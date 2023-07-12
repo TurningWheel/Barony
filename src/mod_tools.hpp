@@ -25,6 +25,8 @@ See LICENSE for details.
 #include "entity.hpp"
 #include "ui/Widget.hpp"
 
+#include <curl/curl.h>
+
 class CustomHelpers
 {
 public:
@@ -1134,44 +1136,41 @@ public:
 			for ( rapidjson::Value::ConstMemberIterator itemSlot_itr = equipped_items.MemberBegin(); itemSlot_itr != equipped_items.MemberEnd(); ++itemSlot_itr )
 			{
 				std::string slotName = itemSlot_itr->name.GetString();
-				if ( itemSlot_itr->value.MemberCount() > 0 )
+				if ( itemSlot_itr->value.IsArray() )
 				{
-					if ( itemSlot_itr->value.IsArray() )
-					{
-						std::vector<std::pair<ItemEntry, int>> itemsToChoose;
-						// a selection of items in the slot. need to choose 1.
-						for ( rapidjson::Value::ConstValueIterator itemArray_itr = itemSlot_itr->value.Begin(); itemArray_itr != itemSlot_itr->value.End(); ++itemArray_itr )
-						{
-							ItemEntry item;
-							for ( rapidjson::Value::ConstMemberIterator item_itr = itemArray_itr->MemberBegin(); item_itr != itemArray_itr->MemberEnd(); ++item_itr )
-							{
-								item.readKeyToItemEntry(item_itr);
-							}
-							itemsToChoose.push_back(std::make_pair(item, getSlotFromKeyName(slotName)));
-						}
-						if ( itemsToChoose.size() > 0 )
-						{
-							std::vector<unsigned int> itemChances(itemsToChoose.size(), 0);
-							int index = 0;
-							for ( auto& pair : itemsToChoose )
-							{
-								itemChances.at(index) = pair.first.weightedChance;
-								++index;
-							}
-
-							int result = local_rng.discrete(itemChances.data(), itemChances.size());
-							statEntry->equipped_items.push_back(std::make_pair(itemsToChoose.at(result).first, itemsToChoose.at(result).second));
-						}
-					}
-					else
+					std::vector<std::pair<ItemEntry, int>> itemsToChoose;
+					// a selection of items in the slot. need to choose 1.
+					for ( rapidjson::Value::ConstValueIterator itemArray_itr = itemSlot_itr->value.Begin(); itemArray_itr != itemSlot_itr->value.End(); ++itemArray_itr )
 					{
 						ItemEntry item;
-						for ( rapidjson::Value::ConstMemberIterator item_itr = itemSlot_itr->value.MemberBegin(); item_itr != itemSlot_itr->value.MemberEnd(); ++item_itr )
+						for ( rapidjson::Value::ConstMemberIterator item_itr = itemArray_itr->MemberBegin(); item_itr != itemArray_itr->MemberEnd(); ++item_itr )
 						{
 							item.readKeyToItemEntry(item_itr);
 						}
-						statEntry->equipped_items.push_back(std::make_pair(item, getSlotFromKeyName(slotName)));
+						itemsToChoose.push_back(std::make_pair(item, getSlotFromKeyName(slotName)));
 					}
+					if ( itemsToChoose.size() > 0 )
+					{
+						std::vector<unsigned int> itemChances(itemsToChoose.size(), 0);
+						int index = 0;
+						for ( auto& pair : itemsToChoose )
+						{
+							itemChances.at(index) = pair.first.weightedChance;
+							++index;
+						}
+
+						int result = local_rng.discrete(itemChances.data(), itemChances.size());
+						statEntry->equipped_items.push_back(std::make_pair(itemsToChoose.at(result).first, itemsToChoose.at(result).second));
+					}
+				}
+				else if ( itemSlot_itr->value.MemberCount() > 0 )
+				{
+					ItemEntry item;
+					for ( rapidjson::Value::ConstMemberIterator item_itr = itemSlot_itr->value.MemberBegin(); item_itr != itemSlot_itr->value.MemberEnd(); ++item_itr )
+					{
+						item.readKeyToItemEntry(item_itr);
+					}
+					statEntry->equipped_items.push_back(std::make_pair(item, getSlotFromKeyName(slotName)));
 				}
 			}
 			const rapidjson::Value& inventory_items = d["inventory_items"];
@@ -1412,25 +1411,28 @@ public:
 				{
 					LevelCurve newCurve;
 					newCurve.mapName = map_itr->name.GetString();
-					const rapidjson::Value& randomGeneration = map_itr->value["random_generation_monsters"];
-					for ( rapidjson::Value::ConstValueIterator monsters_itr = randomGeneration.Begin(); monsters_itr != randomGeneration.End(); ++monsters_itr )
+					if ( map_itr->value.HasMember("random_generation_monsters") )
 					{
-						const rapidjson::Value& monster = *monsters_itr;
-						MonsterCurveEntry newMonster(monster["name"].GetString(),
-							monster["dungeon_depth_minimum"].GetInt(),
-							monster["dungeon_depth_maximum"].GetInt(),
-							monster["weighted_chance"].GetInt(),
-							"");
-
-						if ( monster.HasMember("variants") )
+						const rapidjson::Value& randomGeneration = map_itr->value["random_generation_monsters"];
+						for ( rapidjson::Value::ConstValueIterator monsters_itr = randomGeneration.Begin(); monsters_itr != randomGeneration.End(); ++monsters_itr )
 						{
-							for ( rapidjson::Value::ConstMemberIterator var_itr = monster["variants"].MemberBegin();
-								var_itr != monster["variants"].MemberEnd(); ++var_itr )
+							const rapidjson::Value& monster = *monsters_itr;
+							MonsterCurveEntry newMonster(monster["name"].GetString(),
+								monster["dungeon_depth_minimum"].GetInt(),
+								monster["dungeon_depth_maximum"].GetInt(),
+								monster["weighted_chance"].GetInt(),
+								"");
+
+							if ( monster.HasMember("variants") )
 							{
-								newMonster.addVariant(var_itr->name.GetString(), var_itr->value.GetInt());
+								for ( rapidjson::Value::ConstMemberIterator var_itr = monster["variants"].MemberBegin();
+									var_itr != monster["variants"].MemberEnd(); ++var_itr )
+								{
+									newMonster.addVariant(var_itr->name.GetString(), var_itr->value.GetInt());
+								}
 							}
+							newCurve.monsterCurve.push_back(newMonster);
 						}
-						newCurve.monsterCurve.push_back(newMonster);
 					}
 
 					if ( map_itr->value.HasMember("fixed_monsters") )
@@ -3215,3 +3217,90 @@ struct EditorEntityData_t
 	static void readFromFile();
 };
 extern EditorEntityData_t editorEntityData;
+
+struct Mods
+{
+	static std::vector<int> modelsListModifiedIndexes;
+	static std::vector<int> soundsListModifiedIndexes;
+	static std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImagesToReload;
+	static std::vector<std::pair<std::string, std::string>> mountedFilepaths;
+	static std::vector<std::pair<std::string, std::string>> mountedFilepathsSaved; // saved from config file
+	static std::set<std::string> Mods::mods_loaded_local;
+	static std::set<std::string> Mods::mods_loaded_workshop;
+	static std::list<std::string> Mods::localModFoldernames;
+	static int numCurrentModsLoaded;
+	static bool modelsListRequiresReloadUnmodded;
+	static bool soundListRequiresReloadUnmodded;
+	static bool tileListRequireReloadUnmodded;
+	static bool spriteImagesRequireReloadUnmodded;
+	static bool booksRequireReloadUnmodded;
+	static bool musicRequireReloadUnmodded;
+	static bool langRequireReloadUnmodded;
+	static bool monsterLimbsRequireReloadUnmodded;
+	static bool systemImagesReloadUnmodded;
+	static bool customContentLoadedFirstTime;
+	static bool disableSteamAchievements;
+	static bool isLoading;
+	static Uint32 loadingTicks;
+#ifdef STEAMWORKS
+	static std::vector<SteamUGCDetails_t*> workshopSubscribedItemList;
+	static std::vector<std::pair<std::string, uint64>> workshopLoadedFileIDMap;
+	struct WorkshopTags_t
+	{
+		std::string tag;
+		std::string text;
+		WorkshopTags_t(const char* _tag, const char* _text)
+		{
+			tag = _tag;
+			text = _text;
+		}
+	};
+	static std::vector<WorkshopTags_t> tag_settings;
+	static int uploadStatus;
+	static int uploadErrorStatus;
+	static PublishedFileId_t uploadingExistingItem;
+	static Uint32 uploadTicks;
+	static Uint32 processedOnTick;
+	static int uploadNumRetries;
+	static std::string getFolderFullPath(std::string input);
+#endif
+	static void updateModCounts();
+	static bool mountAllExistingPaths();
+	static bool clearAllMountedPaths();
+	static bool removePathFromMountedFiles(std::string findStr);
+	static bool isPathInMountedFiles(std::string findStr);
+	static void unloadMods();
+	static void loadMods();
+	static void loadModels(int start, int end);
+	static void verifyAchievements(const char* fullpath, bool ignoreBaseFolder);
+	static bool verifyMapFiles(const char* file, bool ignoreBaseFolder);
+	static int createBlankModDirectory(std::string foldername);
+	static void writeLevelsTxtAndPreview(std::string modFolder);
+};
+
+#ifdef USE_LIBCURL
+struct LibCURL_t
+{
+	bool bInit = false;
+	CURL* handle = nullptr;
+	void init()
+	{
+		curl_global_init(CURL_GLOBAL_DEFAULT);
+		if ( handle = curl_easy_init() )
+		{
+			bInit = true;
+		}
+	}
+	void download(std::string filename, std::string url);
+
+	~LibCURL_t()
+	{
+		curl_easy_cleanup(handle);
+		handle = nullptr;
+	}
+
+	static size_t write_data_fp(void* ptr, size_t size, size_t nmemb, File* stream);
+	static size_t write_data_string(void* ptr, size_t size, size_t nmemb, std::string* s);
+};
+extern LibCURL_t LibCURL;
+#endif

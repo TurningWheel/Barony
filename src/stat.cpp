@@ -164,7 +164,7 @@ void Stat::clearStats()
 {
 	int x;
 
-	strcpy(this->obituary, language[1500]);
+	strcpy(this->obituary, Language::get(1500));
 	this->killer = KilledBy::UNKNOWN;
 	this->poisonKiller = 0;
 	this->HP = DEFAULT_HP;
@@ -821,7 +821,7 @@ int Stat::pickRandomEquippedItem(Item** returnItem, bool excludeWeapon, bool exc
 	return equipNum[roll];
 }
 
-char* getSkillLangEntry(int skill)
+const char* getSkillLangEntry(int skill)
 {
 	int langEntry = 236 + skill;
 	if ( skill == PRO_UNARMED )
@@ -832,7 +832,7 @@ char* getSkillLangEntry(int skill)
 	{
 		langEntry = 3340;
 	}
-	return language[langEntry];
+	return Language::get(langEntry);
 }
 
 void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
@@ -1373,7 +1373,7 @@ bool Stat::emptyLootingBag(const int player, Uint32 key)
 	{
 		if ( stats[i] && stats[i]->player_lootbags.find(key) != stats[i]->player_lootbags.end() )
 		{
-			messagePlayer(player, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[4332]);
+			messagePlayer(player, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(4332));
 			if ( !stats[i]->player_lootbags[key].looted )
 			{
 				for ( auto& item_loot : stats[i]->player_lootbags[key].items )
@@ -1393,12 +1393,12 @@ bool Stat::emptyLootingBag(const int player, Uint32 key)
 								free(item2);
 								int oldcount = item->count;
 								item->count = pickedUpCount;
-								//messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[504], item->description());
+								//messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(504), item->description());
 								item->count = oldcount;
 							}
 							else
 							{
-								//messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[504], item->description());
+								//messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(504), item->description());
 								free(item); // item is the picked up items (item == item2)
 							}
 						}

@@ -140,11 +140,11 @@ void actSummonTrap(Entity* my)
 				{
 					if ( SUMMONTRAP_MONSTER < KOBOLD )
 					{
-						//messagePlayer(clientnum, language[2352], language[90 + SUMMONTRAP_MONSTER]);
+						//messagePlayer(clientnum, Language::get(2352), Language::get(90 + SUMMONTRAP_MONSTER));
 					}
 					else if ( SUMMONTRAP_MONSTER >= KOBOLD )
 					{
-						//messagePlayer(clientnum, language[2352], language[2000 + (SUMMONTRAP_MONSTER - 21)]);
+						//messagePlayer(clientnum, Language::get(2352), Language::get(2000 + (SUMMONTRAP_MONSTER - 21)));
 					}
 					SUMMONTRAP_INITIALIZED = 1; // trap is starting up for the first time.
 				}

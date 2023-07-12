@@ -64,9 +64,6 @@ static ConsoleVariable<bool> cvar_sdl_disablejoystickrawinput("/sdl_joystick_raw
 
 -------------------------------------------------------------------------------*/
 
-void generateTileTextures();
-void destroyTileTextures();
-
 FILE* logfile = nullptr;
 bool steam_init = false;
 
@@ -144,6 +141,9 @@ int initApp(char const * const title, int fullscreen)
 			PHYSFS_mkdir("data/statues");
 			PHYSFS_mkdir("data/scripts");
 			PHYSFS_mkdir("config");
+#ifdef STEAMWORKS
+			PHYSFS_mkdir("workshop_cache");
+#endif
 #ifdef NINTENDO
 			PHYSFS_mkdir("mods");
 			std::string path = outputdir;
@@ -445,25 +445,6 @@ int initApp(char const * const title, int fullscreen)
 	// init new ui engine
 	Frame::guiInit();
 
-	// cache language entries
-	bool cacheText = false;
-	if (cacheText) { //This will never run. Why is this here?
-		for (int c = 0; c < NUMLANGENTRIES; ++c) {
-			bool foundSpecialChar = false;
-			for (int i = 0; language[c][i] != '\0'; ++i) {
-				if (language[c][i] == '\\' || language[c][i] == '%') {
-					foundSpecialChar = true;
-				}
-			}
-			if (foundSpecialChar) {
-				continue;
-			}
-			ttfPrintText(ttf8, 0, -200, language[c]);
-			ttfPrintText(ttf12, 0, -200, language[c]);
-			ttfPrintText(ttf16, 0, -200, language[c]);
-		}
-	}
-
 	// create player classes
 	// TODO/FIXME: why isn't this in initGame? why is it in init.cpp?
 #ifndef EDITOR
@@ -687,6 +668,22 @@ int initApp(char const * const title, int fullscreen)
 	return result;
 }
 
+std::map<int, std::string> Language::entries;
+std::map<int, std::string> Language::tmpEntries;
+std::string Language::languageCode = "";
+const char* Language::get(const int line)
+{
+	if ( line < 0 ) {
+		return "";
+	}
+	return entries[line].c_str();
+}
+void Language::reset()
+{
+	entries.clear();
+	tmpEntries.clear();
+}
+
 /*-------------------------------------------------------------------------------
 
 	loadLanguage
@@ -695,7 +692,7 @@ int initApp(char const * const title, int fullscreen)
 
 -------------------------------------------------------------------------------*/
 
-int loadLanguage(char const * const lang)
+int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 {
 	char filename[128] = { 0 };
 	File* fp;
@@ -710,7 +707,7 @@ int loadLanguage(char const * const lang)
 	// compose filename
 	snprintf(filename, 127, "lang/%s.txt", lang);
 	std::string langFilepath;
-	if ( PHYSFS_isInit() && PHYSFS_getRealDir(filename) != NULL )
+	if ( PHYSFS_isInit() && PHYSFS_getRealDir(filename) != NULL && !forceLoadBaseDirectory )
 	{
 		std::string langRealDir = PHYSFS_getRealDir(filename);
 		langFilepath = langRealDir + PHYSFS_getDirSeparator() + filename;
@@ -729,11 +726,11 @@ int loadLanguage(char const * const lang)
 	}
 
 	// check if we've loaded this language already
-	if ( !strcmp(languageCode, lang) )
+	/*if ( !strcmp(languageCode, lang) )
 	{
 		printlog("info: language '%s' already loaded", lang);
 		return 1;
-	}
+	}*/
 
 	// init SDL_TTF
 	if ( !TTF_WasInit() )
@@ -820,19 +817,13 @@ int loadLanguage(char const * const lang)
 		return 1;
 	}
 
-	// free currently loaded language if any
-	freeLanguages();
-
 	// store the new language code
-	strcpy(languageCode, lang);
+	languageCode = lang;
 
-	// allocate new language strings
-	language = (char**) calloc(NUMLANGENTRIES, sizeof(char*));
-
-	// Allocate an emptry string for each possible language entry
-	for (c = 0; c < NUMLANGENTRIES; c++)
+	tmpEntries.clear();
+	if ( forceLoadBaseDirectory )
 	{
-		language[c] = (char*)calloc(1, sizeof(char));
+		entries.clear();
 	}
 
 	// read file
@@ -841,7 +832,7 @@ int loadLanguage(char const * const lang)
 	{
 		//printlog( "loading line %d...\n", line);
 		char data[1024];
-		int entry = NUMLANGENTRIES;
+		int entry = 0;
 
 		// read line from file
 		int i;
@@ -891,21 +882,19 @@ int loadLanguage(char const * const lang)
 			printlog( "warning: syntax error in '%s':%d\n bad syntax!\n", langFilepath.c_str(), line);
 			continue;
 		}
-		else if ( entry >= NUMLANGENTRIES || entry < 0 )
+		else if ( entry < 0 )
 		{
 			printlog( "warning: syntax error in '%s':%d\n invalid language entry!\n", langFilepath.c_str(), line);
 			continue;
 		}
 		char entryText[16] = { 0 };
 		snprintf(entryText, 15, "%d", entry);
-		if ( language[entry][0] )
+		if ( entries.find(entry) != entries.end() )
 		{
-			printlog( "warning: duplicate entry %d in '%s':%d\n", entry, langFilepath.c_str(), line);
-			free(language[entry]);
+			printlog("warning: duplicate entry %d in '%s':%d\n", entry, langFilepath.c_str(), line);
 		}
-		language[entry] = (char*) calloc(strlen((char*)(data + strlen(entryText) + 1)) + 1, sizeof(char));
-		strcpy(language[entry], (char*)(data + strlen(entryText) + 1));
-		//printlog("loading entry %d...text: \"%s\"\n", entry, language[entry]);
+		entries[entry] = (char*)(data + strlen(entryText) + 1);
+		//printlog("loading entry %d...text: \"%s\"\n", entry, Language::get(entry));
 	}
 
 	// close file
@@ -924,1055 +913,17 @@ int loadLanguage(char const * const lang)
 
 -------------------------------------------------------------------------------*/
 
-int reloadLanguage()
+int Language::reloadLanguage()
 {
-	char lang[32];
-
-	strcpy(lang, languageCode);
-	strcpy(languageCode, "");
-	return loadLanguage(lang);
-}
-
-/*-------------------------------------------------------------------------------
- *
-       freeLanguages
-
-	free languages string resources
-
---------------------------------------------------------------------------------*/
-
-void freeLanguages()
-{
-	int c;
-
-	if ( language )
+	if ( PHYSFS_isInit() && PHYSFS_getRealDir("lang/en.txt") != NULL )
 	{
-		for ( c = 0; c < NUMLANGENTRIES; c++ )
+		std::string langRealDir = PHYSFS_getRealDir("lang/en.txt");
+		if ( langRealDir != "./" )
 		{
-			char* entry = language[c];
-			if ( entry )
-			{
-				free(entry);
-			}
-		}
-		free(language);
-	}
-}
-
-/*-------------------------------------------------------------------------------
-
-	generatePolyModels
-
-	processes voxel models and turns them into polygon-based models (surface
-	optimized)
-
--------------------------------------------------------------------------------*/
-
-void generatePolyModels(int start, int end, bool forceCacheRebuild)
-{
-	Sint32 x, y, z;
-	Sint32 c, i;
-	Uint32 index, indexdown[3];
-	Uint8 newcolor, oldcolor;
-	bool buildingquad;
-	polyquad_t* quad1, *quad2;
-	Uint32 numquads;
-	list_t quads;
-	File *model_cache;
-	bool generateAll = start == 0 && end == nummodels;
-
-	quads.first = NULL;
-	quads.last = NULL;
-
-	if ( generateAll )
-	{
-		polymodels = (polymodel_t*) malloc(sizeof(polymodel_t) * nummodels);
-		if ( useModelCache )
-		{
-#ifndef NINTENDO
-            std::string cache_path = std::string(outputdir) + "/models.cache";
-#else
-			std::string cache_path = "models.cache";
-#endif
-			model_cache = openDataFile(cache_path.c_str(), "rb");
-			if ( model_cache )
-			{
-	            printlog("loading model cache...\n");
-				char polymodelsVersionStr[7] = "v0.0.0";
-				char modelsCacheHeader[7] = "000000";
-				model_cache->read(&modelsCacheHeader, sizeof(char), strlen("BARONY"));
-
-				if ( !strcmp(modelsCacheHeader, "BARONY") )
-				{
-					// we're using the new polymodels file.
-					model_cache->read(&polymodelsVersionStr, sizeof(char), strlen(VERSION));
-					printlog("[MODEL CACHE]: Using updated version format %s.", polymodelsVersionStr);
-					if ( strncmp(polymodelsVersionStr, VERSION, strlen(VERSION)) )
-					{
-						// different version.
-						forceCacheRebuild = true;
-						printlog("[MODEL CACHE]: Detected outdated version number %s - current is %s. Upgrading cache...", polymodelsVersionStr, VERSION);
-					}
-				}
-				else
-				{
-					printlog("[MODEL CACHE]: Detected legacy cache without embedded version data, upgrading cache to %s...", VERSION);
-					model_cache->rewind();
-					forceCacheRebuild = true; // upgrade from legacy cache
-				}
-				if ( !forceCacheRebuild )
-				{
-					for (size_t model_index = 0; model_index < nummodels; model_index++) {
-						updateLoadingScreen(30 + ((real_t)model_index / nummodels) * 30.0);
-						polymodel_t *cur = &polymodels[model_index];
-						model_cache->read(&cur->numfaces, sizeof(cur->numfaces), 1);
-						cur->faces = (polytriangle_t *) calloc(sizeof(polytriangle_t), cur->numfaces);
-						model_cache->read(polymodels[model_index].faces, sizeof(polytriangle_t), cur->numfaces);
-					}
-					FileIO::close(model_cache);
-					return;
-				}
-				else
-				{
-				    printlog("failed to load model cache");
-					FileIO::close(model_cache);
-				}
-			}
+			loadLanguage("en", true); // force load the base directory first, then modded paths later.
 		}
 	}
-
-	printlog("generating poly models...\n");
-
-	for ( c = start; c < end; ++c )
-	{
-		updateLoadingScreen(30 + ((real_t)(c - start) / (end - start)) * 30.0);
-		numquads = 0;
-		polymodels[c].numfaces = 0;
-		voxel_t* model = models[c];
-		if ( !model )
-		{
-			continue;
-		}
-		indexdown[0] = model->sizez * model->sizey;
-		indexdown[1] = model->sizez;
-		indexdown[2] = 1;
-
-		// find front faces
-		for ( x = models[c]->sizex - 1; x >= 0; x-- )
-		{
-			for ( z = 0; z < models[c]->sizez; z++ )
-			{
-				oldcolor = 255;
-				buildingquad = false;
-				for ( y = 0; y < models[c]->sizey; y++ )
-				{
-					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
-					newcolor = models[c]->data[index];
-					if ( buildingquad == true )
-					{
-						bool doit = false;
-						if ( newcolor != oldcolor )
-						{
-							doit = true;
-						}
-						else if ( x < models[c]->sizex - 1 )
-							if ( models[c]->data[index + indexdown[0]] >= 0 && models[c]->data[index + indexdown[0]] < 255 )
-							{
-								doit = true;
-							}
-						if ( doit )
-						{
-							// add the last two vertices to the previous quad
-							buildingquad = false;
-
-							node_t* currentNode = quads.last;
-							quad1 = (polyquad_t*)currentNode->element;
-							quad1->vertex[1].x = x - model->sizex / 2.f + 1;
-							quad1->vertex[1].y = y - model->sizey / 2.f;
-							quad1->vertex[1].z = z - model->sizez / 2.f - 1;
-							quad1->vertex[2].x = x - model->sizex / 2.f + 1;
-							quad1->vertex[2].y = y - model->sizey / 2.f;
-							quad1->vertex[2].z = z - model->sizez / 2.f;
-
-							// optimize quad
-							node_t* node;
-							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-							{
-								quad2 = (polyquad_t*)node->element;
-								if ( quad1->side == quad2->side )
-								{
-									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-									{
-										if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z )
-										{
-											if ( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z )
-											{
-												quad2->vertex[2].z++;
-												quad2->vertex[3].z++;
-												list_RemoveNode(currentNode);
-												numquads--;
-												polymodels[c].numfaces -= 2;
-												break;
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-					if ( newcolor != oldcolor || !buildingquad )
-					{
-						if ( newcolor != 255 )
-						{
-							bool doit = false;
-							if ( x == models[c]->sizex - 1 )
-							{
-								doit = true;
-							}
-							else if ( models[c]->data[index + indexdown[0]] == 255 )
-							{
-								doit = true;
-							}
-							if ( doit )
-							{
-								// start building a new quad
-								buildingquad = true;
-								numquads++;
-								polymodels[c].numfaces += 2;
-
-								quad1 = (polyquad_t*) calloc(1, sizeof(polyquad_t));
-								quad1->side = 0;
-								quad1->vertex[0].x = x - model->sizex / 2.f + 1;
-								quad1->vertex[0].y = y - model->sizey / 2.f;
-								quad1->vertex[0].z = z - model->sizez / 2.f - 1;
-								quad1->vertex[3].x = x - model->sizex / 2.f + 1;
-								quad1->vertex[3].y = y - model->sizey / 2.f;
-								quad1->vertex[3].z = z - model->sizez / 2.f;
-								quad1->r = models[c]->palette[models[c]->data[index]][0];
-								quad1->g = models[c]->palette[models[c]->data[index]][1];
-								quad1->b = models[c]->palette[models[c]->data[index]][2];
-
-								node_t* newNode = list_AddNodeLast(&quads);
-								newNode->element = quad1;
-								newNode->deconstructor = &defaultDeconstructor;
-								newNode->size = sizeof(polyquad_t);
-							}
-						}
-					}
-					oldcolor = newcolor;
-				}
-				if ( buildingquad == true )
-				{
-					// add the last two vertices to the previous quad
-					buildingquad = false;
-
-					node_t* currentNode = quads.last;
-					quad1 = (polyquad_t*)currentNode->element;
-					quad1->vertex[1].x = x - model->sizex / 2.f + 1;
-					quad1->vertex[1].y = y - model->sizey / 2.f;
-					quad1->vertex[1].z = z - model->sizez / 2.f - 1;
-					quad1->vertex[2].x = x - model->sizex / 2.f + 1;
-					quad1->vertex[2].y = y - model->sizey / 2.f;
-					quad1->vertex[2].z = z - model->sizez / 2.f;
-
-					// optimize quad
-					node_t* node;
-					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-					{
-						quad2 = (polyquad_t*)node->element;
-						if ( quad1->side == quad2->side )
-						{
-							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-							{
-								if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z )
-								{
-									if ( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z )
-									{
-										quad2->vertex[2].z++;
-										quad2->vertex[3].z++;
-										list_RemoveNode(currentNode);
-										numquads--;
-										polymodels[c].numfaces -= 2;
-										break;
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-
-		// find back faces
-		for ( x = 0; x < models[c]->sizex; x++ )
-		{
-			for ( z = 0; z < models[c]->sizez; z++ )
-			{
-				oldcolor = 255;
-				buildingquad = false;
-				for ( y = 0; y < models[c]->sizey; y++ )
-				{
-					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
-					newcolor = models[c]->data[index];
-					if ( buildingquad == true )
-					{
-						bool doit = false;
-						if ( newcolor != oldcolor )
-						{
-							doit = true;
-						}
-						else if ( x > 0 )
-							if ( models[c]->data[index - indexdown[0]] >= 0 && models[c]->data[index - indexdown[0]] < 255 )
-							{
-								doit = true;
-							}
-						if ( doit )
-						{
-							// add the last two vertices to the previous quad
-							buildingquad = false;
-
-							node_t* currentNode = quads.last;
-							quad1 = (polyquad_t*)currentNode->element;
-							quad1->vertex[1].x = x - model->sizex / 2.f;
-							quad1->vertex[1].y = y - model->sizey / 2.f;
-							quad1->vertex[1].z = z - model->sizez / 2.f;
-							quad1->vertex[2].x = x - model->sizex / 2.f;
-							quad1->vertex[2].y = y - model->sizey / 2.f;
-							quad1->vertex[2].z = z - model->sizez / 2.f - 1;
-
-							// optimize quad
-							node_t* node;
-							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-							{
-								quad2 = (polyquad_t*)node->element;
-								if ( quad1->side == quad2->side )
-								{
-									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-									{
-										if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z )
-										{
-											if ( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z )
-											{
-												quad2->vertex[0].z++;
-												quad2->vertex[1].z++;
-												list_RemoveNode(currentNode);
-												numquads--;
-												polymodels[c].numfaces -= 2;
-												break;
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-					if ( newcolor != oldcolor || !buildingquad )
-					{
-						if ( newcolor != 255 )
-						{
-							bool doit = false;
-							if ( x == 0 )
-							{
-								doit = true;
-							}
-							else if ( models[c]->data[index - indexdown[0]] == 255 )
-							{
-								doit = true;
-							}
-							if ( doit )
-							{
-								// start building a new quad
-								buildingquad = true;
-								numquads++;
-								polymodels[c].numfaces += 2;
-
-								quad1 = (polyquad_t*) calloc(1, sizeof(polyquad_t));
-								quad1->side = 1;
-								quad1->vertex[0].x = x - model->sizex / 2.f;
-								quad1->vertex[0].y = y - model->sizey / 2.f;
-								quad1->vertex[0].z = z - model->sizez / 2.f;
-								quad1->vertex[3].x = x - model->sizex / 2.f;
-								quad1->vertex[3].y = y - model->sizey / 2.f;
-								quad1->vertex[3].z = z - model->sizez / 2.f - 1;
-								quad1->r = models[c]->palette[models[c]->data[index]][0];
-								quad1->g = models[c]->palette[models[c]->data[index]][1];
-								quad1->b = models[c]->palette[models[c]->data[index]][2];
-
-								node_t* newNode = list_AddNodeLast(&quads);
-								newNode->element = quad1;
-								newNode->deconstructor = &defaultDeconstructor;
-								newNode->size = sizeof(polyquad_t);
-							}
-						}
-					}
-					oldcolor = newcolor;
-				}
-				if ( buildingquad == true )
-				{
-					// add the last two vertices to the previous quad
-					buildingquad = false;
-
-					node_t* currentNode = quads.last;
-					quad1 = (polyquad_t*)currentNode->element;
-					quad1->vertex[1].x = x - model->sizex / 2.f;
-					quad1->vertex[1].y = y - model->sizey / 2.f;
-					quad1->vertex[1].z = z - model->sizez / 2.f;
-					quad1->vertex[2].x = x - model->sizex / 2.f;
-					quad1->vertex[2].y = y - model->sizey / 2.f;
-					quad1->vertex[2].z = z - model->sizez / 2.f - 1;
-
-					// optimize quad
-					node_t* node;
-					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-					{
-						quad2 = (polyquad_t*)node->element;
-						if ( quad1->side == quad2->side )
-						{
-							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-							{
-								if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z )
-								{
-									if ( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z )
-									{
-										quad2->vertex[0].z++;
-										quad2->vertex[1].z++;
-										list_RemoveNode(currentNode);
-										numquads--;
-										polymodels[c].numfaces -= 2;
-										break;
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-
-		// find right faces
-		for ( y = models[c]->sizey - 1; y >= 0; y-- )
-		{
-			for ( z = 0; z < models[c]->sizez; z++ )
-			{
-				oldcolor = 255;
-				buildingquad = false;
-				for ( x = 0; x < models[c]->sizex; x++ )
-				{
-					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
-					newcolor = models[c]->data[index];
-					if ( buildingquad == true )
-					{
-						bool doit = false;
-						if ( newcolor != oldcolor )
-						{
-							doit = true;
-						}
-						else if ( y < models[c]->sizey - 1 )
-							if ( models[c]->data[index + indexdown[1]] >= 0 && models[c]->data[index + indexdown[1]] < 255 )
-							{
-								doit = true;
-							}
-						if ( doit )
-						{
-							// add the last two vertices to the previous quad
-							buildingquad = false;
-
-							node_t* currentNode = quads.last;
-							quad1 = (polyquad_t*) currentNode->element;
-							quad1->vertex[1].x = x - model->sizex / 2.f;
-							quad1->vertex[1].y = y - model->sizey / 2.f + 1;
-							quad1->vertex[1].z = z - model->sizez / 2.f;
-							quad1->vertex[2].x = x - model->sizex / 2.f;
-							quad1->vertex[2].y = y - model->sizey / 2.f + 1;
-							quad1->vertex[2].z = z - model->sizez / 2.f - 1;
-
-							// optimize quad
-							node_t* node;
-							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-							{
-								quad2 = (polyquad_t*)node->element;
-								if ( quad1->side == quad2->side )
-								{
-									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-									{
-										if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z )
-										{
-											if ( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z )
-											{
-												quad2->vertex[0].z++;
-												quad2->vertex[1].z++;
-												list_RemoveNode(currentNode);
-												numquads--;
-												polymodels[c].numfaces -= 2;
-												break;
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-					if ( newcolor != oldcolor || !buildingquad )
-					{
-						if ( newcolor != 255 )
-						{
-							bool doit = false;
-							if ( y == models[c]->sizey - 1 )
-							{
-								doit = true;
-							}
-							else if ( models[c]->data[index + indexdown[1]] == 255 )
-							{
-								doit = true;
-							}
-							if ( doit )
-							{
-								// start building a new quad
-								buildingquad = true;
-								numquads++;
-								polymodels[c].numfaces += 2;
-
-								quad1 = (polyquad_t*) calloc(1, sizeof(polyquad_t));
-								quad1->side = 2;
-								quad1->vertex[0].x = x - model->sizex / 2.f;
-								quad1->vertex[0].y = y - model->sizey / 2.f + 1;
-								quad1->vertex[0].z = z - model->sizez / 2.f;
-								quad1->vertex[3].x = x - model->sizex / 2.f;
-								quad1->vertex[3].y = y - model->sizey / 2.f + 1;
-								quad1->vertex[3].z = z - model->sizez / 2.f - 1;
-								quad1->r = models[c]->palette[models[c]->data[index]][0];
-								quad1->g = models[c]->palette[models[c]->data[index]][1];
-								quad1->b = models[c]->palette[models[c]->data[index]][2];
-
-								node_t* newNode = list_AddNodeLast(&quads);
-								newNode->element = quad1;
-								newNode->deconstructor = &defaultDeconstructor;
-								newNode->size = sizeof(polyquad_t);
-							}
-						}
-					}
-					oldcolor = newcolor;
-				}
-				if ( buildingquad == true )
-				{
-					// add the last two vertices to the previous quad
-					buildingquad = false;
-					node_t* currentNode = quads.last;
-					quad1 = (polyquad_t*) currentNode->element;
-					quad1->vertex[1].x = x - model->sizex / 2.f;
-					quad1->vertex[1].y = y - model->sizey / 2.f + 1;
-					quad1->vertex[1].z = z - model->sizez / 2.f;
-					quad1->vertex[2].x = x - model->sizex / 2.f;
-					quad1->vertex[2].y = y - model->sizey / 2.f + 1;
-					quad1->vertex[2].z = z - model->sizez / 2.f - 1;
-
-					// optimize quad
-					node_t* node;
-					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-					{
-						quad2 = (polyquad_t*)node->element;
-						if ( quad1->side == quad2->side )
-						{
-							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-							{
-								if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z )
-								{
-									if ( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z )
-									{
-										quad2->vertex[0].z++;
-										quad2->vertex[1].z++;
-										list_RemoveNode(currentNode);
-										numquads--;
-										polymodels[c].numfaces -= 2;
-										break;
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-
-		// find left faces
-		for ( y = 0; y < models[c]->sizey; y++ )
-		{
-			for ( z = 0; z < models[c]->sizez; z++ )
-			{
-				oldcolor = 255;
-				buildingquad = false;
-				for ( x = 0; x < models[c]->sizex; x++ )
-				{
-					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
-					newcolor = models[c]->data[index];
-					if ( buildingquad == true )
-					{
-						bool doit = false;
-						if ( newcolor != oldcolor )
-						{
-							doit = true;
-						}
-						else if ( y > 0 )
-							if ( models[c]->data[index - indexdown[1]] >= 0 && models[c]->data[index - indexdown[1]] < 255 )
-							{
-								doit = true;
-							}
-						if ( doit )
-						{
-							// add the last two vertices to the previous quad
-							buildingquad = false;
-
-							node_t* currentNode = quads.last;
-							quad1 = (polyquad_t*) currentNode->element;
-							quad1->vertex[1].x = x - model->sizex / 2.f;
-							quad1->vertex[1].y = y - model->sizey / 2.f;
-							quad1->vertex[1].z = z - model->sizez / 2.f - 1;
-							quad1->vertex[2].x = x - model->sizex / 2.f;
-							quad1->vertex[2].y = y - model->sizey / 2.f;
-							quad1->vertex[2].z = z - model->sizez / 2.f;
-
-							// optimize quad
-							node_t* node;
-							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-							{
-								quad2 = (polyquad_t*)node->element;
-								if ( quad1->side == quad2->side )
-								{
-									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-									{
-										if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z )
-										{
-											if ( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z )
-											{
-												quad2->vertex[2].z++;
-												quad2->vertex[3].z++;
-												list_RemoveNode(currentNode);
-												numquads--;
-												polymodels[c].numfaces -= 2;
-												break;
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-					if ( newcolor != oldcolor || !buildingquad )
-					{
-						if ( newcolor != 255 )
-						{
-							bool doit = false;
-							if ( y == 0 )
-							{
-								doit = true;
-							}
-							else if ( models[c]->data[index - indexdown[1]] == 255 )
-							{
-								doit = true;
-							}
-							if ( doit )
-							{
-								// start building a new quad
-								buildingquad = true;
-								numquads++;
-								polymodels[c].numfaces += 2;
-
-								quad1 = (polyquad_t*) calloc(1, sizeof(polyquad_t));
-								quad1->side = 3;
-								quad1->vertex[0].x = x - model->sizex / 2.f;
-								quad1->vertex[0].y = y - model->sizey / 2.f;
-								quad1->vertex[0].z = z - model->sizez / 2.f - 1;
-								quad1->vertex[3].x = x - model->sizex / 2.f;
-								quad1->vertex[3].y = y - model->sizey / 2.f;
-								quad1->vertex[3].z = z - model->sizez / 2.f;
-								quad1->r = models[c]->palette[models[c]->data[index]][0];
-								quad1->g = models[c]->palette[models[c]->data[index]][1];
-								quad1->b = models[c]->palette[models[c]->data[index]][2];
-
-								node_t* newNode = list_AddNodeLast(&quads);
-								newNode->element = quad1;
-								newNode->deconstructor = &defaultDeconstructor;
-								newNode->size = sizeof(polyquad_t);
-							}
-						}
-					}
-					oldcolor = newcolor;
-				}
-				if ( buildingquad == true )
-				{
-					// add the last two vertices to the previous quad
-					buildingquad = false;
-					node_t* currentNode = quads.last;
-					quad1 = (polyquad_t*) currentNode->element;
-					quad1->vertex[1].x = x - model->sizex / 2.f;
-					quad1->vertex[1].y = y - model->sizey / 2.f;
-					quad1->vertex[1].z = z - model->sizez / 2.f - 1;
-					quad1->vertex[2].x = x - model->sizex / 2.f;
-					quad1->vertex[2].y = y - model->sizey / 2.f;
-					quad1->vertex[2].z = z - model->sizez / 2.f;
-
-					// optimize quad
-					node_t* node;
-					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-					{
-						quad2 = (polyquad_t*)node->element;
-						if ( quad1->side == quad2->side )
-						{
-							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-							{
-								if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z )
-								{
-									if ( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z )
-									{
-										quad2->vertex[2].z++;
-										quad2->vertex[3].z++;
-										list_RemoveNode(currentNode);
-										numquads--;
-										polymodels[c].numfaces -= 2;
-										break;
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-
-		// find bottom faces
-		for ( z = models[c]->sizez - 1; z >= 0; z-- )
-		{
-			for ( y = 0; y < models[c]->sizey; y++ )
-			{
-				oldcolor = 255;
-				buildingquad = false;
-				for ( x = 0; x < models[c]->sizex; x++ )
-				{
-					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
-					newcolor = models[c]->data[index];
-					if ( buildingquad == true )
-					{
-						bool doit = false;
-						if ( newcolor != oldcolor )
-						{
-							doit = true;
-						}
-						else if ( z < models[c]->sizez - 1 )
-							if ( models[c]->data[index + indexdown[2]] >= 0 && models[c]->data[index + indexdown[2]] < 255 )
-							{
-								doit = true;
-							}
-						if ( doit )
-						{
-							// add the last two vertices to the previous quad
-							buildingquad = false;
-
-							node_t* currentNode = quads.last;
-							quad1 = (polyquad_t*) currentNode->element;
-							quad1->vertex[1].x = x - model->sizex / 2.f;
-							quad1->vertex[1].y = y - model->sizey / 2.f;
-							quad1->vertex[1].z = z - model->sizez / 2.f;
-							quad1->vertex[2].x = x - model->sizex / 2.f;
-							quad1->vertex[2].y = y - model->sizey / 2.f + 1;
-							quad1->vertex[2].z = z - model->sizez / 2.f;
-
-							// optimize quad
-							node_t* node;
-							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-							{
-								quad2 = (polyquad_t*)node->element;
-								if ( quad1->side == quad2->side )
-								{
-									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-									{
-										if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z )
-										{
-											if ( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z )
-											{
-												quad2->vertex[2].y++;
-												quad2->vertex[3].y++;
-												list_RemoveNode(currentNode);
-												numquads--;
-												polymodels[c].numfaces -= 2;
-												break;
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-					if ( newcolor != oldcolor || !buildingquad )
-					{
-						if ( newcolor != 255 )
-						{
-							bool doit = false;
-							if ( z == models[c]->sizez - 1 )
-							{
-								doit = true;
-							}
-							else if ( models[c]->data[index + indexdown[2]] == 255 )
-							{
-								doit = true;
-							}
-							if ( doit )
-							{
-								// start building a new quad
-								buildingquad = true;
-								numquads++;
-								polymodels[c].numfaces += 2;
-
-								quad1 = (polyquad_t*) calloc(1, sizeof(polyquad_t));
-								quad1->side = 4;
-								quad1->vertex[0].x = x - model->sizex / 2.f;
-								quad1->vertex[0].y = y - model->sizey / 2.f;
-								quad1->vertex[0].z = z - model->sizez / 2.f;
-								quad1->vertex[3].x = x - model->sizex / 2.f;
-								quad1->vertex[3].y = y - model->sizey / 2.f + 1;
-								quad1->vertex[3].z = z - model->sizez / 2.f;
-								quad1->r = models[c]->palette[models[c]->data[index]][0];
-								quad1->g = models[c]->palette[models[c]->data[index]][1];
-								quad1->b = models[c]->palette[models[c]->data[index]][2];
-
-								node_t* newNode = list_AddNodeLast(&quads);
-								newNode->element = quad1;
-								newNode->deconstructor = &defaultDeconstructor;
-								newNode->size = sizeof(polyquad_t);
-							}
-						}
-					}
-					oldcolor = newcolor;
-				}
-				if ( buildingquad == true )
-				{
-					// add the last two vertices to the previous quad
-					buildingquad = false;
-
-					node_t* currentNode = quads.last;
-					quad1 = (polyquad_t*) currentNode->element;
-					quad1->vertex[1].x = x - model->sizex / 2.f;
-					quad1->vertex[1].y = y - model->sizey / 2.f;
-					quad1->vertex[1].z = z - model->sizez / 2.f;
-					quad1->vertex[2].x = x - model->sizex / 2.f;
-					quad1->vertex[2].y = y - model->sizey / 2.f + 1;
-					quad1->vertex[2].z = z - model->sizez / 2.f;
-
-					// optimize quad
-					node_t* node;
-					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-					{
-						quad2 = (polyquad_t*)node->element;
-						if ( quad1->side == quad2->side )
-						{
-							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-							{
-								if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z )
-								{
-									if ( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z )
-									{
-										quad2->vertex[2].y++;
-										quad2->vertex[3].y++;
-										list_RemoveNode(currentNode);
-										numquads--;
-										polymodels[c].numfaces -= 2;
-										break;
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-
-		// find top faces
-		for ( z = 0; z < models[c]->sizez; z++ )
-		{
-			for ( y = 0; y < models[c]->sizey; y++ )
-			{
-				oldcolor = 255;
-				buildingquad = false;
-				for ( x = 0; x < models[c]->sizex; x++ )
-				{
-					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
-					newcolor = models[c]->data[index];
-					if ( buildingquad == true )
-					{
-						bool doit = false;
-						if ( newcolor != oldcolor )
-						{
-							doit = true;
-						}
-						else if ( z > 0 )
-							if ( models[c]->data[index - indexdown[2]] >= 0 && models[c]->data[index - indexdown[2]] < 255 )
-							{
-								doit = true;
-							}
-						if ( doit )
-						{
-							// add the last two vertices to the previous quad
-							buildingquad = false;
-
-							node_t* currentNode = quads.last;
-							quad1 = (polyquad_t*) currentNode->element;
-							quad1->vertex[1].x = x - model->sizex / 2.f;
-							quad1->vertex[1].y = y - model->sizey / 2.f + 1;
-							quad1->vertex[1].z = z - model->sizez / 2.f - 1;
-							quad1->vertex[2].x = x - model->sizex / 2.f;
-							quad1->vertex[2].y = y - model->sizey / 2.f;
-							quad1->vertex[2].z = z - model->sizez / 2.f - 1;
-
-							// optimize quad
-							node_t* node;
-							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-							{
-								quad2 = (polyquad_t*)node->element;
-								if ( quad1->side == quad2->side )
-								{
-									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-									{
-										if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z )
-										{
-											if ( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z )
-											{
-												quad2->vertex[0].y++;
-												quad2->vertex[1].y++;
-												list_RemoveNode(currentNode);
-												numquads--;
-												polymodels[c].numfaces -= 2;
-												break;
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-					if ( newcolor != oldcolor || !buildingquad )
-					{
-						if ( newcolor != 255 )
-						{
-							bool doit = false;
-							if ( z == 0 )
-							{
-								doit = true;
-							}
-							else if ( models[c]->data[index - indexdown[2]] == 255 )
-							{
-								doit = true;
-							}
-							if ( doit )
-							{
-								// start building a new quad
-								buildingquad = true;
-								numquads++;
-								polymodels[c].numfaces += 2;
-
-								quad1 = (polyquad_t*) calloc(1, sizeof(polyquad_t));
-								quad1->side = 5;
-								quad1->vertex[0].x = x - model->sizex / 2.f;
-								quad1->vertex[0].y = y - model->sizey / 2.f + 1;
-								quad1->vertex[0].z = z - model->sizez / 2.f - 1;
-								quad1->vertex[3].x = x - model->sizex / 2.f;
-								quad1->vertex[3].y = y - model->sizey / 2.f;
-								quad1->vertex[3].z = z - model->sizez / 2.f - 1;
-								quad1->r = models[c]->palette[models[c]->data[index]][0];
-								quad1->g = models[c]->palette[models[c]->data[index]][1];
-								quad1->b = models[c]->palette[models[c]->data[index]][2];
-
-								node_t* newNode = list_AddNodeLast(&quads);
-								newNode->element = quad1;
-								newNode->deconstructor = &defaultDeconstructor;
-								newNode->size = sizeof(polyquad_t);
-							}
-						}
-					}
-					oldcolor = newcolor;
-				}
-				if ( buildingquad == true )
-				{
-					// add the last two vertices to the previous quad
-					buildingquad = false;
-
-					node_t* currentNode = quads.last;
-					quad1 = (polyquad_t*) currentNode->element;
-					quad1->vertex[1].x = x - model->sizex / 2.f;
-					quad1->vertex[1].y = y - model->sizey / 2.f + 1;
-					quad1->vertex[1].z = z - model->sizez / 2.f - 1;
-					quad1->vertex[2].x = x - model->sizex / 2.f;
-					quad1->vertex[2].y = y - model->sizey / 2.f;
-					quad1->vertex[2].z = z - model->sizez / 2.f - 1;
-
-					// optimize quad
-					node_t* node;
-					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-					{
-						quad2 = (polyquad_t*)node->element;
-						if ( quad1->side == quad2->side )
-						{
-							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-							{
-								if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z )
-								{
-									if ( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z )
-									{
-										quad2->vertex[0].y++;
-										quad2->vertex[1].y++;
-										list_RemoveNode(currentNode);
-										numquads--;
-										polymodels[c].numfaces -= 2;
-										break;
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-
-		// translate quads into triangles
-		polymodels[c].faces = (polytriangle_t*) malloc(sizeof(polytriangle_t) * polymodels[c].numfaces);
-		for ( uint64_t i = 0; i < polymodels[c].numfaces; i++ )
-		{
-			node_t* node = list_Node(&quads, (int)i / 2);
-			polyquad_t* quad = (polyquad_t*)node->element;
-			polymodels[c].faces[i].r = quad->r;
-			polymodels[c].faces[i].g = quad->g;
-			polymodels[c].faces[i].b = quad->b;
-			if ( i % 2 )
-			{
-				polymodels[c].faces[i].vertex[0] = quad->vertex[0];
-				polymodels[c].faces[i].vertex[1] = quad->vertex[1];
-				polymodels[c].faces[i].vertex[2] = quad->vertex[2];
-			}
-			else
-			{
-				polymodels[c].faces[i].vertex[0] = quad->vertex[0];
-				polymodels[c].faces[i].vertex[1] = quad->vertex[2];
-				polymodels[c].faces[i].vertex[2] = quad->vertex[3];
-			}
-		}
-
-		// free up quads for the next model
-		list_FreeAll(&quads);
-	}
-#ifndef NINTENDO
-    std::string cache_path = std::string(outputdir) + "/models.cache";
-	if (useModelCache && (model_cache = openDataFile(cache_path.c_str(), "wb")))
-	{
-		char modelCacheHeader[32] = "BARONY";
-		strcat(modelCacheHeader, VERSION);
-		model_cache->write(&modelCacheHeader, sizeof(char), strlen(modelCacheHeader));
-		for (size_t model_index = 0; model_index < nummodels; model_index++)
-		{
-			polymodel_t *cur = &polymodels[model_index];
-			model_cache->write(&cur->numfaces, sizeof(cur->numfaces), 1);
-			model_cache->write(cur->faces, sizeof(polytriangle_t), cur->numfaces);
-		}
-		FileIO::close(model_cache);
-	}
-#endif
+	return loadLanguage(languageCode.c_str(), false);
 }
 
 /*-------------------------------------------------------------------------------
@@ -2022,163 +973,6 @@ void destroyTileTextures() {
         GL_CHECK_ERR(glDeleteTextures(1, &tileTextures));
         tileTextures = 0;
     }
-}
-
-void reloadModels(int start, int end) {
-#ifdef WINDOWS
-	start = std::min((int)nummodels - 1, std::max(start, 0));
-	end = std::min((int)nummodels, std::max(end, 0));
-#else
-    start = std::clamp(start, 0, (int)nummodels - 1);
-    end = std::clamp(end, 0, (int)nummodels);
-#endif
-
-    if (start >= end) {
-        return;
-    }
-
-	//messagePlayer(clientnum, language[2354]);
-#ifndef EDITOR
-	messagePlayer(clientnum, MESSAGE_MISC, language[2355], start, end);
-#endif
-
-    loading = true;
-    if (intro) {
-        createLoadingScreen(5);
-    } else {
-        createLevelLoadScreen(5);
-    }
-    doLoadingScreen();
-
-    std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
-    modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
-    File *fp = openDataFile(modelsDirectory.c_str(), "rb");
-    for ( int c = 0; !fp->eof(); c++ )
-    {
-        char name[128];
-	    fp->gets2(name, sizeof(name));
-	    if ( c >= start && c < end ) {
-            if ( polymodels[c].vao ) {
-                GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
-            }
-		    if ( polymodels[c].vbo ) {
-                GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
-		    }
-		    if ( polymodels[c].colors ) {
-                GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
-		    }
-	    }
-    }
-
-    std::atomic_bool loading_done {false};
-    auto loading_task = std::async(std::launch::async, [&loading_done, start, end](){
-	    std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
-	    modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
-	    File *fp = openDataFile(modelsDirectory.c_str(), "rb");
-	    for ( int c = 0; !fp->eof(); c++ )
-	    {
-	        char name[128];
-		    fp->gets2(name, sizeof(name));
-		    if ( c >= start && c < end )
-		    {
-			    if ( models[c] != NULL )
-			    {
-				    if ( models[c]->data )
-				    {
-					    free(models[c]->data);
-				    }
-				    free(models[c]);
-				    if ( polymodels[c].faces )
-				    {
-					    free(polymodels[c].faces);
-				    }
-			        models[c] = loadVoxel(name);
-			    }
-		    }
-	    }
-	    FileIO::close(fp);
-	    generatePolyModels(start, end, true);
-	    loading_done = true;
-	    return 0;
-	});
-    while (!loading_done)
-    {
-        doLoadingScreen();
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
-	generateVBOs(start, end);
-    destroyLoadingScreen();
-    loading = false;
-}
-
-void generateVBOs(int start, int end)
-{
-	const int count = end - start;
-
-	std::unique_ptr<GLuint[]> vaos(new GLuint[count]);
-    GL_CHECK_ERR(glGenVertexArrays(count, vaos.get()));
-
-	std::unique_ptr<GLuint[]> vbos(new GLuint[count]);
-    GL_CHECK_ERR(glGenBuffers(count, vbos.get()));
-
-	std::unique_ptr<GLuint[]> color_buffers(new GLuint[count]);
-    GL_CHECK_ERR(glGenBuffers(count, color_buffers.get()));
-
-	for ( uint64_t c = (uint64_t)start; c < (uint64_t)end; ++c )
-	{
-		polymodel_t *model = &polymodels[c];
-		std::unique_ptr<GLfloat[]> points(new GLfloat[9 * model->numfaces]);
-		std::unique_ptr<GLfloat[]> colors(new GLfloat[9 * model->numfaces]);
-		for (uint64_t i = 0; i < (uint64_t)model->numfaces; i++ )
-		{
-			const polytriangle_t *face = &model->faces[i];
-			for (uint64_t vert_index = 0; vert_index < 3; vert_index++)
-			{
-				const uint64_t data_index = i * 9 + vert_index * 3;
-				const vertex_t *vert = &face->vertex[vert_index];
-
-				points[data_index] = vert->x;
-				points[data_index + 1] = -vert->z;
-				points[data_index + 2] = vert->y;
-
-				colors[data_index] = face->r / 255.f;
-				colors[data_index + 1] = face->g / 255.f;
-				colors[data_index + 2] = face->b / 255.f;
-			}
-		}
-		model->vao = vaos[c - start];
-		model->vbo = vbos[c - start];
-		model->colors = color_buffers[c - start];
-        
-        // NOTE: OpenGL 2.1 does not support vertex array objects!
-#ifdef VERTEX_ARRAYS_ENABLED
-		GL_CHECK_ERR(glBindVertexArray(model->vao));
-#endif
-
-		// vertex data
-        GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, model->vbo));
-        GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, points.get(), GL_STATIC_DRAW));
-#ifdef VERTEX_ARRAYS_ENABLED
-        GL_CHECK_ERR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
-        GL_CHECK_ERR(glEnableVertexAttribArray(0));
-#endif
-
-		// color data
-        GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, model->colors));
-        GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors.get(), GL_STATIC_DRAW));
-#ifdef VERTEX_ARRAYS_ENABLED
-        GL_CHECK_ERR(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
-        GL_CHECK_ERR(glEnableVertexAttribArray(1));
-#endif
-        
-#ifndef VERTEX_ARRAYS_ENABLED
-        GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, 0));
-#endif
-        
-        const int current = (int)c - start;
-	    updateLoadingScreen(80 + (10 * current) / count);
-	    doLoadingScreen();
-	}
 }
 
 /*-------------------------------------------------------------------------------
@@ -2476,8 +1270,6 @@ int deinitApp()
 		printlog("[PhysFS]: De-initializing...\n");
 	}
 
-	// free currently loaded language if any
-	freeLanguages();
 	printlog("notice: archiving log file as %s...\n", logarchiveFilePath.c_str());
 	printlog("success\n");
 	if (logfile)
@@ -2813,65 +1605,5 @@ bool resizeWindow(int new_xres, int new_yres)
     GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	// success
-	return true;
-}
-
-/*-------------------------------------------------------------------------------
-
-loadItemLists()
-
-loads the global item whitelist/blacklists and level curve.
-
--------------------------------------------------------------------------------*/
-
-bool loadItemLists()
-{
-	// open log file
-	if ( !logfile )
-	{
-		openLogFile();
-	}
-
-	// compose filename
-	//char filename[128] = "items/items_global.txt";
-	std::string itemsTxtDirectory = PHYSFS_getRealDir("items/items_global.txt");
-	itemsTxtDirectory.append(PHYSFS_getDirSeparator()).append("items/items_global.txt");
-	// check if item list is valid
-	if ( !dataPathExists(itemsTxtDirectory.c_str()) )
-	{
-		// file doesn't exist
-		printlog("error: unable to locate global item list file: '%s'", itemsTxtDirectory.c_str());
-		return false;
-	}
-
-	std::vector<std::string> itemLevels = getLinesFromDataFile(itemsTxtDirectory);
-	std::string line;
-	int itemIndex = 0;
-
-	for ( std::vector<std::string>::const_iterator i = itemLevels.begin(); i != itemLevels.end(); ++i ) {
-		// process i
-		line = *i;
-		if ( line[0] == '#' || line[0] == '\n' )
-		{
-			continue;
-		}
-		std::size_t found = line.find('#');
-		if ( found != std::string::npos )
-		{
-			char tmp[128];
-			std::string sub = line.substr(0, found);
-			strncpy(tmp, sub.c_str(), sub.length());
-			tmp[sub.length()] = '\0';
-			//printlog("%s", tmp);
-			items[itemIndex].level = atoi(tmp);
-			++itemIndex;
-		}
-	}
-
-	printlog("successfully loaded global item list '%s' \n", itemsTxtDirectory.c_str());
-	/*for ( c = 0; c < NUMITEMS; ++c )
-	{
-		printlog("%s level: %d", items[c].name_identified, items[c].level);
-	}*/
 	return true;
 }

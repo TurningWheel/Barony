@@ -893,7 +893,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		printlog(generationLog, levelset, seed);
 
 		conductGameChallenges[CONDUCT_MODDED] = 1;
-		gamemods_disableSteamAchievements = true;
+		Mods::disableSteamAchievements = true;
 	}
 
 	std::string fullMapPath;
@@ -908,7 +908,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	if ( !verifyMapHash(fullMapPath.c_str(), checkMapHash) )
 	{
 		conductGameChallenges[CONDUCT_MODDED] = 1;
-		gamemods_disableSteamAchievements = true;
+		Mods::disableSteamAchievements = true;
 	}
 
 	// store this map's seed
@@ -955,7 +955,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		// function sets dark level for us.
 		if ( darkmap )
 		{
-			messageLocalPlayers(MESSAGE_HINT, language[1108]);
+			messageLocalPlayers(MESSAGE_HINT, Language::get(1108));
 		}
 	}
 	else if ( !secretlevel )
@@ -965,7 +965,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			if ( map_rng.rand() % 100 < std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) )
 			{
 				darkmap = true;
-				messageLocalPlayers(MESSAGE_HINT, language[1108]);
+				messageLocalPlayers(MESSAGE_HINT, Language::get(1108));
 			}
 			else
 			{
@@ -977,7 +977,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			if ( map_rng.rand() % 4 == 0 )
 			{
 				darkmap = true;
-				messageLocalPlayers(MESSAGE_HINT, language[1108]);
+				messageLocalPlayers(MESSAGE_HINT, Language::get(1108));
 			}
 		}
 	}
@@ -1094,7 +1094,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			if (!verifyMapHash(fullMapPath.c_str(), checkMapHash))
 			{
 				conductGameChallenges[CONDUCT_MODDED] = 1;
-				gamemods_disableSteamAchievements = true;
+				Mods::disableSteamAchievements = true;
 			}
 		}
 		else
@@ -1137,7 +1137,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		if (!verifyMapHash(fullMapPath.c_str(), checkMapHash))
 		{
 			conductGameChallenges[CONDUCT_MODDED] = 1;
-			gamemods_disableSteamAchievements = true;
+			Mods::disableSteamAchievements = true;
 		}
 
 		// level is successfully loaded, add it to the pool
@@ -1290,7 +1290,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			if (!verifyMapHash(fullMapPath.c_str(), checkMapHash))
 			{
 				conductGameChallenges[CONDUCT_MODDED] = 1;
-				gamemods_disableSteamAchievements = true;
+				Mods::disableSteamAchievements = true;
 			}
 
 			// level is successfully loaded, add it to the pool
@@ -1443,7 +1443,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		if (!verifyMapHash(fullMapPath.c_str(), checkMapHash))
 		{
 			conductGameChallenges[CONDUCT_MODDED] = 1;
-			gamemods_disableSteamAchievements = true;
+			Mods::disableSteamAchievements = true;
 		}
 
 		// level is successfully loaded, add it to the pool
@@ -1583,7 +1583,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				if (!verifyMapHash(fullMapPath.c_str(), checkMapHash))
 				{
 					conductGameChallenges[CONDUCT_MODDED] = 1;
-					gamemods_disableSteamAchievements = true;
+					Mods::disableSteamAchievements = true;
 				}
 
 				levelnum = 0;
@@ -3951,12 +3951,12 @@ void assignActions(map_t* map)
 	{
 		customMonsterCurveExists = true;
 		conductGameChallenges[CONDUCT_MODDED] = 1;
-		gamemods_disableSteamAchievements = true;
+		Mods::disableSteamAchievements = true;
 	}
 	if ( gameplayCustomManager.inUse() )
 	{
 		conductGameChallenges[CONDUCT_MODDED] = 1;
-		gamemods_disableSteamAchievements = true;
+		Mods::disableSteamAchievements = true;
 	}
 
 	// assign entity behaviors
@@ -4032,7 +4032,7 @@ void assignActions(map_t* map)
                         }
                         if ( multiplayer != CLIENT )
                         {
-                            messagePlayer(numplayers, MESSAGE_STATUS, language[1109]);
+                            messagePlayer(numplayers, MESSAGE_STATUS, Language::get(1109));
 							stats[numplayers]->HP = stats[numplayers]->MAXHP / 2;
 							stats[numplayers]->MP = stats[numplayers]->MAXMP / 2;
 							stats[numplayers]->HUNGER = 500;
@@ -6985,15 +6985,15 @@ void mapFoodOnLevel(int player)
 	}
 	if ( numFood == 0 && previouslyIdentifiedFood )
 	{
-		messagePlayer(player, MESSAGE_HINT, language[3425]);
+		messagePlayer(player, MESSAGE_HINT, Language::get(3425));
 	}
 	else if ( numFood == 0 )
 	{
-		messagePlayer(player, MESSAGE_HINT, language[3423]);
+		messagePlayer(player, MESSAGE_HINT, Language::get(3423));
 	}
 	else
 	{
-		messagePlayerColor(player, MESSAGE_HINT, makeColorRGB(0, 255, 0),language[3424]);
+		messagePlayerColor(player, MESSAGE_HINT, makeColorRGB(0, 255, 0),Language::get(3424));
 	}
 }
 

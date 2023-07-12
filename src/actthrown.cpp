@@ -420,17 +420,17 @@ void actThrown(Entity* my)
 						if ( itemIsThrowableTinkerTool(item) && tinkeringItemCanBePlaced )
 						{
 							// we can place it, just not on water/lava.
-							messagePlayer(parent->skill[2], MESSAGE_HINT, language[3900]);
+							messagePlayer(parent->skill[2], MESSAGE_HINT, Language::get(3900));
 						}
 						else if ( item->isTinkeringItemWithThrownLimit() && !tinkeringItemCanBePlaced )
 						{
 							if ( stats[parent->skill[2]]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_LEGENDARY )
 							{
-								messagePlayer(parent->skill[2], MESSAGE_MISC, language[3884]);
+								messagePlayer(parent->skill[2], MESSAGE_MISC, Language::get(3884));
 							}
 							else
 							{
-								messagePlayer(parent->skill[2], MESSAGE_MISC, language[3883]);
+								messagePlayer(parent->skill[2], MESSAGE_MISC, Language::get(3883));
 							}
 						}
 					}
@@ -565,7 +565,7 @@ void actThrown(Entity* my)
 							}
 							int oldcount = item->count;
 							item->count = 1;
-							messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[504], item->description());
+							messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(504), item->description());
 							item->count = oldcount;
 							if ( i != 0 && !players[i]->isLocalPlayer() )
 							{
@@ -813,7 +813,7 @@ void actThrown(Entity* my)
 					hit.entity->modHP(-damage);
 				}
 				// set the obituary
-				snprintf(whatever, 255, language[1508], itemname);
+				snprintf(whatever, 255, Language::get(1508), itemname);
 				hit.entity->setObituary(whatever);
 				if (hitstats) {
 				    hitstats->killer = KilledBy::ITEM;
@@ -870,7 +870,7 @@ void actThrown(Entity* my)
 							if ( parent && parent->behavior == &actPlayer && itemCategory(item) == POTION )
 							{
 								Uint32 color = makeColorRGB(255, 0, 0);
-								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[4320], language[4321], MSG_COMBAT);
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(4320), Language::get(4321), MSG_COMBAT);
 							}
 						}
 					}
@@ -915,7 +915,7 @@ void actThrown(Entity* my)
 												spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 685);
 												parent->increaseSkill(PRO_LEADERSHIP);
 												messagePlayerMonsterEvent(parent->skill[2], makeColorRGB(0, 255, 0), 
-													*hitstats, language[3252], language[3251], MSG_COMBAT);
+													*hitstats, Language::get(3252), Language::get(3251), MSG_COMBAT);
 												hit.entity->monsterAllyIndex = parent->skill[2];
 												if ( multiplayer == SERVER )
 												{
@@ -1060,7 +1060,7 @@ void actThrown(Entity* my)
 								friendlyHit = false;
 								if ( parent && parent->behavior == &actPlayer )
 								{
-									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3875], language[3876], MSG_COMBAT);
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3875), Language::get(3876), MSG_COMBAT);
 								}
 								if ( hit.entity->behavior == &actMonster )
 								{
@@ -1068,7 +1068,7 @@ void actThrown(Entity* my)
 									{
 										if ( parent && parent->behavior == &actPlayer )
 										{
-											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3878], language[3879], MSG_COMBAT);
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3878), Language::get(3879), MSG_COMBAT);
 										}
 									}
 									disableAlertBlindStatus = true; // don't aggro target.
@@ -1078,8 +1078,8 @@ void actThrown(Entity* my)
 									hit.entity->setEffect(EFF_MESSY, true, 250, false);
 									serverUpdateEffects(hit.entity->skill[2]);
 									Uint32 color = makeColorRGB(255, 0, 0);
-									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, language[3877]);
-									messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, language[910]);
+									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(3877));
+									messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, Language::get(910));
 								}
 								for ( int i = 0; i < 5; ++i )
 								{
@@ -1098,18 +1098,18 @@ void actThrown(Entity* my)
 									{
 										if ( !strcmp(hitstats->name, "") )
 										{
-											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[690], MSG_COMBAT_BASIC);
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(690), Language::get(690), MSG_COMBAT_BASIC);
 										}
 										else
 										{
-											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[694], MSG_COMBAT_BASIC);
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(690), Language::get(694), MSG_COMBAT_BASIC);
 										}
 									}
 								}
 								else if ( hit.entity->behavior == &actPlayer )
 								{
 									Uint32 color = makeColorRGB(255, 0, 0);
-									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, language[588], itemname); // hit by a flying
+									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(588), itemname); // hit by a flying
 								}
 								Entity* newTarget = item_PotionPolymorph(item, hit.entity, parent);
 								if ( newTarget )
@@ -1372,15 +1372,15 @@ void actThrown(Entity* my)
 								// HP <= 0
 								if ( parent && parent->behavior == &actPlayer )
 								{
-									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[692], language[697], MSG_COMBAT);
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(692), Language::get(697), MSG_COMBAT);
 								}
 							}
 							else
 							{
-								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[690], MSG_COMBAT_BASIC);
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(690), Language::get(690), MSG_COMBAT_BASIC);
 								if ( damage == 0 )
 								{
-									messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, language[447]);
+									messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, Language::get(447));
 								}
 							}
 						}
@@ -1391,21 +1391,21 @@ void actThrown(Entity* my)
 								// HP <= 0
 								if ( parent && parent->behavior == &actPlayer )
 								{
-									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[692], language[697], MSG_COMBAT);
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(692), Language::get(697), MSG_COMBAT);
 								}
 							}
 							else
 							{
-								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[694], MSG_COMBAT_BASIC);
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(690), Language::get(694), MSG_COMBAT_BASIC);
 								if ( damage == 0 )
 								{
 									if ( hitstats->sex )
 									{
-										messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, language[449]);
+										messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, Language::get(449));
 									}
 									else
 									{
-										messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, language[450]);
+										messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, Language::get(450));
 									}
 								}
 							}
@@ -1415,10 +1415,10 @@ void actThrown(Entity* my)
 				if ( hit.entity->behavior == &actPlayer && !skipMessage )
 				{
 					Uint32 color = makeColorRGB(255, 0, 0);
-					messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, language[588], itemname); // hit by a flying
+					messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(588), itemname); // hit by a flying
 					if ( damage == 0 && !wasPotion )
 					{
-						messagePlayer(hit.entity->skill[2], MESSAGE_COMBAT, language[452]);
+						messagePlayer(hit.entity->skill[2], MESSAGE_COMBAT, Language::get(452));
 					}
 				}
 			}

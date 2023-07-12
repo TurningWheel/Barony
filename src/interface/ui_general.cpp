@@ -12,6 +12,7 @@
 #include "ui.hpp"
 #include "../menu.hpp"
 #include "../scores.hpp"
+#include "../mod_tools.hpp"
 #ifdef WINDOWS
 #include <shellapi.h>
 #endif
@@ -447,7 +448,7 @@ void UIToastNotificationManager_t::drawNotifications(bool isMoviePlaying, bool b
 	if (achievementsCheck && !intro) {
 		if (conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 			|| conductGameChallenges[CONDUCT_LIFESAVING]
-			|| gamemods_disableSteamAchievements) {
+			|| Mods::disableSteamAchievements) {
 			achievementsCheck = false;
 			createAchievementsDisabledNotification();
 		}

@@ -32,10 +32,19 @@ Image::Image(const char* _name) {
 	}
 #else
 	std::string path = clippedName;
+    if ( PHYSFS_getRealDir(clippedName) != nullptr )
+    {
+        const char* baseDir = PHYSFS_getRealDir(clippedName);
+        if ( baseDir && strcmp(baseDir, "./") )
+        {
+            path.insert(0, PHYSFS_getDirSeparator());
+            path.insert(0, baseDir);
+        }
+    }
 #endif
-	printlog("loading image '%s'...", clippedName);
+	printlog("loading image '%s'...", path.c_str());
 	if ((surf = IMG_Load(path.c_str())) == NULL) {
-		printlog("failed to load image '%s'", clippedName);
+		printlog("failed to load image '%s'", path.c_str());
 		return;
 	}
 

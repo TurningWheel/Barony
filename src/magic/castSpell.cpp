@@ -69,7 +69,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 	{
 		if ( stats[player]->defending )
 		{
-			messagePlayer(player, MESSAGE_MISC, language[407]);
+			messagePlayer(player, MESSAGE_MISC, Language::get(407));
 			return;
 		}
 		if ( spell_isChanneled(spell))
@@ -96,7 +96,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 
 					//if (spell->magic_effects)
 					//	list_RemoveNode(spell->magic_effects);
-					messagePlayer(player, MESSAGE_COMBAT, language[408], spell->getSpellName());
+					messagePlayer(player, MESSAGE_COMBAT, Language::get(408), spell->getSpellName());
 					if (multiplayer == CLIENT)
 					{
 						list_RemoveNode(node);
@@ -121,7 +121,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 			{
 				if ( multiplayer == CLIENT )
 				{
-					//messagePlayer(player, language[408], spell->getSpellName());
+					//messagePlayer(player, Language::get(408), spell->getSpellName());
 					strcpy((char*)net_packet->data, "VAMP");
 					net_packet->data[4] = clientnum;
 					SDLNet_Write32(spell->ID, &net_packet->data[5]);
@@ -133,9 +133,9 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 				}
 				else
 				{
-					messagePlayerColor(player, MESSAGE_STATUS, uint32ColorGreen, language[3241]);
-					messagePlayerColor(player, MESSAGE_HINT, uint32ColorGreen, language[3242]);
-					//messagePlayer(player, language[408], spell->getSpellName());
+					messagePlayerColor(player, MESSAGE_STATUS, uint32ColorGreen, Language::get(3241));
+					messagePlayerColor(player, MESSAGE_HINT, uint32ColorGreen, Language::get(3242));
+					//messagePlayer(player, Language::get(408), spell->getSpellName());
 					caster->setEffect(EFF_VAMPIRICAURA, true, 1, false); // apply 1 tick countdown to finish effect.
 					caster->playerVampireCurse = 2; // cured.
 					steamAchievement("BARONY_ACH_REVERSE_THIS_CURSE");
@@ -186,7 +186,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 		    //TODO: Allow overexpending at the cost of extreme danger?
 		    // (maybe an immensely powerful tree of magic actually likes this --
 		    //  using your life-force to power spells instead of mana)
-			messagePlayer(player, MESSAGE_MISC, language[375]);
+			messagePlayer(player, MESSAGE_MISC, Language::get(375));
 			if ( players[player]->isLocalPlayer() )
 			{
 				playSound(563, 64);
@@ -528,7 +528,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				playSoundEntity(caster, 163, 128);
 				if ( player >= 0 )
 				{
-					messagePlayer(player, MESSAGE_COMBAT, language[409]);
+					messagePlayer(player, MESSAGE_COMBAT, Language::get(409));
 				}
 				if ( usingSpellbook && stat->shield && itemCategory(stat->shield) == SPELLBOOK 
 					&& (stat->shield->beatitude < 0 && !shouldInvertEquipmentBeatitude(stat)) )
@@ -588,7 +588,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			//Can't cast spells while swimming if not levitating or water walking.
 			if (player >= 0)
 			{
-				messagePlayer(player, MESSAGE_MISC, language[410]);
+				messagePlayer(player, MESSAGE_MISC, Language::get(410));
 			}
 			return nullptr;
 		}
@@ -900,7 +900,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				int foundTarget = 0;
 				if ( caster->behavior == &actPlayer )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3437]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3437));
 				}
 				for ( node_t* node3 = map.creatures->first; node3 != nullptr; node3 = node3->next )
 				{
@@ -931,7 +931,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					serverSpawnMiscParticles(caster, PARTICLE_EFFECT_ERUPT, 864);
 					if ( caster->behavior == &actPlayer )
 					{
-						messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3438]);
+						messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3438));
 					}
 				}
 			}
@@ -969,7 +969,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					serverSpawnMiscParticles(caster, PARTICLE_EFFECT_ERUPT, 864);
 					if ( caster->behavior == &actPlayer )
 					{
-						messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3438]);
+						messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3438));
 					}
 				}
 			}
@@ -1129,12 +1129,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 					if ( totalMetal == 0 && totalMagic == 0 )
 					{
-						messagePlayer(i, MESSAGE_COMBAT, language[3713]);
+						messagePlayer(i, MESSAGE_COMBAT, Language::get(3713));
 						playSoundEntity(caster, 163, 128);
 					}
 					else
 					{
-						messagePlayerColor(i, MESSAGE_INVENTORY, makeColorRGB(0, 255, 0), language[3712], numItems);
+						messagePlayerColor(i, MESSAGE_INVENTORY, makeColorRGB(0, 255, 0), Language::get(3712), numItems);
 						playSoundEntity(caster, 167, 128);
 					}
 
@@ -1160,7 +1160,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 					if ( pickedUpMetal > 0 )
 					{
-						messagePlayer(player, MESSAGE_INVENTORY, language[3665], pickedUpMetal, items[TOOL_METAL_SCRAP].getIdentifiedName());
+						messagePlayer(player, MESSAGE_INVENTORY, Language::get(3665), pickedUpMetal, items[TOOL_METAL_SCRAP].getIdentifiedName());
 					}
 					int pickedUpMagic = 0;
 					while ( totalMagic > 0 )
@@ -1184,7 +1184,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 					if ( pickedUpMagic > 0 )
 					{
-						messagePlayer(player, MESSAGE_INVENTORY, language[3665], pickedUpMagic, items[TOOL_MAGIC_SCRAP].getIdentifiedName());
+						messagePlayer(player, MESSAGE_INVENTORY, Language::get(3665), pickedUpMagic, items[TOOL_MAGIC_SCRAP].getIdentifiedName());
 					}
 					if ( !effectCoordinates.empty() )
 					{
@@ -1211,12 +1211,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					if ( overdrewIntoHP )
 					{
 						amount /= 4;
-						messagePlayerColor(player, MESSAGE_COMBAT, makeColorRGB(255, 255, 255), language[3400]);
+						messagePlayerColor(player, MESSAGE_COMBAT, makeColorRGB(255, 255, 255), Language::get(3400));
 					}
 
 					caster->setEffect(EFF_TROLLS_BLOOD, true, amount, true);
 					Uint32 color = makeColorRGB(0, 255, 0);
-					messagePlayerColor(i, MESSAGE_HINT, color, language[3490]);
+					messagePlayerColor(i, MESSAGE_HINT, color, Language::get(3490));
 					for ( node = map.creatures->first; node; node = node->next )
 					{
 						Entity* entity = (Entity*)(node->element);
@@ -1236,7 +1236,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 							if ( entity->behavior == &actPlayer )
 							{
-								messagePlayerColor(entity->skill[2], MESSAGE_HINT, color, language[3490]);
+								messagePlayerColor(entity->skill[2], MESSAGE_HINT, color, Language::get(3490));
 							}
 						}
 					}
@@ -1267,7 +1267,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 					if ( caster->setEffect(EFF_FLUTTER, true, duration, true) )
 					{
-						messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen, language[3767]);
+						messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen, Language::get(3767));
 						playSoundEntity(caster, 178, 128);
 						spawnMagicEffectParticles(caster->x, caster->y, caster->z, 170);
 					}
@@ -1342,7 +1342,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						caster->setEffect(EFF_SLOW, false, 0, true);
 					}
 					caster->setEffect(EFF_FAST, true, duration, true);
-					messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen, language[768]);
+					messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen, Language::get(768));
 					for ( node = map.creatures->first; node; node = node->next )
 					{
 						Entity* entity = (Entity*)(node->element);
@@ -1362,7 +1362,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							spawnMagicEffectParticles(entity->x, entity->y, entity->z, 174);
 							if ( entity->behavior == &actPlayer )
 							{
-								messagePlayerColor(entity->skill[2], MESSAGE_STATUS, uint32ColorGreen, language[768]);
+								messagePlayerColor(entity->skill[2], MESSAGE_STATUS, uint32ColorGreen, Language::get(768));
 							}
 						}
 					}
@@ -1521,7 +1521,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 
 				Uint32 color = makeColorRGB(0, 255, 0);
-				messagePlayerColor(caster->skill[2], MESSAGE_STATUS, color, language[3419], getMonsterLocalizedName((Monster)caster->effectShapeshift).c_str());
+				messagePlayerColor(caster->skill[2], MESSAGE_STATUS, color, Language::get(3419), getMonsterLocalizedName((Monster)caster->effectShapeshift).c_str());
 			}
 			else
 			{
@@ -1541,11 +1541,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 						if ( stats[caster->skill[2]]->EFFECTS[EFF_POLYMORPH] )
 						{
-							messagePlayer(caster->skill[2], MESSAGE_STATUS, language[4302]); // return to your 'abnormal' form
+							messagePlayer(caster->skill[2], MESSAGE_STATUS, Language::get(4302)); // return to your 'abnormal' form
 						}
 						else
 						{
-							messagePlayer(caster->skill[2], MESSAGE_STATUS, language[3417]);
+							messagePlayer(caster->skill[2], MESSAGE_STATUS, Language::get(3417));
 						}
 						playSoundEntity(caster, 400, 92);
 						createParticleDropRising(caster, 593, 1.f);
@@ -1557,20 +1557,20 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						caster->effectPolymorph = 0;
 						serverUpdateEntitySkill(caster, 50);
 
-						messagePlayer(player, MESSAGE_STATUS, language[3185]);
+						messagePlayer(player, MESSAGE_STATUS, Language::get(3185));
 						playSoundEntity(caster, 400, 92);
 						createParticleDropRising(caster, 593, 1.f);
 						serverSpawnMiscParticles(caster, PARTICLE_EFFECT_RISING_DROP, 593);
 					}
 					else
 					{
-						messagePlayer(caster->skill[2], MESSAGE_HINT, language[3715]);
+						messagePlayer(caster->skill[2], MESSAGE_HINT, Language::get(3715));
 						playSoundEntity(caster, 163, 128);
 					}
 				}
 				else
 				{
-					messagePlayer(caster->skill[2], MESSAGE_HINT, language[3420]);
+					messagePlayer(caster->skill[2], MESSAGE_HINT, Language::get(3420));
 				}
 			}
 		}
@@ -1680,7 +1680,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								if ( entity->behavior == &actPlayer && (entityEffectsCured > 0 || regenEffect) )
 								{
 									serverUpdateEffects(entity->skill[2]);
-									messagePlayerColor(entity->skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), language[411]);
+									messagePlayerColor(entity->skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(411));
 								}
 
 								playSoundEntity(entity, 168, 128);
@@ -1691,15 +1691,15 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 					if ( regenEffect || numEffectsCured > 0 )
 					{
-						messagePlayerColor(i, MESSAGE_STATUS, makeColorRGB(0, 255, 0), language[411]); // your body feels cleansed
+						messagePlayerColor(i, MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(411)); // your body feels cleansed
 					}
 					if ( numAlliesEffectsCured > 0 )
 					{
-						messagePlayerColor(i, MESSAGE_STATUS, makeColorRGB(0, 255, 0), language[4313]); // your allies feel cleansed
+						messagePlayerColor(i, MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(4313)); // your allies feel cleansed
 					}
 					if ( !regenEffect && numEffectsCured == 0 && numAlliesEffectsCured == 0 )
 					{
-						messagePlayer(i, MESSAGE_STATUS, language[3715]); // had no effect.
+						messagePlayer(i, MESSAGE_STATUS, Language::get(3715)); // had no effect.
 					}
 					break;
 				}
@@ -1873,7 +1873,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					if ( players[i] && caster && (caster == players[i]->entity) )
 					{
 						serverUpdateEffects(i);
-						messagePlayer(i, MESSAGE_PROGRESSION, language[3442]);
+						messagePlayer(i, MESSAGE_PROGRESSION, Language::get(3442));
 					}
 				}
 
@@ -2467,7 +2467,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							if ( players[i] && caster && (caster == players[i]->entity) )
 							{
-								messagePlayer(i, MESSAGE_HINT, language[2591]);
+								messagePlayer(i, MESSAGE_HINT, Language::get(2591));
 							}
 						}
 					}

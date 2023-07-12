@@ -25,6 +25,7 @@ namespace MainMenu {
     extern ConsoleVariable<bool> cvar_fastRestart;
 	extern ConsoleVariable<float> cvar_worldtooltip_scale;
 	extern ConsoleVariable<float> cvar_worldtooltip_scale_splitscreen;
+	extern ConsoleVariable<bool> cvar_hold_to_activate;
 	extern ConsoleVariable<float> cvar_enemybar_scale;
     extern ConsoleVariable<int> cvar_desiredFps;
     extern ConsoleVariable<int> cvar_displayHz;

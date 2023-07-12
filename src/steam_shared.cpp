@@ -128,11 +128,11 @@ void CSteamWorkshop::CreateQuerySubscribedItems(EUserUGCList itemListType, EUGCM
 		m_callResultSendQueryUGCRequest.Set(hSteamAPICall, this,
 			&CSteamWorkshop::OnSendQueryUGCRequest);
 	}
-	SteamUGC()->ReleaseQueryUGCRequest(UGCQueryHandle);
 }
 
 void CSteamWorkshop::OnSendQueryUGCRequest(SteamUGCQueryCompleted_t *pResult, bool bIOFailure)
 {
+	subscribedCallStatus = 2;
 	if ( !bIOFailure )
 	{
 		SteamUGCQueryCompleted = *pResult;
@@ -140,10 +140,6 @@ void CSteamWorkshop::OnSendQueryUGCRequest(SteamUGCQueryCompleted_t *pResult, bo
 		{
 			ReadSubscribedItems();
 			StoreResultMessage("Load Subscribed Items: OK", k_EResultOK);
-			if ( subscribedCallStatus == 1 )
-			{
-				subscribedCallStatus = 2;
-			}
 			return;
 		}
 	}
@@ -156,8 +152,17 @@ void CSteamWorkshop::ReadSubscribedItems()
 	{
 		for ( int i = 0; i < SteamUGCQueryCompleted.m_unNumResultsReturned; ++i )
 		{
-				SteamUGC()->GetQueryUGCResult(SteamUGCQueryCompleted.m_handle,
-					i, &m_subscribedItemListDetails[i]);
+			SteamUGC()->GetQueryUGCResult(SteamUGCQueryCompleted.m_handle,
+				i, &m_subscribedItemListDetails[i]);
+			char url[1024];
+			if ( SteamUGC()->GetQueryUGCPreviewURL(SteamUGCQueryCompleted.m_handle, i, url, 256) )
+			{
+				m_subscribedItemPreviewURL[i] = url;
+			}
+			else
+			{
+				m_subscribedItemPreviewURL[i] = "";
+			}
 		}
 		
 		SteamUGC()->ReleaseQueryUGCRequest(SteamUGCQueryCompleted.m_handle);

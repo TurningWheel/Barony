@@ -18,6 +18,5 @@ bool resizeWindow(int new_xres = 0, int new_yres = 0);
 void generatePolyModels(int start, int end, bool forceCacheRebuild);
 void generateVBOs(int start, int end);
 void reloadModels(int start, int end);
-int loadLanguage(char const * const lang);
-int reloadLanguage();
-void freeLanguages();
+void generateTileTextures();
+void destroyTileTextures();

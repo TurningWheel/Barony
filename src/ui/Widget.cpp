@@ -7,6 +7,7 @@
 #include "../player.hpp"
 #include "../input.hpp"
 #include "../engine/audio/sound.hpp"
+#include "../mod_tools.hpp"
 
 #include <queue>
 
@@ -388,7 +389,7 @@ void Widget::drawPost(const SDL_Rect size,
 	}
 
 	// draw selector widgets
-	if (!hideSelectors && selectedWidget == this) {
+	if (!hideSelectors && selectedWidget == this && !Mods::isLoading) {
 		{
 			auto image = Image::get("*images/ui/Main Menus/Selector_TL.png");
 			int w = image->getWidth();
@@ -433,7 +434,7 @@ void Widget::drawPost(const SDL_Rect size,
 
 	// button prompts
 #ifndef EDITOR
-    if (!*cvar_hideGlyphs && !hideGlyphs && (inputs.hasController(owner) || !hideKeyboardGlyphs)) {
+    if (!*cvar_hideGlyphs && !hideGlyphs && !Mods::isLoading && (inputs.hasController(owner) || !hideKeyboardGlyphs)) {
         auto& actions = selectedWidget->getWidgetActions();
         auto action = actions.begin();
 

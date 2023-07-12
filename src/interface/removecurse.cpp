@@ -200,7 +200,7 @@
 //		{
 //			//Print the window label signifying this as the remove curse GUI.
 //			char* window_name;
-//			window_name = language[346];
+//			window_name = Language::get(346);
 //			ttfPrintText(ttf8, (REMOVECURSE_GUI_X + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), REMOVECURSE_GUI_Y + 4, window_name);
 //
 //			//Remove Curse GUI up button.
@@ -338,12 +338,12 @@
 //	}
 //	if (item->beatitude >= 0)
 //	{
-//		messagePlayer(clientnum, language[347], item->getName());
+//		messagePlayer(clientnum, Language::get(347), item->getName());
 //		return;
 //	}
 //
 //	item->beatitude = 0; //0 = uncursed. > 0 = blessed.
-//	messagePlayer(clientnum, language[348], item->description());
+//	messagePlayer(clientnum, Language::get(348), item->description());
 //	closeRemoveCurseGUI();
 //	if ( multiplayer == CLIENT && itemIsEquipped(item, clientnum) )
 //	{

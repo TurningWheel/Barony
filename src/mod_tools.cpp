@@ -22,6 +22,11 @@ See LICENSE for details.
 #include "shops.hpp"
 #include "interface/ui.hpp"
 #endif
+#include "init.hpp"
+#include "ui/LoadingScreen.hpp"
+#include <thread>
+#include <future>
+#include <fstream>
 
 MonsterStatCustomManager monsterStatCustomManager;
 MonsterCurveCustomManager monsterCurveCustomManager;
@@ -322,8 +327,8 @@ void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::createPrompt()
 	//Uint32 centerWindowX = subx1 + (subx2 - subx1) / 2;
 
 	//button_t* button = newButton();
-	//strcpy(button->label, language[3965]);
-	//button->sizex = strlen(language[3965]) * 10 + 8;
+	//strcpy(button->label, Language::get(3965));
+	//button->sizex = strlen(Language::get(3965)) * 10 + 8;
 	//button->sizey = 20;
 	//button->x = centerWindowX - button->sizex / 2;
 	//button->y = suby2 - 28 - 24;
@@ -332,8 +337,8 @@ void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::createPrompt()
 	//button->focused = 1;
 
 	//button = newButton();
-	//strcpy(button->label, language[3966]);
-	//button->sizex = strlen(language[3966]) * 12 + 8;
+	//strcpy(button->label, Language::get(3966));
+	//button->sizex = strlen(Language::get(3966)) * 12 + 8;
 	//button->sizey = 20;
 	//button->x = centerWindowX - button->sizex / 2;
 	//button->y = suby2 - 28;
@@ -363,9 +368,9 @@ void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::drawDialogue()
 	scaled.h = title_bmp->h * 0.75;
 	drawImageScaled(title_bmp, nullptr, &pos);
 	
-	ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3936]) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 13, makeColorRGB(255, 255, 0), language[3936]);
-	ttfPrintTextFormatted(ttf12, centerWindowX - (longestline(language[3967]) * TTF12_WIDTH) / 2, suby2 + 8 - TTF12_HEIGHT * 11, language[3967]);
-	ttfPrintTextFormatted(ttf12, centerWindowX - (longestline(language[3967]) * TTF12_WIDTH) / 2 - TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 11, language[3968]);*/
+	ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(Language::get(3936)) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 13, makeColorRGB(255, 255, 0), Language::get(3936));
+	ttfPrintTextFormatted(ttf12, centerWindowX - (longestline(Language::get(3967)) * TTF12_WIDTH) / 2, suby2 + 8 - TTF12_HEIGHT * 11, Language::get(3967));
+	ttfPrintTextFormatted(ttf12, centerWindowX - (longestline(Language::get(3967)) * TTF12_WIDTH) / 2 - TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 11, Language::get(3968));*/
 }
 
 void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::buttonSkipPrompt(button_t* my)
@@ -572,6 +577,7 @@ void IRCHandler_t::handleMessage(std::string& msg)
 
 void ItemTooltips_t::readItemsFromFile()
 {
+	printlog("loading items...\n");
 	if ( !PHYSFS_getRealDir("items/items.json") )
 	{
 		printlog("[JSON]: Error: Could not find file: items/items.json");
@@ -7602,11 +7608,11 @@ void GameplayPreferences_t::serverProcessGameConfig()
 							{
 								if ( value != 0 )
 								{
-									messagePlayer(i, MESSAGE_HINT, language[4333]);
+									messagePlayer(i, MESSAGE_HINT, Language::get(4333));
 								}
 								else
 								{
-									messagePlayer(i, MESSAGE_HINT, language[4334]);
+									messagePlayer(i, MESSAGE_HINT, Language::get(4334));
 								}
 							}
 						}
@@ -7637,11 +7643,11 @@ void GameplayPreferences_t::serverProcessGameConfig()
 							{
 								if ( value != 0 )
 								{
-									messagePlayer(i, MESSAGE_HINT, language[4342]);
+									messagePlayer(i, MESSAGE_HINT, Language::get(4342));
 								}
 								else
 								{
-									messagePlayer(i, MESSAGE_HINT, language[4343]);
+									messagePlayer(i, MESSAGE_HINT, Language::get(4343));
 								}
 							}
 						}
@@ -7786,4 +7792,967 @@ void EditorEntityData_t::readFromFile()
 			collider.hpbarLookupName = itr->value["hp_bar_lookup_name"].GetString();
 		}
 	}
+}
+
+std::vector<int> Mods::modelsListModifiedIndexes;
+std::vector<int> Mods::soundsListModifiedIndexes;
+std::vector<std::pair<SDL_Surface**, std::string>> Mods::systemResourceImagesToReload;
+std::vector<std::pair<std::string, std::string>> Mods::mountedFilepaths;
+std::vector<std::pair<std::string, std::string>> Mods::mountedFilepathsSaved;
+std::set<std::string> Mods::mods_loaded_local;
+std::set<std::string> Mods::mods_loaded_workshop;
+std::list<std::string> Mods::localModFoldernames;
+int Mods::numCurrentModsLoaded = -1;
+bool Mods::modelsListRequiresReloadUnmodded = false;
+bool Mods::soundListRequiresReloadUnmodded = false;
+bool Mods::tileListRequireReloadUnmodded = false;
+bool Mods::spriteImagesRequireReloadUnmodded = false;
+bool Mods::booksRequireReloadUnmodded = false;
+bool Mods::musicRequireReloadUnmodded = false;
+bool Mods::langRequireReloadUnmodded = false;
+bool Mods::monsterLimbsRequireReloadUnmodded = false;
+bool Mods::systemImagesReloadUnmodded = false;
+bool Mods::customContentLoadedFirstTime = false;
+bool Mods::disableSteamAchievements = false;
+bool Mods::isLoading = false;
+Uint32 Mods::loadingTicks = 0;
+void Mods::updateModCounts()
+{
+	mods_loaded_local.clear();
+	mods_loaded_workshop.clear();
+	for ( auto& mod : mountedFilepaths )
+	{
+		bool found = false;
+		if ( mod.first.find("371970") != std::string::npos )
+		{
+			if ( mod.first.find("workshop") != std::string::npos )
+			{
+				if ( mod.first.find("content") != std::string::npos )
+				{
+					found = true;
+					Mods::mods_loaded_workshop.insert(mod.first);
+				}
+			}
+		}
+		if ( !found )
+		{
+			Mods::mods_loaded_local.insert(mod.first);
+		}
+	}
+}
+#ifdef STEAMWORKS
+std::vector<SteamUGCDetails_t*> Mods::workshopSubscribedItemList;
+std::vector<std::pair<std::string, uint64>> Mods::workshopLoadedFileIDMap;
+std::vector<Mods::WorkshopTags_t> Mods::tag_settings = {
+	Mods::WorkshopTags_t("dungeons", "Dungeons"),
+	Mods::WorkshopTags_t("textures", "Textures"),
+	Mods::WorkshopTags_t("models", "Models"),
+	Mods::WorkshopTags_t("gameplay", "Gameplay"),
+	Mods::WorkshopTags_t("audio", "Audio"),
+	Mods::WorkshopTags_t("misc", "Misc"),
+	Mods::WorkshopTags_t("translations", "Translations")
+};
+int Mods::uploadStatus = 0;
+int Mods::uploadErrorStatus = 0;
+Uint32 Mods::uploadTicks = 0;
+Uint32 Mods::processedOnTick = 0;
+PublishedFileId_t Mods::uploadingExistingItem = 0;
+int Mods::uploadNumRetries = 3;
+
+std::string Mods::getFolderFullPath(std::string input)
+{
+	if ( input == "" ) { return ""; }
+#ifdef WINDOWS
+#ifdef _UNICODE
+	wchar_t pathbuffer[PATH_MAX];
+	const int len1 = MultiByteToWideChar(CP_ACP, 0, input.c_str(), input.size() + 1, 0, 0);
+	auto buf1 = new wchar_t[len1];
+	MultiByteToWideChar(CP_ACP, 0, input.c_str(), input.size() + 1, buf1, len1);
+	const int pathlen = GetFullPathNameW(buf1, PATH_MAX, pathbuffer, NULL);
+	delete[] buf1;
+	const int len2 = WideCharToMultiByte(CP_ACP, 0, pathbuffer, pathlen, 0, 0, 0, 0);
+	auto buf2 = new char[len2];
+	WideCharToMultiByte(CP_ACP, 0, pathbuffer, pathlen, buf2, len2, 0, 0);
+	std::string fullpath = buf2;
+#else
+	char pathbuffer[PATH_MAX];
+	GetFullPathNameA(input.c_str(), PATH_MAX, pathbuffer, NULL);
+	std::string fullpath = pathbuffer;
+#endif
+#else
+	char pathbuffer[PATH_MAX];
+	realpath(input.c_str(), pathbuffer);
+	std::string fullpath = pathbuffer;
+#endif
+	return fullpath;
+}
+#endif
+
+#ifdef USE_LIBCURL
+LibCURL_t LibCURL;
+
+size_t LibCURL_t::write_data_fp(void* ptr, size_t size, size_t nmemb, File* stream) {
+	size_t written = stream->write(ptr, size, nmemb);
+	return written;
+}
+
+size_t LibCURL_t::write_data_string(void* ptr, size_t size, size_t nmemb, std::string* s) {
+	size_t newLength = size * nmemb;
+	try
+	{
+		s->append((char*)ptr, newLength);
+	}
+	catch ( std::bad_alloc& e )
+	{
+		return 0;
+	}
+	return newLength;
+}
+
+void LibCURL_t::download(std::string filename, std::string url)
+{
+	if ( !bInit )
+	{
+		init();
+	}
+
+	std::string content;
+	curl_easy_setopt(handle, CURLOPT_URL, url.c_str());
+	//curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L);  // redirects
+	//curl_easy_setopt(handle, CURLOPT_VERBOSE, 1L);
+	curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, write_data_string);
+	curl_easy_setopt(handle, CURLOPT_WRITEDATA, &content);
+
+	std::string inputPath = PHYSFS_getRealDir("workshop_cache");
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append("workshop_cache");
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	// Grab image 
+	auto result = curl_easy_perform(handle);
+	if ( result != CURLE_OK )
+	{
+		printlog("[CURL]: Error: Could not get file %s", url.c_str());
+	}
+	else
+	{
+		char* type = nullptr;
+		result = curl_easy_getinfo(handle, CURLINFO::CURLINFO_CONTENT_TYPE, &type);
+		if ( result == CURLE_OK && type )
+		{
+			std::string contentType = type;
+			if ( contentType.find("png") != std::string::npos )
+			{
+				inputPath.append(".png");
+			}
+			else if ( contentType.find("jpg") != std::string::npos )
+			{
+				//inputPath.append(".jpg");
+				inputPath.append(".png"); // try always png?
+			}
+			else if ( contentType.find("jpeg") != std::string::npos )
+			{
+				//inputPath.append(".jpg");
+				inputPath.append(".png"); // try always png?
+			}
+			else
+			{
+				printlog("[CURL]: Error: Content type was not jpg or png as expected: %s", contentType.c_str());
+				return;
+			}
+		}
+		else
+		{
+			printlog("[CURL]: Error: curl_easy_getinfo failed.");
+			return;
+		}
+	}
+
+	File* fp = FileIO::open(inputPath.c_str(), "wb");
+	fp->write(content.c_str(), sizeof(char), content.size());
+	if ( !fp )
+	{
+		printlog("[CURL]: Error: Could not open file %s", inputPath.c_str());
+		return;
+	}
+
+	FileIO::close(fp);
+}
+#endif
+
+bool Mods::verifyMapFiles(const char* folder, bool ignoreBaseFolder)
+{
+	std::map<std::string, int> newMapHashes;
+	std::string fullpath;
+	if ( !folder )
+	{
+		fullpath = "maps/";
+	}
+	else
+	{
+		fullpath = folder;
+		fullpath += PHYSFS_getDirSeparator();
+		fullpath += "maps/";
+	}
+	for ( auto f : directoryContents(fullpath.c_str(), false, true) )
+	{
+		const std::string mapPath = "maps/" + f;
+		auto path = PHYSFS_getRealDir(mapPath.c_str());
+		if ( path && ignoreBaseFolder && !strcmp(path, "./") )
+		{
+			continue;
+		}
+
+		map_t m;
+		m.tiles = nullptr;
+		m.entities = (list_t*)malloc(sizeof(list_t));
+		m.entities->first = nullptr;
+		m.entities->last = nullptr;
+		m.creatures = new list_t;
+		m.creatures->first = nullptr;
+		m.creatures->last = nullptr;
+		m.worldUI = new list_t;
+		m.worldUI->first = nullptr;
+		m.worldUI->last = nullptr;
+		if ( path )
+		{
+			int maphash = 0;
+			const std::string fullMapPath = path + (PHYSFS_getDirSeparator() + mapPath);
+			int result = loadMap(fullMapPath.c_str(), &m, m.entities, m.creatures, &maphash);
+			if ( result >= 0 ) {
+				bool fileExistsInTable = false;
+				if ( !verifyMapHash(fullMapPath.c_str(), maphash, &fileExistsInTable) )
+				{
+					if ( fileExistsInTable || strcmp(path, "./") ) 
+					{
+						// return false if map exists in map hash table, or if hash check failed and mod folder contains an unknown map
+						return false;
+					}
+				}
+			}
+		}
+		if ( m.entities ) {
+			list_FreeAll(m.entities);
+			free(m.entities);
+		}
+		if ( m.creatures ) {
+			list_FreeAll(m.creatures);
+			delete m.creatures;
+		}
+		if ( m.worldUI ) {
+			list_FreeAll(m.worldUI);
+			delete m.worldUI;
+		}
+		if ( m.tiles ) {
+			free(m.tiles);
+		}
+	}
+	return true;
+}
+
+void Mods::verifyAchievements(const char* fullpath, bool ignoreBaseFolder)
+{
+	if ( physfsIsMapLevelListModded() )
+	{
+		disableSteamAchievements = true;
+	}
+
+	if ( PHYSFS_getRealDir("/data/gameplaymodifiers.json") )
+	{
+		disableSteamAchievements = true;
+	}
+	else if ( PHYSFS_getRealDir("/data/monstercurve.json") )
+	{
+		disableSteamAchievements = true;
+	}
+	else if ( !verifyMapFiles(fullpath, ignoreBaseFolder) )
+	{
+		disableSteamAchievements = true;
+	}
+}
+
+bool Mods::isPathInMountedFiles(std::string findStr)
+{
+	std::vector<std::pair<std::string, std::string>>::iterator it;
+	std::pair<std::string, std::string> line;
+	for ( it = Mods::mountedFilepaths.begin(); it != Mods::mountedFilepaths.end(); ++it )
+	{
+		line = *it;
+		if ( line.first.compare(findStr) == 0 )
+		{
+			// found entry
+			return true;
+		}
+	}
+	return false;
+}
+
+bool Mods::removePathFromMountedFiles(std::string findStr)
+{
+	std::vector<std::pair<std::string, std::string>>::iterator it;
+	std::pair<std::string, std::string> line;
+	for ( it = Mods::mountedFilepaths.begin(); it != Mods::mountedFilepaths.end(); ++it )
+	{
+		line = *it;
+		if ( line.first.compare(findStr) == 0 )
+		{
+			// found entry, remove from list.
+#ifdef STEAMWORKS
+			for ( std::vector<std::pair<std::string, uint64>>::iterator itId = Mods::workshopLoadedFileIDMap.begin();
+				itId != Mods::workshopLoadedFileIDMap.end(); ++itId )
+			{
+				if ( itId->first.compare(line.second) == 0 )
+				{
+					Mods::workshopLoadedFileIDMap.erase(itId);
+					break;
+				}
+			}
+#endif // STEAMWORKS
+			Mods::mountedFilepaths.erase(it);
+			return true;
+		}
+	}
+	return false;
+}
+
+bool Mods::clearAllMountedPaths()
+{
+	bool success = true;
+	char** i;
+	for ( i = PHYSFS_getSearchPath(); *i != NULL; i++ )
+	{
+		std::string line = *i;
+		if ( line.compare(outputdir) != 0 && line.compare(datadir) != 0 && line.compare("./") != 0 ) // don't unmount the base ./ directory
+		{
+			if ( PHYSFS_unmount(*i) == 0 )
+			{
+				success = false;
+				printlog("[%s] unsuccessfully removed from the search path.\n", line.c_str());
+			}
+			else
+			{
+				printlog("[%s] is removed from the search path.\n", line.c_str());
+			}
+		}
+	}
+	Mods::numCurrentModsLoaded = -1;
+	PHYSFS_freeList(*i);
+	return success;
+}
+
+bool Mods::mountAllExistingPaths()
+{
+	bool success = true;
+	std::vector<std::pair<std::string, std::string>>::iterator it;
+	for ( it = Mods::mountedFilepaths.begin(); it != Mods::mountedFilepaths.end(); ++it )
+	{
+		std::pair<std::string, std::string> itpair = *it;
+		if ( PHYSFS_mount(itpair.first.c_str(), NULL, 0) )
+		{
+			printlog("[%s] is in the search path.\n", itpair.first.c_str());
+		}
+		else
+		{
+			printlog("[%s] unsuccessfully added to search path.\n", itpair.first.c_str());
+			success = false;
+		}
+	}
+	Mods::numCurrentModsLoaded = Mods::mountedFilepaths.size();
+	return success;
+}
+
+void Mods::loadModels(int start, int end) {
+#ifdef WINDOWS
+	start = std::min((int)nummodels - 1, std::max(start, 0));
+	end = std::min((int)nummodels, std::max(end, 0));
+#else
+	start = std::clamp(start, 0, (int)nummodels - 1);
+	end = std::clamp(end, 0, (int)nummodels);
+#endif
+
+	if ( start >= end ) {
+		return;
+	}
+
+	//messagePlayer(clientnum, Language::get(2354));
+#ifndef EDITOR
+	printlog(Language::get(2355), start, end);
+#endif
+
+	loading = true;
+	//createLoadingScreen(5);
+	doLoadingScreen();
+
+	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+	File* fp = openDataFile(modelsDirectory.c_str(), "rb");
+	for ( int c = 0; !fp->eof(); c++ )
+	{
+		char name[128];
+		fp->gets2(name, sizeof(name));
+		if ( c >= start && c < end ) {
+			if ( polymodels[c].vao ) {
+				GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
+			}
+			if ( polymodels[c].vbo ) {
+				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
+			}
+			if ( polymodels[c].colors ) {
+				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
+			}
+		}
+	}
+
+	std::atomic_bool loading_done{ false };
+	auto loading_task = std::async(std::launch::async, [&loading_done, start, end]() {
+		std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+	File* fp = openDataFile(modelsDirectory.c_str(), "rb");
+	for ( int c = 0; !fp->eof(); c++ )
+	{
+		char name[128];
+		fp->gets2(name, sizeof(name));
+		if ( c >= start && c < end )
+		{
+			if ( models[c] != NULL )
+			{
+				if ( models[c]->data )
+				{
+					free(models[c]->data);
+				}
+				free(models[c]);
+				if ( polymodels[c].faces )
+				{
+					free(polymodels[c].faces);
+				}
+				models[c] = loadVoxel(name);
+			}
+		}
+	}
+	FileIO::close(fp);
+	generatePolyModels(start, end, true);
+	loading_done = true;
+	return 0;
+		});
+	while ( !loading_done )
+	{
+		doLoadingScreen();
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+	generateVBOs(start, end);
+}
+
+void Mods::unloadMods()
+{
+	isLoading = true;
+	loadingTicks = 0;
+
+	loading = true;
+	createLoadingScreen(5);
+	doLoadingScreen();
+
+	mountedFilepathsSaved = mountedFilepaths;
+	clearAllMountedPaths();
+	mountedFilepaths.clear();
+	Mods::disableSteamAchievements = false;
+
+	updateLoadingScreen(10);
+	doLoadingScreen();
+
+	if ( Mods::modelsListRequiresReloadUnmodded || !Mods::modelsListModifiedIndexes.empty() )
+	{
+		int modelsIndexUpdateStart = 1;
+		int modelsIndexUpdateEnd = nummodels;
+		physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
+		bool oldModelCache = useModelCache;
+		useModelCache = false;
+		//loadModels(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+		generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
+		generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+		useModelCache = oldModelCache;
+		Mods::modelsListRequiresReloadUnmodded = false;
+	}
+
+	Mods::modelsListModifiedIndexes.clear();
+
+	updateLoadingScreen(20);
+	doLoadingScreen();
+
+	if ( Mods::soundListRequiresReloadUnmodded || !Mods::soundsListModifiedIndexes.empty() )
+	{
+		physfsReloadSounds(true);
+		Mods::soundListRequiresReloadUnmodded = false;
+	}
+
+	Mods::soundsListModifiedIndexes.clear();
+
+	updateLoadingScreen(30);
+	doLoadingScreen();
+
+	if ( Mods::tileListRequireReloadUnmodded )
+	{
+		physfsReloadTiles(true);
+		Mods::tileListRequireReloadUnmodded = false;
+	}
+
+	updateLoadingScreen(40);
+	doLoadingScreen();
+
+	if ( Mods::spriteImagesRequireReloadUnmodded )
+	{
+		physfsReloadSprites(true);
+		Mods::spriteImagesRequireReloadUnmodded = false;
+	}
+
+	updateLoadingScreen(50);
+	doLoadingScreen();
+
+	if ( Mods::booksRequireReloadUnmodded )
+	{
+		physfsReloadBooks();
+		Mods::booksRequireReloadUnmodded = false;
+	}
+
+	updateLoadingScreen(60);
+	doLoadingScreen();
+
+	if ( Mods::musicRequireReloadUnmodded )
+	{
+		gamemodsUnloadCustomThemeMusic();
+		bool reloadIntroMusic = false;
+		physfsReloadMusic(reloadIntroMusic, true);
+		if ( reloadIntroMusic )
+		{
+#ifdef SOUND
+			playMusic(intromusic[local_rng.rand() % (NUMINTROMUSIC - 1)], false, true, true);
+#endif			
+		}
+		Mods::musicRequireReloadUnmodded = false;
+	}
+
+	updateLoadingScreen(70);
+	doLoadingScreen();
+
+	if ( Mods::langRequireReloadUnmodded )
+	{
+		Language::reset();
+		Language::reloadLanguage();
+		Mods::langRequireReloadUnmodded = false;
+	}
+
+	updateLoadingScreen(80);
+	doLoadingScreen();
+
+	if ( Mods::monsterLimbsRequireReloadUnmodded )
+	{
+		physfsReloadMonsterLimbFiles();
+		Mods::monsterLimbsRequireReloadUnmodded = false;
+	}
+
+	updateLoadingScreen(85);
+	doLoadingScreen();
+
+	if ( Mods::systemImagesReloadUnmodded )
+	{
+		physfsReloadSystemImages();
+		Mods::systemImagesReloadUnmodded = false;
+		systemResourceImagesToReload.clear();
+	}
+
+	updateLoadingScreen(90);
+	doLoadingScreen();
+
+	initGameDatafiles(true);
+
+	updateLoadingScreen(95);
+	doLoadingScreen();
+
+	std::atomic_bool loading_done{ false };
+	auto loading_task = std::async(std::launch::async, [&loading_done]() {
+		initGameDatafilesAsync(true);
+	loading_done = true;
+	return 0;
+		});
+	while ( !loading_done )
+	{
+		doLoadingScreen();
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+
+	loadLights();
+
+	consoleCommand("/dumpcache");
+
+	while ( loadingTicks < TICKS_PER_SECOND / 2 ) // artificial delay to look nicer if loading time is short
+	{
+		doLoadingScreen();
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+
+	destroyLoadingScreen();
+	loading = false;
+	isLoading = false;
+}
+
+void Mods::loadMods()
+{
+	Mods::disableSteamAchievements = false;
+	Mods::verifyAchievements(nullptr, false);
+
+	loadingTicks = 0;
+	isLoading = true;
+	loading = true;
+	createLoadingScreen(5);
+	doLoadingScreen();
+
+	Mods::customContentLoadedFirstTime = true;
+
+	updateLoadingScreen(10);
+	doLoadingScreen();
+
+	// process any new model files encountered in the mod load list.
+	if ( physfsSearchModelsToUpdate() || !Mods::modelsListModifiedIndexes.empty() )
+	{
+		int modelsIndexUpdateStart = 1;
+		int modelsIndexUpdateEnd = nummodels;
+		bool oldModelCache = useModelCache;
+		useModelCache = false;
+		physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
+		//loadModels(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+		generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
+		generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+		useModelCache = oldModelCache;
+		Mods::modelsListRequiresReloadUnmodded = true;
+	}
+
+	updateLoadingScreen(20);
+	doLoadingScreen();
+
+	if ( physfsSearchSoundsToUpdate() || !Mods::soundsListModifiedIndexes.empty() )
+	{
+		physfsReloadSounds(false);
+		Mods::soundListRequiresReloadUnmodded = true;
+	}
+
+	updateLoadingScreen(30);
+	doLoadingScreen();
+
+	if ( physfsSearchTilesToUpdate() )
+	{
+		physfsReloadTiles(false);
+		Mods::tileListRequireReloadUnmodded = true;
+	}
+	else if ( Mods::tileListRequireReloadUnmodded ) // clean revert if we had loaded mods but can't find any modded ones
+	{
+		physfsReloadTiles(true);
+		Mods::tileListRequireReloadUnmodded = false;
+	}
+
+	updateLoadingScreen(40);
+	doLoadingScreen();
+
+	if ( physfsSearchSpritesToUpdate() )
+	{
+		physfsReloadSprites(false);
+		Mods::spriteImagesRequireReloadUnmodded = true;
+	}
+	else if ( Mods::spriteImagesRequireReloadUnmodded ) // clean revert if we had loaded mods but can't find any modded ones
+	{
+		physfsReloadSprites(true);
+		Mods::spriteImagesRequireReloadUnmodded = false;
+	}
+
+	updateLoadingScreen(50);
+	doLoadingScreen();
+
+	if ( physfsSearchBooksToUpdate() )
+	{
+		physfsReloadBooks();
+		Mods::booksRequireReloadUnmodded = true;
+	}
+	else if ( Mods::booksRequireReloadUnmodded ) // clean revert if we had loaded mods but can't find any modded ones
+	{
+		physfsReloadBooks();
+		Mods::booksRequireReloadUnmodded = false;
+	}
+
+	updateLoadingScreen(60);
+	doLoadingScreen();
+
+	gamemodsUnloadCustomThemeMusic();
+
+	if ( physfsSearchMusicToUpdate() )
+	{
+		bool reloadIntroMusic = false;
+		physfsReloadMusic(reloadIntroMusic, false);
+		if ( reloadIntroMusic )
+		{
+#ifdef SOUND
+			playMusic(intromusic[local_rng.rand() % (NUMINTROMUSIC - 1)], false, true, true);
+#endif			
+		}
+		Mods::musicRequireReloadUnmodded = true;
+	}
+	else if ( Mods::musicRequireReloadUnmodded ) // clean revert if we had loaded mods but can't find any modded ones
+	{
+		// restore old music
+		bool reloadIntroMusic = true;
+		physfsReloadMusic(reloadIntroMusic, true);
+		if ( reloadIntroMusic )
+		{
+#ifdef SOUND
+			playMusic(intromusic[local_rng.rand() % (NUMINTROMUSIC - 1)], false, true, true);
+#endif			
+		}
+		Mods::musicRequireReloadUnmodded = false;
+	}
+
+	updateLoadingScreen(70);
+	doLoadingScreen();
+
+	std::string langDirectory = PHYSFS_getRealDir("lang/en.txt");
+	if ( langDirectory.compare("./") != 0 )
+	{
+		if ( Language::reloadLanguage() != 0 )
+		{
+			printlog("[PhysFS]: Error reloading modified language file in lang/ directory!");
+		}
+		else
+		{
+			printlog("[PhysFS]: Found modified language file in lang/ directory, reloading en.txt...");
+		}
+		Mods::langRequireReloadUnmodded = true;
+	}
+	else if ( Mods::langRequireReloadUnmodded ) // clean revert if we had loaded mods but can't find any modded ones
+	{
+		Language::reloadLanguage();
+		Mods::langRequireReloadUnmodded = false;
+	}
+
+	updateLoadingScreen(80);
+	doLoadingScreen();
+
+	if ( physfsSearchMonsterLimbFilesToUpdate() )
+	{
+		physfsReloadMonsterLimbFiles();
+		Mods::monsterLimbsRequireReloadUnmodded = true;
+	}
+	else if ( Mods::monsterLimbsRequireReloadUnmodded ) // clean revert if we had loaded mods but can't find any modded ones
+	{
+		physfsReloadMonsterLimbFiles();
+		Mods::monsterLimbsRequireReloadUnmodded = false;
+	}
+
+	updateLoadingScreen(85);
+	doLoadingScreen();
+
+	if ( physfsSearchSystemImagesToUpdate() )
+	{
+		physfsReloadSystemImages();
+		Mods::systemImagesReloadUnmodded = true;
+	}
+	else if ( Mods::systemImagesReloadUnmodded ) // clean revert if we had loaded mods but can't find any modded ones
+	{
+		physfsReloadSystemImages();
+		Mods::systemImagesReloadUnmodded = false;
+	}
+
+	updateLoadingScreen(90);
+	doLoadingScreen();
+
+	initGameDatafiles(true);
+
+	updateLoadingScreen(95);
+	doLoadingScreen();
+
+	std::atomic_bool loading_done{ false };
+	auto loading_task = std::async(std::launch::async, [&loading_done]() {
+		initGameDatafilesAsync(true);
+		loading_done = true;
+		return 0;
+		});
+	while ( !loading_done )
+	{
+		doLoadingScreen();
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+
+	loadLights();
+
+	consoleCommand("/dumpcache");
+
+	while ( loadingTicks < TICKS_PER_SECOND / 2 ) // artificial delay to look nicer if loading time is short
+	{
+		doLoadingScreen();
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+
+	destroyLoadingScreen();
+
+	loading = false;
+	isLoading = false;
+}
+
+void Mods::writeLevelsTxtAndPreview(std::string modFolder)
+{
+	std::string path = outputdir;
+	path.append(PHYSFS_getDirSeparator()).append("mods/").append(modFolder);
+	if ( access(path.c_str(), F_OK) == 0 )
+	{
+		std::string writeFile = modFolder + "/maps/levels.txt";
+		PHYSFS_File* physfp = PHYSFS_openWrite(writeFile.c_str());
+		if ( physfp != nullptr )
+		{
+			PHYSFS_writeBytes(physfp, "map: start\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+			PHYSFS_writeBytes(physfp, "map: minetoswamp\n", 17);
+			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
+			PHYSFS_writeBytes(physfp, "map: swamptolabyrinth\n", 22);
+			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
+			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
+			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
+			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
+			PHYSFS_writeBytes(physfp, "map: labyrinthtoruins\n", 22);
+			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
+			PHYSFS_writeBytes(physfp, "map: boss\n", 10);
+			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);
+			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);
+			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);
+			PHYSFS_writeBytes(physfp, "map: hellboss\n", 14);
+			PHYSFS_writeBytes(physfp, "map: hamlet\n", 12);
+			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
+			PHYSFS_writeBytes(physfp, "map: cavestocitadel\n", 20);
+			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
+			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
+			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
+			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
+			PHYSFS_writeBytes(physfp, "map: sanctum", 12);
+			PHYSFS_close(physfp);
+		}
+		else
+		{
+			printlog("[PhysFS]: Failed to open %s/maps/levels.txt for writing.", path.c_str());
+		}
+
+		std::string srcImage = datadir;
+		srcImage.append("images/system/preview.png");
+		std::string dstImage = path + "/preview.png";
+		if ( access(srcImage.c_str(), F_OK) == 0 )
+		{
+			if ( File* fp_read = FileIO::open(srcImage.c_str(), "rb") )
+			{
+				if ( File* fp_write = FileIO::open(dstImage.c_str(), "wb") )
+				{
+					char chunk[1024];
+					auto len = fp_read->read(chunk, sizeof(chunk[0]), sizeof(chunk));
+					while ( len == sizeof(chunk) )
+					{
+						fp_write->write(chunk, sizeof(chunk[0]), len);
+						len = fp_read->read(chunk, sizeof(chunk[0]), sizeof(chunk));
+					}
+					fp_write->write(chunk, sizeof(chunk[0]), len);
+					FileIO::close(fp_write);
+				}
+				else
+				{
+					printlog("[PhysFS]: Failed to write preview.png in %s", dstImage.c_str());
+				}
+				FileIO::close(fp_read);
+			}
+			else
+			{
+				printlog("[PhysFS]: Failed to open %s", srcImage.c_str());
+			}
+		}
+		else
+		{
+			printlog("[PhysFS]: Failed to access %s", srcImage.c_str());
+		}
+	}
+	else
+	{
+		printlog("[PhysFS]: Failed to write levels.txt in %s", path.c_str());
+	}
+}
+
+int Mods::createBlankModDirectory(std::string foldername)
+{
+	std::string baseDir = outputdir;
+	baseDir.append(PHYSFS_getDirSeparator()).append("mods").append(PHYSFS_getDirSeparator()).append(foldername);
+
+	if ( access(baseDir.c_str(), F_OK) == 0 )
+	{
+		// folder already exists!
+		return 1;
+	}
+	else
+	{
+		if ( PHYSFS_mkdir(foldername.c_str()) )
+		{
+			std::string dir = foldername;
+			std::string folder = "/books";
+			PHYSFS_mkdir((dir + folder).c_str());
+			folder = "/editor";
+			PHYSFS_mkdir((dir + folder).c_str());
+
+			folder = "/images";
+			PHYSFS_mkdir((dir + folder).c_str());
+			std::string subfolder = "/sprites";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/system";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/tiles";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/ui";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+
+			folder = "/items";
+			PHYSFS_mkdir((dir + folder).c_str());
+			subfolder = "/images";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+
+			folder = "/lang";
+			PHYSFS_mkdir((dir + folder).c_str());
+			folder = "/maps";
+			PHYSFS_mkdir((dir + folder).c_str());
+			writeLevelsTxtAndPreview(foldername.c_str());
+
+			folder = "/models";
+			PHYSFS_mkdir((dir + folder).c_str());
+			subfolder = "/creatures";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/decorations";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/doors";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/items";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/particles";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+
+			folder = "/music";
+			PHYSFS_mkdir((dir + folder).c_str());
+			folder = "/sound";
+			PHYSFS_mkdir((dir + folder).c_str());
+
+			folder = "/data";
+			PHYSFS_mkdir((dir + folder).c_str());
+
+			return 0;
+		}
+	}
+	return 2;
 }

@@ -146,27 +146,27 @@ void actDoor(Entity* my)
 								// open door
 								my->doorStatus = 1 + (players[i]->entity->x > my->x);
 								playSoundEntity(my, 21, 96);
-								messagePlayer(i, MESSAGE_INTERACTION, language[464]);
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(464));
 							}
 							else if ( my->doorDir && !my->doorStatus )
 							{
 								// open door
 								my->doorStatus = 1 + (players[i]->entity->y < my->y);
 								playSoundEntity(my, 21, 96);
-								messagePlayer(i, MESSAGE_INTERACTION, language[464]);
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(464));
 							}
 							else
 							{
 								// close door
 								my->doorStatus = 0;
 								playSoundEntity(my, 22, 96);
-								messagePlayer(i, MESSAGE_INTERACTION, language[465]);
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(465));
 							}
 						}
 						else
 						{
 							// door locked
-							messagePlayer(i, MESSAGE_INTERACTION, language[466]);
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(466));
 							playSoundEntity(my, 152, 64);
 						}
 					}
@@ -332,25 +332,25 @@ void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3617], items[magicProjectile.skill[21]].getIdentifiedName(), language[674]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3617), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(674));
 				}
 				else
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[387]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(387));
 				}
 			}
 			else
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, language[3618], items[magicProjectile.skill[21]].getIdentifiedName(), language[674]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(3618), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(674));
 				}
 				else
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, language[378], language[674]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(378), Language::get(674));
 				}
 			}
-			updateEnemyBar(caster, this, language[674], doorHealth, doorMaxHealth);
+			updateEnemyBar(caster, this, Language::get(674), doorHealth, doorMaxHealth);
 		}
 	}
 	if ( !doorDir )

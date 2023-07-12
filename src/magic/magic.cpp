@@ -98,7 +98,7 @@ void spell_magicMap(int player)
 		return;
 	}
 
-	messagePlayer(player, MESSAGE_HINT, language[412]);
+	messagePlayer(player, MESSAGE_HINT, Language::get(412));
 	mapLevel(player);
 }
 
@@ -161,7 +161,7 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		Uint32 color = makeColorRGB(255, 0, 0);
 		if ( parent )
 		{
-			messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, language[2429]);
+			messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(2429));
 		}
 		return false;
 	}
@@ -176,7 +176,7 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		Uint32 color = makeColorRGB(0, 255, 0);
 		if ( parent->behavior == &actPlayer )
 		{
-			messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2428], language[2427], MSG_COMBAT);
+			messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2428), Language::get(2427), MSG_COMBAT);
 		}
 
 		hit.entity->monsterAllyIndex = parent->skill[2];
@@ -308,7 +308,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				{
 					if ( !recentlyHitBySameSpell )
 					{
-						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2431], language[2430], MSG_COMBAT);
+						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2431), Language::get(2430), MSG_COMBAT);
 					}
 				}
 			}
@@ -340,7 +340,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			{
 				if ( !recentlyHitBySameSpell )
 				{
-					messagePlayerColor(player, MESSAGE_COMBAT, color, language[2432]);
+					messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(2432));
 				}
 			}
 
@@ -447,7 +447,7 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 				Uint32 color = makeColorRGB(0, 255, 0);
 				if ( parent->behavior == &actPlayer )
 				{
-					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3427], language[3426], MSG_COMBAT);
+					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3427), Language::get(3426), MSG_COMBAT);
 				}
 			}
 
@@ -476,7 +476,7 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 			}
 			if ( player >= 0 )
 			{
-				messagePlayerColor(player, MESSAGE_COMBAT, color, language[3428]);
+				messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(3428));
 			}
 		}
 		else if ( hit.entity->behavior == &actDoor )
@@ -560,7 +560,7 @@ bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, E
 				Uint32 color = makeColorRGB(255, 0, 0);
 				if ( parent->behavior == &actPlayer )
 				{
-					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2905), Language::get(2906), MSG_COMBAT);
 				}
 			}
 			return false;
@@ -572,7 +572,7 @@ bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, E
 			Uint32 color = makeColorRGB(0, 255, 0);
 			if ( parent->behavior == &actPlayer )
 			{
-				messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3434], language[3435], MSG_COMBAT);
+				messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3434), Language::get(3435), MSG_COMBAT);
 			}
 		}
 
@@ -585,7 +585,7 @@ bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, E
 		}
 		if ( player >= 0 )
 		{
-			messagePlayerColor(player, MESSAGE_COMBAT, color, language[3436]);
+			messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(3436));
 		}
 	}
 	spawnMagicEffectParticles(target->x, target->y, target->z, 863);
@@ -647,7 +647,7 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 					Uint32 color = makeColorRGB(255, 0, 0);
 					if ( parent->behavior == &actPlayer )
 					{
-						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2905), Language::get(2906), MSG_COMBAT);
 					}
 				}
 				return;
@@ -661,7 +661,7 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 				{
 					if ( abs(duration - previousDuration) > 10 ) // message if not recently webbed
 					{
-						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3430], language[3429], MSG_COMBAT);
+						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3430), Language::get(3429), MSG_COMBAT);
 					}
 				}
 			}
@@ -677,7 +677,7 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 			{
 				if ( abs(duration - previousDuration) > 10 ) // message if not recently webbed
 				{
-					messagePlayerColor(player, MESSAGE_COMBAT, color, language[3431]);
+					messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(3431));
 				}
 			}
 		}
@@ -769,7 +769,7 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 					if ( player >= 0 )
 					{
 						color = makeColorRGB(255, 0, 0);
-						messagePlayerColor(player, MESSAGE_COMBAT, color, language[2435], hitstats->weapon->getName());
+						messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(2435), hitstats->weapon->getName());
 					}
 
 					if ( parent )
@@ -777,7 +777,7 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 						color = makeColorRGB(0, 255, 0);
 						if ( parent->behavior == &actPlayer )
 						{
-							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2434], language[2433], MSG_STEAL_WEAPON);
+							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2434), Language::get(2433), MSG_STEAL_WEAPON);
 						}
 					}
 
@@ -822,7 +822,7 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 				if ( player >= 0 )
 				{
 					color = makeColorRGB(0, 255, 0);
-					messagePlayerColor(player, MESSAGE_COMBAT, color, language[2438]);
+					messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(2438));
 				}
 
 				if ( parent )
@@ -830,7 +830,7 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 					color = makeColorRGB(255, 255, 255);
 					if ( parent->behavior == &actPlayer )
 					{
-						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2437], language[2436], MSG_COMBAT);
+						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2437), Language::get(2436), MSG_COMBAT);
 					}
 				}
 			}
@@ -941,7 +941,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 					if ( player >= 0 )
 					{
 						color = makeColorRGB(255, 0, 0);
-						messagePlayerColor(player, MESSAGE_COMBAT, color, language[2441]);
+						messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(2441));
 					}
 
 					if ( parent )
@@ -949,7 +949,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 						color = makeColorRGB(0, 255, 0);
 						if ( parent->behavior == &actPlayer )
 						{
-							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2440], language[2439], MSG_COMBAT);
+							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2440), Language::get(2439), MSG_COMBAT);
 						}
 					}
 				}
@@ -961,7 +961,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 				if ( player >= 0 )
 				{
 					color = makeColorRGB(0, 255, 0);
-					messagePlayerColor(player, MESSAGE_COMBAT, color, language[2444]);
+					messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(2444));
 				}
 
 				if ( parent )
@@ -969,7 +969,102 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 					color = makeColorRGB(255, 255, 255);
 					if ( parent->behavior == &actPlayer )
 					{
-						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2443], language[2442], MSG_COMBAT);
+						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2443), Language::get(2442), MSG_COMBAT);
+					}
+				}
+			}
+		}
+		else
+		{
+			bool forceFurnitureDamage = false;
+			if ( parent )
+			{
+				Stat* casterStats = parent->getStats();
+				if ( casterStats && casterStats->type == SHOPKEEPER )
+				{
+					forceFurnitureDamage = true;
+				}
+			}
+
+			if ( forceFurnitureDamage )
+			{
+				if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
+				{
+					int damage = element.damage;
+					damage += (my.actmagicSpellbookBonus * damage);
+					//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+					damage /= (1 + (int)resistance);
+
+					hit.entity->colliderHandleDamageMagic(damage, my, parent);
+					if ( my.actmagicProjectileArc > 0 )
+					{
+						spawnMagicTower(parent, my.x, my.y, SPELL_DRAIN_SOUL, nullptr);
+					}
+					if ( !(my.actmagicIsOrbiting == 2) )
+					{
+						my.removeLightField();
+						list_RemoveNode(my.mynode);
+					}
+					return;
+				}
+				else if ( hit.entity->behavior == &actChest )
+				{
+					int damage = element.damage;
+					damage += (my.actmagicSpellbookBonus * damage);
+					damage /= (1 + (int)resistance);
+					hit.entity->chestHandleDamageMagic(damage, my, parent);
+					if ( my.actmagicProjectileArc > 0 )
+					{
+						spawnMagicTower(parent, my.x, my.y, SPELL_DRAIN_SOUL, nullptr);
+					}
+					if ( !(my.actmagicIsOrbiting == 2) )
+					{
+						my.removeLightField();
+						list_RemoveNode(my.mynode);
+					}
+					return;
+				}
+				else if ( hit.entity->behavior == &actFurniture )
+				{
+					int damage = element.damage;
+					damage += (my.actmagicSpellbookBonus * damage);
+					damage /= (1 + (int)resistance);
+					hit.entity->furnitureHealth -= damage;
+					if ( parent )
+					{
+						if ( parent->behavior == &actPlayer )
+						{
+							switch ( hit.entity->furnitureType )
+							{
+							case FURNITURE_CHAIR:
+								messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
+								updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+								break;
+							case FURNITURE_TABLE:
+								messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
+								updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+								break;
+							case FURNITURE_BED:
+								messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
+								updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+								break;
+							case FURNITURE_BUNKBED:
+								messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
+								updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+								break;
+							case FURNITURE_PODIUM:
+								messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
+								updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+								break;
+							default:
+								break;
+							}
+						}
+					}
+					playSoundEntity(hit.entity, 28, 128);
+					if ( my.actmagicProjectileArc > 0 )
+					{
+						spawnMagicTower(parent, my.x, my.y, SPELL_DRAIN_SOUL, nullptr);
 					}
 				}
 			}
@@ -1049,7 +1144,7 @@ spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_
 		{
 			serverUpdateEffects(i);
 			Uint32 color = makeColorRGB(0, 255, 0);
-			messagePlayerColor(i, MESSAGE_COMBAT, color, language[2477]);
+			messagePlayerColor(i, MESSAGE_COMBAT, color, Language::get(2477));
 			playSoundPlayer(i, 403, 32);
 		}
 	}
@@ -1247,13 +1342,13 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 					if ( player >= 0 )
 					{
 						color = makeColorRGB(255, 0, 0);
-						messagePlayerColor(player, MESSAGE_COMBAT, color, language[3144]);
+						messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(3144));
 					}
 					if ( parent )
 					{
 						if ( parent->behavior == &actPlayer )
 						{
-							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3139], language[3140], MSG_COMBAT);
+							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3139), Language::get(3140), MSG_COMBAT);
 						}
 						// update enemy bar for attacker
 						/*if ( !strcmp(hitstats->name, "") )
@@ -1273,13 +1368,13 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				playSoundEntity(hit.entity, 163, 64); // FailedSpell1V1.ogg
 				if ( parent && parent->behavior == &actPlayer )
 				{
-					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2905), Language::get(2906), MSG_COMBAT);
 					steamAchievementClient(parent->skill[2], "BARONY_ACH_OFF_LIMITS");
 				}
 				if ( player >= 0 )
 				{
 					color = makeColorRGB(0, 255, 0);
-					messagePlayerColor(player, MESSAGE_COMBAT, color, language[3141]);
+					messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(3141));
 				}
 			}
 			else if ( parent && local_rng.rand() % 100 < chance
@@ -1330,7 +1425,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 					if ( whoToFollow->behavior == &actPlayer )
 					{
 						whoToFollow->increaseSkill(PRO_LEADERSHIP);
-						messagePlayerMonsterEvent(whoToFollow->skill[2], color, *hitstats, language[3137], language[3138], MSG_COMBAT);
+						messagePlayerMonsterEvent(whoToFollow->skill[2], color, *hitstats, Language::get(3137), Language::get(3138), MSG_COMBAT);
 						hit.entity->monsterAllyIndex = whoToFollow->skill[2];
 						if ( multiplayer == SERVER )
 						{
@@ -1405,16 +1500,16 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 					if ( player >= 0 )
 					{
 						color = makeColorRGB(255, 0, 0);
-						messagePlayerColor(player, MESSAGE_COMBAT, color, language[3144]);
+						messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(3144));
 					}
 					if ( parent )
 					{
 						if ( parent->behavior == &actPlayer )
 						{
-							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3139], language[3140], MSG_COMBAT);
+							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3139), Language::get(3140), MSG_COMBAT);
 							if ( currentCharmedFollowerCount > 0 && hit.entity->monsterAllyGetPlayerLeader() != parent )
 							{
-								messagePlayer(parent->skill[2], MESSAGE_MISC, language[3327]);
+								messagePlayer(parent->skill[2], MESSAGE_MISC, Language::get(3327));
 							}
 						}
 						// update enemy bar for attacker
@@ -1452,12 +1547,12 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 					playSoundEntity(hit.entity, 163, 64); // FailedSpell1V1.ogg
 					if ( parent && parent->behavior == &actPlayer )
 					{
-						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3142], language[3143], MSG_COMBAT);
+						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3142), Language::get(3143), MSG_COMBAT);
 					}
 					if ( player >= 0 )
 					{
 						color = makeColorRGB(0, 255, 0);
-						messagePlayerColor(player, MESSAGE_COMBAT, color, language[3141]);
+						messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(3141));
 					}
 				}
 			}
@@ -1483,7 +1578,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 	{
 		if ( parent && parent->behavior == &actPlayer )
 		{
-			messagePlayer(parent->skill[2], MESSAGE_HINT, language[3191]); // had no effect
+			messagePlayer(parent->skill[2], MESSAGE_HINT, Language::get(3191)); // had no effect
 		}
 		return nullptr;
 	}
@@ -1500,7 +1595,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 	{
 		if ( parent && parent->behavior == &actPlayer )
 		{
-			messagePlayer(parent->skill[2], MESSAGE_HINT, language[3191]); // had no effect
+			messagePlayer(parent->skill[2], MESSAGE_HINT, Language::get(3191)); // had no effect
 		}
 		return nullptr;
 	}
@@ -1653,11 +1748,11 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 			{
 				if ( fellInWater )
 				{
-					messagePlayer(parent->skill[2], MESSAGE_STATUS, language[3192]); // water make no work :<
+					messagePlayer(parent->skill[2], MESSAGE_STATUS, Language::get(3192)); // water make no work :<
 				}
 				else
 				{
-					messagePlayer(parent->skill[2], MESSAGE_STATUS, language[3191]); // failed for some other reason
+					messagePlayer(parent->skill[2], MESSAGE_STATUS, Language::get(3191)); // failed for some other reason
 				}
 			}
 			return nullptr;
@@ -1668,7 +1763,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 		{
 			if ( parent && parent->behavior == &actPlayer )
 			{
-				messagePlayer(parent->skill[2], MESSAGE_HINT, language[3191]);
+				messagePlayer(parent->skill[2], MESSAGE_HINT, Language::get(3191));
 			}
 			return nullptr;
 		}
@@ -2003,11 +2098,11 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 			// the %s polymorph into a %s!
 			if ( !strcmp((*targetStats).name, "") || namedMonsterAsGeneric )
 			{
-				messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, language[3187], getMonsterLocalizedName((*targetStats).type).c_str(), getMonsterLocalizedName(summonedStats->type).c_str());
+				messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(3187), getMonsterLocalizedName((*targetStats).type).c_str(), getMonsterLocalizedName(summonedStats->type).c_str());
 			}
 			else
 			{
-				messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, language[3188], (*targetStats).name, getMonsterLocalizedName(summonedStats->type).c_str());
+				messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(3188), (*targetStats).name, getMonsterLocalizedName(summonedStats->type).c_str());
 			}
 		}
 
@@ -2018,13 +2113,13 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 
 		if ( fellToDeath )
 		{
-			summonedEntity->setObituary(language[3010]); // fell to their death.
+			summonedEntity->setObituary(Language::get(3010)); // fell to their death.
 			summonedStats->HP = 0; // kill me instantly
 			summonedStats->killer = KilledBy::BOTTOMLESS_PIT;
 		}
 		else if ( fellInLava )
 		{
-			summonedEntity->setObituary(language[1506]); // goes for a swim in some lava.
+			summonedEntity->setObituary(Language::get(1506)); // goes for a swim in some lava.
 			summonedStats->HP = 0; // kill me instantly
 			summonedStats->killer = KilledBy::LAVA;
 		}
@@ -2095,7 +2190,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 			{
 				race = static_cast<Monster>(target->effectPolymorph);
 			}
-			messagePlayerColor(target->skill[2], MESSAGE_COMBAT, color, language[3186], getMonsterLocalizedName(race).c_str());
+			messagePlayerColor(target->skill[2], MESSAGE_COMBAT, color, Language::get(3186), getMonsterLocalizedName(race).c_str());
 
 			// change player's type here, don't like this.. will get auto reset in actPlayer() though
 			// otherwise the below aggro check will still assume previous race since actPlayer() hasn't run yet.
@@ -2122,7 +2217,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 		}
 		else
 		{
-			messagePlayer(target->skill[2], MESSAGE_STATUS | MESSAGE_HINT, language[3189]);
+			messagePlayer(target->skill[2], MESSAGE_STATUS | MESSAGE_HINT, Language::get(3189));
 		}
 
 	}
@@ -2167,10 +2262,10 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 					{
 						// can't teleport here.
 						Uint32 color = makeColorRGB(255, 0, 255);
-						messagePlayerColor(target->skill[2], MESSAGE_STATUS, color, language[2381]);
+						messagePlayerColor(target->skill[2], MESSAGE_STATUS, color, Language::get(2381));
 						if ( parent->behavior == &actPlayer )
 						{
-							messagePlayerColor(parent->skill[2], MESSAGE_HINT, color, language[3452]);
+							messagePlayerColor(parent->skill[2], MESSAGE_HINT, color, Language::get(3452));
 						}
 						return false;
 					}
@@ -2182,7 +2277,7 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 						Uint32 color = makeColorRGB(255, 0, 0);
 						if ( hitstats )
 						{
-							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2905), Language::get(2906), MSG_COMBAT);
 						}
 					}
 					return false;
@@ -2257,7 +2352,7 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 						if ( parent->behavior == &actPlayer )
 						{
 							// no room to teleport!
-							messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[3453]);
+							messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(3453));
 						}
 						return false;
 					}
@@ -2279,7 +2374,7 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 						if ( parent->behavior == &actPlayer )
 						{
 							// no room to teleport!
-							messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[3453]);
+							messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(3453));
 						}
 						return false;
 					}
@@ -2409,7 +2504,7 @@ void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, i
 				Uint32 color = makeColorRGB(0, 255, 0);
 				if ( parent->behavior == &actPlayer )
 				{
-					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3463], language[3464], MSG_COMBAT);
+					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3463), Language::get(3464), MSG_COMBAT);
 				}
 			}
 
@@ -2430,7 +2525,7 @@ void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, i
 				player = hit.entity->skill[2];
 				if ( player >= 0 )
 				{
-					messagePlayerColor(player, MESSAGE_COMBAT, color, language[3465]);
+					messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(3465));
 				}
 			}
 		}
@@ -2466,7 +2561,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 				{
 					// unable to taunt!
 					Uint32 color = makeColorRGB(255, 255, 255);
-					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3472], language[3473], MSG_COMBAT);
+					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3472), Language::get(3473), MSG_COMBAT);
 				}
 				return false;
 			}
@@ -2477,7 +2572,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 				{
 					// already exorcised!
 					Uint32 color = makeColorRGB(255, 255, 255);
-					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3735], language[3736], MSG_COMBAT);
+					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3735), Language::get(3736), MSG_COMBAT);
 				}
 				return false;
 			}
@@ -2524,7 +2619,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 					if ( parent->behavior == &actPlayer )
 					{
 						// no room to spawn!
-						messagePlayer(parent->skill[2], MESSAGE_MISC, language[3471]);
+						messagePlayer(parent->skill[2], MESSAGE_MISC, Language::get(3471));
 					}
 					return false;
 				}
@@ -2587,17 +2682,17 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 						if ( parent->behavior == &actPlayer )
 						{
 							Uint32 color = makeColorRGB(255, 255, 0);
-							messagePlayerColor(parent->skill[2], MESSAGE_STATUS, color, language[621]);
+							messagePlayerColor(parent->skill[2], MESSAGE_STATUS, color, Language::get(621));
 						}
 						parent->modHP(-(parentStats->MAXHP / 10));
 						if ( parentStats->sex == MALE )
 						{
-							parent->setObituary(language[1528]);
+							parent->setObituary(Language::get(1528));
 							parentStats->killer = KilledBy::FAILED_INVOCATION;
 						}
 						else
 						{
-							parent->setObituary(language[1529]);
+							parent->setObituary(Language::get(1529));
 							parentStats->killer = KilledBy::FAILED_INVOCATION;
 						}
 					}
@@ -2608,7 +2703,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 					Uint32 color = makeColorRGB(0, 255, 0);
 					if ( parent->behavior == &actPlayer )
 					{
-						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3469], language[3470], MSG_COMBAT);
+						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3469), Language::get(3470), MSG_COMBAT);
 					}
 				}
 			}
@@ -2620,11 +2715,11 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 				player = target->skill[2];
 				if ( player >= 0 )
 				{
-					messagePlayerColor(player, MESSAGE_COMBAT, color, language[3468]);
+					messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(3468));
 					if ( hitstats->monsterDemonHasBeenExorcised == 3 )
 					{
 						Uint32 color = makeColorRGB(0, 255, 0);
-						messagePlayerColor(player, MESSAGE_COMBAT, color, language[3468]);
+						messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(3468));
 					}
 				}
 			}

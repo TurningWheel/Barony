@@ -56,6 +56,9 @@ public:
     //! @return resultant state of the slider after processing
     result_t process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable);
 
+    //! gets the physical screen-space x/y (not relative to current parent - but to the absolute root)
+    SDL_Rect getAbsoluteSize() const;
+
     //! activates the slider
     virtual void activate() override;
 

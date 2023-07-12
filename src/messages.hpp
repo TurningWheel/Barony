@@ -28,9 +28,6 @@ typedef struct Message
 {
 	string_t* text; //Same size as the message in draw.c. Make sure not to overrun it.
 
-	//Its location (durr).
-	int x, y;
-
 	//The time it's been displayed so far.
 	int time_displayed;
 

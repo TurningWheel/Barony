@@ -291,7 +291,7 @@ void drawHPMPBars(int player)
 	}
 
 	// Display "HP" at top of Health bar
-	ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[306]);
+	ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, Language::get(306));
 
 	// Display border between actual Health bar and "HP"
 	//pos.x = 76;
@@ -418,20 +418,20 @@ void drawHPMPBars(int player)
 	Uint32 mpColorFG = makeColorRGB(0, 24, 128);
 	if ( stats[player] && stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
 	{
-		ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[3768]);
+		ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, Language::get(3768));
 		mpColorBG = makeColorRGB(32, 48, 0);
 		mpColorFG = makeColorRGB(92, 192, 0);
 	}
 	else if ( stats[player] && stats[player]->type == AUTOMATON )
 	{
-		ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[3474]);
+		ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, Language::get(3474));
 		mpColorBG = makeColorRGB(64, 32, 0);
 		mpColorFG = makeColorRGB(192, 92, 0);
 	}
 	else
 	{
 		// Display "MP" at the top of Magic bar
-		ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[307]);
+		ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, Language::get(307));
 	}
 
 	// Display border between actual Magic bar and "MP"
@@ -512,7 +512,7 @@ void drawStatus(int player)
 	const Sint32 mousexrel = inputs.getMouse(player, Inputs::XREL);
 	const Sint32 mouseyrel = inputs.getMouse(player, Inputs::YREL);
 
-	pos.x = players[player]->statusBarUI.getStartX();
+	//pos.x = players[player]->statusBarUI.getStartX();
 	auto& hotbar_t = players[player]->hotbar;
 	auto& hotbar = hotbar_t.slots();
 
@@ -521,7 +521,7 @@ void drawStatus(int player)
 
 	if ( !hide_statusbar )
 	{
-		pos.y = players[player]->statusBarUI.getStartY();
+		//pos.y = players[player]->statusBarUI.getStartY();
 	}
 	else
 	{
@@ -532,277 +532,277 @@ void drawStatus(int player)
 	initial_position.y = pos.y;
 	initial_position.w = 0;
 	initial_position.h = 0;
-	pos.w = status_bmp->w * uiscale_chatlog;
-	pos.h = status_bmp->h * uiscale_chatlog;
-	if ( !hide_statusbar )
-	{
-		drawImageScaled(status_bmp, NULL, &pos);
-	}
+	//pos.w = status_bmp->w * uiscale_chatlog;
+	//pos.h = status_bmp->h * uiscale_chatlog;
+	//if ( !hide_statusbar )
+	//{
+	//	drawImageScaled(status_bmp, NULL, &pos);
+	//}
 
-	players[player]->statusBarUI.messageStatusBarBox.x = pos.x;
-	players[player]->statusBarUI.messageStatusBarBox.y = pos.y;
-	players[player]->statusBarUI.messageStatusBarBox.w = pos.w;
-	players[player]->statusBarUI.messageStatusBarBox.h = pos.h;
+	////players[player]->statusBarUI.messageStatusBarBox.x = pos.x;
+	////players[player]->statusBarUI.messageStatusBarBox.y = pos.y;
+	////players[player]->statusBarUI.messageStatusBarBox.w = pos.w;
+	////players[player]->statusBarUI.messageStatusBarBox.h = pos.h;
 
-	// enemy health
-	enemyHPDamageBarHandler[player].displayCurrentHPBar(player);
+	//// enemy health
+	//enemyHPDamageBarHandler[player].displayCurrentHPBar(player);
 
-	// messages
-	if ( !hide_statusbar )
-	{
-		x = players[player]->statusBarUI.getStartX() + 24 * uiscale_chatlog;
-		y = players[player]->camera_y2();
-		textscroll = std::min<Uint32>(list_Size(&messages) - 3, textscroll);
-		c = 0;
-		for ( node = messages.last; node != NULL; node = node->prev )
-		{
-			c++;
-			if ( c <= textscroll )
-			{
-				continue;
-			}
-			string = (string_t*)node->element;
-			if ( uiscale_chatlog >= 1.5 )
-			{
-				y -= TTF16_HEIGHT * string->lines;
-				if ( y < y2 - (status_bmp->h * uiscale_chatlog) + 8 * uiscale_chatlog )
-				{
-					break;
-				}
-			}
-			else if ( uiscale_chatlog != 1.f )
-			{
-				y -= TTF12_HEIGHT * string->lines;
-				if ( y < y2 - status_bmp->h * 1.1 + 4 )
-				{
-					break;
-				}
-			}
-			else
-			{
-				y -= TTF12_HEIGHT * string->lines;
-				if ( y < y2 - status_bmp->h + 4 )
-				{
-					break;
-				}
-			}
-			z = 0;
-			for ( i = 0; i < strlen(string->data); i++ )
-			{
-				if ( string->data[i] != 10 )   // newline
-				{
-					z++;
-				}
-				else
-				{
-					z = 0;
-				}
-				if ( z == 65 )
-				{
-					if ( string->data[i] != 10 )
-					{
-						char* tempString = (char*)malloc(sizeof(char) * (strlen(string->data) + 2));
-						strcpy(tempString, string->data);
-						strcpy((char*)(tempString + i + 1), (char*)(string->data + i));
-						tempString[i] = 10;
-						free(string->data);
-						string->data = tempString;
-						string->lines++;
-					}
-					z = 0;
-				}
-			}
-			Uint32 color = makeColor( 0, 0, 0, 255); // black color
-			if ( uiscale_chatlog >= 1.5 )
-			{
-				ttfPrintTextColor(ttf16, x, y, color, false, string->data);
-			}
-			else
-			{
-				ttfPrintTextColor(ttf12, x, y, color, false, string->data);
-			}
-		}
-		if ( inputs.bMouseLeft(player) )
-		{
-			if ( omousey >= y2 - status_bmp->h * uiscale_chatlog + 7 && omousey < y2 - status_bmp->h * uiscale_chatlog + (7 + 27) * uiscale_chatlog )
-			{
-				if ( omousex >= players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog
-					&& omousex < players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog + 11 * uiscale_chatlog )
-				{
-					// text scroll up
-					buttonclick = 3;
-					textscroll++;
-					inputs.mouseClearLeft(player);
-				}
-			}
-			else if ( omousey >= y2 - status_bmp->h * uiscale_chatlog + 34 && omousey < y2 - status_bmp->h * uiscale_chatlog + (34 + 28) * uiscale_chatlog )
-			{
-				if ( omousex >= players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog
-					&& omousex < players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog + 11 * uiscale_chatlog )
-				{
-					// text scroll down
-					buttonclick = 12;
-					textscroll--;
-					if ( textscroll < 0 )
-					{
-						textscroll = 0;
-					}
-					inputs.mouseClearLeft(player);
-				}
-			}
-			else if ( omousey >= y2 - status_bmp->h * uiscale_chatlog + 62 && omousey < y2 - status_bmp->h * uiscale_chatlog + (62 + 31) * uiscale_chatlog )
-			{
-				if ( omousex >= players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog
-					&& omousex < players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog + 11 * uiscale_chatlog )
-				{
-					// text scroll down all the way
-					buttonclick = 4;
-					textscroll = 0;
-					inputs.mouseClearLeft(player);
-				}
-			}
-			/*else if( omousey>=y2-status_bmp->h+8 && omousey<y2-status_bmp->h+8+30 ) {
-				if( omousex>=players[player]->statusBarUI.getStartX()+618 && omousex<players[player]->statusBarUI.getStartX()+618+11 ) {
-					// text scroll up all the way
-					buttonclick=13;
-					textscroll=list_Size(&messages)-4;
-					mousestatus[SDL_BUTTON_LEFT]=0;
-				}
-			}*/
-		}
+	//// messages
+	//if ( !hide_statusbar )
+	//{
+	//	x = players[player]->statusBarUI.getStartX() + 24 * uiscale_chatlog;
+	//	y = players[player]->camera_y2();
+	//	textscroll = std::min<Uint32>(list_Size(&messages) - 3, textscroll);
+	//	c = 0;
+	//	for ( node = messages.last; node != NULL; node = node->prev )
+	//	{
+	//		c++;
+	//		if ( c <= textscroll )
+	//		{
+	//			continue;
+	//		}
+	//		string = (string_t*)node->element;
+	//		if ( uiscale_chatlog >= 1.5 )
+	//		{
+	//			y -= TTF16_HEIGHT * string->lines;
+	//			if ( y < y2 - (status_bmp->h * uiscale_chatlog) + 8 * uiscale_chatlog )
+	//			{
+	//				break;
+	//			}
+	//		}
+	//		else if ( uiscale_chatlog != 1.f )
+	//		{
+	//			y -= TTF12_HEIGHT * string->lines;
+	//			if ( y < y2 - status_bmp->h * 1.1 + 4 )
+	//			{
+	//				break;
+	//			}
+	//		}
+	//		else
+	//		{
+	//			y -= TTF12_HEIGHT * string->lines;
+	//			if ( y < y2 - status_bmp->h + 4 )
+	//			{
+	//				break;
+	//			}
+	//		}
+	//		z = 0;
+	//		for ( i = 0; i < strlen(string->data); i++ )
+	//		{
+	//			if ( string->data[i] != 10 )   // newline
+	//			{
+	//				z++;
+	//			}
+	//			else
+	//			{
+	//				z = 0;
+	//			}
+	//			if ( z == 65 )
+	//			{
+	//				if ( string->data[i] != 10 )
+	//				{
+	//					char* tempString = (char*)malloc(sizeof(char) * (strlen(string->data) + 2));
+	//					strcpy(tempString, string->data);
+	//					strcpy((char*)(tempString + i + 1), (char*)(string->data + i));
+	//					tempString[i] = 10;
+	//					free(string->data);
+	//					string->data = tempString;
+	//					string->lines++;
+	//				}
+	//				z = 0;
+	//			}
+	//		}
+	//		Uint32 color = makeColor( 0, 0, 0, 255); // black color
+	//		if ( uiscale_chatlog >= 1.5 )
+	//		{
+	//			ttfPrintTextColor(ttf16, x, y, color, false, string->data);
+	//		}
+	//		else
+	//		{
+	//			ttfPrintTextColor(ttf12, x, y, color, false, string->data);
+	//		}
+	//	}
+	//	if ( inputs.bMouseLeft(player) )
+	//	{
+	//		if ( omousey >= y2 - status_bmp->h * uiscale_chatlog + 7 && omousey < y2 - status_bmp->h * uiscale_chatlog + (7 + 27) * uiscale_chatlog )
+	//		{
+	//			if ( omousex >= players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog
+	//				&& omousex < players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog + 11 * uiscale_chatlog )
+	//			{
+	//				// text scroll up
+	//				buttonclick = 3;
+	//				textscroll++;
+	//				inputs.mouseClearLeft(player);
+	//			}
+	//		}
+	//		else if ( omousey >= y2 - status_bmp->h * uiscale_chatlog + 34 && omousey < y2 - status_bmp->h * uiscale_chatlog + (34 + 28) * uiscale_chatlog )
+	//		{
+	//			if ( omousex >= players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog
+	//				&& omousex < players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog + 11 * uiscale_chatlog )
+	//			{
+	//				// text scroll down
+	//				buttonclick = 12;
+	//				textscroll--;
+	//				if ( textscroll < 0 )
+	//				{
+	//					textscroll = 0;
+	//				}
+	//				inputs.mouseClearLeft(player);
+	//			}
+	//		}
+	//		else if ( omousey >= y2 - status_bmp->h * uiscale_chatlog + 62 && omousey < y2 - status_bmp->h * uiscale_chatlog + (62 + 31) * uiscale_chatlog )
+	//		{
+	//			if ( omousex >= players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog
+	//				&& omousex < players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog + 11 * uiscale_chatlog )
+	//			{
+	//				// text scroll down all the way
+	//				buttonclick = 4;
+	//				textscroll = 0;
+	//				inputs.mouseClearLeft(player);
+	//			}
+	//		}
+	//		/*else if( omousey>=y2-status_bmp->h+8 && omousey<y2-status_bmp->h+8+30 ) {
+	//			if( omousex>=players[player]->statusBarUI.getStartX()+618 && omousex<players[player]->statusBarUI.getStartX()+618+11 ) {
+	//				// text scroll up all the way
+	//				buttonclick=13;
+	//				textscroll=list_Size(&messages)-4;
+	//				mousestatus[SDL_BUTTON_LEFT]=0;
+	//			}
+	//		}*/
+	//	}
 
-		// mouse wheel
-		if ( !shootmode )
-		{
-			if ( mousex >= players[player]->statusBarUI.getStartX() && mousex < players[player]->statusBarUI.getStartX() + status_bmp->w * uiscale_chatlog )
-			{
-				if ( mousey >= initial_position.y && mousey < initial_position.y + status_bmp->h * uiscale_chatlog )
-				{
-					if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
-					{
-						mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-						textscroll--;
-						if ( textscroll < 0 )
-						{
-							textscroll = 0;
-						}
-					}
-					else if ( mousestatus[SDL_BUTTON_WHEELUP] )
-					{
-						mousestatus[SDL_BUTTON_WHEELUP] = 0;
-						textscroll++;
-					}
-				}
-			}
-		}
-		if (showfirst)
-		{
-			textscroll = list_Size(&messages) - 3;
-		}
+	//	// mouse wheel
+	//	if ( !shootmode )
+	//	{
+	//		if ( mousex >= players[player]->statusBarUI.getStartX() && mousex < players[player]->statusBarUI.getStartX() + status_bmp->w * uiscale_chatlog )
+	//		{
+	//			if ( mousey >= initial_position.y && mousey < initial_position.y + status_bmp->h * uiscale_chatlog )
+	//			{
+	//				if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+	//				{
+	//					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+	//					textscroll--;
+	//					if ( textscroll < 0 )
+	//					{
+	//						textscroll = 0;
+	//					}
+	//				}
+	//				else if ( mousestatus[SDL_BUTTON_WHEELUP] )
+	//				{
+	//					mousestatus[SDL_BUTTON_WHEELUP] = 0;
+	//					textscroll++;
+	//				}
+	//			}
+	//		}
+	//	}
+	//	if (showfirst)
+	//	{
+	//		textscroll = list_Size(&messages) - 3;
+	//	}
 
 
-		//Text scroll up button.
-		if ( buttonclick == 3 )
-		{
-			pos.x = players[player]->statusBarUI.getStartX() + 617 * uiscale_chatlog;
-			pos.y = y2 - status_bmp->h * uiscale_chatlog + 7 * uiscale_chatlog;
-			pos.w = 11 * uiscale_chatlog;
-			pos.h = 27 * uiscale_chatlog;
-			drawRect(&pos, makeColorRGB(255, 255, 255), 80);
-			//drawImage(textup_bmp, NULL, &pos);
-		}
-		//Text scroll down all the way button.
-		if ( buttonclick == 4 )
-		{
-			pos.x = players[player]->statusBarUI.getStartX() + 617 * uiscale_chatlog;
-			pos.y = y2 - status_bmp->h * uiscale_chatlog + 62 * uiscale_chatlog;
-			pos.w = 11 * uiscale_chatlog;
-			pos.h = 31 * uiscale_chatlog;
-			drawRect(&pos, makeColorRGB(255, 255, 255), 80);
-			//drawImage(textdown_bmp, NULL, &pos);
-		}
-		//Text scroll down button.
-		if ( buttonclick == 12 )
-		{
-			pos.x = players[player]->statusBarUI.getStartX() + 617 * uiscale_chatlog;
-			pos.y = y2 - status_bmp->h * uiscale_chatlog + 34 * uiscale_chatlog;
-			pos.w = 11 * uiscale_chatlog;
-			pos.h = 28 * uiscale_chatlog;
-			drawRect(&pos, makeColorRGB(255, 255, 255), 80);
-			//drawImage(textup_bmp, NULL, &pos);
-		}
-		//Text scroll up all the way button.
-		/*if( buttonclick==13 ) {
-			pos.x=players[player]->statusBarUI.getStartX()+617; pos.y=y2-status_bmp->h+8;
-			pos.w=11; pos.h=30;
-			drawRect(&pos,0xffffffff,80);
-			//drawImage(textdown_bmp, NULL, &pos);
-		}*/
-	}
+	//	//Text scroll up button.
+	//	if ( buttonclick == 3 )
+	//	{
+	//		pos.x = players[player]->statusBarUI.getStartX() + 617 * uiscale_chatlog;
+	//		pos.y = y2 - status_bmp->h * uiscale_chatlog + 7 * uiscale_chatlog;
+	//		pos.w = 11 * uiscale_chatlog;
+	//		pos.h = 27 * uiscale_chatlog;
+	//		drawRect(&pos, makeColorRGB(255, 255, 255), 80);
+	//		//drawImage(textup_bmp, NULL, &pos);
+	//	}
+	//	//Text scroll down all the way button.
+	//	if ( buttonclick == 4 )
+	//	{
+	//		pos.x = players[player]->statusBarUI.getStartX() + 617 * uiscale_chatlog;
+	//		pos.y = y2 - status_bmp->h * uiscale_chatlog + 62 * uiscale_chatlog;
+	//		pos.w = 11 * uiscale_chatlog;
+	//		pos.h = 31 * uiscale_chatlog;
+	//		drawRect(&pos, makeColorRGB(255, 255, 255), 80);
+	//		//drawImage(textdown_bmp, NULL, &pos);
+	//	}
+	//	//Text scroll down button.
+	//	if ( buttonclick == 12 )
+	//	{
+	//		pos.x = players[player]->statusBarUI.getStartX() + 617 * uiscale_chatlog;
+	//		pos.y = y2 - status_bmp->h * uiscale_chatlog + 34 * uiscale_chatlog;
+	//		pos.w = 11 * uiscale_chatlog;
+	//		pos.h = 28 * uiscale_chatlog;
+	//		drawRect(&pos, makeColorRGB(255, 255, 255), 80);
+	//		//drawImage(textup_bmp, NULL, &pos);
+	//	}
+	//	//Text scroll up all the way button.
+	//	/*if( buttonclick==13 ) {
+	//		pos.x=players[player]->statusBarUI.getStartX()+617; pos.y=y2-status_bmp->h+8;
+	//		pos.w=11; pos.h=30;
+	//		drawRect(&pos,0xffffffff,80);
+	//		//drawImage(textdown_bmp, NULL, &pos);
+	//	}*/
+	//}
 
-	int playerStatusBarWidth = 38 * uiscale_playerbars;
-	int playerStatusBarHeight = 156 * uiscale_playerbars;
+	//int playerStatusBarWidth = 38 * uiscale_playerbars;
+	//int playerStatusBarHeight = 156 * uiscale_playerbars;
 
-	if ( !players[player]->hud.hpFrame )
-	{
-		drawHPMPBars(player);
-	}
-	
-	// hunger icon
-	if ( stats[player] && stats[player]->type != AUTOMATON
-		&& (svFlags & SV_FLAG_HUNGER) && stats[player]->HUNGER <= 250 && (ticks % 50) - (ticks % 25) )
-	{
-		pos.x = /*xoffset*/ + playerStatusBarWidth + 10; // was pos.x = 128;
-		pos.y = y2 - 160;
-		pos.w = 64;
-		pos.h = 64;
-		if ( playerRequiresBloodToSustain(player) )
-		{
-			drawImageScaled(hunger_blood_bmp, NULL, &pos);
-		}
-		else
-		{
-			drawImageScaled(hunger_bmp, NULL, &pos);
-		}
-	}
+	//if ( !players[player]->hud.hpFrame )
+	//{
+	//	drawHPMPBars(player);
+	//}
+	//
+	//// hunger icon
+	//if ( stats[player] && stats[player]->type != AUTOMATON
+	//	&& (svFlags & SV_FLAG_HUNGER) && stats[player]->HUNGER <= 250 && (ticks % 50) - (ticks % 25) )
+	//{
+	//	pos.x = /*xoffset*/ + playerStatusBarWidth + 10; // was pos.x = 128;
+	//	pos.y = y2 - 160;
+	//	pos.w = 64;
+	//	pos.h = 64;
+	//	if ( playerRequiresBloodToSustain(player) )
+	//	{
+	//		drawImageScaled(hunger_blood_bmp, NULL, &pos);
+	//	}
+	//	else
+	//	{
+	//		drawImageScaled(hunger_bmp, NULL, &pos);
+	//	}
+	//}
 
-	if ( stats[player] && stats[player]->type == AUTOMATON )
-	{
-		if ( stats[player]->HUNGER > 300 || (ticks % 50) - (ticks % 25) )
-		{
-			pos.x = /*xoffset*/ + playerStatusBarWidth + 10; // was pos.x = 128;
-			pos.y = y2 - 160;
-			pos.w = 64;
-			pos.h = 64;
-			if ( stats[player]->HUNGER > 1200 )
-			{
-				drawImageScaled(hunger_boiler_hotflame_bmp, nullptr, &pos);
-			}
-			else
-			{
-				if ( stats[player]->HUNGER > 600 )
-				{
-					drawImageScaledPartial(hunger_boiler_flame_bmp, nullptr, &pos, 1.f);
-				}
-				else
-				{
-					float percent = (stats[player]->HUNGER - 300) / 300.f; // always show a little bit more at the bottom (10-20%)
-					drawImageScaledPartial(hunger_boiler_flame_bmp, nullptr, &pos, percent);
-				}
-			}
-			drawImageScaled(hunger_boiler_bmp, nullptr, &pos);
-		}
-	}
+	//if ( stats[player] && stats[player]->type == AUTOMATON )
+	//{
+	//	if ( stats[player]->HUNGER > 300 || (ticks % 50) - (ticks % 25) )
+	//	{
+	//		pos.x = /*xoffset*/ + playerStatusBarWidth + 10; // was pos.x = 128;
+	//		pos.y = y2 - 160;
+	//		pos.w = 64;
+	//		pos.h = 64;
+	//		if ( stats[player]->HUNGER > 1200 )
+	//		{
+	//			drawImageScaled(hunger_boiler_hotflame_bmp, nullptr, &pos);
+	//		}
+	//		else
+	//		{
+	//			if ( stats[player]->HUNGER > 600 )
+	//			{
+	//				drawImageScaledPartial(hunger_boiler_flame_bmp, nullptr, &pos, 1.f);
+	//			}
+	//			else
+	//			{
+	//				float percent = (stats[player]->HUNGER - 300) / 300.f; // always show a little bit more at the bottom (10-20%)
+	//				drawImageScaledPartial(hunger_boiler_flame_bmp, nullptr, &pos, percent);
+	//			}
+	//		}
+	//		drawImageScaled(hunger_boiler_bmp, nullptr, &pos);
+	//	}
+	//}
 
-	// minotaur icon
-	if ( minotaurlevel && (ticks % 50) - (ticks % 25) )
-	{
-		pos.x = /*xoffset*/ + playerStatusBarWidth + 10; // was pos.x = 128;
-		pos.y = y2 - 160 + 64 + 2;
-		pos.w = 64;
-		pos.h = 64;
-		drawImageScaled(minotaur_bmp, nullptr, &pos);
-	}
+	//// minotaur icon
+	//if ( minotaurlevel && (ticks % 50) - (ticks % 25) )
+	//{
+	//	pos.x = /*xoffset*/ + playerStatusBarWidth + 10; // was pos.x = 128;
+	//	pos.y = y2 - 160 + 64 + 2;
+	//	pos.w = 64;
+	//	pos.h = 64;
+	//	drawImageScaled(minotaur_bmp, nullptr, &pos);
+	//}
 
 	// draw action prompts.
 	/*if ( players[player]->hud.bShowActionPrompts )
@@ -863,7 +863,7 @@ void drawStatus(int player)
 			pos.y = players[player]->hotbar.faceButtonPositions[num].y;
 		}
 
-		drawImageScaledColor(hotbar_img, NULL, &pos, color);
+		//drawImageScaledColor(hotbar_img, NULL, &pos, color);
 		item = uidToItem(hotbar[num].item);
 		if ( item )
 		{
@@ -1084,11 +1084,11 @@ void drawStatus(int player)
 									{
 										if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 										{
-											messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3488]); // unable to use with current level.
+											messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(3488)); // unable to use with current level.
 										}
 										else
 										{
-											messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
+											messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(3432)); // unable to use in current form message.
 										}
 										playSoundPlayer(player, 90, 64);
 									}
@@ -1104,11 +1104,11 @@ void drawStatus(int player)
 								{
 									if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 									{
-										messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3488]); // unable to use with current level.
+										messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(3488)); // unable to use with current level.
 									}
 									else
 									{
-										messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
+										messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(3432)); // unable to use in current form message.
 									}
 									playSoundPlayer(player, 90, 64);
 								}
@@ -1152,11 +1152,11 @@ void drawStatus(int player)
 				{
 					if ( itemIsEquipped(item, player) )
 					{
-						drawImageScaled(equipped_bmp, NULL, &src);
+						//drawImageScaled(equipped_bmp, NULL, &src);
 					}
 					else if ( item->status == BROKEN )
 					{
-						drawImageScaled(itembroken_bmp, NULL, &src);
+						//drawImageScaled(itembroken_bmp, NULL, &src);
 					}
 				}
 				else
@@ -1165,7 +1165,7 @@ void drawStatus(int player)
 					if ( players[player]->magic.selectedSpell() == spell
 						&& (players[player]->magic.selected_spell_last_appearance == item->appearance || players[player]->magic.selected_spell_last_appearance == -1 ) )
 					{
-						drawImageScaled(equipped_bmp, NULL, &src);
+						//drawImageScaled(equipped_bmp, NULL, &src);
 					}
 				}
 			}
@@ -1345,7 +1345,7 @@ void drawStatus(int player)
 							else if ( itemCategory(item) == SCROLL && item->identified )
 							{
 								src.h += TTF12_HEIGHT;
-								src.w = std::max((2 + longestline(language[3862]) + longestline(item->getScrollLabel())) * TTF12_WIDTH + 8, src.w);
+								src.w = std::max((2 + longestline(Language::get(3862)) + longestline(item->getScrollLabel())) * TTF12_WIDTH + 8, src.w);
 							}
 							else if ( itemCategory(item) == SPELLBOOK && learnedSpellbook )
 							{
@@ -1415,24 +1415,24 @@ void drawStatus(int player)
 						if ( !item->identified )
 						{
 							color = makeColorRGB(255, 255, 0);
-							ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[309]);
+							ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, Language::get(309));
 						}
 						else
 						{
 							if ( item->beatitude < 0 )
 							{
 								color = makeColorRGB(255, 0, 0);
-								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[310]);
+								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, Language::get(310));
 							}
 							else if ( item->beatitude == 0 )
 							{
 								color = 0xFFFFFFFF;
-								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[311]);
+								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, Language::get(311));
 							}
 							else
 							{
 								color = makeColorRGB(0, 255, 0);
-								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[312]);
+								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, Language::get(312));
 							}
 						}
 						if ( item->beatitude == 0 || !item->identified )
@@ -1463,8 +1463,8 @@ void drawStatus(int player)
 							ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, color, "%s", item->description());
 						}
 						int itemWeight = item->getWeight();
-						ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 2, language[313], itemWeight);
-						ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, language[314], item->sellValue(player));
+						ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 2, Language::get(313), itemWeight);
+						ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, Language::get(314), item->sellValue(player));
 						if ( strcmp(spellEffectText, "") )
 						{
 							ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4 + TTF12_HEIGHT * 4, makeColorRGB(0, 255, 255), spellEffectText);
@@ -1498,7 +1498,7 @@ void drawStatus(int player)
 									color = makeColorRGB(127, 127, 127); // grey out the text if monster doesn't benefit.
 								}
 
-								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack(stats[player]));
+								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, Language::get(315), item->weaponGetAttack(stats[player]));
 								stats[player]->type = tmpRace;
 							}
 							else if ( itemCategory(item) == ARMOR )
@@ -1526,13 +1526,13 @@ void drawStatus(int player)
 									color = makeColorRGB(127, 127, 127); // grey out the text if monster doesn't benefit.
 								}
 
-								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC(stats[player]));
+								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, Language::get(316), item->armorGetAC(stats[player]));
 								stats[player]->type = tmpRace;
 							}
 							else if ( itemCategory(item) == SCROLL )
 							{
 								color = makeColorRGB(0, 255, 255);
-								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, "%s%s", language[3862], item->getScrollLabel());
+								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, "%s%s", Language::get(3862), item->getScrollLabel());
 							}
 						}
 					}
@@ -1934,17 +1934,17 @@ void drawStatus(int player)
 
 			pos.x = initial_position.x + (hotbar_t.current_hotbar * hotbar_t.getSlotSize());
 			pos.y = initial_position.y - hotbar_t.getSlotSize();
-			if ( !shootmode && !players[player]->bookGUI.bBookOpen && !openedChest[player] && inputs.bControllerInputPressed(player, INJOY_MENU_DROP_ITEM)
-				&& mouseInBounds(player, pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
-			{
-				//Drop item if this hotbar is currently active & the player pressed the cancel button on the gamepad (typically "b").
-				inputs.controllerClearInput(player, INJOY_MENU_DROP_ITEM);
-				Item* itemToDrop = uidToItem(hotbar[hotbar_t.current_hotbar].item);
-				if ( itemToDrop )
-				{
-					dropItem(itemToDrop, player);
-				}
-			}
+			//if ( !shootmode && !players[player]->bookGUI.bBookOpen && !openedChest[player] && inputs.bControllerInputPressed(player, INJOY_MENU_DROP_ITEM)
+			//	&& mouseInBounds(player, pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
+			//{
+			//	//Drop item if this hotbar is currently active & the player pressed the cancel button on the gamepad (typically "b").
+			//	inputs.controllerClearInput(player, INJOY_MENU_DROP_ITEM);
+			//	Item* itemToDrop = uidToItem(hotbar[hotbar_t.current_hotbar].item);
+			//	if ( itemToDrop )
+			//	{
+			//		dropItem(itemToDrop, player);
+			//	}
+			//}
 		}
 
 		if ( item )
@@ -2069,11 +2069,11 @@ void drawStatus(int player)
 			{
 				if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 				{
-					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3488]); // unable to use with current level.
+					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(3488)); // unable to use with current level.
 				}
 				else
 				{
-					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
+					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(3432)); // unable to use in current form message.
 				}
 				playSoundPlayer(player, 90, 64);
 			}
@@ -2118,30 +2118,30 @@ void drawStatus(int player)
 		{
 			stats[player]->PLAYER_LVL_STAT_TIMER[i]--;
 
-			switch ( i )
-			{
-				// prepare the stat image.
-				case STAT_STR:
-					tmp_bmp = str_bmp64u;
-					break;
-				case STAT_DEX:
-					tmp_bmp = dex_bmp64u;
-					break;
-				case STAT_CON:
-					tmp_bmp = con_bmp64u;
-					break;
-				case STAT_INT:
-					tmp_bmp = int_bmp64u;
-					break;
-				case STAT_PER:
-					tmp_bmp = per_bmp64u;
-					break;
-				case STAT_CHR:
-					tmp_bmp = chr_bmp64u;
-					break;
-				default:
-					break;
-			}
+			//switch ( i )
+			//{
+			//	// prepare the stat image.
+			//	case STAT_STR:
+			//		tmp_bmp = str_bmp64u;
+			//		break;
+			//	case STAT_DEX:
+			//		tmp_bmp = dex_bmp64u;
+			//		break;
+			//	case STAT_CON:
+			//		tmp_bmp = con_bmp64u;
+			//		break;
+			//	case STAT_INT:
+			//		tmp_bmp = int_bmp64u;
+			//		break;
+			//	case STAT_PER:
+			//		tmp_bmp = per_bmp64u;
+			//		break;
+			//	case STAT_CHR:
+			//		tmp_bmp = chr_bmp64u;
+			//		break;
+			//	default:
+			//		break;
+			//}
 			drawImageScaled(tmp_bmp, NULL, &pos);
 			if ( stats[player]->PLAYER_LVL_STAT_TIMER[i + NUMSTATS] > 0 )
 			{
@@ -3454,11 +3454,11 @@ void drawStatusNew(const int player)
 			{
 				if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 				{
-					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3488]); // unable to use with current level.
+					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(3488)); // unable to use with current level.
 				}
 				else
 				{
-					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
+					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(3432)); // unable to use in current form message.
 				}
 				playSoundPlayer(player, 90, 64);
 			}
@@ -3603,11 +3603,11 @@ int drawSpellTooltip(const int player, spell_t* spell, Item* item, SDL_Rect* src
 
 		if ( spell->ID == SPELL_DOMINATE )
 		{
-			snprintf(tempstr, 63, language[2977], getCostOfSpell(spell));
+			snprintf(tempstr, 63, Language::get(2977), getCostOfSpell(spell));
 		}
 		else if ( spell->ID == SPELL_DEMON_ILLUSION )
 		{
-			snprintf(tempstr, 63, language[3853], getCostOfSpell(spell));
+			snprintf(tempstr, 63, Language::get(3853), getCostOfSpell(spell));
 		}
 		else
 		{
@@ -3615,24 +3615,24 @@ int drawSpellTooltip(const int player, spell_t* spell, Item* item, SDL_Rect* src
 			{
 				if ( sustainCostPerSecond > 0.01 )
 				{
-					snprintf(tempstr, 31, language[3325],
+					snprintf(tempstr, 31, Language::get(3325),
 						getCostOfSpell(spell, players[player]->entity), sustainCostPerSecond);
 				}
 				else
 				{
-					snprintf(tempstr, 31, language[308], getCostOfSpell(spell, players[player]->entity));
+					snprintf(tempstr, 31, Language::get(308), getCostOfSpell(spell, players[player]->entity));
 				}
 			}
 			else
 			{
 				if ( sustainCostPerSecond > 0.01 )
 				{
-					snprintf(tempstr, 31, language[3325],
+					snprintf(tempstr, 31, Language::get(3325),
 						getCostOfSpell(spell), sustainCostPerSecond);
 				}
 				else
 				{
-					snprintf(tempstr, 31, language[308], getCostOfSpell(spell));
+					snprintf(tempstr, 31, Language::get(308), getCostOfSpell(spell));
 				}
 			}
 		}
@@ -3722,243 +3722,243 @@ void getSpellEffectString(int spellID, char effectTextBuffer[256], char spellTyp
 		case SPELL_FORCEBOLT:
 		case SPELL_MAGICMISSILE:
 		case SPELL_LIGHTNING:
-			snprintf(effectTextBuffer, 255, language[3289], value);
-			snprintf(spellType, 31, language[3303]);
+			snprintf(effectTextBuffer, 255, Language::get(3289), value);
+			snprintf(spellType, 31, Language::get(3303));
 			break;
 		case SPELL_COLD:
-			snprintf(effectTextBuffer, 255, language[3290], value, language[3294]);
-			snprintf(spellType, 31, language[3303]);
+			snprintf(effectTextBuffer, 255, Language::get(3290), value, Language::get(3294));
+			snprintf(spellType, 31, Language::get(3303));
 			*spellInfoLines = 2;
 			break;
 		case SPELL_POISON:
-			snprintf(effectTextBuffer, 255, language[3290], value, language[3300]);
-			snprintf(spellType, 31, language[3303]);
+			snprintf(effectTextBuffer, 255, Language::get(3290), value, Language::get(3300));
+			snprintf(spellType, 31, Language::get(3303));
 			*spellInfoLines = 2;
 			break;
 		case SPELL_FIREBALL:
-			snprintf(effectTextBuffer, 255, language[3290], value, language[3295]);
-			snprintf(spellType, 31, language[3303]);
+			snprintf(effectTextBuffer, 255, Language::get(3290), value, Language::get(3295));
+			snprintf(spellType, 31, Language::get(3303));
 			*spellInfoLines = 2;
 			break;
 		case SPELL_BLEED:
-			snprintf(effectTextBuffer, 255, language[3291], value, language[3297], language[3294]);
+			snprintf(effectTextBuffer, 255, Language::get(3291), value, Language::get(3297), Language::get(3294));
 			*spellInfoLines = 2;
-			snprintf(spellType, 31, language[3303]);
+			snprintf(spellType, 31, Language::get(3303));
 			break;
 		case SPELL_SLOW:
-			snprintf(effectTextBuffer, 255, language[3292], language[3294]);
-			snprintf(spellType, 31, language[3303]);
+			snprintf(effectTextBuffer, 255, Language::get(3292), Language::get(3294));
+			snprintf(spellType, 31, Language::get(3303));
 			break;
 		case SPELL_SLEEP:
-			snprintf(effectTextBuffer, 255, language[3292], language[3298]);
-			snprintf(spellType, 31, language[3303]);
+			snprintf(effectTextBuffer, 255, Language::get(3292), Language::get(3298));
+			snprintf(spellType, 31, Language::get(3303));
 			break;
 		case SPELL_CONFUSE:
-			snprintf(effectTextBuffer, 255, language[3292], language[3299]);
-			snprintf(spellType, 31, language[3303]);
+			snprintf(effectTextBuffer, 255, Language::get(3292), Language::get(3299));
+			snprintf(spellType, 31, Language::get(3303));
 			break;
 		case SPELL_ACID_SPRAY:
-			snprintf(effectTextBuffer, 255, language[3293], value, language[3300]);
-			snprintf(spellType, 31, language[3304]);
+			snprintf(effectTextBuffer, 255, Language::get(3293), value, Language::get(3300));
+			snprintf(spellType, 31, Language::get(3304));
 			*spellInfoLines = 2;
 			break;
 		case SPELL_HEALING:
 		case SPELL_EXTRAHEALING:
 		{
-			snprintf(spellType, 31, language[3301]);
-			snprintf(effectTextBuffer, 255, language[3307], value);
+			snprintf(spellType, 31, Language::get(3301));
+			snprintf(effectTextBuffer, 255, Language::get(3307), value);
 			*spellInfoLines = 2;
 			break;
 		}
 		case SPELL_REFLECT_MAGIC:
-			snprintf(spellType, 31, language[3302]);
-			snprintf(effectTextBuffer, 255, language[3308]);
+			snprintf(spellType, 31, Language::get(3302));
+			snprintf(effectTextBuffer, 255, Language::get(3308));
 			*spellInfoLines = 2;
 			*sustainCostPerSecond = 6.f;
 			break;
 		case SPELL_LEVITATION:
-			snprintf(spellType, 31, language[3302]);
-			snprintf(effectTextBuffer, 255, language[3309]);
+			snprintf(spellType, 31, Language::get(3302));
+			snprintf(effectTextBuffer, 255, Language::get(3309));
 			*sustainCostPerSecond = 0.6;
 			break;
 		case SPELL_INVISIBILITY:
-			snprintf(spellType, 31, language[3302]);
-			snprintf(effectTextBuffer, 255, language[3310]);
+			snprintf(spellType, 31, Language::get(3302));
+			snprintf(effectTextBuffer, 255, Language::get(3310));
 			*sustainCostPerSecond = 1.f;
 			break;
 		case SPELL_LIGHT:
-			snprintf(spellType, 31, language[3302]);
-			snprintf(effectTextBuffer, 255, language[3311]);
+			snprintf(spellType, 31, Language::get(3302));
+			snprintf(effectTextBuffer, 255, Language::get(3311));
 			*sustainCostPerSecond = 15.f;
 			break;
 		case SPELL_REMOVECURSE:
-			snprintf(spellType, 31, language[3305]);
-			snprintf(effectTextBuffer, 255, language[3312]);
+			snprintf(spellType, 31, Language::get(3305));
+			snprintf(effectTextBuffer, 255, Language::get(3312));
 			break;
 		case SPELL_IDENTIFY:
-			snprintf(spellType, 31, language[3305]);
-			snprintf(effectTextBuffer, 255, language[3313]);
+			snprintf(spellType, 31, Language::get(3305));
+			snprintf(effectTextBuffer, 255, Language::get(3313));
 			break;
 		case SPELL_MAGICMAPPING:
-			snprintf(spellType, 31, language[3305]);
-			snprintf(effectTextBuffer, 255, language[3314]);
+			snprintf(spellType, 31, Language::get(3305));
+			snprintf(effectTextBuffer, 255, Language::get(3314));
 			*spellInfoLines = 2;
 			break;
 		case SPELL_TELEPORTATION:
-			snprintf(spellType, 31, language[3305]);
-			snprintf(effectTextBuffer, 255, language[3315]);
+			snprintf(spellType, 31, Language::get(3305));
+			snprintf(effectTextBuffer, 255, Language::get(3315));
 			break;
 		case SPELL_OPENING:
-			snprintf(spellType, 31, language[3303]);
-			snprintf(effectTextBuffer, 255, language[3316]);
+			snprintf(spellType, 31, Language::get(3303));
+			snprintf(effectTextBuffer, 255, Language::get(3316));
 			break;
 		case SPELL_LOCKING:
-			snprintf(spellType, 31, language[3303]);
-			snprintf(effectTextBuffer, 255, language[3317]);
+			snprintf(spellType, 31, Language::get(3303));
+			snprintf(effectTextBuffer, 255, Language::get(3317));
 			break;
 		case SPELL_CUREAILMENT:
-			snprintf(spellType, 31, language[3301]);
-			snprintf(effectTextBuffer, 255, language[3318]);
+			snprintf(spellType, 31, Language::get(3301));
+			snprintf(effectTextBuffer, 255, Language::get(3318));
 			*spellInfoLines = 2;
 			break;
 		case SPELL_DIG:
-			snprintf(spellType, 31, language[3303]);
-			snprintf(effectTextBuffer, 255, language[3319]);
+			snprintf(spellType, 31, Language::get(3303));
+			snprintf(effectTextBuffer, 255, Language::get(3319));
 			break;
 		case SPELL_SUMMON:
-			snprintf(spellType, 31, language[3306]);
-			snprintf(effectTextBuffer, 255, language[3320]);
+			snprintf(spellType, 31, Language::get(3306));
+			snprintf(effectTextBuffer, 255, Language::get(3320));
 			*spellInfoLines = 3;
 			break;
 		case SPELL_STONEBLOOD:
-			snprintf(spellType, 31, language[3304]);
-			snprintf(effectTextBuffer, 255, language[3292], language[3296]);
+			snprintf(spellType, 31, Language::get(3304));
+			snprintf(effectTextBuffer, 255, Language::get(3292), Language::get(3296));
 			break;
 		case SPELL_DOMINATE:
-			snprintf(spellType, 31, language[3303]);
-			snprintf(effectTextBuffer, 255, language[3321]);
+			snprintf(spellType, 31, Language::get(3303));
+			snprintf(effectTextBuffer, 255, Language::get(3321));
 			*spellInfoLines = 4;
 			break;
 		case SPELL_STEAL_WEAPON:
-			snprintf(spellType, 31, language[3303]);
-			snprintf(effectTextBuffer, 255, language[3322]);
+			snprintf(spellType, 31, Language::get(3303));
+			snprintf(effectTextBuffer, 255, Language::get(3322));
 			*spellInfoLines = 2;
 			break;
 		case SPELL_DRAIN_SOUL:
-			snprintf(spellType, 31, language[3303]);
-			snprintf(effectTextBuffer, 255, language[3323], value);
+			snprintf(spellType, 31, Language::get(3303));
+			snprintf(effectTextBuffer, 255, Language::get(3323), value);
 			*spellInfoLines = 2;
 			break;
 		case SPELL_VAMPIRIC_AURA:
-			snprintf(spellType, 31, language[3302]);
-			snprintf(effectTextBuffer, 255, language[3324]);
+			snprintf(spellType, 31, Language::get(3302));
+			snprintf(effectTextBuffer, 255, Language::get(3324));
 			*spellInfoLines = 4;
 			*sustainCostPerSecond = 0.33;
 			break;
 		case SPELL_CHARM_MONSTER:
-			snprintf(spellType, 31, language[3303]);
-			snprintf(effectTextBuffer, 255, language[3326]);
+			snprintf(spellType, 31, Language::get(3303));
+			snprintf(effectTextBuffer, 255, Language::get(3326));
 			*spellInfoLines = 3;
 			break;
 		case SPELL_REVERT_FORM:
-			snprintf(spellType, 31, language[3305]);
-			snprintf(effectTextBuffer, 255, language[3851]);
+			snprintf(spellType, 31, Language::get(3305));
+			snprintf(effectTextBuffer, 255, Language::get(3851));
 			*spellInfoLines = 1;
 			break;
 		case SPELL_RAT_FORM:
-			snprintf(spellType, 31, language[3305]);
-			snprintf(effectTextBuffer, 255, language[3847]);
+			snprintf(spellType, 31, Language::get(3305));
+			snprintf(effectTextBuffer, 255, Language::get(3847));
 			*spellInfoLines = 2;
 			break;
 		case SPELL_SPIDER_FORM:
-			snprintf(spellType, 31, language[3305]);
-			snprintf(effectTextBuffer, 255, language[3848]);
+			snprintf(spellType, 31, Language::get(3305));
+			snprintf(effectTextBuffer, 255, Language::get(3848));
 			*spellInfoLines = 2;
 			break;
 		case SPELL_TROLL_FORM:
-			snprintf(spellType, 31, language[3305]);
-			snprintf(effectTextBuffer, 255, language[3849]);
+			snprintf(spellType, 31, Language::get(3305));
+			snprintf(effectTextBuffer, 255, Language::get(3849));
 			*spellInfoLines = 2;
 			break;
 		case SPELL_IMP_FORM:
-			snprintf(spellType, 31, language[3305]);
-			snprintf(effectTextBuffer, 255, language[3850]);
+			snprintf(spellType, 31, Language::get(3305));
+			snprintf(effectTextBuffer, 255, Language::get(3850));
 			*spellInfoLines = 2;
 			break;
 		case SPELL_SPRAY_WEB:
-			snprintf(spellType, 31, language[3304]);
-			snprintf(effectTextBuffer, 255, language[3834]);
+			snprintf(spellType, 31, Language::get(3304));
+			snprintf(effectTextBuffer, 255, Language::get(3834));
 			*spellInfoLines = 4;
 			break;
 		case SPELL_SPEED:
-			snprintf(spellType, 31, language[3301]);
-			snprintf(effectTextBuffer, 255, language[3835]);
+			snprintf(spellType, 31, Language::get(3301));
+			snprintf(effectTextBuffer, 255, Language::get(3835));
 			*spellInfoLines = 2;
 			break;
 		case SPELL_FEAR:
-			snprintf(spellType, 31, language[3301]);
-			snprintf(effectTextBuffer, 255, language[3836]);
+			snprintf(spellType, 31, Language::get(3301));
+			snprintf(effectTextBuffer, 255, Language::get(3836));
 			*spellInfoLines = 3;
 			break;
 		case SPELL_STRIKE:
-			snprintf(spellType, 31, language[3305]);
-			snprintf(effectTextBuffer, 255, language[3838]);
+			snprintf(spellType, 31, Language::get(3305));
+			snprintf(effectTextBuffer, 255, Language::get(3838));
 			*spellInfoLines = 4;
 			break;
 		case SPELL_DETECT_FOOD:
-			snprintf(spellType, 31, language[3305]);
-			snprintf(effectTextBuffer, 255, language[3839]);
+			snprintf(spellType, 31, Language::get(3305));
+			snprintf(effectTextBuffer, 255, Language::get(3839));
 			*spellInfoLines = 1;
 			break;
 		case SPELL_WEAKNESS:
-			snprintf(spellType, 31, language[3303]);
-			snprintf(effectTextBuffer, 255, language[3837]);
+			snprintf(spellType, 31, Language::get(3303));
+			snprintf(effectTextBuffer, 255, Language::get(3837));
 			*spellInfoLines = 2;
 			break;
 		case SPELL_AMPLIFY_MAGIC:
-			snprintf(spellType, 31, language[3302]);
-			snprintf(effectTextBuffer, 255, language[3852]);
+			snprintf(spellType, 31, Language::get(3302));
+			snprintf(effectTextBuffer, 255, Language::get(3852));
 			*spellInfoLines = 2;
 			*sustainCostPerSecond = 0.25;
 			break;
 		case SPELL_SHADOW_TAG:
-			snprintf(spellType, 31, language[3303]);
-			snprintf(effectTextBuffer, 255, language[3843]);
+			snprintf(spellType, 31, Language::get(3303));
+			snprintf(effectTextBuffer, 255, Language::get(3843));
 			*spellInfoLines = 3;
 			break;
 		case SPELL_TELEPULL:
-			snprintf(spellType, 31, language[3303]);
-			snprintf(effectTextBuffer, 255, language[3844]);
+			snprintf(spellType, 31, Language::get(3303));
+			snprintf(effectTextBuffer, 255, Language::get(3844));
 			*spellInfoLines = 3;
 			break;
 		case SPELL_DEMON_ILLUSION:
-			snprintf(spellType, 31, language[3303]);
-			snprintf(effectTextBuffer, 255, language[3845]);
+			snprintf(spellType, 31, Language::get(3303));
+			snprintf(effectTextBuffer, 255, Language::get(3845));
 			*spellInfoLines = 3;
 			break;
 		case SPELL_TROLLS_BLOOD:
-			snprintf(spellType, 31, language[3301]);
-			snprintf(effectTextBuffer, 255, language[3840]);
+			snprintf(spellType, 31, Language::get(3301));
+			snprintf(effectTextBuffer, 255, Language::get(3840));
 			*spellInfoLines = 2;
 			break;
 		case SPELL_SALVAGE:
-			snprintf(spellType, 31, language[3301]);
-			snprintf(effectTextBuffer, 255, language[3846]);
+			snprintf(spellType, 31, Language::get(3301));
+			snprintf(effectTextBuffer, 255, Language::get(3846));
 			*spellInfoLines = 2;
 			break;
 		case SPELL_FLUTTER:
-			snprintf(spellType, 31, language[3305]);
-			snprintf(effectTextBuffer, 255, language[3841]);
+			snprintf(spellType, 31, Language::get(3305));
+			snprintf(effectTextBuffer, 255, Language::get(3841));
 			*spellInfoLines = 1;
 			break;
 		case SPELL_DASH:
-			snprintf(spellType, 31, language[3305]);
-			snprintf(effectTextBuffer, 255, language[3842]);
+			snprintf(spellType, 31, Language::get(3305));
+			snprintf(effectTextBuffer, 255, Language::get(3842));
 			*spellInfoLines = 3;
 			break;
 		case SPELL_SELF_POLYMORPH:
-			snprintf(spellType, 31, language[3305]);
-			snprintf(effectTextBuffer, 255, language[3886]);
+			snprintf(spellType, 31, Language::get(3305));
+			snprintf(effectTextBuffer, 255, Language::get(3886));
 			*spellInfoLines = 2;
 			break;
 		case SPELL_CRAB_FORM:

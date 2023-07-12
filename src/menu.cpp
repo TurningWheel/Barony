@@ -129,13 +129,13 @@ int gamemods_subscribedItemsStatus = 0;
 char gamemods_newBlankDirectory[32] = "";
 char gamemods_newBlankDirectoryOldName[32] = "";
 int gamemods_newBlankDirectoryStatus = 0;
-int gamemods_numCurrentModsLoaded = -1;
+//int gamemods_numCurrentModsLoaded = -1;
 const int gamemods_maxTags = 10;
 std::vector<std::pair<std::string, std::string>> gamemods_mountedFilepaths;
 std::list<std::string> gamemods_localModFoldernames;
-bool gamemods_modelsListRequiresReload = false;
+//bool gamemods_modelsListRequiresReload = false;
+//bool gamemods_soundListRequiresReload = false;
 bool gamemods_modelsListLastStartedUnmodded = false; // if starting regular game that had to reset model list, use this to reinit custom models.
-bool gamemods_soundListRequiresReload = false;
 bool gamemods_soundsListLastStartedUnmodded = false; // if starting regular game that had to reset sounds list, use this to reinit custom sounds.
 bool gamemods_tileListRequireReloadUnmodded = false;
 bool gamemods_spriteImagesRequireReloadUnmodded = false;
@@ -147,8 +147,6 @@ bool gamemods_itemsTxtRequireReloadUnmodded = false;
 bool gamemods_itemsGlobalTxtRequireReloadUnmodded = false;
 bool gamemods_monsterLimbsRequireReloadUnmodded = false;
 bool gamemods_systemImagesReloadUnmodded = false;
-bool gamemods_customContentLoadedFirstTime = false;
-bool gamemods_disableSteamAchievements = false;
 bool gamemods_modPreload = false;
 
 sex_t lastSex = MALE;
@@ -365,28 +363,28 @@ void initMenuOptions()
 {
 	menuOptions.clear();
 #if (defined USE_EOS && !defined STEAMWORKS)
-	menuOptions.push_back(std::make_pair(language[1303], 1)); // start game
-	menuOptions.push_back(std::make_pair(language[1304], 2)); // intro
-	menuOptions.push_back(std::make_pair(language[3964], 3)); // hall of trials
-	menuOptions.push_back(std::make_pair(language[1305], 4)); // statistics
-	menuOptions.push_back(std::make_pair(language[3971], 5)); // achievements
-	menuOptions.push_back(std::make_pair(language[1306], 6)); // settings
-	menuOptions.push_back(std::make_pair(language[1307], 7)); // credits
-	menuOptions.push_back(std::make_pair(language[2978], 8)); // custom content
-	menuOptions.push_back(std::make_pair(language[1308], 9)); // quit
+	menuOptions.push_back(std::make_pair(Language::get(1303), 1)); // start game
+	menuOptions.push_back(std::make_pair(Language::get(1304), 2)); // intro
+	menuOptions.push_back(std::make_pair(Language::get(3964), 3)); // hall of trials
+	menuOptions.push_back(std::make_pair(Language::get(1305), 4)); // statistics
+	menuOptions.push_back(std::make_pair(Language::get(3971), 5)); // achievements
+	menuOptions.push_back(std::make_pair(Language::get(1306), 6)); // settings
+	menuOptions.push_back(std::make_pair(Language::get(1307), 7)); // credits
+	menuOptions.push_back(std::make_pair(Language::get(2978), 8)); // custom content
+	menuOptions.push_back(std::make_pair(Language::get(1308), 9)); // quit
 #else
-	menuOptions.push_back(std::make_pair(language[1303], 1)); // start game
-	menuOptions.push_back(std::make_pair(language[1304], 2)); // intro
-	menuOptions.push_back(std::make_pair(language[3964], 3)); // hall of trials
-	menuOptions.push_back(std::make_pair(language[1305], 4)); // statistics
-	menuOptions.push_back(std::make_pair(language[1306], 5)); // settings
-	menuOptions.push_back(std::make_pair(language[1307], 6)); // credits
-	menuOptions.push_back(std::make_pair(language[2978], 7)); // custom content
+	menuOptions.push_back(std::make_pair(Language::get(1303), 1)); // start game
+	menuOptions.push_back(std::make_pair(Language::get(1304), 2)); // intro
+	menuOptions.push_back(std::make_pair(Language::get(3964), 3)); // hall of trials
+	menuOptions.push_back(std::make_pair(Language::get(1305), 4)); // statistics
+	menuOptions.push_back(std::make_pair(Language::get(1306), 5)); // settings
+	menuOptions.push_back(std::make_pair(Language::get(1307), 6)); // credits
+	menuOptions.push_back(std::make_pair(Language::get(2978), 7)); // custom content
 #ifdef STEAMWORKS
-	menuOptions.push_back(std::make_pair(language[2979], 8)); // workshop
-	menuOptions.push_back(std::make_pair(language[1308], 9)); // quit
+	menuOptions.push_back(std::make_pair(Language::get(2979), 8)); // workshop
+	menuOptions.push_back(std::make_pair(Language::get(1308), 9)); // quit
 #else
-	menuOptions.push_back(std::make_pair(language[1308], 8)); // quit
+	menuOptions.push_back(std::make_pair(Language::get(1308), 8)); // quit
 #endif
 #endif
 }
@@ -551,7 +549,7 @@ void inline printJoybindingNames(const SDL_Rect& currentPos, int c, bool &rebind
 {
 	Sint32 omousex = inputs.getMouse(clientnum, Inputs::MouseInputs::OX);
 	Sint32 omousey = inputs.getMouse(clientnum, Inputs::MouseInputs::OY);
-	ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1948 + c]);
+	ttfPrintText(ttf8, currentPos.x, currentPos.y, Language::get(1948 + c));
 	if ( inputs.bMouseLeft(clientnum) && !rebindingaction )
 	{
 		if ( omousex >= currentPos.x && omousex < subx2 - 24 )
@@ -825,11 +823,11 @@ void handleInGamePauseMenu()
 	int numOption = 1;
 
 	text.y = yres / 4 + 80;
-	if ( ((omousex >= text.x && omousex < text.x + strlen(language[1309]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
+	if ( ((omousex >= text.x && omousex < text.x + strlen(Language::get(1309)) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
 	{
 		// resume game
 		menuselect = 1;
-		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[1309]);
+		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, Language::get(1309));
 		if ( inputIsPressed )
 		{
 			pauseMenuOnInputPressed();
@@ -838,7 +836,7 @@ void handleInGamePauseMenu()
 	}
 	else
 	{
-		ttfPrintText(ttf16, text.x, text.y, language[1309]);
+		ttfPrintText(ttf16, text.x, text.y, Language::get(1309));
 	}
 
 	bool achievementsMenu = false;
@@ -851,11 +849,11 @@ void handleInGamePauseMenu()
 	++numOption;
 	if ( achievementsMenu )
 	{
-		if ( ((omousex >= text.x && omousex < text.x + strlen(language[3971]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
+		if ( ((omousex >= text.x && omousex < text.x + strlen(Language::get(3971)) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
 		{
 			// settings menu
 			menuselect = numOption;
-			ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[3971]);
+			ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, Language::get(3971));
 			if ( inputIsPressed )
 			{
 				pauseMenuOnInputPressed();
@@ -864,17 +862,17 @@ void handleInGamePauseMenu()
 		}
 		else
 		{
-			ttfPrintText(ttf16, text.x, text.y, language[3971]);
+			ttfPrintText(ttf16, text.x, text.y, Language::get(3971));
 		}
 		text.y += 24;
 		++numOption;
 	}
 
-	if ( ((omousex >= text.x && omousex < text.x + strlen(language[1306]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
+	if ( ((omousex >= text.x && omousex < text.x + strlen(Language::get(1306)) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
 	{
 		// settings menu
 		menuselect = numOption;
-		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[1306]);
+		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, Language::get(1306));
 		if ( inputIsPressed )
 		{
 			pauseMenuOnInputPressed();
@@ -883,10 +881,10 @@ void handleInGamePauseMenu()
 	}
 	else
 	{
-		ttfPrintText(ttf16, text.x, text.y, language[1306]);
+		ttfPrintText(ttf16, text.x, text.y, Language::get(1306));
 	}
-	char* endgameText = NULL;
-	char* quitgameText = language[1313];
+	const char* endgameText = NULL;
+	const char* quitgameText = Language::get(1313);
 	bool singleplayerAliveEndGameAndSave = false;
 	bool singleplayerBossLevelDisableSaveOnExit = false;
 	bool multiplayerAliveEndGameAndSave = false;
@@ -894,7 +892,7 @@ void handleInGamePauseMenu()
 	{
 		if ( stats[clientnum] && stats[clientnum]->HP > 0 )
 		{
-			endgameText = language[3919];
+			endgameText = Language::get(3919);
 			singleplayerAliveEndGameAndSave = true;
 			if ( !strncmp(map.name, "Boss", 4)
 				|| !strncmp(map.name, "Hell Boss", 9)
@@ -903,35 +901,35 @@ void handleInGamePauseMenu()
 				// boss floor, no save scumming easily!
 				singleplayerAliveEndGameAndSave = false;
 				singleplayerBossLevelDisableSaveOnExit = true;
-				endgameText = language[1310];
-				quitgameText = language[3987];
+				endgameText = Language::get(1310);
+				quitgameText = Language::get(3987);
 			}
 		}
 		else
 		{
-			endgameText = language[1310];
-			quitgameText = language[3987];
+			endgameText = Language::get(1310);
+			quitgameText = Language::get(3987);
 			singleplayerAliveEndGameAndSave = false;
 		}
 	}
 	else if ( multiplayer == SERVER )
 	{
-		endgameText = language[1310];
-		quitgameText = language[3987];
+		endgameText = Language::get(1310);
+		quitgameText = Language::get(3987);
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( !client_disconnected[i] && stats[i] && stats[i]->HP > 0 )
 			{
 				multiplayerAliveEndGameAndSave = true;
-				quitgameText = language[1313];
-				endgameText = language[3019];
+				quitgameText = Language::get(1313);
+				endgameText = Language::get(3019);
 				break;
 			}
 		}
 	}
 	else
 	{
-		endgameText = language[3019];
+		endgameText = Language::get(3019);
 	}
 
 	text.y += 24;
@@ -955,7 +953,7 @@ void handleInGamePauseMenu()
 				suby2 = yres / 2 + 64;
 				if ( singleplayerAliveEndGameAndSave )
 				{
-					strcpy(subtext, language[3920]);
+					strcpy(subtext, Language::get(3920));
 					subx1 = xres / 2 - 188;
 					subx2 = xres / 2 + 188;
 					suby1 = yres / 2 - 64;
@@ -963,10 +961,10 @@ void handleInGamePauseMenu()
 
 					// add a cancel button
 					button_t* button = newButton();
-					strcpy(button->label, language[1316]);
-					button->x = subx2 - strlen(language[1316]) * 12 - 16;
+					strcpy(button->label, Language::get(1316));
+					button->x = subx2 - strlen(Language::get(1316)) * 12 - 16;
 					button->y = suby2 - 28;
-					button->sizex = strlen(language[1316]) * 12 + 8;
+					button->sizex = strlen(Language::get(1316)) * 12 + 8;
 					button->sizey = 20;
 					button->action = &buttonCloseSubwindow;
 					button->visible = 1;
@@ -978,11 +976,11 @@ void handleInGamePauseMenu()
 					subx2 = xres / 2 + 188;
 					if ( singleplayerBossLevelDisableSaveOnExit )
 					{
-						strcpy(subtext, language[3990]);
+						strcpy(subtext, Language::get(3990));
 					}
 					else
 					{
-						strcpy(subtext, language[1129]);
+						strcpy(subtext, Language::get(1129));
 					}
 				}
 			}
@@ -996,20 +994,20 @@ void handleInGamePauseMenu()
 					{
 						suby1 = yres / 2 - 100;
 						suby2 = yres / 2 + 100;
-						strcpy(subtext, language[3021]);
+						strcpy(subtext, Language::get(3021));
 					}
 					else
 					{
 						suby1 = yres / 2 - 90;
 						suby2 = yres / 2 + 90;
-						strcpy(subtext, language[3986]);
+						strcpy(subtext, Language::get(3986));
 					}
 				}
 				else if ( multiplayer == CLIENT )
 				{
 					suby1 = yres / 2 - 112;
 					suby2 = yres / 2 + 112;
-					strcpy(subtext, language[3020]);
+					strcpy(subtext, Language::get(3020));
 				}
 			}
 
@@ -1028,10 +1026,10 @@ void handleInGamePauseMenu()
 
 			// yes button
 			button = newButton();
-			strcpy(button->label, language[1314]);
+			strcpy(button->label, Language::get(1314));
 			button->x = subx1 + 8;
 			button->y = suby2 - 28;
-			button->sizex = strlen(language[1314]) * 12 + 8;
+			button->sizex = strlen(Language::get(1314)) * 12 + 8;
 			button->sizey = 20;
 			if ( multiplayer == SINGLE )
 			{
@@ -1061,10 +1059,10 @@ void handleInGamePauseMenu()
 			{
 				// cancel button
 				button = newButton();
-				strcpy(button->label, language[1316]);
-				button->x = subx2 - strlen(language[1316]) * 12 - 16;
+				strcpy(button->label, Language::get(1316));
+				button->x = subx2 - strlen(Language::get(1316)) * 12 - 16;
 				button->y = suby2 - 28;
-				button->sizex = strlen(language[1316]) * 12 + 8;
+				button->sizex = strlen(Language::get(1316)) * 12 + 8;
 				button->sizey = 20;
 				button->action = &buttonCloseSubwindow;
 				button->visible = 1;
@@ -1081,11 +1079,11 @@ void handleInGamePauseMenu()
 	{
 		text.y += 24;
 		++numOption;
-		if ( ((omousex >= text.x && omousex < text.x + strlen(language[1312]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
+		if ( ((omousex >= text.x && omousex < text.x + strlen(Language::get(1312)) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
 		{
 			//restart game
 			menuselect = numOption;
-			ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[1312]);
+			ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, Language::get(1312));
 			if ( inputIsPressed )
 			{
 				pauseMenuOnInputPressed();
@@ -1096,7 +1094,7 @@ void handleInGamePauseMenu()
 				subx2 = xres / 2 + 164;
 				suby1 = yres / 2 - 48;
 				suby2 = yres / 2 + 48;
-				strcpy(subtext, language[1130]);
+				strcpy(subtext, Language::get(1130));
 
 				// close button
 				button_t* button = newButton();
@@ -1113,10 +1111,10 @@ void handleInGamePauseMenu()
 
 				// yes button
 				button = newButton();
-				strcpy(button->label, language[1314]);
+				strcpy(button->label, Language::get(1314));
 				button->x = subx1 + 8;
 				button->y = suby2 - 28;
-				button->sizex = strlen(language[1314]) * 12 + 8;
+				button->sizex = strlen(Language::get(1314)) * 12 + 8;
 				button->sizey = 20;
 				if ( multiplayer == SINGLE )
 				{
@@ -1133,10 +1131,10 @@ void handleInGamePauseMenu()
 
 				// no button
 				button = newButton();
-				strcpy(button->label, language[1315]);
-				button->x = subx2 - strlen(language[1315]) * 12 - 16;
+				strcpy(button->label, Language::get(1315));
+				button->x = subx2 - strlen(Language::get(1315)) * 12 - 16;
 				button->y = suby2 - 28;
-				button->sizex = strlen(language[1315]) * 12 + 8;
+				button->sizex = strlen(Language::get(1315)) * 12 + 8;
 				button->sizey = 20;
 				button->action = &buttonCloseSubwindow;
 				button->visible = 1;
@@ -1145,7 +1143,7 @@ void handleInGamePauseMenu()
 		}
 		else
 		{
-			ttfPrintText(ttf16, text.x, text.y, language[1312]);
+			ttfPrintText(ttf16, text.x, text.y, Language::get(1312));
 		}
 	}
 	
@@ -1166,18 +1164,18 @@ void handleInGamePauseMenu()
 			subx2 = xres / 2 + 188;
 			suby1 = yres / 2 - 64;
 			suby2 = yres / 2 + 64;
-			strcpy(subtext, language[1131]);
+			strcpy(subtext, Language::get(1131));
 			if ( multiplayer == SINGLE )
 			{
 				if ( !singleplayerAliveEndGameAndSave )
 				{
 					if ( singleplayerBossLevelDisableSaveOnExit )
 					{
-						strcpy(subtext, language[3991]);
+						strcpy(subtext, Language::get(3991));
 					}
 					else
 					{
-						strcpy(subtext, language[3988]);
+						strcpy(subtext, Language::get(3988));
 					}
 				}
 			}
@@ -1189,16 +1187,16 @@ void handleInGamePauseMenu()
 					subx2 = xres / 2 + 224;
 					suby1 = yres / 2 - 64;
 					suby2 = yres / 2 + 64;
-					strcpy(subtext, language[3989]);
+					strcpy(subtext, Language::get(3989));
 				}
 			}
 
 			// yes button
 			button_t* button = newButton();
-			strcpy(button->label, language[1314]);
+			strcpy(button->label, Language::get(1314));
 			button->x = subx1 + 8;
 			button->y = suby2 - 28;
-			button->sizex = strlen(language[1314]) * 12 + 8;
+			button->sizex = strlen(Language::get(1314)) * 12 + 8;
 			button->sizey = 20;
 			button->action = &buttonQuitConfirm;
 			button->visible = 1;
@@ -1208,8 +1206,8 @@ void handleInGamePauseMenu()
 
 			// no button
 			// button = newButton();
-			// strcpy(button->label, language[1315]);
-			// button->sizex = strlen(language[1315]) * 12 + 8;
+			// strcpy(button->label, Language::get(1315));
+			// button->sizex = strlen(Language::get(1315)) * 12 + 8;
 			// button->sizey = 20;
 			// button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
 			// button->y = suby2 - 28;
@@ -1219,10 +1217,10 @@ void handleInGamePauseMenu()
 
 			// cancel button
 			button = newButton();
-			strcpy(button->label, language[1316]);
-			button->x = subx2 - strlen(language[1316]) * 12 - 16;
+			strcpy(button->label, Language::get(1316));
+			button->x = subx2 - strlen(Language::get(1316)) * 12 - 16;
 			button->y = suby2 - 28;
-			button->sizex = strlen(language[1316]) * 12 + 8;
+			button->sizex = strlen(Language::get(1316)) * 12 + 8;
 			button->sizey = 20;
 			button->action = &buttonCloseSubwindow;
 			button->visible = 1;
@@ -1277,11 +1275,11 @@ void handleTutorialPauseMenu()
 #endif
 
 	text.y = yres / 4 + 80;
-	if ( ((omousex >= text.x && omousex < text.x + strlen(language[1309]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
+	if ( ((omousex >= text.x && omousex < text.x + strlen(Language::get(1309)) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
 	{
 		// resume game
 		menuselect = numOption;
-		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[1309]);
+		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, Language::get(1309));
 		if ( inputIsPressed )
 		{
 			pauseMenuOnInputPressed();
@@ -1290,16 +1288,16 @@ void handleTutorialPauseMenu()
 	}
 	else
 	{
-		ttfPrintText(ttf16, text.x, text.y, language[1309]);
+		ttfPrintText(ttf16, text.x, text.y, Language::get(1309));
 	}
 
 	//++numOption;
 	//text.y += 24;
-	//if ( ((omousex >= text.x && omousex < text.x + strlen(language[1306]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
+	//if ( ((omousex >= text.x && omousex < text.x + strlen(Language::get(1306)) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
 	//{
 	//	// settings menu
 	//	menuselect = numOption;
-	//	ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[1306]);
+	//	ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, Language::get(1306));
 	//	if ( inputIsPressed )
 	//	{
 	//		pauseMenuOnInputPressed();
@@ -1308,18 +1306,18 @@ void handleTutorialPauseMenu()
 	//}
 	//else
 	//{
-	//	ttfPrintText(ttf16, text.x, text.y, language[1306]);
+	//	ttfPrintText(ttf16, text.x, text.y, Language::get(1306));
 	//}
 
 	if ( achievementsMenu )
 	{
 		++numOption;
 		text.y += 24;
-		if ( ((omousex >= text.x && omousex < text.x + strlen(language[3971]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
+		if ( ((omousex >= text.x && omousex < text.x + strlen(Language::get(3971)) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
 		{
 			// achievements menu
 			menuselect = numOption;
-			ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[3971]);
+			ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, Language::get(3971));
 			if ( inputIsPressed )
 			{
 				pauseMenuOnInputPressed();
@@ -1328,17 +1326,17 @@ void handleTutorialPauseMenu()
 		}
 		else
 		{
-			ttfPrintText(ttf16, text.x, text.y, language[3971]);
+			ttfPrintText(ttf16, text.x, text.y, Language::get(3971));
 		}
 	}
 
 	++numOption;
 	text.y += 24;
-	if ( ((omousex >= text.x && omousex < text.x + strlen(language[1306]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
+	if ( ((omousex >= text.x && omousex < text.x + strlen(Language::get(1306)) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
 	{
 		// settings menu
 		menuselect = numOption;
-		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[1306]);
+		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, Language::get(1306));
 		if ( inputIsPressed )
 		{
 			pauseMenuOnInputPressed();
@@ -1347,15 +1345,15 @@ void handleTutorialPauseMenu()
 	}
 	else
 	{
-		ttfPrintText(ttf16, text.x, text.y, language[1306]);
+		ttfPrintText(ttf16, text.x, text.y, Language::get(1306));
 	}
 
 	++numOption;
 	text.y += 24;
-	char* returnToHubOptionText = language[3958];
+	const char* returnToHubOptionText = Language::get(3958);
 	if ( mapIsTutorialHub )
 	{
-		returnToHubOptionText = language[3969];
+		returnToHubOptionText = Language::get(3969);
 	}
 
 	if ( ((omousex >= text.x && omousex < text.x + strlen(returnToHubOptionText) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
@@ -1376,19 +1374,19 @@ void handleTutorialPauseMenu()
 
 			if ( mapIsTutorialHub )
 			{
-				strcpy(subtext, language[3970]);
+				strcpy(subtext, Language::get(3970));
 			}
 			else
 			{
-				strcpy(subtext, language[3960]);
+				strcpy(subtext, Language::get(3960));
 			}
 
 			// add a cancel button
 			button_t* button = newButton();
-			strcpy(button->label, language[1316]);
-			button->x = subx2 - strlen(language[1316]) * 12 - 16;
+			strcpy(button->label, Language::get(1316));
+			button->x = subx2 - strlen(Language::get(1316)) * 12 - 16;
 			button->y = suby2 - 28;
-			button->sizex = strlen(language[1316]) * 12 + 8;
+			button->sizex = strlen(Language::get(1316)) * 12 + 8;
 			button->sizey = 20;
 			button->action = &buttonCloseSubwindow;
 			button->visible = 1;
@@ -1409,10 +1407,10 @@ void handleTutorialPauseMenu()
 
 			// yes button
 			button = newButton();
-			strcpy(button->label, language[1314]);
+			strcpy(button->label, Language::get(1314));
 			button->x = subx1 + 8;
 			button->y = suby2 - 28;
-			button->sizex = strlen(language[1314]) * 12 + 8;
+			button->sizex = strlen(Language::get(1314)) * 12 + 8;
 			button->sizey = 20;
 			button->action = &gameModeManager.Tutorial.buttonReturnToTutorialHub;
 			button->visible = 1;
@@ -1430,11 +1428,11 @@ void handleTutorialPauseMenu()
 	{
 		++numOption;
 		text.y += 24;
-		if ( ((omousex >= text.x && omousex < text.x + strlen(language[3957]) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
+		if ( ((omousex >= text.x && omousex < text.x + strlen(Language::get(3957)) * text.w && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
 		{
 			//restart game
 			menuselect = numOption;
-			ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[3957]);
+			ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, Language::get(3957));
 			if ( inputIsPressed )
 			{
 				pauseMenuOnInputPressed();
@@ -1445,14 +1443,14 @@ void handleTutorialPauseMenu()
 				subx2 = xres / 2 + 144;
 				suby1 = yres / 2 - 48;
 				suby2 = yres / 2 + 48;
-				strcpy(subtext, language[3956]);
+				strcpy(subtext, Language::get(3956));
 
 				// add a cancel button
 				button_t* button = newButton();
-				strcpy(button->label, language[1316]);
-				button->x = subx2 - strlen(language[1316]) * 12 - 16;
+				strcpy(button->label, Language::get(1316));
+				button->x = subx2 - strlen(Language::get(1316)) * 12 - 16;
 				button->y = suby2 - 28;
-				button->sizex = strlen(language[1316]) * 12 + 8;
+				button->sizex = strlen(Language::get(1316)) * 12 + 8;
 				button->sizey = 20;
 				button->action = &buttonCloseSubwindow;
 				button->visible = 1;
@@ -1473,10 +1471,10 @@ void handleTutorialPauseMenu()
 
 				// yes button
 				button = newButton();
-				strcpy(button->label, language[1314]);
+				strcpy(button->label, Language::get(1314));
 				button->x = subx1 + 8;
 				button->y = suby2 - 28;
-				button->sizex = strlen(language[1314]) * 12 + 8;
+				button->sizex = strlen(Language::get(1314)) * 12 + 8;
 				button->sizey = 20;
 				button->action = &gameModeManager.Tutorial.buttonRestartTrial;
 				button->visible = 1;
@@ -1487,18 +1485,18 @@ void handleTutorialPauseMenu()
 		}
 		else
 		{
-			ttfPrintText(ttf16, text.x, text.y, language[3957]);
+			ttfPrintText(ttf16, text.x, text.y, Language::get(3957));
 		}
 	}
 
 	text.y += 24;
 	++numOption;
 
-	if ( ((omousex >= 50 && omousex < 50 + strlen(language[3959]) * 18 && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
+	if ( ((omousex >= 50 && omousex < 50 + strlen(Language::get(3959)) * 18 && omousey >= text.y && omousey < text.y + text.h) || (menuselect == numOption)) && subwindow == 0 && introstage == 1 )
 	{
 		menuselect = numOption;
 		// return to main menu
-		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, language[3959]);
+		ttfPrintTextFormattedColor(ttf16, text.x, text.y, colorGray, Language::get(3959));
 		if ( inputIsPressed )
 		{
 			pauseMenuOnInputPressed();
@@ -1509,14 +1507,14 @@ void handleTutorialPauseMenu()
 			subx2 = xres / 2 + 144;
 			suby1 = yres / 2 - 48;
 			suby2 = yres / 2 + 48;
-			strcpy(subtext, language[3961]);
+			strcpy(subtext, Language::get(3961));
 
 			// yes button
 			button_t* button = newButton();
-			strcpy(button->label, language[1314]);
+			strcpy(button->label, Language::get(1314));
 			button->x = subx1 + 8;
 			button->y = suby2 - 28;
-			button->sizex = strlen(language[1314]) * 12 + 8;
+			button->sizex = strlen(Language::get(1314)) * 12 + 8;
 			button->sizey = 20;
 			button->action = &buttonEndGameConfirm;
 			button->visible = 1;
@@ -1526,10 +1524,10 @@ void handleTutorialPauseMenu()
 
 			// cancel button
 			button = newButton();
-			strcpy(button->label, language[1316]);
-			button->x = subx2 - strlen(language[1316]) * 12 - 16;
+			strcpy(button->label, Language::get(1316));
+			button->x = subx2 - strlen(Language::get(1316)) * 12 - 16;
 			button->y = suby2 - 28;
-			button->sizex = strlen(language[1316]) * 12 + 8;
+			button->sizex = strlen(Language::get(1316)) * 12 + 8;
 			button->sizey = 20;
 			button->action = &buttonCloseSubwindow;
 			button->visible = 1;
@@ -1551,7 +1549,7 @@ void handleTutorialPauseMenu()
 	}
 	else
 	{
-		ttfPrintText(ttf16, text.x, text.y, language[3959]);
+		ttfPrintText(ttf16, text.x, text.y, Language::get(3959));
 	}
 }
 
@@ -1614,8 +1612,8 @@ static void handleMainMenu(bool mode)
 		if ( mode && subtitleVisible )
 		{
 			Uint32 colorYellow = makeColor( 255, 255, 0, 255);
-			Uint32 len = strlen(language[1910 + subtitleCurrent]);
-			ttfPrintTextColor(ttf16, src.x + src.w / 2 - (len * TTF16_WIDTH) / 2, src.y + src.h - 32, colorYellow, true, language[1910 + subtitleCurrent]);
+			Uint32 len = strlen(Language::get(1910 + subtitleCurrent));
+			ttfPrintTextColor(ttf16, src.x + src.w / 2 - (len * TTF16_WIDTH) / 2, src.y + src.h - 32, colorYellow, true, Language::get(1910 + subtitleCurrent));
 		}
 #ifdef STEAMWORKS
 		if ( mode )
@@ -1724,12 +1722,12 @@ static void handleMainMenu(bool mode)
 				}
 			}
 #if (defined STEAMWORKS || defined USE_EOS)
-			if ( gamemods_disableSteamAchievements
+			if ( Mods::disableSteamAchievements
 				|| (intro == false && 
 					(conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 					|| conductGameChallenges[CONDUCT_LIFESAVING])) )
 			{
-				getSizeOfText(ttf8, language[3003], &w, &h);
+				getSizeOfText(ttf8, Language::get(3003), &w, &h);
 				if ( gamemods_numCurrentModsLoaded < 0 && !conductGameChallenges[CONDUCT_MODDED] )
 				{
 					h = -4;
@@ -1737,18 +1735,18 @@ static void handleMainMenu(bool mode)
 				if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_DEFAULT )
 				{
 					// achievements are disabled
-					ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 16 - h - h2 * 3, language[3003]);
+					ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 16 - h - h2 * 3, Language::get(3003));
 				}
 				else
 				{
 					// achievements are disabled
-					ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 16 - h - h2 * 3, language[3003]);
+					ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 16 - h - h2 * 3, Language::get(3003));
 				}
 			}
 #endif
 
 #ifdef STEAMWORKS
-			getSizeOfText(ttf8, language[2549], &w, &h);
+			getSizeOfText(ttf8, Language::get(2549), &w, &h);
 			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 && omousey < 8 + h)
 				&& subwindow == 0
 				&& introstage == 1
@@ -1760,18 +1758,18 @@ static void handleMainMenu(bool mode)
 					playSound(139, 64);
 					SteamAPICall_NumPlayersOnline = SteamUserStats()->GetNumberOfCurrentPlayers();
 				}
-				ttfPrintTextFormattedColor(ttf8, xres - 8 - w, 8, colorGray, language[2549], steamOnlinePlayers);
+				ttfPrintTextFormattedColor(ttf8, xres - 8 - w, 8, colorGray, Language::get(2549), steamOnlinePlayers);
 			}
 			else if ( SteamUser()->BLoggedOn() )
 			{
-				ttfPrintTextFormatted(ttf8, xres - 8 - w, 8, language[2549], steamOnlinePlayers);
+				ttfPrintTextFormatted(ttf8, xres - 8 - w, 8, Language::get(2549), steamOnlinePlayers);
 			}
 			if ( intro == false )
 			{
 				if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
 				{
-					getSizeOfText(ttf8, language[2986], &w, &h);
-					ttfPrintTextFormatted(ttf8, xres - 8 - w, 8 + h, language[2986]);
+					getSizeOfText(ttf8, Language::get(2986), &w, &h);
+					ttfPrintTextFormatted(ttf8, xres - 8 - w, 8 + h, Language::get(2986));
 				}
 			}
 			if ( SteamUser()->BLoggedOn() && SteamAPICall_NumPlayersOnline == 0 )
@@ -1792,7 +1790,7 @@ static void handleMainMenu(bool mode)
 #else
 			if ( intro && introstage == 1 )
 			{
-				getSizeOfText(ttf8, language[3402], &w, &h);
+				getSizeOfText(ttf8, Language::get(3402), &w, &h);
 				if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 && omousey < 8 + h)
 					&& subwindow == 0 )
 				{
@@ -1803,11 +1801,11 @@ static void handleMainMenu(bool mode)
 						windowEnterSerialPrompt();
 						
 					}
-					ttfPrintTextFormattedColor(ttf8, xres - 8 - w, 8, colorGray, language[3402]);
+					ttfPrintTextFormattedColor(ttf8, xres - 8 - w, 8, colorGray, Language::get(3402));
 				}
 				else
 				{
-					ttfPrintTextFormatted(ttf8, xres - 8 - w, 8, language[3402]);
+					ttfPrintTextFormatted(ttf8, xres - 8 - w, 8, Language::get(3402));
 				}
 			}
 #endif // STEAMWORKS
@@ -1908,8 +1906,8 @@ static void handleMainMenu(bool mode)
 						// print a loading message
 						drawClearBuffers();
 						int w, h;
-						getSizeOfText(ttf16, language[2990], &w, &h);
-						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2990]);
+						getSizeOfText(ttf16, Language::get(2990), &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, Language::get(2990));
 						GO_SwapBuffers(screen);
 
 						physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
@@ -1922,8 +1920,8 @@ static void handleMainMenu(bool mode)
 						// print a loading message
 						drawClearBuffers();
 						int w, h;
-						getSizeOfText(ttf16, language[2988], &w, &h);
-						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2988]);
+						getSizeOfText(ttf16, Language::get(2988), &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, Language::get(2988));
 						GO_SwapBuffers(screen);
 						physfsReloadSounds(true);
 						gamemods_soundsListLastStartedUnmodded = true;
@@ -1933,8 +1931,8 @@ static void handleMainMenu(bool mode)
 					{
 						drawClearBuffers();
 						int w, h;
-						getSizeOfText(ttf16, language[3018], &w, &h);
-						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3018]);
+						getSizeOfText(ttf16, Language::get(3018), &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, Language::get(3018));
 						GO_SwapBuffers(screen);
 						physfsReloadTiles(true);
 						gamemods_tileListRequireReloadUnmodded = false;
@@ -1944,8 +1942,8 @@ static void handleMainMenu(bool mode)
 					{
 						drawClearBuffers();
 						int w, h;
-						getSizeOfText(ttf16, language[2992], &w, &h);
-						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2992]);
+						getSizeOfText(ttf16, Language::get(2992), &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, Language::get(2992));
 						GO_SwapBuffers(screen);
 						physfsReloadBooks();
 						gamemods_booksRequireReloadUnmodded = false;
@@ -1956,8 +1954,8 @@ static void handleMainMenu(bool mode)
 						gamemodsUnloadCustomThemeMusic();
 						drawClearBuffers();
 						int w, h;
-						getSizeOfText(ttf16, language[2994], &w, &h);
-						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2994]);
+						getSizeOfText(ttf16, Language::get(2994), &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, Language::get(2994));
 						GO_SwapBuffers(screen);
 						bool reloadIntroMusic = false;
 						physfsReloadMusic(reloadIntroMusic, true);
@@ -1974,59 +1972,30 @@ static void handleMainMenu(bool mode)
 					{
 						drawClearBuffers();
 						int w, h;
-						getSizeOfText(ttf16, language[3005], &w, &h);
-						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3005]);
+						getSizeOfText(ttf16, Language::get(3005), &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, Language::get(3005));
 						GO_SwapBuffers(screen);
 						reloadLanguage();
 						gamemods_langRequireReloadUnmodded = false;
-					}
-
-					if ( gamemods_itemsTxtRequireReloadUnmodded )
-					{
-						drawClearBuffers();
-						int w, h;
-						getSizeOfText(ttf16, language[3009], &w, &h);
-						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3009]);
-						GO_SwapBuffers(screen);
-						physfsReloadItemsTxt();
-						gamemods_itemsTxtRequireReloadUnmodded = false;
-					}
-
-					if ( gamemods_itemSpritesRequireReloadUnmodded )
-					{
-						drawClearBuffers();
-						int w, h;
-						getSizeOfText(ttf16, language[3007], &w, &h);
-						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3007]);
-						GO_SwapBuffers(screen);
-						physfsReloadItemSprites(true);
-						gamemods_itemSpritesRequireReloadUnmodded = false;
 					}
 
 					if ( gamemods_spriteImagesRequireReloadUnmodded )
 					{
 						drawClearBuffers();
 						int w, h;
-						getSizeOfText(ttf16, language[3016], &w, &h);
-						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3016]);
+						getSizeOfText(ttf16, Language::get(3016), &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, Language::get(3016));
 						GO_SwapBuffers(screen);
 						physfsReloadSprites(true);
 						gamemods_spriteImagesRequireReloadUnmodded = false;
-					}
-
-					if ( gamemods_itemsGlobalTxtRequireReloadUnmodded )
-					{
-						gamemods_itemsGlobalTxtRequireReloadUnmodded = false;
-						printlog("[PhysFS]: Unloaded modified items/items_global.txt file, reloading item spawn levels...");
-						loadItemLists();
 					}
 
 					if ( gamemods_monsterLimbsRequireReloadUnmodded )
 					{
 						drawClearBuffers();
 						int w, h;
-						getSizeOfText(ttf16, language[3014], &w, &h);
-						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3014]);
+						getSizeOfText(ttf16, Language::get(3014), &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, Language::get(3014));
 						GO_SwapBuffers(screen);
 						physfsReloadMonsterLimbFiles();
 						gamemods_monsterLimbsRequireReloadUnmodded = false;
@@ -2036,20 +2005,15 @@ static void handleMainMenu(bool mode)
 					{
 						drawClearBuffers();
 						int w, h;
-						getSizeOfText(ttf16, language[3016], &w, &h);
-						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3016]);
+						getSizeOfText(ttf16, Language::get(3016), &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, Language::get(3016));
 						GO_SwapBuffers(screen);
 						physfsReloadSystemImages();
 						gamemods_systemImagesReloadUnmodded = false;
 						systemResourceImagesToReload.clear();
-
-						// tidy up some other resource files.
-						rightsidebar_titlebar_img = spell_list_titlebar_bmp;
-						rightsidebar_slot_img = spell_list_gui_slot_bmp;
-						rightsidebar_slot_highlighted_img = spell_list_gui_slot_highlighted_bmp;
 					}
 
-					gamemods_disableSteamAchievements = false;
+					Mods::disableSteamAchievements = false;
 
 					if ( gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt )
 					{
@@ -2264,7 +2228,7 @@ static void handleMainMenu(bool mode)
 					subx2 = xres / 2 + 128;
 					suby1 = yres / 2 - 40;
 					suby2 = yres / 2 + 40;
-					strcpy(subtext, language[1128]);
+					strcpy(subtext, Language::get(1128));
 
 					// close button
 					button = newButton();
@@ -2281,10 +2245,10 @@ static void handleMainMenu(bool mode)
 
 					// yes button
 					button = newButton();
-					strcpy(button->label, language[1314]);
+					strcpy(button->label, Language::get(1314));
 					button->x = subx1 + 8;
 					button->y = suby2 - 28;
-					button->sizex = strlen(language[1314]) * 12 + 8;
+					button->sizex = strlen(Language::get(1314)) * 12 + 8;
 					button->sizey = 20;
 					button->action = &buttonQuitConfirm;
 					button->visible = 1;
@@ -2294,10 +2258,10 @@ static void handleMainMenu(bool mode)
 
 					// no button
 					button = newButton();
-					strcpy(button->label, language[1315]);
-					button->x = subx2 - strlen(language[1315]) * 12 - 16;
+					strcpy(button->label, Language::get(1315));
+					button->x = subx2 - strlen(Language::get(1315)) * 12 - 16;
 					button->y = suby2 - 28;
-					button->sizex = strlen(language[1315]) * 12 + 8;
+					button->sizex = strlen(Language::get(1315)) * 12 + 8;
 					button->sizey = 20;
 					button->action = &buttonCloseSubwindow;
 					button->visible = 1;
@@ -2384,7 +2348,7 @@ static void handleMainMenu(bool mode)
 			}
 			if ( subtext[0] != '\0' )
 			{
-				if ( strncmp(subtext, language[740], 12) )
+				if ( strncmp(subtext, Language::get(740), 12) )
 				{
 					ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 8, subtext);
 				}
@@ -2395,7 +2359,7 @@ static void handleMainMenu(bool mode)
 			}
 			if ( loadGameSaveShowRectangle > 0 && gamemods_numCurrentModsLoaded >= 0 )
 			{
-				ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - TTF12_HEIGHT * 5, uint32ColorBaronyBlue, "%s", language[2982]);
+				ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - TTF12_HEIGHT * 5, uint32ColorBaronyBlue, "%s", Language::get(2982));
 			}
 		}
 		else
@@ -2416,11 +2380,11 @@ static void handleMainMenu(bool mode)
 	{
 		if ( gamemods_numCurrentModsLoaded >= 0 )
 		{
-			ttfPrintText(ttf16, subx1 + 8, suby1 + 8, language[2980]);
+			ttfPrintText(ttf16, subx1 + 8, suby1 + 8, Language::get(2980));
 		}
 		else
 		{
-			ttfPrintText(ttf16, subx1 + 8, suby1 + 8, language[1318]);
+			ttfPrintText(ttf16, subx1 + 8, suby1 + 8, Language::get(1318));
 		}
 
 		// draw character window
@@ -2520,7 +2484,7 @@ static void handleMainMenu(bool mode)
 
 			SDL_Rect raceInfoBtn;
 			raceInfoBtn.y = rotateBtn.y;
-			raceInfoBtn.w = longestline(language[3373]) * TTF12_WIDTH + 8 + 4;
+			raceInfoBtn.w = longestline(Language::get(3373)) * TTF12_WIDTH + 8 + 4;
 			raceInfoBtn.x = rotateBtn.x - raceInfoBtn.w - 4;
 			raceInfoBtn.h = rotateBtn.h;
 			drawWindow(raceInfoBtn.x, raceInfoBtn.y, raceInfoBtn.x + raceInfoBtn.w, raceInfoBtn.y + raceInfoBtn.h);
@@ -2548,13 +2512,13 @@ static void handleMainMenu(bool mode)
 				drawLine(pos.x + pos.w, pos.y, pos.x + pos.w, pos.y + pos.h, makeColorRGB(0, 192, 255), 255);
 				if ( stats[0]->playerRace >= RACE_HUMAN )
 				{
-					ttfPrintText(ttf12, pos.x + 12, pos.y + 6, language[3375 + stats[0]->playerRace]);
+					ttfPrintText(ttf12, pos.x + 12, pos.y + 6, Language::get(3375 + stats[0)->playerRace]);
 				}
-				ttfPrintText(ttf12, raceInfoBtn.x + 4, raceInfoBtn.y + 6, language[3374]);
+				ttfPrintText(ttf12, raceInfoBtn.x + 4, raceInfoBtn.y + 6, Language::get(3374));
 			}
 			else
 			{
-				ttfPrintText(ttf12, raceInfoBtn.x + 4, raceInfoBtn.y + 6, language[3373]);
+				ttfPrintText(ttf12, raceInfoBtn.x + 4, raceInfoBtn.y + 6, Language::get(3373));
 			}
 		}
 
@@ -2585,7 +2549,7 @@ static void handleMainMenu(bool mode)
 		// sexes/race
 		if ( charcreation_step == 1 )
 		{
-			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, language[1319]);
+			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, Language::get(1319));
 			Uint32 colorStep1 = uint32ColorWhite;
 			if ( raceSelect != 0 )
 			{
@@ -2593,19 +2557,19 @@ static void handleMainMenu(bool mode)
 			}
 			if ( stats[0]->sex == 0 )
 			{
-				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 56, colorStep1, "[o] %s", language[1321]);
-				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 73, colorStep1, "[ ] %s", language[1322]);
+				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 56, colorStep1, "[o] %s", Language::get(1321));
+				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 73, colorStep1, "[ ] %s", Language::get(1322));
 
-				ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - 80, uint32ColorWhite, language[1320], language[1321]);
+				ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - 80, uint32ColorWhite, Language::get(1320), Language::get(1321));
 			}
 			else
 			{
-				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 56, colorStep1, "[ ] %s", language[1321]);
-				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 73, colorStep1, "[o] %s", language[1322]);
+				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 56, colorStep1, "[ ] %s", Language::get(1321));
+				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 73, colorStep1, "[o] %s", Language::get(1322));
 
-				ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - 80, uint32ColorWhite, language[1320], language[1322]);
+				ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - 80, uint32ColorWhite, Language::get(1320), Language::get(1322));
 			}
-			ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - 56, uint32ColorWhite, language[3175]);
+			ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - 56, uint32ColorWhite, Language::get(3175));
 
 			// race
 			if ( raceSelect != 1 )
@@ -2616,7 +2580,7 @@ static void handleMainMenu(bool mode)
 			{
 				colorStep1 = uint32ColorWhite;
 			}
-			ttfPrintText(ttf16, subx1 + 24, suby1 + 108, language[3160]);
+			ttfPrintText(ttf16, subx1 + 24, suby1 + 108, Language::get(3160));
 			int pady = suby1 + 108 + 24;
 			bool isLocked = false;
 			for ( int c = 0; c < NUMPLAYABLERACES; )
@@ -2663,7 +2627,7 @@ static void handleMainMenu(bool mode)
 				}
 				if ( stats[0]->playerRace == c )
 				{
-					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[o] %s", language[3161 + c]);
+					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[o] %s", Language::get(3161 + c));
 				}
 				else
 				{
@@ -2693,11 +2657,11 @@ static void handleMainMenu(bool mode)
 						img.w = 22;
 						img.h = 20;
 						drawImageScaled(sidebar_unlock_bmp, nullptr, &img);
-						ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[ ] %s", language[3161 + c]);
+						ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[ ] %s", Language::get(3161 + c));
 					}
 					else
 					{
-						ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[ ] %s", language[3161 + c]);
+						ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[ ] %s", Language::get(3161 + c));
 					}
 				}
 
@@ -2753,10 +2717,10 @@ static void handleMainMenu(bool mode)
 			if ( stats[0]->playerRace > 0 )
 			{
 				displayRaceOptions = true;
-				ttfPrintText(ttf16, subx1 + 24, pady, language[3176]);
+				ttfPrintText(ttf16, subx1 + 24, pady, Language::get(3176));
 				pady += 24;
 				char raceOptionBuffer[128];
-				snprintf(raceOptionBuffer, 63, language[3177], language[3161 + stats[0]->playerRace]);
+				snprintf(raceOptionBuffer, 63, Language::get(3177), Language::get(3161 + stats[0)->playerRace]);
 				if ( stats[0]->appearance > 1 )
 				{
 					stats[0]->appearance = lastAppearance;
@@ -2764,12 +2728,12 @@ static void handleMainMenu(bool mode)
 				if ( stats[0]->appearance == 0 )
 				{
 					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[o] %s", raceOptionBuffer);
-					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady + 17, colorStep1, "[ ] %s", language[3178]);
+					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady + 17, colorStep1, "[ ] %s", Language::get(3178));
 				}
 				else if ( stats[0]->appearance == 1 )
 				{
 					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[ ] %s", raceOptionBuffer);
-					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady + 17, colorStep1, "[o] %s", language[3178]);
+					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady + 17, colorStep1, "[o] %s", Language::get(3178));
 				}
 
 			}
@@ -2954,16 +2918,16 @@ static void handleMainMenu(bool mode)
 								if ( c > RACE_GOATMAN && c <= RACE_INSECTOID && !skipFirstDLC )
 								{
 									tooltip.h = TTF12_HEIGHT * 2 + 8;
-									tooltip.w = longestline(language[3917]) * TTF12_WIDTH + 8;
+									tooltip.w = longestline(Language::get(3917)) * TTF12_WIDTH + 8;
 									drawTooltip(&tooltip);
-									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange, language[3917]);
+									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange, Language::get(3917));
 								}
 								else
 								{
 									tooltip.h = TTF12_HEIGHT * 2 + 8;
-									tooltip.w = longestline(language[3200]) * TTF12_WIDTH + 8;
+									tooltip.w = longestline(Language::get(3200)) * TTF12_WIDTH + 8;
 									drawTooltip(&tooltip);
-									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange, language[3200]);
+									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange, Language::get(3200));
 								}
 #ifdef STEAMWORKS
 								if ( SteamUser()->BLoggedOn() )
@@ -2978,11 +2942,11 @@ static void handleMainMenu(bool mode)
 										{
 											if ( c > RACE_GOATMAN && c <= RACE_INSECTOID && !skipFirstDLC )
 											{
-												openURLTryWithOverlay(language[3993]);
+												openURLTryWithOverlay(Language::get(3993));
 											}
 											else
 											{
-												openURLTryWithOverlay(language[3992]);
+												openURLTryWithOverlay(Language::get(3992));
 											}
 										}
 										inputs.mouseClearLeft(clientnum);
@@ -2993,7 +2957,7 @@ static void handleMainMenu(bool mode)
 								{
 									if ( inputs.bMouseLeft(clientnum) )
 									{
-										openURLTryWithOverlay(language[3985]);
+										openURLTryWithOverlay(Language::get(3985));
 										inputs.mouseClearLeft(clientnum);
 									}
 								}
@@ -3001,7 +2965,7 @@ static void handleMainMenu(bool mode)
 								{
 									if ( inputs.bMouseLeft(clientnum) )
 									{
-										openURLTryWithOverlay(language[3984]);
+										openURLTryWithOverlay(Language::get(3984));
 										inputs.mouseClearLeft(clientnum);
 									}
 								}
@@ -3009,15 +2973,15 @@ static void handleMainMenu(bool mode)
 #else
 								if ( c > RACE_GOATMAN && c <= RACE_INSECTOID )
 								{
-									tooltip.w = longestline(language[3372]) * TTF12_WIDTH + 8;
+									tooltip.w = longestline(Language::get(3372)) * TTF12_WIDTH + 8;
 									drawTooltip(&tooltip);
-									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange, language[3372]);
+									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange, Language::get(3372));
 								}
 								else
 								{
-									tooltip.w = longestline(language[3199]) * TTF12_WIDTH + 8;
+									tooltip.w = longestline(Language::get(3199)) * TTF12_WIDTH + 8;
 									drawTooltip(&tooltip);
-									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange, language[3199]);
+									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange, Language::get(3199));
 								}
 #endif // STEAMWORKS
 							}
@@ -3393,7 +3357,7 @@ static void handleMainMenu(bool mode)
 		// classes
 		else if ( charcreation_step == 2 )
 		{
-			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, language[1323]);
+			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, Language::get(1323));
 			int entriesToDisplay = NUMCLASSES;
 			if ( enabledDLCPack1 && enabledDLCPack2 )
 			{
@@ -3491,7 +3455,7 @@ static void handleMainMenu(bool mode)
 							if ( classToPick > CLASS_MONK )
 							{
 								int langline = 3927 + classToPick - CLASS_CONJURER;
-								tooltip.w = longestline(language[langline]) * TTF12_WIDTH + 8;
+								tooltip.w = longestline(Language::get(langline)) * TTF12_WIDTH + 8;
 								drawLockedTooltip = langline;
 							}
 #endif
@@ -3581,24 +3545,24 @@ static void handleMainMenu(bool mode)
 			{
 				drawTooltip(&tooltip);
 				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
-					uint32ColorOrange, language[drawLockedTooltip]);
+					uint32ColorOrange, Language::get(drawLockedTooltip));
 			}
 		}
 
 		// faces
 		else if ( charcreation_step == 3 )
 		{
-			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, language[1324]);
+			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, Language::get(1324));
 			for ( c = 0; c < NUMAPPEARANCES; c++ )
 			{
 				if ( stats[0]->appearance == c )
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + c * 16, "[o] %s", language[20 + c]);
-					ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[38 + c]);
+					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + c * 16, "[o] %s", Language::get(20 + c));
+					ttfPrintText(ttf12, subx1 + 8, suby2 - 80, Language::get(38 + c));
 				}
 				else
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + c * 16, "[ ] %s", language[20 + c]);
+					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + c * 16, "[ ] %s", Language::get(20 + c));
 				}
 				if ( inputs.bMouseLeft(clientnum) )
 				{
@@ -3645,10 +3609,10 @@ static void handleMainMenu(bool mode)
 		// name
 		else if ( charcreation_step == 4 )
 		{
-			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, language[1325]);
+			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, Language::get(1325));
 			drawDepressed(subx1 + 40, suby1 + 56, subx1 + 364, suby1 + 88);
 			ttfPrintText(ttf16, subx1 + 48, suby1 + 64, stats[0]->name);
-			ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1326]);
+			ttfPrintText(ttf12, subx1 + 8, suby2 - 80, Language::get(1326));
 
 			// enter character name
 			if ( !SDL_IsTextInputActive() )
@@ -3686,7 +3650,7 @@ static void handleMainMenu(bool mode)
 		// gamemode
 		else if ( charcreation_step == 5 )
 		{
-			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, language[1327]);
+			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, Language::get(1327));
 
 			std::vector<Sint32> optionY;
 			std::vector<char*> optionTexts;
@@ -3701,31 +3665,31 @@ static void handleMainMenu(bool mode)
 			{
 				nummodes += 1;
 				optionY.insert(optionY.end(), { suby1 + 56, suby1 + 86, suby1 + 128, suby1 + 178, suby1 + 216, suby1 + 256 });
-				optionTexts.insert(optionTexts.end(), { language[1328], language[1330], language[1330], language[1332], language[1330], language[1332] });
-				optionDescriptions.insert(optionDescriptions.end(), { language[1329], language[3946], language[3947], language[3945], language[1538], language[1539] });
-				optionSubtexts.insert(optionSubtexts.end(), { nullptr, language[3943], language[3944], nullptr, language[1537], language[1537] });
+				optionTexts.insert(optionTexts.end(), { Language::get(1328), Language::get(1330), Language::get(1330), Language::get(1332), Language::get(1330), Language::get(1332) });
+				optionDescriptions.insert(optionDescriptions.end(), { Language::get(1329), Language::get(3946), Language::get(3947), Language::get(3945), Language::get(1538), Language::get(1539) });
+				optionSubtexts.insert(optionSubtexts.end(), { nullptr, Language::get(3943), Language::get(3944), nullptr, Language::get(1537), Language::get(1537) });
 				displayedOptionToGamemode.insert(displayedOptionToGamemode.end(), { SINGLE, SERVER, SERVERCROSSPLAY, CLIENT, DIRECTSERVER, DIRECTCLIENT});
 			}
 			else
 			{
 				optionY.insert(optionY.end(), { suby1 + 56, suby1 + 76, suby1 + 96, suby1 + 136, suby1 + 176, 0 });
-				optionTexts.insert(optionTexts.end(), { language[1328], language[1330], language[1332], language[1330], language[1332], nullptr });
-				optionDescriptions.insert(optionDescriptions.end(), { language[1329], language[1331], language[1333], language[1538], language[1539], nullptr });
-				optionSubtexts.insert(optionSubtexts.end(), { nullptr, nullptr, nullptr, language[1537], language[1537], nullptr });
+				optionTexts.insert(optionTexts.end(), { Language::get(1328), Language::get(1330), Language::get(1332), Language::get(1330), Language::get(1332), nullptr });
+				optionDescriptions.insert(optionDescriptions.end(), { Language::get(1329), Language::get(1331), Language::get(1333), Language::get(1538), Language::get(1539), nullptr });
+				optionSubtexts.insert(optionSubtexts.end(), { nullptr, nullptr, nullptr, Language::get(1537), Language::get(1537), nullptr });
 				displayedOptionToGamemode.insert(displayedOptionToGamemode.end(), { SINGLE, SERVER, CLIENT, DIRECTSERVER, DIRECTCLIENT, 0 });
 			}
 #elif (defined(USE_EOS) || defined(STEAMWORKS))
 			nummodes += 2;
 			optionY.insert(optionY.end(), { suby1 + 56, suby1 + 76, suby1 + 96, suby1 + 136, suby1 + 176, 0 });
-			optionTexts.insert(optionTexts.end(), { language[1328], language[1330], language[1332], language[1330], language[1332], nullptr });
-			optionDescriptions.insert(optionDescriptions.end(), { language[1329], language[1331], language[1333], language[1538], language[1539], nullptr });
-			optionSubtexts.insert(optionSubtexts.end(), { nullptr, nullptr, nullptr, language[1537], language[1537] });
+			optionTexts.insert(optionTexts.end(), { Language::get(1328), Language::get(1330), Language::get(1332), Language::get(1330), Language::get(1332), nullptr });
+			optionDescriptions.insert(optionDescriptions.end(), { Language::get(1329), Language::get(1331), Language::get(1333), Language::get(1538), Language::get(1539), nullptr });
+			optionSubtexts.insert(optionSubtexts.end(), { nullptr, nullptr, nullptr, Language::get(1537), Language::get(1537) });
 			displayedOptionToGamemode.insert(displayedOptionToGamemode.end(), { SINGLE, SERVER, CLIENT, DIRECTSERVER, DIRECTCLIENT, 0 });
 #else
 			optionY.insert(optionY.end(), { suby1 + 56, suby1 + 76, suby1 + 96, suby1 + 136, suby1 + 176, 0 });
-			optionTexts.insert(optionTexts.end(), { language[1328], language[1330], language[1332], language[1330], language[1332], nullptr });
-			optionDescriptions.insert(optionDescriptions.end(), { language[1329], language[1331], language[1333], language[1538], language[1539], nullptr });
-			optionSubtexts.insert(optionSubtexts.end(), { nullptr, nullptr, nullptr, language[1537], language[1537] });
+			optionTexts.insert(optionTexts.end(), { Language::get(1328), Language::get(1330), Language::get(1332), Language::get(1330), Language::get(1332), nullptr });
+			optionDescriptions.insert(optionDescriptions.end(), { Language::get(1329), Language::get(1331), Language::get(1333), Language::get(1538), Language::get(1539), nullptr });
+			optionSubtexts.insert(optionSubtexts.end(), { nullptr, nullptr, nullptr, Language::get(1537), Language::get(1537) });
 			displayedOptionToGamemode.insert(displayedOptionToGamemode.end(), { SINGLE, SERVER, CLIENT, DIRECTSERVER, DIRECTCLIENT, 0 });
 #endif
 			for ( int mode = 0; mode < nummodes; mode++ )
@@ -3752,23 +3716,23 @@ static void handleMainMenu(bool mode)
 				{
 					if ( singleplayerSavegameFreeSlot == -1 )
 					{
-						ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60, uint32ColorOrange, true, language[2965]);
+						ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60, uint32ColorOrange, true, Language::get(2965));
 					}
 				}
 				else if ( multiplayerselect > SINGLE )
 				{
 					if ( multiplayerSavegameFreeSlot == -1 )
 					{
-						ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60, uint32ColorOrange, true, language[2966]);
+						ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60, uint32ColorOrange, true, Language::get(2966));
 					}
 					if ( gamemods_numCurrentModsLoaded >= 0 )
 					{
-						ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60 - TTF12_HEIGHT * 6, uint32ColorOrange, true, language[2981]);
+						ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60 - TTF12_HEIGHT * 6, uint32ColorOrange, true, Language::get(2981));
 					}
 				}
 				if ( gamemods_numCurrentModsLoaded >= 0 )
 				{
-					ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60 + TTF12_HEIGHT, uint32ColorBaronyBlue, true, language[2982]);
+					ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60 + TTF12_HEIGHT, uint32ColorBaronyBlue, true, Language::get(2982));
 				}
 				if ( inputs.bMouseLeft(clientnum) )
 				{
@@ -3841,7 +3805,7 @@ static void handleMainMenu(bool mode)
 
 	// serial window.
 #if (!defined STEAMWORKS && !defined USE_EOS)
-	if ( intro && introstage == 1 && subwindow && !strcmp(subtext, language[3403]) && serialEnterWindow )
+	if ( intro && introstage == 1 && subwindow && !strcmp(subtext, Language::get(3403)) && serialEnterWindow )
 	{
 		drawDepressed(subx1 + 8, suby1 + 32, subx2 - 8, suby1 + 56);
 		ttfPrintText(ttf12, subx1 + 16, suby1 + 40, serialInputText);
@@ -3952,7 +3916,7 @@ static void handleMainMenu(bool mode)
 		if ( settings_tab == SETTINGS_VIDEO_TAB )
 		{
 			// resolution
-			ttfPrintText(ttf12, subx1 + 24, suby1 + 60, language[1338]);
+			ttfPrintText(ttf12, subx1 + 24, suby1 + 60, Language::get(1338));
 			c=0;
 			for ( auto cur : resolutions )
 			{
@@ -3983,86 +3947,86 @@ static void handleMainMenu(bool mode)
 			}
 
 			// extra options
-			ttfPrintText(ttf12, subx1 + 224, suby1 + 60, language[1339]);
+			ttfPrintText(ttf12, subx1 + 224, suby1 + 60, Language::get(1339));
 			if ( settings_smoothlighting )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 84, "[x] %s", language[1340]);
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 84, "[x] %s", Language::get(1340));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 84, "[ ] %s", language[1340]);
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 84, "[ ] %s", Language::get(1340));
 			}
 			if ( settings_fullscreen )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 108, "[x] %s", language[1341]);
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 108, "[x] %s", Language::get(1341));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 108, "[ ] %s", language[1341]);
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 108, "[ ] %s", Language::get(1341));
 			}
 			if ( settings_shaking )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 132, "[x] %s", language[1342]);
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 132, "[x] %s", Language::get(1342));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 132, "[ ] %s", language[1342]);
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 132, "[ ] %s", Language::get(1342));
 			}
 			if ( settings_bobbing )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 156, "[x] %s", language[1343]);
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 156, "[x] %s", Language::get(1343));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 156, "[ ] %s", language[1343]);
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 156, "[ ] %s", Language::get(1343));
 			}
 			if ( settings_spawn_blood )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 180, "[x] %s", language[1344]);
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 180, "[x] %s", Language::get(1344));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 180, "[ ] %s", language[1344]);
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 180, "[ ] %s", Language::get(1344));
 			}
 			if ( settings_colorblind )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 204, "[x] %s", language[1345]);
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 204, "[x] %s", Language::get(1345));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 204, "[ ] %s", language[1345]);
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 204, "[ ] %s", Language::get(1345));
 			}
 			if ( settings_light_flicker )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 228, "[x] %s", language[2967]);
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 228, "[x] %s", Language::get(2967));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 228, "[ ] %s", language[2967]);
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 228, "[ ] %s", Language::get(2967));
 			}
 			if ( settings_vsync )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 252, "[x] %s", language[3011]);
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 252, "[x] %s", Language::get(3011));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 252, "[ ] %s", language[3011]);
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 252, "[ ] %s", Language::get(3011));
 			}
 			if ( settings_status_effect_icons )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 276, "[x] %s", language[3357]);
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 276, "[x] %s", Language::get(3357));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 276, "[ ] %s", language[3357]);
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 276, "[ ] %s", Language::get(3357));
 			}
 			if ( settings_borderless )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 300, "[x] %s", language[3935]);
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 300, "[x] %s", Language::get(3935));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 300, "[ ] %s", language[3935]);
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 300, "[ ] %s", Language::get(3935));
 			}
 
 			if ( inputs.bMouseLeft(clientnum) )
@@ -4123,66 +4087,66 @@ static void handleMainMenu(bool mode)
 			}
 
 			// minimap options
-			ttfPrintText(ttf12, subx1 + 498, suby1 + 60, language[3022]);
+			ttfPrintText(ttf12, subx1 + 498, suby1 + 60, Language::get(3022));
 
 			// total scale
-			ttfPrintText(ttf12, subx1 + 498, suby1 + 84, language[3025]);
+			ttfPrintText(ttf12, subx1 + 498, suby1 + 84, Language::get(3025));
 			doSlider(subx1 + 498, suby1 + 84 + 24, 10, 2, 16, 1, (int*)(&settings_minimap_scale));
 
 			// objects (players/allies/minotaur) scale
-			ttfPrintText(ttf12, subx1 + 498, suby1 + 130, language[3026]);
+			ttfPrintText(ttf12, subx1 + 498, suby1 + 130, Language::get(3026));
 			doSlider(subx1 + 498, suby1 + 130 + 24, 10, 0, 4, 1, (int*)(&settings_minimap_object_zoom));
 
 			// foreground transparency
-			ttfPrintText(ttf12, subx1 + 498, suby1 + 176, language[3023]);
+			ttfPrintText(ttf12, subx1 + 498, suby1 + 176, Language::get(3023));
 			doSlider(subx1 + 498, suby1 + 176 + 24, 10, 0, 100, 1, (int*)(&settings_minimap_transparency_foreground));
 
 			// background transparency
-			ttfPrintText(ttf12, subx1 + 498, suby1 + 222, language[3024]);
+			ttfPrintText(ttf12, subx1 + 498, suby1 + 222, Language::get(3024));
 			doSlider(subx1 + 498, suby1 + 222 + 24, 10, 0, 100, 1, (int*)(&settings_minimap_transparency_background));
 
 			// UI options
-			ttfPrintText(ttf12, subx1 + 498, suby1 + 276, language[3034]);
+			ttfPrintText(ttf12, subx1 + 498, suby1 + 276, Language::get(3034));
 
 			if ( settings_uiscale_charactersheet )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 300, "[x] %s", language[3027]);
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 300, "[x] %s", Language::get(3027));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 300, "[ ] %s", language[3027]);
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 300, "[ ] %s", Language::get(3027));
 			}
 			if ( settings_uiscale_skillspage )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 324, "[x] %s", language[3028]);
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 324, "[x] %s", Language::get(3028));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 324, "[ ] %s", language[3028]);
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 324, "[ ] %s", Language::get(3028));
 			}
 			if ( settings_hide_statusbar )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 348, "[x] %s", language[3033]);
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 348, "[x] %s", Language::get(3033));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 348, "[ ] %s", language[3033]);
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 348, "[ ] %s", Language::get(3033));
 			}
 			if ( settings_hide_playertags )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 372, "[x] %s", language[3136]);
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 372, "[x] %s", Language::get(3136));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 372, "[ ] %s", language[3136]);
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 372, "[ ] %s", Language::get(3136));
 			}
 			if ( settings_show_skill_values )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 396, "[x] %s", language[3159]);
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 396, "[x] %s", Language::get(3159));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 396, "[ ] %s", language[3159]);
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 396, "[ ] %s", Language::get(3159));
 			}
 
 			if ( inputs.bMouseLeft(clientnum) )
@@ -4217,66 +4181,66 @@ static void handleMainMenu(bool mode)
 				}
 			}
 			// UI scale sliders
-			ttfPrintText(ttf12, subx1 + 498, suby2 - 220, language[3029]);
+			ttfPrintText(ttf12, subx1 + 498, suby2 - 220, Language::get(3029));
 			doSliderF(subx1 + 498, suby2 - 220 + 24, 10, 1.f, 2.f, 0.25, &settings_uiscale_hotbar);
-			ttfPrintText(ttf12, subx1 + 498, suby2 - 174, language[3030]);
+			ttfPrintText(ttf12, subx1 + 498, suby2 - 174, Language::get(3030));
 			doSliderF(subx1 + 498, suby2 - 174 + 24, 10, 1.f, 2.f, 0.25, &settings_uiscale_chatlog);
-			ttfPrintText(ttf12, subx1 + 498, suby2 - 128, language[3031]);
+			ttfPrintText(ttf12, subx1 + 498, suby2 - 128, Language::get(3031));
 			doSliderF(subx1 + 498, suby2 - 128 + 24, 10, 1.f, 2.f, 0.25, &settings_uiscale_playerbars);
-			ttfPrintText(ttf12, subx1 + 498, suby2 - 80, language[3032]);
+			ttfPrintText(ttf12, subx1 + 498, suby2 - 80, Language::get(3032));
 			doSliderF(subx1 + 498, suby2 - 80 + 24, 10, 1.f, 2.f, 0.25, &settings_uiscale_inventory);
 
 			// fov slider
-			ttfPrintText(ttf12, subx1 + 24, suby2 - 174, language[1346]);
+			ttfPrintText(ttf12, subx1 + 24, suby2 - 174, Language::get(1346));
 			doSlider(subx1 + 24, suby2 - 148, 14, 40, 100, 1, (int*)(&settings_fov));
 
 			// gamma slider
-			ttfPrintText(ttf12, subx1 + 24, suby2 - 128, language[1347]);
+			ttfPrintText(ttf12, subx1 + 24, suby2 - 128, Language::get(1347));
 			doSliderF(subx1 + 24, suby2 - 104, 14, 0.25, 2.f, 0.25, &settings_gamma);
 
 			// fps slider
-			ttfPrintText(ttf12, subx1 + 24, suby2 - 80, language[2411]);
+			ttfPrintText(ttf12, subx1 + 24, suby2 - 80, Language::get(2411));
 			doSlider(subx1 + 24, suby2 - 56, 14, 60, 300, 1, (int*)(&settings_fps));
 		}
 
 		// audio tab
 		if ( settings_tab == SETTINGS_AUDIO_TAB )
 		{
-			ttfPrintText(ttf12, subx1 + 24, suby1 + 60, language[1348]);
+			ttfPrintText(ttf12, subx1 + 24, suby1 + 60, Language::get(1348));
 			doSlider(subx1 + 24, suby1 + 84, 15, 0, 128, 0, &settings_sfxvolume);
 
-			ttfPrintText(ttf12, subx1 + 24, suby1 + 108, language[3972]);
+			ttfPrintText(ttf12, subx1 + 24, suby1 + 108, Language::get(3972));
 			doSlider(subx1 + 24, suby1 + 132, 15, 0, 128, 0, &settings_sfxAmbientVolume);
 
-			ttfPrintText(ttf12, subx1 + 24, suby1 + 156, language[3973]);
+			ttfPrintText(ttf12, subx1 + 24, suby1 + 156, Language::get(3973));
 			doSlider(subx1 + 24, suby1 + 180, 15, 0, 128, 0, &settings_sfxEnvironmentVolume);
 
-			ttfPrintText(ttf12, subx1 + 24, suby1 + 204, language[1349]);
+			ttfPrintText(ttf12, subx1 + 24, suby1 + 204, Language::get(1349));
 			doSlider(subx1 + 24, suby1 + 228, 15, 0, 128, 0, &settings_musvolume);
 
 			if ( settings_minimap_ping_mute )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 264, "[x] %s", language[3012]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 264, "[x] %s", Language::get(3012));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 264, "[ ] %s", language[3012]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 264, "[ ] %s", Language::get(3012));
 			}
 			if ( settings_mute_audio_on_focus_lost )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 288, "[x] %s", language[3158]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 288, "[x] %s", Language::get(3158));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 288, "[ ] %s", language[3158]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 288, "[ ] %s", Language::get(3158));
 			}
 			if ( settings_mute_player_monster_sounds )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 312, "[x] %s", language[3371]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 312, "[x] %s", Language::get(3371));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 312, "[ ] %s", language[3371]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 312, "[ ] %s", Language::get(3371));
 			}
 			if ( inputs.bMouseLeft(clientnum) )
 			{
@@ -4304,7 +4268,7 @@ static void handleMainMenu(bool mode)
 		// keyboard tab
 		if ( settings_tab == SETTINGS_KEYBOARD_TAB )
 		{
-			ttfPrintText(ttf12, subx1 + 24, suby1 + 60, language[1350]);
+			ttfPrintText(ttf12, subx1 + 24, suby1 + 60, Language::get(1350));
 
 			bool rebindingkey = false;
 			if ( rebindkey != -1 )
@@ -4316,19 +4280,19 @@ static void handleMainMenu(bool mode)
 			{
 				if ( c < 14 )
 				{
-					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, language[1351 + c]);
+					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, Language::get(1351 + c));
 				}
 				else if ( c < 16 )
 				{
-					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, language[1940 + (c - 14)]);
+					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, Language::get(1940 + (c - 14)));
 				}
 				else if ( c < 22 )
 				{
-					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, language[1986 + (c - 16)]);
+					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, Language::get(1986 + (c - 16)));
 				}
 				else if ( c < 25 )
 				{
-					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, language[3901 + (c - 22)]);
+					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, Language::get(3901 + (c - 22)));
 				}
 				if ( inputs.bMouseLeft(clientnum) && !rebindingkey )
 				{
@@ -4387,33 +4351,33 @@ static void handleMainMenu(bool mode)
 		// mouse tab
 		if ( settings_tab == SETTINGS_MOUSE_TAB )
 		{
-			ttfPrintText(ttf12, subx1 + 24, suby1 + 60, language[1365]);
+			ttfPrintText(ttf12, subx1 + 24, suby1 + 60, Language::get(1365));
 			doSliderF(subx1 + 24, suby1 + 84, 11, 0, 128, 1, &settings_mousespeed);
 
 			// checkboxes
 			if ( settings_reversemouse )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 108, "[x] %s", language[1366]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 108, "[x] %s", Language::get(1366));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 108, "[ ] %s", language[1366]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 108, "[ ] %s", Language::get(1366));
 			}
 			if ( settings_smoothmouse )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 132, "[x] %s", language[1367]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 132, "[x] %s", Language::get(1367));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 132, "[ ] %s", language[1367]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 132, "[ ] %s", Language::get(1367));
 			}
 			if ( settings_disablemouserotationlimit )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 156, "[x] %s", language[3918]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 156, "[x] %s", Language::get(3918));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 156, "[ ] %s", language[3918]);
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 156, "[ ] %s", Language::get(3918));
 			}
 			if ( inputs.bMouseLeft(clientnum) )
 			{
@@ -4445,7 +4409,7 @@ static void handleMainMenu(bool mode)
 			startPos.x = subx1 + 24;
 			startPos.y = suby1 + 60;
 			SDL_Rect currentPos = startPos;
-			ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1996]);
+			ttfPrintText(ttf8, currentPos.x, currentPos.y, Language::get(1996));
 			currentPos.y += 24;
 
 			bool rebindingaction = false;
@@ -4463,7 +4427,7 @@ static void handleMainMenu(bool mode)
 			//Print out the menu-exclusive bindings.
 			currentPos.y += 12;
 			drawLine(subx1 + 24, currentPos.y - 6, subx2 - 24, currentPos.y - 6, uint32ColorGray, 255);
-			ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1994]);
+			ttfPrintText(ttf8, currentPos.x, currentPos.y, Language::get(1994));
 			currentPos.y += 18;
 			for ( c = INDEX_JOYBINDINGS_START_MENU; c < INDEX_JOYBINDINGS_START_GAME; ++c, currentPos.y += 12 )
 			{
@@ -4473,7 +4437,7 @@ static void handleMainMenu(bool mode)
 			//Print out the game-exclusive bindings.
 			currentPos.y += 12;
 			drawLine(subx1 + 24, currentPos.y - 6, subx2 - 24, currentPos.y - 6, uint32ColorGray, 255);
-			ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1995]);
+			ttfPrintText(ttf8, currentPos.x, currentPos.y, Language::get(1995));
 			currentPos.y += 18;
 			for ( c = INDEX_JOYBINDINGS_START_GAME; c < NUM_JOY_IMPULSES; ++c, currentPos.y += 12 )
 			{
@@ -4510,11 +4474,11 @@ static void handleMainMenu(bool mode)
 			//Checkboxes.
 			if (settings_gamepad_leftx_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2401]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", Language::get(2401));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2401]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", Language::get(2401));
 			}
 
 			if (inputs.bMouseLeft(clientnum) && mouseInBounds(clientnum, current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -4527,11 +4491,11 @@ static void handleMainMenu(bool mode)
 
 			if (settings_gamepad_lefty_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2402]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", Language::get(2402));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2402]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", Language::get(2402));
 			}
 
 			if (inputs.bMouseLeft(clientnum) && mouseInBounds(clientnum, current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -4544,11 +4508,11 @@ static void handleMainMenu(bool mode)
 
 			if (settings_gamepad_rightx_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2403]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", Language::get(2403));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2403]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", Language::get(2403));
 			}
 
 			if (inputs.bMouseLeft(clientnum) && mouseInBounds(clientnum, current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -4561,11 +4525,11 @@ static void handleMainMenu(bool mode)
 
 			if (settings_gamepad_righty_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2404]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", Language::get(2404));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2404]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", Language::get(2404));
 			}
 
 			if (inputs.bMouseLeft(clientnum) && mouseInBounds(clientnum, current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -4578,11 +4542,11 @@ static void handleMainMenu(bool mode)
 
 			if (settings_gamepad_menux_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2405]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", Language::get(2405));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2405]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", Language::get(2405));
 			}
 
 			if (inputs.bMouseLeft(clientnum) && mouseInBounds(clientnum, current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -4595,11 +4559,11 @@ static void handleMainMenu(bool mode)
 
 			if (settings_gamepad_menuy_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2406]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", Language::get(2406));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2406]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", Language::get(2406));
 			}
 
 			if (inputs.bMouseLeft(clientnum) && mouseInBounds(clientnum, current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -4610,28 +4574,28 @@ static void handleMainMenu(bool mode)
 
 			current_option_y += 24;
 
-			ttfPrintText(ttf12, current_option_x, current_option_y, language[2407]);
+			ttfPrintText(ttf12, current_option_x, current_option_y, Language::get(2407));
 			current_option_y += 24;
 			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_rightx_sensitivity, font8x8_bmp, 12); //Doesn't like any fonts besides the default.
 			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_rightx_sensitivity);
 
 			current_option_y += 24;
 
-			ttfPrintText(ttf12, current_option_x, current_option_y, language[2408]);
+			ttfPrintText(ttf12, current_option_x, current_option_y, Language::get(2408));
 			current_option_y += 24;
 			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_righty_sensitivity, font8x8_bmp, 12);
 			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_righty_sensitivity);
 
 			current_option_y += 24;
 
-			ttfPrintText(ttf12, current_option_x, current_option_y, language[2409]);
+			ttfPrintText(ttf12, current_option_x, current_option_y, Language::get(2409));
 			current_option_y += 24;
 			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_menux_sensitivity, font8x8_bmp, 12);
 			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_menux_sensitivity);
 
 			current_option_y += 24;
 
-			ttfPrintText(ttf12, current_option_x, current_option_y, language[2410]);
+			ttfPrintText(ttf12, current_option_x, current_option_y, Language::get(2410));
 			current_option_y += 24;
 			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_menuy_sensitivity, font8x8_bmp, 12);
 			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_menuy_sensitivity);
@@ -4643,46 +4607,46 @@ static void handleMainMenu(bool mode)
 			int current_x = subx1;
 			int current_y = suby1 + 60;
 
-			ttfPrintText(ttf12, subx1 + 24, current_y, language[1371]);
+			ttfPrintText(ttf12, subx1 + 24, current_y, Language::get(1371));
 			current_y += 24;
 
 			int options_start_y = current_y;
 			if ( settings_broadcast )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[1372]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", Language::get(1372));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[1372]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", Language::get(1372));
 			}
 			current_y += 16;
 			if ( settings_nohud )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[1373]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", Language::get(1373));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[1373]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", Language::get(1373));
 			}
 			current_y += 16;
 			int hotbar_options_x = subx1 + 72 + 256;
 			int hotbar_options_y = current_y;
 			if ( settings_auto_hotbar_new_items )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[1374]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", Language::get(1374));
 				int pad_x = hotbar_options_x;
 				int pad_y = hotbar_options_y;
 				drawWindowFancy(pad_x - 16, pad_y - 32, pad_x + 4 * 128 + 16, pad_y + 48 + 16);
-				ttfPrintTextFormatted(ttf12, pad_x, current_y - 16, "%s", language[2583]);
+				ttfPrintTextFormatted(ttf12, pad_x, current_y - 16, "%s", Language::get(2583));
 				for ( int i = 0; i < (NUM_HOTBAR_CATEGORIES); ++i )
 				{
 					if ( settings_auto_hotbar_categories[i] == true )
 					{
-						ttfPrintTextFormatted(ttf12, pad_x, pad_y, "[x] %s", language[2571 + i]);
+						ttfPrintTextFormatted(ttf12, pad_x, pad_y, "[x] %s", Language::get(2571 + i));
 					}
 					else
 					{
-						ttfPrintTextFormatted(ttf12, pad_x, pad_y, "[ ] %s", language[2571 + i]);
+						ttfPrintTextFormatted(ttf12, pad_x, pad_y, "[ ] %s", Language::get(2571 + i));
 					}
 					pad_x += 128;
 					if ( i == 3 || i == 7 )
@@ -4694,7 +4658,7 @@ static void handleMainMenu(bool mode)
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[1374]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", Language::get(1374));
 			}
 
 			// autosort inventory categories
@@ -4703,7 +4667,7 @@ static void handleMainMenu(bool mode)
 			int pad_x = autosort_options_x;
 			int pad_y = autosort_options_y;
 			drawWindowFancy(pad_x - 16, pad_y - 32, pad_x + 4 * 128 + 16, pad_y + 48 + 16);
-			ttfPrintTextFormatted(ttf12, pad_x, current_y - 16 + 112, "%s", language[2912]);
+			ttfPrintTextFormatted(ttf12, pad_x, current_y - 16 + 112, "%s", Language::get(2912));
 
 			// draw the values for autosort
 			for ( int i = 0; i < (NUM_AUTOSORT_CATEGORIES); ++i )
@@ -4723,11 +4687,11 @@ static void handleMainMenu(bool mode)
 				ttfPrintTextFormattedColor(ttf12, padValue_x, pad_y, autosortColor, " %2d", settings_autosort_inventory_categories[i]);
 				if ( i == NUM_AUTOSORT_CATEGORIES - 1 )
 				{
-					ttfPrintTextFormatted(ttf12, pad_x, pad_y, "    > %s", language[2916]);
+					ttfPrintTextFormatted(ttf12, pad_x, pad_y, "    > %s", Language::get(2916));
 				}
 				else
 				{
-					ttfPrintTextFormatted(ttf12, pad_x, pad_y, "    > %s", language[2571 + i]);
+					ttfPrintTextFormatted(ttf12, pad_x, pad_y, "    > %s", Language::get(2571 + i));
 				}
 				pad_x += 128;
 				if ( i == 3 || i == 7 )
@@ -4737,79 +4701,79 @@ static void handleMainMenu(bool mode)
 				}
 			}
 
-			pad_x = autosort_options_x + (strlen(language[2912]) - 3) * (TTF12_WIDTH) + 8; // 3 chars from the end of string.
+			pad_x = autosort_options_x + (strlen(Language::get(2912)) - 3) * (TTF12_WIDTH) + 8; // 3 chars from the end of string.
 			pad_y = autosort_options_y;
 			// hover text for autosort title text
 			if ( mouseInBounds(clientnum, pad_x - 4, pad_x + 3 * TTF12_WIDTH + 8, current_y - 16 + 112, current_y - 16 + 124) )
 			{
 				tooltip_box.x = omousex - TTF12_WIDTH * 32;
 				tooltip_box.y = omousey - (TTF12_HEIGHT * 3 + 16);
-				tooltip_box.w = strlen(language[2914]) * TTF12_WIDTH + 8;
+				tooltip_box.w = strlen(Language::get(2914)) * TTF12_WIDTH + 8;
 				tooltip_box.h = TTF12_HEIGHT * 3 + 8;
 				drawTooltip(&tooltip_box);
-				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[2913]);
-				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4 + TTF12_HEIGHT, language[2914]);
-				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4 + TTF12_HEIGHT * 2, language[2915]);
+				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, Language::get(2913));
+				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4 + TTF12_HEIGHT, Language::get(2914));
+				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4 + TTF12_HEIGHT * 2, Language::get(2915));
 			}
 
 			current_y += 16;
 			if ( settings_auto_appraise_new_items )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[1997]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", Language::get(1997));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[1997]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", Language::get(1997));
 			}
 			current_y += 16;
 			if ( settings_disable_messages )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[1536]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", Language::get(1536));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[1536]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", Language::get(1536));
 			}
 			current_y += 16;
 			if ( settings_right_click_protect )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[1998]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", Language::get(1998));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[1998]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", Language::get(1998));
 			}
 			current_y += 16;
 			if ( settings_hotbar_numkey_quick_add )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[2590]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", Language::get(2590));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[2590]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", Language::get(2590));
 			}
 			current_y += 16;
 			if ( settings_lock_right_sidebar )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[2598]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", Language::get(2598));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[2598]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", Language::get(2598));
 			}
 			current_y += 16;
 			if ( settings_show_game_timer_always )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[2983]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", Language::get(2983));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[2983]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", Language::get(2983));
 			}
 			current_y += 32;
 
 			// server flag elements
-			ttfPrintText(ttf12, subx1 + 24, current_y, language[1375]);
+			ttfPrintText(ttf12, subx1 + 24, current_y, Language::get(1375));
 			current_y += 24;
 
 
@@ -4819,11 +4783,11 @@ static void handleMainMenu(bool mode)
 				char flagStringBuffer[512] = "";
 				if ( i < 5 )
 				{
-					strncpy(flagStringBuffer, language[153 + i], 255);
+					strncpy(flagStringBuffer, Language::get(153 + i), 255);
 				}
 				else
 				{
-					strncpy(flagStringBuffer, language[2917 - 5 + i], 255);
+					strncpy(flagStringBuffer, Language::get(2917 - 5 + i), 255);
 				}
 
 				bool flagEnabled = settings_svFlags & power(2, i);
@@ -4844,11 +4808,11 @@ static void handleMainMenu(bool mode)
 				{
 					if ( i < 5 )
 					{
-						strncpy(flagStringBuffer, language[1942 + i], 255);
+						strncpy(flagStringBuffer, Language::get(1942 + i), 255);
 					}
 					else
 					{
-						strncpy(flagStringBuffer, language[2921 - 5 + i], 255);
+						strncpy(flagStringBuffer, Language::get(2921 - 5 + i), 255);
 					}
 					if (strlen(flagStringBuffer) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
 					{
@@ -4875,7 +4839,7 @@ static void handleMainMenu(bool mode)
 						}
 						if ( gameModeManager.isServerflagDisabledForCurrentMode(i) )
 						{
-							strcat(flagStringBuffer, language[3962]); // changing flags disabled.
+							strcat(flagStringBuffer, Language::get(3962)); // changing flags disabled.
 							tooltip_box.h += TTF12_HEIGHT;
 						}
 						tooltip_box.w = longestline(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
@@ -4885,7 +4849,7 @@ static void handleMainMenu(bool mode)
 
 			// network options
 			current_y += 32;
-			ttfPrintText(ttf12, subx1 + 24, current_y, language[3146]);
+			ttfPrintText(ttf12, subx1 + 24, current_y, Language::get(3146));
 			current_y += 24;
 			int networking_options_start_y = current_y;
 			if ( settings_disableFPSLimitOnNetworkMessages )
@@ -4900,15 +4864,15 @@ static void handleMainMenu(bool mode)
 #ifdef STEAMWORKS
 			if ( settings_disableMultithreadedSteamNetworking )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[3147]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", Language::get(3147));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[3147]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", Language::get(3147));
 			}
 #ifdef USE_EOS
 			current_y += 16;
-			//ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[%c] %s", LobbyHandler.settings_crossplayEnabled ? 'x' : ' ', language[3948]);
+			//ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[%c] %s", LobbyHandler.settings_crossplayEnabled ? 'x' : ' ', Language::get(3948));
 #endif
 #endif // STEAMWORKS
 
@@ -4920,15 +4884,15 @@ static void handleMainMenu(bool mode)
 					char flagStringBuffer[512] = "";
 					if ( hovering_selection < 5 )
 					{
-						strncpy(flagStringBuffer, language[1942 + hovering_selection], 255);
+						strncpy(flagStringBuffer, Language::get(1942 + hovering_selection), 255);
 					}
 					else
 					{
-						strncpy(flagStringBuffer, language[2921 - 5 + hovering_selection], 255);
+						strncpy(flagStringBuffer, Language::get(2921 - 5 + hovering_selection), 255);
 					}
 					if ( gameModeManager.isServerflagDisabledForCurrentMode(hovering_selection) )
 					{
-						strcat(flagStringBuffer, language[3962]); // changing flags disabled.
+						strcat(flagStringBuffer, Language::get(3962)); // changing flags disabled.
 					}
 					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, flagStringBuffer);
 				}
@@ -5070,10 +5034,10 @@ static void handleMainMenu(bool mode)
 				current_y = networking_options_start_y;
 				if ( omousey >= current_y && omousey < current_y + 12 )
 				{
-					//tooltip_box.w = longestline(language[3148]) * TTF12_WIDTH + 8;
+					//tooltip_box.w = longestline(Language::get(3148)) * TTF12_WIDTH + 8;
 					//tooltip_box.h = TTF12_HEIGHT * 2 + 8;
 					//drawTooltip(&tooltip_box);
-					//ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3148]);
+					//ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, Language::get(3148));
 					if ( inputs.bMouseLeft(clientnum) )
 					{
 						inputs.mouseClearLeft(clientnum);
@@ -5084,10 +5048,10 @@ static void handleMainMenu(bool mode)
 #ifdef STEAMWORKS
 				if ( omousey >= current_y && omousey < current_y + 12 )
 				{
-					tooltip_box.w = longestline(language[3148]) * TTF12_WIDTH + 8;
+					tooltip_box.w = longestline(Language::get(3148)) * TTF12_WIDTH + 8;
 					tooltip_box.h = TTF12_HEIGHT * 2 + 8;
 					drawTooltip(&tooltip_box);
-					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3148]);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, Language::get(3148));
 					if ( inputs.bMouseLeft(clientnum) )
 					{
 						inputs.mouseClearLeft(clientnum);
@@ -5098,10 +5062,10 @@ static void handleMainMenu(bool mode)
 				current_y += 16;
 				if ( omousey >= current_y && omousey < current_y + 12 )
 				{
-					/*tooltip_box.w = longestline(language[3148]) * TTF12_WIDTH + 8;
+					/*tooltip_box.w = longestline(Language::get(3148)) * TTF12_WIDTH + 8;
 					tooltip_box.h = TTF12_HEIGHT * 2 + 8;
 					drawTooltip(&tooltip_box);
-					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3148]);*/
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, Language::get(3148));*/
 					if ( inputs.bMouseLeft(clientnum) )
 					{
 						inputs.mouseClearLeft(clientnum);
@@ -5116,66 +5080,66 @@ static void handleMainMenu(bool mode)
 
 				if ( omousey >= current_y && omousey < current_y + 12 ) // ip broadcast
 				{
-					tooltip_box.w = longestline(language[3149]) * TTF12_WIDTH + 8;
+					tooltip_box.w = longestline(Language::get(3149)) * TTF12_WIDTH + 8;
 					tooltip_box.h = TTF12_HEIGHT + 8;
 					drawTooltip(&tooltip_box);
-					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3149]);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, Language::get(3149));
 				}
 				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // no hud
 				{
-					tooltip_box.w = longestline(language[3150]) * TTF12_WIDTH + 8;
+					tooltip_box.w = longestline(Language::get(3150)) * TTF12_WIDTH + 8;
 					tooltip_box.h = TTF12_HEIGHT + 8;
 					drawTooltip(&tooltip_box);
-					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3150]);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, Language::get(3150));
 				}
 				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // auto add to hotbar
 				{
-					tooltip_box.w = longestline(language[3151]) * TTF12_WIDTH + 8;
+					tooltip_box.w = longestline(Language::get(3151)) * TTF12_WIDTH + 8;
 					tooltip_box.h = TTF12_HEIGHT * 2 + 8;
 					drawTooltip(&tooltip_box);
-					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3151]);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, Language::get(3151));
 				}
 				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // auto appraisal
 				{
-					tooltip_box.w = longestline(language[3152]) * TTF12_WIDTH + 8;
+					tooltip_box.w = longestline(Language::get(3152)) * TTF12_WIDTH + 8;
 					tooltip_box.h = TTF12_HEIGHT * 2 + 8;
 					drawTooltip(&tooltip_box);
-					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3152]);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, Language::get(3152));
 				}
 				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // no messages
 				{
-					tooltip_box.w = longestline(language[3153]) * TTF12_WIDTH + 8;
+					tooltip_box.w = longestline(Language::get(3153)) * TTF12_WIDTH + 8;
 					tooltip_box.h = TTF12_HEIGHT * 2 + 8;
 					drawTooltip(&tooltip_box);
-					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3153]);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, Language::get(3153));
 				}
 				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // right click protect
 				{
-					tooltip_box.w = longestline(language[3154]) * TTF12_WIDTH + 8;
+					tooltip_box.w = longestline(Language::get(3154)) * TTF12_WIDTH + 8;
 					tooltip_box.h = TTF12_HEIGHT * 2 + 8;
 					drawTooltip(&tooltip_box);
-					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3154]);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, Language::get(3154));
 				}
 				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // numkey hotbar
 				{
-					tooltip_box.w = longestline(language[3155]) * TTF12_WIDTH + 8;
+					tooltip_box.w = longestline(Language::get(3155)) * TTF12_WIDTH + 8;
 					tooltip_box.h = TTF12_HEIGHT * 3 + 8;
 					drawTooltip(&tooltip_box);
-					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3155]);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, Language::get(3155));
 				}
 				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // lock ride sidebar
 				{
-					tooltip_box.w = longestline(language[3156]) * TTF12_WIDTH + 8;
+					tooltip_box.w = longestline(Language::get(3156)) * TTF12_WIDTH + 8;
 					tooltip_box.h = TTF12_HEIGHT * 3 + 8;
 					drawTooltip(&tooltip_box);
-					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3156]);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, Language::get(3156));
 				}
 				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // show timer always
 				{
-					tooltip_box.w = longestline(language[3157]) * TTF12_WIDTH + 8;
+					tooltip_box.w = longestline(Language::get(3157)) * TTF12_WIDTH + 8;
 					tooltip_box.h = TTF12_HEIGHT * 3 + 8;
 					drawTooltip(&tooltip_box);
-					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3157]);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, Language::get(3157));
 				}
 			}
 		}
@@ -5400,7 +5364,7 @@ static void handleMainMenu(bool mode)
 		}
 		else
 		{
-			ttfPrintText(ttf12, subx1 + 8, suby1 + 100, language[709]);
+			ttfPrintText(ttf12, subx1 + 8, suby1 + 100, Language::get(709));
 		}
 	}
 
@@ -5585,7 +5549,7 @@ static void handleMainMenu(bool mode)
 #endif
 			}
 
-			std::string raceAndClass = language[3161 + stats[c]->playerRace];
+			std::string raceAndClass = Language::get(3161 + stats[c)->playerRace];
 			raceAndClass += " ";
 			if ( stats[c]->playerRace > RACE_HUMAN && stats[c]->appearance != 0 )
 			{
@@ -5601,11 +5565,11 @@ static void handleMainMenu(bool mode)
 
 			if ( stats[c]->sex )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1322], raceAndClass.c_str());
+				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), Language::get(1322), raceAndClass.c_str());
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1321], raceAndClass.c_str());
+				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), Language::get(1321), raceAndClass.c_str());
 			}
 		}
 
@@ -5785,11 +5749,11 @@ static void handleMainMenu(bool mode)
 			char flagStringBuffer[256] = "";
 			if ( i < 5 )
 			{
-				strncpy(flagStringBuffer, language[153 + i], 255);
+				strncpy(flagStringBuffer, Language::get(153 + i), 255);
 			}
 			else
 			{
-				strncpy(flagStringBuffer, language[2917 - 5 + i], 255);
+				strncpy(flagStringBuffer, Language::get(2917 - 5 + i), 255);
 			}
 
 			Uint32 displayedSvFlags = svFlags;
@@ -5810,11 +5774,11 @@ static void handleMainMenu(bool mode)
 			{
 				if ( i < 5 )
 				{
-					strncpy(flagStringBuffer, language[1942 + i], 255);
+					strncpy(flagStringBuffer, Language::get(1942 + i), 255);
 				}
 				else
 				{
-					strncpy(flagStringBuffer, language[2921 - 5 + i], 255);
+					strncpy(flagStringBuffer, Language::get(2921 - 5 + i), 255);
 				}
 				if (strlen(flagStringBuffer) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
 				{
@@ -5856,11 +5820,11 @@ static void handleMainMenu(bool mode)
 					if ( (i == 0 && currentLobbyType == k_ELobbyTypePrivate)
 						|| (i == 1 && currentLobbyType == k_ELobbyTypePublic) )
 					{
-						ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 256 + 16 * i, "[o] %s", language[250 + i]);
+						ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 256 + 16 * i, "[o] %s", Language::get(250 + i));
 					}
 					else
 					{
-						ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 256 + 16 * i, "[ ] %s", language[250 + i]);
+						ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 256 + 16 * i, "[ ] %s", Language::get(250 + i));
 					}
 				}
 			}
@@ -5874,11 +5838,11 @@ static void handleMainMenu(bool mode)
 				if ( (i == 0 && EOS.CurrentLobbyData.LobbyAttributes.PermissionLevel == static_cast<Uint32>(EOS_ELobbyPermissionLevel::EOS_LPL_JOINVIAPRESENCE))
 					|| (i == 1 && EOS.CurrentLobbyData.LobbyAttributes.PermissionLevel == static_cast<Uint32>(EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED)) )
 				{
-					ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 256 + 16 * i, "[o] %s", language[250 + i]);
+					ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 256 + 16 * i, "[o] %s", Language::get(250 + i));
 				}
 				else
 				{
-					ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 256 + 16 * i, "[ ] %s", language[250 + i]);
+					ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 256 + 16 * i, "[ ] %s", Language::get(250 + i));
 				}
 			}
 
@@ -6074,7 +6038,7 @@ static void handleMainMenu(bool mode)
 						{
 							char clientShortName[32] = { 0 };
 							strncpy(clientShortName, stats[playerToKick]->name, 22);
-							snprintf(kickMsg, LOBBY_CHATBOX_LENGTH, language[279], playerToKick + 1, clientShortName);
+							snprintf(kickMsg, LOBBY_CHATBOX_LENGTH, Language::get(279), playerToKick + 1, clientShortName);
 							//newString(&lobbyChatboxMessages, 0xFFFFFFFF, kickMsg);  // servers print their messages right away
 
 							strcpy(msg, kickMsg);
@@ -6155,7 +6119,7 @@ static void handleMainMenu(bool mode)
 					}
 					char shortname[32] = { 0 };
 					strncpy(shortname, stats[playerToKick]->name, 22);
-					//newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1376], shortname);\
+					//newString(&lobbyChatboxMessages, 0xFFFFFFFF, Language::get(1376), shortname);\
 					// TODO print a message about it in lobby chat box
 				}
 			}
@@ -6179,11 +6143,11 @@ static void handleMainMenu(bool mode)
 			char flagStringBuffer[256] = "";
 			if ( hovering_selection < 5 )
 			{
-				strncpy(flagStringBuffer, language[1942 + hovering_selection], 255);
+				strncpy(flagStringBuffer, Language::get(1942 + hovering_selection), 255);
 			}
 			else
 			{
-				strncpy(flagStringBuffer, language[2921 - 5 + hovering_selection], 255);
+				strncpy(flagStringBuffer, Language::get(2921 - 5 + hovering_selection), 255);
 			}
 			if (hovering_selection < NUM_SERVER_FLAGS)
 			{
@@ -6201,7 +6165,7 @@ static void handleMainMenu(bool mode)
 				char tagName[32];
 				std::vector<std::string> serverFileIdsLoaded;
 				std::string modList = "Clients can click '";
-				modList.append(language[2984]).append("' and \n'").append(language[2985]);
+				modList.append(Language::get(2984)).append("' and \n'").append(Language::get(2985));
 				modList.append("' to automatically subscribe and \n");
 				modList.append("mount workshop items loaded in the host's lobby.\n\n");
 				modList.append("All clients should be running the same mod load order\n");
@@ -6609,7 +6573,7 @@ static void handleMainMenu(bool mode)
 
 		if ( !list_Size(scoresPtr) && !score_leaderboard_window )
 		{
-#define NOSCORESSTR language[1389]
+#define NOSCORESSTR Language::get(1389)
 			ttfPrintTextFormatted(ttf16, xres / 2 - strlen(NOSCORESSTR) * 9, yres / 2 - 9, NOSCORESSTR);
 		}
 		else
@@ -6618,11 +6582,11 @@ static void handleMainMenu(bool mode)
 			{
 				if ( scoreDisplayMultiplayer )
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, "%s - %d / %d", language[2958], score_window, list_Size(&topscoresMultiplayer));
+					ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, "%s - %d / %d", Language::get(2958), score_window, list_Size(&topscoresMultiplayer));
 				}
 				else
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, "%s - %d / %d", language[1390], score_window, list_Size(&topscores));
+					ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, "%s - %d / %d", Language::get(1390), score_window, list_Size(&topscores));
 				}
 			}
 
@@ -6715,7 +6679,7 @@ static void handleMainMenu(bool mode)
 			// print name and class
 			if ( victory )
 			{
-				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 40, language[1391]);
+				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 40, Language::get(1391));
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 56, "%s", stats[clientnum]->name);
 				int creature = HUMAN;
 				if ( players[clientnum] && players[clientnum]->entity )
@@ -6726,40 +6690,40 @@ static void handleMainMenu(bool mode)
 				{
 					if ( creature != HUMAN )
 					{
-						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[3359], monstertypenamecapitalized[creature]);
+						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, Language::get(3359), monstertypenamecapitalized[creature]);
 					}
 					else
 					{
-						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1392]);
+						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, Language::get(1392));
 					}
 				}
 				else if ( victory == 2 )
 				{
 					if ( creature != HUMAN )
 					{
-						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[3360], monstertypenamecapitalized[creature]);
+						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, Language::get(3360), monstertypenamecapitalized[creature]);
 					}
 					else
 					{
-						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1393]);
+						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, Language::get(1393));
 					}
 				}
 				else if ( victory == 3 || victory == 4 || victory == 5 )
 				{
 					if ( creature != HUMAN )
 					{
-						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[3361], 
-							language[3363 - 1 + stats[clientnum]->playerRace]);
+						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, Language::get(3361), 
+							Language::get(3363 - 1 + stats[clientnum)->playerRace]);
 					}
 					else
 					{
-						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[2911]);
+						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, Language::get(2911));
 					}
 				}
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 40, language[1394]);
+				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 40, Language::get(1394));
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 56, "%s", stats[clientnum]->name);
 
 				char classname[64];
@@ -6772,11 +6736,11 @@ static void handleMainMenu(bool mode)
 				}
 				if ( creature != HUMAN )
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[3362], monstertypenamecapitalized[creature], classname);
+					ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, Language::get(3362), monstertypenamecapitalized[creature], classname);
 				}
 				else
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1395], classname);
+					ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, Language::get(1395), classname);
 				}
 			}
 
@@ -6787,13 +6751,13 @@ static void handleMainMenu(bool mode)
 				if ( node )
 				{
 					score_t* score = (score_t*)node->element;
-					ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 104, language[1404], totalScore(score));
+					ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 104, Language::get(1404), totalScore(score));
 				}
 			}
 			else
 			{
 #ifdef STEAMWORKS
-				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 104, language[1404], g_SteamLeaderboards->downloadedTags[g_SteamLeaderboards->currentLeaderBoardIndex][TAG_TOTAL_SCORE]);
+				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 104, Language::get(1404), g_SteamLeaderboards->downloadedTags[g_SteamLeaderboards->currentLeaderBoardIndex][TAG_TOTAL_SCORE]);
 #endif // STEAMWORKS
 			}
 
@@ -6804,23 +6768,23 @@ static void handleMainMenu(bool mode)
 			}
 
 			// print character stats
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 128, language[359], stats[clientnum]->LVL, playerClassLangEntry(client_classes[clientnum], clientnum));
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 140, language[1396], stats[clientnum]->EXP);
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 152, language[1397], stats[clientnum]->GOLD);
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 164, language[361], currentlevel);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 128, Language::get(359), stats[clientnum]->LVL, playerClassLangEntry(client_classes[clientnum], clientnum));
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 140, Language::get(1396), stats[clientnum]->EXP);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 152, Language::get(1397), stats[clientnum]->GOLD);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 164, Language::get(361), currentlevel);
 
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 188, language[1398], statGetSTR(stats[clientnum], playerEntity), stats[clientnum]->STR);
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 200, language[1399], statGetDEX(stats[clientnum], playerEntity), stats[clientnum]->DEX);
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 212, language[1400], statGetCON(stats[clientnum], playerEntity), stats[clientnum]->CON);
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 224, language[1401], statGetINT(stats[clientnum], playerEntity), stats[clientnum]->INT);
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 236, language[1402], statGetPER(stats[clientnum], playerEntity), stats[clientnum]->PER);
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 248, language[1403], statGetCHR(stats[clientnum], playerEntity), stats[clientnum]->CHR);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 188, Language::get(1398), statGetSTR(stats[clientnum], playerEntity), stats[clientnum]->STR);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 200, Language::get(1399), statGetDEX(stats[clientnum], playerEntity), stats[clientnum]->DEX);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 212, Language::get(1400), statGetCON(stats[clientnum], playerEntity), stats[clientnum]->CON);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 224, Language::get(1401), statGetINT(stats[clientnum], playerEntity), stats[clientnum]->INT);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 236, Language::get(1402), statGetPER(stats[clientnum], playerEntity), stats[clientnum]->PER);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 248, Language::get(1403), statGetCHR(stats[clientnum], playerEntity), stats[clientnum]->CHR);
 
 			// time
 			Uint32 sec = (completionTime / TICKS_PER_SECOND) % 60;
 			Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
 			Uint32 hour = ((completionTime / TICKS_PER_SECOND) / 60) / 60;
-			ttfPrintTextFormatted(ttf12, subx1 + 32, suby2 - 80, "%s: %02d:%02d:%02d. %s:", language[1405], hour, min, sec, language[1406]);
+			ttfPrintTextFormatted(ttf12, subx1 + 32, suby2 - 80, "%s: %02d:%02d:%02d. %s:", Language::get(1405), hour, min, sec, Language::get(1406));
 			if ( !conductPenniless && !conductFoodless && !conductVegetarian && !conductIlliterate && !conductGameChallenges[CONDUCT_HARDCORE]
 				&& !conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 				&& !conductGameChallenges[CONDUCT_MODDED]
@@ -6833,7 +6797,7 @@ static void handleMainMenu(bool mode)
 				&& !conductGameChallenges[CONDUCT_ACCURSED]
 				&& !conductGameChallenges[CONDUCT_MULTIPLAYER])
 			{
-				ttfPrintText(ttf12, subx1 + 32, suby2 - 64, language[1407]);
+				ttfPrintText(ttf12, subx1 + 32, suby2 - 64, Language::get(1407));
 			}
 			else
 			{
@@ -6841,7 +6805,7 @@ static void handleMainMenu(bool mode)
 				strcpy(tempstr, " ");
 				if ( conductPenniless )
 				{
-					strcat(tempstr, language[1408]);
+					strcat(tempstr, Language::get(1408));
 					++b;
 				}
 				if ( conductFoodless )
@@ -6850,7 +6814,7 @@ static void handleMainMenu(bool mode)
 					{
 						strcat(tempstr, ", ");
 					}
-					strcat(tempstr, language[1409]);
+					strcat(tempstr, Language::get(1409));
 					++b;
 				}
 				if ( conductVegetarian )
@@ -6859,7 +6823,7 @@ static void handleMainMenu(bool mode)
 					{
 						strcat(tempstr, ", ");
 					}
-					strcat(tempstr, language[1410]);
+					strcat(tempstr, Language::get(1410));
 					++b;
 				}
 				if ( conductIlliterate )
@@ -6868,7 +6832,7 @@ static void handleMainMenu(bool mode)
 					{
 						strcat(tempstr, ", ");
 					}
-					strcat(tempstr, language[1411]);
+					strcat(tempstr, Language::get(1411));
 					++b;
 				}
 				for ( int c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
@@ -6883,7 +6847,7 @@ static void handleMainMenu(bool mode)
 						{
 							strcat(tempstr, "\n ");
 						}
-						strcat(tempstr, language[2925 + c]);
+						strcat(tempstr, Language::get(2925 + c));
 						++b;
 					}
 				}
@@ -6896,7 +6860,7 @@ static void handleMainMenu(bool mode)
 
 			// kills
 			int x = 0, y = 0;
-			ttfPrintText(ttf12, subx1 + 456, suby1 + 272, language[1412]);
+			ttfPrintText(ttf12, subx1 + 456, suby1 + 272, Language::get(1412));
 			bool nokills = true;
 			for ( x = 0; x < NUMMONSTERS; x++ )
 			{
@@ -6918,7 +6882,7 @@ static void handleMainMenu(bool mode)
 			}
 			if ( nokills )
 			{
-				ttfPrintText(ttf12, subx1 + 456, suby1 + 296, language[1413]);
+				ttfPrintText(ttf12, subx1 + 456, suby1 + 296, Language::get(1413));
 			}
 		}
 	}
@@ -6940,7 +6904,7 @@ static void handleMainMenu(bool mode)
 		int numSaves = savegamesList.size();
 		if ( numSaves > 0 )
 		{
-			//ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen, language[3066]);
+			//ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen, Language::get(3066));
 		}
 
 		SDL_Rect tooltip; // we will draw the tooltip after drawing the other elements of the display window.
@@ -7116,29 +7080,29 @@ static void handleMainMenu(bool mode)
 		{
 			saveNumColor = uint32ColorOrange;
 		}
-		ttfPrintTextFormattedColor(ttf12, subx2 - (longestline(language[3067]) * TTF12_WIDTH), suby1 + 44, saveNumColor,
-			language[3067], numSingleplayerSaves, SAVE_GAMES_MAX);
+		ttfPrintTextFormattedColor(ttf12, subx2 - (longestline(Language::get(3067)) * TTF12_WIDTH), suby1 + 44, saveNumColor,
+			Language::get(3067), numSingleplayerSaves, SAVE_GAMES_MAX);
 
 		saveNumColor = uint32ColorGreen;
 		if ( numMultiplayerSaves == SAVE_GAMES_MAX )
 		{
 			saveNumColor = uint32ColorOrange;
 		}
-		ttfPrintTextFormattedColor(ttf12, subx2 - (longestline(language[3068]) * TTF12_WIDTH), suby1 + 44 + TTF12_HEIGHT + 4, saveNumColor,
-			language[3068], numMultiplayerSaves, SAVE_GAMES_MAX);
+		ttfPrintTextFormattedColor(ttf12, subx2 - (longestline(Language::get(3068)) * TTF12_WIDTH), suby1 + 44 + TTF12_HEIGHT + 4, saveNumColor,
+			Language::get(3068), numMultiplayerSaves, SAVE_GAMES_MAX);
 
 		// draw the tooltip we initialised earlier.
 		if ( drawDeleteTooltip )
 		{
-			tooltip.w = longestline(language[3064]) * TTF12_WIDTH + 16;
+			tooltip.w = longestline(Language::get(3064)) * TTF12_WIDTH + 16;
 			drawTooltip(&tooltip);
-			ttfPrintTextFormatted(ttf12, tooltip.x + 6, tooltip.y + 6, language[3064]);
+			ttfPrintTextFormatted(ttf12, tooltip.x + 6, tooltip.y + 6, Language::get(3064));
 		}
 		else if ( drawScrollTooltip )
 		{
-			tooltip.w = longestline(language[3066]) * TTF12_WIDTH + 16;
+			tooltip.w = longestline(Language::get(3066)) * TTF12_WIDTH + 16;
 			drawTooltip(&tooltip);
-			ttfPrintTextFormatted(ttf12, tooltip.x + 6, tooltip.y + 6, language[3066]);
+			ttfPrintTextFormatted(ttf12, tooltip.x + 6, tooltip.y + 6, Language::get(3066));
 		}
 	}
 	else if ( gamemods_window != 0 )
@@ -8377,40 +8341,40 @@ static void handleMainMenu(bool mode)
 	//	Uint32 colorBlue = makeColor( 0, 92, 255, 255);
 	//	if ( creditstage == 1 )
 	//	{
-	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[56]), yres / 2 - 9 - 18, colorBlue, language[56]);
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(Language::get(56)), yres / 2 - 9 - 18, colorBlue, Language::get(56));
 	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE02), yres / 2 - 9 + 18, CREDITSLINE02);
 	//	}
 	//	else if ( creditstage == 2 )
 	//	{
-	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[57]), yres / 2 - 9 - 18, colorBlue, language[57]);
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(Language::get(57)), yres / 2 - 9 - 18, colorBlue, Language::get(57));
 	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE04), yres / 2 - 9 + 18, CREDITSLINE04);
 	//	}
 	//	else if ( creditstage == 3 )
 	//	{
-	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[58]), yres / 2 - 9 - 18, colorBlue, language[58]);
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(Language::get(58)), yres / 2 - 9 - 18, colorBlue, Language::get(58));
 	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE06), yres / 2 - 9, CREDITSLINE06);
 	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE40), yres / 2 - 9 + 18, CREDITSLINE40);
 	//	}
 	//	else if ( creditstage == 4 )
 	//	{
-	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[59]), yres / 2 - 9 - 18, colorBlue, language[59]);
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(Language::get(59)), yres / 2 - 9 - 18, colorBlue, Language::get(59));
 	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE39), yres / 2 + 9, CREDITSLINE39);
 	//	}
 	//	else if ( creditstage == 5 )
 	//	{
-	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[60]), yres / 2 - 9 - 18, colorBlue, language[60]);
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(Language::get(60)), yres / 2 - 9 - 18, colorBlue, Language::get(60));
 	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE11), yres / 2 - 9, CREDITSLINE11);
 	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE08), yres / 2 - 9 + 18, CREDITSLINE08);
 	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE09), yres / 2 + 9 + 18 * 1, CREDITSLINE09);
 	//	}
 	//	else if ( creditstage == 6 )
 	//	{
-	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[61]), yres / 2 - 9 - 18, colorBlue, language[61]);
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(Language::get(61)), yres / 2 - 9 - 18, colorBlue, Language::get(61));
 	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE13), yres / 2 - 9 + 18, CREDITSLINE13);
 	//	}
 	//	else if ( creditstage == 7 )
 	//	{
-	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[62]), yres / 2 - 9 - 18 * 4, colorBlue, language[62]);
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(Language::get(62)), yres / 2 - 9 - 18 * 4, colorBlue, Language::get(62));
 	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE15), yres / 2 - 9 - 18 * 2, CREDITSLINE15);
 	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE16), yres / 2 - 9 - 18 * 1, CREDITSLINE16);
 	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE17), yres / 2 - 9, CREDITSLINE17);
@@ -8421,7 +8385,7 @@ static void handleMainMenu(bool mode)
 	//	}
 	//	else if ( creditstage == 8 )
 	//	{
-	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[63]), yres / 2 - 9 - 18 * 4, colorBlue, language[63]);
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(Language::get(63)), yres / 2 - 9 - 18 * 4, colorBlue, Language::get(63));
 	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE23), yres / 2 - 9 - 18 * 2, CREDITSLINE23);
 	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE24), yres / 2 - 9 - 18 * 1, CREDITSLINE24);
 	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE25), yres / 2 - 9, CREDITSLINE25);
@@ -8433,15 +8397,15 @@ static void handleMainMenu(bool mode)
 	//	}
 	//	else if ( creditstage == 9 )
 	//	{
-	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2585]), yres / 2 - 9 - 18, colorBlue, language[2585]);
-	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2586]), yres / 2 - 9, colorBlue, language[2586]);
-	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2587]), yres / 2 - 9 + 18, colorBlue, language[2587]);
-	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2588]), yres / 2 + 9 + 18, colorBlue, language[2588]);
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(Language::get(2585)), yres / 2 - 9 - 18, colorBlue, Language::get(2585));
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(Language::get(2586)), yres / 2 - 9, colorBlue, Language::get(2586));
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(Language::get(2587)), yres / 2 - 9 + 18, colorBlue, Language::get(2587));
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(Language::get(2588)), yres / 2 + 9 + 18, colorBlue, Language::get(2588));
 	//	}
 	//	else if ( creditstage == 10 )
 	//	{
-	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[64]), yres / 2 - 9 - 18, colorBlue, language[64]);
-	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[65]), yres / 2 - 9 + 18, language[65]);
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(Language::get(64)), yres / 2 - 9 - 18, colorBlue, Language::get(64));
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(Language::get(65)), yres / 2 - 9 + 18, Language::get(65));
 	//	}
 	//	else if ( creditstage == 11 )
 	//	{
@@ -8459,10 +8423,10 @@ static void handleMainMenu(bool mode)
 	//		dest.h = yres;
 	//		drawImage(title_bmp, &src, &dest);
 	//		// text
-	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(language[66]), yres / 2, language[66]);
-	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(language[67]), yres / 2 + 20, language[67]);
-	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(language[68]), yres / 2 + 40, language[68]);
-	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(language[69]), yres / 2 + 60, colorBlue, language[69]);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(Language::get(66)), yres / 2, Language::get(66));
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(Language::get(67)), yres / 2 + 20, Language::get(67));
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(Language::get(68)), yres / 2 + 40, Language::get(68));
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(Language::get(69)), yres / 2 + 60, colorBlue, Language::get(69));
 
 	//		// logo
 	//		src.x = 0;
@@ -8517,63 +8481,63 @@ static void handleMainMenu(bool mode)
 			intromoviealpha[8] = std::min(intromoviealpha[8] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, intromoviealpha[8]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[1414]);
+			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, Language::get(1414));
 		}
 		if ( intromoviestage >= 2 )
 		{
 			intromoviealpha[0] = std::min(intromoviealpha[0] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, intromoviealpha[0]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1415]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(1415));
 		}
 		if ( intromoviestage >= 3 )
 		{
 			intromoviealpha[1] = std::min(intromoviealpha[1] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, intromoviealpha[1]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1416]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(1416));
 		}
 		if ( intromoviestage >= 4 )
 		{
 			intromoviealpha[2] = std::min(intromoviealpha[2] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, intromoviealpha[2]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1417]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(1417));
 		}
 		if ( intromoviestage >= 5 )
 		{
 			intromoviealpha[3] = std::min(intromoviealpha[3] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, intromoviealpha[3]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1418]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(1418));
 		}
 		if ( intromoviestage >= 6 )
 		{
 			intromoviealpha[4] = std::min(intromoviealpha[4] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, intromoviealpha[4]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1419]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(1419));
 		}
 		if ( intromoviestage >= 7 )
 		{
 			intromoviealpha[5] = std::min(intromoviealpha[5] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, intromoviealpha[5]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1420]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(1420));
 		}
 		if ( intromoviestage >= 8 )
 		{
 			intromoviealpha[6] = std::min(intromoviealpha[6] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, intromoviealpha[6]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1421]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(1421));
 		}
 		if ( intromoviestage == 9 )
 		{
 			intromoviealpha[7] = std::min(intromoviealpha[7] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, intromoviealpha[7]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1422]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(1422));
 		}
 	}
 
@@ -8608,7 +8572,7 @@ static void handleMainMenu(bool mode)
 			firstendmoviealpha[8] = std::min(firstendmoviealpha[8] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, firstendmoviealpha[8]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[1414]);
+			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, Language::get(1414));
 
 			int titlex = 16;
 			int titley = 12;
@@ -8617,12 +8581,12 @@ static void handleMainMenu(bool mode)
 			{
 				if ( strcmp(epilogueHostName, "") )
 				{
-					ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3819], epilogueHostName, language[3821 + epilogueHostRace]); // says who's story type it is.
+					ttfPrintTextFormattedColor(ttf16, titlex, titley, color, Language::get(3819), epilogueHostName, Language::get(3821 + epilogueHostRace)); // says who's story type it is.
 				}
 			}
 			else
 			{
-				ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3830], language[3821 + epilogueHostRace]); // says who's story type it is
+				ttfPrintTextFormattedColor(ttf16, titlex, titley, color, Language::get(3830), Language::get(3821 + epilogueHostRace)); // says who's story type it is
 			}
 		}
 		if ( firstendmoviestage >= 2 )
@@ -8630,28 +8594,28 @@ static void handleMainMenu(bool mode)
 			firstendmoviealpha[0] = std::min(firstendmoviealpha[0] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, firstendmoviealpha[0]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1423]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(1423));
 		}
 		if ( firstendmoviestage >= 3 )
 		{
 			firstendmoviealpha[1] = std::min(firstendmoviealpha[1] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, firstendmoviealpha[1]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1424]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(1424));
 		}
 		if ( firstendmoviestage >= 4 )
 		{
 			firstendmoviealpha[2] = std::min(firstendmoviealpha[2] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, firstendmoviealpha[2]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1425]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(1425));
 		}
 		if ( firstendmoviestage == 5 )
 		{
 			firstendmoviealpha[3] = std::min(firstendmoviealpha[3] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, firstendmoviealpha[3]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1426]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(1426));
 		}
 	}
 
@@ -8686,7 +8650,7 @@ static void handleMainMenu(bool mode)
 			secondendmoviealpha[8] = std::min(secondendmoviealpha[8] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, secondendmoviealpha[8]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[1414]);
+			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, Language::get(1414));
 
 			int titlex = 16;
 			int titley = 12;
@@ -8695,12 +8659,12 @@ static void handleMainMenu(bool mode)
 			{
 				if ( strcmp(epilogueHostName, "") )
 				{
-					ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3819], epilogueHostName, language[3821 + epilogueHostRace]); // says who's story type it is.
+					ttfPrintTextFormattedColor(ttf16, titlex, titley, color, Language::get(3819), epilogueHostName, Language::get(3821 + epilogueHostRace)); // says who's story type it is.
 				}
 			}
 			else
 			{
-				ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3830], language[3821 + epilogueHostRace]); // says who's story type it is
+				ttfPrintTextFormattedColor(ttf16, titlex, titley, color, Language::get(3830), Language::get(3821 + epilogueHostRace)); // says who's story type it is
 			}
 		}
 		if ( secondendmoviestage >= 2 )
@@ -8708,42 +8672,42 @@ static void handleMainMenu(bool mode)
 			secondendmoviealpha[0] = std::min(secondendmoviealpha[0] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, secondendmoviealpha[0]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 22, color, true, language[1427]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 22, color, true, Language::get(1427));
 		}
 		if ( secondendmoviestage >= 3 )
 		{
 			secondendmoviealpha[1] = std::min(secondendmoviealpha[1] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, secondendmoviealpha[1]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1428]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(1428));
 		}
 		if ( secondendmoviestage >= 4 )
 		{
 			secondendmoviealpha[2] = std::min(secondendmoviealpha[2] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, secondendmoviealpha[2]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1429]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(1429));
 		}
 		if ( secondendmoviestage >= 5 )
 		{
 			secondendmoviealpha[3] = std::min(secondendmoviealpha[3] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, secondendmoviealpha[3]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1430]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(1430));
 		}
 		if ( secondendmoviestage >= 6 )
 		{
 			secondendmoviealpha[4] = std::min(secondendmoviealpha[4] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, secondendmoviealpha[4]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1431]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(1431));
 		}
 		if ( secondendmoviestage == 7 )
 		{
 			secondendmoviealpha[5] = std::min(secondendmoviealpha[5] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, secondendmoviealpha[5]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1432]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(1432));
 		}
 	}
 
@@ -8788,11 +8752,11 @@ static void handleMainMenu(bool mode)
 					color += std::min(std::max(0, thirdendmoviealpha[10]), 255) << 24;
 					if ( multiplayer == CLIENT )
 					{
-						ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[3833]);
+						ttfPrintTextColor(ttf16, 16, yres - 32, color, true, Language::get(3833));
 					}
 					else
 					{
-						ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[3832]);
+						ttfPrintTextColor(ttf16, 16, yres - 32, color, true, Language::get(3832));
 					}
 				}
 			}
@@ -8802,7 +8766,7 @@ static void handleMainMenu(bool mode)
 			}
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, thirdendmoviealpha[8]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[2606]);
+			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, Language::get(2606));
 
 			if ( stats[0] )
 			{
@@ -8818,12 +8782,12 @@ static void handleMainMenu(bool mode)
 				{
 					if ( strcmp(stats[0]->name, "") )
 					{
-						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3820], stats[0]->name, language[3821 + race]); // says who's story type it is.
+						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, Language::get(3820), stats[0]->name, Language::get(3821 + race)); // says who's story type it is.
 					}
 				}
 				else
 				{
-					ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3831], language[3821 + race]); // says who's story type it is.
+					ttfPrintTextFormattedColor(ttf16, titlex, titley, color, Language::get(3831), Language::get(3821 + race)); // says who's story type it is.
 				}
 			}
 		}
@@ -8832,28 +8796,28 @@ static void handleMainMenu(bool mode)
 			thirdendmoviealpha[0] = std::min(thirdendmoviealpha[0] + 2, 255);
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, thirdendmoviealpha[0]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2600]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(2600));
 		}
 		if ( thirdendmoviestage >= 3 )
 		{
 			thirdendmoviealpha[1] = std::min(thirdendmoviealpha[1] + 2, 255);
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, thirdendmoviealpha[1]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2601]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(2601));
 		}
 		if ( thirdendmoviestage >= 4 )
 		{
 			thirdendmoviealpha[2] = std::min(thirdendmoviealpha[2] + 2, 255);
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, thirdendmoviealpha[2]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2602]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(2602));
 		}
 		if ( thirdendmoviestage >= 5 )
 		{
 			thirdendmoviealpha[3] = std::min(thirdendmoviealpha[3] + 2, 255);
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, thirdendmoviealpha[3]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2603]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(2603));
 		}
 	}
 	if ( fourthendmoviestage > 0 )
@@ -8905,7 +8869,7 @@ static void handleMainMenu(bool mode)
 			}
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, fourthendmoviealpha[8]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[2606]);
+			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, Language::get(2606));
 
 			if ( stats[0] )
 			{
@@ -8925,12 +8889,12 @@ static void handleMainMenu(bool mode)
 				{
 					if ( strcmp(epilogueHostName, "") )
 					{
-						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3819], epilogueHostName, language[3821 + epilogueHostRace]); // says who's story type it is.
+						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, Language::get(3819), epilogueHostName, Language::get(3821 + epilogueHostRace)); // says who's story type it is.
 					}
 				}
 				else
 				{
-					ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3830], language[3821 + epilogueHostRace]); // singleplayer story
+					ttfPrintTextFormattedColor(ttf16, titlex, titley, color, Language::get(3830), Language::get(3821 + epilogueHostRace)); // singleplayer story
 				}
 			}
 		}
@@ -8942,7 +8906,7 @@ static void handleMainMenu(bool mode)
 			}
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, fourthendmoviealpha[0]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2607]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(2607));
 		}
 		if ( fourthendmoviestage >= 3 )
 		{
@@ -8952,7 +8916,7 @@ static void handleMainMenu(bool mode)
 			}
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, fourthendmoviealpha[1]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2608]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(2608));
 		}
 		if ( fourthendmoviestage >= 4 )
 		{
@@ -8962,7 +8926,7 @@ static void handleMainMenu(bool mode)
 			}
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, fourthendmoviealpha[2]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2609]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(2609));
 		}
 		if ( fourthendmoviestage >= 5 )
 		{
@@ -8978,7 +8942,7 @@ static void handleMainMenu(bool mode)
 			}
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, fourthendmoviealpha[3]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2610]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(2610));
 		}
 		if ( fourthendmoviestage >= 7 )
 		{
@@ -8988,7 +8952,7 @@ static void handleMainMenu(bool mode)
 			}
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, fourthendmoviealpha[4]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2611]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(2611));
 		}
 		if ( fourthendmoviestage >= 8 )
 		{
@@ -8998,7 +8962,7 @@ static void handleMainMenu(bool mode)
 			}
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, fourthendmoviealpha[5]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2612]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(2612));
 		}
 		if ( fourthendmoviestage >= 9 )
 		{
@@ -9008,7 +8972,7 @@ static void handleMainMenu(bool mode)
 			}
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, fourthendmoviealpha[6]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2613]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, Language::get(2613));
 		}
 		if ( fourthendmoviestage >= 10 )
 		{
@@ -9022,7 +8986,7 @@ static void handleMainMenu(bool mode)
 			fourthendmoviealpha[7] = std::min(fourthendmoviealpha[7] + 2, 255);
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, fourthendmoviealpha[7]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres/ 2) - 256, (yres / 2) - 64, color, true, language[2614]);
+			ttfPrintTextColor(ttf16, 16 + (xres/ 2) - 256, (yres / 2) - 64, color, true, Language::get(2614));
 			if ( fourthendmovietime % 50 == 0 )
 			{
 				steamAchievement("BARONY_ACH_ALWAYS_WAITING");
@@ -9093,41 +9057,41 @@ static void handleMainMenu(bool mode)
 		switch ( movieType )
 		{
 			case MOVIE_MIDGAME_HERX_MONSTERS:
-				langEntries.push_back(language[3771]);
-				langEntries.push_back(language[3772]);
-				langEntries.push_back(language[3773]);
-				langEntries.push_back(language[3774]);
-				langEntries.push_back(language[3775]);
+				langEntries.push_back(Language::get(3771));
+				langEntries.push_back(Language::get(3772));
+				langEntries.push_back(Language::get(3773));
+				langEntries.push_back(Language::get(3774));
+				langEntries.push_back(Language::get(3775));
 				break;
 			case MOVIE_MIDGAME_BAPHOMET_MONSTERS:
-				langEntries.push_back(language[3776]);
-				langEntries.push_back(language[3777]);
-				langEntries.push_back(language[3778]);
-				langEntries.push_back(language[3779]);
-				langEntries.push_back(language[3780]);
-				langEntries.push_back(language[3781]);
+				langEntries.push_back(Language::get(3776));
+				langEntries.push_back(Language::get(3777));
+				langEntries.push_back(Language::get(3778));
+				langEntries.push_back(Language::get(3779));
+				langEntries.push_back(Language::get(3780));
+				langEntries.push_back(Language::get(3781));
 				break;
 			case MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON:
-				langEntries.push_back(language[3782]);
-				langEntries.push_back(language[3783]);
-				langEntries.push_back(language[3784]);
-				langEntries.push_back(language[3785]);
-				langEntries.push_back(language[3786]);
-				langEntries.push_back(language[3787]);
+				langEntries.push_back(Language::get(3782));
+				langEntries.push_back(Language::get(3783));
+				langEntries.push_back(Language::get(3784));
+				langEntries.push_back(Language::get(3785));
+				langEntries.push_back(Language::get(3786));
+				langEntries.push_back(Language::get(3787));
 				break;
 			case MOVIE_CLASSIC_WIN_MONSTERS:
-				langEntries.push_back(language[3788]);
-				langEntries.push_back(language[3789]);
-				langEntries.push_back(language[3790]);
-				langEntries.push_back(language[3791]);
+				langEntries.push_back(Language::get(3788));
+				langEntries.push_back(Language::get(3789));
+				langEntries.push_back(Language::get(3790));
+				langEntries.push_back(Language::get(3791));
 				break;
 			case MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS:
-				langEntries.push_back(language[3792]);
-				langEntries.push_back(language[3793]);
-				langEntries.push_back(language[3794]);
-				langEntries.push_back(language[3795]);
-				langEntries.push_back(language[3796]);
-				langEntries.push_back(language[3797]);
+				langEntries.push_back(Language::get(3792));
+				langEntries.push_back(Language::get(3793));
+				langEntries.push_back(Language::get(3794));
+				langEntries.push_back(Language::get(3795));
+				langEntries.push_back(Language::get(3796));
+				langEntries.push_back(Language::get(3797));
 				break;
 			default:
 				break;
@@ -9150,11 +9114,11 @@ static void handleMainMenu(bool mode)
 						color += std::min(std::max(0, DLCendmoviealpha[movieType][10]), 255) << 24;
 						if ( multiplayer == CLIENT )
 						{
-							ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[3833]);
+							ttfPrintTextColor(ttf16, 16, yres - 32, color, true, Language::get(3833));
 						}
 						else
 						{
-							ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[3832]);
+							ttfPrintTextColor(ttf16, 16, yres - 32, color, true, Language::get(3832));
 						}
 					}
 				}
@@ -9170,7 +9134,7 @@ static void handleMainMenu(bool mode)
 
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, DLCendmoviealpha[movieType][8]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[2606]); // click to continue
+			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, Language::get(2606)); // click to continue
 
 			if ( stats[0] )
 			{
@@ -9185,12 +9149,12 @@ static void handleMainMenu(bool mode)
 					{
 						if ( strcmp(epilogueHostName, "") )
 						{
-							ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3819], epilogueHostName, language[3821 + epilogueHostRace]); // says who's story type it is.
+							ttfPrintTextFormattedColor(ttf16, titlex, titley, color, Language::get(3819), epilogueHostName, Language::get(3821 + epilogueHostRace)); // says who's story type it is.
 						}
 					}
 					else
 					{
-						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3830], language[3821 + epilogueHostRace]); // says who's story type it is
+						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, Language::get(3830), Language::get(3821 + epilogueHostRace)); // says who's story type it is
 					}
 				}
 				else
@@ -9205,12 +9169,12 @@ static void handleMainMenu(bool mode)
 					{
 						if ( strcmp(stats[0]->name, "") )
 						{
-							ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3820], stats[0]->name, language[3821 + race]); // says who's story type it is.
+							ttfPrintTextFormattedColor(ttf16, titlex, titley, color, Language::get(3820), stats[0]->name, Language::get(3821 + race)); // says who's story type it is.
 						}
 					}
 					else
 					{
-						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3831], language[3821 + race]); // says who's story type it is.
+						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, Language::get(3831), Language::get(3821 + race)); // says who's story type it is.
 					}
 				}
 			}
@@ -9269,31 +9233,31 @@ static void handleMainMenu(bool mode)
 		switch ( movieType )
 		{
 			case MOVIE_WIN_AUTOMATON:
-				langEntries.push_back(language[3798]);
-				langEntries.push_back(language[3799]);
-				langEntries.push_back(language[3800]);
-				langEntries.push_back(language[3801]);
-				langEntries.push_back(language[3802]);
-				langEntries.push_back(language[3803]);
-				langEntries.push_back(language[3804]);
+				langEntries.push_back(Language::get(3798));
+				langEntries.push_back(Language::get(3799));
+				langEntries.push_back(Language::get(3800));
+				langEntries.push_back(Language::get(3801));
+				langEntries.push_back(Language::get(3802));
+				langEntries.push_back(Language::get(3803));
+				langEntries.push_back(Language::get(3804));
 				break;
 			case MOVIE_WIN_DEMONS_UNDEAD:
-				langEntries.push_back(language[3805]);
-				langEntries.push_back(language[3806]);
-				langEntries.push_back(language[3807]);
-				langEntries.push_back(language[3808]);
-				langEntries.push_back(language[3809]);
-				langEntries.push_back(language[3810]);
-				langEntries.push_back(language[3811]);
+				langEntries.push_back(Language::get(3805));
+				langEntries.push_back(Language::get(3806));
+				langEntries.push_back(Language::get(3807));
+				langEntries.push_back(Language::get(3808));
+				langEntries.push_back(Language::get(3809));
+				langEntries.push_back(Language::get(3810));
+				langEntries.push_back(Language::get(3811));
 				break;
 			case MOVIE_WIN_BEASTS:
-				langEntries.push_back(language[3812]);
-				langEntries.push_back(language[3813]);
-				langEntries.push_back(language[3814]);
-				langEntries.push_back(language[3815]);
-				langEntries.push_back(language[3816]);
-				langEntries.push_back(language[3817]);
-				langEntries.push_back(language[3818]);
+				langEntries.push_back(Language::get(3812));
+				langEntries.push_back(Language::get(3813));
+				langEntries.push_back(Language::get(3814));
+				langEntries.push_back(Language::get(3815));
+				langEntries.push_back(Language::get(3816));
+				langEntries.push_back(Language::get(3817));
+				langEntries.push_back(Language::get(3818));
 				break;
 			default:
 				break;
@@ -9312,7 +9276,7 @@ static void handleMainMenu(bool mode)
 			}
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, DLCendmoviealpha[movieType][8]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[2606]); // click to continue.
+			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, Language::get(2606)); // click to continue.
 
 			if ( stats[0] )
 			{
@@ -9332,12 +9296,12 @@ static void handleMainMenu(bool mode)
 				{
 					if ( strcmp(epilogueHostName, "") )
 					{
-						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3819], epilogueHostName, language[3821 + epilogueHostRace]); // says who's story type it is.
+						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, Language::get(3819), epilogueHostName, Language::get(3821 + epilogueHostRace)); // says who's story type it is.
 					}
 				}
 				else
 				{
-					ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3830], language[3821 + epilogueHostRace]); // singleplayer story
+					ttfPrintTextFormattedColor(ttf16, titlex, titley, color, Language::get(3830), Language::get(3821 + epilogueHostRace)); // singleplayer story
 				}
 			}
 		}
@@ -9429,7 +9393,7 @@ static void handleMainMenu(bool mode)
 			DLCendmoviealpha[movieType][7] = std::min(DLCendmoviealpha[movieType][7] + 2, 255);
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, DLCendmoviealpha[movieType][7]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres / 2) - 256, (yres / 2) - 64, color, true, language[2614]);
+			ttfPrintTextColor(ttf16, 16 + (xres / 2) - 256, (yres / 2) - 64, color, true, Language::get(2614));
 			if ( DLCendmovieStageAndTime[movieType][MOVIE_TIME] % 50 == 0 )
 			{
 				steamAchievement("BARONY_ACH_ALWAYS_WAITING");
@@ -9523,7 +9487,7 @@ void doNewGame(bool makeHighscore) {
 	{
 		conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 1;
 	}
-	gamemods_disableSteamAchievements = false;
+	Mods::disableSteamAchievements = false;
 
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
@@ -9574,7 +9538,6 @@ void doNewGame(bool makeHighscore) {
 	{
 		// clear follower menu entities.
 		FollowerMenu[i].closeFollowerMenuGUI(true);
-		list_FreeAll(&damageIndicators[i]);
 	}
 	for ( int c = 0; c < NUMMONSTERS; c++ )
 	{
@@ -9756,7 +9719,7 @@ void doNewGame(bool makeHighscore) {
 			if (!verifyMapHash(map.filename, checkMapHash))
 			{
 				conductGameChallenges[CONDUCT_MODDED] = 1;
-				gamemods_disableSteamAchievements = true;
+				Mods::disableSteamAchievements = true;
 			}
 		}
 		else
@@ -9768,7 +9731,7 @@ void doNewGame(bool makeHighscore) {
 				if (!verifyMapHash(fullMapName.c_str(), checkMapHash))
 				{
 					conductGameChallenges[CONDUCT_MODDED] = 1;
-					gamemods_disableSteamAchievements = true;
+					Mods::disableSteamAchievements = true;
 				}
 			}
 			else
@@ -10079,7 +10042,7 @@ void doNewGame(bool makeHighscore) {
 			if (!verifyMapHash(map.filename, checkMapHash))
 			{
 				conductGameChallenges[CONDUCT_MODDED] = 1;
-				gamemods_disableSteamAchievements = true;
+				Mods::disableSteamAchievements = true;
 			}
 		}
 		else
@@ -10091,7 +10054,7 @@ void doNewGame(bool makeHighscore) {
 				if (!verifyMapHash(fullMapName.c_str(), checkMapHash))
 				{
 					conductGameChallenges[CONDUCT_MODDED] = 1;
-					gamemods_disableSteamAchievements = true;
+					Mods::disableSteamAchievements = true;
 				}
 			}
 			else
@@ -11113,20 +11076,20 @@ void openGameoverWindow()
 
 	if ( multiplayer == SINGLE )
 	{
-		strcpy(subtext, language[1133]);
+		strcpy(subtext, Language::get(1133));
 
-		strcat(subtext, language[1134]);
+		strcat(subtext, Language::get(1134));
 
-		strcat(subtext, language[1135]);
+		strcat(subtext, Language::get(1135));
 		strcat(subtext, scorenum);
 
 		if ( madetop )
 		{
-			strcat(subtext, language[1136]);
+			strcat(subtext, Language::get(1136));
 		}
 		else
 		{
-			strcat(subtext, language[1137]);
+			strcat(subtext, Language::get(1137));
 		}
 
 		// identify all inventory items
@@ -11145,10 +11108,10 @@ void openGameoverWindow()
 
 		// Restart
 		button = newButton();
-		strcpy(button->label, language[1138]);
-		button->x = subx2 - strlen(language[1138]) * 12 - 16;
+		strcpy(button->label, Language::get(1138));
+		button->x = subx2 - strlen(Language::get(1138)) * 12 - 16;
 		button->y = suby2 - 28;
-		button->sizex = strlen(language[1138]) * 12 + 8;
+		button->sizex = strlen(Language::get(1138)) * 12 + 8;
 		button->sizey = 20;
 		button->action = &buttonStartSingleplayer;
 		button->visible = 1;
@@ -11157,10 +11120,10 @@ void openGameoverWindow()
 
 		// Return to Main Menu
 		button = newButton();
-		strcpy(button->label, language[1139]);
+		strcpy(button->label, Language::get(1139));
 		button->x = subx1 + 8;
 		button->y = suby2 - 28;
-		button->sizex = strlen(language[1139]) * 12 + 8;
+		button->sizex = strlen(Language::get(1139)) * 12 + 8;
 		button->sizey = 20;
 		button->action = &buttonEndGameConfirm;
 		button->visible = 1;
@@ -11169,7 +11132,7 @@ void openGameoverWindow()
 	}
 	else
 	{
-		strcpy(subtext, language[1140]);
+		strcpy(subtext, Language::get(1140));
 
 		bool survivingPlayer = false;
 		int c;
@@ -11183,22 +11146,22 @@ void openGameoverWindow()
 		}
 		if ( survivingPlayer )
 		{
-			strcat(subtext, language[1141]);
+			strcat(subtext, Language::get(1141));
 		}
 		else
 		{
-			strcat(subtext, language[1142]);
+			strcat(subtext, Language::get(1142));
 		}
 
-		strcat(subtext, language[1143]);
+		strcat(subtext, Language::get(1143));
 		strcat(subtext, scorenum);
 
 		strcat(subtext, "\n\n");
 
 		// Okay
 		button = newButton();
-		strcpy(button->label, language[1144]);
-		button->sizex = strlen(language[1144]) * 12 + 8;
+		strcpy(button->label, Language::get(1144));
+		button->sizex = strlen(Language::get(1144)) * 12 + 8;
 		button->sizey = 20;
 		button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
 		button->y = suby2 - 28;
@@ -11211,7 +11174,7 @@ void openGameoverWindow()
 	// death hints
 	if ( currentlevel / LENGTH_OF_LEVEL_REGION < 1 )
 	{
-		strcat(subtext, language[1145 + local_rng.rand() % 15]);
+		strcat(subtext, Language::get(1145 + local_rng.rand() % 15));
 	}
 
 	// close button
@@ -11302,7 +11265,7 @@ void openAchievementsWindow()
 	subx2 = xres / 2 + 400;
 	suby1 = yres / 2 - 280;
 	suby2 = yres / 2 + 280;
-	strcpy(subtext, language[3971]);
+	strcpy(subtext, Language::get(3971));
 #ifdef USE_EOS
 	EOS.loadAchievementData();
 #endif
@@ -12053,7 +12016,7 @@ void buttonDeleteScoreWindow(button_t* my)
 	subx2 = xres / 2 + 244;
 	suby1 = yres / 2 - 60;
 	suby2 = yres / 2 + 60;
-	strcpy(subtext, language[3002]);
+	strcpy(subtext, Language::get(3002));
 
 	// close button
 	button_t* button = newButton();
@@ -12070,8 +12033,8 @@ void buttonDeleteScoreWindow(button_t* my)
 
 	// delete button
 	button = newButton();
-	strcpy(button->label, language[3001]);
-	button->sizex = strlen(language[3001]) * 12 + 8;
+	strcpy(button->label, Language::get(3001));
+	button->sizex = strlen(Language::get(3001)) * 12 + 8;
 	button->sizey = 20;
 	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
 	button->y = suby2 - 56;
@@ -12082,8 +12045,8 @@ void buttonDeleteScoreWindow(button_t* my)
 
 	// close button
 	button = newButton();
-	strcpy(button->label, language[2962]);
-	button->sizex = strlen(language[2962]) * 12 + 8;
+	strcpy(button->label, Language::get(2962));
+	button->sizex = strlen(Language::get(2962)) * 12 + 8;
 	button->sizey = 20;
 	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
 	button->y = suby2 - 28;
@@ -12146,8 +12109,8 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 	//	&& lastCreatedCharacterSex >= 0 )
 	//{
 	//	button_t* replayCharacterBtn = newButton();
-	//	strcpy(replayCharacterBtn->label, language[3000]);
-	//	replayCharacterBtn->sizex = strlen(language[3000]) * 12 + 8;
+	//	strcpy(replayCharacterBtn->label, Language::get(3000));
+	//	replayCharacterBtn->sizex = strlen(Language::get(3000)) * 12 + 8;
 	//	replayCharacterBtn->sizey = 20;
 	//	replayCharacterBtn->x = button->x - (replayCharacterBtn->sizex + 4); // take position of button attributes above.
 	//	replayCharacterBtn->y = button->y;
@@ -12158,8 +12121,8 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 
 	// Continue ...
 	button = newButton();
-	strcpy(button->label, language[1464]);
-	button->sizex = strlen(language[1464]) * 12 + 8;
+	strcpy(button->label, Language::get(1464));
+	button->sizex = strlen(Language::get(1464)) * 12 + 8;
 	button->sizey = 20;
 	button->x = subx2 - button->sizex - 4;
 	button->y = suby2 - 24;
@@ -12171,10 +12134,10 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 
 	// Back ...
 	button = newButton();
-	strcpy(button->label, language[1465]);
+	strcpy(button->label, Language::get(1465));
 	button->x = subx1 + 4;
 	button->y = suby2 - 24;
-	button->sizex = strlen(language[1465]) * 12 + 8;
+	button->sizex = strlen(Language::get(1465)) * 12 + 8;
 	button->sizey = 20;
 	button->action = &buttonBack;
 	button->visible = 1;
@@ -12186,10 +12149,10 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 
 	// Random Character ...
 	button = newButton();
-	strcpy(button->label, language[1466]);
+	strcpy(button->label, Language::get(1466));
 	button->x = button_back_x + button_back_width + 4;
 	button->y = suby2 - 24;
-	button->sizex = strlen(language[1466]) * 12 + 8;
+	button->sizex = strlen(Language::get(1466)) * 12 + 8;
 	button->sizey = 20;
 	button->action = &buttonRandomCharacter;
 	button->visible = 1;
@@ -12199,10 +12162,10 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 
 	//Random Name.
 	button = newButton();
-	strcpy(button->label, language[2498]);
+	strcpy(button->label, Language::get(2498));
 	button->x = button_back_x + button_back_width + 4;
 	button->y = suby2 - 24;
-	button->sizex = strlen(language[2498]) * 12 + 8;
+	button->sizex = strlen(Language::get(2498)) * 12 + 8;
 	button->sizey = 20;
 	button->action = &buttonRandomName;
 	button->visible = 1;
@@ -12483,127 +12446,64 @@ void buttonGamemodsPrevDirectory(button_t* my)
 }
 
 
-void writeLevelsTxt(std::string modFolder)
-{
-	std::string path = BASE_DATA_DIR;
-	path.append("mods/").append(modFolder);
-	if ( access(path.c_str(), F_OK) == 0 )
-	{
-		std::string writeFile = modFolder + "/maps/levels.txt";
-		PHYSFS_File *physfp = PHYSFS_openWrite(writeFile.c_str());
-		if ( physfp != NULL )
-		{
-			PHYSFS_writeBytes(physfp, "map: start\n", 11);
-			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
-			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
-			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
-			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
-			PHYSFS_writeBytes(physfp, "map: minetoswamp\n", 17);
-			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
-			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
-			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
-			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
-			PHYSFS_writeBytes(physfp, "map: swamptolabyrinth\n", 22);
-			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
-			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
-			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
-			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
-			PHYSFS_writeBytes(physfp, "map: labyrinthtoruins\n", 22);
-			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
-			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
-			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
-			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
-			PHYSFS_writeBytes(physfp, "map: boss\n", 10);
-			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);
-			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);
-			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);
-			PHYSFS_writeBytes(physfp, "map: hellboss\n", 14);
-			PHYSFS_writeBytes(physfp, "map: hamlet\n", 12);
-			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
-			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
-			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
-			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
-			PHYSFS_writeBytes(physfp, "map: cavestocitadel\n", 20);
-			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
-			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
-			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
-			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
-			PHYSFS_writeBytes(physfp, "map: sanctum", 12);
-			PHYSFS_close(physfp);
-		}
-		else
-		{
-			printlog("[PhysFS]: Failed to open %s/maps/levels.txt for writing.", path.c_str());
-		}
-	}
-	else
-	{
-		printlog("[PhysFS]: Failed to write levels.txt in %s", path.c_str());
-	}
-}
-
-void buttonGamemodsCreateModDirectory(button_t* my)
-{
-	std::string baseDir = outputdir;
-	baseDir.append(PHYSFS_getDirSeparator()).append("mods").append(PHYSFS_getDirSeparator()).append(gamemods_newBlankDirectory);
-
-	if ( access(baseDir.c_str(), F_OK) == 0 )
-	{
-		// folder already exists!
-		gamemods_newBlankDirectoryStatus = -1;
-	}
-	else
-	{
-		if ( PHYSFS_mkdir(gamemods_newBlankDirectory) )
-		{
-			gamemods_newBlankDirectoryStatus = 1;
-			std::string dir = gamemods_newBlankDirectory;
-			std::string folder = "/books";
-			PHYSFS_mkdir((dir + folder).c_str());
-			folder = "/editor";
-			PHYSFS_mkdir((dir + folder).c_str());
-
-			folder = "/images";
-			PHYSFS_mkdir((dir + folder).c_str());
-			std::string subfolder = "/sprites";
-			PHYSFS_mkdir((dir + folder + subfolder).c_str());
-			subfolder = "/system";
-			PHYSFS_mkdir((dir + folder + subfolder).c_str());
-			subfolder = "/tiles";
-			PHYSFS_mkdir((dir + folder + subfolder).c_str());
-
-			folder = "/items";
-			PHYSFS_mkdir((dir + folder).c_str());
-			subfolder = "/images";
-			PHYSFS_mkdir((dir + folder + subfolder).c_str());
-
-			folder = "/lang";
-			PHYSFS_mkdir((dir + folder).c_str());
-			folder = "/maps";
-			PHYSFS_mkdir((dir + folder).c_str());
-			writeLevelsTxt(gamemods_newBlankDirectory);
-
-			folder = "/models";
-			PHYSFS_mkdir((dir + folder).c_str());
-			subfolder = "/creatures";
-			PHYSFS_mkdir((dir + folder + subfolder).c_str());
-			subfolder = "/decorations";
-			PHYSFS_mkdir((dir + folder + subfolder).c_str());
-			subfolder = "/doors";
-			PHYSFS_mkdir((dir + folder + subfolder).c_str());
-			subfolder = "/items";
-			PHYSFS_mkdir((dir + folder + subfolder).c_str());
-			subfolder = "/particles";
-			PHYSFS_mkdir((dir + folder + subfolder).c_str());
-
-			folder = "/music";
-			PHYSFS_mkdir((dir + folder).c_str());
-			folder = "/sound";
-			PHYSFS_mkdir((dir + folder).c_str());
-		}
-	}
-	strcpy(gamemods_newBlankDirectoryOldName, gamemods_newBlankDirectory);
-}
+//void writeLevelsTxt(std::string modFolder)
+//{
+//	std::string path = BASE_DATA_DIR;
+//	path.append("mods/").append(modFolder);
+//	if ( access(path.c_str(), F_OK) == 0 )
+//	{
+//		std::string writeFile = modFolder + "/maps/levels.txt";
+//		PHYSFS_File *physfp = PHYSFS_openWrite(writeFile.c_str());
+//		if ( physfp != NULL )
+//		{
+//			PHYSFS_writeBytes(physfp, "map: start\n", 11);
+//			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+//			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+//			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+//			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+//			PHYSFS_writeBytes(physfp, "map: minetoswamp\n", 17);
+//			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
+//			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
+//			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
+//			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
+//			PHYSFS_writeBytes(physfp, "map: swamptolabyrinth\n", 22);
+//			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
+//			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
+//			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
+//			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
+//			PHYSFS_writeBytes(physfp, "map: labyrinthtoruins\n", 22);
+//			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
+//			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
+//			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
+//			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
+//			PHYSFS_writeBytes(physfp, "map: boss\n", 10);
+//			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);
+//			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);
+//			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);
+//			PHYSFS_writeBytes(physfp, "map: hellboss\n", 14);
+//			PHYSFS_writeBytes(physfp, "map: hamlet\n", 12);
+//			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
+//			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
+//			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
+//			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
+//			PHYSFS_writeBytes(physfp, "map: cavestocitadel\n", 20);
+//			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
+//			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
+//			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
+//			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
+//			PHYSFS_writeBytes(physfp, "map: sanctum", 12);
+//			PHYSFS_close(physfp);
+//		}
+//		else
+//		{
+//			printlog("[PhysFS]: Failed to open %s/maps/levels.txt for writing.", path.c_str());
+//		}
+//	}
+//	else
+//	{
+//		printlog("[PhysFS]: Failed to write levels.txt in %s", path.c_str());
+//	}
+//}
 
 void buttonGamemodsCreateNewModTemplate(button_t* my)
 {
@@ -12641,7 +12541,7 @@ void buttonGamemodsCreateNewModTemplate(button_t* my)
 	button->y = suby2 - TTF12_HEIGHT - 8;
 	button->sizex = strlen(button->label) * TTF12_WIDTH + 8;
 	button->sizey = 20;
-	button->action = &buttonGamemodsCreateModDirectory;
+	//button->action = &buttonGamemodsCreateModDirectory;
 	button->visible = 1;
 	button->focused = 1;
 }
@@ -13512,223 +13412,190 @@ void buttonGamemodsGetLocalMods(button_t* my)
 
 void buttonGamemodsStartModdedGame(button_t* my)
 {
-	if ( gamemods_modPreload )
-	{
-		// look for a save game
-		if ( anySaveFileExists() )
-		{
-			openNewLoadGameWindow(nullptr);
-		}
-		else
-		{
-			buttonOpenCharacterCreationWindow(NULL);
-		}
-		return;
-	}
-
-	gamemods_numCurrentModsLoaded = gamemods_mountedFilepaths.size();
-	if ( gamemods_numCurrentModsLoaded > 0 )
-	{
-		steamAchievement("BARONY_ACH_LOCAL_CUSTOMS");
-	}
-
-	if ( physfsIsMapLevelListModded() )
-	{
-		gamemods_disableSteamAchievements = true;
-	}
-	else
-	{
-		gamemods_disableSteamAchievements = false;
-	}
-
-	int w, h;
-
-	if ( !gamemods_modelsListRequiresReload && gamemods_modelsListLastStartedUnmodded )
-	{
-		if ( physfsSearchModelsToUpdate() || !gamemods_modelsListModifiedIndexes.empty() )
-		{
-			gamemods_modelsListRequiresReload = true;
-		}
-		gamemods_modelsListLastStartedUnmodded = false;
-	}
-	if ( !gamemods_soundListRequiresReload && gamemods_soundsListLastStartedUnmodded )
-	{
-		if ( physfsSearchSoundsToUpdate() )
-		{
-			gamemods_soundListRequiresReload = true;
-		}
-		gamemods_soundsListLastStartedUnmodded = false;
-	}
-
-	// process any new model files encountered in the mod load list.
-	int modelsIndexUpdateStart = 1;
-	int modelsIndexUpdateEnd = nummodels;
-	if ( gamemods_modelsListRequiresReload )
-	{
-		if ( physfsSearchModelsToUpdate() || !gamemods_modelsListModifiedIndexes.empty() )
-		{
-			// print a loading message
-			drawClearBuffers();
-			getSizeOfText(ttf16, language[2989], &w, &h);
-			ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2989]);
-			GO_SwapBuffers(screen);
-			physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
-			generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
-			generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
-		}
-		gamemods_modelsListRequiresReload = false;
-	}
-	if ( gamemods_soundListRequiresReload )
-	{
-		if ( physfsSearchSoundsToUpdate() )
-		{
-			// print a loading message
-			drawClearBuffers();
-			getSizeOfText(ttf16, language[2987], &w, &h);
-			ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2987]);
-			GO_SwapBuffers(screen);
-			physfsReloadSounds(true);
-		}
-		gamemods_soundListRequiresReload = false;
-	}
-
-	if ( physfsSearchTilesToUpdate() )
-	{
-		// print a loading message
-		drawClearBuffers();
-		getSizeOfText(ttf16, language[3017], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3017]);
-		GO_SwapBuffers(screen);
-		physfsReloadTiles(false);
-		gamemods_tileListRequireReloadUnmodded = true;
-	}
-
-	if ( physfsSearchSpritesToUpdate() )
-	{
-		// print a loading message
-		drawClearBuffers();
-		getSizeOfText(ttf16, language[3015], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3015]);
-		GO_SwapBuffers(screen);
-		physfsReloadSprites(false);
-		gamemods_spriteImagesRequireReloadUnmodded = true;
-	}
-
-	if ( physfsSearchBooksToUpdate() )
-	{
-		// print a loading message
-		drawClearBuffers();
-		getSizeOfText(ttf16, language[2991], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2991]);
-		GO_SwapBuffers(screen);
-		physfsReloadBooks();
-		gamemods_booksRequireReloadUnmodded = true;
-	}
-
-	gamemodsUnloadCustomThemeMusic();
-
-	if ( physfsSearchMusicToUpdate() )
-	{
-		// print a loading message
-		drawClearBuffers();
-		getSizeOfText(ttf16, language[2993], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2993]);
-		GO_SwapBuffers(screen);
-		bool reloadIntroMusic = false;
-		physfsReloadMusic(reloadIntroMusic, false);
-		if ( reloadIntroMusic )
-		{
-#ifdef SOUND
-			playMusic(intromusic[local_rng.rand() % (NUMINTROMUSIC - 1)], false, true, true);
-#endif			
-		}
-		gamemods_musicRequireReloadUnmodded = true;
-	}
-
-	std::string langDirectory = PHYSFS_getRealDir("lang/en.txt");
-	if ( langDirectory.compare("./") != 0 )
-	{
-		// print a loading message
-		drawClearBuffers();
-		getSizeOfText(ttf16, language[3004], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3004]);
-		GO_SwapBuffers(screen);
-		if ( reloadLanguage() != 0 )
-		{
-			printlog("[PhysFS]: Error reloading modified language file in lang/ directory!");
-		}
-		else
-		{
-			printlog("[PhysFS]: Found modified language file in lang/ directory, reloading en.txt...");
-		}
-		gamemods_langRequireReloadUnmodded = true;
-	}
-
-	if ( physfsSearchItemsTxtToUpdate() )
-	{
-		// print a loading message
-		drawClearBuffers();
-		getSizeOfText(ttf16, language[3008], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3008]);
-		GO_SwapBuffers(screen);
-		physfsReloadItemsTxt();
-		gamemods_itemsTxtRequireReloadUnmodded = true;
-	}
-
-	if ( physfsSearchItemSpritesToUpdate() )
-	{
-		// print a loading message
-		drawClearBuffers();
-		getSizeOfText(ttf16, language[3006], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3006]);
-		GO_SwapBuffers(screen);
-		physfsReloadItemSprites(false);
-		gamemods_itemSpritesRequireReloadUnmodded = true;
-	}
-
-	if ( physfsSearchItemsGlobalTxtToUpdate() )
-	{
-		gamemods_itemsGlobalTxtRequireReloadUnmodded = true;
-		loadItemLists();
-	}
-
-	if ( physfsSearchMonsterLimbFilesToUpdate() )
-	{
-		// print a loading message
-		drawClearBuffers();
-		getSizeOfText(ttf16, language[3013], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3013]);
-		GO_SwapBuffers(screen);
-		physfsReloadMonsterLimbFiles();
-		gamemods_monsterLimbsRequireReloadUnmodded = true;
-	}
-
-	if ( physfsSearchSystemImagesToUpdate() )
-	{
-		// print a loading message
-		drawClearBuffers();
-		getSizeOfText(ttf16, language[3015], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3015]);
-		GO_SwapBuffers(screen);
-		physfsReloadSystemImages();
-		gamemods_systemImagesReloadUnmodded = true;
-
-		// tidy up some other resource files.
-		rightsidebar_titlebar_img = spell_list_titlebar_bmp;
-		rightsidebar_slot_img = spell_list_gui_slot_bmp;
-		rightsidebar_slot_highlighted_img = spell_list_gui_slot_highlighted_bmp;
-	}
-
-	// look for a save game
-	if ( anySaveFileExists() )
-	{
-		//openLoadGameWindow(NULL);
-		openNewLoadGameWindow(nullptr);
-	}
-	else
-	{
-		buttonOpenCharacterCreationWindow(NULL);
-	}
+//	if ( gamemods_modPreload )
+//	{
+//		// look for a save game
+//		if ( anySaveFileExists() )
+//		{
+//			openNewLoadGameWindow(nullptr);
+//		}
+//		else
+//		{
+//			buttonOpenCharacterCreationWindow(NULL);
+//		}
+//		return;
+//	}
+//
+//	gamemods_numCurrentModsLoaded = gamemods_mountedFilepaths.size();
+//	if ( gamemods_numCurrentModsLoaded > 0 )
+//	{
+//		steamAchievement("BARONY_ACH_LOCAL_CUSTOMS");
+//	}
+//
+//	if ( physfsIsMapLevelListModded() )
+//	{
+//		Mods::disableSteamAchievements = true;
+//	}
+//	else
+//	{
+//		Mods::disableSteamAchievements = false;
+//	}
+//
+//	int w, h;
+//
+//	if ( !gamemods_modelsListRequiresReload && gamemods_modelsListLastStartedUnmodded )
+//	{
+//		if ( physfsSearchModelsToUpdate() || !gamemods_modelsListModifiedIndexes.empty() )
+//		{
+//			gamemods_modelsListRequiresReload = true;
+//		}
+//		gamemods_modelsListLastStartedUnmodded = false;
+//	}
+//	if ( !gamemods_soundListRequiresReload && gamemods_soundsListLastStartedUnmodded )
+//	{
+//		if ( physfsSearchSoundsToUpdate() )
+//		{
+//			gamemods_soundListRequiresReload = true;
+//		}
+//		gamemods_soundsListLastStartedUnmodded = false;
+//	}
+//
+//	// process any new model files encountered in the mod load list.
+//	int modelsIndexUpdateStart = 1;
+//	int modelsIndexUpdateEnd = nummodels;
+//	if ( gamemods_modelsListRequiresReload )
+//	{
+//		if ( physfsSearchModelsToUpdate() || !gamemods_modelsListModifiedIndexes.empty() )
+//		{
+//			// print a loading message
+//			drawClearBuffers();
+//			getSizeOfText(ttf16, Language::get(2989), &w, &h);
+//			ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, Language::get(2989));
+//			GO_SwapBuffers(screen);
+//			physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
+//			generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
+//			generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+//		}
+//		gamemods_modelsListRequiresReload = false;
+//	}
+//	if ( gamemods_soundListRequiresReload )
+//	{
+//		if ( physfsSearchSoundsToUpdate() )
+//		{
+//			// print a loading message
+//			drawClearBuffers();
+//			getSizeOfText(ttf16, Language::get(2987), &w, &h);
+//			ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, Language::get(2987));
+//			GO_SwapBuffers(screen);
+//			physfsReloadSounds(true);
+//		}
+//		gamemods_soundListRequiresReload = false;
+//	}
+//
+//	if ( physfsSearchTilesToUpdate() )
+//	{
+//		// print a loading message
+//		drawClearBuffers();
+//		getSizeOfText(ttf16, Language::get(3017), &w, &h);
+//		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, Language::get(3017));
+//		GO_SwapBuffers(screen);
+//		physfsReloadTiles(false);
+//		gamemods_tileListRequireReloadUnmodded = true;
+//	}
+//
+//	if ( physfsSearchSpritesToUpdate() )
+//	{
+//		// print a loading message
+//		drawClearBuffers();
+//		getSizeOfText(ttf16, Language::get(3015), &w, &h);
+//		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, Language::get(3015));
+//		GO_SwapBuffers(screen);
+//		physfsReloadSprites(false);
+//		gamemods_spriteImagesRequireReloadUnmodded = true;
+//	}
+//
+//	if ( physfsSearchBooksToUpdate() )
+//	{
+//		// print a loading message
+//		drawClearBuffers();
+//		getSizeOfText(ttf16, Language::get(2991), &w, &h);
+//		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, Language::get(2991));
+//		GO_SwapBuffers(screen);
+//		physfsReloadBooks();
+//		gamemods_booksRequireReloadUnmodded = true;
+//	}
+//
+//	gamemodsUnloadCustomThemeMusic();
+//
+//	if ( physfsSearchMusicToUpdate() )
+//	{
+//		// print a loading message
+//		drawClearBuffers();
+//		getSizeOfText(ttf16, Language::get(2993), &w, &h);
+//		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, Language::get(2993));
+//		GO_SwapBuffers(screen);
+//		bool reloadIntroMusic = false;
+//		physfsReloadMusic(reloadIntroMusic, false);
+//		if ( reloadIntroMusic )
+//		{
+//#ifdef SOUND
+//			playMusic(intromusic[local_rng.rand() % (NUMINTROMUSIC - 1)], false, true, true);
+//#endif			
+//		}
+//		gamemods_musicRequireReloadUnmodded = true;
+//	}
+//
+//	std::string langDirectory = PHYSFS_getRealDir("lang/en.txt");
+//	if ( langDirectory.compare("./") != 0 )
+//	{
+//		// print a loading message
+//		drawClearBuffers();
+//		getSizeOfText(ttf16, Language::get(3004), &w, &h);
+//		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, Language::get(3004));
+//		GO_SwapBuffers(screen);
+//		if ( reloadLanguage() != 0 )
+//		{
+//			printlog("[PhysFS]: Error reloading modified language file in lang/ directory!");
+//		}
+//		else
+//		{
+//			printlog("[PhysFS]: Found modified language file in lang/ directory, reloading en.txt...");
+//		}
+//		gamemods_langRequireReloadUnmodded = true;
+//	}
+//
+//	if ( physfsSearchMonsterLimbFilesToUpdate() )
+//	{
+//		// print a loading message
+//		drawClearBuffers();
+//		getSizeOfText(ttf16, Language::get(3013), &w, &h);
+//		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, Language::get(3013));
+//		GO_SwapBuffers(screen);
+//		physfsReloadMonsterLimbFiles();
+//		gamemods_monsterLimbsRequireReloadUnmodded = true;
+//	}
+//
+//	if ( physfsSearchSystemImagesToUpdate() )
+//	{
+//		// print a loading message
+//		drawClearBuffers();
+//		getSizeOfText(ttf16, Language::get(3015), &w, &h);
+//		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, Language::get(3015));
+//		GO_SwapBuffers(screen);
+//		physfsReloadSystemImages();
+//		gamemods_systemImagesReloadUnmodded = true;
+//	}
+//
+//	// look for a save game
+//	if ( anySaveFileExists() )
+//	{
+//		//openLoadGameWindow(NULL);
+//		openNewLoadGameWindow(nullptr);
+//	}
+//	else
+//	{
+//		buttonOpenCharacterCreationWindow(NULL);
+//	}
 }
 
 void gamemodsCustomContentInit()
@@ -13797,49 +13664,51 @@ void gamemodsCustomContentInit()
 
 bool gamemodsClearAllMountedPaths()
 {
-	bool success = true;
-	char **i;
-	for ( i = PHYSFS_getSearchPath(); *i != NULL; i++ )
-	{
-		std::string line = *i;
-		if ( line.compare(outputdir) != 0 && line.compare(datadir) != 0 && line.compare("./") != 0 ) // don't unmount the base ./ directory
-		{
-			if ( PHYSFS_unmount(*i) == 0 )
-			{
-				success = false;
-				printlog("[%s] unsuccessfully removed from the search path.\n", line.c_str());
-			}
-			else
-			{
-				printlog("[%s] is removed from the search path.\n", line.c_str());
-			}
-		}
-	}
-	gamemods_numCurrentModsLoaded = -1;
-	PHYSFS_freeList(*i);
-	return success;
+	return true;
+	//bool success = true;
+	//char **i;
+	//for ( i = PHYSFS_getSearchPath(); *i != NULL; i++ )
+	//{
+	//	std::string line = *i;
+	//	if ( line.compare(outputdir) != 0 && line.compare(datadir) != 0 && line.compare("./") != 0 ) // don't unmount the base ./ directory
+	//	{
+	//		if ( PHYSFS_unmount(*i) == 0 )
+	//		{
+	//			success = false;
+	//			printlog("[%s] unsuccessfully removed from the search path.\n", line.c_str());
+	//		}
+	//		else
+	//		{
+	//			printlog("[%s] is removed from the search path.\n", line.c_str());
+	//		}
+	//	}
+	//}
+	//gamemods_numCurrentModsLoaded = -1;
+	//PHYSFS_freeList(*i);
+	//return success;
 }
 
 bool gamemodsMountAllExistingPaths()
 {
-	bool success = true;
-	std::vector<std::pair<std::string, std::string>>::iterator it;
-	for ( it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
-	{
-		std::pair<std::string, std::string> itpair = *it;
-		if ( PHYSFS_mount(itpair.first.c_str(), NULL, 0) )
-		{
-			printlog("[%s] is in the search path.\n", itpair.first.c_str());
-		}
-		else
-		{
-			printlog("[%s] unsuccessfully added to search path.\n", itpair.first.c_str());
-			success = false;
-		}
-	}
-	gamemods_numCurrentModsLoaded = gamemods_mountedFilepaths.size();
-	gamemods_customContentLoadedFirstTime = true;
-	return success;
+	return true;
+//	bool success = true;
+//	std::vector<std::pair<std::string, std::string>>::iterator it;
+//	for ( it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
+//	{
+//		std::pair<std::string, std::string> itpair = *it;
+//		if ( PHYSFS_mount(itpair.first.c_str(), NULL, 0) )
+//		{
+//			printlog("[%s] is in the search path.\n", itpair.first.c_str());
+//		}
+//		else
+//		{
+//			printlog("[%s] unsuccessfully added to search path.\n", itpair.first.c_str());
+//			success = false;
+//		}
+//	}
+//	gamemods_numCurrentModsLoaded = gamemods_mountedFilepaths.size();
+//	gamemods_customContentLoadedFirstTime = true;
+//	return success;
 }
 
 void gamemodsWindowClearVariables()
@@ -13922,7 +13791,7 @@ void gamemodsWorkshopPreloadMod(int fileID, std::string modTitle)
 		bool addToPath = !gamemodsIsPathInMountedFiles(fullpath);
 		if ( PHYSFS_mount(fullpath, NULL, 0) )
 		{
-			reloadLanguage();
+			Language::reloadLanguage();
 			if ( addToPath )
 			{
 				gamemods_mountedFilepaths.push_back(std::make_pair(fullpath, modTitle)); // change string to your mod name here.
@@ -14002,10 +13871,10 @@ void windowSerialResult(int success)
 
 	// ok button
 	button_t* button = newButton();
-	strcpy(button->label, language[1317]);
-	button->x = subx2 - strlen(language[1317]) * 12 - 16;
+	strcpy(button->label, Language::get(1317));
+	button->x = subx2 - strlen(Language::get(1317)) * 12 - 16;
 	button->y = suby2 - 28;
-	button->sizex = strlen(language[1317]) * 12 + 8;
+	button->sizex = strlen(Language::get(1317)) * 12 + 8;
 	button->sizey = 20;
 	button->action = &buttonCloseSubwindow;
 	button->visible = 1;
@@ -14028,17 +13897,17 @@ void windowSerialResult(int success)
 	{
 		if ( success == 2 )
 		{
-			strcpy(subtext, language[3405]);
+			strcpy(subtext, Language::get(3405));
 		}
 		else if ( success == 1 )
 		{
-			strcpy(subtext, language[3404]);
+			strcpy(subtext, Language::get(3404));
 		}
 		playSound(402, 92);
 	}
 	else
 	{
-		strcpy(subtext, language[3406]);
+		strcpy(subtext, Language::get(3406));
 	}
 }
 
@@ -14050,7 +13919,7 @@ void windowEnterSerialPrompt()
 	subx2 = xres / 2 + 300;
 	suby1 = yres / 2 - 64;
 	suby2 = yres / 2 + 64;
-	strcpy(subtext, language[3403]);
+	strcpy(subtext, Language::get(3403));
 	strcpy(serialInputText, "");
 	serialEnterWindow = true;
 	serialVerifyWindow = 0;
@@ -14070,10 +13939,10 @@ void windowEnterSerialPrompt()
 
 	// cancel button
 	button = newButton();
-	strcpy(button->label, language[1316]);
-	button->x = subx2 - strlen(language[1316]) * 12 - 16;
+	strcpy(button->label, Language::get(1316));
+	button->x = subx2 - strlen(Language::get(1316)) * 12 - 16;
 	button->y = suby2 - 28;
-	button->sizex = strlen(language[1316]) * 12 + 8;
+	button->sizex = strlen(Language::get(1316)) * 12 + 8;
 	button->sizey = 20;
 	button->action = &buttonCloseSubwindow;
 	button->visible = 1;

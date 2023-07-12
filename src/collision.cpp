@@ -166,7 +166,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 				}
 				if ( players[player]->worldUI.bTooltipActiveForPlayer(*tooltip) )
 				{
-					if ( tooltip->worldTooltipRequiresButtonHeld == 1 )
+					if ( tooltip->worldTooltipRequiresButtonHeld == 1 && *MainMenu::cvar_hold_to_activate )
 					{
 						if ( input.binaryHeldToggle("Use") )
 						{
@@ -760,7 +760,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 								// If the Entity is now on fire, tell them
 								if ( hit.entity->flags[BURNING] && !previouslyOnFire )
 								{
-									messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, language[590]); // "You suddenly catch fire!"
+									messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, Language::get(590)); // "You suddenly catch fire!"
 								}
 							}
 						}
@@ -788,7 +788,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 								// If the Entity is now on fire, tell them
 								if ( hit.entity->flags[BURNING] && !previouslyOnFire )
 								{
-									messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, language[590]); // "You suddenly catch fire!"
+									messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, Language::get(590)); // "You suddenly catch fire!"
 								}
 							}
 						}
@@ -985,6 +985,9 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 	}
 
 	//std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+	bool ignoreFurniture = my && my->behavior == &actMonster && myStats
+		&& (myStats->type == SHOPKEEPER
+			|| myStats->type == MINOTAUR);
 
 	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 	{
@@ -992,7 +995,7 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 		for ( node = currentList->first; node != nullptr; node = node->next )
 		{
 			Entity* entity = (Entity*)node->element;
-			if ( (entity != target && target != nullptr) || entity->flags[PASSABLE] || entity == my 
+			if ( (entity != target && target != nullptr) || entity->flags[PASSABLE] || entity == my
 				|| ((entities == LINETRACE_IGNORE_ENTITIES) && 
 						( (!entity->flags[BLOCKSIGHT] && entity->behavior != &actMonster) 
 							|| (entity->behavior == &actMonster && (entity->flags[INVISIBLE] && entity->sprite != 889) )
@@ -1008,6 +1011,10 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 			if ( entity->behavior == &actParticleTimer )
 			{
 				continue;
+			}
+			if ( entity->behavior == &actFurniture && ignoreFurniture )
+			{
+				continue; // see through furniture cause we'll bust it down
 			}
 
 			int entitymapx = static_cast<int>(entity->x) >> 4;

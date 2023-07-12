@@ -844,7 +844,7 @@ void createAllyFollowerFrame(const int player)
 		commandText->setHJustify(Field::justify_t::LEFT);
 		commandText->setVJustify(Field::justify_t::TOP);
 		commandText->setSize(SDL_Rect{ 0, 0, glyphFrame->getSize().w, 24 });
-		commandText->setText(language[4202]);
+		commandText->setText(Language::get(4202));
 		commandText->setColor(hudColors.characterSheetLightNeutral);
 		commandText->setOntop(true);
 		commandText->setDisabled(true);*/
@@ -863,7 +863,7 @@ void createAllyFollowerFrame(const int player)
 		repeatText->setHJustify(Field::justify_t::LEFT);
 		repeatText->setVJustify(Field::justify_t::TOP);
 		repeatText->setSize(SDL_Rect{ 0, 0, frame->getSize().w, 24 });
-		repeatText->setText(language[4203]);
+		repeatText->setText(Language::get(4203));
 		repeatText->setColor(hudColors.characterSheetLightNeutral);
 		repeatText->setOntop(true);
 		repeatText->setDisabled(true);*/
@@ -3633,7 +3633,7 @@ void createHotbar(const int player)
 	}
 
 	auto cancelPromptTxt = hotbar_t.hotbarFrame->addField("hotbar cancel prompt", 32);
-	cancelPromptTxt->setText(language[3063]);
+	cancelPromptTxt->setText(Language::get(3063));
 	cancelPromptTxt->setSize(SDL_Rect{ 0, 0, 100, 24 });
 	cancelPromptTxt->setDisabled(true);
 	cancelPromptTxt->setFont(font);
@@ -3666,7 +3666,7 @@ void createUINavigation(const int player)
 		const int glyphSize = 32;
 		const char* buttonFont = "fonts/pixel_maz.ttf#32#2";
 		auto magicButton = uiNavFrame->addButton("magic button");
-		magicButton->setText(language[4115]);
+		magicButton->setText(Language::get(4115));
 		magicButton->setFont(buttonFont);
 		magicButton->setBackground("*#images/ui/HUD/HUD_Button_Base_Small_00.png");
 		magicButton->setBackgroundActivated("*#images/ui/HUD/HUD_Button_Base_SmallPress_00.png");
@@ -3703,7 +3703,7 @@ void createUINavigation(const int player)
 			0xFFFFFFFF, "images/system/white.png", "magic button glyph")->disabled = true;
 
 		auto statusButton = uiNavFrame->addButton("status button");
-		statusButton->setText(language[4118]);
+		statusButton->setText(Language::get(4118));
 		statusButton->setFont(buttonFont);
 		statusButton->setBackground("*#images/ui/HUD/HUD_Button_Base_Small_00.png");
 		statusButton->setBackgroundActivated("*#images/ui/HUD/HUD_Button_Base_SmallPress_00.png");
@@ -3738,7 +3738,7 @@ void createUINavigation(const int player)
 			0xFFFFFFFF, "images/system/white.png", "status button glyph")->disabled = true;
 
 		auto itemsButton = uiNavFrame->addButton("items button");
-		itemsButton->setText(language[4116]);
+		itemsButton->setText(Language::get(4116));
 		itemsButton->setFont(buttonFont);
 		itemsButton->setBackground("*#images/ui/HUD/HUD_Button_Base_Small_00.png");
 		itemsButton->setBackgroundActivated("*#images/ui/HUD/HUD_Button_Base_SmallPress_00.png");
@@ -3776,7 +3776,7 @@ void createUINavigation(const int player)
 			0xFFFFFFFF, "images/system/white.png", "items button glyph")->disabled = true;
 
 		auto skillsButton = uiNavFrame->addButton("skills button");
-		skillsButton->setText(language[4117]);
+		skillsButton->setText(Language::get(4117));
 		skillsButton->setFont(buttonFont);
 		skillsButton->setBackground("*#images/ui/HUD/HUD_Button_Base_Small_00.png");
 		skillsButton->setBackgroundActivated("*#images/ui/HUD/HUD_Button_Base_SmallPress_00.png");
@@ -3956,7 +3956,7 @@ void Player::HUD_t::updateUINavigation()
 				case Player::GUI_t::MODULE_SHOP:
 				case Player::GUI_t::MODULE_ALCHEMY:
 					rightBumperTxt->setDisabled(false);
-					rightBumperTxt->setText(language[4092]);
+					rightBumperTxt->setText(Language::get(4092));
 					break;
 				default:
 					break;
@@ -3973,18 +3973,18 @@ void Player::HUD_t::updateUINavigation()
 				&& selectedElement <= Player::CharacterSheet_t::SHEET_WGT )
 			{
 				additionalTxt->setDisabled(false);
-				additionalTxt->setText(language[4111]);
+				additionalTxt->setText(Language::get(4111));
 			}
 			else if ( selectedElement == Player::CharacterSheet_t::SHEET_CHAR_RACE_SEX
 				|| selectedElement == Player::CharacterSheet_t::SHEET_CHAR_CLASS )
 			{
 				additionalTxt->setDisabled(false);
-				additionalTxt->setText(language[4111]);
+				additionalTxt->setText(Language::get(4111));
 			}
 			else if ( selectedElement == Player::CharacterSheet_t::SHEET_DUNGEON_FLOOR )
 			{
 				additionalTxt->setDisabled(false);
-				additionalTxt->setText(language[4112]);
+				additionalTxt->setText(Language::get(4112));
 			}
 			else if ( selectedElement == Player::CharacterSheet_t::SHEET_SKILL_LIST
 				|| selectedElement == Player::CharacterSheet_t::SHEET_OPEN_LOG 
@@ -3994,28 +3994,28 @@ void Player::HUD_t::updateUINavigation()
 				// options to use specific text 'open log' etc
 				//if ( selectedElement == Player::CharacterSheet_t::SHEET_SKILL_LIST )
 				//{
-				//	additionalTxt->setText(language[4095]);
+				//	additionalTxt->setText(Language::get(4095));
 				//}
 				//else if ( selectedElement == Player::CharacterSheet_t::SHEET_OPEN_LOG )
 				//{
-				//	additionalTxt->setText(language[4106]);
+				//	additionalTxt->setText(Language::get(4106));
 				//}
 				//else if ( selectedElement == Player::CharacterSheet_t::SHEET_OPEN_MAP )
 				//{
-				//	additionalTxt->setText(language[4105]);
+				//	additionalTxt->setText(Language::get(4105));
 				//}
-				additionalTxt->setText(language[4107]); // activate
+				additionalTxt->setText(Language::get(4107)); // activate
 			}
 			else if ( selectedElement == Player::CharacterSheet_t::SHEET_GOLD )
 			{
 				additionalTxt->setDisabled(false);
 				if ( player.GUI.isDropdownActive() )
 				{
-					additionalTxt->setText(language[4053]);
+					additionalTxt->setText(Language::get(4053));
 				}
 				else
 				{
-					additionalTxt->setText(language[4108]);
+					additionalTxt->setText(Language::get(4108));
 				}
 			}
 			else if ( selectedElement == Player::CharacterSheet_t::SHEET_TIMER )
@@ -4023,11 +4023,11 @@ void Player::HUD_t::updateUINavigation()
 				additionalTxt->setDisabled(false);
 				if ( player.characterSheet.showGameTimerAlways )
 				{
-					additionalTxt->setText(language[4110]);
+					additionalTxt->setText(Language::get(4110));
 				}
 				else
 				{
-					additionalTxt->setText(language[4109]);
+					additionalTxt->setText(Language::get(4109));
 				}
 			}
 			if ( !additionalTxt->isDisabled() )
@@ -4129,11 +4129,11 @@ void Player::HUD_t::updateUINavigation()
 				leftTriggerTxt->setDisabled(false);
 				if ( player.inventory_mode == INVENTORY_MODE_ITEM )
 				{
-					leftTriggerTxt->setText(language[4093]);
+					leftTriggerTxt->setText(Language::get(4093));
 				}
 				else if ( player.inventory_mode == INVENTORY_MODE_SPELL )
 				{
-					leftTriggerTxt->setText(language[4094]);
+					leftTriggerTxt->setText(Language::get(4094));
 				}
 			}
 
@@ -4182,7 +4182,7 @@ void Player::HUD_t::updateUINavigation()
 					rightTriggerTxt->setSize(textPos);
 				}
 				rightTriggerTxt->setDisabled(false);
-				rightTriggerTxt->setText(language[4095]);
+				rightTriggerTxt->setText(Language::get(4095));
 
 				if ( !additionalTxt->isDisabled() )
 				{
@@ -5408,7 +5408,7 @@ void Player::HUD_t::updateStatusEffectFocusedWindow()
 		{
 			auto heading_txt = backgroundFrame->addField("heading txt", 128);
 			heading_txt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
-			heading_txt->setText(language[4345]);
+			heading_txt->setText(Language::get(4345));
 			heading_txt->setColor(makeColor(255, 255, 255, 255));
 			heading_txt->setVJustify(Field::justify_t::CENTER);
 			heading_txt->setHJustify(Field::justify_t::CENTER);
@@ -5461,7 +5461,7 @@ void Player::HUD_t::updateStatusEffectFocusedWindow()
 
 			auto noEffectTxt = backgroundFrame->addField("no effect txt", 128);
 			noEffectTxt->setFont(smallfont_outline);
-			noEffectTxt->setText(language[4346]);
+			noEffectTxt->setText(Language::get(4346));
 			noEffectTxt->setDisabled(true);
 			noEffectTxt->setColor(makeColor(255, 255, 255, 255));
 			noEffectTxt->setVJustify(Field::justify_t::CENTER);
@@ -8487,13 +8487,13 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				text->setDisabled(false);
 				if ( !glyphAdditional->disabled )
 				{
-					std::string txt = language[4201];
-					txt += language[3650];
+					std::string txt = Language::get(4201);
+					txt += Language::get(3650);
 					text->setText(txt.c_str());
 				}
 				else
 				{
-					text->setText(language[3650]);
+					text->setText(Language::get(3650));
 				}
 			}
 			else
@@ -8501,13 +8501,13 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				text->setDisabled(false);
 				if ( !glyphAdditional->disabled )
 				{
-					std::string txt = language[4201];
-					txt += language[3039];
+					std::string txt = Language::get(4201);
+					txt += Language::get(3039);
 					text->setText(txt.c_str());
 				}
 				else
 				{
-					text->setText(language[3039]);
+					text->setText(Language::get(3039));
 				}
 			}
 		}
@@ -8524,18 +8524,18 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 						)
 					{
 						text->setDisabled(false);
-						text->setText(language[4041]); // "Interact with..."
+						text->setText(Language::get(4041)); // "Interact with..."
 					}
 					else
 					{
 						text->setDisabled(false);
-						text->setText(language[4042]); // "Attack..."
+						text->setText(Language::get(4042)); // "Attack..."
 					}
 				}
 				else
 				{
 					text->setDisabled(false);
-					text->setText(language[4041]); // "Interact with..."
+					text->setText(Language::get(4041)); // "Interact with..."
 				}
 			}
 			else
@@ -8547,7 +8547,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 
 		if ( !glyphAdditional->disabled )
 		{
-			if ( !strstr(text->getText(), language[4201]) ) // no "(ALL) " text
+			if ( !strstr(text->getText(), Language::get(4201)) ) // no "(ALL) " text
 			{
 				glyphAdditional->disabled = true;
 				textPos.x -= glyphAdditional->pos.w + skillIconToGlyphPadding;
@@ -8774,7 +8774,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					}
 
 					text->setDisabled(false);
-					text->setText(language[3663]);
+					text->setText(Language::get(3663));
 				}
 				else
 				{
@@ -8782,7 +8782,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					textPos.y = cursor->pos.y + 11;
 
 					text->setDisabled(false);
-					text->setText(language[3663]);
+					text->setText(Language::get(3663));
 				}
 			}
 		}
@@ -8878,7 +8878,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					//glyphCycle->pos.x += 16;
 					//interactPrompt.promptAnim = 1.0;
 					glyphCycle->color = makeColor(255, 255, 255, 255 * interactPrompt.promptAnim);
-					textCycle->setText(language[4326]);
+					textCycle->setText(Language::get(4326));
 					textCycle->setColor(makeColor(255, 255, 255, 255 * interactPrompt.promptAnim));
 					SDL_Rect textPos = text->getSize();
 					textPos.x = glyphCycle->pos.x + glyphCycle->pos.w + 4;
@@ -10868,19 +10868,19 @@ void openLogWindow(int player) {
 		std::vector<TextAndGlyphs> textAndGlyphs;
 		if ( twoPrompts )
 		{
-			help_left->setText(language[4315]);
+			help_left->setText(Language::get(4315));
 			help_center->setDisabled(true);
 			help_center_div->setDisabled(true);
-			help_right->setText(language[4316]);
+			help_right->setText(Language::get(4316));
 
 			textAndGlyphs.push_back(TextAndGlyphs{ LogPageUp, LogPageDown, help_left_div, help_left});
 			textAndGlyphs.push_back(TextAndGlyphs{ LogScrollUp, LogScrollDown, help_right_div, help_right });
 		}
 		else
 		{
-			help_left->setText(language[4314]);
-			help_center->setText(language[4315]);
-			help_right->setText(language[4316]);
+			help_left->setText(Language::get(4314));
+			help_center->setText(Language::get(4315));
+			help_right->setText(Language::get(4316));
 
 			textAndGlyphs.push_back(TextAndGlyphs{ LogHome, LogEnd, help_left_div, help_left });
 			textAndGlyphs.push_back(TextAndGlyphs{ LogPageUp, LogPageDown, help_center_div, help_center });
@@ -11430,7 +11430,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			SDL_Rect buttonPos{ 0, 0, buttonFramePos.w, 40 };
 			auto mapButton = buttonFrame->addButton("map button");
-			mapButton->setText(language[4069]);
+			mapButton->setText(Language::get(4069));
 			mapButton->setFont(buttonFont);
 			mapButton->setBackground("*#images/ui/CharSheet/HUD_CharSheet_Button_00.png");
 			mapButton->setSize(buttonPos);
@@ -11455,7 +11455,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			buttonPos.y = buttonPos.y + buttonPos.h + 2;
 			auto logButton = buttonFrame->addButton("log button");
-			logButton->setText(language[4070]);
+			logButton->setText(Language::get(4070));
 			logButton->setFont(buttonFont);
 			logButton->setBackground("*#images/ui/CharSheet/HUD_CharSheet_Button_00.png");
 			logButton->setSize(buttonPos);
@@ -11562,7 +11562,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			Frame* skillsButtonFrame = sheetFrame->addFrame("skills button frame");
 			skillsButtonFrame->setSize(SDL_Rect{ leftAlignX + 14, 360 - 8 - 42, 186, 42 });
 			auto skillsButton = skillsButtonFrame->addButton("skills button");
-			skillsButton->setText(language[4074]);
+			skillsButton->setText(Language::get(4074));
 			skillsButton->setFont(skillsFont);
 			skillsButton->setBackground("*#images/ui/CharSheet/HUD_CharSheet_ButtonWide_00.png");
 			skillsButton->setBackgroundActivated("*#images/ui/CharSheet/HUD_CharSheet_ButtonWidePress_00.png");
@@ -12677,7 +12677,7 @@ void Player::CharacterSheet_t::processCharacterSheet()
 			{
 				SDL_Rect buttonPos{ 0, 1, 98, 38 };
 				auto mapBtn = buttonFrame->findButton("map button");
-				mapBtn->setText(language[4071]);
+				mapBtn->setText(Language::get(4071));
 				mapBtn->setSize(buttonPos);
 				auto mapSelector = buttonFrame->findFrame("map button selector");
 				SDL_Rect mapSelectorPos = buttonPos;
@@ -12689,7 +12689,7 @@ void Player::CharacterSheet_t::processCharacterSheet()
 
 				buttonPos.x = buttonFramePos.w - buttonPos.w;
 				auto logBtn = buttonFrame->findButton("log button");
-				logBtn->setText(language[4072]);
+				logBtn->setText(Language::get(4072));
 				logBtn->setSize(buttonPos);
 				auto logSelector = buttonFrame->findFrame("log button selector");
 				SDL_Rect logSelectorPos = buttonPos;
@@ -12740,14 +12740,14 @@ void Player::CharacterSheet_t::processCharacterSheet()
 			{
 				SDL_Rect buttonPos{ 0, 0, buttonFramePos.w, 40 };
 				auto mapBtn = buttonFrame->findButton("map button");
-				mapBtn->setText(language[4069]);
+				mapBtn->setText(Language::get(4069));
 				mapBtn->setSize(buttonPos);
 				auto mapSelector = buttonFrame->findFrame("map button selector");
 				mapSelector->setSize(buttonPos);
 
 				buttonPos.y = buttonPos.y + buttonPos.h + 2;
 				auto logBtn = buttonFrame->findButton("log button");
-				logBtn->setText(language[4070]);
+				logBtn->setText(Language::get(4070));
 				logBtn->setSize(buttonPos);
 				auto logSelector = buttonFrame->findFrame("log button selector");
 				logSelector->setSize(buttonPos);
@@ -16372,7 +16372,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 							if ( stats[player.playernum]->appearance != 0 )
 							{
 								aestheticOnly = true;
-								appearance = language[4068];
+								appearance = Language::get(4068);
 								type = player.entity->getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
 							}
 						}
@@ -18076,7 +18076,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 	int charLevelWidth = 0;
 	if ( charLevel )
 	{
-		snprintf(buf, sizeof(buf), language[4051], stats[player.playernum]->LVL);
+		snprintf(buf, sizeof(buf), Language::get(4051), stats[player.playernum]->LVL);
 		if ( strcmp(buf, charLevel->getText()) )
 		{
 			charLevel->setText(buf);
@@ -18134,7 +18134,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 				if ( stats[player.playernum]->appearance != 0 )
 				{
 					aestheticOnly = true;
-					appearance = language[4068];
+					appearance = Language::get(4068);
 					type = player.entity->getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
 				}
 			}
@@ -18143,7 +18143,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 		capitalizeString(race);
 		if ( type == HUMAN )
 		{
-			appearance = language[20 + stats[player.playernum]->appearance % NUMAPPEARANCES];
+			appearance = Language::get(20 + stats[player.playernum]->appearance % NUMAPPEARANCES);
 			capitalizeString(appearance);
 		}
 		bool centerIconAndText = false;
@@ -18256,7 +18256,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 	{
 		if ( auto floorLevelText = floorFrame->findField("dungeon level text") )
 		{
-			snprintf(buf, sizeof(buf), language[4052], currentlevel);
+			snprintf(buf, sizeof(buf), Language::get(4052), currentlevel);
 			if ( strcmp(buf, floorLevelText->getText()) )
 			{
 				floorLevelText->setText(buf);
@@ -20300,7 +20300,7 @@ void createInventoryTooltipFrame(const int player)
 		const char* interactFont = "fonts/pixel_maz.ttf#32#2";
 
 		auto interactText = interactFrame->addField("interact text", 32);
-		interactText->setText(language[4040]);
+		interactText->setText(Language::get(4040));
 		interactText->setSize(SDL_Rect{ 0, 2, 0, topBackgroundHeight });
 		interactText->setFont(interactFont);
 		interactText->setHJustify(Field::justify_t::CENTER);
@@ -20476,7 +20476,7 @@ void createInventoryTooltipFrame(const int player)
 		int textAlignY = interactGlyph1->pos.y - 4;
 		int textAlignXRightJustify = interactGlyph1->pos.x - 6 - textWidth;
 		auto promptText = promptFrame->addField("txt 1", 32);
-		promptText->setText(language[4050]);
+		promptText->setText(Language::get(4050));
 		promptText->setSize(SDL_Rect{
 			textAlignXRightJustify,
 			textAlignY,
@@ -20489,7 +20489,7 @@ void createInventoryTooltipFrame(const int player)
 		textAlignXRightJustify = interactGlyph2->pos.x - 6 - textWidth;
 		textAlignY = interactGlyph2->pos.y - 4;
 		promptText = promptFrame->addField("txt 2", 32);
-		promptText->setText(language[4040]);
+		promptText->setText(Language::get(4040));
 		promptText->setSize(SDL_Rect{
 			textAlignXRightJustify,
 			textAlignY,
@@ -22193,7 +22193,7 @@ void loadHUDSettingsJSON()
 						}
 						else
 						{
-							dropdown.title = language[4040]; // "interact"
+							dropdown.title = Language::get(4040); // "interact"
 						}
 						if ( itr->value.HasMember("align_right") )
 						{
@@ -22585,12 +22585,12 @@ bool takeAllChestGUIAction(const int player)
 
 	if ( pickedUpItems > 0 )
 	{
-		messagePlayer(player, MESSAGE_INVENTORY, language[4099], pickedUpItems);
+		messagePlayer(player, MESSAGE_INVENTORY, Language::get(4099), pickedUpItems);
 		playSound(35 + local_rng.rand() % 3, 64);
 	}
 	else if ( pickedUpItems == 0 && numItems > 0 )
 	{
-		messagePlayer(player, MESSAGE_INVENTORY, language[4100]);
+		messagePlayer(player, MESSAGE_INVENTORY, Language::get(4100));
 		playSoundPlayer(player, 90, 64);
 	}
 
@@ -22722,7 +22722,7 @@ void createChestGUI(const int player)
 		promptBack->setFont(promptFont.c_str());
 		promptBack->setHJustify(Field::justify_t::RIGHT);
 		promptBack->setVJustify(Field::justify_t::CENTER);
-		promptBack->setText(language[4053]);
+		promptBack->setText(Language::get(4053));
 		//promptBack->setOntop(true);
 		promptBack->setColor(makeColor(201, 162, 100, 255));
 
@@ -22735,7 +22735,7 @@ void createChestGUI(const int player)
 		promptGrabAll->setFont(promptFont.c_str());
 		promptGrabAll->setHJustify(Field::justify_t::RIGHT);
 		promptGrabAll->setVJustify(Field::justify_t::CENTER);
-		promptGrabAll->setText(language[4091]);
+		promptGrabAll->setText(Language::get(4091));
 		//promptBack->setOntop(true);
 		promptGrabAll->setColor(makeColor(201, 162, 100, 255));
 
@@ -22954,7 +22954,7 @@ void createShopGUI(const int player)
 
 			auto discountLabelText = bgFrame->addField("discount label", 32);
 			discountLabelText->setFont(valueFont);
-			discountLabelText->setText(language[4122]);
+			discountLabelText->setText(Language::get(4122));
 			discountLabelText->setHJustify(Field::justify_t::RIGHT);
 			discountLabelText->setVJustify(Field::justify_t::TOP);
 			discountLabelText->setSize(SDL_Rect{ bgFrame->getSize().w - 106 - 180 - 12, bgFrame->getSize().h - 92 - 30, 180, 24 });
@@ -22982,7 +22982,7 @@ void createShopGUI(const int player)
 
 			auto currentGoldLabelText = bgFrame->addField("current gold label", 32);
 			currentGoldLabelText->setFont(valueFont);
-			currentGoldLabelText->setText(language[4119]);
+			currentGoldLabelText->setText(Language::get(4119));
 			currentGoldLabelText->setHJustify(Field::justify_t::RIGHT);
 			currentGoldLabelText->setVJustify(Field::justify_t::TOP);
 			currentGoldLabelText->setSize(SDL_Rect{ bgFrame->getSize().w - 106 - 100 - 12, bgFrame->getSize().h - 92, 100, 24 });
@@ -23003,7 +23003,7 @@ void createShopGUI(const int player)
 			auto promptFont = "fonts/pixel_maz.ttf#32#2";
 			auto buybackText = bgFrame->addField("buyback txt", 32);
 			buybackText->setFont(promptFont);
-			buybackText->setText(language[4120]);
+			buybackText->setText(Language::get(4120));
 			buybackText->setHJustify(Field::justify_t::LEFT);
 			buybackText->setVJustify(Field::justify_t::TOP);
 			buybackText->setSize(SDL_Rect{ bgFrame->getSize().w - 178, bgFrame->getSize().h - 58, 178, 24 });
@@ -23018,7 +23018,7 @@ void createShopGUI(const int player)
 			auto buybackBtn = bgFrame->addButton("buyback button");
 			buybackBtn->setSize(SDL_Rect{ bgFrame->getSize().w - 208, bgFrame->getSize().h - 50, 194, 26 });
 			buybackBtn->setFont(promptFont);
-			buybackBtn->setText(language[4120]);
+			buybackBtn->setText(Language::get(4120));
 			buybackBtn->setColor(makeColor(255, 255, 255, 255));
 			buybackBtn->setHighlightColor(makeColor(255, 255, 255, 255));
 			buybackBtn->setHideGlyphs(true);
@@ -23036,7 +23036,7 @@ void createShopGUI(const int player)
 
 			auto closeText = bgFrame->addField("close shop prompt", 32);
 			closeText->setFont(promptFont);
-			closeText->setText(language[4121]);
+			closeText->setText(Language::get(4121));
 			closeText->setHJustify(Field::justify_t::LEFT);
 			closeText->setVJustify(Field::justify_t::TOP);
 			closeText->setSize(SDL_Rect{ bgFrame->getSize().w - 178, bgFrame->getSize().h - 36, 178, 24 });
@@ -24256,7 +24256,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 							{
 								// no space
 								tryAddToInventory = false;
-								messagePlayer(player, MESSAGE_INVENTORY, language[727], item->getName()); // no room
+								messagePlayer(player, MESSAGE_INVENTORY, Language::get(727), item->getName()); // no room
 								playSoundPlayer(player, 90, 64);
 								break;
 							}
@@ -24341,7 +24341,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 							{
 								// no space
 								tryAddToInventory = false;
-								messagePlayer(player, MESSAGE_INVENTORY, language[727], item->getName()); // no room
+								messagePlayer(player, MESSAGE_INVENTORY, Language::get(727), item->getName()); // no room
 								playSoundPlayer(player, 90, 64);
 								break;
 							}
@@ -24412,7 +24412,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 								{
 									// no space
 									tryAddToChest = false;
-									messagePlayer(player, MESSAGE_INVENTORY, language[4098], item->getName()); // no room
+									messagePlayer(player, MESSAGE_INVENTORY, Language::get(4098), item->getName()); // no room
 									playSoundPlayer(player, 90, 64);
 									break;
 								}
@@ -24484,7 +24484,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 								{
 									// no space
 									tryAddToChest = false;
-									messagePlayer(player, MESSAGE_INVENTORY, language[4098], item->getName()); // no room
+									messagePlayer(player, MESSAGE_INVENTORY, Language::get(4098), item->getName()); // no room
 									playSoundPlayer(player, 90, 64);
 									break;
 								}
@@ -24518,7 +24518,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		}
 		else
 		{
-			messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
+			messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(3432)); // unable to use in current form message.
 			playSoundPlayer(player, 90, 64);
 		}
 		if ( !emptiedSlot && (inputs.getUIInteraction(player)->itemMenuOpen || players[player]->inventoryUI.bCompactView) )
@@ -24601,13 +24601,13 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 				}
 				else
 				{
-					messagePlayer(player, MESSAGE_EQUIPMENT, language[1092], item->getName()); // this is useless!
+					messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1092), item->getName()); // this is useless!
 					playSoundPlayer(player, 90, 64);
 				}
 			}
 			else
 			{
-				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(3432)); // unable to use in current form message.
 				playSoundPlayer(player, 90, 64);
 			}
 		}
@@ -24621,13 +24621,13 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 				}
 				else
 				{
-					messagePlayer(player, MESSAGE_EQUIPMENT, language[1092], item->getName()); // this is useless!
+					messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1092), item->getName()); // this is useless!
 					playSoundPlayer(player, 90, 64);
 				}
 			}
 			else
 			{
-				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(3432)); // unable to use in current form message.
 				playSoundPlayer(player, 90, 64);
 			}
 		}
@@ -24648,7 +24648,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 			}
 			else
 			{
-				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(3432)); // unable to use in current form message.
 				playSoundPlayer(player, 90, 64);
 			}
 		}
@@ -24668,7 +24668,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		{
 			if ( item->status == BROKEN )
 			{
-				messagePlayer(player, MESSAGE_EQUIPMENT, language[1092], item->getName()); // don't try equip broken stuff
+				messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1092), item->getName()); // don't try equip broken stuff
 				playSoundPlayer(player, 90, 64);
 				return;
 			}
@@ -24706,11 +24706,11 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		{
 			if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 			{
-				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3488]); // unable to use with current level.
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(3488)); // unable to use with current level.
 			}
 			else
 			{
-				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(3432)); // unable to use in current form message.
 			}
 			playSoundPlayer(player, 90, 64);
 		}
@@ -24726,11 +24726,11 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		{
 			if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 			{
-				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3488]); // unable to use with current level.
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(3488)); // unable to use with current level.
 			}
 			else
 			{
-				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(3432)); // unable to use in current form message.
 			}
 			playSoundPlayer(player, 90, 64);
 		}
@@ -28883,7 +28883,7 @@ void Player::Hotbar_t::updateHotbar()
 	if ( (!bCompactView && !loweredY) && useHotbarFaceMenu && faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE )
 	{
 		cancelPromptTxt->setDisabled(false);
-		cancelPromptTxt->setText(language[3063]);
+		cancelPromptTxt->setText(Language::get(3063));
 		static ConsoleVariable<int> cvar_hotbar_cancel_prompt_y("/hotbar_cancel_prompt_y", -6);
 		static ConsoleVariable<int> cvar_hotbar_cancel_prompt_x("/hotbar_cancel_prompt_x", 29);
 		cancelPromptGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("Hotbar Down / Cancel");
@@ -29901,7 +29901,7 @@ void Player::SkillSheet_t::createSkillSheet()
 			"*#images/ui/SkillSheet/UI_Skills_Separator_00.png", "legend div");
 		legendDivImg->pos.x = scrollAreaFrame->getSize().w / 2 - legendDivImg->pos.w / 2;
 		auto legendDivTxt = scrollAreaFrame->addField("legend div text", 128);
-		legendDivTxt->setText(language[4056]);
+		legendDivTxt->setText(Language::get(4056));
 		SDL_Rect legendDivTxtPos = legendDivImg->pos;
 		legendDivTxt->setSize(legendDivTxtPos);
 		legendDivTxt->setFont(descFont);
@@ -29955,7 +29955,7 @@ void Player::SkillSheet_t::createSkillSheet()
 	promptBack->setFont(promptFont.c_str());
 	promptBack->setHJustify(Field::justify_t::RIGHT);
 	promptBack->setVJustify(Field::justify_t::CENTER);
-	promptBack->setText(language[4053]);
+	promptBack->setText(Language::get(4053));
 	//promptBack->setOntop(true);
 	promptBack->setTextColor(makeColor(201, 162, 100, 255));
 
@@ -29970,7 +29970,7 @@ void Player::SkillSheet_t::createSkillSheet()
 	promptScroll->setFont(promptFont.c_str());
 	promptScroll->setHJustify(Field::justify_t::LEFT);
 	promptScroll->setVJustify(Field::justify_t::CENTER);
-	promptScroll->setText(language[4062]);
+	promptScroll->setText(Language::get(4062));
 	//promptScroll->setOntop(true);
 	promptScroll->setTextColor(makeColor(201, 162, 100, 255));
 
@@ -30713,7 +30713,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		{
 			if ( skillCapstoneUnlocked(playernum, proficiency) )
 			{
-				snprintf(buf, sizeof(buf), "%s", language[4064]); // "instant"
+				snprintf(buf, sizeof(buf), "%s", Language::get(4064)); // "instant"
 			}
 			else
 			{
@@ -30725,7 +30725,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		{
 			if ( skillCapstoneUnlocked(playernum, proficiency) )
 			{
-				snprintf(buf, sizeof(buf), "%s", language[4065]); // "any"
+				snprintf(buf, sizeof(buf), "%s", Language::get(4065)); // "any"
 			}
 			else
 			{
@@ -30749,11 +30749,11 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		{
 			if ( (stats[playernum]->PROFICIENCIES[proficiency] + (statGetPER(stats[playernum], player) * 5)) >= 100 )
 			{
-				snprintf(buf, sizeof(buf), rawValue.c_str(), language[1314]); // yes
+				snprintf(buf, sizeof(buf), rawValue.c_str(), Language::get(1314)); // yes
 			}
 			else
 			{
-				snprintf(buf, sizeof(buf), rawValue.c_str(), language[1315]); // no
+				snprintf(buf, sizeof(buf), rawValue.c_str(), Language::get(1315)); // no
 			}
 		}
 		return buf;
@@ -30826,18 +30826,18 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "TINKERING_KIT_REPAIR_ITEM" )
 		{
-			std::string canRepairItems = language[4057]; // none
+			std::string canRepairItems = Language::get(4057); // none
 			char metalbuf[64] = "";
 			char magicbuf[64] = "";
 			if ( (stats[playernum]->PROFICIENCIES[proficiency] + PER + (stats[playernum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_LEGENDARY )
 			{
-				canRepairItems = language[4058]; // all
+				canRepairItems = Language::get(4058); // all
 			}
 			else if ( (stats[playernum]->PROFICIENCIES[proficiency] + PER + (stats[playernum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_MASTER )
 			{
 				// 2/0
-				snprintf(metalbuf, sizeof(metalbuf), language[4059], 2);
-				snprintf(magicbuf, sizeof(magicbuf), language[4060], 0);
+				snprintf(metalbuf, sizeof(metalbuf), Language::get(4059), 2);
+				snprintf(magicbuf, sizeof(magicbuf), Language::get(4060), 0);
 				canRepairItems = "\x1E ";
 				canRepairItems += metalbuf;
 				canRepairItems += '\n';
@@ -30847,8 +30847,8 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			else if ( (stats[playernum]->PROFICIENCIES[proficiency] + PER + (stats[playernum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_EXPERT )
 			{
 				// 1/0
-				snprintf(metalbuf, sizeof(metalbuf), language[4059], 1);
-				snprintf(magicbuf, sizeof(magicbuf), language[4060], 0);
+				snprintf(metalbuf, sizeof(metalbuf), Language::get(4059), 1);
+				snprintf(magicbuf, sizeof(magicbuf), Language::get(4060), 0);
 				canRepairItems = "\x1E ";
 				canRepairItems += metalbuf;
 				canRepairItems += '\n';
@@ -30962,11 +30962,11 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		{
 			if ( (stats[playernum])->playerRace == RACE_INSECTOID && (stats[playernum])->appearance == 0 )
 			{
-				return language[4066];
+				return Language::get(4066);
 			}
 			else if ( (stats[playernum])->type == AUTOMATON )
 			{
-				return language[4067];
+				return Language::get(4067);
 			}
 			else
 			{
@@ -30978,11 +30978,11 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		{
 			if ( (stats[playernum])->playerRace == RACE_INSECTOID && (stats[playernum])->appearance == 0 )
 			{
-				return language[4066];
+				return Language::get(4066);
 			}
 			else if ( (stats[playernum])->type == AUTOMATON )
 			{
-				return language[4067];
+				return Language::get(4067);
 			}
 			else
 			{
@@ -31027,18 +31027,18 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		{
 			if ( isSpellcasterBeginner(playernum, player) )
 			{
-				snprintf(buf, sizeof(buf), rawValue.c_str(), language[1314]); // yes
+				snprintf(buf, sizeof(buf), rawValue.c_str(), Language::get(1314)); // yes
 			}
 			else
 			{
-				snprintf(buf, sizeof(buf), rawValue.c_str(), language[1315]); // no
+				snprintf(buf, sizeof(buf), rawValue.c_str(), Language::get(1315)); // no
 			}
 		}
 		else if ( tag == "CASTING_SPELLBOOK_FUMBLE" )
 		{
 			int skillLVL = std::min(std::max(0, stats[playernum]->PROFICIENCIES[proficiency] + statGetINT(stats[playernum], player)), 100);
 			skillLVL /= 20;
-			std::string tierName = language[4061];
+			std::string tierName = Language::get(4061);
 			tierName += " ";
 			if ( skillLVL <= 0 )
 			{
@@ -31072,11 +31072,11 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 	{
 		if ( tag == "MAGIC_CURRENT_TIER" )
 		{
-			std::string tierName = language[4061];
+			std::string tierName = Language::get(4061);
 			int skillLVL = std::min(stats[playernum]->PROFICIENCIES[proficiency] + statGetINT(stats[playernum], player), 100);
 			if ( skillLVL < 0 )
 			{
-				tierName = language[4057]; // none
+				tierName = Language::get(4057); // none
 			}
 			else
 			{
@@ -31512,6 +31512,24 @@ void buttonSkillsheetUpdateSelectorOnHighlight(const int player, Button* button)
 			players[player]->GUI.activateModule(Player::GUI_t::MODULE_SKILLS_LIST);
 		}
 		SDL_Rect pos = button->getAbsoluteSize();
+		// make sure to adjust absolute size to camera viewport
+		pos.x -= players[player]->camera_virtualx1();
+		pos.y -= players[player]->camera_virtualy1();
+		players[player]->hud.setCursorDisabled(false);
+		players[player]->hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, inputs.getVirtualMouse(player)->draw_cursor);
+	}
+}
+
+void sliderSkillsheetUpdateSelectorOnHighlight(const int player, Slider* slider)
+{
+	if ( slider->isHighlighted() )
+	{
+		players[player]->GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_SKILLS_LIST);
+		if ( players[player]->GUI.activeModule != Player::GUI_t::MODULE_SKILLS_LIST )
+		{
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_SKILLS_LIST);
+		}
+		SDL_Rect pos = slider->getAbsoluteSize();
 		// make sure to adjust absolute size to camera viewport
 		pos.x -= players[player]->camera_virtualx1();
 		pos.y -= players[player]->camera_virtualy1();
@@ -32282,31 +32300,31 @@ void Player::SkillSheet_t::processSkillSheet()
 				std::string skillLvlTitle = "";
 				if ( proficiencyValue >= SKILL_LEVEL_LEGENDARY )
 				{
-					skillLvlTitle = language[369];
+					skillLvlTitle = Language::get(369);
 				}
 				else if ( proficiencyValue >= SKILL_LEVEL_MASTER )
 				{
-					skillLvlTitle = language[368];
+					skillLvlTitle = Language::get(368);
 				}
 				else if ( proficiencyValue >= SKILL_LEVEL_EXPERT )
 				{
-					skillLvlTitle = language[367];
+					skillLvlTitle = Language::get(367);
 				}
 				else if ( proficiencyValue >= SKILL_LEVEL_SKILLED )
 				{
-					skillLvlTitle = language[366];
+					skillLvlTitle = Language::get(366);
 				}
 				else if ( proficiencyValue >= SKILL_LEVEL_BASIC )
 				{
-					skillLvlTitle = language[365];
+					skillLvlTitle = Language::get(365);
 				}
 				else if ( proficiencyValue >= SKILL_LEVEL_NOVICE )
 				{
-					skillLvlTitle = language[364];
+					skillLvlTitle = Language::get(364);
 				}
 				else
 				{
-					skillLvlTitle = language[363];
+					skillLvlTitle = Language::get(363);
 				}
 				skillLvlTitle.erase(std::remove(skillLvlTitle.begin(), skillLvlTitle.end(), ' '), skillLvlTitle.end()); // trim whitespace
 				snprintf(skillLvl, sizeof(skillLvl), "%s (%d)", skillLvlTitle.c_str(), stats[player.playernum]->PROFICIENCIES[proficiency]);
@@ -32979,6 +32997,11 @@ void Player::SkillSheet_t::processSkillSheet()
 			reblitFrame = true;
 		}
 		scrollArea->setSize(scrollAreaPos);
+
+		if ( !slider->isDisabled() && inputs.getVirtualMouse(player.playernum)->draw_cursor )
+		{
+			sliderSkillsheetUpdateSelectorOnHighlight(player.playernum, slider);
+		}
 	}
 
 	if ( oldHighlightedSkill != highlightedSkill )
@@ -32992,7 +33015,7 @@ void Player::SkillSheet_t::processSkillSheet()
 	if ( auto promptBack = skillFrame->findField("prompt back txt") )
 	{
 		promptBack->setDisabled(!drawGlyphs);
-		promptBack->setText(language[4053]);
+		promptBack->setText(Language::get(4053));
 		auto promptImg = skillFrame->findImage("prompt back img");
 		promptImg->disabled = !drawGlyphs;
 		SDL_Rect glyphPos = promptImg->pos;
@@ -33026,11 +33049,11 @@ void Player::SkillSheet_t::processSkillSheet()
 		promptScroll->setDisabled(!drawGlyphs);
 		if ( bUseCompactSkillsView )
 		{
-			promptScroll->setText(language[4063]);
+			promptScroll->setText(Language::get(4063));
 		}
 		else
 		{
-			promptScroll->setText(language[4062]);
+			promptScroll->setText(Language::get(4062));
 		}
 		auto promptImg = skillFrame->findImage("prompt scroll img");
 		promptImg->disabled = !drawGlyphs;
@@ -33209,6 +33232,24 @@ void buttonSpellUpdateSelectorOnHighlight(const int player, Button* button)
 			players[player]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
 		}
 		SDL_Rect pos = button->getAbsoluteSize();
+		// make sure to adjust absolute size to camera viewport
+		pos.x -= players[player]->camera_virtualx1();
+		pos.y -= players[player]->camera_virtualy1();
+		players[player]->hud.setCursorDisabled(false);
+		players[player]->hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, inputs.getVirtualMouse(player)->draw_cursor);
+	}
+}
+
+void sliderSpellUpdateSelectorOnHighlight(const int player, Slider* slider)
+{
+	if ( slider->isHighlighted() )
+	{
+		players[player]->GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_SPELLS);
+		if ( players[player]->GUI.activeModule != Player::GUI_t::MODULE_SPELLS )
+		{
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
+		}
+		SDL_Rect pos = slider->getAbsoluteSize();
 		// make sure to adjust absolute size to camera viewport
 		pos.x -= players[player]->camera_virtualx1();
 		pos.y -= players[player]->camera_virtualy1();
@@ -33470,13 +33511,17 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 			player.inventoryUI.tooltipDelayTick = ticks + TICKS_PER_SECOND / 10;
 			const real_t fpsScale = getFPSScale(60.0);
 			real_t setpointDiff = 0.0;
+
+			// slightly faster on gamepad
+			static ConsoleVariable<float> cvar_spell_slider_speed("/spell_slider_speed", 1.f);
+			const real_t factor = (3.0 * (*cvar_spell_slider_speed + (usingGamepad ? -.25f : 0.f)));
 			if ( scrollSetpoint - scrollAnimateX > 0.0 )
 			{
-				setpointDiff = fpsScale * std::max(3.0, (scrollSetpoint - scrollAnimateX)) / 3.0;
+				setpointDiff = fpsScale * std::max(3.0, (scrollSetpoint - scrollAnimateX)) / factor;
 			}
 			else
 			{
-				setpointDiff = fpsScale * std::min(-3.0, (scrollSetpoint - scrollAnimateX)) / 3.0;
+				setpointDiff = fpsScale * std::min(-3.0, (scrollSetpoint - scrollAnimateX)) / factor;
 			}
 			scrollAnimateX += setpointDiff;
 			if ( setpointDiff > 0.0 )
@@ -33510,7 +33555,24 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 
 	if ( scrollAmount > 0 )
 	{
-		slider->setValue((scrollAnimateX / scrollAmount) * 100.0);
+		if ( !slider->isDisabled() && !usingGamepad )
+		{
+			sliderSpellUpdateSelectorOnHighlight(player.playernum, slider);
+		}
+		if ( slider->isCurrentlyPressed() )
+		{
+			auto val = slider->getValue() / 100.0;
+			int animX = val * scrollAmount;
+			animX /= player.inventoryUI.getSlotSize();
+			animX *= player.inventoryUI.getSlotSize();
+
+			scrollSetpoint = animX;
+			scrollSetpoint = std::min(scrollSetpoint, scrollAmount);
+		}
+		else
+		{
+			slider->setValue((scrollAnimateX / scrollAmount) * 100.0);
+		}
 	}
 	else
 	{
@@ -33975,7 +34037,7 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 		int furthestLeftPrompt = xres;
 		if ( !promptBack->isDisabled() )
 		{
-			promptBack->setText(language[4053]);
+			promptBack->setText(Language::get(4053));
 			SDL_Rect glyphPos = promptBackImg->pos;
 			if ( auto textGet = Text::get(promptBack->getText(), promptBack->getFont(),
 				promptBack->getTextColor(), promptBack->getOutlineColor()) )
@@ -34018,7 +34080,7 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 		}
 		if ( !promptGrab->isDisabled() )
 		{
-			promptGrab->setText(language[4091]);
+			promptGrab->setText(Language::get(4091));
 			auto promptGrabImg = baseFrame->findImage("prompt grab img");
 			SDL_Rect glyphPos = promptGrabImg->pos;
 			if ( auto textGet = Text::get(promptGrab->getText(), promptGrab->getFont(),
@@ -34911,14 +34973,14 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 			if ( itemCategory(item) == BOOK )
 			{
 				snprintf(buf, sizeof(buf), "%s %s", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
-					language[4214]); // brand new copy of
+					Language::get(4214)); // brand new copy of
 				snprintf(buf2, sizeof(buf), "%s (?)", getBookNameFromIndex(item->appearance % numbooks).c_str());
 			}
 			else if ( itemCategory(item) == SCROLL )
 			{
 				snprintf(buf, sizeof(buf), "%s %s", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
 					items[item->type].getUnidentifiedName());
-				snprintf(buf2, sizeof(buf), "%s %s (?)", language[4215], item->getScrollLabel());
+				snprintf(buf2, sizeof(buf), "%s %s (?)", Language::get(4215), item->getScrollLabel());
 			}
 			else
 			{
@@ -34949,7 +35011,7 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 			else if ( itemCategory(item) == BOOK )
 			{
 				snprintf(buf, sizeof(buf), "%s %s", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
-					language[4214]); // brand new copy of
+					Language::get(4214)); // brand new copy of
 				snprintf(buf2, sizeof(buf), "%s (%+d)", getBookNameFromIndex(item->appearance % numbooks).c_str(), item->beatitude);
 			}
 			else
@@ -37672,12 +37734,12 @@ void updateSkillUpFrame(const int player)
 		{
 			if ( skillUp.isSpell )
 			{
-				skillNameTxt->setText(language[4328]);
+				skillNameTxt->setText(Language::get(4328));
 			}
 			else
 			{
 				char buf[128];
-				snprintf(buf, sizeof(buf), language[4327], Player::SkillSheet_t::skillSheetData.skillEntries[skillsheetIndex].name.c_str());
+				snprintf(buf, sizeof(buf), Language::get(4327), Player::SkillSheet_t::skillSheetData.skillEntries[skillsheetIndex].name.c_str());
 				skillNameTxt->setText(buf);
 			}
 			if ( auto textGet = skillNameTxt->getTextObject() )

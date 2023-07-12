@@ -588,46 +588,46 @@ char* Item::description() const
 		{
 			if ( type >= ARTIFACT_ORB_BLUE && type <= ARTIFACT_ORB_GREEN )
 			{
-				snprintf(tempstr, 1024, language[987 + status], beatitude);
+				snprintf(tempstr, 1024, Language::get(987 + status), beatitude);
 			}
 			else if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				if ( this->type == TOOL_GYROBOT || this->type == TOOL_DUMMYBOT || this->type == TOOL_SENTRYBOT || this->type == TOOL_SPELLBOT )
 				{
-					snprintf(tempstr, 1024, "%s", language[3653 + status]);
+					snprintf(tempstr, 1024, "%s", Language::get(3653 + status));
 				}
 				else if ( itemTypeIsQuiver(this->type) )
 				{
-					snprintf(tempstr, 1024, language[3738], beatitude);
+					snprintf(tempstr, 1024, Language::get(3738), beatitude);
 				}
 				else
 				{
-					snprintf(tempstr, 1024, language[982 + status], beatitude);
+					snprintf(tempstr, 1024, Language::get(982 + status), beatitude);
 				}
 			}
 			else if ( itemCategory(this) == AMULET || itemCategory(this) == RING || itemCategory(this) == GEM )
 			{
-				snprintf(tempstr, 1024, language[987 + status], beatitude);
+				snprintf(tempstr, 1024, Language::get(987 + status), beatitude);
 			}
 			else if ( itemCategory(this) == POTION )
 			{
 				if ( type == POTION_EMPTY )
 				{
 					//No fancy descriptives for empty potions.
-					snprintf(tempstr, 1024, language[982 + status], beatitude);
+					snprintf(tempstr, 1024, Language::get(982 + status), beatitude);
 				}
 				else
 				{
-					snprintf(tempstr, 1024, language[992 + status], language[974 + items[type].index + appearance % items[type].variations - 50], beatitude);
+					snprintf(tempstr, 1024, Language::get(992 + status), Language::get(974 + items[type].index + appearance % items[type].variations - 50), beatitude);
 				}
 			}
 			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
 			{
-				snprintf(tempstr, 1024, language[997 + status], beatitude);
+				snprintf(tempstr, 1024, Language::get(997 + status), beatitude);
 			}
 			else if ( itemCategory(this) == FOOD )
 			{
-				snprintf(tempstr, 1024, language[1002 + status], beatitude);
+				snprintf(tempstr, 1024, Language::get(1002 + status), beatitude);
 			}
 
 			for ( c = 0; c < 1024; ++c )
@@ -642,7 +642,7 @@ char* Item::description() const
 			{
 				if ( itemCategory(this) == BOOK )
 				{
-					snprintf(&tempstr[c], 1024 - c, language[1007], getBookNameFromIndex(appearance % numbooks).c_str());
+					snprintf(&tempstr[c], 1024 - c, Language::get(1007), getBookNameFromIndex(appearance % numbooks).c_str());
 				}
 				else
 				{
@@ -658,46 +658,46 @@ char* Item::description() const
 		{
 			if ( type >= ARTIFACT_ORB_BLUE && type <= ARTIFACT_ORB_GREEN )
 			{
-				snprintf(tempstr, 1024, language[1023 + status], count, beatitude);
+				snprintf(tempstr, 1024, Language::get(1023 + status), count, beatitude);
 			}
 			else if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				if ( this->type == TOOL_GYROBOT || this->type == TOOL_DUMMYBOT || this->type == TOOL_SENTRYBOT || this->type == TOOL_SPELLBOT )
 				{
-					snprintf(tempstr, 1024, language[3658 + status], count);
+					snprintf(tempstr, 1024, Language::get(3658 + status), count);
 				}
 				else if ( itemTypeIsQuiver(this->type) )
 				{
-					snprintf(tempstr, 1024, language[3738], beatitude);
+					snprintf(tempstr, 1024, Language::get(3738), beatitude);
 				}
 				else
 				{
-					snprintf(tempstr, 1024, language[1008 + status], count, beatitude);
+					snprintf(tempstr, 1024, Language::get(1008 + status), count, beatitude);
 				}
 			}
 			else if ( itemCategory(this) == AMULET || itemCategory(this) == RING || itemCategory(this) == GEM )
 			{
-				snprintf(tempstr, 1024, language[1013 + status], count, beatitude);
+				snprintf(tempstr, 1024, Language::get(1013 + status), count, beatitude);
 			}
 			else if ( itemCategory(this) == POTION )
 			{
 				if ( type == POTION_EMPTY )
 				{
 					//No fancy descriptives for empty potions.
-					snprintf(tempstr, 1024, language[1008 + status], count, beatitude);
+					snprintf(tempstr, 1024, Language::get(1008 + status), count, beatitude);
 				}
 				else
 				{
-					snprintf(tempstr, 1024, language[1018 + status], count, language[974 + items[type].index + appearance % items[type].variations - 50], beatitude);
+					snprintf(tempstr, 1024, Language::get(1018 + status), count, Language::get(974 + items[type].index + appearance % items[type].variations - 50), beatitude);
 				}
 			}
 			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
 			{
-				snprintf(tempstr, 1024, language[1023 + status], count, beatitude);
+				snprintf(tempstr, 1024, Language::get(1023 + status), count, beatitude);
 			}
 			else if ( itemCategory(this) == FOOD )
 			{
-				snprintf(tempstr, 1024, language[1028 + status], count, beatitude);
+				snprintf(tempstr, 1024, Language::get(1028 + status), count, beatitude);
 			}
 
 			for ( c = 0; c < 1024; ++c )
@@ -712,7 +712,7 @@ char* Item::description() const
 			{
 				if ( itemCategory(this) == BOOK )
 				{
-					snprintf(&tempstr[c], 1024 - c, language[1033], count, getBookNameFromIndex(appearance % numbooks).c_str());
+					snprintf(&tempstr[c], 1024 - c, Language::get(1033), count, getBookNameFromIndex(appearance % numbooks).c_str());
 				}
 				else
 				{
@@ -731,46 +731,46 @@ char* Item::description() const
 		{
 			if ( type >= ARTIFACT_ORB_BLUE && type <= ARTIFACT_ORB_GREEN )
 			{
-				strncpy(tempstr, language[1049 + status], 1024);
+				strncpy(tempstr, Language::get(1049 + status), 1024);
 			}
 			else if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				if ( this->type == TOOL_GYROBOT || this->type == TOOL_DUMMYBOT || this->type == TOOL_SENTRYBOT || this->type == TOOL_SPELLBOT )
 				{
-					strncpy(tempstr, language[3653 + status], 1024);
+					strncpy(tempstr, Language::get(3653 + status), 1024);
 				}
 				else if ( itemTypeIsQuiver(this->type) )
 				{
-					snprintf(tempstr, 1024, "%s", language[3763]);
+					snprintf(tempstr, 1024, "%s", Language::get(3763));
 				}
 				else
 				{
-					strncpy(tempstr, language[1034 + status], 1024);
+					strncpy(tempstr, Language::get(1034 + status), 1024);
 				}
 			}
 			else if ( itemCategory(this) == AMULET || itemCategory(this) == RING || itemCategory(this) == GEM )
 			{
-				strncpy(tempstr, language[1039 + status], 1024);
+				strncpy(tempstr, Language::get(1039 + status), 1024);
 			}
 			else if ( itemCategory(this) == POTION )
 			{
 				if ( type == POTION_EMPTY )
 				{
 					//No fancy descriptives for empty potions.
-					snprintf(tempstr, 1024, language[1034 + status], beatitude);
+					snprintf(tempstr, 1024, Language::get(1034 + status), beatitude);
 				}
 				else
 				{
-					snprintf(tempstr, 1024, language[1044 + status], language[974 + items[type].index + appearance % items[type].variations - 50]);
+					snprintf(tempstr, 1024, Language::get(1044 + status), Language::get(974 + items[type].index + appearance % items[type].variations - 50));
 				}
 			}
 			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
 			{
-				strncpy(tempstr, language[1049 + status], 1024);
+				strncpy(tempstr, Language::get(1049 + status), 1024);
 			}
 			else if ( itemCategory(this) == FOOD )
 			{
-				strncpy(tempstr, language[1054 + status], 1024);
+				strncpy(tempstr, Language::get(1054 + status), 1024);
 			}
 
 			for ( c = 0; c < 1024; ++c )
@@ -785,13 +785,13 @@ char* Item::description() const
 			{
 				if ( itemCategory(this) == SCROLL )
 				{
-					snprintf(&tempstr[c], 1024 - c, language[1059], items[type].getUnidentifiedName(), this->getScrollLabel());
+					snprintf(&tempstr[c], 1024 - c, Language::get(1059), items[type].getUnidentifiedName(), this->getScrollLabel());
 				}
 				else
 				{
 					if ( itemCategory(this) == BOOK )
 					{
-						snprintf(&tempstr[c], 1024 - c, language[1007], getBookNameFromIndex(appearance % numbooks).c_str());
+						snprintf(&tempstr[c], 1024 - c, Language::get(1007), getBookNameFromIndex(appearance % numbooks).c_str());
 					}
 					else
 					{
@@ -808,46 +808,46 @@ char* Item::description() const
 		{
 			if ( type >= ARTIFACT_ORB_BLUE && type <= ARTIFACT_ORB_GREEN )
 			{
-				snprintf(tempstr, 1024, language[1065 + status], count);
+				snprintf(tempstr, 1024, Language::get(1065 + status), count);
 			}
 			else if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				if ( this->type == TOOL_GYROBOT || this->type == TOOL_DUMMYBOT || this->type == TOOL_SENTRYBOT || this->type == TOOL_SPELLBOT )
 				{
-					snprintf(tempstr, 1024, language[3658 + status], count);
+					snprintf(tempstr, 1024, Language::get(3658 + status), count);
 				}
 				else if ( itemTypeIsQuiver(this->type) )
 				{
-					snprintf(tempstr, 1024, "%s", language[3763]);
+					snprintf(tempstr, 1024, "%s", Language::get(3763));
 				}
 				else
 				{
-					snprintf(tempstr, 1024, language[1060 + status], count);
+					snprintf(tempstr, 1024, Language::get(1060 + status), count);
 				}
 			}
 			else if ( itemCategory(this) == AMULET || itemCategory(this) == RING || itemCategory(this) == GEM )
 			{
-				snprintf(tempstr, 1024, language[1065 + status], count);
+				snprintf(tempstr, 1024, Language::get(1065 + status), count);
 			}
 			else if ( itemCategory(this) == POTION )
 			{
 				if ( type == POTION_EMPTY )
 				{
 					//No fancy descriptives for empty potions.
-					snprintf(tempstr, 1024, language[1060 + status], count);
+					snprintf(tempstr, 1024, Language::get(1060 + status), count);
 				}
 				else
 				{
-					snprintf(tempstr, 1024, language[1070 + status], count, language[974 + items[type].index + appearance % items[type].variations - 50]);
+					snprintf(tempstr, 1024, Language::get(1070 + status), count, Language::get(974 + items[type].index + appearance % items[type].variations - 50));
 				}
 			}
 			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
 			{
-				snprintf(tempstr, 1024, language[1075 + status], count);
+				snprintf(tempstr, 1024, Language::get(1075 + status), count);
 			}
 			else if ( itemCategory(this) == FOOD )
 			{
-				snprintf(tempstr, 1024, language[1080 + status], count);
+				snprintf(tempstr, 1024, Language::get(1080 + status), count);
 			}
 
 			for ( c = 0; c < 1024; ++c )
@@ -862,13 +862,13 @@ char* Item::description() const
 			{
 				if ( itemCategory(this) == SCROLL )
 				{
-					snprintf(&tempstr[c], 1024 - c, language[1085], items[type].getUnidentifiedName(), this->getScrollLabel());
+					snprintf(&tempstr[c], 1024 - c, Language::get(1085), items[type].getUnidentifiedName(), this->getScrollLabel());
 				}
 				else
 				{
 					if ( itemCategory(this) == BOOK )
 					{
-						snprintf(&tempstr[c], 1024 - c, language[1086], count, getBookNameFromIndex(appearance % numbooks).c_str());
+						snprintf(&tempstr[c], 1024 - c, Language::get(1086), count, getBookNameFromIndex(appearance % numbooks).c_str());
 					}
 					else
 					{
@@ -918,7 +918,7 @@ char* Item::getName() const
 		{
 			if ( itemCategory(this) == BOOK )
 			{
-				snprintf(tempstr, sizeof(tempstr), language[1007], getBookNameFromIndex(appearance % numbooks).c_str());
+				snprintf(tempstr, sizeof(tempstr), Language::get(1007), getBookNameFromIndex(appearance % numbooks).c_str());
 			}
 			else
 			{
@@ -929,11 +929,11 @@ char* Item::getName() const
 		{
 			if ( itemCategory(this) == SCROLL )
 			{
-				snprintf(tempstr, sizeof(tempstr), language[1059], items[type].getUnidentifiedName(), this->getScrollLabel());
+				snprintf(tempstr, sizeof(tempstr), Language::get(1059), items[type].getUnidentifiedName(), this->getScrollLabel());
 			}
 			else if ( itemCategory(this) == BOOK )
 			{
-				snprintf(tempstr, sizeof(tempstr), language[1007], getBookNameFromIndex(appearance % numbooks).c_str());
+				snprintf(tempstr, sizeof(tempstr), Language::get(1007), getBookNameFromIndex(appearance % numbooks).c_str());
 			}
 			else
 			{
@@ -1217,11 +1217,11 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 		{
 			if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
 			{
-				messagePlayer(player, MESSAGE_EQUIPMENT, language[3218]);
+				messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(3218));
 			}
 			else
 			{
-				messagePlayer(player, MESSAGE_EQUIPMENT, language[1087]);
+				messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1087));
 			}
 			playSoundPlayer(player, 90, 64);
 			return false;
@@ -1251,7 +1251,7 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 		if ( item->count >= 10 && (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
 		{
 			item->count = 10;
-			messagePlayer(player, MESSAGE_SPAM_MISC, language[1088], item->description());
+			messagePlayer(player, MESSAGE_SPAM_MISC, Language::get(1088), item->description());
 			item->count = oldcount - 10;
 		}
 		else if ( itemTypeIsQuiver(item->type) )
@@ -1259,7 +1259,7 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 			item->count = 1;
 			if ( notifyMessage )
 			{
-				messagePlayer(player, MESSAGE_SPAM_MISC, language[1088], item->description());
+				messagePlayer(player, MESSAGE_SPAM_MISC, Language::get(1088), item->description());
 			}
 			item->count = 0;
 			/*if ( oldcount >= 10 )
@@ -1276,7 +1276,7 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 			item->count = 1;
 			if ( notifyMessage )
 			{
-				messagePlayer(player, MESSAGE_SPAM_MISC, language[1088], item->description());
+				messagePlayer(player, MESSAGE_SPAM_MISC, Language::get(1088), item->description());
 			}
 			item->count = oldcount - 1;
 		}
@@ -1376,7 +1376,7 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 					item->count = qtyToDrop;
 					if ( notifyMessage )
 					{
-						messagePlayer(player, MESSAGE_SPAM_MISC, language[1088], item->description());
+						messagePlayer(player, MESSAGE_SPAM_MISC, Language::get(1088), item->description());
 					}
 					item->count = oldcount - qtyToDrop;
 					if ( item->count <= 0 )
@@ -1772,11 +1772,11 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 					{
 						if ( shouldInvertEquipmentBeatitude(stats[player]) && (*slot)->beatitude > 0 )
 						{
-							messagePlayer(player, MESSAGE_EQUIPMENT, language[3217], (*slot)->getName());
+							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(3217), (*slot)->getName());
 						}
 						else
 						{
-							messagePlayer(player, MESSAGE_EQUIPMENT, language[1089], (*slot)->getName());
+							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1089), (*slot)->getName());
 						}
 						playSoundPlayer(player, 90, 64);
 					}
@@ -1835,7 +1835,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 			item->count = 1;
 			if ( intro == false )
 			{
-				messagePlayer(player, MESSAGE_EQUIPMENT, language[1090], item->description());
+				messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1090), item->description());
 			}
 			item->count = oldcount;
 		}
@@ -1880,11 +1880,11 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 					{
 						if ( shouldInvertEquipmentBeatitude(stats[player]) && (*slot)->beatitude > 0 )
 						{
-							messagePlayer(player, MESSAGE_EQUIPMENT, language[3217], (*slot)->getName());
+							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(3217), (*slot)->getName());
 						}
 						else
 						{
-							messagePlayer(player, MESSAGE_EQUIPMENT, language[1089], (*slot)->getName());
+							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1089), (*slot)->getName());
 						}
 						playSoundPlayer(player, 90, 64);
 					}
@@ -1899,7 +1899,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 					if ( checkInventorySpaceForPaperDoll && !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
 					{
 						// no backpack space
-						messagePlayer(player, MESSAGE_INVENTORY, language[3997], item->getName());
+						messagePlayer(player, MESSAGE_INVENTORY, Language::get(3997), item->getName());
 						if ( players[player]->isLocalPlayer() )
 						{
 							playSoundPlayer(player, 90, 64);
@@ -1960,7 +1960,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 			item->count = 1;
 			if ( intro == false && !fadeout )
 			{
-				messagePlayer(player, MESSAGE_EQUIPMENT, language[1091], item->description());
+				messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1091), item->description());
 			}
 			item->count = oldcount;
 		}
@@ -1996,13 +1996,13 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 
 	if ( item->status == BROKEN && player >= 0 && players[player]->isLocalPlayer() )
 	{
-		messagePlayer(player, MESSAGE_EQUIPMENT, language[1092], item->getName());
+		messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1092), item->getName());
 		playSoundPlayer(player, 90, 64);
 		return;
 	}
 	if ( item->type == FOOD_CREAMPIE && player >= 0 && players[player]->isLocalPlayer() && itemIsEquipped(item, player) )
 	{
-		messagePlayer(player, MESSAGE_EQUIPMENT, language[3874]); // can't eat while equipped.
+		messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(3874)); // can't eat while equipped.
 		playSoundPlayer(player, 90, 64);
 		return;
 	}
@@ -2027,7 +2027,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			}
 			if ( !havetinopener )
 			{
-				messagePlayer(player, MESSAGE_HINT, language[1093]);
+				messagePlayer(player, MESSAGE_HINT, Language::get(1093));
 				playSoundPlayer(player, 90, 64);
 				return;
 			}
@@ -2248,7 +2248,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			{
 				if ( players[player]->isLocalPlayer() )
 				{
-					messagePlayer(player, MESSAGE_EQUIPMENT, language[1095]);
+					messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1095));
 				}
 			}
 			if ( item->beatitude >= 0 )
@@ -2306,7 +2306,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			drankPotion = item_PotionParalysis(item, players[player]->entity, usedBy);
 			break;
 		case POTION_EMPTY:
-			messagePlayer(player, MESSAGE_HINT, language[2359]);
+			messagePlayer(player, MESSAGE_HINT, Language::get(2359));
 			if ( players[player]->isLocalPlayer() )
 			{
 				playSoundPlayer(player, 90, 64);
@@ -2382,7 +2382,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 					players[player]->entity->modMP(stats[player]->MAXMP);
 					// results of eating
 					const Uint32 color = makeColorRGB(255, 128, 0);
-					messagePlayerColor(player, MESSAGE_STATUS, color, language[3699]); // superheats
+					messagePlayerColor(player, MESSAGE_STATUS, color, Language::get(3699)); // superheats
 					serverUpdateHunger(player);
 					if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
 					{
@@ -2657,11 +2657,11 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			{
 				if ( item->type == TOOL_METAL_SCRAP )
 				{
-					messagePlayer(player, MESSAGE_HINT, language[3705]);
+					messagePlayer(player, MESSAGE_HINT, Language::get(3705));
 				}
 				else
 				{
-					messagePlayer(player, MESSAGE_HINT, language[3706]);
+					messagePlayer(player, MESSAGE_HINT, Language::get(3706));
 				}
 			}
 			break;
@@ -2677,7 +2677,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 					}
 					else
 					{
-						messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, language[970]);
+						messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(970));
 						playSoundPlayer(player, 90, 64);
 					}
 				}
@@ -2698,7 +2698,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case ARTIFACT_MACE:
 			if ( players[player]->isLocalPlayer() )
 			{
-				messagePlayer(player, MESSAGE_WORLD, language[1096]);
+				messagePlayer(player, MESSAGE_WORLD, Language::get(1096));
 			}
 			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
@@ -2725,24 +2725,24 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 					if ( lootbagPlayer == player )
 					{
 						messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT,
-							language[4331], item->getLootBagNumItems());
+							Language::get(4331), item->getLootBagNumItems());
 					}
 					else if ( name == "" || client_disconnected[lootbagPlayer] )
 					{
 						messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT,
-							language[4330], item->getLootBagNumItems());
+							Language::get(4330), item->getLootBagNumItems());
 					}
 					else
 					{
 						messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT,
-							language[4329], item->getLootBagNumItems(), 
+							Language::get(4329), item->getLootBagNumItems(), 
 							name.c_str());
 					}
 				}
 				else
 				{
 					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT,
-						language[4330], item->getLootBagNumItems());
+						Language::get(4330), item->getLootBagNumItems());
 				}
 
 				if ( !players[player]->isLocalPlayer() )
@@ -2807,7 +2807,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			{
 				Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
 				itemPickup(player, emptyBottle);
-				messagePlayer(player, MESSAGE_INTERACTION, language[3351], items[POTION_EMPTY].getIdentifiedName());
+				messagePlayer(player, MESSAGE_INTERACTION, Language::get(3351), items[POTION_EMPTY].getIdentifiedName());
 				free(emptyBottle);
 			}
 		}
@@ -2824,132 +2824,132 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		switch ( item->type )
 		{
 			case ARTIFACT_BREASTPIECE:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2972]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2972));
 				break;
 			case ARTIFACT_HELM:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2973]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2973));
 				break;
 			case ARTIFACT_BOOTS:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2974]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2974));
 				break;
 			case ARTIFACT_CLOAK:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2975]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2975));
 				break;
 			case ARTIFACT_GLOVES:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2976]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2976));
 				break;
 			case AMULET_LIFESAVING:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2478]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2478));
 				break;
 			case AMULET_WATERBREATHING:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2479]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2479));
 				break;
 			case AMULET_MAGICREFLECTION:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2480]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2480));
 				break;
 			case HAT_WIZARD:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2481]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2481));
 				break;
 			case SPIKED_GAUNTLETS:
 			case BRASS_KNUCKLES:
 			case IRON_KNUCKLES:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2482]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2482));
 				break;
 			case HAT_JESTER:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2483]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2483));
 				break;
 			case IRON_BOOTS_WATERWALKING:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2484]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2484));
 				break;
 			case LEATHER_BOOTS_SPEED:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2485]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2485));
 				break;
 			case CLOAK_INVISIBILITY:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2486]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2486));
 				break;
 			case CLOAK_PROTECTION:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2487]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2487));
 				break;
 			case CLOAK_MAGICREFLECTION:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2488]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2488));
 				break;
 			case GLOVES_DEXTERITY:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2489]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2489));
 				break;
 			case BRACERS_CONSTITUTION:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2490]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2490));
 				break;
 			case GAUNTLETS_STRENGTH:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2491]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2491));
 				break;
 			case AMULET_POISONRESISTANCE:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2492]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2492));
 				break;
 			case RING_ADORNMENT:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2384]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2384));
 				break;
 			case RING_SLOWDIGESTION:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2385]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2385));
 				break;
 			case RING_PROTECTION:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2386]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2386));
 				break;
 			case RING_WARNING:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2387]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2387));
 				break;
 			case RING_STRENGTH:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2388]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2388));
 				break;
 			case RING_CONSTITUTION:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2389]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2389));
 				break;
 			case RING_INVISIBILITY:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2412]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2412));
 				break;
 			case RING_MAGICRESISTANCE:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2413]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2413));
 				break;
 			case RING_CONFLICT:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2414]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2414));
 				break;
 			case RING_LEVITATION:
 				if ( !MFLAG_DISABLELEVITATION )
 				{
 					// can levitate
-					messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2415]);
+					messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2415));
 				}
 				else
 				{
-					messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2381]);
+					messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2381));
 				}
 				break;
 			case RING_REGENERATION:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2416]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2416));
 				break;
 			case RING_TELEPORTATION:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2417]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2417));
 				break;
 			case STEEL_BOOTS_FEATHER:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2418]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2418));
 				break;
 			case STEEL_BOOTS_LEVITATION:
 				if ( !MFLAG_DISABLELEVITATION )
 				{
 					// can levitate
-					messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2419]);
+					messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2419));
 				}
 				else
 				{
-					messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2381]);
+					messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2381));
 				}
 				break;
 			case VAMPIRE_DOUBLET:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2597]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2597));
 				break;
 			case TOOL_BLINDFOLD:
 				break;
 			case TOOL_BLINDFOLD_TELEPATHY:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2908]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2908));
 				break;
 			default:
 				break;
@@ -4362,9 +4362,9 @@ void Item::foodTinGetDescription(std::string& cookingMethod, std::string& protei
 {
 	int a, b, c;
 	foodTinGetDescriptionIndices(&a, &b, &c);
-	cookingMethod = language[918 + a];
-	protein = language[934 + b];
-	sides = language[950 + c];
+	cookingMethod = Language::get(918 + a);
+	protein = Language::get(934 + b);
+	sides = Language::get(950 + c);
 }
 
 int Item::foodGetPukeChance(Stat* eater) const
@@ -4859,10 +4859,10 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 					{
 						// failed.
 						const Uint32 color = makeColorRGB(255, 0, 0);
-						messagePlayerColor(player, MESSAGE_INTERACTION, color, language[3871]); // trap fires.
+						messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(3871)); // trap fires.
 						if ( skill < 2 )
 						{
-							messagePlayer(player, MESSAGE_INTERACTION, language[3887]); // not skilled enough.
+							messagePlayer(player, MESSAGE_INTERACTION, Language::get(3887)); // not skilled enough.
 						}
 						failed = true;
 					}
@@ -4875,7 +4875,7 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 					else
 					{
 						const Uint32 color = makeColorRGB(0, 255, 0);
-						messagePlayerColor(player, MESSAGE_INTERACTION, color, language[3872]);
+						messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(3872));
 						playSoundEntity(entity, 176, 128);
 						entity->skill[4] = player + 1; // disabled flag and spit out items.
 						serverUpdateEntitySkill(entity, 4); // update clients.
@@ -4895,12 +4895,12 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 						stats[player]->weapon->status = static_cast<Status>(stats[player]->weapon->status - 1);
 						if ( stats[player]->weapon->status == BROKEN )
 						{
-							messagePlayer(player, MESSAGE_EQUIPMENT, language[1104]);
+							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1104));
 							playSoundEntity(players[player]->entity, 76, 64);
 						}
 						else
 						{
-							messagePlayer(player, MESSAGE_EQUIPMENT, language[1103]);
+							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1103));
 						}
 						if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 						{
@@ -4921,7 +4921,7 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 				}
 				else if ( entity->skill[4] != 0 )
 				{
-					messagePlayer(player, MESSAGE_HINT, language[3870]);
+					messagePlayer(player, MESSAGE_HINT, Language::get(3870));
 					return;
 				}
 			}
@@ -4931,7 +4931,7 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 
 	if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] == 53 )
 	{
-		messagePlayer(player, MESSAGE_HINT, language[3873]);
+		messagePlayer(player, MESSAGE_HINT, Language::get(3873));
 	}
 }
 
@@ -6015,7 +6015,7 @@ void playerTryEquipItemAndUpdateServer(const int player, Item* const item, bool 
 		{
 			if ( !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
 			{
-				messagePlayer(player, MESSAGE_INVENTORY, language[3997], item->getName());
+				messagePlayer(player, MESSAGE_INVENTORY, Language::get(3997), item->getName());
 				playSoundPlayer(player, 90, 64);
 				return;
 			}

@@ -397,3 +397,15 @@ void Slider::scrollParent() {
 	}
 	fparent->setActualSize(fActualSize);
 }
+
+SDL_Rect Slider::getAbsoluteSize() const
+{
+	SDL_Rect _size{ handleSize.x, handleSize.y, handleSize.w, handleSize.h };
+	auto _parent = static_cast<Frame*>(this->parent);
+	if ( _parent ) {
+		SDL_Rect absoluteSize = _parent->getAbsoluteSize();
+		_size.x += std::max(0, absoluteSize.x);
+		_size.y += std::max(0, absoluteSize.y);
+	}
+	return _size;
+}

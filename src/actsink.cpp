@@ -89,14 +89,14 @@ void actSink(Entity* my)
 				//First check that it's not depleted.
 				if (my->skill[0] == 0)
 				{
-					messagePlayer(i, MESSAGE_INTERACTION, language[580]);
+					messagePlayer(i, MESSAGE_INTERACTION, Language::get(580));
 					playSoundEntity(my, 140 + local_rng.rand() % 2, 64);
 				}
 				else
 				{
 					if ( players[i]->entity->flags[BURNING] )
 					{
-						messagePlayer(i, MESSAGE_INTERACTION, language[468]);
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(468));
 						players[i]->entity->flags[BURNING] = false;
 						serverUpdateEntityFlag(players[i]->entity, BURNING);
 						steamAchievementClient(i, "BARONY_ACH_HOT_SHOWER");
@@ -108,14 +108,14 @@ void actSink(Entity* my)
 							players[i]->entity->setEffect(EFF_POLYMORPH, false, 0, true);
 							players[i]->entity->effectPolymorph = 0;
 							serverUpdateEntitySkill(players[i]->entity, 50);
-							messagePlayer(i, MESSAGE_INTERACTION, language[3192]);
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(3192));
 							if ( !stats[i]->EFFECTS[EFF_SHAPESHIFT] )
 							{
-								messagePlayer(i, MESSAGE_INTERACTION, language[3185]);
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(3185));
 							}
 							else
 							{
-								messagePlayer(i, MESSAGE_INTERACTION, language[4303]);  // wears out, no mention of 'normal' form
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(4303));  // wears out, no mention of 'normal' form
 							}
 						}
 
@@ -128,7 +128,7 @@ void actSink(Entity* my)
 						case 0:
 						{
 							//playSoundEntity(players[i]->entity, 52, 64);
-							messagePlayer(i, MESSAGE_INTERACTION, language[581]);
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(581));
 
 							//Randomly choose a ring.
 							//88-99 are rings.
@@ -164,7 +164,7 @@ void actSink(Entity* my)
 							if (item)
 							{
 								itemPickup(i, item);
-								messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[504], item->description());
+								messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(504), item->description());
 								free(item);
 							}
 							break;
@@ -178,7 +178,7 @@ void actSink(Entity* my)
 							if ( monster )
 							{
 								Uint32 color = makeColorRGB(255, 128, 0);
-								messagePlayerColor(i, MESSAGE_HINT, color, language[582]);
+								messagePlayerColor(i, MESSAGE_HINT, color, Language::get(582));
 								Stat* monsterStats = monster->getStats();
 								monsterStats->LVL = 4;
 							}
@@ -193,7 +193,7 @@ void actSink(Entity* my)
 							if ( stats[i]->type == AUTOMATON )
 							{
 								Uint32 color = makeColorRGB(255, 128, 0);
-								messagePlayerColor(i, MESSAGE_STATUS, color, language[3700]);
+								messagePlayerColor(i, MESSAGE_STATUS, color, Language::get(3700));
 								playSoundEntity(players[i]->entity, 52, 64);
 								stats[i]->HUNGER -= 200; //Lose boiler
 								players[i]->entity->modMP(5 + local_rng.rand() % 6); //Raise temperature because steam.
@@ -201,7 +201,7 @@ void actSink(Entity* my)
 							}
 							else if ( stats[i]->type != VAMPIRE )
 							{
-								messagePlayer(i, MESSAGE_INTERACTION, language[583]);
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(583));
 								playSoundEntity(players[i]->entity, 52, 64);
 								if ( stats[i]->type != SKELETON )
 								{
@@ -215,11 +215,11 @@ void actSink(Entity* my)
 								players[i]->entity->modHP(-2);
 								playSoundEntity(players[i]->entity, 28, 64);
 								playSoundEntity(players[i]->entity, 249, 128);
-								players[i]->entity->setObituary(language[1533]);
+								players[i]->entity->setObituary(Language::get(1533));
 						        stats[i]->killer = KilledBy::SINK;
 
 								Uint32 color = makeColorRGB(255, 0, 0);
-								messagePlayerColor(i, MESSAGE_STATUS, color, language[3183]);
+								messagePlayerColor(i, MESSAGE_STATUS, color, Language::get(3183));
 								if ( i >= 0 && players[i]->isLocalPlayer() )
 								{
 									cameravars[i].shakex += .1;
@@ -247,7 +247,7 @@ void actSink(Entity* my)
 							if ( stats[i]->type == AUTOMATON )
 							{
 								Uint32 color = makeColorRGB(255, 128, 0);
-								messagePlayerColor(i, MESSAGE_STATUS, color, language[3701]);
+								messagePlayerColor(i, MESSAGE_STATUS, color, Language::get(3701));
 								playSoundEntity(players[i]->entity, 52, 64);
 								stats[i]->HUNGER += 200; //Gain boiler
 								players[i]->entity->modMP(2);
@@ -266,11 +266,11 @@ void actSink(Entity* my)
 									playSoundEntity(players[i]->entity, 249, 128);
 								}
 								playSoundEntity(players[i]->entity, 28, 64);
-								players[i]->entity->setObituary(language[1533]);
+								players[i]->entity->setObituary(Language::get(1533));
 						        stats[i]->killer = KilledBy::SINK;
 
 								Uint32 color = makeColorRGB(255, 0, 0);
-								messagePlayerColor(i, MESSAGE_STATUS, color, language[584]);
+								messagePlayerColor(i, MESSAGE_STATUS, color, Language::get(584));
 
 								if ( i >= 0 && players[i]->isLocalPlayer() )
 								{
@@ -334,7 +334,7 @@ void actSink(Entity* my)
 					else     //Second usage.
 					{
 						my->skill[0]--; //Sink is depleted!
-						messagePlayer(i, MESSAGE_INTERACTION, language[585]);
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(585));
 						playSoundEntity(my, 132, 64);
 					}
 					serverUpdateEntitySkill(my, 0);

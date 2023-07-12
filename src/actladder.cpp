@@ -82,13 +82,13 @@ void actLadder(Entity* my)
 						if (dist > TOUCHRANGE)
 						{
 							sendMinimapPing(i, my->x / 16.0, my->y / 16.0);
-							messagePlayer(i, MESSAGE_INTERACTION, language[505]); // "you must assemble your party"
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(505)); // "you must assemble your party"
 							if (ticks - mpPokeCooldown[i] >= TICKS_PER_SECOND * 3) {
 								for (int j = 0; j < MAXPLAYERS; ++j) {
 									if (!client_disconnected[j] && j != i) {
 										// "so-and-so wants to leave the level"
 										messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind_lobby, false),
-											language[509], stats[i]->name);
+											Language::get(509), stats[i]->name);
 									}
 								}
 								mpPokeCooldown[i] = ticks;
@@ -98,11 +98,11 @@ void actLadder(Entity* my)
 					}
 					if (playercount == 1)
 					{
-						messagePlayer(i, MESSAGE_INTERACTION, language[506]);
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(506));
 					}
 					else
 					{
-						messagePlayer(i, MESSAGE_INTERACTION, language[507]);
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(507));
 					}
 					loadnextlevel = true;
 					if (secretlevel)
@@ -154,7 +154,7 @@ void actLadderUp(Entity* my)
 			{
 				if (inrange[i])
 				{
-					messagePlayer(i, MESSAGE_INTERACTION, language[508]);
+					messagePlayer(i, MESSAGE_INTERACTION, Language::get(508));
 					return;
 				}
 			}
@@ -300,13 +300,13 @@ void actPortal(Entity* my)
 					if (dist > TOUCHRANGE)
 					{
 						sendMinimapPing(i, my->x / 16.0, my->y / 16.0);
-						messagePlayer(i, MESSAGE_INTERACTION, language[505]); // "you must assemble your party"
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(505)); // "you must assemble your party"
 						if (ticks - mpPokeCooldown[i] >= TICKS_PER_SECOND * 3) {
 							for (int j = 0; j < MAXPLAYERS; ++j) {
 								if (!client_disconnected[j] && j != i) {
 									// "so-and-so wants to leave the level"
 									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind_lobby, false),
-										language[509], stats[i]->name);
+										Language::get(509), stats[i]->name);
 								}
 							}
 							mpPokeCooldown[i] = ticks;
@@ -316,11 +316,11 @@ void actPortal(Entity* my)
 				}
 				if (playercount == 1)
 				{
-					messagePlayer(i, MESSAGE_INTERACTION, language[510]);
+					messagePlayer(i, MESSAGE_INTERACTION, Language::get(510));
 				}
 				else
 				{
-					messagePlayer(i, MESSAGE_INTERACTION, language[511]);
+					messagePlayer(i, MESSAGE_INTERACTION, Language::get(511));
 				}
 				loadnextlevel = true;
 				if ( secretlevel )
@@ -513,13 +513,13 @@ void actWinningPortal(Entity* my)
 					if (dist > TOUCHRANGE)
 					{
 						sendMinimapPing(i, my->x / 16.0, my->y / 16.0);
-						messagePlayer(i, MESSAGE_INTERACTION, language[505]); // "you must assemble your party"
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(505)); // "you must assemble your party"
 						if (ticks - mpPokeCooldown[i] >= TICKS_PER_SECOND * 3) {
 							for (int j = 0; j < MAXPLAYERS; ++j) {
 								if (!client_disconnected[j] && j != i) {
 									// "so-and-so wants to leave the level"
 									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind_lobby, false),
-										language[509], stats[i]->name);
+										Language::get(509), stats[i]->name);
 								}
 							}
 							mpPokeCooldown[i] = ticks;
@@ -734,13 +734,13 @@ void Entity::actExpansionEndGamePortal()
 					if ( dist > TOUCHRANGE )
 					{
 						sendMinimapPing(i, this->x / 16.0, this->y / 16.0);
-						messagePlayer(i, MESSAGE_INTERACTION, language[505]); // "you must assemble your party"
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(505)); // "you must assemble your party"
 						if (::ticks - mpPokeCooldown[i] >= TICKS_PER_SECOND * 3) {
 							for (int j = 0; j < MAXPLAYERS; ++j) {
 								if (!client_disconnected[j] && j != i) {
 									// "so-and-so wants to leave the level"
 									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind_lobby, false),
-										language[509], stats[i]->name);
+										Language::get(509), stats[i]->name);
 								}
 							}
 							mpPokeCooldown[i] = ::ticks;
@@ -934,13 +934,13 @@ void Entity::actMidGamePortal()
 					if ( dist > TOUCHRANGE )
 					{
 						sendMinimapPing(i, this->x / 16.0, this->y / 16.0);
-						messagePlayer(i, MESSAGE_INTERACTION, language[505]); // "you must assemble your party"
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(505)); // "you must assemble your party"
 						if (::ticks - mpPokeCooldown[i] >= TICKS_PER_SECOND * 3) {
 							for (int j = 0; j < MAXPLAYERS; ++j) {
 								if (!client_disconnected[j] && j != i) {
 									// "so-and-so wants to leave the level"
 									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind_lobby, false),
-										language[509], stats[i]->name);
+										Language::get(509), stats[i]->name);
 								}
 							}
 							mpPokeCooldown[i] = ::ticks;
@@ -1320,13 +1320,13 @@ void actCustomPortal(Entity* my)
 					if ( dist > TOUCHRANGE )
 					{
 						sendMinimapPing(i, my->x / 16.0, my->y / 16.0);
-						messagePlayer(i, MESSAGE_INTERACTION, language[505]); // "you must assemble your party"
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(505)); // "you must assemble your party"
 						if (ticks - mpPokeCooldown[i] >= TICKS_PER_SECOND * 3) {
 							for (int j = 0; j < MAXPLAYERS; ++j) {
 								if (!client_disconnected[j] && j != i) {
 									// "so-and-so wants to leave the level"
 									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind_lobby, false),
-										language[509], stats[i]->name);
+										Language::get(509), stats[i]->name);
 								}
 							}
 							mpPokeCooldown[i] = ticks;
@@ -1336,11 +1336,11 @@ void actCustomPortal(Entity* my)
 				}
 				if ( playercount == 1 )
 				{
-					messagePlayer(i, MESSAGE_INTERACTION, language[506]);
+					messagePlayer(i, MESSAGE_INTERACTION, Language::get(506));
 				}
 				else
 				{
-					messagePlayer(i, MESSAGE_INTERACTION, language[507]);
+					messagePlayer(i, MESSAGE_INTERACTION, Language::get(507));
 				}
 				loadnextlevel = true;
 				skipLevelsOnLoad = 0;

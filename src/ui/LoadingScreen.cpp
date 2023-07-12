@@ -8,6 +8,7 @@
 #include "../game.hpp"
 #include "../draw.hpp"
 #include "../prng.hpp"
+#include "../mod_tools.hpp"
 
 #include <mutex>
 #include <thread>
@@ -124,7 +125,7 @@ static void baseCreateLoadingScreen(real_t progress, const char* background_imag
     label->setSize(fullscreen);
     label->setJustify(Field::justify_t::CENTER);
 	label->setFont("fonts/pixel_maz.ttf#64#2");
-	label->setText(language[709]);
+	label->setText(Language::get(709));
 }
 
 void createLoadingScreen(real_t progress) {
@@ -155,6 +156,11 @@ void doLoadingScreen() {
 	const Uint32 oldTicks = loadingticks;
 	(void)handleEvents();
 	if (oldTicks != loadingticks) {
+
+		if ( Mods::isLoading )
+		{
+			++Mods::loadingTicks;
+		}
 
 		// spinning widget
 		auto spinning_widget = loading_frame->findImage("spinning_widget");

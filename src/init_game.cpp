@@ -51,6 +51,59 @@
 
 -------------------------------------------------------------------------------*/
 
+void initGameDatafiles(bool moddedReload)
+{
+	ItemTooltips.readItemsFromFile();
+	ItemTooltips.readTooltipsFromFile();
+	ItemTooltips.readItemLocalizationsFromFile();
+
+	loadHUDSettingsJSON();
+	Player::SkillSheet_t::loadSkillSheetJSON();
+	Player::CharacterSheet_t::loadCharacterSheetJSON();
+	StatusEffectQueue_t::loadStatusEffectsJSON();
+	FollowerRadialMenu::loadFollowerJSON();
+	MonsterData_t::loadMonsterDataJSON();
+	ScriptTextParser.readAllScripts();
+	ShopkeeperConsumables_t::readFromFile();
+	EditorEntityData_t::readFromFile();
+	ClassHotbarConfig_t::init();
+	MainMenu::RaceDescriptions::readFromFile();
+	MainMenu::ClassDescriptions::readFromFile();
+	StatueManager.readAllStatues();
+}
+
+void initGameDatafilesAsync(bool moddedReload)
+{
+	physfsReloadMonsterLimbFiles();
+	GlyphHelper.readFromFile();
+#ifndef NINTENDO
+	if ( PHYSFS_getRealDir(PLAYERNAMES_MALE_FILE.c_str()) )
+	{
+		std::string namesDirectory = PHYSFS_getRealDir(PLAYERNAMES_MALE_FILE.c_str());
+		namesDirectory.append(PHYSFS_getDirSeparator()).append(PLAYERNAMES_MALE_FILE);
+		randomPlayerNamesMale = getLinesFromDataFile(namesDirectory);
+	}
+	if ( PHYSFS_getRealDir(PLAYERNAMES_FEMALE_FILE.c_str()) )
+	{
+		std::string namesDirectory = PHYSFS_getRealDir(PLAYERNAMES_FEMALE_FILE.c_str());
+		namesDirectory.append(PHYSFS_getDirSeparator()).append(PLAYERNAMES_FEMALE_FILE);
+		randomPlayerNamesFemale = getLinesFromDataFile(namesDirectory);
+	}
+	if ( PHYSFS_getRealDir(NPCNAMES_MALE_FILE.c_str()) )
+	{
+		std::string namesDirectory = PHYSFS_getRealDir(NPCNAMES_MALE_FILE.c_str());
+		namesDirectory.append(PHYSFS_getDirSeparator()).append(NPCNAMES_MALE_FILE);
+		randomNPCNamesMale = getLinesFromDataFile(namesDirectory);
+	}
+	if ( PHYSFS_getRealDir(NPCNAMES_FEMALE_FILE.c_str()) )
+	{
+		std::string namesDirectory = PHYSFS_getRealDir(NPCNAMES_FEMALE_FILE.c_str());
+		namesDirectory.append(PHYSFS_getDirSeparator()).append(NPCNAMES_FEMALE_FILE);
+		randomNPCNamesFemale = getLinesFromDataFile(namesDirectory);
+	}
+#endif
+}
+
 int initGame()
 {
 	// setup some lists
@@ -98,198 +151,13 @@ int initGame()
 	}
 
 	// load item types
-	printlog("loading items...\n");
-	//std::string itemsDirectory = PHYSFS_getRealDir("items/items.txt");
-	//itemsDirectory.append(PHYSFS_getDirSeparator()).append("items/items.txt");
-	//File* fp = openDataFile(itemsDirectory.c_str(), "rb");
-	/*for ( int c = 0; c < NUMITEMS; ++c )
-	{
-		if ( c > SPELLBOOK_DETECT_FOOD )
-		{
-			newItems = c - SPELLBOOK_DETECT_FOOD - 1;
-			items[c].name_identified = language[3500 + newItems * 2];
-			items[c].name_unidentified = language[3501 + newItems * 2];
-		}
-		else if ( c > ARTIFACT_BOW )
-		{
-			newItems = c - ARTIFACT_BOW - 1;
-			items[c].name_identified = language[2200 + newItems * 2];
-			items[c].name_unidentified = language[2201 + newItems * 2];
-		}
-		else
-		{
-			items[c].name_identified = language[1545 + c * 2];
-			items[c].name_unidentified = language[1546 + c * 2];
-		}
-	}*/
-		/*items[c].index = fp->geti();
-		items[c].fpindex = fp->geti();
-		items[c].variations = fp->geti();
-		char name[32];
-		fp->gets2(name, sizeof(name));
-		if (!strcmp(name, "WEAPON"))
-		{
-			items[c].category = WEAPON;
-		}
-		else if (!strcmp(name, "ARMOR"))
-		{
-			items[c].category = ARMOR;
-		}
-		else if (!strcmp(name, "AMULET"))
-		{
-			items[c].category = AMULET;
-		}
-		else if (!strcmp(name, "POTION"))
-		{
-			items[c].category = POTION;
-		}
-		else if (!strcmp(name, "SCROLL"))
-		{
-			items[c].category = SCROLL;
-		}
-		else if (!strcmp(name, "MAGICSTAFF"))
-		{
-			items[c].category = MAGICSTAFF;
-		}
-		else if (!strcmp(name, "RING"))
-		{
-			items[c].category = RING;
-		}
-		else if (!strcmp(name, "SPELLBOOK"))
-		{
-			items[c].category = SPELLBOOK;
-		}
-		else if (!strcmp(name, "TOOL"))
-		{
-			items[c].category = TOOL;
-		}
-		else if (!strcmp(name, "FOOD"))
-		{
-			items[c].category = FOOD;
-		}
-		else if (!strcmp(name, "BOOK"))
-		{
-			items[c].category = BOOK;
-		}
-		else if (!strcmp(name, "THROWN"))
-		{
-			items[c].category = THROWN;
-		}
-		else if (!strcmp(name, "SPELL_CAT"))
-		{
-			items[c].category = SPELL_CAT;
-		}
-		else
-		{
-			items[c].category = GEM;
-		}
-		items[c].weight = fp->geti();
-		items[c].value = fp->geti();
-		items[c].images.first = NULL;
-		items[c].images.last = NULL;
-		while (1)
-		{
-			string_t* string = (string_t*)malloc(sizeof(string_t));
-			string->data = (char*)malloc(sizeof(char) * 64);
-			string->lines = 1;
-
-			node_t* node = list_AddNodeLast(&items[c].images);
-			node->element = string;
-			node->deconstructor = &stringDeconstructor;
-			node->size = sizeof(string_t);
-			string->node = node;
-
-			auto result = fp->gets2(string->data, 64);
-			if (result == nullptr || string->data[0] == '\0') {
-				list_RemoveNode(node);
-				break;
-			}
-		}
-	}
-	FileIO::close(fp);
-	loadItemLists();*/
-	ItemTooltips.readItemsFromFile();
-	ItemTooltips.readTooltipsFromFile();
-	ItemTooltips.readItemLocalizationsFromFile();
+	initGameDatafiles(false);
 	setupSpells();
-
-	loadHUDSettingsJSON();
-	Player::SkillSheet_t::loadSkillSheetJSON();
-	Player::CharacterSheet_t::loadCharacterSheetJSON();
-	StatusEffectQueue_t::loadStatusEffectsJSON();
-	FollowerRadialMenu::loadFollowerJSON();
-	MonsterData_t::loadMonsterDataJSON();
-	ScriptTextParser.readAllScripts();
-	ShopkeeperConsumables_t::readFromFile();
-	EditorEntityData_t::readFromFile();
-	ClassHotbarConfig_t::init();
-	MainMenu::RaceDescriptions::readFromFile();
-	MainMenu::ClassDescriptions::readFromFile();
-	StatueManager.readAllStatues();
 
 	std::atomic_bool loading_done {false};
 	auto loading_task = std::async(std::launch::async, [&loading_done](){
-		// load model offsets
-		printlog( "loading model offsets...\n");
-		for ( int c = 1; c < NUMMONSTERS; c++ )
-		{
-			// initialize all offsets to zero
-			for ( int x = 0; x < 20; x++ )
-			{
-				limbs[c][x][0] = 0;
-				limbs[c][x][1] = 0;
-				limbs[c][x][2] = 0;
-			}
-
-			// open file
-			char filename[256];
-			strcpy(filename, "models/creatures/");
-			strcat(filename, monstertypename[c]);
-			strcat(filename, "/limbs.txt");
-			File* fp;
-			if ( (fp = openDataFile(filename, "rb")) == NULL )
-			{
-				continue;
-			}
-
-			// read file
-			int line;
-			for ( line = 1; !fp->eof(); line++ )
-			{
-				char data[256];
-				int limb = 20;
-				int dummy;
-
-				// read line from file
-				fp->gets( data, 256 );
-
-				// skip blank and comment lines
-				if ( data[0] == '\n' || data[0] == '\r' || data[0] == '#' )
-				{
-					continue;
-				}
-
-				// process line
-				if ( sscanf( data, "%d", &limb ) != 1 || limb >= 20 || limb < 0 )
-				{
-					printlog( "warning: syntax error in '%s':%d\n invalid limb index!\n", filename, line);
-					continue;
-				}
-				if ( sscanf( data, "%d %f %f %f\n", &dummy, &limbs[c][limb][0], &limbs[c][limb][1], &limbs[c][limb][2] ) != 4 )
-				{
-					printlog( "warning: syntax error in '%s':%d\n invalid limb offsets!\n", filename, line);
-					continue;
-				}
-			}
-
-			// close file
-			FileIO::close(fp);
-		}
-
 		updateLoadingScreen(92);
-
-		GlyphHelper.readFromFile();
-
+		initGameDatafilesAsync(false);
 #ifdef NINTENDO
 		const auto playerMaleNames = BASE_DATA_DIR + std::string("/") + PLAYERNAMES_MALE_FILE;
 		const auto playerFemaleNames = BASE_DATA_DIR + std::string("/") + PLAYERNAMES_FEMALE_FILE;
@@ -299,12 +167,7 @@ int initGame()
 		randomPlayerNamesFemale = getLinesFromDataFile(playerFemaleNames);
         randomNPCNamesMale = getLinesFromDataFile(npcMaleNames);
         randomNPCNamesFemale = getLinesFromDataFile(npcFemaleNames);
-#else // NINTENDO
-		randomPlayerNamesMale = getLinesFromDataFile(PLAYERNAMES_MALE_FILE);
-		randomPlayerNamesFemale = getLinesFromDataFile(PLAYERNAMES_FEMALE_FILE);
-        randomNPCNamesMale = getLinesFromDataFile(NPCNAMES_MALE_FILE);
-        randomNPCNamesFemale = getLinesFromDataFile(NPCNAMES_FEMALE_FILE);
-#endif // !NINTENDO
+#endif // NINTENDO
 
 		updateLoadingScreen(94);
 

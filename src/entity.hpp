@@ -583,7 +583,7 @@ public:
 	void (*behavior)(class Entity* my);
 	bool ranbehavior;
 
-	void setObituary(char* obituary);
+	void setObituary(const char* obituary);
 
 	void killedByMonsterObituary(Entity* victim);
 
@@ -899,6 +899,19 @@ public:
 			case SUCCUBUS:
 				succubusChooseWeapon(target, dist);
 				break;
+			case SHOPKEEPER:
+				if ( target )
+				{
+					if ( Stat* targetStats = target->getStats() )
+					{
+						if ( targetStats->type == SHOPKEEPER && myStats->weapon && myStats->weapon->type == SPELLBOOK_DRAIN_SOUL )
+						{
+							// gentlemans agreement to shoot bleed
+							myStats->weapon->type = SPELLBOOK_BLEED;
+						}
+					}
+				}
+				break;
 			default:
 				break;
 		}
@@ -1172,7 +1185,7 @@ static const int MSG_ATTACKS = 4;
 static const int MSG_STEAL_WEAPON = 5;
 static const int MSG_TOOL_BOMB = 6;
 static const int MSG_COMBAT_BASIC = 7;
-void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, char* msgGeneric, char* msgNamed, int detailType, Entity* optionalEntity = nullptr);
+void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, const char* msgGeneric, const char* msgNamed, int detailType, Entity* optionalEntity = nullptr);
 char const * playerClassLangEntry(int classnum, int playernum);
 char const * playerClassDescription(int classnum, int playernum);
 

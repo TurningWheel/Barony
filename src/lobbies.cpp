@@ -321,7 +321,7 @@ void LobbyHandler_t::handleLobbyListRequests()
 
 
 	// lobby list request succeeded?
-	if ( !strcmp(subtext, language[1132]) )
+	if ( !strcmp(subtext, Language::get(1132)) )
 	{
 		bool hasLobbyListRequestReturned = false;
 		switch ( searchType )
@@ -467,7 +467,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 	updateSearchResults();
 
 	// epic/steam lobby browser
-	if ( subwindow && !strcmp(subtext, language[1334]) )
+	if ( subwindow && !strcmp(subtext, Language::get(1334)) )
 	{
 		// draw backdrop for main list and slider
 
@@ -486,7 +486,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 #ifdef STEAMWORKS
 		if ( !EOS.CurrentUserInfo.bUserLoggedIn )
 		{
-			ttfPrintTextFormatted(ttf12, subx2 - 8 - (strlen(language[3994]) + 1) * TTF12_WIDTH, suby2 - TTF12_HEIGHT - 10, language[3994]);
+			ttfPrintTextFormatted(ttf12, subx2 - 8 - (strlen(Language::get(3994)) + 1) * TTF12_WIDTH, suby2 - TTF12_HEIGHT - 10, Language::get(3994));
 		}
 #endif
 #endif
@@ -597,7 +597,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 				}
 			}
 
-			flagsBox.w = strlen(language[2919]) * 10 + 4;
+			flagsBox.w = strlen(Language::get(2919)) * 10 + 4;
 			flagsBox.h = 4 + (getHeightOfFont(ttf12) * (std::max(2, numSvFlags + 2)));
 			flagsBox.x = mousex + 8;
 			flagsBox.y = mousey + 8;
@@ -606,12 +606,12 @@ void LobbyHandler_t::handleLobbyBrowser()
 				flagsBox.h += TTF12_HEIGHT;
 				flagsBox.w += 16;
 			}
-			strcpy(flagsBoxText, language[1335]);
+			strcpy(flagsBoxText, Language::get(1335));
 			strcat(flagsBoxText, "\n");
 
 			if ( !numSvFlags )
 			{
-				strcat(flagsBoxText, language[1336]);
+				strcat(flagsBoxText, Language::get(1336));
 			}
 			else
 			{
@@ -625,11 +625,11 @@ void LobbyHandler_t::handleLobbyBrowser()
 						char flagStringBuffer[256] = "";
 						if ( c < 5 )
 						{
-							strcpy(flagStringBuffer, language[153 + c]);
+							strcpy(flagStringBuffer, Language::get(153 + c));
 						}
 						else
 						{
-							strcpy(flagStringBuffer, language[2917 - 5 + c]);
+							strcpy(flagStringBuffer, Language::get(2917 - 5 + c));
 						}
 						strcat(flagsBoxText, flagStringBuffer);
 					}
@@ -757,7 +757,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 		}
 		else
 		{
-			ttfPrintText(ttf12, x, y, language[1337]);
+			ttfPrintText(ttf12, x, y, Language::get(1337));
 		}
 
 		// draw server flags tooltip (if applicable)
@@ -842,7 +842,7 @@ void LobbyHandler_t::drawLobbyFilters()
 		button_t* button = (button_t*)node->element;
 		if ( button )
 		{
-			if ( !buttonFilterSearch && !strcmp(button->label, language[3953]) )
+			if ( !buttonFilterSearch && !strcmp(button->label, Language::get(3953)) )
 			{
 				buttonFilterSearch = button;
 			}
@@ -886,17 +886,17 @@ void LobbyHandler_t::drawLobbyFilters()
 	{
 		buttonFilterSearch->x = pos.x + 8 + 4;
 		buttonFilterSearch->y = suby2 - 28;
-		buttonFilterSearch->sizex = strlen(language[3953]) * 12 + 8;
+		buttonFilterSearch->sizex = strlen(Language::get(3953)) * 12 + 8;
 		buttonFilterSearch->sizey = 20;
 		buttonFilterSearch->visible = 1;
 		buttonFilterSearch->focused = 1;
 		buttonFilterSearch->key = SDLK_RETURN;
-		strcpy(buttonFilterSearch->label, language[3953]);
+		strcpy(buttonFilterSearch->label, Language::get(3953));
 		buttonFilterSearch->action = &LobbyHandler.searchLobbyWithFilter;
 	}
 
 	// lobby code search
-	ttfPrintTextFormatted(ttf12, text.x, text.y, language[3954]);
+	ttfPrintTextFormatted(ttf12, text.x, text.y, Language::get(3954));
 	text.y += (TTF12_HEIGHT + 2) * 1;
 	drawDepressed(text.x, text.y, text.x + (TTF12_WIDTH * 6), text.y + TTF12_HEIGHT + 4);
 	ttfPrintTextFormatted(ttf12, text.x + 2, text.y + 4, "%s", EOS.lobbySearchByCode);
@@ -908,7 +908,7 @@ void LobbyHandler_t::drawLobbyFilters()
 	text.y += (TTF12_HEIGHT + 2) * 2;
 
 	// show in-progress lobbies
-	ttfPrintTextFormatted(ttf12, text.x, text.y, language[3955], filterShowInProgressLobbies ? 'x' : ' ');
+	ttfPrintTextFormatted(ttf12, text.x, text.y, Language::get(3955), filterShowInProgressLobbies ? 'x' : ' ');
 	if ( inputs.bMouseLeft(clientnum) )
 	{
 		if ( mouseInBounds(clientnum, text.x + strlen("crossplay lobbies: ") * TTF12_WIDTH, text.x + strlen("crossplay lobbies: [x]") * TTF12_WIDTH,

@@ -209,29 +209,29 @@ void Entity::actFurniture()
 						switch ( furnitureType )
 						{
 							case FURNITURE_CHAIR:
-								messagePlayer(i, MESSAGE_INTERACTION, language[476]);
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(476));
 								break;
 							case FURNITURE_TABLE:
-								messagePlayer(i, MESSAGE_INTERACTION, language[477]);
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(477));
 								break;
 							case FURNITURE_BED:
-								messagePlayer(i, MESSAGE_INTERACTION, language[2493]);
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(2493));
 								break;
 							case FURNITURE_BUNKBED:
 								if ( i == 0 || i == 2 )
 								{
-									messagePlayer(i, MESSAGE_INTERACTION, language[2494]);
+									messagePlayer(i, MESSAGE_INTERACTION, Language::get(2494));
 								}
 								else
 								{
-									messagePlayer(i, MESSAGE_INTERACTION, language[2495]);
+									messagePlayer(i, MESSAGE_INTERACTION, Language::get(2495));
 								}
 								break;
 							case FURNITURE_PODIUM:
-								messagePlayer(i, MESSAGE_INTERACTION, language[2496]);
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(2496));
 								break;
 							default:
-								messagePlayer(i, MESSAGE_INTERACTION, language[477]);
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(477));
 								break;
 						}
 					}
@@ -269,7 +269,7 @@ void actMCaxe(Entity* my)
 				{
 					if (inrange[i])
 					{
-						messagePlayer(i, MESSAGE_INTERACTION, language[478 + local_rng.rand() % 5]);
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(478 + local_rng.rand() % 5));
 						MCAXE_USED = 1;
 						serverUpdateEntitySkill(my, 0);
 					}
@@ -766,25 +766,25 @@ void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Enti
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3617], items[magicProjectile.skill[21]].getIdentifiedName(), language[getColliderLangName()]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3617), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(getColliderLangName()));
 				}
 				else
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[2508], language[getColliderLangName()]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(getColliderLangName()));
 				}
 			}
 			else
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, language[3618], items[magicProjectile.skill[21]].getIdentifiedName(), language[getColliderLangName()]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(3618), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(getColliderLangName()));
 				}
 				else
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, language[378], language[getColliderLangName()]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(378), Language::get(getColliderLangName()));
 				}
 			}
-			updateEnemyBar(caster, this, language[getColliderLangName()], colliderCurrentHP, colliderMaxHP);
+			updateEnemyBar(caster, this, Language::get(getColliderLangName()), colliderCurrentHP, colliderMaxHP);
 		}
 	}
 

@@ -348,7 +348,7 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 			else if ( foundNormalSpell )
 			{
 				// can't learn, already have it.
-				messagePlayer(player, MESSAGE_STATUS, language[439], new_spell->getSpellName());
+				messagePlayer(player, MESSAGE_STATUS, Language::get(439), new_spell->getSpellName());
 				spellDeconstructor((void*)new_spell);
 				playSoundPlayer(player, 90, 64);
 				return false;
@@ -357,7 +357,7 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 		else
 		{
 			// can't learn, already have it.
-			messagePlayer(player, MESSAGE_STATUS, language[439], new_spell->getSpellName());
+			messagePlayer(player, MESSAGE_STATUS, Language::get(439), new_spell->getSpellName());
 			spellDeconstructor((void*)new_spell);
 			return false;
 		}
@@ -369,14 +369,14 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 	}
 	if ( !ignoreSkill && skillLVL < new_spell->difficulty )
 	{
-		messagePlayer(player, MESSAGE_PROGRESSION, language[440]);
+		messagePlayer(player, MESSAGE_PROGRESSION, Language::get(440));
 		spellDeconstructor((void*)new_spell);
 		playSoundPlayer(player, 90, 64);
 		return false;
 	}
 	if ( !intro )
 	{
-		messagePlayer(player, MESSAGE_PROGRESSION, language[441], new_spell->getSpellName());
+		messagePlayer(player, MESSAGE_PROGRESSION, Language::get(441), new_spell->getSpellName());
 		skillUpAnimation[player].addSpellLearned(new_spell->ID);
 	}
 	node = list_AddNodeLast(&players[player]->magic.spellList);
@@ -667,7 +667,7 @@ void equipSpell(spell_t* spell, int playernum, Item* spellItem)
 	if ( players[playernum]->isLocalPlayer() )
 	{
 		players[playernum]->magic.equipSpell(spell);
-		messagePlayer(playernum, MESSAGE_MISC, language[442], spell->getSpellName());
+		messagePlayer(playernum, MESSAGE_MISC, Language::get(442), spell->getSpellName());
 		players[playernum]->magic.selected_spell_last_appearance = spellItem->appearance; // to keep track of shapeshift/normal spells.
 	}
 }
@@ -1196,12 +1196,12 @@ void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP)
 			if ( overdrewFromHP )
 			{
 				Uint32 color = makeColorRGB(255, 255, 255);
-				messagePlayerColor(player, MESSAGE_STATUS, color, language[3400]);
+				messagePlayerColor(player, MESSAGE_STATUS, color, Language::get(3400));
 			}
 			else
 			{
 				Uint32 color = makeColorRGB(0, 255, 0);
-				messagePlayerColor(player, MESSAGE_STATUS, color, language[443]);
+				messagePlayerColor(player, MESSAGE_STATUS, color, Language::get(443));
 			}
 		}
 		else
@@ -1209,11 +1209,11 @@ void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP)
 			Uint32 color = makeColorRGB(255, 255, 0);
 			if (amount == 0)
 			{
-				messagePlayerColor(player, MESSAGE_COMBAT, color, language[444]);
+				messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(444));
 			}
 			else
 			{
-				messagePlayerColor(player, MESSAGE_COMBAT, color, language[445]);
+				messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(445));
 			}
 		}
 

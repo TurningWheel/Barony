@@ -215,10 +215,6 @@ char outputdir[PATH_MAX];
 SDL_bool EnableMouseCapture = SDL_TRUE; // disable if mouse capture causes problem debugging in Linux
 bool& enableDebugKeys = cvar_enableDebugKeys.data;
 
-// language stuff
-char languageCode[32] = { 0 };
-char** language = nullptr;
-
 // input stuff
 Uint32 impulses[NUMIMPULSES];
 Uint32 joyimpulses[NUM_JOY_IMPULSES];

@@ -439,7 +439,7 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 		{
 			continue;
 		}
-		snprintf(tempstr, 256, language[697], stats[c]->name);
+		snprintf(tempstr, 256, Language::get(697), stats[c]->name);
 		if ( !strcmp(str, tempstr) )
 		{
 			steamAchievementClient(player, "BARONY_ACH_NOT_A_TEAM_PLAYER");
@@ -2117,7 +2117,7 @@ static void changeLevel() {
 	    if (!verifyMapHash(map.filename, checkMapHash))
 	    {
 		    conductGameChallenges[CONDUCT_MODDED] = 1;
-		    gamemods_disableSteamAchievements = true;
+			Mods::disableSteamAchievements = true;
 	    }
         updateLoadingScreen(50);
 
@@ -2165,47 +2165,47 @@ static void changeLevel() {
 
 	if ( !secretlevel )
 	{
-		messagePlayer(clientnum, MESSAGE_PROGRESSION, language[710], currentlevel);
+		messagePlayer(clientnum, MESSAGE_PROGRESSION, Language::get(710), currentlevel);
 	}
 	else
 	{
-		messagePlayer(clientnum, MESSAGE_PROGRESSION, language[711], map.name);
+		messagePlayer(clientnum, MESSAGE_PROGRESSION, Language::get(711), map.name);
 	}
 	if ( !secretlevel && result )
 	{
 		switch ( currentlevel )
 		{
 			case 2:
-				messagePlayer(clientnum, MESSAGE_HINT, language[712]);
-				Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[712]));
+				messagePlayer(clientnum, MESSAGE_HINT, Language::get(712));
+				Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", Language::get(712)));
 				break;
 			case 3:
-				messagePlayer(clientnum, MESSAGE_HINT, language[713]);
-				Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[713]));
+				messagePlayer(clientnum, MESSAGE_HINT, Language::get(713));
+				Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", Language::get(713)));
 				break;
 			case 7:
-				messagePlayer(clientnum, MESSAGE_HINT, language[714]);
-				Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[714]));
+				messagePlayer(clientnum, MESSAGE_HINT, Language::get(714));
+				Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", Language::get(714)));
 				break;
 			case 8:
-				messagePlayer(clientnum, MESSAGE_HINT, language[715]);
-				Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[715]));
+				messagePlayer(clientnum, MESSAGE_HINT, Language::get(715));
+				Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", Language::get(715)));
 				break;
 			case 11:
-				messagePlayer(clientnum, MESSAGE_HINT, language[716]);
-				Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[716]));
+				messagePlayer(clientnum, MESSAGE_HINT, Language::get(716));
+				Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", Language::get(716)));
 				break;
 			case 13:
-				messagePlayer(clientnum, MESSAGE_HINT, language[717]);
-				Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[717]));
+				messagePlayer(clientnum, MESSAGE_HINT, Language::get(717));
+				Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", Language::get(717)));
 				break;
 			case 16:
-				messagePlayer(clientnum, MESSAGE_HINT, language[718]);
-				Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[718]));
+				messagePlayer(clientnum, MESSAGE_HINT, Language::get(718));
+				Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", Language::get(718)));
 				break;
 			case 18:
-				messagePlayer(clientnum, MESSAGE_HINT, language[719]);
-				Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[719]));
+				messagePlayer(clientnum, MESSAGE_HINT, Language::get(719));
+				Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", Language::get(719)));
 				break;
 			default:
 				break;
@@ -2213,25 +2213,25 @@ static void changeLevel() {
 	}
 	if ( MFLAG_DISABLETELEPORT )
 	{
-		Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_teleport", language[2382]));
+		Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_teleport", Language::get(2382)));
 	}
 	if ( MFLAG_DISABLEOPENING )
 	{
-		Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_opening", language[2382]));
+		Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_opening", Language::get(2382)));
 	}
 	if ( MFLAG_DISABLETELEPORT || MFLAG_DISABLEOPENING )
 	{
-		messagePlayer(clientnum, MESSAGE_HINT, language[2382]);
+		messagePlayer(clientnum, MESSAGE_HINT, Language::get(2382));
 	}
 	if ( MFLAG_DISABLELEVITATION )
 	{
-		messagePlayer(clientnum, MESSAGE_HINT, language[2383]);
-		Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_levitation", language[2383]));
+		messagePlayer(clientnum, MESSAGE_HINT, Language::get(2383));
+		Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_levitation", Language::get(2383)));
 	}
 	if ( MFLAG_DISABLEDIGGING )
 	{
-		messagePlayer(clientnum, MESSAGE_HINT, language[2450]);
-		Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_digging", language[2450]));
+		messagePlayer(clientnum, MESSAGE_HINT, Language::get(2450));
+		Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_digging", Language::get(2450)));
 	}
 	if ( MFLAG_DISABLEHUNGER )
 	{
@@ -2246,7 +2246,7 @@ static void changeLevel() {
 
 	if ( !strncmp(map.name, "Mages Guild", 11) )
 	{
-		messagePlayer(clientnum, MESSAGE_HINT, language[2599]);
+		messagePlayer(clientnum, MESSAGE_HINT, Language::get(2599));
 	}
 	fadeout = false;
 	fadealpha = 255;
@@ -2792,7 +2792,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// ping
 	{'PING', [](){
-		messagePlayer(clientnum, MESSAGE_MISC, language[1117], (SDL_GetTicks() - pingtime));
+		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1117), (SDL_GetTicks() - pingtime));
 	}},
 
 	// unlock steam achievement
@@ -2810,14 +2810,14 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	// pause game
 	{'PAUS', [](){
 	    const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
-		messagePlayer(clientnum, MESSAGE_MISC, language[1118], stats[player]->name);
+		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1118), stats[player]->name);
 		pauseGame(2, 0);
 	}},
 
 	// unpause game
 	{'UNPS', [](){
 	    const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
-		messagePlayer(clientnum, MESSAGE_MISC, language[1119], stats[player]->name);
+		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1119), stats[player]->name);
 		pauseGame(1, 0);
 	}},
 
@@ -3370,7 +3370,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		strcpy( shopkeepername_client[clientnum], (char*)(&net_packet->data[9]) );
 		shopkeepername[clientnum] = shopkeepername_client[clientnum];
 		shoptimer[clientnum] = ticks - 1;
-		shopspeech[clientnum] = language[194 + local_rng.rand() % 3];
+		shopspeech[clientnum] = Language::get(194 + local_rng.rand() % 3);
 
 		players[clientnum]->shopGUI.openShop();
 		return;
@@ -3557,7 +3557,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			}
 		}
 		
-		if ( !strcmp(msg, language[1109]) ) // "you survive through your party's persistence"
+		if ( !strcmp(msg, Language::get(1109)) ) // "you survive through your party's persistence"
 		{
 			// ... or lived
 			stats[clientnum]->HP = stats[clientnum]->MAXHP * 0.5;
@@ -3573,11 +3573,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				}
 			}
 		}
-		else if ( !strncmp(msg, language[1114], 28) ) // Zap brigade music
+		else if ( !strncmp(msg, Language::get(1114), 28) ) // Zap brigade music
 		{
 			playSoundNotification(175, 128);
 		}
-		else if ( (strstr(msg, language[1160])) != NULL ) // <player name> bumps you
+		else if ( (strstr(msg, Language::get(1160))) != NULL ) // <player name> bumps you
 		{
 			for ( int c = 0; c < MAXPLAYERS; c++ )
 			{
@@ -4869,14 +4869,14 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 
 	// pause game
 	{'PAUS', [](){
-		messagePlayer(clientnum, MESSAGE_MISC, language[1118], stats[net_packet->data[4]]->name);
+		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1118), stats[net_packet->data[4]]->name);
 		const int j = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
 		pauseGame(2, j);
 	}},
 
 	// unpause game
 	{'UNPS', [](){
-		messagePlayer(clientnum, MESSAGE_MISC, language[1119], stats[net_packet->data[4]]->name);
+		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1119), stats[net_packet->data[4]]->name);
 		const int j = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
 		pauseGame(1, j);
 	}},
@@ -5147,9 +5147,9 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			net_packet->address.port = net_clients[c - 1].port;
 			net_packet->len = 5;
 			sendPacketSafe(net_sock, -1, net_packet, c - 1);
-			messagePlayer(c, MESSAGE_MISC, language[1120], shortname);
+			messagePlayer(c, MESSAGE_MISC, Language::get(1120), shortname);
 		}
-		messagePlayer(clientnum, MESSAGE_MISC, language[1120], shortname);
+		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1120), shortname);
 	}},
 
 	// message
@@ -5763,7 +5763,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		if ( players[player] && players[player]->entity )
 		{
 			spawnMagicTower(nullptr, players[player]->entity->x, players[player]->entity->y, SPELL_FIREBALL, nullptr);
-			players[player]->entity->setObituary(language[3350]);
+			players[player]->entity->setObituary(Language::get(3350));
 			stats[player]->killer = KilledBy::FAILED_ALCHEMY;
 		}
 	}},
@@ -6139,8 +6139,8 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 				stats[player]->EFFECTS[EFF_VAMPIRICAURA] && players[player]->entity->playerVampireCurse == 1 )
 			{
 				players[player]->entity->setEffect(EFF_VAMPIRICAURA, true, 1, true);
-				messagePlayerColor(player, MESSAGE_STATUS, uint32ColorGreen, language[3241]);
-				messagePlayerColor(player, MESSAGE_HINT, uint32ColorGreen, language[3242]);
+				messagePlayerColor(player, MESSAGE_STATUS, uint32ColorGreen, Language::get(3241));
+				messagePlayerColor(player, MESSAGE_HINT, uint32ColorGreen, Language::get(3242));
 				players[player]->entity->playerVampireCurse = 2; // cured.
 				serverUpdateEntitySkill(players[player]->entity, 51);
 				steamAchievementClient(player, "BARONY_ACH_REVERSE_THIS_CURSE");
@@ -6207,7 +6207,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			if ( players[player]->entity->setEffect(EFF_BLEEDING, true, TICKS_PER_SECOND * 15, true) )
 			{
 				messagePlayerColor(player, MESSAGE_STATUS, 
-					makeColorRGB(255, 0, 0), language[701]); // you're bleeding!
+					makeColorRGB(255, 0, 0), Language::get(701)); // you're bleeding!
 			}
 			playSoundEntity(players[player]->entity, 162, 64);
 		}

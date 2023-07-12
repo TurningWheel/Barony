@@ -165,13 +165,13 @@ void actFountain(Entity* my)
 				if (my->skill[0] == 0)
 				{
 					//Depleted
-					messagePlayer(i, MESSAGE_INTERACTION, language[467]);
+					messagePlayer(i, MESSAGE_INTERACTION, Language::get(467));
 				}
 				else
 				{
 					if (players[i]->entity->flags[BURNING])
 					{
-						messagePlayer(i, MESSAGE_INTERACTION, language[468]);
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(468));
 						players[i]->entity->flags[BURNING] = false;
 						serverUpdateEntityFlag(players[i]->entity, BURNING);
 						steamAchievementClient(i, "BARONY_ACH_HOT_SHOWER");
@@ -267,7 +267,7 @@ void actFountain(Entity* my)
 								{
 									if ( creature == INCUBUS )
 									{
-										messagePlayerColor(i, MESSAGE_INTERACTION, color, language[2519]);
+										messagePlayerColor(i, MESSAGE_INTERACTION, color, Language::get(2519));
 										Stat* tmpStats = spawnedMonster->getStats();
 										if ( tmpStats )
 										{
@@ -276,7 +276,7 @@ void actFountain(Entity* my)
 									}
 									else
 									{
-										messagePlayerColor(i, MESSAGE_INTERACTION, color, language[469]);
+										messagePlayerColor(i, MESSAGE_INTERACTION, color, Language::get(469));
 									}
 								}
 							}
@@ -284,7 +284,7 @@ void actFountain(Entity* my)
 							{
 								if ( spawnedMonster = summonMonster(SUCCUBUS, my->x, my->y) )
 								{
-									messagePlayerColor(i, MESSAGE_INTERACTION, color, language[469]);
+									messagePlayerColor(i, MESSAGE_INTERACTION, color, Language::get(469));
 								}
 							}
 							else if ( currentlevel < 20 )
@@ -298,14 +298,14 @@ void actFountain(Entity* my)
 										{
 											strcpy(tmpStats->name, "lesser incubus");
 										}
-										messagePlayerColor(i, MESSAGE_INTERACTION, color, language[2519]);
+										messagePlayerColor(i, MESSAGE_INTERACTION, color, Language::get(2519));
 									}
 								}
 								else
 								{
 									if ( spawnedMonster = summonMonster(SUCCUBUS, my->x, my->y) )
 									{
-										messagePlayerColor(i, MESSAGE_INTERACTION, color, language[469]);
+										messagePlayerColor(i, MESSAGE_INTERACTION, color, Language::get(469));
 									}
 								}
 							}
@@ -313,7 +313,7 @@ void actFountain(Entity* my)
 							{
 								if ( spawnedMonster = summonMonster(INCUBUS, my->x, my->y) )
 								{
-									messagePlayerColor(i, MESSAGE_INTERACTION, color, language[2519]);
+									messagePlayerColor(i, MESSAGE_INTERACTION, color, Language::get(2519));
 								}
 							}
 							break;
@@ -321,8 +321,8 @@ void actFountain(Entity* my)
 						case 1:
 							if ( stats[i] && stats[i]->type != VAMPIRE )
 							{
-								messagePlayer(i, MESSAGE_INTERACTION, language[470]);
-								messagePlayer(i, MESSAGE_INTERACTION, language[471]);
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(470));
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(471));
 								playSoundEntity(players[i]->entity, 52, 64);
 								if ( stats[i]->type != SKELETON )
 								{
@@ -336,11 +336,11 @@ void actFountain(Entity* my)
 								players[i]->entity->modHP(-3);
 								playSoundEntity(players[i]->entity, 28, 64);
 								playSoundEntity(players[i]->entity, 249, 128);
-								players[i]->entity->setObituary(language[1533]);
+								players[i]->entity->setObituary(Language::get(1533));
 								stats[i]->killer = KilledBy::FOUNTAIN;
 
 								Uint32 color = makeColorRGB(255, 0, 0);
-								messagePlayerColor(i, MESSAGE_STATUS, color, language[3183]);
+								messagePlayerColor(i, MESSAGE_STATUS, color, Language::get(3183));
 								if ( i >= 0 && players[i]->isLocalPlayer() )
 								{
 									cameravars[i].shakex += .1;
@@ -361,7 +361,7 @@ void actFountain(Entity* my)
 						case 2:
 						{
 							//Potion effect. Potion effect is stored in my->skill[3], randomly chosen when the fountain is created.
-							messagePlayer(i, MESSAGE_INTERACTION, language[470]);
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(470));
 							Item* item = newItem(static_cast<ItemType>(POTION_WATER + my->skill[3]), static_cast<Status>(4), 0, 1, 0, false, NULL);
 							useItem(item, i, my);
 							// Long live the mystical fountain of TODO.
@@ -373,8 +373,8 @@ void actFountain(Entity* my)
 							playSoundEntity(players[i]->entity, 52, 64);
 							//playSoundEntity(players[i]->entity, 167, 64);
 							Uint32 textcolor = makeColorRGB(0, 255, 255);
-							messagePlayerColor(i, MESSAGE_STATUS, textcolor, language[471]);
-							messagePlayerColor(i, MESSAGE_STATUS, textcolor, language[473]);
+							messagePlayerColor(i, MESSAGE_STATUS, textcolor, Language::get(471));
+							messagePlayerColor(i, MESSAGE_STATUS, textcolor, Language::get(473));
 							bool stuckOnYouSuccess = false;
 
 							if ( !stats[i] )
@@ -485,7 +485,7 @@ void actFountain(Entity* my)
 							playSoundEntity(players[i]->entity, 52, 64);
 							//playSoundEntity(players[i]->entity, 167, 64);
 							Uint32 textcolor = makeColorRGB(0, 255, 255);
-							messagePlayerColor(i, MESSAGE_STATUS, textcolor, language[471]);
+							messagePlayerColor(i, MESSAGE_STATUS, textcolor, Language::get(471));
 							//Choose only one piece of equipment to bless.
 
 							if ( !stats[i] )
@@ -538,7 +538,7 @@ void actFountain(Entity* my)
 
 							if ( items.size() )
 							{
-								messagePlayerColor(i, MESSAGE_STATUS, textcolor, language[2592]); //"The fountain blesses a piece of equipment"
+								messagePlayerColor(i, MESSAGE_STATUS, textcolor, Language::get(2592)); //"The fountain blesses a piece of equipment"
 								//Randomly choose a piece of equipment.
 								std::pair<Item*, Uint32> chosen = items[local_rng.rand()%items.size()];
 								if ( chosen.first->beatitude == 0 )
@@ -572,13 +572,13 @@ void actFountain(Entity* my)
 					}
 					if ( potionDropQuantity > 1 )
 					{
-						messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen, language[3245], potionDropQuantity);
+						messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen, Language::get(3245), potionDropQuantity);
 					}
 					else if ( potionDropQuantity == 1 )
 					{
-						messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen, language[3246]);
+						messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen, Language::get(3246));
 					}
-					messagePlayer(i, MESSAGE_INTERACTION, language[474]);
+					messagePlayer(i, MESSAGE_INTERACTION, Language::get(474));
 					my->skill[0] = 0; //Dry up fountain.
 					serverUpdateEntitySkill(my, 0);
 					//TODO: messagePlayersInSight() instead.

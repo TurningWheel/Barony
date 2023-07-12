@@ -210,7 +210,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 				if ( entity->behavior == &actPlayer )
 				{
 					Uint32 color = makeColorRGB(255, 0, 0);
-					messagePlayerColor(entity->skill[2], MESSAGE_STATUS, color, language[455]);
+					messagePlayerColor(entity->skill[2], MESSAGE_STATUS, color, Language::get(455));
 					if ( players[entity->skill[2]]->isLocalPlayer() )
 					{
 						cameravars[entity->skill[2]].shakex += .1;
@@ -236,19 +236,19 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 				if ( my->sprite == BOULDER_LAVA_SPRITE )
 				{
 					entity->modHP(-50);
-					entity->setObituary(language[3898]);
+					entity->setObituary(Language::get(3898));
 					stats->killer = KilledBy::BOULDER;
 				}
 				else if ( my->sprite == BOULDER_ARCANE_SPRITE )
 				{
 					entity->modHP(-50);
-					entity->setObituary(language[3899]);
+					entity->setObituary(Language::get(3899));
 					stats->killer = KilledBy::BOULDER;
 				}
 				else
 				{
 					entity->modHP(-80);
-					entity->setObituary(language[1505]);
+					entity->setObituary(Language::get(1505));
 					stats->killer = KilledBy::BOULDER;
 				}
 				if ( entity->behavior == &actPlayer )
@@ -390,7 +390,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 							for ( c = 0; c < MAXPLAYERS; c++ )
 							{
 								Uint32 color = makeColorRGB(255, 128, 0);
-								messagePlayerColor(c, MESSAGE_HINT, color, language[406]);
+								messagePlayerColor(c, MESSAGE_HINT, color, Language::get(406));
 							}
 						}
 						boulderSokobanOnDestroy(false);
@@ -787,7 +787,7 @@ void actBoulder(Entity* my)
 					Uint32 color = makeColorRGB(255, 0, 255);
 					if ( !client_disconnected[c] )
 					{
-						messagePlayerColor(c, MESSAGE_HINT, color, language[3401]);
+						messagePlayerColor(c, MESSAGE_HINT, color, Language::get(3401));
 					}
 				}
 
@@ -883,7 +883,7 @@ void actBoulder(Entity* my)
 									Uint32 color = makeColorRGB(255, 0, 255);
 									if ( !client_disconnected[c] )
 									{
-										messagePlayerColor(c, MESSAGE_HINT, color, language[3401]);
+										messagePlayerColor(c, MESSAGE_HINT, color, Language::get(3401));
 									}
 								}
 
@@ -938,7 +938,7 @@ void actBoulder(Entity* my)
 						}
 						if ( !hasRingOfStr )
 						{
-							messagePlayer(i, MESSAGE_INTERACTION, language[456]);
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(456));
 						}
 						else
 						{
@@ -1052,7 +1052,7 @@ void actBoulder(Entity* my)
 				BOULDER_ROLLING = 0;
 				if ( BOULDER_SOUND_ON_PUSH > 0 )
 				{
-					messagePlayer(BOULDER_SOUND_ON_PUSH - 1, MESSAGE_HINT, language[3974]);
+					messagePlayer(BOULDER_SOUND_ON_PUSH - 1, MESSAGE_HINT, Language::get(3974));
 					BOULDER_SOUND_ON_PUSH = 0;
 				}
 			}
@@ -1144,7 +1144,7 @@ void actBoulder(Entity* my)
 							}
 							else
 							{
-								messagePlayer(BOULDER_SOUND_ON_PUSH - 1, MESSAGE_HINT, language[3974]);
+								messagePlayer(BOULDER_SOUND_ON_PUSH - 1, MESSAGE_HINT, Language::get(3974));
 							}
 							BOULDER_SOUND_ON_PUSH = 0;
 						}
@@ -1885,18 +1885,18 @@ void boulderSokobanOnDestroy(bool pushedOffLedge)
 			if ( goldCount >= 39 )
 			{
 				playSoundPlayer(c, 393, 128);
-				messagePlayerColor(c, MESSAGE_HINT, color, language[2969]);
+				messagePlayerColor(c, MESSAGE_HINT, color, Language::get(2969));
 			}
 			else
 			{
 				playSoundPlayer(c, 395, 128);
 				if ( goldCount < 25 )
 				{
-					messagePlayerColor(c, MESSAGE_HINT, color, language[2971]); // less than impressed.
+					messagePlayerColor(c, MESSAGE_HINT, color, Language::get(2971)); // less than impressed.
 				}
 				else
 				{
-					messagePlayerColor(c, MESSAGE_HINT, color, language[2970]); // mildly entertained.
+					messagePlayerColor(c, MESSAGE_HINT, color, Language::get(2970)); // mildly entertained.
 				}
 			}
 		}
@@ -1969,12 +1969,12 @@ void boulderLavaOrArcaneOnDestroy(Entity* my, int sprite, Entity* boulderHitEnti
 		}
 		if ( sprite == BOULDER_LAVA_SPRITE )
 		{
-		    boulderHitEntity->setObituary(language[3898]);
+		    boulderHitEntity->setObituary(Language::get(3898));
 			spawnMagicTower(nullptr, boulderHitEntity->x, boulderHitEntity->y, SPELL_FIREBALL, boulderHitEntity);
 		}
 		else if ( sprite == BOULDER_ARCANE_SPRITE )
 		{
-		    boulderHitEntity->setObituary(language[3899]);
+		    boulderHitEntity->setObituary(Language::get(3899));
 			switch ( local_rng.rand() % 4 )
 			{
 				case 0:
