@@ -6012,6 +6012,7 @@ bind_failed:
             case Input::ControllerType::NintendoSwitch:
                 path = "*#images/ui/Main Menus/Settings/Controls/Layout_Switch-lines.png";
                 break;
+			default:
             case Input::ControllerType::Xbox:
                 path = "*#images/ui/Main Menus/Settings/Controls/Layout_Xbox-lines.png";
                 break;
