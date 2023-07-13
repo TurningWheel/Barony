@@ -584,7 +584,7 @@ namespace MainMenu {
 		bool minimap_pings_enabled = true;
 		bool player_monster_sounds_enabled = true;
 		bool out_of_focus_audio_enabled = true;
-        Bindings bindings;
+        Bindings bindings = Bindings::reset(defaultControlLayout);
         Controls controls[MAX_SPLITSCREEN];
 		bool classic_mode_enabled = false;
 		bool hardcore_mode_enabled = false;
