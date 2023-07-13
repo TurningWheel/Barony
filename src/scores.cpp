@@ -3800,7 +3800,7 @@ std::string setSaveGameFileName(bool singleplayer, SaveFileType type, int saveIn
 	{
 		if ( singleplayer )
 		{
-			if ( Mods::numCurrentModsLoaded == -1 )
+			if ( true/*Mods::numCurrentModsLoaded == -1*/ )
 			{
 				filename.append(".baronysave");
 			}
@@ -3811,7 +3811,7 @@ std::string setSaveGameFileName(bool singleplayer, SaveFileType type, int saveIn
 		}
 		else
 		{
-			if ( Mods::numCurrentModsLoaded == -1 )
+			if ( true/*Mods::numCurrentModsLoaded == -1*/ )
 			{
 				filename.append("_mp.baronysave");
 			}
