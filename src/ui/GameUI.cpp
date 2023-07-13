@@ -11057,22 +11057,25 @@ void openLogWindow(int player) {
 			if ( inputs.hasController(player) && !inputs.getVirtualMouse(player)->draw_cursor )
 			{
 				Button* closeBtn = frame->findButton("close");
-				SDL_Rect closeBtnPos = closeBtn->getSize();
-				closeBtn->setSize(closeBtnPos);
+                if (closeBtn)
+                {
+                    SDL_Rect closeBtnPos = closeBtn->getSize();
+                    closeBtn->setSize(closeBtnPos);
 
-				closeGlyph->path = Input::inputs[player].getGlyphPathForBinding("LogClose");
-				if ( auto imgGet = Image::get(closeGlyph->path.c_str()) )
-				{
-					closeGlyph->pos.w = imgGet->getWidth();
-					closeGlyph->pos.h = imgGet->getHeight();
-					closeGlyph->disabled = false;
-				}
-				closeGlyph->pos.x = closeBtn->getSize().x + closeBtn->getSize().w / 2 - closeGlyph->pos.w / 2;
-				if ( closeGlyph->pos.x % 2 == 1 )
-				{
-					++closeGlyph->pos.x;
-				}
-				closeGlyph->pos.y = closeBtn->getSize().y + closeBtn->getSize().h - 4;
+                    closeGlyph->path = Input::inputs[player].getGlyphPathForBinding("LogClose");
+                    if ( auto imgGet = Image::get(closeGlyph->path.c_str()) )
+                    {
+                        closeGlyph->pos.w = imgGet->getWidth();
+                        closeGlyph->pos.h = imgGet->getHeight();
+                        closeGlyph->disabled = false;
+                    }
+                    closeGlyph->pos.x = closeBtn->getSize().x + closeBtn->getSize().w / 2 - closeGlyph->pos.w / 2;
+                    if ( closeGlyph->pos.x % 2 == 1 )
+                    {
+                        ++closeGlyph->pos.x;
+                    }
+                    closeGlyph->pos.y = closeBtn->getSize().y + closeBtn->getSize().h - 4;
+                }
 			}
 		}
         });
