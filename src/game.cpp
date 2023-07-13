@@ -5229,6 +5229,19 @@ void ingameHud()
 			}
 		}
 		players[player]->hud.followerDisplay.bCycleNextDisabled = (worldUIBlocksFollowerCycle && players[player]->shootmode);
+		bool allowCycle = true;
+		if ( FollowerMenu[player].followerMenuIsOpen() )
+		{
+			std::string cycleNPCbinding = input.binding("Cycle NPCs");
+			if ( cycleNPCbinding == input.binding("MenuCancel") )
+			{
+				allowCycle = false;
+				if ( !players[player]->shootmode )
+				{
+					players[player]->hud.followerDisplay.bCycleNextDisabled = true;
+				}
+			}
+		}
 
 		if ( !players[player]->usingCommand() && input.consumeBinaryToggle("Cycle NPCs")
 			&& !gamePaused
@@ -5236,13 +5249,16 @@ void ingameHud()
 		{
 			if ( (!worldUIBlocksFollowerCycle && players[player]->shootmode) || FollowerMenu[player].followerMenuIsOpen() )
 			{
-				// can select next follower in inventory or shootmode
-				FollowerMenu[player].selectNextFollower();
-				players[player]->characterSheet.proficienciesPage = 1;
-				if ( players[player]->shootmode && !players[player]->characterSheet.lock_right_sidebar )
+				if ( allowCycle )
 				{
-					// from now on, allies should be displayed all times
-					//players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+					// can select next follower in inventory or shootmode
+					FollowerMenu[player].selectNextFollower();
+					players[player]->characterSheet.proficienciesPage = 1;
+					if ( players[player]->shootmode && !players[player]->characterSheet.lock_right_sidebar )
+					{
+						// from now on, allies should be displayed all times
+						//players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+					}
 				}
 			}
 		}
