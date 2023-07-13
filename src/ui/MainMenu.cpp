@@ -6009,9 +6009,26 @@ bind_failed:
             case Input::ControllerType::PlayStation:
                 path = "*#images/ui/Main Menus/Settings/Controls/Layout_PS5-lines.png";
                 break;
-            case Input::ControllerType::NintendoSwitch:
-                path = "*#images/ui/Main Menus/Settings/Controls/Layout_Switch-lines.png";
-                break;
+#ifdef NINTENDO
+			case Input::ControllerType::NintendoSwitch: {
+				if (nxIsHandheldMode()) {
+					path = "*#images/ui/Main Menus/Settings/Controls/Layout_SwitchHandheld-Lines.png";
+				}
+				else {
+					if (nxIsProController(player)) {
+						path = "*#images/ui/Main Menus/Settings/Controls/Layout_ProController-lines.png";
+					}
+					else {
+						path = "*#images/ui/Main Menus/Settings/Controls/Layout_Switch-lines.png";
+					}
+				}
+				break;
+			}
+#else
+			case Input::ControllerType::NintendoSwitch:
+				path = "*#images/ui/Main Menus/Settings/Controls/Layout_Switch-lines.png";
+				break;
+#endif
 			default:
             case Input::ControllerType::Xbox:
                 path = "*#images/ui/Main Menus/Settings/Controls/Layout_Xbox-lines.png";
@@ -6056,26 +6073,73 @@ bind_failed:
             }
             else if (controllerType == Input::ControllerType::NintendoSwitch) {
                 const int r = x + (int)image->getWidth() + 4;
-                list.insert(list.end(),{
-                    {"ButtonLeftBumper", 0, 2, false, nullptr},
-                    {"LeftTrigger", 0, 44, false, nullptr},
-                    {"ButtonBack", 0, 82, false, nullptr},
-                    {"ButtonLeftStick", 0, 108, false, "Move"},
-                    {"ButtonLeftStick", 0, 148, true, nullptr},
-                    {"DpadX+", 0, 186, false, nullptr},
-                    {"DpadY+", 0, 222, false, nullptr},
-                    {"DpadX-", 0, 258, false, nullptr},
-                    {"DpadY-", 0, 294, false, nullptr},
-                    {"ButtonRightBumper", r, 2, false, nullptr},
-                    {"RightTrigger", r, 44, false, nullptr},
-                    {"ButtonStart", r, 76, false, nullptr},
-                    {"ButtonA", r, 112, false, nullptr},
-                    {"ButtonB", r, 148, false, nullptr},
-                    {"ButtonX", r, 184, false, nullptr},
-                    {"ButtonY", r, 220, false, nullptr},
-                    {"ButtonRightStick", r, 266, false, "Look / Turn"},
-                    {"ButtonRightStick", r, 306, true, nullptr},
-                });
+#ifdef NINTENDO
+				if (!nxIsHandheldMode() && nxIsProController(player)) {
+					list.insert(list.end(), {
+						{"ButtonLeftBumper", 0, 2, false, nullptr},
+						{"LeftTrigger", 0, 44, false, nullptr},
+						{"ButtonLeftStick", 0, 78, false, "Move"},
+						{"ButtonLeftStick", 0, 118, true, nullptr},
+						{"ButtonBack", 0, 156, false, nullptr},
+						{"DpadX+", 0, 194, false, nullptr},
+						{"DpadY+", 0, 230, false, nullptr},
+						{"DpadX-", 0, 266, false, nullptr},
+						{"DpadY-", 0, 302, false, nullptr},
+						{"ButtonRightBumper", r, 2, false, nullptr},
+						{"RightTrigger", r, 44, false, nullptr},
+						{"ButtonA", r, 74, false, nullptr},
+						{"ButtonB", r, 110, false, nullptr},
+						{"ButtonX", r, 146, false, nullptr},
+						{"ButtonY", r, 182, false, nullptr},
+						{"ButtonStart", r, 214, false, nullptr},
+						{"ButtonRightStick", r, 266, false, "Look / Turn"},
+						{"ButtonRightStick", r, 306, true, nullptr},
+						});
+				}
+				else {
+					list.insert(list.end(), {
+						{"ButtonLeftBumper", 0, 2, false, nullptr},
+						{"LeftTrigger", 0, 44, false, nullptr},
+						{"ButtonBack", 0, 82, false, nullptr},
+						{"ButtonLeftStick", 0, 108, false, "Move"},
+						{"ButtonLeftStick", 0, 148, true, nullptr},
+						{"DpadX+", 0, 186, false, nullptr},
+						{"DpadY+", 0, 222, false, nullptr},
+						{"DpadX-", 0, 258, false, nullptr},
+						{"DpadY-", 0, 294, false, nullptr},
+						{"ButtonRightBumper", r, 2, false, nullptr},
+						{"RightTrigger", r, 44, false, nullptr},
+						{"ButtonStart", r, 76, false, nullptr},
+						{"ButtonA", r, 112, false, nullptr},
+						{"ButtonB", r, 148, false, nullptr},
+						{"ButtonX", r, 184, false, nullptr},
+						{"ButtonY", r, 220, false, nullptr},
+						{"ButtonRightStick", r, 266, false, "Look / Turn"},
+						{"ButtonRightStick", r, 306, true, nullptr},
+						});
+				}
+#else
+				list.insert(list.end(), {
+					{"ButtonLeftBumper", 0, 2, false, nullptr},
+					{"LeftTrigger", 0, 44, false, nullptr},
+					{"ButtonBack", 0, 82, false, nullptr},
+					{"ButtonLeftStick", 0, 108, false, "Move"},
+					{"ButtonLeftStick", 0, 148, true, nullptr},
+					{"DpadX+", 0, 186, false, nullptr},
+					{"DpadY+", 0, 222, false, nullptr},
+					{"DpadX-", 0, 258, false, nullptr},
+					{"DpadY-", 0, 294, false, nullptr},
+					{"ButtonRightBumper", r, 2, false, nullptr},
+					{"RightTrigger", r, 44, false, nullptr},
+					{"ButtonStart", r, 76, false, nullptr},
+					{"ButtonA", r, 112, false, nullptr},
+					{"ButtonB", r, 148, false, nullptr},
+					{"ButtonX", r, 184, false, nullptr},
+					{"ButtonY", r, 220, false, nullptr},
+					{"ButtonRightStick", r, 266, false, "Look / Turn"},
+					{"ButtonRightStick", r, 306, true, nullptr},
+					});
+#endif
             }
             else if (controllerType == Input::ControllerType::Xbox) {
                 const int r = x + (int)image->getWidth() + 4;
