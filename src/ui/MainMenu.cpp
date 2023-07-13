@@ -6019,14 +6019,14 @@ bind_failed:
 						path = "*#images/ui/Main Menus/Settings/Controls/Layout_ProController-lines.png";
 					}
 					else {
-						path = "*#images/ui/Main Menus/Settings/Controls/Layout_Switch-lines.png";
+						path = "*#images/ui/Main Menus/Settings/Controls/Layout_Switch-Lines.png";
 					}
 				}
 				break;
 			}
 #else
 			case Input::ControllerType::NintendoSwitch:
-				path = "*#images/ui/Main Menus/Settings/Controls/Layout_Switch-lines.png";
+				path = "*#images/ui/Main Menus/Settings/Controls/Layout_Switch-Lines.png";
 				break;
 #endif
 			default:
