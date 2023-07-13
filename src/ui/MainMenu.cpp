@@ -18963,6 +18963,102 @@ failed:
 	    );
 	}
 
+	static void loadSaveConfirm(Button& button, bool load_singleplayer, int load_save_index)
+	{
+		destroyMainMenu();
+
+		savegameCurrentFileIndex = load_save_index;
+		auto info = getSaveGameInfo(load_singleplayer, savegameCurrentFileIndex);
+		loadingsavegame = getSaveGameUniqueGameKey(info);
+
+		if ( info.multiplayer_type == SPLITSCREEN || info.multiplayer_type == SINGLE ) {
+			multiplayer = SINGLE;
+			clientnum = -1;
+			for ( int c = 0; c < MAXPLAYERS; ++c ) {
+				if ( info.players_connected[c] ) {
+					clientnum = clientnum == -1 ? c : clientnum;
+					playerSlotsLocked[c] = false;
+					loadGame(c, info);
+				}
+				else {
+					playerSlotsLocked[c] = true;
+				}
+			}
+			assert(clientnum != -1);
+#ifndef NINTENDO
+			inputs.setPlayerIDAllowedKeyboard(clientnum);
+#endif
+			createLobby(LobbyType::LobbyLocal);
+		}
+		else if ( info.multiplayer_type == SERVER || info.multiplayer_type == DIRECTSERVER || info.multiplayer_type == SERVERCROSSPLAY ) {
+			multiplayer = SERVER;
+			for ( int c = 0; c < MAXPLAYERS; ++c ) {
+				newPlayer[c] = c != 0;
+				if ( info.players_connected[c] ) {
+					playerSlotsLocked[c] = false;
+					loadGame(c, info);
+				}
+				else {
+					playerSlotsLocked[c] = true;
+				}
+			}
+			if ( info.multiplayer_type == SERVERCROSSPLAY ) {
+#ifdef STEAMWORKS
+				LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_STEAM;
+				LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+#ifdef USE_EOS
+				if ( LobbyHandler.crossplayEnabled )
+				{
+					LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
+					LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+				}
+#endif
+#elif defined USE_EOS
+				// if just eos, then force hosting settings to default.
+				LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
+				LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+#endif
+				createMainMenu(false); // just in-case the lobby hosting fails
+				hostOnlineLobby(button);
+			}
+			else if ( info.multiplayer_type == SERVER ) {
+				if ( getSaveGameVersionNum(info) <= 335 )
+				{
+					// legacy support for steam ver not remembering if crossplay or not. no action.
+					// starting with v3.3.6, (mul == SERVERCROSSPLAY) detects from the savefile.
+				}
+				else
+				{
+#ifdef STEAMWORKS
+					LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_STEAM;
+					LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+#endif
+				}
+				createMainMenu(false); // just in-case the lobby hosting fails
+				hostOnlineLobby(button);
+			}
+			else if ( info.multiplayer_type == DIRECTSERVER ) {
+				createMainMenu(false); // just in-case the lobby hosting fails
+				hostLANLobby(button);
+			}
+		}
+		else if ( info.multiplayer_type == CLIENT || info.multiplayer_type == DIRECTCLIENT ) {
+			for ( int c = 0; c < MAXPLAYERS; ++c ) {
+				if ( info.players_connected[c] ) {
+					playerSlotsLocked[c] = false;
+					loadGame(c, info);
+				}
+				else {
+					playerSlotsLocked[c] = true;
+				}
+			}
+			multiplayer = SINGLE;
+			clientnum = 0;
+			createDummyMainMenu();
+			createLobbyBrowser(button);
+		}
+	}
+
 	static void loadSavePrompt(bool singleplayer, int save_index) {
 	    static bool load_singleplayer;
 	    static int load_save_index;
@@ -18983,117 +19079,113 @@ failed:
 
 	    // window text
 	    char window_text[1024];
-	    snprintf(window_text, sizeof(window_text),
-	        "Are you sure you want to load\nthe save game \"%s\"?", shortened_name);
+		const bool modded = saveGameInfo.players[saveGameInfo.player_num].additionalConducts[CONDUCT_MODDED];
+		bool moddedSavegameWarning = false;
+		bool unModdedSavegameWarning = false;
+		if ( modded && Mods::numCurrentModsLoaded <= 0 )
+		{
+			moddedSavegameWarning = true;
+		}
+		else if ( !modded && Mods::numCurrentModsLoaded >= 0 )
+		{
+			unModdedSavegameWarning = true;
+		}
 
-	    binaryPrompt(
-	        window_text, "Yes", "No",
-	        [](Button& button) { // Yes button
-                soundActivate();
-                destroyMainMenu();
+		if ( moddedSavegameWarning || unModdedSavegameWarning )
+		{
+			if ( moddedSavegameWarning )
+			{
+				snprintf(window_text, sizeof(window_text),
+					"Warning: This is a modded save game!\nNo mods are currently loaded.\n\nContinuing may cause save data issues.\n\nAre you sure you want to load\nthe save game \"%s\"?", shortened_name);
+			}
+			else if ( unModdedSavegameWarning )
+			{
+				snprintf(window_text, sizeof(window_text),
+					"Warning: This is an unmodded save game!\n%d mod(s) are currently loaded.\n\nContinuing may invalidate achievements for this save.\n\nAre you sure you want to load\nthe save game \"%s\"?",
+					Mods::numCurrentModsLoaded,
+					shortened_name);
+			}
 
-                savegameCurrentFileIndex = load_save_index;
-                auto info = getSaveGameInfo(load_singleplayer, savegameCurrentFileIndex);
-                loadingsavegame = getSaveGameUniqueGameKey(info);
+			auto prompt = monoPromptXL(
+				window_text, "Yes",
+				[](Button& button) { // Yes button
+					soundActivate();
+					loadSaveConfirm(button, load_singleplayer, load_save_index);
+				});
 
-                if (info.multiplayer_type == SPLITSCREEN || info.multiplayer_type == SINGLE) {
-                    multiplayer = SINGLE;
-                    clientnum = -1;
-                    for (int c = 0; c < MAXPLAYERS; ++c) {
-                        if (info.players_connected[c]) {
-                            clientnum = clientnum == -1 ? c : clientnum;
-                            playerSlotsLocked[c] = false;
-                            loadGame(c, info);
-                        } else {
-                            playerSlotsLocked[c] = true;
-                        }
-                    }
-                    assert(clientnum != -1);
-#ifndef NINTENDO
-                    inputs.setPlayerIDAllowedKeyboard(clientnum);
-#endif
-                    createLobby(LobbyType::LobbyLocal);
-                } else if (info.multiplayer_type == SERVER || info.multiplayer_type == DIRECTSERVER || info.multiplayer_type == SERVERCROSSPLAY) {
-                    multiplayer = SERVER;
-                    for (int c = 0; c < MAXPLAYERS; ++c) {
-                        newPlayer[c] = c != 0;
-                        if (info.players_connected[c]) {
-                            playerSlotsLocked[c] = false;
-                    		loadGame(c, info);
-                        } else {
-                            playerSlotsLocked[c] = true;
-                        }
-                    }
-                    if (info.multiplayer_type == SERVERCROSSPLAY) {
-#ifdef STEAMWORKS
-			            LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_STEAM;
-			            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
-#ifdef USE_EOS
-			            if ( LobbyHandler.crossplayEnabled )
-			            {
-							LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
-				            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
-			            }
-#endif
-#elif defined USE_EOS
-			            // if just eos, then force hosting settings to default.
-			            LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
-			            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
-#endif
-						createMainMenu(false); // just in-case the lobby hosting fails
-                        hostOnlineLobby(button);
-                    } else if (info.multiplayer_type == SERVER) {
-			            if ( getSaveGameVersionNum(info) <= 335 )
-			            {
-				            // legacy support for steam ver not remembering if crossplay or not. no action.
-				            // starting with v3.3.6, (mul == SERVERCROSSPLAY) detects from the savefile.
-			            }
-			            else
-			            {
-#ifdef STEAMWORKS
-				            LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_STEAM;
-				            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
-#endif
-			            }
-						createMainMenu(false); // just in-case the lobby hosting fails
-                        hostOnlineLobby(button);
-                    } else if (info.multiplayer_type == DIRECTSERVER) {
-						createMainMenu(false); // just in-case the lobby hosting fails
-                        hostLANLobby(button);
-                    }
-                } else if (info.multiplayer_type == CLIENT || info.multiplayer_type == DIRECTCLIENT) {
-                    for (int c = 0; c < MAXPLAYERS; ++c) {
-                        if (info.players_connected[c]) {
-                            playerSlotsLocked[c] = false;
-                    		loadGame(c, info);
-                        } else {
-                            playerSlotsLocked[c] = true;
-						}
-                    }
-                    multiplayer = SINGLE;
-					clientnum = 0;
-                    createDummyMainMenu();
-                    createLobbyBrowser(button);
-                }
-	        },
-	        [](Button& button) { // No button
-			    soundCancel();
-			    if (savegame_selected) {
-			        savegame_selected->select();
-			    } else {
-			        assert(main_menu_frame);
-		            auto window = main_menu_frame->findFrame("continue_window"); assert(window);
-	                if (load_singleplayer) {
-                        auto b = window->findButton("singleplayer");
-                        b->select();
-	                } else {
-                        auto b = window->findButton("multiplayer");
-                        b->select();
-	                }
-			    }
-			    closeBinary();
-	        },
-	        false, false); // both buttons are yellow
+			auto button = prompt->findButton("okay");
+			SDL_Rect pos = button->getSize();
+			pos.x = prompt->getSize().w / 2 - pos.w - 8;
+			button->setSize(pos);
+
+			auto buttonCancel = prompt->addButton("cancel");
+			buttonCancel->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+			buttonCancel->setBackgroundHighlighted("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackHigh00.png");
+			buttonCancel->setBackgroundActivated("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackPress00.png");
+			buttonCancel->setColor(makeColor(255, 255, 255, 255));
+			buttonCancel->setHighlightColor(makeColor(255, 255, 255, 255));
+			buttonCancel->setTextColor(makeColor(255, 255, 255, 255));
+			buttonCancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
+			buttonCancel->setFont(smallfont_outline);
+			buttonCancel->setText("Cancel");
+			pos.x = prompt->getSize().w / 2 + 8;
+			buttonCancel->setSize(pos);
+			buttonCancel->setCallback([](Button& button) {
+				soundCancel();
+				if ( savegame_selected ) {
+					savegame_selected->select();
+				}
+				else {
+					assert(main_menu_frame);
+					auto window = main_menu_frame->findFrame("continue_window"); assert(window);
+					if ( load_singleplayer ) {
+						auto b = window->findButton("singleplayer");
+						b->select();
+					}
+					else {
+						auto b = window->findButton("multiplayer");
+						b->select();
+					}
+				}
+				closeMono();
+			});
+
+			button->setWidgetRight("cancel");
+			button->setWidgetBack("cancel");
+			buttonCancel->setWidgetLeft("okay");
+			buttonCancel->setWidgetBack("cancel");
+		}
+		else
+		{
+			snprintf(window_text, sizeof(window_text),
+				"Are you sure you want to load\nthe save game \"%s\"?", shortened_name);
+			binaryPrompt(
+				window_text, "Yes", "No",
+				[](Button& button) { // Yes button
+					soundActivate();
+					loadSaveConfirm(button, load_singleplayer, load_save_index);
+				},
+				[](Button& button) { // No button
+					soundCancel();
+				if ( savegame_selected ) {
+					savegame_selected->select();
+				}
+				else {
+					assert(main_menu_frame);
+					auto window = main_menu_frame->findFrame("continue_window"); assert(window);
+					if ( load_singleplayer ) {
+						auto b = window->findButton("singleplayer");
+						b->select();
+					}
+					else {
+						auto b = window->findButton("multiplayer");
+						b->select();
+					}
+				}
+				closeBinary();
+				},
+				false, false); // both buttons are yellow
+		}
 	}
                   
     static void addContinuePlayerInfo(Frame& frame, SaveGameInfo& info, int player, int x, int y, bool show_pnum) {
