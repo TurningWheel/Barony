@@ -7878,6 +7878,7 @@ Uint32 Mods::uploadTicks = 0;
 Uint32 Mods::processedOnTick = 0;
 PublishedFileId_t Mods::uploadingExistingItem = 0;
 int Mods::uploadNumRetries = 3;
+bool Mods::forceDownloadCachedImages = false;
 
 std::string Mods::getFolderFullPath(std::string input)
 {

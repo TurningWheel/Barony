@@ -22928,7 +22928,7 @@ failed:
 					}
 					else
 					{
-						if ( PHYSFS_getRealDir(fileID_png.c_str()) )
+						if ( !Mods::forceDownloadCachedImages && PHYSFS_getRealDir(fileID_png.c_str()) )
 						{
 							filePath = PHYSFS_getRealDir(fileID_png.c_str());
 							filePath += PHYSFS_getDirSeparator();
@@ -23923,6 +23923,7 @@ failed:
 							no_mods_found->setDisabled(numResults > 0);
 							no_mods_found->setText("No Workshop items found.");
 						}
+						Mods::forceDownloadCachedImages = false;
 					}
 				}
 			}
@@ -24256,8 +24257,15 @@ failed:
 
 		return frame;
 	}
-
+	static bool forceWorkshopCacheUpdate = true;
 	static void createModsWindow() {
+		if ( forceWorkshopCacheUpdate )
+		{
+#ifdef STEAMWORKS
+			Mods::forceDownloadCachedImages = true;
+#endif
+		}
+		forceWorkshopCacheUpdate = false;
 		assert(main_menu_frame);
 		Mods::clearAllMountedPaths();
 		for ( auto it = Mods::mountedFilepathsSaved.begin(); it != Mods::mountedFilepathsSaved.end(); )

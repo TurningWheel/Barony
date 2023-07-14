@@ -3266,6 +3266,7 @@ struct Mods
 	static Uint32 processedOnTick;
 	static int uploadNumRetries;
 	static std::string getFolderFullPath(std::string input);
+	static bool forceDownloadCachedImages;
 #endif
 	static void updateModCounts();
 	static bool mountAllExistingPaths();
