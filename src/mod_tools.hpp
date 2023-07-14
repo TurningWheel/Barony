@@ -2478,6 +2478,9 @@ public:
 			readFromFile();
 		}
 		int dungeonLevel = -1;
+		bool showFirstTutorialCompletedPrompt = false;
+		bool firstTutorialCompleted = false;
+		void createFirstTutorialCompletedPrompt();
 		void setTutorialMap(std::string& mapname)
 		{
 			loadCustomNextMap = mapname;

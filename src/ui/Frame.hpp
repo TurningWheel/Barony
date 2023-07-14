@@ -341,6 +341,7 @@ public:
 	void							setBlitToParent(bool _bBlitParent) { bBlitToParent = _bBlitParent; }
 	const bool						bIsDirtyBlit() const { return bBlitDirty; }
 	const bool						isBlitToParent() const { return bBlitToParent; }
+	const Uint32					getTicks() const { return ticks; }
 
 	void	setFont(const char* _font) { font = _font; }
 	void	setBorder(const int _border) { border = _border; }

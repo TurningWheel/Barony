@@ -22455,6 +22455,129 @@ failed:
 	    }
 	}
 
+	void tutorialFirstTimeCompleted() {
+		if ( !gamePaused ) {
+			pauseGame(2, 0);
+			destroyMainMenu();
+			createDummyMainMenu();
+		}
+
+		if ( !main_menu_frame ) {
+			return;
+		}
+
+		bool issmall = false;
+		Frame* prompt = createPrompt("mono_prompt", issmall);
+		if ( !prompt ) {
+			return;
+		}
+
+		auto text = prompt->addField("text", issmall ? 128 : 1024);
+		text->setSize(SDL_Rect{ 30, 28, prompt->getSize().w - 60, issmall ? 46 : 134 });
+		text->setFont(smallfont_no_outline);
+		text->setText(
+			u8"Congratulations, you've completed the first tutorial!\n\n"
+			u8"You are now within the Hall of Trials,\n"
+			u8"9 more trials are available to teach and test you.\n\n"
+			u8"Explore the Hall of Trials to learn more or return\n"
+			u8"to the main menu and start your adventure.\n"
+		);
+		text->setJustify(Field::justify_t::CENTER);
+
+		auto okay = prompt->addButton("okay");
+		okay->setSize(SDL_Rect{ (prompt->getActualSize().w - 108) / 2, prompt->getSize().h - 98, 108, 52 });
+		okay->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+		okay->setBackgroundHighlighted("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackHigh00.png");
+		okay->setBackgroundActivated("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackPress00.png");
+		okay->setColor(makeColor(255, 255, 255, 255));
+		okay->setHighlightColor(makeColor(255, 255, 255, 255));
+		okay->setTextColor(makeColor(255, 255, 255, 255));
+		okay->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		okay->setFont(smallfont_outline);
+		okay->setText("Explore\nHall of Trials");
+		okay->setCallback([](Button& button) {
+			closeMono();
+
+			destroyMainMenu();
+			pauseGame(1, 0); // unpause game
+
+			soundActivate();
+		});
+		okay->select();
+		okay->setTickCallback([](Widget& widget) {
+			if ( !main_menu_frame ) {
+				return;
+			}
+			auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
+			if ( !selectedWidget ) {
+				auto button = static_cast<Button*>(&widget);
+				button->select();
+			}
+		});
+
+		auto button = prompt->findButton("okay");
+		SDL_Rect pos = button->getSize();
+		button->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Button_00.png");
+		button->setBackgroundHighlighted("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonHigh_00.png");
+		button->setBackgroundActivated("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonPress_00.png");
+		pos.w = 164;
+		pos.y += (pos.h - 64);
+		pos.h = 64;
+		pos.x = prompt->getSize().w / 2 - pos.w - 8;
+		button->setSize(pos);
+
+		auto buttonCancel = prompt->addButton("cancel");
+		buttonCancel->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Button_00.png");
+		buttonCancel->setBackgroundHighlighted("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonHigh_00.png");
+		buttonCancel->setBackgroundActivated("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonPress_00.png");
+		buttonCancel->setColor(makeColor(255, 255, 255, 255));
+		buttonCancel->setHighlightColor(makeColor(255, 255, 255, 255));
+		buttonCancel->setTextColor(makeColor(255, 255, 255, 255));
+		buttonCancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		buttonCancel->setFont(smallfont_outline);
+		buttonCancel->setText("Return to\nMain Menu");
+		pos.x = prompt->getSize().w / 2 + 8;
+		buttonCancel->setSize(pos);
+		buttonCancel->setCallback([](Button& button) {
+			closeMono();
+
+			soundActivate();
+
+			destroyMainMenu();
+			createDummyMainMenu();
+			if ( saveGameExists(multiplayer == SINGLE) ) {
+				beginFade(MainMenu::FadeDestination::RootMainMenu);
+			}
+			else {
+				beginFade(MainMenu::FadeDestination::Endgame);
+			}
+		});
+
+		button->setWidgetRight("cancel");
+		buttonCancel->setWidgetLeft("okay");
+		button->setDisabled(true);
+		buttonCancel->setDisabled(true);
+		button->setTextColor(makeColorRGB(128, 128, 128));
+		buttonCancel->setTextColor(makeColorRGB(128, 128, 128));
+
+		prompt->setTickCallback([](Widget& widget) {
+			auto frame = static_cast<Frame*>(&widget);
+			if ( frame->getTicks() > TICKS_PER_SECOND * 5 )
+			{
+				if ( auto button = frame->findButton("okay") )
+				{
+					button->setDisabled(false);
+					button->setTextColor(makeColorRGB(255, 255, 255));
+				}
+				if ( auto button = frame->findButton("cancel") )
+				{
+					button->setDisabled(false);
+					button->setTextColor(makeColorRGB(255, 255, 255));
+				}
+			}
+		});
+	}
+
     void controllerDisconnected(int player) {
         if (!gamePaused) {
             pauseGame(2, 0);
@@ -23502,6 +23625,18 @@ failed:
 			}
 		}
 
+		if ( auto window = main_menu_frame->findFrame("mods_menu") )
+		{
+			if ( auto subwindow = window->findFrame("subwindow") )
+			{
+				if ( auto no_mods_found = subwindow->findField("no_mods_found") )
+				{
+					no_mods_found->setDisabled(true);
+					no_mods_found->setText("");
+				}
+			}
+		}
+
 		if ( !prompt )
 		{
 			return;
@@ -23590,6 +23725,12 @@ failed:
 
 						auto rock_background = subwindow->findImage("rock_background");
 						rock_background->pos = subwindow->getActualSize();
+
+						if ( auto no_mods_found = subwindow->findField("no_mods_found") )
+						{
+							no_mods_found->setDisabled(numResults > 0);
+							no_mods_found->setText("No subscribed Workshop items found.");
+						}
 					}
 				}
 			}
@@ -23680,6 +23821,18 @@ failed:
 			}
 		}
 
+		if ( auto window = main_menu_frame->findFrame("mods_menu") )
+		{
+			if ( auto subwindow = window->findFrame("subwindow") )
+			{
+				if ( auto no_mods_found = subwindow->findField("no_mods_found") )
+				{
+					no_mods_found->setDisabled(true);
+					no_mods_found->setText("");
+				}
+			}
+		}
+
 		if ( !prompt )
 		{
 			return;
@@ -23762,6 +23915,12 @@ failed:
 
 						auto rock_background = subwindow->findImage("rock_background");
 						rock_background->pos = subwindow->getActualSize();
+
+						if ( auto no_mods_found = subwindow->findField("no_mods_found") )
+						{
+							no_mods_found->setDisabled(numResults > 0);
+							no_mods_found->setText("No Workshop items found.");
+						}
 					}
 				}
 			}
@@ -23825,6 +23984,18 @@ failed:
 					{
 						blank_mod_folder->select();
 					}
+				}
+			}
+		}
+
+		if ( auto window = main_menu_frame->findFrame("mods_menu") )
+		{
+			if ( auto subwindow = window->findFrame("subwindow") )
+			{
+				if ( auto no_mods_found = subwindow->findField("no_mods_found") )
+				{
+					no_mods_found->setDisabled(true);
+					no_mods_found->setText("");
 				}
 			}
 		}
@@ -23918,6 +24089,12 @@ failed:
 
 						auto rock_background = subwindow->findImage("rock_background");
 						rock_background->pos = subwindow->getActualSize();
+
+						if ( auto no_mods_found = subwindow->findField("no_mods_found") )
+						{
+							no_mods_found->setDisabled(Mods::localModFoldernames.size() != 0);
+							no_mods_found->setText("No folders found in /mods/ directory.");
+						}
 					}
 				}
 			}
@@ -24228,6 +24405,14 @@ failed:
 			mods_active_tab = mod_tabs[0].name;
 		}
 #endif
+
+		auto no_mods_found = subwindow->addField("no_mods_found", 128);
+		no_mods_found->setFont(bigfont_outline);
+		no_mods_found->setSize(SDL_Rect{ 0, 0, subwindow->getSize().w, subwindow->getSize().h});
+		no_mods_found->setJustify(Field::justify_t::CENTER);
+		no_mods_found->setText("");
+		no_mods_found->setDisabled(true);
+		no_mods_found->setColor(makeColorRGB(192, 192, 192));
 
 		auto load_status_frame = window->addFrame("load_status");
 		load_status_frame->setSize(SDL_Rect{ 448, 622, 196, 78 });

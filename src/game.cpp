@@ -2203,7 +2203,14 @@ void gameLogic(void)
 
 					Player::Minimap_t::mapDetails.clear();
 
-					if ( !secretlevel )
+					if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+					{
+						if ( gameModeManager.Tutorial.showFirstTutorialCompletedPrompt )
+						{
+							gameModeManager.Tutorial.createFirstTutorialCompletedPrompt();
+						}
+					}
+					else if ( !secretlevel )
 					{
 						messageLocalPlayers(MESSAGE_PROGRESSION, Language::get(710), currentlevel);
 					}
@@ -2211,6 +2218,9 @@ void gameLogic(void)
 					{
 						messageLocalPlayers(MESSAGE_PROGRESSION, Language::get(711), map.name);
 					}
+
+					gameModeManager.Tutorial.showFirstTutorialCompletedPrompt = false;
+
 					if ( !secretlevel && result )
 					{
 						switch ( currentlevel )

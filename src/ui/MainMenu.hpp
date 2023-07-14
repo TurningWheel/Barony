@@ -111,6 +111,7 @@ namespace MainMenu {
 	// special events:
 
     void controllerDisconnected(int player);                        // controller disconnect prompt, eg if a player unplugs a controller
+	void tutorialFirstTimeCompleted();								// tutorial first level completed event
     void openGameoverWindow(int player, bool tutorial = false);     // opens gameover window, used when player dies
 	void disconnectedFromServer(const char* text);                  // called when the player is disconnected from the server, prompts them to end the game
 	void receivedInvite(void*);                                     // called when a player receives an invite to a lobby (EOS or Steam)

@@ -126,10 +126,19 @@ void GameModeManager_t::Tutorial_t::openGameoverWindow()
 {
 	return;
 }
+void GameModeManager_t::Tutorial_t::createFirstTutorialCompletedPrompt()
+{
+	return;
+}
 #else
 void GameModeManager_t::Tutorial_t::openGameoverWindow()
 {
 	MainMenu::openGameoverWindow(0, true);
+}
+
+void GameModeManager_t::Tutorial_t::createFirstTutorialCompletedPrompt()
+{
+	MainMenu::tutorialFirstTimeCompleted();
 }
 #endif
 
@@ -207,6 +216,10 @@ void GameModeManager_t::Tutorial_t::readFromFile()
 		int version = d["version"].GetInt();
 
 		this->FirstTimePrompt.showFirstTimePrompt = d["first_time_prompt"].GetBool();
+		if ( d.HasMember("first_tutorial_complete") )
+		{
+			this->firstTutorialCompleted = d["first_tutorial_complete"].GetBool();
+		}
 
 		for ( auto it = levels.begin(); it != levels.end(); ++it )
 		{
@@ -225,8 +238,10 @@ void GameModeManager_t::Tutorial_t::readFromFile()
 		d.SetObject();
 		CustomHelpers::addMemberToRoot(d, "version", rapidjson::Value(1));
 		CustomHelpers::addMemberToRoot(d, "first_time_prompt", rapidjson::Value(true));
+		CustomHelpers::addMemberToRoot(d, "first_tutorial_complete", rapidjson::Value(false));
 
 		this->FirstTimePrompt.showFirstTimePrompt = true;
+		this->firstTutorialCompleted = false;
 
 		rapidjson::Value levelsObj(rapidjson::kObjectType);
 		CustomHelpers::addMemberToRoot(d, "levels", levelsObj);
@@ -273,6 +288,11 @@ void GameModeManager_t::Tutorial_t::writeToDocument()
 	d.ParseStream(is);
 
 	d["first_time_prompt"].SetBool(this->FirstTimePrompt.showFirstTimePrompt);
+	if ( !d.HasMember("first_tutorial_complete") )
+	{
+		CustomHelpers::addMemberToRoot(d, "first_tutorial_complete", rapidjson::Value(false));
+	}
+	d["first_tutorial_complete"].SetBool(this->firstTutorialCompleted);
 
 	for ( auto it = levels.begin(); it != levels.end(); ++it )
 	{
