@@ -22472,6 +22472,8 @@ failed:
 			return;
 		}
 
+		playSound(553, 64);
+
 		auto text = prompt->addField("text", issmall ? 128 : 1024);
 		text->setSize(SDL_Rect{ 30, 28, prompt->getSize().w - 60, issmall ? 46 : 134 });
 		text->setFont(smallfont_no_outline);
