@@ -2501,13 +2501,17 @@ void drawStatusNew(const int player)
 		{
 			drawHotBarTooltipOnCycle = false;
 		}
+		if ( FollowerMenu[player].followerMenuIsOpen() )
+		{
+			drawHotBarTooltipOnCycle = false;
+		}
 	}
 
 	bool tooltipOpen = false;
 	Frame* tooltipSlotFrame = nullptr;
 	bool tooltipPromptFrameWasDisabled = true;
 
-	if ( !shootmode || drawHotBarTooltipOnCycle )
+	if ( (!shootmode && !FollowerMenu[player].followerMenuIsOpen()) || drawHotBarTooltipOnCycle)
 	{
 		//Go back through all of the hotbar slots and draw the tooltips.
 		for ( int num = 0; num < NUM_HOTBAR_SLOTS; ++num )

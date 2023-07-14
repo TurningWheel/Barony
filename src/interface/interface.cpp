@@ -2110,6 +2110,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		if ( input.binaryToggle("MenuCancel") )
 		{
 			input.consumeBinaryToggle("MenuCancel");
+			input.consumeBindingsSharedWithBinding("MenuCancel");
 			closeFollowerMenuGUI();
 			Player::soundCancel();
 		}
@@ -2160,6 +2161,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 	if ( followerMenuIsOpen() && input.binaryToggle("MenuCancel") )
 	{
 		input.consumeBinaryToggle("MenuCancel");
+		input.consumeBindingsSharedWithBinding("MenuCancel");
 		closeFollowerMenuGUI();
 		players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 		Player::soundCancel();

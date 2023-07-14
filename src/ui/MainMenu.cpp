@@ -279,7 +279,11 @@ namespace MainMenu {
             {
                 {"Attack", "Mouse1", "RightTrigger", emptyBinding},
                 {"Use", "Mouse3", "ButtonA", emptyBinding},
-                {"Cast Spell", "F", "ButtonX", emptyBinding},
+#ifdef NINTENDO
+                {"Cast Spell", "F", "ButtonY", emptyBinding},
+#else
+				{"Cast Spell", "F", "ButtonX", emptyBinding},
+#endif
                 {"Defend", "Space", "LeftTrigger", emptyBinding},
                 {"Sneak", "Space", "LeftTrigger", emptyBinding},
                 {"Character Status", "Tab", "ButtonBack", emptyBinding},
