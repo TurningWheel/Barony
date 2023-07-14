@@ -538,66 +538,66 @@ namespace MainMenu {
 
     // All menu options combined
 	struct AllSettings {
-	    std::vector<std::pair<std::string, std::string>> mods;
-	    bool crossplay_enabled;
-	    bool fast_restart;
-		float world_tooltip_scale;
-		float world_tooltip_scale_splitscreen;
-		float enemybar_scale;
-		bool add_items_to_hotbar_enabled;
+	    std::vector<std::pair<std::string, std::string>> mods = Mods::mountedFilepathsSaved;
+	    bool crossplay_enabled = LobbyHandler.crossplayEnabled;
+	    bool fast_restart = false;
+		float world_tooltip_scale = 100.f;
+		float world_tooltip_scale_splitscreen = 150.f;
+		float enemybar_scale = 100.f;
+		bool add_items_to_hotbar_enabled = true;
 		InventorySorting inventory_sorting;
 		LastCreatedCharacter lastCharacter;
-		bool use_on_release_enabled;
-        bool ui_filter_enabled;
-        float ui_scale;
+		bool use_on_release_enabled = true;
+        bool ui_filter_enabled = false;
+        float ui_scale = 100.f;
 		Minimap minimap;
-		bool show_messages_enabled;
+		bool show_messages_enabled = true;
 		Messages show_messages;
-		bool show_player_nametags_enabled;
-		bool show_hud_enabled;
-		bool show_ip_address_enabled;
-		bool content_control_enabled;
-		bool colorblind_mode_enabled;
-		bool arachnophobia_filter_enabled;
-		bool shaking_enabled;
-		bool bobbing_enabled;
-		bool light_flicker_enabled;
-		bool hold_to_activate_enabled;
+		bool show_player_nametags_enabled = true;
+		bool show_hud_enabled = true;
+		bool show_ip_address_enabled = true;
+		bool content_control_enabled = false;
+		bool colorblind_mode_enabled = false;
+		bool arachnophobia_filter_enabled = false;
+		bool shaking_enabled = true;
+		bool bobbing_enabled = true;
+		bool light_flicker_enabled = true;
+		bool hold_to_activate_enabled = true;
         struct Video video;
-		bool use_frame_interpolation;
-		bool vertical_split_enabled;
-		bool staggered_split_enabled;
-		bool clipped_split_enabled;
-		float item_tooltip_height;
-		int shootmode_crosshair;
-		int shootmode_crosshair_opacity;
-		bool hdr_enabled;
-		float fov;
-		float fps;
-		std::string audio_device;
-		float master_volume;
-		float gameplay_volume;
-		float ambient_volume;
-		float environment_volume;
-		float notification_volume;
-		float music_volume;
-		bool minimap_pings_enabled;
-		bool player_monster_sounds_enabled;
-		bool out_of_focus_audio_enabled;
-        Bindings bindings;
+		bool use_frame_interpolation = true;
+		bool vertical_split_enabled = false;
+		bool staggered_split_enabled = false;
+		bool clipped_split_enabled = false;
+		float item_tooltip_height = 100.f;
+		int shootmode_crosshair = 0;
+		int shootmode_crosshair_opacity = 50;
+		bool hdr_enabled = true;
+		float fov = 60.f;
+		float fps = AUTO_FPS;
+		std::string audio_device = "";
+		float master_volume = 100.f;
+		float gameplay_volume = 100.f;
+		float ambient_volume = 100.f;
+		float environment_volume = 100.f;
+		float notification_volume = 100.f;
+		float music_volume = 100.f;
+		bool minimap_pings_enabled = true;
+		bool player_monster_sounds_enabled = true;
+		bool out_of_focus_audio_enabled = true;
+        Bindings bindings = Bindings::reset(defaultControlLayout);
         Controls controls[MAX_SPLITSCREEN];
-		bool classic_mode_enabled;
-		bool hardcore_mode_enabled;
-		bool friendly_fire_enabled;
-		bool keep_inventory_enabled;
-		bool hunger_enabled;
-		bool minotaur_enabled;
-		bool random_traps_enabled;
-		bool extra_life_enabled;
-		bool cheats_enabled;
-		bool skipintro;
-		int port_number;
-		bool show_lobby_code;
+		bool classic_mode_enabled = false;
+		bool hardcore_mode_enabled = false;
+		bool friendly_fire_enabled = true;
+		bool keep_inventory_enabled = false;
+		bool hunger_enabled = true;
+		bool minotaur_enabled = true;
+		bool random_traps_enabled = true;
+		bool extra_life_enabled = false;
+		bool cheats_enabled = false;
+		bool skipintro = true;
+		int port_number = DEFAULT_PORT;
+		bool show_lobby_code = true;
 		std::vector<int> lobby_filter_settings;
 		inline int save(); // non-zero if video needs restart
 		static inline AllSettings load(bool video);
@@ -2836,72 +2836,7 @@ namespace MainMenu {
 	}
 
 	inline AllSettings AllSettings::reset() {
-		AllSettings settings;
-		settings.mods = Mods::mountedFilepathsSaved;
-		settings.crossplay_enabled = LobbyHandler.crossplayEnabled;
-		settings.fast_restart = false;
-		settings.world_tooltip_scale = 100.f;
-		settings.world_tooltip_scale_splitscreen = 150.f;
-		settings.enemybar_scale = 100.f;
-		settings.add_items_to_hotbar_enabled = true;
-		settings.inventory_sorting = InventorySorting::reset();
-		settings.lastCharacter = LastCreatedCharacter::reset();
-		settings.use_on_release_enabled = true;
-		settings.minimap = Minimap::reset();
-		settings.show_messages_enabled = true;
-		settings.show_messages = Messages::reset();
-		settings.show_player_nametags_enabled = true;
-		settings.show_hud_enabled = true;
-		settings.show_ip_address_enabled = true;
-		settings.content_control_enabled = false;
-		settings.colorblind_mode_enabled = false;
-		settings.arachnophobia_filter_enabled = false;
-		settings.shaking_enabled = true;
-		settings.bobbing_enabled = true;
-		settings.light_flicker_enabled = true;
-		settings.hold_to_activate_enabled = true;
-		settings.video = Video::reset();
-		settings.vertical_split_enabled = false;
-		settings.clipped_split_enabled = false;
-		settings.staggered_split_enabled = false;
-		settings.use_frame_interpolation = true;
-		settings.fov = 60;
-		settings.fps = AUTO_FPS;
-		settings.item_tooltip_height = 100.f;
-		settings.shootmode_crosshair = 0;
-		settings.shootmode_crosshair_opacity = 50;
-		settings.hdr_enabled = true;
-		settings.audio_device = "";
-		settings.master_volume = 100.f;
-		settings.gameplay_volume = 100.f;
-		settings.ambient_volume = 100.f;
-		settings.environment_volume = 100.f;
-		settings.notification_volume = 100.f;
-		settings.music_volume = 100.f;
-		settings.minimap_pings_enabled = true;
-		settings.player_monster_sounds_enabled = true;
-		settings.out_of_focus_audio_enabled = true;
-		settings.bindings = Bindings::reset(defaultControlLayout);
-        for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
-            settings.controls[c] = Controls::reset();
-        }
-		settings.classic_mode_enabled = false;
-		settings.hardcore_mode_enabled = false;
-		settings.friendly_fire_enabled = true;
-		settings.keep_inventory_enabled = false;
-		settings.hunger_enabled = true;
-		settings.minotaur_enabled = true;
-		settings.random_traps_enabled = true;
-		settings.extra_life_enabled = false;
-		settings.cheats_enabled = false;
-		settings.skipintro = true;
-		settings.port_number = DEFAULT_PORT;
-		settings.show_lobby_code = true;
-		for ( int i = 0; i < MAX_LOBBY_FILTERS_SAVED; ++i )
-		{
-			settings.lobby_filter_settings[i] = 0;
-		}
-		return settings;
+		return AllSettings();
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
@@ -6009,9 +5944,27 @@ bind_failed:
             case Input::ControllerType::PlayStation:
                 path = "*#images/ui/Main Menus/Settings/Controls/Layout_PS5-lines.png";
                 break;
-            case Input::ControllerType::NintendoSwitch:
-                path = "*#images/ui/Main Menus/Settings/Controls/Layout_Switch-lines.png";
-                break;
+#ifdef NINTENDO
+			case Input::ControllerType::NintendoSwitch: {
+				if (nxIsHandheldMode()) {
+					path = "*#images/ui/Main Menus/Settings/Controls/Layout_SwitchHandheld-Lines.png";
+				}
+				else {
+					if (nxIsProController(player)) {
+						path = "*#images/ui/Main Menus/Settings/Controls/Layout_ProController-lines.png";
+					}
+					else {
+						path = "*#images/ui/Main Menus/Settings/Controls/Layout_Switch-Lines.png";
+					}
+				}
+				break;
+			}
+#else
+			case Input::ControllerType::NintendoSwitch:
+				path = "*#images/ui/Main Menus/Settings/Controls/Layout_Switch-Lines.png";
+				break;
+#endif
+			default:
             case Input::ControllerType::Xbox:
                 path = "*#images/ui/Main Menus/Settings/Controls/Layout_Xbox-lines.png";
                 break;
@@ -6055,26 +6008,73 @@ bind_failed:
             }
             else if (controllerType == Input::ControllerType::NintendoSwitch) {
                 const int r = x + (int)image->getWidth() + 4;
-                list.insert(list.end(),{
-                    {"ButtonLeftBumper", 0, 2, false, nullptr},
-                    {"LeftTrigger", 0, 44, false, nullptr},
-                    {"ButtonBack", 0, 82, false, nullptr},
-                    {"ButtonLeftStick", 0, 108, false, "Move"},
-                    {"ButtonLeftStick", 0, 148, true, nullptr},
-                    {"DpadX+", 0, 186, false, nullptr},
-                    {"DpadY+", 0, 222, false, nullptr},
-                    {"DpadX-", 0, 258, false, nullptr},
-                    {"DpadY-", 0, 294, false, nullptr},
-                    {"ButtonRightBumper", r, 2, false, nullptr},
-                    {"RightTrigger", r, 44, false, nullptr},
-                    {"ButtonStart", r, 76, false, nullptr},
-                    {"ButtonA", r, 112, false, nullptr},
-                    {"ButtonB", r, 148, false, nullptr},
-                    {"ButtonX", r, 184, false, nullptr},
-                    {"ButtonY", r, 220, false, nullptr},
-                    {"ButtonRightStick", r, 266, false, "Look / Turn"},
-                    {"ButtonRightStick", r, 306, true, nullptr},
-                });
+#ifdef NINTENDO
+				if (!nxIsHandheldMode() && nxIsProController(player)) {
+					list.insert(list.end(), {
+						{"ButtonLeftBumper", 0, 2, false, nullptr},
+						{"LeftTrigger", 0, 44, false, nullptr},
+						{"ButtonLeftStick", 0, 78, false, "Move"},
+						{"ButtonLeftStick", 0, 118, true, nullptr},
+						{"ButtonBack", 0, 156, false, nullptr},
+						{"DpadX+", 0, 194, false, nullptr},
+						{"DpadY+", 0, 230, false, nullptr},
+						{"DpadX-", 0, 266, false, nullptr},
+						{"DpadY-", 0, 302, false, nullptr},
+						{"ButtonRightBumper", r, 2, false, nullptr},
+						{"RightTrigger", r, 44, false, nullptr},
+						{"ButtonA", r, 74, false, nullptr},
+						{"ButtonB", r, 110, false, nullptr},
+						{"ButtonX", r, 146, false, nullptr},
+						{"ButtonY", r, 182, false, nullptr},
+						{"ButtonStart", r, 214, false, nullptr},
+						{"ButtonRightStick", r, 266, false, "Look / Turn"},
+						{"ButtonRightStick", r, 306, true, nullptr},
+						});
+				}
+				else {
+					list.insert(list.end(), {
+						{"ButtonLeftBumper", 0, 2, false, nullptr},
+						{"LeftTrigger", 0, 44, false, nullptr},
+						{"ButtonBack", 0, 82, false, nullptr},
+						{"ButtonLeftStick", 0, 108, false, "Move"},
+						{"ButtonLeftStick", 0, 148, true, nullptr},
+						{"DpadX+", 0, 186, false, nullptr},
+						{"DpadY+", 0, 222, false, nullptr},
+						{"DpadX-", 0, 258, false, nullptr},
+						{"DpadY-", 0, 294, false, nullptr},
+						{"ButtonRightBumper", r, 2, false, nullptr},
+						{"RightTrigger", r, 44, false, nullptr},
+						{"ButtonStart", r, 76, false, nullptr},
+						{"ButtonA", r, 112, false, nullptr},
+						{"ButtonB", r, 148, false, nullptr},
+						{"ButtonX", r, 184, false, nullptr},
+						{"ButtonY", r, 220, false, nullptr},
+						{"ButtonRightStick", r, 266, false, "Look / Turn"},
+						{"ButtonRightStick", r, 306, true, nullptr},
+						});
+				}
+#else
+				list.insert(list.end(), {
+					{"ButtonLeftBumper", 0, 2, false, nullptr},
+					{"LeftTrigger", 0, 44, false, nullptr},
+					{"ButtonBack", 0, 82, false, nullptr},
+					{"ButtonLeftStick", 0, 108, false, "Move"},
+					{"ButtonLeftStick", 0, 148, true, nullptr},
+					{"DpadX+", 0, 186, false, nullptr},
+					{"DpadY+", 0, 222, false, nullptr},
+					{"DpadX-", 0, 258, false, nullptr},
+					{"DpadY-", 0, 294, false, nullptr},
+					{"ButtonRightBumper", r, 2, false, nullptr},
+					{"RightTrigger", r, 44, false, nullptr},
+					{"ButtonStart", r, 76, false, nullptr},
+					{"ButtonA", r, 112, false, nullptr},
+					{"ButtonB", r, 148, false, nullptr},
+					{"ButtonX", r, 184, false, nullptr},
+					{"ButtonY", r, 220, false, nullptr},
+					{"ButtonRightStick", r, 266, false, "Look / Turn"},
+					{"ButtonRightStick", r, 306, true, nullptr},
+					});
+#endif
             }
             else if (controllerType == Input::ControllerType::Xbox) {
                 const int r = x + (int)image->getWidth() + 4;

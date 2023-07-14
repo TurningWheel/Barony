@@ -8245,6 +8245,7 @@ void Mods::loadModels(int start, int end) {
 
 void Mods::unloadMods()
 {
+#ifndef EDITOR
 	isLoading = true;
 	loadingTicks = 0;
 
@@ -8393,10 +8394,12 @@ void Mods::unloadMods()
 	destroyLoadingScreen();
 	loading = false;
 	isLoading = false;
+#endif
 }
 
 void Mods::loadMods()
 {
+#ifndef EDITOR
 	Mods::disableSteamAchievements = false;
 	Mods::verifyAchievements(nullptr, false);
 
@@ -8592,6 +8595,7 @@ void Mods::loadMods()
 
 	loading = false;
 	isLoading = false;
+#endif
 }
 
 void Mods::writeLevelsTxtAndPreview(std::string modFolder)
