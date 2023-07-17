@@ -15691,7 +15691,10 @@ node_t* Entity::addItemToMonsterInventory(Item* item)
 			Item* item = (Item*)node->element;
 			if ( !item ) { continue; }
 
-			priceAndItems.push_back(std::make_pair(item->buyValue(clientnum), item));
+			if ( !item->itemSpecialShopConsumable )
+			{
+				priceAndItems.push_back(std::make_pair(item->buyValue(clientnum), item));
+			}
 		}
 
 		std::sort(priceAndItems.begin(), priceAndItems.end(), [](std::pair<int, Item*> lhs, std::pair<int, Item*> rhs) {
