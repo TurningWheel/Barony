@@ -7834,6 +7834,7 @@ bool Mods::monsterLimbsRequireReloadUnmodded = false;
 bool Mods::systemImagesReloadUnmodded = false;
 bool Mods::customContentLoadedFirstTime = false;
 bool Mods::disableSteamAchievements = false;
+bool Mods::lobbyDisableSteamAchievements = false;
 bool Mods::isLoading = false;
 Uint32 Mods::loadingTicks = 0;
 void Mods::updateModCounts()

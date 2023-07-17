@@ -8755,6 +8755,24 @@ bind_failed:
 				}
 			}
 #endif
+			memcpy((char*)net_packet->data, "MODS", 4);
+			net_packet->len = 5;
+			if ( Mods::disableSteamAchievements )
+			{
+				net_packet->data[4] = 1;
+			}
+			else
+			{
+				net_packet->data[4] = 0;
+			}
+			for ( int c = 1; c < MAXPLAYERS; c++ ) {
+				if ( client_disconnected[c] ) {
+					continue;
+				}
+				net_packet->address.host = net_clients[c - 1].host;
+				net_packet->address.port = net_clients[c - 1].port;
+				sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			}
 	    } else if (multiplayer == CLIENT) {
 	        memcpy(net_packet->data, "SVFL", 4);
 			net_packet->len = 4;
@@ -9021,6 +9039,25 @@ bind_failed:
 			net_packet->len = 8;
 			for (int c = 1; c < MAXPLAYERS; c++) {
 				if (client_disconnected[c]) {
+					continue;
+				}
+				net_packet->address.host = net_clients[c - 1].host;
+				net_packet->address.port = net_clients[c - 1].port;
+				sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			}
+
+			memcpy((char*)net_packet->data, "MODS", 4);
+			net_packet->len = 5;
+			if ( Mods::disableSteamAchievements )
+			{
+				net_packet->data[4] = 1;
+			}
+			else
+			{
+				net_packet->data[4] = 0;
+			}
+			for ( int c = 1; c < MAXPLAYERS; c++ ) {
+				if ( client_disconnected[c] ) {
 					continue;
 				}
 				net_packet->address.host = net_clients[c - 1].host;
@@ -9346,7 +9383,12 @@ bind_failed:
 	    // update svFlags
 	    {'SVFL', [](){
 		    lobbyWindowSvFlags = SDLNet_Read32(&net_packet->data[4]);
-	    }},
+		} },
+
+		// update mod achievement status
+		{ 'MODS', []() {
+			Mods::lobbyDisableSteamAchievements = net_packet->data[4] == 0 ? false : true;
+		}},
 
 	    // keepalive
 	    {'KPAL', [](){
@@ -9848,6 +9890,7 @@ bind_failed:
 
 	    // reset keepalive
 	    client_keepalive[0] = ticks;
+		Mods::lobbyDisableSteamAchievements = false;
 
 	    // open wait prompt
         cancellablePrompt("connect_prompt", "", "Cancel", [](Widget& widget){
@@ -11428,6 +11471,9 @@ failed:
 				if ( Mods::disableSteamAchievements ) {
 					achievements->setColor(makeColor(180, 37, 37, 255));
 					achievements->setText("ACHIEVEMENTS DISABLED\n(MODDED)");
+				} else if ( Mods::lobbyDisableSteamAchievements ) {
+					achievements->setColor(makeColor(180, 37, 37, 255));
+					achievements->setText("ACHIEVEMENTS DISABLED\n(MODDED LOBBY)");
 				} else if ( (lobbyWindowSvFlags & SV_FLAG_CHEATS) ||
 					(lobbyWindowSvFlags & SV_FLAG_LIFESAVING) ) {
 					achievements->setColor(makeColor(180, 37, 37, 255));
@@ -15177,8 +15223,14 @@ failed:
 		}
 #endif
 
+		if ( type != LobbyType::LobbyJoined )
+		{
+			Mods::lobbyDisableSteamAchievements = false;
+		}
+
 		// reset ALL player stats
         if (!loadingsavegame) {
+
 		    for (int c = 0; c < MAXPLAYERS; ++c) {
 		        if (type != LobbyType::LobbyJoined && type != LobbyType::LobbyLocal && c != 0) {
 		            newPlayer[c] = true;
@@ -16010,6 +16062,7 @@ failed:
 	    Uint32 flags;
 	    std::string address;
 		int numMods;
+		bool modsDisableAchievements;
 	    intptr_t index = -1;
 	    LobbyInfo(
 	        const char* _name = "Barony",
@@ -16019,7 +16072,8 @@ failed:
 	        bool _locked = false,
 	        Uint32 _flags = 0,
 	        const char* _address = "",
-			int _numMods = 0):
+			int _numMods = 0,
+			bool _modsDisableAchievements = false):
 	        name(_name),
             version(_version),
 	        players(_players),
@@ -16027,7 +16081,8 @@ failed:
 	        locked(_locked),
 	        flags(_flags),
 	        address(_address),
-			numMods(_numMods)
+			numMods(_numMods),
+			modsDisableAchievements(_modsDisableAchievements)
 	    {}
 	};
 
@@ -16095,8 +16150,11 @@ failed:
 				{
 					if ( info.numMods > 0 )
 					{
-						info.name = "[MODDED] " + info.name;
-						lobbies.back().name = info.name;
+						if ( info.name.find("[MODDED] ") == std::string::npos )
+						{
+							info.name = "[MODDED] " + info.name;
+							lobbies.back().name = info.name;
+						}
 #ifdef NINTENDO
 						info.locked = true;
 						lobbies.back().locked = info.locked;
@@ -16149,8 +16207,11 @@ failed:
 				{
 					if ( info.numMods > 0 )
 					{
-						info.name = "[MODDED] " + info.name;
-						lobbies.back().name = info.name;
+						if ( info.name.find("[MODDED] ") == std::string::npos )
+						{
+							info.name = "[MODDED] " + info.name;
+							lobbies.back().name = info.name;
+						}
 #ifdef NINTENDO
 						info.locked = true;
 						lobbies.back().locked = info.locked;
@@ -16180,13 +16241,19 @@ failed:
                 printlog("skipping lobby '%s' (has friends)\n", info.name.c_str());
                 return;
             }
-            if (lobbyFilters[2] == Filter::ON && (info.flags & (SV_FLAG_CHEATS | SV_FLAG_LIFESAVING))) {
+            if (lobbyFilters[2] == Filter::ON 
+				&& ( (info.flags & (SV_FLAG_CHEATS | SV_FLAG_LIFESAVING) )
+						|| info.modsDisableAchievements)
+				) {
                 // lobbies with cheats or +1 life do not count for
                 // achievements.
                 printlog("skipping lobby '%s' (achievements disabled)\n", info.name.c_str());
                 return;
             }
-            if (lobbyFilters[2] == Filter::OFF && !(info.flags & (SV_FLAG_CHEATS | SV_FLAG_LIFESAVING))) {
+            if (lobbyFilters[2] == Filter::OFF 
+				&& !( (info.flags & (SV_FLAG_CHEATS | SV_FLAG_LIFESAVING) ) 
+						|| info.modsDisableAchievements )
+				) {
                 // we're only looking for lobbies where achievements aren't enabled
                 printlog("skipping lobby '%s' (achievements enabled)\n", info.name.c_str());
                 return;
@@ -16457,6 +16524,7 @@ failed:
                     info.version = lobbyVersion[c];
 	                info.players = lobbyPlayers[c];
 					info.numMods = lobbyNumMods[c];
+					info.modsDisableAchievements = lobbyModDisableAchievements[c];
 	                info.ping = 50; // TODO
 	                info.locked = false; // this will always be false because steam only reported joinable lobbies
 	                info.flags = (Uint32)flags;
@@ -16473,6 +16541,7 @@ failed:
 						info.version = lobby->LobbyAttributes.gameVersion;
 						info.players = MAXPLAYERS - lobby->FreeSlots;
 						info.numMods = lobby->LobbyAttributes.numServerMods;
+						info.modsDisableAchievements = lobby->LobbyAttributes.modsDisableAchievements;
 						info.ping = 50; // TODO
 						info.locked = lobby->LobbyAttributes.gameCurrentLevel != -1;
 						info.flags = lobby->LobbyAttributes.serverFlags;
@@ -21705,10 +21774,20 @@ failed:
 			achievements->setVJustify(Field::justify_t::TOP);
 			achievements->setTickCallback([](Widget& widget) {
 				Field* achievements = static_cast<Field*>(&widget);
-				if ( Mods::disableSteamAchievements )
+				if ( multiplayer == CLIENT && Mods::lobbyDisableSteamAchievements )
+				{
+					achievements->setColor(makeColor(180, 37, 37, 255));
+					achievements->setText("ACHIEVEMENTS DISABLED (MODDED LOBBY)");
+				}
+				else if ( Mods::disableSteamAchievements )
 				{
 					achievements->setColor(makeColor(180, 37, 37, 255));
 					achievements->setText("ACHIEVEMENTS DISABLED (MODDED)");
+				}
+				else if ( conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS] )
+				{
+					achievements->setColor(makeColor(180, 37, 37, 255));
+					achievements->setText("ACHIEVEMENTS DISABLED (PREVIOUSLY MODDED LOBBY)");
 				}
 				else if (conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 					|| conductGameChallenges[CONDUCT_LIFESAVING] ) {

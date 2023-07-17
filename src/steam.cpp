@@ -43,6 +43,7 @@ char lobbyVersion[MAX_STEAM_LOBBIES][64];
 void* lobbyIDs[MAX_STEAM_LOBBIES] = { NULL };
 int lobbyPlayers[MAX_STEAM_LOBBIES] = { 0 };
 int lobbyNumMods[MAX_STEAM_LOBBIES] = { 0 };
+bool lobbyModDisableAchievements[MAX_STEAM_LOBBIES] = { false };
 bool steamAwaitingLobbyCreation = false;
 
 const char* getRoomCode() {
@@ -812,7 +813,8 @@ void steamAchievement(const char* achName)
 		{
 			return;
 		}
-		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
+		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
+			|| conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS])
 		{
 			return;
 		}
@@ -821,6 +823,7 @@ void steamAchievement(const char* achName)
 	{
 		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 			|| conductGameChallenges[CONDUCT_LIFESAVING]
+			|| conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS]
 			|| Mods::disableSteamAchievements )
 		{
 		// cheats/mods have been enabled on savefile, disallow achievements.
@@ -931,7 +934,8 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 		{
 			return;
 		}
-		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
+		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
+			|| conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS] )
 		{
 			return;
 		}
@@ -940,6 +944,7 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 	{
 		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 			|| conductGameChallenges[CONDUCT_LIFESAVING]
+			|| conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS]
 			|| Mods::disableSteamAchievements )
 		{
 		// cheats/mods have been enabled on savefile, disallow statistics update.
@@ -1175,7 +1180,8 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 		{
 			return;
 		}
-		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
+		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
+			|| conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS] )
 		{
 			return;
 		}
@@ -1184,6 +1190,7 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 	{
 		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 			|| conductGameChallenges[CONDUCT_LIFESAVING]
+			|| conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS]
 			|| Mods::disableSteamAchievements )
 		{
 			// cheats/mods have been enabled on savefile, disallow statistics update.
@@ -1461,6 +1468,7 @@ void steam_OnLobbyMatchListCallback( void* pCallback, bool bIOFailure )
 		const char* lobbyVersion = SteamMatchmaking()->GetLobbyData(lobby, "ver");
 		const int numPlayers = SteamMatchmaking()->GetNumLobbyMembers(lobby);
 		const char* svNumMods = SteamMatchmaking()->GetLobbyData(lobby, "svNumMods");
+		const char* svModsDisableAchievements = SteamMatchmaking()->GetLobbyData(lobby, "svModDisableAch");
 
 		if ( lobbyName && lobbyName[0] && lobbyVersion && lobbyVersion[0] && numPlayers )
 		{
@@ -1468,6 +1476,7 @@ void steam_OnLobbyMatchListCallback( void* pCallback, bool bIOFailure )
             stringCopyUnsafe(::lobbyVersion[iLobby], lobbyVersion, sizeof(::lobbyVersion[iLobby]));
 			lobbyPlayers[iLobby] = numPlayers;
 			lobbyNumMods[iLobby] = atoi(svNumMods);
+			lobbyModDisableAchievements[iLobby] = atoi(svModsDisableAchievements);
 		}
 		else
 		{
@@ -1478,6 +1487,7 @@ void steam_OnLobbyMatchListCallback( void* pCallback, bool bIOFailure )
 			snprintf(lobbyText[iLobby], sizeof(lobbyText[iLobby]), "Lobby %d", lobby.GetAccountID());
 			lobbyPlayers[iLobby] = 0;
 			::lobbyNumMods[iLobby] = 0;
+			::lobbyModDisableAchievements[iLobby] = false;
 		}
 	}
 	if (!roomkey_cached.empty()) {

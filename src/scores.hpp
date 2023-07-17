@@ -35,6 +35,7 @@ static const int CONDUCT_KEEPINVENTORY = 8; // 1 = keep inventory server flag, 0
 static const int CONDUCT_LIFESAVING = 9; // 1 = lifesaving server flag, 0 = not.
 static const int CONDUCT_ACCURSED = 10; // 1 = cursed, 0 = not
 static const int CONDUCT_RANGED_ONLY = 11; // 1 = ranged only, 0 = not.
+static const int CONDUCT_MODDED_NO_ACHIEVEMENTS = 12; // 1 = mods have disabled achievements
 
 static const int STATISTICS_BOMB_SQUAD = 0;
 static const int STATISTICS_SITTING_DUCK = 1;

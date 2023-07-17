@@ -9487,7 +9487,11 @@ void doNewGame(bool makeHighscore) {
 	{
 		conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 1;
 	}
-	Mods::disableSteamAchievements = false;
+
+	if ( Mods::numCurrentModsLoaded <= 0 )
+	{
+		Mods::disableSteamAchievements = false;
+	}
 
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{

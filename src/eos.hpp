@@ -334,6 +334,7 @@ public:
 				Uint32 isLobbyLoadingSavedGame = 0;
 				Uint32 serverFlags = 0;
 				int numServerMods = 0;
+				bool modsDisableAchievements = false;
 				long long lobbyCreationTime = 0;
 				int gameCurrentLevel = -1;
 				Uint32 maxplayersCompatible = MAXPLAYERS;
@@ -347,6 +348,7 @@ public:
 					isLobbyLoadingSavedGame = 0;
 					serverFlags = 0;
 					numServerMods = 0;
+					modsDisableAchievements = false;
 					lobbyCreationTime = 0;
 					gameCurrentLevel = -1;
 					maxplayersCompatible = MAXPLAYERS;
@@ -389,6 +391,7 @@ public:
 			LOBBY_PERMISSION_LEVEL,
 			FRIENDS_ONLY,
 			GAME_MAXPLAYERS,
+			GAME_MODS_DISABLE_ACHIEVEMENTS,
 			ATTRIBUTE_TYPE_SIZE
 		};
 		const int kNumAttributes = ATTRIBUTE_TYPE_SIZE;

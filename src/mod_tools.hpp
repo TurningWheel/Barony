@@ -3243,6 +3243,7 @@ struct Mods
 	static bool systemImagesReloadUnmodded;
 	static bool customContentLoadedFirstTime;
 	static bool disableSteamAchievements;
+	static bool lobbyDisableSteamAchievements;
 	static bool isLoading;
 	static Uint32 loadingTicks;
 #ifdef STEAMWORKS

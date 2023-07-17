@@ -1560,6 +1560,7 @@ void EOSFuncs::LobbyData_t::setLobbyAttributesFromGame(HostUpdateLobbyTypes upda
 		LobbyAttributes.isLobbyLoadingSavedGame = loadingsavegame;
 		LobbyAttributes.serverFlags = svFlags;
 		LobbyAttributes.numServerMods = Mods::numCurrentModsLoaded;
+		LobbyAttributes.modsDisableAchievements = Mods::disableSteamAchievements;
 		LobbyAttributes.PermissionLevel = static_cast<Uint32>(EOS.currentPermissionLevel);
 		LobbyAttributes.friendsOnly = EOS.bFriendsOnly;
 		LobbyAttributes.maxplayersCompatible = MAXPLAYERS;
@@ -2463,6 +2464,10 @@ std::pair<std::string, std::string> EOSFuncs::LobbyData_t::getAttributePair(Attr
 			attributePair.first = "SVNUMMODS";
 			attributePair.second = std::to_string(this->LobbyAttributes.numServerMods);
 			break;
+		case GAME_MODS_DISABLE_ACHIEVEMENTS:
+			attributePair.first = "SVMODDISABLEACH";
+			attributePair.second = this->LobbyAttributes.modsDisableAchievements ? "1" : "0";
+			break;
 		case CREATION_TIME:
 			attributePair.first = "CREATETIME";
 			attributePair.second = std::to_string(this->LobbyAttributes.lobbyCreationTime);
@@ -2517,6 +2522,10 @@ void EOSFuncs::LobbyData_t::setLobbyAttributesAfterReading(EOS_Lobby_AttributeDa
 	else if ( keyName.compare("SVNUMMODS") == 0 )
 	{
 		this->LobbyAttributes.numServerMods = std::stoi(data->Value.AsUtf8);
+	}
+	else if ( keyName.compare("SVMODDISABLEACH") == 0 )
+	{
+		this->LobbyAttributes.modsDisableAchievements = std::stoi(data->Value.AsUtf8) > 0 ? 1 : 0;
 	}
 	else if ( keyName.compare("CREATETIME") == 0 )
 	{
