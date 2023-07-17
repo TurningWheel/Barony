@@ -23,14 +23,20 @@
 	#define STEAMWORKS
 #endif
 
-#if @EOS_ENABLED@
-	#define USE_EOS
-	#define BUILD_ENV_PR "@BUILD_ENV_PR@"
-	#define BUILD_ENV_SA "@BUILD_ENV_SA@"
-	#define BUILD_ENV_DE "@BUILD_ENV_DE@"
-	#define BUILD_ENV_CC "@BUILD_ENV_CC@"
-	#define BUILD_ENV_CS "@BUILD_ENV_CS@"
-	#define BUILD_ENV_GSE "@BUILD_ENV_GSE@"
+#ifndef EDITOR
+	#if @EOS_ENABLED@
+		#define USE_EOS
+		#define BUILD_ENV_PR "@BUILD_ENV_PR@"
+		#define BUILD_ENV_SA "@BUILD_ENV_SA@"
+		#define BUILD_ENV_DE "@BUILD_ENV_DE@"
+		#define BUILD_ENV_CC "@BUILD_ENV_CC@"
+		#define BUILD_ENV_CS "@BUILD_ENV_CS@"
+		#define BUILD_ENV_GSE "@BUILD_ENV_GSE@"
+	#endif
+#endif
+
+#if @IMGUI@
+	#define USE_IMGUI
 #endif
 
 #if @FMOD@

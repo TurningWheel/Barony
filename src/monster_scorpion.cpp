@@ -14,18 +14,21 @@
 #include "stat.hpp"
 #include "entity.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "items.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 void initScorpion(Entity* my, Stat* myStats)
 {
+	my->flags[BURNABLE] = true;
 	my->flags[UPDATENEEDED] = true;
 	my->flags[INVISIBLE] = false;
 
-	my->sprite = 196;
+	my->initMonster(196);
+
 	if ( multiplayer != CLIENT )
 	{
 		MONSTER_SPOTSND = 101;
@@ -49,9 +52,16 @@ void initScorpion(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+			const bool boss =
+			    local_rng.rand() % 50 == 0 &&
+			    !my->flags[USERFLAG2] &&
+			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
-				strcpy(myStats->name, "Skrabblag");
+				myStats->setAttribute("special_npc", "skrabblag");
+				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
+				myStats->sex = FEMALE;
 				myStats->HP = 100;
 				myStats->MAXHP = 100;
 				myStats->OLDHP = myStats->HP;
@@ -62,7 +72,7 @@ void initScorpion(Entity* my, Stat* myStats)
 				myStats->PER = 10;
 				myStats->CHR = 10;
 				myStats->LVL = 15;
-				newItem(GEM_RUBY, static_cast<Status>(1 + rand() % 4), 0, 1, rand(), true, &myStats->inventory);
+				newItem(GEM_RUBY, static_cast<Status>(1 + local_rng.rand() % 4), 0, 1, local_rng.rand(), true, &myStats->inventory);
 				customItemsToGenerate = customItemsToGenerate - 1;
 				int c;
 				for ( c = 0; c < 3; c++ )
@@ -71,6 +81,10 @@ void initScorpion(Entity* my, Stat* myStats)
 					if ( entity )
 					{
 						entity->parent = my->getUID();
+						if ( Stat* followerStats = entity->getStats() )
+						{
+							followerStats->leader_uid = entity->parent;
+						}
 					}
 				}
 			}
@@ -106,7 +120,7 @@ void initScorpion(Entity* my, Stat* myStats)
 	}
 
 	// tail
-	Entity* entity = newEntity(197, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(my->sprite == 1080 ? 1082 : 197, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -126,8 +140,11 @@ void initScorpion(Entity* my, Stat* myStats)
 
 void scorpionDie(Entity* my)
 {
-	int c = 0;
-	for ( c = 0; c < 5; c++ )
+	Entity* gib = spawnGib(my);
+	gib->sprite = my->sprite;
+	gib->skill[5] = 1; // poof
+	serverSpawnGibForClient(gib);
+	for ( int c = 0; c < 8; c++ )
 	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
@@ -137,7 +154,7 @@ void scorpionDie(Entity* my)
 
 	my->removeMonsterDeathNodes();
 
-	playSoundEntity(my, 104 + rand() % 3, 128);
+	playSoundEntity(my, 104 + local_rng.rand() % 3, 128);
 	list_RemoveNode(my->mynode);
 	return;
 }
@@ -158,15 +175,7 @@ void actScorpionTail(Entity* my)
 		{
 			if ( inrange[i] )
 			{
-				if ( i == 0 && selectedEntity[0] == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-				else if ( i > 0 && splitscreen && selectedEntity[i] == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-				else if ( client_selected[i] == my )
+				if ( selectedEntity[i] == my || client_selected[i] == my )
 				{
 					parent->skill[13] = i + 1;
 				}
@@ -236,18 +245,7 @@ void scorpionAnimate(Entity* my, double dist)
 		}
 	}
 
-	// move legs
-	if ( ticks % 10 == 0 && dist > 0.1 )
-	{
-		if ( my->sprite == 196 )
-		{
-			my->sprite = 266;
-		}
-		else
-		{
-			my->sprite = 196;
-		}
-	}
+	bool skrabblag = false;
 
 	// move tail
 	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
@@ -261,6 +259,9 @@ void scorpionAnimate(Entity* my, double dist)
 		entity->y = my->y - 4 * sin(my->yaw);
 		entity->z = my->z;
 		entity->yaw = my->yaw;
+		if (entity->sprite == 1082) {
+		    skrabblag = true;
+		}
 		if ( !MONSTER_ATTACK )
 		{
 			entity->pitch = 0;
@@ -286,6 +287,19 @@ void scorpionAnimate(Entity* my, double dist)
 					MONSTER_ATTACK = 0;
 				}
 			}
+		}
+	}
+
+	// move legs
+	if ( ticks % 10 == 0 && dist > 0.1 )
+	{
+		if ( skrabblag )
+		{
+			my->sprite = my->sprite == 1080 ? 1081 : 1080;
+		}
+		else
+		{
+			my->sprite = my->sprite == 196 ? 266 : 196;
 		}
 	}
 }

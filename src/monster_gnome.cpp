@@ -15,19 +15,21 @@
 #include "entity.hpp"
 #include "items.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "book.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 void initGnome(Entity* my, Stat* myStats)
 {
 	int c;
 	node_t* node;
 
-	//Sprite 295 = Gnome head model
-	my->initMonster(295);
+	my->flags[BURNABLE] = true;
+	my->initMonster(295); //Sprite 295 = Gnome head model
+	my->z = 2.25;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -54,10 +56,10 @@ void initGnome(Entity* my, Stat* myStats)
 			// boss variants
 
 			// random effects
-			if ( rand() % 8 == 0 )
+			if ( local_rng.rand() % 8 == 0 )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 1800;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + local_rng.rand() % 1800;
 			}
 
 			// generates equipment and weapons if available from editor
@@ -81,9 +83,9 @@ void initGnome(Entity* my, Stat* myStats)
 				case 5:
 				case 4:
 				case 3:
-					if ( rand() % 50 == 0 )
+					if ( local_rng.rand() % 50 == 0 )
 					{
-						if ( rand() % 2 == 0 )
+						if ( local_rng.rand() % 2 == 0 )
 						{
 							newItem(ENCHANTED_FEATHER, WORN, 0, 1, (2 * (ENCHANTED_FEATHER_MAX_DURABILITY - 1)) / 4, false, &myStats->inventory);
 						}
@@ -93,18 +95,18 @@ void initGnome(Entity* my, Stat* myStats)
 						}
 					}
 				case 2:
-					if ( rand() % 10 == 0 )
+					if ( local_rng.rand() % 10 == 0 )
 					{
-						int i = 1 + rand() % 4;
+						int i = 1 + local_rng.rand() % 4;
 						for ( c = 0; c < i; c++ )
 						{
-							newItem(static_cast<ItemType>(GEM_GARNET + rand() % 15), static_cast<Status>(1 + rand() % 4), 0, 1, rand(), false, &myStats->inventory);
+							newItem(static_cast<ItemType>(GEM_GARNET + local_rng.rand() % 15), static_cast<Status>(1 + local_rng.rand() % 4), 0, 1, local_rng.rand(), false, &myStats->inventory);
 						}
 					}
 				case 1:
-					if ( rand() % 3 == 0 )
+					if ( local_rng.rand() % 3 == 0 )
 					{
-						newItem(FOOD_FISH, EXCELLENT, 0, 1, rand(), false, &myStats->inventory);
+						newItem(FOOD_FISH, EXCELLENT, 0, 1, local_rng.rand(), false, &myStats->inventory);
 					}
 					break;
 				default:
@@ -114,11 +116,11 @@ void initGnome(Entity* my, Stat* myStats)
 			//give shield
 			if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 			{
-				switch ( rand() % 10 )
+				switch ( local_rng.rand() % 10 )
 				{
 					case 0:
 					case 1:
-						myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + rand() % 3, 1, rand(), false, nullptr);
+						myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						break;
 					case 2:
 					case 3:
@@ -129,7 +131,7 @@ void initGnome(Entity* my, Stat* myStats)
 					case 7:
 					case 8:
 					case 9:
-						myStats->shield = newItem(WOODEN_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+						myStats->shield = newItem(WOODEN_SHIELD, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						break;
 				}
 			}
@@ -137,14 +139,14 @@ void initGnome(Entity* my, Stat* myStats)
 			//give weapon
 			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
-				switch ( rand() % 10 )
+				switch ( local_rng.rand() % 10 )
 				{
 					case 0:
 					case 1:
 					case 2:
 					case 3:
 					case 4:
-						myStats->weapon = newItem(TOOL_PICKAXE, EXCELLENT, -1 + rand() % 3, 1, rand(), false, nullptr);
+						myStats->weapon = newItem(TOOL_PICKAXE, EXCELLENT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						break;
 					case 5:
 					case 6:
@@ -152,7 +154,7 @@ void initGnome(Entity* my, Stat* myStats)
 					case 8:
 					case 9:
 						myStats->GOLD += 100;
-						myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, -1 + rand() % 3, 1, rand(), false, nullptr);
+						myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						break;
 				}
 			}
@@ -160,7 +162,7 @@ void initGnome(Entity* my, Stat* myStats)
 			// give cloak
 			if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
 			{
-				switch ( rand() % 10 )
+				switch ( local_rng.rand() % 10 )
 				{
 					case 0:
 					case 1:
@@ -173,7 +175,7 @@ void initGnome(Entity* my, Stat* myStats)
 					case 7:
 					case 8:
 					case 9:
-						myStats->cloak = newItem(CLOAK, SERVICABLE, -1 + rand() % 3, 1, rand(), false, nullptr);
+						myStats->cloak = newItem(CLOAK, SERVICABLE, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						break;
 				}
 			}
@@ -181,7 +183,7 @@ void initGnome(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(296, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(296, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -200,7 +202,7 @@ void initGnome(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(297, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(297, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -219,7 +221,7 @@ void initGnome(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(298, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(298, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -238,7 +240,7 @@ void initGnome(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(299, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(299, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -257,7 +259,7 @@ void initGnome(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(301, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(301, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -276,7 +278,7 @@ void initGnome(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// world weapon
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -297,7 +299,7 @@ void initGnome(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// shield
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -317,7 +319,7 @@ void initGnome(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// cloak
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -352,12 +354,15 @@ void actGnomeLimb(Entity* my)
 
 void gnomeDie(Entity* my)
 {
-	int c;
-	for ( c = 0; c < 6; c++ )
+	for ( int c = 0; c < 10; c++ )
 	{
 		Entity* entity = spawnGib(my);
 		if ( entity )
 		{
+		    if (c < 6) {
+		        entity->sprite = 295 + c;
+		        entity->skill[5] = 1; // poof
+		    }
 			serverSpawnGibForClient(entity);
 		}
 	}
@@ -366,7 +371,7 @@ void gnomeDie(Entity* my)
 
 	my->removeMonsterDeathNodes();
 
-	playSoundEntity(my, 225 + rand() % 4, 128);
+	playSoundEntity(my, 225 + local_rng.rand() % 4, 128);
 	list_RemoveNode(my->mynode);
 	return;
 }
@@ -376,7 +381,8 @@ void gnomeDie(Entity* my)
 void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 {
 	node_t* node;
-	Entity* entity = nullptr, *entity2 = nullptr;
+	Entity* entity = nullptr;
+	Entity* entity2 = nullptr;
 	Entity* rightbody = nullptr;
 	Entity* weaponarm = nullptr;
 	int bodypart;
@@ -767,27 +773,37 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->yaw = shieldarm->yaw;
 				entity->roll = 0;
 				entity->pitch = 0;
-				if ( entity->sprite == items[TOOL_TORCH].index )
+				if ( entity->sprite == items[TOOL_LANTERN].index )
 				{
-					entity2 = spawnFlame(entity, SPRITE_FLAME);
-					entity2->x += 2 * cos(entity->yaw);
-					entity2->y += 2 * sin(entity->yaw);
-					entity2->z -= 2;
+				    entity->z += 2;
 				}
-				else if ( entity->sprite == items[TOOL_CRYSTALSHARD].index )
-				{
-					entity2 = spawnFlame(entity, SPRITE_CRYSTALFLAME);
-					entity2->x += 2 * cos(entity->yaw);
-					entity2->y += 2 * sin(entity->yaw);
-					entity2->z -= 2;
-				}
-				else if ( entity->sprite == items[TOOL_LANTERN].index )
-				{
-					entity->z += 2;
-					entity2 = spawnFlame(entity, SPRITE_FLAME);
-					entity2->x += 2 * cos(entity->yaw);
-					entity2->y += 2 * sin(entity->yaw);
-					entity2->z += 1;
+                if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
+                {
+				    if ( entity->sprite == items[TOOL_TORCH].index )
+				    {
+						if ( entity2 = spawnFlame(entity, SPRITE_FLAME) )
+						{
+							entity2->x += 2 * cos(entity->yaw);
+							entity2->y += 2 * sin(entity->yaw);
+							entity2->z -= 2;
+						}
+				    }
+				    else if ( entity->sprite == items[TOOL_CRYSTALSHARD].index )
+				    {
+					    /*entity2 = spawnFlame(entity, SPRITE_CRYSTALFLAME);
+					    entity2->x += 2 * cos(entity->yaw);
+					    entity2->y += 2 * sin(entity->yaw);
+					    entity2->z -= 2;*/
+				    }
+				    else if ( entity->sprite == items[TOOL_LANTERN].index )
+				    {
+						if ( entity2 = spawnFlame(entity, SPRITE_FLAME) )
+						{
+							entity2->x += 2 * cos(entity->yaw);
+							entity2->y += 2 * sin(entity->yaw);
+							entity2->z += 1;
+						}
+				    }
 				}
 				if ( MONSTER_SHIELDYAW > PI / 32 )
 				{

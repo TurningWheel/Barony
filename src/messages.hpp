@@ -28,9 +28,6 @@ typedef struct Message
 {
 	string_t* text; //Same size as the message in draw.c. Make sure not to overrun it.
 
-	//Its location (durr).
-	int x, y;
-
 	//The time it's been displayed so far.
 	int time_displayed;
 
@@ -54,3 +51,5 @@ typedef struct Message
 * Remove single % from message strings.
 */
 std::string messageSanitizePercentSign(std::string src, int* percentSignsFound);
+
+extern const int MESSAGE_LIST_SIZE_CAP;

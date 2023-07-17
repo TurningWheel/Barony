@@ -13,12 +13,13 @@
 #include "game.hpp"
 #include "stat.hpp"
 #include "entity.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
 #include "interface/interface.hpp"
 #include "items.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -45,7 +46,7 @@ void actDoor(Entity* my)
 
 		my->doorInit = 1;
 		my->doorStartAng = my->yaw;
-		my->doorHealth = 15 + rand() % 5;
+		my->doorHealth = 15 + local_rng.rand() % 5;
 		my->doorMaxHealth = my->doorHealth;
 		my->doorOldHealth = my->doorHealth;
 		my->doorPreventLockpickExploit = 1;
@@ -54,7 +55,7 @@ void actDoor(Entity* my)
 		{
 			my->doorLocked = 0; // force unlocked.
 		}
-		else if ( rand() % 20 == 0 || (!strncmp(map.name, "The Great Castle", 16) && rand() % 2 == 0) || my->doorForceLockedUnlocked == 1 )   // 5% chance
+		else if ( local_rng.rand() % 20 == 0 || (!strncmp(map.name, "The Great Castle", 16) && local_rng.rand() % 2 == 0) || my->doorForceLockedUnlocked == 1 )   // 5% chance
 		{
 			my->doorLocked = 1;
 			my->doorPreventLockpickExploit = 0;
@@ -91,11 +92,11 @@ void actDoor(Entity* my)
 					entity->x = floor(my->x / 16) * 16 + 8;
 					entity->y = floor(my->y / 16) * 16 + 8;
 					entity->z = 0;
-					entity->z += -7 + rand() % 14;
+					entity->z += -7 + local_rng.rand() % 14;
 					if ( !my->doorDir )
 					{
 						// horizontal door
-						entity->y += -4 + rand() % 8;
+						entity->y += -4 + local_rng.rand() % 8;
 						if ( my->doorSmacked )
 						{
 							entity->yaw = PI;
@@ -108,7 +109,7 @@ void actDoor(Entity* my)
 					else
 					{
 						// vertical door
-						entity->x += -4 + rand() % 8;
+						entity->x += -4 + local_rng.rand() % 8;
 						if ( my->doorSmacked )
 						{
 							entity->yaw = PI / 2;
@@ -118,10 +119,10 @@ void actDoor(Entity* my)
 							entity->yaw = 3 * PI / 2;
 						}
 					}
-					entity->pitch = (rand() % 360) * PI / 180.0;
-					entity->roll = (rand() % 360) * PI / 180.0;
-					entity->vel_x = cos(entity->yaw) * (1.2 + (rand() % 10) / 50.0);
-					entity->vel_y = sin(entity->yaw) * (1.2 + (rand() % 10) / 50.0);
+					entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+					entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+					entity->vel_x = cos(entity->yaw) * (1.2 + (local_rng.rand() % 10) / 50.0);
+					entity->vel_y = sin(entity->yaw) * (1.2 + (local_rng.rand() % 10) / 50.0);
 					entity->vel_z = -.25;
 					entity->fskill[3] = 0.04;
 					serverSpawnGibForClient(entity);
@@ -134,7 +135,7 @@ void actDoor(Entity* my)
 			// using door
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+				if ( selectedEntity[i] == my || client_selected[i] == my )
 				{
 					if ( players[i]->entity && inrange[i])
 					{
@@ -145,27 +146,27 @@ void actDoor(Entity* my)
 								// open door
 								my->doorStatus = 1 + (players[i]->entity->x > my->x);
 								playSoundEntity(my, 21, 96);
-								messagePlayer(i, language[464]);
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(464));
 							}
 							else if ( my->doorDir && !my->doorStatus )
 							{
 								// open door
 								my->doorStatus = 1 + (players[i]->entity->y < my->y);
 								playSoundEntity(my, 21, 96);
-								messagePlayer(i, language[464]);
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(464));
 							}
 							else
 							{
 								// close door
 								my->doorStatus = 0;
 								playSoundEntity(my, 22, 96);
-								messagePlayer(i, language[465]);
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(465));
 							}
 						}
 						else
 						{
 							// door locked
-							messagePlayer(i, language[466]);
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(466));
 							playSoundEntity(my, 152, 64);
 						}
 					}
@@ -219,24 +220,55 @@ void actDoor(Entity* my)
 			// don't set impassable if someone's inside, otherwise do
 			node_t* node;
 			bool somebodyinside = false;
-			std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+			std::vector<list_t*> entLists;
+			if ( multiplayer == CLIENT )
+			{
+				entLists.push_back(map.entities); // clients use old map.entities method
+			}
+			else
+			{
+				entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+			}
+			real_t oldmyx = my->x;
+			real_t oldmyy = my->y;
+			my->x = (static_cast<int>(my->x) >> 4) * 16.0 + 8.0; // door positioning isn't centred on tile so adjust
+			my->y = (static_cast<int>(my->y) >> 4) * 16.0 + 8.0;
 			for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !somebodyinside; ++it )
 			{
 				list_t* currentList = *it;
 				for ( node = currentList->first; node != nullptr; node = node->next )
 				{
 					Entity* entity = (Entity*)node->element;
-					if ( entity == my || entity->flags[PASSABLE] || entity->sprite == 1  )
+					if ( entity == my || entity->flags[PASSABLE] || entity->behavior == &actDoorFrame )
 					{
 						continue;
 					}
-					if ( entityInsideEntity(my, entity) )
+
+					bool insideEntity = false;
+					if ( entity->behavior == &actDoor )
+					{
+						real_t oldx = entity->x;
+						real_t oldy = entity->y;
+						entity->x = (static_cast<int>(entity->x) >> 4) * 16.0 + 8.0; // door positioning isn't centred on tile so adjust
+						entity->y = (static_cast<int>(entity->y) >> 4) * 16.0 + 8.0;
+						insideEntity = entityInsideEntity(my, entity);
+						entity->x = oldx;
+						entity->y = oldy;
+					}
+					else
+					{
+						insideEntity = entityInsideEntity(my, entity);
+					}
+
+					if ( insideEntity )
 					{
 						somebodyinside = true;
 						break;
 					}
 				}
 			}
+			my->x = oldmyx;
+			my->y = oldmyy;
 			if ( !somebodyinside )
 			{
 				my->focaly = 0;
@@ -283,7 +315,7 @@ void actDoorFrame(Entity* my)
 	// intended to make it easier
 	// to determine whether an entity
 	// is part of a door frame
-	if ( my->sprite == 1 && my->flags[INVISIBLE] == false )
+	if ( my->flags[INVISIBLE] == false )
 	{
 		my->flags[PASSABLE] = true; // the actual frame should ALWAYS be passable
 	}
@@ -300,25 +332,25 @@ void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
-					messagePlayer(caster->skill[2], language[3617], items[magicProjectile.skill[21]].name_identified, language[674]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3617), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(674));
 				}
 				else
 				{
-					messagePlayer(caster->skill[2], language[387]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(387));
 				}
 			}
 			else
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
-					messagePlayer(caster->skill[2], language[3618], items[magicProjectile.skill[21]].name_identified, language[674]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(3618), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(674));
 				}
 				else
 				{
-					messagePlayer(caster->skill[2], language[378], language[674]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(378), Language::get(674));
 				}
 			}
-			updateEnemyBar(caster, this, language[674], doorHealth, doorMaxHealth);
+			updateEnemyBar(caster, this, Language::get(674), doorHealth, doorMaxHealth);
 		}
 	}
 	if ( !doorDir )

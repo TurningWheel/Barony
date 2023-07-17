@@ -15,18 +15,20 @@
 #include "entity.hpp"
 #include "items.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "prng.hpp"
 
 void initIncubus(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
-	//Sprite 445 = incubus head sprite
-	my->initMonster(445);
+	my->flags[BURNABLE] = true;
+	my->initMonster(445); //Sprite 445 = incubus head sprite
+	my->z = -1;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -160,23 +162,6 @@ void initIncubus(Entity* my, Stat* myStats)
 				int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 				// boss variants
-				if ( rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
-				{
-
-				}
-				else
-				{
-					/*myStats->DEX = 10;
-					strcpy(myStats->name, "Lilith");
-					for ( c = 0; c < 2; c++ )
-					{
-						Entity* entity = summonMonster(SUCCUBUS, my->x, my->y);
-						if ( entity )
-						{
-							entity->parent = my->getUID();
-						}
-					}*/
-				}
 
 				// random effects
 
@@ -198,13 +183,13 @@ void initIncubus(Entity* my, Stat* myStats)
 				newItem(SPELLBOOK_STEAL_WEAPON, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 				newItem(SPELLBOOK_CHARM_MONSTER, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 
-				if ( rand() % 4 == 0 ) // 1 in 4
+				if ( local_rng.rand() % 4 == 0 ) // 1 in 4
 				{
-					newItem(POTION_CONFUSION, SERVICABLE, 0, 0 + rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+					newItem(POTION_CONFUSION, SERVICABLE, 0, 0 + local_rng.rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 				}
 				else // 3 in 4
 				{
-					newItem(POTION_BOOZE, SERVICABLE, 0, 1 + rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+					newItem(POTION_BOOZE, SERVICABLE, 0, 1 + local_rng.rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 				}
 
 
@@ -215,19 +200,19 @@ void initIncubus(Entity* my, Stat* myStats)
 					case 5:
 					case 4:
 					case 3:
-						if ( rand() % 2 == 0 && !lesserMonster ) // 1 in 2
+						if ( local_rng.rand() % 2 == 0 && !lesserMonster ) // 1 in 2
 						{
-							newItem(MAGICSTAFF_COLD, SERVICABLE, 0, 1, rand(), false, &myStats->inventory);
+							newItem(MAGICSTAFF_COLD, SERVICABLE, 0, 1, local_rng.rand(), false, &myStats->inventory);
 						}
 					case 2:
-						if ( rand() % 5 == 0 ) // 1 in 5
+						if ( local_rng.rand() % 5 == 0 ) // 1 in 5
 						{
-							newItem(POTION_CONFUSION, SERVICABLE, 0, 1 + rand() % 2, rand(), false, &myStats->inventory);
+							newItem(POTION_CONFUSION, SERVICABLE, 0, 1 + local_rng.rand() % 2, local_rng.rand(), false, &myStats->inventory);
 						}
 					case 1:
-						if ( rand() % 3 == 0 ) // 1 in 3
+						if ( local_rng.rand() % 3 == 0 ) // 1 in 3
 						{
-							newItem(POTION_BOOZE, SERVICABLE, 0, 1 + rand() % 3, rand(), false, &myStats->inventory);
+							newItem(POTION_BOOZE, SERVICABLE, 0, 1 + local_rng.rand() % 3, local_rng.rand(), false, &myStats->inventory);
 						}
 						break;
 					default:
@@ -239,11 +224,11 @@ void initIncubus(Entity* my, Stat* myStats)
 				{
 					if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 					{
-						switch ( rand() % 10 )
+						switch ( local_rng.rand() % 10 )
 						{
 							case 0:
 							case 1:
-								myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+								myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 								break;
 							case 2:
 							case 3:
@@ -252,35 +237,35 @@ void initIncubus(Entity* my, Stat* myStats)
 							case 6:
 							case 7:
 							case 8:
-								myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+								myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 								break;
 							case 9:
-								myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+								myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 								break;
 						}
 					}
 				}
 				else if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
 						case 2:
 						case 3:
-							myStats->weapon = newItem(CRYSTAL_SPEAR, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(CRYSTAL_SPEAR, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 4:
 						case 5:
 						case 6:
-							myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 7:
 						case 8:
-							myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 9:
-							myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 					}
 				}
@@ -294,7 +279,7 @@ void initIncubus(Entity* my, Stat* myStats)
 					}
 					else
 					{
-						switch ( rand() % 10 )
+						switch ( local_rng.rand() % 10 )
 						{
 							case 0:
 							case 1:
@@ -307,7 +292,7 @@ void initIncubus(Entity* my, Stat* myStats)
 								break;
 							case 8:
 							case 9:
-								myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+								myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 								break;
 						}
 					}
@@ -317,7 +302,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(446, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(446, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -336,7 +321,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(450, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(450, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -355,7 +340,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(449, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(449, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -374,7 +359,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(448, 0, map.entities, nullptr); //595 //Limb entity.
+	entity = newEntity(448, 1, map.entities, nullptr); //595 //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -393,7 +378,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(447, 0, map.entities, nullptr); //447 //Limb entity.
+	entity = newEntity(447, 1, map.entities, nullptr); //447 //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -412,7 +397,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// world weapon
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -432,7 +417,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// shield
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -451,7 +436,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// cloak
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -474,7 +459,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// helmet
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -497,7 +482,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// mask
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -524,8 +509,6 @@ void actIncubusLimb(Entity* my)
 
 void incubusDie(Entity* my)
 {
-	int c;
-
 	Stat* myStats = my->getStats();
 	if ( myStats && !strncmp(myStats->name, "inner demon", strlen("inner demon")) )
 	{
@@ -533,22 +516,26 @@ void incubusDie(Entity* my)
 		//spawnMagicEffectParticles(my->x, my->y, my->z, 171);
 		createParticleErupt(my, 983);
 		serverSpawnMiscParticles(my, PARTICLE_EFFECT_ERUPT, 983);
-		//playSoundEntity(my, 279 + rand() % 3, 128);
+		//playSoundEntity(my, 279 + local_rng.rand() % 3, 128);
 		playSoundEntity(my, 178, 128);
 		my->removeMonsterDeathNodes();
 		list_RemoveNode(my->mynode);
 		return;
 	}
 
-	for ( c = 0; c < 5; c++ )
+	for ( int c = 0; c < 12; c++ )
 	{
 		Entity* gib = spawnGib(my);
+		if (c < 6) {
+		    gib->sprite = 445 + c;
+		    gib->skill[5] = 1; // poof
+		}
 		serverSpawnGibForClient(gib);
 	}
 
 	my->spawnBlood();
 
-	playSoundEntity(my, 279 + rand() % 3, 128);
+	playSoundEntity(my, 279 + local_rng.rand() % 3, 128);
 
 	my->removeMonsterDeathNodes();
 
@@ -821,7 +808,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							// monster scream
 							if ( my->monsterAttack == MONSTER_POSE_INCUBUS_TAUNT )
 							{
-								playSoundEntityLocal(my, 276 + rand() % 3, 128);
+								playSoundEntityLocal(my, 276 + local_rng.rand() % 3, 128);
 							}
 							else
 							{
@@ -1303,6 +1290,10 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							entity->sprite = 165; // GlassesWorn.vox
 						}
+						else if ( myStats->mask->type == MONOCLE )
+						{
+							entity->sprite = 1196; // monocleWorn.vox
+						}
 						else
 						{
 							entity->sprite = itemModel(myStats->mask);
@@ -1334,7 +1325,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				if ( entity->sprite != 165 )
+				if ( entity->sprite != 165 && entity->sprite != 1196 )
 				{
 					if ( entity->sprite == items[MASK_SHAMAN].index )
 					{
@@ -1354,6 +1345,11 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->focalx = limbs[INCUBUS][10][0] + .25; // .25
 					entity->focaly = limbs[INCUBUS][10][1] - 2.25; // -2.25
 					entity->focalz = limbs[INCUBUS][10][2]; // .5
+
+					if ( entity->sprite == 1196 ) // MonocleWorn.vox
+					{
+						entity->focalx -= .4;
+					}
 				}
 				break;
 			}
@@ -1422,7 +1418,7 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 	if ( ticks % 10 == 0 && monsterSpecialState != INCUBUS_TELEPORT_STEAL )
 	{
 		// teleport to target, higher chance at greater distance or lower HP
-		specialRoll = rand() % 50;
+		specialRoll = local_rng.rand() % 50;
 		if ( specialRoll < (1 + (dist > 80 ? 4 : 0) + (myStats->HP <= myStats->MAXHP * 0.8 ? 4 : 0)) )
 		{
 			monsterSpecialState = INCUBUS_TELEPORT;
@@ -1467,7 +1463,7 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 
 			if ( trySteal && tryCharm )
 			{
-				if ( rand() % 8 == 0 )
+				if ( local_rng.rand() % 8 == 0 )
 				{
 					trySteal = false; // try charm 12.5% of the time.
 				}
@@ -1481,11 +1477,11 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 			{
 				// try to steal weapon if target is holding.
 				// occurs less often against fellow monsters.
-				specialRoll = rand() % (40 + 40 * (target->behavior == &actMonster));
+				specialRoll = local_rng.rand() % (40 + 40 * (target->behavior == &actMonster));
 			}
 			else if ( tryCharm )
 			{
-				specialRoll = rand() % 40;
+				specialRoll = local_rng.rand() % 40;
 			}
 
 			if ( trySteal )
@@ -1523,11 +1519,11 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 		
 		// try new roll for alternate potion throw special.
 		// occurs less often against fellow monsters.
-		specialRoll = rand() % (30 + 30 * (target->behavior == &actMonster));
+		specialRoll = local_rng.rand() % (30 + 30 * (target->behavior == &actMonster));
 		if ( specialRoll < (2 + bonusFromHP) ) // +5% base
 		{
 			node_t* node = nullptr;
-			node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), POTION);
+			node = itemNodeInInventory(myStats, -1, POTION);
 			if ( node != nullptr )
 			{
 				swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);

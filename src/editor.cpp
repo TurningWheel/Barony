@@ -18,8 +18,11 @@
 #include "interface/interface.hpp"
 #include "files.hpp"
 #include "init.hpp"
+#include "mod_tools.hpp"
 #include <sys/stat.h>
+#ifndef EDITOR
 #define EDITOR
+#endif
 
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
@@ -37,14 +40,13 @@ Sint32 mousexrel = 0, mouseyrel = 0;
 int itemSelect = 0;
 int itemSlotSelected = -1;
 char itemName[128];
-bool splitscreen = false; //Unused variable, for game only.
 real_t prev_x = 0;
 real_t prev_y = 0;
 bool duplicatedSprite = false;
 int game = 0;
 // function prototypes
 Uint32 timerCallback(Uint32 interval, void* param);
-void handleEvents(void);
+bool handleEvents(void);
 void mainLogic(void);
 std::vector<Entity*> groupedEntities;
 bool moveSelectionNegativeX = false;
@@ -56,9 +58,9 @@ std::string physfs_openDirectory = BASE_DATA_DIR;
 float limbs[NUMMONSTERS][20][3]; // dummy variable for files.cpp limbs reloading in Barony.
 void buttonStartSingleplayer(button_t* my) {} // dummy function for mod_tools.cpp
 void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value) {} // dummy function for mod_tools.cpp
-AchievementObserver achievementObserver; // dummy function for mod_tools.cpp
+//AchievementObserver achievementObserver; // dummy function for mod_tools.cpp
 void initClass(int i) {} // dummy function for mod_tools.cpp
-void AchievementObserver::updateGlobalStat(int index, int value) {}
+//void AchievementObserver::updateGlobalStat(int index, int value) {}
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages; // dummy variable for files.cpp system resource reloading in Barony.
 void initMenuOptions() {} // dummy
 int textInsertCaratPosition = -1;
@@ -72,7 +74,8 @@ void actHudAdditional(Entity* my) {} // dummy for draw.cpp
 void actHudArrowModel(Entity* my) {} // dummy for draw.cpp
 void actLeftHandMagic(Entity* my) {} // dummy for draw.cpp
 void actRightHandMagic(Entity* my) {} // dummy for draw.cpp
-void messagePlayer(int player, char const * const message, ...) {} // dummy
+bool messagePlayer(int player, Uint32 type, char const * const message, ...) {return true;} // dummy
+
 map_t copymap;
 
 int errorMessage = 0;
@@ -194,9 +197,12 @@ char teleporterPropertyNames[3][25] =
 	"Type of sprite (0-2)"
 };
 
-char ceilingTilePropertyNames[1][30] =
+char ceilingTilePropertyNames[4][30] =
 {
-	"Model texture to use (0-9999)"
+	"Model texture to use (0-9999)",
+	"Direction (0-3)",
+	"Allow boulder trap gen (0-2)",
+	"Allow minotaur break (0-1)"
 };
 
 char spellTrapPropertyNames[5][38] =
@@ -206,6 +212,14 @@ char spellTrapPropertyNames[5][38] =
 	"Power once to continuously fire (0-1)",
 	"Ceiling model to use (0-9999)",
 	"Trap refire rate (1-999s)",
+};
+
+char shrineTeleportPropertyNames[4][48] =
+{
+	"Direction (-1 - 3)",
+	"Height Offset (Qtrs of a voxel, +ive is higher)",
+	"Destination X Offset",
+	"Destination Y Offset"
 };
 
 char furniturePropertyNames[1][19] =
@@ -224,6 +238,21 @@ char floorDecorationPropertyNames[9][59] =
 	"",
 	"",
 	""
+};
+
+char colliderDecorationPropertyNames[11][59] =
+{
+	"Model texture to use (0-9999)",
+	"Direction (-1 - 7)",
+	"Height Offset (Qtrs of a voxel, +ive is higher)",
+	"X Offset (L/R, Qtrs of a voxel, +ive is right)",
+	"Y Offset (U/D, Qtrs of a voxel, +ive is down)",
+	"Has Collision (0 - no collision, 1 - collision",
+	"Collision X (8 - full width, 4 - half width)",
+	"Collision Y (8 - full width, 4 - half width)",
+	"HP (0 - not damageable)",
+	"Diggable (0-1)",
+	"Damage Types"
 };
 
 char soundSourcePropertyNames[5][59] =
@@ -312,19 +341,25 @@ char playerSpawnPropertyNames[1][35] =
 	"Spawn Facing Direction (-1 - 7)"
 };
 
+char statuePropertyNames[2][16] =
+{
+	"Direction (0-3)",
+	"Statue ID",
+};
+
 const char* playerClassLangEntry(int classnum, int playernum)
 {
 	if ( classnum >= CLASS_BARBARIAN && classnum <= CLASS_JOKER )
 	{
-		return language[1900 + classnum];
+		return Language::get(1900 + classnum);
 	}
 	else if ( classnum >= CLASS_CONJURER )
 	{
-		return language[3223 + classnum - CLASS_CONJURER];
+		return Language::get(3223 + classnum - CLASS_CONJURER);
 	}
 	else if ( classnum >= CLASS_SEXTON && classnum <= CLASS_MONK )
 	{
-		return language[2550 + classnum - CLASS_SEXTON];
+		return Language::get(2550 + classnum - CLASS_SEXTON);
 	}
 	else
 	{
@@ -416,16 +451,16 @@ void mainLogic(void)
 	// basic editor functions
 	if ( mode3d == false )
 	{
-		camx += (keystatus[SDL_SCANCODE_RIGHT] - keystatus[SDL_SCANCODE_LEFT]) * TEXTURESIZE;
-		camy += (keystatus[SDL_SCANCODE_DOWN] - keystatus[SDL_SCANCODE_UP]) * TEXTURESIZE;
+		camx += (keystatus[SDLK_RIGHT] - keystatus[SDLK_LEFT]) * TEXTURESIZE;
+		camy += (keystatus[SDLK_DOWN] - keystatus[SDLK_UP]) * TEXTURESIZE;
 	}
 	else
 	{
 		// camera velocity
-		camera_vel.x += cos(camera.ang) * (keystatus[SDL_SCANCODE_UP] - keystatus[SDL_SCANCODE_DOWN]) * .05;
-		camera_vel.y += sin(camera.ang) * (keystatus[SDL_SCANCODE_UP] - keystatus[SDL_SCANCODE_DOWN]) * .05;
-		camera_vel.z += (keystatus[SDL_SCANCODE_PAGEDOWN] - keystatus[SDL_SCANCODE_PAGEUP]) * .25;
-		camera_vel.ang += (keystatus[SDL_SCANCODE_RIGHT] - keystatus[SDL_SCANCODE_LEFT]) * .04;
+		camera_vel.x += cos(camera.ang) * (keystatus[SDLK_UP] - keystatus[SDLK_DOWN]) * .05;
+		camera_vel.y += sin(camera.ang) * (keystatus[SDLK_UP] - keystatus[SDLK_DOWN]) * .05;
+		camera_vel.z += (keystatus[SDLK_PAGEDOWN] - keystatus[SDLK_PAGEUP]) * .25;
+		camera_vel.ang += (keystatus[SDLK_RIGHT] - keystatus[SDLK_LEFT]) * .04;
 
 		// camera position
 		camera.x += camera_vel.x;
@@ -466,7 +501,7 @@ void mainLogic(void)
 
 	if (scroll < 0 )   // mousewheel up
 	{
-		if ( keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL] )
+		if ( keystatus[SDLK_LCTRL] || keystatus[SDLK_RCTRL] )
 		{
 			recentUsedTilePalette++; //scroll through palettes 1-9
 			if ( recentUsedTilePalette == 9 )
@@ -474,7 +509,7 @@ void mainLogic(void)
 				recentUsedTilePalette = 0;
 			}
 		}
-		else if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+		else if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
 		{
 			drawlayer = std::min(drawlayer + 1, MAPLAYERS - 1);
 		}
@@ -491,7 +526,7 @@ void mainLogic(void)
 	}
 	if (scroll > 0 )   // mousewheel down
 	{
-		if ( keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL] )
+		if ( keystatus[SDLK_LCTRL] || keystatus[SDLK_RCTRL] )
 		{
 			recentUsedTilePalette--; //scroll through palettes 1-9
 			if ( recentUsedTilePalette == -1 )
@@ -499,7 +534,7 @@ void mainLogic(void)
 				recentUsedTilePalette = 8;
 			}
 		}
-		else if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+		else if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
 		{
 			drawlayer = std::max(drawlayer - 1, 0);
 		}
@@ -668,15 +703,24 @@ void handleButtons(void)
 
 -------------------------------------------------------------------------------*/
 
-void handleEvents(void)
+bool handleEvents(void)
 {
 	real_t d;
 	int j;
 
+
 	// calculate app rate
-	t = clock();
-	timesync = t - ot;
+	t = SDL_GetTicks();
+	real_t timesync = t - ot;
 	ot = t;
+
+	// do timer
+	time_diff += timesync;
+	constexpr real_t frame = (real_t)1000 / (real_t)TICKS_PER_SECOND;
+	while (time_diff >= frame) {
+		time_diff -= frame;
+		timerCallback(0, NULL);
+	}
 
 	// calculate fps
 	if ( timesync != 0 )
@@ -761,10 +805,10 @@ void handleEvents(void)
 					}
 				}
 				lastkeypressed = event.key.keysym.sym;
-				keystatus[event.key.keysym.scancode] = 1; // set this key's index to 1
+				keystatus[event.key.keysym.sym] = 1; // set this key's index to 1
 				break;
 			case SDL_KEYUP: // if a key is unpressed...
-				keystatus[event.key.keysym.scancode] = 0; // set this key's index to 0
+				keystatus[event.key.keysym.sym] = 0; // set this key's index to 0
 				break;
 			case SDL_TEXTINPUT:
 				if ( (event.text.text[0] != 'c' && event.text.text[0] != 'C') || !(SDL_GetModState()&KMOD_CTRL) )
@@ -798,8 +842,17 @@ void handleEvents(void)
 				}
 				break;
 			case SDL_MOUSEMOTION: // if the mouse is moved...
-				mousex = event.motion.x;
-				mousey = event.motion.y;
+                float factorX;
+                float factorY;
+                {
+                    int w1, w2, h1, h2;
+                    SDL_GL_GetDrawableSize(screen, &w1, &h1);
+                    SDL_GetWindowSize(screen, &w2, &h2);
+                    factorX = (float)w1 / w2;
+                    factorY = (float)h1 / h2;
+                }
+                mousex = event.motion.x * factorX;
+                mousey = event.motion.y * factorY;
 				mousexrel = event.motion.xrel;
 				mouseyrel = event.motion.yrel;
 				break;
@@ -841,28 +894,26 @@ void handleEvents(void)
 					{
 						break;
 					}
-					xres = std::max(event.window.data1, 100);
-					yres = std::max(event.window.data2, 75);
-					if ( zbuffer != NULL )
+                    float factorX, factorY;
+                    {
+                        int w1, w2, h1, h2;
+                        SDL_GL_GetDrawableSize(screen, &w1, &h1);
+                        SDL_GetWindowSize(screen, &w2, &h2);
+                        factorX = (float)w1 / w2;
+                        factorY = (float)h1 / h2;
+                    }
+                    const int x = event.window.data1 * factorX;
+                    const int y = event.window.data2 * factorY;
+					if ( !resizeWindow(x, y) )
 					{
-						free(zbuffer);
+						printlog("critical error! Attempting to abort safely...\n");
+						mainloop = 0;
 					}
-					zbuffer = (real_t*) malloc(sizeof(real_t) * xres * yres);
-					if ( clickmap != NULL )
-					{
-						free(clickmap);
-					}
-					clickmap = (Entity**) malloc(sizeof(Entity*)*xres * yres);
 					if (palette != NULL)
 					{
 						free(palette);
 					}
 					palette = (int*) malloc(sizeof(unsigned int) * xres * yres);
-					if ( !changeVideoMode() )
-					{
-						printlog("critical error! Attempting to abort safely...\n");
-						mainloop = 0;
-					}
 				}
 				break;
 		}
@@ -874,6 +925,8 @@ void handleEvents(void)
 		ocamx = camx;
 		ocamy = camy;
 	}
+
+	return true;
 }
 
 /*-------------------------------------------------------------------------------
@@ -883,6 +936,8 @@ void handleEvents(void)
 	A callback function for the game timer which pushes an SDL event
 
 -------------------------------------------------------------------------------*/
+
+#include "ui/LoadingScreen.hpp"
 
 Uint32 timerCallback(Uint32 interval, void* param)
 {
@@ -898,6 +953,7 @@ Uint32 timerCallback(Uint32 interval, void* param)
 	event.user = userevent;
 
 	ticks++;
+	loadingticks++;
 	SDL_PushEvent(&event);
 	return (interval);
 }
@@ -1082,10 +1138,12 @@ void undo()
 		undospot = tempnode;
 	}
 	free(map.tiles);
+	free(camera.vismap);
 	map_t* undomap = (map_t*)undospot->element;
 	map.width = undomap->width;
 	map.height = undomap->height;
 	map.tiles = (Sint32*) malloc(sizeof(Sint32) * map.width * map.height * MAPLAYERS);
+	camera.vismap = (bool*) malloc(sizeof(bool) * map.height * map.width);
 	memcpy(map.tiles, undomap->tiles, sizeof(Sint32)*undomap->width * undomap->height * MAPLAYERS);
 	list_FreeAll(map.entities);
 	for ( node = undomap->entities->first; node != NULL; node = node->next )
@@ -1115,10 +1173,12 @@ void redo()
 	}
 	selectedEntity[0] = NULL;
 	free(map.tiles);
+	free(camera.vismap);
 	map_t* undomap = (map_t*)redospot->element;
 	map.width = undomap->width;
 	map.height = undomap->height;
 	map.tiles = (Sint32*) malloc(sizeof(Sint32) * map.width * map.height * MAPLAYERS);
+	camera.vismap = (bool*) malloc(sizeof(bool) * map.height * map.width);
 	memcpy(map.tiles, undomap->tiles, sizeof(Sint32)*undomap->width * undomap->height * MAPLAYERS);
 	list_FreeAll(map.entities);
 	for ( node = undomap->entities->first; node != NULL; node = node->next )
@@ -1199,7 +1259,7 @@ int loadTilePalettes()
 	}
 
 	// open palette file
-	if ( (fp = openDataFile(filename, "r")) == NULL )
+	if ( (fp = openDataFile(filename, "rb")) == NULL )
 	{
 		printlog("error: unable to load tile palette file: '%s'", filename);
 		return 1;
@@ -1451,6 +1511,11 @@ int main(int argc, char** argv)
 		printlog( "Failed to get binary path. Program may not work correctly!\n");
 	}
 #endif
+
+#ifdef LINUX
+	(void)chdir(BASE_DATA_DIR); // fixes a lot of headaches...
+#endif
+
 	button_t* button;
 	node_t* node;
 	node_t* nextnode;
@@ -1479,10 +1544,19 @@ int main(int argc, char** argv)
 #endif
 
 	// load default language file (english)
-	if ( loadLanguage("en") )
+	if ( Language::loadLanguage("en", true) )
 	{
 		exit(1);
 	}
+    
+    // init sdl
+    Uint32 init_flags = SDL_INIT_VIDEO | SDL_INIT_EVENTS;
+    init_flags |= SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC;
+    if (SDL_Init(init_flags) == -1)
+    {
+        printlog("failed to initialize SDL: %s\n", SDL_GetError());
+        return 1;
+    }
 
 	// initialize
 	useModelCache = true;
@@ -1528,10 +1602,6 @@ int main(int argc, char** argv)
 	cursorSelect = cursorArrow;
 	cursorFill = newCursor(cursor_fill);
 
-	// instatiate a timer
-	timer = SDL_AddTimer(1000 / TICKS_PER_SECOND, timerCallback, NULL);
-	srand(time(nullptr));
-
 	// create an empty map
 	map.width = 32;
 	map.height = 24;
@@ -1541,6 +1611,7 @@ int main(int argc, char** argv)
 	map.entities->first = nullptr;
 	map.entities->last = nullptr;
 	map.tiles = (int*) malloc(sizeof(int) * map.width * map.height * MAPLAYERS);
+	camera.vismap = (bool*) malloc(sizeof(bool) * map.height * map.width);
 	strcpy(map.name, "");
 	strcpy(map.author, "");
 	map.skybox = 0;
@@ -1572,14 +1643,12 @@ int main(int argc, char** argv)
 			}
 		}
 	}
-	vismap = (bool*) malloc(sizeof(bool) * map.width * map.height);
-	lightmap = (int*)malloc(sizeof(Sint32) * map.width * map.height);
-	lightmapSmoothed = (int*)malloc(sizeof(Sint32) * map.width * map.height);
-	for ( c = 0; c < map.width * map.height; c++ )
-	{
-		lightmap[c] = 0;
-		lightmapSmoothed[c] = 0;
-	}
+    for (int c = 0; c < MAXPLAYERS + 1; ++c) {
+        lightmaps[c].clear();
+        lightmaps[c].resize(map.width * map.height);
+        lightmapsSmoothed[c].clear();
+        lightmapsSmoothed[c].resize((map.width + 2) * (map.height + 2));
+    }
 
 	// initialize camera position
 	camera.x = 4;
@@ -1948,8 +2017,27 @@ int main(int argc, char** argv)
 		}
 	}
 
-	loadItems();
+	ItemTooltips.readItemsFromFile();
+	ItemTooltips.readItemLocalizationsFromFile();
+	for ( c = 0; c < NUMITEMS; c++ )
+	{
+		items[c].surfaces.first = nullptr;
+		items[c].surfaces.last = nullptr;
+		for ( x = 0; x < list_Size(&items[c].images); x++ )
+		{
+			auto** surface = static_cast<SDL_Surface**>(malloc(sizeof(SDL_Surface*)));
+			node_t* node = list_AddNodeLast(&items[c].surfaces);
+			node->element = surface;
+			node->deconstructor = &defaultDeconstructor;
+			node->size = sizeof(SDL_Surface*);
+
+			node_t* node2 = list_Node(&items[c].images, x);
+			auto* string = static_cast<string_t*>(node2->element);
+			*surface = loadImage(string->data);
+		}
+	}
 	loadTilePalettes();
+	EditorEntityData_t::readFromFile();
 
 	bool achievementCartographer = false;
 
@@ -1958,7 +2046,7 @@ int main(int argc, char** argv)
 	while (mainloop)
 	{
 		// game logic
-		handleEvents();
+		(void)handleEvents();
 
 #ifdef STEAMWORKS
 		SteamAPI_RunCallbacks();
@@ -2332,7 +2420,7 @@ int main(int argc, char** argv)
 					pos.y = (selectedarea_y1 << TEXTUREPOWER) - camy;
 					pos.w = (selectedarea_x2 - selectedarea_x1 + 1) << TEXTUREPOWER;
 					pos.h = (selectedarea_y2 - selectedarea_y1 + 1) << TEXTUREPOWER;
-					drawRect(&pos, SDL_MapRGB(mainsurface->format, 255, 255, 255), 127);
+					drawRect(&pos, makeColorRGB(255, 255, 255), 127);
 				}
 				if ( viewsprites )
 				{
@@ -2349,7 +2437,7 @@ int main(int argc, char** argv)
 				camera.winy = 16;
 				camera.winw = xres - 128;
 				camera.winh = yres - 32;
-				light = lightSphere(camera.x, camera.y, 16, 255);
+				light = addLight(camera.x, camera.y, "editor");
 				for ( node = map.entities->first; node != NULL; node = node->next )
 				{
 					entity = (Entity*)node->element;
@@ -2357,10 +2445,13 @@ int main(int argc, char** argv)
 					entity->x += 8;
 					entity->y += 8;
 				}
-				raycast(&camera, REALCOLORS);
+				occlusionCulling(map, camera);
+                beginGraphics();
+				glBeginCamera(&camera, false);
 				glDrawWorld(&camera, REALCOLORS);
 				//drawFloors(&camera);
 				drawEntities3D(&camera, REALCOLORS);
+				glEndCamera(&camera, false);
 				printTextFormatted(font8x8_bmp, 8, yres - 64, "x = %3.3f\ny = %3.3f\nz = %3.3f\nang = %3.3f\nfps = %3.1f", camera.x, camera.y, camera.z, camera.ang, fps);
 				list_RemoveNode(light->node);
 				for ( node = map.entities->first; node != NULL; node = node->next )
@@ -2506,7 +2597,7 @@ int main(int argc, char** argv)
 
 					if ( lastPaletteTileSelected == recentIndex )
 					{
-						drawRect(&boxPos, SDL_MapRGB(mainsurface->format, 255, 0, 0), 255);
+						drawRect(&boxPos, makeColorRGB(255, 0, 0), 255);
 					}
 					drawImage(tiles[recentUsedTiles[recentUsedTilePalette][recentIndex]], NULL, &pos);
 					pos.x += pad_x;
@@ -2648,7 +2739,7 @@ int main(int argc, char** argv)
 			if ( subwindow )
 			{
 				drawWindowFancy(subx1, suby1, subx2, suby2);
-				if ( subtext != NULL )
+				if ( subtext[0] != '\0' )
 				{
 					printText(font8x8_bmp, subx1 + 8, suby1 + 8, subtext);
 				}
@@ -2706,7 +2797,7 @@ int main(int argc, char** argv)
 						pos.y = suby1 + 24 + (std::max(selectedFile - y2, 0)) * 8;
 						pos.w = subx2 - subx1 - 32;
 						pos.h = 8;
-						drawRect(&pos, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+						drawRect(&pos, makeColorRGB(64, 64, 64), 255);
 
 						// print all the files within the directory
 						x = subx1 + 8;
@@ -2794,7 +2885,7 @@ int main(int argc, char** argv)
 						pos.y = suby1 + 24 + (selectedFile - y2) * 8;
 						pos.w = subx2 - subx1 - 32;
 						pos.h = 8;
-						drawRect(&pos, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+						drawRect(&pos, makeColorRGB(64, 64, 64), 255);
 
 						// print all the files within the directory
 						x = subx1 + 8;
@@ -2907,6 +2998,10 @@ int main(int argc, char** argv)
 					printText(font8x8_bmp, start_x3, start_y + pad_y1, mapflagtext[MAP_FLAG_DISABLELEVITATION]);
 
 					pad_y1 += 24;
+					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Gen Border:");
+					drawDepressed(subx1 + 104, start_y + pad_y1 - 4, subx1 + 168, start_y + pad_y1 + rowheight - 4);
+					printText(font8x8_bmp, subx1 + 108, start_y + pad_y1, mapflagtext[MAP_FLAG_PERIMETER_GAP]);
+
 					printText(font8x8_bmp, start_x2, start_y + pad_y1, "Gen Adjacent Rooms:");
 					printText(font8x8_bmp, start_x3, start_y + pad_y1, mapflagtext[MAP_FLAG_GENADJACENTROOMS]);
 
@@ -2932,12 +3027,12 @@ int main(int argc, char** argv)
 					drawDepressed(subx1 + 104, start_y + pad_y1 - 4, subx1 + 168, start_y + pad_y1 + rowheight - 4);
 					printText(font8x8_bmp, subx1 + 108, start_y + pad_y1, heighttext);
 
-					if ( keystatus[SDL_SCANCODE_TAB] )
+					if ( keystatus[SDLK_TAB] )
 					{
-						keystatus[SDL_SCANCODE_TAB] = 0;
+						keystatus[SDLK_TAB] = 0;
 						cursorflash = ticks;
 						editproperty++;
-						if ( editproperty == 14 )
+						if ( editproperty == 15 )
 						{
 							editproperty = 0;
 						}
@@ -2980,10 +3075,15 @@ int main(int argc, char** argv)
 								inputstr = mapflagtext[MAP_FLAG_GENDECORATIONMAX];
 								break;
 							case 12:
-								inputstr = widthtext;
+								inputstr = mapflagtext[MAP_FLAG_PERIMETER_GAP];
 								break;
 							case 13:
+								inputstr = widthtext;
+								break;
+							case 14:
 								inputstr = heighttext;
+								break;
+							default:
 								break;
 						}
 					}
@@ -3193,17 +3293,24 @@ int main(int argc, char** argv)
 							editproperty = 11;
 							cursorflash = ticks;
 						}
+						pad_y1 += 24;
+						if ( omousex >= subx1 + 104 && omousey >= start_y + pad_y1 && omousex < subx1 + 104 + 64 && omousey < start_y + pad_y1 + 16 )
+						{
+							inputstr = mapflagtext[MAP_FLAG_PERIMETER_GAP];
+							editproperty = 12;
+							cursorflash = ticks;
+						}
 
 						if ( omousex >= subx1 + 104 && omousey >= suby2 - 48 && omousex < subx1 + 168 && omousey < suby2 - 32 )
 						{
 							inputstr = widthtext;
-							editproperty = 12;
+							editproperty = 13;
 							cursorflash = ticks;
 						}
 						if ( omousex >= subx1 + 104 && omousey >= suby2 - 24 && omousex < subx1 + 168 && omousey < suby2 - 8 )
 						{
 							inputstr = heighttext;
-							editproperty = 13;
+							editproperty = 14;
 							cursorflash = ticks;
 						}
 					}
@@ -3270,7 +3377,7 @@ int main(int argc, char** argv)
 							printText(font8x8_bmp, subx1 + 108 + strlen(mapflagtext[MAP_FLAG_CEILINGTILE]) * 8, start_y + pad_y1, "\26");
 						}
 					}
-					if ( editproperty == 12 )   // edit map width
+					if ( editproperty == 13 )   // edit map width
 					{
 						if ( !SDL_IsTextInputActive() )
 						{
@@ -3284,7 +3391,7 @@ int main(int argc, char** argv)
 							printText(font8x8_bmp, subx1 + 108 + strlen(widthtext) * 8, suby2 - 44, "\26");
 						}
 					}
-					if ( editproperty == 13 )   // edit map height
+					if ( editproperty == 14 )   // edit map height
 					{
 						if ( !SDL_IsTextInputActive() )
 						{
@@ -3406,6 +3513,20 @@ int main(int argc, char** argv)
 							printText(font8x8_bmp, subx1 + 148 + strlen(mapflagtext[MAP_FLAG_GENDECORATIONMAX]) * 8, start_y + pad_y1, "\26");
 						}
 					}
+					pad_y1 += 24;
+					if ( editproperty == 12 )   // edit perimeter gap
+					{
+						if ( !SDL_IsTextInputActive() )
+						{
+							SDL_StartTextInput();
+							inputstr = mapflagtext[MAP_FLAG_PERIMETER_GAP];
+						}
+						inputlen = 3;
+						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+						{
+							printText(font8x8_bmp, subx1 + 108 + strlen(mapflagtext[MAP_FLAG_PERIMETER_GAP]) * 8, start_y + pad_y1, "\26");
+						}
+					}
 				}
 				else if ( newwindow == 2 ) 
 				{
@@ -3423,7 +3544,7 @@ int main(int argc, char** argv)
 							int pad_y2 = suby1 + 28 + 2 * spacing;
 							int pad_x3 = 44; //property field width
 							int pad_x4;
-							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+							Uint32 color = makeColorRGB(255, 255, 255);
 							char tmpPropertyName[lenProperties] = "";
 							for ( int i = 0; i < numProperties; i++ )
 							{
@@ -3445,19 +3566,19 @@ int main(int argc, char** argv)
 									{
 										if ( i < 3 ) //hp
 										{
-											color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+											color = makeColorRGB(0, 255, 0);
 										}
 										else if ( i < 5 ) //mp
 										{
-											color = SDL_MapRGB(mainsurface->format, 0, 255, 228);
+											color = makeColorRGB(0, 255, 228);
 										}
 										else if ( i == 5 ) //level
 										{
-											color = SDL_MapRGB(mainsurface->format, 255, 192, 0);
+											color = makeColorRGB(255, 192, 0);
 										}
 										else if ( i == 6 ) //gold
 										{
-											color = SDL_MapRGB(mainsurface->format, 255, 192, 0);
+											color = makeColorRGB(255, 192, 0);
 										}
 										drawDepressed(pad_x1 + pad_x2 - 4, pad_y1 - 4, pad_x1 + pad_x2 + pad_x3 - 4, pad_y1 + 16 - 4);
 										// draw another box side by side, spaced by pad_x3 + 16
@@ -3474,7 +3595,7 @@ int main(int argc, char** argv)
 									}
 									else if ( i < 13 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+										color = makeColorRGB(255, 255, 255);
 										pad_y1 += spacing + 10;
 										drawDepressed(pad_x1 + pad_x2 - 4, pad_y1 - 4, pad_x1 + pad_x2 + pad_x3 - 4, pad_y1 + 16 - 4);
 										// draw another box side by side, spaced by pad_x3 + 16
@@ -3495,7 +3616,7 @@ int main(int argc, char** argv)
 										{
 											pad_y1 += 10;
 										}
-										color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+										color = makeColorRGB(255, 255, 255);
 										pad_y1 += spacing + 10;
 										drawDepressed(pad_x1 + pad_x2 - 4, pad_y1 - 4, pad_x1 + pad_x2 + pad_x3 - 4, pad_y1 + 16 - 4);
 										// print property name
@@ -3505,7 +3626,7 @@ int main(int argc, char** argv)
 										if ( i == 13 && spriteStats->type == SHOPKEEPER )
 										{
 											char shopTypeText[32] = "";
-											color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+											color = makeColorRGB(0, 255, 0);
 											switch ( atoi(spriteProperties[25]) )
 											{
 												case 1:
@@ -3533,27 +3654,27 @@ int main(int argc, char** argv)
 													strcpy(shopTypeText, "Hardware Store");
 													break;
 												case 9:
-													strcpy(shopTypeText, "Lighting Store");
+													strcpy(shopTypeText, "Hunting Store");
 													break;
 												case 10:
 													strcpy(shopTypeText, "General Store");
 													break;
 												default:
 													strcpy(shopTypeText, "Default Random Store");
-													color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+													color = makeColorRGB(255, 255, 255);
 													break;
 											}
 											printTextFormattedColor(font8x8_bmp, pad_x1 + pad_x2 + pad_x3 + 8, pad_y1, color, shopTypeText);
-											color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+											color = makeColorRGB(255, 255, 255);
 										}
 									}
 								}
 							}
 							
 							// Cycle properties with TAB.
-							if ( keystatus[SDL_SCANCODE_TAB] )
+							if ( keystatus[SDLK_TAB] )
 							{
-								keystatus[SDL_SCANCODE_TAB] = 0;
+								keystatus[SDLK_TAB] = 0;
 								cursorflash = ticks;
 								editproperty++;
 								if ( editproperty == numProperties * 2 - 2 )
@@ -3790,8 +3911,8 @@ int main(int argc, char** argv)
 						int pad_x3 = pad_x1 + pad_x2 + 8;
 						int pad_y2 = 0;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -3818,7 +3939,7 @@ int main(int argc, char** argv)
 									}
 									else
 									{
-										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										color = makeColorRGB(0, 255, 0);
 										char tmpStr[32] = "";
 										if ( propertyInt == 0 )
 										{
@@ -3862,7 +3983,7 @@ int main(int argc, char** argv)
 									}
 									else
 									{
-										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										color = makeColorRGB(0, 255, 0);
 										char tmpStr[32] = "";
 										strcpy(tmpStr, spriteProperties[i]); //reset
 										strcat(tmpStr, " %%");
@@ -3873,7 +3994,7 @@ int main(int argc, char** argv)
 
 							if ( errorMessage )
 							{
-								color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								color = makeColorRGB(255, 0, 0);
 								if ( errorArr[i] == 1 )
 								{
 									printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, "Invalid ID!");
@@ -3924,9 +4045,9 @@ int main(int argc, char** argv)
 						spacing = 36;
 
 						// Cycle properties with TAB.
-						if ( keystatus[SDL_SCANCODE_TAB] )
+						if ( keystatus[SDLK_TAB] )
 						{
-							keystatus[SDL_SCANCODE_TAB] = 0;
+							keystatus[SDLK_TAB] = 0;
 							cursorflash = ticks;
 							editproperty++;
 							if ( editproperty == numProperties )
@@ -4023,8 +4144,8 @@ int main(int argc, char** argv)
 						}
 						int propertyInt = 0;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
 						for ( int i = 0; i < numProperties; i++ )
 						{
 							if ( newwindow == 4 )
@@ -4092,27 +4213,27 @@ int main(int argc, char** argv)
 								{
 									if ( propertyInt == 2 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 200, 128, 0);
+										color = makeColorRGB(200, 128, 0);
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Decrepit");
 									}
 									else if ( propertyInt == 3 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+										color = makeColorRGB(255, 255, 0);
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Worn");
 									}
 									else if ( propertyInt == 4 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 128, 200, 0);
+										color = makeColorRGB(128, 200, 0);
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Servicable");
 									}
 									else if ( propertyInt == 5 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										color = makeColorRGB(0, 255, 0);
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Excellent");
 									}
 									else if ( propertyInt == 1 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+										color = makeColorRGB(255, 0, 0);
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Broken");
 									}
 									else if ( propertyInt == 0 )
@@ -4149,7 +4270,7 @@ int main(int argc, char** argv)
 									}
 									else if ( propertyInt == 0 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+										color = makeColorRGB(255, 0, 0);
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Invalid ID!");
 									}
 								}
@@ -4157,12 +4278,12 @@ int main(int argc, char** argv)
 								{
 									if ( propertyInt == 1 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										color = makeColorRGB(0, 255, 0);
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Identified");
 									}
 									else if ( propertyInt == 0 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+										color = makeColorRGB(255, 255, 0);
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Unidentified");
 									}
 									else if ( propertyInt == 2 )
@@ -4186,12 +4307,12 @@ int main(int argc, char** argv)
 									}
 									else if ( propertyInt == 0 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+										color = makeColorRGB(255, 0, 0);
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Invalid ID!");
 									}
 									else
 									{
-										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										color = makeColorRGB(0, 255, 0);
 										char tmpStr[32] = "";
 										strcpy(tmpStr, spriteProperties[i]); //reset
 										strcat(tmpStr, " %%");
@@ -4214,7 +4335,7 @@ int main(int argc, char** argv)
 										}
 										else
 										{
-											color = SDL_MapRGB(mainsurface->format, 200, 64, 220);
+											color = makeColorRGB(200, 64, 220);
 										}
 
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, itemCategoryNames[propertyInt]);
@@ -4224,7 +4345,7 @@ int main(int argc, char** argv)
 
 							if ( errorMessage )
 							{
-								color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								color = makeColorRGB(255, 0, 0);
 								if ( errorArr[i] == 1 )
 								{
 									printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Invalid ID!");
@@ -4268,7 +4389,7 @@ int main(int argc, char** argv)
 						pos.y = pad_y1 + 4 + (itemSelect - y2) * 8;
 						pos.w = subx2 - pad_x1 - 24;
 						pos.h = 8;
-						drawRect(&pos, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+						drawRect(&pos, makeColorRGB(64, 64, 64), 255);
 
 						// print all the items
 						x = pad_x1;
@@ -4379,9 +4500,9 @@ int main(int argc, char** argv)
 						}
 
 						// Cycle properties with TAB.
-						if ( keystatus[SDL_SCANCODE_TAB] )
+						if ( keystatus[SDLK_TAB] )
 						{
-							keystatus[SDL_SCANCODE_TAB] = 0;
+							keystatus[SDLK_TAB] = 0;
 							cursorflash = ticks;
 							editproperty++;
 							if ( editproperty == numProperties )
@@ -4451,10 +4572,10 @@ int main(int argc, char** argv)
 						int pad_x3 = pad_x1 + pad_x2 + 8;
 						int pad_y2 = 0;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 color2 = SDL_MapRGB(mainsurface->format, 255, 255, 0);
-						Uint32 colorBad = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 color2 = makeColorRGB(255, 255, 0);
+						Uint32 colorBad = makeColorRGB(255, 0, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -4493,7 +4614,7 @@ int main(int argc, char** argv)
 									}
 									else
 									{
-										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										color = makeColorRGB(0, 255, 0);
 										char tmpStr[32] = "";
 										strcpy(tmpStr, monsterEditorNameStrings[atoi(spriteProperties[i])]);
 										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, tmpStr);
@@ -4573,7 +4694,7 @@ int main(int argc, char** argv)
 									}
 									else
 									{
-										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										color = makeColorRGB(0, 255, 0);
 										char tmpStr[32] = "";
 										strcpy(tmpStr, spriteProperties[i]); //reset
 										strcat(tmpStr, " %%");
@@ -4584,7 +4705,7 @@ int main(int argc, char** argv)
 
 							if ( errorMessage )
 							{
-								color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								color = makeColorRGB(255, 0, 0);
 								if ( errorArr[i] == 1 )
 								{
 									printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, "Invalid ID!");
@@ -4594,9 +4715,9 @@ int main(int argc, char** argv)
 							pad_x1 = subx1 + 8;
 						}
 						// Cycle properties with TAB.
-						if ( keystatus[SDL_SCANCODE_TAB] )
+						if ( keystatus[SDLK_TAB] )
 						{
-							keystatus[SDL_SCANCODE_TAB] = 0;
+							keystatus[SDLK_TAB] = 0;
 							cursorflash = ticks;
 							editproperty++;
 							if ( editproperty == numProperties )
@@ -4660,8 +4781,8 @@ int main(int argc, char** argv)
 						int pad_x3 = pad_x1 + pad_x2 + 8;
 						int pad_y2 = 0;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -4688,7 +4809,7 @@ int main(int argc, char** argv)
 									}
 									else
 									{
-										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										color = makeColorRGB(0, 255, 0);
 										char tmpStr[32] = "";
 										if ( propertyInt == 0 )
 										{
@@ -4719,7 +4840,7 @@ int main(int argc, char** argv)
 									}
 									else
 									{
-										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										color = makeColorRGB(0, 255, 0);
 										// 32 is WAY TOO SMALL for this, wtf?
 										// spriteProperties is a string table, each entry 128 bytes long
 										// " Tiles to power in facing direction" = 35 bytes
@@ -4768,7 +4889,7 @@ int main(int argc, char** argv)
 
 							if ( errorMessage )
 							{
-								color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								color = makeColorRGB(255, 0, 0);
 								if ( errorArr[i] == 1 )
 								{
 									printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, "Invalid ID!");
@@ -4791,9 +4912,9 @@ int main(int argc, char** argv)
 						spacing = 36;
 
 						// Cycle properties with TAB.
-						if ( keystatus[SDL_SCANCODE_TAB] )
+						if ( keystatus[SDLK_TAB] )
 						{
-							keystatus[SDL_SCANCODE_TAB] = 0;
+							keystatus[SDLK_TAB] = 0;
 							cursorflash = ticks;
 							editproperty++;
 							if ( editproperty == numProperties )
@@ -4853,9 +4974,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -4951,9 +5072,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -5093,9 +5214,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -5264,9 +5385,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -5372,9 +5493,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -5396,6 +5517,84 @@ int main(int argc, char** argv)
 									if ( propertyInt > 9999 || propertyInt < 0 )
 									{
 										propertyPageError(i, 0); // reset to default 0.
+									}
+								}
+								else if ( i == 1 )
+								{
+									if ( propertyInt > 3 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										switch ( propertyInt )
+										{
+											case 0:
+												strcpy(tmpStr, "East");
+												break;
+											case 1:
+												strcpy(tmpStr, "South");
+												break;
+											case 2:
+												strcpy(tmpStr, "West");
+												break;
+											case 3:
+												strcpy(tmpStr, "North");
+												break;
+											default:
+												break;
+										}
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+									}
+								}
+								else if ( i == 2 )
+								{
+									if ( propertyInt > 2 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										switch ( propertyInt )
+										{
+											case 0:
+												strcpy(tmpStr, "No trap spawn");
+												printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+												break;
+											case 1:
+												strcpy(tmpStr, "Allow spawn and destroy tile");
+												printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorError, tmpStr);
+												break;
+											case 2:
+												strcpy(tmpStr, "Allow spawn and keep tile");
+												printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorRandom, tmpStr);
+												break;
+											default:
+												break;
+										}
+									}
+								}
+								else if ( i == 3 )
+								{
+									if ( propertyInt > 1 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										if ( propertyInt == 0 )
+										{
+											strcpy(tmpStr, "Indestructible");
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+										}
+										else if ( propertyInt == 1 )
+										{
+											strcpy(tmpStr, "Minotaur breaks");
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorError, tmpStr);
+										}
 									}
 								}
 								else
@@ -5449,9 +5648,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -5584,9 +5783,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -5691,9 +5890,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -5818,9 +6017,9 @@ int main(int argc, char** argv)
 						spacing = 36;
 
 						// Cycle properties with TAB.
-						if ( keystatus[SDL_SCANCODE_TAB] )
+						if ( keystatus[SDLK_TAB] )
 						{
-							keystatus[SDL_SCANCODE_TAB] = 0;
+							keystatus[SDLK_TAB] = 0;
 							cursorflash = ticks;
 							editproperty++;
 							if ( editproperty == numProperties )
@@ -5923,9 +6122,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -6040,9 +6239,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -6146,9 +6345,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 						bool showTextSourceTooltip = false;
 
 						for ( int i = 0; i < numProperties; i++ )
@@ -6186,7 +6385,7 @@ int main(int argc, char** argv)
 								inputField_x = subx1 + 8 + (inputFieldWidth + 8) * i;
 								if ( i == 2 )
 								{
-									Uint32 colorPreview = SDL_MapRGB(mainsurface->format, (Uint32)atoi(spriteProperties[0]),
+									Uint32 colorPreview = makeColorRGB((Uint32)atoi(spriteProperties[0]),
 										(Uint32)atoi(spriteProperties[1]), (Uint32)atoi(spriteProperties[2]));
 									SDL_Rect src;
 									src.x = subx1 + 8 + (inputFieldWidth + 8) * 3;
@@ -6281,9 +6480,9 @@ int main(int argc, char** argv)
 						spacing = 36;
 
 						// Cycle properties with TAB.
-						if ( keystatus[SDL_SCANCODE_TAB] )
+						if ( keystatus[SDLK_TAB] )
 						{
-							keystatus[SDL_SCANCODE_TAB] = 0;
+							keystatus[SDLK_TAB] = 0;
 							cursorflash = ticks;
 							editproperty++;
 							if ( editproperty == numProperties )
@@ -6374,9 +6573,9 @@ int main(int argc, char** argv)
 										textInsertCaratPosition = -1;
 									}
 								}
-								if ( keystatus[SDL_SCANCODE_LEFT] )
+								if ( keystatus[SDLK_LEFT] )
 								{
-									keystatus[SDL_SCANCODE_LEFT] = 0;
+									keystatus[SDLK_LEFT] = 0;
 									if ( textInsertCaratPosition > 0 )
 									{
 										--textInsertCaratPosition;
@@ -6391,9 +6590,9 @@ int main(int argc, char** argv)
 									}
 									cursorflash = ticks;
 								}
-								else if ( keystatus[SDL_SCANCODE_RIGHT] )
+								else if ( keystatus[SDLK_RIGHT] )
 								{
-									keystatus[SDL_SCANCODE_RIGHT] = 0;
+									keystatus[SDLK_RIGHT] = 0;
 									if ( textInsertCaratPosition == -1 )
 									{
 										textInsertCaratPosition = strlen(inputstr);
@@ -6405,7 +6604,7 @@ int main(int argc, char** argv)
 									}
 									cursorflash = ticks;
 								}
-								if ( keystatus[SDL_SCANCODE_RETURN] )
+								if ( keystatus[SDLK_RETURN] )
 								{
 									if ( textInsertCaratPosition >= 0 )
 									{
@@ -6415,7 +6614,7 @@ int main(int argc, char** argv)
 									{
 										textInsertCaratPosition = strlen(inputstr);
 									}
-									keystatus[SDL_SCANCODE_RETURN] = 0;
+									keystatus[SDLK_RETURN] = 0;
 								}
 							}
 
@@ -6534,9 +6733,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -6679,9 +6878,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -6876,9 +7075,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -7026,9 +7225,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -7057,23 +7256,23 @@ int main(int argc, char** argv)
 								{
 									if ( propertyInt == 2 )
 									{
-										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, SDL_MapRGB(mainsurface->format, 200, 128, 0), "Decrepit");
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, makeColorRGB(200, 128, 0), "Decrepit");
 									}
 									else if ( propertyInt == 3 )
 									{
-										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, SDL_MapRGB(mainsurface->format, 255, 255, 0), "Worn");
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, makeColorRGB(255, 255, 0), "Worn");
 									}
 									else if ( propertyInt == 4 )
 									{
-										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, SDL_MapRGB(mainsurface->format, 128, 200, 0), "Servicable");
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, makeColorRGB(128, 200, 0), "Servicable");
 									}
 									else if ( propertyInt == 5 )
 									{
-										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, SDL_MapRGB(mainsurface->format, 0, 255, 0), "Excellent");
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, makeColorRGB(0, 255, 0), "Excellent");
 									}
 									else if ( propertyInt == 1 )
 									{
-										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, SDL_MapRGB(mainsurface->format, 255, 0, 0), "Broken");
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, makeColorRGB(255, 0, 0), "Broken");
 									}
 									else if ( propertyInt == 0 )
 									{
@@ -7099,12 +7298,12 @@ int main(int argc, char** argv)
 								{
 									if ( propertyInt == 1 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										color = makeColorRGB(0, 255, 0);
 										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, "Identified");
 									}
 									else if ( propertyInt == 0 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+										color = makeColorRGB(255, 255, 0);
 										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, "Unidentified");
 									}
 									else if ( propertyInt == 2 )
@@ -7168,9 +7367,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -7271,9 +7470,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -7350,9 +7549,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -7444,6 +7643,215 @@ int main(int argc, char** argv)
 						}
 					}
 				}
+				else if ( newwindow == 29 )
+				{
+					if ( selectedEntity[0] != nullptr )
+					{
+						int numProperties = sizeof(statuePropertyNames) / sizeof(statuePropertyNames[0]); //find number of entries in property list
+						const int lenProperties = sizeof(statuePropertyNames[0]) / sizeof(char); //find length of entry in property list
+						int spacing = 36; // 36 px between each item in the list.
+						int inputFieldHeader_y = suby1 + 28; // 28 px spacing from subwindow start.
+						int inputField_x = subx1 + 8; // 8px spacing from subwindow start.
+						int inputField_y = inputFieldHeader_y + 16;
+						int inputFieldWidth = 64; // width of the text field
+						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
+						char tmpPropertyName[lenProperties] = "";
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
+
+						for ( int i = 0; i < numProperties; i++ )
+						{
+							int propertyInt = atoi(spriteProperties[i]);
+
+							strcpy(tmpPropertyName, statuePropertyNames[i]);
+							inputFieldHeader_y = suby1 + 28 + i * spacing;
+							inputField_y = inputFieldHeader_y + 16;
+							// box outlines then text
+							if ( i == 1 )
+							{
+								inputFieldWidth = 80; // width of the text field
+							}
+							else
+							{
+								inputFieldWidth = 64; // width of the text field
+							}
+							drawDepressed(inputField_x - 4, inputField_y - 4, inputField_x - 4 + inputFieldWidth, inputField_y + 16 - 4);
+							// print values on top of boxes
+							printText(font8x8_bmp, inputField_x, suby1 + 44 + i * spacing, spriteProperties[i]);
+							printText(font8x8_bmp, inputField_x, inputFieldHeader_y, tmpPropertyName);
+
+							if ( errorArr[i] != 1 )
+							{
+								if ( i == 0 )
+								{
+									if ( propertyInt > 3 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										switch ( propertyInt )
+										{
+											case 0:
+												strcpy(tmpStr, "East");
+												break;
+											case 1:
+												strcpy(tmpStr, "South");
+												break;
+											case 2:
+												strcpy(tmpStr, "West");
+												break;
+											case 3:
+												strcpy(tmpStr, "North");
+												break;
+											default:
+												break;
+										}
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+									}
+								}
+								else if ( i == 1 )
+								{
+									if ( propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+								}
+								else
+								{
+									// enter other row entries here
+								}
+							}
+
+							if ( errorMessage )
+							{
+								if ( errorArr[i] == 1 )
+								{
+									printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorError, "Invalid ID!");
+								}
+							}
+						}
+
+						propertyPageTextAndInput(numProperties, inputFieldWidth);
+
+						if ( editproperty < numProperties )   // edit
+						{
+							if ( !SDL_IsTextInputActive() )
+							{
+								SDL_StartTextInput();
+								inputstr = spriteProperties[0];
+							}
+
+							// set the maximum length allowed for user input
+							inputlen = 10;
+							propertyPageCursorFlash(spacing);
+						}
+					}
+				}
+				else if ( newwindow == 30 )
+				{
+					if ( selectedEntity[0] != nullptr )
+					{
+						int numProperties = sizeof(shrineTeleportPropertyNames) / sizeof(shrineTeleportPropertyNames[0]); //find number of entries in property list
+						const int lenProperties = sizeof(shrineTeleportPropertyNames[0]) / sizeof(char); //find length of entry in property list
+						int spacing = 36; // 36 px between each item in the list.
+						int inputFieldHeader_y = suby1 + 28; // 28 px spacing from subwindow start.
+						int inputField_x = subx1 + 8; // 8px spacing from subwindow start.
+						int inputField_y = inputFieldHeader_y + 16;
+						int inputFieldWidth = 64; // width of the text field
+						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
+						char tmpPropertyName[lenProperties] = "";
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
+
+						for ( int i = 0; i < numProperties; i++ )
+						{
+							int propertyInt = atoi(spriteProperties[i]);
+
+							strcpy(tmpPropertyName, shrineTeleportPropertyNames[i]);
+							inputFieldHeader_y = suby1 + 28 + i * spacing;
+							inputField_y = inputFieldHeader_y + 16;
+							// box outlines then text
+							drawDepressed(inputField_x - 4, inputField_y - 4, inputField_x - 4 + inputFieldWidth, inputField_y + 16 - 4);
+							// print values on top of boxes
+							printText(font8x8_bmp, inputField_x, suby1 + 44 + i * spacing, spriteProperties[i]);
+							printText(font8x8_bmp, inputField_x, inputFieldHeader_y, tmpPropertyName);
+
+							if ( errorArr[i] != 1 )
+							{
+								if ( i == 0 )
+								{
+									if ( propertyInt > 3 || propertyInt < -1 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										switch ( propertyInt )
+										{
+											case -1:
+												strcpy(tmpStr, "random");
+												break;
+											case 0:
+												strcpy(tmpStr, "East");
+												break;
+											case 1:
+												strcpy(tmpStr, "South");
+												break;
+											case 2:
+												strcpy(tmpStr, "West");
+												break;
+											case 3:
+												strcpy(tmpStr, "North");
+												break;
+											default:
+												break;
+										}
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+									}
+								}
+								else if ( i == 1 || i == 2 || i == 3 )
+								{
+									if ( propertyInt > 999 || propertyInt < -999 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+								}
+								else
+								{
+									// enter other row entries here
+								}
+							}
+
+							if ( errorMessage )
+							{
+								if ( errorArr[i] == 1 )
+								{
+									printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorError, "Invalid ID!");
+								}
+							}
+						}
+
+						propertyPageTextAndInput(numProperties, inputFieldWidth);
+
+						if ( editproperty < numProperties )   // edit
+						{
+							if ( !SDL_IsTextInputActive() )
+							{
+								SDL_StartTextInput();
+								inputstr = spriteProperties[0];
+							}
+
+							// set the maximum length allowed for user input
+							inputlen = 4;
+							propertyPageCursorFlash(spacing);
+						}
+					}
+				}
 				else if ( newwindow == 25 )
 				{
 					//if ( selectedEntity[0] != nullptr )
@@ -7457,9 +7865,9 @@ int main(int argc, char** argv)
 					//	int inputFieldWidth = 64; // width of the text field
 					//	int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 					//	char tmpPropertyName[lenProperties] = "";
-					//	Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-					//	Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-					//	Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+					//	Uint32 color = makeColorRGB(0, 255, 0);
+					//	Uint32 colorRandom = makeColorRGB(0, 168, 255);
+					//	Uint32 colorError = makeColorRGB(255, 0, 0);
 
 					//	for ( int i = 0; i < numProperties; i++ )
 					//	{
@@ -7534,13 +7942,228 @@ int main(int argc, char** argv)
 					//	}
 					//}
 				}
+				else if ( newwindow == 31 )
+				{
+					if ( selectedEntity[0] != nullptr )
+					{
+						int numProperties = sizeof(colliderDecorationPropertyNames) / sizeof(colliderDecorationPropertyNames[0]); //find number of entries in property list
+						const int lenProperties = sizeof(colliderDecorationPropertyNames[0]) / sizeof(char); //find length of entry in property list
+						int spacing = 36; // 36 px between each item in the list.
+						int inputFieldHeader_y = suby1 + 28; // 28 px spacing from subwindow start.
+						int inputField_x = subx1 + 8; // 8px spacing from subwindow start.
+						int inputField_y = inputFieldHeader_y + 16;
+						int inputFieldWidth = 64; // width of the text field
+						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
+						char tmpPropertyName[lenProperties] = "";
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
+
+						for ( int i = 0; i < numProperties; i++ )
+						{
+							int propertyInt = atoi(spriteProperties[i]);
+							inputFieldWidth = 64; // width of the text field
+							spacing = 36;
+
+							inputFieldHeader_y = suby1 + 28 + i * spacing;
+							inputField_y = inputFieldHeader_y + 16;
+
+							// box outlines then text
+							drawDepressed(inputField_x - 4, inputField_y - 4, inputField_x - 4 + inputFieldWidth, inputField_y + 16 - 4);
+							// print values on top of boxes
+							printText(font8x8_bmp, inputField_x, suby1 + 44 + i * spacing, spriteProperties[i]);
+							strcpy(tmpPropertyName, colliderDecorationPropertyNames[i]);
+							printText(font8x8_bmp, inputField_x, inputFieldHeader_y, tmpPropertyName);
+
+							if ( errorArr[i] != 1 )
+							{
+								if ( i == 0 || i == 8 )
+								{
+									if ( propertyInt > 9999 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+								}
+								else if ( i == 1 )
+								{
+									if ( propertyInt > 7 || propertyInt < -1 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										switch ( propertyInt )
+										{
+											case -1:
+												strcpy(tmpStr, "random");
+												break;
+											case 0:
+												strcpy(tmpStr, "East");
+												break;
+											case 1:
+												strcpy(tmpStr, "Southeast");
+												break;
+											case 2:
+												strcpy(tmpStr, "South");
+												break;
+											case 3:
+												strcpy(tmpStr, "Southwest");
+												break;
+											case 4:
+												strcpy(tmpStr, "West");
+												break;
+											case 5:
+												strcpy(tmpStr, "Northwest");
+												break;
+											case 6:
+												strcpy(tmpStr, "North");
+												break;
+											case 7:
+												strcpy(tmpStr, "Northeast");
+												break;
+											default:
+												break;
+										}
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+									}
+								}
+								else if ( i == 2 || i == 3 || i == 4 )
+								{
+									if ( propertyInt > 999 || propertyInt < -999 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+								}
+								else if ( i == 5 )
+								{
+									if ( propertyInt > 1 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										switch ( propertyInt )
+										{
+											case 0:
+												strcpy(tmpStr, "No collision");
+												break;
+											case 1:
+												strcpy(tmpStr, "Has collision");
+												break;
+											default:
+												break;
+										}
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+									}
+								}
+								else if ( i == 6 || i == 7 )
+								{
+									if ( propertyInt > 8 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+								}
+								else if ( i == 8 )
+								{
+									if ( propertyInt > 999 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										switch ( propertyInt )
+										{
+											case 0:
+												strcpy(tmpStr, "Unable to damage");
+												break;
+											case 1:
+												strcpy(tmpStr, "Breakable");
+												break;
+											default:
+												break;
+										}
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+									}
+								}
+								else if ( i == 9 )
+								{
+									if ( propertyInt > 1 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										switch ( propertyInt )
+										{
+											case 0:
+												strcpy(tmpStr, "Not diggable");
+												break;
+											case 1:
+												strcpy(tmpStr, "Diggable");
+												break;
+											default:
+												break;
+										}
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+									}
+								}
+								else if ( i == 10 )
+								{
+									if ( EditorEntityData_t::colliderData.find(propertyInt) ==
+										EditorEntityData_t::colliderData.end() )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										char tmpStr[64] = "";
+										auto& colliderData = EditorEntityData_t::colliderData[propertyInt];
+										snprintf(tmpStr, sizeof(tmpStr), "%s", colliderData.name.c_str());
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+									}
+								}
+								else
+								{
+									// enter other row entries here
+								}
+							}
+
+							if ( errorMessage )
+							{
+								if ( errorArr[i] == 1 )
+								{
+									printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorError, "Invalid ID!");
+								}
+							}
+						}
+
+						propertyPageTextAndInput(numProperties, inputFieldWidth);
+
+						if ( editproperty < numProperties )   // edit
+						{
+							if ( !SDL_IsTextInputActive() )
+							{
+								SDL_StartTextInput();
+								inputstr = spriteProperties[0];
+							}
+
+							// set the maximum length allowed for user input
+							inputlen = 5;
+							propertyPageCursorFlash(spacing);
+						}
+					}
+				}
 				else if ( newwindow == 16 || newwindow == 17 )
 				{
 					int textColumnLeft = subx1 + 16;
 					int textColumnRight = (subx2 - subx1) / 2 + 300;
 					int pady = suby1 + 16;
 					int spacing = 0;
-					Uint32 colorHeader = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					Uint32 colorHeader = makeColorRGB(0, 255, 0);
 					char helptext[128];
 
 					if ( newwindow == 16 )
@@ -7710,9 +8333,9 @@ int main(int argc, char** argv)
 					}
 				}
 
-				if ( keystatus[SDL_SCANCODE_ESCAPE] )
+				if ( keystatus[SDLK_ESCAPE] )
 				{
-					keystatus[SDL_SCANCODE_ESCAPE] = 0;
+					keystatus[SDLK_ESCAPE] = 0;
 					if ( newwindow > 1 )
 					{
 						//buttonCloseSpriteSubwindow(NULL);
@@ -7726,9 +8349,9 @@ int main(int argc, char** argv)
 						buttonCloseSubwindow(NULL);
 					}
 				}
-				if ( keystatus[SDL_SCANCODE_RETURN] )
+				if ( keystatus[SDLK_RETURN] )
 				{
-					keystatus[SDL_SCANCODE_RETURN] = 0;
+					keystatus[SDLK_RETURN] = 0;
 					if ( newwindow > 1 )
 					{
 						//buttonSpritePropertiesConfirm(NULL);
@@ -7759,124 +8382,124 @@ int main(int argc, char** argv)
 				}
 
 				// handle hotkeys
-				if ( keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL] )
+				if ( keystatus[SDLK_LCTRL] || keystatus[SDLK_RCTRL] )
 				{
-					if ( keystatus[SDL_SCANCODE_N] && !keystatus[SDL_SCANCODE_LSHIFT] && !keystatus[SDL_SCANCODE_RSHIFT] )
+					if ( keystatus[SDLK_n] && !keystatus[SDLK_LSHIFT] && !keystatus[SDLK_RSHIFT] )
 					{
-						keystatus[SDL_SCANCODE_N] = 0;
+						keystatus[SDLK_n] = 0;
 						buttonNew(NULL);
 						groupedEntities.clear();
 					}
-					if ( keystatus[SDL_SCANCODE_S] )
+					if ( keystatus[SDLK_s] )
 					{
-						keystatus[SDL_SCANCODE_S] = 0;
+						keystatus[SDLK_s] = 0;
 						buttonSave(NULL);
 					}
-					if ( keystatus[SDL_SCANCODE_O] )
+					if ( keystatus[SDLK_o] )
 					{
-						keystatus[SDL_SCANCODE_O] = 0;
+						keystatus[SDLK_o] = 0;
 						buttonOpen(NULL);
 						groupedEntities.clear();
 					}
-					if ( keystatus[SDL_SCANCODE_X] )
+					if ( keystatus[SDLK_x] )
 					{
-						keystatus[SDL_SCANCODE_X] = 0;
+						keystatus[SDLK_x] = 0;
 						buttonCut(NULL);
 					}
-					if ( keystatus[SDL_SCANCODE_C] )
+					if ( keystatus[SDLK_c] )
 					{
-						keystatus[SDL_SCANCODE_C] = 0;
+						keystatus[SDLK_c] = 0;
 						buttonCopy(NULL);
 						groupedEntities.clear();
 					}
-					if ( keystatus[SDL_SCANCODE_V] )
+					if ( keystatus[SDLK_v] )
 					{
-						keystatus[SDL_SCANCODE_V] = 0;
+						keystatus[SDLK_v] = 0;
 						buttonPaste(NULL);
 						groupedEntities.clear();
 					}
-					if ( keystatus[SDL_SCANCODE_A] )
+					if ( keystatus[SDLK_a] )
 					{
-						keystatus[SDL_SCANCODE_A] = 0;
+						keystatus[SDLK_a] = 0;
 						buttonSelectAll(NULL);
 						reselectEntityGroup();
 					}
-					if ( keystatus[SDL_SCANCODE_Z] )
+					if ( keystatus[SDLK_z] )
 					{
-						keystatus[SDL_SCANCODE_Z] = 0;
+						keystatus[SDLK_z] = 0;
 						buttonUndo(NULL);
 						groupedEntities.clear();
 					}
-					if ( keystatus[SDL_SCANCODE_Y] )
+					if ( keystatus[SDLK_y] )
 					{
-						keystatus[SDL_SCANCODE_Y] = 0;
+						keystatus[SDLK_y] = 0;
 						buttonRedo(NULL);
 						groupedEntities.clear();
 					}
-					if ( keystatus[SDL_SCANCODE_G] )
+					if ( keystatus[SDLK_g] )
 					{
-						keystatus[SDL_SCANCODE_G] = 0;
+						keystatus[SDLK_g] = 0;
 						buttonGrid(NULL);
 					}
-					if ( keystatus[SDL_SCANCODE_D] )
+					if ( keystatus[SDLK_d] )
 					{
-						keystatus[SDL_SCANCODE_D] = 0;
+						keystatus[SDLK_d] = 0;
 						buttonOpenDirectory(NULL);
 					}
-					if ( keystatus[SDL_SCANCODE_T] )
+					if ( keystatus[SDLK_t] )
 					{
-						keystatus[SDL_SCANCODE_T] = 0;
+						keystatus[SDLK_t] = 0;
 						buttonToolbox(NULL);
 					}
-					if ( keystatus[SDL_SCANCODE_E] )
+					if ( keystatus[SDLK_e] )
 					{
-						keystatus[SDL_SCANCODE_E] = 0;
+						keystatus[SDLK_e] = 0;
 						buttonViewSprites(NULL);
 					}
-					if ( keystatus[SDL_SCANCODE_L] )
+					if ( keystatus[SDLK_l] )
 					{
-						keystatus[SDL_SCANCODE_L] = 0;
+						keystatus[SDLK_l] = 0;
 						buttonAllLayers(NULL);
 					}
-					if ( keystatus[SDL_SCANCODE_H] )
+					if ( keystatus[SDLK_h] )
 					{
-						keystatus[SDL_SCANCODE_H] = 0;
+						keystatus[SDLK_h] = 0;
 						buttonHoverText(NULL);
 					}
-					if ( keystatus[SDL_SCANCODE_I] )
+					if ( keystatus[SDLK_i] )
 					{
-						keystatus[SDL_SCANCODE_I] = 0;
+						keystatus[SDLK_i] = 0;
 						buttonStatusBar(NULL);
 					}
-					if ( keystatus[SDL_SCANCODE_M] )
+					if ( keystatus[SDLK_m] )
 					{
-						keystatus[SDL_SCANCODE_M] = 0;
+						keystatus[SDLK_m] = 0;
 						buttonAttributes(NULL);
 					}
 					//Cycle layer up.
-					if ( keystatus[SDL_SCANCODE_U] )
+					if ( keystatus[SDLK_u] )
 					{
-						keystatus[SDL_SCANCODE_U] = 0;
+						keystatus[SDLK_u] = 0;
 						drawlayer = std::min(drawlayer + 1, MAPLAYERS - 1);
 					}
 					//Cycle layer down.
-					if ( keystatus[SDL_SCANCODE_P] )
+					if ( keystatus[SDLK_p] )
 					{
-						keystatus[SDL_SCANCODE_P] = 0;
+						keystatus[SDLK_p] = 0;
 						drawlayer = std::max(drawlayer - 1, 0);
 					}
-					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
 					{
-						if ( keystatus[SDL_SCANCODE_N] )
+						if ( keystatus[SDLK_n] )
 						{
-							keystatus[SDL_SCANCODE_N] = 0;
+							keystatus[SDLK_n] = 0;
 							buttonClearMap(NULL);
 							groupedEntities.clear();
 						}
 					}
-					if ( keystatus[SDL_SCANCODE_DOWN] )
+					if ( keystatus[SDLK_DOWN] )
 					{
-						keystatus[SDL_SCANCODE_DOWN] = 0;
+						keystatus[SDLK_DOWN] = 0;
 						// move selection
 						if ( selectedarea_y2 < map.height - 1 )
 						{
@@ -7888,9 +8511,9 @@ int main(int argc, char** argv)
 							reselectEntityGroup();
 						}
 					}
-					else if ( keystatus[SDL_SCANCODE_UP] )
+					else if ( keystatus[SDLK_UP] )
 					{
-						keystatus[SDL_SCANCODE_UP] = 0;
+						keystatus[SDLK_UP] = 0;
 						// move selection
 						if ( selectedarea_y1 > 0 )
 						{
@@ -7902,9 +8525,9 @@ int main(int argc, char** argv)
 							reselectEntityGroup();
 						}
 					}
-					else if ( keystatus[SDL_SCANCODE_LEFT] )
+					else if ( keystatus[SDLK_LEFT] )
 					{
-						keystatus[SDL_SCANCODE_LEFT] = 0;
+						keystatus[SDLK_LEFT] = 0;
 						// move selection
 						if ( selectedarea_x1 > 0 )
 						{
@@ -7916,9 +8539,9 @@ int main(int argc, char** argv)
 							reselectEntityGroup();
 						}
 					}
-					else if ( keystatus[SDL_SCANCODE_RIGHT] )
+					else if ( keystatus[SDLK_RIGHT] )
 					{
-						keystatus[SDL_SCANCODE_RIGHT] = 0;
+						keystatus[SDLK_RIGHT] = 0;
 						// move selection
 						if ( selectedarea_x2 < map.width - 1 )
 						{
@@ -7933,11 +8556,11 @@ int main(int argc, char** argv)
 				}
 				else
 				{
-					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
 					{
-						if ( keystatus[SDL_SCANCODE_DOWN] )
+						if ( keystatus[SDLK_DOWN] )
 						{
-							keystatus[SDL_SCANCODE_DOWN] = 0;
+							keystatus[SDLK_DOWN] = 0;
 							// resize selection
 							if ( selectedarea_y2 < map.height - 1 && !moveSelectionNegativeY )
 							{
@@ -7960,9 +8583,9 @@ int main(int argc, char** argv)
 								}
 							}
 						}
-						else if ( keystatus[SDL_SCANCODE_UP] )
+						else if ( keystatus[SDLK_UP] )
 						{
-							keystatus[SDL_SCANCODE_UP] = 0;
+							keystatus[SDLK_UP] = 0;
 							// resize selection
 							if ( selectedarea_y2 > selectedarea_y1 && !moveSelectionNegativeY )
 							{
@@ -7985,9 +8608,9 @@ int main(int argc, char** argv)
 								}
 							}
 						}
-						else if ( keystatus[SDL_SCANCODE_LEFT] )
+						else if ( keystatus[SDLK_LEFT] )
 						{
-							keystatus[SDL_SCANCODE_LEFT] = 0;
+							keystatus[SDLK_LEFT] = 0;
 							// resize selection
 							if ( selectedarea_x2 > selectedarea_x1 && !moveSelectionNegativeX )
 							{
@@ -8010,9 +8633,9 @@ int main(int argc, char** argv)
 								}
 							}
 						}
-						else if ( keystatus[SDL_SCANCODE_RIGHT] )
+						else if ( keystatus[SDLK_RIGHT] )
 						{
-							keystatus[SDL_SCANCODE_RIGHT] = 0;
+							keystatus[SDLK_RIGHT] = 0;
 							// resize selection
 							if ( selectedarea_x2 < map.width - 1 && !moveSelectionNegativeX)
 							{
@@ -8036,57 +8659,57 @@ int main(int argc, char** argv)
 							}
 						}
 					}
-					if ( keystatus[SDL_SCANCODE_S] )
+					if ( keystatus[SDLK_s] )
 					{
-						keystatus[SDL_SCANCODE_S] = 0;
+						keystatus[SDLK_s] = 0;
 						spritepalette = 1;
 					}
-					if ( keystatus[SDL_SCANCODE_T] )
+					if ( keystatus[SDLK_t] )
 					{
-						keystatus[SDL_SCANCODE_T] = 0;
+						keystatus[SDLK_t] = 0;
 						tilepalette = 1;
 					}
-					if ( keystatus[SDL_SCANCODE_F] )
+					if ( keystatus[SDLK_f] )
 					{
-						keystatus[SDL_SCANCODE_F] = 0;
+						keystatus[SDLK_f] = 0;
 						button3DMode(NULL);
 					}
 				}
-				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
+				if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
 				{
-					if ( keystatus[SDL_SCANCODE_F] )
+					if ( keystatus[SDLK_f] )
 					{
-						keystatus[SDL_SCANCODE_F] = 0;
+						keystatus[SDLK_f] = 0;
 						menuVisible = 1;
 					}
-					if ( keystatus[SDL_SCANCODE_E] )
+					if ( keystatus[SDLK_e] )
 					{
-						keystatus[SDL_SCANCODE_E] = 0;
+						keystatus[SDLK_e] = 0;
 						menuVisible = 2;
 					}
-					if ( keystatus[SDL_SCANCODE_V] )
+					if ( keystatus[SDLK_v] )
 					{
-						keystatus[SDL_SCANCODE_V] = 0;
+						keystatus[SDLK_v] = 0;
 						menuVisible = 3;
 					}
-					if ( keystatus[SDL_SCANCODE_M] )
+					if ( keystatus[SDLK_m] )
 					{
-						keystatus[SDL_SCANCODE_M] = 0;
+						keystatus[SDLK_m] = 0;
 						menuVisible = 4;
 					}
-					if ( keystatus[SDL_SCANCODE_H] )
+					if ( keystatus[SDLK_h] )
 					{
-						keystatus[SDL_SCANCODE_H] = 0;
+						keystatus[SDLK_h] = 0;
 						menuVisible = 5;
 					}
-					if ( keystatus[SDL_SCANCODE_F4] )
+					if ( keystatus[SDLK_F4] )
 					{
-						keystatus[SDL_SCANCODE_F4] = 0;
+						keystatus[SDLK_F4] = 0;
 						buttonExit(NULL);
 					}
-					if ( keystatus[SDL_SCANCODE_DOWN] )
+					if ( keystatus[SDLK_DOWN] )
 					{
-						keystatus[SDL_SCANCODE_DOWN] = 0;
+						keystatus[SDLK_DOWN] = 0;
 						// move entities
 						makeUndo();
 						if ( selectedarea_y2 < map.height - 1 )
@@ -8103,9 +8726,9 @@ int main(int argc, char** argv)
 							}
 						}
 					}
-					else if ( keystatus[SDL_SCANCODE_UP] )
+					else if ( keystatus[SDLK_UP] )
 					{
-						keystatus[SDL_SCANCODE_UP] = 0;
+						keystatus[SDLK_UP] = 0;
 						// move entities
 						makeUndo();
 						if ( selectedarea_y1 > 0 )
@@ -8122,9 +8745,9 @@ int main(int argc, char** argv)
 							}
 						}
 					}
-					else if ( keystatus[SDL_SCANCODE_LEFT] )
+					else if ( keystatus[SDLK_LEFT] )
 					{
-						keystatus[SDL_SCANCODE_LEFT] = 0;
+						keystatus[SDLK_LEFT] = 0;
 						// move entities
 						makeUndo();
 						if ( selectedarea_x1 > 0 )
@@ -8141,9 +8764,9 @@ int main(int argc, char** argv)
 							}
 						}
 					}
-					else if ( keystatus[SDL_SCANCODE_RIGHT] )
+					else if ( keystatus[SDLK_RIGHT] )
 					{
-						keystatus[SDL_SCANCODE_RIGHT] = 0;
+						keystatus[SDLK_RIGHT] = 0;
 						// move entities
 						makeUndo();
 						if ( selectedarea_x2 < map.width - 1 )
@@ -8161,129 +8784,129 @@ int main(int argc, char** argv)
 						}
 					}
 				}
-				if ( keystatus[SDL_SCANCODE_DELETE] )
+				if ( keystatus[SDLK_DELETE] )
 				{
-					keystatus[SDL_SCANCODE_DELETE] = 0;
+					keystatus[SDLK_DELETE] = 0;
 					buttonDelete(NULL);
 					groupedEntities.clear();
 				}
-				if ( keystatus[SDL_SCANCODE_C] )
+				if ( keystatus[SDLK_c] )
 				{
-					keystatus[SDL_SCANCODE_C] = 0;
+					keystatus[SDLK_c] = 0;
 					buttonCycleSprites(NULL);
 				}
-				if ( keystatus[SDL_SCANCODE_F1] )
+				if ( keystatus[SDLK_F1] )
 				{
-					keystatus[SDL_SCANCODE_F1] = 0;
+					keystatus[SDLK_F1] = 0;
 					buttonAbout(NULL);
 				}
-				if ( keystatus[SDL_SCANCODE_H] )
+				if ( keystatus[SDLK_h] )
 				{
-					keystatus[SDL_SCANCODE_H] = 0;
+					keystatus[SDLK_h] = 0;
 					buttonEditorControls(NULL);
 				}
-				if ( keystatus[SDL_SCANCODE_1] ) // Switch to Pencil Tool
+				if ( keystatus[SDLK_1] ) // Switch to Pencil Tool
 				{
-					keystatus[SDL_SCANCODE_1] = 0;
+					keystatus[SDLK_1] = 0;
 					selectedTool = 0;
 					selectedarea = false;
 				}
-				if ( keystatus[SDL_SCANCODE_2] ) // Switch to Point Tool
+				if ( keystatus[SDLK_2] ) // Switch to Point Tool
 				{
-					keystatus[SDL_SCANCODE_2] = 0;
+					keystatus[SDLK_2] = 0;
 					selectedTool = 1;
 					selectedarea = false;
 				}
-				if ( keystatus[SDL_SCANCODE_3] ) // Switch to Brush Tool
+				if ( keystatus[SDLK_3] ) // Switch to Brush Tool
 				{
-					keystatus[SDL_SCANCODE_3] = 0;
+					keystatus[SDLK_3] = 0;
 					selectedTool = 2;
 					selectedarea = false;
 				}
-				if ( keystatus[SDL_SCANCODE_4] ) // Switch to Select Tool
+				if ( keystatus[SDLK_4] ) // Switch to Select Tool
 				{
-					keystatus[SDL_SCANCODE_4] = 0;
+					keystatus[SDLK_4] = 0;
 					selectedTool = 3;
 					selectedarea = false;
 				}
-				if ( keystatus[SDL_SCANCODE_5] ) // Switch to Fill Tool
+				if ( keystatus[SDLK_5] ) // Switch to Fill Tool
 				{
-					keystatus[SDL_SCANCODE_5] = 0;
+					keystatus[SDLK_5] = 0;
 					selectedTool = 4;
 					selectedarea = false;
 				}
-				if ( keystatus[SDL_SCANCODE_F2] )
+				if ( keystatus[SDLK_F2] )
 				{
-					keystatus[SDL_SCANCODE_F2] = 0;
+					keystatus[SDLK_F2] = 0;
 					makeUndo();
 					buttonSpriteProperties(NULL);
 				}
-				if ( keystatus[SDL_SCANCODE_KP_7] )
+				if ( keystatus[SDLK_KP_7] )
 				{
-					keystatus[SDL_SCANCODE_KP_7] = 0;
+					keystatus[SDLK_KP_7] = 0;
 					selectedTile = recentUsedTiles[recentUsedTilePalette][0];
 				}
-				if ( keystatus[SDL_SCANCODE_KP_8] )
+				if ( keystatus[SDLK_KP_8] )
 				{
-					keystatus[SDL_SCANCODE_KP_8] = 0;
+					keystatus[SDLK_KP_8] = 0;
 					selectedTile = recentUsedTiles[recentUsedTilePalette][1];
 				}
-				if ( keystatus[SDL_SCANCODE_KP_9] )
+				if ( keystatus[SDLK_KP_9] )
 				{
-					keystatus[SDL_SCANCODE_KP_9] = 0;
+					keystatus[SDLK_KP_9] = 0;
 					selectedTile = recentUsedTiles[recentUsedTilePalette][2];
 				}
-				if ( keystatus[SDL_SCANCODE_KP_4] )
+				if ( keystatus[SDLK_KP_4] )
 				{
-					keystatus[SDL_SCANCODE_KP_4] = 0;
+					keystatus[SDLK_KP_4] = 0;
 					selectedTile = recentUsedTiles[recentUsedTilePalette][3];
 				}
-				if ( keystatus[SDL_SCANCODE_KP_5] )
+				if ( keystatus[SDLK_KP_5] )
 				{
-					keystatus[SDL_SCANCODE_KP_5] = 0;
+					keystatus[SDLK_KP_5] = 0;
 					selectedTile = recentUsedTiles[recentUsedTilePalette][4];
 				}
-				if ( keystatus[SDL_SCANCODE_KP_6] )
+				if ( keystatus[SDLK_KP_6] )
 				{
-					keystatus[SDL_SCANCODE_KP_6] = 0;
+					keystatus[SDLK_KP_6] = 0;
 					selectedTile = recentUsedTiles[recentUsedTilePalette][5];
 				}
-				if ( keystatus[SDL_SCANCODE_KP_1] )
+				if ( keystatus[SDLK_KP_1] )
 				{
-					keystatus[SDL_SCANCODE_KP_1] = 0;
+					keystatus[SDLK_KP_1] = 0;
 					selectedTile = recentUsedTiles[recentUsedTilePalette][6];
 				}
-				if ( keystatus[SDL_SCANCODE_KP_2] )
+				if ( keystatus[SDLK_KP_2] )
 				{
-					keystatus[SDL_SCANCODE_KP_2] = 0;
+					keystatus[SDLK_KP_2] = 0;
 					selectedTile = recentUsedTiles[recentUsedTilePalette][7];
 				}
-				if ( keystatus[SDL_SCANCODE_KP_3] )
+				if ( keystatus[SDLK_KP_3] )
 				{
-					keystatus[SDL_SCANCODE_KP_3] = 0;
+					keystatus[SDLK_KP_3] = 0;
 					selectedTile = recentUsedTiles[recentUsedTilePalette][8];
 				}
-				if ( keystatus[SDL_SCANCODE_KP_PLUS] )
+				if ( keystatus[SDLK_KP_PLUS] )
 				{
-					keystatus[SDL_SCANCODE_KP_PLUS] = 0;
+					keystatus[SDLK_KP_PLUS] = 0;
 					recentUsedTilePalette++; //scroll through palettes 1-9
 					if ( recentUsedTilePalette == 9 )
 					{
 						recentUsedTilePalette = 0;
 					}
 				}
-				if ( keystatus[SDL_SCANCODE_KP_MINUS] )
+				if ( keystatus[SDLK_KP_MINUS] )
 				{
-					keystatus[SDL_SCANCODE_KP_MINUS] = 0;
+					keystatus[SDLK_KP_MINUS] = 0;
 					recentUsedTilePalette--; //scroll through palettes 1-9
 					if ( recentUsedTilePalette == -1 )
 					{
 						recentUsedTilePalette = 8;
 					}
 				}
-				if ( keystatus[SDL_SCANCODE_KP_MULTIPLY] )
+				if ( keystatus[SDLK_KP_MULTIPLY] )
 				{
-					keystatus[SDL_SCANCODE_KP_MULTIPLY] = 0;
+					keystatus[SDLK_KP_MULTIPLY] = 0;
 					lockTilePalette[recentUsedTilePalette] = !lockTilePalette[recentUsedTilePalette]; // toggle lock/unlock
 				}
 			}
@@ -8296,7 +8919,7 @@ int main(int argc, char** argv)
 			x = 0;
 			y = 0;
 			z = 0;
-			drawRect( NULL, SDL_MapRGB(mainsurface->format, 0, 0, 0), 255 ); // wipe screen
+			drawRect( NULL, makeColorRGB(0, 0, 0), 255 ); // wipe screen
 			for ( c = 0; c < xres * yres; c++ )
 			{
 				palette[c] = -1;
@@ -8404,7 +9027,7 @@ int main(int argc, char** argv)
 				mclick = 0;
 				spritepalette = 0;
 			}
-			if (keystatus[SDL_SCANCODE_ESCAPE])
+			if (keystatus[SDLK_ESCAPE])
 			{
 				mclick = 0;
 				spritepalette = 0;
@@ -8469,7 +9092,7 @@ int main(int argc, char** argv)
 		{
 			x = 0;
 			y = 0;
-			drawRect( NULL, SDL_MapRGB(mainsurface->format, 0, 0, 0), 255 ); // wipe screen
+			drawRect( NULL, makeColorRGB(0, 0, 0), 255 ); // wipe screen
 			for ( c = 0; c < xres * yres; c++ )
 			{
 				palette[c] = -1;
@@ -8530,7 +9153,7 @@ int main(int argc, char** argv)
 				mclick = 0;
 				tilepalette = 0;
 			}
-			if (keystatus[SDL_SCANCODE_ESCAPE])
+			if (keystatus[SDLK_ESCAPE])
 			{
 				mclick = 0;
 				tilepalette = 0;
@@ -8605,6 +9228,9 @@ int main(int argc, char** argv)
 	}
 	list_FreeAll(&undolist);
 	saveTilePalettes();
+    for (int c = 0; c < sizeof(view_t::fb) / sizeof(view_t::fb[0]); ++c) {
+        camera.fb[c].destroy();
+    }
 	return deinitApp();
 }
 
@@ -8615,9 +9241,9 @@ void propertyPageTextAndInput(int numProperties, int width)
 	int pad_x2 = width;
 
 	// Cycle properties with TAB.
-	if ( keystatus[SDL_SCANCODE_TAB] )
+	if ( keystatus[SDLK_TAB] )
 	{
-		keystatus[SDL_SCANCODE_TAB] = 0;
+		keystatus[SDLK_TAB] = 0;
 		cursorflash = ticks;
 		editproperty++;
 		if ( editproperty == numProperties )

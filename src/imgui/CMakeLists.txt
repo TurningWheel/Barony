@@ -1,0 +1,14 @@
+list(APPEND GAME_SOURCES
+	"${CMAKE_CURRENT_SOURCE_DIR}/imgui.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/imgui_demo.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/imgui_draw.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/imgui_impl_opengl3.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/imgui_impl_sdl.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/imgui_tables.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/imgui_widgets.cpp"
+)
+list(APPEND EDITOR_SOURCES
+)
+
+set(GAME_SOURCES ${GAME_SOURCES} PARENT_SCOPE)
+set(EDITOR_SOURCES ${EDITOR_SOURCES} PARENT_SCOPE)

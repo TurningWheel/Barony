@@ -20,31 +20,30 @@
 extern list_t* shopInv[MAXPLAYERS];
 extern Uint32 shopkeeper[MAXPLAYERS];
 extern Uint32 shoptimer[MAXPLAYERS];
-extern char* shopspeech[MAXPLAYERS];
-extern int shopinventorycategory[MAXPLAYERS];
-extern int shopitemscroll[MAXPLAYERS];
-static const int NUM_SHOP_GUI_SLOTS = 4;
-extern Item* shopinvitems[MAXPLAYERS][NUM_SHOP_GUI_SLOTS];
-extern Item* sellitem[MAXPLAYERS];
+extern std::string shopspeech[MAXPLAYERS];
 extern int shopkeepertype[MAXPLAYERS];
-extern char* shopkeepername[MAXPLAYERS];
+extern std::string shopkeepername[MAXPLAYERS];
 extern char shopkeepername_client[MAXPLAYERS][64];
 
 void startTradingServer(Entity* entity, int player);
-void buyItemFromShop(const int player, Item* item);
-void sellItemToShop(const int player, Item* item);
+bool isItemSellableToShop(const int player, Item* item);
+bool hideItemFromShopView(Item& item);
+bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack);
+bool sellItemToShop(const int player, Item* item);
 bool shopIsMysteriousShopkeeper(Entity* entity);
-extern int selectedShopSlot[MAXPLAYERS];
 extern std::unordered_map<int, std::unordered_set<int>> shopkeeperMysteriousItems;
 void buyItemFromMysteriousShopkeepConsumeOrb(const int player, Entity& entity, Item& boughtItem);
-void selectShopSlot(const int player, int slot);
-void warpMouseToSelectedShopSlot(const int player);
 void closeShop(const int player);
+void shopChangeGoldEvent(const int player, Sint32 amount);
 
-/*
- * Negative: Left.
- * Positive: Right.
- */
-void cycleShopCategories(const int player, int direction);
-
-static const int NUM_SHOP_CATEGORIES = 8;
+static const int SHOP_TYPE_ARMS_ARMOR = 0;
+static const int SHOP_TYPE_HAT = 1;
+static const int SHOP_TYPE_JEWELRY = 2;
+static const int SHOP_TYPE_BOOKS = 3;
+static const int SHOP_TYPE_POTIONS = 4;
+static const int SHOP_TYPE_STAFFS = 5;
+static const int SHOP_TYPE_FOOD = 6;
+static const int SHOP_TYPE_HARDWARE = 7;
+static const int SHOP_TYPE_HUNTING = 8;
+static const int SHOP_TYPE_GENERAL = 9;
+static const int SHOP_CONSUMABLE_SKILL_REQ_PER_POINT = 10;

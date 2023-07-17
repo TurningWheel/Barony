@@ -17,7 +17,31 @@ typedef float real_t;
 typedef double real_t;
 #endif
 
-#include <algorithm> //For min and max, because the #define breaks everything in c++.
+#include <cstdint>
+#include <cstddef>
+#include <algorithm>
+
+// the following functions are safe variants of C's string library.
+// they include the buffer length of each input as secondary parameters to
+// prevent buffer overruns.
+// they also ALWAYS append null when modifying a string, within the space
+// provided.
+// logically, if a function reaches the end of a string buffer as indicated
+// by the given size, the behavior is identical to the case where it meets
+// a null-terminator.
+// in other words, input strings do not have to be null-terminated if their
+// associated size argument matches exactly the amount of data you wish to use.
+// otherwise the functions will stop at the first null-terminator found,
+// matching the behavior of the original C library.
+
+char* stringCopy(char* dest, const char* src, size_t dest_size, size_t src_size);
+char* stringCopyUnsafe(char* dest, const char* src, size_t dest_size);
+char* stringCat(char* dest, const char* src, size_t dest_size, size_t src_size);
+int stringCmp(const char* str1, const char* str2, size_t str1_size, size_t str2_size);
+size_t stringLen(const char* str, size_t size);
+const char* stringStr(const char* str1, const char* str2, size_t str1_size, size_t str2_size);
+char* stringStr(char* str1, const char* str2, size_t str1_size, size_t str2_size);
+
 #include <iostream>
 #include <list>
 #include <string>
@@ -59,17 +83,6 @@ struct SteamStat_t
 	float m_flAvgDenominator;
 };
 
-struct SteamGlobalStat_t
-{
-	int m_ID;
-	ESteamStatTypes m_eStatType;
-	const char *m_pchStatName;
-	int64_t m_iValue;
-	float m_flValue;
-	float m_flAvgNumerator;
-	float m_flAvgDenominator;
-};
-
 extern bool spamming;
 extern bool showfirst;
 extern bool logCheckObstacle;
@@ -83,7 +96,10 @@ extern bool autoLimbReload;
 #include <math.h>
 #include <time.h>
 #include <fcntl.h>
-#ifndef WINDOWS
+#ifdef WINDOWS
+#include <WinSock2.h>
+#pragma comment(lib, "ws2_32.lib")
+#else
 #include <unistd.h>
 #include <limits.h>
 #endif
@@ -106,7 +122,7 @@ extern bool autoLimbReload;
 #endif
 
 #ifdef APPLE
- #include <Cocoa/Cocoa.h>
+ //#include <Cocoa/Cocoa.h>
  //#include <OpenGL/OpenGL.h>
  #define GL_GLEXT_PROTOTYPES
  #include <OpenGL/gl3ext.h>
@@ -115,10 +131,18 @@ extern bool autoLimbReload;
 #else // APPLE
  #ifndef NINTENDO
   #define GL_GLEXT_PROTOTYPES
+  #ifdef WINDOWS
+    #include <GL/glew.h>
+  #endif
   #include <GL/gl.h>
   #include <GL/glu.h>
+  #ifdef LINUX
+  	typedef uint16_t GLhalf;
+  #endif
  #endif
+#ifndef WINDOWS
  #include <GL/glext.h>
+#endif
  #include "SDL_opengl.h"
 #endif // !APPLE
 
@@ -172,34 +196,98 @@ extern bool autoLimbReload;
 
 #define PI 3.14159265358979323846
 
+void printlog(const char* str, ...);
+const char* gl_error_string(GLenum err);
+#ifdef _MSC_VER
+#define GL_CHECK_ERR(expression) expression;\
+    {\
+		GLenum err;\
+		while((err = glGetError()) != GL_NO_ERROR) {\
+			printlog("[OpenGL]: ERROR type = 0x%x, message = %s",\
+				err, gl_error_string(err));\
+		}\
+	}
+#define GL_CHECK_ERR_RET(expression) expression;\
+    {\
+		GLenum err;\
+		while((err = glGetError()) != GL_NO_ERROR) {\
+			printlog("[OpenGL]: ERROR %s type = 0x%x, message = %s",\
+				err, gl_error_string(err));\
+		}\
+	}
+#else
+#define GL_CHECK_ERR(expression) ({ \
+    expression;\
+    GLenum err;\
+    while((err = glGetError()) != GL_NO_ERROR) {\
+        printlog("[OpenGL]: ERROR type = 0x%x, message = %s",\
+            err, gl_error_string(err));\
+    }\
+})
+#define GL_CHECK_ERR_RET(expression) ({ \
+    auto retval = expression;\
+    GLenum err;\
+    while((err = glGetError()) != GL_NO_ERROR) {\
+        printlog("[OpenGL]: ERROR %s type = 0x%x, message = %s",\
+            err, gl_error_string(err));\
+    }\
+    retval;\
+})
+#endif
+
+typedef struct vec4 {
+    vec4(float f):
+        x(f),
+        y(f),
+        z(f),
+        w(f)
+    {}
+    vec4(float _x, float _y, float _z, float _w):
+        x(_x),
+        y(_y),
+        z(_z),
+        w(_w)
+    {}
+    vec4() = default;
+    float x;
+    float y;
+    float z;
+    float w;
+} vec4_t;
+
+typedef struct mat4x4 {
+    mat4x4(float f):
+        x(f, 0.f, 0.f, 0.f),
+        y(0.f, f, 0.f, 0.f),
+        z(0.f, 0.f, f, 0.f),
+        w(0.f, 0.f, 0.f, f)
+    {}
+    mat4x4(
+        float xx, float xy, float xz, float xw,
+        float yx, float yy, float yz, float yw,
+        float zx, float zy, float zz, float zw,
+        float wx, float wy, float wz, float ww):
+        x(xx, xy, xz, xw),
+        y(yx, yy, yz, yw),
+        z(zx, zy, zz, zw),
+        w(wx, wy, wz, ww)
+    {}
+    mat4x4():
+        mat4x4(1.f)
+    {}
+    vec4_t x;
+    vec4_t y;
+    vec4_t z;
+    vec4_t w;
+} mat4x4_t;
+
 extern FILE* logfile;
-static const int MESSAGE_LIST_SIZE_CAP = 100; //Cap off the message in-game log to 100 messages. Otherwise, game will eat up more RAM and more CPU the longer it goes on.
+extern SDL_bool EnableMouseCapture; // can disable this in main.cpp if mouse capture is causing problems with debugging on Linux
+extern bool& enableDebugKeys; // if true, certain special keys can be used for debugging
 
 class Item;
 //enum Item;
 //enum Status;
-
-#ifdef WINDOWS
-extern PFNGLGENBUFFERSPROC SDL_glGenBuffers;
-extern PFNGLBINDBUFFERPROC SDL_glBindBuffer;
-extern PFNGLBUFFERDATAPROC SDL_glBufferData;
-extern PFNGLDELETEBUFFERSPROC SDL_glDeleteBuffers;
-extern PFNGLGENVERTEXARRAYSPROC SDL_glGenVertexArrays;
-extern PFNGLBINDVERTEXARRAYPROC SDL_glBindVertexArray;
-extern PFNGLDELETEVERTEXARRAYSPROC SDL_glDeleteVertexArrays;
-extern PFNGLENABLEVERTEXATTRIBARRAYPROC SDL_glEnableVertexAttribArray;
-extern PFNGLVERTEXATTRIBPOINTERPROC SDL_glVertexAttribPointer;
-#else
-#define SDL_glGenBuffers glGenBuffers
-#define SDL_glBindBuffer glBindBuffer
-#define SDL_glBufferData glBufferData
-#define SDL_glDeleteBuffers glDeleteBuffers
-#define SDL_glGenVertexArrays glGenVertexArrays
-#define SDL_glBindVertexArray glBindVertexArray
-#define SDL_glDeleteVertexArrays glDeleteVertexArrays
-#define SDL_glEnableVertexAttribArray glEnableVertexAttribArray
-#define SDL_glVertexAttribPointer glVertexAttribPointer
-#endif
 
 #define AVERAGEFRAMES 32
 
@@ -330,14 +418,12 @@ static const int RIGHT_CLICK_IMPULSE = 285; // right click
 //Time in seconds before the in_dev warning disappears.
 #define indev_displaytime 7000
 
-// view structure
-typedef struct view_t
+enum LightModifierValues : int
 {
-	real_t x, y, z;
-	real_t ang;
-	real_t vang;
-	Sint32 winx, winy, winw, winh;
-} view_t;
+	GLOBAL_LIGHT_MODIFIER_STOPPED,
+	GLOBAL_LIGHT_MODIFIER_INUSE,
+	GLOBAL_LIGHT_MODIFIER_DISSIPATING
+};
 
 class Entity; //TODO: Bugger?
 
@@ -373,12 +459,13 @@ typedef struct map_t
 	list_t* entities;
 	list_t* creatures; //A list of Entity* pointers.
 	list_t* worldUI; //A list of Entity* pointers.
+	char filename[256];
 } map_t;
 
 #define MAPLAYERS 3 // number of layers contained in a single map
 #define OBSTACLELAYER 1 // obstacle layer in map
 #define MAPFLAGS 16 // map flags for custom properties
-#define MAPFLAGTEXTS 19 // map flags for custom properties
+#define MAPFLAGTEXTS 20 // map flags for custom properties
 // names for the flag indices
 static const int MAP_FLAG_CEILINGTILE = 0;
 static const int MAP_FLAG_DISABLETRAPS = 1;
@@ -406,6 +493,7 @@ static const int MAP_FLAG_GENADJACENTROOMS = 15;
 static const int MAP_FLAG_DISABLEOPENING = 16;
 static const int MAP_FLAG_DISABLEMESSAGES = 17;
 static const int MAP_FLAG_DISABLEHUNGER = 18;
+static const int MAP_FLAG_PERIMETER_GAP = 19;
 
 #define MFLAG_DISABLEDIGGING ((map.flags[MAP_FLAG_GENBYTES3] >> 24) & 0xFF) // first leftmost byte
 #define MFLAG_DISABLETELEPORT ((map.flags[MAP_FLAG_GENBYTES3] >> 16) & 0xFF) // second leftmost byte
@@ -414,6 +502,7 @@ static const int MAP_FLAG_DISABLEHUNGER = 18;
 #define MFLAG_DISABLEOPENING ((map.flags[MAP_FLAG_GENBYTES4] >> 24) & 0xFF) // first leftmost byte
 #define MFLAG_DISABLEMESSAGES ((map.flags[MAP_FLAG_GENBYTES4] >> 16) & 0xFF) // second leftmost byte
 #define MFLAG_DISABLEHUNGER ((map.flags[MAP_FLAG_GENBYTES4] >> 8) & 0xFF) // third leftmost byte
+#define MFLAG_PERIMETER_GAP ((map.flags[MAP_FLAG_GENBYTES4] >> 0) & 0xFF) // fourth leftmost byte
 
 // delete entity structure
 typedef struct deleteent_t
@@ -498,11 +587,13 @@ typedef struct polytriangle_t
 typedef struct polymodel_t
 {
 	polytriangle_t* faces;
-	Uint32 numfaces;
+	uint64_t numfaces;
+    GLuint vao;
 	GLuint vbo;
 	GLuint colors;
-	GLuint colors_shifted;
-	GLuint va;
+	//GLuint colors_shifted;
+	//GLuint grayscale_colors;
+	//GLuint grayscale_colors_shifted;
 } polymodel_t;
 
 // string structure
@@ -512,23 +603,44 @@ typedef struct string_t
 	char* data;
 	node_t* node;
 	Uint32 color;
+	Uint32 time;
+	int player = -1;
 } string_t;
 
 // door structure (used for map generation)
 typedef struct door_t
 {
+	enum DoorDir : Sint32
+	{
+		DIR_EAST,
+		DIR_SOUTH,
+		DIR_WEST,
+		DIR_NORTH
+	};
+	enum DoorEdge : Sint32
+	{
+		EDGE_EAST,
+		EDGE_SOUTHEAST,
+		EDGE_SOUTH,
+		EDGE_SOUTHWEST,
+		EDGE_WEST,
+		EDGE_NORTHWEST,
+		EDGE_NORTH,
+		EDGE_NORTHEAST
+	};
 	Sint32 x, y;
-	Sint32 dir; // 0: east, 1: south, 2: west, 3: north
+	DoorDir dir;
+	DoorEdge edge;
 } door_t;
 
 #define CLIPNEAR 2
-#define CLIPFAR 1024
+#define CLIPFAR 4000
 #define TEXTURESIZE 32
 #define TEXTUREPOWER 5 // power of 2 that texture size is, ie pow(2,TEXTUREPOWER) = TEXTURESIZE
-#ifndef BARONY_SUPER_MULTIPLAYER
-#define MAXPLAYERS 4
+#ifdef BARONY_SUPER_MULTIPLAYER
+#define MAXPLAYERS 8
 #else
-#define MAXPLAYERS 16
+#define MAXPLAYERS 4
 #endif
 
 // shaking/bobbing, that sort of thing
@@ -543,31 +655,31 @@ extern cameravars_t cameravars[MAXPLAYERS];
 extern int game;
 extern bool loading;
 extern SDL_Window* screen;
-#ifdef APPLE
-extern SDL_Renderer* renderer;
-#else
 extern SDL_GLContext renderer;
-#endif
-extern SDL_Surface* mainsurface;
 extern SDL_Event event;
 extern bool firstmouseevent;
 extern char const * window_title;
 extern Sint32 fullscreen;
 extern bool borderless;
 extern bool smoothlighting;
+extern Sint32 display_id;
 extern Sint32 xres;
 extern Sint32 yres;
 extern int mainloop;
 extern Uint32 ticks;
 extern Uint32 lastkeypressed;
-extern Sint8 keystatus[512];
+extern std::unordered_map<SDL_Keycode, bool> keystatus;
+extern Sint32 mousex, mousey;
+extern Sint32 omousex, omousey;
+extern Sint32 mousexrel, mouseyrel;
 extern char* inputstr;
 extern int inputlen;
 extern string lastname;
-extern int lastCreatedCharacterClass;
-extern int lastCreatedCharacterAppearance;
-extern int lastCreatedCharacterSex;
-extern int lastCreatedCharacterRace;
+extern bool fingerdown;
+extern int fingerx;
+extern int fingery;
+extern int ofingerx;
+extern int ofingery;
 static const unsigned NUM_MOUSE_STATUS = 6;
 extern Sint8 mousestatus[NUM_MOUSE_STATUS];
 //extern Sint8 omousestatus[NUM_MOUSE_STATUS];
@@ -592,24 +704,12 @@ extern int minimapTransparencyForeground;
 extern int minimapTransparencyBackground;
 extern int minimapScale;
 extern int minimapObjectZoom;
-extern int minimapScaleQuickToggle;
-extern bool softwaremode;
-#ifdef NINTENDO
- extern std::chrono::time_point<std::chrono::steady_clock> lastTick;
-#else
- extern SDL_TimerID timer;
-#endif // NINTENDO
-extern real_t* zbuffer;
-extern Sint32* lightmap;
-extern Sint32* lightmapSmoothed;
-extern bool* vismap;
-extern Entity** clickmap;
+extern std::vector<vec4_t> lightmaps[MAXPLAYERS + 1];
+extern std::vector<vec4_t> lightmapsSmoothed[MAXPLAYERS + 1];
 extern list_t entitiesdeleted;
 extern Sint32 multiplayer;
 extern bool directConnect;
 extern bool client_disconnected[MAXPLAYERS];
-extern view_t cameras[MAXPLAYERS];
-extern view_t menucam;
 extern int minotaurlevel;
 #define SINGLE 0
 #define SERVER 1
@@ -617,16 +717,25 @@ extern int minotaurlevel;
 #define DIRECTSERVER 3
 #define DIRECTCLIENT 4
 #define SERVERCROSSPLAY 5
+#define SPLITSCREEN 6
 
 // language stuff
-#define NUMLANGENTRIES 4050
-extern char languageCode[32];
-extern char** language;
+struct Language
+{
+	static const char* get(const int line);
+	static std::map<int, std::string> entries;
+	static std::map<int, std::string> tmpEntries;
+	static void reset();
+	static int loadLanguage(char const* const lang, bool forceLoadBaseDirectory);
+	static int reloadLanguage();
+	static std::string languageCode;
+};
 
 // random game defines
 extern bool movie;
 extern bool genmap;
 extern char classtoquickstart[256];
+extern bool splitscreen;
 
 // commands
 extern list_t messages;
@@ -664,7 +773,6 @@ extern TTF_Font* ttf16;
 extern SDL_Surface* font8x8_bmp;
 extern SDL_Surface* font12x12_bmp;
 extern SDL_Surface* font16x16_bmp;
-extern SDL_Surface* fancyWindow_bmp;
 extern SDL_Surface** sprites;
 extern SDL_Surface** tiles;
 extern std::unordered_map<std::string, SDL_Surface*> achievementImages;
@@ -676,6 +784,7 @@ extern std::set<std::pair<std::string, std::string>, Comparator> achievementName
 extern std::unordered_map<std::string, int> achievementProgress;
 extern std::unordered_map<std::string, int64_t> achievementUnlockTime;
 extern std::unordered_set<std::string> achievementUnlockedLookup;
+extern bool achievementsNeedResort;
 extern voxel_t** models;
 extern polymodel_t* polymodels;
 extern bool useModelCache;
@@ -692,32 +801,23 @@ extern Uint32 numtiles;
 extern Uint32 nummodels;
 extern Sint32 audio_rate, audio_channels, audio_buffers;
 extern Uint16 audio_format;
-extern int sfxvolume;
-extern int sfxAmbientVolume;
-extern int sfxEnvironmentVolume;
+extern real_t musvolume;
+extern real_t sfxvolume;
+extern real_t sfxAmbientVolume;
+extern real_t sfxEnvironmentVolume;
+extern real_t sfxNotificationVolume;
 extern bool *animatedtiles, *swimmingtiles, *lavatiles;
 extern char tempstr[1024];
 static const int MINIMAP_MAX_DIMENSION = 512;
 extern Sint8 minimap[MINIMAP_MAX_DIMENSION][MINIMAP_MAX_DIMENSION];
 extern Uint32 mapseed;
 extern bool* shoparea;
-extern real_t globalLightModifier;
-extern real_t globalLightTelepathyModifier;
-extern int globalLightModifierActive;
-extern int globalLightSmoothingRate;
-enum LightModifierValues : int
-{
-	GLOBAL_LIGHT_MODIFIER_STOPPED,
-	GLOBAL_LIGHT_MODIFIER_INUSE,
-	GLOBAL_LIGHT_MODIFIER_DISSIPATING
-};
 
 // function prototypes for main.c:
 int sgn(real_t x);
 int numdigits_sint16(Sint16 x);
 int longestline(char const * const str);
 int concatedStringLength(char* str, ...);
-void printlog(const char* str, ...);
 
 // function prototypes for list.c:
 void list_FreeAll(list_t* list);
@@ -754,19 +854,8 @@ void stringDeconstructor(void* data);
 void listDeconstructor(void* data);
 Entity* newEntity(Sint32 sprite, Uint32 pos, list_t* entlist, list_t* creaturelist);
 button_t* newButton(void);
-string_t* newString(list_t* list, Uint32 color, char const * const content, ...);
+string_t* newString(list_t* list, Uint32 color, Uint32 time, int player, char const * const content, ...);
 pathnode_t* newPathnode(list_t* list, Sint32 x, Sint32 y, pathnode_t* parent, Sint8 pos);
-
-// function prototypes for opengl.c:
-#define REALCOLORS 0
-#define ENTITYUIDS 1
-real_t getLightForEntity(real_t x, real_t y);
-void glDrawVoxel(view_t* camera, Entity* entity, int mode);
-void glDrawSprite(view_t* camera, Entity* entity, int mode);
-void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode);
-void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode);
-real_t getLightAt(int x, int y);
-void glDrawWorld(view_t* camera, int mode);
 
 // function prototypes for cursors.c:
 SDL_Cursor* newCursor(char const * const image[]);
@@ -786,14 +875,7 @@ GLuint create_shader(const char* filename, GLenum type);
 extern bool no_sound; //False means sound initialized properly. True means sound failed to initialize.
 extern bool initialized; //So that messagePlayer doesn't explode before the game is initialized. //TODO: Does the editor need this set too and stuff?
 
-#ifdef PANDORA
- // Pandora: FBO variables
- extern GLuint fbo_fbo;
- extern GLuint fbo_tex;
- extern GLuint fbo_ren;
-#endif // PANDORA
 void GO_SwapBuffers(SDL_Window* screen);
-unsigned int GO_GetPixelU32(int x, int y, view_t& camera);
 
 static const int NUM_STEAM_STATISTICS = 49;
 extern SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS];
@@ -802,11 +884,34 @@ extern SteamStat_t g_SteamGlobalStats[NUM_GLOBAL_STEAM_STATISTICS];
 
 #ifdef STEAMWORKS
  #include <steam/steam_api.h>
+ struct SteamGlobalStat_t
+ {
+	 int m_ID;
+	 ESteamStatTypes m_eStatType;
+	 const char *m_pchStatName;
+	 int64 m_iValue;
+	 float m_flValue;
+	 float m_flAvgNumerator;
+	 float m_flAvgDenominator;
+ };
  #include "steam.hpp"
  extern CSteamLeaderboards* g_SteamLeaderboards;
  extern CSteamWorkshop* g_SteamWorkshop;
  extern CSteamStatistics* g_SteamStatistics;
+#else
+struct SteamGlobalStat_t
+{
+	int m_ID;
+	ESteamStatTypes m_eStatType;
+	const char *m_pchStatName;
+
+	long long m_iValue;
+	float m_flValue;
+	float m_flAvgNumerator;
+	float m_flAvgDenominator;
+};
 #endif // STEAMWORKS
+extern SteamGlobalStat_t g_SteamAPIGlobalStats[1];
 
 #ifdef USE_EOS
  #include "eos.hpp"
@@ -816,3 +921,26 @@ extern SteamStat_t g_SteamGlobalStats[NUM_GLOBAL_STEAM_STATISTICS];
  #define getSizeOfText(A, B, C, D) TTF_SizeUTF8(A, B, C, D)
  #define getHeightOfFont(A) TTF_FontHeight(A)
 #endif // NINTENDO
+
+#if defined(NINTENDO) || (!defined(USE_EOS) && !defined(STEAMWORKS))
+ #define LOCAL_ACHIEVEMENTS
+#endif
+
+std::string stackTrace();
+void stackTraceUnique();
+void finishStackTraceUnique();
+extern bool ENABLE_STACK_TRACES;
+
+time_t getTime();
+char* getTimeFormatted(time_t t, char* buf, size_t size);
+char* getTimeAndDateFormatted(time_t t, char* buf, size_t size);
+
+// I can't believe windows still defines these...
+#ifdef far
+#undef far
+#endif
+#ifdef near
+#undef near
+#endif
+
+#define VERTEX_ARRAYS_ENABLED

@@ -16,11 +16,15 @@ See LICENSE for details.
 #include "entity.hpp"
 #include "items.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "prng.hpp"
+#include "interface/consolecommand.hpp"
+
+static ConsoleVariable<bool> cvar_spawnArtemisia("/spawn_artemisia", false);
 
 void initShadow(Entity* my, Stat* myStats)
 {
@@ -31,7 +35,9 @@ void initShadow(Entity* my, Stat* myStats)
 		my->monsterShadowDontChangeName = 1; //User set a name.
 	}
 
+	my->flags[BURNABLE] = true;
 	my->initMonster(481);
+	my->z = -1;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -44,6 +50,10 @@ void initShadow(Entity* my, Stat* myStats)
 	{
 		if ( myStats != nullptr )
 		{
+			if ( !strncmp(map.name, "Underworld", 10) && currentlevel <= 7 && my->monsterStoreType == 0 )
+			{
+				my->monsterStoreType = 2;
+			}
 			if ( !myStats->leader_uid )
 			{
 				myStats->leader_uid = 0;
@@ -55,25 +65,35 @@ void initShadow(Entity* my, Stat* myStats)
 			// generate 6 items max, less if there are any forced items from boss variants
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
+			const bool boss =
+			    local_rng.rand() % 50 == 0 &&
+			    !my->flags[USERFLAG2] &&
+			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+
 			// boss variants
-			if ( my->monsterStoreType == 1 && !my->flags[USERFLAG2] )
+			if ( *cvar_spawnArtemisia || (my->monsterStoreType == 1 && !my->flags[USERFLAG2]) )
 			{
-				strcpy(myStats->name, "Artemisia");
+				myStats->setAttribute("special_npc", "artemisia");
+				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
 				myStats->sex = FEMALE;
 				my->monsterShadowDontChangeName = 1;
-				myStats->weapon = newItem(ARTIFACT_BOW, WORN, 0, 1, rand(), false, nullptr);
+				myStats->weapon = newItem(ARTIFACT_BOW, WORN, 0, 1, local_rng.rand(), false, nullptr);
 
-				ItemType type = static_cast<ItemType>(QUIVER_SILVER + rand() % 7);
-				int amount = 10 + rand() % 11;
+				ItemType type = static_cast<ItemType>(QUIVER_SILVER + local_rng.rand() % 7);
+				int amount = 10 + local_rng.rand() % 11;
 				newItem(type, SERVICABLE, 0, amount, ITEM_GENERATED_QUIVER_APPEARANCE, true, &myStats->inventory);
 
-				type = static_cast<ItemType>(QUIVER_SILVER + rand() % 7);
-				amount = 10 + rand() % 11;
+				type = static_cast<ItemType>(QUIVER_SILVER + local_rng.rand() % 7);
+				amount = 10 + local_rng.rand() % 11;
 				newItem(type, SERVICABLE, 0, amount, ITEM_GENERATED_QUIVER_APPEARANCE, true, &myStats->inventory);
 			}
-			else if ( rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+			else if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
-				strcpy(myStats->name, "Baratheon"); //Long live the king, who commands his grue army.
+				myStats->setAttribute("special_npc", "baratheon"); //Long live the king, who commands his grue army.
+				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
+				myStats->sex = MALE;
 				my->monsterShadowDontChangeName = 1; //Special monsters don't change their name either.
 				myStats->GOLD = 1000;
 				myStats->RANDOM_GOLD = 500;
@@ -121,7 +141,9 @@ void initShadow(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(482, 0, map.entities, nullptr); //Limb entity.
+	const int torso_sprite = my->sprite == 1087 ? 1090 :
+	    (my->sprite == 1095 ? 1098 : 482);
+	Entity* entity = newEntity(torso_sprite, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -143,7 +165,9 @@ void initShadow(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(436, 0, map.entities, nullptr); //Limb entity.
+	const int rleg_sprite = my->sprite == 1087 ? 1089 :
+	    (my->sprite == 1095 ? 1097 : 436);
+	entity = newEntity(rleg_sprite, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -162,7 +186,9 @@ void initShadow(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(435, 0, map.entities, nullptr); //Limb entity.
+	const int lleg_sprite = my->sprite == 1087 ? 1088 :
+	    (my->sprite == 1095 ? 1096 : 435);
+	entity = newEntity(lleg_sprite, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -181,7 +207,9 @@ void initShadow(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(433, 0, map.entities, nullptr); //Limb entity.
+	const int rarm_sprite = my->sprite == 1087 ? 1085 :
+	    (my->sprite == 1095 ? 1093 : 433);
+	entity = newEntity(rarm_sprite, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -200,7 +228,9 @@ void initShadow(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(431, 0, map.entities, nullptr); //Limb entity.
+	const int larm_sprite = my->sprite == 1087 ? 1083 :
+	    (my->sprite == 1095 ? 1091 : 431);
+	entity = newEntity(larm_sprite, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -219,7 +249,7 @@ void initShadow(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// world weapon
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -239,7 +269,7 @@ void initShadow(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// shield
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -258,7 +288,7 @@ void initShadow(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// cloak
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -277,7 +307,7 @@ void initShadow(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// helmet
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -299,7 +329,7 @@ void initShadow(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// mask
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -339,7 +369,7 @@ void shadowDie(Entity* my)
 
 	my->spawnBlood(681);
 
-	playSoundEntity(my, 316 + rand() % 2, 128);
+	playSoundEntity(my, 316 + local_rng.rand() % 2, 128);
 
 	my->removeMonsterDeathNodes();
 
@@ -831,7 +861,8 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->breastplate == NULL )
 					{
-						entity->sprite = 482;
+						entity->sprite = my->sprite == 1087 ? 1090 :
+						    (my->sprite == 1095 ? 1098 : 482);
 					}
 					else
 					{
@@ -857,7 +888,8 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// right leg
 			case LIMB_HUMANOID_RIGHTLEG:
-				entity->sprite = 436;
+				entity->sprite = my->sprite == 1087 ? 1089 :
+				    (my->sprite == 1095 ? 1097 : 436);
 				entity->x += 1 * cos(my->yaw + PI / 2) + .25 * cos(my->yaw);
 				entity->y += 1 * sin(my->yaw + PI / 2) + .25 * sin(my->yaw);
 				entity->z += 4;
@@ -869,7 +901,8 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// left leg
 			case LIMB_HUMANOID_LEFTLEG:
-				entity->sprite = 435;
+				entity->sprite = my->sprite == 1087 ? 1088 :
+				    (my->sprite == 1095 ? 1096 : 435);
 				entity->x -= 1 * cos(my->yaw + PI / 2) - .25 * cos(my->yaw);
 				entity->y -= 1 * sin(my->yaw + PI / 2) - .25 * sin(my->yaw);
 				entity->z += 4;
@@ -892,7 +925,8 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SHADOW][4][0] - 0.25; // 0
 						entity->focaly = limbs[SHADOW][4][1] - 0.25; // 0
 						entity->focalz = limbs[SHADOW][4][2]; // 2
-						entity->sprite = 433;
+						entity->sprite = my->sprite == 1087 ? 1085 :
+						    (my->sprite == 1095 ? 1093 : 433);
 					}
 					else
 					{
@@ -900,7 +934,8 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SHADOW][4][0];
 						entity->focaly = limbs[SHADOW][4][1];
 						entity->focalz = limbs[SHADOW][4][2];
-						entity->sprite = 434;
+						entity->sprite = my->sprite == 1087 ? 1086 :
+						    (my->sprite == 1095 ? 1094 : 434);
 					}
 				}
 				entity->x += 2.5 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
@@ -927,7 +962,8 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SHADOW][5][0] - 0.25; // 0
 						entity->focaly = limbs[SHADOW][5][1] + 0.25; // 0
 						entity->focalz = limbs[SHADOW][5][2]; // 2
-						entity->sprite = 431;
+						entity->sprite = my->sprite == 1087 ? 1083 :
+						    (my->sprite == 1095 ? 1091 : 431);
 					}
 					else
 					{
@@ -935,7 +971,8 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SHADOW][5][0];
 						entity->focaly = limbs[SHADOW][5][1];
 						entity->focalz = limbs[SHADOW][5][2];
-						entity->sprite = 432;
+						entity->sprite = my->sprite == 1087 ? 1084 :
+						    (my->sprite == 1095 ? 1092 : 432);
 						if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 || my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1 )
 						{
 							entity->yaw -= MONSTER_WEAPONYAW;
@@ -1065,27 +1102,33 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->yaw = shieldarm->yaw;
 				entity->roll = 0;
 				entity->pitch = 0;
-				if ( entity->sprite == items[TOOL_TORCH].index )
+				if ( entity->sprite == items[TOOL_LANTERN].index )
 				{
-					entity2 = spawnFlame(entity, SPRITE_FLAME);
-					entity2->x += 2 * cos(entity->yaw);
-					entity2->y += 2 * sin(entity->yaw);
-					entity2->z -= 2;
+				    entity->z += 2;
 				}
-				else if ( entity->sprite == items[TOOL_CRYSTALSHARD].index )
-				{
-					entity2 = spawnFlame(entity, SPRITE_CRYSTALFLAME);
-					entity2->x += 2 * cos(entity->yaw);
-					entity2->y += 2 * sin(entity->yaw);
-					entity2->z -= 2;
-				}
-				else if ( entity->sprite == items[TOOL_LANTERN].index )
-				{
-					entity->z += 2;
-					entity2 = spawnFlame(entity, SPRITE_FLAME);
-					entity2->x += 2 * cos(entity->yaw);
-					entity2->y += 2 * sin(entity->yaw);
-					entity2->z += 1;
+	            if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
+	            {
+				    if ( entity->sprite == items[TOOL_TORCH].index )
+				    {
+					    entity2 = spawnFlame(entity, SPRITE_FLAME);
+					    entity2->x += 2 * cos(entity->yaw);
+					    entity2->y += 2 * sin(entity->yaw);
+					    entity2->z -= 2;
+				    }
+				    else if ( entity->sprite == items[TOOL_CRYSTALSHARD].index )
+				    {
+					    /*entity2 = spawnFlame(entity, SPRITE_CRYSTALFLAME);
+					    entity2->x += 2 * cos(entity->yaw);
+					    entity2->y += 2 * sin(entity->yaw);
+					    entity2->z -= 2;*/
+				    }
+				    else if ( entity->sprite == items[TOOL_LANTERN].index )
+				    {
+					    entity2 = spawnFlame(entity, SPRITE_FLAME);
+					    entity2->x += 2 * cos(entity->yaw);
+					    entity2->y += 2 * sin(entity->yaw);
+					    entity2->z += 1;
+				    }
 				}
 				if ( MONSTER_SHIELDYAW > PI / 32 )
 				{
@@ -1229,6 +1272,10 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							entity->sprite = 165; // GlassesWorn.vox
 						}
+						else if ( myStats->mask->type == MONOCLE )
+						{
+							entity->sprite = 1196; // monocleWorn.vox
+						}
 						else
 						{
 							entity->sprite = itemModel(myStats->mask);
@@ -1260,7 +1307,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				if ( entity->sprite != 165 )
+				if ( entity->sprite != 165 && entity->sprite != 1196 )
 				{
 					entity->focalx = limbs[SHADOW][10][0] + .35; // .35
 					entity->focaly = limbs[SHADOW][10][1] - 2; // -2
@@ -1422,19 +1469,19 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 		}
 
 		//On initial mimic, copy more spells & skills.
-		numSkillsToMimic += rand()%3 + 1;
-		numSpellsToMimic += rand()%3 + 1;
+		numSkillsToMimic += local_rng.rand()%3 + 1;
+		numSpellsToMimic += local_rng.rand()%3 + 1;
 
 		if ( target->behavior == actPlayer )
 		{
-			messagePlayer(target->skill[2], language[2516]);
+			messagePlayer(target->skill[2], MESSAGE_HINT, Language::get(2516));
 		}
 	}
 	else
 	{
 		if ( target->behavior == actPlayer )
 		{
-			messagePlayer(target->skill[2], language[2517]);
+			messagePlayer(target->skill[2], MESSAGE_HINT, Language::get(2517));
 		}
 	}
 
@@ -1453,7 +1500,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	//Now choose a random skill and copy it over.
 	for ( int skillsMimicked = 0; skillsCanMimic.size() && skillsMimicked < numSkillsToMimic; ++skillsMimicked )
 	{
-		int choosen = rand()%skillsCanMimic.size();
+		int choosen = local_rng.rand()%skillsCanMimic.size();
 		myStats->PROFICIENCIES[skillsCanMimic[choosen]] = targetStats->PROFICIENCIES[skillsCanMimic[choosen]];
 
 		//messagePlayer(clientnum, "DEBUG: Shadow mimicked skill %d.", skillsCanMimic[choosen]);
@@ -1500,7 +1547,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 			{
 				continue;
 			}
-			Item* spellbook = newItem(static_cast<ItemType>(spellbookType), static_cast<Status>(DECREPIT), 0, 1, rand(), true, nullptr);
+			Item* spellbook = newItem(static_cast<ItemType>(spellbookType), static_cast<Status>(DECREPIT), 0, 1, local_rng.rand(), true, nullptr);
 			if ( !spellbook )
 			{
 				continue;
@@ -1532,14 +1579,14 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	//Now randomly choose & copy over a spell.
 	for ( int spellsMimicked = 0; spellsCanMimic.size() && spellsMimicked < numSkillsToMimic; ++spellsMimicked )
 	{
-		int choosen = rand()%spellsCanMimic.size();
+		int choosen = local_rng.rand()%spellsCanMimic.size();
 
 		int spellbookType = getSpellbookFromSpellID(spellsCanMimic[choosen]);
 		if ( spellbookType == WOODEN_SHIELD )
 		{
 			continue;
 		}
-		Item* spellbook = newItem(static_cast<ItemType>(spellbookType), static_cast<Status>(DECREPIT), 0, 1, rand(), true, nullptr);
+		Item* spellbook = newItem(static_cast<ItemType>(spellbookType), static_cast<Status>(DECREPIT), 0, 1, local_rng.rand(), true, nullptr);
 		if ( !spellbook )
 		{
 			continue;
@@ -1552,7 +1599,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 
 			//TODO: Delete debug.
 			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(spellbook->type));
-			//messagePlayer(clientnum, "DEBUG: Shadow mimicked spell %s.", spell->name);
+			//messagePlayer(clientnum, "DEBUG: Shadow mimicked spell %s.", spell->getSpellName());
 		}
 
 		spellsCanMimic.erase(spellsCanMimic.begin() + choosen); //No longer an eligible spell.
@@ -1639,17 +1686,17 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 		/* THIS NEEDS TO BE ELSEWHERE, TO BE CALLED CONSTANTLY TO ALLOW SHADOW TO TELEPORT IF NO PATH/ DISTANCE IS TOO GREAT */
 
 		// occurs less often against fellow monsters.
-		specialRoll = rand() % (20 + 50 * (target->behavior == &actMonster));
+		specialRoll = local_rng.rand() % (20 + 50 * (target->behavior == &actMonster));
 
 		int requiredRoll = 10;
 
 		// check the roll
 		if ( specialRoll < requiredRoll )
-		//if ( rand() % 150 )
+		//if ( local_rng.rand() % 150 )
 		{
 			//messagePlayer(clientnum, "Rolled the special!");
 			node_t* node = nullptr;
-			bool telemimic  = (rand() % 4 == 0); //By default, 25% chance it'll telepotty instead of casting a spell.
+			bool telemimic  = (local_rng.rand() % 4 == 0); //By default, 25% chance it'll telepotty instead of casting a spell.
 			if ( monsterState != MONSTER_STATE_ATTACK )
 			{
 				//If it's hunting down the player, always want it to teleport and find them.

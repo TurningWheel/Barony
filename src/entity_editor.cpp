@@ -107,10 +107,12 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	creatureShadowTaggedThisUid(skill[54]),
 	monsterIllusionTauntingThisUid(skill[55]),
 	monsterLastDistractedByNoisemaker(skill[55]),
+	monsterExtraReflexTick(skill[56]),
 	monsterSentrybotLookDir(fskill[10]),
 	monsterKnockbackTangentDir(fskill[11]),
 	playerStrafeVelocity(fskill[12]),
 	playerStrafeDir(fskill[13]),
+	monsterSpecialAttackUnequipSafeguard(fskill[14]),
 	entityShowOnMap(skill[59]),
 	effectPolymorph(skill[50]),
 	effectShapeshift(skill[53]),
@@ -126,6 +128,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	itemDelayMonsterPickingUp(skill[24]),
 	itemReceivedDetailsFromServer(skill[25]),
 	itemAutoSalvageByPlayer(skill[26]),
+	itemSplooshed(skill[27]),
+	itemWaterBob(fskill[2]),
 	gateInit(skill[1]),
 	gateStatus(skill[3]),
 	gateRattle(skill[4]),
@@ -174,6 +178,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	pedestalInit(skill[5]),
 	pedestalAmbience(skill[6]),
 	pedestalLockOrb(skill[7]),
+	pedestalPowerStatus(skill[8]),
 	orbInitialised(skill[1]),
 	orbHoverDirection(skill[7]),
 	orbHoverWaitTimer(skill[8]),
@@ -212,7 +217,20 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	spellTrapInit(skill[7]),
 	spellTrapCounter(skill[8]),
 	spellTrapReset(skill[9]),
+	shrineSpellEffect(skill[0]),
+	shrineRefire1(skill[1]),
+	shrineRefire2(skill[3]),
+	shrineDir(skill[4]),
+	shrineAmbience(skill[5]),
+	shrineInit(skill[6]),
+	shrineActivateDelay(skill[7]),
+	shrineZ(skill[8]),
+	shrineDestXOffset(skill[9]),
+	shrineDestYOffset(skill[10]),
 	ceilingTileModel(skill[0]),
+	ceilingTileDir(skill[1]),
+	ceilingTileAllowTrap(skill[3]),
+	ceilingTileBreakable(skill[4]),
 	floorDecorationModel(skill[0]),
 	floorDecorationRotation(skill[1]),
 	floorDecorationHeightOffset(skill[3]),
@@ -226,6 +244,20 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	floorDecorationInteractText6(skill[13]),
 	floorDecorationInteractText7(skill[14]),
 	floorDecorationInteractText8(skill[15]),
+	colliderDecorationModel(skill[0]),
+	colliderDecorationRotation(skill[1]),
+	colliderDecorationHeightOffset(skill[3]),
+	colliderDecorationXOffset(skill[4]),
+	colliderDecorationYOffset(skill[5]),
+	colliderHasCollision(skill[6]),
+	colliderSizeX(skill[7]),
+	colliderSizeY(skill[8]),
+	colliderMaxHP(skill[9]),
+	colliderDiggable(skill[10]),
+	colliderDamageTypes(skill[11]),
+	colliderCurrentHP(skill[12]),
+	colliderOldHP(skill[13]),
+	colliderInit(skill[14]),
 	furnitureType(skill[0]),
 	furnitureInit(skill[1]),
 	furnitureDir(skill[3]),
@@ -269,12 +301,14 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicSpellbookBonus(skill[21]),
 	actmagicCastByTinkerTrap(skill[22]),
 	actmagicTinkerTrapFriendlyFire(skill[23]),
+	actmagicReflectionCount(skill[25]),
 	goldAmount(skill[0]),
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),
 	interactedByMonster(skill[47]),
 	highlightForUI(fskill[29]),
 	highlightForUIGlow(fskill[28]),
+	grayscaleGLRender(fskill[27]),
 	soundSourceFired(skill[0]),
 	soundSourceToPlay(skill[1]),
 	soundSourceVolume(skill[2]),
@@ -310,7 +344,10 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	worldTooltipInit(skill[3]),
 	worldTooltipFadeDelay(skill[4]),
 	worldTooltipIgnoreDrawing(skill[5]),
-	worldTooltipRequiresButtonHeld(skill[6])
+	worldTooltipRequiresButtonHeld(skill[6]),
+	statueInit(skill[0]),
+	statueDir(skill[1]),
+	statueId(skill[3])
 {
 	int c;
 	// add the entity to the entity list
@@ -462,6 +499,12 @@ void actSpriteWorldTooltip(Entity* my)
 	return;
 }
 
+void actDamageGib(Entity* my)
+{
+	// dummy function
+	return;
+}
+
 void actSpriteWorldTooltip(Entity* my);
 
 void actGoldBag(Entity* my)
@@ -487,7 +530,13 @@ int playerEntityMatchesUid(Uint32 uid)
 	return -1;
 }
 
-bool Entity::isPlayerHeadSprite()
+bool Entity::isPlayerHeadSprite() const
+{
+	// dummy function
+	return false;
+}
+
+bool Entity::isPlayerHeadSprite(int sprite)
 {
 	// dummy function
 	return false;

@@ -28,6 +28,475 @@
 
 -------------------------------------------------------------------------------*/
 
+void initClassStats(const int classnum, void* myStats)
+{
+	if ( !myStats ) { return; }
+	Stat* stat = static_cast<Stat*>(myStats);
+	// CLASS LOADOUTS
+	// barbarian
+	if ( classnum == CLASS_BARBARIAN )
+	{
+		// attributes
+		stat->STR += 2;
+		stat->CON += 1;
+		stat->DEX -= 0;
+		stat->INT -= 2;
+		stat->CHR -= 1;
+
+		stat->MAXHP += 10;
+		stat->HP += 10;
+		stat->MAXMP -= 10;
+		stat->MP -= 10;
+
+		// skills
+		stat->PROFICIENCIES[PRO_SWIMMING] = 25;
+		stat->PROFICIENCIES[PRO_SHIELD] = 25;
+		stat->PROFICIENCIES[PRO_AXE] = 50;
+		stat->PROFICIENCIES[PRO_MACE] = 25;
+		stat->PROFICIENCIES[PRO_UNARMED] = 20;
+		stat->PROFICIENCIES[PRO_ALCHEMY] = 10;
+	}
+	// warrior
+	else if ( classnum == CLASS_WARRIOR )
+	{
+		// attributes
+		stat->STR += 1;
+		stat->DEX += 1;
+		stat->CON -= 0;
+		stat->INT -= 2;
+		stat->PER -= 1;
+		stat->CHR += 1;
+
+		stat->MAXMP -= 10;
+		stat->MP -= 10;
+
+		// skills
+		stat->PROFICIENCIES[PRO_LEADERSHIP] = 40;
+		stat->PROFICIENCIES[PRO_RANGED] = 25;
+		stat->PROFICIENCIES[PRO_SWORD] = 25;
+		stat->PROFICIENCIES[PRO_POLEARM] = 50;
+		stat->PROFICIENCIES[PRO_SHIELD] = 25;
+		stat->PROFICIENCIES[PRO_UNARMED] = 10;
+	}
+	// healer
+	else if ( classnum == CLASS_HEALER )
+	{
+		// attributes
+		stat->CON += 2;
+		stat->INT += 1;
+		stat->STR -= 1;
+		stat->DEX -= 1;
+
+		stat->MAXHP -= 10;
+		stat->HP -= 10;
+		stat->MAXMP += 10;
+		stat->MP += 10;
+
+		// skills
+		stat->PROFICIENCIES[PRO_SPELLCASTING] = 50;
+		stat->PROFICIENCIES[PRO_MAGIC] = 25;
+		stat->PROFICIENCIES[PRO_SWIMMING] = 25;
+		stat->PROFICIENCIES[PRO_POLEARM] = 25;
+		stat->PROFICIENCIES[PRO_ALCHEMY] = 30;
+		stat->PROFICIENCIES[PRO_APPRAISAL] = 10;
+		stat->PROFICIENCIES[PRO_SHIELD] = 10;
+	}
+	// rogue
+	else if ( classnum == CLASS_ROGUE )
+	{
+		// attributes
+		stat->DEX += 2;
+		stat->PER += 2;
+		stat->INT -= 1;
+		stat->STR -= 1;
+		stat->CHR -= 1;
+
+		stat->MAXHP -= 5;
+		stat->HP -= 5;
+		stat->MAXMP -= 10;
+		stat->MP -= 10;
+
+		// skills
+		stat->PROFICIENCIES[PRO_APPRAISAL] = 25;
+		stat->PROFICIENCIES[PRO_STEALTH] = 50;
+		stat->PROFICIENCIES[PRO_LOCKPICKING] = 40;
+		stat->PROFICIENCIES[PRO_RANGED] = 25;
+		stat->PROFICIENCIES[PRO_SWORD] = 25;
+		stat->PROFICIENCIES[PRO_ALCHEMY] = 20;
+	}
+	// wanderer
+	else if ( classnum == CLASS_WANDERER )
+	{
+		// attributes
+		stat->DEX += 1;
+		stat->CON += 1;
+		stat->INT -= 1;
+		stat->PER += 1;
+		stat->CHR -= 1;
+
+		stat->MAXHP += 10;
+		stat->HP += 10;
+		stat->MAXMP -= 10;
+		stat->MP -= 10;
+
+		// skills
+		stat->PROFICIENCIES[PRO_STEALTH] = 25;
+		stat->PROFICIENCIES[PRO_SWIMMING] = 50;
+		stat->PROFICIENCIES[PRO_POLEARM] = 25;
+		stat->PROFICIENCIES[PRO_RANGED] = 25;
+		stat->PROFICIENCIES[PRO_TRADING] = 25;
+		stat->PROFICIENCIES[PRO_UNARMED] = 10;
+		stat->PROFICIENCIES[PRO_ALCHEMY] = 30;
+	}
+	// cleric
+	else if ( classnum == CLASS_CLERIC )
+	{
+		// attributes
+		stat->PER += 1;
+		stat->CON += 1;
+		stat->DEX -= 1;
+		stat->CHR -= 0;
+
+		// skills
+		stat->PROFICIENCIES[PRO_MACE] = 25;
+		stat->PROFICIENCIES[PRO_SWIMMING] = 25;
+		stat->PROFICIENCIES[PRO_MAGIC] = 25;
+		stat->PROFICIENCIES[PRO_SPELLCASTING] = 25;
+		stat->PROFICIENCIES[PRO_LEADERSHIP] = 20;
+		stat->PROFICIENCIES[PRO_ALCHEMY] = 20;
+		stat->PROFICIENCIES[PRO_SHIELD] = 10;
+	}
+	// merchant
+	else if ( classnum == CLASS_MERCHANT )
+	{
+		// attributes
+		stat->CHR += 1;
+		stat->PER += 1;
+		stat->DEX -= 1;
+		stat->INT -= 0;
+		stat->GOLD += 1000;
+
+		stat->MAXMP -= 10;
+		stat->MP -= 10;
+
+		// skills
+		stat->PROFICIENCIES[PRO_AXE] = 25;
+		stat->PROFICIENCIES[PRO_LEADERSHIP] = 20;
+		stat->PROFICIENCIES[PRO_APPRAISAL] = 50;
+		stat->PROFICIENCIES[PRO_TRADING] = 50;
+		stat->PROFICIENCIES[PRO_ALCHEMY] = 10;
+		stat->PROFICIENCIES[PRO_LOCKPICKING] = 10;
+	}
+	// wizard
+	else if ( classnum == CLASS_WIZARD )
+	{
+		// attributes
+		stat->INT += 3;
+		stat->PER += 1;
+		stat->DEX -= 1;
+		stat->CHR -= 1;
+
+		stat->MAXHP -= 10;
+		stat->HP -= 10;
+		stat->MAXMP += 20;
+		stat->MP += 20;
+
+		// skills
+		stat->PROFICIENCIES[PRO_POLEARM] = 25;
+		stat->PROFICIENCIES[PRO_SPELLCASTING] = 50;
+		stat->PROFICIENCIES[PRO_MAGIC] = 50;
+		stat->PROFICIENCIES[PRO_ALCHEMY] = 10;
+		stat->PROFICIENCIES[PRO_APPRAISAL] = 10;
+	}
+	// arcanist
+	else if ( classnum == CLASS_ARCANIST )
+	{
+		// attributes
+		stat->STR -= 1;
+		stat->DEX += 1;
+		stat->CON -= 1;
+		stat->INT += 1;
+		stat->PER += 1;
+		stat->CHR -= 1;
+
+		stat->MAXHP -= 5;
+		stat->HP -= 5;
+		stat->MAXMP += 10;
+		stat->MP += 10;
+
+		// skills
+		stat->PROFICIENCIES[PRO_MAGIC] = 25;
+		stat->PROFICIENCIES[PRO_SPELLCASTING] = 50;
+		stat->PROFICIENCIES[PRO_STEALTH] = 25;
+		stat->PROFICIENCIES[PRO_LOCKPICKING] = 25;
+		stat->PROFICIENCIES[PRO_RANGED] = 25;
+	}
+	// joker
+	else if ( classnum == CLASS_JOKER )
+	{
+		// attributes
+		stat->INT += 1;
+		stat->CHR += 1;
+		stat->CON -= 1;
+		stat->STR -= 1;
+		stat->GOLD += 200;
+
+		// skills
+		stat->PROFICIENCIES[PRO_LOCKPICKING] = 25;
+		stat->PROFICIENCIES[PRO_TRADING] = 25;
+		stat->PROFICIENCIES[PRO_LEADERSHIP] = 20;
+		stat->PROFICIENCIES[PRO_MAGIC] = 25;
+		stat->PROFICIENCIES[PRO_SPELLCASTING] = 25;
+		stat->PROFICIENCIES[PRO_ALCHEMY] = 10;
+		stat->PROFICIENCIES[PRO_RANGED] = 20;
+		stat->PROFICIENCIES[PRO_STEALTH] = 10;
+	}
+	// sexton
+	else if ( classnum == CLASS_SEXTON )
+	{
+		// attributes
+		stat->STR -= 1;
+		stat->DEX += 1;
+		stat->CON -= 1;
+		stat->INT += 1;
+
+		stat->MAXMP += 5;
+		stat->MP += 5;
+
+		// skills
+		stat->PROFICIENCIES[PRO_MACE] = 10;
+		stat->PROFICIENCIES[PRO_SHIELD] = 10;
+		stat->PROFICIENCIES[PRO_STEALTH] = 40;
+		stat->PROFICIENCIES[PRO_SPELLCASTING] = 40;
+		stat->PROFICIENCIES[PRO_MAGIC] = 40;
+		stat->PROFICIENCIES[PRO_RANGED] = 20;
+		stat->PROFICIENCIES[PRO_ALCHEMY] = 20;
+	}
+	// ninja
+	else if ( classnum == CLASS_NINJA )
+	{
+		// attributes
+		stat->STR -= 0;
+		stat->DEX += 2;
+		stat->CON -= 1;
+		stat->INT -= 2;
+		stat->PER += 1;
+
+		stat->MAXHP += 5;
+		stat->HP += 5;
+
+		// skills
+		stat->PROFICIENCIES[PRO_STEALTH] = 60;
+		stat->PROFICIENCIES[PRO_SWORD] = 60;
+		stat->PROFICIENCIES[PRO_RANGED] = 40;
+	}
+	// monk
+	else if ( classnum == CLASS_MONK )
+	{
+		// attributes
+		stat->STR += 1;
+		stat->CON += 2;
+		stat->PER -= 1;
+		stat->CHR -= 0;
+
+		stat->MAXHP += 10;
+		stat->HP += 10;
+
+		// skills
+		stat->PROFICIENCIES[PRO_SHIELD] = 40;
+		stat->PROFICIENCIES[PRO_SPELLCASTING] = 20;
+		stat->PROFICIENCIES[PRO_LEADERSHIP] = 10;
+		stat->PROFICIENCIES[PRO_MAGIC] = 10;
+		stat->PROFICIENCIES[PRO_UNARMED] = 50;
+		stat->PROFICIENCIES[PRO_ALCHEMY] = 20;
+		stat->PROFICIENCIES[PRO_SWIMMING] = 10;
+	}
+	// start DLC
+	else if ( classnum == CLASS_CONJURER )
+	{
+		// attributes
+		stat->INT += 1;
+		stat->CON += 2;
+		stat->DEX -= 1;
+		stat->PER -= 2;
+
+		stat->MAXHP -= 0;
+		stat->HP -= 0;
+		stat->MAXMP += 15;
+		stat->MP += 15;
+
+		// skills
+		stat->PROFICIENCIES[PRO_MAGIC] = 40;
+		stat->PROFICIENCIES[PRO_SPELLCASTING] = 40;
+		stat->PROFICIENCIES[PRO_STEALTH] = 20;
+		stat->PROFICIENCIES[PRO_RANGED] = 20;
+		stat->PROFICIENCIES[PRO_LEADERSHIP] = 40;
+		stat->PROFICIENCIES[PRO_ALCHEMY] = 20;
+	}
+	else if ( classnum == CLASS_ACCURSED )
+	{
+		// attributes
+		stat->INT += 10;
+		stat->STR -= 2;
+		stat->CON -= 2;
+		stat->DEX -= 3;
+		stat->PER -= 1;
+
+		stat->MAXHP -= 0;
+		stat->HP -= 0;
+		stat->MAXMP += 10;
+		stat->MP += 10;
+
+		// skills
+		stat->PROFICIENCIES[PRO_MAGIC] = 70;
+		stat->PROFICIENCIES[PRO_SPELLCASTING] = 40;
+		stat->PROFICIENCIES[PRO_STEALTH] = 40;
+		stat->PROFICIENCIES[PRO_APPRAISAL] = 20;
+		stat->PROFICIENCIES[PRO_UNARMED] = 40;
+	}
+	else if ( classnum == CLASS_MESMER )
+	{
+		// attributes
+		stat->STR -= 2;
+		stat->CON -= 3;
+		stat->INT += 2;
+		stat->DEX -= 2;
+		stat->PER += 2;
+		stat->CHR += 4;
+
+		stat->MAXHP -= 5;
+		stat->HP -= 5;
+		stat->MAXMP += 10;
+		stat->MP += 10;
+
+		// skills
+		stat->PROFICIENCIES[PRO_MAGIC] = 60;
+		stat->PROFICIENCIES[PRO_SPELLCASTING] = 40;
+		stat->PROFICIENCIES[PRO_POLEARM] = 20;
+		stat->PROFICIENCIES[PRO_LEADERSHIP] = 60;
+	}
+	else if ( classnum == CLASS_BREWER )
+	{
+		// attributes
+		stat->STR += -2;
+		stat->DEX += 1;
+		stat->CON -= 2;
+		stat->INT -= 2;
+		stat->PER += 1;
+		stat->CHR += 1;
+
+		stat->MAXHP += 10;
+		stat->HP += 10;
+		stat->MAXMP -= 10;
+		stat->MP -= 10;
+
+		stat->GOLD = 100;
+
+		// skills
+		/*stat->PROFICIENCIES[PRO_MACE] = 60;
+		stat->PROFICIENCIES[PRO_SHIELD] = 40;*/
+		stat->PROFICIENCIES[PRO_AXE] = 10;
+		stat->PROFICIENCIES[PRO_UNARMED] = 25;
+		stat->PROFICIENCIES[PRO_TRADING] = 10;
+		stat->PROFICIENCIES[PRO_APPRAISAL] = 10;
+		stat->PROFICIENCIES[PRO_LEADERSHIP] = 25;
+		stat->PROFICIENCIES[PRO_ALCHEMY] = 50;
+	}
+	else if ( classnum == CLASS_SHAMAN )
+	{
+		// attributes
+		stat->STR -= 1;
+		stat->INT += 2;
+		stat->PER += 1;
+		stat->CHR += 1;
+
+		stat->MAXHP += 5;
+		stat->HP += 5;
+
+		stat->MAXMP += 10;
+		stat->MP += 10;
+
+		// skills
+		stat->PROFICIENCIES[PRO_SPELLCASTING] = 40;
+		stat->PROFICIENCIES[PRO_MAGIC] = 40;
+		stat->PROFICIENCIES[PRO_UNARMED] = 10;
+		stat->PROFICIENCIES[PRO_ALCHEMY] = 10;
+		stat->PROFICIENCIES[PRO_STEALTH] = 10;
+		/*stat->PROFICIENCIES[PRO_SHIELD] = 40;
+		stat->PROFICIENCIES[PRO_LEADERSHIP] = 10;
+		stat->PROFICIENCIES[PRO_POLEARM] = 10;
+		stat->PROFICIENCIES[PRO_RANGED] = 10;*/
+	}
+	else if ( classnum == CLASS_PUNISHER )
+	{
+		// attributes
+		stat->STR -= 1;
+		stat->DEX += 1;
+		stat->CON -= 1;
+		stat->INT -= 1;
+
+		/*stat->MAXHP += 5;
+		stat->HP += 5;
+
+		stat->MAXMP += 10;
+		stat->MP += 10;*/
+
+		// skills
+		stat->PROFICIENCIES[PRO_SPELLCASTING] = 40;
+		stat->PROFICIENCIES[PRO_MAGIC] = 20;
+		stat->PROFICIENCIES[PRO_RANGED] = 25;
+		stat->PROFICIENCIES[PRO_AXE] = 25;
+		/*stat->PROFICIENCIES[PRO_SHIELD] = 40;
+		stat->PROFICIENCIES[PRO_LEADERSHIP] = 10;
+		stat->PROFICIENCIES[PRO_POLEARM] = 10;
+		stat->PROFICIENCIES[PRO_UNARMED] = 50;
+		stat->PROFICIENCIES[PRO_ALCHEMY] = 20;*/
+	}
+	else if ( classnum == CLASS_HUNTER )
+	{
+		// attributes
+		stat->STR -= 3;
+		stat->DEX += 1;
+		stat->PER += 3;
+		stat->INT -= 3;
+		stat->CON -= 1;
+
+		stat->MAXHP -= 10;
+		stat->HP -= 10;
+		stat->MAXMP -= 10;
+		stat->MP -= 10;
+
+		// skills
+		stat->PROFICIENCIES[PRO_SPELLCASTING] = 10;
+		stat->PROFICIENCIES[PRO_APPRAISAL] = 20;
+		stat->PROFICIENCIES[PRO_STEALTH] = 25;
+		stat->PROFICIENCIES[PRO_SWIMMING] = 50;
+		stat->PROFICIENCIES[PRO_RANGED] = 50;
+		stat->PROFICIENCIES[PRO_LOCKPICKING] = 10;
+	}
+	else if ( classnum == CLASS_MACHINIST )
+	{
+		// attributes
+		stat->STR -= 2;
+		//stat->DEX -= 2;
+		stat->CON -= 3;
+		stat->INT += 1;
+		stat->PER += 0;
+
+		stat->MAXHP -= 5;
+		stat->HP -= 5;
+
+		stat->MAXMP -= 10;
+		stat->MP -= 10;
+
+		// skills
+		stat->PROFICIENCIES[PRO_LOCKPICKING] = 40;
+		stat->PROFICIENCIES[PRO_RANGED] = 10;
+		stat->PROFICIENCIES[PRO_ALCHEMY] = 10;
+		stat->PROFICIENCIES[PRO_TRADING] = 10;
+	}
+}
+
 void initClass(const int player)
 {
 	Item* item = nullptr;
@@ -42,6 +511,8 @@ void initClass(const int player)
 		//TODO: Dedicated gameStartStuff() function. Seriously.
 		//(same for deathStuff() and/or gameEndStuff().
 		players[player]->inventoryUI.selectSlot(0, 0);
+		players[player]->inventoryUI.selectSpell(0, 0);
+		players[player]->inventoryUI.selectChestSlot(0, 0);
 		hotbar_t.clear();
 		players[player]->paperDoll.clear();
 	}
@@ -53,16 +524,7 @@ void initClass(const int player)
 		curseItems = true;
 	}
 
-	// SEX MODIFIER
-	// female; else male
-	if ( stats[player]->sex )
-	{
-		stats[player]->DEX += 1;
-	}
-	else
-	{
-		stats[player]->STR += 1;
-	}
+	//stats[player]->STR += 1;
 
 	stats[player]->type = HUMAN;
 
@@ -75,24 +537,25 @@ void initClass(const int player)
 	// barbarian
 	if ( client_classes[player] == CLASS_BARBARIAN )
 	{
-		// attributes
-		stats[player]->STR += 1;
-		stats[player]->CON += 1;
-		stats[player]->DEX -= 1;
-		stats[player]->INT -= 1;
+		initClassStats(client_classes[player], stats[player]);
 
-		stats[player]->MAXHP += 10;
-		stats[player]->HP += 10;
-		stats[player]->MAXMP -= 10;
-		stats[player]->MP -= 10;
-
-		// skills
-		stats[player]->PROFICIENCIES[PRO_SWIMMING] = 25;
-		stats[player]->PROFICIENCIES[PRO_SHIELD] = 25;
-		stats[player]->PROFICIENCIES[PRO_AXE] = 50;
-		stats[player]->PROFICIENCIES[PRO_MACE] = 50;
-		stats[player]->PROFICIENCIES[PRO_UNARMED] = 20;
-		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 10;
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
+        
+        // ring of strength
+        item = newItem(RING_STRENGTH, WORN, 0, 1, 0, true, nullptr);
+        if ( isLocalPlayer )
+        {
+            item2 = itemPickup(player, item);
+            useItem(item2, player);
+            free(item);
+        }
+        else
+        {
+            useItem(item, player);
+        }
 
 		// iron axe
 		item = newItem(IRON_AXE, SERVICABLE, 0, 1, 0, true, nullptr);
@@ -114,7 +577,7 @@ void initClass(const int player)
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
-			hotbar[2].item = item2->uid;
+			hotbar[4].item = item2->uid;
 			free(item);
 		}
 		else
@@ -137,12 +600,6 @@ void initClass(const int player)
 
 		if ( isLocalPlayer )
 		{
-			// iron mace
-			item = newItem(IRON_MACE, SERVICABLE, 0, 1, 0, true, nullptr);
-			item2 = itemPickup(player, item);
-			hotbar[1].item = item2->uid;
-			free(item);
-
 			// bread
 			item = newItem(FOOD_BREAD, SERVICABLE, 0, 2, 0, true, nullptr);
 			item2 = itemPickup(player, item);
@@ -154,44 +611,32 @@ void initClass(const int player)
 			free(item);
 
 			// torch
-			item = newItem(TOOL_TORCH, SERVICABLE, 0, 2, 0, true, nullptr);
+			item = newItem(TOOL_TORCH, WORN, 0, 2, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[3].item = item2->uid;
 			free(item);
 
 			// booze
-			item = newItem(POTION_BOOZE, SERVICABLE, 0, 1, 2, true, nullptr);
+			item = newItem(POTION_BOOZE, EXCELLENT, 0, 1, 2, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
 
 			// tomahawk
 			item = newItem(BRONZE_TOMAHAWK, DECREPIT, 0, 2, 1, true, nullptr);
 			item2 = itemPickup(player, item);
-			hotbar[4].item = item2->uid;
+			hotbar[1].item = item2->uid;
 			free(item);
 		}
 	}
 	// warrior
 	else if ( client_classes[player] == CLASS_WARRIOR )
 	{
-		// attributes
-		stats[player]->STR += 1;
-		stats[player]->DEX += 1;
-		stats[player]->CON -= 3;
-		stats[player]->INT -= 1;
-		stats[player]->PER -= 1;
-		stats[player]->CHR += 1;
+		initClassStats(client_classes[player], stats[player]);
 
-		stats[player]->MAXMP -= 10;
-		stats[player]->MP -= 10;
-
-		// skills
-		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 40;
-		stats[player]->PROFICIENCIES[PRO_RANGED] = 25;
-		stats[player]->PROFICIENCIES[PRO_SWORD] = 50;
-		stats[player]->PROFICIENCIES[PRO_POLEARM] = 50;
-		stats[player]->PROFICIENCIES[PRO_SHIELD] = 50;
-		stats[player]->PROFICIENCIES[PRO_UNARMED] = 10;
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// iron spear
 		item = newItem(IRON_SPEAR, SERVICABLE, 0, 1, 0, true, nullptr);
@@ -213,7 +658,7 @@ void initClass(const int player)
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
-			hotbar[3].item = item2->uid;
+			hotbar[1].item = item2->uid;
 			free(item);
 		}
 		else
@@ -262,18 +707,6 @@ void initClass(const int player)
 
 		if ( isLocalPlayer )
 		{
-			// iron sword
-			item = newItem(IRON_SWORD, SERVICABLE, 0, 1, 0, true, nullptr);
-			item2 = itemPickup(player, item);
-			hotbar[1].item = item2->uid;
-			free(item);
-
-			// shortbow
-			item = newItem(SHORTBOW, EXCELLENT, 0, 1, 0, true, nullptr);
-			item2 = itemPickup(player, item);
-			hotbar[2].item = item2->uid;
-			free(item);
-
 			// bread
 			item = newItem(FOOD_BREAD, SERVICABLE, 0, 1, 0, true, nullptr);
 			item2 = itemPickup(player, item);
@@ -288,23 +721,12 @@ void initClass(const int player)
 	// healer
 	else if ( client_classes[player] == CLASS_HEALER )
 	{
-		// attributes
-		stats[player]->CON += 2;
-		stats[player]->INT += 1;
-		stats[player]->STR -= 1;
-		stats[player]->DEX -= 1;
+		initClassStats(client_classes[player], stats[player]);
 
-		stats[player]->MAXHP -= 10;
-		stats[player]->HP -= 10;
-		stats[player]->MAXMP += 10;
-		stats[player]->MP += 10;
-
-		// skills
-		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 50;
-		stats[player]->PROFICIENCIES[PRO_MAGIC] = 25;
-		stats[player]->PROFICIENCIES[PRO_SWIMMING] = 25;
-		stats[player]->PROFICIENCIES[PRO_POLEARM] = 25;
-		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 30;
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// quarterstaff
 		item = newItem(QUARTERSTAFF, SERVICABLE, 0, 1, 0, true, nullptr);
@@ -376,13 +798,27 @@ void initClass(const int player)
 			// cure ailment spellbook
 			item = newItem(SPELLBOOK_CUREAILMENT, EXCELLENT, 0, 1, 1, true, nullptr);
 			item2 = itemPickup(player, item);
-			hotbar[8].item = item2->uid;
+			if ( players[player]->hotbar.useHotbarFaceMenu )
+			{
+				hotbar[7].item = item2->uid;
+			}
+			else
+			{
+				hotbar[8].item = item2->uid;
+			}
 			free(item);
 
 			// healing spellbook
 			item = newItem(SPELLBOOK_HEALING, EXCELLENT, 0, 1, 2, true, nullptr);
 			item2 = itemPickup(player, item);
-			hotbar[9].item = item2->uid;
+			if ( players[player]->hotbar.useHotbarFaceMenu )
+			{
+				hotbar[8].item = item2->uid;
+			}
+			else
+			{
+				hotbar[9].item = item2->uid;
+			}
 			free(item);
 
 			// apples
@@ -405,28 +841,15 @@ void initClass(const int player)
 	// rogue
 	else if ( client_classes[player] == CLASS_ROGUE )
 	{
-		// attributes
-		stats[player]->DEX += 2;
-		stats[player]->PER += 2;
-		stats[player]->INT -= 1;
-		stats[player]->STR -= 1;
-		stats[player]->CHR -= 1;
+		initClassStats(client_classes[player], stats[player]);
 
-		stats[player]->MAXHP -= 10;
-		stats[player]->HP -= 10;
-		stats[player]->MAXMP -= 10;
-		stats[player]->MP -= 10;
-
-		// skills
-		stats[player]->PROFICIENCIES[PRO_APPRAISAL] = 25;
-		stats[player]->PROFICIENCIES[PRO_STEALTH] = 50;
-		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 40;
-		stats[player]->PROFICIENCIES[PRO_RANGED] = 25;
-		stats[player]->PROFICIENCIES[PRO_SWORD] = 25;
-		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// bronze sword
-		item = newItem(BRONZE_SWORD, SERVICABLE, 0, 1, 0, true, nullptr);
+		item = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
@@ -479,7 +902,7 @@ void initClass(const int player)
 		}
 
 		// leather breastpiece
-		item = newItem(LEATHER_BREASTPIECE, DECREPIT, 0, 1, 0, true, nullptr);
+		item = newItem(LEATHER_BREASTPIECE, WORN, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
@@ -493,45 +916,46 @@ void initClass(const int player)
 
 		if ( isLocalPlayer )
 		{
+			// sickness potion
+			item = newItem(POTION_SICKNESS, EXCELLENT, 0, 5, 5, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[3].item = item2->uid;
+			free(item);
+
 			// shortbow
-			item = newItem(SHORTBOW, SERVICABLE, 0, 1, 0, true, nullptr);
+			item = newItem(SHORTBOW, EXCELLENT, 0, 1, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[1].item = item2->uid;
 			free(item);
 
-			// sickness potion
-			item = newItem(POTION_SICKNESS, EXCELLENT, 0, 3, 5, true, nullptr);
+			// ammo
+			item = newItem(QUIVER_KNOCKBACK, SERVICABLE, 0, 15, 0, true, nullptr);
 			item2 = itemPickup(player, item);
+			hotbar[2].item = item2->uid;
+			free(item);
+
+			// noisemaker
+			item = newItem(TOOL_DECOY, EXCELLENT, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[4].item = item2->uid;
 			free(item);
 
 			// lockpicks
-			item = newItem(TOOL_LOCKPICK, SERVICABLE, 0, 3, 0, true, nullptr);
+			item = newItem(TOOL_LOCKPICK, EXCELLENT, 0, 3, 0, true, nullptr);
 			item2 = itemPickup(player, item);
-			hotbar[2].item = item2->uid;
+			hotbar[5].item = item2->uid;
 			free(item);
 		}
 	}
 	// wanderer
 	else if ( client_classes[player] == CLASS_WANDERER )
 	{
-		// attributes
-		stats[player]->CON += 1;
-		stats[player]->INT -= 1;
-		stats[player]->CHR -= 1;
+		initClassStats(client_classes[player], stats[player]);
 
-		stats[player]->MAXHP += 10;
-		stats[player]->HP += 10;
-		stats[player]->MAXMP -= 10;
-		stats[player]->MP -= 10;
-
-		// skills
-		stats[player]->PROFICIENCIES[PRO_STEALTH] = 25;
-		stats[player]->PROFICIENCIES[PRO_SWIMMING] = 50;
-		stats[player]->PROFICIENCIES[PRO_POLEARM] = 25;
-		stats[player]->PROFICIENCIES[PRO_RANGED] = 25;
-		stats[player]->PROFICIENCIES[PRO_TRADING] = 25;
-		stats[player]->PROFICIENCIES[PRO_UNARMED] = 10;
-		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 30;
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// quarterstaff
 		item = newItem(QUARTERSTAFF, WORN, 0, 1, 0, true, nullptr);
@@ -586,12 +1010,31 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
+		// ring warning
+		item = newItem(RING_WARNING, SERVICABLE, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
 		if ( isLocalPlayer )
 		{
 			// crossbow
-			item = newItem(CROSSBOW, WORN, 0, 1, 0, true, nullptr);
+			item = newItem(SLING, EXCELLENT, 0, 1, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[1].item = item2->uid;
+			free(item);
+
+			// lantern
+			item = newItem(TOOL_LANTERN, EXCELLENT, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[2].item = item2->uid;
 			free(item);
 
 			// tins
@@ -619,35 +1062,32 @@ void initClass(const int player)
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// torches
-			item = newItem(TOOL_TORCH, SERVICABLE, 0, 2, 0, true, nullptr);
+			// scroll
+			item = newItem(SCROLL_MAGICMAPPING, SERVICABLE, 0, 6, 0, true, nullptr);
 			item2 = itemPickup(player, item);
-			hotbar[2].item = item2->uid;
 			free(item);
 
-			// lantern
-			item = newItem(TOOL_LANTERN, WORN, 0, 1, 0, true, nullptr);
+			// book
+			item = newItem(SPELLBOOK_DETECT_FOOD, WORN, 0, 1, 0, true, nullptr);
 			item2 = itemPickup(player, item);
-			hotbar[3].item = item2->uid;
+			free(item);
+
+			// cure ailment
+			item = newItem(POTION_CUREAILMENT, SERVICABLE, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[4].item = item2->uid;
 			free(item);
 		}
 	}
 	// cleric
 	else if ( client_classes[player] == CLASS_CLERIC )
 	{
-		// attributes
-		stats[player]->PER += 2;
-		stats[player]->CON += 1;
-		stats[player]->DEX -= 1;
-		stats[player]->CHR -= 1;
+		initClassStats(client_classes[player], stats[player]);
 
-		// skills
-		stats[player]->PROFICIENCIES[PRO_MACE] = 25;
-		stats[player]->PROFICIENCIES[PRO_SWIMMING] = 25;
-		stats[player]->PROFICIENCIES[PRO_MAGIC] = 25;
-		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 25;
-		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 20;
-		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// iron mace
 		item = newItem(IRON_MACE, SERVICABLE, curseItems ? -1 : 1, 1, 0, true, nullptr);
@@ -718,12 +1158,6 @@ void initClass(const int player)
 
 		if ( isLocalPlayer )
 		{
-			// torch
-			item = newItem(TOOL_TORCH, SERVICABLE, 0, 1, 0, true, nullptr);
-			item2 = itemPickup(player, item);
-			hotbar[2].item = item2->uid;
-			free(item);
-
 			// healing potions
 			item = newItem(POTION_HEALING, EXCELLENT, 0, 2, 7, true, nullptr);
 			item2 = itemPickup(player, item);
@@ -740,30 +1174,32 @@ void initClass(const int player)
 			item = newItem(FOOD_BREAD, SERVICABLE, 0, 1, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
+
+			item = newItem(SPELLBOOK_TROLLS_BLOOD, DECREPIT, 0, 1, 8, true, nullptr);
+			item2 = itemPickup(player, item);
+			if ( players[player]->hotbar.useHotbarFaceMenu )
+			{
+				hotbar[8].item = item2->uid;
+			}
+			else
+			{
+				hotbar[9].item = item2->uid;
+			}
+			free(item);
 		}
 	}
 	// merchant
 	else if ( client_classes[player] == CLASS_MERCHANT )
 	{
-		// attributes
-		stats[player]->CHR += 1;
-		stats[player]->PER += 1;
-		stats[player]->DEX -= 1;
-		stats[player]->INT -= 1;
-		stats[player]->GOLD += 500;
+		initClassStats(client_classes[player], stats[player]);
 
-		stats[player]->MAXMP -= 10;
-		stats[player]->MP -= 10;
-
-		// skills
-		stats[player]->PROFICIENCIES[PRO_AXE] = 25;
-		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 20;
-		stats[player]->PROFICIENCIES[PRO_APPRAISAL] = 50;
-		stats[player]->PROFICIENCIES[PRO_TRADING] = 50;
-		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 10;
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// bronze axe
-		item = newItem(BRONZE_AXE, SERVICABLE, 0, 1, 0, true, nullptr);
+		item = newItem(BRONZE_AXE, EXCELLENT, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
@@ -803,7 +1239,7 @@ void initClass(const int player)
 		}
 
 		// glasses
-		item = newItem(TOOL_GLASSES, SERVICABLE, 0, 1, 0, true, nullptr);
+		item = newItem(MONOCLE, SERVICABLE, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
@@ -848,22 +1284,12 @@ void initClass(const int player)
 	// wizard
 	else if ( client_classes[player] == CLASS_WIZARD )
 	{
-		// attributes
-		stats[player]->INT += 1;
-		stats[player]->PER += 1;
-		stats[player]->DEX -= 1;
-		stats[player]->CHR -= 1;
+		initClassStats(client_classes[player], stats[player]);
 
-		stats[player]->MAXHP -= 10;
-		stats[player]->HP -= 10;
-		stats[player]->MAXMP += 20;
-		stats[player]->MP += 20;
-
-		// skills
-		stats[player]->PROFICIENCIES[PRO_POLEARM] = 25;
-		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 50;
-		stats[player]->PROFICIENCIES[PRO_MAGIC] = 50;
-		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 10;
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// quarterstaff
 		item = newItem(QUARTERSTAFF, SERVICABLE, 0, 1, 0, true, nullptr);
@@ -953,70 +1379,68 @@ void initClass(const int player)
 			free(item);
 
 			// potion of restore magic
-			item = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 1, 1, true, nullptr);
+			item = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 2, 1, true, nullptr);
 			item2 = itemPickup(player, item);
+			hotbar[2].item = item2->uid;
 			free(item);
 
 			// spellbook of fireball
 			item = newItem(SPELLBOOK_FIREBALL, SERVICABLE, 0, 1, 3, true, nullptr);
 			item2 = itemPickup(player, item);
-			hotbar[7].item = item2->uid;
+			if ( players[player]->hotbar.useHotbarFaceMenu )
+			{
+				hotbar[6].item = item2->uid;
+			}
+			else
+			{
+				hotbar[7].item = item2->uid;
+			}
 			free(item);
 
 			// spellbook of cold
 			item = newItem(SPELLBOOK_COLD, SERVICABLE, 0, 1, 4, true, nullptr);
 			item2 = itemPickup(player, item);
-			hotbar[8].item = item2->uid;
+			if ( players[player]->hotbar.useHotbarFaceMenu )
+			{
+				hotbar[7].item = item2->uid;
+			}
+			else
+			{
+				hotbar[8].item = item2->uid;
+			}
 			free(item);
 
 			// spellbook of light
 			item = newItem(SPELLBOOK_LIGHT, SERVICABLE, 0, 1, 5, true, nullptr);
 			item2 = itemPickup(player, item);
-			hotbar[9].item = item2->uid;
+			if ( players[player]->hotbar.useHotbarFaceMenu )
+			{
+				hotbar[8].item = item2->uid;
+			}
+			else
+			{
+				hotbar[9].item = item2->uid;
+			}
 			free(item);
 		}
 	}
 	// arcanist
 	else if ( client_classes[player] == CLASS_ARCANIST )
 	{
-		// attributes
-		stats[player]->INT += 1;
-		stats[player]->CHR += 1;
-		stats[player]->PER -= 1;
-		stats[player]->STR -= 1;
+		initClassStats(client_classes[player], stats[player]);
 
-		stats[player]->MAXMP += 10;
-		stats[player]->MP += 10;
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
-		// skills
-		stats[player]->PROFICIENCIES[PRO_MAGIC] = 25;
-		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 50;
-		stats[player]->PROFICIENCIES[PRO_STEALTH] = 25;
-		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 25;
-		stats[player]->PROFICIENCIES[PRO_SWORD] = 25;
-		stats[player]->PROFICIENCIES[PRO_RANGED] = 25;
-
-		// iron sword
-		item = newItem(IRON_SWORD, SERVICABLE, 0, 1, 0, true, nullptr);
+		// crossbow
+		item = newItem(CROSSBOW, WORN, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
 			hotbar[0].item = item2->uid;
-			free(item);
-		}
-		else
-		{
-			useItem(item, player);
-		}
-
-		// crossbow
-		item = newItem(CROSSBOW, SERVICABLE, 0, 1, 0, true, nullptr);
-		if ( isLocalPlayer )
-		{
-			item2 = itemPickup(player, item);
-			useItem(item2, player);
-			hotbar[1].item = item2->uid;
 			free(item);
 		}
 		else
@@ -1078,45 +1502,74 @@ void initClass(const int player)
 
 		if ( isLocalPlayer )
 		{
+			// ammo
+			item = newItem(QUIVER_FIRE, SERVICABLE, 0, 15, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[1].item = item2->uid;
+			free(item);
+
 			// magicstaff of opening
 			item = newItem(MAGICSTAFF_OPENING, SERVICABLE, 0, 1, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[2].item = item2->uid;
 			free(item);
 
+			// potion of restore magic
+			item = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 1, 1, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[3].item = item2->uid;
+			free(item);
+
+			// fire staff
+			item = newItem(MAGICSTAFF_FIRE, SERVICABLE, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[4].item = item2->uid;
+			free(item);
+
 			// spellbook of forcebolt
 			item = newItem(SPELLBOOK_FORCEBOLT, WORN, 0, 1, 6, true, nullptr);
 			item2 = itemPickup(player, item);
-			hotbar[8].item = item2->uid;
+			if ( players[player]->hotbar.useHotbarFaceMenu )
+			{
+				hotbar[7].item = item2->uid;
+			}
+			else
+			{
+				hotbar[8].item = item2->uid;
+			}
 			free(item);
 
 			// spellbook of light
 			item = newItem(SPELLBOOK_LIGHT, WORN, 0, 1, 7, true, nullptr);
 			item2 = itemPickup(player, item);
-			hotbar[9].item = item2->uid;
+			if ( players[player]->hotbar.useHotbarFaceMenu )
+			{
+				hotbar[8].item = item2->uid;
+			}
+			else
+			{
+				hotbar[9].item = item2->uid;
+			}
+			free(item);
+
+			// scroll
+			item = newItem(SCROLL_CHARGING, EXCELLENT, 0, 2, 1, true, nullptr);
+			item2 = itemPickup(player, item);
 			free(item);
 		}
 	}
 	// joker
 	else if ( client_classes[player] == CLASS_JOKER )
 	{
-		// attributes
-		stats[player]->INT += 1;
-		stats[player]->CHR += 1;
-		stats[player]->CON -= 1;
-		stats[player]->STR -= 1;
-		stats[player]->GOLD += 200;
+		initClassStats(client_classes[player], stats[player]);
 
-		// skills
-		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 25;
-		stats[player]->PROFICIENCIES[PRO_TRADING] = 25;
-		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 20;
-		stats[player]->PROFICIENCIES[PRO_MAGIC] = 25;
-		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 25;
-		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 10;
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// jester hat
-		item = newItem(HAT_JESTER, SERVICABLE, 0, 1, 0, true, nullptr);
+		item = newItem(HAT_JESTER, SERVICABLE, curseItems ? -1 : 1, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
@@ -1131,7 +1584,7 @@ void initClass(const int player)
 		if ( isLocalPlayer )
 		{
 			// slingshot
-			item = newItem(SLING, SERVICABLE, 0, 1, 0, true, nullptr);
+			item = newItem(SLING, EXCELLENT, 0, 1, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[0].item = item2->uid;
 			free(item);
@@ -1145,6 +1598,13 @@ void initClass(const int player)
 			// scroll of teleportation
 			item = newItem(SCROLL_TELEPORTATION, EXCELLENT, 0, 3, 0, true, nullptr);
 			item2 = itemPickup(player, item);
+			hotbar[4].item = item2->uid;
+			free(item);
+
+			// potion
+			item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[2].item = item2->uid;
 			free(item);
 
 			// scroll of food
@@ -1160,7 +1620,14 @@ void initClass(const int player)
 			// spellbook of confuse
 			item = newItem(SPELLBOOK_CONFUSE, WORN, 0, 1, 8, true, nullptr);
 			item2 = itemPickup(player, item);
-			hotbar[9].item = item2->uid;
+			if ( players[player]->hotbar.useHotbarFaceMenu )
+			{
+				hotbar[8].item = item2->uid;
+			}
+			else
+			{
+				hotbar[9].item = item2->uid;
+			}
 			free(item);
 
 			// blindfold
@@ -1173,32 +1640,22 @@ void initClass(const int player)
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// fish
-			item = newItem(FOOD_FISH, SERVICABLE, 0, 2, 0, true, nullptr);
+			// food
+			item = newItem(FOOD_CREAMPIE, SERVICABLE, 0, 8, 0, true, nullptr);
 			item2 = itemPickup(player, item);
+			hotbar[3].item = item2->uid;
 			free(item);
 		}
 	}
 	// sexton
 	else if ( client_classes[player] == CLASS_SEXTON )
 	{
-		// attributes
-		stats[player]->STR -= 1;
-		stats[player]->DEX += 1;
-		stats[player]->CON -= 1;
-		stats[player]->INT += 1;
+		initClassStats(client_classes[player], stats[player]);
 
-		stats[player]->MAXMP += 5;
-		stats[player]->MP += 5;
-
-		// skills
-		stats[player]->PROFICIENCIES[PRO_MACE] = 10;
-		stats[player]->PROFICIENCIES[PRO_SHIELD] = 10;
-		stats[player]->PROFICIENCIES[PRO_STEALTH] = 40;
-		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
-		stats[player]->PROFICIENCIES[PRO_MAGIC] = 40;
-		stats[player]->PROFICIENCIES[PRO_RANGED] = 20;
-		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// bronze mace
 		item = newItem(BRONZE_MACE, SERVICABLE, 0, 1, 0, true, nullptr);
@@ -1288,36 +1745,50 @@ void initClass(const int player)
 			// books
 			item = newItem(SPELLBOOK_SLEEP, WORN, 0, 1, 7, true, nullptr);
 			item2 = itemPickup(player, item);
-			hotbar[7].item = item2->uid;
+			if ( players[player]->hotbar.useHotbarFaceMenu )
+			{
+				hotbar[6].item = item2->uid;
+			}
+			else
+			{
+				hotbar[7].item = item2->uid;
+			}
 			free(item);
 
 			item = newItem(SPELLBOOK_OPENING, WORN, 0, 1, 6, true, nullptr);
 			item2 = itemPickup(player, item);
-			hotbar[8].item = item2->uid;
+			if ( players[player]->hotbar.useHotbarFaceMenu )
+			{
+				hotbar[7].item = item2->uid;
+			}
+			else
+			{
+				hotbar[8].item = item2->uid;
+			}
 			free(item);
 
 			item = newItem(SPELLBOOK_LOCKING, WORN, 0, 1, 6, true, nullptr);
 			item2 = itemPickup(player, item);
-			hotbar[9].item = item2->uid;
+			if ( players[player]->hotbar.useHotbarFaceMenu )
+			{
+				hotbar[8].item = item2->uid;
+			}
+			else
+			{
+				hotbar[9].item = item2->uid;
+			}
 			free(item);
 		}
 	}
 	// ninja
 	else if ( client_classes[player] == CLASS_NINJA )
 	{
-		// attributes
-		stats[player]->STR -= 1;
-		stats[player]->DEX += 2;
-		stats[player]->CON -= 1;
-		stats[player]->INT -= 2;
+		initClassStats(client_classes[player], stats[player]);
 
-		stats[player]->MAXHP += 5;
-		stats[player]->HP += 5;
-
-		// skills
-		stats[player]->PROFICIENCIES[PRO_STEALTH] = 60;
-		stats[player]->PROFICIENCIES[PRO_SWORD] = 60;
-		stats[player]->PROFICIENCIES[PRO_RANGED] = 40;
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// katana
 		item = newItem(CRYSTAL_SWORD, DECREPIT, 0, 1, 0, true, nullptr);
@@ -1400,43 +1871,33 @@ void initClass(const int player)
 			free(item);
 			
 			// paralyze potion
-			item = newItem(POTION_PARALYSIS, SERVICABLE, 0, 1, 1, true, nullptr);
+			item = newItem(POTION_PARALYSIS, EXCELLENT, 0, 1, 1, true, nullptr);
 			item2 = itemPickup(player, item);
-			hotbar[3].item = item2->uid;
+			hotbar[4].item = item2->uid;
 			free(item);
 
 			// invis potion
-			item = newItem(POTION_INVISIBILITY, SERVICABLE, 0, 1, 0, true, nullptr);
+			item = newItem(POTION_INVISIBILITY, EXCELLENT, 0, 1, 0, true, nullptr);
 			item2 = itemPickup(player, item);
+			hotbar[3].item = item2->uid;
 			free(item);
 
 			// teleport scroll
 			item = newItem(SCROLL_TELEPORTATION, SERVICABLE, 0, 3, 0, true, nullptr);
 			item2 = itemPickup(player, item);
+			hotbar[5].item = item2->uid;
 			free(item);
 		}
 	}
 	// monk
 	else if ( client_classes[player] == CLASS_MONK )
 	{
-		// attributes
-		stats[player]->STR += 1;
-		stats[player]->CON += 2;
-		stats[player]->PER -= -1;
-		stats[player]->CHR -= -1;
+		initClassStats(client_classes[player], stats[player]);
 
-		stats[player]->MAXHP += 10;
-		stats[player]->HP += 10;
-
-		// skills
-		stats[player]->PROFICIENCIES[PRO_SHIELD] = 40;
-		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 20;
-		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 10;
-		stats[player]->PROFICIENCIES[PRO_POLEARM] = 10;
-		stats[player]->PROFICIENCIES[PRO_MAGIC] = 10;
-		stats[player]->PROFICIENCIES[PRO_RANGED] = 10;
-		stats[player]->PROFICIENCIES[PRO_UNARMED] = 50;
-		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// knuckles
 		item = newItem(BRASS_KNUCKLES, EXCELLENT, 0, 1, 0, true, nullptr);
@@ -1444,7 +1905,6 @@ void initClass(const int player)
 		{
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
-			hotbar[0].item = item2->uid;
 			free(item);
 		}
 		else
@@ -1480,34 +1940,35 @@ void initClass(const int player)
 
 		if ( isLocalPlayer )
 		{
+			// torch
+			item = newItem(TOOL_TORCH, WORN, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[0].item = item2->uid;
+			free(item);
+
 			// light book
 			item = newItem(SPELLBOOK_LIGHT, WORN, 0, 1, 7, true, nullptr);
 			item2 = itemPickup(player, item);
-			hotbar[9].item = item2->uid;
+			if ( players[player]->hotbar.useHotbarFaceMenu )
+			{
+				hotbar[8].item = item2->uid;
+			}
+			else
+			{
+				hotbar[9].item = item2->uid;
+			}
 			free(item);
 		}
 	}
 	// start DLC
 	else if ( client_classes[player] == CLASS_CONJURER )
 	{
-		// attributes
-		stats[player]->INT += 1;
-		stats[player]->CON += 2;
-		stats[player]->DEX -= 1;
-		stats[player]->PER -= 2;
+		initClassStats(client_classes[player], stats[player]);
 
-		stats[player]->MAXHP -= 0;
-		stats[player]->HP -= 0;
-		stats[player]->MAXMP += 15;
-		stats[player]->MP += 15;
-
-		// skills
-		stats[player]->PROFICIENCIES[PRO_MAGIC] = 40;
-		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
-		stats[player]->PROFICIENCIES[PRO_STEALTH] = 20;
-		stats[player]->PROFICIENCIES[PRO_RANGED] = 20;
-		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 40;
-		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// weapon
 		item = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, 0, 1, 0, true, nullptr);
@@ -1579,24 +2040,12 @@ void initClass(const int player)
 	}
 	else if ( client_classes[player] == CLASS_ACCURSED )
 	{
-		// attributes
-		stats[player]->INT += 10;
-		stats[player]->STR -= 2;
-		stats[player]->CON -= 2;
-		stats[player]->DEX -= 3;
-		stats[player]->PER -= 1;
+		initClassStats(client_classes[player], stats[player]);
 
-		stats[player]->MAXHP -= 0;
-		stats[player]->HP -= 0;
-		stats[player]->MAXMP += 10;
-		stats[player]->MP += 10;
-
-		// skills
-		stats[player]->PROFICIENCIES[PRO_MAGIC] = 70;
-		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
-		stats[player]->PROFICIENCIES[PRO_STEALTH] = 40;
-		stats[player]->PROFICIENCIES[PRO_APPRAISAL] = 20;
-		stats[player]->PROFICIENCIES[PRO_UNARMED] = 40;
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// doublet
 		item = newItem(SILVER_DOUBLET, EXCELLENT, 0, 1, 0, true, nullptr);
@@ -1660,24 +2109,12 @@ void initClass(const int player)
 	}
 	else if ( client_classes[player] == CLASS_MESMER )
 	{
-		// attributes
-		stats[player]->STR -= 2;
-		stats[player]->CON -= 3;
-		stats[player]->INT += 2;
-		stats[player]->DEX -= 2;
-		stats[player]->PER += 2;
-		stats[player]->CHR += 4;
+		initClassStats(client_classes[player], stats[player]);
 
-		stats[player]->MAXHP -= 5;
-		stats[player]->HP -= 5;
-		stats[player]->MAXMP += 10;
-		stats[player]->MP += 10;
-
-		// skills
-		stats[player]->PROFICIENCIES[PRO_MAGIC] = 60;
-		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
-		stats[player]->PROFICIENCIES[PRO_POLEARM] = 20;
-		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 60;
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// ring
 		item = newItem(RING_PROTECTION, EXCELLENT, curseItems ? -2 : 2, 1, 0, true, nullptr);
@@ -1767,30 +2204,12 @@ void initClass(const int player)
 	}
 	else if ( client_classes[player] == CLASS_BREWER )
 	{
-		// attributes
-		stats[player]->STR += -2;
-		stats[player]->DEX += 1;
-		stats[player]->CON -= 2;
-		stats[player]->INT -= 2;
-		stats[player]->PER += 1;
-		stats[player]->CHR += 1;
+		initClassStats(client_classes[player], stats[player]);
 
-		stats[player]->MAXHP += 10;
-		stats[player]->HP += 10;
-		stats[player]->MAXMP -= 10;
-		stats[player]->MP -= 10;
-
-		stats[player]->GOLD = 100;
-
-		// skills
-		/*stats[player]->PROFICIENCIES[PRO_MACE] = 60;
-		stats[player]->PROFICIENCIES[PRO_SHIELD] = 40;*/
-		stats[player]->PROFICIENCIES[PRO_AXE] = 10;
-		stats[player]->PROFICIENCIES[PRO_UNARMED] = 25;
-		stats[player]->PROFICIENCIES[PRO_TRADING] = 10;
-		stats[player]->PROFICIENCIES[PRO_APPRAISAL] = 10;
-		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 25;
-		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 50;
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// booze
 		item = newItem(IRON_AXE, EXCELLENT, 0, 1, 0, true, nullptr);
@@ -1806,13 +2225,13 @@ void initClass(const int player)
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
-			equipItem(item2, &stats[player]->weapon, player);
+			equipItem(item2, &stats[player]->weapon, player, false);
 			hotbar[1].item = item2->uid;
 			free(item);
 		}
 		else
 		{
-			equipItem(item, &stats[player]->weapon, player);
+			equipItem(item, &stats[player]->weapon, player, false);
 		}
 
 		// boots
@@ -1849,42 +2268,41 @@ void initClass(const int player)
 			//hotbar[1].item = item2->uid;
 			//free(item);
 
-			// blindness
-			item = newItem(POTION_ACID, SERVICABLE, 0, 2, 0, true, nullptr);
+			// firestorm
+			item = newItem(POTION_FIRESTORM, EXCELLENT, 0, 2, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[5].item = item2->uid;
 			free(item);
 
+			// acid
+			item = newItem(POTION_ACID, EXCELLENT, 0, 2, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
 			// booze
-			item = newItem(POTION_BOOZE, SERVICABLE, 0, 2, 2, true, nullptr);
+			item = newItem(POTION_BOOZE, EXCELLENT, 0, 3, 2, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[6].item = item2->uid;
 			free(item);
 
 			// juice
-			item = newItem(POTION_JUICE, SERVICABLE, 0, 2, 3, true, nullptr);
+			item = newItem(POTION_JUICE, EXCELLENT, 0, 2, 3, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[7].item = item2->uid;
 			free(item);
 			
-			// alembic
-			item = newItem(TOOL_ALEMBIC, EXCELLENT, 0, 1, 0, true, nullptr);
-			item2 = itemPickup(player, item);
-			hotbar[8].item = item2->uid;
-			free(item);
-
 			// polymorph
-			item = newItem(POTION_POLYMORPH, SERVICABLE, 0, 1, 0, true, nullptr);
+			item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 1, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
 
 			// blindness
-			item = newItem(POTION_BLINDNESS, SERVICABLE, 0, 2, 0, true, nullptr);
+			item = newItem(POTION_BLINDNESS, EXCELLENT, 0, 2, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
 
 			// speed
-			item = newItem(POTION_SPEED, SERVICABLE, 0, 1, 0, true, nullptr);
+			item = newItem(POTION_SPEED, EXCELLENT, 0, 1, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
 
@@ -1893,36 +2311,25 @@ void initClass(const int player)
 			item2 = itemPickup(player, item);
 			free(item);
 
+			// alembic
+			item = newItem(TOOL_ALEMBIC, EXCELLENT, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[8].item = item2->uid;
+			free(item);
+
 			item = newItem(READABLE_BOOK, DECREPIT, 0, 1, getBook("Bottle Book"), true, nullptr);
 			item2 = itemPickup(player, item);
-			hotbar[9].item = item2->uid;
 			free(item);
 		}
 	}
 	else if ( client_classes[player] == CLASS_SHAMAN )
 	{
-		// attributes
-		stats[player]->STR -= 1;
-		stats[player]->INT += 2;
-		stats[player]->PER += 1;
-		stats[player]->CHR += 1;
+		initClassStats(client_classes[player], stats[player]);
 
-		stats[player]->MAXHP += 5;
-		stats[player]->HP += 5;
-
-		stats[player]->MAXMP += 10;
-		stats[player]->MP += 10;
-
-		// skills
-		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
-		stats[player]->PROFICIENCIES[PRO_MAGIC] = 40;
-		stats[player]->PROFICIENCIES[PRO_UNARMED] = 10;
-		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 10;
-		stats[player]->PROFICIENCIES[PRO_STEALTH] = 10;
-		/*stats[player]->PROFICIENCIES[PRO_SHIELD] = 40;
-		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 10;
-		stats[player]->PROFICIENCIES[PRO_POLEARM] = 10;
-		stats[player]->PROFICIENCIES[PRO_RANGED] = 10;*/
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		item = newItem(MAGICSTAFF_POISON, EXCELLENT, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
@@ -1982,28 +2389,12 @@ void initClass(const int player)
 	}
 	else if ( client_classes[player] == CLASS_PUNISHER )
 	{
-		// attributes
-		stats[player]->STR -= 1;
-		stats[player]->DEX += 1;
-		stats[player]->CON -= 1;
-		stats[player]->INT -= 1;
+		initClassStats(client_classes[player], stats[player]);
 
-		/*stats[player]->MAXHP += 5;
-		stats[player]->HP += 5;
-
-		stats[player]->MAXMP += 10;
-		stats[player]->MP += 10;*/
-
-		// skills
-		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
-		stats[player]->PROFICIENCIES[PRO_MAGIC] = 20;
-		stats[player]->PROFICIENCIES[PRO_RANGED] = 25;
-		stats[player]->PROFICIENCIES[PRO_AXE] = 25;
-		/*stats[player]->PROFICIENCIES[PRO_SHIELD] = 40;
-		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 10;
-		stats[player]->PROFICIENCIES[PRO_POLEARM] = 10;
-		stats[player]->PROFICIENCIES[PRO_UNARMED] = 50;
-		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;*/
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		item = newItem(TOOL_WHIP, EXCELLENT, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
@@ -2062,25 +2453,12 @@ void initClass(const int player)
 	}
 	else if ( client_classes[player] == CLASS_HUNTER )
 	{
-		// attributes
-		stats[player]->STR -= 3;
-		stats[player]->DEX += 1;
-		stats[player]->PER += 3;
-		stats[player]->INT -= 3;
-		stats[player]->CON -= 1;
+		initClassStats(client_classes[player], stats[player]);
 
-		stats[player]->MAXHP -= 10;
-		stats[player]->HP -= 10;
-		stats[player]->MAXMP -= 10;
-		stats[player]->MP -= 10;
-
-		// skills
-		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 10;
-		stats[player]->PROFICIENCIES[PRO_APPRAISAL] = 20;
-		stats[player]->PROFICIENCIES[PRO_STEALTH] = 25;
-		stats[player]->PROFICIENCIES[PRO_SWIMMING] = 50;
-		stats[player]->PROFICIENCIES[PRO_RANGED] = 50;
-		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 10;
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		item = newItem(LONGBOW, EXCELLENT, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
@@ -2138,17 +2516,17 @@ void initClass(const int player)
 			hotbar[1].item = item2->uid;
 			free(item);
 
-			item = newItem(QUIVER_SILVER, EXCELLENT, 0, 40, 0, true, nullptr);
+			item = newItem(QUIVER_SILVER, SERVICABLE, 0, 40, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[2].item = item2->uid;
 			free(item);
 
-			item = newItem(QUIVER_LIGHTWEIGHT, EXCELLENT, 0, 40, 0, true, nullptr);
+			item = newItem(QUIVER_LIGHTWEIGHT, SERVICABLE, 0, 40, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[3].item = item2->uid;
 			free(item);
 
-			item = newItem(QUIVER_HUNTING, EXCELLENT, 0, 20, 0, true, nullptr);
+			item = newItem(QUIVER_HUNTING, SERVICABLE, 0, 20, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[4].item = item2->uid;
 			free(item);
@@ -2208,24 +2586,12 @@ void initClass(const int player)
 	}
 	else if ( client_classes[player] == CLASS_MACHINIST )
 	{
-		// attributes
-		stats[player]->STR -= 2;
-		//stats[player]->DEX -= 2;
-		stats[player]->CON -= 3;
-		stats[player]->INT += 1;
-		stats[player]->PER += 0;
+		initClassStats(client_classes[player], stats[player]);
 
-		stats[player]->MAXHP -= 5;
-		stats[player]->HP -= 5;
-
-		stats[player]->MAXMP -= 10;
-		stats[player]->MP -= 10;
-
-		// skills
-		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 40;
-		stats[player]->PROFICIENCIES[PRO_RANGED] = 10;
-		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 10;
-		stats[player]->PROFICIENCIES[PRO_TRADING] = 10;
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		item = newItem(CROSSBOW, EXCELLENT, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
@@ -2332,7 +2698,7 @@ void initClass(const int player)
 		if ( isLocalPlayer )
 		{
 			// extra booze for hangover :)
-			item = newItem(POTION_BOOZE, SERVICABLE, 0, 1, 2, true, nullptr);
+			item = newItem(POTION_BOOZE, EXCELLENT, 0, 3, 2, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
 		}
@@ -2355,7 +2721,7 @@ void initClass(const int player)
 		if ( isLocalPlayer )
 		{
 			// bonus polymorph potions
-			item = newItem(POTION_POLYMORPH, SERVICABLE, 0, 2, 0, true, nullptr);
+			item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 2, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
 		}
@@ -2368,7 +2734,7 @@ void initClass(const int player)
 		if ( isLocalPlayer )
 		{
 			// bonus polymorph potions
-			item = newItem(POTION_POLYMORPH, SERVICABLE, 0, 3, 0, true, nullptr);
+			item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 3, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
 		}
@@ -2486,7 +2852,7 @@ void initClass(const int player)
 					continue;
 				}
 
-				item->x = players[player]->inventoryUI.getSizeX() - item->x - 1;
+				//item->x = players[player]->inventoryUI.getSizeX() - item->x - 1;
 				if ( item->type == SPELL_ITEM )
 				{
 					bool skipSpellRearrange = false;
@@ -2530,6 +2896,9 @@ void initClass(const int player)
 				}
 			}
 		}
+
+		autosortInventory(player);
+		players[player]->hud.resetBars();
 	}
 	//stats[player]->printStats();
 	//PlayerCharacterClassManager playerCharacterClassManager(stats[player], client_classes[player]);
@@ -2602,20 +2971,22 @@ void initShapeshiftHotbar(int player)
 			spell_t* spell = getSpellFromItem(player, item);
 			if ( spell )
 			{
+				if ( newSpell && newSpell == spell )
+				{
+					players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_DEFAULT] = players[player]->magic.selectedSpell();
+					players[player]->magic.equipSpell(newSpell);
+					players[player]->magic.selected_spell_last_appearance = item->appearance;
+				}
+
 				if ( spell->ID == SPELL_REVERT_FORM )
 				{
 					spellRevertUid = item->uid;
-					players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_DEFAULT] = players[player]->magic.selectedSpell();
 					if ( !newSpell )
 					{
+						players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_DEFAULT] = players[player]->magic.selectedSpell();
 						players[player]->magic.equipSpell(spell); // revert form add to spell equipped.
 						players[player]->magic.selected_spell_last_appearance = players[player]->magic.selectedSpell()->ID;
 
-					}
-					else
-					{
-						players[player]->magic.equipSpell(newSpell);
-						players[player]->magic.selected_spell_last_appearance = players[player]->magic.selectedSpell()->ID;
 					}
 				}
 				else if ( item->appearance >= 1000 )
@@ -2628,18 +2999,12 @@ void initShapeshiftHotbar(int player)
 
 					if ( item->y >= 0 )
 					{
-						int x = 0;
+						int y = 0;
 						bool notfree = false;
 						bool foundaspot = false;
-						const bool tooManySpells = (list_Size(&players[player]->magic.spellList) >= players[player]->inventoryUI.getSizeX() * 3);
-						int numRows = players[player]->inventoryUI.getSizeY();
-						if ( tooManySpells && players[player]->gui_mode == GUI_MODE_INVENTORY && players[player]->inventory_mode == INVENTORY_MODE_SPELL )
-						{
-							numRows = 4 + ((list_Size(&players[player]->magic.spellList) - (players[player]->inventoryUI.getSizeX() * 3)) / players[player]->inventoryUI.getSizeX());
-						}
 						while ( true )
 						{
-							for ( int y = 0; y < numRows; y++ )
+							for ( int x = 0; x < Player::Inventory_t::MAX_SPELLS_X; x++ )
 							{
 								for ( node_t* node2 = stats[player]->inventory.first; node2 != nullptr; node2 = node2->next )
 								{
@@ -2673,7 +3038,7 @@ void initShapeshiftHotbar(int player)
 							{
 								break;
 							}
-							x++;
+							y++;
 						}
 					}
 					else
@@ -2683,6 +3048,7 @@ void initShapeshiftHotbar(int player)
 							if ( hotbar[i].item == item->uid )
 							{
 								hotbar[i].item = 0;
+								hotbar[i].resetLastItem();
 							}
 						}
 					}
@@ -2734,28 +3100,28 @@ void deinitShapeshiftHotbar(int player)
 	auto& hotbar_alternate = hotbar_t.slotsAlternate();
 
 	auto* newHotbar = &hotbar_alternate[Player::Hotbar_t::HOTBAR_DEFAULT]; // the monster's special hotbar.
-	spell_t* newSpell = players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_DEFAULT];
+	spell_t** newSpell = &players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_DEFAULT];
 	if ( hotbar_t.swapHotbarOnShapeshift > 0 )
 	{
 		if ( hotbar_t.swapHotbarOnShapeshift == RAT )
 		{
 			newHotbar = &hotbar_alternate[Player::Hotbar_t::HOTBAR_RAT];
-			newSpell = players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_RAT];
+			newSpell = &players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_RAT];
 		}
 		else if ( hotbar_t.swapHotbarOnShapeshift == SPIDER )
 		{
 			newHotbar = &hotbar_alternate[Player::Hotbar_t::HOTBAR_SPIDER];
-			newSpell = players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_SPIDER];
+			newSpell = &players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_SPIDER];
 		}
 		else if ( hotbar_t.swapHotbarOnShapeshift == TROLL )
 		{
 			newHotbar = &hotbar_alternate[Player::Hotbar_t::HOTBAR_TROLL];
-			newSpell = players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_TROLL];
+			newSpell = &players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_TROLL];
 		}
 		else if ( hotbar_t.swapHotbarOnShapeshift == CREATURE_IMP )
 		{
 			newHotbar = &hotbar_alternate[Player::Hotbar_t::HOTBAR_IMP];
-			newSpell = players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_IMP];
+			newSpell = &players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_IMP];
 		}
 	}
 	for ( Uint32 slotIndex = 0; slotIndex < NUM_HOTBAR_SLOTS; ++slotIndex )
@@ -2771,12 +3137,13 @@ void deinitShapeshiftHotbar(int player)
 			if ( canUseShapeshiftSpellInCurrentForm(player, *item) != 1 ) // not allowed to use spell.
 			{
 				hotbar[slotIndex].item = 0;
+				hotbar[slotIndex].resetLastItem();
 				hotbar_alternate[Player::Hotbar_t::HOTBAR_DEFAULT][slotIndex].item = 0;
 			}
 		}
 	}
 	hotbar_t.swapHotbarOnShapeshift = 0;
-	newSpell = players[player]->magic.selectedSpell();
+	*newSpell = players[player]->magic.selectedSpell();
 	players[player]->magic.equipSpell(players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_DEFAULT]);
 	if ( players[player]->magic.selectedSpell() )
 	{

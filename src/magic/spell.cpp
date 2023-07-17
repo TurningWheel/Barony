@@ -14,11 +14,13 @@
 #include "../stat.hpp"
 #include "../entity.hpp"
 #include "../interface/interface.hpp"
-#include "../sound.hpp"
+#include "../engine/audio/sound.hpp"
 #include "../items.hpp"
 #include "../net.hpp"
 #include "../player.hpp"
 #include "magic.hpp"
+#include "../mod_tools.hpp"
+#include "../ui/GameUI.hpp"
 
 list_t channeledSpells[MAXPLAYERS];
 
@@ -297,9 +299,11 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 		case SPELL_SELF_POLYMORPH:
 			new_spell = copySpell(&spell_polymorph);
 			break;
-		case SPELL_9:
-		case SPELL_10:
-			new_spell = copySpell(&spell_weakness);
+		case SPELL_CRAB_FORM:
+		    new_spell = copySpell(&spell_spiderForm);
+		    break;
+		case SPELL_CRAB_WEB:
+			new_spell = copySpell(&spell_sprayWeb);
 			break;
 		default:
 			return false;
@@ -344,15 +348,16 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 			else if ( foundNormalSpell )
 			{
 				// can't learn, already have it.
-				messagePlayer(player, language[439], new_spell->name);
+				messagePlayer(player, MESSAGE_STATUS, Language::get(439), new_spell->getSpellName());
 				spellDeconstructor((void*)new_spell);
+				playSoundPlayer(player, 90, 64);
 				return false;
 			}
 		}
 		else
 		{
 			// can't learn, already have it.
-			messagePlayer(player, language[439], new_spell->name);
+			messagePlayer(player, MESSAGE_STATUS, Language::get(439), new_spell->getSpellName());
 			spellDeconstructor((void*)new_spell);
 			return false;
 		}
@@ -364,13 +369,15 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 	}
 	if ( !ignoreSkill && skillLVL < new_spell->difficulty )
 	{
-		messagePlayer(player, language[440]);
+		messagePlayer(player, MESSAGE_PROGRESSION, Language::get(440));
 		spellDeconstructor((void*)new_spell);
+		playSoundPlayer(player, 90, 64);
 		return false;
 	}
 	if ( !intro )
 	{
-		messagePlayer(player, language[441], new_spell->name);
+		messagePlayer(player, MESSAGE_PROGRESSION, Language::get(441), new_spell->getSpellName());
+		skillUpAnimation[player].addSpellLearned(new_spell->ID);
 	}
 	node = list_AddNodeLast(&players[player]->magic.spellList);
 	node->element = new_spell;
@@ -379,11 +386,35 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 
 	if ( !ignoreSkill )
 	{
-		players[player]->entity->increaseSkill(PRO_MAGIC);
+		if ( players[player]->entity )
+		{
+			players[player]->entity->increaseSkill(PRO_MAGIC);
+		}
 	}
 
 	Item* item = newItem(SPELL_ITEM, SERVICABLE, 0, 1, spell, true, nullptr);
-	itemPickup(player, item);
+	if ( Item* pickedUp = itemPickup(player, item) )
+	{
+		if ( !intro )
+		{
+			pickedUp->notifyIcon = true;
+			if ( players[player]->magic.spellbookUidFromHotbarSlot != 0 )
+			{
+				if ( autoAddHotbarFilter(*pickedUp) )
+				{
+					for ( auto& slot : players[player]->hotbar.slots() )
+					{
+						if ( slot.item == players[player]->magic.spellbookUidFromHotbarSlot )
+						{
+							slot.item = pickedUp->uid;
+							break;
+						}
+					}
+				}
+				players[player]->magic.spellbookUidFromHotbarSlot = 0;
+			}
+		}
+	}
 	free(item);
 
 	return true;
@@ -399,7 +430,7 @@ spell_t* newSpell()
 void spellConstructor(spell_t* spell)
 {
 	spell->ID = -1;
-	strcpy(spell->name, "Spell");
+	strcpy(spell->spell_internal_name, "spell_default");
 	spell->elements.first = NULL;
 	spell->elements.last = NULL;
 	spell->sustain = true;
@@ -441,7 +472,7 @@ void spellElementConstructor(spellElement_t* element)
 	element->damage = 0;
 	element->duration = 0;
 	element->can_be_learned = true;
-	strcpy(element->name, "New Element");
+	strcpy(element->element_internal_name, "element_default");
 	element->elements.first = NULL;
 	element->elements.last = NULL;
 	element->node = NULL;
@@ -525,6 +556,10 @@ spellElement_t* copySpellElement(spellElement_t* spellElement)
 int getCostOfSpell(spell_t* spell, Entity* caster)
 {
 	int cost = 0;
+	if ( !spell )
+	{
+		return 0;
+	}
 
 	node_t* node;
 	for ( node = spell->elements.first; node != NULL; node = node->next )
@@ -587,19 +622,24 @@ bool spell_isChanneled(spell_t* spell)
 	return false;
 }
 
-real_t getBonusFromCasterOfSpellElement(Entity* caster, spellElement_t* spellElement)
+real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spellElement_t* spellElement)
 {
-	if ( !caster || caster->behavior != &actPlayer )
+	if ( caster && caster->behavior != &actPlayer )
 	{
-		return 0;
+		return 0.0;
 	}
 
-	int INT = caster->getINT();
+	if ( !casterStats && caster )
+	{
+		casterStats = caster->getStats();
+	}
+
+	int INT = statGetINT(casterStats, caster);
 	if ( INT > 0 )
 	{
 		return INT / 100.0;
 	}
-	return 0;
+	return 0.0;
 }
 
 bool spellElement_isChanneled(spellElement_t* spellElement)
@@ -627,9 +667,18 @@ void equipSpell(spell_t* spell, int playernum, Item* spellItem)
 	if ( players[playernum]->isLocalPlayer() )
 	{
 		players[playernum]->magic.equipSpell(spell);
-		messagePlayer(playernum, language[442], spell->name);
+		messagePlayer(playernum, MESSAGE_MISC, Language::get(442), spell->getSpellName());
 		players[playernum]->magic.selected_spell_last_appearance = spellItem->appearance; // to keep track of shapeshift/normal spells.
 	}
+}
+
+const char* spell_t::getSpellName()
+{
+	if ( ItemTooltips.spellItems.find(ID) != ItemTooltips.spellItems.end() )
+	{
+		return ItemTooltips.spellItems[ID].name.c_str();
+	}
+	return "";
 }
 
 spell_t* getSpellFromID(int ID)
@@ -797,9 +846,11 @@ spell_t* getSpellFromID(int ID)
 		case SPELL_SELF_POLYMORPH:
 			spell = &spell_polymorph;
 			break;
-		case SPELL_9:
-		case SPELL_10:
-			spell = &spell_weakness;
+		case SPELL_CRAB_FORM:
+		    spell = &spell_spiderForm;
+		    break;
+		case SPELL_CRAB_WEB:
+			spell = &spell_sprayWeb;
 			break;
 		default:
 			break;
@@ -969,10 +1020,10 @@ int getSpellbookFromSpellID(int spellID)
 		case SPELL_SELF_POLYMORPH:
 			itemType = SPELLBOOK_SELF_POLYMORPH;
 			break;
-		case SPELL_9:
+		case SPELL_CRAB_FORM:
 			itemType = SPELLBOOK_9;
 			break;
-		case SPELL_10:
+		case SPELL_CRAB_WEB:
 			itemType = SPELLBOOK_10;
 			break;
 		default:
@@ -1088,10 +1139,10 @@ int getSpellIDFromSpellbook(int spellbookType)
 			return spell_dash.ID;
 		case SPELLBOOK_SELF_POLYMORPH:
 			return spell_polymorph.ID;
-		case SPELL_9:
-			return spell_weakness.ID;
-		case SPELL_10:
-			return spell_weakness.ID;
+		case SPELLBOOK_9:
+			return spell_spiderForm.ID;
+		case SPELLBOOK_10:
+			return spell_sprayWeb.ID;
 		default:
 			return SPELL_NONE;
 	}
@@ -1144,29 +1195,29 @@ void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP)
 		{
 			if ( overdrewFromHP )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
-				messagePlayerColor(player, color, language[3400]);
+				Uint32 color = makeColorRGB(255, 255, 255);
+				messagePlayerColor(player, MESSAGE_STATUS, color, Language::get(3400));
 			}
 			else
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-				messagePlayerColor(player, color, language[443]);
+				Uint32 color = makeColorRGB(0, 255, 0);
+				messagePlayerColor(player, MESSAGE_STATUS, color, Language::get(443));
 			}
 		}
 		else
 		{
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+			Uint32 color = makeColorRGB(255, 255, 0);
 			if (amount == 0)
 			{
-				messagePlayerColor(player, color, language[444]);
+				messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(444));
 			}
 			else
 			{
-				messagePlayerColor(player, color, language[445]);
+				messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(445));
 			}
 		}
 
-		if ( multiplayer == SERVER && player > 0 )
+		if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
 		{
 			strcpy((char*)net_packet->data, "UPHP");
 			SDLNet_Write32((Uint32)stats[player]->HP, &net_packet->data[4]);

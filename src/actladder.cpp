@@ -12,7 +12,7 @@
 #include "main.hpp"
 #include "game.hpp"
 #include "stat.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "entity.hpp"
 #include "scores.hpp"
 #include "net.hpp"
@@ -23,6 +23,8 @@
 #include "files.hpp"
 #include "items.hpp"
 #include "mod_tools.hpp"
+#include "ui/MainMenu.hpp"
+#include "colors.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -32,6 +34,8 @@
 	takes a pointer to the entity that uses it as an argument.
 
 -------------------------------------------------------------------------------*/
+
+Uint32 mpPokeCooldown[MAXPLAYERS] = { 0 };
 
 #define LADDER_AMBIENCE my->skill[1]
 #define LADDER_SECRET_ENTRANCE my->skill[3]
@@ -45,6 +49,7 @@ void actLadder(Entity* my)
 	if ( my->ticks == 1 )
 	{
 		my->createWorldUITooltip();
+		memset(mpPokeCooldown, 0, sizeof(mpPokeCooldown));
 	}
 
 	LADDER_AMBIENCE--;
@@ -59,7 +64,7 @@ void actLadder(Entity* my)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+			if ( selectedEntity[i] == my || client_selected[i] == my )
 			{
 				if (inrange[i])
 				{
@@ -76,17 +81,28 @@ void actLadder(Entity* my)
 						dist = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
 						if (dist > TOUCHRANGE)
 						{
-							messagePlayer(i, language[505]);
+							sendMinimapPing(i, my->x / 16.0, my->y / 16.0);
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(505)); // "you must assemble your party"
+							if (ticks - mpPokeCooldown[i] >= TICKS_PER_SECOND * 3) {
+								for (int j = 0; j < MAXPLAYERS; ++j) {
+									if (!client_disconnected[j] && j != i) {
+										// "so-and-so wants to leave the level"
+										messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind_lobby, false),
+											Language::get(509), stats[i]->name);
+									}
+								}
+								mpPokeCooldown[i] = ticks;
+							}
 							return;
 						}
 					}
 					if (playercount == 1)
 					{
-						messagePlayer(i, language[506]);
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(506));
 					}
 					else
 					{
-						messagePlayer(i, language[507]);
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(507));
 					}
 					loadnextlevel = true;
 					if (secretlevel)
@@ -124,26 +140,36 @@ void actLadderUp(Entity* my)
 		LADDER_AMBIENCE = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal( my, 149, 64 );
 	}*/
-	if ( my->ticks == 1 )
+	/*if ( my->ticks == 1 )
 	{
 		my->createWorldUITooltip();
-	}
+	}*/
 
 	// use ladder
 	if ( multiplayer != CLIENT )
 	{
 		for (int i = 0; i < MAXPLAYERS; i++)
 		{
-			if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+			if ( selectedEntity[i] == my || client_selected[i] == my )
 			{
 				if (inrange[i])
 				{
-					messagePlayer(i, language[508]);
+					messagePlayer(i, MESSAGE_INTERACTION, Language::get(508));
 					return;
 				}
 			}
 		}
 	}
+    
+    if (my->z > -20) {
+        const int x = my->x / 16;
+        const int y = my->y / 16;
+        const int index = (MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map.height;
+        if (!map.tiles[index]) {
+            list_RemoveNode(my->mynode);
+            return;
+        }
+    }
 }
 
 void actPortal(Entity* my)
@@ -156,7 +182,7 @@ void actPortal(Entity* my)
 	{
 		my->createWorldUITooltip();
 		my->portalInit = 1;
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 255);
+		my->light = addLight(my->x / 16, my->y / 16, "portal_purple");
 		if ( !strncmp(map.name, "Cockatrice Lair", 15) )
 		{
 			my->flags[INVISIBLE] = true;
@@ -165,6 +191,7 @@ void actPortal(Entity* my)
 		{
 			my->flags[INVISIBLE] = true;
 		}
+		memset(mpPokeCooldown, 0, sizeof(mpPokeCooldown));
 	}
 
 	my->portalAmbience--;
@@ -230,7 +257,7 @@ void actPortal(Entity* my)
 				&& !entity->monsterAllyGetPlayerLeader() )
 			{
 				Stat* stats = entity->getStats();
-				if ( stats && !strncmp(stats->name, "Bram Kindly", 11) )
+				if ( stats && MonsterData_t::nameMatchesSpecialNPCName(*stats, "bram kindly") )
 				{
 					bossAlive = true;
 				}
@@ -255,7 +282,7 @@ void actPortal(Entity* my)
 	// step through portal
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+		if ( selectedEntity[i] == my || client_selected[i] == my )
 		{
 			if (inrange[i])
 			{
@@ -272,17 +299,28 @@ void actPortal(Entity* my)
 					dist = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
 					if (dist > TOUCHRANGE)
 					{
-						messagePlayer(i, language[505]);
+						sendMinimapPing(i, my->x / 16.0, my->y / 16.0);
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(505)); // "you must assemble your party"
+						if (ticks - mpPokeCooldown[i] >= TICKS_PER_SECOND * 3) {
+							for (int j = 0; j < MAXPLAYERS; ++j) {
+								if (!client_disconnected[j] && j != i) {
+									// "so-and-so wants to leave the level"
+									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind_lobby, false),
+										Language::get(509), stats[i]->name);
+								}
+							}
+							mpPokeCooldown[i] = ticks;
+						}
 						return;
 					}
 				}
 				if (playercount == 1)
 				{
-					messagePlayer(i, language[510]);
+					messagePlayer(i, MESSAGE_INTERACTION, Language::get(510));
 				}
 				else
 				{
-					messagePlayer(i, language[511]);
+					messagePlayer(i, MESSAGE_INTERACTION, Language::get(511));
 				}
 				loadnextlevel = true;
 				if ( secretlevel )
@@ -365,6 +403,7 @@ void actWinningPortal(Entity* my)
 	if ( my->ticks == 1 )
 	{
 		my->createWorldUITooltip();
+		memset(mpPokeCooldown, 0, sizeof(mpPokeCooldown));
 	}
 
 	if ( multiplayer != CLIENT )
@@ -435,7 +474,7 @@ void actWinningPortal(Entity* my)
 	if ( !my->portalInit )
 	{
 		my->portalInit = 1;
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 255);
+		my->light = addLight(my->x / 16, my->y / 16, "portal_white");
 	}
 
 	my->portalAmbience--;
@@ -456,7 +495,7 @@ void actWinningPortal(Entity* my)
 	// step through portal
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+		if ( selectedEntity[i] == my || client_selected[i] == my )
 		{
 			if (inrange[i])
 			{
@@ -473,34 +512,109 @@ void actWinningPortal(Entity* my)
 					dist = sqrt( pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
 					if (dist > TOUCHRANGE)
 					{
-						messagePlayer(i, language[509]);
+						sendMinimapPing(i, my->x / 16.0, my->y / 16.0);
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(505)); // "you must assemble your party"
+						if (ticks - mpPokeCooldown[i] >= TICKS_PER_SECOND * 3) {
+							for (int j = 0; j < MAXPLAYERS; ++j) {
+								if (!client_disconnected[j] && j != i) {
+									// "so-and-so wants to leave the level"
+									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind_lobby, false),
+										Language::get(509), stats[i]->name);
+								}
+							}
+							mpPokeCooldown[i] = ticks;
+						}
 						return;
 					}
 				}
+
 				victory = my->portalVictoryType;
+
+				Uint8 cutscene = 0;
+				if (!strncmp(map.name, "Boss", 4)) {
+				    cutscene = 1;
+				}
+				else if (!strncmp(map.name, "Hell Boss", 9)) {
+				    cutscene = 2;
+				}
+
 				if ( multiplayer == SERVER )
 				{
 					for ( c = 1; c < MAXPLAYERS; c++ )
 					{
-						if ( client_disconnected[c] == true )
+						if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 						{
 							continue;
 						}
 						strcpy((char*)net_packet->data, "WING");
 						net_packet->data[4] = victory;
+						net_packet->data[5] = cutscene;
 						net_packet->address.host = net_clients[c - 1].host;
 						net_packet->address.port = net_clients[c - 1].port;
-						net_packet->len = 8;
+						net_packet->len = 6;
 						sendPacketSafe(net_sock, -1, net_packet, c - 1);
 					}
 				}
-				subwindow = 0;
-				introstage = 5; // prepares win game sequence
-				fadeout = true;
-				if ( !intro )
-				{
-					pauseGame(2, false);
-				}
+
+	            if (cutscene == 1) { // classic herx ending
+					int race = RACE_HUMAN;
+					if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
+					{
+						race = stats[clientnum]->playerRace;
+					}
+
+	                switch ( race ) {
+	                default:
+	                case RACE_HUMAN:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicEndingHuman);
+	                    break;
+	                case RACE_AUTOMATON:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicEndingAutomaton);
+	                    break;
+	                case RACE_GOATMAN:
+	                case RACE_GOBLIN:
+	                case RACE_INSECTOID:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicEndingBeast);
+	                    break;
+	                case RACE_SKELETON:
+	                case RACE_VAMPIRE:
+	                case RACE_SUCCUBUS:
+	                case RACE_INCUBUS:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicEndingEvil);
+	                    break;
+	                }
+	            }
+	            else if (cutscene == 2) { // classic baphomet ending
+					int race = RACE_HUMAN;
+					if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
+					{
+						race = stats[clientnum]->playerRace;
+					}
+
+	                switch ( race ) {
+	                default:
+	                case RACE_HUMAN:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicBaphometEndingHuman);
+	                    break;
+	                case RACE_AUTOMATON:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicBaphometEndingAutomaton);
+	                    break;
+	                case RACE_GOATMAN:
+	                case RACE_GOBLIN:
+	                case RACE_INSECTOID:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicBaphometEndingBeast);
+	                    break;
+	                case RACE_SKELETON:
+	                case RACE_VAMPIRE:
+	                case RACE_SUCCUBUS:
+	                case RACE_INCUBUS:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicBaphometEndingEvil);
+	                    break;
+	                }
+	            }
+
+                movie = true;
+				pauseGame(2, false);
 				return;
 			}
 		}
@@ -526,6 +640,7 @@ void Entity::actExpansionEndGamePortal()
 	if ( this->ticks == 1 )
 	{
 		this->createWorldUITooltip();
+		memset(mpPokeCooldown, 0, sizeof(mpPokeCooldown));
 	}
 
 	if ( multiplayer != CLIENT )
@@ -580,7 +695,7 @@ void Entity::actExpansionEndGamePortal()
 	if ( !portalInit )
 	{
 		portalInit = 1;
-		light = lightSphereShadow(x / 16, y / 16, 3, 255);
+		light = addLight(x / 16, y / 16, "portal_blue");
 	}
 
 	portalAmbience--;
@@ -601,7 +716,7 @@ void Entity::actExpansionEndGamePortal()
 	// step through portal
 	for ( i = 0; i < MAXPLAYERS; i++ )
 	{
-		if ( (i == 0 && selectedEntity[0] == this) || (client_selected[i] == this) || (splitscreen && selectedEntity[i] == this) )
+		if ( selectedEntity[i] == this || client_selected[i] == this )
 		{
 			if ( inrange[i] )
 			{
@@ -618,7 +733,18 @@ void Entity::actExpansionEndGamePortal()
 					dist = sqrt(pow(x - players[c]->entity->x, 2) + pow(y - players[c]->entity->y, 2));
 					if ( dist > TOUCHRANGE )
 					{
-						messagePlayer(i, language[509]);
+						sendMinimapPing(i, this->x / 16.0, this->y / 16.0);
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(505)); // "you must assemble your party"
+						if (::ticks - mpPokeCooldown[i] >= TICKS_PER_SECOND * 3) {
+							for (int j = 0; j < MAXPLAYERS; ++j) {
+								if (!client_disconnected[j] && j != i) {
+									// "so-and-so wants to leave the level"
+									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind_lobby, false),
+										Language::get(509), stats[i]->name);
+								}
+							}
+							mpPokeCooldown[i] = ::ticks;
+						}
 						return;
 					}
 				}
@@ -627,25 +753,49 @@ void Entity::actExpansionEndGamePortal()
 				{
 					for ( c = 1; c < MAXPLAYERS; c++ )
 					{
-						if ( client_disconnected[c] == true )
+						if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 						{
 							continue;
 						}
 						strcpy((char*)net_packet->data, "WING");
 						net_packet->data[4] = victory;
+						net_packet->data[5] = 0;
 						net_packet->address.host = net_clients[c - 1].host;
 						net_packet->address.port = net_clients[c - 1].port;
-						net_packet->len = 8;
+						net_packet->len = 6;
 						sendPacketSafe(net_sock, -1, net_packet, c - 1);
 					}
 				}
-				subwindow = 0;
-				introstage = 5; // prepares win game sequence
-				fadeout = true;
-				if ( !intro )
+
+				int race = RACE_HUMAN;
+				if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
 				{
-					pauseGame(2, false);
+					race = stats[clientnum]->playerRace;
 				}
+
+                switch ( race ) {
+                default:
+                case RACE_HUMAN:
+                    MainMenu::beginFade(MainMenu::FadeDestination::EndingHuman);
+                    break;
+                case RACE_AUTOMATON:
+                    MainMenu::beginFade(MainMenu::FadeDestination::EndingAutomaton);
+                    break;
+                case RACE_GOATMAN:
+                case RACE_GOBLIN:
+                case RACE_INSECTOID:
+                    MainMenu::beginFade(MainMenu::FadeDestination::EndingBeast);
+                    break;
+                case RACE_SKELETON:
+                case RACE_VAMPIRE:
+                case RACE_SUCCUBUS:
+                case RACE_INCUBUS:
+                    MainMenu::beginFade(MainMenu::FadeDestination::EndingEvil);
+                    break;
+                }
+
+                movie = true;
+				pauseGame(2, false);
 				return;
 			}
 		}
@@ -671,6 +821,7 @@ void Entity::actMidGamePortal()
 	if ( this->ticks == 1 )
 	{
 		this->createWorldUITooltip();
+		memset(mpPokeCooldown, 0, sizeof(mpPokeCooldown));
 	}
 
 	if ( multiplayer != CLIENT )
@@ -744,7 +895,7 @@ void Entity::actMidGamePortal()
 	if ( !portalInit )
 	{
 		portalInit = 1;
-		light = lightSphereShadow(x / 16, y / 16, 3, 255);
+		light = addLight(x / 16, y / 16, "portal_blue");
 	}
 
 	portalAmbience--;
@@ -765,7 +916,7 @@ void Entity::actMidGamePortal()
 	// step through portal
 	for ( i = 0; i < MAXPLAYERS; i++ )
 	{
-		if ( (i == 0 && selectedEntity[0] == this) || (client_selected[i] == this) || (splitscreen && selectedEntity[i] == this) )
+		if ( selectedEntity[i] == this || client_selected[i] == this )
 		{
 			if ( inrange[i] )
 			{
@@ -782,56 +933,102 @@ void Entity::actMidGamePortal()
 					dist = sqrt(pow(x - players[c]->entity->x, 2) + pow(y - players[c]->entity->y, 2));
 					if ( dist > TOUCHRANGE )
 					{
-						messagePlayer(i, language[509]);
+						sendMinimapPing(i, this->x / 16.0, this->y / 16.0);
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(505)); // "you must assemble your party"
+						if (::ticks - mpPokeCooldown[i] >= TICKS_PER_SECOND * 3) {
+							for (int j = 0; j < MAXPLAYERS; ++j) {
+								if (!client_disconnected[j] && j != i) {
+									// "so-and-so wants to leave the level"
+									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind_lobby, false),
+										Language::get(509), stats[i]->name);
+								}
+							}
+							mpPokeCooldown[i] = ::ticks;
+						}
 						return;
 					}
 				}
-				//victory = portalVictoryType;
-				int movieCrawlType = -1;
-				if ( !strncmp(map.name, "Hell Boss", 9) )
+
+				Uint8 cutscene = 0;
+				if ( !strncmp(map.name, "Boss", 4) )
 				{
-					movieCrawlType = MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON;
-					if ( stats[0] && stats[0]->playerRace > 0 && stats[0]->playerRace != RACE_AUTOMATON )
-					{
-						movieCrawlType = MOVIE_MIDGAME_BAPHOMET_MONSTERS;
-					}
+				    cutscene = 0;
 				}
-				else if ( !strncmp(map.name, "Boss", 4) )
+				else if ( !strncmp(map.name, "Hell Boss", 9) )
 				{
-					if ( stats[0] && stats[0]->playerRace > 0 && stats[0]->playerRace != RACE_AUTOMATON )
-					{
-						movieCrawlType = MOVIE_MIDGAME_HERX_MONSTERS;
-					}
-				}
-				int introstageToChangeTo = 9;
-				if ( movieCrawlType >= 0 )
-				{
-					introstageToChangeTo = 11 + movieCrawlType;
+				    cutscene = 1;
 				}
 
 				if ( multiplayer == SERVER )
 				{
-					for ( c = 1; c < MAXPLAYERS; c++ )
+					for ( int c = 1; c < MAXPLAYERS; c++ )
 					{
-						if ( client_disconnected[c] == true )
+						if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 						{
 							continue;
 						}
 						strcpy((char*)net_packet->data, "MIDG");
-						net_packet->data[4] = introstageToChangeTo;
+						net_packet->data[4] = cutscene;
 						net_packet->address.host = net_clients[c - 1].host;
 						net_packet->address.port = net_clients[c - 1].port;
-						net_packet->len = 8;
+						net_packet->len = 5;
 						sendPacketSafe(net_sock, -1, net_packet, c - 1);
 					}
 				}
-				subwindow = 0;
-				fadeout = true;
-				if ( !intro )
+
+				int race = RACE_HUMAN;
+				if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
 				{
-					pauseGame(2, false);
+					race = stats[clientnum]->playerRace;
 				}
-				introstage = introstageToChangeTo; // prepares mid game sequence
+
+	            if (cutscene == 0) {
+	                switch ( race ) { // herx midpoint
+	                default:
+	                case RACE_HUMAN:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::HerxMidpointHuman);
+	                    break;
+	                case RACE_AUTOMATON:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::HerxMidpointAutomaton);
+	                    break;
+	                case RACE_GOATMAN:
+	                case RACE_GOBLIN:
+	                case RACE_INSECTOID:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::HerxMidpointBeast);
+	                    break;
+	                case RACE_SKELETON:
+	                case RACE_VAMPIRE:
+	                case RACE_SUCCUBUS:
+	                case RACE_INCUBUS:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::HerxMidpointEvil);
+	                    break;
+	                }
+	            }
+	            else if (cutscene == 1) { // baphomet midpoint
+	                switch ( race ) {
+	                default:
+	                case RACE_HUMAN:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::BaphometMidpointHuman);
+	                    break;
+	                case RACE_AUTOMATON:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::BaphometMidpointAutomaton);
+	                    break;
+	                case RACE_GOATMAN:
+	                case RACE_GOBLIN:
+	                case RACE_INSECTOID:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::BaphometMidpointBeast);
+	                    break;
+	                case RACE_SKELETON:
+	                case RACE_VAMPIRE:
+	                case RACE_SUCCUBUS:
+	                case RACE_INCUBUS:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::BaphometMidpointEvil);
+	                    break;
+	                }
+	            }
+
+                movie = true;
+				pauseGame(2, false);
 				return;
 			}
 		}
@@ -1030,6 +1227,7 @@ void actCustomPortal(Entity* my)
 	if ( my->ticks == 1 )
 	{
 		my->createWorldUITooltip();
+		memset(mpPokeCooldown, 0, sizeof(mpPokeCooldown));
 	}
 
 	if ( multiplayer != CLIENT )
@@ -1067,7 +1265,7 @@ void actCustomPortal(Entity* my)
 		my->portalInit = 1;
 		if ( my->portalCustomSpriteAnimationFrames > 0 )
 		{
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 255);
+			my->light = addLight(my->x / 16, my->y / 16, "portal_purple");
 		}
 	}
 
@@ -1104,7 +1302,7 @@ void actCustomPortal(Entity* my)
 	// step through portal
 	for ( i = 0; i < MAXPLAYERS; i++ )
 	{
-		if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+		if ( selectedEntity[i] == my || client_selected[i] == my )
 		{
 			if ( inrange[i] )
 			{
@@ -1121,17 +1319,28 @@ void actCustomPortal(Entity* my)
 					dist = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
 					if ( dist > TOUCHRANGE )
 					{
-						messagePlayer(i, language[509]);
+						sendMinimapPing(i, my->x / 16.0, my->y / 16.0);
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(505)); // "you must assemble your party"
+						if (ticks - mpPokeCooldown[i] >= TICKS_PER_SECOND * 3) {
+							for (int j = 0; j < MAXPLAYERS; ++j) {
+								if (!client_disconnected[j] && j != i) {
+									// "so-and-so wants to leave the level"
+									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind_lobby, false),
+										Language::get(509), stats[i]->name);
+								}
+							}
+							mpPokeCooldown[i] = ticks;
+						}
 						return;
 					}
 				}
 				if ( playercount == 1 )
 				{
-					messagePlayer(i, language[506]);
+					messagePlayer(i, MESSAGE_INTERACTION, Language::get(506));
 				}
 				else
 				{
-					messagePlayer(i, language[507]);
+					messagePlayer(i, MESSAGE_INTERACTION, Language::get(507));
 				}
 				loadnextlevel = true;
 				skipLevelsOnLoad = 0;
@@ -1237,7 +1446,7 @@ void actCustomPortal(Entity* my)
 						// could not find the map name anywhere.
 						loadnextlevel = false;
 						skipLevelsOnLoad = 0;
-						messagePlayer(i, "Error: Map %s was not found in the maps folder!", mapName);
+						messagePlayer(i, MESSAGE_MISC, "Error: Map %s was not found in the maps folder!", mapName);
 						return;
 					}
 					int levelDifference = currentlevel - levelToJumpTo;

@@ -15,20 +15,22 @@ See LICENSE for details.
 #include "entity.hpp"
 #include "items.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "classdescriptions.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "prng.hpp"
 
 void initVampire(Entity* my, Stat* myStats)
 {
 	int c;
 	node_t* node;
 
-	//Sprite 437 = Vampire head model
-	my->initMonster(437);
+    my->flags[BURNABLE] = true;
+	my->initMonster(437); //Sprite 437 = Vampire head model
+	my->z = -1;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -41,13 +43,22 @@ void initVampire(Entity* my, Stat* myStats)
 	{
 		if ( myStats != nullptr )
 		{
+		    if (myStats->sex == FEMALE)
+		    {
+		        my->sprite = 1137;
+		    }
+		    if ( !strncmp(map.name, "The Ruins", 9) )
+		    {
+				strcpy(myStats->name, "young vampire");
+		    }
 			if ( !myStats->leader_uid )
 			{
 				myStats->leader_uid = 0;
 			}
 
 			bool lesserMonster = false;
-			if ( !strncmp(myStats->name, "young vampire", strlen("young vampire")) )
+			if ( !strncmp(myStats->name, "young vampire", strlen("young vampire"))
+				&& myStats->leader_uid == 0 )
 			{
 				lesserMonster = true;
 				myStats->HP = 150;
@@ -69,11 +80,11 @@ void initVampire(Entity* my, Stat* myStats)
 				myStats->RANDOM_CHR = 0;
 				myStats->EXP = 0;
 				myStats->LVL = 18;
-				myStats->GOLD = 50 + rand() % 50;
+				myStats->GOLD = 50 + local_rng.rand() % 50;
 				myStats->RANDOM_GOLD = 0;
 				for ( c = 0; c < 4; ++c )
 				{
-					if ( rand() % 2 == 0 )
+					if ( local_rng.rand() % 2 == 0 )
 					{
 						Entity* entity = summonMonster(GHOUL, my->x, my->y);
 						if ( entity )
@@ -83,6 +94,7 @@ void initVampire(Entity* my, Stat* myStats)
 							if ( followerStats )
 							{
 								strcpy(followerStats->name, "enslaved ghoul");
+								followerStats->leader_uid = entity->parent;
 							}
 						}
 					}
@@ -90,6 +102,10 @@ void initVampire(Entity* my, Stat* myStats)
 			}
 			else if ( !strncmp(myStats->name, "Bram Kindly", strlen("Bram Kindly")) )
 			{
+				myStats->setAttribute("special_npc", "bram kindly");
+				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
+			    myStats->sex = MALE;
 				myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
 				myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
 				my->setEffect(EFF_MAGICRESIST, true, -1, true); //-1 duration, never expires.
@@ -126,14 +142,14 @@ void initVampire(Entity* my, Stat* myStats)
 				case 4:
 				case 3:
 				case 2:
-					if ( rand() % 4 == 0 ) // 1 in 4
+					if ( local_rng.rand() % 4 == 0 ) // 1 in 4
 					{
-						newItem(MAGICSTAFF_BLEED, static_cast<Status>(DECREPIT + rand() % 2), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+						newItem(MAGICSTAFF_BLEED, static_cast<Status>(DECREPIT + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
 					}
 				case 1:
-					if ( rand() % 10 == 0 ) // 1 in 10
+					if ( local_rng.rand() % 10 == 0 ) // 1 in 10
 					{
-						newItem(VAMPIRE_DOUBLET, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+						newItem(VAMPIRE_DOUBLET, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
 					}
 					break;
 				default:
@@ -143,23 +159,23 @@ void initVampire(Entity* my, Stat* myStats)
 			//give weapon
 			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
-				switch ( rand() % 10 )
+				switch ( local_rng.rand() % 10 )
 				{
 					case 0:
 					case 1:
 					case 2:
 					case 3:
-						//myStats->weapon = newItem(SHORTBOW, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+						//myStats->weapon = newItem(SHORTBOW, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 						break;
 					case 4:
 					case 5:
 					case 6:
 					case 7:
-						//myStats->weapon = newItem(CROSSBOW, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+						//myStats->weapon = newItem(CROSSBOW, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 						break;
 					case 8:
 					case 9:
-						//myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -1 + rand() % 2, 1, rand(), false, nullptr);
+						//myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 						break;
 				}
 			}
@@ -167,7 +183,7 @@ void initVampire(Entity* my, Stat* myStats)
 			//give helmet
 			if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 			{
-				switch ( rand() % 10 )
+				switch ( local_rng.rand() % 10 )
 				{
 					case 0:
 					case 1:
@@ -176,13 +192,13 @@ void initVampire(Entity* my, Stat* myStats)
 					case 4:
 						break;
 					case 5:
-						//myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + rand() % 2, 1, 0, false, nullptr);
+						//myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + local_rng.rand() % 2, 1, 0, false, nullptr);
 						break;
 					case 6:
 					case 7:
 					case 8:
 					case 9:
-						//myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + rand() % 2, 1, 0, false, nullptr);
+						//myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + local_rng.rand() % 2, 1, 0, false, nullptr);
 						break;
 				}
 			}
@@ -190,7 +206,7 @@ void initVampire(Entity* my, Stat* myStats)
 			//give shield
 			if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 			{
-				switch ( rand() % 10 )
+				switch ( local_rng.rand() % 10 )
 				{
 					case 0:
 					case 1:
@@ -201,13 +217,13 @@ void initVampire(Entity* my, Stat* myStats)
 						break;
 					case 6:
 					case 7:
-						//myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+						//myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 						break;
 					case 8:
-						//myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+						//myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 						break;
 					case 9:
-						//myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+						//myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 						break;
 				}
 			}
@@ -215,7 +231,7 @@ void initVampire(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(438, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(438, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -234,7 +250,7 @@ void initVampire(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(444, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(444, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -253,7 +269,7 @@ void initVampire(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(443, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(443, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -272,7 +288,7 @@ void initVampire(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(440, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(440, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -291,7 +307,7 @@ void initVampire(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(439, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(439, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -310,7 +326,7 @@ void initVampire(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// world weapon
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -330,7 +346,7 @@ void initVampire(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// shield
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -349,7 +365,7 @@ void initVampire(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// cloak
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -371,7 +387,7 @@ void initVampire(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// helmet
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -393,7 +409,7 @@ void initVampire(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// mask
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -413,12 +429,6 @@ void initVampire(Entity* my, Stat* myStats)
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
 	my->bodyparts.push_back(entity);
-
-	if ( multiplayer == CLIENT )
-	{
-		my->sprite = 437; // vampire head model
-		return;
-	}
 }
 
 void actVampireLimb(Entity* my)
@@ -428,8 +438,11 @@ void actVampireLimb(Entity* my)
 
 void vampireDie(Entity* my)
 {
-	int c;
-	for ( c = 0; c < 5; c++ )
+	Entity* gib = spawnGib(my);
+	gib->sprite = my->sprite;
+    gib->skill[5] = 1;
+	serverSpawnGibForClient(gib);
+	for ( int c = 0; c < 12; c++ )
 	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
@@ -437,7 +450,7 @@ void vampireDie(Entity* my)
 
 	my->spawnBlood();
 
-	playSoundEntity(my, 325 + rand() % 4, 128);
+	playSoundEntity(my, 325 + local_rng.rand() % 4, 128);
 
 	my->removeMonsterDeathNodes();
 
@@ -1209,6 +1222,10 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							entity->sprite = 165; // GlassesWorn.vox
 						}
+						else if ( myStats->mask->type == MONOCLE )
+						{
+							entity->sprite = 1196; // monocleWorn.vox
+						}
 						else
 						{
 							entity->sprite = itemModel(myStats->mask);
@@ -1241,7 +1258,7 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 				}
 
-				if ( entity->sprite != 165 )
+				if ( entity->sprite != 165 && entity->sprite != 1196 )
 				{
 					if ( entity->sprite == items[MASK_SHAMAN].index )
 					{
@@ -1314,7 +1331,7 @@ void Entity::vampireChooseWeapon(const Entity* target, double dist)
 		}
 
 		// occurs less often against fellow monsters.
-		specialRoll = rand() % (20 + 50 * (target->behavior == &actMonster));
+		specialRoll = local_rng.rand() % (20 + 50 * (target->behavior == &actMonster));
 		if ( myStats->HP <= myStats->MAXHP * 0.8 )
 		{
 			bonusFromHP += 1; // +5% chance if on low health
@@ -1343,14 +1360,14 @@ void Entity::vampireChooseWeapon(const Entity* target, double dist)
 			{
 				if ( myStats->HP <= myStats->MAXHP * 0.4)
 				{
-					if ( rand() % 4 > 0 )
+					if ( local_rng.rand() % 4 > 0 )
 					{
 						chooseAura = true; // 75% chance if low HP
 					}
 				}
 				if ( !chooseAura )
 				{
-					if ( rand() % 5 == 0 )
+					if ( local_rng.rand() % 5 == 0 )
 					{
 						chooseAura = true; // 20% chance base
 					}

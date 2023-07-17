@@ -7,6 +7,8 @@
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/error/en.h"
 
+#include <cassert>
+
 const Uint32 BinaryFormatTag = *"spff";
 
 class JsonFileWriter : public FileInterface {
@@ -21,25 +23,26 @@ public:
 	static bool writeObject(File* file, const FileHelper::SerializationFunc& serialize) {
 		JsonFileWriter jfw;
 
-		jfw.beginObject();
-		serialize(&jfw);
-		jfw.endObject();
-
+        bool result = false;
+		if (jfw.beginObject()) {
+		    result = serialize(&jfw);
+		    jfw.endObject();
+		}
 		jfw.save(file);
-		return true;
+		return result;
 	}
 
 	virtual bool isReading() const override { return false; }
 
-	virtual void beginObject() override {
-		writer.StartObject();
+	virtual bool beginObject() override {
+		return writer.StartObject();
 	}
 	virtual void endObject() override {
 		writer.EndObject();
 	}
 
-	virtual void beginArray(Uint32 & size) override {
-		writer.StartArray();
+	virtual bool beginArray(Uint32 & size) override {
+		return writer.StartArray();
 	}
 	virtual void endArray() override {
 		writer.EndArray();
@@ -49,24 +52,23 @@ public:
 		writer.Key(fieldName);
 	}
 
-	virtual void value(Uint32& value) override {
-		writer.Uint(value);
+	virtual bool value(Uint32& value) override {
+		return writer.Uint(value);
 	}
-	virtual void value(Sint32& value) override {
-		writer.Int(value);
+	virtual bool value(Sint32& value) override {
+		return writer.Int(value);
 	}
-	virtual void value(float& value) override {
-		writer.Double(value);
+	virtual bool value(float& value) override {
+		return writer.Double(value);
 	}
-	virtual void value(double& value) override {
-		writer.Double(value);
+	virtual bool value(double& value) override {
+		return writer.Double(value);
 	}
-	virtual void value(bool& value) override {
-		writer.Bool(value);
+	virtual bool value(bool& value) override {
+		return writer.Bool(value);
 	}
-	virtual void value(std::string& value, Uint32 maxLength) override {
-		assert(maxLength == 0 || value.size() <= maxLength);
-		writer.String(value.c_str());
+	virtual bool value(std::string& value) override {
+		return writer.String(value.c_str());
 	}
 
 private:
@@ -74,6 +76,9 @@ private:
 	void save(File* file) {
 		buffer.Flush();
 		file->puts(buffer.GetString());
+#ifdef NINTENDO
+		file->putc('\0');
+#endif
 	}
 
 	File * fp;
@@ -91,107 +96,149 @@ public:
 			return false;
 		}
 
-		jfr.beginObject();
-		serialize(&jfr);
-		jfr.endObject();
-
-		return true;
+		if (jfr.beginObject()) {
+		    bool result = serialize(&jfr);
+		    jfr.endObject();
+		    return result;
+		} else {
+		    return false;
+		}
 	}
 
 	virtual bool isReading() const override { return true; }
 
-	virtual void beginObject() override {
+	virtual bool beginObject() override {
 		auto cv = GetCurrentValue();
-		assert(cv->IsObject());
-		DocIterator di;
-		di.it = cv;
-		di.index = -1;
-		stack.push_back(di);
+		if (cv && cv->IsObject()) {
+		    DocIterator di;
+		    di.it = cv;
+		    di.index = -1;
+		    stack.push_back(di);
+		    return true;
+		} else {
+		    return false;
+		}
 	}
 
 	virtual void endObject() override {
-		stack.pop_back();
+	    if (!stack.empty()) {
+		    stack.pop_back();
+		}
 	}
 
-	virtual void beginArray(Uint32 & size) override {
+	virtual bool beginArray(Uint32 & size) override {
 		auto cv = GetCurrentValue();
-		assert(cv->IsArray());
-		DocIterator di;
-		di.it = cv;
-		di.index = 0;
-		stack.push_back(di);
-		size = di.it->GetArray().Size();
+		if (cv && cv->IsArray()) {
+		    DocIterator di;
+		    di.it = cv;
+		    di.index = 0;
+		    stack.push_back(di);
+		    size = di.it->GetArray().Size();
+		    return true;
+		} else {
+		    return false;
+		}
 	}
 
 	virtual void endArray() override {
-		stack.pop_back();
+	    if (!stack.empty()) {
+		    stack.pop_back();
+		}
 	}
 	virtual void propertyName(const char * fieldName) override {
 		propName = fieldName;
 	}
-	virtual void value(Uint32& value) override {
+	virtual bool value(Uint32& value) override {
 		auto cv = GetCurrentValue();
-		assert(cv->IsUint());
-		value = cv->GetUint();
+		if (cv && cv->IsUint()) {
+		    value = cv->GetUint();
+		    return true;
+		} else {
+		    return false;
+		}
 	}
-	virtual void value(Sint32& value) override {
+	virtual bool value(Sint32& value) override {
 		auto cv = GetCurrentValue();
-		assert(cv->IsInt());
-		value = cv->GetInt();
+		if (cv && cv->IsInt()) {
+		    value = cv->GetInt();
+		    return true;
+		} else {
+		    return false;
+		}
 	}
-	virtual void value(float& value) override {
+	virtual bool value(float& value) override {
 		auto cv = GetCurrentValue();
-		assert(cv->IsFloat());
-		value = cv->GetFloat();
+		if (cv && cv->IsFloat()) {
+		    value = cv->GetFloat();
+		    return true;
+		} else {
+		    return false;
+		}
 	}
-	virtual void value(double& value) override {
+	virtual bool value(double& value) override {
 		auto cv = GetCurrentValue();
-		assert(cv->IsDouble());
-		value = cv->GetDouble();
+		if (cv && cv->IsDouble()) {
+		    value = cv->GetDouble();
+		    return true;
+		} else {
+		    return false;
+		}
 	}
-	virtual void value(bool& value) override {
+	virtual bool value(bool& value) override {
 		auto cv = GetCurrentValue();
-		assert(cv->IsBool());
-		value = cv->GetBool();
+		if (cv && cv->IsBool()) {
+		    value = cv->GetBool();
+		    return true;
+		} else {
+		    return false;
+		}
 	}
-	virtual void value(std::string& value, Uint32 maxLength) override {
+	virtual bool value(std::string& value) override {
 		auto cv = GetCurrentValue();
-		assert(cv->IsString());
-		assert(maxLength == 0 || cv->GetStringLength() <= maxLength);
-		value = cv->GetString();
+		if (cv && cv->IsString()) {
+			value = cv->GetString();
+			return true;
+		} else {
+		    return false;
+		}
 	}
 
 protected:
 
 	rapidjson::Value::ConstValueIterator GetCurrentValue() {
 		if (stack.empty()) {
-			assert(propName == nullptr);
-			return &doc;
+		    if (propName == nullptr) {
+			    return &doc;
+		    } else {
+		        return nullptr;
+		    }
 		}
 
 		DocIterator& di = stack.back();
 		if (di.it->IsArray()) {
-			assert(di.index >= 0);
-			return &di.it->GetArray()[di.index++];
+			if (di.index >= 0) {
+			    return &di.it->GetArray()[di.index++];
+			} else {
+			    return nullptr;
+			}
 		}
 
-		assert(propName != nullptr);
-		rapidjson::Value::ConstValueIterator result = &(*di.it)[propName];
-		propName = nullptr;
-		return result;
+		if (propName != nullptr) {
+		    rapidjson::Value::ConstValueIterator result;
+		    if ((*di.it).HasMember(propName)) {
+		        result = &(*di.it)[propName];
+		    } else {
+		        result = nullptr;
+		    }
+		    propName = nullptr;
+		    return result;
+		} else {
+		    return nullptr;
+		}
 	}
 
 	bool readAllFileData(File * fp) {
-		if (fp->seek(0, FileBase::SeekMode::SETEND)) {
-			printlog("JsonFileReader: failed to seek end (%d)", errno);
-			return false;
-		}
-
-		long size = fp->tell();
-		if (fp->seek(0, FileBase::SeekMode::SET)) {
-			printlog("JsonFileReader: failed to seek beg (%d)", errno);
-			return false;
-		}
+		long size = fp->size();
 
 		// reserve an extra byte for the null terminator
 		char * data = (char *)calloc(sizeof(char), size + 1);
@@ -245,23 +292,26 @@ public:
 
 		bfw.writeHeader();
 
-		bfw.beginObject();
-		serialize(&bfw);
-		bfw.endObject();
-
-		return true;
+		if (bfw.beginObject()) {
+		    bool result = serialize(&bfw);
+		    bfw.endObject();
+		    return result;
+		} else {
+		    return false;
+		}
 	}
 
 	virtual bool isReading() const override { return false; }
 
-	virtual void beginObject() override {
+	virtual bool beginObject() override {
+	    return true;
 	}
 
 	virtual void endObject() override {
 	}
 
-	virtual void beginArray(Uint32 & size) override {
-		fp->write(&size, sizeof(size), 1);
+	virtual bool beginArray(Uint32 & size) override {
+		return fp->write(&size, sizeof(size), 1) == 1;
 	}
 
 	virtual void endArray() override {
@@ -270,38 +320,40 @@ public:
 	virtual void propertyName(const char * name) override {
 	}
 
-	virtual void value(Uint32& v) override {
-		fp->write(&v, sizeof(v), 1);
+	virtual bool value(Uint32& v) override {
+		return fp->write(&v, sizeof(v), 1) == 1;
 	}
-	virtual void value(Sint32& v) override {
-		fp->write(&v, sizeof(v), 1);
+	virtual bool value(Sint32& v) override {
+		return fp->write(&v, sizeof(v), 1) == 1;
 	}
-	virtual void value(float& v) override {
-		fp->write(&v, sizeof(v), 1);
+	virtual bool value(float& v) override {
+		return fp->write(&v, sizeof(v), 1) == 1;
 	}
-	virtual void value(double& v) override {
-		fp->write(&v, sizeof(v), 1);
+	virtual bool value(double& v) override {
+		return fp->write(&v, sizeof(v), 1) == 1;
 	}
-	virtual void value(bool& v) override {
-		fp->write(&v, sizeof(v), 1);
+	virtual bool value(bool& v) override {
+		return fp->write(&v, sizeof(v), 1) == 1;
 	}
-	virtual void value(std::string& v, Uint32 maxLength) override {
-		assert(maxLength == 0 || v.size() <= maxLength);
-		writeStringInternal(v);
+	virtual bool value(std::string& v) override {
+		return writeStringInternal(v);
 	}
 
 private:
 
 	void writeHeader() {
-		fp->write(&BinaryFormatTag, sizeof(BinaryFormatTag), 1);
+		(void)fp->write(&BinaryFormatTag, sizeof(BinaryFormatTag), 1);
 	}
 
-	void writeStringInternal(const std::string& v) {
+	bool writeStringInternal(const std::string& v) {
 		Uint32 len = (Uint32)v.size();
-		fp->write(&len, sizeof(len), 1);
+		bool result = true;
+		result = fp->write(&len, sizeof(len), 1) == 1 ? result : false;
 		if (len) {
-			fp->write(v.c_str(), sizeof(char), len);
+			result = fp->write(v.c_str(), sizeof(char), len) == len ?
+			    result : false;
 		}
+		return result;
 	}
 
 	File* fp = nullptr;
@@ -323,23 +375,23 @@ public:
 		}
 
 		bfr.beginObject();
-		serialize(&bfr);
+		bool result = serialize(&bfr);
 		bfr.endObject();
 
-		return true;
+		return result;
 	}
 
 	virtual bool isReading() const override { return true; }
 
-	virtual void beginObject() override {
+	virtual bool beginObject() override {
+	    return true;
 	}
 
 	virtual void endObject() override {
 	}
 
-	virtual void beginArray(Uint32 & size) override {
-		size_t read = fp->read(&size, sizeof(size), 1);
-		assert(read == 1);
+	virtual bool beginArray(Uint32 & size) override {
+		return fp->read(&size, sizeof(size), 1) == 1;
 	}
 
 	virtual void endArray() override {
@@ -348,29 +400,29 @@ public:
 	virtual void propertyName(const char * name) override {
 	}
 
-	virtual void value(Uint32& v) override {
+	virtual bool value(Uint32& v) override {
 		size_t read = fp->read(&v, sizeof(v), 1);
-		assert(read == 1);
+		return read == 1;
 	}
-	virtual void value(Sint32& v) override {
+	virtual bool value(Sint32& v) override {
 		size_t read = fp->read(&v, sizeof(v), 1);
-		assert(read == 1);
+		return read == 1;
 	}
-	virtual void value(float& v) override {
+	virtual bool value(float& v) override {
 		size_t read = fp->read(&v, sizeof(v), 1);
-		assert(read == 1);
+		return read == 1;
 	}
-	virtual void value(double& v) override {
+	virtual bool value(double& v) override {
 		size_t read = fp->read(&v, sizeof(v), 1);
-		assert(read == 1);
+		return read == 1;
 	}
-	virtual void value(bool& v) override {
+	virtual bool value(bool& v) override {
 		size_t read = fp->read(&v, sizeof(v), 1);
-		assert(read == 1);
+		return read == 1;
 	}
-	virtual void value(std::string& v, Uint32 maxLength) override {
-		readStringInternal(v);
-		assert(maxLength == 0 || v.size() <= maxLength);
+	virtual bool value(std::string& v) override {
+		bool result = readStringInternal(v);
+		return result;
 	}
 
 private:
@@ -391,16 +443,19 @@ private:
 		return true;
 	}
 
-	void readStringInternal(std::string & v) {
+	bool readStringInternal(std::string & v) {
 		Uint32 len;
+		bool result = true;
 		size_t read = fp->read(&len, sizeof(len), 1);
-		assert(read == 1);
+		result = read == 1 ? result : false;
 
 		if (len) {
 			v.reserve(len);
 			read = fp->read(&v[0u], sizeof(char), len);
-			assert(read == len);
+		    result = read == len ? result : false;
 		}
+
+		return result;
 	}
 
 	File* fp;

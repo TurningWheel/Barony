@@ -12,7 +12,7 @@
 #include "main.hpp"
 #include "game.hpp"
 #include "stat.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "entity.hpp"
 #include "scores.hpp"
 #include "net.hpp"
@@ -57,22 +57,33 @@ void Entity::actTeleporter()
 	// use teleporter
 	if ( multiplayer != CLIENT )
 	{
+		if ( this->isInteractWithMonster() )
+		{
+			Entity* monsterInteracting = uidToEntity(this->interactedByMonster);
+			if ( monsterInteracting )
+			{
+				monsterInteracting->teleporterMove(teleporterX, teleporterY, teleporterType);
+				this->clearMonsterInteract();
+				return;
+			}
+			this->clearMonsterInteract();
+		}
 		for ( i = 0; i < MAXPLAYERS; i++ )
 		{
-			if ( (i == 0 && selectedEntity[0] == this) || (client_selected[i] == this) || (splitscreen && selectedEntity[i] == this) )
+			if ( selectedEntity[i] == this || client_selected[i] == this )
 			{
 				if ( inrange[i] )
 				{
 					switch ( teleporterType )
 					{
 						case 0:
-							messagePlayer(i, language[2378]);
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(2378));
 							break;
 						case 1:
-							messagePlayer(i, language[506]);
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(506));
 							break;
 						case 2:
-							messagePlayer(i, language[510]);
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(510));
 							break;
 						default:
 							break;
@@ -88,7 +99,7 @@ void Entity::actTeleporter()
 	{
 		if ( !light )
 		{
-			light = lightSphereShadow(x / 16, y / 16, 3, 255);
+			light = addLight(x / 16, y / 16, "portal_purple");
 		}
 		yaw += 0.01; // rotate slowly on my axis
 		sprite = 620;

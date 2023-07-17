@@ -14,12 +14,13 @@
 #include "stat.hpp"
 #include "entity.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "items.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -52,15 +53,15 @@ void actSink(Entity* my)
 		Entity* entity = spawnGib(my);
 		entity->flags[INVISIBLE] = false;
 		entity->x += .5;
-		entity->z -= 3;
+		entity->z = my->z - 3;
 		entity->flags[SPRITE] = false;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UPDATENEEDED] = false;
 		entity->skill[4] = 6;
 		entity->sprite = 4;
-		entity->yaw = (rand() % 360) * PI / 180.0;
-		entity->pitch = (rand() % 360) * PI / 180.0;
-		entity->roll = (rand() % 360) * PI / 180.0;
+		entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+		entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+		entity->roll = (local_rng.rand() % 360) * PI / 180.0;
 		entity->vel_x = 0;
 		entity->vel_y = 0;
 		entity->vel_z = .25;
@@ -81,21 +82,21 @@ void actSink(Entity* my)
 	int i;
 	for (i = 0; i < MAXPLAYERS; ++i)
 	{
-		if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+		if ( selectedEntity[i] == my || client_selected[i] == my )
 		{
 			if (inrange[i])
 			{
 				//First check that it's not depleted.
 				if (my->skill[0] == 0)
 				{
-					messagePlayer(i, language[580]);
-					playSoundEntity(my, 140 + rand() % 2, 64);
+					messagePlayer(i, MESSAGE_INTERACTION, Language::get(580));
+					playSoundEntity(my, 140 + local_rng.rand() % 2, 64);
 				}
 				else
 				{
 					if ( players[i]->entity->flags[BURNING] )
 					{
-						messagePlayer(i, language[468]);
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(468));
 						players[i]->entity->flags[BURNING] = false;
 						serverUpdateEntityFlag(players[i]->entity, BURNING);
 						steamAchievementClient(i, "BARONY_ACH_HOT_SHOWER");
@@ -107,17 +108,16 @@ void actSink(Entity* my)
 							players[i]->entity->setEffect(EFF_POLYMORPH, false, 0, true);
 							players[i]->entity->effectPolymorph = 0;
 							serverUpdateEntitySkill(players[i]->entity, 50);
-							messagePlayer(i, language[3192]);
-							messagePlayer(i, language[3185]);
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(3192));
+							if ( !stats[i]->EFFECTS[EFF_SHAPESHIFT] )
+							{
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(3185));
+							}
+							else
+							{
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(4303));  // wears out, no mention of 'normal' form
+							}
 						}
-						/*if ( stats[i]->EFFECTS[EFF_SHAPESHIFT] )
-						{
-							players[i]->entity->setEffect(EFF_SHAPESHIFT, false, 0, true);
-							players[i]->entity->effectShapeshift = 0;
-							serverUpdateEntitySkill(players[i]->entity, 53);
-							messagePlayer(i, language[3418]);
-							messagePlayer(i, language[3417]);
-						}*/
 
 						playSoundEntity(players[i]->entity, 400, 92);
 						createParticleDropRising(players[i]->entity, 593, 1.f);
@@ -128,16 +128,16 @@ void actSink(Entity* my)
 						case 0:
 						{
 							//playSoundEntity(players[i]->entity, 52, 64);
-							messagePlayer(i, language[581]);
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(581));
 
 							//Randomly choose a ring.
 							//88-99 are rings.
 							//So 12 rings total.
-							int ring = rand() % 12 + (int)(RING_ADORNMENT); //Generate random number between 0 & 11, then add 88 to it so that it's at the location of the rings.
+							int ring = local_rng.rand() % 12 + (int)(RING_ADORNMENT); //Generate random number between 0 & 11, then add 88 to it so that it's at the location of the rings.
 
 							//Generate a random status.
 							Status status = SERVICABLE;
-							int status_rand = rand() % 4;
+							int status_rand = local_rng.rand() % 4;
 							switch (status_rand)
 							{
 								case 0:
@@ -157,14 +157,14 @@ void actSink(Entity* my)
 									break;
 							}
 							//Random beatitude (third parameter).
-							int beatitude = rand() % 5 - 2; //No item will be able to generate with less than -2 or more than +2 beatitude
+							int beatitude = local_rng.rand() % 5 - 2; //No item will be able to generate with less than -2 or more than +2 beatitude
 
 							//Actually create the item, put it in the player's inventory, and then free the memory of the temp item.
-							Item* item = newItem(static_cast<ItemType>(ring), static_cast<Status>(status), beatitude, 1, rand(), false, NULL);
+							Item* item = newItem(static_cast<ItemType>(ring), static_cast<Status>(status), beatitude, 1, local_rng.rand(), false, NULL);
 							if (item)
 							{
 								itemPickup(i, item);
-								messagePlayer(i, language[504], item->description());
+								messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(504), item->description());
 								free(item);
 							}
 							break;
@@ -177,12 +177,10 @@ void actSink(Entity* my)
 							Entity* monster = summonMonster(SLIME, my->x, my->y);
 							if ( monster )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-								messagePlayerColor(i, color, language[582]);
+								Uint32 color = makeColorRGB(255, 128, 0);
+								messagePlayerColor(i, MESSAGE_HINT, color, Language::get(582));
 								Stat* monsterStats = monster->getStats();
 								monsterStats->LVL = 4;
-								monster->sprite = 210;
-								monster->flags[INVISIBLE] = false;
 							}
 							break;
 						}
@@ -194,18 +192,22 @@ void actSink(Entity* my)
 							}
 							if ( stats[i]->type == AUTOMATON )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-								messagePlayerColor(i, color, language[3700]);
+								Uint32 color = makeColorRGB(255, 128, 0);
+								messagePlayerColor(i, MESSAGE_STATUS, color, Language::get(3700));
 								playSoundEntity(players[i]->entity, 52, 64);
 								stats[i]->HUNGER -= 200; //Lose boiler
-								players[i]->entity->modMP(5 + rand() % 6); //Raise temperature because steam.
+								players[i]->entity->modMP(5 + local_rng.rand() % 6); //Raise temperature because steam.
 								serverUpdateHunger(i);
 							}
 							else if ( stats[i]->type != VAMPIRE )
 							{
-								messagePlayer(i, language[583]);
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(583));
 								playSoundEntity(players[i]->entity, 52, 64);
-								stats[i]->HUNGER += 50; //Less nutrition than the refreshing fountain.
+								if ( stats[i]->type != SKELETON )
+								{
+									stats[i]->HUNGER += 50; //Less nutrition than the refreshing fountain.
+									serverUpdateHunger(i);
+								}
 								players[i]->entity->modHP(1);
 							}
 							else
@@ -213,16 +215,17 @@ void actSink(Entity* my)
 								players[i]->entity->modHP(-2);
 								playSoundEntity(players[i]->entity, 28, 64);
 								playSoundEntity(players[i]->entity, 249, 128);
-								players[i]->entity->setObituary(language[1533]);
+								players[i]->entity->setObituary(Language::get(1533));
+						        stats[i]->killer = KilledBy::SINK;
 
-								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-								messagePlayerColor(i, color, language[3183]);
-								if ( i == 0 || (splitscreen && i > 0) )
+								Uint32 color = makeColorRGB(255, 0, 0);
+								messagePlayerColor(i, MESSAGE_STATUS, color, Language::get(3183));
+								if ( i >= 0 && players[i]->isLocalPlayer() )
 								{
 									cameravars[i].shakex += .1;
 									cameravars[i].shakey += 10;
 								}
-								else if ( multiplayer == SERVER && i > 0 )
+								else if ( multiplayer == SERVER && i > 0 && !players[i]->isLocalPlayer() )
 								{
 									strcpy((char*)net_packet->data, "SHAK");
 									net_packet->data[4] = 10; // turns into .1
@@ -243,8 +246,8 @@ void actSink(Entity* my)
 							}
 							if ( stats[i]->type == AUTOMATON )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-								messagePlayerColor(i, color, language[3701]);
+								Uint32 color = makeColorRGB(255, 128, 0);
+								messagePlayerColor(i, MESSAGE_STATUS, color, Language::get(3701));
 								playSoundEntity(players[i]->entity, 52, 64);
 								stats[i]->HUNGER += 200; //Gain boiler
 								players[i]->entity->modMP(2);
@@ -263,17 +266,18 @@ void actSink(Entity* my)
 									playSoundEntity(players[i]->entity, 249, 128);
 								}
 								playSoundEntity(players[i]->entity, 28, 64);
-								players[i]->entity->setObituary(language[1533]);
+								players[i]->entity->setObituary(Language::get(1533));
+						        stats[i]->killer = KilledBy::SINK;
 
-								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-								messagePlayerColor(i, color, language[584]);
+								Uint32 color = makeColorRGB(255, 0, 0);
+								messagePlayerColor(i, MESSAGE_STATUS, color, Language::get(584));
 
-								if ( i == 0 || (splitscreen && i > 0) )
+								if ( i >= 0 && players[i]->isLocalPlayer() )
 								{
 									cameravars[i].shakex += .1;
 									cameravars[i].shakey += 10;
 								}
-								else if ( multiplayer == SERVER && i > 0 )
+								else if ( multiplayer == SERVER && i > 0 && !players[i]->isLocalPlayer() )
 								{
 									strcpy((char*)net_packet->data, "SHAK");
 									net_packet->data[4] = 10; // turns into .1
@@ -299,7 +303,7 @@ void actSink(Entity* my)
 						my->skill[0]--; //Deduct one usage.
 
 						//Randomly choose second usage stats.
-						int effect = rand() % 10; //4 possible effects.
+						int effect = local_rng.rand() % 10; //4 possible effects.
 						switch (effect)
 						{
 							case 0:
@@ -330,7 +334,7 @@ void actSink(Entity* my)
 					else     //Second usage.
 					{
 						my->skill[0]--; //Sink is depleted!
-						messagePlayer(i, language[585]);
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(585));
 						playSoundEntity(my, 132, 64);
 					}
 					serverUpdateEntitySkill(my, 0);

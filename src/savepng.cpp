@@ -6,9 +6,13 @@
  */
 #include "Config.hpp"
 #ifndef NINTENDO
+#ifdef APPLE
+#include <SDL2/SDL.h>
+#else
 #include <SDL.h>
+#endif
 #include <stdlib.h>
-#include "png.h"
+#include <png.h>
 
 #include "savepng.hpp"
 
@@ -61,7 +65,7 @@ SDL_Surface* SDL_PNGFormatAlpha(SDL_Surface* src)
 	/* NO-OP for images < 32bpp and 32bpp images that already have Alpha channel */
 	if (src->format->BitsPerPixel <= 24 || src->format->Amask)
 	{
-		src->refcount++;
+		src->userdata = (void *)((long int)src->userdata + 1);
 		return src;
 	}
 

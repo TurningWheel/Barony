@@ -15,16 +15,19 @@
 #include "entity.hpp"
 #include "items.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 void initImp(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
+	my->flags[BURNABLE] = false;
 	my->initMonster(289);
+	my->z = -4.5;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -54,10 +57,10 @@ void initImp(Entity* my, Stat* myStats)
 			myStats->EFFECTS[EFF_LEVITATING] = true;
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
-			if ( rand() % 4 == 0 && strncmp(map.name, "Hell Boss", 9) )
+			if ( local_rng.rand() % 4 == 0 && strncmp(map.name, "Hell Boss", 9) )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 3600;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + local_rng.rand() % 3600;
 			}
 
 			// generates equipment and weapons if available from editor
@@ -83,9 +86,9 @@ void initImp(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( rand() % 4 == 0 )
+					if ( local_rng.rand() % 4 == 0 )
 					{
-						newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand() % 21), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+						newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + local_rng.rand() % 21), static_cast<Status>(1 + local_rng.rand() % 4), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
 					}
 					break;
 				default:
@@ -101,7 +104,7 @@ void initImp(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(290, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(290, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->focaly = 1;
@@ -121,7 +124,7 @@ void initImp(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(292, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(292, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -140,7 +143,7 @@ void initImp(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(291, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(291, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -159,7 +162,7 @@ void initImp(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(294, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(294, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -178,7 +181,7 @@ void initImp(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(293, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(293, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -197,7 +200,7 @@ void initImp(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right wing
-	entity = newEntity(310, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(310, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -216,7 +219,7 @@ void initImp(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left wing
-	entity = newEntity(309, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(309, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -243,9 +246,17 @@ void actImpLimb(Entity* my)
 void impDie(Entity* my)
 {
 	int c;
-	for ( c = 0; c < 5; c++ )
+	for ( c = 0; c < 12; c++ )
 	{
 		Entity* gib = spawnGib(my);
+	    if (c < 6) {
+	        gib->sprite = 289 + c;
+	        gib->skill[5] = 1; // poof
+	    }
+	    else if (c >= 6 && c < 8) {
+	        gib->sprite = 309 + (c - 6);
+	        gib->skill[5] = 1; // poof
+	    }
 		serverSpawnGibForClient(gib);
 	}
 

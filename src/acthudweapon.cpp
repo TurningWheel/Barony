@@ -13,13 +13,15 @@
 #include "game.hpp"
 #include "stat.hpp"
 #include "items.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "magic/magic.hpp"
 #include "interface/interface.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
 #include "scores.hpp"
+#include "ui/MainMenu.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -217,7 +219,7 @@ void actHudArm(Entity* my)
 				my->sprite = 855;
 				break;
 			case SPIDER:
-				my->sprite = 853;
+				my->sprite = arachnophobia_filter ? 1005 : 853;
 				break;
 			case CREATURE_IMP:
 				my->sprite = 857;
@@ -326,10 +328,11 @@ enum CrossbowHudweaponChop : int
 void actHudWeapon(Entity* my)
 {
 	double result = 0;
-	ItemType type;
 	bool wearingring = false;
 
 	Player::HUD_t& playerHud = players[HUDWEAPON_PLAYERNUM]->hud;
+
+	Input& input = Input::inputs[HUDWEAPON_PLAYERNUM];
 
 	Entity* entity;
 	Entity* parent = playerHud.arm;
@@ -349,8 +352,8 @@ void actHudWeapon(Entity* my)
 	const Uint32& bowDrawBaseTicks = playerHud.bowDrawBaseTicks;
 #ifdef SOUND
 #ifdef USE_FMOD
-	FMOD_CHANNEL*& bowDrawingSoundChannel = playerHud.bowDrawingSoundChannel;
-	FMOD_BOOL& bowDrawingSoundPlaying = playerHud.bowDrawingSoundPlaying;
+	FMOD::Channel*& bowDrawingSoundChannel = playerHud.bowDrawingSoundChannel;
+	bool& bowDrawingSoundPlaying = playerHud.bowDrawingSoundPlaying;
 #elif defined USE_OPENAL
 	OPENAL_SOUND*& bowDrawingSoundChannel = playerHud.bowDrawingSoundChannel;
 	ALboolean& bowDrawingSoundPlaying = playerHud.bowDrawingSoundPlaying;
@@ -381,7 +384,7 @@ void actHudWeapon(Entity* my)
 		entity = newEntity(109, 1, map.entities, nullptr); // malearmright.vox
 		entity->focalz = -1.5;
 		entity->parent = my->getUID();
-		my->parent = entity->getUID(); // just an easy way to refer to eachother, doesn't mean much
+		my->parent = entity->getUID(); // just an easy way to refer to each other, doesn't mean much
 		playerHud.arm = entity;
 		parent = playerHud.arm;
 		entity->behavior = &actHudArm;
@@ -394,7 +397,7 @@ void actHudWeapon(Entity* my)
 	if ( players[HUDWEAPON_PLAYERNUM] == nullptr || players[HUDWEAPON_PLAYERNUM]->entity == nullptr
 		|| (players[HUDWEAPON_PLAYERNUM]->entity && players[HUDWEAPON_PLAYERNUM]->entity->playerCreatedDeathCam != 0) )
 	{
-		playerHud.weapon = nullptr; //PLAYER DED. NULLIFY THIS.
+		playerHud.weapon = nullptr; //PLAYER DEAD. NULLIFY THIS.
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -417,9 +420,6 @@ void actHudWeapon(Entity* my)
 	{
 		--bowGimpTimer;
 	}
-
-	// check levitating value
-	bool levitating = isLevitating(stats[HUDWEAPON_PLAYERNUM]);
 
 	// swimming
 	if (players[HUDWEAPON_PLAYERNUM] && players[HUDWEAPON_PLAYERNUM]->entity)
@@ -682,24 +682,23 @@ void actHudWeapon(Entity* my)
 
 	bool swingweapon = false;
 	if ( players[HUDWEAPON_PLAYERNUM]->entity
-		&& (*inputPressedForPlayer(HUDWEAPON_PLAYERNUM, impulses[IN_ATTACK]) || (shootmode && inputs.bControllerInputPressed(HUDWEAPON_PLAYERNUM, INJOY_GAME_ATTACK)))
+		&& input.binaryToggle("Attack")
 		&& shootmode 
 		&& !gamePaused
 		&& players[HUDWEAPON_PLAYERNUM]->entity->isMobile()
-		&& !(*inputPressedForPlayer(HUDWEAPON_PLAYERNUM, impulses[IN_DEFEND]) && stats[HUDWEAPON_PLAYERNUM]->defending || (shootmode && inputs.bControllerInputPressed(HUDWEAPON_PLAYERNUM, INJOY_GAME_DEFEND) && stats[HUDWEAPON_PLAYERNUM]->defending))
+		&& !(input.binaryToggle("Defend") && stats[HUDWEAPON_PLAYERNUM]->defending)
 		&& HUDWEAPON_OVERCHARGE < MAXCHARGE )
 	{
 		swingweapon = true;
 	}
-	else if ( (*inputPressedForPlayer(HUDWEAPON_PLAYERNUM, impulses[IN_ATTACK]) || (shootmode && inputs.bControllerInputPressed(HUDWEAPON_PLAYERNUM, INJOY_GAME_ATTACK))) &&
-		(*inputPressedForPlayer(HUDWEAPON_PLAYERNUM, impulses[IN_DEFEND]) && stats[HUDWEAPON_PLAYERNUM]->defending || (shootmode && inputs.bControllerInputPressed(HUDWEAPON_PLAYERNUM, INJOY_GAME_DEFEND) && stats[HUDWEAPON_PLAYERNUM]->defending)) )
+	else if (shootmode && input.binaryToggle("Attack") && input.binaryToggle("Defend") && stats[HUDWEAPON_PLAYERNUM]->defending)
 	{
 		if ( stats[HUDWEAPON_PLAYERNUM]->shield && stats[HUDWEAPON_PLAYERNUM]->shield->type == TOOL_TINKERING_KIT )
 		{
 			if ( !GenericGUI[HUDWEAPON_PLAYERNUM].isGUIOpen() )
 			{
-				*inputPressedForPlayer(HUDWEAPON_PLAYERNUM, impulses[IN_ATTACK]) = 0;
-				inputs.controllerClearInput(HUDWEAPON_PLAYERNUM, INJOY_GAME_ATTACK);
+			    input.consumeBinaryToggle("Attack");
+				input.consumeBindingsSharedWithBinding("Attack");
 				GenericGUI[HUDWEAPON_PLAYERNUM].openGUI(GUI_TYPE_TINKERING, stats[HUDWEAPON_PLAYERNUM]->shield);
 				swapWeaponGimpTimer = 20;
 				return;
@@ -909,7 +908,7 @@ void actHudWeapon(Entity* my)
 #else
 		if ( bowDrawingSoundChannel )
 		{
-			FMOD_Channel_IsPlaying(bowDrawingSoundChannel, &bowDrawingSoundPlaying);
+			bowDrawingSoundChannel->isPlaying(&bowDrawingSoundPlaying);
 		}
 #endif
 #endif // SOUND
@@ -931,7 +930,7 @@ void actHudWeapon(Entity* my)
 #else
 			if ( bowDrawingSoundChannel )
 			{
-				FMOD_Channel_IsPlaying(bowDrawingSoundChannel, &bowDrawingSoundPlaying);
+				bowDrawingSoundChannel->isPlaying(&bowDrawingSoundPlaying);
 			}
 #endif
 #endif // SOUND
@@ -951,16 +950,17 @@ void actHudWeapon(Entity* my)
 #ifdef USE_OPENAL
 				OPENAL_Channel_Stop(bowDrawingSoundChannel);
 #else
-				FMOD_Channel_Stop(bowDrawingSoundChannel);
+				bowDrawingSoundChannel->stop();
 #endif
 				bowDrawingSoundPlaying = 0;
-				bowDrawingSoundChannel = NULL;
+				bowDrawingSoundChannel = nullptr;
 			}
 #endif
 		}
 	}
 
 	bool whip = stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == TOOL_WHIP;
+	bool bearTrap = !hideWeapon && stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == TOOL_BEARTRAP;
 
 	// main animation
 	if ( HUDWEAPON_CHOP == 0 )
@@ -994,7 +994,7 @@ void actHudWeapon(Entity* my)
 		{
 			if ( cast_animation[HUDWEAPON_PLAYERNUM].active || cast_animation[HUDWEAPON_PLAYERNUM].active_spellbook )
 			{
-				messagePlayer(HUDWEAPON_PLAYERNUM, language[1301]);
+				messagePlayer(HUDWEAPON_PLAYERNUM, MESSAGE_COMBAT, Language::get(1301));
 				spellcastingAnimationManager_deactivate(&cast_animation[HUDWEAPON_PLAYERNUM]);
 			}
 			if ( castStrikeAnimation )
@@ -1019,12 +1019,12 @@ void actHudWeapon(Entity* my)
 					{
 						if ( achievementBrawlerMode && conductGameChallenges[CONDUCT_BRAWLER] )
 						{
-							messagePlayer(HUDWEAPON_PLAYERNUM, language[2997]); // prevent attack.
+							messagePlayer(HUDWEAPON_PLAYERNUM, MESSAGE_HINT, Language::get(2997)); // prevent attack.
 							return;
 						}
 						if ( achievementBrawlerMode )
 						{
-							messagePlayer(HUDWEAPON_PLAYERNUM, language[2998]); // notify no longer eligible for achievement but still atk.
+							messagePlayer(HUDWEAPON_PLAYERNUM, MESSAGE_HINT, Language::get(2998)); // notify no longer eligible for achievement but still atk.
 						}
 						conductGameChallenges[CONDUCT_BRAWLER] = 0;
 					}
@@ -1067,7 +1067,7 @@ void actHudWeapon(Entity* my)
 										{
 											real_t amount = 0.f;
 											real_t percent = getArtifactWeaponEffectChance(ARTIFACT_BOW, *(stats[HUDWEAPON_PLAYERNUM]), &amount);
-											if ( (rand() % 100 < static_cast<int>(percent)) )
+											if ( (local_rng.rand() % 100 < static_cast<int>(percent)) )
 											{
 												artifactBowSaveAmmo = true;
 											}
@@ -1321,6 +1321,7 @@ void actHudWeapon(Entity* my)
 						if (itemCategory(item) == SPELLBOOK)
 						{
 							inputs.mouseClearLeft(HUDWEAPON_PLAYERNUM);
+							input.consumeBinaryToggle("Attack");
 							players[HUDWEAPON_PLAYERNUM]->entity->attack(2, 0, nullptr); // will need to add some delay to this so you can't rapid fire spells
 						}
 						else if ( itemIsThrowableTinkerTool(item) )
@@ -1338,6 +1339,10 @@ void actHudWeapon(Entity* my)
 								throwGimpTimer = TICKS_PER_SECOND / 2; // limits how often you can throw objects
 								HUDWEAPON_CHOP = 1; // thrown normal swing
 							}
+						}
+						else if ( item->type == TOOL_BEARTRAP )
+						{
+							HUDWEAPON_CHOP = 18; // magicstaffs lunge
 						}
 						else if (item->type == TOOL_LOCKPICK || item->type == TOOL_SKELETONKEY )
 						{
@@ -1390,7 +1395,7 @@ void actHudWeapon(Entity* my)
 									}
 									if ( !foundWall )
 									{
-										messagePlayer(HUDWEAPON_PLAYERNUM, language[503], item->getName());
+										messagePlayer(HUDWEAPON_PLAYERNUM, MESSAGE_HINT, Language::get(503), item->getName());
 									}
 								}
 							}
@@ -1409,11 +1414,11 @@ void actHudWeapon(Entity* my)
 							{
 								if ( statGetINT(stats[HUDWEAPON_PLAYERNUM], player) <= 10 )
 								{
-									messagePlayer(HUDWEAPON_PLAYERNUM, language[2373], item->getName());
+									messagePlayer(HUDWEAPON_PLAYERNUM, MESSAGE_HINT, Language::get(2373), item->getName());
 								}
 								else
 								{
-									messagePlayer(HUDWEAPON_PLAYERNUM, language[2372], item->getName());
+									messagePlayer(HUDWEAPON_PLAYERNUM, MESSAGE_HINT, Language::get(2372), item->getName());
 								}
 							}
 						}
@@ -1431,7 +1436,7 @@ void actHudWeapon(Entity* my)
 								}
 								else
 								{
-									messagePlayer(HUDWEAPON_PLAYERNUM, language[3336]);
+									messagePlayer(HUDWEAPON_PLAYERNUM, MESSAGE_HINT, Language::get(3336));
 								}
 								throwGimpTimer = TICKS_PER_SECOND / 2;
 							}
@@ -1493,10 +1498,10 @@ void actHudWeapon(Entity* my)
 #ifdef USE_OPENAL
 							OPENAL_Channel_Stop(bowDrawingSoundChannel);
 #else
-							FMOD_Channel_Stop(bowDrawingSoundChannel);
+							bowDrawingSoundChannel->stop();
 #endif
 							bowDrawingSoundPlaying = 0;
-							bowDrawingSoundChannel = NULL;
+							bowDrawingSoundChannel = nullptr;
 						}
 #endif
 
@@ -1740,7 +1745,10 @@ void actHudWeapon(Entity* my)
 				if ( !swingweapon )
 				{
 					HUDWEAPON_CHOP++;
-					players[HUDWEAPON_PLAYERNUM]->entity->attack(1, HUDWEAPON_CHARGE, nullptr);
+					if ( !bearTrap )
+					{
+						players[HUDWEAPON_PLAYERNUM]->entity->attack(1, HUDWEAPON_CHARGE, nullptr);
+					}
 					if ( stats[HUDWEAPON_PLAYERNUM]->weapon
 						&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW) )
 					{
@@ -1863,7 +1871,8 @@ void actHudWeapon(Entity* my)
 			{
 				if ( !rangedweapon 
 					&& item->type != TOOL_SKELETONKEY 
-					&& item->type != TOOL_LOCKPICK 
+					&& item->type != TOOL_LOCKPICK
+					&& item->type != TOOL_BEARTRAP
 					&& itemCategory(item) != POTION 
 					&& itemCategory(item) != GEM
 					&& item->type != FOOD_CREAMPIE
@@ -1912,8 +1921,6 @@ void actHudWeapon(Entity* my)
 				}
 			}
 		}
-
-		bool crossbow = stats[HUDWEAPON_PLAYERNUM]->weapon && (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW);
 
 		if ( stats[HUDWEAPON_PLAYERNUM]->weapon && !hideWeapon )
 		{
@@ -2064,7 +2071,10 @@ void actHudWeapon(Entity* my)
 				if (!swingweapon)
 				{
 					HUDWEAPON_CHOP++;
-					players[HUDWEAPON_PLAYERNUM]->entity->attack(2, HUDWEAPON_CHARGE, nullptr);
+					if ( !bearTrap )
+					{
+						players[HUDWEAPON_PLAYERNUM]->entity->attack(2, HUDWEAPON_CHARGE, nullptr);
+					}
 					if ( stats[HUDWEAPON_PLAYERNUM]->weapon
 						&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW) )
 					{
@@ -2257,13 +2267,16 @@ void actHudWeapon(Entity* my)
 				if (!swingweapon)
 				{
 					HUDWEAPON_CHOP++;
-					if ( stats[HUDWEAPON_PLAYERNUM]->weapon && hideWeapon )
+					if ( !bearTrap )
 					{
-						players[HUDWEAPON_PLAYERNUM]->entity->attack(1, HUDWEAPON_CHARGE, nullptr);
-					}
-					else
-					{
-						players[HUDWEAPON_PLAYERNUM]->entity->attack(3, HUDWEAPON_CHARGE, nullptr);
+						if ( stats[HUDWEAPON_PLAYERNUM]->weapon && hideWeapon )
+						{
+							players[HUDWEAPON_PLAYERNUM]->entity->attack(1, HUDWEAPON_CHARGE, nullptr);
+						}
+						else
+						{
+							players[HUDWEAPON_PLAYERNUM]->entity->attack(3, HUDWEAPON_CHARGE, nullptr);
+						}
 					}
 					if ( stats[HUDWEAPON_PLAYERNUM]->weapon
 						&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW) )
@@ -2344,9 +2357,12 @@ void actHudWeapon(Entity* my)
 				{
 					HUDWEAPON_CHOP = 7;
 				}
-				else
+				else if ( !(stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == TOOL_BEARTRAP) )
 				{
-					if ( itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) != MAGICSTAFF && stats[HUDWEAPON_PLAYERNUM]->weapon->type != CRYSTAL_SPEAR && stats[HUDWEAPON_PLAYERNUM]->weapon->type != IRON_SPEAR && stats[HUDWEAPON_PLAYERNUM]->weapon->type != ARTIFACT_SPEAR )
+					if ( itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) != MAGICSTAFF 
+						&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != CRYSTAL_SPEAR 
+						&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != IRON_SPEAR 
+						&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != ARTIFACT_SPEAR )
 					{
 						HUDWEAPON_CHOP = 1;
 					}
@@ -2420,7 +2436,10 @@ void actHudWeapon(Entity* my)
 					camera_shakex += .06;
 					camera_shakey += 6;
 				}
-				players[HUDWEAPON_PLAYERNUM]->entity->attack(PLAYER_POSE_GOLEM_SMASH, MAXCHARGE, nullptr);
+				if ( !bearTrap )
+				{
+					players[HUDWEAPON_PLAYERNUM]->entity->attack(PLAYER_POSE_GOLEM_SMASH, MAXCHARGE, nullptr);
+				}
 			}
 		}
 	}
@@ -2528,14 +2547,14 @@ void actHudWeapon(Entity* my)
 						throwGimpTimer = TICKS_PER_SECOND / 2; // limits how often you can throw objects
 						if ( stats[HUDWEAPON_PLAYERNUM]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_LEGENDARY )
 						{
-							messagePlayer(HUDWEAPON_PLAYERNUM, language[3884]);
+							messagePlayer(HUDWEAPON_PLAYERNUM, MESSAGE_MISC, Language::get(3884));
 						}
 						else
 						{
-							messagePlayer(HUDWEAPON_PLAYERNUM, language[3883]);
+							messagePlayer(HUDWEAPON_PLAYERNUM, MESSAGE_PROGRESSION, Language::get(3883));
 						}
 					}
-					else if ( stats[HUDWEAPON_PLAYERNUM]->weapon && player )
+					else if ( stats[HUDWEAPON_PLAYERNUM]->weapon && player && !bearTrap )
 					{
 						//lineTrace(player, player->x, player->y, player->yaw, STRIKERANGE, 0, false);
 						players[HUDWEAPON_PLAYERNUM]->entity->attack(2, HUDWEAPON_CHARGE, nullptr);
@@ -2780,6 +2799,178 @@ void actHudWeapon(Entity* my)
 			HUDWEAPON_PITCH = std::min<real_t>(HUDWEAPON_PITCH + .1, 0.0);
 		}
 	}
+	else if ( HUDWEAPON_CHOP == 18 ) // beartrap placing
+	{
+		int targetZ = 1;
+		real_t targetRoll = -PI / 16;
+		real_t rateY = .1;
+		real_t rateZ = -.1;
+		real_t rateRoll = .05;
+		real_t rateX = -.25;
+		real_t targetY = -.5;
+		real_t targetX = 3.0;
+		real_t targetPitch = 0.f;
+
+		if ( !hideWeapon && stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == TOOL_BEARTRAP )
+		{
+			my->sprite = 1191;
+		}
+
+		HUDWEAPON_YAW = 0;
+		HUDWEAPON_PITCH -= .25;
+		if ( HUDWEAPON_PITCH < targetPitch )
+		{
+			HUDWEAPON_PITCH = targetPitch;
+		}
+		HUDWEAPON_MOVEX -= rateX;
+		if ( HUDWEAPON_MOVEX > targetX )
+		{
+			HUDWEAPON_MOVEX = targetX;
+		}
+		HUDWEAPON_MOVEZ -= rateZ;
+		if ( HUDWEAPON_MOVEZ > targetZ )
+		{
+			HUDWEAPON_MOVEZ = targetZ;
+		}
+		HUDWEAPON_MOVEY += rateY;
+		if ( HUDWEAPON_MOVEY > targetY )
+		{
+			HUDWEAPON_MOVEY = targetY;
+		}
+		HUDWEAPON_ROLL -= rateRoll;
+
+		if ( HUDWEAPON_ROLL < targetRoll )
+		{
+			HUDWEAPON_ROLL = targetRoll;
+			if ( HUDWEAPON_PITCH == targetPitch && HUDWEAPON_MOVEX == targetX && HUDWEAPON_MOVEY == targetY && HUDWEAPON_MOVEZ == targetZ )
+			{
+				if ( !swingweapon )
+				{
+					HUDWEAPON_CHOP = 19;
+					if ( players[HUDWEAPON_PLAYERNUM]->entity->skill[3] == 0 )   // debug cam OFF
+					{
+						camera_shakex += .07;
+					}
+					Entity* player = players[HUDWEAPON_PLAYERNUM]->entity;
+					if ( stats[HUDWEAPON_PLAYERNUM]->weapon && player )
+					{
+						Item* item = stats[HUDWEAPON_PLAYERNUM]->weapon;
+						if ( !hideWeapon && item->type == TOOL_BEARTRAP )
+						{
+							bool freeTile = true;
+							if ( players[HUDWEAPON_PLAYERNUM] && players[HUDWEAPON_PLAYERNUM]->entity )
+							{
+								real_t dist = 16.0;
+								real_t checkx = players[HUDWEAPON_PLAYERNUM]->entity->x + dist * cos(players[HUDWEAPON_PLAYERNUM]->entity->yaw);
+								real_t checky = players[HUDWEAPON_PLAYERNUM]->entity->y + dist * sin(players[HUDWEAPON_PLAYERNUM]->entity->yaw);
+								int index = (static_cast<int>(checky) >> 4) * MAPLAYERS + (static_cast<int>(checkx) >> 4) * MAPLAYERS * map.height;
+								while ( !map.tiles[index] || map.tiles[OBSTACLELAYER + index] || swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]] )
+								{
+									dist -= 4.001;
+									if ( dist < 0.0 )
+									{
+										checkx = players[HUDWEAPON_PLAYERNUM]->entity->x;
+										checky = players[HUDWEAPON_PLAYERNUM]->entity->y;
+										index = (static_cast<int>(checky) >> 4) * MAPLAYERS + (static_cast<int>(checkx) >> 4) * MAPLAYERS * map.height;
+										if ( !map.tiles[index] || map.tiles[OBSTACLELAYER + index] || swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]] )
+										{
+											freeTile = false;
+										}
+										break;
+									}
+									checkx = players[HUDWEAPON_PLAYERNUM]->entity->x + dist * cos(players[HUDWEAPON_PLAYERNUM]->entity->yaw);
+									checky = players[HUDWEAPON_PLAYERNUM]->entity->y + dist * sin(players[HUDWEAPON_PLAYERNUM]->entity->yaw);
+									index = (static_cast<int>(checky) >> 4) * MAPLAYERS + (static_cast<int>(checkx) >> 4) * MAPLAYERS * map.height;
+								}
+								if ( !map.tiles[index] || map.tiles[OBSTACLELAYER + index] || swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]] )
+								{
+									freeTile = false;
+								}
+
+								if ( !freeTile )
+								{
+									messagePlayer(HUDWEAPON_PLAYERNUM, MESSAGE_HINT, Language::get(3035));
+								}
+
+								if ( freeTile )
+								{
+									players[HUDWEAPON_PLAYERNUM]->entity->attack(2, HUDWEAPON_CHARGE, nullptr);
+									if ( multiplayer == CLIENT )
+									{
+										Item* item = stats[HUDWEAPON_PLAYERNUM]->weapon;
+										consumeItem(item, HUDWEAPON_PLAYERNUM);
+									}
+								}
+							}
+						}
+
+						if ( !stats[HUDWEAPON_PLAYERNUM]->weapon || hideWeapon )
+						{
+							HUDWEAPON_ROLL = 0;
+							HUDWEAPON_MOVEZ = 3;
+						}
+					}
+					HUDWEAPON_CHARGE = 0;
+					HUDWEAPON_OVERCHARGE = 0;
+				}
+				else
+				{
+					HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + 1, MAXCHARGE);
+				}
+			}
+		}
+	}
+	else if ( HUDWEAPON_CHOP == 19 )     // beartrap swing
+	{
+		int targetZ = 4;
+		real_t rateZ = -.5;
+		HUDWEAPON_MOVEZ -= rateZ;
+
+		if ( stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == TOOL_BEARTRAP )
+		{
+			my->sprite = 1191;
+		}
+
+		if ( HUDWEAPON_MOVEZ > targetZ )
+		{
+			HUDWEAPON_ROLL = -PI / 4;
+			HUDWEAPON_MOVEZ = targetZ;
+			HUDWEAPON_CHOP++;
+		}
+	}
+	else if ( HUDWEAPON_CHOP == 20 )     // return from beartrap swing
+	{
+		HUDWEAPON_MOVEX -= .1;
+		if ( HUDWEAPON_MOVEX < 0 )
+		{
+			HUDWEAPON_MOVEX = 0;
+		}
+		HUDWEAPON_MOVEY += .1;
+		if ( HUDWEAPON_MOVEY > 0 )
+		{
+			HUDWEAPON_MOVEY = 0;
+		}
+		HUDWEAPON_ROLL += .05;
+
+		HUDWEAPON_YAW -= .05;
+		if ( HUDWEAPON_YAW < -.1 )
+		{
+			HUDWEAPON_YAW = -.1;
+		}
+		HUDWEAPON_MOVEZ -= .2;
+		if ( HUDWEAPON_MOVEZ < 0 )
+		{
+			HUDWEAPON_MOVEZ = 0;
+		}
+		if ( HUDWEAPON_ROLL > 0 )
+		{
+			HUDWEAPON_ROLL = 0;
+			if ( HUDWEAPON_YAW == -.1 && HUDWEAPON_MOVEZ == 0 && HUDWEAPON_MOVEY == 0 && HUDWEAPON_MOVEX == 0 )
+			{
+				HUDWEAPON_CHOP = 0;
+			}
+		}
+	}
 
 	if ( HUDWEAPON_CHARGE == MAXCHARGE || castStrikeAnimation 
 		|| players[HUDWEAPON_PLAYERNUM]->entity->skill[9] == MONSTER_POSE_SPECIAL_WINDUP2
@@ -2795,8 +2986,8 @@ void actHudWeapon(Entity* my)
 			{
 				HUDWEAPON_MOVEX -= HUDWEAPON_OLDVIBRATEX;
 				HUDWEAPON_MOVEY -= HUDWEAPON_OLDVIBRATEY;
-				HUDWEAPON_OLDVIBRATEX = (rand() % 30 - 10) / 150.f;
-				HUDWEAPON_OLDVIBRATEY = (rand() % 30 - 10) / 150.f;
+				HUDWEAPON_OLDVIBRATEX = (local_rng.rand() % 30 - 10) / 150.f;
+				HUDWEAPON_OLDVIBRATEY = (local_rng.rand() % 30 - 10) / 150.f;
 				HUDWEAPON_MOVEX += HUDWEAPON_OLDVIBRATEX;
 				HUDWEAPON_MOVEY += HUDWEAPON_OLDVIBRATEY;
 			}
@@ -2806,9 +2997,9 @@ void actHudWeapon(Entity* my)
 				HUDWEAPON_MOVEX -= HUDWEAPON_OLDVIBRATEX;
 				HUDWEAPON_MOVEY -= HUDWEAPON_OLDVIBRATEY;
 				HUDWEAPON_MOVEZ -= HUDWEAPON_OLDVIBRATEZ;
-				HUDWEAPON_OLDVIBRATEX = (rand() % 30 - 10) / 80.f;
-				HUDWEAPON_OLDVIBRATEY = (rand() % 30 - 10) / 80.f;
-				HUDWEAPON_OLDVIBRATEZ = (rand() % 30 - 10) / 80.f;
+				HUDWEAPON_OLDVIBRATEX = (local_rng.rand() % 30 - 10) / 80.f;
+				HUDWEAPON_OLDVIBRATEY = (local_rng.rand() % 30 - 10) / 80.f;
+				HUDWEAPON_OLDVIBRATEZ = (local_rng.rand() % 30 - 10) / 80.f;
 				HUDWEAPON_MOVEX += HUDWEAPON_OLDVIBRATEX;
 				HUDWEAPON_MOVEY += HUDWEAPON_OLDVIBRATEY;
 				HUDWEAPON_MOVEZ += HUDWEAPON_OLDVIBRATEZ;
@@ -2834,15 +3025,14 @@ void actHudWeapon(Entity* my)
 			entity->flags[NOUPDATE] = true;
 			entity->flags[UPDATENEEDED] = false;
 			entity->flags[OVERDRAW] = true;
-			entity->flags[BRIGHT] = true;
 			entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
 			entity->scaley = 0.25f;
 			entity->scalez = 0.25f;
 			entity->z -= 3.5;
 			entity->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
-			entity->yaw = ((rand() % 6) * 60) * PI / 180.0;
-			entity->pitch = (rand() % 360) * PI / 180.0;
-			entity->roll = (rand() % 360) * PI / 180.0;
+			entity->yaw = ((local_rng.rand() % 6) * 60) * PI / 180.0;
+			entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+			entity->roll = (local_rng.rand() % 360) * PI / 180.0;
 			entity->vel_x = cos(entity->yaw) * .1;
 			entity->vel_y = sin(entity->yaw) * .1;
 			entity->vel_z = -.15;
@@ -2923,6 +3113,17 @@ void actHudWeapon(Entity* my)
 				my->yaw = -.05 - camera_shakex2;
 				my->pitch = HUDWEAPON_PITCH - camera_shakey2 / 200.f;
 				my->roll = HUDWEAPON_ROLL;
+			}
+			else if ( item->type == TOOL_BEARTRAP )
+			{
+				my->x = 6 + HUDWEAPON_MOVEX + 3 * (itemCategory(item) == POTION) + 5;
+				my->y = 3 + HUDWEAPON_MOVEY - 3 * (itemCategory(item) == POTION) + 2;
+				my->z = (cameras[HUDWEAPON_PLAYERNUM].z * .5 - players[HUDWEAPON_PLAYERNUM]->entity->z) + 7 + HUDWEAPON_MOVEZ - 3 * (itemCategory(item) == POTION)
+					+ 2;
+				my->yaw = HUDWEAPON_YAW - camera_shakex2;
+				my->pitch = defaultpitch + HUDWEAPON_PITCH - camera_shakey2 / 200.f + -.25;
+				my->roll = HUDWEAPON_ROLL + (PI / 2) * (itemCategory(item) == POTION);
+				my->focalx = 0;
 			}
 			else if ( item->type == SLING
 				|| item->type == SHORTBOW
@@ -3011,8 +3212,8 @@ void actHudShield(Entity* my)
 {
 	my->flags[UNCLICKABLE] = true;
 
-	auto& camera_shakex = cameravars[HUDSHIELD_PLAYERNUM].shakex;
-	auto& camera_shakey = cameravars[HUDSHIELD_PLAYERNUM].shakey;
+	Input& input = Input::inputs[HUDSHIELD_PLAYERNUM];
+
 	auto& camera_shakex2 = cameravars[HUDSHIELD_PLAYERNUM].shakex2;
 	auto& camera_shakey2 = cameravars[HUDSHIELD_PLAYERNUM].shakey2;
 
@@ -3038,9 +3239,6 @@ void actHudShield(Entity* my)
 		list_RemoveNode(my->mynode);
 		return;
 	}
-
-	// check levitating value
-	bool levitating = isLevitating(stats[HUDSHIELD_PLAYERNUM]);
 
 	// select model
 	bool wearingring = false;
@@ -3165,7 +3363,7 @@ void actHudShield(Entity* my)
 	bool swimming = false;
 	if (players[HUDSHIELD_PLAYERNUM] && players[HUDSHIELD_PLAYERNUM]->entity)
 	{
-		if ( players[HUDWEAPON_PLAYERNUM]->movement.isPlayerSwimming() || players[HUDSHIELD_PLAYERNUM]->entity->skill[13] != 0 ) //skill[13] PLAYER_INWATER
+		if ( players[HUDSHIELD_PLAYERNUM]->movement.isPlayerSwimming() || players[HUDSHIELD_PLAYERNUM]->entity->skill[13] != 0 ) //skill[13] PLAYER_INWATER
 		{
 			my->flags[INVISIBLE] = true;
 			Entity* parent = uidToEntity(my->parent);
@@ -3191,23 +3389,36 @@ void actHudShield(Entity* my)
 	}
 
 	bool defending = false;
+	bool wouldBeDefending = false; // to handle different block/sneaking hotkeys. not allowed to sneak if we would be defending on the same hotkey
 	bool sneaking = false;
-	if (!command && !swimming)
+    const bool shootmode = players[HUDSHIELD_PLAYERNUM]->shootmode;
+	if ( !players[HUDSHIELD_PLAYERNUM]->usingCommand()
+		&& players[HUDSHIELD_PLAYERNUM]->bControlEnabled
+		&& !gamePaused
+		&& !swimming && shootmode)
 	{
 		if ( players[HUDSHIELD_PLAYERNUM] && players[HUDSHIELD_PLAYERNUM]->entity 
-			&& (*inputPressedForPlayer(HUDSHIELD_PLAYERNUM, impulses[IN_DEFEND]) 
-				|| (players[HUDSHIELD_PLAYERNUM]->shootmode && inputs.bControllerInputPressed(HUDSHIELD_PLAYERNUM, INJOY_GAME_DEFEND)))
+			&& shootmode
 			&& players[HUDSHIELD_PLAYERNUM]->entity->isMobile() 
-			&& !gamePaused 
 			&& !cast_animation[HUDSHIELD_PLAYERNUM].active
 			&& !cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook
 			&& (!spellbook || (spellbook && hideShield)) )
 		{
-			if ( stats[HUDSHIELD_PLAYERNUM]->shield && (players[HUDSHIELD_PLAYERNUM]->hud.weapon->skill[0] % 3 == 0) )
+			if ( stats[HUDSHIELD_PLAYERNUM]->shield )
 			{
-				defending = true;
+				if ( (players[HUDSHIELD_PLAYERNUM]->hud.weapon->skill[0] % 3 == 0) )
+				{
+					if (input.binaryToggle("Defend"))
+					{
+						defending = true;
+					}
+				}
+				wouldBeDefending = true;
 			}
-			sneaking = true;
+			if (input.binaryToggle("Sneak"))
+			{
+			    sneaking = true;
+			}
 		}
 	}
 
@@ -3215,6 +3426,7 @@ void actHudShield(Entity* my)
 	{
 		// can't defend with quivers.
 		defending = false;
+		wouldBeDefending = false;
 	}
 	if ( playerRace == RAT
 		|| playerRace == CREATURE_IMP
@@ -3222,6 +3434,7 @@ void actHudShield(Entity* my)
 		|| playerRace == SPIDER )
 	{
 		defending = false;
+		wouldBeDefending = false;
 	}
 
 	if (defending)
@@ -3232,7 +3445,7 @@ void actHudShield(Entity* my)
 	{
 		stats[HUDSHIELD_PLAYERNUM]->defending = false;
 	}
-	if ( sneaking )
+	if ( sneaking && (!defending && !wouldBeDefending) )
 	{
 		stats[HUDSHIELD_PLAYERNUM]->sneaking = true;
 	}
@@ -3240,7 +3453,6 @@ void actHudShield(Entity* my)
 	{
 		stats[HUDSHIELD_PLAYERNUM]->sneaking = false;
 	}
-
 	if (multiplayer == CLIENT)
 	{
 		if (HUDSHIELD_DEFEND != defending || ticks % 120 == 0)
@@ -3274,7 +3486,7 @@ void actHudShield(Entity* my)
 	Entity*& hudweapon = players[HUDSHIELD_PLAYERNUM]->hud.weapon;
 
 	// shield switching animation
-	if ( players[HUDWEAPON_PLAYERNUM]->hud.shieldSwitch )
+	if ( players[HUDSHIELD_PLAYERNUM]->hud.shieldSwitch )
 	{
 		if ( hudweapon )
 		{
@@ -3302,7 +3514,7 @@ void actHudShield(Entity* my)
 
 		if ( !spellbook )
 		{
-			players[HUDWEAPON_PLAYERNUM]->hud.shieldSwitch = false;
+			players[HUDSHIELD_PLAYERNUM]->hud.shieldSwitch = false;
 		}
 		if ( !(defending || (spellbook && cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook) || doBowReload) )
 		{
@@ -3661,7 +3873,7 @@ void actHudShield(Entity* my)
 	Entity*& hudarm = players[HUDSHIELD_PLAYERNUM]->hud.arm;
 	if ( playerRace == SPIDER && hudarm && players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(0) )
 	{
-		my->sprite = 854;
+		my->sprite = arachnophobia_filter ? 1006 : 854;
 		my->x = hudarm->x;
 		my->y = -hudarm->y;
 		my->z = hudarm->z;
@@ -3685,7 +3897,6 @@ void actHudShield(Entity* my)
 	}
 
 	// torch/lantern flames
-	my->flags[BRIGHT] = false;
 	if ( playerRace == TROLL || playerRace == SPIDER || playerRace == CREATURE_IMP || playerRace == RAT )
 	{
 		// don't process flames as these don't hold torches.
@@ -3696,36 +3907,46 @@ void actHudShield(Entity* my)
 		&& players[HUDSHIELD_PLAYERNUM]->entity->skill[3] == 0 
 		&& !cast_animation[HUDSHIELD_PLAYERNUM].active 
 		&& !cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook
-		&& !players[HUDWEAPON_PLAYERNUM]->hud.shieldSwitch)
+		&& !players[HUDSHIELD_PLAYERNUM]->hud.shieldSwitch)
 	{
 		if (itemCategory(stats[HUDSHIELD_PLAYERNUM]->shield) == TOOL)
 		{
-			if (stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_TORCH)
-			{
-				Entity* entity = spawnFlame(my, SPRITE_FLAME);
-				entity->flags[OVERDRAW] = true;
-				entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
-				entity->y += 2.5 * sin(HUDSHIELD_ROLL);
-				entity->skill[11] = HUDSHIELD_PLAYERNUM;
-				my->flags[BRIGHT] = true;
-			}
-			if ( stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_CRYSTALSHARD )
-			{
-				Entity* entity = spawnFlame(my, SPRITE_CRYSTALFLAME);
-				entity->flags[OVERDRAW] = true;
-				entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
-				entity->y += 2.5 * sin(HUDSHIELD_ROLL);
-				entity->skill[11] = HUDSHIELD_PLAYERNUM;
-				my->flags[BRIGHT] = true;
-			}
-			else if (stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_LANTERN)
-			{
-				Entity* entity = spawnFlame(my, SPRITE_FLAME);
-				entity->flags[OVERDRAW] = true;
-				entity->skill[11] = HUDSHIELD_PLAYERNUM;
-				entity->z += 1;
-				my->flags[BRIGHT] = true;
-			}
+		    if (stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_TORCH)
+		    {
+                if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
+                {
+					if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
+					{
+						entity->flags[OVERDRAW] = true;
+						entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
+						entity->y += 2.5 * sin(HUDSHIELD_ROLL);
+						entity->skill[11] = HUDSHIELD_PLAYERNUM;
+					}
+			    }
+		    }
+		    else if ( stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_CRYSTALSHARD )
+		    {
+                if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
+                {
+			        /*Entity* entity = spawnFlame(my, SPRITE_CRYSTALFLAME);
+			        entity->flags[OVERDRAW] = true;
+			        entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
+			        entity->y += 2.5 * sin(HUDSHIELD_ROLL);
+			        entity->skill[11] = HUDSHIELD_PLAYERNUM;*/
+			    }
+		    }
+		    else if (stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_LANTERN)
+		    {
+                if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
+                {
+					if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
+					{
+						entity->flags[OVERDRAW] = true;
+						entity->skill[11] = HUDSHIELD_PLAYERNUM;
+						entity->z += 1;
+					}
+			    }
+		    }
 		}
 	}
 }
@@ -3740,8 +3961,6 @@ void actHudAdditional(Entity* my)
 
 	my->flags[UNCLICKABLE] = true;
 
-	auto& camera_shakex = cameravars[HUDSHIELD_PLAYERNUM].shakex;
-	auto& camera_shakey = cameravars[HUDSHIELD_PLAYERNUM].shakey;
 	auto& camera_shakex2 = cameravars[HUDSHIELD_PLAYERNUM].shakex2;
 	auto& camera_shakey2 = cameravars[HUDSHIELD_PLAYERNUM].shakey2;
 
@@ -3776,7 +3995,8 @@ void actHudAdditional(Entity* my)
 
 	if ( !players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(2)
 		|| players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(2)->flags[INVISIBLE]
-		|| players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(2)->sprite == 854 )
+		|| players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(2)->sprite == 854
+		|| players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(2)->sprite == 1006 )
 	{
 		// if shield invisible or spider arm we're invis.
 		my->flags[INVISIBLE] = true;
@@ -3824,29 +4044,13 @@ void actHudAdditional(Entity* my)
 	}
 
 	bool defending = false;
-	bool sneaking = false;
-	/*if ( !command )
-	{
-		if ( players[HUDSHIELD_PLAYERNUM] && players[HUDSHIELD_PLAYERNUM]->entity
-			&& (*inputPressedForPlayer(HUDSHIELD_PLAYERNUM, impulses[IN_DEFEND]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_DEFEND])))
-			&& players[HUDSHIELD_PLAYERNUM]->entity->isMobile()
-			&& !gamePaused
-			&& !cast_animation.active )
-		{
-			if ( stats[HUDSHIELD_PLAYERNUM]->shield && (hudweapon->skill[0] % 3 == 0) )
-			{
-				defending = true;
-			}
-			sneaking = true;
-		}
-	}*/
 
 	// shield switching animation
-	if ( players[HUDWEAPON_PLAYERNUM]->hud.shieldSwitch )
+	if ( players[HUDSHIELD_PLAYERNUM]->hud.shieldSwitch )
 	{
 		if ( spellbook )
 		{
-			players[HUDWEAPON_PLAYERNUM]->hud.shieldSwitch = false;
+			players[HUDSHIELD_PLAYERNUM]->hud.shieldSwitch = false;
 		}
 		if ( !(defending || (spellbook && cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook)) )
 		{

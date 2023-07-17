@@ -15,19 +15,23 @@
 #include "entity.hpp"
 #include "items.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "prng.hpp"
 
 void initSkeleton(Entity* my, Stat* myStats)
 {
 	int c;
 	node_t* node;
 
+	my->flags[BURNABLE] = false;
+
 	//Sprite 229 = Skeleton head model
 	my->initMonster(229);
+	my->z = -0.5;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -40,6 +44,10 @@ void initSkeleton(Entity* my, Stat* myStats)
 	{
 		if ( myStats != nullptr )
 		{
+		    if ( myStats->sex == FEMALE )
+		    {
+		        my->sprite = 1103;
+		    }
 			if ( !myStats->leader_uid )
 			{
 				myStats->leader_uid = 0;
@@ -51,14 +59,13 @@ void initSkeleton(Entity* my, Stat* myStats)
 			{
 				int rank = std::min(my->monsterAllySummonRank, 7);
 				bool secondarySummon = true;
-				if ( !strcmp(myStats->name, "skeleton knight") )
+				if ( MonsterData_t::nameMatchesSpecialNPCName(*myStats, "skeleton knight") )
 				{
 					secondarySummon = false;
 				}
 				my->skeletonSummonSetEquipment(myStats, rank);
-				myStats->sex = MALE;
 				myStats->GOLD = 0;
-				my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 64);
+				my->light = addLight(my->x / 16, my->y / 16, "summoned_skeleton_glow");
 
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )
@@ -224,7 +231,24 @@ void initSkeleton(Entity* my, Stat* myStats)
 				int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 				// boss variants
-				if ( rand() % 50 > 0 || my->flags[USERFLAG2] || strcmp(myStats->name, "") || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+			    const bool boss =
+			        local_rng.rand() % 50 == 0 &&
+			        !my->flags[USERFLAG2] &&
+			        !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+			    if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
+			    {
+					myStats->setAttribute("special_npc", "funny bones");
+					strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+					my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
+			        myStats->sex = MALE;
+					myStats->HP = 100;
+					myStats->MAXHP = 100;
+					myStats->STR += 6;
+					int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
+					myStats->weapon = newItem(ARTIFACT_AXE, static_cast<Status>(status), 1, 1, local_rng.rand(), true, nullptr);
+					myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, nullptr);
+			    }
+				else
 				{
 					// not boss if a follower, or name has already been set to something other than blank.
 					if ( strncmp(map.name, "Underworld", 10) )
@@ -232,41 +256,31 @@ void initSkeleton(Entity* my, Stat* myStats)
 						//give weapon
 						if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 						{
-							switch ( rand() % 10 )
+							switch ( local_rng.rand() % 10 )
 							{
 								case 0:
 								case 1:
-									myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+									myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 									break;
 								case 2:
 								case 3:
-									myStats->weapon = newItem(BRONZE_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+									myStats->weapon = newItem(BRONZE_SWORD, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 									break;
 								case 4:
 								case 5:
-									myStats->weapon = newItem(IRON_SPEAR, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+									myStats->weapon = newItem(IRON_SPEAR, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 									break;
 								case 6:
 								case 7:
-									myStats->weapon = newItem(IRON_AXE, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+									myStats->weapon = newItem(IRON_AXE, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 									break;
 								case 8:
 								case 9:
-									myStats->weapon = newItem(IRON_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+									myStats->weapon = newItem(IRON_SWORD, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 									break;
 							}
 						}
 					}
-				}
-				else
-				{
-					myStats->HP = 100;
-					myStats->MAXHP = 100;
-					strcpy(myStats->name, "Funny Bones");
-					myStats->STR += 6;
-					int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
-					myStats->weapon = newItem(ARTIFACT_AXE, static_cast<Status>(status), 1, 1, rand(), true, nullptr);
-					myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, nullptr);
 				}
 
 				// random effects
@@ -302,23 +316,23 @@ void initSkeleton(Entity* my, Stat* myStats)
 				//give weapon
 				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
 						case 2:
 						case 3:
-							myStats->weapon = newItem(SHORTBOW, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(SHORTBOW, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 4:
 						case 5:
 						case 6:
 						case 7:
-							myStats->weapon = newItem(CROSSBOW, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(CROSSBOW, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 8:
 						case 9:
-							myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -1 + rand() % 2, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 							break;
 					}
 				}
@@ -326,7 +340,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 				//give helmet
 				if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
@@ -335,13 +349,13 @@ void initSkeleton(Entity* my, Stat* myStats)
 						case 4:
 							break;
 						case 5:
-							myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+							myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 6:
 						case 7:
 						case 8:
 						case 9:
-							myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+							myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 							break;
 					}
 				}
@@ -355,7 +369,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 					}
 					else
 					{
-						switch ( rand() % 10 )
+						switch ( local_rng.rand() % 10 )
 						{
 							case 0:
 							case 1:
@@ -366,13 +380,13 @@ void initSkeleton(Entity* my, Stat* myStats)
 								break;
 							case 6:
 							case 7:
-								myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+								myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 								break;
 							case 8:
-								myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+								myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 								break;
 							case 9:
-								myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+								myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 								break;
 						}
 					}
@@ -382,7 +396,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(230, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(230, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -401,7 +415,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(236, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(236, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -420,7 +434,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(235, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(235, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -439,7 +453,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(233, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(233, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -458,7 +472,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(231, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(231, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -477,7 +491,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// world weapon
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -498,7 +512,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// shield
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -518,7 +532,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// cloak
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -541,7 +555,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// helmet
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -564,7 +578,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// mask
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -591,6 +605,36 @@ void initSkeleton(Entity* my, Stat* myStats)
 
 void actSkeletonLimb(Entity* my)
 {
+	Entity* parent = uidToEntity(my->skill[2]);
+
+	if ( parent && parent->behavior == &actMonster )
+	{
+		if ( Stat* stats = parent->getStats() )
+		{
+			const char* lightName = nullptr;
+			if ( MonsterData_t::nameMatchesSpecialNPCName(*stats, "skeleton sentinel") )
+			{
+				lightName = "summoned_skeleton_glow";
+			}
+			else if ( MonsterData_t::nameMatchesSpecialNPCName(*stats, "skeleton knight") )
+			{
+				lightName = "summoned_skeleton_glow";
+			}
+
+			if ( my->light )
+			{
+				list_RemoveNode(my->light->node);
+				my->light = nullptr;
+			}
+
+			if ( lightName )
+			{
+				my->light = addLight(my->x / 16, my->y / 16, lightName);
+				my->actMonsterLimb(false);
+				return;
+			}
+		}
+	}
 	my->actMonsterLimb(true);
 }
 
@@ -632,7 +676,7 @@ void skeletonDie(Entity* my)
 				int manaToRefund = std::min(spellCost, static_cast<int>(myStats->MP / static_cast<float>(myStats->MAXMP) * spellCost)); // MP to restore
 				if ( manaToRefund > 0 )
 				{
-					manaToRefund -= rand() % (std::max(1, manaToRefund / 3));
+					manaToRefund -= local_rng.rand() % (std::max(1, manaToRefund / 3));
 					if ( leaderStats->HP <= 0 )
 					{
 						manaToRefund = 0;
@@ -644,7 +688,7 @@ void skeletonDie(Entity* my)
 						spellEntity->skill[7] = manaToRefund;
 						if ( leader->behavior == &actPlayer )
 						{
-							messagePlayerMonsterEvent(leader->skill[2], 0xFFFFFFFF, *myStats, language[3194], language[3195], MSG_COMBAT);
+							messagePlayerMonsterEvent(leader->skill[2], 0xFFFFFFFF, *myStats, Language::get(3194), Language::get(3195), MSG_COMBAT);
 						}
 					}
 				}
@@ -660,26 +704,52 @@ void skeletonDie(Entity* my)
 		Entity* entity = spawnGib(my);
 		if ( entity )
 		{
-			switch ( c )
-			{
-				case 0:
-					entity->sprite = 229;
-					break;
-				case 1:
-					entity->sprite = 230;
-					break;
-				case 2:
-					entity->sprite = 231;
-					break;
-				case 3:
-					entity->sprite = 233;
-					break;
-				case 4:
-					entity->sprite = 235;
-					break;
-				case 5:
-					entity->sprite = 236;
-					break;
+            entity->skill[5] = 1; // poof
+            if (my->sprite == 1103) {
+			    switch ( c )
+			    {
+				    case 0:
+					    entity->sprite = 1099;
+					    break;
+				    case 1:
+					    entity->sprite = 1101;
+					    break;
+				    case 2:
+					    entity->sprite = 1103;
+					    break;
+				    case 3:
+					    entity->sprite = 1104;
+					    break;
+				    case 4:
+					    entity->sprite = 1105;
+					    break;
+				    case 5:
+					    entity->sprite = 1106;
+					    break;
+			    }
+            }
+            else {
+			    switch ( c )
+			    {
+				    case 0:
+					    entity->sprite = 229;
+					    break;
+				    case 1:
+					    entity->sprite = 230;
+					    break;
+				    case 2:
+					    entity->sprite = 231;
+					    break;
+				    case 3:
+					    entity->sprite = 233;
+					    break;
+				    case 4:
+					    entity->sprite = 235;
+					    break;
+				    case 5:
+					    entity->sprite = 236;
+					    break;
+			    }
 			}
 			serverSpawnGibForClient(entity);
 		}
@@ -836,7 +906,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->breastplate == nullptr )
 					{
-						entity->sprite = 230;
+						entity->sprite = my->sprite == 1103 ? 1106 : 230;
 					}
 					else
 					{
@@ -864,7 +934,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->shoes == nullptr )
 					{
-						entity->sprite = 236;
+						entity->sprite = my->sprite == 1103 ? 1105 : 236;
 					}
 					else
 					{
@@ -892,7 +962,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->shoes == nullptr )
 					{
-						entity->sprite = 235;
+						entity->sprite = my->sprite == 1103 ? 1104 : 235;
 					}
 					else
 					{
@@ -921,7 +991,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->gloves == nullptr )
 					{
-						entity->sprite = 233;
+						entity->sprite = my->sprite == 1103 ? 1101 : 233;
 					}
 					else
 					{
@@ -949,7 +1019,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( entity->skill[7] == 0 )
 					{
-						if ( entity->sprite == 233 )
+						if ( entity->sprite == 233 || entity->sprite == 1101 )
 						{
 							// these are the default arms.
 							// chances are they may be wrong if sent by the server, 
@@ -963,7 +1033,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( entity->skill[7] == 0 )
 					{
 						// we set this ourselves until proper initialisation.
-						entity->sprite = 233;
+						entity->sprite = my->sprite == 1103 ? 1101 : 233;
 					}
 					else
 					{
@@ -981,7 +1051,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SKELETON][4][0]; // 0
 						entity->focaly = limbs[SKELETON][4][1]; // 0
 						entity->focalz = limbs[SKELETON][4][2]; // 2
-						//entity->sprite = 233;
+						//entity->sprite = my->sprite == 1103 ? 1101 : 233;
 					}
 					else
 					{
@@ -989,9 +1059,9 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SKELETON][4][0] + 1; // 1
 						entity->focaly = limbs[SKELETON][4][1]; // 0
 						entity->focalz = limbs[SKELETON][4][2] - 1; // 1
-						if ( entity->sprite == 233 )
+						if ( entity->sprite == 233 || entity->sprite == 1101 )
 						{
-							entity->sprite = 234;
+							entity->sprite = my->sprite == 1103 ? 1102 : 234;
 						}
 						else
 						{
@@ -1010,7 +1080,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->gloves == nullptr )
 					{
-						entity->sprite = 231;
+						entity->sprite = my->sprite == 1103 ? 1099 : 231;
 					}
 					else
 					{
@@ -1038,7 +1108,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( entity->skill[7] == 0 )
 					{
-						if ( entity->sprite == 231 )
+						if ( entity->sprite == 231 || entity->sprite == 1099 )
 						{
 							// these are the default arms.
 							// chances are they may be wrong if sent by the server, 
@@ -1052,7 +1122,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( entity->skill[7] == 0 )
 					{
 						// we set this ourselves until proper initialisation.
-						entity->sprite = 231;
+						entity->sprite = my->sprite == 1103 ? 1099 : 231;
 					}
 					else
 					{
@@ -1068,7 +1138,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( shield->flags[INVISIBLE] )
 					{
 						// if shield invisible, relax arm.
-						//entity->sprite = 231;
+						//entity->sprite = my->sprite == 1103 ? 1099 : 231;
 						entity->focalx = limbs[SKELETON][5][0]; // 0
 						entity->focaly = limbs[SKELETON][5][1]; // 0
 						entity->focalz = limbs[SKELETON][5][2]; // 2
@@ -1079,9 +1149,9 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SKELETON][5][0] + 1; // 1
 						entity->focaly = limbs[SKELETON][5][1]; // 0
 						entity->focalz = limbs[SKELETON][5][2] - 1; // 1
-						if ( entity->sprite == 231 )
+						if ( entity->sprite == 231 || entity->sprite == 1099 )
 						{
-							entity->sprite = 232;
+							entity->sprite = my->sprite == 1103 ? 1100 : 232;
 						}
 						else
 						{
@@ -1325,6 +1395,10 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							entity->sprite = 165; // GlassesWorn.vox
 						}
+						else if ( myStats->mask->type == MONOCLE )
+						{
+							entity->sprite = 1196; // monocleWorn.vox
+						}
 						else
 						{
 							entity->sprite = itemModel(myStats->mask);
@@ -1356,7 +1430,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				if ( entity->sprite != 165 )
+				if ( entity->sprite != 165 && entity->sprite != 1196 )
 				{
 					if ( entity->sprite == items[MASK_SHAMAN].index )
 					{
@@ -1406,7 +1480,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 void Entity::skeletonSummonSetEquipment(Stat* myStats, int rank)
 {
-	if ( !strcmp(myStats->name, "skeleton knight") )
+	if ( MonsterData_t::nameMatchesSpecialNPCName(*myStats, "skeleton knight") )
 	{
 		switch ( rank )
 		{
@@ -1644,7 +1718,7 @@ void Entity::skeletonSummonSetEquipment(Stat* myStats, int rank)
 				break;
 		}
 	}
-	else if ( !strcmp(myStats->name, "skeleton sentinel") )
+	else if ( MonsterData_t::nameMatchesSpecialNPCName(*myStats, "skeleton sentinel") )
 	{
 		switch ( rank )
 		{

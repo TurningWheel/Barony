@@ -13,6 +13,7 @@ See LICENSE for details.
 #include "game.hpp"
 #include "items.hpp"
 #include "files.hpp"
+#include "entity.hpp"
 
 Uint32 itemuids = 1;
 ItemGeneric items[NUMITEMS];
@@ -182,124 +183,124 @@ char* Item::description() const
 
 int loadItems()
 {
-	int c, x;
-	char name[32];
-	// load item types
-	printlog("loading items...\n");
-	File* const fp = openDataFile("items/items.txt", "r");
-	for ( c = 0; !fp->eof(); c++ )
-	{
-		items[c].name_identified = language[1545 + c * 2];
-		items[c].name_unidentified = language[1546 + c * 2];
-		items[c].index = fp->geti();
-		items[c].fpindex = fp->geti();
-		items[c].variations = fp->geti();
-		fp->gets(name, sizeof(name));
-		if ( !strcmp(name, "WEAPON") )
-		{
-			items[c].category = WEAPON;
-		}
-		else if ( !strcmp(name, "ARMOR") )
-		{
-			items[c].category = ARMOR;
-		}
-		else if ( !strcmp(name, "AMULET") )
-		{
-			items[c].category = AMULET;
-		}
-		else if ( !strcmp(name, "POTION") )
-		{
-			items[c].category = POTION;
-		}
-		else if ( !strcmp(name, "SCROLL") )
-		{
-			items[c].category = SCROLL;
-		}
-		else if ( !strcmp(name, "MAGICSTAFF") )
-		{
-			items[c].category = MAGICSTAFF;
-		}
-		else if ( !strcmp(name, "RING") )
-		{
-			items[c].category = RING;
-		}
-		else if ( !strcmp(name, "SPELLBOOK") )
-		{
-			items[c].category = SPELLBOOK;
-		}
-		else if ( !strcmp(name, "TOOL") )
-		{
-			items[c].category = TOOL;
-		}
-		else if ( !strcmp(name, "FOOD") )
-		{
-			items[c].category = FOOD;
-		}
-		else if ( !strcmp(name, "BOOK") )
-		{
-			items[c].category = BOOK;
-		}
-		else if ( !strcmp(name, "SPELL_CAT") )
-		{
-			items[c].category = SPELL_CAT;
-		}
-		else
-		{
-			items[c].category = GEM;
-		}
-		items[c].weight = fp->geti();
-		items[c].value = fp->geti();
-		items[c].images.first = nullptr;
-		items[c].images.last = nullptr;
-		while ( true )
-		{
-			auto* string = static_cast<string_t*>(malloc(sizeof(string_t)));
-			string->data = static_cast<char*>(malloc(sizeof(char) * 64));
-			string->lines = 1;
+	//int c, x;
+	//char name[32];
+	//// load item types
+	//printlog("loading items...\n");
+	//File* const fp = openDataFile("items/items.txt", "rb");
+	//for ( c = 0; !fp->eof(); c++ )
+	//{
+	//	items[c].name_identified = Language::get(1545 + c * 2);
+	//	items[c].name_unidentified = Language::get(1546 + c * 2);
+	//	items[c].index = fp->geti();
+	//	items[c].fpindex = fp->geti();
+	//	items[c].variations = fp->geti();
+	//	fp->gets(name, sizeof(name));
+	//	if ( !strcmp(name, "WEAPON") )
+	//	{
+	//		items[c].category = WEAPON;
+	//	}
+	//	else if ( !strcmp(name, "ARMOR") )
+	//	{
+	//		items[c].category = ARMOR;
+	//	}
+	//	else if ( !strcmp(name, "AMULET") )
+	//	{
+	//		items[c].category = AMULET;
+	//	}
+	//	else if ( !strcmp(name, "POTION") )
+	//	{
+	//		items[c].category = POTION;
+	//	}
+	//	else if ( !strcmp(name, "SCROLL") )
+	//	{
+	//		items[c].category = SCROLL;
+	//	}
+	//	else if ( !strcmp(name, "MAGICSTAFF") )
+	//	{
+	//		items[c].category = MAGICSTAFF;
+	//	}
+	//	else if ( !strcmp(name, "RING") )
+	//	{
+	//		items[c].category = RING;
+	//	}
+	//	else if ( !strcmp(name, "SPELLBOOK") )
+	//	{
+	//		items[c].category = SPELLBOOK;
+	//	}
+	//	else if ( !strcmp(name, "TOOL") )
+	//	{
+	//		items[c].category = TOOL;
+	//	}
+	//	else if ( !strcmp(name, "FOOD") )
+	//	{
+	//		items[c].category = FOOD;
+	//	}
+	//	else if ( !strcmp(name, "BOOK") )
+	//	{
+	//		items[c].category = BOOK;
+	//	}
+	//	else if ( !strcmp(name, "SPELL_CAT") )
+	//	{
+	//		items[c].category = SPELL_CAT;
+	//	}
+	//	else
+	//	{
+	//		items[c].category = GEM;
+	//	}
+	//	items[c].weight = fp->geti();
+	//	items[c].value = fp->geti();
+	//	items[c].images.first = nullptr;
+	//	items[c].images.last = nullptr;
+	//	while ( true )
+	//	{
+	//		auto* string = static_cast<string_t*>(malloc(sizeof(string_t)));
+	//		string->data = static_cast<char*>(malloc(sizeof(char) * 64));
+	//		string->lines = 1;
 
-			node_t* node = list_AddNodeLast(&items[c].images);
-			node->element = string;
-			node->deconstructor = &stringDeconstructor;
-			node->size = sizeof(string_t);
-			string->node = node;
+	//		node_t* node = list_AddNodeLast(&items[c].images);
+	//		node->element = string;
+	//		node->deconstructor = &stringDeconstructor;
+	//		node->size = sizeof(string_t);
+	//		string->node = node;
 
-			x = 0;
-			bool fileend = false;
-			while ( (string->data[x] = fp->getc()) != '\n' )
-			{
-				if ( fp->eof() )
-				{
-					fileend = true;
-					break;
-				}
-				x++;
-			}
-			if ( x == 0 || fileend )
-			{
-				list_RemoveNode(node);
-				break;
-			}
-			string->data[x] = 0;
-		}
-	}
-	for ( c = 0; c < NUMITEMS; c++ )
-	{
-		items[c].surfaces.first = nullptr;
-		items[c].surfaces.last = nullptr;
-		for ( x = 0; x < list_Size(&items[c].images); x++ )
-		{
-			auto** surface = static_cast<SDL_Surface**>(malloc(sizeof(SDL_Surface*)));
-			node_t* node = list_AddNodeLast(&items[c].surfaces);
-			node->element = surface;
-			node->deconstructor = &defaultDeconstructor;
-			node->size = sizeof(SDL_Surface*);
+	//		x = 0;
+	//		bool fileend = false;
+	//		while ( (string->data[x] = fp->getc()) != '\n' )
+	//		{
+	//			if ( fp->eof() )
+	//			{
+	//				fileend = true;
+	//				break;
+	//			}
+	//			x++;
+	//		}
+	//		if ( x == 0 || fileend )
+	//		{
+	//			list_RemoveNode(node);
+	//			break;
+	//		}
+	//		string->data[x] = 0;
+	//	}
+	//}
+	//for ( c = 0; c < NUMITEMS; c++ )
+	//{
+	//	items[c].surfaces.first = nullptr;
+	//	items[c].surfaces.last = nullptr;
+	//	for ( x = 0; x < list_Size(&items[c].images); x++ )
+	//	{
+	//		auto** surface = static_cast<SDL_Surface**>(malloc(sizeof(SDL_Surface*)));
+	//		node_t* node = list_AddNodeLast(&items[c].surfaces);
+	//		node->element = surface;
+	//		node->deconstructor = &defaultDeconstructor;
+	//		node->size = sizeof(SDL_Surface*);
 
-			node_t* node2 = list_Node(&items[c].images, x);
-			auto* string = static_cast<string_t*>(node2->element);
-			*surface = loadImage(string->data);
-		}
-	}
-	FileIO::close(fp);
+	//		node_t* node2 = list_Node(&items[c].images, x);
+	//		auto* string = static_cast<string_t*>(node2->element);
+	//		*surface = loadImage(string->data);
+	//	}
+	//}
+	//FileIO::close(fp);
 	return 1;
 }
 

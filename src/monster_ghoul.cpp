@@ -15,17 +15,23 @@
 #include "entity.hpp"
 #include "items.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 void initGhoul(Entity* my, Stat* myStats)
 {
 	int c;
 	node_t* node;
 
+	my->flags[BURNABLE] = true;
 	my->initMonster(246);
+	if (my->z < 10) {
+	    // this if check allows ghouls to rise out of gravestones.
+	    my->z = -.25;
+	}
 
 	if ( multiplayer != CLIENT )
 	{
@@ -65,7 +71,7 @@ void initGhoul(Entity* my, Stat* myStats)
 						myStats->LVL = 15;
 					}
 					myStats->PER = 10;
-					if ( rand() % 2 == 0 )
+					if ( local_rng.rand() % 2 == 0 )
 					{
 						myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
 						myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
@@ -81,33 +87,44 @@ void initGhoul(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+			const bool boss =
+			    local_rng.rand() % 50 == 0 &&
+			    !my->flags[USERFLAG2] &&
+			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
-				if ( !strncmp(map.name, "Bram's Castle", 13) )
-				{
-					myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
-					myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
-				}
-			}
-			else if ( !lesserMonster )
-			{
-				strcpy(myStats->name, "Coral Grimes");
+				myStats->setAttribute("special_npc", "coral grimes");
+				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
 				for ( c = 0; c < 3; c++ )
 				{
 					Entity* entity = summonMonster(GHOUL, my->x, my->y);
 					if ( entity )
 					{
 						entity->parent = my->getUID();
+						if ( Stat* followerStats = entity->getStats() )
+						{
+							followerStats->leader_uid = entity->parent;
+						}
 					}
 				}
+				myStats->sex = MALE;
 				myStats->HP *= 3;
 				myStats->MAXHP *= 3;
 				myStats->OLDHP = myStats->HP;
 				myStats->LVL = 15;
 				myStats->DEX = 2;
 				myStats->STR = 13;
-				newItem(GEM_GARNET, EXCELLENT, 0, 1, rand(), false, &myStats->inventory);
+				newItem(GEM_GARNET, EXCELLENT, 0, 1, local_rng.rand(), false, &myStats->inventory);
 				customItemsToGenerate -= 1;
+			}
+			else
+			{
+				if ( !strncmp(map.name, "Bram's Castle", 13) )
+				{
+					myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
+					myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
+				}
 			}
 
 			// random effects
@@ -134,19 +151,19 @@ void initGhoul(Entity* my, Stat* myStats)
 				case 5:
 				case 4:
 				case 3:
-					if ( rand() % 20 == 0 )
+					if ( local_rng.rand() % 20 == 0 )
 					{
-						newItem(POTION_WATER, SERVICABLE, 2, 1, rand(), false, &myStats->inventory);
+						newItem(POTION_WATER, SERVICABLE, 2, 1, local_rng.rand(), false, &myStats->inventory);
 					}
 				case 2:
-					if ( rand() % 10 == 0 )
+					if ( local_rng.rand() % 10 == 0 )
 					{
-						newItem(itemLevelCurve(TOOL, 0, currentlevel), DECREPIT, 1, 1, rand(), false, &myStats->inventory);
+						newItem(itemLevelCurve(TOOL, 0, currentlevel), DECREPIT, 1, 1, local_rng.rand(), false, &myStats->inventory);
 					}
 				case 1:
-					if ( rand() % 4 == 0 )
+					if ( local_rng.rand() % 4 == 0 )
 					{
-						newItem(FOOD_MEAT, DECREPIT, -1, 1, rand(), false, &myStats->inventory);
+						newItem(FOOD_MEAT, DECREPIT, -1, 1, local_rng.rand(), false, &myStats->inventory);
 					}
 					break;
 				default:
@@ -156,7 +173,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(247, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(my->sprite == 1017 ? 1020 : 247, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -175,7 +192,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(251, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1017 ? 1019 : 251, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -194,7 +211,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(250, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1017 ? 1018 : 250, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -213,7 +230,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(249, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1017 ? 1016 : 249, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -232,7 +249,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(248, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1017 ? 1015 : 248, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -258,15 +275,15 @@ void actGhoulLimb(Entity* my)
 
 void ghoulDie(Entity* my)
 {
-	int c;
-	for ( c = 0; c < 10; c++ )
+	for ( int c = 0; c < 10; c++ )
 	{
 		Entity* entity = spawnGib(my);
 		if ( entity )
 		{
 			if ( c < 6 )
 			{
-				entity->sprite = 246 + c;
+                entity->skill[5] = 1; // poof
+				entity->sprite = my->sprite == 1017 ? (1015 + c) : (246 + c);
 			}
 			serverSpawnGibForClient(entity);
 		}

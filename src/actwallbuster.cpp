@@ -13,10 +13,11 @@
 #include "game.hpp"
 #include "stat.hpp"
 #include "entity.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "paths.hpp"
+#include "player.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -48,7 +49,7 @@ void actWallBuster(Entity* my)
 		{
 			for ( c = 1; c < MAXPLAYERS; c++ )
 			{
-				if ( client_disconnected[c] == true )
+				if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 				{
 					continue;
 				}
@@ -86,7 +87,7 @@ void actWallBuilder(Entity* my)
 			for ( node_t* node = currentList->first; node != nullptr; node = node->next )
 			{
 				Entity* entity = (Entity*)node->element;
-				if ( entity == my || entity->flags[PASSABLE] || entity->sprite == 1 || (entity->behavior != &actMonster && entity->behavior != &actPlayer) )
+				if ( entity == my || entity->flags[PASSABLE] || entity->behavior == &actDoorFrame || (entity->behavior != &actMonster && entity->behavior != &actPlayer) )
 				{
 					continue;
 				}
@@ -128,11 +129,18 @@ void actWallBuilder(Entity* my)
 		Uint16 x = std::min<Uint16>(std::max<int>(0.0, my->x / 16), map.width - 1);
 		Uint16 y = std::min<Uint16>(std::max<int>(0.0, my->y / 16), map.height - 1);
 		map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] = map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height];
+
+		const real_t effectOffset = 2.0;
+		spawnPoof(static_cast<Sint16>(x * 16.0 - effectOffset), static_cast<Sint16>(y * 16.0 - effectOffset), 8, 1.0);
+		spawnPoof(static_cast<Sint16>(x * 16.0 - effectOffset), static_cast<Sint16>(y * 16.0 + 16.0 + effectOffset), 8, 1.0);
+		spawnPoof(static_cast<Sint16>(x * 16.0 + 16.0 + effectOffset), static_cast<Sint16>(y * 16.0 - effectOffset), 8, 1.0);
+		spawnPoof(static_cast<Sint16>(x * 16.0 + 16.0 + effectOffset), static_cast<Sint16>(y * 16.0 + 16.0 + effectOffset), 8, 1.0);
+
 		if ( multiplayer == SERVER )
 		{
 			for ( c = 1; c < MAXPLAYERS; c++ )
 			{
-				if ( client_disconnected[c] == true )
+				if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 				{
 					continue;
 				}
@@ -145,6 +153,7 @@ void actWallBuilder(Entity* my)
 				sendPacketSafe(net_sock, -1, net_packet, c - 1);
 			}
 		}
+		generatePathMaps();
 		list_RemoveNode(my->mynode);
 	}
 }

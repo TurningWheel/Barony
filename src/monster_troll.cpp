@@ -15,17 +15,20 @@
 #include "entity.hpp"
 #include "items.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 void initTroll(Entity* my, Stat* myStats)
 {
 	int c;
 	node_t* node;
 
+	my->flags[BURNABLE] = true;
 	my->initMonster(204);
+	my->z = -1.5;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -50,18 +53,27 @@ void initTroll(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+		    const bool boss =
+		        local_rng.rand() % 50 == 0 &&
+		        !my->flags[USERFLAG2] &&
+		        !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] &&
+		        myStats->leader_uid == 0;
+		    if ( boss || *cvar_summonBosses )
 			{
-			}
-			else
-			{
-				strcpy(myStats->name, "Thumpus the Troll");
+				myStats->setAttribute("special_npc", "thumpus");
+				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
+			    myStats->sex = MALE;
 				for ( c = 0; c < 3; c++ )
 				{
 					Entity* entity = summonMonster(GNOME, my->x, my->y);
 					if ( entity )
 					{
 						entity->parent = my->getUID();
+						if ( Stat* followerStats = entity->getStats() )
+						{
+							followerStats->leader_uid = entity->parent;
+						}
 					}
 				}
 				myStats->HP *= 2;
@@ -72,10 +84,10 @@ void initTroll(Entity* my, Stat* myStats)
 			}
 
 			// random effects
-			if ( rand() % 4 == 0 )
+			if ( local_rng.rand() % 4 == 0 )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 3600;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + local_rng.rand() % 3600;
 			}
 
 			// generates equipment and weapons if available from editor
@@ -101,13 +113,13 @@ void initTroll(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( rand() % 3 == 0 )
+					if ( local_rng.rand() % 3 == 0 )
 					{
-						int i = 1 + rand() % 3;
+						int i = 1 + local_rng.rand() % 3;
 						for ( c = 0; c < i; c++ )
 						{
-							Category cat = static_cast<Category>(rand() % (NUMCATEGORIES - 1));
-							newItem(static_cast<ItemType>(itemLevelCurve(cat, 0, currentlevel + 10)), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+							Category cat = static_cast<Category>(local_rng.rand() % (NUMCATEGORIES - 1));
+							newItem(static_cast<ItemType>(itemLevelCurve(cat, 0, currentlevel + 10)), static_cast<Status>(1 + local_rng.rand() % 4), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
 						}
 					}
 					break;
@@ -118,7 +130,7 @@ void initTroll(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(205, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(my->sprite == 1132 ? 1135 : 205, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -137,7 +149,7 @@ void initTroll(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(209, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1132 ? 1134 : 209, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -156,7 +168,7 @@ void initTroll(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(208, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1132 ? 1133 : 208, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -175,7 +187,7 @@ void initTroll(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(207, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1132 ? 1131 : 207, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -194,7 +206,7 @@ void initTroll(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(206, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1132 ? 1130 : 206, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -220,10 +232,17 @@ void actTrollLimb(Entity* my)
 
 void trollDie(Entity* my)
 {
-	int c;
-	for ( c = 0; c < 5; c++ )
+	for ( int c = 0; c < 12; c++ )
 	{
 		Entity* gib = spawnGib(my);
+		if (c < 6) {
+		    if (my->sprite == 1132) {
+		        gib->sprite = 1130 + c;
+		    } else {
+		        gib->sprite = 204 + c;
+		    }
+		    gib->skill[5] = 1; // poof
+		}
 		serverSpawnGibForClient(gib);
 	}
 
@@ -354,7 +373,7 @@ void trollMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						if ( entity->pitch > PI / 4.0 )
 						{
 							entity->pitch = PI / 4.0;
-							if ( bodypart == 3 && entity->skill[0] == 0 )
+							if ( bodypart == 3 && entity->skill[0] == 1 )
 							{
 								playSoundEntityLocal(my, 115, 128);
 								entity->skill[0] = 0;

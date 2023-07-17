@@ -15,17 +15,20 @@
 #include "entity.hpp"
 #include "items.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "prng.hpp"
 
 void initCockatrice(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
+	my->flags[BURNABLE] = true;
 	my->initMonster(413);
+	my->z = -4.5;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -56,10 +59,10 @@ void initCockatrice(Entity* my, Stat* myStats)
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
 			// cockatrices don't sleep!
-			/*if ( rand() % 4 == 0 )
+			/*if ( local_rng.rand() % 4 == 0 )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 3600;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + local_rng.rand() % 3600;
 			}*/
 
 			// generates equipment and weapons if available from editor
@@ -82,10 +85,10 @@ void initCockatrice(Entity* my, Stat* myStats)
 			int minValue = 70;
 			int maxValue = 80;
 			int numRolls = 1; // 0-2 extra rolls
-			if ( rand() % 2 == 0 ) // 50% chance
+			if ( local_rng.rand() % 2 == 0 ) // 50% chance
 			{
 				++numRolls;
-				if ( rand() % 2 == 0 ) // 25% chance, including the previous roll
+				if ( local_rng.rand() % 2 == 0 ) // 25% chance, including the previous roll
 				{
 					++numRolls;
 				}
@@ -98,37 +101,37 @@ void initCockatrice(Entity* my, Stat* myStats)
 				case 5:
 					// TODO: cockatrice head.
 				case 4:
-					if ( rand() % 20 == 0 ) // 5% drop stoneblood spellbook
+					if ( local_rng.rand() % 20 == 0 ) // 5% drop stoneblood spellbook
 					{
-						newItem(static_cast<ItemType>(SPELLBOOK_STONEBLOOD), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+						newItem(static_cast<ItemType>(SPELLBOOK_STONEBLOOD), static_cast<Status>(1 + local_rng.rand() % 4), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
 					}
 				case 3:
-					if ( rand() % 5 == 0 ) // 20% for gemstone, luckstone to obsidian. qty 1-2.
+					if ( local_rng.rand() % 5 == 0 ) // 20% for gemstone, luckstone to obsidian. qty 1-2.
 					{
-						if ( rand() % 3 == 0 )
+						if ( local_rng.rand() % 3 == 0 )
 						{
 							newItem(ENCHANTED_FEATHER, WORN, 0, 1, (2 * (ENCHANTED_FEATHER_MAX_DURABILITY - 1)) / 4, false, &myStats->inventory);
 						}
 						else
 						{
-							newItem(static_cast<ItemType>(GEM_LUCK + rand() % 16), static_cast<Status>(EXCELLENT), 0, 1 + rand() % 2, rand(), false, &myStats->inventory);
+							newItem(static_cast<ItemType>(GEM_LUCK + local_rng.rand() % 16), static_cast<Status>(EXCELLENT), 0, 1 + local_rng.rand() % 2, local_rng.rand(), false, &myStats->inventory);
 						}
 					}
 				case 2:
-					if ( rand() % 10 < 3 ) // 30% drop stoneblood magicstaff
+					if ( local_rng.rand() % 10 < 3 ) // 30% drop stoneblood magicstaff
 					{
-						newItem(static_cast<ItemType>(MAGICSTAFF_STONEBLOOD), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+						newItem(static_cast<ItemType>(MAGICSTAFF_STONEBLOOD), static_cast<Status>(1 + local_rng.rand() % 4), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
 					}
 				case 1:
 					for ( int i = 0; i < numRolls; ++i )
 					{
-						if ( rand() % 3 == 0 ) // 33% chance to choose high value item
+						if ( local_rng.rand() % 3 == 0 ) // 33% chance to choose high value item
 						{
 							minValue = 100;
 							maxValue = 100;
 						}
 						ItemType itemType = itemTypeWithinGoldValue(Category::POTION, minValue, maxValue);
-						newItem(itemType, static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+						newItem(itemType, static_cast<Status>(1 + local_rng.rand() % 4), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
 						// reset values for next loop.
 						minValue = 70;
 						maxValue = 80;
@@ -147,7 +150,7 @@ void initCockatrice(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(414, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(414, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->focaly = 1;
@@ -167,7 +170,7 @@ void initCockatrice(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(416, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(416, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -186,7 +189,7 @@ void initCockatrice(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(415, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(415, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -205,7 +208,7 @@ void initCockatrice(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(418, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(418, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -224,7 +227,7 @@ void initCockatrice(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(417, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(417, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -243,7 +246,7 @@ void initCockatrice(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right wing
-	entity = newEntity(420, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(420, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -262,7 +265,7 @@ void initCockatrice(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left wing
-	entity = newEntity(419, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(419, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -289,16 +292,20 @@ void actCockatriceLimb(Entity* my)
 void cockatriceDie(Entity* my)
 {
 	int c;
-	for ( c = 0; c < 5; c++ )
+	for ( c = 0; c < 12; c++ )
 	{
 		Entity* gib = spawnGib(my);
+	    if (c < 8) {
+	        gib->sprite = 413 + c;
+	        gib->skill[5] = 1; // poof
+	    }
 		serverSpawnGibForClient(gib);
 	}
 
 	my->spawnBlood();
 
 	//playSoundEntity(my, 28, 128);
-	playSoundEntity(my, 388 + rand() % 2, 128);
+	playSoundEntity(my, 388 + local_rng.rand() % 2, 128);
 
 	my->removeMonsterDeathNodes();
 

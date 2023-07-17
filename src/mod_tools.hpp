@@ -15,12 +15,17 @@ See LICENSE for details.
 #include "json.hpp"
 #include "files.hpp"
 #include "prng.hpp"
+#include "items.hpp"
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/prettywriter.h"
 #include "net.hpp"
 #include "scores.hpp"
+#include "entity.hpp"
+#include "ui/Widget.hpp"
+
+#include <curl/curl.h>
 
 class CustomHelpers
 {
@@ -65,13 +70,9 @@ public:
 class MonsterStatCustomManager
 {
 public:
-	std::mt19937 monsterStatSeed;
 	static const std::vector<std::string> itemStatusStrings;
 	static const std::vector<std::string> shopkeeperTypeStrings;
-	MonsterStatCustomManager() :
-		monsterStatSeed(rand())
-	{
-	};
+	MonsterStatCustomManager() = default;
 
 	int getSlotFromKeyName(std::string keyName)
 	{
@@ -175,7 +176,7 @@ public:
 			{
 				return invalidEntry;
 			}
-			return (arr[rapidjson::SizeType(rand() % arr.Size())].GetString());
+			return (arr[rapidjson::SizeType(local_rng.rand() % arr.Size())].GetString());
 		}
 		int getRandomArrayInt(const rapidjson::GenericArray<true, rapidjson::GenericValue<rapidjson::UTF8<>>>& arr, int invalidEntry)
 		{
@@ -183,7 +184,7 @@ public:
 			{
 				return invalidEntry;
 			}
-			return (arr[rapidjson::SizeType(rand() % arr.Size())].GetInt());
+			return (arr[rapidjson::SizeType(local_rng.rand() % arr.Size())].GetInt());
 		}
 
 		bool readKeyToItemEntry(rapidjson::Value::ConstMemberIterator& itr)
@@ -263,7 +264,7 @@ public:
 			{
 				if ( itr->value.IsArray() )
 				{
-					this->appearance = static_cast<Uint32>(getRandomArrayInt(itr->value.GetArray(), rand()));
+					this->appearance = static_cast<Uint32>(getRandomArrayInt(itr->value.GetArray(), local_rng.rand()));
 				}
 				else if ( itr->value.IsInt() )
 				{
@@ -274,7 +275,7 @@ public:
 					std::string str = itr->value.GetString();
 					if ( str.compare("random") == 0 )
 					{
-						this->appearance = rand();
+						this->appearance = local_rng.rand();
 					}
 				}
 				return true;
@@ -292,7 +293,7 @@ public:
 			else if ( name.compare("drop_percent_chance") == 0 )
 			{
 				this->dropChance = itr->value.GetInt();
-				if ( rand() % 100 >= this->dropChance )
+				if ( local_rng.rand() % 100 >= this->dropChance )
 				{
 					this->dropItemOnDeath = false;
 				}
@@ -312,9 +313,8 @@ public:
 
 	class StatEntry
 	{
-		std::mt19937 StatEntrySeed;
 	public:
-		char name[128] = "";
+		char name[128];
 		int type = NOTHING;
 		sex_t sex = sex_t::MALE;
 		Uint32 appearance = 0;
@@ -376,25 +376,25 @@ public:
 		bool castSpellbooksFromInventory = false;
 		int spellbookCastCooldown = 250;
 
-		StatEntry(const Stat* myStats) :
-			StatEntrySeed(rand())
+		StatEntry(const Stat* myStats)
 		{
 			readFromStats(myStats);
+			strcpy(name, "");
 		}
-		StatEntry() :
-			StatEntrySeed(rand())
+		StatEntry()
 		{
 			for ( int i = 0; i < NUMPROFICIENCIES; ++i )
 			{
 				PROFICIENCIES[i] = 0;
 			}
+			strcpy(name, "");
 		};
 
 		std::string getFollowerVariant()
 		{
 			if ( followerVariants.size() > 0 )
 			{
-				std::vector<int> variantChances(followerVariants.size(), 0);
+				std::vector<unsigned int> variantChances(followerVariants.size(), 0);
 				int index = 0;
 				for ( auto& pair : followerVariants )
 				{
@@ -402,8 +402,7 @@ public:
 					++index;
 				}
 
-				std::discrete_distribution<> variantWeightedDistribution(variantChances.begin(), variantChances.end());
-				int result = variantWeightedDistribution(StatEntrySeed);
+				int result = local_rng.discrete(variantChances.data(), variantChances.size());
 				return followerVariants.at(result).first;
 			}
 			return "none";
@@ -501,7 +500,7 @@ public:
 				equippedSlots.insert(it.second);
 				if ( it.first.percentChance < 100 )
 				{
-					if ( rand() % 100 >= it.first.percentChance )
+					if ( local_rng.rand() % 100 >= it.first.percentChance )
 					{
 						continue;
 					}
@@ -610,7 +609,7 @@ public:
 				}
 				if ( it.percentChance < 100 )
 				{
-					if ( rand() % 100 >= it.percentChance )
+					if ( local_rng.rand() % 100 >= it.percentChance )
 					{
 						continue;
 					}
@@ -684,7 +683,7 @@ public:
 				{
 					if ( shopkeeperMinItems >= 0 && shopkeeperMaxItems >= 0 )
 					{
-						numItems = shopkeeperMinItems + rand() % std::max(1, (shopkeeperMaxItems - shopkeeperMinItems + 1));
+						numItems = shopkeeperMinItems + local_rng.rand() % std::max(1, (shopkeeperMaxItems - shopkeeperMinItems + 1));
 						myStats->MISC_FLAGS[STAT_FLAG_SHOPKEEPER_CUSTOM_PROPERTIES] |= numItems + 1;
 					}
 					if ( shopkeeperMaxGeneratedBlessing >= 0 )
@@ -1137,45 +1136,41 @@ public:
 			for ( rapidjson::Value::ConstMemberIterator itemSlot_itr = equipped_items.MemberBegin(); itemSlot_itr != equipped_items.MemberEnd(); ++itemSlot_itr )
 			{
 				std::string slotName = itemSlot_itr->name.GetString();
-				if ( itemSlot_itr->value.MemberCount() > 0 )
+				if ( itemSlot_itr->value.IsArray() )
 				{
-					if ( itemSlot_itr->value.IsArray() )
-					{
-						std::vector<std::pair<ItemEntry, int>> itemsToChoose;
-						// a selection of items in the slot. need to choose 1.
-						for ( rapidjson::Value::ConstValueIterator itemArray_itr = itemSlot_itr->value.Begin(); itemArray_itr != itemSlot_itr->value.End(); ++itemArray_itr )
-						{
-							ItemEntry item;
-							for ( rapidjson::Value::ConstMemberIterator item_itr = itemArray_itr->MemberBegin(); item_itr != itemArray_itr->MemberEnd(); ++item_itr )
-							{
-								item.readKeyToItemEntry(item_itr);
-							}
-							itemsToChoose.push_back(std::make_pair(item, getSlotFromKeyName(slotName)));
-						}
-						if ( itemsToChoose.size() > 0 )
-						{
-							std::vector<int> itemChances(itemsToChoose.size(), 0);
-							int index = 0;
-							for ( auto& pair : itemsToChoose )
-							{
-								itemChances.at(index) = pair.first.weightedChance;
-								++index;
-							}
-
-							std::discrete_distribution<> itemWeightedDistribution(itemChances.begin(), itemChances.end());
-							int result = itemWeightedDistribution(monsterStatSeed);
-							statEntry->equipped_items.push_back(std::make_pair(itemsToChoose.at(result).first, itemsToChoose.at(result).second));
-						}
-					}
-					else
+					std::vector<std::pair<ItemEntry, int>> itemsToChoose;
+					// a selection of items in the slot. need to choose 1.
+					for ( rapidjson::Value::ConstValueIterator itemArray_itr = itemSlot_itr->value.Begin(); itemArray_itr != itemSlot_itr->value.End(); ++itemArray_itr )
 					{
 						ItemEntry item;
-						for ( rapidjson::Value::ConstMemberIterator item_itr = itemSlot_itr->value.MemberBegin(); item_itr != itemSlot_itr->value.MemberEnd(); ++item_itr )
+						for ( rapidjson::Value::ConstMemberIterator item_itr = itemArray_itr->MemberBegin(); item_itr != itemArray_itr->MemberEnd(); ++item_itr )
 						{
 							item.readKeyToItemEntry(item_itr);
 						}
-						statEntry->equipped_items.push_back(std::make_pair(item, getSlotFromKeyName(slotName)));
+						itemsToChoose.push_back(std::make_pair(item, getSlotFromKeyName(slotName)));
 					}
+					if ( itemsToChoose.size() > 0 )
+					{
+						std::vector<unsigned int> itemChances(itemsToChoose.size(), 0);
+						int index = 0;
+						for ( auto& pair : itemsToChoose )
+						{
+							itemChances.at(index) = pair.first.weightedChance;
+							++index;
+						}
+
+						int result = local_rng.discrete(itemChances.data(), itemChances.size());
+						statEntry->equipped_items.push_back(std::make_pair(itemsToChoose.at(result).first, itemsToChoose.at(result).second));
+					}
+				}
+				else if ( itemSlot_itr->value.MemberCount() > 0 )
+				{
+					ItemEntry item;
+					for ( rapidjson::Value::ConstMemberIterator item_itr = itemSlot_itr->value.MemberBegin(); item_itr != itemSlot_itr->value.MemberEnd(); ++item_itr )
+					{
+						item.readKeyToItemEntry(item_itr);
+					}
+					statEntry->equipped_items.push_back(std::make_pair(item, getSlotFromKeyName(slotName)));
 				}
 			}
 			const rapidjson::Value& inventory_items = d["inventory_items"];
@@ -1196,7 +1191,7 @@ public:
 					}
 					if ( itemsToChoose.size() > 0 )
 					{
-						std::vector<int> itemChances(itemsToChoose.size(), 0);
+						std::vector<unsigned int> itemChances(itemsToChoose.size(), 0);
 						int index = 0;
 						for ( auto& i : itemsToChoose )
 						{
@@ -1204,8 +1199,7 @@ public:
 							++index;
 						}
 
-						std::discrete_distribution<> itemWeightedDistribution(itemChances.begin(), itemChances.end());
-						int result = itemWeightedDistribution(monsterStatSeed);
+						int result = local_rng.discrete(itemChances.data(), itemChances.size());
 						statEntry->inventory_items.push_back(itemsToChoose.at(result));
 					}
 				}
@@ -1289,7 +1283,7 @@ public:
 					}
 					if ( !statEntry->shopkeeperStoreTypes.empty() )
 					{
-						std::vector<int> storeChances(statEntry->shopkeeperStoreTypes.size(), 0);
+						std::vector<unsigned int> storeChances(statEntry->shopkeeperStoreTypes.size(), 0);
 						int index = 0;
 						for ( auto& chance : storeChances )
 						{
@@ -1297,8 +1291,7 @@ public:
 							++index;
 						}
 
-						std::discrete_distribution<> storeTypeWeightedDistribution(storeChances.begin(), storeChances.end());
-						std::string result = statEntry->shopkeeperStoreTypes.at(storeTypeWeightedDistribution(monsterStatSeed)).first;
+						std::string result = statEntry->shopkeeperStoreTypes.at(local_rng.discrete(storeChances.data(), storeChances.size())).first;
 						index = 0;
 						for ( auto& lookup : shopkeeperTypeStrings )
 						{
@@ -1344,10 +1337,7 @@ class MonsterCurveCustomManager
 {
 	bool usingCustomManager = false;
 public:
-	std::mt19937 curveSeed;
-	MonsterCurveCustomManager() :
-		curveSeed(rand())
-	{};
+	MonsterCurveCustomManager() = default;
 
 	class MonsterCurveEntry
 	{
@@ -1421,25 +1411,28 @@ public:
 				{
 					LevelCurve newCurve;
 					newCurve.mapName = map_itr->name.GetString();
-					const rapidjson::Value& randomGeneration = map_itr->value["random_generation_monsters"];
-					for ( rapidjson::Value::ConstValueIterator monsters_itr = randomGeneration.Begin(); monsters_itr != randomGeneration.End(); ++monsters_itr )
+					if ( map_itr->value.HasMember("random_generation_monsters") )
 					{
-						const rapidjson::Value& monster = *monsters_itr;
-						MonsterCurveEntry newMonster(monster["name"].GetString(),
-							monster["dungeon_depth_minimum"].GetInt(),
-							monster["dungeon_depth_maximum"].GetInt(),
-							monster["weighted_chance"].GetInt(),
-							"");
-
-						if ( monster.HasMember("variants") )
+						const rapidjson::Value& randomGeneration = map_itr->value["random_generation_monsters"];
+						for ( rapidjson::Value::ConstValueIterator monsters_itr = randomGeneration.Begin(); monsters_itr != randomGeneration.End(); ++monsters_itr )
 						{
-							for ( rapidjson::Value::ConstMemberIterator var_itr = monster["variants"].MemberBegin();
-								var_itr != monster["variants"].MemberEnd(); ++var_itr )
+							const rapidjson::Value& monster = *monsters_itr;
+							MonsterCurveEntry newMonster(monster["name"].GetString(),
+								monster["dungeon_depth_minimum"].GetInt(),
+								monster["dungeon_depth_maximum"].GetInt(),
+								monster["weighted_chance"].GetInt(),
+								"");
+
+							if ( monster.HasMember("variants") )
 							{
-								newMonster.addVariant(var_itr->name.GetString(), var_itr->value.GetInt());
+								for ( rapidjson::Value::ConstMemberIterator var_itr = monster["variants"].MemberBegin();
+									var_itr != monster["variants"].MemberEnd(); ++var_itr )
+								{
+									newMonster.addVariant(var_itr->name.GetString(), var_itr->value.GetInt());
+								}
 							}
+							newCurve.monsterCurve.push_back(newMonster);
 						}
-						newCurve.monsterCurve.push_back(newMonster);
 					}
 
 					if ( map_itr->value.HasMember("fixed_monsters") )
@@ -1519,7 +1512,7 @@ public:
 	}
 	int rollMonsterFromCurve(std::string currentMap)
 	{
-		std::vector<int> monsterCurveChances(NUMMONSTERS, 0);
+		std::vector<unsigned int> monsterCurveChances(NUMMONSTERS, 0);
 
 		for ( LevelCurve curve : allLevelCurves )
 		{
@@ -1542,8 +1535,7 @@ public:
 						}
 					}
 				}
-				std::discrete_distribution<> monsterWeightedDistribution(monsterCurveChances.begin(), monsterCurveChances.end());
-				int result = monsterWeightedDistribution(curveSeed);
+				int result = local_rng.discrete(monsterCurveChances.data(), monsterCurveChances.size());
 				//printlog("[MonsterCurveCustomManager]: Rolled: %d", result);
 				return result;
 			}
@@ -1558,7 +1550,7 @@ public:
 			if ( curve.mapName.compare(currentMap) == 0 )
 			{
 				std::vector<std::string> variantResults;
-				std::vector<int> variantChances;
+				std::vector<unsigned int> variantChances;
 				for ( MonsterCurveEntry& monster : curve.monsterCurve )
 				{
 					if ( currentlevel >= monster.levelmin && currentlevel <= monster.levelmax )
@@ -1585,8 +1577,7 @@ public:
 				}
 				if ( !variantResults.empty() )
 				{
-					std::discrete_distribution<> variantWeightedDistribution(variantChances.begin(), variantChances.end());
-					int result = variantWeightedDistribution(curveSeed);
+					int result = local_rng.discrete(variantChances.data(), variantChances.size());
 					return variantResults[result];
 				}
 			}
@@ -1603,7 +1594,7 @@ public:
 				{
 					if ( monster.monsterType == monsterType && monster.variants.size() > 0 )
 					{
-						std::vector<int> variantChances(monster.variants.size(), 0);
+						std::vector<unsigned int> variantChances(monster.variants.size(), 0);
 						int index = 0;
 						for ( auto& pair : monster.variants )
 						{
@@ -1611,8 +1602,7 @@ public:
 							++index;
 						}
 
-						std::discrete_distribution<> variantWeightedDistribution(variantChances.begin(), variantChances.end());
-						int result = variantWeightedDistribution(curveSeed);
+						int result = local_rng.discrete(variantChances.data(), variantChances.size());
 						return monster.variants.at(result).first;
 					}
 				}
@@ -2279,7 +2269,7 @@ public:
 				return true;
 			}
 			// found, roll prng
-			if ( prng_get_uint() % 100 < m->minoPercent )
+			if ( map_rng.rand() % 100 < m->minoPercent )
 			{
 				minotaurlevel = 1;
 			}
@@ -2315,7 +2305,7 @@ public:
 				return true;
 			}
 			// found, roll prng
-			if ( prng_get_uint() % 100 < m->darkPercent )
+			if ( map_rng.rand() % 100 < m->darkPercent )
 			{
 				darkmap = true;
 			}
@@ -2351,7 +2341,7 @@ public:
 				return true;
 			}
 			// found, roll prng
-			if ( prng_get_uint() % 100 < m->shopPercent )
+			if ( map_rng.rand() % 100 < m->shopPercent )
 			{
 				shoplevel = true;
 			}
@@ -2402,7 +2392,7 @@ public:
 			}
 
 			// found, roll prng
-			if ( prng_get_uint() % 100 < percentValue )
+			if ( map_rng.rand() % 100 < percentValue )
 			{
 				bOut = true;
 			}
@@ -2440,14 +2430,14 @@ public:
 			{
 				bHasSavedServerFlags = false;
 				svFlags = serverFlags;
-				printlog("[SESSION]: Restoring server flags at stage: %d", introstage);
+				printlog("[SESSION]: Restoring server flags\n");
 			}
 		}
 		void saveServerFlags()
 		{
 			serverFlags = svFlags;
 			bHasSavedServerFlags = true;
-			printlog("[SESSION]: Saving server flags at stage: %d", introstage);
+			printlog("[SESSION]: Saving server flags\n");
 		}
 	} currentSession;
 	bool isServerflagDisabledForCurrentMode(int i)
@@ -2505,8 +2495,10 @@ public:
 		void openGameoverWindow();
 		void onMapRestart(int levelNum)
 		{
+#ifndef EDITOR
 			achievementObserver.updateGlobalStat(
 				std::min(STEAM_GSTAT_TUTORIAL1_ATTEMPTS - 1 + levelNum, static_cast<int>(STEAM_GSTAT_TUTORIAL10_ATTEMPTS)));
+#endif // !EDITOR
 		}
 
 		class Menu_t
@@ -2579,6 +2571,7 @@ public:
 };
 extern GameModeManager_t gameModeManager;
 
+#ifndef NINTENDO
 class IRCHandler_t
 {
 	IPaddress ip;
@@ -2611,3 +2604,703 @@ public:
 	bool readFromFile();
 };
 extern IRCHandler_t IRCHandler;
+#endif // !NINTENDO
+
+class ItemTooltips_t
+{
+	struct tmpItem_t
+	{
+		std::string internalName = "nothing";
+		Sint32 itemId = -1;
+		Sint32 fpIndex = -1;
+		Sint32 tpIndex = -1;
+		Sint32 gold = 0;
+		Sint32 weight = 0;
+		Sint32 itemLevel = -1;
+		std::string category = "nothing";
+		std::string equipSlot = "nothing";
+		std::vector<std::string> imagePaths;
+		std::map<std::string, Sint32> attributes;
+		std::string tooltip = "tooltip_default";
+		std::string iconLabelPath = "";
+	};
+
+	enum SpellItemTypes : int
+	{
+		SPELL_TYPE_DEFAULT,
+		SPELL_TYPE_PROJECTILE,
+		SPELL_TYPE_PROJECTILE_SHORT_X3,
+		SPELL_TYPE_SELF,
+		SPELL_TYPE_AREA,
+		SPELL_TYPE_SELF_SUSTAIN
+	};
+
+	enum SpellTagTypes : int
+	{
+		SPELL_TAG_DAMAGE,
+		SPELL_TAG_UTILITY,
+		SPELL_TAG_STATUS_EFFECT,
+		SPELL_TAG_HEALING,
+		SPELL_TAG_CURE,
+		SPELL_TAG_BASIC_HIT_MESSAGE
+	};
+
+	struct spellItem_t
+	{
+		Sint32 id;
+		std::string internalName;
+		std::string name;
+		std::string spellTypeStr;
+		SpellItemTypes spellType;
+		std::string spellbookInternalName;
+		std::string magicstaffInternalName;
+		Sint32 spellbookId;
+		Sint32 magicstaffId;
+		std::vector<std::string> spellTagsStr;
+		std::set<SpellTagTypes> spellTags;
+	};
+
+	struct ItemTooltipIcons_t
+	{
+		std::string iconPath = "";
+		std::string text = "";
+		Uint32 textColor = 0xFFFFFFFF;
+		std::string conditionalAttribute = "";
+		ItemTooltipIcons_t(std::string _path, std::string _text)
+		{
+			iconPath = _path;
+			text = _text;
+		}
+		void setColor(Uint32 color) { textColor = color; }
+		void setConditionalAttribute(std::string str) { conditionalAttribute = str; }
+	};
+
+	Uint32 defaultHeadingTextColor = 0xFFFFFFFF;
+	Uint32 defaultIconTextColor = 0xFFFFFFFF;
+	Uint32 defaultDescriptionTextColor = 0xFFFFFFFF;
+	Uint32 defaultDetailsTextColor = 0xFFFFFFFF;
+	Uint32 defaultPositiveTextColor = 0xFFFFFFFF;
+	Uint32 defaultNegativeTextColor = 0xFFFFFFFF;
+	Uint32 defaultStatusEffectTextColor = 0xFFFFFFFF;
+	Uint32 defaultFaintTextColor = 0xFFFFFFFF;
+
+public:
+	struct ItemTooltip_t
+	{
+		Uint32 headingTextColor = 0;
+		Uint32 descriptionTextColor = 0;
+		Uint32 detailsTextColor = 0;
+		Uint32 positiveTextColor = 0;
+		Uint32 negativeTextColor = 0;
+		Uint32 statusEffectTextColor = 0;
+		Uint32 faintTextColor = 0;
+		std::vector<ItemTooltipIcons_t> icons;
+		std::vector<std::string> descriptionText;
+		std::map<std::string, std::vector<std::string>> detailsText;
+		std::vector<std::string> detailsTextInsertOrder;
+		std::map<std::string, int> minWidths;
+		std::map<std::string, int> maxWidths;
+		std::map<std::string, int> headerMaxWidths;
+		void setColorHeading(Uint32 color) { headingTextColor = color; }
+		void setColorDescription(Uint32 color) { descriptionTextColor = color; }
+		void setColorDetails(Uint32 color) { detailsTextColor = color; }
+		void setColorPositive(Uint32 color) { positiveTextColor = color; }
+		void setColorNegative(Uint32 color) { negativeTextColor = color; }
+		void setColorStatus(Uint32 color) { statusEffectTextColor = color; }
+		void setColorFaintText(Uint32 color) { faintTextColor = color; }
+	};
+	void readItemsFromFile();
+	void readItemLocalizationsFromFile();
+	void readTooltipsFromFile();
+	std::vector<tmpItem_t> tmpItems;
+	std::map<Sint32, spellItem_t> spellItems;
+	std::map<std::string, ItemTooltip_t> tooltips;
+	std::map<std::string, std::map<std::string, std::string>> adjectives;
+	std::map<std::string, std::vector<std::string>> templates;
+	//std::vector<std::pair<int, Sint32>> itemValueTable;
+	//std::map<int, std::vector<std::pair<int, Sint32>>> itemValueTableByCategory;
+	struct ItemLocalization_t
+	{
+		std::string name_identified = "";
+		std::string name_unidentified = "";
+	};
+	std::map<std::string, ItemLocalization_t> itemNameLocalizations;
+	std::map<std::string, std::string> spellNameLocalizations;
+	std::string defaultString = "";
+	char buf[2048];
+	bool autoReload = false;
+	bool itemDebug = false;
+	std::string& getItemStatusAdjective(Uint32 itemType, Status status);
+	std::string& getItemBeatitudeAdjective(Sint16 beatitude);
+	std::string& getItemPotionAlchemyAdjective(const int player, Uint32 itemType);
+	std::string& getItemPotionHarmAllyAdjective(Item& item);
+	std::string& getItemProficiencyName(int proficiency);
+	std::string& getItemSlotName(ItemEquippableSlot slotname);
+	std::string& getItemStatShortName(std::string& attribute);
+	std::string& getItemStatFullName(std::string& attribute);
+	std::string& getItemEquipmentEffectsForIconText(std::string& attribute);
+	std::string& getItemEquipmentEffectsForAttributesText(std::string& attribute);
+	std::string& getProficiencyLevelName(Sint32 proficiencyLevel);
+	std::string& getIconLabel(Item& item);
+	std::string getSpellIconText(const int player, Item& item);
+	std::string getSpellDescriptionText(const int player, Item& item);
+	std::string getSpellIconPath(const int player, Item& item);
+	std::string getCostOfSpellString(const int player, Item& item);
+	std::string& getSpellTypeString(const int player, Item& item);
+	node_t* getSpellNodeFromSpellID(int spellID);
+	real_t getSpellSustainCostPerSecond(int spellID);
+	int getSpellDamageOrHealAmount(const int player, spell_t* spell, Item* spellbook);
+	bool bIsSpellDamageOrHealingType(spell_t* spell);
+	bool bSpellHasBasicHitMessage(const int spellID);
+
+	void formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex, std::string& conditionalAttribute);
+	void formatItemDescription(const int player, std::string tooltipType, Item& item, std::string& str);
+	void formatItemDetails(const int player, std::string tooltipType, Item& item, std::string& str, std::string detailTag);
+	void stripOutPositiveNegativeItemDetails(std::string& str, std::string& positiveValues, std::string& negativeValues);
+	void stripOutHighlightBracketText(std::string& str, std::string& bracketText);
+	void getWordIndexesItemDetails(void* field, std::string& str, std::string& highlightValues, std::string& positiveValues, std::string& negativeValues,
+		std::map<int, Uint32>& highlightIndexes, std::map<int, Uint32>& positiveIndexes, std::map<int, Uint32>& negativeIndexes, ItemTooltip_t& tooltip);
+};
+extern ItemTooltips_t ItemTooltips;
+
+class StatueManager_t
+{
+public:
+	StatueManager_t() {};
+	~StatueManager_t() {};
+	int processStatueExport();
+
+	bool activeEditing = false;
+	Uint32 lastEntityUnderMouse = 0;
+	Uint32 editingPlayerUid = 0;
+	real_t statueEditorHeightOffset = 0.0;
+	bool drawGreyscale = false;
+	void readStatueFromFile(int index, std::string filename);
+	void readAllStatues();
+	void refreshAllStatues();
+	void resetStatueEditor();
+	static Uint32 statueId;
+	std::string exportFileName = "";
+	int exportRotations = 0;
+	bool exportActive = false;
+	rapidjson::Document exportDocument;
+
+	class Statue_t
+	{
+		Uint32 id;
+	public:
+		struct StatueLimb_t
+		{
+			real_t x;
+			real_t y;
+			real_t z;
+			real_t pitch;
+			real_t roll;
+			real_t yaw;
+			real_t focalx;
+			real_t focaly;
+			real_t focalz;
+			Sint32 sprite;
+			bool visible = true;
+		};
+		std::map<std::string, std::vector<StatueLimb_t>> limbs;
+		Statue_t() {
+			id = statueId; 
+			++statueId;
+		}
+		real_t heightOffset = 0.0;
+	};
+
+	const std::vector<std::string> directionKeys{ "east", "south", "west", "north" };
+	std::map<Uint32, Statue_t> allStatues;
+};
+extern StatueManager_t StatueManager;
+
+class DebugTimers_t
+{
+	std::map<std::string, std::vector<std::pair<std::string, std::chrono::high_resolution_clock::time_point>>> timepoints;
+public:
+	void addTimePoint(std::string key, std::string desc = "") { timepoints[key].push_back(std::make_pair(desc, std::chrono::high_resolution_clock::now())); }
+	void printTimepoints(std::string key, int& posy);
+	void clearTimepoints(std::string key) { timepoints[key].clear(); }
+	void clearAllTimepoints() { timepoints.clear(); }
+	void printAllTimepoints();
+};
+extern DebugTimers_t DebugTimers;
+
+class GlyphRenderer_t
+{
+	std::string baseSourceFolder = "";
+	std::string renderedGlyphFolder = "";
+	std::string basePressedGlyphPath = "";
+	std::string baseUnpressedGlyphPath = "";
+	std::string pressedRenderedPrefix = "";
+	std::string unpressedRenderedPrefix = "";
+	std::string defaultstring = "";
+public:
+	struct GlyphData_t
+	{
+		std::string keyname = "";
+		std::string folder = "";
+		std::string fullpath = "";
+		std::string pressedRenderedFullpath = "";
+		std::string unpressedRenderedFullpath = "";
+		std::string filename = "";
+		std::string unpressedGlyphPath = "";
+		std::string pressedGlyphPath = "";
+		int render_offsetx = 0;
+		int render_offsety = 0;
+		int keycode = SDLK_UNKNOWN;
+	};
+	std::map<int, GlyphData_t> allGlyphs;
+
+	GlyphRenderer_t() {};
+	~GlyphRenderer_t() {};
+	bool readFromFile();
+	void renderGlyphsToPNGs();
+	std::string& getGlyphPath(int scancode, bool pressed = false) 
+	{ 
+		if ( allGlyphs.find(scancode) != allGlyphs.end() )
+		{ 
+			if ( pressed )
+			{
+				return allGlyphs[scancode].pressedRenderedFullpath;
+			}
+			else
+			{
+				return allGlyphs[scancode].unpressedRenderedFullpath;
+			}
+		}
+		return defaultstring;
+	}
+};
+extern GlyphRenderer_t GlyphHelper;
+
+bool charIsWordSeparator(char c);
+
+class ScriptTextParser_t
+{
+public:
+	ScriptTextParser_t() {};
+	~ScriptTextParser_t() {};
+	void readAllScripts();
+	bool readFromFile(const std::string& filename);
+	void writeWorldSignsToFile();
+	enum ObjectType_t : int {
+		OBJ_SIGN,
+		OBJ_MESSAGE,
+		OBJ_SCRIPT
+	};
+	enum VariableTypes : int {
+		TEXT,
+		GLYPH,
+		IMG,
+		SCRIPT
+	};
+
+	struct Entry_t
+	{
+		std::string name = "";
+		std::vector<std::string> rawText;
+		struct Variable_t
+		{
+			VariableTypes type = TEXT;
+			std::string value = "";
+			int sizex = 0;
+			int sizey = 0;
+		};
+		std::vector<Variable_t> variables;
+		std::string formattedText = "";
+		ObjectType_t objectType = OBJ_MESSAGE;
+		int hjustify = 4;
+		int vjustify = 0;
+		std::vector<int> padPerLine;
+		int padTopY = 0;
+		std::string font = "";
+		Uint32 fontColor = 0xFFFFFFFF;
+		Uint32 fontOutlineColor = 0xFFFFFFFF;
+		Uint32 fontHighlightColor = 0xFFFFFFFF;
+		Uint32 fontHighlight2Color = 0xFFFFFFFF;
+		std::vector<int> wordHighlights;
+		std::vector<int> wordHighlights2;
+		int imageInlineTextAdjustX = 0; // when img is placed inbetween text, move it by this adjustment to center
+		struct AdditionalContentProperties_t
+		{
+			SDL_Rect pos{0, 0, 0, 0};
+			std::string path = "";
+			std::string bgPath = "";
+			int imgBorder = 0;
+		};
+		AdditionalContentProperties_t signVideoContent;
+	};
+	std::map<std::string, Entry_t> allEntries;
+};
+extern ScriptTextParser_t ScriptTextParser;
+
+#ifndef EDITOR
+//#define USE_THEORA_VIDEO
+#endif // !EDITOR
+#ifdef USE_THEORA_VIDEO
+#include <theoraplayer/theoraplayer.h>
+#include <theoraplayer/Manager.h>
+#include <theoraplayer/VideoFrame.h>
+class VideoManager_t
+{
+	theoraplayer::VideoClip* clip = NULL;
+	static bool isInit;
+	bool started = false;
+	bool whichTexture = false;
+	GLuint textureId1 = 0;
+	GLuint textureId2 = 0;
+	void drawTexturedQuad(unsigned int texID, int tw, int th, const SDL_Rect& src, const SDL_Rect& dest, float alpha);
+	GLuint createTexture(int w, int h, unsigned int format);
+	int potCeil(int value)
+	{
+		--value;
+		value |= value >> 1;
+		value |= value >> 2;
+		value |= value >> 4;
+		value |= value >> 8;
+		value |= value >> 16;
+		++value;
+		return value;
+	}
+	void destroyClip();
+	void updateCurrentClip(float timeDelta);
+	static void destroy();
+	void draw();
+	static void init();
+	std::string currentfile = "";
+public:
+	VideoManager_t() {};
+	~VideoManager_t() {};
+	void drawAsFrameCallback(const Widget& widget, SDL_Rect frameSize, SDL_Rect offset, float alpha);
+	void update();
+	void loadfile(const char* filename);
+	bool isPlaying(const char* filename) { return currentfile == filename && (clip != nullptr); }
+	void stop() { destroyClip(); }
+	static void deinitManager();
+};
+extern VideoManager_t VideoManager[MAXPLAYERS];
+#endif
+
+#ifndef EDITOR
+#ifdef USE_IMGUI
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_sdl.h"
+#include "imgui/imgui_impl_opengl3.h"
+
+class ImGui_t
+{
+public:
+	static bool isInit;
+	static bool queueInit;
+	static bool queueDeinit;
+	static bool disablePlayerControl;
+	static SDL_Rect debugRect;
+	ImGui_t() {};
+	~ImGui_t()
+	{
+		// Cleanup
+		ImGui_ImplOpenGL3_Shutdown();
+		ImGui_ImplSDL2_Shutdown();
+		ImGui::DestroyContext();
+	};
+	static void init();
+	static void deinit();
+	static ImGuiIO& getIO() { return ImGui::GetIO(); }
+	static bool show_demo_window;
+	static void showConsoleCommands();
+	static void showHUDTimers();
+	static void buttonConsoleCommandHighlight(const char* cmd, bool flag);
+	static void update();
+	static void render();
+	static bool requestingMouse() // if mouse is detected on a module (the game should not process the mouse clicks)
+	{
+		if ( isInit )
+		{
+			return getIO().WantCaptureMouse;
+		}
+		return false;
+	}
+
+	static ImVec4 colorOn;
+	static ImVec4 colorOnHovered;
+	static ImVec4 colorOnActive;
+	static ImVec4 colorBtnDefault;
+	static ImVec4 colorBtnDefaultActive;
+	static ImVec4 colorBtnDefaultHovered;
+};
+#endif
+#endif
+
+#ifndef EDITOR
+struct ShopkeeperConsumables_t
+{
+	struct ItemEntry
+	{
+		std::vector<ItemType> type;
+		std::vector<Status> status;
+		std::vector<Sint16> beatitude;
+		std::vector<Sint16> count;
+		std::vector<Uint32> appearance;
+		std::vector<bool> identified;
+		
+		int percentChance = 100;
+		int weightedChance = 1;
+		int dropChance = 0;
+		bool emptyItemEntry = false;
+		bool dropItemOnDeath = false;
+	};
+	struct StoreSlots_t
+	{
+		int slotTradingReq = 0;
+		std::vector<ItemEntry> itemEntries;
+	};
+	static int consumableBuyValueMult;
+	static std::map<int, std::vector<StoreSlots_t>> entries; // shop type as key
+	static void readFromFile();
+};
+
+struct ClassHotbarConfig_t
+{
+	struct HotbarEntry_t
+	{
+		std::vector<int> itemTypes;
+		std::vector<int> itemCategories;
+		int slotnum = -1;
+		HotbarEntry_t(int _slotnum)
+		{
+			slotnum = _slotnum;
+		};
+	};
+	struct ClassHotbar_t
+	{
+		struct ClassHotbarLayout_t
+		{
+			std::vector<HotbarEntry_t> hotbar;
+			std::vector<std::vector<HotbarEntry_t>> hotbar_alternates;
+			void init();
+			bool hasData = false;
+		};
+		ClassHotbarLayout_t layoutClassic;
+		ClassHotbarLayout_t layoutModern;
+	};
+	static ClassHotbar_t ClassHotbarsDefault[NUMCLASSES];
+	static ClassHotbar_t ClassHotbars[NUMCLASSES];
+	static void assignHotbarSlots(const int player);
+	enum HotbarConfigType : int
+	{
+		HOTBAR_LAYOUT_DEFAULT_CONFIG,
+		HOTBAR_LAYOUT_CUSTOM_CONFIG
+	};
+	enum HotbarConfigWriteMode : int
+	{
+		HOTBAR_CONFIG_WRITE,
+		HOTBAR_CONFIG_DELETE
+	};
+	static void readFromFile(HotbarConfigType fileReadType);
+	static void writeToFile(HotbarConfigType fileWriteType, HotbarConfigWriteMode writeMode);
+	static void init();
+};
+
+struct LocalAchievements_t
+{
+	struct Achievement_t
+	{
+		std::string name;
+		bool unlocked = false;
+		int64_t unlockTime = 0;
+	};
+	struct Statistic_t
+	{
+		std::string name;
+		int value = 0;
+	};
+	std::map<std::string, Achievement_t> achievements;
+	std::map<int, Statistic_t> statistics;
+	static void readFromFile();
+	static void writeToFile();
+	static void init();
+	void updateAchievement(const char* name, const bool unlocked);
+	void updateStatistic(const int stat_num, const int value);
+};
+extern LocalAchievements_t LocalAchievements;
+
+class GameplayPreferences_t
+{
+	//Player& player;
+	int player = -1;
+public:
+	enum GameplayerPrefIndexes : int
+	{
+		GPREF_ARACHNOPHOBIA = 0,
+		GPREF_COLORBLIND,
+		GPREF_ENUM_END
+	};
+	struct GameplayPreference_t
+	{
+		int value = 0;
+		bool needsUpdate = true;
+		void set(const int _value);
+		void reset()
+		{
+			value = 0;
+			needsUpdate = true;
+		}
+	};
+	GameplayPreference_t preferences[GPREF_ENUM_END];
+	bool isInit = false;
+	/*GameplayPreferences_t(Player& p) : player(p)
+	{};*/
+	GameplayPreferences_t() {};
+	~GameplayPreferences_t() {};
+	Uint32 lastUpdateTick = 0;
+	void requestUpdateFromClient();
+	void sendToClients(const int targetPlayer);
+	void process();
+	void sendToServer();
+	static void receivePacket();
+
+	enum GameConfigIndexes : int
+	{
+		GOPT_ARACHNOPHOBIA = 0,
+		GOPT_COLORBLIND,
+		GOPT_ENUM_END
+	};
+	static GameplayPreference_t gameConfig[GOPT_ENUM_END];
+	static int getGameConfigValue(GameConfigIndexes index)
+	{
+		if ( index >= 0 && index < GOPT_ENUM_END )
+		{
+			return gameConfig[index].value;
+		}
+		return 0;
+	}
+	static void serverProcessGameConfig();
+	static void serverUpdateGameConfig();
+	static void receiveGameConfig();
+	static Uint32 lastGameConfigUpdateTick;
+	static void reset();
+};
+
+extern GameplayPreferences_t gameplayPreferences[MAXPLAYERS];
+#endif
+
+struct EditorEntityData_t
+{
+	struct EntityColliderData_t
+	{
+		int gib = 0;
+		int sfxBreak = 0;
+		int sfxHit = 0;
+		std::string damageCalculationType = "default";
+		std::string name = "";
+		std::string hpbarLookupName = "object";
+		int entityLangEntry = 4335;
+		int hitMessageLangEntry = 2509;
+		int breakMessageLangEntry = 2510;
+	};
+	struct ColliderDmgProperties_t
+	{
+		bool burnable = false;
+		bool minotaurPathThroughAndBreak = false;
+		bool meleeAffects = false;
+		bool magicAffects = false;
+		bool bombsAttach = false;
+		bool boulderDestroys = false;
+		bool showAsWallOnMinimap = false;
+		std::unordered_set<int> proficiencyBonusDamage;
+	};
+	static std::map<std::string, ColliderDmgProperties_t> colliderDmgTypes;
+	static std::map<int, EntityColliderData_t> colliderData;
+	static void readFromFile();
+};
+extern EditorEntityData_t editorEntityData;
+
+struct Mods
+{
+	static std::vector<int> modelsListModifiedIndexes;
+	static std::vector<int> soundsListModifiedIndexes;
+	static std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImagesToReload;
+	static std::vector<std::pair<std::string, std::string>> mountedFilepaths;
+	static std::vector<std::pair<std::string, std::string>> mountedFilepathsSaved; // saved from config file
+	static std::set<std::string> mods_loaded_local;
+	static std::set<std::string> mods_loaded_workshop;
+	static std::list<std::string> localModFoldernames;
+	static int numCurrentModsLoaded;
+	static bool modelsListRequiresReloadUnmodded;
+	static bool soundListRequiresReloadUnmodded;
+	static bool tileListRequireReloadUnmodded;
+	static bool spriteImagesRequireReloadUnmodded;
+	static bool booksRequireReloadUnmodded;
+	static bool musicRequireReloadUnmodded;
+	static bool langRequireReloadUnmodded;
+	static bool monsterLimbsRequireReloadUnmodded;
+	static bool systemImagesReloadUnmodded;
+	static bool customContentLoadedFirstTime;
+	static bool disableSteamAchievements;
+	static bool isLoading;
+	static Uint32 loadingTicks;
+#ifdef STEAMWORKS
+	static std::vector<SteamUGCDetails_t*> workshopSubscribedItemList;
+	static std::vector<std::pair<std::string, uint64>> workshopLoadedFileIDMap;
+	struct WorkshopTags_t
+	{
+		std::string tag;
+		std::string text;
+		WorkshopTags_t(const char* _tag, const char* _text)
+		{
+			tag = _tag;
+			text = _text;
+		}
+	};
+	static std::vector<WorkshopTags_t> tag_settings;
+	static int uploadStatus;
+	static int uploadErrorStatus;
+	static PublishedFileId_t uploadingExistingItem;
+	static Uint32 uploadTicks;
+	static Uint32 processedOnTick;
+	static int uploadNumRetries;
+	static std::string getFolderFullPath(std::string input);
+#endif
+	static void updateModCounts();
+	static bool mountAllExistingPaths();
+	static bool clearAllMountedPaths();
+	static bool removePathFromMountedFiles(std::string findStr);
+	static bool isPathInMountedFiles(std::string findStr);
+	static void unloadMods();
+	static void loadMods();
+	static void loadModels(int start, int end);
+	static void verifyAchievements(const char* fullpath, bool ignoreBaseFolder);
+	static bool verifyMapFiles(const char* file, bool ignoreBaseFolder);
+	static int createBlankModDirectory(std::string foldername);
+	static void writeLevelsTxtAndPreview(std::string modFolder);
+};
+
+#ifdef USE_LIBCURL
+struct LibCURL_t
+{
+	bool bInit = false;
+	CURL* handle = nullptr;
+	void init()
+	{
+		curl_global_init(CURL_GLOBAL_DEFAULT);
+		if ( handle = curl_easy_init() )
+		{
+			bInit = true;
+		}
+	}
+	void download(std::string filename, std::string url);
+
+	~LibCURL_t()
+	{
+		curl_easy_cleanup(handle);
+		handle = nullptr;
+	}
+
+	static size_t write_data_fp(void* ptr, size_t size, size_t nmemb, File* stream);
+	static size_t write_data_string(void* ptr, size_t size, size_t nmemb, std::string* s);
+};
+extern LibCURL_t LibCURL;
+#endif

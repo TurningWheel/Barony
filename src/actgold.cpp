@@ -13,10 +13,11 @@
 #include "game.hpp"
 #include "stat.hpp"
 #include "messages.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "entity.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -77,37 +78,34 @@ void actGoldBag(Entity* my)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+			if ( selectedEntity[i] == my || client_selected[i] == my )
 			{
 				if (inrange[i])
 				{
 					if (players[i] && players[i]->entity)
 					{
-						playSoundEntity(players[i]->entity, 242 + rand() % 4, 64 );
+						playSoundEntity(players[i]->entity, 242 + local_rng.rand() % 4, 64 );
 					}
 					stats[i]->GOLD += my->goldAmount;
-					if ( i != 0 )
+					if ( multiplayer == SERVER && i > 0 && !players[i]->isLocalPlayer() )
 					{
-						if ( multiplayer == SERVER )
-						{
-							// send the client info on the gold it picked up
-							strcpy((char*)net_packet->data, "GOLD");
-							SDLNet_Write32(stats[i]->GOLD, &net_packet->data[4]);
-							net_packet->address.host = net_clients[i - 1].host;
-							net_packet->address.port = net_clients[i - 1].port;
-							net_packet->len = 8;
-							sendPacketSafe(net_sock, -1, net_packet, i - 1);
-						}
+						// send the client info on the gold it picked up
+						strcpy((char*)net_packet->data, "GOLD");
+						SDLNet_Write32(stats[i]->GOLD, &net_packet->data[4]);
+						net_packet->address.host = net_clients[i - 1].host;
+						net_packet->address.port = net_clients[i - 1].port;
+						net_packet->len = 8;
+						sendPacketSafe(net_sock, -1, net_packet, i - 1);
 					}
 
 					// message for item pickup
 					if ( my->goldAmount == 1 )
 					{
-						messagePlayer(i, language[483]);
+						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(483));
 					}
 					else
 					{
-						messagePlayer(i, language[484], my->goldAmount);
+						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(484), my->goldAmount);
 					}
 
 					// remove gold entity

@@ -11,6 +11,14 @@
 
 #pragma once
 
+#include "stat.hpp"
+#include "json.hpp"
+
+#ifndef EDITOR
+#include "interface/consolecommand.hpp"
+extern ConsoleVariable<bool> cvar_summonBosses;
+#endif
+
 enum Monster : int
 {
 	NOTHING,
@@ -25,7 +33,7 @@ enum Monster : int
 	SKELETON,
 	SCORPION,
 	CREATURE_IMP, //Because Apple so unkindly is already using the IMP keyword.
-	BUGBEAR,
+	CRAB,
 	GNOME,
 	DEMON,
 	SUCCUBUS,
@@ -49,10 +57,232 @@ enum Monster : int
 	SENTRYBOT,
 	SPELLBOT,
 	GYROBOT,
-	DUMMYBOT
+	DUMMYBOT,
+	MAX_MONSTER
 };
-const int NUMMONSTERS = 37;
+const int NUMMONSTERS = MAX_MONSTER;
 extern int kills[NUMMONSTERS];
+
+static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
+    // NOTHING
+    {
+        0,
+    },
+
+    // HUMAN
+    {
+        113, 114, 115, 116, 117,
+        125, 126, 127, 128, 129,
+        332, 333,
+        341, 342, 343, 344, 345, 346,
+        354, 355, 356, 357, 358, 359,
+        367, 368, 369, 370, 371, 372,
+        380, 381, 382, 383, 384, 385,
+    },
+
+    // RAT
+    {
+        131, 265,                       // normal rat walk cycle
+        814,                            // player rat head
+        1043,                           // player rat head attack 1
+        1044,                           // player rat head attack 2
+        1063, 1064, 1065, 1066, 1067,   // normal rat attack frames
+        1068, 1069,                     // algernon walk cycle
+        1070, 1071, 1072, 1073, 1074,   // algernon attack frames
+    },
+
+    // GOBLIN
+    {
+        180, 694, 752, 1035, 1039,
+    },
+
+    // SLIME
+    {
+        189, 1108, 1109, 1110, 1111, 1112, // blue
+        210, 1113, 1114, 1115, 1116, 1117, // green
+    },
+
+    // TROLL
+    {
+        204,    // normal troll
+        817,    // player troll
+        1132,   // thumpus
+    },
+
+    // OCTOPUS
+    {
+    },
+
+    // SPIDER
+    {
+        267,    // normal spider body
+        997,    // normal crab body
+        823,    // player spider body
+        1001,   // player crab body
+        1118,   // shelob body
+		1189,	// bubbles body
+    },
+
+    // GHOUL
+    {
+        246,
+        1017, // coral grimes
+    },
+
+    // SKELETON
+    {
+        229,        // normal
+        686,        // player
+        1049,       // player (mouldy, female)
+        1103,       // mouldy (female)
+        1107,       // funny bones
+    },
+
+    // SCORPION
+    {
+        196, 266,           // normal body and tail
+        1080, 1081, 1082    // skrabblag body1, body2, tail
+    },
+
+    // CREATURE_IMP
+    {
+        289, 827
+    },
+
+    // CRAB
+    {
+    },
+
+    // GNOME
+    {
+        295,
+    },
+
+    // DEMON
+    {
+        258,    // normal demon
+        1008,   // deu-debreau
+    },
+
+    // SUCCUBUS
+    {
+        190,        // normal succubus
+        710,        // player succubus
+        1126,       // lilith
+    },
+
+    // MIMIC
+    {
+    },
+
+    // LICH
+    {
+        274,
+    },
+
+    // MINOTAUR
+    {
+        239,
+    },
+
+    // DEVIL
+    {
+        304,
+    },
+
+    // SHOPKEEPER
+    {
+        217,
+    },
+
+    // KOBOLD
+    {
+        421,
+    },
+
+    // SCARAB
+    {
+        429, 430,   // scarab bodies
+        1075,       // scarab attack
+        1078, 1079  // xyggi 1, xyggi 2
+    },
+
+    // CRYSTALGOLEM
+    {
+        475,
+    },
+
+    // INCUBUS
+    {
+        445, 702,
+    },
+
+    // VAMPIRE
+    {
+        437,    // normal
+        718,    // player male
+        756,    // player female
+        1136,   // bram
+        1137,   // female
+    },
+
+    // SHADOW
+    {
+        481,    // normal shadow head
+        1087,   // artemisia head
+        1095,   // baratheon head
+    },
+
+    // COCKATRICE
+    {
+        413,
+    },
+
+    // INSECTOID
+    {
+        455, 726, 760, 1057,
+    },
+
+    // GOATMAN
+    {
+        463, 734, 768, 1025, 1029,
+    },
+
+    // AUTOMATON
+    {
+        467, 742, 770, 1007,
+    },
+
+    // LICH_ICE
+    {
+        650,
+    },
+
+    // LICH_FIRE
+    {
+        646,
+    },
+
+    // SENTRYBOT
+    {
+        872,
+    },
+
+    // SPELLBOT
+    {
+        885,
+    },
+
+    // GYROBOT
+    {
+        886,
+    },
+
+    // DUMMYBOT
+    {
+        889,
+    },
+};
 
 static char monstertypename[][15] =
 {
@@ -68,7 +298,7 @@ static char monstertypename[][15] =
 	"skeleton",
 	"scorpion",
 	"imp",
-	"bugbear",
+	"crab",
 	"gnome",
 	"demon",
 	"succubus",
@@ -109,7 +339,7 @@ static char monstertypenamecapitalized[][15] =
 	"Skeleton",
 	"Scorpion",
 	"Imp",
-	"Bugbear",
+	"Crab",
 	"Gnome",
 	"Demon",
 	"Succubus",
@@ -154,10 +384,10 @@ static char gibtype[NUMMONSTERS] =
 	1,	//OCTOPUS,
 	2,	//SPIDER,
 	2,	//GHOUL,
-	0,	//SKELETON,
+	5,	//SKELETON,
 	2,	//SCORPION,
 	1,	//CREATURE_IMP
-	1,	//BUGBEAR,
+	2,	//CRAB,
 	1,	//GNOME,
 	1,	//DEMON,
 	1,	//SUCCUBUS,
@@ -168,7 +398,7 @@ static char gibtype[NUMMONSTERS] =
 	1,	//SHOPKEEPER,
 	1,	//KOBOLD,
 	2,	//SCARAB,
-	0,	//CRYSTALGOLem,
+	0,	//CRYSTALGOLEM,
 	1,	//INCUBUS,
 	1,	//VAMPIRE,
 	4,	//SHADOW,
@@ -201,7 +431,7 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8, 1.1 }, // skeleton
 	{ 0.9, 1.1, 1.f, 1.3, 1.f, 1.f, 1.2 }, // scorpion
 	{ 1.1, 1.f, 0.8, 1.f, 1.f, 1.2, 1.f }, // imp
-	{ 1.1, 1.f, 1.1, 0.9, 1.1, 1.f, 1.f }, // bugbear
+	{ 1.f, 1.1, 1.f, 1.2, 1.1, 1.f, 1.1 }, // crab
 	{ 0.9, 1.f, 1.f, 0.9, 1.1, 1.1, 1.f }, // gnome
 	{ 0.9, 0.8, 1.f, 0.8, 0.9, 1.1, 0.8 }, // demon
 	{ 1.2, 1.f, 1.f, 0.9, 1.f, 0.8, 1.f }, // succubus
@@ -240,7 +470,7 @@ enum DamageTableType : int
 };
 static const int numDamageTableTypes = 7;
 
-static std::vector<std::vector<int>> classStatGrowth =
+static std::vector<std::vector<unsigned int>> classStatGrowth =
 {
 	// stat weightings for classes on level up
 	//	STR	DEX	CON	INT	PER	CHR -- sum is approx 24.
@@ -260,7 +490,7 @@ static std::vector<std::vector<int>> classStatGrowth =
 	{	3,	2,	4,	6,	4,	4 }, // CONJURER 13
 	{	3,	3,	1,	6,	6,	3 }, // ACCURSED 14
 	{	3,	3,	1,	6,	4,	7 }, // MESMER 15
-	{	4,	4,	3,	5,	3,	5 }, // BREWER 16
+	{	4,	5,	5,	2,	3,	5 }, // BREWER 16
 	{	2,	5,	2,	4,	7,	4 }, // MACHINIST 17
 	{	4,	3,	2,	3,	4,	4 }, // PUNISHER 18
 	{	4,	4,	4,	4,	4,	4 }, // SHAMAN 19
@@ -425,8 +655,9 @@ static const int MONSTER_ALLY_DEXTERITY_SPEED_CAP = 15;
 
 void summonMonsterClient(Monster creature, long x, long y, Uint32 uid);
 Entity* summonMonster(Monster creature, long x, long y, bool forceLocation = false);
+Entity* summonMonsterNoSmoke(Monster creature, long x, long y, bool forceLocation = false);
 void summonManyMonster(Monster creature);
-bool monsterMoveAside(Entity* my, Entity* entity);
+bool monsterMoveAside(Entity* my, Entity* entity, bool ignoreMonsterState = false);
 
 //--init* functions--
 void initHuman(Entity* my, Stat* myStats);
@@ -650,6 +881,7 @@ static const int MONSTER_SPECIAL_COOLDOWN_SHADOW_SPELLCAST = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEPORT = 300;
 static const int MONSTER_SPECIAL_COOLDOWN_INSECTOID_THROW = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_INSECTOID_ACID = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_SPIDER_CAST = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_CONFUSION = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_STEAL = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_CHARM = 300;
@@ -727,6 +959,10 @@ extern int monsterGlobalAttackTimeMultiplier;
 bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[64], Entity* my, Stat* myStats);
 // check qty of a certain creature race alive on a map
 int numMonsterTypeAliveOnMap(Monster creature, Entity*& lastMonster);
+// get monster strings from language file
+std::string getMonsterLocalizedName(Monster creature);
+std::string getMonsterLocalizedPlural(Monster creature);
+std::string getMonsterLocalizedInjury(Monster creature);
 
 //-----RACE SPECIFIC CONSTANTS-----
 
@@ -761,6 +997,9 @@ static const int VAMPIRE_CAST_DRAIN = 2;
 //--Succubus--
 static const int SUCCUBUS_CHARM = 1;
 
+//--Spider--
+static const int SPIDER_CAST = 1;
+
 //--Shadow--
 static const int SHADOW_SPELLCAST = 1;
 static const int SHADOW_TELEPORT_ONLY = 2;
@@ -768,6 +1007,7 @@ static const int SHADOW_TELEPORT_ONLY = 2;
 //--Generic
 static const int MONSTER_SPELLCAST_GENERIC = 100;
 static const int MONSTER_SPELLCAST_GENERIC2 = 101;
+static const int MONSTER_SPECIAL_SAFEGUARD_TIMER_BASE = 0;
 
 //--Lich Attacks--
 static const int LICH_ATK_VERTICAL_SINGLE = 0;
@@ -799,3 +1039,156 @@ static const int GYRO_START_FLYING = 4;
 
 //--Dummybot--
 static const int DUMMYBOT_RETURN_FORM = 1;
+
+struct MonsterData_t
+{
+	struct MonsterDataEntry_t
+	{
+		int monsterType = NOTHING;
+		std::string defaultIconPath = "";
+		struct IconLookup_t
+		{
+			std::string key = "";
+			std::string iconPath = "";
+		};
+		std::map<int, IconLookup_t> iconSpritesAndPaths;
+		std::map<std::string, std::vector<int>> keyToSpriteLookup;
+		std::set<int> modelIndexes;
+		std::set<int> playerModelIndexes;
+		std::string defaultShortDisplayName = "";
+		struct SpecialNPCEntry_t
+		{
+			std::string internalName = "";
+			std::string name = "";
+			std::string shortname = "";
+			std::set<int> modelIndexes;
+			int baseModel = 0;
+			std::string uniqueIcon = "";
+		};
+		std::map<std::string, SpecialNPCEntry_t> specialNPCs;
+		MonsterDataEntry_t(int type)
+		{
+			monsterType = type;
+			defaultShortDisplayName = "";
+			defaultIconPath = "";
+		};
+		MonsterDataEntry_t() = default;
+	};
+	static std::string iconDefaultString;
+	static std::string keyDefaultString;
+	static std::map<int, MonsterDataEntry_t> monsterDataEntries;
+	static std::string& getAllyIconFromSprite(int sprite, int type = -1);
+	static std::string& getKeyFromSprite(int sprite, int type = -1);
+	static int getSpriteFromKey(int sprite, std::string key, int type = -1);
+	static int getSpecialNPCBaseModel(Stat& myStats);
+	static std::string getSpecialNPCName(Stat& myStats);
+	static bool nameMatchesSpecialNPCName(Stat& myStats, std::string npcKey);
+	static void loadMonsterDataJSON();
+};
+extern MonsterData_t monsterData;
+
+class ShopkeeperPlayerHostility_t
+{
+public:
+	enum WantedLevel : int
+	{
+		NO_WANTED_LEVEL,
+		WANTED_FOR_AGGRESSION_SHOPKEEP_INITIATED,
+		WANTED_FOR_ACCESSORY,
+		WANTED_FOR_AGGRESSION,
+		WANTED_FOR_KILL
+	};
+	struct PlayerRaceHostility_t
+	{
+	public:
+		int numAggressions = 0;
+		int numKills = 0;
+		int numAccessories = 0;
+		Monster playerRace = NOTHING;
+		WantedLevel wantedLevel = NO_WANTED_LEVEL;
+		int player = -1;
+		bool bRequiresNetUpdate = false;
+		PlayerRaceHostility_t()
+		{
+			wantedLevel = NO_WANTED_LEVEL;
+			playerRace = NOTHING;
+			player = -1;
+			numAggressions = 0;
+			numKills = 0;
+			numAccessories = 0;
+		};
+		PlayerRaceHostility_t(const Monster _playerRace, const WantedLevel _wantedLevel, const int _player) :
+			PlayerRaceHostility_t()
+		{
+			wantedLevel = _wantedLevel;
+			playerRace = _playerRace;
+			player = _player;
+		}
+
+		bool serialize(FileInterface* fp);
+	};
+	bool playerRaceCheckHostility(const int player, const Monster type) const;
+	PlayerRaceHostility_t* getPlayerHostility(const int player, Monster overrideType = NOTHING);
+	void serverSendClientUpdate(const bool force = false);
+	void reset();
+	void resetPlayerHostility(const int player, bool clearAll = false);
+	ShopkeeperPlayerHostility_t();
+	bool isPlayerEnemy(const int player);
+	void setWantedLevel(PlayerRaceHostility_t& h, WantedLevel wantedLevel, Entity* shopkeeper, bool primaryPlayerCheck);
+	WantedLevel getWantedLevel(const int player);
+	void onShopkeeperDeath(Entity* my, Stat* myStats, Entity* attacker);
+	void onShopkeeperHit(Entity* my, Stat* myStats, Entity* attacker);
+	void updateShopkeeperActMonster(Entity& my, Stat& myStats, bool ringconflict);
+	std::map<Monster, PlayerRaceHostility_t> playerHostility[MAXPLAYERS];
+};
+extern ShopkeeperPlayerHostility_t ShopkeeperPlayerHostility;
+
+struct MonsterAllyFormation_t
+{
+	struct MonsterAllies_t
+	{
+		struct FormationInfo_t
+		{
+			int x = 0;
+			int y = 0;
+			int pathingDelay = 0;
+			int tryExtendPath = 0;
+			bool init = false;
+			bool expired = false;
+		};
+		std::unordered_map<Uint32, FormationInfo_t> meleeUnits;
+		std::unordered_map<Uint32, FormationInfo_t> rangedUnits;
+		Uint32 updatedOnTick = 0;
+	};
+	void updateFormation(Uint32 leaderUid, Uint32 monsterUpdateUid = 0);
+	bool getFollowLocation(Uint32 uid, Uint32 leaderUid, std::pair<int, int>& outPos);
+	void updateOnPathFail(Uint32 uid, Entity* entity);
+	void updateOnPathSucceed(Uint32 uid, Entity* entity);
+	void updateOnFollowCommand(Uint32 uid, Entity* entity);
+	std::unordered_map<Uint32, MonsterAllies_t> units;
+	std::vector<std::pair<int, int>> formationShape;
+	MonsterAllyFormation_t()
+	{
+		formationShape.push_back(std::make_pair(-2, 0));
+		formationShape.push_back(std::make_pair(2, 0));
+		for ( int i = 1; i < 50; ++i )
+		{
+			if ( i % 2 == 0 )
+			{
+				formationShape.push_back(std::make_pair(-2, -i));
+				formationShape.push_back(std::make_pair(2, -i));
+				formationShape.push_back(std::make_pair(0, -i));
+			}
+			else
+			{
+				formationShape.push_back(std::make_pair(-1, -i));
+				formationShape.push_back(std::make_pair(1, -i));
+			}
+		}
+	}
+	void reset() { units.clear(); }
+	int getFollowerChaseLeaderInterval(Entity& my, Stat& myStats);
+	int getFollowerPathingDelay(Entity& my, Stat& myStats);
+	int getFollowerTryExtendedPathSearch(Entity& my, Stat& myStats);
+};
+extern MonsterAllyFormation_t monsterAllyFormations;

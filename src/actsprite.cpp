@@ -11,7 +11,7 @@
 
 #include "main.hpp"
 #include "game.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "entity.hpp"
@@ -19,6 +19,7 @@
 #include "draw.hpp"
 #include "items.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -39,7 +40,7 @@ void actSprite(Entity* my)
 	if ( !my->skill[6] && SPRITE_LIT )
 	{
 		my->skill[6] = 1;
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, SPRITE_LIT, 256);
+		my->light = addLight(my->x / 16, my->y / 16, "explosion");
 	}
 	else if ( !SPRITE_LIT )
 	{
@@ -70,15 +71,16 @@ void actSpriteNametag(Entity* my)
 	Entity* parent = uidToEntity(my->parent);
 	if ( parent )
 	{
-		if ( !hide_playertags )
+		if ( hide_playertags )
 		{
-			my->flags[INVISIBLE] = false;
-			my->x = parent->x;
-			my->y = parent->y;
+            my->flags[INVISIBLE] = true;
 		}
 		else
 		{
-			my->flags[INVISIBLE] = true;
+            my->flags[INVISIBLE] = false;
+            my->x = parent->x;
+            my->y = parent->y;
+            my->z = parent->z - 6;
 		}
 	}
 	else
@@ -206,11 +208,11 @@ void actSpriteWorldTooltip(Entity* my)
 			}
 			if ( bFound && index >= 0 && index < players[i]->worldUI.tooltipsInRange.size() )
 			{
-				players[i]->worldUI.tooltipsInRange.erase(players[i]->worldUI.tooltipsInRange.begin() + index);
-				if ( players[i]->worldUI.bTooltipActiveForPlayer(*my) )
+				if ( players[i]->worldUI.bTooltipActiveForPlayer(*my) && players[i]->worldUI.tooltipsInRange.size() > 1 )
 				{
 					players[i]->worldUI.cycleToNextTooltip();
 				}
+				players[i]->worldUI.tooltipsInRange.erase(players[i]->worldUI.tooltipsInRange.begin() + index);
 			}
 		}
 
@@ -225,7 +227,7 @@ Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z)
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
-			if ( client_disconnected[c] )
+			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}
@@ -245,11 +247,12 @@ Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z)
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;
+    entity->ditheringDisabled = true;
 	entity->flags[SPRITE] = true;
 	entity->flags[PASSABLE] = true;
-	entity->flags[BRIGHT] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
+	entity->flags[BRIGHT] = true;
 	entity->behavior = &actSprite;
 	entity->skill[0] = 1;
 	entity->skill[1] = 4;
@@ -270,7 +273,7 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
-			if ( client_disconnected[c] )
+			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}
@@ -290,9 +293,9 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;
+    entity->ditheringDisabled = true;
 	entity->flags[SPRITE] = true;
 	entity->flags[PASSABLE] = true;
-	entity->flags[BRIGHT] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
 	entity->behavior = &actSprite;
@@ -302,7 +305,7 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 	Entity* my = entity;
 	SPRITE_FRAMES = 10;
 	SPRITE_ANIMSPEED = 2;
-	SPRITE_LIT = 4;
+	SPRITE_LIT = 1;
 	playSoundEntityLocal(entity, 153, 128);
 	Entity* explosion = entity;
 	for (i = 0; i < 10; ++i)
@@ -312,18 +315,18 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 		entity->x = explosion->x;
 		entity->y = explosion->y;
 		entity->z = explosion->z;
+        entity->ditheringDisabled = true;
 		entity->flags[SPRITE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UPDATENEEDED] = false;
-		entity->flags[BRIGHT] = true;
 		entity->flags[PASSABLE] = true;
 		//entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
 		//entity->scaley = 0.25f;
 		//entity->scalez = 0.25f;
-		entity->vel_x = (-40 + rand() % 81) / 8.f;
-		entity->vel_y = (-40 + rand() % 81) / 8.f;
-		entity->vel_z = (-40 + rand() % 81) / 8.f;
-		entity->skill[0] = 15 + rand() % 10;
+		entity->vel_x = (-40 + local_rng.rand() % 81) / 8.f;
+		entity->vel_y = (-40 + local_rng.rand() % 81) / 8.f;
+		entity->vel_z = (-40 + local_rng.rand() % 81) / 8.f;
+		entity->skill[0] = 15 + local_rng.rand() % 10;
 	}
 	if ( multiplayer != CLIENT )
 	{
@@ -335,12 +338,11 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 
 Entity* spawnExplosionFromSprite(Uint16 sprite, Sint16 x, Sint16 y, Sint16 z)
 {
-	int c, i;
 	if ( multiplayer == SERVER )
 	{
-		for ( c = 1; c < MAXPLAYERS; c++ )
+		for ( int c = 1; c < MAXPLAYERS; c++ )
 		{
-			if ( client_disconnected[c] )
+			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}
@@ -370,9 +372,9 @@ Entity* spawnExplosionFromSprite(Uint16 sprite, Sint16 x, Sint16 y, Sint16 z)
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;
+    entity->ditheringDisabled = true;
 	entity->flags[SPRITE] = true;
 	entity->flags[PASSABLE] = true;
-	entity->flags[BRIGHT] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
 	entity->behavior = &actSprite;
@@ -382,28 +384,28 @@ Entity* spawnExplosionFromSprite(Uint16 sprite, Sint16 x, Sint16 y, Sint16 z)
 	Entity* my = entity;
 	SPRITE_FRAMES = 10;
 	SPRITE_ANIMSPEED = 2;
-	SPRITE_LIT = 4;
+	SPRITE_LIT = 1;
 	playSoundEntityLocal(entity, 153, 128);
 	Entity* explosion = entity;
-	for ( i = 0; i < 10; ++i )
+	for ( int i = 0; i < 10; ++i )
 	{
 		entity = newEntity(16, 1, map.entities, nullptr); //Sprite entity.
 		entity->behavior = &actFlame;
 		entity->x = explosion->x;
 		entity->y = explosion->y;
 		entity->z = explosion->z;
+        entity->ditheringDisabled = true;
 		entity->flags[SPRITE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UPDATENEEDED] = false;
-		entity->flags[BRIGHT] = true;
 		entity->flags[PASSABLE] = true;
 		//entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
 		//entity->scaley = 0.25f;
 		//entity->scalez = 0.25f;
-		entity->vel_x = (-40 + rand() % 81) / 8.f;
-		entity->vel_y = (-40 + rand() % 81) / 8.f;
-		entity->vel_z = (-40 + rand() % 81) / 8.f;
-		entity->skill[0] = 15 + rand() % 10;
+		entity->vel_x = (-40 + local_rng.rand() % 81) / 8.f;
+		entity->vel_y = (-40 + local_rng.rand() % 81) / 8.f;
+		entity->vel_z = (-40 + local_rng.rand() % 81) / 8.f;
+		entity->skill[0] = 15 + local_rng.rand() % 10;
 	}
 	if ( multiplayer != CLIENT )
 	{
@@ -411,6 +413,56 @@ Entity* spawnExplosionFromSprite(Uint16 sprite, Sint16 x, Sint16 y, Sint16 z)
 	}
 	entity->setUID(-3);
 	return explosion;
+}
+
+Entity* spawnPoof(Sint16 x, Sint16 y, Sint16 z, real_t scale, bool updateClients)
+{
+	// poof
+	auto entity = newEntity(170, 1, map.entities, nullptr);
+	entity->x = x;
+	entity->y = y;
+	entity->z = z;
+	entity->scalex = scale;
+	entity->scaley = scale;
+	entity->scalez = scale;
+    entity->ditheringDisabled = true;
+	entity->flags[SPRITE] = true;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UNCLICKABLE] = true;
+	entity->behavior = &actSprite;
+	Entity* my = entity;
+	SPRITE_DESTROY = 1;
+	SPRITE_FRAMES = 7;
+	SPRITE_ANIMSPEED = 2;
+	SPRITE_LIT = 0;
+	if ( multiplayer != CLIENT )
+	{
+		entity_uids--;
+	}
+	entity->setUID(-3);
+
+	if ( updateClients && multiplayer == SERVER )
+	{
+		for ( int c = 1; c < MAXPLAYERS; c++ )
+		{
+			if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
+			{
+				continue;
+			}
+			strcpy((char*)net_packet->data, "PUFF");
+			SDLNet_Write16(x, &net_packet->data[4]);
+			SDLNet_Write16(y, &net_packet->data[6]);
+			SDLNet_Write16(z, &net_packet->data[8]);
+			SDLNet_Write16(static_cast<Uint16>(scale * 100), &net_packet->data[10]);
+			net_packet->address.host = net_clients[c - 1].host;
+			net_packet->address.port = net_clients[c - 1].port;
+			net_packet->len = 12;
+			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+		}
+	}
+
+	return entity;
 }
 
 void actSleepZ(Entity* my)
@@ -425,7 +477,7 @@ void actSleepZ(Entity* my)
 
 	// go up
 	my->z -= .2;
-	if ( my->z < -128 )
+	if ( my->z < -16 )
 	{
 		list_RemoveNode(my->mynode);
 		return;
@@ -445,7 +497,7 @@ Entity* spawnSleepZ(Sint16 x, Sint16 y, Sint16 z)
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
-			if ( client_disconnected[c] )
+			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}
@@ -465,6 +517,7 @@ Entity* spawnSleepZ(Sint16 x, Sint16 y, Sint16 z)
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;
+    entity->ditheringDisabled = true;
 	entity->flags[SPRITE] = true;
 	entity->flags[PASSABLE] = true;
 	entity->flags[UPDATENEEDED] = false;
@@ -492,7 +545,7 @@ Entity* spawnFloatingSpriteMisc(int sprite, Sint16 x, Sint16 y, Sint16 z)
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
-			if ( client_disconnected[c] )
+			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}
@@ -513,6 +566,7 @@ Entity* spawnFloatingSpriteMisc(int sprite, Sint16 x, Sint16 y, Sint16 z)
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;
+    entity->ditheringDisabled = true;
 	entity->flags[SPRITE] = true;
 	entity->flags[PASSABLE] = true;
 	entity->flags[UPDATENEEDED] = false;

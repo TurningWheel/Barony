@@ -14,43 +14,233 @@
 #include "entity.hpp"
 #include "prng.hpp"
 
+#ifdef WINDOWS
+extern "C"
+{
+	__declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
+	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+#endif
+
+#include <assert.h>
+
+char* stringCopy(char* dest, const char* src, size_t dest_size, size_t src_size) {
+    // verify input
+    assert(dest);
+    assert(src);
+    if (!dest || !src || !dest_size) {
+	    return dest;
+    }
+
+    // copy string
+    if (src_size < dest_size) {
+        memcpy(dest, src, src_size);
+        dest[src_size] = '\0';
+    } else {
+        memcpy(dest, src, dest_size);
+        dest[dest_size - 1] = '\0';
+    }
+
+	return dest;
+}
+
+char* stringCopyUnsafe(char* dest, const char* src, size_t size) {
+    // verify input
+    assert(dest);
+    assert(src);
+    if (!dest || !src || !size) {
+	    return dest;
+    }
+
+    // copy string
+    --size;
+    size_t c = 0;
+    for (; c < size && src[c] != '\0'; ++c) {
+        dest[c] = src[c];
+    }
+	dest[c] = '\0';
+
+	return dest;
+}
+
+char* stringCat(char* dest, const char* src, size_t dest_size, size_t src_size) {
+    // verify input
+    assert(dest);
+    assert(src);
+    if (!dest || !src || !dest_size || !src_size) {
+	    return dest;
+    }
+
+    // find end of dest string
+    size_t off = 0;
+    for (; off < dest_size && dest[off] != '\0'; ++off);
+    dest += off;
+    dest_size -= off;
+    if (!dest || !dest_size) {
+        return dest;
+    }
+
+    // copy string
+    if (src_size < dest_size) {
+        memcpy(dest, src, src_size);
+        dest[src_size] = '\0';
+    } else {
+        memcpy(dest, src, dest_size);
+        dest[dest_size - 1] = '\0';
+    }
+
+	return dest;
+}
+
+int stringCmp(const char* str1, const char* str2, size_t str1_size, size_t str2_size) {
+    // verify input
+    assert(str1);
+    assert(str2);
+    if (!str1 || !str2) {
+	    return 0;
+    }
+
+    // scan strings for first difference
+    size_t c = 0;
+    for (; c < str1_size && c < str2_size &&
+        str1[c] != '\0' && str2[c] != '\0' &&
+        str1[c] == str2[c]; ++c);
+
+    bool end_of_str1 = false;
+    bool end_of_str2 = false;
+
+    // reached end of first string'
+    if (c == str1_size || str1[c] == '\0') {
+        end_of_str1 = true;
+    }
+
+    // reached end of second string
+    if (c == str2_size || str2[c] == '\0') {
+        end_of_str2 = true;
+    }
+
+    if (end_of_str1 && end_of_str2) {
+        return 0; // reached end of both strings, they are identical
+    }
+    else if (end_of_str1 && !end_of_str2) {
+        return -str2[c]; // reached end of only str1, return <0
+    }
+    else if (end_of_str2 && !end_of_str1) {
+        return str1[c]; // reached end of only str2, return >0
+    }
+    else {
+        return str1[c] - str2[c]; // found a different character
+    }
+}
+
+size_t stringLen(const char* str, size_t size) {
+    // verify input
+    assert(str);
+    assert(size);
+    if (!str || !size) {
+	    return 0;
+    }
+
+    // find end of string
+    size_t len = 0;
+    for (; len < size && str[len] != '\0'; ++len);
+    return len;
+}
+
+const char* stringStr(const char* str1, const char* str2, size_t str1_size, size_t str2_size) {
+    // verify input
+    assert(str1);
+    assert(str2);
+    if (!str1 || !str2) {
+	    return nullptr;
+    }
+
+    // scan str1 for a match of str2
+    for (size_t s = 0; s < str1_size && str1[s] != '\0'; ++s) {
+        const char* ptr = str1 + s;
+        if (!stringCmp(ptr, str2, str1_size - s, str2_size)) {
+            return ptr;
+        }
+    }
+
+    // no match found
+    return nullptr;
+}
+
+char* stringStr(char* str1, const char* str2, size_t str1_size, size_t str2_size) {
+    // verify input
+    assert(str1);
+    assert(str2);
+    if (!str1 || !str2) {
+	    return nullptr;
+    }
+
+    // scan str1 for a match of str2
+    for (size_t s = 0; s < str1_size && str1[s] != '\0'; ++s) {
+        char* ptr = str1 + s;
+        if (!stringCmp(ptr, str2, str1_size - s, str2_size)) {
+            return ptr;
+        }
+    }
+
+    // no match found
+    return nullptr;
+}
+
+#ifdef EDITOR
+struct cvar_thingy {
+    bool data = false;
+} cvar_enableDebugKeys;
+#else
+#include "interface/consolecommand.hpp"
+static ConsoleVariable<bool> cvar_enableDebugKeys("/enabledebugkeys", false, "if true, certain special keys can be used for debugging");
+#endif
+
 // main definitions
-Sint32 xres = 960;
-Sint32 yres = 600;
+Sint32 display_id = 0;
+#if defined(APPLE) && !defined(EDITOR)
+// retina displays have higher DPI so we need a higher display resolution
+Sint32 xres = 2560;
+Sint32 yres = 1440;
+#else
+Sint32 xres = 1280;
+Sint32 yres = 720;
+#endif
 int mainloop = 1;
 bool initialized = false;
 Uint32 ticks = 0;
 bool stop = false;
 char datadir[PATH_MAX];
 char outputdir[PATH_MAX];
-
-// language stuff
-char languageCode[32] = { 0 };
-char** language = nullptr;
+SDL_bool EnableMouseCapture = SDL_TRUE; // disable if mouse capture causes problem debugging in Linux
+bool& enableDebugKeys = cvar_enableDebugKeys.data;
 
 // input stuff
-int reversemouse = 0;
-real_t mousespeed = 32;
 Uint32 impulses[NUMIMPULSES];
 Uint32 joyimpulses[NUM_JOY_IMPULSES];
 Uint32 lastkeypressed = 0;
-Sint8 keystatus[512];
+std::unordered_map<SDL_Keycode, bool> keystatus;
 char* inputstr = nullptr;
 int inputlen = 0;
+bool fingerdown = false;
+int fingerx = 0;
+int fingery = 0;
+int ofingerx = 0;
+int ofingery = 0;
 Sint8 mousestatus[6];
-Entity** clickmap = nullptr;
 bool capture_mouse = true;
 string lastname;
-int lastCreatedCharacterClass = -1;
-int lastCreatedCharacterAppearance = -1;
-int lastCreatedCharacterSex = -1;
-int lastCreatedCharacterRace = -1;
 
 // net stuff
 Uint32 clientplayer = 0;
 int numplayers = 0;
 int clientnum = 0;
-int multiplayer = -1;
+int multiplayer = 0;
+SteamGlobalStat_t g_SteamAPIGlobalStats[1] =
+{
+	{ 57, STEAM_STAT_INT, "STAT_GLOBAL_GAME_STARTED" }
+};
+
 SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS] =
 {
 	{ 1, STEAM_STAT_INT, "STAT_BOULDER_DEATHS" },
@@ -194,24 +384,13 @@ list_t safePacketsSent;
 std::unordered_map<int, Uint32> safePacketsReceivedMap[MAXPLAYERS];
 bool receivedclientnum = false;
 char const * window_title = nullptr;
-bool softwaremode = false;
-#ifdef NINTENDO
- std::chrono::time_point<std::chrono::steady_clock> lastTick;
-#else
- SDL_TimerID timer;
-#endif // NINTENDO
 SDL_Window* screen = nullptr;
-#ifdef APPLE
-SDL_Renderer* renderer = nullptr;
-#else
-SDL_GLContext renderer;
-#endif
-SDL_Surface* mainsurface = nullptr;
+SDL_GLContext renderer = nullptr;
 SDL_Event event;
 bool firstmouseevent = true;
 int fullscreen = 0;
 bool borderless = false;
-bool smoothlighting = false;
+bool smoothlighting = true;
 list_t removedEntities;
 list_t entitiesToDelete[MAXPLAYERS];
 Entity* client_selected[MAXPLAYERS] = {nullptr, nullptr, nullptr, nullptr};
@@ -224,9 +403,9 @@ list_t entitiesdeleted;
 
 // fps
 bool showfps = false;
+real_t time_diff = 0.0;
 real_t t, ot = 0.0, frameval[AVERAGEFRAMES];
 Uint32 cycles = 0, pingtime = 0;
-Uint32 timesync = 0;
 real_t fps = 0.0;
 
 // world sim data
@@ -242,10 +421,6 @@ list_t button_l;
 list_t light_l;
 Uint32 mapseed;
 bool* shoparea = nullptr;
-real_t globalLightModifier = 0.f;
-real_t globalLightTelepathyModifier = 0.f;
-int globalLightSmoothingRate = 1;
-int globalLightModifierActive = 0;
 
 // game variables
 Sint8 minimap[MINIMAP_MAX_DIMENSION][MINIMAP_MAX_DIMENSION];
@@ -258,7 +433,7 @@ bool loading = false;
 int currentlevel = 0, minotaurlevel = 0;
 bool secretlevel = false;
 bool darkmap = false;
-bool skipintro = false;
+bool skipintro = true;
 bool broadcast = false;
 bool nohud = false;
 bool noclip = false, godmode = false, buddhamode = false;
@@ -322,7 +497,7 @@ int* palette;
 
 // video definitions
 polymodel_t* polymodels = nullptr;
-bool useModelCache = false;
+bool useModelCache = true;
 list_t ttfTextHash[HASH_SIZE];
 TTF_Font* ttf8 = nullptr;
 TTF_Font* ttf12 = nullptr;
@@ -330,7 +505,6 @@ TTF_Font* ttf16 = nullptr;
 SDL_Surface* font8x8_bmp = nullptr;
 SDL_Surface* font12x12_bmp = nullptr;
 SDL_Surface* font16x16_bmp = nullptr;
-SDL_Surface* fancyWindow_bmp = nullptr;
 SDL_Surface** sprites = nullptr;
 SDL_Surface** tiles = nullptr;
 std::unordered_map<std::string, SDL_Surface*> achievementImages;
@@ -342,11 +516,12 @@ std::unordered_map<std::string, int> achievementProgress; // ->second is the ass
 std::unordered_map<std::string, int64_t> achievementUnlockTime;
 
 std::unordered_set<std::string> achievementUnlockedLookup;
+bool achievementsNeedResort = true;
 Uint32 imgref = 1, vboref = 1;
 const Uint32 ttfTextCacheLimit = 9000;
 GLuint* texid = nullptr;
 bool disablevbos = false;
-Uint32 fov = 65;
+Uint32 fov = 60;
 Uint32 fpsLimit = 60;
 //GLuint *vboid=nullptr, *vaoid=nullptr;
 SDL_Surface** allsurfaces;
@@ -356,10 +531,8 @@ bool *lavatiles = nullptr;
 bool *swimmingtiles = nullptr;
 int rscale = 1;
 real_t vidgamma = 1.0f;
-real_t* zbuffer = nullptr;
-Sint32* lightmap = nullptr;
-Sint32* lightmapSmoothed = nullptr;
-bool* vismap = nullptr;
+std::vector<vec4_t> lightmaps[MAXPLAYERS + 1];
+std::vector<vec4_t> lightmapsSmoothed[MAXPLAYERS + 1];
 bool mode3d = false;
 bool verticalSync = false;
 bool showStatusEffectIcons = true;
@@ -370,17 +543,17 @@ int minimapTransparencyForeground = 0;
 int minimapTransparencyBackground = 0;
 int minimapScale = 4;
 int minimapObjectZoom = 0;
-int minimapScaleQuickToggle = 0;
 
 // audio definitions
 int audio_rate = 22050;
 Uint16 audio_format = AUDIO_S16;
 int audio_channels = 2;
 int audio_buffers = 512;
-int sfxvolume = 64;
-int sfxAmbientVolume = 64;
-int sfxEnvironmentVolume = 64;
-int musvolume = 48;
+real_t sfxvolume = 1.0;
+real_t sfxAmbientVolume = 1.0;
+real_t sfxEnvironmentVolume = 1.0;
+real_t sfxNotificationVolume = 1.0;
+real_t musvolume = 1.0;
 
 // fun stuff
 SDL_Surface* title_bmp = nullptr;
@@ -388,8 +561,6 @@ SDL_Surface* logo_bmp = nullptr;
 SDL_Surface* cursor_bmp = nullptr;
 SDL_Surface* cross_bmp = nullptr;
 SDL_Surface* selected_cursor_bmp = nullptr;
-SDL_Surface* controllerglyphs1_bmp = nullptr;
-SDL_Surface* skillIcons_bmp = nullptr;
 int shaking = 0, bobbing = 0;
 bool fadeout = false, fadefinished = false;
 int fadealpha = 0;
@@ -401,6 +572,7 @@ char maptoload[256], configtoload[256];
 bool loadingmap = false, genmap = false, loadingconfig = false;
 bool deleteallbuttons = false;
 Uint32 cursorflash = 0;
+bool splitscreen = false;
 
 bool no_sound = false;
 
@@ -501,20 +673,158 @@ void printlog(const char* str, ...)
 	va_end( argptr );
 
 	// timestamp the message
-	time_t timer;
 	char buffer[32];
-	struct tm* tm_info;
-	time(&timer);
-	tm_info = localtime(&timer);
-	strftime( buffer, 32, "%H-%M-%S", tm_info );
+    getTimeFormatted(getTime(), buffer, sizeof(buffer));
 
 	// print to the log
 	if ( newstr[strlen(newstr) - 1] != '\n' )
 	{
-		int c = strlen(newstr);
+		int c = (int)strlen(newstr);
 		newstr[c] = '\n';
 		newstr[c + 1] = 0;
 	}
+#ifndef NINTENDO
+	//fprintf( stderr, "%s", newstr );
 	fprintf( stderr, "[%s] %s", buffer, newstr );
 	fflush( stderr );
+#endif
+	//fprintf( stdout, "%s", newstr );
+	fprintf( stdout, "[%s] %s", buffer, newstr );
+	fflush( stdout );
 }
+
+#ifdef NDEBUG
+bool ENABLE_STACK_TRACES = false;
+#else
+bool ENABLE_STACK_TRACES = false;
+#endif
+static std::unordered_map<std::string, size_t> unique_traces;
+
+#ifdef LINUX
+#include <execinfo.h>
+#endif
+
+std::string stackTrace() {
+#ifndef NDEBUG
+    if (!ENABLE_STACK_TRACES) {
+        return "";
+    }
+#ifdef LINUX
+
+    // perform stack trace
+    constexpr unsigned int STACK_SIZE = 16;
+	void* array[STACK_SIZE];
+	size_t size = backtrace(array, STACK_SIZE);
+	if (size < 4) {
+	    return "";
+	}
+	char** symbols = backtrace_symbols(array, size);
+
+    // build string
+    std::string trace;
+	for (auto c = 3; c < size; ++c) {
+	    trace += "\n";
+	    symbols[c] = strrchr(symbols[c], (int)'(');
+	    trace += symbols[c];
+	}
+
+	// free backtrace table
+	free(symbols);
+
+    return trace;
+#endif
+#endif
+	return "";
+}
+
+void stackTraceUnique() {
+#ifndef NDEBUG
+    if (!ENABLE_STACK_TRACES) {
+        return;
+    }
+#ifdef LINUX
+
+    // perform stack trace
+    constexpr unsigned int STACK_SIZE = 16;
+	void* array[STACK_SIZE];
+	size_t size = backtrace(array, STACK_SIZE);
+	if (size < 4) {
+	    return;
+	}
+	char** symbols = backtrace_symbols(array, size);
+
+    // build string
+    std::string trace;
+	for (auto c = 3; c < size; ++c) {
+	    trace += "\n";
+	    //symbols[c] = strrchr(symbols[c], (int)'(');
+	    trace += symbols[c];
+	}
+
+	// free backtrace table
+	free(symbols);
+
+    // attempt to place in map, or increment if it already exists
+	auto result = unique_traces.emplace(trace, 1);
+	if (result.second) {
+	    // haven't seen this trace before
+	    printlog(trace.c_str());
+	} else {
+	    // have seen this trace, simply increment counter
+	    ++result.first->second;
+	}
+#endif
+#endif
+}
+
+void finishStackTraceUnique() {
+#ifndef NDEBUG
+    if (!ENABLE_STACK_TRACES) {
+        return;
+    }
+    printlog("Unique stack trace tally:");
+    for (auto it = unique_traces.begin(); it != unique_traces.end(); ++it) {
+        printlog(it->first.c_str());
+        printlog("%llu", it->second);
+    }
+    unique_traces.clear();
+#endif
+}
+
+#ifndef EDITOR
+#include "interface/consolecommand.hpp"
+static ConsoleCommand purgeStackTraces("/purge_stack_traces", "purge stack traces",
+    [](int argc, const char* argv[]){
+    finishStackTraceUnique();
+    });
+#endif
+
+#ifdef NINTENDO
+time_t getTime() {
+    return nxGetTime();
+}
+
+char* getTimeFormatted(time_t t, char* buf, size_t size) {
+    return nxGetTimeFormatted(t, buf, size);
+}
+
+char* getTimeAndDateFormatted(time_t t, char* buf, size_t size) {
+    return nxGetTimeAndDateFormatted(t, buf, size);
+}
+#else // NINTENDO
+time_t getTime() {
+    return time(nullptr);
+}
+
+char* getTimeFormatted(time_t t, char* buf, size_t size) {
+    struct tm* tm = localtime(&t);
+    strftime(buf, size, "%H-%M-%S", tm);
+    return buf;
+}
+
+char* getTimeAndDateFormatted(time_t t, char* buf, size_t size) {
+    struct tm* tm = localtime(&t);
+    strftime(buf, size, "%Y-%m-%d %H-%M-%S", tm);
+    return buf;
+}
+#endif

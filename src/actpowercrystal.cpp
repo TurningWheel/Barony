@@ -14,11 +14,12 @@ See LICENSE for details.
 #include "stat.hpp"
 #include "entity.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "items.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -57,9 +58,6 @@ void Entity::actPowerCrystal()
 	int i = 0;
 
 	real_t acceleration = 0.95;
-
-	//this->light = lightSphereShadow(this->x / 16, this->y / 16, 3, 64);
-	//messagePlayer(0, "vel z: %f", this->vel_z);
 
 	if ( ticks == 1 )
 	{
@@ -145,7 +143,7 @@ void Entity::actPowerCrystal()
 			this->vel_z = this->fskill[1]; // reset velocity at the mid point of animation
 		}
 
-		spawnAmbientParticles(80, 579, 10 + rand() % 40, 1.0, false);
+		spawnAmbientParticles(80, 579, 10 + local_rng.rand() % 40, 1.0, false);
 
 		if ( crystalTurning == 1 )
 		{
@@ -193,7 +191,7 @@ void Entity::actPowerCrystal()
 
 	for ( i = 0; i < MAXPLAYERS; i++ )
 	{
-		if ( ((i == 0 && selectedEntity[0] == this) || (client_selected[i] == this) || (splitscreen && selectedEntity[i] == this)) && crystalTurning == 0 )
+		if ( (client_selected[i] == this || selectedEntity[i] == this) && crystalTurning == 0 )
 		{
 			if ( inrange[i] )
 			{
@@ -204,11 +202,11 @@ void Entity::actPowerCrystal()
 					crystalTurnStartDir = static_cast<Sint32>(this->yaw / (PI / 2));
 					serverUpdateEntitySkill(this, 3);
 					serverUpdateEntitySkill(this, 4);
-					messagePlayer(i, language[2356]);
+					messagePlayer(i, MESSAGE_INTERACTION, Language::get(2356));
 				}
 				else if ( !crystalInitialised )
 				{
-					messagePlayer(i, language[2357]);
+					messagePlayer(i, MESSAGE_INTERACTION, Language::get(2357));
 				}
 			}	
 		}

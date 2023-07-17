@@ -13,7 +13,7 @@
 #include "game.hpp"
 #include "stat.hpp"
 #include "messages.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "entity.hpp"
 #include "items.hpp"
 #include "net.hpp"
@@ -22,6 +22,8 @@
 #include "magic/magic.hpp"
 #include "scores.hpp"
 #include "monster.hpp"
+#include "prng.hpp"
+#include "paths.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -61,9 +63,9 @@ void actBeartrap(Entity* my)
 	// undo beartrap
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+		if ( selectedEntity[i] == my || client_selected[i] == my )
 		{
-			if (inrange[i])
+			if ( inrange[i] )
 			{
 				Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 				entity->flags[INVISIBLE] = true;
@@ -86,7 +88,7 @@ void actBeartrap(Entity* my)
 				entity->skill[15] = BEARTRAP_IDENTIFIED;
 				entity->itemNotMoving = 1;
 				entity->itemNotMovingClient = 1;
-				messagePlayer(i, language[1300]);
+				messagePlayer(i, MESSAGE_INTERACTION, Language::get(1300));
 				list_RemoveNode(my->mynode);
 				return;
 			}
@@ -114,6 +116,10 @@ void actBeartrap(Entity* my)
 			{
 				Entity* parent = uidToEntity(my->parent);
 				if ( (parent && parent->checkFriend(entity)) )
+				{
+					continue;
+				}
+				if ( stat->type == GYROBOT )
 				{
 					continue;
 				}
@@ -151,7 +157,9 @@ void actBeartrap(Entity* my)
 					//	}
 					//}
 					// set obituary
-					entity->setObituary(language[1504]);
+					entity->updateEntityOnHit(parent, true);
+					entity->setObituary(Language::get(1504));
+					stat->killer = KilledBy::TRAP_BEAR;
 
 					if ( stat->HP <= 0 && oldHP > 0 )
 					{
@@ -163,8 +171,8 @@ void actBeartrap(Entity* my)
 					if ( entity->behavior == &actPlayer )
 					{
 						int player = entity->skill[2];
-						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						messagePlayerColor(player, color, language[454]);
+						Uint32 color = makeColorRGB(255, 0, 0);
+						messagePlayerColor(player, MESSAGE_STATUS, color, Language::get(454));
 						if ( !players[player]->isLocalPlayer() )
 						{
 							serverUpdateEffects(player);
@@ -174,7 +182,7 @@ void actBeartrap(Entity* my)
 							cameravars[entity->skill[2]].shakex += .1;
 							cameravars[entity->skill[2]].shakey += 10;
 						}
-						else if ( player > 0 && multiplayer == SERVER )
+						else if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 						{
 							strcpy((char*)net_packet->data, "SHAK");
 							net_packet->data[4] = 10; // turns into .1
@@ -194,32 +202,25 @@ void actBeartrap(Entity* my)
 							{
 								if ( entityDist(my, parent) >= 64 && entityDist(my, parent) < 128 )
 								{
-									messagePlayer(player, language[2521]);
+									messagePlayer(player, MESSAGE_HINT, Language::get(2521));
 								}
 								else
 								{
-									messagePlayer(player, language[2522]);
+									messagePlayer(player, MESSAGE_HINT, Language::get(2522));
 								}
-								if ( rand() % 10 == 0 )
+								if ( local_rng.rand() % 10 == 0 )
 								{
 									parent->increaseSkill(PRO_LOCKPICKING);
 								}
-								if ( rand() % 5 == 0 )
-								{
-									parent->increaseSkill(PRO_RANGED);
-								}
+								//if ( local_rng.rand() % 5 == 0 )
+								//{
+								//	parent->increaseSkill(PRO_RANGED);
+								//}
 							}
 							// update enemy bar for attacker
 							if ( !strcmp(stat->name, "") )
 							{
-								if ( stat->type < KOBOLD ) //Original monster count
-								{
-									updateEnemyBar(parent, entity, language[90 + stat->type], stat->HP, stat->MAXHP);
-								}
-								else if ( stat->type >= KOBOLD ) //New monsters
-								{
-									updateEnemyBar(parent, entity, language[2000 + (stat->type - KOBOLD)], stat->HP, stat->MAXHP);
-								}
+								updateEnemyBar(parent, entity, getMonsterLocalizedName(stat->type).c_str(), stat->HP, stat->MAXHP);
 							}
 							else
 							{
@@ -344,30 +345,30 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 	}
 
 	// stumbled into the trap!
-	Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+	Uint32 color = makeColorRGB(0, 255, 0);
 	if ( parent && parent->behavior == &actPlayer && triggered != parent )
 	{
 		if ( !hitByAOE )
 		{
-			messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3498], language[3499], MSG_TOOL_BOMB, my);
+			messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), Language::get(3498), Language::get(3499), MSG_TOOL_BOMB, my);
 		}
 		else
 		{
-			messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3613], language[3614], MSG_TOOL_BOMB, my);
+			messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), Language::get(3613), Language::get(3614), MSG_TOOL_BOMB, my);
 		}
 	}
 	if ( triggered->behavior == &actPlayer )
 	{
 		int player = triggered->skill[2];
-		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+		Uint32 color = makeColorRGB(255, 0, 0);
 		// you stumbled into the trap!
 		if ( !hitByAOE )
 		{
-			messagePlayerColor(player, color, language[3497], items[BOMB_ITEMTYPE].name_identified);
+			messagePlayerColor(player, MESSAGE_STATUS, color, Language::get(3497), items[BOMB_ITEMTYPE].getIdentifiedName());
 		}
 		else
 		{
-			messagePlayerColor(player, color, language[3612], items[BOMB_ITEMTYPE].name_identified);
+			messagePlayerColor(player, MESSAGE_STATUS, color, Language::get(3612), items[BOMB_ITEMTYPE].getIdentifiedName());
 		}
 	}
 
@@ -378,8 +379,8 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			// no effect.
 			if ( parent && parent->behavior == &actPlayer )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-				messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3603], language[3604], MSG_COMBAT);
+				Uint32 color = makeColorRGB(255, 0, 0);
+				messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), Language::get(3603), Language::get(3604), MSG_COMBAT);
 			}
 			return;
 		}
@@ -410,12 +411,12 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 
 		if ( !parentgoodspots.empty() )
 		{
-			Entity* targetLocation = parentgoodspots[rand() % parentgoodspots.size()];
+			Entity* targetLocation = parentgoodspots[local_rng.rand() % parentgoodspots.size()];
 			teleported = triggered->teleportAroundEntity(targetLocation, 2);
 		}
 		else if ( !goodspots.empty() )
 		{
-			Entity* targetLocation = goodspots[rand() % goodspots.size()];
+			Entity* targetLocation = goodspots[local_rng.rand() % goodspots.size()];
 			teleported = triggered->teleportAroundEntity(targetLocation, 2);
 		}
 		else
@@ -432,14 +433,14 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 				// whisked away!
 				if ( triggered != parent )
 				{
-					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-					messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3601], language[3602], MSG_COMBAT);
+					Uint32 color = makeColorRGB(0, 255, 0);
+					messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), Language::get(3601), Language::get(3602), MSG_COMBAT);
 				}
 			}
 			if ( triggered->behavior == &actPlayer )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
-				messagePlayerColor(triggered->skill[2], color, language[3611]);
+				Uint32 color = makeColorRGB(255, 255, 255);
+				messagePlayerColor(triggered->skill[2], MESSAGE_STATUS, color, Language::get(3611));
 				achievementObserver.playerAchievements[triggered->skill[2]].checkPathBetweenObjects(triggered, my, AchievementObserver::BARONY_ACH_WONDERFUL_TOYS);
 			}
 
@@ -455,8 +456,8 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 		{
 			if ( parent && parent->behavior == &actPlayer && triggered != parent )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-				messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3615], language[3616], MSG_COMBAT);
+				Uint32 color = makeColorRGB(255, 0, 0);
+				messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), Language::get(3615), Language::get(3616), MSG_COMBAT);
 			}
 		}
 		return;
@@ -510,7 +511,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 	int oldHP = stat->HP;
 	if ( stat )
 	{
-		damage *= triggered->getDamageTableMultiplier(*stat, DAMAGE_TABLE_MAGIC); // reduce/increase by magic table.
+		damage *= Entity::getDamageTableMultiplier(triggered, *stat, DAMAGE_TABLE_MAGIC); // reduce/increase by magic table.
 	}
 	bool wasAsleep = false;
 	if ( stat )
@@ -518,7 +519,9 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 		wasAsleep = stat->EFFECTS[EFF_ASLEEP];
 	}
 	triggered->modHP(-damage);
-	triggered->setObituary(language[3496]);
+	triggered->setObituary(Language::get(3496));
+	triggered->updateEntityOnHit(parent, true);
+	stat->killer = KilledBy::TRAP_BOMB;
 
 	if ( stat->HP <= 0 && oldHP > 0 )
 	{
@@ -551,7 +554,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			cameravars[triggered->skill[2]].shakex += .1;
 			cameravars[triggered->skill[2]].shakey += 10;
 		}
-		else if ( player > 0 && multiplayer == SERVER )
+		else if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 		{
 			strcpy((char*)net_packet->data, "SHAK");
 			net_packet->data[4] = 10; // turns into .1
@@ -573,30 +576,30 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			{
 				if ( entityDist(my, parent) >= 64 && entityDist(my, parent) < 128 )
 				{
-					messagePlayer(player, language[3494]);
+					messagePlayer(player, MESSAGE_HINT, Language::get(3494));
 				}
 				else
 				{
-					messagePlayer(player, language[3495]);
+					messagePlayer(player, MESSAGE_HINT, Language::get(3495));
 				}
 			}
 			if ( triggered->behavior == &actMonster )
 			{
 				if ( oldHP > 0 && stat->HP == 0 ) // got a kill
 				{
-					if ( rand() % 5 == 0 )
+					if ( local_rng.rand() % 5 == 0 )
 					{
 						parent->increaseSkill(PRO_LOCKPICKING);
 					}
 				}
 				else if ( oldHP > stat->HP )
 				{
-					if ( rand() % 20 == 0 ) // wounded
+					if ( local_rng.rand() % 20 == 0 ) // wounded
 					{
 						parent->increaseSkill(PRO_LOCKPICKING);
 					}
 				}
-				else if( rand() % 20 == 0) // any other effect
+				else if( local_rng.rand() % 20 == 0) // any other effect
 				{
 					parent->increaseSkill(PRO_LOCKPICKING);
 				}
@@ -623,14 +626,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			{
 				if ( !strcmp(stat->name, "") )
 				{
-					if ( stat->type < KOBOLD ) //Original monster count
-					{
-						updateEnemyBar(parent, triggered, language[90 + stat->type], stat->HP, stat->MAXHP);
-					}
-					else if ( stat->type >= KOBOLD ) //New monsters
-					{
-						updateEnemyBar(parent, triggered, language[2000 + (stat->type - KOBOLD)], stat->HP, stat->MAXHP);
-					}
+					updateEnemyBar(parent, triggered, getMonsterLocalizedName(stat->type).c_str(), stat->HP, stat->MAXHP);
 				}
 				else
 				{
@@ -654,8 +650,8 @@ void actBomb(Entity* my)
 	{
 		if ( BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TELEPORT_RECEIVER )
 		{
-			my->spawnAmbientParticles(25, 576, 10 + rand() % 40, 1.0, false);
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 92);
+			my->spawnAmbientParticles(25, 576, 10 + local_rng.rand() % 40, 1.0, false);
+			my->light = addLight(my->x / 16, my->y / 16, "trap_teleport");
 		}
 		return;
 	}
@@ -667,7 +663,7 @@ void actBomb(Entity* my)
 	// undo bomb
 	for ( int i = 0; i < MAXPLAYERS; i++ )
 	{
-		if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+		if ( selectedEntity[i] == my || client_selected[i] == my )
 		{
 			if ( inrange[i] )
 			{
@@ -703,7 +699,7 @@ void actBomb(Entity* my)
 					entity->itemNotMoving = 0;
 					entity->itemNotMovingClient = 0;
 				}
-				messagePlayer(i, language[3600], items[BOMB_ITEMTYPE].name_identified);
+				messagePlayer(i, MESSAGE_INTERACTION, Language::get(3600), items[BOMB_ITEMTYPE].getIdentifiedName());
 				list_RemoveNode(my->mynode);
 				return;
 			}
@@ -730,8 +726,8 @@ void actBomb(Entity* my)
 
 	if ( BOMB_ITEMTYPE == TOOL_TELEPORT_BOMB && BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TELEPORT_RECEIVER )
 	{
-		my->spawnAmbientParticles(25, 576, 10 + rand() % 40, 1.0, false);
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 92);
+		my->spawnAmbientParticles(25, 576, 10 + local_rng.rand() % 40, 1.0, false);
+		my->light = addLight(my->x / 16, my->y / 16, "trap_teleport");
 		my->sprite = 899;
 		return;
 	}
@@ -830,6 +826,25 @@ void actBomb(Entity* my)
 					shouldExplode = true;
 				}
 			}
+			else if ( onEntity->behavior == &actColliderDecoration )
+			{
+				if ( onEntity->colliderCurrentHP < BOMB_ENTITY_ATTACHED_START_HP
+					|| BOMB_HIT_BY_PROJECTILE == 1 )
+				{
+					if ( onEntity->colliderCurrentHP > 0 )
+					{
+						if ( BOMB_ITEMTYPE == TOOL_BOMB ) // fire bomb do more.
+						{
+							onEntity->colliderHandleDamageMagic(50, *my, uidToEntity(my->parent));
+						}
+						else
+						{
+							onEntity->colliderHandleDamageMagic(20, *my, uidToEntity(my->parent));
+						}
+					}
+					shouldExplode = true;
+				}
+			}
 		}
 		else
 		{
@@ -896,7 +911,7 @@ void actBomb(Entity* my)
 						entityDistance = entityDist(my, entity);
 						if ( entityDistance < 6.5 )
 						{
-							spawnExplosionFromSprite(explosionSprite, my->x - 4 + rand() % 9, my->y + rand() % 9, my->z - 2);
+							spawnExplosionFromSprite(explosionSprite, my->x - 4 + local_rng.rand() % 9, my->y + local_rng.rand() % 9, my->z - 2);
 							triggered = entity;
 						}
 					}
@@ -935,7 +950,7 @@ void actBomb(Entity* my)
 								if ( entityDistance < 12 )
 								{
 									triggered = entity;
-									spawnExplosionFromSprite(explosionSprite, my->x - rand() % 9, my->y - 4 + rand() % 9, my->z);
+									spawnExplosionFromSprite(explosionSprite, my->x - local_rng.rand() % 9, my->y - 4 + local_rng.rand() % 9, my->z);
 								}
 								break;
 							case Item::ItemBombFacingDirection::BOMB_WEST:
@@ -944,7 +959,7 @@ void actBomb(Entity* my)
 								if ( entityDistance < 12 )
 								{
 									triggered = entity;
-									spawnExplosionFromSprite(explosionSprite, my->x + rand() % 9, my->y - 4 + rand() % 9, my->z);
+									spawnExplosionFromSprite(explosionSprite, my->x + local_rng.rand() % 9, my->y - 4 + local_rng.rand() % 9, my->z);
 								}
 								break;
 							case Item::ItemBombFacingDirection::BOMB_SOUTH:
@@ -953,7 +968,7 @@ void actBomb(Entity* my)
 								if ( entityDistance < 12 )
 								{
 									triggered = entity;
-									spawnExplosionFromSprite(explosionSprite, my->x - 4 + rand() % 9, my->y - rand() % 9, my->z);
+									spawnExplosionFromSprite(explosionSprite, my->x - 4 + local_rng.rand() % 9, my->y - local_rng.rand() % 9, my->z);
 								}
 								break;
 							case Item::ItemBombFacingDirection::BOMB_NORTH:
@@ -962,7 +977,7 @@ void actBomb(Entity* my)
 								if ( entityDistance < 12 )
 								{
 									triggered = entity;
-									spawnExplosionFromSprite(explosionSprite, my->x - 4 + rand() % 9, my->y + rand() % 9, my->z);
+									spawnExplosionFromSprite(explosionSprite, my->x - 4 + local_rng.rand() % 9, my->y + local_rng.rand() % 9, my->z);
 								}
 								break;
 							default:
@@ -977,7 +992,9 @@ void actBomb(Entity* my)
 	}
 
 	if ( !bombExplodeAOETargets && triggered 
-		&& (BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_DOOR || BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_CHEST) )
+		&& (BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_DOOR 
+			|| BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_CHEST
+			|| BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_COLLIDER) )
 	{
 		// found enemy, do AoE effect.
 		BOMB_HIT_BY_PROJECTILE = 1;
@@ -1095,13 +1112,13 @@ void actDecoyBox(Entity* my)
 	else
 	{
 		// let's make some noise.
-		if ( my->ticks % 5 == 0 && rand() % 3 == 0 )
+		if ( my->ticks % 5 == 0 && local_rng.rand() % 3 == 0 )
 		{
-			playSoundEntityLocal(my, 472 + rand() % 13, 192);
+			playSoundEntityLocal(my, 472 + local_rng.rand() % 13, 192);
 		}
-		if ( my->ticks % 20 == 0 && rand() % 3 > 0 )
+		if ( my->ticks % 20 == 0 && local_rng.rand() % 3 > 0 )
 		{
-			playSoundEntityLocal(my, 475 + rand() % 10, 192);
+			playSoundEntityLocal(my, 475 + local_rng.rand() % 10, 192);
 		}
 	}
 	if ( multiplayer == CLIENT )
@@ -1198,8 +1215,8 @@ void actDecoyBox(Entity* my)
 											entity->setEffect(EFF_DISORIENTED, true, TICKS_PER_SECOND * 1, false);
 											entity->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 5, false);
 										}
-										spawnFloatingSpriteMisc(134, entity->x + (-4 + rand() % 9) + cos(entity->yaw) * 2,
-											entity->y + (-4 + rand() % 9) + sin(entity->yaw) * 2, entity->z + rand() % 4);
+										spawnFloatingSpriteMisc(134, entity->x + (-4 + local_rng.rand() % 9) + cos(entity->yaw) * 2,
+											entity->y + (-4 + local_rng.rand() % 9) + sin(entity->yaw) * 2, entity->z + local_rng.rand() % 4);
 									}
 								}
 								break;
@@ -1209,7 +1226,8 @@ void actDecoyBox(Entity* my)
 								break;
 							}
 							if ( !myStats->EFFECTS[EFF_DISTRACTED_COOLDOWN] 
-								&& entity->monsterSetPathToLocation(my->x / 16, my->y / 16, 2) && entity->children.first )
+								&& entity->monsterSetPathToLocation(my->x / 16, my->y / 16, 2,
+									GeneratePathTypes::GENERATE_PATH_DEFAULT) && entity->children.first )
 							{
 								// path only if we're not on cooldown
 								entity->monsterLastDistractedByNoisemaker = my->getUID();
@@ -1241,8 +1259,8 @@ void actDecoyBox(Entity* my)
 											entity->setEffect(EFF_DISORIENTED, true, TICKS_PER_SECOND * 1, false);
 											entity->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 5, false);
 										}
-										spawnFloatingSpriteMisc(134, entity->x + (-4 + rand() % 9) + cos(entity->yaw) * 2,
-											entity->y + (-4 + rand() % 9) + sin(entity->yaw) * 2, entity->z + rand() % 4);
+										spawnFloatingSpriteMisc(134, entity->x + (-4 + local_rng.rand() % 9) + cos(entity->yaw) * 2,
+											entity->y + (-4 + local_rng.rand() % 9) + sin(entity->yaw) * 2, entity->z + local_rng.rand() % 4);
 									}
 								}
 
@@ -1265,7 +1283,7 @@ void actDecoyBox(Entity* my)
 											}
 											if ( !message )
 											{
-												messagePlayer(parent->skill[2], language[3671]);
+												messagePlayer(parent->skill[2], MESSAGE_WORLD, Language::get(3671));
 												message = true;
 											}
 											break;
@@ -1282,7 +1300,7 @@ void actDecoyBox(Entity* my)
 		{
 			if ( parent && parent->behavior == &actPlayer )
 			{
-				messagePlayer(parent->skill[2], language[3882]);
+				messagePlayer(parent->skill[2], MESSAGE_HINT, Language::get(3882));
 			}
 		}
 	}
@@ -1290,9 +1308,9 @@ void actDecoyBox(Entity* my)
 	if ( my->ticks > TICKS_PER_SECOND * 7 )
 	{
 		// stop working.
-		bool decoyBreak = (rand() % 5 == 0);
+		bool decoyBreak = (local_rng.rand() % 5 == 0);
 		Entity* parent = uidToEntity(my->parent);
-		playSoundEntity(my, 485 + rand() % 3, 192);
+		playSoundEntity(my, 485 + local_rng.rand() % 3, 192);
 		if ( !decoyBreak )
 		{
 			playSoundEntity(my, 176, 128);
@@ -1304,7 +1322,7 @@ void actDecoyBox(Entity* my)
 			}
 			/*if ( parent && parent->behavior == &actPlayer )
 			{
-				messagePlayer(parent->skill[2], language[3769]);
+				messagePlayer(parent->skill[2], Language::get(3769));
 			}*/
 			list_RemoveNode(my->mynode);
 			return;
@@ -1336,7 +1354,7 @@ void actDecoyBox(Entity* my)
 			}
 			if ( parent && parent->behavior == &actPlayer )
 			{
-				messagePlayer(parent->skill[2], language[3770]);
+				messagePlayer(parent->skill[2], MESSAGE_EQUIPMENT, Language::get(3770));
 			}
 			list_RemoveNode(my->mynode);
 			return;

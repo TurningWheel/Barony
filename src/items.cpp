@@ -16,7 +16,7 @@
 #include "messages.hpp"
 #include "interface/interface.hpp"
 #include "magic/magic.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "book.hpp"
 #include "scrolls.hpp"
 #include "shops.hpp"
@@ -24,15 +24,147 @@
 #include "scores.hpp"
 #include "net.hpp"
 #include "player.hpp"
+#include "mod_tools.hpp"
+
+#include <assert.h>
 
 Uint32 itemuids = 1;
 ItemGeneric items[NUMITEMS];
 const real_t potionDamageSkillMultipliers[6] = { 1.f, 1.1, 1.25, 1.5, 2.5, 4.f };
 const real_t thrownDamageSkillMultipliers[6] = { 1.f, 1.1, 1.25, 1.5, 2.f, 3.f };
-std::mt19937 enchantedFeatherScrollSeed(0);
+Uint32 enchantedFeatherScrollSeed;
 std::vector<int> enchantedFeatherScrollsShuffled;
 bool overrideTinkeringLimit = false;
 int decoyBoxRange = 15;
+
+bool autoHotbarSoftReserveItem(Item& item)
+{
+	Category cat = itemCategory(&item);
+	if ( cat == THROWN || item.type == GEM_ROCK || itemIsThrowableTinkerTool(&item) || item.type == TOOL_BEARTRAP )
+	{
+		return true;
+	}
+	return false;
+}
+
+void autoHotbarTryAdd(const int player, Item& item)
+{
+	if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
+	{
+		if ( !item.usableWhileShapeshifted(stats[player]) )
+		{
+			return;
+		}
+	}
+	if ( !autoAddHotbarFilter(item) )
+	{
+		return;
+	}
+	if ( item.type == SPELL_ITEM && players[player]->magic.spellbookUidFromHotbarSlot != 0 )
+	{
+		return; // we're going to replace our spellbook slot
+	}
+	Category cat = itemCategory(&item);
+	if ( !item.identified && cat != SPELL_CAT ) { return; }
+
+	std::vector<std::tuple<int, int, hotbar_slot_t*>> slots(NUM_HOTBAR_SLOTS); // index, priority, then stored item info
+	size_t index = 0;
+	const int DEFAULT_PRIORITY = 5;
+	const int RESERVED_PRIORITY = 4;
+	for ( auto& slot : players[player]->hotbar.slots() )
+	{
+		std::get<0>(slots[index]) = index;
+		if ( uidToItem(slot.item) )
+		{
+			std::get<1>(slots[index]) = -1; // taken
+			std::get<2>(slots[index]) = nullptr;
+			++index;
+			continue;
+		}
+
+		if ( slot.lastItem.type == item.type )
+		{
+			std::get<1>(slots[index]) = DEFAULT_PRIORITY + 1;
+		}
+		else if ( autoHotbarSoftReserveItem(slot.lastItem) )
+		{
+			std::get<1>(slots[index]) = RESERVED_PRIORITY;
+		}
+		else
+		{
+			std::get<1>(slots[index]) = DEFAULT_PRIORITY;
+		}
+		std::get<2>(slots[index]) = &slot;
+		++index;
+	}
+
+
+	bool softReserveSlots = autoHotbarSoftReserveItem(item);
+	if ( softReserveSlots )
+	{
+		for ( auto& slot : slots )
+		{
+			auto& priority = std::get<1>(slot);
+			if ( priority < 0 ) { continue; }
+
+			auto hotbar_slot = std::get<2>(slot);
+			if ( !hotbar_slot ) { continue; }
+			if ( !hotbar_slot->lastItem.identified ) { continue; } // no good
+
+			if ( hotbar_slot->lastItem.type == item.type )
+			{
+				priority = std::max(priority, 10); // match item type, good
+				if ( hotbar_slot->lastItem.status == item.status )
+				{
+					priority = std::max(priority, 15); // match item status, good+
+					if ( hotbar_slot->lastItem.beatitude == item.beatitude )
+					{
+						priority = std::max(priority, 20); // match item beatitude, good++
+					}
+				}
+			}
+			else if ( autoHotbarSoftReserveItem(hotbar_slot->lastItem) ) // these items are interchangeable, non matching types
+			{
+				priority = std::max(priority, RESERVED_PRIORITY - 1); // slightly less than normal reserved slot
+			}
+		}
+	}
+
+	std::pair<int, int> indexAndPriorityToPick = { -1, 0 };
+	for ( auto& slot : slots )
+	{
+		auto& priority = std::get<1>(slot);
+		if ( priority > indexAndPriorityToPick.second )
+		{
+			indexAndPriorityToPick.second = priority;
+			indexAndPriorityToPick.first = std::get<0>(slot);
+		}
+	}
+
+	if ( indexAndPriorityToPick.first >= 0 )
+	{
+		size_t index = indexAndPriorityToPick.first;
+		players[player]->hotbar.slots()[index].item = item.uid;
+		players[player]->hotbar.slots()[index].storeLastItem(&item);
+		if ( item.type == BOOMERANG )
+		{
+			players[player]->hotbar.magicBoomerangHotbarSlot = index;
+		}
+		return;
+	}
+
+	for ( auto& hotbarSlot : players[player]->hotbar.slots() )
+	{
+		if ( !uidToItem(hotbarSlot.item) )
+		{
+			if ( autoAddHotbarFilter(item) )
+			{
+				hotbarSlot.item = item.uid;
+				break;
+			}
+		}
+	}
+}
 
 /*-------------------------------------------------------------------------------
 
@@ -69,40 +201,35 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 	}
 
 	// now set all of my data elements
-	item->type = type;
-	item->status = status;
-	item->beatitude = beatitude;
-	item->count = count;
+	// try to sanitize these a bit so that corrupt data doesn't crash the whole game
+	item->type = (type >= 0 && type < NUMITEMS) ? type : ItemType::GEM_ROCK;
+	item->status = (int)status < Status::BROKEN ?
+		Status::BROKEN : ((int)status > EXCELLENT ? EXCELLENT : status);
+	item->beatitude = std::min(std::max((Sint16)-100, beatitude), (Sint16)100);
+	item->count = std::max(count, (Sint16)1);
 	item->appearance = appearance;
 	item->identified = identified;
 	item->uid = itemuids;
 	item->ownerUid = 0;
 	item->isDroppable = true;
+	item->playerSoldItemToShop = false;
+	item->itemHiddenFromShop = false;
+	item->itemRequireTradingSkillInShop = 0;
+	item->itemSpecialShopConsumable = false;
+	item->interactNPCUid = 0;
+	item->notifyIcon = false;
 	if ( inventory )
 	{
-		int y;
-		bool notfree = false, foundaspot = false;
-
-		bool is_spell = false;
-		if (itemCategory(item) == SPELL_CAT)
-		{
-			is_spell = true;
-		}
-
-		int inventory_sizex = 0;
-		int inventory_sizey = 0;
 		Player::Inventory_t* playerInventoryUI = nullptr;
 		Player::Magic_t* playerMagic = nullptr;
+		int player = -1;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( stats[i] && inventory == &stats[i]->inventory )
 			{
-				inventory_sizex = players[i]->inventoryUI.DEFAULT_INVENTORY_SIZEX;
-				inventory_sizey = players[i]->inventoryUI.DEFAULT_INVENTORY_SIZEY;
-				inventory_sizex = players[i]->inventoryUI.getSizeX();
-				inventory_sizey = players[i]->inventoryUI.getSizeY();
 				playerInventoryUI = &players[i]->inventoryUI;
 				playerMagic = &players[i]->magic;
+				player = i;
 				break;
 			}
 		}
@@ -114,152 +241,9 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 			return item;
 		}
 
-		int x = 0;
-		if ( is_spell )
+		if ( player >= 0 )
 		{
-			if ( playerMagic && list_Size(&playerMagic->spellList) >= inventory_sizex * playerInventoryUI->DEFAULT_INVENTORY_SIZEY )
-			{
-				// original commented out code to investigate -- why a double = sign?
-				//inventory_y = INVENTORY_SIZEY = 4 + ((list_Size(&spellList) - (inventory_sizex * Player::Inventory_t::DEFAULT_INVENTORY_SIZEY)) / inventory_sizex);
-
-				playerInventoryUI->setSizeY((playerInventoryUI->DEFAULT_INVENTORY_SIZEY + 1)
-					+ ((list_Size(&playerMagic->spellList) - (inventory_sizex * playerInventoryUI->DEFAULT_INVENTORY_SIZEY)) / inventory_sizex));
-			}
-			else
-			{
-				playerInventoryUI->setSizeY(playerInventoryUI->DEFAULT_INVENTORY_SIZEY);
-			}
-		}
-		else if ( multiplayer != CLIENT )
-		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				if ( stats[i] && &stats[i]->inventory == inventory )
-				{
-					if ( stats[i]->cloak && stats[i]->cloak->type == CLOAK_BACKPACK 
-						&& (shouldInvertEquipmentBeatitude(stats[i]) ? abs(stats[i]->cloak->beatitude) >= 0 : stats[i]->cloak->beatitude >= 0) )
-					{
-						playerInventoryUI->setSizeY(playerInventoryUI->DEFAULT_INVENTORY_SIZEY + playerInventoryUI->getPlayerBackpackBonusSizeY());
-						break;
-					}
-					break;
-				}
-			}
-		}
-		else if ( multiplayer == CLIENT )
-		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				if ( !players[i]->isLocalPlayer() )
-				{
-					continue;
-				}
-				if ( stats[i] && &stats[i]->inventory == inventory )
-				{
-					if ( stats[i]->cloak && stats[i]->cloak->type == CLOAK_BACKPACK 
-						&& (shouldInvertEquipmentBeatitude(stats[i]) ? abs(stats[i]->cloak->beatitude) >= 0 : stats[i]->cloak->beatitude >= 0) )
-					{
-						players[i]->inventoryUI.setSizeY(players[i]->inventoryUI.DEFAULT_INVENTORY_SIZEY + players[i]->inventoryUI.getPlayerBackpackBonusSizeY());
-						break;
-					}
-					break;
-				}
-			}
-		}
-		const int sort_y = std::min(std::max(playerInventoryUI->getSizeY(), 2), playerInventoryUI->DEFAULT_INVENTORY_SIZEY); // only sort y values of 2-3, if extra row don't auto sort into it.
-
-		while ( true )
-		{
-			for ( y = 0; y < sort_y; y++ )
-			{
-				for ( node_t* node = inventory->first; node != nullptr; node = node->next )
-				{
-					Item* tempItem = static_cast<Item*>(node->element);
-					if ( tempItem == item )
-					{
-						continue;
-					}
-					if ( tempItem )
-					{
-						if ( tempItem->x == x && tempItem->y == y )
-						{
-							if (is_spell && itemCategory(tempItem) == SPELL_CAT)
-							{
-								notfree = true;  //Both spells. Can't fit in the same slot.
-							}
-							else if (!is_spell && itemCategory(tempItem) != SPELL_CAT)
-							{
-								notfree = true;  //Both not spells. Can't fit in the same slot.
-							}
-						}
-					}
-				}
-				if ( notfree )
-				{
-					notfree = false;
-					continue;
-				}
-				item->x = x;
-				item->y = y;
-				foundaspot = true;
-				break;
-			}
-			if ( foundaspot )
-			{
-				break;
-			}
-			x++;
-		}
-
-
-		// backpack sorting, sort into here as last priority.
-		if ( x > playerInventoryUI->getSizeX() - 1 && playerInventoryUI->getSizeY() > playerInventoryUI->DEFAULT_INVENTORY_SIZEY )
-		{
-			x = 0;
-			foundaspot = false;
-			notfree = false;
-			while ( true )
-			{
-				for ( y = playerInventoryUI->DEFAULT_INVENTORY_SIZEY; y < playerInventoryUI->getSizeY(); y++ )
-				{
-					for ( node_t* node = inventory->first; node != nullptr; node = node->next )
-					{
-						Item* tempItem = static_cast<Item*>(node->element);
-						if ( tempItem == item )
-						{
-							continue;
-						}
-						if ( tempItem )
-						{
-							if ( tempItem->x == x && tempItem->y == y )
-							{
-								if ( is_spell && itemCategory(tempItem) == SPELL_CAT )
-								{
-									notfree = true;  //Both spells. Can't fit in the same slot.
-								}
-								else if ( !is_spell && itemCategory(tempItem) != SPELL_CAT )
-								{
-									notfree = true;  //Both not spells. Can't fit in the same slot.
-								}
-							}
-						}
-					}
-					if ( notfree )
-					{
-						notfree = false;
-						continue;
-					}
-					item->x = x;
-					item->y = y;
-					foundaspot = true;
-					break;
-				}
-				if ( foundaspot )
-				{
-					break;
-				}
-				x++;
-			}
+			playerInventoryUI->moveItemToFreeInventorySlot(item);
 		}
 
 		// add the item to the hotbar automatically
@@ -273,27 +257,7 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 				}
 				if ( stats[i] && inventory == &stats[i]->inventory )
 				{
-					for ( auto& hotbarSlot : players[i]->hotbar.slots() )
-					{
-						if ( !uidToItem(hotbarSlot.item) )
-						{
-							if ( autoAddHotbarFilter(*item) )
-							{
-								if ( players[i] && players[i]->entity && players[i]->entity->effectShapeshift != NOTHING )
-								{
-									if ( item->usableWhileShapeshifted(stats[i]) )
-									{
-										hotbarSlot.item = item->uid;
-									}
-								}
-								else
-								{
-									hotbarSlot.item = item->uid;
-								}
-								break;
-							}
-						}
-					}
+					autoHotbarTryAdd(i, *item);
 					break;
 				}
 			}
@@ -404,13 +368,13 @@ ItemType itemCurve(const Category cat)
 				switch ( static_cast<ItemType>(c) )
 				{
 					case TOOL_TINOPENER:
-						if ( prng_get_uint() % 2 )   // 50% chance
+						if ( map_rng.rand() % 2 )   // 50% chance
 						{
 							chances[c] = true;
 						}
 						break;
 					case TOOL_LANTERN:
-						if ( prng_get_uint() % 4 )   // 75% chance
+						if ( map_rng.rand() % 4 )   // 75% chance
 						{
 							chances[c] = true;
 						}
@@ -456,14 +420,14 @@ ItemType itemCurve(const Category cat)
 	// most gems are worthless pieces of glass
 	if ( cat == GEM )
 	{
-		if ( prng_get_uint() % 10 )
+		if ( map_rng.rand() % 10 )
 		{
 			return GEM_GLASS;
 		}
 	}
 
 	// pick the item
-	Uint32 pick = prng_get_uint() % numleft;
+	Uint32 pick = map_rng.rand() % numleft;
 	for ( c = 0; c < numitems; c++ )
 	{
 		if ( items[c].category == cat )
@@ -521,13 +485,13 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 					switch ( static_cast<ItemType>(c) )
 					{
 						case TOOL_TINOPENER:
-							if ( prng_get_uint() % 2 )   // 50% chance
+							if ( map_rng.rand() % 2 )   // 50% chance
 							{
 								chances[c] = false;
 							}
 							break;
 						case TOOL_LANTERN:
-							if ( prng_get_uint() % 4 == 0 )   // 25% chance
+							if ( map_rng.rand() % 4 == 0 )   // 25% chance
 							{
 								chances[c] = false;
 							}
@@ -541,7 +505,7 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 					switch ( static_cast<ItemType>(c) )
 					{
 						case CLOAK_BACKPACK:
-							if ( prng_get_uint() % 4 )   // 25% chance
+							if ( map_rng.rand() % 4 )   // 25% chance
 							{
 								chances[c] = false;
 							}
@@ -576,14 +540,14 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 	// most gems are worthless pieces of glass
 	if ( cat == GEM )
 	{
-		if ( prng_get_uint() % 10 )
+		if ( map_rng.rand() % 10 )
 		{
 			return GEM_GLASS;
 		}
 	}
 
 	// pick the item
-	Uint32 pick = prng_get_uint() % numleft;
+	Uint32 pick = map_rng.rand() % numleft;
 	for ( c = 0; c < numitems; c++ )
 	{
 		if ( items[c].category == cat )
@@ -592,7 +556,7 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 			{
 				if ( pick == 0 )
 				{
-					//messagePlayer(0, "Chose item: %s of %d items.", items[c].name_identified ,numleft);
+					//messagePlayer(0, "Chose item: %s of %d items.", items[c].getIdentifiedName() ,numleft);
 					return static_cast<ItemType>(c);
 				}
 				else
@@ -622,44 +586,48 @@ char* Item::description() const
 	{
 		if ( count < 2 )
 		{
-			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
+			if ( type >= ARTIFACT_ORB_BLUE && type <= ARTIFACT_ORB_GREEN )
+			{
+				snprintf(tempstr, 1024, Language::get(987 + status), beatitude);
+			}
+			else if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				if ( this->type == TOOL_GYROBOT || this->type == TOOL_DUMMYBOT || this->type == TOOL_SENTRYBOT || this->type == TOOL_SPELLBOT )
 				{
-					snprintf(tempstr, 1024, language[3653 + status]);
+					snprintf(tempstr, 1024, "%s", Language::get(3653 + status));
 				}
 				else if ( itemTypeIsQuiver(this->type) )
 				{
-					snprintf(tempstr, 1024, language[3738], beatitude);
+					snprintf(tempstr, 1024, Language::get(3738), beatitude);
 				}
 				else
 				{
-					snprintf(tempstr, 1024, language[982 + status], beatitude);
+					snprintf(tempstr, 1024, Language::get(982 + status), beatitude);
 				}
 			}
 			else if ( itemCategory(this) == AMULET || itemCategory(this) == RING || itemCategory(this) == GEM )
 			{
-				snprintf(tempstr, 1024, language[987 + status], beatitude);
+				snprintf(tempstr, 1024, Language::get(987 + status), beatitude);
 			}
 			else if ( itemCategory(this) == POTION )
 			{
 				if ( type == POTION_EMPTY )
 				{
 					//No fancy descriptives for empty potions.
-					snprintf(tempstr, 1024, language[982 + status], beatitude);
+					snprintf(tempstr, 1024, Language::get(982 + status), beatitude);
 				}
 				else
 				{
-					snprintf(tempstr, 1024, language[992 + status], language[974 + items[type].index + appearance % items[type].variations - 50], beatitude);
+					snprintf(tempstr, 1024, Language::get(992 + status), Language::get(974 + items[type].index + appearance % items[type].variations - 50), beatitude);
 				}
 			}
 			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
 			{
-				snprintf(tempstr, 1024, language[997 + status], beatitude);
+				snprintf(tempstr, 1024, Language::get(997 + status), beatitude);
 			}
 			else if ( itemCategory(this) == FOOD )
 			{
-				snprintf(tempstr, 1024, language[1002 + status], beatitude);
+				snprintf(tempstr, 1024, Language::get(1002 + status), beatitude);
 			}
 
 			for ( c = 0; c < 1024; ++c )
@@ -674,11 +642,11 @@ char* Item::description() const
 			{
 				if ( itemCategory(this) == BOOK )
 				{
-					snprintf(&tempstr[c], 1024 - c, language[1007], books[appearance % numbooks]->name);
+					snprintf(&tempstr[c], 1024 - c, Language::get(1007), getBookNameFromIndex(appearance % numbooks).c_str());
 				}
 				else
 				{
-					snprintf(&tempstr[c], 1024 - c, "%s", items[type].name_identified);
+					snprintf(&tempstr[c], 1024 - c, "%s", items[type].getIdentifiedName());
 				}
 			}
 			else
@@ -688,44 +656,48 @@ char* Item::description() const
 		}
 		else
 		{
-			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
+			if ( type >= ARTIFACT_ORB_BLUE && type <= ARTIFACT_ORB_GREEN )
+			{
+				snprintf(tempstr, 1024, Language::get(1023 + status), count, beatitude);
+			}
+			else if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				if ( this->type == TOOL_GYROBOT || this->type == TOOL_DUMMYBOT || this->type == TOOL_SENTRYBOT || this->type == TOOL_SPELLBOT )
 				{
-					snprintf(tempstr, 1024, language[3658 + status], count);
+					snprintf(tempstr, 1024, Language::get(3658 + status), count);
 				}
 				else if ( itemTypeIsQuiver(this->type) )
 				{
-					snprintf(tempstr, 1024, language[3738], beatitude);
+					snprintf(tempstr, 1024, Language::get(3738), beatitude);
 				}
 				else
 				{
-					snprintf(tempstr, 1024, language[1008 + status], count, beatitude);
+					snprintf(tempstr, 1024, Language::get(1008 + status), count, beatitude);
 				}
 			}
 			else if ( itemCategory(this) == AMULET || itemCategory(this) == RING || itemCategory(this) == GEM )
 			{
-				snprintf(tempstr, 1024, language[1013 + status], count, beatitude);
+				snprintf(tempstr, 1024, Language::get(1013 + status), count, beatitude);
 			}
 			else if ( itemCategory(this) == POTION )
 			{
 				if ( type == POTION_EMPTY )
 				{
 					//No fancy descriptives for empty potions.
-					snprintf(tempstr, 1024, language[1008 + status], count, beatitude);
+					snprintf(tempstr, 1024, Language::get(1008 + status), count, beatitude);
 				}
 				else
 				{
-					snprintf(tempstr, 1024, language[1018 + status], count, language[974 + items[type].index + appearance % items[type].variations - 50], beatitude);
+					snprintf(tempstr, 1024, Language::get(1018 + status), count, Language::get(974 + items[type].index + appearance % items[type].variations - 50), beatitude);
 				}
 			}
 			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
 			{
-				snprintf(tempstr, 1024, language[1023 + status], count, beatitude);
+				snprintf(tempstr, 1024, Language::get(1023 + status), count, beatitude);
 			}
 			else if ( itemCategory(this) == FOOD )
 			{
-				snprintf(tempstr, 1024, language[1028 + status], count, beatitude);
+				snprintf(tempstr, 1024, Language::get(1028 + status), count, beatitude);
 			}
 
 			for ( c = 0; c < 1024; ++c )
@@ -740,11 +712,11 @@ char* Item::description() const
 			{
 				if ( itemCategory(this) == BOOK )
 				{
-					snprintf(&tempstr[c], 1024 - c, language[1033], count, books[appearance % numbooks]->name);
+					snprintf(&tempstr[c], 1024 - c, Language::get(1033), count, getBookNameFromIndex(appearance % numbooks).c_str());
 				}
 				else
 				{
-					snprintf(&tempstr[c], 1024 - c, "%s", items[type].name_identified);
+					snprintf(&tempstr[c], 1024 - c, "%s", items[type].getIdentifiedName());
 				}
 			}
 			else
@@ -757,44 +729,48 @@ char* Item::description() const
 	{
 		if ( count < 2 )
 		{
-			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
+			if ( type >= ARTIFACT_ORB_BLUE && type <= ARTIFACT_ORB_GREEN )
+			{
+				strncpy(tempstr, Language::get(1049 + status), 1024);
+			}
+			else if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				if ( this->type == TOOL_GYROBOT || this->type == TOOL_DUMMYBOT || this->type == TOOL_SENTRYBOT || this->type == TOOL_SPELLBOT )
 				{
-					strncpy(tempstr, language[3653 + status], 1024);
+					strncpy(tempstr, Language::get(3653 + status), 1024);
 				}
 				else if ( itemTypeIsQuiver(this->type) )
 				{
-					snprintf(tempstr, 1024, language[3763]);
+					snprintf(tempstr, 1024, "%s", Language::get(3763));
 				}
 				else
 				{
-					strncpy(tempstr, language[1034 + status], 1024);
+					strncpy(tempstr, Language::get(1034 + status), 1024);
 				}
 			}
 			else if ( itemCategory(this) == AMULET || itemCategory(this) == RING || itemCategory(this) == GEM )
 			{
-				strncpy(tempstr, language[1039 + status], 1024);
+				strncpy(tempstr, Language::get(1039 + status), 1024);
 			}
 			else if ( itemCategory(this) == POTION )
 			{
 				if ( type == POTION_EMPTY )
 				{
 					//No fancy descriptives for empty potions.
-					snprintf(tempstr, 1024, language[1034 + status], beatitude);
+					snprintf(tempstr, 1024, Language::get(1034 + status), beatitude);
 				}
 				else
 				{
-					snprintf(tempstr, 1024, language[1044 + status], language[974 + items[type].index + appearance % items[type].variations - 50]);
+					snprintf(tempstr, 1024, Language::get(1044 + status), Language::get(974 + items[type].index + appearance % items[type].variations - 50));
 				}
 			}
 			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
 			{
-				strncpy(tempstr, language[1049 + status], 1024);
+				strncpy(tempstr, Language::get(1049 + status), 1024);
 			}
 			else if ( itemCategory(this) == FOOD )
 			{
-				strncpy(tempstr, language[1054 + status], 1024);
+				strncpy(tempstr, Language::get(1054 + status), 1024);
 			}
 
 			for ( c = 0; c < 1024; ++c )
@@ -809,17 +785,17 @@ char* Item::description() const
 			{
 				if ( itemCategory(this) == SCROLL )
 				{
-					snprintf(&tempstr[c], 1024 - c, language[1059], items[type].name_unidentified, this->getScrollLabel());
+					snprintf(&tempstr[c], 1024 - c, Language::get(1059), items[type].getUnidentifiedName(), this->getScrollLabel());
 				}
 				else
 				{
 					if ( itemCategory(this) == BOOK )
 					{
-						snprintf(&tempstr[c], 1024 - c, language[1007], books[appearance % numbooks]->name);
+						snprintf(&tempstr[c], 1024 - c, Language::get(1007), getBookNameFromIndex(appearance % numbooks).c_str());
 					}
 					else
 					{
-						snprintf(&tempstr[c], 1024 - c, "%s", items[type].name_unidentified);
+						snprintf(&tempstr[c], 1024 - c, "%s", items[type].getUnidentifiedName());
 					}
 				}
 			}
@@ -830,44 +806,48 @@ char* Item::description() const
 		}
 		else
 		{
-			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
+			if ( type >= ARTIFACT_ORB_BLUE && type <= ARTIFACT_ORB_GREEN )
+			{
+				snprintf(tempstr, 1024, Language::get(1065 + status), count);
+			}
+			else if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				if ( this->type == TOOL_GYROBOT || this->type == TOOL_DUMMYBOT || this->type == TOOL_SENTRYBOT || this->type == TOOL_SPELLBOT )
 				{
-					snprintf(tempstr, 1024, language[3658 + status], count);
+					snprintf(tempstr, 1024, Language::get(3658 + status), count);
 				}
 				else if ( itemTypeIsQuiver(this->type) )
 				{
-					snprintf(tempstr, 1024, language[3763]);
+					snprintf(tempstr, 1024, "%s", Language::get(3763));
 				}
 				else
 				{
-					snprintf(tempstr, 1024, language[1060 + status], count);
+					snprintf(tempstr, 1024, Language::get(1060 + status), count);
 				}
 			}
 			else if ( itemCategory(this) == AMULET || itemCategory(this) == RING || itemCategory(this) == GEM )
 			{
-				snprintf(tempstr, 1024, language[1065 + status], count);
+				snprintf(tempstr, 1024, Language::get(1065 + status), count);
 			}
 			else if ( itemCategory(this) == POTION )
 			{
 				if ( type == POTION_EMPTY )
 				{
 					//No fancy descriptives for empty potions.
-					snprintf(tempstr, 1024, language[1060 + status], count);
+					snprintf(tempstr, 1024, Language::get(1060 + status), count);
 				}
 				else
 				{
-					snprintf(tempstr, 1024, language[1070 + status], count, language[974 + items[type].index + appearance % items[type].variations - 50]);
+					snprintf(tempstr, 1024, Language::get(1070 + status), count, Language::get(974 + items[type].index + appearance % items[type].variations - 50));
 				}
 			}
 			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
 			{
-				snprintf(tempstr, 1024, language[1075 + status], count);
+				snprintf(tempstr, 1024, Language::get(1075 + status), count);
 			}
 			else if ( itemCategory(this) == FOOD )
 			{
-				snprintf(tempstr, 1024, language[1080 + status], count);
+				snprintf(tempstr, 1024, Language::get(1080 + status), count);
 			}
 
 			for ( c = 0; c < 1024; ++c )
@@ -882,17 +862,17 @@ char* Item::description() const
 			{
 				if ( itemCategory(this) == SCROLL )
 				{
-					snprintf(&tempstr[c], 1024 - c, language[1085], count, items[type].name_unidentified, this->getScrollLabel());
+					snprintf(&tempstr[c], 1024 - c, Language::get(1085), items[type].getUnidentifiedName(), this->getScrollLabel());
 				}
 				else
 				{
 					if ( itemCategory(this) == BOOK )
 					{
-						snprintf(&tempstr[c], 1024 - c, language[1086], count, books[appearance % numbooks]->name);
+						snprintf(&tempstr[c], 1024 - c, Language::get(1086), count, getBookNameFromIndex(appearance % numbooks).c_str());
 					}
 					else
 					{
-						snprintf(&tempstr[c], 1024 - c, "%s", items[type].name_unidentified);
+						snprintf(&tempstr[c], 1024 - c, "%s", items[type].getUnidentifiedName());
 					}
 				}
 			}
@@ -915,7 +895,7 @@ char* Item::description() const
 
 Category itemCategory(const Item* const item)
 {
-	if ( !item )
+	if ( !item || item->type < 0 || item->type >= NUMITEMS )
 	{
 		return GEM;
 	}
@@ -938,26 +918,26 @@ char* Item::getName() const
 		{
 			if ( itemCategory(this) == BOOK )
 			{
-				snprintf(tempstr, sizeof(tempstr), language[1007], books[appearance % numbooks]->name);
+				snprintf(tempstr, sizeof(tempstr), Language::get(1007), getBookNameFromIndex(appearance % numbooks).c_str());
 			}
 			else
 			{
-				strcpy(tempstr, items[type].name_identified);
+				strcpy(tempstr, items[type].getIdentifiedName());
 			}
 		}
 		else
 		{
 			if ( itemCategory(this) == SCROLL )
 			{
-				snprintf(tempstr, sizeof(tempstr), language[1059], items[type].name_unidentified, this->getScrollLabel());
+				snprintf(tempstr, sizeof(tempstr), Language::get(1059), items[type].getUnidentifiedName(), this->getScrollLabel());
 			}
 			else if ( itemCategory(this) == BOOK )
 			{
-				snprintf(tempstr, sizeof(tempstr), language[1007], books[appearance % numbooks]->name);
+				snprintf(tempstr, sizeof(tempstr), Language::get(1007), getBookNameFromIndex(appearance % numbooks).c_str());
 			}
 			else
 			{
-				strcpy(tempstr, items[type].name_unidentified);
+				strcpy(tempstr, items[type].getUnidentifiedName());
 			}
 		}
 	}
@@ -978,9 +958,39 @@ char* Item::getName() const
 
 Sint32 itemModel(const Item* const item)
 {
-	if ( !item )
+	if ( !item || item->type < 0 || item->type >= NUMITEMS )
 	{
 		return 0;
+	}
+	if ( item->type == TOOL_PLAYER_LOOT_BAG )
+	{
+		if ( colorblind_lobby )
+		{
+			int playerOwner = (item->appearance) % MAXPLAYERS;
+			Uint32 index = 4;
+			switch ( playerOwner )
+			{
+			case 0:
+				index = 2;
+				break;
+			case 1:
+				index = 3;
+				break;
+			case 2:
+				index = 1;
+				break;
+			case 3:
+				index = 4;
+				break;
+			default:
+				break;
+			}
+			return items[item->type].index + index;
+		}
+		else
+		{
+			return items[item->type].index + item->appearance % MAXPLAYERS;
+		}
 	}
 	return items[item->type].index + item->appearance % items[item->type].variations;
 }
@@ -995,7 +1005,7 @@ Sint32 itemModel(const Item* const item)
 
 Sint32 itemModelFirstperson(const Item* const item)
 {
-	if ( !item )
+	if ( !item || item->type < 0 || item->type >= NUMITEMS )
 	{
 		return 0;
 	}
@@ -1012,7 +1022,7 @@ Sint32 itemModelFirstperson(const Item* const item)
 
 SDL_Surface* itemSprite(Item* const item)
 {
-	if ( !item )
+	if ( !item || item->type < 0 || item->type >= NUMITEMS )
 	{
 		return nullptr;
 	}
@@ -1040,7 +1050,41 @@ SDL_Surface* itemSprite(Item* const item)
 	}
 	else
 	{
-		node_t* node = list_Node(&items[item->type].surfaces, item->appearance % items[item->type].variations);
+		node_t* node = nullptr;
+		if ( item->type == TOOL_PLAYER_LOOT_BAG )
+		{
+			if ( colorblind_lobby )
+			{
+				int playerOwner = (item->appearance) % MAXPLAYERS;
+				Uint32 index = 4;
+				switch ( playerOwner )
+				{
+					case 0:
+						index = 2;
+						break;
+					case 1:
+						index = 3;
+						break;
+					case 2:
+						index = 1;
+						break;
+					case 3:
+						index = 4;
+						break;
+					default:
+						break;
+				}
+				node = list_Node(&items[item->type].surfaces, index);
+			}
+			else
+			{
+				node = list_Node(&items[item->type].surfaces, (item->appearance) % MAXPLAYERS);
+			}
+		}
+		else
+		{
+			node = list_Node(&items[item->type].surfaces, item->appearance % items[item->type].variations);
+		}
 		if ( !node )
 		{
 			return nullptr;
@@ -1060,7 +1104,7 @@ SDL_Surface* itemSprite(Item* const item)
 
 -------------------------------------------------------------------------------*/
 
-int itemCompare(const Item* const item1, const Item* const item2, bool checkAppearance)
+int itemCompare(const Item* const item1, const Item* const item2, bool checkAppearance, bool comparisonUsedForStacking)
 {
 	Sint32 model1 = 0;
 	Sint32 model2 = 0;
@@ -1108,9 +1152,13 @@ int itemCompare(const Item* const item1, const Item* const item2, bool checkAppe
 	{
 		return 1;
 	}
-	else if ( item1->type == SCROLL_MAIL || item1->type == READABLE_BOOK || items[item1->type].category == SPELL_CAT )
+	else if ( item1->type == SCROLL_MAIL || item1->type == READABLE_BOOK || items[item1->type].category == SPELL_CAT
+		|| item1->type == TOOL_PLAYER_LOOT_BAG )
 	{
-		return 1; // these items do not stack
+		if ( comparisonUsedForStacking )
+		{
+			return 1; // these items do not stack
+		}
 	}
 
 	if (item1->identified != item2->identified)
@@ -1148,6 +1196,7 @@ int itemCompare(const Item* const item1, const Item* const item2, bool checkAppe
 
 -------------------------------------------------------------------------------*/
 
+Uint32 dropItemSfxTicks[MAXPLAYERS] = { 0 };
 bool dropItem(Item* const item, const int player, const bool notifyMessage)
 {
 	if (!item)
@@ -1168,12 +1217,13 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 		{
 			if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
 			{
-				messagePlayer(player, language[3218]);
+				messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(3218));
 			}
 			else
 			{
-				messagePlayer(player, language[1087]);
+				messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1087));
 			}
+			playSoundPlayer(player, 90, 64);
 			return false;
 		}
 	}
@@ -1201,7 +1251,7 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 		if ( item->count >= 10 && (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
 		{
 			item->count = 10;
-			messagePlayer(player, language[1088], item->description());
+			messagePlayer(player, MESSAGE_SPAM_MISC, Language::get(1088), item->description());
 			item->count = oldcount - 10;
 		}
 		else if ( itemTypeIsQuiver(item->type) )
@@ -1209,7 +1259,7 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 			item->count = 1;
 			if ( notifyMessage )
 			{
-				messagePlayer(player, language[1088], item->description());
+				messagePlayer(player, MESSAGE_SPAM_MISC, Language::get(1088), item->description());
 			}
 			item->count = 0;
 			/*if ( oldcount >= 10 )
@@ -1226,7 +1276,7 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 			item->count = 1;
 			if ( notifyMessage )
 			{
-				messagePlayer(player, language[1088], item->description());
+				messagePlayer(player, MESSAGE_SPAM_MISC, Language::get(1088), item->description());
 			}
 			item->count = oldcount - 1;
 		}
@@ -1252,7 +1302,7 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 	}
 	else
 	{
-		if ( item == players[player]->bookGUI .openBookItem )
+		if ( item == players[player]->bookGUI.openBookItem )
 		{
 			players[player]->bookGUI.closeBookGUI();
 		}
@@ -1282,9 +1332,9 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->yaw = players[player]->entity->yaw;
-		entity->vel_x = (1.5 + .025 * (rand() % 11)) * cos(players[player]->entity->yaw);
-		entity->vel_y = (1.5 + .025 * (rand() % 11)) * sin(players[player]->entity->yaw);
-		entity->vel_z = (-10 - rand() % 20) * .01;
+		entity->vel_x = (1.5 + .025 * (local_rng.rand() % 11)) * cos(players[player]->entity->yaw);
+		entity->vel_y = (1.5 + .025 * (local_rng.rand() % 11)) * sin(players[player]->entity->yaw);
+		entity->vel_z = (-10 - local_rng.rand() % 20) * .01;
 		entity->flags[PASSABLE] = true;
 		entity->behavior = &actItem;
 		entity->skill[10] = item->type;
@@ -1296,8 +1346,12 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 		entity->parent = players[player]->entity->getUID();
 		entity->itemOriginalOwner = entity->parent;
 
-		// play sound
-		playSoundEntity( players[player]->entity, 47 + rand() % 3, 64 );
+		// play sound - not in the same tick
+		if ( ticks - dropItemSfxTicks[player] > 1 )
+		{
+			playSoundEntity( players[player]->entity, 47 + local_rng.rand() % 3, 64 );
+		}
+		dropItemSfxTicks[player] = ticks;
 
 		// unequip the item
 		Item** slot = itemSlot(stats[player], item);
@@ -1322,7 +1376,7 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 					item->count = qtyToDrop;
 					if ( notifyMessage )
 					{
-						messagePlayer(player, language[1088], item->description());
+						messagePlayer(player, MESSAGE_SPAM_MISC, Language::get(1088), item->description());
 					}
 					item->count = oldcount - qtyToDrop;
 					if ( item->count <= 0 )
@@ -1364,6 +1418,18 @@ Entity* dropItemMonster(Item* const item, Entity* const monster, Stat* const mon
 		if ( item == inputs.getUIInteraction(monster->skill[2])->selectedItem )
 		{
 			inputs.getUIInteraction(monster->skill[2])->selectedItem = nullptr;
+			inputs.getUIInteraction(monster->skill[2])->selectedItemFromChest = 0;
+		}
+	}
+	else if ( monster->behavior == &actChest )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( item == inputs.getUIInteraction(i)->selectedItem )
+			{
+				inputs.getUIInteraction(i)->selectedItem = nullptr;
+				inputs.getUIInteraction(i)->selectedItemFromChest = 0;
+			}
 		}
 	}
 
@@ -1494,8 +1560,8 @@ Entity* dropItemMonster(Item* const item, Entity* const monster, Stat* const mon
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->yaw = monster->yaw;
-		entity->vel_x = (rand() % 20 - 10) / 10.0;
-		entity->vel_y = (rand() % 20 - 10) / 10.0;
+		entity->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
+		entity->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
 		entity->vel_z = -.5;
 		entity->flags[PASSABLE] = true;
 		entity->flags[USERFLAG1] = true; // speeds up game when many items are dropped
@@ -1530,11 +1596,37 @@ Entity* dropItemMonster(Item* const item, Entity* const monster, Stat* const mon
 			{
 				entity->z = 4;
 			}
+			else if ( monsterStats->type == GYROBOT )
+			{
+				entity->vel_x = 0.0;
+				entity->vel_y = 0.0;
+				entity->vel_z = -.5;
+			}
 			else if ( monsterStats->type == SENTRYBOT || monsterStats->type == SPELLBOT )
 			{
 				entity->vel_x *= 0.1;
 				entity->vel_y *= 0.1;
 				entity->vel_z = -.5;
+			}
+			else if ( item->type == ARTIFACT_ORB_PURPLE && monsterStats->type == LICH )
+			{
+				entity->vel_x = 0.0;
+				entity->vel_y = 0.0;
+				int ix = static_cast<int>(std::floor(monster->x)) >> 4;
+				int iy = static_cast<int>(std::floor(monster->y)) >> 4;
+				if ( map.tiles[OBSTACLELAYER + iy * MAPLAYERS + ix * MAPLAYERS * map.height]
+					|| !map.tiles[iy * MAPLAYERS + ix * MAPLAYERS * map.height] )
+				{
+					// failsafe area in the center of the boss room
+					entity->x = 36 * 16.0 + 8.0;
+					entity->y = 17 * 16.0 + 8.0;
+				}
+				else
+				{
+					// drop in center of tile
+					entity->x = ix * 16.0 + 8.0;
+					entity->y = iy * 16.0 + 8.0;
+				}
 			}
 		}
 	}
@@ -1587,16 +1679,24 @@ void consumeItem(Item*& item, const int player)
 		players[player]->inventoryUI.appraisal.timer = 0;
 	}
 
+	bool clientConsumedEquippedItem = false;
 	if ( player >= 0 && !players[player]->isLocalPlayer() && multiplayer == SERVER )
 	{
 		Item** slot = nullptr;
 		if ( (slot = itemSlot(stats[player], item)) != nullptr )
 		{
 			(*slot)->count--; // if client had consumed item equipped, this'll update the count.
+			if ( item == (*slot) )
+			{
+				clientConsumedEquippedItem = true;
+			}
 		}
 	}
 
-	item->count--;
+	if ( !clientConsumedEquippedItem )
+	{
+		item->count--;
+	}
 	if ( item->count <= 0 )
 	{
 		if ( item->node != nullptr )
@@ -1635,7 +1735,7 @@ void consumeItem(Item*& item, const int player)
 
 -------------------------------------------------------------------------------*/
 
-EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
+EquipItemResult equipItem(Item* const item, Item** const slot, const int player, bool checkInventorySpaceForPaperDoll)
 {
 	int oldcount;
 
@@ -1672,12 +1772,13 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 					{
 						if ( shouldInvertEquipmentBeatitude(stats[player]) && (*slot)->beatitude > 0 )
 						{
-							messagePlayer(player, language[3217], (*slot)->getName());
+							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(3217), (*slot)->getName());
 						}
 						else
 						{
-							messagePlayer(player, language[1089], (*slot)->getName());
+							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1089), (*slot)->getName());
 						}
+						playSoundPlayer(player, 90, 64);
 					}
 					(*slot)->identified = true;
 					return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
@@ -1692,20 +1793,20 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 				{
 					if ( itemCategory(item) == AMULET || itemCategory(item) == RING )
 					{
-						playSoundEntity(players[player]->entity, 33 + rand() % 2, 64);
+						playSoundEntity(players[player]->entity, 33 + local_rng.rand() % 2, 64);
 					}
 					else if ( item->type == BOOMERANG )
 					{
 					}
 					else if ( itemCategory(item) == WEAPON || itemCategory(item) == THROWN )
 					{
-						playSoundEntity(players[player]->entity, 40 + rand() % 4, 64);
+						playSoundEntity(players[player]->entity, 40 + local_rng.rand() % 4, 64);
 					}
 					else if ( itemCategory(item) == ARMOR 
 						|| item->type == TOOL_TINKERING_KIT 
 						|| itemTypeIsQuiver(item->type) )
 					{
-						playSoundEntity(players[player]->entity, 44 + rand() % 3, 64);
+						playSoundEntity(players[player]->entity, 44 + local_rng.rand() % 3, 64);
 					}
 					else if ( item->type == TOOL_TORCH || item->type == TOOL_LANTERN || item->type == TOOL_CRYSTALSHARD )
 					{
@@ -1734,7 +1835,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 			item->count = 1;
 			if ( intro == false )
 			{
-				messagePlayer(player, language[1090], item->description());
+				messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1090), item->description());
 			}
 			item->count = oldcount;
 		}
@@ -1779,12 +1880,13 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 					{
 						if ( shouldInvertEquipmentBeatitude(stats[player]) && (*slot)->beatitude > 0 )
 						{
-							messagePlayer(player, language[3217], (*slot)->getName());
+							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(3217), (*slot)->getName());
 						}
 						else
 						{
-							messagePlayer(player, language[1089], (*slot)->getName());
+							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1089), (*slot)->getName());
 						}
+						playSoundPlayer(player, 90, 64);
 					}
 					(*slot)->identified = true;
 					return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
@@ -1794,10 +1896,14 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 					&& players[player]->paperDoll.enabled
 					&& players[player]->paperDoll.isItemOnDoll(**slot) )
 				{
-					if ( !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
+					if ( checkInventorySpaceForPaperDoll && !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
 					{
 						// no backpack space
-						messagePlayer(player, language[3997], item->getName());
+						messagePlayer(player, MESSAGE_INVENTORY, Language::get(3997), item->getName());
+						if ( players[player]->isLocalPlayer() )
+						{
+							playSoundPlayer(player, 90, 64);
+						}
 						return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 					}
 				}
@@ -1821,7 +1927,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 				{
 					if (itemCategory(item) == ARMOR )
 					{
-						playSoundEntity(players[player]->entity, 44 + rand() % 3, 64);
+						playSoundEntity(players[player]->entity, 44 + local_rng.rand() % 3, 64);
 					}
 				}
 			}
@@ -1854,7 +1960,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 			item->count = 1;
 			if ( intro == false && !fadeout )
 			{
-				messagePlayer(player, language[1091], item->description());
+				messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1091), item->description());
 			}
 			item->count = oldcount;
 		}
@@ -1865,6 +1971,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 		return EQUIP_ITEM_SUCCESS_UNEQUIP;
 	}
 }
+
 /*-------------------------------------------------------------------------------
 
 	useItem
@@ -1873,7 +1980,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 
 -------------------------------------------------------------------------------*/
 
-void useItem(Item* item, const int player, Entity* usedBy)
+void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDropping)
 {
 	if ( item == nullptr )
 	{
@@ -1886,91 +1993,17 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		usedBy = players[player]->entity;
 	}
 
-	if ( openedChest[player] && itemCategory(item) != SPELL_CAT ) //TODO: What if fountain called this function for its potion effect?
-	{
-		//If a chest is open, put the item in the chest.
-		openedChest[player]->addItemToChestFromInventory(player, item, false);
-		return;
-	}
-	else if ( player >= 0 && players[player]->isLocalPlayer() && players[player]->gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT) //TODO: What if fountain called this function for its potion effect?
-	{
-		bool deal = true;
-		switch ( shopkeepertype[player] )
-		{
-			case 0: // arms & armor
-				if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR && itemCategory(item) != THROWN )
-				{
-					deal = false;
-				}
-				break;
-			case 1: // hats
-				if ( itemCategory(item) != ARMOR )
-				{
-					deal = false;
-				}
-				break;
-			case 2: // jewelry
-				if ( itemCategory(item) != RING && itemCategory(item) != AMULET && itemCategory(item) != GEM )
-				{
-					deal = false;
-				}
-				break;
-			case 3: // bookstore
-				if ( itemCategory(item) != SPELLBOOK && itemCategory(item) != SCROLL && itemCategory(item) != BOOK )
-				{
-					deal = false;
-				}
-				break;
-			case 4: // potion shop
-				if ( itemCategory(item) != POTION )
-				{
-					deal = false;
-				}
-				break;
-			case 5: // magicstaffs
-				if ( itemCategory(item) != MAGICSTAFF )
-				{
-					deal = false;
-				}
-				break;
-			case 6: // food
-				if ( itemCategory(item) != FOOD )
-				{
-					deal = false;
-				}
-				break;
-			case 7: // tools
-			case 8: // lights
-				if ( itemCategory(item) != TOOL )
-				{
-					deal = false;
-				}
-				break;
-			default:
-				break;
-		}
-		if ( deal )
-		{
-			sellitem[player] = item;
-			shopspeech[player] = language[215];
-			shoptimer[player] = ticks - 1;
-		}
-		else
-		{
-			shopspeech[player] = language[212 + rand() % 3];
-			shoptimer[player] = ticks - 1;
-		}
-		return;
-	}
 
 	if ( item->status == BROKEN && player >= 0 && players[player]->isLocalPlayer() )
 	{
-		messagePlayer(player, language[1092], item->getName());
+		messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1092), item->getName());
+		playSoundPlayer(player, 90, 64);
 		return;
 	}
 	if ( item->type == FOOD_CREAMPIE && player >= 0 && players[player]->isLocalPlayer() && itemIsEquipped(item, player) )
 	{
-		messagePlayer(player, language[3874]); // can't eat while equipped.
+		messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(3874)); // can't eat while equipped.
+		playSoundPlayer(player, 90, 64);
 		return;
 	}
 
@@ -1994,11 +2027,57 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			}
 			if ( !havetinopener )
 			{
-				messagePlayer(player, language[1093]);
+				messagePlayer(player, MESSAGE_HINT, Language::get(1093));
+				playSoundPlayer(player, 90, 64);
 				return;
 			}
 		}
 	}
+
+	EquipItemResult equipItemResult = EquipItemResult::EQUIP_ITEM_SUCCESS_UNEQUIP;
+
+	bool checkInventorySpaceForPaperDoll = players[player]->paperDoll.isItemOnDoll(*item);
+	if ( unequipForDropping )
+	{
+		checkInventorySpaceForPaperDoll = false;
+	}
+	struct ItemDetailsForServer
+	{
+		ItemType type = WOODEN_SHIELD;
+		Status status = EXCELLENT;
+		Sint16 beatitude = 0;
+		Sint16 count = 1;
+		Uint32 appearance = 0;
+		bool identified = false;
+		bool sendToServer = false;
+		void setItem(Item& item)
+		{
+			type = item.type;
+			status = item.status;
+			beatitude = item.beatitude;
+			count = item.count;
+			appearance = item.appearance;
+			identified = item.identified;
+			sendToServer = true;
+		}
+		void send()
+		{
+			if ( multiplayer != CLIENT ) { return; }
+			strcpy((char*)net_packet->data, "USEI");
+			SDLNet_Write32(static_cast<Uint32>(type), &net_packet->data[4]);
+			SDLNet_Write32(static_cast<Uint32>(status), &net_packet->data[8]);
+			SDLNet_Write32(static_cast<Uint32>(beatitude), &net_packet->data[12]);
+			SDLNet_Write32(static_cast<Uint32>(count), &net_packet->data[16]);
+			SDLNet_Write32(static_cast<Uint32>(appearance), &net_packet->data[20]);
+			net_packet->data[24] = identified;
+			net_packet->data[25] = clientnum;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 26;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+	};
+	ItemDetailsForServer itemDetailsForServer;
 
 	if ( multiplayer == CLIENT && !intro )
 	{
@@ -2010,23 +2089,13 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		}
 		else
 		{
-			strcpy((char*)net_packet->data, "USEI");
-			SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
-			SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
-			SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
-			SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
-			SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
-			net_packet->data[24] = item->identified;
-			net_packet->data[25] = clientnum;
-			net_packet->address.host = net_server.host;
-			net_packet->address.port = net_server.port;
-			net_packet->len = 26;
-			sendPacketSafe(net_sock, -1, net_packet, 0);
+			itemDetailsForServer.setItem(*item);
 		}
 	}
 
 	bool drankPotion = false;
 	bool tryLearnPotionRecipe = false;
+	bool tryLevelAppraiseFromPotion = false;
 	const bool tryEmptyBottle = (item->status >= SERVICABLE);
 	const ItemType potionType = item->type;
 	if ( player >= 0 && players[player]->isLocalPlayer() )
@@ -2039,32 +2108,36 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			{
 				tryLearnPotionRecipe = true;
 			}
+			else
+			{
+				tryLevelAppraiseFromPotion = true;
+			}
 		}
 	}
 
 	switch ( item->type )
 	{
 		case WOODEN_SHIELD:
-			equipItem(item, &stats[player]->shield, player);
+			equipItemResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			break;
 		case QUARTERSTAFF:
 		case BRONZE_SWORD:
 		case BRONZE_MACE:
 		case BRONZE_AXE:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case BRONZE_SHIELD:
-			equipItem(item, &stats[player]->shield, player);
+			equipItemResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			break;
 		case SLING:
 		case IRON_SPEAR:
 		case IRON_SWORD:
 		case IRON_MACE:
 		case IRON_AXE:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case IRON_SHIELD:
-			equipItem(item, &stats[player]->shield, player);
+			equipItemResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			break;
 		case SHORTBOW:
 		case STEEL_HALBERD:
@@ -2080,19 +2153,19 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case STEEL_CHAKRAM:
 		case CRYSTAL_SHURIKEN:
 		case BOOMERANG:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case STEEL_SHIELD:
 		case STEEL_SHIELD_RESISTANCE:
 		case MIRROR_SHIELD:
 		case CRYSTAL_SHIELD:
-			equipItem(item, &stats[player]->shield, player);
+			equipItemResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			break;
 		case CROSSBOW:
 		case LONGBOW:
 		case COMPOUND_BOW:
 		case HEAVY_CROSSBOW:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case GLOVES:
 		case GLOVES_DEXTERITY:
@@ -2106,7 +2179,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case IRON_KNUCKLES:
 		case SPIKED_GAUNTLETS:
 		case SUEDE_GLOVES:
-			equipItem(item, &stats[player]->gloves, player);
+			equipItemResult = equipItem(item, &stats[player]->gloves, player, checkInventorySpaceForPaperDoll);
 			break;
 		case CLOAK:
 		case CLOAK_BLACK:
@@ -2116,7 +2189,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case ARTIFACT_CLOAK:
 		case CLOAK_BACKPACK:
 		case CLOAK_SILVER:
-			equipItem(item, &stats[player]->cloak, player);
+			equipItemResult = equipItem(item, &stats[player]->cloak, player, checkInventorySpaceForPaperDoll);
 			break;
 		case LEATHER_BOOTS:
 		case LEATHER_BOOTS_SPEED:
@@ -2128,7 +2201,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case ARTIFACT_BOOTS:
 		case CRYSTAL_BOOTS:
 		case SUEDE_BOOTS:
-			equipItem(item, &stats[player]->shoes, player);
+			equipItemResult = equipItem(item, &stats[player]->shoes, player, checkInventorySpaceForPaperDoll);
 			break;
 		case LEATHER_BREASTPIECE:
 		case IRON_BREASTPIECE:
@@ -2141,7 +2214,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case ARTIFACT_BREASTPIECE:
 		case TUNIC:
 		case MACHINIST_APRON:
-			equipItem(item, &stats[player]->breastplate, player);
+			equipItemResult = equipItem(item, &stats[player]->breastplate, player, checkInventorySpaceForPaperDoll);
 			break;
 		case HAT_PHRYGIAN:
 		case HAT_HOOD:
@@ -2156,31 +2229,36 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case HAT_HOOD_RED:
 		case HAT_HOOD_SILVER:
 		case PUNISHER_HOOD:
-			equipItem(item, &stats[player]->helmet, player);
+			equipItemResult = equipItem(item, &stats[player]->helmet, player, checkInventorySpaceForPaperDoll);
 			break;
 		case AMULET_SEXCHANGE:
-			messagePlayer(player, language[1094]);
 			item_AmuletSexChange(item, player);
-			consumeItem(item, player);
 			break;
 		case AMULET_LIFESAVING:
 		case AMULET_WATERBREATHING:
 		case AMULET_MAGICREFLECTION:
-			equipItem(item, &stats[player]->amulet, player);
+			equipItemResult = equipItem(item, &stats[player]->amulet, player, checkInventorySpaceForPaperDoll);
 			break;
 		case AMULET_STRANGULATION:
-			equipItem(item, &stats[player]->amulet, player);
-			if ( stats[player]->amulet )
+		{
+			bool oldStrangulation = stats[player]->amulet && stats[player]->amulet->type == AMULET_STRANGULATION;
+			equipItemResult = equipItem(item, &stats[player]->amulet, player, checkInventorySpaceForPaperDoll);
+			if ( stats[player]->amulet && stats[player]->amulet->type == AMULET_STRANGULATION
+				&& !oldStrangulation )
 			{
-				messagePlayer(player, language[1095]);
+				if ( players[player]->isLocalPlayer() )
+				{
+					messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1095));
+				}
 			}
 			if ( item->beatitude >= 0 )
 			{
 				item->beatitude = -1;
 			}
+		}
 			break;
 		case AMULET_POISONRESISTANCE:
-			equipItem(item, &stats[player]->amulet, player);
+			equipItemResult = equipItem(item, &stats[player]->amulet, player, checkInventorySpaceForPaperDoll);
 			break;
 		case POTION_WATER:
 			drankPotion = item_PotionWater(item, players[player]->entity, usedBy);
@@ -2228,7 +2306,11 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			drankPotion = item_PotionParalysis(item, players[player]->entity, usedBy);
 			break;
 		case POTION_EMPTY:
-			messagePlayer(player, language[2359]);
+			messagePlayer(player, MESSAGE_HINT, Language::get(2359));
+			if ( players[player]->isLocalPlayer() )
+			{
+				playSoundPlayer(player, 90, 64);
+			}
 			break;
 		case POTION_POLYMORPH:
 		{
@@ -2299,8 +2381,8 @@ void useItem(Item* item, const int player, Entity* usedBy)
 					stats[player]->HUNGER = std::min(stats[player]->HUNGER + 1500, 1500);
 					players[player]->entity->modMP(stats[player]->MAXMP);
 					// results of eating
-					const Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-					messagePlayerColor(player, color, language[3699]); // superheats
+					const Uint32 color = makeColorRGB(255, 128, 0);
+					messagePlayerColor(player, MESSAGE_STATUS, color, Language::get(3699)); // superheats
 					serverUpdateHunger(player);
 					if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
 					{
@@ -2376,7 +2458,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case MAGICSTAFF_SUMMON:
 		case MAGICSTAFF_CHARM:
 		case MAGICSTAFF_POISON:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case RING_ADORNMENT:
 		case RING_SLOWDIGESTION:
@@ -2390,7 +2472,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case RING_LEVITATION:
 		case RING_REGENERATION:
 		case RING_TELEPORTATION:
-			equipItem(item, &stats[player]->ring, player);
+			equipItemResult = equipItem(item, &stats[player]->ring, player, checkInventorySpaceForPaperDoll);
 			break;
 		case SPELLBOOK_FORCEBOLT:
 		case SPELLBOOK_MAGICMISSILE:
@@ -2463,11 +2545,11 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case GEM_JETSTONE:
 		case GEM_OBSIDIAN:
 		case GEM_GLASS:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_PICKAXE:
 		case TOOL_WHIP:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_TINOPENER:
 			item_ToolTinOpener(item, player);
@@ -2486,7 +2568,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case TOOL_GYROBOT:
 		case TOOL_SENTRYBOT:
 		case TOOL_SPELLBOT:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_TORCH:
 		case TOOL_LANTERN:
@@ -2499,12 +2581,12 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case QUIVER_KNOCKBACK:
 		case QUIVER_CRYSTAL:
 		case QUIVER_HUNTING:
-			equipItem(item, &stats[player]->shield, player);
+			equipItemResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_BLINDFOLD:
 		case TOOL_BLINDFOLD_FOCUS:
 		case TOOL_BLINDFOLD_TELEPATHY:
-			equipItem(item, &stats[player]->mask, player);
+			equipItemResult = equipItem(item, &stats[player]->mask, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_TOWEL:
 			item_ToolTowel(item, player);
@@ -2515,11 +2597,12 @@ void useItem(Item* item, const int player, Entity* usedBy)
 				}
 			break;
 		case TOOL_GLASSES:
+		case MONOCLE:
 		case MASK_SHAMAN:
-			equipItem(item, &stats[player]->mask, player);
+			equipItemResult = equipItem(item, &stats[player]->mask, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_BEARTRAP:
-			item_ToolBeartrap(item, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_ALEMBIC:
 			if ( !players[player]->isLocalPlayer() )
@@ -2528,7 +2611,14 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			}
 			else
 			{
-				GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, false, item);
+				if ( GenericGUI[player].alchemyGUI.bOpen && GenericGUI[player].alembicItem == item )
+				{
+					GenericGUI[player].closeGUI();
+				}
+				else
+				{
+					GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, true, item);
+				}
 			}
 			break;
 		case ENCHANTED_FEATHER:
@@ -2538,7 +2628,14 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			}
 			else
 			{
-				GenericGUI[player].openGUI(GUI_TYPE_SCRIBING, item);
+				if ( GenericGUI[player].featherGUI.bOpen && GenericGUI[player].scribingToolItem == item )
+				{
+					GenericGUI[player].closeGUI();
+				}
+				else
+				{
+					GenericGUI[player].openGUI(GUI_TYPE_SCRIBING, item);
+				}
 			}
 			break;
 		case FOOD_BREAD:
@@ -2560,11 +2657,11 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			{
 				if ( item->type == TOOL_METAL_SCRAP )
 				{
-					messagePlayer(player, language[3705]);
+					messagePlayer(player, MESSAGE_HINT, Language::get(3705));
 				}
 				else
 				{
-					messagePlayer(player, language[3706]);
+					messagePlayer(player, MESSAGE_HINT, Language::get(3706));
 				}
 			}
 			break;
@@ -2575,12 +2672,13 @@ void useItem(Item* item, const int player, Entity* usedBy)
 				{
 					if (!players[player]->entity->isBlind())
 					{
-						players[player]->bookGUI.openBook(books[item->appearance % numbooks], item);
+						players[player]->bookGUI.openBook(item->appearance % numbooks, item);
 						conductIlliterate = false;
 					}
 					else
 					{
-						messagePlayer(player, language[970]);
+						messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(970));
+						playSoundPlayer(player, 90, 64);
 					}
 				}
 			}
@@ -2595,25 +2693,63 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			break;
 		}
 		case ARTIFACT_SWORD:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case ARTIFACT_MACE:
 			if ( players[player]->isLocalPlayer() )
 			{
-				messagePlayer(player, language[1096]);
+				messagePlayer(player, MESSAGE_WORLD, Language::get(1096));
 			}
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case ARTIFACT_SPEAR:
 		case ARTIFACT_AXE:
 		case ARTIFACT_BOW:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case ARTIFACT_ORB_BLUE:
 		case ARTIFACT_ORB_RED:
 		case ARTIFACT_ORB_PURPLE:
 		case ARTIFACT_ORB_GREEN:
-			equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
+			break;
+		case TOOL_PLAYER_LOOT_BAG:
+			if ( multiplayer != CLIENT )
+			{
+				int lootbagPlayer = item->getLootBagPlayer();
+				
+				if ( lootbagPlayer >= 0 && lootbagPlayer < MAXPLAYERS
+					&& stats[lootbagPlayer] )
+				{
+					std::string name = stats[lootbagPlayer]->name;
+					if ( lootbagPlayer == player )
+					{
+						messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT,
+							Language::get(4331), item->getLootBagNumItems());
+					}
+					else if ( name == "" || client_disconnected[lootbagPlayer] )
+					{
+						messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT,
+							Language::get(4330), item->getLootBagNumItems());
+					}
+					else
+					{
+						messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT,
+							Language::get(4329), item->getLootBagNumItems(), 
+							name.c_str());
+					}
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT,
+						Language::get(4330), item->getLootBagNumItems());
+				}
+
+				if ( !players[player]->isLocalPlayer() )
+				{
+					consumeItem(item, player);
+				}
+			}
 			break;
 		default:
 			printlog("error: item %d used, but it has no use case!\n", static_cast<int>(item->type));
@@ -2622,6 +2758,15 @@ void useItem(Item* item, const int player, Entity* usedBy)
 
 	if ( players[player]->isLocalPlayer() )
 	{
+		if ( checkInventorySpaceForPaperDoll && equipItemResult == EquipItemResult::EQUIP_ITEM_FAIL_CANT_UNEQUIP )
+		{
+			itemDetailsForServer.sendToServer = false;
+		}
+
+		if ( itemDetailsForServer.sendToServer )
+		{
+			itemDetailsForServer.send();
+		}
 		if ( drankPotion && usedBy
 			&& (players[player] && players[player]->entity)
 			&& players[player]->entity == usedBy )
@@ -2630,12 +2775,39 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			{
 				GenericGUI[player].alchemyLearnRecipe(potionType, true);
 			}
+			if ( tryLevelAppraiseFromPotion )
+			{
+				if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] < SKILL_LEVEL_BASIC )
+				{
+					if ( stats[player] && players[player]->entity )
+					{
+						if ( local_rng.rand() % 4 == 0 )
+						{
+							if ( multiplayer == CLIENT )
+							{
+								// request level up
+								strcpy((char*)net_packet->data, "CSKL");
+								net_packet->data[4] = player;
+								net_packet->data[5] = PRO_APPRAISAL;
+								net_packet->address.host = net_server.host;
+								net_packet->address.port = net_server.port;
+								net_packet->len = 6;
+								sendPacketSafe(net_sock, -1, net_packet, 0);
+							}
+							else
+							{
+								players[player]->entity->increaseSkill(PRO_APPRAISAL);
+							}
+						}
+					}
+				}
+			}
 			const int skillLVL = stats[player]->PROFICIENCIES[PRO_ALCHEMY] / 20;
-			if ( tryEmptyBottle && rand() % 100 < std::min(80, (60 + skillLVL * 10)) ) // 60 - 80% chance
+			if ( tryEmptyBottle && local_rng.rand() % 100 < std::min(80, (60 + skillLVL * 10)) ) // 60 - 80% chance
 			{
 				Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
 				itemPickup(player, emptyBottle);
-				messagePlayer(player, language[3351], items[POTION_EMPTY].name_identified);
+				messagePlayer(player, MESSAGE_INTERACTION, Language::get(3351), items[POTION_EMPTY].getIdentifiedName());
 				free(emptyBottle);
 			}
 		}
@@ -2647,140 +2819,137 @@ void useItem(Item* item, const int player, Entity* usedBy)
 	}
 
 	// on-equip messages.
-	if ( multiplayer != CLIENT && itemIsEquipped(item, player) )
+	if ( multiplayer != CLIENT && equipItemResult == EquipItemResult::EQUIP_ITEM_SUCCESS_NEWITEM && itemIsEquipped(item, player) )
 	{
 		switch ( item->type )
 		{
 			case ARTIFACT_BREASTPIECE:
-				messagePlayer(player, language[2972]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2972));
 				break;
 			case ARTIFACT_HELM:
-				messagePlayer(player, language[2973]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2973));
 				break;
 			case ARTIFACT_BOOTS:
-				messagePlayer(player, language[2974]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2974));
 				break;
 			case ARTIFACT_CLOAK:
-				messagePlayer(player, language[2975]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2975));
 				break;
 			case ARTIFACT_GLOVES:
-				messagePlayer(player, language[2976]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2976));
 				break;
 			case AMULET_LIFESAVING:
-				messagePlayer(player, language[2478]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2478));
 				break;
 			case AMULET_WATERBREATHING:
-				messagePlayer(player, language[2479]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2479));
 				break;
 			case AMULET_MAGICREFLECTION:
-				messagePlayer(player, language[2480]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2480));
 				break;
 			case HAT_WIZARD:
-				messagePlayer(player, language[2481]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2481));
 				break;
 			case SPIKED_GAUNTLETS:
 			case BRASS_KNUCKLES:
 			case IRON_KNUCKLES:
-				messagePlayer(player, language[2482]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2482));
 				break;
 			case HAT_JESTER:
-				messagePlayer(player, language[2483]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2483));
 				break;
 			case IRON_BOOTS_WATERWALKING:
-				messagePlayer(player, language[2484]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2484));
 				break;
 			case LEATHER_BOOTS_SPEED:
-				messagePlayer(player, language[2485]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2485));
 				break;
 			case CLOAK_INVISIBILITY:
-				messagePlayer(player, language[2486]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2486));
 				break;
 			case CLOAK_PROTECTION:
-				messagePlayer(player, language[2487]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2487));
 				break;
 			case CLOAK_MAGICREFLECTION:
-				messagePlayer(player, language[2488]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2488));
 				break;
 			case GLOVES_DEXTERITY:
-				messagePlayer(player, language[2489]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2489));
 				break;
 			case BRACERS_CONSTITUTION:
-				messagePlayer(player, language[2490]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2490));
 				break;
 			case GAUNTLETS_STRENGTH:
-				messagePlayer(player, language[2491]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2491));
 				break;
 			case AMULET_POISONRESISTANCE:
-				messagePlayer(player, language[2492]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2492));
 				break;
 			case RING_ADORNMENT:
-				messagePlayer(player, language[2384]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2384));
 				break;
 			case RING_SLOWDIGESTION:
-				messagePlayer(player, language[2385]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2385));
 				break;
 			case RING_PROTECTION:
-				messagePlayer(player, language[2386]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2386));
 				break;
 			case RING_WARNING:
-				messagePlayer(player, language[2387]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2387));
 				break;
 			case RING_STRENGTH:
-				messagePlayer(player, language[2388]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2388));
 				break;
 			case RING_CONSTITUTION:
-				messagePlayer(player, language[2389]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2389));
 				break;
 			case RING_INVISIBILITY:
-				messagePlayer(player, language[2412]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2412));
 				break;
 			case RING_MAGICRESISTANCE:
-				messagePlayer(player, language[2413]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2413));
 				break;
 			case RING_CONFLICT:
-				messagePlayer(player, language[2414]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2414));
 				break;
 			case RING_LEVITATION:
 				if ( !MFLAG_DISABLELEVITATION )
 				{
 					// can levitate
-					messagePlayer(player, language[2415]);
+					messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2415));
 				}
 				else
 				{
-					messagePlayer(player, language[2381]);
+					messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2381));
 				}
 				break;
 			case RING_REGENERATION:
-				messagePlayer(player, language[2416]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2416));
 				break;
 			case RING_TELEPORTATION:
-				messagePlayer(player, language[2417]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2417));
 				break;
 			case STEEL_BOOTS_FEATHER:
-				messagePlayer(player, language[2418]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2418));
 				break;
 			case STEEL_BOOTS_LEVITATION:
 				if ( !MFLAG_DISABLELEVITATION )
 				{
 					// can levitate
-					messagePlayer(player, language[2419]);
+					messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2419));
 				}
 				else
 				{
-					messagePlayer(player, language[2381]);
+					messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2381));
 				}
 				break;
 			case VAMPIRE_DOUBLET:
-				messagePlayer(player, language[2597]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2597));
 				break;
 			case TOOL_BLINDFOLD:
 				break;
-			case TOOL_BLINDFOLD_FOCUS:
-				messagePlayer(player, language[2907]);
-				break;
 			case TOOL_BLINDFOLD_TELEPATHY:
-				messagePlayer(player, language[2908]);
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2908));
 				break;
 			default:
 				break;
@@ -2796,7 +2965,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 
 -------------------------------------------------------------------------------*/
 
-Item* itemPickup(const int player, Item* const item)
+Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventoryItem, bool forceNewStack)
 {
 	if (!item)
 	{
@@ -2806,11 +2975,23 @@ Item* itemPickup(const int player, Item* const item)
 
 	if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
 	{
-		item->identified = true;
-		if ( item->type == GEM_GLASS )
+		if ( !(player != 0 && multiplayer == SERVER && !players[player]->isLocalPlayer()) )
 		{
-			steamStatisticUpdate(STEAM_STAT_RHINESTONE_COWBOY, STEAM_STAT_INT, 1);
+			if ( !item->identified )
+			{
+				item->identified = true;
+				item->notifyIcon = true;
+				if ( item->type == GEM_GLASS )
+				{
+					steamStatisticUpdate(STEAM_STAT_RHINESTONE_COWBOY, STEAM_STAT_INT, 1);
+				}
+			}
 		}
+	}
+
+	if ( item->identified && !intro )
+	{
+		item->notifyIcon = true;
 	}
 
 	if ( multiplayer != CLIENT && player >= 0 && players[player] && players[player]->entity )
@@ -2833,7 +3014,7 @@ Item* itemPickup(const int player, Item* const item)
 
 	//messagePlayer(0, "id: %d", item->ownerUid);
 
-	if ( player != 0 && multiplayer == SERVER )
+	if ( player != 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 	{
 		// send the client info on the item it just picked up
 		strcpy((char*)net_packet->data, "ITEM");
@@ -2843,7 +3024,7 @@ Item* itemPickup(const int player, Item* const item)
 		SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
 		SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
 		SDLNet_Write32(static_cast<Uint32>(item->ownerUid), &net_packet->data[24]);
-		net_packet->data[28] = item->identified;
+		net_packet->data[28] = item->identified ? 1 : 0;
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
 		net_packet->len = 29;
@@ -2852,9 +3033,40 @@ Item* itemPickup(const int player, Item* const item)
 	else
 	{
 		std::unordered_set<Uint32> appearancesOfSimilarItems;
+		bool doSpecificItemCheck = (addToSpecificInventoryItem != nullptr);
+		bool hasRunSpecificItemCheck = false;
 		for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
 		{
-			item2 = static_cast<Item*>(node->element);
+			if ( doSpecificItemCheck )
+			{
+				if ( !hasRunSpecificItemCheck )
+				{
+					item2 = addToSpecificInventoryItem;
+					hasRunSpecificItemCheck = true;
+				}
+				else
+				{
+					node = stats[player]->inventory.first;
+					item2 = static_cast<Item*>(node->element);
+					doSpecificItemCheck = false;
+				}
+			}
+			else
+			{
+				item2 = static_cast<Item*>(node->element);
+			}
+
+			if ( forceNewStack )
+			{
+				if ( !itemCompare(item, item2, true) )
+				{
+					// items are the same (incl. appearance!)
+					// if they shouldn't stack, we need to change appearance of the new item.
+					appearancesOfSimilarItems.insert(item2->appearance);
+				}
+				continue;
+			}
+
 			if (!itemCompare(item, item2, false))
 			{
 				if ( (itemTypeIsQuiver(item2->type) && (item->count + item2->count) >= QUIVER_MAX_AMMO_QTY)
@@ -2867,7 +3079,7 @@ Item* itemPickup(const int player, Item* const item)
 						maxStack = SCRAP_MAX_STACK_QTY;
 					}
 
-					if ( item2->count == maxStack - 1 )
+					if ( item2->count >= maxStack - 1 )
 					{
 						// can't add anymore to this stack, let's skip over this.
 
@@ -2951,8 +3163,11 @@ Item* itemPickup(const int player, Item* const item)
 				}
 			}
 		}
-		if ( !appearancesOfSimilarItems.empty() )
+		if ( !appearancesOfSimilarItems.empty() && item && item->type >= 0 && item->type < NUMITEMS )
 		{
+			Uint32 originalAppearance = item->appearance;
+			int originalVariation = originalAppearance % items[item->type].variations;
+
 			int tries = 100;
 			bool robot = false;
 			// we need to find a unique appearance within the list.
@@ -2960,22 +3175,46 @@ Item* itemPickup(const int player, Item* const item)
 				|| item->type == TOOL_DUMMYBOT )
 			{
 				robot = true;
-				item->appearance += (rand() % 100000) * 10;
+				item->appearance += (local_rng.rand() % 100000) * 10;
 			}
 			else
 			{
-				item->appearance = rand();
+				item->appearance = local_rng.rand();
+				if ( item->appearance % items[item->type].variations != originalVariation )
+				{
+					// we need to match the variation for the new appearance, take the difference so new varation matches
+					int change = (item->appearance % items[item->type].variations - originalVariation);
+					if ( item->appearance < change ) // underflow protection
+					{
+						item->appearance += items[item->type].variations;
+					}
+					item->appearance -= change;
+					int newVariation = item->appearance % items[item->type].variations;
+					assert(newVariation == originalVariation);
+				}
 			}
 			auto it = appearancesOfSimilarItems.find(item->appearance);
 			while ( it != appearancesOfSimilarItems.end() && tries > 0 )
 			{
 				if ( robot )
 				{
-					item->appearance += (rand() % 100000) * 10;
+					item->appearance += (local_rng.rand() % 100000) * 10;
 				}
 				else
 				{
-					item->appearance = rand();
+					item->appearance = local_rng.rand();
+					if ( item->appearance % items[item->type].variations != originalVariation )
+					{
+						// we need to match the variation for the new appearance, take the difference so new varation matches
+						int change = (item->appearance % items[item->type].variations - originalVariation);
+						if ( item->appearance < change ) // underflow protection
+						{
+							item->appearance += items[item->type].variations;
+						}
+						item->appearance -= change;
+						int newVariation = item->appearance % items[item->type].variations;
+						assert(newVariation == originalVariation);
+					}
 				}
 				it = appearancesOfSimilarItems.find(item->appearance);
 				--tries;
@@ -2984,10 +3223,338 @@ Item* itemPickup(const int player, Item* const item)
 
 		item2 = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &stats[player]->inventory);
 		item2->ownerUid = item->ownerUid;
+		item2->notifyIcon = item->notifyIcon;
 		return item2;
 	}
 
 	return item;
+}
+
+int Item::getMaxStackLimit(int player) const
+{
+	if ( !shouldItemStack(player, true) )
+	{
+		return 1;
+	}
+
+	int maxStack = 100;
+	if ( itemCategory(this) == THROWN || itemCategory(this) == GEM )
+	{
+		maxStack = THROWN_GEM_MAX_STACK_QTY;
+	}
+	else if ( itemTypeIsQuiver(this->type) )
+	{
+		maxStack = QUIVER_MAX_AMMO_QTY - 1;
+	}
+	else if ( type == TOOL_METAL_SCRAP || type == TOOL_MAGIC_SCRAP )
+	{
+		maxStack = SCRAP_MAX_STACK_QTY - 1;
+	}
+
+	return maxStack;
+}
+
+ItemStackResult getItemStackingBehaviorIndividualItemCheck(const int player, Item* itemToCheck, Item* itemDestinationStack, int& newQtyForCheckedItem, int& newQtyForDestItem)
+{
+	ItemStackResult itemStackResult;
+	itemStackResult.itemToStackInto = nullptr;
+	if ( !itemToCheck || !itemDestinationStack )
+	{
+		itemStackResult.resultType = ITEM_STACKING_ERROR;
+		return itemStackResult;
+	}
+
+	if ( !itemCompare(itemToCheck, itemDestinationStack, false) )
+	{
+		if ( (itemTypeIsQuiver(itemDestinationStack->type) && (itemToCheck->count + itemDestinationStack->count) >= QUIVER_MAX_AMMO_QTY)
+			|| ((itemDestinationStack->type == TOOL_MAGIC_SCRAP || itemDestinationStack->type == TOOL_METAL_SCRAP)
+				&& (itemToCheck->count + itemDestinationStack->count) >= SCRAP_MAX_STACK_QTY) )
+		{
+			int maxStack = QUIVER_MAX_AMMO_QTY;
+			if ( itemDestinationStack->type == TOOL_MAGIC_SCRAP || itemDestinationStack->type == TOOL_METAL_SCRAP )
+			{
+				maxStack = SCRAP_MAX_STACK_QTY;
+			}
+
+			if ( itemDestinationStack->count >= maxStack - 1 )
+			{
+				// can't add anymore to this stack, let's skip over this.
+				newQtyForDestItem = itemDestinationStack->count;
+				newQtyForCheckedItem = itemToCheck->count;
+				itemStackResult.resultType = ITEM_DESTINATION_STACK_IS_FULL;
+				itemStackResult.itemToStackInto = itemDestinationStack;
+				return itemStackResult;
+			}
+
+			// too many arrows, split off into a new stack with reduced qty.
+			const int total = itemToCheck->count + itemDestinationStack->count;
+			const int destinationStackQty = maxStack - 1;
+			newQtyForDestItem = destinationStackQty;
+			newQtyForCheckedItem = total - newQtyForDestItem;
+
+			if ( newQtyForCheckedItem <= 0 )
+			{
+				itemStackResult.resultType = ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK;
+				itemStackResult.itemToStackInto = itemDestinationStack;
+				return itemStackResult;
+			}
+			else
+			{
+				itemStackResult.resultType = ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK;
+				itemStackResult.itemToStackInto = itemDestinationStack;
+				return itemStackResult;
+			}
+		}
+		// if items are the same, check to see if they should stack
+		else if ( itemDestinationStack->shouldItemStack(player) )
+		{
+			int maxStack = itemDestinationStack->getMaxStackLimit(player);
+
+			const int total = itemToCheck->count + itemDestinationStack->count;
+			if ( total > maxStack )
+			{
+				newQtyForDestItem = maxStack;
+				newQtyForCheckedItem = total - newQtyForDestItem;
+				if ( newQtyForCheckedItem <= 0 )
+				{
+					itemStackResult.resultType = ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK;
+					itemStackResult.itemToStackInto = itemDestinationStack;
+					return itemStackResult;
+				}
+				else
+				{
+					itemStackResult.resultType = ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK;
+					itemStackResult.itemToStackInto = itemDestinationStack;
+					return itemStackResult;
+				}
+			}
+			else
+			{
+				newQtyForCheckedItem = 0;
+				newQtyForDestItem = total;
+				itemStackResult.resultType = ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK;
+				itemStackResult.itemToStackInto = itemDestinationStack;
+				return itemStackResult;
+			}
+		}
+		else if ( !itemCompare(itemToCheck, itemDestinationStack, true) )
+		{
+			newQtyForCheckedItem = itemToCheck->count;
+			newQtyForDestItem = itemDestinationStack->count;
+			itemStackResult.resultType = ITEM_DESTINATION_STACK_IS_FULL;
+			return itemStackResult;
+		}
+	}
+	newQtyForCheckedItem = itemToCheck->count;
+	newQtyForDestItem = itemDestinationStack->count;
+	itemStackResult.resultType = ITEM_DESTINATION_NOT_SAME_ITEM;
+	return itemStackResult;
+}
+
+void getItemEmptySlotStackingBehavior(const int player, Item& itemToCheck, int& newQtyForCheckedItem, int& newQtyForDestItem)
+{
+	int maxStack = itemToCheck.getMaxStackLimit(player);
+	if ( itemToCheck.count > maxStack )
+	{
+		newQtyForCheckedItem = itemToCheck.count - maxStack;
+		newQtyForDestItem = maxStack;
+	}
+	else
+	{
+		newQtyForCheckedItem = 0;
+		newQtyForDestItem = itemToCheck.count;
+	}
+}
+
+ItemStackResult getItemStackingBehaviorIntoChest(const int player, Item* itemToCheck, Item* itemDestinationStack, int& newQtyForCheckedItem, int& newQtyForDestItem)
+{
+	ItemStackResult itemStackResult;
+	itemStackResult.itemToStackInto = nullptr;
+	if ( !itemToCheck )
+	{
+		itemStackResult.resultType = ITEM_STACKING_ERROR;
+		return itemStackResult;
+	}
+
+	list_t* chest_inventory = nullptr;
+	if ( multiplayer == CLIENT )
+	{
+		chest_inventory = &chestInv[player];
+	}
+	else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+	{
+		chest_inventory = (list_t*)openedChest[player]->children.first->element;
+	}
+	if ( !chest_inventory )
+	{
+		// no chest inventory available
+		itemStackResult.resultType = ITEM_STACKING_ERROR;
+		return itemStackResult;
+	}
+
+	if ( itemDestinationStack )
+	{
+		return getItemStackingBehaviorIndividualItemCheck(player, itemToCheck, itemDestinationStack, newQtyForCheckedItem, newQtyForDestItem);
+	}
+
+	itemStackResult.resultType = ITEM_ADDED_WITHOUT_NEEDING_STACK;
+	newQtyForCheckedItem = itemToCheck->count;
+	newQtyForDestItem = 0;
+
+	for ( node_t* node = chest_inventory->first; node != nullptr; node = node->next )
+	{
+		Item* item2 = static_cast<Item*>(node->element);
+		if ( item2 )
+		{
+			int tmpQtyCheckedItem = newQtyForCheckedItem;
+			int tmpQtyDestItem = newQtyForDestItem;
+			auto res = getItemStackingBehaviorIndividualItemCheck(player, itemToCheck, item2, tmpQtyCheckedItem, tmpQtyDestItem);
+			bool skipResult = false;
+			switch ( res.resultType )
+			{
+				case ITEM_DESTINATION_NOT_SAME_ITEM:
+				case ITEM_STACKING_ERROR:
+				case ITEM_DESTINATION_STACK_IS_FULL:
+					skipResult = true;
+					break;
+				default:
+					break;
+			}
+			if ( skipResult )
+			{
+				continue;
+			}
+
+			// found a stack to add this item to
+			newQtyForCheckedItem = tmpQtyCheckedItem;
+			newQtyForDestItem = tmpQtyDestItem;
+			res.itemToStackInto = item2;
+			return res;
+		}
+	}
+
+	//std::vector<std::pair<int, Item*>> chestSlotOrder;
+	//for ( node_t* node = chest_inventory->first; node != nullptr; node = node->next )
+	//{
+	//	Item* item2 = static_cast<Item*>(node->element);
+	//	if ( item2 )
+	//	{
+	//		int key = item2->x + item2->y * 100;
+	//		chestSlotOrder.push_back(std::make_pair(key, item2));
+	//	}
+	//}
+	//std::sort(chestSlotOrder.begin(), chestSlotOrder.end()); // sort ascending by position, left to right, then down
+	//for ( auto& keyValue : chestSlotOrder )
+	//{
+	//	Item* item2 = keyValue.second;
+	//	if ( item2 )
+	//	{
+	//		int tmpQtyCheckedItem = newQtyForCheckedItem;
+	//		int tmpQtyDestItem = newQtyForDestItem;
+	//		auto res = getItemStackingBehaviorIndividualItemCheck(player, itemToCheck, item2, tmpQtyCheckedItem, tmpQtyDestItem);
+	//		bool skipResult = false;
+	//		switch ( res )
+	//		{
+	//			case ITEM_DESTINATION_NOT_SAME_ITEM:
+	//			case ITEM_STACKING_ERROR:
+	//			case ITEM_DESTINATION_STACK_IS_FULL:
+	//				skipResult = true;
+	//				break;
+	//			default:
+	//				break;
+	//		}
+	//		if ( skipResult )
+	//		{
+	//			continue;
+	//		}
+
+	//		// found a stack to add this item to
+	//		result = res;
+	//		newQtyForCheckedItem = tmpQtyCheckedItem;
+	//		newQtyForDestItem = tmpQtyDestItem;
+	//		return result;
+	//	}
+	//}
+
+	itemStackResult.resultType = ITEM_ADDED_WITHOUT_NEEDING_STACK;
+	int maxStack = itemToCheck->getMaxStackLimit(player);
+	if ( itemToCheck->count > maxStack )
+	{
+		newQtyForCheckedItem = itemToCheck->count - maxStack;
+		newQtyForDestItem = maxStack;
+	}
+	else
+	{
+		newQtyForCheckedItem = 0;
+		newQtyForDestItem = itemToCheck->count;
+	}
+	return itemStackResult;
+}
+
+ItemStackResult getItemStackingBehavior(const int player, Item* itemToCheck, Item* itemDestinationStack, int& newQtyForCheckedItem, int& newQtyForDestItem)
+{
+	ItemStackResult itemStackResult;
+	itemStackResult.itemToStackInto = nullptr;
+	if ( !itemToCheck )
+	{
+		itemStackResult.resultType = ITEM_STACKING_ERROR;
+		return itemStackResult;
+	}
+
+	if ( itemDestinationStack )
+	{
+		return getItemStackingBehaviorIndividualItemCheck(player, itemToCheck, itemDestinationStack, newQtyForCheckedItem, newQtyForDestItem);
+	}
+
+	itemStackResult.resultType = ITEM_ADDED_WITHOUT_NEEDING_STACK;
+	newQtyForCheckedItem = itemToCheck->count;
+	newQtyForDestItem = 0;
+
+	for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
+	{
+		Item* item2 = static_cast<Item*>(node->element);
+		if ( item2 )
+		{
+			int tmpQtyCheckedItem = newQtyForCheckedItem;
+			int tmpQtyDestItem = newQtyForDestItem;
+			auto res = getItemStackingBehaviorIndividualItemCheck(player, itemToCheck, item2, tmpQtyCheckedItem, tmpQtyDestItem);
+			bool skipResult = false;
+			switch ( res.resultType )
+			{
+				case ITEM_DESTINATION_NOT_SAME_ITEM:
+				case ITEM_STACKING_ERROR:
+				case ITEM_DESTINATION_STACK_IS_FULL:
+					skipResult = true;
+					break;
+				default:
+					break;
+			}
+			if ( skipResult )
+			{
+				continue;
+			}
+			
+			// found a stack to add this item to
+			newQtyForCheckedItem = tmpQtyCheckedItem;
+			newQtyForDestItem = tmpQtyDestItem;
+			res.itemToStackInto = item2;
+			return res;
+		}
+	}
+
+	itemStackResult.resultType = ITEM_ADDED_WITHOUT_NEEDING_STACK;
+	int maxStack = itemToCheck->getMaxStackLimit(player);
+	if ( itemToCheck->count > maxStack )
+	{
+		newQtyForCheckedItem = itemToCheck->count - maxStack;
+		newQtyForDestItem = maxStack;
+	}
+	else
+	{
+		newQtyForCheckedItem = 0;
+		newQtyForDestItem = itemToCheck->count;
+	}
+	return itemStackResult;
 }
 
 /*-------------------------------------------------------------------------------
@@ -2999,13 +3566,23 @@ Item* itemPickup(const int player, Item* const item)
 
 -------------------------------------------------------------------------------*/
 
-Item* newItemFromEntity(const Entity* const entity)
+Item* newItemFromEntity(const Entity* const entity, bool discardUid)
 {
 	if ( entity == nullptr )
 	{
 		return nullptr;
 	}
+	Uint32 oldUids = itemuids;
 	Item* item = newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], entity->skill[15], nullptr);
+	if ( !item )
+	{
+		return nullptr;
+	}
+	if ( discardUid && itemuids == oldUids + 1 )
+	{
+		--itemuids;
+		item->uid = 0;
+	}
 	item->ownerUid = static_cast<Uint32>(entity->itemOriginalOwner);
 	item->interactNPCUid = static_cast<Uint32>(entity->interactedByMonster);
 	return item;
@@ -3079,6 +3656,14 @@ Item** itemSlot(Stat* const myStats, Item* const item)
 
 bool itemIsEquipped(const Item* const item, const int player)
 {
+	if ( player < 0 || !stats[player] )
+	{
+		return false;
+	}
+	if ( !item->node || item->node->list != &stats[player]->inventory )
+	{
+		return false;
+	}
 	if ( !itemCompare(item, stats[player]->helmet, true) )
 	{
 		return true;
@@ -3335,6 +3920,490 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	return attack;
 }
 
+bool Item::doesItemProvideBeatitudeAC() const
+{
+	if ( itemTypeIsQuiver(type) || itemCategory(this) == SPELLBOOK || itemCategory(this) == AMULET )
+	{
+		return false;
+	}
+	return true;
+}
+
+bool Item::doesItemProvidePassiveShieldBonus() const
+{
+	if ( itemTypeIsQuiver(type) || itemCategory(this) == SPELLBOOK )
+	{
+		return false;
+	}
+	return true;
+}
+
+bool Item::doesPotionHarmAlliesOnThrown() const
+{
+	switch ( type )
+	{
+		case POTION_HEALING:
+		case POTION_EXTRAHEALING:
+		case POTION_RESTOREMAGIC:
+		case POTION_CUREAILMENT:
+		case POTION_WATER:
+		case POTION_BOOZE:
+		case POTION_JUICE:
+		case POTION_STRENGTH:
+		case POTION_SPEED:
+		case POTION_INVISIBILITY:
+		case POTION_LEVITATION:
+		case POTION_POLYMORPH:
+			return false;
+		default:
+			break;
+	}
+	return true;
+}
+
+Sint32 Item::potionGetEffectHealth(Entity* my, Stat* myStats) const
+{
+	if ( itemCategory(this) != POTION )
+	{
+		return 0;
+	}
+
+	int heal = 0;
+
+	switch ( type )
+	{
+		case POTION_WATER:
+			heal += (beatitude <= 0 ? 1 : (5 * beatitude));
+			break;
+		case POTION_BOOZE:
+			heal += (5 * (1 + beatitude));
+			break;
+		case POTION_JUICE:
+			heal += (5 * (1 + std::max((Sint16)0, beatitude))); // always 5 at cursed.
+			break;
+		case POTION_HEALING:
+		{
+			int amount = std::max(7 + status, 0);
+			int multiplier = std::max(5, beatitude + 5);
+			amount *= multiplier / 5.f;
+			heal += amount;
+			break;
+		}
+		case POTION_EXTRAHEALING:
+		{
+			int amount = std::max(15 + status, 0);
+			int multiplier = std::max(5, beatitude + 5);
+			amount *= multiplier;
+			heal += amount;
+			break;
+		}
+		case POTION_RESTOREMAGIC:
+		{
+			int amount = std::max(7 + status, 0);
+			int multiplier = std::max(5, beatitude + 5);
+			amount *= multiplier;
+			heal += amount;
+			break;
+		}
+		default:
+			break;
+	}
+
+	return heal;
+}
+Sint32 Item::potionGetEffectDamage(Entity* my, Stat* myStats) const
+{
+	if ( itemCategory(this) != POTION )
+	{
+		return 0;
+	}
+
+	int damage = 0;
+	switch ( type )
+	{
+		case POTION_SICKNESS:
+			damage += (5 + 5 * abs(beatitude));
+			break;
+		case POTION_ACID:
+			damage += (10 + 5 * abs(beatitude));
+			break;
+		case POTION_THUNDERSTORM:
+		case POTION_FIRESTORM:
+		case POTION_ICESTORM:
+			damage += (10 + 5 * abs(beatitude));
+			break;
+		default:
+			break;
+	}
+
+	return damage;
+}
+
+Sint32 Item::potionGetEffectDurationMinimum(Entity* my, Stat* myStats) const
+{
+	if ( itemCategory(this) != POTION )
+	{
+		return 1;
+	}
+
+	int duration = 1;
+
+	switch ( type )
+	{
+		case POTION_WATER:
+			break;
+		case POTION_BOOZE:
+			if ( myStats && myStats->type == GOATMAN )
+			{
+				duration = 7500; // 2.5 mins
+			}
+			else
+			{
+				duration = 2000;
+			}
+			break;
+		case POTION_JUICE:
+			break;
+		case POTION_SICKNESS:
+			break;
+		case POTION_CONFUSION:
+			duration = 750;
+			break;
+		case POTION_EXTRAHEALING:
+			break;
+		case POTION_HEALING:
+			break;
+		case POTION_CUREAILMENT:
+			duration = 4 * beatitude * TICKS_PER_SECOND;
+			break;
+		case POTION_BLINDNESS:
+			duration = 500;
+			break;
+		case POTION_RESTOREMAGIC:
+			break;
+		case POTION_INVISIBILITY:
+			duration = 1500 + (beatitude > 0 ? beatitude * 1500 : 0);
+			break;
+		case POTION_LEVITATION:
+			duration = 1500 + (beatitude > 0 ? beatitude * 1500 : 0);
+			break;
+		case POTION_SPEED:
+			duration = 3000 + (beatitude > 0 ? beatitude * 3000 : 0);
+			break;
+		case POTION_ACID:
+			break;
+		case POTION_PARALYSIS:
+			duration = 350;
+			break;
+		case POTION_POLYMORPH:
+			duration = 60 * TICKS_PER_SECOND * 4; // 4 mins
+			break;
+		case POTION_FIRESTORM:
+		case POTION_ICESTORM:
+		case POTION_THUNDERSTORM:
+			break;
+		case POTION_STRENGTH:
+			duration = 3000 + (beatitude > 0 ? beatitude * 3000 : 0);
+			break;
+		default:
+			break;
+	}
+
+	return duration;
+}
+
+Sint32 Item::potionGetEffectDurationMaximum(Entity* my, Stat* myStats) const
+{
+	if ( itemCategory(this) != POTION )
+	{
+		return 1;
+	}
+
+	int duration = 1;
+
+	switch ( type )
+	{
+		case POTION_WATER:
+			break;
+		case POTION_BOOZE:
+			if ( myStats && myStats->type == GOATMAN )
+			{
+				duration = 10500; // 3.5 mins
+			}
+			else
+			{
+				duration = 3000;
+			}
+			break;
+		case POTION_JUICE:
+			break;
+		case POTION_SICKNESS:
+			break;
+		case POTION_CONFUSION:
+			duration = 1500;
+			break;
+		case POTION_EXTRAHEALING:
+			break;
+		case POTION_HEALING:
+			break;
+		case POTION_CUREAILMENT:
+			duration = 4 * beatitude * TICKS_PER_SECOND;
+			break;
+		case POTION_BLINDNESS:
+			duration = 750;
+			break;
+		case POTION_RESTOREMAGIC:
+			break;
+		case POTION_INVISIBILITY:
+			duration = 3000 + (beatitude > 0 ? beatitude * 1500 : 0);
+			break;
+		case POTION_LEVITATION:
+			duration = 3000 + (beatitude > 0 ? beatitude * 1500 : 0);
+			break;
+		case POTION_SPEED:
+			duration = 3000 + (beatitude > 0 ? beatitude * 3000 : 0);
+			break;
+		case POTION_ACID:
+			break;
+		case POTION_PARALYSIS:
+			duration = 500;
+			break;
+		case POTION_POLYMORPH:
+			duration = 60 * TICKS_PER_SECOND * 6; // 6 mins
+			break;
+		case POTION_FIRESTORM:
+		case POTION_ICESTORM:
+		case POTION_THUNDERSTORM:
+			break;
+		case POTION_STRENGTH:
+			duration = 3000 + (beatitude > 0 ? beatitude * 3000 : 0);
+			break;
+		default:
+			break;
+	}
+
+	return duration;
+}
+
+Sint32 Item::potionGetEffectDurationRandom(Entity* my, Stat* myStats) const
+{
+	Sint32 range = std::max(1, potionGetEffectDurationMaximum(my, myStats) - potionGetEffectDurationMinimum(my, myStats));
+	return potionGetEffectDurationMinimum(my, myStats) + (local_rng.rand() % (range));
+}
+
+Sint32 Item::potionGetCursedEffectDurationMinimum(Entity* my, Stat* myStats) const
+{
+	if ( itemCategory(this) != POTION )
+	{
+		return 1;
+	}
+
+	int duration = 1;
+
+	switch ( type )
+	{
+		case POTION_WATER:
+			break;
+		case POTION_BOOZE:
+			break;
+		case POTION_JUICE:
+			duration = 1000;
+			break;
+		case POTION_SICKNESS:
+			break;
+		case POTION_CONFUSION:
+			break;
+		case POTION_EXTRAHEALING:
+			duration = 750;
+			break;
+		case POTION_HEALING:
+			duration = 750;
+			break;
+		case POTION_CUREAILMENT:
+			duration = 750;
+			break;
+		case POTION_BLINDNESS:
+			break;
+		case POTION_RESTOREMAGIC:
+			duration = 1000;
+			break;
+		case POTION_INVISIBILITY:
+			break;
+		case POTION_LEVITATION:
+			duration = 1000;
+			break;
+		case POTION_SPEED:
+			duration = 2000;
+			break;
+		case POTION_ACID:
+			break;
+		case POTION_PARALYSIS:
+			break;
+		case POTION_POLYMORPH:
+			break;
+		case POTION_FIRESTORM:
+		case POTION_ICESTORM:
+		case POTION_THUNDERSTORM:
+			break;
+		case POTION_STRENGTH:
+			duration = 1000;
+			break;
+		default:
+			break;
+	}
+
+	return duration;
+}
+
+Sint32 Item::potionGetCursedEffectDurationMaximum(Entity* my, Stat* myStats) const
+{
+	if ( itemCategory(this) != POTION )
+	{
+		return 1;
+	}
+
+	int duration = 1;
+
+	switch ( type )
+	{
+		case POTION_WATER:
+			break;
+		case POTION_BOOZE:
+			break;
+		case POTION_JUICE:
+			duration = 1500;
+			break;
+		case POTION_SICKNESS:
+			break;
+		case POTION_CONFUSION:
+			break;
+		case POTION_EXTRAHEALING:
+			duration = 750;
+			break;
+		case POTION_HEALING:
+			duration = 750;
+			break;
+		case POTION_CUREAILMENT:
+			duration = 750;
+			break;
+		case POTION_BLINDNESS:
+			break;
+		case POTION_RESTOREMAGIC:
+			duration = 1500;
+			break;
+		case POTION_INVISIBILITY:
+			break;
+		case POTION_LEVITATION:
+			duration = 1500;
+			break;
+		case POTION_SPEED:
+			duration = 3000;
+			break;
+		case POTION_ACID:
+			break;
+		case POTION_PARALYSIS:
+			break;
+		case POTION_POLYMORPH:
+			break;
+		case POTION_FIRESTORM:
+		case POTION_ICESTORM:
+		case POTION_THUNDERSTORM:
+			break;
+		case POTION_STRENGTH:
+			duration = 1500;
+			break;
+		default:
+			break;
+	}
+
+	return duration;
+}
+
+Sint32 Item::potionGetCursedEffectDurationRandom(Entity* my, Stat* myStats) const
+{
+	Sint32 range = std::max(1, potionGetCursedEffectDurationMaximum(my, myStats) - potionGetCursedEffectDurationMinimum(my, myStats));
+	return potionGetCursedEffectDurationMinimum(my, myStats) + (local_rng.rand() % (range));
+}
+
+Sint32 Item::getWeight() const
+{
+	if ( type >= 0 && type < NUMITEMS )
+	{
+		if ( itemTypeIsQuiver(type) )
+		{
+			return std::max(1, items[type].weight * count / 5);
+		}
+		else
+		{
+			return items[type].weight * count;
+		}
+	}
+	return 0;
+}
+
+void Item::foodTinGetDescriptionIndices(int* a, int* b, int* c) const
+{
+	Uint32 scaledAppearance = appearance % 4096;
+	if ( a )
+	{
+		*a = ((scaledAppearance >> 8) & 0xF); // 0-15
+	}
+	if ( b )
+	{
+		*b = ((scaledAppearance >> 4) & 0xF); // 0-15
+	}
+	if ( c )
+	{
+		*c = (scaledAppearance & 0xF); // 0-15
+	}
+}
+
+void Item::foodTinGetDescription(std::string& cookingMethod, std::string& protein, std::string& sides) const
+{
+	int a, b, c;
+	foodTinGetDescriptionIndices(&a, &b, &c);
+	cookingMethod = Language::get(918 + a);
+	protein = Language::get(934 + b);
+	sides = Language::get(950 + c);
+}
+
+int Item::foodGetPukeChance(Stat* eater) const
+{
+	int pukeChance = 100;
+	switch ( status )
+	{
+		case EXCELLENT:
+			pukeChance = 100; // 0%
+			break;
+		case SERVICABLE:
+			pukeChance = 25; // 1 in 25, 4%
+			break;
+		case WORN:
+			pukeChance = 10; // 1 in 10, 10%
+			break;
+		case DECREPIT:
+			pukeChance = 4; // 1 in 4, 25%
+			break;
+		default:
+			pukeChance = 100;
+			break;
+	}
+
+	if ( eater )
+	{
+		if ( eater->type == VAMPIRE )
+		{
+			pukeChance = 1;
+		}
+		else if ( eater->type == INSECTOID )
+		{
+			pukeChance = 100; // insectoids can eat anything.
+		}
+	}
+
+	return pukeChance;
+}
+
 /*-------------------------------------------------------------------------------
 
 	Item::armorGetAC
@@ -3354,7 +4423,7 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 		}
 	}
 
-	if ( itemTypeIsQuiver(type) )
+	if ( !doesItemProvideBeatitudeAC() )
 	{
 		armor = 0;
 	}
@@ -3611,14 +4680,20 @@ int Item::buyValue(const int player) const
 	value /= (50 + stats[player]->PROFICIENCIES[PRO_TRADING]) / 150.f;
 
 	// charisma bonus
-	value /= 1.f + stats[player]->CHR / 20.f;
+	/*value /= 1.f + statGetCHR(stats[player], players[player]->entity) / 20.f;*/
 
 	// result
 	value = std::max(1, value);
 
-	if ( shopIsMysteriousShopkeeper(uidToEntity(shopkeeper[player])) )
+	/*if ( shopIsMysteriousShopkeeper(uidToEntity(shopkeeper[player])) )
 	{
 		value *= 2;
+	}*/
+	if ( itemSpecialShopConsumable )
+	{
+		real_t valueMult = std::max(1.0, ShopkeeperConsumables_t::consumableBuyValueMult / 100.0);
+		valueMult *= value;
+		value = valueMult;
 	}
 
 	if ( itemTypeIsQuiver(type) )
@@ -3666,7 +4741,7 @@ int Item::sellValue(const int player) const
 	value *= (50 + stats[player]->PROFICIENCIES[PRO_TRADING]) / 150.f;
 
 	// charisma bonus
-	value *= 1.f + stats[player]->CHR / 20.f;
+	value *= 1.f + statGetCHR(stats[player], players[player]->entity) / 20.f;
 
 	// result
 	value = std::max(1, value);
@@ -3780,14 +4855,14 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 				{
 					const int skill = std::max(1, stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10);
 					bool failed = false;
-					if ( skill < 2 || rand() % skill == 0 ) // 20 skill requirement.
+					if ( skill < 2 || local_rng.rand() % skill == 0 ) // 20 skill requirement.
 					{
 						// failed.
-						const Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						messagePlayerColor(player, color, language[3871]); // trap fires.
+						const Uint32 color = makeColorRGB(255, 0, 0);
+						messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(3871)); // trap fires.
 						if ( skill < 2 )
 						{
-							messagePlayer(player, language[3887]); // not skilled enough.
+							messagePlayer(player, MESSAGE_INTERACTION, Language::get(3887)); // not skilled enough.
 						}
 						failed = true;
 					}
@@ -3799,15 +4874,15 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 					}
 					else
 					{
-						const Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						messagePlayerColor(player, color, language[3872]);
+						const Uint32 color = makeColorRGB(0, 255, 0);
+						messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(3872));
 						playSoundEntity(entity, 176, 128);
 						entity->skill[4] = player + 1; // disabled flag and spit out items.
 						serverUpdateEntitySkill(entity, 4); // update clients.
 					}
 
 					// degrade lockpick.
-					if ( !(stats[player]->weapon->type == TOOL_SKELETONKEY) && (rand() % 10 == 0 || (failed && rand() % 4 == 0)) )
+					if ( !(stats[player]->weapon->type == TOOL_SKELETONKEY) && (local_rng.rand() % 10 == 0 || (failed && local_rng.rand() % 4 == 0)) )
 					{
 						if ( players[player]->isLocalPlayer() )
 						{
@@ -3820,14 +4895,14 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 						stats[player]->weapon->status = static_cast<Status>(stats[player]->weapon->status - 1);
 						if ( stats[player]->weapon->status == BROKEN )
 						{
-							messagePlayer(player, language[1104]);
+							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1104));
 							playSoundEntity(players[player]->entity, 76, 64);
 						}
 						else
 						{
-							messagePlayer(player, language[1103]);
+							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1103));
 						}
-						if ( player > 0 && multiplayer == SERVER )
+						if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 						{
 							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = 5;
@@ -3838,7 +4913,7 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
-					if ( !failed && rand() % 5 == 0 )
+					if ( !failed && local_rng.rand() % 5 == 0 )
 					{
 						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 					}
@@ -3846,7 +4921,7 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 				}
 				else if ( entity->skill[4] != 0 )
 				{
-					messagePlayer(player, language[3870]);
+					messagePlayer(player, MESSAGE_HINT, Language::get(3870));
 					return;
 				}
 			}
@@ -3856,7 +4931,7 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 
 	if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] == 53 )
 	{
-		messagePlayer(player, language[3873]);
+		messagePlayer(player, MESSAGE_HINT, Language::get(3873));
 	}
 }
 
@@ -3896,8 +4971,8 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 {
 	int itemSlots[6] = { ITEM_SLOT_INV_1, ITEM_SLOT_INV_2, ITEM_SLOT_INV_3, ITEM_SLOT_INV_4, ITEM_SLOT_INV_5, ITEM_SLOT_INV_6 };
 	int i = 0;
-	ItemType itemId { static_cast<ItemType>(-1) };
-	int itemAppearance = rand();
+	Sint32 itemId = -1;
+	int itemAppearance = local_rng.rand();
 	int category = 0;
 	bool itemIdentified;
 	int itemsGenerated = 0;
@@ -3920,7 +4995,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 					if ( category == 14 )
 					{
 						// equipment
-						randType = rand() % 2;
+						randType = local_rng.rand() % 2;
 						if ( randType == 0 )
 						{
 							itemId = itemLevelCurve(static_cast<Category>(WEAPON), 0, currentlevel);
@@ -3933,7 +5008,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 					else if ( category == 15 )
 					{
 						// jewelry
-						randType = rand() % 2;
+						randType = local_rng.rand() % 2;
 						if ( randType == 0 )
 						{
 							itemId = itemLevelCurve(static_cast<Category>(AMULET), 0, currentlevel);
@@ -3946,7 +5021,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 					else if ( category == 16 )
 					{
 						// magical
-						randType = rand() % 3;
+						randType = local_rng.rand() % 3;
 						if ( randType == 0 )
 						{
 							itemId = itemLevelCurve(static_cast<Category>(SCROLL), 0, currentlevel);
@@ -3972,7 +5047,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 				Status itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemSlots[i] + 1]);
 				if ( itemStatus == 0 )
 				{
-					itemStatus = static_cast<Status>(DECREPIT + rand() % 4);
+					itemStatus = static_cast<Status>(DECREPIT + local_rng.rand() % 4);
 				}
 				else if ( itemStatus > BROKEN )
 				{
@@ -3981,26 +5056,26 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 				int itemBless = stats->EDITOR_ITEMS[itemSlots[i] + 2];
 				if ( itemBless == 10 )
 				{
-					itemBless = -1 + rand() % 3;
+					itemBless = -1 + local_rng.rand() % 3;
 				}
 				const int itemCount = stats->EDITOR_ITEMS[itemSlots[i] + 3];
 				if ( stats->EDITOR_ITEMS[itemSlots[i] + 4] == 1 )
 				{
-					itemIdentified = false;
+					itemIdentified = true;
 				}
 				else if ( stats->EDITOR_ITEMS[itemSlots[i] + 4] == 2 )
 				{
-					itemIdentified = true;
+					itemIdentified = local_rng.rand() % 2;
 				}
 				else
 				{
-					itemIdentified = rand() % 2;
+					itemIdentified = false;
 				}
-				itemAppearance = rand();
+				itemAppearance = local_rng.rand();
 				chance = stats->EDITOR_ITEMS[itemSlots[i] + 5];
-				if ( rand() % 100 < chance )
+				if ( local_rng.rand() % 100 < chance )
 				{
-					newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, &stats->inventory);
+					newItem(static_cast<ItemType>(itemId), itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, &stats->inventory);
 				}
 				itemsGenerated++;
 			}
@@ -4008,7 +5083,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 	}
 }
 
-node_t* itemNodeInInventory(const Stat* const myStats, const ItemType itemToFind, const Category cat)
+node_t* itemNodeInInventory(const Stat* const myStats, Sint32 itemToFind, const Category cat)
 {
 	if ( myStats == nullptr )
 	{
@@ -4028,7 +5103,7 @@ node_t* itemNodeInInventory(const Stat* const myStats, const ItemType itemToFind
 			{
 				return node;
 			}
-			else if ( itemToFind != -1 && item->type == itemToFind )
+			else if ( itemToFind >= 0 && item->type == static_cast<ItemType>(itemToFind) )
 			{
 				return node;
 			}
@@ -4190,7 +5265,7 @@ bool swapMonsterWeaponWithInventoryItem(Entity* const my, Stat* const myStats, n
 			copyItem(myStats->weapon, tmpItem);
 			if ( multiplayer != CLIENT && (itemCategory(myStats->weapon) == WEAPON || itemCategory(myStats->weapon) == THROWN) )
 			{
-				playSoundEntity(my, 40 + rand() % 4, 64);
+				playSoundEntity(my, 40 + local_rng.rand() % 4, 64);
 			}
 			free(tmpItem);
 		}
@@ -4226,7 +5301,7 @@ bool swapMonsterWeaponWithInventoryItem(Entity* const my, Stat* const myStats, n
 			myStats->weapon = tmpItem;
 			if ( multiplayer != CLIENT && (itemCategory(myStats->weapon) == WEAPON || itemCategory(myStats->weapon) == THROWN) )
 			{
-				playSoundEntity(my, 40 + rand() % 4, 64);
+				playSoundEntity(my, 40 + local_rng.rand() % 4, 64);
 			}
 		}
 		else
@@ -4356,7 +5431,7 @@ ItemType itemTypeWithinGoldValue(const int cat, const int minValue, const int ma
 	}
 
 	// pick the item
-	int pick = rand() % numoftype;// prng_get_uint() % numoftype;
+	int pick = local_rng.rand() % numoftype;// map_rng.rand() % numoftype;
 	for ( c = 0; c < numitems; c++ )
 	{
 		if ( chances[c] == true )
@@ -4430,7 +5505,7 @@ bool Item::isThisABetterArmor(const Item& newArmor, const Item* const armorAlrea
 	return false;
 }
 
-bool Item::shouldItemStack(const int player) const
+bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 {
 	if ( player >= 0 )
 	{
@@ -4444,7 +5519,13 @@ bool Item::shouldItemStack(const int player) const
 				&& this->type != TOOL_PICKAXE
 				&& this->type != TOOL_ALEMBIC
 				&& this->type != TOOL_TINKERING_KIT
-				&& this->type != ENCHANTED_FEATHER )
+				&& this->type != ENCHANTED_FEATHER
+				&& this->type != TOOL_LANTERN
+				&& this->type != TOOL_GLASSES
+				&& this->type != TOOL_MIRROR
+				&& this->type != TOOL_BLINDFOLD
+				&& this->type != TOOL_BLINDFOLD_FOCUS
+				&& this->type != TOOL_BLINDFOLD_TELEPATHY)
 			|| itemCategory(this) == THROWN
 			|| itemCategory(this) == GEM
 			|| itemCategory(this) == POTION
@@ -4452,21 +5533,27 @@ bool Item::shouldItemStack(const int player) const
 				&& this->type != TOOL_PICKAXE 
 				&& this->type != TOOL_ALEMBIC 
 				&& this->type != TOOL_TINKERING_KIT
-				&& this->type != ENCHANTED_FEATHER)
+				&& this->type != ENCHANTED_FEATHER
+				&& this->type != TOOL_LANTERN
+				&& this->type != TOOL_GLASSES
+				&& this->type != TOOL_MIRROR
+				&& this->type != TOOL_BLINDFOLD
+				&& this->type != TOOL_BLINDFOLD_FOCUS
+				&& this->type != TOOL_BLINDFOLD_TELEPATHY)
 			)
 		{
 			// THROWN, GEM, TOOLS, POTIONS should stack when equipped.
 			// otherwise most equippables should not stack.
 			if ( itemCategory(this) == THROWN || itemCategory(this) == GEM )
 			{
-				if ( count >= 9 )
+				if ( !ignoreStackLimit && count >= THROWN_GEM_MAX_STACK_QTY )
 				{
 					return false;
 				}
 			}
 			else if ( itemTypeIsQuiver(this->type) )
 			{
-				if ( count >= QUIVER_MAX_AMMO_QTY - 1 )
+				if ( !ignoreStackLimit && count >= QUIVER_MAX_AMMO_QTY - 1 )
 				{
 					return false;
 				}
@@ -4474,7 +5561,7 @@ bool Item::shouldItemStack(const int player) const
 			}
 			else if ( type == TOOL_METAL_SCRAP || type == TOOL_MAGIC_SCRAP )
 			{
-				if ( count >= SCRAP_MAX_STACK_QTY - 1 )
+				if ( !ignoreStackLimit && count >= SCRAP_MAX_STACK_QTY - 1 )
 				{
 					return false;
 				}
@@ -4488,6 +5575,15 @@ bool Item::shouldItemStack(const int player) const
 		}
 	}
 	return false;
+}
+
+bool Item::shouldItemStackInShop(bool ignoreStackLimit)
+{
+	node_t* itemNode = node;
+	node = nullptr; // to make isEquipped return false in shouldItemStack
+	bool result = shouldItemStack(clientnum, ignoreStackLimit);
+	node = itemNode;
+	return result;
 }
 
 
@@ -4662,6 +5758,10 @@ real_t rangedAttackGetSpeedModifier(const Stat* const myStats)
 	if ( myStats->weapon->type == LONGBOW )
 	{
 		bowModifier = 1.25;
+	}
+	else if ( myStats->weapon->type == ARTIFACT_BOW )
+	{
+		bowModifier = 0.9;
 	}
 	else if ( myStats->weapon->type == COMPOUND_BOW )
 	{
@@ -4902,6 +6002,11 @@ void playerTryEquipItemAndUpdateServer(const int player, Item* const item, bool 
 		return;
 	}
 
+	if ( multiplayer == CLIENT && !players[player]->isLocalPlayer() )
+	{
+		return;
+	}
+
 	if ( checkInventorySpaceForPaperDoll )
 	{
 		if ( players[player]->isLocalPlayer() 
@@ -4910,7 +6015,8 @@ void playerTryEquipItemAndUpdateServer(const int player, Item* const item, bool 
 		{
 			if ( !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
 			{
-				messagePlayer(player, language[3997], item->getName());
+				messagePlayer(player, MESSAGE_INVENTORY, Language::get(3997), item->getName());
+				playSoundPlayer(player, 90, 64);
 				return;
 			}
 		}
@@ -4933,12 +6039,12 @@ void playerTryEquipItemAndUpdateServer(const int player, Item* const item, bool 
 		{
 			if ( !cast_animation[player].active_spellbook )
 			{
-				equipResult = equipItem(item, &stats[player]->shield, player);
+				equipResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			}
 		}
 		else
 		{
-			equipResult = equipItem(item, &stats[player]->weapon, player);
+			equipResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 		}
 		if ( equipResult != EQUIP_ITEM_FAIL_CANT_UNEQUIP )
 		{
@@ -4965,14 +6071,37 @@ void playerTryEquipItemAndUpdateServer(const int player, Item* const item, bool 
 		{
 			if ( !cast_animation[player].active_spellbook )
 			{
-				equipResult = equipItem(item, &stats[player]->shield, player);
+				equipResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			}
 		}
 		else
 		{
-			equipResult = equipItem(item, &stats[player]->weapon, player);
+			equipResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 		}
 	}
+}
+
+void clientSendAppearanceUpdateToServer(const int player, Item* item, const bool onIdentify)
+{
+	if ( multiplayer != CLIENT ) { return; }
+	if ( !item || !itemIsEquipped(item, player) || items[item->type].item_slot == NO_EQUIP )
+	{
+		return;
+	}
+	strcpy((char*)net_packet->data, "EQUA");
+	SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
+	SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
+	SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
+	SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
+	SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
+	net_packet->data[24] = item->identified;
+	net_packet->data[25] = player;
+	net_packet->data[26] = items[item->type].item_slot;
+	net_packet->data[27] = onIdentify;
+	net_packet->address.host = net_server.host;
+	net_packet->address.port = net_server.port;
+	net_packet->len = 28;
+	sendPacketSafe(net_sock, -1, net_packet, 0);
 }
 
 void clientSendEquipUpdateToServer(const EquipItemSendToServerSlot slot, const EquipItemResult equipType, const int player,
@@ -5015,41 +6144,64 @@ void clientUnequipSlotAndUpdateServer(const int player, const EquipItemSendToSer
 
 	if ( slot == EQUIP_ITEM_SLOT_HELM )
 	{
-		equipType = equipItem(item, &stats[player]->helmet, player);
+		equipType = equipItem(item, &stats[player]->helmet, player, false);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_BREASTPLATE )
 	{
-		equipType = equipItem(item, &stats[player]->breastplate, player);
+		equipType = equipItem(item, &stats[player]->breastplate, player, false);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_GLOVES )
 	{
-		equipType = equipItem(item, &stats[player]->gloves, player);
+		equipType = equipItem(item, &stats[player]->gloves, player, false);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_BOOTS )
 	{
-		equipType = equipItem(item, &stats[player]->shoes, player);
+		equipType = equipItem(item, &stats[player]->shoes, player, false);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_SHIELD )
 	{
-		equipType = equipItem(item, &stats[player]->shield, player);
+		equipType = equipItem(item, &stats[player]->shield, player, false);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_CLOAK )
 	{
-		equipType = equipItem(item, &stats[player]->cloak, player);
+		equipType = equipItem(item, &stats[player]->cloak, player, false);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_AMULET )
 	{
-		equipType = equipItem(item, &stats[player]->amulet, player);
+		equipType = equipItem(item, &stats[player]->amulet, player, false);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_RING )
 	{
-		equipType = equipItem(item, &stats[player]->ring, player);
+		equipType = equipItem(item, &stats[player]->ring, player, false);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_MASK )
 	{
-		equipType = equipItem(item, &stats[player]->mask, player);
+		equipType = equipItem(item, &stats[player]->mask, player, false);
 	}
 
 	clientSendEquipUpdateToServer(slot, equipType, player,
 		item->type, item->status, item->beatitude, item->count, item->appearance, item->identified);
+}
+
+int Item::getLootBagPlayer() const
+{
+	return (int)(appearance & 0x000000FF) % MAXPLAYERS;
+}
+int Item::getLootBagNumItems() const
+{
+	if ( multiplayer == CLIENT )
+	{
+		return 0;
+	}
+	if ( stats[0]->player_lootbags.find(appearance)
+		!= stats[0]->player_lootbags.end() )
+	{
+		auto& lootbag = stats[0]->player_lootbags[appearance];
+		if ( !lootbag.looted )
+		{
+			return lootbag.items.size();
+		}
+		return 0;
+	}
+	return 0;
 }

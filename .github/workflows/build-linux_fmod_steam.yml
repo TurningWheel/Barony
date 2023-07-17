@@ -6,21 +6,21 @@ name: Linux-CI_fmod_steam
 # events but only for the master branch
 on:
   push:
-    branches: [ master ]
+    branches: [ master, develop ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, develop ]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
   build:
     # The type of runner that the job will run on
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     # Actually does the build...
     - name: Update apt repository
@@ -41,7 +41,7 @@ jobs:
         ./build-linux_fmod_steam.sh
         
     - name: Upload Game Build Artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         # Artifact name
         name: Game_fmod_steam # optional
@@ -49,7 +49,7 @@ jobs:
         path: build/release/barony
         
     - name: Upload Editor Build Artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         # Artifact name
         name: Editor_fmod_steam # optional

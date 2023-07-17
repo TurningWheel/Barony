@@ -13,7 +13,7 @@
 #include "game.hpp"
 #include "stat.hpp"
 #include "items.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "monster.hpp"
 #include "interface/interface.hpp"
 #include "net.hpp"
@@ -22,6 +22,7 @@
 #include "player.hpp"
 #include "magic/magic.hpp"
 #include "paths.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -55,12 +56,13 @@ void actThrown(Entity* my)
 	ItemType type = WOODEN_SHIELD;
 	char* itemname = nullptr;
 
-	item = newItemFromEntity(my);
+	item = newItemFromEntity(my, true);
 	if ( item )
 	{
 		cat = itemCategory(item);
 		type = item->type;
 		free(item);
+		item = nullptr;
 	}
 
 	if ( multiplayer == CLIENT )
@@ -120,7 +122,7 @@ void actThrown(Entity* my)
 			my->focalz = 0.5;
 			if ( my->ticks > 0 && my->ticks % 7 == 0 )
 			{
-				playSoundEntityLocal(my, 434 + rand() % 10, 64);
+				playSoundEntityLocal(my, 434 + local_rng.rand() % 10, 64);
 			}
 		}
 	}
@@ -129,7 +131,7 @@ void actThrown(Entity* my)
 		// select appropriate model
 		my->skill[2] = -8;
 		my->flags[INVISIBLE] = false;
-		item = newItemFromEntity(my);
+		item = newItemFromEntity(my, true);
 		if ( item )
 		{
 			my->sprite = itemModel(item);
@@ -138,10 +140,11 @@ void actThrown(Entity* my)
 				my->sprite = BOOMERANG_PARTICLE;
 				if ( my->ticks > 0 && my->ticks % 7 == 0 )
 				{
-					playSoundEntityLocal(my, 434 + rand() % 10, 64);
+					playSoundEntityLocal(my, 434 + local_rng.rand() % 10, 64);
 				}
 			}
 			free(item);
+			item = nullptr;
 		}
 	}
 
@@ -349,6 +352,15 @@ void actThrown(Entity* my)
 					list_RemoveNode(my->mynode);
 					return;
 				}
+				else if ( itemCategory(item) == GEM && (item->beatitude < 0 || local_rng.rand() % 5 == 0) )
+				{
+					// cursed gem, explode
+					createParticleShatteredGem(my->x, my->y, 7.5, my->sprite, nullptr);
+					serverSpawnMiscParticlesAtLocation(my->x, my->y, 7.5, PARTICLE_EFFECT_SHATTERED_GEM, my->sprite);
+					free(item);
+					list_RemoveNode(my->mynode);
+					return;
+				}
 				else if ( item->type == BOOMERANG && uidToEntity(my->parent) )
 				{
 					Entity* parent = uidToEntity(my->parent);
@@ -408,17 +420,17 @@ void actThrown(Entity* my)
 						if ( itemIsThrowableTinkerTool(item) && tinkeringItemCanBePlaced )
 						{
 							// we can place it, just not on water/lava.
-							messagePlayer(parent->skill[2], language[3900]);
+							messagePlayer(parent->skill[2], MESSAGE_HINT, Language::get(3900));
 						}
 						else if ( item->isTinkeringItemWithThrownLimit() && !tinkeringItemCanBePlaced )
 						{
 							if ( stats[parent->skill[2]]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_LEGENDARY )
 							{
-								messagePlayer(parent->skill[2], language[3884]);
+								messagePlayer(parent->skill[2], MESSAGE_MISC, Language::get(3884));
 							}
 							else
 							{
-								messagePlayer(parent->skill[2], language[3883]);
+								messagePlayer(parent->skill[2], MESSAGE_MISC, Language::get(3883));
 							}
 						}
 					}
@@ -529,7 +541,7 @@ void actThrown(Entity* my)
 	{
 		for ( int i = 0; i < MAXPLAYERS; i++ )
 		{
-			if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+			if ( selectedEntity[i] == my || client_selected[i] == my )
 			{
 				if ( inrange[i] )
 				{
@@ -553,7 +565,7 @@ void actThrown(Entity* my)
 							}
 							int oldcount = item->count;
 							item->count = 1;
-							messagePlayer(i, language[504], item->description());
+							messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(504), item->description());
 							item->count = oldcount;
 							if ( i != 0 && !players[i]->isLocalPlayer() )
 							{
@@ -702,12 +714,20 @@ void actThrown(Entity* my)
 					list_RemoveNode(my->mynode);
 					return;
 				}
+				else if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic()
+					&& hit.entity->isColliderAttachableToBombs() )
+				{
+					item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_COLLIDER, Item::ItemBombFacingDirection::BOMB_UP, my, hit.entity);
+					free(item);
+					list_RemoveNode(my->mynode);
+					return;
+				}
 			}
 			else if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
 			{
 				int oldHP = 0;
 				oldHP = hit.entity->getHP();
-				int damage = (BASE_THROWN_DAMAGE + item->beatitude);
+				int damage = (BASE_THROWN_DAMAGE + item->weaponGetAttack(parentStats));
 				if ( parentStats )
 				{
 					if ( itemCategory(item) == POTION )
@@ -716,31 +736,28 @@ void actThrown(Entity* my)
 						//int dex = parent->getDEX() / 4;
 						//damage += dex;
 						damage = damage * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
-						damage -= rand() % ((damage / 4) + 1);
+						damage -= local_rng.rand() % ((damage / 4) + 1);
 					}
 					else
 					{
 						if ( itemCategory(item) == THROWN )
 						{
+							int enemyAC = AC(hitstats);
 							damage = my->thrownProjectilePower;
 							if ( my->thrownProjectileCharge >= 1 )
 							{
 								damage += my->thrownProjectileCharge / 5; //0-3 base +damage
-								real_t bypassArmor = 1 - my->thrownProjectileCharge * 0.05; //100-35% of armor taken into account
-								if ( item->type == BOOMERANG )
-								{
-									//damage *= damagetables[hitstats->type][4]; // ranged damage tables.
-								}
-								damage -= (AC(hit.entity->getStats()) * bypassArmor);
+								real_t bypassArmor = 1 - my->thrownProjectileCharge * 0.05; //100-25% of armor taken into account
+								enemyAC *= bypassArmor;
 							}
 							else
 							{
-								if ( item->type == BOOMERANG )
-								{
-									//damage *= damagetables[hitstats->type][4]; // ranged damage tables.
-								}
-								damage -= (AC(hit.entity->getStats()) * .5);
+								enemyAC *= .5;
 							}
+
+							real_t targetACEffectiveness = Entity::getACEffectiveness(hit.entity, hitstats, hit.entity->behavior == &actPlayer, parent, parentStats);
+							int attackAfterReductions = static_cast<int>(std::max(0.0, ((damage * targetACEffectiveness - enemyAC))) + (1.0 - targetACEffectiveness) * damage);
+							damage = attackAfterReductions;
 						}
 						else
 						{
@@ -783,21 +800,9 @@ void actThrown(Entity* my)
 				//messagePlayer(0, "damage: %d", damage);
 				if ( parent && parent->behavior == &actPlayer && parent->checkFriend(hit.entity) && itemCategory(item) == POTION )
 				{
-					switch ( item->type )
+					if ( !item->doesPotionHarmAlliesOnThrown() )
 					{
-						case POTION_HEALING:
-						case POTION_EXTRAHEALING:
-						case POTION_RESTOREMAGIC:
-						case POTION_CUREAILMENT:
-						case POTION_WATER:
-						case POTION_BOOZE:
-						case POTION_JUICE:
-						case POTION_STRENGTH:
-						case POTION_SPEED:
-							damage = 0;
-							break;
-						default:
-							break;
+						damage = 0;
 					}
 					damage = std::min(10, damage); // impact damage is 10 max on allies.
 				}
@@ -808,8 +813,12 @@ void actThrown(Entity* my)
 					hit.entity->modHP(-damage);
 				}
 				// set the obituary
-				snprintf(whatever, 255, language[1508], itemname);
+				snprintf(whatever, 255, Language::get(1508), itemname);
 				hit.entity->setObituary(whatever);
+				if (hitstats) {
+				    hitstats->killer = KilledBy::ITEM;
+				    hitstats->killer_item = item->type;
+				}
 				bool skipMessage = false;
 				Entity* polymorphedTarget = nullptr;
 				bool disableAlertBlindStatus = false;
@@ -817,6 +826,7 @@ void actThrown(Entity* my)
 				bool wasPotion = itemCategory(item) == POTION;
 				bool wasBoomerang = item->type == BOOMERANG;
 				bool wasConfused = (hitstats && hitstats->EFFECTS[EFF_CONFUSED]);
+				bool healingPotion = false;
 
 				if ( hitstats )
 				{
@@ -854,6 +864,15 @@ void actThrown(Entity* my)
 							default:
 								break;
 						}
+
+						if ( ignorePotion )
+						{
+							if ( parent && parent->behavior == &actPlayer && itemCategory(item) == POTION )
+							{
+								Uint32 color = makeColorRGB(255, 0, 0);
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(4320), Language::get(4321), MSG_COMBAT);
+							}
+						}
 					}
 					else
 					{
@@ -867,15 +886,17 @@ void actThrown(Entity* my)
 					}
 					if ( !ignorePotion )   // this makes it impossible to bork the end boss :)
 					{
-						if ( rand() % 4 == 0 && parent != NULL && itemCategory(item) == POTION && item->type != POTION_EMPTY )
+						if ( local_rng.rand() % 4 == 0 && parent != NULL && itemCategory(item) == POTION && item->type != POTION_EMPTY )
 						{
 							parent->increaseSkill(PRO_ALCHEMY);
 						}
-						switch ( item->type )
+						ItemType itemType = item->type;
+						switch ( itemType )
 						{
 							case POTION_WATER:
 								usedpotion = true;
 								item_PotionWater(item, hit.entity, parent);
+								healingPotion = true;
 								break;
 							case POTION_BOOZE:
 								item_PotionBooze(item, hit.entity, parent);
@@ -885,15 +906,16 @@ void actThrown(Entity* my)
 									if ( hit.entity->behavior == &actMonster && parent && parent->behavior == &actPlayer )
 									{
 										if ( parentStats->type == GOATMAN
-											&& (hitstats->type == HUMAN || hitstats->type == GOBLIN)
+											&& (hitstats->type == HUMAN || hitstats->type == GOBLIN
+												|| hitstats->type == INCUBUS || hitstats->type == SUCCUBUS )
 											&& hitstats->leader_uid == 0 )
 										{
 											if ( forceFollower(*parent, *hit.entity) )
 											{
 												spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 685);
 												parent->increaseSkill(PRO_LEADERSHIP);
-												messagePlayerMonsterEvent(parent->skill[2], SDL_MapRGB(mainsurface->format, 0, 255, 0), 
-													*hitstats, language[3252], language[3251], MSG_COMBAT);
+												messagePlayerMonsterEvent(parent->skill[2], makeColorRGB(0, 255, 0), 
+													*hitstats, Language::get(3252), Language::get(3251), MSG_COMBAT);
 												hit.entity->monsterAllyIndex = parent->skill[2];
 												if ( multiplayer == SERVER )
 												{
@@ -930,11 +952,13 @@ void actThrown(Entity* my)
 										}
 									}
 								}
+								healingPotion = true;
 								usedpotion = true;
 								break;
 							case POTION_JUICE:
 								item_PotionJuice(item, hit.entity, parent);
 								usedpotion = true;
+								healingPotion = true;
 								break;
 							case POTION_SICKNESS:
 								item_PotionSickness(item, hit.entity, parent);
@@ -961,6 +985,7 @@ void actThrown(Entity* my)
 									}
 								}
 								usedpotion = true;
+								healingPotion = true;
 							}
 								break;
 							case POTION_HEALING:
@@ -979,6 +1004,7 @@ void actThrown(Entity* my)
 									}
 								}
 								usedpotion = true;
+								healingPotion = true;
 							}
 								break;
 							case POTION_CUREAILMENT:
@@ -1030,11 +1056,11 @@ void actThrown(Entity* my)
 							{
 								skipMessage = true;
 								playSoundEntity(hit.entity, 28, 64);
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								Uint32 color = makeColorRGB(0, 255, 0);
 								friendlyHit = false;
 								if ( parent && parent->behavior == &actPlayer )
 								{
-									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3875], language[3876], MSG_COMBAT);
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3875), Language::get(3876), MSG_COMBAT);
 								}
 								if ( hit.entity->behavior == &actMonster )
 								{
@@ -1042,7 +1068,7 @@ void actThrown(Entity* my)
 									{
 										if ( parent && parent->behavior == &actPlayer )
 										{
-											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3878], language[3879], MSG_COMBAT);
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3878), Language::get(3879), MSG_COMBAT);
 										}
 									}
 									disableAlertBlindStatus = true; // don't aggro target.
@@ -1051,9 +1077,9 @@ void actThrown(Entity* my)
 								{
 									hit.entity->setEffect(EFF_MESSY, true, 250, false);
 									serverUpdateEffects(hit.entity->skill[2]);
-									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-									messagePlayerColor(hit.entity->skill[2], color, language[3877]);
-									messagePlayer(hit.entity->skill[2], language[910]);
+									Uint32 color = makeColorRGB(255, 0, 0);
+									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(3877));
+									messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, Language::get(910));
 								}
 								for ( int i = 0; i < 5; ++i )
 								{
@@ -1065,33 +1091,37 @@ void actThrown(Entity* my)
 							}
 							case POTION_POLYMORPH:
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								Uint32 color = makeColorRGB(0, 255, 0);
 								if ( hit.entity->behavior == &actMonster )
 								{
 									if ( parent && parent->behavior == &actPlayer )
 									{
 										if ( !strcmp(hitstats->name, "") )
 										{
-											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[690], MSG_COMBAT);
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(690), Language::get(690), MSG_COMBAT_BASIC);
 										}
 										else
 										{
-											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[694], MSG_COMBAT);
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(690), Language::get(694), MSG_COMBAT_BASIC);
 										}
 									}
 								}
 								else if ( hit.entity->behavior == &actPlayer )
 								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-									messagePlayerColor(hit.entity->skill[2], color, language[588], itemname);
+									Uint32 color = makeColorRGB(255, 0, 0);
+									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(588), itemname); // hit by a flying
 								}
 								Entity* newTarget = item_PotionPolymorph(item, hit.entity, parent);
 								if ( newTarget )
 								{
 									polymorphedTarget = hit.entity;
 									hit.entity = newTarget;
-									hitstats = newTarget->getStats();
 									hit.entity->setObituary(whatever);
+									hitstats = newTarget->getStats();
+				                    if (hitstats) {
+				                        hitstats->killer = KilledBy::ITEM;
+				                        hitstats->killer_item = itemType;
+				                    }
 								}
 								skipMessage = true;
 								usedpotion = true;
@@ -1114,7 +1144,10 @@ void actThrown(Entity* my)
 						{
 							if ( hitstats->type == LICH || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
 							{
-								steamAchievementClient(parent->skill[2], "BARONY_ACH_SECRET_WEAPON");
+								if ( true/*client_classes[parent->skill[2]] == CLASS_BREWER*/ )
+								{
+									steamAchievementClient(parent->skill[2], "BARONY_ACH_SECRET_WEAPON");
+								}
 							}
 							steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_BOMBARDIER, STEAM_STAT_INT, 1);
 						}
@@ -1129,18 +1162,11 @@ void actThrown(Entity* my)
 				}
 
 				// update enemy bar for attacker
-				if ( !friendlyHit )
+				if ( !friendlyHit || healingPotion )
 				{
 					if ( !strcmp(hitstats->name, "") )
 					{
-						if ( hitstats->type < KOBOLD ) //Original monster count
-						{
-							updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-						}
-						else if ( hitstats->type >= KOBOLD ) //New monsters
-						{
-							updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-						}
+						updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 					}
 					else
 					{
@@ -1197,7 +1223,7 @@ void actThrown(Entity* my)
 							cameravars[hit.entity->skill[2]].shakex += .1;
 							cameravars[hit.entity->skill[2]].shakey += 10;
 						}
-						else if ( hit.entity->skill[2] > 0 )
+						else if ( hit.entity->skill[2] > 0 && !players[hit.entity->skill[2]]->isLocalPlayer() )
 						{
 							strcpy((char*)net_packet->data, "SHAK");
 							net_packet->data[4] = 10; // turns into .1
@@ -1208,9 +1234,31 @@ void actThrown(Entity* my)
 							sendPacketSafe(net_sock, -1, net_packet, hit.entity->skill[2] - 1);
 						}
 					}
-					if ( rand() % 5 == 0 && parent != NULL )
+
+					bool doSkillIncrease = true;
+					if ( monsterIsImmobileTurret(hit.entity, hitstats) )
 					{
-						parent->increaseSkill(PRO_RANGED);
+						if ( hitstats->type == DUMMYBOT && hitstats->HP > 0 )
+						{
+							doSkillIncrease = true; // can train on dummybots.
+						}
+						else
+						{
+							doSkillIncrease = false; // no skill for killing/hurting other turrets.
+						}
+					}
+					if ( hit.entity->behavior == &actPlayer && parent && parent->behavior == &actPlayer )
+					{
+						doSkillIncrease = false; // no skill for killing/hurting players
+					}
+					int chance = 5;
+					if ( doSkillIncrease && (local_rng.rand() % chance == 0) && parent && parent->getStats() )
+					{
+						if ( hitstats->type != DUMMYBOT 
+							|| (hitstats->type == DUMMYBOT && parent->getStats()->PROFICIENCIES[PRO_RANGED] < SKILL_LEVEL_BASIC) )
+						{
+							parent->increaseSkill(PRO_RANGED);
+						}
 					}
 				}
 				else
@@ -1226,7 +1274,7 @@ void actThrown(Entity* my)
 							cameravars[hit.entity->skill[2]].shakex += .05;
 							cameravars[hit.entity->skill[2]].shakey += 5;
 						}
-						else if ( hit.entity->skill[2] > 0 )
+						else if ( hit.entity->skill[2] > 0 && !players[hit.entity->skill[2]]->isLocalPlayer() )
 						{
 							strcpy((char*)net_packet->data, "SHAK");
 							net_packet->data[4] = 5; // turns into .05
@@ -1242,6 +1290,7 @@ void actThrown(Entity* my)
 				if ( hitstats->HP <= 0 && parent )
 				{
 					parent->awardXP(hit.entity, true, true);
+					spawnBloodVialOnMonsterDeath(hit.entity, hitstats);
 				}
 
 				bool doAlert = true;
@@ -1307,29 +1356,13 @@ void actThrown(Entity* my)
 					}
 
 					// alert other monsters too
-					Entity* ohitentity = hit.entity;
-					node_t* node;
-					for ( node = map.creatures->first; node != nullptr && alertAllies && !targetHealed; node = node->next ) //Searching for monsters? Creature list, not entity list.
+					if ( alertAllies && !targetHealed )
 					{
-						Entity* entity = (Entity*)node->element;
-						if ( entity && entity->behavior == &actMonster && entity != ohitentity && entity != polymorphedTarget )
-						{
-							if ( entity->checkFriend(hit.entity) )
-							{
-								if ( entity->monsterState == MONSTER_STATE_WAIT )
-								{
-									double tangent = atan2(entity->y - ohitentity->y, entity->x - ohitentity->x);
-									lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
-									if ( hit.entity == entity )
-									{
-										entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
-									}
-								}
-							}
-						}
+						std::unordered_set<Entity*> entitiesToSkip = { polymorphedTarget };
+						hit.entity->alertAlliesOnBeingHit(parent, &entitiesToSkip);
 					}
-					hit.entity = ohitentity;
-					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					hit.entity->updateEntityOnHit(parent, alertTarget);
+					Uint32 color = makeColorRGB(0, 255, 0);
 					if ( parent->behavior == &actPlayer && !skipMessage )
 					{
 						if ( !strcmp(hitstats->name, "") )
@@ -1339,15 +1372,15 @@ void actThrown(Entity* my)
 								// HP <= 0
 								if ( parent && parent->behavior == &actPlayer )
 								{
-									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[692], language[697], MSG_COMBAT);
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(692), Language::get(697), MSG_COMBAT);
 								}
 							}
 							else
 							{
-								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[690], MSG_COMBAT);
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(690), Language::get(690), MSG_COMBAT_BASIC);
 								if ( damage == 0 )
 								{
-									messagePlayer(parent->skill[2], language[447]);
+									messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, Language::get(447));
 								}
 							}
 						}
@@ -1358,21 +1391,21 @@ void actThrown(Entity* my)
 								// HP <= 0
 								if ( parent && parent->behavior == &actPlayer )
 								{
-									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[692], language[697], MSG_COMBAT);
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(692), Language::get(697), MSG_COMBAT);
 								}
 							}
 							else
 							{
-								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[694], MSG_COMBAT);
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(690), Language::get(694), MSG_COMBAT_BASIC);
 								if ( damage == 0 )
 								{
 									if ( hitstats->sex )
 									{
-										messagePlayer(parent->skill[2], language[449]);
+										messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, Language::get(449));
 									}
 									else
 									{
-										messagePlayer(parent->skill[2], language[450]);
+										messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, Language::get(450));
 									}
 								}
 							}
@@ -1381,11 +1414,11 @@ void actThrown(Entity* my)
 				}
 				if ( hit.entity->behavior == &actPlayer && !skipMessage )
 				{
-					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-					messagePlayerColor(hit.entity->skill[2], color, language[588], itemname);
+					Uint32 color = makeColorRGB(255, 0, 0);
+					messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(588), itemname); // hit by a flying
 					if ( damage == 0 && !wasPotion )
 					{
-						messagePlayer(hit.entity->skill[2], language[452]);
+						messagePlayer(hit.entity->skill[2], MESSAGE_COMBAT, Language::get(452));
 					}
 				}
 			}
@@ -1394,6 +1427,7 @@ void actThrown(Entity* my)
 				switch ( item->type )
 				{
 					case POTION_FIRESTORM:
+						spawnMagicTower(parent, my->x, my->y, SPELL_FIREBALL, hit.entity);
 						if ( hit.entity->behavior == &actBoulder )
 						{
 							if ( hit.entity->sprite == 989 || hit.entity->sprite == 990 )
@@ -1404,8 +1438,8 @@ void actThrown(Entity* my)
 							{
 								magicDig(parent, my, 2, 4);
 							}
+							hit.entity = nullptr;
 						}
-						spawnMagicTower(parent, my->x, my->y, SPELL_FIREBALL, hit.entity);
 						break;
 					case POTION_ICESTORM:
 						spawnMagicTower(parent, my->x, my->y, SPELL_COLD, hit.entity);
@@ -1443,7 +1477,7 @@ void actThrown(Entity* my)
 					if ( hit.side == 0 )
 					{
 						// pick a random side to be on.
-						if ( rand() % 2 == 0 )
+						if ( local_rng.rand() % 2 == 0 )
 						{
 							hit.side = HORIZONTAL;
 						}
@@ -1536,32 +1570,53 @@ void actThrown(Entity* my)
 		}
 		else
 		{
-			Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
-			entity->flags[INVISIBLE] = true;
-			entity->flags[UPDATENEEDED] = true;
-			entity->flags[PASSABLE] = true;
-			entity->x = ox;
-			entity->y = oy;
-			entity->z = oz;
-			entity->sizex = my->sizex;
-			entity->sizey = my->sizey;
-			entity->yaw = my->yaw;
-			entity->pitch = my->pitch;
-			entity->roll = my->roll;
-			entity->vel_x = THROWN_VELX / 2;
-			entity->vel_y = THROWN_VELY / 2;
-			entity->vel_z = my->vel_z;
-			entity->behavior = &actItem;
-			entity->skill[10] = item->type;
-			entity->skill[11] = item->status;
-			entity->skill[12] = item->beatitude;
-			entity->skill[13] = item->count;
-			entity->skill[14] = item->appearance;
-			entity->skill[15] = item->identified;
-			if ( itemCategory(item) == THROWN )
+			bool dropItem = true;
+			if ( itemCategory(item) == GEM )
 			{
-				//Hack to make monsters stop catching your shurikens and chakrams.
-				entity->parent = my->parent;
+				if ( (hit.entity && local_rng.rand() % 2 == 0) || item->beatitude < 0 || local_rng.rand() % 5 == 0 )
+				{
+					dropItem = false;
+					if ( hit.entity )
+					{
+						createParticleShatteredGem(hit.entity->x, hit.entity->y, 7.5, my->sprite, hit.entity);
+						serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_SHATTERED_GEM, my->sprite);
+					}
+					else
+					{
+						createParticleShatteredGem(my->x, my->y, my->z, my->sprite, nullptr);
+						serverSpawnMiscParticlesAtLocation(my->x, my->y, my->z, PARTICLE_EFFECT_SHATTERED_GEM, my->sprite);
+					}
+				}
+			}
+			if ( dropItem )
+			{
+				Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+				entity->flags[INVISIBLE] = true;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[PASSABLE] = true;
+				entity->x = ox;
+				entity->y = oy;
+				entity->z = oz;
+				entity->sizex = my->sizex;
+				entity->sizey = my->sizey;
+				entity->yaw = my->yaw;
+				entity->pitch = my->pitch;
+				entity->roll = my->roll;
+				entity->vel_x = THROWN_VELX / 2;
+				entity->vel_y = THROWN_VELY / 2;
+				entity->vel_z = my->vel_z;
+				entity->behavior = &actItem;
+				entity->skill[10] = item->type;
+				entity->skill[11] = item->status;
+				entity->skill[12] = item->beatitude;
+				entity->skill[13] = item->count;
+				entity->skill[14] = item->appearance;
+				entity->skill[15] = item->identified;
+				if ( itemCategory(item) == THROWN )
+				{
+					//Hack to make monsters stop catching your shurikens and chakrams.
+					entity->parent = my->parent;
+				}
 			}
 			free(item);
 			list_RemoveNode(my->mynode);

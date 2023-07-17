@@ -14,10 +14,11 @@
 #include "stat.hpp"
 #include "entity.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -91,8 +92,8 @@ void actHeadstone(Entity* my)
 	{
 		my->createWorldUITooltip();
 		HEADSTONE_INIT = 1;
-		HEADSTONE_MESSAGE = rand();
-		HEADSTONE_GHOUL = (rand() % 4 == 0);
+		HEADSTONE_MESSAGE = local_rng.rand();
+		HEADSTONE_GHOUL = (local_rng.rand() % 4 == 0);
 	}
 
 	bool shouldspawn = false;
@@ -103,16 +104,20 @@ void actHeadstone(Entity* my)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+			if ( selectedEntity[i] == my || client_selected[i] == my )
 			{
 				if (inrange[i])
 				{
-					messagePlayer(i, language[485 + HEADSTONE_MESSAGE % 17]);
+					//messagePlayer(i, MESSAGE_INTERACTION, Language::get(485 + HEADSTONE_MESSAGE % 17));
+					players[i]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
+						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_GRAVE,
+						Language::get(485 + HEADSTONE_MESSAGE % 17));
+
 					if ( HEADSTONE_GHOUL && !HEADSTONE_FIRED )
 					{
 						shouldspawn = true;
-						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-						messagePlayerColor(i, color, language[502]);
+						Uint32 color = makeColorRGB(255, 128, 0);
+						messagePlayerColor(i, MESSAGE_INTERACTION, color, Language::get(502));
 					}
 				}
 			}
@@ -127,7 +132,7 @@ void actHeadstone(Entity* my)
 			HEADSTONE_FIRED = 1;
 
 			// make a ghoul
-			Entity* monster = summonMonster(GHOUL, my->x, my->y);
+			Entity* monster = summonMonsterNoSmoke(GHOUL, my->x, my->y, false);
 			if ( monster )
 			{
 				monster->z = 13;

@@ -15,18 +15,21 @@
 #include "entity.hpp"
 #include "items.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "magic/magic.hpp"
 #include "player.hpp"
 #include "colors.hpp"
+#include "prng.hpp"
 
 void initMinotaur(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
+	my->flags[BURNABLE] = true;
 	my->initMonster(239);
+	my->z = -6;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -100,7 +103,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					switch ( rand() % 4 )
+					switch ( local_rng.rand() % 4 )
 					{
 						case 0:
 							gemtype = GEM_RUBY;
@@ -115,7 +118,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 							gemtype = GEM_DIAMOND;
 							break;
 					}
-					newItem(gemtype, EXCELLENT, 0, 1, rand(), true, &myStats->inventory);
+					newItem(gemtype, EXCELLENT, 0, 1, local_rng.rand(), true, &myStats->inventory);
 					break;
 				default:
 					break;
@@ -124,7 +127,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	}
 
 	// head
-	Entity* entity = newEntity(237, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(237, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -143,7 +146,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// chest
-	entity = newEntity(238, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(238, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -162,7 +165,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(243, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(243, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -181,7 +184,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(242, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(242, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -200,7 +203,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(241, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(241, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -219,7 +222,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(240, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(240, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -246,17 +249,35 @@ void actMinotaurLimb(Entity* my)
 void minotaurDie(Entity* my)
 {
 	int c;
-	for ( c = 0; c < 5; c++ )
+	for ( c = 0; c < 20; c++ )
 	{
 		Entity* gib = spawnGib(my);
+		if (c < 7) {
+            gib->skill[5] = 1; // poof
+		    gib->sprite = 237 + c;
+		}
 		serverSpawnGibForClient(gib);
 	}
 
 	my->spawnBlood();
 
-	for ( c = 0; c < MAXPLAYERS; c++ )
+	if ( multiplayer == SINGLE )
 	{
-		playSoundPlayer(c, 114, 128);
+		for ( c = 0; c < MAXPLAYERS; c++ )
+		{
+			if ( players[c]->isLocalPlayer() )
+			{
+				playSoundPlayer(c, 114, 128);
+				break;
+			}
+		}
+	}
+	else
+	{
+		for ( c = 0; c < MAXPLAYERS; c++ )
+		{
+			playSoundPlayer(c, 114, 128);
+		}
 	}
 
 	my->removeMonsterDeathNodes();
@@ -616,12 +637,26 @@ void actMinotaurTrap(Entity* my)
 				MINOTAURTRAP_FIRED = 1;
 				if ( strcmp(map.name, "Hell Boss") )
 				{
-					int c;
-					for ( c = 0; c < MAXPLAYERS; c++ )
+					bool playedSound = false;
+					for ( int c = 0; c < MAXPLAYERS; c++ )
 					{
-						playSoundPlayer( c, 107 + rand() % 3, 128 );
-						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-						messagePlayerColor(c, color, language[1113]);
+						if ( multiplayer == SINGLE )
+						{
+							if ( players[c]->isLocalPlayer() )
+							{
+								if ( !playedSound )
+								{
+									playSoundPlayer(c, 107 + local_rng.rand() % 3, 128);
+								}
+								playedSound = true;
+							}
+						}
+						else
+						{
+							playSoundPlayer( c, 107 + local_rng.rand() % 3, 128 );
+						}
+						Uint32 color = makeColorRGB(255, 128, 0);
+						messagePlayerColor(c, MESSAGE_HINT, color, Language::get(1113));
 					}
 				}
 			}
@@ -638,7 +673,7 @@ void actMinotaurTimer(Entity* my)
 	if (( (currentlevel < 25 && MINOTAURTIMER_LIFE == TICKS_PER_SECOND * 120)
 			|| (currentlevel >= 25 && MINOTAURTIMER_LIFE == TICKS_PER_SECOND * 180)
 		)
-		&& rand() % 5 == 0 )   // two minutes if currentlevel < 25, else 3 minutes.
+		&& local_rng.rand() % 5 == 0 )   // two minutes if currentlevel < 25, else 3 minutes.
 	{
 		int c;
 		bool spawnedsomebody = false;
@@ -664,21 +699,17 @@ void actMinotaurTimer(Entity* my)
 
 		if ( spawnedsomebody )
 		{
-#ifdef MUSIC
-			fadein_increment = default_fadein_increment * 20;
-			fadeout_increment = default_fadeout_increment * 5;
-			playmusic( sounds[175], false, true, false);
-#endif
+			playSoundNotification(175, 128);
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
+				Uint32 color = makeColorRGB(0, 255, 255);
 				if ( stats[c]->type == HUMAN )
 				{
-					messagePlayerColor(c, color, language[1114], stats[c]->name);
+					messagePlayerColor(c, MESSAGE_WORLD, color, Language::get(1114), stats[c]->name);
 				}
 				else
 				{
-					messagePlayerColor(c, color, language[3285]);
+					messagePlayerColor(c, MESSAGE_WORLD, color, Language::get(3285));
 				}
 			}
 		}
@@ -692,11 +723,26 @@ void actMinotaurTimer(Entity* my)
 		if ( monster )
 		{
 			int c;
+			bool playedSound = false;
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
-				playSoundPlayer( c, 107 + rand() % 3, 128 );
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-				messagePlayerColor(c, color, language[1115]);
+				if ( multiplayer == SINGLE )
+				{
+					if ( players[c]->isLocalPlayer() )
+					{
+						if ( !playedSound )
+						{
+							playSoundPlayer(c, 107 + local_rng.rand() % 3, 128);
+						}
+						playedSound = true;
+					}
+				}
+				else
+				{
+					playSoundPlayer( c, 107 + local_rng.rand() % 3, 128 );
+				}
+				Uint32 color = makeColorRGB(255, 128, 0);
+				messagePlayerColor(c, MESSAGE_HINT, color, Language::get(1115));
 			}
 			MINOTAURTIMER_ACTIVE = MINOTAURTIMER_LIFE;
 		}
@@ -704,22 +750,52 @@ void actMinotaurTimer(Entity* my)
 	if ( MINOTAURTIMER_ACTIVE && MINOTAURTIMER_LIFE >= MINOTAURTIMER_ACTIVE + TICKS_PER_SECOND * 3 )
 	{
 		int c;
+		bool playedSound = false;
 		for ( c = 0; c < MAXPLAYERS; c++ )
 		{
 			if ( currentlevel < 25 )
 			{
-				playSoundPlayer(c, 120 + rand() % 3, 128);
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-				messagePlayerColor(c, color, language[1116]);
-				messagePlayerColor(c, color, language[73]);
+				if ( multiplayer == SINGLE )
+				{
+					if ( players[c]->isLocalPlayer() )
+					{
+						if ( !playedSound )
+						{
+							playSoundPlayer(c, 120 + local_rng.rand() % 3, 128);
+						}
+						playedSound = true;
+					}
+				}
+				else
+				{
+					playSoundPlayer(c, 120 + local_rng.rand() % 3, 128);
+				}
+				Uint32 color = makeColorRGB(255, 0, 255);
+				messagePlayerColor(c, MESSAGE_WORLD, color, Language::get(1116));
+				messagePlayerColor(c, MESSAGE_WORLD, color, Language::get(73));
 			}
 			else
 			{
-				playSoundPlayer(c, 375, 128);
-				playSoundPlayer(c, 379, 128);
-				messagePlayerColor(c, uint32ColorOrange(*mainsurface), language[1116]);
-				messagePlayerColor(c, uint32ColorOrange(*mainsurface), language[73]);
-				messagePlayerColor(c, uint32ColorBaronyBlue(*mainsurface), language[73]);
+				if ( multiplayer == SINGLE )
+				{
+					if ( players[c]->isLocalPlayer() )
+					{
+						if ( !playedSound )
+						{
+							playSoundPlayer(c, 375, 128);
+							playSoundPlayer(c, 379, 128);
+						}
+						playedSound = true;
+					}
+				}
+				else
+				{
+					playSoundPlayer(c, 375, 128);
+					playSoundPlayer(c, 379, 128);
+				}
+				messagePlayerColor(c, MESSAGE_WORLD, uint32ColorOrange, Language::get(1116));
+				messagePlayerColor(c, MESSAGE_WORLD, uint32ColorOrange, Language::get(73));
+				messagePlayerColor(c, MESSAGE_WORLD, uint32ColorBaronyBlue, Language::get(73));
 			}
 		}
 		list_RemoveNode(my->mynode);
@@ -740,17 +816,16 @@ void actMinotaurCeilingBuster(Entity* my)
 		for ( c = 0; c < 2; c++ )
 		{
 			Entity* entity = newEntity(171, 1, map.entities, nullptr); //Particle entity.
-			entity->x = my->x - 8 + rand() % 17;
-			entity->y = my->y - 8 + rand() % 17;
-			entity->z = 10 + rand() % 3;
+			entity->x = my->x - 8 + local_rng.rand() % 17;
+			entity->y = my->y - 8 + local_rng.rand() % 17;
+			entity->z = 10 + local_rng.rand() % 3;
 			entity->scalex = 0.7;
 			entity->scaley = 0.7;
 			entity->scalez = 0.7;
 			entity->sizex = 1;
 			entity->sizey = 1;
-			entity->yaw = (rand() % 360) * PI / 180.f;
+			entity->yaw = (local_rng.rand() % 360) * PI / 180.f;
 			entity->flags[PASSABLE] = true;
-			entity->flags[BRIGHT] = true;
 			entity->flags[NOUPDATE] = true;
 			entity->flags[UNCLICKABLE] = true;
 			entity->behavior = &actMagicParticle;
@@ -799,7 +874,7 @@ void actMinotaurCeilingBuster(Entity* my)
 					}
 
 					// spawn several rock particles (NOT items)
-					int c, i = 6 + rand() % 4;
+					int c, i = 6 + local_rng.rand() % 4;
 					for ( c = 0; c < i; c++ )
 					{
 						Entity *entity = nullptr;
@@ -813,19 +888,19 @@ void actMinotaurCeilingBuster(Entity* my)
 						}
 						if ( entity )
 						{
-							entity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
-							entity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
+							entity->x = ((int)(my->x / 16)) * 16 + local_rng.rand() % 16;
+							entity->y = ((int)(my->y / 16)) * 16 + local_rng.rand() % 16;
 							entity->z = -8;
 							entity->flags[PASSABLE] = true;
 							entity->flags[INVISIBLE] = false;
 							entity->flags[NOUPDATE] = true;
 							entity->flags[UPDATENEEDED] = false;
 							entity->sprite = items[GEM_ROCK].index;
-							entity->yaw = rand() % 360 * PI / 180;
-							entity->pitch = rand() % 360 * PI / 180;
-							entity->roll = rand() % 360 * PI / 180;
-							entity->vel_x = (rand() % 20 - 10) / 10.0;
-							entity->vel_y = (rand() % 20 - 10) / 10.0;
+							entity->yaw = local_rng.rand() % 360 * PI / 180;
+							entity->pitch = local_rng.rand() % 360 * PI / 180;
+							entity->roll = local_rng.rand() % 360 * PI / 180;
+							entity->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
+							entity->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
 							entity->vel_z = -.25;
 							entity->fskill[3] = 0.03;
 						}
@@ -845,7 +920,7 @@ void actMinotaurCeilingBuster(Entity* my)
 							if ( entity->behavior == &actDoorFrame )
 							{
 								// spawn several rock items
-								int c, i = 8 + rand() % 4;
+								int c, i = 8 + local_rng.rand() % 4;
 								for ( c = 0; c < i; c++ )
 								{
 									Entity *entity = nullptr;
@@ -859,19 +934,19 @@ void actMinotaurCeilingBuster(Entity* my)
 									}
 									if ( entity )
 									{
-										entity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
-										entity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
+										entity->x = ((int)(my->x / 16)) * 16 + local_rng.rand() % 16;
+										entity->y = ((int)(my->y / 16)) * 16 + local_rng.rand() % 16;
 										entity->z = -8;
 										entity->flags[PASSABLE] = true;
 										entity->flags[INVISIBLE] = false;
 										entity->flags[NOUPDATE] = true;
 										entity->flags[UPDATENEEDED] = false;
 										entity->sprite = items[GEM_ROCK].index;
-										entity->yaw = rand() % 360 * PI / 180;
-										entity->pitch = rand() % 360 * PI / 180;
-										entity->roll = rand() % 360 * PI / 180;
-										entity->vel_x = (rand() % 20 - 10) / 10.0;
-										entity->vel_y = (rand() % 20 - 10) / 10.0;
+										entity->yaw = local_rng.rand() % 360 * PI / 180;
+										entity->pitch = local_rng.rand() % 360 * PI / 180;
+										entity->roll = local_rng.rand() % 360 * PI / 180;
+										entity->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
+										entity->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
 										entity->vel_z = -.25;
 										entity->fskill[3] = 0.03;
 									}
@@ -882,7 +957,45 @@ void actMinotaurCeilingBuster(Entity* my)
 							{
 								if ( multiplayer != CLIENT )
 								{
-									entity->skill[4] = 0; // destroy the door
+									entity->doorHealth = 0; // destroy the door
+								}
+							}
+							else if ( entity->behavior == &actCeilingTile && entity->ceilingTileBreakable != 0 )
+							{
+								Entity *childEntity = nullptr;
+								if ( multiplayer == SERVER )
+								{
+									childEntity = spawnGib(my);
+								}
+								else
+								{
+									childEntity = spawnGibClient(my->x, my->y, my->z, 5);
+								}
+								if ( childEntity )
+								{
+									childEntity->x = ((int)(my->x / 16)) * 16 + local_rng.rand() % 16;
+									childEntity->y = ((int)(my->y / 16)) * 16 + local_rng.rand() % 16;
+									childEntity->z = -8;
+									childEntity->flags[PASSABLE] = true;
+									childEntity->flags[INVISIBLE] = false;
+									childEntity->flags[NOUPDATE] = true;
+									childEntity->flags[UPDATENEEDED] = false;
+									childEntity->sprite = items[GEM_ROCK].index;
+									childEntity->yaw = local_rng.rand() % 360 * PI / 180;
+									childEntity->pitch = local_rng.rand() % 360 * PI / 180;
+									childEntity->roll = local_rng.rand() % 360 * PI / 180;
+									childEntity->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
+									childEntity->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
+									childEntity->vel_z = -.25;
+									childEntity->fskill[3] = 0.03;
+								}
+								list_RemoveNode(entity->mynode);
+							}
+							else if ( entity->isDamageableCollider() )
+							{
+								if ( multiplayer != CLIENT )
+								{
+									entity->colliderCurrentHP = 0;
 								}
 							}
 							else if ( entity->behavior == &actGate )
@@ -899,7 +1012,7 @@ void actMinotaurCeilingBuster(Entity* my)
 									)
 							{
 								// spawn several rock items
-								int c, i = rand() % 4;
+								int c, i = local_rng.rand() % 4;
 								for ( c = 0; c < i; ++c )
 								{
 									//Entity* childEntity = spawnGib(my);
@@ -912,21 +1025,21 @@ void actMinotaurCeilingBuster(Entity* my)
 									{
 										childEntity = spawnGibClient(my->x, my->y, my->z, 5);
 									}
-									if ( entity )
+									if ( childEntity )
 									{
-										childEntity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
-										childEntity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
+										childEntity->x = ((int)(my->x / 16)) * 16 + local_rng.rand() % 16;
+										childEntity->y = ((int)(my->y / 16)) * 16 + local_rng.rand() % 16;
 										childEntity->z = -8;
 										childEntity->flags[PASSABLE] = true;
 										childEntity->flags[INVISIBLE] = false;
 										childEntity->flags[NOUPDATE] = true;
 										childEntity->flags[UPDATENEEDED] = false;
 										childEntity->sprite = items[GEM_ROCK].index;
-										childEntity->yaw = rand() % 360 * PI / 180;
-										childEntity->pitch = rand() % 360 * PI / 180;
-										childEntity->roll = rand() % 360 * PI / 180;
-										childEntity->vel_x = (rand() % 20 - 10) / 10.0;
-										childEntity->vel_y = (rand() % 20 - 10) / 10.0;
+										childEntity->yaw = local_rng.rand() % 360 * PI / 180;
+										childEntity->pitch = local_rng.rand() % 360 * PI / 180;
+										childEntity->roll = local_rng.rand() % 360 * PI / 180;
+										childEntity->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
+										childEntity->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
 										childEntity->vel_z = -.25;
 										childEntity->fskill[3] = 0.03;
 									}
@@ -943,6 +1056,10 @@ void actMinotaurCeilingBuster(Entity* my)
 
 void createMinotaurTimer(Entity* entity, map_t* map)
 {
+	if ( !entity )
+	{
+		return;
+	}
 	Entity* childEntity = newEntity(37, 0, map->entities, nullptr); //Timer entity.
 	childEntity->sizex = 2;
 	childEntity->sizey = 2;

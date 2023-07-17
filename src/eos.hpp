@@ -3,6 +3,11 @@
 #include "Config.hpp"
 
 #ifdef USE_EOS
+#ifdef NINTENDO
+#define EOS_BUILD_PLATFORM_NAME Switch
+#include "eos_platform_prereqs.h"
+#include "eos/Switch/eos_Switch.h"
+#endif
 #include "eos_sdk.h"
 #include "eos_logging.h"
 #include "eos_auth.h"
@@ -20,13 +25,16 @@
 #include <map>
 #include <atomic>
 #include "net.hpp"
-#include "stat.hpp"
 #include "physfs.h"
 
 class EOSFuncs
 {
 	std::unordered_map<std::string, SteamStat_t*> statMappings;
+	bool initialized = false;
+
 public:
+	bool isInitialized() const { return initialized; }
+
 	std::string ProductId = "";
 	std::string SandboxId = "";
 	std::string DeploymentId = "";
@@ -38,7 +46,11 @@ public:
 	class Accounts_t 
 	{
 	public:
+#ifdef NINTENDO
+		EOS_ELoginCredentialType AuthType = EOS_ELoginCredentialType::EOS_LCT_ExternalAuth;
+#else
 		EOS_ELoginCredentialType AuthType = EOS_ELoginCredentialType::EOS_LCT_Developer;
+#endif
 		EOS_EResult AccountAuthenticationStatus = EOS_EResult::EOS_NotConfigured;
 		EOS_EResult AccountAuthenticationCompleted = EOS_EResult::EOS_NotConfigured;
 
@@ -74,41 +86,34 @@ public:
 
 	class CrossplayAccounts_t
 	{
-		enum PromptTypes : int
-		{
-			PROMPT_CLOSED,
-			PROMPT_SETUP,
-			PROMPT_ABOUT
-		};
 	public:
 		EOS_ContinuanceToken continuanceToken = nullptr;
 		EOS_EResult connectLoginStatus = EOS_EResult::EOS_NotConfigured;
 		EOS_EResult connectLoginCompleted = EOS_EResult::EOS_NotConfigured;
+		bool promptActive = false;
+		bool acceptedEula = false;
 
+		bool trySetupFromSettingsMenu = false;
 		bool awaitingConnectCallback = false;
 		bool awaitingCreateUserCallback = false;
 		bool awaitingAppTicketResponse = false;
 
-		bool acceptedEula = false;
-		bool trySetupFromSettingsMenu = false;
 		bool logOut = false;
 		bool autologin = false;
-		PromptTypes promptStatus = PROMPT_CLOSED;
-		PromptTypes getPromptStatus() { return promptStatus; };
-		void openPromptSetup() { promptStatus = PROMPT_SETUP;  }
-		void openPromptAbout() { promptStatus = PROMPT_ABOUT; }
-		void closePrompt() { promptStatus = PROMPT_CLOSED; }
 
 		void handleLogin();
 		void createDialogue();
-		void drawDialogue();
 		void createNotification();
+		void acceptCrossplay();
+		void denyCrossplay();
+		void viewPrivacyPolicy();
+		bool isLoggingIn();
 
 		void resetOnFailure();
 		static void retryCrossplaySetupOnFailure();
 	} CrossplayAccountManager;
 
-	const int kMaxLobbiesToSearch = 100;
+	const int kMaxLobbiesToSearch = 200;
 
 	// global shenanigans
 	bool bRequestingLobbies = false; // client is waiting for lobby data to display
@@ -119,6 +124,10 @@ public:
 	//bool bStillConnectingToLobby = false; // TODO: client got a lobby invite and booted up the game with this?
 	char currentLobbyName[32] = "";
 	EOS_ELobbyPermissionLevel currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
+	EOS_ELobbyPermissionLevel currentPermissionLevelUserConfigured = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
+	bool bFriendsOnly = false; // if true the current lobby can only be found by friends
+	bool bFriendsOnlyUserConfigured = true;
+
 	char lobbySearchByCode[32] = "";
 
 	std::unordered_set<EOS_ProductUserId> ProductIdsAwaitingAccountMappingCallback;
@@ -134,7 +143,6 @@ public:
 		bool definitionsAwaitingCallback = false;
 		bool playerDataLoaded = false;
 		bool definitionsLoaded = false;
-		void sortAchievementsForDisplay();
 		bool bAchievementsInit = false;
 	} Achievements;
 
@@ -277,6 +285,7 @@ public:
 		bool bLobbyHasBasicDetailsRead = false;
 		bool bAwaitingLeaveCallback = false;
 		bool bAwaitingCreationCallback = false;
+		EOS_EResult LobbyCreationResult = EOS_EResult::EOS_Success;
 		bool bDenyLobbyJoinEvent = false;
 
 		class PlayerLobbyData_t {
@@ -321,14 +330,15 @@ public:
 			public:
 				std::string lobbyName = "";
 				std::string gameVersion = "";
+				std::string gameJoinKey = "";
 				Uint32 isLobbyLoadingSavedGame = 0;
 				Uint32 serverFlags = 0;
-				Uint32 numServerMods = 0;
+				int numServerMods = 0;
 				long long lobbyCreationTime = 0;
 				int gameCurrentLevel = -1;
-				std::string gameJoinKey = "";
-				Uint32 PermissionLevel = static_cast<Uint32>(EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED);
 				Uint32 maxplayersCompatible = MAXPLAYERS;
+				Uint32 PermissionLevel = static_cast<Uint32>(EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED);
+				bool friendsOnly = false;
 				void ClearData()
 				{
 					lobbyName = "";
@@ -341,6 +351,7 @@ public:
 					gameCurrentLevel = -1;
 					maxplayersCompatible = MAXPLAYERS;
 					PermissionLevel = static_cast<Uint32>(EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED);
+					friendsOnly = false;
 				}
 		} LobbyAttributes;
 		enum HostUpdateLobbyTypes : int
@@ -376,9 +387,11 @@ public:
 			GAME_CURRENT_LEVEL,
 			GAME_JOIN_KEY,
 			LOBBY_PERMISSION_LEVEL,
-			GAME_MAXPLAYERS
+			FRIENDS_ONLY,
+			GAME_MAXPLAYERS,
+			ATTRIBUTE_TYPE_SIZE
 		};
-		const int kNumAttributes = 10;
+		const int kNumAttributes = ATTRIBUTE_TYPE_SIZE;
 		std::pair<std::string, std::string> getAttributePair(AttributeTypes type);
 
 	} CurrentLobbyData;
@@ -485,23 +498,63 @@ public:
 		int optionalIndex;
 	};
 
-	void shutdown()
+	void stop()
 	{
+		if (!initialized)
+		{
+			return;
+		}
+		if (CurrentLobbyData.currentLobbyIsValid())
+		{
+			leaveLobby();
+
+			Uint32 shutdownTicks = SDL_GetTicks();
+			while (CurrentLobbyData.bAwaitingLeaveCallback)
+			{
+#ifdef APPLE
+				SDL_Event event;
+				while (SDL_PollEvent(&event) != 0)
+				{
+					//Makes Mac work because Apple had to do it different.
+				}
+#endif
+				EOS_Platform_Tick(PlatformHandle);
+				SDL_Delay(1);
+				if (SDL_GetTicks() - shutdownTicks >= 1000)
+				{
+					// only give 1 second for the leave callback to complete.
+					break;
+				}
+			}
+		}
+		AccountManager.deinit();
 		UnsubscribeFromConnectionRequests();
-		if ( PlatformHandle )
+		SetNetworkAvailable(false);
+		if (PlatformHandle)
 		{
 			EOS_Platform_Release(PlatformHandle);
-			EOS_Platform_Release(ServerPlatformHandle);
 			PlatformHandle = nullptr;
+		}
+		if (ServerPlatformHandle)
+		{
+			EOS_Platform_Release(ServerPlatformHandle);
 			ServerPlatformHandle = nullptr;
 		}
+		initialized = false;
+		logInfo("Stop completed.");
+	}
+
+	void quit()
+	{
 		EOS_EResult result = EOS_Shutdown();
-		if ( result != EOS_EResult::EOS_Success )
+		if (result != EOS_EResult::EOS_Success)
 		{
 			logError("Shutdown error! code: %d", static_cast<int>(result));
 		}
-
-		logInfo("Shutdown completed.");
+		else
+		{
+			logInfo("Shutdown completed.");
+		}
 	}
 
 	bool initPlatform(bool enableLogging);
@@ -648,7 +701,7 @@ public:
 				}
 				else
 				{
-					static char buffer[EOS_PRODUCTUSERID_MAX_LENGTH];
+					static char buffer[EOS_PRODUCTUSERID_MAX_LENGTH + 1];
 					int bufferSize = sizeof(buffer);
 					EOS_EResult result = EOS_ProductUserId_ToString(id, buffer, &bufferSize);
 					if ( result == EOS_EResult::EOS_Success )
@@ -686,7 +739,7 @@ public:
 				}
 				else
 				{
-					static char buffer[EOS_EPICACCOUNTID_MAX_LENGTH];
+					static char buffer[EOS_EPICACCOUNTID_MAX_LENGTH + 1];
 					int bufferSize = sizeof(buffer);
 					EOS_EResult result = EOS_EpicAccountId_ToString(id, buffer, &bufferSize);
 					if ( result == EOS_EResult::EOS_Success )
@@ -740,10 +793,51 @@ public:
 			}
 	};
 
+	void SetSleepStatus(bool asleep)
+	{
+#ifdef NINTENDO
+		if (!PlatformHandle)
+		{
+			return;
+		}
+		static bool oldStatus = false;
+		if (oldStatus != asleep) {
+			oldStatus = asleep;
+			auto status = asleep ? EOS_EApplicationStatus::EOS_AS_BackgroundSuspended : EOS_EApplicationStatus::EOS_AS_Foreground;
+			EOS_Platform_SetApplicationStatus(PlatformHandle, status);
+		}
+#endif
+	}
+
+	bool oldNetworkStatus = false;
+	void SetNetworkAvailable(bool available)
+	{
+#ifdef NINTENDO
+		if (oldNetworkStatus != available) {
+			oldNetworkStatus = available;
+			auto status = available ? EOS_ENetworkStatus::EOS_NS_Online : EOS_ENetworkStatus::EOS_NS_Disabled;
+			if (PlatformHandle) {
+				EOS_Platform_SetNetworkStatus(PlatformHandle, status);
+			}
+			if (ServerPlatformHandle) {
+				EOS_Platform_SetNetworkStatus(ServerPlatformHandle, status);
+			}
+#ifdef NINTENDO
+			if (!available) {
+				if (CurrentUserInfo.isValid() && CurrentUserInfo.isLoggedIn()) {
+					printlog("[NX] auto-logging out user from EOS!");
+					CrossplayAccountManager.logOut = true;
+				}
+			}
+#endif
+		}
+#endif
+	}
+
 	bool HandleReceivedMessages(EOS_ProductUserId* remoteIdReturn);
 	bool HandleReceivedMessagesAndIgnore(EOS_ProductUserId* remoteIdReturn); // function to empty the packet queue on main lobby.
 	void SendMessageP2P(EOS_ProductUserId RemoteId, const void* data, int len);
-	void serialize(void* file);
+	bool serialize(void* file);
 	void readFromFile();
 	void readFromCmdLineArgs();
 	void queryAccountIdFromProductId(LobbyData_t* lobby/*, std::vector<EOS_ProductUserId>& accountsToQuery*/);

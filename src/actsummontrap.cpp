@@ -18,7 +18,7 @@ See LICENSE for details.
 #include "net.hpp"
 #include "collision.hpp"
 #include "magic/magic.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "player.hpp"
 #include "mod_tools.hpp"
 
@@ -78,16 +78,24 @@ void actSummonTrap(Entity* my)
 				}
 				else
 				{
-					// pick a completely random monster (barring some exceptions).
-					SUMMONTRAP_MONSTER = rand() % NUMMONSTERS;
-					while ( SUMMONTRAP_MONSTER == LICH || SUMMONTRAP_MONSTER == SHOPKEEPER || SUMMONTRAP_MONSTER == DEVIL
-						|| SUMMONTRAP_MONSTER == MIMIC || SUMMONTRAP_MONSTER == BUGBEAR || SUMMONTRAP_MONSTER == OCTOPUS
-						|| SUMMONTRAP_MONSTER == MINOTAUR || SUMMONTRAP_MONSTER == LICH_FIRE || SUMMONTRAP_MONSTER == LICH_ICE
-						|| SUMMONTRAP_MONSTER == NOTHING || SUMMONTRAP_MONSTER == SENTRYBOT || SUMMONTRAP_MONSTER == SPELLBOT
-						|| SUMMONTRAP_MONSTER == GYROBOT || SUMMONTRAP_MONSTER == DUMMYBOT )
+					// pick a completely random monster (barring some exceptions)
+					const std::set<Monster> typesToSkip
 					{
-						SUMMONTRAP_MONSTER = rand() % NUMMONSTERS;
+	                    LICH, SHOPKEEPER, DEVIL, MIMIC, CRAB, OCTOPUS,
+	                    MINOTAUR, LICH_FIRE, LICH_ICE, NOTHING,
+	                    SENTRYBOT, SPELLBOT, GYROBOT, DUMMYBOT
+	                };
+	                
+					std::vector<Monster> possibleTypes;
+					for ( int i = 0; i < NUMMONSTERS; ++i )
+					{
+						const Monster mon = static_cast<Monster>(i);
+						if ( typesToSkip.find(mon) == typesToSkip.end() )
+						{
+							possibleTypes.push_back(mon);
+						}
 					}
+	                SUMMONTRAP_MONSTER = possibleTypes.at(local_rng.rand() % possibleTypes.size());
 				}
 
 				int count = 0;
@@ -132,11 +140,11 @@ void actSummonTrap(Entity* my)
 				{
 					if ( SUMMONTRAP_MONSTER < KOBOLD )
 					{
-						//messagePlayer(clientnum, language[2352], language[90 + SUMMONTRAP_MONSTER]);
+						//messagePlayer(clientnum, Language::get(2352), Language::get(90 + SUMMONTRAP_MONSTER));
 					}
 					else if ( SUMMONTRAP_MONSTER >= KOBOLD )
 					{
-						//messagePlayer(clientnum, language[2352], language[2000 + (SUMMONTRAP_MONSTER - 21)]);
+						//messagePlayer(clientnum, Language::get(2352), Language::get(2000 + (SUMMONTRAP_MONSTER - 21)));
 					}
 					SUMMONTRAP_INITIALIZED = 1; // trap is starting up for the first time.
 				}
@@ -146,11 +154,11 @@ void actSummonTrap(Entity* my)
 					SUMMONTRAP_MONSTER = -1;
 				}
 
-				if ( (SUMMONTRAP_FAILURERATE != 0) && (rand() % 100 < SUMMONTRAP_FAILURERATE) )
+				if ( (SUMMONTRAP_FAILURERATE != 0) && (local_rng.rand() % 100 < SUMMONTRAP_FAILURERATE) )
 				{
 					// trap breaks!
 					SUMMONTRAP_FIRED = 1;
-					playSoundEntity(my, 76, 128);
+					//playSoundEntity(my, 76, 128);
 					return;
 				}
 
@@ -161,7 +169,7 @@ void actSummonTrap(Entity* my)
 					{
 						// trap is finished running
 						SUMMONTRAP_FIRED = 1;
-						playSoundEntity(my, 76, 128);
+						//playSoundEntity(my, 76, 128);
 					}	
 				}
 				else

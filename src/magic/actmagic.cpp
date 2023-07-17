@@ -14,15 +14,63 @@
 #include "../stat.hpp"
 #include "../entity.hpp"
 #include "../interface/interface.hpp"
-#include "../sound.hpp"
+#include "../engine/audio/sound.hpp"
 #include "../items.hpp"
 #include "../monster.hpp"
 #include "../net.hpp"
 #include "../collision.hpp"
 #include "../paths.hpp"
 #include "../player.hpp"
-#include "magic.hpp"
 #include "../scores.hpp"
+#include "../prng.hpp"
+#include "magic.hpp"
+#include "../mod_tools.hpp"
+
+static const char* colorForSprite(int sprite, bool darker) {
+    if (darker) {
+        switch (sprite) {
+        case 672:
+        case 168: return "magic_red_flicker";
+        case 169: return "magic_orange_flicker";
+        case 670:
+        case 170: return "magic_yellow_flicker";
+        case 983:
+        case 171: return "magic_green_flicker";
+        case 592:
+        case 172: return "magic_blue_flicker";
+        case 625:
+        case 173: return "magic_purple_flicker";
+        default:
+        case 669:
+        case 680:
+        case 174: return "magic_white_flicker";
+        case 593:
+        case 175: return "magic_black_flicker";
+        case 678: return "magic_pink_flicker";
+        }
+    } else {
+        switch (sprite) {
+        case 672:
+        case 168: return "magic_red";
+        case 169: return "magic_orange";
+        case 670:
+        case 170: return "magic_yellow";
+        case 983:
+        case 171: return "magic_green";
+        case 592:
+        case 172: return "magic_blue";
+        case 625:
+        case 173: return "magic_purple";
+        default:
+        case 669:
+        case 680:
+        case 174: return "magic_white";
+        case 593:
+        case 175: return "magic_black";
+        case 678: return "magic_pink";
+        }
+    }
+}
 
 void actMagiclightBall(Entity* my)
 {
@@ -39,7 +87,7 @@ void actMagiclightBall(Entity* my)
 		my->removeLightField();
 
 		//Light up the area.
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
+		my->light = addLight(my->x / 16, my->y / 16, "magic_light");
 
 
 		if ( flickerLights )
@@ -55,24 +103,39 @@ void actMagiclightBall(Entity* my)
 			if (lightball_lighting == 1)
 			{
 				my->removeLightField();
-				my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
+				my->light = addLight(my->x / 16, my->y / 16, "magic_light");
 			}
 			else
 			{
 				my->removeLightField();
-				my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 174);
+				my->light = addLight(my->x / 16, my->y / 16, "magic_light_flicker");
 			}
 			lightball_flicker = 0;
 		}
 
 		lightball_timer--;
+		const real_t diff = std::max(.01, (1.0 - my->fskill[0])) / 15.0;
+		my->fskill[0] += diff;
+		my->fskill[0] = std::min(1.0, my->fskill[0]);
+		my->yaw += .01 + 0.5 * (1.0 - my->fskill[0]);
+		if ( my->yaw >= PI * 2 )
+		{
+			my->yaw -= PI * 2;
+		}
+		my->new_yaw = my->yaw;
 		return;
 	}
 
-	my->yaw += .01;
-	if ( my->yaw >= PI * 2 )
+	if ( magic_init )
 	{
-		my->yaw -= PI * 2;
+		const real_t diff = std::max(.01, (1.0 - my->fskill[0])) / 15.0;
+		my->fskill[0] += diff;
+		my->fskill[0] = std::min(1.0, my->fskill[0]);
+		my->yaw += .01 + 0.5 * (1.0 - my->fskill[0]);
+		if ( my->yaw >= PI * 2 )
+		{
+			my->yaw -= PI * 2;
+		}
 	}
 
 	/*if (!my->parent) { //This means that it doesn't have a caster. In other words, magic light staff.
@@ -129,27 +192,29 @@ void actMagiclightBall(Entity* my)
 	}
 
 	// if the spell has been unsustained, remove it
-	if ( !spell->magicstaff && !spell->sustain )
+	if ( !spell->sustain )
 	{
-		int i = 0;
-		int player = -1;
-		for (i = 0; i < MAXPLAYERS; ++i)
-		{
-			if (players[i]->entity == caster)
-			{
-				player = i;
-			}
-		}
-		if (player > 0 && multiplayer == SERVER)
-		{
-			strcpy( (char*)net_packet->data, "UNCH");
-			net_packet->data[4] = player;
-			SDLNet_Write32(spell->ID, &net_packet->data[5]);
-			net_packet->address.host = net_clients[player - 1].host;
-			net_packet->address.port = net_clients[player - 1].port;
-			net_packet->len = 9;
-			sendPacketSafe(net_sock, -1, net_packet, player - 1);
-		}
+        if (!spell->magicstaff)
+        {
+            int player = -1;
+            for (int i = 0; i < MAXPLAYERS; ++i)
+            {
+                if (players[i]->entity == caster)
+                {
+                    player = i;
+                }
+            }
+            if (player > 0 && multiplayer == SERVER)
+            {
+                strcpy( (char*)net_packet->data, "UNCH");
+                net_packet->data[4] = player;
+                SDLNet_Write32(spell->ID, &net_packet->data[5]);
+                net_packet->address.host = net_clients[player - 1].host;
+                net_packet->address.port = net_clients[player - 1].port;
+                net_packet->len = 9;
+                sendPacketSafe(net_sock, -1, net_packet, player - 1);
+            }
+        }
 		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
@@ -238,7 +303,7 @@ void actMagiclightBall(Entity* my)
 			{
 				//messagePlayer(0, "****Moving.");
 				double tangent = atan2(parent->y - my->y, parent->x - my->x);
-				lineTraceTarget(my, my->x, my->y, tangent, 1024, IGNORE_ENTITIES, false, parent);
+				lineTraceTarget(my, my->x, my->y, tangent, 1024, LINETRACE_IGNORE_ENTITIES, false, parent);
 				if ( !hit.entity || hit.entity == parent )   //Line of sight to caster?
 				{
 					if (my->path != NULL)
@@ -264,7 +329,9 @@ void actMagiclightBall(Entity* my)
 					if (!my->path)
 					{
 						//messagePlayer(0, "[Light ball] Generating path.");
-						list_t* path = generatePath((int)floor(my->x / 16), (int)floor(my->y / 16), (int)floor(parent->x / 16), (int)floor(parent->y / 16), my, parent);
+						list_t* path = generatePath((int)floor(my->x / 16), (int)floor(my->y / 16), 
+							(int)floor(parent->x / 16), (int)floor(parent->y / 16), my, parent,
+							GeneratePathTypes::GENERATE_PATH_DEFAULT);
 						if ( path != NULL )
 						{
 							my->path = path;
@@ -386,7 +453,7 @@ void actMagiclightBall(Entity* my)
 		}
 
 		//Light up the area.
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
+		my->light = addLight(my->x / 16, my->y / 16, "magic_light");
 
 		if ( flickerLights )
 		{
@@ -401,12 +468,12 @@ void actMagiclightBall(Entity* my)
 			if (lightball_lighting == 1)
 			{
 				my->removeLightField();
-				my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
+				my->light = addLight(my->x / 16, my->y / 16, "magic_light");
 			}
 			else
 			{
 				my->removeLightField();
-				my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 174);
+				my->light = addLight(my->x / 16, my->y / 16, "magic_light_flicker");
 			}
 			lightball_flicker = 0;
 		}
@@ -432,6 +499,55 @@ void actMagiclightBall(Entity* my)
 		}
 	}
 }
+
+void spawnBloodVialOnMonsterDeath(Entity* entity, Stat* hitstats)
+{
+	if ( !entity || !hitstats ) { return; }
+	if ( entity->behavior == &actMonster )
+	{
+		bool tryBloodVial = false;
+		if ( gibtype[hitstats->type] == 1 || gibtype[hitstats->type] == 2 )
+		{
+			for ( int c = 0; c < MAXPLAYERS; ++c )
+			{
+				if ( playerRequiresBloodToSustain(c) )
+				{
+					tryBloodVial = true;
+					break;
+				}
+			}
+			if ( tryBloodVial )
+			{
+				bool spawnBloodVial = false;
+				if ( hitstats->EFFECTS[EFF_BLEEDING] )
+				{
+					if ( hitstats->EFFECTS_TIMERS[EFF_BLEEDING] >= 250 )
+					{
+						spawnBloodVial = (local_rng.rand() % 2 == 0);
+					}
+					else if ( hitstats->EFFECTS_TIMERS[EFF_BLEEDING] >= 150 )
+					{
+						spawnBloodVial = (local_rng.rand() % 4 == 0);
+					}
+					else
+					{
+						spawnBloodVial = (local_rng.rand() % 8 == 0);
+					}
+				}
+				else
+				{
+					spawnBloodVial = (local_rng.rand() % 10 == 0);
+				}
+				if ( spawnBloodVial )
+				{
+					Item* blood = newItem(FOOD_BLOOD, EXCELLENT, 0, 1, gibtype[hitstats->type] - 1, true, &hitstats->inventory);
+				}
+			}
+		}
+	}
+}
+
+static ConsoleVariable<bool> cvar_magic_fx_use_vismap("/magic_fx_use_vismap", true);
 
 void actMagicMissile(Entity* my)   //TODO: Verify this function.
 {
@@ -479,6 +595,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					list_RemoveNode(my->mynode);
 					return;
 				}
+			}
+			else if ( spell->ID == SPELL_NONE )
+			{
+				my->removeLightField();
+				list_RemoveNode(my->mynode);
+				return;
 			}
 
 			node = spell->elements.first;
@@ -624,89 +746,23 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				//if (hit.entity != NULL) {
 				Stat* hitstats = nullptr;
 				int player = -1;
+
+				// count reflection
+				int reflection = 0;
 				if ( hit.entity )
 				{
 					hitstats = hit.entity->getStats();
 					if ( hit.entity->behavior == &actPlayer )
 					{
-						bool skipMessage = false;
-						if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) && my->actmagicTinkerTrapFriendlyFire == 0 )
-						{
-							if ( parent && (parent->behavior == &actMonster || parent->behavior == &actPlayer) && parent->checkFriend(hit.entity) )
-							{
-								skipMessage = true;
-							}
-						}
-
 						player = hit.entity->skill[2];
-						if ( my->actmagicCastByTinkerTrap == 1 )
-						{
-							skipMessage = true;
-						}
-						if ( !skipMessage )
-						{
-							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-							messagePlayerColor(player, color, language[376]);
-						}
-						if ( hitstats )
-						{
-							entityHealth = hitstats->HP;
-						}
-					}
-					if ( parent && hitstats )
-					{
-						if ( parent->behavior == &actPlayer )
-						{
-							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-							if ( strcmp(element->name, spellElement_charmMonster.name) )
-							{
-								if ( my->actmagicCastByTinkerTrap == 1 )
-								{
-									//messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3498], language[3499], MSG_COMBAT);
-								}
-								else
-								{
-									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT);
-								}
-							}
-						}
 					}
 				}
-
-				// Handling reflecting the missile
-				int reflection = 0;
 				if ( hitstats )
 				{
-					if ( !strcmp(map.name, "Hell Boss") && hit.entity->behavior == &actPlayer )
-					{
-						/* no longer in use */
-						/*bool founddevil = false;
-						node_t* tempNode;
-						for ( tempNode = map.creatures->first; tempNode != nullptr; tempNode = tempNode->next )
-						{
-							Entity* tempEntity = (Entity*)tempNode->element;
-							if ( tempEntity->behavior == &actMonster )
-							{
-								Stat* stats = tempEntity->getStats();
-								if ( stats )
-								{
-									if ( stats->type == DEVIL )
-									{
-										founddevil = true;
-										break;
-									}
-								}
-							}
-						}
-						if ( !founddevil )
-						{
-							reflection = 3;
-						}*/
-					}
-					else if ( parent && 
-							(	(hit.entity->getRace() == LICH_ICE && parent->getRace() == LICH_FIRE)
-								|| ( (hit.entity->getRace() == LICH_FIRE || hitstats->leader_uid == parent->getUID()) && parent->getRace() == LICH_ICE) 
-								|| (parent->getRace() == LICH_ICE) && !strncmp(hitstats->name, "corrupted automaton", 19)
+					if ( parent &&
+						((hit.entity->getRace() == LICH_ICE && parent->getRace() == LICH_FIRE)
+							|| ((hit.entity->getRace() == LICH_FIRE || hitstats->leader_uid == parent->getUID()) && parent->getRace() == LICH_ICE)
+							|| (parent->getRace() == LICH_ICE) && !strncmp(hitstats->name, "corrupted automaton", 19)
 							)
 						)
 					{
@@ -746,34 +802,111 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				if ( reflection )
+
+				bool yourSpellHitsTheMonster = false;
+				bool youAreHitByASpell = false;
+				if ( hit.entity )
 				{
-					spell_t* spellIsReflectingMagic = hit.entity->getActiveMagicEffect(SPELL_REFLECT_MAGIC);
-					playSoundEntity(hit.entity, 166, 128);
-					if ( hit.entity )
+					if ( hit.entity->behavior == &actPlayer )
 					{
-						if ( hit.entity->behavior == &actPlayer )
+						bool skipMessage = false;
+						if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) && my->actmagicTinkerTrapFriendlyFire == 0 )
 						{
-							if ( !strcmp(element->name, spellElement_charmMonster.name) )
+							if ( parent && (parent->behavior == &actMonster || parent->behavior == &actPlayer) && parent->checkFriend(hit.entity) )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT);
-							}
-							if ( !spellIsReflectingMagic )
-							{
-								messagePlayer(player, language[379]);
-							}
-							else
-							{
-								messagePlayer(player, language[2475]);
+								skipMessage = true;
 							}
 						}
+
+						if ( my->actmagicCastByTinkerTrap == 1 )
+						{
+							skipMessage = true;
+						}
+						if ( !skipMessage )
+						{
+							Uint32 color = makeColorRGB(255, 0, 0);
+							if ( reflection == 0 )
+							{
+								messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(376));
+								youAreHitByASpell = true;
+							}
+						}
+						if ( hitstats )
+						{
+							entityHealth = hitstats->HP;
+						}
 					}
-					if ( parent )
+					if ( parent && hitstats )
 					{
 						if ( parent->behavior == &actPlayer )
 						{
-							messagePlayer(parent->skill[2], language[379]);
+							Uint32 color = makeColorRGB(0, 255, 0);
+							if ( strcmp(element->element_internal_name, spellElement_charmMonster.element_internal_name) )
+							{
+								if ( my->actmagicCastByTinkerTrap == 1 )
+								{
+									//messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3498), Language::get(3499), MSG_COMBAT);
+								}
+								else
+								{
+									if ( reflection == 0 )
+									{
+										yourSpellHitsTheMonster = true;
+										if ( ItemTooltips.bSpellHasBasicHitMessage(spell->ID) )
+										{
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(378), Language::get(377), MSG_COMBAT_BASIC);
+										}
+										else
+										{
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(378), Language::get(377), MSG_COMBAT);
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+
+				// Handling reflecting the missile
+				if ( reflection )
+				{
+					spell_t* spellIsReflectingMagic = nullptr;
+					if ( hit.entity )
+					{
+						spellIsReflectingMagic = hit.entity->getActiveMagicEffect(SPELL_REFLECT_MAGIC);
+						playSoundEntity(hit.entity, 166, 128);
+						if ( hit.entity->behavior == &actPlayer )
+						{
+							if ( youAreHitByASpell )
+							{
+								if ( !spellIsReflectingMagic )
+								{
+									messagePlayer(player, MESSAGE_COMBAT, Language::get(379)); // but it bounces off!
+								}
+								else
+								{
+									messagePlayer(player, MESSAGE_COMBAT, Language::get(2475)); // but it bounces off!
+								}
+							}
+							else
+							{
+								messagePlayer(player, MESSAGE_COMBAT, Language::get(4325)); // you reflected a spell!
+							}
+						}
+					}
+					if ( parent && hitstats )
+					{
+						if ( parent->behavior == &actPlayer )
+						{
+							if ( yourSpellHitsTheMonster )
+							{
+								messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(379)); // but it bounces off!
+							}
+							else
+							{
+								messagePlayerMonsterEvent(parent->skill[2], makeColorRGB(255, 255, 255), 
+									*hitstats, Language::get(4322), Language::get(4323), MSG_COMBAT); // your spell bounces off the monster!
+							}
 						}
 					}
 					if ( hit.side == HORIZONTAL )
@@ -807,6 +940,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							my->pitch = 0;
 						}
 						my->parent = hit.entity->getUID();
+						++my->actmagicReflectionCount;
 					}
 
 					// Only degrade the equipment if Friendly Fire is ON or if it is (OFF && target is an enemy)
@@ -829,7 +963,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					if ( bShouldEquipmentDegrade )
 					{
 						// Reflection of 3 does not degrade equipment
-						if ( rand() % 2 == 0 && hitstats && reflection < 3 )
+						if ( local_rng.rand() % 2 == 0 && hitstats && reflection < 3 )
 						{
 							// set armornum to the relevant equipment slot to send to clients
 							int armornum = 5 + reflection;
@@ -863,11 +997,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								hitstats->cloak->status = static_cast<Status>(std::max(static_cast<int>(BROKEN), hitstats->cloak->status - 1));
 								if ( hitstats->cloak->status != BROKEN )
 								{
-									messagePlayer(player, language[380]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(380));
 								}
 								else
 								{
-									messagePlayer(player, language[381]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(381));
 									playSoundEntity(hit.entity, 76, 64);
 								}
 							}
@@ -877,11 +1011,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								hitstats->amulet->status = static_cast<Status>(std::max(static_cast<int>(BROKEN), hitstats->amulet->status - 1));
 								if ( hitstats->amulet->status != BROKEN )
 								{
-									messagePlayer(player, language[382]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(382));
 								}
 								else
 								{
-									messagePlayer(player, language[383]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(383));
 									playSoundEntity(hit.entity, 76, 64);
 								}
 							}
@@ -891,15 +1025,15 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								hitstats->shield->status = static_cast<Status>(std::max(static_cast<int>(BROKEN), hitstats->shield->status - 1));
 								if ( hitstats->shield->status != BROKEN )
 								{
-									messagePlayer(player, language[384]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(384));
 								}
 								else
 								{
-									messagePlayer(player, language[385]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(385));
 									playSoundEntity(hit.entity, 76, 64);
 								}
 							}
-							if ( player > 0 && multiplayer == SERVER )
+							if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 							{
 								strcpy((char*)net_packet->data, "ARMR");
 								net_packet->data[4] = armornum;
@@ -942,9 +1076,16 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( hitstats )
 							{
 								hit.entity->setEffect(EFF_MAGICREFLECT, false, 0, true);
-								messagePlayer(player, language[2476]);
+								messagePlayer(player, MESSAGE_STATUS, Language::get(2476));
 							}
 						}
+					}
+
+					if ( my->actmagicReflectionCount >= 3 )
+					{
+						my->removeLightField();
+						list_RemoveNode(my->mynode);
+						return;
 					}
 					return;
 				}
@@ -952,8 +1093,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				// Test for Friendly Fire, if Friendly Fire is OFF, delete the missile
 				if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 				{
-					if ( !strcmp(element->name, spellElement_telePull.name) 
-						|| !strcmp(element->name, spellElement_shadowTag.name)
+					if ( !strcmp(element->element_internal_name, spellElement_telePull.element_internal_name)
+						|| !strcmp(element->element_internal_name, spellElement_shadowTag.element_internal_name)
 						|| my->actmagicTinkerTrapFriendlyFire == 1 )
 					{
 						// these spells can hit allies no penalty.
@@ -980,16 +1121,18 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									// avoid y axis.
 									int direction = 1;
-									if ( rand() % 2 == 0 )
+									if ( local_rng.rand() % 2 == 0 )
 									{
 										direction = -1;
 									}
-									if ( hit.entity->monsterSetPathToLocation(hit.entity->x / 16, (hit.entity->y / 16) + 1 * direction, 0) )
+									if ( hit.entity->monsterSetPathToLocation(hit.entity->x / 16, (hit.entity->y / 16) + 1 * direction, 0,
+										GeneratePathTypes::GENERATE_PATH_MOVEASIDE) )
 									{
 										hit.entity->monsterState = MONSTER_STATE_HUNT;
 										serverUpdateEntitySkill(hit.entity, 0);
 									}
-									else if ( hit.entity->monsterSetPathToLocation(hit.entity->x / 16, (hit.entity->y / 16) - 1 * direction, 0) )
+									else if ( hit.entity->monsterSetPathToLocation(hit.entity->x / 16, (hit.entity->y / 16) - 1 * direction, 0,
+										GeneratePathTypes::GENERATE_PATH_MOVEASIDE) )
 									{
 										hit.entity->monsterState = MONSTER_STATE_HUNT;
 										serverUpdateEntitySkill(hit.entity, 0);
@@ -1002,17 +1145,19 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								else if ( static_cast<int>(parent->x / 16) == static_cast<int>(hit.entity->x / 16) )
 								{
 									int direction = 1;
-									if ( rand() % 2 == 0 )
+									if ( local_rng.rand() % 2 == 0 )
 									{
 										direction = -1;
 									}
 									// avoid x axis.
-									if ( hit.entity->monsterSetPathToLocation((hit.entity->x / 16) + 1 * direction, hit.entity->y / 16, 0) )
+									if ( hit.entity->monsterSetPathToLocation((hit.entity->x / 16) + 1 * direction, hit.entity->y / 16, 0,
+										GeneratePathTypes::GENERATE_PATH_MOVEASIDE) )
 									{
 										hit.entity->monsterState = MONSTER_STATE_HUNT;
 										serverUpdateEntitySkill(hit.entity, 0);
 									}
-									else if ( hit.entity->monsterSetPathToLocation((hit.entity->x / 16) - 1 * direction, hit.entity->y / 16, 0) )
+									else if ( hit.entity->monsterSetPathToLocation((hit.entity->x / 16) - 1 * direction, hit.entity->y / 16, 0,
+										GeneratePathTypes::GENERATE_PATH_MOVEASIDE) )
 									{
 										hit.entity->monsterState = MONSTER_STATE_HUNT;
 										serverUpdateEntitySkill(hit.entity, 0);
@@ -1044,11 +1189,24 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									alertTarget = false;
 								}
 							}
-							if ( !strcmp(element->name, spellElement_telePull.name) || !strcmp(element->name, spellElement_shadowTag.name) )
+							if ( !strcmp(element->element_internal_name, spellElement_telePull.element_internal_name) 
+								|| !strcmp(element->element_internal_name, spellElement_shadowTag.element_internal_name) )
 							{
 								alertTarget = false;
 								alertAllies = false;
 							}
+							if ( hitstats->type == SHOPKEEPER && !strcmp(element->element_internal_name, spellElement_charmMonster.element_internal_name) )
+							{
+								if ( parent->behavior == &actPlayer )
+								{
+									alertTarget = false;
+									alertAllies = false;
+								}
+							}
+							/*if ( hitstats->type == SHOPKEEPER && parent->getMonsterTypeFromSprite() == SHOPKEEPER )
+							{
+								alertTarget = false;
+							}*/
 							if ( my->actmagicCastByTinkerTrap == 1 )
 							{
 								if ( entityDist(hit.entity, parent) > TOUCHRANGE )
@@ -1074,62 +1232,32 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 
 							// alert other monsters too
-							Entity* ohitentity = hit.entity;
-							for ( node = map.creatures->first; node != nullptr && alertAllies; node = node->next )
+							if ( alertAllies )
 							{
-								entity = (Entity*)node->element;
-								if ( entity->behavior == &actMonster && entity != ohitentity )
-								{
-									Stat* buddystats = entity->getStats();
-									if ( buddystats != nullptr )
-									{
-										if ( hit.entity && hit.entity->checkFriend(entity) ) //TODO: hit.entity->checkFriend() without first checking if it's NULL crashes because hit.entity turns to NULL somewhere along the line. It looks like ohitentity preserves that value though, so....uh...ya, I don't know.
-										{
-											if ( entity->monsterState == MONSTER_STATE_WAIT )
-											{
-												tangent = atan2( entity->y - ohitentity->y, entity->x - ohitentity->x );
-												lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
-												if ( hit.entity == entity )
-												{
-													entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
-												}
-											}
-										}
-									}
-								}
+								hit.entity->alertAlliesOnBeingHit(parent);
 							}
-							hit.entity = ohitentity;
+							hit.entity->updateEntityOnHit(parent, alertTarget);
 						}
 					}
 				}
 
 				// check for magic resistance...
 				// resistance stacks diminishingly
-				//TODO: EFFECTS[EFF_MAGICRESIST]
 				int resistance = 0;
 				if ( hit.entity )
 				{
-					resistance = hit.entity->getMagicResistance();
-				}
-				
-				if ( resistance > 0 )
-				{
-					if ( parent )
-					{
-						if ( parent->behavior == &actPlayer )
-						{
-							messagePlayer(parent->skill[2], language[386]);
-						}
-					}
+					resistance = Entity::getMagicResistance(hit.entity->getStats());
+
+					// TODO - magic impact weak/strong messages?
 				}
 
 				real_t spellbookDamageBonus = (my->actmagicSpellbookBonus / 100.f);
 				if ( my->actmagicCastByMagicstaff == 0 && my->actmagicCastByTinkerTrap == 0 )
 				{
-					spellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, element);
+					spellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, nullptr, element);
 				}
 
-				if (!strcmp(element->name, spellElement_force.name))
+				if (!strcmp(element->element_internal_name, spellElement_force.element_internal_name))
 				{
 					if (hit.entity)
 					{
@@ -1140,7 +1268,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-							damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							for (i = 0; i < damage; i += 2)   //Spawn a gib for every two points of damage.
@@ -1157,14 +1285,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								if ( hitstats->type < KOBOLD ) //Original monster count
-								{
-									updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-								}
-								else if ( hitstats->type >= KOBOLD ) //New monsters
-								{
-									updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-								}
+								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 							}
 							else
 							{
@@ -1174,6 +1295,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( hitstats->HP <= 0 && parent)
 							{
 								parent->awardXP( hit.entity, true, true );
+								spawnBloodVialOnMonsterDeath(hit.entity, hitstats);
 							}
 						}
 						else if (hit.entity->behavior == &actDoor)
@@ -1182,6 +1304,16 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
+							my->removeLightField();
+							list_RemoveNode(my->mynode);
+							return;
+						}
+						else if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
+						{
+							int damage = element->damage;
+							damage += (spellbookDamageBonus * damage);
+							damage /= (1 + (int)resistance);
+							hit.entity->colliderHandleDamageMagic(damage, *my, parent);
 							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
@@ -1202,37 +1334,34 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
 							hit.entity->furnitureHealth -= damage;
-							if ( hit.entity->furnitureHealth < 0 )
+							if ( parent )
 							{
-								if ( parent )
+								if ( parent->behavior == &actPlayer )
 								{
-									if ( parent->behavior == &actPlayer )
+									switch ( hit.entity->furnitureType )
 									{
-										switch ( hit.entity->furnitureType )
-										{
-											case FURNITURE_CHAIR:
-												messagePlayer(parent->skill[2], language[388]);
-												updateEnemyBar(parent, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_TABLE:
-												messagePlayer(parent->skill[2], language[389]);
-												updateEnemyBar(parent, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_BED:
-												messagePlayer(parent->skill[2], language[2508], language[2505]);
-												updateEnemyBar(parent, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_BUNKBED:
-												messagePlayer(parent->skill[2], language[2508], language[2506]);
-												updateEnemyBar(parent, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_PODIUM:
-												messagePlayer(parent->skill[2], language[2508], language[2507]);
-												updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											default:
-												break;
-										}
+										case FURNITURE_CHAIR:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
+											updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_TABLE:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
+											updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_BED:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
+											updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_BUNKBED:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
+											updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_PODIUM:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
+											updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										default:
+											break;
 									}
 								}
 							}
@@ -1240,7 +1369,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if (!strcmp(element->name, spellElement_magicmissile.name))
+				else if (!strcmp(element->element_internal_name, spellElement_magicmissile.element_internal_name))
 				{
 					spawnExplosion(my->x, my->y, my->z);
 					if (hit.entity)
@@ -1260,11 +1389,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									// cast through amplify magic effect
 									damage /= 2;
 								}
-								damage = damage - rand() % ((damage / 8) + 1);
+								damage = damage - local_rng.rand() % ((damage / 8) + 1);
 							}
 
 
-							damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							for (i = 0; i < damage; i += 2)   //Spawn a gib for every two points of damage.
@@ -1282,14 +1411,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								if ( hitstats->type < KOBOLD ) //Original monster count
-								{
-									updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-								}
-								else if ( hitstats->type >= KOBOLD ) //New monsters
-								{
-									updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-								}
+								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 							}
 							else
 							{
@@ -1299,6 +1421,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( hitstats->HP <= 0 && parent)
 							{
 								parent->awardXP( hit.entity, true, true );
+								spawnBloodVialOnMonsterDeath(hit.entity, hitstats);
 							}
 						}
 						else if ( hit.entity->behavior == &actDoor )
@@ -1324,6 +1447,29 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							return;
 						}
+						else if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
+						{
+							int damage = element->damage;
+							damage += (spellbookDamageBonus * damage);
+							damage /= (1 + (int)resistance);
+
+							hit.entity->colliderHandleDamageMagic(damage, *my, parent);
+							if ( my->actmagicProjectileArc > 0 )
+							{
+								Entity* caster = uidToEntity(spell->caster);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+							}
+							if ( !(my->actmagicIsOrbiting == 2) )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
+							else
+							{
+								spawnExplosion(my->x, my->y, my->z);
+							}
+							return;
+						}
 						else if ( hit.entity->behavior == &actChest )
 						{
 							int damage = element->damage;
@@ -1352,37 +1498,34 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
 							hit.entity->furnitureHealth -= damage;
-							if ( hit.entity->furnitureHealth < 0 )
+							if ( parent )
 							{
-								if ( parent )
+								if ( parent->behavior == &actPlayer )
 								{
-									if ( parent->behavior == &actPlayer )
+									switch ( hit.entity->furnitureType )
 									{
-										switch ( hit.entity->furnitureType )
-										{
-											case FURNITURE_CHAIR:
-												messagePlayer(parent->skill[2], language[388]);
-												updateEnemyBar(parent, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_TABLE:
-												messagePlayer(parent->skill[2], language[389]);
-												updateEnemyBar(parent, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_BED:
-												messagePlayer(parent->skill[2], language[2508], language[2505]);
-												updateEnemyBar(parent, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_BUNKBED:
-												messagePlayer(parent->skill[2], language[2508], language[2506]);
-												updateEnemyBar(parent, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_PODIUM:
-												messagePlayer(parent->skill[2], language[2508], language[2507]);
-												updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											default:
-												break;
-										}
+										case FURNITURE_CHAIR:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
+											updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_TABLE:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
+											updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_BED:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
+											updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_BUNKBED:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
+											updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_PODIUM:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
+											updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										default:
+											break;
 									}
 								}
 							}
@@ -1405,7 +1548,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if (!strcmp(element->name, spellElement_fire.name))
+				else if (!strcmp(element->element_internal_name, spellElement_fire.element_internal_name))
 				{
 					if ( !(my->actmagicIsOrbiting == 2) )
 					{
@@ -1456,9 +1599,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									damage = 14;
 								}
-								damage = damage - rand() % ((damage / 8) + 1);
+								damage = damage - local_rng.rand() % ((damage / 8) + 1);
 							}
-							damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
 							if ( parent )
 							{
 								Stat* casterStats = parent->getStats();
@@ -1482,15 +1625,17 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									&& parent->behavior == &actParticleDot
 									&& parent->skill[1] > 0 )
 								{
-									if ( hitstats && hitstats->obituary && !strcmp(hitstats->obituary, language[3898]) )
+									if ( hitstats && !strcmp(hitstats->obituary, Language::get(3898)) )
 									{
 										// was caused by a flaming boulder.
-										hit.entity->setObituary(language[3898]);
+										hit.entity->setObituary(Language::get(3898));
+										hitstats->killer = KilledBy::BOULDER;
 									}
 									else
 									{
 										// blew the brew (alchemy)
-										hit.entity->setObituary(language[3350]);
+										hit.entity->setObituary(Language::get(3350));
+										hitstats->killer = KilledBy::FAILED_ALCHEMY;
 									}
 								}
 								else
@@ -1506,14 +1651,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								if ( hitstats->type < KOBOLD ) //Original monster count
-								{
-									updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-								}
-								else if ( hitstats->type >= KOBOLD ) //New monsters
-								{
-									updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-								}
+								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 							}
 							else
 							{
@@ -1527,7 +1665,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										if ( hitstats->type == LICH || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
 										{
-											if ( client_classes[parent->skill[2]] == CLASS_BREWER )
+											if ( true/*client_classes[parent->skill[2]] == CLASS_BREWER*/ )
 											{
 												steamAchievementClient(parent->skill[2], "BARONY_ACH_SECRET_WEAPON");
 											}
@@ -1539,6 +1677,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										steamAchievementClient(parent->skill[2], "BARONY_ACH_TIME_TO_PLAN");
 									}
 									parent->awardXP( hit.entity, true, true );
+									spawnBloodVialOnMonsterDeath(hit.entity, hitstats);
 								}
 								else
 								{
@@ -1572,6 +1711,29 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							return;
 						} 
+						else if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
+						{
+							int damage = element->damage;
+							damage += (spellbookDamageBonus * damage);
+							damage /= (1 + (int)resistance);
+
+							hit.entity->colliderHandleDamageMagic(damage, *my, parent);
+							if ( my->actmagicProjectileArc > 0 )
+							{
+								Entity* caster = uidToEntity(spell->caster);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+							}
+							if ( !(my->actmagicIsOrbiting == 2) )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
+							else
+							{
+								spawnExplosion(my->x, my->y, my->z);
+							}
+							return;
+						}
 						else if (hit.entity->behavior == &actChest) 
 						{
 							int damage = element->damage;
@@ -1600,37 +1762,34 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
 							hit.entity->furnitureHealth -= damage;
-							if ( hit.entity->furnitureHealth < 0 )
+							if ( parent )
 							{
-								if ( parent )
+								if ( parent->behavior == &actPlayer )
 								{
-									if ( parent->behavior == &actPlayer )
+									switch ( hit.entity->furnitureType )
 									{
-										switch ( hit.entity->furnitureType )
-										{
-											case FURNITURE_CHAIR:
-												messagePlayer(parent->skill[2], language[388]);
-												updateEnemyBar(parent, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_TABLE:
-												messagePlayer(parent->skill[2], language[389]);
-												updateEnemyBar(parent, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_BED:
-												messagePlayer(parent->skill[2], language[2508], language[2505]);
-												updateEnemyBar(parent, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_BUNKBED:
-												messagePlayer(parent->skill[2], language[2508], language[2506]);
-												updateEnemyBar(parent, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_PODIUM:
-												messagePlayer(parent->skill[2], language[2508], language[2507]);
-												updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											default:
-												break;
-										}
+										case FURNITURE_CHAIR:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
+											updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_TABLE:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
+											updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_BED:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
+											updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_BUNKBED:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
+											updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_PODIUM:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
+											updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										default:
+											break;
 									}
 								}
 							}
@@ -1653,42 +1812,52 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if (!strcmp(element->name, spellElement_confuse.name))
+				else if (!strcmp(element->element_internal_name, spellElement_confuse.element_internal_name))
 				{
 					if (hit.entity)
 					{
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
 							playSoundEntity(hit.entity, 174, 64);
-							hitstats->EFFECTS[EFF_CONFUSED] = true;
-							hitstats->EFFECTS_TIMERS[EFF_CONFUSED] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
-							hitstats->EFFECTS_TIMERS[EFF_CONFUSED] /= (1 + (int)resistance);
+							int duration = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
+							duration /= (1 + (int)resistance);
 
-							// If the Entity hit is a Player, update their status to be Slowed
-							if ( hit.entity->behavior == &actPlayer )
+							if ( hit.entity->setEffect(EFF_CONFUSED, true, duration, false) )
 							{
-								serverUpdateEffects(hit.entity->skill[2]);
-							}
-
-							hit.entity->skill[1] = 0; //Remove the monster's target.
-							if ( parent )
-							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								if ( parent->behavior == &actPlayer )
+								if ( hit.entity->behavior == &actMonster )
 								{
-									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[391], language[390], MSG_COMBAT);
+									hit.entity->monsterTarget = 0; // monsters forget what they're doing
+								}
+								if ( parent )
+								{
+									Uint32 color = makeColorRGB(0, 255, 0);
+									if ( parent->behavior == &actPlayer )
+									{
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(391), Language::get(390), MSG_COMBAT);
+									}
+								}
+								Uint32 color = makeColorRGB(255, 0, 0);
+								if ( player >= 0 )
+								{
+									messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(392));
 								}
 							}
-							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-							if ( player >= 0 )
+							else
 							{
-								messagePlayerColor(player, color, language[392]);
+								if ( parent )
+								{
+									Uint32 color = makeColorRGB(255, 0, 0);
+									if ( parent->behavior == &actPlayer )
+									{
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2905), Language::get(2906), MSG_COMBAT);
+									}
+								}
 							}
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 						}
 					}
 				}
-				else if (!strcmp(element->name, spellElement_cold.name))
+				else if (!strcmp(element->element_internal_name, spellElement_cold.element_internal_name))
 				{
 					playSoundEntity(my, 197, 128);
 					if (hit.entity)
@@ -1740,11 +1909,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									damage = 18;
 								}
-								damage = damage - rand() % ((damage / 8) + 1);
+								damage = damage - local_rng.rand() % ((damage / 8) + 1);
 							}
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							int oldHP = hitstats->HP;
-							damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							Entity* gib = spawnGib(hit.entity);
@@ -1759,14 +1928,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								if ( hitstats->type < KOBOLD ) //Original monster count
-								{
-									updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-								}
-								else if ( hitstats->type >= KOBOLD ) //New monsters
-								{
-									updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-								}
+								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 							}
 							else
 							{
@@ -1774,16 +1936,16 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							if ( parent )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								Uint32 color = makeColorRGB(0, 255, 0);
 								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[394], language[393], MSG_COMBAT);
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(394), Language::get(393), MSG_COMBAT);
 								}
 							}
-							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+							Uint32 color = makeColorRGB(255, 0, 0);
 							if ( player >= 0 )
 							{
-								messagePlayerColor(player, color, language[395]);
+								messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(395));
 							}
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 							if ( oldHP > 0 && hitstats->HP <= 0 )
@@ -1795,7 +1957,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										if ( hitstats->type == LICH || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
 										{
-											if ( client_classes[parent->skill[2]] == CLASS_BREWER )
+											if ( true/*client_classes[parent->skill[2]] == CLASS_BREWER*/ )
 											{
 												steamAchievementClient(parent->skill[2], "BARONY_ACH_SECRET_WEAPON");
 											}
@@ -1806,6 +1968,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										steamAchievementClient(parent->skill[2], "BARONY_ACH_TIME_TO_PLAN");
 									}
+									spawnBloodVialOnMonsterDeath(hit.entity, hitstats);
 								}
 								else
 								{
@@ -1818,13 +1981,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if (!strcmp(element->name, spellElement_slow.name))
+				else if (!strcmp(element->element_internal_name, spellElement_slow.element_internal_name))
 				{
 					if (hit.entity)
 					{
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
-							playSoundEntity(hit.entity, 396 + rand() % 3, 64);
+							playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
 							hitstats->EFFECTS[EFF_SLOW] = true;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
@@ -1838,22 +2001,22 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( parent )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								Uint32 color = makeColorRGB(0, 255, 0);
 								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[394], language[393], MSG_COMBAT);
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(394), Language::get(393), MSG_COMBAT);
 								}
 							}
-							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+							Uint32 color = makeColorRGB(255, 0, 0);
 							if ( player >= 0 )
 							{
-								messagePlayerColor(player, color, language[395]);
+								messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(395));
 							}
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 						}
 					}
 				}
-				else if (!strcmp(element->name, spellElement_sleep.name))
+				else if (!strcmp(element->element_internal_name, spellElement_sleep.element_internal_name))
 				{
 					if (hit.entity)
 					{
@@ -1863,11 +2026,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int effectDuration = 0;
 							if ( parent && parent->behavior == &actMagicTrapCeiling )
 							{
-								effectDuration = 200 + rand() % 150; // 4 seconds + 0 to 3 seconds.
+								effectDuration = 200 + local_rng.rand() % 150; // 4 seconds + 0 to 3 seconds.
 							}
 							else
 							{
-								effectDuration = 600 + rand() % 300; // 12 seconds + 0 to 6 seconds.
+								effectDuration = 600 + local_rng.rand() % 300; // 12 seconds + 0 to 6 seconds.
 								if ( hitstats )
 								{
 									effectDuration = std::max(0, effectDuration - ((hitstats->CON % 10) * 50)); // reduce 1 sec every 10 CON.
@@ -1882,7 +2045,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								if ( hitstats && hitstats->EFFECTS[EFF_ASLEEP] )
 								{
 									// check to see if we're reapplying the sleep effect.
-									int preventSleepRoll = rand() % 4 - resistance;
+									int preventSleepRoll = local_rng.rand() % 4 - resistance;
 									if ( hit.entity->behavior == &actPlayer || (preventSleepRoll <= 0) )
 									{
 										magicTrapReapplySleep = false;
@@ -1899,15 +2062,15 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									if ( hit.entity->behavior == &actPlayer )
 									{
 										serverUpdateEffects(hit.entity->skill[2]);
-										Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-										messagePlayerColor(hit.entity->skill[2], color, language[396]);
+										Uint32 color = makeColorRGB(255, 0, 0);
+										messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(396));
 									}
 									if ( parent )
 									{
-										Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										Uint32 color = makeColorRGB(0, 255, 0);
 										if ( parent->behavior == &actPlayer )
 										{
-											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[398], language[397], MSG_COMBAT);
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(398), Language::get(397), MSG_COMBAT);
 										}
 									}
 								}
@@ -1915,10 +2078,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									if ( parent )
 									{
-										Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										Uint32 color = makeColorRGB(255, 0, 0);
 										if ( parent->behavior == &actPlayer )
 										{
-											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2905), Language::get(2906), MSG_COMBAT);
 										}
 									}
 								}
@@ -1927,7 +2090,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if (!strcmp(element->name, spellElement_lightning.name))
+				else if (!strcmp(element->element_internal_name, spellElement_lightning.element_internal_name))
 				{
 					playSoundEntity(my, 173, 128);
 					if (hit.entity)
@@ -1970,11 +2133,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									damage = 22;
 								}
-								damage = damage - rand() % ((damage / 8) + 1);
+								damage = damage - local_rng.rand() % ((damage / 8) + 1);
 							}
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							int oldHP = hitstats->HP;
-							damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 
@@ -1987,14 +2150,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								if ( hitstats->type < KOBOLD ) //Original monster count
-								{
-									updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-								}
-								else if ( hitstats->type >= KOBOLD ) //New monsters
-								{
-									updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-								}
+								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 							}
 							else
 							{
@@ -2007,13 +2163,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									if ( hitstats->type == LICH || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
 									{
-										if ( client_classes[parent->skill[2]] == CLASS_BREWER )
+										if ( true/*client_classes[parent->skill[2]] == CLASS_BREWER*/ )
 										{
 											steamAchievementClient(parent->skill[2], "BARONY_ACH_SECRET_WEAPON");
 										}
 									}
 									steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_BOMBARDIER, STEAM_STAT_INT, 1);
 								}
+								spawnBloodVialOnMonsterDeath(hit.entity, hitstats);
 							}
 						}
 						else if ( hit.entity->behavior == &actDoor )
@@ -2024,6 +2181,26 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage /= (1 + (int)resistance);
 
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
+							if ( my->actmagicProjectileArc > 0 )
+							{
+								Entity* caster = uidToEntity(spell->caster);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+							}
+							if ( !(my->actmagicIsOrbiting == 2) )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
+							return;
+						}
+						else if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
+						{
+							int damage = element->damage;
+							damage += (spellbookDamageBonus * damage);
+							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+							damage /= (1 + (int)resistance);
+
+							hit.entity->colliderHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
@@ -2060,37 +2237,34 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
 							hit.entity->furnitureHealth -= damage;
-							if ( hit.entity->furnitureHealth < 0 )
+							if ( parent )
 							{
-								if ( parent )
+								if ( parent->behavior == &actPlayer )
 								{
-									if ( parent->behavior == &actPlayer )
+									switch ( hit.entity->furnitureType )
 									{
-										switch ( hit.entity->furnitureType )
-										{
-											case FURNITURE_CHAIR:
-												messagePlayer(parent->skill[2], language[388]);
-												updateEnemyBar(parent, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_TABLE:
-												messagePlayer(parent->skill[2], language[389]);
-												updateEnemyBar(parent, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_BED:
-												messagePlayer(parent->skill[2], language[2508], language[2505]);
-												updateEnemyBar(parent, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_BUNKBED:
-												messagePlayer(parent->skill[2], language[2508], language[2506]);
-												updateEnemyBar(parent, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_PODIUM:
-												messagePlayer(parent->skill[2], language[2508], language[2507]);
-												updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											default:
-												break;
-										}
+										case FURNITURE_CHAIR:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
+											updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_TABLE:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
+											updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_BED:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
+											updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_BUNKBED:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
+											updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_PODIUM:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
+											updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										default:
+											break;
 									}
 								}
 							}
@@ -2103,7 +2277,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if (!strcmp(element->name, spellElement_locking.name))
+				else if (!strcmp(element->element_internal_name, spellElement_locking.element_internal_name))
 				{
 					if ( hit.entity )
 					{
@@ -2111,9 +2285,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEOPENING )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-								messagePlayerColor(parent->skill[2], 0xFFFFFFFF, language[3096], language[3097]);
-								messagePlayerColor(parent->skill[2], color, language[3101]); // disabled locking spell.
+								Uint32 color = makeColorRGB(255, 0, 255);
+								messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, Language::get(3096), Language::get(3097));
+								messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(3101)); // disabled locking spell.
 							}
 							else
 							{
@@ -2123,7 +2297,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									if ( parent->behavior == &actPlayer )
 									{
-										messagePlayer(parent->skill[2], language[399]);
+										messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(399));
 									}
 								}
 							}
@@ -2136,9 +2310,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEOPENING )
 								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-									messagePlayerColor(parent->skill[2], 0xFFFFFFFF, language[3096], language[3099]);
-									messagePlayerColor(parent->skill[2], color, language[3100]); // disabled locking spell.
+									Uint32 color = makeColorRGB(255, 0, 255);
+									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, Language::get(3096), Language::get(3099));
+									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(3100)); // disabled locking spell.
 								}
 								else
 								{
@@ -2147,7 +2321,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										if ( parent->behavior == &actPlayer )
 										{
-											messagePlayer(parent->skill[2], language[400]);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(400));
 										}
 									}
 								}
@@ -2156,19 +2330,21 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else
 						{
 							if ( parent )
+							{
 								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayer(parent->skill[2], language[401]);
+									messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(401));
 								}
+							}
 							if ( player >= 0 )
 							{
-								messagePlayer(player, language[401]);
+								messagePlayer(player, MESSAGE_COMBAT, Language::get(401));
 							}
 						}
 						spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 					}
 				}
-				else if (!strcmp(element->name, spellElement_opening.name))
+				else if (!strcmp(element->element_internal_name, spellElement_opening.element_internal_name))
 				{
 					if (hit.entity)
 					{
@@ -2178,9 +2354,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								if ( parent && parent->behavior == &actPlayer )
 								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-									messagePlayerColor(parent->skill[2], 0xFFFFFFFF, language[3096], language[3097]);
-									messagePlayerColor(parent->skill[2], color, language[3101]); // disabled opening spell.
+									Uint32 color = makeColorRGB(255, 0, 255);
+									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, Language::get(3096), Language::get(3097));
+									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(3101)); // disabled opening spell.
 								}
 							}
 							else
@@ -2204,7 +2380,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									if ( parent->behavior == &actPlayer)
 									{
-										messagePlayer(parent->skill[2], language[402]);
+										messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(402));
 									}
 								}
 							}
@@ -2215,9 +2391,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								if ( parent && parent->behavior == &actPlayer )
 								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-									messagePlayerColor(parent->skill[2], 0xFFFFFFFF, language[3096], language[3098]);
-									messagePlayerColor(parent->skill[2], color, language[3102]); // disabled opening spell.
+									Uint32 color = makeColorRGB(255, 0, 255);
+									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, Language::get(3096), Language::get(3098));
+									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(3102)); // disabled opening spell.
 								}
 							}
 							else
@@ -2238,7 +2414,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										if ( parent->behavior == &actPlayer )
 										{
-											messagePlayer(parent->skill[2], language[403]); // "The spell opens the gate!"
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(403)); // "The spell opens the gate!"
 										}
 									}
 								}
@@ -2253,9 +2429,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									if ( parent && parent->behavior == &actPlayer )
 									{
-										Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-										messagePlayerColor(parent->skill[2], 0xFFFFFFFF, language[3096], language[3099]);
-										messagePlayerColor(parent->skill[2], color, language[3100]); // disabled opening spell.
+										Uint32 color = makeColorRGB(255, 0, 255);
+										messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, Language::get(3096), Language::get(3099));
+										messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(3100)); // disabled opening spell.
 									}
 								}
 								else
@@ -2266,7 +2442,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										if ( parent->behavior == &actPlayer)
 										{
-											messagePlayer(parent->skill[2], language[404]); // "The spell unlocks the chest!"
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(404)); // "The spell unlocks the chest!"
 										}
 									}
 								}
@@ -2291,7 +2467,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										{
 											if ( parent->behavior == &actPlayer )
 											{
-												messagePlayer(parent->skill[2], language[2358]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2358));
 											}
 										}
 									}
@@ -2304,20 +2480,20 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayer(parent->skill[2], language[401]); // "No telling what it did..."
+									messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(401)); // "No telling what it did..."
 								}
 							}
 
 							if ( player >= 0 )
 							{
-								messagePlayer(player, language[401]); // "No telling what it did..."
+								messagePlayer(player, MESSAGE_COMBAT, Language::get(401)); // "No telling what it did..."
 							}
 						}
 
 						spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 					}
 				}
-				else if (!strcmp(element->name, spellElement_dig.name))
+				else if (!strcmp(element->element_internal_name, spellElement_dig.element_internal_name))
 				{
 					if ( !hit.entity )
 					{
@@ -2339,59 +2515,70 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								magicDig(parent, my, 8, 4);
 							}
 						}
+						else if ( hit.entity->behavior == &actColliderDecoration && hit.entity->colliderDiggable != 0 )
+						{
+							magicDig(parent, my, 1, 0);
+						}
 						else
 						{
 							if ( parent )
+							{
 								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayer(parent->skill[2], language[401]);
+									messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(401));
 								}
+							}
 							if ( player >= 0 )
 							{
-								messagePlayer(player, language[401]);
+								messagePlayer(player, MESSAGE_COMBAT, Language::get(401));
 							}
 						}
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_stoneblood.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_stoneblood.element_internal_name) )
 				{
 					if ( hit.entity )
 					{
 						if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
 						{
-							playSoundEntity(hit.entity, 172, 64); //TODO: Paralyze spell sound.
 							int effectDuration = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							effectDuration /= (1 + (int)resistance);
+							int oldDuration = !hitstats->EFFECTS[EFF_PARALYZED] ? 0 : hitstats->EFFECTS_TIMERS[EFF_PARALYZED];
 							if ( hit.entity->setEffect(EFF_PARALYZED, true, effectDuration, false) )
 							{
 								if ( hit.entity->behavior == &actPlayer )
 								{
 									serverUpdateEffects(hit.entity->skill[2]);
 								}
-								// update enemy bar for attacker
-								if ( parent )
+								
+								// notify if effect wasn't active with identical duration, few ticks leeway
+								if ( abs(hitstats->EFFECTS_TIMERS[EFF_PARALYZED] - oldDuration) > 10 ) 
 								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-									if ( parent->behavior == &actPlayer )
+									playSoundEntity(hit.entity, 172, 64); //TODO: Paralyze spell sound.
+									if ( parent )
 									{
-										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2421], language[2420], MSG_COMBAT);
+										Uint32 color = makeColorRGB(0, 255, 0);
+										if ( parent->behavior == &actPlayer )
+										{
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2421), Language::get(2420), MSG_COMBAT);
+										}
 									}
-								}
 
-								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-								if ( player >= 0 )
-								{
-									messagePlayerColor(player, color, language[2422]);
+									Uint32 color = makeColorRGB(255, 0, 0);
+									if ( player >= 0 )
+									{
+										messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(2422));
+									}
 								}
 							}
 							else
 							{
 								if ( parent )
 								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+									Uint32 color = makeColorRGB(255, 0, 0);
 									if ( parent->behavior == &actPlayer )
 									{
-										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2905), Language::get(2906), MSG_COMBAT);
 									}
 								}
 							}
@@ -2399,7 +2586,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_bleed.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_bleed.element_internal_name) )
 				{
 					playSoundEntity(my, 173, 128);
 					if ( hit.entity )
@@ -2412,10 +2599,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-							damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
+							Stat* casterStats = nullptr;
 							if ( parent )
 							{
-								Stat* casterStats = parent->getStats();
+								casterStats = parent->getStats();
 								if ( casterStats && casterStats->type == LICH_FIRE && parent->monsterLichAllyStatus == LICH_ALLY_DEAD )
 								{
 									damage *= 2;
@@ -2433,11 +2621,28 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 							int bleedDuration = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							bleedDuration /= (1 + (int)resistance);
+							bool wasBleeding = hit.entity->getStats() ? hit.entity->getStats()->EFFECTS[EFF_BLEEDING] : false;
 							if ( hit.entity->setEffect(EFF_BLEEDING, true, bleedDuration, true) )
 							{
 								if ( parent )
 								{
 									hitstats->bleedInflictedBy = static_cast<Sint32>(my->parent);
+								}
+								if ( !wasBleeding && parent && casterStats )
+								{
+									// energize if wearing punisher hood!
+									if ( casterStats->helmet && casterStats->helmet->type == PUNISHER_HOOD )
+									{
+										parent->modMP(1 + local_rng.rand() % 2);
+										Uint32 color = makeColorRGB(0, 255, 0);
+										parent->setEffect(EFF_MP_REGEN, true, 250, true);
+										if ( parent->behavior == &actPlayer )
+										{
+											messagePlayerColor(parent->skill[2], MESSAGE_HINT, color, Language::get(3753));
+											steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_ITS_A_LIVING, STEAM_STAT_INT, 1);
+										}
+										playSoundEntity(parent, 168, 128);
+									}
 								}
 							}
 							hitstats->EFFECTS[EFF_SLOW] = true;
@@ -2451,10 +2656,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( parent )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								Uint32 color = makeColorRGB(0, 255, 0);
 								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2424], language[2423], MSG_COMBAT);
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2424), Language::get(2423), MSG_COMBAT);
 								}
 							}
 
@@ -2467,14 +2672,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								if ( hitstats->type < KOBOLD ) //Original monster count
-								{
-									updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-								}
-								else if ( hitstats->type >= KOBOLD ) //New monsters
-								{
-									updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-								}
+								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 							}
 							else
 							{
@@ -2492,7 +2690,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										for ( c = 0; c < MAXPLAYERS; ++c )
 										{
-											if ( players[c]->entity && players[c]->entity->playerRequiresBloodToSustain() )
+											if ( playerRequiresBloodToSustain(c) )
 											{
 												tryBloodVial = true;
 												break;
@@ -2506,10 +2704,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 
-							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+							Uint32 color = makeColorRGB(255, 0, 0);
 							if ( player >= 0 )
 							{
-								messagePlayerColor(player, color, language[2425]);
+								messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(2425));
 							}
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 							for ( int gibs = 0; gibs < 10; ++gibs )
@@ -2518,9 +2716,104 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								serverSpawnGibForClient(gib);
 							}
 						}
+						else
+						{
+							Entity* caster = uidToEntity(spell->caster);
+							bool forceFurnitureDamage = false;
+							if ( caster && caster->behavior == &actMonster && caster->getMonsterTypeFromSprite() == SHOPKEEPER )
+							{
+								forceFurnitureDamage = true;
+							}
+
+							if ( forceFurnitureDamage )
+							{
+								if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
+								{
+									int damage = element->damage;
+									damage += (spellbookDamageBonus * damage);
+									//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+									damage /= (1 + (int)resistance);
+
+									hit.entity->colliderHandleDamageMagic(damage, *my, parent);
+									if ( my->actmagicProjectileArc > 0 )
+									{
+										Entity* caster = uidToEntity(spell->caster);
+										spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+									}
+									if ( !(my->actmagicIsOrbiting == 2) )
+									{
+										my->removeLightField();
+										list_RemoveNode(my->mynode);
+									}
+									return;
+								}
+								else if ( hit.entity->behavior == &actChest )
+								{
+									int damage = element->damage;
+									damage += (spellbookDamageBonus * damage);
+									damage /= (1 + (int)resistance);
+									hit.entity->chestHandleDamageMagic(damage, *my, parent);
+									if ( my->actmagicProjectileArc > 0 )
+									{
+										Entity* caster = uidToEntity(spell->caster);
+										spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+									}
+									if ( !(my->actmagicIsOrbiting == 2) )
+									{
+										my->removeLightField();
+										list_RemoveNode(my->mynode);
+									}
+									return;
+								}
+								else if ( hit.entity->behavior == &actFurniture )
+								{
+									int damage = element->damage;
+									damage += (spellbookDamageBonus * damage);
+									damage /= (1 + (int)resistance);
+									hit.entity->furnitureHealth -= damage;
+									if ( parent )
+									{
+										if ( parent->behavior == &actPlayer )
+										{
+											switch ( hit.entity->furnitureType )
+											{
+											case FURNITURE_CHAIR:
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
+												updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+												break;
+											case FURNITURE_TABLE:
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
+												updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+												break;
+											case FURNITURE_BED:
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
+												updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+												break;
+											case FURNITURE_BUNKBED:
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
+												updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+												break;
+											case FURNITURE_PODIUM:
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
+												updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+												break;
+											default:
+												break;
+											}
+										}
+									}
+									playSoundEntity(hit.entity, 28, 128);
+									if ( my->actmagicProjectileArc > 0 )
+									{
+										Entity* caster = uidToEntity(spell->caster);
+										spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+									}
+								}
+							}
+						}
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_dominate.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_dominate.element_internal_name) )
 				{
 					Entity *caster = uidToEntity(spell->caster);
 					if ( caster )
@@ -2531,7 +2824,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_acidSpray.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_acidSpray.element_internal_name) )
 				{
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
@@ -2539,7 +2832,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						spellEffectAcid(*my, *element, parent, resistance);
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_poison.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_poison.element_internal_name) )
 				{
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
@@ -2547,7 +2840,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						spellEffectPoison(*my, *element, parent, resistance);
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_sprayWeb.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_sprayWeb.element_internal_name) )
 				{
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
@@ -2555,7 +2848,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						spellEffectSprayWeb(*my, *element, parent, resistance);
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_stealWeapon.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_stealWeapon.element_internal_name) )
 				{
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
@@ -2563,7 +2856,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						spellEffectStealWeapon(*my, *element, parent, resistance);
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_drainSoul.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_drainSoul.element_internal_name) )
 				{
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
@@ -2571,7 +2864,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						spellEffectDrainSoul(*my, *element, parent, resistance);
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_charmMonster.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_charmMonster.element_internal_name) )
 				{
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
@@ -2579,7 +2872,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						spellEffectCharmMonster(*my, *element, parent, resistance, static_cast<bool>(my->actmagicCastByMagicstaff));
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_telePull.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_telePull.element_internal_name) )
 				{
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
@@ -2587,7 +2880,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						spellEffectTeleportPull(my, *element, parent, hit.entity, resistance);
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_shadowTag.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_shadowTag.element_internal_name) )
 				{
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
@@ -2595,7 +2888,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						spellEffectShadowTag(*my, *element, parent, resistance);
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_demonIllusion.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_demonIllusion.element_internal_name) )
 				{
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
@@ -2690,10 +2983,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 		//element = (spellElement_t *)element->elements->first->element; //Go down two levels to the second element.
 		node = element->elements.first;
 		element = (spellElement_t*)node->element;
-		if (!strcmp(element->name, spellElement_fire.name) || !strcmp(element->name, spellElement_lightning.name))
+		//if (!strcmp(element->element_internal_name, spellElement_fire.element_internal_name)
+		//	|| !strcmp(element->element_internal_name, spellElement_lightning.element_internal_name))
+        if (1)
 		{
 			//Make the ball light up stuff as it travels.
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
+			my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, false));
 
 			if ( flickerLights )
 			{
@@ -2709,12 +3004,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				if (lightball_lighting == 1)
 				{
 					my->removeLightField();
-					my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
+					my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, false));
 				}
 				else
 				{
 					my->removeLightField();
-					my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 174);
+					my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, true));
 				}
 				lightball_flicker = 0;
 			}
@@ -2725,7 +3020,26 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 		}
 
 		// spawn particles
-		spawnMagicParticle(my);
+		if ( *cvar_magic_fx_use_vismap && !intro )
+		{
+			int x = my->x / 16.0;
+			int y = my->y / 16.0;
+			if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+			{
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
+					{
+						spawnMagicParticle(my);
+						break;
+					}
+				}
+			}
+		}
+		else
+		{
+			spawnMagicParticle(my);
+		}
 	}
 	else
 	{
@@ -2746,7 +3060,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 void actMagicClient(Entity* my)
 {
 	my->removeLightField();
-	my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
+	my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, false));
 
 	if ( flickerLights )
 	{
@@ -2762,23 +3076,62 @@ void actMagicClient(Entity* my)
 		if (lightball_lighting == 1)
 		{
 			my->removeLightField();
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
+			my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, false));
 		}
 		else
 		{
 			my->removeLightField();
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 174);
+			my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, true));
 		}
 		lightball_flicker = 0;
 	}
 
 	// spawn particles
-	spawnMagicParticle(my);
+	if ( *cvar_magic_fx_use_vismap && !intro )
+	{
+		int x = my->x / 16.0;
+		int y = my->y / 16.0;
+		if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
+				{
+					spawnMagicParticle(my);
+					break;
+				}
+			}
+		}
+	}
+	else
+	{
+		spawnMagicParticle(my);
+	}
 }
 
 void actMagicClientNoLight(Entity* my)
 {
-	spawnMagicParticle(my); // simply spawn particles
+	// simply spawn particles
+	if ( *cvar_magic_fx_use_vismap && !intro )
+	{
+		int x = my->x / 16.0;
+		int y = my->y / 16.0;
+		if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
+				{
+					spawnMagicParticle(my);
+					break;
+				}
+			}
+		}
+	}
+	else
+	{
+		spawnMagicParticle(my);
+	}
 }
 
 void actMagicParticle(Entity* my)
@@ -2805,6 +3158,8 @@ void actMagicParticle(Entity* my)
 	}
 }
 
+static ConsoleVariable<float> cvar_magic_fx_light_bonus("/magic_fx_light_bonus", 0.25f);
+
 Entity* spawnMagicParticle(Entity* parentent)
 {
 	if ( !parentent )
@@ -2815,9 +3170,9 @@ Entity* spawnMagicParticle(Entity* parentent)
 
 	entity = newEntity(parentent->sprite, 1, map.entities, nullptr); //Particle entity.
 
-	entity->x = parentent->x + (rand() % 50 - 25) / 20.f;
-	entity->y = parentent->y + (rand() % 50 - 25) / 20.f;
-	entity->z = parentent->z + (rand() % 50 - 25) / 20.f;
+	entity->x = parentent->x + (local_rng.rand() % 50 - 25) / 20.f;
+	entity->y = parentent->y + (local_rng.rand() % 50 - 25) / 20.f;
+	entity->z = parentent->z + (local_rng.rand() % 50 - 25) / 20.f;
 	entity->scalex = 0.7;
 	entity->scaley = 0.7;
 	entity->scalez = 0.7;
@@ -2828,10 +3183,11 @@ Entity* spawnMagicParticle(Entity* parentent)
 	entity->roll = parentent->roll;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[PASSABLE] = true;
-	entity->flags[BRIGHT] = true;
 	entity->flags[UNCLICKABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UPDATENEEDED] = false;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
 	entity->behavior = &actMagicParticle;
 	if ( multiplayer != CLIENT )
 	{
@@ -2853,9 +3209,9 @@ Entity* spawnMagicParticleCustom(Entity* parentent, int sprite, real_t scale, re
 	entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 
 	int size = 50 / spreadReduce;
-	entity->x = parentent->x + (rand() % size - size / 2) / 20.f;
-	entity->y = parentent->y + (rand() % size - size / 2) / 20.f;
-	entity->z = parentent->z + (rand() % size - size / 2) / 20.f;
+	entity->x = parentent->x + (local_rng.rand() % size - size / 2) / 20.f;
+	entity->y = parentent->y + (local_rng.rand() % size - size / 2) / 20.f;
+	entity->z = parentent->z + (local_rng.rand() % size - size / 2) / 20.f;
 	entity->scalex = scale;
 	entity->scaley = scale;
 	entity->scalez = scale;
@@ -2866,10 +3222,11 @@ Entity* spawnMagicParticleCustom(Entity* parentent, int sprite, real_t scale, re
 	entity->roll = parentent->roll;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[PASSABLE] = true;
-	entity->flags[BRIGHT] = true;
 	entity->flags[UNCLICKABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UPDATENEEDED] = false;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
 	entity->behavior = &actMagicParticle;
 	if ( multiplayer != CLIENT )
 	{
@@ -2887,7 +3244,7 @@ void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite)
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
-			if ( client_disconnected[c] )
+			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}
@@ -2907,19 +3264,20 @@ void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite)
 	for ( c = 0; c < 10; c++ )
 	{
 		Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
-		entity->x = x - 5 + rand() % 11;
-		entity->y = y - 5 + rand() % 11;
-		entity->z = z - 10 + rand() % 21;
+		entity->x = x - 5 + local_rng.rand() % 11;
+		entity->y = y - 5 + local_rng.rand() % 11;
+		entity->z = z - 10 + local_rng.rand() % 21;
 		entity->scalex = 0.7;
 		entity->scaley = 0.7;
 		entity->scalez = 0.7;
 		entity->sizex = 1;
 		entity->sizey = 1;
-		entity->yaw = (rand() % 360) * PI / 180.f;
+		entity->yaw = (local_rng.rand() % 360) * PI / 180.f;
 		entity->flags[PASSABLE] = true;
-		entity->flags[BRIGHT] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
+		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus, 
+			*cvar_magic_fx_light_bonus, 0.f);
 		entity->behavior = &actMagicParticle;
 		entity->vel_z = -1;
 		if ( multiplayer != CLIENT )
@@ -2928,27 +3286,6 @@ void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite)
 		}
 		entity->setUID(-3);
 	}
-}
-
-void createParticle1(Entity* caster, int player)
-{
-	Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Particle entity.
-	entity->sizex = 0;
-	entity->sizey = 0;
-	entity->x = caster->x;
-	entity->y = caster->y;
-	entity->z = -7;
-	entity->vel_z = 0.3;
-	entity->yaw = (rand() % 360) * PI / 180.0;
-	entity->skill[0] = 50;
-	entity->skill[1] = player;
-	entity->fskill[0] = 0.03;
-	entity->light = lightSphereShadow(entity->x / 16, entity->y / 16, 3, 192);
-	entity->behavior = &actParticleCircle;
-	entity->flags[PASSABLE] = true;
-	entity->flags[INVISIBLE] = true;
-	entity->setUID(-3);
-
 }
 
 void createParticleCircling(Entity* parent, int duration, int sprite)
@@ -2966,7 +3303,7 @@ void createParticleCircling(Entity* parent, int duration, int sprite)
 	entity->focalx = 8;
 	entity->z = -7;
 	entity->vel_z = 0.15;
-	entity->yaw = (rand() % 360) * PI / 180.0;
+	entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 	entity->skill[0] = duration;
 	entity->skill[1] = -1;
 	//entity->scalex = 0.01;
@@ -2974,6 +3311,8 @@ void createParticleCircling(Entity* parent, int duration, int sprite)
 	entity->fskill[0] = -0.1;
 	entity->behavior = &actParticleCircle;
 	entity->flags[PASSABLE] = true;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
 	entity->setUID(-3);
 
 	real_t tmp = entity->yaw;
@@ -2994,6 +3333,8 @@ void createParticleCircling(Entity* parent, int duration, int sprite)
 	entity->fskill[0] = -0.1;
 	entity->behavior = &actParticleCircle;
 	entity->flags[PASSABLE] = true;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
 	entity->setUID(-3);
 
 	entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
@@ -3012,6 +3353,8 @@ void createParticleCircling(Entity* parent, int duration, int sprite)
 	entity->fskill[0] = -0.1;
 	entity->behavior = &actParticleCircle;
 	entity->flags[PASSABLE] = true;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
 	entity->setUID(-3);
 
 	entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
@@ -3030,6 +3373,8 @@ void createParticleCircling(Entity* parent, int duration, int sprite)
 	entity->fskill[0] = 0.1;
 	entity->behavior = &actParticleCircle;
 	entity->flags[PASSABLE] = true;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
 	entity->setUID(-3);
 
 	entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
@@ -3048,6 +3393,8 @@ void createParticleCircling(Entity* parent, int duration, int sprite)
 	entity->fskill[0] = 0.1;
 	entity->behavior = &actParticleCircle;
 	entity->flags[PASSABLE] = true;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
 	entity->setUID(-3);
 
 	entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
@@ -3066,6 +3413,8 @@ void createParticleCircling(Entity* parent, int duration, int sprite)
 	entity->fskill[0] = 0.1;
 	entity->behavior = &actParticleCircle;
 	entity->flags[PASSABLE] = true;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
 	entity->setUID(-3);
 }
 
@@ -3116,16 +3465,18 @@ void createParticleDot(Entity* parent)
 		Entity* entity = newEntity(576, 1, map.entities, nullptr); //Particle entity.
 		entity->sizex = 1;
 		entity->sizey = 1;
-		entity->x = parent->x + (-4 + rand() % 9);
-		entity->y = parent->y + (-4 + rand() % 9);
-		entity->z = 7.5 + rand()%50;
+		entity->x = parent->x + (-4 + local_rng.rand() % 9);
+		entity->y = parent->y + (-4 + local_rng.rand() % 9);
+		entity->z = 7.5 + local_rng.rand()%50;
 		entity->vel_z = -1;
-		//entity->yaw = (rand() % 360) * PI / 180.0;
-		entity->skill[0] = 10 + rand()% 50;
+		//entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+		entity->skill[0] = 10 + local_rng.rand()% 50;
 		entity->behavior = &actParticleDot;
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
+		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+			*cvar_magic_fx_light_bonus, 0.f);
 		if ( multiplayer != CLIENT )
 		{
 			entity_uids--;
@@ -3151,15 +3502,16 @@ Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration, i
 	entity->skill[1] = effectType;
 	entity->parent = parent->getUID();
 	//entity->vel_z = -1;
-	//entity->yaw = (rand() % 360) * PI / 180.0;
+	//entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 	entity->skill[0] = duration;
 	entity->fskill[0] = entity->x;
 	entity->fskill[1] = entity->y;
 	entity->behavior = &actParticleAestheticOrbit;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[BRIGHT] = true;
 	entity->flags[UNCLICKABLE] = true;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
 	if ( multiplayer != CLIENT )
 	{
 		entity_uids--;
@@ -3168,7 +3520,7 @@ Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration, i
 	return entity;
 }
 
-void createParticleRock(Entity* parent)
+void createParticleRock(Entity* parent, int sprite)
 {
 	if ( !parent )
 	{
@@ -3176,18 +3528,18 @@ void createParticleRock(Entity* parent)
 	}
 	for ( int c = 0; c < 5; c++ )
 	{
-		Entity* entity = newEntity(78, 1, map.entities, nullptr); //Particle entity.
+		Entity* entity = newEntity(sprite != -1 ? sprite : 78, 1, map.entities, nullptr); //Particle entity.
 		entity->sizex = 1;
 		entity->sizey = 1;
-		entity->x = parent->x + (-4 + rand() % 9);
-		entity->y = parent->y + (-4 + rand() % 9);
+		entity->x = parent->x + (-4 + local_rng.rand() % 9);
+		entity->y = parent->y + (-4 + local_rng.rand() % 9);
 		entity->z = 7.5;
-		entity->yaw = c * 2 * PI / 5;//(rand() % 360) * PI / 180.0;
-		entity->roll = (rand() % 360) * PI / 180.0;
+		entity->yaw = c * 2 * PI / 5;//(local_rng.rand() % 360) * PI / 180.0;
+		entity->roll = (local_rng.rand() % 360) * PI / 180.0;
 
 		entity->vel_x = 0.2 * cos(entity->yaw);
 		entity->vel_y = 0.2 * sin(entity->yaw);
-		entity->vel_z = 3;// 0.25 - (rand() % 5) / 10.0;
+		entity->vel_z = 3;// 0.25 - (local_rng.rand() % 5) / 10.0;
 
 		entity->skill[0] = 50; // particle life
 		entity->skill[1] = 0; // particle direction, 0 = upwards, 1 = downwards.
@@ -3196,6 +3548,55 @@ void createParticleRock(Entity* parent)
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
+		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+			*cvar_magic_fx_light_bonus, 0.f);
+		if ( multiplayer != CLIENT )
+		{
+			entity_uids--;
+		}
+		entity->setUID(-3);
+	}
+}
+
+void createParticleShatteredGem(real_t x, real_t y, real_t z, int sprite, Entity* parent)
+{
+	for ( int c = 0; c < 5; c++ )
+	{
+		Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
+		entity->sizex = 1;
+		entity->sizey = 1;
+		if ( parent )
+		{
+			entity->x = parent->x + (-4 + local_rng.rand() % 9);
+			entity->y = parent->y + (-4 + local_rng.rand() % 9);
+		}
+		else
+		{
+			entity->x = x + (-4 + local_rng.rand() % 9);
+			entity->y = y + (-4 + local_rng.rand() % 9);
+		}
+		entity->z = z;
+		entity->yaw = c * 2 * PI / 5;//(local_rng.rand() % 360) * PI / 180.0;
+		entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+
+		entity->vel_x = 0.2 * cos(entity->yaw);
+		entity->vel_y = 0.2 * sin(entity->yaw);
+		entity->vel_z = 3;// 0.25 - (local_rng.rand() % 5) / 10.0;
+
+		real_t scale = .4;
+		entity->scalex = scale;
+		entity->scaley = scale;
+		entity->scalez = scale;
+
+		entity->skill[0] = 50; // particle life
+		entity->skill[1] = 0; // particle direction, 0 = upwards, 1 = downwards.
+
+		entity->behavior = &actParticleRock;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+			*cvar_magic_fx_light_bonus, 0.f);
 		if ( multiplayer != CLIENT )
 		{
 			entity_uids--;
@@ -3277,9 +3678,9 @@ void actParticleAestheticOrbit(Entity* my)
 			Entity* particle = spawnMagicParticle(my);
 			if ( particle )
 			{
-				particle->x = my->x + (-10 + rand() % 21) / (50.f);
-				particle->y = my->y + (-10 + rand() % 21) / (50.f);
-				particle->z = my->z + (-10 + rand() % 21) / (50.f);
+				particle->x = my->x + (-10 + local_rng.rand() % 21) / (50.f);
+				particle->y = my->y + (-10 + local_rng.rand() % 21) / (50.f);
+				particle->z = my->z + (-10 + local_rng.rand() % 21) / (50.f);
 				particle->scalex = my->scalex;
 				particle->scaley = my->scaley;
 				particle->scalez = my->scalez;
@@ -3288,7 +3689,7 @@ void actParticleAestheticOrbit(Entity* my)
 		}
 		else if ( my->skill[1] == PARTICLE_EFFECT_SPELL_WEB_ORBIT )
 		{
-			if ( my->sprite == 863 && !stats->EFFECTS[EFF_WEBBED] )
+			if ( my->sprite == 863 && (!stats || !stats->EFFECTS[EFF_WEBBED]) )
 			{
 				list_RemoveNode(my->mynode);
 				return;
@@ -3348,6 +3749,8 @@ void createParticleErupt(Entity* parent, int sprite)
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
+		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+			*cvar_magic_fx_light_bonus, 0.f);
 		if ( multiplayer != CLIENT )
 		{
 			entity_uids--;
@@ -3556,6 +3959,11 @@ void createParticleSap(Entity* parent)
 			}
 			entity->yaw += PI / 3;
 		}
+		else
+		{
+			entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+				*cvar_magic_fx_light_bonus, 0.f);
+		}
 	}
 }
 
@@ -3572,12 +3980,12 @@ void createParticleDropRising(Entity* parent, int sprite, double scale)
 		Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 		entity->sizex = 1;
 		entity->sizey = 1;
-		entity->x = parent->x - 4 + rand() % 9;
-		entity->y = parent->y - 4 + rand() % 9;
-		entity->z = 7.5 + rand() % 50;
+		entity->x = parent->x - 4 + local_rng.rand() % 9;
+		entity->y = parent->y - 4 + local_rng.rand() % 9;
+		entity->z = 7.5 + local_rng.rand() % 50;
 		entity->vel_z = -1;
-		//entity->yaw = (rand() % 360) * PI / 180.0;
-		entity->particleDuration = 10 + rand() % 50;
+		//entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+		entity->particleDuration = 10 + local_rng.rand() % 50;
 		entity->scalex *= scale;
 		entity->scaley *= scale;
 		entity->scalez *= scale;
@@ -3585,6 +3993,8 @@ void createParticleDropRising(Entity* parent, int sprite, double scale)
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
+		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+			*cvar_magic_fx_light_bonus, 0.f);
 		if ( multiplayer != CLIENT )
 		{
 			entity_uids--;
@@ -3634,7 +4044,26 @@ void actParticleErupt(Entity* my)
 		my->scalex *= 0.99;
 		my->scaley *= 0.99;
 		my->scalez *= 0.99;
-		spawnMagicParticle(my);
+		if ( *cvar_magic_fx_use_vismap && !intro )
+		{
+			int x = my->x / 16.0;
+			int y = my->y / 16.0;
+			if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+			{
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
+					{
+						spawnMagicParticle(my);
+						break;
+					}
+				}
+			}
+		}
+		else
+		{
+			spawnMagicParticle(my);
+		}
 		if ( my->skill[1] == 0 ) // rising
 		{
 			my->z += my->vel_z;
@@ -3716,16 +4145,16 @@ void actParticleTimer(Entity* my)
 						// teleport success.
 						if ( parent->behavior == &actPlayer )
 						{
-							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+							Uint32 color = makeColorRGB(0, 255, 0);
 							if ( target->getStats() )
 							{
-								messagePlayerMonsterEvent(parent->skill[2], color, *(target->getStats()), language[3450], language[3451], MSG_COMBAT);
+								messagePlayerMonsterEvent(parent->skill[2], color, *(target->getStats()), Language::get(3450), Language::get(3451), MSG_COMBAT);
 							}
 						}
 						if ( target->behavior == &actPlayer )
 						{
-							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
-							messagePlayerColor(target->skill[2], color, language[3461]);
+							Uint32 color = makeColorRGB(255, 255, 255);
+							messagePlayerColor(target->skill[2], MESSAGE_COMBAT, color, Language::get(3461));
 						}
 						real_t distance =  sqrt((target->x - oldx) * (target->x - oldx) + (target->y - oldy) * (target->y - oldy)) / 16.f;
 						//real_t distance = (entityDist(parent, target)) / 16;
@@ -3742,13 +4171,13 @@ void actParticleTimer(Entity* my)
 								int numSprites = std::min(3, durationToStun / 25);
 								for ( int i = 0; i < numSprites; ++i )
 								{
-									spawnFloatingSpriteMisc(134, target->x + (-4 + rand() % 9) + cos(target->yaw) * 2, 
-										target->y + (-4 + rand() % 9) + sin(target->yaw) * 2, target->z + rand() % 4);
+									spawnFloatingSpriteMisc(134, target->x + (-4 + local_rng.rand() % 9) + cos(target->yaw) * 2, 
+										target->y + (-4 + local_rng.rand() % 9) + sin(target->yaw) * 2, target->z + local_rng.rand() % 4);
 								}
 							}
 							target->monsterReleaseAttackTarget();
 							target->lookAtEntity(*parent);
-							target->monsterLookDir += (PI - PI / 4 + (rand() % 10) * PI / 40);
+							target->monsterLookDir += (PI - PI / 4 + (local_rng.rand() % 10) * PI / 40);
 						}
 						else if ( target->behavior == &actPlayer )
 						{
@@ -3757,11 +4186,11 @@ void actParticleTimer(Entity* my)
 							int numSprites = std::min(3, durationToStun / 50);
 							for ( int i = 0; i < numSprites; ++i )
 							{
-								spawnFloatingSpriteMisc(134, target->x + (-4 + rand() % 9) + cos(target->yaw) * 2,
-									target->y + (-4 + rand() % 9) + sin(target->yaw) * 2, target->z + rand() % 4);
+								spawnFloatingSpriteMisc(134, target->x + (-4 + local_rng.rand() % 9) + cos(target->yaw) * 2,
+									target->y + (-4 + local_rng.rand() % 9) + sin(target->yaw) * 2, target->z + local_rng.rand() % 4);
 							}
-							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
-							messagePlayerColor(target->skill[2], color, language[3462]);
+							Uint32 color = makeColorRGB(255, 255, 255);
+							messagePlayerColor(target->skill[2], MESSAGE_COMBAT, color, Language::get(3462));
 						}
 						if ( multiplayer == SERVER )
 						{
@@ -3872,7 +4301,7 @@ void actParticleTimer(Entity* my)
 			{
 				// teleport to fixed location spell.
 				node_t* node;
-				int c = 0 + rand() % 3;
+				int c = 0 + local_rng.rand() % 3;
 				Entity* target = nullptr;
 				for ( node = map.entities->first; node != nullptr; node = node->next )
 				{
@@ -3923,7 +4352,7 @@ void actParticleTimer(Entity* my)
 					if ( target )
 					{
 						createParticleErupt(parent, my->particleTimerEndSprite);
-						teleported = parent->teleport((target->x / 16) - 11 + rand() % 23, (target->y / 16) - 11 + rand() % 23);
+						teleported = parent->teleport((target->x / 16) - 11 + local_rng.rand() % 23, (target->y / 16) - 11 + local_rng.rand() % 23);
 
 						if ( teleported )
 						{
@@ -3965,6 +4394,28 @@ void actParticleTimer(Entity* my)
 					}
 				}
 			}
+			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_SHRINE_TELEPORT )
+			{
+				// teleport to target spell.
+				Entity* toTeleport = uidToEntity(my->particleTimerVariable2);
+				Entity* target = uidToEntity(static_cast<Uint32>(my->particleTimerTarget));
+				if ( toTeleport && target )
+				{
+					bool teleported = false;
+					createParticleErupt(toTeleport, my->particleTimerEndSprite);
+					serverSpawnMiscParticles(toTeleport, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
+					teleported = toTeleport->teleportAroundEntity(target, my->particleTimerVariable1);
+					if ( teleported )
+					{
+						createParticleErupt(toTeleport, my->particleTimerEndSprite);
+						// teleport success.
+						if ( multiplayer == SERVER )
+						{
+							serverSpawnMiscParticles(toTeleport, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
+						}
+					}
+				}
+			}
 		}
 		my->removeLightField();
 		list_RemoveNode(my->mynode);
@@ -3985,16 +4436,18 @@ void actParticleTimer(Entity* my)
 					Entity* entity = newEntity(my->particleTimerCountdownSprite, 1, map.entities, nullptr); //Particle entity.
 					entity->sizex = 1;
 					entity->sizey = 1;
-					entity->x = parent->x - 4 + rand() % 9;
-					entity->y = parent->y - 4 + rand() % 9;
+					entity->x = parent->x - 4 + local_rng.rand() % 9;
+					entity->y = parent->y - 4 + local_rng.rand() % 9;
 					entity->z = 7.5;
 					entity->vel_z = -1;
-					entity->yaw = (rand() % 360) * PI / 180.0;
-					entity->particleDuration = 10 + rand() % 30;
+					entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+					entity->particleDuration = 10 + local_rng.rand() % 30;
 					entity->behavior = &actParticleDot;
 					entity->flags[PASSABLE] = true;
 					entity->flags[NOUPDATE] = true;
 					entity->flags[UNCLICKABLE] = true;
+					entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+						*cvar_magic_fx_light_bonus, 0.f);
 					if ( multiplayer != CLIENT )
 					{
 						entity_uids--;
@@ -4019,7 +4472,7 @@ void actParticleTimer(Entity* my)
 			{
 				if ( my->particleTimerCountdownAction < 100 )
 				{
-					my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, 92);
+					my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, true));
 					playSoundEntityLocal(my, 167, 128);
 					createParticleDropRising(my, 680, 1.0);
 					createParticleCircling(my, 70, my->particleTimerCountdownSprite);
@@ -4031,7 +4484,7 @@ void actParticleTimer(Entity* my)
 			{
 				if ( my->particleTimerCountdownAction < 100 )
 				{
-					my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, 92);
+					my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, true));
 					playSoundEntityLocal(my, 167, 128);
 					createParticleDropRising(my, 593, 1.0);
 					createParticleCircling(my, 70, my->particleTimerCountdownSprite);
@@ -4100,29 +4553,50 @@ void actParticleSap(Entity* my)
 				z_decel = 0.9935;
 				z_accel = z_decel;
 			}
-			Entity* particle = spawnMagicParticleCustom(my, (rand() % 2) ? 943 : 979, 1, 10);
+			Entity* particle = spawnMagicParticleCustom(my, (local_rng.rand() % 2) ? 943 : 979, 1, 10);
 			if ( particle )
 			{
+				particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
 				particle->focalx = 2;
 				particle->focaly = -2;
 				particle->focalz = 2.5;
+				particle->ditheringDisabled = true;
 			}
 			if ( PARTICLE_LIFE < 100 && my->ticks % 6 == 0 )
 			{
 				if ( PARTICLE_LIFE < 70 )
 				{
-					playSoundEntityLocal(my, 434 + rand() % 10, 64);
+					playSoundEntityLocal(my, 434 + local_rng.rand() % 10, 64);
 				}
 				else
 				{
-					playSoundEntityLocal(my, 434 + rand() % 10, 32);
+					playSoundEntityLocal(my, 434 + local_rng.rand() % 10, 32);
 				}
 			}
 			//particle->flags[SPRITE] = true;
 		}
 		else
 		{
-			spawnMagicParticle(my);
+			if ( *cvar_magic_fx_use_vismap && !intro )
+			{
+				int x = my->x / 16.0;
+				int y = my->y / 16.0;
+				if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+				{
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
+						{
+							spawnMagicParticle(my);
+							break;
+						}
+					}
+				}
+			}
+			else
+			{
+				spawnMagicParticle(my);
+			}
 		}
 		Entity* parent = uidToEntity(my->parent);
 		if ( parent )
@@ -4242,14 +4716,14 @@ void actParticleSapCenter(Entity* my)
 						Stat *myStats = parent->getStats();
 						if ( myStats )
 						{
-							node_t* weaponNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON);
+							node_t* weaponNode = itemNodeInInventory(myStats, -1, WEAPON);
 							if ( weaponNode )
 							{
 								swapMonsterWeaponWithInventoryItem(parent, myStats, weaponNode, false, true);
 								if ( myStats->type == INCUBUS )
 								{
 									parent->monsterSpecialState = INCUBUS_TELEPORT_STEAL;
-									parent->monsterSpecialTimer = 100 + rand() % MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_RANDOM;
+									parent->monsterSpecialTimer = 100 + local_rng.rand() % MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_RANDOM;
 								}
 							}
 						}
@@ -4265,8 +4739,8 @@ void actParticleSapCenter(Entity* my)
 				parent->modMP(my->skill[8]);
 				if ( parent->behavior == &actPlayer )
 				{
-					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-					messagePlayerColor(parent->skill[2], color, language[2445]);
+					Uint32 color = makeColorRGB(0, 255, 0);
+					messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(2445));
 				}
 				playSoundEntity(parent, 168, 128);
 				spawnMagicEffectParticles(parent->x, parent->y, parent->z, 169);
@@ -4282,8 +4756,8 @@ void actParticleSapCenter(Entity* my)
 				parent->modMP(my->skill[7]);
 				/*if ( parent->behavior == &actPlayer )
 				{
-					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-					messagePlayerColor(parent->skill[2], color, language[774]);
+					Uint32 color = makeColorRGB(0, 255, 0);
+					messagePlayerColor(parent->skill[2], MESSAGE_STATUS, color, Language::get(774));
 				}*/
 				playSoundEntity(parent, 168, 128);
 				spawnMagicEffectParticles(parent->x, parent->y, parent->z, 169);
@@ -4305,8 +4779,8 @@ void actParticleSapCenter(Entity* my)
 				{
 					item->ownerUid = parent->getUID();
 					Item* pickedUp = itemPickup(parent->skill[2], item);
-					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-					messagePlayerColor(parent->skill[2], color, language[3746], items[item->type].name_unidentified);
+					Uint32 color = makeColorRGB(0, 255, 0);
+					messagePlayerColor(parent->skill[2], MESSAGE_EQUIPMENT, color, Language::get(3746), items[item->type].getUnidentifiedName());
 					achievementObserver.awardAchievementIfActive(parent->skill[2], parent, AchievementObserver::BARONY_ACH_IF_YOU_LOVE_SOMETHING);
 					if ( pickedUp )
 					{
@@ -4330,6 +4804,7 @@ void actParticleSapCenter(Entity* my)
 										&& hotbar[i].item == pickedUp->uid )
 									{
 										hotbar[i].item = 0;
+										hotbar[i].resetLastItem();
 									}
 								}
 							}
@@ -4346,14 +4821,14 @@ void actParticleSapCenter(Entity* my)
 					Stat *myStats = parent->getStats();
 					if ( myStats )
 					{
-						node_t* weaponNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON);
+						node_t* weaponNode = itemNodeInInventory(myStats, -1, WEAPON);
 						if ( weaponNode )
 						{
 							swapMonsterWeaponWithInventoryItem(parent, myStats, weaponNode, false, true);
 						}
 					}
 				}
-				playSoundEntity(parent, 431 + rand() % 3, 92);
+				playSoundEntity(parent, 431 + local_rng.rand() % 3, 92);
 				item = nullptr;
 			}
 			list_RemoveNode(my->mynode);
@@ -4411,7 +4886,8 @@ void actParticleSapCenter(Entity* my)
 							magicLevel = std::min(7, 1 + (stats[caster->skill[2]]->playerSummonLVLHP >> 16) / 5);
 
 							monster->monsterAllySummonRank = magicLevel;
-							strcpy(monsterStats->name, "skeleton knight");
+							monsterStats->setAttribute("special_npc", "skeleton knight");
+							strcpy(monsterStats->name, MonsterData_t::getSpecialNPCName(*monsterStats).c_str());
 							forceFollower(*caster, *monster);
 
 							monster->setEffect(EFF_STUNNED, true, 20, false);
@@ -4467,7 +4943,8 @@ void actParticleSapCenter(Entity* my)
 									monster->yaw = my->yaw - PI;
 									if ( monsterStats )
 									{
-										strcpy(monsterStats->name, "skeleton sentinel");
+										monsterStats->setAttribute("special_npc", "skeleton sentinel");
+										strcpy(monsterStats->name, MonsterData_t::getSpecialNPCName(*monsterStats).c_str());
 										magicLevel = 1;
 										if ( stats[caster->skill[2]] )
 										{
@@ -4537,8 +5014,8 @@ void actParticleSapCenter(Entity* my)
 			entity->sizex = 4;
 			entity->sizey = 4;
 			entity->yaw = my->yaw;
-			entity->vel_x = (rand() % 20 - 10) / 10.0;
-			entity->vel_y = (rand() % 20 - 10) / 10.0;
+			entity->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
+			entity->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
 			entity->vel_z = -.5;
 			entity->flags[PASSABLE] = true;
 			entity->flags[USERFLAG1] = true; // speeds up game when many items are dropped
@@ -4574,8 +5051,8 @@ void actParticleSapCenter(Entity* my)
 				entity->sizex = 4;
 				entity->sizey = 4;
 				entity->yaw = my->yaw;
-				entity->vel_x = (rand() % 20 - 10) / 10.0;
-				entity->vel_y = (rand() % 20 - 10) / 10.0;
+				entity->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
+				entity->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
 				entity->vel_z = -.5;
 				entity->flags[PASSABLE] = true;
 				entity->flags[USERFLAG1] = true; // speeds up game when many items are dropped
@@ -4629,23 +5106,23 @@ void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount
 		Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 		entity->sizex = 1;
 		entity->sizey = 1;
-		entity->x = parent->x - 3 + rand() % 7;
-		entity->y = parent->y - 3 + rand() % 7;
-		entity->z = 0 + rand() % 190;
+		entity->x = parent->x - 3 + local_rng.rand() % 7;
+		entity->y = parent->y - 3 + local_rng.rand() % 7;
+		entity->z = 0 + local_rng.rand() % 190;
 		if ( parent && parent->behavior == &actPlayer )
 		{
 			entity->z /= 2;
 		}
 		entity->vel_z = -1;
-		entity->yaw = (rand() % 360) * PI / 180.0;
+		entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 		entity->particleDuration = entity->z + 10;
-		/*if ( rand() % 5 > 0 )
+		/*if ( local_rng.rand() % 5 > 0 )
 		{
 			entity->vel_x = 0.5*cos(entity->yaw);
 			entity->vel_y = 0.5*sin(entity->yaw);
 			entity->particleDuration = 6;
 			entity->z = 0;
-			entity->vel_z = 0.5 *(-1 + rand() % 3);
+			entity->vel_z = 0.5 *(-1 + local_rng.rand() % 3);
 		}*/
 		entity->scalex *= scale;
 		entity->scaley *= scale;
@@ -4654,6 +5131,8 @@ void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
+		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+			*cvar_magic_fx_light_bonus, 0.f);
 		entity->parent = parent->getUID();
 		if ( multiplayer != CLIENT )
 		{
@@ -4673,16 +5152,16 @@ void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount
 		entity->sizey = 1;
 		entity->yaw = 0 + c * arc;
 
-		entity->x = parent->x + (radius * cos(entity->yaw));// - 2 + rand() % 5;
-		entity->y = parent->y + (radius * sin(entity->yaw));// - 2 + rand() % 5;
+		entity->x = parent->x + (radius * cos(entity->yaw));// - 2 + local_rng.rand() % 5;
+		entity->y = parent->y + (radius * sin(entity->yaw));// - 2 + local_rng.rand() % 5;
 		entity->z = radius + 150;
-		entity->particleDuration = entity->z + rand() % 3;
+		entity->particleDuration = entity->z + local_rng.rand() % 3;
 		entity->vel_z = -1;
 		if ( parent && parent->behavior == &actPlayer )
 		{
 			entity->z /= 2;
 		}
-		randScale = 1 + rand() % 3;
+		randScale = 1 + local_rng.rand() % 3;
 
 		entity->scalex *= (scale / randScale);
 		entity->scaley *= (scale / randScale);
@@ -4691,6 +5170,8 @@ void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
+		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+			*cvar_magic_fx_light_bonus, 0.f);
 		entity->parent = parent->getUID();
 		if ( multiplayer != CLIENT )
 		{
@@ -4706,7 +5187,7 @@ void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount
 
 void actParticleExplosionCharge(Entity* my)
 {
-	if ( PARTICLE_LIFE < 0 || (my->z < -4 && rand() % 4 == 0) || (ticks % 14 == 0 && uidToEntity(my->parent) == nullptr) )
+	if ( PARTICLE_LIFE < 0 || (my->z < -4 && local_rng.rand() % 4 == 0) || (ticks % 14 == 0 && uidToEntity(my->parent) == nullptr) )
 	{
 		list_RemoveNode(my->mynode);
 	}
@@ -4825,6 +5306,7 @@ bool Entity::magicOrbitingCollision()
 			if ( entity->behavior != &actMonster 
 				&& entity->behavior != &actPlayer
 				&& entity->behavior != &actDoor
+				&& !(entity->isDamageableCollider() && entity->isColliderDamageableByMagic())
 				&& entity->behavior != &::actChest 
 				&& entity->behavior != &::actFurniture )
 			{
@@ -4956,7 +5438,7 @@ Entity* castStationaryOrbitingMagicMissile(Entity* parent, int spellID, real_t c
 		entity->y = centery;
 		entity->z = 15;
 		entity->vel_z = 0;
-		//entity->yaw = (rand() % 360) * PI / 180.0;
+		//entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 		entity->skill[0] = 100;
 		entity->skill[1] = 10;
 		entity->behavior = &actParticleDot;
@@ -4964,6 +5446,8 @@ Entity* castStationaryOrbitingMagicMissile(Entity* parent, int spellID, real_t c
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
 		entity->flags[INVISIBLE] = true;
+		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+			*cvar_magic_fx_light_bonus, 0.f);
 		parent = entity;
 	}
 	Stat* stats = parent->getStats();
@@ -5022,21 +5506,28 @@ Entity* castStationaryOrbitingMagicMissile(Entity* parent, int spellID, real_t c
 	return entity;
 }
 
-void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite)
+void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite, Uint32 uid)
 {
 	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 	//entity->sizex = 1;
 	//entity->sizey = 1;
 	entity->x = x;
 	entity->y = y;
-	entity->z = 7.5;
+	entity->z = 0;
 	entity->vel_z = -0.8;
-	//entity->yaw = (rand() % 360) * PI / 180.0;
+	//entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 	entity->skill[0] = 50;
+	entity->skill[1] = 0;
+	entity->parent = uid;
+	entity->fskill[1] = entity->z; // start z
 	entity->behavior = &actParticleFollowerCommand;
+	entity->scalex = 0.8;
+	entity->scaley = 0.8;
+	entity->scalez = 0.8;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
+	entity->flags[BRIGHT] = true;
 	if ( multiplayer != CLIENT )
 	{
 		entity_uids--;
@@ -5046,20 +5537,22 @@ void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite)
 	// boosty boost
 	for ( int c = 0; c < 10; c++ )
 	{
-		entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
-		entity->x = x - 4 + rand() % 9;
-		entity->y = y - 4 + rand() % 9;
-		entity->z = z - 0 + rand() % 11;
-		entity->scalex = 0.7;
-		entity->scaley = 0.7;
-		entity->scalez = 0.7;
+		entity = newEntity(174, 1, map.entities, nullptr); //Particle entity.
+		entity->x = x - 4 + local_rng.rand() % 9;
+		entity->y = y - 4 + local_rng.rand() % 9;
+		entity->z = z - 0 + local_rng.rand() % 11;
+		entity->scalex = 0.5;
+		entity->scaley = 0.5;
+		entity->scalez = 0.5;
 		entity->sizex = 1;
 		entity->sizey = 1;
-		entity->yaw = (rand() % 360) * PI / 180.f;
+		entity->yaw = (local_rng.rand() % 360) * PI / 180.f;
 		entity->flags[PASSABLE] = true;
-		entity->flags[BRIGHT] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
+		entity->flags[BRIGHT] = true;
+		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+			*cvar_magic_fx_light_bonus, 0.f);
 		entity->behavior = &actMagicParticle;
 		entity->vel_z = -1;
 		if ( multiplayer != CLIENT )
@@ -5071,6 +5564,7 @@ void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite)
 
 }
 
+static ConsoleVariable<float> cvar_follower_particle_speed("/follower_particle_speed", 2.0);
 void actParticleFollowerCommand(Entity* my)
 {
 	if ( PARTICLE_LIFE < 0 )
@@ -5081,11 +5575,31 @@ void actParticleFollowerCommand(Entity* my)
 	else
 	{
 		--PARTICLE_LIFE;
-		my->z += my->vel_z;
-		my->yaw += my->vel_z * 2;
-		if ( my->z < -3 )
+		if ( my->parent != 0 )
 		{
+			if ( Entity* parent = uidToEntity(my->parent) )
+			{
+				my->x = parent->x;
+				my->y = parent->y;
+			}
+		}
+		my->z += my->vel_z;
+		my->yaw += (std::min(my->vel_z * 2, -0.1)) / *cvar_follower_particle_speed;
+		if ( my->z < (my->fskill[1] - 3) )
+		{
+			my->skill[1] = 1;
 			my->vel_z *= 0.9;
+		}
+		if ( my->skill[1] != 0 && abs(my->vel_z) < 0.1 )
+		{
+			my->z += .1 * sin(my->fskill[0]);
+			my->fskill[0] += 1.0 * PI / 32;
+			/*if ( my->fskill[0] > PI / 2 )
+			{
+				my->scalex *= .9;
+				my->scaley *= .9;
+				my->scalez *= .9;
+			}*/
 		}
 	}
 }
@@ -5116,6 +5630,8 @@ void actParticleShadowTag(Entity* my)
 			entity->flags[PASSABLE] = true;
 			entity->flags[NOUPDATE] = true;
 			entity->flags[UNCLICKABLE] = true;
+			entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+				*cvar_magic_fx_light_bonus, 0.f);
 			if ( multiplayer != CLIENT )
 			{
 				entity_uids--;
@@ -5133,10 +5649,10 @@ void actParticleShadowTag(Entity* my)
 				&& parent )
 			{
 				// caster is alive, notify they lost their mark
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+				Uint32 color = makeColorRGB(255, 255, 255);
 				if ( parent->getStats() )
 				{
-					messagePlayerMonsterEvent(caster->skill[2], color, *(parent->getStats()), language[3466], language[3467], MSG_COMBAT);
+					messagePlayerMonsterEvent(caster->skill[2], color, *(parent->getStats()), Language::get(3466), Language::get(3467), MSG_COMBAT);
 					parent->setEffect(EFF_SHADOW_TAGGED, false, 0, true);
 				}
 			}
@@ -5149,7 +5665,7 @@ void actParticleShadowTag(Entity* my)
 	{
 		--PARTICLE_LIFE;
 		my->removeLightField();
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 92);
+		my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, true));
 
 		Entity* parent = uidToEntity(my->parent);
 		if ( parent )
@@ -5276,6 +5792,8 @@ void actParticleShadowTag(Entity* my)
 				entity->flags[PASSABLE] = true;
 				entity->flags[NOUPDATE] = true;
 				entity->flags[UNCLICKABLE] = true;
+				entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+					*cvar_magic_fx_light_bonus, 0.f);
 				if ( multiplayer != CLIENT )
 				{
 					entity_uids--;
@@ -5304,7 +5822,7 @@ void createParticleShadowTag(Entity* parent, Uint32 casterUid, int duration)
 	entity->scalex = 0.1;
 	entity->scaley = 0.1;
 	entity->scalez = 0.1;
-	entity->yaw = (rand() % 360) * PI / 180.0;
+	entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 	entity->skill[0] = duration;
 	entity->skill[1] = 0;
 	entity->skill[2] = static_cast<Sint32>(casterUid);
@@ -5313,6 +5831,8 @@ void createParticleShadowTag(Entity* parent, Uint32 casterUid, int duration)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
+	/*entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);*/
 	if ( multiplayer != CLIENT )
 	{
 		entity_uids--;
@@ -5337,12 +5857,14 @@ void createParticleCharmMonster(Entity* parent)
 	entity->scalex = 0.1;
 	entity->scaley = 0.1;
 	entity->scalez = 0.1;
-	entity->yaw = (rand() % 360) * PI / 180.0;
+	entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 	entity->skill[0] = 45;
 	entity->behavior = &actParticleCharmMonster;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
 	if ( multiplayer != CLIENT )
 	{
 		entity_uids--;
@@ -5375,6 +5897,8 @@ void actParticleCharmMonster(Entity* my)
 			entity->flags[PASSABLE] = true;
 			entity->flags[NOUPDATE] = true;
 			entity->flags[UNCLICKABLE] = true;
+			entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+				*cvar_magic_fx_light_bonus, 0.f);
 			if ( multiplayer != CLIENT )
 			{
 				entity_uids--;
@@ -5464,19 +5988,35 @@ void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* au
 		}
 	}
 	spawnMagicEffectParticles(x, y, 0, 174);
-	spawnExplosion(x, y, -4 + rand() % 8);
+	spawnExplosion(x, y, -4 + local_rng.rand() % 8);
 }
 
-void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
+bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 {
 	if ( !hit.entity )
 	{
 		if ( map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] != 0 )
 		{
-			if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEDIGGING )
+			if ( MFLAG_DISABLEDIGGING )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-				messagePlayerColor(parent->skill[2], color, language[2380]); // disabled digging.
+				if ( parent && parent->behavior == &actPlayer )
+				{
+					Uint32 color = makeColorRGB(255, 0, 255);
+					messagePlayerColor(parent->skill[2], MESSAGE_HINT, color, Language::get(2380)); // disabled digging.
+				}
+				playSoundPos(hit.x, hit.y, 66, 128); // strike wall
+			}
+			else if ( swimmingtiles[map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height]]
+				|| lavatiles[map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height]] )
+			{
+				// no effect for lava/water tiles.
+			}
+			else if ( !mapTileDiggable(hit.mapx, hit.mapy) )
+			{
+				if ( parent && parent->behavior == &actPlayer )
+				{
+					messagePlayer(parent->skill[2], MESSAGE_HINT, Language::get(706));
+				}
 				playSoundPos(hit.x, hit.y, 66, 128); // strike wall
 			}
 			else
@@ -5492,21 +6032,21 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 				{
 					randRocks = 1;
 				}
-				int i = numRocks + rand() % randRocks;
+				int i = numRocks + local_rng.rand() % randRocks;
 				for ( int c = 0; c < i; c++ )
 				{
 					Entity* rock = newEntity(-1, 1, map.entities, nullptr); //Rock entity.
 					rock->flags[INVISIBLE] = true;
 					rock->flags[UPDATENEEDED] = true;
-					rock->x = hit.mapx * 16 + 4 + rand() % 8;
-					rock->y = hit.mapy * 16 + 4 + rand() % 8;
-					rock->z = -6 + rand() % 12;
+					rock->x = hit.mapx * 16 + 4 + local_rng.rand() % 8;
+					rock->y = hit.mapy * 16 + 4 + local_rng.rand() % 8;
+					rock->z = -6 + local_rng.rand() % 12;
 					rock->sizex = 4;
 					rock->sizey = 4;
-					rock->yaw = rand() % 360 * PI / 180;
-					rock->vel_x = (rand() % 20 - 10) / 10.0;
-					rock->vel_y = (rand() % 20 - 10) / 10.0;
-					rock->vel_z = -.25 - (rand() % 5) / 10.0;
+					rock->yaw = local_rng.rand() % 360 * PI / 180;
+					rock->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
+					rock->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
+					rock->vel_z = -.25 - (local_rng.rand() % 5) / 10.0;
 					rock->flags[PASSABLE] = true;
 					rock->behavior = &actItem;
 					rock->flags[USERFLAG1] = true; // no collision: helps performance
@@ -5527,28 +6067,59 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 				map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] = 0;
 
 				// send wall destroy info to clients
-				for ( int c = 1; c < MAXPLAYERS; c++ )
+				if ( multiplayer == SERVER )
 				{
-					if ( client_disconnected[c] == true )
+					for ( int c = 1; c < MAXPLAYERS; c++ )
 					{
-						continue;
+						if ( players[c]->isLocalPlayer() || client_disconnected[c] == true )
+						{
+							continue;
+						}
+						strcpy((char*)net_packet->data, "WALD");
+						SDLNet_Write16((Uint16)hit.mapx, &net_packet->data[4]);
+						SDLNet_Write16((Uint16)hit.mapy, &net_packet->data[6]);
+						net_packet->address.host = net_clients[c - 1].host;
+						net_packet->address.port = net_clients[c - 1].port;
+						net_packet->len = 8;
+						sendPacketSafe(net_sock, -1, net_packet, c - 1);
 					}
-					strcpy((char*)net_packet->data, "WALD");
-					SDLNet_Write16((Uint16)hit.mapx, &net_packet->data[4]);
-					SDLNet_Write16((Uint16)hit.mapy, &net_packet->data[6]);
-					net_packet->address.host = net_clients[c - 1].host;
-					net_packet->address.port = net_clients[c - 1].port;
-					net_packet->len = 8;
-					sendPacketSafe(net_sock, -1, net_packet, c - 1);
 				}
 
 				generatePathMaps();
+				return true;
 			}
 		}
+		return false;
+	}
+	else if ( hit.entity->behavior == &actColliderDecoration && hit.entity->colliderDiggable != 0 )
+	{
+		int sprite = EditorEntityData_t::colliderData[hit.entity->colliderDamageTypes].gib;
+		if ( sprite > 0 )
+		{
+			createParticleRock(hit.entity, sprite);
+			if ( multiplayer == SERVER )
+			{
+				serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_ABILITY_ROCK, sprite);
+			}
+		}
+
+		if ( parent )
+		{
+			if ( parent->behavior == &actPlayer && hit.entity->isDamageableCollider() )
+			{
+				messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(4337),
+					Language::get(hit.entity->getColliderLangName())); // you destroy the %s!
+			}
+		}
+
+		// destroy the object
+		playSoundEntity(hit.entity, 67, 128);
+		list_RemoveNode(hit.entity->mynode);
+		return true;
 	}
 	else if ( hit.entity->behavior == &actBoulder )
 	{
-		int i = numRocks + rand() % 4;
+		int i = numRocks + local_rng.rand() % 4;
 
 		// spawn several rock items //TODO: This should really be its own function.
 		int c;
@@ -5557,15 +6128,15 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 			Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Rock entity.
 			entity->flags[INVISIBLE] = true;
 			entity->flags[UPDATENEEDED] = true;
-			entity->x = hit.entity->x - 4 + rand() % 8;
-			entity->y = hit.entity->y - 4 + rand() % 8;
-			entity->z = -6 + rand() % 12;
+			entity->x = hit.entity->x - 4 + local_rng.rand() % 8;
+			entity->y = hit.entity->y - 4 + local_rng.rand() % 8;
+			entity->z = -6 + local_rng.rand() % 12;
 			entity->sizex = 4;
 			entity->sizey = 4;
-			entity->yaw = rand() % 360 * PI / 180;
-			entity->vel_x = (rand() % 20 - 10) / 10.0;
-			entity->vel_y = (rand() % 20 - 10) / 10.0;
-			entity->vel_z = -.25 - (rand() % 5) / 10.0;
+			entity->yaw = local_rng.rand() % 360 * PI / 180;
+			entity->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
+			entity->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
+			entity->vel_z = -.25 - (local_rng.rand() % 5) / 10.0;
 			entity->flags[PASSABLE] = true;
 			entity->behavior = &actItem;
 			entity->flags[USERFLAG1] = true; // no collision: helps performance
@@ -5589,7 +6160,7 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 		{
 			if ( parent->behavior == &actPlayer )
 			{
-				messagePlayer(parent->skill[2], language[405]);
+				messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(405));
 			}
 		}
 
@@ -5597,7 +6168,7 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 		if ( !strcmp(map.name, "Sokoban") )
 		{
 			Entity* monster = nullptr;
-			if ( rand() % 2 == 0 )
+			if ( local_rng.rand() % 2 == 0 )
 			{
 				monster = summonMonster(INSECTOID, ox, oy);
 			}
@@ -5610,11 +6181,13 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 				int c;
 				for ( c = 0; c < MAXPLAYERS; c++ )
 				{
-					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-					messagePlayerColor(c, color, language[406]);
+					Uint32 color = makeColorRGB(255, 128, 0);
+					messagePlayerColor(c, MESSAGE_HINT, color, Language::get(406));
 				}
 			}
 			boulderSokobanOnDestroy(false);
 		}
+		return true;
 	}
+	return false;
 }

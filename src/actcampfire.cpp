@@ -13,9 +13,10 @@
 #include "game.hpp"
 #include "stat.hpp"
 #include "items.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -34,7 +35,6 @@
 
 void actCampfire(Entity* my)
 {
-	Entity* entity;
 	int i;
 
 	// init
@@ -56,20 +56,37 @@ void actCampfire(Entity* my)
 		}
 
 		// spew flame particles
-		for ( i = 0; i < 3; i++ )
+		if ( flickerLights )
 		{
-			entity = spawnFlame(my, SPRITE_FLAME);
-			entity->x += ((rand() % 30) - 10) / 10.f;
-			entity->y += ((rand() % 30) - 10) / 10.f;
-			entity->z -= 1;
+		    for ( i = 0; i < 3; i++ )
+		    {
+				if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
+				{
+					entity->x += ((local_rng.rand() % 30) - 10) / 10.f;
+					entity->y += ((local_rng.rand() % 30) - 10) / 10.f;
+					entity->z -= 1;
+				}
+		    }
+			if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
+			{
+				entity->z -= 2;
+			}
 		}
-		entity = spawnFlame(my, SPRITE_FLAME);
-		entity->z -= 2;
+		else
+		{
+		    if ( ticks % TICKS_PER_SECOND == 0 )
+		    {
+				if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
+				{
+					entity->z -= 2;
+				}
+		    }
+		}
 
 		// light environment
 		if ( !CAMPFIRE_LIGHTING )
 		{
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 6, 160);
+			my->light = addLight(my->x / 16, my->y / 16, "campfire");
 			CAMPFIRE_LIGHTING = 1;
 		}
 		if ( flickerLights )
@@ -84,21 +101,20 @@ void actCampfire(Entity* my)
 			if (CAMPFIRE_LIGHTING == 1)
 			{
 				my->removeLightField();
-				my->light = lightSphereShadow(my->x / 16, my->y / 16, 6, 160);
+				my->light = addLight(my->x / 16, my->y / 16, "campfire");
 			}
 			else
 			{
 				my->removeLightField();
-				my->light = lightSphereShadow(my->x / 16, my->y / 16, 6, 152);
+				my->light = addLight(my->x / 16, my->y / 16, "campfire_flicker");
 			}
-			CAMPFIRE_FLICKER = 2 + rand() % 7;
+			CAMPFIRE_FLICKER = 2 + local_rng.rand() % 7;
 		}
 	}
 	else
 	{
 		my->removeLightField();
 		my->light = NULL;
-		my->flags[BRIGHT] = false;
 	}
 
 	if ( multiplayer != CLIENT )
@@ -106,18 +122,18 @@ void actCampfire(Entity* my)
 		// using campfire
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+			if ( selectedEntity[i] == my || client_selected[i] == my )
 			{
 				if (inrange[i])
 				{
 					if ( CAMPFIRE_HEALTH > 0 )
 					{
-						messagePlayer(i, language[457]);
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(457));
 						CAMPFIRE_HEALTH--;
 						if ( CAMPFIRE_HEALTH <= 0 )
 						{
 							serverUpdateEntitySkill(my, 3); // extinguish for all clients
-							messagePlayer(i, language[458]);
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(458));
 							my->removeLightField();
 							my->light = NULL;
 						}
@@ -127,7 +143,7 @@ void actCampfire(Entity* my)
 					}
 					else
 					{
-						messagePlayer(i, language[458]);
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(458));
 					}
 				}
 			}

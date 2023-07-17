@@ -15,17 +15,20 @@
 #include "entity.hpp"
 #include "items.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "prng.hpp"
 
 void initCrystalgolem(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
+	my->flags[BURNABLE] = false;
 	my->initMonster(475);
+	my->z = -1.5;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -50,32 +53,12 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
-			{
-			}
-			else
-			{
-				/*strcpy(myStats->name, "Thumpus the Troll");
-				for ( c = 0; c < 3; c++ )
-				{
-					Entity* entity = summonMonster(GNOME, my->x, my->y);
-					if ( entity )
-					{
-						entity->parent = my->getUID();
-					}
-				}
-				myStats->HP *= 2;
-				myStats->MAXHP *= 2;
-				myStats->OLDHP = myStats->HP;
-				myStats->GOLD += 300;
-				myStats->LVL += 10;*/
-			}
 
 			// random effects
-			if ( rand() % 8 == 0 )
+			if ( local_rng.rand() % 8 == 0 )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 3600;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + local_rng.rand() % 3600;
 			}
 
 			// generates equipment and weapons if available from editor
@@ -99,43 +82,43 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 				case 5:
 				case 4:
 				case 3:
-					if ( rand() % 10 == 0 ) // 10% for gemstone, rock to obsidian.
+					if ( local_rng.rand() % 10 == 0 ) // 10% for gemstone, rock to obsidian.
 					{
-						newItem(static_cast<ItemType>(GEM_ROCK + rand() % 17), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, &myStats->inventory);
+						newItem(static_cast<ItemType>(GEM_ROCK + local_rng.rand() % 17), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, &myStats->inventory);
 					}
 				case 2:
-					if ( rand() % 20 == 0 ) // 5% for secondary armor/weapon.
+					if ( local_rng.rand() % 20 == 0 ) // 5% for secondary armor/weapon.
 					{
-						if ( rand() % 2 == 0 ) // 50% armor
+						if ( local_rng.rand() % 2 == 0 ) // 50% armor
 						{
-							newItem(static_cast<ItemType>(CRYSTAL_BREASTPIECE + rand() % 5), static_cast<Status>(DECREPIT + rand() % 4), -2 + rand() % 5, 1, rand(), false, &myStats->inventory);
+							newItem(static_cast<ItemType>(CRYSTAL_BREASTPIECE + local_rng.rand() % 5), static_cast<Status>(DECREPIT + local_rng.rand() % 4), -2 + local_rng.rand() % 5, 1, local_rng.rand(), false, &myStats->inventory);
 						}
 						else // 50% weapon
 						{
-							if ( rand() % 5 == 0 ) // 1 in 5 is shuriken, 1-3 count.
+							if ( local_rng.rand() % 5 == 0 ) // 1 in 5 is shuriken, 1-3 count.
 							{
-								newItem(static_cast<ItemType>(CRYSTAL_SHURIKEN), EXCELLENT, -2 + rand() % 5, 1 + rand() % 3, rand(), false, &myStats->inventory);
+								newItem(static_cast<ItemType>(CRYSTAL_SHURIKEN), EXCELLENT, -2 + local_rng.rand() % 5, 1 + local_rng.rand() % 3, local_rng.rand(), false, &myStats->inventory);
 							}
 							else // pick 1 of 4 normal weapons.
 							{
-								newItem(static_cast<ItemType>(CRYSTAL_SWORD + rand() % 4), static_cast<Status>(DECREPIT + rand() % 4), -2 + rand() % 5, 1, rand(), false, &myStats->inventory);
+								newItem(static_cast<ItemType>(CRYSTAL_SWORD + local_rng.rand() % 4), static_cast<Status>(DECREPIT + local_rng.rand() % 4), -2 + local_rng.rand() % 5, 1, local_rng.rand(), false, &myStats->inventory);
 							}
 						}
 					}
 				case 1:
-					if ( rand() % 2 == 0 ) // 50% armor
+					if ( local_rng.rand() % 2 == 0 ) // 50% armor
 					{
-						newItem(static_cast<ItemType>(CRYSTAL_BREASTPIECE + rand() % 5), static_cast<Status>(DECREPIT + rand() % 4), -2 + rand() % 5, 1, rand(), false, &myStats->inventory);
+						newItem(static_cast<ItemType>(CRYSTAL_BREASTPIECE + local_rng.rand() % 5), static_cast<Status>(DECREPIT + local_rng.rand() % 4), -2 + local_rng.rand() % 5, 1, local_rng.rand(), false, &myStats->inventory);
 					}
 					else // 50% weapon
 					{
-						if ( rand() % 5 == 0 ) // 1 in 5 is shuriken, 1-3 count.
+						if ( local_rng.rand() % 5 == 0 ) // 1 in 5 is shuriken, 1-3 count.
 						{
-							newItem(static_cast<ItemType>(CRYSTAL_SHURIKEN), EXCELLENT, -2 + rand() % 5, 1 + rand() % 3, rand(), false, &myStats->inventory);
+							newItem(static_cast<ItemType>(CRYSTAL_SHURIKEN), EXCELLENT, -2 + local_rng.rand() % 5, 1 + local_rng.rand() % 3, local_rng.rand(), false, &myStats->inventory);
 						}
 						else // pick 1 of 4 normal weapons.
 						{
-							newItem(static_cast<ItemType>(CRYSTAL_SWORD + rand() % 4), static_cast<Status>(DECREPIT + rand() % 4), -2 + rand() % 5, 1, rand(), false, &myStats->inventory);
+							newItem(static_cast<ItemType>(CRYSTAL_SWORD + local_rng.rand() % 4), static_cast<Status>(DECREPIT + local_rng.rand() % 4), -2 + local_rng.rand() % 5, 1, local_rng.rand(), false, &myStats->inventory);
 						}
 					}
 					break;
@@ -146,7 +129,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(476, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(476, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -165,7 +148,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(480, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(480, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -184,7 +167,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(479, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(479, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -203,7 +186,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(478, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(478, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -222,7 +205,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(477, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(477, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -248,16 +231,19 @@ void actCrystalgolemLimb(Entity* my)
 
 void crystalgolemDie(Entity* my)
 {
-	int c;
-	for ( c = 0; c < 5; c++ )
+	my->removeMonsterDeathNodes();
+
+	for ( int c = 0; c < 6; c++ )
 	{
 		Entity* gib = spawnGib(my);
+		if (c < 6) {
+		    gib->sprite = 475 + c;
+		    gib->skill[5] = 1; // poof
+		}
 		serverSpawnGibForClient(gib);
 	}
 
-	playSoundEntity(my, 269 + rand() % 4, 128);
-
-	my->removeMonsterDeathNodes();
+	playSoundEntity(my, 269 + local_rng.rand() % 4, 128);
 
 	list_RemoveNode(my->mynode);
 	return;
@@ -382,7 +368,7 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							{
 								playSoundEntityLocal(my, 115, 128);
 								entity->skill[0] = 1;
-								/*if ( rand() % 4 == 0 )
+								/*if ( local_rng.rand() % 4 == 0 )
 								{
 									playSoundEntityLocal(my, 266, 32);
 								}*/

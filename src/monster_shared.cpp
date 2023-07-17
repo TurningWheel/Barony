@@ -14,17 +14,86 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "entity.hpp"
+#include "prng.hpp"
+#include "monster.hpp"
+
+#include <cassert>
+
+ConsoleVariable<bool> cvar_summonBosses("/summonbosses", false, "Always summon bosses");
 
 void Entity::initMonster(int mySprite)
 {
-	sprite = mySprite;
+    if (multiplayer != CLIENT) {
+	    sprite = mySprite;
+		if ( Stat* myStats = this->getStats() )
+		{
+			if ( myStats->type != NOTHING )
+			{
+				int specialNPCModel = MonsterData_t::getSpecialNPCBaseModel(*myStats);
+				if ( specialNPCModel != 0 )
+				{
+					sprite = specialNPCModel;
+				}
+				else
+				{
+					if ( skill[3] != 0 ) // MONSTER_INIT, loading a savefile
+					{
+						auto key = MonsterData_t::getKeyFromSprite(sprite);
+						if ( myStats->sex == sex_t::MALE )
+						{
+							if ( key == "monster female" )
+							{
+								// need to swap
+								int newsprite = MonsterData_t::getSpriteFromKey(sprite, "monster male");
+								if ( newsprite != 0 )
+								{
+									sprite = newsprite;
+								}
+							}
+						}
+						else if ( myStats->sex == sex_t::FEMALE )
+						{
+							if ( key == "monster male" )
+							{
+								// need to swap
+								int newsprite = MonsterData_t::getSpriteFromKey(sprite, "monster female");
+								if ( newsprite != 0 )
+								{
+									sprite = newsprite;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 
 	//Common flags.
 	flags[UPDATENEEDED] = true;
 	flags[BLOCKSIGHT] = true;
 	flags[INVISIBLE] = false;
 
-	int monsterType = this->getMonsterTypeFromSprite();
+	Monster monsterType = this->getMonsterTypeFromSprite();
+
+    if (monsterType != SPIDER) {
+	    focalx = limbs[monsterType][0][0];
+	    focaly = limbs[monsterType][0][1];
+	    focalz = limbs[monsterType][0][2];
+	} else {
+		if (arachnophobia_filter)
+		{
+		    focalx = limbs[CRAB][0][0];
+		    focaly = limbs[CRAB][0][1];
+		    focalz = limbs[CRAB][0][2];
+		}
+		else
+		{
+		    focalx = limbs[SPIDER][0][0];
+		    focaly = limbs[SPIDER][0][1];
+		    focalz = limbs[SPIDER][0][2];
+		}
+	}
 
 	switch ( monsterType )
 	{
@@ -79,7 +148,7 @@ void Entity::initMonster(int mySprite)
 			monsterFootstepType = MONSTER_FOOTSTEP_NONE;
 			monsterSpellAnimation = MONSTER_SPELLCAST_NONE;
 			break;
-		case BUGBEAR:
+		case CRAB:
 			// unused
 			break;
 		case DEMON:
@@ -168,147 +237,29 @@ void Entity::initMonster(int mySprite)
 	return;
 }
 
-int Entity::getMonsterTypeFromSprite()
+Monster Entity::getMonsterTypeFromSprite() const
 {
-	int mySprite = this->sprite;
+	Sint32 mySprite = this->sprite;
+	return Entity::getMonsterTypeFromSprite(mySprite);
+}
 
-	if ( (mySprite >= 113 && mySprite < 118) ||
-		(mySprite >= 125 && mySprite < 130) ||
-		(mySprite >= 332 && mySprite < 334) ||
-		(mySprite >= 341 && mySprite < 347) ||
-		(mySprite >= 354 && mySprite < 360) ||
-		(mySprite >= 367 && mySprite < 373) ||
-		(mySprite >= 380 && mySprite < 386) )   // human heads
-	{
-		return HUMAN;
+Monster Entity::getMonsterTypeFromSprite(const int sprite)
+{
+	Sint32 mySprite = sprite;
+	static std::unordered_map<Sint32, Monster> spriteToMonster;
+	if ( spriteToMonster.empty() ) {
+		for ( int c = 0; c < NUMMONSTERS; ++c ) {
+			const auto monster = static_cast<Monster>(c);
+			for ( auto sprite : monsterSprites[c] ) {
+				const auto result = spriteToMonster.emplace(sprite, monster);
+				assert(result.second == true && "spriteToMonster conflict!");
+			}
+		}
 	}
-	else if ( mySprite == 131 || mySprite == 265 || mySprite == 814 )     // rat
-	{
-		return RAT;
-	}
-	else if ( mySprite == 180 || mySprite == 694 || mySprite == 752 )     // goblin head
-	{
-		return GOBLIN;
-	}
-	else if ( mySprite == 196 || mySprite == 266 )     // scorpion body
-	{
-		return SCORPION;
-	}
-	else if ( mySprite == 190 || mySprite == 710 )     // succubus head
-	{
-		return SUCCUBUS;
-	}
-	else if ( mySprite == 204 || mySprite == 817 )     // troll head
-	{
-		return TROLL;
-	}
-	else if ( mySprite == 217 )     // shopkeeper head
-	{
-		return SHOPKEEPER;
-	}
-	else if ( mySprite == 229 || mySprite == 686 )     // skeleton head
-	{
-		return SKELETON;
-	}
-	else if ( mySprite == 239 )     // minotaur waist
-	{
-		return MINOTAUR;
-	}
-	else if ( mySprite == 246 )     // ghoul head
-	{
-		return GHOUL;
-	}
-	else if ( mySprite == 258 )     // demon head
-	{
-		return DEMON;
-	}
-	else if ( mySprite == 267 || mySprite == 823 )     // spider body
-	{
-		return SPIDER;
-	}
-	else if ( mySprite == 274 )     // lich body
-	{
-		return LICH;
-	}
-	else if ( mySprite == 289 || mySprite == 827 )     // imp head
-	{
-		return CREATURE_IMP;
-	}
-	else if ( mySprite == 295 )     // gnome head
-	{
-		return GNOME;
-	}
-	else if ( mySprite == 304 )     // devil torso
-	{
-		return DEVIL;
-	}
-	else if ( mySprite == 475 )     // crystal golem head
-	{
-		return CRYSTALGOLEM;
-	}
-	else if ( mySprite == 413 )     // cockatrice head
-	{
-		return COCKATRICE;
-	}
-	else if ( mySprite == 467 || mySprite == 742 || mySprite == 770 )     // automaton head
-	{
-		return AUTOMATON;
-	}
-	else if ( mySprite == 429 || mySprite == 430 )     // scarab
-	{
-		return SCARAB;
-	}
-	else if ( mySprite == 421 )     // kobold head
-	{
-		return KOBOLD;
-	}
-	else if ( mySprite == 481 )     // shadow head
-	{
-		return SHADOW;
-	}
-	else if ( mySprite == 437 || mySprite == 718 || mySprite == 756 )     // vampire head
-	{
-		return VAMPIRE;
-	}
-	else if ( mySprite == 445 || mySprite == 702 )     // incubus head
-	{
-		return INCUBUS;
-	}
-	else if ( mySprite == 455 || mySprite == 726 || mySprite == 760 )     // insectoid head
-	{
-		return INSECTOID;
-	}
-	else if ( mySprite == 463 || mySprite == 734 || mySprite == 768 )     // goatman head
-	{
-		return GOATMAN;
-	}
-	else if ( mySprite == 646 )     // lich body
-	{
-		return LICH_FIRE;
-	}
-	else if ( mySprite == 650 )     // lich body
-	{
-		return LICH_ICE;
-	}
-	else if ( mySprite == 189 || mySprite == 210 )
-	{
-		return SLIME;
-	}
-	else if ( mySprite == 872 )     // sentrybot
-	{
-		return SENTRYBOT;
-	}
-	else if ( mySprite == 885 )
-	{
-		return SPELLBOT;
-	}
-	else if ( mySprite == 886 )
-	{
-		return GYROBOT;
-	}
-	else if ( mySprite == 889 )
-	{
-		return DUMMYBOT;
+
+	auto find = spriteToMonster.find(mySprite);
+	if ( find != spriteToMonster.end() ) {
+		return find->second;
 	}
 	return NOTHING;
 }
@@ -338,15 +289,7 @@ void Entity::actMonsterLimb(bool processLight)
 		{
 			if ( inrange[i] )
 			{
-				if ( i == 0 && selectedEntity[0] == this )
-				{
-					parentEnt->skill[13] = i + 1;
-				}
-				else if ( i > 0 && splitscreen && selectedEntity[i] == this )
-				{
-					parentEnt->skill[13] = i + 1;
-				}
-				else if ( client_selected[i] == this )
+				if ( client_selected[i] == this || selectedEntity[i] == this )
 				{
 					parentEnt->skill[13] = i + 1;
 				}
@@ -363,26 +306,26 @@ void Entity::actMonsterLimb(bool processLight)
 			light = nullptr;
 		}
 
-		int carryingLightSource = 0;
+        const char* lightName = nullptr;
 		if ( flags[INVISIBLE] == false )
 		{
 			if ( sprite == 93 )   // torch
 			{
-				carryingLightSource = 6;
+                lightName = "npc_torch";
 			}
 			else if ( sprite == 94 )     // lantern
 			{
-				carryingLightSource = 9;
+                lightName = "npc_lantern";
 			}
 			else if ( sprite == 529 )	// crystal shard
 			{
-				carryingLightSource = 4;
+                lightName = "npc_shard";
 			}
 		}
 
-		if ( carryingLightSource != 0 )
+		if ( lightName )
 		{
-			light = lightSphereShadow(x / 16, y / 16, carryingLightSource, 50 + 15 * carryingLightSource);
+			light = addLight(x / 16, y / 16, lightName);
 		}
 	}
 
@@ -398,6 +341,7 @@ void Entity::actMonsterLimb(bool processLight)
 
 void Entity::removeMonsterDeathNodes()
 {
+	removeLightField();
 	int i = 0;
 	node_t *nextnode = nullptr;
 	for ( node_t *node = children.first; node != nullptr; node = nextnode )
@@ -421,7 +365,7 @@ void Entity::removeMonsterDeathNodes()
 
 void Entity::spawnBlood(int bloodSprite)
 {
-	if ( spawn_blood )
+	if ( spawn_blood || bloodSprite != 160 )
 	{
 		int tileX = std::min<unsigned int>(std::max<int>(0, this->x / 16), map.width - 1);
 		int tileY = std::min<unsigned int>(std::max<int>(0, this->y / 16), map.height - 1);
@@ -432,14 +376,120 @@ void Entity::spawnBlood(int bloodSprite)
 				Entity* entity = newEntity(bloodSprite, 1, map.entities, nullptr); //Blood/gib entity.
 				entity->x = this->x;
 				entity->y = this->y;
-				entity->z = 8 + (rand() % 20) / 100.0;
+				entity->z = 8 + (local_rng.rand() % 20) / 100.0;
 				entity->parent = getUID();
 				entity->sizex = 2;
 				entity->sizey = 2;
-				entity->yaw = (rand() % 360) * PI / 180.0;
+				entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 				entity->flags[UPDATENEEDED] = true;
 				entity->flags[PASSABLE] = true;
 			}
 		}
 	}
+}
+
+
+MonsterData_t monsterData;
+std::map<int, MonsterData_t::MonsterDataEntry_t> MonsterData_t::monsterDataEntries;
+std::string MonsterData_t::iconDefaultString = "#*images/ui/HUD/allies/icons/Icon_HeadDefaultM_00.png";
+std::string MonsterData_t::keyDefaultString = "";
+
+int MonsterData_t::getSpriteFromKey(int sprite, std::string key, int type)
+{
+	if ( type < NOTHING || type >= NUMMONSTERS )
+	{
+		type = Entity::getMonsterTypeFromSprite(sprite);
+	}
+
+	if ( type < NOTHING || type >= NUMMONSTERS )
+	{
+		return 0;
+	}
+
+	auto& data = monsterDataEntries[type];
+	auto find = data.keyToSpriteLookup.find(key);
+	if ( find == data.keyToSpriteLookup.end() ) {
+		return 0;
+	}
+	else 
+	{
+		if ( find->second.size() > 0 )
+		{
+			return find->second[0];
+		}
+		return 0;
+	}
+}
+
+std::string& MonsterData_t::getKeyFromSprite(int sprite, int type)
+{
+	if ( type < NOTHING || type >= NUMMONSTERS )
+	{
+		type = Entity::getMonsterTypeFromSprite(sprite);
+	}
+
+	if ( type < NOTHING || type >= NUMMONSTERS )
+	{
+		return keyDefaultString;
+	}
+
+	auto& data = monsterDataEntries[type];
+	auto find = data.iconSpritesAndPaths.find(sprite);
+	if ( find == data.iconSpritesAndPaths.end() ) {
+		return keyDefaultString;
+	}
+	else 
+	{
+		return find->second.key;
+	}
+}
+std::string& MonsterData_t::getAllyIconFromSprite(int sprite, int type)
+{
+	if ( type < NOTHING || type >= NUMMONSTERS )
+	{
+		type = Entity::getMonsterTypeFromSprite(sprite);
+	}
+
+	if ( type < NOTHING || type >= NUMMONSTERS )
+	{
+		return iconDefaultString;
+	}
+    
+    auto& data = monsterDataEntries[type];
+    auto find = data.iconSpritesAndPaths.find(sprite);
+    if (find == data.iconSpritesAndPaths.end()) {
+        return data.defaultIconPath;
+    } else {
+        return find->second.iconPath;
+    }
+}
+
+int MonsterData_t::getSpecialNPCBaseModel(Stat& myStats)
+{
+	std::string npcValue = myStats.getAttribute("special_npc");
+	if ( npcValue != "" )
+	{
+		return monsterDataEntries[myStats.type].specialNPCs[npcValue].baseModel;
+	}
+	return 0;
+}
+
+std::string MonsterData_t::getSpecialNPCName(Stat& myStats)
+{
+	std::string npcValue = myStats.getAttribute("special_npc");
+	if ( npcValue != "" )
+	{
+		return monsterDataEntries[myStats.type].specialNPCs[npcValue].name;
+	}
+	return "";
+}
+
+bool MonsterData_t::nameMatchesSpecialNPCName(Stat& myStats, std::string npcKey)
+{
+	auto& specialNPCs = monsterDataEntries[myStats.type].specialNPCs;
+	if ( specialNPCs.find(npcKey) != specialNPCs.end() )
+	{
+		return specialNPCs[npcKey].name == myStats.name;
+	}
+	return false;
 }

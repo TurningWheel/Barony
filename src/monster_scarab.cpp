@@ -14,21 +14,26 @@
 #include "stat.hpp"
 #include "entity.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "items.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 void initScarab(Entity* my, Stat* myStats)
 {
 	int c;
 	node_t* node;
 
-	my->sprite = 429; // scarab model
-
+	my->flags[BURNABLE] = true;
 	my->flags[UPDATENEEDED] = true;
 	my->flags[INVISIBLE] = false;
+
+	my->initMonster(429);
+
+    auto& scarabFly = my->fskill[24];
+    scarabFly = 0.0;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -41,6 +46,11 @@ void initScarab(Entity* my, Stat* myStats)
 	{
 		if ( myStats != NULL )
 		{
+		    if ( !strncmp(map.name, "The Labyrinth", 13) )
+		    {
+				myStats->DEX -= 4;
+			    myStats->LVL = 10;
+		    }
 			if ( !myStats->leader_uid )
 			{
 				myStats->leader_uid = 0;
@@ -53,9 +63,16 @@ void initScarab(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+			const bool boss =
+			    local_rng.rand() % 50 == 0 &&
+			    !my->flags[USERFLAG2] &&
+			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
-				strcpy(myStats->name, "Xyggi");
+				myStats->setAttribute("special_npc", "xyggi");
+				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
+				myStats->sex = FEMALE;
 				myStats->HP = 70;
 				myStats->MAXHP = 70;
 				myStats->OLDHP = myStats->HP;
@@ -79,6 +96,10 @@ void initScarab(Entity* my, Stat* myStats)
 					if ( entity )
 					{
 						entity->parent = my->getUID();
+						if ( Stat* followerStats = entity->getStats() )
+						{
+							followerStats->leader_uid = entity->parent;
+						}
 					}
 				}
 			}
@@ -116,16 +137,16 @@ void initScarab(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( rand() % 2 || playerCount > 1 )
+					if ( local_rng.rand() % 2 || playerCount > 1 )
 					{
-						if ( rand() % 3 > 0 )
+						if ( local_rng.rand() % 3 > 0 )
 						{
-							newItem(FOOD_TOMALLEY, static_cast<Status>(DECREPIT + rand() % 4), 0, 1, rand(), false, &myStats->inventory);
+							newItem(FOOD_TOMALLEY, static_cast<Status>(DECREPIT + local_rng.rand() % 4), 0, 1, local_rng.rand(), false, &myStats->inventory);
 						}
 						else
 						{
 							ItemType gem = GEM_GLASS;
-							switch( rand() % 7 )
+							switch( local_rng.rand() % 7 )
 							{
 								case 0:
 									gem = GEM_OPAL;
@@ -149,11 +170,11 @@ void initScarab(Entity* my, Stat* myStats)
 									gem = GEM_GLASS;
 									break;
 							}
-							newItem(gem, static_cast<Status>(DECREPIT + rand()%2), (rand()%4 == 0), 1, rand(), false, &myStats->inventory);
+							newItem(gem, static_cast<Status>(DECREPIT + local_rng.rand()%2), (local_rng.rand()%4 == 0), 1, local_rng.rand(), false, &myStats->inventory);
 						}
 						if ( playerCount > 2 )
 						{
-							newItem(FOOD_TOMALLEY, static_cast<Status>(DECREPIT + rand() % 4), 0, 1 + rand() % 2, rand(), false, &myStats->inventory);
+							newItem(FOOD_TOMALLEY, static_cast<Status>(DECREPIT + local_rng.rand() % 4), 0, 1 + local_rng.rand() % 2, local_rng.rand(), false, &myStats->inventory);
 						}
 					}
 					break;
@@ -163,8 +184,16 @@ void initScarab(Entity* my, Stat* myStats)
 		}
 	}
 
+	if ( multiplayer != CLIENT && myStats )
+	{
+		if ( myStats->getAttribute("special_npc") == "xyggi" )
+		{
+			my->z = 3.25;
+		}
+	}
+
 	// right wing
-	Entity* entity = newEntity(483, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(my->sprite == 1078 ? 1077 : 483, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 5;
 	entity->sizey = 11;
 	entity->skill[2] = my->getUID();
@@ -183,7 +212,7 @@ void initScarab(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left wing
-	entity = newEntity(484, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1078 ? 1076 : 484, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 5;
 	entity->sizey = 11;
 	entity->skill[2] = my->getUID();
@@ -254,19 +283,7 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 		}
 	}
 
-	// move legs
-	if ( (ticks % 10 == 0 && dist > 0.1) || (MONSTER_ATTACKTIME == 0 && MONSTER_ATTACK == 1) )
-	{
-		//MONSTER_ATTACKTIME = MONSTER_ATTACK;
-		if ( my->sprite == 429 )
-		{
-			my->sprite = 430;
-		}
-		else
-		{
-			my->sprite = 429;
-		}
-	}
+	const bool xyggi = (my->sprite == 1078 || my->sprite == 1079);
 
 	// move wings
 	for ( bodypart = 0, node = my->children.first; node != nullptr; node = node->next, ++bodypart )
@@ -492,13 +509,52 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 		}
 	}
 
-	if ( MONSTER_ATTACK != 0 )
+    auto& scarabFly = my->fskill[24];
+
+	// move body
+	if (xyggi)
 	{
-		MONSTER_ATTACKTIME++;
-	}
-	else
-	{
-		MONSTER_ATTACKTIME = 0;
+	    if ( (ticks % 10 == 0 && dist > 0.1) )
+	    {
+		    my->sprite = my->sprite == 1078 ? 1079 : 1078;
+		}
+	} else {
+        if (MONSTER_ATTACK)
+        {
+	        MONSTER_ATTACKTIME++;
+        }
+	    if (MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP1)
+	    {
+	        if (scarabFly < PI / 2.0) {
+	            scarabFly += (PI / TICKS_PER_SECOND) * 2.0;
+	            if (scarabFly >= PI / 2.0) {
+	                scarabFly = PI / 2.0;
+	                my->attack(1, 0, nullptr); // munch
+	            }
+	        }
+	        my->sprite = 1075;
+		    my->focalz = -1;
+	    }
+	    else
+	    {
+            if (scarabFly > 0.0) {
+                scarabFly -= PI / TICKS_PER_SECOND;
+                if (scarabFly <= 0.0) {
+                    scarabFly = 0.0;
+	                my->sprite = 429;
+	                my->focalz = limbs[SCARAB][0][2];
+	                MONSTER_ATTACK = 0;
+	                MONSTER_ATTACKTIME = 0;
+                }
+            }
+            if (my->sprite == 429 || my->sprite == 430) {
+                if (ticks % 10 == 0 && dist > 0.1)
+                {
+	                my->sprite = my->sprite == 429 ? 430 : 429;
+	            }
+	        }
+	    }
+        my->new_z = my->z = 6.0 - sin(scarabFly) * 6.0;
 	}
 }
 
@@ -509,8 +565,11 @@ void actScarabLimb(Entity* my)
 
 void scarabDie(Entity* my)
 {
-	int c = 0;
-	for ( c = 0; c < 2; c++ )
+	Entity* gib = spawnGib(my);
+	gib->sprite = my->sprite;
+	gib->skill[5] = 1; // poof
+	serverSpawnGibForClient(gib);
+	for ( int c = 0; c < 2; c++ )
 	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
@@ -518,7 +577,10 @@ void scarabDie(Entity* my)
 
 	my->spawnBlood(212);
 
-	playSoundEntity(my, 308 + rand() % 2, 64); //TODO: Scarab death sound effect.
+	playSoundEntity(my, 308 + local_rng.rand() % 2, 64); //TODO: Scarab death sound effect.
+
+	my->removeMonsterDeathNodes();
+
 	list_RemoveNode(my->mynode);
 	return;
 }

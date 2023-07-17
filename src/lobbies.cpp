@@ -28,48 +28,114 @@ See LICENSE for details.
 
 LobbyHandler_t LobbyHandler;
 
+std::string LobbyHandler_t::getCurrentRoomKey() const
+{
+    if (multiplayer != CLIENT && multiplayer != SERVER) {
+        return "";
+    }
+    const LobbyServiceType type = multiplayer == SERVER ?
+        getHostingType() : getJoiningType();
+    if (type == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+        char roomkey[16];
+        snprintf(roomkey, sizeof(roomkey), "s%s", getRoomCode());
+        for (auto ptr = roomkey; *ptr != '\0'; ++ptr) {
+            *ptr = (char)toupper((int)(*ptr));
+        }
+        return std::string(roomkey);
+#endif // STEAMWORKS
+    }
+    else if (type == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+        char roomkey[16];
+        snprintf(roomkey, sizeof(roomkey), "e%s",
+            EOS.CurrentLobbyData.LobbyAttributes.gameJoinKey.c_str());
+        for (auto ptr = roomkey; *ptr != '\0'; ++ptr) {
+            *ptr = (char)toupper((int)(*ptr));
+        }
+        return std::string(roomkey);
+#endif // USE_EOS
+    }
+    return "";
+}
+
 std::string LobbyHandler_t::getLobbyJoinFailedConnectString(int result)
 {
 	char buf[1024] = "";
 	switch ( result )
 	{
 		case EResult_LobbyFailures::LOBBY_GAME_IN_PROGRESS:
-			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nGame is currently in progress and not joinable.");
+			snprintf(buf, 1023, "Unable to join lobby:\nGame in progress not joinable.");
 			break;
 		case EResult_LobbyFailures::LOBBY_USING_SAVEGAME:
-			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby requires a compatible saved game to join.\nNewly created characters cannot join this lobby.");
+			snprintf(buf, 1023, "Unable to join lobby:\nCompatible save required.");
 			break;
 		case EResult_LobbyFailures::LOBBY_NOT_USING_SAVEGAME:
-			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby is not loading from a saved game.\nCreate a new character to join.");
+			snprintf(buf, 1023, "Unable to join lobby:\nOnly new characters allowed.");
 			break;
 		case EResult_LobbyFailures::LOBBY_WRONG_SAVEGAME:
-			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby saved game is incompatible with current save.\nEnsure the correct saved game is loaded.");
+			snprintf(buf, 1023, "Unable to join lobby:\nIncompatible save game.");
 			break;
 		case EResult_LobbyFailures::LOBBY_JOIN_CANCELLED:
-			snprintf(buf, 1023, "Lobby join cancelled while setting up players.\n\nSafely leaving lobby.");
-			break;
-		case EResult_LobbyFailures::LOBBY_JOIN_TIMEOUT:
-			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nTimeout waiting for response from host.");
+			snprintf(buf, 1023, "Lobby join cancelled.\nSafely leaving lobby.");
 			break;
 		case EResult_LobbyFailures::LOBBY_NO_OWNER:
-			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nNo host found for lobby.");
+			snprintf(buf, 1023, "Unable to join lobby:\nLobby has no host.");
 			break;
 		case EResult_LobbyFailures::LOBBY_NOT_FOUND:
-			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby no longer exists.");
+			snprintf(buf, 1023, "Unable to join lobby:\nLobby no longer exists.");
 			break;
 		case EResult_LobbyFailures::LOBBY_TOO_MANY_PLAYERS:
-			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby is full.");
+			snprintf(buf, 1023, "Unable to join lobby:\nLobby is full.");
 			break;
 #ifdef USE_EOS
-		case static_cast<int>(EOS_EResult::EOS_NotFound):
-			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby no longer exists.");
+#ifdef STEAMWORKS
+		case static_cast<int>(EOS_EResult::EOS_InvalidUser):
+			snprintf(buf, 1023, "Unable to join lobby:\nCrossplay not enabled.");
 			break;
-		case static_cast<int>(EOS_EResult::EOS_Lobby_TooManyPlayers):
-			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nLobby is full.");
+#else
+		case static_cast<int>(EOS_EResult::EOS_InvalidUser):
+			snprintf(buf, 1023, "Unable to join lobby:\nNot connected to Epic Online.");
 			break;
 #endif
+		case static_cast<int>(EOS_EResult::EOS_NoChange) :
+			snprintf(buf, 1023, "Unable to join lobby:\nNo match found.");
+			break;
+#ifdef STEAMWORKS
+		case static_cast<int>(k_EResultNoMatch) :
+			snprintf(buf, 1023, "Unable to join lobby:\nNo match found.");
+			break;
+#endif
+		case static_cast<int>(EOS_EResult::EOS_NotFound):
+			snprintf(buf, 1023, "Unable to join lobby:\nLobby no longer exists.");
+			break;
+		case static_cast<int>(EOS_EResult::EOS_Lobby_TooManyPlayers):
+			snprintf(buf, 1023, "Unable to join lobby:\nLobby is full.");
+			break;
+#endif
+		case EResult_LobbyFailures::LOBBY_JOIN_TIMEOUT:
+#ifndef NINTENDO
+			snprintf(buf, 1023, "Unable to join lobby:\nTimeout waiting for host.");
+#else
+			nxErrorPrompt(
+				"Unable to join lobby. Timeout waiting for host.",
+				"Unable to join lobby.\n\nTimeout waiting for host.\n\nPlease try again later.",
+				result);
+			snprintf(buf, 1023, "Unable to join lobby.");
+#endif
+			break;
 		default:
-			snprintf(buf, 1023, "Failed to join the selected lobby:\n\nGeneral failure - error code: %d.", result);
+#ifndef NINTENDO
+			snprintf(buf, 1023, "Unable to join lobby:\nError code: %d.", result);
+#else
+			nxErrorPrompt(
+				"Unable to join lobby. Invalid game version.",
+				"Unable to join lobby. Invalid game version.\n\n"
+				"Please check that your game version is up-to-date.\n\n"
+				"If the error persists, please try again later.",
+				result);
+			snprintf(buf, 1023, "Unable to join lobby.");
+#endif
 			break;
 	}
 	printlog("[Lobbies Error]: %s", buf);
@@ -89,21 +155,50 @@ bool LobbyHandler_t::validateSteamLobbyDataOnJoin()
 			// loading save game, but incorrect assertion from client side.
 			if ( loadingsavegame == 0 )
 			{
-				connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_USING_SAVEGAME;
+				// try reload from your other savefiles since this didn't match the default savegameIndex.
+				bool foundSave = false;
+				for ( int c = 0; c < SAVE_GAMES_MAX; ++c ) {
+					auto info = getSaveGameInfo(false, c);
+					if ( info.game_version != -1 ) {
+						if ( info.gamekey == lsg ) {
+							savegameCurrentFileIndex = c;
+							foundSave = true;
+							break;
+						}
+					}
+				}
+
+				if ( foundSave )
+				{
+					loadingsavegame = lsg;
+					auto info = getSaveGameInfo(false, savegameCurrentFileIndex);
+					for ( int c = 0; c < MAXPLAYERS; ++c ) {
+						if ( info.players_connected[c] ) {
+							loadGame(c, info);
+						}
+					}
+				}
+				else
+				{
+					connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_USING_SAVEGAME;
+					errorOnJoin = true;
+				}
 			}
 			else if ( loadingsavegame > 0 && lsg == 0 )
 			{
 				connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_NOT_USING_SAVEGAME;
+				errorOnJoin = true;
 			}
 			else if ( loadingsavegame > 0 && lsg > 0 )
 			{
 				connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_WRONG_SAVEGAME;
+				errorOnJoin = true;
 			}
 			else
 			{
 				connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_UNHANDLED_ERROR;
+				errorOnJoin = true;
 			}
-			errorOnJoin = true;
 		}
 	}
 
@@ -121,6 +216,7 @@ bool LobbyHandler_t::validateSteamLobbyDataOnJoin()
 	{
 		connectingToLobbyWindow = false;
 		connectingToLobby = false;
+		multiplayer = SINGLE;
 	}
 
 	return !errorOnJoin;
@@ -225,7 +321,7 @@ void LobbyHandler_t::handleLobbyListRequests()
 
 
 	// lobby list request succeeded?
-	if ( !strcmp(subtext, language[1132]) )
+	if ( !strcmp(subtext, Language::get(1132)) )
 	{
 		bool hasLobbyListRequestReturned = false;
 		switch ( searchType )
@@ -371,7 +467,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 	updateSearchResults();
 
 	// epic/steam lobby browser
-	if ( subwindow && !strcmp(subtext, language[1334]) )
+	if ( subwindow && !strcmp(subtext, Language::get(1334)) )
 	{
 		// draw backdrop for main list and slider
 
@@ -390,7 +486,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 #ifdef STEAMWORKS
 		if ( !EOS.CurrentUserInfo.bUserLoggedIn )
 		{
-			ttfPrintTextFormatted(ttf12, subx2 - 8 - (strlen(language[3994]) + 1) * TTF12_WIDTH, suby2 - TTF12_HEIGHT - 10, language[3994]);
+			ttfPrintTextFormatted(ttf12, subx2 - 8 - (strlen(Language::get(3994)) + 1) * TTF12_WIDTH, suby2 - TTF12_HEIGHT - 10, Language::get(3994));
 		}
 #endif
 #endif
@@ -501,7 +597,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 				}
 			}
 
-			flagsBox.w = strlen(language[2919]) * 10 + 4;
+			flagsBox.w = strlen(Language::get(2919)) * 10 + 4;
 			flagsBox.h = 4 + (getHeightOfFont(ttf12) * (std::max(2, numSvFlags + 2)));
 			flagsBox.x = mousex + 8;
 			flagsBox.y = mousey + 8;
@@ -510,12 +606,12 @@ void LobbyHandler_t::handleLobbyBrowser()
 				flagsBox.h += TTF12_HEIGHT;
 				flagsBox.w += 16;
 			}
-			strcpy(flagsBoxText, language[1335]);
+			strcpy(flagsBoxText, Language::get(1335));
 			strcat(flagsBoxText, "\n");
 
 			if ( !numSvFlags )
 			{
-				strcat(flagsBoxText, language[1336]);
+				strcat(flagsBoxText, Language::get(1336));
 			}
 			else
 			{
@@ -529,11 +625,11 @@ void LobbyHandler_t::handleLobbyBrowser()
 						char flagStringBuffer[256] = "";
 						if ( c < 5 )
 						{
-							strcpy(flagStringBuffer, language[153 + c]);
+							strcpy(flagStringBuffer, Language::get(153 + c));
 						}
 						else
 						{
-							strcpy(flagStringBuffer, language[2917 - 5 + c]);
+							strcpy(flagStringBuffer, Language::get(2917 - 5 + c));
 						}
 						strcat(flagsBoxText, flagStringBuffer);
 					}
@@ -593,7 +689,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 			}
 			pos.w = subx2 - subx1 - 44;
 			pos.h = 16;
-			drawRect(&pos, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+			drawRect(&pos, makeColorRGB(64, 64, 64), 255);
 		}
 
 		// print all lobby entries
@@ -638,11 +734,11 @@ void LobbyHandler_t::handleLobbyBrowser()
 						displayedLobbyName += "..";
 					}
 
-					Uint32 color = uint32ColorWhite(*mainsurface);
+					Uint32 color = uint32ColorWhite;
 					char buf[maxCharacters] = "";
 					if ( EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyAttributes.gameCurrentLevel >= 0 )
 					{
-						color = uint32ColorYellow(*mainsurface);
+						color = uint32ColorYellow;
 						// hide lobby name for in progress.
 						snprintf(buf, maxCharacters - 1, "%s%s", "In-progress lobby", lobbyDetailText.c_str());
 					}
@@ -661,7 +757,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 		}
 		else
 		{
-			ttfPrintText(ttf12, x, y, language[1337]);
+			ttfPrintText(ttf12, x, y, Language::get(1337));
 		}
 
 		// draw server flags tooltip (if applicable)
@@ -713,13 +809,6 @@ void LobbyHandler_t::searchLobbyWithFilter(button_t* my)
 {
 #ifdef USE_EOS
 	EOS.LobbySearchResults.showLobbiesInProgress = LobbyHandler.filterShowInProgressLobbies;
-	for ( int c = 0; c < 4 && EOS.lobbySearchByCode[c] != 0; ++c )
-	{
-		if ( EOS.lobbySearchByCode[c] >= 'A' && EOS.lobbySearchByCode[c] <= 'Z' )
-		{
-			EOS.lobbySearchByCode[c] = 'a' + (EOS.lobbySearchByCode[c] - 'A'); // to lowercase.
-		}
-	}
 
 	if ( strcmp(EOS.lobbySearchByCode, "") != 0 )
 	{
@@ -753,7 +842,7 @@ void LobbyHandler_t::drawLobbyFilters()
 		button_t* button = (button_t*)node->element;
 		if ( button )
 		{
-			if ( !buttonFilterSearch && !strcmp(button->label, language[3953]) )
+			if ( !buttonFilterSearch && !strcmp(button->label, Language::get(3953)) )
 			{
 				buttonFilterSearch = button;
 			}
@@ -773,7 +862,7 @@ void LobbyHandler_t::drawLobbyFilters()
 		}
 		if ( buttonRefresh )
 		{
-			buttonRefresh->key = SDL_SCANCODE_RETURN;
+			buttonRefresh->key = SDLK_RETURN;
 		}
 		return;
 	}
@@ -797,17 +886,17 @@ void LobbyHandler_t::drawLobbyFilters()
 	{
 		buttonFilterSearch->x = pos.x + 8 + 4;
 		buttonFilterSearch->y = suby2 - 28;
-		buttonFilterSearch->sizex = strlen(language[3953]) * 12 + 8;
+		buttonFilterSearch->sizex = strlen(Language::get(3953)) * 12 + 8;
 		buttonFilterSearch->sizey = 20;
 		buttonFilterSearch->visible = 1;
 		buttonFilterSearch->focused = 1;
-		buttonFilterSearch->key = SDL_SCANCODE_RETURN;
-		strcpy(buttonFilterSearch->label, language[3953]);
+		buttonFilterSearch->key = SDLK_RETURN;
+		strcpy(buttonFilterSearch->label, Language::get(3953));
 		buttonFilterSearch->action = &LobbyHandler.searchLobbyWithFilter;
 	}
 
 	// lobby code search
-	ttfPrintTextFormatted(ttf12, text.x, text.y, language[3954]);
+	ttfPrintTextFormatted(ttf12, text.x, text.y, Language::get(3954));
 	text.y += (TTF12_HEIGHT + 2) * 1;
 	drawDepressed(text.x, text.y, text.x + (TTF12_WIDTH * 6), text.y + TTF12_HEIGHT + 4);
 	ttfPrintTextFormatted(ttf12, text.x + 2, text.y + 4, "%s", EOS.lobbySearchByCode);
@@ -819,7 +908,7 @@ void LobbyHandler_t::drawLobbyFilters()
 	text.y += (TTF12_HEIGHT + 2) * 2;
 
 	// show in-progress lobbies
-	ttfPrintTextFormatted(ttf12, text.x, text.y, language[3955], filterShowInProgressLobbies ? 'x' : ' ');
+	ttfPrintTextFormatted(ttf12, text.x, text.y, Language::get(3955), filterShowInProgressLobbies ? 'x' : ' ');
 	if ( inputs.bMouseLeft(clientnum) )
 	{
 		if ( mouseInBounds(clientnum, text.x + strlen("crossplay lobbies: ") * TTF12_WIDTH, text.x + strlen("crossplay lobbies: [x]") * TTF12_WIDTH,

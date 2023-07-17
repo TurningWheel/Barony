@@ -1,0 +1,1325 @@
+{
+    "version": 1,
+    "items": {
+        "wooden_shield": {
+            "name_identified": "wooden shield",
+            "name_unidentified": "wooden shield"
+        },
+        "quarterstaff": {
+            "name_identified": "quarter staff",
+            "name_unidentified": "quarter staff"
+        },
+        "bronze_sword": {
+            "name_identified": "bronze sword",
+            "name_unidentified": "bronze sword"
+        },
+        "bronze_mace": {
+            "name_identified": "bronze mace",
+            "name_unidentified": "bronze mace"
+        },
+        "bronze_axe": {
+            "name_identified": "bronze axe",
+            "name_unidentified": "bronze axe"
+        },
+        "bronze_shield": {
+            "name_identified": "bronze shield",
+            "name_unidentified": "bronze shield"
+        },
+        "sling": {
+            "name_identified": "slingshot",
+            "name_unidentified": "slingshot"
+        },
+        "iron_spear": {
+            "name_identified": "iron spear",
+            "name_unidentified": "iron spear"
+        },
+        "iron_sword": {
+            "name_identified": "iron sword",
+            "name_unidentified": "iron sword"
+        },
+        "iron_mace": {
+            "name_identified": "iron mace",
+            "name_unidentified": "iron mace"
+        },
+        "iron_axe": {
+            "name_identified": "iron axe",
+            "name_unidentified": "iron axe"
+        },
+        "iron_shield": {
+            "name_identified": "iron shield",
+            "name_unidentified": "iron shield"
+        },
+        "shortbow": {
+            "name_identified": "shortbow",
+            "name_unidentified": "shortbow"
+        },
+        "steel_halberd": {
+            "name_identified": "steel halberd",
+            "name_unidentified": "steel halberd"
+        },
+        "steel_sword": {
+            "name_identified": "steel sword",
+            "name_unidentified": "steel sword"
+        },
+        "steel_mace": {
+            "name_identified": "steel mace",
+            "name_unidentified": "steel mace"
+        },
+        "steel_axe": {
+            "name_identified": "steel axe",
+            "name_unidentified": "steel axe"
+        },
+        "steel_shield": {
+            "name_identified": "steel shield",
+            "name_unidentified": "steel shield"
+        },
+        "steel_shield_resistance": {
+            "name_identified": "steel shield of magic resistance",
+            "name_unidentified": "steel shield"
+        },
+        "crossbow": {
+            "name_identified": "crossbow",
+            "name_unidentified": "crossbow"
+        },
+        "gloves": {
+            "name_identified": "leather gloves",
+            "name_unidentified": "gloves"
+        },
+        "gloves_dexterity": {
+            "name_identified": "leather gloves of dexterity",
+            "name_unidentified": "gloves"
+        },
+        "bracers": {
+            "name_identified": "iron bracers",
+            "name_unidentified": "bracers"
+        },
+        "bracers_constitution": {
+            "name_identified": "iron bracers of constitution",
+            "name_unidentified": "bracers"
+        },
+        "gauntlets": {
+            "name_identified": "steel gauntlets",
+            "name_unidentified": "gauntlets"
+        },
+        "gauntlets_strength": {
+            "name_identified": "steel gauntlets of might",
+            "name_unidentified": "gauntlets"
+        },
+        "cloak": {
+            "name_identified": "cloak",
+            "name_unidentified": "cloak"
+        },
+        "cloak_magicreflection": {
+            "name_identified": "cloak of magic reflection",
+            "name_unidentified": "cloak"
+        },
+        "cloak_invisibility": {
+            "name_identified": "cloak of invisibility",
+            "name_unidentified": "cloak"
+        },
+        "cloak_protection": {
+            "name_identified": "cloak of protection",
+            "name_unidentified": "cloak"
+        },
+        "leather_boots": {
+            "name_identified": "leather boots",
+            "name_unidentified": "leather boots"
+        },
+        "leather_boots_speed": {
+            "name_identified": "leather boots of speed",
+            "name_unidentified": "leather boots"
+        },
+        "iron_boots": {
+            "name_identified": "iron boots",
+            "name_unidentified": "iron boots"
+        },
+        "iron_boots_waterwalking": {
+            "name_identified": "iron boots of water walking",
+            "name_unidentified": "iron boots"
+        },
+        "steel_boots": {
+            "name_identified": "steel boots",
+            "name_unidentified": "steel boots"
+        },
+        "steel_boots_levitation": {
+            "name_identified": "steel boots of levitation",
+            "name_unidentified": "steel boots"
+        },
+        "steel_boots_feather": {
+            "name_identified": "steel boots of feather",
+            "name_unidentified": "steel boots"
+        },
+        "leather_breastpiece": {
+            "name_identified": "leather breastpiece",
+            "name_unidentified": "leather breastpiece"
+        },
+        "iron_breastpiece": {
+            "name_identified": "iron breastpiece",
+            "name_unidentified": "iron breastpiece"
+        },
+        "steel_breastpiece": {
+            "name_identified": "steel breastpiece",
+            "name_unidentified": "steel breastpiece"
+        },
+        "hat_phrygian": {
+            "name_identified": "phrygian hat",
+            "name_unidentified": "phrygian hat"
+        },
+        "hat_hood": {
+            "name_identified": "hood",
+            "name_unidentified": "hood"
+        },
+        "hat_wizard": {
+            "name_identified": "wizard hat",
+            "name_unidentified": "wizard hat"
+        },
+        "hat_jester": {
+            "name_identified": "jester hat",
+            "name_unidentified": "jester hat"
+        },
+        "leather_helm": {
+            "name_identified": "leather helm",
+            "name_unidentified": "leather helm"
+        },
+        "iron_helm": {
+            "name_identified": "iron helm",
+            "name_unidentified": "iron helm"
+        },
+        "steel_helm": {
+            "name_identified": "steel helm",
+            "name_unidentified": "steel helm"
+        },
+        "amulet_sexchange": {
+            "name_identified": "amulet of sex change",
+            "name_unidentified": "amulet"
+        },
+        "amulet_lifesaving": {
+            "name_identified": "amulet of life saving",
+            "name_unidentified": "amulet"
+        },
+        "amulet_waterbreathing": {
+            "name_identified": "amulet of olympic swimming",
+            "name_unidentified": "amulet"
+        },
+        "amulet_magicreflection": {
+            "name_identified": "amulet of magic reflection",
+            "name_unidentified": "amulet"
+        },
+        "amulet_strangulation": {
+            "name_identified": "amulet of strangulation",
+            "name_unidentified": "amulet"
+        },
+        "amulet_poisonresistance": {
+            "name_identified": "amulet of poison resistance",
+            "name_unidentified": "amulet"
+        },
+        "potion_water": {
+            "name_identified": "bottle of water",
+            "name_unidentified": "potion"
+        },
+        "potion_booze": {
+            "name_identified": "bottle of booze",
+            "name_unidentified": "potion"
+        },
+        "potion_juice": {
+            "name_identified": "bottle of fruit juice",
+            "name_unidentified": "potion"
+        },
+        "potion_sickness": {
+            "name_identified": "potion of sickness",
+            "name_unidentified": "potion"
+        },
+        "potion_confusion": {
+            "name_identified": "potion of confusion",
+            "name_unidentified": "potion"
+        },
+        "potion_extrahealing": {
+            "name_identified": "potion of extra healing",
+            "name_unidentified": "potion"
+        },
+        "potion_healing": {
+            "name_identified": "potion of healing",
+            "name_unidentified": "potion"
+        },
+        "potion_cureailment": {
+            "name_identified": "potion of cure ailment",
+            "name_unidentified": "potion"
+        },
+        "potion_blindness": {
+            "name_identified": "potion of blindness",
+            "name_unidentified": "potion"
+        },
+        "potion_restoremagic": {
+            "name_identified": "potion of restore magic",
+            "name_unidentified": "potion"
+        },
+        "potion_invisibility": {
+            "name_identified": "potion of invisibility",
+            "name_unidentified": "potion"
+        },
+        "potion_levitation": {
+            "name_identified": "potion of levitation",
+            "name_unidentified": "potion"
+        },
+        "potion_speed": {
+            "name_identified": "potion of speed",
+            "name_unidentified": "potion"
+        },
+        "potion_acid": {
+            "name_identified": "potion of acid",
+            "name_unidentified": "potion"
+        },
+        "potion_paralysis": {
+            "name_identified": "potion of paralysis",
+            "name_unidentified": "potion"
+        },
+        "scroll_mail": {
+            "name_identified": "piece of mail",
+            "name_unidentified": "stamped scroll"
+        },
+        "scroll_identify": {
+            "name_identified": "scroll of identify",
+            "name_unidentified": "scroll"
+        },
+        "scroll_light": {
+            "name_identified": "scroll of light",
+            "name_unidentified": "scroll"
+        },
+        "scroll_blank": {
+            "name_identified": "blank scroll",
+            "name_unidentified": "scroll"
+        },
+        "scroll_enchantweapon": {
+            "name_identified": "scroll of enchant weapon",
+            "name_unidentified": "scroll"
+        },
+        "scroll_enchantarmor": {
+            "name_identified": "scroll of enchant armor",
+            "name_unidentified": "scroll"
+        },
+        "scroll_removecurse": {
+            "name_identified": "scroll of remove curse",
+            "name_unidentified": "scroll"
+        },
+        "scroll_fire": {
+            "name_identified": "scroll of fire",
+            "name_unidentified": "scroll"
+        },
+        "scroll_food": {
+            "name_identified": "scroll of food",
+            "name_unidentified": "scroll"
+        },
+        "scroll_magicmapping": {
+            "name_identified": "scroll of magic mapping",
+            "name_unidentified": "scroll"
+        },
+        "scroll_repair": {
+            "name_identified": "scroll of repair",
+            "name_unidentified": "scroll"
+        },
+        "scroll_destroyarmor": {
+            "name_identified": "scroll of destroy armor",
+            "name_unidentified": "scroll"
+        },
+        "scroll_teleportation": {
+            "name_identified": "scroll of teleportation",
+            "name_unidentified": "scroll"
+        },
+        "scroll_summon": {
+            "name_identified": "scroll of summon",
+            "name_unidentified": "scroll"
+        },
+        "magicstaff_light": {
+            "name_identified": "magicstaff of light",
+            "name_unidentified": "magicstaff"
+        },
+        "magicstaff_digging": {
+            "name_identified": "magicstaff of digging",
+            "name_unidentified": "magicstaff"
+        },
+        "magicstaff_locking": {
+            "name_identified": "magicstaff of locking",
+            "name_unidentified": "magicstaff"
+        },
+        "magicstaff_magicmissile": {
+            "name_identified": "magicstaff of magic missile",
+            "name_unidentified": "magicstaff"
+        },
+        "magicstaff_opening": {
+            "name_identified": "magicstaff of opening",
+            "name_unidentified": "magicstaff"
+        },
+        "magicstaff_slow": {
+            "name_identified": "magicstaff of slow",
+            "name_unidentified": "magicstaff"
+        },
+        "magicstaff_cold": {
+            "name_identified": "magicstaff of cold",
+            "name_unidentified": "magicstaff"
+        },
+        "magicstaff_fire": {
+            "name_identified": "magicstaff of fire",
+            "name_unidentified": "magicstaff"
+        },
+        "magicstaff_lightning": {
+            "name_identified": "magicstaff of lightning",
+            "name_unidentified": "magicstaff"
+        },
+        "magicstaff_sleep": {
+            "name_identified": "magicstaff of sleep",
+            "name_unidentified": "magicstaff"
+        },
+        "ring_adornment": {
+            "name_identified": "ring of adornment",
+            "name_unidentified": "ring"
+        },
+        "ring_slowdigestion": {
+            "name_identified": "ring of slow digestion",
+            "name_unidentified": "ring"
+        },
+        "ring_protection": {
+            "name_identified": "ring of protection",
+            "name_unidentified": "ring"
+        },
+        "ring_warning": {
+            "name_identified": "ring of warning",
+            "name_unidentified": "ring"
+        },
+        "ring_strength": {
+            "name_identified": "ring of might",
+            "name_unidentified": "ring"
+        },
+        "ring_constitution": {
+            "name_identified": "ring of constitution",
+            "name_unidentified": "ring"
+        },
+        "ring_invisibility": {
+            "name_identified": "ring of invisibility",
+            "name_unidentified": "ring"
+        },
+        "ring_magicresistance": {
+            "name_identified": "ring of magic resistance",
+            "name_unidentified": "ring"
+        },
+        "ring_conflict": {
+            "name_identified": "ring of conflict",
+            "name_unidentified": "ring"
+        },
+        "ring_levitation": {
+            "name_identified": "ring of levitation",
+            "name_unidentified": "ring"
+        },
+        "ring_regeneration": {
+            "name_identified": "ring of regeneration",
+            "name_unidentified": "ring"
+        },
+        "ring_teleportation": {
+            "name_identified": "ring of teleportation",
+            "name_unidentified": "ring"
+        },
+        "spellbook_forcebolt": {
+            "name_identified": "spellbook of forcebolt",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_magicmissile": {
+            "name_identified": "spellbook of magic missile",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_cold": {
+            "name_identified": "spellbook of cold",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_fireball": {
+            "name_identified": "spellbook of fireball",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_light": {
+            "name_identified": "spellbook of light",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_removecurse": {
+            "name_identified": "spellbook of remove curse",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_lightning": {
+            "name_identified": "spellbook of lightning",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_identify": {
+            "name_identified": "spellbook of identify",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_magicmapping": {
+            "name_identified": "spellbook of magic mapping",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_sleep": {
+            "name_identified": "spellbook of sleep",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_confuse": {
+            "name_identified": "spellbook of confuse",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_slow": {
+            "name_identified": "spellbook of slow",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_opening": {
+            "name_identified": "spellbook of opening",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_locking": {
+            "name_identified": "spellbook of locking",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_levitation": {
+            "name_identified": "spellbook of levitation",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_invisibility": {
+            "name_identified": "spellbook of invisibility",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_teleportation": {
+            "name_identified": "spellbook of teleportation",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_healing": {
+            "name_identified": "spellbook of healing",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_extrahealing": {
+            "name_identified": "spellbook of extra healing",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_cureailment": {
+            "name_identified": "spellbook of cure ailment",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_dig": {
+            "name_identified": "spellbook of dig",
+            "name_unidentified": "spellbook"
+        },
+        "gem_rock": {
+            "name_identified": "rock",
+            "name_unidentified": "rock"
+        },
+        "gem_luck": {
+            "name_identified": "luckstone",
+            "name_unidentified": "rock"
+        },
+        "gem_garnet": {
+            "name_identified": "garnet",
+            "name_unidentified": "gem"
+        },
+        "gem_ruby": {
+            "name_identified": "ruby",
+            "name_unidentified": "gem"
+        },
+        "gem_jacinth": {
+            "name_identified": "jacinth",
+            "name_unidentified": "gem"
+        },
+        "gem_amber": {
+            "name_identified": "amber",
+            "name_unidentified": "gem"
+        },
+        "gem_citrine": {
+            "name_identified": "citrine",
+            "name_unidentified": "gem"
+        },
+        "gem_jade": {
+            "name_identified": "jade",
+            "name_unidentified": "gem"
+        },
+        "gem_emerald": {
+            "name_identified": "emerald",
+            "name_unidentified": "gem"
+        },
+        "gem_sapphire": {
+            "name_identified": "sapphire",
+            "name_unidentified": "gem"
+        },
+        "gem_aquamarine": {
+            "name_identified": "aquamarine",
+            "name_unidentified": "gem"
+        },
+        "gem_amethyst": {
+            "name_identified": "amethyst",
+            "name_unidentified": "gem"
+        },
+        "gem_fluorite": {
+            "name_identified": "fluorite",
+            "name_unidentified": "gem"
+        },
+        "gem_opal": {
+            "name_identified": "opal",
+            "name_unidentified": "gem"
+        },
+        "gem_diamond": {
+            "name_identified": "diamond",
+            "name_unidentified": "gem"
+        },
+        "gem_jetstone": {
+            "name_identified": "jetstone",
+            "name_unidentified": "gem"
+        },
+        "gem_obsidian": {
+            "name_identified": "obsidian",
+            "name_unidentified": "gem"
+        },
+        "gem_glass": {
+            "name_identified": "piece of worthless glass",
+            "name_unidentified": "gem"
+        },
+        "tool_pickaxe": {
+            "name_identified": "pickaxe",
+            "name_unidentified": "pickaxe"
+        },
+        "tool_tinopener": {
+            "name_identified": "tin opener",
+            "name_unidentified": "tin opener"
+        },
+        "tool_mirror": {
+            "name_identified": "mirror",
+            "name_unidentified": "mirror"
+        },
+        "tool_lockpick": {
+            "name_identified": "lockpick",
+            "name_unidentified": "lockpick"
+        },
+        "tool_skeletonkey": {
+            "name_identified": "skeleton key",
+            "name_unidentified": "key"
+        },
+        "tool_torch": {
+            "name_identified": "torch",
+            "name_unidentified": "torch"
+        },
+        "tool_lantern": {
+            "name_identified": "lantern",
+            "name_unidentified": "lantern"
+        },
+        "tool_blindfold": {
+            "name_identified": "blindfold",
+            "name_unidentified": "blindfold"
+        },
+        "tool_towel": {
+            "name_identified": "towel",
+            "name_unidentified": "towel"
+        },
+        "tool_glasses": {
+            "name_identified": "pair of glasses",
+            "name_unidentified": "pair of glasses"
+        },
+        "tool_beartrap": {
+            "name_identified": "beartrap",
+            "name_unidentified": "beartrap"
+        },
+        "food_bread": {
+            "name_identified": "bread",
+            "name_unidentified": "bread"
+        },
+        "food_creampie": {
+            "name_identified": "cream pie",
+            "name_unidentified": "cream pie"
+        },
+        "food_cheese": {
+            "name_identified": "cheese",
+            "name_unidentified": "cheese"
+        },
+        "food_apple": {
+            "name_identified": "apple",
+            "name_unidentified": "apple"
+        },
+        "food_meat": {
+            "name_identified": "meat",
+            "name_unidentified": "meat"
+        },
+        "food_fish": {
+            "name_identified": "fish",
+            "name_unidentified": "fish"
+        },
+        "food_tin": {
+            "name_identified": "tin",
+            "name_unidentified": "tin"
+        },
+        "readable_book": {
+            "name_identified": "book",
+            "name_unidentified": "readable book"
+        },
+        "spell_item": {
+            "name_identified": "spell",
+            "name_unidentified": "spell"
+        },
+        "artifact_sword": {
+            "name_identified": "Dyrnwyn",
+            "name_unidentified": "magic sword"
+        },
+        "artifact_mace": {
+            "name_identified": "Sharur",
+            "name_unidentified": "magic mace"
+        },
+        "artifact_spear": {
+            "name_identified": "Gungnir",
+            "name_unidentified": "magic spear"
+        },
+        "artifact_axe": {
+            "name_identified": "Parashu",
+            "name_unidentified": "magic axe"
+        },
+        "artifact_bow": {
+            "name_identified": "Khryselakatos",
+            "name_unidentified": "magic bow"
+        },
+        "artifact_breastpiece": {
+            "name_identified": "Dragon's Mail",
+            "name_unidentified": "artifact breastpiece"
+        },
+        "artifact_helm": {
+            "name_identified": "Sphinx's Veil",
+            "name_unidentified": "artifact helm"
+        },
+        "artifact_boots": {
+            "name_identified": "Oracle's Treads",
+            "name_unidentified": "artifact boots"
+        },
+        "artifact_cloak": {
+            "name_identified": "Wraith's Gown",
+            "name_unidentified": "artifact cloak"
+        },
+        "artifact_gloves": {
+            "name_identified": "Djinni's Brace",
+            "name_unidentified": "artifact gloves"
+        },
+        "crystal_breastpiece": {
+            "name_identified": "crystal breastpiece",
+            "name_unidentified": "crystal breastpiece"
+        },
+        "crystal_helm": {
+            "name_identified": "crystal helm",
+            "name_unidentified": "crystal helm"
+        },
+        "crystal_boots": {
+            "name_identified": "crystal boots",
+            "name_unidentified": "crystal boots"
+        },
+        "crystal_shield": {
+            "name_identified": "crystal shield",
+            "name_unidentified": "crystal shield"
+        },
+        "crystal_gloves": {
+            "name_identified": "crystal gauntlets",
+            "name_unidentified": "crystal gauntlets"
+        },
+        "vampire_doublet": {
+            "name_identified": "vampire doublet",
+            "name_unidentified": "doublet"
+        },
+        "wizard_doublet": {
+            "name_identified": "wizard doublet",
+            "name_unidentified": "doublet"
+        },
+        "healer_doublet": {
+            "name_identified": "healer doublet",
+            "name_unidentified": "doublet"
+        },
+        "mirror_shield": {
+            "name_identified": "mirror shield",
+            "name_unidentified": "mirror shield"
+        },
+        "brass_knuckles": {
+            "name_identified": "brass knuckles",
+            "name_unidentified": "knuckles"
+        },
+        "iron_knuckles": {
+            "name_identified": "iron knuckles",
+            "name_unidentified": "knuckles"
+        },
+        "spiked_gauntlets": {
+            "name_identified": "spiked gauntlets",
+            "name_unidentified": "knuckles"
+        },
+        "food_tomalley": {
+            "name_identified": "tomalley",
+            "name_unidentified": "tomalley"
+        },
+        "tool_crystalshard": {
+            "name_identified": "crystal shard",
+            "name_unidentified": "crystal shard"
+        },
+        "crystal_sword": {
+            "name_identified": "crystal sword",
+            "name_unidentified": "crystal sword"
+        },
+        "crystal_spear": {
+            "name_identified": "crystal spear",
+            "name_unidentified": "crystal spear"
+        },
+        "crystal_battleaxe": {
+            "name_identified": "crystal axe",
+            "name_unidentified": "crystal axe"
+        },
+        "crystal_mace": {
+            "name_identified": "crystal mace",
+            "name_unidentified": "crystal mace"
+        },
+        "bronze_tomahawk": {
+            "name_identified": "bronze tomahawk",
+            "name_unidentified": "bronze tomahawk"
+        },
+        "iron_dagger": {
+            "name_identified": "iron dagger",
+            "name_unidentified": "iron dagger"
+        },
+        "steel_chakram": {
+            "name_identified": "steel chakram",
+            "name_unidentified": "steel chakram"
+        },
+        "crystal_shuriken": {
+            "name_identified": "crystal shuriken",
+            "name_unidentified": "crystal shuriken"
+        },
+        "cloak_black": {
+            "name_identified": "black cloak",
+            "name_unidentified": "black cloak"
+        },
+        "magicstaff_stoneblood": {
+            "name_identified": "magicstaff of stoneblood",
+            "name_unidentified": "magicstaff"
+        },
+        "magicstaff_bleed": {
+            "name_identified": "magicstaff of bloodletting",
+            "name_unidentified": "magicstaff"
+        },
+        "magicstaff_summon": {
+            "name_identified": "magicstaff of conjure skeleton",
+            "name_unidentified": "magicstaff"
+        },
+        "tool_blindfold_focus": {
+            "name_identified": "blindfold of free action",
+            "name_unidentified": "blindfold"
+        },
+        "tool_blindfold_telepathy": {
+            "name_identified": "blindfold of telepathy",
+            "name_unidentified": "blindfold"
+        },
+        "spellbook_summon": {
+            "name_identified": "spellbook of conjure skeleton",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_stoneblood": {
+            "name_identified": "spellbook of stoneblood",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_bleed": {
+            "name_identified": "spellbook of bloodletting",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_reflect_magic": {
+            "name_identified": "spellbook of reflect magic",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_acid_spray": {
+            "name_identified": "spellbook of spray acid",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_steal_weapon": {
+            "name_identified": "spellbook of steal weapon",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_drain_soul": {
+            "name_identified": "spellbook of drain soul",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_vampiric_aura": {
+            "name_identified": "spellbook of vampiric aura",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_charm": {
+            "name_identified": "spellbook of charm monster",
+            "name_unidentified": "spellbook"
+        },
+        "potion_empty": {
+            "name_identified": "empty bottle",
+            "name_unidentified": "empty bottle"
+        },
+        "artifact_orb_blue": {
+            "name_identified": "blue mystic orb",
+            "name_unidentified": "blue mystic orb"
+        },
+        "artifact_orb_red": {
+            "name_identified": "red mystic orb",
+            "name_unidentified": "red mystic orb"
+        },
+        "artifact_orb_purple": {
+            "name_identified": "purple mystic orb",
+            "name_unidentified": "purple mystic orb"
+        },
+        "artifact_orb_green": {
+            "name_identified": "green mystic orb",
+            "name_unidentified": "green mystic orb"
+        },
+        "tunic": {
+            "name_identified": "tunic",
+            "name_unidentified": "tunic"
+        },
+        "hat_fez": {
+            "name_identified": "fez",
+            "name_unidentified": "fez"
+        },
+        "magicstaff_charm": {
+            "name_identified": "magicstaff of charm monster",
+            "name_unidentified": "magicstaff"
+        },
+        "potion_polymorph": {
+            "name_identified": "potion of polymorph",
+            "name_unidentified": "potion"
+        },
+        "food_blood": {
+            "name_identified": "vial of blood",
+            "name_unidentified": "potion"
+        },
+        "cloak_backpack": {
+            "name_identified": "backpack",
+            "name_unidentified": "backpack"
+        },
+        "tool_alembic": {
+            "name_identified": "alembic",
+            "name_unidentified": "alembic"
+        },
+        "potion_firestorm": {
+            "name_identified": "potion of firestorm",
+            "name_unidentified": "unstable potion"
+        },
+        "potion_icestorm": {
+            "name_identified": "potion of icestorm",
+            "name_unidentified": "unstable potion"
+        },
+        "potion_thunderstorm": {
+            "name_identified": "potion of thunderstorm",
+            "name_unidentified": "unstable potion"
+        },
+        "potion_strength": {
+            "name_identified": "potion of strength",
+            "name_unidentified": "potion"
+        },
+        "suede_boots": {
+            "name_identified": "suede boots",
+            "name_unidentified": "suede boots"
+        },
+        "suede_gloves": {
+            "name_identified": "suede gloves",
+            "name_unidentified": "suede gloves"
+        },
+        "cloak_silver": {
+            "name_identified": "silver cloak",
+            "name_unidentified": "silver cloak"
+        },
+        "hat_hood_silver": {
+            "name_identified": "silver hood",
+            "name_unidentified": "silver hood"
+        },
+        "hat_hood_red": {
+            "name_identified": "red hood",
+            "name_unidentified": "red hood"
+        },
+        "silver_doublet": {
+            "name_identified": "silver doublet",
+            "name_unidentified": "silver doublet"
+        },
+        "spellbook_revert_form": {
+            "name_identified": "spellbook of revert form",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_rat_form": {
+            "name_identified": "spellbook of rat form",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_spider_form": {
+            "name_identified": "spellbook of arthropod form",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_troll_form": {
+            "name_identified": "spellbook of troll form",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_imp_form": {
+            "name_identified": "spellbook of imp form",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_spray_web": {
+            "name_identified": "spellbook of spray web",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_poison": {
+            "name_identified": "spellbook of poison",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_speed": {
+            "name_identified": "spellbook of speed",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_fear": {
+            "name_identified": "spellbook of fear",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_strike": {
+            "name_identified": "spellbook of power strike",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_detect_food": {
+            "name_identified": "spellbook of detect food",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_weakness": {
+            "name_identified": "spellbook of weakness",
+            "name_unidentified": "spellbook"
+        },
+        "mask_shaman": {
+            "name_identified": "shaman mask",
+            "name_unidentified": "shaman mask"
+        },
+        "spellbook_amplify_magic": {
+            "name_identified": "spellbook of amplify magic",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_shadow_tag": {
+            "name_identified": "spellbook of arcane mark",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_telepull": {
+            "name_identified": "spellbook of teleport other",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_demon_illu": {
+            "name_identified": "spellbook of inner demon",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_trolls_blood": {
+            "name_identified": "spellbook of troll's blood",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_salvage": {
+            "name_identified": "spellbook of salvage",
+            "name_unidentified": "spellbook"
+        },
+        "tool_whip": {
+            "name_identified": "whip",
+            "name_unidentified": "whip"
+        },
+        "spellbook_flutter": {
+            "name_identified": "spellbook of flutter",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_dash": {
+            "name_identified": "spellbook of dash",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_self_polymorph": {
+            "name_identified": "spellbook of polymorph",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_9": {
+            "name_identified": "spellbook of 9",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_10": {
+            "name_identified": "spellbook of 10",
+            "name_unidentified": "spellbook"
+        },
+        "magicstaff_poison": {
+            "name_identified": "magicstaff of poison",
+            "name_unidentified": "magicstaff"
+        },
+        "tool_metal_scrap": {
+            "name_identified": "metal scrap",
+            "name_unidentified": "scrap"
+        },
+        "tool_magic_scrap": {
+            "name_identified": "magic scrap",
+            "name_unidentified": "scrap"
+        },
+        "tool_tinkering_kit": {
+            "name_identified": "tinkering kit",
+            "name_unidentified": "tinkering kit"
+        },
+        "tool_sentrybot": {
+            "name_identified": "sentry bot",
+            "name_unidentified": "sentry bot"
+        },
+        "tool_detonated_charge": {
+            "name_identified": "detonator",
+            "name_unidentified": "detonator"
+        },
+        "tool_fire_bomb": {
+            "name_identified": "flame trap",
+            "name_unidentified": "trap"
+        },
+        "tool_sleep_bomb": {
+            "name_identified": "sleep trap",
+            "name_unidentified": "trap"
+        },
+        "tool_freeze_bomb": {
+            "name_identified": "freeze trap",
+            "name_unidentified": "trap"
+        },
+        "tool_teleport_bomb": {
+            "name_identified": "teleportation trap",
+            "name_unidentified": "trap"
+        },
+        "tool_gyrobot": {
+            "name_identified": "gyrobot",
+            "name_unidentified": "gyrobot"
+        },
+        "tool_spellbot": {
+            "name_identified": "spellbot",
+            "name_unidentified": "spellbot"
+        },
+        "tool_decoy": {
+            "name_identified": "noisemaker",
+            "name_unidentified": "noisemaker"
+        },
+        "tool_dummybot": {
+            "name_identified": "dummybot",
+            "name_unidentified": "dummybot"
+        },
+        "machinist_apron": {
+            "name_identified": "leather apron",
+            "name_unidentified": "apron"
+        },
+        "enchanted_feather": {
+            "name_identified": "enchanted feather",
+            "name_unidentified": "feather"
+        },
+        "punisher_hood": {
+            "name_identified": "executioner hood",
+            "name_unidentified": "hood"
+        },
+        "scroll_charging": {
+            "name_identified": "scroll of charging",
+            "name_unidentified": "scroll"
+        },
+        "quiver_silver": {
+            "name_identified": "quiver of silver ammo",
+            "name_unidentified": "quiver"
+        },
+        "quiver_pierce": {
+            "name_identified": "quiver of piercing ammo",
+            "name_unidentified": "quiver"
+        },
+        "quiver_lightweight": {
+            "name_identified": "quiver of swift ammo",
+            "name_unidentified": "quiver"
+        },
+        "quiver_fire": {
+            "name_identified": "quiver of fire ammo",
+            "name_unidentified": "quiver"
+        },
+        "quiver_heavy": {
+            "name_identified": "quiver of springshot ammo",
+            "name_unidentified": "quiver"
+        },
+        "quiver_crystal": {
+            "name_identified": "quiver of crystal ammo",
+            "name_unidentified": "quiver"
+        },
+        "quiver_hunting": {
+            "name_identified": "quiver of hunting ammo",
+            "name_unidentified": "quiver"
+        },
+        "longbow": {
+            "name_identified": "longbow",
+            "name_unidentified": "longbow"
+        },
+        "compound_bow": {
+            "name_identified": "compound bow",
+            "name_unidentified": "compound bow"
+        },
+        "heavy_crossbow": {
+            "name_identified": "arbalest",
+            "name_unidentified": "arbalest"
+        },
+        "boomerang": {
+            "name_identified": "boomerang",
+            "name_unidentified": "boomerang"
+        },
+        "scroll_conjurearrow": {
+            "name_identified": "scroll of conjure arrow",
+            "name_unidentified": "scroll"
+        },
+        "monocle": {
+            "name_identified": "monocle",
+            "name_unidentified": "monocle"
+        },
+		"tool_player_loot_bag": {
+            "name_identified": "death box",
+            "name_unidentified": "death box"
+        }
+    },
+	"spell_names": {
+        "spell_forcebolt": {
+            "name": "Forcebolt"
+        },
+        "spell_magicmissile": {
+            "name": "Magic Missile"
+        },
+        "spell_cold": {
+            "name": "Cold"
+        },
+        "spell_fireball": {
+            "name": "Fireball"
+        },
+        "spell_lightning": {
+            "name": "Lightning"
+        },
+        "spell_removecurse": {
+            "name": "Remove Curse"
+        },
+        "spell_light": {
+            "name": "Light"
+        },
+        "spell_identify": {
+            "name": "Identify"
+        },
+        "spell_magicmapping": {
+            "name": "Magic Mapping"
+        },
+        "spell_sleep": {
+            "name": "Sleep"
+        },
+        "spell_confuse": {
+            "name": "Confuse"
+        },
+        "spell_slow": {
+            "name": "Slow"
+        },
+        "spell_opening": {
+            "name": "Opening"
+        },
+        "spell_locking": {
+            "name": "Locking"
+        },
+        "spell_levitation": {
+            "name": "Levitation"
+        },
+        "spell_invisibility": {
+            "name": "Invisibility"
+        },
+        "spell_teleportation": {
+            "name": "Teleportation"
+        },
+        "spell_healing": {
+            "name": "Healing"
+        },
+        "spell_extrahealing": {
+            "name": "Extra Healing"
+        },
+        "spell_cureailment": {
+            "name": "Cure Ailment"
+        },
+        "spell_dig": {
+            "name": "Dig"
+        },
+        "spell_summon": {
+            "name": "Conjure Skeleton"
+        },
+        "spell_stoneblood": {
+            "name": "Stone Blood"
+        },
+        "spell_bleed": {
+            "name": "Bloodletting"
+        },
+        "spell_dominate": {
+            "name": "Dominate"
+        },
+        "spell_reflect_magic": {
+            "name": "Reflect Magic"
+        },
+        "spell_acid_spray": {
+            "name": "Spray Acid"
+        },
+        "spell_steal_weapon": {
+            "name": "Steal Weapon"
+        },
+        "spell_drain_soul": {
+            "name": "Drain Soul"
+        },
+        "spell_vampiric_aura": {
+            "name": "Vampiric Aura"
+        },
+        "spell_charm": {
+            "name": "Charm Monster"
+        },
+        "spell_revert_form": {
+            "name": "Revert Form"
+        },
+        "spell_rat_form": {
+            "name": "Rat Form"
+        },
+        "spell_spider_form": {
+            "name": "Arthropod Form"
+        },
+        "spell_troll_form": {
+            "name": "Troll Form"
+        },
+        "spell_imp_form": {
+            "name": "Imp Form"
+        },
+        "spell_spray_web": {
+            "name": "Spray Web"
+        },
+        "spell_poison": {
+            "name": "Poison"
+        },
+        "spell_speed": {
+            "name": "Speed"
+        },
+        "spell_fear": {
+            "name": "Fear"
+        },
+        "spell_strike": {
+            "name": "Power Strike"
+        },
+        "spell_detect_food": {
+            "name": "Detect Food"
+        },
+        "spell_weakness": {
+            "name": "Weakness"
+        },
+        "spell_amplify_magic": {
+            "name": "Elemental Focus"
+        },
+        "spell_shadow_tag": {
+            "name": "Arcane Mark"
+        },
+        "spell_telepull": {
+            "name": "Teleport Other"
+        },
+        "spell_demon_illu": {
+            "name": "Inner Demon"
+        },
+        "spell_trolls_blood": {
+            "name": "Troll's Blood"
+        },
+        "spell_salvage": {
+            "name": "Salvage"
+        },
+        "spell_flutter": {
+            "name": "Flutter"
+        },
+        "spell_dash": {
+            "name": "Dash"
+        },
+        "spell_self_polymorph": {
+            "name": "Polymorph"
+        },
+        "spell_crab_form": {
+            "name": "Arthropod Form"
+        },
+        "spell_crab_web": {
+            "name": "Spray Web"
+		}
+    }
+}

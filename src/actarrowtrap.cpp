@@ -13,10 +13,11 @@
 #include "game.hpp"
 #include "stat.hpp"
 #include "entity.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "collision.hpp"
 #include "items.hpp"
 #include "net.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -58,7 +59,7 @@ void actArrowTrap(Entity* my)
 		{
 			ItemType quiver = static_cast<ItemType>(ARROWTRAP_TYPE);
 			int qty = 2 + (5 - ARROWTRAP_FIRED / 2); // 2 to 7
-			Entity* dropped = dropItemMonster(newItem(quiver, EXCELLENT, 0, qty, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr), my, nullptr, qty);
+			Entity* dropped = dropItemMonster(newItem(quiver, SERVICABLE, 0, qty, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr), my, nullptr, qty);
 			std::vector<std::pair<int, int>> freeTiles;
 			int x = my->x / 16;
 			int y = my->y / 16;
@@ -92,18 +93,18 @@ void actArrowTrap(Entity* my)
 			}
 			if ( !freeTiles.empty() )
 			{
-				std::pair<int, int> chosenTile = freeTiles[rand() % freeTiles.size()];
+				std::pair<int, int> chosenTile = freeTiles[local_rng.rand() % freeTiles.size()];
 				dropped->x += (chosenTile.first - x) * 8;
 				dropped->y += (chosenTile.second - y) * 8;
 				dropped->vel_x = (chosenTile.first - x);
 				if ( abs(dropped->vel_x) > 0.01 )
 				{
-					dropped->vel_x *= (5 + rand() % 11) / 10.0; //50% to 150%
+					dropped->vel_x *= (5 + local_rng.rand() % 11) / 10.0; //50% to 150%
 				}
 				dropped->vel_y = (chosenTile.second - y);
 				if ( abs(dropped->vel_y) > 0.01 )
 				{
-					dropped->vel_y *= (5 + rand() % 11) / 10.0; //50% to 150%
+					dropped->vel_y *= (5 + local_rng.rand() % 11) / 10.0; //50% to 150%
 				}
 			}
 		}
@@ -198,7 +199,7 @@ void actArrowTrap(Entity* my)
 				if ( !map.tiles[OBSTACLELAYER + index] )
 				{
 					Entity* entity = newEntity(166, 1, map.entities, nullptr); // arrow
-					playSoundEntity(my, 239 + rand() % 3, 96);
+					playSoundEntity(my, 239 + local_rng.rand() % 3, 96);
 					entity->parent = my->getUID();
 					entity->x = my->x + x;
 					entity->y = my->y + y;
@@ -259,7 +260,7 @@ void actArrowTrap(Entity* my)
 					{
 						/*entity->x = targetToAutoHit->x;
 						entity->y = targetToAutoHit->y;*/
-						if ( rand() % 2 == 0 )
+						if ( local_rng.rand() % 2 == 0 )
 						{
 							double tangent = atan2(entity->y - targetToAutoHit->y, entity->x - targetToAutoHit->x);
 							entity->yaw = tangent + PI;
@@ -267,9 +268,9 @@ void actArrowTrap(Entity* my)
 							entity->vel_y = sin(entity->yaw) * entity->arrowSpeed;
 							targetToAutoHit = nullptr;
 						}
-						else if ( rand() % 2 == 0 )
+						else if ( local_rng.rand() % 2 == 0 )
 						{
-							entity->yaw = entity->yaw - PI / 12 + (0.1 * (rand() % 11) * (PI / 6)); // -/+ PI/12 range
+							entity->yaw = entity->yaw - PI / 12 + (0.1 * (local_rng.rand() % 11) * (PI / 6)); // -/+ PI/12 range
 							entity->vel_x = cos(entity->yaw) * entity->arrowSpeed;
 							entity->vel_y = sin(entity->yaw) * entity->arrowSpeed;
 							targetToAutoHit = nullptr;

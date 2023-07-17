@@ -15,17 +15,20 @@
 #include "entity.hpp"
 #include "items.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 void initSuccubus(Entity* my, Stat* myStats)
 {
 	int c;
 	node_t* node;
 
+	my->flags[BURNABLE] = true;
 	my->initMonster(190);
+	my->z = -1;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -50,20 +53,26 @@ void initSuccubus(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+		    const bool boss =
+		        local_rng.rand() % 50 == 0 &&
+		        !my->flags[USERFLAG2] &&
+		        !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+		    if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
-
-			}
-			else
-			{
+				myStats->setAttribute("special_npc", "lilith");
+				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
 				myStats->DEX = 10;
-				strcpy(myStats->name, "Lilith");
 				for ( c = 0; c < 2; c++ )
 				{
 					Entity* entity = summonMonster(SUCCUBUS, my->x, my->y);
 					if ( entity )
 					{
 						entity->parent = my->getUID();
+						if ( Stat* followerStats = entity->getStats() )
+						{
+							followerStats->leader_uid = entity->parent;
+						}
 					}
 				}
 			}
@@ -95,13 +104,13 @@ void initSuccubus(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( !strcmp(myStats->name, "Lilith") && rand() % 4 > 0 )
+					if ( !strcmp(myStats->name, "Lilith") && local_rng.rand() % 4 > 0 )
 					{
-						newItem(MAGICSTAFF_CHARM, EXCELLENT, -1 + rand() % 3, 1, rand(), false, &myStats->inventory); // 75% chance
+						newItem(MAGICSTAFF_CHARM, EXCELLENT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory); // 75% chance
 					}
-					else if ( rand() % 10 == 0 )
+					else if ( local_rng.rand() % 10 == 0 )
 					{
-						newItem(MAGICSTAFF_CHARM, static_cast<Status>(DECREPIT + rand() % 2), -1 + rand() % 3, 1, rand(), false, &myStats->inventory); // 10% chance
+						newItem(MAGICSTAFF_CHARM, static_cast<Status>(DECREPIT + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory); // 10% chance
 					}
 					break;
 				default:
@@ -110,8 +119,15 @@ void initSuccubus(Entity* my, Stat* myStats)
 		}
 	}
 
+	if ( my->sprite == MonsterData_t::monsterDataEntries[SUCCUBUS].specialNPCs["lilith"].baseModel )
+	{
+		my->focalz = -3;
+		my->focalx = 1;
+	}
+
+
 	// torso
-	Entity* entity = newEntity(191, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(my->sprite == 1126 ? 1129 : 191, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -130,7 +146,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(195, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1126 ? 1128 : 195, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -149,7 +165,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(194, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1126 ? 1127 : 194, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -168,7 +184,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(193, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1126 ? 1124 : 193, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -187,7 +203,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(192, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1126 ? 1122 : 192, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -206,7 +222,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// world weapon
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -226,7 +242,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// shield
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -245,7 +261,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// cloak
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -268,7 +284,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// helmet
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -291,7 +307,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// mask
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -318,16 +334,23 @@ void actSuccubusLimb(Entity* my)
 
 void succubusDie(Entity* my)
 {
-	int c;
-	for ( c = 0; c < 5; c++ )
+	for ( int c = 0; c < 10; c++ )
 	{
 		Entity* gib = spawnGib(my);
+	    if (c < 6) {
+	        if (my->sprite == 1126) {
+	            gib->sprite = 1124 + c;
+	        } else {
+	            gib->sprite = 190 + c;
+	        }
+	        gib->skill[5] = 1; // poof
+	    }
 		serverSpawnGibForClient(gib);
 	}
 
 	my->spawnBlood();
 
-	playSoundEntity(my, 71, 128);
+	playSoundEntity(my, 71, 255);
 
 	my->removeMonsterDeathNodes();
 
@@ -494,7 +517,7 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->shoes == nullptr )
 					{
-						entity->sprite = 195;
+						entity->sprite = my->sprite == 1126 ? 1128 : 195;
 					}
 					else
 					{
@@ -522,7 +545,7 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->shoes == nullptr )
 					{
-						entity->sprite = 194;
+						entity->sprite = my->sprite == 1126 ? 1127 : 194;
 					}
 					else
 					{
@@ -557,7 +580,7 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SUCCUBUS][4][0] - 0.25; // 0
 						entity->focaly = limbs[SUCCUBUS][4][1] - 0.25; // 0
 						entity->focalz = limbs[SUCCUBUS][4][2]; // 2
-						entity->sprite = 193;
+						entity->sprite = my->sprite == 1126 ? 1124 : 193;
 						if ( my->monsterAttack == 0 )
 						{
 							entity->roll = -PI / 16;
@@ -569,7 +592,7 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SUCCUBUS][4][0];
 						entity->focaly = limbs[SUCCUBUS][4][1];
 						entity->focalz = limbs[SUCCUBUS][4][2];
-						entity->sprite = 623;
+						entity->sprite = my->sprite == 1126 ? 1125 : 623;
 					}
 				}
 				my->setHumanoidLimbOffset(entity, SUCCUBUS, LIMB_HUMANOID_RIGHTARM);
@@ -590,7 +613,7 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SUCCUBUS][5][0] - 0.25; // 0
 						entity->focaly = limbs[SUCCUBUS][5][1] + 0.25; // 0
 						entity->focalz = limbs[SUCCUBUS][5][2]; // 2
-						entity->sprite = 192;
+						entity->sprite = my->sprite == 1126 ? 1122 : 192;
 						entity->roll = PI / 16;
 					}
 					else
@@ -599,7 +622,7 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SUCCUBUS][5][0];
 						entity->focaly = limbs[SUCCUBUS][5][1];
 						entity->focalz = limbs[SUCCUBUS][5][2];
-						entity->sprite = 622;
+						entity->sprite = my->sprite == 1126 ? 1123 : 622;
 					}
 				}
 				my->setHumanoidLimbOffset(entity, SUCCUBUS, LIMB_HUMANOID_LEFTARM);
@@ -841,6 +864,10 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							entity->sprite = 165; // GlassesWorn.vox
 						}
+						else if ( myStats->mask->type == MONOCLE )
+						{
+							entity->sprite = 1196; // monocleWorn.vox
+						}
 						else
 						{
 							entity->sprite = itemModel(myStats->mask);
@@ -872,7 +899,7 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				if ( entity->sprite != 165 )
+				if ( entity->sprite != 165 && entity->sprite != 1196 )
 				{
 					if ( entity->sprite == items[MASK_SHAMAN].index )
 					{
@@ -892,6 +919,11 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->focalx = limbs[SUCCUBUS][10][0] + .25; // .25
 					entity->focaly = limbs[SUCCUBUS][10][1] - 2.25; // -2.25
 					entity->focalz = limbs[SUCCUBUS][10][2]; // .5
+
+					if ( entity->sprite == 1196 )
+					{
+						entity->focalx -= .25;
+					}
 				}
 				break;
 			}
@@ -946,7 +978,7 @@ void Entity::succubusChooseWeapon(const Entity* target, double dist)
 		// try to charm enemy.
 		int specialRoll = -1;
 		int bonusFromHP = 0;
-		specialRoll = rand() % 40;
+		specialRoll = local_rng.rand() % 40;
 		if ( myStats->HP <= myStats->MAXHP * 0.8 )
 		{
 			bonusFromHP += 1; // +2.5% chance if on low health
@@ -967,7 +999,7 @@ void Entity::succubusChooseWeapon(const Entity* target, double dist)
 		if ( specialRoll < requiredRoll )
 		{
 			node_t* node = nullptr;
-			node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+			node = itemNodeInInventory(myStats, -1, SPELLBOOK);
 			if ( node != nullptr )
 			{
 				swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);

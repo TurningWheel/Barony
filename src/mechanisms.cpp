@@ -13,16 +13,27 @@
 #include "game.hpp"
 #include "stat.hpp"
 #include "entity.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "player.hpp"
 #include "scores.hpp"
 
 //Circuits do not overlap. They connect to all their neighbors, allowing for circuits to interfere with eachother.
+static ConsoleVariable<bool> cvar_wire_debug("/wire_debug", false);
 
 void actCircuit(Entity* my)
 {
 	my->flags[PASSABLE] = true; // these should ALWAYS be passable. No exceptions
+	if ( (svFlags & SV_FLAG_CHEATS) && *cvar_wire_debug )
+	{
+		my->flags[INVISIBLE] = false;
+		my->sprite = 170;
+	}
+	else
+	{
+		my->sprite = 18;
+		my->flags[INVISIBLE] = true;
+	}
 }
 
 void Entity::circuitPowerOn()
@@ -132,7 +143,7 @@ void Entity::updateCircuitNeighbors()
 
 void Entity::mechanismPowerOn()
 {
-	if (skill)
+	//if (skill)
 	{
 		circuit_status = CIRCUIT_ON;    //Power on.
 	}
@@ -140,7 +151,7 @@ void Entity::mechanismPowerOn()
 
 void Entity::mechanismPowerOff()
 {
-	if (skill)
+	//if (skill)
 	{
 		circuit_status = CIRCUIT_OFF;    //Power off.
 	}
@@ -180,11 +191,11 @@ void actSwitch(Entity* my)
 		int i = 0;
 		for (i = 0; i < MAXPLAYERS; ++i)
 		{
-			if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+			if ( selectedEntity[i] == my || client_selected[i] == my )
 			{
 				if (inrange[i])   //Act on it only if the player (or monster, if/when this is changed to support monster interaction?) is in range.
 				{
-					messagePlayer(i, language[1110]);
+					messagePlayer(i, MESSAGE_INTERACTION, Language::get(1110));
 					playSoundEntity(my, 56, 64);
 					my->toggleSwitch();
 				}
@@ -256,7 +267,7 @@ void actSwitchWithTimer(Entity* my)
 		int i = 0;
 		for ( i = 0; i < MAXPLAYERS; ++i )
 		{
-			if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+			if ( selectedEntity[i] == my || client_selected[i] == my )
 			{
 				// server/client has clicked on the entity.
 				if ( inrange[i] )   //Act on it only if the player (or monster, if/when this is changed to support monster interaction?) is in range.
@@ -264,16 +275,16 @@ void actSwitchWithTimer(Entity* my)
 					switch ( my->leverStatus )
 					{
 						case 0:
-							messagePlayer(i, language[2360]);
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(2360));
 							break;
 						case 1:
-							messagePlayer(i, language[2361]);
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(2361));
 							break;
 						case 2:
-							messagePlayer(i, language[2362]);
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(2362));
 							break;
 						default:
-							messagePlayer(i, language[2363]);
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(2363));
 							break;
 					}
 
@@ -381,6 +392,15 @@ void actSwitchWithTimer(Entity* my)
 #define TRAP_ON my->skill[0]
 void actTrap(Entity* my)
 {
+	if ( (svFlags & SV_FLAG_CHEATS) && *cvar_wire_debug )
+	{
+		my->flags[INVISIBLE] = false;
+	}
+	else
+	{
+		my->flags[INVISIBLE] = true;
+	}
+
 	// activates circuit when certain entities are occupying its tile
 	node_t* node;
 	Entity* entity;
@@ -429,6 +449,15 @@ void actTrap(Entity* my)
 #define TRAPPERMANENT_ON my->skill[0]
 void actTrapPermanent(Entity* my)
 {
+	if ( (svFlags & SV_FLAG_CHEATS) && *cvar_wire_debug )
+	{
+		my->flags[INVISIBLE] = false;
+	}
+	else
+	{
+		my->flags[INVISIBLE] = true;
+	}
+
 	// activates circuit when certain entities are occupying its tile
 	// unlike actTrap, never deactivates
 	node_t* node;
@@ -524,12 +553,16 @@ void actTrapPermanent(Entity* my)
 }
 
 //This is called when the switch is toggled by the player.
-void Entity::toggleSwitch()
+void Entity::toggleSwitch(int skillIndexForPower)
 {
 	//If off, power on and send poweron signal. If on, power off and send poweroff signal.
-
-	switch_power = (switch_power == SWITCH_UNPOWERED);
-	serverUpdateEntitySkill(this, 0);
+	if ( skillIndexForPower < 0 )
+	{
+		skillIndexForPower = 0;
+	}
+	Sint32& switchPower = skill[skillIndexForPower];
+	switchPower = (switchPower == SWITCH_UNPOWERED);
+	serverUpdateEntitySkill(this, skillIndexForPower);
 
 	//(my->skill[0]) ? my->sprite = 171 : my->sprite = 168;
 
@@ -548,7 +581,7 @@ void Entity::toggleSwitch()
 				{
 					if (powerable->behavior == actCircuit)
 					{
-						(switch_power) ? powerable->circuitPowerOn() : powerable->circuitPowerOff();
+						(switchPower) ? powerable->circuitPowerOn() : powerable->circuitPowerOff();
 					}
 					else if ( powerable->behavior == &::actSignalTimer )
 					{
@@ -562,25 +595,25 @@ void Entity::toggleSwitch()
 							case 0: // west
 								if ( (x1 + 1) == x2 )
 								{
-									(switch_power) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+									(switchPower) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
 								}
 								break;
 							case 1: // south
 								if ( (y1 - 1) == y2 )
 								{
-									(switch_power) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+									(switchPower) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
 								}
 								break;
 							case 2: // east
 								if ( (x1 - 1) == x2 )
 								{
-									(switch_power) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+									(switchPower) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
 								}
 								break;
 							case 3: // north
 								if ( (y1 + 1) == y2 )
 								{
-									(switch_power) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+									(switchPower) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
 								}
 								break;
 							default:
@@ -589,7 +622,7 @@ void Entity::toggleSwitch()
 					}
 					else
 					{
-						(switch_power) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+						(switchPower) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
 					}
 				}
 			}

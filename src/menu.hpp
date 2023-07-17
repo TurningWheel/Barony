@@ -11,11 +11,6 @@
 
 #pragma once
 
-extern bool savethisgame;
-
-// main menu code
-void handleMainMenu(bool mode);
-
 #define NUMSUBTITLES 30
 extern int subtitleCurrent;
 extern bool subtitleVisible;
@@ -52,7 +47,6 @@ enum NewMovieCrawlTypes : int
 	MOVIE_WIN_DEMONS_UNDEAD,
 	MOVIE_WIN_BEASTS
 };
-extern real_t drunkextend;
 extern bool losingConnection[MAXPLAYERS];
 extern int rebindaction;
 
@@ -92,7 +86,7 @@ void buttonConfirmDeleteMultiplayerFile(button_t* my);
 void buttonLoadSingleplayerGame(button_t* my);
 void buttonLoadMultiplayerGame(button_t* my);
 void buttonRandomCharacter(button_t* my);
-void buttonReplayLastCharacter(button_t* my);
+bool replayLastCharacter(const int index, int multiplayer);
 void buttonDeleteScoreWindow(button_t* my);
 void buttonOpenScoresWindow(button_t* my);
 void buttonRandomName(button_t* my);
@@ -128,7 +122,7 @@ void openSteamLobbyWaitWindow(button_t* my);
 #else
 void windowEnterSerialPrompt();
 void windowSerialResult(int success);
-size_t serialHash(std::string input);
+size_t serialHash(const std::string& input);
 extern char serialInputText[64];
 #endif
 
@@ -149,7 +143,6 @@ void openGameoverWindow();
 void openSteamLobbyBrowserWindow(button_t* my);
 void openLoadGameWindow(button_t* my);
 void openNewLoadGameWindow(button_t* my);
-void reloadSavegamesList(bool showWindow = true);
 void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment, int* var, SDL_Surface* slider_font = SLIDERFONT, int slider_font_char_width = 16);
 void doSliderF(int x, int y, int dots, real_t minvalue, real_t maxvalue, real_t increment, real_t* var);
 
@@ -170,7 +163,7 @@ extern int gamemods_window;
 extern int gamemods_window_scroll;
 extern int gamemods_window_fileSelect;
 extern int gamemods_uploadStatus;
-extern int gamemods_numCurrentModsLoaded;
+//extern int gamemods_numCurrentModsLoaded;
 extern std::list<std::string> currentDirectoryFiles;
 extern std::string directoryPath;
 void gamemodsWindowClearVariables();
@@ -180,11 +173,10 @@ bool gamemodsRemovePathFromMountedFiles(std::string findStr);
 bool gamemodsIsPathInMountedFiles(std::string findStr);
 bool gamemodsClearAllMountedPaths();
 bool gamemodsMountAllExistingPaths();
-extern bool gamemods_disableSteamAchievements;
-extern std::vector<std::pair<std::string, std::string>> gamemods_mountedFilepaths;
-extern bool gamemods_modelsListRequiresReload;
-extern bool gamemods_soundListRequiresReload;
-extern bool gamemods_modPreload;
+//extern std::vector<std::pair<std::string, std::string>> gamemods_mountedFilepaths;
+//extern bool gamemods_modelsListRequiresReload;
+//extern bool gamemods_soundListRequiresReload;
+//extern bool gamemods_modPreload;
 #ifdef STEAMWORKS
 void gamemodsWorkshopPreloadMod(int fileID, std::string modTitle);
 void gamemodsWindowUploadInit(bool creatingNewItem);
@@ -234,7 +226,6 @@ extern int settings_minimap_scale;
 extern int settings_minimap_object_zoom;
 extern char portnumber_char[6];
 extern char connectaddress[64];
-extern bool smoothmouse;
 extern bool usecamerasmoothing;
 extern bool disablemouserotationlimit;
 extern bool broadcast;
@@ -283,6 +274,17 @@ extern Sint32 oldXres;
 extern Sint32 oldYres;
 extern button_t* revertResolutionButton;
 
+int getNumDisplays();
+struct resolution {
+	int x;
+	int y;
+	int hz;
+
+	bool operator==(const resolution& rhs) const {
+		return x == rhs.x && y == rhs.y && hz == rhs.hz;
+	}
+};
+void getResolutionList(int device_id, std::list<resolution>&);
 void applySettings();
 void openConfirmResolutionWindow();
 void buttonAcceptResolution(button_t* my);
@@ -291,3 +293,51 @@ void revertResolution();
 
 extern std::vector<std::pair<std::string, int>> menuOptions;
 void initMenuOptions();
+
+class Stat;
+int isCharacterValidFromDLC(Stat& myStats, int characterClass);
+
+// handle intro stage stuff
+void doQuitGame();
+void doNewGame(bool makeHighscore);
+void doCredits();
+void doEndgame(bool saveHighscore);
+void doIntro();
+void doEndgameHerx();
+void doEndgameDevil();
+void doMidgame();
+void doEndgameCitadel();
+void doEndgameClassicAndExtraMidGame();
+void doEndgameExpansion();
+
+enum CharacterDLCValidation : int
+{
+	INVALID_CHARACTER,
+	VALID_OK_CHARACTER,
+	INVALID_REQUIREDLC1,
+	INVALID_REQUIREDLC2,
+	INVALID_REQUIRE_ACHIEVEMENT
+};
+
+struct LastCreatedCharacter {
+	static const int NUM_LAST_CHARACTERS = 6;
+	static const int LASTCHAR_LAN_PERSONA_INDEX = 4;
+	static const int LASTCHAR_ONLINE_PERSONA_INDEX = 5;
+	int characterClass[NUM_LAST_CHARACTERS];
+	int characterAppearance[NUM_LAST_CHARACTERS];
+	int characterSex[NUM_LAST_CHARACTERS];
+	int characterRace[NUM_LAST_CHARACTERS];
+	std::string characterName[NUM_LAST_CHARACTERS];
+	LastCreatedCharacter()
+	{
+		for ( int i = 0; i < NUM_LAST_CHARACTERS; ++i )
+		{
+			characterClass[i] = -1;
+			characterAppearance[i] = -1;
+			characterSex[i] = -1;
+			characterRace[i] = -1;
+			characterName[i] = "";
+		}
+	}
+};
+extern LastCreatedCharacter LastCreatedCharacterSettings;

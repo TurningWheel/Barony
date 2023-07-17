@@ -71,8 +71,32 @@ public:
 	// @param buf the buffer to contain the read string
 	// @param size the maximum size of the string to read
 	// @return buf if successfully read a string, otherwise nullptr
-	// The base class only contains the common implementation between FileNX and FilePC (currently just input validation), not a default implementation, so deriving implementation is mandatory.
-	virtual char* gets(char* buf, int size) = 0;
+	char* gets(char* buf, int size)
+	{
+		char* result = buf;
+	    if (!buf) {
+		    return nullptr;
+	    }
+		for (int c = 0; c < size - 1; ++c) {
+			size_t bytesRead = read(buf, sizeof(char), 1);
+			if (bytesRead > 0U) {
+				if (*buf == '\0' || *buf == '\n') {
+					buf += bytesRead;
+					break;
+				}
+				buf += bytesRead;
+			} else {
+				*buf = '\0';
+				if (c == 0) {
+					return nullptr;
+				} else {
+					return result;
+				}
+			}
+		}
+		*(buf) = '\0';
+		return result;
+	}
 
 	// read an integer from the stream
 	// @return the read integer or possibly 0 if we failed to read one
@@ -123,6 +147,14 @@ public:
 	{
 		size_t size = strlen(str);
 		return write(str, sizeof(char), size) == size ? 0 : -1;
+	}
+
+	// write char to file
+	// @param c the char to write
+	// @return 0 on success, -1 on error
+	int putc(char c)
+	{
+		return write(&c, sizeof(char), 1) == 1 ? 0 : -1;
 	}
 
 	// seek mode associated with seek()
@@ -198,30 +230,27 @@ public:
 			return nullptr;
 		}
 
-		FileBase::FileMode fileMode = FileBase::FileMode::INVALID;
-
-#ifdef NINTENDO
-		return FileIO_NintendoOpen(path, mode, fileMode);
-#else
-		FILE* fp = fopen(path, mode);
+		FileBase::FileMode fileMode;
 		switch (mode[0])
 		{
-		case 'r':
-			fileMode = FileBase::FileMode::READ;
-			break;
-		case 'w':
-			fileMode = FileBase::FileMode::WRITE;
-			break;
-		default:
-			break;
+		case 'r': fileMode = FileBase::FileMode::READ; break;
+		case 'w': fileMode = FileBase::FileMode::WRITE; break;
+		default: fileMode = FileBase::FileMode::INVALID; break;
 		}
 
-		if (fp)
-		{
-			return new File(fp, fileMode, path);
+#ifdef NINTENDO
+		return FileNX::FileIO_NintendoOpen(path, mode, fileMode);
+#else
+        // note: on PC, files are ALWAYS opened in binary mode
+		FILE* fp;
+		switch (fileMode) {
+		default: assert(0 && "invalid file open mode");
+		case FileBase::FileMode::READ: fp = fopen(path, "rb"); break;
+		case FileBase::FileMode::WRITE: fp = fopen(path, "wb"); break;
 		}
-		else
-		{
+		if (fp) {
+			return new File(fp, fileMode, path);
+		} else {
 			return nullptr;
 		}
 #endif
@@ -245,6 +274,7 @@ extern char outputdir[PATH_MAX];
 void glLoadTexture(SDL_Surface* image, int texnum);
 SDL_Surface* loadImage(char const * const filename);
 voxel_t* loadVoxel(char* filename2);
+bool verifyMapHash(const char* filename, int hash, bool* fileExistsInTable = nullptr);
 int loadMap(const char* filename, map_t* destmap, list_t* entlist, list_t* creatureList, int *checkMapHash = nullptr);
 int loadConfig(char* filename);
 int loadDefaultConfig();
@@ -253,11 +283,11 @@ char* readFile(char* filename);
 std::list<std::string> directoryContents(const char* directory, bool includeSubdirectory, bool includeFiles);
 File *openDataFile(const char *const filename, const char * const mode);
 DIR * openDataDir(const char *const);
-bool dataPathExists(const char *const);
+bool dataPathExists(const char *const, bool complete = true);
 bool completePath(char *dest, const char * const path, const char *base = datadir);
 void openLogFile();
 std::vector<std::string> getLinesFromDataFile(std::string filename);
-int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap);
+int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap, int forcemap = -1);
 int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed, int *checkMapHash = nullptr);
 std::list<std::string> physfsGetFileNamesInDirectory(const char* dir);
 std::string physfsFormatMapName(char const * const levelfilename);
@@ -273,7 +303,6 @@ void physfsReloadTiles(bool reloadAll);
 bool physfsSearchTilesToUpdate();
 void physfsReloadSprites(bool reloadAll);
 bool physfsSearchSpritesToUpdate();
-extern std::vector<int> gamemods_modelsListModifiedIndexes;
 bool physfsIsMapLevelListModded();
 bool physfsSearchItemSpritesToUpdate();
 void physfsReloadItemSprites(bool reloadAll);
@@ -285,7 +314,6 @@ void physfsReloadMonsterLimbFiles();
 void physfsReloadSystemImages();
 bool physfsSearchSystemImagesToUpdate();
 void gamemodsUnloadCustomThemeMusic();
-extern std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImagesToReload;
 
 enum MapParameterIndices : int
 {

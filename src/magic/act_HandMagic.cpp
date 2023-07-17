@@ -14,12 +14,14 @@
 #include "../stat.hpp"
 #include "../entity.hpp"
 #include "../interface/interface.hpp"
-#include "../sound.hpp"
+#include "../engine/audio/sound.hpp"
 #include "../items.hpp"
 #include "../player.hpp"
 #include "magic.hpp"
 #include "../net.hpp"
 #include "../scores.hpp"
+#include "../ui/MainMenu.hpp"
+#include "../prng.hpp"
 
 //The spellcasting animation stages:
 #define CIRCLE 0 //One circle
@@ -108,10 +110,10 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 
 	if (stat->PROFICIENCIES[PRO_SPELLCASTING] < SPELLCASTING_BEGINNER)   //There's a chance that caster is newer to magic (and thus takes longer to cast a spell).
 	{
-		int chance = rand() % 10;
+		int chance = local_rng.rand() % 10;
 		if (chance >= stat->PROFICIENCIES[PRO_SPELLCASTING] / 15)
 		{
-			int amount = (rand() % 50) / std::max(stat->PROFICIENCIES[PRO_SPELLCASTING] + statGetINT(stat, caster), 1);
+			int amount = (local_rng.rand() % 50) / std::max(stat->PROFICIENCIES[PRO_SPELLCASTING] + statGetINT(stat, caster), 1);
 			amount = std::min(amount, CASTING_EXTRA_TIMES_CAP);
 			animation_manager->times_to_circle += amount;
 		}
@@ -343,7 +345,7 @@ void actLeftHandMagic(Entity* my)
 				my->sprite = 856;
 				break;
 			case SPIDER:
-				my->sprite = 854;
+				my->sprite = arachnophobia_filter ? 1006 : 854;
 				break;
 			case CREATURE_IMP:
 				my->sprite = 858;
@@ -429,19 +431,20 @@ void actLeftHandMagic(Entity* my)
 					entity->flags[NOUPDATE] = true;
 					entity->flags[UPDATENEEDED] = false;
 					entity->flags[OVERDRAW] = true;
-					entity->flags[BRIGHT] = true;
+					entity->lightBonus = vec4(0.2f, 0.2f, 0.2f, 0.f);
 					entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
 					entity->scaley = 0.25f;
 					entity->scalez = 0.25f;
 					entity->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
+					entity->z += 3.0;
 					if ( cast_animation[HANDMAGIC_PLAYERNUM].active_spellbook )
 					{
 						entity->y -= 1.5;
 						entity->z += 1;
 					}
-					entity->yaw = ((rand() % 6) * 60) * PI / 180.0;
-					entity->pitch = (rand() % 360) * PI / 180.0;
-					entity->roll = (rand() % 360) * PI / 180.0;
+					entity->yaw = ((local_rng.rand() % 6) * 60) * PI / 180.0;
+					entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+					entity->roll = (local_rng.rand() % 360) * PI / 180.0;
 					entity->vel_x = cos(entity->yaw) * .1;
 					entity->vel_y = sin(entity->yaw) * .1;
 					entity->vel_z = -.15;
@@ -463,8 +466,8 @@ void actLeftHandMagic(Entity* my)
 							cameravars[HANDMAGIC_PLAYERNUM].shakex += 0.1;
 							cameravars[HANDMAGIC_PLAYERNUM].shakey += 10;
 							playSoundPlayer(HANDMAGIC_PLAYERNUM, 28, 92);
-							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
-							messagePlayerColor(HANDMAGIC_PLAYERNUM, color, language[621]);
+							Uint32 color = makeColorRGB(255, 255, 0);
+							messagePlayerColor(HANDMAGIC_PLAYERNUM, MESSAGE_STATUS, color, Language::get(621));
 						}
 					}
 					--cast_animation[HANDMAGIC_PLAYERNUM].mana_left;
@@ -699,7 +702,7 @@ void actRightHandMagic(Entity* my)
 				my->sprite = 855;
 				break;
 			case SPIDER:
-				my->sprite = 853;
+				my->sprite = arachnophobia_filter ? 1005 : 853;
 				break;
 			case CREATURE_IMP:
 				my->sprite = 857;
@@ -785,16 +788,17 @@ void actRightHandMagic(Entity* my)
 					entity->flags[NOUPDATE] = true;
 					entity->flags[UPDATENEEDED] = false;
 					entity->flags[OVERDRAW] = true;
-					entity->flags[BRIGHT] = true;
+					entity->lightBonus = vec4(0.2f, 0.2f, 0.2f, 0.f);
+					entity->z += 3.0;
 					//entity->sizex = 1; //MAKE 'EM SMALL PLEASE!
 					//entity->sizey = 1;
 					entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
 					entity->scaley = 0.25f;
 					entity->scalez = 0.25f;
 					entity->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
-					entity->yaw = ((rand() % 6) * 60) * PI / 180.0;
-					entity->pitch = (rand() % 360) * PI / 180.0;
-					entity->roll = (rand() % 360) * PI / 180.0;
+					entity->yaw = ((local_rng.rand() % 6) * 60) * PI / 180.0;
+					entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+					entity->roll = (local_rng.rand() % 360) * PI / 180.0;
 					entity->vel_x = cos(entity->yaw) * .1;
 					entity->vel_y = sin(entity->yaw) * .1;
 					entity->vel_z = -.15;

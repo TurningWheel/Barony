@@ -15,18 +15,20 @@
 #include "entity.hpp"
 #include "items.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "prng.hpp"
 
 void initInsectoid(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
- 	//Sprite 455 = Insectoid head model
-	my->initMonster(455);
+	my->flags[BURNABLE] = true;
+	my->initMonster(455); //Sprite 455 = Insectoid head model
+	my->z = 0;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -39,6 +41,13 @@ void initInsectoid(Entity* my, Stat* myStats)
 	{
 		if ( myStats != nullptr )
 		{
+		    if (myStats->sex == FEMALE) {
+		        my->sprite = 1057;
+		    }
+			if ( !strncmp(map.name, "Sokoban", 7) || !strncmp(map.name, "The Labyrinth", 13) )
+			{
+				strcpy(myStats->name, "lesser insectoid");
+			}
 			if ( !myStats->leader_uid )
 			{
 				myStats->leader_uid = 0;
@@ -70,34 +79,12 @@ void initInsectoid(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
-			{
-			}
-			else
-			{
-				/*myStats->HP = 120;
-				myStats->MAXHP = 120;
-				myStats->OLDHP = myStats->HP;
-				strcpy(myStats->name, "The Potato King");
-				myStats->weapon = newItem(ARTIFACT_MACE, EXCELLENT, 1, 1, rand(), true, nullptr);
-				myStats->helmet = newItem(HAT_JESTER, SERVICABLE, 3 + rand() % 3, 1, 0, false, nullptr);
-
-				int c;
-				for ( c = 0; c < 3; c++ )
-				{
-					Entity* entity = summonMonster(GOBLIN, my->x, my->y);
-					if ( entity )
-					{
-						entity->parent = my->getUID();
-					}
-				}*/
-			}
 
 			// random effects
-			if ( rand() % 8 == 0 )
+			if ( local_rng.rand() % 8 == 0 )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 1800;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + local_rng.rand() % 1800;
 			}
 
 			// generates equipment and weapons if available from editor
@@ -124,23 +111,23 @@ void initInsectoid(Entity* my, Stat* myStats)
 				case 5:
 				case 4:
 				case 3:
-					if ( !lesserMonster && rand() % 20 == 0 )
+					if ( !lesserMonster && local_rng.rand() % 20 == 0 )
 					{
-						newItem(SPELLBOOK_ACID_SPRAY, SERVICABLE, -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+						newItem(SPELLBOOK_ACID_SPRAY, SERVICABLE, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
 					}
 				case 2:
-					/*if ( rand() % 2 == 0 )
+					/*if ( local_rng.rand() % 2 == 0 )
 					{
-						newItem(SHORTBOW, SERVICABLE, -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+						newItem(SHORTBOW, SERVICABLE, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
 					}*/
 				case 1:
 					if ( lesserMonster )
 					{
-						newItem(IRON_DAGGER, WORN, 0, 0 + rand() % 2, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+						newItem(IRON_DAGGER, WORN, 0, 0 + local_rng.rand() % 2, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 					}
 					else
 					{
-						newItem(IRON_DAGGER, WORN, 0, 2 + rand() % 4, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+						newItem(IRON_DAGGER, WORN, 0, 2 + local_rng.rand() % 4, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 					}
 					break;
 				default:
@@ -153,34 +140,34 @@ void initInsectoid(Entity* my, Stat* myStats)
 				//give weapon
 				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
-							myStats->weapon = newItem(IRON_SPEAR, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(IRON_SPEAR, static_cast<Status>(DECREPIT + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 1:
 						case 2:
 						case 3:
 						case 4:
-							myStats->weapon = newItem(SHORTBOW, SERVICABLE, -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(SHORTBOW, SERVICABLE, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 5:
-							if ( rand() % 2 )
+							if ( local_rng.rand() % 2 )
 							{
-								myStats->weapon = newItem(LONGBOW, SERVICABLE, -1 + rand() % 3, 1, rand(), false, nullptr);
+								myStats->weapon = newItem(LONGBOW, SERVICABLE, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							}
 							else
 							{
-								myStats->weapon = newItem(SHORTBOW, SERVICABLE, -1 + rand() % 3, 1, rand(), false, nullptr);
+								myStats->weapon = newItem(SHORTBOW, SERVICABLE, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							}
 							break;
 						case 6:
 						case 7:
-							myStats->weapon = newItem(STEEL_SWORD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(STEEL_SWORD, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 8:
 						case 9:
-							myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						default:
 							break;
@@ -196,7 +183,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 					else
 					{
 						// give shield
-						switch ( rand() % 10 )
+						switch ( local_rng.rand() % 10 )
 						{
 							case 0:
 							case 1:
@@ -206,12 +193,12 @@ void initInsectoid(Entity* my, Stat* myStats)
 								break;
 							case 5:
 							case 6:
-								myStats->shield = newItem(STEEL_SHIELD, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+								myStats->shield = newItem(STEEL_SHIELD, static_cast<Status>(DECREPIT + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 								break;
 							case 7:
 							case 8:
 							case 9:
-								myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+								myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 								break;
 							default:
 								break;
@@ -222,7 +209,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 				// give cloak
 				if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
@@ -235,7 +222,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 						case 7:
 						case 8:
 						case 9:
-							myStats->cloak = newItem(CLOAK, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->cloak = newItem(CLOAK, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 					}
 				}
@@ -243,18 +230,18 @@ void initInsectoid(Entity* my, Stat* myStats)
 				// give booties
 				if ( myStats->shoes == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
-							myStats->shoes = newItem(STEEL_BOOTS, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->shoes = newItem(STEEL_BOOTS, static_cast<Status>(DECREPIT + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 2:
 						case 3:
 						case 4:
 						case 5:
 						case 6:
-							myStats->shoes = newItem(IRON_BOOTS, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->shoes = newItem(IRON_BOOTS, static_cast<Status>(DECREPIT + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 7:
 						case 8:
@@ -272,28 +259,28 @@ void initInsectoid(Entity* my, Stat* myStats)
 				//give weapon
 				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 				{
-					switch ( rand() % 20 )
+					switch ( local_rng.rand() % 20 )
 					{
 						case 0:
 						case 1:
 							//10%
-							myStats->weapon = newItem(SHORTBOW, static_cast<Status>(SERVICABLE + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(SHORTBOW, static_cast<Status>(SERVICABLE + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 2:
 						case 3:
 						case 4:
 							//15%
-							myStats->weapon = newItem(LONGBOW, static_cast<Status>(SERVICABLE + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(LONGBOW, static_cast<Status>(SERVICABLE + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 5:
 						case 6:
 							//10%
-							myStats->weapon = newItem(COMPOUND_BOW, static_cast<Status>(SERVICABLE + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(COMPOUND_BOW, static_cast<Status>(SERVICABLE + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 7:
 						case 8:
 							//10%
-							myStats->weapon = newItem(STEEL_SWORD, static_cast<Status>(SERVICABLE + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(STEEL_SWORD, static_cast<Status>(SERVICABLE + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 9:
 						case 10:
@@ -301,19 +288,19 @@ void initInsectoid(Entity* my, Stat* myStats)
 						case 12:
 						case 13:
 							//25%
-							myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(SERVICABLE + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(SERVICABLE + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 14:
 						case 15:
 						case 16:
 							//15%
-							myStats->weapon = newItem(CRYSTAL_SWORD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(CRYSTAL_SWORD, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 17:
 						case 18:
 						case 19:
 							//15%
-							myStats->weapon = newItem(CRYSTAL_SPEAR, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(CRYSTAL_SPEAR, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 					}
 				}
@@ -327,7 +314,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 					else
 					{
 						// give shield
-						switch ( rand() % 20 )
+						switch ( local_rng.rand() % 20 )
 						{
 							case 0:
 							case 1:
@@ -337,19 +324,19 @@ void initInsectoid(Entity* my, Stat* myStats)
 							case 5:
 							case 6:
 							case 7:
-								myStats->shield = newItem(STEEL_SHIELD, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+								myStats->shield = newItem(STEEL_SHIELD, static_cast<Status>(DECREPIT + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 								break;
 							case 8:
 							case 9:
 							case 10:
 							case 11:
-								myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+								myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 								break;
 							case 18:
-								myStats->shield = newItem(CRYSTAL_SHIELD, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+								myStats->shield = newItem(CRYSTAL_SHIELD, static_cast<Status>(DECREPIT + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 								break;
 							case 19:
-								myStats->shield = newItem(CRYSTAL_SHIELD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+								myStats->shield = newItem(CRYSTAL_SHIELD, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 								break;
 							default:
 								break;
@@ -360,7 +347,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 				// give cloak
 				if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
@@ -373,7 +360,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 						case 7:
 						case 8:
 						case 9:
-							myStats->cloak = newItem(CLOAK, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->cloak = newItem(CLOAK, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 					}
 				}
@@ -381,7 +368,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 				// give helmet
 				/*if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
@@ -389,18 +376,18 @@ void initInsectoid(Entity* my, Stat* myStats)
 							break;
 						case 3:
 						case 4:
-							myStats->helmet = newItem(HAT_PHRYGIAN, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
+							myStats->helmet = newItem(HAT_PHRYGIAN, WORN, -1 + local_rng.rand() % 3, 1, 0, false, nullptr);
 							break;
 						case 5:
-							myStats->helmet = newItem(HAT_WIZARD, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
+							myStats->helmet = newItem(HAT_WIZARD, WORN, -1 + local_rng.rand() % 3, 1, 0, false, nullptr);
 							break;
 						case 6:
 						case 7:
-							myStats->helmet = newItem(LEATHER_HELM, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
+							myStats->helmet = newItem(LEATHER_HELM, WORN, -1 + local_rng.rand() % 3, 1, 0, false, nullptr);
 							break;
 						case 8:
 						case 9:
-							myStats->helmet = newItem(IRON_HELM, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
+							myStats->helmet = newItem(IRON_HELM, WORN, -1 + local_rng.rand() % 3, 1, 0, false, nullptr);
 							break;
 					}
 				}*/
@@ -408,7 +395,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 				// give armor
 				/*if ( myStats->breastplate == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
@@ -420,10 +407,10 @@ void initInsectoid(Entity* my, Stat* myStats)
 						case 7:
 							break;
 						case 8:
-							myStats->breastplate = newItem(IRON_BREASTPIECE, static_cast<Status>(DECREPIT + rand() % 4), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->breastplate = newItem(IRON_BREASTPIECE, static_cast<Status>(DECREPIT + local_rng.rand() % 4), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 9:
-							myStats->breastplate = newItem(STEEL_BREASTPIECE, static_cast<Status>(DECREPIT + rand() % 4), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->breastplate = newItem(STEEL_BREASTPIECE, static_cast<Status>(DECREPIT + local_rng.rand() % 4), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 					}
 				}*/
@@ -431,21 +418,21 @@ void initInsectoid(Entity* my, Stat* myStats)
 				// give booties
 				if ( myStats->shoes == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
 				{
-					switch ( rand() % 20 )
+					switch ( local_rng.rand() % 20 )
 					{
 						case 0:
 						case 1:
 						case 2:
-							myStats->shoes = newItem(STEEL_BOOTS, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->shoes = newItem(STEEL_BOOTS, static_cast<Status>(DECREPIT + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 3:
 						case 4:
 						case 5:
 						case 6:
-							myStats->shoes = newItem(IRON_BOOTS, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->shoes = newItem(IRON_BOOTS, static_cast<Status>(DECREPIT + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 19:
-							myStats->shoes = newItem(CRYSTAL_BOOTS, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->shoes = newItem(CRYSTAL_BOOTS, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						default:
 							break;
@@ -457,7 +444,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(458, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(my->sprite == 1057 ? 1060 : 458, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -479,7 +466,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(457, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1057 ? 1059 : 457, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -498,7 +485,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(456, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1057 ? 1058 : 456, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -517,7 +504,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(453, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1057 ? 1055 : 453, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -536,7 +523,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(451, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1057 ? 1053 : 451, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -555,7 +542,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// world weapon
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -575,7 +562,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// shield
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -594,7 +581,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// cloak
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -613,7 +600,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// helmet
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -635,7 +622,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// mask
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -704,8 +691,11 @@ void actInsectoidLimb(Entity* my)
 
 void insectoidDie(Entity* my)
 {
-	int c;
-	for ( c = 0; c < 5; c++ )
+	Entity* gib = spawnGib(my);
+	gib->sprite = my->sprite;
+	gib->skill[5] = 1; // poof
+	serverSpawnGibForClient(gib);
+	for ( int c = 0; c < 10; c++ )
 	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
@@ -713,7 +703,7 @@ void insectoidDie(Entity* my)
 
 	my->spawnBlood(212);
 
-	playSoundEntity(my, 287 + rand() % 4, 128);
+	playSoundEntity(my, 287 + local_rng.rand() % 4, 128);
 
 	my->removeMonsterDeathNodes();
 
@@ -1016,7 +1006,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->breastplate == nullptr )
 					{
-						entity->sprite = 458;
+						entity->sprite = my->sprite == 1057 ? 1060 : 458;
 					}
 					else
 					{
@@ -1041,7 +1031,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				else if ( multiplayer == CLIENT )
 				{
-					if ( entity->sprite != 468 )
+					if ( entity->sprite != 458 && entity->sprite != 1060 )
 					{
 						entity->scalex = 0.9;
 						// shrink the width of the breastplate
@@ -1061,7 +1051,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->shoes == nullptr )
 					{
-						entity->sprite = 457;
+						entity->sprite = my->sprite == 1057 ? 1059 : 457;
 					}
 					else
 					{
@@ -1089,7 +1079,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->shoes == nullptr )
 					{
-						entity->sprite = 456;
+						entity->sprite = my->sprite == 1057 ? 1058 : 456;
 					}
 					else
 					{
@@ -1124,7 +1114,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[INSECTOID][4][0]; // 0
 						entity->focaly = limbs[INSECTOID][4][1]; // 0
 						entity->focalz = limbs[INSECTOID][4][2]; // 2
-						entity->sprite = 453;
+						entity->sprite = my->sprite == 1057 ? 1055 : 453;
 					}
 					else
 					{
@@ -1132,7 +1122,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[INSECTOID][4][0] + 0.75;
 						entity->focaly = limbs[INSECTOID][4][1];
 						entity->focalz = limbs[INSECTOID][4][2] - 0.75;
-						entity->sprite = 454;
+						entity->sprite = my->sprite == 1057 ? 1056 : 454;
 					}
 				}
 				my->setHumanoidLimbOffset(entity, INSECTOID, LIMB_HUMANOID_RIGHTARM);
@@ -1152,14 +1142,14 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[INSECTOID][5][0]; // 0
 						entity->focaly = limbs[INSECTOID][5][1]; // 0
 						entity->focalz = limbs[INSECTOID][5][2]; // 2
-						entity->sprite = 451;
+						entity->sprite = my->sprite == 1057 ? 1053 : 451;
 					}
 					else
 					{
 						entity->focalx = limbs[INSECTOID][5][0] + 0.75;
 						entity->focaly = limbs[INSECTOID][5][1];
 						entity->focalz = limbs[INSECTOID][5][2] - 0.75;
-						entity->sprite = 452;
+						entity->sprite = my->sprite == 1057 ? 1054 : 452;
 					}
 				}
 				my->setHumanoidLimbOffset(entity, INSECTOID, LIMB_HUMANOID_LEFTARM);
@@ -1398,6 +1388,10 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							entity->sprite = 165; // GlassesWorn.vox
 						}
+						else if ( myStats->mask->type == MONOCLE )
+						{
+							entity->sprite = 1196; // monocleWorn.vox
+						}
 						else
 						{
 							entity->sprite = itemModel(myStats->mask);
@@ -1429,7 +1423,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				if ( entity->sprite != 165 )
+				if ( entity->sprite != 165 && entity->sprite != 1196 )
 				{
 					if ( entity->sprite == items[MASK_SHAMAN].index )
 					{
@@ -1451,6 +1445,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->focalz = limbs[INSECTOID][10][2]; // .25
 				}
 				break;
+			// Left wing:
 			case 12:
 			{
 				additionalLimb = entity;
@@ -1460,8 +1455,8 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->flags[INVISIBLE] = true;
 				
 				entity->flags[INVISIBLE] = my->flags[INVISIBLE];
-				entity->sprite = 750;
-				if ( torso && torso->sprite != 727 && torso->sprite != 761 && torso->sprite != 458 )
+				entity->sprite = my->sprite == 1057 ? 1061 : 750;
+				if ( torso && torso->sprite != 727 && torso->sprite != 761 && torso->sprite != 458 && torso->sprite != 1060 )
 				{
 					// wearing armor, offset more.
 					entity->x -= 2.25 * cos(my->yaw);
@@ -1522,18 +1517,19 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->yaw += entity->fskill[0];
 				break;
 			}
+			// Right wing:
 			case 13:
 				entity->focalx = limbs[INSECTOID][12][0];
 				entity->focaly = limbs[INSECTOID][12][1];
 				entity->focalz = limbs[INSECTOID][12][2];
 				entity->flags[INVISIBLE] = true;
 				entity->flags[INVISIBLE] = my->flags[INVISIBLE];
-				entity->sprite = 751;
+				entity->sprite = my->sprite == 1057 ? 1062 : 751;
 				if ( additionalLimb ) // follow the yaw of the previous limb.
 				{
 					entity->yaw -= additionalLimb->fskill[0];
 				}
-				if ( torso && torso->sprite != 727 && torso->sprite != 761 && torso->sprite != 458 )
+				if ( torso && torso->sprite != 727 && torso->sprite != 761 && torso->sprite != 458 && torso->sprite != 1060 )
 				{
 					// wearing armor, offset more.
 					entity->x -= 2.25 * cos(my->yaw);
@@ -1630,7 +1626,7 @@ void Entity::insectoidChooseWeapon(const Entity* target, double dist)
 	// occurs less often against fellow monsters.
 	if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 )
 	{
-		specialRoll = rand() % (40 + 40 * (target != nullptr && target->behavior == &actMonster));
+		specialRoll = local_rng.rand() % (40 + 40 * (target != nullptr && target->behavior == &actMonster));
 		//messagePlayer(0, "rolled: %d", specialRoll);
 		if ( myStats->HP <= myStats->MAXHP * 0.6 )
 		{
@@ -1642,7 +1638,7 @@ void Entity::insectoidChooseWeapon(const Entity* target, double dist)
 		}
 		if ( specialRoll < (1 + bonusFromHP) ) // +5% base
 		{
-			node_t* node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), THROWN);
+			node_t* node = itemNodeInInventory(myStats, -1, THROWN);
 			if ( node != nullptr )
 			{
 				bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);
@@ -1650,7 +1646,7 @@ void Entity::insectoidChooseWeapon(const Entity* target, double dist)
 				{
 					if ( myStats->weapon->count > 1 )
 					{
-						monsterSpecialState = INSECTOID_DOUBLETHROW_FIRST + rand() % 2; // 50% for double throw.
+						monsterSpecialState = INSECTOID_DOUBLETHROW_FIRST + local_rng.rand() % 2; // 50% for double throw.
 					}
 					else
 					{

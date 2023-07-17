@@ -14,11 +14,10 @@
 #include "interface/interface.hpp"
 #include "magic/magic.hpp"
 #include "messages.hpp"
-#ifdef USE_FMOD
- #include "fmod.h"
-#else
- #include "sound.hpp"
-#endif
+#include "engine/audio/sound.hpp"
+#include "input.hpp"
+#include "ui/Frame.hpp"
+#include "ui/Field.hpp"
 
 
 //Splitscreen support stuff.
@@ -26,9 +25,6 @@
 //TODO: Move these into each and every individual player.
 extern Entity* selectedEntity[MAXPLAYERS];
 extern Entity* lastSelectedEntity[MAXPLAYERS];
-extern Sint32 mousex, mousey;
-extern Sint32 omousex, omousey;
-extern Sint32 mousexrel, mouseyrel;
 
 /*
  * TODO: Will need to make messages work for each hotseat player.
@@ -38,16 +34,14 @@ extern Sint32 mousexrel, mouseyrel;
  * I believe one of the splitscreen layouts included a version where all of the messages were communal and were in the center of the screen or summat.
  */
 
-extern bool splitscreen;
-
 extern int gamepad_deadzone;
 extern int gamepad_trigger_deadzone;
-extern int gamepad_leftx_sensitivity;
-extern int gamepad_lefty_sensitivity;
-extern int gamepad_rightx_sensitivity;
-extern int gamepad_righty_sensitivity;
-extern int gamepad_menux_sensitivity;
-extern int gamepad_menuy_sensitivity;
+extern real_t gamepad_leftx_sensitivity;
+extern real_t gamepad_lefty_sensitivity;
+extern real_t gamepad_rightx_sensitivity;
+extern real_t gamepad_righty_sensitivity;
+extern real_t gamepad_menux_sensitivity;
+extern real_t gamepad_menuy_sensitivity;
 
 extern bool gamepad_leftx_invert;
 extern bool gamepad_lefty_invert;
@@ -56,17 +50,49 @@ extern bool gamepad_righty_invert;
 extern bool gamepad_menux_invert;
 extern bool gamepad_menuy_invert;
 
+struct PlayerSettings_t
+{
+	int player = -1;
+	int shootmodeCrosshair = 0;
+	int shootmodeCrosshairOpacity = 50;
+    real_t mousespeed = 32.0;
+    bool mkb_world_tooltips_enabled = true;
+    bool gamepad_facehotbar = true;
+    bool hotbar_numkey_quick_add = true;
+    bool reversemouse = 0;
+    bool smoothmouse = false;
+    real_t gamepad_rightx_sensitivity = 1.0;
+    real_t gamepad_righty_sensitivity = 1.0;
+    bool gamepad_rightx_invert = false;
+    bool gamepad_righty_invert = false;
+	void init(const int _player)
+	{
+		player = _player;
+	}
+};
+extern PlayerSettings_t playerSettings[MAXPLAYERS];
+
 //Game Controller 1 handler
 //TODO: Joystick support?
 //extern SDL_GameController* game_controller;
 
+#include <chrono>
+
 class GameController
 {
+	friend class Input;
 	SDL_GameController* sdl_device;
 	SDL_Haptic* sdl_haptic;
 	int id;
 	std::string name;
 	static const int BUTTON_HELD_TICKS = TICKS_PER_SECOND / 4;
+
+#ifdef NINTENDO
+	using time_unit = std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::milliseconds>;
+	time_unit timeNow;
+	time_unit timeStart = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now());
+#endif
+
 public:
 	GameController();
 	~GameController();
@@ -84,8 +110,17 @@ public:
 			RUMBLE_TMP
 		};
 		int hapticEffectId = -1;
-		SDL_HapticEffect hapticEffect;
+		struct HapticEffect
+		{
+			Uint16 type = SDL_HAPTIC_LEFTRIGHT;
+			Uint32 length = 0;
+			Uint16 large_magnitude = 0;
+			Uint16 small_magnitude = 0;
+			Sint32 leftRightBalance = 0;
+		};
+		HapticEffect hapticEffect;
 		Uint32 hapticTick;
+		Uint32 oscillatorTick;
 		Haptic_t();
 		~Haptic_t() {};
 
@@ -117,14 +152,14 @@ public:
 	{
 		INVALID = -2,
 		CENTERED = -1,
-		UP,
-		UPLEFT,
-		LEFT,
-		DOWNLEFT,
 		DOWN,
-		DOWNRIGHT,
+		DOWNLEFT,
+		LEFT,
+		UPLEFT,
+		UP,
+		UPRIGHT,
 		RIGHT,
-		UPRIGHT
+		DOWNRIGHT
 	};
 
 	enum RadialSelection : int
@@ -205,18 +240,20 @@ public:
 	void close();
 
 	//Opens the SDL device.
-	//If c < 0 or c >= SDL_NumJoysticks() or c is not a game controller, then returns false.
-	bool open(int c);
+	//If sdl_which < 0 or sdl_which >= SDL_NumJoysticks() or sdl_which is not a game controller, then returns false.
+	//index is the new id of the game controller.
+	bool open(int sdl_which, int index);
 
 	void initBindings();
 	const int getID() { return id; }
-	const SDL_GameController* getControllerDevice() { return sdl_device; }
+	SDL_GameController* getControllerDevice() const { return sdl_device; }
 	SDL_Haptic* getHaptic() { return sdl_haptic; }
 	const bool isActive();
 	void addRumble(Haptic_t::RumblePattern pattern, Uint16 smallMagnitude, Uint16 largeMagnitude, Uint32 length, Uint32 srcEntityUid);
-	void doRumble(Haptic_t::Rumble* r);
+	GameController::Haptic_t::HapticEffect* doRumble(Haptic_t::Rumble* r);
+	GameController::Haptic_t::HapticEffect* handleRumble();
 	void stopRumble();
-	void handleRumble();
+	void reinitHaptic();
 
 	/*
 	 * Moves the player's head around.
@@ -224,14 +261,10 @@ public:
 	 */
 	void handleAnalog(int player);
 
-	//Left analog stick movement along the x axis.
-	int getLeftXMove();
-	//...along the y axis.
-	int getLeftYMove();
 	//Right analog stick movement along the x axis.
-	int getRightXMove();
+	int getRightXMove(int player);
 	//...along the y axis.
-	int getRightYMove();
+	int getRightYMove(int player);
 
 	int getLeftTrigger();
 	int getRightTrigger();
@@ -288,36 +321,6 @@ public:
 	float x_forceMaxForwardThreshold = 0.7;
 	float x_forceMaxBackwardThreshold = 0.5;
 	float y_forceMaxStrafeThreshold = 0.7;
-
-	/*
-	 * Uses dpad to move the cursor around the inventory and select items.
-	 * Returns true if moved.
-	 */
-	bool handleInventoryMovement(const int player);
-
-	/*
-	 * Uses dpad to move the cursor around a chest's inventory and select items.
-	 * Returns true if moved.
-	 */
-	bool handleChestMovement(const int player);
-
-	/*
-	 * Uses dpad to move the cursor around a shop's inventory and select items.
-	 * Returns true if moved.
-	 */
-	bool handleShopMovement(const int player);
-
-	/*
-	 * Uses dpad to move the cursor through the item context menu and select entries.
-	 * Returns true if moved.
-	 */
-	bool handleItemContextMenu(const int player, const Item& item);
-
-	/*
-	* Uses dpad to move the cursor through the item context menu and select entries.
-	* Returns true if moved.
-	*/
-	bool handleRepairGUIMovement(const int player);
 };
 const int MAX_GAME_CONTROLLERS = 16;
 extern std::array<GameController, MAX_GAME_CONTROLLERS> game_controllers;
@@ -350,9 +353,10 @@ class Inputs
 		Uint32 mouseRightHeldTicks = 0;
 		bool mouseRightHeld = false;
 
-		bool draw_cursor = true; //True if the gamepad's d-pad has been used to navigate menus and such. //TODO: Off by default on consoles and the like.
+		bool draw_cursor = false; //True if the gamepad's d-pad has been used to navigate menus and such. //TODO: Off by default on consoles and the like.
 		bool moved = false;
-		bool lastMovementFromController = false;
+		bool lastMovementFromController = true;
+		real_t mouseAnimationPercent = 0.0;
 		VirtualMouse() {};
 		~VirtualMouse() {};
 
@@ -386,10 +390,13 @@ class Inputs
 		* -1 means it's not from the hotbar.
 		*/
 		int selectedItemFromHotbar = -1;
+		Uint32 selectedItemFromChest = 0;
 
 		Item* selectedItem = nullptr;
 		bool toggleclick = false;
 		bool itemMenuOpen = false;
+		bool itemMenuFromHotbar = false;
+		int itemMenuOffsetDetectionY = 0;
 		int itemMenuX = 0;
 		int itemMenuY = 0;
 		int itemMenuSelected = 0;
@@ -408,15 +415,27 @@ public:
 	~Inputs() {};
 	const void setPlayerIDAllowedKeyboard(const int player)
 	{
+		if (multiplayer != SINGLE && player != 0) {
+			setPlayerIDAllowedKeyboard(0);
+			return;
+		}
+	    printlog("giving keyboard to player %d", player);
 		playerUsingKeyboardControl = player;
+	}
+	const int getPlayerIDAllowedKeyboard()
+	{
+		if (multiplayer != SINGLE)
+		{
+			return 0;
+		}
+		else
+		{
+	   		return playerUsingKeyboardControl;
+		}
 	}
 	const bool bPlayerUsingKeyboardControl(const int player) const
 	{
-		if ( !splitscreen )
-		{
-			return player == clientnum;
-		}
-		return player == playerUsingKeyboardControl;
+		return player == playerUsingKeyboardControl || multiplayer != SINGLE;
 	}
 	void controllerHandleMouse(const int player);
 	const bool bControllerInputPressed(const int player, const unsigned controllerImpulse) const;
@@ -445,6 +464,9 @@ public:
 	}
 	VirtualMouse* getVirtualMouse(int player)
 	{
+		if (multiplayer != SINGLE && player != 0) {
+			return getVirtualMouse(0);
+		}
 		if ( player < 0 || player >= MAXPLAYERS )
 		{
 			printlog("[INPUTS]: Warning: player index %d out of range.", player);
@@ -496,6 +518,9 @@ public:
 	void warpMouse(const int player, const Sint32 x, const Sint32 y, Uint32 flags);
 	const int getControllerID(int player) const
 	{
+		if (multiplayer != SINGLE && player != 0) {
+			return getControllerID(0);
+		}
 		if ( player < 0 || player >= MAXPLAYERS )
 		{
 			printlog("[INPUTS]: Warning: player index %d out of range.", player);
@@ -507,32 +532,26 @@ public:
 
 	const bool hasController(int player) const 
 	{
+		if (multiplayer != SINGLE && player != 0) {
+			return hasController(0);
+		}
 		if ( player < 0 || player >= MAXPLAYERS )
 		{
 			printlog("[INPUTS]: Warning: player index %d out of range.", player);
 			return false;
 		}
-		return playerControllerIds[player] != -1;
+		return playerControllerIds[player] != -1 && getController(player);
 	}
 	void setControllerID(int player, const int id) 
 	{
+		if (multiplayer != SINGLE && player != 0) {
+			return setControllerID(0, id);
+		}
 		if ( player < 0 || player >= MAXPLAYERS )
 		{
 			printlog("[INPUTS]: Warning: player index %d out of range.", player);
 		}
 		playerControllerIds[player] = id;
-	}
-	void addControllerIDToNextAvailableInput(const int id)
-	{
-		for ( int i = 0; i < MAXPLAYERS; ++i )
-		{
-			if ( playerControllerIds[i] == -1 )
-			{
-				playerControllerIds[i] = id;
-				printlog("[INPUTS]: Automatically assigned controller id %d to player index %d.", id, i);
-				break;
-			}
-		}
 	}
 	const bool bPlayerIsControllable(int player) const;
 	void updateAllMouse()
@@ -586,6 +605,10 @@ public:
 	}
 	void rumble(const int player, GameController::Haptic_t::RumblePattern pattern, Uint16 smallMagnitude, Uint16 largeMagnitude, Uint32 length, Uint32 srcEntityUid)
 	{
+		if (multiplayer != SINGLE && player != 0) {
+			rumble(0, pattern, smallMagnitude, largeMagnitude, length, srcEntityUid);
+			return;
+		}
 		if ( !hasController(player) )
 		{
 			return;
@@ -594,6 +617,10 @@ public:
 	}
 	void rumbleStop(const int player)
 	{
+		if (multiplayer != SINGLE && player != 0) {
+			rumbleStop(0);
+			return;
+		}
 		if ( !hasController(player) )
 		{
 			return;
@@ -602,6 +629,12 @@ public:
 	}
 	void addRumbleForPlayerHPLoss(const int player, Sint32 damageAmount);
 	SDL_Rect getGlyphRectForInput(const int player, bool pressed, const unsigned keyboardImpulse, const unsigned controllerImpulse);
+	void addRumbleForHapticType(const int player, Uint32 hapticType, Uint32 uid);
+	static const Uint32 HAPTIC_SFX_BOULDER_BOUNCE_VOL;
+	static const Uint32 HAPTIC_SFX_BOULDER_ROLL_LOW_VOL;
+	static const Uint32 HAPTIC_SFX_BOULDER_ROLL_HIGH_VOL;
+	static const Uint32 HAPTIC_SFX_BOULDER_LAUNCH_VOL;
+	void addRumbleRemotePlayer(const int player, Uint32 hapticType, Uint32 uid);
 };
 extern Inputs inputs;
 void initGameControllers();
@@ -632,12 +665,14 @@ public:
 
 	bool bSplitscreen = false;
 	SplitScreenTypes splitScreenType = SPLITSCREEN_DEFAULT;
-
+	bool bControlEnabled = true; // disabled if dead waiting for gameover prompt etc
 	Player(int playernum = 0, bool local_host = true);
 	~Player();
 
 	void init();
 	void cleanUpOnEntityRemoval();
+
+	const char* getAccountName() const;
 
 	view_t& camera() const { return *cam; }
 	const int camera_x1() const { return cam->winx; }
@@ -646,13 +681,132 @@ public:
 	const int camera_y2() const { return cam->winy + cam->winh; }
 	const int camera_width() const { return cam->winw; }
 	const int camera_height() const { return cam->winh; }
+	const int camera_virtualx1() const { return cam->winx * ((float)Frame::virtualScreenX / xres); }
+	const int camera_virtualx2() const { return (cam->winx + cam->winw)* ((float)Frame::virtualScreenX / xres); }
+	const int camera_virtualy1() const { return cam->winy * ((float)Frame::virtualScreenY / yres); }
+	const int camera_virtualy2() const { return (cam->winy + cam->winh) * ((float)Frame::virtualScreenY / yres); }
+	const int camera_virtualWidth() const { return cam->winw * ((float)Frame::virtualScreenX / xres); }
+	const int camera_virtualHeight() const { return cam->winh * ((float)Frame::virtualScreenY / yres); }
 	const int camera_midx() const { return camera_x1() + camera_width() / 2; }
 	const int camera_midy() const { return camera_y1() + camera_height() / 2; }
 	const bool isLocalPlayer() const;
 	const bool isLocalPlayerAlive() const;
+	const bool bUseCompactGUIWidth() const;
+	const bool bUseCompactGUIHeight() const;
+	const bool bAlignGUINextToInventoryCompact() const; // if chest/shop etc appears alongside inventory as opposed to opposite of viewport in compact view
+	const bool usingCommand() const;
+	void clearGUIPointers();
+
+	enum PanelJustify_t
+	{
+		PANEL_JUSTIFY_LEFT,
+		PANEL_JUSTIFY_RIGHT
+	};
+
+	struct GUIDropdown_t {
+		Player& player;
+		int dropDownX = 0;
+		int dropDownY = 0;
+		int dropDownOptionSelected = -1;
+		Uint32 dropDownItem = 0;
+		bool bOpen = false;
+		std::string currentName = "";
+		Frame* dropdownBlockClickFrame = nullptr;
+		Frame* dropdownFrame = nullptr;
+		bool dropDownToggleClick = false;
+		int dropdownLinkToModule = 0;
+		bool bClosedThisTick = false;
+		struct DropdownOption_t {
+			std::string text = "";
+			std::string keyboardGlyph = "";
+			std::string controllerGlyph = "";
+			std::string action = "";
+			DropdownOption_t(std::string _text, std::string _keyboardGlyph, std::string _controllerGlyph, std::string _action)
+			{
+				text = _text;
+				action = _action;
+				keyboardGlyph = _keyboardGlyph;
+				controllerGlyph = _controllerGlyph;
+			}
+		};
+		struct DropDown_t
+		{
+			std::string title = "Interact";
+			std::string internalName = "";
+			bool alignRight = true;
+			int module = 0;
+			int defaultOption = 0;
+			std::vector<DropdownOption_t> options;
+		};
+
+		void open(const std::string name);
+		void close();
+		void create(const std::string name);
+		bool set(const std::string name);
+		void process();
+		bool getDropDownAlignRight(const std::string& name);
+		void activateSelection(const std::string& name, int option);
+		static std::map<std::string, DropDown_t> allDropDowns;
+		GUIDropdown_t(Player& p) :
+			player(p) {}
+	};
+
+	class GUI_t
+	{
+		Player& player;
+	public:
+		GUI_t(Player& p) :
+			player(p),
+			dropdownMenu(p)
+		{};
+		~GUI_t() {};
+		enum GUIModules
+		{
+			MODULE_NONE,
+			MODULE_INVENTORY,
+			MODULE_SHOP,
+			MODULE_CHEST,
+			MODULE_REMOVECURSE,
+			MODULE_IDENTIFY,
+			MODULE_TINKERING,
+			MODULE_ALCHEMY,
+			MODULE_FEATHER,
+			MODULE_FOLLOWERMENU,
+			MODULE_CHARACTERSHEET,
+			MODULE_SKILLS_LIST,
+			MODULE_BOOK_VIEW,
+			MODULE_HOTBAR,
+			MODULE_SPELLS,
+			MODULE_STATUS_EFFECTS,
+			MODULE_LOG,
+			MODULE_MAP,
+			MODULE_SIGN_VIEW,
+			MODULE_ITEMEFFECTGUI,
+			MODULE_PORTRAIT
+		};
+		GUIModules activeModule = MODULE_NONE;
+		GUIModules previousModule = MODULE_NONE;
+		GUIModules hoveringButtonModule = MODULE_NONE;
+		void activateModule(GUIModules module);
+		bool warpControllerToModule(bool moveCursorInstantly);
+		bool bActiveModuleUsesInventory();
+		bool bActiveModuleHasNoCursor();
+		void setHoveringOverModuleButton(GUIModules moduleOfButton);
+		void clearHoveringOverModuleButton();
+		GUIModules hoveringOverModuleButton();
+		bool handleCharacterSheetMovement(); // controller movement for misc GUIs not for inventory/hotbar
+		bool handleInventoryMovement(); // controller movement for hotbar/inventory
+		GUIModules handleModuleNavigation(bool checkDestinationOnly, bool checkLeftNavigation = true);
+		bool bModuleAccessibleWithMouse(GUIModules moduleToAccess); // if no other full-screen modules taking precedence
+		bool isGameoverActive();
+		bool returnToPreviousActiveModule();
+		GUIDropdown_t dropdownMenu;
+		void closeDropdowns();
+		bool isDropdownActive();
+	} GUI;
 
 	//All the code that sets shootmode = false. Display chests, inventory, books, shopkeeper, identify, whatever.
-	void openStatusScreen(int whichGUIMode, int whichInventoryMode); //TODO: Make all the everything use this. //TODO: Make an accompanying closeStatusScreen() function.
+	void openStatusScreen(const int whichGUIMode, const int whichInventoryMode, const int whichModule = Player::GUI_t::MODULE_INVENTORY); //TODO: Make all the everything use this. //TODO: Make an accompanying closeStatusScreen() function.
 	void closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore whatToClose);
 	bool shootmode = false;
 	int inventory_mode = INVENTORY_MODE_ITEM;
@@ -667,12 +821,193 @@ public:
 
 		int selectedSlotX = 0;
 		int selectedSlotY = 0;
+
+		int selectedSpellX = 0;
+		int selectedSpellY = 0;
 	public:
+		Frame* frame = nullptr;
+		Frame* tooltipContainerFrame = nullptr;
+		Frame* tooltipFrame = nullptr;
+		Frame* titleOnlyTooltipFrame = nullptr;
+		Frame* interactFrame = nullptr;
+		Frame* interactBlockClickFrame = nullptr;
+		Frame* tooltipPromptFrame = nullptr;
+		Frame* selectedItemCursorFrame = nullptr;
+		Frame* spellFrame = nullptr;
+		Frame* chestFrame = nullptr;
+		std::unordered_map<int, Frame*> slotFrames;
+		std::unordered_map<int, Frame*> spellSlotFrames;
+		std::unordered_map<int, Frame*> chestSlotFrames;
+		bool bCompactView = false;
+		real_t slideOutPercent = 0.0;
+		static int slideOutWidth;
+		bool bFirstTimeSnapCursor = false;
+		bool isInteractable = false;
+		Uint32 tooltipDelayTick = 0;
+		real_t animPaperDollHide = 0.0;
+		bool bIsTooltipDelayed();
+		void openInventory();
+		void closeInventory();
+
+		int miscTooltipOpacitySetpoint = 100;
+		real_t miscTooltipOpacityAnimate = 1.0;
+		Uint32 miscTooltipDeselectedTick = 0;
+		Frame* miscTooltipFrame = nullptr;
+
+		PanelJustify_t inventoryPanelJustify = PANEL_JUSTIFY_LEFT;
+		PanelJustify_t paperDollPanelJustify = PANEL_JUSTIFY_LEFT;
+		void setCompactView(bool bCompact);
+		void resizeAndPositionInventoryElements();
+		bool paperDollContextMenuActive();
+		void updateInventoryMiscTooltip();
+		enum GamepadDropdownTypes : int
+		{
+			GAMEPAD_DROPDOWN_DISABLE,
+			GAMEPAD_DROPDOWN_FULL, // always open full context menu on 'A', 'B' to close inventory
+			GAMEPAD_DROPDOWN_COMPACT // 'A' opens a context menu if item has 2+ options on 'A', 'Y'. 'Y' drop, 'B' close inv
+		};
+		GamepadDropdownTypes useItemDropdownOnGamepad = GAMEPAD_DROPDOWN_COMPACT;
+
+		struct Cursor_t
+		{
+			real_t animateX = 0.0;
+			real_t animateY = 0.0;
+			int animateSetpointX = 0;
+			int animateSetpointY = 0;
+			int animateStartX = 0;
+			int animateStartY = 0;
+			Uint32 lastUpdateTick = 0;
+			const int cursorToSlotOffset = 7;
+			Player::GUI_t::GUIModules queuedModule = Player::GUI_t::GUIModules::MODULE_NONE;
+			Frame* queuedFrameToWarpTo = nullptr;
+		};
+		Cursor_t cursor;
+
+		struct SelectedItemAnimate_t
+		{
+			real_t animateX = 0.0;
+			real_t animateY = 0.0;
+		};
+		SelectedItemAnimate_t selectedItemAnimate;
+
+		struct SpellPanel_t
+		{
+			Player& player;
+			PanelJustify_t panelJustify = PANEL_JUSTIFY_LEFT;
+			real_t animx = 0.0;
+			real_t scrollPercent = 0.0;
+			real_t scrollInertia = 0.0;
+			int scrollSetpoint = 0;
+			real_t scrollAnimateX = 0.0;
+			bool isInteractable = true;
+			bool bOpen = false;
+			bool bFirstTimeSnapCursor = false;
+			int currentScrollRow = 0;
+			const int kNumSpellsToDisplayVertical = 5;
+			int getNumSpellsToDisplayVertical() const;
+			void openSpellPanel();
+			void closeSpellPanel();
+			void updateSpellPanel();
+			void scrollToSlot(int x, int y, bool instantly);
+			bool isSlotVisible(int x, int y) const;
+			bool isItemVisible(Item* item) const;
+			static int heightOffsetWhenNotCompact;
+			SpellPanel_t(Player& p) :
+				player(p) {}
+		};
+		SpellPanel_t spellPanel;
+
+		struct ChestGUI_t
+		{
+			Player& player;
+			PanelJustify_t panelJustify = PANEL_JUSTIFY_LEFT;
+			real_t animx = 0.0;
+			real_t scrollPercent = 0.0;
+			real_t scrollInertia = 0.0;
+			int scrollSetpoint = 0;
+			real_t scrollAnimateX = 0.0;
+			bool isInteractable = true;
+			bool bOpen = false;
+			bool bFirstTimeSnapCursor = false;
+			int currentScrollRow = 0;
+			const int kNumItemsToDisplayVertical = 3;
+			int getNumItemsToDisplayVertical() const;
+			void openChest();
+			void closeChest();
+			void updateChest();
+			void scrollToSlot(int x, int y, bool instantly);
+			bool isSlotVisible(int x, int y) const;
+			bool isItemVisible(Item* item) const;
+
+			int selectedChestSlotX = -1;
+			int selectedChestSlotY = -1;
+			bool isChestSelected();
+
+			static int heightOffsetWhenNotCompact;
+			ChestGUI_t(Player& p) :
+				player(p) {}
+		};
+		ChestGUI_t chestGUI;
+
+		struct ItemTooltipDisplay_t
+		{
+			Uint32 type;
+			int status;
+			int beatitude;
+			int count;
+			Uint32 appearance;
+			bool identified;
+			Uint32 uid;
+			bool wasAppraisalTarget = false;
+
+			int playernum;
+			Sint32 playerLVL;
+			Sint32 playerEXP;
+			Sint32 playerSTR;
+			Sint32 playerDEX;
+			Sint32 playerCON;
+			Sint32 playerINT;
+			Sint32 playerPER;
+			Sint32 playerCHR;
+
+			int opacitySetpoint = 100;
+			real_t opacityAnimate = 1.0;
+			int titleOnlyOpacitySetpoint = 100;
+			real_t titleOnlyOpacityAnimate = 1.0;
+			real_t expandAnimate = 1.0;
+			int expandSetpoint = 1;
+			real_t expandCurrent = 1.0;
+			bool expanded = false;
+			real_t frameTooltipScrollAnim = 0.0;
+			real_t frameTooltipScrollSetpoint = 0.0;
+			int scrolledToMax = 0;
+			real_t frameTooltipScrollPrevSetpoint = 0.0;
+			bool scrollable = false;
+
+			int tooltipDescriptionHeight = 0;
+			int tooltipAttributeHeight = 0;
+			int tooltipWidth = 0;
+			int tooltipHeight = 0;
+
+			bool isItemSameAsCurrent(const int player, Item* newItem);
+			void updateItem(const int player, Item* newItem);
+			bool displayingShortFormTooltip = false;
+			bool displayingTitleOnlyTooltip = false;
+			ItemTooltipDisplay_t();
+		};
+		ItemTooltipDisplay_t itemTooltipDisplay;
+
 		int DEFAULT_INVENTORY_SIZEX = 12;
 		int DEFAULT_INVENTORY_SIZEY = 3;
+		static const int MAX_SPELLS_X;
+		static const int MAX_SPELLS_Y;
+		static const int MAX_CHEST_X;
+		static const int MAX_CHEST_Y;
 		Inventory_t(Player& p) : 
 			player(p), 
 			appraisal(p), 
+			spellPanel(p),
+			chestGUI(p),
 			DEFAULT_INVENTORY_SIZEX(12),
 			DEFAULT_INVENTORY_SIZEY(3)
 		{
@@ -683,16 +1018,35 @@ public:
 		const int getTotalSize() const { return sizex * sizey; }
 		const int getSizeX() const { return sizex; }
 		const int getSizeY() const { return sizey; }
-		const int getStartX() const;
-		const int getStartY() const;
-		const int getSlotSize() const { return static_cast<int>(40 * uiscale_inventory); }
+		const int getSlotSize() const { return 40; }
+		const int getItemSpriteSize() const { return 36; }
 		void setSizeY(int size) { sizey = size; }
 		void selectSlot(const int x, const int y) { selectedSlotX = x; selectedSlotY = y; }
 		const int getSelectedSlotX() const { return selectedSlotX; }
 		const int getSelectedSlotY() const { return selectedSlotY; }
+		void selectSpell(const int x, const int y) { selectedSpellX = x; selectedSpellY = y; }
+		const int getSelectedSpellX() const { return selectedSpellX; }
+		const int getSelectedSpellY() const { return selectedSpellY; }
+		void selectChestSlot(const int x, const int y);
+		const int getSelectedChestX() const { return chestGUI.selectedChestSlotX; }
+		const int getSelectedChestY() const { return chestGUI.selectedChestSlotY; }
+		const bool isItemFromChest(Item* item) const;
 		const bool selectedSlotInPaperDoll() const { return selectedSlotY < 0; }
-		const int getSelectedSlotPositionX(Item* snapToItem) const;
-		const int getSelectedSlotPositionY(Item* snapToItem) const;
+		bool warpMouseToSelectedItem(Item* snapToItem, Uint32 flags);
+		bool warpMouseToSelectedSpell(Item* snapToItem, Uint32 flags);
+		bool warpMouseToSelectedChestSlot(Item* snapToItem, Uint32 flags);
+		bool guiAllowDropItems() const;
+		bool guiAllowDefaultRightClick() const;
+		void processInventory();
+		void updateInventory();
+		void updateCursor();
+		void updateItemContextMenuClickFrame();
+		void updateInventoryItemTooltip();
+		void updateSelectedItemAnimation();
+		void updateItemContextMenu();
+		void cycleInventoryTab();
+		void activateItemContextMenuOption(Item* item, ItemContextMenuPrompts prompt);
+		bool moveItemToFreeInventorySlot(Item* item);
 		void resetInventory()
 		{
 			if ( bNewInventoryLayout )
@@ -725,6 +1079,11 @@ public:
 			}
 			return 1;
 		}
+		void updateSelectedSlotAnimation(int destx, int desty, int width, int height, bool usingMouse);
+		Frame* getInventorySlotFrame(int x, int y) const;
+		Frame* getSpellSlotFrame(int x, int y) const;
+		Frame* getItemSlotFrame(Item* item, int x, int y) const;
+		Frame* getChestSlotFrame(int x, int y) const;
 
 		enum PaperDollRows : int
 		{
@@ -749,64 +1108,128 @@ public:
 			int timer = 0; //There is a delay after the appraisal skill is activated before the item is identified.
 			int timermax = 0;
 			Uint32 current_item = 0; //The item being appraised (or rather its uid)
+			Uint32 old_item = 0;
 			int getAppraisalTime(Item* item); // Return time in ticks needed to appraise an item
 			void appraiseItem(Item* item); // start appraise process
+			bool appraisalPossible(Item* item); // if possible with current skill and stats
+			real_t animAppraisal = 0.0;
+			Uint32 animStartTick = 0;
+			Uint32 itemNotifyUpdatedThisTick = 0;
+			int itemNotifyAnimState = 0;
+			enum ItemNotifyHoverStates : int
+			{
+				NOTIFY_ITEM_WAITING_TO_HOVER,
+				NOTIFY_ITEM_HOVERED,
+				NOTIFY_ITEM_REMOVE
+			};
+			std::unordered_map<Uint32, ItemNotifyHoverStates> itemsToNotify;
+			void updateAppraisalAnim();
 		} appraisal;
 		bool bNewInventoryLayout = true;
 	} inventoryUI;
 
-	class StatusBar_t
+	struct ShopGUI_t
 	{
 		Player& player;
-	public:
-		StatusBar_t(Player& p) : player(p)
-		{};
-		~StatusBar_t() {};
-		SDL_Rect messageStatusBarBox;
-		const int getStartX() const 
-		{ 
-			return (player.camera_midx() - status_bmp->w * uiscale_chatlog / 2);
-		}
-		const int getStartY() const
-		{
-			return (player.camera_y2() - getOffsetY());
-		}
-		const int getOffsetY() const { return (status_bmp->h * uiscale_chatlog * (hide_statusbar ? 0 : 1)); }
-	} statusBarUI;
+		Frame* shopFrame = nullptr;
+		PanelJustify_t panelJustify = PANEL_JUSTIFY_LEFT;
+		bool buybackView = false;
+		real_t animx = 0.0;
+		bool isInteractable = true;
+		bool bOpen = false;
+		bool bFirstTimeSnapCursor = false;
+		void openShop();
+		void closeShop();
+		void updateShop();
+		Uint32 chatTicks = 0;
+		size_t chatStringLength = 0;
+		std::string chatStrFull = "";
+		Sint32 itemPrice = -1;
+		bool itemUnknownPreventPurchase = false;
+		std::string itemDesc = "";
+		bool itemRequiresTitleReflow = true;
+		Sint32 playerCurrentGold = 0;
+		Sint32 playerChangeGold = 0;
+		real_t animGold = 0.0;
+		Uint32 animGoldStartTicks = 0;
+		real_t animTooltip = 0.0;
+		Uint32 animTooltipTicks = 0;
+		real_t animNoDeal = 0.0;
+		Uint32 animNoDealTicks = 0;
+
+		int lastTooltipModule = Player::GUI_t::MODULE_NONE;
+		int selectedShopSlotX = -1;
+		int selectedShopSlotY = -1;
+		static const int MAX_SHOP_X;
+		static const int MAX_SHOP_Y;
+		std::unordered_map<int, Frame*> shopSlotFrames;
+		bool isShopSelected();
+		void selectShopSlot(const int x, const int y);
+		const int getSelectedShopX() const { return selectedShopSlotX; }
+		const int getSelectedShopY() const { return selectedShopSlotY; }
+		Frame* getShopSlotFrame(int x, int y) const;
+		const bool isItemFromShop(Item* item) const;
+		void setItemDisplayNameAndPrice(Item* item);
+		const bool isItemSelectedFromShop(Item* item) const;
+		const bool isItemSelectedToSellToShop(Item* item) const;
+		bool warpMouseToSelectedShopItem(Item* snapToItem, Uint32 flags);
+		void clearItemDisplayed();
+
+		static int heightOffsetWhenNotCompact;
+		ShopGUI_t(Player& p) :
+			player(p) {}
+	};
+	ShopGUI_t shopGUI;
 
 	class BookGUI_t
 	{
 		Player& player;
-		static const int BOOK_TITLE_PADDING = 2; //The amount of empty space above and below the book titlename.
-		static const int FLIPMARGIN = 240;
-		static const int DRAGHEIGHT_BOOK = 32;
 	public:
-		static const int BOOK_PAGE_WIDTH = 248;
-		static const int BOOK_PAGE_HEIGHT = 256;
+		static const int BOOK_PAGE_WIDTH = 220;
+		static const int BOOK_PAGE_HEIGHT = 260;
 		BookGUI_t(Player& p) : player(p)
 		{};
 		~BookGUI_t() {};
+
+		real_t bookFadeInAnimationY = 0.0;
+
+		Frame* bookFrame = nullptr;
 		int offsetx = 0;
 		int offsety = 0;
-		bool draggingBookGUI = false;
 		bool bBookOpen = false;
-		node_t* bookPageNode = nullptr;
 		Item* openBookItem = nullptr;
-		book_t* book = nullptr;
-		const int getStartX() const
-		{
-			return ((player.camera_midx() - (getBookWidth() / 2)) + offsetx);
-		}
-		const int getStartY() const
-		{
-			return ((player.camera_midy() - (getBookHeight() / 2)) + offsety);
-		}
-		const int getBookWidth() const { return bookgui_img->w; }
-		const int getBookHeight() const { return bookgui_img->h; }
+		std::string openBookName = "";
+		int currentBookPage = 0;
 		void updateBookGUI();
 		void closeBookGUI();
-		void openBook(struct book_t* book, Item* item);
+		void createBookGUI();
+		void openBook(int index, Item* item);
 	} bookGUI;
+
+	class SignGUI_t
+	{
+		Player& player;
+	public:
+		static const int SIGN_WIDTH = 220;
+		static const int SIGN_HEIGHT = 260;
+		SignGUI_t(Player& p) : player(p)
+		{};
+		~SignGUI_t() {};
+
+		real_t signFadeInAnimationY = 0.0;
+		real_t signAnimVideo = 0.0;
+		real_t signWorldCoordX = 0.0;
+		real_t signWorldCoordY = 0.0;
+		Frame* signFrame = nullptr;
+		bool bSignOpen = false;
+		std::string signName = "";
+		int currentSignPage = 0;
+		void updateSignGUI();
+		void closeSignGUI();
+		void createSignGUI();
+		void openSign(std::string name, Uint32 uid);
+		Uint32 signUID = 0;
+	} signGUI;
 
 	class CharacterSheet_t
 	{
@@ -820,6 +1243,8 @@ public:
 		SDL_Rect characterSheetBox;
 		SDL_Rect statsSheetBox;
 
+		Player::PanelJustify_t panelJustify = PANEL_JUSTIFY_RIGHT;
+
 		void setDefaultSkillsSheetBox();
 		void setDefaultPartySheetBox();
 		void setDefaultCharacterSheetBox();
@@ -827,12 +1252,194 @@ public:
 		bool lock_right_sidebar = false;
 		int proficienciesPage = 0;
 		int attributespage = 0;
+		bool showGameTimerAlways = false;
+		bool isInteractable = false;
+		int tooltipOpacitySetpoint = 100;
+		real_t tooltipOpacityAnimate = 1.0;
+		Uint32 tooltipDeselectedTick = 0;
+
+		static std::map<std::string, std::pair<std::string, std::string>> mapDisplayNamesDescriptions;
+		static std::map<std::string, std::string> hoverTextStrings;
+		enum SheetElements
+		{
+			SHEET_UNSELECTED,
+			SHEET_OPEN_LOG,
+			SHEET_OPEN_MAP,
+			SHEET_TIMER,
+			SHEET_GOLD,
+			SHEET_DUNGEON_FLOOR,
+			SHEET_CHAR_CLASS,
+			SHEET_CHAR_RACE_SEX,
+			SHEET_SKILL_LIST,
+			SHEET_STR,
+			SHEET_DEX,
+			SHEET_CON,
+			SHEET_INT,
+			SHEET_PER,
+			SHEET_CHR,
+			SHEET_ATK,
+			SHEET_AC,
+			SHEET_POW,
+			SHEET_RES,
+			SHEET_RGN,
+			SHEET_RGN_MP,
+			SHEET_WGT,
+			SHEET_ENUM_END
+		};
+		enum SheetDisplay
+		{
+			CHARSHEET_DISPLAY_NORMAL,
+			CHARSHEET_DISPLAY_COMPACT
+		};
+		bool isSheetElementAllowedToNavigateTo(SheetElements element);
+		SheetDisplay sheetDisplayType = CHARSHEET_DISPLAY_NORMAL;
+		Frame* sheetFrame = nullptr;
+		SheetElements selectedElement = SHEET_UNSELECTED;
+		SheetElements queuedElement = SHEET_UNSELECTED;
+		SheetElements cachedElementTooltip = SHEET_UNSELECTED;
+		void selectElement(SheetElements element, bool usingMouse, bool moveCursor = false);
+		void createCharacterSheet();
+		void processCharacterSheet();
+		void updateGameTimer();
+		void updateStats();
+		void updateAttributes();
+		void updateCharacterInfo();
+		static void loadCharacterSheetJSON();
+		static std::string defaultString;
+		static std::string& getHoverTextString(std::string key);
+		void updateCharacterSheetTooltip(SheetElements element, SDL_Rect pos, Player::PanelJustify_t tooltipJustify = PANEL_JUSTIFY_RIGHT);
 	} characterSheet;
+
+	class SkillSheet_t
+	{
+		Player& player;
+	public:
+		SkillSheet_t(Player& p) : player(p)
+		{};
+		~SkillSheet_t() {};
+
+		Frame* skillFrame = nullptr;
+		int selectedSkill = 0;
+		int highlightedSkill = 0;
+		real_t skillsFadeInAnimationY = 0.0;
+		bool bSkillSheetOpen = false;
+		Uint32 openTick = 0;
+		bool bSkillSheetEntryLoaded = false;
+		real_t scrollPercent = 0.0;
+		real_t scrollInertia = 0.0;
+		int skillSlideDirection = 0;
+		real_t skillSlideAmount = 0.0;
+		bool bUseCompactSkillsView = false;
+		bool bSlideWindowsOnly = false;
+		static real_t windowHeightScaleX;
+		static real_t windowHeightScaleY;
+		static real_t windowCompactHeightScaleX;
+		static real_t windowCompactHeightScaleY;
+		static bool generateFollowerTableForSkillsheet;
+		static struct SkillSheetData_t
+		{
+			Uint32 defaultTextColor = 0xFFFFFFFF;
+			Uint32 noviceTextColor = 0xFFFFFFFF;
+			Uint32 expertTextColor = 0xFFFFFFFF;
+			Uint32 legendTextColor = 0xFFFFFFFF;
+			struct SkillEntry_t
+			{
+				SkillEntry_t() {};
+				~SkillEntry_t() {};
+				std::string name;
+				int skillId = -1;
+				std::string skillIconPath;
+				std::string skillIconPathLegend;
+				std::string skillIconPath32px;
+				std::string skillIconPathLegend32px;
+				std::string statIconPath;
+				std::string description;
+				std::string legendaryDescription;
+				int skillSfx = 552;
+				int effectStartOffsetX = 72;
+				int effectBackgroundOffsetX = 8;
+				int effectBackgroundWidth = 80;
+				struct SkillEffect_t
+				{
+					SkillEffect_t() {};
+					~SkillEffect_t() {};
+					std::string tag;
+					std::string title;
+					std::string rawValue;
+					std::string value;
+					int valueCustomWidthOffset = 0;
+					bool bAllowAutoResizeValue = false;
+					bool bAllowRealtimeUpdate = false;
+					real_t marquee[MAXPLAYERS] = { 0.0 };
+					Uint32 marqueeTicks[MAXPLAYERS] = { 0 };
+					bool marqueeCompleted[MAXPLAYERS] = { false };
+					int effectUpdatedAtSkillLevel = -1;
+					int effectUpdatedAtMonsterType = -1;
+					int cachedWidth = -1;
+				};
+				std::vector<SkillEffect_t> effects;
+			};
+			std::vector<SkillEntry_t> skillEntries;
+			std::string iconBgPathDefault = "";
+			std::string iconBgPathNovice = "";
+			std::string iconBgPathExpert = "";
+			std::string iconBgPathLegend = "";
+			std::string iconBgSelectedPathDefault = "";
+			std::string iconBgSelectedPathNovice = "";
+			std::string iconBgSelectedPathExpert = "";
+			std::string iconBgSelectedPathLegend = "";
+			std::string highlightSkillImg = "";
+			std::string selectSkillImg = "";
+			std::string highlightSkillImg_Right = "";
+			std::string selectSkillImg_Right = "";
+			std::vector<std::string> potionNamesToFilter;
+			std::map<Monster, std::vector<Monster>> leadershipAllyTableBase;
+			std::map<Monster, std::vector<Monster>> leadershipAllyTableLegendary;
+			std::map<Monster, std::vector<std::pair<Monster, std::string>>> leadershipAllyTableSpecialRecruitment;
+		} skillSheetData;
+
+		void selectSkill(int skill);
+		void createSkillSheet();
+		void processSkillSheet();
+		void closeSkillSheet();
+		void openSkillSheet();
+		void resetSkillDisplay();
+		static void loadSkillSheetJSON();
+	} skillSheet;
 
 	class HUD_t
 	{
 		Player& player;
 	public:
+	    Frame* controllerFrame = nullptr;
+		Frame* hudFrame = nullptr;
+		Frame* xpFrame = nullptr;
+		Frame* levelupFrame = nullptr;
+		Frame* skillupFrame = nullptr;
+		Frame* hpFrame = nullptr;
+		Frame* mpFrame = nullptr;
+		Frame* minimapFrame = nullptr;
+		Frame* gameTimerFrame = nullptr;
+		Frame* allyStatusFrame = nullptr;
+		Frame* minotaurFrame = nullptr;
+		Frame* minotaurSharedDisplay = nullptr;
+		Frame* minotaurDisplay = nullptr;
+		Frame* mapPromptFrame = nullptr;
+		Frame* allyFollowerFrame = nullptr;
+		Frame* allyFollowerTitleFrame = nullptr;
+		Frame* allyFollowerGlyphFrame = nullptr;
+		Frame* allyPlayerFrame = nullptr;
+		Frame* enemyBarFrame = nullptr;
+		Frame* enemyBarFrameHUD = nullptr;
+		Frame* actionPromptsFrame = nullptr;
+		Frame* worldTooltipFrame = nullptr;
+		Frame* statusEffectFocusedWindow = nullptr;
+		Frame* uiNavFrame = nullptr;
+		Frame* cursorFrame = nullptr;
+		real_t hudDamageTextVelocityX = 0.0;
+		real_t hudDamageTextVelocityY = 0.0;
+		real_t animHideXP = 0.0;
+
 		Entity* weapon = nullptr;
 		Entity* arm = nullptr;
 		Entity* magicLeftHand = nullptr;
@@ -853,12 +1460,147 @@ public:
 		Uint32 bowStartDrawingTick = 0;
 		Uint32 bowDrawBaseTicks = 50;
 #ifdef USE_FMOD
-		FMOD_CHANNEL* bowDrawingSoundChannel = NULL;
-		FMOD_BOOL bowDrawingSoundPlaying = 0;
+		FMOD::Channel* bowDrawingSoundChannel = NULL;
+		bool bowDrawingSoundPlaying = 0;
 #elif defined USE_OPENAL
 		OPENAL_SOUND* bowDrawingSoundChannel = NULL;
 		ALboolean bowDrawingSoundPlaying = 0;
 #endif
+		struct Cursor_t
+		{
+			real_t animateX = 0.0;
+			real_t animateY = 0.0;
+			real_t animateW = 0.0;
+			real_t animateH = 0.0;
+			int animateSetpointX = 0;
+			int animateSetpointY = 0;
+			int animateSetpointW = 0;
+			int animateSetpointH = 0;
+			int animateStartX = 0;
+			int animateStartY = 0;
+			int animateStartW = 0;
+			int animateStartH = 0;
+			Uint32 lastUpdateTick = 0;
+			const int cursorToSlotOffset = 7;
+		};
+		Cursor_t cursor;
+
+		enum AnimateStates : int {
+			ANIMATE_NONE,
+			ANIMATE_MOVING,
+			ANIMATE_LEVELUP_RISING,
+			ANIMATE_LEVELUP_FALLING
+		};
+
+		enum AnimateFlashEffects_t : int {
+			FLASH_ON_DAMAGE,
+			FLASH_ON_RECOVERY
+		};
+
+		struct Bar_t
+		{
+			real_t animateValue = 0.0;
+			real_t animateValue2 = 0.0;
+			real_t animatePreviousSetpoint = 0.0;
+			Sint32 animateSetpoint = 0;
+			Uint32 animateTicks = 0;
+			AnimateStates animateState = ANIMATE_NONE;
+			Uint32 xpLevelups = 0;
+			real_t maxValue = 0.0;
+			real_t fadeIn = 0.0;
+			real_t fadeOut = 0.0;
+			real_t widthMultiplier = 1.0;
+
+			Uint32 flashTicks = 0;
+			Uint32 flashProcessedOnTick = 0;
+			int flashAnimState = -1;
+			AnimateFlashEffects_t flashType = FLASH_ON_DAMAGE;
+		};
+		struct XPInfo_t
+		{
+			enum XPCycleInfo : int
+			{
+				CYCLE_NONE,
+				CYCLE_LVL,
+				CYCLE_XP
+			};
+			XPCycleInfo cycleStatus = CYCLE_NONE;
+			real_t fade = 1.0;
+			Uint32 cycleTicks = 0;
+			Uint32 cycleProcessedOnTick = 0;
+			bool fadeIn = true;
+		};
+		XPInfo_t xpInfo;
+		struct InteractPrompt_t
+		{
+			real_t promptAnim = 0.0;
+			Uint32 activeTicks = 0;
+			Uint32 processedOnTick = 0;
+			real_t cycleAnim = 1.0;
+		};
+		InteractPrompt_t interactPrompt;
+		Bar_t xpBar;
+		Bar_t HPBar;
+		Bar_t MPBar;
+		Bar_t enemyBar;
+		struct FollowerBar_t
+		{
+			Bar_t hpBar;
+			Bar_t mpBar;
+			real_t animx = 0.0;
+			real_t animy = 0.0;
+			bool expired = false;
+			Uint32 expiredTicks = 0;
+			real_t animFade = 0.0;
+			real_t animFadeScroll = 0.0;
+			real_t animFadeScrollDummy = 0.0;
+			bool bInit = false;
+			std::string name = "";
+			std::string customPortraitPath = "";
+			int level = 0;
+			int model = 0;
+			int monsterType = 0;
+			bool selected = false;
+			bool dummy = false;
+		};
+		struct FollowerDisplay_t
+		{
+			static bool infiniteScrolling;
+			static int getNumEntriesToShow(const int playernum);
+			bool getCompactMode(const int playernum);
+			static int numFiniteBars;
+			static int numInfiniteFullsizeBars;
+			static int numInfiniteCompactBars;
+			static int numInfiniteSplitscreenFullsizeBars;
+			static int numInfiniteSplitscreenCompactBars;
+			real_t scrollPercent = 0.0;
+			real_t scrollInertia = 0.0;
+			int scrollSetpoint = 0;
+			int currentScrollRow = 0;
+			real_t scrollAnimateX = 0.0;
+			Uint32 lastUidSelected = 0;
+			real_t animSelected = 0.0;
+			Uint32 scrollTicks = 0;
+			bool isInteractable = false;
+			bool bCompact = false;
+			bool bHalfWidthBars = false;
+			bool bCycleNextDisabled = false;
+			bool bCommandNPCDisabled = false;
+			bool bOpenFollowerMenuDisabled = false;
+		};
+		FollowerDisplay_t followerDisplay;
+		std::vector<std::pair<Uint32, FollowerBar_t>> followerBars;
+		std::vector<std::pair<Uint32, FollowerBar_t>> playerBars;
+
+		enum CompactLayoutModes : int {
+			COMPACT_LAYOUT_INVENTORY,
+			COMPACT_LAYOUT_CHARSHEET
+		};
+		CompactLayoutModes compactLayoutMode = COMPACT_LAYOUT_CHARSHEET;
+		bool bShowUINavigation = false;
+		void closeStatusFxWindow();
+		bool statusFxFocusedWindowActive = false;
+
 		HUD_t(Player& p) : player(p)
 		{};
 		~HUD_t() {};
@@ -877,26 +1619,74 @@ public:
 			shieldSwitch = false;
 		}
 		bool bShowActionPrompts = true;
+		bool bShortHPMPForActionBars = false;
 		enum ActionPrompts : int
 		{
 			ACTION_PROMPT_MAINHAND,
 			ACTION_PROMPT_OFFHAND,
-			ACTION_PROMPT_MAGIC
+			ACTION_PROMPT_MAGIC,
+			ACTION_PROMPT_SNEAK
 		};
-		void drawActionGlyph(SDL_Rect& pos, ActionPrompts prompt) const;
-		void drawActionIcon(SDL_Rect& pos, int skill) const;
-		const int getActionIconForPlayer(ActionPrompts prompt) const;
+		const int getActionIconForPlayer(ActionPrompts prompt, std::string& promptString) const;
+		void processHUD();
+		void updateGameTimer();
+		void updateMinimapPrompts();
+		int XP_FRAME_WIDTH = 650;
+		int XP_FRAME_START_Y = 44;
+		int XP_FRAME_HEIGHT = 34;
+		void updateXPBar();
+		int HPMP_FRAME_WIDTH = 276;
+		int HPMP_FRAME_START_X = 14;
+		int HPMP_FRAME_START_Y = 106;
+		int HPMP_FRAME_HEIGHT = 34;
+		void updateHPBar();
+		void updateMPBar();
+		const int ENEMYBAR_FRAME_WIDTH = 564;
+		const int ENEMYBAR_BAR_WIDTH = 556;
+		const int ENEMYBAR_FRAME_START_Y = 182;
+		const int ENEMYBAR_FRAME_HEIGHT = 44;
+		static int actionPromptOffsetX;
+		static int actionPromptOffsetY;
+		static int actionPromptBackingSize;
+		static int actionPromptIconSize;
+		static int actionPromptIconOpacity;
+		static int actionPromptIconBackingOpacity;
+		int offsetHUDAboveHotbarHeight = 0;
+		void updateEnemyBar(Frame* whichFrame);
+		void updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails);
+		void resetBars();
+		void updateFrameTooltip(Item* item, const int x, const int y, int justify);
+        void finalizeFrameTooltip(Item* item, const int x, const int y, int justify);
+		void updateStatusEffectTooltip();
+		void updateCursor();
+		void updateActionPrompts();
+		void updateWorldTooltipPrompts();
+		void updateUINavigation();
+		void updateMinotaurWarning();
+		void updateStatusEffectFocusedWindow();
+		void updateCursorAnimation(int destx, int desty, int width, int height, bool usingMouse);
+		void setCursorDisabled(bool disabled) { if ( cursorFrame ) { cursorFrame->setDisabled(disabled); } };
+		const char* getCrosshairPath();
 	} hud;
 
 	class Magic_t
 	{
 		Player& player;
 		spell_t* selected_spell = nullptr; //The spell the player has currently selected.
+		spell_t* quick_cast_spell = nullptr; //Spell ready for quick-casting
 	public:
 		spell_t* selected_spell_alternate[NUM_HOTBAR_ALTERNATES] = { nullptr, nullptr, nullptr, nullptr, nullptr };
 		int selected_spell_last_appearance = -1;
 		list_t spellList; //All of the player's spells are stored here.
-
+		bool bHasUnreadNewSpell = false;
+		Uint32 noManaFeedbackTicks = 0;
+		Uint32 noManaProcessedOnTick = 0;
+		Uint32 spellbookUidFromHotbarSlot = 0;
+		void flashNoMana()
+		{
+			noManaFeedbackTicks = 0;
+			noManaProcessedOnTick = ticks;
+		}
 		Magic_t(Player& p) : player(p)
 		{
 			spellList.first = nullptr;
@@ -911,12 +1701,17 @@ public:
 				selected_spell_alternate[c] = nullptr;
 			}
 			selected_spell_last_appearance = -1;
+			quick_cast_spell = nullptr;
 		}
 		void equipSpell(spell_t* spell) 
 		{ 
 			selected_spell = spell; 
 		}
+		void setQuickCastSpellFromInventory(Item* item);
+		bool doQuickCastSpell() { return quick_cast_spell != nullptr; }
+		void resetQuickCastSpell() { quick_cast_spell = nullptr; }
 		spell_t* selectedSpell() const { return selected_spell; }
+		spell_t* quickCastSpell() const { return quick_cast_spell; }
 
 	} magic;
 	class PlayerSettings_t
@@ -949,27 +1744,35 @@ public:
 		void handlePlayerCameraUpdate(bool useRefreshRateDelta);
 		void handlePlayerCameraBobbing(bool useRefreshRateDelta);
 		void handlePlayerMovement(bool useRefreshRateDelta);
+		real_t getMaximumSpeed();
+		real_t getWeightRatio(int weight, Sint32 STR);
+		int getCharacterWeight();
+		int getCharacterEquippedWeight();
+		int getCharacterModifiedWeight(int* customWeight = nullptr);
+		real_t getSpeedFactor(real_t weightratio, Sint32 DEX);
+		real_t getCurrentMovementSpeed();
 		void handlePlayerCameraPosition(bool useRefreshRateDelta);
 		void reset();
 	} movement;
 
 	class MessageZone_t
 	{
-		static const int MESSAGE_X_OFFSET = 5;
 		//Time in seconds before the message starts fading.
 		static const int MESSAGE_PREFADE_TIME = 3600;
 		//How fast the alpha value de-increments
 		static const int MESSAGE_FADE_RATE = 10;
 		TTF_Font* font = ttf16;
-		Uint32 old_sdl_ticks;
+		Uint32 old_sdl_ticks = 0;
 		Player& player;
 	public:
 		static const int ADD_MESSAGE_BUFFER_LENGTH = 256;
 		MessageZone_t(Player& p) : player(p) {};
 		~MessageZone_t() {};
 		std::list<Message*> notification_messages;
+		//Init old_sdl_ticks to determine when to fade messages
+		static void startMessages();
 		//Adds a message to the list of messages.
-		void addMessage(Uint32 color, char* content, ...);
+		void addMessage(Uint32 color, const char* content);
 		//Updates all the messages; fades them & removes them.
 		void updateMessages();
 		//Draw all the messages.
@@ -977,20 +1780,37 @@ public:
 		//Used on program deinitialization.
 		void deleteAllNotificationMessages();
 
-		// leftmost x-anchored location
-		int getMessageZoneStartX();
-		// bottommost y-anchored location
-		int getMessageZoneStartY();
 		//Maximum number of messages displayed on screen at once before the oldest message is automatically deleted.
 		int getMaxTotalLines();
 
+		int MESSAGE_MAX_ENTRIES = 20;
+		Frame* chatFrame = nullptr;
+		real_t animFade = 1.0;
+		bool bottomAlignedMessages = false;
+		bool useBigFont = false;
+		static const char* bigfont;
+		static const char* smallfont;
+		enum ChatAlignment_t : int
+		{
+			ALIGN_CENTER_BOTTOM,
+			ALIGN_LEFT_BOTTOM,
+			ALIGN_LEFT_TOP
+		};
+		ChatAlignment_t messageAlignment = ALIGN_CENTER_BOTTOM;
+		ChatAlignment_t actualAlignment = ALIGN_CENTER_BOTTOM;
+		void createChatbox();
+		void processChatbox();
+
+		Frame* logParentFrame = nullptr;
+		Frame* logWindow = nullptr;
+		void processLogFrame();
 		int fontSize() { return getHeightOfFont(font); }
 	} messageZone;
 
 	class WorldUI_t
 	{
 		Player& player;
-		bool bEnabled = false;
+		bool bEnabled = true;
 		static const int UID_TOOLTIP_ACTIVE = -21;
 		static const int UID_TOOLTIP_DISABLED = -20;
 		enum TooltipView
@@ -1000,7 +1820,131 @@ public:
 			TOOLTIP_VIEW_RESCAN
 		};
 	public:
-		WorldUI_t(Player& p) : player(p)
+		struct WorldTooltipItem_t
+		{
+			Player& player;
+			WorldTooltipItem_t(Player& p) : player(p)
+			{};
+			~WorldTooltipItem_t() 
+			{
+				if ( itemFrame )
+				{
+					delete itemFrame;
+					itemFrame = nullptr;
+				}
+				if ( itemWorldTooltipSurface )
+				{
+					SDL_FreeSurface(itemWorldTooltipSurface);
+					itemWorldTooltipSurface = nullptr;
+				}
+			};
+			Uint32 type = WOODEN_SHIELD;
+			int status = 0;
+			int beatitude = -99;
+			int count = 0;
+			Uint32 appearance = 0;
+			bool identified = false;
+			bool isItemSameAsCurrent(Item* item);
+			SDL_Surface* blitItemWorldTooltip(Item* item);
+			SDL_Surface* itemWorldTooltipSurface = nullptr;
+			Frame* itemFrame = nullptr;
+
+			struct WorldItemSettings_t
+			{
+				static real_t scaleMod;
+				static real_t opacity;
+			};
+		} worldTooltipItem;
+
+		struct WorldTooltipDialogue_t
+		{
+			Player& player;
+			enum DialogueType_t
+			{
+				DIALOGUE_NONE,
+				DIALOGUE_NPC,
+				DIALOGUE_GRAVE,
+				DIALOGUE_SIGNPOST,
+				DIALOGUE_FOLLOWER_CMD,
+				DIALOGUE_BROADCAST,
+				DIALOGUE_ATTACK
+			};
+			struct Dialogue_t
+			{
+				int player = -1;
+				Uint32 parent = 0;
+				real_t x = 0.0;
+				real_t y = 0.0;
+				real_t z = 0.0;
+				bool active = false;
+				bool draw = false;
+				bool init = false;
+				real_t animZ = 0.0;
+				real_t alpha = 0.0;
+				real_t drawScale = 0.0;
+				Uint32 spawnTick = 0;
+				Uint32 updatedThisTick = 0;
+				Uint32 expiryTicks = 0;
+				Field* dialogueField = nullptr;
+				size_t dialogueStringLength = 0;
+				std::string dialogueStrFull = "";
+				std::string dialogueStrCurrent = "";
+				void deactivate();
+				void update();
+				DialogueType_t dialogueType = DIALOGUE_NONE;
+				SDL_Surface* blitDialogueTooltip();
+				SDL_Surface* dialogueTooltipSurface = nullptr;
+				Dialogue_t() {};
+				Dialogue_t(int player)
+				{
+					this->player = player;
+				};
+				~Dialogue_t() 
+				{
+					if ( dialogueField )
+					{
+						delete dialogueField;
+						dialogueField = nullptr;
+					}
+					if ( dialogueTooltipSurface )
+					{
+						SDL_FreeSurface(dialogueTooltipSurface);
+						dialogueTooltipSurface = nullptr;
+					}
+				};
+			};
+			Dialogue_t playerDialogue;
+			std::map<Uint32, Dialogue_t> sharedDialogues;
+			int getPlayerNum() { return player.playernum; }
+			WorldTooltipDialogue_t(Player& p) : player(p)
+			{};
+			~WorldTooltipDialogue_t() {};
+			void update();
+			void createDialogueTooltip(Uint32 uid, DialogueType_t type, char const * const message, ...);
+			struct WorldDialogueSettings_t
+			{
+				struct Setting_t
+				{
+					real_t offsetZ = 0.0;
+					int textDelay = 0;
+					bool followEntity = false;
+					real_t fadeDist = 32.0; // 2 tiles radius
+					Uint32 baseTicksToDisplay = TICKS_PER_SECOND * 3;
+					Uint32 extraTicksPerLine = TICKS_PER_SECOND * 2;
+					int maxWidth = 300;
+					int padx = 8;
+					int pady = 8;
+					int padAfterFirstLine = 0;
+					real_t scaleMod = 0.0;
+				};
+				static std::map<Player::WorldUI_t::WorldTooltipDialogue_t::DialogueType_t, Setting_t> settings;
+			};
+		} worldTooltipDialogue;
+
+		WorldUI_t(Player& p) : 
+			player(p),
+			worldTooltipItem(p),
+			worldTooltipDialogue(p)
 		{};
 		~WorldUI_t() {};
 		TooltipView tooltipView = TOOLTIP_VIEW_FREE;
@@ -1025,6 +1969,7 @@ public:
 		real_t tooltipInRange(Entity& tooltip); // returns distance of added tooltip, otherwise 0.
 		void cycleToNextTooltip();
 		void cycleToPreviousTooltip();
+
 	} worldUI;
 
 	class PaperDoll_t
@@ -1058,16 +2003,14 @@ public:
 		{
 			Uint32 item;
 			PaperDollSlotType slotType;
-			SDL_Rect pos { 0,0,0,0 };
 			PaperDollSlot_t()
 			{
 				item = 0;
 				slotType = SLOT_MAX;
 			}
-			bool bMouseInSlot = false;
 		};
 		std::array<PaperDollSlot_t, kNumPaperDollSlots> dollSlots;
-		const int getSlotSize() const;
+		//const int getSlotSize() const;
 		void initSlots()
 		{
 			returningItemsToInventory.clear();
@@ -1075,7 +2018,6 @@ public:
 			{
 				dollSlots[i].item = 0;
 				dollSlots[i].slotType = static_cast<PaperDollSlotType>(i);
-				dollSlots[i].bMouseInSlot = false;
 			}
 		}
 		void clear()
@@ -1084,9 +2026,6 @@ public:
 			for ( int i = 0; i < kNumPaperDollSlots; ++i )
 			{
 				dollSlots[i].item = 0;
-				dollSlots[i].bMouseInSlot = false;
-				SDL_Rect nullRect{ 0,0,0,0 };
-				dollSlots[i].pos = nullRect;
 			}
 		}
 		void drawSlots();
@@ -1094,10 +2033,20 @@ public:
 		PaperDollSlotType getSlotForItem(const Item& item) const;
 		bool isItemOnDoll(const Item& item) const { return getSlotForItem(item) != SLOT_MAX; }
 		PaperDollSlotType paperDollSlotFromCoordinates(int x, int y) const;
+		void getCoordinatesFromSlotType(PaperDollSlotType slot, int& outx, int& outy) const;
 		void selectPaperDollCoordinatesFromSlotType(PaperDollSlotType slot) const;
-		void warpMouseToPaperDollSlot(PaperDollSlotType slot);
 		std::vector<Uint32> returningItemsToInventory;
 		void warpMouseToMostRecentReturnedInventoryItem();
+		bool portraitActiveToEdit = false;
+		real_t portraitRotationInertia = 0.0;
+		real_t portraitRotationPercent = 0.0;
+		real_t portraitYaw = (330) * PI / 180;
+		void resetPortrait()
+		{
+			portraitRotationInertia = 0.0;
+			portraitRotationPercent = 0.0;
+			portraitYaw = (330) * PI / 180;
+		}
 	} paperDoll;
 
 	class Hotbar_t {
@@ -1105,6 +2054,7 @@ public:
 		std::array<std::array<hotbar_slot_t, NUM_HOTBAR_SLOTS>, NUM_HOTBAR_ALTERNATES> hotbar_alternate;
 		Player& player;
 	public:
+		std::array<Frame*, NUM_HOTBAR_SLOTS> hotbarSlotFrames;
 		int current_hotbar = 0;
 		bool hotbarShapeshiftInit[NUM_HOTBAR_ALTERNATES] = { false, false, false, false, false };
 		int swapHotbarOnShapeshift = 0;
@@ -1112,12 +2062,28 @@ public:
 		int magicBoomerangHotbarSlot = -1;
 		Uint32 hotbarTooltipLastGameTick = 0;
 		SDL_Rect hotbarBox;
+		Frame* hotbarFrame = nullptr;
+		real_t selectedSlotAnimateCurrentValue = 0.0;
+		bool isInteractable = false;
+
+		struct Cursor_t
+		{
+			real_t animateX = 0.0;
+			real_t animateY = 0.0;
+			int animateSetpointX = 0;
+			int animateSetpointY = 0;
+			int animateStartX = 0;
+			int animateStartY = 0;
+			Uint32 lastUpdateTick = 0;
+			const int cursorToSlotOffset = 7;
+		};
+		Cursor_t shootmodeCursor;
 
 		// temp stuff
 		bool useHotbarRadialMenu = false;
 		bool useHotbarFaceMenu = true;
 		bool faceMenuInvertLayout = false;
-		bool faceMenuQuickCastEnabled = true;
+		bool faceMenuQuickCastEnabled = false;
 		bool faceMenuQuickCast = true;
 		bool faceMenuAlternateLayout = false;
 		enum FaceMenuGroup : int
@@ -1131,17 +2097,21 @@ public:
 		int faceButtonTopYPosition = yres;
 		int radialHotbarSlots = NUM_HOTBAR_SLOTS;
 		int radialHotbarProgress = 0;
-		// end temp stuff
+		int oldSlotFrameTrackSlot = -1;
+		
+		real_t animHide = 0.0;
 
 		std::array<SDL_Rect, NUM_HOTBAR_SLOTS> faceButtonPositions;
-		const int getStartX() const
-		{
-			return (player.camera_midx() - ((NUM_HOTBAR_SLOTS / 2) * getSlotSize()));
-		}
-		const int getSlotSize() const { return hotbar_img->w * uiscale_hotbar; }
+		const int getSlotSize() const { return 48; }
+		const int getHotbarStartY1() const { return -106; }
+		const int getHotbarStartY2() const { return -96; }
 
 		Hotbar_t(Player& p) : player(p)
 		{
+			for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+			{
+				hotbarSlotFrames[i] = nullptr;
+			}
 			clear();
 		};
 		~Hotbar_t() {};
@@ -1160,7 +2130,7 @@ public:
 			faceButtonTopYPosition = yres;
 			swapHotbarOnShapeshift = 0;
 			current_hotbar = 0;
-			hotbarHasFocus = false;
+			//hotbarHasFocus = false;
 			magicBoomerangHotbarSlot = -1;
 			hotbarTooltipLastGameTick = 0;
 			for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
@@ -1170,9 +2140,11 @@ public:
 			for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 			{
 				hotbar[i].item = 0;
+				hotbar[i].resetLastItem();
 				for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
 				{
 					hotbar_alternate[j][i].item = 0;
+					hotbar_alternate[j][i].resetLastItem();
 				}
 			}
 		}
@@ -1180,23 +2152,55 @@ public:
 		auto& slots() { return hotbar; };
 		auto& slotsAlternate(int alternate) { return hotbar_alternate[alternate]; };
 		auto& slotsAlternate() { return hotbar_alternate; }
-		void selectHotbarSlot(int slot)
-		{
-			if ( slot < 0 )
-			{
-				slot = NUM_HOTBAR_SLOTS - 1;
-			}
-			if ( slot >= NUM_HOTBAR_SLOTS )
-			{
-				slot = 0;
-			}
-			current_hotbar = slot;
-			hotbarHasFocus = true;
-		}
+		void selectHotbarSlot(int slot);
 		void initFaceButtonHotbar();
-		void drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos);
 		FaceMenuGroup getFaceMenuGroupForSlot(int hotbarSlot);
+		void processHotbar();
+		void updateHotbar();
+		Frame* getHotbarSlotFrame(const int hotbarSlot);
+		bool warpMouseToHotbar(const int hotbarSlot, Uint32 flags);
+		void updateSelectedSlotAnimation(int destx, int desty, int width, int height, bool usingMouse);
+		void updateCursor();
 	} hotbar;
+
+	class Minimap_t
+	{
+		Player& player;
+	public:
+		static std::vector<std::pair<std::string, std::string>> mapDetails;
+		Minimap_t(Player& p) : player(p)
+		{};
+		~Minimap_t() {};
+
+		bool big = false;           // "big" mode (centered)
+		real_t real_scale = 0.0;    // canonical scale
+		real_t scale = 0.0;         // momentary scale
+		real_t scale_ang = 0.0;     // used to interpolate
+		bool animating = false;		// if in the middle of scaling animation
+		SDL_Rect minimapPos;
+		static SDL_Rect sharedMinimapPos;
+		Frame* mapParentFrame = nullptr;
+		Frame* mapWindow = nullptr;
+		bool bScalePromptEnabled = false;
+		bool bExpandPromptEnabled = false;
+		void processMapFrame();
+		static int fullSize;
+		static int compactSize;
+		static bool bUpdateMainMenuSettingScale;
+		static real_t mainMenuSettingScale;
+		static int compact2pVerticalSize;
+		static real_t fullBigScale;
+		static real_t compactBigScale;
+		static real_t compact2pVerticalBigScale;
+	} minimap;
+
+	static void soundMovement();
+	static void soundActivate();
+	static void soundCancel();
+	static void soundModuleNavigation();
+	static void soundStatusOpen();
+	static void soundStatusClose();
+	static void soundHotbarShootmodeMovement();
 };
 
 extern Player* players[MAXPLAYERS];

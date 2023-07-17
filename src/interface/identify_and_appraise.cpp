@@ -217,11 +217,11 @@ SDL_Surface* identifyGUI_img;
 //			char* window_name;
 //			if (identifygui_appraising)
 //			{
-//				window_name = language[317];
+//				window_name = Language::get(317);
 //			}
 //			else
 //			{
-//				window_name = language[318];
+//				window_name = Language::get(318);
 //			}
 //			ttfPrintText(ttf8, (getIdentifyGUIStartX(player) + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), 
 //				getIdentifyGUIStartY(player) + 4, window_name);
@@ -357,6 +357,41 @@ SDL_Surface* identifyGUI_img;
 //	}
 //} //updateIdentifyGUI()
 
+bool Player::Inventory_t::Appraisal_t::appraisalPossible(Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+
+	if ( item->identified ) { return false; }
+
+	if ( stats[player.playernum]->PROFICIENCIES[PRO_APPRAISAL] < 100 )
+	{
+		if ( item->type == GEM_GLASS )
+		{
+			if ( (stats[player.playernum]->PROFICIENCIES[PRO_APPRAISAL] 
+				+ statGetPER(stats[player.playernum], player.entity) * 5) >= 100 )
+			{
+				return true;
+			}
+		}
+		else
+		{
+			if ( (stats[player.playernum]->PROFICIENCIES[PRO_APPRAISAL]
+				+ statGetPER(stats[player.playernum], player.entity) * 5) >= items[item->type].value / 10 )
+			{
+				return true;
+			}
+		}
+	}
+	else
+	{
+		return true;
+	}
+	return false;
+}
+
 void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 {
 	if (!item)
@@ -365,14 +400,23 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 	}
 	if (item->identified)
 	{
-		messagePlayer(player.playernum, language[319], item->getName());
+		messagePlayer(player.playernum, MESSAGE_INVENTORY, Language::get(319), item->getName());
+		old_item = 0;
+		playSoundPlayer(player.playernum, 90, 64);
+		return;
+	}
+	else if ( !appraisalPossible(item) )
+	{
+		messagePlayer(player.playernum, MESSAGE_INVENTORY, Language::get(3240), item->description());
+		old_item = 0;
+		playSoundPlayer(player.playernum, 90, 64);
 		return;
 	}
 
 	/*if (!identifygui_appraising)
 	{
 		item->identified = true;
-		messagePlayer(clientnum, language[320], item->description());
+		messagePlayer(clientnum, Language::get(320), item->description());
 		if ( players[player]->inventoryUI.appraisal.timer > 0 
 			&& players[player]->inventoryUI.appraisal.current_item
 			&& players[player]->inventoryUI.appraisal.current_item == item->uid)
@@ -389,7 +433,8 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 	if ( stats[player.playernum]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
 	{
 		item->identified = true;
-		messagePlayer(player.playernum, language[320], item->description());
+		item->notifyIcon = true;
+		messagePlayer(player.playernum, MESSAGE_INVENTORY, Language::get(320), item->description());
 		if ( timer > 0 && current_item != 0	&& current_item == item->uid)
 		{
 			timer = 0;
@@ -402,15 +447,65 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 	}
 	else
 	{
-		messagePlayer(player.playernum, language[321], item->description());
+		Item* oldItemToUpdate = nullptr;
+		bool doMessage = true;
+		if ( current_item > 0 )
+		{
+			oldItemToUpdate = uidToItem(current_item);
+		}
+		else
+		{
+			if ( old_item == item->uid ) // auto appraising picked the same item
+			{
+				doMessage = false; // cut back on appraisal spam
+			}
+		}
+
+		if ( doMessage )
+		{
+			messagePlayer(player.playernum, MESSAGE_INVENTORY, Language::get(321), item->description());
+		}
 
 		//Tick the timer in act player.
 		//Once the timer hits zero, roll to see if the item is identified.
 		//If it is identified, identify it and print out a message for the player.
 		timer = getAppraisalTime(item);
 		timermax = timer;
+		if ( oldItemToUpdate && current_item != item->uid )
+		{
+			bool itemOnPaperDoll = false;
+			if ( player.paperDoll.enabled && itemIsEquipped(oldItemToUpdate, player.playernum) )
+			{
+				auto slotType = player.paperDoll.getSlotForItem(*oldItemToUpdate);
+				if ( slotType != Player::PaperDoll_t::SLOT_MAX )
+				{
+					itemOnPaperDoll = true;
+				}
+			}
+
+			int itemx = oldItemToUpdate->x;
+			int itemy = oldItemToUpdate->y;
+			if ( itemOnPaperDoll )
+			{
+				player.paperDoll.getCoordinatesFromSlotType(player.paperDoll.getSlotForItem(*oldItemToUpdate), itemx, itemy);
+			}
+
+			if ( auto slotFrame = player.inventoryUI.getItemSlotFrame(oldItemToUpdate, itemx, itemy) )
+			{
+				if ( auto appraisalFrame = slotFrame->findFrame("appraisal frame") )
+				{
+					appraisalFrame->setDisabled(true);
+				}
+			}
+		}
 		current_item = item->uid;
+		if ( doMessage )
+		{
+			animAppraisal = PI;
+			animStartTick = ticks;
+		}
 	}
+	old_item = 0;
 }
 
 int Player::Inventory_t::Appraisal_t::getAppraisalTime(Item* item)
@@ -420,6 +515,23 @@ int Player::Inventory_t::Appraisal_t::getAppraisalTime(Item* item)
 	if ( item->type != GEM_GLASS )
 	{
 		appraisal_time = (items[item->type].value * 60) / (stats[this->player.playernum]->PROFICIENCIES[PRO_APPRAISAL] + 1);    // time in ticks until item is appraised
+		if ( stats[player.playernum] && stats[player.playernum]->mask && stats[player.playernum]->mask->type == MONOCLE )
+		{
+			real_t mult = 1.0;
+			if ( stats[player.playernum]->mask->beatitude == 0 )
+			{
+				mult = .5;
+			}
+			else if ( stats[player.playernum]->mask->beatitude > 0 || shouldInvertEquipmentBeatitude(stats[player.playernum]) )
+			{
+				mult = .25;
+			}
+			else if ( stats[player.playernum]->mask->beatitude < 0 )
+			{
+				mult = 2.0;
+			}
+			appraisal_time *= mult;
+		}
 		int playerCount = 0;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
@@ -441,6 +553,23 @@ int Player::Inventory_t::Appraisal_t::getAppraisalTime(Item* item)
 	else
 	{
 		appraisal_time = (1000 * 60) / (stats[this->player.playernum]->PROFICIENCIES[PRO_APPRAISAL] + 1);    // time in ticks until item is appraised+-
+		if ( stats[player.playernum] && stats[player.playernum]->mask && stats[player.playernum]->mask->type == MONOCLE )
+		{
+			real_t mult = 1.0;
+			if ( stats[player.playernum]->mask->beatitude == 0 )
+			{
+				mult = .5;
+			}
+			else if ( stats[player.playernum]->mask->beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player.playernum]) )
+			{
+				mult = .25;
+			}
+			else if ( stats[player.playernum]->mask->beatitude < 0 )
+			{
+				mult = 2.0;
+			}
+			appraisal_time *= mult;
+		}
 		int playerCount = 0;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{

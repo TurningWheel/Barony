@@ -21,6 +21,7 @@ public:
 
 	const char*		getName() const { return name.c_str(); }
 	TTF_Font*		getTTF() { return font; }
+	int				getOutline() { return outlineSize; }
 
 	//! get the size of the given text string in pixels
 	//! @param str the utf-8 string to get the size of
@@ -30,8 +31,9 @@ public:
 	int sizeText(const char* str, int* out_w, int* out_h) const;
 
 	//! get the height of the font
+	//! @param include the size of the outline
 	//! @return the font height in pixels
-	int height() const;
+	int height(bool withOutline = true) const;
 
 	//! get a Font object from the engine
 	//! @param name The Font name
@@ -45,4 +47,5 @@ private:
 	std::string name;
 	TTF_Font* font = nullptr;
 	int pointSize = 16;
+	int outlineSize = 0;
 };

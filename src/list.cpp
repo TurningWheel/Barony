@@ -24,6 +24,10 @@
 
 void list_FreeAll(list_t* list)
 {
+	if ( !list )
+	{
+		return;
+	}
 	node_t* node, *nextnode;
 	if (list == map.entities)
 		map.entities_map.clear();
@@ -52,7 +56,25 @@ void list_RemoveNode(node_t* node)
 	}
 	if (node->list && node->list == map.entities)
 	{
-		map.entities_map.erase(((Entity*)node->element)->getUID());
+		Entity* entity = ((Entity*)node->element);
+		map.entities_map.erase(entity->getUID());
+#ifndef EDITOR
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( FollowerMenu[i].recentEntity == entity )
+			{
+				FollowerMenu[i].recentEntity = nullptr;
+			}
+			if ( FollowerMenu[i].followerToCommand == entity )
+			{
+				FollowerMenu[i].followerToCommand = nullptr;
+			}
+			if ( FollowerMenu[i].entityToInteractWith == entity )
+			{
+				FollowerMenu[i].entityToInteractWith = nullptr;
+			}
+		}
+#endif // !EDITOR
 	}
 
 #ifndef EDITOR
@@ -61,6 +83,29 @@ void list_RemoveNode(node_t* node)
 		if ( !players[i] || !players[i]->isLocalPlayer() )
 		{
 			continue;
+		}
+		if ( openedChest[i] && inputs.getUIInteraction(i)->selectedItem )
+		{
+			list_t* chest_inventory = nullptr;
+			if ( multiplayer == CLIENT )
+			{
+				chest_inventory = &chestInv[i];
+			}
+			else if ( openedChest[i]->children.first && openedChest[i]->children.first->element )
+			{
+				chest_inventory = (list_t*)openedChest[i]->children.first->element;
+			}
+
+			if ( chest_inventory )
+			{
+				Item* tmp = ((Item*)node->element);
+				if ( tmp == inputs.getUIInteraction(i)->selectedItem )
+				{
+					// important! crashes occur when deleting items you've selected...
+					inputs.getUIInteraction(i)->selectedItem = nullptr;
+					inputs.getUIInteraction(i)->selectedItemFromChest = 0;
+				}
+			}
 		}
 		if ( stats[i] && node->list && node->list == &stats[i]->inventory )
 		{
@@ -71,6 +116,7 @@ void list_RemoveNode(node_t* node)
 				{
 					// important! crashes occur when deleting items you've selected...
 					inputs.getUIInteraction(i)->selectedItem = nullptr; 
+					inputs.getUIInteraction(i)->selectedItemFromChest = 0;
 					// printlog("Reset selectedItem");
 				}
 				if ( GenericGUI[i].isItemUsedForCurrentGUI(*tmp) )
@@ -409,6 +455,9 @@ list_t* list_CopyNew(list_t* srclist)
 
 Uint32 list_Index(node_t* node)
 {
+	if (node == nullptr) {
+		return UINT32_MAX;
+	}
 	node_t* tempnode;
 	int i;
 
@@ -433,14 +482,11 @@ Uint32 list_Index(node_t* node)
 
 node_t* list_Node(list_t* list, int index)
 {
-	if ( index < 0 || index >= list_Size(list) )
-	{
+	if (index < 0) {
 		return NULL;
 	}
-
-	int i;
+    int i = 0;
 	node_t* node = list->first;
-
-	for ( i = 0; i != index; node = node->next, i++ );
+	for (; i != index && node; node = node->next, i++ );
 	return node;
 }

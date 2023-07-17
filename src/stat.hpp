@@ -12,14 +12,12 @@
 #pragma once
 
 #ifdef USE_FMOD
-#include "fmod.h"
+#include <fmod.hpp>
 #endif
 
-class Item;
+#include "items.hpp"
+
 enum Monster : int;
-//enum Item;
-//enum Status;
-//enum Category;
 
 
 // effects
@@ -174,9 +172,38 @@ static const int STAT_FLAG_MONSTER_DISABLE_HC_SCALING = 26;
 
 typedef enum
 {
-	MALE,
-	FEMALE
+	MALE = 0,
+	FEMALE = 1
 } sex_t;
+
+enum KilledBy {
+    UNKNOWN,
+    MONSTER,
+    ITEM,
+    ALLY_BETRAYAL,
+    ATTEMPTED_ROBBERY,
+    TRESPASSING,
+    TRAP_ARROW,
+    TRAP_BEAR,
+    TRAP_SPIKE,
+    TRAP_MAGIC,
+    TRAP_BOMB,
+    BOULDER,
+    LAVA,
+    WATER,
+    FAILED_INVOCATION,
+    STARVATION,
+    POISON,
+    BLEEDING,
+    BURNING_TO_CRISP,
+    STRANGULATION,
+    FUNNY_POTION,
+    BOTTOMLESS_PIT,
+    NO_FUEL,
+    FOUNTAIN,
+    SINK,
+    FAILED_ALCHEMY,
+};
 
 class Stat
 {
@@ -185,8 +212,16 @@ public:
 	sex_t sex;
 	Uint32 appearance;
 	char name[128];
+
+	// uid of the entity which killed me via burning/poison (for rewarding XP to them)
+	Uint32 poisonKiller;
+
+	// Obituary stuff
 	char obituary[128];
-	Uint32 poisonKiller; // uid of the entity which killed me via burning/poison
+	KilledBy killer;
+	Monster killer_monster;
+	ItemType killer_item;
+	std::string killer_name;
 
 	// attributes
 	Sint32 HP, MAXHP, OLDHP;
@@ -252,12 +287,21 @@ public:
 
 	// misc
 #ifdef USE_FMOD
-	FMOD_CHANNEL* monster_sound; //TODO: Do?
+	FMOD::Channel* monster_sound;
 #else
 	void* monster_sound;
 #endif
 	int monster_idlevar;
-
+	std::map<std::string, std::string> attributes;
+	struct Lootbag_t
+	{
+		int spawn_x = 0;
+		int spawn_y = 0;
+		bool spawnedOnGround = false;
+		bool looted = false;
+		std::vector<Item> items;
+	};
+	std::map<Uint32, Lootbag_t> player_lootbags;
 	list_t magic_effects; //Makes things like the invisibility spell work.
 	Stat(Sint32 sprite);
 	~Stat();
@@ -267,6 +311,7 @@ public:
 	void copyNPCStatsAndInventoryFrom(Stat& src);
 	void printStats();
 	Sint32 EDITOR_ITEMS[ITEM_SLOT_NUM];
+	int pickRandomEquippedItemToDegradeOnHit(Item** returnItem, bool excludeWeapon, bool excludeShield, bool excludeArmor, bool excludeJewelry);
 	int pickRandomEquippedItem(Item** returnItem, bool excludeWeapon, bool excludeShield, bool excludeArmor, bool excludeJewelry);
 	enum MonsterForceAllegiance : int
 	{
@@ -275,6 +320,24 @@ public:
 		MONSTER_FORCE_PLAYER_ENEMY,
 		MONSTER_FORCE_PLAYER_RECRUITABLE
 	};
+	int getPassiveShieldBonus(bool checkShield) const;
+	int getActiveShieldBonus(bool checkShield) const;
+	std::string getAttribute(std::string key) const
+	{ 
+		if ( attributes.find(key) != attributes.end() )
+		{
+			return attributes.at(key);
+		}
+		else
+		{
+			return "";
+		}
+	}
+	void setAttribute(std::string key, std::string value);
+	bool statusEffectRemovedByCureAilment(const int effect, Entity* my);
+	void addItemToLootingBag(const int player, const real_t x, const real_t y, Item& item);
+	Uint32 getLootingBagKey(const int player);
+	static bool emptyLootingBag(const int player, Uint32 key);
 };
 extern Stat* stats[MAXPLAYERS];
 
@@ -285,4 +348,4 @@ inline bool skillCapstoneUnlocked(int player, int proficiency)
 
 void setDefaultMonsterStats(Stat* stats, int sprite);
 bool isMonsterStatsDefault(Stat& myStats);
-char* getSkillLangEntry(int skill);
+const char* getSkillLangEntry(int skill);

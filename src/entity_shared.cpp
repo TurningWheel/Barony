@@ -142,7 +142,17 @@ int checkSpriteType(Sint32 sprite)
 		return 22;
 	case 1:
 		return 23;
-		break;
+	case 169:
+		// statue
+		return 24;
+	case 177:
+		// teleport shrine
+		return 25;
+	case 178:
+		// generic spell shrine
+		return 26;
+	case 179:
+		return 27;
 	default:
 		return 0;
 		break;
@@ -417,7 +427,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"tool_magic_scrap",
 	"tool_tinkering_kit",
 	"tool_sentrybot",
-	"tool_repairkit",
+	"tool_detonated_charge",
 	"tool_fire_bomb",
 	"tool_sleep_bomb",
 	"tool_freeze_bomb",
@@ -430,7 +440,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"enchanted_feather",
 	"punisher_hood",
 	"scroll_charging",
-	"quiver_sharp",
+	"quiver_silver",
 	"quiver_pierce",
 	"quiver_lightweight",
 	"quiver_fire",
@@ -442,6 +452,8 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"heavy_crossbow",
 	"boomerang",
 	"scroll_conjurearrow",
+	"monocle",
+	"tool_player_loot_bag",
 	""
 };
 
@@ -610,7 +622,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"tool_torch",
 		"tool_lantern",
 		"tool_crystalshard",
-		"quiver_sharp",
+		"quiver_silver",
 		"quiver_pierce",
 		"quiver_lightweight",
 		"quiver_fire",
@@ -698,6 +710,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"tool_glasses",
 		"tool_blindfold_focus",
 		"tool_blindfold_telepathy",
+		"monocle",
 		""
 	},
 	{
@@ -889,7 +902,19 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"SPELLBOT",
 	"DUMMYBOT",
 	"GYROBOT",
-	"UNUSED"
+	"UNUSED",
+	"STATUE ANIMATOR",
+	"STATUE",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"TELEPORT SHRINE",
+	"SPELL SHRINE",
+	"COLLIDER DECORATION"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][16] =
@@ -1172,7 +1197,16 @@ char tileEditorNameStrings[NUM_EDITOR_TILES][44] =
 	"Sky.png",
 	"SkyCrackle.png",
 	"SkyCrackle_B.png",
-	"Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me",
+	"Shopsign_armsnarmor.png", 
+	"Shopsign_book.png", 
+	"Shopsign_deli.png", 
+	"Shopsign_hardware.png", 
+	"Shopsign_hat.png", 
+	"Shopsign_hunting.png", 
+	"Shopsign_jewelry.png",
+	"Shopsign_magicstaff.png", 
+	"Shopsign_potion.png",
+	"Transparent.png", 
 	"Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me",
 	"Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me",
 	"Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me", "Replace Me",
@@ -1496,11 +1530,17 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 		{
 			// copy old entity attributes to newly created.
 			entityNew->ceilingTileModel = entityToCopy->ceilingTileModel;
+			entityNew->ceilingTileDir = entityToCopy->ceilingTileDir;
+			entityNew->ceilingTileAllowTrap = entityToCopy->ceilingTileAllowTrap;
+			entityNew->ceilingTileBreakable = entityToCopy->ceilingTileBreakable;
 		}
 		else
 		{
 			// set default new entity attributes.
 			entityNew->ceilingTileModel = 0;
+			entityNew->ceilingTileDir = 0;
+			entityNew->ceilingTileAllowTrap = 0;
+			entityNew->ceilingTileBreakable = 0;
 		}
 	}
 	// spell trap
@@ -1785,6 +1825,92 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 		{
 			// set default new entity attributes.
 			entityNew->playerStartDir = 0;
+		}
+	}
+	else if ( spriteType == 24 ) // statue
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->statueDir = entityToCopy->statueDir;
+			entityNew->statueId = entityToCopy->statueId;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->statueDir = 0;
+			entityNew->statueId = 0;
+		}
+	}
+	else if ( spriteType == 25 ) // teleport shrine
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->shrineDir = entityToCopy->shrineDir;
+			entityNew->shrineZ = entityToCopy->shrineZ;
+			entityNew->shrineDestXOffset = entityToCopy->shrineDestXOffset;
+			entityNew->shrineDestYOffset = entityToCopy->shrineDestYOffset;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->shrineDir = 0;
+			entityNew->shrineZ = 0;
+			entityNew->shrineDestXOffset = 0;
+			entityNew->shrineDestYOffset = 0;
+		}
+	}
+	else if ( spriteType == 26 ) // spell shrine
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->shrineDir = entityToCopy->shrineDir;
+			entityNew->shrineZ = entityToCopy->shrineZ;
+			entityNew->shrineDestXOffset = entityToCopy->shrineDestXOffset;
+			entityNew->shrineDestYOffset = entityToCopy->shrineDestYOffset;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->shrineDir = 0;
+			entityNew->shrineZ = 0;
+			entityNew->shrineDestXOffset = 0;
+			entityNew->shrineDestYOffset = 0;
+		}
+	}
+	else if ( spriteType == 27 ) // collider deco
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->colliderDecorationModel = entityToCopy->colliderDecorationModel;
+			entityNew->colliderDecorationRotation = entityToCopy->colliderDecorationRotation;
+			entityNew->colliderDecorationHeightOffset = entityToCopy->colliderDecorationHeightOffset;
+			entityNew->colliderDecorationXOffset = entityToCopy->colliderDecorationXOffset;
+			entityNew->colliderDecorationYOffset = entityToCopy->colliderDecorationYOffset;
+			entityNew->colliderHasCollision = entityToCopy->colliderHasCollision;
+			entityNew->colliderSizeX = entityToCopy->colliderSizeX;
+			entityNew->colliderSizeY = entityToCopy->colliderSizeY;
+			entityNew->colliderMaxHP = entityToCopy->colliderMaxHP;
+			entityNew->colliderDiggable = entityToCopy->colliderDiggable;
+			entityNew->colliderDamageTypes = entityToCopy->colliderDamageTypes;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->colliderDecorationModel = 0;
+			entityNew->colliderDecorationRotation = 0;
+			entityNew->colliderDecorationHeightOffset = 0;
+			entityNew->colliderDecorationXOffset = 0;
+			entityNew->colliderDecorationYOffset = 0;
+			entityNew->colliderHasCollision = 1;
+			entityNew->colliderSizeX = 0;
+			entityNew->colliderSizeY = 0;
+			entityNew->colliderMaxHP = 0;
+			entityNew->colliderDiggable = 0;
+			entityNew->colliderDamageTypes = 0;
 		}
 	}
 

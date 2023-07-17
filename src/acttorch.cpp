@@ -13,11 +13,12 @@
 #include "game.hpp"
 #include "stat.hpp"
 #include "items.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
 #include "interface/interface.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -50,12 +51,17 @@ void actTorch(Entity* my)
 		TORCH_FIRE = 480;
 		playSoundEntityLocal( my, 133, 32 );
 	}
-	Entity* entity = spawnFlame(my, SPRITE_FLAME);
-	entity->x += .25 * cos(my->yaw);
-	entity->y += .25 * sin(my->yaw);
-	entity->z -= 2.5;
-	entity->flags[GENIUS] = false;
-	entity->setUID(-3);
+	if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
+	{
+		if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
+		{
+			entity->x += .25 * cos(my->yaw);
+			entity->y += .25 * sin(my->yaw);
+			entity->z -= 2.5;
+			entity->flags[GENIUS] = false;
+			entity->setUID(-3);
+		}
+	}
 
 	// check wall behind me. (e.g mined or destroyed then remove torch)
 	int checkx = my->x - cos(my->yaw) * 8;
@@ -72,7 +78,7 @@ void actTorch(Entity* my)
 	// lighting
 	if ( !TORCH_LIGHTING )
 	{
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 7, 192);
+		my->light = addLight(my->x / 16, my->y / 16, "torch_wall");
 		TORCH_LIGHTING = 1;
 	}
 	if ( flickerLights )
@@ -87,14 +93,14 @@ void actTorch(Entity* my)
 		if (TORCH_LIGHTING == 1)
 		{
 			my->removeLightField();
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 7, 192);
+			my->light = addLight(my->x / 16, my->y / 16, "torch_wall");
 		}
 		else
 		{
 			my->removeLightField();
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 7, 174);
+			my->light = addLight(my->x / 16, my->y / 16, "torch_wall_flicker");
 		}
-		TORCH_FLICKER = 2 + rand() % 7;
+		TORCH_FLICKER = 2 + local_rng.rand() % 7;
 	}
 
 	// using
@@ -102,7 +108,7 @@ void actTorch(Entity* my)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+			if ( selectedEntity[i] == my || client_selected[i] == my )
 			{
 				if (inrange[i])
 				{
@@ -118,11 +124,11 @@ void actTorch(Entity* my)
 					if ( trySalvage )
 					{
 						// auto salvage this item, don't pick it up.
-						messagePlayer(i, language[589]);
+						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(589));
 						bool salvaged = false;
-						if ( GenericGUI[i].isItemSalvageable(item, i) )
+						if ( GenericGUI[0].isItemSalvageable(item, i) ) // let the server [0] salvage for client i
 						{
-							if ( GenericGUI[i].tinkeringSalvageItem(item, true, i) )
+							if ( GenericGUI[0].tinkeringSalvageItem(item, true, i) ) // let the server [0] salvage for client i
 							{
 								salvaged = true;
 							}
@@ -132,7 +138,7 @@ void actTorch(Entity* my)
 						{
 							if ( players[i] != nullptr && players[i]->entity != nullptr )
 							{
-								playSoundEntity(players[i]->entity, 35 + rand() % 3, 64);
+								playSoundEntity(players[i]->entity, 35 + local_rng.rand() % 3, 64);
 							}
 							free(item);
 							/*if ( GenericGUI.tinkeringKitRollIfShouldBreak() )
@@ -152,7 +158,7 @@ void actTorch(Entity* my)
 					}
 					else
 					{
-						messagePlayer(i, language[589]);
+						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(589));
 						list_RemoveNode(my->light->node);
 						list_RemoveNode(my->mynode);
 						itemPickup(i, item);
@@ -198,12 +204,15 @@ void actCrystalShard(Entity* my)
 		TORCH_FIRE = 480;
 		playSoundEntityLocal(my, 133, 32);
 	}
-	Entity* entity = spawnFlame(my, SPRITE_CRYSTALFLAME);
-	entity->x += .25 * cos(my->yaw);
-	entity->y += .25 * sin(my->yaw);
-	entity->z -= 2.5;
-	entity->flags[GENIUS] = false;
-	entity->setUID(-3);
+	if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
+	{
+	    /*Entity* entity = spawnFlame(my, SPRITE_CRYSTALFLAME);
+	    entity->x += .25 * cos(my->yaw);
+	    entity->y += .25 * sin(my->yaw);
+	    entity->z -= 2.5;
+	    entity->flags[GENIUS] = false;
+	    entity->setUID(-3);*/
+	}
 
 	// check wall behind me. (e.g mined or destroyed then remove torch)
 	int checkx = my->x - cos(my->yaw) * 8;
@@ -220,7 +229,7 @@ void actCrystalShard(Entity* my)
 	// lighting
 	if ( !TORCH_LIGHTING )
 	{
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, 128);
+		my->light = addLight(my->x / 16, my->y / 16, "crystal_shard_wall");
 		TORCH_LIGHTING = 1;
 	}
 
@@ -236,14 +245,14 @@ void actCrystalShard(Entity* my)
 		if ( TORCH_LIGHTING == 1 )
 		{
 			my->removeLightField();
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, 128);
+			my->light = addLight(my->x / 16, my->y / 16, "crystal_shard_wall");
 		}
 		else
 		{
 			my->removeLightField();
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, 112);
+			my->light = addLight(my->x / 16, my->y / 16, "crystal_shard_wall_flicker");
 		}
-		TORCH_FLICKER = 2 + rand() % 7;
+		TORCH_FLICKER = 2 + local_rng.rand() % 7;
 	}
 
 	// using
@@ -251,7 +260,7 @@ void actCrystalShard(Entity* my)
 	{
 		for ( i = 0; i < MAXPLAYERS; i++ )
 		{
-			if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+			if ( selectedEntity[i] == my || client_selected[i] == my )
 			{
 				if ( inrange[i] )
 				{
@@ -267,11 +276,11 @@ void actCrystalShard(Entity* my)
 					if ( trySalvage )
 					{
 						// auto salvage this item, don't pick it up.
-						messagePlayer(i, language[589]);
+						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(589));
 						bool salvaged = false;
-						if ( GenericGUI[i].isItemSalvageable(item, i) )
+						if ( GenericGUI[0].isItemSalvageable(item, i) )  // let the server [0] salvage for client i
 						{
-							if ( GenericGUI[i].tinkeringSalvageItem(item, true, i) )
+							if ( GenericGUI[0].tinkeringSalvageItem(item, true, i) )  // let the server [0] salvage for client i
 							{
 								salvaged = true;
 							}
@@ -281,7 +290,7 @@ void actCrystalShard(Entity* my)
 						{
 							if ( players[i] != nullptr && players[i]->entity != nullptr )
 							{
-								playSoundEntity(players[i]->entity, 35 + rand() % 3, 64);
+								playSoundEntity(players[i]->entity, 35 + local_rng.rand() % 3, 64);
 							}
 							free(item);
 							/*if ( GenericGUI.tinkeringKitRollIfShouldBreak() )
@@ -301,7 +310,7 @@ void actCrystalShard(Entity* my)
 					}
 					else
 					{
-						messagePlayer(i, language[589]);
+						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(589));
 						list_RemoveNode(my->light->node);
 						list_RemoveNode(my->mynode);
 						itemPickup(i, item);
@@ -343,7 +352,8 @@ void Entity::actLightSource()
 		// lighting
 		if ( !LIGHTSOURCE_LIGHT )
 		{
-			light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, lightSourceBrightness);
+            const auto color = lightSourceBrightness / 255.f;
+			light = lightSphereShadow(0, x / 16, y / 16, lightSourceRadius, color, color, color, 0.5f);
 			LIGHTSOURCE_LIGHT = 1;
 		}
 		if ( lightSourceFlicker && flickerLights )
@@ -355,7 +365,8 @@ void Entity::actLightSource()
 			LIGHTSOURCE_LIGHT = 1;
 			if ( !light )
 			{
-				light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, lightSourceBrightness);
+                const auto color = lightSourceBrightness / 255.f;
+                light = lightSphereShadow(0, x / 16, y / 16, lightSourceRadius, color, color, color, 0.5f);
 			}
 		}
 
@@ -366,19 +377,22 @@ void Entity::actLightSource()
 			if ( LIGHTSOURCE_LIGHT == 1 )
 			{
 				removeLightField();
-				light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, lightSourceBrightness);
+                const auto color = lightSourceBrightness / 255.f;
+                light = lightSphereShadow(0, x / 16, y / 16, lightSourceRadius, color, color, color, 0.5f);
 			}
 			else
 			{
 				removeLightField();
-				light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, std::max(lightSourceBrightness - 16, 0));
+                const auto brightness = std::max(lightSourceBrightness - 16, 0);
+                const auto color = lightSourceBrightness / 255.f;
+                light = lightSphereShadow(0, x / 16, y / 16, lightSourceRadius, color, color, color, 0.5f);
 			}
-			LIGHTSOURCE_FLICKER = 2 + rand() % 7;
+			LIGHTSOURCE_FLICKER = 2 + local_rng.rand() % 7;
 		}
 
 		if ( multiplayer != CLIENT )
 		{
-			if ( !lightSourceAlwaysOn && (circuit_status == CIRCUIT_OFF && !lightSourceInvertPower)
+			if ( (!lightSourceAlwaysOn && (circuit_status == CIRCUIT_OFF && !lightSourceInvertPower))
 				|| (circuit_status == CIRCUIT_ON && lightSourceInvertPower == 1) )
 			{
 				if ( LIGHTSOURCE_ENABLED == 1 && lightSourceLatchOn < 2 + lightSourceInvertPower )

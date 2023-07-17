@@ -13,10 +13,11 @@
 #include "game.hpp"
 #include "stat.hpp"
 #include "entity.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "paths.hpp"
 
 void actGate(Entity* my)
 {
@@ -30,8 +31,7 @@ void actGate(Entity* my)
 
 void Entity::actGate()
 {
-	int i;
-
+	const bool oldPassable = flags[PASSABLE];
 	if ( multiplayer != CLIENT )
 	{
 		if ( circuit_status == 0 )
@@ -110,13 +110,13 @@ void Entity::actGate()
 	// rightclick message
 	if ( multiplayer != CLIENT )
 	{
-		for (i = 0; i < MAXPLAYERS; i++)
+		for (int i = 0; i < MAXPLAYERS; i++)
 		{
-			if ( (i == 0 && selectedEntity[0] == this) || (client_selected[i] == this) || (splitscreen && selectedEntity[i] == this) )
+			if ( selectedEntity[i] == this || client_selected[i] == this )
 			{
 				if (inrange[i])
 				{
-					messagePlayer(i, language[475]);
+					messagePlayer(i, MESSAGE_INTERACTION, Language::get(475));
 				}
 			}
 		}
@@ -172,14 +172,22 @@ void Entity::actGate()
 	bool somebodyinside = false;
 	if ( this->z > gateStartHeight - 6 && this->flags[PASSABLE] )
 	{
-		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, 1);
+		std::vector<list_t*> entLists;
+		if ( multiplayer == CLIENT )
+		{
+			entLists.push_back(map.entities); // clients use old map.entities method
+		}
+		else
+		{
+			entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, 1);
+		}
 		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !somebodyinside; ++it )
 		{
 			list_t* currentList = *it;
 			for ( node = currentList->first; node != nullptr; node = node->next )
 			{
 				Entity* entity = (Entity*)node->element;
-				if ( entity == this || entity->flags[PASSABLE] || entity->sprite == 1 )
+				if ( entity == this || entity->flags[PASSABLE] || entity->behavior == &actDoorFrame )
 				{
 					continue;
 				}
@@ -199,4 +207,12 @@ void Entity::actGate()
 	{
 		this->flags[PASSABLE] = true;
 	}
+
+	//if ( multiplayer != CLIENT )
+	//{
+	//	if ( flags[PASSABLE] != oldPassable )
+	//	{
+	//		updateGatePath(*this);
+	//	}
+	//}
 }

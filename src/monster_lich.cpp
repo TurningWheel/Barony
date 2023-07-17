@@ -14,21 +14,27 @@
 #include "stat.hpp"
 #include "entity.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "items.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
 #include "scores.hpp"
+#include "prng.hpp"
 
 void initLich(Entity* my, Stat* myStats)
 {
 	int c;
 
+	my->flags[BURNABLE] = false;
 	my->flags[UPDATENEEDED] = true;
 	my->flags[INVISIBLE] = false;
 
-	my->sprite = 274;
+	my->z = -2;
+	my->yaw = PI;
+	my->initMonster(274);
+	my->skill[29] = 120;
+
 	if ( multiplayer != CLIENT )
 	{
 		MONSTER_SPOTSND = 120;
@@ -106,7 +112,7 @@ void initLich(Entity* my, Stat* myStats)
 	}
 
 	// right arm
-	Entity* entity = newEntity(276, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(276, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -125,7 +131,7 @@ void initLich(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(275, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(275, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -144,7 +150,7 @@ void initLich(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// head
-	entity = newEntity(277, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(277, 1, map.entities, nullptr); //Limb entity.
 	entity->yaw = my->yaw;
 	entity->sizex = 4;
 	entity->sizey = 4;
@@ -252,7 +258,7 @@ void lichDie(Entity* my)
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
-			if ( client_disconnected[c] )
+			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}
@@ -331,7 +337,7 @@ void lichAnimate(Entity* my, double dist)
 		}
 		if ( myStats->HP > myStats->MAXHP / 2 )
 		{
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 4, 192);
+			my->light = addLight(my->x / 16, my->y / 16, "herx_glow");
 		}
 		else if ( !my->skill[27] )
 		{
@@ -343,7 +349,7 @@ void lichAnimate(Entity* my, double dist)
 	{
 		if ( !my->skill[27] )
 		{
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 4, 192);
+			my->light = addLight(my->x / 16, my->y / 16, "herx_glow");
 		}
 	}
 

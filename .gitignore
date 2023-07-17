@@ -1,0 +1,77 @@
+**/books/*
+build/*
+**/data/*
+**/fonts/*
+**/images/*
+**/items/*
+**/maps/*
+**/models/*
+**/music/*
+**/sound/*
+**/editor/*
+**/crashlogs/*
+**/logfiles/*
+**/lang/*
+**/config/*
+!lang/*
+!lang/item_names.json
+**/mods/*
+**/savegames/*
+src/Config.hpp
+.buildconfig
+steam_appid.txt
+*.o
+*.exe
+*.ffs_db
+*.TMP
+*.tlog
+*.psess
+*.vspx
+/VS-includes
+!/VS-includes/Config.hpp
+/VS-libs/*
+*.inl
+*.dll
+/VS.2015/.vs/Barony/v14
+*.iobj
+*.idb
+*.ipdb
+*.pdb
+*.obj
+*.log
+*.user
+*log.txt
+*.cache
+*.zip
+*.res
+*.lnk
+*.xml
+/VS.2015/Beta/Release
+/VS.2015/Debug
+/VS.2015/EOS Debug
+/VS.2015/EOS
+/VS.2015/EOS 3
+/VS.2015/EOS 4
+/VS.2015/Steam Crossplay
+*.db
+*.opendb
+/VS.2015/Release/
+*.lib
+*.exp
+/VS.2015/x64/Steam Crossplay
+*.vsp
+/VS.2015/Steam Debug
+/VS.2015/enc_temp_folder/*
+.vscode/*
+**/v17
+**/v16
+**/FileContentIndex
+*VSWorkspaceState.json
+*slnx.sqlite
+*ProjectSettings.json
+*FileListAbsolute.txt
+*recipe
+.DS_Store
+xcode/Barony/Barony.xcodeproj/project.xcworkspace/*
+xcode/Barony/Barony.xcodeproj/xcuserdata/*
+*.ps1

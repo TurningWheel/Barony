@@ -16,236 +16,6 @@ public:
     Widget& operator=(const Widget&) = delete;
     Widget& operator=(Widget&&) = delete;
 
-	//! variable types
-	enum var_t {
-		TYPE_BOOLEAN,
-		TYPE_INTEGER,
-		TYPE_FLOAT,
-		TYPE_STRING,
-		TYPE_POINTER,
-		TYPE_NIL,
-		TYPE_MAX
-	};
-
-	//! function parameter
-	struct param_t {
-		param_t() = default;
-		param_t(const param_t&) = delete;
-		param_t(param_t&&) = delete;
-		virtual ~param_t() = default;
-
-		param_t& operator=(const param_t&) = delete;
-		param_t& operator=(param_t&&) = delete;
-
-		virtual var_t getType() const = 0;
-		virtual param_t* copy() const = 0;
-		virtual const char* str() = 0;
-		Uint32 strSize() const { return string.size(); }
-
-	protected:
-		std::string string;
-	};
-
-	//! boolean parameter
-	struct param_bool_t : param_t {
-		param_bool_t() {
-			string.reserve(2);
-		}
-		param_bool_t(const bool _value) : value(_value) {
-			string.reserve(2);
-		}
-		virtual ~param_bool_t() {}
-		virtual var_t getType() const override { return TYPE_BOOLEAN; }
-		virtual param_t* copy() const override {
-			return new param_bool_t(value);
-		}
-		virtual const char* str() override {
-			return value ? "tb" : "fb";
-		}
-		bool value = false;
-	};
-
-	//! integer parameter
-	struct param_int_t : param_t {
-		param_int_t() {
-			string.reserve(5);
-		}
-		param_int_t(const int _value) : value(_value) {
-			string.reserve(5);
-		}
-		virtual ~param_int_t() {}
-		virtual var_t getType() const override { return TYPE_INTEGER; }
-		virtual param_t* copy() const override {
-			return new param_int_t(value);
-		}
-		virtual const char* str() override {
-			Uint32* p = (Uint32*)(&string[0]);
-			*p = value;
-			string[4] = 'i';
-			return string.c_str();
-		}
-		int value = 0;
-	};
-
-	//! float parameter
-	struct param_float_t : param_t {
-		param_float_t() {
-			string.reserve(5);
-		}
-		param_float_t(const float _value) : value(_value) {
-			string.reserve(5);
-		}
-		virtual ~param_float_t() {}
-		virtual var_t getType() const override { return TYPE_FLOAT; }
-		virtual param_t* copy() const override {
-			return new param_float_t(value);
-		}
-		virtual const char* str() override {
-			float* p = (float*)(&string[0]);
-			*p = value;
-			string[4] = 'f';
-			return string.c_str();
-		}
-		float value = 0.f;
-	};
-
-	//! string parameter
-	struct param_string_t : param_t {
-		param_string_t() {}
-		param_string_t(const std::string& _value) : value(_value) {}
-		virtual ~param_string_t() {}
-		virtual var_t getType() const override { return TYPE_STRING; }
-		virtual param_t* copy() const override {
-			return new param_string_t(value);
-		}
-		virtual const char* str() override {
-			string.reserve(value.size() + 4);
-			string = value;
-			Uint32* p = (Uint32*)(&string[value.length()]);
-			*p = value.length();
-			string[string.size() - 1] = 's';
-			return string.c_str();
-		}
-		std::string value;
-	};
-
-	//! pointer parameter
-	struct param_pointer_t : param_t {
-		param_pointer_t() {
-			string.reserve(1);
-		}
-		param_pointer_t(void* _value) : value(_value) {
-			string.reserve(1);
-		}
-		virtual ~param_pointer_t() {}
-		virtual var_t getType() const override { return TYPE_POINTER; }
-		virtual param_t* copy() const override {
-			return new param_pointer_t(value);
-		}
-		virtual const char* str() override {
-			return "p";
-		}
-		void* value = nullptr;
-	};
-
-	//! nil parameter
-	struct param_nil_t : param_t {
-		param_nil_t() {
-			string.reserve(1);
-		}
-		virtual ~param_nil_t() {}
-		virtual var_t getType() const override { return TYPE_NIL; }
-		virtual param_t* copy() const override {
-			return new param_nil_t();
-		}
-		virtual const char* str() override {
-			return "n";
-		}
-	};
-
-	//! function arguments
-	class Args {
-	public:
-		Args() = default;
-		Args(const Args& src) {
-			copy(src);
-		}
-		Args(Args&&) = delete;
-		~Args() {
-			while (list.size() > 0) {
-				delete list.back();
-				list.pop_back();
-			}
-		}
-
-		Args& operator=(const Args&) = delete;
-		Args& operator=(Args&&) = delete;
-
-		const std::vector<param_t*>&		getList() const { return list; }
-		int									getSize() const { return (int)list.size(); }
-
-		//! copy the args from one struct to another
-		//! @param src the args to copy
-		void copy(const Args& src) {
-			while (list.size() > 0) {
-				delete list.back();
-				list.pop_back();
-			}
-			for (Uint32 c = 0; c < src.list.size(); ++c) {
-				list.push_back(src.list[c]->copy());
-			}
-		}
-
-		//! add a bool to the args list
-		//! @param value the value to init with
-		void addBool(const bool value) {
-			list.push_back(new param_bool_t(value));
-		}
-
-		//! add an int to the args list
-		//! @param value the value to init with
-		void addInt(const int value) {
-			list.push_back(new param_int_t(value));
-		}
-
-		//! add a float to the args list
-		//! @param value the value to init with
-		void addFloat(const float value) {
-			list.push_back(new param_float_t(value));
-		}
-
-		//! add a string to the args list
-		//! @param value the value to init with
-		void addString(const std::string& value) {
-			list.push_back(new param_string_t(value));
-		}
-
-		//! add a pointer to the args list
-		//! @param value the value to init with
-		void addPointer(void* value) {
-			list.push_back(new param_pointer_t(value));
-		}
-
-		//! add a nil to the args list
-		void addNil() {
-			list.push_back(new param_nil_t());
-		}
-
-	private:
-		std::vector<param_t*> list;
-	};
-
-    //! native callback function for processing args
-    class Callback {
-    public:
-        virtual ~Callback() {}
-
-        //! handle the args
-        //! @param args the args to consume
-        //! @return error code
-        virtual int operator()(Args& args) const = 0;
-    };
-
     //! widget type
     enum type_t {
         WIDGET_FRAME,
@@ -254,44 +24,90 @@ public:
         WIDGET_SLIDER
     };
 
-    virtual type_t  getType() const = 0;
-    const char*		getName() const { return name.c_str(); }
-    bool			isPressed() const { return reallyPressed; }
-    bool			isHighlighted() const { return selected | highlighted; }
-    bool			isSelected() const { return selected; }
-    bool			isDisabled() const { return disabled; }
-    bool            isInvisible() const { return invisible; }
-    Uint32          getHighlightTime() const { return highlightTime; }
-    Sint32          getOwner() const { return owner; }
-    const char*     getWidgetRight() const { return widgetRight.c_str(); }
-    const char*     getWidgetDown() const { return widgetDown.c_str(); }
-    const char*     getWidgetLeft() const { return widgetLeft.c_str(); }
-    const char*     getWidgetUp() const { return widgetUp.c_str(); }
-    const char*     getWidgetPageLeft() const { return widgetPageLeft.c_str(); }
-    const char*     getWidgetPageRight() const { return widgetPageRight.c_str(); }
-    const char*     getWidgetBack() const { return widgetBack.c_str(); }
-    const char*     getWidgetSearchParent() const { return widgetSearchParent.c_str(); }
-    const char*     getWidgetTab() const { return widgetTab.c_str(); }
+    //! glyph position
+    enum glyph_position_t {
+        CENTERED,
+        CENTERED_RIGHT,
+        CENTERED_LEFT,
+        CENTERED_TOP,
+        CENTERED_BOTTOM,
+        BOTTOM_RIGHT,
+        BOTTOM_LEFT,
+        UPPER_RIGHT,
+        UPPER_LEFT,
+    };
+
+    virtual type_t      getType() const = 0;
+    Widget*             getParent() { return parent; }
+    const Widget*       getParent() const { return parent; }
+    const char*		    getName() const { return name.c_str(); }
+    bool			    isPressed() const { return reallyPressed; }
+	bool				isCurrentlyPressed() const { return pressed; }
+    bool			    isHighlighted() const { return highlighted; }
+    bool			    isSelected() const { return selected; }
+    bool			    isDisabled() const { return disabled; }
+    bool                isInvisible() const { return invisible; }
+    bool                isToBeDeleted() const { return toBeDeleted; }
+    bool                isHideGlyphs() const { return hideGlyphs; }
+    bool                isHideKeyboardGlyphs() const { return hideKeyboardGlyphs; }
+    bool                isHideSelectors() const { return hideSelectors; }
+    Uint32              getHighlightTime() const { return highlightTime; }
+    Sint32              getOwner() const { return owner; }
+    void			    (*getTickCallback() const)(Widget&) { return tickCallback; }
+    void			    (*getDrawCallback() const)(const Widget&, const SDL_Rect) { return drawCallback; }
+    const char*         getWidgetSearchParent() const { return widgetSearchParent.c_str(); }
+    auto&               getWidgetActions() const { return widgetActions; }
+    auto&               getWidgetMovements() const { return widgetMovements; }
+    auto&               getWidgets() const { return widgets; }
+    const void*         getUserData() const { return userData; }
+    void*               getUserData() { return userData; }
+    SDL_Rect            getButtonsOffset() const { return buttonsOffset; }
+    SDL_Rect            getSelectorOffset() const { return selectorOffset; }
+    glyph_position_t    getGlyphPosition() const { return glyphPosition; }
 
     void	setName(const char* _name) { name = _name; }
     void	setPressed(bool _pressed) { reallyPressed = pressed = _pressed; }
-    void    setSelected(bool _selected) { selected = _selected; }
     void	setDisabled(bool _disabled) { disabled = _disabled; }
     void    setInvisible(bool _invisible) { invisible = _invisible; }
+    void    setHideGlyphs(bool _hideGlyphs) { hideGlyphs = _hideGlyphs; }
+    void    setHideKeyboardGlyphs(bool _hideGlyphs) { hideKeyboardGlyphs = _hideGlyphs; }
+    void    setHideSelectors(bool _hideSelectors) { hideSelectors = _hideSelectors; }
     void    setOwner(Sint32 _owner) { owner = _owner; }
-    void    setWidgetRight(const char* s) { widgetRight = s; }
-    void    setWidgetDown(const char* s) { widgetDown = s; }
-    void    setWidgetLeft(const char* s) { widgetLeft = s; }
-    void    setWidgetUp(const char* s) { widgetUp = s; }
-    void    setWidgetPageLeft(const char* s) { widgetPageLeft = s; }
-    void    setWidgetPageRight(const char* s) { widgetPageRight = s; }
-    void    setWidgetBack(const char* s) { widgetBack = s; }
+    void	setTickCallback(void (*const fn)(Widget&)) { tickCallback = fn; }
+    void	setDrawCallback(void (*const fn)(const Widget&, const SDL_Rect)) { drawCallback = fn; }
+    void    setWidgetRight(const char* s) { widgetMovements["MenuRight"] = s; widgetMovements["AltMenuRight"] = s; }
+    void    setWidgetDown(const char* s) { widgetMovements["MenuDown"] = s; widgetMovements["AltMenuDown"] = s; }
+    void    setWidgetLeft(const char* s) { widgetMovements["MenuLeft"] = s; widgetMovements["AltMenuLeft"] = s; }
+    void    setWidgetUp(const char* s) { widgetMovements["MenuUp"] = s; widgetMovements["AltMenuUp"] = s; }
+    void    setWidgetPageLeft(const char* s) { widgetActions["MenuPageLeft"] = s; }
+    void    setWidgetPageRight(const char* s) { widgetActions["MenuPageRight"] = s; }
+    void    setWidgetBack(const char* s) { widgetActions["MenuCancel"] = s; }
     void    setWidgetSearchParent(const char* s) { widgetSearchParent = s; }
-    void    setWidgetTab(const char* s) { widgetTab = s; }
+    void    addWidgetAction(const char* binding, const char* action) { widgetActions[binding] = action; }
+    void    addWidgetMovement(const char* binding, const char* action) { widgetMovements[binding] = action; }
+    void    setUserData(void* p) { userData = p; }
+    void    setButtonsOffset(SDL_Rect r) { buttonsOffset = r; }
+    void    setSelectorOffset(SDL_Rect r) { selectorOffset = r; }
+	void	setMenuConfirmControlType(int flags) { menuConfirmControlType = flags; }
+    void    setGlyphPosition(glyph_position_t p) { glyphPosition = p; }
+    void    setAlwaysShowGlyphs(bool b) { alwaysShowGlyphs = b; }
+    void    setDontSearchAncestors(bool b) { dontSearchAncestors = b; }
+    
+    //! removes the widget safely
+    void removeSelf();
+    
+    //! remove an object from the widget
+    //! @param name the name of the object to remove
+    //! @return true if the object was successfully removed, false otherwise
+    virtual bool remove(const char* name);
 
     //! recursively locates the head widget for this widget
     //! @return the head widget, which may be this widget
     Widget* findHead();
+    const Widget* findHead() const;
+
+    //! scroll the parent frame (if any) to be within our bounds
+    virtual void scrollParent();
 
     //! activate this widget
     virtual void activate();
@@ -302,43 +118,101 @@ public:
     //! deselect this widget
     virtual void deselect();
 
+    //! update this widget for one tick
+    void process();
+
     //! handle inputs on the widget
     //! @return the next widget to select, or nullptr if no widget was selected
     Widget* handleInput();
+
+    //! return true if this widget is the descendant of another widget
+    //! @param widget the widget who is supposedly our ancestor
+    //! @return true if it is, otherwise false
+    bool isChildOf(const Widget& widget) const;
 
     //! adopt a new widget as one of our children
     //! @param widget the widget to adopt
     void adoptWidget(Widget& widget);
 
+    enum class SearchType {
+        DEPTH_FIRST,
+        BREADTH_FIRST
+    };
+
+	enum MenuConfirmTypes : int {
+		MENU_CONFIRM_KEYBOARD = 1,
+		MENU_CONFIRM_CONTROLLER
+	};
+
     //! find a widget amongst our children
     //! @param name the name of the widget to find
     //! @param recursive true to search recursively or not
     //! @return the widget found, or nullptr if it was not found
-    Widget* findWidget(const char* name, bool recursive);
+    Widget* findWidget(const char* name, bool recursive, SearchType searchType = SearchType::BREADTH_FIRST);
+    const Widget* findWidget(const char* name, bool recursive, SearchType searchType = SearchType::BREADTH_FIRST) const;
+
+    //! build a list of all the selected widgets amongst our children
+    //! @param outResult a list containing all the selected widgets
+    void findSelectedWidgets(std::vector<Widget*>& outResult);
+
+    //! build a list of all the selected widgets amongst our children (const only)
+    //! @param outResult a list containing all the selected widgets
+    void findSelectedWidgets(std::vector<const Widget*>& outResult) const;
+
+    //! find the widget selected by the specified owner/player
+    //! @param owner the player who owns the widget
+    //! @return the selected widget or nullptr if it could not be found
+    Widget* findSelectedWidget(int owner);
+
+    //! find search parent
+    //! @return the search parent, if any
+    Frame* findSearchRoot();
+    const Frame* findSearchRoot() const;
+
+    //! find the selected widget amongst our children
+    //! @return the selected widget, or nullptr if it was not found
+    Widget* findSelectedWidget();
 
 protected:
-    Widget* parent = nullptr;                       //!< parent widget
-    std::list<Widget*> widgets;                     //!< widget children
-    std::string name;                               //!< widget name
-    bool pressed = false;							//!< pressed state
-    bool reallyPressed = false;						//!< the "actual" pressed state, pre-mouse process
-    bool highlighted = false;                       //!< if true, this widget has the mouse over it
-    bool selected = false;							//!< if true, this widget has focus
-    bool disabled = false;							//!< if true, the widget is unusable and grayed out
-    bool invisible = false;                         //!< if true, widget is both unusable and invisible
-	bool toBeDeleted = false;						//!< if true, the widget will be removed at the end of its process
-    Uint32 highlightTime = 0u;						//!< records the time since the widget was highlighted
-    Sint32 owner = 0;                               //!< which player owns this widget (0 = player 1, 1 = player 2, etc)
+    Widget* parent = nullptr;                                       //!< parent widget
+    std::list<Widget*> widgets;                                     //!< widget children
+    std::string name;                                               //!< widget name
+    bool pressed = false;							                //!< pressed state
+    bool reallyPressed = false;						                //!< the "actual" pressed state, pre-mouse process
+    bool highlighted = false;                                       //!< if true, this widget has the mouse over it
+    bool selected = false;							                //!< if true, this widget has focus
+    bool disabled = false;							                //!< if true, the widget is unusable and grayed out
+    bool invisible = false;                                         //!< if true, widget is both unusable and invisible
+	bool toBeDeleted = false;						                //!< if true, the widget will be removed at the end of its process
+    bool hideGlyphs = false;                                        //!< true if you don't want to see controller button glyphs on the widget
+    bool hideKeyboardGlyphs = true;                                 //!< true if you don't want to see keyboard glyphs on the widget
+    bool hideSelectors = false;                                     //!< true if you don't want to see selectors on the borders of this widget
+    bool alwaysShowGlyphs = false;                                  //!< true if you want relevant glyphs to always be displayed for this widget
+	int menuConfirmControlType =									//!< which input types are allowed to 'activate' the widget via 'MenuConfirm'
+		MenuConfirmTypes::MENU_CONFIRM_KEYBOARD 
+		| MenuConfirmTypes::MENU_CONFIRM_CONTROLLER;
+    Uint32 highlightTime = 0u;						                //!< records the time since the widget was highlighted
+    Sint32 owner = 0;                                               //!< which player owns this widget (0 = player 1, 1 = player 2, etc)
+    SDL_Rect selectorOffset {0, 0, 0, 0};                           //!< offset for x, y, w, h in the selector box
+    SDL_Rect buttonsOffset {0, 0, 0, 0};                            //!< offset for x, y in button prompts
+    glyph_position_t glyphPosition = CENTERED_BOTTOM;               //!< default button position
+    void (*tickCallback)(Widget&) = nullptr;		                //!< the callback to run each frame for this widget
+    void (*drawCallback)(const Widget&, const SDL_Rect) = nullptr;  //!< the callback to run after the widget is drawn
+    void* userData = nullptr;                                       //!< user data
+    bool dontSearchAncestors = false;                               //!< if true, doesn't fall back to a full-search if a widget can't be found for a binding
 
-    std::string widgetSearchParent;                 //!< parent of widget to select (use to narrow search)
-    std::string widgetRight;             			//!< next widget to select right
-    std::string widgetDown;                         //!< next widget to select down
-    std::string widgetLeft;                         //!< next widget to select left
-    std::string widgetUp;                           //!< next widget to select up
-    std::string widgetPageLeft;                     //!< widget to activate when you press MenuPageLeft
-    std::string widgetPageRight;                    //!< widget to activate when you press MenuPageRight
-    std::string widgetBack;                         //!< widget to activate when you press MenuCancel
-    std::string widgetTab;                          //!< widget to select when you press tab
+    std::unordered_map<std::string, std::string>
+        widgetActions;                              //!< widgets to select and activate when input is pressed
+    std::unordered_map<std::string, std::string>
+        widgetMovements;                            //!< widgets to select when input is pressed
+    std::string widgetSearchParent;                 //!< widget to search from for actions and movements
 
-    Frame* findSearchRoot();
+    void drawPost(const SDL_Rect size,
+        const std::vector<const Widget*>& selectedWidgets,
+        const std::vector<const Widget*>& searchParents) const;
 };
+
+#ifndef EDITOR
+#include "../interface/consolecommand.hpp"
+extern ConsoleVariable<bool> cvar_hideGlyphs;
+#endif

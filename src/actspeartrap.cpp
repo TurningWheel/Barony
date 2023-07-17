@@ -13,7 +13,7 @@
 #include "game.hpp"
 #include "stat.hpp"
 #include "entity.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
@@ -129,8 +129,8 @@ void actSpearTrap(Entity* my)
 								// do damage!
 								if ( entity->behavior == &actPlayer )
 								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-									messagePlayerColor(entity->skill[2], color, language[586]);
+									Uint32 color = makeColorRGB(255, 0, 0);
+									messagePlayerColor(entity->skill[2], MESSAGE_STATUS, color, Language::get(586));
 									if ( players[entity->skill[2]]->isLocalPlayer() )
 									{
 										cameravars[entity->skill[2]].shakex += .1;
@@ -138,7 +138,7 @@ void actSpearTrap(Entity* my)
 									}
 									else
 									{
-										if ( entity->skill[2] > 0 )
+										if ( entity->skill[2] > 0 && !players[entity->skill[2]]->isLocalPlayer() )
 										{
 											strcpy((char*)net_packet->data, "SHAK");
 											net_packet->data[4] = 10; // turns into .1
@@ -161,7 +161,8 @@ void actSpearTrap(Entity* my)
 									}
 								}
 								// set obituary
-								entity->setObituary(language[1507]);
+								entity->setObituary(Language::get(1507));
+						        stats->killer = KilledBy::TRAP_SPIKE;
 							}
 						}
 					}

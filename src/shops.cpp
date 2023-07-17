@@ -13,26 +13,22 @@
 #include "game.hpp"
 #include "stat.hpp"
 #include "items.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "shops.hpp"
 #include "interface/interface.hpp"
 #include "net.hpp"
 #include "player.hpp"
 #include "scores.hpp"
+#include "prng.hpp"
 
 list_t* shopInv[MAXPLAYERS] = { nullptr };
 Uint32 shopkeeper[MAXPLAYERS] = { 0 };
 Uint32 shoptimer[MAXPLAYERS] = { 0 };
-char* shopspeech[MAXPLAYERS] = { nullptr };
-int shopinventorycategory[MAXPLAYERS];
-int shopitemscroll[MAXPLAYERS] = { 0 };
-Item* shopinvitems[MAXPLAYERS][NUM_SHOP_GUI_SLOTS];
-Item* sellitem[MAXPLAYERS] = { nullptr };
+std::string shopspeech[MAXPLAYERS] = { "" };
 int shopkeepertype[MAXPLAYERS] = { 0 };
-char* shopkeepername[MAXPLAYERS] = { nullptr };
+std::string shopkeepername[MAXPLAYERS] = { "" };
 char shopkeepername_client[MAXPLAYERS][64];
 
-int selectedShopSlot[MAXPLAYERS];
 std::unordered_map<int, std::unordered_set<int>> shopkeeperMysteriousItems(
 {
 	{ ARTIFACT_ORB_GREEN, { ARTIFACT_BOW, QUIVER_HUNTING, QUIVER_PIERCE } },
@@ -42,11 +38,41 @@ std::unordered_map<int, std::unordered_set<int>> shopkeeperMysteriousItems(
 
 void closeShop(const int player)
 {
-	if ( multiplayer == CLIENT )
+	if ( shopkeeper[player] != 0 )
 	{
-		list_FreeAll(shopInv[player]);
-		shopInv[player]->first = nullptr;
-		shopInv[player]->last = nullptr;
+		if ( multiplayer != CLIENT )
+		{
+			Entity* entity = uidToEntity(shopkeeper[player]);
+			if ( entity )
+			{
+				entity->skill[0] = 0;
+				if ( uidToEntity(entity->skill[1]) )
+				{
+					monsterMoveAside(entity, uidToEntity(entity->skill[1]));
+				}
+				entity->skill[1] = 0;
+			}
+		}
+		else
+		{
+			// inform server that we're done talking to shopkeeper
+			strcpy((char*)net_packet->data, "SHPC");
+			SDLNet_Write32((Uint32)shopkeeper[player], &net_packet->data[4]);
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 8;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+	}
+
+	if ( multiplayer == CLIENT && players[player]->isLocalPlayer() )
+	{
+		if ( shopInv[player] )
+		{
+			list_FreeAll(shopInv[player]);
+			shopInv[player]->first = nullptr;
+			shopInv[player]->last = nullptr;
+		}
 	}
 	else
 	{
@@ -55,7 +81,7 @@ void closeShop(const int player)
 	shopkeeper[player] = 0;
 
 	//Clean up shopkeeper gamepad code here.
-	selectedShopSlot[player] = -1;
+	players[player]->shopGUI.closeShop();
 }
 
 /*-------------------------------------------------------------------------------
@@ -89,32 +115,17 @@ void startTradingServer(Entity* entity, int player)
 
 	if ( players[player]->isLocalPlayer() )
 	{
-		players[player]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_SHOP);
-		players[player]->openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM);
+		players[player]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_INVENTORY);
+		players[player]->openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM, Player::GUI_t::MODULE_SHOP);
+
 		shopInv[player] = &stats->inventory;
 		shopkeeper[player] = entity->getUID();
 		shoptimer[player] = ticks - 1;
-		shopspeech[player] = language[194 + rand() % 3];
-		shopinventorycategory[player] = 7;
-		sellitem[player] = NULL;
-		Entity* entity = uidToEntity(shopkeeper[player]);
-		if ( entity )
-		{
-			shopkeepertype[player] = entity->monsterStoreType;
-		}
+		shopspeech[player] = Language::get(194 + local_rng.rand() % 3);
+		shopkeepertype[player] = entity->monsterStoreType;
 		shopkeepername[player] = stats->name;
-		shopitemscroll[player] = 0;
 
-		//Initialize shop gamepad code here.
-		if ( shopinvitems[player][0] != nullptr )
-		{
-			selectedShopSlot[player] = 0;
-			warpMouseToSelectedShopSlot(player);
-		}
-		else
-		{
-			selectedShopSlot[player] = -1;
-		}
+		players[player]->shopGUI.openShop();
 	}
 	else if ( multiplayer == SERVER )
 	{
@@ -137,8 +148,8 @@ void startTradingServer(Entity* entity, int player)
 			Item* item = (Item*)node->element;
 			strcpy((char*)net_packet->data, "SHPI");
 			SDLNet_Write32(item->type, &net_packet->data[4]);
-			net_packet->data[8] = (char)item->status;
-			net_packet->data[9] = (char)item->beatitude;
+			net_packet->data[8] = (Sint8)item->status;
+			net_packet->data[9] = (Sint8)item->beatitude;
 			net_packet->data[10] = (unsigned char)item->count;
 			SDLNet_Write32((Uint32)item->appearance, &net_packet->data[11]);
 			if ( item->identified )
@@ -149,15 +160,26 @@ void startTradingServer(Entity* entity, int player)
 			{
 				net_packet->data[15] = 0;
 			}
+			if ( item->playerSoldItemToShop )
+			{
+				net_packet->data[15] |= (1 << 1);
+			}
+			if ( item->itemSpecialShopConsumable )
+			{
+				net_packet->data[15] |= (1 << 2);
+			}
+			net_packet->data[15] |= ((0xF & item->itemRequireTradingSkillInShop) << 4);
+			net_packet->data[16] = (Sint8)item->x;
+			net_packet->data[17] = (Sint8)item->y;
 			net_packet->address.host = net_clients[player - 1].host;
 			net_packet->address.port = net_clients[player - 1].port;
-			net_packet->len = 16;
+			net_packet->len = 18;
 			sendPacketSafe(net_sock, -1, net_packet, player - 1);
 		}
 	}
 	entity->skill[0] = 4; // talk state
 	entity->skill[1] = players[player]->entity->getUID();
-	messagePlayer(player, language[1122], stats->name);
+	messagePlayer(player, MESSAGE_HINT, Language::get(1122), stats->name);
 }
 
 /*-------------------------------------------------------------------------------
@@ -168,22 +190,33 @@ void startTradingServer(Entity* entity, int player)
 
 -------------------------------------------------------------------------------*/
 
-void buyItemFromShop(const int player, Item* item)
+bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack)
 {
+	bOutConsumedEntireStack = false;
 	if ( !item )
 	{
-		return;
+		return false;
 	}
 
-	if ( stats[player]->GOLD >= item->buyValue(player) )
+	if ( players[player]->shopGUI.itemUnknownPreventPurchase )
 	{
-		if ( items[item->type].value * 1.5 >= item->buyValue(player) )
+		shopspeech[player] = Language::get(4252 + local_rng.rand() % 3);
+		shoptimer[player] = ticks - 1;
+		playSound(90, 64);
+	}
+	else if ( stats[player]->GOLD >= item->buyValue(player) )
+	{
+		if ( item->itemSpecialShopConsumable )
 		{
-			shopspeech[player] = language[200 + rand() % 3];
+			shopspeech[player] = Language::get(4255 + local_rng.rand() % 5);
+		}
+		else if ( items[item->type].value * 1.5 >= item->buyValue(player) )
+		{
+			shopspeech[player] = Language::get(200 + local_rng.rand() % 3);
 		}
 		else
 		{
-			shopspeech[player] = language[197 + rand() % 3];
+			shopspeech[player] = Language::get(197 + local_rng.rand() % 3);
 		}
 		shoptimer[player] = ticks - 1;
 		Item* itemToPickup = newItem(item->type, item->status, item->beatitude, 1, item->appearance, item->identified, nullptr);
@@ -193,6 +226,7 @@ void buyItemFromShop(const int player, Item* item)
 		}
 		itemPickup(player, itemToPickup);
 
+		shopChangeGoldEvent(player, -item->buyValue(player));
 		stats[player]->GOLD -= item->buyValue(player);
 
 		if ( stats[player]->playerRace > 0 && players[player] && players[player]->entity->effectPolymorph > NUMMONSTERS )
@@ -206,7 +240,7 @@ void buyItemFromShop(const int player, Item* item)
 		{
 			item->count = 1;
 		}
-		messagePlayer(player, language[1123], item->description(), item->buyValue(player));
+		messagePlayer(player, MESSAGE_INVENTORY, Language::get(1123), item->description(), item->buyValue(player));
 		item->count = ocount;
 		if ( multiplayer != CLIENT )
 		{
@@ -217,13 +251,26 @@ void buyItemFromShop(const int player, Item* item)
 				shopstats->GOLD += item->buyValue(player);
 			}
 
-			if ( players[player] && players[player]->entity )
+			if ( players[player] && players[player]->entity && !item->playerSoldItemToShop )
 			{
-				if ( rand() % 2 )
+				bool increaseSkill = false;
+				int buyValue = item->buyValue(player);
+				if ( buyValue >= 100 )
 				{
-					if ( item->buyValue(player) <= 1 )
+					increaseSkill = true;
+				}
+				else
+				{
+					if ( rand() % 100 <= (std::max(10, buyValue)) ) // 10% to 100% from 1-100 gold
 					{
-						// buying cheap items does not increase trading past basic
+						increaseSkill = true;
+					}
+				}
+
+				if ( increaseSkill )
+				{
+					if ( buyValue <= 1 )
+					{
 						if ( stats[player]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
 						{
 							players[player]->entity->increaseSkill(PRO_TRADING);
@@ -234,13 +281,28 @@ void buyItemFromShop(const int player, Item* item)
 						players[player]->entity->increaseSkill(PRO_TRADING);
 					}
 				}
-				else if ( item->buyValue(player) >= 150 )
-				{
-					if ( item->buyValue(player) >= 300 || rand() % 2 )
-					{
-						players[player]->entity->increaseSkill(PRO_TRADING);
-					}
-				}
+				//if ( local_rng.rand() % 2 )
+				//{
+				//	if ( item->buyValue(player) <= 1 )
+				//	{
+				//		// buying cheap items does not increase trading past basic
+				//		if ( stats[player]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
+				//		{
+				//			players[player]->entity->increaseSkill(PRO_TRADING);
+				//		}
+				//	}
+				//	else
+				//	{
+				//		players[player]->entity->increaseSkill(PRO_TRADING);
+				//	}
+				//}
+				//else if ( item->buyValue(player) >= 150 )
+				//{
+				//	if ( item->buyValue(player) >= 300 || local_rng.rand() % 2 )
+				//	{
+				//		players[player]->entity->increaseSkill(PRO_TRADING);
+				//	}
+				//}
 			}
 		}
 		else if ( multiplayer == CLIENT )
@@ -251,7 +313,9 @@ void buyItemFromShop(const int player, Item* item)
 			// send item that was bought to server
 			SDLNet_Write32(item->type, &net_packet->data[8]);
 			SDLNet_Write32(item->status, &net_packet->data[12]);
-			SDLNet_Write32(item->beatitude, &net_packet->data[16]);
+			SDLNet_Write16(item->beatitude, &net_packet->data[16]);
+			net_packet->data[18] = (Sint8)item->x;
+			net_packet->data[19] = (Sint8)item->y;
 			SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
 			if ( itemTypeIsQuiver(item->type) )
 			{
@@ -269,6 +333,10 @@ void buyItemFromShop(const int player, Item* item)
 			{
 				net_packet->data[28] = 0;
 			}
+			if ( item->playerSoldItemToShop )
+			{
+				net_packet->data[28] |= (1 << 4);
+			}
 			net_packet->data[29] = player;
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
@@ -283,14 +351,29 @@ void buyItemFromShop(const int player, Item* item)
 		{
 			item->count = 1; // so we consume it all up.
 		}
+		if ( item->count > 1 )
+		{
+			bOutConsumedEntireStack = false;
+		}
+		else
+		{
+			bOutConsumedEntireStack = true;
+		}
 		consumeItem(item, player);
+		return true;
 	}
 	else
 	{
-		shopspeech[player] = language[203 + rand() % 3];
+		shopspeech[player] = Language::get(203 + local_rng.rand() % 3);
 		shoptimer[player] = ticks - 1;
 		playSound(90, 64);
+		if ( players[player]->isLocalPlayer() )
+		{
+			players[player]->shopGUI.animNoDeal = 1.0;
+			players[player]->shopGUI.animNoDealTicks = ticks;
+		}
 	}
+	return false;
 }
 
 /*-------------------------------------------------------------------------------
@@ -301,33 +384,23 @@ void buyItemFromShop(const int player, Item* item)
 
 -------------------------------------------------------------------------------*/
 
-void sellItemToShop(const int player, Item* item)
+bool isItemSellableToShop(const int player, Item* item)
 {
 	if ( !item )
 	{
-		return;
+		return false;
 	}
-	if ( ((item->beatitude < 0 && !shouldInvertEquipmentBeatitude(stats[player]))
-		|| (item->beatitude > 0 && shouldInvertEquipmentBeatitude(stats[player])))
-		&& itemIsEquipped(item, player) )
+
+	if ( items[item->type].hasAttribute("UNSELLABLE") )
 	{
-		if ( item->beatitude > 0 )
-		{
-			messagePlayer(player, language[3219], item->getName());
-		}
-		else
-		{
-			messagePlayer(player, language[1124], item->getName());
-		}
-		playSound(90, 64);
-		return;
+		return false;
 	}
 
 	bool deal = true;
 	if ( stats[player]->PROFICIENCIES[PRO_TRADING] >= CAPSTONE_UNLOCK_LEVEL[PRO_TRADING] )
 	{
 		//Skill capstone: Can sell anything to any shop.
-		if (shopkeepertype[player] == 10)
+		if ( shopkeepertype[player] == 10 )
 		{
 			deal = false;
 		}
@@ -385,7 +458,7 @@ void sellItemToShop(const int player, Item* item)
 				}
 				break;
 			case 8: // hunting
-				if ( itemCategory(item) != WEAPON 
+				if ( itemCategory(item) != WEAPON
 					&& itemCategory(item) != THROWN
 					&& !itemTypeIsQuiver(item->type)
 					&& item->type != BRASS_KNUCKLES
@@ -402,6 +475,60 @@ void sellItemToShop(const int player, Item* item)
 				break;
 		}
 	}
+	return deal;
+}
+
+bool sellItemToShop(const int player, Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+
+	bool deal = isItemSellableToShop(player, item);
+
+	if ( !deal )
+	{
+		if ( shopkeepertype[player] == 10 && 
+			(item->type == ARTIFACT_ORB_BLUE
+			|| item->type == ARTIFACT_ORB_GREEN
+			|| item->type == ARTIFACT_ORB_RED) )
+		{
+			shopspeech[player] = Language::get(4126);
+		}
+		else
+		{
+			shopspeech[player] = Language::get(212 + local_rng.rand() % 3);
+		}
+		shoptimer[player] = ticks - 1;
+		playSound(90, 64);
+		return false;
+	}
+
+	if ( ((item->beatitude < 0 && !shouldInvertEquipmentBeatitude(stats[player]))
+		|| (item->beatitude > 0 && shouldInvertEquipmentBeatitude(stats[player])))
+		&& itemIsEquipped(item, player) )
+	{
+		if ( item->beatitude > 0 )
+		{
+			messagePlayer(player, MESSAGE_INVENTORY, Language::get(3219), item->getName());
+		}
+		else
+		{
+			messagePlayer(player, MESSAGE_INVENTORY, Language::get(1124), item->getName());
+		}
+	}
+
+	int xout = Player::ShopGUI_t::MAX_SHOP_X;
+	int yout = Player::ShopGUI_t::MAX_SHOP_Y;
+	Item* itemToStackInto = nullptr;
+	if ( !getShopFreeSlot(player, nullptr, item, xout, yout, itemToStackInto) )
+	{
+		shopspeech[player] = Language::get(4125);
+		shoptimer[player] = ticks - 1;
+		playSound(90, 64);
+		return false;
+	}
 
 	if ( itemIsEquipped(item, player) )
 	{
@@ -409,64 +536,84 @@ void sellItemToShop(const int player, Item* item)
 			|| itemCategory(item) == RING
 			|| itemCategory(item) == AMULET )
 		{
-			shopspeech[player] = language[3914];
+			shopspeech[player] = Language::get(3914);
 		}
 		else if ( itemCategory(item) == SPELLBOOK 
 			|| itemCategory(item) == BOOK
 			|| itemCategory(item) == SCROLL )
 		{
-			shopspeech[player] = language[3915];
+			shopspeech[player] = Language::get(3915);
 		}
 		else if ( itemCategory(item) == WEAPON 
 			|| itemCategory(item) == MAGICSTAFF
 			|| itemCategory(item) == THROWN )
 		{
-			shopspeech[player] = language[3911];
+			shopspeech[player] = Language::get(3911);
 		}
 		else if ( itemCategory(item) == ARMOR )
 		{
-			shopspeech[player] = language[3910];
+			shopspeech[player] = Language::get(3910);
 		}
 		else if ( itemCategory(item) == TOOL )
 		{
-			shopspeech[player] = language[3912];
+			shopspeech[player] = Language::get(3912);
 		}
 		else if ( itemCategory(item) == POTION )
 		{
-			shopspeech[player] = language[3913];
+			shopspeech[player] = Language::get(3913);
 		}
 		else if ( itemCategory(item) == FOOD )
 		{
-			shopspeech[player] = language[3916];
+			shopspeech[player] = Language::get(3916);
 		}
 		shoptimer[player] = ticks - 1;
 		playSound(90, 64);
-		return;
-	}
-
-	if ( !deal )
-	{
-		shopspeech[player] = language[212 + rand() % 3];
-		shoptimer[player] = ticks - 1;
-		playSound(90, 64);
-		return;
+		return false;
 	}
 
 	if ( items[item->type].value * .75 <= item->sellValue(player) )
 	{
-		shopspeech[player] = language[209 + rand() % 3];
+		shopspeech[player] = Language::get(209 + local_rng.rand() % 3);
 	}
 	else
 	{
-		shopspeech[player] = language[206 + rand() % 3];
+		shopspeech[player] = Language::get(206 + local_rng.rand() % 3);
 	}
 	shoptimer[player] = ticks - 1;
-	Item* sold = newItem(item->type, item->status, item->beatitude, 1, item->appearance, item->identified, shopInv[player]);
-	if ( itemTypeIsQuiver(item->type) )
+
+	if ( itemToStackInto != nullptr )
 	{
-		sold->count = item->count;
+		int addQty = 1;
+		if ( itemTypeIsQuiver(item->type) )
+		{
+			addQty = item->count;
+		}
+		itemToStackInto->count += addQty;
 	}
+	else
+	{
+		Item* sold = newItem(item->type, item->status, item->beatitude, 1, item->appearance, item->identified, shopInv[player]);
+		if ( itemTypeIsQuiver(item->type) )
+		{
+			sold->count = item->count;
+		}
+		sold->playerSoldItemToShop = true;
+		sold->x = xout;
+		sold->y = yout;
+	}
+
+	shopChangeGoldEvent(player, item->sellValue(player));
 	stats[player]->GOLD += item->sellValue(player);
+
+	if ( multiplayer != CLIENT )
+	{
+		Entity* entity = uidToEntity(shopkeeper[player]);
+		if ( entity )
+		{
+			Stat* shopstats = entity->getStats();
+			shopstats->GOLD -= item->sellValue(player);
+		}
+	}
 
 	if ( stats[player]->playerRace > 0 && players[player] && players[player]->entity->effectPolymorph > NUMMONSTERS )
 	{
@@ -479,28 +626,28 @@ void sellItemToShop(const int player, Item* item)
 	{
 		item->count = 1;
 	}
-	messagePlayer(player, language[1125], item->description(), item->sellValue(player));
+	messagePlayer(player, MESSAGE_INVENTORY, Language::get(1125), item->description(), item->sellValue(player));
 	item->count = ocount;
 	if ( multiplayer != CLIENT )
 	{
-		if ( players[player] && players[player]->entity )
-		{
-			if ( rand() % 2 )
-			{
-				if ( item->sellValue(player) <= 1 )
-				{
-					// selling cheap items does not increase trading past basic
-					if ( stats[player]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
-					{
-						players[player]->entity->increaseSkill(PRO_TRADING);
-					}
-				}
-				else
-				{
-					players[player]->entity->increaseSkill(PRO_TRADING);
-				}
-			}
-		}
+		//if ( players[player] && players[player]->entity )
+		//{
+		//	if ( local_rng.rand() % 2 )
+		//	{
+		//		if ( item->sellValue(player) <= 1 )
+		//		{
+		//			// selling cheap items does not increase trading past basic
+		//			if ( stats[player]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
+		//			{
+		//				players[player]->entity->increaseSkill(PRO_TRADING);
+		//			}
+		//		}
+		//		else
+		//		{
+		//			players[player]->entity->increaseSkill(PRO_TRADING);
+		//		}
+		//	}
+		//}
 	}
 	else
 	{
@@ -510,7 +657,9 @@ void sellItemToShop(const int player, Item* item)
 		// send item that was sold to server
 		SDLNet_Write32(item->type, &net_packet->data[8]);
 		SDLNet_Write32(item->status, &net_packet->data[12]);
-		SDLNet_Write32(item->beatitude, &net_packet->data[16]);
+		SDLNet_Write16(item->beatitude, &net_packet->data[16]);
+		net_packet->data[18] = (Sint8)xout;
+		net_packet->data[19] = (Sint8)yout;
 		SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
 		if ( itemTypeIsQuiver(item->type) )
 		{
@@ -539,7 +688,7 @@ void sellItemToShop(const int player, Item* item)
 		item->count = 1; // so we consume it all up.
 	}
 	consumeItem(item, player);
-	sellitem[player] = NULL;
+	return true;
 }
 
 bool shopIsMysteriousShopkeeper(Entity* entity)

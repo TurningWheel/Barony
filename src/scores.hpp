@@ -11,12 +11,14 @@
 
 #pragma once
 #include "monster.hpp"
+#include "json.hpp"
+#include "player.hpp"
 
 #define SCORESFILE "scores.dat"
 #define SCORESFILE_MULTIPLAYER "scores_multiplayer.dat"
 
 // game score structure
-#define MAXTOPSCORES 30
+#define MAXTOPSCORES 100
 #define NUM_CONDUCT_CHALLENGES 32
 #define NUM_GAMEPLAY_STATISTICS 64
 
@@ -267,7 +269,9 @@ extern bool achievementStatusRhythmOfTheKnight[MAXPLAYERS];
 extern std::pair<Uint32, Uint32> achievementThankTheTankPair[MAXPLAYERS];
 extern bool achievementStatusBaitAndSwitch[MAXPLAYERS];
 extern Uint32 achievementBaitAndSwitchTimer[MAXPLAYERS];
-extern std::unordered_set<int> clientLearnedAlchemyIngredients;
+extern std::unordered_set<int> clientLearnedAlchemyIngredients[MAXPLAYERS];
+extern std::vector<std::pair<int, std::pair<int, int>>> clientLearnedAlchemyRecipes[MAXPLAYERS];
+extern std::unordered_set<int> clientLearnedScrollLabels[MAXPLAYERS];
 extern bool achievementStatusThankTheTank[MAXPLAYERS];
 extern std::vector<Uint32> achievementStrobeVec[MAXPLAYERS];
 extern bool achievementStatusStrobe[MAXPLAYERS];
@@ -275,37 +279,340 @@ extern bool playerFailedRangedOnlyConduct[MAXPLAYERS];
 extern bool achievementBrawlerMode;
 extern bool achievementRangedMode[MAXPLAYERS];
 
-score_t* scoreConstructor();
+score_t* scoreConstructor(int player);
 void scoreDeconstructor(void* data);
-int saveScore();
+int saveScore(int player);
 int totalScore(score_t* score);
 void loadScore(int score);
+void loadScore(score_t* score);
+bool deleteScore(bool multiplayer, int index);
 void saveAllScores(const std::string& scoresfilename);
 void loadAllScores(const std::string& scoresfilename);
+
+enum SaveFileType {
+    MAIN,
+    FOLLOWERS,
+    SCREENSHOT,
+	JSON,
+    SIZE_OF_TYPE
+};
+
 extern int savegameCurrentFileIndex;
-std::string setSaveGameFileName(bool singleplayer, bool followersFile, int saveIndex = savegameCurrentFileIndex);
-int saveGame(int saveIndex = savegameCurrentFileIndex);
-int loadGame(int player, int saveIndex = savegameCurrentFileIndex);
-list_t* loadGameFollowers(int saveIndex = savegameCurrentFileIndex);
+
+std::string setSaveGameFileName(bool singleplayer, SaveFileType type, int saveIndex = savegameCurrentFileIndex);
+int saveGameOld(int saveIndex = savegameCurrentFileIndex);
+int loadGameOld(int player, int saveIndex = savegameCurrentFileIndex);
+list_t* loadGameFollowersOld(int saveIndex = savegameCurrentFileIndex);
+
 int deleteSaveGame(int gametype, int saveIndex = savegameCurrentFileIndex);
 bool saveGameExists(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
+bool anySaveFileExists(bool singleplayer);
 bool anySaveFileExists();
 
-char* getSaveGameName(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
-int getSaveGameType(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
-int getSaveGameClientnum(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
-Uint32 getSaveGameMapSeed(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
-Uint32 getSaveGameUniqueGameKey(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
-int getSaveGameVersionNum(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
-int getSavegameVersion(char checkstr[64]); // returns -1 on invalid version, otherwise converts to 3 digit int
+struct SaveGameInfo {
+	std::string magic_cookie = "BARONYJSONSAVE";
+	int game_version = -1;
+    std::string timestamp;
+	Uint32 hash = 0;
+	std::string gamename;
+	Uint32 gamekey = 0;
+	Uint32 mapseed = 0;
+	Uint32 gametimer = 0;
+	Uint32 svflags = 0;
+    int player_num = 0;
+    int multiplayer_type = SINGLE;
+    int dungeon_lvl = 0;
+	int level_track = 0;
+    std::vector<int> players_connected;
+
+	struct Player {
+		Uint32 char_class = 0;
+		Uint32 race = 0;
+		std::vector<int> kills;
+
+		bool conductPenniless = false;
+		bool conductFoodless = false;
+		bool conductVegetarian = false;
+		bool conductIlliterate = false;
+		int additionalConducts[NUM_CONDUCT_CHALLENGES] = { 0 };
+		int gameStatistics[NUM_GAMEPLAY_STATISTICS] = { 0 };
+
+		Uint32 hotbar[NUM_HOTBAR_SLOTS];
+		Uint32 hotbar_alternate[NUM_HOTBAR_ALTERNATES][NUM_HOTBAR_SLOTS];
+		Uint32 selected_spell;
+		Uint32 selected_spell_alternate[NUM_HOTBAR_ALTERNATES];
+		int selected_spell_last_appearance;
+		std::vector<Uint32> spells;
+
+		typedef std::pair<int, std::pair<int, int>> recipe_t;
+		std::vector<recipe_t> known_recipes;
+		std::vector<int> known_scrolls;
+
+		struct PlayerRaceHostility_t
+		{
+			int numAggressions = 0;
+			int numKills = 0;
+			int numAccessories = 0;
+			int playerRace = NOTHING;
+			int wantedLevel = ShopkeeperPlayerHostility_t::NO_WANTED_LEVEL;
+			int player = -1;
+
+			PlayerRaceHostility_t() = default;
+			PlayerRaceHostility_t(const PlayerRaceHostility_t&) = default;
+			PlayerRaceHostility_t(PlayerRaceHostility_t&&) = default;
+			PlayerRaceHostility_t(ShopkeeperPlayerHostility_t::PlayerRaceHostility_t& h)
+			{
+				wantedLevel = h.wantedLevel;
+				playerRace = h.playerRace;
+				player = h.player;
+				numAggressions = h.numAggressions;
+				numKills = h.numKills;
+				numAccessories = h.numAccessories;
+			}
+			bool serialize(FileInterface* fp)
+			{
+				fp->property("wanted_level", wantedLevel);
+				fp->property("player_race", playerRace);
+				fp->property("player", player);
+				fp->property("num_aggressions", numAggressions);
+				fp->property("num_kills", numKills);
+				fp->property("num_accessories", numAccessories);
+				return true;
+			}
+		};
+		std::vector<std::pair<int, PlayerRaceHostility_t>> shopkeeperHostility;
+
+		struct stat_t {
+			struct item_t {
+				item_t() = default;
+				item_t(const item_t&) = default;
+				item_t(item_t&&) = default;
+				item_t(Uint32 _type,
+					Uint32 _status,
+					Uint32 _appearance,
+					int _beatitude,
+					int _count,
+					bool _identified,
+					int _x,
+					int _y)
+				{
+					type = _type;
+					status = _status;
+					appearance = _appearance;
+					beatitude = _beatitude;
+					count = _count;
+					identified = _identified;
+					x = _x;
+					y = _y;
+				}
+
+				Uint32 type = 0;
+				Uint32 status = 0;
+				Uint32 appearance = 0;
+				int beatitude = 0;
+				int count = 1;
+				bool identified = false;
+				int x = 0;
+				int y = 0;
+
+				bool serialize(FileInterface* fp) {
+					fp->property("type", type);
+					fp->property("status", status);
+					fp->property("appearance", appearance);
+					fp->property("beatitude", beatitude);
+					fp->property("count", count);
+					fp->property("identified", identified);
+					fp->property("x", x);
+					fp->property("y", y);
+					return true;
+				}
+			};
+
+			struct lootbag_t
+			{
+				lootbag_t() = default;
+				lootbag_t(const lootbag_t&) = default;
+				lootbag_t(lootbag_t&&) = default;
+				lootbag_t(
+					int _spawn_x,
+					int _spawn_y,
+					bool _spawnedOnGround,
+					bool _looted
+					)
+				{
+					spawn_x = _spawn_x;
+					spawn_y = _spawn_y;
+					spawnedOnGround = _spawnedOnGround;
+					looted = _looted;
+				}
+
+				int spawn_x = 0;
+				int spawn_y = 0;
+				bool spawnedOnGround = false;
+				bool looted = false;
+				std::vector<item_t> items;
+				bool serialize(FileInterface* fp) {
+					fp->property("spawn_x", spawn_x);
+					fp->property("spawn_y", spawn_y);
+					fp->property("looted", looted);
+					fp->property("spawned", spawnedOnGround);
+					fp->property("items", items);
+					return true;
+				}
+			};
+
+			std::string name;
+			Uint32 type = Monster::HUMAN;
+			Uint32 sex = 0;
+			Uint32 appearance = 0;
+			int HP = 0;
+			int maxHP = 0;
+			int MP = 0;
+			int maxMP = 0;
+			int STR = 0;
+			int DEX = 0;
+			int CON = 0;
+			int INT = 0;
+			int PER = 0;
+			int CHR = 0;
+			int EXP = 0;
+			int LVL = 0;
+			int GOLD = 0;
+			int HUNGER = 0;
+			std::vector<int> PROFICIENCIES;
+			std::vector<int> EFFECTS;
+			std::vector<int> EFFECTS_TIMERS;
+			std::vector<int> MISC_FLAGS;
+			std::vector<std::pair<std::string, std::string>> attributes;
+			std::vector<std::pair<std::string, Uint32>> player_equipment;
+			std::vector<std::pair<std::string, item_t>> npc_equipment;
+			std::vector<item_t> inventory;
+			std::vector<std::pair<Uint32, lootbag_t>> player_lootbags;
+
+			bool serialize(FileInterface* fp) {
+				fp->property("name", name);
+				fp->property("type", type);
+				fp->property("sex", sex);
+				fp->property("appearance", appearance);
+				fp->property("HP", HP);
+				fp->property("maxHP", maxHP);
+				fp->property("MP", MP);
+				fp->property("maxMP", maxMP);
+				fp->property("STR", STR);
+				fp->property("DEX", DEX);
+				fp->property("CON", CON);
+				fp->property("INT", INT);
+				fp->property("PER", PER);
+				fp->property("CHR", CHR);
+				fp->property("EXP", EXP);
+				fp->property("LVL", LVL);
+				fp->property("GOLD", GOLD);
+				fp->property("HUNGER", HUNGER);
+				fp->property("PROFICIENCIES", PROFICIENCIES);
+				fp->property("EFFECTS", EFFECTS);
+				fp->property("EFFECTS_TIMERS", EFFECTS_TIMERS);
+				fp->property("MISC_FLAGS", MISC_FLAGS);
+				fp->property("player_equipment", player_equipment);
+				fp->property("npc_equipment", npc_equipment);
+				fp->property("inventory", inventory);
+				fp->property("attributes", attributes);
+				fp->property("lootbags", player_lootbags);
+				return true;
+			}
+		};
+
+		stat_t stats;
+		std::vector<stat_t> followers;
+		
+		bool serialize(FileInterface* fp) {
+			fp->property("char_class", char_class);
+			fp->property("race", race);
+			fp->property("kills", kills);
+			fp->property("race", race);
+			fp->property("conduct_penniless", conductPenniless);
+			fp->property("conduct_foodless", conductFoodless);
+			fp->property("conduct_vegetarian", conductVegetarian);
+			fp->property("conduct_illiterate", conductIlliterate);
+			fp->property("additional_conducts", additionalConducts);
+			if ( fp->isReading() )
+			{
+				for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+				{
+					hotbar[i] = UINT32_MAX;
+					for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
+					{
+						hotbar_alternate[j][i] = UINT32_MAX;
+					}
+				}
+				selected_spell = UINT32_MAX;
+				for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
+				{
+					selected_spell_alternate[j] = UINT32_MAX;
+				}
+			}
+			fp->property("hotbar", hotbar);
+			fp->property("hotbar_alternate", hotbar_alternate);
+			fp->property("selected_spell", selected_spell);
+			fp->property("selected_spell_alternate", selected_spell_alternate);
+			fp->property("selected_spell_last_appearance", selected_spell_last_appearance);
+			fp->property("spells", spells);
+			fp->property("recipes", known_recipes);
+			fp->property("scrolls", known_scrolls);
+			fp->property("stats", stats);
+			fp->property("followers", followers);
+			fp->property("game_statistics", gameStatistics);
+			fp->property("shopkeeper_hostility", shopkeeperHostility);
+			return true;
+		}
+	};
+	std::vector<Player> players;
+	std::vector<std::pair<std::string, std::string>> map_messages; // map modifiers "sound of pickaxes striking rock" "walls are fortified" etc
+	std::vector<std::pair<std::string, std::string>> additional_data;
+	
+	bool serialize(FileInterface* fp) {
+		fp->property("magic_cookie", magic_cookie);
+		fp->property("game_version", game_version);
+		fp->property("timestamp", timestamp);
+		fp->property("hash", hash);
+		fp->property("game_name", gamename);
+		fp->property("gamekey", gamekey);
+		fp->property("mapseed", mapseed);
+		fp->property("gametimer", gametimer);
+		fp->property("svflags", svflags);
+		fp->property("player_num", player_num);
+		fp->property("multiplayer_type", multiplayer_type);
+		fp->property("dungeon_lvl", dungeon_lvl);
+		fp->property("level_track", level_track);
+		fp->property("players_connected", players_connected);
+		fp->property("players", players);
+		fp->property("additional_data", additional_data);
+		fp->property("map_messages", map_messages);
+		return true;
+	}
+};
+
+int saveGame(int saveIndex = savegameCurrentFileIndex);
+int loadGame(int player, const SaveGameInfo& info);
+list_t* loadGameFollowers(const SaveGameInfo& info);
+
+SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
+const char* getSaveGameName(const SaveGameInfo& info);
+int getSaveGameType(const SaveGameInfo& info);
+int getSaveGameClientnum(const SaveGameInfo& info);
+Uint32 getSaveGameMapSeed(const SaveGameInfo& info);
+Uint32 getSaveGameUniqueGameKey(const SaveGameInfo& info);
+int getSaveGameVersionNum(const SaveGameInfo& info);
+
+int getSavegameVersion(const char* checkstr); // returns -1 on invalid version, otherwise converts to 3 digit int
 void setDefaultPlayerConducts(); // init values for foodless, penniless etc.
 void updatePlayerConductsInMainLoop(); // check and update conduct flags throughout game that don't require a specific action. (tracking gold, server flags etc...)
 void updateGameplayStatisticsInMainLoop(); // check for achievement values for gameplay statistics.
 void updateAchievementRhythmOfTheKnight(int player, Entity* target, bool playerIsHit);
 void updateAchievementThankTheTank(int player, Entity* target, bool targetKilled);
 void updateAchievementBaitAndSwitch(int player, bool isTeleporting);
-static const int SAVE_GAMES_MAX = 10;
+static const int SAVE_GAMES_MAX = 100;
 
+#ifndef EDITOR
 class AchievementObserver
 {
 	int levelObserved = -1;
@@ -464,6 +771,7 @@ public:
 	void updateGlobalStat(int index, int value = 1);
 };
 extern AchievementObserver achievementObserver;
+#endif
 
 #ifdef STEAMWORKS
 bool steamLeaderboardSetScore(score_t* score);

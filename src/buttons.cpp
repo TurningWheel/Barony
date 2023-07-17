@@ -90,11 +90,11 @@ static void updateMapNames()
 	std::string path;
 	if ( savewindow > 0 )
 	{
-		path = physfs_saveDirectory + "maps/";
+		path = physfs_saveDirectory + "/maps/";
 	}
 	else
 	{
-		path = physfs_openDirectory + "maps/";
+		path = physfs_openDirectory + "/maps/";
 	}
 	if ( (dir = openDataDir(path.c_str())) != NULL )
 	{
@@ -439,6 +439,7 @@ void buttonNewConfirm(button_t* my)
 	int x, y, z, c;
 	clearUndos();
 	free(map.tiles);
+	free(camera.vismap);
 	list_FreeAll(map.entities);
 	strcpy(map.name, nametext);
 	strcpy(map.author, authortext);
@@ -524,6 +525,7 @@ void buttonNewConfirm(button_t* my)
 	map.width = std::min(std::max(MINWIDTH, map.width), MAXWIDTH);
 	map.height = std::min(std::max(MINHEIGHT, map.height), MAXHEIGHT);
 	map.tiles = (int*) malloc(sizeof(int) * MAPLAYERS * map.height * map.width);
+	camera.vismap = (bool*) malloc(sizeof(bool) * map.height * map.width);
 	for ( z = 0; z < MAPLAYERS; z++ )
 	{
 		for ( y = 0; y < map.height; y++ )
@@ -548,26 +550,12 @@ void buttonNewConfirm(button_t* my)
 			}
 		}
 	}
-	if ( vismap != NULL )
-	{
-		free(vismap);
-	}
-	vismap = (bool*) malloc(sizeof(bool) * map.width * map.height);
-	if ( lightmap != NULL )
-	{
-		free(lightmap);
-	}
-	if ( lightmapSmoothed != NULL )
-	{
-		free(lightmapSmoothed);
-	}
-	lightmap = (int*) malloc(sizeof(Sint32) * map.width * map.height);
-	lightmapSmoothed = (int*)malloc(sizeof(Sint32) * map.width * map.height);
-	for (c = 0; c < map.width * map.height; c++ )
-	{
-		lightmap[c] = 0;
-		lightmapSmoothed[c] = 0;
-	}
+    for (int c = 0; c < MAXPLAYERS + 1; ++c) {
+        lightmaps[c].clear();
+        lightmaps[c].resize(map.width * map.height);
+        lightmapsSmoothed[c].clear();
+        lightmapsSmoothed[c].resize((map.width + 2) * (map.height + 2));
+    }
 	strcpy(message, "                             Created a new map.");
 	filename[0] = 0;
 	oldfilename[0] = 0;
@@ -876,7 +864,7 @@ void buttonSave(button_t* my)
 		printlog("saving map file '%s'...\n", filename);
 
 		std::string path = physfs_saveDirectory;
-		path.append("maps/").append(filename);
+		path.append("/maps/").append(filename);
 		if (saveMap(path.c_str()))
 		{
 			strcat(message, "Failed to save ");
@@ -1198,6 +1186,7 @@ void buttonAttributes(button_t* my)
 	snprintf(mapflagtext[MAP_FLAG_GENLOOTMAX], 4, "%d", (map.flags[MAP_FLAG_GENBYTES2] >> 16) & static_cast<int>(0xFF));
 	snprintf(mapflagtext[MAP_FLAG_GENDECORATIONMIN], 4, "%d", (map.flags[MAP_FLAG_GENBYTES2] >> 8) & static_cast<int>(0xFF));
 	snprintf(mapflagtext[MAP_FLAG_GENDECORATIONMAX], 4, "%d", (map.flags[MAP_FLAG_GENBYTES2] >> 0) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_PERIMETER_GAP], 4, "%d", (map.flags[MAP_FLAG_GENBYTES4] >> 0) & static_cast<int>(0xFF));
 	if ( (map.flags[MAP_FLAG_GENBYTES3] >> 24) & static_cast<int>(0xFF) )
 	{
 		strcpy(mapflagtext[MAP_FLAG_DISABLEDIGGING], "[x]");
@@ -1347,6 +1336,7 @@ void buttonAttributesConfirm(button_t* my)
 
 	// allocate memory for a new map
 	free(map.tiles);
+	free(camera.vismap);
 	map.width = atoi(widthtext);
 	map.height = atoi(heighttext);
 	map.width = std::min(std::max(MINWIDTH, map.width), MAXWIDTH);
@@ -1429,6 +1419,10 @@ void buttonAttributesConfirm(button_t* my)
 	{
 		map.flags[MAP_FLAG_GENBYTES4] |= (1 << 8); // store in third leftmost byte.
 	}
+	if ( atoi(mapflagtext[MAP_FLAG_PERIMETER_GAP]) >= 0 )
+	{
+		map.flags[MAP_FLAG_GENBYTES4] |= 0xFF & (atoi(mapflagtext[MAP_FLAG_PERIMETER_GAP]) << 0); // store in fourth leftmost byte.
+	}
 
 	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]", 3) )
 	{
@@ -1456,28 +1450,15 @@ void buttonAttributesConfirm(button_t* my)
 	}
 
 	map.tiles = (int*) malloc(sizeof(int) * MAPLAYERS * map.height * map.width);
+	camera.vismap = (bool*) malloc(sizeof(bool) * map.height * map.width);
 	strcpy(map.name, nametext);
 	strcpy(map.author, authortext);
-	if ( vismap != NULL )
-	{
-		free(vismap);
-	}
-	vismap = (bool*) malloc(sizeof(bool) * map.width * map.height);
-	if ( lightmap != NULL )
-	{
-		free(lightmap);
-	}
-	if ( lightmapSmoothed != NULL )
-	{
-		free(lightmapSmoothed);
-	}
-	lightmap = (int*)malloc(sizeof(Sint32) * map.width * map.height);
-	lightmapSmoothed = (int*)malloc(sizeof(Sint32) * map.width * map.height);
-	for ( c = 0; c < map.width * map.height; c++ )
-	{
-		lightmap[c] = 0;
-		lightmapSmoothed[c] = 0;
-	}
+    for (int c = 0; c < MAXPLAYERS + 1; ++c) {
+        lightmaps[c].clear();
+        lightmaps[c].resize(map.width * map.height);
+        lightmapsSmoothed[c].clear();
+        lightmapsSmoothed[c].resize((map.width + 2) * (map.height + 2));
+    }
 
 	// transfer data from the new map to the old map and fill extra space with empty data
 	for ( z = 0; z < MAPLAYERS; z++ )
@@ -1576,6 +1557,7 @@ void buttonHelp(button_t* my)
 	{
 		menuVisible = 0;
 	}
+	strcpy(subtext, "");
 }
 
 void buttonAbout(button_t* my)
@@ -1931,6 +1913,9 @@ void buttonSpriteProperties(button_t* my)
 				break;
 			case 10:
 				snprintf(spriteProperties[0], 5, "%d", static_cast<int>(selectedEntity[0]->ceilingTileModel));
+				snprintf(spriteProperties[1], 5, "%d", static_cast<int>(selectedEntity[0]->ceilingTileDir));
+				snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity[0]->ceilingTileAllowTrap));
+				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity[0]->ceilingTileBreakable));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -1938,8 +1923,8 @@ void buttonSpriteProperties(button_t* my)
 				newwindow = 12;
 				subx1 = xres / 2 - 170;
 				subx2 = xres / 2 + 170;
-				suby1 = yres / 2 - 60;
-				suby2 = yres / 2 + 60;
+				suby1 = yres / 2 - 100;
+				suby2 = yres / 2 + 100;
 				strcpy(subtext, "Ceiling Tile Properties:");
 				break;
 			case 11:
@@ -2280,6 +2265,76 @@ void buttonSpriteProperties(button_t* my)
 				suby2 = yres / 2 + 60;
 				strcpy(subtext, "Player Spawn Properties:");
 				break;
+			case 24: // statue
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->statueDir));
+				snprintf(spriteProperties[1], 32, "%d", static_cast<int>(selectedEntity[0]->statueId));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 29;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 60;
+				suby2 = yres / 2 + 60;
+				strcpy(subtext, "Statue Properties:");
+				break;
+			case 25: // teleport shrine
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->shrineDir));
+				snprintf(spriteProperties[1], 5, "%d", static_cast<int>(selectedEntity[0]->shrineZ));
+				snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity[0]->shrineDestXOffset));
+				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity[0]->shrineDestYOffset));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 30;
+				subx1 = xres / 2 - 220;
+				subx2 = xres / 2 + 220;
+				suby1 = yres / 2 - 90;
+				suby2 = yres / 2 + 90;
+				strcpy(subtext, "Teleport Shrine Properties:");
+				break;
+			case 26: // spell shrine
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->shrineDir));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity[0]->shrineZ));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 30;
+				subx1 = xres / 2 - 220;
+				subx2 = xres / 2 + 220;
+				suby1 = yres / 2 - 60;
+				suby2 = yres / 2 + 60;
+				strcpy(subtext, "Spell Shrine Properties:");
+				break;
+			case 27:
+			{
+				snprintf(spriteProperties[0], 5, "%d", static_cast<int>(selectedEntity[0]->colliderDecorationModel));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity[0]->colliderDecorationRotation));
+				snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity[0]->colliderDecorationHeightOffset));
+				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity[0]->colliderDecorationXOffset));
+				snprintf(spriteProperties[4], 5, "%d", static_cast<int>(selectedEntity[0]->colliderDecorationYOffset));
+				snprintf(spriteProperties[5], 5, "%d", static_cast<int>(selectedEntity[0]->colliderHasCollision));
+				snprintf(spriteProperties[6], 4, "%d", static_cast<int>(selectedEntity[0]->colliderSizeX));
+				snprintf(spriteProperties[7], 4, "%d", static_cast<int>(selectedEntity[0]->colliderSizeY));
+				snprintf(spriteProperties[8], 5, "%d", static_cast<int>(selectedEntity[0]->colliderMaxHP));
+				snprintf(spriteProperties[9], 4, "%d", static_cast<int>(selectedEntity[0]->colliderDiggable));
+				snprintf(spriteProperties[10], 4, "%d", static_cast<int>(selectedEntity[0]->colliderDamageTypes));
+
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 31;
+				subx1 = xres / 2 - 200;
+				subx2 = xres / 2 + 200;
+				suby1 = yres / 2 - 220;
+				suby2 = yres / 2 + 220;
+				strcpy(subtext, "Collider Model Properties:");
+				break;
+			}
 			default:
 				strcpy(message, "No properties available for current sprite.");
 				messagetime = 60;
@@ -3120,6 +3175,9 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				break;
 			case 10: //ceiling tile model
 				selectedEntity[0]->ceilingTileModel = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->ceilingTileDir = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->ceilingTileAllowTrap = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->ceilingTileBreakable = (Sint32)atoi(spriteProperties[3]);
 				break;
 			case 11: //spell trap ceiling
 				selectedEntity[0]->spellTrapType = (Sint32)atoi(spriteProperties[0]);
@@ -3354,6 +3412,33 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				break;
 			case 23: // player spawn
 				selectedEntity[0]->playerStartDir = (Sint32)atoi(spriteProperties[0]);
+				break;
+			case 24: // statue
+				selectedEntity[0]->statueDir = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->statueId = (Sint32)atoi(spriteProperties[1]);
+				break;
+			case 25: // teleport shrine
+				selectedEntity[0]->shrineDir = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->shrineZ = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->shrineDestXOffset = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->shrineDestYOffset = (Sint32)atoi(spriteProperties[3]);
+				break;
+			case 26: // spell shrine
+				selectedEntity[0]->shrineDir = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->shrineZ = (Sint32)atoi(spriteProperties[1]);
+				break;
+			case 27:
+				selectedEntity[0]->colliderDecorationModel = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->colliderDecorationRotation = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->colliderDecorationHeightOffset = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->colliderDecorationXOffset = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity[0]->colliderDecorationYOffset = (Sint32)atoi(spriteProperties[4]);
+				selectedEntity[0]->colliderHasCollision = (Sint32)atoi(spriteProperties[5]);
+				selectedEntity[0]->colliderSizeX = (Sint32)atoi(spriteProperties[6]);
+				selectedEntity[0]->colliderSizeY = (Sint32)atoi(spriteProperties[7]);
+				selectedEntity[0]->colliderMaxHP = (Sint32)atoi(spriteProperties[8]);
+				selectedEntity[0]->colliderDiggable = (Sint32)atoi(spriteProperties[9]);
+				selectedEntity[0]->colliderDamageTypes = (Sint32)atoi(spriteProperties[10]);
 				break;
 			default:
 				break;

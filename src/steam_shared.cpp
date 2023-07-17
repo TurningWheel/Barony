@@ -39,10 +39,11 @@ CSteamStatistics::CSteamStatistics(SteamStat_t* gStats, SteamGlobalStat_t* gGlob
 	//m_CallbackGlobalStatsReceived(this, &CSteamStatistics::OnGlobalStatsReceived),
 {
 	m_iNumStats = numStatistics;
-	m_iNumGlobalStats = 2;
+	m_iNumGlobalStats = 1;
 	m_pStats = gStats;
 	m_pGlobalStats = gGlobalStats;
 	RequestStats();
+	RequestGlobalStats();
 }
 
 void CSteamWorkshop::CreateItem()
@@ -127,11 +128,11 @@ void CSteamWorkshop::CreateQuerySubscribedItems(EUserUGCList itemListType, EUGCM
 		m_callResultSendQueryUGCRequest.Set(hSteamAPICall, this,
 			&CSteamWorkshop::OnSendQueryUGCRequest);
 	}
-	SteamUGC()->ReleaseQueryUGCRequest(UGCQueryHandle);
 }
 
 void CSteamWorkshop::OnSendQueryUGCRequest(SteamUGCQueryCompleted_t *pResult, bool bIOFailure)
 {
+	subscribedCallStatus = 2;
 	if ( !bIOFailure )
 	{
 		SteamUGCQueryCompleted = *pResult;
@@ -139,10 +140,6 @@ void CSteamWorkshop::OnSendQueryUGCRequest(SteamUGCQueryCompleted_t *pResult, bo
 		{
 			ReadSubscribedItems();
 			StoreResultMessage("Load Subscribed Items: OK", k_EResultOK);
-			if ( subscribedCallStatus == 1 )
-			{
-				subscribedCallStatus = 2;
-			}
 			return;
 		}
 	}
@@ -155,8 +152,17 @@ void CSteamWorkshop::ReadSubscribedItems()
 	{
 		for ( int i = 0; i < SteamUGCQueryCompleted.m_unNumResultsReturned; ++i )
 		{
-				SteamUGC()->GetQueryUGCResult(SteamUGCQueryCompleted.m_handle,
-					i, &m_subscribedItemListDetails[i]);
+			SteamUGC()->GetQueryUGCResult(SteamUGCQueryCompleted.m_handle,
+				i, &m_subscribedItemListDetails[i]);
+			char url[1024];
+			if ( SteamUGC()->GetQueryUGCPreviewURL(SteamUGCQueryCompleted.m_handle, i, url, 256) )
+			{
+				m_subscribedItemPreviewURL[i] = url;
+			}
+			else
+			{
+				m_subscribedItemPreviewURL[i] = "";
+			}
 		}
 		
 		SteamUGC()->ReleaseQueryUGCRequest(SteamUGCQueryCompleted.m_handle);
@@ -208,6 +214,24 @@ bool CSteamStatistics::RequestStats()
 	return SteamUserStats()->RequestCurrentStats();
 }
 
+bool CSteamStatistics::RequestGlobalStats()
+{
+	// Is Steam loaded? If not we can't get stats.
+	if ( NULL == SteamUserStats() || NULL == SteamUser() )
+	{
+		return false;
+	}
+	// Is the user logged on?  If not we can't get stats.
+	if ( !SteamUser()->BLoggedOn() )
+	{
+		return false;
+	}
+	// Request user stats.
+	m_CallbackGlobalStatsReceived.Set(SteamUserStats()->RequestGlobalStats(1), this,
+		&CSteamStatistics::OnGlobalStatsReceived);
+	return true;
+}
+
 void CSteamStatistics::OnUserStatsReceived(UserStatsReceived_t *pCallback)
 {
 	// we may get callbacks for other games' stats arriving, ignore them
@@ -234,7 +258,6 @@ void CSteamStatistics::OnUserStatsReceived(UserStatsReceived_t *pCallback)
 				}
 			}
 			m_bInitialized = true;
-			SteamUserStats()->RequestGlobalStats(60);
 			printlog("[STEAM]: successfully received Steam user statistics.");
 		}
 		else
@@ -308,45 +331,51 @@ void CSteamStatistics::OnUserStatsStored(UserStatsStored_t *pCallback)
 	}
 }
 
-//void CSteamStatistics::OnGlobalStatsReceived(GlobalStatsReceived_t *pCallback)
-//{
-//	// we may get callbacks for other games' stats arriving, ignore them
-//	if ( pCallback->m_nGameID == STEAM_APPID )
-//	{
-//		if ( pCallback->m_eResult == k_EResultOK )
-//		{
-//			// load stats
-//			for ( int iStat = 0; iStat < m_iNumGlobalStats; ++iStat )
-//			{
-//				SteamGlobalStat_t &stat = m_pGlobalStats[iStat];
-//				switch ( stat.m_eStatType )
-//				{
-//					case STEAM_STAT_INT:
-//						SteamUserStats()->GetGlobalStat(stat.m_pchStatName, &stat.m_iValue);
-//						SteamUserStats()->SetStat(stat.m_pchStatName, static_cast<int>(1));
-//						printlog("%s: %d", stat.m_pchStatName, stat.m_iValue);
-//						break;
-//					case STEAM_STAT_FLOAT:
-//					case STEAM_STAT_AVGRATE:
-//						SteamUserStats()->GetStat(stat.m_pchStatName, &stat.m_flValue);
-//						break;
-//					default:
-//						break;
-//				}
-//			}
-//			//m_bInitialized = true;
-//			printlog("[STEAM]: successfully received Steam user statistics.");
-//		}
-//		else
-//		{
-//			printlog("[STEAM]: unsuccessfully received Steam user statistics!");
-//		}
-//	}
-//	else
-//	{
-//		printlog("[STEAM]: unsuccessfully received Steam user statistics, appID (%d) was invalid!", pCallback->m_nGameID);
-//	}
-//}
+void CSteamStatistics::OnGlobalStatsReceived(GlobalStatsReceived_t *pCallback, bool bIOFailure)
+{
+	// we may get callbacks for other games' stats arriving, ignore them
+	if ( pCallback->m_nGameID == STEAM_APPID )
+	{
+		if ( pCallback->m_eResult == k_EResultOK )
+		{
+			// load stats
+			for ( int iStat = 0; iStat < m_iNumGlobalStats; ++iStat )
+			{
+				SteamGlobalStat_t &stat = m_pGlobalStats[iStat];
+				switch ( stat.m_eStatType )
+				{
+					case STEAM_STAT_INT:
+					{
+						SteamUserStats()->GetGlobalStat(stat.m_pchStatName, &stat.m_iValue);
+						int32 newValue = (int32)stat.m_iValue + 1;
+						SteamUserStats()->SetStat(stat.m_pchStatName, newValue);
+						int64 history[1] = { 0 };
+						auto result = SteamUserStats()->GetGlobalStatHistory(stat.m_pchStatName, history, sizeof(int64));
+						//printlog("%s: %d | %d", stat.m_pchStatName, stat.m_iValue, history[0]);
+						auto storeStatResult = SteamUserStats()->StoreStats();
+					}
+						break;
+					case STEAM_STAT_FLOAT:
+					case STEAM_STAT_AVGRATE:
+						SteamUserStats()->GetStat(stat.m_pchStatName, &stat.m_flValue);
+						break;
+					default:
+						break;
+				}
+			}
+			//m_bInitialized = true;
+			printlog("[STEAM]: successfully received global Steam statistics.");
+		}
+		else
+		{
+			printlog("[STEAM]: unsuccessfully received global Steam statistics!");
+		}
+	}
+	else
+	{
+		printlog("[STEAM]: unsuccessfully received Steam user statistics, appID (%d) was invalid!", pCallback->m_nGameID);
+	}
+}
 
 bool CSteamStatistics::ClearAllStats()
 {

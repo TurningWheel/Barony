@@ -14,47 +14,420 @@
 #include "entity.hpp"
 #include "files.hpp"
 #include "items.hpp"
+#include "ui/Text.hpp"
+#include "ui/GameUI.hpp"
+#include "interface/interface.hpp"
+#include "interface/consolecommand.hpp"
+#include "mod_tools.hpp"
+#include "player.hpp"
+#include "ui/MainMenu.hpp"
 
-#ifdef WINDOWS
-PFNGLGENBUFFERSPROC SDL_glGenBuffers;
-PFNGLBINDBUFFERPROC SDL_glBindBuffer;
-PFNGLBUFFERDATAPROC SDL_glBufferData;
-PFNGLDELETEBUFFERSPROC SDL_glDeleteBuffers;
-PFNGLGENVERTEXARRAYSPROC SDL_glGenVertexArrays;
-PFNGLBINDVERTEXARRAYPROC SDL_glBindVertexArray;
-PFNGLDELETEVERTEXARRAYSPROC SDL_glDeleteVertexArrays;
-PFNGLENABLEVERTEXATTRIBARRAYPROC SDL_glEnableVertexAttribArray;
-PFNGLVERTEXATTRIBPOINTERPROC SDL_glVertexAttribPointer;
+static real_t getLightAtModifier = 1.0;
+static real_t getLightAtAdder = 0.0;
+
+#ifndef EDITOR
+static ConsoleVariable<bool> cvar_fullBright("/fullbright", false);
 #endif
 
-void perspectiveGL(GLdouble fovY, GLdouble aspect, GLdouble zNear, GLdouble zFar)
+static void perspectiveGL(GLdouble fovY, GLdouble aspect, GLdouble zNear, GLdouble zFar)
 {
 	GLdouble fW, fH;
 
 	fH = tan(fovY / 360 * PI) * zNear;
 	fW = fH * aspect;
 
-	glFrustum(-fW, fW, -fH, fH, zNear, zFar);
+    GL_CHECK_ERR(glFrustum(-fW, fW, -fH, fH, zNear, zFar));
 }
 
-/*-------------------------------------------------------------------------------
+vec4_t vec4_copy(const vec4_t* v) {
+	return vec4_t(v->x, v->y, v->z, v->w);
+}
 
-	getLightForEntity
+vec4_t* mul_mat_vec4(vec4_t* result, const mat4x4_t* m, const vec4_t* v) {
+	result->x = m->x.x * v->x + m->y.x * v->y + m->z.x * v->z + m->w.x * v->w;
+	result->y = m->x.y * v->x + m->y.y * v->y + m->z.y * v->z + m->w.y * v->w;
+	result->z = m->x.z * v->x + m->y.z * v->y + m->z.z * v->z + m->w.z * v->w;
+	result->w = m->x.w * v->x + m->y.w * v->y + m->z.w * v->z + m->w.w * v->w;
+	return result;
+}
 
-	Returns a shade factor (0.0-1.0) to shade an entity with, based on
-	its surroundings
+vec4_t* add_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b) {
+	result->x = a->x + b->x;
+	result->y = a->y + b->y;
+	result->z = a->z + b->z;
+	result->w = a->w + b->w;
+	return result;
+}
 
--------------------------------------------------------------------------------*/
+vec4_t* sub_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b) {
+	result->x = a->x - b->x;
+	result->y = a->y - b->y;
+	result->z = a->z - b->z;
+	result->w = a->w - b->w;
+	return result;
+}
 
-real_t getLightForEntity(real_t x, real_t y)
+vec4_t* mul_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b) {
+	result->x = a->x * b->x;
+	result->y = a->y * b->y;
+	result->z = a->z * b->z;
+	result->w = a->w * b->w;
+	return result;
+}
+
+vec4_t* div_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b) {
+	result->x = a->x / b->x;
+	result->y = a->y / b->y;
+	result->z = a->z / b->z;
+	result->w = a->w / b->w;
+	return result;
+}
+
+vec4_t* pow_vec4(vec4_t* result, const vec4_t* v, float f) {
+	result->x = v->x * f;
+	result->y = v->y * f;
+	result->z = v->z * f;
+	result->w = v->w * f;
+	return result;
+}
+
+float dot_vec4(const vec4_t* a, const vec4_t* b) {
+	return a->x * b->x + a->y * b->y + a->z * b->z + a->w * b->w;
+}
+
+vec4_t* cross_vec3(vec4_t* result, const vec4_t* a, const vec4_t* b) {
+	result->x = a->y * b->z - a->z * b->y;
+	result->y = a->z * b->x - a->x * b->z;
+	result->z = a->x * b->y - a->y * b->x;
+	return result;
+}
+
+vec4_t* cross_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b) {
+	result->x = a->y * b->z - a->z * b->y;
+	result->y = a->z * b->w - a->w * b->z;
+	result->z = a->w * b->x - a->x * b->w;
+	result->w = a->x * b->y - a->y * b->x;
+	return result;
+}
+
+float length_vec4(const vec4_t* v) {
+	return sqrtf(v->x * v->x + v->y * v->y + v->z * v->z + v->w * v->w);
+}
+
+vec4_t* normal_vec4(vec4_t* result, const vec4_t* v) {
+	float length = length_vec4(v);
+	result->x = v->x / length;
+	result->y = v->y / length;
+	result->z = v->z / length;
+	result->w = v->w / length;
+	return result;
+}
+
+mat4x4_t* mul_mat(mat4x4_t* result, const mat4x4_t* m1, const mat4x4_t* m2) {
+	vec4 v[6];
+	(void)add_vec4(
+		&result->x,
+		add_vec4(&v[0], pow_vec4(&v[1], &m1->x, m2->x.x), pow_vec4(&v[2], &m1->y, m2->x.y)),
+		add_vec4(&v[3], pow_vec4(&v[4], &m1->z, m2->x.z), pow_vec4(&v[5], &m1->w, m2->x.w))
+	);
+	(void)add_vec4(
+		&result->y,
+		add_vec4(&v[0], pow_vec4(&v[1], &m1->x, m2->y.x), pow_vec4(&v[2], &m1->y, m2->y.y)),
+		add_vec4(&v[3], pow_vec4(&v[4], &m1->z, m2->y.z), pow_vec4(&v[5], &m1->w, m2->y.w))
+	);
+	(void)add_vec4(
+		&result->z,
+		add_vec4(&v[0], pow_vec4(&v[1], &m1->x, m2->z.x), pow_vec4(&v[2], &m1->y, m2->z.y)),
+		add_vec4(&v[3], pow_vec4(&v[4], &m1->z, m2->z.z), pow_vec4(&v[5], &m1->w, m2->z.w))
+	);
+	(void)add_vec4(
+		&result->w,
+		add_vec4(&v[0], pow_vec4(&v[1], &m1->x, m2->w.x), pow_vec4(&v[2], &m1->y, m2->w.y)),
+		add_vec4(&v[3], pow_vec4(&v[4], &m1->z, m2->w.z), pow_vec4(&v[5], &m1->w, m2->w.w))
+	);
+	return result;
+}
+
+mat4x4_t* translate_mat(mat4x4_t* result, const mat4x4_t* m, const vec4_t* v) {
+    vec4_t t[5];
+    result->x = m->x;
+    result->y = m->y;
+    result->z = m->z;
+    (void)add_vec4(&result->w, &m->w,
+        add_vec4(&t[0],
+            add_vec4(&t[1],
+                pow_vec4(&t[2], &m->x, v->x),
+                pow_vec4(&t[3], &m->y, v->y)),
+            pow_vec4(&t[4], &m->z, v->z)));
+    return result;
+}
+
+mat4x4_t* rotate_mat(mat4x4_t* result, const mat4x4_t* m, float angle, const vec4_t* v) {
+    const float a = (angle / 180.f) * PI;
+    const float c = cos(a);
+    const float s = sin(a);
+
+    vec4_t axis; (void)normal_vec4(&axis, v);
+    vec4_t temp; (void)pow_vec4(&temp, &axis, 1.f - c);
+
+    mat4x4_t rotate;
+    rotate.x.x = c + temp.x * axis.x;
+    rotate.x.y = temp.x * axis.y + s * axis.z;
+    rotate.x.z = temp.x * axis.z - s * axis.y;
+
+    rotate.y.x = temp.y * axis.x - s * axis.z;
+    rotate.y.y = c + temp.y * axis.y;
+    rotate.y.z = temp.y * axis.z + s * axis.x;
+
+    rotate.z.x = temp.z * axis.x + s * axis.y;
+    rotate.z.y = temp.z * axis.y - s * axis.x;
+    rotate.z.z = c + temp.z * axis.z;
+
+    mat4x4_t t(0.f);
+    (void)add_vec4(&result->x,
+        add_vec4(&t.w, pow_vec4(&t.x, &m->x, rotate.x.x), pow_vec4(&t.y, &m->y, rotate.x.y)),
+        pow_vec4(&t.z, &m->z, rotate.x.z));
+    (void)add_vec4(&result->y,
+        add_vec4(&t.w, pow_vec4(&t.x, &m->x, rotate.y.x), pow_vec4(&t.y, &m->y, rotate.y.y)),
+        pow_vec4(&t.z, &m->z, rotate.y.z));
+    (void)add_vec4(&result->z,
+        add_vec4(&t.w, pow_vec4(&t.x, &m->x, rotate.z.x), pow_vec4(&t.y, &m->y, rotate.z.y)),
+        pow_vec4(&t.z, &m->z, rotate.z.z));
+    result->w = m->w;
+    return result;
+}
+
+mat4x4_t* scale_mat(mat4x4_t* result, const mat4x4_t* m, const vec4_t* v) {
+    (void)pow_vec4(&result->x, &m->x, v->x);
+    (void)pow_vec4(&result->y, &m->y, v->y);
+    (void)pow_vec4(&result->z, &m->z, v->z);
+    result->w = m->w;
+    return result;
+}
+
+mat4x4_t* ortho(mat4x4_t* result, float left, float right, float bot, float top, float near, float far) {
+    *result = mat4x4(1.f);
+    result->x.x = 2.f / (right - left);
+    result->y.y = 2.f / (top - bot);
+    result->z.z = 2.f / (far - near);
+    result->w.x = -1.f;
+    result->w.y = -1.f;
+    return result;
+}
+
+mat4x4_t* frustum(mat4x4_t* result, float left, float right, float bot, float top, float near, float far) {
+    *result = mat4x4(0.f);
+    result->x.x = 2.f / (right - left);
+    result->x.z = (right + left) / (right - left);
+    result->y.y = 2.f / (top - bot);
+    result->y.z = (top + bot) / (top - bot);
+    result->z.z = -(far + near) / (far - near);
+    result->z.w = -1.f;
+    result->w.z = -(2.f * far * near) / (far - near);
+    return result;
+}
+
+mat4x4_t* slow_perspective(mat4x4_t* result, float fov, float aspect, float near, float far) {
+    const float h = tanf((fov / 180.f * (float)PI) / 2.f);
+    const float w = h * aspect;
+    return frustum(result, -w, w, -h, h, near, far);
+}
+
+mat4x4_t* fast_perspective(mat4x4_t* result, float fov, float aspect, float near, float far) {
+    const float h = tanf((fov / 180.f * (float)PI) / 2.f);
+    const float w = h * aspect;
+    
+    *result = mat4x4(0.f);
+    result->x.x = 1.f / w;
+    result->y.y = 1.f / h;
+    result->z.z = -(far + near) / (far - near);
+    result->z.w = -1.f;
+    result->w.z = -(2.f * far * near) / (far - near);
+    return result;
+}
+
+mat4x4_t* mat_from_array(mat4x4_t* result, float matArray[16])
 {
-	if ( x < 0 || y < 0 || x >= map.width || y >= map.height )
-	{
-		return 1.f;
-	}
-	int u = x;
-	int v = y;
-	return std::min(std::max(0, lightmapSmoothed[v + u * map.height]), 255) / 255.0;
+    memcpy((void*)result, (const void*)matArray, sizeof(mat4x4_t));
+	return result;
+}
+
+bool invertMatrix4x4(mat4x4_t* result, const mat4x4_t* m)
+{
+	float inv[16];
+
+	inv[0] = m->y.y * m->z.z * m->w.w -
+		m->y.y * m->z.w * m->w.z -
+		m->z.y * m->y.z * m->w.w +
+		m->z.y * m->y.w * m->w.z +
+		m->w.y * m->y.z * m->z.w -
+		m->w.y * m->y.w * m->z.z;
+
+	inv[4] = -m->y.x * m->z.z * m->w.w +
+		m->y.x * m->z.w * m->w.z +
+		m->z.x * m->y.z * m->w.w -
+		m->z.x * m->y.w * m->w.z -
+		m->w.x * m->y.z * m->z.w +
+		m->w.x * m->y.w * m->z.z;
+
+	inv[8] = m->y.x * m->z.y * m->w.w -
+		m->y.x * m->z.w * m->w.y -
+		m->z.x * m->y.y * m->w.w +
+		m->z.x * m->y.w * m->w.y +
+		m->w.x * m->y.y * m->z.w -
+		m->w.x * m->y.w * m->z.y;
+
+	inv[12] = -m->y.x * m->z.y * m->w.z +
+		m->y.x * m->z.z * m->w.y +
+		m->z.x * m->y.y * m->w.z -
+		m->z.x * m->y.z * m->w.y -
+		m->w.x * m->y.y * m->z.z +
+		m->w.x * m->y.z * m->z.y;
+
+	inv[1] = -m->x.y * m->z.z * m->w.w +
+		m->x.y * m->z.w * m->w.z +
+		m->z.y * m->x.z * m->w.w -
+		m->z.y * m->x.w * m->w.z -
+		m->w.y * m->x.z * m->z.w +
+		m->w.y * m->x.w * m->z.z;
+
+	inv[5] = m->x.x * m->z.z * m->w.w -
+		m->x.x * m->z.w * m->w.z -
+		m->z.x * m->x.z * m->w.w +
+		m->z.x * m->x.w * m->w.z +
+		m->w.x * m->x.z * m->z.w -
+		m->w.x * m->x.w * m->z.z;
+
+	inv[9] = -m->x.x * m->z.y * m->w.w +
+		m->x.x * m->z.w * m->w.y +
+		m->z.x * m->x.y * m->w.w -
+		m->z.x * m->x.w * m->w.y -
+		m->w.x * m->x.y * m->z.w +
+		m->w.x * m->x.w * m->z.y;
+
+	inv[13] = m->x.x * m->z.y * m->w.z -
+		m->x.x * m->z.z * m->w.y -
+		m->z.x * m->x.y * m->w.z +
+		m->z.x * m->x.z * m->w.y +
+		m->w.x * m->x.y * m->z.z -
+		m->w.x * m->x.z * m->z.y;
+
+	inv[2] = m->x.y * m->y.z * m->w.w -
+		m->x.y * m->y.w * m->w.z -
+		m->y.y * m->x.z * m->w.w +
+		m->y.y * m->x.w * m->w.z +
+		m->w.y * m->x.z * m->y.w -
+		m->w.y * m->x.w * m->y.z;
+
+	inv[6] = -m->x.x * m->y.z * m->w.w +
+		m->x.x * m->y.w * m->w.z +
+		m->y.x * m->x.z * m->w.w -
+		m->y.x * m->x.w * m->w.z -
+		m->w.x * m->x.z * m->y.w +
+		m->w.x * m->x.w * m->y.z;
+
+	inv[10] = m->x.x * m->y.y * m->w.w -
+		m->x.x * m->y.w * m->w.y -
+		m->y.x * m->x.y * m->w.w +
+		m->y.x * m->x.w * m->w.y +
+		m->w.x * m->x.y * m->y.w -
+		m->w.x * m->x.w * m->y.y;
+
+	inv[14] = -m->x.x * m->y.y * m->w.z +
+		m->x.x * m->y.z * m->w.y +
+		m->y.x * m->x.y * m->w.z -
+		m->y.x * m->x.z * m->w.y -
+		m->w.x * m->x.y * m->y.z +
+		m->w.x * m->x.z * m->y.y;
+
+	inv[3] = -m->x.y * m->y.z * m->z.w +
+		m->x.y * m->y.w * m->z.z +
+		m->y.y * m->x.z * m->z.w -
+		m->y.y * m->x.w * m->z.z -
+		m->z.y * m->x.z * m->y.w +
+		m->z.y * m->x.w * m->y.z;
+
+	inv[7] = m->x.x * m->y.z * m->z.w -
+		m->x.x * m->y.w * m->z.z -
+		m->y.x * m->x.z * m->z.w +
+		m->y.x * m->x.w * m->z.z +
+		m->z.x * m->x.z * m->y.w -
+		m->z.x * m->x.w * m->y.z;
+
+	inv[11] = -m->x.x * m->y.y * m->z.w +
+		m->x.x * m->y.w * m->z.y +
+		m->y.x * m->x.y * m->z.w -
+		m->y.x * m->x.w * m->z.y -
+		m->z.x * m->x.y * m->y.w +
+		m->z.x * m->x.w * m->y.y;
+
+	inv[15] = m->x.x * m->y.y * m->z.z -
+		m->x.x * m->y.z * m->z.y -
+		m->y.x * m->x.y * m->z.z +
+		m->y.x * m->x.z * m->z.y +
+		m->z.x * m->x.y * m->y.z -
+		m->z.x * m->x.z * m->y.y;
+
+	float det = m->x.x * inv[0] + m->x.y * inv[4] + m->x.z * inv[8] + m->x.w * inv[12];
+
+    if (det == 0.f) {
+        return false;
+    }
+
+	det = 1.f / det;
+
+    float* out = (float*)result;
+    for (int i = 0; i < 16; ++i) {
+        out[i] = inv[i] * det;
+    }
+
+	return true;
+}
+
+vec4_t project(
+	const vec4_t* world,
+	const mat4x4_t* model,
+	const mat4x4_t* projview,
+	const vec4_t* window
+) {
+	vec4 copy;
+	vec4_t result = *world; result.w = 1.f;
+	copy = vec4_copy(&result); mul_mat_vec4(&result, model, &copy);
+	copy = vec4_copy(&result); mul_mat_vec4(&result, projview, &copy);
+
+	vec4 half(0.5f);
+	vec4 w(result.w);
+	div_vec4(&result, &result, &w);
+	mul_vec4(&result, &result, &half);
+	add_vec4(&result, &result, &half);
+	result.x = result.x * window->z + window->x;
+	result.y = result.y * window->w + window->y;
+	return result;
+}
+
+vec4_t unproject(
+	const vec4_t* screenCoords,
+	const mat4x4_t* model,
+	const mat4x4_t* projview,
+	const vec4_t* window
+) {
+	vec4_t result = *screenCoords;
+	result.x = (result.x - window->x) / window->z;
+	result.y = (result.y - window->y) / window->w;
+
+	vec4 half(0.5f);
+	sub_vec4(&result, &result, &half);
+	div_vec4(&result, &result, &half);
+
+    vec4 copy;
+    mat4x4_t inv;
+    invertMatrix4x4(&inv, projview);
+	copy = vec4_copy(&result); mul_mat_vec4(&result, &inv, &copy);
+    
+    vec4 w(result.w);
+    div_vec4(&result, &result, &w);
+
+	return result;
 }
 
 /*-------------------------------------------------------------------------------
@@ -65,434 +438,667 @@ real_t getLightForEntity(real_t x, real_t y)
 
 -------------------------------------------------------------------------------*/
 
-bool wholevoxels = false;
-void glDrawVoxel(view_t* camera, Entity* entity, int mode)
-{
-	real_t dx, dy, dz;
-	int voxX, voxY, voxZ;
-	real_t s = 1;
-	//int x = 0;
-	//int y = 0;
-	Sint32 index;
-	Sint32 indexdown[3];
-	voxel_t* model;
-	int modelindex = 0;
-	GLfloat rotx, roty, rotz;
-	//GLuint uidcolor;
+static void fillSmoothLightmap(int which) {
+    auto lightmap = lightmaps[which].data();
+    auto lightmapSmoothed = lightmapsSmoothed[which].data();
+    
+    constexpr float epsilon = 1.f;
+    constexpr float defaultSmoothRate = 4.f;
+#ifndef EDITOR
+    static ConsoleVariable<float> cvar_smoothingRate("/lightupdate", defaultSmoothRate);
+    const float smoothingRate = *cvar_smoothingRate;
+#else
+    const float smoothingRate = defaultSmoothRate;
+#endif
+    const float rate = smoothingRate * (1.f / fpsLimit);
+    
+    int v = 0;
+    int index = 0;
+    int smoothindex = 2 + map.height + 1;
+    const int size = map.width * map.height;
+    for ( ; index < size; ++index, ++v, ++smoothindex )
+    {
+        if ( v == map.height ) {
+            smoothindex += 2;
+            v = 0;
+        }
+        
+        auto& d = lightmapSmoothed[smoothindex];
+        const auto& s = lightmap[index];
+        for (int c = 0; c < 4; ++c) {
+            auto& dc = *(&d.x + c);
+            const auto& sc = *(&s.x + c);
+            const auto diff = sc - dc;
+            if (fabsf(diff) < epsilon) { dc += diff; }
+            else { dc += diff * rate; }
+        }
+    }
+}
 
-	if (!entity)
-	{
+static inline bool testTileOccludes(const map_t& map, int index) {
+    if (index < 0 || index > map.width * map.height * MAPLAYERS - MAPLAYERS) {
+        return true;
+    }
+    const Uint64& t0 = *(Uint64*)&map.tiles[index];
+    const Uint32& t1 = *(Uint32*)&map.tiles[index + 2];
+    return (t0 & 0xffffffff00000000) && (t0 & 0x00000000ffffffff) && t1;
+}
+
+static void loadLightmapTexture(int which) {
+    auto lightmapSmoothed = lightmapsSmoothed[which].data();
+    
+    // allocate lightmap pixel data
+    static std::vector<float> pixels;
+    pixels.clear();
+    pixels.reserve(map.width * map.height * 4);
+    
+#ifdef EDITOR
+    const bool fullbright = false;
+#else
+    const bool fullbright = *cvar_fullBright;
+#endif
+    
+    // build lightmap texture data
+    const float div = 1.f / 255.f;
+    const int xoff = MAPLAYERS * map.height;
+    const int yoff = MAPLAYERS;
+    if (fullbright) {
+        for (int y = 0; y < map.height; ++y) {
+            for (int x = 0; x < map.width; ++x) {
+                pixels.insert(pixels.end(), {1.f, 1.f, 1.f, 1.f});
+            }
+        }
+    } else {
+        for (int y = 0; y < map.height; ++y) {
+            for (int x = 0, index = y * yoff; x < map.width; ++x, index += xoff) {
+                if (!testTileOccludes(map, index)) {
+                    float count = 1.f;
+                    vec4_t t, total = lightmapSmoothed[(y + 1) + (x + 1) * (map.height + 2)];
+                    if (!testTileOccludes(map, index + yoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 2) + (x + 1) * (map.height + 2)]); total = t; ++count; }
+                    if (!testTileOccludes(map, index + xoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 1) + (x + 2) * (map.height + 2)]); total = t; ++count; }
+                    if (!testTileOccludes(map, index - yoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 0) + (x + 1) * (map.height + 2)]); total = t; ++count; }
+                    if (!testTileOccludes(map, index - xoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 1) + (x + 0) * (map.height + 2)]); total = t; ++count; }
+                    total.x = (total.x / count) * div;
+                    total.y = (total.y / count) * div;
+                    total.z = (total.z / count) * div;
+                    total.w = 1.f;
+                    pixels.insert(pixels.end(), {total.x, total.y, total.z, total.w});
+                } else {
+                    pixels.insert(pixels.end(), {0.f, 0.f, 0.f, 1.f});
+                }
+            }
+        }
+    }
+    
+    // load lightmap texture data
+    GL_CHECK_ERR(glActiveTexture(GL_TEXTURE1));
+    lightmapTexture[which]->loadFloat(pixels.data(), map.width, map.height, true, false);
+    lightmapTexture[which]->bind();
+    GL_CHECK_ERR(glActiveTexture(GL_TEXTURE0));
+}
+
+static void updateChunks();
+
+void beginGraphics() {
+    // this runs exactly once each graphics frame.
+    updateChunks();
+}
+
+static void uploadUniforms(Shader& shader, float* proj, float* view, float* mapDims) {
+    shader.bind();
+    if (proj) { GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, false, proj)); }
+    if (view) { GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uView"), 1, false, view)); }
+    if (mapDims) { GL_CHECK_ERR(glUniform2fv(shader.uniform("uMapDims"), 1, mapDims)); }
+}
+
+// hsv values:
+// x = [0-360]
+// y = [0-100]
+// z = [0-100]
+// w = [0-1]
+static vec4_t* HSVtoRGB(vec4_t* result, const vec4_t* hsv){
+    float h = fmodf(hsv->x, 360.f);
+    if (h < 0.f) {
+        h += 360.f;
+    }
+    const float s = hsv->y / 100.f;
+    const float v = hsv->z / 100.f;
+    const float C = s * v;
+    const float X = C * (1.f - fabsf(fmodf(h/60.f, 2.f) - 1.f));
+    const float m = v - C;
+    float r, g, b;
+    if (h >= 0 && h < 60) {
+        r = C; g = X; b = 0;
+    }
+    else if(h >= 60 && h < 120) {
+        r = X; g = C; b = 0;
+    }
+    else if(h >= 120 && h < 180) {
+        r = 0; g = C; b = X;
+    }
+    else if(h >= 180 && h < 240) {
+        r = 0; g = X; b = C;
+    }
+    else if(h >= 240 && h < 300) {
+        r = X; g = 0; b = C;
+    }
+    else {
+        r = C; g = 0; b = X;
+    }
+    result->x = r + m;
+    result->y = g + m;
+    result->z = b + m;
+    result->w = hsv->w;
+    return result;
+}
+
+static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, int mode, bool remap) {
+    if (mode == REALCOLORS) {
+        if (remap) {
+            bool doGrayScale = false;
+            real_t grayScaleFactor = 0.0;
+            if (entity->grayscaleGLRender > 0.001) {
+                doGrayScale = true;
+                grayScaleFactor = entity->grayscaleGLRender;
+            }
+            
+            mat4x4_t remap(1.f);
+            if (doGrayScale) {
+                remap.x.x = 1.f / 3.f;
+                remap.x.y = 1.f / 3.f;
+                remap.x.z = 1.f / 3.f;
+                remap.y.x = 1.f / 3.f;
+                remap.y.y = 1.f / 3.f;
+                remap.y.z = 1.f / 3.f;
+                remap.z.x = 1.f / 3.f;
+                remap.z.y = 1.f / 3.f;
+                remap.z.z = 1.f / 3.f;
+            }
+            else if (entity->flags[USERFLAG2]) {
+                if (entity->behavior != &actMonster || monsterChangesColorWhenAlly(nullptr, entity)) {
+                    // certain allies use G/B/R color map
+                    remap = mat4x4_t(0.f);
+                    remap.x.y = 1.f;
+                    remap.y.z = 1.f;
+                    remap.z.x = 1.f;
+                }
+            }
+#ifndef EDITOR
+            static ConsoleVariable<bool> cvar_rainbowTest("/rainbowtest", false);
+            if (*cvar_rainbowTest) {
+                remap = mat4x4_t(0.f);
+                
+                const auto period = TICKS_PER_SECOND * 3; // 3 seconds
+                const auto time = (ticks % period) / (real_t)period; // [0-1]
+                const auto amp = 360.0;
+                
+                vec4_t hsv;
+                hsv.y = 100.f; // saturation
+                hsv.z = 100.f; // value
+                hsv.w = 0.f;   // unused
+                
+                hsv.x = time * amp;
+                HSVtoRGB(&remap.x, &hsv); // red
+                
+                hsv.x = time * amp + 120;
+                HSVtoRGB(&remap.y, &hsv); // green
+                
+                hsv.x = time * amp + 240;
+                HSVtoRGB(&remap.z, &hsv); // blue
+            }
+#endif
+            GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&remap));
+        }
+
+        if (entity->monsterEntityRenderAsTelepath) {
+            const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f, };
+            GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
+
+            Vector4 defaultLight{ 0.1f, 0.1f, 0.25f, 1.f };
+#ifndef EDITOR
+            static ConsoleVariable<Vector4> cvar_lightColor("/telepath_color", defaultLight);
+            const auto& light = *cvar_lightColor;
+#else
+            const auto& light = defaultLight;
+#endif
+            GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, (float*)&light));
+        } else {
+            const GLfloat light[4] = {
+                (float)getLightAtModifier,
+                (float)getLightAtModifier,
+                (float)getLightAtModifier,
+                1.f,
+            };
+            GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
+            GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, (float*)&entity->lightBonus));
+        }
+
+        // highlighting
+        bool highlightEntity = false;
+        bool highlightEntityFromParent = false;
+        int player = -1;
+        for (player = 0; player < MAXPLAYERS; ++player) {
+            if (&cameras[player] == camera) {
+                break;
+            }
+        }
+        highlightEntity = entity->bEntityHighlightedForPlayer(player);
+        if (!highlightEntity) {
+            Entity* parent = uidToEntity(entity->parent);
+            if (parent && parent->bEntityHighlightedForPlayer(player)) {
+                entity->highlightForUIGlow = parent->highlightForUIGlow;
+                highlightEntityFromParent = true;
+                highlightEntity = highlightEntityFromParent;
+            }
+        }
+        if (highlightEntity) {
+            if (!highlightEntityFromParent) {
+                entity->highlightForUIGlow = (0.05 * (entity->ticks % 41));
+            }
+            float highlight = entity->highlightForUIGlow;
+            if (highlight > 1.f) {
+                highlight = 1.f - (highlight - 1.f);
+            }
+            const GLfloat add[4] = {
+                (highlight - .5f) * .05f,
+                (highlight - .5f) * .05f,
+                (highlight - .5f) * .05f,
+                0.f };
+            GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, add));
+        } else {
+            constexpr GLfloat add[4] = { 0.f, 0.f, 0.f, 0.f };
+            GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, add));
+        }
+    } else {
+        if (remap) {
+            mat4x4_t empty(0.f);
+            GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&empty));
+        }
+        
+        constexpr GLfloat light[4] = { 0.f, 0.f, 0.f, 0.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+        
+        GLfloat uidcolors[4];
+        Uint32 uid = entity->getUID();
+        uidcolors[0] = ((Uint8)(uid)) / 255.f;
+        uidcolors[1] = ((Uint8)(uid >> 8)) / 255.f;
+        uidcolors[2] = ((Uint8)(uid >> 16)) / 255.f;
+        uidcolors[3] = ((Uint8)(uid >> 24)) / 255.f;
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, uidcolors));
+    }
+}
+
+constexpr float defaultGamma = 0.75f;           // default gamma level: 75%
+constexpr float defaultExposure = 0.5f;         // default exposure level: 50%
+constexpr float defaultAdjustmentRate = 0.1f;   // how fast your eyes adjust
+constexpr float defaultLimitHigh = 4.f;         // your aperture can increase to see something 4 times darker.
+constexpr float defaultLimitLow = 0.1f;         // your aperture can decrease to see something 10 times brighter.
+constexpr float defaultLumaRed = 0.2126f;       // how much to weigh red light for luma (ITU 709)
+constexpr float defaultLumaGreen = 0.7152f;     // how much to weigh green light for luma (ITU 709)
+constexpr float defaultLumaBlue = 0.0722f;      // how much to weigh blue light for luma (ITU 709)
+#ifndef NINTENDO
+constexpr bool defaultMultithread = true;       // use multiple workers to collect luminance samples
+constexpr float defaultSamples = 16384;         // how many samples (pixels) to gather from the framebuffer for average scene luminance
+#else
+constexpr bool defaultMultithread = false;
+constexpr float defaultSamples = 4096;
+#endif
+#ifdef EDITOR
+bool hdrEnabled = true;
+#else
+static ConsoleVariable<bool> cvar_hdrMultithread("/hdr_multithread", defaultMultithread);
+static ConsoleVariable<float> cvar_hdrExposure("/hdr_exposure", defaultExposure);
+static ConsoleVariable<float> cvar_hdrGamma("/hdr_gamma", defaultGamma);
+static ConsoleVariable<float> cvar_hdrAdjustment("/hdr_adjust_rate", defaultAdjustmentRate);
+static ConsoleVariable<float> cvar_hdrLimitHigh("/hdr_limit_high", defaultLimitHigh);
+static ConsoleVariable<float> cvar_hdrLimitLow("/hdr_limit_low", defaultLimitLow);
+static ConsoleVariable<int> cvar_hdrSamples("/hdr_samples", defaultSamples);
+static ConsoleVariable<Vector4> cvar_hdrLuma("/hdr_luma", Vector4{defaultLumaRed, defaultLumaGreen, defaultLumaBlue, 0.f});
+bool hdrEnabled = true;
+#endif
+
+static int oldViewport[4];
+
+void glBeginCamera(view_t* camera, bool useHDR)
+{
+    if (!camera) {
+        return;
+    }
+    
+    // setup viewport
+#ifdef EDITOR
+    const bool hdr = useHDR;
+#else
+    const bool hdr = useHDR ? *MainMenu::cvar_hdrEnabled : false;
+#endif
+    
+    if (hdr) {
+        const int numFbs = sizeof(view_t::fb) / sizeof(view_t::fb[0]);
+        const int fbIndex = camera->drawnFrames % numFbs;
+        camera->fb[fbIndex].init(camera->winw, camera->winh, GL_LINEAR, GL_LINEAR);
+        camera->fb[fbIndex].bindForWriting();
+        GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+        GL_CHECK_ERR(glScissor(0, 0, camera->winw, camera->winh));
+    } else {
+        GL_CHECK_ERR(glGetIntegerv(GL_VIEWPORT, oldViewport));
+        GL_CHECK_ERR(glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh));
+        GL_CHECK_ERR(glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh));
+    }
+    GL_CHECK_ERR(glEnable(GL_SCISSOR_TEST));
+    GL_CHECK_ERR(glEnable(GL_DEPTH_TEST));
+    
+    const float aspect = (real_t)camera->winw / (real_t)camera->winh;
+	const float rotx = camera->vang * 180.f / PI; // get x rotation
+	const float roty = (camera->ang - 3.f * PI / 2.f) * 180.f / PI; // get y rotation
+	const float rotz = 0.f; // get z rotation
+    
+    // setup projection + view matrix (shader)
+    mat4x4_t proj, view, view2, identity;
+    vec4_t translate(-camera->x * 32.f, camera->z, -camera->y * 32.f, 0.f);
+    (void)perspective(&proj, fov, aspect, CLIPNEAR, CLIPFAR);
+    (void)rotate_mat(&view, &view2, rotx, &identity.x); view2 = view;
+    (void)rotate_mat(&view, &view2, roty, &identity.y); view2 = view;
+    (void)rotate_mat(&view, &view2, rotz, &identity.z); view2 = view;
+    (void)translate_mat(&view, &view2, &translate); view2 = view;
+    
+    // store proj * view
+    (void)mul_mat(&camera->projview, &proj, &view);
+    
+    // set ambient lighting
+    if ( camera->globalLightModifierActive ) {
+        getLightAtModifier = camera->globalLightModifier;
+    }
+    else {
+        getLightAtModifier = 1.0;
+    }
+    
+    // lightmap dimensions
+    vec4_t mapDims;
+    mapDims.x = map.width;
+    mapDims.y = map.height;
+    
+    // upload lightmap
+    int lightmapIndex = 0;
+    for (int c = 0; c < MAXPLAYERS; ++c) {
+        if (camera == &cameras[c]) {
+            lightmapIndex = c + 1;
+            break;
+        }
+    }
+    fillSmoothLightmap(lightmapIndex);
+    loadLightmapTexture(lightmapIndex);
+    
+	// upload uniforms
+    uploadUniforms(voxelShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(voxelBrightShader, (float*)&proj, (float*)&view, nullptr);
+    uploadUniforms(voxelDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(worldShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(worldDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(worldDarkShader, (float*)&proj, (float*)&view, nullptr);
+    uploadUniforms(skyShader, (float*)&proj, (float*)&view, nullptr);
+    uploadUniforms(spriteShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(spriteDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(spriteBrightShader, (float*)&proj, (float*)&view, nullptr);
+}
+
+#include <thread>
+#include <future>
+
+void glEndCamera(view_t* camera, bool useHDR)
+{
+    if (!camera) {
+        return;
+    }
+    
+    GL_CHECK_ERR(glDisable(GL_DEPTH_TEST));
+    GL_CHECK_ERR(glDisable(GL_SCISSOR_TEST));
+    
+#ifdef EDITOR
+    const bool hdr = useHDR;
+    const bool hdr_multithread = defaultMultithread;
+    const float hdr_exposure = defaultExposure;
+    const float hdr_gamma = defaultGamma;
+    const float hdr_adjustment_rate = defaultAdjustmentRate;
+    const float hdr_limit_high = defaultLimitHigh;
+    const float hdr_limit_low = defaultLimitLow;
+    const int hdr_samples = defaultSamples;
+    const Vector4 hdr_luma{defaultLumaRed, defaultLumaGreen, defaultLumaBlue, 0.f};
+#else
+    const bool hdr = useHDR ? *MainMenu::cvar_hdrEnabled : false;
+    const bool hdr_multithread = *cvar_hdrMultithread;
+    const float hdr_exposure = *cvar_hdrExposure;
+    const float hdr_gamma = *cvar_hdrGamma;
+    const float hdr_adjustment_rate = *cvar_hdrAdjustment;
+    const float hdr_limit_high = *cvar_hdrLimitHigh;
+    const float hdr_limit_low = *cvar_hdrLimitLow;
+    const int hdr_samples = *cvar_hdrSamples;
+    const Vector4 hdr_luma = *cvar_hdrLuma;
+#endif
+    
+    const int numFbs = sizeof(view_t::fb) / sizeof(view_t::fb[0]);
+    const int fbIndex = camera->drawnFrames % numFbs;
+    
+    if (hdr) {
+        // update viewport
+        camera->fb[fbIndex].unbindForWriting();
+        GL_CHECK_ERR(glGetIntegerv(GL_VIEWPORT, oldViewport));
+        GL_CHECK_ERR(glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh));
+        
+        // calculate luminance
+        camera->fb[fbIndex].bindForReading();
+        auto pixels = camera->fb[fbIndex].lock();
+        if (pixels) {
+            // functor for crawling through the framebuffer collecting samples
+            auto fn = [](GLhalf* pixels, GLhalf* end, const int step) {
+                std::vector<float> v(4);
+                for (; pixels < end; pixels += step) {
+                    const float p[4] = {
+                        toFloat32(*(pixels + 0)),
+                        toFloat32(*(pixels + 1)),
+                        toFloat32(*(pixels + 2)),
+                        toFloat32(*(pixels + 3)),
+                    };
+                    v[0] += p[0];
+                    v[1] += p[1];
+                    v[2] += p[2];
+                    v[3] += p[3];
+                }
+                return v;
+            };
+            
+            // collect samples
+            std::vector<float> v(4);
+            int samplesCollected = 0;
+            if (hdr_multithread) {
+                // spawn jobs to count samples
+                const auto cores = std::thread::hardware_concurrency();
+                std::vector<std::future<std::vector<float>>> jobs;
+                const int size = camera->winw * camera->winh * 4;
+                const int step = ((size / 4) / hdr_samples) * 4;
+                const int section = size / cores;
+                auto begin = pixels;
+                for (int c = 0; c < cores; ++c, begin += section) {
+                    jobs.emplace_back(std::async(std::launch::async, fn,
+                        begin, begin + section, step));
+                    samplesCollected += section / step;
+                }
+                
+                // add samples together
+                for (int c = 0; c < cores; ++c) {
+                    auto& job = jobs[c];
+                    if (job.valid()) {
+                        auto r = job.get();
+                        v[0] += r[0];
+                        v[1] += r[1];
+                        v[2] += r[2];
+                        v[3] += r[3];
+                    }
+                }
+            } else {
+                // synchronized sample collection
+                const int size = camera->winw * camera->winh * 4;
+                const int step = ((size / 4) / hdr_samples) * 4;
+                v = fn(pixels, pixels + size, step);
+                samplesCollected = size / step;
+            }
+            
+            // calculate scene average luminance
+            if (samplesCollected) {
+                float luminance = v[0] * hdr_luma.x + v[1] * hdr_luma.y + v[2] * hdr_luma.z + v[3] * hdr_luma.w; // dot-product
+                luminance = luminance / samplesCollected;
+                const float rate = hdr_adjustment_rate / fpsLimit;
+                if (camera->luminance > luminance) {
+                    camera->luminance -= std::min(rate, camera->luminance - luminance);
+                } else if (camera->luminance < luminance) {
+                    camera->luminance += std::min(rate, luminance - camera->luminance);
+                }
+            }
+        }
+        camera->fb[fbIndex].unlock();
+        const float exposure = std::min(std::max(hdr_limit_low, hdr_exposure / camera->luminance), hdr_limit_high);
+        const float brightness = 1.f;
+        const float gamma = hdr_gamma * vidgamma;
+        
+        // blit framebuffer
+        camera->fb[fbIndex].hdrDraw(brightness, gamma, exposure);
+        camera->fb[fbIndex].unbindForReading();
+        
+        // revert viewport
+        GL_CHECK_ERR(glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]));
+    } else {
+        GL_CHECK_ERR(glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]));
+    }
+    ++camera->drawnFrames;
+}
+
+void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
+	if (!camera || !entity) {
 		return;
 	}
 
-	// assign model
-	if ( entity->sprite >= 0 && entity->sprite < nummodels )
-	{
-		if ( models[entity->sprite] != NULL )
-		{
-			model = models[entity->sprite];
-		}
-		else
-		{
-			model = models[0];
-		}
+	// select model
+    voxel_t* model = nullptr;
+    int modelindex = -1;
+#ifndef EDITOR
+	static ConsoleVariable<int> cvar_forceModel("/forcemodel", -1, "force all voxel models to use a specific index");
+	modelindex = *cvar_forceModel;
+#endif
+	if (modelindex < 0) {
 		modelindex = entity->sprite;
 	}
-	else
-	{
+	if (modelindex >= 0 && modelindex < nummodels) {
+		if (models[modelindex] != NULL) {
+			model = models[modelindex];
+		} else {
+			model = models[0];
+		}
+	} else {
 		model = models[0];
 		modelindex = 0;
 	}
-
-	if ( model == models[0] )
-	{
+	if (!model || model == models[0]) {
 		return; // don't draw green balls
 	}
-
-	// model array indexes
-	indexdown[0] = model->sizez * model->sizey;
-	indexdown[1] = model->sizez;
-	indexdown[2] = 1;
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	// setup projection
-	glMatrixMode( GL_PROJECTION );
-	glLoadIdentity();
-	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
-	glEnable( GL_DEPTH_TEST );
-	if ( !entity->flags[OVERDRAW] )
-	{
-		rotx = camera->vang * 180 / PI; // get x rotation
-		roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
-		rotz = 0; // get z rotation
-		glRotatef(rotx, 1, 0, 0); // rotate pitch
-		glRotatef(roty, 0, 1, 0); // rotate yaw
-		glRotatef(rotz, 0, 0, 1); // rotate roll
-		glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
+    
+    // set GL state
+	if (mode == REALCOLORS) {
+        GL_CHECK_ERR(glEnable(GL_BLEND));
 	}
-	else
-	{
-		glRotatef(90, 0, 1, 0);
+    bool changedDepthRange = false;
+	if (entity->flags[OVERDRAW] || (entity->monsterEntityRenderAsTelepath == 1 && !intro) 
+		|| modelindex == FOLLOWER_SELECTED_PARTICLE
+		|| modelindex == FOLLOWER_TARGET_PARTICLE ) {
+        changedDepthRange = true;
+        GL_CHECK_ERR(glDepthRange(0, 0.1));
 	}
-
-	// setup model matrix
-	glMatrixMode( GL_MODELVIEW );
-	glLoadIdentity();
-	glPushMatrix();
-	rotx = entity->roll * 180 / PI; // get x rotation
-	roty = 360 - entity->yaw * 180 / PI; // get y rotation
-	rotz = 360 - entity->pitch * 180 / PI; // get z rotation
-	glTranslatef(entity->x * 2, -entity->z * 2 - 1, entity->y * 2);
-	glRotatef(roty, 0, 1, 0); // rotate yaw
-	glRotatef(rotz, 0, 0, 1); // rotate pitch
-	glRotatef(rotx, 1, 0, 0); // rotate roll
-	glTranslatef(entity->focalx * 2, -entity->focalz * 2, entity->focaly * 2);
-	glScalef(entity->scalex, entity->scalez, entity->scaley);
-	if ( mode == REALCOLORS )
-	{
-		glEnable(GL_BLEND);
-	}
-	else
-	{
-		glDisable(GL_BLEND);
-	}
-
-	if ( entity->flags[OVERDRAW] || entity->monsterEntityRenderAsTelepath == 1 )
-	{
-		glDepthRange(0, 0.1);
-	}
-
-	bool highlightEntity = false;
-	bool highlightEntityFromParent = false;
-	int player = -1;
-	for ( player = 0; player < MAXPLAYERS; ++player )
-	{
-		if ( &cameras[player] == camera )
-		{
-			break;
-		}
-	}
-	highlightEntity = entity->bEntityHighlightedForPlayer(player);
-	if ( !highlightEntity && (entity->sprite == 184 || entity->sprite == 585 || entity->sprite == 216) ) // lever base/chest lid
-	{
-		Entity* parent = uidToEntity(entity->parent);
-		if ( parent && parent->bEntityHighlightedForPlayer(player) )
-		{
-			entity->highlightForUIGlow = parent->highlightForUIGlow;
-			highlightEntityFromParent = true;
-			highlightEntity = highlightEntityFromParent;
-		}
-	}
-
-	// get shade factor
-	if (!entity->flags[BRIGHT])
-	{
-		if ( !entity->flags[OVERDRAW] )
-		{
-			if ( entity->monsterEntityRenderAsTelepath == 1 )
-			{
-				if ( globalLightModifierActive )
-				{
-					s = globalLightTelepathyModifier;
-				}
-			}
-			else
-			{
-				s = getLightForEntity(entity->x / 16, entity->y / 16);
-			}
-		}
-		else
-		{
-			s = getLightForEntity(camera->x, camera->y);
-		}
-	}
-
-	if ( globalLightModifierActive && entity->monsterEntityRenderAsTelepath == 0 )
-	{
-		s *= globalLightModifier;
-	}
-
-	// Moved glBeign / glEnd outside the loops, to limit the number of calls (helps gl4es on Pandora)
-	if ( wholevoxels )
-	{
-		glBegin( GL_QUADS );
-		for ( index = 0, voxX = 0; voxX < model->sizex; voxX++ )
-		{
-			for ( voxY = 0; voxY < model->sizey; voxY++ )
-			{
-				for ( voxZ = 0; voxZ < model->sizez; voxZ++, index++ )
-				{
-					// get the bit color
-					if ( model->data[index] == 255 || model->data[index] == 0 )
-					{
-						continue;
-					}
-					if ( mode == REALCOLORS )
-					{
-						glColor3f((model->palette[model->data[index]][0] / 255.0)*s, (model->palette[model->data[index]][1] / 255.0)*s, (model->palette[model->data[index]][2] / 255.0)*s );
-					}
-					else
-					{
-						Uint32 uid = entity->getUID();
-						glColor4ub((Uint8)(uid), (Uint8)(uid >> 8), (Uint8)(uid >> 16), (Uint8)(uid >> 24));
-					}
-
-					// calculate model offsets
-					dx = (real_t)voxX - ((real_t)model->sizex) / 2.f;
-					dy = (real_t)voxY - ((real_t)model->sizey) / 2.f;
-					dz = ((real_t)model->sizez) / 2.f - (real_t)voxZ;
-
-					// draw front of cube
-					bool drawFront = false;
-					if ( voxX == model->sizex - 1 )
-					{
-						drawFront = true;
-					}
-					else if ( model->data[index + indexdown[0]] == 255 )
-					{
-						drawFront = true;
-					}
-					if ( drawFront )
-					{
-						//glBegin( GL_QUADS );
-						glVertex3f(dx + 1, dz + 0, dy + 1);
-						glVertex3f(dx + 1, dz + 0, dy + 0);
-						glVertex3f(dx + 1, dz + 1, dy + 0);
-						glVertex3f(dx + 1, dz + 1, dy + 1);
-						//glEnd();
-					}
-
-					// draw back of cube
-					bool drawBack = false;
-					if ( voxX == 0 )
-					{
-						drawBack = true;
-					}
-					else if ( model->data[index - indexdown[0]] == 255 )
-					{
-						drawBack = true;
-					}
-					if ( drawBack )
-					{
-						//glBegin( GL_QUADS );
-						glVertex3f(dx + 0, dz + 0, dy + 1);
-						glVertex3f(dx + 0, dz + 1, dy + 1);
-						glVertex3f(dx + 0, dz + 1, dy + 0);
-						glVertex3f(dx + 0, dz + 0, dy + 0);
-						//glEnd();
-					}
-
-					// draw right side of cube
-					bool drawRight = false;
-					if ( voxY == model->sizey - 1 )
-					{
-						drawRight = true;
-					}
-					else if ( model->data[index + indexdown[1]] == 255 )
-					{
-						drawRight = true;
-					}
-					if ( drawRight )
-					{
-						//glBegin( GL_QUADS );
-						glVertex3f(dx + 0, dz + 0, dy + 1);
-						glVertex3f(dx + 1, dz + 0, dy + 1);
-						glVertex3f(dx + 1, dz + 1, dy + 1);
-						glVertex3f(dx + 0, dz + 1, dy + 1);
-						//glEnd();
-					}
-
-					// draw left side of cube
-					bool drawLeft = false;
-					if ( voxY == 0 )
-					{
-						drawLeft = true;
-					}
-					else if ( model->data[index - indexdown[1]] == 255 )
-					{
-						drawLeft = true;
-					}
-					if ( drawLeft )
-					{
-						//glBegin( GL_QUADS );
-						glVertex3f(dx + 0, dz + 0, dy + 0);
-						glVertex3f(dx + 0, dz + 1, dy + 0);
-						glVertex3f(dx + 1, dz + 1, dy + 0);
-						glVertex3f(dx + 1, dz + 0, dy + 0);
-						//glEnd();
-					}
-
-					// draw bottom of cube
-					bool drawBottom = false;
-					if ( voxZ == model->sizez - 1 )
-					{
-						drawBottom = true;
-					}
-					else if ( model->data[index + indexdown[2]] == 255 )
-					{
-						drawBottom = true;
-					}
-					if ( drawBottom )
-					{
-						//glBegin( GL_QUADS );
-						glVertex3f(dx + 0, dz + 0, dy + 0);
-						glVertex3f(dx + 1, dz + 0, dy + 0);
-						glVertex3f(dx + 1, dz + 0, dy + 1);
-						glVertex3f(dx + 0, dz + 0, dy + 1);
-						//glEnd();
-					}
-
-					// draw top of cube
-					bool drawTop = false;
-					if ( voxZ == 0 )
-					{
-						drawTop = true;
-					}
-					else if ( model->data[index - indexdown[2]] == 255 )
-					{
-						drawTop = true;
-					}
-					if ( drawTop )
-					{
-						//glBegin( GL_QUADS );
-						glVertex3f(dx + 0, dz + 1, dy + 0);
-						glVertex3f(dx + 0, dz + 1, dy + 1);
-						glVertex3f(dx + 1, dz + 1, dy + 1);
-						glVertex3f(dx + 1, dz + 1, dy + 0);
-						//glEnd();
-					}
-				}
-			}
-		}
-		glEnd();
-	}
-	else
-	{
-		if ( disablevbos )
-		{
-			glBegin( GL_TRIANGLES ); //moved outside
-			for ( index = 0; index < polymodels[modelindex].numfaces; index++ )
-			{
-				if ( mode == REALCOLORS )
-				{
-					if ( entity->flags[USERFLAG2] )
-					{
-						if ( entity->behavior == &actMonster 
-							&& (entity->isPlayerHeadSprite() || entity->sprite == 467 || !monsterChangesColorWhenAlly(nullptr, entity)) )
-						{
-							// dont invert human heads, or automaton heads.
-							glColor3f((polymodels[modelindex].faces[index].r / 255.f)*s, (polymodels[modelindex].faces[index].g / 255.f)*s, (polymodels[modelindex].faces[index].b / 255.f)*s );
-						}
-						else
-						{
-							glColor3f((polymodels[modelindex].faces[index].b / 255.f)*s, (polymodels[modelindex].faces[index].r / 255.f)*s, (polymodels[modelindex].faces[index].g / 255.f)*s);
-						}
-					}
-					else
-					{
-						glColor3f((polymodels[modelindex].faces[index].b / 255.f)*s, (polymodels[modelindex].faces[index].r / 255.f)*s, (polymodels[modelindex].faces[index].g / 255.f)*s );
-					}
-				}
-				else
-				{
-					Uint32 uid = entity->getUID();
-					glColor4ub((Uint8)(uid), (Uint8)(uid >> 8), (Uint8)(uid >> 16), (Uint8)(uid >> 24));
-				}
-
-				polytriangle_t* face = &polymodels[modelindex].faces[index];
-
-				//glBegin( GL_TRIANGLES );
-				glVertex3f(face->vertex[0].x, -face->vertex[0].z, face->vertex[0].y);
-				glVertex3f(face->vertex[1].x, -face->vertex[1].z, face->vertex[1].y);
-				glVertex3f(face->vertex[2].x, -face->vertex[2].z, face->vertex[2].y);
-				//glEnd();
-			}
-			glEnd();
-		}
-		else
-		{
-			SDL_glBindVertexArray(polymodels[modelindex].va);
-			SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].vbo);
-			glVertexPointer( 3, GL_FLOAT, 0, (char*) NULL );  // Set The Vertex Pointer To The Vertex Buffer
-			glEnableClientState(GL_VERTEX_ARRAY); // enable the vertex array on the client side
-			if ( mode == REALCOLORS )
-			{
-				glEnableClientState(GL_COLOR_ARRAY); // enable the color array on the client side
-				if ( entity->flags[USERFLAG2] )
-				{
-					if ( entity->behavior == &actMonster && (entity->isPlayerHeadSprite() 
-						|| entity->sprite == 467 || !monsterChangesColorWhenAlly(nullptr, entity)) )
-					{
-						SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
-					}
-					else
-					{
-						SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors_shifted);
-					}
-				}
-				else
-				{
-					SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
-				}
-				glColorPointer(3, GL_FLOAT, 0, 0);
-				GLfloat params_col[4] = { static_cast<GLfloat>(s), static_cast<GLfloat>(s), static_cast<GLfloat>(s), 1.f };
-				if ( highlightEntity )
-				{
-					glEnable(GL_LIGHTING);
-					glEnable(GL_LIGHT1);
-					if ( !highlightEntityFromParent )
-					{
-						entity->highlightForUIGlow = (0.05 * (entity->ticks % 41));
-					}
-					real_t highlight = entity->highlightForUIGlow;
-					if ( highlight > 1.0 )
-					{
-						highlight = 1.0 - (highlight - 1.0);
-					}
-					GLfloat ambient[4] = { 
-						static_cast<GLfloat>(.15 + highlight * .15), 
-						static_cast<GLfloat>(.15 + highlight * .15), 
-						static_cast<GLfloat>(.15 + highlight * .15),
-						1.f };
-					glLightModelfv(GL_LIGHT_MODEL_AMBIENT, params_col);
-					glLightfv(GL_LIGHT1, GL_AMBIENT, ambient);
-					glEnable(GL_COLOR_MATERIAL);
-				}
-				else
-				{
-					glEnable(GL_LIGHTING);
-					glEnable(GL_COLOR_MATERIAL);
-					glLightModelfv(GL_LIGHT_MODEL_AMBIENT, params_col);
-				}
-			}
-			else
-			{
-				GLfloat uidcolors[4];
-				Uint32 uid = entity->getUID();
-				uidcolors[0] = ((Uint8)(uid)) / 255.f;
-				uidcolors[1] = ((Uint8)(uid >> 8)) / 255.f;
-				uidcolors[2] = ((Uint8)(uid >> 16)) / 255.f;
-				uidcolors[3] = ((Uint8)(uid >> 24)) / 255.f;
-				glColor4f(uidcolors[0], uidcolors[1], uidcolors[2], uidcolors[3]);
-			}
-			glDrawArrays(GL_TRIANGLES, 0, 3 * polymodels[modelindex].numfaces);
-			if ( mode == REALCOLORS )
-			{
-				glDisable(GL_COLOR_MATERIAL);
-				glDisable(GL_LIGHTING);
-				if ( highlightEntity )
-				{
-					glDisable(GL_LIGHT1);
-				}
-				glDisableClientState(GL_COLOR_ARRAY); // disable the color array on the client side
-			}
-			glDisableClientState(GL_VERTEX_ARRAY); // disable the vertex array on the client side
-		}
-	}
-	glDepthRange(0, 1);
-	glPopMatrix();
+    
+    // bind shader
+    auto& dither = entity->dithering[camera];
+    auto& shader = !entity->flags[BRIGHT] && !entity->monsterEntityRenderAsTelepath ?
+        (dither.value < Entity::Dither::MAX ? voxelDitheredShader : voxelShader):
+        voxelBrightShader;
+    shader.bind();
+    
+    // upload dither amount, if necessary
+    if (&shader == &voxelDitheredShader) {
+        GL_CHECK_ERR(glUniform1f(shader.uniform("uDitherAmount"),
+            (float)((uint32_t)1 << (dither.value - 1)) / (1 << (Entity::Dither::MAX / 2 - 1))));
+    }
+    
+    mat4x4_t m, t, i;
+    vec4_t v;
+    
+    // model matrix
+    float rotx, roty, rotz;
+    if (entity->flags[OVERDRAW]) {
+        v = vec4(camera->x * 32, -camera->z, camera->y * 32, 0);
+        (void)translate_mat(&m, &t, &v); t = m;
+        rotx = 0; // roll
+        roty = 360.0 - camera->ang * 180.0 / PI; // yaw
+        rotz = 360.0 - camera->vang * 180.0 / PI; // pitch
+        (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
+        (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
+        (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
+    }
+    rotx = entity->roll * 180.0 / PI; // roll
+    roty = 360.0 - entity->yaw * 180.0 / PI; // yaw
+    rotz = 360.0 - entity->pitch * 180.0 / PI; // pitch
+    v = vec4(entity->x * 2.f, -entity->z * 2.f - 1, entity->y * 2.f, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
+    (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
+    (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
+    v = vec4(entity->focalx * 2.f, -entity->focalz * 2.f, entity->focaly * 2.f, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    v = vec4(entity->scalex, entity->scaley, entity->scalez, 0.f);
+    (void)scale_mat(&m, &t, &v); t = m;
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
+    
+    // upload light variables
+    if (entity->flags[BRIGHT]) {
+        mat4x4_t remap(1.f);
+        GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&remap));
+        const float b = std::max(0.5f, camera->luminance * 4.f);
+        const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
+        const GLfloat light[4] = { b, b, b, 1.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+        const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
+    } else {
+        uploadLightUniforms(camera, shader, entity, mode, true);
+    }
+    
+    // draw mesh
+#ifdef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glBindVertexArray(polymodels[modelindex].vao));
+#else
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].vbo));
+    GL_CHECK_ERR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(0));
+    
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors));
+    GL_CHECK_ERR(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(1));
+#endif
+    
+    GL_CHECK_ERR(glDrawArrays(GL_TRIANGLES, 0, (int)(3 * polymodels[modelindex].numfaces)));
+    
+#ifdef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glBindVertexArray(polymodels[modelindex].vao));
+#else
+    GL_CHECK_ERR(glDisableVertexAttribArray(0));
+    GL_CHECK_ERR(glDisableVertexAttribArray(1));
+#endif
+    
+    // reset GL state
+    if (changedDepthRange) {
+        GL_CHECK_ERR(glDepthRange(0, 1));
+    }
+    if (mode == REALCOLORS) {
+        GL_CHECK_ERR(glDisable(GL_BLEND));
+    }
 }
 
 /*-------------------------------------------------------------------------------
@@ -502,740 +1108,550 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 	Draws a 2D sprite to represent an object in 3D
 
 -------------------------------------------------------------------------------*/
-SDL_Surface* glTextSurface(std::string text, GLuint* outTextId)
+
+Mesh spriteMesh = {
+    {
+        -.5f, -.5f, 0.f,
+         .5f, -.5f, 0.f,
+         .5f,  .5f, 0.f,
+        -.5f, -.5f, 0.f,
+         .5f,  .5f, 0.f,
+        -.5f,  .5f, 0.f,
+    }, // positions
+    {
+        0.f, 1.f,
+        1.f, 1.f,
+        1.f, 0.f,
+        0.f, 1.f,
+        1.f, 0.f,
+        0.f, 0.f,
+    }, // texcoords
+    {} // colors
+};
+
+#ifndef EDITOR
+static ConsoleVariable<GLfloat> cvar_enemybarDepthRange("/enemybar_depth_range", 0.5);
+static ConsoleVariable<float> cvar_ulight_factor_min("/sprite_ulight_factor_min", 0.5f);
+static ConsoleVariable<float> cvar_ulight_factor_mult("/sprite_ulight_factor_mult", 4.f);
+#endif
+
+void glDrawEnemyBarSprite(view_t* camera, int mode, int playerViewport, void* enemyHPBarDetails)
 {
-	SDL_Surface* image = sprites[0];
-	GLuint textureId = texid[sprites[0]->refcount];
-	char textToRetrieve[128];
-	strncpy(textToRetrieve, text.c_str(), 127);
-	textToRetrieve[std::min(static_cast<int>(strlen(text.c_str())), 127)] = '\0';
-
-	if ( (image = ttfTextHashRetrieve(ttfTextHash, textToRetrieve, ttf12, true)) != NULL )
-	{
-		textureId = texid[image->refcount];
+#ifndef EDITOR
+    if (!camera || mode != REALCOLORS || !enemyHPBarDetails) {
+		return;
 	}
-	else
-	{
-		// create the text outline surface
-		TTF_SetFontOutline(ttf12, 2);
-		SDL_Color sdlColorBlack = { 0, 0, 0, 255 };
-		image = TTF_RenderUTF8_Blended(ttf12, textToRetrieve, sdlColorBlack);
+	auto enemybar = (EnemyHPDamageBarHandler::EnemyHPDetails*)enemyHPBarDetails;
+	SDL_Surface* sprite = enemybar->worldSurfaceSprite;
+	if (!sprite || !enemybar->worldTexture) {
+		return;
+	}
 
-		// create the text surface
-		TTF_SetFontOutline(ttf12, 0);
-		SDL_Color sdlColorWhite = { 255, 255, 255, 255 };
-		SDL_Surface* textSurf = TTF_RenderUTF8_Blended(ttf12, textToRetrieve, sdlColorWhite);
-
-		// combine the surfaces
-		SDL_Rect pos;
-		pos.x = 2;
-		pos.y = 2;
-		pos.h = 0;
-		pos.w = 0;
-
-		SDL_BlitSurface(textSurf, NULL, image, &pos);
-		SDL_FreeSurface(textSurf);
-		// load the text outline surface as a GL texture
-		allsurfaces[imgref] = image;
-		allsurfaces[imgref]->refcount = imgref;
-		glLoadTexture(allsurfaces[imgref], imgref);
-		imgref++;
-		// store the surface in the text surface cache
-		if ( !ttfTextHashStore(ttfTextHash, textToRetrieve, ttf12, true, image) )
-		{
-			printlog("warning: failed to store text outline surface with imgref %d\n", imgref - 1);
+	// bind texture
+	TempTexture* tex = enemybar->worldTexture;
+	tex->bind();
+    
+    // bind shader
+    GL_CHECK_ERR(glEnable(GL_BLEND));
+    auto& shader = spriteBrightShader;
+    shader.bind();
+    
+    vec4_t v;
+    mat4x4_t m, t;
+    
+    // model matrix
+    const float height = (float)enemybar->worldZ - 6.f;
+    const float drawOffsetY = 0.f;
+    /*const float drawOffsetY = enemybar->worldSurfaceSpriteStatusEffects ?
+        enemybar->worldSurfaceSpriteStatusEffects->h / -2.f : 0.f;*/
+    v = vec4((float)enemybar->worldX * 2.f, drawOffsetY - height * 2.f, (float)enemybar->worldY * 2.f, 0.f);
+    (void)translate_mat(&t, &m, &v); m = t;
+    mat4x4_t i;
+    (void)rotate_mat(&t, &m, -90.f - camera->ang * (180.f / PI), &i.y); m = t;
+    (void)rotate_mat(&t, &m, -camera->vang * (180.f / PI), &i.x); m = t;
+    float scale = 0.08;
+    scale += (0.05f * ((*MainMenu::cvar_enemybar_scale / 100.f) - 1.f));
+    v = vec4(scale * tex->w, scale * tex->h, scale * enemybar->screenDistance, 0.f);
+    (void)scale_mat(&t, &m, &v); m = t;
+    
+    // don't update if dead target.
+    if (enemybar->enemy_hp > 0) {
+        // 0, 0, 0, 1.f is centre of rendered quad
+        // therefore, the following represents the top
+        vec4_t worldCoords;
+        worldCoords.x = 0.f;
+        worldCoords.y = .5f;
+        worldCoords.z = 0.f;
+        worldCoords.w = 1.f;
+        
+        const vec4_t window(camera->winx, camera->winy, camera->winw, camera->winh);
+        float topOfWindow = window.w + window.y;
+        const float factorY = (float)yres / Frame::virtualScreenY;
+        if ( playerViewport >= 0 )
+        {
+            // sprite height >50 means status effects active, let the effect do the padding
+            // otherwise push approx below XP bar, 26 pixels
+            topOfWindow += factorY * (sprite->h > 50 ? 0 : -26); 
+        }
+		vec4_t screenCoordinates = project(&worldCoords, &m, &camera->projview, &window);
+        if (screenCoordinates.y >= topOfWindow && screenCoordinates.z >= 0.f) {
+            // above camera limit
+			const float pixelOffset = fabs(screenCoordinates.y - topOfWindow);
+			screenCoordinates.y -= pixelOffset;
+            
+            // convert back into worldCoords
+			vec4_t worldCoords2 = unproject(&screenCoordinates, &m, &camera->projview, &window);
+            worldCoords2.y -= scale * tex->h * 0.5f;
+            m.w = worldCoords2;
 		}
-		textureId = texid[image->refcount];
 	}
-	if ( outTextId )
-	{
-		*outTextId = textureId;
+
+    // upload model matrix
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m));
+
+    // update GL state
+    GL_CHECK_ERR(glDepthRange(0, *cvar_enemybarDepthRange));
+    GL_CHECK_ERR(glEnable(GL_BLEND));
+    
+    // upload light variables
+    const float b = std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
+    const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)enemybar->animator.fadeOut / 100.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
+    const GLfloat light[4] = { b, b, b, 1.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+    const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
+
+    // draw
+    spriteMesh.draw();
+    
+    // reset GL state
+    GL_CHECK_ERR(glDepthRange(0, 1));
+    GL_CHECK_ERR(glDisable(GL_BLEND));
+#endif // !EDITOR
+}
+
+void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
+{
+#ifndef EDITOR
+	if (!camera || !worldDialogue || mode != REALCOLORS) {
+		return;
 	}
-	return image;
+	auto dialogue = (Player::WorldUI_t::WorldTooltipDialogue_t::Dialogue_t*)worldDialogue;
+	if (dialogue->alpha <= 0.0) {
+		return;
+	}
+	SDL_Surface* sprite = nullptr;
+	if (dialogue->dialogueTooltipSurface) {
+        sprite = dialogue->dialogueTooltipSurface;
+	} else {
+        sprite = dialogue->blitDialogueTooltip();
+	}
+	if (!sprite) {
+		return;
+	}
+
+	// bind texture
+	TempTexture* tex = nullptr;
+	tex = new TempTexture();
+	if (sprite) {
+		tex->load(sprite, false, true);
+        tex->bind();
+	}
+    
+    // depth range
+    GL_CHECK_ERR(glDepthRange(0.f, .6f));
+    
+    // bind shader
+    GL_CHECK_ERR(glEnable(GL_BLEND));
+    auto& shader = spriteBrightShader;
+    shader.bind();
+    
+    vec4_t v;
+    mat4x4_t m, t, i;
+    
+    // scale
+    float scale = static_cast<float>(dialogue->drawScale);
+    if (splitscreen) {
+        scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale_splitscreen / 100.f) - 1.f));
+    } else {
+        scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale / 100.f) - 1.f));
+    }
+    
+    // model matrix
+    v = vec4(dialogue->x * 2, -(dialogue->z + dialogue->animZ) * 2 - 1, dialogue->y * 2, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    (void)rotate_mat(&m, &t, -90.f - camera->ang * (180.f / PI), &i.y); t = m;
+    (void)rotate_mat(&m, &t, -camera->vang * (180.f / PI), &i.x); t = m;
+    v = vec4(scale * tex->w, scale * tex->h, scale, 0.f);
+    (void)scale_mat(&m, &t, &v); t = m;
+    
+    // limit to top of screen:
+    {
+        // 0, 0, 0, 1.f is centre of rendered quad
+        // therefore, the following represents the top
+        vec4_t worldCoords;
+        worldCoords.x = 0.f;
+        worldCoords.y = .5f;
+        worldCoords.z = 0.f;
+        worldCoords.w = 1.f;
+        
+        const vec4_t window(camera->winx, camera->winy, camera->winw, camera->winh);
+        const float topOfWindow = window.w + window.y;
+        vec4_t screenCoordinates = project(&worldCoords, &m, &camera->projview, &window);
+        if (screenCoordinates.y >= topOfWindow && screenCoordinates.z >= 0.f) {
+            // above camera limit
+            const float pixelOffset = fabs(screenCoordinates.y - topOfWindow);
+            screenCoordinates.y -= pixelOffset;
+            
+            // convert back into worldCoords
+            vec4_t worldCoords2 = unproject(&screenCoordinates, &m, &camera->projview, &window);
+            worldCoords2.y -= scale * tex->h * 0.5f;
+            m.w = worldCoords2;
+        }
+    }
+    
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
+    
+    // upload light variables
+    const float b = std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
+    const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)dialogue->alpha };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
+    const GLfloat light[4] = { b, b, b, 1.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+    const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
+
+    // draw
+    spriteMesh.draw();
+
+    // cleanup
+	if (tex) {
+		delete tex;
+		tex = nullptr;
+	}
+    
+    // reset GL state
+    GL_CHECK_ERR(glDepthRange(0.f, 1.f));
+    GL_CHECK_ERR(glDisable(GL_BLEND));
+#endif
 }
 
 void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 {
-	SDL_Surface* sprite;
-	real_t s = 1;
+#ifndef EDITOR
+	if (!camera || !entity || intro) {
+		return;
+	}
+    if (mode != REALCOLORS) {
+        return;
+    }
 
-	if ( !entity )
-	{
-		return;
-	}
-	if ( !uidToEntity(entity->parent) )
-	{
-		return;
-	}
+    // find player that this UI sprite is drawing for
 	int player = -1;
-	if ( entity->behavior == &actSpriteWorldTooltip )
-	{
-		if ( entity->worldTooltipIgnoreDrawing != 0 )
-		{
+	if ( entity->behavior == &actSpriteWorldTooltip ) {
+		if ( entity->worldTooltipIgnoreDrawing != 0 ) {
 			return;
 		}
-		for ( player = 0; player < MAXPLAYERS; ++player )
-		{
-			if ( &cameras[player] == camera )
-			{
+		for (player = 0; player < MAXPLAYERS; ++player) {
+			if (&cameras[player] == camera) {
 				break;
 			}
 		}
-		if ( player >= 0 && player < MAXPLAYERS )
-		{
-			if ( entity->worldTooltipPlayer != player )
-			{
+		if (player >= 0 && player < MAXPLAYERS) {
+			if (entity->worldTooltipPlayer != player) {
 				return;
 			}
-			if ( entity->worldTooltipActive == 0 && entity->worldTooltipFadeDelay == 0 )
-			{
+			if (entity->worldTooltipActive == 0 && entity->worldTooltipFadeDelay == 0) {
 				return;
 			}
+		} else {
+			return;
 		}
-		else
-		{
+		if (!uidToEntity(entity->parent)) {
 			return;
 		}
 	}
 
-	// setup projection
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
-	glEnable(GL_DEPTH_TEST);
-	if ( !entity->flags[OVERDRAW] || entity->flags[OVERDRAW] )
-	{
-		GLfloat rotx = camera->vang * 180 / PI; // get x rotation
-		GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
-		GLfloat rotz = 0; // get z rotation
-		glRotatef(rotx, 1, 0, 0); // rotate pitch
-		glRotatef(roty, 0, 1, 0); // rotate yaw
-		glRotatef(rotz, 0, 0, 1); // rotate roll
-		glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
-	}
-	else
-	{
-		glRotatef(90, 0, 1, 0);
-	}
-
-	// setup model matrix
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glPushMatrix();
-	if ( mode == REALCOLORS )
-	{
-		glEnable(GL_BLEND);
-	}
-	else
-	{
-		glDisable(GL_BLEND);
-	}
-
-	// assign texture
-	TempTexture* tex = nullptr;
-	if ( entity->behavior == &actSpriteWorldTooltip )
+	// bind texture
+    TempTexture* tex = nullptr;
+	SDL_Surface* sprite = nullptr;
+	if (entity->behavior == &actSpriteWorldTooltip)
 	{
 		Entity* parent = uidToEntity(entity->parent);
-		if ( parent && parent->behavior == &actItem && (multiplayer != CLIENT || (multiplayer == CLIENT && parent->itemReceivedDetailsFromServer != 0)) )
+		if (parent && parent->behavior == &actItem && (multiplayer != CLIENT
+            || (multiplayer == CLIENT && (parent->itemReceivedDetailsFromServer != 0 || parent->skill[10] != 0))))
 		{
-			Item* item = newItemFromEntity(uidToEntity(entity->parent));
-			if ( !item )
-			{
+			Item* item = newItemFromEntity(uidToEntity(entity->parent), true);
+			if (!item) {
 				return;
 			}
-
-			SDL_Rect tooltip;
-			tooltip.h = TTF12_HEIGHT * 4 + 8;
-			tooltip.w = std::max(13, longestline(item->description())) * TTF12_WIDTH + 8;
-			tooltip.w = std::max(20 * TTF12_WIDTH + 8, tooltip.w);
-			if ( parent->behavior == &actItem )
-			{
-				sprite = SDL_CreateRGBSurface(0, tooltip.w, tooltip.h, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-				SDL_FillRect(sprite, nullptr, SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255));
-				SDL_LockSurface(sprite);
-
-				for ( int x = 0; x < sprite->w; x++ )
-				{
-					Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 192, 255, 255);
-					putPixel(sprite, x, 0, color);
-					putPixel(sprite, x, sprite->h - 1, color);
-				}
-				for ( int y = 0; y < sprite->h; y++ )
-				{
-					Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 192, 255, 255);
-					putPixel(sprite, 0, y, color);
-					putPixel(sprite, sprite->w - 1, y, color);
-				}
-			}
-			else
-			{
-				sprite = SDL_CreateRGBSurface(0, 320, 32, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-				SDL_FillRect(sprite, nullptr, SDL_MapRGBA(mainsurface->format, 0, 0, 0, 0));
-				SDL_LockSurface(sprite);
-			}
-			SDL_UnlockSurface(sprite);
-
-			node_t* node = list_Node(&items[item->type].surfaces, item->appearance % items[item->type].variations);
-			if ( !node )
-			{
-				return;
-			}
-			SDL_Rect pos;
-			pos.w = 48;
-			pos.h = 48;
-			pos.x = tooltip.w - pos.w - 8;
-			pos.y = TTF12_HEIGHT;
-			SDL_Surface** itemSurf = static_cast<SDL_Surface**>(node->element);
-			SDL_BlitScaled(*itemSurf, nullptr, sprite, &pos);
-
-			GLuint itemTexid = 0;
-			SDL_Surface* textSurf = glTextSurface(item->description(), &itemTexid);
-			if ( textSurf )
-			{
-				pos.x = 4;
-				pos.y = 0;
-				SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
-			}
-			char buf[256] = "";
-			if ( !item->identified )
-			{
-				textSurf = glTextSurface(language[309], &itemTexid);
-				if ( textSurf )
-				{
-					pos.y += TTF12_HEIGHT;
-					SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
-				}
-			}
-			else
-			{
-				if ( item->beatitude < 0 )
-				{
-					textSurf = glTextSurface(language[310], &itemTexid);
-				}
-				else if ( item->beatitude > 0 )
-				{
-					textSurf = glTextSurface(language[312], &itemTexid);
-				}
-				else
-				{
-					textSurf = glTextSurface(language[311], &itemTexid);
-				}
-				if ( textSurf )
-				{
-					pos.y += TTF12_HEIGHT;
-					SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
-				}
-			}
-
-			snprintf(buf, 255, language[313], items[item->type].weight);
-			textSurf = glTextSurface(buf, &itemTexid);
-			if ( textSurf )
-			{
-				pos.y += TTF12_HEIGHT;
-				SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
-			}
-			snprintf(buf, 255, language[314], item->sellValue(player));
-			textSurf = glTextSurface(buf, &itemTexid);
-			if ( textSurf )
-			{
-				pos.y += TTF12_HEIGHT;
-				SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
-			}
+			sprite = players[player]->worldUI.worldTooltipItem.blitItemWorldTooltip(item);
 			free(item);
-			item = nullptr;
 		}
-		if ( static_cast<Sint32>(entity->getUID()) == -21 )
-		{
-			GLuint tmpTextid = 0;
-			SDL_Rect pos;
-			pos.x = 0;
-			pos.y = 0;
-			pos.w = 64;
-			pos.h = 64;
-			if ( parent->behavior == &actItem )
-			{
-				//SDL_Surface* textSurf = glTextSurface("Press use to pick up!", &tmpTextid);
-				//if ( textSurf )
-				//{
-				//	pos.x = 32 + 16;
-				//	pos.y += 32;
-				//	if ( multiplayer == CLIENT && parent->itemReceivedDetailsFromServer == 0 )
-				//	{
-				//		// no details yet.
-				//		pos.y -= 24;
-				//	}
-				//	SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
-				//}
-			}
-			/*else
-			{
-				SDL_Surface* textSurf = glTextSurface("Press use to interact!", &tmpTextid);
-				if ( textSurf )
-				{
-					pos.x = 32 + 16;
-					pos.y += 8;
-					SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
-					SDL_BlitSurface(selected_glyph_bmp, nullptr, sprite, &pos);
-				}
-			}*/
-		}
-		//
+
 		tex = new TempTexture();
-		tex->load(sprite, false, true);
-		if ( mode == REALCOLORS )
-		{
-			tex->bind();
+		if (sprite) {
+		    tex->load(sprite, false, true);
+		    tex->bind();
 		}
-		else
-		{
-			glBindTexture(GL_TEXTURE_2D, 0);
-		}
-		//glBindTexture(GL_TEXTURE_2D, texid[sprite->refcount]);
 	}
-	else
-	{
-		if ( entity->sprite >= 0 && entity->sprite < numsprites )
-		{
-			if ( sprites[entity->sprite] != NULL )
-			{
+	else {
+		if (entity->sprite >= 0 && entity->sprite < numsprites) {
+			if (sprites[entity->sprite] != NULL) {
 				sprite = sprites[entity->sprite];
-			}
-			else
-			{
+			} else {
 				sprite = sprites[0];
 			}
-		}
-		else
-		{
+		} else {
 			sprite = sprites[0];
 		}
 	}
-
-	// translate sprite and rotate towards camera
-	//double tangent = atan2( entity->y-camera->y*16, camera->x*16-entity->x ) * (180/PI);
-	glTranslatef(entity->x * 2, -entity->z * 2 - 1, entity->y * 2);
-	if ( !entity->flags[OVERDRAW] || entity->flags[OVERDRAW] )
-	{
-		real_t tangent = 180 - camera->ang * (180 / PI);
-		glRotatef(tangent, 0, 1, 0);
-	}
-	else
-	{
-		real_t tangent = 180;
-		glRotatef(tangent, 0, 1, 0);
-	}
-	glScalef(entity->scalex, entity->scalez, entity->scaley);
-
-	if ( entity->flags[OVERDRAW] )
-	{
-		glDepthRange(0.1, 0.2);
-	}
-
-	// get shade factor
-	if ( mode == REALCOLORS )
-	{
-		if ( !entity->flags[BRIGHT] )
-		{
-			if ( !entity->flags[OVERDRAW] )
-			{
-				s = getLightForEntity(entity->x / 16, entity->y / 16);
-			}
-			else
-			{
-				s = getLightForEntity(camera->x, camera->y);
-			}
-
-			if ( globalLightModifierActive )
-			{
-				s *= globalLightModifier;
-			}
-
-			glColor4f(s, s, s, 1);
-		}
-		else
-		{
-			if ( entity->behavior == &actSpriteWorldTooltip )
-			{
-				glColor4f(1.f, 1.f, 1.f, entity->worldTooltipAlpha);
-			}
-			else if ( globalLightModifierActive )
-			{
-				glColor4f(globalLightModifier, globalLightModifier, globalLightModifier, 1);
-			}
-			else
-			{
-				glColor4f(1.f, 1.f, 1.f, 1);
-			}
-		}
-	}
-	else
-	{
-		Uint32 uid = entity->getUID();
-		glColor4ub((Uint8)(uid), (Uint8)(uid >> 8), (Uint8)(uid >> 16), (Uint8)(uid >> 24));
-	}
-
-	// draw quad
-	glBegin(GL_QUADS);
-	glTexCoord2f(0, 0);
-	glVertex3f(0, sprite->h / 2, sprite->w / 2);
-	glTexCoord2f(0, 1);
-	glVertex3f(0, -sprite->h / 2, sprite->w / 2);
-	glTexCoord2f(1, 1);
-	glVertex3f(0, -sprite->h / 2, -sprite->w / 2);
-	glTexCoord2f(1, 0);
-	glVertex3f(0, sprite->h / 2, -sprite->w / 2);
-	glEnd();
-	glDepthRange(0, 1);
-	glPopMatrix();
-
-	if ( entity->behavior == &actSpriteWorldTooltip )
-	{
-		if ( tex ) {
-			delete tex;
-			tex = nullptr;
-		}
-		if ( sprite ) {
-			SDL_FreeSurface(sprite);
-			sprite = nullptr;
-		}
-	}
+    
+    // depth range
+    if (entity->flags[OVERDRAW]) {
+        GL_CHECK_ERR(glDepthRange(0.1f, 0.2f));
+    } else {
+        GL_CHECK_ERR(glDepthRange(0.f, 0.6f));
+    }
+    
+    // bind shader
+    GL_CHECK_ERR(glEnable(GL_BLEND));
+    auto& shader = spriteBrightShader;
+    shader.bind();
+    
+    vec4_t v;
+    mat4x4_t m, t, i;
+    
+    // scale
+    float scale = Player::WorldUI_t::WorldTooltipItem_t::WorldItemSettings_t::scaleMod;
+    if ( splitscreen ) {
+        scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale_splitscreen / 100.f) - 1.f));
+    } else {
+        scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale / 100.f) - 1.f));
+    }
+    
+    // model matrix
+    v = vec4(entity->x * 2, -entity->z * 2 - 1, entity->y * 2, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    (void)rotate_mat(&m, &t, -90.f - camera->ang * (180.f / PI), &i.y); t = m;
+    (void)rotate_mat(&m, &t, -camera->vang * (180.f / PI), &i.x); t = m;
+    v = vec4((entity->scalex + scale) * tex->w, (entity->scalez + scale) * tex->h, (entity->scalez + scale), 0.f);
+    (void)scale_mat(&m, &t, &v); t = m;
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
+    
+    // upload light variables
+    const float b = std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
+    const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)entity->worldTooltipAlpha };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
+    const GLfloat light[4] = { b, b, b, 1.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+    const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
+    
+    // draw
+    spriteMesh.draw();
+    
+    // cleanup
+    if (tex) {
+        delete tex;
+        tex = nullptr;
+    }
+    
+    // reset GL state
+    GL_CHECK_ERR(glDepthRange(0.f, 1.f));
+    GL_CHECK_ERR(glDisable(GL_BLEND));
+#endif
 }
 
 void glDrawSprite(view_t* camera, Entity* entity, int mode)
 {
-	SDL_Surface* sprite;
-	//int x, y;
-	real_t s = 1;
+    // bind texture
+    SDL_Surface* sprite;
+    if (entity->sprite >= 0 && entity->sprite < numsprites) {
+        if (sprites[entity->sprite] != nullptr) {
+            sprite = sprites[entity->sprite];
+        } else {
+            sprite = sprites[0];
+        }
+    } else {
+        sprite = sprites[0];
+    }
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, texid[(long int)sprite->userdata]));
+    
+    // set GL state
+    if (mode == REALCOLORS) {
+        GL_CHECK_ERR(glEnable(GL_BLEND));
+    }
+    if (entity->flags[OVERDRAW]) {
+        GL_CHECK_ERR(glDepthRange(0, 0.1));
+    }
+    
+    // bind shader
+    auto& dither = entity->dithering[camera];
+    auto& shader = !entity->flags[BRIGHT] ?
+        (dither.value < Entity::Dither::MAX ? spriteDitheredShader : spriteShader):
+        spriteBrightShader;
+    shader.bind();
+    
+    // upload dither amount, if necessary
+    if (&shader == &spriteDitheredShader) {
+        GL_CHECK_ERR(glUniform1f(shader.uniform("uDitherAmount"),
+            (float)((uint32_t)1 << (dither.value - 1)) / (1 << (Entity::Dither::MAX / 2 - 1))));
+    }
+    
+    vec4_t v;
+    mat4x4_t m, t, i;
+    
+    // model matrix
+    if (entity->flags[OVERDRAW]) {
+        v = vec4(camera->x * 32, -camera->z, camera->y * 32, 0);
+        (void)translate_mat(&m, &t, &v); t = m;
+        const float rotx = 0; // roll
+        const float roty = 360.0 - camera->ang * 180.0 / PI; // yaw
+        const float rotz = 360.0 - camera->vang * 180.0 / PI; // pitch
+        (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
+        (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
+        (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
+    }
+    v = vec4(entity->x * 2.f, -entity->z * 2.f - 1, entity->y * 2.f, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    (void)rotate_mat(&m, &t, entity->flags[OVERDRAW] ? -90.f :
+        -90.f - camera->ang * (180.f / PI), &i.y); t = m;
+    v = vec4(entity->focalx * 2.f, -entity->focalz * 2.f, entity->focaly * 2.f, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    v = vec4(entity->scalex * sprite->w, entity->scaley * sprite->h, entity->scalez, 0.f);
+    (void)scale_mat(&m, &t, &v); t = m;
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
+    
+    // upload light variables
+    if (entity->flags[BRIGHT]) {
+#ifndef EDITOR
+        const float b = std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
+#else
+        const float b = std::max(0.5f, camera->luminance * 4.f);
+#endif
+        const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
+        const GLfloat light[4] = { b, b, b, 1.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+        const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
+    } else {
+        uploadLightUniforms(camera, shader, entity, mode, false);
+    }
 
-	// setup projection
-	glMatrixMode( GL_PROJECTION );
-	glLoadIdentity();
-	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
-	glEnable( GL_DEPTH_TEST );
-	if (!entity->flags[OVERDRAW])
-	{
-		GLfloat rotx = camera->vang * 180 / PI; // get x rotation
-		GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
-		GLfloat rotz = 0; // get z rotation
-		glRotatef(rotx, 1, 0, 0); // rotate pitch
-		glRotatef(roty, 0, 1, 0); // rotate yaw
-		glRotatef(rotz, 0, 0, 1); // rotate roll
-		glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
-	}
-	else
-	{
-		glRotatef(90, 0, 1, 0);
-
-	}
-
-	// setup model matrix
-	glMatrixMode( GL_MODELVIEW );
-	glLoadIdentity();
-	glPushMatrix();
-	if ( mode == REALCOLORS )
-	{
-		glEnable(GL_BLEND);
-	}
-	else
-	{
-		glDisable(GL_BLEND);
-	}
-
-	// assign texture
-	if ( entity->sprite >= 0 && entity->sprite < numsprites )
-	{
-		if ( sprites[entity->sprite] != NULL )
-		{
-			sprite = sprites[entity->sprite];
-		}
-		else
-		{
-			sprite = sprites[0];
-		}
-	}
-	else
-	{
-		sprite = sprites[0];
-	}
-
-	if ( mode == REALCOLORS )
-	{
-		glBindTexture(GL_TEXTURE_2D, texid[sprite->refcount]);
-	}
-	else
-	{
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
-
-	// translate sprite and rotate towards camera
-	//double tangent = atan2( entity->y-camera->y*16, camera->x*16-entity->x ) * (180/PI);
-	glTranslatef(entity->x * 2, -entity->z * 2 - 1, entity->y * 2);
-	if (!entity->flags[OVERDRAW])
-	{
-		real_t tangent = 180 - camera->ang * (180 / PI);
-		glRotatef(tangent, 0, 1, 0);
-	}
-	else
-	{
-		real_t tangent = 180;
-		glRotatef(tangent, 0, 1, 0);
-	}
-	glScalef(entity->scalex, entity->scalez, entity->scaley);
-
-	if ( entity->flags[OVERDRAW] )
-	{
-		glDepthRange(0, 0.1);
-	}
-
-	// get shade factor
-	if ( mode == REALCOLORS )
-	{
-		if (!entity->flags[BRIGHT])
-		{
-			if (!entity->flags[OVERDRAW])
-			{
-				s = getLightForEntity(entity->x / 16, entity->y / 16);
-			}
-			else
-			{
-				s = getLightForEntity(camera->x, camera->y);
-			}
-
-			if ( globalLightModifierActive )
-			{
-				s *= globalLightModifier;
-			}
-
-			glColor4f(s, s, s, 1);
-		}
-		else
-		{
-			if ( globalLightModifierActive )
-			{
-				glColor4f(globalLightModifier, globalLightModifier, globalLightModifier, 1);
-			}
-			else
-			{
-				glColor4f(1.f, 1.f, 1.f, 1);
-			}
-		}
-	}
-	else
-	{
-		Uint32 uid = entity->getUID();
-		glColor4ub((Uint8)(uid), (Uint8)(uid >> 8), (Uint8)(uid >> 16), (Uint8)(uid >> 24));
-	}
-
-	// draw quad
-	glBegin(GL_QUADS);
-	glTexCoord2f(0, 0);
-	glVertex3f(0, sprite->h / 2, sprite->w / 2);
-	glTexCoord2f(0, 1);
-	glVertex3f(0, -sprite->h / 2, sprite->w / 2);
-	glTexCoord2f(1, 1);
-	glVertex3f(0, -sprite->h / 2, -sprite->w / 2);
-	glTexCoord2f(1, 0);
-	glVertex3f(0, sprite->h / 2, -sprite->w / 2);
-	glEnd();
-	glDepthRange(0, 1);
-	glPopMatrix();
+	// draw
+    spriteMesh.draw();
+    
+    // reset GL state
+    if (mode == REALCOLORS) {
+        GL_CHECK_ERR(glDisable(GL_BLEND));
+    }
+    if (entity->flags[OVERDRAW]) {
+        GL_CHECK_ERR(glDepthRange(0.f, 1.f));
+    }
 }
+
+#ifndef EDITOR
+static ConsoleVariable<GLfloat> cvar_dmgSpriteDepthRange("/dmg_sprite_depth_range", 0.49);
+#endif // !EDITOR
 
 void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode)
 {
-	//int x, y;
-	real_t s = 1;
-	SDL_Surface* image = sprites[0];
-	GLuint textureId = texid[sprites[0]->refcount];
-	char textToRetrieve[128];
-
-	if ( text.compare("") == 0 )
-	{
+	if (!camera || !entity || text.empty()) {
 		return;
 	}
 
-	// strncpy() does not copy N bytes if a terminating null is encountered first
-	// see http://www.cplusplus.com/reference/cstring/strncpy/
-	// see https://en.cppreference.com/w/c/string/byte/strncpy
-	// GCC throws a warning (intended) when the length argument to strncpy()
-	// in any way depends on strlen(src) to discourage this (and related) construct(s).
-	strncpy(textToRetrieve, text.c_str(), 22);
-	textToRetrieve[std::min(static_cast<int>(strlen(text.c_str())), 22)] = '\0';
-	if ( (image = ttfTextHashRetrieve(ttfTextHash, textToRetrieve, ttf12, true)) != NULL )
-	{
-		textureId = texid[image->refcount];
+    // set color
+	Uint32 color = makeColor(255, 255, 255, 255);
+	if (entity->behavior == &actDamageGib && text[0] == '+') {
+#ifndef EDITOR
+		color = hudColors.characterSheetGreen;
+#endif // !EDITOR
 	}
-	else
-	{
-		// create the text outline surface
-		TTF_SetFontOutline(ttf12, 2);
-		SDL_Color sdlColorBlack = { 0, 0, 0, 255 };
-		image = TTF_RenderUTF8_Blended(ttf12, textToRetrieve, sdlColorBlack);
+	else if (entity->behavior == &actSpriteNametag) {
+		color = entity->skill[1];
+	}
+	auto rendered_text = Text::get(
+        text.c_str(), "fonts/pixel_maz.ttf#32#2",
+		color, makeColor(0, 0, 0, 255));
+	auto textureId = rendered_text->getTexID();
 
-		// create the text surface
-		TTF_SetFontOutline(ttf12, 0);
-		SDL_Color sdlColorWhite = { 255, 255, 255, 255 };
-		SDL_Surface* textSurf = TTF_RenderUTF8_Blended(ttf12, textToRetrieve, sdlColorWhite);
-
-		// combine the surfaces
-		SDL_Rect pos;
-		pos.x = 2;
-		pos.y = 2;
-		pos.h = 0;
-		pos.w = 0;
-
-		SDL_BlitSurface(textSurf, NULL, image, &pos);
-		SDL_FreeSurface(textSurf);
-		// load the text outline surface as a GL texture
-		allsurfaces[imgref] = image;
-		allsurfaces[imgref]->refcount = imgref;
-		glLoadTexture(allsurfaces[imgref], imgref);
-		imgref++;
-		// store the surface in the text surface cache
-		if ( !ttfTextHashStore(ttfTextHash, textToRetrieve, ttf12, true, image) )
-		{
-			printlog("warning: failed to store text outline surface with imgref %d\n", imgref - 1);
+	// bind texture
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, textureId));
+    const GLfloat w = static_cast<GLfloat>(rendered_text->getWidth());
+    const GLfloat h = static_cast<GLfloat>(rendered_text->getHeight());
+    if (mode == REALCOLORS) {
+        GL_CHECK_ERR(glEnable(GL_BLEND));
+    }
+    
+    // set GL state
+	if (entity->flags[OVERDRAW]) {
+        GL_CHECK_ERR(glDepthRange(0.f, 0.1f));
+	} else {
+		if (entity->behavior == &actDamageGib) {
+#ifndef EDITOR
+            GL_CHECK_ERR(glDepthRange(0.f, *cvar_dmgSpriteDepthRange));
+#endif // !EDITOR
 		}
-		textureId = texid[image->refcount];
-	}
-	// setup projection
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
-	glEnable(GL_DEPTH_TEST);
-	if ( !entity->flags[OVERDRAW] )
-	{
-		GLfloat rotx = camera->vang * 180 / PI; // get x rotation
-		GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
-		GLfloat rotz = 0; // get z rotation
-		glRotatef(rotx, 1, 0, 0); // rotate pitch
-		glRotatef(roty, 0, 1, 0); // rotate yaw
-		glRotatef(rotz, 0, 0, 1); // rotate roll
-		glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
-	}
-	else
-	{
-		glRotatef(90, 0, 1, 0);
-	}
-
-
-	// setup model matrix
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glPushMatrix();
-	if ( mode == REALCOLORS )
-	{
-		glEnable(GL_BLEND);
-	}
-	else
-	{
-		glDisable(GL_BLEND);
-	}
-
-	// assign texture
-	if ( mode == REALCOLORS )
-	{
-		glBindTexture(GL_TEXTURE_2D, textureId);
-	}
-	else
-	{
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
-
-	// translate sprite and rotate towards camera
-	//double tangent = atan2( entity->y-camera->y*16, camera->x*16-entity->x ) * (180/PI);
-	glTranslatef(entity->x * 2, -entity->z * 2 - 1, entity->y * 2);
-	if ( !entity->flags[OVERDRAW] )
-	{
-		real_t tangent = 180 - camera->ang * (180 / PI);
-		glRotatef(tangent, 0, 1, 0);
-	}
-	else
-	{
-		real_t tangent = 180;
-		glRotatef(tangent, 0, 1, 0);
-	}
-	glScalef(entity->scalex, entity->scalez, entity->scaley);
-
-	if ( entity->flags[OVERDRAW] )
-	{
-		glDepthRange(0, 0.1);
-	}
-
-	// get shade factor
-	if ( mode == REALCOLORS )
-	{
-		if ( !entity->flags[BRIGHT] )
-		{
-			if ( !entity->flags[OVERDRAW] )
-			{
-				s = getLightForEntity(entity->x / 16, entity->y / 16);
-			}
-			else
-			{
-				s = getLightForEntity(camera->x, camera->y);
-			}
-			glColor4f(s, s, s, 1);
+		else if (entity->behavior != &actSpriteNametag) {
+            GL_CHECK_ERR(glDepthRange(0.f, 0.98f));
 		}
-		else
-		{
-			glColor4f(1.f, 1.f, 1.f, 1);
+		else if (entity->behavior == &actSpriteNametag) {
+            GL_CHECK_ERR(glDepthRange(0.f, 0.52f));
 		}
 	}
-	else
-	{
-		Uint32 uid = entity->getUID();
-		glColor4ub((Uint8)(uid), (Uint8)(uid >> 8), (Uint8)(uid >> 16), (Uint8)(uid >> 24));
-	}
+    
+    // bind shader
+    auto& shader = spriteBrightShader;
+    shader.bind();
+    
+    vec4_t v;
+    mat4x4_t m, t, i;
+    
+    // model matrix
+    if (entity->flags[OVERDRAW]) {
+        v = vec4(camera->x * 32, -camera->z, camera->y * 32, 0);
+        (void)translate_mat(&m, &t, &v); t = m;
+        const float rotx = 0; // roll
+        const float roty = 360.0 - camera->ang * 180.0 / PI; // yaw
+        const float rotz = 360.0 - camera->vang * 180.0 / PI; // pitch
+        (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
+        (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
+        (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
+    }
+    v = vec4(entity->x * 2.f, -entity->z * 2.f - 1, entity->y * 2.f, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    (void)rotate_mat(&m, &t, entity->flags[OVERDRAW] ? -90.f :
+        -90.f - camera->ang * (180.f / PI), &i.y); t = m;
+    v = vec4(entity->focalx * 2.f, -entity->focalz * 2.f, entity->focaly * 2.f, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    v = vec4(entity->scalex * w, entity->scaley * h, entity->scalez, 0.f);
+    (void)scale_mat(&m, &t, &v); t = m;
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
+    
+    // upload light variables
+#ifndef EDITOR
+    const float b = std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
+#else
+    const float b = std::max(0.5f, camera->luminance * 4.f);
+#endif
+    const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
+    const GLfloat light[4] = { b, b, b, 1.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+    const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
 
-	// draw quad
-	glBegin(GL_QUADS);
-	glTexCoord2f(0, 0);
-	glVertex3f(0, image->h / 2, image->w / 2);
-	glTexCoord2f(0, 1);
-	glVertex3f(0, -image->h / 2, image->w / 2);
-	glTexCoord2f(1, 1);
-	glVertex3f(0, -image->h / 2, -image->w / 2);
-	glTexCoord2f(1, 0);
-	glVertex3f(0, image->h / 2, -image->w / 2);
-	glEnd();
-	glDepthRange(0, 1);
-	glPopMatrix();
-}
-
-/*-------------------------------------------------------------------------------
-
-	getLightAt
-
-	returns the light shade factor for the vertex at the given x/y point
-
--------------------------------------------------------------------------------*/
-
-real_t getLightAt(int x, int y)
-{
-	real_t l = 0;
-	int u, v;
-
-	for ( u = x - 1; u < x + 1; u++ )
-	{
-		for ( v = y - 1; v < y + 1; v++ )
-		{
-			if ( u >= 0 && u < map.width && v >= 0 && v < map.height )
-			{
-				l += std::min(std::max(0, lightmapSmoothed[v + u * map.height]), 255) / 255.0;
-			}
-		}
-	}
-
-	if ( globalLightModifierActive )
-	{
-		l *= globalLightModifier;
-	}
-
-	return l / 4.f;
+    // draw
+    spriteMesh.draw();
+    
+    // reset GL state
+    GL_CHECK_ERR(glDepthRange(0, 1));
+    if (mode == REALCOLORS) {
+        GL_CHECK_ERR(glDisable(GL_BLEND));
+    }
 }
 
 /*-------------------------------------------------------------------------------
@@ -1246,628 +1662,235 @@ real_t getLightAt(int x, int y)
 
 -------------------------------------------------------------------------------*/
 
+static bool shouldDrawClouds(const map_t& map, int* cloudtile = nullptr) {
+    bool clouds = false;
+    if (cloudtile) {
+        *cloudtile = 77; // hell clouds
+    }
+    if ((!strncmp(map.name, "Hell", 4) || map.skybox != 0) && smoothlighting) {
+        clouds = true;
+        if (cloudtile) {
+            if (strncmp(map.name, "Hell", 4)) {
+                // not a hell map, custom clouds
+                *cloudtile = map.skybox;
+            }
+        }
+    }
+    return clouds;
+}
+
+#include "ui/Image.hpp"
+
+std::vector<Chunk> chunks;
+
+constexpr float sky_size = CLIPFAR * 16.f;
+constexpr float sky_htex_size = sky_size / 64.f;
+constexpr float sky_ltex_size = sky_size / 32.f;
+Mesh skyMesh = {
+    {
+        -sky_size, 65.f, -sky_size,
+         sky_size, 65.f, -sky_size,
+         sky_size, 65.f,  sky_size,
+        -sky_size, 65.f, -sky_size,
+         sky_size, 65.f,  sky_size,
+        -sky_size, 65.f,  sky_size,
+        -sky_size, 64.f, -sky_size,
+         sky_size, 64.f, -sky_size,
+         sky_size, 64.f,  sky_size,
+        -sky_size, 64.f, -sky_size,
+         sky_size, 64.f,  sky_size,
+        -sky_size, 64.f,  sky_size,
+    }, // positions
+    {
+        0.f, 0.f,
+        sky_htex_size, 0.f,
+        sky_htex_size, sky_htex_size,
+        0.f, 0.f,
+        sky_htex_size, sky_htex_size,
+        0.f, sky_htex_size,
+        0.f, 0.f,
+        sky_ltex_size, 0.f,
+        sky_ltex_size, sky_ltex_size,
+        0.f, 0.f,
+        sky_ltex_size, sky_ltex_size,
+        0.f, sky_ltex_size,
+    }, // texcoords
+    {
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, .5f,
+        1.f, 1.f, 1.f, .5f,
+        1.f, 1.f, 1.f, .5f,
+        1.f, 1.f, 1.f, .5f,
+        1.f, 1.f, 1.f, .5f,
+        1.f, 1.f, 1.f, .5f,
+    }, // colors
+};
+
 void glDrawWorld(view_t* camera, int mode)
 {
-	int x, y, z;
-	int index;
-	real_t s;
-	bool clouds = false;
-	int cloudtile = 0;
-	int mapceilingtile = 50;
+#ifndef EDITOR
+    static ConsoleVariable<bool> cvar_skipDrawWorld("/skipdrawworld", false);
+    if (*cvar_skipDrawWorld) {
+        return;
+    }
+#endif
 
-	if ( softwaremode == true )
-	{
-		return;
-	}
-
-	if ( (!strncmp(map.name, "Hell", 4) || map.skybox != 0) && smoothlighting )
-	{
-		clouds = true;
-		if ( !strncmp(map.name, "Hell", 4) )
-		{
-			cloudtile = 77;
-		}
-		else
-		{
-			cloudtile = map.skybox;
-		}
-	}
-
-	for ( int v = 0; v < map.height; v++ )
-	{
-		for ( int u = 0; u < map.width; u++ )
-		{
-			int smoothingRate = globalLightSmoothingRate;
-			int difference = abs(lightmapSmoothed[v + u * map.height] - lightmap[v + u * map.height]);
-			if ( difference > 64 )
-			{
-				smoothingRate *= 4;
-			}
-			else if ( difference > 32 )
-			{
-				smoothingRate *= 2;
-			}
-			if ( lightmapSmoothed[v + u * map.height] < lightmap[v + u * map.height] )
-			{
-				lightmapSmoothed[v + u * map.height] = std::min(lightmap[v + u * map.height], lightmapSmoothed[v + u * map.height] + smoothingRate);
-			}
-			else if ( lightmapSmoothed[v + u * map.height] > lightmap[v + u * map.height] )
-			{
-				lightmapSmoothed[v + u * map.height] = std::max(lightmap[v + u * map.height], lightmapSmoothed[v + u * map.height] - smoothingRate);
-			}
-		}
-	}
-
-	if ( map.flags[MAP_FLAG_CEILINGTILE] != 0 && map.flags[MAP_FLAG_CEILINGTILE] < numtiles )
-	{
-		mapceilingtile = map.flags[MAP_FLAG_CEILINGTILE];
-	}
-
-	glEnable(GL_SCISSOR_TEST);
-	glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-
-	if ( clouds && mode == REALCOLORS )
-	{
-		// draw sky "box"
-		glMatrixMode( GL_PROJECTION );
-		glLoadIdentity();
-		glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-		perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 16);
-		GLfloat rotx = camera->vang * 180 / PI; // get x rotation
-		GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
-		GLfloat rotz = 0; // get z rotation
-		glRotatef(rotx, 1, 0, 0); // rotate pitch
-		glRotatef(roty, 0, 1, 0); // rotate yaw
-		glRotatef(rotz, 0, 0, 1); // rotate roll
-		glMatrixMode( GL_MODELVIEW );
-		glLoadIdentity();
-		glEnable( GL_DEPTH_TEST );
-		glDepthMask(GL_FALSE);
-		glEnable(GL_BLEND);
-
-		// first (higher) sky layer
-		glColor4f(1.f, 1.f, 1.f, .5);
-		glBindTexture(GL_TEXTURE_2D, texid[tiles[cloudtile]->refcount]); // sky tile
-		glBegin( GL_QUADS );
-		glTexCoord2f((real_t)(ticks % 60) / 60, (real_t)(ticks % 60) / 60);
-		glVertex3f(-CLIPFAR * 16, 64, -CLIPFAR * 16);
-
-		glTexCoord2f((CLIPFAR) / 2 + (real_t)(ticks % 60) / 60, (real_t)(ticks % 60) / 60);
-		glVertex3f(CLIPFAR * 16, 64, -CLIPFAR * 16);
-
-		glTexCoord2f((CLIPFAR) / 2 + (real_t)(ticks % 60) / 60, (CLIPFAR) / 2 + (real_t)(ticks % 60) / 60);
-		glVertex3f(CLIPFAR * 16, 64, CLIPFAR * 16);
-
-		glTexCoord2f((real_t)(ticks % 60) / 60, (CLIPFAR) / 2 + (real_t)(ticks % 60) / 60);
-		glVertex3f(-CLIPFAR * 16, 64, CLIPFAR * 16);
-		glEnd();
-
-		// second (closer) sky layer
-		glColor4f(1.f, 1.f, 1.f, .5);
-		glBindTexture(GL_TEXTURE_2D, texid[tiles[cloudtile]->refcount]); // sky tile
-		glBegin( GL_QUADS );
-		glTexCoord2f((real_t)(ticks % 240) / 240, (real_t)(ticks % 240) / 240);
-		glVertex3f(-CLIPFAR * 16, 32, -CLIPFAR * 16);
-
-		glTexCoord2f((CLIPFAR) / 2 + (real_t)(ticks % 240) / 240, (real_t)(ticks % 240) / 240);
-		glVertex3f(CLIPFAR * 16, 32, -CLIPFAR * 16);
-
-		glTexCoord2f((CLIPFAR) / 2 + (real_t)(ticks % 240) / 240, (CLIPFAR) / 2 + (real_t)(ticks % 240) / 240);
-		glVertex3f(CLIPFAR * 16, 32, CLIPFAR * 16);
-
-		glTexCoord2f((real_t)(ticks % 240) / 240, (CLIPFAR) / 2 + (real_t)(ticks % 240) / 240);
-		glVertex3f(-CLIPFAR * 16, 32, CLIPFAR * 16);
-		glEnd();
-	}
-
-	// setup projection
-	glMatrixMode( GL_PROJECTION );
-	glLoadIdentity();
-	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
-	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
-	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
-	GLfloat rotz = 0; // get z rotation
-	glRotatef(rotx, 1, 0, 0); // rotate pitch
-	glRotatef(roty, 0, 1, 0); // rotate yaw
-	glRotatef(rotz, 0, 0, 1); // rotate roll
-	glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
-	glMatrixMode( GL_MODELVIEW );
-	glLoadIdentity();
-	glEnable( GL_DEPTH_TEST );
-	glDepthMask(GL_TRUE);
-	if ( mode == REALCOLORS )
-	{
-		glEnable(GL_BLEND);
-	}
-	else
-	{
-		glDisable(GL_BLEND);
-	}
-
-	// glBegin / glEnd are also moved outside, 
-	// but needs to track the texture used to "flush" current drawing before switching
-	GLuint cur_tex = 0, new_tex = 0;
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glBegin(GL_QUADS);
-	for ( x = 0; x < map.width; x++ )
-	{
-		for ( y = 0; y < map.height; y++ )
-		{
-			if ( x >= (int)camera->x - 3 && x <= (int)camera->x + 3 && y >= (int)camera->y - 3 && y <= (int)camera->y + 3 )
-			{
-				vismap[y + x * map.height] = true;
-			}
-			if ( vismap[y + x * map.height] )
-			{
-				for ( z = 0; z < MAPLAYERS + 1; z++ )
-				{
-					index = z + y * MAPLAYERS + x * MAPLAYERS * map.height;
-
-					if ( z >= 0 && z < MAPLAYERS )
-					{
-						// skip "air" tiles
-						if ( map.tiles[index] == 0 )
-						{
-							continue;
-						}
-
-						// bind texture
-						if ( mode == REALCOLORS )
-						{
-							if ( map.tiles[index] < 0 || map.tiles[index] >= numtiles )
-							{
-								new_tex = texid[sprites[0]->refcount];
-								//glBindTexture(GL_TEXTURE_2D, texid[sprites[0]->refcount]);
-							}
-							else
-							{
-								new_tex = texid[tiles[map.tiles[index]]->refcount];
-								//glBindTexture(GL_TEXTURE_2D, texid[tiles[map.tiles[index]]->refcount]);
-							}
-						}
-						else
-						{
-							new_tex = 0;
-							//glBindTexture(GL_TEXTURE_2D, 0);
-						}
-						// check if the texture has changed (flushing drawing if it's the case)
-						if(new_tex != cur_tex)
-						{
-							glEnd();
-							glBindTexture(GL_TEXTURE_2D, new_tex);
-							cur_tex=new_tex;
-							glBegin(GL_QUADS);
-						}
-
-						// draw east wall
-						if ( x == map.width - 1 || !map.tiles[index + MAPLAYERS * map.height] )
-						{
-							if ( smoothlighting && mode == REALCOLORS )
-							{
-								//glBegin( GL_QUADS );
-								if ( z )
-								{
-									s = getLightAt(x + 1, y + 1);
-									glColor3f(s, s, s);
-									glTexCoord2f(0, 0);
-									glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
-									glTexCoord2f(0, 1);
-									glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 32);
-									s = getLightAt(x + 1, y);
-									glColor3f(s, s, s);
-									glTexCoord2f(1, 1);
-									glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 0);
-									glTexCoord2f(1, 0);
-									glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
-								}
-								else
-								{
-									s = getLightAt(x + 1, y + 1);
-									glColor3f(s, s, s);
-									glTexCoord2f(0, 0);
-									glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
-									glColor3f(0, 0, 0);
-									glTexCoord2f(0, 2);
-									glVertex3f(x * 32 + 32, z * 32 - 48 - 32, y * 32 + 32);
-									s = getLightAt(x + 1, y);
-									glColor3f(0, 0, 0);
-									glTexCoord2f(1, 2);
-									glVertex3f(x * 32 + 32, z * 32 - 48 - 32, y * 32 + 0);
-									glColor3f(s, s, s);
-									glTexCoord2f(1, 0);
-									glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
-								}
-								//glEnd();
-							}
-							else
-							{
-								if ( mode == REALCOLORS )
-								{
-									if ( x < map.width - 1 )
-									{
-										s = std::min(std::max(0, lightmapSmoothed[y + (x + 1) * map.height]), 255) / 255.0;
-										if ( globalLightModifierActive )
-										{
-											s *= globalLightModifier;
-										}
-									}
-									else
-									{
-										s = .5;
-									}
-									glColor3f(s, s, s);
-								}
-								else
-								{
-									glColor4ub(0, 0, 0, 0);
-								}
-								if ( x == map.width - 1 || !map.tiles[z + y * MAPLAYERS + (x + 1)*MAPLAYERS * map.height] )
-								{
-									//glBegin( GL_QUADS );
-									glTexCoord2f(0, 0);
-									glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
-									glTexCoord2f(0, 1);
-									glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 32);
-									glTexCoord2f(1, 1);
-									glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 0);
-									glTexCoord2f(1, 0);
-									glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
-									//glEnd();
-								}
-							}
-						}
-
-						// draw south wall
-						if ( y == map.height - 1 || !map.tiles[index + MAPLAYERS] )
-						{
-							if ( smoothlighting && mode == REALCOLORS )
-							{
-								//glBegin( GL_QUADS );
-								if ( z )
-								{
-									s = getLightAt(x, y + 1);
-									glColor3f(s, s, s);
-									glTexCoord2f(0, 0);
-									glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
-									glTexCoord2f(0, 1);
-									glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 32);
-									s = getLightAt(x + 1, y + 1);
-									glColor3f(s, s, s);
-									glTexCoord2f(1, 1);
-									glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 32);
-									glTexCoord2f(1, 0);
-									glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
-								}
-								else
-								{
-									s = getLightAt(x, y + 1);
-									glColor3f(s, s, s);
-									glTexCoord2f(0, 0);
-									glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
-									glColor3f(0, 0, 0);
-									glTexCoord2f(0, 2);
-									glVertex3f(x * 32 + 0, z * 32 - 48 - 32, y * 32 + 32);
-									s = getLightAt(x + 1, y + 1);
-									glColor3f(0, 0, 0);
-									glTexCoord2f(1, 2);
-									glVertex3f(x * 32 + 32, z * 32 - 48 - 32, y * 32 + 32);
-									glColor3f(s, s, s);
-									glTexCoord2f(1, 0);
-									glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
-								}
-								//glEnd();
-							}
-							else
-							{
-								if ( mode == REALCOLORS )
-								{
-									if ( y < map.height - 1 )
-									{
-										s = std::min(std::max(0, lightmapSmoothed[(y + 1) + x * map.height]), 255) / 255.0;
-										if ( globalLightModifierActive )
-										{
-											s *= globalLightModifier;
-										}
-									}
-									else
-									{
-										s = .5;
-									}
-									glColor3f(s, s, s);
-								}
-								if ( y == map.height - 1 || !map.tiles[z + (y + 1)*MAPLAYERS + x * MAPLAYERS * map.height] )
-								{
-									//glBegin( GL_QUADS );
-									glTexCoord2f(0, 0);
-									glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
-									glTexCoord2f(0, 1);
-									glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 32);
-									glTexCoord2f(1, 1);
-									glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 32);
-									glTexCoord2f(1, 0);
-									glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
-									//glEnd();
-								}
-							}
-						}
-
-						// draw west wall
-						if ( x == 0 || !map.tiles[index - MAPLAYERS * map.height] )
-						{
-							if ( smoothlighting && mode == REALCOLORS )
-							{
-								//glBegin( GL_QUADS );
-								if ( z )
-								{
-									s = getLightAt(x, y);
-									glColor3f(s, s, s);
-									glTexCoord2f(0, 0);
-									glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
-									glTexCoord2f(0, 1);
-									glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 0);
-									s = getLightAt(x, y + 1);
-									glColor3f(s, s, s);
-									glTexCoord2f(1, 1);
-									glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 32);
-									glTexCoord2f(1, 0);
-									glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
-								}
-								else
-								{
-									s = getLightAt(x, y);
-									glColor3f(s, s, s);
-									glTexCoord2f(0, 0);
-									glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
-									glColor3f(0, 0, 0);
-									glTexCoord2f(0, 2);
-									glVertex3f(x * 32 + 0, z * 32 - 48 - 32, y * 32 + 0);
-									s = getLightAt(x, y + 1);
-									glColor3f(0, 0, 0);
-									glTexCoord2f(1, 2);
-									glVertex3f(x * 32 + 0, z * 32 - 48 - 32, y * 32 + 32);
-									glColor3f(s, s, s);
-									glTexCoord2f(1, 0);
-									glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
-								}
-								//glEnd();
-							}
-							else
-							{
-								if ( mode == REALCOLORS )
-								{
-									if ( x > 0 )
-									{
-										s = std::min(std::max(0, lightmapSmoothed[y + (x - 1) * map.height]), 255) / 255.0;
-										if ( globalLightModifierActive )
-										{
-											s *= globalLightModifier;
-										}
-									}
-									else
-									{
-										s = .5;
-									}
-									glColor3f(s, s, s);
-								}
-								if ( x == 0 || !map.tiles[z + y * MAPLAYERS + (x - 1)*MAPLAYERS * map.height] )
-								{
-									//glBegin( GL_QUADS );
-									glTexCoord2f(0, 0);
-									glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
-									glTexCoord2f(0, 1);
-									glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 0);
-									glTexCoord2f(1, 1);
-									glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 32);
-									glTexCoord2f(1, 0);
-									glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
-									//glEnd();
-								}
-							}
-						}
-
-						// draw north wall
-						if ( y == 0 || !map.tiles[index - MAPLAYERS] )
-						{
-							if ( smoothlighting && mode == REALCOLORS )
-							{
-								//glBegin( GL_QUADS );
-								if ( z )
-								{
-									s = getLightAt(x + 1, y);
-									glColor3f(s, s, s);
-									glTexCoord2f(0, 0);
-									glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
-									glTexCoord2f(0, 1);
-									glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 0);
-									s = getLightAt(x, y);
-									glColor3f(s, s, s);
-									glTexCoord2f(1, 1);
-									glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 0);
-									glTexCoord2f(1, 0);
-									glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
-								}
-								else
-								{
-									s = getLightAt(x + 1, y);
-									glColor3f(s, s, s);
-									glTexCoord2f(0, 0);
-									glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
-									glColor3f(0, 0, 0);
-									glTexCoord2f(0, 2);
-									glVertex3f(x * 32 + 32, z * 32 - 48 - 32, y * 32 + 0);
-									s = getLightAt(x, y);
-									glColor3f(0, 0, 0);
-									glTexCoord2f(1, 2);
-									glVertex3f(x * 32 + 0, z * 32 - 48 - 32, y * 32 + 0);
-									glColor3f(s, s, s);
-									glTexCoord2f(1, 0);
-									glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
-								}
-								//glEnd();
-							}
-							else
-							{
-								if ( mode == REALCOLORS )
-								{
-									if ( y > 0 )
-									{
-										s = std::min(std::max(0, lightmapSmoothed[(y - 1) + x * map.height]), 255) / 255.0;
-										if ( globalLightModifierActive )
-										{
-											s *= globalLightModifier;
-										}
-									}
-									else
-									{
-										s = .5;
-									}
-									glColor3f(s, s, s);
-								}
-								if ( y == 0 || !map.tiles[z + (y - 1)*MAPLAYERS + x * MAPLAYERS * map.height] )
-								{
-									//glBegin( GL_QUADS );
-									glTexCoord2f(0, 0);
-									glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
-									glTexCoord2f(0, 1);
-									glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 0);
-									glTexCoord2f(1, 1);
-									glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 0);
-									glTexCoord2f(1, 0);
-									glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
-									//glEnd();
-								}
-							}
-						}
-					}
-					else
-					{
-						// bind texture
-						if ( mode == REALCOLORS )
-						{
-							new_tex = texid[tiles[mapceilingtile]->refcount];
-							//glBindTexture(GL_TEXTURE_2D, texid[tiles[50]->refcount]); // rock tile
-							if (cur_tex!=new_tex)
-							{
-								glEnd();
-								cur_tex = new_tex;
-								glBindTexture(GL_TEXTURE_2D, new_tex);
-								glBegin(GL_QUADS);
-							}
-						}
-						else
-						{
-							continue;
-						}
-					}
-
-					if ( smoothlighting && mode == REALCOLORS )
-					{
-						// draw floor
-						if ( z < OBSTACLELAYER )
-						{
-							if ( !map.tiles[index + 1] )
-							{
-								//glBegin( GL_QUADS );
-								s = getLightAt(x, y);
-								glColor3f(s, s, s);
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 0, -16 - 32 * abs(z), y * 32 + 0);
-								s = getLightAt(x, y + 1);
-								glColor3f(s, s, s);
-								glTexCoord2f(0, 1);
-								glVertex3f(x * 32 + 0, -16 - 32 * abs(z), y * 32 + 32);
-								s = getLightAt(x + 1, y + 1);
-								glColor3f(s, s, s);
-								glTexCoord2f(1, 1);
-								glVertex3f(x * 32 + 32, -16 - 32 * abs(z), y * 32 + 32);
-								s = getLightAt(x + 1, y);
-								glColor3f(s, s, s);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 32, -16 - 32 * abs(z), y * 32 + 0);
-								//glEnd();
-							}
-						}
-
-						// draw ceiling
-						else if ( z > OBSTACLELAYER && (!clouds || z < MAPLAYERS) )
-						{
-							if ( !map.tiles[index - 1] )
-							{
-								//glBegin( GL_QUADS );
-								s = getLightAt(x, y);
-								glColor3f(s, s, s);
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 0, 16 + 32 * abs(z - 2), y * 32 + 0);
-								s = getLightAt(x + 1, y);
-								glColor3f(s, s, s);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 32, 16 + 32 * abs(z - 2), y * 32 + 0);
-								s = getLightAt(x + 1, y + 1);
-								glColor3f(s, s, s);
-								glTexCoord2f(1, 1);
-								glVertex3f(x * 32 + 32, 16 + 32 * abs(z - 2), y * 32 + 32);
-								s = getLightAt(x, y + 1);
-								glColor3f(s, s, s);
-								glTexCoord2f(0, 1);
-								glVertex3f(x * 32 + 0, 16 + 32 * abs(z - 2), y * 32 + 32);
-								//glEnd();
-							}
-						}
-					}
-					else
-					{
-						// unsmooth lighting
-						if ( mode == REALCOLORS )
-						{
-							s = std::min(std::max(0, lightmapSmoothed[y + x * map.height]), 255) / 255.0;
-							glColor3f(s, s, s);
-						}
-
-						// draw floor
-						if ( z < OBSTACLELAYER )
-						{
-							if ( !map.tiles[index + 1] )
-							{
-								//glBegin( GL_QUADS );
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 0, -16 - 32 * abs(z), y * 32 + 0);
-								glTexCoord2f(0, 1);
-								glVertex3f(x * 32 + 0, -16 - 32 * abs(z), y * 32 + 32);
-								glTexCoord2f(1, 1);
-								glVertex3f(x * 32 + 32, -16 - 32 * abs(z), y * 32 + 32);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 32, -16 - 32 * abs(z), y * 32 + 0);
-								//glEnd();
-							}
-						}
-
-						// draw ceiling
-						else if ( z > OBSTACLELAYER )
-						{
-							if ( !map.tiles[index - 1] )
-							{
-								//glBegin( GL_QUADS );
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 0, 16 + 32 * abs(z - 2), y * 32 + 0);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 32, 16 + 32 * abs(z - 2), y * 32 + 0);
-								glTexCoord2f(1, 1);
-								glVertex3f(x * 32 + 32, 16 + 32 * abs(z - 2), y * 32 + 32);
-								glTexCoord2f(0, 1);
-								glVertex3f(x * 32 + 0, 16 + 32 * abs(z - 2), y * 32 + 32);
-								//glEnd();
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	glEnd();
-
-	glDisable(GL_SCISSOR_TEST);
-	glScissor(0, 0, xres, yres);
+    // determine whether we should draw clouds, and their texture
+    int cloudtile;
+    const bool clouds = shouldDrawClouds(map, &cloudtile);
+    
+    // upload uniforms for dither shader
+    if (mode == REALCOLORS) {
+        worldDitheredShader.bind();
+        const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
+        GL_CHECK_ERR(glUniform4fv(worldDitheredShader.uniform("uLightFactor"), 1, light));
+    }
+    
+    // bind core shader
+    auto& shader = mode == REALCOLORS ?
+        worldShader : worldDarkShader;
+    shader.bind();
+    
+    // upload uniforms for core shader
+    if (&shader != &worldDarkShader) {
+        const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
+    }
+    
+    const bool ditheringDisabled = ticks - ditherDisabledTime < TICKS_PER_SECOND;
+    
+    // update chunk dithering & mark chunks for rebuilding
+    std::set<std::pair<int, Chunk*>> chunksToBuild;
+    for (int index = 0; index < chunks.size(); ++index) {
+        auto& chunk = chunks[index];
+        auto& dither = chunk.dithering[camera];
+        if (ticks != dither.lastUpdateTick) {
+            dither.lastUpdateTick = ticks;
+            for (int x = chunk.x; x < chunk.x + chunk.w; ++x) {
+                for (int y = chunk.y; y < chunk.y + chunk.h; ++y) {
+                    if (camera->vismap[y + x * map.height]) {
+                        if (ditheringDisabled) {
+                            dither.value = Chunk::Dither::MAX;
+                        } else {
+                            dither.value = std::min(Chunk::Dither::MAX, dither.value + 2);
+                        }
+                        goto end;
+                    }
+                }
+            }
+            if (ditheringDisabled) {
+                dither.value = 0;
+            } else {
+                dither.value = std::max(0, dither.value - 2);
+            }
+        end:;
+        }
+        if (dither.value) {
+            if (chunk.isDirty(map)) {
+                chunksToBuild.emplace(0, &chunk);
+            }
+        }
+    }
+    
+    // mark chunk neighbors for building (in-case of shared walls)
+    const int dim = 4; // size of chunk in tiles
+    const int yoff = 1;
+    const int xoff = (map.height / dim) + ((map.height % dim) ? 1 : 0);
+    for (auto it = chunksToBuild.begin(); it != chunksToBuild.end();) {
+        const int index = it->first;
+        bool foundDirtyNeighbor = false; // call the police
+        for (int x = -xoff; x <= xoff; x += xoff) {
+            for (int y = -yoff; y <= yoff; y += yoff) {
+                if ((x && y) || (!x && !y)) {
+                    continue;
+                }
+                const int off = index + x + y;
+                if (off < 0 || off >= chunks.size()) {
+                    continue;
+                }
+                auto& neighbor = chunks[off];
+                if (chunksToBuild.emplace(off, &neighbor).second) {
+                    if (neighbor.isDirty(map)) {
+                        // if this neighbor chunk needs rebuilding,
+                        // it's possible _its_ neighbors need rebuilding too.
+                        // therefore, restart the search for adjacent chunks.
+                        it = chunksToBuild.begin();
+                        foundDirtyNeighbor = true;
+                    }
+                }
+            }
+        }
+        if (!foundDirtyNeighbor) {
+            ++it;
+        }
+    }
+    
+    // build chunks
+    for (auto& pair : chunksToBuild) {
+        auto& chunk = *pair.second;
+        chunk.build(map, !clouds, chunk.x, chunk.y, chunk.w, chunk.h);
+    }
+    
+    // draw chunks
+    for (auto& chunk : chunks) {
+        auto& dither = chunk.dithering[camera];
+        if (dither.value) {
+            if (mode == REALCOLORS) {
+                if (dither.value == 10) {
+                    worldShader.bind();
+                    chunk.draw();
+                } else {
+                    worldDitheredShader.bind();
+                    GL_CHECK_ERR(glUniform1f(worldDitheredShader.uniform("uDitherAmount"),
+                        (float)((uint32_t)1 << (dither.value - 1)) / (1 << (Chunk::Dither::MAX / 2 - 1))));
+                    chunk.draw();
+                }
+            } else {
+                chunk.draw();
+            }
+        }
+    }
+    
+    // draw clouds
+    // do this after drawing walls/floors/etc because that way most of it can
+    // fail the depth test, improving fill rate.
+    if (clouds && mode == REALCOLORS) {
+        auto& shader = skyShader;
+        shader.bind();
+        GL_CHECK_ERR(glDepthMask(GL_FALSE));
+        GL_CHECK_ERR(glEnable(GL_BLEND));
+        
+        // upload texture scroll value
+        const float scroll[2] = {
+            ((float)(ticks % 60) / 60.f),
+            ((float)(ticks % 120) / 120.f),
+        };
+        GL_CHECK_ERR(glUniform2fv(shader.uniform("uScroll"), 1, scroll));
+        
+        // upload light value
+        const float light[4] = {
+            (float)getLightAtModifier,
+            (float)getLightAtModifier,
+            (float)getLightAtModifier,
+            1.f,
+        };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
+        
+        // bind cloud texture
+        GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, texid[(long int)tiles[cloudtile]->userdata]));
+        
+        // draw sky
+        skyMesh.draw();
+        
+        // reset GL
+        GL_CHECK_ERR(glDisable(GL_BLEND));
+        GL_CHECK_ERR(glDepthMask(GL_TRUE));
+    }
 }
 
 static int dirty = 1;
@@ -1876,79 +1899,714 @@ static unsigned int oldpix = 0;
 
 unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
 {
-	if(!dirty && (oldx==x) && (oldy==y))
-		return oldpix;
-
-	if(dirty) {
-#ifdef PANDORA
-		// Pandora fbo
-		if((xres==800) && (yres==480)) {
-			glBindFramebuffer(GL_FRAMEBUFFER, fbo_fbo);
-		}
-#endif
-		// generate object buffer
-		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+    if (!dirty && (oldx==x) && (oldy==y)) {
+        return oldpix;
+    }
+    
+    if (!hdrEnabled) {
+        main_framebuffer.unbindForWriting();
+    }
+    
+	if (dirty) {
+        GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+		glBeginCamera(&camera, false);
 		glDrawWorld(&camera, ENTITYUIDS);
 		drawEntities3D(&camera, ENTITYUIDS);
+		glEndCamera(&camera, false);
 	}
 
 	GLubyte pixel[4];
-	glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void*)pixel);
+    GL_CHECK_ERR(glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void*)pixel));
 	oldpix = pixel[0] + (((Uint32)pixel[1]) << 8) + (((Uint32)pixel[2]) << 16) + (((Uint32)pixel[3]) << 24);
-#ifdef PANDORA
-	if((dirty) && (xres==800) && (yres==480)) {
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
-#endif
+    if (!hdrEnabled) {
+        main_framebuffer.bindForWriting();
+    }
 	dirty = 0;
 	return oldpix;
+}
+
+const char* gl_error_string(GLenum err) {
+    switch (err) {
+    case GL_NO_ERROR:
+        return "GL_NO_ERROR";
+    case GL_INVALID_ENUM:
+        assert(0 && "GL_INVALID_ENUM");
+        return "GL_INVALID_ENUM";
+    case GL_INVALID_VALUE:
+        assert(0 && "GL_INVALID_VALUE");
+        return "GL_INVALID_VALUE";
+    case GL_INVALID_OPERATION:
+        assert(0 && "GL_INVALID_OPERATION");
+        return "GL_INVALID_OPERATION";
+    case GL_STACK_OVERFLOW:
+        assert(0 && "GL_STACK_OVERFLOW");
+        return "GL_STACK_OVERFLOW";
+    case GL_STACK_UNDERFLOW:
+        assert(0 && "GL_STACK_UNDERFLOW");
+        return "GL_STACK_UNDERFLOW";
+    case GL_OUT_OF_MEMORY:
+        assert(0 && "GL_OUT_OF_MEMORY");
+        return "GL_OUT_OF_MEMORY";
+    case GL_TABLE_TOO_LARGE:
+        assert(0 && "GL_TABLE_TOO_LARGE");
+        return "GL_TABLE_TOO_LARGE";
+    case GL_INVALID_FRAMEBUFFER_OPERATION:
+        assert(0 && "GL_INVALID_FRAMEBUFFER_OPERATION");
+        return "GL_INVALID_FRAMEBUFFER_OPERATION";
+    default:
+        assert(0 && "unknown OpenGL error!");
+        return nullptr;
+    }
 }
 
 void GO_SwapBuffers(SDL_Window* screen)
 {
 	dirty = 1;
-#ifdef PANDORA
-	bool bBlit = !(xres==800 && yres==480);
-
-	int vp_old[4];
-	if(bBlit) {
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-		glGetIntegerv(GL_VIEWPORT, vp_old);
-		glViewport(0, 0, 800, 480);
-		glMatrixMode( GL_PROJECTION );
-		glLoadIdentity();
-		glOrtho(0, 800, 480, 0, 1, -1);
-		glMatrixMode( GL_MODELVIEW );
-		glLoadIdentity();
-
-		glDisable(GL_BLEND);
-		glDisable(GL_ALPHA_TEST);
-		glDisable(GL_DEPTH_TEST);
-		glDisable(GL_LIGHTING);
-
-		glBindTexture(GL_TEXTURE_2D, fbo_tex);
-		glColor4f(1,1,1,1);
-
-		glBegin(GL_QUADS);
-		 glTexCoord2f(0,yres/1024.0f); glVertex2f(0,0);
-		 glTexCoord2f(0, 0); glVertex2f(0,480);
-		 glTexCoord2f(xres/1024.0f, 0); glVertex2f(800,480);
-		 glTexCoord2f(xres/1024.0f, yres/1024.0f); glVertex2f(800,0);
-		glEnd();
-
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
+    
+    if (!hdrEnabled) {
+        main_framebuffer.unbindForWriting();
+        main_framebuffer.bindForReading();
+        GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+        main_framebuffer.draw(vidgamma);
+    }
+	
+    SDL_GL_SwapWindow(screen);
+    
+#ifndef EDITOR
+    // enable HDR if desired
+    hdrEnabled = *MainMenu::cvar_hdrEnabled;
 #endif
-#ifdef APPLE
-	SDL_RenderPresent(renderer);
-#else
-	SDL_GL_SwapWindow(screen);
+    
+    if (!hdrEnabled) {
+        main_framebuffer.bindForWriting();
+    }
+}
+
+static float chunkTexCoords[3];
+static inline void makeTexCoords(float x, float y, float tile) {
+#define fdivf(A, B) A / B
+    constexpr float dim = 32.f;
+    chunkTexCoords[0] = floorf(fmodf(tile, dim) + x) / dim;
+    chunkTexCoords[1] = floorf(fdivf(tile, dim) + y) / dim;
+}
+
+void Chunk::build(const map_t& map, bool ceiling, int startX, int startY, int w, int h) {
+    std::vector<float> positions;
+    std::vector<float> texcoords;
+    std::vector<float> colors;
+    
+    positions.reserve(1200);
+    texcoords.reserve(800);
+    colors.reserve(1200);
+    
+    // determine ceiling texture
+    int mapceilingtile = 50;
+    if (map.flags[MAP_FLAG_CEILINGTILE] > 0 && map.flags[MAP_FLAG_CEILINGTILE] < numtiles) {
+        mapceilingtile = map.flags[MAP_FLAG_CEILINGTILE];
+    }
+    
+    int index2 = 0;
+    const int endX = std::min((int)map.width, startX + w);
+    const int endY = std::min((int)map.height, startY + h);
+    
+    // copy tiles
+    this->x = startX;
+    this->y = startY;
+    this->w = endX - startX;
+    this->h = endY - startY;
+    const int sizeOfTiles = this->w * this->h * MAPLAYERS;
+    this->tiles.clear();
+    this->tiles.resize(sizeOfTiles);
+    
+    for (int x = startX; x < endX; ++x) {
+        for (int y = startY; y < endY; ++y) {
+            for (int z = 0; z < MAPLAYERS + 1; ++z) {
+                const int index = z + y * MAPLAYERS + x * map.height * MAPLAYERS;
+
+                // build walls
+                if (z >= 0 && z < MAPLAYERS) {
+                    assert(index2 < sizeOfTiles);
+                    this->tiles[index2] = map.tiles[index];
+                    ++index2;
+                    
+                    // skip empty tiles
+                    if (map.tiles[index] == 0) {
+                        continue;
+                    }
+
+                    // skip special transparent tile
+                    if (map.tiles[index] == TRANSPARENT_TILE) {
+                        continue;
+                    }
+
+                    // select texture
+                    float tile = mapceilingtile;
+                    if (map.tiles[index] >= 0 && map.tiles[index] < numtiles) {
+                        if (map.tiles[index] >= 22 && map.tiles[index] < 30) {
+                            // water special case
+                            tile = 267 + map.tiles[index] - 22;
+                        }
+                        else if (map.tiles[index] >= 64 && map.tiles[index] < 72) {
+                            // lava special case
+                            tile = 285 + map.tiles[index] - 64;
+                        }
+                        else {
+                            tile = map.tiles[index];
+                        }
+                    }
+                    
+                    // determine lava texture
+                    bool lavaTexture = false;
+                    if ((tile >= 64 && tile < 72) ||
+                        (tile >= 129 && tile < 135) ||
+                        (tile >= 136 && tile < 139) ||
+                        (tile >= 285 && tile < 293) ||
+                        (tile >= 294 && tile < 302)) {
+                        lavaTexture = true;
+                    }
+
+                    // draw east wall
+                    const int easter = index + MAPLAYERS * map.height;
+                    if (x == map.width - 1 || !map.tiles[easter] || map.tiles[easter] == TRANSPARENT_TILE) {
+                        if (z) { // normal wall
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                        }
+                        else { // darkened pit
+                            for (int j = z - 1; j <= z; ++j) {
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 16.f, y * 32.f + 32.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(0.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 48.f, y * 32.f + 32.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 48.f, y * 32.f + 0.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 16.f, y * 32.f + 32.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 48.f, y * 32.f + 0.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(1.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 16.f, y * 32.f + 0.f});
+                            }
+                        }
+                    }
+
+                    // draw south wall
+                    const int souther = index + MAPLAYERS;
+                    if (y == map.height - 1 || !map.tiles[souther] || map.tiles[souther] == TRANSPARENT_TILE) {
+                        if (z) { // normal wall
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                        }
+                        else { // darkened pit
+                            for (int j = z - 1; j <= z; ++j) {
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 16.f, y * 32.f + 32.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(0.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 48.f, y * 32.f + 32.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 48.f, y * 32.f + 32.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 16.f, y * 32.f + 32.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 48.f, y * 32.f + 32.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(1.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 16.f, y * 32.f + 32.f});
+                            }
+                        }
+                    }
+
+                    // draw west wall
+                    const int wester = index - MAPLAYERS * map.height;
+                    if (x == 0 || !map.tiles[wester] || map.tiles[wester] == TRANSPARENT_TILE) {
+                        if (z) { // normal wall
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                        }
+                        else { // darkened pit
+                            for (int j = z - 1; j <= z; ++j) {
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 16.f, y * 32.f + 0.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(0.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 48.f, y * 32.f + 0.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 48.f, y * 32.f + 32.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 16.f, y * 32.f + 0.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 48.f, y * 32.f + 32.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(1.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 16.f, y * 32.f + 32.f});
+                            }
+                        }
+                    }
+
+                    // draw north wall
+                    const int norther = index - MAPLAYERS;
+                    if (y == 0 || !map.tiles[norther] || map.tiles[norther] == TRANSPARENT_TILE) {
+                        if (z) { // normal wall
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                        }
+                        else { // darkened pit
+                            for (int j = z - 1; j <= z; ++j) {
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 16.f, y * 32.f + 0.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(0.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 48.f, y * 32.f + 0.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 48.f, y * 32.f + 0.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 16.f, y * 32.f + 0.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 48.f, y * 32.f + 0.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(1.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 16.f, y * 32.f + 0.f});
+                            }
+                        }
+                    }
+                }
+                
+                // build floor and ceiling
+                {
+                    // select floor/ceiling texture
+                    float tile = mapceilingtile;
+                    if (z >= 0 && z < MAPLAYERS) {
+                        if (map.tiles[index] < 0 || map.tiles[index] >= numtiles) {
+                            tile = 0;
+                        } else {
+                            tile = map.tiles[index];
+                        }
+                    }
+                    
+                    // determine lava texture
+                    bool lavaTexture = false;
+                    if ((tile >= 64 && tile < 72) ||
+                        (tile >= 129 && tile < 135) ||
+                        (tile >= 136 && tile < 139) ||
+                        (tile >= 285 && tile < 293) ||
+                        (tile >= 294 && tile < 302)) {
+                        lavaTexture = true;
+                    }
+                    
+                    // build floor
+                    if (z < OBSTACLELAYER) {
+                        if (!map.tiles[index + 1] || map.tiles[index + 1] == TRANSPARENT_TILE) {
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, -16.f - 32.f * abs(z), y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, -16.f - 32.f * abs(z), y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, -16.f - 32.f * abs(z), y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, -16.f - 32.f * abs(z), y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, -16.f - 32.f * abs(z), y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, -16.f - 32.f * abs(z), y * 32.f + 0.f});
+                        }
+                    }
+                    
+                    // build ceiling
+                    else if (z > OBSTACLELAYER && (ceiling || z < MAPLAYERS)) {
+                        if (!map.tiles[index - 1] || map.tiles[index - 1] == TRANSPARENT_TILE) {
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, 16.f + 32.f * abs(z - 2), y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, 16.f + 32.f * abs(z - 2), y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, 16.f + 32.f * abs(z - 2), y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, 16.f + 32.f * abs(z - 2), y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, 16.f + 32.f * abs(z - 2), y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, 16.f + 32.f * abs(z - 2), y * 32.f + 32.f});
+                        }
+                    }
+                }
+            }
+        }
+    }
+    indices = (int)texcoords.size() / 2;
+    buildBuffers(positions, texcoords, colors);
+    //printlog("built chunk with %d tris", indices);
+}
+
+void Chunk::buildBuffers(const std::vector<float>& positions, const std::vector<float>& texcoords, const std::vector<float>& colors) {
+    // create buffers
+#ifdef VERTEX_ARRAYS_ENABLED
+    if (!vao) {
+        GL_CHECK_ERR(glGenVertexArrays(1, &vao));
+    }
+    GL_CHECK_ERR(glBindVertexArray(vao));
 #endif
-#ifdef PANDORA
-	if(bBlit) {
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo_fbo);
-		glViewport(vp_old[0], vp_old[1], vp_old[2], vp_old[3]);
-	}
+    if (!vbo_positions) {
+        GL_CHECK_ERR(glGenBuffers(1, &vbo_positions));
+    }
+    if (!vbo_texcoords) {
+        GL_CHECK_ERR(glGenBuffers(1, &vbo_texcoords));
+    }
+    if (!vbo_colors) {
+        GL_CHECK_ERR(glGenBuffers(1, &vbo_colors));
+    }
+    
+    // upload positions
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_positions));
+    GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(float), positions.data(), GL_DYNAMIC_DRAW));
+#ifdef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(0));
+#endif
+    
+    // upload texcoords
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_texcoords));
+    GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, texcoords.size() * sizeof(float), texcoords.data(), GL_DYNAMIC_DRAW));
+#ifdef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(1));
+#endif
+    
+    // upload colors
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_colors));
+    GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_DYNAMIC_DRAW));
+#ifdef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(2));
+#endif
+    
+#ifndef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 #endif
 }
+
+void Chunk::destroyBuffers() {
+    if (vao) {
+        GL_CHECK_ERR(glDeleteVertexArrays(1, &vao));
+        vao = 0;
+    }
+    if (vbo_positions) {
+        GL_CHECK_ERR(glDeleteBuffers(1, &vbo_positions));
+        vbo_positions = 0;
+    }
+    if (vbo_texcoords) {
+        GL_CHECK_ERR(glDeleteBuffers(1, &vbo_texcoords));
+        vbo_texcoords = 0;
+    }
+    if (vbo_colors) {
+        GL_CHECK_ERR(glDeleteBuffers(1, &vbo_colors));
+        vbo_colors = 0;
+    }
+    indices = 0;
+}
+
+void Chunk::draw() {
+    if (!indices) {
+        return;
+    }
+    
+#ifdef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glBindVertexArray(vao));
+#else
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_positions));
+    GL_CHECK_ERR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(0));
+    
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_texcoords));
+    GL_CHECK_ERR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(1));
+    
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_colors));
+    GL_CHECK_ERR(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(2));
+#endif
+    
+    GL_CHECK_ERR(glDrawArrays(GL_TRIANGLES, 0, indices));
+    
+#ifndef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glDisableVertexAttribArray(0));
+    GL_CHECK_ERR(glDisableVertexAttribArray(1));
+    GL_CHECK_ERR(glDisableVertexAttribArray(2));
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+#endif
+}
+
+bool Chunk::isDirty(const map_t& map) {
+    if (tiles.empty()) {
+        return true;
+    }
+    for (int u = 0; u < w; ++u) {
+        const int off0 = u * h * MAPLAYERS;
+        const int off1 = (u + x) * map.height * MAPLAYERS + y * MAPLAYERS;
+        const int size = MAPLAYERS * h;
+        assert(off0 + size <= w * h * MAPLAYERS);
+        assert(off1 + size <= map.width * map.height * MAPLAYERS);
+        if (memcmp(&tiles[off0], &map.tiles[off1], size * sizeof(Sint32))) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void clearChunks() {
+    chunks.clear();
+}
+
+void createChunks() {
+    constexpr int chunkSize = 4;
+    chunks.reserve((map.width / chunkSize + 1) * (map.height / chunkSize + 1));
+    for (int x = 0; x < map.width; x += chunkSize) {
+        for (int y = 0; y < map.height; y += chunkSize) {
+            chunks.emplace_back();
+            auto& chunk = chunks.back();
+            chunk.build(map, !shouldDrawClouds(map), x, y, chunkSize, chunkSize);
+        }
+    }
+}
+
+void updateChunks() {
+    static int cachedW = -1;
+    static int cachedH = -1;
+    if (cachedW != map.width || cachedH != map.height) {
+        cachedW = map.width;
+        cachedH = map.height;
+        clearChunks();
+        createChunks();
+    }
+}
+
+#ifndef EDITOR
+static ConsoleCommand ccmd_build_test_chunk("/build_test_chunk", "builds a chunk covering the whole level",
+    [](int argc, const char* argv[]){
+    chunks.emplace_back();
+    auto& chunk = chunks.back();
+    chunk.build(map, !shouldDrawClouds(map), 0, 0, map.width, map.height);
+    });
+
+static ConsoleCommand ccmd_update_chunks("/updatechunks", "rebuilds all chunks",
+    [](int argc, const char* argv[]){
+    clearChunks();
+    createChunks();
+    });
+#endif

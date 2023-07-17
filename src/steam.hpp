@@ -11,54 +11,61 @@
 
 #pragma once
 
-#include "game.hpp"
-
 //TODO: Bugger all void pointers and helper funcs on these.
 void steam_OnP2PSessionRequest(void* p_Callback); //TODO: Finalize porting.
 //void steam_OnGameOverlayActivated(void *callback);
 void steam_OnLobbyMatchListCallback(void* pCallback, bool bIOFailure);
 void steam_OnLobbyDataUpdatedCallback(void* pCallback);
 void steam_OnLobbyCreated(void* pCallback, bool bIOFailure);
-void processLobbyInvite();
 void steam_OnGameJoinRequested(void* pCallback);
-void steam_ConnectToLobby();
+void steam_ConnectToLobby(const char* arg);
 void steam_OnLobbyEntered(void* pCallback, bool bIOFailure);
 void steam_GameServerPingOnServerResponded(void* steamID);
 void steam_OnP2PSessionConnectFail(void* pCallback);
 void steam_OnRequestEncryptedAppTicket(void* pCallback, bool bIOFailure);
+
+// determine if the given lobby is using a savegame; if it is, load our compatible save.
+// @return true if we are able to join the lobby, otherwise false (because no compatible save was found)
+bool processLobbyInvite(void* lobby);
 
 #define MAX_STEAM_LOBBIES 100
 
 extern Uint32 numSteamLobbies;
 extern int selectedSteamLobby;
 extern char lobbyText[MAX_STEAM_LOBBIES][64];
+extern char lobbyVersion[MAX_STEAM_LOBBIES][64];
 extern void* lobbyIDs[MAX_STEAM_LOBBIES];
 extern int lobbyPlayers[MAX_STEAM_LOBBIES];
+extern int lobbyNumMods[MAX_STEAM_LOBBIES];
 
 extern void* steamIDRemote[MAXPLAYERS]; //TODO: Bugger void pointer.
 
 extern bool requestingLobbies;
 
-extern bool serverLoadingSaveGame; // determines whether lobbyToConnectTo is loading a savegame or not
+#include <string>
+
 extern void* currentLobby; // CSteamID to the current game lobby
-extern void* lobbyToConnectTo; // CSteamID of the game lobby that user has been invited to
-extern char pchCmdLine[1024]; // for game join requests
+extern std::string cmd_line; // for game join requests
 #ifdef STEAMWORKS
 extern char currentLobbyName[32];
 extern ELobbyType currentLobbyType;
+extern ELobbyType steamLobbyTypeUserConfigured;
+extern bool steamLobbyFriendsOnlyUserConfigured;
+extern bool steamLobbyInviteOnlyUserConfigured;
 extern bool connectingToLobby, connectingToLobbyWindow;
-extern bool stillConnectingToLobby;
 extern bool joinLobbyWaitingForHostResponse;
 extern bool denyLobbyJoinEvent;
 extern int connectingToLobbyStatus;
+extern bool steamAwaitingLobbyCreation;
 #endif
+const char* getRoomCode();
 
 
 
 //These are all an utter bodge.
 //They should not exist, but potato.
 //TODO: Remove all of these wrappers and access the steam stuff directly.
-SteamAPICall_t cpp_SteamMatchmaking_RequestLobbyList();
+SteamAPICall_t cpp_SteamMatchmaking_RequestLobbyList(const char* roomkey);
 SteamAPICall_t cpp_SteamMatchmaking_JoinLobby(CSteamID steamIDLobby);
 SteamAPICall_t cpp_SteamMatchmaking_CreateLobby(ELobbyType eLobbyType, int cMaxMembers);
 SteamAPICall_t cpp_SteamMatchmaking_RequestAppTicket();
@@ -103,13 +110,50 @@ extern void (*cpp_SteamServerClientWrapper_OnLobbyMatchListCallback)(void* pCall
 extern void (*cpp_SteamServerClientWrapper_OnRequestEncryptedAppTicket)(void* pEncryptedAppTicketResponse, bool bIOFailure); //Where pEncryptedAppTicketResponse is of type
 extern void (*cpp_SteamServerClientWrapper_GameServerPingOnServerResponded)(void* steamID);
 
+enum ESteamLeaderboardTitles : int
+{
+    LEADERBOARD_NONE,
+    LEADERBOARD_NORMAL_TIME,
+    LEADERBOARD_NORMAL_SCORE,
+    LEADERBOARD_MULTIPLAYER_TIME,
+    LEADERBOARD_MULTIPLAYER_SCORE,
+    LEADERBOARD_HELL_TIME,
+    LEADERBOARD_HELL_SCORE,
+    LEADERBOARD_HARDCORE_TIME,
+    LEADERBOARD_HARDCORE_SCORE,
+    LEADERBOARD_CLASSIC_TIME,
+    LEADERBOARD_CLASSIC_SCORE,
+    LEADERBOARD_CLASSIC_HARDCORE_TIME,
+    LEADERBOARD_CLASSIC_HARDCORE_SCORE,
+    LEADERBOARD_MULTIPLAYER_CLASSIC_TIME,
+    LEADERBOARD_MULTIPLAYER_CLASSIC_SCORE,
+    LEADERBOARD_MULTIPLAYER_HELL_TIME,
+    LEADERBOARD_MULTIPLAYER_HELL_SCORE,
+    LEADERBOARD_DLC_NORMAL_TIME,
+    LEADERBOARD_DLC_NORMAL_SCORE,
+    LEADERBOARD_DLC_MULTIPLAYER_TIME,
+    LEADERBOARD_DLC_MULTIPLAYER_SCORE,
+    LEADERBOARD_DLC_HELL_TIME,
+    LEADERBOARD_DLC_HELL_SCORE,
+    LEADERBOARD_DLC_HARDCORE_TIME,
+    LEADERBOARD_DLC_HARDCORE_SCORE,
+    LEADERBOARD_DLC_CLASSIC_TIME,
+    LEADERBOARD_DLC_CLASSIC_SCORE,
+    LEADERBOARD_DLC_CLASSIC_HARDCORE_TIME,
+    LEADERBOARD_DLC_CLASSIC_HARDCORE_SCORE,
+    LEADERBOARD_DLC_MULTIPLAYER_CLASSIC_TIME,
+    LEADERBOARD_DLC_MULTIPLAYER_CLASSIC_SCORE,
+    LEADERBOARD_DLC_MULTIPLAYER_HELL_TIME,
+    LEADERBOARD_DLC_MULTIPLAYER_HELL_SCORE
+};
+
 class CSteamLeaderboards
 {
 private:
 	SteamLeaderboard_t m_CurrentLeaderboard; // Handle to leaderboard
 public:
 	int m_nLeaderboardEntries; // How many entries do we have?
-	static const int k_numEntriesToRetrieve = 50;
+	static const int k_numEntriesToRetrieve = 100;
 	LeaderboardEntry_t m_leaderboardEntries[k_numEntriesToRetrieve]; // The entries
 	std::string leaderBoardSteamUsernames[k_numEntriesToRetrieve];
 	static const int k_numLeaderboardTags = 64;
@@ -230,6 +274,7 @@ class CSteamWorkshop
 private:
 public:
 	SteamUGCDetails_t m_subscribedItemListDetails[50]; // The entries
+	std::array<std::string, 50> m_subscribedItemPreviewURL;
 	SteamUGCDetails_t m_myWorkshopItemToModify;
 	int numSubcribedItemResults = 50;
 	int subscribedCallStatus;
@@ -294,10 +339,13 @@ public:
 	bool RequestStats();
 	bool StoreStats();
 	bool ClearAllStats();
+	bool RequestGlobalStats();
 
 	STEAM_CALLBACK(CSteamStatistics, OnUserStatsReceived, UserStatsReceived_t, m_CallbackUserStatsReceived);
 	STEAM_CALLBACK(CSteamStatistics, OnUserStatsStored, UserStatsStored_t, m_CallbackUserStatsStored);
 	//STEAM_CALLBACK(CSteamStatistics, OnGlobalStatsReceived, GlobalStatsReceived_t, m_CallbackGlobalStatsReceived);
+	CCallResult<CSteamStatistics, GlobalStatsReceived_t> m_CallbackGlobalStatsReceived;
+	void OnGlobalStatsReceived(GlobalStatsReceived_t *pCallback, bool bIOFailure);
 	//NOTE FOR FUTURE GLOBAL STATS NEEDS CCallResult NOT STEAM_CALLBACK!
 };
 

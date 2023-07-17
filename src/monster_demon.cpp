@@ -15,17 +15,20 @@
 #include "entity.hpp"
 #include "items.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 void initDemon(Entity* my, Stat* myStats)
 {
 	int c;
 	node_t* node;
 
+	my->flags[BURNABLE] = false;
 	my->initMonster(258);
+	my->z = -8.5;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -50,12 +53,16 @@ void initDemon(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+			const bool boss =
+			    local_rng.rand() % 50 == 0 &&
+			    !my->flags[USERFLAG2] &&
+			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
-			}
-			else
-			{
-				strcpy(myStats->name, "Deu De'Breau");
+				myStats->setAttribute("special_npc", "deudebreau");
+				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
+				myStats->sex = MALE;
 				myStats->LVL = 30;
 				for ( c = 0; c < 3; c++ )
 				{
@@ -63,6 +70,10 @@ void initDemon(Entity* my, Stat* myStats)
 					if ( entity )
 					{
 						entity->parent = my->getUID();
+						if ( Stat* followerStats = entity->getStats() )
+						{
+							followerStats->leader_uid = entity->parent;
+						}
 					}
 				}
 			}
@@ -93,7 +104,7 @@ void initDemon(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( rand() % 2 == 0 )
+					if ( local_rng.rand() % 2 == 0 )
 					{
 						myStats->weapon = newItem(SPELLBOOK_FIREBALL, EXCELLENT, 0, 1, 0, false, nullptr);
 					}
@@ -105,7 +116,7 @@ void initDemon(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(264, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(my->sprite == 1008 ? 1014 : 264, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -124,7 +135,7 @@ void initDemon(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(263, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1008 ? 1013 : 263, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -143,7 +154,7 @@ void initDemon(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(262, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1008 ? 1011 : 262, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -162,7 +173,7 @@ void initDemon(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(261, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1008 ? 1012 : 261, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -181,7 +192,7 @@ void initDemon(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(260, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1008 ? 1010 : 260, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -200,7 +211,7 @@ void initDemon(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// jaw
-	entity = newEntity(259, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1008 ? 1009 : 259, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -226,11 +237,19 @@ void actDemonLimb(Entity* my)
 
 void demonDie(Entity* my)
 {
-	int c;
-	for ( c = 0; c < 5; c++ )
+	for ( int c = 0; c < 10; c++ )
 	{
-		Entity* gib = spawnGib(my);
-		serverSpawnGibForClient(gib);
+		Entity* entity = spawnGib(my);
+		if ( entity )
+		{
+		    //entity->z = local_rng.uniform(8, entity->z);
+			if ( c < 7 )
+			{
+                entity->skill[5] = 1; // poof
+				entity->sprite = my->sprite == 1008 ? (1008 + c) : (258 + c);
+			}
+			serverSpawnGibForClient(entity);
+		}
 	}
 
 	my->spawnBlood();
@@ -557,16 +576,22 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// right arm
 			case 5:
-				entity->x += 5 * cos(my->yaw + PI / 2) - 1 * cos(my->yaw);
-				entity->y += 5 * sin(my->yaw + PI / 2) - 1 * sin(my->yaw);
-				entity->z += 2.75;
+				entity->x += (limbs[DEMON][7][0]) * cos(my->yaw + PI / 2) - (limbs[DEMON][7][1]) * cos(my->yaw);
+				entity->y += (limbs[DEMON][7][0]) * sin(my->yaw + PI / 2) - (limbs[DEMON][7][1]) * sin(my->yaw);
+				entity->z += 2.75 + limbs[DEMON][7][2];
 				entity->yaw += MONSTER_WEAPONYAW;
+				entity->focalx = limbs[DEMON][4][0];
+				entity->focaly = limbs[DEMON][4][1];
+				entity->focalz = limbs[DEMON][4][2];
 				break;
 			// left arm
 			case 6:
-				entity->x -= 5 * cos(my->yaw + PI / 2) + 1 * cos(my->yaw);
-				entity->y -= 5 * sin(my->yaw + PI / 2) + 1 * sin(my->yaw);
-				entity->z += 2.75;
+				entity->x -= (limbs[DEMON][7][0]) * cos(my->yaw + PI / 2) + (limbs[DEMON][7][1]) * cos(my->yaw);
+				entity->y -= (limbs[DEMON][7][0]) * sin(my->yaw + PI / 2) + (limbs[DEMON][7][1]) * sin(my->yaw);
+				entity->z += 2.75 + limbs[DEMON][7][2];
+				entity->focalx = limbs[DEMON][5][0];
+				entity->focaly = limbs[DEMON][5][1];
+				entity->focalz = limbs[DEMON][5][2];
 				break;
 			default:
 				break;
@@ -588,6 +613,8 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 void actDemonCeilingBuster(Entity* my)
 {
+    return; // don't do this anymore jan 16 2023
+    
 	double x, y;
 
 	// bust ceilings
@@ -628,7 +655,7 @@ void actDemonCeilingBuster(Entity* my)
 					}
 
 					// spawn several rock particles (NOT items)
-					int c, i = 6 + rand() % 4;
+					int c, i = 6 + local_rng.rand() % 4;
 					for ( c = 0; c < i; c++ )
 					{
 						Entity* entity = nullptr;
@@ -642,19 +669,19 @@ void actDemonCeilingBuster(Entity* my)
 						}
 						if ( entity )
 						{
-							entity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
-							entity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
+							entity->x = ((int)(my->x / 16)) * 16 + local_rng.rand() % 16;
+							entity->y = ((int)(my->y / 16)) * 16 + local_rng.rand() % 16;
 							entity->z = -8;
 							entity->flags[PASSABLE] = true;
 							entity->flags[INVISIBLE] = false;
 							entity->flags[NOUPDATE] = true;
 							entity->flags[UPDATENEEDED] = false;
 							entity->sprite = items[GEM_ROCK].index;
-							entity->yaw = rand() % 360 * PI / 180;
-							entity->pitch = rand() % 360 * PI / 180;
-							entity->roll = rand() % 360 * PI / 180;
-							entity->vel_x = (rand() % 20 - 10) / 10.0;
-							entity->vel_y = (rand() % 20 - 10) / 10.0;
+							entity->yaw = local_rng.rand() % 360 * PI / 180;
+							entity->pitch = local_rng.rand() % 360 * PI / 180;
+							entity->roll = local_rng.rand() % 360 * PI / 180;
+							entity->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
+							entity->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
 							entity->vel_z = -.25;
 							entity->fskill[3] = 0.03;
 						}

@@ -12,7 +12,7 @@
 #include "main.hpp"
 #include "game.hpp"
 #include "stat.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "entity.hpp"
 #include "net.hpp"
 #include "collision.hpp"
@@ -22,6 +22,7 @@
 #include "interface/interface.hpp"
 #include "items.hpp"
 #include "scores.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -68,25 +69,25 @@ void actRotate(Entity* my)
 	my->flags[PASSABLE] = true; // this entity should always be passable
 
 #ifdef TESTSPRITES
-	if ( keystatus[SDL_SCANCODE_HOME] )
+	if ( keystatus[SDLK_HOME] )
 	{
-		keystatus[SDL_SCANCODE_HOME] = 0;
+		keystatus[SDLK_HOME] = 0;
 		my->sprite++;
 		if ( my->sprite >= nummodels )
 		{
 			my->sprite = 0;
 		}
-		messagePlayer(clientnum, "test sprite: %d", my->sprite);
+		messagePlayer(clientnum, MESSAGE_MISC, "test sprite: %d", my->sprite);
 	}
-	if ( keystatus[SDL_SCANCODE_END] )
+	if ( keystatus[SDLK_END] )
 	{
-		keystatus[SDL_SCANCODE_END] = 0;
+		keystatus[SDLK_END] = 0;
 		my->sprite += 10;
 		if ( my->sprite >= nummodels )
 		{
 			my->sprite = 0;
 		}
-		messagePlayer(clientnum, "test sprite: %d", my->sprite);
+		messagePlayer(clientnum, MESSAGE_MISC, "test sprite: %d", my->sprite);
 	}
 #endif
 }
@@ -102,50 +103,6 @@ void actLiquid(Entity* my)
 
 	list_RemoveNode(my->mynode);
 	return;
-
-	if ( !LIQUID_INIT )
-	{
-		LIQUID_INIT = 1;
-		LIQUID_TIMER = 60 * (rand() % 20);
-		if ( LIQUID_LAVA )
-		{
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 2, 128);
-		}
-	}
-	LIQUID_TIMER--;
-	if ( LIQUID_TIMER <= 0 )
-	{
-		LIQUID_TIMER = 60 * 20 + 60 * (rand() % 20);
-		if ( !LIQUID_LAVA )
-		{
-			playSoundEntityLocal( my, 135, 32 );
-		}
-		else
-		{
-			playSoundEntityLocal( my, 155, 100 );
-		}
-	}
-	if ( LIQUID_LAVA && !LIQUID_LAVANOBUBBLE )
-	{
-		if ( ticks % 40 == my->getUID() % 40 && rand() % 3 == 0 )
-		{
-			int c, j = 1 + rand() % 2;
-			for ( c = 0; c < j; c++ )
-			{
-				Entity* entity = spawnGib( my );
-				entity->x += rand() % 16 - 8;
-				entity->y += rand() % 16 - 8;
-				entity->flags[SPRITE] = true;
-				entity->sprite = 42;
-				entity->fskill[3] = 0.01;
-				double vel = (rand() % 10) / 20.f;
-				entity->vel_x = vel * cos(entity->yaw);
-				entity->vel_y = vel * sin(entity->yaw);
-				entity->vel_z = -.15 - (rand() % 15) / 100.f;
-				entity->z = 7.5;
-			}
-		}
-	}
 }
 
 void actEmpty(Entity* my)
@@ -173,15 +130,18 @@ void Entity::actFurniture()
 {
 	if ( !furnitureInit )
 	{
-		this->createWorldUITooltip();
+		if ( furnitureType == FURNITURE_BUNKBED )
+		{
+			this->createWorldUITooltip();
+		}
 		furnitureInit = 1;
 		if ( furnitureType == FURNITURE_TABLE || furnitureType == FURNITURE_BUNKBED || furnitureType == FURNITURE_BED || furnitureType == FURNITURE_PODIUM )
 		{
-			furnitureHealth = 15 + rand() % 5;
+			furnitureHealth = 15 + local_rng.rand() % 5;
 		}
 		else
 		{
-			furnitureHealth = 4 + rand() % 4;
+			furnitureHealth = 4 + local_rng.rand() % 4;
 		}
 		furnitureMaxHealth = furnitureHealth;
 		furnitureOldHealth = furnitureHealth;
@@ -213,14 +173,14 @@ void Entity::actFurniture()
 					entity->sprite = 187; // Splinter.vox
 					entity->x = floor(x / 16) * 16 + 8;
 					entity->y = floor(y / 16) * 16 + 8;
-					entity->y += -3 + rand() % 6;
-					entity->x += -3 + rand() % 6;
-					entity->z = -5 + rand() % 10;
-					entity->yaw = (rand() % 360) * PI / 180.0;
-					entity->pitch = (rand() % 360) * PI / 180.0;
-					entity->roll = (rand() % 360) * PI / 180.0;
-					entity->vel_x = (rand() % 10 - 5) / 10.0;
-					entity->vel_y = (rand() % 10 - 5) / 10.0;
+					entity->y += -3 + local_rng.rand() % 6;
+					entity->x += -3 + local_rng.rand() % 6;
+					entity->z = -5 + local_rng.rand() % 10;
+					entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+					entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+					entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+					entity->vel_x = (local_rng.rand() % 10 - 5) / 10.0;
+					entity->vel_y = (local_rng.rand() % 10 - 5) / 10.0;
 					entity->vel_z = -.5;
 					entity->fskill[3] = 0.04;
 					serverSpawnGibForClient(entity);
@@ -242,36 +202,36 @@ void Entity::actFurniture()
 			int i;
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				if ( (i == 0 && selectedEntity[0] == this) || (client_selected[i] == this) || (splitscreen && selectedEntity[i] == this) )
+				if ( selectedEntity[i] == this || client_selected[i] == this )
 				{
 					if (inrange[i])
 					{
 						switch ( furnitureType )
 						{
 							case FURNITURE_CHAIR:
-								messagePlayer(i, language[476]);
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(476));
 								break;
 							case FURNITURE_TABLE:
-								messagePlayer(i, language[477]);
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(477));
 								break;
 							case FURNITURE_BED:
-								messagePlayer(i, language[2493]);
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(2493));
 								break;
 							case FURNITURE_BUNKBED:
 								if ( i == 0 || i == 2 )
 								{
-									messagePlayer(i, language[2494]);
+									messagePlayer(i, MESSAGE_INTERACTION, Language::get(2494));
 								}
 								else
 								{
-									messagePlayer(i, language[2495]);
+									messagePlayer(i, MESSAGE_INTERACTION, Language::get(2495));
 								}
 								break;
 							case FURNITURE_PODIUM:
-								messagePlayer(i, language[2496]);
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(2496));
 								break;
 							default:
-								messagePlayer(i, language[477]);
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(477));
 								break;
 						}
 					}
@@ -305,11 +265,11 @@ void actMCaxe(Entity* my)
 			int i;
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+				if ( selectedEntity[i] == my || client_selected[i] == my )
 				{
 					if (inrange[i])
 					{
-						messagePlayer(i, language[478 + rand() % 5]);
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(478 + local_rng.rand() % 5));
 						MCAXE_USED = 1;
 						serverUpdateEntitySkill(my, 0);
 					}
@@ -382,6 +342,119 @@ void actStalagColumn(Entity* my)
 void Entity::actStalagColumn()
 {
 
+}
+
+void actStatue(Entity* my)
+{
+	if ( my->statueInit == 0 && StatueManager.allStatues.size() > 0 )
+	{
+		// needs to init.
+		if ( StatueManager.allStatues.find(my->statueId) != StatueManager.allStatues.end() )
+		{
+			my->statueInit = 1;
+			if ( my->statueDir >= 0 && my->statueDir < StatueManager.directionKeys.size() )
+			{
+				int index = 0;
+				real_t baseHeight = 0.0;
+				std::string directionString = StatueManager.directionKeys[my->statueDir];
+				for ( auto& limb : StatueManager.allStatues[my->statueId].limbs[directionString] )
+				{
+					Entity* childEntity = newEntity(limb.sprite, 1, map.entities, nullptr);
+					childEntity->parent = my->getUID();
+					childEntity->x = my->x - limb.x;
+					childEntity->y = my->y - limb.y;
+					childEntity->z = limb.z + StatueManager.allStatues[my->statueId].heightOffset;
+					childEntity->focalx = limb.focalx;
+					childEntity->focaly = limb.focaly;
+					childEntity->focalz = limb.focalz;
+					childEntity->pitch = limb.pitch;
+					childEntity->roll = limb.roll;
+					childEntity->yaw = limb.yaw;
+					childEntity->flags[PASSABLE] = true;
+					childEntity->grayscaleGLRender = 1.0;
+					node_t* tempNode = list_AddNodeLast(&my->children);
+					tempNode->element = childEntity; // add the node to the children list.
+					tempNode->deconstructor = &emptyDeconstructor;
+					tempNode->size = sizeof(Entity*);
+					++index;
+				}
+			}
+		}
+	}
+}
+
+void actStatueAnimator(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+
+	if ( StatueManager.processStatueExport() == 1 ) // in progress
+	{
+		if ( Entity* player = uidToEntity(StatueManager.editingPlayerUid) )
+		{
+			player->yaw += PI / 2;
+			while ( player->yaw >= 2 * PI )
+			{
+				player->yaw -= 2 * PI;
+			}
+		}
+	}
+
+	for ( int i = 0; i < MAXPLAYERS; i++ )
+	{
+		if ( selectedEntity[i] == my || client_selected[i] == my )
+		{
+			if ( inrange[i] )
+			{
+				if ( !StatueManager.activeEditing )
+				{
+					StatueManager.statueEditorHeightOffset = 0.0;
+				}
+				StatueManager.activeEditing = !StatueManager.activeEditing;
+				messagePlayer(0, MESSAGE_MISC, "Statue editing mode: %d", StatueManager.activeEditing);
+
+				my->skill[0] = StatueManager.activeEditing ? 1 : 0;
+			}
+		}
+	}
+
+	if ( StatueManager.activeEditing )
+	{
+		if ( !players[1]->entity )
+		{
+			client_disconnected[1] = false;
+			Entity* entity = newEntity(0, 1, map.entities, nullptr);
+			entity->behavior = &actPlayer;
+			entity->addToCreatureList(map.creatures);
+
+			entity->x = my->x;
+			entity->y = my->y;
+			entity->z = my->z;
+
+			entity->z -= 15 + StatueManager.statueEditorHeightOffset;
+			entity->focalx = limbs[HUMAN][0][0]; // 0
+			entity->focaly = limbs[HUMAN][0][1]; // 0
+			entity->focalz = limbs[HUMAN][0][2]; // -1.5
+			entity->sprite = 113; // head model
+			entity->sizex = 4;
+			entity->sizey = 4;
+			entity->flags[GENIUS] = true;
+			entity->flags[BLOCKSIGHT] = true;
+			entity->flags[PASSABLE] = true;
+			entity->skill[2] = 1; // skill[2] == PLAYER_NUM
+			players[1]->entity = entity;
+			StatueManager.editingPlayerUid = entity->getUID();
+		}
+		else
+		{
+			players[1]->entity->x = my->x;
+			players[1]->entity->y = my->y;
+			players[1]->entity->z = my->z;
+			players[1]->entity->z -= 15 + StatueManager.statueEditorHeightOffset;
+		}
+	}
 }
 
 void actColumn(Entity* my)
@@ -463,7 +536,7 @@ void Entity::actPistonCam()
 		{
 			pistonCamDir = 1; // up
 			pistonCamRotateSpeed = 0.2;
-			pistonCamTimer = rand() % 5 * TICKS_PER_SECOND;
+			pistonCamTimer = local_rng.rand() % 5 * TICKS_PER_SECOND;
 		}
 	}
 	if ( pistonCamDir == 1 ) // up
@@ -472,7 +545,7 @@ void Entity::actPistonCam()
 		if ( z < -1.75 )
 		{
 			z = -1.75;
-			pistonCamRotateSpeed *= rand() % 2 == 0 ? -1 : 1;
+			pistonCamRotateSpeed *= local_rng.rand() % 2 == 0 ? -1 : 1;
 			pistonCamDir = 2; // top
 		}
 	}
@@ -482,7 +555,7 @@ void Entity::actPistonCam()
 		{
 			pistonCamDir = 3; // down
 			pistonCamRotateSpeed = -0.2;
-			pistonCamTimer = rand() % 5 * TICKS_PER_SECOND;
+			pistonCamTimer = local_rng.rand() % 5 * TICKS_PER_SECOND;
 		}
 	}
 	else if ( pistonCamDir == 3 ) // down
@@ -491,10 +564,236 @@ void Entity::actPistonCam()
 		if ( z > 1.75 )
 		{
 			z = 1.75;
-			pistonCamRotateSpeed *= rand() % 2 == 0 ? -1 : 1;
+			pistonCamRotateSpeed *= local_rng.rand() % 2 == 0 ? -1 : 1;
 			pistonCamDir = 0; // down
 		}
 	}
+}
+
+bool Entity::isColliderShownAsWallOnMinimap() const
+{
+	if ( !isDamageableCollider() ) { return false; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	auto& colliderDmgType = EditorEntityData_t::colliderDmgTypes[colliderData.damageCalculationType];
+	return colliderDmgType.showAsWallOnMinimap;
+}
+
+bool Entity::isColliderWeakToBoulders() const
+{
+	if ( !isDamageableCollider() ) { return false; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	auto& colliderDmgType = EditorEntityData_t::colliderDmgTypes[colliderData.damageCalculationType];
+	return colliderDmgType.boulderDestroys;
+}
+
+bool Entity::isColliderWeakToSkill(int proficiency) const
+{
+	if ( !isDamageableCollider() ) { return false; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	auto& colliderDmgType = EditorEntityData_t::colliderDmgTypes[colliderData.damageCalculationType];
+	return colliderDmgType.proficiencyBonusDamage.find(proficiency) != colliderDmgType.proficiencyBonusDamage.end();
+}
+
+bool Entity::isColliderDamageableByMelee() const
+{
+	if ( !isDamageableCollider() ) { return false; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	auto& colliderDmgType = EditorEntityData_t::colliderDmgTypes[colliderData.damageCalculationType];
+	return colliderDmgType.meleeAffects;
+}
+
+bool Entity::isColliderDamageableByMagic() const
+{
+	if ( !isDamageableCollider() ) { return false; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	auto& colliderDmgType = EditorEntityData_t::colliderDmgTypes[colliderData.damageCalculationType];
+	return colliderDmgType.magicAffects;
+}
+
+bool Entity::isColliderAttachableToBombs() const
+{
+	if ( !isDamageableCollider() ) { return false; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	auto& colliderDmgType = EditorEntityData_t::colliderDmgTypes[colliderData.damageCalculationType];
+	return colliderDmgType.bombsAttach;
+}
+
+bool Entity::isDamageableCollider() const 
+{ 
+	return behavior == &actColliderDecoration && colliderMaxHP > 0;
+}
+
+int Entity::getColliderLangName() const
+{
+	if ( !isDamageableCollider() ) { return 1; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	return colliderData.entityLangEntry;
+}
+
+int Entity::getColliderOnHitLangEntry() const
+{
+	if ( !isDamageableCollider() ) { return 1; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	return colliderData.hitMessageLangEntry;
+}
+
+int Entity::getColliderOnBreakLangEntry() const
+{
+	if ( !isDamageableCollider() ) { return 1; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	return colliderData.breakMessageLangEntry;
+}
+
+int Entity::getColliderSfxOnHit() const
+{
+	if ( !isDamageableCollider() ) { return 0; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	return colliderData.sfxHit;
+}
+
+int Entity::getColliderSfxOnBreak() const
+{
+	if ( !isDamageableCollider() ) { return 0; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	return colliderData.sfxBreak;
+}
+
+void actColliderDecoration(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+
+	if ( !my->colliderInit )
+	{
+		my->colliderInit = 1;
+		if ( my->colliderDiggable != 0 )
+		{
+			my->colliderHasCollision = 1;
+		}
+		if ( my->isDamageableCollider() )
+		{
+			auto& colliderData = EditorEntityData_t::colliderData[my->colliderDamageTypes];
+			auto& colliderDmgType = EditorEntityData_t::colliderDmgTypes[colliderData.damageCalculationType];
+			if ( colliderDmgType.burnable )
+			{
+				my->flags[BURNABLE] = true;
+			}
+			if ( colliderDmgType.minotaurPathThroughAndBreak )
+			{
+				my->colliderHasCollision = 2;
+			}
+		}
+	}
+
+	my->flags[PASSABLE] = (my->colliderHasCollision == 0);
+	if ( multiplayer != CLIENT )
+	{
+		bool checkWallDeletion = false;
+		if ( my->colliderHasCollision != 0 )
+		{
+			if ( my->sprite == 1203 || my->sprite == 1204 )
+			{
+				if ( my->z > -8.51 && my->z < -8.49 )
+				{
+					checkWallDeletion = true;
+				}
+			}
+			else if ( my->sprite == 1197 || my->sprite == 1198 )
+			{
+				if ( my->z > 7.49 || my->z < 7.51 )
+				{
+					checkWallDeletion = true;
+				}
+			}
+		}
+		if ( checkWallDeletion )
+		{
+			int x = static_cast<int>(my->x) >> 4;
+			int y = static_cast<int>(my->y) >> 4;
+			if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				//messagePlayer(0, MESSAGE_DEBUG, "[Collider]: Destroyed self at x: %d, y: %d", x, y);
+				list_RemoveNode(my->mynode);
+				return;
+			}
+		}
+	}
+
+	if ( my->isDamageableCollider() )
+	{
+		auto& colliderData = EditorEntityData_t::colliderData[my->colliderDamageTypes];
+		if ( my->flags[BURNING] && my->flags[BURNABLE] )
+		{
+			if ( ticks % 30 == 0 )
+			{
+				my->colliderCurrentHP--;
+			}
+		}
+
+		my->colliderOldHP = my->colliderCurrentHP;
+
+		if ( my->colliderCurrentHP <= 0 )
+		{
+			int sprite = colliderData.gib;
+			if ( sprite > 0 )
+			{
+				createParticleRock(my, sprite);
+				if ( multiplayer == SERVER )
+				{
+					serverSpawnMiscParticles(my, PARTICLE_EFFECT_ABILITY_ROCK, sprite);
+				}
+			}
+			if ( colliderData.sfxBreak > 0 )
+			{
+				playSoundEntity(my, colliderData.sfxBreak, 128);
+			}
+			list_RemoveNode(my->mynode);
+			return;
+		}
+	}
+}
+
+void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster)
+{
+	colliderCurrentHP -= damage; //Decrease object health.
+	if ( caster )
+	{
+		if ( caster->behavior == &actPlayer )
+		{
+			if ( colliderCurrentHP <= 0 )
+			{
+				if ( magicProjectile.behavior == &actBomb )
+				{
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3617), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(getColliderLangName()));
+				}
+				else
+				{
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(getColliderLangName()));
+				}
+			}
+			else
+			{
+				if ( magicProjectile.behavior == &actBomb )
+				{
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(3618), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(getColliderLangName()));
+				}
+				else
+				{
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(378), Language::get(getColliderLangName()));
+				}
+			}
+			updateEnemyBar(caster, this, Language::get(getColliderLangName()), colliderCurrentHP, colliderMaxHP);
+		}
+	}
+
+	int sound = 28; //damage.ogg
+	if ( getColliderSfxOnHit() > 0 )
+	{
+		sound = getColliderSfxOnHit();
+	}
+	playSoundEntity(this, sound, 64);
 }
 
 void actFloorDecoration(Entity* my)
@@ -524,10 +823,9 @@ void actFloorDecoration(Entity* my)
 	}
 
 	// using
-	int i;
-	for ( i = 0; i < MAXPLAYERS; i++ )
+	for ( int i = 0; i < MAXPLAYERS; i++ )
 	{
-		if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+		if ( selectedEntity[i] == my || client_selected[i] == my )
 		{
 			if ( inrange[i] )
 			{
@@ -556,13 +854,43 @@ void actFloorDecoration(Entity* my)
 				}
 				std::string output = buf;
 
-
-				size_t foundSignpostCharacter = output.find("#");
-				if ( foundSignpostCharacter == 0 )
+				if ( buf[0] == '$' )
 				{
+					// try to replace text with data file entry
+					std::string key = "";
+					for ( int j = 0; j <= totalChars; ++j )
+					{
+						char c = buf[j];
+						if ( c == '$' ) { continue; }
+						if ( charIsWordSeparator(c) ) { break; }
+						key += c;
+					}
+					if ( ScriptTextParser.allEntries.find(key) != ScriptTextParser.allEntries.end() )
+					{
+						if ( players[i]->isLocalPlayer() )
+						{
+							if ( players[i]->isLocalPlayerAlive() )
+							{
+								players[i]->signGUI.openSign(key, my->getUID());
+							}
+						}
+						else if ( multiplayer == SERVER && i > 0 && !client_disconnected[i] )
+						{
+							strcpy((char*)net_packet->data, "SIGN");
+							SDLNet_Write32(my->getUID(), &net_packet->data[4]);
+							strcpy((char*)(&net_packet->data[8]), key.c_str());
+							net_packet->address.host = net_clients[i - 1].host;
+							net_packet->address.port = net_clients[i - 1].port;
+							net_packet->len = 8 + strlen(key.c_str()) + 1;
+							sendPacketSafe(net_sock, -1, net_packet, i - 1);
+						}
+						return;
+					}
+				}
+
+				const bool signpost = output[0] == '#';
+				if (signpost) {
 					output.erase(0, 1);
-					output.insert(0, "The sign says:\n \"");
-					output += "\"";
 				}
 
 				size_t foundInputTag = output.find("@in=");
@@ -582,17 +910,13 @@ void actFloorDecoration(Entity* my)
 						impulseStr = impulseStr + output.at(inputTagStrIndex);
 						++inputTagStrIndex;
 					}
-					for ( int i = 0; i < NUMIMPULSES; ++i )
-					{
-						if ( impulseStrings[i].compare(impulseStr) == 0 )
-						{
-							output.erase(output.find(impulseStr), impulseStr.length());
-							std::string inputFormatted = "[";
-							inputFormatted.append(getInputName(impulses[i])).append("]");
-							output.insert(foundInputTag, inputFormatted.c_str());
-							break;
-						}
-					}
+					output.erase(output.find(impulseStr), impulseStr.length());
+					std::string inputFormatted;
+					inputFormatted.append("[");
+					const char* binding = Input::inputs[0].binding(impulseStr.c_str());
+					inputFormatted.append(binding[0] == '\0' ? impulseStr : binding);
+					inputFormatted.append("]");
+					output.insert(foundInputTag, inputFormatted.c_str());
 					foundInputTag = output.find("@in=");
 				}
 
@@ -604,7 +928,13 @@ void actFloorDecoration(Entity* my)
 					found = output.find("\\n");
 				}
 				strcpy(buf, output.c_str());
-				messagePlayer(i, buf);
+
+				if (signpost) {
+					players[i]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
+						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_SIGNPOST, buf);
+				} else {
+					messagePlayer(i, MESSAGE_INSPECTION, buf);
+				}
 			}
 		}
 	}
@@ -621,7 +951,7 @@ void actTextSource(Entity* my)
 
 TextSourceScript textSourceScript;
 
-int TextSourceScript::textSourceProcessScriptTag(std::string& input, std::string findTag)
+int TextSourceScript::textSourceProcessScriptTag(std::string& input, std::string findTag, Entity& src)
 {
 	size_t foundScriptTag = input.find(findTag);
 	if ( foundScriptTag != std::string::npos )
@@ -710,6 +1040,12 @@ int TextSourceScript::textSourceProcessScriptTag(std::string& input, std::string
 				y1 = std::stoi(y_str);
 				y2 = y1;
 			}
+
+			// offset for generated dungeons
+			x1 += src.mapGenerationRoomX;
+			x2 += src.mapGenerationRoomX;
+			y1 += src.mapGenerationRoomY;
+			y2 += src.mapGenerationRoomY;
 
 			x1 = std::min(std::max(0, x1), (int)map.width - 1);
 			y1 = std::min(std::max(0, y1), (int)map.height - 1);
@@ -891,7 +1227,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 
 		if ( (*it).find("@reattachto=") != std::string::npos )
 		{
-			int attachTo = textSourceProcessScriptTag(input, "@reattachto=");
+			int attachTo = textSourceProcessScriptTag(input, "@reattachto=", src);
 			if ( attachTo == k_ScriptError )
 			{
 				return;
@@ -904,9 +1240,16 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 			int x2 = static_cast<int>(src.x / 16);
 			int y1 = static_cast<int>(src.y / 16);
 			int y2 = static_cast<int>(src.y / 16);
+
+			// offset for generated dungeons
+			x1 += src.mapGenerationRoomX;
+			x2 += src.mapGenerationRoomX;
+			y1 += src.mapGenerationRoomY;
+			y2 += src.mapGenerationRoomY;
+
 			if ( input.find("@attachrange=") != std::string::npos )
 			{
-				int result = textSourceProcessScriptTag(input, "@attachrange=");
+				int result = textSourceProcessScriptTag(input, "@attachrange=", src);
 				if ( result != k_ScriptError )
 				{
 					x1 = result & 0xFF;
@@ -951,7 +1294,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@clrplayer") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@clrplayer");
+			int result = textSourceProcessScriptTag(input, "@clrplayer", src);
 			if ( result != k_ScriptError )
 			{
 				std::vector<Entity*> applyToEntities;
@@ -996,7 +1339,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@class=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@class=");
+			int result = textSourceProcessScriptTag(input, "@class=", src);
 			if ( result != k_ScriptError && result >= CLASS_BARBARIAN && result < NUMCLASSES )
 			{
 				if ( !enabledDLCPack1 && result >= CLASS_CONJURER && result <= CLASS_BREWER )
@@ -1054,7 +1397,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@clrstats") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@clrstats");
+			int result = textSourceProcessScriptTag(input, "@clrstats", src);
 			if ( result != k_ScriptError )
 			{
 				std::vector<Entity*> applyToEntities;
@@ -1113,7 +1456,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@hunger=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@hunger=");
+			int result = textSourceProcessScriptTag(input, "@hunger=", src);
 			if ( result != k_ScriptError )
 			{
 				std::vector<Entity*> applyToEntities;
@@ -1160,7 +1503,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@nextlevel=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@nextlevel=");
+			int result = textSourceProcessScriptTag(input, "@nextlevel=", src);
 			if ( result != k_ScriptError )
 			{
 				loadnextlevel = true;
@@ -1169,7 +1512,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@power=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@power=");
+			int result = textSourceProcessScriptTag(input, "@power=", src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1221,7 +1564,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@unpower=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@unpower=");
+			int result = textSourceProcessScriptTag(input, "@unpower=", src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1247,9 +1590,85 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 				}
 			}
 		}
+		else if ( (*it).find("@wire=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@wire=", src);
+			if ( result != k_ScriptError )
+			{
+				int x1 = result & 0xFF;
+				int x2 = (result >> 8) & 0xFF;
+				int y1 = (result >> 16) & 0xFF;
+				int y2 = (result >> 24) & 0xFF;
+				bool foundExisting = false;
+				std::unordered_set<int> wireSpots;
+				for ( node_t* node = map.entities->first; node; node = node->next )
+				{
+					Entity* wire = (Entity*)node->element;
+					if ( wire && wire->behavior == &actCircuit )
+					{
+						int findx = static_cast<int>(wire->x) >> 4;
+						int findy = static_cast<int>(wire->y) >> 4;
+						if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+						{
+							wireSpots.insert(static_cast<int>(wire->x / 16) + map.width * static_cast<int>(wire->y / 16));
+						}
+					}
+				}
+				for ( int x = x1; x <= x2; ++x )
+				{
+					for ( int y = y1; y <= y2; ++y )
+					{
+						if ( wireSpots.find(x + map.width * y) == wireSpots.end() )
+						{
+							Entity* wire = newEntity(-1, 1, map.entities, nullptr);
+							wire->sizex = 3;
+							wire->sizey = 3;
+							wire->x = x * 16 + 8;
+							wire->y = y * 16 + 8;
+							wire->z = 5;
+							wire->behavior = &actCircuit;
+							wire->flags[PASSABLE] = true;
+							wire->flags[INVISIBLE] = true;
+							wire->flags[NOUPDATE] = true;
+							wire->skill[28] = 1; //It's a depowered powerable.
+							TileEntityList.addEntity(*wire); // make sure new nodes are added to the tile list to properly update neighbors.
+							wire->updateCircuitNeighbors();
+						}
+					}
+				}
+			}
+		}
+		else if ( (*it).find("@unwire=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@unwire=", src);
+			if ( result != k_ScriptError )
+			{
+				int x1 = result & 0xFF;
+				int x2 = (result >> 8) & 0xFF;
+				int y1 = (result >> 16) & 0xFF;
+				int y2 = (result >> 24) & 0xFF;
+				node_t* nextnode = nullptr;
+				for ( node_t* node = map.entities->first; node; node = nextnode )
+				{
+					nextnode = node->next;
+					Entity* wire = (Entity*)node->element;
+					if ( wire && wire->behavior == &actCircuit )
+					{
+						int findx = static_cast<int>(wire->x) >> 4;
+						int findy = static_cast<int>(wire->y) >> 4;
+						if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+						{
+							wire->skill[28] = 1; // unpower the wire
+							wire->updateCircuitNeighbors(); // update surrounding stuff
+							list_RemoveNode(node); // delete this
+						}
+					}
+				}
+			}
+		}
 		else if ( (*it).find("@freezemonsters=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@freezemonsters=");
+			int result = textSourceProcessScriptTag(input, "@freezemonsters=", src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1292,7 +1711,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@unfreezemonsters=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@unfreezemonsters=");
+			int result = textSourceProcessScriptTag(input, "@unfreezemonsters=", src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1335,14 +1754,14 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@seteffect=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@seteffect=");
+			int result = textSourceProcessScriptTag(input, "@seteffect=", src);
 			if ( result != k_ScriptError )
 			{
 				int effect = result & 0xFF;
 				int effectEndRange = (result >> 8) & 0xFF;
 				int duration = (result >> 16) & 0xFF;
 				int durationEndRange = (result >> 24) & 0xFF;
-				duration = duration + rand() % (std::max(1, (durationEndRange - duration)));
+				duration = duration + local_rng.rand() % (std::max(1, (durationEndRange - duration)));
 				if ( processOnAttachedEntity )
 				{
 					for ( auto entity : attachedEntities )
@@ -1365,7 +1784,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@clreffect=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@clreffect=");
+			int result = textSourceProcessScriptTag(input, "@clreffect=", src);
 			if ( result != k_ScriptError )
 			{
 				int effect = result & 0xFF;
@@ -1392,7 +1811,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@findtarget=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@findtarget=");
+			int result = textSourceProcessScriptTag(input, "@findtarget=", src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1430,7 +1849,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 										//if ( hit.entity == target )
 										//{
 											//my->monsterLookTime = 1;
-											//my->monsterMoveTime = rand() % 10 + 1;
+											//my->monsterMoveTime = local_rng.rand() % 10 + 1;
 											entity->monsterLookDir = tangent;
 											toAttack = target;
 										//}
@@ -1452,7 +1871,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@killall=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@killall=");
+			int result = textSourceProcessScriptTag(input, "@killall=", src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1495,7 +1914,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@killenemies=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@killenemies=");
+			int result = textSourceProcessScriptTag(input, "@killenemies=", src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1538,7 +1957,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@nodropitems=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@nodropitems=");
+			int result = textSourceProcessScriptTag(input, "@nodropitems=", src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1588,7 +2007,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		else if ( (*it).find("@copyNPC=") != std::string::npos )
 		{
 			std::string profTag = "@copyNPC=";
-			int result = textSourceProcessScriptTag(input, profTag);
+			int result = textSourceProcessScriptTag(input, profTag, src);
 			if ( result != k_ScriptError )
 			{
 				std::vector<Entity*> applyToEntities;
@@ -1648,7 +2067,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		else if ( (*it).find("@setenemy=") != std::string::npos )
 		{
 			std::string profTag = "@setenemy=";
-			int result = textSourceProcessScriptTag(input, profTag);
+			int result = textSourceProcessScriptTag(input, profTag, src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1699,7 +2118,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		else if ( (*it).find("@setally=") != std::string::npos )
 		{
 			std::string profTag = "@setally=";
-			int result = textSourceProcessScriptTag(input, profTag);
+			int result = textSourceProcessScriptTag(input, profTag, src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1748,7 +2167,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		else if ( (*it).find("@setvar=") != std::string::npos )
 		{
 			std::string profTag = "@setvar=";
-			int result = textSourceProcessScriptTag(input, profTag);
+			int result = textSourceProcessScriptTag(input, profTag, src);
 			if ( result != k_ScriptError )
 			{
 				achievementObserver.checkMapScriptsOnVariableSet();
@@ -1758,9 +2177,312 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 				}*/
 			}
 		}
+		//else if ( (*it).find("@addtomonster=") != std::string::npos ) // adds entire stack to 1 destination monster
+		//{
+		//	int result = textSourceProcessScriptTag(input, "@addtomonster=", src);
+		//	if ( result != k_ScriptError )
+		//	{
+		//		int x1 = result & 0xFF;
+		//		int x2 = (result >> 8) & 0xFF;
+		//		int y1 = (result >> 16) & 0xFF;
+		//		int y2 = (result >> 24) & 0xFF;
+		//		std::vector<Entity*> applyToEntities;
+		//		if ( processOnAttachedEntity && textSourceScript.getAttachedToEntityType(src.textSourceIsScript) == textSourceScript.TO_ITEMS )
+		//		{
+		//			for ( auto entity : attachedEntities )
+		//			{
+		//				if ( entity->behavior == &actItem )
+		//				{
+		//					applyToEntities.push_back(entity);
+		//				}
+		//			}
+		//			Entity* monster = nullptr;
+		//			for ( node_t* node = map.creatures->first; node; node = node->next )
+		//			{
+		//				Entity* entity = (Entity*)node->element;
+		//				if ( entity && entity->behavior == &actMonster )
+		//				{
+		//					int findx = static_cast<int>(entity->x) >> 4;
+		//					int findy = static_cast<int>(entity->y) >> 4;
+		//					if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+		//					{
+		//						monster = entity;
+		//					}
+		//				}
+		//			}
+		//			for ( auto entity : applyToEntities )
+		//			{
+		//				Item* item = newItemFromEntity(entity);
+		//				if ( item && monster )
+		//				{
+		//					monster->addItemToMonsterInventory(item);
+		//				}
+		//				list_RemoveNode(entity->mynode);
+		//				entity = nullptr;
+		//			}
+		//		}
+		//		else
+		//		{
+		//			// not implemented, needs to be attached to items.
+		//		}
+		//	}
+		//}
+		else if ( (*it).find("@addtomonsters=") != std::string::npos ) // adds entire stack between monster(s)
+		{
+			int result = textSourceProcessScriptTag(input, "@addtomonsters=", src);
+			if ( result != k_ScriptError )
+			{
+				int x1 = result & 0xFF;
+				int x2 = (result >> 8) & 0xFF;
+				int y1 = (result >> 16) & 0xFF;
+				int y2 = (result >> 24) & 0xFF;
+				std::vector<Entity*> applyToEntities;
+				if ( processOnAttachedEntity && textSourceScript.getAttachedToEntityType(src.textSourceIsScript) == textSourceScript.TO_ITEMS )
+				{
+					for ( auto entity : attachedEntities )
+					{
+						if ( entity->behavior == &actItem )
+						{
+							applyToEntities.push_back(entity);
+						}
+					}
+					std::vector<Entity*> monsters;
+					for ( node_t* node = map.creatures->first; node; node = node->next )
+					{
+						Entity* entity = (Entity*)node->element;
+						if ( entity && entity->behavior == &actMonster )
+						{
+							int findx = static_cast<int>(entity->x) >> 4;
+							int findy = static_cast<int>(entity->y) >> 4;
+							if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+							{
+								monsters.push_back(entity);
+							}
+						}
+					}
+					for ( auto entity : applyToEntities )
+					{
+						for ( auto monster : monsters )
+						{
+							Item* item = newItemFromEntity(entity);
+							if ( item )
+							{
+								monster->addItemToMonsterInventory(item);
+							}
+						}
+						list_RemoveNode(entity->mynode);
+						entity = nullptr;
+					}
+				}
+				else
+				{
+					// not implemented, needs to be attached to items.
+				}
+			}
+		}
+		else if ( (*it).find("@equipitems=") != std::string::npos ) // monster try equip items
+		{
+			int result = textSourceProcessScriptTag(input, "@equipitems=", src);
+			if ( result != k_ScriptError )
+			{
+				int x1 = result & 0xFF;
+				int x2 = (result >> 8) & 0xFF;
+				int y1 = (result >> 16) & 0xFF;
+				int y2 = (result >> 24) & 0xFF;
+				std::vector<Entity*> applyToEntities;
+				if ( processOnAttachedEntity )
+				{
+					for ( auto entity : attachedEntities )
+					{
+						if ( entity->behavior == &actMonster )
+						{
+							applyToEntities.push_back(entity);
+						}
+					}
+
+					std::vector<Entity*> items;
+					if ( attachedEntities.size() > 0 )
+					{
+						for ( node_t* node = map.entities->first; node; node = node->next )
+						{
+							Entity* entity = (Entity*)node->element;
+							if ( entity && entity->behavior == &actItem )
+							{
+								int findx = static_cast<int>(entity->x) >> 4;
+								int findy = static_cast<int>(entity->y) >> 4;
+								if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+								{
+									items.push_back(entity);
+								}
+							}
+						}
+					}
+					for ( auto entity : applyToEntities )
+					{
+						for ( auto i : items )
+						{
+							Item* item = newItemFromEntity(i);
+							Stat* myStats = entity->getStats();
+							if ( item && myStats )
+							{
+								Item** itemSlot = nullptr;
+								switch ( ::items[item->type].item_slot )
+								{
+									case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_WEAPON:
+										itemSlot = &myStats->weapon;
+										break;
+									case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_SHIELD:
+										if ( itemCategory(item) == SPELLBOOK )
+										{
+											itemSlot = &myStats->weapon;
+										}
+										else
+										{
+											itemSlot = &myStats->shield;
+										}
+										break;
+									case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_GLOVES:
+										itemSlot = &myStats->gloves;
+										break;
+									case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_CLOAK:
+										itemSlot = &myStats->cloak;
+										break;
+									case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BOOTS:
+										itemSlot = &myStats->shoes;
+										break;
+									case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BREASTPLATE:
+										itemSlot = &myStats->breastplate;
+										break;
+									case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_AMULET:
+										itemSlot = &myStats->amulet;
+										break;
+									case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_RING:
+										itemSlot = &myStats->ring;
+										break;
+									case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_MASK:
+										itemSlot = &myStats->mask;
+										break;
+									case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_HELM:
+										itemSlot = &myStats->helmet;
+										break;
+									case ItemEquippableSlot::NO_EQUIP:
+										break;
+									default:
+										break;
+
+								}
+								if ( itemSlot )
+								{
+									if ( (*itemSlot) != nullptr )
+									{
+										copyItem(*itemSlot, item); // set equipped item to this new one.
+									}
+									else
+									{
+										(*itemSlot) = newItem(WOODEN_SHIELD, EXCELLENT, 0, 1, 0, false, NULL);
+										copyItem(*itemSlot, item); // set equipped item to this new one.
+									}
+								}
+								free(item);
+							}
+						}
+					}
+					for ( auto i : items )
+					{
+						list_RemoveNode(i->mynode);
+						i = nullptr;
+					}
+				}
+				else
+				{
+					// not implemented, needs to be attached to creatures
+				}
+			}
+		}
+		else if ( (*it).find("@pickupitems=") != std::string::npos ) // adds entire stack between monster(s)
+		{
+			int result = textSourceProcessScriptTag(input, "@pickupitems=", src);
+			if ( result != k_ScriptError )
+			{
+				int x1 = result & 0xFF;
+				int x2 = (result >> 8) & 0xFF;
+				int y1 = (result >> 16) & 0xFF;
+				int y2 = (result >> 24) & 0xFF;
+				std::vector<Entity*> applyToEntities;
+				if ( processOnAttachedEntity )
+				{
+					for ( auto entity : attachedEntities )
+					{
+						if ( (entity->behavior == &actMonster 
+							&& textSourceScript.getAttachedToEntityType(src.textSourceIsScript) != textSourceScript.TO_PLAYERS)
+							|| (entity->behavior == &actPlayer
+								&& textSourceScript.getAttachedToEntityType(src.textSourceIsScript) == textSourceScript.TO_PLAYERS) )
+						{
+							applyToEntities.push_back(entity);
+						}
+					}
+
+					std::vector<Entity*> items;
+					if ( attachedEntities.size() > 0 )
+					{
+						for ( node_t* node = map.entities->first; node; node = node->next )
+						{
+							Entity* entity = (Entity*)node->element;
+							if ( entity && entity->behavior == &actItem )
+							{
+								int findx = static_cast<int>(entity->x) >> 4;
+								int findy = static_cast<int>(entity->y) >> 4;
+								if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+								{
+									items.push_back(entity);
+								}
+							}
+						}
+					}
+					for ( auto entity : applyToEntities )
+					{
+						for ( auto i : items )
+						{
+							Item* item = newItemFromEntity(i);
+							if ( item )
+							{
+								if ( entity->behavior == &actMonster )
+								{
+									entity->addItemToMonsterInventory(item);
+								}
+								else if ( entity->behavior == &actPlayer )
+								{
+									Item* pickedUp = itemPickup(entity->skill[2], item);
+									if ( pickedUp )
+									{
+										if ( players[entity->skill[2]]->isLocalPlayer() )
+										{
+											// item is the new inventory stack for server, free the picked up items
+											free(item);
+										}
+										else
+										{
+											free(pickedUp); // item is the picked up items (pickedUp == item)
+										}
+									}
+								}
+							}
+						}
+					}
+					for ( auto i : items )
+					{
+						list_RemoveNode(i->mynode);
+					}
+				}
+				else
+				{
+					// not implemented, needs to be attached to creatures
+				}
+			}
+		}
 		else if ( (*it).find("@addtochest=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@addtochest=");
+			int result = textSourceProcessScriptTag(input, "@addtochest=", src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1798,7 +2520,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 							Item* item = newItemFromEntity(entity);
 							if ( item )
 							{
-								chest->addItemToChest(item);
+								chest->addItemToChest(item, true, nullptr);
 							}
 							list_RemoveNode(entity->mynode);
 							entity = nullptr;
@@ -1842,7 +2564,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 				profTag.append("=");
 				if ( (*it).find(profTag) != std::string::npos )
 				{
-					int result = textSourceProcessScriptTag(input, profTag);
+					int result = textSourceProcessScriptTag(input, profTag, src);
 					if ( result != k_ScriptError )
 					{
 						std::vector<Entity*> applyToEntities;
@@ -1932,7 +2654,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 				profTag.append("+");
 				if ( (*it).find(profTag) != std::string::npos )
 				{
-					int result = textSourceProcessScriptTag(input, profTag);
+					int result = textSourceProcessScriptTag(input, profTag, src);
 					if ( result != k_ScriptError )
 					{
 						std::vector<Entity*> applyToEntities;
@@ -1999,7 +2721,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 				profTag.append(std::to_string(i).append("="));
 				if ( (*it).find(profTag) != std::string::npos )
 				{
-					int result = textSourceProcessScriptTag(input, profTag);
+					int result = textSourceProcessScriptTag(input, profTag, src);
 					if ( result != k_ScriptError )
 					{
 						std::vector<Entity*> applyToEntities;
@@ -2033,6 +2755,8 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 							if ( stats )
 							{
 								stats->PROFICIENCIES[i] = result;
+								stats->PROFICIENCIES[i] = std::min(stats->PROFICIENCIES[i], 100);
+								stats->PROFICIENCIES[i] = std::max(stats->PROFICIENCIES[i], 0);
 							}
 						}
 					}
@@ -2044,7 +2768,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 				profTag.append(std::to_string(i).append("+"));
 				if ( (*it).find(profTag) != std::string::npos )
 				{
-					int result = textSourceProcessScriptTag(input, profTag);
+					int result = textSourceProcessScriptTag(input, profTag, src);
 					if ( result != k_ScriptError )
 					{
 						std::vector<Entity*> applyToEntities;
@@ -2078,6 +2802,8 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 							if ( stats )
 							{
 								stats->PROFICIENCIES[i] += result;
+								stats->PROFICIENCIES[i] = std::min(stats->PROFICIENCIES[i], 100);
+								stats->PROFICIENCIES[i] = std::max(stats->PROFICIENCIES[i], 0);
 							}
 						}
 					}
@@ -2205,7 +2931,7 @@ void Entity::actTextSource()
 
 			std::string output = textSourceScript.getScriptFromEntity(*this);
 
-			Uint32 color = SDL_MapRGB(mainsurface->format, (textSourceColorRGB >> 16) & 0xFF, (textSourceColorRGB >> 8) & 0xFF,
+			Uint32 color = makeColorRGB((textSourceColorRGB >> 16) & 0xFF, (textSourceColorRGB >> 8) & 0xFF,
 				(textSourceColorRGB >> 0) & 0xFF);
 
 			if ( textSourceIsScript != textSourceScript.NO_SCRIPT )
@@ -2257,17 +2983,13 @@ void Entity::actTextSource()
 					impulseStr = impulseStr + output.at(inputTagStrIndex);
 					++inputTagStrIndex;
 				}
-				for ( int i = 0; i < NUMIMPULSES; ++i )
-				{
-					if ( impulseStrings[i].compare(impulseStr) == 0 )
-					{
-						output.erase(output.find(impulseStr), impulseStr.length());
-						std::string inputFormatted = "[";
-						inputFormatted.append(getInputName(impulses[i])).append("]");
-						output.insert(foundInputTag, inputFormatted.c_str());
-						break;
-					}
-				}
+				output.erase(output.find(impulseStr), impulseStr.length());
+				std::string inputFormatted;
+				inputFormatted.append("[");
+				const char* binding = Input::inputs[0].binding(impulseStr.c_str());
+				inputFormatted.append(binding[0] == '\0' ? impulseStr : binding);
+				inputFormatted.append("]");
+				output.insert(foundInputTag, inputFormatted.c_str());
 				foundInputTag = output.find("@in=");
 			}
 
@@ -2294,11 +3016,11 @@ void Entity::actTextSource()
 					{
 						if ( foundPlayerRef != std::string::npos && stats[c] )
 						{
-							messagePlayerColor(c, color, buf, stats[c]->name);
+							messagePlayerColor(c, MESSAGE_MISC, color, buf, stats[c]->name);
 						}
 						else
 						{
-							messagePlayerColor(c, color, buf);
+							messagePlayerColor(c, MESSAGE_MISC, color, buf);
 						}
 					}
 				}
@@ -2321,7 +3043,7 @@ void TextSourceScript::updateClientInformation(int player, bool clearInventory, 
 	{
 		return;
 	}
-	if ( !stats[player] || client_disconnected[player] )
+	if ( !stats[player] || client_disconnected[player] || players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -2438,12 +3160,30 @@ std::string TextSourceScript::getScriptFromEntity(Entity& src)
 	{
 		buf[totalChars] = '\0';
 	}
+
+	if ( buf[0] == '$' )
+	{
+		// try to replace script with data file entry
+		std::string key = "";
+		for ( int i = 0; i <= totalChars; ++i )
+		{
+			char c = buf[i];
+			if ( c == '$' ) { continue; }
+			if ( charIsWordSeparator(c) ) { break; }
+			key += c;
+		}
+		if ( ScriptTextParser.allEntries.find(key) != ScriptTextParser.allEntries.end() )
+		{
+			return ScriptTextParser.allEntries[key].formattedText;
+		}
+	}
 	return buf;
 }
 
 void TextSourceScript::parseScriptInMapGeneration(Entity& src)
 {
 	std::string script = getScriptFromEntity(src);
+
 	size_t foundScriptTag = script.find("@script");
 	if ( foundScriptTag != std::string::npos )
 	{
@@ -2466,7 +3206,7 @@ void TextSourceScript::parseScriptInMapGeneration(Entity& src)
 
 	if ( script.find("@triggerif=") != std::string::npos )
 	{
-		int result = textSourceProcessScriptTag(script, "@triggerif=");
+		int result = textSourceProcessScriptTag(script, "@triggerif=", src);
 		if ( result != k_ScriptError )
 		{
 			textSourceScript.setTriggerType(src.textSourceIsScript, static_cast<ScriptTriggeredBy>(result));
@@ -2475,7 +3215,7 @@ void TextSourceScript::parseScriptInMapGeneration(Entity& src)
 
 	if ( script.find("@attachto=") != std::string::npos )
 	{
-		int attachTo = textSourceProcessScriptTag(script, "@attachto=");
+		int attachTo = textSourceProcessScriptTag(script, "@attachto=", src);
 		if ( attachTo == k_ScriptError )
 		{
 			return;
@@ -2485,9 +3225,14 @@ void TextSourceScript::parseScriptInMapGeneration(Entity& src)
 		int x2 = static_cast<int>(src.x / 16);
 		int y1 = static_cast<int>(src.y / 16);
 		int y2 = static_cast<int>(src.y / 16);
+		// offset for generated dungeons
+		x1 += src.mapGenerationRoomX;
+		x2 += src.mapGenerationRoomX;
+		y1 += src.mapGenerationRoomY;
+		y2 += src.mapGenerationRoomY;
 		if ( script.find("@attachrange=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(script, "@attachrange=");
+			int result = textSourceProcessScriptTag(script, "@attachrange=", src);
 			if ( result != k_ScriptError )
 			{
 				x1 = result & 0xFF;

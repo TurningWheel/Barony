@@ -15,13 +15,14 @@
 #include "entity.hpp"
 #include "items.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "book.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
 #include "interface/interface.hpp"
+#include "prng.hpp"
 
 std::unordered_map<Uint32, int> gyroBotDetectedUids;
 
@@ -29,7 +30,9 @@ void initSentryBot(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
+	my->flags[BURNABLE] = false;
 	my->initMonster(my->sprite);
+	my->z = 0;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -88,7 +91,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 	int race = my->getMonsterTypeFromSprite();
 
 	// tripod
-	Entity* entity = newEntity(873, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(873, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -108,7 +111,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// gear 1 left head
-	entity = newEntity(874, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(874, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -129,7 +132,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// gear 1 right head
-	entity = newEntity(874, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(874, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -150,7 +153,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// gear 1 left body
-	entity = newEntity(874, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(874, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -170,7 +173,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// gear 1 right body
-	entity = newEntity(874, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(874, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -190,7 +193,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// gear 2 middle
-	entity = newEntity(875, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(875, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -213,7 +216,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// loader
-	entity = newEntity(876, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(876, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -234,7 +237,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// world weapon
-	entity = newEntity(167, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(167, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -268,6 +271,7 @@ void initGyroBot(Entity* my, Stat* myStats)
 	node_t* node;
 	gyroBotDetectedUids.clear();
 
+    my->z = 5;
 	my->initMonster(886);
 
 	if ( multiplayer != CLIENT )
@@ -312,7 +316,7 @@ void initGyroBot(Entity* my, Stat* myStats)
 	}
 
 	// rotor large
-	Entity* entity = newEntity(887, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(887, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 2;
 	entity->sizey = 2;
 	entity->skill[2] = my->getUID();
@@ -332,7 +336,7 @@ void initGyroBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// rotor small
-	entity = newEntity(888, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(888, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 2;
 	entity->sizey = 2;
 	entity->skill[2] = my->getUID();
@@ -352,7 +356,7 @@ void initGyroBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// bomb
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 2;
 	entity->sizey = 2;
 	entity->skill[2] = my->getUID();
@@ -390,7 +394,7 @@ void sentryBotDie(Entity* my)
 	{
 		// don't make noises etc.
 		Stat* myStats = my->getStats();
-		if ( myStats && !strncmp(myStats->obituary, language[3631], strlen(language[3631])) )
+		if ( myStats && !strncmp(myStats->obituary, Language::get(3631), strlen(Language::get(3631))) )
 		{
 			// returning to land, don't explode into gibs.
 			gibs = false;
@@ -409,19 +413,19 @@ void sentryBotDie(Entity* my)
 		{
 			dropBrokenShell = false;
 		}
-		/*if ( myStats->monsterTinkeringStatus == EXCELLENT && rand() % 100 < 90 )
+		/*if ( myStats->monsterTinkeringStatus == EXCELLENT && local_rng.rand() % 100 < 90 )
 		{
 			dropBrokenShell = true;
 		}
-		else if ( myStats->monsterTinkeringStatus == SERVICABLE && rand() % 100 < 80 )
+		else if ( myStats->monsterTinkeringStatus == SERVICABLE && local_rng.rand() % 100 < 80 )
 		{
 			dropBrokenShell = true;
 		}
-		else if ( myStats->monsterTinkeringStatus == WORN && rand() % 100 < 70 )
+		else if ( myStats->monsterTinkeringStatus == WORN && local_rng.rand() % 100 < 70 )
 		{
 			dropBrokenShell = true;
 		}
-		else if ( myStats->monsterTinkeringStatus == DECREPIT && rand() % 100 < 60 )
+		else if ( myStats->monsterTinkeringStatus == DECREPIT && local_rng.rand() % 100 < 60 )
 		{
 			dropBrokenShell = true;
 		}*/
@@ -435,7 +439,7 @@ void sentryBotDie(Entity* my)
 				entity->flags[USERFLAG1] = true;    // makes items passable, improves performance
 			}
 		}
-		playSoundEntity(my, 451 + rand() % 2, 128);
+		playSoundEntity(my, 451 + local_rng.rand() % 2, 128);
 	}
 
 	my->removeMonsterDeathNodes();
@@ -447,6 +451,7 @@ void sentryBotDie(Entity* my)
 			Entity* entity = spawnGib(my);
 			if ( entity )
 			{
+			    entity->skill[5] = 1; // poof
 				switch ( c )
 				{
 					case 0:
@@ -475,7 +480,7 @@ void sentryBotDie(Entity* my)
 		}
 	}
 
-	// playSoundEntity(my, 298 + rand() % 4, 128);
+	// playSoundEntity(my, 298 + local_rng.rand() % 4, 128);
 	list_RemoveNode(my->mynode);
 	return;
 }
@@ -512,7 +517,8 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 				}
 				Item* item = newItem(type, static_cast<Status>(myStats->monsterTinkeringStatus), 0, 1, appearance, true, &myStats->inventory);
 				myStats->HP = 0;
-				my->setObituary(language[3631]);
+				myStats->killer = KilledBy::NO_FUEL;
+				my->setObituary(Language::get(3631));
 				return;
 			}
 		}
@@ -533,7 +539,7 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 		my->z = limbs[race][11][2];
 	}
 
-	if ( ticks % (3 * TICKS_PER_SECOND) == 0 && rand() % 5 > 0 )
+	if ( ticks % (3 * TICKS_PER_SECOND) == 0 && local_rng.rand() % 5 > 0 )
 	{
 		playSoundEntityLocal(my, 259, 8);
 	}
@@ -1029,8 +1035,8 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 				int leader = my->monsterAllyIndex;
 				if ( leader >= 0 )
 				{
-					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-					messagePlayerColor(leader, color, language[3651]);
+					Uint32 color = makeColorRGB(0, 255, 0);
+					messagePlayerColor(leader, MESSAGE_HINT, color, Language::get(3651));
 				}
 			}
 		}
@@ -1184,7 +1190,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 
 			if ( foundGoodSound >= 1 )
 			{
-				playSoundEntity(my, 444 + rand() % 5, 128);
+				playSoundEntity(my, 444 + local_rng.rand() % 5, 128);
 			}
 			else if ( foundBadSound >= 1 )
 			{
@@ -1199,10 +1205,10 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 		switch ( my->monsterAllyClass )
 		{
 			case ALLY_GYRO_LIGHT_FAINT:
-				my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 128);
+				my->light = addLight(my->x / 16, my->y / 16, "gyrobot_faint");
 				break;
 			case ALLY_GYRO_LIGHT_BRIGHT:
-				my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 128);
+				my->light = addLight(my->x / 16, my->y / 16, "gyrobot_bright");
 				break;
 			default:
 				break;
@@ -1219,9 +1225,33 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 			&& my->monsterSpecialTimer == 0
 			&& my->monsterSpecialState == 0 )
 		{
-			// doACoolFlip = true!
-			my->attack(MONSTER_POSE_RANGED_WINDUP1, 0, nullptr);
-			my->monsterSpecialTimer = TICKS_PER_SECOND * 8;
+			bool doACoolFlip = true;
+
+			for ( bodypart = 0, node = my->children.first; node != nullptr; node = node->next, ++bodypart )
+			{
+				if ( bodypart == GYRO_BOMB )
+				{
+					entity = (Entity*)node->element;
+					if ( entity )
+					{
+						if ( entity->sprite == items[TOOL_SENTRYBOT].index )
+						{
+							doACoolFlip = false;
+						}
+						else if ( entity->sprite == items[TOOL_SPELLBOT].index )
+						{
+							doACoolFlip = false;
+						}
+					}
+					break;
+				}
+			}
+
+			if ( doACoolFlip )
+			{
+				my->attack(MONSTER_POSE_RANGED_WINDUP1, 0, nullptr);
+				my->monsterSpecialTimer = TICKS_PER_SECOND * 8;
+			}
 		}
 
 		if ( my->monsterSpecialState == GYRO_RETURN_LANDING )
@@ -1231,7 +1261,8 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 				int appearance = monsterTinkeringConvertHPToAppearance(myStats);
 				Item* item = newItem(TOOL_GYROBOT, static_cast<Status>(myStats->monsterTinkeringStatus), 0, 1, appearance, true, &myStats->inventory);
 				myStats->HP = 0;
-				my->setObituary(language[3631]);
+				myStats->killer = KilledBy::NO_FUEL;
+				my->setObituary(Language::get(3631));
 				return;
 			}
 		}
@@ -1413,7 +1444,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 					for ( node_t* inv = myStats->inventory.first; inv; inv = inv->next )
 					{
 						Item* holding = (Item*)inv->element;
-						if ( holding && holding->type >= TOOL_BOMB && holding->type <= TOOL_TELEPORT_BOMB )
+						if ( holding && itemIsThrowableTinkerTool(holding) )
 						{
 							entity->sprite = items[holding->type].index;
 						}
@@ -1426,6 +1457,31 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 					{
 						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
 					}
+				}
+
+				if ( entity->sprite == items[TOOL_SENTRYBOT].index )
+				{
+					entity->focalx = limbs[GYROBOT][8][0];
+					entity->focaly = limbs[GYROBOT][8][1];
+					entity->focalz = limbs[GYROBOT][8][2];
+				}
+				else if ( entity->sprite == items[TOOL_SPELLBOT].index )
+				{
+					entity->focalx = limbs[GYROBOT][9][0];
+					entity->focaly = limbs[GYROBOT][9][1];
+					entity->focalz = limbs[GYROBOT][9][2];
+				}
+				else if ( entity->sprite == items[TOOL_GYROBOT].index )
+				{
+					entity->focalx = limbs[GYROBOT][10][0];
+					entity->focaly = limbs[GYROBOT][10][1];
+					entity->focalz = limbs[GYROBOT][10][2];
+				}
+				else if ( entity->sprite == items[TOOL_DUMMYBOT].index || entity->sprite == items[TOOL_DECOY].index )
+				{
+					entity->focalx = limbs[GYROBOT][11][0];
+					entity->focaly = limbs[GYROBOT][11][1];
+					entity->focalz = limbs[GYROBOT][11][2];
 				}
 
 				if ( multiplayer == SERVER )
@@ -1460,7 +1516,7 @@ void gyroBotDie(Entity* my)
 	{
 		// don't make noises etc.
 		Stat* myStats = my->getStats();
-		if ( myStats && !strncmp(myStats->obituary, language[3631], strlen(language[3631])) )
+		if ( myStats && !strncmp(myStats->obituary, Language::get(3631), strlen(Language::get(3631))) )
 		{
 			// returning to land, don't explode into gibs.
 			gibs = false;
@@ -1470,7 +1526,7 @@ void gyroBotDie(Entity* my)
 	my->removeMonsterDeathNodes();
 	if ( gibs )
 	{
-		playSoundEntity(my, 451 + rand() % 2, 128);
+		playSoundEntity(my, 451 + local_rng.rand() % 2, 128);
 		playSoundEntity(my, 450, 128);
 		int c;
 		for ( c = 0; c < 4; c++ )
@@ -1508,6 +1564,7 @@ void initDummyBot(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
+	my->z = 0;
 	my->initMonster(889);
 	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
 	if ( multiplayer != CLIENT )
@@ -1549,7 +1606,7 @@ void initDummyBot(Entity* my, Stat* myStats)
 	}
 
 	// head
-	Entity* entity = newEntity(889, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(889, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 2;
 	entity->sizey = 2;
 	entity->skill[2] = my->getUID();
@@ -1570,7 +1627,7 @@ void initDummyBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// body
-	entity = newEntity(890, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(890, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 2;
 	entity->sizey = 2;
 	entity->skill[2] = my->getUID();
@@ -1590,7 +1647,7 @@ void initDummyBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// shield
-	entity = newEntity(891, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(891, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 2;
 	entity->sizey = 2;
 	entity->skill[2] = my->getUID();
@@ -1610,7 +1667,7 @@ void initDummyBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// box
-	entity = newEntity(892, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(892, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 2;
 	entity->sizey = 2;
 	entity->skill[2] = my->getUID();
@@ -1631,7 +1688,7 @@ void initDummyBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// lid
-	entity = newEntity(893, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(893, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 2;
 	entity->sizey = 2;
 	entity->skill[2] = my->getUID();
@@ -1655,7 +1712,7 @@ void initDummyBot(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// crank
-	entity = newEntity(895, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(895, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->skill[2] = my->getUID();
@@ -1693,7 +1750,7 @@ void dummyBotDie(Entity* my)
 	{
 		// don't make noises etc.
 		Stat* myStats = my->getStats();
-		if ( myStats && !strncmp(myStats->obituary, language[3643], strlen(language[3643])) )
+		if ( myStats && !strncmp(myStats->obituary, Language::get(3643), strlen(Language::get(3643))) )
 		{
 			// returning to box, don't explode into gibs.
 			gibs = false;
@@ -1707,19 +1764,19 @@ void dummyBotDie(Entity* my)
 		{
 			dropBrokenShell = false;
 		}
-		/*if ( myStats->monsterTinkeringStatus == EXCELLENT && rand() % 100 < 80 )
+		/*if ( myStats->monsterTinkeringStatus == EXCELLENT && local_rng.rand() % 100 < 80 )
 		{
 			dropBrokenShell = true;
 		}
-		else if ( myStats->monsterTinkeringStatus == SERVICABLE && rand() % 100 < 60 )
+		else if ( myStats->monsterTinkeringStatus == SERVICABLE && local_rng.rand() % 100 < 60 )
 		{
 			dropBrokenShell = true;
 		}
-		else if ( myStats->monsterTinkeringStatus == WORN && rand() % 100 < 40 )
+		else if ( myStats->monsterTinkeringStatus == WORN && local_rng.rand() % 100 < 40 )
 		{
 			dropBrokenShell = true;
 		}
-		else if ( myStats->monsterTinkeringStatus == DECREPIT && rand() % 100 < 20 )
+		else if ( myStats->monsterTinkeringStatus == DECREPIT && local_rng.rand() % 100 < 20 )
 		{
 			dropBrokenShell = true;
 		}*/
@@ -1738,13 +1795,14 @@ void dummyBotDie(Entity* my)
 	my->removeMonsterDeathNodes();
 	if ( gibs )
 	{
-		playSoundEntity(my, 451 + rand() % 2, 128);
+		playSoundEntity(my, 451 + local_rng.rand() % 2, 128);
 		int c;
 		for ( c = 0; c < 5; c++ )
 		{
 			Entity* entity = spawnGib(my);
 			if ( entity )
 			{
+			    entity->skill[5] = 1; // poof
 				switch ( c )
 				{
 					case 0:
@@ -1861,7 +1919,8 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 						int appearance = monsterTinkeringConvertHPToAppearance(myStats);
 						Item* item = newItem(TOOL_DUMMYBOT, static_cast<Status>(myStats->monsterTinkeringStatus), 0, 1, appearance, true, &myStats->inventory);
 						myStats->HP = 0;
-						my->setObituary(language[3643]);
+						myStats->killer = KilledBy::NO_FUEL;
+						my->setObituary(Language::get(3643));
 						return;
 					}
 				}
@@ -2046,7 +2105,7 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 				{
 					if ( entity->flags[INVISIBLE] )
 					{
-						playSoundEntityLocal(my, 44 + rand() % 3, 92);
+						playSoundEntityLocal(my, 44 + local_rng.rand() % 3, 92);
 					}
 					entity->flags[INVISIBLE] = false;
 				}

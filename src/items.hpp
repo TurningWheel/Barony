@@ -12,7 +12,9 @@
 #pragma once
 
 #include "main.hpp"
-#include "entity.hpp"
+
+class Entity; // forward declare
+class Stat; // forward declare
 
 // items
 typedef enum ItemType
@@ -303,9 +305,11 @@ typedef enum ItemType
 	COMPOUND_BOW,
 	HEAVY_CROSSBOW,
 	BOOMERANG,
-	SCROLL_CONJUREARROW
+	SCROLL_CONJUREARROW,
+	MONOCLE,
+	TOOL_PLAYER_LOOT_BAG
 } ItemType;
-const int NUMITEMS = 287;
+const int NUMITEMS = 289;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -375,6 +379,21 @@ private:
 
 };
 
+enum ItemEquippableSlot : int
+{
+	EQUIPPABLE_IN_SLOT_WEAPON,
+	EQUIPPABLE_IN_SLOT_SHIELD,
+	EQUIPPABLE_IN_SLOT_MASK,
+	EQUIPPABLE_IN_SLOT_HELM,
+	EQUIPPABLE_IN_SLOT_GLOVES,
+	EQUIPPABLE_IN_SLOT_BOOTS,
+	EQUIPPABLE_IN_SLOT_BREASTPLATE,
+	EQUIPPABLE_IN_SLOT_CLOAK,
+	EQUIPPABLE_IN_SLOT_AMULET,
+	EQUIPPABLE_IN_SLOT_RING,
+	NO_EQUIP
+};
+
 // inventory item structure
 class Item
 {
@@ -392,6 +411,11 @@ public:
 	Uint32 interactNPCUid; // if NPC is interacting with item
 	bool forcedPickupByPlayer; // player used interact on NPC with item on floor
 	bool isDroppable; // if item should drop on death
+	bool playerSoldItemToShop = false; // if item was sold to a shopkeeper
+	bool itemHiddenFromShop = false; // if item needs to be hidden in shop view
+	bool notifyIcon = false; // if item draws exclamation as a 'new' untouched item
+	Uint8 itemRequireTradingSkillInShop = 0; // if item hidden in shop view until player has trading req
+	bool itemSpecialShopConsumable = false; // if item is extra non-standard inventory consumable
 
 	// weight, category and other generic info reported by function calls
 
@@ -431,16 +455,39 @@ public:
 	 */
 	static bool isThisABetterWeapon(const Item& newWeapon, const Item* weaponAlreadyHave);
 	static bool isThisABetterArmor(const Item& newArmor, const Item* armorAlreadyHave); //Also checks shields.
-	bool shouldItemStack(int player) const;
+	bool shouldItemStack(int player, bool ignoreStackLimit = false) const;
+	bool shouldItemStackInShop(bool ignoreStackLimit = false);
+	int getMaxStackLimit(int player) const;
 
 	bool isShield() const;
+	bool doesItemProvideBeatitudeAC() const;
+	bool doesItemProvidePassiveShieldBonus() const;
+	bool doesPotionHarmAlliesOnThrown() const;
+
+	Sint32 potionGetEffectHealth(Entity* my, Stat* myStats) const;
+	Sint32 potionGetEffectDamage(Entity* my, Stat* myStats) const;
+	Sint32 potionGetEffectDurationMinimum(Entity* my, Stat* myStats) const;
+	Sint32 potionGetEffectDurationMaximum(Entity* my, Stat* myStats) const;
+	Sint32 potionGetEffectDurationRandom(Entity* my, Stat* myStats) const;
+	Sint32 potionGetCursedEffectDurationMinimum(Entity* my, Stat* myStats) const;
+	Sint32 potionGetCursedEffectDurationMaximum(Entity* my, Stat* myStats) const;
+	Sint32 potionGetCursedEffectDurationRandom(Entity* my, Stat* myStats) const;
+
+	Sint32 getWeight() const;
+
+	void foodTinGetDescriptionIndices(int* a, int* b, int* c) const;
+	void foodTinGetDescription(std::string& cookingMethod, std::string& protein, std::string& sides) const;
+	int foodGetPukeChance(Stat* eater) const;
+	int getLootBagPlayer() const;
+	int getLootBagNumItems() const;
 
 	enum ItemBombPlacement : int
 	{
 		BOMB_FLOOR,
 		BOMB_WALL,
 		BOMB_CHEST,
-		BOMB_DOOR
+		BOMB_DOOR,
+		BOMB_COLLIDER
 	};
 	enum ItemBombFacingDirection : int
 	{
@@ -467,9 +514,9 @@ extern Uint32 itemuids;
 // item generic
 class ItemGeneric
 {
+	std::string item_name_identified;      // identified item name
+	std::string item_name_unidentified;    // unidentified item name
 public:
-	char* name_identified;      // identified item name
-	char* name_unidentified;    // unidentified item name
 	int index;                  // world model
 	int fpindex;                // first person model
 	int variations;             // number of model variations
@@ -479,6 +526,30 @@ public:
 	list_t surfaces;            // item image surfaces (inventory)
 	Category category;          // item category
 	int level;					// item level for random generation
+	// equip slot that item can go in
+	ItemEquippableSlot item_slot = ItemEquippableSlot::NO_EQUIP;
+	std::map<std::string, Sint32> attributes;
+	std::string tooltip = "tooltip_default";
+
+	const char* getIdentifiedName() const { return item_name_identified.c_str(); }
+	const char* getUnidentifiedName() const { return item_name_unidentified.c_str(); }
+	void setIdentifiedName(std::string name) { item_name_identified = name; }
+	void setUnidentifiedName(std::string name) { item_name_unidentified = name; }
+	bool hasAttribute(std::string attribute)
+	{
+		if ( attributes.size() > 0 )
+		{
+			if ( attributes.find(attribute) != attributes.end() )
+			{
+				return true;
+			}
+			return false;
+		}
+		else
+		{
+			return false;
+		}
+	}
 };
 extern ItemGeneric items[NUMITEMS];
 
@@ -520,19 +591,20 @@ void item_AmuletSexChange(Item* item, int player);
 void item_ToolTowel(Item*& item, int player);
 void item_ToolTinOpener(Item* item, int player);
 void item_ToolMirror(Item*& item, int player);
-void item_ToolBeartrap(Item*& item, int player);
+void item_ToolBeartrap(Item*& item, Entity* usedBy);
 void item_Food(Item*& item, int player);
 void item_FoodTin(Item*& item, int player);
 void item_FoodAutomaton(Item*& item, int player);
 void item_Gem(Item* item, int player);
 void item_Spellbook(Item*& item, int player);
+void item_ToolLootBag(Item*& item, int player);
 
 //General functions.
 Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory);
 Item* uidToItem(Uint32 uid);
 ItemType itemCurve(Category cat);
 ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel);
-Item* newItemFromEntity(const Entity* entity); //Make sure to call free(item).
+Item* newItemFromEntity(const Entity* entity, bool discardUid = false); //Make sure to call free(item). discardUid will free the new items uid if this is for temp purposes
 Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 count = 1);
 Item** itemSlot(Stat* myStats, Item* item);
 
@@ -542,7 +614,7 @@ Sint32 itemModelFirstperson(const Item* item);
 SDL_Surface* itemSprite(Item* item);
 void consumeItem(Item*& item, int player); //NOTE: Items have to be unequipped before calling this function on them. NOTE: THIS CAN FREE THE ITEM POINTER. Sets item to nullptr if it does.
 bool dropItem(Item* item, int player, bool notifyMessage = true); // return true on free'd item
-void useItem(Item* item, int player, Entity* usedBy = nullptr);
+void useItem(Item* item, int player, Entity* usedBy = nullptr, bool unequipForDropping = false);
 enum EquipItemResult : int
 {
 	EQUIP_ITEM_FAIL_CANT_UNEQUIP,
@@ -567,8 +639,28 @@ void playerTryEquipItemAndUpdateServer(const int player, Item* item, bool checkI
 void clientSendEquipUpdateToServer(EquipItemSendToServerSlot slot, EquipItemResult equipType, int player,
 	ItemType type, Status status, Sint16 beatitude, int count, Uint32 appearance, bool identified);
 void clientUnequipSlotAndUpdateServer(const int player, EquipItemSendToServerSlot slot, Item* item);
-EquipItemResult equipItem(Item* item, Item** slot, int player);
-Item* itemPickup(int player, Item* item);
+void clientSendAppearanceUpdateToServer(const int player, Item* item, const bool onIdentify);
+EquipItemResult equipItem(Item* item, Item** slot, int player, bool checkInventorySpaceForPaperDoll);
+enum ItemStackResults : int
+{
+	ITEM_STACKING_ERROR,
+	ITEM_DESTINATION_NOT_SAME_ITEM,
+	ITEM_DESTINATION_STACK_IS_FULL,
+	ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK,
+	ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK,
+	ITEM_ADDED_WITHOUT_NEEDING_STACK
+};
+struct ItemStackResult
+{
+	ItemStackResults resultType = ITEM_STACKING_ERROR;
+	Item* itemToStackInto = nullptr;
+};
+// checks inventory order for stacking items (the first item in the list that is stackable will be returned)
+ItemStackResult getItemStackingBehavior(const int player, Item* itemToCheck, Item* itemDestinationStack, int& newQtyForCheckedItem, int& newQtyForDestItem);
+// checks chest inventory order for dropping all items into (the first item in the list that is stackable will be returned)
+ItemStackResult getItemStackingBehaviorIntoChest(const int player, Item* itemToCheck, Item* itemDestinationStack, int& newQtyForCheckedItem, int& newQtyForDestItem);
+void getItemEmptySlotStackingBehavior(const int player, Item& itemToCheck, int& newQtyForCheckedItem, int& newQtyForDestItem);
+Item* itemPickup(int player, Item* item, Item* addToSpecificInventoryItem = nullptr, bool forceNewStack = false);
 bool itemIsEquipped(const Item* item, int player);
 bool shouldInvertEquipmentBeatitude(const Stat* wielder);
 bool isItemEquippableInShieldSlot(const Item* item);
@@ -576,7 +668,7 @@ bool itemIsConsumableByAutomaton(const Item& item);
 
 extern const real_t potionDamageSkillMultipliers[6];
 extern const real_t thrownDamageSkillMultipliers[6];
-extern std::mt19937 enchantedFeatherScrollSeed;
+extern Uint32 enchantedFeatherScrollSeed;
 extern std::vector<int> enchantedFeatherScrollsShuffled;
 static const std::vector<int> enchantedFeatherScrollsFixedList =
 {
@@ -609,12 +701,13 @@ static const std::vector<int> enchantedFeatherScrollsFixedList =
 static const int ENCHANTED_FEATHER_MAX_DURABILITY = 101;
 static const int QUIVER_MAX_AMMO_QTY = 51;
 static const int SCRAP_MAX_STACK_QTY = 101;
+static const int THROWN_GEM_MAX_STACK_QTY = 9;
 
 //-----ITEM COMPARISON FUNCS-----
 /*
  * Only compares items of the same type.
  */
-int itemCompare(const Item* item1, const Item* item2, bool checkAppearance);
+int itemCompare(const Item* item1, const Item* item2, bool checkAppearance, bool comparisonUsedForStacking = true);
 
 /*
  * Returns true if potion is harmful to the player.
@@ -629,7 +722,7 @@ void copyItem(Item* itemToSet, const Item* itemToCopy);
 bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode, bool moveStack, bool overrideCursed);
 bool monsterUnequipSlot(Stat* myStats, Item** slot, Item* itemToUnequip);
 bool monsterUnequipSlotFromCategory(Stat* myStats, Item** slot, Category cat);
-node_t* itemNodeInInventory(const Stat* myStats, ItemType itemToFind, Category cat);
+node_t* itemNodeInInventory(const Stat* myStats, Sint32 itemToFind, Category cat);
 node_t* spellbookNodeInInventory(const Stat* myStats, int spellIDToFind);
 node_t* getRangedWeaponItemNodeInInventory(const Stat* myStats, bool includeMagicstaff);
 node_t* getMeleeWeaponItemNodeInInventory(const Stat* myStats);
@@ -651,5 +744,3 @@ extern int decoyBoxRange;
 static const int MONSTER_ITEM_UNDROPPABLE_APPEARANCE = 1234567890;
 static const int ITEM_TINKERING_APPEARANCE = 987654320;
 static const int ITEM_GENERATED_QUIVER_APPEARANCE = 1122334455;
-
-bool loadItemLists();

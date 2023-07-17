@@ -15,18 +15,20 @@
 #include "entity.hpp"
 #include "items.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "prng.hpp"
 
 void initAutomaton(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
-	 //Sprite 467 = Automaton head model
-	my->initMonster(467);
+	my->flags[BURNABLE] = false;
+	my->initMonster(467); //Sprite 467 = Automaton head model
+	my->z = -.5;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -39,6 +41,14 @@ void initAutomaton(Entity* my, Stat* myStats)
 	{
 		if ( myStats != NULL )
 		{
+	        if (myStats->sex == FEMALE)
+	        {
+	            my->sprite = 1007;
+	        }
+			if ( my->monsterStoreType == 1 )
+			{
+				strcpy(myStats->name, "damaged automaton");
+			}
 			if ( !myStats->leader_uid )
 			{
 				myStats->leader_uid = 0;
@@ -90,31 +100,31 @@ void initAutomaton(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			//if ( rand() % 50 || my->flags[USERFLAG2] )
+			//if ( local_rng.rand() % 50 || my->flags[USERFLAG2] )
 			//{
 			//	if ( strncmp(map.name, "Underworld", 10) )
 			//	{
-			//		switch ( rand() % 10 )
+			//		switch ( local_rng.rand() % 10 )
 			//		{
 			//			case 0:
 			//			case 1:
-			//				//myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+			//				//myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, NULL);
 			//				break;
 			//			case 2:
 			//			case 3:
-			//				//myStats->weapon = newItem(BRONZE_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+			//				//myStats->weapon = newItem(BRONZE_SWORD, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, NULL);
 			//				break;
 			//			case 4:
 			//			case 5:
-			//				//myStats->weapon = newItem(IRON_SPEAR, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+			//				//myStats->weapon = newItem(IRON_SPEAR, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, NULL);
 			//				break;
 			//			case 6:
 			//			case 7:
-			//				//myStats->weapon = newItem(IRON_AXE, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+			//				//myStats->weapon = newItem(IRON_AXE, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, NULL);
 			//				break;
 			//			case 8:
 			//			case 9:
-			//				//myStats->weapon = newItem(IRON_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+			//				//myStats->weapon = newItem(IRON_SWORD, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, NULL);
 			//				break;
 			//		}
 			//	}
@@ -124,7 +134,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 			//	myStats->HP = 100;
 			//	myStats->MAXHP = 100;
 			//	strcpy(myStats->name, "Funny Bones");
-			//	myStats->weapon = newItem(ARTIFACT_AXE, EXCELLENT, 1, 1, rand(), true, NULL);
+			//	myStats->weapon = newItem(ARTIFACT_AXE, EXCELLENT, 1, 1, local_rng.rand(), true, NULL);
 			//	myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, NULL);
 			//}
 
@@ -163,19 +173,19 @@ void initAutomaton(Entity* my, Stat* myStats)
 			{
 				if ( greaterMonster )
 				{
-					switch ( rand() % 4 )
+					switch ( local_rng.rand() % 4 )
 					{
 						case 0:
-							myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+							myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, -1 + local_rng.rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
 							break;
 						case 1:
-							myStats->weapon = newItem(CRYSTAL_SPEAR, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+							myStats->weapon = newItem(CRYSTAL_SPEAR, EXCELLENT, -1 + local_rng.rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
 							break;
 						case 2:
-							myStats->weapon = newItem(SHORTBOW, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+							myStats->weapon = newItem(SHORTBOW, EXCELLENT, -1 + local_rng.rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
 							break;
 						case 3:
-							myStats->weapon = newItem(CROSSBOW, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+							myStats->weapon = newItem(CROSSBOW, EXCELLENT, -1 + local_rng.rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
 							break;
 						default:
 							break;
@@ -186,7 +196,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 			//give helmet
 			if ( myStats->helmet == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 			{
-				switch ( rand() % 10 )
+				switch ( local_rng.rand() % 10 )
 				{
 					case 0:
 					case 1:
@@ -195,13 +205,13 @@ void initAutomaton(Entity* my, Stat* myStats)
 					case 4:
 						break;
 					case 5:
-						//myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + rand() % 2, 1, 0, false, NULL);
+						//myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + local_rng.rand() % 2, 1, 0, false, NULL);
 						break;
 					case 6:
 					case 7:
 					case 8:
 					case 9:
-						//myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + rand() % 2, 1, 0, false, NULL);
+						//myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + local_rng.rand() % 2, 1, 0, false, NULL);
 						break;
 				}
 			}
@@ -217,19 +227,19 @@ void initAutomaton(Entity* my, Stat* myStats)
 				{
 					if ( greaterMonster )
 					{
-						switch ( rand() % 4 )
+						switch ( local_rng.rand() % 4 )
 						{
 							case 0:
-								myStats->shield = newItem(CRYSTAL_SHIELD, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+								myStats->shield = newItem(CRYSTAL_SHIELD, EXCELLENT, -1 + local_rng.rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
 								break;
 							case 1:
-								myStats->shield = newItem(STEEL_SHIELD_RESISTANCE, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+								myStats->shield = newItem(STEEL_SHIELD_RESISTANCE, EXCELLENT, -1 + local_rng.rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
 								break;
 							case 2:
-								myStats->shield = newItem(STEEL_SHIELD, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+								myStats->shield = newItem(STEEL_SHIELD, EXCELLENT, -1 + local_rng.rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
 								break;
 							case 3:
-								myStats->shield = newItem(MIRROR_SHIELD, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+								myStats->shield = newItem(MIRROR_SHIELD, EXCELLENT, -1 + local_rng.rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
 								break;
 							default:
 								break;
@@ -243,13 +253,13 @@ void initAutomaton(Entity* my, Stat* myStats)
 			{
 				if ( greaterMonster )
 				{
-					switch ( rand() % 4 )
+					switch ( local_rng.rand() % 4 )
 					{
 						case 0:
 						case 1:
 						case 2:
 						case 3:
-							myStats->shoes = newItem(STEEL_BOOTS_LEVITATION, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+							myStats->shoes = newItem(STEEL_BOOTS_LEVITATION, EXCELLENT, -1 + local_rng.rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
 							break;
 						default:
 							break;
@@ -262,16 +272,16 @@ void initAutomaton(Entity* my, Stat* myStats)
 			{
 				if ( greaterMonster )
 				{
-					switch ( rand() % 4 )
+					switch ( local_rng.rand() % 4 )
 					{
 						case 0:
-							myStats->cloak = newItem(CLOAK_MAGICREFLECTION, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+							myStats->cloak = newItem(CLOAK_MAGICREFLECTION, EXCELLENT, -1 + local_rng.rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
 							break;
 						case 1:
-							myStats->cloak = newItem(CLOAK_PROTECTION, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+							myStats->cloak = newItem(CLOAK_PROTECTION, EXCELLENT, -1 + local_rng.rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
 							break;
 						case 2:
-							myStats->cloak = newItem(CLOAK, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+							myStats->cloak = newItem(CLOAK, EXCELLENT, -1 + local_rng.rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
 							break;
 						case 3:
 							break;
@@ -284,7 +294,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(468, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(468, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -303,7 +313,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(474, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(474, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -322,7 +332,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(473, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(473, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -341,7 +351,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(471, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(471, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -360,7 +370,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(469, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(469, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -379,7 +389,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// world weapon
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -400,7 +410,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// shield
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -420,7 +430,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// cloak
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -443,7 +453,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// helmet
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -466,7 +476,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// mask
-	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -506,10 +516,11 @@ void automatonDie(Entity* my)
 		Entity* entity = spawnGib(my);
 		if ( entity )
 		{
+		    entity->skill[5] = 1; // poof
 			switch ( c )
 			{
 				case 0:
-					entity->sprite = 467;
+					entity->sprite = my->sprite;
 					break;
 				case 1:
 					entity->sprite = 468;
@@ -530,7 +541,7 @@ void automatonDie(Entity* my)
 			serverSpawnGibForClient(entity);
 		}
 	}
-	playSoundEntity(my, 260 + rand() % 2, 128);
+	playSoundEntity(my, 260 + local_rng.rand() % 2, 128);
 	list_RemoveNode(my->mynode);
 	return;
 }
@@ -620,7 +631,9 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 		else
 		{
-			if ( my->monsterSpecialState != AUTOMATON_MALFUNCTION_START && my->monsterSpecialState != AUTOMATON_MALFUNCTION_RUN )
+			if ( my->monsterSpecialState != AUTOMATON_MALFUNCTION_START 
+				&& my->monsterSpecialState != AUTOMATON_MALFUNCTION_RUN
+				&& !(myStats->amulet && myStats->amulet->type == AMULET_LIFESAVING && myStats->amulet->beatitude >= 0) )
 			{
 				my->z = -.5;
 				my->pitch = 0;
@@ -629,7 +642,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					)
 				{
 					// threshold for boom boom
-					if ( rand() % 4 > 0 ) // 3/4
+					if ( local_rng.rand() % 4 > 0 ) // 3/4
 					{
 						my->monsterSpecialState = AUTOMATON_MALFUNCTION_START;
 						my->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_AUTOMATON_MALFUNCTION;
@@ -670,7 +683,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 	}
 
-	if ( ticks % (2 * TICKS_PER_SECOND) == 0 && rand() % 5 > 0 )
+	if ( ticks % (2 * TICKS_PER_SECOND) == 0 && local_rng.rand() % 5 > 0 )
 	{
 		playSoundEntityLocal(my, 259, 16);
 	}
@@ -1258,6 +1271,10 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							entity->sprite = 165; // GlassesWorn.vox
 						}
+						else if ( myStats->mask->type == MONOCLE )
+						{
+							entity->sprite = 1196; // monocleWorn.vox
+						}
 						else
 						{
 							entity->sprite = itemModel(myStats->mask);
@@ -1289,7 +1306,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				if ( entity->sprite != 165 )
+				if ( entity->sprite != 165 && entity->sprite != 1196 )
 				{
 					if ( entity->sprite == items[MASK_SHAMAN].index )
 					{
@@ -1457,11 +1474,11 @@ void Entity::automatonRecycleItem()
 	}
 
 	this->monsterSpecialState = AUTOMATON_RECYCLE_ANIMATION_WAITING; // reset my special state after the previous lines.
-	int pickItem1 = rand() % matches; // pick random valid item index in inventory
-	int pickItem2 = rand() % matches;
+	int pickItem1 = local_rng.rand() % matches; // pick random valid item index in inventory
+	int pickItem2 = local_rng.rand() % matches;
 	while ( pickItem2 == pickItem1 )
 	{
-		pickItem2 = rand() % matches; // make sure index 2 is unique
+		pickItem2 = local_rng.rand() % matches; // make sure index 2 is unique
 	}
 
 	itemIndex = 0;
@@ -1491,14 +1508,14 @@ void Entity::automatonRecycleItem()
 	//messagePlayer(0, "made it past");
 
 	int maxGoldValue = ((items[item1->type].value + items[item2->type].value) * 2) / 3;
-	if ( rand() % 2 == 0 )
+	if ( local_rng.rand() % 2 == 0 )
 	{
 		maxGoldValue = ((items[item1->type].value + items[item2->type].value) * 1) / 2;
 	}
 	int minGoldValue = ((items[item1->type].value + items[item2->type].value) * 1) / 3;
 	ItemType type;
 	// generate a weapon/armor piece and add it into the inventory.
-	switch ( rand() % 10 )
+	switch ( local_rng.rand() % 10 )
 	{
 		case 0:
 		case 1:
@@ -1524,14 +1541,14 @@ void Entity::automatonRecycleItem()
 	{
 		Item* item = nullptr;
 		// recycle item1 or item2, reduce durability.
-		if ( rand() % 2 == 0 )
+		if ( local_rng.rand() % 2 == 0 )
 		{
-			item = newItem(type, item1->status, item1->beatitude, 1, rand(), item1->identified, &myStats->inventory);
+			item = newItem(type, item1->status, item1->beatitude, 1, local_rng.rand(), item1->identified, &myStats->inventory);
 			item1->status = static_cast<Status>(std::max(0, item1->status - 2));
 		}
 		else
 		{
-			item = newItem(type, item2->status, item2->beatitude, 1, rand(), item2->identified, &myStats->inventory);
+			item = newItem(type, item2->status, item2->beatitude, 1, local_rng.rand(), item2->identified, &myStats->inventory);
 			item2->status = static_cast<Status>(std::max(0, item2->status - 2));
 		}
 		// drop newly created item. To pickup if possible or leave behind if overburdened.

@@ -20,10 +20,11 @@
 #endif // NINTENDO
 #include "draw.hpp"
 #include "files.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "prng.hpp"
 #include "hash.hpp"
 #include "init.hpp"
+#include "light.hpp"
 #include "net.hpp"
 #ifndef NINTENDO
  #include "editor.hpp"
@@ -33,7 +34,9 @@
  #include <steam/steam_api.h>
  #include "steam.hpp"
 #endif // STEAMWORKS
+#ifndef EDITOR
 #include "player.hpp"
+#endif
 #include "items.hpp"
 #include "cppfuncs.hpp"
 #include "ui/Text.hpp"
@@ -41,11 +44,17 @@
 #include "ui/Image.hpp"
 #include "ui/Frame.hpp"
 #include "ui/Button.hpp"
+#include "ui/LoadingScreen.hpp"
+#ifndef EDITOR
+#include "ui/MainMenu.hpp"
+#include "interface/consolecommand.hpp"
+static ConsoleVariable<bool> cvar_sdl_disablejoystickrawinput("/sdl_joystick_rawinput_disable", false, "disable SDL rawinput for gamepads (helps SDL_HapticOpen())");
+#endif
 
-#ifdef USE_FMOD
- #include "fmod.h"
- //#include <fmod_errors.h>
-#endif // USE_FMOD
+#include <thread>
+#include <future>
+#include <chrono>
+
 
 /*-------------------------------------------------------------------------------
 
@@ -55,27 +64,17 @@
 
 -------------------------------------------------------------------------------*/
 
-#define LOADSTR1 language[741]
-#define LOADSTR2 language[742]
-#define LOADSTR3 language[743]
-#define LOADSTR4 language[744]
-
-#ifdef PANDORA
-// Pandora FBO
-GLuint fbo_fbo = 0;
-GLuint fbo_tex = 0;
-GLuint fbo_trn = 0;
-GLuint fbo_ren = 0;
-#endif
-
 FILE* logfile = nullptr;
 bool steam_init = false;
 
 int initApp(char const * const title, int fullscreen)
 {
-	char name[128];
 	File* fp;
-	Uint32 x, c;
+
+	Uint32 seed;
+	local_rng.seedTime();
+    local_rng.getSeed(&seed, sizeof(seed));
+    net_rng.seedBytes(&seed, sizeof(seed));
 
 	// open log file
 	if ( !logfile )
@@ -99,21 +98,17 @@ int initApp(char const * const title, int fullscreen)
 	light_l.last = NULL;
 	entitiesdeleted.first = NULL;
 	entitiesdeleted.last = NULL;
-	for ( c = 0; c < HASH_SIZE; c++ )
+	for (int c = 0; c < HASH_SIZE; ++c)
 	{
 		ttfTextHash[c].first = NULL;
 		ttfTextHash[c].last = NULL;
 	}
-	map.entities = NULL;
-	map.creatures = nullptr;
-	map.worldUI = nullptr;
-	map.tiles = NULL;
 
 	// init PHYSFS
 #ifndef NINTENDO
 	PHYSFS_init("/");
 	PHYSFS_permitSymbolicLinks(1);
-#endif // NINTENDO
+#endif
 
 	if ( !PHYSFS_isInit() )
 	{
@@ -133,20 +128,27 @@ int initApp(char const * const title, int fullscreen)
 
 	if ( PHYSFS_mount(outputdir, NULL, 1) )
 	{
-		printlog("[PhysFS]: successfully mounted output %s folder", outputdir);
+		printlog("[PhysFS]: successfully mounted output \"%s\" folder", outputdir);
 		if ( PHYSFS_setWriteDir(outputdir) )
 		{
+		    PHYSFS_mkdir("books");
 			PHYSFS_mkdir("savegames");
 			//TODO: Will these need special NINTENDO handling?
 			PHYSFS_mkdir("crashlogs");
 			PHYSFS_mkdir("logfiles");
 			PHYSFS_mkdir("data");
 			PHYSFS_mkdir("data/custom-monsters");
+			PHYSFS_mkdir("data/statues");
+			PHYSFS_mkdir("data/scripts");
+			PHYSFS_mkdir("config");
+#ifdef STEAMWORKS
+			PHYSFS_mkdir("workshop_cache");
+#endif
 #ifdef NINTENDO
 			PHYSFS_mkdir("mods");
 			std::string path = outputdir;
 			path.append(PHYSFS_getDirSeparator()).append("mods");
-			PHYSFS_setWriteDir(path.c_str());
+			PHYSFS_setWriteDir(path.c_str()); //Umm...should it really be doing that? First off, it didn't actually create this directory. Second off, what about the rest of the directories it created?
 			printlog("[PhysFS]: successfully set write folder %s", path.c_str());
 #else // NINTENDO
 			if ( PHYSFS_mkdir("mods") )
@@ -170,6 +172,27 @@ int initApp(char const * const title, int fullscreen)
 		return 13;
 	}
 
+	// initialize SDL
+	window_title = title;
+	printlog("initializing SDL...\n");
+#ifdef WINDOWS
+#ifndef EDITOR
+	if ((*cvar_sdl_disablejoystickrawinput) == true)
+	{
+		SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT, "0"); // prefer XINPUT devices, helps making SDL_HapticOpen() work on my wireless xbox controllers
+		printlog("SDL_HINT_JOYSTICK_RAWINPUT set to 0");
+	}
+#endif
+#endif
+    // do this in main() now.
+	/*Uint32 init_flags = SDL_INIT_VIDEO | SDL_INIT_EVENTS;
+	init_flags |= SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC;
+	if (SDL_Init(init_flags) == -1)
+	{
+		printlog("failed to initialize SDL: %s\n", SDL_GetError());
+		return 1;
+	}*/
+
 	// init steamworks
 #ifdef STEAMWORKS
 	SteamAPI_RestartAppIfNecessary(STEAM_APPID);
@@ -182,18 +205,33 @@ int initApp(char const * const title, int fullscreen)
 	steam_init = true;
 	g_SteamLeaderboards = new CSteamLeaderboards();
 	g_SteamWorkshop = new CSteamWorkshop();
-	g_SteamStatistics = new CSteamStatistics(g_SteamStats, nullptr, NUM_STEAM_STATISTICS);
+	g_SteamStatistics = new CSteamStatistics(g_SteamStats, g_SteamAPIGlobalStats, NUM_STEAM_STATISTICS);
+    if (xres == 1280 && yres == 720 && SteamUtils()->IsSteamRunningOnSteamDeck()) {
+        // default steam deck native resolution
+        xres = 1280;
+        yres = 800;
+    }
+#ifdef PANDORA
+    if (xres == 1280 && yres == 720) {
+        // Pandora native resolution
+        xres = 800;
+        yres = 480;
+    }
+#endif
 	// Preloads mod content from a workshop fileID
 	//gamemodsWorkshopPreloadMod(YOUR WORKSHOP FILE ID HERE, "YOUR WORKSHOP TITLE HERE");
 #endif
 #if defined USE_EOS
 	EOS.readFromFile();
 	EOS.readFromCmdLineArgs();
+#ifndef NINTENDO
 	if ( EOS.initPlatform(true) == false )
 	{
 		return 14;
 	}
+#endif
 #ifndef STEAMWORKS
+#ifndef NINTENDO
 #ifdef APPLE
 	if ( EOS.CredentialName.compare("") == 0 )
 	{
@@ -208,19 +246,95 @@ int initApp(char const * const title, int fullscreen)
 		return 15;
 	}
 #endif
+#endif
+#ifdef NINTENDO
+	EOS.SetNetworkAvailable(nxConnectedToNetwork());
+#else
 	EOS.initAuth();
+#endif
 #endif // !STEAMWORKS
 #endif
-
-	window_title = title;
-	printlog("initializing SDL...\n");
-	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER 
-		| SDL_INIT_EVENTS | SDL_INIT_JOYSTICK 
-		| SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC) == -1 )
+#ifndef EDITOR
+	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		printlog("failed to initialize SDL: %s\n", SDL_GetError());
-		return 1;
+		playerSettings->init(i);
 	}
+#endif
+
+	// I'm not sure when we'd need the following block.
+	// mobile ports????
+#if 0
+	auto event_filter = [](void* userdata, SDL_Event* e) -> int {
+		if (!e) {
+			return 0;
+		}
+		switch (e->type) {
+		default: break;
+		case SDL_APP_TERMINATING:
+			// safe cleanup
+			printlog("barony safely shutting down");
+			saveConfig("default.cfg");
+			MainMenu::settingsMount();
+			(void)MainMenu::settingsSave();
+			deinitGame();
+			deinitApp();
+			nxTerm();
+			break;
+		case SDL_APP_WILLENTERFOREGROUND:
+		case SDL_APP_DIDENTERFOREGROUND:
+		{
+			printlog("barony waking up");
+			static const int displays = SDL_GetNumVideoDisplays();
+			std::vector<SDL_Rect> displayBounds;
+			for (int i = 0; i < displays; i++) {
+				displayBounds.push_back(SDL_Rect());
+				SDL_GetDisplayBounds(i, &displayBounds.back());
+			}
+			if (displayBounds.size() > 0) {
+				const int x = displayBounds[0].w;
+				const int y = displayBounds[0].h;
+				printlog("new display size: %d %d", x, y);
+				SDL_Event new_event;
+				new_event.type = SDL_WINDOWEVENT;
+				new_event.window.event = SDL_WINDOWEVENT_RESIZED;
+				new_event.window.data1 = x;
+				new_event.window.data2 = y;
+				new_event.window.timestamp = SDL_GetTicks();
+				new_event.window.type = SDL_WINDOWEVENT;
+				new_event.window.windowID = screen ? SDL_GetWindowID(screen) : 0;
+				SDL_PushEvent(&new_event);
+			}
+#ifdef USE_EOS
+			EOS.SetSleepStatus(false);
+#endif
+			break;
+		}
+		case SDL_APP_WILLENTERBACKGROUND:
+		case SDL_APP_DIDENTERBACKGROUND:
+			printlog("barony going to sleep");
+#ifdef USE_EOS
+			EOS.SetSleepStatus(true);
+#endif
+			break;
+		case SDL_APP_LOWMEMORY:
+			printlog("barony low memory, dumping UI cache");
+			Text::dumpCache();
+			Image::dumpCache();
+			Font::dumpCache();
+			break;
+		}
+
+		return 0;
+		};
+	SDL_SetEventFilter(event_filter, nullptr);
+#endif
+
+#ifdef NINTENDO
+	SDL_GameControllerAddMappingsFromFile(GAME_CONTROLLER_DB_FILEPATH);
+#else
+	SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
+#endif
+
 	//printlog("initializing SDL_mixer. rate: %d format: %d channels: %d buffers: %d\n", audio_rate, audio_format, audio_channels, audio_buffers);
 	/*if( Mix_OpenAudio(audio_rate, audio_format, audio_channels, audio_buffers) ) {
 		SDL_Quit();
@@ -228,60 +342,10 @@ int initApp(char const * const title, int fullscreen)
 		return 2;
 	}*/
 
-#ifdef USE_FMOD
-	printlog("initializing FMOD...\n");
-	fmod_result = FMOD_System_Create(&fmod_system);
-	if (FMODErrorCheck())
-	{
-		printlog("Failed to create FMOD.\n");
-		no_sound = true;
-	}
-	if (!no_sound)
-	{
-		//FMOD_System_SetOutput(fmod_system, FMOD_OUTPUTTYPE_DSOUND);
-		fmod_result = FMOD_System_Init(fmod_system, fmod_maxchannels, FMOD_INIT_NORMAL | FMOD_INIT_3D_RIGHTHANDED, 0);
-		if (FMODErrorCheck())
-		{
-			printlog("Failed to initialize FMOD.\n");
-			no_sound = true;
-		}
-		if (!no_sound)
-		{
-			fmod_result = FMOD_System_CreateChannelGroup(fmod_system, NULL, &sound_group);
-			if (FMODErrorCheck())
-			{
-				printlog("Failed to create sound channel group.\n");
-				no_sound = true;
-			}
-			fmod_result = FMOD_System_CreateChannelGroup(fmod_system, NULL, &soundAmbient_group);
-			if ( FMODErrorCheck() )
-			{
-				printlog("Failed to create sound ambient channel group.\n");
-				no_sound = true;
-			}
-			fmod_result = FMOD_System_CreateChannelGroup(fmod_system, NULL, &soundEnvironment_group);
-			if ( FMODErrorCheck() )
-			{
-				printlog("Failed to create sound environment channel group.\n");
-				no_sound = true;
-			}
-			if (!no_sound)
-			{
-				fmod_result = FMOD_System_CreateChannelGroup(fmod_system, NULL, &music_group);
-				if (FMODErrorCheck())
-				{
-					printlog("Failed to create music channel group.\n");
-					no_sound = true;
-				}
-			}
-		}
-	}
-#elif defined USE_OPENAL
-	if (!no_sound)
-	{
-		initOPENAL();
-	}
+#ifndef EDITOR
+	initSoundEngine(); //Yes, this silently ignores the return value...(which is not good, but not important either)
 #endif
+
 	printlog("initializing SDL_net...\n");
 	if ( SDLNet_Init() < 0 )
 	{
@@ -298,7 +362,7 @@ int initApp(char const * const title, int fullscreen)
 	// hide cursor for game
 	if ( game )
 	{
-		SDL_ShowCursor(SDL_FALSE);
+		SDL_ShowCursor(EnableMouseCapture == SDL_FALSE ? SDL_ENABLE : SDL_DISABLE);
 	}
 	SDL_StopTextInput();
 
@@ -307,85 +371,40 @@ int initApp(char const * const title, int fullscreen)
 	{
 		return 3;
 	}
+
+#ifdef WINDOWS
+	printlog("[OpenGL]: Graphics Vendor: %s | Renderer: %s | Version: %s",
+		glGetString(GL_VENDOR),
+		glGetString(GL_RENDERER),
+		glGetString(GL_VERSION));
+#else
+	printlog("[OpenGL]: Graphics Vendor: %s | Renderer: %s | Version: %s",
+		GL_CHECK_ERR_RET(glGetString(GL_VENDOR)),
+        GL_CHECK_ERR_RET(glGetString(GL_RENDERER)),
+        GL_CHECK_ERR_RET(glGetString(GL_VERSION)));
+#endif
+
+	createCommonDrawResources();
+	main_framebuffer.init(xres, yres, GL_NEAREST, GL_NEAREST);
+    if (!hdrEnabled) {
+        main_framebuffer.bindForWriting();
+    }
+    GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
 	//SDL_EnableUNICODE(1);
 	//SDL_WM_SetCaption(title, 0);
 	//SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY,SDL_DEFAULT_REPEAT_INTERVAL);
 
-	// get pointers to opengl extensions
-#ifdef WINDOWS
-	bool noextensions = false;
-	if ( !softwaremode )
-	{
-		if ( (SDL_glGenBuffers = (PFNGLGENBUFFERSPROC)SDL_GL_GetProcAddress("glGenBuffers")) == NULL )
-		{
-			noextensions = true;
-		}
-		else if ( (SDL_glBindBuffer = (PFNGLBINDBUFFERPROC)SDL_GL_GetProcAddress("glBindBuffer")) == NULL )
-		{
-			noextensions = true;
-		}
-		else if ( (SDL_glBufferData = (PFNGLBUFFERDATAPROC)SDL_GL_GetProcAddress("glBufferData")) == NULL )
-		{
-			noextensions = true;
-		}
-		else if ( (SDL_glDeleteBuffers = (PFNGLDELETEBUFFERSPROC)SDL_GL_GetProcAddress("glDeleteBuffers")) == NULL )
-		{
-			noextensions = true;
-		}
-		else if ( (SDL_glGenVertexArrays = (PFNGLGENVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glGenVertexArrays")) == NULL )
-		{
-			noextensions = true;
-		}
-		else if ( (SDL_glBindVertexArray = (PFNGLBINDVERTEXARRAYPROC)SDL_GL_GetProcAddress("glBindVertexArray")) == NULL )
-		{
-			noextensions = true;
-		}
-		else if ( (SDL_glDeleteVertexArrays = (PFNGLDELETEVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glDeleteVertexArrays")) == NULL )
-		{
-			noextensions = true;
-		}
-/*
-// Unused
-		else if ( (SDL_glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)SDL_GL_GetProcAddress("glEnableVertexAttribArray")) == NULL )
-		{
-			noextensions = true;
-		}
-		else if ( (SDL_glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)SDL_GL_GetProcAddress("glVertexAttribPointer")) == NULL )
-		{
-			noextensions = true;
-		}
-*/
-	}
-	if (softwaremode)
-	{
-		printlog("notice: using software rendering.\n");
-	}
-	if ( noextensions )
-	{
-		printlog("warning: failed to load OpenGL extensions.\nYou may want to update your drivers or your graphics card, as performance will be reduced without these.\n");
-		disablevbos = true;
-	}
-#else
-	if (softwaremode)
-	{
-		printlog("notice: using software rendering.\n");
-	}
-#endif
-
 	// initialize buffers
-	zbuffer = (real_t*) malloc(sizeof(real_t) * xres * yres);
-	clickmap = (Entity**) malloc(sizeof(Entity*)*xres * yres);
 	texid = (GLuint*) malloc(MAXTEXTURES * sizeof(GLuint));
 	//vaoid = (GLuint *) malloc(MAXBUFFERS*sizeof(GLuint));
 	//vboid = (GLuint *) malloc(MAXBUFFERS*sizeof(GLuint));
 	allsurfaces = (SDL_Surface**) malloc(sizeof(SDL_Surface*)*MAXTEXTURES);
-	for ( c = 0; c < MAXTEXTURES; c++ )
+	for (int c = 0; c < MAXTEXTURES; ++c)
 	{
 		allsurfaces[c] = NULL;
 	}
-	glGenTextures(MAXTEXTURES, texid);
-	//SDL_glGenVertexArrays(MAXBUFFERS, vaoid);
-	//SDL_glGenBuffers(MAXBUFFERS, vboid);
+    GL_CHECK_ERR(glGenTextures(MAXTEXTURES, texid));
 
 	// load windows icon
 #ifndef _MSC_VER
@@ -405,16 +424,8 @@ int initApp(char const * const title, int fullscreen)
 #endif
 #endif
 
-	drawClearBuffers();
-	GO_SwapBuffers(screen);
-
 	// load resources
 	printlog("loading engine resources...\n");
-	if ((fancyWindow_bmp = loadImage("images/system/fancyWindow.png")) == NULL)
-	{
-		printlog("failed to load fancyWindow.png\n");
-		return 5;
-	}
 	if ((font8x8_bmp = loadImage("images/system/font8x8.png")) == NULL)
 	{
 		printlog("failed to load font8x8.png\n");
@@ -431,42 +442,30 @@ int initApp(char const * const title, int fullscreen)
 		return 5;
 	}
 
-	// cache language entries
-	bool cacheText = false;
-	if (cacheText) {
-		for (int c = 0; c < NUMLANGENTRIES; ++c) {
-			bool foundSpecialChar = false;
-			for (int i = 0; language[c][i] != '\0'; ++i) {
-				if (language[c][i] == '\\' || language[c][i] == '%') {
-					foundSpecialChar = true;
-				}
-			}
-			if (foundSpecialChar) {
-				continue;
-			}
-			ttfPrintText(ttf8, 0, -200, language[c]);
-			ttfPrintText(ttf12, 0, -200, language[c]);
-			ttfPrintText(ttf16, 0, -200, language[c]);
-		}
+	// init new ui engine
+	Frame::guiInit();
+
+	// create player classes
+	// TODO/FIXME: why isn't this in initGame? why is it in init.cpp?
+#ifndef EDITOR
+	for ( int c = 0; c < MAXPLAYERS; c++ )
+	{
+		players[c] = new Player(c, true);
 	}
+#endif
 
-	// print a loading message
-	drawClearBuffers();
-	int w, h;
-	getSizeOfText(ttf16, LOADSTR1, &w, &h);
-	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR1);
-
-	GO_SwapBuffers(screen);
+	createLoadingScreen(10);
+	doLoadingScreen();
 
 	// load sprites
 	printlog("loading sprites...\n");
-	fp = openDataFile("images/sprites.txt", "r");
+	fp = openDataFile("images/sprites.txt", "rb");
 	for ( numsprites = 0; !fp->eof(); numsprites++ )
 	{
 		while ( fp->getc() != '\n' ) if ( fp->eof() )
-			{
-				break;
-			}
+		{
+			break;
+		}
 	}
 	FileIO::close(fp);
 	if ( numsprites == 0 )
@@ -475,9 +474,10 @@ int initApp(char const * const title, int fullscreen)
 		return 6;
 	}
 	sprites = (SDL_Surface**) malloc(sizeof(SDL_Surface*)*numsprites);
-	fp = openDataFile("images/sprites.txt", "r");
-	for ( c = 0; !fp->eof(); c++ )
+	fp = openDataFile("images/sprites.txt", "rb");
+	for ( int c = 0; !fp->eof(); c++ )
 	{
+		char name[128] = { '\0' };
 		fp->gets2(name, 128);
 		sprites[c] = loadImage(name);
 		if ( sprites[c] == NULL )
@@ -493,73 +493,23 @@ int initApp(char const * const title, int fullscreen)
 	}
 	FileIO::close(fp);
 
-	// print a loading message
-	drawClearBuffers();
-	getSizeOfText(ttf16, LOADSTR2, &w, &h);
-	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR2);
-
-	GO_SwapBuffers(screen);
-
-	// load models
-	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
-	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
-	printlog("loading models from directory %s...\n", modelsDirectory.c_str());
-
-	fp = openDataFile(modelsDirectory.c_str(), "r");
-	for ( nummodels = 0; !fp->eof(); nummodels++ )
-	{
-		while ( fp->getc() != '\n' ) if ( fp->eof() )
-			{
-				break;
-			}
-	}
-	FileIO::close(fp);
-	if ( nummodels == 0 )
-	{
-		printlog("failed to identify any models in models.txt\n");
-		return 11;
-	}
-	models = (voxel_t**) malloc(sizeof(voxel_t*)*nummodels);
-	fp = openDataFile(modelsDirectory.c_str(), "r");
-	for ( c = 0; !fp->eof(); c++ )
-	{
-		fp->gets2(name, 128);
-		models[c] = loadVoxel(name);
-		if ( models[c] == NULL )
-		{
-			printlog("warning: failed to load '%s' listed at line %d in models.txt\n", name, c + 1);
-			if ( c == 0 )
-			{
-				printlog("model 0 cannot be NULL!\n");
-				FileIO::close(fp);
-				return 12;
-			}
-		}
-	}
-	if ( !softwaremode )
-	{
-		generatePolyModels(0, nummodels, false);
-	}
-	FileIO::close(fp);
-	// print a loading message
-	drawClearBuffers();
-	getSizeOfText(ttf16, LOADSTR3, &w, &h);
-	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR3);
-
-	GO_SwapBuffers(screen);
+	updateLoadingScreen(15);
+	doLoadingScreen();
 
 	// load tiles
 	std::string tilesDirectory = PHYSFS_getRealDir("images/tiles.txt");
 	tilesDirectory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
 	printlog("loading tiles from directory %s...\n", tilesDirectory.c_str());
-
-	fp = openDataFile(tilesDirectory.c_str(), "r");
+	fp = openDataFile(tilesDirectory.c_str(), "rb");
 	for ( numtiles = 0; !fp->eof(); numtiles++ )
 	{
-		while ( fp->getc() != '\n' ) if ( fp->eof() )
+		while ( fp->getc() != '\n' )
+		{
+			if ( fp->eof() )
 			{
 				break;
 			}
+		}
 	}
 	FileIO::close(fp);
 	if ( numtiles == 0 )
@@ -571,9 +521,10 @@ int initApp(char const * const title, int fullscreen)
 	animatedtiles = (bool*) malloc(sizeof(bool) * numtiles);
 	lavatiles = (bool*) malloc(sizeof(bool) * numtiles);
 	swimmingtiles = (bool*)malloc(sizeof(bool) * numtiles);
-	fp = openDataFile(tilesDirectory.c_str(), "r");
-	for ( c = 0; !fp->eof(); c++ )
+	fp = openDataFile(tilesDirectory.c_str(), "rb");
+	for ( int c = 0; !fp->eof(); c++ )
 	{
+		char name[128];
 		fp->gets2(name, 128);
 		tiles[c] = loadImage(name);
 		animatedtiles[c] = false;
@@ -581,7 +532,7 @@ int initApp(char const * const title, int fullscreen)
 		swimmingtiles[c] = false;
 		if ( tiles[c] != NULL )
 		{
-			for (x = 0; x < strlen(name); x++)
+			for (int x = 0; x < strlen(name); x++)
 			{
 				if ( name[x] >= '0' && name[x] <= '9' )
 				{
@@ -612,99 +563,125 @@ int initApp(char const * const title, int fullscreen)
 	}
 	FileIO::close(fp);
 
-	// print a loading message
-	drawClearBuffers();
-	getSizeOfText(ttf16, LOADSTR4, &w, &h);
-	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR4);
+	// asynchronous loading tasks
+	std::atomic_bool loading_done {false};
+	auto loading_task = std::async(std::launch::async, [&loading_done](){
+		File* fp;
 
-	GO_SwapBuffers(screen);
+		updateLoadingScreen(20);
 
-	// load sound effects
-	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
-	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
-#ifdef USE_FMOD
-	printlog("loading sounds...\n");
-	fp = openDataFile(soundsDirectory.c_str(), "r");
-	for ( numsounds = 0; !fp->eof(); ++numsounds )
-	{
-		while ( fp->getc() != '\n' )
+		// load models
+		std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+		modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+		printlog("loading models from directory %s...\n", modelsDirectory.c_str());
+
+		fp = openDataFile(modelsDirectory.c_str(), "rb");
+		for ( nummodels = 0; !fp->eof(); nummodels++ )
 		{
-			if ( fp->eof() )
+			while ( fp->getc() != '\n' ) if ( fp->eof() )
+				{
+					break;
+				}
+		}
+		FileIO::close(fp);
+		if ( nummodels == 0 )
+		{
+			printlog("failed to identify any models in models.txt\n");
+			loading_done = true;
+			return 11;
+		}
+		models = (voxel_t**) malloc(sizeof(voxel_t*)*nummodels);
+		fp = openDataFile(modelsDirectory.c_str(), "rb");
+		for ( int c = 0; !fp->eof(); c++ )
+		{
+			char name[128];
+			fp->gets2(name, 128);
+			models[c] = loadVoxel(name);
+			if ( models[c] == NULL )
 			{
-				break;
+				printlog("warning: failed to load '%s' listed at line %d in models.txt\n", name, c + 1);
+				if ( c == 0 )
+				{
+					printlog("model 0 cannot be NULL!\n");
+					FileIO::close(fp);
+					loading_done = true;
+					return 12;
+				}
+				else
+				{
+					printlog("copying model 0 for %d as a fallback\n", c);
+					auto model = (voxel_t*)malloc(sizeof(voxel_t));
+					model->sizex = models[0]->sizex;
+					model->sizey = models[0]->sizey;
+					model->sizez = models[0]->sizez;
+					const auto size = sizeof(Uint8) * model->sizex * model->sizey * model->sizez;
+					model->data = (Uint8*)malloc(size);
+					memcpy(model->data, models[0]->data, size);
+					memcpy(model->palette, models[0]->palette, sizeof(voxel_t::palette));
+					models[c] = model;
+				}
 			}
 		}
-	}
-	FileIO::close(fp);
-	if ( numsounds == 0 )
-	{
-		printlog("failed to identify any sounds in sounds.txt\n");
-		return 10;
-	}
-	sounds = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*numsounds);
-	fp = openDataFile(soundsDirectory.c_str(), "r");
-	for ( c = 0; !fp->eof(); ++c )
-	{
-		fp->gets2(name, 128);
-		//TODO: Might need to malloc the sounds[c]->sound
-		fmod_result = FMOD_System_CreateSound(fmod_system, name, (FMOD_MODE)(FMOD_SOFTWARE | FMOD_3D), NULL, &sounds[c]);
-		if (FMODErrorCheck())
-		{
-			printlog("warning: failed to load '%s' listed at line %d in sounds.txt\n", name, c + 1);
-		}
-		//TODO: set sound volume? Or otherwise handle sound volume.
-	}
-	FileIO::close(fp);
-	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
-	FMOD_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
-	FMOD_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
-	FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0);
-#elif defined USE_OPENAL // USE_FMOD
-	printlog("loading sounds...\n");
-	fp = openDataFile(soundsDirectory.c_str(), "r");
-	for ( numsounds = 0; !fp->eof(); numsounds++ )
-	{
-		while ( fp->getc() != '\n' ) if ( fp->eof() )
-			{
-				break;
-			}
-	}
-	FileIO::close(fp);
-	if ( numsounds == 0 )
-	{
-		printlog("failed to identify any sounds in sounds.txt\n");
-		return 10;
-	}
-	sounds = (OPENAL_BUFFER**) malloc(sizeof(OPENAL_BUFFER*)*numsounds);
-	for (c = 0, fp = openDataFile(soundsDirectory.c_str(), "r"); fp->gets2(name, 128); ++c)
-	{
-		//TODO: Might need to malloc the sounds[c]->sound
-		OPENAL_CreateSound(name, true, &sounds[c]);
-		//TODO: set sound volume? Or otherwise handle sound volume.
-	}
-	FileIO::close(fp);
-	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
-	OPENAL_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
-	OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
-	//FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0); // This on is hardcoded, I've been lazy here'
-#endif // defined USE_OPENAL
+		updateLoadingScreen(30);
+		generatePolyModels(0, nummodels, false);
+		FileIO::close(fp);
+		updateLoadingScreen(60);
 
-	// init new ui engine
 #ifndef EDITOR
-	gui = new Frame("root");
-	SDL_Rect guiRect;
-	guiRect.x = 0;
-	guiRect.y = 0;
-	guiRect.w = Frame::virtualScreenX;
-	guiRect.h = Frame::virtualScreenY;
-	gui->setSize(guiRect);
-	gui->setActualSize(guiRect);
-	gui->setHollow(true);
-
-	//createTestUI();
+		int soundStatus = loadSoundResources(60, 20); // start at 60% loading, progress to 80%
+		if ( 0 != soundStatus )
+		{
+		    loading_done = true;
+			return soundStatus;
+		}
 #endif
 
-	return 0;
+		updateLoadingScreen(80);
+        
+        loadLights();
+        updateLoadingScreen(81);
+        
+		loading_done = true;
+		return 0;
+	});
+	while (!loading_done)
+	{
+		doLoadingScreen();
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+
+	int result = loading_task.get();
+	if (result == 0)
+	{
+		generateVBOs(0, nummodels);
+        generateTileTextures();
+	}
+
+#ifdef EDITOR
+	// Don't destroy the loading screen in the game.
+	// It will be used later.
+	destroyLoadingScreen();
+#endif
+
+	//createTestUI();
+
+	return result;
+}
+
+std::map<int, std::string> Language::entries;
+std::map<int, std::string> Language::tmpEntries;
+std::string Language::languageCode = "";
+const char* Language::get(const int line)
+{
+	if ( line < 0 ) {
+		return "";
+	}
+	return entries[line].c_str();
+}
+void Language::reset()
+{
+	entries.clear();
+	tmpEntries.clear();
 }
 
 /*-------------------------------------------------------------------------------
@@ -715,7 +692,7 @@ int initApp(char const * const title, int fullscreen)
 
 -------------------------------------------------------------------------------*/
 
-int loadLanguage(char const * const lang)
+int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 {
 	char filename[128] = { 0 };
 	File* fp;
@@ -730,7 +707,7 @@ int loadLanguage(char const * const lang)
 	// compose filename
 	snprintf(filename, 127, "lang/%s.txt", lang);
 	std::string langFilepath;
-	if ( PHYSFS_isInit() && PHYSFS_getRealDir(filename) != NULL )
+	if ( PHYSFS_isInit() && PHYSFS_getRealDir(filename) != NULL && !forceLoadBaseDirectory )
 	{
 		std::string langRealDir = PHYSFS_getRealDir(filename);
 		langFilepath = langRealDir + PHYSFS_getDirSeparator() + filename;
@@ -749,11 +726,11 @@ int loadLanguage(char const * const lang)
 	}
 
 	// check if we've loaded this language already
-	if ( !strcmp(languageCode, lang) )
+	/*if ( !strcmp(languageCode, lang) )
 	{
 		printlog("info: language '%s' already loaded", lang);
 		return 1;
-	}
+	}*/
 
 	// init SDL_TTF
 	if ( !TTF_WasInit() )
@@ -834,25 +811,19 @@ int loadLanguage(char const * const lang)
 	TTF_SetFontHinting(ttf16, TTF_HINTING_MONO);
 
 	// open language file
-	if ( (fp = openDataFile(langFilepath.c_str(), "r")) == NULL )
+	if ( (fp = openDataFile(langFilepath.c_str(), "rb")) == NULL )
 	{
 		printlog("error: unable to load language file: '%s'", langFilepath.c_str());
 		return 1;
 	}
 
-	// free currently loaded language if any
-	freeLanguages();
-
 	// store the new language code
-	strcpy(languageCode, lang);
+	languageCode = lang;
 
-	// allocate new language strings
-	language = (char**) calloc(NUMLANGENTRIES, sizeof(char*));
-
-	// Allocate an emptry string for each possible language entry
-	for (c = 0; c < NUMLANGENTRIES; c++)
+	tmpEntries.clear();
+	if ( forceLoadBaseDirectory )
 	{
-		language[c] = (char*)calloc(1, sizeof(char));
+		entries.clear();
 	}
 
 	// read file
@@ -861,7 +832,7 @@ int loadLanguage(char const * const lang)
 	{
 		//printlog( "loading line %d...\n", line);
 		char data[1024];
-		int entry = NUMLANGENTRIES;
+		int entry = 0;
 
 		// read line from file
 		int i;
@@ -911,48 +882,25 @@ int loadLanguage(char const * const lang)
 			printlog( "warning: syntax error in '%s':%d\n bad syntax!\n", langFilepath.c_str(), line);
 			continue;
 		}
-		else if ( entry >= NUMLANGENTRIES || entry < 0 )
+		else if ( entry < 0 )
 		{
 			printlog( "warning: syntax error in '%s':%d\n invalid language entry!\n", langFilepath.c_str(), line);
 			continue;
 		}
-		//printlog( "loading entry %d...\n", entry);
 		char entryText[16] = { 0 };
 		snprintf(entryText, 15, "%d", entry);
-		if ( language[entry][0] )
+		if ( entries.find(entry) != entries.end() )
 		{
-			printlog( "warning: duplicate entry %d in '%s':%d\n", entry, langFilepath.c_str(), line);
-			free(language[entry]);
+			printlog("warning: duplicate entry %d in '%s':%d\n", entry, langFilepath.c_str(), line);
 		}
-		language[entry] = (char*) calloc(strlen((char*)(data + strlen(entryText) + 1)) + 1, sizeof(char));
-		strcpy(language[entry], (char*)(data + strlen(entryText) + 1));
+		entries[entry] = (char*)(data + strlen(entryText) + 1);
+		//printlog("loading entry %d...text: \"%s\"\n", entry, Language::get(entry));
 	}
 
 	// close file
 	FileIO::close(fp);
 	printlog( "successfully loaded language file '%s'\n", langFilepath.c_str());
 
-	// update item internal language entries.
-	for ( int c = 0; c < NUMITEMS; ++c )
-	{
-		if ( c > SPELLBOOK_DETECT_FOOD )
-		{
-			int newItems = c - SPELLBOOK_DETECT_FOOD - 1;
-			items[c].name_identified = language[3500 + newItems * 2];
-			items[c].name_unidentified = language[3501 + newItems * 2];
-		}
-		else if ( c > ARTIFACT_BOW )
-		{
-			int newItems = c - ARTIFACT_BOW - 1;
-			items[c].name_identified = language[2200 + newItems * 2];
-			items[c].name_unidentified = language[2201 + newItems * 2];
-		}
-		else
-		{
-			items[c].name_identified = language[1545 + c * 2];
-			items[c].name_unidentified = language[1546 + c * 2];
-		}
-	}
 	initMenuOptions();
 	return 0;
 }
@@ -965,1067 +913,17 @@ int loadLanguage(char const * const lang)
 
 -------------------------------------------------------------------------------*/
 
-int reloadLanguage()
+int Language::reloadLanguage()
 {
-	char lang[32];
-
-	strcpy(lang, languageCode);
-	strcpy(languageCode, "");
-	return loadLanguage(lang);
-}
-
-/*-------------------------------------------------------------------------------
- *
-       freeLanguages
-
-	free languages string resources
-
---------------------------------------------------------------------------------*/
-
-void freeLanguages()
-{
-	int c;
-
-	if ( language )
+	if ( PHYSFS_isInit() && PHYSFS_getRealDir("lang/en.txt") != NULL )
 	{
-		for ( c = 0; c < NUMLANGENTRIES; c++ )
+		std::string langRealDir = PHYSFS_getRealDir("lang/en.txt");
+		if ( langRealDir != "./" )
 		{
-			char* entry = language[c];
-			if ( entry )
-			{
-				free(entry);
-			}
-		}
-		free(language);
-	}
-}
-
-/*-------------------------------------------------------------------------------
-
-	generatePolyModels
-
-	processes voxel models and turns them into polygon-based models (surface
-	optimized)
-
--------------------------------------------------------------------------------*/
-
-void generatePolyModels(int start, int end, bool forceCacheRebuild)
-{
-	Sint32 x, y, z;
-	Sint32 c, i;
-	Uint32 index, indexdown[3];
-	Uint8 newcolor, oldcolor;
-	bool buildingquad;
-	polyquad_t* quad1, *quad2;
-	Uint32 numquads;
-	list_t quads;
-	File *model_cache;
-	bool generateAll = start == 0 && end == nummodels;
-
-	quads.first = NULL;
-	quads.last = NULL;
-
-	printlog("generating poly models...\n");
-	if ( generateAll )
-	{
-		polymodels = (polymodel_t*) malloc(sizeof(polymodel_t) * nummodels);
-		if ( useModelCache )
-		{
-			model_cache = openDataFile("models.cache", "rb");
-			if ( model_cache ) //TODO: Needs updating to the new File I/O stuff.
-			{
-				char polymodelsVersionStr[7] = "v0.0.0";
-				char modelsCacheHeader[7] = "000000";
-				model_cache->read(&modelsCacheHeader, sizeof(char), strlen("BARONY"));
-
-				if ( !strcmp(modelsCacheHeader, "BARONY") )
-				{
-					// we're using the new polymodels file.
-					model_cache->read(&polymodelsVersionStr, sizeof(char), strlen(VERSION));
-					printlog("[MODEL CACHE]: Using updated version format %s.", polymodelsVersionStr);
-					if ( strncmp(polymodelsVersionStr, VERSION, strlen(VERSION)) )
-					{
-						// different version.
-						forceCacheRebuild = true;
-						printlog("[MODEL CACHE]: Detected outdated version number %s - current is %s. Upgrading cache...", polymodelsVersionStr, VERSION);
-					}
-				}
-				else
-				{
-					printlog("[MODEL CACHE]: Detected legacy cache without embedded version data, upgrading cache to %s...", VERSION);
-					model_cache->rewind();
-					forceCacheRebuild = true; // upgrade from legacy cache
-				}
-				if ( !forceCacheRebuild )
-				{
-					for (size_t model_index = 0; model_index < nummodels; model_index++) {
-						polymodel_t *cur = &polymodels[model_index];
-						model_cache->read(&cur->numfaces, sizeof(cur->numfaces), 1);
-						cur->faces = (polytriangle_t *) calloc(sizeof(polytriangle_t), cur->numfaces);
-						model_cache->read(polymodels[model_index].faces, sizeof(polytriangle_t), cur->numfaces);
-					}
-					FileIO::close(model_cache);
-					return generateVBOs(start, end);
-				}
-				else
-				{
-					FileIO::close(model_cache);
-				}
-			}
+			loadLanguage("en", true); // force load the base directory first, then modded paths later.
 		}
 	}
-
-	for ( c = start; c < end; ++c )
-	{
-		char loadText[128];
-		snprintf(loadText, 127, language[745], c, nummodels);
-
-#ifndef NINTENDO
-		// print a loading message
-		if ( start == 0 && end == nummodels )
-		{
-			if ( c % 50 == 0 )
-			{
-				drawClearBuffers();
-				int w, h;
-				getSizeOfText(ttf16, loadText, &w, &h);
-				ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, loadText);
-
-				GO_SwapBuffers(screen);
-			}
-		}
-#endif
-
-		numquads = 0;
-		polymodels[c].numfaces = 0;
-		voxel_t* model = models[c];
-		if ( !model )
-		{
-			continue;
-		}
-		indexdown[0] = model->sizez * model->sizey;
-		indexdown[1] = model->sizez;
-		indexdown[2] = 1;
-
-		// find front faces
-		for ( x = models[c]->sizex - 1; x >= 0; x-- )
-		{
-			for ( z = 0; z < models[c]->sizez; z++ )
-			{
-				oldcolor = 255;
-				buildingquad = false;
-				for ( y = 0; y < models[c]->sizey; y++ )
-				{
-					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
-					newcolor = models[c]->data[index];
-					if ( buildingquad == true )
-					{
-						bool doit = false;
-						if ( newcolor != oldcolor )
-						{
-							doit = true;
-						}
-						else if ( x < models[c]->sizex - 1 )
-							if ( models[c]->data[index + indexdown[0]] >= 0 && models[c]->data[index + indexdown[0]] < 255 )
-							{
-								doit = true;
-							}
-						if ( doit )
-						{
-							// add the last two vertices to the previous quad
-							buildingquad = false;
-
-							node_t* currentNode = quads.last;
-							quad1 = (polyquad_t*)currentNode->element;
-							quad1->vertex[1].x = x - model->sizex / 2.f + 1;
-							quad1->vertex[1].y = y - model->sizey / 2.f;
-							quad1->vertex[1].z = z - model->sizez / 2.f - 1;
-							quad1->vertex[2].x = x - model->sizex / 2.f + 1;
-							quad1->vertex[2].y = y - model->sizey / 2.f;
-							quad1->vertex[2].z = z - model->sizez / 2.f;
-
-							// optimize quad
-							node_t* node;
-							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-							{
-								quad2 = (polyquad_t*)node->element;
-								if ( quad1->side == quad2->side )
-								{
-									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-									{
-										if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z )
-										{
-											if ( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z )
-											{
-												quad2->vertex[2].z++;
-												quad2->vertex[3].z++;
-												list_RemoveNode(currentNode);
-												numquads--;
-												polymodels[c].numfaces -= 2;
-												break;
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-					if ( newcolor != oldcolor || !buildingquad )
-					{
-						if ( newcolor != 255 )
-						{
-							bool doit = false;
-							if ( x == models[c]->sizex - 1 )
-							{
-								doit = true;
-							}
-							else if ( models[c]->data[index + indexdown[0]] == 255 )
-							{
-								doit = true;
-							}
-							if ( doit )
-							{
-								// start building a new quad
-								buildingquad = true;
-								numquads++;
-								polymodels[c].numfaces += 2;
-
-								quad1 = (polyquad_t*) calloc(1, sizeof(polyquad_t));
-								quad1->side = 0;
-								quad1->vertex[0].x = x - model->sizex / 2.f + 1;
-								quad1->vertex[0].y = y - model->sizey / 2.f;
-								quad1->vertex[0].z = z - model->sizez / 2.f - 1;
-								quad1->vertex[3].x = x - model->sizex / 2.f + 1;
-								quad1->vertex[3].y = y - model->sizey / 2.f;
-								quad1->vertex[3].z = z - model->sizez / 2.f;
-								quad1->r = models[c]->palette[models[c]->data[index]][0];
-								quad1->g = models[c]->palette[models[c]->data[index]][1];
-								quad1->b = models[c]->palette[models[c]->data[index]][2];
-
-								node_t* newNode = list_AddNodeLast(&quads);
-								newNode->element = quad1;
-								newNode->deconstructor = &defaultDeconstructor;
-								newNode->size = sizeof(polyquad_t);
-							}
-						}
-					}
-					oldcolor = newcolor;
-				}
-				if ( buildingquad == true )
-				{
-					// add the last two vertices to the previous quad
-					buildingquad = false;
-
-					node_t* currentNode = quads.last;
-					quad1 = (polyquad_t*)currentNode->element;
-					quad1->vertex[1].x = x - model->sizex / 2.f + 1;
-					quad1->vertex[1].y = y - model->sizey / 2.f;
-					quad1->vertex[1].z = z - model->sizez / 2.f - 1;
-					quad1->vertex[2].x = x - model->sizex / 2.f + 1;
-					quad1->vertex[2].y = y - model->sizey / 2.f;
-					quad1->vertex[2].z = z - model->sizez / 2.f;
-
-					// optimize quad
-					node_t* node;
-					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-					{
-						quad2 = (polyquad_t*)node->element;
-						if ( quad1->side == quad2->side )
-						{
-							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-							{
-								if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z )
-								{
-									if ( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z )
-									{
-										quad2->vertex[2].z++;
-										quad2->vertex[3].z++;
-										list_RemoveNode(currentNode);
-										numquads--;
-										polymodels[c].numfaces -= 2;
-										break;
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-
-		// find back faces
-		for ( x = 0; x < models[c]->sizex; x++ )
-		{
-			for ( z = 0; z < models[c]->sizez; z++ )
-			{
-				oldcolor = 255;
-				buildingquad = false;
-				for ( y = 0; y < models[c]->sizey; y++ )
-				{
-					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
-					newcolor = models[c]->data[index];
-					if ( buildingquad == true )
-					{
-						bool doit = false;
-						if ( newcolor != oldcolor )
-						{
-							doit = true;
-						}
-						else if ( x > 0 )
-							if ( models[c]->data[index - indexdown[0]] >= 0 && models[c]->data[index - indexdown[0]] < 255 )
-							{
-								doit = true;
-							}
-						if ( doit )
-						{
-							// add the last two vertices to the previous quad
-							buildingquad = false;
-
-							node_t* currentNode = quads.last;
-							quad1 = (polyquad_t*)currentNode->element;
-							quad1->vertex[1].x = x - model->sizex / 2.f;
-							quad1->vertex[1].y = y - model->sizey / 2.f;
-							quad1->vertex[1].z = z - model->sizez / 2.f;
-							quad1->vertex[2].x = x - model->sizex / 2.f;
-							quad1->vertex[2].y = y - model->sizey / 2.f;
-							quad1->vertex[2].z = z - model->sizez / 2.f - 1;
-
-							// optimize quad
-							node_t* node;
-							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-							{
-								quad2 = (polyquad_t*)node->element;
-								if ( quad1->side == quad2->side )
-								{
-									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-									{
-										if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z )
-										{
-											if ( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z )
-											{
-												quad2->vertex[0].z++;
-												quad2->vertex[1].z++;
-												list_RemoveNode(currentNode);
-												numquads--;
-												polymodels[c].numfaces -= 2;
-												break;
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-					if ( newcolor != oldcolor || !buildingquad )
-					{
-						if ( newcolor != 255 )
-						{
-							bool doit = false;
-							if ( x == 0 )
-							{
-								doit = true;
-							}
-							else if ( models[c]->data[index - indexdown[0]] == 255 )
-							{
-								doit = true;
-							}
-							if ( doit )
-							{
-								// start building a new quad
-								buildingquad = true;
-								numquads++;
-								polymodels[c].numfaces += 2;
-
-								quad1 = (polyquad_t*) calloc(1, sizeof(polyquad_t));
-								quad1->side = 1;
-								quad1->vertex[0].x = x - model->sizex / 2.f;
-								quad1->vertex[0].y = y - model->sizey / 2.f;
-								quad1->vertex[0].z = z - model->sizez / 2.f;
-								quad1->vertex[3].x = x - model->sizex / 2.f;
-								quad1->vertex[3].y = y - model->sizey / 2.f;
-								quad1->vertex[3].z = z - model->sizez / 2.f - 1;
-								quad1->r = models[c]->palette[models[c]->data[index]][0];
-								quad1->g = models[c]->palette[models[c]->data[index]][1];
-								quad1->b = models[c]->palette[models[c]->data[index]][2];
-
-								node_t* newNode = list_AddNodeLast(&quads);
-								newNode->element = quad1;
-								newNode->deconstructor = &defaultDeconstructor;
-								newNode->size = sizeof(polyquad_t);
-							}
-						}
-					}
-					oldcolor = newcolor;
-				}
-				if ( buildingquad == true )
-				{
-					// add the last two vertices to the previous quad
-					buildingquad = false;
-
-					node_t* currentNode = quads.last;
-					quad1 = (polyquad_t*)currentNode->element;
-					quad1->vertex[1].x = x - model->sizex / 2.f;
-					quad1->vertex[1].y = y - model->sizey / 2.f;
-					quad1->vertex[1].z = z - model->sizez / 2.f;
-					quad1->vertex[2].x = x - model->sizex / 2.f;
-					quad1->vertex[2].y = y - model->sizey / 2.f;
-					quad1->vertex[2].z = z - model->sizez / 2.f - 1;
-
-					// optimize quad
-					node_t* node;
-					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-					{
-						quad2 = (polyquad_t*)node->element;
-						if ( quad1->side == quad2->side )
-						{
-							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-							{
-								if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z )
-								{
-									if ( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z )
-									{
-										quad2->vertex[0].z++;
-										quad2->vertex[1].z++;
-										list_RemoveNode(currentNode);
-										numquads--;
-										polymodels[c].numfaces -= 2;
-										break;
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-
-		// find right faces
-		for ( y = models[c]->sizey - 1; y >= 0; y-- )
-		{
-			for ( z = 0; z < models[c]->sizez; z++ )
-			{
-				oldcolor = 255;
-				buildingquad = false;
-				for ( x = 0; x < models[c]->sizex; x++ )
-				{
-					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
-					newcolor = models[c]->data[index];
-					if ( buildingquad == true )
-					{
-						bool doit = false;
-						if ( newcolor != oldcolor )
-						{
-							doit = true;
-						}
-						else if ( y < models[c]->sizey - 1 )
-							if ( models[c]->data[index + indexdown[1]] >= 0 && models[c]->data[index + indexdown[1]] < 255 )
-							{
-								doit = true;
-							}
-						if ( doit )
-						{
-							// add the last two vertices to the previous quad
-							buildingquad = false;
-
-							node_t* currentNode = quads.last;
-							quad1 = (polyquad_t*) currentNode->element;
-							quad1->vertex[1].x = x - model->sizex / 2.f;
-							quad1->vertex[1].y = y - model->sizey / 2.f + 1;
-							quad1->vertex[1].z = z - model->sizez / 2.f;
-							quad1->vertex[2].x = x - model->sizex / 2.f;
-							quad1->vertex[2].y = y - model->sizey / 2.f + 1;
-							quad1->vertex[2].z = z - model->sizez / 2.f - 1;
-
-							// optimize quad
-							node_t* node;
-							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-							{
-								quad2 = (polyquad_t*)node->element;
-								if ( quad1->side == quad2->side )
-								{
-									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-									{
-										if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z )
-										{
-											if ( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z )
-											{
-												quad2->vertex[0].z++;
-												quad2->vertex[1].z++;
-												list_RemoveNode(currentNode);
-												numquads--;
-												polymodels[c].numfaces -= 2;
-												break;
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-					if ( newcolor != oldcolor || !buildingquad )
-					{
-						if ( newcolor != 255 )
-						{
-							bool doit = false;
-							if ( y == models[c]->sizey - 1 )
-							{
-								doit = true;
-							}
-							else if ( models[c]->data[index + indexdown[1]] == 255 )
-							{
-								doit = true;
-							}
-							if ( doit )
-							{
-								// start building a new quad
-								buildingquad = true;
-								numquads++;
-								polymodels[c].numfaces += 2;
-
-								quad1 = (polyquad_t*) calloc(1, sizeof(polyquad_t));
-								quad1->side = 2;
-								quad1->vertex[0].x = x - model->sizex / 2.f;
-								quad1->vertex[0].y = y - model->sizey / 2.f + 1;
-								quad1->vertex[0].z = z - model->sizez / 2.f;
-								quad1->vertex[3].x = x - model->sizex / 2.f;
-								quad1->vertex[3].y = y - model->sizey / 2.f + 1;
-								quad1->vertex[3].z = z - model->sizez / 2.f - 1;
-								quad1->r = models[c]->palette[models[c]->data[index]][0];
-								quad1->g = models[c]->palette[models[c]->data[index]][1];
-								quad1->b = models[c]->palette[models[c]->data[index]][2];
-
-								node_t* newNode = list_AddNodeLast(&quads);
-								newNode->element = quad1;
-								newNode->deconstructor = &defaultDeconstructor;
-								newNode->size = sizeof(polyquad_t);
-							}
-						}
-					}
-					oldcolor = newcolor;
-				}
-				if ( buildingquad == true )
-				{
-					// add the last two vertices to the previous quad
-					buildingquad = false;
-					node_t* currentNode = quads.last;
-					quad1 = (polyquad_t*) currentNode->element;
-					quad1->vertex[1].x = x - model->sizex / 2.f;
-					quad1->vertex[1].y = y - model->sizey / 2.f + 1;
-					quad1->vertex[1].z = z - model->sizez / 2.f;
-					quad1->vertex[2].x = x - model->sizex / 2.f;
-					quad1->vertex[2].y = y - model->sizey / 2.f + 1;
-					quad1->vertex[2].z = z - model->sizez / 2.f - 1;
-
-					// optimize quad
-					node_t* node;
-					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-					{
-						quad2 = (polyquad_t*)node->element;
-						if ( quad1->side == quad2->side )
-						{
-							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-							{
-								if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z )
-								{
-									if ( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z )
-									{
-										quad2->vertex[0].z++;
-										quad2->vertex[1].z++;
-										list_RemoveNode(currentNode);
-										numquads--;
-										polymodels[c].numfaces -= 2;
-										break;
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-
-		// find left faces
-		for ( y = 0; y < models[c]->sizey; y++ )
-		{
-			for ( z = 0; z < models[c]->sizez; z++ )
-			{
-				oldcolor = 255;
-				buildingquad = false;
-				for ( x = 0; x < models[c]->sizex; x++ )
-				{
-					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
-					newcolor = models[c]->data[index];
-					if ( buildingquad == true )
-					{
-						bool doit = false;
-						if ( newcolor != oldcolor )
-						{
-							doit = true;
-						}
-						else if ( y > 0 )
-							if ( models[c]->data[index - indexdown[1]] >= 0 && models[c]->data[index - indexdown[1]] < 255 )
-							{
-								doit = true;
-							}
-						if ( doit )
-						{
-							// add the last two vertices to the previous quad
-							buildingquad = false;
-
-							node_t* currentNode = quads.last;
-							quad1 = (polyquad_t*) currentNode->element;
-							quad1->vertex[1].x = x - model->sizex / 2.f;
-							quad1->vertex[1].y = y - model->sizey / 2.f;
-							quad1->vertex[1].z = z - model->sizez / 2.f - 1;
-							quad1->vertex[2].x = x - model->sizex / 2.f;
-							quad1->vertex[2].y = y - model->sizey / 2.f;
-							quad1->vertex[2].z = z - model->sizez / 2.f;
-
-							// optimize quad
-							node_t* node;
-							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-							{
-								quad2 = (polyquad_t*)node->element;
-								if ( quad1->side == quad2->side )
-								{
-									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-									{
-										if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z )
-										{
-											if ( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z )
-											{
-												quad2->vertex[2].z++;
-												quad2->vertex[3].z++;
-												list_RemoveNode(currentNode);
-												numquads--;
-												polymodels[c].numfaces -= 2;
-												break;
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-					if ( newcolor != oldcolor || !buildingquad )
-					{
-						if ( newcolor != 255 )
-						{
-							bool doit = false;
-							if ( y == 0 )
-							{
-								doit = true;
-							}
-							else if ( models[c]->data[index - indexdown[1]] == 255 )
-							{
-								doit = true;
-							}
-							if ( doit )
-							{
-								// start building a new quad
-								buildingquad = true;
-								numquads++;
-								polymodels[c].numfaces += 2;
-
-								quad1 = (polyquad_t*) calloc(1, sizeof(polyquad_t));
-								quad1->side = 3;
-								quad1->vertex[0].x = x - model->sizex / 2.f;
-								quad1->vertex[0].y = y - model->sizey / 2.f;
-								quad1->vertex[0].z = z - model->sizez / 2.f - 1;
-								quad1->vertex[3].x = x - model->sizex / 2.f;
-								quad1->vertex[3].y = y - model->sizey / 2.f;
-								quad1->vertex[3].z = z - model->sizez / 2.f;
-								quad1->r = models[c]->palette[models[c]->data[index]][0];
-								quad1->g = models[c]->palette[models[c]->data[index]][1];
-								quad1->b = models[c]->palette[models[c]->data[index]][2];
-
-								node_t* newNode = list_AddNodeLast(&quads);
-								newNode->element = quad1;
-								newNode->deconstructor = &defaultDeconstructor;
-								newNode->size = sizeof(polyquad_t);
-							}
-						}
-					}
-					oldcolor = newcolor;
-				}
-				if ( buildingquad == true )
-				{
-					// add the last two vertices to the previous quad
-					buildingquad = false;
-					node_t* currentNode = quads.last;
-					quad1 = (polyquad_t*) currentNode->element;
-					quad1->vertex[1].x = x - model->sizex / 2.f;
-					quad1->vertex[1].y = y - model->sizey / 2.f;
-					quad1->vertex[1].z = z - model->sizez / 2.f - 1;
-					quad1->vertex[2].x = x - model->sizex / 2.f;
-					quad1->vertex[2].y = y - model->sizey / 2.f;
-					quad1->vertex[2].z = z - model->sizez / 2.f;
-
-					// optimize quad
-					node_t* node;
-					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-					{
-						quad2 = (polyquad_t*)node->element;
-						if ( quad1->side == quad2->side )
-						{
-							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-							{
-								if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z )
-								{
-									if ( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z )
-									{
-										quad2->vertex[2].z++;
-										quad2->vertex[3].z++;
-										list_RemoveNode(currentNode);
-										numquads--;
-										polymodels[c].numfaces -= 2;
-										break;
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-
-		// find bottom faces
-		for ( z = models[c]->sizez - 1; z >= 0; z-- )
-		{
-			for ( y = 0; y < models[c]->sizey; y++ )
-			{
-				oldcolor = 255;
-				buildingquad = false;
-				for ( x = 0; x < models[c]->sizex; x++ )
-				{
-					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
-					newcolor = models[c]->data[index];
-					if ( buildingquad == true )
-					{
-						bool doit = false;
-						if ( newcolor != oldcolor )
-						{
-							doit = true;
-						}
-						else if ( z < models[c]->sizez - 1 )
-							if ( models[c]->data[index + indexdown[2]] >= 0 && models[c]->data[index + indexdown[2]] < 255 )
-							{
-								doit = true;
-							}
-						if ( doit )
-						{
-							// add the last two vertices to the previous quad
-							buildingquad = false;
-
-							node_t* currentNode = quads.last;
-							quad1 = (polyquad_t*) currentNode->element;
-							quad1->vertex[1].x = x - model->sizex / 2.f;
-							quad1->vertex[1].y = y - model->sizey / 2.f;
-							quad1->vertex[1].z = z - model->sizez / 2.f;
-							quad1->vertex[2].x = x - model->sizex / 2.f;
-							quad1->vertex[2].y = y - model->sizey / 2.f + 1;
-							quad1->vertex[2].z = z - model->sizez / 2.f;
-
-							// optimize quad
-							node_t* node;
-							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-							{
-								quad2 = (polyquad_t*)node->element;
-								if ( quad1->side == quad2->side )
-								{
-									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-									{
-										if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z )
-										{
-											if ( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z )
-											{
-												quad2->vertex[2].y++;
-												quad2->vertex[3].y++;
-												list_RemoveNode(currentNode);
-												numquads--;
-												polymodels[c].numfaces -= 2;
-												break;
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-					if ( newcolor != oldcolor || !buildingquad )
-					{
-						if ( newcolor != 255 )
-						{
-							bool doit = false;
-							if ( z == models[c]->sizez - 1 )
-							{
-								doit = true;
-							}
-							else if ( models[c]->data[index + indexdown[2]] == 255 )
-							{
-								doit = true;
-							}
-							if ( doit )
-							{
-								// start building a new quad
-								buildingquad = true;
-								numquads++;
-								polymodels[c].numfaces += 2;
-
-								quad1 = (polyquad_t*) calloc(1, sizeof(polyquad_t));
-								quad1->side = 4;
-								quad1->vertex[0].x = x - model->sizex / 2.f;
-								quad1->vertex[0].y = y - model->sizey / 2.f;
-								quad1->vertex[0].z = z - model->sizez / 2.f;
-								quad1->vertex[3].x = x - model->sizex / 2.f;
-								quad1->vertex[3].y = y - model->sizey / 2.f + 1;
-								quad1->vertex[3].z = z - model->sizez / 2.f;
-								quad1->r = models[c]->palette[models[c]->data[index]][0];
-								quad1->g = models[c]->palette[models[c]->data[index]][1];
-								quad1->b = models[c]->palette[models[c]->data[index]][2];
-
-								node_t* newNode = list_AddNodeLast(&quads);
-								newNode->element = quad1;
-								newNode->deconstructor = &defaultDeconstructor;
-								newNode->size = sizeof(polyquad_t);
-							}
-						}
-					}
-					oldcolor = newcolor;
-				}
-				if ( buildingquad == true )
-				{
-					// add the last two vertices to the previous quad
-					buildingquad = false;
-
-					node_t* currentNode = quads.last;
-					quad1 = (polyquad_t*) currentNode->element;
-					quad1->vertex[1].x = x - model->sizex / 2.f;
-					quad1->vertex[1].y = y - model->sizey / 2.f;
-					quad1->vertex[1].z = z - model->sizez / 2.f;
-					quad1->vertex[2].x = x - model->sizex / 2.f;
-					quad1->vertex[2].y = y - model->sizey / 2.f + 1;
-					quad1->vertex[2].z = z - model->sizez / 2.f;
-
-					// optimize quad
-					node_t* node;
-					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-					{
-						quad2 = (polyquad_t*)node->element;
-						if ( quad1->side == quad2->side )
-						{
-							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-							{
-								if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z )
-								{
-									if ( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z )
-									{
-										quad2->vertex[2].y++;
-										quad2->vertex[3].y++;
-										list_RemoveNode(currentNode);
-										numquads--;
-										polymodels[c].numfaces -= 2;
-										break;
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-
-		// find top faces
-		for ( z = 0; z < models[c]->sizez; z++ )
-		{
-			for ( y = 0; y < models[c]->sizey; y++ )
-			{
-				oldcolor = 255;
-				buildingquad = false;
-				for ( x = 0; x < models[c]->sizex; x++ )
-				{
-					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
-					newcolor = models[c]->data[index];
-					if ( buildingquad == true )
-					{
-						bool doit = false;
-						if ( newcolor != oldcolor )
-						{
-							doit = true;
-						}
-						else if ( z > 0 )
-							if ( models[c]->data[index - indexdown[2]] >= 0 && models[c]->data[index - indexdown[2]] < 255 )
-							{
-								doit = true;
-							}
-						if ( doit )
-						{
-							// add the last two vertices to the previous quad
-							buildingquad = false;
-
-							node_t* currentNode = quads.last;
-							quad1 = (polyquad_t*) currentNode->element;
-							quad1->vertex[1].x = x - model->sizex / 2.f;
-							quad1->vertex[1].y = y - model->sizey / 2.f + 1;
-							quad1->vertex[1].z = z - model->sizez / 2.f - 1;
-							quad1->vertex[2].x = x - model->sizex / 2.f;
-							quad1->vertex[2].y = y - model->sizey / 2.f;
-							quad1->vertex[2].z = z - model->sizez / 2.f - 1;
-
-							// optimize quad
-							node_t* node;
-							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-							{
-								quad2 = (polyquad_t*)node->element;
-								if ( quad1->side == quad2->side )
-								{
-									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-									{
-										if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z )
-										{
-											if ( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z )
-											{
-												quad2->vertex[0].y++;
-												quad2->vertex[1].y++;
-												list_RemoveNode(currentNode);
-												numquads--;
-												polymodels[c].numfaces -= 2;
-												break;
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-					if ( newcolor != oldcolor || !buildingquad )
-					{
-						if ( newcolor != 255 )
-						{
-							bool doit = false;
-							if ( z == 0 )
-							{
-								doit = true;
-							}
-							else if ( models[c]->data[index - indexdown[2]] == 255 )
-							{
-								doit = true;
-							}
-							if ( doit )
-							{
-								// start building a new quad
-								buildingquad = true;
-								numquads++;
-								polymodels[c].numfaces += 2;
-
-								quad1 = (polyquad_t*) calloc(1, sizeof(polyquad_t));
-								quad1->side = 5;
-								quad1->vertex[0].x = x - model->sizex / 2.f;
-								quad1->vertex[0].y = y - model->sizey / 2.f + 1;
-								quad1->vertex[0].z = z - model->sizez / 2.f - 1;
-								quad1->vertex[3].x = x - model->sizex / 2.f;
-								quad1->vertex[3].y = y - model->sizey / 2.f;
-								quad1->vertex[3].z = z - model->sizez / 2.f - 1;
-								quad1->r = models[c]->palette[models[c]->data[index]][0];
-								quad1->g = models[c]->palette[models[c]->data[index]][1];
-								quad1->b = models[c]->palette[models[c]->data[index]][2];
-
-								node_t* newNode = list_AddNodeLast(&quads);
-								newNode->element = quad1;
-								newNode->deconstructor = &defaultDeconstructor;
-								newNode->size = sizeof(polyquad_t);
-							}
-						}
-					}
-					oldcolor = newcolor;
-				}
-				if ( buildingquad == true )
-				{
-					// add the last two vertices to the previous quad
-					buildingquad = false;
-
-					node_t* currentNode = quads.last;
-					quad1 = (polyquad_t*) currentNode->element;
-					quad1->vertex[1].x = x - model->sizex / 2.f;
-					quad1->vertex[1].y = y - model->sizey / 2.f + 1;
-					quad1->vertex[1].z = z - model->sizez / 2.f - 1;
-					quad1->vertex[2].x = x - model->sizex / 2.f;
-					quad1->vertex[2].y = y - model->sizey / 2.f;
-					quad1->vertex[2].z = z - model->sizez / 2.f - 1;
-
-					// optimize quad
-					node_t* node;
-					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next )
-					{
-						quad2 = (polyquad_t*)node->element;
-						if ( quad1->side == quad2->side )
-						{
-							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b )
-							{
-								if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z )
-								{
-									if ( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z )
-									{
-										quad2->vertex[0].y++;
-										quad2->vertex[1].y++;
-										list_RemoveNode(currentNode);
-										numquads--;
-										polymodels[c].numfaces -= 2;
-										break;
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-
-		// translate quads into triangles
-		polymodels[c].faces = (polytriangle_t*) malloc(sizeof(polytriangle_t) * polymodels[c].numfaces);
-		for ( i = 0; i < polymodels[c].numfaces; i++ )
-		{
-			node_t* node = list_Node(&quads, i / 2);
-			polyquad_t* quad = (polyquad_t*)node->element;
-			polymodels[c].faces[i].r = quad->r;
-			polymodels[c].faces[i].g = quad->g;
-			polymodels[c].faces[i].b = quad->b;
-			if ( i % 2 )
-			{
-				polymodels[c].faces[i].vertex[0] = quad->vertex[0];
-				polymodels[c].faces[i].vertex[1] = quad->vertex[1];
-				polymodels[c].faces[i].vertex[2] = quad->vertex[2];
-			}
-			else
-			{
-				polymodels[c].faces[i].vertex[0] = quad->vertex[0];
-				polymodels[c].faces[i].vertex[1] = quad->vertex[2];
-				polymodels[c].faces[i].vertex[2] = quad->vertex[3];
-			}
-		}
-
-		// free up quads for the next model
-		list_FreeAll(&quads);
-	}
-	if (useModelCache && (model_cache = openDataFile("models.cache", "wb"))) 
-	{
-		char modelCacheHeader[32] = "BARONY";
-		strcat(modelCacheHeader, VERSION);
-		model_cache->write(&modelCacheHeader, sizeof(char), strlen(modelCacheHeader));
-		for (size_t model_index = 0; model_index < nummodels; model_index++)
-		{
-			polymodel_t *cur = &polymodels[model_index];
-			model_cache->write(&cur->numfaces, sizeof(cur->numfaces), 1);
-			model_cache->write(cur->faces, sizeof(polytriangle_t), cur->numfaces);
-		}
-		FileIO::close(model_cache);
-	}
-
-	// now store models into VBOs
-	if ( !disablevbos )
-	{
-		generateVBOs(start, end);
-	}
+	return loadLanguage(languageCode.c_str(), false);
 }
 
 /*-------------------------------------------------------------------------------
@@ -2036,68 +934,45 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 
 -------------------------------------------------------------------------------*/
 
-void generateVBOs(int start, int end)
-{
-	int count = end - start;
+static GLuint tileTextures = 0;
 
-	std::unique_ptr<GLuint[]> vas(new GLuint[count]);
-	SDL_glGenVertexArrays(count, vas.get());
-
-	std::unique_ptr<GLuint[]> vbos(new GLuint[count]);
-	SDL_glGenBuffers(count, vbos.get());
-
-	std::unique_ptr<GLuint[]> color_buffers(new GLuint[count]);
-	SDL_glGenBuffers(count, color_buffers.get());
-
-	std::unique_ptr<GLuint[]> color_shifted_buffers(new GLuint[count]);
-	SDL_glGenBuffers(count, color_shifted_buffers.get());
-
-	for ( int c = start; c < end; ++c )
-	{
-		polymodel_t *model = &polymodels[c];
-		std::unique_ptr<GLfloat[]> points(new GLfloat[9 * model->numfaces]);
-		std::unique_ptr<GLfloat[]> colors(new GLfloat[9 * model->numfaces]);
-		std::unique_ptr<GLfloat[]> colors_shifted(new GLfloat[9 * model->numfaces]);
-		for ( int i = 0; i < model->numfaces; i++ )
-		{
-			const polytriangle_t *face = &model->faces[i];
-			for (int vert_index = 0; vert_index < 3; vert_index++)
-			{
-				int data_index = i * 9 + vert_index * 3;
-				const vertex_t *vert = &face->vertex[vert_index];
-
-				points[data_index] = vert->x;
-				points[data_index + 1] = -vert->z;
-				points[data_index + 2] = vert->y;
-
-				colors[data_index] = face->r / 255.f;
-				colors[data_index + 1] = face->g / 255.f;
-				colors[data_index + 2] = face->b / 255.f;
-
-				colors_shifted[data_index] = face->b / 255.f;
-				colors_shifted[data_index + 1] = face->r / 255.f;
-				colors_shifted[data_index + 2] = face->g / 255.f;
-			}
+void generateTileTextures() {
+    destroyTileTextures();
+    constexpr int w = 32; // width of a tile texture
+    constexpr int h = 32; // height of a tile texture
+    constexpr int dim = 32; // how many tile textures to put in each row and column
+    const int max = numtiles < dim * dim ? numtiles : dim * dim;
+    GL_CHECK_ERR(glActiveTexture(GL_TEXTURE2));
+    GL_CHECK_ERR(glGenTextures(1, &tileTextures));
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, tileTextures));
+    GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w * dim, h * dim, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr));
+    for (int c = 0; c < max; ++c) {
+        if (!tiles[c]) {
+            continue;
+        }
+		if (tiles[c]->w != 32 || tiles[c]->h != 32 || tiles[c]->format->BytesPerPixel != 4) {
+			// incorrect format
+			continue;
 		}
-		model->va = vas[c - start];
-		model->vbo = vbos[c - start];
-		model->colors = color_buffers[c - start];
-		model->colors_shifted = color_shifted_buffers[c - start];
-		SDL_glBindVertexArray(model->va);
+        SDL_LockSurface(tiles[c]);
+        GL_CHECK_ERR(glTexSubImage2D(GL_TEXTURE_2D, 0,
+            (c % dim) * w,
+            (c / dim) * h,
+            w, h, GL_RGBA, GL_UNSIGNED_BYTE, tiles[c]->pixels));
+        SDL_UnlockSurface(tiles[c]);
+    }
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
+    GL_CHECK_ERR(glActiveTexture(GL_TEXTURE0));
+}
 
-		// vertex data
-		// Well, the generic vertex array are not used, so disabled (making it run on any OpenGL 1.5 hardware)
-		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->vbo);
-		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, points.get(), GL_STATIC_DRAW);
-
-		// color data
-		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->colors);
-		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
-
-		// shifted color data
-		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->colors_shifted);
-		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors_shifted.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
-	}
+void destroyTileTextures() {
+    if (tileTextures) {
+        GL_CHECK_ERR(glDeleteTextures(1, &tileTextures));
+        tileTextures = 0;
+    }
 }
 
 /*-------------------------------------------------------------------------------
@@ -2109,139 +984,108 @@ void generateVBOs(int start, int end)
 -------------------------------------------------------------------------------*/
 int deinitApp()
 {
-	Uint32 c;
 #ifdef USE_OPENAL
 	closeOPENAL();
 #endif
 	// close engine
 	printlog("closing engine...\n");
-	printlog("removing engine timer...\n");
-#ifndef NINTENDO
-	if ( timer )
-	{
-		SDL_RemoveTimer(timer);
-	}
-#endif // !NINTENDO
+
+	finishStackTraceUnique();
 
 	printlog("freeing engine resources...\n");
 	list_FreeAll(&button_l);
 	list_FreeAll(&entitiesdeleted);
-	if ( fancyWindow_bmp )
-	{
-		SDL_FreeSurface(fancyWindow_bmp);
-	}
-	if ( font8x8_bmp )
-	{
+	if (font8x8_bmp) {
 		SDL_FreeSurface(font8x8_bmp);
 	}
-	if ( font12x12_bmp )
-	{
+	if (font12x12_bmp) {
 		SDL_FreeSurface(font12x12_bmp);
 	}
-	if ( font16x16_bmp )
-	{
+	if (font16x16_bmp) {
 		SDL_FreeSurface(font16x16_bmp);
 	}
-	if ( ttf8 )
-	{
+	if (ttf8) {
 		TTF_CloseFont(ttf8);
 	}
-	if ( ttf12 )
-	{
+	if (ttf12) {
 		TTF_CloseFont(ttf12);
 	}
-	if ( ttf16 )
-	{
+	if (ttf16) {
 		TTF_CloseFont(ttf16);
 	}
 
-#ifndef EDITOR
 	printlog("freeing ui resources...\n");
 	Text::dumpCache();
 	Image::dumpCache();
 	Font::dumpCache();
-	if (gui) {
-		delete gui;
-		gui = nullptr;
-	}
-#endif
+	Frame::guiDestroy();
+    destroyTileTextures();
 
 	printlog("freeing map data...\n");
-	if ( map.entities != NULL )
-	{
+	if (map.entities != nullptr) {
 		list_FreeAll(map.entities);
 		free(map.entities);
 	}
-	if ( map.creatures != nullptr)
-	{
+	if (map.creatures != nullptr) {
 		list_FreeAll(map.creatures); //TODO: Need to call this? Entities are only pointed to by the thing, not owned.
 		delete map.creatures;
 	}
-	if ( map.worldUI != nullptr )
-	{
+	if (map.worldUI != nullptr) {
 		list_FreeAll(map.worldUI);
 		delete map.worldUI;
 	}
 	list_FreeAll(&light_l);
-	if ( map.tiles != NULL )
-	{
+	if (map.tiles != nullptr) {
 		free(map.tiles);
 	}
-	if ( lightmap != NULL )
-	{
-		free(lightmap);
+#ifdef EDITOR
+	if (camera.vismap != nullptr) {
+		free(camera.vismap);
+		camera.vismap = nullptr;
 	}
-	if ( lightmapSmoothed )
-	{
-		free(lightmapSmoothed);
+#endif
+	if (menucam.vismap != nullptr) {
+		free(menucam.vismap);
+		menucam.vismap = nullptr;
 	}
-	if ( vismap != NULL )
-	{
-		free(vismap);
+	for ( int i = 0; i < MAXPLAYERS; ++i ) {
+		if ( cameras[i].vismap != nullptr ) {
+			free(cameras[i].vismap);
+			cameras[i].vismap = nullptr;
+		}
 	}
-
-	for ( c = 0; c < HASH_SIZE; c++ )
-	{
+	for (int c = 0; c < HASH_SIZE; ++c) {
 		list_FreeAll(&ttfTextHash[c]);
 	}
 
 	// free textures
 	printlog("freeing textures...\n");
-	if ( tiles != NULL )
-	{
-		for ( c = 0; c < numtiles; c++ )
-		{
-			if ( tiles[c] )
-			{
+	if (tiles != nullptr) {
+		for (int c = 0; c < numtiles; ++c) {
+			if (tiles[c]) {
 				SDL_FreeSurface(tiles[c]);
 			}
 		}
 		free(tiles);
 	}
-	if ( animatedtiles )
-	{
+	if (animatedtiles) {
 		free(animatedtiles);
 		animatedtiles = nullptr;
 	}
-	if ( lavatiles )
-	{
+	if (lavatiles) {
 		free(lavatiles);
 		lavatiles = nullptr;
 	}
-	if ( swimmingtiles )
-	{
+	if (swimmingtiles) {
 		free(swimmingtiles);
 		swimmingtiles = nullptr;
 	}
 
 	// free sprites
 	printlog("freeing sprites...\n");
-	if ( sprites != NULL )
-	{
-		for ( c = 0; c < numsprites; c++ )
-		{
-			if ( sprites[c] )
-			{
+	if (sprites != nullptr) {
+		for (int c = 0; c < numsprites; ++c) {
+			if ( sprites[c] ) {
 				SDL_FreeSurface(sprites[c]);
 			}
 		}
@@ -2249,22 +1093,17 @@ int deinitApp()
 	}
 
 	// free achievement images
-	for (auto& item : achievementImages) 
-	{
+	for (auto& item : achievementImages) {
 		SDL_FreeSurface(item.second);
 	}
 	achievementImages.clear();
 
 	// free models
 	printlog("freeing models...\n");
-	if ( models != NULL )
-	{
-		for ( c = 0; c < nummodels; c++ )
-		{
-			if ( models[c] != NULL )
-			{
-				if ( models[c]->data )
-				{
+	if (models != nullptr) {
+        for (int c = 0; c < nummodels; ++c) {
+            if (models[c] != nullptr) {
+                if (models[c]->data) {
 					free(models[c]->data);
 				}
 				free(models[c]);
@@ -2272,74 +1111,40 @@ int deinitApp()
 		}
 		free(models);
 	}
-	if ( polymodels != NULL )
-	{
-		for ( c = 0; c < nummodels; c++ )
-		{
-			if ( polymodels[c].faces )
-			{
+	if (polymodels != nullptr) {
+		for (int c = 0; c < nummodels; ++c) {
+			if (polymodels[c].faces) {
 				free(polymodels[c].faces);
 			}
 		}
-		if ( !disablevbos )
-		{
-			for ( c = 0; c < nummodels; c++ )
-			{
-				if ( polymodels[c].vbo )
-				{
-					SDL_glDeleteBuffers(1, &polymodels[c].vbo);
+		if (!disablevbos) {
+            for (int c = 0; c < nummodels; ++c) {
+                if (polymodels[c].vao) {
+                    GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
+                }
+				if (polymodels[c].vbo) {
+                    GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
 				}
-				if ( polymodels[c].colors )
-				{
-					SDL_glDeleteBuffers(1, &polymodels[c].colors);
-				}
-				if ( polymodels[c].va )
-				{
-					SDL_glDeleteVertexArrays(1, &polymodels[c].va);
+				if (polymodels[c].colors) {
+                    GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
 				}
 			}
 		}
 		free(polymodels);
 	}
 
-	// free sounds
-#ifdef USE_FMOD
-	printlog("freeing sounds...\n");
-	if ( sounds != NULL )
-	{
-		for ( c = 0; c < numsounds && !no_sound; c++ )
-		{
-			if (sounds[c] != NULL)
-			{
-				if (sounds[c] != NULL)
-				{
-					FMOD_Sound_Release(sounds[c]);    //Free the sound's FMOD sound.
-				}
-				//free(sounds[c]); //Then free the sound itself.
-			}
-		}
-		free(sounds); //Then free the sound array.
-	}
+#ifndef EDITOR
+	freeSoundResources();
 #endif
 
 	// delete opengl buffers
-	if ( allsurfaces != NULL )
-	{
+	if (allsurfaces != nullptr) {
 		free(allsurfaces);
 	}
-	if ( texid != NULL )
-	{
-		glDeleteTextures(MAXTEXTURES, texid);
+    if (texid != nullptr) {
+        GL_CHECK_ERR(glDeleteTextures(MAXTEXTURES, texid));
 		free(texid);
 	}
-
-	// delete opengl buffers
-	/*SDL_glDeleteBuffers(MAXBUFFERS,vboid);
-	if( vboid != NULL )
-		free(vboid);
-	SDL_glDeleteVertexArrays(MAXBUFFERS,vaoid);
-	if( vaoid != NULL )
-		free(vaoid);*/
 
 	// close network interfaces
 	closeNetworkInterfaces();
@@ -2352,62 +1157,34 @@ int deinitApp()
 	IMG_Quit();
 	//Mix_HaltChannel(-1);
 	//Mix_CloseAudio();
-#ifdef USE_FMOD
-	if ( fmod_system )
-	{
-		FMOD_System_Close(fmod_system);
-		FMOD_System_Release(fmod_system);
-		fmod_system = NULL;
-	}
+#ifndef EDITOR
+	exitSoundEngine();
 #endif
-	if ( screen )
-	{
-		SDL_DestroyWindow(screen);
-		screen = NULL;
-	}
-	if ( renderer )
-	{
-#ifdef APPLE
-		SDL_DestroyRenderer(renderer);
-#else
+	destroyCommonDrawResources();
+	main_framebuffer.destroy();
+	if (renderer) {
 		SDL_GL_DeleteContext(renderer);
-#endif
 		renderer = NULL;
 	}
-	if ( mainsurface )
-	{
-		SDL_FreeSurface(mainsurface);
-		mainsurface = NULL;
+	if (screen) {
+		SDL_DestroyWindow(screen);
+		screen = NULL;
 	}
 	TTF_Quit();
 	SDL_Quit();
 
-	// free video and input buffers
-	if ( zbuffer != NULL )
-	{
-		free(zbuffer);
-	}
-	if ( clickmap != NULL )
-	{
-		free(clickmap);
-	}
-
 	// shutdown steamworks
 #ifdef STEAMWORKS
-	if ( steam_init )
-	{
+	if (steam_init) {
 		printlog("storing user stats to Steam...\n");
 		SteamUserStats()->StoreStats();
-		if ( g_SteamLeaderboards )
-		{
+		if (g_SteamLeaderboards) {
 			delete g_SteamLeaderboards;
 		}
-		if ( g_SteamWorkshop )
-		{
+		if (g_SteamWorkshop) {
 			delete g_SteamWorkshop;
 		}
-		if ( g_SteamStatistics )
-		{
+		if (g_SteamStatistics) {
 			delete g_SteamStatistics;
 		}
 		SteamAPI_Shutdown();
@@ -2415,10 +1192,11 @@ int deinitApp()
 #endif
 
 
+#ifndef NINTENDO
 	int numLogFilesToKeepInArchive = 30;
 	// archive logfiles.
 	char lognamewithTimestamp[128];
-	std::time_t timeNow = std::time(nullptr);
+    std::time_t timeNow = getTime();
 	struct tm *localTimeNow = nullptr;
 	localTimeNow = std::localtime(&timeNow);
 
@@ -2492,8 +1270,6 @@ int deinitApp()
 		printlog("[PhysFS]: De-initializing...\n");
 	}
 
-	// free currently loaded language if any
-	freeLanguages();
 	printlog("notice: archiving log file as %s...\n", logarchiveFilePath.c_str());
 	printlog("success\n");
 	if (logfile)
@@ -2514,56 +1290,9 @@ int deinitApp()
 	ss << "cp " << logToArchive << " " << logarchiveFilePath.c_str();
 	system(ss.str().c_str());
 #endif // WINDOWS
+#endif //ndef NINTENDO
 	return 0;
 }
-
-#ifdef PANDORA
-void GO_InitFBO()
-{
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	if(fbo_fbo) {
-		glDeleteFramebuffers(1, &fbo_fbo); fbo_fbo = 0;
-		glDeleteRenderbuffers(1, &fbo_ren); fbo_ren = 0;
-		if(fbo_trn) {
-			glDeleteRenderbuffers(1, &fbo_trn); fbo_trn = 0;
-		}
-		if(fbo_tex) {
-			glDeleteTextures(1, &fbo_tex); fbo_tex = 0;
-		}
-	}
-
-	// Pandora, create the FBO!
-	bool small_fbo=((xres==800) && (yres==480));
-	glGenFramebuffers(1, &fbo_fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo_fbo);
-	if(small_fbo) {
-		glGenRenderbuffers(1, &fbo_trn);
-		glBindRenderbuffer(GL_RENDERBUFFER, fbo_trn);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, 1024, 512);
-		glBindRenderbuffer(GL_RENDERBUFFER, 0);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, fbo_trn);
-	} else {
-		glGenTextures(1, &fbo_tex);
-		glBindTexture(GL_TEXTURE_2D, fbo_tex);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1024, 1024, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_tex, 0);
-	}
-	glGenRenderbuffers(1, &fbo_ren);
-	glBindRenderbuffer(GL_RENDERBUFFER, fbo_ren);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, 1024, (small_fbo)?512:1024);
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fbo_ren);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	if(!small_fbo)
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo_fbo);
-
-}
-#endif
 
 /*-------------------------------------------------------------------------------
 
@@ -2573,157 +1302,190 @@ void GO_InitFBO()
 
 -------------------------------------------------------------------------------*/
 
-bool initVideo()
+static void positionAndLimitWindow(int& x, int& y, int& w, int& h)
 {
 #ifdef NINTENDO
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
-	SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY );
-	SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	// don't do anything on nintendo.
+	// SDL_GetDisplayBounds() isn't helpful, because it just returns
+	// the size of the current display, which is incorrect when you're
+	// trying to switch the display size.
+	return;
 #else
-	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 1/*3*/ ); //Why GL 3.0? using only fixed pipeline stuff here
-	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 0 );
-	SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 8 );
-	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
-	SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24 );
-	//SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
-	//SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1 );
-	//SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, 4 );
+	static const int displays = SDL_GetNumVideoDisplays();
+	std::vector<SDL_Rect> displayBounds;
+	for (int i = 0; i < displays; i++) {
+		displayBounds.push_back(SDL_Rect());
+		SDL_GetDisplayBounds(i, &displayBounds.back());
+	}
+	if (display_id >= 0 && display_id < displays) {
+		auto& bound = displayBounds[display_id];
+		if (fullscreen) {
+			x = bound.x;
+			y = bound.y;
+			//w = std::min(bound.w, w);
+			//h = std::min(bound.h, h);
+		}
+		else {
+            //w = std::min(bound.w, w);
+            //h = std::min(bound.h, h);
+			x = bound.x + (bound.w - w) / 2;
+			y = bound.y + (bound.h - h) / 2;
+		}
+	}
 #endif
+}
 
-	printlog("setting display mode to %dx%d...\n", xres, yres);
-	Uint32 flags = 0;
-#ifdef PANDORA
-	fullscreen = true;
-#endif
-#ifdef NINTENDO
-	flags = SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_OPENGL;
-#else
-	if ( fullscreen )
-	{
-		flags |= SDL_WINDOW_FULLSCREEN;
-	}
-	if ( borderless )
-	{
-		flags |= SDL_WINDOW_BORDERLESS;
-	}
-	if ( !game )
-	{
-		flags |= SDL_WINDOW_RESIZABLE;
-	}
-	if ( !softwaremode )
-	{
-		flags |= SDL_WINDOW_OPENGL;
-	}
-#endif
-#ifdef APPLE
-	if ( fullscreen )
-	{
-		flags |= SDL_WINDOW_BORDERLESS;
-	}
-	SDL_DestroyWindow(screen);
-	screen = NULL;
-#endif
-#ifdef PANDORA
-	int screen_width = 800;
-#else
+bool initVideo()
+{
+    if (!renderer) {
+        // On Apple:
+        // * the highest supported compatibility-profile version is 2.1
+        // * the highest supported core-profile version is 4.1
+        // * the lowest supported core-profile version is 3.2
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+	    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    }
+
+	// desired screen dimensions + position
+    int screen_x = 0;
+    int screen_y = 0;
 	int screen_width = xres;
-#endif
+	int screen_height = yres;
+
+	printlog("attempting to set display mode to %dx%d on device %d...", screen_width, screen_height, display_id);
+
+	/*
+
+	2022-11-16
+
+	Fullscreen modes in SDL2 are absolutely broken right now on all platforms besides Windows. We are experiencing:
+
+	- display server crashes when changing video mode (must be reset in a desktop properties window)
+	- severe visual glitches when reverting to windowed mode in fullscreen desktop
+	- fullscreen desktop mode only supports native res - you can't downscale
+	- window can be placed on the wrong display, and on wayland, it can't be moved at all
+	- window size sometimes changes but not actual display mode
+	- window position sometimes wrong, mouse stops at wrong place
+	- huge black bars (display mode or window size changes, but not contents)
+    - on macOS 13 "Ventura" SDL_SetWindowFullscreen() crashes to desktop... lovely
+
+	So, "true" fullscreen mode is cancelled on POSIX devices. Thanks SDL.
+
+	*/
+
 	if ( !screen )
 	{
-#ifdef PANDORA
-		if ((screen = SDL_CreateWindow( window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_width, 480, flags )) == NULL)
-#else
-		if ((screen = SDL_CreateWindow( window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_width, yres, flags )) == NULL)
+        Uint32 flags = 0;
+        flags |= SDL_WINDOW_OPENGL;
+        
+#ifndef EDITOR
+        flags |= SDL_WINDOW_ALLOW_HIGHDPI;
 #endif
-		{
-			printlog("failed to set video mode.\n");
-			return false;
-		}
+        
+        flags |= SDL_WINDOW_RESIZABLE;
+        
+#ifdef PANDORA
+	    flags |= SDL_WINDOW_FULLSCREEN;
+#endif
+        
+#ifdef NINTENDO
+    	flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+#else
+        if (fullscreen) {
+            flags |= SDL_WINDOW_FULLSCREEN;
+        }
+        if (borderless) {
+            flags |= SDL_WINDOW_BORDERLESS;
+        }
+#endif
+
+		positionAndLimitWindow(screen_x, screen_y, screen_width, screen_height);
+        
+        if ((screen = SDL_CreateWindow(window_title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+            screen_width, screen_height, flags)) == nullptr)
+        {
+            printlog("failed to set video mode.\n");
+            return false;
+        }
+        
+#ifndef NINTENDO
+        // make sure that we actually got the window size we wanted
+        SDL_GL_GetDrawableSize(screen, &xres, &yres);
+        SDL_DestroyWindow(screen);
+        const float factorx = (float)xres / screen_width;
+        const float factory = (float)yres / screen_height;
+        if ((screen = SDL_CreateWindow(window_title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+            (int)(screen_width / factorx), (int)(screen_height / factory), flags)) == nullptr)
+        {
+            printlog("failed to set video mode.\n");
+            return false;
+        }
+#endif
 	}
 	else
 	{
-#ifdef PANDORA
-		SDL_SetWindowSize(screen, screen_width, 480);
-#else
-		SDL_SetWindowSize(screen, screen_width, yres);
-#endif
-#ifndef NINTENDO
-		if ( fullscreen )
-		{
-			SDL_SetWindowFullscreen(screen, SDL_WINDOW_FULLSCREEN);
-		}
-		else
-		{
-			SDL_SetWindowFullscreen(screen, 0);
-		}
+	    SDL_SetWindowFullscreen(screen, 0);
 
-		if ( borderless )
-		{
-			SDL_SetWindowBordered(screen, SDL_bool::SDL_FALSE);
+		positionAndLimitWindow(screen_x, screen_y, screen_width, screen_height);
+
+		SDL_RestoreWindow(screen); // if the window is maximized, we need to un-maximize it.
+		SDL_SetWindowBordered(screen, borderless ? SDL_bool::SDL_FALSE : SDL_bool::SDL_TRUE);
+		SDL_SetWindowPosition(screen, screen_x, screen_y);
+		SDL_SetWindowSize(screen, screen_width, screen_height);
+        SDL_GL_GetDrawableSize(screen, &xres, &yres);
+        printlog("set window size to %dx%d", xres, yres);
+
+		if (fullscreen) {
+			SDL_DisplayMode mode;
+			SDL_GetDesktopDisplayMode(display_id, &mode);
+			mode.w = xres;
+			mode.h = yres;
+			SDL_SetWindowDisplayMode(screen, &mode);
+            SDL_SetWindowFullscreen(screen, SDL_WINDOW_FULLSCREEN);
 		}
-		else
-		{
-			SDL_SetWindowBordered(screen, SDL_bool::SDL_TRUE);
-		}
-		SDL_SetWindowPosition(screen, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
-#endif // !NINTENDO
 	}
 
 	if ( !renderer )
 	{
-#ifdef APPLE
-		if ((renderer = SDL_CreateRenderer(screen, -1, 0)) == NULL)
-		{
-#else
 		if ((renderer = SDL_GL_CreateContext(screen)) == NULL)
 		{
-#endif
-			printlog("failed to create SDL renderer. Reason: \"%s\"\n", SDL_GetError());
+			printlog("failed to create GL context. Reason: \"%s\"\n", SDL_GetError());
 			printlog("You may need to update your video drivers.\n");
 			return false;
 		}
-	}
-#ifndef APPLE
-	SDL_GL_MakeCurrent(screen, renderer);
+
+#ifdef WINDOWS
+		glewInit();
 #endif
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-	Uint32 rmask = 0xff000000;
-	Uint32 gmask = 0x00ff0000;
-	Uint32 bmask = 0x0000ff00;
-	Uint32 amask = 0x000000ff;
-#else
-	Uint32 rmask = 0x000000ff;
-	Uint32 gmask = 0x0000ff00;
-	Uint32 bmask = 0x00ff0000;
-	Uint32 amask = 0xff000000;
-#endif
-	if ((mainsurface = SDL_CreateRGBSurface(0, xres, yres, 32, rmask, gmask, bmask, amask)) == NULL)
-	{
-		printlog("failed to create main window surface.\n");
-		return false;
-	}
-	if ( !softwaremode )
-	{
-#ifdef PANDORA
-		GO_InitFBO();
-#endif
+
 #ifdef NINTENDO
 		initNxGL();
-#endif // NINTENDO
-		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-		glEnable(GL_TEXTURE_2D);
-		glEnable(GL_CULL_FACE);
-		glCullFace(GL_BACK);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		//glEnableClientState(GL_VERTEX_ARRAY);
-		glMatrixMode( GL_MODELVIEW );
-		glLoadIdentity();
-		glMatrixMode( GL_PROJECTION );
-		glLoadIdentity();
-		glClearColor( 0, 0, 0, 0 );
+#endif
+        
+        // do this to fix the window size/position caused by high-dpi scaling
+        int w1, w2, h1, h2;
+        SDL_GL_GetDrawableSize(screen, &w1, &h1);
+        SDL_GetWindowSize(screen, &w2, &h2);
+        const float factorX = (float)w1 / w2;
+        const float factorY = (float)h1 / h2;
+        SDL_SetWindowSize(screen, screen_width / factorX, screen_height / factorY);
+        SDL_GL_GetDrawableSize(screen, &xres, &yres);
+        printlog("set window size to %dx%d", xres, yres);
+        
+        // setup opengl
+        GL_CHECK_ERR(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
+        GL_CHECK_ERR(glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
+        GL_CHECK_ERR(glEnable(GL_LINE_SMOOTH));
+        //GL_CHECK_ERR(glEnable(GL_TEXTURE_2D));
+        GL_CHECK_ERR(glEnable(GL_CULL_FACE));
+        GL_CHECK_ERR(glCullFace(GL_BACK));
+        GL_CHECK_ERR(glDisable(GL_DEPTH_TEST));
+        //GL_CHECK_ERR(glDisable(GL_LIGHTING));
+        GL_CHECK_ERR(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+        GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 0.f));
 	}
 
 	if ( verticalSync )
@@ -2734,13 +1496,7 @@ bool initVideo()
 	{
 		SDL_GL_SetSwapInterval(0);
 	}
-#ifndef NINTENDO
-	if ( SDL_SetWindowBrightness(screen, vidgamma) < 0 )
-	{
-		printlog("warning: failed to change gamma setting:\n%s\n", SDL_GetError());
-		return true;
-	}
-#endif
+
 	printlog("display changed successfully.\n");
 	return true;
 }
@@ -2755,53 +1511,41 @@ bool initVideo()
 
 -------------------------------------------------------------------------------*/
 
-bool changeVideoMode()
+bool changeVideoMode(int new_xres, int new_yres)
 {
-	printlog("changing video mode.\n");
-#ifdef PANDORA
-	GO_InitFBO();
-#else
-	int c;
+    float factorX, factorY;
+    {
+        int w1, w2, h1, h2;
+        SDL_GL_GetDrawableSize(screen, &w1, &h1);
+        SDL_GetWindowSize(screen, &w2, &h2);
+        factorX = (float)w1 / w2;
+        factorY = (float)h1 / h2;
+    }
+    if (new_xres) {
+        xres = std::max(1024, new_xres);
+    }
+    if (new_yres) {
+        yres = std::max(720, new_yres);
+    }
+    xres /= factorX;
+    yres /= factorY;
+	printlog("changing video mode (%d x %d).\n", xres, yres);
 
-	// delete old texture names (they're going away anyway)
-	glDeleteTextures(MAXTEXTURES, texid);
-
-	// delete vertex data
-	if ( !disablevbos )
-	{
-		for ( c = 0; c < nummodels; c++ )
-		{
-			SDL_glDeleteBuffers(1, &polymodels[c].vbo);
-			SDL_glDeleteBuffers(1, &polymodels[c].colors);
-			SDL_glDeleteVertexArrays(1, &polymodels[c].va);
-		}
-	}
-
-	/*if( screen ) {
-		SDL_DestroyWindow(screen);
-		screen = NULL;
-	}*/
-	if ( renderer )
-	{
-#ifdef APPLE
-		SDL_DestroyRenderer(renderer);
-#else
-		SDL_GL_DeleteContext(renderer);
-#endif
-		renderer = NULL;
-	}
-	if ( mainsurface )
-	{
-		SDL_FreeSurface(mainsurface);
-		mainsurface = NULL;
-	}
+	// destroy gui fbo
+	main_framebuffer.destroy();
+	Frame::fboDestroy();
 
 	// set video mode
 	int result = initVideo();
 	if ( !result )
 	{
-		xres = 960;
-		yres = 600;
+#if defined(APPLE) && !defined(EDITOR)
+        xres = 2560;
+        yres = 1440;
+#else
+        xres = 1280;
+		yres = 720;
+#endif
 		fullscreen = 0;
 		borderless = false;
 		printlog("defaulting to safe video mode...\n");
@@ -2811,87 +1555,55 @@ bool changeVideoMode()
 		}
 	}
 
-	// now reload all textures
-	glGenTextures(MAXTEXTURES, texid);
-	for ( c = 1; c < imgref; c++ )
-	{
-		glLoadTexture(allsurfaces[c], c);
-	}
+    // create new framebuffers
+	Frame::fboInit();
+    if (!hdrEnabled) {
+        main_framebuffer.unbindForWriting();
+    }
+	main_framebuffer.init(xres, yres, GL_NEAREST, GL_NEAREST);
+    if (!hdrEnabled) {
+        main_framebuffer.bindForWriting();
+    }
+    GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-	// regenerate vbos
-	if ( !disablevbos )
-	{
-		generateVBOs(0, nummodels);
-	}
-
-#ifndef EDITOR
-	// dump ui resources, these are all no good too!
-	Text::dumpCache();
-	Image::dumpCache();
-	Font::dumpCache();
-#endif // !EDITOR
-
-#endif
 	// success
 	return true;
 }
 
-/*-------------------------------------------------------------------------------
-
-loadItemLists()
-
-loads the global item whitelist/blacklists and level curve.
-
--------------------------------------------------------------------------------*/
-
-bool loadItemLists()
+bool resizeWindow(int new_xres, int new_yres)
 {
-	// open log file
-	if ( !logfile )
-	{
-		openLogFile();
+    if (!screen || !renderer) {
+        return false;
+    }
+    
+	if (new_xres) {
+		xres = std::max(100, new_xres);
+	}
+	if (new_yres) {
+		yres = std::max(100, new_yres);
 	}
 
-	// compose filename
-	//char filename[128] = "items/items_global.txt";
-	std::string itemsTxtDirectory = PHYSFS_getRealDir("items/items_global.txt");
-	itemsTxtDirectory.append(PHYSFS_getDirSeparator()).append("items/items_global.txt");
-	// check if item list is valid
-	if ( !dataPathExists(itemsTxtDirectory.c_str()) )
-	{
-		// file doesn't exist
-		printlog("error: unable to locate global item list file: '%s'", itemsTxtDirectory.c_str());
-		return false;
-	}
+	// destroy fbos
+	main_framebuffer.destroy();
+	Frame::fboDestroy();
 
-	std::vector<std::string> itemLevels = getLinesFromDataFile(itemsTxtDirectory);
-	std::string line;
-	int itemIndex = 0;
+#ifndef EDITOR
+    if (!intro) {
+        MainMenu::setupSplitscreen();
+    }
+#endif
 
-	for ( std::vector<std::string>::const_iterator i = itemLevels.begin(); i != itemLevels.end(); ++i ) {
-		// process i
-		line = *i;
-		if ( line[0] == '#' || line[0] == '\n' )
-		{
-			continue;
-		}
-		std::size_t found = line.find('#');
-		if ( found != std::string::npos )
-		{
-			char tmp[128];
-			std::string sub = line.substr(0, found);
-			strncpy(tmp, sub.c_str(), sub.length());
-			tmp[sub.length()] = '\0';
-			//printlog("%s", tmp);
-			items[itemIndex].level = atoi(tmp);
-			++itemIndex;
-		}
-	}
+	// create new framebuffers
+	Frame::fboInit();
+    if (!hdrEnabled) {
+        main_framebuffer.unbindForWriting();
+    }
+	main_framebuffer.init(xres, yres, GL_NEAREST, GL_NEAREST);
+    if (!hdrEnabled) {
+        main_framebuffer.bindForWriting();
+    }
+    GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-	printlog("successfully loaded global item list '%s' \n", itemsTxtDirectory.c_str());
-	/*for ( c = 0; c < NUMITEMS; ++c )
-	{
-		printlog("%s level: %d", items[c].name_identified, items[c].level);
-	}*/
+	// success
 	return true;
 }

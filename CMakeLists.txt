@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 project(barony)
 
 if (NOT CMAKE_BUILD_TYPE)
@@ -11,6 +11,10 @@ endif()
 
 if (NOT DEFINED STEAMWORKS_ENABLED)
 	set (STEAMWORKS_ENABLED 0)
+	option(STEAMWORKS "Enable Steamworks" OFF)
+	if (STEAMWORKS)
+		set (STEAMWORKS_ENABLED 1)
+	endif()
 endif()
 
 if (DEFINED ENV{OPTIMIZATION_LEVEL})
@@ -25,6 +29,16 @@ endif()
 
 if (NOT DEFINED EOS_ENABLED)
 	set (EOS_ENABLED 0)
+	option(EOS "Enable Epic Online Services" OFF)
+	if (EOS)
+		set (EOS_ENABLED 1)
+	endif()
+	set(BUILD_ENV_PR "" CACHE STRING "EOS product id")
+	set(BUILD_ENV_SA "" CACHE STRING "EOS sandbox")
+	set(BUILD_ENV_DE "" CACHE STRING "EOS deployment")
+	set(BUILD_ENV_CC "" CACHE STRING "EOS cc")
+	set(BUILD_ENV_CS "" CACHE STRING "EOS cs")
+	set(BUILD_ENV_GSE "" CACHE STRING "EOS gse")
 endif()
 
 # EOS Tokens
@@ -91,6 +105,10 @@ if (NOT "${BARONY_WIN32_LIBRARIES}" STREQUAL "")
 	list(APPEND CMAKE_PREFIX_PATH $ENV{BARONY_WIN32_LIBRARIES})
 endif(NOT "${BARONY_WIN32_LIBRARIES}" STREQUAL "")
 
+if (DEFINED ENV{BARONY_DATADIR}) # Used by visual studio to set the current working directory when debugging the barony executables.
+	set (BARONY_DATADIR $ENV{BARONY_DATADIR})
+endif()
+
 #FMOD can be disabled in one of two ways:
 # * Not having FMOD installed will automatically disable FMOD (and, consequently, the game's sound engine as a whole).
 # * Running cmake with -DFMOD_ENABLED=OFF
@@ -150,16 +168,16 @@ endif()
 # Set platform-dependent compiler & linker flags
 if( NOT WIN32 )
   if(PANDORA)
-	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -ffast-math -funroll-loops -fstrict-aliasing -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=softfp -g -fuse-ld=gold -fuse-linker-plugin")
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall ")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -ffast-math -funroll-loops -fstrict-aliasing -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=softfp -g -fuse-ld=gold -fuse-linker-plugin")
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ")
 	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OPTIMIZATION_LEVEL} -ffast-math -funroll-loops -fstrict-aliasing -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=softfp -g -fuse-ld=gold -fuse-linker-plugin -fsingle-precision-constant")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${OPTIMIZATION_LEVEL} -ffast-math -funroll-loops -fstrict-aliasing -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=softfp -g -fuse-ld=gold -fuse-linker-plugin -fsingle-precision-constant")
   else()
-	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -pedantic -Wall -pg -ffast-math -funroll-loops -fstrict-aliasing")
-	#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -pg -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover -Wreturn-type -Werror=return-type")
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pedantic -Wall -pg")
-	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -pedantic ${OPTIMIZATION_LEVEL} -ffast-math -funroll-loops -fstrict-aliasing")
-	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -pedantic ${OPTIMIZATION_LEVEL}")
+	set(DISABLED_WARNINGS "-Wno-pedantic -Wno-empty-body -Wno-string-plus-int -Wno-parentheses -Wno-format-security -Wno-multichar")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${DISABLED_WARNINGS} -pg -ffast-math -funroll-loops -fstrict-aliasing")
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${DISABLED_WARNINGS} -Wno-inconsistent-missing-override -pg")
+	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${DISABLED_WARNINGS} ${OPTIMIZATION_LEVEL} -ffast-math -funroll-loops -fstrict-aliasing")
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${DISABLED_WARNINGS} -Wno-inconsistent-missing-override ${OPTIMIZATION_LEVEL}")
   endif()
   if (APPLE)
 	set (Apple 1)
@@ -175,15 +193,15 @@ if( NOT WIN32 )
 	set(MACOSX_BUNDLE_BUNDLE_VERSION 2.0.2)
 	set(MACOSX_BUNDLE_ICON_FILE "barony.icns")
 	#set(MACOSX_BUNDLE_ICON_FILE "game.icns")
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++14 -stdlib=libc++ -I/opt/local/include/")
-	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++14 -stdlib=libc++ -I/opt/local/include/")
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++17 -stdlib=libc++ -I/opt/local/include/")
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++17 -stdlib=libc++ -I/opt/local/include/")
   else()
 	set (Apple 0)
 	set (Linux 1) #TODO: Should not assume this? What if BSD/DOS/whatever-have-you?
 	if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD|NetBSD|DragonFly") # OpenBSD is purposely discarded at it lacks for now current exe path retrieval feature
 	   set(Bsd 1)
 	endif()
-	if (${CMAKE_SYSTEM_NAME} STREQUAL "Haiku")
+	if (${CMAKE_SYSTEM_NAME} MATCHES "Haiku")
 	   set(Haiku 1)
 	endif()
 	set (NOT_DWORD_DEFINED 1)
@@ -191,10 +209,17 @@ if( NOT WIN32 )
 	  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -malign-double")
 	  set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -malign-double")
 	endif()
-	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -rdynamic -Wl,-rpath=$ORIGIN")
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++14 -rdynamic -Wl,-rpath=$ORIGIN")
-	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -Wl,-rpath=$ORIGIN -Wno-write-strings")
-	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++14 -Wl,-rpath=$ORIGIN")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -rdynamic")
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++17")
+	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++17")
+	if (CMAKE_COMPILER_IS_GNUCXX)
+		set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wl,-rpath='$ORIGIN'")
+		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wl,-rpath='$ORIGIN'")
+		set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -Wl,-rpath='$ORIGIN'")
+		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wl,-rpath='$ORIGIN'")
+		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath='$ORIGIN'")
+	endif()
   endif()
 
 	if (ARCHITECTURE) # TODO: Support this on Windows too.
@@ -203,7 +228,7 @@ if( NOT WIN32 )
 	endif()
 else( NOT WIN32 )
 	# These look like mingw to me?
-	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -pg ${OPTIMIZATION_LEVEL} -ffast-math -funroll-loops -malign-double -fstrict-aliasing -mwindows")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -pg ${OPTIMIZATION_LEVEL} -ffast-math -funroll-loops -malign-double -fstrict-aliasing -mwindows")
 	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OPTIMIZATION_LEVEL} -ffast-math -funroll-loops -malign-double -fstrict-aliasing -mwindows")
 	# We should be using Visual Studio flags...or better yet, providing an option to select which you'd prefer.
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MP")
@@ -278,25 +303,24 @@ if (OPENAL_ENABLED)
   endif()
 endif()
 
+set(IMGUI 1)
+
 find_package(Threads REQUIRED)
+if (FMOD_ENABLED)
+	find_package(FMOD REQUIRED)
+	if (FMOD_FOUND)
+		set(FMOD 1)
+	endif()
+endif()
 if(NOT APPLE)
   #Linux needs these two.
   #Macs have their own special line.
-  if (FMOD_ENABLED)
-	find_package(FMOD)
-	if (FMOD_FOUND)
-	  set(FMOD 1)
-	endif()
-  endif()
   find_package(PNG REQUIRED)
 elseif (APPLE)
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FMOD_CXX_FLAGS}")
   MESSAGE("CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
   set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${FMOD_LINK_FLAGS}")
   MESSAGE("CMAKE_EXE_LINKER_FLAGS: ${CMAKE_EXE_LINKER_FLAGS}")
-  if (FMOD_ENABLED)
-	set(FMOD 1)
-  endif()
 endif()
 
 if(STEAMWORKS_ENABLED)
@@ -319,19 +343,13 @@ endif()
 # Add include directories
 #include_directories(${GLM_INCLUDE_DIR})
 if( NOT WIN32 )
-  include_directories(${THREADS_INCLUDE_DIR})
+ 	include_directories(${THREADS_INCLUDE_DIR})
 endif()
 if(NOT APPLE)
-  #Remember, Mac doesn't have find_package for fmod and png.
-  if (FMOD_FOUND)
+ 	include_directories(${PNG_INCLUDE_DIR})
+endif()
+if (FMOD_FOUND)
 	include_directories(${FMOD_INCLUDE_DIR})
-  endif()
-  include_directories(${PNG_INCLUDE_DIR})
-elseif (APPLE)
-  if (FMOD_ENABLED)
-	include_directories("${PROJECT_SOURCE_DIR}/libraries/fmod/inc")
-	link_directories("${PROJECT_SOURCE_DIR}/libraries/fmod/lib")
-  endif()
 endif()
 
 # Add the source directory
@@ -352,11 +370,11 @@ message("***************************")
 message("Debug flags: ")
 message("${CMAKE_C_FLAGS_DEBUG}")
 message("${CMAKE_CXX_FLAGS_DEBUG}")
-#-g -Wall -pg -ffast-math -funroll-loops -fstrict-aliasing
+#-g -pg -ffast-math -funroll-loops -fstrict-aliasing
 message("Release flags: ")
 message("${CMAKE_C_FLAGS_RELEASE}")
 message("${CMAKE_CXX_FLAGS_RELEASE}")
-#-O3 -DNDEBUG -Wall -pg -ffast-math -funroll-loops -fstrict-aliasing
+#-O3 -DNDEBUG -pg -ffast-math -funroll-loops -fstrict-aliasing
 message("***************************")
 
 
@@ -371,17 +389,13 @@ if (APPLE)
   set(COPY_FRAMEWORKS ${PROJECT_SOURCE_DIR}/../Frameworks/SDL.framework ${PROJECT_SOURCE_DIR}/../Frameworks/SDL_image.framework ${PROJECT_SOURCE_DIR}/../Frameworks/SDL_mixer.framework ${PROJECT_SOURCE_DIR}/../Frameworks/SDL_net.framework)
   message("{COPY_FRAMEWORKS}: ${COPY_FRAMEWORKS}")
   if (FMOD_ENABLED)
-	SET_SOURCE_FILES_PROPERTIES(libfmodex.dylib PROPERTIES MACOSX_PACKAGE_LOCATION MacOS)
+	SET_SOURCE_FILES_PROPERTIES(libfmod.dylib PROPERTIES MACOSX_PACKAGE_LOCATION MacOS) # TODO: Use ${FMOD_LIBRARY} instead?
   endif()
   #add_executable(barony MACOSX_BUNDLE OSX/SDLmain.m ${GAME_SOURCES} ${COPY_FRAMEWORKS} ${BOOK_FILES} ${IMAGE_FILES} ${ITEM_FILES} ${MAP_FILES} ${MODEL_FILES} ${MUSIC_FILES} ${SOUND_FILES} libfmodex.dylib)
   #add_executable(barony MACOSX_BUNDLE OSX/SDLmain.m ${GAME_SOURCES} ${COPY_FRAMEWORKS} libfmodex.dylib /opt/local/lib/libpng16.16.dylib)
   #add_executable(barony MACOSX_BUNDLE OSX/SDLmain.m ${GAME_SOURCES} ${MACOSX_BUNDLE_ICON_FILE} libfmodex.dylib /opt/local/lib/libpng16.16.dylib)
   if (GAME_ENABLED)
-	if (FMOD_ENABLED)
-	  add_executable(barony MACOSX_BUNDLE ${GAME_SOURCES} ${MACOSX_BUNDLE_ICON_FILE} libfmodex.dylib ${PROJECT_SOURCE_DIR}/libpng16.16.dylib)
-	else()
-	  add_executable(barony MACOSX_BUNDLE ${GAME_SOURCES} ${MACOSX_BUNDLE_ICON_FILE} ${PROJECT_SOURCE_DIR}/libpng16.16.dylib)
-	endif(FMOD_ENABLED)
+	add_executable(barony MACOSX_BUNDLE ${GAME_SOURCES} ${MACOSX_BUNDLE_ICON_FILE} ${PROJECT_SOURCE_DIR}/libpng16.16.dylib)
   #add_executable(barony OSX/SDLmain.m ${GAME_SOURCES})
   #add_executable(barony ${GAME_SOURCES})
   #SET_SOURCE_FILES_PROPERTIES(${COPY_FRAMEWORKS} PROPERTIES MACOSX_PACKAGE_LOCATION Frameworks)
@@ -420,6 +434,10 @@ if (GAME_ENABLED)
 	# if(EOS_ENABLED)
 	#   target_link_libraries(barony -lsteam_api) #TODO: Fix for Windows.
 	# endif()
+	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT barony) # Otherwise, hitting "debug" will default to "ALL_BUILD" :|
+	if (DEFINED BARONY_DATADIR)
+		set_target_properties(barony PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "\$(BARONY_DATADIR)/")
+	endif()
 	target_link_libraries(barony ${SDL2_LIBRARIES} ${SDL2_LIBRARY} ${SDL2IMAGE_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${SDL2_NET_LIBRARIES} ${SDL2_TTF_LIBRARIES} ${SDL2TTF_LIBRARY})
 	if (STEAMWORKS_ENABLED)
 		target_link_libraries(barony ${STEAMWORKS_LIBRARY})
@@ -443,30 +461,32 @@ if (GAME_ENABLED)
 	if (APPLE)
 	  target_link_libraries(barony ${PROJECT_SOURCE_DIR}/libpng16.16.dylib) #Wait...what? if(APPLE) in if(WIN32)? What was I thinking back then, haha.
 	endif()
-	if (${CMAKE_SYSTEM_NAME} MATCHES "BSD|DragonFly" OR ${CMAKE_SYSTEM_NAME} STREQUAL "Haiku")
+	if (${CMAKE_SYSTEM_NAME} MATCHES "BSD|DragonFly" OR ${CMAKE_SYSTEM_NAME} MATCHES "Haiku")
 	  # For backtrace
 	  find_path(EXECINFO_INC NAMES execinfo.h)
 	  find_library(EXECINFO_LIB NAMES execinfo)
 	  include_directories(${EXECINFO_INC})
 	  target_link_libraries(barony ${EXECINFO_LIB})
 	endif()
+	#if(LINUX)
+		target_link_libraries(barony -lpthread)
+	#endif(LINUX)
   endif()
   target_link_libraries(barony ${OPENGL_LIBRARIES})
-  target_link_libraries(barony ${THREADS_LIBRARIES})
+  target_link_libraries(barony ${THREADS_LIBRARIES}) # TODO: Not sure what this is doing, since it doesn't appear to be working in Linux!
   target_link_libraries(barony -lm) # TODO: In Visual Studio, I bet this is something else, right?
   if (NOT CMAKE_SYSTEM_NAME MATCHES "Haiku")
 	  target_link_libraries(barony -lc)
   endif()
+  if (FMOD_FOUND)
+    target_link_libraries(barony ${FMOD_LIBRARY})
+  endif()
+  target_link_libraries(barony ${PHYSFS_LIBRARY})
   if(NOT APPLE)
-	#Remember, Mac isn't using find_package for FMOD and PNG.
+	#Remember, Mac isn't using find_package for PNG.
 	target_link_libraries(barony ${PNG_LIBRARY})
-	target_link_libraries(barony ${PHYSFS_LIBRARY})
-	if (FMOD_FOUND)
-	  target_link_libraries(barony ${FMOD_LIBRARY})
-	endif()
   endif()
   if (APPLE)
-	target_link_libraries(barony ${PHYSFS_LIBRARY})
 	target_link_libraries(barony ${IOKit_LIBRARY})
   endif()
   # We need to link to Winsock if we're on Windows
@@ -474,11 +494,6 @@ if (GAME_ENABLED)
 	target_link_libraries(barony wsock32 ws2_32)
 	#target_link_libraries(barony -lpng -lfmodex) Mingw, not Visual Studio.
   endif()
-  if(APPLE)
-	if (FMOD_ENABLED)
-	  target_link_libraries(barony -lfmodex) #Finally manually link fmod for mac.
-	endif()
-  endif(APPLE)
   target_link_libraries(barony ${EXTRA_LIBS}) #Apple needs this for OpenGL to work.
 
   if (OPENAL)
@@ -496,13 +511,13 @@ set(BASE_DATA_DIR "./" CACHE INTERNAL "Base data dir")
 if (NOT APPLE AND UNIX)
   include(GNUInstallDirs)
   if (DATA_DIR)
-	set(BASE_DATA_DIR "${CMAKE_INSTALL_FULL_DATAROOTDIR}/barony")
+	set(BASE_DATA_DIR "${CMAKE_INSTALL_PREFIX}")
   endif()
   message(STATUS "Base data directory ${BASE_DATA_DIR}")
 
   if (GAME_ENABLED)
 	install(TARGETS barony
-	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+	RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}"
 	COMPONENT Runtime
 	)
   endif(GAME_ENABLED)
@@ -520,19 +535,23 @@ if (EDITOR_ENABLED)
   if (APPLE)
 	#add_executable(editor OSX/SDLmain.m ${EDITOR_SOURCES})
 	#set(MACOSX_BUNDLE_ICON_FILE "${PROJECT_SOURCE_DIR}/editor.icns")
+	#set(MACOSX_BUNDLE_ICON_FILE "editor.icns")
 	#add_executable(editor MACOSX_BUNDLE OSX/SDLmain.m ${EDITOR_SOURCES} ${COPY_FRAMEWORKS} libfmodex.dylib  /opt/local/lib/libpng16.16.dylib)
 	#add_executable(editor MACOSX_BUNDLE OSX/SDLmain.m ${EDITOR_SOURCES} libfmodex.dylib  /opt/local/lib/libpng16.16.dylib)
-	if (FMOD_ENABLED)
-	  add_executable(${EDITOR_EXE_NAME} MACOSX_BUNDLE ${EDITOR_SOURCES} libfmodex.dylib ${PROJECT_SOURCE_DIR}/libpng16.16.dylib)
-	else()
-	  add_executable(${EDITOR_EXE_NAME} MACOSX_BUNDLE ${EDITOR_SOURCES} ${PROJECT_SOURCE_DIR}/libpng16.16.dylib)
-	endif()
+	set_source_files_properties("editor.icns" PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+	add_executable(${EDITOR_EXE_NAME} MACOSX_BUNDLE "editor.icns" ${EDITOR_SOURCES} ${PROJECT_SOURCE_DIR}/libpng16.16.dylib)
 	#SET_SOURCE_FILES_PROPERTIES(${MACOSX_BUNDLE_ICON_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
 	set_source_files_properties(${EDITOR_SOURCES} PROPERTIES COMPILE_FLAGS "-x objective-c++")
   else()
-	add_executable(${EDITOR_EXE_NAME} ${EDITOR_SOURCES} ${EDITOR_RESOURCE_FILE})
+	if (WIN32)
+		# add_executable(${EDITOR_EXE_NAME} EXCLUDE_FROM_ALL ${EDITOR_SOURCES} ${EDITOR_RESOURCE_FILE})
+		add_executable(${EDITOR_EXE_NAME} ${EDITOR_SOURCES} ${EDITOR_RESOURCE_FILE})
+		set_target_properties(${EDITOR_EXE_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "\$(BARONY_DATADIR)/")
+	else()
+		add_executable(${EDITOR_EXE_NAME} ${EDITOR_SOURCES} ${EDITOR_RESOURCE_FILE})
+	endif()
   endif()
-  target_compile_definitions(${EDITOR_EXE_NAME} PUBLIC EDITOR) # So that shared source files know this is the editor they're dealing with.
+  target_compile_definitions(${EDITOR_EXE_NAME} PUBLIC EDITOR) # So that shared source files know this is the editor they're dealing with. # TODO: Try using this to disable some things we don't want in the editor?
 
   target_link_libraries(${EDITOR_EXE_NAME} ${SDL2_LIBRARIES} ${SDL2_LIBRARY} ${SDL2IMAGE_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${SDL2_NET_LIBRARIES} ${SDL2_TTF_LIBRARIES} ${SDL2TTF_LIBRARY})
   if(STEAMWORKS_ENABLED)
@@ -547,6 +566,9 @@ if (EDITOR_ENABLED)
 	  # 64 bit
 	  target_link_libraries(${EDITOR_EXE_NAME} -L/usr/lib64 -lstdc++)
 	endif()
+	#if(LINUX)
+		target_link_libraries(${EDITOR_EXE_NAME} -lpthread)
+	#endif(LINUX)
   endif()
   target_link_libraries(${EDITOR_EXE_NAME} ${OPENGL_LIBRARIES})
   target_link_libraries(${EDITOR_EXE_NAME} ${THREADS_LIBRARIES})
@@ -555,13 +577,13 @@ if (EDITOR_ENABLED)
 	  target_link_libraries(${EDITOR_EXE_NAME} -lc)
   endif()
   # We need to link to Winsock if we're on Windows
+  if (FMOD_FOUND)
+    target_link_libraries(${EDITOR_EXE_NAME} ${FMOD_LIBRARY})
+  endif()
   if(NOT APPLE)
 	#Remember, Mac isn't using find_package for FMOD and PNG.
 	target_link_libraries(${EDITOR_EXE_NAME} ${PHYSFS_LIBRARY})
 	target_link_libraries(${EDITOR_EXE_NAME} ${PNG_LIBRARY})
-	if (FMOD_FOUND)
-	  target_link_libraries(${EDITOR_EXE_NAME} ${FMOD_LIBRARY})
-	endif()
   endif()
   if (APPLE)
 	target_link_libraries(${EDITOR_EXE_NAME} ${PHYSFS_LIBRARY})
@@ -575,7 +597,7 @@ if (EDITOR_ENABLED)
   endif()
   if (APPLE)
 	if (FMOD_ENABLED)
-	  target_link_libraries(${EDITOR_EXE_NAME} -lfmodex) #Finally manually link fmod for mac.
+	  target_link_libraries(${EDITOR_EXE_NAME} ${FMOD_LIBRARY}) #Finally manually link fmod for mac.
 	endif()
   endif()
   target_link_libraries(${EDITOR_EXE_NAME} ${EXTRA_LIBS}) #Apple needs this for OpenGL to work.
@@ -589,22 +611,54 @@ if (EDITOR_ENABLED)
   endif()
 endif(EDITOR_ENABLED)
 
+# Various install targets
+# 1) <TODO: insert proper description here...I think they're being used by the BSD maintainer(s)?>.
 if (NOT APPLE AND UNIX)
   if (EDITOR_ENABLED)
 	install(TARGETS ${EDITOR_EXE_NAME}
-	  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT Runtime
+	  RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}" COMPONENT Runtime
 	)
   endif()
 
-  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lang DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/barony)
+  install(DIRECTORY
+	${CMAKE_SOURCE_DIR}/books
+	${CMAKE_SOURCE_DIR}/data
+	${CMAKE_SOURCE_DIR}/fonts
+	${CMAKE_SOURCE_DIR}/images
+	${CMAKE_SOURCE_DIR}/items
+	${CMAKE_SOURCE_DIR}/lang
+	${CMAKE_SOURCE_DIR}/maps
+	${CMAKE_SOURCE_DIR}/models
+	${CMAKE_SOURCE_DIR}/music
+	${CMAKE_SOURCE_DIR}/sound
+	DESTINATION "${CMAKE_INSTALL_PREFIX}"
+  )
 
-  if (EXISTS books)
-	install(DIRECTORY 
-		${CMAKE_CURRENT_BINARY_DIR}/books ${CMAKE_CURRENT_BINARY_DIR}/images ${CMAKE_CURRENT_BINARY_DIR}/items
-		${CMAKE_CURRENT_BINARY_DIR}/maps ${CMAKE_CURRENT_BINARY_DIR}/models ${CMAKE_CURRENT_BINARY_DIR}/music
-		${CMAKE_CURRENT_BINARY_DIR}/sound DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/barony
-	)
-  endif()
+  install(FILES
+  	${CMAKE_SOURCE_DIR}/steam_appid.txt
+  	${CMAKE_SOURCE_DIR}/gamecontrollerdb.txt
+  	${CMAKE_SOURCE_DIR}/playernames-female.txt
+  	${CMAKE_SOURCE_DIR}/playernames-male.txt
+	#TYPE INCLUDE # If your CMAKE is stupid like mine and it complains about "install FILES given no DESTINATION!", you can tell it to shove it by uncommenting this line.
+  	DESTINATION "${CMAKE_INSTALL_PREFIX}"
+  )
+endif()
+# 2) Windows install targets
+if (WIN32)
+	if (DEFINED BARONY_DATADIR)
+		# THIS IS AN UTTER BODGE TO STOP VISUAL STUDIO/CMAKE FROM TRYING TO CREATE BARONY/BIN IN C:/PROGRAM FILES
+		# ...there's probably a better way to do this
+		set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR})
+		# TODO: How to force Visual Studio to run the INSTALL target before you hit the "play" button to run the debugger?
+		# Maybe...custom commands or targets?
+
+		# 2.a) Copy over lang/en.txt over to the data directory, if it exists.
+		install(FILES lang/en.txt DESTINATION ${BARONY_DATADIR}/lang/ CONFIGURATIONS ${CMAKE_CONFIGURATION_TYPES})
+
+		# 2.b) Do the same for the executables, why not?
+		install(TARGETS barony DESTINATION ${BARONY_DATADIR}/ CONFIGURATIONS ${CMAKE_CONFIGURATION_TYPES}) # TODO: To escape or to not escape these?
+		install(TARGETS ${EDITOR_EXE_NAME} DESTINATION ${BARONY_DATADIR}/ CONFIGURATIONS ${CMAKE_CONFIGURATION_TYPES})
+	endif()
 endif()
 
 if (APPLE)

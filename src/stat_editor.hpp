@@ -14,7 +14,7 @@
 #include "main.hpp"
 
 #ifdef USE_FMOD
-#include "fmod.h"
+#include <fmod.hpp>
 #endif
 
 class Item;
@@ -36,7 +36,7 @@ typedef enum
 	SKELETON,
 	SCORPION,
 	CREATURE_IMP, //Because Apple so unkindly is already using the IMP keyword.
-	BUGBEAR,
+	CRAB,
 	GNOME,
 	DEMON,
 	SUCCUBUS,
@@ -151,7 +151,7 @@ public:
 
 	// misc
 #ifdef USE_FMOD
-	FMOD_CHANNEL* monster_sound; //TODO: Do?
+	FMOD::Channel* monster_sound;
 #else
 	void* monster_sound;
 #endif

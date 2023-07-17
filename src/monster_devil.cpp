@@ -15,19 +15,25 @@
 #include "entity.hpp"
 #include "items.hpp"
 #include "monster.hpp"
-#include "sound.hpp"
+#include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
 #include "scores.hpp"
 #include "magic/magic.hpp"
+#include "prng.hpp"
 
 void initDevil(Entity* my, Stat* myStats)
 {
 	int c;
 	node_t* node;
 
+	my->flags[BURNABLE] = false;
 	my->initMonster(304);
+	my->z = -4;
+	my->sizex = 20;
+	my->sizey = 20;
+	my->yaw = PI;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -62,7 +68,7 @@ void initDevil(Entity* my, Stat* myStats)
 	}
 
 	// head
-	Entity* entity = newEntity(303, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(303, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -81,7 +87,7 @@ void initDevil(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right bicep
-	entity = newEntity(305, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(305, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -100,7 +106,7 @@ void initDevil(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right forearm
-	entity = newEntity(306, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(306, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -119,7 +125,7 @@ void initDevil(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left bicep
-	entity = newEntity(307, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(307, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -138,7 +144,7 @@ void initDevil(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left forearm
-	entity = newEntity(308, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(308, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -180,7 +186,7 @@ void devilDie(Entity* my)
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
-			if ( client_disconnected[c] )
+			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 			{
 				continue;
 			}
@@ -221,7 +227,7 @@ void devilDie(Entity* my)
 			//messagePlayer(c, "completion time: %d", completionTime);
 			steamAchievementClient(c, "BARONY_ACH_BOOTS_OF_SPEED");
 		}
-		//messagePlayer(c, language[1112]);
+		//messagePlayer(c, Language::get(1112));
 		//playSoundPlayer(c, 97, 128);
 		//stats[c]->STR += 20;
 		//stats[c]->DEX += 5;
@@ -676,7 +682,7 @@ bool Entity::devilSummonMonster(Entity* summonOnEntity, Monster creature, int ra
 		{
 			return false;
 		}
-		std::pair<int,int> chosen = goodspots.at(rand() % goodspots.size());
+		std::pair<int,int> chosen = goodspots.at(local_rng.rand() % goodspots.size());
 		Entity* timer = createParticleTimer(this, 70, 174);
 		timer->x = chosen.first * 16.0 + 8;
 		timer->y = chosen.second * 16.0 + 8;
@@ -759,7 +765,7 @@ bool Entity::devilBoulderSummonIfPlayerIsHiding(int player)
 					++numPlayers;
 				}
 			}
-			if ( devilGetNumMonstersInArena(SHADOW) <= numPlayers && (rand() % 4 == 0) )
+			if ( devilGetNumMonstersInArena(SHADOW) <= numPlayers && (local_rng.rand() % 4 == 0) )
 			{
 				if ( !devilSummonMonster(players[player]->entity, SHADOW, 5, player) )
 				{
