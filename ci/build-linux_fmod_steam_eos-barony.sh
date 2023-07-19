@@ -59,7 +59,7 @@ export STEAMWORKS_ROOT="${DEPENDENCIES_DIR}/steamworks_sdk/"
 export STEAMWORKS_ENABLED=1
 export FMOD_DIR="${DEPENDENCIES_DIR}/fmod/"
 source "${DEPENDENCIES_DIR}/eos-steam.env"
-export NFD_DIR="${DEPENDENCIES_DIR}/"
+export NFD_DIR="${DEPENDENCIES_DIR}/nfd/"
 export RAPID_JSON_DIR="${DEPENDENCIES_DIR}/"
 export PHYSFSDIR="${DEPENDENCIES_DIR}/physfs/"
 export EOS_ENABLED=1
