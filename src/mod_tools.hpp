@@ -25,7 +25,9 @@ See LICENSE for details.
 #include "entity.hpp"
 #include "ui/Widget.hpp"
 
+#ifdef USE_LIBCURL
 #include <curl/curl.h>
+#endif
 
 class CustomHelpers
 {
