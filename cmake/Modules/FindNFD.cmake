@@ -41,7 +41,7 @@ FIND_LIBRARY(NFD_LIBRARY
 	NAMES nfd libnfd
 	HINTS
 	$ENV{NFD_DIR}
-	PATH_SUFFIXES lib64 lib libs64 libs libs/Win32 libs/Win64
+	PATH_SUFFIXES lib64 lib libs64 libs libs/Win32 libs/Win64 nfd
 	PATHS ${NFD_SEARCH_PATHS}
 )
 
