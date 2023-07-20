@@ -4410,6 +4410,12 @@ bool handleEvents(void)
 					// reobtain haptic devices for each existing controller
 					controller.reinitHaptic();
 				}
+#ifdef STEAMWORKS
+                // on steam deck, player 1 always needs a controller.
+                if (SteamUtils()->IsSteamRunningOnSteamDeck() && !inputs.hasController(0)) {
+                    bindControllerToPlayer(controller.getID(), 0);
+                }
+#endif
 				break;
 			}
 			case SDL_CONTROLLERDEVICEREMOVED:

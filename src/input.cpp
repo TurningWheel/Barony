@@ -356,6 +356,11 @@ Input::ControllerType Input::getControllerType(int index) {
     if (*cvar_forceGlyphs >= 0) {
         return (ControllerType)*cvar_forceGlyphs;
     } else {
+#ifdef STEAMWORKS
+        if (SteamUtils()->IsSteamRunningOnSteamDeck()) {
+            return ControllerType::SteamDeck;
+        }
+#endif
         // SDL lets us differentiate controller types
         const int device = ::inputs.getControllerID(index);
         auto type = SDL_GameControllerTypeForIndex(device);
@@ -528,6 +533,49 @@ std::string Input::getGlyphPathForInput(const char* input, bool pressed, Control
             {"StickRightY+", {"Stick_Xbox_R_Down_00.png", "Stick_Xbox_R_Down_Pressed_00.png"}},
             {"LeftTrigger", {"Button_Xbox_LT_00.png", "Button_Xbox_LT_Press_00.png"}},
             {"RightTrigger", {"Button_Xbox_RT_00.png", "Button_Xbox_RT_Press_00.png"}},
+            {"DpadX-", {"G_Direct_Left_Press00.png", "G_Direct_00.png"}},
+            {"DpadX+", {"G_Direct_Right_Press00.png", "G_Direct_00.png"}},
+            {"DpadY-", {"G_Direct_Up_Press00.png", "G_Direct_00.png"}},
+            {"DpadY+", {"G_Direct_Down_Press00.png", "G_Direct_00.png"}},
+        };
+        
+        // look for glyph in table
+        auto find = mappings.find(input);
+        if (find != mappings.end()) {
+            auto& glyphs = find->second;
+            return pressed ? rootPath + glyphs.second : rootPath + glyphs.first;
+        }
+    }
+    else if (type == ControllerType::SteamDeck) {
+        static const std::unordered_map<std::string, std::pair<std::string, std::string>> mappings =
+        {
+            {"Mouse1", {"Mouse/Mouse_LClick_Pressed_00.png", "Mouse/Mouse_LClick_Unpressed_00.png"}},
+            {"Mouse2", {"Mouse/Mouse_MClick_Pressed_00.png", "Mouse/Mouse_MClick_Unpressed_00.png"}},
+            {"Mouse3", {"Mouse/Mouse_RClick_Pressed_00.png", "Mouse/Mouse_RClick_Unpressed_00.png"}},
+			{"Mouse4", {"Mouse/Mouse_M4_Pressed_00.png", "Mouse/Mouse_M4_Unpressed_00.png"}},
+			{"Mouse5", {"Mouse/Mouse_M5_Pressed_00.png", "Mouse/Mouse_M5_Unpressed_00.png"}},
+            {"MouseWheelDown", {"Mouse/Mouse_MWheelDown_Pressed_00.png", "Mouse/Mouse_MWheelDown_Unpressed_00.png"}},
+            {"MouseWheelUp", {"Mouse/Mouse_MWheelUp_Pressed_00.png", "Mouse/Mouse_MWheelUp_Unpressed_00.png"}},
+            {"ButtonA", {"Button_Xbox_DarkA_00.png", "Button_Xbox_DarkA_Press_00.png"}},
+            {"ButtonB", {"Button_Xbox_DarkB_00.png", "Button_Xbox_DarkB_Press_00.png"}},
+            {"ButtonX", {"Button_Xbox_DarkX_00.png", "Button_Xbox_DarkX_Press_00.png"}},
+            {"ButtonY", {"Button_Xbox_DarkY_00.png", "Button_Xbox_DarkY_Press_00.png"}},
+            {"ButtonLeftBumper", {"Button_PS_L1_00.png", "Button_PS_L1_Press_00.png"}},
+            {"ButtonRightBumper", {"Button_PS_R1_00.png", "Button_PS_R1_Press_00.png"}},
+            {"ButtonLeftStick", {"Stick_Xbox_L_00.png", "Stick_Xbox_L_Pressed_00.png"}},
+            {"ButtonRightStick", {"Stick_Xbox_R_00.png", "Stick_Xbox_R_Pressed_00.png"}},
+            {"ButtonStart", {"Button_Xbox_Menu_00.png", "Button_Xbox_Menu_Press_00.png"}},
+            {"ButtonBack", {"Button_Xbox_View_00.png", "Button_Xbox_View_Press_00.png"}},
+            {"StickLeftX-", {"Stick_Xbox_L_Left_00.png", "Stick_Xbox_L_Left_Pressed_00.png"}},
+            {"StickLeftX+", {"Stick_Xbox_L_Right_00.png", "Stick_Xbox_L_Right_Pressed_00.png"}},
+            {"StickLeftY-", {"Stick_Xbox_L_Up_00.png", "Stick_Xbox_L_Up_Pressed_00.png"}},
+            {"StickLeftY+", {"Stick_Xbox_L_Down_00.png", "Stick_Xbox_L_Down_Pressed_00.png"}},
+            {"StickRightX-", {"Stick_Xbox_R_Left_00.png", "Stick_Xbox_R_Left_Pressed_00.png"}},
+            {"StickRightX+", {"Stick_Xbox_R_Right_00.png", "Stick_Xbox_R_Right_Pressed_00.png"}},
+            {"StickRightY-", {"Stick_Xbox_R_Up_00.png", "Stick_Xbox_R_Up_Pressed_00.png"}},
+            {"StickRightY+", {"Stick_Xbox_R_Down_00.png", "Stick_Xbox_R_Down_Pressed_00.png"}},
+            {"LeftTrigger", {"Button_PS_L2_00.png", "Button_PS_L2_Press_00.png"}},
+            {"RightTrigger", {"Button_PS_R2_00.png", "Button_PS_R2_Press_00.png"}},
             {"DpadX-", {"G_Direct_Left_Press00.png", "G_Direct_00.png"}},
             {"DpadX+", {"G_Direct_Right_Press00.png", "G_Direct_00.png"}},
             {"DpadY-", {"G_Direct_Up_Press00.png", "G_Direct_00.png"}},
