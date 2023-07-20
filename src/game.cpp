@@ -4124,7 +4124,7 @@ bool handleEvents(void)
 						{
 							inputs.getVirtualMouse(i)->lastMovementFromController = false;
 						}
-						if ( inputs.bPlayerUsingKeyboardControl(i) )
+						if ( inputs.bPlayerUsingKeyboardControl(i) && (!inputs.hasController(i) || gamePaused) )
 						{
 							inputs.getVirtualMouse(i)->lastMovementFromController = false;
 							if ( !players[i]->shootmode || !players[i]->entity || gamePaused )
