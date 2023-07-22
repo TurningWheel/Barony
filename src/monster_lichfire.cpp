@@ -365,6 +365,10 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 			}
 		}
 
+		if ( my->monsterLichBattleState == LICH_BATTLE_IMMOBILE )
+		{
+			my->flags[PASSABLE] = true;
+		}
 		if ( my->monsterLichBattleState == LICH_BATTLE_IMMOBILE && my->ticks > TICKS_PER_SECOND )
 		{
 			int sides = 0;
@@ -393,6 +397,7 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 			if ( sides != 4 )
 			{
 				my->monsterLichBattleState = LICH_BATTLE_READY;
+				my->flags[PASSABLE] = false;
 				real_t distToPlayer = 0;
 				int c, playerToChase = -1;
 				for ( c = 0; c < MAXPLAYERS; c++ )
