@@ -2631,6 +2631,7 @@ void gameLogic(void)
 							client_disconnected[c] = true;
 						}
 					}
+					PingNetworkStatus_t::update();
 				}
 			}
 
@@ -2843,6 +2844,7 @@ void gameLogic(void)
 					MainMenu::timedOut();
 					client_disconnected[0] = true;
 				}
+				PingNetworkStatus_t::update();
 			}
 
 			// animate tiles

@@ -8978,7 +8978,7 @@ bind_failed:
 			addLobbyChatMessage(color, (char*)(&net_packet->data[8]));
 		}},
 
-		// received client ping
+		// received manual client ping
 		{'PING', [](){
 			const int j = net_packet->data[4];
 			if (j <= 0 || j >= MAXPLAYERS ) {
@@ -8992,6 +8992,16 @@ bind_failed:
 			net_packet->address.port = net_clients[j - 1].port;
 			net_packet->len = 5;
 			sendPacketSafe(net_sock, -1, net_packet, j - 1);
+		}},
+
+		// automated ping
+		{'PNGU', []() {
+			PingNetworkStatus_t::respond();
+		}},
+
+		// automated ping response
+		{'PNGR', []() {
+			PingNetworkStatus_t::receive();
 		}},
 
 		// player disconnected
@@ -9343,6 +9353,16 @@ bind_failed:
 			addLobbyChatMessage(uint32ColorBaronyBlue, buf);
 		}},
 
+		// automated ping
+		{'PNGU', []() {
+			PingNetworkStatus_t::respond();
+		}},
+
+		// automated ping response
+		{'PNGR', []() {
+			PingNetworkStatus_t::receive();
+		}},
+
 		// player disconnect
 	    {'DISC', [](){
 		    const int playerDisconnected = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
@@ -9563,6 +9583,7 @@ bind_failed:
 				} else {
 					// join game succeeded, advance to lobby
 					client_keepalive[0] = ticks;
+					PingNetworkStatus_t::reset();
 					receivedclientnum = true;
 					printlog("connected to server.\n");
 					client_disconnected[clientnum] = false;
@@ -9736,6 +9757,7 @@ bind_failed:
 	        handlePacketsAsClient();
 	    }
         doKeepAlive();
+		PingNetworkStatus_t::update();
 
         // push username to lobby
         if (multiplayer != SINGLE && !directConnect) {
@@ -9890,6 +9912,7 @@ bind_failed:
 
 	    // reset keepalive
 	    client_keepalive[0] = ticks;
+		PingNetworkStatus_t::reset();
 		Mods::lobbyDisableSteamAchievements = false;
 
 	    // open wait prompt
@@ -15832,12 +15855,14 @@ failed:
                 createStartButton(c);
             }
 		} else if (type == LobbyType::LobbyLAN) {
+			PingNetworkStatus_t::reset();
 			setupNetGameAsServer();
 			createStartButton(0);
             for (int c = 1; c < MAXPLAYERS; ++c) {
                 createWaitingStone(c);
             }
 		} else if (type == LobbyType::LobbyOnline) {
+			PingNetworkStatus_t::reset();
 			setupNetGameAsServer();
 			createStartButton(0);
             for (int c = 1; c < MAXPLAYERS; ++c) {
@@ -15859,6 +15884,143 @@ failed:
 		            }
 		        }
 		    }
+		}
+
+		// network ping displays
+		if ( PingNetworkStatus_t::bEnabled 
+				&& (type == LobbyType::LobbyLAN || type == LobbyType::LobbyOnline
+					|| type == LobbyType::LobbyJoined) )
+		{
+			for ( int index = 0; index < MAXPLAYERS; ++index )
+			{
+				auto pingFrame = lobby->addFrame((std::string("ping") + std::to_string(index)).c_str());
+				const int x = (Frame::virtualScreenX / 8) * (index * 2 + 1);
+				SDL_Rect pos{ x - 108 / 2, Frame::virtualScreenY - 270, 108, 38 + 18 + 4 };
+				pos.y += 146 + 32;
+				pingFrame->setSize(pos);
+				pingFrame->setHollow(true);
+				pingFrame->setTickCallback([](Widget& widget) {
+					auto frame = static_cast<Frame*>(&widget);
+					std::string name = frame->getName();
+					name = name.substr(strlen("ping"));
+					int player = std::stoi(name);
+					if ( auto ping = frame->findField("ping") )
+					{
+						ping->setDisabled(true);
+						auto pingImg = frame->findImage("ping img");
+						pingImg->disabled = true;
+						auto warningImg = frame->findImage("warning img");
+						warningImg->disabled = true;
+						auto pingBg = frame->findImage("ping bg");
+						pingBg->disabled = true;
+						if ( player == clientnum || (clientnum > 0 && player > 0) )
+						{
+							return;
+						}
+						if ( !client_disconnected[player] )
+						{
+							pingBg->disabled = false;
+							auto value = PingNetworkStatus[player].displayMillisImmediate;
+							const int divideInterval = 25;
+							if ( value > 0 )
+							{
+								char buf[32];
+								ping->setDisabled(false);
+								if ( value < PingNetworkStatus_t::pingLimitGreen )
+								{
+									if ( pingImg->path != "#*images/ui/HUD/Ping_Green.png" )
+									{
+										PingNetworkStatus[player].saveDisplayMillis(true);
+									}
+									pingImg->path = "#*images/ui/HUD/Ping_Green.png";
+									value = PingNetworkStatus[player].displayMillis;
+									value /= divideInterval;
+									value *= divideInterval;
+									if ( value < divideInterval )
+									{
+										snprintf(buf, sizeof(buf), "<%dMS", divideInterval);
+									}
+									else
+									{
+										snprintf(buf, sizeof(buf), "%dMS", value);
+									}
+								}
+								else if ( value < PingNetworkStatus_t::pingLimitYellow )
+								{
+									if ( pingImg->path != "#*images/ui/HUD/Ping_Yellow.png" )
+									{
+										PingNetworkStatus[player].saveDisplayMillis(true);
+									}
+									pingImg->path = "#*images/ui/HUD/Ping_Yellow.png";
+									value = PingNetworkStatus[player].displayMillis;
+									value /= divideInterval;
+									value *= divideInterval;
+									snprintf(buf, sizeof(buf), "%dMS", value);
+								}
+								else if ( value < PingNetworkStatus_t::pingLimitOrange )
+								{
+									if ( pingImg->path != "#*images/ui/HUD/Ping_Orange.png" )
+									{
+										PingNetworkStatus[player].saveDisplayMillis(true);
+									}
+									pingImg->path = "#*images/ui/HUD/Ping_Orange.png";
+									warningImg->disabled = false;
+									warningImg->path = "#*images/ui/HUD/warning_glyph.png";
+									value = PingNetworkStatus[player].displayMillis;
+									value /= divideInterval;
+									value *= divideInterval;
+									snprintf(buf, sizeof(buf), "%dMS", value);
+								}
+								else
+								{
+									if ( pingImg->path != "#*images/ui/HUD/Ping_Red.png" )
+									{
+										PingNetworkStatus[player].saveDisplayMillis(true);
+									}
+									pingImg->path = "#*images/ui/HUD/Ping_Red.png";
+									warningImg->disabled = false;
+									warningImg->path = "#*images/ui/HUD/danger_glyph.png";
+									value = PingNetworkStatus[player].displayMillis;
+									value /= divideInterval;
+									value *= divideInterval;
+									if ( value >= 500 )
+									{
+										snprintf(buf, sizeof(buf), ">%dMS", std::min(value, (Uint32)500));
+									}
+									else
+									{
+										snprintf(buf, sizeof(buf), "%dMS", value);
+									}
+								}
+								pingImg->disabled = false;
+
+								ping->setText(buf);
+							}
+							else
+							{
+								pingImg->path = "#*images/ui/HUD/Ping_Grey.png";
+								pingImg->disabled = false;
+								warningImg->disabled = true;
+							}
+						}
+					}
+				});
+
+				auto pingValue = pingFrame->addField("ping", 32);
+				pingValue->setSize(SDL_Rect{ 0, pos.h - 29, pos.w - 12, 24 });
+				pingValue->setFont(smallfont_outline);
+				pingValue->setHJustify(Field::justify_t::RIGHT);
+				pingValue->setVJustify(Field::justify_t::TOP);
+				pingValue->setDisabled(true);
+				pingValue->setColor(makeColorRGB(134, 159, 165));
+
+				auto bg = pingFrame->addImage(SDL_Rect{0, pos.h - 38, 108, 38}, 0xFFFFFFFF,
+					"#*images/ui/HUD/Ping_Background.png", "ping bg");
+				auto pingImg = pingFrame->addImage(SDL_Rect{ 12, pos.h - 28, 18, 18 }, 0xFFFFFFFF,
+					"#*images/ui/HUD/Ping_Grey.png", "ping img");
+				auto warningImg = pingFrame->addImage(SDL_Rect{ pos.w / 2 - 10, 0, 18, 18 }, 0xFFFFFFFF,
+					"#*images/ui/HUD/warning_glyph.png", "warning img");
+			}
 		}
 
 		// announce lobby in chat window
