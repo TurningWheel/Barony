@@ -529,7 +529,14 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 	}
 	entity->modHP(item->potionGetEffectHealth(entity, stats));
 	// results of eating
-	updateHungerMessages(entity, stats, item);
+	if ( entity->behavior == &actPlayer && stats->type != SKELETON && stats->type != AUTOMATON )
+	{
+		updateHungerMessages(entity, stats, item);
+	}
+	else if ( player > 0 )
+	{
+		serverUpdateHunger(player);
+	}
 	serverUpdateEffects(player);
 
 	// play drink sound
@@ -712,7 +719,14 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 	}
 
 	// results of eating
-	updateHungerMessages(entity, stats, item);
+	if ( entity->behavior == &actPlayer && stats->type != SKELETON && stats->type != AUTOMATON )
+	{
+		updateHungerMessages(entity, stats, item);
+	}
+	else if ( player > 0 )
+	{
+		serverUpdateHunger(player);
+	}
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
@@ -2231,8 +2245,11 @@ bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 			Sint32 hungerPointPerMana = entity->playerInsectoidHungerValueOfManaPoint(*stats);
 			stats->HUNGER += amount * hungerPointPerMana;
 			stats->HUNGER = std::min(999, stats->HUNGER);
-			updateHungerMessages(entity, stats, item);
-			if ( player > 0 )
+			if ( entity->behavior == &actPlayer && stats->type != SKELETON && stats->type != AUTOMATON )
+			{
+				updateHungerMessages(entity, stats, item);
+			}
+			else if ( player > 0 )
 			{
 				serverUpdateHunger(player);
 			}
