@@ -15768,6 +15768,10 @@ failed:
 						{
 							hide_roomcode(*roomcode, static_cast<Button&>(widget), hidden_roomcode);
 						}
+						else if ( strlen(roomcode->getText()) <= 2 )
+						{
+							hide_roomcode(*roomcode, static_cast<Button&>(widget), hidden_roomcode);
+						}
 
 						// this refocuses the player card
 						if (widget.isSelected()) {
