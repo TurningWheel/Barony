@@ -4136,7 +4136,7 @@ bool handleEvents(void)
 						{
 							inputs.getVirtualMouse(i)->lastMovementFromController = false;
 						}
-						if ( inputs.bPlayerUsingKeyboardControl(i) )
+						if ( inputs.bPlayerUsingKeyboardControl(i) && (!inputs.hasController(i) || gamePaused) )
 						{
 							inputs.getVirtualMouse(i)->lastMovementFromController = false;
 							if ( !players[i]->shootmode || !players[i]->entity || gamePaused )
@@ -4398,6 +4398,7 @@ bool handleEvents(void)
 				}
 
 				// now find a free controller slot.
+                int id = -1;
 				for ( int c = 0; c < game_controllers.size(); ++c )
 				{
 					auto& controller = game_controllers[c];
@@ -4406,11 +4407,12 @@ bool handleEvents(void)
 						continue;
 					}
 
-					bool result = controller.open(sdl_device_index, c);
+                    id = c;
+					bool result = controller.open(sdl_device_index, id);
 					assert(result); // this should always succeed because we test that the device index is valid above.
-					printlog("Device %d successfully initialized as game controller in slot %d.\n", sdl_device_index, controller.getID());
+					printlog("Device %d successfully initialized as game controller in slot %d.\n", sdl_device_index, id);
 					controller.initBindings();
-					Input::gameControllers[controller.getID()] = controller.getControllerDevice();
+					Input::gameControllers[id] = controller.getControllerDevice();
 					for (int c = 0; c < 4; ++c) {
 						Input::inputs[c].refresh();
 					}
@@ -4422,6 +4424,14 @@ bool handleEvents(void)
 					// reobtain haptic devices for each existing controller
 					controller.reinitHaptic();
 				}
+#ifdef STEAMWORKS
+                // on steam deck, player 1 always needs a controller.
+                if (SteamUtils()->IsSteamRunningOnSteamDeck()) {
+                    if (id >= 0 && !inputs.hasController(0)) {
+                        bindControllerToPlayer(id, 0);
+                    }
+                }
+#endif
 				break;
 			}
 			case SDL_CONTROLLERDEVICEREMOVED:

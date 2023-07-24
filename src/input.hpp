@@ -169,6 +169,7 @@ public:
         PlayStation,
         NintendoSwitch,
         Xbox,
+        SteamDeck,
     };
     
     static ControllerType getControllerType(int index);

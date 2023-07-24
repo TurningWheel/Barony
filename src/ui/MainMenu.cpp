@@ -6312,6 +6312,9 @@ bind_failed:
 				path = "*#images/ui/Main Menus/Settings/Controls/Layout_Switch-Lines.png";
 				break;
 #endif
+            case Input::ControllerType::SteamDeck:
+                path = "*#images/ui/Main Menus/Settings/Controls/Layout_Deck-Lines.png";
+                break;
 			default:
             case Input::ControllerType::Xbox:
                 path = "*#images/ui/Main Menus/Settings/Controls/Layout_Xbox-lines.png";
@@ -6443,6 +6446,29 @@ bind_failed:
                     {"ButtonX", r, 146, false, nullptr},
                     {"ButtonY", r, 182, false, nullptr},
                     {"ButtonStart", r, 214, false, nullptr},
+                    {"ButtonRightStick", r, 266, false, "Look / Turn"},
+                    {"ButtonRightStick", r, 306, true, nullptr},
+                });
+            }
+            else if (controllerType == Input::ControllerType::SteamDeck) {
+                const int r = x + (int)image->getWidth() + 4;
+                list.insert(list.end(),{
+                    {"ButtonLeftBumper", 0, 2, false, nullptr},
+                    {"LeftTrigger", 0, 44, false, nullptr},
+                    {"ButtonBack", 0, 78, false, nullptr},
+                    {"DpadX+", 0, 112, false, nullptr},
+                    {"DpadY+", 0, 148, false, nullptr},
+                    {"DpadX-", 0, 184, false, nullptr},
+                    {"DpadY-", 0, 220, false, nullptr},
+                    {"ButtonLeftStick", 0, 266, false, "Move"},
+                    {"ButtonLeftStick", 0, 306, true, nullptr},
+                    {"ButtonRightBumper", r, 2, false, nullptr},
+                    {"RightTrigger", r, 44, false, nullptr},
+                    {"ButtonStart", r, 78, false, nullptr},
+                    {"ButtonA", r, 112, false, nullptr},
+                    {"ButtonB", r, 148, false, nullptr},
+                    {"ButtonX", r, 184, false, nullptr},
+                    {"ButtonY", r, 220, false, nullptr},
                     {"ButtonRightStick", r, 266, false, "Look / Turn"},
                     {"ButtonRightStick", r, 306, true, nullptr},
                 });
@@ -14656,6 +14682,9 @@ failed:
                 case Input::ControllerType::PlayStation:
                     msg = "*** Press [L1] to suggest a class for your party ***";
                     break;
+                case Input::ControllerType::SteamDeck:
+                    msg = "*** Press [L1] to suggest a class for your party ***";
+                    break;
                 }
                 addLobbyChatMessage(uint32ColorBaronyBlue, msg);
 			}
@@ -15031,7 +15060,12 @@ failed:
 			const int h = image->getHeight();
 			image->draw(nullptr, SDL_Rect{ x - w / 2, y - h / 2, w, h }, viewport);
 #else
-            if (keyboardAvailable) {
+#ifdef STEAMWORKS
+            const bool steamdeck = SteamUtils()->IsSteamRunningOnSteamDeck();
+#else
+            constexpr bool steamdeck = false;
+#endif
+            if (keyboardAvailable && !steamdeck) {
                 if (controllerAvailable) {
                     // draw spacebar and A button
                     {
@@ -26034,8 +26068,15 @@ failed:
 			button->setBackground("*#images/ui/Main Menus/Mods/Upload/Button_00.png");
 			button->setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Upload/Button_High00.png");
 			button->setBackgroundActivated("*#images/ui/Main Menus/Mods/Upload/Button_Press00.png");
-			button->setHighlightColor(0xFFFFFFFF);
-			button->setColor(0xFFFFFFFF);
+            if (SteamUtils()->IsSteamRunningOnSteamDeck()) {
+                button->setTextColor(makeColorRGB(127, 127, 127));
+                button->setHighlightColor(makeColorRGB(127, 127, 127));
+                button->setColor(makeColorRGB(127, 127, 127));
+            } else {
+                button->setTextColor(0xFFFFFFFF);
+                button->setHighlightColor(0xFFFFFFFF);
+                button->setColor(0xFFFFFFFF);
+            }
 			button->select();
 
 			button->setWidgetSearchParent("workshop_create");
@@ -26111,6 +26152,10 @@ failed:
 				}
 			});
 			button->setCallback([](Button& button) {
+                if (SteamUtils()->IsSteamRunningOnSteamDeck()) {
+                    soundError();
+                    return;
+                }
 				soundActivate();
 				
 				nfdchar_t* outPath = NULL;
