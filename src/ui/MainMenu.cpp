@@ -137,7 +137,7 @@ namespace MainMenu {
 #endif
                 {"Interact Tooltip Prev", emptyBinding, emptyBinding, emptyBinding },
                 {"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
-                {"Quick Turn", emptyBinding, "ButtonLeftStick", emptyBinding },
+                {"Quick Turn", emptyBinding, "ButtonRightBumper", emptyBinding },
                 {"Chat", "Return", hiddenBinding, emptyBinding},
                 {"Move Forward", "W", hiddenBinding, emptyBinding},
                 {"Move Left", "A", hiddenBinding, emptyBinding},
@@ -192,7 +192,7 @@ namespace MainMenu {
 #ifdef NINTENDO
                 {"Interact Tooltip Next", "R", "ButtonB", emptyBinding },
 #else
-                {"Interact Tooltip Next", "R", "ButtonA", emptyBinding },
+                {"Interact Tooltip Next", "R", "DpadY+", emptyBinding },
 #endif
                 {"Interact Tooltip Prev", emptyBinding, emptyBinding, emptyBinding },
                 {"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
