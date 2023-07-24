@@ -3724,6 +3724,17 @@ namespace MainMenu {
 		auto dimmer = static_cast<Frame*>(window->getParent());
 		dimmer->removeSelf();
 		settingsCustomizeInventorySorting(button);
+
+		if ( main_menu_frame )
+		{
+			if ( auto window = main_menu_frame->findFrame("inventory_sorting_window") )
+			{
+				if ( auto dimmer = window->getParent() )
+				{
+					dimmer->setUserData((void*)(intptr_t)SETTING_MODIFIED);
+				}
+			}
+		}
 	}
 
 	static void inventorySortingDiscard(Button& button) {
@@ -5140,6 +5151,14 @@ namespace MainMenu {
 				parent_background->removeSelf();
 				allSettings.minimap = Minimap::reset();
 				settingsMinimap(button);
+
+				if ( main_menu_frame )
+				{
+					if ( auto window = main_menu_frame->findFrame("minimap") )
+					{
+						window->setUserData((void*)(intptr_t)SETTING_MODIFIED);
+					}
+				}
 			},
 			[](Button& button){ // discard & exit
 				if ( auto parent = button.getParent() )
@@ -5283,6 +5302,14 @@ namespace MainMenu {
 				parent_background->removeSelf();
 				allSettings.show_messages = Messages::reset();
 				settingsMessages(button);
+
+				if ( main_menu_frame )
+				{
+					if ( auto window = main_menu_frame->findFrame("messages") )
+					{
+						window->setUserData((void*)(intptr_t)SETTING_MODIFIED);
+					}
+				}
 			},
 			[](Button& button){ // discard & exit
 				if ( auto parent = button.getParent() )
@@ -5505,6 +5532,14 @@ namespace MainMenu {
 				allSettings.bindings = Bindings::reset(defaultControlLayout);
 				const int player = multiplayer == CLIENT ? 0 : getMenuOwner();
 				settingsBindings(player, inputs.hasController(player) ? 1 : 0, defaultControlLayout);
+
+				if ( main_menu_frame )
+				{
+					if ( auto window = main_menu_frame->findFrame("bindings") )
+					{
+						window->setUserData((void*)(intptr_t)SETTING_MODIFIED);
+					}
+				}
 			},
 			[](Button& button){ // discard & exit
 				if ( auto parent = button.getParent() )
@@ -21026,11 +21061,19 @@ failed:
                     if (strcmp(button->getBackground(), name) == 0) {
                         button->select();
                         button->activate();
+
+						if ( main_menu_frame )
+						{
+							if ( auto window = main_menu_frame->findFrame("settings") )
+							{
+								window->setUserData((void*)(intptr_t)SETTING_MODIFIED);
+							}
+						}
                         return;
                     }
                 }
 			}
-			});
+		});
 
 		auto discard_and_exit = settings->addButton("discard_and_exit");
 		discard_and_exit->setBackground("*images/ui/Main Menus/Settings/Settings_Button_Basic00.png");
