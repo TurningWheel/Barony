@@ -334,8 +334,8 @@ void GameController::handleAnalog(int player)
 
 		if ( radialMenuOpen )
 		{
-            const auto rawx = getRawRightXMove() * (playerSettings[player].gamepad_rightx_invert * -2 + 1);
-            const auto rawy = getRawRightYMove() * (playerSettings[player].gamepad_righty_invert * -2 + 1);
+            const auto rawx = getRawRightXMove();
+            const auto rawy = getRawRightYMove();
 			const real_t floatx = rawx;
 			const real_t floaty = rawy;
 
