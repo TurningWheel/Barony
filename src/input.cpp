@@ -1155,6 +1155,49 @@ std::vector<std::string> Input::getBindingsForInput(const char* input) const {
     return result;
 }
 
+bool Input::bindingIsSharedWithKeyboardSystemBinding(const char* binding)
+{
+	if ( multiplayer != SINGLE && player != 0 ) {
+		return inputs[0].bindingIsSharedWithKeyboardSystemBinding(binding);
+	}
+#ifndef EDITOR
+	if ( disabled )
+	{
+		return false;
+	}
+
+	const std::pair<std::string, binding_t> checkBinding =
+		std::make_pair(binding, input(binding));
+	if ( !checkBinding.second.isBindingUsingKeyboard() )
+	{
+		return false;
+	}
+
+	if ( checkBinding.second.type == Input::binding_t::bindtype_t::KEYBOARD )
+	{
+		switch ( checkBinding.second.keycode )
+		{
+			case SDLK_LSHIFT:
+			case SDLK_RSHIFT:
+			case SDLK_LALT:
+			case SDLK_RALT:
+			case SDLK_LCTRL:
+			case SDLK_RCTRL:
+			case SDLK_SLASH:
+				return true;
+			default:
+				break;
+		}
+	}
+
+	if ( checkBinding.second.input.find("Mouse") != std::string::npos )
+	{
+		return true;
+	}
+#endif
+	return false;
+}
+
 void Input::consumeBindingsSharedWithBinding(const char* binding)
 {
 	if (multiplayer != SINGLE && player != 0) {

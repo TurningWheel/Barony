@@ -3395,10 +3395,25 @@ void actHudShield(Entity* my)
 	if ( !players[HUDSHIELD_PLAYERNUM]->usingCommand()
 		&& players[HUDSHIELD_PLAYERNUM]->bControlEnabled
 		&& !gamePaused
-		&& !swimming && shootmode)
+		&& !swimming )
 	{
+		bool allowDefend = (shootmode && inputs.hasController(HUDSHIELD_PLAYERNUM))
+			|| (!inputs.hasController(HUDSHIELD_PLAYERNUM) && inputs.bPlayerUsingKeyboardControl(HUDSHIELD_PLAYERNUM));
+		if ( allowDefend )
+		{
+			if ( players[HUDSHIELD_PLAYERNUM]->messageZone.logWindow || players[HUDSHIELD_PLAYERNUM]->minimap.mapWindow )
+			{
+				allowDefend = false;
+			}
+			else if ( !shootmode && input.bindingIsSharedWithKeyboardSystemBinding("Defend") )
+			{
+				allowDefend = false;
+			}
+		}
+
+
 		if ( players[HUDSHIELD_PLAYERNUM] && players[HUDSHIELD_PLAYERNUM]->entity 
-			&& shootmode
+			&& allowDefend
 			&& players[HUDSHIELD_PLAYERNUM]->entity->isMobile() 
 			&& !cast_animation[HUDSHIELD_PLAYERNUM].active
 			&& !cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook

@@ -201,6 +201,9 @@ public:
 
 	//! consume bindings that all use the same input as given binding
 	void consumeBindingsSharedWithBinding(const char* binding);
+
+	//! return true if binding conflicts with system binding (i.e left/right click, scroll wheel)
+	bool bindingIsSharedWithKeyboardSystemBinding(const char* binding);
  
     //! get list of bindings for given input
     std::vector<std::string> getBindingsForInput(const char* input) const;
