@@ -1115,10 +1115,12 @@ Frame* createAllyPlayerEntry(const int player)
 					pos.y = frame->getSize().y + 9;
 					char buf[32];
 					snprintf(buf, sizeof(buf), "%dMS", PingNetworkStatus[player].displayMillis);
-					if ( auto textGet = Text::get(buf, smallfont_outline, makeColorRGB(134, 159, 165), makeColor(0, 0, 0, 255)) )
+					if ( auto textGet = Text::get(buf, smallfont_outline, 
+						makeColor(134, 159, 165, 255), makeColor(0, 0, 0, 255)) )
 					{
-						textGet->draw(SDL_Rect{ 0,0,0,0 }, SDL_Rect{ pos.x, pos.y, 0, 0 },
-							SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY });
+						textGet->drawColor(SDL_Rect{ 0,0,0,0 }, SDL_Rect{ pos.x, pos.y, 0, 0 },
+							SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY }, 
+							makeColor(255, 255, 255, 255 * (frame->getOpacity() / 100.0)));
 					}
 				}
 			}
