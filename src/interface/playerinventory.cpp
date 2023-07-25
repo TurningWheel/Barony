@@ -3304,6 +3304,7 @@ void releaseItem(const int player)
 			bool mouseInChest = false;
 			bool mouseInAlchemyBasePotion = false;
 			bool mouseInAlchemySecondaryPotion = false;
+			bool allowDropItems = players[player]->inventoryUI.guiAllowDropItems(selectedItem);
 			if ( !mouseInInventory )
 			{
 				if ( players[player]->inventoryUI.chestFrame
@@ -3315,6 +3316,31 @@ void releaseItem(const int player)
 						if ( !chestSlots->isDisabled() && chestSlots->capturesMouse() )
 						{
 							mouseInChest = true;
+						}
+					}
+					if ( players[player]->inventoryUI.chestFrame->capturesMouse() )
+					{
+						allowDropItems = false;
+					}
+				}
+				else if ( GenericGUI[player].alchemyGUI.bOpen )
+				{
+					if ( GenericGUI[player].alchemyGUI.alchFrame
+						&& !GenericGUI[player].alchemyGUI.alchFrame->isDisabled() )
+					{
+						if ( auto baseFrame = GenericGUI[player].alchemyGUI.alchFrame->findFrame("alchemy base") )
+						{
+							if ( !baseFrame->isDisabled() && baseFrame->capturesMouse() )
+							{
+								allowDropItems = false;
+							}
+						}
+						if ( auto recipesFrame = GenericGUI[player].alchemyGUI.alchFrame->findFrame("player recipes") )
+						{
+							if ( !recipesFrame->isDisabled() && recipesFrame->capturesMouse() )
+							{
+								allowDropItems = false;
+							}
 						}
 					}
 				}
@@ -3984,7 +4010,7 @@ void releaseItem(const int player)
 					playSound(139, 64); // click sound
 				}
 			}
-			else if ( itemCategory(selectedItem) == SPELL_CAT || mouseInInventory || !players[player]->inventoryUI.guiAllowDropItems() )
+			else if ( itemCategory(selectedItem) == SPELL_CAT || mouseInInventory || !allowDropItems )
 			{
 				//Outside inventory. Spells can't be dropped.
 				//If mouseInInventory, we dropped onto a slot frame area and the item should return to where it was
@@ -7296,13 +7322,23 @@ bool Player::Inventory_t::guiAllowDefaultRightClick() const
 	return false;
 }
 
-bool Player::Inventory_t::guiAllowDropItems() const
+bool Player::Inventory_t::guiAllowDropItems(Item* itemToDrop) const
 {
 	if ( player.GUI.bModuleAccessibleWithMouse(player.GUI.activeModule) )
 	{
-		if ( player.shopGUI.bOpen || GenericGUI[player.playernum].isGUIOpen()
+		if ( GenericGUI[player.playernum].alchemyGUI.bOpen )
+		{
+			if ( itemToDrop && GenericGUI[player.playernum].alembicItem == itemToDrop )
+			{
+				return false;
+			}
+			return true;
+		}
+
+		if ( player.shopGUI.bOpen 
+			|| GenericGUI[player.playernum].isGUIOpen()
 			|| player.GUI.isDropdownActive() || player.GUI.isGameoverActive()
-			|| player.inventoryUI.chestGUI.bOpen
+			/*|| player.inventoryUI.chestGUI.bOpen*/
 			|| !players[player.playernum]->bControlEnabled )
 		{
 			return false;
@@ -9512,7 +9548,7 @@ void Player::Inventory_t::updateInventory()
 				{
 					if ( (keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT]) )
 					{
-						if ( guiAllowDropItems() )
+						if ( guiAllowDropItems(item) )
 						{
 							if ( players[player]->paperDoll.isItemOnDoll(*item) )
 							{
