@@ -102,10 +102,13 @@ Entity* spawnFlame(Entity* parentent, Sint32 sprite )
 				bool anyVismap = false;
 				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
+					if ( !client_disconnected[i] && players[i]->isLocalPlayer() )
 					{
-						anyVismap = true;
-						break;
+                        if ( cameras[i].vismap && cameras[i].vismap[y + x * map.height] )
+                        {
+                            anyVismap = true;
+                            break;
+                        }
 					}
 				}
 				if ( !anyVismap )
