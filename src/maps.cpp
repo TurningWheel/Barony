@@ -2791,8 +2791,8 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		for ( doorNode = doorList.first; doorNode != nullptr; doorNode = doorNode->next )
 		{
 			door_t* door = (door_t*)doorNode->element;
-			int x = std::min<unsigned int>(std::max(0, door->x), map.width); //TODO: Why are const int and unsigned int being compared?
-			int y = std::min<unsigned int>(std::max(0, door->y), map.height); //TODO: Why are const int and unsigned int being compared?
+			int x = std::min<unsigned int>(std::max(0, door->x), map.width - 1); //TODO: Why are const int and unsigned int being compared?
+			int y = std::min<unsigned int>(std::max(0, door->y), map.height - 1); //TODO: Why are const int and unsigned int being compared?
 			if ( possiblelocations[y + x * map.height] == true )
 			{
 				possiblelocations[y + x * map.height] = false;

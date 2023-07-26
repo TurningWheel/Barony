@@ -398,7 +398,7 @@ bool inrange[MAXPLAYERS];
 Sint32 client_classes[MAXPLAYERS];
 Uint32 client_keepalive[MAXPLAYERS];
 Uint16 portnumber;
-bool client_disconnected[MAXPLAYERS];
+bool client_disconnected[MAXPLAYERS] = { false };
 list_t entitiesdeleted;
 
 // fps

@@ -526,6 +526,7 @@ void buttonNewConfirm(button_t* my)
 	map.height = std::min(std::max(MINHEIGHT, map.height), MAXHEIGHT);
 	map.tiles = (int*) malloc(sizeof(int) * MAPLAYERS * map.height * map.width);
 	camera.vismap = (bool*) malloc(sizeof(bool) * map.height * map.width);
+    memset(camera.vismap, 0, sizeof(bool) * map.height * map.width);
 	for ( z = 0; z < MAPLAYERS; z++ )
 	{
 		for ( y = 0; y < map.height; y++ )
@@ -1451,6 +1452,7 @@ void buttonAttributesConfirm(button_t* my)
 
 	map.tiles = (int*) malloc(sizeof(int) * MAPLAYERS * map.height * map.width);
 	camera.vismap = (bool*) malloc(sizeof(bool) * map.height * map.width);
+    memset(camera.vismap, 0, sizeof(bool) * map.height * map.width);
 	strcpy(map.name, nametext);
 	strcpy(map.author, authortext);
     for (int c = 0; c < MAXPLAYERS + 1; ++c) {

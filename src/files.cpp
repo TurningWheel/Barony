@@ -1772,11 +1772,14 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 	{
 #ifdef EDITOR
 		camera.vismap = (bool*)malloc(sizeof(bool) * destmap->width * destmap->height);
+        memset(camera.vismap, 0, sizeof(bool) * destmap->height * destmap->width);
 #endif
 		menucam.vismap = (bool*)malloc(sizeof(bool) * destmap->width * destmap->height);
+        memset(menucam.vismap, 0, sizeof(bool) * destmap->height * destmap->width);
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			cameras[i].vismap = (bool*)malloc(sizeof(bool) * destmap->width * destmap->height);
+            memset(cameras[i].vismap, 0, sizeof(bool) * destmap->height * destmap->width);
 		}
 	}
 	fp->read(destmap->tiles, sizeof(Sint32), destmap->width * destmap->height * MAPLAYERS);

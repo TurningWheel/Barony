@@ -1144,6 +1144,7 @@ void undo()
 	map.height = undomap->height;
 	map.tiles = (Sint32*) malloc(sizeof(Sint32) * map.width * map.height * MAPLAYERS);
 	camera.vismap = (bool*) malloc(sizeof(bool) * map.height * map.width);
+    memset(camera.vismap, 0, sizeof(bool) * map.height * map.width);
 	memcpy(map.tiles, undomap->tiles, sizeof(Sint32)*undomap->width * undomap->height * MAPLAYERS);
 	list_FreeAll(map.entities);
 	for ( node = undomap->entities->first; node != NULL; node = node->next )
@@ -1179,6 +1180,7 @@ void redo()
 	map.height = undomap->height;
 	map.tiles = (Sint32*) malloc(sizeof(Sint32) * map.width * map.height * MAPLAYERS);
 	camera.vismap = (bool*) malloc(sizeof(bool) * map.height * map.width);
+    memset(camera.vismap, 0, sizeof(bool) * map.height * map.width);
 	memcpy(map.tiles, undomap->tiles, sizeof(Sint32)*undomap->width * undomap->height * MAPLAYERS);
 	list_FreeAll(map.entities);
 	for ( node = undomap->entities->first; node != NULL; node = node->next )
@@ -1612,6 +1614,7 @@ int main(int argc, char** argv)
 	map.entities->last = nullptr;
 	map.tiles = (int*) malloc(sizeof(int) * map.width * map.height * MAPLAYERS);
 	camera.vismap = (bool*) malloc(sizeof(bool) * map.height * map.width);
+    memset(camera.vismap, 0, sizeof(bool) * map.height * map.width);
 	strcpy(map.name, "");
 	strcpy(map.author, "");
 	map.skybox = 0;
