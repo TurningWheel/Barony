@@ -19113,17 +19113,17 @@ failed:
 	}
 
 	static void hostOnlineLobby(Button&) {
-#ifndef STEAMWORKS
-		if ( Mods::numCurrentModsLoaded >= 1 )
-		{
-			errorPrompt("Unable to host lobby:\nModded online lobbies are not yet\navailable.", "Okay", [](Button&) {
-				multiplayer = SINGLE;
-				soundCancel();
-				closeMono();
-			});
-			return;
-		}
-#endif
+//#ifndef STEAMWORKS
+//		if ( Mods::numCurrentModsLoaded >= 1 )
+//		{
+//			errorPrompt("Unable to host lobby:\nModded online lobbies are not yet\navailable.", "Okay", [](Button&) {
+//				multiplayer = SINGLE;
+//				soundCancel();
+//				closeMono();
+//			});
+//			return;
+//		}
+//#endif
 
 #if !defined(STEAMWORKS) && !defined(USE_EOS)
 		errorPrompt("Unable to host lobby:\nOnline play is not available.", "Okay", [](Button&){
@@ -19142,22 +19142,22 @@ failed:
 			createOnlineLobby();
 #elif defined(STEAMWORKS) && defined(USE_EOS)
 			if (LobbyHandler.crossplayEnabled) {
-				if ( Mods::numCurrentModsLoaded >= 1 )
-				{
-					const char* prompt = "Notice: Modded online lobbies are\nnot yet available for crossplay.";
-					binaryPrompt(prompt, "Host via\nSteam", "Cancel",
-						[](Button&) { // yes
-							closeBinary();
-							LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
-							LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
-							createOnlineLobby();
-						},
-						[](Button&) { // no
-							closeBinary();
-							soundCancel();
-						}, false, false);
-				}
-				else
+				//if ( Mods::numCurrentModsLoaded >= 1 )
+				//{
+				//	const char* prompt = "Notice: Modded online lobbies are\nnot yet available for crossplay.";
+				//	binaryPrompt(prompt, "Host via\nSteam", "Cancel",
+				//		[](Button&) { // yes
+				//			closeBinary();
+				//			LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+				//			LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+				//			createOnlineLobby();
+				//		},
+				//		[](Button&) { // no
+				//			closeBinary();
+				//			soundCancel();
+				//		}, false, false);
+				//}
+				//else
 				{
 					const char* prompt = "Would you like to host via\nEpic Online for crossplay?";
 					binaryPrompt(prompt, "Yes", "No",
