@@ -220,6 +220,7 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 #endif
 
 ConsoleVariable<bool> cvar_enableKeepAlives("/keepalive_enabled", true);
+ConsoleVariable<bool> cvar_animate_tiles("/animate_tiles", true);
 
 std::vector<std::string> randomPlayerNamesMale;
 std::vector<std::string> randomPlayerNamesFemale;
@@ -1396,7 +1397,7 @@ void gameLogic(void)
 							int index = z + y * MAPLAYERS + x * MAPLAYERS * map.height;
 							if ( animatedtiles[map.tiles[index]] )
 							{
-								if ( ticks % 10 == 0 )
+								if ( ticks % 10 == 0 && *cvar_animate_tiles )
 								{
 									map.tiles[index]--;
 									if ( !animatedtiles[map.tiles[index]] )
@@ -2860,7 +2861,7 @@ void gameLogic(void)
 							int index = z + y * MAPLAYERS + x * MAPLAYERS * map.height;
 							if ( animatedtiles[map.tiles[index]] )
 							{
-								if ( ticks % 10 == 0 )
+								if ( (ticks % 10 == 0) && *cvar_animate_tiles )
 								{
 									map.tiles[index]--;
 									if ( !animatedtiles[map.tiles[index]] )
