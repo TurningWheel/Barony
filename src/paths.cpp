@@ -615,16 +615,15 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 	}
 
     // here begins actual A* code:
-    typedef std::unordered_map<pairtype, pathnode_t, pair_hash> set;
     struct queue_type {
         int x, y;
-        set& openList;
-        bool operator<(const queue_type& rhs) const {
-            const auto find1 = openList.find({x, y});
-            assert(find1 != openList.end());
+        std::unordered_map<pairtype, pathnode_t, pair_hash>& openSet;
+        bool operator>(const queue_type& rhs) const {
+            const auto find1 = openSet.find({x, y});
+            assert(find1 != openSet.end());
             const auto& lhs_node = find1->second;
-            const auto find2 = rhs.openList.find({rhs.x, rhs.y});
-            assert(find2 != openList.end());
+            const auto find2 = rhs.openSet.find({rhs.x, rhs.y});
+            assert(find2 != openSet.end());
             const auto& rhs_node = find2->second;
             return lhs_node.g + lhs_node.h > rhs_node.g + rhs_node.h;
         }
@@ -634,8 +633,8 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
             return *this;
         }
     };
-    std::priority_queue<queue_type> queue;
-	set openSet, closedSet;
+    std::priority_queue<queue_type, std::vector<queue_type>, std::greater<queue_type>> queue;
+	std::unordered_map<pairtype, pathnode_t, pair_hash> openSet, closedSet;
 
 	// create starting node in list
     const auto firstNode = pathnode_t{x1, y1, 0, heuristic(x1, y1, x2, y2), -1, -1};
