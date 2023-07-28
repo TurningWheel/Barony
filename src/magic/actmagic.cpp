@@ -142,9 +142,6 @@ void actMagiclightBall(Entity* my)
 		return;
 	})*/
 
-	//list_t *path = NULL;
-	pathnode_t* pathnode = NULL;
-
 	//TODO: Follow player around (at a distance -- and delay before starting to follow).
 	//TODO: Circle around player's head if they stand still for a little bit. Continue circling even if the player walks away -- until the player is far enough to trigger move (or if the player moved for a bit and then stopped, then update position).
 	//TODO: Don't forget to cast flickering light all around it.
@@ -353,7 +350,7 @@ void actMagiclightBall(Entity* my)
 							{
 								if (node->element)
 								{
-									pathnode = (pathnode_t*)node->element;
+									auto pathnode = (pathnode_t*)node->element;
 									//total_distance += sqrt(pow(pathnode->y - prevy, 2) + pow(pathnode->x - prevx, 2) );
 									total_distance += sqrt(pow(prevx - pathnode->x, 2) + pow(prevy - pathnode->y, 2) );
 									prevx = pathnode->x;
@@ -372,13 +369,13 @@ void actMagiclightBall(Entity* my)
 						{
 							if (my->path->first != NULL)
 							{
-								pathnode = (pathnode_t*)my->path->first->element;
+								auto pathnode = (pathnode_t*)my->path->first->element;
 								//double distance = sqrt(pow(pathnode->y * 16 + 8 - my->y, 2) + pow(pathnode->x * 16 + 8 - my->x, 2) );
 								//double distance = sqrt(pow((my->y) - ((pathnode->y + 8) * 16), 2) + pow((my->x) - ((pathnode->x + 8) * 16), 2));
 								double distance = sqrt(pow(((pathnode->y * 16) + 8) - (my->y), 2) + pow(((pathnode->x * 16) + 8) - (my->x), 2));
 								if (distance <= 4)
 								{
-									list_RemoveNode(pathnode->node); //TODO: Make sure it doesn't get stuck here. Maybe remove the node only if it's the last one?
+									list_RemoveNode(my->path->first);
 									if (!my->path->first)
 									{
 										list_FreeAll(my->path);
