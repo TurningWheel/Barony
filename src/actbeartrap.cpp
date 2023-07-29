@@ -220,11 +220,13 @@ void actBeartrap(Entity* my)
 							// update enemy bar for attacker
 							if ( !strcmp(stat->name, "") )
 							{
-								updateEnemyBar(parent, entity, getMonsterLocalizedName(stat->type).c_str(), stat->HP, stat->MAXHP);
+								updateEnemyBar(parent, entity, getMonsterLocalizedName(stat->type).c_str(), stat->HP, stat->MAXHP,
+									false, DamageGib::DMG_DEFAULT);
 							}
 							else
 							{
-								updateEnemyBar(parent, entity, stat->name, stat->HP, stat->MAXHP);
+								updateEnemyBar(parent, entity, stat->name, stat->HP, stat->MAXHP,
+									false, DamageGib::DMG_DEFAULT);
 							}
 						}
 					}
@@ -626,11 +628,13 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			{
 				if ( !strcmp(stat->name, "") )
 				{
-					updateEnemyBar(parent, triggered, getMonsterLocalizedName(stat->type).c_str(), stat->HP, stat->MAXHP);
+					updateEnemyBar(parent, triggered, getMonsterLocalizedName(stat->type).c_str(), stat->HP, stat->MAXHP,
+						false, DamageGib::DMG_TODO);
 				}
 				else
 				{
-					updateEnemyBar(parent, triggered, stat->name, stat->HP, stat->MAXHP);
+					updateEnemyBar(parent, triggered, stat->name, stat->HP, stat->MAXHP,
+						false, DamageGib::DMG_TODO);
 				}
 				Entity* gib = spawnGib(triggered);
 				serverSpawnGibForClient(gib);

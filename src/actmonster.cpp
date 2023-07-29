@@ -5151,7 +5151,8 @@ timeToGoAgain:
 												{
 													hit.entity->doorHealth = 0;    // minotaurs smash doors instantly
 												}
-												updateEnemyBar(my, hit.entity, Language::get(674), hit.entity->skill[4], hit.entity->skill[9]);
+												updateEnemyBar(my, hit.entity, Language::get(674), hit.entity->skill[4], hit.entity->skill[9],
+													false, DamageGib::DMG_DEFAULT);
 												playSoundEntity(hit.entity, 28, 64);
 												if ( hit.entity->doorHealth <= 0 )
 												{
@@ -6225,7 +6226,8 @@ timeToGoAgain:
 											{
 												hit.entity->doorHealth = 0;    // minotaurs smash doors instantly
 											}
-											updateEnemyBar(my, hit.entity, Language::get(674), hit.entity->skill[4], hit.entity->skill[9]);
+											updateEnemyBar(my, hit.entity, Language::get(674), hit.entity->skill[4], hit.entity->skill[9],
+												false, DamageGib::DMG_DEFAULT);
 											playSoundEntity(hit.entity, 28, 64);
 											if ( hit.entity->doorHealth <= 0 )
 											{

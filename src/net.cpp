@@ -2780,14 +2780,26 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		Sint16 oldhp = SDLNet_Read16(&net_packet->data[8]);
 		Uint32 uid = SDLNet_Read32(&net_packet->data[10]);
 		bool lowPriorityTick = false;
-		if ( net_packet->data[14] == 1 )
+		DamageGib gib = DMG_DEFAULT;
+		if ( EnemyHPDamageBarHandler::bDamageGibTypesEnabled )
 		{
-			lowPriorityTick = true;
+			gib = (DamageGib)((net_packet->data[14] & 0xFE) >> 1); // upper 7 bits
+			if ( net_packet->data[14] & 1 )
+			{
+				lowPriorityTick = true;
+			}
+		}
+		else
+		{
+			if ( net_packet->data[14] == 1 )
+			{
+				lowPriorityTick = true;
+			}
 		}
 		char enemy_name[128] = "";
 		strcpy(enemy_name, (char*)(&net_packet->data[15]));
 		enemyHPDamageBarHandler[clientnum].addEnemyToList(static_cast<Sint32>(enemy_hp), 
-			static_cast<Sint32>(enemy_maxhp), static_cast<Sint32>(oldhp), uid, enemy_name, lowPriorityTick);
+			static_cast<Sint32>(enemy_maxhp), static_cast<Sint32>(oldhp), uid, enemy_name, lowPriorityTick, gib);
 	}},
 
 	// ping

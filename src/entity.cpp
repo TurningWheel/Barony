@@ -3949,11 +3949,13 @@ void Entity::handleEffects(Stat* myStats)
 				// update enemy bar for attacker
 				if ( !strcmp(myStats->name, "") )
 				{
-					updateEnemyBar(killer, this, getMonsterLocalizedName(myStats->type).c_str(), myStats->HP, myStats->MAXHP, lowPriority);
+					updateEnemyBar(killer, this, getMonsterLocalizedName(myStats->type).c_str(), myStats->HP, myStats->MAXHP, lowPriority,
+						DamageGib::DMG_POISON);
 				}
 				else
 				{
-					updateEnemyBar(killer, this, myStats->name, myStats->HP, myStats->MAXHP, lowPriority);
+					updateEnemyBar(killer, this, myStats->name, myStats->HP, myStats->MAXHP, lowPriority,
+						DamageGib::DMG_POISON);
 				}
 			}
 			myStats->killer = KilledBy::POISON;
@@ -4082,11 +4084,13 @@ void Entity::handleEffects(Stat* myStats)
 					// update enemy bar for attacker
 					if ( !strcmp(myStats->name, "") )
 					{
-						updateEnemyBar(killer, this, getMonsterLocalizedName(myStats->type).c_str(), myStats->HP, myStats->MAXHP, lowPriority);
+						updateEnemyBar(killer, this, getMonsterLocalizedName(myStats->type).c_str(), myStats->HP, myStats->MAXHP, lowPriority,
+							DamageGib::DMG_BLEED);
 					}
 					else
 					{
-						updateEnemyBar(killer, this, myStats->name, myStats->HP, myStats->MAXHP, lowPriority);
+						updateEnemyBar(killer, this, myStats->name, myStats->HP, myStats->MAXHP, lowPriority,
+							DamageGib::DMG_BLEED);
 					}
 				}
 			}
@@ -4268,11 +4272,13 @@ void Entity::handleEffects(Stat* myStats)
 						// update enemy bar for attacker
 						if ( !strcmp(myStats->name, "") )
 						{
-							updateEnemyBar(killer, this, getMonsterLocalizedName(myStats->type).c_str(), myStats->HP, myStats->MAXHP, lowPriority);
+							updateEnemyBar(killer, this, getMonsterLocalizedName(myStats->type).c_str(), myStats->HP, myStats->MAXHP, lowPriority,
+								DamageGib::DMG_FIRE);
 						}
 						else
 						{
-							updateEnemyBar(killer, this, myStats->name, myStats->HP, myStats->MAXHP, lowPriority);
+							updateEnemyBar(killer, this, myStats->name, myStats->HP, myStats->MAXHP, lowPriority,
+								DamageGib::DMG_FIRE);
 						}
 					}
 				}
@@ -7581,34 +7587,42 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				if ( hit.entity->behavior == &actDoor )
 				{
-					updateEnemyBar(this, hit.entity, Language::get(674), entityHP, hit.entity->skill[9]);
+					updateEnemyBar(this, hit.entity, Language::get(674), entityHP, hit.entity->skill[9], false,
+						DamageGib::DMG_DEFAULT);
 				}
 				else if ( hit.entity->behavior == &::actChest )
 				{
-					updateEnemyBar(this, hit.entity, Language::get(675), entityHP, hit.entity->skill[8]);
+					updateEnemyBar(this, hit.entity, Language::get(675), entityHP, hit.entity->skill[8], false,
+						DamageGib::DMG_DEFAULT);
 				}
 				else if ( hit.entity->isDamageableCollider() )
 				{
-					updateEnemyBar(this, hit.entity, Language::get(hit.entity->getColliderLangName()), entityHP, hit.entity->colliderMaxHP);
+					updateEnemyBar(this, hit.entity, Language::get(hit.entity->getColliderLangName()), entityHP, hit.entity->colliderMaxHP, false,
+						DamageGib::DMG_DEFAULT);
 				}
 				else if ( hit.entity->behavior == &::actFurniture )
 				{
 					switch ( hit.entity->furnitureType )
 					{
 						case FURNITURE_CHAIR:
-							updateEnemyBar(this, hit.entity, Language::get(677), entityHP, hit.entity->furnitureMaxHealth);
+							updateEnemyBar(this, hit.entity, Language::get(677), entityHP, hit.entity->furnitureMaxHealth, false,
+								DamageGib::DMG_DEFAULT);
 							break;
 						case FURNITURE_TABLE:
-							updateEnemyBar(this, hit.entity, Language::get(676), entityHP, hit.entity->furnitureMaxHealth);
+							updateEnemyBar(this, hit.entity, Language::get(676), entityHP, hit.entity->furnitureMaxHealth, false,
+								DamageGib::DMG_DEFAULT);
 							break;
 						case FURNITURE_BED:
-							updateEnemyBar(this, hit.entity, Language::get(2505), entityHP, hit.entity->furnitureMaxHealth);
+							updateEnemyBar(this, hit.entity, Language::get(2505), entityHP, hit.entity->furnitureMaxHealth, false,
+								DamageGib::DMG_DEFAULT);
 							break;
 						case FURNITURE_BUNKBED:
-							updateEnemyBar(this, hit.entity, Language::get(2506), entityHP, hit.entity->furnitureMaxHealth);
+							updateEnemyBar(this, hit.entity, Language::get(2506), entityHP, hit.entity->furnitureMaxHealth, false,
+								DamageGib::DMG_DEFAULT);
 							break;
 						case FURNITURE_PODIUM:
-							updateEnemyBar(this, hit.entity, Language::get(2507), entityHP, hit.entity->furnitureMaxHealth);
+							updateEnemyBar(this, hit.entity, Language::get(2507), entityHP, hit.entity->furnitureMaxHealth, false,
+								DamageGib::DMG_DEFAULT);
 							break;
 						default:
 							break;
@@ -9588,14 +9602,34 @@ void Entity::attack(int pose, int charge, Entity* target)
 						hit.entity->modHP(damage); // undo melee damage.
 					}
 
+					DamageGib dmgGib = DMG_DEFAULT;
+					bool charged = std::max(charge, MAXCHARGE / 2) / ((double)(MAXCHARGE / 2)) > 1;
+					if ( weaponMultipliers >= 1.15 )
+					{
+						dmgGib = DMG_STRONGER;
+						if ( charged )
+						{
+							dmgGib = DMG_STRONGEST;
+						}
+					}
+					else if ( charged )
+					{
+						dmgGib = DMG_STRONGER;
+					}
+					else if ( weaponMultipliers <= 0.85 )
+					{
+						dmgGib = DMG_WEAKER;
+					}
 					// update enemy bar for attacker
 					if ( !strcmp(hitstats->name, "") )
 					{
-						updateEnemyBar(this, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
+						updateEnemyBar(this, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP, false,
+							dmgGib);
 					}
 					else
 					{
-						updateEnemyBar(this, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+						updateEnemyBar(this, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP, false,
+							dmgGib);
 					}
 
 					if ( hitstats->type == INCUBUS 
@@ -9637,11 +9671,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 								// update enemy bar for attacker
 								if ( !strcmp(myStats->name, "") )
 								{
-									updateEnemyBar(illusionParent, this, getMonsterLocalizedName(myStats->type).c_str(), myStats->HP, myStats->MAXHP);
+									updateEnemyBar(illusionParent, this, getMonsterLocalizedName(myStats->type).c_str(), myStats->HP, myStats->MAXHP, false,
+										DamageGib::DMG_DEFAULT);
 								}
 								else
 								{
-									updateEnemyBar(illusionParent, this, myStats->name, myStats->HP, myStats->MAXHP);
+									updateEnemyBar(illusionParent, this, myStats->name, myStats->HP, myStats->MAXHP, false,
+										DamageGib::DMG_DEFAULT);
 								}
 							}
 						}

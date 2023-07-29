@@ -784,7 +784,8 @@ void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Enti
 					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(378), Language::get(getColliderLangName()));
 				}
 			}
-			updateEnemyBar(caster, this, Language::get(getColliderLangName()), colliderCurrentHP, colliderMaxHP);
+			updateEnemyBar(caster, this, Language::get(getColliderLangName()), colliderCurrentHP, colliderMaxHP,
+				false, DamageGib::DMG_DEFAULT);
 		}
 	}
 

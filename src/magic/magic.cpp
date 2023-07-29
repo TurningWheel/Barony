@@ -316,11 +316,13 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			// update enemy bar for attacker
 			if ( !strcmp(hitstats->name, "") )
 			{
-				updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
+				updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
+					false, DamageGib::DMG_TODO);
 			}
 			else
 			{
-				updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+				updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
+					false, DamageGib::DMG_TODO);
 			}
 
 			if ( oldHP > 0 && hitstats->HP <= 0 && parent )
@@ -454,11 +456,13 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 			// update enemy bar for attacker
 			if ( !strcmp(hitstats->name, "") )
 			{
-				updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
+				updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
+					false, DamageGib::DMG_TODO);
 			}
 			else
 			{
-				updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+				updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
+					false, DamageGib::DMG_TODO);
 			}
 
 			if ( hitstats->HP <= 0 && parent )
@@ -906,11 +910,13 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			// update enemy bar for attacker
 			if ( !strcmp(hitstats->name, "") )
 			{
-				updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
+				updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
+					false, DamageGib::DMG_TODO);
 			}
 			else
 			{
-				updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+				updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
+					false, DamageGib::DMG_TODO);
 			}
 
 			Uint32 color = makeColorRGB(255, 0, 0);
@@ -1038,23 +1044,28 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 							{
 							case FURNITURE_CHAIR:
 								messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
-								updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+								updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+									false, DamageGib::DMG_DEFAULT);
 								break;
 							case FURNITURE_TABLE:
 								messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
-								updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+								updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+									false, DamageGib::DMG_DEFAULT);
 								break;
 							case FURNITURE_BED:
 								messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
-								updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+								updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+									false, DamageGib::DMG_DEFAULT);
 								break;
 							case FURNITURE_BUNKBED:
 								messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
-								updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+								updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+									false, DamageGib::DMG_DEFAULT);
 								break;
 							case FURNITURE_PODIUM:
 								messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
-								updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+								updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+									false, DamageGib::DMG_DEFAULT);
 								break;
 							default:
 								break;

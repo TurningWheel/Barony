@@ -153,6 +153,8 @@ EnemyHPDamageBarHandler enemyHPDamageBarHandler[MAXPLAYERS];
 FollowerRadialMenu FollowerMenu[MAXPLAYERS];
 GenericGUIMenu GenericGUI[MAXPLAYERS];
 
+bool EnemyHPDamageBarHandler::bDamageGibTypesEnabled = false;
+std::map<int, std::vector<int>> EnemyHPDamageBarHandler::damageGibAnimCurves;
 int EnemyHPDamageBarHandler::maxTickLifetime = 120;
 int EnemyHPDamageBarHandler::maxTickFurnitureLifetime = 60;
 int EnemyHPDamageBarHandler::shortDistanceHPBarFadeTicks = TICKS_PER_SECOND / 2;
@@ -10940,7 +10942,7 @@ void EnemyHPDamageBarHandler::EnemyHPDetails::updateWorldCoordinates()
 	}
 }
 
-void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 uid, const char* name, bool isLowPriority)
+void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 uid, const char* name, bool isLowPriority, DamageGib gibDmgType)
 {
 	auto find = HPBars.find(uid);
 	EnemyHPDetails* details = nullptr;
@@ -10977,7 +10979,7 @@ void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 old
 	details->animator.damageTaken = std::max(-details->enemy_maxhp, oldHP - HP); // IDK if this needs a lower limit for healing
 
 	Entity* entity = uidToEntity(uid);
-	spawnDamageGib(entity, details->animator.damageTaken);
+	spawnDamageGib(entity, details->animator.damageTaken, gibDmgType);
 	lastEnemyUid = uid;
 
 	if ( entity )

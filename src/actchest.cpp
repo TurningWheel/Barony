@@ -1513,7 +1513,8 @@ void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity 
 				}
 			}
 		}
-		updateEnemyBar(caster, this, Language::get(675), chestHealth, chestMaxHealth);
+		updateEnemyBar(caster, this, Language::get(675), chestHealth, chestMaxHealth,
+			false, DamageGib::DMG_DEFAULT);
 	}
 	playSoundEntity(this, 28, 128);
 }

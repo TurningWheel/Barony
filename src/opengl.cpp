@@ -1565,11 +1565,21 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 
     // set color
 	Uint32 color = makeColor(255, 255, 255, 255);
-	if (entity->behavior == &actDamageGib && text[0] == '+') {
+    if ( entity->behavior == &actDamageGib ) {
 #ifndef EDITOR
-		color = hudColors.characterSheetGreen;
+        if ( !EnemyHPDamageBarHandler::bDamageGibTypesEnabled )
+        {
+            if ( text[0] == '+' )
+            {
+                color = hudColors.characterSheetGreen;
+            }
+        }
+        else
+        {
+            color = entity->skill[6];
+        }
 #endif // !EDITOR
-	}
+    }
 	else if (entity->behavior == &actSpriteNametag) {
 		color = entity->skill[1];
 	}
@@ -1578,7 +1588,7 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 		color, makeColor(0, 0, 0, 255));
 	auto textureId = rendered_text->getTexID();
 
-	// bind texture
+    // bind texture
     GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, textureId));
     const GLfloat w = static_cast<GLfloat>(rendered_text->getWidth());
     const GLfloat h = static_cast<GLfloat>(rendered_text->getHeight());

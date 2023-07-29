@@ -33,7 +33,8 @@
 
 -------------------------------------------------------------------------------*/
 
-void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick)
+void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick, 
+	DamageGib gibType)
 {
 	// server/singleplayer only function.
 	hp = std::max(0, hp); // bounds checking - furniture can go negative
@@ -144,6 +145,11 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 		}
 	}
 
+	if ( !EnemyHPDamageBarHandler::bDamageGibTypesEnabled )
+	{
+		gibType = DamageGib::DMG_DEFAULT;
+	}
+
 	if ( player >= 0 /*&& players[player]->isLocalPlayer()*/ )
 	{
 		// add enemy bar to the server
@@ -168,11 +174,11 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 		}
 		if ( stats )
 		{
-			enemyHPDamageBarHandler[p].addEnemyToList(hp, maxhp, oldhp, target->getUID(), name, lowPriorityTick);
+			enemyHPDamageBarHandler[p].addEnemyToList(hp, maxhp, oldhp, target->getUID(), name, lowPriorityTick, gibType);
 		}
 		else
 		{
-			enemyHPDamageBarHandler[p].addEnemyToList(hp, maxhp, oldhp, target->getUID(), name, lowPriorityTick);
+			enemyHPDamageBarHandler[p].addEnemyToList(hp, maxhp, oldhp, target->getUID(), name, lowPriorityTick, gibType);
 		}
 	}
 	
@@ -200,6 +206,10 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 				}
 				SDLNet_Write32(target->getUID(), &net_packet->data[10]);
 				net_packet->data[14] = lowPriorityTick ? 1 : 0; // 1 == true
+				if ( EnemyHPDamageBarHandler::bDamageGibTypesEnabled )
+				{
+					net_packet->data[14] |= (gibType << 1) & 0xFE;
+				}
 				strcpy((char*)(&net_packet->data[15]), name);
 				net_packet->data[15 + strlen(name)] = 0;
 				net_packet->address.host = net_clients[p - 1].host;

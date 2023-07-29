@@ -18,6 +18,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "prng.hpp"
+#include "ui/GameUI.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -147,6 +148,56 @@ void actDamageGib(Entity* my)
 	my->y += GIB_VELY;
 	GIB_VELX = GIB_VELX * .95;
 	GIB_VELY = GIB_VELY * .95;
+
+	if ( my->skill[3] == DMG_WEAKER || my->skill[3] == DMG_WEAKEST )
+	{
+		real_t scale = 0.2;
+		if ( my->ticks > 10 )
+		{
+			scale *= 1.0 - 0.5 * (std::min((int)my->ticks - 10, 20)) / 20.0;
+		}
+		my->scalex = scale;
+		my->scaley = scale;
+		my->scalez = scale;
+	}
+	else if ( my->skill[3] == DMG_STRONGER
+		|| my->skill[3] == DMG_STRONGEST )
+	{
+		real_t scale = 0.2;
+		auto& anim = EnemyHPDamageBarHandler::damageGibAnimCurves[DMG_DEFAULT];
+		if ( my->ticks >= anim.size() )
+		{
+			scale *= anim[anim.size() - 1] / 100.0;
+		}
+		else
+		{
+			scale *= anim[my->ticks] / 100.0;
+		}
+		my->scalex = scale;
+		my->scaley = scale;
+		my->scalez = scale;
+
+		//GIB_VELX = GIB_VELX * .95;
+		//GIB_VELY = GIB_VELY * .95;
+
+		GIB_VELZ += GIB_GRAVITY / 2;
+		if ( my->ticks < anim.size() )
+		{
+			if ( GIB_VELZ >= -.001 )
+			{
+				GIB_VELZ = -0.001;
+			}
+		}
+		my->z += GIB_VELZ;
+
+		if ( my->ticks > anim.size() + 10 )
+		{
+			list_RemoveNode(my->mynode);
+			return;
+		}
+
+		return;
+	}
 
 	// gravity
 	if ( my->z < 8 )
@@ -295,7 +346,7 @@ Entity* spawnGib(Entity* parentent, int customGibSprite)
 	return entity;
 }
 
-Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount)
+Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType)
 {
 	if ( !parentent )
 	{
@@ -313,14 +364,21 @@ Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount)
 	entity->parent = parentent->getUID();
 	entity->sizex = 1;
 	entity->sizey = 1;
-	real_t vel = (local_rng.rand() % 10) / 10.f;
+	real_t vel = (local_rng.rand() % 10) / 20.f;
+	entity->vel_z = -.5;
+	if ( gibDmgType == DMG_STRONGER || gibDmgType == DMG_STRONGEST )
+	{
+		vel = 0.25;
+		entity->vel_z = -.4;
+	}
+	entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 	entity->vel_x = vel * cos(entity->yaw);
 	entity->vel_y = vel * sin(entity->yaw);
-	entity->vel_z = -.5;
 	entity->scalex = 0.2;
 	entity->scaley = 0.2;
 	entity->scalez = 0.2;
 	entity->skill[0] = dmgAmount;
+	entity->skill[3] = gibDmgType;
 	entity->fskill[3] = 0.04;
 	entity->behavior = &actDamageGib;
     entity->ditheringDisabled = true;
@@ -340,6 +398,34 @@ Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount)
 	}
 	entity->setUID(-3);
 
+	Uint32 color = makeColor(255, 255, 255, 255);
+	switch ( (DamageGib)entity->skill[3] )
+	{
+		case DMG_DEFAULT:
+		case DMG_WEAKER:
+		case DMG_WEAKEST:
+			break;
+		case DMG_STRONGER:
+			color = makeColor(238, 150, 75, 255);
+			break;
+		case DMG_STRONGEST:
+			color = makeColor(235, 94, 0, 255);
+			break;
+		case DMG_FIRE:
+			break;
+		case DMG_BLEED:
+			break;
+		case DMG_POISON:
+			break;
+		case DMG_HEAL:
+			color = hudColors.characterSheetGreen;
+			break;
+		case DMG_TODO:
+			break;
+		default:
+			break;
+	}
+	entity->skill[6] = color;
 	return entity;
 }
 

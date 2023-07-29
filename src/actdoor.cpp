@@ -350,7 +350,8 @@ void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *
 					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(378), Language::get(674));
 				}
 			}
-			updateEnemyBar(caster, this, Language::get(674), doorHealth, doorMaxHealth);
+			updateEnemyBar(caster, this, Language::get(674), doorHealth, doorMaxHealth,
+				false, DamageGib::DMG_DEFAULT);
 		}
 	}
 	if ( !doorDir )

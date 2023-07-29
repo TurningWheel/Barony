@@ -21818,6 +21818,21 @@ void loadHUDSettingsJSON()
 						LevelUpAnimBreakpoints.push_back(it->GetInt());
 					}
 				}
+				if ( d.HasMember("dmg_number_anim_curve") )
+				{
+					EnemyHPDamageBarHandler::damageGibAnimCurves.clear();
+					for ( auto it = d["dmg_number_anim_curve"].MemberBegin(); it != d["dmg_number_anim_curve"].MemberEnd(); ++it )
+					{
+						std::string name = it->name.GetString();
+						if ( name == "default" )
+						{
+							for ( auto it2 = it->value.Begin(); it2 != it->value.End(); ++it2 )
+							{
+								EnemyHPDamageBarHandler::damageGibAnimCurves[DMG_DEFAULT].push_back(it2->GetInt());
+							}
+						}
+					}
+				}
 				if ( d.HasMember("damage_indicators") )
 				{
 					damageIndicatorSettings.settings.clear();
