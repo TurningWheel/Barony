@@ -22561,7 +22561,7 @@ failed:
 		    void(*banner_funcs[])(Button&) = {
 		        [](Button&){ // banner #1
 		        if (enabledDLCPack1 && enabledDLCPack2) {
-                    openURLTryWithOverlay("https://turningwheelgames.com/blog/2022/11/qodbeta");
+                    openURLTryWithOverlay("https://www.baronygame.com/blog/qod-update-launched");
                 } else {
 					openDLCPrompt(enabledDLCPack1 ? 1 : 0);
                 }
