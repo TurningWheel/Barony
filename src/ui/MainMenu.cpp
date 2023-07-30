@@ -22536,6 +22536,7 @@ failed:
 		);
 
 		if (!ingame) {
+#ifdef NINTENDO
 		    const char* banner_images[][2] = {
 		        {
 		            "*#images/ui/Main Menus/Banners/UI_MainMenu_QoDPatchNotes1_base.png",
@@ -22560,21 +22561,47 @@ failed:
 		    }
 		    void(*banner_funcs[])(Button&) = {
 		        [](Button&){ // banner #1
-		        if (enabledDLCPack1 && enabledDLCPack2) {
-                    openURLTryWithOverlay("https://www.baronygame.com/blog/qod-update-launched");
-                } else {
-					openDLCPrompt(enabledDLCPack1 ? 1 : 0);
-                }
-		        },
-		        [](Button&){ // banner #2
-                openURLTryWithOverlay("https://discord.gg/xDhtaR9KA2");
-		        },
+					if (enabledDLCPack1 && enabledDLCPack2) {
+						openURLTryWithOverlay("https://www.baronygame.com/blog/qod-update-launched");
+					} else {
+						openDLCPrompt(enabledDLCPack1 ? 1 : 0);
+					}
+		        }
 		    };
-#ifdef NINTENDO
 			const int num_banners = (enabledDLCPack1 && enabledDLCPack2) ?
                 0 : 1;
 #else
-		    constexpr int num_banners = sizeof(banner_funcs) / sizeof(banner_funcs[0]);
+			const char* banner_images[][2] = {
+				{
+					"*#images/ui/Main Menus/Banners/UI_MainMenu_QoDPatchNotes1_base.png",
+					"*#images/ui/Main Menus/Banners/UI_MainMenu_QoDPatchNotes1_high.png",
+				},
+				{
+					"*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_base.png",
+					"*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_high.png",
+				}
+			};
+			if ( !enabledDLCPack1 && !enabledDLCPack2 ) {
+				banner_images[1][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_base.png";
+				banner_images[1][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_high.png";
+			}
+			else if ( !enabledDLCPack1 ) {
+				banner_images[1][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_MnOBanner1_base.png";
+				banner_images[1][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_MnOBanner1_high.png";
+			}
+			else if ( !enabledDLCPack2 ) {
+				banner_images[1][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_LnPBanner1_base.png";
+				banner_images[1][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_LnPBanner1_high.png";
+			}
+			void(*banner_funcs[])(Button&) = {
+				[](Button&) { // banner #1
+					openURLTryWithOverlay("https://www.baronygame.com/blog/qod-update-launched");
+				},
+				[](Button&) { // banner #2
+					 openDLCPrompt(enabledDLCPack1 ? 1 : 0);
+				},
+			};
+		    const int num_banners = (enabledDLCPack1 && enabledDLCPack2) ? 1 : sizeof(banner_funcs) / sizeof(banner_funcs[0]);
 #endif
 		    auto banners = main_menu_frame->addFrame("banners");
 		    banners->setSize(SDL_Rect{(Frame::virtualScreenX - 472) / 2, y, 472, Frame::virtualScreenY - y});
@@ -22612,6 +22639,10 @@ failed:
 				}
 				banner->setWidgetBack("back_button");
 
+#ifndef NINTENDO
+				banner->setWidgetLeft("discord btn");
+#endif
+
 				y += banner->getSize().h;
 				y += 16;
 			}
@@ -22620,6 +22651,43 @@ failed:
 				auto dimmer = main_menu_frame->findFrame("dimmer");
 				widget.setInvisible(dimmer != nullptr);
 				});
+
+#ifndef NINTENDO
+			{
+				auto discordFrame = main_menu_frame->addFrame("discord");
+				auto button = discordFrame->addButton("discord btn");
+
+				button->setBackground("#images/ui/Main Menus/Banners/UI_MainMenu_DiscordLink_base.png");
+				button->setBackgroundHighlighted("#images/ui/Main Menus/Banners/UI_MainMenu_DiscordLink_high.png");
+				SDL_Rect btnPos = SDL_Rect{ 0, 0, 0, 0 };
+				if ( auto imgGet = Image::get(button->getBackground()) )
+				{
+					btnPos.w = imgGet->getWidth();
+					btnPos.h = imgGet->getHeight();
+				}
+				button->setSize(btnPos);
+				button->setCallback([](Button& button) {
+					openURLTryWithOverlay("https://discord.gg/xDhtaR9KA2");
+				});
+				button->setButtonsOffset(SDL_Rect{ 0, -8, 0, 0 });
+				button->setColor(uint32ColorWhite);
+				button->setHighlightColor(uint32ColorWhite);
+
+				button->setWidgetUp("Play Game");
+				button->setWidgetDown("Play Game");
+				button->setWidgetLeft("Play Game");
+				button->setWidgetRight("Play Game");
+				button->setWidgetBack("back_button");
+
+				discordFrame->setTickCallback([](Widget& widget) {
+					assert(main_menu_frame);
+					auto dimmer = main_menu_frame->findFrame("dimmer");
+					widget.setInvisible(dimmer != nullptr);
+				});
+
+				discordFrame->setSize(SDL_Rect{ 8, Frame::virtualScreenY - btnPos.h - 8, btnPos.w, btnPos.h });
+			}
+#endif
 
 			char buf[64];
 			const char date[] = __DATE__;
