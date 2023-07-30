@@ -220,6 +220,7 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 #endif
 
 ConsoleVariable<bool> cvar_enableKeepAlives("/keepalive_enabled", true);
+ConsoleVariable<bool> cvar_animate_tiles("/animate_tiles", true);
 
 std::vector<std::string> randomPlayerNamesMale;
 std::vector<std::string> randomPlayerNamesFemale;
@@ -1396,7 +1397,7 @@ void gameLogic(void)
 							int index = z + y * MAPLAYERS + x * MAPLAYERS * map.height;
 							if ( animatedtiles[map.tiles[index]] )
 							{
-								if ( ticks % 10 == 0 )
+								if ( ticks % 10 == 0 && *cvar_animate_tiles )
 								{
 									map.tiles[index]--;
 									if ( !animatedtiles[map.tiles[index]] )
@@ -2203,7 +2204,14 @@ void gameLogic(void)
 
 					Player::Minimap_t::mapDetails.clear();
 
-					if ( !secretlevel )
+					if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+					{
+						if ( gameModeManager.Tutorial.showFirstTutorialCompletedPrompt )
+						{
+							gameModeManager.Tutorial.createFirstTutorialCompletedPrompt();
+						}
+					}
+					else if ( !secretlevel )
 					{
 						messageLocalPlayers(MESSAGE_PROGRESSION, Language::get(710), currentlevel);
 					}
@@ -2211,6 +2219,9 @@ void gameLogic(void)
 					{
 						messageLocalPlayers(MESSAGE_PROGRESSION, Language::get(711), map.name);
 					}
+
+					gameModeManager.Tutorial.showFirstTutorialCompletedPrompt = false;
+
 					if ( !secretlevel && result )
 					{
 						switch ( currentlevel )
@@ -2621,6 +2632,7 @@ void gameLogic(void)
 							client_disconnected[c] = true;
 						}
 					}
+					PingNetworkStatus_t::update();
 				}
 			}
 
@@ -2833,6 +2845,7 @@ void gameLogic(void)
 					MainMenu::timedOut();
 					client_disconnected[0] = true;
 				}
+				PingNetworkStatus_t::update();
 			}
 
 			// animate tiles
@@ -2848,7 +2861,7 @@ void gameLogic(void)
 							int index = z + y * MAPLAYERS + x * MAPLAYERS * map.height;
 							if ( animatedtiles[map.tiles[index]] )
 							{
-								if ( ticks % 10 == 0 )
+								if ( (ticks % 10 == 0) && *cvar_animate_tiles )
 								{
 									map.tiles[index]--;
 									if ( !animatedtiles[map.tiles[index]] )
@@ -5110,10 +5123,14 @@ void ingameHud()
 			{
 				allowCasting = true;
 			}
-			else if ( !players[player]->usingCommand() && shootmode && bControlEnabled )
+			else if ( !players[player]->usingCommand() && bControlEnabled
+				&& ((shootmode && inputs.hasController(player)) || (!inputs.hasController(player) && inputs.bPlayerUsingKeyboardControl(player))) )
 			{
 				bool hotbarFaceMenuOpen = players[player]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE;
-			    if (tryHotbarQuickCast || input.binaryToggle("Cast Spell") || (hasSpellbook && input.binaryToggle("Defend")) )
+				bool castMemorizedSpell = input.binaryToggle("Cast Spell");
+				bool castSpellbook = (hasSpellbook && input.binaryToggle("Defend"));
+
+			    if (tryHotbarQuickCast || castMemorizedSpell || castSpellbook )
 			    {
 				    allowCasting = true;
 				    if ( tryHotbarQuickCast == false )
@@ -5121,6 +5138,49 @@ void ingameHud()
 						if ( hotbarFaceMenuOpen )
 						{
 							allowCasting = false;
+						}
+						if ( !shootmode ) // check we dont conflict with system bindings
+						{
+							if ( players[player]->messageZone.logWindow || players[player]->minimap.mapWindow || FollowerMenu[player].followerMenuIsOpen() )
+							{
+								allowCasting = false;
+							}
+							else
+							{
+								if ( castMemorizedSpell )
+								{
+									if ( input.bindingIsSharedWithKeyboardSystemBinding("Cast Spell") )
+									{
+										allowCasting = false;
+									}
+								}
+								if ( castSpellbook )
+								{
+									if ( input.bindingIsSharedWithKeyboardSystemBinding("Defend") )
+									{
+										allowCasting = false;
+										input.consumeBinaryToggle("Defend");
+									}
+								}
+							}
+						}
+						else
+						{
+							if ( FollowerMenu[player].followerMenuIsOpen() )
+							{
+								if ( castMemorizedSpell )
+								{
+									if ( input.bindingIsSharedWithKeyboardSystemBinding("Cast Spell") )
+									{
+										allowCasting = false;
+									}
+								}
+								if ( castSpellbook )
+								{
+									allowCasting = false;
+									input.consumeBinaryToggle("Defend");
+								}
+							}
 						}
 				    }
 					else
@@ -5131,7 +5191,7 @@ void ingameHud()
 						}
 					}
 
-				    if ( allowCasting && input.binaryToggle("Defend") && hasSpellbook && players[player] && players[player]->entity )
+				    if ( allowCasting && castSpellbook && players[player] && players[player]->entity )
 				    {
 					    if ( players[player]->entity->effectShapeshift != NOTHING )
 					    {
@@ -5145,26 +5205,12 @@ void ingameHud()
 						    }
 					    }
 
-						if ( FollowerMenu[player].followerMenuIsOpen() )
+						if ( allowCasting && players[player]->entity->isBlind() )
 						{
-							input.consumeBinaryToggle("Defend"); // moveto or interact we can block, but dont cast spell
+							messagePlayer(player, MESSAGE_EQUIPMENT | MESSAGE_STATUS, Language::get(3863)); // prevent casting of spell.
+							input.consumeBinaryToggle("Defend");
 							allowCasting = false;
 						}
-					    else if ( input.binaryToggle("Defend")
-						    && strcmp(input.binding("Defend"), "Mouse3") == 0
-						    && inputs.getUIInteraction(player)->itemMenuOpen ) // bound to right click, has context menu open.
-					    {
-						    allowCasting = false;
-					    }
-					    else
-					    {
-						    if ( allowCasting && players[player]->entity->isBlind() )
-						    {
-							    messagePlayer(player, MESSAGE_EQUIPMENT | MESSAGE_STATUS, Language::get(3863)); // prevent casting of spell.
-							    input.consumeBinaryToggle("Defend");
-							    allowCasting = false;
-						    }
-					    }
 				    }
 				}
 			}

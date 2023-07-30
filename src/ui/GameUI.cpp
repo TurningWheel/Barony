@@ -905,7 +905,7 @@ void createAllyPlayerFrame(const int player)
 	auto frame = hud_t.hudFrame->addFrame("player status");
 	hud_t.allyPlayerFrame = frame;
 	frame->setHollow(true);
-	frame->setSize(SDL_Rect{ 0, 0, 210, 0 });
+	frame->setSize(SDL_Rect{ 0, 0, 300, 0 });
 	frame->setDisabled(true);
 	frame->setScrollBarsEnabled(false);
 	frame->setAllowScrollBinds(false);
@@ -918,7 +918,7 @@ Frame* createAllyPlayerEntry(const int player)
 
 	auto entry = baseFrame->addFrame("entry");
 	const int allyPlayerEntryHeight = 40;
-	entry->setSize(SDL_Rect{ 0, 0, 210, allyPlayerEntryHeight });
+	entry->setSize(SDL_Rect{ 0, 0, 214, allyPlayerEntryHeight });
 	entry->setHollow(true);
 	entry->setInheritParentFrameOpacity(false);
 
@@ -997,7 +997,7 @@ Frame* createAllyPlayerEntry(const int player)
 	const int mpHeight = 6;
 	{
 		Frame* mpFrame = entry->addFrame("mp");
-		mpFrame->setSize(SDL_Rect{ portrait->getSize().x + portrait->getSize().w - 4, 30, entry->getSize().w - (portrait->getSize().x + portrait->getSize().w - 4), mpHeight });
+		mpFrame->setSize(SDL_Rect{ portrait->getSize().x + portrait->getSize().w, 30, entry->getSize().w - (portrait->getSize().x + portrait->getSize().w - 4), mpHeight });
 		SDL_Rect mpFramePos = mpFrame->getSize();
 		mpFrame->setHollow(true);
 
@@ -1025,6 +1025,107 @@ Frame* createAllyPlayerEntry(const int player)
 		auto base = mpFrame->addImage(SDL_Rect{ 0, 0, 4, 6 }, 0xFFFFFFFF,
 			"*#images/ui/HUD/allies/HUD_MPBar_Base_00.png", "mp img base");
 	}
+
+	entry->setDrawCallback([](const Widget& widget, SDL_Rect rect) {
+		if ( widget.getUserData() && PingNetworkStatus_t::bEnabled )
+		{
+			int player = reinterpret_cast<intptr_t>(widget.getUserData()) - 1;
+			if ( player < 0 || player >= MAXPLAYERS ) {
+				return;
+			}
+
+			auto value = PingNetworkStatus[player].displayMillisImmediate;
+			const int divideInterval = 25;
+			Image* img = nullptr;
+			Image* warningImg = nullptr;
+			if ( value > 0 )
+			{
+				char buf[32];
+				if ( value < PingNetworkStatus_t::pingLimitGreen )
+				{
+					if ( PingNetworkStatus[player].hudDisplayOKTicks == 0 )
+					{
+						PingNetworkStatus[player].hudDisplayOKTicks = ticks;
+					}
+					if ( PingNetworkStatus_t::pingHUDDisplayGreen || 
+						(PingNetworkStatus_t::pingHUDShowOKBriefly
+							&& ((ticks - PingNetworkStatus[player].hudDisplayOKTicks) < 5 * TICKS_PER_SECOND)) )
+					{
+						img = Image::get("#*images/ui/HUD/Ping_Green.png");
+					}
+				}
+				else if ( value < PingNetworkStatus_t::pingLimitYellow )
+				{
+					if ( PingNetworkStatus[player].hudDisplayOKTicks == 0 )
+					{
+						PingNetworkStatus[player].hudDisplayOKTicks = ticks;
+					}
+					if ( PingNetworkStatus_t::pingHUDDisplayYellow ||
+						(PingNetworkStatus_t::pingHUDShowOKBriefly
+							&& ((ticks - PingNetworkStatus[player].hudDisplayOKTicks) < 5 * TICKS_PER_SECOND)) )
+					{
+						img = Image::get("#*images/ui/HUD/Ping_Yellow.png");
+					}
+				}
+				else if ( value < PingNetworkStatus_t::pingLimitOrange )
+				{
+					PingNetworkStatus[player].hudDisplayOKTicks = 0;
+					if ( PingNetworkStatus_t::pingHUDDisplayOrange )
+					{
+						img = Image::get("#*images/ui/HUD/Ping_Orange.png");
+						warningImg = Image::get("#*images/ui/HUD/warning_glyph.png");
+					}
+				}
+				else
+				{
+					PingNetworkStatus[player].hudDisplayOKTicks = 0;
+					if ( PingNetworkStatus_t::pingHUDDisplayRed )
+					{
+						img = Image::get("#*images/ui/HUD/Ping_Red.png");
+						warningImg = Image::get("#*images/ui/HUD/danger_glyph.png");
+					}
+				}
+			}
+			else
+			{
+				img = nullptr;
+				PingNetworkStatus[player].hudDisplayOKTicks = 0;
+			}
+			if ( img )
+			{
+				const auto frame = static_cast<const Frame*>(&widget);
+				SDL_Rect pos = frame->getSize();
+				pos.x = pos.x + pos.w - 4;
+				pos.y = pos.y + 8;
+				pos.w = img->getWidth();
+				pos.h = img->getHeight();
+				img->drawColor(nullptr, pos, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY }, 
+					makeColor(255, 255, 255, 255 * (frame->getOpacity() / 100.0)));
+
+				if ( warningImg )
+				{
+					pos.y += 14;
+					warningImg->drawColor(nullptr, pos, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+						makeColor(255, 255, 255, 255 * (frame->getOpacity() / 100.0)));
+				}
+
+				if ( PingNetworkStatus_t::pingHUDShowNumericValue )
+				{
+					pos.x += 20;
+					pos.y = frame->getSize().y + 9;
+					char buf[32];
+					snprintf(buf, sizeof(buf), "%dMS", PingNetworkStatus[player].displayMillis);
+					if ( auto textGet = Text::get(buf, smallfont_outline, 
+						makeColor(134, 159, 165, 255), makeColor(0, 0, 0, 255)) )
+					{
+						textGet->drawColor(SDL_Rect{ 0,0,0,0 }, SDL_Rect{ pos.x, pos.y, 0, 0 },
+							SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY }, 
+							makeColor(255, 255, 255, 255 * (frame->getOpacity() / 100.0)));
+					}
+				}
+			}
+		}
+	});
 	return entry;
 }
 
@@ -1141,7 +1242,7 @@ Frame* createAllyFollowerEntry(const int player, Frame* baseFrame)
 	if ( false )
 	{
 		Frame* mpFrame = entry->addFrame("mp");
-		mpFrame->setSize(SDL_Rect{ portrait->getSize().x + portrait->getSize().w - 4, 30, entry->getSize().w - (portrait->getSize().x + portrait->getSize().w - 4), mpHeight });
+		mpFrame->setSize(SDL_Rect{ portrait->getSize().x + portrait->getSize().w, 30, entry->getSize().w - (portrait->getSize().x + portrait->getSize().w - 4), mpHeight });
 		SDL_Rect mpFramePos = mpFrame->getSize();
 		mpFrame->setHollow(true);
 
@@ -1483,6 +1584,11 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 			}
 			followerBar.expired = true;
 			followerBar.selected = false;
+		}
+
+		if ( bPlayerBars )
+		{
+			entryFrame->setUserData(followerBar.expired ? nullptr : (void*)(intptr_t)(uid + 1)); // 0 is nullptr, so +1
 		}
 
 		if ( !bPlayerBars )
@@ -21712,6 +21818,21 @@ void loadHUDSettingsJSON()
 						LevelUpAnimBreakpoints.push_back(it->GetInt());
 					}
 				}
+				if ( d.HasMember("dmg_number_anim_curve") )
+				{
+					EnemyHPDamageBarHandler::damageGibAnimCurves.clear();
+					for ( auto it = d["dmg_number_anim_curve"].MemberBegin(); it != d["dmg_number_anim_curve"].MemberEnd(); ++it )
+					{
+						std::string name = it->name.GetString();
+						if ( name == "default" )
+						{
+							for ( auto it2 = it->value.Begin(); it2 != it->value.End(); ++it2 )
+							{
+								EnemyHPDamageBarHandler::damageGibAnimCurves[DMG_DEFAULT].push_back(it2->GetInt());
+							}
+						}
+					}
+				}
 				if ( d.HasMember("damage_indicators") )
 				{
 					damageIndicatorSettings.settings.clear();
@@ -22264,6 +22385,21 @@ void loadHUDSettingsJSON()
 							dropdown.options.push_back(Player::GUIDropdown_t::DropdownOption_t(text, keyboard_glyph, controller_glyph, action));
 						}
 					}
+				}
+				if ( d.HasMember("ping_status") )
+				{
+					PingNetworkStatus_t::bEnabled = d["ping_status"]["enabled"].GetBool();
+
+					PingNetworkStatus_t::pingLimitGreen = d["ping_status"]["limit_green"].GetInt();
+					PingNetworkStatus_t::pingLimitYellow = d["ping_status"]["limit_yellow"].GetInt();
+					PingNetworkStatus_t::pingLimitOrange = d["ping_status"]["limit_orange"].GetInt();
+
+					PingNetworkStatus_t::pingHUDDisplayGreen = d["ping_status"]["show_green_always"].GetBool();
+					PingNetworkStatus_t::pingHUDDisplayYellow = d["ping_status"]["show_yellow_always"].GetBool();
+					PingNetworkStatus_t::pingHUDDisplayOrange = d["ping_status"]["show_orange_always"].GetBool();
+					PingNetworkStatus_t::pingHUDDisplayRed = d["ping_status"]["show_red_always"].GetBool();
+					PingNetworkStatus_t::pingHUDShowOKBriefly = d["ping_status"]["show_green_yellow_briefly"].GetBool();
+					PingNetworkStatus_t::pingHUDShowNumericValue = d["ping_status"]["show_numeric_on_hud"].GetBool();
 				}
 				printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
 			}

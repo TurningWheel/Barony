@@ -4567,8 +4567,15 @@ void actPlayer(Entity* my)
                     }
                 }
                 else if (players[PLAYER_NUM]->isLocalPlayer()) {
-                    light_type = "player_ambient";
                     ambientLight = true;
+					if ( stats[PLAYER_NUM]->sneaking ) {
+						light_type = "player_sneaking";
+					}
+					else
+					{
+						light_type = "player_ambient";
+					}
+
                 }
             }
             else if (players[PLAYER_NUM]->isLocalPlayer()) {

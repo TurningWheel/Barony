@@ -61,14 +61,28 @@ extern real_t uiscale_inventory;
 
 #include "../entity.hpp"
 
+enum DamageGib {
+	DMG_DEFAULT,
+	DMG_WEAKER,
+	DMG_WEAKEST,
+	DMG_STRONGER,
+	DMG_STRONGEST,
+	DMG_FIRE,
+	DMG_BLEED,
+	DMG_POISON,
+	DMG_HEAL,
+	DMG_TODO
+};
 class EnemyHPDamageBarHandler
 {
 public:
+	static bool bDamageGibTypesEnabled;
 	static int maxTickLifetime;
 	static int maxTickFurnitureLifetime;
 	static int shortDistanceHPBarFadeTicks;
 	static real_t shortDistanceHPBarFadeDistance;
 	static bool bEnemyBarSimpleBlit;
+	static std::map<int, std::vector<int>> damageGibAnimCurves;
 	static void dumpCache();
 	static std::vector<std::pair<real_t, int>>widthHealthBreakpointsMonsters;
 	static std::vector<std::pair<real_t, int>>widthHealthBreakpointsFurniture;
@@ -76,6 +90,7 @@ public:
 		BAR_TYPE_CREATURE,
 		BAR_TYPE_FURNITURE
 	};
+
 	struct BarAnimator_t
 	{
 		real_t foregroundValue = 0.0;
@@ -154,7 +169,7 @@ public:
 	};
 
 	std::unordered_map<Uint32, EnemyHPDetails> HPBars;
-	void addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 uid, const char* name, bool isLowPriority);
+	void addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 uid, const char* name, bool isLowPriority, DamageGib gibDmgType);
 	void displayCurrentHPBar(const int player);
 	void cullExpiredHPBars();
 	EnemyHPDetails* getMostRecentHPBar(int index = 0);
@@ -215,7 +230,9 @@ void updateChestInventory(const int player);
 Item* takeItemFromChest(int player, Item* item, int amount, Item* addToSpecificInventoryItem, bool forceNewStack, bool bDoPickupMessage = true);
 void updateShopWindow(const int player);
 bool getShopFreeSlot(const int player, list_t* shopInventory, Item* itemToSell, int& xout, int& yout, Item*& itemToStackInto);
-void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick = false);
+
+void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp, Sint32 maxhp, 
+	bool lowPriorityTick, DamageGib gibType);
 
 bool autoAddHotbarFilter(const Item& item);
 void quickStackItems(const int player);

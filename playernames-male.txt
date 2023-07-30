@@ -1,138 +1,367 @@
-Dwarfurious
-Rubendt
-Leopold
-Bezel Fhloston
-Theodeus Pez
-Sheridan the Glorious
-Mighty Ciprian
-Sir Francis Bacon
-Chris the Magnificent
-Josiah of Lords
-Ben the Venerable
-Korben
-Franklin
-Torvald
-Reginauld O'Grahdtz
-Morgan
-Brandex Khola
-General Bill
-Shorelock Homes
-Bad Blad
-Tepit
-Cornelius
-Vares Voldo
-Tobias
-Xyggitru'ugnar
-Rulf
-Crooked Trevor
-Whyatt Fordineaux
-Charlie
-Jimmy Yeast
-Bennett Swift
-Choppy Chuck
-Fidel Cast-O
-Zack "Shooter" Shotmen
-Funny Lou
-Mr. Brad the Miser
-Father Skabbs
-Blockhead Gary
-Jasper
-Xavier
-Henry
-Hoff
-Brick
-Dribbus
-Big Bear
-Paulie
-Darius
-Alejandro
-Bull
-Chip
-Wedge
-Duke
-Daland Lawrence
-Moss
-Mr. Sterling
-Houston Jackson
-Cyrano
-Boxcar Joe
-Alduier Tarek
-Gereg
-Kalec
-Kladeos
-Gene of the Gods' Hand
-Carlito
-Grumpy Dan
-Zherkan
-The Real Shen
-Valkar
-Mana Boy
-Five
-Fishsticks
-Cintra
-Science
-Mittens
-Lerandrel
-Robin
-Kelly
-Justice
-Dorfy
-Toggle
-Gibbin
-Tocko
-Cookie
-Lohwl
-Quinn
-Boots
-The Crusher
-Wizz-Bang
-Captain
-Frosty
-Muy Braino
-Pokey
-Stabbotage
-Castie
-Blackthumb
-Giggles
-Stranger
-Wulf
-Boss
-Bones
-Sid
-Indy
-Noggin
-Goblinsbane
-Thrillho
+Marley
+Flubba Bubba
 Doormat
+Alexander Chapman
+Rowdy Matt
+Isaac the Bound
+Fisher
+Tocko
+Ol' Porkchop
+Casteel
+Duke
+Night
+Rubendt
+Curtis
+Xyggitru'ugnar
+Boots
+Iain, Son of Fire
+Paulie
+Rynn Scirocco
+Vesaldius
+Asirith
+Pokey
+Anthony Banthony
+Phroe Phantom
+Kelly
+Morgan
+Daland Lawrence
+Moist Log
+Harvey
+Crooked Trevor
+Sheridan the Glorious
+Shion
+Egg, Friend of Ham
+Fercer Barrimos
+Holgar
+Jam the Jovial
+Biggus
+Kiko the Brazen
 Flapjacks
-Pockets
-Cardigan
-Lamp
-Number 9
-Flash
-Thunder Egg
+Jasper
+Eggfield
+Mudraptor
+Tyyrm Proudmoore
+Gozer the Geezer
+Paelias the Whacksmith
+Blockhead Gary
+Josiah of Lords
+Voltar
+Thrillho
+Arawn Gilver
+Henry
+Enthiccus
+Lith Fylkir
+Sable
+Dwarfurious
+Justice
+L0G1CR0W
+Robertonius
+Minsc
+Stanislaw the Vigilant
+Holden Limes
+Goblinsbane
+Kibblebits
 Moonshine
-Banjo
-Drop Bear
-Chapstick
-Sesame Bun
+Brandex Khola
+Dr. Ghost
+Strongest Grasshopper
+bk2skwl
+Lucky Leo
+Daniel "The Hair" Daugherty
+Robin
+Hoff
+Chuckles
+Old Sea Salt
+Baron Von Cobalt
+Mighty Ciprian
+Lazar
+Mr. Sterling
+Stabbotage
+Scoot of Doot Loot
+Cheese Lord
+NomadRanger
+Dohgyrius
+Boxcar Joe
+Marleya
+The Ash Davis
+LukeBu
+Joseph Hermes
 Rattlesnake
-Squeaky
+Danse the Safe
+Glarthir
+Brett
+Bacaniel
+Damian Silvermane
+Socks
+Pitcher
+Mimanus
+Stranger
+Sid
+Sir Robert Myers
+Jim
+Siesta
+Fishsticks
+Chad
+Captain
+Boss
+The Crusher
+Drop Bear
+Creed
+Lone Wolf
+Chazu
+Cyprus SongSteel
+Darius
+MaRcTaMaN
+Muy Braino
+Sockyy
+Whyatt Fordineaux
+Jadeon Alexander
+Lohwl
+The Tabby
+Lenny Loosejocks
+Odrek Harbrum
+Shoag
+Tacojustice
+Niblik Squashims
+Ultimat0mega
+Oy Vey
+Grumpy Dan
+Silvadi
+Jimmy Yeast
+Istel
+Sir Han Sirhan
+Shorelock Homes
+Torrance The Great
+Big Bear
+Skeksis
+Kalec
+Furio Goldenthread
+Nezaruke Korozazu
+Carlito
+Banjo
+Alex Brah
+Hylun Sunborn
+Mao
+Riquito
+Science
+Lamp
+Milo Miles Goodbarrel III
+Fidel Cast-O
+Requer Hugo
+Tobias
+Mr. Brad the Miser
+Xemuth
+Truffelzwerg
+Hal
+Sigh Tamma
+Colonial Williamsburg
+Dusto the Cringeling
+Xiaoniu
+Truck Thunders
+Yrag Notgnirraw
+Magician
+The Real Shen
+Norgyort
+Tucker Lake
+Shinnogo
+Korben
+Choppy Chuck
+Yakov of Astora
+Bonk Donkulous
+Captain Khar
+Froyo Jeggings
+Gremlin
+Valkar
+Tewky
+Ben the Venerable
+Houston Jackson
+Umbarde
+xDAXx
+Castie
+Julius Scarmiglione
+Azorann Von Raymer
+Master of Farts
+Easy Mode
+Boobah Boobalah
+Coothe
+Hedge McHogface
+Bennett Swift
+Tinkuwu
+Wulf
+Tabarneth
+Gizzard
+Badonn
+Sardoneous Rex
+Zherkan
+James Stookman
+Cameron Stallings
+Five
+Goldfish Mind the Wise
+Thorfinn Healfdene
+Thunder Egg
 Meat
 Sleeves
-Socks
-Beans
-Pitcher
-Froyo Jeggings
-Dax
+Tommy Kobbero Andersen
+Whirlygig
+Gamble Lord
+Torvald
+Vares Voldo
+Chapstick
+Ada
+Hogman the Intruder
+Barnaby Calbahoun
+Wingwangwoo
+Ran
+Funny Lou
+The J.P.
+Plenni Flaps
+Beanus Maximus
+Old Man Fless
+Geralt Greengum
+The Dutchmiser
+General Bill
+Moss
+Kitten Chaingun
+ENTER NAME
+Olfin Ironbeard
+Bull
+Gabe Noodle
+Chris the Magnificent
+Dormant God Akkad
+Khazu
+Indispensible Plolat
+Drudge Jedd
+Diogenes Griphonn
+Zack "Shooter" Shotmen
+Brody
 qwertyuiopasdfghjklzxc
+Dorfy
+CDR Caramel
+Bumperton XX
+Beans
+A Ninja Bee
+Cardigan
+Jory the Drunk
+King Sreff
+Charles Dunley
+Ansp Foetbarl
+DrWhoCares
+wxqie
+Frosty
+Faust
+Lightspeed Boi
+Gah-Nam
+Adom
+Franklin
+Kladeos
+Sue Permario
+Wizz-Bang
+Smitty
+Reuben the Honidian
+MAMMAL_MAN
+Xavier
+Basura
+Tepit
+The Rat King
+Alejandro
+Rulf
+Mazzle Dazzle
+Charlie
+Sum Booka
+Theodeus Pez
+Chip
+Blackthumb
+Giggles
+Brick
+Galudir
+Adalbert
+Mana Boy
+Vyse Dyne
+Joshua D Ziegler
+Noland
+Bragnarock
+Sitzkrieg
+Gene of the Gods' Hand
+Sir Francis Bacon
+Jeremiah the Tryer
+Autumntail
+Number 9
+Dak Bladefist
+Brocha
+Quinn
+Sir Liest of Dispositions
+Salad
+Booki
+Max Blax
+Cornelius
+Lulu the Reckless
+Flash
+Cro
+Barb's Husband
+Hiyoko Choco
+Robin Yew
+Wedge
+Dad said no
+Cursio
+Sir Punches Stuff
+Blue Rose
+Mr. Figgles
+Cuco jr Fernandez
+Bartholomew Jackson IV
+Hrathen
+Colin Gauvin
+Bad Blad
+Gladuateur
+Fenguard
+Arthemis Bosc
+Lerandrel
+Sesame Bun
+Ben Llewellyn
+Mister Resistor
+Toggle
+Vurdai
+Yiren the Tenacious
+Legeden
+Squeaky
+Batter
+Cintra
+Mittens
+Bones
 Lost Deppresso
-Sable
-Cheese Lord
-Lone Wolf
-Lucky Leo
-Shion
-Danse the Safe
-Siesta
+Harold Martini
+Pockets
+Noggin
+Undecided
+Gibbin
+Happen III
+Michael Darcy
+dadey60
+Sir Skunkalot
+Gereg
+Macnus of Birmingham
+<*Goliath*>
+Indy
+Ratatha
+Gaius
+Kevin Reagan
+Voxels McGee
+Reginauld O'Grahdtz
+Leopold
+Cevet Daphvir
+Cookie
+Thrumbunk
+Milk Man
+Makooti
+Dribbus
+Cyrano
+Father Skabbs
+Alduier Tarek
+Mystic Mungus
+Jargo
+Armadil
+Myco Kain
+Trungad
 Dorai-Yu
-Marley
+Bezel Fhloston
+Telpemir
+Scumbo Bunger

@@ -1565,11 +1565,21 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 
     // set color
 	Uint32 color = makeColor(255, 255, 255, 255);
-	if (entity->behavior == &actDamageGib && text[0] == '+') {
+    if ( entity->behavior == &actDamageGib ) {
 #ifndef EDITOR
-		color = hudColors.characterSheetGreen;
+        if ( !EnemyHPDamageBarHandler::bDamageGibTypesEnabled )
+        {
+            if ( text[0] == '+' )
+            {
+                color = hudColors.characterSheetGreen;
+            }
+        }
+        else
+        {
+            color = entity->skill[6];
+        }
 #endif // !EDITOR
-	}
+    }
 	else if (entity->behavior == &actSpriteNametag) {
 		color = entity->skill[1];
 	}
@@ -1578,7 +1588,7 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 		color, makeColor(0, 0, 0, 255));
 	auto textureId = rendered_text->getTexID();
 
-	// bind texture
+    // bind texture
     GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, textureId));
     const GLfloat w = static_cast<GLfloat>(rendered_text->getWidth());
     const GLfloat h = static_cast<GLfloat>(rendered_text->getHeight());
@@ -1731,6 +1741,10 @@ Mesh skyMesh = {
     }, // colors
 };
 
+#ifndef EDITOR
+static ConsoleVariable<bool> cvar_allowChunkRebuild("/allow_chunk_rebuild", true);
+#endif
+
 void glDrawWorld(view_t* camera, int mode)
 {
 #ifndef EDITOR
@@ -1830,10 +1844,18 @@ void glDrawWorld(view_t* camera, int mode)
         }
     }
     
+#ifdef EDITOR
+    constexpr bool allowChunkRebuild = true;
+#else
+    const bool allowChunkRebuild = *cvar_allowChunkRebuild;
+#endif
+    
     // build chunks
-    for (auto& pair : chunksToBuild) {
-        auto& chunk = *pair.second;
-        chunk.build(map, !clouds, chunk.x, chunk.y, chunk.w, chunk.h);
+    if (allowChunkRebuild) {
+        for (auto& pair : chunksToBuild) {
+            auto& chunk = *pair.second;
+            chunk.build(map, !clouds, chunk.x, chunk.y, chunk.w, chunk.h);
+        }
     }
     
     // draw chunks

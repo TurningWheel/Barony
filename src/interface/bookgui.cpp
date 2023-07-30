@@ -841,6 +841,7 @@ void Player::SignGUI_t::updateSignGUI()
 		if ( Input::inputs[player.playernum].binaryToggle("MenuCancel") )
 		{
 			Input::inputs[player.playernum].consumeBinaryToggle("MenuCancel");
+			Input::inputs[player.playernum].consumeBindingsSharedWithBinding("MenuCancel");
 			closeSignGUI();
 			return;
 		}

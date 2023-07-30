@@ -2480,6 +2480,9 @@ public:
 			readFromFile();
 		}
 		int dungeonLevel = -1;
+		bool showFirstTutorialCompletedPrompt = false;
+		bool firstTutorialCompleted = false;
+		void createFirstTutorialCompletedPrompt();
 		void setTutorialMap(std::string& mapname)
 		{
 			loadCustomNextMap = mapname;
@@ -3242,6 +3245,7 @@ struct Mods
 	static bool systemImagesReloadUnmodded;
 	static bool customContentLoadedFirstTime;
 	static bool disableSteamAchievements;
+	static bool lobbyDisableSteamAchievements;
 	static bool isLoading;
 	static Uint32 loadingTicks;
 #ifdef STEAMWORKS
@@ -3265,6 +3269,7 @@ struct Mods
 	static Uint32 processedOnTick;
 	static int uploadNumRetries;
 	static std::string getFolderFullPath(std::string input);
+	static bool forceDownloadCachedImages;
 #endif
 	static void updateModCounts();
 	static bool mountAllExistingPaths();

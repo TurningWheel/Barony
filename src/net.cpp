@@ -2780,19 +2780,41 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		Sint16 oldhp = SDLNet_Read16(&net_packet->data[8]);
 		Uint32 uid = SDLNet_Read32(&net_packet->data[10]);
 		bool lowPriorityTick = false;
-		if ( net_packet->data[14] == 1 )
+		DamageGib gib = DMG_DEFAULT;
+		if ( EnemyHPDamageBarHandler::bDamageGibTypesEnabled )
 		{
-			lowPriorityTick = true;
+			gib = (DamageGib)((net_packet->data[14] & 0xFE) >> 1); // upper 7 bits
+			if ( net_packet->data[14] & 1 )
+			{
+				lowPriorityTick = true;
+			}
+		}
+		else
+		{
+			if ( net_packet->data[14] == 1 )
+			{
+				lowPriorityTick = true;
+			}
 		}
 		char enemy_name[128] = "";
 		strcpy(enemy_name, (char*)(&net_packet->data[15]));
 		enemyHPDamageBarHandler[clientnum].addEnemyToList(static_cast<Sint32>(enemy_hp), 
-			static_cast<Sint32>(enemy_maxhp), static_cast<Sint32>(oldhp), uid, enemy_name, lowPriorityTick);
+			static_cast<Sint32>(enemy_maxhp), static_cast<Sint32>(oldhp), uid, enemy_name, lowPriorityTick, gib);
 	}},
 
 	// ping
 	{'PING', [](){
 		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1117), (SDL_GetTicks() - pingtime));
+	}},
+
+	// automated ping
+	{'PNGU', [](){
+		PingNetworkStatus_t::respond();
+	}},
+
+	// automated ping response
+	{'PNGR', [](){
+		PingNetworkStatus_t::receive();
 	}},
 
 	// unlock steam achievement
@@ -4862,6 +4884,16 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		sendPacketSafe(net_sock, -1, net_packet, j - 1);
 	}},
 
+	// automated ping
+	{'PNGU', []() {
+		PingNetworkStatus_t::respond();
+	}},
+
+	// automated ping response
+	{'PNGR', []() {
+		PingNetworkStatus_t::receive();
+	}},
+
 	// network scan
 	{'SCAN', [](){
 	    handleScanPacket();
@@ -6923,4 +6955,233 @@ void handleScanPacket() {
         net_packet->len = offset + 9;
         sendPacket(net_sock, -1, net_packet, 0);
     }
+}
+
+PingNetworkStatus_t PingNetworkStatus[MAXPLAYERS];
+bool PingNetworkStatus_t::bEnabled = false;
+int PingNetworkStatus_t::pingLimitGreen = 100;
+int PingNetworkStatus_t::pingLimitYellow = 150;
+int PingNetworkStatus_t::pingLimitOrange = 250;
+bool PingNetworkStatus_t::pingHUDDisplayGreen = false;
+bool PingNetworkStatus_t::pingHUDDisplayYellow = false;
+bool PingNetworkStatus_t::pingHUDDisplayOrange = true;
+bool PingNetworkStatus_t::pingHUDDisplayRed = true;
+bool PingNetworkStatus_t::pingHUDShowOKBriefly = true;
+bool PingNetworkStatus_t::pingHUDShowNumericValue = false;
+void PingNetworkStatus_t::reset()
+{
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		PingNetworkStatus[i].clear();
+	}
+}
+
+void PingNetworkStatus_t::receive()
+{
+	int player = net_packet->data[4];
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return;
+	}
+	auto& p = PingNetworkStatus[player];
+	Uint32 seq = SDLNet_Read32(&net_packet->data[5]);
+
+	auto find = p.pings.find(seq);
+	if ( find != p.pings.end() )
+	{
+		if ( seq > p.lastSequence )
+		{
+			p.lastPingtime = SDL_GetTicks() - find->second; // update our displayed ping value
+			p.lastSequence = seq;
+			//messagePlayer(clientnum, MESSAGE_DEBUG, "[%d]: %4d ms", player, p.lastPingtime);
+		}
+		p.pings.erase(seq);
+
+	}
+	std::vector<Uint32> toErase;
+	for ( auto& keypair : p.pings )
+	{
+		if ( keypair.first < seq )
+		{
+			toErase.push_back(keypair.first);
+		}
+	}
+	for ( auto& key : toErase )
+	{
+		p.pings.erase(key);
+	}
+}
+
+void PingNetworkStatus_t::respond()
+{
+	int player = net_packet->data[4];
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return;
+	}
+
+	strcpy((char*)net_packet->data, "PNGR");
+	net_packet->data[4] = clientnum;
+	net_packet->len = 9;
+
+	if ( multiplayer == CLIENT )
+	{
+		net_packet->address.host = net_server.host;
+		net_packet->address.port = net_server.port;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+	}
+	else if ( multiplayer == SERVER )
+	{
+		if ( player > 0 )
+		{
+			net_packet->address.host = net_clients[player - 1].host;
+			net_packet->address.port = net_clients[player - 1].port;
+			sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		}
+	}
+}
+
+void PingNetworkStatus_t::saveDisplayMillis(bool forceUpdate)
+{
+	if ( oldestSequenceTicks > 0 )
+	{
+		displayMillisImmediate = std::max(SDL_GetTicks() - oldestSequenceTicks, lastPingtime);
+	}
+	else
+	{
+		displayMillisImmediate = lastPingtime;
+	}
+	if ( (ticks % (TICKS_PER_SECOND * 2) == 0) || displayMillis == 0 || forceUpdate )
+	{
+		displayMillis = displayMillisImmediate;
+	}
+}
+
+void PingNetworkStatus_t::update()
+{
+	if ( !bEnabled )
+	{
+		reset();
+		return;
+	}
+	if ( !(multiplayer == CLIENT || multiplayer == SERVER) )
+	{
+		reset();
+		return;
+	}
+	if ( !net_packet ) { return; }
+
+	if ( true )
+	{
+		bool updated = false;
+		if ( multiplayer == CLIENT ) 
+		{
+			if ( PingNetworkStatus[0].needsUpdate || (ticks % (5 * TICKS_PER_SECOND) == 0) )
+			{
+				updated = true;
+				PingNetworkStatus[0].needsUpdate = false;
+
+				strcpy((char*)net_packet->data, "PNGU");
+				net_packet->data[4] = clientnum;
+				net_packet->len = 9;
+
+				++PingNetworkStatus[0].sequence;
+				SDLNet_Write32(PingNetworkStatus[0].sequence, &net_packet->data[5]);
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+
+				PingNetworkStatus[0].pings[PingNetworkStatus[0].sequence] = SDL_GetTicks();
+			}
+		}
+		else if ( multiplayer == SERVER ) 
+		{
+			for ( int i = 1; i < MAXPLAYERS; i++ ) 
+			{
+				if ( client_disconnected[i] ) 
+				{
+					continue;
+				}
+
+				if ( PingNetworkStatus[i].needsUpdate || (ticks % (5 * TICKS_PER_SECOND) == 0) )
+				{
+					updated = true;
+					PingNetworkStatus[i].needsUpdate = false;
+
+					strcpy((char*)net_packet->data, "PNGU");
+					net_packet->data[4] = clientnum;
+					net_packet->len = 9;
+
+					++PingNetworkStatus[i].sequence;
+					SDLNet_Write32(PingNetworkStatus[i].sequence, &net_packet->data[5]);
+					net_packet->address.host = net_clients[i - 1].host;
+					net_packet->address.port = net_clients[i - 1].port;
+					sendPacketSafe(net_sock, -1, net_packet, i - 1);
+
+					PingNetworkStatus[i].pings[PingNetworkStatus[i].sequence] = SDL_GetTicks();
+				}
+			}
+		}
+
+		if ( updated )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				auto& p = PingNetworkStatus[i];
+				while ( p.pings.size() >= 10 )
+				{
+					Uint32 minSequence = 0;
+					for ( auto& keypairs : p.pings )
+					{
+						if ( minSequence == 0 )
+						{
+							minSequence = keypairs.first;
+						}
+						else if ( keypairs.first < minSequence )
+						{
+							minSequence = keypairs.first;
+						}
+					}
+
+					if ( minSequence > 0 )
+					{
+						p.pings.erase(minSequence);
+					}
+				}
+			}
+		}
+	}
+
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		auto& p = PingNetworkStatus[i];
+		if ( client_disconnected[i] )
+		{
+			p.clear();
+			return;
+		}
+		Uint32 minSequence = 0;
+		for ( auto& keypairs : p.pings )
+		{
+			if ( minSequence == 0 )
+			{
+				minSequence = keypairs.first;
+			}
+			else if ( keypairs.first < minSequence )
+			{
+				minSequence = keypairs.first;
+			}
+
+		}
+		if ( minSequence > 0 )
+		{
+			p.oldestSequenceTicks = p.pings[minSequence];
+		}
+		else
+		{
+			p.oldestSequenceTicks = 0;
+		}
+
+		p.saveDisplayMillis();
+	}
 }

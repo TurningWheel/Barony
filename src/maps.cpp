@@ -1447,9 +1447,101 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		}
 
 		// level is successfully loaded, add it to the pool
+		subRoomList = (list_t*)malloc(sizeof(list_t));
+		subRoomList->first = nullptr;
+		subRoomList->last = nullptr;
+
 		node = list_AddNodeLast(&shopSubRooms.list);
+		node->element = subRoomList;
+		node->deconstructor = &listDeconstructor;
+
+		node = list_AddNodeLast(subRoomList);
 		node->element = subRoomMap;
 		node->deconstructor = &mapDeconstructor;
+
+		// more nodes are created to record the exit points on the sublevel
+		for ( y = 0; y < subRoomMap->height; y++ )
+		{
+			for ( x = 0; x < subRoomMap->width; x++ )
+			{
+				if ( x == 0 || y == 0 || x == subRoomMap->width - 1 || y == subRoomMap->height - 1 )
+				{
+					if ( !subRoomMap->tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * subRoomMap->height] )
+					{
+						door = (door_t*)malloc(sizeof(door_t));
+						door->x = x;
+						door->y = y;
+						if ( x == subRoomMap->width - 1 )
+						{
+							door->dir = door_t::DIR_EAST;
+							if ( y == subRoomMap->height - 1 )
+							{
+								door->edge = door_t::EDGE_SOUTHEAST;
+							}
+							else if ( y == 0 )
+							{
+								door->edge = door_t::EDGE_NORTHEAST;
+							}
+							else
+							{
+								door->edge = door_t::EDGE_EAST;
+							}
+						}
+						else if ( y == subRoomMap->height - 1 )
+						{
+							door->dir = door_t::DIR_SOUTH;
+							if ( x == subRoomMap->width - 1 )
+							{
+								door->edge = door_t::EDGE_SOUTHEAST;
+							}
+							else if ( x == 0 )
+							{
+								door->edge = door_t::EDGE_SOUTHWEST;
+							}
+							else
+							{
+								door->edge = door_t::EDGE_SOUTH;
+							}
+						}
+						else if ( x == 0 )
+						{
+							door->dir = door_t::DIR_WEST;
+							if ( y == subRoomMap->height - 1 )
+							{
+								door->edge = door_t::EDGE_SOUTHWEST;
+							}
+							else if ( y == 0 )
+							{
+								door->edge = door_t::EDGE_NORTHWEST;
+							}
+							else
+							{
+								door->edge = door_t::EDGE_WEST;
+							}
+						}
+						else if ( y == 0 )
+						{
+							door->dir = door_t::DIR_NORTH;
+							if ( x == subRoomMap->width - 1 )
+							{
+								door->edge = door_t::EDGE_NORTHEAST;
+							}
+							else if ( x == 0 )
+							{
+								door->edge = door_t::EDGE_NORTHWEST;
+							}
+							else
+							{
+								door->edge = door_t::EDGE_NORTH;
+							}
+						}
+						node2 = list_AddNodeLast(subRoomList);
+						node2->element = door;
+						node2->deconstructor = &defaultDeconstructor;
+					}
+				}
+			}
+		}
 	}
 
 	StartRoomInfo_t startRoomInfo;
@@ -1872,6 +1964,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					subRoomNode = subRoomNode->next;
 					k++;
 				}
+				subRoomNode = ((list_t*)subRoomNode->element)->first;
 				subRoomMap = (map_t*)subRoomNode->element;
 				subRoomDoorNode = subRoomNode->next;
 			}

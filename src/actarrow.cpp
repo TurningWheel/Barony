@@ -977,13 +977,32 @@ void actArrow(Entity* my)
 					}
 
 					// update enemy bar for attacker
+					DamageGib dmgGib = DMG_DEFAULT;
+					if ( damageMultiplier <= 0.75 )
+					{
+						dmgGib = DMG_WEAKEST;
+					}
+					else if ( damageMultiplier <= 0.85 )
+					{
+						dmgGib = DMG_WEAKER;
+					}
+					else if ( damageMultiplier >= 1.25 )
+					{
+						dmgGib = DMG_STRONGEST;
+					}
+					else if ( damageMultiplier >= 1.15 )
+					{
+						dmgGib = DMG_STRONGER;
+					}
 					if ( !strcmp(hitstats->name, "") )
 					{
-						updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
+						updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP, 
+							false, dmgGib);
 					}
 					else
 					{
-						updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+						updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
+							false, dmgGib);
 					}
 
 				}

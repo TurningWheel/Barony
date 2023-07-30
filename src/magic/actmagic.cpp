@@ -142,9 +142,6 @@ void actMagiclightBall(Entity* my)
 		return;
 	})*/
 
-	//list_t *path = NULL;
-	pathnode_t* pathnode = NULL;
-
 	//TODO: Follow player around (at a distance -- and delay before starting to follow).
 	//TODO: Circle around player's head if they stand still for a little bit. Continue circling even if the player walks away -- until the player is far enough to trigger move (or if the player moved for a bit and then stopped, then update position).
 	//TODO: Don't forget to cast flickering light all around it.
@@ -353,7 +350,7 @@ void actMagiclightBall(Entity* my)
 							{
 								if (node->element)
 								{
-									pathnode = (pathnode_t*)node->element;
+									auto pathnode = (pathnode_t*)node->element;
 									//total_distance += sqrt(pow(pathnode->y - prevy, 2) + pow(pathnode->x - prevx, 2) );
 									total_distance += sqrt(pow(prevx - pathnode->x, 2) + pow(prevy - pathnode->y, 2) );
 									prevx = pathnode->x;
@@ -372,13 +369,13 @@ void actMagiclightBall(Entity* my)
 						{
 							if (my->path->first != NULL)
 							{
-								pathnode = (pathnode_t*)my->path->first->element;
+								auto pathnode = (pathnode_t*)my->path->first->element;
 								//double distance = sqrt(pow(pathnode->y * 16 + 8 - my->y, 2) + pow(pathnode->x * 16 + 8 - my->x, 2) );
 								//double distance = sqrt(pow((my->y) - ((pathnode->y + 8) * 16), 2) + pow((my->x) - ((pathnode->x + 8) * 16), 2));
 								double distance = sqrt(pow(((pathnode->y * 16) + 8) - (my->y), 2) + pow(((pathnode->x * 16) + 8) - (my->x), 2));
 								if (distance <= 4)
 								{
-									list_RemoveNode(pathnode->node); //TODO: Make sure it doesn't get stuck here. Maybe remove the node only if it's the last one?
+									list_RemoveNode(my->path->first);
 									if (!my->path->first)
 									{
 										list_FreeAll(my->path);
@@ -1285,11 +1282,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
+								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
+									false, DamageGib::DMG_TODO);
 							}
 							else
 							{
-								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
+									false, DamageGib::DMG_TODO);
 							}
 
 							if ( hitstats->HP <= 0 && parent)
@@ -1342,23 +1341,28 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										case FURNITURE_CHAIR:
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
-											updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+												false, DamageGib::DMG_DEFAULT);
 											break;
 										case FURNITURE_TABLE:
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
-											updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+												false, DamageGib::DMG_DEFAULT);
 											break;
 										case FURNITURE_BED:
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
-											updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+												false, DamageGib::DMG_DEFAULT);
 											break;
 										case FURNITURE_BUNKBED:
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
-											updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+												false, DamageGib::DMG_DEFAULT);
 											break;
 										case FURNITURE_PODIUM:
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
-											updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+												false, DamageGib::DMG_DEFAULT);
 											break;
 										default:
 											break;
@@ -1411,11 +1415,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
+								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
+									false, DamageGib::DMG_TODO);
 							}
 							else
 							{
-								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
+									false, DamageGib::DMG_TODO);
 							}
 
 							if ( hitstats->HP <= 0 && parent)
@@ -1506,23 +1512,28 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										case FURNITURE_CHAIR:
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
-											updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+												false, DamageGib::DMG_DEFAULT);
 											break;
 										case FURNITURE_TABLE:
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
-											updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+												false, DamageGib::DMG_DEFAULT);
 											break;
 										case FURNITURE_BED:
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
-											updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+												false, DamageGib::DMG_DEFAULT);
 											break;
 										case FURNITURE_BUNKBED:
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
-											updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+												false, DamageGib::DMG_DEFAULT);
 											break;
 										case FURNITURE_PODIUM:
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
-											updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+												false, DamageGib::DMG_DEFAULT);
 											break;
 										default:
 											break;
@@ -1651,11 +1662,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
+								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
+									false, DamageGib::DMG_TODO);
 							}
 							else
 							{
-								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
+									false, DamageGib::DMG_TODO);
 							}
 							if ( oldHP > 0 && hitstats->HP <= 0 )
 							{
@@ -1770,23 +1783,28 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										case FURNITURE_CHAIR:
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
-											updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+												false, DamageGib::DMG_DEFAULT);
 											break;
 										case FURNITURE_TABLE:
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
-											updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+												false, DamageGib::DMG_DEFAULT);
 											break;
 										case FURNITURE_BED:
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
-											updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+												false, DamageGib::DMG_DEFAULT);
 											break;
 										case FURNITURE_BUNKBED:
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
-											updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+												false, DamageGib::DMG_DEFAULT);
 											break;
 										case FURNITURE_PODIUM:
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
-											updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+												false, DamageGib::DMG_DEFAULT);
 											break;
 										default:
 											break;
@@ -1928,11 +1946,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
+								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
+									false, DamageGib::DMG_TODO);
 							}
 							else
 							{
-								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
+									false, DamageGib::DMG_TODO);
 							}
 							if ( parent )
 							{
@@ -2150,11 +2170,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
+								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
+									false, DamageGib::DMG_TODO);
 							}
 							else
 							{
-								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
+									false, DamageGib::DMG_TODO);
 							}
 							if ( oldHP > 0 && hitstats->HP <= 0 && parent)
 							{
@@ -2245,23 +2267,28 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										case FURNITURE_CHAIR:
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
-											updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+												false, DamageGib::DMG_DEFAULT);
 											break;
 										case FURNITURE_TABLE:
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
-											updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+												false, DamageGib::DMG_DEFAULT);
 											break;
 										case FURNITURE_BED:
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
-											updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+												false, DamageGib::DMG_DEFAULT);
 											break;
 										case FURNITURE_BUNKBED:
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
-											updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+												false, DamageGib::DMG_DEFAULT);
 											break;
 										case FURNITURE_PODIUM:
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
-											updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+												false, DamageGib::DMG_DEFAULT);
 											break;
 										default:
 											break;
@@ -2672,11 +2699,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
+								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
+									false, DamageGib::DMG_TODO);
 							}
 							else
 							{
-								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
+									false, DamageGib::DMG_TODO);
 							}
 
 							if ( hitstats->HP <= 0 && parent )
@@ -2779,23 +2808,28 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 											{
 											case FURNITURE_CHAIR:
 												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
-												updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+												updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+													false, DamageGib::DMG_DEFAULT);
 												break;
 											case FURNITURE_TABLE:
 												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
-												updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+												updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+													false, DamageGib::DMG_DEFAULT);
 												break;
 											case FURNITURE_BED:
 												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
-												updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+												updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+													false, DamageGib::DMG_DEFAULT);
 												break;
 											case FURNITURE_BUNKBED:
 												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
-												updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+												updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+													false, DamageGib::DMG_DEFAULT);
 												break;
 											case FURNITURE_PODIUM:
 												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
-												updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+												updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+													false, DamageGib::DMG_DEFAULT);
 												break;
 											default:
 												break;

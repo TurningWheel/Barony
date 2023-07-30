@@ -3404,6 +3404,14 @@ void updatePlayerConductsInMainLoop()
 			conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 1;
 		}
 	}
+	if ( !conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS] )
+	{
+		if ( Mods::disableSteamAchievements
+			|| (multiplayer == CLIENT && Mods::lobbyDisableSteamAchievements) )
+		{
+			conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS] = 1;
+		}
+	}
 	if ( !conductGameChallenges[CONDUCT_MULTIPLAYER] )
 	{
 		if ( multiplayer != SINGLE || splitscreen )
@@ -5186,6 +5194,7 @@ void AchievementObserver::updateGlobalStat(int index, int value)
 		return;
 	}
 	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
+		|| conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS]
 		|| Mods::disableSteamAchievements )
 	{
 		return;

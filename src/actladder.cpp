@@ -1357,6 +1357,14 @@ void actCustomPortal(Entity* my)
 						auto& tutorialLevels = gameModeManager.Tutorial.levels;
 						if ( number >= 1 && number < tutorialLevels.size() )
 						{
+							if ( number == 1 )
+							{
+								if ( !gameModeManager.Tutorial.firstTutorialCompleted )
+								{
+									gameModeManager.Tutorial.showFirstTutorialCompletedPrompt = true;
+									gameModeManager.Tutorial.firstTutorialCompleted = true;
+								}
+							}
 							if ( tutorialLevels.at(number).completionTime == 0 )
 							{
 								tutorialLevels.at(number).completionTime = completionTime; // first time score.

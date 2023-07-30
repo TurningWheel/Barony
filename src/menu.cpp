@@ -9477,6 +9477,7 @@ void doNewGame(bool makeHighscore) {
 	}
 	EnemyHPDamageBarHandler::dumpCache();
 	monsterAllyFormations.reset();
+	PingNetworkStatus_t::reset();
 	currentlevel = startfloor;
 	secretlevel = false;
 	victory = 0;
@@ -9487,7 +9488,11 @@ void doNewGame(bool makeHighscore) {
 	{
 		conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 1;
 	}
-	Mods::disableSteamAchievements = false;
+
+	if ( Mods::numCurrentModsLoaded <= 0 )
+	{
+		Mods::disableSteamAchievements = false;
+	}
 
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
@@ -10623,6 +10628,7 @@ void doEndgame(bool saveHighscore) {
 	}
 	EnemyHPDamageBarHandler::dumpCache();
 	monsterAllyFormations.reset();
+	PingNetworkStatus_t::reset();
 	gameModeManager.currentSession.restoreSavedServerFlags();
 	client_classes[0] = 0;
 	for ( c = 0; c < MAXPLAYERS; c++ )
