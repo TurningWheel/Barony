@@ -21,6 +21,7 @@
 #include "mod_tools.hpp"
 #include "player.hpp"
 #include "ui/MainMenu.hpp"
+#include "init.hpp"
 
 static real_t getLightAtModifier = 1.0;
 static real_t getLightAtAdder = 0.0;
@@ -1757,6 +1758,13 @@ void glDrawWorld(view_t* camera, int mode)
     // determine whether we should draw clouds, and their texture
     int cloudtile;
     const bool clouds = shouldDrawClouds(map, &cloudtile);
+    
+    // select texture atlas
+    constexpr int numTileAtlases = sizeof(AnimatedTile::indices) / sizeof(AnimatedTile::indices[0]);
+    const int atlasIndex = (ticks % (numTileAtlases * 10)) / 10;
+    GL_CHECK_ERR(glActiveTexture(GL_TEXTURE2));
+    bindTextureAtlas(atlasIndex);
+    GL_CHECK_ERR(glActiveTexture(GL_TEXTURE0));
     
     // upload uniforms for dither shader
     if (mode == REALCOLORS) {
