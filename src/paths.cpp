@@ -678,6 +678,13 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 	{
 		maxtries = *cvar_pathlimit_commandmove;
 	}
+	else if ( pathingType == GeneratePathTypes::GENERATE_PATH_BOSS_TRACKING_HUNT
+		|| pathingType == GeneratePathTypes::GENERATE_PATH_BOSS_TRACKING_IDLE
+		|| (pathingType == GeneratePathTypes::GENERATE_PATH_TO_HUNT_MONSTER_TARGET
+			&& my && stats && my->isBossMonster()) )
+	{
+		maxtries = *cvar_pathlimit_bosses;
+	}
 	while (!openSet.empty()) {
         if ((tries >= maxtries && !playerCheckPathToExit && !loading) ||
 			(tries >= 10000 && (playerCheckPathToExit || loading))) {
