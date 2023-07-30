@@ -469,6 +469,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
       <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -592,6 +593,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -623,6 +625,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -655,6 +658,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
       </UndefinePreprocessorDefinitions>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
       <AdditionalOptions>/DBUILD_PR="$(BARONY_BUILD_PR)" /DBUILD_CC="$(BARONY_BUILD_CC)" /DBUILD_CS="$(BARONY_BUILD_CS)" /DBUILD_DE="$(BARONY_BUILD_DE)" /DBUILD_SA="$(BARONY_BUILD_SA)" /DBUILD_GSE="$(BARONY_BUILD_GSTATS)" %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -751,6 +755,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
       </UndefinePreprocessorDefinitions>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
       <AdditionalOptions>/DBUILD_PR="$(BARONY_BUILD_PR)" /DBUILD_CC="$(BARONY_BUILD_CC)" /DBUILD_CS="$(BARONY_BUILD_CS)" /DBUILD_DE="$(BARONY_BUILD_DE)" /DBUILD_SA="$(BARONY_BUILD_SA)" /DBUILD_GSE="$(BARONY_BUILD_GSTATE)" %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -782,6 +787,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -896,6 +902,7 @@ copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS 4\barony_test.exe" </Com
       <MinimalRebuild>false</MinimalRebuild>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
       <AdditionalOptions>/DBUILD_PR="$(BARONY_BUILD_PR)" /DBUILD_CC="$(BARONY_BUILD_CC)" /DBUILD_CS="$(BARONY_BUILD_CS)" /DBUILD_DE="$(BARONY_BUILD_DE)" /DBUILD_SA="$(BARONY_BUILD_SA)" /DBUILD_GSE="$(BARONY_BUILD_GSTATE)" %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -934,6 +941,7 @@ copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS 4\barony_test.exe" </Com
       <MinimalRebuild>false</MinimalRebuild>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
       <AdditionalOptions>/DBUILD_PR="$(BARONY_BUILD_PR)" /DBUILD_CC="$(BARONY_BUILD_CC)" /DBUILD_CS="$(BARONY_BUILD_CS)" /DBUILD_DE="$(BARONY_BUILD_DE)" /DBUILD_SA="$(BARONY_BUILD_SA)" /DBUILD_GSE="$(BARONY_BUILD_GSTATE)" %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -999,6 +1007,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -1063,6 +1072,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
