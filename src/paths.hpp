@@ -15,6 +15,14 @@ extern int* pathMapFlying;
 extern int* pathMapGrounded;
 extern int pathMapZone;
 
+// pathnode struct
+typedef struct pathnode
+{
+	Sint32 x = 0, y = 0;     // location
+	Uint32 g = 0, h = 0;     // heuristic info
+	Sint32 px = -1, py = -1; // parent location
+} pathnode_t;
+
 // function prototypes
 Uint32 heuristic(int x1, int y1, int x2, int y2);
 enum GeneratePathTypes
@@ -39,5 +47,5 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 void generatePathMaps();
 // return true if an entity is blocks pathing
 bool isPathObstacle(Entity* entity);
-int pathCheckObstacle(long x, long y, Entity* my, Entity* target);
+int pathCheckObstacle(int x, int y, Entity* my, Entity* target);
 void updateGatePath(Entity& entity);

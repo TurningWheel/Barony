@@ -513,15 +513,6 @@ typedef struct deleteent_t
 #define MAXTRIES 6 // max number of attempts on a packet
 #define MAXDELETES 2 // max number of packets resent in a frame
 
-// pathnode struct
-typedef struct pathnode_t
-{
-	struct pathnode_t* parent;
-	Sint32 x, y;
-	Uint32 g, h;
-	node_t* node;
-} pathnode_t;
-
 // hit structure
 #define HORIZONTAL 1
 #define VERTICAL 2
@@ -855,7 +846,6 @@ void listDeconstructor(void* data);
 Entity* newEntity(Sint32 sprite, Uint32 pos, list_t* entlist, list_t* creaturelist);
 button_t* newButton(void);
 string_t* newString(list_t* list, Uint32 color, Uint32 time, int player, char const * const content, ...);
-pathnode_t* newPathnode(list_t* list, Sint32 x, Sint32 y, pathnode_t* parent, Sint8 pos);
 
 // function prototypes for cursors.c:
 SDL_Cursor* newCursor(char const * const image[]);

@@ -2066,7 +2066,6 @@ void actMonster(Entity* my)
 	double dist, dist2;
 	list_t* path;
 	node_t* node, *node2;
-	pathnode_t* pathnode;
 	double dir;
 	double tangent;
 	Stat* myStats;
@@ -6134,11 +6133,11 @@ timeToGoAgain:
 					path = (list_t*)my->children.first->element;
 					if ( path->first != NULL )
 					{
-						pathnode = (pathnode_t*)path->first->element;
+						auto pathnode = (pathnode_t*)path->first->element;
 						dist = sqrt( pow(pathnode->y * 16 + 8 - my->y, 2) + pow(pathnode->x * 16 + 8 - my->x, 2) );
 						if ( dist <= 2 )
 						{
-							list_RemoveNode(pathnode->node);
+							list_RemoveNode(path->first);
 							if ( local_rng.rand() % 8 == 0 )
 							{
 								if ( !MONSTER_SOUND )

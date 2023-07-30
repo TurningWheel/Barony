@@ -309,91 +309,6 @@ Uint32 heuristic(int x1, int y1, int x2, int y2)
 
 /*-------------------------------------------------------------------------------
 
-	heapAdd
-
-	Adds a pathnode to the heap
-
--------------------------------------------------------------------------------*/
-
-pathnode_t** heapAdd(pathnode_t** heap, pathnode_t* pathnode, long* length)
-{
-	long x;
-
-	*length += 1;
-	heap[*length] = pathnode;
-	for ( x = *length; x > 1; x = x >> 1 )
-	{
-		if ( heap[x >> 1]->g + heap[x >> 1]->h > pathnode->g + pathnode->h )
-		{
-			pathnode = heap[x];
-			heap[x] = heap[x >> 1];
-			heap[x >> 1] = pathnode;
-		}
-		else
-		{
-			heap[x] = pathnode;
-			break;
-		}
-	}
-
-	return heap;
-}
-
-/*-------------------------------------------------------------------------------
-
-	heapRemove
-
-	Removes a pathnode from the heap
-
--------------------------------------------------------------------------------*/
-
-pathnode_t** heapRemove(pathnode_t** heap, long* length)
-{
-	long u, v = 1;
-	pathnode_t* pathnode;
-
-	heap[1] = heap[*length];
-	*length -= 1;
-	while ( 1 )
-	{
-		u = v;
-
-		if ( (u << 1) + 1 <= *length )
-		{
-			if ( heap[u << 1]->g + heap[u << 1]->h < heap[u]->g + heap[u]->h )
-			{
-				v = u << 1;
-			}
-			if ( heap[(u << 1) + 1]->g + heap[(u << 1) + 1]->h < heap[v]->g + heap[v]->h )
-			{
-				v = (u << 1) + 1;
-			}
-		}
-		else if ( u << 1 <= *length )
-		{
-			if ( heap[u << 1]->g + heap[u << 1]->h < heap[u]->g + heap[u]->h )
-			{
-				v = u << 1;
-			}
-		}
-
-		if ( u != v )
-		{
-			pathnode = heap[u];
-			heap[u] = heap[v];
-			heap[v] = pathnode;
-		}
-		else
-		{
-			break;
-		}
-	}
-
-	return heap;
-}
-
-/*-------------------------------------------------------------------------------
-
 	pathCheckObstacle
 
 	only used during the load process because it's a pretty slow way of
@@ -402,11 +317,11 @@ pathnode_t** heapRemove(pathnode_t** heap, long* length)
 
 -------------------------------------------------------------------------------*/
 
-int pathCheckObstacle(long x, long y, Entity* my, Entity* target)
+int pathCheckObstacle(int x, int y, Entity* my, Entity* target)
 {
-	int u = std::min(std::max<unsigned int>(0, x >> 4), map.width);
-	int v = std::min(std::max<unsigned int>(0, y >> 4), map.height); //TODO: Why are int and long int being compared?
-	int index = v * MAPLAYERS + u * MAPLAYERS * map.height;
+	const int u = std::min(std::max(0, x >> 4), (int)map.width - 1);
+	const int v = std::min(std::max(0, y >> 4), (int)map.height - 1);
+	const int index = v * MAPLAYERS + u * MAPLAYERS * map.height;
 
 	if ( map.tiles[OBSTACLELAYER + index] || !map.tiles[index] || lavatiles[map.tiles[index]] )
 	{
@@ -437,7 +352,7 @@ int pathCheckObstacle(long x, long y, Entity* my, Entity* target)
 			|| entity->sprite == 169	// statue
 			|| entity->sprite == 177	// shrine
 			|| entity->sprite == 178	// spell shrine
-			|| entity->sprite == 179 && (entity->colliderHasCollision != 0 || entity->colliderDiggable != 0) // collider
+			|| (entity->sprite == 179 && (entity->colliderHasCollision != 0 || entity->colliderDiggable != 0)) // collider
 			)
 		{
 			if ( (int)floor(entity->x / 16) == u && (int)floor(entity->y / 16) == v )
@@ -461,6 +376,15 @@ int pathCheckObstacle(long x, long y, Entity* my, Entity* target)
 	NULL.
 
 -------------------------------------------------------------------------------*/
+
+typedef std::pair<int, int> pairtype;
+struct pair_hash
+{
+    template <class T1, class T2>
+    std::size_t operator() (const std::pair<T1, T2> &pair) const {
+        return std::hash<T1>()(pair.first) ^ std::hash<T2>()(pair.second);
+    }
+};
 
 static std::chrono::high_resolution_clock::time_point pathtime;
 static std::chrono::high_resolution_clock::time_point starttime;
@@ -494,26 +418,13 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		return NULL;
 	}
 
-	pathnode_t* pathnode, *childnode, *parent;
-	list_t* openList, *closedList;
-	list_t* path;
-	node_t* node;
-	bool alreadyadded;
-	Sint32 x, y, z, h, g;
-	pathnode_t** binaryheap;
-	long heaplength = 0;
-	node_t* entityNode = NULL;
-
-	int* pathMap = (int*) calloc(map.width * map.height, sizeof(int));
-
-	bool levitating = false;
-
-	x1 = std::min<unsigned int>(std::max(0, x1), map.width - 1);
-	y1 = std::min<unsigned int>(std::max(0, y1), map.height - 1);
-	x2 = std::min<unsigned int>(std::max(0, x2), map.width - 1);
-	y2 = std::min<unsigned int>(std::max(0, y2), map.height - 1); //TODO: Why are int and unsigned int being compared?
+	x1 = std::min(std::max(0, x1), (int)map.width - 1);
+	y1 = std::min(std::max(0, y1), (int)map.height - 1);
+	x2 = std::min(std::max(0, x2), (int)map.width - 1);
+	y2 = std::min(std::max(0, y2), (int)map.height - 1);
 
 	// get levitation status
+	bool levitating = false;
 	Stat* stats = my->getStats();
 	if ( stats )
 	{
@@ -533,6 +444,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 	bool playerCheckAchievement = (my && my->behavior == &actPlayer
 		&& target && (target->behavior == &actBomb || target->behavior == &actPlayerLimb || target->behavior == &actItem || target->behavior == &actSwitch));
 
+	int* pathMap = (int*) calloc(map.width * map.height, sizeof(int));
 	int pathMapType = GateGraph::GATE_GRAPH_GROUNDED;
 	if ( !loading )
 	{
@@ -613,8 +525,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 	}
 
 	Uint32 standingOnTrap = 0; // 0 - not checked.
-
-	for ( entityNode = map.entities->first; entityNode != nullptr; entityNode = entityNode->next )
+	for ( auto entityNode = map.entities->first; entityNode != nullptr; entityNode = entityNode->next )
 	{
 		Entity* entity = (Entity*)entityNode->element;
 		if ( entity->flags[PASSABLE] )
@@ -689,13 +600,11 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 			//Fix to make ladders generate in hell.
 			continue;
 		}
-		if ( playerCheckAchievement &&
-			(entity->behavior == &actMonster || entity->behavior == &actPlayer) )
+		if (playerCheckAchievement && (entity->behavior == &actMonster || entity->behavior == &actPlayer))
 		{
 			continue;
 		}
-		if ( stats && stats->type == MINOTAUR && 
-			(entity->behavior == &actBoulder || (entity->isDamageableCollider() && entity->colliderHasCollision == 2)) )
+		if (stats && stats->type == MINOTAUR && (entity->behavior == &actBoulder || (entity->isDamageableCollider() && entity->colliderHasCollision == 2)))
 		{
 			// minotaurs bust through boulders, not an obstacle
 			continue;
@@ -705,34 +614,47 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		pathMap[y + x * map.height] = 0;
 	}
 
-	openList = (list_t*) malloc(sizeof(list_t));
-	openList->first = NULL;
-	openList->last = NULL;
-	closedList = (list_t*) malloc(sizeof(list_t));
-	closedList->first = NULL;
-	closedList->last = NULL;
-	binaryheap = (pathnode_t**) malloc(sizeof(pathnode_t*)*map.width * map.height);
-	binaryheap[0] = NULL;
+    // here begins actual A* code:
+    struct queue_type {
+        int x, y;
+        std::unordered_map<pairtype, pathnode_t, pair_hash>& openSet;
+        bool operator>(const queue_type& rhs) const {
+            const auto find1 = openSet.find({x, y});
+            assert(find1 != openSet.end());
+            const auto& lhs_node = find1->second;
+            const auto find2 = rhs.openSet.find({rhs.x, rhs.y});
+            assert(find2 != openSet.end());
+            const auto& rhs_node = find2->second;
+            return lhs_node.g + lhs_node.h > rhs_node.g + rhs_node.h;
+        }
+        queue_type& operator=(const queue_type& rhs) {
+            x = rhs.x;
+            y = rhs.y;
+            return *this;
+        }
+    };
+    std::priority_queue<queue_type, std::vector<queue_type>, std::greater<queue_type>> queue;
+	std::unordered_map<pairtype, pathnode_t, pair_hash> openSet, closedSet;
 
 	// create starting node in list
-	pathnode = newPathnode(openList, x1, y1, NULL, 1);
-	pathnode->g = 0;
-	pathnode->h = heuristic(x1, y1, x2, y2);
-	heapAdd(binaryheap, pathnode, &heaplength);
+    const auto firstNode = pathnode_t{x1, y1, 0, heuristic(x1, y1, x2, y2), -1, -1};
+    openSet.insert({pairtype{firstNode.x, firstNode.y}, firstNode});
+	queue.push({x1, y1, openSet});
 	int tries = 0;
 	int maxtries = *cvar_pathlimit;
 	static ConsoleVariable<int> cvar_pathlimit_idlewalk("/pathlimit_idlewalk", 40);
 	static ConsoleVariable<int> cvar_pathlimit_allyfollow("/pathlimit_allyfollow", 200);
 	static ConsoleVariable<int> cvar_pathlimit_bosses("/pathlimit_bosses", 2000);
 	static ConsoleVariable<int> cvar_pathlimit_commandmove("/pathlimit_commandmove", 1000);
-	if ( pathingType == GeneratePathTypes::GENERATE_PATH_IDLE_WALK
-		|| pathingType == GeneratePathTypes::GENERATE_PATH_MOVEASIDE
-		|| pathingType == GeneratePathTypes::GENERATE_PATH_MONSTER_MOVE_BACKWARDS )
+	if (pathingType == GeneratePathTypes::GENERATE_PATH_IDLE_WALK ||
+        pathingType == GeneratePathTypes::GENERATE_PATH_MOVEASIDE ||
+		pathingType == GeneratePathTypes::GENERATE_PATH_MONSTER_MOVE_BACKWARDS)
 	{
 		maxtries = *cvar_pathlimit_idlewalk;
 	}
-	else if ( pathingType == GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW
-		|| pathingType == GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW2	)
+	else if (
+        pathingType == GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW ||
+		pathingType == GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW2)
 	{
 		maxtries = *cvar_pathlimit_allyfollow;
 		if ( my->behavior == &actMonster )
@@ -750,244 +672,168 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 			}
 		}
 	}
-	else if ( pathingType == GeneratePathTypes::GENERATE_PATH_PLAYER_ALLY_MOVETO
-		|| pathingType == GeneratePathTypes::GENERATE_PATH_INTERACT_MOVE )
+	else if (
+        pathingType == GeneratePathTypes::GENERATE_PATH_PLAYER_ALLY_MOVETO ||
+		pathingType == GeneratePathTypes::GENERATE_PATH_INTERACT_MOVE)
 	{
 		maxtries = *cvar_pathlimit_commandmove;
 	}
-	else if ( pathingType == GeneratePathTypes::GENERATE_PATH_BOSS_TRACKING_HUNT
-		|| pathingType == GeneratePathTypes::GENERATE_PATH_BOSS_TRACKING_IDLE
-		|| (pathingType == GeneratePathTypes::GENERATE_PATH_TO_HUNT_MONSTER_TARGET 
-			&& my && stats && my->isBossMonster()) )
-	{
-		maxtries = *cvar_pathlimit_bosses;
-	}
-	while ( openList->first != NULL 
-		&& ((tries < maxtries && !playerCheckPathToExit && !loading)
-			|| (tries < 10000 && (playerCheckPathToExit || loading))) )
-	{
-		/*pathnode = (pathnode_t *)openList->first->element;
-		for( node=openList->first; node!=NULL; node=node->next ) {
-			childnode = (pathnode_t *)node->element;
-			if( childnode->g+childnode->h < pathnode->g+pathnode->h )
-				pathnode=childnode;
-		}*/
-		pathnode = binaryheap[1];
-
-		x = pathnode->x;
-		y = pathnode->y;
-		h = pathnode->h;
-		g = pathnode->g;
-		parent = pathnode->parent;
-		list_RemoveNode(pathnode->node);
-		heapRemove(binaryheap, &heaplength);
-		pathnode = newPathnode(closedList, x, y, parent, 1);
-		pathnode->h = h;
-		pathnode->g = g;
-		if ( pathnode->x == x2 && pathnode->y == y2 )
-		{
+	while (!openSet.empty()) {
+        if ((tries >= maxtries && !playerCheckPathToExit && !loading) ||
+			(tries >= 10000 && (playerCheckPathToExit || loading))) {
+            // early abort, this path is taking too long!
+            break;
+        }
+        
+        const auto key = queue.top(); queue.pop();
+		const auto find = openSet.find({key.x, key.y});
+        assert(find != openSet.end());
+        const auto pathnode = find->second;
+        openSet.erase({key.x, key.y});
+        closedSet.insert({{key.x, key.y}, pathnode});
+        
+		if (pathnode.x == x2 && pathnode.y == y2) {
 			// found target, retrace path
-			path = (list_t*) malloc(sizeof(list_t));
-			path->first = NULL;
-			path->last = NULL;
-			list_FreeAll(openList);
-			free(openList);
-			for ( childnode = pathnode; childnode != NULL; childnode = pathnode->parent )
-			{
-				if ( childnode->parent == NULL )
-				{
-					parent->parent = NULL;
-					break;
-				}
-				parent = newPathnode(path, childnode->x, childnode->y, childnode->parent, 0);
-				pathnode = pathnode->parent;
+			auto path = (list_t*) malloc(sizeof(list_t));
+			path->first = nullptr;
+			path->last = nullptr;
+            auto find = closedSet.find(pairtype{pathnode.x, pathnode.y});
+			while (find != closedSet.end()) {
+                if (find->second.px == -1 || find->second.py == -1) {
+                    // don't bother including the very first node on the path.
+                    // the reason is, the starting tile isn't necessary to
+                    // begin the path; and if an entity happens to be on
+                    // the edge of its starting tile, it will actually
+                    // double-back before going to the next one!
+                    break;
+                }
+                auto pathnode = (pathnode_t*)malloc(sizeof(pathnode_t));
+                *pathnode = find->second;
+                auto node = list_AddNodeFirst(path);
+                node->size = sizeof(pathnode_t);
+                node->deconstructor = defaultDeconstructor;
+                node->element = pathnode;
+                find = closedSet.find(pairtype{pathnode->px, pathnode->py});
 			}
-			list_FreeAll(closedList);
-			free(closedList);
-			free(binaryheap);
 			free(pathMap);
 
-			if ( *cvar_pathing_debug )
-			{
+			if ( *cvar_pathing_debug ) {
 				auto now = std::chrono::high_resolution_clock::now();
 				ms = std::chrono::duration_cast<std::chrono::microseconds>(now - pathtime);
 				DebugStats.gui2 = DebugStats.gui2 + ms;
 				messagePlayer(0, MESSAGE_DEBUG, "PASS (%d): path tries: %d", (int)pathingType, tries);
 			}
 			lastGeneratePathTries = tries;
-			if ( my->behavior == &actMonster )
-			{
+			if ( my->behavior == &actMonster ) {
 				monsterAllyFormations.updateOnPathSucceed(my->getUID(), my);
 			}
 			return path;
 		}
 
 		// expand search
-		for ( y = -1; y <= 1; y++ )
-		{
-			for ( x = -1; x <= 1; x++ )
-			{
-				if ( x == 0 && y == 0 )
-				{
+		for (int y = -1; y <= 1; y++) {
+			for (int x = -1; x <= 1; x++) {
+                const int newx = pathnode.x + x;
+                const int newy = pathnode.y + y;
+				if (x == 0 && y == 0) {
 					continue;
 				}
-				z = 0;
-				if ( !loading )
-				{
+				int z = 0;
+				if (!loading) {
 					int index;
-					index = (pathnode->y + y) + (pathnode->x + x)*map.height;
-					index = std::min(std::max(0, index), (int)map.width * (int)map.height - 1);
-					if ( !pathMap[index] )
-					{
+					index = newy + newx * map.height;
+					index = std::min(std::max(0, index),
+                        (int)map.width * (int)map.height - 1);
+					if (!pathMap[index]) {
 						z++;
 					}
-					if ( x && y )
-					{
-						index = (pathnode->y) + (pathnode->x + x)*map.height;
-						index = std::min(std::max(0, index), (int)map.width * (int)map.height - 1);
-						if ( !pathMap[index] )
-						{
+					if (x && y) {
+						index = pathnode.y + newx * map.height;
+						index = std::min(std::max(0, index),
+                            (int)map.width * (int)map.height - 1);
+						if (!pathMap[index]) {
 							z++;
 						}
-						index = (pathnode->y + y) + (pathnode->x)*map.height;
-						index = std::min(std::max(0, index), (int)map.width * (int)map.height - 1);
-						if ( !pathMap[index] )
-						{
+						index = newy + x * map.height;
+						index = std::min(std::max(0, index),
+                            (int)map.width * (int)map.height - 1);
+						if (!pathMap[index]) {
 							z++;
 						}
 					}
 				}
-				else
-				{
-					if ( pathCheckObstacle(((pathnode->x + x) << 4) + 8, ((pathnode->y + y) << 4) + 8, my, target) )
-					{
+				else { // if (!loading)
+					if (pathCheckObstacle((newx << 4) + 8, (newy << 4) + 8, my, target)) {
 						z++;
 					}
-					if ( x && y )
-					{
-						if ( pathCheckObstacle(((pathnode->x) << 4) + 8, ((pathnode->y + y) << 4) + 8, my, target) )
-						{
+					if (x && y) {
+						if (pathCheckObstacle((pathnode.x << 4) + 8, (newy << 4) + 8, my, target)) {
 							z++;
 						}
-						if ( pathCheckObstacle(((pathnode->x + x) << 4) + 8, ((pathnode->y) << 4) + 8, my, target) )
-						{
+						if (pathCheckObstacle((newx << 4) + 8, (pathnode.y << 4) + 8, my, target)) {
 							z++;
 						}
 					}
 				}
-				if ( !z )
-				{
-					alreadyadded = false;
-					for ( node = closedList->first; node != NULL; node = node->next )
-					{
-						childnode = (pathnode_t*)node->element;
-						if ( childnode->x == pathnode->x + x && childnode->y == pathnode->y + y )
-						{
-							alreadyadded = true;
-							break;
-						}
+				if (!z) {
+                    const auto key = pairtype{newx, newy};
+					bool alreadyadded = closedSet.find(key) != closedSet.end();
+                    auto find = openSet.find(key);
+					if (find != openSet.end()) {
+                        alreadyadded = true;
+						auto& childnode = find->second;
+                        if (x && y) {
+                            if (childnode.g > pathnode.g + DIAGONALCOST) {
+                                childnode.px = pathnode.x;
+                                childnode.py = pathnode.y;
+                                childnode.g = pathnode.g + DIAGONALCOST;
+                            }
+                        } else {
+                            if (childnode.g > pathnode.g + STRAIGHTCOST) {
+                                childnode.px = pathnode.x;
+                                childnode.py = pathnode.y;
+                                childnode.g = pathnode.g + STRAIGHTCOST;
+                            }
+                        }
 					}
-					for ( node = openList->first; node != NULL; node = node->next )
-					{
-						childnode = (pathnode_t*)node->element;
-						if ( childnode->x == pathnode->x + x && childnode->y == pathnode->y + y )
-						{
-							alreadyadded = true;
-							if ( x && y )
-							{
-								if ( childnode->g > pathnode->g + DIAGONALCOST )
-								{
-									childnode->parent = pathnode;
-									childnode->g = pathnode->g + DIAGONALCOST;
-								}
-							}
-							else
-							{
-								if ( childnode->g > pathnode->g + STRAIGHTCOST )
-								{
-									childnode->parent = pathnode;
-									childnode->g = pathnode->g + STRAIGHTCOST;
-								}
-							}
-							break;
-						}
-					}
-					if ( alreadyadded == false )
-					{
-						/*if ( enableDebugKeys && *cvar_pathing_debug 
-							&& keystatus[SDLK_g] )
-						{
+					if (alreadyadded == false) {
+						if (enableDebugKeys && *cvar_pathing_debug && keystatus[SDLK_g]) {
 							Entity* particle = spawnMagicParticle(my);
 							particle->sprite = 576;
-							particle->x = (pathnode->x + x) * 16.0 + 8.0;
-							particle->y = (pathnode->y + y) * 16.0 + 8.0;
+							particle->x = (pathnode.x + x) * 16.0 + 8.0;
+							particle->y = (pathnode.y + y) * 16.0 + 8.0;
 							particle->z = 0;
 							particle->scalex = 2.0;
 							particle->scaley = 2.0;
 							particle->scalez = 2.0;
-						}*/
-						if ( list_Size(openList) >= 1000 )
-						{
-							list_FreeAll(openList);
-							list_FreeAll(closedList);
-							free(openList);
-							free(closedList);
-							free(binaryheap);
-							free(pathMap);
-							if ( *cvar_pathing_debug )
-							{
-								auto now = std::chrono::high_resolution_clock::now();
-								ms = std::chrono::duration_cast<std::chrono::microseconds>(now - pathtime);
-								DebugStats.gui2 = DebugStats.gui2 + ms;
-								messagePlayer(0, MESSAGE_DEBUG, "FAIL (%d): path tries: %d", (int)pathingType, tries);
-							}
-							lastGeneratePathTries = tries;
-							if ( my->behavior == &actMonster
-								&& (pathingType == GENERATE_PATH_ALLY_FOLLOW
-									|| pathingType == GENERATE_PATH_ALLY_FOLLOW2) )
-							{
-								monsterAllyFormations.updateOnPathFail(my->getUID(), my);
-							}
-							return NULL;
 						}
-						childnode = newPathnode(openList, pathnode->x + x, pathnode->y + y, pathnode, 1);
-						if ( x && y )
-						{
-							childnode->g = pathnode->g + DIAGONALCOST;
-						}
-						else
-						{
-							childnode->g = pathnode->g + STRAIGHTCOST;
-						}
-						childnode->h = heuristic(childnode->x, childnode->y, x2, y2);
-						heapAdd(binaryheap, childnode, &heaplength);
+                        const auto newNode = pathnode_t{newx, newy,
+                            (x && y) ? (pathnode.g + DIAGONALCOST) : (pathnode.g + STRAIGHTCOST),
+                            heuristic(newx, newy, x2, y2), pathnode.x, pathnode.y};
+                        openSet.insert({pairtype{newx, newy}, newNode});
+                        queue.push({newx, newy, openSet});
 					}
 				}
 			}
 		}
 		++tries;
 	}
-	list_FreeAll(openList);
-	list_FreeAll(closedList);
-	free(openList);
-	free(closedList);
-	free(binaryheap);
+ 
+    // path failed
 	free(pathMap);
-	if ( *cvar_pathing_debug )
-	{
+	if ( *cvar_pathing_debug ) {
 		auto now = std::chrono::high_resolution_clock::now();
 		ms = std::chrono::duration_cast<std::chrono::microseconds>(now - pathtime);
 		DebugStats.gui2 = DebugStats.gui2 + ms;
-		messagePlayer(0, MESSAGE_DEBUG, "FAIL (%d) uid: %d : path tries: %d (%d, %d) to (%d, %d)", (int)pathingType, 
-			my->getUID(),
-			tries, x1, y1, x2, y2);
+		messagePlayer(0, MESSAGE_DEBUG, "FAIL (%d) uid: %d : path tries: %d (%d, %d) to (%d, %d)",
+            (int)pathingType, my->getUID(), tries, x1, y1, x2, y2);
 	}
 	lastGeneratePathTries = tries;
-	if ( my->behavior == &actMonster
-		&& (pathingType == GENERATE_PATH_ALLY_FOLLOW
-			|| pathingType == GENERATE_PATH_ALLY_FOLLOW2) )
-	{
-		monsterAllyFormations.updateOnPathFail(my->getUID(), my);
+	if (my->behavior == &actMonster) {
+		if (pathingType == GENERATE_PATH_ALLY_FOLLOW ||
+            pathingType == GENERATE_PATH_ALLY_FOLLOW2) {
+            monsterAllyFormations.updateOnPathFail(my->getUID(), my);
+        }
 	}
 	return NULL;
 }

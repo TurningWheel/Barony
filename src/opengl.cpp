@@ -1741,6 +1741,10 @@ Mesh skyMesh = {
     }, // colors
 };
 
+#ifndef EDITOR
+static ConsoleVariable<bool> cvar_allowChunkRebuild("/allow_chunk_rebuild", true);
+#endif
+
 void glDrawWorld(view_t* camera, int mode)
 {
 #ifndef EDITOR
@@ -1840,10 +1844,18 @@ void glDrawWorld(view_t* camera, int mode)
         }
     }
     
+#ifdef EDITOR
+    constexpr bool allowChunkRebuild = true;
+#else
+    const bool allowChunkRebuild = *cvar_allowChunkRebuild;
+#endif
+    
     // build chunks
-    for (auto& pair : chunksToBuild) {
-        auto& chunk = *pair.second;
-        chunk.build(map, !clouds, chunk.x, chunk.y, chunk.w, chunk.h);
+    if (allowChunkRebuild) {
+        for (auto& pair : chunksToBuild) {
+            auto& chunk = *pair.second;
+            chunk.build(map, !clouds, chunk.x, chunk.y, chunk.w, chunk.h);
+        }
     }
     
     // draw chunks
