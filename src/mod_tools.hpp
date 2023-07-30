@@ -2557,7 +2557,7 @@ public:
 		{
 			std::string outputPath = outputdir;
 			outputPath.append(PHYSFS_getDirSeparator());
-			std::string fileName = "data/tutorial_scores.json";
+			std::string fileName = "savegames/tutorial_scores.json";
 			outputPath.append(fileName.c_str());
 
 			File* fp = FileIO::open(outputPath.c_str(), "wb");

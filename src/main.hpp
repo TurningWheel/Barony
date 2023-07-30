@@ -804,6 +804,11 @@ extern Sint8 minimap[MINIMAP_MAX_DIMENSION][MINIMAP_MAX_DIMENSION];
 extern Uint32 mapseed;
 extern bool* shoparea;
 
+struct AnimatedTile {
+    int indices[8] = { 0 };
+};
+extern std::unordered_map<int, AnimatedTile> tileAnimations;
+
 // function prototypes for main.c:
 int sgn(real_t x);
 int numdigits_sint16(Sint16 x);
