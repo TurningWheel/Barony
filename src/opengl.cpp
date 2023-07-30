@@ -1758,11 +1758,16 @@ void glDrawWorld(view_t* camera, int mode)
     int cloudtile;
     const bool clouds = shouldDrawClouds(map, &cloudtile);
     
+    // select texture atlas
+    constexpr int numTileAtlases = sizeof(AnimatedTile::indices) / sizeof(AnimatedTile::indices[0]);
+    const int atlasIndex = ((ticks % (numTileAtlases * 10)) / 10) + 2;
+    
     // upload uniforms for dither shader
     if (mode == REALCOLORS) {
         worldDitheredShader.bind();
         const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
         GL_CHECK_ERR(glUniform4fv(worldDitheredShader.uniform("uLightFactor"), 1, light));
+        GL_CHECK_ERR(glUniform1i(worldDitheredShader.uniform("uTextures"), atlasIndex));
     }
     
     // bind core shader
@@ -1774,6 +1779,7 @@ void glDrawWorld(view_t* camera, int mode)
     if (&shader != &worldDarkShader) {
         const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
         GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
+        GL_CHECK_ERR(glUniform1i(shader.uniform("uTextures"), atlasIndex));
     }
     
     const bool ditheringDisabled = ticks - ditherDisabledTime < TICKS_PER_SECOND;

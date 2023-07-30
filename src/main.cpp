@@ -543,6 +543,7 @@ int minimapTransparencyForeground = 0;
 int minimapTransparencyBackground = 0;
 int minimapScale = 4;
 int minimapObjectZoom = 0;
+std::unordered_map<int, AnimatedTile> tileAnimations;
 
 // audio definitions
 int audio_rate = 22050;

@@ -562,6 +562,37 @@ int initApp(char const * const title, int fullscreen)
 		}
 	}
 	FileIO::close(fp);
+ 
+    // load animated.txt
+	if (!PHYSFS_getRealDir("images/animated.txt")) {
+		printlog("error: could not find file: %s", "images/animated.txt");
+	} else {
+        std::string directory = PHYSFS_getRealDir("images/animated.txt");
+        directory.append(PHYSFS_getDirSeparator()).append("images/animated.txt");
+        printlog("[PhysFS]: Loading tile animations from directory %s...\n", directory.c_str());
+        File* fp = openDataFile(directory.c_str(), "rb");
+        if (!fp) {
+            printlog("error: could not open file: %s", "images/animated.txt");
+        } else {
+            for (int c = 0; !fp->eof(); ++c) {
+                AnimatedTile animation;
+                char line[PATH_MAX];
+                fp->gets2(line, PATH_MAX);
+                
+                // extract animation frames
+                constexpr int numIndices = sizeof(animation.indices) / sizeof(animation.indices[0]);
+                char *str = line, *end;
+                int index = 0;
+                do {
+                    animation.indices[index] = (int)strtol(str, &end, 10);
+                    str = end + 1;
+                    ++index;
+                } while (end && *end == ' ' && index < numIndices);
+                tileAnimations.insert({animation.indices[0], animation});
+            }
+            FileIO::close(fp);
+        }
+    }
 
 	// asynchronous loading tasks
 	std::atomic_bool loading_done {false};
@@ -934,7 +965,8 @@ int Language::reloadLanguage()
 
 -------------------------------------------------------------------------------*/
 
-static GLuint tileTextures = 0;
+static constexpr int numTileAtlases = sizeof(AnimatedTile::indices) / sizeof(AnimatedTile::indices[0]);
+static GLuint tileTextures[numTileAtlases] = { 0 };
 
 void generateTileTextures() {
     destroyTileTextures();
@@ -942,36 +974,60 @@ void generateTileTextures() {
     constexpr int h = 32; // height of a tile texture
     constexpr int dim = 32; // how many tile textures to put in each row and column
     const int max = numtiles < dim * dim ? numtiles : dim * dim;
-    GL_CHECK_ERR(glActiveTexture(GL_TEXTURE2));
-    GL_CHECK_ERR(glGenTextures(1, &tileTextures));
-    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, tileTextures));
-    GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w * dim, h * dim, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr));
-    for (int c = 0; c < max; ++c) {
-        if (!tiles[c]) {
-            continue;
+    
+    // create atlases
+    GL_CHECK_ERR(glGenTextures(numTileAtlases, tileTextures));
+    for (int atlas = 0; atlas < numTileAtlases; ++atlas) {
+        GL_CHECK_ERR(glActiveTexture(GL_TEXTURE2 + atlas));
+        GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, tileTextures[atlas]));
+        GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w * dim, h * dim, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr));
+        for (int index = 0; index < max; ++index) {
+            SDL_Surface* tile;
+            
+            // select tile for the atlas (it might be animated)
+            auto find = tileAnimations.find(index);
+            if (find == tileAnimations.end()) {
+                tile = tiles[index];
+            } else {
+                const auto& animation = find->second;
+                const int animIndex = std::clamp(animation.indices[atlas], 0, (int)numtiles - 1);
+                tile = tiles[animIndex];
+            }
+            
+            // error checking
+            if (!tile) {
+                // tile failed to load from tiles directory
+                continue;
+            }
+            if (tile->w != 32 || tile->h != 32 || tile->format->BytesPerPixel != 4) {
+                // incorrect format
+                continue;
+            }
+            
+            // load tile image
+            SDL_LockSurface(tile);
+            GL_CHECK_ERR(glTexSubImage2D(GL_TEXTURE_2D, 0,
+                (index % dim) * w,
+                (index / dim) * h,
+                w, h, GL_RGBA, GL_UNSIGNED_BYTE, tile->pixels));
+            SDL_UnlockSurface(tile);
         }
-		if (tiles[c]->w != 32 || tiles[c]->h != 32 || tiles[c]->format->BytesPerPixel != 4) {
-			// incorrect format
-			continue;
-		}
-        SDL_LockSurface(tiles[c]);
-        GL_CHECK_ERR(glTexSubImage2D(GL_TEXTURE_2D, 0,
-            (c % dim) * w,
-            (c / dim) * h,
-            w, h, GL_RGBA, GL_UNSIGNED_BYTE, tiles[c]->pixels));
-        SDL_UnlockSurface(tiles[c]);
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
     }
-    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
-    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
+    
+    // reset active texture to 0 at end
     GL_CHECK_ERR(glActiveTexture(GL_TEXTURE0));
 }
 
 void destroyTileTextures() {
-    if (tileTextures) {
-        GL_CHECK_ERR(glDeleteTextures(1, &tileTextures));
-        tileTextures = 0;
+    for (int c = 0; c < numTileAtlases; ++c) {
+        if (tileTextures[c]) {
+            GL_CHECK_ERR(glDeleteTextures(1, &tileTextures[c]));
+            tileTextures[c] = 0;
+        }
     }
 }
 

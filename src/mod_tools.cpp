@@ -189,10 +189,10 @@ void GameModeManager_t::Tutorial_t::readFromFile()
 		return;
 	}
 
-	if ( PHYSFS_getRealDir("/data/tutorial_scores.json") )
+	if ( PHYSFS_getRealDir("/savegames/tutorial_scores.json") )
 	{
-		std::string inputPath = PHYSFS_getRealDir("/data/tutorial_scores.json");
-		inputPath.append("/data/tutorial_scores.json");
+		std::string inputPath = PHYSFS_getRealDir("/savegames/tutorial_scores.json");
+		inputPath.append("/savegames/tutorial_scores.json");
 
 		File* fp = FileIO::open(inputPath.c_str(), "rb");
 		if ( !fp )
@@ -232,7 +232,7 @@ void GameModeManager_t::Tutorial_t::readFromFile()
 	}
 	else
 	{
-		printlog("[JSON]: File /data/tutorial_scores.json does not exist, creating...");
+		printlog("[JSON]: File /savegames/tutorial_scores.json does not exist, creating...");
 
 		rapidjson::Document d;
 		d.SetObject();
@@ -263,14 +263,14 @@ void GameModeManager_t::Tutorial_t::writeToDocument()
 		return;
 	}
 
-	if ( !PHYSFS_getRealDir("/data/tutorial_scores.json") )
+	if ( !PHYSFS_getRealDir("/savegames/tutorial_scores.json") )
 	{
-		printlog("[JSON]: Error file /data/tutorial_scores.json does not exist");
+		printlog("[JSON]: Error file /savegames/tutorial_scores.json does not exist");
 		return;
 	}
 
-	std::string inputPath = PHYSFS_getRealDir("/data/tutorial_scores.json");
-	inputPath.append("/data/tutorial_scores.json");
+	std::string inputPath = PHYSFS_getRealDir("/savegames/tutorial_scores.json");
+	inputPath.append("/savegames/tutorial_scores.json");
 
 	File* fp = FileIO::open(inputPath.c_str(), "rb");
 	if ( !fp )

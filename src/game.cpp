@@ -1235,36 +1235,6 @@ void gameLogic(void)
 			logoalpha += 2;
 		}
 
-		// animate tiles
-		if ( ticks % 10 == 0 && !gamePaused )
-		{
-			int x, y, z;
-			for ( x = 0; x < map.width; x++ )
-			{
-				for ( y = 0; y < map.height; y++ )
-				{
-					for ( z = 0; z < MAPLAYERS; z++ )
-					{
-                        const int index = z + y * MAPLAYERS + x * MAPLAYERS * map.height;
-						if ( animatedtiles[map.tiles[index]] )
-						{
-							map.tiles[index]--;
-							if ( !animatedtiles[map.tiles[index]] )
-							{
-								int tile = map.tiles[index];
-								do
-								{
-									tile++;
-								}
-								while ( animatedtiles[tile] );
-								map.tiles[index] = tile - 1;
-							}
-						}
-					}
-				}
-			}
-		}
-
 		// execute entity behaviors
 		c = multiplayer;
 		x = clientnum;
@@ -1397,19 +1367,6 @@ void gameLogic(void)
 							int index = z + y * MAPLAYERS + x * MAPLAYERS * map.height;
 							if ( animatedtiles[map.tiles[index]] )
 							{
-								if ( ticks % 10 == 0 && *cvar_animate_tiles )
-								{
-									map.tiles[index]--;
-									if ( !animatedtiles[map.tiles[index]] )
-									{
-										do
-										{
-											map.tiles[index]++;
-										}
-										while ( animatedtiles[map.tiles[index]] );
-										map.tiles[index]--;
-									}
-								}
 								if ( z == 0 )
 								{
 									// water and lava noises
@@ -2861,19 +2818,6 @@ void gameLogic(void)
 							int index = z + y * MAPLAYERS + x * MAPLAYERS * map.height;
 							if ( animatedtiles[map.tiles[index]] )
 							{
-								if ( (ticks % 10 == 0) && *cvar_animate_tiles )
-								{
-									map.tiles[index]--;
-									if ( !animatedtiles[map.tiles[index]] )
-									{
-										do
-										{
-											map.tiles[index]++;
-										}
-										while ( animatedtiles[map.tiles[index]] );
-										map.tiles[index]--;
-									}
-								}
 								if ( z == 0 )
 								{
 									// water and lava noises

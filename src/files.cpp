@@ -1785,10 +1785,32 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 	fp->read(destmap->tiles, sizeof(Sint32), destmap->width * destmap->height * MAPLAYERS);
 	fp->read(&numentities, sizeof(Uint32), 1); // number of entities on the map
 
-	for ( c = 0; c < destmap->width * destmap->height * MAPLAYERS; ++c )
+    const int mapsize = destmap->width * destmap->height * MAPLAYERS;
+	for ( int c = 0; c < mapsize; ++c )
 	{
 		mapHashData += destmap->tiles[c];
 	}
+ 
+    // new as of july 30 2023
+    // fix animated tiles so they always start on the correct index
+    constexpr int numTileAtlases = sizeof(AnimatedTile::indices) / sizeof(AnimatedTile::indices[0]);
+    for (int c = 0; c < mapsize; ++c) {
+        int& tile = destmap->tiles[c];
+        if (animatedtiles[tile]) {
+            auto find = tileAnimations.find(tile);
+            if (find == tileAnimations.end()) {
+                // this is not the correct index!
+                for (const auto& pair : tileAnimations) {
+                    const auto& animation = pair.second;
+                    for (int i = 0; i < numTileAtlases; ++i) {
+                        if (animation.indices[i] == tile) {
+                            tile = animation.indices[0];
+                        }
+                    }
+                }
+            }
+        }
+    }
 
 	for (c = 0; c < numentities; c++)
 	{
@@ -4524,71 +4546,109 @@ bool physfsSearchTilesToUpdate()
 
 void physfsReloadTiles(bool reloadAll)
 {
-	if ( !PHYSFS_getRealDir("images/tiles.txt") )
-	{
+    // load tiles.txt
+	if (!PHYSFS_getRealDir("images/tiles.txt")) {
 		printlog("error: could not find file: %s", "images/tiles.txt");
-		return;
-	}
-	std::string tilesDirectory = PHYSFS_getRealDir("images/tiles.txt");
-	tilesDirectory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
-	printlog("[PhysFS]: Loading tiles from directory %s...\n", tilesDirectory.c_str());
-	File* fp = openDataFile(tilesDirectory.c_str(), "rb");
-	char name[PATH_MAX];
-
-	for ( int c = 0; !fp->eof(); c++ )
-	{
-		fp->gets2(name, PATH_MAX);
-		if ( PHYSFS_getRealDir(name) != NULL )
-		{
-			std::string tileRealDir = PHYSFS_getRealDir(name);
-			if ( reloadAll || tileRealDir.compare("./") != 0 )
-			{
-				std::string tileFile = tileRealDir;
-				tileFile.append(PHYSFS_getDirSeparator()).append(name);
-				if ( tiles[c] )
-				{
-					SDL_FreeSurface(tiles[c]);
-				}
-				char fullname[PATH_MAX];
-				strncpy(fullname, tileFile.c_str(), PATH_MAX - 1);
-				tiles[c] = loadImage(fullname);
-				animatedtiles[c] = false;
-				lavatiles[c] = false;
-				swimmingtiles[c] = false;
-				if ( tiles[c] != NULL )
-				{
-					size_t found = tileFile.find(".png");
-					if ( found != string::npos && found != 0 )
-					{
-						if ( tileFile.at(found - 1) >= '0' && tileFile.at(found - 1) <= '9' )
-						{
-							// animated tiles if the tile name ends in a number 0-9.
-							animatedtiles[c] = true;
-						}
-					}
-					if ( strstr(name, "Lava") || strstr(name, "lava") )
-					{
-						lavatiles[c] = true;
-					}
-					if ( strstr(name, "Water") || strstr(name, "water") || strstr(name, "swimtile") || strstr(name, "Swimtile") )
-					{
-						swimmingtiles[c] = true;
-					}
-				}
-				else
-				{
-					printlog("warning: failed to load '%s' listed at line %d in %s\n", name, c + 1, tilesDirectory.c_str());
-					if ( c == 0 )
-					{
-						printlog("tile 0 cannot be NULL!\n");
-						FileIO::close(fp);
-						return;
-					}
-				}
-			}
-		}
-	}
-	FileIO::close(fp);
+	} else {
+        std::string directory = PHYSFS_getRealDir("images/tiles.txt");
+        directory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
+        printlog("[PhysFS]: Loading tiles from directory %s...\n", directory.c_str());
+        File* fp = openDataFile(directory.c_str(), "rb");
+        if (!fp) {
+            printlog("error: could not open file: %s", "images/tiles.txt");
+        } else {
+            for ( int c = 0; !fp->eof(); c++ )
+            {
+                char name[PATH_MAX];
+                fp->gets2(name, PATH_MAX);
+                if ( PHYSFS_getRealDir(name) != NULL )
+                {
+                    std::string tileRealDir = PHYSFS_getRealDir(name);
+                    if ( reloadAll || tileRealDir.compare("./") != 0 )
+                    {
+                        std::string tileFile = tileRealDir;
+                        tileFile.append(PHYSFS_getDirSeparator()).append(name);
+                        if ( tiles[c] )
+                        {
+                            SDL_FreeSurface(tiles[c]);
+                        }
+                        char fullname[PATH_MAX];
+                        strncpy(fullname, tileFile.c_str(), PATH_MAX - 1);
+                        tiles[c] = loadImage(fullname);
+                        animatedtiles[c] = false;
+                        lavatiles[c] = false;
+                        swimmingtiles[c] = false;
+                        if ( tiles[c] != NULL )
+                        {
+                            size_t found = tileFile.find(".png");
+                            if ( found != string::npos && found != 0 )
+                            {
+                                if ( tileFile.at(found - 1) >= '0' && tileFile.at(found - 1) <= '9' )
+                                {
+                                    // animated tiles if the tile name ends in a number 0-9.
+                                    animatedtiles[c] = true;
+                                }
+                            }
+                            if ( strstr(name, "Lava") || strstr(name, "lava") )
+                            {
+                                lavatiles[c] = true;
+                            }
+                            if ( strstr(name, "Water") || strstr(name, "water") || strstr(name, "swimtile") || strstr(name, "Swimtile") )
+                            {
+                                swimmingtiles[c] = true;
+                            }
+                        }
+                        else
+                        {
+                            printlog("warning: failed to load '%s' listed at line %d in %s\n",
+                                name, c + 1, directory.c_str());
+                            if ( c == 0 )
+                            {
+                                printlog("tile 0 cannot be NULL!\n");
+                                FileIO::close(fp);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+            FileIO::close(fp);
+        }
+    }
+ 
+    // load animated.txt
+	if (!PHYSFS_getRealDir("images/animated.txt")) {
+		printlog("error: could not find file: %s", "images/animated.txt");
+	} else {
+        std::string directory = PHYSFS_getRealDir("images/animated.txt");
+        directory.append(PHYSFS_getDirSeparator()).append("images/animated.txt");
+        printlog("[PhysFS]: Loading tile animations from directory %s...\n", directory.c_str());
+        File* fp = openDataFile(directory.c_str(), "rb");
+        if (!fp) {
+            printlog("error: could not open file: %s", "images/animated.txt");
+        } else {
+            tileAnimations.clear();
+            for (int c = 0; !fp->eof(); ++c) {
+                AnimatedTile animation;
+                char line[PATH_MAX];
+                fp->gets2(line, PATH_MAX);
+                
+                // extract animation frames
+                constexpr int numIndices = sizeof(animation.indices) / sizeof(animation.indices[0]);
+                char *str = line, *end;
+                int index = 0;
+                do {
+                    animation.indices[index] = (int)strtol(str, &end, 10);
+                    str = end + 1;
+                    ++index;
+                } while (end && *end == ' ' && index < numIndices);
+                tileAnimations.insert({animation.indices[0], animation});
+            }
+            FileIO::close(fp);
+        }
+    }
+ 
+    // generate tile texture atlas
 	generateTileTextures();
 }
 
