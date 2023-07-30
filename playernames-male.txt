@@ -151,7 +151,7 @@ Requer Hugo
 Tobias
 Mr. Brad the Miser
 Xemuth
-Trüffelzwerg
+Truffelzwerg
 Hal
 Sigh Tamma
 Colonial Williamsburg
@@ -363,3 +363,5 @@ Myco Kain
 Trungad
 Dorai-Yu
 Bezel Fhloston
+Telpemir
+Scumbo Bunger
