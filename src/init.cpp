@@ -976,9 +976,9 @@ void generateTileTextures() {
     const int max = numtiles < dim * dim ? numtiles : dim * dim;
     
     // create atlases
+    GL_CHECK_ERR(glActiveTexture(GL_TEXTURE2));
     GL_CHECK_ERR(glGenTextures(numTileAtlases, tileTextures));
     for (int atlas = 0; atlas < numTileAtlases; ++atlas) {
-        GL_CHECK_ERR(glActiveTexture(GL_TEXTURE2 + atlas));
         GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, tileTextures[atlas]));
         GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w * dim, h * dim, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr));
         for (int index = 0; index < max; ++index) {
@@ -1029,6 +1029,10 @@ void destroyTileTextures() {
             tileTextures[c] = 0;
         }
     }
+}
+
+void bindTextureAtlas(int index) {
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, tileTextures[index]));
 }
 
 /*-------------------------------------------------------------------------------

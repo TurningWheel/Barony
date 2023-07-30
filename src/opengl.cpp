@@ -21,6 +21,7 @@
 #include "mod_tools.hpp"
 #include "player.hpp"
 #include "ui/MainMenu.hpp"
+#include "init.hpp"
 
 static real_t getLightAtModifier = 1.0;
 static real_t getLightAtAdder = 0.0;
@@ -1760,14 +1761,16 @@ void glDrawWorld(view_t* camera, int mode)
     
     // select texture atlas
     constexpr int numTileAtlases = sizeof(AnimatedTile::indices) / sizeof(AnimatedTile::indices[0]);
-    const int atlasIndex = ((ticks % (numTileAtlases * 10)) / 10) + 2;
+    const int atlasIndex = (ticks % (numTileAtlases * 10)) / 10;
+    GL_CHECK_ERR(glActiveTexture(GL_TEXTURE2));
+    bindTextureAtlas(atlasIndex);
+    GL_CHECK_ERR(glActiveTexture(GL_TEXTURE0));
     
     // upload uniforms for dither shader
     if (mode == REALCOLORS) {
         worldDitheredShader.bind();
         const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
         GL_CHECK_ERR(glUniform4fv(worldDitheredShader.uniform("uLightFactor"), 1, light));
-        GL_CHECK_ERR(glUniform1i(worldDitheredShader.uniform("uTextures"), atlasIndex));
     }
     
     // bind core shader
@@ -1779,7 +1782,6 @@ void glDrawWorld(view_t* camera, int mode)
     if (&shader != &worldDarkShader) {
         const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
         GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
-        GL_CHECK_ERR(glUniform1i(shader.uniform("uTextures"), atlasIndex));
     }
     
     const bool ditheringDisabled = ticks - ditherDisabledTime < TICKS_PER_SECOND;
