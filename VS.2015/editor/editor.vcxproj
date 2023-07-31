@@ -296,8 +296,8 @@
     <TargetName>$(ProjectName)-debug</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\include;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\include;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\include;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\include;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\include;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\public;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\include;C:\programming\turning_wheel\GameLibs\missing_windows_includes</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\lib;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\lib;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\redistributable_bin;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\lib\x86;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;$(SolutionDir)..\VS-libs</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)..\VS-libs</LibraryPath>
     <TargetName>$(ProjectName)-debug</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -316,18 +316,18 @@
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\include;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\include;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\include;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\include;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\include;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\public;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\include;C:\programming\turning_wheel\GameLibs\missing_windows_includes</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\lib;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\lib;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\redistributable_bin;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\lib\x86;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;$(SolutionDir)..\VS-libs</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)..\VS-libs</LibraryPath>
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='16-Player Crossplay|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\include;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\include;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\include;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\include;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\include;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\public;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\include;C:\programming\turning_wheel\GameLibs\missing_windows_includes</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\lib;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\lib;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\redistributable_bin;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\lib\x86;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;$(SolutionDir)..\VS-libs</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)..\VS-libs</LibraryPath>
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Steam Crossplay|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\include;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\include;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\include;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\include;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\include;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\public;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\include;C:\programming\turning_wheel\GameLibs\missing_windows_includes;P:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\x64;P:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\x64\SDL2;P:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\x64\physfs</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\lib;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\lib;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\redistributable_bin;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\lib\x86;$(SolutionDir)..\VS-libs;P:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\lib\amd64\baronylibs</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)..\VS-libs</LibraryPath>
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EOS|Win32'">
@@ -341,13 +341,13 @@
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EOS|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\include;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\include;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\include;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\include;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\include;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\public;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\include;C:\programming\turning_wheel\GameLibs\missing_windows_includes;P:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\x64;P:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\x64\SDL2;P:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\x64\physfs</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\lib;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\lib;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\redistributable_bin;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\lib\x86;$(SolutionDir)..\VS-libs;P:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\lib\amd64\baronylibs</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)..\VS-libs</LibraryPath>
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='16Player-EOS|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\include;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\include;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\include;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\include;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\include;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\public;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\include;C:\programming\turning_wheel\GameLibs\missing_windows_includes</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\lib;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\lib;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\redistributable_bin;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\lib\x86;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;$(SolutionDir)..\VS-libs</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)..\VS-libs</LibraryPath>
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EOS Debug|Win32'">
@@ -365,13 +365,13 @@
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EOS Debug|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\include;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\include;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\include;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\include;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\include;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\public;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\include;C:\programming\turning_wheel\GameLibs\missing_windows_includes</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\lib;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\lib;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\redistributable_bin;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\lib\x86;$(SolutionDir)..\VS-libs;P:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\lib\amd64\baronylibs</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)..\VS-libs</LibraryPath>
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Steam Debug|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\include;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\include;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\include;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\include;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\include;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\public;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\include;C:\programming\turning_wheel\GameLibs\missing_windows_includes</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\lib;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\lib;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\redistributable_bin;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\lib\x86;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;$(SolutionDir)..\VS-libs</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)..\VS-libs</LibraryPath>
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NODRM|Win32'">
@@ -380,8 +380,8 @@
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NODRM|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\include;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\include;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\include;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\include;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\include;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\public;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\include;C:\programming\turning_wheel\GameLibs\missing_windows_includes</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\lib;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\lib;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\redistributable_bin;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\lib\x86;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;$(SolutionDir)..\VS-libs</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)..\VS-libs</LibraryPath>
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='16Player-Release|Win32'">
@@ -390,8 +390,8 @@
     <TargetName>$(ProjectName)-16player</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='16Player-Release|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\include;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\include;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\include;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\include;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\include;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\public;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\include;C:\programming\turning_wheel\GameLibs\missing_windows_includes</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\lib;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\lib;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\redistributable_bin;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\lib\x86;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;$(SolutionDir)..\VS-libs</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)..\VS-libs</LibraryPath>
     <TargetName>$(ProjectName)-16player</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -783,7 +783,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING;BARONY_DRM_FREE;EDITOR;LOCAL_ACHIEVEMENTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING;BARONY_DRM_FREE;EDITOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
       <AdditionalOptions>
