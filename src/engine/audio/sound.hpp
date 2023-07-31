@@ -28,6 +28,14 @@
 #endif
 
 extern Uint32 numsounds;
+bool initSoundEngine(); //If it fails to initialize the sound engine, it'll just disable audio.
+void exitSoundEngine();
+int loadSoundResources(real_t base_load_percent, real_t top_load_percent);
+void freeSoundResources();
+// all parameters should be in ranges of [0.0 - 1.0]
+void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment, real_t notification);
+void setAudioDevice(const std::string& device);
+bool loadMusic();
 
 //Pointer to the FMOD system.
 #ifdef USE_FMOD
@@ -94,10 +102,6 @@ extern FMOD::ChannelGroup* soundAmbient_group, *soundEnvironment_group, *music_n
 bool FMODErrorCheck();
 
 void sound_update(int player, int index, int numplayers);
-bool initSoundEngine(); //If it fails to initialize the sound engine, it'll just disable audio.
-void exitSoundEngine();
-int loadSoundResources(real_t base_load_percent, real_t top_load_percent);
-void freeSoundResources();
 
 FMOD::Channel* playSoundPlayer(int player, Uint16 snd, Uint8 vol);
 FMOD::Channel* playSoundNotificationPlayer(int player, Uint16 snd, Uint8 vol);
@@ -109,11 +113,6 @@ FMOD::Channel* playSound(Uint16 snd, Uint8 vol);
 FMOD::Channel* playSoundNotification(Uint16 snd, Uint8 vol);
 FMOD::Channel* playSoundVelocity();
 
-// all parameters should be in ranges of [0.0 - 1.0]
-void setAudioDevice(const std::string& device);
-void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment, real_t notification);
-
-bool loadMusic();
 void stopMusic();
 void playMusic(FMOD::Sound* sound, bool loop, bool crossfade, bool resume); //Automatically crossfades. NOTE: Resets fadein and fadeout increments to the defaults every time it is called. You'll have to change the fadein and fadeout increments AFTER calling this function.
 
@@ -224,10 +223,12 @@ void OPENAL_Sound_Release(OPENAL_BUFFER* buffer);
 
 extern float fadein_increment, fadeout_increment, default_fadein_increment, default_fadeout_increment;
 #else
-void* playSound(Uint32, int);
-void* playSoundPos(real_t x, real_t y, Uint32, int);
-void* playSoundPosLocal(real_t, real_t, Uint32, int);
-void* playSoundEntity(Entity*, Uint32, int);
-void* playSoundEntityLocal(Entity*, Uint32, int);
-void* playSoundPlayer(int, Uint32, int);
+void* playSound(Uint16, Uint8);
+void* playSoundPos(real_t x, real_t y, Uint16, Uint8);
+void* playSoundPosLocal(real_t, real_t, Uint16, Uint8);
+void* playSoundEntity(Entity*, Uint16, Uint8);
+void* playSoundEntityLocal(Entity*, Uint16, Uint8);
+void* playSoundPlayer(int, Uint16, Uint8);
+void* playSoundNotification(Uint16, Uint8);
+void* playSoundNotificationPlayer(int, Uint16, Uint8);
 #endif

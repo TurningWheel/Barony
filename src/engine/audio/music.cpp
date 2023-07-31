@@ -186,9 +186,12 @@ int fmod_result;
 
 void stopMusic()
 {
+#ifdef SOUND
     playMusic(nullptr, false, false, false);
+#endif
 }
 
+#ifdef USE_FMOD
 void playMusic(FMOD::Sound* sound, bool loop, bool crossfade, bool resume)
 {
 	if (no_sound)
@@ -262,6 +265,7 @@ void playMusic(FMOD::Sound* sound, bool loop, bool crossfade, bool resume)
 		return; // What?
 	}
 }
+#endif
 
 bool shopmusicplaying = false;
 bool combatmusicplaying = false;
@@ -273,6 +277,7 @@ bool sanctummusicplaying = false;
 
 int currenttrack = -1;
 
+#ifdef USE_FMOD
 void handleLevelMusic()
 {
 	if (no_sound)
@@ -662,3 +667,4 @@ void handleLevelMusic()
 		fadeout_increment = default_fadeout_increment;
 	}
 }
+#endif

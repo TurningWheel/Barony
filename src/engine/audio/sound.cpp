@@ -31,6 +31,15 @@
 
 #ifdef USE_FMOD
 #elif defined USE_OPENAL
+#else
+void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment, real_t notification)
+{
+	return;
+}
+void setAudioDevice(const std::string& device) 
+{
+	return;
+}
 #endif
 
 #ifdef USE_FMOD

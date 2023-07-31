@@ -21280,7 +21280,9 @@ failed:
 #if defined(WINDOWS)
 	    char path[PATH_MAX];
 	    completePath(path, "editor.exe");
+#ifdef SOUND
 	    stopMusic();
+#endif
 	    system(path);
 #elif defined(LINUX)
 	    char path[PATH_MAX];
@@ -21552,8 +21554,10 @@ failed:
 
 				// return to title screen
 		        destroyMainMenu();
+#ifdef SOUND
 				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
 	            playMusic(intromusic[music], true, false, false);
+#endif
 				createTitleScreen();
 
 #ifndef NINTENDO
@@ -21583,8 +21587,10 @@ failed:
 
 				// return to menu
 				destroyMainMenu();
+#ifdef SOUND
 				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
 	            playMusic(intromusic[music], true, false, false);
+#endif
 				createMainMenu(false);
 
 				// join lobby we've been invited to
@@ -21616,8 +21622,10 @@ failed:
                     // create a highscore as token of remembrance.
                     doEndgame(true);
                 }
+#ifdef SOUND
                 const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
                 playMusic(intromusic[music], true, false, false);
+#endif
                 createMainMenu(false);
                 if (saved_invite_lobby) {
                     connectToServer(nullptr, saved_invite_lobby, LobbyType::LobbyOnline);
@@ -21646,7 +21654,9 @@ failed:
 				destroyMainMenu();
 				createDummyMainMenu();
 				createCreditsScreen(true);
+#ifdef SOUND
 	            playMusic(intromusic[0], true, false, false);
+#endif
 
 #ifndef NINTENDO
 				for (int c = 1; c < MAX_SPLITSCREEN; ++c) {
@@ -21661,13 +21671,17 @@ failed:
 				destroyMainMenu();
 				createDummyMainMenu();
 				createStoryScreen("data/story/intro.json", [](){beginFade(FadeDestination::RootMainMenu);});
+#ifdef SOUND
 				playMusic(introstorymusic, false, true, false);
+#endif
 			}
 			else if (main_menu_fade_destination == FadeDestination::IntroStoryScreenNoMusicFade) {
 				destroyMainMenu();
 				createDummyMainMenu();
 				createStoryScreen("data/story/intro.json", [](){beginFade(FadeDestination::TitleScreen);});
+#ifdef SOUND
 				playMusic(introstorymusic, false, false, false);
+#endif
 			}
 			else if (main_menu_fade_destination >= FadeDestination::HerxMidpointHuman &&
 			    main_menu_fade_destination <= FadeDestination::ClassicBaphometEndingEvil) {
@@ -21711,7 +21725,9 @@ failed:
 				int scene = (int)main_menu_fade_destination - (int)FadeDestination::HerxMidpointHuman;
 				assert(scene >= 0 && scene < num_scenes);
 				createStoryScreen(scenes[scene].filename, scenes[scene].end_func);
+#ifdef SOUND
 				playMusic(endgamemusic, false, false, false);
+#endif
 			}
 			else if (main_menu_fade_destination == FadeDestination::GameStart) {
 				gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
