@@ -9,6 +9,10 @@
 /* Begin PBXBuildFile section */
 		84222CCC29ECB510000BF08E /* npcnames-female.txt in Resources */ = {isa = PBXBuildFile; fileRef = 84222CCA29ECB510000BF08E /* npcnames-female.txt */; };
 		84222CCD29ECB510000BF08E /* npcnames-male.txt in Resources */ = {isa = PBXBuildFile; fileRef = 84222CCB29ECB510000BF08E /* npcnames-male.txt */; };
+		843354EB2A771B050014D3CC /* libnfd.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 843354EA2A771B050014D3CC /* libnfd.a */; };
+		843354EC2A771B6F0014D3CC /* libnfd.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 843354EA2A771B050014D3CC /* libnfd.a */; };
+		843354F32A771DA20014D3CC /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 843354F12A771D960014D3CC /* Cocoa.framework */; };
+		843354F62A771DAC0014D3CC /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 843354F12A771D960014D3CC /* Cocoa.framework */; };
 		844D4A262925E64C005907BA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 844D4A252925E64C005907BA /* Assets.xcassets */; };
 		844D4A37292724EE005907BA /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84C3DB19291F8A1C0084EAD5 /* OpenGL.framework */; };
 		844D4A3C292724FE005907BA /* SDL2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 844D4A38292724FE005907BA /* SDL2.framework */; };
@@ -305,6 +309,8 @@
 /* Begin PBXFileReference section */
 		84222CCA29ECB510000BF08E /* npcnames-female.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = "npcnames-female.txt"; path = "../../npcnames-female.txt"; sourceTree = "<group>"; };
 		84222CCB29ECB510000BF08E /* npcnames-male.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = "npcnames-male.txt"; path = "../../npcnames-male.txt"; sourceTree = "<group>"; };
+		843354EA2A771B050014D3CC /* libnfd.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libnfd.a; path = "../../../nfd-build/libnfd.a"; sourceTree = "<group>"; };
+		843354F12A771D960014D3CC /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		844D4A1F2925E64C005907BA /* Barony Editor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Barony Editor.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		844D4A252925E64C005907BA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		844D4A38292724FE005907BA /* SDL2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2.framework; path = ../../../../../../Library/Frameworks/SDL2.framework; sourceTree = "<group>"; };
@@ -573,8 +579,10 @@
 				844D4A3C292724FE005907BA /* SDL2.framework in Frameworks */,
 				844D4A3E292724FE005907BA /* SDL2_ttf.framework in Frameworks */,
 				844D4A40292724FE005907BA /* SDL2_net.framework in Frameworks */,
+				843354F32A771DA20014D3CC /* Cocoa.framework in Frameworks */,
 				847B3BF4296BF8C2002D8852 /* libphysfs.1.dylib in Frameworks */,
 				847B3BF3296BF8B5002D8852 /* libpng16.16.dylib in Frameworks */,
+				843354EB2A771B050014D3CC /* libnfd.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -582,6 +590,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				843354F62A771DAC0014D3CC /* Cocoa.framework in Frameworks */,
 				84C3DB1A291F8A1C0084EAD5 /* OpenGL.framework in Frameworks */,
 				84C3D8F2291F5D370084EAD5 /* SDL2.framework in Frameworks */,
 				84F7108F292350C500AE0D03 /* Theora.framework in Frameworks */,
@@ -596,6 +605,7 @@
 				84B7E1802920290E00D1F0C5 /* libfmod.dylib in Frameworks */,
 				84F7106529232BB100AE0D03 /* libEOSSDK-Mac-Shipping.dylib in Frameworks */,
 				84F71060292327D900AE0D03 /* libsteam_api.dylib in Frameworks */,
+				843354EC2A771B6F0014D3CC /* libnfd.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -894,6 +904,8 @@
 		84C3D8F0291F5D370084EAD5 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				843354F12A771D960014D3CC /* Cocoa.framework */,
+				843354EA2A771B050014D3CC /* libnfd.a */,
 				844D4A3B292724FE005907BA /* SDL2_image.framework */,
 				844D4A3A292724FE005907BA /* SDL2_net.framework */,
 				844D4A39292724FE005907BA /* SDL2_ttf.framework */,
@@ -1266,6 +1278,7 @@
 					"\"$(SRCROOT)/../../../fmod/api/core/inc\"",
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Include\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/public\"",
+					"\"$(SRCROOT)/../../../nfd-build\"",
 				);
 				INFOPLIST_FILE = "Barony-Editor-Info.plist";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -1279,6 +1292,7 @@
 					"\"$(SRCROOT)/../../../fmod/api/core/lib\"",
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Bin\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
+					"\"$(SRCROOT)/../../../nfd-build\"",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MARKETING_VERSION = 1.0;
@@ -1321,6 +1335,7 @@
 					"\"$(SRCROOT)/../../../fmod/api/core/inc\"",
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Include\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/public\"",
+					"\"$(SRCROOT)/../../../nfd-build\"",
 				);
 				INFOPLIST_FILE = "Barony-Editor-Info.plist";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -1334,6 +1349,7 @@
 					"\"$(SRCROOT)/../../../fmod/api/core/lib\"",
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Bin\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
+					"\"$(SRCROOT)/../../../nfd-build\"",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MARKETING_VERSION = 1.0;
@@ -1486,6 +1502,7 @@
 					"\"$(SRCROOT)/../../../fmod/api/core/inc\"",
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Include\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/public\"",
+					"\"$(SRCROOT)/../../../nfd-build\"",
 				);
 				INFOPLIST_FILE = Barony/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.role-playing-games";
@@ -1510,6 +1527,7 @@
 					"\"$(SRCROOT)/../../../fmod/api/core/lib\"",
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Bin\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
+					"\"$(SRCROOT)/../../../nfd-build\"",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MARKETING_VERSION = 1.0;
@@ -1561,6 +1579,7 @@
 					"\"$(SRCROOT)/../../../fmod/api/core/inc\"",
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Include\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/public\"",
+					"\"$(SRCROOT)/../../../nfd-build\"",
 				);
 				INFOPLIST_FILE = Barony/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.role-playing-games";
@@ -1585,6 +1604,7 @@
 					"\"$(SRCROOT)/../../../fmod/api/core/lib\"",
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Bin\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
+					"\"$(SRCROOT)/../../../nfd-build\"",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MARKETING_VERSION = 1.0;
