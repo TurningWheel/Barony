@@ -385,7 +385,7 @@ int initApp(char const * const title, int fullscreen)
 			"Detected OpenGL version (1.1.0) is not compatible.\n\n"
 			"Your video card drivers may be out of date, please check for updates directly from your manufacturer's website (e.g Intel/AMD/NVIDIA).\n"
 			"Drivers obtained through Windows Update may not automatically find the correct drivers.\n\n"
-			"If you have a computer with more than one video card, make sure you run Barony using the dedicated NVIDIA/AMD card.\n\n"
+			"If you have a computer with more than one video card, make sure you run Barony using the dedicated video card (NVIDIA/AMD).\n\n"
 			"For more assistance, send the following diagnostic file output through to one of our support forums:\n"
 			"- Use the run command (Windows key + R) and enter \"dxdiag\" and \"Save All Information..\" to a text file\n"
 			"- Additionally send the log.txt file from the game installation directory\n\n"
