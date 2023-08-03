@@ -125,7 +125,10 @@ static void updateModFolderNames()
 	if ( !modFolderNames.empty() )
 	{
 		std::list<std::string>::iterator it = std::find(modFolderNames.begin(), modFolderNames.end(), "..");
-		modFolderNames.erase(it);
+		if ( it != modFolderNames.end() )
+		{
+			modFolderNames.erase(it);
+		}
 		std::sort(mapNames.begin(), mapNames.end());
 	}
 }
