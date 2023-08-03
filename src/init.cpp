@@ -373,10 +373,25 @@ int initApp(char const * const title, int fullscreen)
 	}
 
 #ifdef WINDOWS
+	char gl_version[64];
+	snprintf(gl_version, sizeof(gl_version), "%s", glGetString(GL_VERSION));
 	printlog("[OpenGL]: Graphics Vendor: %s | Renderer: %s | Version: %s",
 		glGetString(GL_VENDOR),
 		glGetString(GL_RENDERER),
 		glGetString(GL_VERSION));
+	if ( strstr(gl_version, "1.1.0") )
+	{
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error",
+			"Detected OpenGL version (1.1.0) is not compatible.\n\n"
+			"Your video card drivers may be out of date, please check for updates directly from your manufacturer's website (e.g Intel/AMD/NVIDIA).\n"
+			"Drivers obtained through Windows Update may not automatically find the correct drivers.\n\n"
+			"If you have a computer with more than one video card, make sure you run Barony using the dedicated NVIDIA/AMD card.\n\n"
+			"For more assistance, send the following diagnostic file output through to one of our support forums:\n"
+			"- Use the run command (Windows key + R) and enter \"dxdiag\" and \"Save All Information..\" to a text file\n"
+			"- Additionally send the log.txt file from the game installation directory\n\n"
+			"http://www.baronygame.com/",
+			screen);
+	}
 #else
 	printlog("[OpenGL]: Graphics Vendor: %s | Renderer: %s | Version: %s",
 		GL_CHECK_ERR_RET(glGetString(GL_VENDOR)),
@@ -1404,9 +1419,11 @@ bool initVideo()
         // * the lowest supported core-profile version is 3.2
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	    //SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 	    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
 	    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+		//SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
     }
 
 	// desired screen dimensions + position
