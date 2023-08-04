@@ -304,7 +304,11 @@ void actStalagFloor(Entity* my)
 	{
 		return;
 	}
-
+	if ( my->flags[BLOCKSIGHT] 
+		&& (my->sprite == 581 || my->sprite == 582) ) // stop the compiler optimising into a different entity.
+	{
+		my->flags[BLOCKSIGHT] = false;
+	}
 	my->actStalagFloor();
 }
 
@@ -319,6 +323,11 @@ void actStalagCeiling(Entity* my)
 	if ( !my )
 	{
 		return;
+	}
+	if ( my->flags[BLOCKSIGHT] 
+		&& (my->sprite == 583 || my->sprite == 584) ) // stop the compiler optimising into a different entity.
+	{
+		my->flags[BLOCKSIGHT] = false;
 	}
 	my->actStalagCeiling();
 }
@@ -335,7 +344,10 @@ void actStalagColumn(Entity* my)
 	{
 		return;
 	}
-
+	if ( my->flags[BLOCKSIGHT] && my->sprite == 580 ) // stop the compiler optimising into a different entity.
+	{
+		my->flags[BLOCKSIGHT] = false;
+	}
 	my->actStalagColumn();
 }
 
@@ -464,7 +476,7 @@ void actColumn(Entity* my)
 	{
 		return;
 	}
-	if ( my->flags[BLOCKSIGHT] ) // stop the compiler optimising into a different entity.
+	if ( my->flags[BLOCKSIGHT] && my->sprite == 629 ) // stop the compiler optimising into a different entity.
 	{
 		my->flags[BLOCKSIGHT] = false;
 	}
@@ -497,6 +509,10 @@ void actPistonBase(Entity* my)
 	if ( !my )
 	{
 		return;
+	}
+	if ( my->flags[BLOCKSIGHT] && my->sprite == 631 ) // stop the compiler optimising into a different entity.
+	{
+		my->flags[BLOCKSIGHT] = false;
 	}
 }
 
