@@ -270,7 +270,7 @@ real_t getGamepadMenuYSensitivity(int player)
 
 real_t getGamepadRightXSensitivity(int player)
 {
-    const auto value = gamepad_rightx_sensitivity * playerSettings[player].gamepad_rightx_sensitivity;
+    const auto value = gamepad_rightx_sensitivity * playerSettings[multiplayer ? 0 : player].gamepad_rightx_sensitivity;
 	if ( !TimerExperiments::bUseTimerInterpolation )
 	{
 		return value;
@@ -281,7 +281,7 @@ real_t getGamepadRightXSensitivity(int player)
 
 real_t getGamepadRightYSensitivity(int player)
 {
-    const auto value = gamepad_righty_sensitivity * playerSettings[player].gamepad_righty_sensitivity;
+    const auto value = gamepad_righty_sensitivity * playerSettings[multiplayer ? 0 : player].gamepad_righty_sensitivity;
 	if ( !TimerExperiments::bUseTimerInterpolation )
 	{
 		return value;
@@ -308,17 +308,17 @@ void GameController::handleAnalog(int player)
 
 	if (!players[player]->shootmode || gamePaused)
 	{
-        const auto rawx = getRawRightXMove() * (playerSettings[player].gamepad_rightx_invert * -2 + 1);
-        const auto rawy = getRawRightYMove() * (playerSettings[player].gamepad_righty_invert * -2 + 1);
+        const auto rawx = getRawRightXMove() * (playerSettings[multiplayer ? 0 : player].gamepad_rightx_invert * -2 + 1);
+        const auto rawy = getRawRightYMove() * (playerSettings[multiplayer ? 0 : player].gamepad_righty_invert * -2 + 1);
 		int rightx = rawx * getGamepadMenuXSensitivity(player);
 		int righty = rawy * getGamepadMenuYSensitivity(player);
 
 		//The right stick's inversion and the menu's inversion should be independent of eachother. This just undoes any inversion.
-		if (gamepad_rightx_invert ^ playerSettings[player].gamepad_rightx_invert)
+		if (gamepad_rightx_invert ^ playerSettings[multiplayer ? 0 : player].gamepad_rightx_invert)
 		{
 			rightx = -rightx;
 		}
-		if (gamepad_righty_invert ^ playerSettings[player].gamepad_righty_invert)
+		if (gamepad_righty_invert ^ playerSettings[multiplayer ? 0 : player].gamepad_righty_invert)
 		{
 			righty = -righty;
 		}
@@ -386,8 +386,8 @@ void GameController::handleAnalog(int player)
 		}
 		else if ( rightStickDeadzoneType != DEADZONE_PER_AXIS )
 		{
-            const auto rawx = getRawRightXMove() * (playerSettings[player].gamepad_rightx_invert * -2 + 1);
-            const auto rawy = getRawRightYMove() * (playerSettings[player].gamepad_righty_invert * -2 + 1);
+            const auto rawx = getRawRightXMove() * (playerSettings[multiplayer ? 0 : player].gamepad_rightx_invert * -2 + 1);
+            const auto rawy = getRawRightYMove() * (playerSettings[multiplayer ? 0 : player].gamepad_righty_invert * -2 + 1);
 			rightx = rawx;
 			righty = rawy;
 
@@ -458,8 +458,8 @@ void GameController::handleAnalog(int player)
 		}
 		else if ( rightStickDeadzoneType == DEADZONE_MAGNITUDE_LINEAR || rightStickDeadzoneType == DEADZONE_MAGNITUDE_HALFPIPE )
 		{
-            const auto rawx = getRawRightXMove() * (playerSettings[player].gamepad_rightx_invert * -2 + 1);
-            const auto rawy = getRawRightYMove() * (playerSettings[player].gamepad_righty_invert * -2 + 1);
+            const auto rawx = getRawRightXMove() * (playerSettings[multiplayer ? 0 : player].gamepad_rightx_invert * -2 + 1);
+            const auto rawy = getRawRightYMove() * (playerSettings[multiplayer ? 0 : player].gamepad_righty_invert * -2 + 1);
 			floatx = rawx;
 			floaty = rawy;
 
@@ -561,7 +561,7 @@ int GameController::getRightXMove(int player) // with sensitivity
 		return 0;
 	}
 	int x = getRawRightXMove();
-    x *= playerSettings[player].gamepad_rightx_invert * -2 + 1;
+    x *= playerSettings[multiplayer ? 0 : player].gamepad_rightx_invert * -2 + 1;
 	x *= getGamepadRightXSensitivity(player);
 	return x;
 }
@@ -573,7 +573,7 @@ int GameController::getRightYMove(int player) // with sensitivity
 		return 0;
 	}
 	int y = getRawRightYMove();
-    y *= playerSettings[player].gamepad_righty_invert * -2 + 1;
+    y *= playerSettings[multiplayer ? 0 : player].gamepad_righty_invert * -2 + 1;
 	y *= getGamepadRightYSensitivity(player);
 	return y;
 }
@@ -3969,7 +3969,7 @@ void Player::WorldUI_t::handleTooltips()
 		}
 		else if ( inputs.bPlayerUsingKeyboardControl(player) )
 		{
-			if ( playerSettings[player].mkb_world_tooltips_enabled )
+			if ( playerSettings[multiplayer ? 0 : player].mkb_world_tooltips_enabled )
 			{
 				if ( !players[player]->worldUI.bEnabled )
 				{

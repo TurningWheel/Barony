@@ -208,7 +208,7 @@ typedef struct view_t
     bool* vismap = nullptr;
     float luminance = defaultLuminance;
     unsigned int drawnFrames = 0;
-    mat4x4 projview;
+    mat4x4 projview, proj, proj_hud;
 } view_t;
 
 #define FLIP_VERTICAL 1
