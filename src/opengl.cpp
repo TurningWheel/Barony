@@ -406,6 +406,58 @@ vec4_t project(
 	return result;
 }
 
+vec4_t project_clipped(
+	const vec4_t* world,
+	const mat4x4_t* model,
+	const mat4x4_t* projview,
+	const vec4_t* window
+) {
+	vec4 copy;
+	vec4_t result = *world; result.w = 1.f;
+	copy = vec4_copy(&result); mul_mat_vec4(&result, model, &copy);
+	copy = vec4_copy(&result); mul_mat_vec4(&result, projview, &copy);
+ 
+    float w = result.w;
+    if (w < CLIPNEAR) {
+        w = CLIPNEAR;
+        result.x *= CLIPFAR;
+        result.y *= CLIPFAR;
+    }
+    if (result.x > w) {
+        const float factor = w / result.x;
+        pow_vec4(&result, &result, factor);
+    }
+    else if (result.x < -w) {
+        const float factor = -w / result.x;
+        pow_vec4(&result, &result, factor);
+    }
+    if (result.y > w) {
+        const float factor = w / result.y;
+        pow_vec4(&result, &result, factor);
+    }
+    else if (result.y < -w) {
+        const float factor = -w / result.y;
+        pow_vec4(&result, &result, factor);
+    }
+    if (result.z > w) {
+        const float factor = w / result.z;
+        pow_vec4(&result, &result, factor);
+    }
+    else if (result.z < -w) {
+        const float factor = -w / result.z;
+        pow_vec4(&result, &result, factor);
+    }
+
+	vec4 half(0.5f);
+	vec4 div(result.w);
+	div_vec4(&result, &result, &div);
+	mul_vec4(&result, &result, &half);
+	add_vec4(&result, &result, &half);
+	result.x = result.x * window->z + window->x;
+	result.y = result.y * window->w + window->y;
+	return result;
+}
+
 vec4_t unproject(
 	const vec4_t* screenCoords,
 	const mat4x4_t* model,
