@@ -1048,6 +1048,7 @@ bool physfsSearchMusicToUpdate()
 	themeMusic.push_back("music/bramscastle.ogg");
 	themeMusic.push_back("music/hamlet.ogg");
 	themeMusic.push_back("music/tutorial.ogg");
+	themeMusic.push_back("sound/Death.ogg");
 
 	for ( std::vector<std::string>::iterator it = themeMusic.begin(); it != themeMusic.end(); ++it )
 	{
