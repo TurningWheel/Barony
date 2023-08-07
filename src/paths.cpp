@@ -925,11 +925,11 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 						obstacle = true;
 						break;
 					}
-					else if ( entity->behavior == &actWallBuilder || entity->behavior == &actWallBuster )
+					/*else if ( entity->behavior == &actWallBuilder || entity->behavior == &actWallBuster )
 					{
 						obstacle = false;
 						break;
-					}
+					}*/
 				}
 			}
 			//list_FreeAll(list);
@@ -975,11 +975,11 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 											foundObstacle = true;
 											break;
 										}
-										else if ( entity->behavior == &actWallBuilder || entity->behavior == &actWallBuster )
+										/*else if ( entity->behavior == &actWallBuilder || entity->behavior == &actWallBuster )
 										{
 											foundWallModifier = true;
 											break;
-										}
+										}*/
 									}
 								}
 								if ( foundWallModifier )
@@ -1022,11 +1022,11 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 											foundObstacle = true;
 											break;
 										}
-										else if ( entity->behavior == &actWallBuilder || entity->behavior == &actWallBuster )
+										/*else if ( entity->behavior == &actWallBuilder || entity->behavior == &actWallBuster )
 										{
 											foundWallModifier = true;
 											break;
-										}
+										}*/
 									}
 								}
 								if ( foundWallModifier )
@@ -1069,11 +1069,11 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 											foundObstacle = true;
 											break;
 										}
-										else if ( entity->behavior == &actWallBuilder || entity->behavior == &actWallBuster )
+										/*else if ( entity->behavior == &actWallBuilder || entity->behavior == &actWallBuster )
 										{
 											foundWallModifier = true;
 											break;
-										}
+										}*/
 									}
 								}
 								if ( foundWallModifier )
@@ -1116,11 +1116,11 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 											foundObstacle = true;
 											break;
 										}
-										else if ( entity->behavior == &actWallBuilder || entity->behavior == &actWallBuster )
+										/*else if ( entity->behavior == &actWallBuilder || entity->behavior == &actWallBuster )
 										{
 											foundWallModifier = true;
 											break;
-										}
+										}*/
 									}
 								}
 								if ( foundWallModifier )

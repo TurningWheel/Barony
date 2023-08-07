@@ -71,7 +71,7 @@ void actItem(Entity* my)
 		my->flags[NOUPDATE] = true;
 		if ( ITEM_LIFE == 0 )
 		{
-			Entity* tempEntity = uidToEntity(clientplayer);
+			Entity* tempEntity = players[clientnum]->entity;
 			if ( tempEntity )
 			{
 				if ( entityInsideEntity(my, tempEntity) )

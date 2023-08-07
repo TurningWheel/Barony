@@ -69,7 +69,7 @@ void actThrown(Entity* my)
 	{
 		if ( THROWN_LIFE == 0 )
 		{
-			Entity* tempEntity = uidToEntity(clientplayer);
+			Entity* tempEntity = players[clientnum]->entity;
 			if ( tempEntity )
 			{
 				if ( entityInsideEntity(my, tempEntity) )

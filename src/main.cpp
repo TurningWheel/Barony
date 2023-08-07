@@ -232,7 +232,6 @@ bool capture_mouse = true;
 string lastname;
 
 // net stuff
-Uint32 clientplayer = 0;
 int numplayers = 0;
 int clientnum = 0;
 int multiplayer = 0;

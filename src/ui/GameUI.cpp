@@ -33527,7 +33527,14 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 	}
 	else
 	{
+		if ( bOpen )
+		{
 		slider->setDisabled(false);
+	}
+		else
+		{
+			slider->setDisabled(true);
+		}
 	}
 
 	currentScrollRow = scrollSetpoint / player.inventoryUI.getSlotSize();
@@ -33694,7 +33701,7 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 
 	if ( scrollAmount > 0 )
 	{
-		if ( !slider->isDisabled() && !usingGamepad )
+		if ( !slider->isDisabled() && !usingGamepad && isInteractable )
 		{
 			sliderSpellUpdateSelectorOnHighlight(player.playernum, slider);
 		}
