@@ -21263,10 +21263,13 @@ failed:
 							closeMono();
 							return_to_main_menu(button);
 						});
+                    video_refresh &= ~VideoRefresh::Video;
 				} else {
+                    if (video_refresh) {
+                        soundActivate();
+                    }
 					return_to_main_menu(button);
 				}
-				video_refresh = VideoRefresh::None;
 			} else {
 				return_to_main_menu(button);
 			}
@@ -21848,7 +21851,14 @@ failed:
         if (video_refresh) {
 			Frame::guiResize(0, 0); // resize gui for new aspect ratio
             createMainMenu(!intro);
-
+            
+#if defined(VIDEO_RESTART_NEEDED)
+            // return to settings button
+            assert(main_menu_frame);
+            auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+            auto settings_button = buttons->findButton("Settings"); assert(settings_button);
+            settings_button->select();
+#else
             // return to video settings window
             assert(main_menu_frame);
             auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
@@ -21925,6 +21935,7 @@ failed:
                     }
                     });
             }
+#endif
 
             // at the end so that old_video is not overwritten
             video_refresh = VideoRefresh::None;
