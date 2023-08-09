@@ -49,17 +49,17 @@ public:
 		return readSize / size;
 	}
 
-	size_t size()
+	size_t size() override
 	{
 		return data.size();
 	}
 
-	bool eof()
+	bool eof() override
 	{
 		return pos >= size();
 	}
 
-	int seek(ptrdiff_t offset, SeekMode mode)
+	int seek(ptrdiff_t offset, SeekMode mode) override
 	{
 		switch (mode) {
 		case SeekMode::SET: pos = offset; break;
@@ -73,7 +73,7 @@ public:
 		}
 	}
 
-	long int tell()
+	long int tell() override
 	{
 		return (long int)pos;
 	}
