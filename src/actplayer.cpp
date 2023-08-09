@@ -2589,7 +2589,6 @@ void actPlayer(Entity* my)
 				//auto screenshot_path = setSaveGameFileName(multiplayer == SINGLE, SaveFileType::SCREENSHOT);
 				//takeScreenshot(screenshot_path.c_str());
 			}
-			clientplayer = my->getUID();
 			if ( !strcmp(map.name, "Boss") && !my->skill[29] )
 			{
 				bool foundherx = false;

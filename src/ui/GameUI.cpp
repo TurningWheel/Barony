@@ -6840,6 +6840,19 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 					effectsToSkipAnim.insert(i);
 				}
 			}
+			else if ( i == EFF_TELEPATH )
+			{
+				skipAnim = true;
+				effectsToSkipAnim.insert(i);
+			}
+			else if ( i == EFF_BLIND )
+			{
+				if ( stats[player]->mask && stats[player]->mask->type == TOOL_BLINDFOLD_TELEPATHY )
+				{
+					skipAnim = true;
+					effectsToSkipAnim.insert(i);
+				}
+			}
 			else if ( i == EFF_DRUNK && stats[player]->type == GOATMAN )
 			{
 				effectActive = false;
@@ -33527,7 +33540,14 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 	}
 	else
 	{
+		if ( bOpen )
+		{
 		slider->setDisabled(false);
+	}
+		else
+		{
+			slider->setDisabled(true);
+		}
 	}
 
 	currentScrollRow = scrollSetpoint / player.inventoryUI.getSlotSize();
@@ -33694,7 +33714,7 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 
 	if ( scrollAmount > 0 )
 	{
-		if ( !slider->isDisabled() && !usingGamepad )
+		if ( !slider->isDisabled() && !usingGamepad && isInteractable )
 		{
 			sliderSpellUpdateSelectorOnHighlight(player.playernum, slider);
 		}

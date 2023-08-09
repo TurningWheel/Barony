@@ -6515,10 +6515,13 @@ timeToGoAgain:
 										}
 										my->monsterAllyInteractTarget = 0;
 										my->monsterAllyState = ALLY_STATE_DEFAULT;
-										if ( target->behavior == &actTeleporter || target->behavior == &actTeleportShrine )
+										if ( target )
 										{
-											my->monsterAllyState = ALLY_STATE_DEFEND;
-											my->createPathBoundariesNPC(5);
+											if ( target->behavior == &actTeleporter || target->behavior == &actTeleportShrine )
+											{
+												my->monsterAllyState = ALLY_STATE_DEFEND;
+												my->createPathBoundariesNPC(5);
+											}
 										}
 									}
 								}
@@ -6531,7 +6534,7 @@ timeToGoAgain:
 								for ( node = map.creatures->first; node != nullptr; node = node->next )
 								{
 									Entity* target = (Entity*)node->element;
-									if ( target->behavior == &actMonster && my->checkEnemy(target) )
+									if ( target && target->behavior == &actMonster && my->checkEnemy(target) )
 									{
 										real_t oldDist = dist;
 										dist = sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2));
@@ -6572,7 +6575,7 @@ timeToGoAgain:
 							for ( node = map.creatures->first; node != nullptr; node = node->next )
 							{
 								Entity* target = (Entity*)node->element;
-								if ( target->behavior == &actMonster && my->checkEnemy(target) )
+								if ( target && target->behavior == &actMonster && my->checkEnemy(target) )
 								{
 									real_t oldDist = dist;
 									dist = sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2));
@@ -6636,7 +6639,7 @@ timeToGoAgain:
 									}
 									my->monsterAllyInteractTarget = 0;
 
-									if ( target->behavior == &actTeleporter || target->behavior == &actTeleportShrine )
+									if ( target && (target->behavior == &actTeleporter || target->behavior == &actTeleportShrine) )
 									{
 										my->monsterAllyState = ALLY_STATE_DEFEND;
 										my->createPathBoundariesNPC(5);
@@ -6680,7 +6683,7 @@ timeToGoAgain:
 							for ( node = map.creatures->first; node != nullptr; node = node->next )
 							{
 								Entity* target = (Entity*)node->element;
-								if ( target->behavior == &actMonster && my->checkEnemy(target) )
+								if ( target && target->behavior == &actMonster && my->checkEnemy(target) )
 								{
 									real_t oldDist = dist;
 									dist = sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2));
@@ -6761,7 +6764,7 @@ timeToGoAgain:
 					my->monsterState = MONSTER_STATE_WAIT;
 					my->monsterTarget = 0;
 					int player = -1;
-					if ( target->behavior == &actPlayer )
+					if ( target && target->behavior == &actPlayer )
 					{
 						player = target->skill[2];
 					}

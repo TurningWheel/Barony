@@ -1048,6 +1048,7 @@ bool physfsSearchMusicToUpdate()
 	themeMusic.push_back("music/bramscastle.ogg");
 	themeMusic.push_back("music/hamlet.ogg");
 	themeMusic.push_back("music/tutorial.ogg");
+	themeMusic.push_back("sound/Death.ogg");
 
 	for ( std::vector<std::string>::iterator it = themeMusic.begin(); it != themeMusic.end(); ++it )
 	{
@@ -1161,6 +1162,7 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 	themeMusic.push_back("music/bramscastle.ogg");
 	themeMusic.push_back("music/hamlet.ogg");
 	themeMusic.push_back("music/tutorial.ogg");
+	themeMusic.push_back("sound/Death.ogg");
 
 	int index = 0;
 #ifdef USE_OPENAL
@@ -1315,6 +1317,13 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 							tutorialmusic->release();
 						}
 						fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &tutorialmusic);
+						break;
+					case 19:
+						if ( gameovermusic )
+						{
+							gameovermusic->release();
+						}
+						fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_DEFAULT, nullptr, &gameovermusic);
 						break;
 					default:
 						break;
