@@ -406,6 +406,84 @@ vec4_t project(
 	return result;
 }
 
+struct ClipResult {
+    enum class Direction {
+        Invalid,
+        Left,
+        Right,
+        Top,
+        Bottom,
+        Front,
+        Behind,
+    };
+    Direction direction = Direction::Invalid;
+    vec4_t clipped_coords;
+};
+
+ClipResult project_clipped(
+	const vec4_t* world,
+	const mat4x4_t* model,
+	const mat4x4_t* projview,
+	const vec4_t* window
+) {
+    ClipResult clipResult;
+    vec4_t& result = clipResult.clipped_coords;
+	result = *world; result.w = 1.f;
+    
+	vec4 copy;
+	copy = vec4_copy(&result); mul_mat_vec4(&result, model, &copy);
+	copy = vec4_copy(&result); mul_mat_vec4(&result, projview, &copy);
+ 
+    float w = result.w;
+    if (w < CLIPNEAR) {
+        w = CLIPNEAR;
+        result.x *= CLIPFAR;
+        result.y *= CLIPFAR;
+        if (result.z < -w) {
+            clipResult.direction = ClipResult::Direction::Behind;
+        }
+    }
+    if (result.x > w) {
+        const float factor = w / result.x;
+        pow_vec4(&result, &result, factor);
+        clipResult.direction = ClipResult::Direction::Right;
+    }
+    else if (result.x < -w) {
+        const float factor = -w / result.x;
+        pow_vec4(&result, &result, factor);
+        clipResult.direction = ClipResult::Direction::Left;
+    }
+    if (result.y > w) {
+        const float factor = w / result.y;
+        pow_vec4(&result, &result, factor);
+        clipResult.direction = ClipResult::Direction::Top;
+    }
+    else if (result.y < -w) {
+        const float factor = -w / result.y;
+        pow_vec4(&result, &result, factor);
+        clipResult.direction = ClipResult::Direction::Bottom;
+    }
+    if (result.z > w) {
+        const float factor = w / result.z;
+        pow_vec4(&result, &result, factor);
+        clipResult.direction = ClipResult::Direction::Front;
+    }
+    else if (result.z < -w) {
+        const float factor = -w / result.z;
+        pow_vec4(&result, &result, factor);
+        clipResult.direction = ClipResult::Direction::Behind;
+    }
+
+	vec4 half(0.5f);
+	vec4 div(w);
+	div_vec4(&result, &result, &div);
+	mul_vec4(&result, &result, &half);
+	add_vec4(&result, &result, &half);
+	result.x = result.x * window->z + window->x;
+	result.y = result.y * window->w + window->y;
+	return clipResult;
+}
+
 vec4_t unproject(
 	const vec4_t* screenCoords,
 	const mat4x4_t* model,
@@ -798,6 +876,7 @@ void glBeginCamera(view_t* camera, bool useHDR)
     mat4x4_t proj, view, view2, identity;
     vec4_t translate(-camera->x * 32.f, camera->z, -camera->y * 32.f, 0.f);
     (void)perspective(&proj, fov, aspect, CLIPNEAR, CLIPFAR);
+    (void)perspective(&camera->proj_hud, 60.f, aspect, CLIPNEAR, CLIPFAR);
     (void)rotate_mat(&view, &view2, rotx, &identity.x); view2 = view;
     (void)rotate_mat(&view, &view2, roty, &identity.y); view2 = view;
     (void)rotate_mat(&view, &view2, rotz, &identity.z); view2 = view;
@@ -805,6 +884,7 @@ void glBeginCamera(view_t* camera, bool useHDR)
     
     // store proj * view
     (void)mul_mat(&camera->projview, &proj, &view);
+    camera->proj = proj;
     
     // set ambient lighting
     if ( camera->globalLightModifierActive ) {
@@ -1041,6 +1121,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
         (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
         (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
         (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
+        GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, false, (float*)&camera->proj_hud));
     }
     rotx = entity->roll * 180.0 / PI; // roll
     roty = 360.0 - entity->yaw * 180.0 / PI; // yaw
@@ -1094,6 +1175,9 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
 #endif
     
     // reset GL state
+    if (entity->flags[OVERDRAW]) {
+        GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, false, (float*)&camera->proj));
+    }
     if (changedDepthRange) {
         GL_CHECK_ERR(glDepthRange(0, 1));
     }
@@ -1514,6 +1598,7 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
         (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
         (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
         (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
+        GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, false, (float*)&camera->proj_hud));
     }
     v = vec4(entity->x * 2.f, -entity->z * 2.f - 1, entity->y * 2.f, 0.f);
     (void)translate_mat(&m, &t, &v); t = m;
@@ -1546,6 +1631,9 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     spriteMesh.draw();
     
     // reset GL state
+    if (entity->flags[OVERDRAW]) {
+        GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, false, (float*)&camera->proj));
+    }
     if (mode == REALCOLORS) {
         GL_CHECK_ERR(glDisable(GL_BLEND));
     }

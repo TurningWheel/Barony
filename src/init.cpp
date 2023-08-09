@@ -970,8 +970,16 @@ static GLuint tileTextures[numTileAtlases] = { 0 };
 
 void generateTileTextures() {
     destroyTileTextures();
-    constexpr int w = 32; // width of a tile texture
-    constexpr int h = 32; // height of a tile texture
+    
+#ifdef EDITOR
+    constexpr int size = 32;
+#else
+    static ConsoleVariable<int> cvar_tileTextureSize("/tile_texture_size", 32, "the size of a tile texture");
+    const int size = *cvar_tileTextureSize;
+#endif
+    
+    const int w = size; // width of a tile texture
+    const int h = size; // height of a tile texture
     constexpr int dim = 32; // how many tile textures to put in each row and column
     const int max = numtiles < dim * dim ? numtiles : dim * dim;
     
