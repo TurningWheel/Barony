@@ -189,6 +189,7 @@ static const int GUI_MODE_MAGIC = 1;
 static const int GUI_MODE_SHOP = 2;
 static const int GUI_MODE_FOLLOWERMENU = 3;
 static const int GUI_MODE_SIGN = 4;
+static const int GUI_MODE_CALLOUT = 5;
 
 extern int textscroll;
 extern int inventorycategory;
@@ -1120,7 +1121,8 @@ enum CloseGUIIgnore : int
 	CLOSEGUI_DONT_CLOSE_FOLLOWERGUI,
 	CLOSEGUI_DONT_CLOSE_CHEST,
 	CLOSEGUI_DONT_CLOSE_SHOP,
-	CLOSEGUI_DONT_CLOSE_INVENTORY
+	CLOSEGUI_DONT_CLOSE_INVENTORY,
+	CLOSEGUI_DONT_CLOSE_CALLOUTGUI
 };
 
 static const int SCANCODE_UNASSIGNED_BINDING = 399;
@@ -1330,6 +1332,175 @@ public:
 	const int getPlayer() const { return gui_player; }
 };
 extern FollowerRadialMenu FollowerMenu[MAXPLAYERS];
+
+struct CalloutRadialMenu
+{
+	int menuX; // starting mouse coordinates that are the center of the circle.
+	int menuY; // starting mouse coordinates that are the center of the circle.
+	int optionSelected; // current moused over option.
+	bool selectMoveTo; // player is choosing a point or target to interact with.
+	int moveToX; // x position for follower to move to.
+	int moveToY; // y position for follower to move to.
+	bool menuToggleClick; // user pressed menu key but did not select option before letting go. keeps the menu open without input.
+	bool holdWheel; // user pressed quick menu for last follower.
+	char interactText[128]; // user moused over object while selecting interact object.
+	int maxMonstersToDraw;
+	int gui_player = 0;
+	Frame* calloutFrame;
+	bool bOpen = false;
+	Uint32 lockOnEntityUid = 0;
+
+	CalloutRadialMenu() :
+		calloutFrame(nullptr),
+		menuX(-1),
+		menuY(-1),
+		optionSelected(-1),
+		selectMoveTo(false),
+		moveToX(-1),
+		moveToY(-1),
+		menuToggleClick(false),
+		holdWheel(false),
+		bOpen(false)
+	{
+		memset(interactText, 0, 128);
+	}
+
+	void createCalloutMenuGUI();
+	bool calloutGUIHasBeenCreated() const;
+	static void loadCalloutJSON();
+	enum PanelDirections : int
+	{
+		NORTH,
+		NORTHWEST,
+		WEST,
+		SOUTHWEST,
+		SOUTH,
+		SOUTHEAST,
+		EAST,
+		NORTHEAST,
+		PANEL_DIRECTION_END
+	};
+	struct PanelEntry
+	{
+		int x = 0;
+		int y = 0;
+		std::string path = "";
+		std::string path_hover = "";
+		int icon_offsetx = 0;
+		int icon_offsety = 0;
+	};
+	static std::vector<PanelEntry> panelEntries;
+	struct IconEntry
+	{
+		std::string name = "";
+		int id = -1;
+		std::string path = "";
+		std::string path_hover = "";
+		std::string path_active = "";
+		std::string path_active_hover = "";
+		int icon_offsetx = 0;
+		int icon_offsety = 0;
+		std::map<std::string, std::pair<std::string, std::set<int>>> text_map;
+	};
+	static std::map<std::string, IconEntry> iconEntries;
+	static int followerWheelRadius;
+	static int followerWheelButtonThickness;
+	static int followerWheelFrameOffsetX;
+	static int followerWheelFrameOffsetY;
+	static int followerWheelInnerCircleRadiusOffset;
+	static int followerWheelInnerCircleRadiusOffsetAlternate;
+
+	enum CalloutCommand : int
+	{
+		CALLOUT_CMD_LOOK,
+		CALLOUT_CMD_HELP,
+		CALLOUT_CMD_NEGATIVE,
+		CALLOUT_CMD_SOUTHWEST,
+		CALLOUT_CMD_SOUTH,
+		CALLOUT_CMD_SOUTHEAST,
+		CALLOUT_CMD_AFFIRMATIVE,
+		CALLOUT_CMD_MOVE,
+		CALLOUT_CMD_CANCEL,
+		CALLOUT_CMD_SELECT,
+		CALLOUT_CMD_END
+	};
+	enum CalloutType : int
+	{
+		CALLOUT_TYPE_NO_TARGET,
+		CALLOUT_TYPE_NPC,
+		CALLOUT_TYPE_PLAYER,
+		CALLOUT_TYPE_LEVER,
+		CALLOUT_TYPE_BOULDER,
+		CALLOUT_TYPE_TRAP,
+		CALLOUT_TYPE_GENERIC_INTERACTABLE,
+		CALLOUT_TYPE_CHEST,
+		CALLOUT_TYPE_ITEM,
+		CALLOUT_TYPE_NPC_ENEMY,
+		CALLOUT_TYPE_NPC_PLAYERALLY
+	};
+	struct CalloutParticle_t
+	{
+		real_t x = 0.0;
+		real_t y = 0.0;
+		real_t z = 0.0;
+		Uint32 entityUid = 0;
+		Uint32 ticks = 0;
+		CalloutCommand cmd = CALLOUT_CMD_END;
+		CalloutType type = CALLOUT_TYPE_NO_TARGET;
+		bool expired = false;
+		bool lockOnScreen = true;
+		void init(const int player);
+		CalloutParticle_t() = default;
+		CalloutParticle_t(const int player, real_t _x, real_t _y, real_t _z, Uint32 _uid, CalloutCommand _cmd) :
+			x(_x),
+			y(_y),
+			z(_z),
+			entityUid(_uid),
+			cmd(_cmd)
+		{
+			init(player);
+		};
+		static Uint32 kParticleLifetime;
+	};
+	std::map<Uint32, CalloutParticle_t> callouts;
+
+	real_t animTitle = 0.0;
+	real_t animWheel = 0.0;
+	Uint32 openedThisTick = 0;
+	real_t animInvalidAction = 0.0;
+	Uint32 animInvalidActionTicks = 0;
+	Uint32 updatedThisTick = 0;
+
+	bool calloutMenuIsOpen();
+	void drawCalloutMenu();
+	void initCalloutMenuGUICursor(bool openInventory);
+	void closeCalloutMenuGUI();
+	bool allowedInteractEntity(Entity& selectedEntity, bool updateInteractText = true);
+	void createParticleCallout(real_t x, real_t y, real_t z, Uint32 uid, CalloutCommand _cmd = CALLOUT_CMD_LOOK);
+	void createParticleCallout(Entity* entity, CalloutCommand _cmd = CALLOUT_CMD_LOOK);
+	static std::string getIconPathForCommand(CalloutCommand cmd, CalloutType type, bool highlight);
+	void setCalloutBannerText(Field* field, const char* iconName, Uint32 color, CalloutCommand cmd);
+	static CalloutType getCalloutTypeForUid(const int player, Uint32 uid);
+	static CalloutType getCalloutTypeForEntity(const int player, Entity* parent);
+	/*void selectNextFollower();
+	int numMonstersToDrawInParty();
+	void updateScrollPartySheet();
+	int optionDisabledForCreature(int playerSkillLVL, int monsterType, int option, Entity* follower);
+	bool allowedClassToggle(int monsterType);
+	bool allowedItemPickupToggle(int monsterType);
+	static bool allowedInteractFood(int monsterType);
+	static bool allowedInteractWorld(int monsterType);
+	bool allowedInteractItems(int monsterType);
+	bool attackCommandOnly(int monsterType);
+	void monsterGyroBotConvertCommand(int* option);
+	bool monsterGyroBotOnlyCommand(int option);
+	bool monsterGyroBotDisallowedCommands(int option);
+	bool isTinkeringFollower(int type);*/
+	void setPlayer(const int p) { gui_player = p; }
+	const int getPlayer() const { return gui_player; }
+	void update();
+};
+extern CalloutRadialMenu CalloutMenu[MAXPLAYERS];
 
 std::string getItemSpritePath(const int player, Item& item);
 

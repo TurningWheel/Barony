@@ -316,6 +316,7 @@ void openLogWindow(int player);
 void capitalizeString(std::string& str);
 void uppercaseString(std::string& str);
 void camelCaseString(std::string& str);
+bool stringStartsWithVowel(std::string& str);
 
 struct MinotaurWarning_t
 {

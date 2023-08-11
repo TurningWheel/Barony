@@ -62,6 +62,7 @@ void initGameDatafiles(bool moddedReload)
 	Player::CharacterSheet_t::loadCharacterSheetJSON();
 	StatusEffectQueue_t::loadStatusEffectsJSON();
 	FollowerRadialMenu::loadFollowerJSON();
+	CalloutRadialMenu::loadCalloutJSON();
 	MonsterData_t::loadMonsterDataJSON();
 	ScriptTextParser.readAllScripts();
 	ShopkeeperConsumables_t::readFromFile();
@@ -292,6 +293,7 @@ int initGame()
 			initClass(c);
 			GenericGUI[c].setPlayer(c);
 			FollowerMenu[c].setPlayer(c);
+			CalloutMenu[c].setPlayer(c);
 			cameras[c].winx = 0;
 			cameras[c].winy = 0;
 			cameras[c].winw = xres;

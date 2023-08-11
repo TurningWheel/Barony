@@ -7536,7 +7536,7 @@ void Player::Inventory_t::updateInventory()
 
 	if ( inputs.hasController(player) )
 	{
-		bool radialMenuOpen = FollowerMenu[player].followerMenuIsOpen();
+		bool radialMenuOpen = FollowerMenu[player].followerMenuIsOpen() || CalloutMenu[player].calloutMenuIsOpen();
 		if ( radialMenuOpen )
 		{
 			// do nothing?

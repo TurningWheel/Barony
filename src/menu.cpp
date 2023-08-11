@@ -9543,6 +9543,7 @@ void doNewGame(bool makeHighscore) {
 	{
 		// clear follower menu entities.
 		FollowerMenu[i].closeFollowerMenuGUI(true);
+		CalloutMenu[i].closeCalloutMenuGUI();
 	}
 	for ( int c = 0; c < NUMMONSTERS; c++ )
 	{
@@ -9699,6 +9700,7 @@ void doNewGame(bool makeHighscore) {
 			FollowerMenu[i].recentEntity = nullptr;
 			FollowerMenu[i].followerToCommand = nullptr;
 			FollowerMenu[i].entityToInteractWith = nullptr;
+			CalloutMenu[i].closeCalloutMenuGUI();
 		}
 
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -9972,6 +9974,7 @@ void doNewGame(bool makeHighscore) {
 			FollowerMenu[i].recentEntity = nullptr;
 			FollowerMenu[i].followerToCommand = nullptr;
 			FollowerMenu[i].entityToInteractWith = nullptr;
+			CalloutMenu[i].closeCalloutMenuGUI();
 		}
 
 		client_disconnected[0] = false;
@@ -10695,6 +10698,7 @@ void doEndgame(bool saveHighscore) {
 		FollowerMenu[i].recentEntity = nullptr;
 		FollowerMenu[i].followerToCommand = nullptr;
 		FollowerMenu[i].entityToInteractWith = nullptr;
+		CalloutMenu[i].closeCalloutMenuGUI();
 	}
 
 	// load menu level

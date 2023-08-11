@@ -299,7 +299,7 @@ void GameController::handleAnalog(int player)
 
 	//Right analog stick = look.
 
-	bool radialMenuOpen = FollowerMenu[player].followerMenuIsOpen();
+	bool radialMenuOpen = FollowerMenu[player].followerMenuIsOpen() || CalloutMenu[player].calloutMenuIsOpen();
 	if ( !radialMenuOpen )
 	{
 		consumeDpadDirToggle();
@@ -1210,6 +1210,7 @@ bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 		if ( player.bookGUI.bBookOpen || player.skillSheet.bSkillSheetOpen
 			|| player.signGUI.bSignOpen
 			|| FollowerMenu[player.playernum].followerMenuIsOpen()
+			|| CalloutMenu[player.playernum].calloutMenuIsOpen()
 			|| player.minimap.mapWindow || player.messageZone.logWindow )
 		{
 			return false;
@@ -3189,10 +3190,17 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 	real_t maxDist = 24.0;
 	real_t minDist = 4.0;
 
-	bool followerSelectInteract = false;
+	bool selectInteract = false;
+	bool callout = false;
 	if ( FollowerMenu[player.playernum].followerMenuIsOpen() && FollowerMenu[player.playernum].selectMoveTo )
 	{
-		followerSelectInteract = (FollowerMenu[player.playernum].optionSelected == ALLY_CMD_ATTACK_SELECT);
+		selectInteract = (FollowerMenu[player.playernum].optionSelected == ALLY_CMD_ATTACK_SELECT);
+		maxDist = 256;
+	}
+	else if ( CalloutMenu[player.playernum].calloutMenuIsOpen() && CalloutMenu[player.playernum].selectMoveTo )
+	{
+		selectInteract = (CalloutMenu[player.playernum].optionSelected == CalloutRadialMenu::CALLOUT_CMD_SELECT);
+		callout = true;
 		maxDist = 256;
 	}
 	else if ( parent 
@@ -3233,11 +3241,21 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 		real_t interactAngle = (PI / 8);
 		if ( parent )
 		{
-			if ( followerSelectInteract )
+			if ( selectInteract )
 			{
-				if ( !FollowerMenu[player.playernum].allowedInteractEntity(*parent, false) )
+				if ( FollowerMenu[player.playernum].followerMenuIsOpen() && FollowerMenu[player.playernum].selectMoveTo )
 				{
-					return 0.0;
+					if ( !FollowerMenu[player.playernum].allowedInteractEntity(*parent, false) )
+					{
+						return 0.0;
+					}
+				}
+				else if ( CalloutMenu[player.playernum].calloutMenuIsOpen() && CalloutMenu[player.playernum].selectMoveTo )
+				{
+					if ( !CalloutMenu[player.playernum].allowedInteractEntity(*parent, false) )
+					{
+						return 0.0;
+					}
 				}
 
 				Entity* ohitentity = hit.entity;
@@ -3251,8 +3269,12 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 				}
 				hit.entity = ohitentity;
 			}
+			else if ( parent->behavior == &actBoulderTrapHole )
+			{
+				return 0.0;
+			}
 
-			if ( !followerSelectInteract && stats[player.playernum] && stats[player.playernum]->defending )
+			if ( !selectInteract && stats[player.playernum] && stats[player.playernum]->defending )
 			{
 				if ( stats[player.playernum]->shield && stats[player.playernum]->shield->type == TOOL_TINKERING_KIT )
 				{
@@ -3314,8 +3336,15 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			{
 				dist = std::max(0.02, dist - 4.0); // bonus priority for goldbag
 			}
+			else if ( (parent->behavior == &actTorch || parent->behavior == &actCrystalShard) )
+			{
+				if ( callout )
+				{
+					dist += 8.0; // distance penalty when calling out
+				}
+			}
 
-			if ( followerSelectInteract )
+			if ( selectInteract )
 			{
 				if ( parent->behavior == &actMonster 
 					&& ((multiplayer != CLIENT && parent->checkEnemy(player.entity)) 
@@ -3348,7 +3377,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 		if ( (abs(tangent - playerYaw) < (interactAngle)) || (abs(tangent - playerYaw) > (2 * PI - interactAngle)) )
 		{
 			//messagePlayer(0, "%.2f", tangent - playerYaw);
-			if ( !followerSelectInteract )
+			if ( !selectInteract )
 			{
 				Entity* ohitentity = hit.entity;
 				real_t tangent2 = atan2(players[player.playernum]->entity->y - tooltip.y, players[player.playernum]->entity->x - tooltip.x);
@@ -3363,7 +3392,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 				return dist;
 			}
 
-			if ( followerSelectInteract )
+			if ( selectInteract )
 			{
 				// perform head pitch check
 				if ( false )
@@ -3413,6 +3442,65 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 					particle->y = previousy;
 					particle->z = 7.5;*/
 				}
+				else if ( parent && parent->behavior == &actBoulderTrapHole )
+				{
+					// more accurate line of sight, look up
+					real_t startx = cameras[player.playernum].x * 16.0;
+					real_t starty = cameras[player.playernum].y * 16.0;
+					real_t startz = cameras[player.playernum].z + (4.5 - cameras[player.playernum].z) / 2.0 + -2.5;
+					real_t pitch = cameras[player.playernum].vang;
+					if ( pitch < PI ) // looking down
+					{
+						return 0.0;
+					}
+
+					// draw line from the players height and direction until we hit the ground.
+					real_t previousx = startx;
+					real_t previousy = starty;
+					int index = 0;
+					const real_t yaw = cameras[player.playernum].ang;
+
+					bool onCeilingLayer = parent->z > -11.0 && parent->z < -10;
+					real_t endz = onCeilingLayer ? -8.0 : -8.0 - 16.0;
+					for ( ; startz > endz; startz -= abs((0.1) * tan(pitch)) )
+					{
+						startx += 0.1 * cos(yaw);
+						starty += 0.1 * sin(yaw);
+						const int index_x = static_cast<int>(startx) >> 4;
+						const int index_y = static_cast<int>(starty) >> 4;
+						index = (index_y)*MAPLAYERS + (index_x)*MAPLAYERS * map.height;
+						if ( !map.tiles[(OBSTACLELAYER) + index] )
+						{
+							// store the last known good coordinate
+							previousx = startx;// + 16 * cos(yaw);
+							previousy = starty;// + 16 * sin(yaw);
+						}
+						if ( map.tiles[OBSTACLELAYER + index] )
+						{
+							break;
+						}
+						if ( map.tiles[(OBSTACLELAYER + 1) + index] && !onCeilingLayer )
+						{
+							break;
+						}
+					}
+
+					Entity* particle = spawnMagicParticle(players[player.playernum]->entity);
+					particle->sprite = 942;
+					particle->x = previousx;
+					particle->y = previousy;
+					particle->z = startz;
+
+					real_t lookDist = sqrt(pow(previousx - players[player.playernum]->entity->x, 2) + pow(previousy - players[player.playernum]->entity->y, 2));
+					if ( abs(dist - lookDist) > 8.25 )
+					{
+						return 0.0; // looking at a tile on the ground more than x units away from the tooltip
+					}
+					else if ( abs(startz - endz) > 0.25 )
+					{
+						return 0.0; // if we're not fixated on the tile of the object return
+					}
+				}
 				else
 				{
 					// more accurate line of sight
@@ -3450,7 +3538,37 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 					}
 
 					real_t lookDist = sqrt(pow(previousx - players[player.playernum]->entity->x, 2) + pow(previousy - players[player.playernum]->entity->y, 2));
-					if ( lookDist < dist )
+					if ( callout )
+					{
+						if ( parent )
+						{
+							if ( cameras[player.playernum].vang > PI ) // looking above horizon
+							{
+								if ( parent->behavior == &actItem || parent->behavior == &actGoldBag
+									|| parent->behavior == &actSwitch || parent->behavior == &actSwitchWithTimer )
+								{
+									return 0.0;
+								}
+							}
+						}
+						if ( (lookDist < dist) )
+						{
+							if ( abs(dist - lookDist) > 16.0 )
+							{
+								return 0.0; // looking at a tile on the ground more than x units away from the tooltip
+							}
+						}
+						else if ( (parent->behavior == &actItem && parent->z > 4) || parent->behavior == &actGoldBag
+							|| parent->behavior == &actSwitch || parent->behavior == &actSwitchWithTimer )
+						{
+							if ( dist < 32.0 && abs(dist - lookDist) > 16.0
+								|| dist >= 32.0 && abs(dist - lookDist) > 24.0 )
+							{
+								return 0.0; // looking at a tile on the ground more than x units away from the tooltip
+							}
+						}
+					}
+					else if ( lookDist < dist )
 					{
 						if ( abs(dist - lookDist) > 24.0 )
 						{
@@ -3509,6 +3627,12 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 			&& FollowerMenu[player.playernum].optionSelected == ALLY_CMD_ATTACK_SELECT )
 		{
 			FollowerMenu[player.playernum].allowedInteractEntity(*parent, true);
+		}
+		else if ( CalloutMenu[player.playernum].calloutMenuIsOpen()
+			&& CalloutMenu[player.playernum].selectMoveTo
+			&& CalloutMenu[player.playernum].optionSelected == CalloutRadialMenu::CALLOUT_CMD_SELECT )
+		{
+			CalloutMenu[player.playernum].allowedInteractEntity(*parent, true);
 		}
 		else if ( parent->behavior == &actItem )
 		{
@@ -3951,6 +4075,7 @@ void Player::WorldUI_t::handleTooltips()
 		if ( !players[player]->isLocalPlayerAlive() )
 		{
 			players[player]->worldUI.reset();
+			players[player]->worldUI.tooltipView = Player::WorldUI_t::TooltipView::TOOLTIP_VIEW_RESCAN;
 			continue;
 		}
 		if ( players[player]->entity && players[player]->entity->ticks < TICKS_PER_SECOND / 2 )
@@ -3993,7 +4118,7 @@ void Player::WorldUI_t::handleTooltips()
 
 		bool foundTinkeringKit = false;
 		bool radialMenuOpen = FollowerMenu[player].followerMenuIsOpen();
-		bool followerSelectInteract = false;
+		bool selectInteract = false;
 		if ( radialMenuOpen )
 		{
 			// follower menu can be "open" but selectMoveTo == true means the GUI is closed and selecting move or interact.
@@ -4002,7 +4127,21 @@ void Player::WorldUI_t::handleTooltips()
 				radialMenuOpen = true;
 			}
 			radialMenuOpen = false;
-			followerSelectInteract = (FollowerMenu[player].optionSelected == ALLY_CMD_ATTACK_SELECT);
+			selectInteract = (FollowerMenu[player].optionSelected == ALLY_CMD_ATTACK_SELECT);
+		}
+		else
+		{
+			radialMenuOpen = CalloutMenu[player].calloutMenuIsOpen();
+			if ( radialMenuOpen )
+			{
+				// callout menu can be "open" but selectMoveTo == true means the GUI is closed and selecting interact.
+				if ( CalloutMenu[player].selectMoveTo == false )
+				{
+					radialMenuOpen = true;
+				}
+				radialMenuOpen = false;
+				selectInteract = (CalloutMenu[player].optionSelected == CalloutRadialMenu::CALLOUT_CMD_SELECT);
+			}
 		}
 
 		bool bDoingActionHideTooltips = false;
@@ -4043,7 +4182,7 @@ void Player::WorldUI_t::handleTooltips()
 			else
 			{
 				bDoingActionHideTooltips = true;
-				if ( FollowerMenu[player].selectMoveTo )
+				if ( FollowerMenu[player].selectMoveTo || CalloutMenu[player].selectMoveTo )
 				{
 					bDoingActionHideTooltips = false; // selecting follower target is OK if defending
 				}
@@ -4057,7 +4196,7 @@ void Player::WorldUI_t::handleTooltips()
 				players[player]->entity->yaw, STRIKERANGE, 0, true);
 			if ( hit.entity )
 			{
-				if ( hit.entity->behavior == &actMonster && followerSelectInteract )
+				if ( hit.entity->behavior == &actMonster && selectInteract )
 				{
 					// don't let hostile monsters get in the way of selection
 				}
@@ -4145,7 +4284,7 @@ void Player::WorldUI_t::handleTooltips()
 				if ( newDist > 0.01 )
 				{
 					players[player]->worldUI.tooltipsInRange.push_back(std::make_pair(tooltip, newDist));
-					if ( followerSelectInteract && parent && closestTooltip && parent->behavior != &actMonster )
+					if ( selectInteract && parent && closestTooltip && parent->behavior != &actMonster )
 					{
 						// follower interaction - monsters have higher priority than interactibles.
 						Entity* closestParent = uidToEntity(closestTooltip->parent);
@@ -4164,6 +4303,7 @@ void Player::WorldUI_t::handleTooltips()
 			if ( closestTooltip )
 			{
 				players[player]->worldUI.playerLastYaw = players[player]->entity->yaw;
+				players[player]->worldUI.playerLastPitch = players[player]->camera().vang;
 				while ( players[player]->worldUI.playerLastYaw >= 4 * PI )
 				{
 					players[player]->worldUI.playerLastYaw -= 2 * PI;
@@ -4171,6 +4311,14 @@ void Player::WorldUI_t::handleTooltips()
 				while ( players[player]->worldUI.playerLastYaw < 2 * PI )
 				{
 					players[player]->worldUI.playerLastYaw += 2 * PI;
+				}
+				while ( players[player]->worldUI.playerLastPitch >= 4 * PI )
+				{
+					players[player]->worldUI.playerLastPitch -= 2 * PI;
+				}
+				while ( players[player]->worldUI.playerLastPitch < 2 * PI )
+				{
+					players[player]->worldUI.playerLastPitch += 2 * PI;
 				}
 				players[player]->worldUI.setTooltipActive(*closestTooltip);
 			}
@@ -4208,6 +4356,16 @@ void Player::WorldUI_t::handleTooltips()
 				currentYaw += 2 * PI;
 			}
 			real_t yawDiff = players[player]->worldUI.playerLastYaw - currentYaw;
+			real_t currentPitch = players[player]->camera().vang;
+			while ( currentPitch >= 4 * PI )
+			{
+				currentPitch -= 2 * PI;
+			}
+			while ( currentPitch < 2 * PI )
+			{
+				currentPitch += 2 * PI;
+			}
+			real_t pitchDiff = players[player]->worldUI.playerLastPitch - currentPitch;
 			if ( inputs.hasController(player) )
 			{
 				real_t floatx = inputs.getController(player)->getLeftXPercent();
@@ -4230,10 +4388,19 @@ void Player::WorldUI_t::handleTooltips()
 					continue;
 				}
 			}
-			if ( abs(yawDiff) > PI / 16 )
+			if ( abs(yawDiff) > PI / 16 || abs(pitchDiff) > PI / 64 )
 			{
 				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
 				continue;
+			}
+			if ( selectInteract && CalloutMenu[player].calloutMenuIsOpen() )
+			{
+				if ( (players[player]->worldUI.playerLastPitch < PI && players[player]->camera().vang >= PI)
+					|| (players[player]->worldUI.playerLastPitch >= PI && players[player]->camera().vang < PI) )
+				{
+					players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
+					continue;
+				}
 			}
 			if ( FollowerMenu[player].selectMoveTo && FollowerMenu[player].optionSelected == ALLY_CMD_MOVETO_SELECT )
 			{
@@ -6369,6 +6536,7 @@ void Player::clearGUIPointers()
 	playerInventoryFrames[playernum].autosortFrame = nullptr;
 
 	FollowerMenu[playernum].followerFrame = nullptr;
+	CalloutMenu[playernum].calloutFrame = nullptr;
 }
 
 const char* Player::getAccountName() const {

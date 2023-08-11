@@ -1983,6 +1983,7 @@ static void changeLevel() {
 		FollowerMenu[i].recentEntity = nullptr;
 		FollowerMenu[i].followerToCommand = nullptr;
 		FollowerMenu[i].entityToInteractWith = nullptr;
+		CalloutMenu[i].closeCalloutMenuGUI();
 	}
 
 	// stop all sounds
@@ -2103,6 +2104,7 @@ static void changeLevel() {
 
 	// clear follower menu entities.
 	FollowerMenu[clientnum].closeFollowerMenuGUI(true);
+	CalloutMenu[clientnum].closeCalloutMenuGUI();
 
     // load map file
 	loading = true;

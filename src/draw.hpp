@@ -41,6 +41,25 @@ vec4_t project(
     const mat4x4_t* model,
     const mat4x4_t* projview,
     const vec4_t* window);
+struct ClipResult {
+    enum class Direction {
+        Invalid,
+        Left,
+        Right,
+        Top,
+        Bottom,
+        Front,
+        Behind,
+    };
+    Direction direction = Direction::Invalid;
+    bool isBehind = false;
+    vec4_t clipped_coords;
+};
+ClipResult project_clipped(
+    const vec4_t* world,
+    const mat4x4_t* model,
+    const mat4x4_t* projview,
+    const vec4_t* window);
 vec4_t unproject(
     const vec4_t* screenCoords,
     const mat4x4_t* model,

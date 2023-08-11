@@ -341,6 +341,28 @@ void camelCaseString(std::string& str)
 	}
 }
 
+bool stringStartsWithVowel(std::string& str)
+{
+	if ( str.size() < 1 ) { return false; }
+	switch ( str[0] )
+	{
+		case 'a':
+		case 'e':
+		case 'i':
+		case 'o':
+		case 'u':
+		case 'A':
+		case 'E':
+		case 'I':
+		case 'O':
+		case 'U':
+			return true;
+		default:
+			break;
+	}
+	return false;
+}
+
 std::string EnemyBarSettings_t::getEnemyBarSpriteName(Entity* entity)
 {
 	if ( !entity ) { return "default"; }
@@ -2571,7 +2593,8 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 				const int selectorAnimW = 4;
 				if ( titleSelectorGlyph )
 				{
-					if ( halfWidthBars || (!players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen())
+					if ( halfWidthBars 
+						|| (!players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() && !CalloutMenu[player].calloutMenuIsOpen())
 						|| followerDisplay.bCycleNextDisabled || list_Size(&stats[player]->FOLLOWERS) <= 1 )
 					{
 						titleSelectorGlyph->disabled = true;
@@ -2738,7 +2761,9 @@ void updateAllyFollowerFrame(const int player)
 		return;
 	}
 
-	if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() && players[player]->gui_mode != GUI_MODE_NONE )
+	if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() 
+		&& !CalloutMenu[player].calloutMenuIsOpen()
+		&& players[player]->gui_mode != GUI_MODE_NONE )
 	{
 		baseFrame->setOpacity(0.0);
 		baseFrame->setInheritParentFrameOpacity(false);
@@ -3251,7 +3276,9 @@ void updateAllyPlayerFrame(const int player)
 		return;
 	}
 
-	if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() && players[player]->gui_mode != GUI_MODE_NONE )
+	if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() 
+		&& !CalloutMenu[player].calloutMenuIsOpen()
+		&& players[player]->gui_mode != GUI_MODE_NONE )
 	{
 		baseFrame->setOpacity(0.0);
 		baseFrame->setInheritParentFrameOpacity(false);
@@ -3976,7 +4003,8 @@ void Player::HUD_t::updateUINavigation()
 
 	bShowUINavigation = false;
 	if ( player.gui_mode != GUI_MODE_NONE 
-		&& player.gui_mode != GUI_MODE_FOLLOWERMENU 
+		&& player.gui_mode != GUI_MODE_FOLLOWERMENU
+		&& player.gui_mode != GUI_MODE_CALLOUT
 		&& player.gui_mode != GUI_MODE_SIGN
 		&& player.isLocalPlayer() && !player.shootmode )
 	{
@@ -8349,6 +8377,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 	SDL_Rect promptPos{ player.camera_virtualWidth() / 2, player.camera_virtualHeight() / 2, 0, 0 };
 
 	FollowerRadialMenu& followerMenu = FollowerMenu[player.playernum];
+	CalloutRadialMenu& calloutMenu = CalloutMenu[player.playernum];
 
 	auto icon = worldTooltipFrame->findImage("icon img");
 	icon->disabled = true;
@@ -8386,10 +8415,14 @@ void Player::HUD_t::updateWorldTooltipPrompts()
         }
     }
 
-	if ( followerMenu.selectMoveTo && (followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
-		|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
+	bool followerInteract = followerMenu.selectMoveTo && (followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
+		|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT);
+	bool calloutInteract = calloutMenu.selectMoveTo && (calloutMenu.optionSelected == CalloutRadialMenu::CALLOUT_CMD_SELECT);
+
+	if ( followerInteract || calloutInteract )
 	{
 		bool forceBlankInteractText = false;
+		auto optionSelected = followerInteract ? followerMenu.optionSelected : calloutMenu.optionSelected;
 		if ( !player.worldUI.isEnabled() )
 		{
 			cursor->path = "#*images/ui/Crosshairs/cursor_xB.png";
@@ -8407,7 +8440,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		}
 		else
 		{
-			if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
+			if ( optionSelected == ALLY_CMD_MOVETO_SELECT )
 			{
 				cursor->path = "#*images/ui/Crosshairs/cursor_xB.png";
 				if ( auto imgGet = Image::get(cursor->path.c_str()) )
@@ -8596,7 +8629,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		}
 		
 
-		if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
+		if ( followerInteract && optionSelected == ALLY_CMD_MOVETO_SELECT )
 		{
 			if ( followerMenu.followerToCommand
 				&& (followerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT
@@ -8632,35 +8665,51 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		}
 		else
 		{
-			if ( !strcmp(followerMenu.interactText, "") || forceBlankInteractText )
+			if ( followerInteract )
 			{
-				if ( followerMenu.followerToCommand )
+				if ( !strcmp(followerMenu.interactText, "") || forceBlankInteractText )
 				{
-					int type = followerMenu.followerToCommand->getMonsterTypeFromSprite();
-					if ( followerMenu.allowedInteractItems(type)
-						|| followerMenu.allowedInteractFood(type)
-						|| followerMenu.allowedInteractWorld(type)
-						)
+					if ( followerMenu.followerToCommand )
 					{
-						text->setDisabled(false);
-						text->setText(Language::get(4041)); // "Interact with..."
+						int type = followerMenu.followerToCommand->getMonsterTypeFromSprite();
+						if ( followerMenu.allowedInteractItems(type)
+							|| followerMenu.allowedInteractFood(type)
+							|| followerMenu.allowedInteractWorld(type)
+							)
+						{
+							text->setDisabled(false);
+							text->setText(Language::get(4041)); // "Interact with..."
+						}
+						else
+						{
+							text->setDisabled(false);
+							text->setText(Language::get(4042)); // "Attack..."
+						}
 					}
 					else
 					{
 						text->setDisabled(false);
-						text->setText(Language::get(4042)); // "Attack..."
+						text->setText(Language::get(4041)); // "Interact with..."
 					}
 				}
 				else
 				{
 					text->setDisabled(false);
-					text->setText(Language::get(4041)); // "Interact with..."
+					text->setText(followerMenu.interactText);
 				}
 			}
-			else
+			else if ( calloutInteract )
 			{
-				text->setDisabled(false);
-				text->setText(followerMenu.interactText);
+				if ( !strcmp(calloutMenu.interactText, "") || forceBlankInteractText )
+				{
+					text->setDisabled(false);
+					text->setText(Language::get(4348)); // "Call out..."
+				}
+				else
+				{
+					text->setDisabled(false);
+					text->setText(calloutMenu.interactText);
+				}
 			}
 		}
 
@@ -9350,7 +9399,9 @@ void Player::HUD_t::updateActionPrompts()
 				continue;
 			}
 
-			if ( player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU || player.gui_mode == GUI_MODE_SIGN )
+			if ( player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU 
+				|| player.gui_mode == GUI_MODE_SIGN
+				|| player.gui_mode == GUI_MODE_CALLOUT )
 			{
 				promptText->setDisabled(true);
 			}
@@ -9438,7 +9489,9 @@ void Player::HUD_t::updateActionPrompts()
 			}
 			glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding(bindingName.c_str(), pressed);
 			glyph->disabled = prompt->isDisabled();
-			if ( !player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU || player.gui_mode == GUI_MODE_SIGN )
+			if ( !player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU 
+				|| player.gui_mode == GUI_MODE_SIGN
+				|| player.gui_mode == GUI_MODE_CALLOUT )
 			{
 				glyph->disabled = true;
 			}
@@ -9573,6 +9626,132 @@ static void checkControllerState(int player) {
     controllerFrame->setHollow(true);
 }
 
+void drawCallouts(const int playernum)
+{
+	for ( auto& callout : CalloutMenu[playernum].callouts )
+	{
+		std::string iconPath = CalloutRadialMenu::getIconPathForCommand(callout.second.cmd, callout.second.type,
+			true);
+		if ( iconPath == "" )
+		{
+			continue;
+		}
+
+		vec4_t v;
+		mat4x4_t m, t;
+
+		auto camera = &cameras[playernum];
+		auto& player = players[playernum];
+
+		const int offset = 40;
+		int leftOfWindow = player->camera_virtualx1() + offset;
+		int rightOfWindow = player->camera_virtualx1() + player->camera_virtualWidth() - offset;
+		int topOfWindow = player->camera_virtualy1() + offset;
+		int bottomOfWindow = player->camera_virtualy2() - offset;
+
+		mat4x4_t id;
+		vec4_t world{ (float)callout.second.x * 2.f, -(float)callout.second.z * 2.f, (float)callout.second.y * 2.f, 1.f };
+		vec4_t window2{ (float)0, (float)0,
+			(float)player->camera_virtualWidth(), (float)player->camera_virtualHeight() };
+		SDL_Rect dest{ 0, 0, 0, 0 };
+		if ( callout.second.lockOnScreen )
+		{
+			auto screen_position = project_clipped(&world, &id, &camera->projview, &window2);
+			dest = SDL_Rect{ player->camera_virtualx1() + (int)screen_position.clipped_coords.x,
+				player->camera_virtualy1() + Frame::virtualScreenY - (Frame::virtualScreenY - player->camera_virtualHeight()) - (int)screen_position.clipped_coords.y,
+			14, 22 };
+			if ( !screen_position.isBehind
+				&& (screen_position.direction == ClipResult::Direction::Front
+					|| screen_position.direction == ClipResult::Direction::Invalid) )
+			{
+				callout.second.lockOnScreen = false;
+			}
+
+			dest.x = std::min(rightOfWindow, std::max(leftOfWindow, dest.x));
+			dest.y = std::min(bottomOfWindow, std::max(topOfWindow, dest.y));
+			real_t tangent = atan2(camera->y * 32.0 - world.z, camera->x * 32.0 - world.x);
+			real_t camang = camera->ang;
+			while ( tangent >= 2 * PI )
+			{
+				tangent -= PI * 2;
+			}
+			while ( tangent < 0 )
+			{
+				tangent += PI * 2;
+			}
+			while ( camang >= 2 * PI )
+			{
+				camang -= PI * 2;
+			}
+			while ( camang < 0 )
+			{
+				camang += PI * 2;
+			}
+			real_t result = tangent - camang;
+			while ( result >= PI )
+			{
+				result -= PI * 2;
+			}
+			while ( result < -PI )
+			{
+				result += PI * 2;
+			}
+			//messagePlayer(player->playernum, MESSAGE_DEBUG, "%f", ((PI - abs(abs(tangent - camang) - PI)) * 2));
+			//messagePlayer(player->playernum, MESSAGE_DEBUG, "%f", result);
+			if ( result >= 0.0 && result < PI / 2 )
+			{
+				dest.x = leftOfWindow;
+			}
+			else if ( result < 0.0 && result > -PI / 2 )
+			{
+				dest.x = rightOfWindow;
+			}
+
+			if ( abs(result) < (3 * PI / 4) )
+			{
+				real_t mult = std::min(1.0, ((3 * PI / 4) - abs(result)) / (PI / 2));
+				dest.y += ((player->camera_virtualHeight() / 2) - dest.y) * mult;
+			}
+		}
+		else
+		{
+			auto screen_position = project(&world, &id, &camera->projview, &window2);
+			if ( screen_position.z >= 1.0 || screen_position.z < 0.0 )
+			{
+				continue;
+			}
+			dest = SDL_Rect{ player->camera_virtualx1() + (int)screen_position.x,
+				player->camera_virtualy1() + Frame::virtualScreenY - (Frame::virtualScreenY - player->camera_virtualHeight()) -
+				(int)screen_position.y,
+			14, 22 };
+		}
+
+		real_t lifePercent = callout.second.ticks / (real_t)CalloutRadialMenu::CalloutParticle_t::kParticleLifetime;
+		Uint32 alpha = 255;
+		if ( lifePercent >= 0.8 )
+		{
+			alpha -= std::min((Uint32)255, (Uint32)(255 * (lifePercent - 0.8) / 0.2));
+		}
+		Uint32 color = makeColor(255, 255, 255, alpha);
+		SDL_Rect iconPos = dest;
+		if ( auto image = Image::get(iconPath.c_str()) )
+		{
+			iconPos.w = image->getWidth();
+			iconPos.h = image->getHeight();
+			iconPos.x -= iconPos.w / 2;
+			iconPos.y -= iconPos.h;
+			image->drawColor(nullptr, iconPos,
+				SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY }, color);
+		}
+
+		dest.x -= dest.w / 2;
+		dest.y -= dest.h / 2;
+		auto image = Image::get("*#images/ui/CalloutWheel/WorldIcons/cmd_playertagRed_sm.png");
+		image->drawColor(nullptr, dest,
+			SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY }, color);
+	}
+}
+
 void Player::HUD_t::processHUD()
 {
 	const SDL_Rect hudSize{
@@ -9589,6 +9768,9 @@ void Player::HUD_t::processHUD()
 		hudFrame->setHollow(true);
 		hudFrame->setBorder(0);
 		hudFrame->setOwner(player.playernum);
+		hudFrame->setDrawCallback([](const Widget& widget, SDL_Rect rect) {
+			drawCallouts(widget.getOwner());
+		});
 	}
 
 	if ( !minotaurSharedDisplay && player.playernum == 0 )
@@ -26103,6 +26285,7 @@ void Player::HUD_t::updateGameTimer()
 	bool overrideGameTimerSetting = false;
 	if ( splitscreen && !(player.bUseCompactGUIHeight() && player.bUseCompactGUIWidth())
 		&& !player.shootmode && !FollowerMenu[player.playernum].followerMenuIsOpen()
+		&& !CalloutMenu[player.playernum].calloutMenuIsOpen()
 		&& player.gui_mode != GUI_MODE_NONE )
 	{
 		if ( compactLayoutMode == COMPACT_LAYOUT_INVENTORY || player.bUseCompactGUIWidth() )
@@ -26219,7 +26402,8 @@ void Player::HUD_t::updateXPBar()
 	{
 		tempHideXP = true;
 	}
-	else if ( (player.gui_mode == GUI_MODE_FOLLOWERMENU || player.minimap.mapWindow || player.messageZone.logWindow)
+	else if ( (player.gui_mode == GUI_MODE_FOLLOWERMENU || player.gui_mode == GUI_MODE_CALLOUT
+		|| player.minimap.mapWindow || player.messageZone.logWindow)
 		&& player.bUseCompactGUIHeight() )
 	{
 		tempHideXP = true;
@@ -28893,6 +29077,7 @@ void Player::Hotbar_t::updateHotbar()
 	bool tempHideHotbar = false;
 	if ( player.bUseCompactGUIHeight()
 		&& (player.gui_mode == GUI_MODE_FOLLOWERMENU
+			|| player.gui_mode == GUI_MODE_CALLOUT
 			|| (player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET && !player.shootmode)
 			|| (player.gui_mode == GUI_MODE_MAGIC)
 			|| (player.shopGUI.bOpen)
@@ -28966,7 +29151,8 @@ void Player::Hotbar_t::updateHotbar()
 	hotbarStartY1 += animHide * abs(getHotbarStartY1());
 	hotbarStartY2 += animHide * abs(getHotbarStartY1());
 
-	if ( !player.shootmode || FollowerMenu[player.playernum].followerMenuIsOpen() )
+	if ( !player.shootmode || FollowerMenu[player.playernum].followerMenuIsOpen()
+		|| CalloutMenu[player.playernum].calloutMenuIsOpen() )
 	{
         if (player.hotbar.useHotbarFaceMenu)
         {
@@ -33542,8 +33728,8 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 	{
 		if ( bOpen )
 		{
-		slider->setDisabled(false);
-	}
+			slider->setDisabled(false);
+		}
 		else
 		{
 			slider->setDisabled(true);

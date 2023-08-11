@@ -166,7 +166,9 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 				}
 				if ( players[player]->worldUI.bTooltipActiveForPlayer(*tooltip) )
 				{
-					if ( tooltip->worldTooltipRequiresButtonHeld == 1 && *MainMenu::cvar_hold_to_activate )
+					if ( tooltip->worldTooltipRequiresButtonHeld == 1 
+						&& *MainMenu::cvar_hold_to_activate
+						&& clicktype != ENTITY_CLICK_CALLOUT )
 					{
 						if ( input.binaryHeldToggle("Use") )
 						{
@@ -196,7 +198,8 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 		}
 	}
 
-	if ( !entity && !mute_player_monster_sounds && !clickCheckOverride )
+	if ( !entity && !mute_player_monster_sounds && !clickCheckOverride 
+		&& clicktype != ENTITY_CLICK_CALLOUT )
 	{
 		if ( players[player] && players[player]->entity && players[player]->movement.monsterEmoteGimpTimer == 0 )
 		{

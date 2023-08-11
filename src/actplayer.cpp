@@ -4042,6 +4042,7 @@ void actPlayer(Entity* my)
 
 		bool shootmode = players[PLAYER_NUM]->shootmode;
 		FollowerRadialMenu& followerMenu = FollowerMenu[PLAYER_NUM];
+		CalloutRadialMenu& calloutMenu = CalloutMenu[PLAYER_NUM];
 
 		// object interaction
 		if ( intro == false )
@@ -4101,8 +4102,9 @@ void actPlayer(Entity* my)
 			}
 
 			Input& input = Input::inputs[PLAYER_NUM];
+			auto& b = (multiplayer != SINGLE && PLAYER_NUM != 0) ? Input::inputs[0].getBindings() : input.getBindings();
 
-			if ( followerMenu.followerToCommand == nullptr && followerMenu.selectMoveTo == false )
+			if ( !followerMenu.followerMenuIsOpen() && !calloutMenu.calloutMenuIsOpen() )
 			{
 				bool clickedOnGUI = false;
 
@@ -4173,7 +4175,7 @@ void actPlayer(Entity* my)
 					selectedEntity[PLAYER_NUM] = nullptr;
 				}
 			}
-			else
+			else if ( followerMenu.followerMenuIsOpen() )
 			{
 				selectedEntity[PLAYER_NUM] = NULL;
 
@@ -4284,6 +4286,8 @@ void actPlayer(Entity* my)
 							if ( players[PLAYER_NUM]->worldUI.isEnabled() )
 							{
 								players[PLAYER_NUM]->worldUI.reset();
+								players[PLAYER_NUM]->worldUI.tooltipView = Player::WorldUI_t::TooltipView::TOOLTIP_VIEW_RESCAN;
+								players[PLAYER_NUM]->worldUI.gimpDisplayTimer = 0;
 							}
 
 							followerMenu.selectMoveTo = false;
@@ -4292,9 +4296,217 @@ void actPlayer(Entity* my)
 					}
 				}
 			}
+			else if ( calloutMenu.calloutMenuIsOpen() )
+			{
+				selectedEntity[PLAYER_NUM] = NULL;
+				// TODO CALLOUT?
+				if ( !players[PLAYER_NUM]->usingCommand() && players[PLAYER_NUM]->bControlEnabled && !gamePaused && input.binaryToggle("Use") )
+				{
+					if ( !calloutMenu.menuToggleClick && calloutMenu.selectMoveTo )
+					{
+						if ( calloutMenu.optionSelected == CalloutRadialMenu::CALLOUT_CMD_SELECT )
+						{
+							// we're selecting a target for the ally.
+							Entity* target = entityClicked(nullptr, false, PLAYER_NUM, EntityClickType::ENTITY_CLICK_CALLOUT);
+							input.consumeBinaryToggle("Use");
+							//input.consumeBindingsSharedWithBinding("Use");
+							if ( target )
+							{
+								Entity* parent = uidToEntity(target->skill[2]);
+								if ( target->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
+								{
+									// see if we selected a limb
+									if ( parent )
+									{
+										target = parent;
+									}
+								}
+								else if ( target->sprite == 184 || target->sprite == 585 ) // switch base.
+								{
+									parent = uidToEntity(target->parent);
+									if ( parent )
+									{
+										target = parent;
+									}
+								}
+								if ( true /*&& calloutMenu.allowedInteractEntity(*target)*/ )
+								{
+									calloutMenu.createParticleCallout(target);
+									/*calloutMenu.holdWheel = false;
+									calloutMenu.selectMoveTo = false;
+									calloutMenu.bOpen = true;
+									calloutMenu.optionSelected = ALLY_CMD_CANCEL;
+									calloutMenu.initCalloutMenuGUICursor(true);
+									Player::soundActivate();*/
+								}
+							}
+
+							if ( players[PLAYER_NUM]->worldUI.isEnabled() )
+							{
+								players[PLAYER_NUM]->worldUI.reset();
+								players[PLAYER_NUM]->worldUI.tooltipView = Player::WorldUI_t::TooltipView::TOOLTIP_VIEW_RESCAN;
+							}
+
+							calloutMenu.closeCalloutMenuGUI();
+							strcpy(calloutMenu.interactText, "");
+						}
+					}
+				}
+			}
+
+			bool skipFollowerMenu = false;
+			if ( !players[PLAYER_NUM]->usingCommand() && players[PLAYER_NUM]->bControlEnabled
+				&& !gamePaused )
+			{
+				bool showCalloutCommandsOnGamepad = false;
+				auto showCalloutCommandsFind = b.find("Show Player Callouts");
+				std::string showCalloutCommandsInputStr = "";
+				if ( showCalloutCommandsFind != b.end() )
+				{
+					showCalloutCommandsOnGamepad = (*showCalloutCommandsFind).second.isBindingUsingGamepad();
+					showCalloutCommandsInputStr = (*showCalloutCommandsFind).second.input;
+				}
+
+				if ( players[PLAYER_NUM]->worldUI.bTooltipInView && players[PLAYER_NUM]->worldUI.tooltipsInRange.size() > 1 )
+				{
+					if ( showCalloutCommandsOnGamepad &&
+						(showCalloutCommandsInputStr == input.binding("Interact Tooltip Next")
+							|| showCalloutCommandsInputStr == input.binding("Interact Tooltip Prev")) )
+					{
+						input.consumeBinaryToggle("Show Player Callouts");
+						players[PLAYER_NUM]->hud.followerDisplay.bOpenFollowerMenuDisabled = true;
+					}
+				}
+
+				if ( (input.binaryToggle("Show Player Callouts") && !showCalloutCommandsOnGamepad)
+					|| (input.binaryToggle("Show Player Callouts") && showCalloutCommandsOnGamepad
+						&& players[PLAYER_NUM]->shootmode /*&& !players[PLAYER_NUM]->worldUI.bTooltipInView*/) )
+				{
+					if ( !calloutMenu.bOpen && !calloutMenu.selectMoveTo )
+					{
+						if ( !players[PLAYER_NUM]->shootmode )
+						{
+							players[PLAYER_NUM]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_CALLOUTGUI);
+						}
+						input.consumeBinaryToggle("Show Player Callouts");
+						calloutMenu.selectMoveTo = true;
+						calloutMenu.optionSelected = CalloutRadialMenu::CALLOUT_CMD_SELECT;
+						calloutMenu.lockOnEntityUid = 0;
+						Player::soundActivate();
+						skipFollowerMenu = true;
+
+						if ( players[PLAYER_NUM]->worldUI.isEnabled() )
+						{
+							players[PLAYER_NUM]->worldUI.reset();
+							players[PLAYER_NUM]->worldUI.tooltipView = Player::WorldUI_t::TooltipView::TOOLTIP_VIEW_RESCAN;
+							players[PLAYER_NUM]->worldUI.gimpDisplayTimer = 0;
+						}
+					}
+					else if ( calloutMenu.selectMoveTo )
+					{
+						// we're selecting a target for the ally.
+						Entity* target = entityClicked(nullptr, true, PLAYER_NUM, EntityClickType::ENTITY_CLICK_CALLOUT);
+
+						if ( target )
+						{
+							Entity* parent = uidToEntity(target->skill[2]);
+							if ( target->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
+							{
+								// see if we selected a limb
+								if ( parent )
+								{
+									target = parent;
+								}
+							}
+							else if ( target->sprite == 184 || target->sprite == 585 ) // switch base.
+							{
+								parent = uidToEntity(target->parent);
+								if ( parent )
+								{
+									target = parent;
+								}
+							}
+
+							calloutMenu.holdWheel = true;
+							if ( showCalloutCommandsOnGamepad )
+							{
+								calloutMenu.holdWheel = false;
+							}
+							skipFollowerMenu = true;
+							calloutMenu.selectMoveTo = false;
+							calloutMenu.bOpen = true;
+							calloutMenu.initCalloutMenuGUICursor(true);
+							Player::soundActivate();
+							calloutMenu.lockOnEntityUid = target->getUID();
+						}
+						else
+						{
+							// we're selecting a point in the world
+							if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity )
+							{
+								real_t startx = cameras[PLAYER_NUM].x * 16.0;
+								real_t starty = cameras[PLAYER_NUM].y * 16.0;
+								static ConsoleVariable<float> cvar_followerStartZ("/follower_start_z", -2.5);
+								real_t startz = cameras[PLAYER_NUM].z + (4.5 - cameras[PLAYER_NUM].z) / 2.0 + *cvar_followerStartZ;
+								real_t pitch = cameras[PLAYER_NUM].vang;
+								if ( pitch < 0 || pitch > PI )
+								{
+									pitch = 0;
+								}
+
+								static ConsoleVariable<float> cvar_followerMoveTo("/follower_moveto_z", 0.1);
+								static ConsoleVariable<float> cvar_followerStartZLimit("/follower_start_z_limit", 7.5);
+								// draw line from the players height and direction until we hit the ground.
+								real_t previousx = startx;
+								real_t previousy = starty;
+								int index = 0;
+								const real_t yaw = cameras[PLAYER_NUM].ang;
+								for ( ; startz < *cvar_followerStartZLimit; startz += abs((*cvar_followerMoveTo) * tan(pitch)) )
+								{
+									startx += 0.1 * cos(yaw);
+									starty += 0.1 * sin(yaw);
+									const int index_x = static_cast<int>(startx) >> 4;
+									const int index_y = static_cast<int>(starty) >> 4;
+									index = (index_y)*MAPLAYERS + (index_x)*MAPLAYERS * map.height;
+									if ( map.tiles[index] && !map.tiles[OBSTACLELAYER + index] )
+									{
+										// store the last known good coordinate
+										previousx = startx;// + 16 * cos(yaw);
+										previousy = starty;// + 16 * sin(yaw);
+									}
+									if ( map.tiles[OBSTACLELAYER + index] )
+									{
+										break;
+									}
+								}
+
+								calloutMenu.holdWheel = true;
+								if ( showCalloutCommandsOnGamepad )
+								{
+									calloutMenu.holdWheel = false;
+								}
+								skipFollowerMenu = true;
+								calloutMenu.selectMoveTo = false;
+								calloutMenu.bOpen = true;
+								calloutMenu.lockOnEntityUid = 0;
+								calloutMenu.moveToX = previousx;
+								calloutMenu.moveToY = previousy;
+								calloutMenu.initCalloutMenuGUICursor(true);
+								Player::soundActivate();
+							}
+							else
+							{
+								calloutMenu.closeCalloutMenuGUI();
+							}
+						}
+					}
+				}
+			}
+
 
 			if ( !players[PLAYER_NUM]->usingCommand() && players[PLAYER_NUM]->bControlEnabled
 				&& !gamePaused
+				&& !skipFollowerMenu
 				&& !followerMenu.followerToCommand && followerMenu.recentEntity )
 			{
 				auto& b = (multiplayer != SINGLE && PLAYER_NUM != 0) ? Input::inputs[0].getBindings() : input.getBindings();

@@ -1813,13 +1813,13 @@ public:
 		bool bEnabled = true;
 		static const int UID_TOOLTIP_ACTIVE = -21;
 		static const int UID_TOOLTIP_DISABLED = -20;
+	public:
 		enum TooltipView
 		{
 			TOOLTIP_VIEW_FREE,
 			TOOLTIP_VIEW_LOCKED,
 			TOOLTIP_VIEW_RESCAN
 		};
-	public:
 		struct WorldTooltipItem_t
 		{
 			Player& player;
@@ -1951,6 +1951,7 @@ public:
 		std::vector<std::pair<Entity*, real_t>> tooltipsInRange;
 		static real_t tooltipHeightOffsetZ;
 		real_t playerLastYaw = 0.0;
+		real_t playerLastPitch = 0.0;
 		int gimpDisplayTimer = 0;
 		void reset();
 		void setTooltipActive(Entity& tooltip);

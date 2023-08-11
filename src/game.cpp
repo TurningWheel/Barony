@@ -1851,6 +1851,7 @@ void gameLogic(void)
 						FollowerMenu[i].recentEntity = nullptr;
 						FollowerMenu[i].followerToCommand = nullptr;
 						FollowerMenu[i].entityToInteractWith = nullptr;
+						CalloutMenu[i].closeCalloutMenuGUI();
 					}
 
 					// stop all sounds
@@ -2113,6 +2114,7 @@ void gameLogic(void)
 						if ( players[i]->isLocalPlayer() )
 						{
 							FollowerMenu[i].closeFollowerMenuGUI(true);
+							CalloutMenu[i].closeCalloutMenuGUI();
 						}
 						players[i]->hud.followerBars.clear();
 					}
@@ -5085,7 +5087,8 @@ void ingameHud()
 						}
 						if ( !shootmode ) // check we dont conflict with system bindings
 						{
-							if ( players[player]->messageZone.logWindow || players[player]->minimap.mapWindow || FollowerMenu[player].followerMenuIsOpen() )
+							if ( players[player]->messageZone.logWindow || players[player]->minimap.mapWindow 
+								|| FollowerMenu[player].followerMenuIsOpen() || CalloutMenu[player].calloutMenuIsOpen() )
 							{
 								allowCasting = false;
 							}
@@ -5110,7 +5113,7 @@ void ingameHud()
 						}
 						else
 						{
-							if ( FollowerMenu[player].followerMenuIsOpen() )
+							if ( FollowerMenu[player].followerMenuIsOpen() || CalloutMenu[player].calloutMenuIsOpen() )
 							{
 								if ( castMemorizedSpell )
 								{
@@ -5353,6 +5356,7 @@ void ingameHud()
 		players[player]->messageZone.processChatbox();
 		updateSkillUpFrame(player);
 		updateLevelUpFrame(player);
+		CalloutMenu[player].update();
 		players[player]->inventoryUI.updateSelectedItemAnimation();
 		players[player]->inventoryUI.updateInventoryItemTooltip();
 		players[player]->inventoryUI.updateInventoryMiscTooltip();
@@ -6013,6 +6017,7 @@ static void doConsoleCommands() {
 		for (int i = 0; i < MAXPLAYERS; ++i) {
 			if (players[i]->isLocalPlayer() && inputs.bPlayerUsingKeyboardControl(i)) {
 				FollowerMenu[i].closeFollowerMenuGUI();
+				CalloutMenu[i].closeCalloutMenuGUI();
 			}
 		}
 	}
@@ -6603,6 +6608,7 @@ int main(int argc, char** argv)
 						FollowerMenu[i].recentEntity = nullptr;
 						FollowerMenu[i].followerToCommand = nullptr;
 						FollowerMenu[i].entityToInteractWith = nullptr;
+						CalloutMenu[i].closeCalloutMenuGUI();
 					}
 
 					// black background
