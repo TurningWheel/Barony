@@ -406,6 +406,138 @@ vec4_t project(
 	return result;
 }
 
+ClipResult project_clipped(
+    const vec4_t* world,
+    const mat4x4_t* model,
+    const mat4x4_t* projview,
+    const vec4_t* window
+) {
+    ClipResult clipResult;
+    vec4_t& result = clipResult.clipped_coords;
+    result = *world; result.w = 1.f;
+    clipResult.isBehind = false;
+
+    vec4 copy;
+    copy = vec4_copy(&result); mul_mat_vec4(&result, model, &copy);
+    copy = vec4_copy(&result); mul_mat_vec4(&result, projview, &copy);
+
+    float w = result.w;
+    if ( w < CLIPNEAR ) {
+        w = CLIPNEAR;
+        result.x *= CLIPFAR;
+        result.y *= CLIPFAR;
+        if ( result.z < -w ) {
+            clipResult.direction = ClipResult::Direction::Behind;
+            clipResult.isBehind = true;
+        }
+    }
+    if ( result.x > w ) {
+        const float factor = w / result.x;
+        pow_vec4(&result, &result, factor);
+        clipResult.direction = ClipResult::Direction::Right;
+    }
+    else if ( result.x < -w ) {
+        const float factor = -w / result.x;
+        pow_vec4(&result, &result, factor);
+        clipResult.direction = ClipResult::Direction::Left;
+    }
+    if ( result.y > w ) {
+        const float factor = w / result.y;
+        pow_vec4(&result, &result, factor);
+        clipResult.direction = ClipResult::Direction::Top;
+    }
+    else if ( result.y < -w ) {
+        const float factor = -w / result.y;
+        pow_vec4(&result, &result, factor);
+        clipResult.direction = ClipResult::Direction::Bottom;
+    }
+    if ( result.z > w ) {
+        const float factor = w / result.z;
+        pow_vec4(&result, &result, factor);
+        clipResult.direction = ClipResult::Direction::Front;
+    }
+    else if ( result.z < -w ) {
+        const float factor = -w / result.z;
+        pow_vec4(&result, &result, factor);
+        clipResult.direction = ClipResult::Direction::Behind;
+        clipResult.isBehind = true;
+    }
+
+    vec4 half(0.5f);
+    vec4 div(w);
+    div_vec4(&result, &result, &div);
+    mul_vec4(&result, &result, &half);
+    add_vec4(&result, &result, &half);
+    result.x = result.x * window->z + window->x;
+    result.y = result.y * window->w + window->y;
+    return clipResult;
+}
+
+ClipResult project_clipped2(
+    const vec4_t* world,
+    const mat4x4_t* model,
+    const mat4x4_t* projview,
+    const vec4_t* window
+) {
+    ClipResult clipResult;
+    vec4_t& result = clipResult.clipped_coords;
+    result = *world; result.w = 1.f;
+    clipResult.isBehind = false;
+
+    vec4 copy;
+    copy = vec4_copy(&result); mul_mat_vec4(&result, model, &copy);
+    copy = vec4_copy(&result); mul_mat_vec4(&result, projview, &copy);
+
+    float w = result.w;
+    if ( w < CLIPNEAR ) {
+        w = CLIPNEAR;
+        if ( result.z < -w ) {
+            clipResult.direction = ClipResult::Direction::Behind;
+            clipResult.isBehind = true;
+        }
+    }
+    if ( result.x > w ) {
+        const float factor = w / result.x;
+        pow_vec4(&result, &result, factor);
+        clipResult.direction = ClipResult::Direction::Right;
+    }
+    else if ( result.x < -w ) {
+        const float factor = -w / result.x;
+        pow_vec4(&result, &result, factor);
+        clipResult.direction = ClipResult::Direction::Left;
+    }
+    if ( result.y > w ) {
+        const float factor = w / result.y;
+        pow_vec4(&result, &result, factor);
+        clipResult.direction = ClipResult::Direction::Top;
+    }
+    else if ( result.y < -w ) {
+        const float factor = -w / result.y;
+        pow_vec4(&result, &result, factor);
+        clipResult.direction = ClipResult::Direction::Bottom;
+    }
+    if ( result.z > w ) {
+        const float factor = w / result.z;
+        pow_vec4(&result, &result, factor);
+        clipResult.direction = ClipResult::Direction::Front;
+    }
+    else if ( result.z < -w ) {
+        const float factor = -w / result.z;
+        pow_vec4(&result, &result, factor);
+        clipResult.direction = ClipResult::Direction::Behind;
+        clipResult.isBehind = true;
+    }
+
+    vec4 half(0.5f);
+    vec4 div(w);
+    div_vec4(&result, &result, &div);
+    mul_vec4(&result, &result, &half);
+    add_vec4(&result, &result, &half);
+    result.x = result.x * window->z + window->x;
+    result.y = result.y * window->w + window->y;
+    return clipResult;
+}
+
 vec4_t unproject(
 	const vec4_t* screenCoords,
 	const mat4x4_t* model,

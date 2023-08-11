@@ -533,16 +533,16 @@ void createCommonDrawResources() {
         sprite_vertex_glsl, sizeof(sprite_vertex_glsl),
         sprite_dithered_fragment_glsl, sizeof(sprite_dithered_fragment_glsl));
     
-    static const char sprite_bright_vertex_glsl[] =
-        "in vec3 iPosition;"
-        "in vec2 iTexCoord;"
-        "uniform mat4 uProj;"
-        "uniform mat4 uView;"
-        "uniform mat4 uModel;"
-        "out vec2 TexCoord;"
-    
-        "void main() {"
-        "gl_Position = uProj * uView * uModel * vec4(iPosition, 1.0);"
+	static const char sprite_bright_vertex_glsl[] =
+		"in vec3 iPosition;"
+		"in vec2 iTexCoord;"
+		"uniform mat4 uProj;"
+		"uniform mat4 uView;"
+		"uniform mat4 uModel;"
+		"out vec2 TexCoord;"
+
+		"void main() {"
+		"gl_Position = uProj * uView * uModel * vec4(iPosition, 1.0);"
         "TexCoord = iTexCoord;"
         "}";
 

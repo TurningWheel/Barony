@@ -9656,7 +9656,7 @@ void drawCallouts(const int playernum)
 		SDL_Rect dest{ 0, 0, 0, 0 };
 		if ( callout.second.lockOnScreen )
 		{
-			auto screen_position = project_clipped(&world, &id, &camera->projview, &window2);
+			auto screen_position = project_clipped2(&world, &id, &camera->projview, &window2);
 			dest = SDL_Rect{ player->camera_virtualx1() + (int)screen_position.clipped_coords.x,
 				player->camera_virtualy1() + Frame::virtualScreenY - (Frame::virtualScreenY - player->camera_virtualHeight()) - (int)screen_position.clipped_coords.y,
 			14, 22 };
