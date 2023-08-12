@@ -930,6 +930,7 @@ void glBeginCamera(view_t* camera, bool useHDR)
     mat4x4_t proj, view, view2, identity;
     vec4_t translate(-camera->x * 32.f, camera->z, -camera->y * 32.f, 0.f);
     (void)perspective(&proj, fov, aspect, CLIPNEAR, CLIPFAR);
+    (void)perspective(&camera->proj_hud, 60.f, aspect, CLIPNEAR, CLIPFAR);
     (void)rotate_mat(&view, &view2, rotx, &identity.x); view2 = view;
     (void)rotate_mat(&view, &view2, roty, &identity.y); view2 = view;
     (void)rotate_mat(&view, &view2, rotz, &identity.z); view2 = view;
@@ -937,6 +938,7 @@ void glBeginCamera(view_t* camera, bool useHDR)
     
     // store proj * view
     (void)mul_mat(&camera->projview, &proj, &view);
+    camera->proj = proj;
     
     // set ambient lighting
     if ( camera->globalLightModifierActive ) {
@@ -1173,6 +1175,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
         (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
         (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
         (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
+        GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, false, (float*)&camera->proj_hud));
     }
     rotx = entity->roll * 180.0 / PI; // roll
     roty = 360.0 - entity->yaw * 180.0 / PI; // yaw
@@ -1226,6 +1229,9 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
 #endif
     
     // reset GL state
+    if (entity->flags[OVERDRAW]) {
+        GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, false, (float*)&camera->proj));
+    }
     if (changedDepthRange) {
         GL_CHECK_ERR(glDepthRange(0, 1));
     }
@@ -1646,6 +1652,7 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
         (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
         (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
         (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
+        GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, false, (float*)&camera->proj_hud));
     }
     v = vec4(entity->x * 2.f, -entity->z * 2.f - 1, entity->y * 2.f, 0.f);
     (void)translate_mat(&m, &t, &v); t = m;
@@ -1678,6 +1685,9 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     spriteMesh.draw();
     
     // reset GL state
+    if (entity->flags[OVERDRAW]) {
+        GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, false, (float*)&camera->proj));
+    }
     if (mode == REALCOLORS) {
         GL_CHECK_ERR(glDisable(GL_BLEND));
     }

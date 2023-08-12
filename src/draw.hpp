@@ -232,7 +232,7 @@ typedef struct view_t
     bool* vismap = nullptr;
     float luminance = defaultLuminance;
     unsigned int drawnFrames = 0;
-    mat4x4 projview;
+    mat4x4 projview, proj, proj_hud;
 } view_t;
 
 #define FLIP_VERTICAL 1
@@ -276,6 +276,7 @@ SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool out
 SDL_Rect ttfPrintText( TTF_Font* font, int x, int y, const char* str );
 SDL_Rect ttfPrintTextFormattedColor( TTF_Font* font, int x, int y, Uint32 color, char const * const fmt, ... );
 SDL_Rect ttfPrintTextFormatted( TTF_Font* font, int x, int y, char const * const fmt, ... );
+void debugPrintText(int x, int y, const SDL_Rect& viewport, char const * const fmt, ...);
 void printTextFormatted( SDL_Surface* font_bmp, int x, int y, char const * const fmt, ... );
 void printTextFormattedAlpha(SDL_Surface* font_bmp, int x, int y, Uint8 alpha, char const * const fmt, ...);
 void printTextFormattedColor(SDL_Surface* font_bmp, int x, int y, Uint32 color, char const * const fmt, ...);

@@ -4545,7 +4545,7 @@ namespace MainMenu {
 			if (widget.isSelected() && !bind_mode) {
 				if (inputs.hasController(player) && input.consumeBinaryToggle("MenuAlt2")) {
 					auto binding = (const char*)widget.getUserData();
-					(void)settingsBind(player, 1 /* Gamepad */, binding, nullptr);
+					(void)settingsBind(player, 1 /* Gamepad */, binding, emptyBinding);
 
 					button->setText(emptyBinding);
 					button->setIcon("");
@@ -5749,7 +5749,7 @@ namespace MainMenu {
 						snprintf(buf, sizeof(buf), "Cancelled rebinding \"%s\"", bound_binding.c_str());
 						tooltip->setText(buf);
 					} else if (Input::lastInputOfAnyKind == "Delete") {
-						(void)settingsBind(bound_player, bound_device, bound_binding.c_str(), nullptr);
+						(void)settingsBind(bound_player, bound_device, bound_binding.c_str(), emptyBinding);
 						bound_button->setText(emptyBinding);
 		                bound_button->setIcon("");
 						char buf[256];
@@ -11472,6 +11472,7 @@ failed:
 
 	static void race_button_fn(Button& button, bool override_dlc) {
         const int index = button.getOwner();
+        const bool wasHuman = stats[index]->playerRace == RACE_HUMAN;
 		auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
         bool success = false;
 		for (int c = 0; c < num_races; ++c) {
@@ -11493,7 +11494,9 @@ failed:
                         }
                     }
 					if (stats[index]->playerRace == RACE_SUCCUBUS) {
-						stats[index]->appearance = 0;
+                        if (wasHuman) {
+                            stats[index]->appearance = 0;
+                        }
 						stats[index]->sex = FEMALE;
 						auto card = static_cast<Frame*>(frame->getParent()); assert(card);
 						auto bottom = card->findFrame("bottom"); assert(bottom);
@@ -11507,7 +11510,9 @@ failed:
 						male->setHighlightColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
 					}
 					else if (stats[index]->playerRace == RACE_INCUBUS) {
-						stats[index]->appearance = 0;
+                        if (wasHuman) {
+                            stats[index]->appearance = 0;
+                        }
 						stats[index]->sex = MALE;
 						auto card = static_cast<Frame*>(frame->getParent()); assert(card);
 						auto bottom = card->findFrame("bottom"); assert(bottom);
@@ -11529,7 +11534,9 @@ failed:
                         }
 					}
 					else {
-						stats[index]->appearance = 0;
+                        if (wasHuman) {
+                            stats[index]->appearance = 0;
+                        }
 					}
 					if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
 						// perhaps the class is not valid for this race.
@@ -11548,10 +11555,12 @@ failed:
 				other_button->setPressed(false);
 			}
 		}
-		auto disable_abilities = frame->findButton("disable_abilities");
-		if (disable_abilities) {
-			disable_abilities->setPressed(false);
-		}
+        if (wasHuman) {
+            auto disable_abilities = frame->findButton("disable_abilities");
+            if (disable_abilities) {
+                disable_abilities->setPressed(false);
+            }
+        }
 		stats[index]->clearStats();
 		initClass(index);
         
@@ -21258,10 +21267,13 @@ failed:
 							closeMono();
 							return_to_main_menu(button);
 						});
+                    video_refresh &= ~VideoRefresh::Video;
 				} else {
+                    if (video_refresh) {
+                        soundActivate();
+                    }
 					return_to_main_menu(button);
 				}
-				video_refresh = VideoRefresh::None;
 			} else {
 				return_to_main_menu(button);
 			}
@@ -21843,7 +21855,14 @@ failed:
         if (video_refresh) {
 			Frame::guiResize(0, 0); // resize gui for new aspect ratio
             createMainMenu(!intro);
-
+            
+#if defined(VIDEO_RESTART_NEEDED)
+            // return to settings button
+            assert(main_menu_frame);
+            auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+            auto settings_button = buttons->findButton("Settings"); assert(settings_button);
+            settings_button->select();
+#else
             // return to video settings window
             assert(main_menu_frame);
             auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
@@ -21920,6 +21939,7 @@ failed:
                     }
                     });
             }
+#endif
 
             // at the end so that old_video is not overwritten
             video_refresh = VideoRefresh::None;

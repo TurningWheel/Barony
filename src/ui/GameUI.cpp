@@ -8309,7 +8309,7 @@ void createWorldTooltipPrompts(const int player)
 
 const char* Player::HUD_t::getCrosshairPath()
 {
-	switch ( playerSettings[player.playernum].shootmodeCrosshair )
+	switch ( playerSettings[multiplayer ? 0 : player.playernum].shootmodeCrosshair )
 	{
 		case 0:
 		default:
@@ -8488,7 +8488,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 						promptPos.y -= (int)imgGet->getHeight() / 2;
 						SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 						cursor->pos = cursorPos;
-						cursor->color = makeColor(255, 255, 255, 255 * playerSettings[player.playernum].shootmodeCrosshairOpacity / 100.f);
+						cursor->color = makeColor(255, 255, 255, 255 * playerSettings[multiplayer ? 0 : player.playernum].shootmodeCrosshairOpacity / 100.f);
 					}
 
 					textPos.x = cursor->pos.x + cursor->pos.w / 2;
@@ -8522,7 +8522,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 						promptPos.y -= (int)imgGet->getHeight() / 2;
 						SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 						cursor->pos = cursorPos;
-						cursor->color = makeColor(255, 255, 255, 255 * playerSettings[player.playernum].shootmodeCrosshairOpacity / 100.f);
+						cursor->color = makeColor(255, 255, 255, 255 * playerSettings[multiplayer ? 0 : player.playernum].shootmodeCrosshairOpacity / 100.f);
 					}
 				}
 			}
@@ -8740,7 +8740,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				promptPos.y -= (int)imgGet->getHeight() / 2;
 				SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 				cursor->pos = cursorPos;
-				cursor->color = makeColor(255, 255, 255, 255 * playerSettings[player.playernum].shootmodeCrosshairOpacity / 100.f);
+				cursor->color = makeColor(255, 255, 255, 255 * playerSettings[multiplayer ? 0 : player.playernum].shootmodeCrosshairOpacity / 100.f);
 			}
 
 			textPos.x += 40;
@@ -8841,7 +8841,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				promptPos.y -= (int)imgGet->getHeight() / 2;
 				SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 				cursor->pos = cursorPos;
-				cursor->color = makeColor(255, 255, 255, 255 * playerSettings[player.playernum].shootmodeCrosshairOpacity / 100.f);
+				cursor->color = makeColor(255, 255, 255, 255 * playerSettings[multiplayer ? 0 : player.playernum].shootmodeCrosshairOpacity / 100.f);
 			}
 
 			if ( usingTinkeringKit )
@@ -9891,7 +9891,7 @@ void Player::HUD_t::processHUD()
 #ifndef NINTENDO
 		if ( inputs.hasController(player.playernum) )
 		{
-			if ( !playerSettings[player.playernum].gamepad_facehotbar || *cvar_hotbar_compact_disable )
+			if ( !playerSettings[multiplayer ? 0 : player.playernum].gamepad_facehotbar || *cvar_hotbar_compact_disable )
 			{
 				offsetHUDAboveHotbarHeight = *cvar_ui_above_hotbar_y;
 			}
@@ -9901,7 +9901,7 @@ void Player::HUD_t::processHUD()
             offsetHUDAboveHotbarHeight = *cvar_ui_above_hotbar_y;
 		}
 #else
-		if ( !playerSettings[player.playernum].gamepad_facehotbar || *cvar_hotbar_compact_disable )
+		if ( !playerSettings[multiplayer ? 0 : player.playernum].gamepad_facehotbar || *cvar_hotbar_compact_disable )
 		{
 			offsetHUDAboveHotbarHeight = *cvar_ui_above_hotbar_y;
 		}
@@ -19215,14 +19215,14 @@ void Player::Hotbar_t::processHotbar()
 #ifndef NINTENDO
 	if ( inputs.hasController(player.playernum) )
 	{
-		useHotbarFaceMenu = playerSettings[player.playernum].gamepad_facehotbar;
+		useHotbarFaceMenu = playerSettings[multiplayer ? 0 : player.playernum].gamepad_facehotbar;
 	}
 	else if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
 	{
 		useHotbarFaceMenu = false;
 	}
 #else
-	useHotbarFaceMenu = playerSettings[player.playernum].gamepad_facehotbar;
+	useHotbarFaceMenu = playerSettings[multiplayer ? 0 : player.playernum].gamepad_facehotbar;
 #endif // NINTENDO
 
 	if ( !hotbarFrame )

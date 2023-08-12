@@ -1546,7 +1546,7 @@ void drawStatus(int player)
 							}
 						}
 					}
-					if ( !drawHotBarTooltipOnCycle && playerSettings[player].hotbar_numkey_quick_add && inputs.bPlayerUsingKeyboardControl(player) )
+					if ( !drawHotBarTooltipOnCycle && playerSettings[multiplayer ? 0 : player].hotbar_numkey_quick_add && inputs.bPlayerUsingKeyboardControl(player) )
 					{
 						Uint32 swapItem = 0;
 						if ( keystatus[SDLK_1] )
@@ -1630,8 +1630,8 @@ void drawStatus(int player)
 	if ( !command && stats[player] && stats[player]->HP > 0 )
 	{
 		Item* item = NULL;
-		const auto& inventoryUI = players[player]->inventoryUI;
-		if ( !(!shootmode && playerSettings[player].hotbar_numkey_quick_add
+		const auto& inventoryUI = players[multiplayer ? 0 : player]->inventoryUI;
+		if ( !(!shootmode && playerSettings[multiplayer ? 0 : player].hotbar_numkey_quick_add
 			/*&&	(
 					(omousex >= inventoryUI.getStartX()
 						&& omousex <= inventoryUI.getStartX() + inventoryUI.getSizeX() * inventoryUI.getSlotSize()
@@ -2703,7 +2703,7 @@ void drawStatusNew(const int player)
 						}
 					}
 
-					if ( !drawHotBarTooltipOnCycle && playerSettings[player].hotbar_numkey_quick_add
+					if ( !drawHotBarTooltipOnCycle && playerSettings[multiplayer ? 0 : player].hotbar_numkey_quick_add
 						&& players[player]->bControlEnabled && !gamePaused
 						&& !players[player]->usingCommand()
 						&& inputs.bPlayerUsingKeyboardControl(player) )
@@ -2890,7 +2890,7 @@ void drawStatusNew(const int player)
 		const auto& inventoryUI = players[player]->inventoryUI;
 		if ( inputs.bPlayerUsingKeyboardControl(player)
 			&& players[player]->gui_mode != GUI_MODE_SIGN
-			&& (shootmode || (!shootmode && !(playerSettings[player].hotbar_numkey_quick_add && (mouseInsidePlayerHotbar(player) || mouseInsidePlayerInventory(player))))) )
+			&& (shootmode || (!shootmode && !(playerSettings[multiplayer ? 0 : player].hotbar_numkey_quick_add && (mouseInsidePlayerHotbar(player) || mouseInsidePlayerInventory(player))))) )
 		{
 			// if hotbar_numkey_quick_add is enabled, then the number keys won't do the default equip function
 			// skips equipping items if the mouse is in the hotbar or inventory area. otherwise the below code runs.

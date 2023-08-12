@@ -3074,6 +3074,46 @@ void printText( SDL_Surface* font_bmp, int x, int y, const char* str )
 
 -------------------------------------------------------------------------------*/
 
+void debugPrintText(int x, int y, const SDL_Rect& viewport, char const * const fmt, ...)
+{
+    const auto font = font16x16_bmp;
+
+	// format the string
+	va_list argptr;
+	va_start(argptr, fmt);
+	char str[1024] = {'\0'};
+	int size = vsnprintf(str, sizeof(str), fmt, argptr);
+	va_end(argptr);
+
+	// define font dimensions
+    SDL_Rect src, dest;
+	dest.x = x;
+	dest.y = y;
+	dest.w = font->w / 16;
+	dest.h = font->h / 16;
+	src.w = font->w / 16;
+	src.h = font->h / 16;
+
+	// print the characters in the string
+	for (int c = 0; c < size; ++c) {
+		src.x = (str[c] * src.w) % font->w;
+		src.y = (int)((str[c] * src.w) / font->w) * src.h;
+		if (str[c] != '\n' && str[c] != '\r') {
+            SDL_Rect odest;
+			odest.x = dest.x;
+			odest.y = dest.y;
+            Image::draw(texid[(long int)font->userdata], font->w, font->h,
+                &src, dest, viewport, 0xffffffff);
+			dest.x = odest.x + src.w;
+			dest.y = odest.y;
+		}
+		else if (str[c] == '\n') {
+			dest.x = x;
+			dest.y += src.h;
+		}
+	}
+}
+
 void printTextFormatted( SDL_Surface* font_bmp, int x, int y, char const * const fmt, ... )
 {
 	int c;

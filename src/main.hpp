@@ -211,7 +211,7 @@ const char* gl_error_string(GLenum err);
     {\
 		GLenum err;\
 		while((err = glGetError()) != GL_NO_ERROR) {\
-			printlog("[OpenGL]: ERROR %s type = 0x%x, message = %s",\
+			printlog("[OpenGL]: ERROR type = 0x%x, message = %s",\
 				err, gl_error_string(err));\
 		}\
 	}
@@ -228,7 +228,7 @@ const char* gl_error_string(GLenum err);
     auto retval = expression;\
     GLenum err;\
     while((err = glGetError()) != GL_NO_ERROR) {\
-        printlog("[OpenGL]: ERROR %s type = 0x%x, message = %s",\
+        printlog("[OpenGL]: ERROR type = 0x%x, message = %s",\
             err, gl_error_string(err));\
     }\
     retval;\
