@@ -23616,14 +23616,15 @@ bool CalloutRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updat
 	{
 		strcpy(interactText, Language::get(4347)); // "Callout "
 	}
-	if ( selectedEntity.behavior == &actTorch && interactWorld )
+
+	/*if ( selectedEntity.behavior == &actTorch && interactWorld )
 	{
 		if ( updateInteractText )
 		{
 			strcat(interactText, items[TOOL_TORCH].getIdentifiedName());
 		}
-	}
-	else if ( (selectedEntity.behavior == &actSwitch || 
+	}*/
+	if ( (selectedEntity.behavior == &actSwitch || 
 		selectedEntity.behavior == &actSwitchWithTimer ||
 		selectedEntity.sprite == 184) && interactWorld )
 	{
@@ -23661,14 +23662,100 @@ bool CalloutRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updat
 			}
 		}
 	}
-	else if ( selectedEntity.behavior == &actBomb && interactWorld )
+	else if ( selectedEntity.behavior == &actLadder )
 	{
 		if ( updateInteractText )
 		{
-			strcpy(interactText, Language::get(3093));
-			strcat(interactText, Language::get(4045)); // "trap"
+			if ( secretlevel && selectedEntity.skill[3] == 1 ) // secret ladder
+			{
+				strcat(interactText, Language::get(4310)); // "ladder"
+			}
+			else if ( !secretlevel && selectedEntity.skill[3] == 1 ) // secret ladder
+			{
+				strcat(interactText, Language::get(4310)); // "ladder" 
+			}
+			else
+			{
+				strcat(interactText, Language::get(4310)); // "ladder" 
+			}
 		}
 	}
+	else if ( selectedEntity.behavior == &actPortal )
+	{
+		if ( updateInteractText )
+		{
+			if ( selectedEntity.skill[3] == 0 ) // secret entrance portal
+			{
+				if ( secretlevel )
+				{
+					strcat(interactText, Language::get(4311)); // "portal" 
+				}
+				else
+				{
+					strcat(interactText, Language::get(4311)); // "portal" 
+				}
+			}
+			else
+			{
+				if ( !strcmp(map.name, "Hell") )
+				{
+					strcat(interactText, Language::get(4311)); // "portal" 
+				}
+				else if ( !strcmp(map.name, "Mages Guild") )
+				{
+					strcat(interactText, Language::get(4311)); // "portal"
+				}
+				else
+				{
+					strcat(interactText, Language::get(4311)); // "portal"
+				}
+			}
+		}
+	}
+	else if ( selectedEntity.behavior == &::actMidGamePortal )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(4311)); // "portal"
+		}
+	}
+	else if ( selectedEntity.behavior == &actCustomPortal )
+	{
+		if ( updateInteractText )
+		{
+			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+			{
+				strcat(interactText, Language::get(4310)); // "ladder"
+			}
+			else
+			{
+				if ( selectedEntity.portalCustomSpriteAnimationFrames > 0 )
+				{
+					strcat(interactText, Language::get(4311)); // "portal"
+				}
+				else
+				{
+					strcat(interactText, Language::get(4310)); // "ladder"
+				}
+			}
+		}
+	}
+	else if ( selectedEntity.behavior == &::actExpansionEndGamePortal
+		|| selectedEntity.behavior == &actWinningPortal )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(4311)); // "portal"
+		}
+	}
+	//else if ( selectedEntity.behavior == &actBomb && interactWorld )
+	//{
+	//	if ( updateInteractText )
+	//	{
+	//		strcpy(interactText, Language::get(3093));
+	//		strcat(interactText, Language::get(4045)); // "trap"
+	//	}
+	//}
 	else if ( selectedEntity.behavior == &actBoulderTrapHole
 		&& interactWorld )
 	{
@@ -23676,6 +23763,14 @@ bool CalloutRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updat
 		{
 			strcat(interactText, Language::get(4349)); // "trap"
 		}
+	}
+	else if ( selectedEntity.behavior == &actBoulder
+		&& interactWorld )
+		{
+			if ( updateInteractText )
+			{
+				strcat(interactText, Language::get(4358)); // "boulder"
+			}
 	}
 	else if ( selectedEntity.behavior == &actItem && interactItems )
 	{
@@ -23696,6 +23791,48 @@ bool CalloutRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updat
 			{
 				strcat(interactText, Language::get(4046)); // "item"
 			}
+		}
+	}
+	else if ( selectedEntity.behavior == &actGoldBag )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(4353)); // "gold"
+		}
+	}
+	else if ( selectedEntity.behavior == &actFountain )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(4355)); // "fountain"
+		}
+	}
+	else if ( selectedEntity.behavior == &actSink )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(4354)); // "sink"
+		}
+	}
+	else if ( selectedEntity.behavior == &actHeadstone )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(4357)); // "grave"
+		}
+	}
+	else if ( selectedEntity.behavior == &actPowerCrystal || selectedEntity.behavior == &actPowerCrystalBase )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(4356)); // "crystal"
+		}
+	}
+	else if ( selectedEntity.behavior == &actChestLid || selectedEntity.behavior == &actChest )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(675)); // "chest"
 		}
 	}
 	else if ( selectedEntity.behavior == &actMonster && enableAttack && selectedEntity.getMonsterTypeFromSprite() != GYROBOT )

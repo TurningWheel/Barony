@@ -3558,8 +3558,8 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 								return 0.0; // looking at a tile on the ground more than x units away from the tooltip
 							}
 						}
-						else if ( (parent->behavior == &actItem && parent->z > 4) || parent->behavior == &actGoldBag
-							|| parent->behavior == &actSwitch || parent->behavior == &actSwitchWithTimer )
+						else if ( parent && ((parent->behavior == &actItem && parent->z > 4) || parent->behavior == &actGoldBag
+							|| parent->behavior == &actSwitch || parent->behavior == &actSwitchWithTimer) )
 						{
 							if ( dist < 32.0 && abs(dist - lookDist) > 16.0
 								|| dist >= 32.0 && abs(dist - lookDist) > 24.0 )
@@ -4158,16 +4158,16 @@ void Player::WorldUI_t::handleTooltips()
 		{
 			bDoingActionHideTooltips = true;
 		}
-		else if ( players[player]->hud.weapon && players[player]->hud.weapon->skill[0] != 0 )
+		else if ( (players[player]->hud.weapon && players[player]->hud.weapon->skill[0] != 0) && !selectInteract )
 		{
 			// hudweapon chop
 			bDoingActionHideTooltips = true;
 		}
-		else if ( players[player]->hud.bowFire || players[player]->hud.bowIsBeingDrawn )
+		else if ( (players[player]->hud.bowFire || players[player]->hud.bowIsBeingDrawn) && !selectInteract )
 		{
 			bDoingActionHideTooltips = true;
 		}
-		else if ( cast_animation[player].active || cast_animation[player].active_spellbook )
+		else if ( (cast_animation[player].active || cast_animation[player].active_spellbook) && !selectInteract )
 		{
 			// spells
 			bDoingActionHideTooltips = true;
@@ -4182,7 +4182,7 @@ void Player::WorldUI_t::handleTooltips()
 			else
 			{
 				bDoingActionHideTooltips = true;
-				if ( FollowerMenu[player].selectMoveTo || CalloutMenu[player].selectMoveTo )
+				if ( selectInteract )
 				{
 					bDoingActionHideTooltips = false; // selecting follower target is OK if defending
 				}
@@ -4392,15 +4392,6 @@ void Player::WorldUI_t::handleTooltips()
 			{
 				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
 				continue;
-			}
-			if ( selectInteract && CalloutMenu[player].calloutMenuIsOpen() )
-			{
-				if ( (players[player]->worldUI.playerLastPitch < PI && players[player]->camera().vang >= PI)
-					|| (players[player]->worldUI.playerLastPitch >= PI && players[player]->camera().vang < PI) )
-				{
-					players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
-					continue;
-				}
 			}
 			if ( FollowerMenu[player].selectMoveTo && FollowerMenu[player].optionSelected == ALLY_CMD_MOVETO_SELECT )
 			{
