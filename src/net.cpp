@@ -4403,6 +4403,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	        }
 	    }
 	    else if (net_packet->data[5] == 1) { // classic herx ending
+			victory = 1;
 	        switch ( race ) {
 	        default:
 	        case RACE_HUMAN:
@@ -4425,6 +4426,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	        }
 	    }
 	    else if (net_packet->data[5] == 2) { // classic baphomet ending
+			victory = 2;
 	        switch ( race ) {
 	        default:
 	        case RACE_HUMAN:
