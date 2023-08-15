@@ -4898,9 +4898,22 @@ void physfsReloadMonsterLimbFiles()
 		strcat(filename, monstertypename[c]);
 		strcat(filename, "/limbs.txt");
 		File* fp;
-		if ( (fp = openDataFile(filename, "rb")) == NULL )
+
+		if ( PHYSFS_getRealDir(filename) )
 		{
-			continue;
+			std::string limbsDir = PHYSFS_getRealDir(filename);
+			limbsDir.append(PHYSFS_getDirSeparator()).append(filename);
+			if ( (fp = openDataFile(limbsDir.c_str(), "rb")) == NULL )
+			{
+				continue;
+			}
+		}
+		else
+		{
+			if ( (fp = openDataFile(filename, "rb")) == NULL )
+			{
+				continue;
+			}
 		}
 
 		// read file
