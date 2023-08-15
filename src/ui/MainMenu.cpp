@@ -855,7 +855,6 @@ namespace MainMenu {
 	static void playContinue(Button&);
 
 	static void mainPlayGame(Button&);
-	static void mainPlayModdedGame(Button&);
 	static void mainArchives(Button&);
 	static void mainAssignControllers(Button&);
 	static void mainSettings(Button&);
@@ -1239,7 +1238,7 @@ namespace MainMenu {
 		back_button->setBorderColor(0);
 		back_button->setHighlightColor(0);
 		back_button->setBorder(0);
-		back_button->setText("Back");
+		back_button->setText(Language::get(5000));
 		back_button->setFont(smallfont_outline);
 		back_button->setHJustify(Button::justify_t::LEFT);
 		back_button->setVJustify(Button::justify_t::TOP);
@@ -1817,11 +1816,11 @@ namespace MainMenu {
 		dlcPromptIndex = which;
 #if defined(NINTENDO) || defined(STEAMWORKS) || defined(USE_EOS)
 #ifdef NINTENDO
-		const char* window_text = "Would you like to browse this\nDLC in the Nintendo eShop?";
+		const char* window_text = Language::get(5001);
 #else
-		const char* window_text = "Would you like to browse this\nDLC in the online store?";
+		const char* window_text = Language::get(5002);
 #endif
-		binaryPrompt(window_text, "Yes", "No",
+		binaryPrompt(window_text, Language::get(5003), Language::get(5004),
 			[](Button& button){
 #if defined(STEAMWORKS)
 				soundActivate();
@@ -1845,7 +1844,7 @@ namespace MainMenu {
 				closeBinary();
 			}, false);
 #else
-        textFieldPrompt("", "Enter DLC Key...", "Enter DLC Serial Key", "Confirm", "Cancel",
+        textFieldPrompt("", Language::get(5005), Language::get(5006), Language::get(5007), Language::get(5008),
             [](Button& button){ // okay
                 soundActivate();
 
@@ -1867,26 +1866,26 @@ namespace MainMenu {
                         auto field = static_cast<Field*>(&widget);
                         auto time = ticks - window_ticks;
                         if (time % TICKS_PER_SECOND < 10) {
-                            field->setText("Verifying");
+                            field->setText(Language::get(5010));
                         }
                         else if (time % TICKS_PER_SECOND < 20) {
-                            field->setText("Verifying.");
+                            field->setText(Language::get(5011));
                         }
                         else if (time % TICKS_PER_SECOND < 30) {
-                            field->setText("Verifying..");
+                            field->setText(Language::get(5012));
                         }
                         else if (time % TICKS_PER_SECOND < 40) {
-                            field->setText("Verifying...");
+                            field->setText(Language::get(5013));
                         }
                         else {
-                            field->setText("Verifying....");
+                            field->setText(Language::get(5014));
                         }
                         if (time > TICKS_PER_SECOND * 2) {
                             closePrompt("dlc_check_window");
 		                    std::size_t DLCHash = serialHash(text);
 
 		                    auto prompt = [](const char* text){
-		                        monoPrompt(text, "Okay", [](Button&){
+		                        monoPrompt(text, Language::get(5009), [](Button&){
 		                            soundActivate();
 		                            closeMono();
                                     auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
@@ -1898,7 +1897,7 @@ namespace MainMenu {
 		                    if (DLCHash == 144425) {
 			                    playSound(402, 92);
 			                    printlog("[LICENSE]: Myths and Outcasts DLC license key found.");
-			                    prompt("Myths and Outcasts DLC\nhas been unlocked!");
+			                    prompt(Language::get(5015));
 			                    enabledDLCPack1 = true;
 
                                 char path[PATH_MAX] = "";
@@ -1913,7 +1912,7 @@ namespace MainMenu {
 		                    } else if ( DLCHash == 135398 ) {
 			                    playSound(402, 92);
 			                    printlog("[LICENSE]: Legends and Pariahs DLC license key found.");
-			                    prompt("Legends and Pariahs DLC\nhas been unlocked!");
+			                    prompt(Language::get(5016));
 			                    enabledDLCPack2 = true;
 
                                 char path[PATH_MAX] = "";
@@ -1927,7 +1926,7 @@ namespace MainMenu {
                                 }
 		                    } else {
 			                    printlog("[LICENSE]: DLC license key invalid.");
-		                        errorPrompt("Invalid license key", "Okay", [](Button&){
+		                        errorPrompt(Language::get(5017), Language::get(5009), [](Button&){
 		                            soundActivate();
 		                            closeMono();
                                     auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
@@ -2115,21 +2114,21 @@ namespace MainMenu {
 			attemptedConnection = false;
 			nxShutdownWireless();
 			nxConnectToNetwork();
-			cancellablePrompt("connect_eos_prompt", "Connecting\n...", "Cancel",
+			cancellablePrompt("connect_eos_prompt", Language::get(5020), Language::get(5008),
 				[](Widget& widget) {
 				const char* str;
 				auto part = ticks % TICKS_PER_SECOND;
 				auto text = static_cast<Field*>(&widget);
 				if (part < TICKS_PER_SECOND / 5) {
-					str = "Connecting\n.";
+					str = Language::get(5020);
 				} else if (part < 2 * TICKS_PER_SECOND / 5) {
-					str = "Connecting\n..";
+					str = Language::get(5021);
 				} else if (part < 3 * TICKS_PER_SECOND / 5) {
-					str = "Connecting\n...";
+					str = Language::get(5022);
 				} else if (part < 4 * TICKS_PER_SECOND / 5) {
-					str = "Connecting\n....";
+					str = Language::get(5023);
 				} else {
-					str = "Connecting\n.....";
+					str = Language::get(5024);
 				}
 				text->setText(str);
 
@@ -3157,7 +3156,7 @@ namespace MainMenu {
 		        if (next) {
 		            next->setHideGlyphs(true);
 		            next->setHideKeyboardGlyphs(true);
-		            next->setText("Waiting for host...");
+		            next->setText(Language::get(5025));
 		        }
 		    } else {
 		        movie = false;
@@ -3169,7 +3168,7 @@ namespace MainMenu {
         if (multiplayer != CLIENT || victory) {
 		    auto back_button = main_menu_frame->addButton("back");
 		    back_button->setHideSelectors(true);
-		    back_button->setText("Skip story");
+		    back_button->setText(Language::get(5026));
 		    back_button->setColor(makeColor(0, 0, 0, 0));
 		    back_button->setHighlightColor(makeColor(0, 0, 0, 0));
 		    back_button->setBorderColor(makeColor(0, 0, 0, 0));
@@ -3183,9 +3182,9 @@ namespace MainMenu {
 		        ++story_skip;
 		        story_skip_timer = (float)TICKS_PER_SECOND;
 		        switch (story_skip) {
-		        case 0: button.setText("Skip story"); break;
-		        case 1: button.setText("Confirm (1)?"); break;
-		        case 2: button.setText("Confirm (2)?"); break;
+		        case 0: button.setText(Language::get(5026)); break;
+		        case 1: button.setText(Language::get(5027)); break;
+		        case 2: button.setText(Language::get(5028)); break;
 		        }
 		        if (story_skip >= 3) {
 			        end_story_screen();
@@ -3432,7 +3431,7 @@ namespace MainMenu {
 		            story_skip = 0;
 		            auto back_button = main_menu_frame->findButton("back");
 					if (back_button) {
-		            	back_button->setText("Skip story");
+		            	back_button->setText(Language::get(5026));
 					}
 					auto next = main_menu_frame->findButton("next");
 					if (next) {
@@ -3764,8 +3763,8 @@ namespace MainMenu {
 			}
 		}
 
-		auto prompt = binaryPrompt("Are you sure you want\nto discard changes?",
-			"Yes,\nDiscard", "Cancel",
+		auto prompt = binaryPrompt(Language::get(5029),
+			Language::get(5030), Language::get(5008),
 			[](Button& button) {
 				closeBinary();
 				
@@ -3887,20 +3886,20 @@ namespace MainMenu {
 		// banner
 		auto banner_text = window->addField("banner_text", 64);
 		banner_text->setSize(SDL_Rect{14, 4, 950, 50});
-		banner_text->setText("AUTOMATIC INVENTORY BEHAVIOR");
+		banner_text->setText(Language::get(5030));
 		banner_text->setFont(bigfont_outline);
 		banner_text->setJustify(Field::justify_t::CENTER);
 
 		auto populate_text = window->addField("populate_text", 64);
 		populate_text->setSize(SDL_Rect{20, 64, 512, 64});
-		populate_text->setText("Populate Hotbar");
+		populate_text->setText(Language::get(5031));
 		populate_text->setFont(bigfont_outline);
 		populate_text->setVJustify(Field::justify_t::TOP);
 		populate_text->setHJustify(Field::justify_t::LEFT);
 
 		auto sort_text = window->addField("sort_text", 64);
 		sort_text->setSize(SDL_Rect{16, 64, 942, 64});
-		sort_text->setText("Auto-Sort Order");
+		sort_text->setText(Language::get(5032));
 		sort_text->setFont(bigfont_outline);
 		sort_text->setVJustify(Field::justify_t::TOP);
 		sort_text->setHJustify(Field::justify_t::CENTER);
@@ -3920,9 +3919,9 @@ namespace MainMenu {
 			void (*callback)(Button&);
 		};
 		Option options[] = {
-			{"Defaults", "Restore\nDefaults", inventorySortingDefaults},
-			{"Discard", "Discard\n& Exit", inventorySortingDiscard},
-			{"Confirm", "Confirm\n& Exit", inventorySortingConfirm},
+			{"Defaults", Language::get(5033), inventorySortingDefaults},
+			{"Discard", Language::get(5034), inventorySortingDiscard},
+			{"Confirm", Language::get(5035), inventorySortingConfirm},
 		};
 		const int num_options = sizeof(options) / sizeof(options[0]);
 		for (int c = 0; c < num_options; ++c) {
@@ -4291,7 +4290,7 @@ namespace MainMenu {
 		settingsOpenDropdown(button, "device", DropdownType::Short, [](Frame::entry_t& entry){
 			soundActivate();
 			int new_device = 0;
-		    if (sscanf(entry.name.c_str(), "Display %d", &new_device) == 1) {
+		    if (sscanf(entry.name.c_str(), Language::get(5036), &new_device) == 1) {
 		        --new_device;
 		    }
 			allSettings.video.display_id = new_device;
@@ -4371,7 +4370,7 @@ namespace MainMenu {
 	static void settingsGamepadHotbarLayout(Button& button) {
 		settingsOpenDropdown(button, "gamepad_facehotbar", DropdownType::Short_2Slot, [](Frame::entry_t& entry) {
 			soundActivate();
-			if ( entry.name == "Classic" )
+			if ( entry.name == Language::get(5230) )
 			{
 				allSettings.controls[bound_player].gamepad_facehotbar = false;
 			}
@@ -4393,19 +4392,19 @@ namespace MainMenu {
 		settingsOpenDropdown(button, "window_mode", DropdownType::Short, [](Frame::entry_t& entry){
 			soundActivate();
 			do {
-				if (entry.name == "Windowed") {
+				if (entry.name == Language::get(5037)) {
 					allSettings.video.window_mode = 0;
 					break;
 				}
-                if (entry.name == "Bordered") {
+                if (entry.name == Language::get(5038)) {
                     allSettings.video.window_mode = 0;
                     break;
                 }
-				if (entry.name == "Borderless") {
+				if (entry.name == Language::get(5039)) {
 					allSettings.video.window_mode = 1;
 					break;
 				}
-                if (entry.name == "Fullscreen") {
+                if (entry.name == Language::get(5040)) {
                     allSettings.video.window_mode = 2;
                     break;
                 }
@@ -4550,7 +4549,7 @@ namespace MainMenu {
 					assert(main_menu_frame);
 					auto bindings = main_menu_frame->findFrame("bindings"); assert(bindings);
 					auto tooltip = bindings->findField("tooltip"); assert(tooltip);
-					snprintf(buf, sizeof(buf), "Deleted \"%s\" binding.", binding);
+					snprintf(buf, sizeof(buf), Language::get(5041), binding);
 					tooltip->setText(buf);
 				}
 			}
@@ -4632,7 +4631,7 @@ namespace MainMenu {
 			158,
 			48});
 		button->setFont(smallfont_outline);
-		button->setText("Off          On");
+		button->setText(Language::get(5042));
 		button->setJustify(Button::justify_t::CENTER);
 		button->setCallback(callback);
 		button->setPressed(on);
@@ -4672,7 +4671,7 @@ namespace MainMenu {
 			158,
 			44});
 		button->setFont(smallfont_outline);
-		button->setText("Customize");
+		button->setText(Language::get(5043));
 		button->setJustify(Button::justify_t::CENTER);
 		button->setCallback(customize_callback);
 		button->setBackground("*images/ui/Main Menus/Settings/Settings_Button_Customize00.png");
@@ -4719,7 +4718,7 @@ namespace MainMenu {
 			158,
 			44});
 		button->setFont(smallfont_outline);
-		button->setText("Customize");
+		button->setText(Language::get(5043));
 		button->setJustify(Button::justify_t::CENTER);
 		button->setCallback(callback);
 		button->setBackground("*images/ui/Main Menus/Settings/Settings_Button_Customize00.png");
@@ -5084,7 +5083,7 @@ namespace MainMenu {
 		defaults->setTextColor(makeColor(255, 255, 255, 255));
 		defaults->setTextHighlightColor(makeColor(255, 255, 255, 255));
 		defaults->setSize(SDL_Rect{156, 630, 164, 62});
-		defaults->setText("Restore\nDefaults");
+		defaults->setText(Language::get(5033));
 		defaults->setFont(smallfont_outline);
 		defaults->setWidgetSearchParent(name);
 		defaults->setWidgetBack("discard_and_exit");
@@ -5102,7 +5101,7 @@ namespace MainMenu {
 		discard->setHighlightColor(makeColor(255, 255, 255, 255));
 		discard->setTextColor(makeColor(255, 255, 255, 255));
 		discard->setTextHighlightColor(makeColor(255, 255, 255, 255));
-		discard->setText("Discard\n& Exit");
+		discard->setText(Language::get(5034));
 		discard->setFont(smallfont_outline);
 		discard->setSize(SDL_Rect{
 			(window->getActualSize().w - 164) / 2,
@@ -5127,7 +5126,7 @@ namespace MainMenu {
 		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
 		confirm->setTextColor(makeColor(255, 255, 255, 255));
 		confirm->setTextHighlightColor(makeColor(255, 255, 255, 255));
-		confirm->setText("Confirm\n& Exit");
+		confirm->setText(Language::get(5035));
 		confirm->setFont(smallfont_outline);
 		confirm->setSize(SDL_Rect{504, 630, 164, 62});
 		confirm->setCallback(confirm_callback);
@@ -5144,7 +5143,7 @@ namespace MainMenu {
 
 	static void settingsMinimap(Button& button) {
 		soundActivate();
-		auto window = settingsGenericWindow("minimap", "MINIMAP",
+		auto window = settingsGenericWindow("minimap", Language::get(5044),
 			[](Button& button){ // restore defaults
 				auto parent = static_cast<Frame*>(button.getParent()); assert(parent);
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
@@ -5179,8 +5178,8 @@ namespace MainMenu {
 					}
 				}
 
-				auto prompt = binaryPrompt("Are you sure you want\nto discard changes?",
-					"Yes,\nDiscard", "Cancel",
+				auto prompt = binaryPrompt(Language::get(5029),
+					Language::get(5030), Language::get(5008),
 					[](Button& button) {
 						closeBinary();
 
@@ -5259,27 +5258,27 @@ namespace MainMenu {
 		auto subwindow = window->findFrame("subwindow"); assert(subwindow);
 		int y = 0;
 
-		y += settingsAddSubHeader(*subwindow, y, "scale_header", "Scale", true);
+		y += settingsAddSubHeader(*subwindow, y, "scale_header", Language::get(5045), true);
 
-		/*y += settingsAddSlider(*subwindow, y, "map_scale", "Map scale",
-			"Scale the map to be larger or smaller.",
+		/*y += settingsAddSlider(*subwindow, y, "map_scale",
+            Language::get(5046), Language::get(5047),
             allSettings.minimap.map_scale, 25, 100, sliderPercent,
 			[](Slider& slider){ soundSliderSetting(slider, true); allSettings.minimap.map_scale = slider.getValue(); }, true);*/
 
-		y += settingsAddSlider(*subwindow, y, "icon_scale", "Icon scale",
-			"Scale the size of icons on the map (such as players and allies)",
+		y += settingsAddSlider(*subwindow, y, "icon_scale",
+            Language::get(5048), Language::get(5049),
 			allSettings.minimap.icon_scale, 100, 200, sliderPercent,
 			[](Slider& slider){ soundSliderSetting(slider, true); allSettings.minimap.icon_scale = slider.getValue(); }, true);
 
-		y += settingsAddSubHeader(*subwindow, y, "transparency_header", "Transparency", true);
+		y += settingsAddSubHeader(*subwindow, y, "transparency_header", Language::get(5050), true);
 
-		y += settingsAddSlider(*subwindow, y, "foreground_opacity", "Foreground opacity",
-			"Set the opacity of the minimap's foreground.",
+		y += settingsAddSlider(*subwindow, y, "foreground_opacity",
+            Language::get(5051), Language::get(5052),
 			allSettings.minimap.foreground_opacity, 0, 100, sliderPercent,
 			[](Slider& slider) { soundSliderSetting(slider, true); allSettings.minimap.foreground_opacity = slider.getValue(); }, true);
 
-		y += settingsAddSlider(*subwindow, y, "background_opacity", "Background opacity",
-			"Set the opacity of the minimap's background.",
+		y += settingsAddSlider(*subwindow, y, "background_opacity",
+            Language::get(5053), Language::get(5054),
 			allSettings.minimap.background_opacity, 0, 100, sliderPercent,
 			[](Slider& slider){ soundSliderSetting(slider, true); allSettings.minimap.background_opacity = slider.getValue(); }, true);
 
@@ -5295,7 +5294,7 @@ namespace MainMenu {
 
 	static void settingsMessages(Button& button) {
 		soundActivate();
-		auto window = settingsGenericWindow("messages", "MESSAGES",
+		auto window = settingsGenericWindow("messages", Language::get(5055),
 			[](Button& button){ // restore defaults
 				auto parent = static_cast<Frame*>(button.getParent()); assert(parent);
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
@@ -5330,8 +5329,8 @@ namespace MainMenu {
 					}
 				}
 
-				auto prompt = binaryPrompt("Are you sure you want\nto discard changes?",
-					"Yes,\nDiscard", "Cancel",
+				auto prompt = binaryPrompt(Language::get(5052),
+					Language::get(5030), Language::get(5008),
 					[](Button& button) {
 						closeBinary();
 
@@ -5410,50 +5409,50 @@ namespace MainMenu {
 		auto subwindow = window->findFrame("subwindow"); assert(subwindow);
 		int y = 0;
 
-		y += settingsAddSubHeader(*subwindow, y, "categories_header", "Categories", true);
+		y += settingsAddSubHeader(*subwindow, y, "categories_header", Language::get(5056), true);
 
-		y += settingsAddBooleanOption(*subwindow, y, "messages_combat", "Combat messages",
-			"Enable report of damage received or given in combat.",
+		y += settingsAddBooleanOption(*subwindow, y, "messages_combat",
+            Language::get(5057), Language::get(5058),
 			allSettings.show_messages.combat, [](Button& button) {soundToggleSetting(button); allSettings.show_messages.combat = button.isPressed(); });
 
-		y += settingsAddBooleanOption(*subwindow, y, "messages_status", "Status messages",
-			"Enable report of character status changes and other passive effects.",
+		y += settingsAddBooleanOption(*subwindow, y, "messages_status",
+            Language::get(5059), Language::get(5060),
 			allSettings.show_messages.status, [](Button& button){soundToggleSetting(button); allSettings.show_messages.status = button.isPressed();});
 
-		y += settingsAddBooleanOption(*subwindow, y, "messages_inventory", "Inventory messages",
-			"Enable report of inventory and item appraisal messages.",
+		y += settingsAddBooleanOption(*subwindow, y, "messages_inventory",
+            Language::get(5061), Language::get(5062),
 			allSettings.show_messages.inventory, [](Button& button){soundToggleSetting(button); allSettings.show_messages.inventory = button.isPressed();});
 
-		y += settingsAddBooleanOption(*subwindow, y, "messages_equipment", "Equipment messages",
-			"Enable report of player equipment changes.",
+		y += settingsAddBooleanOption(*subwindow, y, "messages_equipment",
+            Language::get(5063), Language::get(5064),
 			allSettings.show_messages.equipment, [](Button& button){soundToggleSetting(button); allSettings.show_messages.equipment = button.isPressed();});
 
-		y += settingsAddBooleanOption(*subwindow, y, "messages_world", "World messages",
-			"Enable report of diegetic messages, such as speech and text.",
+		y += settingsAddBooleanOption(*subwindow, y, "messages_world",
+            Language::get(5065), Language::get(5066),
 			allSettings.show_messages.world, [](Button& button){soundToggleSetting(button); allSettings.show_messages.world = button.isPressed();});
 
-		y += settingsAddBooleanOption(*subwindow, y, "messages_chat", "Player chat",
-			"Enable multiplayer chat.",
+		y += settingsAddBooleanOption(*subwindow, y, "messages_chat",
+            Language::get(5067), Language::get(5068),
 			allSettings.show_messages.chat, [](Button& button){soundToggleSetting(button); allSettings.show_messages.chat = button.isPressed();});
 
-		y += settingsAddBooleanOption(*subwindow, y, "messages_progression", "Progression messages",
-			"Enable report of player character progression messages (ie level-ups).",
+		y += settingsAddBooleanOption(*subwindow, y, "messages_progression", 
+            Language::get(5069), Language::get(5070),
 			allSettings.show_messages.progression, [](Button& button){soundToggleSetting(button); allSettings.show_messages.progression = button.isPressed();});
 
-		y += settingsAddBooleanOption(*subwindow, y, "messages_interaction", "Interaction messages",
-			"Enable report of player interactions with the world.",
+		y += settingsAddBooleanOption(*subwindow, y, "messages_interaction", 
+            Language::get(5071), Language::get(5072),
 			allSettings.show_messages.interaction, [](Button& button){soundToggleSetting(button); allSettings.show_messages.interaction = button.isPressed();});
 
-		y += settingsAddBooleanOption(*subwindow, y, "messages_inspection", "Inspection messages",
-			"Enable player inspections of world objects.",
+		y += settingsAddBooleanOption(*subwindow, y, "messages_inspection",
+            Language::get(5073), Language::get(5074),
 			allSettings.show_messages.inspection, [](Button& button){soundToggleSetting(button); allSettings.show_messages.inspection = button.isPressed();});
 
-		y += settingsAddBooleanOption(*subwindow, y, "messages_hint", "Hint messages",
-			"Enable cryptic hints for certain items, world events, etc.",
+		y += settingsAddBooleanOption(*subwindow, y, "messages_hint", 
+            Language::get(5075), Language::get(5076),
 			allSettings.show_messages.hint, [](Button& button){soundToggleSetting(button); allSettings.show_messages.hint = button.isPressed();});
 
-		y += settingsAddBooleanOption(*subwindow, y, "messages_obituary", "Obituary messages",
-			"Enable obituary messages for player deaths.",
+		y += settingsAddBooleanOption(*subwindow, y, "messages_obituary",
+            Language::get(5077), Language::get(5078),
 			allSettings.show_messages.obituary, [](Button& button){soundToggleSetting(button); allSettings.show_messages.obituary = button.isPressed();});
 
 		hookSettings(*subwindow,
@@ -5474,9 +5473,9 @@ namespace MainMenu {
 	}
 
 	static int getDeviceIndexForName(const char* name) {
-		if (strcmp(name, "KB & Mouse") == 0) { return 0; }
-		if (strcmp(name, "Gamepad") == 0) { return 1; }
-		if (strcmp(name, "Joystick") == 0) { return 2; }
+		if (strcmp(name, Language::get(5079)) == 0) { return 0; }
+		if (strcmp(name, Language::get(5080)) == 0) { return 1; }
+		if (strcmp(name, Language::get(5081)) == 0) { return 2; }
 		else { return -1; }
 	}
 
@@ -5524,7 +5523,7 @@ namespace MainMenu {
 		bound_binding = "";
 		bound_input = "";
 
-		auto window = settingsGenericWindow("bindings", "BINDINGS",
+		auto window = settingsGenericWindow("bindings", Language::get(5082),
 			[](Button& button){ // restore defaults
 				auto parent = static_cast<Frame*>(button.getParent()); assert(parent);
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
@@ -5570,8 +5569,8 @@ namespace MainMenu {
 					}
 				}
 
-				auto prompt = binaryPrompt("Are you sure you want\nto discard changes?",
-					"Yes,\nDiscard", "Cancel",
+				auto prompt = binaryPrompt(Language::get(5029),
+					Language::get(5030), Language::get(5008),
 					[](Button& button) {
 						closeBinary();
 
@@ -5665,7 +5664,7 @@ namespace MainMenu {
 		auto subwindow = window->findFrame("subwindow"); assert(subwindow);
 		int y = 0;
 
-		y += settingsAddSubHeader(*subwindow, y, "bindings_header", "Bindings", true);
+		y += settingsAddSubHeader(*subwindow, y, "bindings_header", Language::get(5083), true);
         
         std::vector<Setting> bindings;
         bindings.reserve(getBindings(profile).size());
@@ -5680,12 +5679,12 @@ namespace MainMenu {
 			char tip[256];
 			if (inputs.hasController(getMenuOwner())) {
 #ifdef NINTENDO
-				snprintf(tip, sizeof(tip), "Bind a button to %s,\nor press X to delete the current binding", binding.name);
+				snprintf(tip, sizeof(tip), Language::get(5084), binding.name);
 #else
-				snprintf(tip, sizeof(tip), "Bind a button to %s,\nor press Y to delete the current binding", binding.name);
+				snprintf(tip, sizeof(tip), Language::get(5085), binding.name);
 #endif
 			} else {
-				snprintf(tip, sizeof(tip), "Bind an input to %s", binding.name);
+				snprintf(tip, sizeof(tip), Language::get(5086), binding.name);
 			}
 			y += settingsAddBinding(*subwindow, y, player_index, device_index, binding.name, tip,
 				[](Button& button){
@@ -5702,14 +5701,10 @@ namespace MainMenu {
 					char buf[256];
 					
 					if (inputs.hasController(getMenuOwner())) {
-						snprintf(buf, sizeof(buf),
-							"Binding \"%s\".\n"
-							"The next button you press will be bound to this action.",
+						snprintf(buf, sizeof(buf), Language::get(5087),
 							bound_binding.c_str());
 					} else {
-						snprintf(buf, sizeof(buf),
-							"Binding \"%s\". Press ESC to cancel or DEL to delete the binding.\n"
-							"The next input you activate will be bound to this action.",
+						snprintf(buf, sizeof(buf), Language::get(5088),
 							bound_binding.c_str());
 					}
 
@@ -5742,14 +5737,14 @@ namespace MainMenu {
 		                auto glyph = Input::getGlyphPathForInput(bound_button->getText(), false, Input::getControllerType(bound_player));
 		                bound_button->setIcon(glyph.c_str());
 						char buf[256];
-						snprintf(buf, sizeof(buf), "Cancelled rebinding \"%s\"", bound_binding.c_str());
+						snprintf(buf, sizeof(buf), Language::get(5089), bound_binding.c_str());
 						tooltip->setText(buf);
 					} else if (Input::lastInputOfAnyKind == "Delete") {
 						(void)settingsBind(bound_player, bound_device, bound_binding.c_str(), emptyBinding);
 						bound_button->setText(emptyBinding);
 		                bound_button->setIcon("");
 						char buf[256];
-						snprintf(buf, sizeof(buf), "Deleted \"%s\" binding.", bound_binding.c_str());
+						snprintf(buf, sizeof(buf), Language::get(5090), bound_binding.c_str());
 						tooltip->setText(buf);
 					} else {
 						bool result = settingsBind(bound_player, bound_device, bound_binding.c_str(), Input::lastInputOfAnyKind.c_str());
@@ -5763,7 +5758,7 @@ namespace MainMenu {
 		                auto glyph = Input::getGlyphPathForInput(bound_button->getText(), false, Input::getControllerType(bound_player));
 		                bound_button->setIcon(glyph.c_str());
 						char buf[256];
-						snprintf(buf, sizeof(buf), "Bound \"%s\" to \"%s\"", bound_binding.c_str(), newinput.c_str());
+						snprintf(buf, sizeof(buf), Language::get(5091), bound_binding.c_str(), newinput.c_str());
 						tooltip->setText(buf);
 					}
 					bound_button = nullptr;
@@ -5820,20 +5815,8 @@ bind_failed:
 		settingsSelect(*subwindow, bindings[0]);
 	}
 
-	static const std::vector<const char*> crosshairs =
-	{ 
-		"Dot",
-		"Dot (Large)",
-		"Plus (Small)",
-		"Plus (Medium)",
-		"Plus (Large)",
-		"Cross",
-		"Carat",
-		"Circle",
-		"Dots (3x)",
-		"Dots (4x)",
-		":)",
-		"@" };
+	static std::vector<const char*> crosshairs;
+    
 	static void settingsCrosshairType(Button& button) {
 		settingsOpenDropdown(button, "shootmode_crosshair", DropdownType::Short, [](Frame::entry_t& entry) {
 			soundActivate();
@@ -5868,102 +5851,81 @@ bind_failed:
 		}
 		int y = 0;
 
-		y += settingsAddSubHeader(*settings_subwindow, y, "general", "General Options");
-		y += settingsAddBooleanOption(*settings_subwindow, y, "fast_restart", "Instant Restart on Gameover",
-			"Automatically restarts the game quickly after dying.",
+		y += settingsAddSubHeader(*settings_subwindow, y, "general", Language::get(5104));
+		y += settingsAddBooleanOption(*settings_subwindow, y, "fast_restart", Language::get(5105), Language::get(5106),
 			allSettings.fast_restart, [](Button& button){soundToggleSetting(button); allSettings.fast_restart = button.isPressed();});
 
-		y += settingsAddSubHeader(*settings_subwindow, y, "inventory", "Inventory Options");
-		y += settingsAddBooleanOption(*settings_subwindow, y, "add_items_to_hotbar", "Add Items to Hotbar",
-			"Automatically fill the hotbar with recently collected items.",
+		y += settingsAddSubHeader(*settings_subwindow, y, "inventory", Language::get(5107));
+		y += settingsAddBooleanOption(*settings_subwindow, y, "add_items_to_hotbar", Language::get(5108), Language::get(5109),
 			allSettings.add_items_to_hotbar_enabled, [](Button& button){soundToggleSetting(button); allSettings.add_items_to_hotbar_enabled = button.isPressed();});
-		y += settingsAddCustomize(*settings_subwindow, y, "inventory_sorting", "Inventory Sorting",
-			"Customize the way items are automatically sorted in your inventory.",
+		y += settingsAddCustomize(*settings_subwindow, y, "inventory_sorting", Language::get(5110), Language::get(5111),
 			[](Button& button){allSettings.inventory_sorting = InventorySorting::load(); settingsCustomizeInventorySorting(button);});
 #ifndef NINTENDO
-		y += settingsAddBooleanOption(*settings_subwindow, y, "use_on_release", "Use on Release",
-			"Activate an item as soon as the Use key is released in the inventory window.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "use_on_release", Language::get(5112), Language::get(5113),
 			allSettings.use_on_release_enabled, [](Button& button){soundToggleSetting(button); allSettings.use_on_release_enabled = button.isPressed();});
 #endif
 
-		y += settingsAddSubHeader(*settings_subwindow, y, "hud", "HUD Options");
+		y += settingsAddSubHeader(*settings_subwindow, y, "hud", Language::get(5114));
 #ifndef NINTENDO
-        y += settingsAddSlider(*settings_subwindow, y, "ui_scale", "HUD Scaling",
-            "Scale the UI to a larger or smaller size. (Recommended values: 50%, 75%, or 100%)",
+        y += settingsAddSlider(*settings_subwindow, y, "ui_scale", Language::get(5115), Language::get(5116),
             allSettings.ui_scale, 50.f, 100.f, sliderPercent,
             [](Slider& slider){soundSliderSetting(slider, true); allSettings.ui_scale = floorf(slider.getValue());});
 #endif
-		y += settingsAddSlider(*settings_subwindow, y, "enemybar_scale", "Enemy Health Bar Scaling",
-			"Control size of in-world popups for enemy health bars.",
+		y += settingsAddSlider(*settings_subwindow, y, "enemybar_scale", Language::get(5117), Language::get(5118),
 			allSettings.enemybar_scale, 50, 100, sliderPercent, [](Slider& slider) {soundSliderSetting(slider, true); allSettings.enemybar_scale = slider.getValue(); });
-		y += settingsAddSlider(*settings_subwindow, y, "world_tooltip_scale", "Popup Scaling",
-			"Control size of in-world popups for items, gravestones and NPC dialogue.",
+		y += settingsAddSlider(*settings_subwindow, y, "world_tooltip_scale", Language::get(5119), Language::get(5120),
 			allSettings.world_tooltip_scale, 100, 200, sliderPercent, [](Slider& slider) {soundSliderSetting(slider, true); allSettings.world_tooltip_scale = slider.getValue(); });
-		y += settingsAddSlider(*settings_subwindow, y, "world_tooltip_scale_splitscreen", "Popup Scaling (Splitscreen)",
-			"Control size of in-world popups for items, gravestones and NPC dialogue in splitscreen.",
+		y += settingsAddSlider(*settings_subwindow, y, "world_tooltip_scale_splitscreen", Language::get(5121), Language::get(5122),
 			allSettings.world_tooltip_scale_splitscreen, 100, 200, sliderPercent, [](Slider& slider) {soundSliderSetting(slider, true); allSettings.world_tooltip_scale_splitscreen = slider.getValue(); });
-		y += settingsAddSlider(*settings_subwindow, y, "item_tooltip_height", "Item Tooltip Height",
-			"Adjust the vertical position of in-world item tooltip popups.",
+		y += settingsAddSlider(*settings_subwindow, y, "item_tooltip_height", Language::get(5123), Language::get(5124),
 			allSettings.item_tooltip_height, 50, 100, sliderPercent, [
 			](Slider& slider) {soundSliderSetting(slider, true); allSettings.item_tooltip_height = slider.getValue(); });
-		y += settingsAddSlider(*settings_subwindow, y, "shootmode_crosshair_opacity", "Crosshair Opacity",
-			"Adjust the opacity of the crosshair.",
+		y += settingsAddSlider(*settings_subwindow, y, "shootmode_crosshair_opacity", Language::get(5125), Language::get(5126),
 			allSettings.shootmode_crosshair_opacity, 0, 100, sliderPercent, [
 			](Slider& slider) {soundSliderSetting(slider, true); allSettings.shootmode_crosshair_opacity = slider.getValue(); });
+   
+        crosshairs.clear();
+        for (int c = 5092; c <= 5103; ++c) {
+            crosshairs.push_back(Language::get(c));
+        }
+   
 		const char* selected_mode = crosshairs[allSettings.shootmode_crosshair];
-		y += settingsAddDropdown(*settings_subwindow, y, "shootmode_crosshair", "Crosshair Type", "Adjust the appearance of the crosshair.",
+		y += settingsAddDropdown(*settings_subwindow, y, "shootmode_crosshair", Language::get(5127), Language::get(5128),
 			false, crosshairs, selected_mode, settingsCrosshairType);
 
 #ifndef NINTENDO
-        y += settingsAddBooleanOption(*settings_subwindow, y, "ui_filter", "Filter Scaling",
-            "Scaled UI elements will have softer edges if this is enabled, at the cost of some sharpness.",
+        y += settingsAddBooleanOption(*settings_subwindow, y, "ui_filter", Language::get(5129), Language::get(5130),
             allSettings.ui_filter_enabled, [](Button& button){soundToggleSetting(button); allSettings.ui_filter_enabled = button.isPressed();});
 #endif
 
-		y += settingsAddCustomize(*settings_subwindow, y, "minimap_settings", "Minimap Settings",
-			"Customize the appearance of the in-game minimap.",
+		y += settingsAddCustomize(*settings_subwindow, y, "minimap_settings", Language::get(5131), Language::get(5132),
 			[](Button& button){allSettings.minimap = Minimap::load(); settingsMinimap(button);});
-		y += settingsAddBooleanWithCustomizeOption(*settings_subwindow, y, "show_messages", "Show Messages",
-			"Customize which messages will be logged to the player, if any.",
+		y += settingsAddBooleanWithCustomizeOption(*settings_subwindow, y, "show_messages", Language::get(5133), Language::get(5134),
 			allSettings.show_messages_enabled, [](Button& button){soundToggleSetting(button); allSettings.show_messages_enabled = button.isPressed();},
 			[](Button& button){allSettings.show_messages = Messages::load(); settingsMessages(button);});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "show_player_nametags", "Show Player Nametags",
-			"Display the name of each player character above their avatar.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "show_player_nametags", Language::get(5135), Language::get(5136),
 			allSettings.show_player_nametags_enabled, [](Button& button){soundToggleSetting(button); allSettings.show_player_nametags_enabled = button.isPressed();});
 
 
-		y += settingsAddSubHeader(*settings_subwindow, y, "accessibility", "Accessibility");
-		y += settingsAddBooleanOption(*settings_subwindow, y, "content_control", "Content Control",
-			"Disable the appearance of blood and other explicit kinds of content in the game",
+		y += settingsAddSubHeader(*settings_subwindow, y, "accessibility", Language::get(5137));
+		y += settingsAddBooleanOption(*settings_subwindow, y, "content_control", Language::get(5138), Language::get(5139),
 			allSettings.content_control_enabled, [](Button& button) {soundToggleSetting(button); allSettings.content_control_enabled = button.isPressed(); });
-		y += settingsAddBooleanOption(*settings_subwindow, y, "colorblind_mode", "Colorblind Mode",
-			"Change the appearance of certain UI elements to improve visibility for certain colorblind individuals.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "colorblind_mode", Language::get(5140), Language::get(5141),
 			allSettings.colorblind_mode_enabled, [](Button& button) {soundToggleSetting(button); allSettings.colorblind_mode_enabled = button.isPressed(); });
-		const char* arachnophobia_desc;
-		if ( intro ) {
-			arachnophobia_desc = "Replace all giant spiders in the game with hostile crustaceans.";
-		}
-		else {
-			arachnophobia_desc = "Replace all giant spiders in the game with hostile crustaceans. (Updates at end of current dungeon level)";
-		}
-		y += settingsAddBooleanOption(*settings_subwindow, y, "arachnophobia_filter", "Arachnophobia Filter",
+		const char* arachnophobia_desc = Language::get(intro ? 5142 : 5143);
+		y += settingsAddBooleanOption(*settings_subwindow, y, "arachnophobia_filter", Language::get(5144),
 			arachnophobia_desc, allSettings.arachnophobia_filter_enabled,
 			[](Button& button) {soundToggleSetting(button); allSettings.arachnophobia_filter_enabled = button.isPressed(); });
-		y += settingsAddBooleanOption(*settings_subwindow, y, "shaking", "Shaking",
-			"Toggle the camera's ability to twist and roll when the player stumbles or receives damage.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "shaking", Language::get(5145), Language::get(5146),
 			allSettings.shaking_enabled, [](Button& button) {soundToggleSetting(button); allSettings.shaking_enabled = button.isPressed(); });
-		y += settingsAddBooleanOption(*settings_subwindow, y, "bobbing", "Bobbing",
-			"Toggle the camera's ability to bob steadily as the player moves.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "bobbing", Language::get(5147), Language::get(5148),
 			allSettings.bobbing_enabled, [](Button& button) {soundToggleSetting(button); allSettings.bobbing_enabled = button.isPressed(); });
-		y += settingsAddBooleanOption(*settings_subwindow, y, "light_flicker", "Light Flicker",
-			"Toggle the flickering appearance of torches and other light fixtures in the game world.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "light_flicker", Language::get(5149), Language::get(5150),
 			allSettings.light_flicker_enabled, [](Button& button) {soundToggleSetting(button); allSettings.light_flicker_enabled = button.isPressed(); });
-		y += settingsAddBooleanOption(*settings_subwindow, y, "hold_to_activate", "Hold To Activate Exits",
-			"Toggle to change dungeon exits requiring long hold of the \"Use\" binding.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "hold_to_activate", Language::get(5151), Language::get(5152),
 			allSettings.hold_to_activate_enabled, [](Button& button) {soundToggleSetting(button); allSettings.hold_to_activate_enabled = button.isPressed(); });
 #if 0
-		y += settingsAddBooleanOption(*settings_subwindow, y, "show_hud", "Show HUD",
-			"Toggle the display of health and other status bars in game when the inventory is closed.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "show_hud", Language::get(5153), Language::get(5154),
 			allSettings.show_hud_enabled, [](Button& button){soundToggleSetting(button); allSettings.show_hud_enabled = button.isPressed();});
 #endif
 
@@ -6085,33 +6047,35 @@ bind_failed:
 			displays_formatted_ptrs.push_back(displays_formatted.back().c_str());
 		}
 
-        const std::vector<const char*> modes = {"Windowed", "Borderless", "Fullscreen"};
-		const char* selected_mode = borderless ? "Borderless" : (fullscreen ? "Fullscreen" : "Windowed");
+        std::vector<const char*> modes;
+        modes.push_back(Language::get(5037));   // windowed
+        //modes.push_back(Language::get(5038)); // bordered
+        modes.push_back(Language::get(5039));   // borderless
+        modes.push_back(Language::get(5040));   // fullscreen
+		const char* selected_mode = borderless ? Language::get(5039):
+            (fullscreen ? Language::get(5040) : Language::get(5037));
 
-		y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display Mode");
-        y += settingsAddDropdown(*settings_subwindow, y, "resolution", "Resolution", "Change the current window resolution.",
+		y += settingsAddSubHeader(*settings_subwindow, y, "display", Language::get(5155));
+        y += settingsAddDropdown(*settings_subwindow, y, "resolution", Language::get(5156), Language::get(5157),
             true, resolutions_formatted_ptrs, resolutions_formatted_ptrs[selected_res],
             resolutions_formatted.size() > 5 ? settingsResolutionBig : settingsResolutionSmall);
-        y += settingsAddDropdown(*settings_subwindow, y, "device", "Device", "Change the current display device.",
+        y += settingsAddDropdown(*settings_subwindow, y, "device", Language::get(5158), Language::get(5159),
             false, displays_formatted_ptrs, displays_formatted_ptrs[allSettings.video.display_id],
             settingsDisplayDevice);
-        y += settingsAddDropdown(*settings_subwindow, y, "window_mode", "Window Mode", "Change the current display mode.",
+        y += settingsAddDropdown(*settings_subwindow, y, "window_mode", Language::get(5160), Language::get(5161),
             false, modes, selected_mode, settingsWindowMode);
-		y += settingsAddBooleanOption(*settings_subwindow, y, "vsync", "Vertical Sync",
-			"Prevent screen-tearing by locking the game's refresh rate to the current display.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "vsync", Language::get(5162), Language::get(5163),
 			allSettings.video.vsync_enabled, [](Button& button){soundToggleSetting(button); allSettings.video.vsync_enabled = button.isPressed();});
 #endif
-		y += settingsAddSubHeader(*settings_subwindow, y, "options", "Display Options");
-		y += settingsAddSlider(*settings_subwindow, y, "gamma", "Gamma",
-			"Adjust the brightness of the visuals in-game.",
+		y += settingsAddSubHeader(*settings_subwindow, y, "options", Language::get(5164));
+		y += settingsAddSlider(*settings_subwindow, y, "gamma", Language::get(5165), Language::get(5166),
 			allSettings.video.gamma, 50, 200, sliderPercent, [](Slider& slider){soundSliderSetting(slider, true); allSettings.video.gamma = slider.getValue();});
-		y += settingsAddSlider(*settings_subwindow, y, "fov", "Field of View",
-			"Adjust the vertical field-of-view of the in-game camera.",
+		y += settingsAddSlider(*settings_subwindow, y, "fov", Language::get(5167), Language::get(5168),
 			allSettings.fov, 40, 100, nullptr, [](Slider& slider){soundSliderSetting(slider, true); allSettings.fov = slider.getValue();});
 #ifndef NINTENDO
         auto sliderFPS = [](float v) -> const char* {
             if ((int)v == AUTO_FPS) {
-                return "Auto";
+                return Language::get(5181);
             } else {
                 static char buf[8];
                 snprintf(buf, sizeof(buf), "%d", (int)v);
@@ -6119,24 +6083,18 @@ bind_failed:
             }
         };
         
-		y += settingsAddSlider(*settings_subwindow, y, "fps", "FPS limit",
-			"Limit the frame-rate of the game window. Do not set this higher than your refresh rate. (Recommended: Auto)",
+		y += settingsAddSlider(*settings_subwindow, y, "fps", Language::get(5169), Language::get(5170),
 			allSettings.fps ? allSettings.fps : AUTO_FPS, MIN_FPS, AUTO_FPS, sliderFPS, [](Slider& slider){soundSliderSetting(slider, true); allSettings.fps = slider.getValue();});
-		/*y += settingsAddBooleanOption(*settings_subwindow, y, "hdr_enabled", "High Dynamic Range (HDR)",
-			"Increases color contrast of the rendered world with both brightened and darkened areas.",
+		/*y += settingsAddBooleanOption(*settings_subwindow, y, "hdr_enabled", Language::get(5171), Language::get(5172),
 			allSettings.hdr_enabled, [](Button& button) {soundToggleSetting(button); allSettings.hdr_enabled = button.isPressed(); });*/
-		y += settingsAddBooleanOption(*settings_subwindow, y, "use_frame_interpolation", "Camera Interpolation",
-			"Smooth player camera by interpolating camera movements over additional frames.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "use_frame_interpolation", Language::get(5173), Language::get(5174),
 			allSettings.use_frame_interpolation, [](Button& button) {soundToggleSetting(button); allSettings.use_frame_interpolation = button.isPressed();});
 #endif
-		y += settingsAddBooleanOption(*settings_subwindow, y, "vertical_split", "Vertical Splitscreen",
-			"For splitscreen with two-players: divide the screen along a vertical line rather than a horizontal one.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "vertical_split", Language::get(5175), Language::get(5176),
 			allSettings.vertical_split_enabled, [](Button& button){soundToggleSetting(button); allSettings.vertical_split_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "clipped_split", "Clipped Splitscreen",
-			"For splitscreen with two-players: reduce each viewport by 20% to preserve aspect ratio.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "clipped_split", Language::get(5177), Language::get(5178),
 			allSettings.clipped_split_enabled, [](Button& button){soundToggleSetting(button); allSettings.clipped_split_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "staggered_split", "Staggered Splitscreen",
-			"For splitscreen with two-players: stagger each viewport so they each rest in a corner of the display.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "staggered_split", Language::get(5179), Language::get(5180),
 			allSettings.staggered_split_enabled, [](Button& button){soundToggleSetting(button); allSettings.staggered_split_enabled = button.isPressed();});
 
 #ifndef NINTENDO
@@ -6214,54 +6172,46 @@ bind_failed:
 			drivers_formatted_ptrs.push_back(d.name);
 		}
 
-		y += settingsAddSubHeader(*settings_subwindow, y, "output", "Output");
-		y += settingsAddDropdown(*settings_subwindow, y, "device", "Device", "The output device for all game audio",
+		y += settingsAddSubHeader(*settings_subwindow, y, "output", Language::get(5182));
+		y += settingsAddDropdown(*settings_subwindow, y, "device", Language::get(5183), Language::get(5184),
             true, drivers_formatted_ptrs, drivers_formatted_ptrs[selected_device],
             settingsAudioDevice);
 #endif
 
-		y += settingsAddSubHeader(*settings_subwindow, y, "volume", "Volume");
-		y += settingsAddSlider(*settings_subwindow, y, "master_volume", "Master Volume",
-			"Adjust the volume of all sound sources equally.",
+		y += settingsAddSubHeader(*settings_subwindow, y, "volume", Language::get(5185));
+		y += settingsAddSlider(*settings_subwindow, y, "master_volume", Language::get(5186), Language::get(5187),
 			allSettings.master_volume, 0, 100, sliderPercent, [](Slider& slider){soundSliderSetting(slider, true); allSettings.master_volume = slider.getValue();
 				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
 				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0, allSettings.notification_volume / 100.0);});
-		y += settingsAddSlider(*settings_subwindow, y, "gameplay_volume", "Gameplay Volume",
-			"Adjust the volume of most game sound effects.",
+		y += settingsAddSlider(*settings_subwindow, y, "gameplay_volume", Language::get(5188), Language::get(5189),
 			allSettings.gameplay_volume, 0, 100, sliderPercent, [](Slider& slider){soundSliderSetting(slider, true); allSettings.gameplay_volume = slider.getValue();
 				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
 				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0, allSettings.notification_volume / 100.0);});
-		y += settingsAddSlider(*settings_subwindow, y, "ambient_volume", "Ambient Volume",
-			"Adjust the volume of ominous subterranean sound-cues.",
+		y += settingsAddSlider(*settings_subwindow, y, "ambient_volume", Language::get(5190), Language::get(5191),
 			allSettings.ambient_volume, 0, 100, sliderPercent, [](Slider& slider){soundSliderSetting(slider, true); allSettings.ambient_volume = slider.getValue();
 				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
 				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0, allSettings.notification_volume / 100.0);});
-		y += settingsAddSlider(*settings_subwindow, y, "environment_volume", "Environment Volume",
-			"Adjust the volume of flowing water and lava.",
+		y += settingsAddSlider(*settings_subwindow, y, "environment_volume", Language::get(5192), Language::get(5193),
 			allSettings.environment_volume, 0, 100, sliderPercent, [](Slider& slider){soundSliderSetting(slider, true); allSettings.environment_volume = slider.getValue();
 				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
 				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0, allSettings.notification_volume / 100.0);});
-		y += settingsAddSlider(*settings_subwindow, y, "notification_volume", "Notification Volume",
-			"Adjust the volume of skill increase and level up notifications.",
+		y += settingsAddSlider(*settings_subwindow, y, "notification_volume", Language::get(5194), Language::get(5195),
 			allSettings.notification_volume, 0, 100, sliderPercent, [](Slider& slider) {soundSliderSetting(slider, true); allSettings.notification_volume = slider.getValue();
 		setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
 			allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0, allSettings.notification_volume / 100.0); });
-		y += settingsAddSlider(*settings_subwindow, y, "music_volume", "Music Volume",
-			"Adjust the volume of the game's soundtrack.",
+		y += settingsAddSlider(*settings_subwindow, y, "music_volume", Language::get(5196), Language::get(5197),
 			allSettings.music_volume, 0, 100, sliderPercent, [](Slider& slider){soundSliderSetting(slider, true); allSettings.music_volume = slider.getValue();
 				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
 				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0, allSettings.notification_volume / 100.0);});
 
-		y += settingsAddSubHeader(*settings_subwindow, y, "options", "Options");
-		y += settingsAddBooleanOption(*settings_subwindow, y, "minimap_pings", "Minimap Pings",
-			"Toggle the ability to hear pings on the minimap",
+		y += settingsAddSubHeader(*settings_subwindow, y, "options", Language::get(5198));
+		y += settingsAddBooleanOption(*settings_subwindow, y, "minimap_pings", Language::get(5199), Language::get(5200),
 			allSettings.minimap_pings_enabled, [](Button& button){soundToggleSetting(button); allSettings.minimap_pings_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "player_monster_sounds", "Player Monster Sounds",
-			"Toggle the chance to emit monstrous mumbles when playing a non-human character.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "player_monster_sounds", Language::get(5201), Language::get(5202),
 			allSettings.player_monster_sounds_enabled, [](Button& button){soundToggleSetting(button); allSettings.player_monster_sounds_enabled = button.isPressed();});
 #ifndef NINTENDO
-		y += settingsAddBooleanOption(*settings_subwindow, y, "out_of_focus_audio", "Out-of-Focus Audio",
-			"Enable audio sources even when the game window is out-of-focus.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "out_of_focus_audio", Language::get(5203),
+			Language::get(5204),
 			allSettings.out_of_focus_audio_enabled, [](Button& button){soundToggleSetting(button); allSettings.out_of_focus_audio_enabled = button.isPressed();});
 #endif
 
@@ -6320,7 +6270,7 @@ bind_failed:
             const auto& input = Input::inputs[player];
             const auto controllerType = input.getControllerType();
             
-            y += settingsAddSubHeader(*settings_subwindow, y, "layout_header", "Layout");
+            y += settingsAddSubHeader(*settings_subwindow, y, "layout_header", Language::get(5205));
             y += 8;
             const char* path;
             switch (controllerType) {
@@ -6531,7 +6481,7 @@ bind_failed:
                     }
                     if (bindings.empty()) {
                         field->setColor(makeColorRGB(127, 127, 127));
-                        field->setText("- UNBOUND -");
+                        field->setText(Language::get(5206));
                     } else {
                         if (bindings.size() == 1) {
                             field->setText(bindings[0].c_str());
@@ -6574,24 +6524,23 @@ bind_failed:
             y += 20;
         }
         
-        y += settingsAddSubHeader(*settings_subwindow, y, "bindings_header", "Bindings", true);
+        y += settingsAddSubHeader(*settings_subwindow, y, "bindings_header", Language::get(5207), true);
         
         static std::vector<std::string> players;
         static std::vector<const char*> player_ptrs;
         if (players.empty()) {
             players.reserve(MAX_SPLITSCREEN);
             for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
-                std::string str = "Player ";
+                std::string str = Language::get(5208);
                 str += std::to_string(c + 1);
                 players.emplace_back(str);
                 player_ptrs.emplace_back(players.back().c_str());
             }
         }
 
-        std::string player_str = "Player " + std::to_string(player + 1);
-        y += settingsAddDropdown(*settings_subwindow, y, "player_dropdown_button", "Player",
-            "Select the player whose controls you wish to customize.", false,
-            player_ptrs, player_str.c_str(),
+        std::string player_str = Language::get(5208) + std::to_string(player + 1);
+        y += settingsAddDropdown(*settings_subwindow, y, "player_dropdown_button",
+            Language::get(5209), Language::get(5210), false, player_ptrs, player_str.c_str(),
             [](Button& button){
                 soundActivate();
                 settingsOpenDropdown(button, "player_dropdown", DropdownType::Short,
@@ -6617,13 +6566,13 @@ bind_failed:
         
 #ifndef NINTENDO
         const std::vector<const char*> devices = {
-            "KB & Mouse",
-            "Gamepad",
-            //"Joystick", // Maybe for the future.
+            Language::get(5079),
+            Language::get(5080),
+            //Language::get(5081),
         };
         
-        y += settingsAddDropdown(*settings_subwindow, y, "device_dropdown_button", "Device",
-            "Select a controller for the given player.", false, devices, devices[device],
+        y += settingsAddDropdown(*settings_subwindow, y, "device_dropdown_button",
+            Language::get(5211), Language::get(5212), false, devices, devices[device],
             [](Button& button){
                 soundActivate();
                 settingsOpenDropdown(button, "device_dropdown", DropdownType::Short,
@@ -6653,8 +6602,8 @@ bind_failed:
             layouts.emplace_back(layout.name.c_str());
         }
         
-        y += settingsAddDropdown(*settings_subwindow, y, "profile_dropdown_button", "Profile",
-            "Select a predefined binding layout for the given player.", false, layouts, profile,
+        y += settingsAddDropdown(*settings_subwindow, y, "profile_dropdown_button",
+            Language::get(5213), Language::get(5214), false, layouts, profile,
             [](Button& button){
                 soundActivate();
                 settingsOpenDropdown(button, "profile_dropdown", DropdownType::Short,
@@ -6691,8 +6640,8 @@ bind_failed:
                     });
             });
 
-        y += settingsAddCustomize(*settings_subwindow, y, "bindings", "Bindings",
-            "Change controller bindings.",
+        y += settingsAddCustomize(*settings_subwindow, y, "bindings",
+            Language::get(5215), Language::get(5216),
             [](Button&){
                 const int player = multiplayer == CLIENT ? 0 : getMenuOwner();
                 old_bindings = allSettings.bindings;
@@ -6701,25 +6650,20 @@ bind_failed:
 
         // Mouse & Keyboard settings
         if (device == 0) {
-            y += settingsAddSubHeader(*settings_subwindow, y, "settings", "Mouse & Keyboard");
-            y += settingsAddSlider(*settings_subwindow, y, "mouse_sensitivity", "Mouse Sensitivity",
-                "Control the speed by which mouse movement affects camera movement.",
+            y += settingsAddSubHeader(*settings_subwindow, y, "settings", Language::get(5217));
+            y += settingsAddSlider(*settings_subwindow, y, "mouse_sensitivity", Language::get(5218), Language::get(5219),
                 allSettings.controls[bound_player].mouse_sensitivity, 0, 100, nullptr, [](Slider& slider)
                 {soundSliderSetting(slider, true); allSettings.controls[bound_player].mouse_sensitivity = slider.getValue();});
-            y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", "Number Keys in Inventory",
-                "Allow the player to bind inventory items to the hotbar using the number keys on their keyboard.",
+            y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", Language::get(5220), Language::get(5221),
                 allSettings.controls[bound_player].numkeys_in_inventory_enabled, [](Button& button)
                 {soundToggleSetting(button); allSettings.controls[bound_player].numkeys_in_inventory_enabled = button.isPressed();});
-            y += settingsAddBooleanOption(*settings_subwindow, y, "reverse_mouse", "Reverse Mouse",
-                "Reverse mouse up and down movement for controlling the orientation of the player.",
+            y += settingsAddBooleanOption(*settings_subwindow, y, "reverse_mouse", Language::get(5222), Language::get(5223),
                 allSettings.controls[bound_player].reverse_mouse_enabled, [](Button& button)
                 {soundToggleSetting(button); allSettings.controls[bound_player].reverse_mouse_enabled = button.isPressed();});
-            y += settingsAddBooleanOption(*settings_subwindow, y, "smooth_mouse", "Smooth Mouse",
-                "Smooth the movement of the mouse over a few frames of input.",
+            y += settingsAddBooleanOption(*settings_subwindow, y, "smooth_mouse", Language::get(5224), Language::get(5225),
                 allSettings.controls[bound_player].smooth_mouse_enabled, [](Button& button)
                 {soundToggleSetting(button); allSettings.controls[bound_player].smooth_mouse_enabled = button.isPressed();});
-            y += settingsAddBooleanOption(*settings_subwindow, y, "mkb_world_tooltips", "Interact Aim Assist",
-                "Disable to always use precise cursor targeting on interactable objects and remove interact popups.",
+            y += settingsAddBooleanOption(*settings_subwindow, y, "mkb_world_tooltips", Language::get(5226), Language::get(5227),
                 allSettings.controls[bound_player].mkb_world_tooltips_enabled, [](Button& button)
                 {soundToggleSetting(button); allSettings.controls[bound_player].mkb_world_tooltips_enabled = button.isPressed();});
             
@@ -6735,26 +6679,21 @@ bind_failed:
         
         // Gamepad settings
         if (device == 1) {
-            y += settingsAddSubHeader(*settings_subwindow, y, "settings", "Controller Settings");
-            std::vector<const char*> gamepad_facehotbar_strings = { "Modern", "Classic" };
-            y += settingsAddDropdown(*settings_subwindow, y, "gamepad_facehotbar", "Hotbar Layout",
-                "Modern: Grouped 3x3 slot layout using held buttons. Classic: Flat 10 slot layout with simpler controls.", false,
+            y += settingsAddSubHeader(*settings_subwindow, y, "settings", Language::get(5228));
+            std::vector<const char*> gamepad_facehotbar_strings = { Language::get(5229), Language::get(5230) };
+            y += settingsAddDropdown(*settings_subwindow, y, "gamepad_facehotbar", Language::get(5231), Language::get(5232), false,
                 gamepad_facehotbar_strings, gamepad_facehotbar_strings[allSettings.controls[bound_player].gamepad_facehotbar ? 0 : 1], settingsGamepadHotbarLayout);
-            y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_x", "Turn Sensitivity X",
-                "Affect the horizontal sensitivity of the control stick used for turning.",
+            y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_x", Language::get(5233), Language::get(5234),
                 allSettings.controls[bound_player].turn_sensitivity_x, 25.f, 200.f, sliderPercent, [](Slider& slider)
                 {soundSliderSetting(slider, true); allSettings.controls[bound_player].turn_sensitivity_x = slider.getValue();});
-            y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_y", "Turn Sensitivity Y",
-                "Affect the vertical sensitivity of the control stick used for turning.",
+            y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_y", Language::get(5235), Language::get(5236),
                 allSettings.controls[bound_player].turn_sensitivity_y, 25.f, 200.f, sliderPercent, [](Slider& slider)
                 {soundSliderSetting(slider, true); allSettings.controls[bound_player].turn_sensitivity_y = slider.getValue();});
 
-            y += settingsAddBooleanOption(*settings_subwindow, y, "gamepad_camera_invert_x", "Invert Camera Look X",
-                "Enable to invert left/right look controls of the player camera.",
+            y += settingsAddBooleanOption(*settings_subwindow, y, "gamepad_camera_invert_x", Language::get(5237), Language::get(5238),
                 allSettings.controls[bound_player].gamepad_camera_invert_x, [](Button& button)
                 {soundToggleSetting(button); allSettings.controls[bound_player].gamepad_camera_invert_x = button.isPressed();});
-            y += settingsAddBooleanOption(*settings_subwindow, y, "gamepad_camera_invert_y", "Invert Camera Look Y",
-                "Enable to invert up/down look controls of the player camera.",
+            y += settingsAddBooleanOption(*settings_subwindow, y, "gamepad_camera_invert_y", Language::get(5239), Language::get(5240),
                 allSettings.controls[bound_player].gamepad_camera_invert_y, [](Button& button)
                 {soundToggleSetting(button); allSettings.controls[bound_player].gamepad_camera_invert_y = button.isPressed();});
             
@@ -6799,19 +6738,18 @@ bind_failed:
 		int y = 0;
 
 #if 0
-		y += settingsAddSubHeader(*settings_subwindow, y, "general", "General");
-		y += settingsAddBooleanOption(*settings_subwindow, y, "show_ip_address", "Streamer Mode",
-			"If you're a streamer and know what doxxing is, definitely switch this on.",
+		y += settingsAddSubHeader(*settings_subwindow, y, "general", Language::get(5241));
+		y += settingsAddBooleanOption(*settings_subwindow, y, "show_ip_address", Language::get(5242), Language::get(5243),
 			allSettings.show_ip_address_enabled, [](Button& button){soundToggleSetting(button); allSettings.show_ip_address_enabled = button.isPressed();});
 #endif
 
         char port_desc[1024];
-        snprintf(port_desc, sizeof(port_desc), "The port number to use when hosting a LAN lobby. (Default: %d)", DEFAULT_PORT);
+        snprintf(port_desc, sizeof(port_desc), Language::get(5244), DEFAULT_PORT);
 
         char buf[16];
         snprintf(buf, sizeof(buf), "%hu", (Uint16)allSettings.port_number);
-		y += settingsAddSubHeader(*settings_subwindow, y, "lan", "LAN");
-		y += settingsAddField(*settings_subwindow, y, "port_number", "Port",
+		y += settingsAddSubHeader(*settings_subwindow, y, "lan", Language::get(5245));
+		y += settingsAddField(*settings_subwindow, y, "port_number", Language::get(5246),
 			port_desc, buf, [](Field& field) {
 				auto oldPort = allSettings.port_number;
 				allSettings.port_number = (Uint16)strtol(field.getText(), nullptr, 10);
@@ -6827,9 +6765,8 @@ bind_failed:
 				}
 			});
 #if defined(USE_EOS) && (defined(STEAMWORKS) || defined(NINTENDO))
-		y += settingsAddSubHeader(*settings_subwindow, y, "crossplay", "Crossplay");
-		y += settingsAddBooleanOption(*settings_subwindow, y, "crossplay", "Crossplay Enabled",
-		    "Enable crossplay through Epic Online Services",
+		y += settingsAddSubHeader(*settings_subwindow, y, "crossplay", Language::get(5247));
+		y += settingsAddBooleanOption(*settings_subwindow, y, "crossplay", Language::get(5248), Language::get(5249),
 		    allSettings.crossplay_enabled, [](Button& button){soundToggleSetting(button); allSettings.crossplay_enabled = button.isPressed();});
 
 		hookSettings(*settings_subwindow,
@@ -6866,34 +6803,25 @@ bind_failed:
 			allSettings.cheats_enabled = svFlags & SV_FLAG_CHEATS;
 		}
 
-		y += settingsAddSubHeader(*settings_subwindow, y, "game", "Game Settings");
-		y += settingsAddBooleanOption(*settings_subwindow, y, "hunger", "Hunger",
-			"When hunger is off, passive HP regeneration is disabled and eating food heals the player directly.",
+		y += settingsAddSubHeader(*settings_subwindow, y, "game", Language::get(5250));
+		y += settingsAddBooleanOption(*settings_subwindow, y, "hunger", Language::get(5251), Language::get(5252),
 			allSettings.hunger_enabled, [](Button& button){soundToggleSetting(button); allSettings.hunger_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "minotaur", "Minotaur",
-			"Toggle the minotaur's ability to spawn on many levels after a certain amount of time.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "minotaur", Language::get(5253), Language::get(5254),
 			allSettings.minotaur_enabled, [](Button& button){soundToggleSetting(button); allSettings.minotaur_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "random_traps", "Random Traps",
-			"Toggle the random placement of traps throughout each level.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "random_traps", Language::get(5255), Language::get(5256),
 			allSettings.random_traps_enabled, [](Button& button){soundToggleSetting(button); allSettings.random_traps_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "friendly_fire", "Friendly Fire",
-			"Enable players to harm each other and their allies.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "friendly_fire", Language::get(5257), Language::get(5258),
 			allSettings.friendly_fire_enabled, [](Button& button){soundToggleSetting(button); allSettings.friendly_fire_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "hardcore_mode", "Hardcore Mode",
-			"Greatly increases the difficulty of all combat encounters.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "hardcore_mode", Language::get(5259), Language::get(5260),
 			allSettings.hardcore_mode_enabled, [](Button& button){soundToggleSetting(button); allSettings.hardcore_mode_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "classic_mode", "Classic Mode",
-			"Toggle this option to make the game end after the battle with Baron Herx.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "classic_mode", Language::get(5261), Language::get(5262),
 			allSettings.classic_mode_enabled, [](Button& button){soundToggleSetting(button); allSettings.classic_mode_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "keep_inventory", "Keep Inventory after Death",
-			"When a player dies, they retain their inventory when revived on the next level.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "keep_inventory", Language::get(5263), Language::get(5264),
 			allSettings.keep_inventory_enabled, [](Button& button){soundToggleSetting(button); allSettings.keep_inventory_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "extra_life", "Extra Life",
-			"Start the game with an Amulet of Life-saving, to prevent one death.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "extra_life", Language::get(5265), Language::get(5266),
 			allSettings.extra_life_enabled, [](Button& button){soundToggleSetting(button); allSettings.extra_life_enabled = button.isPressed();});
 #ifndef NINTENDO
-		y += settingsAddBooleanOption(*settings_subwindow, y, "cheats", "Cheats",
-			"Toggle the ability to activate cheatcodes during gameplay.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "cheats", Language::get(5267), Language::get(5268),
 			allSettings.cheats_enabled, [](Button& button){soundToggleSetting(button); allSettings.cheats_enabled = button.isPressed();});
 #endif
 
@@ -7015,9 +6943,9 @@ bind_failed:
 		auto banner = window->addField("banner", 128);
 		banner->setFont(banner_font);
 #ifdef NINTENDO
-		banner->setText("HIGHSCORES");
+		banner->setText(Language::get(5269));
 #else
-		banner->setText("LEADERBOARDS");
+		banner->setText(Language::get(5270));
 #endif
 		banner->setSize(SDL_Rect{330, 30, 338, 24});
 		banner->setJustify(Field::justify_t::CENTER);
@@ -7111,59 +7039,6 @@ bind_failed:
         victory_plate_text->setFont(smallfont_outline);
         victory_plate_text->setJustify(Field::justify_t::CENTER);
 
-        struct Victory {
-            const char* text;
-            const char* plate_image;
-            const char* header_image;
-            Uint32 textColor;
-            Uint32 outlineColor;
-        };
-        static Victory victories[] = {
-            { // defeat (victory = 0)
-                "Here lies\n%s\nRequiescat In Pace",
-                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_DeadEnd_Plate_00A.png",
-                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_DeadEnd_Image_01B.png",
-                makeColor(151, 115, 58, 255),
-                makeColor(21, 9, 8, 255)
-            },
-            { // classic victory (victory = 1)
-                "Make Way For\n%s\nthe Triumphant!",
-                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Plate_00.png",
-                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Image_01B.png",
-                makeColor(230, 183, 20, 255),
-                makeColor(82, 31, 4, 255)
-            },
-            { // classic hell victory (victory = 2)
-                "Bow Before\n%s\nthe Eternal!",
-                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Plate_00.png",
-                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Image_01B.png",
-                makeColor(230, 183, 20, 255),
-                makeColor(82, 31, 4, 255)
-            },
-            { // neutral (beast) victory (victory = 3)
-                "Long Live\n%s\nthe Baron!",
-                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Plate_00.png",
-                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Image_01B.png",
-                makeColor(230, 183, 20, 255),
-                makeColor(82, 31, 4, 255)
-            },
-            { // good (human) victory (victory = 4)
-                "All Hail\n%s\nthe Baron!",
-                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_GoodEnd_Plate_00.png",
-                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_GoodEnd_Image_01B.png",
-                makeColor(110, 107, 224, 255),
-                makeColor(22, 16, 30, 255)
-            },
-            { // evil (demon) victory (victory = 5)
-                "Tremble Before\n%s\nthe Baron!",
-                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_EvilEnd_Plate_00.png",
-                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_EvilEnd_Image_01B.png",
-                makeColor(223, 42, 42, 255),
-                makeColor(52, 10, 28, 255)
-            },
-        };
-        static constexpr int num_victories = sizeof(victories) / sizeof(victories[0]);
-
         auto right_panel = subframe->addImage(
 			SDL_Rect{284, 0, 338, 476},
 			0xffffffff,
@@ -7183,7 +7058,7 @@ bind_failed:
 		character_counters_titles->setColor(makeColor(151, 115, 58, 255));
 		character_counters_titles->setHJustify(Field::justify_t::LEFT);
 		character_counters_titles->setVJustify(Field::justify_t::TOP);
-		character_counters_titles->setText("XP:\nGold:\nDungeon Level:");
+		character_counters_titles->setText(Language::get(5277));
 
 		auto character_counters = subframe->addField("character_counters", 256);
 		character_counters->setFont(smallfont_outline);
@@ -7209,7 +7084,7 @@ bind_failed:
 		kills_banner->setColor(makeColor(203, 171, 101, 255));
 		kills_banner->setHJustify(Field::justify_t::LEFT);
 		kills_banner->setVJustify(Field::justify_t::CENTER);
-		kills_banner->setText("Kills:");
+		kills_banner->setText(Language::get(5278));
 
 		auto kills_left = subframe->addFrame("kills_left");
 		kills_left->setScrollBarsEnabled(false);
@@ -7254,7 +7129,7 @@ bind_failed:
 		time_and_score_titles->setColor(makeColor(203, 171, 101, 255));
 		time_and_score_titles->setHJustify(Field::justify_t::LEFT);
 		time_and_score_titles->setVJustify(Field::justify_t::CENTER);
-		time_and_score_titles->setText("Time:\nScore:");
+		time_and_score_titles->setText(Language::get(5279));
 
 		auto time_and_score = subframe->addField("time_and_score", 256);
 		time_and_score->setFont(bigfont_outline);
@@ -7281,6 +7156,59 @@ bind_failed:
             auto window = main_menu_frame->findFrame("leaderboards"); assert(window);
             auto subframe = window->findFrame("subframe"); assert(subframe);
             auto victory_plate_text = subframe->findField("victory_plate_text"); assert(victory_plate_text);
+
+            struct Victory {
+                const char* text;
+                const char* plate_image;
+                const char* header_image;
+                Uint32 textColor;
+                Uint32 outlineColor;
+            };
+            const Victory victories[] = {
+                { // defeat (victory = 0)
+                    Language::get(5271),
+                    "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_DeadEnd_Plate_00A.png",
+                    "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_DeadEnd_Image_01B.png",
+                    makeColor(151, 115, 58, 255),
+                    makeColor(21, 9, 8, 255)
+                },
+                { // classic victory (victory = 1)
+                    Language::get(5272),
+                    "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Plate_00.png",
+                    "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Image_01B.png",
+                    makeColor(230, 183, 20, 255),
+                    makeColor(82, 31, 4, 255)
+                },
+                { // classic hell victory (victory = 2)
+                    Language::get(5273),
+                    "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Plate_00.png",
+                    "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Image_01B.png",
+                    makeColor(230, 183, 20, 255),
+                    makeColor(82, 31, 4, 255)
+                },
+                { // neutral (beast) victory (victory = 3)
+                    Language::get(5274),
+                    "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Plate_00.png",
+                    "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Image_01B.png",
+                    makeColor(230, 183, 20, 255),
+                    makeColor(82, 31, 4, 255)
+                },
+                { // good (human) victory (victory = 4)
+                    Language::get(5275),
+                    "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_GoodEnd_Plate_00.png",
+                    "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_GoodEnd_Image_01B.png",
+                    makeColor(110, 107, 224, 255),
+                    makeColor(22, 16, 30, 255)
+                },
+                { // evil (demon) victory (victory = 5)
+                    Language::get(5276),
+                    "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_EvilEnd_Plate_00.png",
+                    "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_EvilEnd_Image_01B.png",
+                    makeColor(223, 42, 42, 255),
+                    makeColor(52, 10, 28, 255)
+                },
+            };
+            const int num_victories = sizeof(victories) / sizeof(victories[0]);
 
             if (score->victory < 0 || score->victory >= num_victories) {
                 return;
@@ -7321,7 +7249,7 @@ bind_failed:
                 });
             
 		    auto conduct_header = conduct->addEntry("header", true);
-		    conduct_header->text = " Voluntary Challenges:";
+		    conduct_header->text = Language::get(5280);
 		    conduct_header->color = makeColor(203, 171, 101, 255);
 
 		    struct Conduct {
@@ -7331,26 +7259,26 @@ bind_failed:
 		    };
 
 		    Conduct conducts[] = {
-		        {(bool)score->conductGameChallenges[CONDUCT_CHEATS_ENABLED], "cheats_enabled", u8" \x1E You cheated."},
-		        {(bool)score->conductGameChallenges[CONDUCT_MODDED], "modded", u8" \x1E You played with mods."},
-		        {(bool)score->conductGameChallenges[CONDUCT_MULTIPLAYER], "multiplayer", u8" \x1E You played with friends."},
-		        {(bool)score->conductGameChallenges[CONDUCT_HARDCORE], "hardcore", u8" \x1E You were hardcore."},
-		        {(bool)score->conductGameChallenges[CONDUCT_CLASSIC_MODE], "classic_mode", u8" \x1E You played Classic Mode."},
-		        {score->conductPenniless, "penniless", u8" \x1E You were penniless."},
-		        {score->conductFoodless, "foodless", u8" \x1E You ate nothing."},
+		        {(bool)score->conductGameChallenges[CONDUCT_CHEATS_ENABLED], "cheats_enabled", Language::get(5282)},
+		        {(bool)score->conductGameChallenges[CONDUCT_MODDED], "modded", Language::get(5283)},
+		        {(bool)score->conductGameChallenges[CONDUCT_MULTIPLAYER], "multiplayer", Language::get(5284)},
+		        {(bool)score->conductGameChallenges[CONDUCT_HARDCORE], "hardcore", Language::get(5285)},
+		        {(bool)score->conductGameChallenges[CONDUCT_CLASSIC_MODE], "classic_mode", Language::get(5286)},
+		        {score->conductPenniless, "penniless", Language::get(5287)},
+		        {score->conductFoodless, "foodless", Language::get(5288)},
 		        {score->conductVegetarian &&
-		            !score->conductFoodless, "vegetarian", u8" \x1E You were vegetarian."},
-		        {score->conductIlliterate, "illiterate", u8" \x1E You were illiterate."},
-		        {(bool)score->conductGameChallenges[CONDUCT_BRAWLER], "brawler", u8" \x1E You used no weapons."},
+		            !score->conductFoodless, "vegetarian", Language::get(5289)},
+		        {score->conductIlliterate, "illiterate", Language::get(5290)},
+		        {(bool)score->conductGameChallenges[CONDUCT_BRAWLER], "brawler", Language::get(5291)},
 		        {(bool)score->conductGameChallenges[CONDUCT_RANGED_ONLY] &&
-		            !(bool)score->conductGameChallenges[CONDUCT_BRAWLER], "ranged_only", u8" \x1E Only used ranged weapons."},
-		        {(bool)score->conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED], "blessed_boots_speed", u8" \x1E You were extremely quick."},
+		            !(bool)score->conductGameChallenges[CONDUCT_BRAWLER], "ranged_only", Language::get(5292)},
+		        {(bool)score->conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED], "blessed_boots_speed", Language::get(5293)},
 		        {(bool)score->conductGameChallenges[CONDUCT_BOOTS_SPEED] &&
-		            !(bool)score->conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED], "boots_speed", u8" \x1E You were very quick."},
+		            !(bool)score->conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED], "boots_speed", Language::get(5294)},
 		        {(bool)score->conductGameChallenges[CONDUCT_KEEPINVENTORY] &&
-		            (bool)score->conductGameChallenges[CONDUCT_MULTIPLAYER], "keep_inventory", u8" \x1E Kept items after death."},
-		        {(bool)score->conductGameChallenges[CONDUCT_LIFESAVING], "life_saving", u8" \x1E You had an extra life."},
-		        {(bool)score->conductGameChallenges[CONDUCT_ACCURSED], "accursed", u8" \x1E You were accursed."},
+		            (bool)score->conductGameChallenges[CONDUCT_MULTIPLAYER], "keep_inventory", Language::get(5295)},
+		        {(bool)score->conductGameChallenges[CONDUCT_LIFESAVING], "life_saving", Language::get(5296)},
+		        {(bool)score->conductGameChallenges[CONDUCT_ACCURSED], "accursed", Language::get(5297)},
 		    };
 		    constexpr int num_conducts = sizeof(conducts) / sizeof(conducts[0]);
 
@@ -7359,13 +7287,13 @@ bind_failed:
 		        if (conducts[c].achieved) {
 		            atLeastOneConduct = true;
 		            auto entry = conduct->addEntry(conducts[c].name, true);
-		            entry->text = conducts[c].text;
+		            entry->text = u8" \x1E " + std::string(conducts[c].text);
 		            entry->color = makeColor(203, 171, 101, 255);
 		        }
 		    }
 		    if (!atLeastOneConduct) {
 	            auto entry = conduct->addEntry("none", true);
-	            entry->text = " None";
+	            entry->text = Language::get(5281);
 	            entry->color = makeColor(203, 171, 101, 255);
 		    }
 
@@ -7373,7 +7301,7 @@ bind_failed:
 
             auto character_title = subframe->findField("character_title");
             assert(character_title);
-            snprintf(buf, sizeof(buf), "LVL %d %s %s",
+            snprintf(buf, sizeof(buf), Language::get(5298),
                 score->stats->LVL,
                 Language::get(3821 + score->stats->playerRace),
                 playerClassLangEntry(score->classnum, 0));
@@ -7381,19 +7309,27 @@ bind_failed:
 
             auto character_counters = subframe->findField("character_counters");
             assert(character_counters);
-            snprintf(buf, sizeof(buf), "%d/100\n%d\n%d",
+            snprintf(buf, sizeof(buf), Language::get(5299),
                 score->stats->EXP,
                 score->stats->GOLD,
                 score->dungeonlevel);
             character_counters->setText(buf);
 
-            const char* attributes[6] = {"STR", "DEX", "CON", "INT", "PER", "CHR"};
-            const Sint32 attr_i[6] = {
+            constexpr int num_attributes = 6;
+            const char* attributes[] = {
+                Language::get(5300),
+                Language::get(5301),
+                Language::get(5302),
+                Language::get(5303),
+                Language::get(5304),
+                Language::get(5305),
+            };
+            const Sint32 attr_i[] = {
                 score->stats->STR, score->stats->DEX, score->stats->CON,
                 score->stats->INT, score->stats->PER, score->stats->CHR,
             };
-		    Field* character_attributes[6];
-            for (int c = 0; c < 6; ++c) {
+		    Field* character_attributes[num_attributes];
+            for (int c = 0; c < num_attributes; ++c) {
                 std::string name = std::string("character_attribute") + std::to_string(c);
 		        character_attributes[c] = subframe->findField(name.c_str());
 		        assert(character_attributes[c]);
@@ -7437,7 +7373,7 @@ bind_failed:
             if (noKillsAtAll) {
                 auto entry = kills_left->addEntry("no_kills", true);
                 entry->color = makeColor(151, 115, 58, 255);
-                entry->text = " None";
+                entry->text = Language::get(5281);
             }
 
             const Uint32 time = score->completionTime / TICKS_PER_SECOND;
@@ -7454,6 +7390,7 @@ bind_failed:
             time_and_score->setText(buf);
             };
 
+        // TODO: Replace these with new leaderboard categories
         static const char* categories[] = {
 	        "None",
 	        "Fastest Time\nNormal", "Highest Score\nNormal",
@@ -7660,11 +7597,11 @@ bind_failed:
                     if (!field) {
                         field = window->addField("wait_message", 1024);
                         field->setFont(bigfont_outline);
-                        field->setText("No scores found.");
+                        field->setText(Language::get(5306));
                         field->setSize(SDL_Rect{30, 148, 932, 468});
                         field->setJustify(Field::justify_t::CENTER);
                     } else {
-                        field->setText("No scores found.");
+                        field->setText(Language::get(5306));
                     }
                     set_links("");
                 }
@@ -7677,11 +7614,11 @@ bind_failed:
                 if (!field) {
                     field = window->addField("wait_message", 1024);
                     field->setFont(bigfont_outline);
-                    field->setText("Downloading scores...");
+                    field->setText(Language::get(5307));
                     field->setSize(SDL_Rect{30, 148, 932, 468});
                     field->setJustify(Field::justify_t::CENTER);
                 } else {
-                    field->setText("Downloading scores...");
+                    field->setText(Language::get(5307));
                 }
                 set_links("");
 #endif
@@ -7811,11 +7748,11 @@ bind_failed:
                     if (!field) {
                         field = window->addField("wait_message", 1024);
                         field->setFont(bigfont_outline);
-                        field->setText("No scores found.");
+                        field->setText(Language::get(5306));
                         field->setSize(SDL_Rect{30, 148, 932, 468});
                         field->setJustify(Field::justify_t::CENTER);
                     } else {
-                        field->setText("No scores found.");
+                        field->setText(Language::get(5306));
                     }
                 } else {
                     (void)window->remove("wait_message");
@@ -7863,12 +7800,12 @@ bind_failed:
             void (*func)(Button& button);
         };
         static const Tab tabs[] = {
-            {"local", "Local\nSingleplayer", TAB_FN(BoardType::LOCAL_SINGLE)},
-            {"lan", "Local\nMultiplayer", TAB_FN(BoardType::LOCAL_MULTI)},
+            {"local", Language::get(5308), TAB_FN(BoardType::LOCAL_SINGLE)},
+            {"lan", Language::get(5309), TAB_FN(BoardType::LOCAL_MULTI)},
 #ifdef STEAMWORKS
             // TODO for now these are disabled, @wallofjustice make better leaderboards in future
-            //{"friends", "Leaderboard\nFriends", TAB_FN(BoardType::ONLINE_FRIENDS)},
-            //{"world", "Leaderboard\nWorld", TAB_FN(BoardType::ONLINE_WORLD)},
+            //{"friends", Language::get(5310), TAB_FN(BoardType::ONLINE_FRIENDS)},
+            //{"world", Language::get(5311), TAB_FN(BoardType::ONLINE_WORLD)},
 #endif
         };
         static constexpr int num_tabs = sizeof(tabs) / sizeof(tabs[0]);
@@ -8017,7 +7954,7 @@ bind_failed:
 		delete_entry->setHighlightColor(makeColor(255, 255, 255, 255));
 		delete_entry->setGlyphPosition(Widget::glyph_position_t::CENTERED_BOTTOM);
 		delete_entry->setFont(smallfont_outline);
-		delete_entry->setText("Delete Entry");
+		delete_entry->setText(Language::get(5312));
 		delete_entry->setTickCallback([](Widget& widget){
             if (boardType == BoardType::LOCAL_SINGLE || boardType == BoardType::LOCAL_MULTI) {
                 auto scores = boardType == BoardType::LOCAL_SINGLE ?
@@ -8035,11 +7972,10 @@ bind_failed:
             }
             if (selectedScore) {
                 char prompt[1024];
-                const char* fmt = "Are you sure you want to delete\n\"%s\"?";
+                const char* fmt = Language::get(5313);
                 snprintf(prompt, sizeof(prompt), fmt, selectedScore->stats->name);
                 binaryPrompt(
-                    prompt,
-                    "Yes", "No",
+                    prompt, Language::get(5314), Language::get(5315),
                     [](Button& button){ // Yes
                         soundActivate();
 		                soundDeleteSave();
@@ -8076,8 +8012,7 @@ bind_failed:
                 auto scores = boardType == BoardType::LOCAL_SINGLE ?
                     &topscores : &topscoresMultiplayer;
             } else {
-                errorPrompt(
-                    "Please select a score\nto delete first", "Okay",
+                errorPrompt(Language::get(5316), Language::get(5317),
                     [](Button& button){
 		                soundCancel();
 		                repopulate_list(boardType);
@@ -8107,7 +8042,7 @@ bind_failed:
 			sortAchievementsForDisplay();
 		}
 
-		auto window = genericWindow("achievements", "ACHIEVEMENTS", false);
+		auto window = genericWindow("achievements", Language::get(5318), false);
 		assert(window);
 
 		auto back_button = createBackWidget(window,[](Button& button){
@@ -8152,13 +8087,12 @@ bind_failed:
 		// set tooltip text
 		char tooltip_buf[256] = { '\0' };
 		const int percent = (num_unlocked * 100) / num_achievements;
-		snprintf(tooltip_buf, sizeof(tooltip_buf), "Unlocked %d / %d achievements (%d%%)",
+		snprintf(tooltip_buf, sizeof(tooltip_buf), Language::get(5319),
 			num_unlocked, num_achievements, percent);
 		auto tooltip = window->findField("tooltip"); assert(tooltip);
 		tooltip->setText(tooltip_buf);
 
-		const char* explanation_text =
-			"Complete optional in-game challenges\nfor fun and bragging rights";
+		const char* explanation_text = Language::get(5320);
 
 		// explanation text
 		auto explanation = window->addField("explanation", 256);
@@ -8204,8 +8138,8 @@ bind_failed:
 			// achievement title
 			const char* title = achName ? achName :
 				(num_hidden ?
-				"Hidden achievements":
-				"Hidden achievement");
+				Language::get(5321):
+				Language::get(5322));
 			auto headerField = frame->addField("header", 64);
 			headerField->setFont(smallfont_outline);
 			headerField->setColor(makeColorRGB(255, 255, 0));
@@ -8230,8 +8164,7 @@ bind_failed:
 				}
 			} else {
 				const char* fmt = num_hidden > 1 ?
-					"%d additional achievements remain...":
-					"%d additional achievement remains...";
+					Language::get(5323) : Language::get(5324);
 				snprintf(buf, sizeof(buf), fmt, num_hidden);
 			}
 			auto mainField = frame->addField("main", 256);
@@ -8285,7 +8218,7 @@ bind_failed:
 
 					char tbuf[64];
 					getTimeAndDateFormatted(t, tbuf, sizeof(tbuf));
-					snprintf(buffer, sizeof(buffer), "Unlocked %s", tbuf);
+					snprintf(buffer, sizeof(buffer), Language::get(5325), tbuf);
 
 					auto unlockField = frame->addField("unlock", 64);
 					unlockField->setFont(smallfont_outline);
@@ -8316,7 +8249,7 @@ bind_failed:
 
 		// list unlocked achievements
 		if (num_unlocked > 0) {
-			y += settingsAddSubHeader(*subwindow, y, "unlocked", "Unlocked", true);
+			y += settingsAddSubHeader(*subwindow, y, "unlocked", Language::get(5326), true);
 			for (auto& item : achievementNamesSorted) {
 				if (!achievementUnlocked(item.first.c_str())) {
 					continue;
@@ -8337,7 +8270,7 @@ bind_failed:
 
 		// list locked achievements
 		if (num_locked > 0) {
-			y += settingsAddSubHeader(*subwindow, y, "locked", "Locked", true);
+			y += settingsAddSubHeader(*subwindow, y, "locked", Language::get(5327), true);
 			for (auto& item : achievementNamesSorted) {
 				if (achievementUnlocked(item.first.c_str())) {
 					continue;
@@ -8375,15 +8308,7 @@ bind_failed:
 /******************************************************************************/
 
 	static void archivesLeaderboards(Button& button) {
-		if (0) {
-		    // test cutscene
-		    soundActivate();
-		    destroyMainMenu();
-		    createDummyMainMenu();
-		    beginFade(MainMenu::FadeDestination::EndingHuman);
-		} else {
-		    createLeaderboards();
-		}
+        createLeaderboards();
 	}
 
 	static void archivesDungeonCompendium(Button& button) {
@@ -20634,12 +20559,6 @@ failed:
 	}
 
 	static void createModsWindow();
-
-	static void mainPlayModdedGame(Button& button) {
-	    // WIP
-		soundActivate();
-		createPlayWindow();
-	}
 
 	static void mainModsMenu(Button& button) {
 		createModsWindow();

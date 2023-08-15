@@ -6424,3 +6424,398 @@ for accessory to violence!#
 4346 No effects active#
 
 4399 end#
+
+# New main menu strings (5000)
+
+5000 Back#
+5001 Would you like to browse this
+DLC in the Nintendo eShop?#
+5002 Would you like to browse this
+DLC in the online store?#
+5003 Yes#
+5004 No#
+5005 Enter DLC Key...#
+5006 Enter DLC Serial Key#
+5007 Confirm#
+5008 Cancel#
+5009 Okay#
+5010 Verifying#
+5011 Verifying.#
+5012 Verifying..#
+5013 Verifying...#
+5014 Verifying....#
+5015 Myths and Outcasts DLC
+has been unlocked!#
+5016 Legends and Pariahs DLC
+has been unlocked!#
+5017 Invalid license key#
+5020 Connecting
+.#
+5021 Connecting
+..#
+5022 Connecting
+...#
+5023 Connecting
+....#
+5024 Connecting
+.....#
+5025 Waiting for host...#
+5026 Skip story#
+5027 Confirm (1)#
+5028 Confirm (2)#
+5029 Are you sure you want
+to discard changes?#
+5030 Yes,
+Discard#
+
+5031 AUTOMATIC INVENTORY BEHAVIOR#
+5032 Auto-Sort Order#
+
+5033 Restore
+Defaults#
+5034 Discard
+& Exit#
+5035 Confirm
+& Exit#
+
+5036 Display %d#
+5037 Windowed#
+5038 Bordered#
+5039 Borderless#
+5040 Fullscreen#
+5041 Deleted "%s" binding.#
+5042 Off          On#
+5043 Customize#
+
+5044 MINIMAP#
+5045 Scale#
+5046 Map scale#
+5047 Scale the map to be larger or smaller.#
+5048 Icon scale#
+5049 Scale the size of icons on the map (such as players and allies)#
+5050 Transparency#
+5051 Foreground opacity#
+5052 Set the opacity of the minimap's foreground.#
+5053 Background opacity#
+5054 Set the opacity of the minimap's background.#
+
+5055 MESSAGES#
+5056 Categories#
+5057 Combat messages#
+5058 Enable report of damage received or given in combat.#
+5059 Status messages#
+5060 Enable report of character status changes and other passive effects.#
+5061 Inventory messages#
+5062 Enable report of inventory and item appraisal messages.#
+5063 Equipment messages#
+5064 Enable report of player equipment changes.#
+5065 World messages#
+5066 Enable report of diegetic messages, such as speech and text.#
+5067 Player chat#
+5068 Enable multiplayer chat.#
+5069 Progression messages#
+5070 Enable report of player character progression messages (ie level-ups).#
+5071 Interaction messages#
+5072 Enable report of player interactions with the world.#
+5073 Inspection messages#
+5074 Enable player inspections of world objects.#
+5075 Hint messages#
+5076 Enable cryptic hints for certain items, world events, etc.#
+5077 Obituary messages#
+5078 Enable obituary messages for player deaths.#
+
+5079 KB & Mouse#
+5080 Gamepad#
+5081 Joystick#
+
+5082 BINDINGS#
+5083 Bindings#
+5084 Bind a button to %s,
+or press X to delete the current binding#
+5085 Bind a button to %s,
+or press Y to delete the current binding#
+5086 Bind an input to %s#
+5087 Binding "%s".
+The next button you press will be bound to this action.#
+5088 Binding "%s". Press ESC to cancel or DEL to delete the binding.
+The next input you activate will be bound to this action.#
+5089 Cancelled rebinding "%s"#
+5090 Deleted "%s" binding.#
+5091 Bound "%s" to "%s"#
+
+# Crosshair types
+
+5092 Dot#
+5093 Dot (Large)#
+5094 Plus (Small)#
+5095 Plus (Medium)#
+5096 Plus (Large)#
+5097 Cross#
+5098 Carat#
+5099 Circle#
+5100 Dots (3x)#
+5101 Dots (4x)#
+5102 :)#
+5103 @#
+
+# More new menu stuff
+
+5104 General Options#
+5105 Instant Restart on Gameover#
+5106 Automatically restarts the game quickly after dying.#
+
+5107 Inventory Options#
+5108 Add Items to Hotbar#
+5109 Automatically fill the hotbar with recently collected items.#
+5110 Inventory Sorting#
+5111 Customize the way items are automatically sorted in your inventory.#
+5112 Use on Release#
+5113 Activate an item as soon as the Use key is released in the inventory window.#
+
+5114 HUD Options#
+5115 HUD Scaling#
+5116 Scale the UI to a larger or smaller size. (Recommended values: 50%, 75%, or 100%)#
+5117 Enemy Health Bar Scaling#
+5118 Control size of in-world popups for enemy health bars.#
+5119 Popup Scaling#
+5120 Control size of in-world popups for items, gravestones and NPC dialogue.#
+5121 Popup Scaling (Splitscreen)#
+5122 Control size of in-world popups for items, gravestones and NPC dialogue in splitscreen.#
+5123 Item Tooltip Height#
+5124 Adjust the vertical position of in-world item tooltip popups.#
+5125 Crosshair Opacity#
+5126 Adjust the opacity of the crosshair.#
+5127 Crosshair Type#
+5128 Adjust the appearance of the crosshair.#
+5129 Filter Scaling#
+5130 Scaled UI elements will have softer edges if this is enabled, at the cost of some sharpness.#
+5131 Minimap Settings#
+5132 Customize the appearance of the in-game minimap.#
+5133 Show Messages#
+5134 Customize which messages will be logged to the player, if any.#
+5135 Show Player Nametags#
+5136 Display the name of each player character above their avatar.#
+
+5137 Accessibility#
+5138 Content Control#
+5139 Disable the appearance of blood and other explicit kinds of content in the game#
+5140 Colorblind Mode#
+5141 Change the appearance of certain UI elements to improve visibility for certain colorblind individuals.#
+5142 Replace all giant spiders in the game with hostile crustaceans.#
+5143 Replace all giant spiders in the game with hostile crustaceans. (Updates at end of current dungeon level)#
+5144 Arachnophobia Filter#
+5145 Shaking#
+5146 Toggle the camera's ability to twist and roll when the player stumbles or receives damage.#
+5147 Bobbing#
+5148 Toggle the camera's ability to bob steadily as the player moves.#
+5149 Light Flicker#
+5150 Toggle the flickering appearance of torches and other light fixtures in the game world.#
+5151 Hold To Activate Exits#
+5152 Toggle to change dungeon exits requiring long hold of the "Use" binding.#
+5153 Show HUD#
+5154 Toggle the display of health and other status bars in game when the inventory is closed.#
+
+5155 Display Mode#
+5156 Resolution#
+5157 Change the current window resolution.#
+5158 Device#
+5159 Change the current display device.#
+5160 Window Mode#
+5161 Change the current display mode.#
+5162 Vertical Sync#
+5163 Prevent screen-tearing by locking the game's refresh rate to the current display.#
+5164 Display Options#
+5165 Gamma#
+5166 Adjust the brightness of the game's visuals.#
+5167 Field of View#
+5168 Adjust the vertical field-of-view of the in-game camera.#
+5169 FPS limit#
+5170 Limit the frame-rate of the game window. Do not set this higher than your refresh rate. (Recommended: Auto)#
+5171 High Dynamic Range (HDR)#
+5172 Increases color contrast of the rendered world with both brightened and darkened areas.#
+5173 Camera Interpolation#
+5174 Smooth player camera by interpolating camera movements over additional frames.#
+5175 Vertical Splitscreen#
+5176 For splitscreen with two-players: divide the screen along a vertical line rather than a horizontal one.#
+5177 Clipped Splitscreen#
+5178 For splitscreen with two-players: reduce each viewport by 20% to preserve aspect ratio.#
+5179 Staggered Splitscreen#
+5180 For splitscreen with two-players: stagger each viewport so they each rest in a corner of the display.#
+5181 Auto#
+
+5182 Output#
+5183 Device#
+5184 The output device for all game audio#
+5185 Volume#
+5186 Master Volume#
+5187 Adjust the volume of all sound sources equally.#
+5188 Gameplay Volume#
+5189 Adjust the volume of most game sound effects.#
+5190 Ambient Volume#
+5191 Adjust the volume of ominous subterranean sound-cues.#
+5192 Environment Volume#
+5193 Adjust the volume of flowing water and lava.#
+5194 Notification Volume#
+5195 Adjust the volume of skill increase and level up notifications.#
+5196 Music Volume#
+5197 Adjust the volume of the game's soundtrack.#
+5198 Options#
+5199 Minimap Pings#
+5200 Toggle the ability to hear pings on the minimap#
+5201 Player Monster Sounds#
+5202 Toggle the chance to emit monstrous mumbles when playing a non-human character.#
+5203 Out-of-Focus Audio#
+5204 Enable audio sources even when the game window is out-of-focus.#
+
+5205 Layout#
+5206 - UNBOUND -#
+5207 Bindings#
+5208 Player #
+5209 Player#
+5210 Select the player whose controls you wish to customize.#
+5211 Device#
+5212 Select a controller for the given player.#
+5213 Profile#
+5214 Select a predefined binding layout for the given player.#
+5215 Bindings#
+5216 Change controller bindings.#
+5217 Mouse & Keyboard#
+5218 Mouse Sensitivity#
+5219 Control the speed by which mouse movement affects camera movement.#
+5220 Number Keys in Inventory#
+5221 Allow the player to bind inventory items to the hotbar using the number keys on their keyboard.#
+5222 Reverse Mouse#
+5223 Reverse mouse up and down movement for controlling the orientation of the player.#
+5224 Smooth Mouse#
+5225 Smooth the movement of the mouse over a few frames of input.#
+5226 Interact Aim Assist#
+5227 Disable to always use precise cursor targeting on interactable objects and remove interact popups.#
+5228 Controller Settings#
+5229 Modern#
+5230 Classic#
+5231 Hotbar Layout#
+5232 Modern: Grouped 3x3 slot layout using held buttons. Classic: Flat 10 slot layout with simpler controls.#
+5233 Turn Sensitivity X#
+5234 Affect the horizontal sensitivity of the control stick used for turning.#
+5235 Turn Sensitivity Y#
+5236 Affect the vertical sensitivity of the control stick used for turning.#
+5237 Invert Camera Look X#
+5238 Enable to invert left/right look controls of the player camera.#
+5239 Invert Camera Look Y#
+5240 Enable to invert up/down look controls of the player camera.#
+
+5241 General#
+5242 Streamer Mode#
+5243 If you're a streamer and know what doxxing is, definitely switch this on.#
+5244 The port number to use when hosting a LAN lobby. (Default: %d)#
+5245 LAN#
+5246 Port#
+5247 Crossplay#
+5248 Crossplay Enabled#
+5249 Enable crossplay through Epic Online Services#
+
+5250 Game Settings#
+5251 Hunger#
+5252 When hunger is off, passive HP regeneration is disabled and eating food heals the player directly.#
+5253 Minotaur#
+5254 Toggle the minotaur's ability to spawn on many levels after a certain amount of time.#
+5255 Random Traps#
+5256 Toggle the random placement of traps throughout each level.#
+5257 Friendly Fire#
+5258 Enable players to harm each other and their allies.#
+5259 Hardcore Mode#
+5260 Greatly increases the difficulty of all combat encounters.#
+5261 Classic Mode#
+5262 Toggle this option to make the game end after the battle with Baron Herx.#
+5263 Keep Inventory after Death#
+5264 When a player dies, they retain their inventory when revived on the next level.#
+5265 Extra Life#
+5266 Start the game with an Amulet of Life-saving, to prevent one death.#
+5267 Cheats#
+5268 Toggle the ability to activate cheatcodes during gameplay.#
+
+5269 HIGHSCORES#
+5270 LEADERBOARDS#
+5271 Here lies
+%s
+Requiescat In Pace#
+5272 Make Way For
+%s
+the Triumphant!#
+5273 Bow Before
+%s
+the Eternal!#
+5274 Long Live
+%s
+the Baron!#
+5275 All Hail
+%s
+the Baron!#
+5276 Tremble Before
+%s
+the Baron!#
+5277 XP:
+Gold:
+Dungeon Level:#
+5278 Kills:#
+5279 Time:
+Score:#
+
+5280  Voluntary Challenges:#
+5281  None#
+5282 You cheated.#
+5283 You played with mods.#
+5284 You played with friends.#
+5285 You were hardcore.#
+5286 You played Classic Mode.#
+5287 You were penniless.#
+5288 You ate nothing.#
+5289 You were vegetarian.#
+5290 You were illiterate.#
+5291 You used no weapons.#
+5292 Only used ranged weapons.#
+5293 You were extremely quick.#
+5294 You were very quick.#
+5295 Kept items after death.#
+5296 You had an extra life.#
+5297 You were accursed.#
+5298 LVL %d %s %s#
+5299 %d/100
+%d
+%d#
+5300 STR#
+5301 DEX#
+5302 CON#
+5303 INT#
+5304 PER#
+5305 CHR#
+5306 No scores found.#
+5307 Downloading scores...#
+5308 Local
+Singleplayer#
+5309 Local
+Multiplayer#
+5310 Leaderboard
+Friends#
+5311 Leaderboard
+World#
+5312 Delete Entry#
+5313 Are you sure you want to delete
+"%s"?#
+5314 Yes#
+5315 No#
+5316 Please select a score
+to delete first#
+5317 Okay#
+
+5318 ACHIEVEMENTS#
+5319 Unlocked %d / %d achievements (%d%%)#
+5320 Complete optional in-game challenges
+for fun and bragging rights#
+5321 Hidden achievements#
+5322 Hidden achievement#
+5323 %d additional achievements remain...#
+5324 %d additional achievement remains...#
+5325 Unlocked %s#
+5326 Unlocked#
+5327 Locked#
