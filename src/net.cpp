@@ -4451,6 +4451,22 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	        }
 	    }
 
+		if ( victory > 0 )
+		{
+			int k = 0;
+			for ( int c = 0; c < MAXPLAYERS; c++ )
+			{
+				if ( players[c] && players[c]->entity )
+				{
+					k++;
+				}
+			}
+			if ( k >= 2 )
+			{
+				steamAchievement("BARONY_ACH_IN_GREATER_NUMBERS");
+			}
+		}
+
 	    // force game to pause
         movie = true;
 		pauseGame(2, false);

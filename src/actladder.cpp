@@ -554,6 +554,22 @@ void actWinningPortal(Entity* my)
 						net_packet->len = 6;
 						sendPacketSafe(net_sock, -1, net_packet, c - 1);
 					}
+
+					if ( victory > 0 )
+					{
+						int k = 0;
+						for ( int c = 0; c < MAXPLAYERS; c++ )
+						{
+							if ( players[c] && players[c]->entity )
+							{
+								k++;
+							}
+						}
+						if ( k >= 2 )
+						{
+							steamAchievement("BARONY_ACH_IN_GREATER_NUMBERS");
+						}
+					}
 				}
 
 	            if (cutscene == 1) { // classic herx ending
@@ -764,6 +780,22 @@ void Entity::actExpansionEndGamePortal()
 						net_packet->address.port = net_clients[c - 1].port;
 						net_packet->len = 6;
 						sendPacketSafe(net_sock, -1, net_packet, c - 1);
+					}
+
+					if ( victory > 0 )
+					{
+						int k = 0;
+						for ( int c = 0; c < MAXPLAYERS; c++ )
+						{
+							if ( players[c] && players[c]->entity )
+							{
+								k++;
+							}
+						}
+						if ( k >= 2 )
+						{
+							steamAchievement("BARONY_ACH_IN_GREATER_NUMBERS");
+						}
 					}
 				}
 
