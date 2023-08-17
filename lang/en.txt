@@ -6819,3 +6819,293 @@ for fun and bragging rights#
 5325 Unlocked %s#
 5326 Unlocked#
 5327 Locked#
+
+5328 Messages#
+5329 Chat#
+5330 Enter message here...#
+5331 *** %s has timed out ***#
+5332 *** %s has been kicked ***#
+5333 *** %s has left the game ***#
+5334 *** ping time = %4d ms ***#
+5335 The lobby has been closed
+by the host.#
+5336 *** %s has left the game ***#
+5337 You have been kicked
+from the lobby.#
+5338 Joining lobby...\n\n%ds#
+5339 Joining lobby...\n\n%ds.#
+5340 Joining lobby...\n\n%ds..#
+5341 Joining lobby...\n\n%ds...#
+5342 Failed to connect to lobby.#
+5343 Failed to join lobby.
+Crossplay required.#
+5344 Unable to join lobby.
+Invalid room code.#
+5345 Failed to resolve host at:
+%s#
+5346 Failed to open UDP socket.#
+5347 Failed to join lobby.#
+
+5348 Barbarian#
+5349 Warrior#
+5350 Healer#
+5351 Rogue#
+5352 Wanderer#
+5353 Cleric#
+5354 Merchant#
+5355 Wizard#
+5356 Arcanist#
+5357 Joker#
+5358 Sexton#
+5359 Ninja#
+5360 Monk#
+5361 Conjurer#
+5362 Accursed#
+5363 Mesmer#
+5364 Brewer#
+5365 Mechanist#
+5366 Punisher#
+5367 Shaman#
+5368 Hunter#
+
+5369 Human#
+5370 Skeleton#
+5371 Vampire#
+5372 Succubus#
+5373 Goatman#
+5374 Automaton#
+5375 Incubus#
+5376 Goblin#
+5377 Insectoid#
+
+5378 Disable Hunger#
+5379 Disable Random
+Minotaurs#
+5380 Enable Life Saving
+Amulet#
+5381 Keep Items on Death#
+5382 Disable Random Traps#
+5383 Disable Friendly Fire#
+5384 Enable Classic
+Endings#
+5385 Enable Hardcore
+Difficulty#
+5386 Enable Cheats#
+
+5387 ACHIEVEMENTS DISABLED
+(MODDED)#
+5388 ACHIEVEMENTS DISABLED
+(MODDED LOBBY)#
+5389 ACHIEVEMENTS DISABLED#
+5390 ACHIEVEMENTS ENABLED#
+
+5391 LOBBY SETTINGS#
+5392 Game Flags#
+5393 Invite Only#
+5394 Friends Only#
+5395 Open Lobby#
+5396 Set Player
+Count#
+5396 This will kick %s
+and %s!#
+5397 This will kick %s.
+Are you sure?#
+5398 Okay#
+5399 Go Back#
+5400 Yes#
+5401 No#
+5402 Kick Player#
+5403 Are you sure you want
+to kick %s?#
+
+5404 RACE SELECTION#
+5405 Landguard#
+5406 Northborn#
+5407 Firebrand#
+5408 Hardbred#
+5409 Highwatch#
+5410 Gloomforge#
+5411 Pyrebloom#
+5412 Snakestone#
+5413 Windclan#
+5414 Warblood#
+5415 Millbound#
+5416 Sunstalk#
+5417 Claymount#
+5418 Stormward#
+5419 Tradefell#
+5420 Nighthill#
+5421 Baytower#
+5422 Whetsong#
+5423 Disable monster
+race abilities#
+5424 Hide Race
+Info#
+5425 Show Race
+Info#
+
+5426 CLASS SELECTION#
+5427 HP:
+MP:#
+5428 Survival:
+Complexity:#
+5429 Hide Class Info#
+5430 Show Class Info#
+5431 *** Please wait %d seconds before suggesting another class. ***#
+5432 %s: We need a %s.#
+
+5433 NAME:#
+5434 Enter a name for Player %d#
+5435 View Game Settings#
+5436 *** Press [LB] to suggest a class for your party ***#
+5437 *** Press [LT] to suggest a class for your party ***#
+5438 *** Press [L1] to suggest a class for your party ***#
+5439 *** Press [L1] to suggest a class for your party ***#
+5440 Ready#
+5441 LOCKED#
+5442 New players
+cannot join#
+5443 PLAYER %d#
+5444 Press to Start#
+5445 Connect Controller#
+5446 Please Wait#
+5447 INVITE#
+5448 Click to Invite#
+5449 OPEN#
+5450 Waiting for
+player to join#
+5451 *** %s has joined the game ***#
+5452 Ready!#
+5453 Not Ready#
+5454 Are you sure you want to leave
+this lobby?#
+5455 Yes#
+5456 No#
+5457 Set a public name for this lobby.#
+5458 Local Lobby#
+5459 Wireless Lobby#
+5460 LAN Lobby#
+5461 Online Lobby (Epic)#
+5462 Online Lobby (Steam)#
+5463 Online Lobby#
+5464 LAN address#
+5465 Room code#
+5466 Wireless lobby opened successfully.#
+5467 Server hosted on LAN successfully.#
+5468 Lobby successfully hosted via Steam.#
+5469 Lobby successfully hosted via Epic Online.#
+5470 Joined wireless lobby successfully.#
+5471 Joined LAN server successfully.#
+5472 Joined lobby successfully via Steam.#
+5473 Joined lobby successfully via Epic Online.#
+5474 Press A on a controller to assign it to Player %d,
+or click here to assign only the mouse and keyboard
+
+
+
+#
+5475 Press A on a controller to activate it now,
+or click here to use only the mouse and keyboard
+
+
+
+#
+5476 ASSIGN CONTROLLER#
+5477 P%d#
+
+5478 Private lobby#
+5479 [MODDED]#
+5480 Unable to join lobby.
+Lobby is modded.#
+5481 Unable to join lobby.
+Lobby is locked.#
+5482 Okay#
+5483 Requesting lobby list...#
+5484 Cancel#
+5485 ONLINE LOBBY BROWSER#
+5486 Filters#
+5487 Show non-joinable#
+5488 Show friends only#
+5489 Achievements enabled#
+5490 Cheats enabled#
+5491 Friendly fire enabled#
+5492 Minotaurs enabled#
+5493 Hunger enabled#
+5494 Random traps enabled#
+5495 Hardcore mode#
+5496 Classic mode#
+5497 Keep items on death#
+5498 +1 Life#
+
+5500 Cheats#
+5501 Hurt allies#
+5502 Minotaurs#
+5503 Hunger#
+5504 Traps#
+5505 Hardcore#
+5506 Classic#
+5507 Keep items#
+5508 +1 Life#
+5509 None#
+5510 Name:#
+5511 Flags:#
+5512 Lobby Info#
+5513 ONLINE#
+5514 Unable to connect to Epic Online
+Online play is not available.#
+5515 Okay#
+5516 WIRELESS#
+5517 LAN#
+5518 Enter an IP address to connect to.#
+5519 Enter the code to a lobby you wish to connect to.#
+5520 Enter IP address...#
+5521 Enter roomcode...#
+5522 Connect#
+5523 Cancel#
+5524 Enter Lobby
+Code#
+5525 Enter IP
+Address#
+5526 Select a lobby to join first.#
+5527 Join Lobby#
+5528  Lobby Name#
+5529  Lobby Name (%d hidden)#
+5530  Players#
+5531  Version#
+5532  Ping#
+5533 Filter Settings#
+5534 Crossplay#
+
+5535 TUTORIALS#
+5536 Take on 10 challenges that teach and test your adventuring
+skills, preparing you to take on the dungeon#
+5537 Trial#
+5538 Best Time#
+5539 Hub#
+5540  The Hall of Trials#
+5541  Trial 1: Dungeon Basics and Melee Fighting#
+5542  Trial 2: Bows, Arrows, and Throwing Weapons#
+5543  Trial 3: Dungeon Traps, Spikes, and Boulders#
+5544  Trial 4: Food, Appraisal, and Curses#
+5545  Trial 5: Magic, Spellbooks, and Casting#
+5546  Trial 6: Stealth and Sneak Attacks#
+5547  Trial 7: Follower Recruiting and Commands#
+5548  Trial 8: Potions and Alchemy#
+5549  Trial 9: Tinkering#
+5550  Trial 10: Merchants and Shops#
+5551  Total Clear Time#
+5552 Reset Trial
+Progress#
+5553 Are you sure you want to reset
+your best times?#
+5554 Yes#
+5555 No#
+5556 Enter Level#
+5557 Select a level to start first.#
+5558 Okay#
+5559 PLAY GAME#
+5560 TUTORIALS#
+5561  
+CONTINUE#
+5562  
+NEW#

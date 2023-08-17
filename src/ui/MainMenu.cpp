@@ -5499,7 +5499,11 @@ namespace MainMenu {
 			else if (device_index == 0 && strncmp(input, "Pad", 3) && strncmp(input, "Joy", 3)) {
 				input_to_store = input;
 			}
+            else {
+                input_to_store = input;
+            }
 			if (input_to_store.empty()) {
+                printlog("failed to bind");
 				return false;
 			} else {
 				auto find = bindings.find(binding);
@@ -8601,9 +8605,9 @@ bind_failed:
         label->setVJustify(Field::justify_t::CENTER);
         label->setFont(bigfont_outline);
 #ifdef NINTENDO
-        label->setText("Messages");
+        label->setText(Language::get(5328));
 #else
-        label->setText("Chat");
+        label->setText(Language::get(5329));
 #endif
 
 #ifndef NINTENDO
@@ -8653,7 +8657,7 @@ bind_failed:
         chat_tooltip->setVJustify(Field::justify_t::CENTER);
         chat_tooltip->setFont(lobby_chat_font->c_str());
         chat_tooltip->setColor(makeColor(201, 162, 100, 255));
-        chat_tooltip->setText("Enter message here...");
+        chat_tooltip->setText(Language::get(5330));
         chat_tooltip->setTickCallback([](Widget& widget){
             auto frame = static_cast<Frame*>(widget.getParent());
             auto chat_buffer = frame->findField("buffer"); assert(chat_buffer);
@@ -8814,7 +8818,7 @@ bind_failed:
 						}
 
 						char buf[1024];
-						snprintf(buf, sizeof(buf), "*** %s has timed out ***", players[i]->getAccountName());
+						snprintf(buf, sizeof(buf), Language::get(5331), players[i]->getAccountName());
 						addLobbyChatMessage(uint32ColorYellow, buf);
 
 						if (directConnect) {
@@ -8990,7 +8994,7 @@ bind_failed:
             sendPacketSafe(net_sock, -1, net_packet, index - 1);
 
 			char buf[1024];
-			snprintf(buf, sizeof(buf), "*** %s has been kicked ***", players[index]->getAccountName());
+			snprintf(buf, sizeof(buf), Language::get(5332), players[index]->getAccountName());
 			addLobbyChatMessage(uint32ColorRed, buf);
 
 			client_disconnected[index] = true;
@@ -9374,7 +9378,7 @@ bind_failed:
 			}
 
 			char buf[1024];
-			snprintf(buf, sizeof(buf), "*** %s has left the game ***", players[player]->getAccountName());
+			snprintf(buf, sizeof(buf), Language::get(5333), players[player]->getAccountName());
 			addLobbyChatMessage(uint32ColorYellow, buf);
 
 		    if (directConnect) {
@@ -9691,7 +9695,7 @@ bind_failed:
 		// received ping back from server
 		{'PING', [](){
 			char buf[1024];
-			snprintf(buf, sizeof(buf), "*** ping time = %4d ms ***", (SDL_GetTicks() - pingtime));
+			snprintf(buf, sizeof(buf), Language::get(5334), (SDL_GetTicks() - pingtime));
 			addLobbyChatMessage(uint32ColorBaronyBlue, buf);
 		}},
 
@@ -9714,10 +9718,10 @@ bind_failed:
                 disconnectFromLobby(false);
 	            destroyMainMenu();
 	            createMainMenu(false);
-                connectionErrorPrompt("The lobby has been closed\nby the host.");
+                connectionErrorPrompt(Language::get(5335));
 		    } else {
 		        char buf[1024];
-		        snprintf(buf, sizeof(buf), "*** %s has left the game ***", players[playerDisconnected]->getAccountName());
+		        snprintf(buf, sizeof(buf), Language::get(5336), players[playerDisconnected]->getAccountName());
 		        addLobbyChatMessage(uint32ColorYellow, buf);
 			    if (directConnect) {
 	                createWaitingStone(playerDisconnected);
@@ -9733,7 +9737,7 @@ bind_failed:
             disconnectFromLobby(false);
             destroyMainMenu();
             createMainMenu(false);
-            connectionErrorPrompt("You have been kicked\nfrom the lobby.");
+            connectionErrorPrompt(Language::get(5337));
 	    }},
 
 	    // got a chat message
@@ -10265,20 +10269,20 @@ bind_failed:
             int seconds = diff / TICKS_PER_SECOND;
             auto text = static_cast<Field*>(&widget);
             if (part < TICKS_PER_SECOND / 4) {
-                snprintf(buf, sizeof(buf), "Joining lobby...\n\n%ds", seconds);
+                snprintf(buf, sizeof(buf), Language::get(5338), seconds);
             } else if (part < 2 * TICKS_PER_SECOND / 4) {
-                snprintf(buf, sizeof(buf), "Joining lobby...\n\n%ds.", seconds);
+                snprintf(buf, sizeof(buf), Language::get(5339), seconds);
             } else if (part < 3 * TICKS_PER_SECOND / 4) {
-                snprintf(buf, sizeof(buf), "Joining lobby...\n\n%ds..", seconds);
+                snprintf(buf, sizeof(buf), Language::get(5340), seconds);
             } else {
-                snprintf(buf, sizeof(buf), "Joining lobby...\n\n%ds...", seconds);
+                snprintf(buf, sizeof(buf), Language::get(5341), seconds);
             }
             text->setText(buf);
 
             // here is the connection polling loop
 			if (directConnect) {
 				if (seconds >= 15) {
-					systemErrorPrompt("Failed to connect to lobby.");
+					systemErrorPrompt(Language::get(5342));
 					closePrompt("connect_prompt");
 #ifdef NINTENDO
 					// recover wireless state
@@ -10439,7 +10443,7 @@ bind_failed:
 #ifdef STEAMWORKS
 						if (!LobbyHandler.crossplayEnabled) {
 							// can't join an epic lobby if crossplay is not enabled
-							connectionErrorPrompt("Failed to join lobby.\nCrossplay required.");
+							connectionErrorPrompt(Language::get(5343));
 							goto failed;
 						}
 #endif
@@ -10483,7 +10487,7 @@ bind_failed:
 			    }
 			}
 #endif
-			connectionErrorPrompt("Unable to join lobby.\nInvalid room code.");
+			connectionErrorPrompt(Language::get(5344));
 	        goto failed;
         } else if (lobbyType == LobbyType::LobbyLAN) {
 #ifdef NINTENDO
@@ -10527,7 +10531,7 @@ bind_failed:
 		    printlog("resolving host's address at %s...\n", address);
 		    if (SDLNet_ResolveHost(&net_server, address_copy, port) == -1) {
 			    char buf[1024];
-			    snprintf(buf, sizeof(buf), "Failed to resolve host at:\n%s", address);
+			    snprintf(buf, sizeof(buf), Language::get(5345), address);
 				systemErrorPrompt(buf);
 				printlog(buf);
 				goto failed;
@@ -10537,7 +10541,7 @@ bind_failed:
 		    printlog("opening UDP socket...\n");
 		    if (!(net_sock = SDLNet_UDP_Open(NETWORK_PORT_CLIENT))) {
 			    char buf[1024];
-			    snprintf(buf, sizeof(buf), "Failed to open UDP socket.");
+			    snprintf(buf, sizeof(buf), "%s", Language::get(5346));
 				systemErrorPrompt(buf);
 				printlog(buf);
 				goto failed;
@@ -10549,7 +10553,7 @@ bind_failed:
 	    }
 
 	    // connection initiation failed for unknown reason
-		connectionErrorPrompt("Failed to join lobby.");
+		connectionErrorPrompt(Language::get(5347));
 
 failed:
 	    closePrompt("connect_prompt");
@@ -10587,129 +10591,129 @@ failed:
 		const char* image_locked;
 	};
 
-	static const std::unordered_map<std::string, Class> classes = {
+	const std::unordered_map<std::string, Class> classes = {
 		{"barbarian", {
-			"Barbarian", DLC::Base,
+			Language::get(5348), DLC::Base,
 			"ClassSelect_Icon_Barbarian_00.png",
 			"ClassSelect_Icon_BarbarianOn_00.png",
 			"ClassSelect_Icon_BarbarianLocked_00.png",
 			}},
 		{"warrior", {
-			"Warrior", DLC::Base,
+			Language::get(5349), DLC::Base,
 			"ClassSelect_Icon_Warrior_00.png",
 			"ClassSelect_Icon_WarriorOn_00.png",
 			"ClassSelect_Icon_WarriorLocked_00.png",
 			}},
 		{"healer", {
-			"Healer", DLC::Base,
+			Language::get(5350), DLC::Base,
 			"ClassSelect_Icon_Healer_00.png",
 			"ClassSelect_Icon_HealerOn_00.png",
 			"ClassSelect_Icon_HealerLocked_00.png",
 			}},
 		{"rogue", {
-			"Rogue", DLC::Base,
+			Language::get(5351), DLC::Base,
 			"ClassSelect_Icon_Rogue_00.png",
 			"ClassSelect_Icon_RogueOn_00.png",
 			"ClassSelect_Icon_RogueLocked_00.png",
 			}},
 		{"wanderer", {
-			"Wanderer", DLC::Base,
+			Language::get(5352), DLC::Base,
 			"ClassSelect_Icon_Wanderer_00.png",
 			"ClassSelect_Icon_WandererOn_00.png",
 			"ClassSelect_Icon_WandererLocked_00.png",
 			}},
 		{"cleric", {
-			"Cleric", DLC::Base,
+			Language::get(5353), DLC::Base,
 			"ClassSelect_Icon_Cleric_00.png",
 			"ClassSelect_Icon_ClericOn_00.png",
 			"ClassSelect_Icon_ClericLocked_00.png",
 			}},
 		{"merchant", {
-			"Merchant", DLC::Base,
+			Language::get(5354), DLC::Base,
 			"ClassSelect_Icon_Merchant_00.png",
 			"ClassSelect_Icon_MerchantOn_00.png",
 			"ClassSelect_Icon_MerchantLocked_00.png",
 			}},
 		{"wizard", {
-			"Wizard", DLC::Base,
+			Language::get(5355), DLC::Base,
 			"ClassSelect_Icon_Wizard_00.png",
 			"ClassSelect_Icon_WizardOn_00.png",
 			"ClassSelect_Icon_WizardLocked_00.png",
 			}},
 		{"arcanist", {
-			"Arcanist", DLC::Base,
+			Language::get(5356), DLC::Base,
 			"ClassSelect_Icon_Arcanist_00.png",
 			"ClassSelect_Icon_ArcanistOn_00.png",
 			"ClassSelect_Icon_ArcanistLocked_00.png",
 			}},
 		{"joker", {
-			"Joker", DLC::Base,
+			Language::get(5357), DLC::Base,
 			"ClassSelect_Icon_Jester_00.png",
 			"ClassSelect_Icon_JesterOn_00.png",
 			"ClassSelect_Icon_JesterLocked_00.png",
 			}},
 		{"sexton", {
-			"Sexton", DLC::Base,
+			Language::get(5358), DLC::Base,
 			"ClassSelect_Icon_Sexton_00.png",
 			"ClassSelect_Icon_SextonOn_00.png",
 			"ClassSelect_Icon_SextonLocked_00.png",
 			}},
 		{"ninja", {
-			"Ninja", DLC::Base,
+			Language::get(5359), DLC::Base,
 			"ClassSelect_Icon_Ninja_00.png",
 			"ClassSelect_Icon_NinjaOn_00.png",
 			"ClassSelect_Icon_NinjaLocked_00.png",
 			}},
 		{"monk", {
-			"Monk", DLC::Base,
+			Language::get(5360), DLC::Base,
 			"ClassSelect_Icon_Monk_00.png",
 			"ClassSelect_Icon_MonkOn_00.png",
 			"ClassSelect_Icon_MonkLocked_00.png",
 			}},
 		{"conjurer", {
-			"Conjurer", DLC::MythsAndOutcasts,
+			Language::get(5361), DLC::MythsAndOutcasts,
 			"ClassSelect_Icon_Conjurer_00.png",
 			"ClassSelect_Icon_ConjurerOn_00.png",
 			"ClassSelect_Icon_ConjurerLocked_00.png",
 			}},
 		{"accursed", {
-			"Accursed", DLC::MythsAndOutcasts,
+			Language::get(5362), DLC::MythsAndOutcasts,
 			"ClassSelect_Icon_Accursed_00.png",
 			"ClassSelect_Icon_AccursedOn_00.png",
 			"ClassSelect_Icon_AccursedLocked_00.png",
 			}},
 		{"mesmer", {
-			"Mesmer", DLC::MythsAndOutcasts,
+			Language::get(5363), DLC::MythsAndOutcasts,
 			"ClassSelect_Icon_Mesmer_00.png",
 			"ClassSelect_Icon_MesmerOn_00.png",
 			"ClassSelect_Icon_MesmerLocked_00.png",
 			}},
 		{"brewer", {
-			"Brewer", DLC::MythsAndOutcasts,
+			Language::get(5364), DLC::MythsAndOutcasts,
 			"ClassSelect_Icon_Brewer_00.png",
 			"ClassSelect_Icon_BrewerOn_00.png",
 			"ClassSelect_Icon_BrewerLocked_00.png",
 			}},
 		{"mechanist", {
-			"Mechanist", DLC::LegendsAndPariahs,
+			Language::get(5365), DLC::LegendsAndPariahs,
 			"ClassSelect_Icon_Mechanist_00.png",
 			"ClassSelect_Icon_MechanistOn_00.png",
 			"ClassSelect_Icon_MechanistLocked_00.png",
 			}},
 		{"punisher", {
-			"Punisher", DLC::LegendsAndPariahs,
+			Language::get(5366), DLC::LegendsAndPariahs,
 			"ClassSelect_Icon_Punisher_00.png",
 			"ClassSelect_Icon_PunisherOn_00.png",
 			"ClassSelect_Icon_PunisherLocked_00.png",
 			}},
 		{"shaman", {
-			"Shaman", DLC::LegendsAndPariahs,
+			Language::get(5367), DLC::LegendsAndPariahs,
 			"ClassSelect_Icon_Shaman_00.png",
 			"ClassSelect_Icon_ShamanOn_00.png",
 			"ClassSelect_Icon_ShamanLocked_00.png",
 			}},
 		{"hunter", {
-			"Hunter", DLC::LegendsAndPariahs,
+			Language::get(5368), DLC::LegendsAndPariahs,
 			"ClassSelect_Icon_Hunter_00.png",
 			"ClassSelect_Icon_HunterOn_00.png",
 			"ClassSelect_Icon_HunterLocked_00.png",
@@ -10725,18 +10729,18 @@ failed:
 		"shaman", "hunter"
 	};
 
-	static const char* races[] = {
-	    "Human",
-		"Skeleton",
-		"Vampire",
-		"Succubus",
-		"Goatman",
-		"Automaton",
-		"Incubus",
-		"Goblin",
-		"Insectoid",
+	const char* races[] = {
+	    Language::get(5369), // Human
+		Language::get(5370), // Skeleton
+		Language::get(5371), // Vampire
+		Language::get(5372), // Succubus
+		Language::get(5373), // Goatman
+		Language::get(5374), // Automaton
+		Language::get(5375), // Incubus
+		Language::get(5376), // Goblin
+		Language::get(5377), // Insectoid
 	};
-	static constexpr int num_races = sizeof(races) / sizeof(races[0]);
+	const int num_races = sizeof(races) / sizeof(races[0]);
 
 	bool ClassDescriptions::init = false;
 	std::unordered_map<int, ClassDescriptions::DescData_t> ClassDescriptions::data;
@@ -11251,7 +11255,12 @@ failed:
 	{
 		// stats definitions
 		const char* class_stats_text[] = {
-			"STR", "DEX", "CON", "INT", "PER", "CHR"
+			Language::get(5300),
+            Language::get(5301),
+            Language::get(5302),
+            Language::get(5303),
+            Language::get(5304),
+            Language::get(5305),
 		};
 		constexpr int num_class_stats = sizeof(class_stats_text) / sizeof(class_stats_text[0]);
 
@@ -11547,9 +11556,9 @@ failed:
 			    stats[index]->playerRace = RACE_HUMAN;
 			    auto race = card->findButton("race");
 			    if (race) {
-				    race->setText("Human");
+				    race->setText(Language::get(5369)); // Human
 			    }
-			    auto human = subframe ? subframe->findButton("Human") : nullptr;
+			    auto human = subframe ? subframe->findButton(Language::get(5369)) : nullptr;
 			    if (human) {
 				    human->setPressed(true);
 			    }
@@ -11576,7 +11585,7 @@ failed:
 		}
 		if (stats[index]->playerRace == RACE_INCUBUS) {
 		    auto subframe = card->findFrame("subframe");
-			auto incubus = subframe ? subframe->findButton("Incubus") : nullptr;
+			auto incubus = subframe ? subframe->findButton(Language::get(5375)) : nullptr;
 			if (incubus) {
 				incubus->setPressed(false);
 			}
@@ -11584,9 +11593,9 @@ failed:
 				stats[index]->playerRace = RACE_SUCCUBUS;
 				auto race = card->findButton("race");
 				if (race) {
-					race->setText("Succubus");
+					race->setText(Language::get(5372));
 				}
-				auto succubus = subframe ? subframe->findButton("Succubus") : nullptr;
+				auto succubus = subframe ? subframe->findButton(Language::get(5372)) : nullptr;
 				if (succubus) {
 					succubus->setPressed(true);
 				}
@@ -11603,9 +11612,9 @@ failed:
 				stats[index]->playerRace = RACE_HUMAN;
 				auto race = card->findButton("race");
 				if (race) {
-					race->setText("Human");
+					race->setText(Language::get(5369));
 				}
-				auto human = subframe ? subframe->findButton("Human") : nullptr;
+				auto human = subframe ? subframe->findButton(Language::get(5369)) : nullptr;
 				if (human) {
 					human->setPressed(true);
 				}
@@ -11722,16 +11731,16 @@ failed:
 		header->setJustify(Field::justify_t::CENTER);
 
 		const char* game_settings_text[] = {
-			"Disable Hunger",
-			"Disable Random\nMinotaurs",
-			"Enable Life Saving\nAmulet",
-			"Keep Items on Death",
-			"Disable Random Traps",
-			"Disable Friendly Fire",
-			"Enable Classic\nEndings",
-			"Enable Hardcore\nDifficulty",
+			Language::get(5378), // disable hunger
+			Language::get(5379), // disable minotaurs
+			Language::get(5380), // life saving amulet
+			Language::get(5381), // keep items on death
+			Language::get(5382), // disable random traps
+			Language::get(5383), // disable friendly fire
+			Language::get(5384), // classic endings
+			Language::get(5385), // hardcore difficulty
 #ifndef NINTENDO
-			"Enable Cheats",
+			Language::get(5386), // cheats
 #endif
 		};
 
@@ -11832,29 +11841,29 @@ failed:
             if (multiplayer != CLIENT) {
 				if ( Mods::disableSteamAchievements ) {
 					achievements->setColor(makeColor(180, 37, 37, 255));
-					achievements->setText("ACHIEVEMENTS DISABLED\n(MODDED)");
+					achievements->setText(Language::get(5387));
 				} else if ( allSettings.cheats_enabled ||
 					allSettings.extra_life_enabled ) {
 					achievements->setColor(makeColor(180, 37, 37, 255));
-					achievements->setText("ACHIEVEMENTS DISABLED");
+					achievements->setText(Language::get(5389));
                 } else {
                     achievements->setColor(makeColor(37, 90, 255, 255));
-                    achievements->setText("ACHIEVEMENTS ENABLED");
+                    achievements->setText(Language::get(5390));
                 }
             } else {
 				if ( Mods::disableSteamAchievements ) {
 					achievements->setColor(makeColor(180, 37, 37, 255));
-					achievements->setText("ACHIEVEMENTS DISABLED\n(MODDED)");
+					achievements->setText(Language::get(5387));
 				} else if ( Mods::lobbyDisableSteamAchievements ) {
 					achievements->setColor(makeColor(180, 37, 37, 255));
-					achievements->setText("ACHIEVEMENTS DISABLED\n(MODDED LOBBY)");
+					achievements->setText(Language::get(5388));
 				} else if ( (lobbyWindowSvFlags & SV_FLAG_CHEATS) ||
 					(lobbyWindowSvFlags & SV_FLAG_LIFESAVING) ) {
 					achievements->setColor(makeColor(180, 37, 37, 255));
-					achievements->setText("ACHIEVEMENTS DISABLED");
+					achievements->setText(Language::get(5389));
                 } else {
                     achievements->setColor(makeColor(37, 90, 255, 255));
-                    achievements->setText("ACHIEVEMENTS ENABLED");
+                    achievements->setText(Language::get(5390));
                 }
                 Frame* card = static_cast<Frame*>(widget.getParent());
                 for (auto button : card->getButtons()) {
@@ -11938,7 +11947,7 @@ failed:
 		auto header = card->addField("header", 64);
 		header->setSize(SDL_Rect{30, 8, 264, 50});
 		header->setFont(smallfont_outline);
-		header->setText("LOBBY SETTINGS");
+		header->setText(Language::get(5391));
 		header->setJustify(Field::justify_t::CENTER);
 
 		auto custom_difficulty = card->addButton("custom_difficulty");
@@ -11949,7 +11958,7 @@ failed:
 		custom_difficulty->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_CustomizeHigh00A.png");
 		custom_difficulty->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_CustomizePress00A.png");
 		custom_difficulty->setFont(smallfont_outline);
-		custom_difficulty->setText("Game Flags");
+		custom_difficulty->setText(Language::get(5392));
 		custom_difficulty->setWidgetSearchParent(name.c_str());
 		custom_difficulty->addWidgetAction("MenuStart", "confirm");
 		custom_difficulty->addWidgetAction("MenuPageRightAlt", "chat");
@@ -11978,7 +11987,7 @@ failed:
 		invite_label->setSize(SDL_Rect{ 82, 146, 122, 26 });
 #endif
 		invite_label->setFont(smallfont_outline);
-		invite_label->setText("Invite Only");
+		invite_label->setText(Language::get(5393));
 		invite_label->setJustify(Field::justify_t::CENTER);
 		if (!online) {
 			invite_label->setColor(makeColor(70, 62, 59, 255));
@@ -12073,7 +12082,7 @@ failed:
 		auto friends_label = card->addField("friends_label", 64);
 		friends_label->setSize(SDL_Rect{82, 178, 122, 26});
 		friends_label->setFont(smallfont_outline);
-		friends_label->setText("Friends Only");
+		friends_label->setText(Language::get(5394));
 		friends_label->setJustify(Field::justify_t::CENTER);
 		if (!online) {
 			friends_label->setColor(makeColor(70, 62, 59, 255));
@@ -12168,7 +12177,7 @@ failed:
 		open_label->setSize(SDL_Rect{ 82, 210, 122, 26 });
 #endif
 		open_label->setFont(smallfont_outline);
-		open_label->setText("Open Lobby");
+		open_label->setText(Language::get(5395));
 		open_label->setJustify(Field::justify_t::CENTER);
 		if (!online) {
 			open_label->setColor(makeColor(70, 62, 59, 255));
@@ -12268,7 +12277,7 @@ failed:
 		auto player_count_label = card->addField("player_count_label", 64);
 		player_count_label->setSize(SDL_Rect{40, 266, 116, 40});
 		player_count_label->setFont(smallfont_outline);
-		player_count_label->setText("Set Player\nCount");
+		player_count_label->setText(Language::get(5396));
 		player_count_label->setJustify(Field::justify_t::CENTER);
 
         for (int c = 0; c < 3; ++c) {
@@ -12307,9 +12316,9 @@ failed:
 						} else {
 							if (!client_disconnected[2] && !client_disconnected[3]) {
 								char prompt[1024];
-								snprintf(prompt, sizeof(prompt), "This will kick %s\nand %s!",
+								snprintf(prompt, sizeof(prompt), Language::get(5396),
 									players[2]->getAccountName(), players[3]->getAccountName());
-								binaryPrompt(prompt, "Okay", "Go Back",
+								binaryPrompt(prompt, Language::get(5398), Language::get(5399),
 									[](Button&){ // okay
 										lockSlot(1, false);
 										lockSlot(2, true);
@@ -12324,8 +12333,8 @@ failed:
 							}
 							else if (!client_disconnected[2]) {
 								char prompt[1024];
-								snprintf(prompt, sizeof(prompt), "This will kick %s.\nAre you sure?", players[2]->getAccountName());
-								binaryPrompt(prompt, "Okay", "Go Back",
+								snprintf(prompt, sizeof(prompt), Language::get(5397), players[2]->getAccountName());
+								binaryPrompt(prompt, Language::get(5400), Language::get(5401),
 									[](Button&){ // okay
 										lockSlot(1, false);
 										lockSlot(2, true);
@@ -12340,8 +12349,8 @@ failed:
 							}
 							else if (!client_disconnected[3]) {
 								char prompt[1024];
-								snprintf(prompt, sizeof(prompt), "This will kick %s.\nAre you sure?", players[3]->getAccountName());
-								binaryPrompt(prompt, "Okay", "Go Back",
+								snprintf(prompt, sizeof(prompt), Language::get(5397), players[3]->getAccountName());
+								binaryPrompt(prompt, Language::get(5400), Language::get(5401),
 									[](Button&){ // okay
 										lockSlot(1, false);
 										lockSlot(2, true);
@@ -12366,8 +12375,8 @@ failed:
 							soundActivate();
 						} else {
 							char prompt[1024];
-							snprintf(prompt, sizeof(prompt), "This will kick %s.\nAre you sure?", players[3]->getAccountName());
-							binaryPrompt(prompt, "Yes", "No",
+							snprintf(prompt, sizeof(prompt), Language::get(5397), players[3]->getAccountName());
+							binaryPrompt(prompt, Language::get(5400), Language::get(5401),
 								[](Button&){ // yes
 									lockSlot(1, false);
 									lockSlot(2, false);
@@ -12397,7 +12406,7 @@ failed:
 		auto kick_player_label = card->addField("kick_player_label", 64);
 		kick_player_label->setSize(SDL_Rect{40, 310, 116, 40});
 		kick_player_label->setFont(smallfont_outline);
-		kick_player_label->setText("Kick Player");
+		kick_player_label->setText(Language::get(5402));
 		kick_player_label->setJustify(Field::justify_t::CENTER);
 
         for (int c = 0; c < 3; ++c) {
@@ -12432,8 +12441,8 @@ failed:
 							return;
 						}
 						char prompt[1024];
-						snprintf(prompt, sizeof(prompt), "Are you sure you want\nto kick %s?", players[1]->getAccountName());
-						binaryPrompt(prompt, "Yes", "No",
+						snprintf(prompt, sizeof(prompt), Language::get(5403), players[1]->getAccountName());
+						binaryPrompt(prompt, Language::get(5400), Language::get(5401),
 							[](Button&){ // yes
 								soundActivate();
 								closeBinary();
@@ -12452,8 +12461,8 @@ failed:
 							return;
 						}
 						char prompt[1024];
-						snprintf(prompt, sizeof(prompt), "Are you sure you want\nto kick %s?", players[2]->getAccountName());
-						binaryPrompt(prompt, "Yes", "No",
+						snprintf(prompt, sizeof(prompt), Language::get(5403), players[2]->getAccountName());
+						binaryPrompt(prompt, Language::get(5400), Language::get(5401),
 							[](Button&){ // yes
 								soundActivate();
 								closeBinary();
@@ -12472,8 +12481,8 @@ failed:
 							return;
 						}
 						char prompt[1024];
-						snprintf(prompt, sizeof(prompt), "Are you sure you want\nto kick %s?", players[3]->getAccountName());
-						binaryPrompt(prompt, "Yes", "No",
+						snprintf(prompt, sizeof(prompt), Language::get(5403), players[3]->getAccountName());
+						binaryPrompt(prompt, Language::get(5400), Language::get(5401),
 							[](Button&){ // yes
 								soundActivate();
 								closeBinary();
@@ -12924,7 +12933,7 @@ failed:
 		auto header = card->addField("header", 64);
 		header->setSize(SDL_Rect{30, 8, 264, 50});
 		header->setFont(smallfont_outline);
-		header->setText("RACE SELECTION");
+		header->setText(Language::get(5404));
 		header->setJustify(Field::justify_t::CENTER);
 
 		if (details) {
@@ -13076,7 +13085,7 @@ failed:
 		        }
 
 				// rescue this player's focus
-                if (strcmp(widget.getName(), "Human") == 0) {
+                if (strcmp(widget.getName(), Language::get(5369)) == 0) {
                     if (!main_menu_frame) {
                         return;
                     }
@@ -13104,11 +13113,24 @@ failed:
 		}
         
         static const char* appearance_names[] = {
-            "Landguard", "Northborn", "Firebrand", "Hardbred",
-            "Highwatch", "Gloomforge", "Pyrebloom", "Snakestone",
-            "Windclan", "Warblood", "Millbound", "Sunstalk",
-            "Claymount", "Stormward", "Tradefell", "Nighthill",
-            "Baytower", "Whetsong"
+            Language::get(5405),
+            Language::get(5406),
+            Language::get(5407),
+            Language::get(5408),
+            Language::get(5409),
+            Language::get(5410),
+            Language::get(5411),
+            Language::get(5412),
+            Language::get(5413),
+            Language::get(5414),
+            Language::get(5415),
+            Language::get(5416),
+            Language::get(5417),
+            Language::get(5418),
+            Language::get(5419),
+            Language::get(5420),
+            Language::get(5421),
+            Language::get(5422),
         };
 
         static constexpr int num_appearances = sizeof(appearance_names) / sizeof(appearance_names[0]);
@@ -13142,7 +13164,7 @@ failed:
 			auto box = frame->findImage("selection_box"); assert(box);
 			box->pos.y = frame->getActualSize().y;
 			backdrop->pos.y = frame->getActualSize().y + 4;
-            auto human = parent->findButton("Human"); assert(human);
+            auto human = parent->findButton(Language::get(5369)); assert(human);
             auto appearance_uparrow = parent->findButton("appearance_uparrow"); assert(appearance_uparrow);
             auto appearance_downarrow = parent->findButton("appearance_downarrow"); assert(appearance_downarrow);
 			auto controlType = Input::inputs[widget.getOwner()].getPlayerControlType();
@@ -13313,7 +13335,7 @@ failed:
 		disable_abilities_text->setSize(SDL_Rect{44, 0, 154, 48});
 		disable_abilities_text->setFont(smallfont_outline);
 		disable_abilities_text->setColor(makeColor(166, 123, 81, 255));
-		disable_abilities_text->setText("Disable monster\nrace abilities");
+		disable_abilities_text->setText(Language::get(5423));
 		disable_abilities_text->setHJustify(Field::justify_t::LEFT);
 		disable_abilities_text->setVJustify(Field::justify_t::CENTER);
 		disable_abilities_text->setTickCallback([](Widget& widget){
@@ -13471,11 +13493,7 @@ failed:
 
 		auto show_race_info = bottom->addButton("show_race_info");
 		show_race_info->setFont(smallfont_outline);
-		if (details) {
-		    show_race_info->setText("Hide Race\nInfo");
-		} else {
-		    show_race_info->setText("Show Race\nInfo");
-		}
+		show_race_info->setText(Language::get(details ? 5424 : 5425));
 		show_race_info->setColor(makeColor(255, 255, 255, 255));
 		show_race_info->setHighlightColor(makeColor(255, 255, 255, 255));
 		show_race_info->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonShowDetails_00.png");
@@ -13558,15 +13576,8 @@ failed:
 		auto header = card->addField("header", 64);
 		header->setSize(SDL_Rect{32, 14, 260, 38});
 		header->setFont(smallfont_outline);
-		header->setText("CLASS SELECTION");
+		header->setText(Language::get(5426));
 		header->setJustify(Field::justify_t::CENTER);
-
-		/*auto class_name_header = card->addField("class_name_header", 64);
-		class_name_header->setSize(SDL_Rect{98, 70, 128, 26});
-		class_name_header->setFont(smallfont_outline);
-		class_name_header->setText("Fix this");
-		class_name_header->setHJustify(Field::justify_t::CENTER);
-		class_name_header->setVJustify(Field::justify_t::BOTTOM);*/
 
         if (details) {
   		    static auto class_desc_fn = [](Field& field, int index){
@@ -13595,7 +13606,12 @@ failed:
 
             // stats definitions
 		    const char* class_stats_text[] = {
-		        "STR", "DEX", "CON", "INT", "PER", "CHR"
+		        Language::get(5300),
+		        Language::get(5301),
+		        Language::get(5302),
+		        Language::get(5303),
+		        Language::get(5304),
+		        Language::get(5305),
 		    };
 		    constexpr int num_class_stats = sizeof(class_stats_text) / sizeof(class_stats_text[0]);
 		    constexpr SDL_Rect bottom{44, 302, 236, 68};
@@ -13699,7 +13715,7 @@ failed:
 				auto hpmp_header = card->addField("hpmp_header", 32);
 				hpmp_header->setFont(smallfont_outline);
 				hpmp_header->setColor(makeColorRGB(209, 166, 161));
-				hpmp_header->setText("HP:\nMP:");
+				hpmp_header->setText(Language::get(5427));
 				hpmp_header->setHJustify(Field::justify_t::LEFT);
 				hpmp_header->setVJustify(Field::justify_t::TOP);
 				hpmp_header->setSize(hpmp_size);
@@ -13737,7 +13753,7 @@ failed:
 		    auto difficulty_header = card->addField("difficulty_header", 128);
 		    difficulty_header->setFont(smallfont_outline);
 		    difficulty_header->setColor(makeColorRGB(209, 166, 161));
-		    difficulty_header->setText("Survival:\nComplexity:");
+		    difficulty_header->setText(Language::get(5428));
 		    difficulty_header->setHJustify(Field::justify_t::LEFT);
 		    difficulty_header->setVJustify(Field::justify_t::TOP);
 		    difficulty_header->setSize(difficulty_size);
@@ -13863,13 +13879,13 @@ failed:
         class_info->setFont(smallfont_outline);
 		class_info->setGlyphPosition(Widget::glyph_position_t::CENTERED_BOTTOM);
 		if (details) {
-            class_info->setText("Hide Class Info");
+            class_info->setText(Language::get(5429));
 		    class_info->setCallback([](Button& button){
 				characterCardClassMenu(button.getOwner(), false, class_selection[button.getOwner()]);
 				soundActivate();
 				});
 		} else {
-            class_info->setText("Show Class Info");
+            class_info->setText(Language::get(5430));
 		    class_info->setCallback([](Button& button){
 				characterCardClassMenu(button.getOwner(), true, class_selection[button.getOwner()]);
 				soundActivate();
@@ -14094,13 +14110,13 @@ failed:
 								static Uint32 lastClassRequest = 0;
 								char buf[1024];
 								if (ticks - lastClassRequest >= TICKS_PER_SECOND * waitingPeriod) {
-									int len = snprintf(buf, sizeof(buf), "%s: We need a %s.",
+									int len = snprintf(buf, sizeof(buf), Language::get(5432),
 										players[player]->getAccountName(), widget.getName());
 									Uint32 color = playerColor(player, colorblind_lobby, false);
 									sendChatMessageOverNet(color, buf, (size_t)len);
 									lastClassRequest = ticks;
 								} else {
-									snprintf(buf, sizeof(buf), "*** Please wait %d seconds before suggesting another class. ***",
+									snprintf(buf, sizeof(buf), Language::get(5431),
 										waitingPeriod - (ticks - lastClassRequest) / TICKS_PER_SECOND);
 									addLobbyChatMessage(uint32ColorBaronyBlue, buf);
 								}
@@ -14236,7 +14252,7 @@ failed:
 		name_text->setSize(SDL_Rect{30, 30, 56, 36});
 		name_text->setFont(smallfont_outline);
 		name_text->setColor(makeColor(166, 123, 81, 255));
-		name_text->setText("NAME:");
+		name_text->setText(Language::get(5433));
 		name_text->setHJustify(Field::justify_t::RIGHT);
 		name_text->setVJustify(Field::justify_t::CENTER);
 
@@ -14246,13 +14262,16 @@ failed:
 			"*images/ui/Main Menus/Play/PlayerCreation/Finalize__NameField_00.png",
 			"name_box"
 		);
+  
+        char guidebuf[256];
+        snprintf(guidebuf, sizeof(guidebuf), Language::get(5434), index + 1);
 
 		auto name_field = card->addField("name", 32);
 		name_field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
 		name_field->setSelectorOffset(SDL_Rect{-7, -7, 7, 7});
 		name_field->setButtonsOffset(SDL_Rect{11, 0, 0, 0});
 		name_field->setScroll(true);
-		name_field->setGuide((std::string("Enter a name for Player ") + std::to_string(index + 1)).c_str());
+		name_field->setGuide(guidebuf);
 		name_field->setFont(smallfont_outline);
 		name_field->setText(stats[index]->name);
 		name_field->setSize(SDL_Rect{90, 34, 146, 28});
@@ -14354,7 +14373,7 @@ failed:
 		game_settings->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBase_00.png");
 		game_settings->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBaseHigh_00.png");
 		game_settings->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBasePress_00.png");
-		game_settings->setText("View Game Settings");
+		game_settings->setText(Language::get(5435));
 		game_settings->setFont(smallfont_outline);
 		game_settings->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		game_settings->addWidgetAction("MenuStart", "ready");
@@ -14459,21 +14478,7 @@ failed:
 		race_button->setColor(makeColor(255, 255, 255, 255));
 		race_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		race_button->setSize(SDL_Rect{166, 166, 108, 52});
-		switch (stats[index]->playerRace) {
-		case RACE_HUMAN: race_button->setText("Human"); break;
-		case RACE_SKELETON: race_button->setText("Skeleton"); break;
-		case RACE_VAMPIRE: race_button->setText("Vampire"); break;
-		case RACE_SUCCUBUS: race_button->setText("Succubus"); break;
-		case RACE_GOATMAN: race_button->setText("Goatman"); break;
-		case RACE_AUTOMATON: race_button->setText("Automaton"); break;
-		case RACE_INCUBUS: race_button->setText("Incubus"); break;
-		case RACE_GOBLIN: race_button->setText("Goblin"); break;
-		case RACE_INSECTOID: race_button->setText("Insectoid"); break;
-		case RACE_RAT: race_button->setText("Rat"); break;
-		case RACE_TROLL: race_button->setText("Troll"); break;
-		case RACE_SPIDER: race_button->setText("Spider"); break;
-		case RACE_IMP: race_button->setText("Imp"); break;
-		}
+		race_button->setText(Language::get(5369 + stats[index]->playerRace));
 		race_button->setFont(smallfont_outline);
 		race_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_RaceBase_00.png");
 		race_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_RaceBaseHigh_00.png");
@@ -14519,23 +14524,7 @@ failed:
 			    stats[index]->playerRace = RACE_HUMAN;
 			}
 			auto race_button = card->findButton("race");
-			if (race_button) {
-				switch (stats[index]->playerRace) {
-				case RACE_HUMAN: race_button->setText("Human"); break;
-				case RACE_SKELETON: race_button->setText("Skeleton"); break;
-				case RACE_VAMPIRE: race_button->setText("Vampire"); break;
-				case RACE_SUCCUBUS: stats[index]->sex = FEMALE; race_button->setText("Succubus"); break;
-				case RACE_GOATMAN: race_button->setText("Goatman"); break;
-				case RACE_AUTOMATON: race_button->setText("Automaton"); break;
-				case RACE_INCUBUS: stats[index]->sex = MALE; race_button->setText("Incubus"); break;
-				case RACE_GOBLIN: race_button->setText("Goblin"); break;
-				case RACE_INSECTOID: race_button->setText("Insectoid"); break;
-				case RACE_RAT: race_button->setText("Rat"); break;
-				case RACE_TROLL: race_button->setText("Troll"); break;
-				case RACE_SPIDER: race_button->setText("Spider"); break;
-				case RACE_IMP: race_button->setText("Imp"); break;
-				}
-			}
+			race_button->setText(Language::get(5369 + stats[index]->playerRace));
 
 			// choose a random appearance
 			const int appearance_choice = RNG.uniform(0, NUMAPPEARANCES - 1);
@@ -14643,16 +14632,16 @@ failed:
                 switch (type) {
                 default:
                 case Input::ControllerType::Xbox:
-                    msg = "*** Press [LB] to suggest a class for your party ***";
+                    msg = Language::get(5436);
                     break;
                 case Input::ControllerType::NintendoSwitch:
-                    msg = "*** Press [L] to suggest a class for your party ***";
+                    msg = Language::get(5437);
                     break;
                 case Input::ControllerType::PlayStation:
-                    msg = "*** Press [L1] to suggest a class for your party ***";
+                    msg = Language::get(5438);
                     break;
                 case Input::ControllerType::SteamDeck:
-                    msg = "*** Press [L1] to suggest a class for your party ***";
+                    msg = Language::get(5439);
                     break;
                 }
                 addLobbyChatMessage(uint32ColorBaronyBlue, msg);
@@ -14691,7 +14680,7 @@ failed:
 		ready_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBaseHigh_00.png");
 		ready_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBasePress_00.png");
 		ready_button->setFont(bigfont_outline);
-		ready_button->setText("Ready");
+		ready_button->setText(Language::get(5440));
 		ready_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		ready_button->addWidgetAction("MenuPageRightAlt", "chat");
 		ready_button->addWidgetAction("MenuPageLeftAlt", "privacy");
@@ -14739,7 +14728,7 @@ failed:
 		);
 
 		auto banner = card->addField("banner", 64);
-		banner->setText("LOCKED");
+		banner->setText(Language::get(5441));
 		banner->setFont(banner_font);
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
@@ -14747,7 +14736,7 @@ failed:
 		banner->setColor(uint32ColorPlayerX);
 
 		auto text = card->addField("text", 128);
-		text->setText("New players\ncannot join");
+		text->setText(Language::get(5442));
 		text->setFont(smallfont_outline);
 		text->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
 		text->setVJustify(Field::justify_t::TOP);
@@ -14837,9 +14826,12 @@ failed:
 			"*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png",
 			"backdrop"
 		);
+  
+        char playerbuf[64];
+        snprintf(playerbuf, sizeof(playerbuf), Language::get(5443), index + 1);
 
 		auto banner = card->addField("invite_banner", 64);
-		banner->setText((std::string("PLAYER ") + std::to_string(index + 1)).c_str());
+		banner->setText(playerbuf);
 		banner->setFont(banner_font);
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
@@ -14899,16 +14891,16 @@ failed:
 		    auto field = static_cast<Field*>(&widget);
 		    if (inputs.getPlayerIDAllowedKeyboard() == player ||
 		        inputs.hasController(player) || multiplayer != SINGLE) {
-		        field->setText("Press to Start");
+		        field->setText(Language::get(5444));
 		    } else {
 		        const int num_controllers = countUnassignedControllers();
 		        if (isControllerAvailable(player, num_controllers)) {
-		            field->setText("Press to Start");
+		            field->setText(Language::get(5444));
 		        } else {
 		            if (num_controllers < player) {
-		                field->setText("Connect Controller");
+		                field->setText(Language::get(5445));
 		            } else {
-		                field->setText("Please Wait");
+		                field->setText(Language::get(5446));
 		            }
 		        }
 		    }
@@ -15118,7 +15110,7 @@ failed:
 		);
 
 		auto banner = card->addField("invite_banner", 64);
-		banner->setText("INVITE");
+		banner->setText(Language::get(5447));
 		banner->setFont(banner_font);
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
@@ -15132,7 +15124,7 @@ failed:
 		});
 
 		auto invite = card->addButton("invite_button");
-		invite->setText("Click to Invite");
+		invite->setText(Language::get(5448));
 		invite->setFont(smallfont_outline);
 		invite->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 16});
 		invite->setVJustify(Button::justify_t::TOP);
@@ -15179,7 +15171,7 @@ failed:
 		);
 
 		auto banner = card->addField("banner", 64);
-		banner->setText("OPEN");
+		banner->setText(Language::get(5449));
 		banner->setFont(banner_font);
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
@@ -15193,7 +15185,7 @@ failed:
 		});
 
 		auto text = card->addField("text", 128);
-		text->setText("Waiting for\nplayer to join");
+		text->setText(Language::get(5450));
 		text->setFont(smallfont_outline);
 		text->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
 		text->setVJustify(Field::justify_t::TOP);
@@ -15351,7 +15343,7 @@ failed:
 					newPlayer[player] = false;
 
 					char buf[1024];
-					int len = snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[player]->getAccountName());
+					int len = snprintf(buf, sizeof(buf), Language::get(5451), players[player]->getAccountName());
 					if (len > 0) {
 						sendChatMessageOverNet(uint32ColorBaronyBlue, buf, len);
 					}
@@ -15387,9 +15379,9 @@ failed:
 
 		    auto button = card->addButton("button"); assert(button);
 		    if (ready) {
-		        button->setText("Ready!");
+		        button->setText(Language::get(5452));
 		    } else {
-		        button->setText("Not Ready");
+		        button->setText(Language::get(5453));
 		    }
 		    button->setHideSelectors(true);
 		    button->setFont(smallfont_outline);
@@ -15420,9 +15412,9 @@ failed:
 		} else {
 		    auto status = card->addField("status", 64); assert(status);
 		    if (ready) {
-		        status->setText("Ready!");
+		        status->setText(Language::get(5452));
 		    } else {
-		        status->setText("Not Ready");
+		        status->setText(Language::get(5453));
 		    }
 		    status->setFont(smallfont_outline);
 		    status->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
@@ -15808,9 +15800,7 @@ failed:
 					}
 #endif
 			    } else {
-			        binaryPrompt(
-	                    "Are you sure you want to leave\nthis lobby?",
-	                    "Yes", "No",
+			        binaryPrompt(Language::get(5454), Language::get(5455), Language::get(5456),
 	                    [](Button&){ // yes
 			                soundActivate();
 			                disconnectFromLobby();
@@ -15897,7 +15887,7 @@ failed:
 #endif
                 
 		        field->setScroll(true);
-		        field->setGuide("Set a public name for this lobby.");
+		        field->setGuide(Language::get(5457));
 		        field->setSize(SDL_Rect{162, 14, 242, 28});
 		        field->setFont(smallfont_outline);
 		        field->setHJustify(Field::justify_t::LEFT);
@@ -15966,34 +15956,34 @@ failed:
 			// lobby type
 			const char* type_str;
 			if (type == LobbyType::LobbyLocal) {
-			    type_str = "Local Lobby";
+			    type_str = Language::get(5458);
 			} else {
 			    if (directConnect) {
 #ifdef NINTENDO
-                    type_str = "Wireless Lobby";
+                    type_str = Language::get(5459);
 #else
-					type_str = "LAN Lobby";
+					type_str = Language::get(5460);
 #endif
 			    } else {
 			        if (type == LobbyType::LobbyJoined) {
 			            if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-			                type_str = "Online Lobby (Epic)";
+			                type_str = Language::get(5461);
 			            }
 			            else if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-			                type_str = "Online Lobby (Steam)";
+			                type_str = Language::get(5462);
 			            }
 			            else {
-			                type_str = "Online Lobby";
+			                type_str = Language::get(5463);
 			            }
 			        } else {
 			            if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-			                type_str = "Online Lobby (Epic)";
+			                type_str = Language::get(5461);
 			            }
 			            else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-			                type_str = "Online Lobby (Steam)";
+			                type_str = Language::get(5462);
 			            }
 			            else {
-			                type_str = "Online Lobby";
+			                type_str = Language::get(5463);
 			            }
 			        }
 			    }
@@ -16080,9 +16070,9 @@ failed:
                 roomcode_header->setSize(SDL_Rect{Frame::virtualScreenX - 212 - 44 - 292 - 32, 0, 320, 35});
                 roomcode_header->setFont(smallfont_outline);
                 if (directConnect) {
-                    roomcode_header->setText("LAN address");
+                    roomcode_header->setText(Language::get(5464));
                 } else {
-                    roomcode_header->setText("Room code");
+                    roomcode_header->setText(Language::get(5465));
                 }
                 
 			    auto roomcode = banner->addField("roomcode", 128);
@@ -16159,9 +16149,9 @@ failed:
 			    chat_button->setTextHighlightColor(0xffffffff);
 		        chat_button->setTextColor(0xffffffff);
 #ifdef NINTENDO
-		        chat_button->setText("Messages");
+		        chat_button->setText(Language::get(5328));
 #else
-		        chat_button->setText("Chat");
+		        chat_button->setText(Language::get(5329));
 #endif
 		        chat_button->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/Button_Chat00.png");
 		        chat_button->setBackgroundHighlighted("*#images/ui/Main Menus/Play/PlayerCreation/Button_ChatHigh00.png");
@@ -16393,32 +16383,32 @@ failed:
 		if (type == LobbyType::LobbyLAN || type == LobbyType::LobbyOnline) {
             if (directConnect) {
 #ifdef NINTENDO
-				addLobbyChatMessage(uint32ColorBaronyBlue, "Wireless lobby opened successfully.");
+				addLobbyChatMessage(uint32ColorBaronyBlue, Language::get(5466));
 #else
-                addLobbyChatMessage(uint32ColorBaronyBlue, "Server hosted on LAN successfully.");
+                addLobbyChatMessage(uint32ColorBaronyBlue, Language::get(5467));
 #endif
             } else {
                 if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-                    addLobbyChatMessage(uint32ColorBaronyBlue, "Lobby successfully hosted via Steam.");
+                    addLobbyChatMessage(uint32ColorBaronyBlue, Language::get(5468));
                 }
                 else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-                    addLobbyChatMessage(uint32ColorBaronyBlue, "Lobby successfully hosted via Epic Online.");
+                    addLobbyChatMessage(uint32ColorBaronyBlue, Language::get(5469));
                 }
             }
 		}
 		else if (type == LobbyType::LobbyJoined) {
             if (directConnect) {
 #ifdef NINTENDO
-				addLobbyChatMessage(uint32ColorBaronyBlue, "Joined wireless lobby successfully.");
+				addLobbyChatMessage(uint32ColorBaronyBlue, Language::get(5470));
 #else
-                addLobbyChatMessage(uint32ColorBaronyBlue, "Joined LAN server successfully.");
+                addLobbyChatMessage(uint32ColorBaronyBlue, Language::get(5471));
 #endif
             } else {
                 if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-                    addLobbyChatMessage(uint32ColorBaronyBlue, "Joined lobby successfully via Steam.");
+                    addLobbyChatMessage(uint32ColorBaronyBlue, Language::get(5472));
                 }
                 else if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-                    addLobbyChatMessage(uint32ColorBaronyBlue, "Joined lobby successfully via Epic Online.");
+                    addLobbyChatMessage(uint32ColorBaronyBlue, Language::get(5473));
                 }
             }
 		}
@@ -16501,11 +16491,9 @@ failed:
 
 		char text[1024];
         if (multiple_players) {
-		    snprintf(text, sizeof(text), "Press A on a controller to assign it to Player %d,\n"
-		        "or click here to assign only the mouse and keyboard\n\n\n\n", index + 1);
+		    snprintf(text, sizeof(text), Language::get(5474), index + 1);
         } else {
-		    snprintf(text, sizeof(text), "Press A on a controller to activate it now,\n"
-		        "or click here to use only the mouse and keyboard\n\n\n\n");
+		    snprintf(text, sizeof(text), Language::get(5475));
         }
 
         auto prompt = textPrompt("controller_prompt", text, prompt_tick_callback, false);
@@ -16516,7 +16504,7 @@ failed:
         header->setSize(header_size);
         header->setFont(bigfont_outline);
         header->setJustify(Field::justify_t::CENTER);
-        header->setText("ASSIGN CONTROLLER");
+        header->setText(Language::get(5476));
 
         auto dimmer = static_cast<Frame*>(prompt->getParent());
         dimmer->setOwner(index);
@@ -16565,7 +16553,9 @@ failed:
                 field->setSize(SDL_Rect{x, y, w, h});
                 field->setJustify(Field::justify_t::CENTER);
 				if (multiplayer == SINGLE) {
-                	field->setText((std::string("P") + std::to_string(c + 1)).c_str());
+                    char buf[16];
+                    snprintf(buf, sizeof(buf), Language::get(5477), c + 1);
+                	field->setText(buf);
 				}
                 field->setFont(bigfont_outline);
 				field->setColor(playerColor(c, colorblind_lobby, false));
@@ -16643,7 +16633,7 @@ failed:
 				{
 					// this is a invite-only lobby.
 					info.locked = true;
-					info.name = "Private lobby";
+					info.name = Language::get(5478);
 					lobbies.back().name = info.name;
 					lobbies.back().locked = info.locked;
 					privateLobby = true;
@@ -16664,7 +16654,7 @@ failed:
                     if (!foundFriend) {
                         // this is a friends-only lobby, and we don't have any friends in it.
 						info.locked = true;
-						info.name = "Private lobby";
+						info.name = Language::get(5478);
 						lobbies.back().name = info.name;
 						lobbies.back().locked = info.locked;
 						privateLobby = true;
@@ -16675,9 +16665,9 @@ failed:
 				{
 					if ( info.numMods > 0 )
 					{
-						if ( info.name.find("[MODDED] ") == std::string::npos )
+						if ( info.name.find(Language::get(5479)) == std::string::npos )
 						{
-							info.name = "[MODDED] " + info.name;
+							info.name = Language::get(5479) + " " + info.name;
 							lobbies.back().name = info.name;
 						}
 #ifdef NINTENDO
@@ -16700,7 +16690,7 @@ failed:
 				if (invite_only && stringCmp(invite_only, "true", 4, 4) == 0) {
 					// this is a invite-only lobby.
 					info.locked = true;
-					info.name = "Private lobby";
+					info.name = Language::get(5478);
 					lobbies.back().name = info.name;
 					lobbies.back().locked = info.locked;
 					privateLobby = true;
@@ -16721,7 +16711,7 @@ failed:
                     if (!foundFriend) {
                         // this is a friends-only lobby, and we don't have any friends in it.
 						info.locked = true;
-						info.name = "Private lobby";
+						info.name = Language::get(5478);
 						lobbies.back().name = info.name;
 						lobbies.back().locked = info.locked;
 						privateLobby = true;
@@ -16732,9 +16722,9 @@ failed:
 				{
 					if ( info.numMods > 0 )
 					{
-						if ( info.name.find("[MODDED] ") == std::string::npos )
+						if ( info.name.find(Language::get(5479)) == std::string::npos )
 						{
-							info.name = "[MODDED] " + info.name;
+							info.name = Language::get(5479) + " " + info.name;
 							lobbies.back().name = info.name;
 						}
 #ifdef NINTENDO
@@ -16864,14 +16854,14 @@ failed:
 #ifdef NINTENDO
 							if ( lobby.numMods > 0 )
 							{
-								errorPrompt("Unable to join lobby.\nLobby is modded.",
-									"Okay", [](Button&) {soundCancel(); closeMono(); });
+								errorPrompt(Language::get(5480), Language::get(5482),
+                                    [](Button&) {soundCancel(); closeMono(); });
 							}
 							else
 #endif
 							{
-								errorPrompt("Unable to join lobby.\nLobby is locked.",
-									"Okay", [](Button&) {soundCancel(); closeMono(); });
+								errorPrompt(Language::get(5481), Language::get(5482),
+									[](Button&) {soundCancel(); closeMono(); });
 							}
                         }
                     }
@@ -17017,7 +17007,7 @@ failed:
 #endif
 
 	    // create new window
-	    cancellablePrompt("lobby_list_request", "Requesting lobby list...", "Cancel",
+	    cancellablePrompt("lobby_list_request", Language::get(5483), Language::get(5484),
 	        [](Widget& widget){
 #if defined(STEAMWORKS)
 #if defined(USE_EOS)
@@ -17361,7 +17351,7 @@ failed:
 
 		auto banner_title = window->addField("banner", 64);
 		banner_title->setSize(SDL_Rect{538, 24, 204, 18});
-		banner_title->setText("ONLINE LOBBY BROWSER");
+		banner_title->setText(Language::get(5485));
 		banner_title->setFont(smallfont_outline);
 		banner_title->setJustify(Field::justify_t::CENTER);
 
@@ -17412,21 +17402,21 @@ failed:
 		    label->setJustify(Field::justify_t::CENTER);
 		    label->setSize(SDL_Rect{80, 48, 146, 22});
 		    label->setFont(smallfont_outline);
-		    label->setText("Filters");
+		    label->setText(Language::get(5486));
 
             const char* filter_names[] = {
-                "Show non-joinable",
-                "Show friends only",
-                "Achievements enabled",
-                "Cheats enabled",
-                "Friendly fire enabled",
-                "Minotaurs enabled",
-                "Hunger enabled",
-                "Random traps enabled",
-                "Hardcore mode",
-                "Classic mode",
-                "Keep items on death",
-                "+1 Life",
+                Language::get(5487), // show non-joinable
+                Language::get(5488), // show friends only
+                Language::get(5489), // achievements enabled
+                Language::get(5490), // cheats enabled
+                Language::get(5491), // friendly fire enabled
+                Language::get(5492), // minotaurs enabled
+                Language::get(5493), // hunger enabled
+                Language::get(5494), // random traps enabled
+                Language::get(5495), // hardcore mode
+                Language::get(5496), // classic mode
+                Language::get(5497), // keep items on death
+                Language::get(5498), // +1 life
             };
             constexpr int num_filter_names = sizeof(filter_names) / sizeof(filter_names[0]);
 
@@ -17536,34 +17526,25 @@ failed:
 
                 const auto& lobby = lobbies[selectedLobby];
 
-                const char* flag_names[] = {
-                    u8" \x1E Cheats\n",
-                    u8" \x1E Hurt allies\n",
-                    u8" \x1E Minotaurs\n",
-                    u8" \x1E Hunger\n",
-                    u8" \x1E Traps\n",
-                    u8" \x1E Hardcore\n",
-                    u8" \x1E Classic\n",
-                    u8" \x1E Keep items\n",
-                    u8" \x1E +1 Life\n",
-                };
-                constexpr int num_flag_names = sizeof(flag_names) / sizeof(flag_names[0]);
-
                 std::string flags1, flags2;
                 bool foundFlags = false;
                 for (int c = 0, index = 0; c < NUM_SERVER_FLAGS; ++c) {
                     if (lobby.flags & (1 << c)) {
                         if (index & 1) {
-                            flags2.append(flag_names[c]);
+                            flags2.append(u8" \x1E ");
+                            flags2.append(Language::get(5500 + c));
+                            flags2.append("\n");
                         } else {
-                            flags1.append(flag_names[c]);
+                            flags1.append(u8" \x1E ");
+                            flags1.append(Language::get(5500 + c));
+                            flags1.append("\n");
                         }
                         foundFlags = true;
                         ++index;
                     }
                 }
                 if (!foundFlags) {
-                    flags1.append("None");
+                    flags1.append(Language::get(5509));
                 }
                 
                 auto frame = static_cast<Frame*>(&widget); assert(frame);
@@ -17577,13 +17558,13 @@ failed:
                 values1->reflowTextToFit(0);
                 const int numLines = values1->getNumTextLines();
                 
-                std::string header_txt = "Name:";
+                std::string header_txt = Language::get(5510); // Name:
                 std::string values2_txt;
                 for (int c = 0; c <= numLines; ++c) {
                     header_txt += "\n";
                     values2_txt += "\n";
                 }
-                header_txt += "Flags:";
+                header_txt += Language::get(5511); // Flags:
                 values2_txt += "\n%s";
                 
                 auto headers = frame->findField("headers"); assert(headers);
@@ -17615,7 +17596,7 @@ failed:
 		    label->setJustify(Field::justify_t::CENTER);
 		    label->setSize(SDL_Rect{78, 48, 146, 22});
 		    label->setFont(smallfont_outline);
-		    label->setText("Lobby Info");
+		    label->setText(Language::get(5512)); // Lobby Info
 
 		    auto headers = frame_left->addField("headers", 1024);
 		    headers->setHJustify(Field::justify_t::LEFT);
@@ -17651,7 +17632,7 @@ failed:
 		online_tab->setHighlightColor(0);
 		online_tab->setBorder(0);
 		online_tab->setColor(0);
-		online_tab->setText("ONLINE");
+		online_tab->setText(Language::get(5513));
 		online_tab->setFont(smallfont_outline);
 		online_tab->setGlyphPosition(Widget::glyph_position_t::CENTERED_LEFT);
 		online_tab->setButtonsOffset(SDL_Rect{ 0, 0, 0, 0 });
@@ -17690,7 +17671,7 @@ failed:
 						refreshLobbyBrowser();
 					} else {
 						nxInitWireless();
-						errorPrompt("Unable to connect to Epic Online\nOnline play is not available.", "Okay", [](Button&) {closeMono();});
+						errorPrompt(Language::get(5514), Language::get(5515), [](Button&) {closeMono();});
 						multiplayer = SINGLE;
 						soundError();
 					}
@@ -17732,9 +17713,9 @@ failed:
 		lan_tab->setBorder(0);
 		lan_tab->setColor(0);
 #if defined(NINTENDO)
-		lan_tab->setText("WIRELESS");
+		lan_tab->setText(Language::get(5516));
 #else
-		lan_tab->setText("LAN");
+		lan_tab->setText(Language::get(5517));
 #endif
 		lan_tab->setFont(smallfont_outline);
 		lan_tab->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
@@ -17792,15 +17773,15 @@ failed:
 				return;
 			}
 #endif
-		    static const char* guide_ipaddr = "Enter an IP address to connect to.";
-		    static const char* guide_roomcode = "Enter the code to a lobby you wish to connect to.";
+		    static const char* guide_ipaddr = Language::get(5518);
+		    static const char* guide_roomcode = Language::get(5519);
 		    static const char* guide;
 		    guide = directConnect ? guide_ipaddr : guide_roomcode;
-		    static const char* tip_ipaddr = "Enter IP address...";
-		    static const char* tip_roomcode = "Enter roomcode...";
+		    static const char* tip_ipaddr = Language::get(5520);
+		    static const char* tip_roomcode = Language::get(5521);
 		    static const char* tip;
 		    tip = directConnect ? tip_ipaddr : tip_roomcode;
-            textFieldPrompt(last_address, tip, guide, "Connect", "Cancel",
+            textFieldPrompt(last_address, tip, guide, Language::get(5522), Language::get(5523),
                 [](Button&){ // connect
                     const char* address = closeTextField(); // only valid for one frame
                     if (directConnect) {
@@ -17828,7 +17809,7 @@ failed:
 		enter_code->setBackgroundActivated("*images/ui/Main Menus/Play/LobbyBrowser/UI_Button_BasicPress00.png");
 		enter_code->setHighlightColor(makeColor(255, 255, 255, 255));
 		enter_code->setColor(makeColor(255, 255, 255, 255));
-		enter_code->setText("Enter Lobby\nCode");
+		enter_code->setText(Language::get(5524));
 		enter_code->setFont(smallfont_outline);
 		enter_code->setWidgetSearchParent(window->getName());
 		enter_code->addWidgetAction("MenuPageLeft", "online_tab");
@@ -17847,12 +17828,12 @@ failed:
 #ifdef NINTENDO
 			auto button = static_cast<Button*>(&widget);
 		    if (mode == BrowserMode::Online) {
-		        button->setText("Enter Lobby\nCode");
+		        button->setText(Language::get(5524));
 				button->setTextColor(makeColor(255, 255, 255, 255));
 				button->setHighlightColor(makeColor(255, 255, 255, 255));
 				button->setColor(makeColor(255, 255, 255, 255));
 		    } else if (mode == BrowserMode::LAN) {
-                button->setText("Enter Lobby\nCode");
+                button->setText(Language::get(5524));
 				button->setTextColor(makeColor(127, 127, 127, 255));
 				button->setHighlightColor(makeColor(127, 127, 127, 255));
 				button->setColor(makeColor(127, 127, 127, 255));
@@ -17860,10 +17841,10 @@ failed:
 #else
 			auto button = static_cast<Button*>(&widget);
 			if (mode == BrowserMode::Online) {
-				button->setText("Enter Lobby\nCode");
+				button->setText(Language::get(5524));
 			}
 			else if (mode == BrowserMode::LAN) {
-				button->setText("Enter IP\nAddress");
+				button->setText(Language::get(5525));
 			}
 #endif
 		    });
@@ -17880,12 +17861,12 @@ failed:
                         button.deselect();
                     }
                 } else {
-					errorPrompt("Unable to join lobby.\nLobby is locked.",
-						"Okay", [](Button&) {soundCancel(); closeMono();});
+					errorPrompt(Language::get(5481), Language::get(5482),
+						[](Button&) {soundCancel(); closeMono();});
                 }
             } else {
-	            errorPrompt("Select a lobby to join first.",
-	                "Okay", [](Button&){soundCancel(); closeMono();});
+	            errorPrompt(Language::get(5526), Language::get(5482),
+	                [](Button&){soundCancel(); closeMono();});
             }
 		    };
 
@@ -17896,7 +17877,7 @@ failed:
 		join_lobby->setBackgroundActivated("*images/ui/Main Menus/Play/LobbyBrowser/UI_Button_BasicPress00.png");
 		join_lobby->setHighlightColor(makeColor(255, 255, 255, 255));
 		join_lobby->setColor(makeColor(255, 255, 255, 255));
-		join_lobby->setText("Join Lobby");
+		join_lobby->setText(Language::get(5527));
 		join_lobby->setFont(smallfont_outline);
 		join_lobby->setWidgetSearchParent(window->getName());
 		join_lobby->addWidgetAction("MenuPageLeft", "online_tab");
@@ -17932,7 +17913,7 @@ failed:
 		    name_column_header->setFont(smallfont_no_outline);
 		    name_column_header->setSize(SDL_Rect{354, 116, 380, 20});
 		    name_column_header->setColor(makeColor(106, 192, 159, 255));
-		    name_column_header->setText(" Lobby Name");
+		    name_column_header->setText(Language::get(5528));
 			name_column_header->setTickCallback([](Widget& widget) {
 				Field* name_column_header = static_cast<Field*>(&widget);
 				if ( lobbyFiltersEnabled )
@@ -17942,17 +17923,17 @@ failed:
 					if ( lobbiesFiltered > 0 )
 					{
 						char buf[64] = {'\0'};
-						snprintf(buf, sizeof(buf), " Lobby Name (%d hidden)", lobbiesFiltered);
+						snprintf(buf, sizeof(buf), Language::get(5529), lobbiesFiltered);
 						name_column_header->setText(buf);
 					}
 					else
 					{
-						name_column_header->setText(" Lobby Name");
+						name_column_header->setText(Language::get(5528));
 					}
 				}
 				else
 				{
-					name_column_header->setText(" Lobby Name");
+					name_column_header->setText(Language::get(5528));
 				}
 			});
 
@@ -18046,7 +18027,7 @@ failed:
 		    players_column_header->setFont(smallfont_no_outline);
 		    players_column_header->setSize(SDL_Rect{ prevColumnSize.x + prevColumnSize.w + 4, 116, 76, 20});
 		    players_column_header->setColor(makeColor(106, 192, 159, 255));
-		    players_column_header->setText(" Players");
+		    players_column_header->setText(Language::get(5530));
 
 		    auto list = window->addFrame("players");
 		    list->setScrollBarsEnabled(false);
@@ -18098,7 +18079,7 @@ failed:
 			version_column_header->setFont(smallfont_no_outline);
 			version_column_header->setSize(SDL_Rect{ prevColumnSize.x + prevColumnSize.w + 4, 116, 70, 20 });
 			version_column_header->setColor(makeColor(106, 192, 159, 255));
-			version_column_header->setText(" Version");
+			version_column_header->setText(Language::get(5531));
 
 			auto list = window->addFrame("versions");
 			list->setScrollBarsEnabled(false);
@@ -18147,7 +18128,7 @@ failed:
 		    ping_column_header->setFont(smallfont_no_outline);
 		    ping_column_header->setSize(SDL_Rect{ prevColumnSize.x + prevColumnSize.w + 4, 116, 48, 20});
 		    ping_column_header->setColor(makeColor(106, 192, 159, 255));
-		    ping_column_header->setText(" Ping");
+		    ping_column_header->setText(Language::get(5532));
 
 		    auto list = window->addFrame("pings");
 		    list->setScrollBarsEnabled(false);
@@ -18322,7 +18303,7 @@ failed:
 		filter_settings->setBackgroundActivated("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_FilterSettingsPress00.png");
 		filter_settings->setHighlightColor(makeColor(255, 255, 255, 255));
 		filter_settings->setColor(makeColor(255, 255, 255, 255));
-		filter_settings->setText("Filter Settings");
+		filter_settings->setText(Language::get(5533));
 		filter_settings->setFont(smallfont_outline);
 		filter_settings->setWidgetSearchParent(window->getName());
 		filter_settings->addWidgetAction("MenuPageLeft", "online_tab");
@@ -18339,7 +18320,7 @@ failed:
 		crossplay_label->setJustify(Field::justify_t::CENTER);
 		crossplay_label->setSize(SDL_Rect{ online_tab->getSize().x - 14, 378, 96, 48});
 		crossplay_label->setFont(smallfont_outline);
-		crossplay_label->setText("Crossplay");
+		crossplay_label->setText(Language::get(5534));
 
 		auto crossplay = window->addButton("crossplay");
 		crossplay->setSize(SDL_Rect{ filter_settings->getSize().x + 50, 378, 158, 48});
@@ -18352,7 +18333,7 @@ failed:
 		crossplay->setColor(makeColor(255,255,255,255));
 		crossplay->setTextHighlightColor(makeColor(255,255,255,255));
 		crossplay->setTextColor(makeColor(255,255,255,255));
-		crossplay->setText("Off          On");
+		crossplay->setText(Language::get(5042)); // off/on
 		crossplay->setFont(smallfont_outline);
 		crossplay->setWidgetSearchParent(window->getName());
 		crossplay->addWidgetAction("MenuPageLeft", "online_tab");
@@ -18376,7 +18357,7 @@ failed:
 		auto filter_settings = window->addButton("filter_settings");
 		filter_settings->setSize(SDL_Rect{ online_tab->getSize().x + 38, 384, 158, 44});
 		filter_settings->setFont(smallfont_outline);
-		filter_settings->setText("Filter Settings");
+		filter_settings->setText(Language::get(5533));
 		filter_settings->setJustify(Button::justify_t::CENTER);
 		filter_settings->setCallback(filter_settings_fn);
 		filter_settings->setBackground("*images/ui/Main Menus/Settings/Settings_Button_Customize00.png");
@@ -18514,16 +18495,14 @@ failed:
 		window_title->setFont(banner_font);
 		window_title->setSize(SDL_Rect{412, 24, 338, 24});
 		window_title->setJustify(Field::justify_t::CENTER);
-		window_title->setText("TUTORIALS");
+		window_title->setText(Language::get(5535));
 
 		auto subtitle = window->addField("subtitle", 1024);
 		subtitle->setFont(bigfont_no_outline);
 		subtitle->setColor(makeColor(170, 134, 102, 255));
 		subtitle->setSize(SDL_Rect{242, 74, 684, 50});
 		subtitle->setJustify(Field::justify_t::CENTER);
-		subtitle->setText(
-		    u8"Take on 10 challenges that teach and test your adventuring\n"
-		    u8"skills, preparing you to take on the dungeon");
+		subtitle->setText(Language::get(5536));
 
 		(void)createBackWidget(window, [](Button& button){
 			soundCancel();
@@ -18548,13 +18527,13 @@ failed:
 		banner_trial->setSize(SDL_Rect{48, 88, 66, 42});
 		banner_trial->setJustify(Field::justify_t::CENTER);
 		banner_trial->setFont(bigfont_outline);
-		banner_trial->setText("Trial");
+		banner_trial->setText(Language::get(5537));
 
 		auto banner_time = subwindow->addField("banner_trial", 32);
 		banner_time->setSize(SDL_Rect{920, 88, 116, 42});
 		banner_time->setJustify(Field::justify_t::CENTER);
 		banner_time->setFont(bigfont_outline);
-		banner_time->setText("Best Time");
+		banner_time->setText(Language::get(5538));
 
 		SDL_Rect fleur_positions[4] = {
 		    { 22, 94, 26, 30 },
@@ -18681,7 +18660,7 @@ failed:
         std::string times[11];
         std::string total_time_str;
         Uint64 total_time = 0;
-        times[0] = "Hub";
+        times[0] = Language::get(5539);
         for (int c = 1; c < 11; ++c) {
             const Uint32 time = levels[c].completionTime / TICKS_PER_SECOND;
             const Uint32 hour = time / 3600;
@@ -18704,17 +18683,17 @@ failed:
         // create buttons
         Button* tutorials[11];
         constexpr int num_tutorials = sizeof(tutorials) / sizeof(tutorials[0]);
-        tutorials[0]  = make_button(*subwindow,  24, "tutorial_hub", " The Hall of Trials", times[0].c_str());
-        tutorials[1]  = make_button(*subwindow, 140, "tutorial1",    " Trial 1: Dungeon Basics and Melee Fighting", times[1].c_str());
-        tutorials[2]  = make_button(*subwindow, 202, "tutorial2",    " Trial 2: Bows, Arrows, and Throwing Weapons", times[2].c_str());
-        tutorials[3]  = make_button(*subwindow, 264, "tutorial3",    " Trial 3: Dungeon Traps, Spikes, and Boulders", times[3].c_str());
-        tutorials[4]  = make_button(*subwindow, 326, "tutorial4",    " Trial 4: Food, Appraisal, and Curses", times[4].c_str());
-        tutorials[5]  = make_button(*subwindow, 388, "tutorial5",    " Trial 5: Magic, Spellbooks, and Casting", times[5].c_str());
-        tutorials[6]  = make_button(*subwindow, 450, "tutorial6",    " Trial 6: Stealth and Sneak Attacks", times[6].c_str());
-        tutorials[7]  = make_button(*subwindow, 512, "tutorial7",    " Trial 7: Follower Recruiting and Commands", times[7].c_str());
-        tutorials[8]  = make_button(*subwindow, 574, "tutorial8",    " Trial 8: Potions and Alchemy", times[8].c_str());
-        tutorials[9]  = make_button(*subwindow, 636, "tutorial9",    " Trial 9: Tinkering", times[9].c_str());
-        tutorials[10] = make_button(*subwindow, 698, "tutorial10",   " Trial 10: Merchants and Shops", times[10].c_str());
+        tutorials[0]  = make_button(*subwindow,  24, "tutorial_hub", Language::get(5540), times[0].c_str());
+        tutorials[1]  = make_button(*subwindow, 140, "tutorial1", Language::get(5541), times[1].c_str());
+        tutorials[2]  = make_button(*subwindow, 202, "tutorial2", Language::get(5542), times[2].c_str());
+        tutorials[3]  = make_button(*subwindow, 264, "tutorial3", Language::get(5543), times[3].c_str());
+        tutorials[4]  = make_button(*subwindow, 326, "tutorial4", Language::get(5544), times[4].c_str());
+        tutorials[5]  = make_button(*subwindow, 388, "tutorial5", Language::get(5545), times[5].c_str());
+        tutorials[6]  = make_button(*subwindow, 450, "tutorial6", Language::get(5546), times[6].c_str());
+        tutorials[7]  = make_button(*subwindow, 512, "tutorial7", Language::get(5547), times[7].c_str());
+        tutorials[8]  = make_button(*subwindow, 574, "tutorial8", Language::get(5548), times[8].c_str());
+        tutorials[9]  = make_button(*subwindow, 636, "tutorial9", Language::get(5549), times[9].c_str());
+        tutorials[10] = make_button(*subwindow, 698, "tutorial10", Language::get(5550), times[10].c_str());
         tutorials[0]->select();
 
         // link buttons
@@ -18735,7 +18714,7 @@ failed:
         auto total_time_label = window->addField("total_time_label", 128);
         total_time_label->setFont(bigfont_no_outline);
         total_time_label->setSize(SDL_Rect{540, 646, 340, 30});
-        total_time_label->setText(" Total Clear Time");
+        total_time_label->setText(Language::get(5551));
         total_time_label->setHJustify(Field::justify_t::LEFT);
         total_time_label->setVJustify(Field::justify_t::CENTER);
 
@@ -18748,7 +18727,7 @@ failed:
 
         // buttons at bottom
         auto reset = window->addButton("reset");
-        reset->setText("Reset Trial\nProgress");
+        reset->setText(Language::get(5552));
         reset->setSize(SDL_Rect{152, 630, 164, 62});
         reset->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Button_00.png");
         reset->setBackgroundHighlighted("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonHigh_00.png");
@@ -18758,7 +18737,7 @@ failed:
         reset->setColor(0xffffffff);
         reset->setCallback([](Button&){
 	        binaryPrompt(
-	            "Are you sure you want to reset\nyour best times?", "Yes", "No",
+	            Language::get(5553), Language::get(5554), Language::get(5555),
 	            [](Button& button) { // Yes button
 			        soundActivate();
 			        soundDeleteSave();
@@ -18795,7 +18774,7 @@ failed:
             });
 
         auto enter = window->addButton("enter");
-        enter->setText("Enter Level");
+        enter->setText(Language::get(5556));
         enter->setSize(SDL_Rect{902, 630, 164, 62});
         enter->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Button_00.png");
         enter->setBackgroundHighlighted("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonHigh_00.png");
@@ -18810,8 +18789,7 @@ failed:
 		        beginFade(MainMenu::FadeDestination::HallOfTrials);
 		    } else {
                 errorPrompt(
-	                "Select a level to start first.",
-	                "Okay",
+	                Language::get(5557), Language::get(5558),
 	                [](Button& button){
 			            soundCancel();
 			            assert(main_menu_frame);
@@ -18856,7 +18834,7 @@ failed:
 
 		auto banner_title = window->addField("banner", 32);
 		banner_title->setSize(SDL_Rect{170, 24, 98, 18});
-		banner_title->setText("PLAY GAME");
+		banner_title->setText(Language::get(5559));
 		banner_title->setFont(smallfont_outline);
 		banner_title->setJustify(Field::justify_t::CENTER);
 
@@ -18869,7 +18847,7 @@ failed:
 		hall_of_trials_button->setBackgroundActivated("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrialsPress00.png");
 		hall_of_trials_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		hall_of_trials_button->setColor(makeColor(255, 255, 255, 255));
-		hall_of_trials_button->setText("TUTORIALS");
+		hall_of_trials_button->setText(Language::get(5560));
 		hall_of_trials_button->setFont(smallfont_outline);
 		hall_of_trials_button->setWidgetSearchParent(window->getName());
 		if (continueAvailable) {
@@ -18913,7 +18891,7 @@ failed:
 		continue_button->setBackground("*images/ui/Main Menus/Play/UI_PlayMenu_Button_ContinueB00.png");
 		continue_button->setTextColor(makeColor(180, 180, 180, 255));
 		continue_button->setTextHighlightColor(makeColor(180, 133, 13, 255));
-		continue_button->setText(" \nCONTINUE");
+		continue_button->setText(Language::get(5561));
 		continue_button->setFont(smallfont_outline);
 		if (continueAvailable) {
 			continue_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/UI_PlayMenu_Button_ContinueA00.png");
@@ -18935,7 +18913,7 @@ failed:
 		new_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/UI_PlayMenu_NewA00.png");
 		new_button->setTextColor(makeColor(180, 180, 180, 255));
 		new_button->setTextHighlightColor(makeColor(180, 133, 13, 255));
-		new_button->setText(" \nNEW");
+		new_button->setText(Language::get(5562));
 		new_button->setFont(smallfont_outline);
 		new_button->setCallback(playNew);
 		new_button->setWidgetSearchParent(window->getName());
