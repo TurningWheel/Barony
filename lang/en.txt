@@ -6423,8 +6423,6 @@ for accessory to violence!#
 4345 Status Effects#
 4346 No effects active#
 
-4399 end#
-
 # New main menu strings (5000)
 
 5000 Back#
@@ -7591,3 +7589,64 @@ will now reload.#
 Update#
 5922 Submit New
 Workshop Mod#
+5923 No new files selected:
+Only tags/version will be modified.#
+5924 New files will be uploaded and
+tags/version will be modified.#
+5925 Proceed#
+5926 Cancel#
+5927 Starting upload#
+5928 Modifying existing item#
+5929 Creating item#
+5930 Waiting on update handle#
+5931 Setting title#
+5932 Setting description#
+5933 Setting tags#
+5934 Preparing content#
+5935 Note: No preview.png image found#
+5936 First upload.#
+5937 Item updated.#
+5938 Uploading content, this may take
+some time.#
+5939 Timed out while uploading,
+retrying 1/3...#
+5940 Timed out while uploading,
+retrying 2/3...#
+5941 Timed out while uploading,
+retrying 3/3...#
+5942 Timed out while uploading,
+try again later.#
+5943 Successfully uploaded content!#
+5944 Unknown error#
+5945 Waiting#
+5946 Error: Not logged in.#
+5947 Error: No content folder
+selected to upload.#
+5948 Error: Could not read
+content folder.#
+5949 Starting upload#
+5950 Please
+wait#
+5951 View Item#
+5952 Retry
+Upload#
+5953 Error code: #
+5954 CUSTOM DIFFICULTY#
+5955 No subscribed Workshop items found.#
+
+5956 Equip#
+5957 Drop#
+5958 SPELLS#
+5959 Chest#
+5960 Take All#
+5961 Skill Level:#
+5962 Associated Stat:#
+5963 Attack#
+5964 Sneak#
+5965 Cast Spell#
+5966 Map#
+5967 Log#
+5968 CHARACTER SHEET#
+5969 GOLD#
+
+6000 end#

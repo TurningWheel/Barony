@@ -11537,7 +11537,7 @@ failed:
 			    stats[index]->playerRace = RACE_INCUBUS;
 			    auto race = card->findButton("race");
 			    if (race) {
-				    race->setText("Incubus");
+				    race->setText(Language::get(3827));
 			    }
 			    auto incubus = subframe ? subframe->findButton("Incubus") : nullptr;
 			    if (incubus) {
@@ -11727,7 +11727,7 @@ failed:
 		auto header = card->addField("header", 64);
 		header->setSize(SDL_Rect{30, 8, 264, 50});
 		header->setFont(smallfont_outline);
-		header->setText("CUSTOM DIFFICULTY");
+		header->setText(Language::get(5954));
 		header->setJustify(Field::justify_t::CENTER);
 
 		const char* game_settings_text[] = {
@@ -21236,7 +21236,6 @@ failed:
 	}
 
 	static void mainDropOut(Button& button) {
-	    const char* prompt = ;
 		binaryPrompt(
 			Language::get(5636), // window text
 			Language::get(5637), // okay text
@@ -22935,7 +22934,7 @@ failed:
                 if (madetop) {
                     snprintf(highscore_buf, sizeof(highscore_buf), Language::get(5833), placement);
                 } else {
-                    snprintf(highscore_buf, sizeof(highscore_buf), "%s" Language::get(5834));
+                    snprintf(highscore_buf, sizeof(highscore_buf), "%s", Language::get(5834));
                 }
                 footer->setText(highscore_buf);
             }
@@ -24447,7 +24446,7 @@ failed:
 						if ( auto no_mods_found = subwindow->findField("no_mods_found") )
 						{
 							no_mods_found->setDisabled(numResults > 0);
-							no_mods_found->setText("No subscribed Workshop items found.");
+							no_mods_found->setText(Language::get(5955));
 						}
 					}
 				}
@@ -26750,13 +26749,13 @@ failed:
 			{
 				if ( modFolderPathToUpload == "" )
 				{
-					message = "No new files selected:\nOnly tags/version will be modified.";
+					message = Language::get(5923);
 				}
 				else
 				{
-					message = "New files will be uploaded and\ntags/version will be modified.";
+					message = Language::get(5924);
 				}
-				binaryPrompt(message.c_str(), "Proceed", "Cancel",
+				binaryPrompt(message.c_str(), Language::get(5925), Language::get(5926),
 					[](Button& button) {
 						closeBinary();
 						soundActivate();
@@ -26818,7 +26817,7 @@ failed:
 						Mods::uploadStatus = UploadStatus::STATUS_EXISTING_ITEM;
 					}
 				}
-				return "Starting upload";
+				return Language::get(5927);
 			case UploadStatus::STATUS_EXISTING_ITEM:
 				if ( Mods::uploadTicks >= kStateDelay )
 				{
@@ -26826,7 +26825,7 @@ failed:
 					Mods::uploadStatus = STATUS_ITEM_CREATED;
 					g_SteamWorkshop->StartItemExistingUpdate(Mods::uploadingExistingItem);
 				}
-				return "Modifying existing item";
+				return Language::get(5928);
 			case UploadStatus::STATUS_CREATE_ITEM:
 				if ( Mods::uploadTicks >= kStateDelay )
 				{
@@ -26853,7 +26852,7 @@ failed:
 						}
 					}
 				}
-				return "Creating item";
+				return Language::get(5929);
 			case UploadStatus::STATUS_ITEM_CREATED:
 				if ( Mods::uploadTicks >= kStateDelay )
 				{
@@ -26878,7 +26877,7 @@ failed:
 						Mods::uploadStatus = UploadStatus::STATUS_ERROR;
 					}
 				}
-				return "Waiting on update handle";
+				return Language::get(5930);
 			case UploadStatus::STATUS_SET_TITLE:
 				if ( Mods::uploadTicks >= kStateDelay )
 				{
@@ -26901,7 +26900,7 @@ failed:
 						Mods::uploadStatus = UploadStatus::STATUS_ERROR;
 					}
 				}
-				return "Setting title";
+				return Language::get(5931);
 			case UploadStatus::STATUS_SET_DESC:
 				if ( Mods::uploadTicks >= kStateDelay )
 				{
@@ -26924,7 +26923,7 @@ failed:
 						Mods::uploadStatus = UploadStatus::STATUS_ERROR;
 					}
 				}
-				return "Setting description";
+				return Language::get(5932);
 			case UploadStatus::STATUS_SET_TAGS:
 				if ( Mods::uploadTicks >= kStateDelay )
 				{
@@ -26999,7 +26998,7 @@ failed:
 						Mods::uploadStatus = UploadStatus::STATUS_ERROR;
 					}
 				}
-				return "Setting tags";
+				return Language::get(5933);
 			case UploadStatus::STATUS_UPLOAD_CONTENT_INIT:
 				if ( Mods::uploadTicks >= kStateDelay )
 				{
@@ -27062,7 +27061,7 @@ failed:
 						Mods::uploadStatus = UploadStatus::STATUS_ERROR;
 					}
 				}
-				return "Preparing content";
+				return Language::get(5934);
 			case UploadStatus::STATUS_UPLOAD_PREVIEW_MISSING:
 				if ( Mods::uploadTicks >= kStateDelay )
 				{
@@ -27078,7 +27077,7 @@ failed:
 						Mods::uploadStatus = UploadStatus::STATUS_ERROR;
 					}
 				}
-				return "Note: No preview.png image found";
+				return Language::get(5935);
 			case UploadStatus::STATUS_UPLOAD_CONTENT_START:
 				if ( Mods::uploadTicks >= kStateDelay )
 				{
@@ -27089,11 +27088,11 @@ failed:
 						g_SteamWorkshop->SubmitItemUpdateResult.m_eResult = k_EResultNone;
 						if ( Mods::uploadingExistingItem == 0 )
 						{
-							g_SteamWorkshop->SubmitItemUpdate("First upload.");
+							g_SteamWorkshop->SubmitItemUpdate(Language::get(5936));
 						}
 						else
 						{
-							g_SteamWorkshop->SubmitItemUpdate("Item updated.");
+							g_SteamWorkshop->SubmitItemUpdate(Language::get(5937));
 						}
 					}
 					else
@@ -27103,7 +27102,7 @@ failed:
 						Mods::uploadStatus = UploadStatus::STATUS_ERROR;
 					}
 				}
-				return "Uploading content, this may take\nsome time.";
+				return Language::get(5938);
 			case UploadStatus::STATUS_ITEM_UPDATING:
 				if ( Mods::uploadTicks >= kStateDelay )
 				{
@@ -27140,7 +27139,7 @@ failed:
 						Mods::uploadStatus = UploadStatus::STATUS_ERROR;
 					}
 				}
-				return "Uploading content, this may take\nsome time.";
+				return Language::get(5938);
 			case UploadStatus::STATUS_RETRY:
 				if ( Mods::uploadTicks >= TICKS_PER_SECOND * 2 )
 				{
@@ -27167,26 +27166,26 @@ failed:
 				}
 				if ( Mods::uploadNumRetries == 3 )
 				{
-					return "Timed out while uploading,\nretrying 1/3...";
+					return Language::get(5939);
 				}
 				else if ( Mods::uploadNumRetries == 2 )
 				{
-					return "Timed out while uploading,\nretrying 2/3...";
+					return Language::get(5940);
 				}
 				else if ( Mods::uploadNumRetries == 1 )
 				{
-					return "Timed out while uploading,\nretrying 3/3...";
+					return Language::get(5941);
 				}
 				else
 				{
-					return "Timed out while uploading,\ntry again later.";
+					return Language::get(5942);
 				}
 			case UploadStatus::STATUS_COMPLETED:
-				return "Successfully uploaded content!";
+				return Language::get(5943);
 			case UploadStatus::STATUS_ERROR:
-				return "Unknown error";
+				return Language::get(5944);
 			default:
-				return "Waiting";
+				return Language::get(5945);
 				break;
 		}
 	}
@@ -27195,7 +27194,7 @@ failed:
 	{
 		if ( !SteamUser()->BLoggedOn() || !g_SteamWorkshop )
 		{
-			auto frame = errorPrompt("Error: Not logged in.", "Okay", [](Button& button) {
+			auto frame = errorPrompt(Language::get(5946), Language::get(5884), [](Button& button) {
 				closeMono();
 				soundActivate();
 			});
@@ -27205,7 +27204,7 @@ failed:
 		auto fullpath = Mods::getFolderFullPath(modFolderPathToUpload);
 		if ( fullpath == "" && Mods::uploadingExistingItem == 0 )
 		{
-			auto frame = errorPrompt("Error: No content folder\nselected to upload.", "Okay", [](Button& button) {
+			auto frame = errorPrompt(Language::get(5947), Language::get(5884), [](Button& button) {
 				closeMono();
 				soundActivate();
 				});
@@ -27213,14 +27212,14 @@ failed:
 		}
 		if ( fullpath != "" && access(fullpath.c_str(), F_OK) != 0 )
 		{
-			auto frame = errorPrompt("Error: Could not read\ncontent folder.", "Okay", [](Button& button) {
+			auto frame = errorPrompt(Language::get(5948), Language::get(5884), [](Button& button) {
 				closeMono();
 				soundActivate();
 				});
 			return;
 		}
 
-		auto frame = monoPrompt("Starting upload", "Please\nwait", [](Button& button) {
+		auto frame = monoPrompt(Language::get(5949), Language::get(5950), [](Button& button) {
 			closeMono();
 
 			if ( auto workshop_create = main_menu_frame->findFrame("workshop_create") )
@@ -27267,7 +27266,7 @@ failed:
 					playSound(553, 64);
 
 					button->setDisabled(false);
-					button->setText("Dismiss");
+					button->setText(Language::get(5835));
 					button->setWidgetLeft("view workshop");
 					button->setWidgetBack("okay");
 
@@ -27288,7 +27287,7 @@ failed:
 					view->setTextColor(makeColor(255, 255, 255, 255));
 					view->setTextHighlightColor(makeColor(255, 255, 255, 255));
 					view->setFont(smallfont_outline);
-					view->setText("View Item");
+					view->setText(Language::get(5951));
 					view->setCallback([](Button& button) {
 						std::string url = "steam://url/CommunityFilePage/";
 						url += std::to_string(g_SteamWorkshop->SubmitItemUpdateResult.m_nPublishedFileId);
@@ -27311,7 +27310,7 @@ failed:
 				{
 					button->setDisabled(false);
 					button->select();
-					button->setText("Cancel");
+					button->setText(Language::get(5860));
 					button->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png");
 					button->setBackgroundHighlighted("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonHigh00.png");
 					button->setBackgroundActivated("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonPress00.png");
@@ -27332,7 +27331,7 @@ failed:
 					retry->setTextColor(makeColor(255, 255, 255, 255));
 					retry->setTextHighlightColor(makeColor(255, 255, 255, 255));
 					retry->setFont(smallfont_outline);
-					retry->setText("Retry\nUpload");
+					retry->setText(Language::get(5952));
 					retry->select();
 					retry->setCallback([](Button& button) {
 						soundActivate();
@@ -27363,7 +27362,7 @@ failed:
 					});
 				}
 
-				status += "Error code: ";
+				status += Language::get(5953);
 				status += std::to_string(Mods::uploadErrorStatus);
 				status += '\n';
 			}
