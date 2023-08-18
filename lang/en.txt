@@ -7417,3 +7417,177 @@ has been lost.#
 5828 They sleep in memory.#
 5829 Gone but not forgotten.#
 5830 Killed by: #
+
+5831 Learn from your failure
+to complete the test!#
+5832 You will be revived if your
+party makes it to the next level.#
+5833 You placed #%d
+in local highscores!#
+5834 You failed to place
+in local highscores.#
+
+5835 Dismiss#
+5836 Back to Hub#
+5837 Quit to Main#
+5838 Restart#
+5839 Okay#
+
+5840 Congratulations, you've completed the first tutorial!
+
+You are now within the Hall of Trials,
+9 more trials are available to teach and test you.
+
+Explore the Hall of Trials to learn more or return
+to the main menu and start your adventure.#
+5841 Explore
+Hall of Trials#
+5842 Return to
+Main Menu#
+5843 Reconnect the controller for Player #
+5844 Please reconnect your controller.#
+5845 RECONNECT CONTROLLER#
+
+5846 Enabling Crossplay allows you to host and join
+lobbies via Epic Games, Inc.
+
+By clicking Accept, you agree to share public info
+about your Steam profile with Epic Games, Inc.
+for the purpose of enabling crossplay.#
+
+5847 Would you like to link your device to an online
+account hosted by Epic Games, Inc. to play online?
+
+By choosing Accept, you agree to share some info
+about your Nintendo console with Epic Games, Inc.
+for the purpose of enabling online play.#
+
+5848 Enabling online play allows you to host and join
+online lobbies hosted via Epic Games, Inc.
+
+By clicking Accept, you agree to share some info
+about your device with Epic Games, Inc. for the
+purpose of enabling online play.#
+
+5849 Accept#
+5850 View
+Privacy Policy#
+5851 Deny#
+
+5852 Select at least 1 mod to load.#
+5853 Okay#
+5854 Unload Mod#
+5855 Load Mod#
+5856 Load Order: #
+5857 Update Mod#
+5858 Steam Workshop#
+5859 Fetching subscriptions...#
+5860 Cancel#
+5861 Fetching my items...#
+5862 No Workshop items found.#
+5863 Loading local mod folders...#
+5864 No folders found in /mods/ directory.#
+5865 MODS#
+5866 Local
+Mods#
+5867 Steam
+Workshop#
+5868 My Workshop
+Items#
+5869 Do you want to exit this menu?
+Any active mods will be unloaded.#
+5870 Yes#
+5871 No#
+5872 
+Mods Loaded:
+#
+5873 Local Mods:
+Workshop:
+Total Loaded:#
+5874 ACHIEVEMENTS
+DISABLED#
+5875 ACHIEVEMENTS
+ENABLED#
+5876 Note: Not all modded files can be
+verified prior to game start to
+ensure Achievements are enabled.#
+5877 Dismiss#
+5878 Start
+Modded Game#
+5879 New Workshop
+Mod#
+5880 Browse
+Workshop#
+5881 Open
+Workshop#
+5882 Browse community created mods and 'subscribe' to\ndownload mods for use.
+
+Subscribing while Barony is running may require
+closing the game in order for Steam to begin downloading.
+
+Current game version: #
+5883 Your workshop items
+will now reload.#
+5884 Okay#
+5885 Cancel#
+5886 Create Blank
+Mod Folder#
+5887 This will create a new mod folder inside the Barony
+/mods/ directory with a blank file structure
+and default preview.png file.#
+5888 Enter a name for the new folder#
+5889 Confirm#
+5890 Cancel#
+5891 Error: Folder name cannot
+ be blank.#
+5892 New folder: '%s'
+created successfully!#
+5893 Error: A folder already exists
+named '%s'#
+5894 Error: Unable to write folder
+'%s'#
+5895 Title#
+5896 Description#
+5897 UPDATE WORKSHOP MOD#
+5898 NEW WORKSHOP MOD#
+5899 Upload a folder within the /mods/ directory for your mod.
+Files/tags may be changed within this menu after creation.#
+5900 Submitting an update changes the tagged game version.
+Choosing a new folder or changing tags is optional.#
+5901 Folder to Upload:#
+5902 No folder selected#
+5903 Choose...#
+5904 Error: Parent folder
+must be "mods".#
+5905 Error: Could not open folder:#
+5906 Title:#
+5907 Edit...#
+5908 This can be edited later with a larger length
+within the Steam Workshop page after creation.#
+5909 Enter a title for this item#
+5910 Confirm#
+5911 Cancel#
+5912 For existing items, visit the
+Workshop page to make edits.#
+5913 Description:#
+5914 Enter a description for this item#
+5915 For existing items, visit the
+Workshop page to make edits.#
+5916 Tags:#
+5917 Manage In
+Workshop#
+5918 You can view and edit most attributes of your mod
+directly on the Workshop page, such as longer
+descriptions with HTML support, setting visibility to public
+or adding screenshots to the carousel.
+
+If you need to edit the preview image or modded files,
+use the upload window here in-game instead.#
+5919 Open
+Workshop#
+5920 Your workshop items
+will now reload.#
+5921 Submit
+Update#
+5922 Submit New
+Workshop Mod#

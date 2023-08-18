@@ -22926,18 +22926,16 @@ failed:
         footer->setJustify(Field::justify_t::CENTER);
 
         if (tutorial) {
-            footer->setText("Learn from your failure\nto complete the test!");
+            footer->setText(Language::get(5831));
         } else {
             if (survivingPlayer) {
-                footer->setText("You will be revived if your\nparty makes it to the next level.");
+                footer->setText(Language::get(5832));
             } else {
                 char highscore_buf[256];
                 if (madetop) {
-                    snprintf(highscore_buf, sizeof(highscore_buf),
-                        "You placed #%d\nin local highscores!", placement);
+                    snprintf(highscore_buf, sizeof(highscore_buf), Language::get(5833), placement);
                 } else {
-                    snprintf(highscore_buf, sizeof(highscore_buf),
-                        "You failed to place\nin local highscores.");
+                    snprintf(highscore_buf, sizeof(highscore_buf), "%s" Language::get(5834));
                 }
                 footer->setText(highscore_buf);
             }
@@ -22967,7 +22965,7 @@ failed:
             dismiss->setBackground("images/ui/GameOver/UI_GameOver_Button_Dismiss_02.png");
             dismiss->setBackgroundHighlighted("images/ui/GameOver/UI_GameOver_Button_DismissHigh_02.png");
             dismiss->setBackgroundActivated("images/ui/GameOver/UI_GameOver_Button_DismissPress_02.png");
-            dismiss->setText("Dismiss");
+            dismiss->setText(Language::get(5835));
             dismiss->setFont(smallfont_outline);
             dismiss->setTextColor(makeColor(170, 134, 102, 255));
             dismiss->setTextHighlightColor(makeColor(170, 134, 102, 255));
@@ -22987,7 +22985,7 @@ failed:
             quit->setBackground("images/ui/GameOver/UI_GameOver_Button_Quit_02.png");
             quit->setBackgroundHighlighted("images/ui/GameOver/UI_GameOver_Button_QuitHigh_02.png");
             quit->setBackgroundActivated("images/ui/GameOver/UI_GameOver_Button_QuitPress_02.png");
-            quit->setText(tutorial ? "Back to Hub" : "Quit to Main");
+            quit->setText(tutorial ? Language::get(5836) : Language::get(5837));
             quit->setFont(smallfont_outline);
             quit->setTextColor(makeColor(170, 134, 102, 255));
             quit->setTextHighlightColor(makeColor(170, 134, 102, 255));
@@ -23034,7 +23032,7 @@ failed:
             restart->setBackground("images/ui/GameOver/UI_GameOver_Button_Lobby_02.png");
             restart->setBackgroundHighlighted("images/ui/GameOver/UI_GameOver_Button_LobbyHigh_02.png");
             restart->setBackgroundActivated("images/ui/GameOver/UI_GameOver_Button_LobbyPress_02.png");
-            restart->setText("Restart");
+            restart->setText(Language::get(5838));
             restart->setFont(smallfont_outline);
             restart->setTextColor(makeColor(170, 134, 102, 255));
             restart->setTextHighlightColor(makeColor(170, 134, 102, 255));
@@ -23090,7 +23088,7 @@ failed:
             dismiss->setBackground("images/ui/GameOver/UI_GameOver_Button_Restart_02.png");
             dismiss->setBackgroundHighlighted("images/ui/GameOver/UI_GameOver_Button_RestartHigh_02.png");
             dismiss->setBackgroundActivated("images/ui/GameOver/UI_GameOver_Button_RestartPress_02.png");
-            dismiss->setText("Dismiss");
+            dismiss->setText(Language::get(5835));
             dismiss->setFont(smallfont_outline);
             dismiss->setTextColor(makeColor(170, 134, 102, 255));
             dismiss->setTextHighlightColor(makeColor(170, 134, 102, 255));
@@ -23118,7 +23116,7 @@ failed:
             } else {
                 const auto error = LobbyHandler_t::EResult_LobbyFailures::LOBBY_USING_SAVEGAME;
                 const auto str = LobbyHandler.getLobbyJoinFailedConnectString(error);
-                errorPrompt(str.c_str(), "Okay",
+                errorPrompt(str.c_str(), Language::get(5839),
                 [](Button&){
                 soundCancel();
                 closeMono();
@@ -23216,13 +23214,7 @@ failed:
 		auto text = prompt->addField("text", issmall ? 128 : 1024);
 		text->setSize(SDL_Rect{ 30, 28, prompt->getSize().w - 60, issmall ? 46 : 134 });
 		text->setFont(smallfont_no_outline);
-		text->setText(
-			u8"Congratulations, you've completed the first tutorial!\n\n"
-			u8"You are now within the Hall of Trials,\n"
-			u8"9 more trials are available to teach and test you.\n\n"
-			u8"Explore the Hall of Trials to learn more or return\n"
-			u8"to the main menu and start your adventure.\n"
-		);
+		text->setText(Language::get(5840));
 		text->setJustify(Field::justify_t::CENTER);
 
 		auto okay = prompt->addButton("okay");
@@ -23235,7 +23227,7 @@ failed:
 		okay->setTextColor(makeColor(255, 255, 255, 255));
 		okay->setTextHighlightColor(makeColor(255, 255, 255, 255));
 		okay->setFont(smallfont_outline);
-		okay->setText("Explore\nHall of Trials");
+		okay->setText(Language::get(5841));
 		okay->setCallback([](Button& button) {
 			closeMono();
 
@@ -23276,7 +23268,7 @@ failed:
 		buttonCancel->setTextColor(makeColor(255, 255, 255, 255));
 		buttonCancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
 		buttonCancel->setFont(smallfont_outline);
-		buttonCancel->setText("Return to\nMain Menu");
+		buttonCancel->setText(Language::get(5842));
 		pos.x = prompt->getSize().w / 2 + 8;
 		buttonCancel->setSize(pos);
 		buttonCancel->setCallback([](Button& button) {
@@ -23388,9 +23380,9 @@ failed:
 
 		char text[1024];
         if (splitscreen) {
-		    snprintf(text, sizeof(text), "Reconnect the controller for Player %d\n\n\n\n", player + 1);
+		    snprintf(text, sizeof(text), "%s%d\n\n\n\n", Language::get(5843), player + 1);
         } else {
-		    snprintf(text, sizeof(text), "Please reconnect your controller.\n\n\n\n");
+		    snprintf(text, sizeof(text), "%s\n\n\n\n", Language::get(5844));
         }
 
         // at this point the prompt should ALWAYS open
@@ -23406,7 +23398,7 @@ failed:
         header->setSize(header_size);
         header->setFont(bigfont_outline);
         header->setJustify(Field::justify_t::CENTER);
-        header->setText("RECONNECT CONTROLLER");
+        header->setText(Language::get(5845));
 
         auto back = createBackWidget(prompt, [](Button& button){
             destroyMainMenu();
@@ -23444,11 +23436,14 @@ failed:
                     SDL_Rect{x, y, w, h},
                     makeColor(255, 255, 255, 255),
                     path, name.c_str());
+                    
+                char fmt[16];
+                snprintf(fmt, sizeof(fmt), Language::get(5477), c + 1);
 
                 auto field = prompt->addField(name.c_str(), 16);
                 field->setSize(SDL_Rect{x, y, w, h});
                 field->setJustify(Field::justify_t::CENTER);
-                field->setText((std::string("P") + std::to_string(c + 1)).c_str());
+                field->setText(fmt);
                 field->setFont(bigfont_outline);
 				field->setColor(playerColor(c, colorblind_lobby, false));
                 ++num;
@@ -23469,33 +23464,15 @@ failed:
     void crossplayPrompt() {
 #ifdef USE_EOS
 #if defined(STEAMWORKS)
-        const char* prompt =
-            "Enabling Crossplay allows you to host and join\n"
-            "lobbies via Epic Games, Inc.\n"
-            "\n"
-            "By clicking Accept, you agree to share public info\n"
-            "about your Steam profile with Epic Games, Inc.\n"
-            "for the purpose of enabling crossplay.";
+		const char* prompt = Language::get(5846);
 #elif defined(NINTENDO)
-		const char* prompt =
-			"Would you like to link your device to an online\n"
-			"account hosted by Epic Games, Inc. to play online?\n"
-			"\n"
-			"By choosing Accept, you agree to share some info\n"
-			"about your Nintendo console with Epic Games, Inc.\n"
-			"for the purpose of enabling online play.";
+		const char* prompt = Language::get(5847);
 #else
-		const char* prompt =
-			"Enabling online play allows you to host and join\n"
-			"online lobbies hosted via Epic Games, Inc.\n"
-			"\n"
-			"By clicking Accept, you agree to share some info\n"
-			"about your device with Epic Games, Inc. for the\n"
-			"purpose of enabling online play.";
+		const char* prompt = Language::get(5848);
 #endif
         trinaryPrompt(
             prompt,
-            "Accept", "View\nPrivacy Policy", "Deny",
+            Language::get(5849), Language::get(5850), Language::get(5851),
             [](Button&){ // accept
             soundActivate();
 			closeTrinary();
@@ -23588,7 +23565,7 @@ failed:
 		Mods::numCurrentModsLoaded = Mods::mountedFilepaths.size();
 		if ( Mods::numCurrentModsLoaded == 0 )
 		{
-			errorPrompt("Select at least 1 mod to load.", "Okay",
+			errorPrompt(Language::get(5852), Language::get(5853),
 				[](Button&) {
 					soundCancel();
 					closeMono();
@@ -23714,7 +23691,7 @@ failed:
 				{
 					if ( !toggleActive )
 					{
-						button.setText("Unload Mod");
+						button.setText(Language::get(5854));
 						button.setBackground("*#images/ui/Main Menus/Mods/Unload_Button_00.png");
 						button.setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Unload_Button_High00.png");
 						button.setBackgroundActivated("*#images/ui/Main Menus/Mods/Unload_Button_Press00.png");
@@ -23724,7 +23701,7 @@ failed:
 					{
 						PHYSFS_unmount(fullpath);
 						Mods::removePathFromMountedFiles(fullpath);
-						button.setText("Load Mod");
+						button.setText(Language::get(5855));
 						printlog("[%s] is removed from the search path.\n", fullpath);
 						button.setBackground("*#images/ui/Main Menus/Mods/Load_Button_00.png");
 						button.setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Load_Button_High00.png");
@@ -23735,7 +23712,7 @@ failed:
 				{
 					if ( !toggleActive )
 					{
-						button.setText("Load Mod");
+						button.setText(Language::get(5855));
 						button.setBackground("*#images/ui/Main Menus/Mods/Load_Button_00.png");
 						button.setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Load_Button_High00.png");
 						button.setBackgroundActivated("*#images/ui/Main Menus/Mods/Load_Button_Press00.png");
@@ -23744,7 +23721,7 @@ failed:
 					{
 						Mods::mountedFilepaths.push_back(std::make_pair(fullpath, itemDetails.m_rgchTitle));
 						modLoaded = true;
-						button.setText("Unload Mod");
+						button.setText(Language::get(5854));
 						button.setBackground("*#images/ui/Main Menus/Mods/Unload_Button_00.png");
 						button.setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Unload_Button_High00.png");
 						button.setBackgroundActivated("*#images/ui/Main Menus/Mods/Unload_Button_Press00.png");
@@ -23765,7 +23742,7 @@ failed:
 			{
 				if ( !toggleActive )
 				{
-					button.setText("Unload Mod");
+					button.setText(Language::get(5854));
 					button.setBackground("*#images/ui/Main Menus/Mods/Unload_Button_00.png");
 					button.setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Unload_Button_High00.png");
 					button.setBackgroundActivated("*#images/ui/Main Menus/Mods/Unload_Button_Press00.png");
@@ -23775,7 +23752,7 @@ failed:
 				{
 					PHYSFS_unmount(fullpath);
 					Mods::removePathFromMountedFiles(fullpath);
-					button.setText("Load Mod");
+					button.setText(Language::get(5855));
 					printlog("[%s] is removed from the search path.\n", fullpath);
 					button.setBackground("*#images/ui/Main Menus/Mods/Load_Button_00.png");
 					button.setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Load_Button_High00.png");
@@ -23786,7 +23763,7 @@ failed:
 			{
 				if ( !toggleActive )
 				{
-					button.setText("Load Mod");
+					button.setText(Language::get(5855));
 					button.setBackground("*#images/ui/Main Menus/Mods/Load_Button_00.png");
 					button.setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Load_Button_High00.png");
 					button.setBackgroundActivated("*#images/ui/Main Menus/Mods/Load_Button_Press00.png");
@@ -23795,7 +23772,7 @@ failed:
 				{
 					Mods::mountedFilepaths.push_back(std::make_pair(fullpath, *it));
 					modLoaded = true;
-					button.setText("Unload Mod");
+					button.setText(Language::get(5854));
 					button.setBackground("*#images/ui/Main Menus/Mods/Unload_Button_00.png");
 					button.setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Unload_Button_High00.png");
 					button.setBackgroundActivated("*#images/ui/Main Menus/Mods/Unload_Button_Press00.png");
@@ -23835,7 +23812,7 @@ failed:
 						if ( Mods::mountedFilepaths[i].first == fullpath )
 						{
 							char buf[32];
-							snprintf(buf, sizeof(buf), "Load Order: %d", i + 1);
+							snprintf(buf, sizeof(buf), "%s%d", Language::get(5856), i + 1);
 							modOrderTxt->setText(buf);
 							break;
 						}
@@ -24114,14 +24091,14 @@ failed:
 			button->setScrollParentOffset(btnScrollParentOffset);
 			if ( isMounted )
 			{
-				button->setText("Unload Mod");
+				button->setText(Language::get(5854));
 				button->setBackground("*#images/ui/Main Menus/Mods/Unload_Button_00.png");
 				button->setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Unload_Button_High00.png");
 				button->setBackgroundActivated("*#images/ui/Main Menus/Mods/Unload_Button_Press00.png");
 			}
 			else
 			{
-				button->setText("Load Mod");
+				button->setText(Language::get(5855));
 				button->setBackground("*#images/ui/Main Menus/Mods/Load_Button_00.png");
 				button->setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Load_Button_High00.png");
 				button->setBackgroundActivated("*#images/ui/Main Menus/Mods/Load_Button_Press00.png");
@@ -24185,7 +24162,7 @@ failed:
 						if ( !strcmp(Mods::mountedFilepaths[i].first.c_str(), modPath->getText()) )
 						{
 							char buf[32];
-							snprintf(buf, sizeof(buf), "Load Order: %d", i + 1);
+							snprintf(buf, sizeof(buf), "%s%d", Language::get(5856), i + 1);
 							Field* field = static_cast<Field*>(&widget);
 							field->setText(buf);
 							break;
@@ -24228,7 +24205,7 @@ failed:
 			button->setUserData((void*)(intptr_t)(isWorkshopMod ? 1 : 0));
 			button->setFont(smallfont_outline);
 			button->setScrollParentOffset(btnScrollParentOffset);
-			button->setText("Update Mod");
+			button->setText(Language::get(5857));
 			button->setWidgetSearchParent("mods_menu");
 			button->setWidgetPageLeft("tab_left");
 			button->setWidgetPageRight("tab_right");
@@ -24289,8 +24266,8 @@ failed:
 		mods_loading_tick = ticks;
 		mods_active_tab = "Steam Workshop";
 		auto prompt = monoPrompt(
-			"Fetching subscriptions...",
-			"Cancel",
+			Language::get(5859),
+			Language::get(5860),
 			[](Button&) {
 				soundCancel();
 				assert(main_menu_frame);
@@ -24485,8 +24462,8 @@ failed:
 		mods_loading_tick = ticks;
 		mods_active_tab = "My Workshop Items";
 		auto prompt = monoPrompt(
-			"Fetching my items...",
-			"Cancel",
+			Language::get(5861),
+			Language::get(5860),
 			[](Button&) {
 				soundCancel();
 				assert(main_menu_frame);
@@ -24660,7 +24637,7 @@ failed:
 						if ( auto no_mods_found = subwindow->findField("no_mods_found") )
 						{
 							no_mods_found->setDisabled(numResults > 0);
-							no_mods_found->setText("No Workshop items found.");
+							no_mods_found->setText(Language::get(5862));
 						}
 						Mods::forceDownloadCachedImages = false;
 					}
@@ -24674,8 +24651,8 @@ failed:
 		mods_loading_tick = ticks;
 		mods_active_tab = "Local Mods";
 		auto prompt = monoPrompt(
-			"Loading local mod folders...",
-			"Cancel",
+			Language::get(5863),
+			Language::get(5860),
 			[](Button&) {
 				soundCancel();
 				closeMono();
@@ -24835,7 +24812,7 @@ failed:
 						if ( auto no_mods_found = subwindow->findField("no_mods_found") )
 						{
 							no_mods_found->setDisabled(Mods::localModFoldernames.size() != 0);
-							no_mods_found->setText("No folders found in /mods/ directory.");
+							no_mods_found->setText(Language::get(5864));
 						}
 					}
 				}
@@ -25093,7 +25070,7 @@ failed:
 		window_title->setFont(banner_font);
 		window_title->setSize(SDL_Rect{ 412, 24, 338, 24 });
 		window_title->setJustify(Field::justify_t::CENTER);
-		window_title->setText("MODS");
+		window_title->setText(Language::get(5865));
 
 		struct Option {
 			const char* name;
@@ -25101,10 +25078,10 @@ failed:
 			void (*callback)(Button&);
 		};
 		static std::vector<Option> mod_tabs = {
-			{"Local Mods", "Local\nMods", workshopLoadLocalMods},
+			{"Local Mods", Language::get(5866), workshopLoadLocalMods},
 #ifdef STEAMWORKS
-			{"Steam Workshop", "Steam\nWorkshop", workshopLoadSubscribedItems},
-			{"My Workshop Items", "My Workshop\nItems", workshopLoadMyItems},
+			{"Steam Workshop", Language::get(5867), workshopLoadSubscribedItems},
+			{"My Workshop Items", Language::get(5868), workshopLoadMyItems},
 #endif
 		};
 
@@ -25113,17 +25090,17 @@ failed:
 			{
 				// open prompt
 				auto prompt = binaryPrompt(
-					"Do you want to exit this menu?\nAny active mods will be unloaded.", "Yes", "No",
+					Language::get(5869), Language::get(5870), Language::get(5871),
 					[](Button& button) { // yes
-						soundActivate();
-				gui->deselect();
-				Mods::unloadMods();
-				destroyMainMenu();
-				createMainMenu(false);
+                        soundActivate();
+                        gui->deselect();
+                        Mods::unloadMods();
+                        destroyMainMenu();
+                        createMainMenu(false);
 					},
-					[](Button&) { // no
-						soundCancel();
-					closeBinary();
+                    [](Button&) { // no
+                        soundCancel();
+                        closeBinary();
 					}, false, false); // yellow buttons
 			}
 			else
@@ -25181,9 +25158,9 @@ failed:
 		load_status_titles->setFont(smallfont_outline);
 		load_status_titles->setSize(SDL_Rect{ 8, 8, load_status_frame->getSize().w - 64, load_status_frame->getSize().h - 16 });
 #ifndef STEAMWORKS
-		load_status_titles->setText("\nMods Loaded:\n");
+		load_status_titles->setText(Language::get(5872));
 #else
-		load_status_titles->setText("Local Mods:\nWorkshop:\nTotal Loaded:");
+		load_status_titles->setText(Language::get(5873));
 #endif // !STEAMWORKS
 
 		load_status_titles->setHJustify(Field::justify_t::RIGHT);
@@ -25232,12 +25209,12 @@ failed:
 			Field* field = static_cast<Field*>(&widget);
 		if ( Mods::disableSteamAchievements )
 		{
-			field->setText("ACHIEVEMENTS\nDISABLED");
+			field->setText(Language::get(5874));
 			field->setTextColor(hudColors.characterSheetRed);
 		}
 		else
 		{
-			field->setText("ACHIEVEMENTS\nENABLED");
+			field->setText(Language::get(5875));
 			field->setTextColor(makeColorRGB(255, 255, 255));
 		}
 			});
@@ -25265,9 +25242,10 @@ failed:
 		load_status_help->setSize(SDL_Rect{ load_status_bg_pos.x + load_status_bg_pos.w + 8,
 			load_status_frame_pos.h / 2 - 14, 26, 26 });
 		load_status_help->setCallback([](Button& button) {
-			monoPrompt("Note: Not all modded files can be\nverified prior to game start to\nensure Achievements are enabled.", "Dismiss", [](Button& button) {
+			monoPrompt(Language::get(5876), Language::get(5877),
+                [](Button& button) {
 				soundActivate();
-		closeMono();
+                closeMono();
 				});
 			});
 		load_status_help->setTickCallback([](Widget& widget) {
@@ -25370,7 +25348,7 @@ failed:
 		slider->setWidgetPageRight("tab_right");
 
 		auto enter = window->addButton("start_modded_game");
-		enter->setText("Start\nModded Game");
+		enter->setText(Language::get(5878));
 		enter->setSize(SDL_Rect{ 902, 630, 164, 62 });
 		enter->setBackground("*images/ui/Main Menus/Mods/Mod_Button_00.png");
 		enter->setBackgroundHighlighted("*images/ui/Main Menus/Mods/Mod_ButtonHigh_00.png");
@@ -25417,7 +25395,7 @@ failed:
 
 #ifdef STEAMWORKS
 		auto new_workshop_mod = window->addButton("new_workshop_mod");
-		new_workshop_mod->setText("New Workshop\nMod");
+		new_workshop_mod->setText(Language::get(5879));
 		new_workshop_mod->setSize(SDL_Rect{ 902, 630, 164, 62 });
 		new_workshop_mod->setBackground("*images/ui/Main Menus/Mods/Mod_Button_00.png");
 		new_workshop_mod->setBackgroundHighlighted("*images/ui/Main Menus/Mods/Mod_ButtonHigh_00.png");
@@ -25459,7 +25437,7 @@ failed:
 		new_workshop_mod->setWidgetUp(mod_tabs[mod_tabs.size() - 1].name);
 
 		auto browse_workshop = window->addButton("browse_workshop");
-		browse_workshop->setText("Browse\nWorkshop");
+		browse_workshop->setText(Language::get(5880));
 		browse_workshop->setSize(SDL_Rect{ 152, 630, 164, 62 });
 		browse_workshop->setBackground("*images/ui/Main Menus/Mods/Mod_Button_00.png");
 		browse_workshop->setBackgroundHighlighted("*images/ui/Main Menus/Mods/Mod_ButtonHigh_00.png");
@@ -25470,13 +25448,10 @@ failed:
 		browse_workshop->setDisabled(true);
 		browse_workshop->setInvisible(true);
 		browse_workshop->setCallback([](Button&) {
-			std::string info = "Browse community created mods and 'subscribe' to\ndownload mods for use.";
-				info += "\n\nSubscribing while Barony is running may require";
-				info += "\nclosing the game in order for Steam to begin downloading.";
-				info += "\n\nCurrent game version: ";
-				info += VERSION;
+			std::string info = Language::get(5882);
+            info += VERSION;
 			auto frame = monoPromptXL(info.c_str(),
-			"Open\nWorkshop", [](Button& button) {
+			Language::get(5881), [](Button& button) {
 				openURLTryWithOverlay("https://steamcommunity.com/app/371970/workshop/");
 				soundActivate();
 
@@ -25486,7 +25461,7 @@ failed:
 
 				closeMono();
 
-				monoPrompt("Your workshop items\nwill now reload.", "Okay", [](Button& button) {
+				monoPrompt(Language::get(5883), Language::get(5884), [](Button& button) {
 					closeMono();
 					if ( auto mods_menu = main_menu_frame->findFrame("mods_menu") )
 					{
@@ -25512,7 +25487,7 @@ failed:
 			buttonCancel->setTextColor(makeColor(255, 255, 255, 255));
 			buttonCancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
 			buttonCancel->setFont(smallfont_outline);
-			buttonCancel->setText("Cancel");
+			buttonCancel->setText(Language::get(5885));
 			pos.x = frame->getSize().w / 2 + 8;
 			buttonCancel->setSize(pos);
 			buttonCancel->setCallback([](Button& button) {
@@ -25553,7 +25528,7 @@ failed:
 		browse_workshop->setWidgetUp(mod_tabs[0].name);
 #endif
 		auto blank_mod_folder = window->addButton("blank_mod_folder");
-		blank_mod_folder->setText("Create Blank\nMod Folder");
+		blank_mod_folder->setText(Language::get(5886));
 		blank_mod_folder->setSize(SDL_Rect{ 152, 630, 164, 62 });
 		blank_mod_folder->setBackground("*images/ui/Main Menus/Mods/Mod_Button_00.png");
 		blank_mod_folder->setBackgroundHighlighted("*images/ui/Main Menus/Mods/Mod_ButtonHigh_00.png");
@@ -25562,8 +25537,8 @@ failed:
 		blank_mod_folder->setHighlightColor(0xffffffff);
 		blank_mod_folder->setColor(0xffffffff);
 		blank_mod_folder->setCallback([](Button&) {
-			workshopEditPrompt("This will create a new mod folder inside the Barony\n/mods/ directory with a blank file structure\nand default preview.png file.",
-			"Enter a name for the new folder", "Confirm", "Cancel",
+			workshopEditPrompt(Language::get(5887),
+			Language::get(5888), Language::get(5889), Language::get(5890),
 			[](Button& button) {
 				auto prompt = main_menu_frame->findFrame("binary_prompt"); assert(prompt);
 				auto field = prompt->findField("field"); assert(field);
@@ -25577,7 +25552,7 @@ failed:
 				}
 				else
 				{
-					errorPrompt("Error: Folder name cannot\n be blank.", "Okay", [](Button& button) {
+					errorPrompt(Language::get(5891), Language::get(5884), [](Button& button) {
 						soundActivate();
 						closeMono();
 					});
@@ -25587,8 +25562,8 @@ failed:
 				if ( res == 0 )
 				{
 					char buf[128];
-					snprintf(buf, sizeof(buf), "New folder: '%s'\ncreated successfully!", folderName.c_str());
-					monoPrompt(buf, "Okay", [](Button& button) {
+					snprintf(buf, sizeof(buf), Language::get(5892), folderName.c_str());
+					monoPrompt(buf, Language::get(5884), [](Button& button) {
 						soundActivate();
 					closeMono();
 
@@ -25604,8 +25579,8 @@ failed:
 				else if ( res == 1 )
 				{
 					char buf[128];
-					snprintf(buf, sizeof(buf), "Error: A folder already exists\nnamed '%s'", folderName.c_str());
-					errorPrompt(buf, "Okay", [](Button& button) {
+					snprintf(buf, sizeof(buf), Language::get(5893), folderName.c_str());
+					errorPrompt(buf, Language::get(5884), [](Button& button) {
 						soundActivate();
 					closeMono();
 					});
@@ -25613,8 +25588,8 @@ failed:
 				else
 				{
 					char buf[128];
-					snprintf(buf, sizeof(buf), "Error: Unable to write folder\n'%s'", folderName.c_str());
-					errorPrompt(buf, "Okay", [](Button& button) {
+					snprintf(buf, sizeof(buf), Language::get(5894), folderName.c_str());
+					errorPrompt(buf, Language::get(5884), [](Button& button) {
 						soundActivate();
 					closeMono();
 					});
@@ -25892,8 +25867,8 @@ failed:
 		}
 
 		modFolderPathToUpload = "";
-		modTitleToUpload = details ? details->m_rgchTitle : "Title";
-		modDescToUpload = details ? details->m_rgchDescription : "Description";
+		modTitleToUpload = details ? details->m_rgchTitle : Language::get(5895);
+		modDescToUpload = details ? details->m_rgchDescription : Language::get(5896);
 		modTags.clear();
 		if ( details )
 		{
@@ -26007,11 +25982,11 @@ failed:
 		window_title->setJustify(Field::justify_t::CENTER);
 		if ( details )
 		{
-			window_title->setText("UPDATE WORKSHOP MOD");
+			window_title->setText(Language::get(5897));
 		}
 		else
 		{
-			window_title->setText("NEW WORKSHOP MOD");
+			window_title->setText(Language::get(5898));
 		}
 
 		auto subtitle = window->addField("subtitle", 1024);
@@ -26021,17 +25996,11 @@ failed:
 		subtitle->setJustify(Field::justify_t::CENTER);
 		if ( !details )
 		{
-			subtitle->setText(
-				u8"Upload a folder within the /mods/ directory for your mod.\n"
-				u8"Files/tags may be changed within this menu after creation."
-			);
+			subtitle->setText(Language::get(5899));
 		}
 		else
 		{
-			subtitle->setText(
-				u8"Submitting an update changes the tagged game version.\n"
-				u8"Choosing a new folder or changing tags is optional."
-			);
+			subtitle->setText(Language::get(5900));
 		}
 		subtitle->setIndividualLinePadding(0, 4);
 
@@ -26059,7 +26028,7 @@ failed:
 			title->setHJustify(Field::justify_t::LEFT);
 			title->setVJustify(Field::justify_t::CENTER);
 			title->setFont(bigfont_outline);
-			title->setText("Folder To Upload:");
+			title->setText(Language::get(5901));
 			title->setSize(SDL_Rect{ titleBacking->pos.x + 24, titleBacking->pos.y, titleBacking->pos.w - 24, titleBacking->pos.h });
 
 			SDL_Rect valuePos = titleBacking->pos;
@@ -26071,14 +26040,14 @@ failed:
 			value->setHJustify(Field::justify_t::CENTER);
 			value->setVJustify(Field::justify_t::CENTER);
 			value->setFont(bigfont_outline);
-			value->setText("No folder selected");
+			value->setText(Language::get(5902));
 			value->setColor(makeColorRGB(128, 128, 128));
 			value->setSize(SDL_Rect{ valuePos.x + 24, valuePos.y, valuePos.w - 24 * 2, valuePos.h });
 			value->setTickCallback([](Widget& widget) {
 				auto field = static_cast<Field*>(&widget);
 				if ( modFolderPathToUpload == "" )
 				{
-					field->setText("No folder selected");
+					field->setText(Language::get(5902));
 					field->setColor(makeColorRGB(128, 128, 128));
 				}
 				else
@@ -26094,7 +26063,7 @@ failed:
 			});
 
 			auto button = subwindow->addButton("folder button");
-			button->setText("Choose...");
+			button->setText(Language::get(5903));
 			button->setFont(smallfont_outline);
 			button->setSize(SDL_Rect{ valuePos.x + valuePos.w + 20, titleBacking->pos.y + titleBacking->pos.h / 2 - 44 / 2, 158, 44 });
 			button->setBackground("*#images/ui/Main Menus/Mods/Upload/Button_00.png");
@@ -26238,7 +26207,7 @@ failed:
 					if ( fail )
 					{
 						modFolderPathToUpload = "";
-						errorPrompt("Error: Parent folder\nmust be \"mods\".", "Okay",
+						errorPrompt(Language::get(5904), Language::get(5884),
 							[](Button&) {
 								soundCancel();
 								closeMono();
@@ -26272,8 +26241,8 @@ failed:
 				else if ( result == NFD_ERROR )
 				{
 					char err[128];
-					snprintf(err, sizeof(err), "Error: Could not open folder:\n%s", NFD_GetError());
-					errorPrompt(err, "Okay",
+					snprintf(err, sizeof(err), "%s\n%s", Language::get(5905), NFD_GetError());
+					errorPrompt(err, Language::get(5884),
 						[](Button&) {
 							soundCancel();
 							closeMono();
@@ -26305,7 +26274,7 @@ failed:
 			title->setHJustify(Field::justify_t::LEFT);
 			title->setVJustify(Field::justify_t::CENTER);
 			title->setFont(bigfont_outline);
-			title->setText("Title:");
+			title->setText(Language::get(5906));
 			title->setSize(SDL_Rect{ titleBacking->pos.x + 24, titleBacking->pos.y, titleBacking->pos.w - 24, titleBacking->pos.h });
 
 			SDL_Rect valuePos = titleBacking->pos;
@@ -26334,7 +26303,7 @@ failed:
 			});
 
 			auto button = subwindow->addButton("title button");
-			button->setText("Edit...");
+			button->setText(Language::get(5907));
 			button->setFont(smallfont_outline);
 			button->setSize(SDL_Rect{ valuePos.x + valuePos.w + 20, titleBacking->pos.y + titleBacking->pos.h / 2 - 44 / 2, 158, 44 });
 			button->setBackground("*#images/ui/Main Menus/Mods/Upload/Button_00.png");
@@ -26356,8 +26325,8 @@ failed:
 			if ( !details )
 			{
 				button->setCallback([](Button& button) {
-					workshopEditPrompt("This can be edited later with a larger length\nwithin the Steam Workshop page after creation.", 
-					"Enter a title for this item", "Confirm", "Cancel",
+					workshopEditPrompt(Language::get(5908), 
+					Language::get(5909), Language::get(5910), Language::get(5911),
 						[](Button& button) {
 							soundActivate();
 							assert(main_menu_frame);
@@ -26405,7 +26374,7 @@ failed:
 				button->setTextColor(makeColorRGB(128, 128, 128));
 				button->setTextHighlightColor(makeColorRGB(128, 128, 128));
 				button->setCallback([](Button& button) {
-					errorPrompt("For existing items, visit the\nWorkshop page to make edits.", "Okay", [](Button& button) {
+					errorPrompt(Language::get(5912), Language::get(5884), [](Button& button) {
 						soundActivate();
 						closeMono();
 
@@ -26434,7 +26403,7 @@ failed:
 			title->setHJustify(Field::justify_t::LEFT);
 			title->setVJustify(Field::justify_t::CENTER);
 			title->setFont(bigfont_outline);
-			title->setText("Description:");
+			title->setText(Language::get(5913));
 			title->setSize(SDL_Rect{ titleBacking->pos.x + 24, titleBacking->pos.y, titleBacking->pos.w - 24, titleBacking->pos.h });
 
 			SDL_Rect valuePos = titleBacking->pos;
@@ -26463,7 +26432,7 @@ failed:
 			});
 
 			auto button = subwindow->addButton("desc button");
-			button->setText("Edit...");
+			button->setText(Language::get(5907));
 			button->setFont(smallfont_outline);
 			button->setSize(SDL_Rect{ valuePos.x + valuePos.w + 20, titleBacking->pos.y + titleBacking->pos.h / 2 - 44 / 2, 158, 44 });
 			button->setBackground("*#images/ui/Main Menus/Mods/Upload/Button_00.png");
@@ -26488,8 +26457,8 @@ failed:
 			if ( !details )
 			{
 				button->setCallback([](Button& button) {
-					workshopEditPrompt("This can be edited later with a larger length\nwithin the Steam Workshop page after creation.",
-					"Enter a description for this item", "Confirm", "Cancel",
+					workshopEditPrompt(Language::get(5908),
+					Language::get(5914), Language::get(5910), Language::get(5911),
 					[](Button& button) {
 						soundActivate();
 
@@ -26537,7 +26506,7 @@ failed:
 				button->setTextColor(makeColorRGB(128, 128, 128));
 				button->setTextHighlightColor(makeColorRGB(128, 128, 128));
 				button->setCallback([](Button& button) {
-					errorPrompt("For existing items, visit the\nWorkshop page to make edits.", "Okay", [](Button& button) {
+					errorPrompt(Language::get(5915), Language::get(5884), [](Button& button) {
 						soundActivate();
 						closeMono();
 
@@ -26566,7 +26535,7 @@ failed:
 			title->setHJustify(Field::justify_t::LEFT);
 			title->setVJustify(Field::justify_t::CENTER);
 			title->setFont(bigfont_outline);
-			title->setText("Tags:");
+			title->setText(Language::get(5916));
 			title->setSize(SDL_Rect{ titleBacking->pos.x + 24, titleBacking->pos.y, titleBacking->pos.w - 24, titleBacking->pos.h });
 
 			int currentX = titleBacking->pos.x + titleBacking->pos.w + 20;
@@ -26671,7 +26640,7 @@ failed:
 		if ( Mods::uploadingExistingItem != 0 )
 		{
 			auto manage = window->addButton("manage");
-			manage->setText("Manage In\nWorkshop");
+			manage->setText(Language::get(5917));
 			manage->setSize(SDL_Rect{ 152, 630, 164, 62 });
 			manage->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Button_00.png");
 			manage->setBackgroundHighlighted("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonHigh_00.png");
@@ -26680,8 +26649,8 @@ failed:
 			manage->setHighlightColor(0xffffffff);
 			manage->setColor(0xffffffff);
 			manage->setCallback([](Button&) {
-				auto frame = monoPromptXL("You can view and edit most attributes of your mod\ndirectly on the Workshop page, such as longer\ndescriptions with HTML support, setting visibility to public\nor adding screenshots to the carousel.\n\nIf you need to edit the preview image or modded files,\nuse the upload window here in-game instead.",
-				"Open\nWorkshop", [](Button& button) {
+				auto frame = monoPromptXL(Language::get(5918),
+				Language::get(5919), [](Button& button) {
 					std::string url = "steam://url/CommunityFilePage/";
 					url += std::to_string(Mods::uploadingExistingItem);
 					openURLTryWithOverlay(url);
@@ -26694,7 +26663,7 @@ failed:
 
 					closeMono();
 
-					monoPrompt("Your workshop items\nwill now reload.", "Okay", [](Button& button) {
+					monoPrompt(Language::get(5920), Language::get(5884), [](Button& button) {
 						closeMono();
 						if ( auto workshop_create = main_menu_frame->findFrame("workshop_create") )
 						{
@@ -26727,7 +26696,7 @@ failed:
 				buttonCancel->setTextColor(makeColor(255, 255, 255, 255));
 				buttonCancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
 				buttonCancel->setFont(smallfont_outline);
-				buttonCancel->setText("Cancel");
+				buttonCancel->setText(Language::get(5911));
 				pos.x = frame->getSize().w / 2 + 8;
 				buttonCancel->setSize(pos);
 				buttonCancel->setCallback([](Button& button) {
@@ -26753,11 +26722,11 @@ failed:
 		auto enter = window->addButton("enter");
 		if ( details )
 		{
-			enter->setText("Submit\nUpdate");
+			enter->setText(Language::get(5921));
 		}
 		else
 		{
-			enter->setText("Submit New\nWorkshop Mod");
+			enter->setText(Language::get(5922));
 		}
 		enter->setSize(SDL_Rect{ window->getSize().w - 164 - 152, 630, 164, 62});
 		enter->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Button_00.png");
