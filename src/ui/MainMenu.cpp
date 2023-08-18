@@ -18939,7 +18939,7 @@ failed:
 		if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
 			EOS.createLobby();
-			textPrompt("host_lobby_prompt", "Creating Epic lobby...",
+			textPrompt("host_lobby_prompt", Language::get(5563),
 				[](Widget&){
 				if (EOS.CurrentLobbyData.bAwaitingCreationCallback) {
 					if (!isConnectedToEpic()) {
@@ -18951,13 +18951,9 @@ failed:
 						nxEnableAutoSleep();
 						nxEndParentalControls();
 						logoutOfEpic();
-						nxErrorPrompt(
-							"Failed to host Epic lobby.",
-							"Failed to host Epic lobby.\n\n"
-							"Please try again later.",
-							33333);
+						nxErrorPrompt(Language::get(5564), Language::get(5565), 33333);
 #else
-						errorPrompt("Failed to host Epic lobby.", "Okay",
+						errorPrompt(Language::get(5564), Language::get(5558),
 							[](Button&) {soundCancel(); closeMono(); });
 #endif
 					}
@@ -18974,13 +18970,9 @@ failed:
 						nxEnableAutoSleep();
 						nxEndParentalControls();
 						logoutOfEpic();
-						nxErrorPrompt(
-							"Failed to host Epic lobby.",
-							"Failed to host Epic lobby.\n\n"
-							"Please try again later.",
-							44444);
+						nxErrorPrompt(Language::get(5564), Language::get(5565), 44444);
 #else
-						errorPrompt("Failed to host Epic lobby.", "Okay",
+						errorPrompt(Language::get(5564), Language::get(5558),
 							[](Button&){soundCancel(); closeMono();});
 #endif
 					}
@@ -19006,7 +18998,7 @@ failed:
 				::currentLobbyType = ::steamLobbyTypeUserConfigured;
 			}
 			cpp_SteamMatchmaking_CreateLobby(::currentLobbyType, MAXPLAYERS);
-			textPrompt("host_lobby_prompt", "Creating Steam lobby...",
+			textPrompt("host_lobby_prompt", Language::get(5566),
 				[](Widget&){
 				if (steamAwaitingLobbyCreation) {
 					return;
@@ -19015,7 +19007,7 @@ failed:
 						createLobby(LobbyType::LobbyOnline);
 					} else {
 						closePrompt("host_lobby_prompt");
-						errorPrompt("Failed to host Steam lobby.", "Okay",
+						errorPrompt(Language::get(5567), Language::get(5558),
 							[](Button&){soundCancel(); closeMono();});
 					}
 				}
@@ -19038,11 +19030,12 @@ failed:
 //#endif
 
 #if !defined(STEAMWORKS) && !defined(USE_EOS)
-		errorPrompt("Unable to host lobby:\nOnline play is not available.", "Okay", [](Button&){
-			multiplayer = SINGLE;
-			soundCancel();
-			closeMono();
-		});
+		errorPrompt(Language::get(5568), Language::get(5558),
+            [](Button&){
+            multiplayer = SINGLE;
+            soundCancel();
+            closeMono();
+            });
 #else
 		auto completion = [](bool connected){
 			closeNetworkInterfaces();
@@ -19071,8 +19064,8 @@ failed:
 				//}
 				//else
 				{
-					const char* prompt = "Would you like to host via\nEpic Online for crossplay?";
-					binaryPrompt(prompt, "Yes", "No",
+					const char* prompt = Language::get(5569);
+					binaryPrompt(prompt, Language::get(5554), Language::get(5555),
 						[](Button&) { // yes
 							closeBinary();
 							LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
@@ -19096,7 +19089,7 @@ failed:
 				createOnlineLobby();
 			}
 			else {
-				errorPrompt("Unable to host lobby:\nOnline play is not available.", "Okay", [](Button&) {
+				errorPrompt(Language::get(5568), Language::get(5558), [](Button&) {
 					soundCancel();
 					closeMono();
 					});
@@ -19148,7 +19141,7 @@ failed:
 		// open socket
 		if (!(net_sock = SDLNet_UDP_Open(port))) {
 			char buf[1024];
-			snprintf(buf, sizeof(buf), "Failed to open UDP socket\non port %hu.", port);
+			snprintf(buf, sizeof(buf), Language::get(5570), port);
 			systemErrorPrompt(buf);
 			nxShutdownWireless();
 			return;
@@ -19165,8 +19158,8 @@ failed:
 		// open socket
 		if (!(net_sock = SDLNet_UDP_Open(port))) {
 			char buf[1024];
-			snprintf(buf, sizeof(buf), "Failed to open UDP socket\non port %hu.", port);
-			errorPrompt(buf, "Okay", [](Button&){soundCancel(); closeMono();});
+			snprintf(buf, sizeof(buf), Language::get(5570), port);
+			errorPrompt(buf, Language::get(5558), [](Button&){soundCancel(); closeMono();});
 			return;
 		}
 
@@ -19209,7 +19202,7 @@ failed:
 		    auto local_image = window->findImage("local_image"); assert(local_image);
 		    if (local_button->isSelected()) {
                 char buf[128];
-                const char fmt[] = "Play singleplayer or with 2-%d\nplayers in splitscreen multiplayer";
+                const char* fmt = Language::get(5571);
                 snprintf(buf, sizeof(buf), fmt, MAX_SPLITSCREEN);
 		        tooltip->setText(buf);
                 local_image->path =
@@ -19231,9 +19224,9 @@ failed:
 		    if (host_lan_button->isSelected()) {
                 char buf[128];
 #ifdef NINTENDO
-                const char fmt[] = "Host a game with 2-%d players\nover a wireless connection";
+                const char* fmt = Language::get(5572);
 #else
-                const char fmt[] = "Host a game with 2-%d players\nover a local area network (LAN)";
+                const char* fmt = Language::get(5573);
 #endif
                 snprintf(buf, sizeof(buf), fmt, MAXPLAYERS);
                 tooltip->setText(buf);
@@ -19248,7 +19241,7 @@ failed:
 #if defined(STEAMWORKS) || defined(USE_EOS)
 		    if (host_online_button->isSelected()) {
                 char buf[128];
-                const char fmt[] = "Host a game with 2-%d players\nover the internet";
+                const char* fmt = Language::get(5574);
                 snprintf(buf, sizeof(buf), fmt, MAXPLAYERS);
                 tooltip->setText(buf);
                 host_online_image->path =
@@ -19260,7 +19253,7 @@ failed:
 #else
 		    if (host_online_button->isSelected()) {
                 char buf[128];
-                const char fmt[] = "Host a game with 2-%d players\nover the internet (disabled)";
+                const char* fmt = Language::get(5575);
                 snprintf(buf, sizeof(buf), fmt, MAXPLAYERS);
 		        tooltip->setText(buf);
 		    }
@@ -19268,7 +19261,7 @@ failed:
 		    auto join_button = window->findButton("join"); assert(join_button);
 		    auto join_image = window->findImage("join_image"); assert(join_image);
 		    if (join_button->isSelected()) {
-		        tooltip->setText("Join a multiplayer game");
+		        tooltip->setText(Language::get(5576));
                 join_image->path =
 		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_LobbyBrowser_00.png";
 		    } else {
@@ -19286,7 +19279,7 @@ failed:
 
 		auto banner_title = window->addField("banner", 32);
 		banner_title->setSize(SDL_Rect{180, 24, 152, 18});
-		banner_title->setText("NEW ADVENTURER");
+		banner_title->setText(Language::get(5577));
 		banner_title->setFont(smallfont_outline);
 		banner_title->setJustify(Field::justify_t::CENTER);
 
@@ -19306,7 +19299,7 @@ failed:
 		local_button->setBackgroundActivated("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Down_00.png");
 		local_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		local_button->setColor(makeColor(255, 255, 255, 255));
-		local_button->setText("Local Adventure");
+		local_button->setText(Language::get(5578));
 		local_button->setFont(smallfont_outline);
 		local_button->setWidgetSearchParent(window->getName());
 		local_button->setWidgetBack("back_button");
@@ -19341,9 +19334,9 @@ failed:
 		host_lan_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		host_lan_button->setColor(makeColor(255, 255, 255, 255));
 #ifdef NINTENDO
-		host_lan_button->setText("Host Wireless\nParty");
+		host_lan_button->setText(Language::get(5579));
 #else
-		host_lan_button->setText("Host LAN Party");
+		host_lan_button->setText(Language::get(5580));
 #endif
 		host_lan_button->setFont(smallfont_outline);
 		host_lan_button->setWidgetSearchParent(window->getName());
@@ -19389,7 +19382,7 @@ failed:
 		host_online_button->setTextColor(makeColor(127, 127, 127, 255));
 		host_online_button->setTextHighlightColor(makeColor(127, 127, 127, 255));
 #endif
-		host_online_button->setText("Host Online Party");
+		host_online_button->setText(Language::get(5581));
 		host_online_button->setFont(smallfont_outline);
 		host_online_button->setWidgetSearchParent(window->getName());
 		host_online_button->setWidgetBack("back_button");
@@ -19411,7 +19404,7 @@ failed:
 		join_button->setBackgroundActivated("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Down_00.png");
 		join_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		join_button->setColor(makeColor(255, 255, 255, 255));
-		join_button->setText("Lobby Browser");
+		join_button->setText(Language::get(5582));
 		join_button->setFont(smallfont_outline);
 		join_button->setWidgetSearchParent(window->getName());
 		join_button->setWidgetBack("back_button");
@@ -19440,8 +19433,8 @@ failed:
 		gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt = false;
 		gameModeManager.Tutorial.writeToDocument();
 		binaryPrompt(
-			"Barony is a challenging game.\nWould you like to play a tutorial?",
-			"Yes", "No",
+			Language::get(5583),
+			Language::get(5584), Language::get(5585),
 			[](Button& button) { // Yes
 				soundActivate();
 				destroyMainMenu();
@@ -19452,8 +19445,8 @@ failed:
 			[](Button& button) { // No
 				closeBinary();
 				monoPrompt(
-					"You can find the Tutorials\nin the Play Game menu.",
-					"Okay",
+					Language::get(5586),
+					Language::get(5587),
 					[](Button&) {
 						soundCancel();
 
@@ -19512,11 +19505,10 @@ failed:
 
 	    // window text
 	    char window_text[1024];
-	    snprintf(window_text, sizeof(window_text),
-	        "Are you sure you want to delete\nthe save game \"%s\"?", shortened_name);
+	    snprintf(window_text, sizeof(window_text), Language::get(5588), shortened_name);
 
 	    binaryPrompt(
-	        window_text, "Yes", "No",
+	        window_text, Language::get(5584), Language::get(5585),
 	        [](Button& button) { // Yes button
 			    soundActivate();
 			    soundDeleteSave();
@@ -19700,19 +19692,17 @@ failed:
 		{
 			if ( moddedSavegameWarning )
 			{
-				snprintf(window_text, sizeof(window_text),
-					"Warning: This is a modded save game!\nNo mods are currently loaded.\n\nContinuing may cause save data issues.\n\nAre you sure you want to load\nthe save game \"%s\"?", shortened_name);
+				snprintf(window_text, sizeof(window_text), Language::get(5589), shortened_name);
 			}
 			else if ( unModdedSavegameWarning )
 			{
-				snprintf(window_text, sizeof(window_text),
-					"Warning: This is an unmodded save game!\n%d mod(s) are currently loaded.\n\nContinuing may invalidate achievements for this save.\n\nAre you sure you want to load\nthe save game \"%s\"?",
+				snprintf(window_text, sizeof(window_text), Language::get(5590),
 					Mods::numCurrentModsLoaded,
 					shortened_name);
 			}
 
 			auto prompt = monoPromptXL(
-				window_text, "Yes",
+				window_text, Language::get(5584),
 				[](Button& button) { // Yes button
 					soundActivate();
 					loadSaveConfirm(button, load_singleplayer, load_save_index);
@@ -19732,7 +19722,7 @@ failed:
 			buttonCancel->setTextColor(makeColor(255, 255, 255, 255));
 			buttonCancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
 			buttonCancel->setFont(smallfont_outline);
-			buttonCancel->setText("Cancel");
+			buttonCancel->setText(Language::get(5591));
 			pos.x = prompt->getSize().w / 2 + 8;
 			buttonCancel->setSize(pos);
 			buttonCancel->setCallback([](Button& button) {
@@ -19762,10 +19752,9 @@ failed:
 		}
 		else
 		{
-			snprintf(window_text, sizeof(window_text),
-				"Are you sure you want to load\nthe save game \"%s\"?", shortened_name);
+			snprintf(window_text, sizeof(window_text), Language::get(5592), shortened_name);
 			binaryPrompt(
-				window_text, "Yes", "No",
+				window_text, Language::get(5584), Language::get(5585),
 				[](Button& button) { // Yes button
 					soundActivate();
 					loadSaveConfirm(button, load_singleplayer, load_save_index);
@@ -19803,11 +19792,11 @@ failed:
         char buf[16];
         auto lvl = subframe->addField("player_lvl", sizeof(buf));
         if (show_pnum) {
-            snprintf(buf, sizeof(buf), "P%d\nLv%d", player + 1, info.players[player].stats.LVL);
+            snprintf(buf, sizeof(buf), Language::get(5593), player + 1, info.players[player].stats.LVL);
             lvl->setTextColor(playerColor(player, colorblind, false));
             lvl->setOutlineColor(makeColorRGB(0, 0, 0));
         } else {
-            snprintf(buf, sizeof(buf), "Lv%d", info.players[player].stats.LVL);
+            snprintf(buf, sizeof(buf), Language::get(5594), info.players[player].stats.LVL);
             lvl->setTextColor(makeColorRGB(255, 255, 255));
             lvl->setOutlineColor(makeColorRGB(52, 32, 23));
         }
@@ -19857,7 +19846,7 @@ failed:
             auto none_exists = subwindow.addField("none_exists", 256);
             none_exists->setSize(subwindow.getActualSize());
             none_exists->setFont(bigfont_outline);
-            none_exists->setText("No compatible save files found.");
+            none_exists->setText(Language::get(5595));
             none_exists->setJustify(Field::justify_t::CENTER);
         } else {
 			// sort savegames by date/time
@@ -20004,13 +19993,13 @@ failed:
 				char game_type[32] = { '\0' };
 				switch (saveGameInfo.multiplayer_type) {
 				default:
-				case SINGLE: snprintf(game_type, sizeof(game_type), "Singleplayer"); break;
-				case SERVER: snprintf(game_type, sizeof(game_type), "Online Host %dp (#1)", numplayers); break;
-				case CLIENT: snprintf(game_type, sizeof(game_type), "Online Client %dp (#%d)", numplayers, saveGameInfo.player_num + 1); break;
-				case DIRECTSERVER: snprintf(game_type, sizeof(game_type), "Local Host %dp (#1)", numplayers); break;
-				case DIRECTCLIENT: snprintf(game_type, sizeof(game_type), "Local Client (#%d/%d)", saveGameInfo.player_num + 1, numplayers); break;
-				case SERVERCROSSPLAY: snprintf(game_type, sizeof(game_type), "Online Host %dp (#1)", numplayers); break;
-				case SPLITSCREEN: snprintf(game_type, sizeof(game_type), "Splitscreen %dp", numplayers); break;
+				case SINGLE: snprintf(game_type, sizeof(game_type), "%s", Language::get(5596)); break;
+				case SERVER: snprintf(game_type, sizeof(game_type), Language::get(5597), numplayers); break;
+				case CLIENT: snprintf(game_type, sizeof(game_type), Language::get(5598), numplayers, saveGameInfo.player_num + 1); break;
+				case DIRECTSERVER: snprintf(game_type, sizeof(game_type), Language::get(5599), numplayers); break;
+				case DIRECTCLIENT: snprintf(game_type, sizeof(game_type), Language::get(5600), numplayers, saveGameInfo.player_num + 1); break;
+				case SERVERCROSSPLAY: snprintf(game_type, sizeof(game_type), Language::get(5597), numplayers); break;
+				case SPLITSCREEN: snprintf(game_type, sizeof(game_type), Language::get(5601), numplayers); break;
 				}
 
                 // format book label string
@@ -20229,12 +20218,12 @@ failed:
 		    8,
 		    256,
 		    48});
-		banner_title->setText("CONTINUE ADVENTURE");
+		banner_title->setText(Language::get(5602));
 		banner_title->setFont(bigfont_outline);
 		banner_title->setJustify(Field::justify_t::CENTER);
 
 		auto singleplayer = window->addButton("singleplayer");
-		singleplayer->setText("Local Games");
+		singleplayer->setText(Language::get(5603));
 		singleplayer->setFont(smallfont_outline);
 		singleplayer->setSize(SDL_Rect{226, 38, 156, 36});
 		singleplayer->setColor(makeColor(255, 255, 255, 255));
@@ -20284,7 +20273,7 @@ failed:
 		    });
 
 		auto multiplayer = window->addButton("multiplayer");
-		multiplayer->setText("Net Games");
+		multiplayer->setText(Language::get(5604));
 		multiplayer->setFont(smallfont_outline);
 		multiplayer->setSize(SDL_Rect{702, 38, 144, 36});
 		multiplayer->setColor(makeColor(255, 255, 255, 255));
@@ -20357,7 +20346,7 @@ failed:
 		gradient->ontop = true;
 
 		auto delete_button = window->addButton("delete");
-		delete_button->setText("Delete Save");
+		delete_button->setText(Language::get(5605));
 		delete_button->setFont(smallfont_outline);
 		delete_button->setSize(SDL_Rect{278, 390, 164, 62});
 		delete_button->setColor(makeColor(255, 255, 255, 255));
@@ -20384,8 +20373,8 @@ failed:
 	            deleteSavePrompt(continueSingleplayer, save_index);
 	        } else {
 	            errorPrompt(
-	                "Select a savegame to delete first.",
-	                "Okay",
+	                Language::get(5606),
+	                Language::get(5607),
 	                [](Button& button){
 			            soundCancel();
 			            if (savegame_selected) {
@@ -20408,7 +20397,7 @@ failed:
 		    });
 
 		auto enter_button = window->addButton("enter");
-		enter_button->setText("Enter Dungeon");
+		enter_button->setText(Language::get(5608));
 		enter_button->setFont(smallfont_outline);
 		enter_button->setSize(SDL_Rect{642, 390, 164, 62});
 		enter_button->setColor(makeColor(255, 255, 255, 255));
@@ -20435,8 +20424,8 @@ failed:
 	            loadSavePrompt(continueSingleplayer, save_index);
 	        } else {
                 errorPrompt(
-                    "Select a savegame to load first.",
-                    "Okay",
+                    Language::get(5609),
+                    Language::get(5607),
                     [](Button& button){
 		                soundCancel();
 		                if (savegame_selected) {
@@ -20572,7 +20561,7 @@ failed:
 		// add banner text to notification
 		auto banner_text = notification->addField("text", 64);
 		banner_text->setJustify(Field::justify_t::CENTER);
-		banner_text->setText("ADVENTURE ARCHIVES");
+		banner_text->setText(Language::get(5610));
 		banner_text->setFont(menu_option_font);
 		banner_text->setColor(makeColor(180, 135, 27, 255));
 		banner_text->setSize(SDL_Rect{19 * 2, 15 * 2, 166 * 2, 12 * 2});
@@ -20593,20 +20582,20 @@ failed:
 			void (*callback)(Button&);
 		};
 		Option options[] = {
-			//{"Dungeon Compendium", "DUNGEON COMPENDIUM", archivesDungeonCompendium}, // TODO
+			//{"Dungeon Compendium", Language::get(5612), archivesDungeonCompendium}, // TODO
 #ifndef STEAMWORKS
 #if defined(USE_EOS) || defined(LOCAL_ACHIEVEMENTS)
-			{"Achievements", "ACHIEVEMENTS", archivesAchievements},
+			{"Achievements", Language::get(5611), archivesAchievements},
 #endif
 #endif
 #ifdef NINTENDO
-			{"Leaderboards", "HIGHSCORES", archivesLeaderboards},
+			{"Leaderboards", Language::get(5613), archivesLeaderboards},
 #else
-			{"Leaderboards", "LEADERBOARDS", archivesLeaderboards},
+			{"Leaderboards", Language::get(5614), archivesLeaderboards},
 #endif
-			{"Story Introduction", "STORY INTRODUCTION", archivesStoryIntroduction},
-			{"Credits", "CREDITS", archivesCredits},
-			{"Back to Main Menu", "BACK TO MAIN MENU", archivesBackToMainMenu}
+			{"Story Introduction", Language::get(5615), archivesStoryIntroduction},
+			{"Credits", Language::get(5616), archivesCredits},
+			{"Back to Main Menu", Language::get(5617), archivesBackToMainMenu}
 		};
 		const int num_options = sizeof(options) / sizeof(options[0]);
 
@@ -20778,31 +20767,32 @@ failed:
 		window_title->setFont(banner_font);
 		window_title->setSize(SDL_Rect{394, 26, 338, 24});
 		window_title->setJustify(Field::justify_t::CENTER);
-		window_title->setText("SETTINGS");
+		window_title->setText(Language::get(5624));
 
 		struct Option {
 			const char* name;
+            const char* text;
 			void (*callback)(Button&);
 		};
 		std::vector<Option> tabs = {
-			{"General", settingsGeneral},
-			{"Video", settingsVideo},
-			{"Audio", settingsAudio},
-			{"Controls", settingsControls},
+			{"General", Language::get(5618), settingsGeneral},
+			{"Video", Language::get(5619), settingsVideo},
+			{"Audio", Language::get(5620), settingsAudio},
+			{"Controls", Language::get(5621), settingsControls},
 		};
 		if (intro) {
 #ifndef NINTENDO
-		    tabs.push_back({"Online", settingsOnline});
+		    tabs.push_back({"Online", Language::get(5622), settingsOnline});
 #endif
 		} else {
-			tabs.push_back({"Game", settingsGame});
+			tabs.push_back({"Game", Language::get(5623), settingsGame});
 		}
 		const int num_tabs = (int)tabs.size();
 		for (int c = 0; c < num_tabs; ++c) {
 			const int x = settings->getSize().w / (num_tabs + 1);
 			auto button = settings->addButton(tabs[c].name);
 			button->setCallback(tabs[c].callback);
-			button->setText(tabs[c].name);
+			button->setText(tabs[c].text);
 			button->setFont(banner_font);
 			if (tabs[c].name == settings_tab_name) {
 				button->setBackground("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png");
@@ -20960,7 +20950,7 @@ failed:
 		restore_defaults->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_BasicHigh00.png");
 		restore_defaults->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_BasicPress00.png");
 		restore_defaults->setSize(SDL_Rect{84, 630, 164, 62});
-		restore_defaults->setText("Restore\nDefaults");
+		restore_defaults->setText(Language::get(5625));
 		restore_defaults->setJustify(Button::justify_t::CENTER);
 		restore_defaults->setFont(smallfont_outline);
 		restore_defaults->setColor(makeColor(255, 255, 255, 255));
@@ -21016,7 +21006,7 @@ failed:
 		discard_and_exit->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_BasicHigh00.png");
 		discard_and_exit->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_BasicPress00.png");
 		discard_and_exit->setSize(SDL_Rect{700, 630, 164, 62});
-		discard_and_exit->setText("Discard\n& Exit");
+		discard_and_exit->setText(Language::get(5626));
 		discard_and_exit->setJustify(Button::justify_t::CENTER);
 		discard_and_exit->setFont(smallfont_outline);
 		discard_and_exit->setColor(makeColor(255, 255, 255, 255));
@@ -21045,8 +21035,8 @@ failed:
 			}
 			
 
-			auto prompt = binaryPrompt("Are you sure you want\nto discard changes?",
-				"Yes,\nDiscard", "Cancel",
+			auto prompt = binaryPrompt(Language::get(5627),
+                Language::get(5628), Language::get(5629),
 				[](Button& button) {
 					closeBinary();
 
@@ -21124,7 +21114,7 @@ failed:
 		confirm_and_exit->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_BasicHigh00.png");
 		confirm_and_exit->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_BasicPress00.png");
 		confirm_and_exit->setSize(SDL_Rect{880, 630, 164, 62});
-		confirm_and_exit->setText("Confirm\n& Exit");
+		confirm_and_exit->setText(Language::get(5630));
 		confirm_and_exit->setJustify(Button::justify_t::CENTER);
 		confirm_and_exit->setFont(smallfont_outline);
 		confirm_and_exit->setColor(makeColor(255, 255, 255, 255));
@@ -21154,7 +21144,7 @@ failed:
 			if (video_refresh != VideoRefresh::None) {
 				if (video_refresh & VideoRefresh::Video) {
 					// non-windows platforms need to throw a prompt to restart to apply video settings
-					monoPrompt("You must restart Barony for\nsome settings to take effect.", "Okay",
+					monoPrompt(Language::get(5631), Language::get(5632),
 						[](Button& button) {
 							soundCancel();
 							closeMono();
@@ -21196,18 +21186,28 @@ failed:
 #elif defined(LINUX)
 	    char path[PATH_MAX];
 	    completePath(path, "editor &");
+#ifdef SOUND
 	    stopMusic();
+#endif
+	    system(path);
+#elif defined(APPLE)
+	    char path[PATH_MAX];
+	    completePath(path, "BaronyEditor.app &");
+#ifdef SOUND
+	    stopMusic();
+#endif
 	    system(path);
 #else
+        printlog("can't open editor (no path configured)");
         return;
 #endif
 	}
 
 	static void mainEndLife(Button& button) {
 		binaryPrompt(
-			"Are you sure you want to die?\nThere is no return from this.", // window text
-			"End Life", // okay text
-			"Cancel", // cancel text
+			Language::get(5633), // window text
+			Language::get(5634), // okay text
+			Language::get(5635), // cancel text
 			[](Button&){ // okay
 				soundActivate();
 				closeMainMenu();
@@ -21236,11 +21236,11 @@ failed:
 	}
 
 	static void mainDropOut(Button& button) {
-	    const char* prompt = "Do you want to drop out?\nThis player will be lost forever.";
+	    const char* prompt = ;
 		binaryPrompt(
-			prompt, // window text
-			"Okay", // okay text
-			"Cancel", // cancel text
+			Language::get(5636), // window text
+			Language::get(5637), // okay text
+			Language::get(5638), // cancel text
 			[](Button&){ // okay
 				client_disconnected[getMenuOwner()] = true;
 				soundActivate();
@@ -21260,14 +21260,14 @@ failed:
 	static void mainRestartGame(Button& button) {
 	    const char* prompt;
 	    if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
-	        prompt = "Are you sure you want to restart?\nThis adventure will be lost forever.";
+	        prompt = Language::get(5639);
 	    } else {
-	        prompt = "Are you sure you want to restart\nthe current trial?";
+	        prompt = Language::get(5640);
 	    }
 		binaryPrompt(
 			prompt, // window text
-			"Restart", // okay text
-			"Cancel", // cancel text
+			Language::get(5641), // okay text
+			Language::get(5642), // cancel text
 			[](Button&){ // okay
 				soundActivate();
 				destroyMainMenu();
@@ -21319,14 +21319,14 @@ failed:
 	static void mainReturnToHallofTrials(Button& button) {
 	    const char* prompt;
 	    if (strcmp(map.filename, "tutorial_hub.lmp")) {
-	        prompt = "Are you sure you want to return\nto the Hall of Trials?";
+	        prompt = Language::get(5643);
 	    } else {
-	        prompt = "Are you sure you want to reset\nthe Hall of Trials level?";
+	        prompt = Language::get(5644);
 	    }
 		binaryPrompt(
 			prompt, // window text
-			"Okay", // okay text
-			"Cancel", // cancel text
+			Language::get(5645), // okay text
+			Language::get(5646), // cancel text
 			[](Button&){ // okay
 				soundActivate();
 				destroyMainMenu();
@@ -21347,14 +21347,14 @@ failed:
 	static void mainQuitToMainMenu(Button& button) {
 	    const char* prompt;
 	    if (saveGameExists(multiplayer == SINGLE)) {
-	        prompt = "All progress before the current\ndungeon level will be saved.";
+	        prompt = Language::get(5647);
 	    } else {
-	        prompt = "Are you sure you want to return\nto the main menu?";
+	        prompt = Language::get(5648);
 	    }
 		binaryPrompt(
 			prompt, // window text
-			"Quit to Menu", // okay text
-			"Cancel", // cancel text
+			Language::get(5649), // okay text
+			Language::get(5650), // cancel text
 			[](Button&){ // okay
 				soundActivate();
 				destroyMainMenu();
@@ -21376,28 +21376,28 @@ failed:
 	}
 
 	static void mainQuitToDesktop(Button& button) {
-		static const char* quit_messages[][3] {
-			{"You want to leave, eh?\nThen get out and don't come back!", "Fine geez", "Never!"},
-			{"Did the wittle gobwins\nhurt your feewings?", "Yes", "No"},
-			{"Just cancel your plans.\nI'll wait.", "Good luck", "Sure"},
-			{"You couldn't kill the lich anyway.", "You're right", "Oh yeah?"},
-			{"Mad cuz bad!\nGit gud!", "I am anger", "Okay"},
-			{"The gnomes are laughing at you!\nAre you really gonna take that?", "Yeah :(", "No way!"},
-			{"Don't go now! There's a\nboulder trap around the corner!", "Kill me", "Oh thanks"},
-			{"I'll tell your parents\nyou said a bad word.", "Poop", "Please no"},
-			{"Please don't leave!\nThere's more treasure to loot!", "Don't care", "More loot!"},
-			{"Just be glad I can't summon\nthe minotaur in real life.", "Too bad", "Point taken"},
-			{"Off to leave a salty review I see?", "... yeah", "No way!"},
-			{"I'd leave too.\nThis game looks just like Minecraft.", "lol", "Ouch"},
-			{"Okay, I see how it is.\nSee if I'm still here tomorrow.", "Whatever", "I love you!"},
-			{"Don't quit now, you were\ngoing to win the next run.", "Don't lie", "Really?"},
-			{"A wimpy adventurer\nwould quit right now.", "Wimp time", "Am not!"},
-			{"An adventurer is trapped\nand they need your help!", "Who cares", "I'll do it!"},
-			{"A quitter says what?", "What?", "Not today"},
-			{"You won't quit.\nYou're just bluffing.", "Bet", "Ya got me."},
-			{"Say one more thing and\nI'm kicking you out of this game.", "Thing", "..."},
+		const char* quit_messages[][3] {
+			{Language::get(5700), Language::get(5701), Language::get(5702)},
+			{Language::get(5703), Language::get(5704), Language::get(5705)},
+			{Language::get(5706), Language::get(5707), Language::get(5708)},
+			{Language::get(5709), Language::get(5710), Language::get(5711)},
+			{Language::get(5712), Language::get(5713), Language::get(5714)},
+			{Language::get(5715), Language::get(5716), Language::get(5717)},
+			{Language::get(5718), Language::get(5719), Language::get(5720)},
+			{Language::get(5721), Language::get(5722), Language::get(5723)},
+			{Language::get(5724), Language::get(5725), Language::get(5726)},
+			{Language::get(5727), Language::get(5728), Language::get(5729)},
+			{Language::get(5730), Language::get(5731), Language::get(5732)},
+			{Language::get(5733), Language::get(5734), Language::get(5735)},
+			{Language::get(5736), Language::get(5737), Language::get(5738)},
+			{Language::get(5739), Language::get(5740), Language::get(5741)},
+			{Language::get(5742), Language::get(5743), Language::get(5744)},
+			{Language::get(5745), Language::get(5746), Language::get(5747)},
+			{Language::get(5748), Language::get(5749), Language::get(5750)},
+			{Language::get(5751), Language::get(5752), Language::get(5753)},
+			{Language::get(5754), Language::get(5755), Language::get(5756)},
 		};
-		constexpr int num_quit_messages = sizeof(quit_messages) / (sizeof(const char*) * 3);
+		const int num_quit_messages = sizeof(quit_messages) / (sizeof(const char*) * 3);
 
 		static int quit_motd = -2;
 		++quit_motd;
@@ -21776,7 +21776,7 @@ failed:
             static Uint32 resolution_timeout;
             static constexpr Uint32 timeout_seconds = 10;
             resolution_timeout = ticks + timeout_seconds * TICKS_PER_SECOND;
-            static const char* fmt = "Does the screen look okay?\n%llu...";
+            const char* fmt = Language::get(5757);
             snprintf(buf, sizeof(buf), fmt, timeout_seconds);
 
             // reset resolution function
@@ -21794,7 +21794,7 @@ failed:
 
             // open prompt
             auto prompt = binaryPrompt(
-                buf, "Yes", "No",
+                buf, Language::get(5758), Language::get(5759),
                 [](Button&){ // yes
                     soundActivate();
                     closeBinary();
@@ -22051,7 +22051,7 @@ failed:
 		button->setBackground("images/ui/Main Menus/Title/UI_Title_GradLight_Pink_01.png");
 		button->setIcon("images/ui/Main Menus/Title/UI_Title_Text_PressToStart_Gold_01.png");
 		button->setFont(bigfont_outline);
-		button->setText("Press to Start");
+		button->setText(Language::get(5760));
 		button->setGlyphPosition(Widget::glyph_position_t::CENTERED);
 		button->setButtonsOffset(SDL_Rect{0, 48, 0, 0});
 		button->setHideKeyboardGlyphs(false);
@@ -22236,11 +22236,14 @@ failed:
 					SDL_Rect{x, y, w, h},
 					makeColor(255, 255, 255, 255),
 					path, name.c_str());
+     
+                char fmt[16];
+                snprintf(fmt, sizeof(fmt), Language::get(5477), player + 1);
 
 				auto field = notification->addField(name.c_str(), 16);
 				field->setSize(SDL_Rect{x, y, w, h});
 				field->setJustify(Field::justify_t::CENTER);
-				field->setText((std::string("P") + std::to_string(player + 1)).c_str());
+				field->setText(fmt);
 				field->setFont(bigfont_outline);
 				field->setColor(playerColor(player, colorblind_lobby, false));
 			}
@@ -22257,84 +22260,84 @@ failed:
 		std::vector<Option> options;
 		if (ingame) {
 	        options.insert(options.begin(), {
-		        {"Back to Game", "BACK TO GAME", mainClose},
-		        {"Assign Controllers", "ASSIGN CONTROLLERS", mainAssignControllers},
-		        //{"Dungeon Compendium", "DUNGEON COMPENDIUM", archivesDungeonCompendium}, // TODO
+		        {"Back to Game", Language::get(5761), mainClose},
+		        {"Assign Controllers", Language::get(5762), mainAssignControllers},
+		        //{"Dungeon Compendium", Language::get(5763), archivesDungeonCompendium}, // TODO
 #ifndef STEAMWORKS
 #if defined(USE_EOS) || defined(LOCAL_ACHIEVEMENTS)
-		        {"Achievements", "ACHIEVEMENTS", archivesAchievements},
+		        {"Achievements", Language::get(5764), archivesAchievements},
 #endif
 #endif
-		        {"Settings", "SETTINGS", mainSettings},
+		        {"Settings", Language::get(5765), mainSettings},
 		        });
 			if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
 			    options.insert(options.end(), {
-				    {"End Life", "END LIFE", mainEndLife},
+				    {"End Life", Language::get(5766), mainEndLife},
 				    });
 				if (splitscreen && getMenuOwner() != clientnum) {
 					// in splitscreen games, everyone but the first player can drop out of the game.
 			        options.insert(options.end(), {
-				        {"Drop Out", "DROP OUT", mainDropOut},
+				        {"Drop Out", Language::get(5767), mainDropOut},
 				        });
 				}
 				if (multiplayer == SERVER || (multiplayer == SINGLE && getMenuOwner() == clientnum)) {
 					// only the first player has the power to restart the game.
 			        options.insert(options.end(), {
-				        {"Restart Game", "RESTART GAME", mainRestartGame},
+				        {"Restart Game", Language::get(5768), mainRestartGame},
 				        });
 				}
 			} else {
 			    if (strcmp(map.filename, "tutorial_hub.lmp")) {
 			        options.insert(options.end(), {
-				        {"Restart Trial", "RESTART TRIAL", mainRestartGame},
-				        {"Return to Hall of Trials", "RETURN TO TRIAL HUB", mainReturnToHallofTrials},
+				        {"Restart Trial", Language::get(5769), mainRestartGame},
+				        {"Return to Hall of Trials", Language::get(5770), mainReturnToHallofTrials},
 				        });
 				} else {
 			        options.insert(options.end(), {
-				        {"Return to Hall of Trials", "RETURN TO TRIAL HUB", mainReturnToHallofTrials},
+				        {"Return to Hall of Trials", Language::get(5770), mainReturnToHallofTrials},
 				        });
 				}
 			}
 	        options.insert(options.end(), {
-		        {"Quit to Main Menu", "QUIT TO MAIN MENU", mainQuitToMainMenu},
-		        //{"Quit to Desktop", "QUIT TO DESKTOP", mainQuitToDesktop},
+		        {"Quit to Main Menu", Language::get(5771), mainQuitToMainMenu},
+		        //{"Quit to Desktop", Language::get(5772), mainQuitToDesktop},
 		        });
 		} else {
 			if ( Mods::numCurrentModsLoaded >= 0 )
 			{
 				options.insert(options.begin(), {
 #if defined(NINTENDO)
-				{"Play Game", "PLAY", mainPlayGame},
+				{"Play Game", Language::get(5773), mainPlayGame},
 #else
-				{"Play Game", "PLAY MODDED GAME", mainModsMenu},
-				{"Unload Mods", "UNLOAD MODS", mainUnloadMods},
+				{"Play Game", Language::get(5774), mainModsMenu},
+				{"Unload Mods", Language::get(5776), mainUnloadMods},
 #endif
-				{"Adventure Archives", "ADVENTURE ARCHIVES", mainArchives},
-				{"Settings", "SETTINGS", mainSettings},
+				{"Adventure Archives", Language::get(5777), mainArchives},
+				{"Settings", Language::get(5778), mainSettings},
 #if !defined(NINTENDO)
 #if !defined(NDEBUG)
-				{"Editor", "EDITOR", mainEditor},
+				{"Editor", Language::get(5779), mainEditor},
 #endif
-				{"Quit", "QUIT", mainQuitToDesktop},
+				{"Quit", Language::get(5780), mainQuitToDesktop},
 #endif
-					});
+                });
 			}
 			else
 			{
 				options.insert(options.begin(), {
 #if defined(NINTENDO)
-				{"Play Game", "PLAY", mainPlayGame},
+				{"Play Game", Language::get(5773), mainPlayGame},
 #else
-				{"Play Game", "PLAY GAME", mainPlayGame},
-				{"Mod Menu", "PLAY MODDED GAME", mainModsMenu},
+				{"Play Game", Language::get(5774), mainPlayGame},
+				{"Mod Menu", Language::get(5775), mainModsMenu},
 #endif
-				{"Adventure Archives", "ADVENTURE ARCHIVES", mainArchives},
-				{"Settings", "SETTINGS", mainSettings},
+				{"Adventure Archives", Language::get(5777), mainArchives},
+				{"Settings", Language::get(5778), mainSettings},
 #if !defined(NINTENDO)
 #if !defined(NDEBUG)
-			    {"Editor", "EDITOR", mainEditor},
+			    {"Editor", Language::get(5779), mainEditor},
 #endif
-				{"Quit", "QUIT", mainQuitToDesktop},
+				{"Quit", Language::get(5780), mainQuitToDesktop},
 #endif
 				});
 			}
@@ -22411,27 +22414,27 @@ failed:
 				if ( multiplayer == CLIENT && Mods::lobbyDisableSteamAchievements )
 				{
 					achievements->setColor(makeColor(180, 37, 37, 255));
-					achievements->setText("ACHIEVEMENTS DISABLED (MODDED LOBBY)");
+					achievements->setText(Language::get(5781));
 				}
 				else if ( Mods::disableSteamAchievements )
 				{
 					achievements->setColor(makeColor(180, 37, 37, 255));
-					achievements->setText("ACHIEVEMENTS DISABLED (MODDED)");
+					achievements->setText(Language::get(5782));
 				}
 				else if ( conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS] )
 				{
 					achievements->setColor(makeColor(180, 37, 37, 255));
-					achievements->setText("ACHIEVEMENTS DISABLED (PREVIOUSLY MODDED LOBBY)");
+					achievements->setText(Language::get(5783));
 				}
 				else if (conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 					|| conductGameChallenges[CONDUCT_LIFESAVING] ) {
 					achievements->setColor(makeColor(180, 37, 37, 255));
-					achievements->setText("ACHIEVEMENTS DISABLED");
+					achievements->setText(Language::get(5784));
 				}
 				else 
 				{
 					achievements->setColor(makeColor(37, 90, 255, 255));
-					achievements->setText(""); // "ACHIEVEMENTS ENABLED"
+					achievements->setText(""); // Language::get(5785) "ACHIEVEMENTS ENABLED"
 				}
 				});
 			(*achievements->getTickCallback())(*achievements);
@@ -22667,10 +22670,10 @@ failed:
                 }
                 int players = getPlayersOnline.current();
                 if (players == 0) {
-                    online_players->setText("Players online: ... ");
+                    online_players->setText(Language::get(5786));
                 } else {
                     char buf[256];
-                    snprintf(buf, sizeof(buf), "Players online: %d ", players);
+                    snprintf(buf, sizeof(buf), Language::get(5787), players);
                     online_players->setText(buf);
                 }
 			    });
@@ -22744,20 +22747,17 @@ failed:
 		logoutOfEpic();
 		if (intro) {
 			nxErrorPrompt(
-				"The network connection to the game has been lost.",
-				"The network connection to the game has been lost.\n\n"
-				"Please re-establish your network connection and try again later.",
+				Language::get(5788),
+				Language::get(5789),
 				11111);
 		} else {
 			nxErrorPrompt(
-				"The network connection to the game has been lost.",
-				"The network connection to the game has been lost.\n\n"
-				"All game progress up to the current dungeon level has been saved.\n\n"
-				"Please re-establish your network connection and try again later.",
+				Language::get(5788),
+				Language::get(5790),
 				11111);
 		}
 #else
-		disconnectedFromServer("The network connection\nhas been lost.");
+		disconnectedFromServer(Language::get(5791));
 #endif
 	}
 
@@ -22868,39 +22868,10 @@ failed:
         banner->setFont(smallfont_no_outline);
         banner->setJustify(Field::justify_t::CENTER);
         if (survivingPlayer || (multiplayer == SINGLE && !splitscreen)) {
-            banner->setText("You have died.");
+            banner->setText(Language::get(5792));
         } else {
-            banner->setText("Your party has been wiped out.");
+            banner->setText(Language::get(5793));
         }
-
-        const char* deathStrings[] = {
-            "Unknown",
-            "Monster", // unused
-            "Item", // unused
-            "Betrayal",
-            "Attempted Robbery",
-            "Trespassing",
-            "Arrow Trap",
-            "Bear Trap",
-            "Spike Trap",
-            "Magic Trap",
-            "Bomb Trap",
-            "Boulder",
-            "Lava",
-            "Hot Water",
-            "Invocation",
-            "Starvation",
-            "Poison",
-            "Bleeding",
-            "Burning",
-            "Strangulation",
-            "Funny Potion",
-            "Bottomless Pit",
-            "Lack of Fuel",
-            "Fountain",
-            "Sink",
-            "Alchemy",
-        };
 
         std::string cause_of_death;
         switch (stats[player]->killer) {
@@ -22918,33 +22889,20 @@ failed:
             break;
         }
         default: {
-            cause_of_death = deathStrings[(int)stats[player]->killer];
+            cause_of_death = Language::get(5794 + (int)stats[player]->killer);
             break;
         }
         }
 
-        const char* eulogy;
-        switch (RNG.uniform(0, 9)) {
-        default:
-        case 0: eulogy = "We hardly knew ye."; break;
-        case 1: eulogy = "Rest In Peace."; break;
-        case 2: eulogy = "You will be missed."; break;
-        case 3: eulogy = "Until we meet again."; break;
-        case 4: eulogy = "Now at rest."; break;
-        case 5: eulogy = "Mourn not my death."; break;
-        case 6: eulogy = "Passed into memory."; break;
-        case 7: eulogy = "In Loving Memory."; break;
-        case 8: eulogy = "They sleep in memory."; break;
-        case 9: eulogy = "Gone but not forgotten."; break;
-        }
+        const char* eulogy = Language::get(RNG.uniform(5820, 5829));
 
         char epitaph_buf[1024];
         if (tutorial) {
-            snprintf(epitaph_buf, sizeof(epitaph_buf), "%s\nKilled by: %s\n\n%s",
-                stats[player]->name, cause_of_death.c_str(), eulogy);
+            snprintf(epitaph_buf, sizeof(epitaph_buf), "%s\n%s%s\n\n%s",
+                stats[player]->name, Language::get(5830), cause_of_death.c_str(), eulogy);
         } else {
-            snprintf(epitaph_buf, sizeof(epitaph_buf), "%s\nKilled by: %s\n\n%s",
-                stats[player]->name, cause_of_death.c_str(), eulogy);
+            snprintf(epitaph_buf, sizeof(epitaph_buf), "%s\n%s%s\n\n%s",
+                stats[player]->name, Language::get(5830), cause_of_death.c_str(), eulogy);
         }
 
         auto epitaph = window->addField("epitaph", 1024);

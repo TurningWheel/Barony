@@ -6832,10 +6832,18 @@ by the host.#
 5336 *** %s has left the game ***#
 5337 You have been kicked
 from the lobby.#
-5338 Joining lobby...\n\n%ds#
-5339 Joining lobby...\n\n%ds.#
-5340 Joining lobby...\n\n%ds..#
-5341 Joining lobby...\n\n%ds...#
+5338 Joining lobby...
+
+%ds#
+5339 Joining lobby...
+
+%ds.#
+5340 Joining lobby...
+
+%ds..#
+5341 Joining lobby...
+
+%ds...#
 5342 Failed to connect to lobby.#
 5343 Failed to join lobby.
 Crossplay required.#
@@ -7109,3 +7117,303 @@ your best times?#
 CONTINUE#
 5562  
 NEW#
+5563 Creating Epic lobby...#
+5564 Failed to host Epic lobby.#
+5565 Failed to host Epic lobby.
+
+Please try again later.#
+5566 Creating Steam lobby...#
+5567 Failed to host Steam lobby.#
+5568 Unable to host lobby:
+Online play is not available.#
+5569 Would you like to host via
+Epic Online for crossplay?#
+5570 Failed to open UDP socket
+on port %hu.#
+
+5571 Play singleplayer or with 2-%d
+players in splitscreen multiplayer#
+5572 Host a game with 2-%d players
+over a wireless connection#
+5573 Host a game with 2-%d players
+over a local area network (LAN)#
+5574 Host a game with 2-%d players
+over the internet#
+5575 Host a game with 2-%d players
+over the internet (disabled)#
+5576 Join a multiplayer game#
+5577 NEW ADVENTURER#
+5578 Local Adventure#
+5579 Host Wireless
+Party#
+5580 Host LAN Party#
+5581 Host Online Party#
+5582 Lobby Browser#
+
+5583 Barony is a challenging game.
+Would you like to play a tutorial?#
+5584 Yes#
+5585 No#
+5586 You can find the Tutorials
+in the Play Game menu.#
+5587 Okay#
+5588 Are you sure you want to delete
+the save game "%s"?"#
+5589 Warning: This is a modded save game!
+No mods are currently loaded.
+
+Continuing may cause save data issues.
+
+Are you sure you want to load
+the save game "%s"?#
+5590 Warning: This is an unmodded save game!
+%d mod(s) are currently loaded.
+
+Continuing may invalidate achievements for this save.
+
+Are you sure you want to load
+the save game "%s"?#
+5591 Cancel#
+5592 Are you sure you want to load
+the save game "%s"?#
+5593 P%d
+Lv%d#
+5594 Lv%d#
+5595 No compatible save files found.#
+5596 Singleplayer#
+5597 Online Host %dp (p1)#
+5598 Online Client %dp (p%d)#
+5599 Local Host %dp (p1)#
+5600 Local Client %dp (p%d)#
+5601 Splitscreen %dp#
+5602 CONTINUE ADVENTURE#
+5603 Local Games#
+5604 Net Games#
+5605 Delete Save#
+5606 Select a savegame to delete first.#
+5607 Okay#
+5608 Enter Dungeon#
+5609 Select a savegame to load first.#
+
+5610 ADVENTURE ARCHIVES#
+5611 ACHIEVEMENTS#
+5612 DUNGEON COMPENDIUM#
+5613 HIGHSCORES#
+5614 LEADERBOARDS#
+5615 STORY INTRODUCTION#
+5616 CREDITS#
+5617 BACK TO MAIN MENU#
+
+5624 SETTINGS# 
+5618 General#
+5619 Video#
+5620 Audio#
+5621 Controls#
+5622 Online#
+5623 Game#
+5625 Restore
+Defaults#
+5626 Discard
+& Exit#
+5627 Are you sure you want
+to discard changes?#
+5628 Yes,
+Discard#
+5629 Cancel#
+5630 Confirm
+& Exit#
+5631 You must restart Barony for
+some settings to take effect.#
+5632 Okay#
+
+5633 Are you sure you want to die?
+There is no return from this.#
+5634 End Life#
+5635 Cancel#
+5636 Do you want to drop out?
+This player will be lost forever.#
+5637 Okay#
+5638 Cancel#
+5639 Are you sure you want to restart?
+This adventure will be lost forever.#
+5640 Are you sure you want to restart
+the current trial?#
+5641 Restart#
+5642 Cancel#
+5643 Are you sure you want to return
+to the Hall of Trials?#
+5644 Are you sure you want to reset
+the Hall of Trials level?#
+5645 Okay#
+5646 Cancel#
+5647 All progress before the current
+dungeon level will be saved.#
+5648 Are you sure you want to return
+to the main menu?#
+5649 Quit to Menu#
+5650 Cancel#
+
+# quit messages
+
+5700 You want to leave, eh?
+Then get out and don't come back!#
+5701 Fine geez#
+5702 Never!#
+5703 Did the wittle gobwins
+hurt your feewings?#
+5704 Yes#
+5705 No#
+5706 Just cancel your plans.
+I'll wait.#
+5707 Good luck#
+5708 Sure#
+5709 You couldn't kill the lich anyway.#
+5710 You're right#
+5711 Oh yeah?#
+5712 Mad cuz bad!
+Git gud!#
+5713 I am anger#
+5714 Okay#
+5715 The gnomes are laughing at you!
+Are you really gonna take that?#
+5716 Yeah :(#
+5717 No way!#
+5718 Don't go now! There's a
+boulder trap around the corner!#
+5719 Kill me#
+5720 Oh thanks#
+5721 I'll tell your parents
+you said a bad word.#
+5722 Poop#
+5723 Please no#
+5724 Please don't leave!
+There's more treasure to loot!#
+5725 Don't care#
+5726 More loot!#
+5727 Just be glad I can't summon
+the minotaur in real life.#
+5728 Too bad#
+5729 Point taken#
+5730 Off to leave a salty review I see?#
+5731 ... yeah#
+5732 No way!#
+5733 I'd leave too.
+This game looks just like Minecraft.#
+5734 lol#
+5735 Ouch#
+5736 Okay, I see how it is.
+See if I'm still here tomorrow.#
+5737 Whatever#
+5738 I love you!#
+5739 Don't quit now, you were
+going to win the next run.#
+5740 Don't lie#
+5741 Really?#
+5742 A wimpy adventurer
+would quit right now.#
+5743 Wimp time#
+5744 Am not!#
+5745 An adventurer is trapped
+and they need your help!#
+5746 Who cares#
+5747 I'll do it!#
+5748 A quitter says what?#
+5749 What?#
+5750 Not today#
+5751 You won't quit.
+You're just bluffing.#
+5752 Bet#
+5753 Ya got me.#
+5754 Say one more thing and
+I'm kicking you out of this game.#
+5755 Thing#
+5756 ...#
+
+5757 Does the screen look okay?
+%llu...#
+5758 Yes#
+5759 No#
+
+5760 Press to Start#
+5761 BACK TO GAME#
+5762 ASSIGN CONTROLLERS#
+5763 DUNGEON COMPENDIUM#
+5764 ACHIEVEMENTS#
+5765 SETTINGS#
+5766 END LIFE#
+5767 DROP OUT#
+5768 RESTART GAME#
+5769 RESTART TRIAL#
+5770 RETURN TO TRIAL HUB#
+5771 QUIT TO MAIN MENU#
+5772 QUIT TO DESKTOP#
+5773 PLAY#
+6774 PLAY GAME#
+5775 PLAY MODDED GAME#
+5776 UNLOAD MODS#
+5777 ADVENTURE ARCHIVES#
+5778 SETTINGS#
+5779 EDITOR#
+5780 QUIT#
+
+5781 ACHIEVEMENTS DISABLED (MODDED LOBBY)#
+5782 ACHIEVEMENTS DISABLED (MODDED)#
+5783 ACHIEVEMENTS DISABLED (PREVIOUSLY MODDED LOBBY)#
+5784 ACHIEVEMENTS DISABLED#
+5785 ACHIEVEMENTS ENABLED#
+
+5786 Players online: ... #
+5787 Players online: %d #
+
+5788 The network connection to the game has been lost.#
+5789 The network connection to the game has been lost.
+
+Please re-establish your network connection and try again later.#
+5790 The network connection to the game has been lost.
+
+All game progress up to the current dungeon level has been saved.
+
+Please re-establish your network connection and try again later.#
+5791 The network connection
+has been lost.#
+
+5792 You have died.#
+5793 Your party has been wiped out.#
+5794 Unknown#
+5795 Monster#
+5796 Item#
+5797 Betrayal#
+5798 Attempted Robbery#
+5799 Trespassing#
+5800 Arrow Trap#
+5801 Bear Trap#
+5802 Spike Trap#
+5803 Magic Trap#
+5804 Bomb Trap#
+5805 Boulder#
+5806 Lava#
+5807 Hot Water#
+5808 Invocation#
+5809 Starvation#
+5810 Poison#
+5811 Bleeding#
+5812 Burning#
+5813 Strangulation#
+5814 Funny Potion#
+5815 Bottomless Pit#
+5816 Lack of Fuel#
+5817 Fountain#
+5818 Sink#
+5819 Alchemy#
+
+5820 We hardly knew ye.#
+5821 Rest In Peace.#
+5822 You will be missed.#
+5823 Until we meet again.#
+5824 Now at rest.#
+5825 Mourn not my death.#
+5826 Passed into memory.#
+5827 In Loving Memory.#
+5828 They sleep in memory.#
+5829 Gone but not forgotten.#
+5830 Killed by: #
