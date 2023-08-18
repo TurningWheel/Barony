@@ -9667,11 +9667,14 @@ void Player::HUD_t::processHUD()
             SDL_Rect{x, y, w, h},
             0xffffffff, path,
             "controller");
+     
+        char fmt[16];
+        snprintf(fmt, sizeof(fmt), Language::get(5477), player.playernum + 1);
 
         auto field = controllerFrame->addField("label", 16);
         field->setSize(SDL_Rect{x, y, w, h});
         field->setJustify(Field::justify_t::CENTER);
-        field->setText((std::string("P") + std::to_string(player.playernum + 1)).c_str());
+        field->setText(fmt);
         field->setFont(bigfont_outline); 
 		field->setColor(playerColor(player.playernum, colorblind_lobby, false));
     }
