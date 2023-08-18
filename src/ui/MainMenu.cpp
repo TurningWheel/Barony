@@ -6736,6 +6736,10 @@ bind_failed:
     }
 
 	static void settingsControls(Button& button) {
+        defaultBindings[0].name = Language::get(6014);
+        defaultBindings[1].name = Language::get(6015);
+        defaultBindings[2].name = Language::get(6016);
+        defaultBindings[3].name = Language::get(6017);
         const int player = multiplayer == CLIENT ? 0 : getMenuOwner();
         const int device = inputs.hasController(player) ? 1 : 0;
         const char* profile = getMatchingProfileName(player, inputs.hasController(player));
@@ -21870,10 +21874,6 @@ failed:
 		enabledDLCPack1 = SteamApps()->BIsDlcInstalled(1010820);
 		enabledDLCPack2 = SteamApps()->BIsDlcInstalled(1010821);
 #endif
-        defaultBindings[0].name = Language::get(6014);
-        defaultBindings[1].name = Language::get(6015);
-        defaultBindings[2].name = Language::get(6016);
-        defaultBindings[3].name = Language::get(6017);
 
         if (!ingame) {
             handleNetwork();
