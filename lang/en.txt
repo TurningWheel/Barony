@@ -7202,13 +7202,13 @@ Lv%d#
 5616 CREDITS#
 5617 BACK TO MAIN MENU#
 
-5624 SETTINGS# 
 5618 General#
 5619 Video#
 5620 Audio#
 5621 Controls#
 5622 Online#
 5623 Game#
+5624 SETTINGS#
 5625 Restore
 Defaults#
 5626 Discard
