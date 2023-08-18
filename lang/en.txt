@@ -6910,7 +6910,7 @@ Difficulty#
 5393 Invite Only#
 5394 Friends Only#
 5395 Open Lobby#
-5396 Set Player
+6018 Set Player
 Count#
 5396 This will kick %s
 and %s!#
@@ -7346,7 +7346,7 @@ I'm kicking you out of this game.#
 5771 QUIT TO MAIN MENU#
 5772 QUIT TO DESKTOP#
 5773 PLAY#
-6774 PLAY GAME#
+5774 PLAY GAME#
 5775 PLAY MODDED GAME#
 5776 UNLOAD MODS#
 5777 ADVENTURE ARCHIVES#
@@ -7698,5 +7698,6 @@ Upload#
 6015 Expert#
 6016 Classic#
 6017 Minimal#
+#6018 was missed earlier, so it is used.
 
 6100 end#

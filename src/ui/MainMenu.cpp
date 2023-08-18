@@ -10599,7 +10599,6 @@ failed:
 	};
 
 	struct Class {
-		const char* name;
 		DLC dlc;
 		const char* image;
 		const char* image_highlighted;
@@ -10608,127 +10607,127 @@ failed:
 
 	const std::unordered_map<std::string, Class> classes = {
 		{"barbarian", {
-			Language::get(5348), DLC::Base,
+			DLC::Base,
 			"ClassSelect_Icon_Barbarian_00.png",
 			"ClassSelect_Icon_BarbarianOn_00.png",
 			"ClassSelect_Icon_BarbarianLocked_00.png",
 			}},
 		{"warrior", {
-			Language::get(5349), DLC::Base,
+			DLC::Base,
 			"ClassSelect_Icon_Warrior_00.png",
 			"ClassSelect_Icon_WarriorOn_00.png",
 			"ClassSelect_Icon_WarriorLocked_00.png",
 			}},
 		{"healer", {
-			Language::get(5350), DLC::Base,
+			DLC::Base,
 			"ClassSelect_Icon_Healer_00.png",
 			"ClassSelect_Icon_HealerOn_00.png",
 			"ClassSelect_Icon_HealerLocked_00.png",
 			}},
 		{"rogue", {
-			Language::get(5351), DLC::Base,
+			DLC::Base,
 			"ClassSelect_Icon_Rogue_00.png",
 			"ClassSelect_Icon_RogueOn_00.png",
 			"ClassSelect_Icon_RogueLocked_00.png",
 			}},
 		{"wanderer", {
-			Language::get(5352), DLC::Base,
+			DLC::Base,
 			"ClassSelect_Icon_Wanderer_00.png",
 			"ClassSelect_Icon_WandererOn_00.png",
 			"ClassSelect_Icon_WandererLocked_00.png",
 			}},
 		{"cleric", {
-			Language::get(5353), DLC::Base,
+			DLC::Base,
 			"ClassSelect_Icon_Cleric_00.png",
 			"ClassSelect_Icon_ClericOn_00.png",
 			"ClassSelect_Icon_ClericLocked_00.png",
 			}},
 		{"merchant", {
-			Language::get(5354), DLC::Base,
+			DLC::Base,
 			"ClassSelect_Icon_Merchant_00.png",
 			"ClassSelect_Icon_MerchantOn_00.png",
 			"ClassSelect_Icon_MerchantLocked_00.png",
 			}},
 		{"wizard", {
-			Language::get(5355), DLC::Base,
+			DLC::Base,
 			"ClassSelect_Icon_Wizard_00.png",
 			"ClassSelect_Icon_WizardOn_00.png",
 			"ClassSelect_Icon_WizardLocked_00.png",
 			}},
 		{"arcanist", {
-			Language::get(5356), DLC::Base,
+			DLC::Base,
 			"ClassSelect_Icon_Arcanist_00.png",
 			"ClassSelect_Icon_ArcanistOn_00.png",
 			"ClassSelect_Icon_ArcanistLocked_00.png",
 			}},
 		{"joker", {
-			Language::get(5357), DLC::Base,
+			DLC::Base,
 			"ClassSelect_Icon_Jester_00.png",
 			"ClassSelect_Icon_JesterOn_00.png",
 			"ClassSelect_Icon_JesterLocked_00.png",
 			}},
 		{"sexton", {
-			Language::get(5358), DLC::Base,
+			DLC::Base,
 			"ClassSelect_Icon_Sexton_00.png",
 			"ClassSelect_Icon_SextonOn_00.png",
 			"ClassSelect_Icon_SextonLocked_00.png",
 			}},
 		{"ninja", {
-			Language::get(5359), DLC::Base,
+			DLC::Base,
 			"ClassSelect_Icon_Ninja_00.png",
 			"ClassSelect_Icon_NinjaOn_00.png",
 			"ClassSelect_Icon_NinjaLocked_00.png",
 			}},
 		{"monk", {
-			Language::get(5360), DLC::Base,
+			DLC::Base,
 			"ClassSelect_Icon_Monk_00.png",
 			"ClassSelect_Icon_MonkOn_00.png",
 			"ClassSelect_Icon_MonkLocked_00.png",
 			}},
 		{"conjurer", {
-			Language::get(5361), DLC::MythsAndOutcasts,
+			DLC::MythsAndOutcasts,
 			"ClassSelect_Icon_Conjurer_00.png",
 			"ClassSelect_Icon_ConjurerOn_00.png",
 			"ClassSelect_Icon_ConjurerLocked_00.png",
 			}},
 		{"accursed", {
-			Language::get(5362), DLC::MythsAndOutcasts,
+			DLC::MythsAndOutcasts,
 			"ClassSelect_Icon_Accursed_00.png",
 			"ClassSelect_Icon_AccursedOn_00.png",
 			"ClassSelect_Icon_AccursedLocked_00.png",
 			}},
 		{"mesmer", {
-			Language::get(5363), DLC::MythsAndOutcasts,
+			DLC::MythsAndOutcasts,
 			"ClassSelect_Icon_Mesmer_00.png",
 			"ClassSelect_Icon_MesmerOn_00.png",
 			"ClassSelect_Icon_MesmerLocked_00.png",
 			}},
 		{"brewer", {
-			Language::get(5364), DLC::MythsAndOutcasts,
+			DLC::MythsAndOutcasts,
 			"ClassSelect_Icon_Brewer_00.png",
 			"ClassSelect_Icon_BrewerOn_00.png",
 			"ClassSelect_Icon_BrewerLocked_00.png",
 			}},
 		{"mechanist", {
-			Language::get(5365), DLC::LegendsAndPariahs,
+			DLC::LegendsAndPariahs,
 			"ClassSelect_Icon_Mechanist_00.png",
 			"ClassSelect_Icon_MechanistOn_00.png",
 			"ClassSelect_Icon_MechanistLocked_00.png",
 			}},
 		{"punisher", {
-			Language::get(5366), DLC::LegendsAndPariahs,
+			DLC::LegendsAndPariahs,
 			"ClassSelect_Icon_Punisher_00.png",
 			"ClassSelect_Icon_PunisherOn_00.png",
 			"ClassSelect_Icon_PunisherLocked_00.png",
 			}},
 		{"shaman", {
-			Language::get(5367), DLC::LegendsAndPariahs,
+			DLC::LegendsAndPariahs,
 			"ClassSelect_Icon_Shaman_00.png",
 			"ClassSelect_Icon_ShamanOn_00.png",
 			"ClassSelect_Icon_ShamanLocked_00.png",
 			}},
 		{"hunter", {
-			Language::get(5368), DLC::LegendsAndPariahs,
+			DLC::LegendsAndPariahs,
 			"ClassSelect_Icon_Hunter_00.png",
 			"ClassSelect_Icon_HunterOn_00.png",
 			"ClassSelect_Icon_HunterLocked_00.png",
@@ -10743,19 +10742,9 @@ failed:
 		"mesmer", "brewer", "mechanist", "punisher",
 		"shaman", "hunter"
 	};
-
-	const char* races[] = {
-	    Language::get(5369), // Human
-		Language::get(5370), // Skeleton
-		Language::get(5371), // Vampire
-		Language::get(5372), // Succubus
-		Language::get(5373), // Goatman
-		Language::get(5374), // Automaton
-		Language::get(5375), // Incubus
-		Language::get(5376), // Goblin
-		Language::get(5377), // Insectoid
-	};
-	const int num_races = sizeof(races) / sizeof(races[0]);
+    
+    // number of player selectable races
+	constexpr int num_races = 9;
 
 	bool ClassDescriptions::init = false;
 	std::unordered_map<int, ClassDescriptions::DescData_t> ClassDescriptions::data;
@@ -11421,7 +11410,7 @@ failed:
 		auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
         bool success = false;
 		for (int c = 0; c < num_races; ++c) {
-			auto race = races[c];
+			auto race = Language::get(5369 + c);
 			if (strcmp(button.getName(), race) == 0) {
 				if (!override_dlc &&
                     ((!enabledDLCPack1 && c >= 1 && c <= 4) ||
@@ -11494,7 +11483,7 @@ failed:
 		}
 		for (int c = 0; c < num_races; ++c) {
 			// clear other buttons
-			auto race = races[c];
+			auto race = Language::get(5369 + c);
 			auto other_button = frame->findButton(race);
 			if (other_button != &button) {
 				other_button->setPressed(false);
@@ -12292,7 +12281,7 @@ failed:
 		auto player_count_label = card->addField("player_count_label", 64);
 		player_count_label->setSize(SDL_Rect{40, 266, 116, 40});
 		player_count_label->setFont(smallfont_outline);
-		player_count_label->setText(Language::get(5396));
+		player_count_label->setText(Language::get(6018));
 		player_count_label->setJustify(Field::justify_t::CENTER);
 
         for (int c = 0; c < 3; ++c) {
@@ -13013,7 +13002,7 @@ failed:
 			slider->setValue(actualSize.y);
 			});
 		slider->setWidgetSearchParent(card->getName());
-		slider->setWidgetLeft(races[0]);
+		slider->setWidgetLeft(Language::get(5369));
 	    slider->setWidgetBack("back_button");
 	    slider->setGlyphPosition(Widget::glyph_position_t::CENTERED);
 	    slider->setHideSelectors(true);
@@ -13032,7 +13021,7 @@ failed:
 		gradient->ontop = true;
 
         for (int c = 0; c < num_races; ++c) {
-		    auto race = subframe->addButton(races[c]);
+		    auto race = subframe->addButton(Language::get(5369 + c));
 		    race->setSize(SDL_Rect{0, c * 36 + 2, 30, 30});
 		    if (!enabledDLCPack1 && c >= 1 && c <= 4) {
 		        race->setBackground("*#images/ui/Main Menus/sublist_item-locked.png");
@@ -13061,13 +13050,13 @@ failed:
 		    race->addWidgetAction("MenuPageLeftAlt", "privacy");
 		    race->setWidgetBack("back_button");
 		    if (c < num_races - 1) {
-		        race->setWidgetDown(races[c + 1]);
+		        race->setWidgetDown(Language::get(5369 + c + 1));
 		    }
 		    /*else {
 		        race->setWidgetDown("disable_abilities");
 		    }*/
 		    if (c > 0) {
-		        race->setWidgetUp(races[c - 1]);
+		        race->setWidgetUp(Language::get(5369 + c - 1));
 		    }
 		    race->setGlyphPosition(Widget::glyph_position_t::CENTERED);
 		    race->addWidgetAction("MenuPageLeft", "male");
@@ -13112,7 +13101,7 @@ failed:
                 }
 		        });
 
-		    auto label = subframe->addField((std::string(races[c]) + "_label").c_str(), 64);
+		    auto label = subframe->addField((std::string(Language::get(5369 + c)) + "_label").c_str(), 64);
 		    if (c >= 1 && c <= 4) {
 		        label->setColor(color_dlc1);
 		    } else if (c >= 5 && c <= 8) {
@@ -13120,7 +13109,7 @@ failed:
 		    } else {
 		        label->setColor(color_dlc0);
 		    }
-		    label->setText(races[c]);
+		    label->setText(Language::get(5369 + c));
 		    label->setFont(smallfont_outline);
 		    label->setSize(SDL_Rect{32, c * 36, 96, 36});
 		    label->setHJustify(Field::justify_t::LEFT);
@@ -13170,8 +13159,8 @@ failed:
 	    appearances->addWidgetAction("MenuPageRight", "female");
 	    appearances->addWidgetAction("MenuAlt1", "disable_abilities");
 	    appearances->addWidgetAction("MenuAlt2", "show_race_info");
-		appearances->setWidgetLeft(races[0]);
-		appearances->setWidgetDown(races[1]);
+		appearances->setWidgetLeft(Language::get(5369));
+		appearances->setWidgetDown(Language::get(5370));
 		appearances->setTickCallback([](Widget& widget){
 			auto frame = static_cast<Frame*>(&widget);
 			auto parent = static_cast<Frame*>(frame->getParent());
@@ -13383,7 +13372,7 @@ failed:
 		disable_abilities->addWidgetAction("MenuPageLeftAlt", "privacy");
 		disable_abilities->setWidgetBack("back_button");
 		disable_abilities->setWidgetDown("show_race_info");
-		disable_abilities->setWidgetUp(races[num_races - 1]);
+		disable_abilities->setWidgetUp(Language::get(5369 + num_races - 1));
 		if (stats[index]->playerRace != RACE_HUMAN) {
 			disable_abilities->setPressed(stats[index]->appearance != 0);
 		}
@@ -13799,10 +13788,7 @@ failed:
         } else {
 		    static auto class_name_fn = [](Field& field, int index){
 			    const int i = std::min(std::max(0, client_classes[index]), num_classes - 1);
-			    auto find = classes.find(classes_in_order[i]);
-			    if (find != classes.end()) {
-				    field.setText(find->second.name);
-			    }
+			    field.setText(Language::get(5348 + i));
 			    if (i < CLASS_CONJURER) {
 			        field.setColor(color_dlc0);
 			    } else if (i < CLASS_MACHINIST) {
@@ -14603,10 +14589,7 @@ failed:
 		class_text->setSize(SDL_Rect{96, 236, 138, 32});
 		static auto class_text_fn = [](Field& field, int index){
 			int i = std::min(std::max(0, client_classes[index]), num_classes - 1);
-			auto find = classes.find(classes_in_order[i]);
-			if (find != classes.end()) {
-				field.setText(find->second.name);
-			}
+            field.setText(Language::get(5348 + i));
 		};
 		class_text->setFont(smallfont_outline);
 		class_text->setJustify(Field::justify_t::CENTER);
