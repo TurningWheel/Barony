@@ -97,12 +97,12 @@ namespace MainMenu {
         const std::string joystick;
     };
     struct BindingLayout {
-        const std::string name;
+        std::string name;
         const std::vector<DefaultBinding> bindings;
     };
-    static const std::vector<BindingLayout> defaultBindings = {
+    static std::vector<BindingLayout> defaultBindings = {
         {
-            "Standard",
+            "", // Standard
             {
                 {"Attack", "Mouse1", "RightTrigger", emptyBinding},
                 {"Use", "Mouse3", "ButtonA", emptyBinding},
@@ -161,7 +161,7 @@ namespace MainMenu {
             }
         },
         {
-            "Expert",
+            "", // Expert
             {
                 {"Attack", "Mouse1", "RightTrigger", emptyBinding},
                 {"Use", "Mouse3", "ButtonRightBumper", emptyBinding},
@@ -220,7 +220,7 @@ namespace MainMenu {
             }
         },
         {
-            "Classic",
+            "", // Classic
             {
                 {"Attack", "Mouse1", "RightTrigger", emptyBinding},
                 {"Use", "Mouse3", "ButtonA", emptyBinding},
@@ -275,7 +275,7 @@ namespace MainMenu {
             }
         },
         {
-            "Minimal",
+            "", // Minimal
             {
                 {"Attack", "Mouse1", "RightTrigger", emptyBinding},
                 {"Use", "Mouse3", "ButtonA", emptyBinding},
@@ -335,7 +335,7 @@ namespace MainMenu {
         },
     };
 
-    static const char defaultControlLayout[] = "Standard";
+    static const char* defaultControlLayout = "";
 
     inline static const auto& getBindings(const char* name) {
         for (auto& layout : defaultBindings) {
@@ -4482,6 +4482,17 @@ namespace MainMenu {
 
 	static bool settingsBind(int player_index, int device_index, const char* binding, const char* input);
 	static bool bind_mode = false;
+ 
+    static const char* translateBinding(const char* binding) {
+        int c = 5970;
+        for (auto& b : defaultBindings[0].bindings) {
+            if (b.action == binding) {
+                break;
+            }
+            ++c;
+        }
+        return Language::get(c);
+    }
 
 	static int settingsAddBinding(
 		Frame& frame,
@@ -4493,7 +4504,7 @@ namespace MainMenu {
 		void (*callback)(Button&))
 	{
 		std::string fullname = std::string("setting_") + binding;
-		int result = settingsAddOption(frame, y, binding, binding, tip);
+		int result = settingsAddOption(frame, y, binding, translateBinding(binding), tip);
 		auto button = frame.addButton((fullname + "_binding_button").c_str());
 		button->setSize(SDL_Rect{
 			390,
@@ -5683,12 +5694,12 @@ namespace MainMenu {
 			char tip[256];
 			if (inputs.hasController(getMenuOwner())) {
 #ifdef NINTENDO
-				snprintf(tip, sizeof(tip), Language::get(5084), binding.name);
+				snprintf(tip, sizeof(tip), Language::get(5084), translateBinding(binding.name));
 #else
-				snprintf(tip, sizeof(tip), Language::get(5085), binding.name);
+				snprintf(tip, sizeof(tip), Language::get(5085), translateBinding(binding.name));
 #endif
 			} else {
-				snprintf(tip, sizeof(tip), Language::get(5086), binding.name);
+				snprintf(tip, sizeof(tip), Language::get(5086), translateBinding(binding.name));
 			}
 			y += settingsAddBinding(*subwindow, y, player_index, device_index, binding.name, tip,
 				[](Button& button){
@@ -5706,10 +5717,10 @@ namespace MainMenu {
 					
 					if (inputs.hasController(getMenuOwner())) {
 						snprintf(buf, sizeof(buf), Language::get(5087),
-							bound_binding.c_str());
+							translateBinding(bound_binding.c_str()));
 					} else {
 						snprintf(buf, sizeof(buf), Language::get(5088),
-							bound_binding.c_str());
+							translateBinding(bound_binding.c_str()));
 					}
 
 					tooltip->setText(buf);
@@ -5741,14 +5752,14 @@ namespace MainMenu {
 		                auto glyph = Input::getGlyphPathForInput(bound_button->getText(), false, Input::getControllerType(bound_player));
 		                bound_button->setIcon(glyph.c_str());
 						char buf[256];
-						snprintf(buf, sizeof(buf), Language::get(5089), bound_binding.c_str());
+						snprintf(buf, sizeof(buf), Language::get(5089), translateBinding(bound_binding.c_str()));
 						tooltip->setText(buf);
 					} else if (Input::lastInputOfAnyKind == "Delete") {
 						(void)settingsBind(bound_player, bound_device, bound_binding.c_str(), emptyBinding);
 						bound_button->setText(emptyBinding);
 		                bound_button->setIcon("");
 						char buf[256];
-						snprintf(buf, sizeof(buf), Language::get(5090), bound_binding.c_str());
+						snprintf(buf, sizeof(buf), Language::get(5090), translateBinding(bound_binding.c_str()));
 						tooltip->setText(buf);
 					} else {
 						bool result = settingsBind(bound_player, bound_device, bound_binding.c_str(), Input::lastInputOfAnyKind.c_str());
@@ -5762,7 +5773,7 @@ namespace MainMenu {
 		                auto glyph = Input::getGlyphPathForInput(bound_button->getText(), false, Input::getControllerType(bound_player));
 		                bound_button->setIcon(glyph.c_str());
 						char buf[256];
-						snprintf(buf, sizeof(buf), Language::get(5091), bound_binding.c_str(), newinput.c_str());
+						snprintf(buf, sizeof(buf), Language::get(5091), translateBinding(bound_binding.c_str()), newinput.c_str());
 						tooltip->setText(buf);
 					}
 					bound_button = nullptr;
@@ -6480,7 +6491,7 @@ bind_failed:
                     std::vector<std::string> bindings;
                     for (auto& bind : allSettings.bindings.gamepad_bindings[player]) {
                         if (bind.second == b.name) {
-                            bindings.emplace_back(bind.first);
+                            bindings.emplace_back(translateBinding(bind.first.c_str()));
                         }
                     }
                     if (bindings.empty()) {
@@ -6625,7 +6636,7 @@ bind_failed:
                     
                     // using the "Minimal" layout causes facehotbar / "Modern" hotbar from working at all.
                     // so make sure to disable that when Minimal is selected.
-                    if (entry.text == "Minimal") {
+                    if (entry.text == Language::get(6017)) { // "Minimal"
                         allSettings.controls[bound_player].gamepad_facehotbar = false;
                     }
                     
@@ -16667,7 +16678,7 @@ failed:
 					{
 						if ( info.name.find(Language::get(5479)) == std::string::npos )
 						{
-							info.name = Language::get(5479) + " " + info.name;
+							info.name = Language::get(5479) + (" " + info.name);
 							lobbies.back().name = info.name;
 						}
 #ifdef NINTENDO
@@ -16724,7 +16735,7 @@ failed:
 					{
 						if ( info.name.find(Language::get(5479)) == std::string::npos )
 						{
-							info.name = Language::get(5479) + " " + info.name;
+							info.name = Language::get(5479) + (" " + info.name);
 							lobbies.back().name = info.name;
 						}
 #ifdef NINTENDO
@@ -21850,15 +21861,19 @@ failed:
 			assert(main_menu_frame);
 		}
 
+        // update a few things every tick
 #ifdef NINTENDO
 		enabledDLCPack1 = nxCheckDLC(0);
 		enabledDLCPack2 = nxCheckDLC(1);
 #endif
-
 #ifdef STEAMWORKS
 		enabledDLCPack1 = SteamApps()->BIsDlcInstalled(1010820);
 		enabledDLCPack2 = SteamApps()->BIsDlcInstalled(1010821);
-#endif // STEAMWORKS
+#endif
+        defaultBindings[0].name = Language::get(6014);
+        defaultBindings[1].name = Language::get(6015);
+        defaultBindings[2].name = Language::get(6016);
+        defaultBindings[3].name = Language::get(6017);
 
         if (!ingame) {
             handleNetwork();

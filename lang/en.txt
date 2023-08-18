@@ -7649,4 +7649,54 @@ Upload#
 5968 CHARACTER SHEET#
 5969 GOLD#
 
-6000 end#
+5970 Attack#
+5971 Use#
+5972 Cast Spell#
+5973 Defend#
+5974 Sneak#
+5975 Character Status#
+5976 Pause Game#
+5977 Spell List#
+5978 Skill Sheet#
+5979 Autosort Inventory#
+5980 Command NPC#
+5981 Show NPC Commands#
+5982 Cycle NPCs#
+5983 Open Map#
+5984 Open Log#
+5985 Toggle Minimap#
+5986 Hotbar Left#
+5987 Hotbar Right#
+5988 Hotbar Up / Select#
+5989 Hotbar Down / Cancel#
+5990 Interact Tooltip Next#
+5991 Interact Tooltip Prev#
+5992 Expand Inventory Tooltip#
+5993 Quick Turn#
+5994 Chat#
+5995 Move Forward#
+5996 Move Left#
+5997 Move Backward#
+5998 Move Right#
+5999 Turn Left#
+6000 Turn Right#
+6001 Look Up#
+6002 Look Down#
+6003 Screenshot#
+6004 Hotbar Slot 1#
+6005 Hotbar Slot 2#
+6006 Hotbar Slot 3#
+6007 Hotbar Slot 4#
+6008 Hotbar Slot 5#
+6009 Hotbar Slot 6#
+6010 Hotbar Slot 7#
+6011 Hotbar Slot 8#
+6012 Hotbar Slot 9#
+6013 Hotbar Slot 10#
+
+6014 Standard#
+6015 Expert#
+6016 Classic#
+6017 Minimal#
+
+6100 end#
