@@ -1022,7 +1022,7 @@ void generateTileTextures() {
                 // tile failed to load from tiles directory
                 continue;
             }
-            if (tile->w != 32 || tile->h != 32 || tile->format->BytesPerPixel != 4) {
+            if (tile->w != size || tile->h != size || tile->format->BytesPerPixel != 4) {
                 // incorrect format
                 continue;
             }
