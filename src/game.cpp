@@ -6553,8 +6553,12 @@ int main(int argc, char** argv)
 			SteamAPI_RunCallbacks();
 #endif
 #ifdef USE_EOS
-			EOS_Platform_Tick(EOS.PlatformHandle);
-			EOS_Platform_Tick(EOS.ServerPlatformHandle);
+			if (EOS.PlatformHandle) {
+				EOS_Platform_Tick(EOS.PlatformHandle);
+			}
+			if (EOS.ServerPlatformHandle) {
+				EOS_Platform_Tick(EOS.ServerPlatformHandle);
+			}
 			EOS.StatGlobalManager.updateQueuedStats();
 			EOS.AccountManager.handleLogin();
 			EOS.CrossplayAccountManager.handleLogin();
