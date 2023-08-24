@@ -6422,5 +6422,25 @@ for accessory to violence!#
 4344 The %s shatters in your grasp!#
 4345 Status Effects#
 4346 No effects active#
+4347 Call out #
+4348 Call out...#
+4349 boulder trap#
+4350 spike trap#
+4351 arrow trap#
+4352 magic trap#
+4353 gold#
+4354 sink#
+4355 fountain#
+4356 crystal#
+4357 grave#
+4358 boulder#
+4359 secret entrance#
+4360 secret exit#
+4361 level exit#
+4362 trap#
+4363 sign#
+4364 pedestal#
+4365 campfire#
+4366 object#
 
 4399 end#
