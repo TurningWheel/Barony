@@ -2822,11 +2822,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		steamAchievement((char*)(&net_packet->data[4]));
 	}},
 
-	// update steam statistic
+		// update steam statistic
 	{'SSTA', []() {
 		const int statisticNum = static_cast<int>(net_packet->data[4]);
 		int value = static_cast<int>(SDLNet_Read16(&net_packet->data[6]));
-		steamStatisticUpdate(player, static_cast<ESteamStatTypes>(net_packet->data[5]), value);
+		steamStatisticUpdate(statisticNum, static_cast<ESteamStatTypes>(net_packet->data[5]), value);
 	}},
 
 	// pause game
