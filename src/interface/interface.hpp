@@ -1346,12 +1346,14 @@ struct CalloutRadialMenu
 	char interactText[128]; // user moused over object while selecting interact object.
 	int maxMonstersToDraw;
 	int gui_player = 0;
-	Frame* calloutFrame;
+	Frame* calloutFrame = nullptr;
+	Frame* calloutPingFrame = nullptr;
 	bool bOpen = false;
 	Uint32 lockOnEntityUid = 0;
 
 	CalloutRadialMenu() :
 		calloutFrame(nullptr),
+		calloutPingFrame(nullptr),
 		menuX(-1),
 		menuY(-1),
 		optionSelected(-1),
@@ -1400,9 +1402,32 @@ struct CalloutRadialMenu
 		std::string path_active_hover = "";
 		int icon_offsetx = 0;
 		int icon_offsety = 0;
-		std::map<std::string, std::pair<std::string, std::set<int>>> text_map;
+		struct IconEntryText_t
+		{
+			std::string bannerText = "";
+			std::set<int> bannerHighlights;
+			std::string worldMsgSays = "";
+			std::string worldMsg = "";
+			std::string worldMsgEmote = "";
+			std::string worldMsgEmoteYou = "";
+			std::string worldIconTag = "";
+			std::string worldIconTagMini = "";
+		};
+		std::map<std::string, IconEntryText_t> text_map;
 	};
 	static std::map<std::string, IconEntry> iconEntries;
+	struct WorldIconEntry_t
+	{
+		std::string pathDefault = "";
+		std::string pathPlayer1 = "";
+		std::string pathPlayer2 = "";
+		std::string pathPlayer3 = "";
+		std::string pathPlayer4 = "";
+		std::string pathPlayerX = "";
+		int id = 0;
+	};
+	static std::map<std::string, WorldIconEntry_t> worldIconEntries;
+	static std::map<int, std::string> worldIconIDToEntryKey;
 	static int followerWheelRadius;
 	static int followerWheelButtonThickness;
 	static int followerWheelFrameOffsetX;
@@ -1429,14 +1454,28 @@ struct CalloutRadialMenu
 		CALLOUT_TYPE_NO_TARGET,
 		CALLOUT_TYPE_NPC,
 		CALLOUT_TYPE_PLAYER,
-		CALLOUT_TYPE_LEVER,
 		CALLOUT_TYPE_BOULDER,
 		CALLOUT_TYPE_TRAP,
 		CALLOUT_TYPE_GENERIC_INTERACTABLE,
 		CALLOUT_TYPE_CHEST,
 		CALLOUT_TYPE_ITEM,
+		CALLOUT_TYPE_SWITCH,
+		CALLOUT_TYPE_SWITCH_ON,
+		CALLOUT_TYPE_SWITCH_OFF,
+		CALLOUT_TYPE_SHRINE,
+		CALLOUT_TYPE_EXIT,
+		CALLOUT_TYPE_SECRET_EXIT,
+		CALLOUT_TYPE_SECRET_ENTRANCE,
+		CALLOUT_TYPE_GOLD,
+		CALLOUT_TYPE_FOUNTAIN,
 		CALLOUT_TYPE_NPC_ENEMY,
-		CALLOUT_TYPE_NPC_PLAYERALLY
+		CALLOUT_TYPE_NPC_PLAYERALLY,
+		CALLOUT_TYPE_TELEPORTER_LADDER_UP,
+		CALLOUT_TYPE_TELEPORTER_LADDER_DOWN,
+		CALLOUT_TYPE_TELEPORTER_PORTAL,
+		CALLOUT_TYPE_BOMB_TRAP,
+		CALLOUT_TYPE_COLLIDER_BREAKABLE
+		/*,CALLOUT_TYPE_PEDESTAL*/
 	};
 	struct CalloutParticle_t
 	{
@@ -1445,10 +1484,25 @@ struct CalloutRadialMenu
 		real_t z = 0.0;
 		Uint32 entityUid = 0;
 		Uint32 ticks = 0;
+		Uint32 creationTick = 0;
 		CalloutCommand cmd = CALLOUT_CMD_END;
 		CalloutType type = CALLOUT_TYPE_NO_TARGET;
 		bool expired = false;
-		bool lockOnScreen = true;
+		bool lockOnScreen[MAXPLAYERS];
+		int playerColor = -1;
+		int tagID = -1;
+		int tagSmallID = -1;
+		int animateState = 0;
+		int animateStateInit = 0;
+		real_t scale = 1.0;
+		real_t animateX = 0.0;
+		real_t animateScaleForPlayerView[MAXPLAYERS];
+		real_t animateBounce = 0.0;
+		real_t animateY = 0.0;
+		bool doMessage = true;
+		Uint32 messageSentTick = 0;
+		bool big[MAXPLAYERS];
+		void animate();
 		void init(const int player);
 		CalloutParticle_t() = default;
 		CalloutParticle_t(const int player, real_t _x, real_t _y, real_t _z, Uint32 _uid, CalloutCommand _cmd) :
@@ -1476,12 +1530,21 @@ struct CalloutRadialMenu
 	void initCalloutMenuGUICursor(bool openInventory);
 	void closeCalloutMenuGUI();
 	bool allowedInteractEntity(Entity& selectedEntity, bool updateInteractText = true);
-	void createParticleCallout(real_t x, real_t y, real_t z, Uint32 uid, CalloutCommand _cmd = CALLOUT_CMD_LOOK);
-	void createParticleCallout(Entity* entity, CalloutCommand _cmd = CALLOUT_CMD_LOOK);
+	bool createParticleCallout(real_t x, real_t y, real_t z, Uint32 uid, CalloutCommand _cmd = CALLOUT_CMD_LOOK); // if true, send message
+	bool createParticleCallout(Entity* entity, CalloutCommand _cmd = CALLOUT_CMD_LOOK); // if true, send message
 	static std::string getIconPathForCommand(CalloutCommand cmd, CalloutType type, bool highlight);
-	void setCalloutBannerText(Field* field, const char* iconName, Uint32 color, CalloutCommand cmd);
+	enum SetCalloutTextTypes : int {
+		SET_CALLOUT_BANNER_TEXT,
+		SET_CALLOUT_WORLD_TEXT,
+		SET_CALLOUT_ICON_KEY
+	};
+	std::string setCalloutText(Field* field, const char* iconName, Uint32 color, CalloutCommand cmd, SetCalloutTextTypes setType, const int targetPlayer);
+	std::string getCalloutMessage(const IconEntry::IconEntryText_t& text_map, const char* object, const int targetPlayer);
+	void sendCalloutText(CalloutCommand cmd);
+	static std::string getCalloutKeyForCommand(CalloutCommand cmd);
 	static CalloutType getCalloutTypeForUid(const int player, Uint32 uid);
 	static CalloutType getCalloutTypeForEntity(const int player, Entity* parent);
+	static void drawCallouts(const int playernum);
 	/*void selectNextFollower();
 	int numMonstersToDrawInParty();
 	void updateScrollPartySheet();

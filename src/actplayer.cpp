@@ -4028,6 +4028,10 @@ void actPlayer(Entity* my)
 		}
 	}
 
+	static ConsoleVariable<float> cvar_calloutStartZ("/callout_start_z", -2.5);
+	static ConsoleVariable<float> cvar_calloutMoveTo("/callout_moveto_z", 0.1);
+	static ConsoleVariable<float> cvar_calloutStartZLimit("/callout_start_z_limit", 7.5);
+
 	if ( players[PLAYER_NUM]->isLocalPlayer() )
 	{
 		players[PLAYER_NUM]->entity = my;
@@ -4331,13 +4335,64 @@ void actPlayer(Entity* my)
 								}
 								if ( true /*&& calloutMenu.allowedInteractEntity(*target)*/ )
 								{
-									calloutMenu.createParticleCallout(target);
+									calloutMenu.lockOnEntityUid = target->getUID();
+									if ( calloutMenu.createParticleCallout(target) )
+									{
+										calloutMenu.sendCalloutText(CalloutRadialMenu::CALLOUT_CMD_LOOK);
+									}
 									/*calloutMenu.holdWheel = false;
 									calloutMenu.selectMoveTo = false;
 									calloutMenu.bOpen = true;
 									calloutMenu.optionSelected = ALLY_CMD_CANCEL;
 									calloutMenu.initCalloutMenuGUICursor(true);
 									Player::soundActivate();*/
+								}
+							}
+							else
+							{
+								// we're selecting a point in the world
+								if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity )
+								{
+									real_t startx = cameras[PLAYER_NUM].x * 16.0;
+									real_t starty = cameras[PLAYER_NUM].y * 16.0;
+									real_t startz = cameras[PLAYER_NUM].z + (4.5 - cameras[PLAYER_NUM].z) / 2.0 + *cvar_calloutStartZ;
+									real_t pitch = cameras[PLAYER_NUM].vang;
+									if ( pitch < 0 || pitch > PI )
+									{
+										pitch = 0;
+									}
+
+									// draw line from the players height and direction until we hit the ground.
+									real_t previousx = startx;
+									real_t previousy = starty;
+									int index = 0;
+									const real_t yaw = cameras[PLAYER_NUM].ang;
+									for ( ; startz < *cvar_calloutStartZLimit; startz += abs((*cvar_calloutMoveTo) * tan(pitch)) )
+									{
+										startx += 0.1 * cos(yaw);
+										starty += 0.1 * sin(yaw);
+										const int index_x = static_cast<int>(startx) >> 4;
+										const int index_y = static_cast<int>(starty) >> 4;
+										index = (index_y)*MAPLAYERS + (index_x)*MAPLAYERS * map.height;
+										if ( !map.tiles[OBSTACLELAYER + index] )
+										{
+											// store the last known good coordinate
+											previousx = startx;// + 16 * cos(yaw);
+											previousy = starty;// + 16 * sin(yaw);
+										}
+										if ( map.tiles[OBSTACLELAYER + index] )
+										{
+											break;
+										}
+									}
+
+									calloutMenu.moveToX = previousx;
+									calloutMenu.moveToY = previousy;
+									calloutMenu.lockOnEntityUid = 0;
+									if ( calloutMenu.createParticleCallout(previousx, previousy, -4, 0, CalloutRadialMenu::CALLOUT_CMD_LOOK) )
+									{
+										calloutMenu.sendCalloutText(CalloutRadialMenu::CALLOUT_CMD_LOOK);
+									}
 								}
 							}
 
@@ -4446,29 +4501,26 @@ void actPlayer(Entity* my)
 							{
 								real_t startx = cameras[PLAYER_NUM].x * 16.0;
 								real_t starty = cameras[PLAYER_NUM].y * 16.0;
-								static ConsoleVariable<float> cvar_followerStartZ("/follower_start_z", -2.5);
-								real_t startz = cameras[PLAYER_NUM].z + (4.5 - cameras[PLAYER_NUM].z) / 2.0 + *cvar_followerStartZ;
+								real_t startz = cameras[PLAYER_NUM].z + (4.5 - cameras[PLAYER_NUM].z) / 2.0 + *cvar_calloutStartZ;
 								real_t pitch = cameras[PLAYER_NUM].vang;
 								if ( pitch < 0 || pitch > PI )
 								{
 									pitch = 0;
 								}
 
-								static ConsoleVariable<float> cvar_followerMoveTo("/follower_moveto_z", 0.1);
-								static ConsoleVariable<float> cvar_followerStartZLimit("/follower_start_z_limit", 7.5);
 								// draw line from the players height and direction until we hit the ground.
 								real_t previousx = startx;
 								real_t previousy = starty;
 								int index = 0;
 								const real_t yaw = cameras[PLAYER_NUM].ang;
-								for ( ; startz < *cvar_followerStartZLimit; startz += abs((*cvar_followerMoveTo) * tan(pitch)) )
+								for ( ; startz < *cvar_calloutStartZLimit; startz += abs((*cvar_calloutMoveTo) * tan(pitch)) )
 								{
 									startx += 0.1 * cos(yaw);
 									starty += 0.1 * sin(yaw);
 									const int index_x = static_cast<int>(startx) >> 4;
 									const int index_y = static_cast<int>(starty) >> 4;
 									index = (index_y)*MAPLAYERS + (index_x)*MAPLAYERS * map.height;
-									if ( map.tiles[index] && !map.tiles[OBSTACLELAYER + index] )
+									if ( !map.tiles[OBSTACLELAYER + index] )
 									{
 										// store the last known good coordinate
 										previousx = startx;// + 16 * cos(yaw);

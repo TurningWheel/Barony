@@ -3291,7 +3291,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			{
 				return 0.0;
 			}
-			if ( parent->getMonsterTypeFromSprite() == SHOPKEEPER )
+			if ( parent->getMonsterTypeFromSprite() == SHOPKEEPER && !selectInteract )
 			{
 				if ( !shopIsMysteriousShopkeeper(parent) && ShopkeeperPlayerHostility.isPlayerEnemy(player.playernum) )
 				{
@@ -3485,11 +3485,15 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 						}
 					}
 
-					Entity* particle = spawnMagicParticle(players[player.playernum]->entity);
-					particle->sprite = 942;
-					particle->x = previousx;
-					particle->y = previousy;
-					particle->z = startz;
+					static ConsoleVariable<bool> cvar_calloutboulderdebug("/calloutboulderdebug", false);
+					if ( *cvar_calloutboulderdebug )
+					{
+						Entity* particle = spawnMagicParticle(players[player.playernum]->entity);
+						particle->sprite = 942;
+						particle->x = previousx;
+						particle->y = previousy;
+						particle->z = startz;
+					}
 
 					real_t lookDist = sqrt(pow(previousx - players[player.playernum]->entity->x, 2) + pow(previousy - players[player.playernum]->entity->y, 2));
 					if ( abs(dist - lookDist) > 8.25 )
@@ -3545,6 +3549,9 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 							if ( cameras[player.playernum].vang > PI ) // looking above horizon
 							{
 								if ( parent->behavior == &actItem || parent->behavior == &actGoldBag
+									|| parent->behavior == &actLadder
+									|| parent->behavior == &actBeartrap
+									|| parent->behavior == &actBomb
 									|| parent->behavior == &actSwitch || parent->behavior == &actSwitchWithTimer )
 								{
 									return 0.0;
@@ -3559,6 +3566,9 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 							}
 						}
 						else if ( parent && ((parent->behavior == &actItem && parent->z > 4) || parent->behavior == &actGoldBag
+							|| parent->behavior == &actLadder
+							|| parent->behavior == &actBeartrap
+							|| parent->behavior == &actBomb
 							|| parent->behavior == &actSwitch || parent->behavior == &actSwitchWithTimer) )
 						{
 							if ( dist < 32.0 && abs(dist - lookDist) > 16.0
@@ -3601,6 +3611,20 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		{
 			setTooltipDisabled(tooltip);
 			return;
+		}
+		else if ( parent->behavior == &actColliderDecoration )
+		{
+			if ( CalloutMenu[player.playernum].calloutMenuIsOpen()
+				&& CalloutMenu[player.playernum].selectMoveTo
+				&& CalloutMenu[player.playernum].optionSelected == CalloutRadialMenu::CALLOUT_CMD_SELECT )
+			{
+				// allowed in callout mode, otherwise no
+			}
+			else
+			{
+				setTooltipDisabled(tooltip);
+				return;
+			}
 		}
 		parent->highlightForUI = 1.0;
 
@@ -6528,6 +6552,7 @@ void Player::clearGUIPointers()
 
 	FollowerMenu[playernum].followerFrame = nullptr;
 	CalloutMenu[playernum].calloutFrame = nullptr;
+	CalloutMenu[playernum].calloutPingFrame = nullptr;
 }
 
 const char* Player::getAccountName() const {

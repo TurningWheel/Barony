@@ -5356,7 +5356,6 @@ void ingameHud()
 		players[player]->messageZone.processChatbox();
 		updateSkillUpFrame(player);
 		updateLevelUpFrame(player);
-		CalloutMenu[player].update();
 		players[player]->inventoryUI.updateSelectedItemAnimation();
 		players[player]->inventoryUI.updateInventoryItemTooltip();
 		players[player]->inventoryUI.updateInventoryMiscTooltip();
@@ -5374,6 +5373,7 @@ void ingameHud()
 		players[player]->skillSheet.processSkillSheet();
 		players[player]->signGUI.updateSignGUI();
 		players[player]->hud.updateStatusEffectTooltip(); // to create a tooltip in this order to draw over previous elements
+		CalloutRadialMenu::drawCallouts(player);
 		players[player]->inventoryUI.updateItemContextMenuClickFrame();
 		players[player]->GUI.handleModuleNavigation(false);
 		players[player]->inventoryUI.updateCursor();
@@ -6987,6 +6987,7 @@ int main(int argc, char** argv)
 				for ( int player = 0; player < MAXPLAYERS; ++player )
 				{
 					players[player]->messageZone.updateMessages();
+					CalloutMenu[player].update();
 				}
 				if ( !nohud )
 				{

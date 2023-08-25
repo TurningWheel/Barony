@@ -3566,6 +3566,40 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 	}},
 
+	// server forwarded a player callout
+	{ 'CALL', []() {
+		const int pnum = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		if ( pnum != clientnum )
+		{
+			Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
+			Entity* entity = nullptr;
+			if ( uid != 0 )
+			{
+				entity = uidToEntity(uid);
+				if ( !entity )
+				{
+					return;
+				}
+			}
+			CalloutMenu[pnum].lockOnEntityUid = uid;
+			CalloutRadialMenu::CalloutCommand cmd = (CalloutRadialMenu::CalloutCommand)net_packet->data[9];
+			if ( uid )
+			{
+				if ( entity )
+				{
+					CalloutMenu[pnum].createParticleCallout(entity, cmd);
+				}
+			}
+			else
+			{
+				real_t x = SDLNet_Read16(&net_packet->data[10]);
+				real_t y = SDLNet_Read16(&net_packet->data[12]);
+				CalloutMenu[pnum].createParticleCallout(
+					x * 16.0 + 8.0, y * 16.0 + 8.0, -4, 0, cmd);
+			}
+		}
+	}},
+
 	// textbox message
 	{'MSGS', [](){
 		Uint32 color = SDLNet_Read32(&net_packet->data[4]);
@@ -5202,6 +5236,42 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			messagePlayer(c, MESSAGE_MISC, Language::get(1120), shortname);
 		}
 		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1120), shortname);
+	}},
+
+	// client callout
+	{'CALL', []() {
+		const int pnum = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		if ( pnum != clientnum )
+		{
+			Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
+			Entity* entity = uidToEntity(uid);
+			if ( uid != 0 )
+			{
+				if ( !entity )
+				{
+					return;
+				}
+			}
+			CalloutMenu[pnum].lockOnEntityUid = uid;
+			CalloutRadialMenu::CalloutCommand cmd = (CalloutRadialMenu::CalloutCommand)net_packet->data[9];
+
+			if ( uid == 0 )
+			{
+				real_t x = SDLNet_Read16(&net_packet->data[10]);
+				real_t y = SDLNet_Read16(&net_packet->data[12]);
+				if ( CalloutMenu[pnum].createParticleCallout(x * 16.0 + 8.0, y * 16.0 + 8.0, -4, 0, cmd) )
+				{
+					CalloutMenu[pnum].sendCalloutText(cmd);
+				}
+			}
+			else
+			{
+				if ( CalloutMenu[pnum].createParticleCallout(entity, cmd) )
+				{
+					CalloutMenu[pnum].sendCalloutText(cmd);
+				}
+			}
+		}
 	}},
 
 	// message

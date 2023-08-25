@@ -739,6 +739,11 @@ void actColliderDecoration(Entity* my)
 
 	if ( my->isDamageableCollider() )
 	{
+		if ( my->ticks == 1 )
+		{
+			my->createWorldUITooltip();
+		}
+
 		auto& colliderData = EditorEntityData_t::colliderData[my->colliderDamageTypes];
 		if ( my->flags[BURNING] && my->flags[BURNABLE] )
 		{

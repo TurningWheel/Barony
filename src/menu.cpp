@@ -10243,7 +10243,7 @@ void doEndgame(bool saveHighscore) {
 	if ( victory )
 	{
 		int k = 0;
-		for ( c = 0; c < MAXPLAYERS; c++ )
+		for ( int c = 0; c < MAXPLAYERS; c++ )
 		{
 			if (players[c] && players[c]->entity)
 			{
