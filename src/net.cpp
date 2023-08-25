@@ -2822,11 +2822,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		steamAchievement((char*)(&net_packet->data[4]));
 	}},
 
-	// update steam statistic
-	{'SSTA', [](){
-	    const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		// update steam statistic
+	{'SSTA', []() {
+		const int statisticNum = static_cast<int>(net_packet->data[4]);
 		int value = static_cast<int>(SDLNet_Read16(&net_packet->data[6]));
-		steamStatisticUpdate(player, static_cast<ESteamStatTypes>(net_packet->data[5]), value);
+		steamStatisticUpdate(statisticNum, static_cast<ESteamStatTypes>(net_packet->data[5]), value);
 	}},
 
 	// pause game
@@ -4448,6 +4448,22 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	            break;
 	        }
 	    }
+
+		if ( victory > 0 )
+		{
+			int k = 0;
+			for ( int c = 0; c < MAXPLAYERS; c++ )
+			{
+				if ( players[c] && players[c]->entity )
+				{
+					k++;
+				}
+			}
+			if ( k >= 2 )
+			{
+				steamAchievement("BARONY_ACH_IN_GREATER_NUMBERS");
+			}
+		}
 
 	    // force game to pause
         movie = true;

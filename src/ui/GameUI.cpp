@@ -10067,7 +10067,9 @@ void Player::MessageZone_t::processChatbox()
 			int textHeight = h;
 			if ( !useBigFont )
 			{
-				textHeight = (int)(std::max(*cvar_log_lineheight_min, (int)textGet->getHeight()) * (int)current->text->lines + 2);
+				int h2 = (int)(std::max(*cvar_log_lineheight_min + 2, 
+					((int)textGet->getHeight() + textLinePadding) * textGet->getNumTextLines() + textLinePadding));
+				textHeight = h2;
 				h = textHeight + *cvar_log_lineheight_offset;
 			}
 
