@@ -21820,7 +21820,7 @@ failed:
                         auto prompt = static_cast<Frame*>(&widget);
                         auto text = prompt->findField("text");
                         char buf[256];
-                        snprintf(buf, sizeof(buf), fmt, seconds + 1);
+                        snprintf(buf, sizeof(buf), Language::get(5757), seconds + 1);
                         text->setText(buf);
                     } else {
                         soundCancel();
