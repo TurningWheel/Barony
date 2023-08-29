@@ -3817,7 +3817,11 @@ void Entity::handleEffects(Stat* myStats)
 			if ( (this->char_torchtime >= 7500 && myStats->shield->type == TOOL_TORCH) || (this->char_torchtime >= 10500) )
 			{
 				this->char_torchtime = 0;
-				if ( myStats->shield->type == TOOL_TORCH && player >= 0 )
+				if ( behavior == &actPlayer && effectShapeshift != NOTHING )
+				{
+					// do nothing, shapeshifted
+				}
+				else if ( myStats->shield->type == TOOL_TORCH && player >= 0 )
 				{
 					std::string itemName = myStats->shield->getName();
 					ItemType itemType = myStats->shield->type;
