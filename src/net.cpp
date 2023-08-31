@@ -3583,6 +3583,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			}
 			CalloutMenu[pnum].lockOnEntityUid = uid;
 			CalloutRadialMenu::CalloutCommand cmd = (CalloutRadialMenu::CalloutCommand)net_packet->data[9];
+			CalloutMenu[pnum].clientCalloutHelpFlags = SDLNet_Read32(&net_packet->data[10]);
 			if ( uid )
 			{
 				if ( entity )
@@ -3592,8 +3593,8 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			}
 			else
 			{
-				real_t x = SDLNet_Read16(&net_packet->data[10]);
-				real_t y = SDLNet_Read16(&net_packet->data[12]);
+				real_t x = SDLNet_Read16(&net_packet->data[14]);
+				real_t y = SDLNet_Read16(&net_packet->data[16]);
 				CalloutMenu[pnum].createParticleCallout(
 					x * 16.0 + 8.0, y * 16.0 + 8.0, -4, 0, cmd);
 			}
@@ -5254,11 +5255,11 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			}
 			CalloutMenu[pnum].lockOnEntityUid = uid;
 			CalloutRadialMenu::CalloutCommand cmd = (CalloutRadialMenu::CalloutCommand)net_packet->data[9];
-
+			CalloutMenu[pnum].clientCalloutHelpFlags = SDLNet_Read32(&net_packet->data[10]);
 			if ( uid == 0 )
 			{
-				real_t x = SDLNet_Read16(&net_packet->data[10]);
-				real_t y = SDLNet_Read16(&net_packet->data[12]);
+				real_t x = SDLNet_Read16(&net_packet->data[14]);
+				real_t y = SDLNet_Read16(&net_packet->data[16]);
 				if ( CalloutMenu[pnum].createParticleCallout(x * 16.0 + 8.0, y * 16.0 + 8.0, -4, 0, cmd) )
 				{
 					CalloutMenu[pnum].sendCalloutText(cmd);

@@ -1468,6 +1468,7 @@ struct CalloutRadialMenu
 		CALLOUT_TYPE_SECRET_ENTRANCE,
 		CALLOUT_TYPE_GOLD,
 		CALLOUT_TYPE_FOUNTAIN,
+		CALLOUT_TYPE_SINK,
 		CALLOUT_TYPE_NPC_ENEMY,
 		CALLOUT_TYPE_NPC_PLAYERALLY,
 		CALLOUT_TYPE_TELEPORTER_LADDER_UP,
@@ -1477,6 +1478,20 @@ struct CalloutRadialMenu
 		CALLOUT_TYPE_COLLIDER_BREAKABLE
 		/*,CALLOUT_TYPE_PEDESTAL*/
 	};
+	enum CalloutHelpFlags : int
+	{
+		CALLOUT_HELP_FOOD_HUNGRY =		0b1,
+		CALLOUT_HELP_BLOOD_HUNGRY =		0b10,
+		CALLOUT_HELP_FOOD_WEAK =		0b100,
+		CALLOUT_HELP_BLOOD_WEAK =		0b1000,
+		CALLOUT_HELP_FOOD_STARVING =	0b10000,
+		CALLOUT_HELP_BLOOD_STARVING =	0b100000,
+		CALLOUT_HELP_STEAM_CRITICAL =	0b1000000,
+		CALLOUT_HELP_HP_LOW =			0b10000000,
+		CALLOUT_HELP_HP_CRITICAL =		0b100000000,
+		CALLOUT_HELP_NEGATIVE_FX =		0b1000000000,
+	};
+	Uint32 clientCalloutHelpFlags = 0;
 	struct CalloutParticle_t
 	{
 		real_t x = 0.0;
@@ -1484,6 +1499,7 @@ struct CalloutRadialMenu
 		real_t z = 0.0;
 		Uint32 entityUid = 0;
 		Uint32 ticks = 0;
+		Uint32 lifetime = 1;
 		Uint32 creationTick = 0;
 		CalloutCommand cmd = CALLOUT_CMD_END;
 		CalloutType type = CALLOUT_TYPE_NO_TARGET;
@@ -1499,6 +1515,8 @@ struct CalloutRadialMenu
 		real_t animateScaleForPlayerView[MAXPLAYERS];
 		real_t animateBounce = 0.0;
 		real_t animateY = 0.0;
+		bool noUpdate = false;
+		bool selfCallout = false;
 		bool doMessage = true;
 		Uint32 messageSentTick = 0;
 		bool big[MAXPLAYERS];

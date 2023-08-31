@@ -22228,12 +22228,12 @@ std::string CalloutRadialMenu::getCalloutMessage(const IconEntry::IconEntryText_
 		if ( object )
 		{
 			snprintf(buf, sizeof(buf), text_map.worldMsg.c_str(), object);
+			return buf;
 		}
 		else
 		{
 			return text_map.worldMsg;
 		}
-		return buf;
 	}
 }
 
@@ -22248,14 +22248,35 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 	}
 	std::string key = "default";
 	Entity* entity = uidToEntity(lockOnEntityUid);
-	if ( lockOnEntityUid == 0 )
+	const int player = getPlayer();
+	if ( lockOnEntityUid == 0 && players[player]->isLocalPlayer() )
 	{
 		if ( cmd == CALLOUT_CMD_AFFIRMATIVE || cmd == CALLOUT_CMD_NEGATIVE )
 		{
-			entity = players[getPlayer()]->entity;
+			entity = players[player]->entity;
+		}
+		else if ( cmd == CALLOUT_CMD_HELP )
+		{
+			entity = players[player]->entity;
 		}
 	}
-	const int player = getPlayer();
+
+	if ( cmd == CALLOUT_CMD_MOVE )
+	{
+		if ( setType == SET_CALLOUT_BANNER_TEXT )
+		{
+			setCalloutBannerTextUnformatted(player, field, iconName, "default", color);
+		}
+		else if ( setType == SET_CALLOUT_ICON_KEY )
+		{
+			return "default";
+		}
+		else
+		{
+			return getCalloutMessage(findIcon->second.text_map["default"], nullptr, targetPlayer);
+		}
+		return "";
+	}
 
 	auto calloutType = getCalloutTypeForEntity(player, entity);
 	auto& text_map = findIcon->second.text_map;
@@ -22265,6 +22286,102 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 		key = "location";
 		break;
 	case CALLOUT_TYPE_PLAYER:
+		if ( cmd == CALLOUT_CMD_HELP && entity && entity->behavior == &actPlayer 
+			&& player >= 0 && entity == players[player]->entity )
+		{
+			if ( players[player]->isLocalPlayer() )
+			{
+				clientCalloutHelpFlags = 0;
+				auto& fx = StatusEffectQueue[player];
+				EntityHungerIntervals hunger = EntityHungerIntervals::HUNGER_INTERVAL_OVERSATIATED;
+				bool hungerBlood = false;
+				for ( auto& eff : fx.effectQueue )
+				{
+					if ( eff.effect == StatusEffectQueue_t::kEffectBread || eff.effect == StatusEffectQueue_t::kEffectBloodHunger )
+					{
+						if ( eff.effect == StatusEffectQueue_t::kEffectBloodHunger )
+						{
+							hungerBlood = true;
+						}
+						if ( eff.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_STARVING) )
+						{
+							clientCalloutHelpFlags |= hungerBlood ? CALLOUT_HELP_BLOOD_STARVING : CALLOUT_HELP_FOOD_STARVING;
+						}
+						else if ( eff.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_WEAK) )
+						{
+							clientCalloutHelpFlags |= hungerBlood ? CALLOUT_HELP_BLOOD_WEAK : CALLOUT_HELP_FOOD_WEAK;
+						}
+						else if ( eff.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_HUNGRY) )
+						{
+							clientCalloutHelpFlags |= hungerBlood ? CALLOUT_HELP_BLOOD_HUNGRY : CALLOUT_HELP_FOOD_HUNGRY;
+						}
+					}
+					else if ( eff.effect == StatusEffectQueue_t::kEffectAutomatonHunger )
+					{
+						if ( eff.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_AUTOMATON_CRITICAL) )
+						{
+							clientCalloutHelpFlags |= CALLOUT_HELP_STEAM_CRITICAL;
+						}
+					}
+					else if ( eff.effect >= 0 && eff.effect < NUMEFFECTS )
+					{
+						if ( stats[player]->statusEffectRemovedByCureAilment(eff.effect, players[player]->entity) )
+						{
+							clientCalloutHelpFlags |= CALLOUT_HELP_NEGATIVE_FX;
+						}
+					}
+				}
+				bool hpLow = stats[player]->HP < (3 * stats[player]->MAXHP / 5);
+				bool hpCritical = stats[player]->HP < (1 * stats[player]->MAXHP / 4);
+				clientCalloutHelpFlags |= hpLow ? CALLOUT_HELP_HP_LOW : 0;
+				clientCalloutHelpFlags |= hpCritical ? CALLOUT_HELP_HP_CRITICAL : 0;
+			}
+
+			if ( clientCalloutHelpFlags & CALLOUT_HELP_BLOOD_STARVING )
+			{
+				key = "condition_blood_starving";
+			}
+			else if ( clientCalloutHelpFlags & CALLOUT_HELP_FOOD_STARVING )
+			{
+				key = "condition_food_starving";
+			}
+			else if ( (clientCalloutHelpFlags & CALLOUT_HELP_STEAM_CRITICAL) && (svFlags & SV_FLAG_HUNGER) )
+			{
+				key = "condition_steam_empty";
+			}
+			else if ( clientCalloutHelpFlags & CALLOUT_HELP_BLOOD_WEAK )
+			{
+				key = "condition_blood_weak";
+			}
+			else if ( clientCalloutHelpFlags & CALLOUT_HELP_FOOD_WEAK )
+			{
+				key = "condition_food_weak";
+			}
+			else if ( clientCalloutHelpFlags & CALLOUT_HELP_BLOOD_HUNGRY )
+			{
+				key = "condition_blood_hungry";
+			}
+			else if ( clientCalloutHelpFlags & CALLOUT_HELP_FOOD_HUNGRY )
+			{
+				key = "condition_food_hungry";
+			}
+			else if ( clientCalloutHelpFlags & CALLOUT_HELP_HP_CRITICAL )
+			{
+				key = "condition_heal_urgent";
+			}
+			else if ( clientCalloutHelpFlags & CALLOUT_HELP_HP_LOW )
+			{
+				key = "condition_heal";
+			}
+			else if ( (clientCalloutHelpFlags & CALLOUT_HELP_STEAM_CRITICAL) && !(svFlags & SV_FLAG_HUNGER) )
+			{
+				key = "condition_steam_empty";
+			}
+			/*else if ( clientCalloutHelpFlags & CALLOUT_HELP_NEGATIVE_FX )
+			{
+				key = "condition_cure_ailment";
+			}*/
+		}
 		break;
 	case CALLOUT_TYPE_NPC:
 	case CALLOUT_TYPE_NPC_ENEMY:
@@ -22715,6 +22832,9 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 	case CALLOUT_TYPE_FOUNTAIN:
 		key = "fountain";
 		break;
+	case CALLOUT_TYPE_SINK:
+		key = "sink";
+		break;
 	case CALLOUT_TYPE_TELEPORTER_LADDER_UP:
 		key = "teleporter";
 		if ( text_map.find(std::string(key + "_up")) != text_map.end() )
@@ -23063,7 +23183,7 @@ CalloutRadialMenu::CalloutType CalloutRadialMenu::getCalloutTypeForEntity(const 
 	}
 	else if ( parent->behavior == &actSink )
 	{
-		type = CALLOUT_TYPE_GENERIC_INTERACTABLE;
+		type = CALLOUT_TYPE_SINK;
 	}
 	else if ( parent->behavior == &actChestLid || parent->behavior == &actChest )
 	{
@@ -23253,9 +23373,17 @@ void CalloutRadialMenu::CalloutParticle_t::init(const int player)
 {
 	creationTick = ::ticks;
 	messageSentTick = ::ticks;
+	lifetime = kParticleLifetime;
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		lockOnScreen[i] = true;
+		if ( i == player && entityUid == achievementObserver.playerUids[player] && players[i]->isLocalPlayer() )
+		{
+			lockOnScreen[i] = true;
+		}
+		else
+		{
+			lockOnScreen[i] = true;
+		}
 		big[i] = true;
 		animateScaleForPlayerView[i] = 0.0;
 	}
@@ -23342,12 +23470,18 @@ void CalloutRadialMenu::drawCallouts(const int playernum)
 	{
 		return lhs.dist < rhs.dist;
 	};
+	auto compFunc2 = [](CalloutToDraw_t& lhs, CalloutToDraw_t& rhs)
+	{
+		return lhs.creationTick < rhs.creationTick;
+	};
 	std::priority_queue<CalloutToDraw_t, std::vector<CalloutToDraw_t>, decltype(compFunc)> priorityQueue(compFunc);
+	std::priority_queue<CalloutToDraw_t, std::vector<CalloutToDraw_t>, decltype(compFunc2)> priorityQueueSelf(compFunc2);
 
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		for ( auto& callout : CalloutMenu[i].callouts )
 		{
+			bool selfCallout = false;
 			if ( i == playernum && callout.second.entityUid == achievementObserver.playerUids[playernum] )
 			{
 				if ( players[i]->entity && players[i]->entity->skill[3] == 1 )
@@ -23356,7 +23490,8 @@ void CalloutRadialMenu::drawCallouts(const int playernum)
 				}
 				else
 				{
-					continue; // don't draw self callouts
+					selfCallout = true;
+					//continue; // don't draw self callouts
 				}
 			}
 
@@ -23407,6 +23542,11 @@ void CalloutRadialMenu::drawCallouts(const int playernum)
 
 			mat4x4_t id;
 			vec4_t world{ (float)callout.second.x * 2.f, -(float)callout.second.z * 2.f, (float)callout.second.y * 2.f, 1.f };
+			if ( selfCallout )
+			{
+				world.x = 32.0 * camera->x + 32.0 * cos(camera->ang);
+				world.z = 32.0 * camera->y + 32.0 * sin(camera->ang);
+			}
 			vec4_t window2{ (float)0, (float)0,
 				(float)player->camera_virtualWidth(), (float)player->camera_virtualHeight() };
 			SDL_Rect dest{ 0, 0, 0, 0 };
@@ -23482,7 +23622,12 @@ void CalloutRadialMenu::drawCallouts(const int playernum)
 				14, 22 };
 			}
 
-			real_t lifePercent = callout.second.ticks / (real_t)CalloutRadialMenu::CalloutParticle_t::kParticleLifetime;
+			real_t lifePercent = callout.second.ticks / (real_t)callout.second.lifetime;
+			if ( selfCallout )
+			{
+				// fade early for the self callout player, but not others in splitscreen
+				lifePercent = callout.second.ticks / (real_t)((TICKS_PER_SECOND * 4) / 5);
+			}
 			Uint32 alpha = 255;
 			if ( lifePercent >= 0.8 )
 			{
@@ -23527,6 +23672,15 @@ void CalloutRadialMenu::drawCallouts(const int playernum)
 					iconPos.w = image->getWidth() * scale;
 					iconPos.h = image->getHeight() * scale;
 					const int heightOffset = image->getHeight() - iconPos.h;
+
+					if ( selfCallout )
+					{
+						real_t y = iconPos.y;
+						iconPos.y = players[playernum]->camera_virtualHeight() / 4;
+						real_t factor = players[playernum]->camera_virtualHeight() / (real_t)Frame::virtualScreenY;
+						iconPos.y += factor * 16.0 * (y - iconPos.y) / (real_t)players[playernum]->camera_virtualHeight();
+					}
+
 					iconPos.x -= iconPos.w / 2;
 					iconPos.y -= iconPos.h + heightOffset / 2;
 					iconPos.y -= (iconPos.h / 4) * callout.second.animateBounce;
@@ -23741,7 +23895,7 @@ void CalloutRadialMenu::update()
 		for ( auto it = callouts.begin(); it != callouts.end(); ++it )
 		{
 			it->second.ticks++;
-			if ( it->second.ticks >= CalloutParticle_t::kParticleLifetime )
+			if ( it->second.ticks >= it->second.lifetime )
 			{
 				it->second.expired = true;
 			}
@@ -23767,7 +23921,7 @@ bool CalloutRadialMenu::createParticleCallout(Entity* entity, CalloutRadialMenu:
 	if ( !entity ) { return false; }
 	if ( _cmd == CALLOUT_CMD_CANCEL ) { return false; }
 
-	Uint32 exisitingMessageSent = 0;
+	Uint32 existingMessageSent = 0;
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		if ( CalloutMenu[i].callouts.find(entity->getUID()) != CalloutMenu[i].callouts.end() )
@@ -23775,7 +23929,7 @@ bool CalloutRadialMenu::createParticleCallout(Entity* entity, CalloutRadialMenu:
 			auto& existingCallout = CalloutMenu[i].callouts[entity->getUID()];
 			if ( i == getPlayer() && existingCallout.cmd == _cmd )
 			{
-				exisitingMessageSent = existingCallout.messageSentTick;
+				existingMessageSent = existingCallout.messageSentTick;
 			}
 			CalloutMenu[i].callouts.erase(entity->getUID()); // delete other players pings on this object
 		}
@@ -23783,12 +23937,12 @@ bool CalloutRadialMenu::createParticleCallout(Entity* entity, CalloutRadialMenu:
 
 	auto& callout = callouts[entity->getUID()];
 	callout = CalloutRadialMenu::CalloutParticle_t(getPlayer(), entity->x, entity->y, entity->z, entity->getUID(), _cmd);
-	if ( exisitingMessageSent > 0 && multiplayer != CLIENT )
+	if ( existingMessageSent > 0 && multiplayer != CLIENT )
 	{
-		if ( (callout.messageSentTick - exisitingMessageSent) < (TICKS_PER_SECOND * 3.5) )
+		if ( (callout.messageSentTick - existingMessageSent) < (TICKS_PER_SECOND * 3.5) )
 		{
 			callout.doMessage = false;
-			callout.messageSentTick = exisitingMessageSent;
+			callout.messageSentTick = existingMessageSent;
 		}
 	}
 
@@ -23813,7 +23967,8 @@ bool CalloutRadialMenu::createParticleCallout(Entity* entity, CalloutRadialMenu:
 			net_packet->data[4] = getPlayer();
 			SDLNet_Write32(entity->getUID(), &net_packet->data[5]);
 			net_packet->data[9] = (Uint8)_cmd;
-			net_packet->len = 10;
+			SDLNet_Write32(clientCalloutHelpFlags, &net_packet->data[10]);
+			net_packet->len = 14;
 			net_packet->address.host = net_clients[i - 1].host;
 			net_packet->address.port = net_clients[i - 1].port;
 			sendPacketSafe(net_sock, -1, net_packet, i - 1);
@@ -23833,9 +23988,26 @@ bool CalloutRadialMenu::createParticleCallout(real_t x, real_t y, real_t z, Uint
 	//		CalloutMenu[i].callouts.erase(uid);
 	//	}
 	//}
-
+	Uint32 existingMessageSent = 0;
+	if ( _cmd == CALLOUT_CMD_MOVE && callouts.find(uid) != callouts.end() )
+	{
+		auto& existingCallout = callouts[uid];
+		if ( existingCallout.cmd == _cmd )
+		{
+			existingMessageSent = existingCallout.messageSentTick;
+		}
+	}
 	auto& callout = callouts[uid];
+
 	callout = CalloutRadialMenu::CalloutParticle_t(getPlayer(), x, y, z, uid, _cmd);
+	if ( existingMessageSent > 0 && multiplayer != CLIENT )
+	{
+		if ( (callout.messageSentTick - existingMessageSent) < (TICKS_PER_SECOND * 3.5) )
+		{
+			callout.doMessage = false;
+			callout.messageSentTick = existingMessageSent;
+		}
+	}
 
 	std::string calloutTypeKey = getCalloutKeyForCommand(_cmd);
 	Uint32 oldTarget = lockOnEntityUid;
@@ -23862,14 +24034,15 @@ bool CalloutRadialMenu::createParticleCallout(real_t x, real_t y, real_t z, Uint
 			net_packet->data[4] = getPlayer();
 			SDLNet_Write32(uid, &net_packet->data[5]);
 			net_packet->data[9] = (Uint8)_cmd;
-			net_packet->len = 10;
+			SDLNet_Write32(clientCalloutHelpFlags, &net_packet->data[10]);
+			net_packet->len = 14;
 			if ( uid == 0 )
 			{
 				Uint16 _x = std::min<Uint16>(std::max<int>(0.0, x / 16), map.width - 1);
 				Uint16 _y = std::min<Uint16>(std::max<int>(0.0, y / 16), map.height - 1);
-				SDLNet_Write16(_x, &net_packet->data[10]);
-				SDLNet_Write16(_y, &net_packet->data[12]);
-				net_packet->len = 14;
+				SDLNet_Write16(_x, &net_packet->data[14]);
+				SDLNet_Write16(_y, &net_packet->data[16]);
+				net_packet->len = 18;
 			}
 			net_packet->address.host = net_clients[i - 1].host;
 			net_packet->address.port = net_clients[i - 1].port;
@@ -23892,14 +24065,15 @@ void CalloutRadialMenu::sendCalloutText(CalloutRadialMenu::CalloutCommand cmd)
 		net_packet->data[4] = getPlayer();
 		SDLNet_Write32(lockOnEntityUid, &net_packet->data[5]);
 		net_packet->data[9] = (Uint8)cmd;
-		net_packet->len = 10;
+		SDLNet_Write32(clientCalloutHelpFlags, &net_packet->data[10]);
+		net_packet->len = 14;
 		if ( lockOnEntityUid == 0 )
 		{
 			Uint16 _x = std::min<Uint16>(std::max<int>(0.0, moveToX / 16), map.width - 1);
 			Uint16 _y = std::min<Uint16>(std::max<int>(0.0, moveToY / 16), map.height - 1);
-			SDLNet_Write16(_x, &net_packet->data[10]);
-			SDLNet_Write16(_y, &net_packet->data[12]);
-			net_packet->len = 14;
+			SDLNet_Write16(_x, &net_packet->data[14]);
+			SDLNet_Write16(_y, &net_packet->data[16]);
+			net_packet->len = 18;
 		}
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
@@ -24164,7 +24338,7 @@ void CalloutRadialMenu::drawCalloutMenu()
 			if ( optionSelected != -1 )
 			{
 				holdWheel = false;
-				if ( optionSelected != ALLY_CMD_ATTACK_CONFIRM && optionSelected != ALLY_CMD_MOVETO_CONFIRM )
+				if ( optionSelected != CALLOUT_CMD_SELECT )
 				{
 					if ( !sfxPlayed && optionSelected != CALLOUT_CMD_CANCEL )
 					{
@@ -24202,8 +24376,7 @@ void CalloutRadialMenu::drawCalloutMenu()
 						{
 							lockOnEntityUid = achievementObserver.playerUids[gui_player];
 						}
-						else if ( (CalloutCommand)optionSelected == CALLOUT_CMD_HELP
-							|| (CalloutCommand)optionSelected == CALLOUT_CMD_MOVE )
+						else if ( (CalloutCommand)optionSelected == CALLOUT_CMD_HELP )
 						{
 							lockOnEntityUid = achievementObserver.playerUids[gui_player];
 						}
