@@ -849,7 +849,8 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 	int player = -1;
 	const int minLight = (int)(TOUCHRANGE * 1.5);
 	int light = std::max(minLight, entityLight()); // max 255 light to start with.
-	if ( !isInvisible() )
+	bool invis = isInvisible();
+	if ( !invis )
 	{
 		bool sneaking = false;
 		if ( behavior == &actPlayer )
@@ -891,13 +892,19 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 		}
 		else
 		{
-			light -= myStats.PROFICIENCIES[PRO_STEALTH] * 2;
+			if ( sneaking )
+			{
+				light /= 2; // halve for sneaking
+			}
+			light -= (light - TOUCHRANGE) * (1.0 * (myStats.PROFICIENCIES[PRO_STEALTH] / 100.0)); // reduce to 32 as sneak approaches 100
 		}
 	}
-	else
+	
+	if ( invis )
 	{
-		light = TOUCHRANGE;
+		light = std::min(light, TOUCHRANGE);
 	}
+
 	light = std::max(light, 0);
 	if ( myStats.type == DUMMYBOT )
 	{
