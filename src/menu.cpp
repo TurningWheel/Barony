@@ -628,7 +628,7 @@ bool isAchievementUnlockedForClassUnlock(PlayerRaces race)
 	{
 		return unlocked;
 	}
-#elif defined USE_EOS
+#elif (defined USE_EOS || defined LOCAL_ACHIEVEMENTS)
 	if ( enabledDLCPack1 && race == RACE_SKELETON && achievementUnlocked("BARONY_ACH_BONY_BARON") )
 	{
 		return true;
