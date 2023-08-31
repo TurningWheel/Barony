@@ -3431,7 +3431,7 @@ void createEnemyBar(const int player, Frame*& frame)
 	enemyName->setColor(color);
 	enemyName->setHJustify(Field::justify_t::CENTER);
 	enemyName->setVJustify(Field::justify_t::CENTER);
-	enemyName->setText("Skeleton");
+	enemyName->setText("");
 	enemyName->setOntop(true);
 
 	auto dmgText = hud_t.hudFrame->addField("enemy dmg txt", 128);
@@ -5551,7 +5551,7 @@ void Player::HUD_t::updateStatusEffectFocusedWindow()
 			dismiss->setBackground("*#images/ui/Inventory/chests/Button_TakeAll_00.png");
 			dismiss->setBackgroundHighlighted("*#images/ui/Inventory/chests/Button_TakeAllHigh_00.png");
 			dismiss->setBackgroundActivated("*#images/ui/Inventory/chests/Button_TakeAllPress_00.png");
-			dismiss->setText("Dismiss");
+			dismiss->setText(Language::get(5835));
 			dismiss->setFont(smallfont_outline);
 			dismiss->setTextHighlightColor(makeColor(201, 162, 100, 255));
 			dismiss->setDisabled(true);
@@ -9105,7 +9105,7 @@ void createActionPrompts(const int player)
 	glyph->ontop = true;
 	auto mainHandText = actionPromptFrame->addField("action mainhand text", 64);
 	mainHandText->setFont(promptFont);
-	mainHandText->setText("Attack");
+	mainHandText->setText(Language::get(5963));
 	mainHandText->setHJustify(Field::justify_t::CENTER);
 
 	auto offHand = actionPromptFrame->addFrame("action offhand");
@@ -9119,7 +9119,7 @@ void createActionPrompts(const int player)
 	glyph->ontop = true;
 	auto offHandText = actionPromptFrame->addField("action offhand text", 64);
 	offHandText->setFont(promptFont);
-	offHandText->setText("Sneak");
+	offHandText->setText(Language::get(5964));
 	offHandText->setHJustify(Field::justify_t::CENTER);
 
 	auto magic = actionPromptFrame->addFrame("action magic");
@@ -9133,7 +9133,7 @@ void createActionPrompts(const int player)
 	glyph->ontop = true;
 	auto magicText = actionPromptFrame->addField("action magic text", 64);
 	magicText->setFont(promptFont);
-	magicText->setText("Cast spell");
+	magicText->setText(Language::get(5965));
 	magicText->setHJustify(Field::justify_t::CENTER);
 
 	auto sneak = actionPromptFrame->addFrame("action sneak");
@@ -9147,7 +9147,7 @@ void createActionPrompts(const int player)
 	glyph->ontop = true;
 	auto sneakText = actionPromptFrame->addField("action sneak text", 64);
 	sneakText->setFont(promptFont);
-	sneakText->setText("Sneak");
+	sneakText->setText(Language::get(5964));
 	sneakText->setHJustify(Field::justify_t::CENTER);
 }
 
@@ -9667,11 +9667,14 @@ void Player::HUD_t::processHUD()
             SDL_Rect{x, y, w, h},
             0xffffffff, path,
             "controller");
+     
+        char fmt[16];
+        snprintf(fmt, sizeof(fmt), Language::get(5477), player.playernum + 1);
 
         auto field = controllerFrame->addField("label", 16);
         field->setSize(SDL_Rect{x, y, w, h});
         field->setJustify(Field::justify_t::CENTER);
-        field->setText((std::string("P") + std::to_string(player.playernum + 1)).c_str());
+        field->setText(fmt);
         field->setFont(bigfont_outline); 
 		field->setColor(playerColor(player.playernum, colorblind_lobby, false));
     }
@@ -10732,7 +10735,7 @@ void openMapWindow(int player) {
     label->setHJustify(Field::justify_t::LEFT);
     label->setVJustify(Field::justify_t::CENTER);
     label->setFont(bigfont_outline);
-    label->setText("Map");
+    label->setText(Language::get(5966));
 
 	auto closeGlyph = frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
 		"", "close glyph");
@@ -11271,7 +11274,7 @@ void openLogWindow(int player) {
     label->setHJustify(Field::justify_t::LEFT);
     label->setVJustify(Field::justify_t::CENTER);
     label->setFont(bigfont_outline);
-    label->setText("Log");
+    label->setText(Language::get(5967));
 
 	auto closeGlyph = frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
 		"", "close glyph");
@@ -11515,7 +11518,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			auto characterSheetTitleText = fullscreenBg->addField("character sheet title text", 32);
 			characterSheetTitleText->setFont(titleFont);
 			characterSheetTitleText->setSize(SDL_Rect{ 6, 177, 202, 32 });
-			characterSheetTitleText->setText("CHARACTER SHEET");
+			characterSheetTitleText->setText(Language::get(5968));
 			characterSheetTitleText->setVJustify(Field::justify_t::CENTER);
 			characterSheetTitleText->setHJustify(Field::justify_t::CENTER);
 		}
@@ -11808,7 +11811,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				characterTextPos.y,
 				characterTextPos.w,
 				characterTextPos.h });
-			classText->setText("Barbarian");
+			classText->setText("");
 			classText->setVJustify(Field::justify_t::CENTER);
 			classText->setHJustify(Field::justify_t::LEFT);
 			classText->setTextColor(classTextColor);
@@ -11823,7 +11826,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				characterTextPos.y,
 				characterTextPos.w,
 				characterTextPos.h });
-			raceText->setText("Human Gloomforge");
+			raceText->setText("");
 			raceText->setVJustify(Field::justify_t::CENTER);
 			raceText->setHJustify(Field::justify_t::CENTER);
 			raceText->setColor(infoTextColor);
@@ -11851,7 +11854,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			auto goldTitleText = characterInnerFrame->addField("gold text title", 8);
 			goldTitleText->setFont(infoFont);
 			goldTitleText->setSize(SDL_Rect{ 48, characterTextPos.y, 52, characterTextPos.h });
-			goldTitleText->setText("GOLD");
+			goldTitleText->setText(Language::get(5969));
 			goldTitleText->setVJustify(Field::justify_t::CENTER);
 			goldTitleText->setColor(infoTextColor);
 
@@ -11905,7 +11908,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textBase->setFont(statFont);
 				textPos.x = headingLeftX;
 				textBase->setSize(textPos);
-				textBase->setText("STR");
+				textBase->setText(Language::get(5300));
 				textBase->setColor(statTextColor);
 				auto textStat = statsInnerFrame->addField("str text stat", 32);
 				textStat->setVJustify(Field::justify_t::CENTER);
@@ -11944,7 +11947,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textBase->setFont(statFont);
 				textPos.x = headingLeftX;
 				textBase->setSize(textPos);
-				textBase->setText("DEX");
+				textBase->setText(Language::get(5301));
 				textBase->setColor(statTextColor);
 				auto textStat = statsInnerFrame->addField("dex text stat", 32);
 				textStat->setVJustify(Field::justify_t::CENTER);
@@ -11983,7 +11986,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textBase->setFont(statFont);
 				textPos.x = headingLeftX;
 				textBase->setSize(textPos);
-				textBase->setText("CON");
+				textBase->setText(Language::get(5302));
 				textBase->setColor(statTextColor);
 				auto textStat = statsInnerFrame->addField("con text stat", 32);
 				textStat->setVJustify(Field::justify_t::CENTER);
@@ -12022,7 +12025,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textBase->setFont(statFont);
 				textPos.x = headingLeftX;
 				textBase->setSize(textPos);
-				textBase->setText("INT");
+				textBase->setText(Language::get(5303));
 				textBase->setColor(statTextColor);
 				auto textStat = statsInnerFrame->addField("int text stat", 32);
 				textStat->setVJustify(Field::justify_t::CENTER);
@@ -12061,7 +12064,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textBase->setFont(statFont);
 				textPos.x = headingLeftX;
 				textBase->setSize(textPos);
-				textBase->setText("PER");
+				textBase->setText(Language::get(5304));
 				textBase->setColor(statTextColor);
 				auto textStat = statsInnerFrame->addField("per text stat", 32);
 				textStat->setVJustify(Field::justify_t::CENTER);
@@ -12100,7 +12103,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textBase->setFont(statFont);
 				textPos.x = headingLeftX;
 				textBase->setSize(textPos);
-				textBase->setText("CHR");
+				textBase->setText(Language::get(5305));
 				textBase->setColor(statTextColor);
 				auto textStat = statsInnerFrame->addField("chr text stat", 32);
 				textStat->setVJustify(Field::justify_t::CENTER);
@@ -20626,7 +20629,7 @@ void createInventoryTooltipFrame(const int player)
 		int textAlignXLeftJustify = interactGlyph3->pos.x + interactGlyph3->pos.w + 6;
 		textAlignY = interactGlyph3->pos.y - 4;
 		promptText = promptFrame->addField("txt 3", 32);
-		promptText->setText("Equip");
+		promptText->setText(Language::get(5956));
 		promptText->setSize(SDL_Rect{
 			textAlignXLeftJustify,
 			textAlignY,
@@ -20639,7 +20642,7 @@ void createInventoryTooltipFrame(const int player)
 		textAlignXLeftJustify = interactGlyph4->pos.x + interactGlyph4->pos.w + 6;
 		textAlignY = interactGlyph4->pos.y - 4;
 		promptText = promptFrame->addField("txt 4", 32);
-		promptText->setText("Drop");
+		promptText->setText(Language::get(5957));
 		promptText->setSize(SDL_Rect{
 			textAlignXLeftJustify,
 			textAlignY,
@@ -22535,7 +22538,7 @@ void createPlayerSpellList(const int player)
 		const char* font = "fonts/pixel_maz.ttf#32#2";
 		auto titleText = bgFrame->addField("title txt", 64);
 		titleText->setFont(font);
-		titleText->setText("SPELLS");
+		titleText->setText(Language::get(5958));
 		titleText->setHJustify(Field::justify_t::CENTER);
 		titleText->setVJustify(Field::justify_t::TOP);
 		titleText->setSize(SDL_Rect{ 56, 12, 96, 24 });
@@ -22817,7 +22820,7 @@ void createChestGUI(const int player)
 		const char* font = "fonts/pixel_maz.ttf#32#2";
 		auto titleText = bgFrame->addField("title txt", 64);
 		titleText->setFont(font);
-		titleText->setText("Chest");
+		titleText->setText(Language::get(5959));
 		titleText->setHJustify(Field::justify_t::CENTER);
 		titleText->setVJustify(Field::justify_t::CENTER);
 		titleText->setSize(SDL_Rect{ basePos.x + 4, 0, 162, 32 });
@@ -22853,7 +22856,7 @@ void createChestGUI(const int player)
 		grabAllBtn->setSize(grabBtnPos);
 		grabAllBtn->setColor(makeColor(255, 255, 255, 255));
 		grabAllBtn->setHighlightColor(makeColor(255, 255, 255, 255));
-		grabAllBtn->setText("Take All");
+		grabAllBtn->setText(Language::get(5960));
 		grabAllBtn->setFont(font);
 		grabAllBtn->setHideGlyphs(true);
 		grabAllBtn->setHideKeyboardGlyphs(true);
@@ -29897,7 +29900,7 @@ void Player::SkillSheet_t::createSkillSheet()
 		auto skillLvlHeaderTxt = scrollAreaFrame->addField("skill lvl header txt", 128);
 		skillLvlHeaderTxt->setFont(descFont);
 		skillLvlHeaderTxt->setSize(txtPos);
-		skillLvlHeaderTxt->setText("Skill Level:");
+		skillLvlHeaderTxt->setText(Language::get(5961));
 
 		auto skillLvlHeaderVal = scrollAreaFrame->addField("skill lvl header val", 128);
 		skillLvlHeaderVal->setFont(descFont);
@@ -29917,7 +29920,7 @@ void Player::SkillSheet_t::createSkillSheet()
 		auto statHeaderTxt = scrollAreaFrame->addField("stat header txt", 128);
 		statHeaderTxt->setFont(descFont);
 		statHeaderTxt->setSize(txtPos);
-		statHeaderTxt->setText("Associated Stat:");
+		statHeaderTxt->setText(Language::get(5962));
 
 		auto statTypeTxt = scrollAreaFrame->addField("stat type txt", 128);
 		statTypeTxt->setFont(descFont);
@@ -32500,22 +32503,22 @@ void Player::SkillSheet_t::processSkillSheet()
 					switch ( getStatForProficiency(proficiency) )
 					{
 						case STAT_STR:
-							statTypeTxt->setText("STR");
+							statTypeTxt->setText(Language::get(5300));
 							break;
 						case STAT_DEX:
-							statTypeTxt->setText("DEX");
+							statTypeTxt->setText(Language::get(5301));
 							break;
 						case STAT_CON:
-							statTypeTxt->setText("CON");
+							statTypeTxt->setText(Language::get(5302));
 							break;
 						case STAT_INT:
-							statTypeTxt->setText("INT");
+							statTypeTxt->setText(Language::get(5303));
 							break;
 						case STAT_PER:
-							statTypeTxt->setText("PER");
+							statTypeTxt->setText(Language::get(5304));
 							break;
 						case STAT_CHR:
-							statTypeTxt->setText("CHR");
+							statTypeTxt->setText(Language::get(5305));
 							break;
 						default:
 							break;
