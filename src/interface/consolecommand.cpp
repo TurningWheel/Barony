@@ -1208,6 +1208,11 @@ namespace ConsoleCommands {
 			return;
 		}
 
+		int player = clientnum;
+		if ( argc == 2 ) {
+			player = atoi(argv[1]);
+		}
+
 		if (multiplayer == SINGLE)
 		{
 			Stat* tempStats = players[clientnum]->entity->getStats();
@@ -1216,9 +1221,21 @@ namespace ConsoleCommands {
 				tempStats->HUNGER = std::max(0, tempStats->HUNGER - 100);
 			}
 		}
+		else if ( multiplayer == SERVER )
+		{
+			if ( player >= 0 && player < MAXPLAYERS )
+			{
+				Stat* tempStats = players[player]->entity->getStats();
+				if ( tempStats )
+				{
+					tempStats->HUNGER = std::max(0, tempStats->HUNGER - 100);
+				}
+				serverUpdateHunger(player);
+			}
+		}
 		else
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(284));
 		}
 		});
 
