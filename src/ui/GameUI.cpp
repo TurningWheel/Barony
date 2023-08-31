@@ -30250,7 +30250,8 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 	{
 		if ( tag == "STEALTH_VIS_REDUCTION" )
 		{
-			val = stats[playernum]->PROFICIENCIES[proficiency] * 2 * 100 / 512.f; // % visibility reduction
+			//val = stats[playernum]->PROFICIENCIES[proficiency] * 2 * 100 / 512.f; // % visibility reduction
+			val = 100.f * (255 - TOUCHRANGE) * (1.0 * (stats[playernum]->PROFICIENCIES[PRO_STEALTH] / 100.f)) / 255.f;
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "STEALTH_SNEAK_VIS" )
