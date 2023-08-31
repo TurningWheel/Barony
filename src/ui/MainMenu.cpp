@@ -24160,7 +24160,7 @@ failed:
 
 			if ( !viewMyItems )
 			{
-				if ( currentVersionNum > latestVersionNum )
+				if ( latestVersionNum < 400 && currentVersionNum > latestVersionNum )
 				{
 					auto imgPos = versionPos;
 					imgPos.y += 2;
