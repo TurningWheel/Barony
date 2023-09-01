@@ -1123,7 +1123,7 @@ spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_
 	}
 
 	int duration = element->duration; // duration in ticks.
-	duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
+	//duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
 	node_t* spellnode = list_AddNodeLast(&myStats->magic_effects);
 	spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
 	spell_t* channeled_spell = (spell_t*)(spellnode->element);
