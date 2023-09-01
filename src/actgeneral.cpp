@@ -1398,15 +1398,18 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 					intro = true;
 					initClass(player);
 					intro = oldIntro;
-				}
 
-				if ( !applyToEntities.empty() )
-				{
 					for ( int c = 1; c < MAXPLAYERS; ++c )
 					{
 						if ( !players[c]->isLocalPlayer() )
 						{
-							updateClientInformation(c, false, false, TextSourceScript::CLIENT_UPDATE_CLASS);
+							strcpy((char*)net_packet->data, "SCRC");
+							net_packet->data[4] = (Uint8)player;
+							net_packet->data[5] = (Uint8)client_classes[player];
+							net_packet->address.host = net_clients[c - 1].host;
+							net_packet->address.port = net_clients[c - 1].port;
+							net_packet->len = 6;
+							sendPacketSafe(net_sock, -1, net_packet, c - 1);
 						}
 					}
 				}
@@ -3113,7 +3116,8 @@ void TextSourceScript::updateClientInformation(int player, bool clearInventory, 
 	}
 	else if ( updateType == CLIENT_UPDATE_CLASS )
 	{
-		strcpy((char*)net_packet->data, "SCRC");
+		// unused
+		/*strcpy((char*)net_packet->data, "SCRC");
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			net_packet->data[4 + i] = client_classes[i];
@@ -3121,7 +3125,7 @@ void TextSourceScript::updateClientInformation(int player, bool clearInventory, 
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
 		net_packet->len = 5 + MAXPLAYERS;
-		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);*/
 	}
 	else if ( updateType == CLIENT_UPDATE_HUNGER )
 	{

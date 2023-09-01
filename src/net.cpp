@@ -4620,20 +4620,19 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		{
 			stats[clientnum]->PROFICIENCIES[i] = (Sint8)net_packet->data[27 + i];
 		}
-	}},
+	} },
 
 	// update class from script
-	{'SCRC', [](){
-		for ( int c = 0; c < MAXPLAYERS; ++c )
+	{ 'SCRC', []() {
+		int player = net_packet->data[4];
+		int classnum = net_packet->data[5];
+		if ( player >= 0 && player < MAXPLAYERS )
 		{
-			client_classes[c] = net_packet->data[4 + c];
-			if ( c == clientnum )
-			{
-				bool oldIntro = intro;
-				intro = true;
-				initClass(clientnum);
-				intro = oldIntro;
-			}
+			client_classes[player] = classnum;
+			bool oldIntro = intro;
+			intro = true;
+			initClass(player);
+			intro = oldIntro;
 		}
 	}},
 
