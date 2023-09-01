@@ -1180,7 +1180,7 @@ namespace MainMenu {
 				auto dropdown_wide = "*images/ui/Main Menus/Settings/Settings_WideDrop_ScrollBG00.png";
 
 				// Maybe we need a more sensible way to identify these button types.
-				auto boolean_button_text = "Off          On";
+				auto boolean_button_text = Language::get(5042);
 				if (strcmp(button->getBackground(), customize) == 0) {
 					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_customize_button") - 1) - (sizeof("setting_") - 1));
 				} else if (strcmp(button->getBackground(), binding) == 0) {
