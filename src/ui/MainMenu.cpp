@@ -3886,13 +3886,13 @@ namespace MainMenu {
 		// banner
 		auto banner_text = window->addField("banner_text", 64);
 		banner_text->setSize(SDL_Rect{14, 4, 950, 50});
-		banner_text->setText(Language::get(5030));
+		banner_text->setText(Language::get(5031));
 		banner_text->setFont(bigfont_outline);
 		banner_text->setJustify(Field::justify_t::CENTER);
 
 		auto populate_text = window->addField("populate_text", 64);
 		populate_text->setSize(SDL_Rect{20, 64, 512, 64});
-		populate_text->setText(Language::get(5031));
+		populate_text->setText(Language::get(6019));
 		populate_text->setFont(bigfont_outline);
 		populate_text->setVJustify(Field::justify_t::TOP);
 		populate_text->setHJustify(Field::justify_t::LEFT);
@@ -25074,7 +25074,7 @@ failed:
 			const char* title;
 			void (*callback)(Button&);
 		};
-		static std::vector<Option> mod_tabs = {
+		std::vector<Option> mod_tabs = {
 			{"Local Mods", Language::get(5866), workshopLoadLocalMods},
 #ifdef STEAMWORKS
 			{"Steam Workshop", Language::get(5867), workshopLoadSubscribedItems},
@@ -25140,6 +25140,13 @@ failed:
 		auto load_status_frame = window->addFrame("load_status");
 		load_status_frame->setSize(SDL_Rect{ 448, 622, 196, 78 });
 		load_status_frame->setTickCallback([](Widget& widget) {
+			std::vector<Option> mod_tabs = {
+			{"Local Mods", Language::get(5866), workshopLoadLocalMods},
+#ifdef STEAMWORKS
+			{"Steam Workshop", Language::get(5867), workshopLoadSubscribedItems},
+			{"My Workshop Items", Language::get(5868), workshopLoadMyItems},
+#endif
+			};
 #ifdef STEAMWORKS
 			if ( mods_active_tab == mod_tabs[2].name )
 			{
@@ -25730,6 +25737,14 @@ failed:
 			tab_left->setCallback([](Button&) {
 				auto mods_menu = main_menu_frame->findFrame("mods_menu"); assert(mods_menu);
 				const char* prevtab = nullptr;
+
+				std::vector<Option> mod_tabs = {
+					{"Local Mods", Language::get(5866), workshopLoadLocalMods},
+#ifdef STEAMWORKS
+					{"Steam Workshop", Language::get(5867), workshopLoadSubscribedItems},
+					{"My Workshop Items", Language::get(5868), workshopLoadMyItems},
+#endif
+				};
 				for ( auto& tab : mod_tabs ) {
 					auto button = mods_menu->findButton(tab.name);
 					if ( button ) {
@@ -25766,6 +25781,14 @@ failed:
 			tab_right->setCallback([](Button&) {
 				auto mods_menu = main_menu_frame->findFrame("mods_menu"); assert(mods_menu);
 				const char* nexttab = nullptr;
+
+				std::vector<Option> mod_tabs = {
+					{"Local Mods", Language::get(5866), workshopLoadLocalMods},
+#ifdef STEAMWORKS
+					{"Steam Workshop", Language::get(5867), workshopLoadSubscribedItems},
+					{"My Workshop Items", Language::get(5868), workshopLoadMyItems},
+#endif
+				};
 				for ( auto it = mod_tabs.rbegin(); it != mod_tabs.rend(); ++it ) {
 					auto tab = (*it);
 					auto button = mods_menu->findButton(tab.name);
@@ -25805,6 +25828,14 @@ failed:
 					rescueFocus = true;
 				}
 			}
+
+			std::vector<Option> mod_tabs = {
+			{"Local Mods", Language::get(5866), workshopLoadLocalMods},
+#ifdef STEAMWORKS
+			{"Steam Workshop", Language::get(5867), workshopLoadSubscribedItems},
+			{"My Workshop Items", Language::get(5868), workshopLoadMyItems},
+#endif
+			};
 
 			for ( auto& tab : mod_tabs ) 
 			{
