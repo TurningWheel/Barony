@@ -100,6 +100,17 @@ void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambien
 
 void sound_update(int player, int index, int numplayers)
 {
+#ifdef DEBUG_EVENT_TIMERS
+	auto time1 = std::chrono::high_resolution_clock::now();
+	auto time2 = std::chrono::high_resolution_clock::now();
+	auto accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+	if ( accum > 5 )
+	{
+		printlog("Large tick time: [10] %f", accum);
+	}
+	time1 = std::chrono::high_resolution_clock::now();
+#endif
+
 	if (no_sound)
 	{
 		return;
@@ -128,7 +139,28 @@ void sound_update(int player, int index, int numplayers)
 
 	//FMOD_System_Set3DListenerAttributes(fmod_system, 0, &position, &velocity, &forward, &up);
 	fmod_system->set3DNumListeners(numplayers);
+
+#ifdef DEBUG_EVENT_TIMERS
+	time2 = std::chrono::high_resolution_clock::now();
+	accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+	if ( accum > 5 )
+	{
+		printlog("Large tick time: [11] %f", accum);
+	}
+	time1 = std::chrono::high_resolution_clock::now();
+#endif
+
 	fmod_system->set3DListenerAttributes(player, &position, 0, &forward, &up);
+
+#ifdef DEBUG_EVENT_TIMERS
+	time2 = std::chrono::high_resolution_clock::now();
+	accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+	if ( accum > 5 )
+	{
+		printlog("Large tick time: [12] %f", accum);
+	}
+	time1 = std::chrono::high_resolution_clock::now();
+#endif
 
 	if (player == 0) {
 		//Fade in the currently playing music.
@@ -137,6 +169,16 @@ void sound_update(int player, int index, int numplayers)
 		{
 			music_notification_group->isPlaying(&notificationPlaying);
 		}
+
+#ifdef DEBUG_EVENT_TIMERS
+		time2 = std::chrono::high_resolution_clock::now();
+		accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+		if ( accum > 5 )
+		{
+			printlog("Large tick time: [13] %f", accum);
+		}
+		time1 = std::chrono::high_resolution_clock::now();
+#endif
 
 		if (music_channel)
 		{
@@ -147,6 +189,15 @@ void sound_update(int player, int index, int numplayers)
 				float volume = 1.0f;
 				music_channel->getVolume(&volume);
 
+#ifdef DEBUG_EVENT_TIMERS
+				time2 = std::chrono::high_resolution_clock::now();
+				accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+				if ( accum > 5 )
+				{
+					printlog("Large tick time: [14] %f", accum);
+				}
+				time1 = std::chrono::high_resolution_clock::now();
+#endif
 #ifdef EDITOR
 				if ( volume < 1.0f )
 				{
@@ -177,6 +228,15 @@ void sound_update(int player, int index, int numplayers)
 					music_channel->setVolume(volume);
 				}
 #endif
+#ifdef DEBUG_EVENT_TIMERS
+				time2 = std::chrono::high_resolution_clock::now();
+				accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+				if ( accum > 5 )
+				{
+					printlog("Large tick time: [15] %f", accum);
+				}
+				time1 = std::chrono::high_resolution_clock::now();
+#endif
 			}
 		}
 
@@ -184,11 +244,32 @@ void sound_update(int player, int index, int numplayers)
 		if (music_channel2)
 		{
 			playing = false;
+
+#ifdef DEBUG_EVENT_TIMERS
+			time2 = std::chrono::high_resolution_clock::now();
+			accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+			if ( accum > 5 )
+			{
+				printlog("Large tick time: [16] %f", accum);
+			}
+			time1 = std::chrono::high_resolution_clock::now();
+#endif
+
 			music_channel2->isPlaying(&playing);
 			if (playing)
 			{
 				float volume = 0.0f;
 				music_channel2->getVolume(&volume);
+
+#ifdef DEBUG_EVENT_TIMERS
+				time2 = std::chrono::high_resolution_clock::now();
+				accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+				if ( accum > 5 )
+				{
+					printlog("Large tick time: [17] %f", accum);
+				}
+				time1 = std::chrono::high_resolution_clock::now();
+#endif
 
 				if (volume > 0.0f)
 				{
@@ -199,13 +280,43 @@ void sound_update(int player, int index, int numplayers)
 					}
 					music_channel2->setVolume(volume);
 				}
+
+#ifdef DEBUG_EVENT_TIMERS
+				time2 = std::chrono::high_resolution_clock::now();
+				accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+				if ( accum > 5 )
+				{
+					printlog("Large tick time: [18] %f", accum);
+				}
+				time1 = std::chrono::high_resolution_clock::now();
+#endif
 			}
 		}
 	}
 
+#ifdef DEBUG_EVENT_TIMERS
+	time2 = std::chrono::high_resolution_clock::now();
+	accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+	if ( accum > 5 )
+	{
+		printlog("Large tick time: [19] %f", accum);
+	}
+	time1 = std::chrono::high_resolution_clock::now();
+#endif
+
 	if (player == numplayers - 1) {
 		fmod_system->update();
 	}
+
+#ifdef DEBUG_EVENT_TIMERS
+	time2 = std::chrono::high_resolution_clock::now();
+	accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+	if ( accum > 5 )
+	{
+		printlog("Large tick time: [20] %f", accum);
+	}
+	time1 = std::chrono::high_resolution_clock::now();
+#endif
 }
 
 #elif defined USE_OPENAL
