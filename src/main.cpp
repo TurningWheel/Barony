@@ -554,6 +554,7 @@ real_t sfxAmbientVolume = 1.0;
 real_t sfxEnvironmentVolume = 1.0;
 real_t sfxNotificationVolume = 1.0;
 real_t musvolume = 1.0;
+bool musicPreload = false;
 
 // fun stuff
 SDL_Surface* title_bmp = nullptr;

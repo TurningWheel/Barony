@@ -588,6 +588,7 @@ namespace MainMenu {
 		bool minimap_pings_enabled = true;
 		bool player_monster_sounds_enabled = true;
 		bool out_of_focus_audio_enabled = true;
+		bool preload_music_files_enabled = false;
         Bindings bindings = Bindings::reset(defaultControlLayout);
         Controls controls[MAX_SPLITSCREEN];
 		bool classic_mode_enabled = false;
@@ -1180,7 +1181,7 @@ namespace MainMenu {
 				auto dropdown_wide = "*images/ui/Main Menus/Settings/Settings_WideDrop_ScrollBG00.png";
 
 				// Maybe we need a more sensible way to identify these button types.
-				auto boolean_button_text = "Off          On";
+				auto boolean_button_text = Language::get(5042);
 				if (strcmp(button->getBackground(), customize) == 0) {
 					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_customize_button") - 1) - (sizeof("setting_") - 1));
 				} else if (strcmp(button->getBackground(), binding) == 0) {
@@ -2756,6 +2757,7 @@ namespace MainMenu {
 		minimapPingMute = !minimap_pings_enabled;
 		mute_player_monster_sounds = !player_monster_sounds_enabled;
 		mute_audio_on_focus_lost = !out_of_focus_audio_enabled;
+		musicPreload = preload_music_files_enabled;
 		bindings.save();
         for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
             controls[c].save(c);
@@ -2852,6 +2854,7 @@ namespace MainMenu {
 		settings.minimap_pings_enabled = !minimapPingMute;
 		settings.player_monster_sounds_enabled = !mute_player_monster_sounds;
 		settings.out_of_focus_audio_enabled = !mute_audio_on_focus_lost;
+		settings.preload_music_files_enabled = musicPreload;
 		settings.bindings = Bindings::load();
         for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
             settings.controls[c] = Controls::load(c);
@@ -2884,7 +2887,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 17;
+	    int version = 18;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -2968,6 +2971,7 @@ namespace MainMenu {
 		file->property("minimap_pings_enabled", minimap_pings_enabled);
 		file->property("player_monster_sounds_enabled", player_monster_sounds_enabled);
 		file->property("out_of_focus_audio_enabled", out_of_focus_audio_enabled);
+		file->propertyVersion("music_preload", version >= 18, preload_music_files_enabled);
 		file->property("bindings", bindings);
         if (version < 17) {
             Controls controls;
@@ -3886,13 +3890,13 @@ namespace MainMenu {
 		// banner
 		auto banner_text = window->addField("banner_text", 64);
 		banner_text->setSize(SDL_Rect{14, 4, 950, 50});
-		banner_text->setText(Language::get(5030));
+		banner_text->setText(Language::get(5031));
 		banner_text->setFont(bigfont_outline);
 		banner_text->setJustify(Field::justify_t::CENTER);
 
 		auto populate_text = window->addField("populate_text", 64);
 		populate_text->setSize(SDL_Rect{20, 64, 512, 64});
-		populate_text->setText(Language::get(5031));
+		populate_text->setText(Language::get(6019));
 		populate_text->setFont(bigfont_outline);
 		populate_text->setVJustify(Field::justify_t::TOP);
 		populate_text->setHJustify(Field::justify_t::LEFT);
@@ -6228,6 +6232,9 @@ bind_failed:
 		y += settingsAddBooleanOption(*settings_subwindow, y, "out_of_focus_audio", Language::get(5203),
 			Language::get(5204),
 			allSettings.out_of_focus_audio_enabled, [](Button& button){soundToggleSetting(button); allSettings.out_of_focus_audio_enabled = button.isPressed();});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "music_preload", Language::get(6020),
+			Language::get(6021),
+			allSettings.preload_music_files_enabled, [](Button& button) {soundToggleSetting(button); allSettings.preload_music_files_enabled = button.isPressed(); });
 #endif
 
 #ifndef NINTENDO
@@ -6244,7 +6251,8 @@ bind_failed:
 			{Setting::Type::Slider, "music_volume"},
 			{Setting::Type::Boolean, "minimap_pings"},
 			{Setting::Type::Boolean, "player_monster_sounds"},
-			{Setting::Type::Boolean, "out_of_focus_audio"}});
+			{Setting::Type::Boolean, "out_of_focus_audio"},
+			{Setting::Type::Boolean, "music_preload"}});
 #else
 		hookSettings(*settings_subwindow,
 			{{Setting::Type::Slider, "master_volume"},
@@ -25074,7 +25082,7 @@ failed:
 			const char* title;
 			void (*callback)(Button&);
 		};
-		static std::vector<Option> mod_tabs = {
+		std::vector<Option> mod_tabs = {
 			{"Local Mods", Language::get(5866), workshopLoadLocalMods},
 #ifdef STEAMWORKS
 			{"Steam Workshop", Language::get(5867), workshopLoadSubscribedItems},
@@ -25140,6 +25148,13 @@ failed:
 		auto load_status_frame = window->addFrame("load_status");
 		load_status_frame->setSize(SDL_Rect{ 448, 622, 196, 78 });
 		load_status_frame->setTickCallback([](Widget& widget) {
+			std::vector<Option> mod_tabs = {
+			{"Local Mods", Language::get(5866), workshopLoadLocalMods},
+#ifdef STEAMWORKS
+			{"Steam Workshop", Language::get(5867), workshopLoadSubscribedItems},
+			{"My Workshop Items", Language::get(5868), workshopLoadMyItems},
+#endif
+			};
 #ifdef STEAMWORKS
 			if ( mods_active_tab == mod_tabs[2].name )
 			{
@@ -25730,6 +25745,14 @@ failed:
 			tab_left->setCallback([](Button&) {
 				auto mods_menu = main_menu_frame->findFrame("mods_menu"); assert(mods_menu);
 				const char* prevtab = nullptr;
+
+				std::vector<Option> mod_tabs = {
+					{"Local Mods", Language::get(5866), workshopLoadLocalMods},
+#ifdef STEAMWORKS
+					{"Steam Workshop", Language::get(5867), workshopLoadSubscribedItems},
+					{"My Workshop Items", Language::get(5868), workshopLoadMyItems},
+#endif
+				};
 				for ( auto& tab : mod_tabs ) {
 					auto button = mods_menu->findButton(tab.name);
 					if ( button ) {
@@ -25766,6 +25789,14 @@ failed:
 			tab_right->setCallback([](Button&) {
 				auto mods_menu = main_menu_frame->findFrame("mods_menu"); assert(mods_menu);
 				const char* nexttab = nullptr;
+
+				std::vector<Option> mod_tabs = {
+					{"Local Mods", Language::get(5866), workshopLoadLocalMods},
+#ifdef STEAMWORKS
+					{"Steam Workshop", Language::get(5867), workshopLoadSubscribedItems},
+					{"My Workshop Items", Language::get(5868), workshopLoadMyItems},
+#endif
+				};
 				for ( auto it = mod_tabs.rbegin(); it != mod_tabs.rend(); ++it ) {
 					auto tab = (*it);
 					auto button = mods_menu->findButton(tab.name);
@@ -25805,6 +25836,14 @@ failed:
 					rescueFocus = true;
 				}
 			}
+
+			std::vector<Option> mod_tabs = {
+			{"Local Mods", Language::get(5866), workshopLoadLocalMods},
+#ifdef STEAMWORKS
+			{"Steam Workshop", Language::get(5867), workshopLoadSubscribedItems},
+			{"My Workshop Items", Language::get(5868), workshopLoadMyItems},
+#endif
+			};
 
 			for ( auto& tab : mod_tabs ) 
 			{

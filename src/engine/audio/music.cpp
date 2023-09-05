@@ -35,143 +35,287 @@ bool loadMusic()
 int fmod_result;
 #endif
 
-	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_INTRODUCTION, FMOD_DEFAULT, nullptr, &introductionmusic); //TODO: FMOD_SOFTWARE -> FMOD_DEFAULT?
-	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_INTERMISSION, FMOD_DEFAULT, nullptr, &intermissionmusic);
-	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_MINETOWN, FMOD_DEFAULT, nullptr, &minetownmusic);
-	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_SPLASH, FMOD_DEFAULT, nullptr, &splashmusic);
-	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_LIBRARY, FMOD_DEFAULT, nullptr, &librarymusic);
-	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_SHOP, FMOD_DEFAULT, nullptr, &shopmusic);
-	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_HERXBOSS, FMOD_DEFAULT, nullptr, &herxmusic);
-	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_TEMPLE, FMOD_DEFAULT, nullptr, &templemusic);
-	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_ENDGAME, FMOD_DEFAULT, nullptr, &endgamemusic);
-	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_ESCAPE, FMOD_DEFAULT, nullptr, &escapemusic);
-	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_DEVIL, FMOD_DEFAULT, nullptr, &devilmusic);
-	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_SANCTUM, FMOD_DEFAULT, nullptr, &sanctummusic);
-	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_TUTORIAL, FMOD_DEFAULT, nullptr, &tutorialmusic);
-	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_INTROSTORY, FMOD_DEFAULT, nullptr, &introstorymusic);
-	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_GAMEOVER, FMOD_DEFAULT, nullptr, &gameovermusic);
-	if ( PHYSFS_getRealDir(MUSIC_FILEPATH_GNOMISH_MINES) != nullptr )
+	if ( musicPreload )
 	{
-		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_GNOMISH_MINES, FMOD_DEFAULT, nullptr, &gnomishminesmusic);
-	}
-	if ( PHYSFS_getRealDir(MUSIC_FILEPATH_GREATCASTLE) != nullptr )
-	{
-		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_GREATCASTLE, FMOD_DEFAULT, nullptr, &greatcastlemusic);
-	}
-	if ( PHYSFS_getRealDir(MUSIC_FILEPATH_SOKOBAN) != nullptr )
-	{
-		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_SOKOBAN, FMOD_DEFAULT, nullptr, &sokobanmusic);
-	}
-	if ( PHYSFS_getRealDir(MUSIC_FILEPATH_CAVES_LAIR) != nullptr )
-	{
-		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_CAVES_LAIR, FMOD_DEFAULT, nullptr, &caveslairmusic);
-	}
-	if ( PHYSFS_getRealDir(MUSIC_FILEPATH_BRAMS_CASTLE) != nullptr )
-	{
-		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_BRAMS_CASTLE, FMOD_DEFAULT, nullptr, &bramscastlemusic);
-	}
-	if ( PHYSFS_getRealDir(MUSIC_FILEPATH_HAMLET) != nullptr )
-	{
-		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_HAMLET, FMOD_DEFAULT, nullptr, &hamletmusic);
-	}
+		fmod_result = fmod_system->createSound(MUSIC_FILEPATH_INTRODUCTION, FMOD_DEFAULT, nullptr, &introductionmusic); //TODO: FMOD_SOFTWARE -> FMOD_DEFAULT?
+		fmod_result = fmod_system->createSound(MUSIC_FILEPATH_INTERMISSION, FMOD_DEFAULT, nullptr, &intermissionmusic);
+		fmod_result = fmod_system->createSound(MUSIC_FILEPATH_MINETOWN, FMOD_DEFAULT, nullptr, &minetownmusic);
+		fmod_result = fmod_system->createSound(MUSIC_FILEPATH_SPLASH, FMOD_DEFAULT, nullptr, &splashmusic);
+		fmod_result = fmod_system->createSound(MUSIC_FILEPATH_LIBRARY, FMOD_DEFAULT, nullptr, &librarymusic);
+		fmod_result = fmod_system->createSound(MUSIC_FILEPATH_SHOP, FMOD_DEFAULT, nullptr, &shopmusic);
+		fmod_result = fmod_system->createSound(MUSIC_FILEPATH_HERXBOSS, FMOD_DEFAULT, nullptr, &herxmusic);
+		fmod_result = fmod_system->createSound(MUSIC_FILEPATH_TEMPLE, FMOD_DEFAULT, nullptr, &templemusic);
+		fmod_result = fmod_system->createSound(MUSIC_FILEPATH_ENDGAME, FMOD_DEFAULT, nullptr, &endgamemusic);
+		fmod_result = fmod_system->createSound(MUSIC_FILEPATH_ESCAPE, FMOD_DEFAULT, nullptr, &escapemusic);
+		fmod_result = fmod_system->createSound(MUSIC_FILEPATH_DEVIL, FMOD_DEFAULT, nullptr, &devilmusic);
+		fmod_result = fmod_system->createSound(MUSIC_FILEPATH_SANCTUM, FMOD_DEFAULT, nullptr, &sanctummusic);
+		fmod_result = fmod_system->createSound(MUSIC_FILEPATH_TUTORIAL, FMOD_DEFAULT, nullptr, &tutorialmusic);
+		fmod_result = fmod_system->createSound(MUSIC_FILEPATH_INTROSTORY, FMOD_DEFAULT, nullptr, &introstorymusic);
+		fmod_result = fmod_system->createSound(MUSIC_FILEPATH_GAMEOVER, FMOD_DEFAULT, nullptr, &gameovermusic);
+		if ( PHYSFS_getRealDir(MUSIC_FILEPATH_GNOMISH_MINES) != nullptr )
+		{
+			fmod_result = fmod_system->createSound(MUSIC_FILEPATH_GNOMISH_MINES, FMOD_DEFAULT, nullptr, &gnomishminesmusic);
+		}
+		if ( PHYSFS_getRealDir(MUSIC_FILEPATH_GREATCASTLE) != nullptr )
+		{
+			fmod_result = fmod_system->createSound(MUSIC_FILEPATH_GREATCASTLE, FMOD_DEFAULT, nullptr, &greatcastlemusic);
+		}
+		if ( PHYSFS_getRealDir(MUSIC_FILEPATH_SOKOBAN) != nullptr )
+		{
+			fmod_result = fmod_system->createSound(MUSIC_FILEPATH_SOKOBAN, FMOD_DEFAULT, nullptr, &sokobanmusic);
+		}
+		if ( PHYSFS_getRealDir(MUSIC_FILEPATH_CAVES_LAIR) != nullptr )
+		{
+			fmod_result = fmod_system->createSound(MUSIC_FILEPATH_CAVES_LAIR, FMOD_DEFAULT, nullptr, &caveslairmusic);
+		}
+		if ( PHYSFS_getRealDir(MUSIC_FILEPATH_BRAMS_CASTLE) != nullptr )
+		{
+			fmod_result = fmod_system->createSound(MUSIC_FILEPATH_BRAMS_CASTLE, FMOD_DEFAULT, nullptr, &bramscastlemusic);
+		}
+		if ( PHYSFS_getRealDir(MUSIC_FILEPATH_HAMLET) != nullptr )
+		{
+			fmod_result = fmod_system->createSound(MUSIC_FILEPATH_HAMLET, FMOD_DEFAULT, nullptr, &hamletmusic);
+		}
 
-	if ( NUMMINESMUSIC > 0 )
-	{
-		minesmusic = (FMOD::Sound**) malloc(sizeof(FMOD::Sound*)*NUMMINESMUSIC);
-		for ( c = 0; c < NUMMINESMUSIC; c++ )
+		if ( NUMMINESMUSIC > 0 )
 		{
-			snprintf(tempstr, 1000, MUSIC_FILEPATH_MINES, c);
-			fmod_result = fmod_system->createStream(tempstr, FMOD_DEFAULT, nullptr, &minesmusic[c]);
-		}
-	}
-	if ( NUMSWAMPMUSIC > 0 )
-	{
-		swampmusic = (FMOD::Sound**) malloc(sizeof(FMOD::Sound*)*NUMSWAMPMUSIC);
-		for ( c = 0; c < NUMSWAMPMUSIC; c++ )
-		{
-			snprintf(tempstr, 1000, MUSIC_FILEPATH_SWAMP, c);
-			fmod_result = fmod_system->createStream(tempstr, FMOD_DEFAULT, nullptr, &swampmusic[c]);
-		}
-	}
-	if ( NUMLABYRINTHMUSIC > 0 )
-	{
-		labyrinthmusic = (FMOD::Sound**) malloc(sizeof(FMOD::Sound*)*NUMLABYRINTHMUSIC);
-		for ( c = 0; c < NUMLABYRINTHMUSIC; c++ )
-		{
-			snprintf(tempstr, 1000, MUSIC_FILEPATH_LABYRINTH, c);
-			fmod_result = fmod_system->createStream(tempstr, FMOD_DEFAULT, nullptr, &labyrinthmusic[c]);
-		}
-	}
-	if ( NUMRUINSMUSIC > 0 )
-	{
-		ruinsmusic = (FMOD::Sound**) malloc(sizeof(FMOD::Sound*)*NUMRUINSMUSIC);
-		for ( c = 0; c < NUMRUINSMUSIC; c++ )
-		{
-			snprintf(tempstr, 1000, MUSIC_FILEPATH_RUINS, c);
-			fmod_result = fmod_system->createStream(tempstr, FMOD_DEFAULT, nullptr, &ruinsmusic[c]);
-		}
-	}
-	if ( NUMUNDERWORLDMUSIC > 0 )
-	{
-		underworldmusic = (FMOD::Sound**) malloc(sizeof(FMOD::Sound*)*NUMUNDERWORLDMUSIC);
-		for ( c = 0; c < NUMUNDERWORLDMUSIC; c++ )
-		{
-			snprintf(tempstr, 1000, MUSIC_FILEPATH_UNDERWORLD, c);
-			fmod_result = fmod_system->createStream(tempstr, FMOD_DEFAULT, nullptr, &underworldmusic[c]);
-		}
-	}
-	if ( NUMHELLMUSIC > 0 )
-	{
-		hellmusic = (FMOD::Sound**) malloc(sizeof(FMOD::Sound*)*NUMHELLMUSIC);
-		for ( c = 0; c < NUMHELLMUSIC; c++ )
-		{
-			snprintf(tempstr, 1000, MUSIC_FILEPATH_HELL, c);
-			fmod_result = fmod_system->createStream(tempstr, FMOD_DEFAULT, nullptr, &hellmusic[c]);
-		}
-	}
-	if ( NUMMINOTAURMUSIC > 0 )
-	{
-		minotaurmusic = (FMOD::Sound**) malloc(sizeof(FMOD::Sound*)*NUMMINOTAURMUSIC);
-		for ( c = 0; c < NUMMINOTAURMUSIC; c++ )
-		{
-			snprintf(tempstr, 1000, MUSIC_FILEPATH_MINOTAUR, c);
-			fmod_result = fmod_system->createStream(tempstr, FMOD_DEFAULT, nullptr, &minotaurmusic[c]);
-		}
-	}
-	if ( NUMCAVESMUSIC > 0 )
-	{
-		cavesmusic = (FMOD::Sound**) malloc(sizeof(FMOD::Sound*)*NUMCAVESMUSIC);
-		for ( c = 0; c < NUMCAVESMUSIC; c++ )
-		{
-			snprintf(tempstr, 1000, MUSIC_FILEPATH_CAVES, c);
-			fmod_result = fmod_system->createStream(tempstr, FMOD_DEFAULT, nullptr, &cavesmusic[c]);
-		}
-	}
-	if ( NUMCITADELMUSIC > 0 )
-	{
-		citadelmusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*)*NUMCITADELMUSIC);
-		for ( c = 0; c < NUMCITADELMUSIC; c++ )
-		{
-			snprintf(tempstr, 1000, MUSIC_FILEPATH_CITADEL, c);
-			fmod_result = fmod_system->createStream(tempstr, FMOD_DEFAULT, nullptr, &citadelmusic[c]);
-		}
-	}
-	if ( NUMINTROMUSIC > 0 )
-	{
-		intromusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*)*NUMINTROMUSIC);
-		for ( c = 0; c < NUMINTROMUSIC; c++ )
-		{
-			if ( c == 0 )
+			minesmusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMMINESMUSIC);
+			for ( c = 0; c < NUMMINESMUSIC; c++ )
 			{
-				strcpy(tempstr, MUSIC_FILEPATH_INTRO);
+				snprintf(tempstr, 1000, MUSIC_FILEPATH_MINES, c);
+				fmod_result = fmod_system->createSound(tempstr, FMOD_DEFAULT, nullptr, &minesmusic[c]);
 			}
-			else
+		}
+		if ( NUMSWAMPMUSIC > 0 )
+		{
+			swampmusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMSWAMPMUSIC);
+			for ( c = 0; c < NUMSWAMPMUSIC; c++ )
 			{
-				snprintf(tempstr, 1000, MUSIC_FILEPATH_ADDITIONAL_INTROS, c);
+				snprintf(tempstr, 1000, MUSIC_FILEPATH_SWAMP, c);
+				fmod_result = fmod_system->createSound(tempstr, FMOD_DEFAULT, nullptr, &swampmusic[c]);
 			}
-			fmod_result = fmod_system->createStream(tempstr, FMOD_DEFAULT, nullptr, &intromusic[c]);
+		}
+		if ( NUMLABYRINTHMUSIC > 0 )
+		{
+			labyrinthmusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMLABYRINTHMUSIC);
+			for ( c = 0; c < NUMLABYRINTHMUSIC; c++ )
+			{
+				snprintf(tempstr, 1000, MUSIC_FILEPATH_LABYRINTH, c);
+				fmod_result = fmod_system->createSound(tempstr, FMOD_DEFAULT, nullptr, &labyrinthmusic[c]);
+			}
+		}
+		if ( NUMRUINSMUSIC > 0 )
+		{
+			ruinsmusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMRUINSMUSIC);
+			for ( c = 0; c < NUMRUINSMUSIC; c++ )
+			{
+				snprintf(tempstr, 1000, MUSIC_FILEPATH_RUINS, c);
+				fmod_result = fmod_system->createSound(tempstr, FMOD_DEFAULT, nullptr, &ruinsmusic[c]);
+			}
+		}
+		if ( NUMUNDERWORLDMUSIC > 0 )
+		{
+			underworldmusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMUNDERWORLDMUSIC);
+			for ( c = 0; c < NUMUNDERWORLDMUSIC; c++ )
+			{
+				snprintf(tempstr, 1000, MUSIC_FILEPATH_UNDERWORLD, c);
+				fmod_result = fmod_system->createSound(tempstr, FMOD_DEFAULT, nullptr, &underworldmusic[c]);
+			}
+		}
+		if ( NUMHELLMUSIC > 0 )
+		{
+			hellmusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMHELLMUSIC);
+			for ( c = 0; c < NUMHELLMUSIC; c++ )
+			{
+				snprintf(tempstr, 1000, MUSIC_FILEPATH_HELL, c);
+				fmod_result = fmod_system->createSound(tempstr, FMOD_DEFAULT, nullptr, &hellmusic[c]);
+			}
+		}
+		if ( NUMMINOTAURMUSIC > 0 )
+		{
+			minotaurmusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMMINOTAURMUSIC);
+			for ( c = 0; c < NUMMINOTAURMUSIC; c++ )
+			{
+				snprintf(tempstr, 1000, MUSIC_FILEPATH_MINOTAUR, c);
+				fmod_result = fmod_system->createSound(tempstr, FMOD_DEFAULT, nullptr, &minotaurmusic[c]);
+			}
+		}
+		if ( NUMCAVESMUSIC > 0 )
+		{
+			cavesmusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMCAVESMUSIC);
+			for ( c = 0; c < NUMCAVESMUSIC; c++ )
+			{
+				snprintf(tempstr, 1000, MUSIC_FILEPATH_CAVES, c);
+				fmod_result = fmod_system->createSound(tempstr, FMOD_DEFAULT, nullptr, &cavesmusic[c]);
+			}
+		}
+		if ( NUMCITADELMUSIC > 0 )
+		{
+			citadelmusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMCITADELMUSIC);
+			for ( c = 0; c < NUMCITADELMUSIC; c++ )
+			{
+				snprintf(tempstr, 1000, MUSIC_FILEPATH_CITADEL, c);
+				fmod_result = fmod_system->createSound(tempstr, FMOD_DEFAULT, nullptr, &citadelmusic[c]);
+			}
+		}
+		if ( NUMINTROMUSIC > 0 )
+		{
+			intromusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMINTROMUSIC);
+			for ( c = 0; c < NUMINTROMUSIC; c++ )
+			{
+				if ( c == 0 )
+				{
+					strcpy(tempstr, MUSIC_FILEPATH_INTRO);
+				}
+				else
+				{
+					snprintf(tempstr, 1000, MUSIC_FILEPATH_ADDITIONAL_INTROS, c);
+				}
+				fmod_result = fmod_system->createSound(tempstr, FMOD_DEFAULT, nullptr, &intromusic[c]);
+			}
 		}
 	}
+	else
+	{
+		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_INTRODUCTION, FMOD_DEFAULT, nullptr, &introductionmusic); //TODO: FMOD_SOFTWARE -> FMOD_DEFAULT?
+		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_INTERMISSION, FMOD_DEFAULT, nullptr, &intermissionmusic);
+		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_MINETOWN, FMOD_DEFAULT, nullptr, &minetownmusic);
+		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_SPLASH, FMOD_DEFAULT, nullptr, &splashmusic);
+		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_LIBRARY, FMOD_DEFAULT, nullptr, &librarymusic);
+		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_SHOP, FMOD_DEFAULT, nullptr, &shopmusic);
+		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_HERXBOSS, FMOD_DEFAULT, nullptr, &herxmusic);
+		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_TEMPLE, FMOD_DEFAULT, nullptr, &templemusic);
+		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_ENDGAME, FMOD_DEFAULT, nullptr, &endgamemusic);
+		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_ESCAPE, FMOD_DEFAULT, nullptr, &escapemusic);
+		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_DEVIL, FMOD_DEFAULT, nullptr, &devilmusic);
+		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_SANCTUM, FMOD_DEFAULT, nullptr, &sanctummusic);
+		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_TUTORIAL, FMOD_DEFAULT, nullptr, &tutorialmusic);
+		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_INTROSTORY, FMOD_DEFAULT, nullptr, &introstorymusic);
+		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_GAMEOVER, FMOD_DEFAULT, nullptr, &gameovermusic);
+		if ( PHYSFS_getRealDir(MUSIC_FILEPATH_GNOMISH_MINES) != nullptr )
+		{
+			fmod_result = fmod_system->createStream(MUSIC_FILEPATH_GNOMISH_MINES, FMOD_DEFAULT, nullptr, &gnomishminesmusic);
+		}
+		if ( PHYSFS_getRealDir(MUSIC_FILEPATH_GREATCASTLE) != nullptr )
+		{
+			fmod_result = fmod_system->createStream(MUSIC_FILEPATH_GREATCASTLE, FMOD_DEFAULT, nullptr, &greatcastlemusic);
+		}
+		if ( PHYSFS_getRealDir(MUSIC_FILEPATH_SOKOBAN) != nullptr )
+		{
+			fmod_result = fmod_system->createStream(MUSIC_FILEPATH_SOKOBAN, FMOD_DEFAULT, nullptr, &sokobanmusic);
+		}
+		if ( PHYSFS_getRealDir(MUSIC_FILEPATH_CAVES_LAIR) != nullptr )
+		{
+			fmod_result = fmod_system->createStream(MUSIC_FILEPATH_CAVES_LAIR, FMOD_DEFAULT, nullptr, &caveslairmusic);
+		}
+		if ( PHYSFS_getRealDir(MUSIC_FILEPATH_BRAMS_CASTLE) != nullptr )
+		{
+			fmod_result = fmod_system->createStream(MUSIC_FILEPATH_BRAMS_CASTLE, FMOD_DEFAULT, nullptr, &bramscastlemusic);
+		}
+		if ( PHYSFS_getRealDir(MUSIC_FILEPATH_HAMLET) != nullptr )
+		{
+			fmod_result = fmod_system->createStream(MUSIC_FILEPATH_HAMLET, FMOD_DEFAULT, nullptr, &hamletmusic);
+		}
+
+		if ( NUMMINESMUSIC > 0 )
+		{
+			minesmusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMMINESMUSIC);
+			for ( c = 0; c < NUMMINESMUSIC; c++ )
+			{
+				snprintf(tempstr, 1000, MUSIC_FILEPATH_MINES, c);
+				fmod_result = fmod_system->createStream(tempstr, FMOD_DEFAULT, nullptr, &minesmusic[c]);
+			}
+		}
+		if ( NUMSWAMPMUSIC > 0 )
+		{
+			swampmusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMSWAMPMUSIC);
+			for ( c = 0; c < NUMSWAMPMUSIC; c++ )
+			{
+				snprintf(tempstr, 1000, MUSIC_FILEPATH_SWAMP, c);
+				fmod_result = fmod_system->createStream(tempstr, FMOD_DEFAULT, nullptr, &swampmusic[c]);
+			}
+		}
+		if ( NUMLABYRINTHMUSIC > 0 )
+		{
+			labyrinthmusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMLABYRINTHMUSIC);
+			for ( c = 0; c < NUMLABYRINTHMUSIC; c++ )
+			{
+				snprintf(tempstr, 1000, MUSIC_FILEPATH_LABYRINTH, c);
+				fmod_result = fmod_system->createStream(tempstr, FMOD_DEFAULT, nullptr, &labyrinthmusic[c]);
+			}
+		}
+		if ( NUMRUINSMUSIC > 0 )
+		{
+			ruinsmusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMRUINSMUSIC);
+			for ( c = 0; c < NUMRUINSMUSIC; c++ )
+			{
+				snprintf(tempstr, 1000, MUSIC_FILEPATH_RUINS, c);
+				fmod_result = fmod_system->createStream(tempstr, FMOD_DEFAULT, nullptr, &ruinsmusic[c]);
+			}
+		}
+		if ( NUMUNDERWORLDMUSIC > 0 )
+		{
+			underworldmusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMUNDERWORLDMUSIC);
+			for ( c = 0; c < NUMUNDERWORLDMUSIC; c++ )
+			{
+				snprintf(tempstr, 1000, MUSIC_FILEPATH_UNDERWORLD, c);
+				fmod_result = fmod_system->createStream(tempstr, FMOD_DEFAULT, nullptr, &underworldmusic[c]);
+			}
+		}
+		if ( NUMHELLMUSIC > 0 )
+		{
+			hellmusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMHELLMUSIC);
+			for ( c = 0; c < NUMHELLMUSIC; c++ )
+			{
+				snprintf(tempstr, 1000, MUSIC_FILEPATH_HELL, c);
+				fmod_result = fmod_system->createStream(tempstr, FMOD_DEFAULT, nullptr, &hellmusic[c]);
+			}
+		}
+		if ( NUMMINOTAURMUSIC > 0 )
+		{
+			minotaurmusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMMINOTAURMUSIC);
+			for ( c = 0; c < NUMMINOTAURMUSIC; c++ )
+			{
+				snprintf(tempstr, 1000, MUSIC_FILEPATH_MINOTAUR, c);
+				fmod_result = fmod_system->createStream(tempstr, FMOD_DEFAULT, nullptr, &minotaurmusic[c]);
+			}
+		}
+		if ( NUMCAVESMUSIC > 0 )
+		{
+			cavesmusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMCAVESMUSIC);
+			for ( c = 0; c < NUMCAVESMUSIC; c++ )
+			{
+				snprintf(tempstr, 1000, MUSIC_FILEPATH_CAVES, c);
+				fmod_result = fmod_system->createStream(tempstr, FMOD_DEFAULT, nullptr, &cavesmusic[c]);
+			}
+		}
+		if ( NUMCITADELMUSIC > 0 )
+		{
+			citadelmusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMCITADELMUSIC);
+			for ( c = 0; c < NUMCITADELMUSIC; c++ )
+			{
+				snprintf(tempstr, 1000, MUSIC_FILEPATH_CITADEL, c);
+				fmod_result = fmod_system->createStream(tempstr, FMOD_DEFAULT, nullptr, &citadelmusic[c]);
+			}
+		}
+		if ( NUMINTROMUSIC > 0 )
+		{
+			intromusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMINTROMUSIC);
+			for ( c = 0; c < NUMINTROMUSIC; c++ )
+			{
+				if ( c == 0 )
+				{
+					strcpy(tempstr, MUSIC_FILEPATH_INTRO);
+				}
+				else
+				{
+					snprintf(tempstr, 1000, MUSIC_FILEPATH_ADDITIONAL_INTROS, c);
+				}
+				fmod_result = fmod_system->createStream(tempstr, FMOD_DEFAULT, nullptr, &intromusic[c]);
+			}
+		}
+	}
+	
 #ifdef USE_OPENAL
 #undef fmod_system
 #undef FMOD_SOFTWARE

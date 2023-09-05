@@ -2456,7 +2456,7 @@ void gameLogic(void)
 			if ( debugMonsterTimer )
 			{
 				printlog("accum: %f", accum);
-			}
+				}
 			for ( node = map.entities->first; node != nullptr; node = node->next )
 			{
 				entity = (Entity*)node->element;
@@ -3590,6 +3590,20 @@ bool handleEvents(void)
 	real_t timesync = t - ot;
 	ot = t;
 
+#ifdef DEBUG_EVENT_TIMERS
+	auto time1 = std::chrono::high_resolution_clock::now();
+	auto time2 = std::chrono::high_resolution_clock::now();
+	real_t accum = 0.0;
+
+	time2 = std::chrono::high_resolution_clock::now();
+	accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+	if ( accum > 5 )
+	{
+		printlog("Large tick time: [0] %f", accum);
+	}
+	time1 = std::chrono::high_resolution_clock::now();
+#endif
+
 	// do timer
 	int numframes = 0;
 	time_diff += timesync;
@@ -3625,6 +3639,16 @@ bool handleEvents(void)
 	if (initialized) {
 		inputs.updateAllMouse();
 	}
+
+#ifdef DEBUG_EVENT_TIMERS
+	time2 = std::chrono::high_resolution_clock::now();
+	accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+	if ( accum > 5 )
+	{
+		printlog("Large tick time: [1] %f", accum);
+	}
+	time1 = std::chrono::high_resolution_clock::now();
+#endif
 
 	Input::lastInputOfAnyKind = "";
 
@@ -3678,6 +3702,16 @@ bool handleEvents(void)
 	    }
 	}
 
+#ifdef DEBUG_EVENT_TIMERS
+	time2 = std::chrono::high_resolution_clock::now();
+	accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+	if ( accum > 5 )
+	{
+		printlog("Large tick time: [2] %f", accum);
+	}
+	time1 = std::chrono::high_resolution_clock::now();
+#endif
+
 	// update network state
 #if defined(NINTENDO)
 	if (initialized && !loading) {
@@ -3720,12 +3754,31 @@ bool handleEvents(void)
 	}
 #endif // NINTENDO
 
+#ifdef DEBUG_EVENT_TIMERS
+	time2 = std::chrono::high_resolution_clock::now();
+	accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+	if ( accum > 5 )
+	{
+		printlog("Large tick time: [3] %f", accum);
+	}
+	time1 = std::chrono::high_resolution_clock::now();
+#endif
+
 	while ( SDL_PollEvent(&event) )   // poll SDL events
 	{
 #ifdef USE_IMGUI
 		if ( ImGui_t::isInit )
 		{
 			ImGui_ImplSDL2_ProcessEvent(&event);
+#ifdef DEBUG_EVENT_TIMERS
+			time2 = std::chrono::high_resolution_clock::now();
+			accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+			if ( accum > 5 )
+			{
+				printlog("Large tick time: [4] %f", accum);
+			}
+			time1 = std::chrono::high_resolution_clock::now();
+#endif
 		}
 #endif
 		// Global events
@@ -4579,7 +4632,27 @@ bool handleEvents(void)
 				}
 				break;
 		}
+
+#ifdef DEBUG_EVENT_TIMERS
+		time2 = std::chrono::high_resolution_clock::now();
+		accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+		if ( accum > 5 )
+		{
+			printlog("Large tick time: [5] event: %d %f", event.type, accum);
+		}
+		time1 = std::chrono::high_resolution_clock::now();
+#endif
 	}
+
+#ifdef DEBUG_EVENT_TIMERS
+	time2 = std::chrono::high_resolution_clock::now();
+	accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+	if ( accum > 5 )
+	{
+		printlog("Large tick time: [6] %f", accum);
+	}
+	time1 = std::chrono::high_resolution_clock::now();
+#endif
 
 	if (numframes)
 	{
@@ -4604,6 +4677,16 @@ bool handleEvents(void)
 #endif
 	}
 
+#ifdef DEBUG_EVENT_TIMERS
+	time2 = std::chrono::high_resolution_clock::now();
+	accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+	if ( accum > 5 )
+	{
+		printlog("Large tick time: [7] %f", accum);
+	}
+	time1 = std::chrono::high_resolution_clock::now();
+#endif
+
 	for (int runtimes = 0; runtimes < numframes; ++runtimes)
 	{
 		if (!loading && initialized)
@@ -4616,6 +4699,16 @@ bool handleEvents(void)
 			++loadingticks;
 		}
 	}
+
+#ifdef DEBUG_EVENT_TIMERS
+	time2 = std::chrono::high_resolution_clock::now();
+	accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+	if ( accum > 5 )
+	{
+		printlog("Large tick time: [8] %f", accum);
+	}
+	time1 = std::chrono::high_resolution_clock::now();
+#endif
 
 	if (initialized)
 	{
@@ -4631,6 +4724,16 @@ bool handleEvents(void)
 			controller.updateAxis();
 		}
 	}
+
+#ifdef DEBUG_EVENT_TIMERS
+	time2 = std::chrono::high_resolution_clock::now();
+	accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+	if ( accum > 5 )
+	{
+		printlog("Large tick time: [9] %f", accum);
+	}
+	time1 = std::chrono::high_resolution_clock::now();
+#endif
 
 	return numframes > 0;
 }
@@ -6544,6 +6647,13 @@ int main(int argc, char** argv)
 			DebugStats.t21PostHandleMessages = std::chrono::high_resolution_clock::now();
 			bool ranframes = handleEvents();
 			DebugStats.t2PostEvents = std::chrono::high_resolution_clock::now();
+#ifdef DEBUG_EVENT_TIMERS
+			real_t accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.t2PostEvents - DebugStats.t21PostHandleMessages).count();
+			if ( accum > 5.0 )
+			{
+				printlog("Long tick time: %f", accum);
+			}
+#endif
 			// handle steam callbacks
 #ifdef STEAMWORKS
 			if ( g_SteamLeaderboards )

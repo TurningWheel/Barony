@@ -6422,6 +6422,26 @@ for accessory to violence!#
 4344 The %s shatters in your grasp!#
 4345 Status Effects#
 4346 No effects active#
+4347 Call out #
+4348 Call out...#
+4349 boulder trap#
+4350 spike trap#
+4351 arrow trap#
+4352 magic trap#
+4353 gold#
+4354 sink#
+4355 fountain#
+4356 crystal#
+4357 grave#
+4358 boulder#
+4359 secret entrance#
+4360 secret exit#
+4361 level exit#
+4362 trap#
+4363 sign#
+4364 pedestal#
+4365 campfire#
+4366 object#
 
 # New main menu strings (5000)
 
@@ -6643,7 +6663,7 @@ The next input you activate will be bound to this action.#
 
 5182 Output#
 5183 Device#
-5184 The output device for all game audio#
+5184 The output device for all game audio.#
 5185 Volume#
 5186 Master Volume#
 5187 Adjust the volume of all sound sources equally.#
@@ -6710,7 +6730,7 @@ The next input you activate will be bound to this action.#
 5246 Port#
 5247 Crossplay#
 5248 Crossplay Enabled#
-5249 Enable crossplay through Epic Online Services#
+5249 Enable crossplay through Epic Online Services.#
 
 5250 Game Settings#
 5251 Hunger#
@@ -7699,5 +7719,9 @@ Upload#
 6016 Classic#
 6017 Minimal#
 #6018 was missed earlier, so it is used.
+
+6019 Populate Hotbar#
+6020 Preload Music Files#
+6021 Preloading improves playback performance, but increases system memory usage. (Applied next game launch)#
 
 6100 end#

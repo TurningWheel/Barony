@@ -693,7 +693,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			entity->behavior = &actMagiclightBall;
 			entity->skill[4] = entity->x; //Store what x it started shooting out from the player at.
 			entity->skill[5] = entity->y; //Store what y it started shooting out from the player at.
-			entity->skill[12] = (element->duration * (((element->mana + extramagic_to_use) / static_cast<double>(element->base_mana)) * element->overload_multiplier)); //How long this thing lives.
+			entity->skill[12] = (element->duration);// *(((element->mana + extramagic_to_use) / static_cast<double>(element->base_mana)) * element->overload_multiplier)); //How long this thing lives.
 			node_t* spellnode = list_AddNodeLast(&entity->children);
 			spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
 			channeled_spell = (spell_t*)(spellnode->element);
@@ -704,20 +704,20 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				((spell_t*)spellnode->element)->magicstaff = true;
 			}
 			spellnode->deconstructor = &spellDeconstructor;
-			if (newbie)
-			{
-				//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-				chance = local_rng.rand() % 10;
-				if (chance >= spellcasting / 10)
-				{
-					// lifespan of the lightball
-					entity->skill[12] -= local_rng.rand() % (2000 / (spellcasting + 1));
-					if (entity->skill[12] < 180)
-					{
-						entity->skill[12] = 180;    //Range checking.
-					}
-				}
-			}
+			//if (newbie)
+			//{
+			//	//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
+			//	chance = local_rng.rand() % 10;
+			//	if (chance >= spellcasting / 10)
+			//	{
+			//		// lifespan of the lightball
+			//		entity->skill[12] -= local_rng.rand() % (2000 / (spellcasting + 1));
+			//		if (entity->skill[12] < 180)
+			//		{
+			//			entity->skill[12] = 180;    //Range checking.
+			//		}
+			//	}
+			//}
 			if (using_magicstaff || trap)
 			{
 				entity->skill[12] = MAGICSTAFF_LIGHT_DURATION; //TODO: Grab the duration from the magicstaff or trap?
@@ -754,7 +754,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		else if (!strcmp(element->element_internal_name, spellElement_invisible.element_internal_name))
 		{
 			int duration = element->duration;
-			duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
+			//duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
 			node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
 			spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
 			channeled_spell = (spell_t*)(spellnode->element);
@@ -762,19 +762,19 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			spellnode->size = sizeof(spell_t);
 			((spell_t*)spellnode->element)->caster = caster->getUID();
 			spellnode->deconstructor = &spellDeconstructor;
-			if (newbie)
-			{
-				//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-				chance = local_rng.rand() % 10;
-				if (chance >= spellcasting / 10)
-				{
-					duration -= local_rng.rand() % (1000 / (spellcasting + 1));
-				}
-				if (duration < 180)
-				{
-					duration = 180;    //Range checking.
-				}
-			}
+			//if (newbie)
+			//{
+			//	//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
+			//	chance = local_rng.rand() % 10;
+			//	if (chance >= spellcasting / 10)
+			//	{
+			//		duration -= local_rng.rand() % (1000 / (spellcasting + 1));
+			//	}
+			//	if (duration < 180)
+			//	{
+			//		duration = 180;    //Range checking.
+			//	}
+			//}
 			duration /= getCostOfSpell((spell_t*)spellnode->element);
 			channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
 			caster->setEffect(EFF_INVISIBLE, true, duration, false);
@@ -815,7 +815,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		else if (!strcmp(element->element_internal_name, spellElement_levitation.element_internal_name))
 		{
 			int duration = element->duration;
-			duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
+			//duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
 			node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
 			spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
 			channeled_spell = (spell_t*)(spellnode->element);
@@ -823,19 +823,19 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			spellnode->size = sizeof(spell_t);
 			((spell_t*)spellnode->element)->caster = caster->getUID();
 			spellnode->deconstructor = &spellDeconstructor;
-			if (newbie)
-			{
-				//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-				chance = local_rng.rand() % 10;
-				if (chance >= spellcasting / 10)
-				{
-					duration -= local_rng.rand() % (1000 / (spellcasting + 1));
-				}
-				if (duration < 180)
-				{
-					duration = 180;    //Range checking.
-				}
-			}
+			//if (newbie)
+			//{
+			//	//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
+			//	chance = local_rng.rand() % 10;
+			//	if (chance >= spellcasting / 10)
+			//	{
+			//		duration -= local_rng.rand() % (1000 / (spellcasting + 1));
+			//	}
+			//	if (duration < 180)
+			//	{
+			//		duration = 180;    //Range checking.
+			//	}
+			//}
 			duration /= getCostOfSpell((spell_t*)spellnode->element);
 			channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
 			caster->setEffect(EFF_LEVITATING, true, duration, false);
@@ -1795,7 +1795,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				//TODO: Refactor into a function that adds magic_effects. Invisibility also makes use of this.
 				//Also refactor the duration determining code.
 				int duration = element->duration;
-				duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
+				//duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
 				node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
 				spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
 				channeled_spell = (spell_t*)(spellnode->element);
@@ -1803,19 +1803,19 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				spellnode->size = sizeof(spell_t);
 				((spell_t*)spellnode->element)->caster = caster->getUID();
 				spellnode->deconstructor = &spellDeconstructor;
-				if ( newbie )
-				{
-					//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-					chance = local_rng.rand() % 10;
-					if ( chance >= spellcasting / 10 )
-					{
-						duration -= local_rng.rand() % (1000 / (spellcasting + 1));
-					}
-					if ( duration < 180 )
-					{
-						duration = 180;    //Range checking.
-					}
-				}
+				//if ( newbie )
+				//{
+				//	//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
+				//	chance = local_rng.rand() % 10;
+				//	if ( chance >= spellcasting / 10 )
+				//	{
+				//		duration -= local_rng.rand() % (1000 / (spellcasting + 1));
+				//	}
+				//	if ( duration < 180 )
+				//	{
+				//		duration = 180;    //Range checking.
+				//	}
+				//}
 				duration /= getCostOfSpell((spell_t*)spellnode->element);
 				channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
 				caster->setEffect(EFF_MAGICREFLECT, true, duration, true);
@@ -1844,7 +1844,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				//TODO: Refactor into a function that adds magic_effects. Invisibility also makes use of this.
 				//Also refactor the duration determining code.
 				int duration = element->duration;
-				duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
+				//duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
 				node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
 				spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
 				channeled_spell = (spell_t*)(spellnode->element);
