@@ -588,6 +588,7 @@ namespace MainMenu {
 		bool minimap_pings_enabled = true;
 		bool player_monster_sounds_enabled = true;
 		bool out_of_focus_audio_enabled = true;
+		bool preload_music_files_enabled = false;
         Bindings bindings = Bindings::reset(defaultControlLayout);
         Controls controls[MAX_SPLITSCREEN];
 		bool classic_mode_enabled = false;
@@ -2756,6 +2757,7 @@ namespace MainMenu {
 		minimapPingMute = !minimap_pings_enabled;
 		mute_player_monster_sounds = !player_monster_sounds_enabled;
 		mute_audio_on_focus_lost = !out_of_focus_audio_enabled;
+		musicPreload = preload_music_files_enabled;
 		bindings.save();
         for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
             controls[c].save(c);
@@ -2852,6 +2854,7 @@ namespace MainMenu {
 		settings.minimap_pings_enabled = !minimapPingMute;
 		settings.player_monster_sounds_enabled = !mute_player_monster_sounds;
 		settings.out_of_focus_audio_enabled = !mute_audio_on_focus_lost;
+		settings.preload_music_files_enabled = musicPreload;
 		settings.bindings = Bindings::load();
         for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
             settings.controls[c] = Controls::load(c);
@@ -2884,7 +2887,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 17;
+	    int version = 18;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -2968,6 +2971,7 @@ namespace MainMenu {
 		file->property("minimap_pings_enabled", minimap_pings_enabled);
 		file->property("player_monster_sounds_enabled", player_monster_sounds_enabled);
 		file->property("out_of_focus_audio_enabled", out_of_focus_audio_enabled);
+		file->propertyVersion("music_preload", version >= 18, preload_music_files_enabled);
 		file->property("bindings", bindings);
         if (version < 17) {
             Controls controls;
@@ -6228,6 +6232,9 @@ bind_failed:
 		y += settingsAddBooleanOption(*settings_subwindow, y, "out_of_focus_audio", Language::get(5203),
 			Language::get(5204),
 			allSettings.out_of_focus_audio_enabled, [](Button& button){soundToggleSetting(button); allSettings.out_of_focus_audio_enabled = button.isPressed();});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "music_preload", Language::get(6020),
+			Language::get(6021),
+			allSettings.preload_music_files_enabled, [](Button& button) {soundToggleSetting(button); allSettings.preload_music_files_enabled = button.isPressed(); });
 #endif
 
 #ifndef NINTENDO
@@ -6244,7 +6251,8 @@ bind_failed:
 			{Setting::Type::Slider, "music_volume"},
 			{Setting::Type::Boolean, "minimap_pings"},
 			{Setting::Type::Boolean, "player_monster_sounds"},
-			{Setting::Type::Boolean, "out_of_focus_audio"}});
+			{Setting::Type::Boolean, "out_of_focus_audio"},
+			{Setting::Type::Boolean, "music_preload"}});
 #else
 		hookSettings(*settings_subwindow,
 			{{Setting::Type::Slider, "master_volume"},

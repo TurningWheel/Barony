@@ -7721,5 +7721,7 @@ Upload#
 #6018 was missed earlier, so it is used.
 
 6019 Populate Hotbar#
+6020 Preload Music Files#
+6021 Preloading improves playback performance, but increases system memory usage. (Applied next game launch)#
 
 6100 end#
