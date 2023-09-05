@@ -2388,6 +2388,22 @@ void FollowerRadialMenu::drawFollowerMenu()
 			if ( optionSelected != -1 )
 			{
 				holdWheel = false;
+				// return to shootmode and close guis etc. TODO: tidy up interface code into 1 spot?
+				if ( !keepWheelOpen )
+				{
+					if ( !accessedMenuFromPartySheet
+						|| optionSelected == ALLY_CMD_MOVETO_SELECT
+						|| optionSelected == ALLY_CMD_ATTACK_SELECT
+						|| optionSelected == ALLY_CMD_CANCEL )
+					{
+						players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_FOLLOWERGUI);
+						if ( !followerToCommand )
+						{
+							return;
+						}
+					}
+				}
+
 				if ( optionSelected != ALLY_CMD_ATTACK_CONFIRM && optionSelected != ALLY_CMD_MOVETO_CONFIRM )
 				{
 					if ( !sfxPlayed && optionSelected != ALLY_CMD_CANCEL )
@@ -2399,17 +2415,6 @@ void FollowerRadialMenu::drawFollowerMenu()
 				else
 				{
 					playSound(399, 48); // ping
-				}
-				// return to shootmode and close guis etc. TODO: tidy up interface code into 1 spot?
-				if ( !keepWheelOpen )
-				{
-					if ( !accessedMenuFromPartySheet
-						|| optionSelected == ALLY_CMD_MOVETO_SELECT
-						|| optionSelected == ALLY_CMD_ATTACK_SELECT
-						|| optionSelected == ALLY_CMD_CANCEL )
-					{
-						players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_FOLLOWERGUI);
-					}
 				}
 
 				if ( disableOption == 0

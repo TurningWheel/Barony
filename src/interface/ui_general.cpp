@@ -437,7 +437,7 @@ void UIToastNotification::drawActionButton(const SDL_Rect& src)
 }
 
 UIToastNotificationManager_t UIToastNotificationManager;
-
+static ConsoleVariable<bool> cvar_achievements_warning("/achievements_warning", true);
 void UIToastNotificationManager_t::drawNotifications(bool isMoviePlaying, bool beforeFadeout)
 {
 	if ( !bIsInit )
@@ -450,7 +450,10 @@ void UIToastNotificationManager_t::drawNotifications(bool isMoviePlaying, bool b
 			|| conductGameChallenges[CONDUCT_LIFESAVING]
 			|| Mods::disableSteamAchievements) {
 			achievementsCheck = false;
-			createAchievementsDisabledNotification();
+			if ( *cvar_achievements_warning )
+			{
+				createAchievementsDisabledNotification();
+			}
 		}
 	}
 

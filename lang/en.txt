@@ -6443,4 +6443,1285 @@ for accessory to violence!#
 4365 campfire#
 4366 object#
 
-4399 end#
+# New main menu strings (5000)
+
+5000 Back#
+5001 Would you like to browse this
+DLC in the Nintendo eShop?#
+5002 Would you like to browse this
+DLC in the online store?#
+5003 Yes#
+5004 No#
+5005 Enter DLC Key...#
+5006 Enter DLC Serial Key#
+5007 Confirm#
+5008 Cancel#
+5009 Okay#
+5010 Verifying#
+5011 Verifying.#
+5012 Verifying..#
+5013 Verifying...#
+5014 Verifying....#
+5015 Myths and Outcasts DLC
+has been unlocked!#
+5016 Legends and Pariahs DLC
+has been unlocked!#
+5017 Invalid license key#
+5020 Connecting
+.#
+5021 Connecting
+..#
+5022 Connecting
+...#
+5023 Connecting
+....#
+5024 Connecting
+.....#
+5025 Waiting for host...#
+5026 Skip story#
+5027 Confirm (1)#
+5028 Confirm (2)#
+5029 Are you sure you want
+to discard changes?#
+5030 Yes,
+Discard#
+
+5031 AUTOMATIC INVENTORY BEHAVIOR#
+5032 Auto-Sort Order#
+
+5033 Restore
+Defaults#
+5034 Discard
+& Exit#
+5035 Confirm
+& Exit#
+
+5036 Display %d#
+5037 Windowed#
+5038 Bordered#
+5039 Borderless#
+5040 Fullscreen#
+5041 Deleted "%s" binding.#
+5042 Off          On#
+5043 Customize#
+
+5044 MINIMAP#
+5045 Scale#
+5046 Map scale#
+5047 Scale the map to be larger or smaller.#
+5048 Icon scale#
+5049 Scale the size of icons on the map (such as players and allies)#
+5050 Transparency#
+5051 Foreground opacity#
+5052 Set the opacity of the minimap's foreground.#
+5053 Background opacity#
+5054 Set the opacity of the minimap's background.#
+
+5055 MESSAGES#
+5056 Categories#
+5057 Combat messages#
+5058 Enable report of damage received or given in combat.#
+5059 Status messages#
+5060 Enable report of character status changes and other passive effects.#
+5061 Inventory messages#
+5062 Enable report of inventory and item appraisal messages.#
+5063 Equipment messages#
+5064 Enable report of player equipment changes.#
+5065 World messages#
+5066 Enable report of diegetic messages, such as speech and text.#
+5067 Player chat#
+5068 Enable multiplayer chat.#
+5069 Progression messages#
+5070 Enable report of player character progression messages (ie level-ups).#
+5071 Interaction messages#
+5072 Enable report of player interactions with the world.#
+5073 Inspection messages#
+5074 Enable player inspections of world objects.#
+5075 Hint messages#
+5076 Enable cryptic hints for certain items, world events, etc.#
+5077 Obituary messages#
+5078 Enable obituary messages for player deaths.#
+
+5079 KB & Mouse#
+5080 Gamepad#
+5081 Joystick#
+
+5082 BINDINGS#
+5083 Bindings#
+5084 Bind a button to %s,
+or press X to delete the current binding#
+5085 Bind a button to %s,
+or press Y to delete the current binding#
+5086 Bind an input to %s#
+5087 Binding "%s".
+The next button you press will be bound to this action.#
+5088 Binding "%s". Press ESC to cancel or DEL to delete the binding.
+The next input you activate will be bound to this action.#
+5089 Cancelled rebinding "%s"#
+5090 Deleted "%s" binding.#
+5091 Bound "%s" to "%s"#
+
+# Crosshair types
+
+5092 Dot#
+5093 Dot (Large)#
+5094 Plus (Small)#
+5095 Plus (Medium)#
+5096 Plus (Large)#
+5097 Cross#
+5098 Carat#
+5099 Circle#
+5100 Dots (3x)#
+5101 Dots (4x)#
+5102 :)#
+5103 @#
+
+# More new menu stuff
+
+5104 General Options#
+5105 Instant Restart on Gameover#
+5106 Automatically restarts the game quickly after dying.#
+
+5107 Inventory Options#
+5108 Add Items to Hotbar#
+5109 Automatically fill the hotbar with recently collected items.#
+5110 Inventory Sorting#
+5111 Customize the way items are automatically sorted in your inventory.#
+5112 Use on Release#
+5113 Activate an item as soon as the Use key is released in the inventory window.#
+
+5114 HUD Options#
+5115 HUD Scaling#
+5116 Scale the UI to a larger or smaller size. (Recommended values: 50%, 75%, or 100%)#
+5117 Enemy Health Bar Scaling#
+5118 Control size of in-world popups for enemy health bars.#
+5119 Popup Scaling#
+5120 Control size of in-world popups for items, gravestones and NPC dialogue.#
+5121 Popup Scaling (Splitscreen)#
+5122 Control size of in-world popups for items, gravestones and NPC dialogue in splitscreen.#
+5123 Item Tooltip Height#
+5124 Adjust the vertical position of in-world item tooltip popups.#
+5125 Crosshair Opacity#
+5126 Adjust the opacity of the crosshair.#
+5127 Crosshair Type#
+5128 Adjust the appearance of the crosshair.#
+5129 Filter Scaling#
+5130 Scaled UI elements will have softer edges if this is enabled, at the cost of some sharpness.#
+5131 Minimap Settings#
+5132 Customize the appearance of the in-game minimap.#
+5133 Show Messages#
+5134 Customize which messages will be logged to the player, if any.#
+5135 Show Player Nametags#
+5136 Display the name of each player character above their avatar.#
+
+5137 Accessibility#
+5138 Content Control#
+5139 Disable the appearance of blood and other explicit kinds of content in the game#
+5140 Colorblind Mode#
+5141 Change the appearance of certain UI elements to improve visibility for certain colorblind individuals.#
+5142 Replace all giant spiders in the game with hostile crustaceans.#
+5143 Replace all giant spiders in the game with hostile crustaceans. (Updates at end of current dungeon level)#
+5144 Arachnophobia Filter#
+5145 Shaking#
+5146 Toggle the camera's ability to twist and roll when the player stumbles or receives damage.#
+5147 Bobbing#
+5148 Toggle the camera's ability to bob steadily as the player moves.#
+5149 Light Flicker#
+5150 Toggle the flickering appearance of torches and other light fixtures in the game world.#
+5151 Hold To Activate Exits#
+5152 Toggle to change dungeon exits requiring long hold of the "Use" binding.#
+5153 Show HUD#
+5154 Toggle the display of health and other status bars in game when the inventory is closed.#
+
+5155 Display Mode#
+5156 Resolution#
+5157 Change the current window resolution.#
+5158 Device#
+5159 Change the current display device.#
+5160 Window Mode#
+5161 Change the current display mode.#
+5162 Vertical Sync#
+5163 Prevent screen-tearing by locking the game's refresh rate to the current display.#
+5164 Display Options#
+5165 Gamma#
+5166 Adjust the brightness of the game's visuals.#
+5167 Field of View#
+5168 Adjust the vertical field-of-view of the in-game camera.#
+5169 FPS limit#
+5170 Limit the frame-rate of the game window. Do not set this higher than your refresh rate. (Recommended: Auto)#
+5171 High Dynamic Range (HDR)#
+5172 Increases color contrast of the rendered world with both brightened and darkened areas.#
+5173 Camera Interpolation#
+5174 Smooth player camera by interpolating camera movements over additional frames.#
+5175 Vertical Splitscreen#
+5176 For splitscreen with two-players: divide the screen along a vertical line rather than a horizontal one.#
+5177 Clipped Splitscreen#
+5178 For splitscreen with two-players: reduce each viewport by 20% to preserve aspect ratio.#
+5179 Staggered Splitscreen#
+5180 For splitscreen with two-players: stagger each viewport so they each rest in a corner of the display.#
+5181 Auto#
+
+5182 Output#
+5183 Device#
+5184 The output device for all game audio.#
+5185 Volume#
+5186 Master Volume#
+5187 Adjust the volume of all sound sources equally.#
+5188 Gameplay Volume#
+5189 Adjust the volume of most game sound effects.#
+5190 Ambient Volume#
+5191 Adjust the volume of ominous subterranean sound-cues.#
+5192 Environment Volume#
+5193 Adjust the volume of flowing water and lava.#
+5194 Notification Volume#
+5195 Adjust the volume of skill increase and level up notifications.#
+5196 Music Volume#
+5197 Adjust the volume of the game's soundtrack.#
+5198 Options#
+5199 Minimap Pings#
+5200 Toggle the ability to hear pings on the minimap#
+5201 Player Monster Sounds#
+5202 Toggle the chance to emit monstrous mumbles when playing a non-human character.#
+5203 Out-of-Focus Audio#
+5204 Enable audio sources even when the game window is out-of-focus.#
+
+5205 Layout#
+5206 - UNBOUND -#
+5207 Bindings#
+5208 Player #
+5209 Player#
+5210 Select the player whose controls you wish to customize.#
+5211 Device#
+5212 Select a controller for the given player.#
+5213 Profile#
+5214 Select a predefined binding layout for the given player.#
+5215 Bindings#
+5216 Change controller bindings.#
+5217 Mouse & Keyboard#
+5218 Mouse Sensitivity#
+5219 Control the speed by which mouse movement affects camera movement.#
+5220 Number Keys in Inventory#
+5221 Allow the player to bind inventory items to the hotbar using the number keys on their keyboard.#
+5222 Reverse Mouse#
+5223 Reverse mouse up and down movement for controlling the orientation of the player.#
+5224 Smooth Mouse#
+5225 Smooth the movement of the mouse over a few frames of input.#
+5226 Interact Aim Assist#
+5227 Disable to always use precise cursor targeting on interactable objects and remove interact popups.#
+5228 Controller Settings#
+5229 Modern#
+5230 Classic#
+5231 Hotbar Layout#
+5232 Modern: Grouped 3x3 slot layout using held buttons. Classic: Flat 10 slot layout with simpler controls.#
+5233 Turn Sensitivity X#
+5234 Affect the horizontal sensitivity of the control stick used for turning.#
+5235 Turn Sensitivity Y#
+5236 Affect the vertical sensitivity of the control stick used for turning.#
+5237 Invert Camera Look X#
+5238 Enable to invert left/right look controls of the player camera.#
+5239 Invert Camera Look Y#
+5240 Enable to invert up/down look controls of the player camera.#
+
+5241 General#
+5242 Streamer Mode#
+5243 If you're a streamer and know what doxxing is, definitely switch this on.#
+5244 The port number to use when hosting a LAN lobby. (Default: %d)#
+5245 LAN#
+5246 Port#
+5247 Crossplay#
+5248 Crossplay Enabled#
+5249 Enable crossplay through Epic Online Services.#
+
+5250 Game Settings#
+5251 Hunger#
+5252 When hunger is off, passive HP regeneration is disabled and eating food heals the player directly.#
+5253 Minotaur#
+5254 Toggle the minotaur's ability to spawn on many levels after a certain amount of time.#
+5255 Random Traps#
+5256 Toggle the random placement of traps throughout each level.#
+5257 Friendly Fire#
+5258 Enable players to harm each other and their allies.#
+5259 Hardcore Mode#
+5260 Greatly increases the difficulty of all combat encounters.#
+5261 Classic Mode#
+5262 Toggle this option to make the game end after the battle with Baron Herx.#
+5263 Keep Inventory after Death#
+5264 When a player dies, they retain their inventory when revived on the next level.#
+5265 Extra Life#
+5266 Start the game with an Amulet of Life-saving, to prevent one death.#
+5267 Cheats#
+5268 Toggle the ability to activate cheatcodes during gameplay.#
+
+5269 HIGHSCORES#
+5270 LEADERBOARDS#
+5271 Here lies
+%s
+Requiescat In Pace#
+5272 Make Way For
+%s
+the Triumphant!#
+5273 Bow Before
+%s
+the Eternal!#
+5274 Long Live
+%s
+the Baron!#
+5275 All Hail
+%s
+the Baron!#
+5276 Tremble Before
+%s
+the Baron!#
+5277 XP:
+Gold:
+Dungeon Level:#
+5278 Kills:#
+5279 Time:
+Score:#
+
+5280  Voluntary Challenges:#
+5281  None#
+5282 You cheated.#
+5283 You played with mods.#
+5284 You played with friends.#
+5285 You were hardcore.#
+5286 You played Classic Mode.#
+5287 You were penniless.#
+5288 You ate nothing.#
+5289 You were vegetarian.#
+5290 You were illiterate.#
+5291 You used no weapons.#
+5292 Only used ranged weapons.#
+5293 You were extremely quick.#
+5294 You were very quick.#
+5295 Kept items after death.#
+5296 You had an extra life.#
+5297 You were accursed.#
+5298 LVL %d %s %s#
+5299 %d/100
+%d
+%d#
+5300 STR#
+5301 DEX#
+5302 CON#
+5303 INT#
+5304 PER#
+5305 CHR#
+5306 No scores found.#
+5307 Downloading scores...#
+5308 Local
+Singleplayer#
+5309 Local
+Multiplayer#
+5310 Leaderboard
+Friends#
+5311 Leaderboard
+World#
+5312 Delete Entry#
+5313 Are you sure you want to delete
+"%s"?#
+5314 Yes#
+5315 No#
+5316 Please select a score
+to delete first#
+5317 Okay#
+
+5318 ACHIEVEMENTS#
+5319 Unlocked %d / %d achievements (%d%%)#
+5320 Complete optional in-game challenges
+for fun and bragging rights#
+5321 Hidden achievements#
+5322 Hidden achievement#
+5323 %d additional achievements remain...#
+5324 %d additional achievement remains...#
+5325 Unlocked %s#
+5326 Unlocked#
+5327 Locked#
+
+5328 Messages#
+5329 Chat#
+5330 Enter message here...#
+5331 *** %s has timed out ***#
+5332 *** %s has been kicked ***#
+5333 *** %s has left the game ***#
+5334 *** ping time = %4d ms ***#
+5335 The lobby has been closed
+by the host.#
+5336 *** %s has left the game ***#
+5337 You have been kicked
+from the lobby.#
+5338 Joining lobby...
+
+%ds#
+5339 Joining lobby...
+
+%ds.#
+5340 Joining lobby...
+
+%ds..#
+5341 Joining lobby...
+
+%ds...#
+5342 Failed to connect to lobby.#
+5343 Failed to join lobby.
+Crossplay required.#
+5344 Unable to join lobby.
+Invalid room code.#
+5345 Failed to resolve host at:
+%s#
+5346 Failed to open UDP socket.#
+5347 Failed to join lobby.#
+
+5348 Barbarian#
+5349 Warrior#
+5350 Healer#
+5351 Rogue#
+5352 Wanderer#
+5353 Cleric#
+5354 Merchant#
+5355 Wizard#
+5356 Arcanist#
+5357 Joker#
+5358 Sexton#
+5359 Ninja#
+5360 Monk#
+5361 Conjurer#
+5362 Accursed#
+5363 Mesmer#
+5364 Brewer#
+5365 Mechanist#
+5366 Punisher#
+5367 Shaman#
+5368 Hunter#
+
+5369 Human#
+5370 Skeleton#
+5371 Vampire#
+5372 Succubus#
+5373 Goatman#
+5374 Automaton#
+5375 Incubus#
+5376 Goblin#
+5377 Insectoid#
+
+5378 Disable Hunger#
+5379 Disable Random
+Minotaurs#
+5380 Enable Life Saving
+Amulet#
+5381 Keep Items on Death#
+5382 Disable Random Traps#
+5383 Disable Friendly Fire#
+5384 Enable Classic
+Endings#
+5385 Enable Hardcore
+Difficulty#
+5386 Enable Cheats#
+
+5387 ACHIEVEMENTS DISABLED
+(MODDED)#
+5388 ACHIEVEMENTS DISABLED
+(MODDED LOBBY)#
+5389 ACHIEVEMENTS DISABLED#
+5390 ACHIEVEMENTS ENABLED#
+
+5391 LOBBY SETTINGS#
+5392 Game Flags#
+5393 Invite Only#
+5394 Friends Only#
+5395 Open Lobby#
+6018 Set Player
+Count#
+5396 This will kick %s
+and %s!#
+5397 This will kick %s.
+Are you sure?#
+5398 Okay#
+5399 Go Back#
+5400 Yes#
+5401 No#
+5402 Kick Player#
+5403 Are you sure you want
+to kick %s?#
+
+5404 RACE SELECTION#
+5405 Landguard#
+5406 Northborn#
+5407 Firebrand#
+5408 Hardbred#
+5409 Highwatch#
+5410 Gloomforge#
+5411 Pyrebloom#
+5412 Snakestone#
+5413 Windclan#
+5414 Warblood#
+5415 Millbound#
+5416 Sunstalk#
+5417 Claymount#
+5418 Stormward#
+5419 Tradefell#
+5420 Nighthill#
+5421 Baytower#
+5422 Whetsong#
+5423 Disable monster
+race abilities#
+5424 Hide Race
+Info#
+5425 Show Race
+Info#
+
+5426 CLASS SELECTION#
+5427 HP:
+MP:#
+5428 Survival:
+Complexity:#
+5429 Hide Class Info#
+5430 Show Class Info#
+5431 *** Please wait %d seconds before suggesting another class. ***#
+5432 %s: We need a %s.#
+
+5433 NAME:#
+5434 Enter a name for Player %d#
+5435 View Game Settings#
+5436 *** Press [LB] to suggest a class for your party ***#
+5437 *** Press [LT] to suggest a class for your party ***#
+5438 *** Press [L1] to suggest a class for your party ***#
+5439 *** Press [L1] to suggest a class for your party ***#
+5440 Ready#
+5441 LOCKED#
+5442 New players
+cannot join#
+5443 PLAYER %d#
+5444 Press to Start#
+5445 Connect Controller#
+5446 Please Wait#
+5447 INVITE#
+5448 Click to Invite#
+5449 OPEN#
+5450 Waiting for
+player to join#
+5451 *** %s has joined the game ***#
+5452 Ready!#
+5453 Not Ready#
+5454 Are you sure you want to leave
+this lobby?#
+5455 Yes#
+5456 No#
+5457 Set a public name for this lobby.#
+5458 Local Lobby#
+5459 Wireless Lobby#
+5460 LAN Lobby#
+5461 Online Lobby (Epic)#
+5462 Online Lobby (Steam)#
+5463 Online Lobby#
+5464 LAN address#
+5465 Room code#
+5466 Wireless lobby opened successfully.#
+5467 Server hosted on LAN successfully.#
+5468 Lobby successfully hosted via Steam.#
+5469 Lobby successfully hosted via Epic Online.#
+5470 Joined wireless lobby successfully.#
+5471 Joined LAN server successfully.#
+5472 Joined lobby successfully via Steam.#
+5473 Joined lobby successfully via Epic Online.#
+5474 Press A on a controller to assign it to Player %d,
+or click here to assign only the mouse and keyboard
+
+
+
+#
+5475 Press A on a controller to activate it now,
+or click here to use only the mouse and keyboard
+
+
+
+#
+5476 ASSIGN CONTROLLER#
+5477 P%d#
+
+5478 Private lobby#
+5479 [MODDED]#
+5480 Unable to join lobby.
+Lobby is modded.#
+5481 Unable to join lobby.
+Lobby is locked.#
+5482 Okay#
+5483 Requesting lobby list...#
+5484 Cancel#
+5485 ONLINE LOBBY BROWSER#
+5486 Filters#
+5487 Show non-joinable#
+5488 Show friends only#
+5489 Achievements enabled#
+5490 Cheats enabled#
+5491 Friendly fire enabled#
+5492 Minotaurs enabled#
+5493 Hunger enabled#
+5494 Random traps enabled#
+5495 Hardcore mode#
+5496 Classic mode#
+5497 Keep items on death#
+5498 +1 Life#
+
+5500 Cheats#
+5501 Hurt allies#
+5502 Minotaurs#
+5503 Hunger#
+5504 Traps#
+5505 Hardcore#
+5506 Classic#
+5507 Keep items#
+5508 +1 Life#
+5509 None#
+5510 Name:#
+5511 Flags:#
+5512 Lobby Info#
+5513 ONLINE#
+5514 Unable to connect to Epic Online
+Online play is not available.#
+5515 Okay#
+5516 WIRELESS#
+5517 LAN#
+5518 Enter an IP address to connect to.#
+5519 Enter the code to a lobby you wish to connect to.#
+5520 Enter IP address...#
+5521 Enter roomcode...#
+5522 Connect#
+5523 Cancel#
+5524 Enter Lobby
+Code#
+5525 Enter IP
+Address#
+5526 Select a lobby to join first.#
+5527 Join Lobby#
+5528  Lobby Name#
+5529  Lobby Name (%d hidden)#
+5530  Players#
+5531  Version#
+5532  Ping#
+5533 Filter Settings#
+5534 Crossplay#
+
+5535 TUTORIALS#
+5536 Take on 10 challenges that teach and test your adventuring
+skills, preparing you to take on the dungeon#
+5537 Trial#
+5538 Best Time#
+5539 Hub#
+5540  The Hall of Trials#
+5541  Trial 1: Dungeon Basics and Melee Fighting#
+5542  Trial 2: Bows, Arrows, and Throwing Weapons#
+5543  Trial 3: Dungeon Traps, Spikes, and Boulders#
+5544  Trial 4: Food, Appraisal, and Curses#
+5545  Trial 5: Magic, Spellbooks, and Casting#
+5546  Trial 6: Stealth and Sneak Attacks#
+5547  Trial 7: Follower Recruiting and Commands#
+5548  Trial 8: Potions and Alchemy#
+5549  Trial 9: Tinkering#
+5550  Trial 10: Merchants and Shops#
+5551  Total Clear Time#
+5552 Reset Trial
+Progress#
+5553 Are you sure you want to reset
+your best times?#
+5554 Yes#
+5555 No#
+5556 Enter Level#
+5557 Select a level to start first.#
+5558 Okay#
+5559 PLAY GAME#
+5560 TUTORIALS#
+5561  
+CONTINUE#
+5562  
+NEW#
+5563 Creating Epic lobby...#
+5564 Failed to host Epic lobby.#
+5565 Failed to host Epic lobby.
+
+Please try again later.#
+5566 Creating Steam lobby...#
+5567 Failed to host Steam lobby.#
+5568 Unable to host lobby:
+Online play is not available.#
+5569 Would you like to host via
+Epic Online for crossplay?#
+5570 Failed to open UDP socket
+on port %hu.#
+
+5571 Play singleplayer or with 2-%d
+players in splitscreen multiplayer#
+5572 Host a game with 2-%d players
+over a wireless connection#
+5573 Host a game with 2-%d players
+over a local area network (LAN)#
+5574 Host a game with 2-%d players
+over the internet#
+5575 Host a game with 2-%d players
+over the internet (disabled)#
+5576 Join a multiplayer game#
+5577 NEW ADVENTURER#
+5578 Local Adventure#
+5579 Host Wireless
+Party#
+5580 Host LAN Party#
+5581 Host Online Party#
+5582 Lobby Browser#
+
+5583 Barony is a challenging game.
+Would you like to play a tutorial?#
+5584 Yes#
+5585 No#
+5586 You can find the Tutorials
+in the Play Game menu.#
+5587 Okay#
+5588 Are you sure you want to delete
+the save game "%s"?"#
+5589 Warning: This is a modded save game!
+No mods are currently loaded.
+
+Continuing may cause save data issues.
+
+Are you sure you want to load
+the save game "%s"?#
+5590 Warning: This is an unmodded save game!
+%d mod(s) are currently loaded.
+
+Continuing may invalidate achievements for this save.
+
+Are you sure you want to load
+the save game "%s"?#
+5591 Cancel#
+5592 Are you sure you want to load
+the save game "%s"?#
+5593 P%d
+Lv%d#
+5594 Lv%d#
+5595 No compatible save files found.#
+5596 Singleplayer#
+5597 Online Host %dp (p1)#
+5598 Online Client %dp (p%d)#
+5599 Local Host %dp (p1)#
+5600 Local Client %dp (p%d)#
+5601 Splitscreen %dp#
+5602 CONTINUE ADVENTURE#
+5603 Local Games#
+5604 Net Games#
+5605 Delete Save#
+5606 Select a savegame to delete first.#
+5607 Okay#
+5608 Enter Dungeon#
+5609 Select a savegame to load first.#
+
+5610 ADVENTURE ARCHIVES#
+5611 ACHIEVEMENTS#
+5612 DUNGEON COMPENDIUM#
+5613 HIGHSCORES#
+5614 LEADERBOARDS#
+5615 STORY INTRODUCTION#
+5616 CREDITS#
+5617 BACK TO MAIN MENU#
+
+5618 General#
+5619 Video#
+5620 Audio#
+5621 Controls#
+5622 Online#
+5623 Game#
+5624 SETTINGS#
+5625 Restore
+Defaults#
+5626 Discard
+& Exit#
+5627 Are you sure you want
+to discard changes?#
+5628 Yes,
+Discard#
+5629 Cancel#
+5630 Confirm
+& Exit#
+5631 You must restart Barony for
+some settings to take effect.#
+5632 Okay#
+
+5633 Are you sure you want to die?
+There is no return from this.#
+5634 End Life#
+5635 Cancel#
+5636 Do you want to drop out?
+This player will be lost forever.#
+5637 Okay#
+5638 Cancel#
+5639 Are you sure you want to restart?
+This adventure will be lost forever.#
+5640 Are you sure you want to restart
+the current trial?#
+5641 Restart#
+5642 Cancel#
+5643 Are you sure you want to return
+to the Hall of Trials?#
+5644 Are you sure you want to reset
+the Hall of Trials level?#
+5645 Okay#
+5646 Cancel#
+5647 All progress before the current
+dungeon level will be saved.#
+5648 Are you sure you want to return
+to the main menu?#
+5649 Quit to Menu#
+5650 Cancel#
+
+# quit messages
+
+5700 You want to leave, eh?
+Then get out and don't come back!#
+5701 Fine geez#
+5702 Never!#
+5703 Did the wittle gobwins
+hurt your feewings?#
+5704 Yes#
+5705 No#
+5706 Just cancel your plans.
+I'll wait.#
+5707 Good luck#
+5708 Sure#
+5709 You couldn't kill the lich anyway.#
+5710 You're right#
+5711 Oh yeah?#
+5712 Mad cuz bad!
+Git gud!#
+5713 I am anger#
+5714 Okay#
+5715 The gnomes are laughing at you!
+Are you really gonna take that?#
+5716 Yeah :(#
+5717 No way!#
+5718 Don't go now! There's a
+boulder trap around the corner!#
+5719 Kill me#
+5720 Oh thanks#
+5721 I'll tell your parents
+you said a bad word.#
+5722 Poop#
+5723 Please no#
+5724 Please don't leave!
+There's more treasure to loot!#
+5725 Don't care#
+5726 More loot!#
+5727 Just be glad I can't summon
+the minotaur in real life.#
+5728 Too bad#
+5729 Point taken#
+5730 Off to leave a salty review I see?#
+5731 ... yeah#
+5732 No way!#
+5733 I'd leave too.
+This game looks just like Minecraft.#
+5734 lol#
+5735 Ouch#
+5736 Okay, I see how it is.
+See if I'm still here tomorrow.#
+5737 Whatever#
+5738 I love you!#
+5739 Don't quit now, you were
+going to win the next run.#
+5740 Don't lie#
+5741 Really?#
+5742 A wimpy adventurer
+would quit right now.#
+5743 Wimp time#
+5744 Am not!#
+5745 An adventurer is trapped
+and they need your help!#
+5746 Who cares#
+5747 I'll do it!#
+5748 A quitter says what?#
+5749 What?#
+5750 Not today#
+5751 You won't quit.
+You're just bluffing.#
+5752 Bet#
+5753 Ya got me.#
+5754 Say one more thing and
+I'm kicking you out of this game.#
+5755 Thing#
+5756 ...#
+
+5757 Does the screen look okay?
+%llu...#
+5758 Yes#
+5759 No#
+
+5760 Press to Start#
+5761 BACK TO GAME#
+5762 ASSIGN CONTROLLERS#
+5763 DUNGEON COMPENDIUM#
+5764 ACHIEVEMENTS#
+5765 SETTINGS#
+5766 END LIFE#
+5767 DROP OUT#
+5768 RESTART GAME#
+5769 RESTART TRIAL#
+5770 RETURN TO TRIAL HUB#
+5771 QUIT TO MAIN MENU#
+5772 QUIT TO DESKTOP#
+5773 PLAY#
+5774 PLAY GAME#
+5775 PLAY MODDED GAME#
+5776 UNLOAD MODS#
+5777 ADVENTURE ARCHIVES#
+5778 SETTINGS#
+5779 EDITOR#
+5780 QUIT#
+
+5781 ACHIEVEMENTS DISABLED (MODDED LOBBY)#
+5782 ACHIEVEMENTS DISABLED (MODDED)#
+5783 ACHIEVEMENTS DISABLED (PREVIOUSLY MODDED LOBBY)#
+5784 ACHIEVEMENTS DISABLED#
+5785 ACHIEVEMENTS ENABLED#
+
+5786 Players online: ... #
+5787 Players online: %d #
+
+5788 The network connection to the game has been lost.#
+5789 The network connection to the game has been lost.
+
+Please re-establish your network connection and try again later.#
+5790 The network connection to the game has been lost.
+
+All game progress up to the current dungeon level has been saved.
+
+Please re-establish your network connection and try again later.#
+5791 The network connection
+has been lost.#
+
+5792 You have died.#
+5793 Your party has been wiped out.#
+5794 Unknown#
+5795 Monster#
+5796 Item#
+5797 Betrayal#
+5798 Attempted Robbery#
+5799 Trespassing#
+5800 Arrow Trap#
+5801 Bear Trap#
+5802 Spike Trap#
+5803 Magic Trap#
+5804 Bomb Trap#
+5805 Boulder#
+5806 Lava#
+5807 Hot Water#
+5808 Invocation#
+5809 Starvation#
+5810 Poison#
+5811 Bleeding#
+5812 Burning#
+5813 Strangulation#
+5814 Funny Potion#
+5815 Bottomless Pit#
+5816 Lack of Fuel#
+5817 Fountain#
+5818 Sink#
+5819 Alchemy#
+
+5820 We hardly knew ye.#
+5821 Rest In Peace.#
+5822 You will be missed.#
+5823 Until we meet again.#
+5824 Now at rest.#
+5825 Mourn not my death.#
+5826 Passed into memory.#
+5827 In Loving Memory.#
+5828 They sleep in memory.#
+5829 Gone but not forgotten.#
+5830 Killed by: #
+
+5831 Learn from your failure
+to complete the test!#
+5832 You will be revived if your
+party makes it to the next level.#
+5833 You placed #%d
+in local highscores!#
+5834 You failed to place
+in local highscores.#
+
+5835 Dismiss#
+5836 Back to Hub#
+5837 Quit to Main#
+5838 Restart#
+5839 Okay#
+
+5840 Congratulations, you've completed the first tutorial!
+
+You are now within the Hall of Trials,
+9 more trials are available to teach and test you.
+
+Explore the Hall of Trials to learn more or return
+to the main menu and start your adventure.#
+5841 Explore
+Hall of Trials#
+5842 Return to
+Main Menu#
+5843 Reconnect the controller for Player #
+5844 Please reconnect your controller.#
+5845 RECONNECT CONTROLLER#
+
+5846 Enabling Crossplay allows you to host and join
+lobbies via Epic Games, Inc.
+
+By clicking Accept, you agree to share public info
+about your Steam profile with Epic Games, Inc.
+for the purpose of enabling crossplay.#
+
+5847 Would you like to link your device to an online
+account hosted by Epic Games, Inc. to play online?
+
+By choosing Accept, you agree to share some info
+about your Nintendo console with Epic Games, Inc.
+for the purpose of enabling online play.#
+
+5848 Enabling online play allows you to host and join
+online lobbies hosted via Epic Games, Inc.
+
+By clicking Accept, you agree to share some info
+about your device with Epic Games, Inc. for the
+purpose of enabling online play.#
+
+5849 Accept#
+5850 View
+Privacy Policy#
+5851 Deny#
+
+5852 Select at least 1 mod to load.#
+5853 Okay#
+5854 Unload Mod#
+5855 Load Mod#
+5856 Load Order: #
+5857 Update Mod#
+5858 Steam Workshop#
+5859 Fetching subscriptions...#
+5860 Cancel#
+5861 Fetching my items...#
+5862 No Workshop items found.#
+5863 Loading local mod folders...#
+5864 No folders found in /mods/ directory.#
+5865 MODS#
+5866 Local
+Mods#
+5867 Steam
+Workshop#
+5868 My Workshop
+Items#
+5869 Do you want to exit this menu?
+Any active mods will be unloaded.#
+5870 Yes#
+5871 No#
+5872 
+Mods Loaded:
+#
+5873 Local Mods:
+Workshop:
+Total Loaded:#
+5874 ACHIEVEMENTS
+DISABLED#
+5875 ACHIEVEMENTS
+ENABLED#
+5876 Note: Not all modded files can be
+verified prior to game start to
+ensure Achievements are enabled.#
+5877 Dismiss#
+5878 Start
+Modded Game#
+5879 New Workshop
+Mod#
+5880 Browse
+Workshop#
+5881 Open
+Workshop#
+5882 Browse community created mods and 'subscribe' to\ndownload mods for use.
+
+Subscribing while Barony is running may require
+closing the game in order for Steam to begin downloading.
+
+Current game version: #
+5883 Your workshop items
+will now reload.#
+5884 Okay#
+5885 Cancel#
+5886 Create Blank
+Mod Folder#
+5887 This will create a new mod folder inside the Barony
+/mods/ directory with a blank file structure
+and default preview.png file.#
+5888 Enter a name for the new folder#
+5889 Confirm#
+5890 Cancel#
+5891 Error: Folder name cannot
+ be blank.#
+5892 New folder: '%s'
+created successfully!#
+5893 Error: A folder already exists
+named '%s'#
+5894 Error: Unable to write folder
+'%s'#
+5895 Title#
+5896 Description#
+5897 UPDATE WORKSHOP MOD#
+5898 NEW WORKSHOP MOD#
+5899 Upload a folder within the /mods/ directory for your mod.
+Files/tags may be changed within this menu after creation.#
+5900 Submitting an update changes the tagged game version.
+Choosing a new folder or changing tags is optional.#
+5901 Folder to Upload:#
+5902 No folder selected#
+5903 Choose...#
+5904 Error: Parent folder
+must be "mods".#
+5905 Error: Could not open folder:#
+5906 Title:#
+5907 Edit...#
+5908 This can be edited later with a larger length
+within the Steam Workshop page after creation.#
+5909 Enter a title for this item#
+5910 Confirm#
+5911 Cancel#
+5912 For existing items, visit the
+Workshop page to make edits.#
+5913 Description:#
+5914 Enter a description for this item#
+5915 For existing items, visit the
+Workshop page to make edits.#
+5916 Tags:#
+5917 Manage In
+Workshop#
+5918 You can view and edit most attributes of your mod
+directly on the Workshop page, such as longer
+descriptions with HTML support, setting visibility to public
+or adding screenshots to the carousel.
+
+If you need to edit the preview image or modded files,
+use the upload window here in-game instead.#
+5919 Open
+Workshop#
+5920 Your workshop items
+will now reload.#
+5921 Submit
+Update#
+5922 Submit New
+Workshop Mod#
+5923 No new files selected:
+Only tags/version will be modified.#
+5924 New files will be uploaded and
+tags/version will be modified.#
+5925 Proceed#
+5926 Cancel#
+5927 Starting upload#
+5928 Modifying existing item#
+5929 Creating item#
+5930 Waiting on update handle#
+5931 Setting title#
+5932 Setting description#
+5933 Setting tags#
+5934 Preparing content#
+5935 Note: No preview.png image found#
+5936 First upload.#
+5937 Item updated.#
+5938 Uploading content, this may take
+some time.#
+5939 Timed out while uploading,
+retrying 1/3...#
+5940 Timed out while uploading,
+retrying 2/3...#
+5941 Timed out while uploading,
+retrying 3/3...#
+5942 Timed out while uploading,
+try again later.#
+5943 Successfully uploaded content!#
+5944 Unknown error#
+5945 Waiting#
+5946 Error: Not logged in.#
+5947 Error: No content folder
+selected to upload.#
+5948 Error: Could not read
+content folder.#
+5949 Starting upload#
+5950 Please
+wait#
+5951 View Item#
+5952 Retry
+Upload#
+5953 Error code: #
+5954 CUSTOM DIFFICULTY#
+5955 No subscribed Workshop items found.#
+
+5956 Equip#
+5957 Drop#
+5958 SPELLS#
+5959 Chest#
+5960 Take All#
+5961 Skill Level:#
+5962 Associated Stat:#
+5963 Attack#
+5964 Sneak#
+5965 Cast Spell#
+5966 Map#
+5967 Log#
+5968 CHARACTER SHEET#
+5969 GOLD#
+
+5970 Attack#
+5971 Use#
+5972 Cast Spell#
+5973 Defend#
+5974 Sneak#
+5975 Character Status#
+5976 Pause Game#
+5977 Spell List#
+5978 Skill Sheet#
+5979 Autosort Inventory#
+5980 Command NPC#
+5981 Show NPC Commands#
+5982 Cycle NPCs#
+5983 Open Map#
+5984 Open Log#
+5985 Toggle Minimap#
+5986 Hotbar Left#
+5987 Hotbar Right#
+5988 Hotbar Up / Select#
+5989 Hotbar Down / Cancel#
+5990 Interact Tooltip Next#
+5991 Interact Tooltip Prev#
+5992 Expand Inventory Tooltip#
+5993 Quick Turn#
+5994 Chat#
+5995 Move Forward#
+5996 Move Left#
+5997 Move Backward#
+5998 Move Right#
+5999 Turn Left#
+6000 Turn Right#
+6001 Look Up#
+6002 Look Down#
+6003 Screenshot#
+6004 Hotbar Slot 1#
+6005 Hotbar Slot 2#
+6006 Hotbar Slot 3#
+6007 Hotbar Slot 4#
+6008 Hotbar Slot 5#
+6009 Hotbar Slot 6#
+6010 Hotbar Slot 7#
+6011 Hotbar Slot 8#
+6012 Hotbar Slot 9#
+6013 Hotbar Slot 10#
+
+6014 Standard#
+6015 Expert#
+6016 Classic#
+6017 Minimal#
+#6018 was missed earlier, so it is used.
+
+6019 Populate Hotbar#
+6020 Preload Music Files#
+6021 Preloading improves playback performance, but increases system memory usage. (Applied next game launch)#
+
+6100 end#
