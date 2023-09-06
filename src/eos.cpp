@@ -133,7 +133,7 @@ void EOS_CALL EOSFuncs::ConnectLoginCompleteCallback(const EOS_Connect_LoginCall
 	else if ( data->ResultCode == EOS_EResult::EOS_InvalidUser )
 	{
 		EOSFuncs::logInfo("Connect Login Callback: creating new user");
-		EOS_Connect_CreateUserOptions CreateUserOptions;
+		EOS_Connect_CreateUserOptions CreateUserOptions{};
 		CreateUserOptions.ApiVersion = EOS_CONNECT_CREATEUSER_API_LATEST;
 		CreateUserOptions.ContinuanceToken = data->ContinuanceToken;
 
@@ -192,7 +192,7 @@ void EOS_CALL EOSFuncs::ConnectLoginCrossplayCompleteCallback(const EOS_Connect_
 	{
 		if ( EOS.CrossplayAccountManager.acceptedEula )
 		{
-			EOS_Connect_CreateUserOptions CreateUserOptions;
+			EOS_Connect_CreateUserOptions CreateUserOptions{};
 			CreateUserOptions.ApiVersion = EOS_CONNECT_CREATEUSER_API_LATEST;
 			CreateUserOptions.ContinuanceToken = data->ContinuanceToken;
 
@@ -293,7 +293,7 @@ void EOS_CALL EOSFuncs::FriendsQueryCallback(const EOS_Friends_QueryFriendsCallb
 		return;
 	}
 	EOS_HFriends FriendsHandle = EOS_Platform_GetFriendsInterface(EOS.PlatformHandle);
-	EOS_Friends_GetFriendsCountOptions FriendsCountOptions;
+	EOS_Friends_GetFriendsCountOptions FriendsCountOptions{};
 	FriendsCountOptions.ApiVersion = EOS_FRIENDS_GETFRIENDSCOUNT_API_LATEST;
 	FriendsCountOptions.LocalUserId = data->LocalUserId;
 	int numFriends = EOS_Friends_GetFriendsCount(FriendsHandle, &FriendsCountOptions);
@@ -301,7 +301,7 @@ void EOS_CALL EOSFuncs::FriendsQueryCallback(const EOS_Friends_QueryFriendsCallb
 
 	EOS.CurrentUserInfo.Friends.clear();
 
-	EOS_Friends_GetFriendAtIndexOptions IndexOptions;
+	EOS_Friends_GetFriendAtIndexOptions IndexOptions{};
 	IndexOptions.ApiVersion = EOS_FRIENDS_GETFRIENDATINDEX_API_LATEST;
 	IndexOptions.LocalUserId = data->LocalUserId;
 	for ( int i = 0; i < numFriends; ++i )
@@ -311,7 +311,7 @@ void EOS_CALL EOSFuncs::FriendsQueryCallback(const EOS_Friends_QueryFriendsCallb
 
 		if ( EOSFuncs::Helpers_t::epicIdIsValid(FriendUserId) )
 		{
-			EOS_Friends_GetStatusOptions StatusOptions;
+			EOS_Friends_GetStatusOptions StatusOptions{};
 			StatusOptions.ApiVersion = EOS_FRIENDS_GETSTATUS_API_LATEST;
 			StatusOptions.LocalUserId = data->LocalUserId;
 			StatusOptions.TargetUserId = FriendUserId;
@@ -340,7 +340,7 @@ void EOS_CALL EOSFuncs::UserInfoCallback(const EOS_UserInfo_QueryUserInfoCallbac
 	UserInfoQueryData_t* userInfoQueryData = (static_cast<UserInfoQueryData_t*>(data->ClientData));
 	if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{
-		EOS_UserInfo_CopyUserInfoOptions UserInfoOptions;
+		EOS_UserInfo_CopyUserInfoOptions UserInfoOptions{};
 		UserInfoOptions.ApiVersion = EOS_USERINFO_COPYUSERINFO_API_LATEST;
 		UserInfoOptions.LocalUserId = data->LocalUserId;
 		UserInfoOptions.TargetUserId = data->TargetUserId;
@@ -468,12 +468,12 @@ void EOS_CALL EOSFuncs::OnLobbySearchFinished(const EOS_LobbySearch_FindCallback
 	}
 	else if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{
-		EOS_LobbySearch_GetSearchResultCountOptions SearchResultOptions;
+		EOS_LobbySearch_GetSearchResultCountOptions SearchResultOptions{};
 		SearchResultOptions.ApiVersion = EOS_LOBBYSEARCH_GETSEARCHRESULTCOUNT_API_LATEST;
 		int NumSearchResults = EOS_LobbySearch_GetSearchResultCount(EOS.LobbySearchResults.CurrentLobbySearch, &SearchResultOptions);
 		int* searchOptions = static_cast<int*>(data->ClientData);
 
-		EOS_LobbySearch_CopySearchResultByIndexOptions IndexOptions;
+		EOS_LobbySearch_CopySearchResultByIndexOptions IndexOptions{};
 		IndexOptions.ApiVersion = EOS_LOBBYSEARCH_COPYSEARCHRESULTBYINDEX_API_LATEST;
 		for ( int i = 0; i < NumSearchResults; ++i )
 		{
@@ -652,7 +652,7 @@ void EOS_CALL EOSFuncs::OnIncomingConnectionRequest(const EOS_P2P_OnIncomingConn
 		}
 
 		EOS_HP2P P2PHandle = EOS_Platform_GetP2PInterface(EOS.PlatformHandle);
-		EOS_P2P_AcceptConnectionOptions Options;
+		EOS_P2P_AcceptConnectionOptions Options{};
 		Options.ApiVersion = EOS_P2P_ACCEPTCONNECTION_API_LATEST;
 		Options.LocalUserId = EOS.CurrentUserInfo.getProductUserIdHandle();
 		Options.RemoteUserId = data->RemoteUserId;
@@ -749,7 +749,7 @@ void EOS_CALL EOSFuncs::OnQueryAccountMappingsCallback(const EOS_Connect_QueryPr
 			std::vector<EOS_ProductUserId> MappingsReceived;
 			for ( const EOS_ProductUserId& productId : EOS.ProductIdsAwaitingAccountMappingCallback )
 			{
-				EOS_Connect_GetProductUserIdMappingOptions Options = {};
+				EOS_Connect_GetProductUserIdMappingOptions Options{};
 				Options.ApiVersion = EOS_CONNECT_GETPRODUCTUSERIDMAPPING_API_LATEST;
 				Options.AccountIdType = EOS_EExternalAccountType::EOS_EAT_EPIC;
 				Options.LocalUserId = EOS.CurrentUserInfo.getProductUserIdHandle();
@@ -867,7 +867,7 @@ void EOS_CALL EOSFuncs::OnQueryAccountMappingsCallback(const EOS_Connect_QueryPr
 
 void EOSFuncs::getExternalAccountUserInfo(EOS_ProductUserId targetId, UserInfoQueryType queryType)
 {
-	EOS_Connect_CopyProductUserInfoOptions CopyProductUserInfoOptions = {};
+	EOS_Connect_CopyProductUserInfoOptions CopyProductUserInfoOptions{};
 	CopyProductUserInfoOptions.ApiVersion = EOS_CONNECT_COPYPRODUCTUSERINFO_API_LATEST;
 	CopyProductUserInfoOptions.TargetUserId = targetId;
 
@@ -958,7 +958,7 @@ void EOS_CALL EOSFuncs::OnMemberStatusReceived(const EOS_Lobby_LobbyMemberStatus
 			case EOS_ELobbyMemberStatus::EOS_LMS_LEFT:
 				if ( EOS.P2PConnectionInfo.isPeerIndexed(data->TargetUserId) )
 				{
-					EOS_P2P_CloseConnectionOptions closeOptions = {};
+					EOS_P2P_CloseConnectionOptions closeOptions{};
 					closeOptions.ApiVersion = EOS_P2P_CLOSECONNECTIONS_API_LATEST;
 					closeOptions.LocalUserId = EOS.CurrentUserInfo.getProductUserIdHandle();
 					closeOptions.RemoteUserId = data->TargetUserId;
@@ -1156,14 +1156,14 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 		return true;
 	}
 #ifdef NINTENDO
-	EOS_Switch_InitializeOptions SwitchOptions;
+	EOS_Switch_InitializeOptions SwitchOptions{};
 	SwitchOptions.ApiVersion = EOS_SWITCH_INITIALIZEOPTIONS_API_LATEST;
 	//SwitchOptions.OnNetworkRequested = &Game_OnNetworkRequested;
 	SwitchOptions.OnNetworkRequested_DEPRECATED = nullptr;
 	SwitchOptions.CacheStorageSizekB = 0; // EOS_SWITCH_MIN_CACHE_STORAGE_SIZE_KB
 	SwitchOptions.CacheStorageIndex = 0;
 
-	EOS_InitializeOptions InitializeOptions;
+	EOS_InitializeOptions InitializeOptions{};
 	InitializeOptions.ProductName = "Barony";
 	InitializeOptions.ProductVersion = VERSION;
 	InitializeOptions.ApiVersion = EOS_INITIALIZE_API_LATEST;
@@ -1174,7 +1174,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	InitializeOptions.SystemInitializeOptions = &SwitchOptions;
 	InitializeOptions.OverrideThreadAffinity = nullptr;
 #else
-	EOS_InitializeOptions InitializeOptions;
+	EOS_InitializeOptions InitializeOptions{};
 	InitializeOptions.ProductName = "Barony";
 	InitializeOptions.ProductVersion = VERSION;
 	InitializeOptions.ApiVersion = EOS_INITIALIZE_API_LATEST;
@@ -1211,7 +1211,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 		}
 	}
 
-	EOS_Platform_Options PlatformOptions = {};
+	EOS_Platform_Options PlatformOptions{};
 	PlatformOptions.ApiVersion = EOS_PLATFORM_OPTIONS_API_LATEST;
 	PlatformOptions.Reserved = nullptr;
 	PlatformOptions.ProductId = BUILD_ENV_PR;
@@ -1231,6 +1231,16 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	static std::string EncryptionKey(64, '1');
 	PlatformOptions.EncryptionKey = EncryptionKey.c_str();
 	PlatformOptions.CacheDirectory = nullptr; // important - needs double slashes and absolute path
+	PlatformOptions.TickBudgetInMilliseconds = 0; // do all available work
+
+	EOS_Platform_RTCOptions rtcOptions{};
+	rtcOptions.ApiVersion = EOS_PLATFORM_RTCOPTIONS_API_LATEST;
+	rtcOptions.BackgroundMode = EOS_ERTCBackgroundMode::EOS_RTCBM_KeepRoomsAlive;
+	rtcOptions.PlatformSpecificOptions = nullptr; // must be null initialized
+	PlatformOptions.RTCOptions = &rtcOptions;
+
+	PlatformOptions.IntegratedPlatformOptionsContainerHandle = nullptr; // must be null initialized
+	PlatformOptions.SystemSpecificOptions = nullptr; // must be null initialized
 
 	PlatformHandle = EOS_Platform_Create(&PlatformOptions);
 	PlatformOptions.bIsServer = EOS_TRUE;
@@ -1338,11 +1348,11 @@ void EOSFuncs::initConnectLogin() // should not handle for Steam connect logins
 			return;
 		}
 
-		EOS_Connect_UserLoginInfo Info;
+		EOS_Connect_UserLoginInfo Info{};
 		Info.ApiVersion = EOS_CONNECT_USERLOGININFO_API_LATEST;
 		Info.DisplayName = MainMenu::getUsername();
 
-		EOS_Connect_LoginOptions Options;
+		EOS_Connect_LoginOptions Options{};
 		Options.ApiVersion = EOS_CONNECT_LOGIN_API_LATEST;
 		Options.Credentials = &Credentials;
 		Options.UserLoginInfo = &Info;
@@ -1366,7 +1376,7 @@ void EOSFuncs::initConnectLogin() // should not handle for Steam connect logins
 		Credentials.Type = EOS_EExternalCredentialType::EOS_ECT_EPIC; // change this to steam etc for different account providers.
 		Credentials.Token = UserAuthToken->AccessToken;
 
-		EOS_Connect_LoginOptions Options;
+		EOS_Connect_LoginOptions Options{};
 		Options.ApiVersion = EOS_CONNECT_LOGIN_API_LATEST;
 		Options.Credentials = &Credentials;
 		Options.UserLoginInfo = nullptr;
@@ -1421,7 +1431,7 @@ bool EOSFuncs::HandleReceivedMessages(EOS_ProductUserId* remoteIdReturn)
 
 	EOS_HP2P P2PHandle = EOS_Platform_GetP2PInterface(PlatformHandle);
 
-	EOS_P2P_ReceivePacketOptions ReceivePacketOptions;
+	EOS_P2P_ReceivePacketOptions ReceivePacketOptions{};
 	ReceivePacketOptions.ApiVersion = EOS_P2P_RECEIVEPACKET_API_LATEST;
 	ReceivePacketOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
 	ReceivePacketOptions.MaxDataSizeBytes = 512;
@@ -1466,7 +1476,7 @@ bool EOSFuncs::HandleReceivedMessagesAndIgnore(EOS_ProductUserId* remoteIdReturn
 	}
 	EOS_HP2P P2PHandle = EOS_Platform_GetP2PInterface(PlatformHandle);
 
-	EOS_P2P_ReceivePacketOptions ReceivePacketOptions;
+	EOS_P2P_ReceivePacketOptions ReceivePacketOptions{};
 	ReceivePacketOptions.ApiVersion = EOS_P2P_RECEIVEPACKET_API_LATEST;
 	ReceivePacketOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
 	ReceivePacketOptions.MaxDataSizeBytes = 512;
@@ -1532,7 +1542,7 @@ void EOSFuncs::SendMessageP2P(EOS_ProductUserId RemoteId, const void* data, int 
 	SocketId.ApiVersion = EOS_P2P_SOCKETID_API_LATEST;
 	strncpy(SocketId.SocketName, "CHAT", 5);
 
-	EOS_P2P_SendPacketOptions SendPacketOptions = {};
+	EOS_P2P_SendPacketOptions SendPacketOptions{};
 	SendPacketOptions.ApiVersion = EOS_P2P_SENDPACKET_API_LATEST;
 	SendPacketOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
 	SendPacketOptions.RemoteUserId = RemoteId;
@@ -1615,7 +1625,7 @@ bool EOSFuncs::LobbyData_t::updateLobbyForHost(HostUpdateLobbyTypes updateType)
 	}
 
 	EOS_HLobby LobbyHandle = EOS_Platform_GetLobbyInterface(EOS.PlatformHandle);
-	EOS_Lobby_UpdateLobbyModificationOptions ModifyOptions = {};
+	EOS_Lobby_UpdateLobbyModificationOptions ModifyOptions{};
 	ModifyOptions.ApiVersion = EOS_LOBBY_UPDATELOBBYMODIFICATION_API_LATEST;
 	ModifyOptions.LobbyId = this->LobbyId.c_str();
 	ModifyOptions.LocalUserId = EOS.CurrentUserInfo.getProductUserIdHandle();
@@ -1636,7 +1646,7 @@ bool EOSFuncs::LobbyData_t::updateLobbyForHost(HostUpdateLobbyTypes updateType)
 	EOS.LobbyModificationHandle = LobbyModification;
 	setLobbyAttributesFromGame(updateType);
 
-	/*EOS_LobbyModification_SetPermissionLevelOptions permissionOptions = {};
+	/*EOS_LobbyModification_SetPermissionLevelOptions permissionOptions{};
 	permissionOptions.ApiVersion = EOS_LOBBYMODIFICATION_SETPERMISSIONLEVEL_API_LATEST;
 	permissionOptions.PermissionLevel = EOS.CurrentLobbyData.PermissionLevel;
 	EOS_LobbyModification_SetPermissionLevel(LobbyModification, &permissionOptions);*/
@@ -1666,7 +1676,7 @@ bool EOSFuncs::LobbyData_t::updateLobbyForHost(HostUpdateLobbyTypes updateType)
 			data.ValueType = EOS_ELobbyAttributeType::EOS_AT_INT64;
 		}
 
-		EOS_LobbyModification_AddAttributeOptions addAttributeOptions;
+		EOS_LobbyModification_AddAttributeOptions addAttributeOptions{};
 		addAttributeOptions.ApiVersion = EOS_LOBBYMODIFICATION_ADDATTRIBUTE_API_LATEST;
 		addAttributeOptions.Visibility = EOS_ELobbyAttributeVisibility::EOS_LAT_PUBLIC;
 		addAttributeOptions.Attribute = &(data);
@@ -1689,7 +1699,7 @@ bool EOSFuncs::LobbyData_t::updateLobbyForHost(HostUpdateLobbyTypes updateType)
 	}
 
 	//Trigger lobby update
-	EOS_Lobby_UpdateLobbyOptions UpdateOptions;
+	EOS_Lobby_UpdateLobbyOptions UpdateOptions{};
 	UpdateOptions.ApiVersion = EOS_LOBBY_UPDATELOBBY_API_LATEST;
 	UpdateOptions.LobbyModificationHandle = EOS.LobbyModificationHandle;
 	EOS_Lobby_UpdateLobby(LobbyHandle, &UpdateOptions, nullptr, OnLobbyUpdateFinished);
@@ -1707,7 +1717,7 @@ bool EOSFuncs::LobbyData_t::modifyLobbyMemberAttributeForCurrentUser()
 	}
 
 	EOS_HLobby LobbyHandle = EOS_Platform_GetLobbyInterface(EOS.PlatformHandle);
-	EOS_Lobby_UpdateLobbyModificationOptions ModifyOptions;
+	EOS_Lobby_UpdateLobbyModificationOptions ModifyOptions{};
 	ModifyOptions.ApiVersion = EOS_LOBBY_UPDATELOBBYMODIFICATION_API_LATEST;
 	ModifyOptions.LobbyId = this->LobbyId.c_str();
 	ModifyOptions.LocalUserId = EOS.CurrentUserInfo.getProductUserIdHandle();
@@ -1742,7 +1752,7 @@ bool EOSFuncs::LobbyData_t::modifyLobbyMemberAttributeForCurrentUser()
 		memberData.Key = "CLIENTNUM";
 		memberData.Value.AsInt64 = player.clientNumber;
 
-		EOS_LobbyModification_AddMemberAttributeOptions addMemberData;
+		EOS_LobbyModification_AddMemberAttributeOptions addMemberData{};
 		addMemberData.ApiVersion = EOS_LOBBYMODIFICATION_ADDMEMBERATTRIBUTE_API_LATEST;
 		addMemberData.Visibility = EOS_ELobbyAttributeVisibility::EOS_LAT_PUBLIC;
 		addMemberData.Attribute = &memberData;
@@ -1756,7 +1766,7 @@ bool EOSFuncs::LobbyData_t::modifyLobbyMemberAttributeForCurrentUser()
 	}
 
 	//Trigger lobby update
-	EOS_Lobby_UpdateLobbyOptions UpdateOptions;
+	EOS_Lobby_UpdateLobbyOptions UpdateOptions{};
 	UpdateOptions.ApiVersion = EOS_LOBBY_UPDATELOBBY_API_LATEST;
 	UpdateOptions.LobbyModificationHandle = EOS.LobbyMemberModificationHandle;
 	EOS_Lobby_UpdateLobby(LobbyHandle, &UpdateOptions, nullptr, OnLobbyMemberUpdateFinished);
@@ -1826,7 +1836,7 @@ void EOSFuncs::LobbyData_t::getLobbyAttributes(EOS_HLobbyDetails LobbyDetails)
 
 	EOS_HLobby LobbyHandle = EOS_Platform_GetLobbyInterface(EOS.PlatformHandle);
 
-	/*EOS_Lobby_CopyLobbyDetailsHandleOptions CopyHandleOptions;
+	/*EOS_Lobby_CopyLobbyDetailsHandleOptions CopyHandleOptions{};
 	CopyHandleOptions.ApiVersion = EOS_LOBBY_COPYLOBBYDETAILSHANDLE_API_LATEST;
 	CopyHandleOptions.LobbyId = this->LobbyId.c_str();
 	CopyHandleOptions.LocalUserId = EOSFuncs::Helpers_t::productIdFromString(EOS.CurrentUserInfo.getProductUserIdStr());
@@ -1839,13 +1849,13 @@ void EOSFuncs::LobbyData_t::getLobbyAttributes(EOS_HLobbyDetails LobbyDetails)
 		return;
 	}*/
 
-	EOS_LobbyDetails_GetAttributeCountOptions CountOptions;
+	EOS_LobbyDetails_GetAttributeCountOptions CountOptions{};
 	CountOptions.ApiVersion = EOS_LOBBYDETAILS_GETATTRIBUTECOUNT_API_LATEST;
 	int numAttributes = EOS_LobbyDetails_GetAttributeCount(LobbyDetails, &CountOptions);
 
 	for ( int i = 0; i < numAttributes; ++i )
 	{
-		EOS_LobbyDetails_CopyAttributeByIndexOptions AttrOptions;
+		EOS_LobbyDetails_CopyAttributeByIndexOptions AttrOptions{};
 		AttrOptions.ApiVersion = EOS_LOBBYDETAILS_COPYATTRIBUTEBYINDEX_API_LATEST;
 		AttrOptions.AttrIndex = i;
 
@@ -1910,7 +1920,7 @@ void EOSFuncs::createLobby()
 	}
 
 	LobbyHandle = EOS_Platform_GetLobbyInterface(PlatformHandle);
-	EOS_Lobby_CreateLobbyOptions CreateOptions;
+	EOS_Lobby_CreateLobbyOptions CreateOptions{};
 	CreateOptions.ApiVersion = EOS_LOBBY_CREATELOBBY_API_LATEST;
 	CreateOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
 	CreateOptions.MaxLobbyMembers = MAXPLAYERS;
@@ -2065,7 +2075,7 @@ void EOSFuncs::leaveLobby()
 
 	LobbyHandle = EOS_Platform_GetLobbyInterface(PlatformHandle);
 
-	EOS_Lobby_LeaveLobbyOptions LeaveOptions;
+	EOS_Lobby_LeaveLobbyOptions LeaveOptions{};
 	LeaveOptions.ApiVersion = EOS_LOBBY_LEAVELOBBY_API_LATEST;
 	LeaveOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
 	LeaveOptions.LobbyId = CurrentLobbyData.LobbyId.c_str();
@@ -2093,7 +2103,7 @@ void EOSFuncs::searchLobbies(LobbyParameters_t::LobbySearchOptions searchType,
 
 	LobbyHandle = EOS_Platform_GetLobbyInterface(PlatformHandle);
 	logInfo("searchLobbies: starting search");
-	EOS_Lobby_CreateLobbySearchOptions CreateSearchOptions = {};
+	EOS_Lobby_CreateLobbySearchOptions CreateSearchOptions{};
 	CreateSearchOptions.ApiVersion = EOS_LOBBY_CREATELOBBYSEARCH_API_LATEST;
 	CreateSearchOptions.MaxResults = kMaxLobbiesToSearch;
 
@@ -2118,13 +2128,13 @@ void EOSFuncs::searchLobbies(LobbyParameters_t::LobbySearchOptions searchType,
 	LobbySearchResults.results.clear();
 	LobbySearchResults.resultsSortedForDisplay.clear();
 
-	/*EOS_LobbySearch_SetTargetUserIdOptions SetLobbyOptions = {};
+	/*EOS_LobbySearch_SetTargetUserIdOptions SetLobbyOptions{};
 	SetLobbyOptions.ApiVersion = EOS_LOBBYSEARCH_SETLOBBYID_API_LATEST;
 	SetLobbyOptions.TargetUserId = CurrentUserInfo.Friends.at(0).UserId;
 	Result = EOS_LobbySearch_SetTargetUserId(LobbySearch, &SetLobbyOptions);*/
 	if ( searchType != LobbyParameters_t::LOBBY_SEARCH_BY_LOBBYID )
 	{
-	    EOS_LobbySearch_SetParameterOptions ParamOptions = {};
+	    EOS_LobbySearch_SetParameterOptions ParamOptions{};
 	    ParamOptions.ApiVersion = EOS_LOBBYSEARCH_SETPARAMETER_API_LATEST;
 	    ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_NOTANYOF;
 
@@ -2171,13 +2181,13 @@ void EOSFuncs::searchLobbies(LobbyParameters_t::LobbySearchOptions searchType,
 	else if ( searchType == LobbyParameters_t::LOBBY_SEARCH_BY_LOBBYID )
 	{
 		// appends criteria to search for within the normal search function
-		EOS_LobbySearch_SetLobbyIdOptions SetLobbyOptions = {};
+		EOS_LobbySearch_SetLobbyIdOptions SetLobbyOptions{};
 		SetLobbyOptions.ApiVersion = EOS_LOBBYSEARCH_SETLOBBYID_API_LATEST;
 		SetLobbyOptions.LobbyId = lobbyIdToSearch;
 		EOS_LobbySearch_SetLobbyId(LobbySearch, &SetLobbyOptions);
 	}
 
-	EOS_LobbySearch_FindOptions FindOptions;
+	EOS_LobbySearch_FindOptions FindOptions{};
 	FindOptions.ApiVersion = EOS_LOBBYSEARCH_FIND_API_LATEST;
 	FindOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
 
@@ -2202,7 +2212,7 @@ void EOSFuncs::LobbyData_t::destroyLobby()
 
 	EOS.LobbyHandle = EOS_Platform_GetLobbyInterface(EOS.PlatformHandle);
 
-	EOS_Lobby_DestroyLobbyOptions DestroyOptions;
+	EOS_Lobby_DestroyLobbyOptions DestroyOptions{};
 	DestroyOptions.ApiVersion = EOS_LOBBY_DESTROYLOBBY_API_LATEST;
 	DestroyOptions.LocalUserId = EOS.CurrentUserInfo.getProductUserIdHandle();
 	DestroyOptions.LobbyId = LobbyId.c_str();
@@ -2247,7 +2257,7 @@ void EOSFuncs::LobbyData_t::updateLobby()
 
 	EOS_HLobby LobbyHandle = EOS_Platform_GetLobbyInterface(EOS.PlatformHandle);
 
-	EOS_Lobby_CopyLobbyDetailsHandleOptions CopyHandleOptions;
+	EOS_Lobby_CopyLobbyDetailsHandleOptions CopyHandleOptions{};
 	CopyHandleOptions.ApiVersion = EOS_LOBBY_COPYLOBBYDETAILSHANDLE_API_LATEST;
 	CopyHandleOptions.LobbyId = LobbyId.c_str();
 	CopyHandleOptions.LocalUserId = EOS.CurrentUserInfo.getProductUserIdHandle();
@@ -2274,7 +2284,7 @@ void EOSFuncs::LobbyData_t::getLobbyMemberInfo(EOS_HLobbyDetails LobbyDetails)
 	}
 
 	EOS_HLobby LobbyHandle = EOS_Platform_GetLobbyInterface(EOS.PlatformHandle);
-	EOS_LobbyDetails_GetMemberCountOptions MemberCountOptions;
+	EOS_LobbyDetails_GetMemberCountOptions MemberCountOptions{};
 	MemberCountOptions.ApiVersion = EOS_LOBBYDETAILS_GETMEMBERCOUNT_API_LATEST;
 
 	Uint32 numPlayers = EOS_LobbyDetails_GetMemberCount(LobbyDetails, &MemberCountOptions);
@@ -2292,7 +2302,7 @@ void EOSFuncs::LobbyData_t::getLobbyMemberInfo(EOS_HLobbyDetails LobbyDetails)
 	}
 	this->playersInLobby.clear();
 
-	EOS_LobbyDetails_GetMemberByIndexOptions MemberByIndexOptions;
+	EOS_LobbyDetails_GetMemberByIndexOptions MemberByIndexOptions{};
 	MemberByIndexOptions.ApiVersion = EOS_LOBBYDETAILS_GETMEMBERBYINDEX_API_LATEST;
 	for ( Uint32 i = 0; i < numPlayers; ++i )
 	{
@@ -2317,13 +2327,13 @@ void EOSFuncs::LobbyData_t::getLobbyMemberInfo(EOS_HLobbyDetails LobbyDetails)
 		}
 
 		//member attributes
-		EOS_LobbyDetails_GetMemberAttributeCountOptions MemberAttributeCountOptions;
+		EOS_LobbyDetails_GetMemberAttributeCountOptions MemberAttributeCountOptions{};
 		MemberAttributeCountOptions.ApiVersion = EOS_LOBBYDETAILS_GETMEMBERATTRIBUTECOUNT_API_LATEST;
 		MemberAttributeCountOptions.TargetUserId = memberId;
 		const Uint32 numAttributes = EOS_LobbyDetails_GetMemberAttributeCount(LobbyDetails, &MemberAttributeCountOptions);
 		for ( Uint32 j = 0; j < numAttributes; ++j )
 		{
-			EOS_LobbyDetails_CopyMemberAttributeByIndexOptions MemberAttributeCopyOptions;
+			EOS_LobbyDetails_CopyMemberAttributeByIndexOptions MemberAttributeCopyOptions{};
 			MemberAttributeCopyOptions.ApiVersion = EOS_LOBBYDETAILS_COPYMEMBERATTRIBUTEBYINDEX_API_LATEST;
 			MemberAttributeCopyOptions.AttrIndex = j;
 			MemberAttributeCopyOptions.TargetUserId = memberId;
@@ -2355,7 +2365,7 @@ void EOSFuncs::LobbyData_t::getLobbyMemberInfo(EOS_HLobbyDetails LobbyDetails)
 
 void EOSFuncs::queryLocalExternalAccountId(EOS_EExternalAccountType accountType)
 {
-	EOS_Connect_QueryProductUserIdMappingsOptions QueryOptions = {};
+	EOS_Connect_QueryProductUserIdMappingsOptions QueryOptions{};
 	QueryOptions.ApiVersion = EOS_CONNECT_QUERYPRODUCTUSERIDMAPPINGS_API_LATEST;
 	QueryOptions.AccountIdType_DEPRECATED = accountType;
 	QueryOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
@@ -2392,7 +2402,7 @@ void EOSFuncs::queryAccountIdFromProductId(LobbyData_t* lobby/*, std::vector<EOS
 	{
 		return;
 	}
-	EOS_Connect_QueryProductUserIdMappingsOptions QueryOptions = {};
+	EOS_Connect_QueryProductUserIdMappingsOptions QueryOptions{};
 	QueryOptions.ApiVersion = EOS_CONNECT_QUERYPRODUCTUSERIDMAPPINGS_API_LATEST;
 	//QueryOptions.AccountIdType_DEPRECATED = EOS_EExternalAccountType::EOS_EAT_EPIC;
 	QueryOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
@@ -2628,10 +2638,10 @@ bool EOSFuncs::P2PConnectionInfo_t::isPeerStillValid(int index) const
 
 void EOSFuncs::P2PConnectionInfo_t::resetPeersAndServerData()
 {
-	EOS_P2P_CloseConnectionsOptions closeOptions = {};
+	EOS_P2P_CloseConnectionsOptions closeOptions{};
 	closeOptions.ApiVersion = EOS_P2P_CLOSECONNECTIONS_API_LATEST;
 	closeOptions.LocalUserId = EOS.CurrentUserInfo.getProductUserIdHandle();
-	EOS_P2P_SocketId SocketId = {};
+	EOS_P2P_SocketId SocketId{};
 	SocketId.ApiVersion = EOS_P2P_SOCKETID_API_LATEST;
 	strncpy(SocketId.SocketName, "CHAT", 5);
 	closeOptions.SocketId = &SocketId;
@@ -2649,16 +2659,16 @@ void EOSFuncs::LobbyData_t::SubscribeToLobbyUpdates()
 
 	EOS_HLobby LobbyHandle = EOS_Platform_GetLobbyInterface(EOS.PlatformHandle);
 
-	EOS_Lobby_AddNotifyLobbyUpdateReceivedOptions UpdateNotifyOptions;
+	EOS_Lobby_AddNotifyLobbyUpdateReceivedOptions UpdateNotifyOptions{};
 	UpdateNotifyOptions.ApiVersion = EOS_LOBBY_ADDNOTIFYLOBBYUPDATERECEIVED_API_LATEST;
 
 	LobbyUpdateNotification = EOS_Lobby_AddNotifyLobbyUpdateReceived(LobbyHandle, &UpdateNotifyOptions, nullptr, OnLobbyUpdateReceived);
 
-	EOS_Lobby_AddNotifyLobbyMemberUpdateReceivedOptions MemberUpdateOptions;
+	EOS_Lobby_AddNotifyLobbyMemberUpdateReceivedOptions MemberUpdateOptions{};
 	MemberUpdateOptions.ApiVersion = EOS_LOBBY_ADDNOTIFYLOBBYMEMBERUPDATERECEIVED_API_LATEST;
 	LobbyMemberUpdateNotification = EOS_Lobby_AddNotifyLobbyMemberUpdateReceived(LobbyHandle, &MemberUpdateOptions, nullptr, OnMemberUpdateReceived);
 
-	EOS_Lobby_AddNotifyLobbyMemberStatusReceivedOptions MemberStatusOptions;
+	EOS_Lobby_AddNotifyLobbyMemberStatusReceivedOptions MemberStatusOptions{};
 	MemberStatusOptions.ApiVersion = EOS_LOBBY_ADDNOTIFYLOBBYMEMBERSTATUSRECEIVED_API_LATEST;
 	LobbyMemberStatusNotification = EOS_Lobby_AddNotifyLobbyMemberStatusReceived(LobbyHandle, &MemberStatusOptions, nullptr, OnMemberStatusReceived);
 
@@ -2706,12 +2716,12 @@ void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQuer
 		return;
 	}
 
-	EOS_Achievements_GetAchievementDefinitionCountOptions AchievementDefinitionsCountOptions = {};
+	EOS_Achievements_GetAchievementDefinitionCountOptions AchievementDefinitionsCountOptions{};
 	AchievementDefinitionsCountOptions.ApiVersion = EOS_ACHIEVEMENTS_GETACHIEVEMENTDEFINITIONCOUNT_API_LATEST;
 
 	uint32_t AchievementDefinitionsCount = EOS_Achievements_GetAchievementDefinitionCount(EOS.AchievementsHandle, &AchievementDefinitionsCountOptions);
 
-	EOS_Achievements_CopyAchievementDefinitionV2ByIndexOptions CopyOptions = {};
+	EOS_Achievements_CopyAchievementDefinitionV2ByIndexOptions CopyOptions{};
 	CopyOptions.ApiVersion = EOS_ACHIEVEMENTS_COPYDEFINITIONV2BYACHIEVEMENTID_API_LATEST;
 
 	for ( CopyOptions.AchievementIndex = 0; CopyOptions.AchievementIndex < AchievementDefinitionsCount; ++CopyOptions.AchievementIndex )
@@ -2773,13 +2783,13 @@ void EOSFuncs::OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPl
 		return;
 	}
 
-	EOS_Achievements_GetPlayerAchievementCountOptions AchievementsCountOptions = {};
+	EOS_Achievements_GetPlayerAchievementCountOptions AchievementsCountOptions{};
 	AchievementsCountOptions.ApiVersion = EOS_ACHIEVEMENTS_GETPLAYERACHIEVEMENTCOUNT_API_LATEST;
 	AchievementsCountOptions.UserId = EOS.CurrentUserInfo.getProductUserIdHandle();
 
 	uint32_t AchievementsCount = EOS_Achievements_GetPlayerAchievementCount(EOS.AchievementsHandle, &AchievementsCountOptions);
 
-	EOS_Achievements_CopyPlayerAchievementByIndexOptions CopyOptions = {};
+	EOS_Achievements_CopyPlayerAchievementByIndexOptions CopyOptions{};
 	CopyOptions.ApiVersion = EOS_ACHIEVEMENTS_COPYPLAYERACHIEVEMENTBYINDEX_API_LATEST;
 	CopyOptions.TargetUserId = EOS.CurrentUserInfo.getProductUserIdHandle();
 	CopyOptions.LocalUserId = EOS.CurrentUserInfo.getProductUserIdHandle();
@@ -2904,7 +2914,7 @@ void EOSFuncs::loadAchievementData()
 		achievementNames.clear();
 		achievementDesc.clear();
 		achievementHidden.clear();
-		EOS_Achievements_QueryDefinitionsOptions Options = {};
+		EOS_Achievements_QueryDefinitionsOptions Options{};
 		Options.ApiVersion = EOS_ACHIEVEMENTS_QUERYDEFINITIONS_API_LATEST;
 		//Options.EpicUserId = EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str());
 		Options.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
@@ -2918,7 +2928,7 @@ void EOSFuncs::loadAchievementData()
 	Achievements.playerDataAwaitingCallback = true;
 	//achievementProgress.clear();
 	//achievementUnlockTime.clear();
-	EOS_Achievements_QueryPlayerAchievementsOptions PlayerAchievementOptions = {};
+	EOS_Achievements_QueryPlayerAchievementsOptions PlayerAchievementOptions{};
 	PlayerAchievementOptions.ApiVersion = EOS_ACHIEVEMENTS_QUERYPLAYERACHIEVEMENTS_API_LATEST;
 	PlayerAchievementOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
 	PlayerAchievementOptions.TargetUserId = CurrentUserInfo.getProductUserIdHandle();
@@ -2930,7 +2940,7 @@ void EOSFuncs::loadAchievementData()
 void EOSFuncs::unlockAchievement(const char* name)
 {
 	//logInfo("unlocking EOS achievement '%s'", name);
-	EOS_Achievements_UnlockAchievementsOptions UnlockAchievementsOptions = {};
+	EOS_Achievements_UnlockAchievementsOptions UnlockAchievementsOptions{};
 	UnlockAchievementsOptions.ApiVersion = EOS_ACHIEVEMENTS_UNLOCKACHIEVEMENTS_API_LATEST;
 	UnlockAchievementsOptions.UserId = CurrentUserInfo.getProductUserIdHandle();
 	UnlockAchievementsOptions.AchievementsCount = 1;
@@ -2950,7 +2960,7 @@ void EOSFuncs::ingestStat(int stat_num, int value)
 	StatsToIngest[0].StatName = g_SteamStats[stat_num].m_pchStatName;
 	StatsToIngest[0].IngestAmount = value;
 
-	EOS_Stats_IngestStatOptions Options = {};
+	EOS_Stats_IngestStatOptions Options{};
 	Options.ApiVersion = EOS_STATS_INGESTSTAT_API_LATEST;
 	Options.Stats = StatsToIngest;
 	Options.StatsCount = sizeof(StatsToIngest) / sizeof(StatsToIngest[0]);
@@ -3048,7 +3058,7 @@ void EOSFuncs::ingestGlobalStats()
 		}
 	}
 
-	EOS_Stats_IngestStatOptions Options = {};
+	EOS_Stats_IngestStatOptions Options{};
 	Options.ApiVersion = EOS_STATS_INGESTSTAT_API_LATEST;
 	Options.Stats = StatsToIngest;
 	Options.StatsCount = numStats;
@@ -3071,7 +3081,7 @@ void EOS_CALL EOSFuncs::OnQueryAllStatsCallback(const EOS_Stats_OnQueryStatsComp
 	{
 
 		EOS.StatsHandle = EOS_Platform_GetStatsInterface(EOS.PlatformHandle);
-		EOS_Stats_GetStatCountOptions StatCountOptions = {};
+		EOS_Stats_GetStatCountOptions StatCountOptions{};
 		StatCountOptions.ApiVersion = EOS_STATS_GETSTATCOUNT_API_LATEST;
 		StatCountOptions.TargetUserId = EOS.CurrentUserInfo.getProductUserIdHandle();
 
@@ -3079,7 +3089,7 @@ void EOS_CALL EOSFuncs::OnQueryAllStatsCallback(const EOS_Stats_OnQueryStatsComp
 
 		EOSFuncs::logInfo("OnQueryAllStatsCallback: read %d stats", numStats);
 
-		EOS_Stats_CopyStatByIndexOptions CopyByIndexOptions = {};
+		EOS_Stats_CopyStatByIndexOptions CopyByIndexOptions{};
 		CopyByIndexOptions.ApiVersion = EOS_STATS_COPYSTATBYINDEX_API_LATEST;
 		CopyByIndexOptions.TargetUserId = EOS.CurrentUserInfo.getProductUserIdHandle();
 
@@ -3140,7 +3150,7 @@ void EOSFuncs::queryAllStats()
 	StatsHandle = EOS_Platform_GetStatsInterface(PlatformHandle);
 
 	// Query Player Stats
-	EOS_Stats_QueryStatsOptions StatsQueryOptions = {};
+	EOS_Stats_QueryStatsOptions StatsQueryOptions{};
 	StatsQueryOptions.ApiVersion = EOS_STATS_QUERYSTATS_API_LATEST;
 	StatsQueryOptions.TargetUserId = CurrentUserInfo.getProductUserIdHandle();
 	StatsQueryOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
@@ -3164,7 +3174,7 @@ void EOSFuncs::queryAllStats()
 void EOSFuncs::showFriendsOverlay()
 {
 	UIHandle = EOS_Platform_GetUIInterface(PlatformHandle);
-	EOS_UI_SetDisplayPreferenceOptions DisplayOptions;
+	EOS_UI_SetDisplayPreferenceOptions DisplayOptions{};
 	DisplayOptions.ApiVersion = EOS_UI_SETDISPLAYPREFERENCE_API_LATEST;
 	DisplayOptions.NotificationLocation = EOS_UI_ENotificationLocation::EOS_UNL_TopRight;
 
@@ -3172,7 +3182,7 @@ void EOSFuncs::showFriendsOverlay()
 	EOSFuncs::logInfo("showFriendsOverlay: result: %d", static_cast<int>(result));
 
 	UIHandle = EOS_Platform_GetUIInterface(PlatformHandle);
-	EOS_UI_ShowFriendsOptions Options = {};
+	EOS_UI_ShowFriendsOptions Options{};
 	Options.ApiVersion = EOS_UI_SHOWFRIENDS_API_LATEST;
 	Options.LocalUserId = EOSFuncs::Helpers_t::epicIdFromString(CurrentUserInfo.epicAccountId.c_str());
 
@@ -3232,7 +3242,7 @@ bool EOSFuncs::initAuth(std::string hostname, std::string tokenName)
 		break;
 	}
 
-	EOS_Auth_LoginOptions LoginOptions = {};
+	EOS_Auth_LoginOptions LoginOptions{};
 	LoginOptions.ApiVersion = EOS_AUTH_LOGIN_API_LATEST;
 	LoginOptions.ScopeFlags = static_cast<EOS_EAuthScopeFlags>(EOS_EAuthScopeFlags::EOS_AS_BasicProfile | EOS_EAuthScopeFlags::EOS_AS_FriendsList | EOS_EAuthScopeFlags::EOS_AS_Presence);
 	LoginOptions.Credentials = &Credentials;
@@ -3376,11 +3386,11 @@ static void nxTokenRequest()
 	Credentials.Token = token;
 	Credentials.Type = EOS_EExternalCredentialType::EOS_ECT_NINTENDO_NSA_ID_TOKEN; // change this to steam etc for different account providers.
 
-	EOS_Connect_UserLoginInfo Info;
+	EOS_Connect_UserLoginInfo Info{};
 	Info.ApiVersion = EOS_CONNECT_USERLOGININFO_API_LATEST;
 	Info.DisplayName = MainMenu::getUsername();
 
-	EOS_Connect_LoginOptions Options;
+	EOS_Connect_LoginOptions Options{};
 	Options.ApiVersion = EOS_CONNECT_LOGIN_API_LATEST;
 	Options.Credentials = &Credentials;
 	Options.UserLoginInfo = &Info;
@@ -3580,7 +3590,7 @@ void EOSFuncs::CrossplayAccounts_t::acceptCrossplay()
 	acceptedEula = true;
 	if ( continuanceToken )
 	{
-		EOS_Connect_CreateUserOptions CreateUserOptions;
+		EOS_Connect_CreateUserOptions CreateUserOptions{};
 		CreateUserOptions.ApiVersion = EOS_CONNECT_CREATEUSER_API_LATEST;
 		CreateUserOptions.ContinuanceToken = continuanceToken;
 
@@ -3672,7 +3682,7 @@ void EOSFuncs::queryDLCOwnership()
 {
 	EcomHandle = EOS_Platform_GetEcomInterface(PlatformHandle);
 
-	EOS_Ecom_QueryEntitlementsOptions options = {};
+	EOS_Ecom_QueryEntitlementsOptions options{};
 	options.ApiVersion = EOS_ECOM_QUERYENTITLEMENTS_API_LATEST;
 	options.bIncludeRedeemed = true;
 	std::vector<EOS_Ecom_EntitlementName> entitlements;
@@ -3698,7 +3708,7 @@ void EOS_CALL EOSFuncs::OnEcomQueryEntitlementsCallback(const EOS_Ecom_QueryEnti
 		EOSFuncs::logInfo("OnEcomQueryEntitlementsCallback: callback success");
 
 		EOS.EcomHandle = EOS_Platform_GetEcomInterface(EOS.PlatformHandle);
-		EOS_Ecom_GetEntitlementsCountOptions countOptions = {};
+		EOS_Ecom_GetEntitlementsCountOptions countOptions{};
 		countOptions.ApiVersion = EOS_ECOM_GETENTITLEMENTSCOUNT_API_LATEST;
 		countOptions.LocalUserId = EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str());
 
@@ -3706,7 +3716,7 @@ void EOS_CALL EOSFuncs::OnEcomQueryEntitlementsCallback(const EOS_Ecom_QueryEnti
 		//EOSFuncs::logInfo("OnEcomQueryEntitlementsCallback: %d entitlements", numEntitlements);
 		for ( int i = 0; i < numEntitlements; ++i )
 		{
-			EOS_Ecom_CopyEntitlementByIndexOptions copyOptions;
+			EOS_Ecom_CopyEntitlementByIndexOptions copyOptions{};
 			copyOptions.ApiVersion = EOS_ECOM_COPYENTITLEMENTBYINDEX_API_LATEST;
 			copyOptions.EntitlementIndex = i;
 			copyOptions.LocalUserId = EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str());
@@ -3768,7 +3778,7 @@ static void EOS_CALL OnQueryGlobalStatsCallback(const EOS_Stats_OnQueryStatsComp
 	}
 	else if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{
-		EOS_Stats_GetStatCountOptions StatCountOptions = {};
+		EOS_Stats_GetStatCountOptions StatCountOptions{};
 		StatCountOptions.ApiVersion = EOS_STATS_GETSTATCOUNT_API_LATEST;
 		StatCountOptions.TargetUserId = EOS.StatGlobalManager.getProductUserIdHandle();
 
@@ -3777,7 +3787,7 @@ static void EOS_CALL OnQueryGlobalStatsCallback(const EOS_Stats_OnQueryStatsComp
 
 		EOSFuncs::logInfo("OnQueryGlobalStatsCallback: read %d stats", numStats);
 
-		EOS_Stats_CopyStatByIndexOptions CopyByIndexOptions = {};
+		EOS_Stats_CopyStatByIndexOptions CopyByIndexOptions{};
 		CopyByIndexOptions.ApiVersion = EOS_STATS_COPYSTATBYINDEX_API_LATEST;
 		CopyByIndexOptions.TargetUserId = EOS.StatGlobalManager.getProductUserIdHandle();
 
@@ -3829,7 +3839,7 @@ void EOSFuncs::StatGlobal_t::queryGlobalStatUser()
 	init();
 
 	// Query Player Stats
-	EOS_Stats_QueryStatsOptions StatsQueryOptions = {};
+	EOS_Stats_QueryStatsOptions StatsQueryOptions{};
 	StatsQueryOptions.ApiVersion = EOS_STATS_QUERYSTATS_API_LATEST;
 	StatsQueryOptions.LocalUserId = getProductUserIdHandle();
 	StatsQueryOptions.TargetUserId = getProductUserIdHandle();
