@@ -7440,7 +7440,7 @@ has been lost.#
 to complete the test!#
 5832 You will be revived if your
 party makes it to the next level.#
-5833 You placed #%d
+5833 You placed at %d
 in local highscores!#
 5834 You failed to place
 in local highscores.#
