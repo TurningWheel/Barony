@@ -6559,7 +6559,7 @@ The next button you press will be bound to this action.#
 The next input you activate will be bound to this action.#
 5089 Cancelled rebinding "%s"#
 5090 Deleted "%s" binding.#
-5091 Bound "%s" to "%s"#
+5091 Rebound "%s"#
 
 # Crosshair types
 
