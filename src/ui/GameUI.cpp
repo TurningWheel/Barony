@@ -30484,6 +30484,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "GLOVE_DEGRADE_CHANCE" )
 		{
 			val = 100 + (stats[playernum]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
+			val += (static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20)) * 10;
 			if ( svFlags & SV_FLAG_HARDCORE )
 			{
 				val *= 2;
@@ -30501,6 +30502,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "GLOVE_DEGRADE0_CHANCE" )
 		{
 			val = 8 + (stats[playernum]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
+			val += static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20);
 			if ( svFlags & SV_FLAG_HARDCORE )
 			{
 				val *= 2;
