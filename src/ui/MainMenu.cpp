@@ -5790,7 +5790,7 @@ namespace MainMenu {
 		                auto glyph = Input::getGlyphPathForInput(bound_button->getText(), false, Input::getControllerType(bound_player));
 		                bound_button->setIcon(glyph.c_str());
 						char buf[256];
-						snprintf(buf, sizeof(buf), Language::get(5091), translateBinding(bound_binding.c_str()), newinput.c_str());
+						snprintf(buf, sizeof(buf), Language::get(5091), translateBinding(bound_binding.c_str()));
 						tooltip->setText(buf);
 					}
 					bound_button = nullptr;

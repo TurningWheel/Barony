@@ -6559,7 +6559,7 @@ The next button you press will be bound to this action.#
 The next input you activate will be bound to this action.#
 5089 Cancelled rebinding "%s"#
 5090 Deleted "%s" binding.#
-5091 Bound "%s" to "%s"#
+5091 Rebound "%s"#
 
 # Crosshair types
 
@@ -7440,7 +7440,7 @@ has been lost.#
 to complete the test!#
 5832 You will be revived if your
 party makes it to the next level.#
-5833 You placed #%d
+5833 You placed at %d
 in local highscores!#
 5834 You failed to place
 in local highscores.#
