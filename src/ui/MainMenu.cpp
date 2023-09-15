@@ -4493,10 +4493,19 @@ namespace MainMenu {
  
     static const char* translateBinding(const char* binding) {
         int c = 5970;
+		if ( !strcmp(binding, "Show Player Callouts") )
+		{
+			return Language::get(6022);
+		}
+
         for (auto& b : defaultBindings[0].bindings) {
             if (b.action == binding) {
                 break;
             }
+			if ( b.action == "Show Player Callouts" )
+			{
+				continue; // don't increment c, not in the linear language entries
+			}
             ++c;
         }
         return Language::get(c);
