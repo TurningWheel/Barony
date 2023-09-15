@@ -8417,7 +8417,7 @@ bind_failed:
 		const Uint32 seconds = getTime() % seconds_in_day;
 
         if (add_to_list) {
-            playSound(238, 64);
+            playSound(Message::CHAT_MESSAGE_SFX, 64);
             new_lobby_chat_message_alert = ticks;
             lobby_chat_messages.emplace_back(LobbyChatMessage{seconds, color, msg});
             if (lobby_chat_messages.size() > lobby_chat_max_messages) {

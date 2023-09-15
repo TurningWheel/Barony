@@ -6201,7 +6201,7 @@ static void doConsoleCommands() {
 						strcat(chatstring, command_str);
 						Uint32 color = playerColor(commandPlayer, colorblind_lobby, false);
 						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
-							playSound(238, 64);
+							playSound(Message::CHAT_MESSAGE_SFX, 64);
 						}
 
 						// send message to server
@@ -6228,7 +6228,7 @@ static void doConsoleCommands() {
 						strcat(chatstring, command_str);
 						Uint32 color = playerColor(commandPlayer, colorblind_lobby, false);
 						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
-							playSound(238, 64);
+							playSound(Message::CHAT_MESSAGE_SFX, 64);
 						}
 						if (multiplayer == SERVER)
 						{

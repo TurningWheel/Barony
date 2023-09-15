@@ -3612,7 +3612,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			const bool printed = messagePlayerColor(clientnum, type, color, "%s", msg);
 			if (type == MESSAGE_CHAT && printed)
 			{
-				playSound(238, 64);
+				playSound(Message::CHAT_MESSAGE_SFX, 64);
 			}
 		}
 		
@@ -5288,7 +5288,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		const int len = snprintf(fmt, sizeof(fmt), "%s: %s", shortname, (char*)(&net_packet->data[9]));
 		messagePlayerColor(clientnum, type, color, fmt);
 
-		playSound(238, 64);
+		playSound(Message::CHAT_MESSAGE_SFX, 64);
 
 		// relay message to all clients
 		for ( int c = 1; c < MAXPLAYERS; c++ )

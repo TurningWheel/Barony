@@ -36610,7 +36610,21 @@ bool SkillUpAnimation_t::soundIndexUsedForNotification(const int index)
 	{
 		return true;
 	}
+	else if ( index == CalloutRadialMenu::CALLOUT_SFX_NEGATIVE
+		|| index == CalloutRadialMenu::CALLOUT_SFX_NEUTRAL
+		|| index == CalloutRadialMenu::CALLOUT_SFX_POSITIVE )
+	{
+		return true;
+	}
+	else if ( index == Message::CHAT_MESSAGE_SFX )
+	{
+		return true;
+	}
 	else if ( index == *cvar_lvl_ding_sfx )
+	{
+		return true;
+	}
+	else if ( index == *cvar_skill_newspell_sfx )
 	{
 		return true;
 	}

@@ -1953,7 +1953,9 @@ void drawEntities3D(view_t* camera, int mode)
                 const int y = entity->y / 16;
                 if (x >= 0 && y >= 0 && x < map.width && y < map.height)
                 {
-                    if ( !camera->vismap[y + x * map.height] && entity->monsterEntityRenderAsTelepath != 1 )
+                    if ( !camera->vismap[y + x * map.height] 
+						&& entity->monsterEntityRenderAsTelepath != 1
+						&& !(entity->behavior == &actSpriteNametag && entity->ditheringDisabled) )
                     {
                         decrease = true;
                         goto end;

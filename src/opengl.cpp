@@ -1498,6 +1498,10 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 			}
 		}
 		if (player >= 0 && player < MAXPLAYERS) {
+            if ( CalloutMenu[player].calloutMenuIsOpen() )
+            {
+                return;
+            }
 			if (entity->worldTooltipPlayer != player) {
 				return;
 			}

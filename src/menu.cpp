@@ -5996,7 +5996,7 @@ static void handleMainMenu(bool mode)
 			keystatus[SDLK_RETURN] = 0;
 			if ( multiplayer != CLIENT )
 			{
-				playSound(238, 64);
+				playSound(Message::CHAT_MESSAGE_SFX, 64);
 			}
 
 			char shortname[32] = {0};

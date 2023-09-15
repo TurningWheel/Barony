@@ -22356,6 +22356,10 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 		}
 		if ( setType == SET_CALLOUT_BANNER_TEXT )
 		{
+			if ( key == "unavailable" )
+			{
+				color = hudColors.characterSheetRed;
+			}
 			setCalloutBannerTextFormatted(player, field, color, highlights, textMap.bannerText.c_str(), targetPlayerName.c_str());
 		}
 		else
@@ -25049,6 +25053,7 @@ void CalloutRadialMenu::drawCalloutMenu()
 			// draw the text for the menu wheel.
 
 			bool lockedOption = false;
+			panelIcons[i]->color = makeColor(255, 255, 255, 255);
 			{
 				/*if ( i == ALLY_CMD_ATTACK_SELECT )
 				{
@@ -25151,9 +25156,9 @@ void CalloutRadialMenu::drawCalloutMenu()
 						std::string key = (i == highlight) ? "tag_btn_player_wave_hover" : "tag_btn_player_wave";
 						if ( lockedOption )
 						{
-							panelIcons[i]->path = worldIconEntries[key].pathDefault;
+							panelIcons[i]->color = makeColor(255, 255, 255, 64);
 						}
-						else
+						
 						{
 							switch ( targetPlayer )
 							{
@@ -25190,9 +25195,9 @@ void CalloutRadialMenu::drawCalloutMenu()
 						std::string key = (i == highlight) ? "tag_btn_player_wave_hover" : "tag_btn_player_wave";
 						if ( lockedOption )
 						{
-							panelIcons[i]->path = worldIconEntries[key].pathDefault;
+							panelIcons[i]->color = makeColor(255, 255, 255, 64);
 						}
-						else
+						
 						{
 							switch ( targetPlayer )
 							{
@@ -25229,9 +25234,9 @@ void CalloutRadialMenu::drawCalloutMenu()
 						std::string key = (i == highlight) ? "tag_btn_player_wave_hover" : "tag_btn_player_wave";
 						if ( lockedOption )
 						{
-							panelIcons[i]->path = worldIconEntries[key].pathDefault;
+							panelIcons[i]->color = makeColor(255, 255, 255, 64);
 						}
-						else
+						
 						{
 							switch ( targetPlayer )
 							{
@@ -25332,10 +25337,10 @@ void CalloutRadialMenu::drawCalloutMenu()
 
 		bool disableActionGlyph = false;
 		bool missingSkillLevel = false;
-		//if ( disableOption != 0 )
-		//{
-		//	disableActionGlyph = true;
-
+		if ( disableOption != 0 )
+		{
+			disableActionGlyph = true;
+		}
 		//	if ( disableOption == -2 ) // disabled due to cooldown
 		//	{
 		//		setCalloutBannerText(gui_player, bannerTxt, "invalid_action", "rest_cooldown", hudColors.characterSheetRed);
@@ -25548,30 +25553,29 @@ void CalloutRadialMenu::drawCalloutMenu()
 			bannerFrame->setSize(bannerSize);
 
 			auto wheelTitleText = bgFrame->findField("wheel title");
-			Stat* playerStats = stats[gui_player];
-			if ( playerStats )
+			if ( !strcmp(wheelTitleText->getText(), "") )
 			{
 				char buf[128] = "";
 				int spaces = 0;
 				int spaces2 = 0;
-				for ( int c = 0; c <= strlen(Language::get(4200)); ++c )
+
+				if ( Entity* target = uidToEntity(lockOnEntityUid) )
 				{
-					if ( Language::get(4200)[c] == '\0' )
+					bool allowed = allowedInteractEntity(*target, true);
+					if ( allowed )
 					{
-						break;
+						snprintf(buf, sizeof(buf), "%s...", interactText);
 					}
-					if ( Language::get(4200)[c] == ' ' )
+					else
 					{
-						++spaces;
+						snprintf(buf, sizeof(buf), Language::get(4348));
 					}
-				}
-				if ( strcmp(playerStats->name, "") && strcmp(playerStats->name, "nothing") )
-				{
-					snprintf(buf, sizeof(buf), Language::get(4200), playerStats->name);
+					spaces = 1;
 				}
 				else
 				{
-					snprintf(buf, sizeof(buf), Language::get(4200), getMonsterLocalizedName(playerStats->type).c_str());
+					snprintf(buf, sizeof(buf), Language::get(4348));
+					spaces = 1;
 				}
 
 				for ( int c = 0; c <= strlen(buf); ++c )
@@ -25587,7 +25591,7 @@ void CalloutRadialMenu::drawCalloutMenu()
 				}
 				wheelTitleText->setText(buf);
 				wheelTitleText->clearWordsToHighlight();
-				int wordIndex = 1;
+				int wordIndex = 2;
 				while ( spaces2 >= spaces ) // every additional space means +1 word to highlight for the monster's name
 				{
 					wheelTitleText->addWordToHighlight(wordIndex, followerTitleHighlightColor);
