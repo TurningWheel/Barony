@@ -155,7 +155,7 @@ FollowerRadialMenu FollowerMenu[MAXPLAYERS];
 CalloutRadialMenu CalloutMenu[MAXPLAYERS];
 GenericGUIMenu GenericGUI[MAXPLAYERS];
 
-bool EnemyHPDamageBarHandler::bDamageGibTypesEnabled = false;
+bool EnemyHPDamageBarHandler::bDamageGibTypesEnabled = true;
 std::map<int, std::vector<int>> EnemyHPDamageBarHandler::damageGibAnimCurves;
 int EnemyHPDamageBarHandler::maxTickLifetime = 120;
 int EnemyHPDamageBarHandler::maxTickFurnitureLifetime = 60;
