@@ -1081,6 +1081,7 @@ void gameLogic(void)
 	    {
 			players[c]->hud.followerDisplay.bCommandNPCDisabled = false;
 			players[c]->hud.followerDisplay.bOpenFollowerMenuDisabled = false;
+			players[c]->hud.bOpenCalloutsMenuDisabled = false;
 
 	        if (c != clientnum && !splitscreen)
 	        {
@@ -5336,7 +5337,12 @@ void ingameHud()
 		}
 		players[player]->hud.followerDisplay.bCycleNextDisabled = (worldUIBlocksFollowerCycle && players[player]->shootmode);
 		bool allowCycle = true;
-		if ( FollowerMenu[player].followerMenuIsOpen() )
+		if ( CalloutMenu[player].calloutMenuIsOpen() && !players[player]->shootmode )
+		{
+			players[player]->hud.followerDisplay.bCycleNextDisabled = true;
+			allowCycle = false;
+		}
+		else if ( FollowerMenu[player].followerMenuIsOpen() )
 		{
 			std::string cycleNPCbinding = input.binding("Cycle NPCs");
 			if ( cycleNPCbinding == input.binding("MenuCancel") )
@@ -7368,6 +7374,7 @@ int main(int argc, char** argv)
 				}
 			}
 			Text::dumpCacheInMainLoop();
+			achievementObserver.getCurrentPlayerUids();
 			DebugStats.t11End = std::chrono::high_resolution_clock::now();
 
 			// increase the cycle count

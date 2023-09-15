@@ -1620,6 +1620,7 @@ public:
 		}
 		bool bShowActionPrompts = true;
 		bool bShortHPMPForActionBars = false;
+		bool bOpenCalloutsMenuDisabled = false;
 		enum ActionPrompts : int
 		{
 			ACTION_PROMPT_MAINHAND,

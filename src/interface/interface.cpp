@@ -21967,6 +21967,15 @@ void CalloutRadialMenu::loadCalloutJSON()
 						}
 					}
 				}
+				if ( d.HasMember("help_strings") )
+				{
+					CalloutRadialMenu::helpDescriptors.clear();
+					for ( rapidjson::Value::ConstMemberIterator itr = d["help_strings"].MemberBegin();
+						itr != d["help_strings"].MemberEnd(); ++itr )
+					{
+						CalloutRadialMenu::helpDescriptors[itr->name.GetString()] = itr->value.GetString();
+					}
+				}
 				if ( d.HasMember("world_icons") )
 				{
 					CalloutRadialMenu::worldIconEntries.clear();
@@ -22065,6 +22074,7 @@ void CalloutRadialMenu::loadCalloutJSON()
 									std::string worldMsgSays = "";
 									std::string worldMsgEmote = "";
 									std::string worldMsgEmoteYou = "";
+									std::string worldMsgEmoteToYou = "";
 									std::string worldIcon = "";
 									std::string worldIconMini = "";
 									if ( itr3->value.HasMember("msg") )
@@ -22083,6 +22093,10 @@ void CalloutRadialMenu::loadCalloutJSON()
 									{
 										worldMsgEmoteYou = itr3->value["msg_emote_you"].GetString();
 									}
+									if ( itr3->value.HasMember("msg_emote_to_you") )
+									{
+										worldMsgEmoteToYou = itr3->value["msg_emote_to_you"].GetString();
+									}
 									if ( itr3->value.HasMember("world_icon") )
 									{
 										worldIcon = itr3->value["world_icon"].GetString();
@@ -22099,6 +22113,7 @@ void CalloutRadialMenu::loadCalloutJSON()
 									entry.worldMsgSays = worldMsgSays;
 									entry.worldMsgEmote = worldMsgEmote;
 									entry.worldMsgEmoteYou = worldMsgEmoteYou;
+									entry.worldMsgEmoteToYou = worldMsgEmoteToYou;
 									entry.worldIconTag = worldIcon;
 									entry.worldIconTagMini = worldIconMini;
 
@@ -22254,15 +22269,29 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 	std::string key = "default";
 	Entity* entity = uidToEntity(lockOnEntityUid);
 	const int player = getPlayer();
-	if ( lockOnEntityUid == 0 && players[player]->isLocalPlayer() )
+	if ( players[player]->isLocalPlayer() )
 	{
-		if ( cmd == CALLOUT_CMD_AFFIRMATIVE || cmd == CALLOUT_CMD_NEGATIVE )
+		if ( lockOnEntityUid == 0 )
 		{
-			entity = players[player]->entity;
+			if ( cmd == CALLOUT_CMD_AFFIRMATIVE || cmd == CALLOUT_CMD_NEGATIVE )
+			{
+				entity = players[player]->entity;
+			}
+			else if ( cmd == CALLOUT_CMD_HELP )
+			{
+				entity = players[player]->entity;
+			}
 		}
-		else if ( cmd == CALLOUT_CMD_HELP )
+
+		if ( cmd == CALLOUT_CMD_SOUTH
+			|| cmd == CALLOUT_CMD_SOUTHWEST
+			|| cmd == CALLOUT_CMD_SOUTHEAST )
 		{
-			entity = players[player]->entity;
+			int toPlayer = getPlayerForDirectPlayerCmd(getPlayer(), cmd);
+			if ( toPlayer >= 0 && players[toPlayer] && players[toPlayer]->entity && !client_disconnected[toPlayer] )
+			{
+				entity = players[toPlayer]->entity;
+			}
 		}
 	}
 
@@ -22279,6 +22308,70 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 		else
 		{
 			return getCalloutMessage(findIcon->second.text_map["default"], nullptr, targetPlayer);
+		}
+		return "";
+	}
+	else if ( cmd == CALLOUT_CMD_SOUTH
+		|| cmd == CALLOUT_CMD_SOUTHWEST
+		|| cmd == CALLOUT_CMD_SOUTHEAST )
+	{
+		std::string targetPlayerName = "";
+		
+		int toPlayer = getPlayerForDirectPlayerCmd(getPlayer(), cmd);
+		key = "player_wave";
+		if ( toPlayer < 0 || client_disconnected[toPlayer] || (players[toPlayer] && !players[toPlayer]->entity) )
+		{
+			key = "unavailable";
+		}
+
+		if ( setType == SET_CALLOUT_ICON_KEY )
+		{
+			return key;
+		}
+
+		if ( key != "unavailable" )
+		{
+			char shortname[32];
+			stringCopy(shortname, stats[toPlayer]->name, sizeof(shortname), 22);
+			targetPlayerName = shortname;
+		}
+
+		auto& textMap = findIcon->second.text_map[key];
+		auto highlights = textMap.bannerHighlights;
+		if ( highlights.size() > 0 )
+		{
+			int indexStart = 0;
+			for ( auto highlight : highlights )
+			{
+				indexStart = std::max(highlight, indexStart);
+			}
+			for ( auto c : targetPlayerName )
+			{
+				if ( c == ' ' )
+				{
+					highlights.insert(indexStart + 1);
+					++indexStart;
+				}
+			}
+		}
+		if ( setType == SET_CALLOUT_BANNER_TEXT )
+		{
+			setCalloutBannerTextFormatted(player, field, color, highlights, textMap.bannerText.c_str(), targetPlayerName.c_str());
+		}
+		else
+		{
+			if ( entity && entity->skill[2] == targetPlayer )
+			{
+				char shortname[32];
+				stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
+				char buf[128];
+				snprintf(buf, sizeof(buf), textMap.worldMsgEmoteToYou.c_str(), shortname);
+				return buf;
+			}
+			else
+			{
+				return getCalloutMessage(textMap, targetPlayerName.c_str(), targetPlayer);
+			}
 		}
 		return "";
 	}
@@ -22342,50 +22435,212 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 				clientCalloutHelpFlags |= hpCritical ? CALLOUT_HELP_HP_CRITICAL : 0;
 			}
 
-			if ( clientCalloutHelpFlags & CALLOUT_HELP_BLOOD_STARVING )
+			if ( clientCalloutHelpFlags )
 			{
-				key = "condition_blood_starving";
+				key = "help_all_conditions";
+				if ( setType == SET_CALLOUT_ICON_KEY )
+				{
+					if ( clientCalloutHelpFlags & CALLOUT_HELP_BLOOD_STARVING )
+					{
+						key = "condition_blood_starving";
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_FOOD_STARVING )
+					{
+						key = "condition_food_starving";
+					}
+					else if ( (clientCalloutHelpFlags & CALLOUT_HELP_STEAM_CRITICAL) && (svFlags & SV_FLAG_HUNGER) )
+					{
+						key = "condition_steam_empty";
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_BLOOD_WEAK )
+					{
+						key = "condition_blood_weak";
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_FOOD_WEAK )
+					{
+						key = "condition_food_weak";
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_BLOOD_HUNGRY )
+					{
+						key = "condition_blood_hungry";
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_FOOD_HUNGRY )
+					{
+						key = "condition_food_hungry";
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_HP_CRITICAL )
+					{
+						key = "condition_heal_urgent";
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_HP_LOW )
+					{
+						key = "condition_heal";
+					}
+					else if ( (clientCalloutHelpFlags & CALLOUT_HELP_STEAM_CRITICAL) && !(svFlags & SV_FLAG_HUNGER) )
+					{
+						key = "condition_steam_empty";
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_NEGATIVE_FX )
+					{
+						key = "condition_cure_ailment";
+					}
+					return key;
+				}
+
+				auto& textMap = text_map[key];
+				auto highlights = textMap.bannerHighlights;
+
+				std::string helpText = "";
+
+				// hunger stats
+				{
+					if ( clientCalloutHelpFlags & CALLOUT_HELP_BLOOD_STARVING )
+					{
+						helpText += helpDescriptors["starving_blood"];
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_FOOD_STARVING )
+					{
+						helpText += helpDescriptors["starving"];
+					}
+					else if ( (clientCalloutHelpFlags & CALLOUT_HELP_STEAM_CRITICAL) && (svFlags & SV_FLAG_HUNGER) )
+					{
+						helpText += helpDescriptors["empty_steam"];
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_BLOOD_WEAK )
+					{
+						helpText += helpDescriptors["very_hungry_blood"];
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_FOOD_WEAK )
+					{
+						helpText += helpDescriptors["very_hungry"];
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_BLOOD_HUNGRY )
+					{
+						helpText += helpDescriptors["hungry_blood"];
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_FOOD_HUNGRY )
+					{
+						helpText += helpDescriptors["hungry"];
+					}
+					else if ( (clientCalloutHelpFlags & CALLOUT_HELP_STEAM_CRITICAL) && !(svFlags & SV_FLAG_HUNGER) )
+					{
+						helpText += helpDescriptors["empty_steam"];
+					}
+				}
+
+				// health stats
+				{
+					if ( clientCalloutHelpFlags & CALLOUT_HELP_HP_CRITICAL )
+					{
+						if ( helpText.size() > 1 )
+						{
+							helpText += helpDescriptors["separator"];
+						}
+						helpText += helpDescriptors["healing_urgent"];
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_HP_LOW )
+					{
+						if ( helpText.size() > 1 )
+						{
+							helpText += helpDescriptors["separator"];
+						}
+						helpText += helpDescriptors["healing"];
+					}
+				}
+
+				// effects
+				if ( clientCalloutHelpFlags & CALLOUT_HELP_NEGATIVE_FX )
+				{
+					int numEffectsAdded = 0;
+					for ( int i = 0; i < NUMEFFECTS; ++i )
+					{
+						if ( numEffectsAdded >= 3 )
+						{
+							break;
+						}
+						if ( stats[player]->EFFECTS[i] 
+							&& (stats[player]->statusEffectRemovedByCureAilment(i, players[player]->entity)
+								|| i == EFF_WITHDRAWAL && stats[player]->EFFECTS_TIMERS[EFF_WITHDRAWAL] == -2) )
+						{
+							if ( StatusEffectQueue_t::StatusEffectDefinitions_t::allEffects[i].name == "" )
+							{
+								continue;
+							}
+							if ( helpText.size() > 1 )
+							{
+								helpText += helpDescriptors["separator"];
+							}
+							helpText += StatusEffectQueue_t::StatusEffectDefinitions_t::allEffects[i].name;
+							++numEffectsAdded;
+						}
+					}
+				}
+
+				if ( setType == SET_CALLOUT_BANNER_TEXT )
+				{
+					setCalloutBannerTextFormatted(player, field, color, highlights, textMap.bannerText.c_str(), helpText.c_str());
+				}
+				else
+				{
+					return getCalloutMessage(textMap, helpText.c_str(), targetPlayer);
+				}
+				return "";
 			}
-			else if ( clientCalloutHelpFlags & CALLOUT_HELP_FOOD_STARVING )
+		}
+		else if ( cmd == CALLOUT_CMD_LOOK )
+		{
+			std::string targetPlayerName = "";
+			if ( entity && entity->behavior == &actPlayer )
 			{
-				key = "condition_food_starving";
+				char shortname[32];
+				stringCopy(shortname, stats[entity->skill[2]]->name, sizeof(shortname), 22);
+				targetPlayerName = shortname;
 			}
-			else if ( (clientCalloutHelpFlags & CALLOUT_HELP_STEAM_CRITICAL) && (svFlags & SV_FLAG_HUNGER) )
+
+			key = "player_wave";
+			if ( setType == SET_CALLOUT_ICON_KEY )
 			{
-				key = "condition_steam_empty";
+				return key;
 			}
-			else if ( clientCalloutHelpFlags & CALLOUT_HELP_BLOOD_WEAK )
+
+			auto& textMap = text_map[key];
+			auto highlights = textMap.bannerHighlights;
+			if ( highlights.size() > 0 )
 			{
-				key = "condition_blood_weak";
+				int indexStart = 0;
+				for ( auto highlight : highlights )
+				{
+					indexStart = std::max(highlight, indexStart);
+				}
+				for ( auto c : targetPlayerName )
+				{
+					if ( c == ' ' )
+					{
+						highlights.insert(indexStart + 1);
+						++indexStart;
+					}
+				}
 			}
-			else if ( clientCalloutHelpFlags & CALLOUT_HELP_FOOD_WEAK )
+			if ( setType == SET_CALLOUT_BANNER_TEXT )
 			{
-				key = "condition_food_weak";
+				setCalloutBannerTextFormatted(player, field, color, highlights, textMap.bannerText.c_str(), targetPlayerName.c_str());
 			}
-			else if ( clientCalloutHelpFlags & CALLOUT_HELP_BLOOD_HUNGRY )
+			else
 			{
-				key = "condition_blood_hungry";
+				if ( entity && entity->skill[2] == targetPlayer )
+				{
+					char shortname[32];
+					stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
+					char buf[128];
+					snprintf(buf, sizeof(buf), textMap.worldMsgEmoteToYou.c_str(), shortname);
+					return buf;
+				}
+				else
+				{
+					return getCalloutMessage(textMap, targetPlayerName.c_str(), targetPlayer);
+				}
 			}
-			else if ( clientCalloutHelpFlags & CALLOUT_HELP_FOOD_HUNGRY )
-			{
-				key = "condition_food_hungry";
-			}
-			else if ( clientCalloutHelpFlags & CALLOUT_HELP_HP_CRITICAL )
-			{
-				key = "condition_heal_urgent";
-			}
-			else if ( clientCalloutHelpFlags & CALLOUT_HELP_HP_LOW )
-			{
-				key = "condition_heal";
-			}
-			else if ( (clientCalloutHelpFlags & CALLOUT_HELP_STEAM_CRITICAL) && !(svFlags & SV_FLAG_HUNGER) )
-			{
-				key = "condition_steam_empty";
-			}
-			/*else if ( clientCalloutHelpFlags & CALLOUT_HELP_NEGATIVE_FX )
-			{
-				key = "condition_cure_ailment";
-			}*/
+			return "";
 		}
 		break;
 	case CALLOUT_TYPE_NPC:
@@ -23148,6 +23403,7 @@ bool CalloutRadialMenu::calloutMenuIsOpen()
 std::vector<CalloutRadialMenu::PanelEntry> CalloutRadialMenu::panelEntries;
 std::map<std::string, CalloutRadialMenu::IconEntry> CalloutRadialMenu::iconEntries;
 std::map<std::string, CalloutRadialMenu::WorldIconEntry_t> CalloutRadialMenu::worldIconEntries;
+std::map<std::string, std::string> CalloutRadialMenu::helpDescriptors;
 std::map<int, std::string> CalloutRadialMenu::worldIconIDToEntryKey;
 int CalloutRadialMenu::followerWheelButtonThickness = 70;
 int CalloutRadialMenu::followerWheelRadius = 140;
@@ -23487,9 +23743,9 @@ void CalloutRadialMenu::drawCallouts(const int playernum)
 		for ( auto& callout : CalloutMenu[i].callouts )
 		{
 			bool selfCallout = false;
-			if ( i == playernum && callout.second.entityUid == achievementObserver.playerUids[playernum] )
+			if ( callout.second.entityUid == achievementObserver.playerUids[playernum] )
 			{
-				if ( players[i]->entity && players[i]->entity->skill[3] == 1 )
+				if ( i == playernum && players[i]->entity && players[i]->entity->skill[3] == 1 )
 				{
 					// debug/thirdperson cam.
 				}
@@ -23500,30 +23756,51 @@ void CalloutRadialMenu::drawCallouts(const int playernum)
 				}
 			}
 
-			auto& iconPaths = CalloutRadialMenu::worldIconEntries[CalloutRadialMenu::worldIconIDToEntryKey[callout.second.tagID]];
+			auto* iconPaths = &CalloutRadialMenu::worldIconEntries[CalloutRadialMenu::worldIconIDToEntryKey[callout.second.tagID]];
 			auto& iconPathsMini = CalloutRadialMenu::worldIconEntries[CalloutRadialMenu::worldIconIDToEntryKey[callout.second.tagSmallID]];
+			if ( selfCallout )
+			{
+				std::string checkTag = CalloutRadialMenu::worldIconIDToEntryKey[callout.second.tagID] + "_display_self";
+				if ( CalloutRadialMenu::worldIconEntries.find(checkTag) != CalloutRadialMenu::worldIconEntries.end() )
+				{
+					iconPaths = &CalloutRadialMenu::worldIconEntries[checkTag];
+				}
+			}
+
 			std::string iconPath = "";
 			std::string iconPathMini = "";
-			switch ( i )
+			int playerColor = i;
+			if ( callout.second.cmd == CALLOUT_CMD_SOUTH
+				|| callout.second.cmd == CALLOUT_CMD_SOUTHWEST
+				|| callout.second.cmd == CALLOUT_CMD_SOUTHEAST )
+			{
+				playerColor = CalloutMenu[i].getPlayerForDirectPlayerCmd(i, callout.second.cmd);
+				if ( playernum == playerColor )
+				{
+					iconPaths = &CalloutRadialMenu::worldIconEntries["tag_btn_player_wave_to_me"];
+				}
+			}
+
+			switch ( playerColor )
 			{
 			case 0:
-				iconPath = iconPaths.pathPlayer1;
+				iconPath = iconPaths->pathPlayer1;
 				iconPathMini = iconPathsMini.pathPlayer1;
 				break;
 			case 1:
-				iconPath = iconPaths.pathPlayer2;
+				iconPath = iconPaths->pathPlayer2;
 				iconPathMini = iconPathsMini.pathPlayer2;
 				break;
 			case 2:
-				iconPath = iconPaths.pathPlayer3;
+				iconPath = iconPaths->pathPlayer3;
 				iconPathMini = iconPathsMini.pathPlayer3;
 				break;
 			case 3:
-				iconPath = iconPaths.pathPlayer4;
+				iconPath = iconPaths->pathPlayer4;
 				iconPathMini = iconPathsMini.pathPlayer4;
 				break;
 			default:
-				iconPath = iconPaths.pathPlayerX;
+				iconPath = iconPaths->pathPlayerX;
 				iconPathMini = iconPathsMini.pathPlayerX;
 				break;
 			}
@@ -23599,7 +23876,12 @@ void CalloutRadialMenu::drawCallouts(const int playernum)
 				}
 				//messagePlayer(player->playernum, MESSAGE_DEBUG, "%f", ((PI - abs(abs(tangent - camang) - PI)) * 2));
 				//messagePlayer(player->playernum, MESSAGE_DEBUG, "%f", result);
-				if ( result >= 0.0 && result < PI / 2 )
+				if ( abs(result) < 0.0001 )
+				{
+					// really small angle due to camera fluctuations, affix to left side to prevent flicker
+					dest.x = leftOfWindow;
+				}
+				else if ( result >= 0.0 && result < PI / 2 )
 				{
 					dest.x = leftOfWindow;
 				}
@@ -23632,6 +23914,26 @@ void CalloutRadialMenu::drawCallouts(const int playernum)
 			{
 				// fade early for the self callout player, but not others in splitscreen
 				lifePercent = callout.second.ticks / (real_t)((TICKS_PER_SECOND * 4) / 5);
+			}
+			else
+			{
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( callout.second.entityUid == achievementObserver.playerUids[i] )
+					{
+						if ( callout.second.cmd == CALLOUT_CMD_AFFIRMATIVE
+							|| callout.second.cmd == CALLOUT_CMD_NEGATIVE
+							|| callout.second.cmd == CALLOUT_CMD_LOOK
+							|| callout.second.cmd == CALLOUT_CMD_SOUTH 
+							|| callout.second.cmd == CALLOUT_CMD_SOUTHWEST 
+							|| callout.second.cmd == CALLOUT_CMD_SOUTHEAST )
+						{
+							// fade early for simple thumbs up/down for players
+							lifePercent = callout.second.ticks / (real_t)((TICKS_PER_SECOND * 4) / 5);
+						}
+						break;
+					}
+				}
 			}
 			Uint32 alpha = 255;
 			if ( lifePercent >= 0.8 )
@@ -23680,10 +23982,12 @@ void CalloutRadialMenu::drawCallouts(const int playernum)
 
 					if ( selfCallout )
 					{
-						real_t y = iconPos.y;
+						real_t y = iconPos.y - players[playernum]->camera_virtualy1();
 						iconPos.y = players[playernum]->camera_virtualHeight() / 4;
 						real_t factor = players[playernum]->camera_virtualHeight() / (real_t)Frame::virtualScreenY;
-						iconPos.y += factor * 16.0 * (y - iconPos.y) / (real_t)players[playernum]->camera_virtualHeight();
+						iconPos.y += factor * 16.0 * (y - iconPos.y) 
+							/ (real_t)players[playernum]->camera_virtualHeight();
+						iconPos.y += players[playernum]->camera_virtualy1();
 					}
 
 					iconPos.x -= iconPos.w / 2;
@@ -23921,6 +24225,11 @@ void CalloutRadialMenu::update()
 	}
 }
 
+int CalloutRadialMenu::CALLOUT_SFX_NEUTRAL = 612;
+int CalloutRadialMenu::CALLOUT_SFX_NEGATIVE = 614;
+int CalloutRadialMenu::CALLOUT_SFX_POSITIVE = 613;
+static ConsoleVariable<int> cvar_callout_sfx_vol("/callout_sfx_vol", 128);
+
 bool CalloutRadialMenu::createParticleCallout(Entity* entity, CalloutRadialMenu::CalloutCommand _cmd)
 {
 	if ( !entity ) { return false; }
@@ -23941,13 +24250,45 @@ bool CalloutRadialMenu::createParticleCallout(Entity* entity, CalloutRadialMenu:
 	}
 
 	auto& callout = callouts[entity->getUID()];
-	callout = CalloutRadialMenu::CalloutParticle_t(getPlayer(), entity->x, entity->y, entity->z, entity->getUID(), _cmd);
+	real_t x = entity->x;
+	real_t y = entity->y;
+	if ( TimerExperiments::bUseTimerInterpolation && entity->bUseRenderInterpolation )
+	{
+		x = entity->lerpRenderState.x.position * 16.0;
+		y = entity->lerpRenderState.y.position * 16.0;
+	}
+	callout = CalloutRadialMenu::CalloutParticle_t(getPlayer(), x, y, entity->z, entity->getUID(), _cmd);
 	if ( existingMessageSent > 0 && multiplayer != CLIENT )
 	{
 		if ( (callout.messageSentTick - existingMessageSent) < (TICKS_PER_SECOND * 3.5) )
 		{
 			callout.doMessage = false;
 			callout.messageSentTick = existingMessageSent;
+		}
+	}
+
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		while ( CalloutMenu[i].callouts.size() > 3 )
+		{
+			Uint32 earliestTick = ::ticks;
+			auto itToDelete = CalloutMenu[i].callouts.end();
+			for ( auto it = CalloutMenu[i].callouts.begin(); it != CalloutMenu[i].callouts.end(); ++it )
+			{
+				if ( it->second.creationTick < earliestTick )
+				{
+					earliestTick = it->second.creationTick;
+					itToDelete = it;
+				}
+			}
+			if ( itToDelete == CalloutMenu[i].callouts.end() )
+			{
+				break;
+			}
+			else
+			{
+				CalloutMenu[i].callouts.erase(itToDelete);
+			}
 		}
 	}
 
@@ -23959,6 +24300,19 @@ bool CalloutRadialMenu::createParticleCallout(Entity* entity, CalloutRadialMenu:
 
 	callout.tagID = worldIconEntries[iconEntries[calloutTypeKey].text_map[key].worldIconTag].id;
 	callout.tagSmallID = worldIconEntries[iconEntries[calloutTypeKey].text_map[key].worldIconTagMini].id;
+
+	if ( callout.cmd == CALLOUT_CMD_AFFIRMATIVE )
+	{
+		playSound(CALLOUT_SFX_POSITIVE, *cvar_callout_sfx_vol);
+	}
+	else if ( callout.cmd == CALLOUT_CMD_NEGATIVE )
+	{
+		playSound(CALLOUT_SFX_NEGATIVE, *cvar_callout_sfx_vol);
+	}
+	else
+	{
+		playSound(CALLOUT_SFX_NEUTRAL, *cvar_callout_sfx_vol);
+	}
 
 	if ( multiplayer == SERVER )
 	{
@@ -24011,6 +24365,44 @@ bool CalloutRadialMenu::createParticleCallout(real_t x, real_t y, real_t z, Uint
 		{
 			callout.doMessage = false;
 			callout.messageSentTick = existingMessageSent;
+		}
+	}
+
+	if ( callout.cmd == CALLOUT_CMD_AFFIRMATIVE )
+	{
+		playSound(CALLOUT_SFX_POSITIVE, *cvar_callout_sfx_vol);
+	}
+	else if ( callout.cmd == CALLOUT_CMD_NEGATIVE )
+	{
+		playSound(CALLOUT_SFX_NEGATIVE, *cvar_callout_sfx_vol);
+	}
+	else
+	{
+		playSound(CALLOUT_SFX_NEUTRAL, *cvar_callout_sfx_vol);
+	}
+
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		while ( CalloutMenu[i].callouts.size() > 3 )
+		{
+			Uint32 earliestTick = ::ticks;
+			auto itToDelete = CalloutMenu[i].callouts.end();
+			for ( auto it = CalloutMenu[i].callouts.begin(); it != CalloutMenu[i].callouts.end(); ++it )
+			{
+				if ( it->second.creationTick < earliestTick )
+				{
+					earliestTick = it->second.creationTick;
+					itToDelete = it;
+				}
+			}
+			if ( itToDelete == CalloutMenu[i].callouts.end() )
+			{
+				break;
+			}
+			else
+			{
+				CalloutMenu[i].callouts.erase(itToDelete);
+			}
 		}
 	}
 
@@ -24120,67 +24512,57 @@ std::string CalloutRadialMenu::getCalloutKeyForCommand(CalloutRadialMenu::Callou
 	{
 		return "move";
 	}
+	else if ( cmd == CALLOUT_CMD_SOUTH )
+	{
+		return "player_wave_1";
+	}
+	else if ( cmd == CALLOUT_CMD_SOUTHWEST )
+	{
+		return "player_wave_2";
+	}
+	else if ( cmd == CALLOUT_CMD_SOUTHEAST )
+	{
+		return "player_wave_3";
+	}
 	return "";
 }
 
-std::string CalloutRadialMenu::getIconPathForCommand(CalloutRadialMenu::CalloutCommand cmd, CalloutType type, bool highlight)
+int CalloutRadialMenu::getPlayerForDirectPlayerCmd(const int player, const CalloutRadialMenu::CalloutCommand cmd)
 {
-	if ( cmd == CALLOUT_CMD_LOOK )
+	if ( cmd == CALLOUT_CMD_SOUTH )
 	{
-		if ( highlight )
+		if ( player == 0 )
 		{
-			return iconEntries["look_at"].path_hover;
+			return 1;
 		}
 		else
 		{
-			return iconEntries["look_at"].path;
+			return 0;
 		}
 	}
-	else if ( cmd == CALLOUT_CMD_HELP )
+	else if ( cmd == CALLOUT_CMD_SOUTHWEST )
 	{
-		if ( highlight )
+		if ( player == 0 )
 		{
-			return iconEntries["help"].path_hover;
+			return 2;
 		}
 		else
 		{
-			return iconEntries["help"].path;
+			return player == 1 ? 2 : 1;
 		}
 	}
-	else if ( cmd == CALLOUT_CMD_AFFIRMATIVE )
+	else if ( cmd == CALLOUT_CMD_SOUTHEAST )
 	{
-		if ( highlight )
+		if ( player == 0 || player == 1 )
 		{
-			return iconEntries["affirmative"].path_hover;
+			return 3;
 		}
 		else
 		{
-			return iconEntries["affirmative"].path;
+			return player == 2 ? 3 : 2;
 		}
 	}
-	else if ( cmd == CALLOUT_CMD_NEGATIVE )
-	{
-		if ( highlight )
-		{
-			return iconEntries["negative"].path_hover;
-		}
-		else
-		{
-			return iconEntries["negative"].path;
-		}
-	}
-	else if ( cmd == CALLOUT_CMD_MOVE )
-	{
-		if ( highlight )
-		{
-			return iconEntries["move"].path_hover;
-		}
-		else
-		{
-			return iconEntries["move"].path;
-		}
-	}
-	return "";
+	return -1;
 }
 
 void CalloutRadialMenu::drawCalloutMenu()
@@ -24282,6 +24664,25 @@ void CalloutRadialMenu::drawCalloutMenu()
 			animInvalidAction = std::max(0.0, animInvalidAction);
 		}
 
+		if ( optionSelected == CALLOUT_CMD_SOUTH
+			|| optionSelected == CALLOUT_CMD_SOUTHEAST
+			|| optionSelected == CALLOUT_CMD_SOUTHWEST )
+		{
+			int targetPlayer = getPlayerForDirectPlayerCmd(getPlayer(), (CalloutCommand)optionSelected);
+			if ( targetPlayer < 0 || client_disconnected[targetPlayer] || (players[targetPlayer] && !players[targetPlayer]->entity) )
+			{
+				disableOption = true;
+			}
+			else
+			{
+				disableOption = false;
+			}
+		}
+		else
+		{
+			disableOption = false;
+		}
+
 		bool menuConfirmOnGamepad = input.input("MenuConfirm").isBindingUsingGamepad();
 		bool menuLeftClickOnKeyboard = input.input("MenuLeftClick").isBindingUsingKeyboard() && !inputs.hasController(gui_player);
 
@@ -24347,7 +24748,7 @@ void CalloutRadialMenu::drawCalloutMenu()
 				{
 					if ( !sfxPlayed && optionSelected != CALLOUT_CMD_CANCEL )
 					{
-						playSound(139, 64); // click
+						//playSound(139, 64); // click
 						sfxPlayed = true;
 					}
 				}
@@ -24387,10 +24788,46 @@ void CalloutRadialMenu::drawCalloutMenu()
 						}
 					}
 
+					if ( (CalloutCommand)optionSelected == CALLOUT_CMD_SOUTH
+						|| (CalloutCommand)optionSelected == CALLOUT_CMD_SOUTHWEST
+						|| (CalloutCommand)optionSelected == CALLOUT_CMD_SOUTHEAST )
+					{
+						int toPlayer = getPlayerForDirectPlayerCmd(getPlayer(), (CalloutCommand)optionSelected);
+						if ( toPlayer >= 0 )
+						{
+							lockOnEntityUid = achievementObserver.playerUids[toPlayer];
+						}
+					}
+
 					if ( lockOnEntityUid )
 					{
 						if ( Entity* target = uidToEntity(lockOnEntityUid) )
 						{
+							if ( target->behavior == &actPlayer && target->skill[2] != getPlayer() )
+							{
+								if ( (CalloutCommand)optionSelected == CALLOUT_CMD_HELP )
+								{
+									lockOnEntityUid = achievementObserver.playerUids[getPlayer()];
+									target = uidToEntity(lockOnEntityUid);
+								}
+								else if ( (CalloutCommand)optionSelected == CALLOUT_CMD_LOOK
+									|| (CalloutCommand)optionSelected == CALLOUT_CMD_AFFIRMATIVE
+									|| (CalloutCommand)optionSelected == CALLOUT_CMD_NEGATIVE )
+								{
+									target = players[getPlayer()]->entity;
+								}
+								else if ( (CalloutCommand)optionSelected == CALLOUT_CMD_SOUTH
+									|| (CalloutCommand)optionSelected == CALLOUT_CMD_SOUTHWEST
+									|| (CalloutCommand)optionSelected == CALLOUT_CMD_SOUTHEAST )
+								{
+									int toPlayer = getPlayerForDirectPlayerCmd(getPlayer(), (CalloutCommand)optionSelected);
+									if ( toPlayer >= 0 )
+									{
+										target = players[getPlayer()]->entity;
+									}
+								}
+							}
+
 							if ( createParticleCallout(target, (CalloutCommand)optionSelected) )
 							{
 								sendCalloutText((CalloutCommand)optionSelected);
@@ -24414,6 +24851,8 @@ void CalloutRadialMenu::drawCalloutMenu()
 				if ( !keepWheelOpen )
 				{
 					closeCalloutMenuGUI();
+					players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+					return;
 				}
 				optionSelected = -1;
 			}
@@ -24697,15 +25136,144 @@ void CalloutRadialMenu::drawCalloutMenu()
 							panelIcons[i]->path = iconEntries["move"].path;
 						}
 					}
+					else if ( i == CALLOUT_CMD_SOUTH )
+					{
+						int targetPlayer = getPlayerForDirectPlayerCmd(getPlayer(), (CalloutCommand)i);
+						if ( targetPlayer < 0 || client_disconnected[targetPlayer] || (players[targetPlayer] && !players[targetPlayer]->entity) )
+						{
+							lockedOption = true;
+						}
+						if ( i == highlight )
+						{
+							setCalloutText(bannerTxt, "player_wave_1", textHighlightColor, (CalloutCommand)i, SET_CALLOUT_BANNER_TEXT, -1);
+						}
+
+						std::string key = (i == highlight) ? "tag_btn_player_wave_hover" : "tag_btn_player_wave";
+						if ( lockedOption )
+						{
+							panelIcons[i]->path = worldIconEntries[key].pathDefault;
+						}
+						else
+						{
+							switch ( targetPlayer )
+							{
+							case 0:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer1;
+								break;
+							case 1:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer2;
+								break;
+							case 2:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer3;
+								break;
+							case 3:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer4;
+								break;
+							default:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayerX;
+								break;
+							}
+						}
+					}
+					else if ( i == CALLOUT_CMD_SOUTHWEST )
+					{
+						int targetPlayer = getPlayerForDirectPlayerCmd(getPlayer(), (CalloutCommand)i);
+						if ( targetPlayer < 0 || client_disconnected[targetPlayer] || (players[targetPlayer] && !players[targetPlayer]->entity) )
+						{
+							lockedOption = true;
+						}
+						if ( i == highlight )
+						{
+							setCalloutText(bannerTxt, "player_wave_2", textHighlightColor, (CalloutCommand)i, SET_CALLOUT_BANNER_TEXT, -1);
+						}
+						
+						std::string key = (i == highlight) ? "tag_btn_player_wave_hover" : "tag_btn_player_wave";
+						if ( lockedOption )
+						{
+							panelIcons[i]->path = worldIconEntries[key].pathDefault;
+						}
+						else
+						{
+							switch ( targetPlayer )
+							{
+							case 0:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer1;
+								break;
+							case 1:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer2;
+								break;
+							case 2:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer3;
+								break;
+							case 3:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer4;
+								break;
+							default:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayerX;
+								break;
+							}
+						}
+					}
+					else if ( i == CALLOUT_CMD_SOUTHEAST )
+					{
+						int targetPlayer = getPlayerForDirectPlayerCmd(getPlayer(), (CalloutCommand)i);
+						if ( targetPlayer < 0 || client_disconnected[targetPlayer] || (players[targetPlayer] && !players[targetPlayer]->entity) )
+						{
+							lockedOption = true;
+						}
+						if ( i == highlight )
+						{
+							setCalloutText(bannerTxt, "player_wave_3", textHighlightColor, (CalloutCommand)i, SET_CALLOUT_BANNER_TEXT, -1);
+						}
+						
+						std::string key = (i == highlight) ? "tag_btn_player_wave_hover" : "tag_btn_player_wave";
+						if ( lockedOption )
+						{
+							panelIcons[i]->path = worldIconEntries[key].pathDefault;
+						}
+						else
+						{
+							switch ( targetPlayer )
+							{
+							case 0:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer1;
+								break;
+							case 1:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer2;
+								break;
+							case 2:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer3;
+								break;
+							case 3:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer4;
+								break;
+							default:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayerX;
+								break;
+							}
+						}
+					}
 				}
 			}
 
-			if ( highlight == i && !mouseInCenterButton )
+			if ( lockedOption )
+			{
+				if ( highlight == i && !mouseInCenterButton )
+				{
+					panelImages[i]->path = getPanelEntriesForCallout()[i].path_hover;
+				}
+				else
+				{
+					panelImages[i]->path = getPanelEntriesForCallout()[i].path;
+				}
+			}
+			else if ( highlight == i && !mouseInCenterButton )
 			{
 				panelImages[i]->path = getPanelEntriesForCallout()[i].path_hover;
 			}
 
-			if ( !lockedOption && panelIcons[i]->path != "" )
+
+			if ( /*!lockedOption &&*/ panelIcons[i]->path != "" )
 			{
 				if ( auto imgGet = Image::get(panelIcons[i]->path.c_str()) )
 				{
@@ -24737,13 +25305,23 @@ void CalloutRadialMenu::drawCalloutMenu()
 		if ( optionSelected == -1 && disableOption == 0 && highlight != -1 )
 		{
 			// in case optionSelected is cleared, but we're still highlighting text (happens on next frame when clicking on disabled option.)
-			if ( highlight == CALLOUT_CMD_SELECT )
+			if ( highlight == CALLOUT_CMD_SOUTH
+				|| highlight == CALLOUT_CMD_SOUTHEAST
+				|| highlight == CALLOUT_CMD_SOUTHWEST )
 			{
-				disableOption = false;// optionDisabledForCreature(skillLVL, followerStats->type, highlight, followerToCommand);
+				int targetPlayer = getPlayerForDirectPlayerCmd(getPlayer(), (CalloutCommand)highlight);
+				if ( targetPlayer < 0 || client_disconnected[targetPlayer] || (players[targetPlayer] && !players[targetPlayer]->entity) )
+				{
+					disableOption = true;
+				}
+				else
+				{
+					disableOption = false;
+				}
 			}
 			else
 			{
-				disableOption = false;// optionDisabledForCreature(skillLVL, followerStats->type, highlight, followerToCommand);
+				disableOption = false;
 			}
 		}
 
@@ -25299,6 +25877,19 @@ bool CalloutRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updat
 			strcat(interactText, getMonsterLocalizedName((Monster)monsterType).c_str());
 		}
 	}
+	else if ( selectedEntity.behavior == &actPlayer )
+	{
+		if ( updateInteractText )
+		{
+			int playernum = selectedEntity.skill[2];
+			if ( playernum >= 0 && playernum < MAXPLAYERS )
+			{
+				char shortname[32];
+				stringCopy(shortname, stats[playernum]->name, sizeof(shortname), 22);
+				strcat(interactText, shortname);
+			}
+		}
+	}
 	else if ( selectedEntity.behavior == &actColliderDecoration && selectedEntity.isDamageableCollider() )
 	{
 		if ( updateInteractText )
@@ -25324,7 +25915,7 @@ bool CalloutRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updat
 	{
 		if ( updateInteractText )
 		{
-			strcpy(interactText, Language::get(4047)); // "No interactions available"
+			strcpy(interactText, "");
 		}
 		return false;
 	}

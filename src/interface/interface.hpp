@@ -1410,6 +1410,7 @@ struct CalloutRadialMenu
 			std::string worldMsg = "";
 			std::string worldMsgEmote = "";
 			std::string worldMsgEmoteYou = "";
+			std::string worldMsgEmoteToYou = "";
 			std::string worldIconTag = "";
 			std::string worldIconTagMini = "";
 		};
@@ -1427,6 +1428,7 @@ struct CalloutRadialMenu
 		int id = 0;
 	};
 	static std::map<std::string, WorldIconEntry_t> worldIconEntries;
+	static std::map<std::string, std::string> helpDescriptors;
 	static std::map<int, std::string> worldIconIDToEntryKey;
 	static int followerWheelRadius;
 	static int followerWheelButtonThickness;
@@ -1434,6 +1436,9 @@ struct CalloutRadialMenu
 	static int followerWheelFrameOffsetY;
 	static int followerWheelInnerCircleRadiusOffset;
 	static int followerWheelInnerCircleRadiusOffsetAlternate;
+	static int CALLOUT_SFX_NEUTRAL;
+	static int CALLOUT_SFX_NEGATIVE;
+	static int CALLOUT_SFX_POSITIVE;
 
 	enum CalloutCommand : int
 	{
@@ -1449,6 +1454,7 @@ struct CalloutRadialMenu
 		CALLOUT_CMD_SELECT,
 		CALLOUT_CMD_END
 	};
+	int getPlayerForDirectPlayerCmd(const int player, const CalloutCommand cmd);
 	enum CalloutType : int
 	{
 		CALLOUT_TYPE_NO_TARGET,
@@ -1550,7 +1556,6 @@ struct CalloutRadialMenu
 	bool allowedInteractEntity(Entity& selectedEntity, bool updateInteractText = true);
 	bool createParticleCallout(real_t x, real_t y, real_t z, Uint32 uid, CalloutCommand _cmd = CALLOUT_CMD_LOOK); // if true, send message
 	bool createParticleCallout(Entity* entity, CalloutCommand _cmd = CALLOUT_CMD_LOOK); // if true, send message
-	static std::string getIconPathForCommand(CalloutCommand cmd, CalloutType type, bool highlight);
 	enum SetCalloutTextTypes : int {
 		SET_CALLOUT_BANNER_TEXT,
 		SET_CALLOUT_WORLD_TEXT,

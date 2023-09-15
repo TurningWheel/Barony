@@ -728,6 +728,99 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 		}
 	}
 
+	bool blinkPlayers[MAXPLAYERS] = { false };
+	{
+		struct CalloutPing_t
+		{
+			real_t x = 0.0;
+			real_t y = 0.0;
+			Uint32 creationTick = 0;
+			int player = 0;
+			int targetPlayer = -1;
+			Uint32 lifetime = 0;
+			Uint32 ticks = 0;
+			bool selfCallout = false;
+			CalloutPing_t(real_t _x, real_t _y, Uint32 _creationTick, 
+				int _player, int _targetPlayer,
+				Uint32 _ticks, Uint32 _lifetime, bool _selfCallout) :
+				x(_x),
+				y(_y),
+				creationTick(_creationTick),
+				player(_player),
+				targetPlayer(_targetPlayer),
+				ticks(_ticks),
+				lifetime(_lifetime),
+				selfCallout(_selfCallout)
+			{};
+		};
+		auto compFunc = [](CalloutPing_t& lhs, CalloutPing_t& rhs)
+		{
+			return lhs.creationTick < rhs.creationTick;
+		};
+		std::priority_queue<CalloutPing_t, std::vector<CalloutPing_t>, decltype(compFunc)> priorityQueue(compFunc);
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			blinkPlayers[i] = false;
+			for ( auto& callout : CalloutMenu[i].callouts )
+			{
+				bool selfCallout = false;
+				int targetPlayer = -1;
+				for ( int j = 0; j < MAXPLAYERS; ++j )
+				{
+					if ( callout.second.entityUid == achievementObserver.playerUids[j] )
+					{
+						selfCallout = true;
+						targetPlayer = j;
+						break;
+					}
+				}
+				priorityQueue.push(CalloutPing_t(callout.second.x / 16.0, callout.second.y / 16.0, 
+					callout.second.creationTick, i, targetPlayer,
+					callout.second.ticks,
+					callout.second.kParticleLifetime, selfCallout));
+			}
+		}
+		while ( !priorityQueue.empty() )
+		{
+			auto& ping = priorityQueue.top();
+
+			Uint32 aliveTime = ::ticks - ping.creationTick;
+			if ( ping.targetPlayer >= 0 && ping.targetPlayer < MAXPLAYERS )
+			{
+				blinkPlayers[ping.targetPlayer] = true;
+			}
+			if ( (aliveTime < (TICKS_PER_SECOND / 2) && (aliveTime % 10 < 5)) || aliveTime >= (TICKS_PER_SECOND / 2) )
+			{
+				if ( ping.targetPlayer >= 0 && ping.targetPlayer < MAXPLAYERS )
+				{
+					blinkPlayers[ping.targetPlayer] = false;
+					priorityQueue.pop();
+					continue;
+				}
+
+				// set color
+				Uint32 color = playerColor(ping.player, colorblind_lobby, false);
+				uint8_t r, g, b, a;
+				getColor(color, &r, &g, &b, &a);
+
+				real_t lifePercent = ping.ticks / (real_t)ping.lifetime;
+				if ( ping.selfCallout && !drawingSharedMap )
+				{
+					// fade early for the self callout player, but not others in splitscreen
+					lifePercent = ping.ticks / (real_t)((TICKS_PER_SECOND * 4) / 5);
+				}
+				Uint32 alpha = 255;
+				if ( lifePercent >= 0.8 )
+				{
+					alpha -= std::min((Uint32)255, (Uint32)(255 * (lifePercent - 0.8) / 0.2));
+				}
+				color = makeColor(r, g, b, alpha);
+				drawCircleMesh((real_t)ping.x + 0.5, (real_t)ping.y + 0.5, (real_t)1.0, rect, color);
+			}
+			priorityQueue.pop();
+		}
+	}
+
 	// draw minotaur, players, and allies
 	for ( int c = 0; c < 2; ++c )
 	{
@@ -747,6 +840,10 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 			else if ( entity->behavior == &actPlayer )
 			{
 				foundplayer = entity->skill[2];
+				if ( blinkPlayers[foundplayer] )
+				{
+					continue; // skip this one since it's blinking from a callout
+				}
 			}
 			else if ( entity->behavior == &actMonster )
 			{

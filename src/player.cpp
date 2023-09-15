@@ -3258,6 +3258,12 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 					}
 				}
 
+				if ( parent->behavior == &actPlayer && player.playernum == parent->skill[2] )
+				{
+					// can't select self
+					return 0.0;
+				}
+
 				Entity* ohitentity = hit.entity;
 				real_t tangent2 = atan2(players[player.playernum]->entity->y - parent->y, players[player.playernum]->entity->x - parent->x);
 				lineTraceTarget(parent, parent->x, parent->y, tangent2, maxDist, 0, false, players[player.playernum]->entity);
@@ -3270,6 +3276,10 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 				hit.entity = ohitentity;
 			}
 			else if ( parent->behavior == &actBoulderTrapHole )
+			{
+				return 0.0;
+			}
+			else if ( parent->behavior == &actPlayer )
 			{
 				return 0.0;
 			}

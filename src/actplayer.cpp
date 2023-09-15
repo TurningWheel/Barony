@@ -2579,6 +2579,11 @@ void actPlayer(Entity* my)
 
 	if ( !intro )
 	{
+		if ( PLAYER_ALIVETIME == 0 )
+		{
+			my->createWorldUITooltip();
+		}
+
 		PLAYER_ALIVETIME++;
 		if ( PLAYER_NUM == clientnum ) // specifically the host - in splitscreen we only process this once for all players.
 		{
@@ -4336,6 +4341,11 @@ void actPlayer(Entity* my)
 								if ( true /*&& calloutMenu.allowedInteractEntity(*target)*/ )
 								{
 									calloutMenu.lockOnEntityUid = target->getUID();
+									if ( target->behavior == &actPlayer && target->skill[2] != PLAYER_NUM )
+									{
+										target = my;
+									}
+
 									if ( calloutMenu.createParticleCallout(target) )
 									{
 										calloutMenu.sendCalloutText(CalloutRadialMenu::CALLOUT_CMD_LOOK);
@@ -4429,11 +4439,12 @@ void actPlayer(Entity* my)
 							|| showCalloutCommandsInputStr == input.binding("Interact Tooltip Prev")) )
 					{
 						input.consumeBinaryToggle("Show Player Callouts");
-						players[PLAYER_NUM]->hud.followerDisplay.bOpenFollowerMenuDisabled = true;
+						players[PLAYER_NUM]->hud.bOpenCalloutsMenuDisabled = true;
 					}
 				}
 
-				if ( (input.binaryToggle("Show Player Callouts") && !showCalloutCommandsOnGamepad)
+				if ( (input.binaryToggle("Show Player Callouts") && !showCalloutCommandsOnGamepad
+						&& players[PLAYER_NUM]->shootmode)
 					|| (input.binaryToggle("Show Player Callouts") && showCalloutCommandsOnGamepad
 						&& players[PLAYER_NUM]->shootmode /*&& !players[PLAYER_NUM]->worldUI.bTooltipInView*/) )
 				{
@@ -4544,7 +4555,7 @@ void actPlayer(Entity* my)
 								calloutMenu.moveToX = previousx;
 								calloutMenu.moveToY = previousy;
 								calloutMenu.initCalloutMenuGUICursor(true);
-								Player::soundActivate();
+								//Player::soundActivate();
 							}
 							else
 							{
