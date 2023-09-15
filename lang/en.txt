@@ -6674,7 +6674,7 @@ The next input you activate will be bound to this action.#
 5192 Environment Volume#
 5193 Adjust the volume of flowing water and lava.#
 5194 Notification Volume#
-5195 Adjust the volume of skill increase and level up notifications.#
+5195 Adjust the volume of callouts, chat messages, skill increases and level up notifications.#
 5196 Music Volume#
 5197 Adjust the volume of the game's soundtrack.#
 5198 Options#
