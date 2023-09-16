@@ -3262,8 +3262,8 @@ void releaseItem(const int player)
 	bool& toggleclick = inputs.getUIInteraction(player)->toggleclick;
 
 	// releasing items
-	if ( (!Input::inputs[player].binary("MenuLeftClick") && !toggleclick)
-		|| (Input::inputs[player].binaryToggle("MenuLeftClick") && toggleclick)
+	if ( (!Input::inputs[player].binary("MenuLeftClick") && inputs.bPlayerUsingKeyboardControl(player) && !toggleclick)
+		|| (Input::inputs[player].binaryToggle("MenuLeftClick") && inputs.bPlayerUsingKeyboardControl(player) && toggleclick)
 		|| ( (Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(player, PROMPT_GRAB).c_str())
 			|| Input::inputs[player].binaryToggle("MenuConfirm")) 
 			&& toggleclick) )
