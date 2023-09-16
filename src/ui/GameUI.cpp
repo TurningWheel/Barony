@@ -5793,7 +5793,7 @@ void Player::HUD_t::updateStatusEffectFocusedWindow()
 		}
 		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 		{
-			if ( Input::inputs[player.playernum].binaryToggle("MenuLeftClick") )
+			if ( Input::inputs[player.playernum].binaryToggle("MenuLeftClick") && inputs.bPlayerUsingKeyboardControl(player.playernum) )
 			{
 				Input::inputs[player.playernum].consumeBinaryToggle("MenuLeftClick");
 				if ( !bgFrame->capturesMouse() )
@@ -32342,7 +32342,7 @@ void Player::SkillSheet_t::processSkillSheet()
 								skillSlideDirection = -1;
 							}
 						}
-						if ( Input::inputs[player.playernum].binaryToggle("MenuLeftClick") )
+						if ( Input::inputs[player.playernum].binaryToggle("MenuLeftClick") && inputs.bPlayerUsingKeyboardControl(player.playernum) )
 						{
 							selectSkill(i);
 							Input::inputs[player.playernum].consumeBinaryToggle("MenuLeftClick");
