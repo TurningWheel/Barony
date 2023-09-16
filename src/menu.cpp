@@ -10489,80 +10489,86 @@ void doEndgame(bool saveHighscore) {
 					steamAchievement("BARONY_ACH_POST_HARDCORE");
 				}
 
-				if ( client_classes[clientnum] == CLASS_MESMER )
+				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					steamAchievement("BARONY_ACH_COMMANDER_CHIEF");
-				}
-				else if ( client_classes[clientnum] == CLASS_BREWER )
-				{
-					steamAchievement("BARONY_ACH_DRUNK_POWER");
-				}
-				else if ( client_classes[clientnum] == CLASS_ACCURSED )
-				{
-					steamAchievement("BARONY_ACH_POWER_HUNGRY");
-					if ( stats[clientnum]->EFFECTS[EFF_VAMPIRICAURA] && stats[clientnum]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+					if ( players[i]->isLocalPlayer() && !client_disconnected[i] )
 					{
-						if ( stats[clientnum] && (svFlags & SV_FLAG_HUNGER) )
+						if ( client_classes[i] == CLASS_MESMER )
 						{
-							steamAchievement("BARONY_ACH_BLOOD_IS_THE_LIFE");
+							steamAchievement("BARONY_ACH_COMMANDER_CHIEF");
 						}
-					}
-				}
-				else if ( client_classes[clientnum] == CLASS_HUNTER )
-				{
-					steamAchievement("BARONY_ACH_RANGER_DANGER");
-					if ( conductGameChallenges[CONDUCT_RANGED_ONLY] )
-					{
-						steamAchievement("BARONY_ACH_GUDIPARIAN_BAZI");
-					}
-				}
-				else if ( client_classes[clientnum] == CLASS_CONJURER )
-				{
-					steamAchievement("BARONY_ACH_TURN_UNDEAD");
-				}
-				else if ( client_classes[clientnum] == CLASS_SHAMAN )
-				{
-					steamAchievement("BARONY_ACH_MY_FINAL_FORM");
-				}
-				else if ( client_classes[clientnum] == CLASS_PUNISHER )
-				{
-					steamAchievement("BARONY_ACH_TIME_TO_SUFFER");
-				}
-				else if ( client_classes[clientnum] == CLASS_MACHINIST )
-				{
-					steamAchievement("BARONY_ACH_LIKE_CLOCKWORK");
-				}
+						else if ( client_classes[i] == CLASS_BREWER )
+						{
+							steamAchievement("BARONY_ACH_DRUNK_POWER");
+						}
+						else if ( client_classes[i] == CLASS_ACCURSED )
+						{
+							steamAchievement("BARONY_ACH_POWER_HUNGRY");
+							if ( stats[i]->EFFECTS[EFF_VAMPIRICAURA] && stats[i]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+							{
+								if ( stats[i] && (svFlags & SV_FLAG_HUNGER) )
+								{
+									steamAchievement("BARONY_ACH_BLOOD_IS_THE_LIFE");
+								}
+							}
+						}
+						else if ( client_classes[i] == CLASS_HUNTER )
+						{
+							steamAchievement("BARONY_ACH_RANGER_DANGER");
+							if ( conductGameChallenges[CONDUCT_RANGED_ONLY] )
+							{
+								steamAchievement("BARONY_ACH_GUDIPARIAN_BAZI");
+							}
+						}
+						else if ( client_classes[i] == CLASS_CONJURER )
+						{
+							steamAchievement("BARONY_ACH_TURN_UNDEAD");
+						}
+						else if ( client_classes[i] == CLASS_SHAMAN )
+						{
+							steamAchievement("BARONY_ACH_MY_FINAL_FORM");
+						}
+						else if ( client_classes[i] == CLASS_PUNISHER )
+						{
+							steamAchievement("BARONY_ACH_TIME_TO_SUFFER");
+						}
+						else if ( client_classes[i] == CLASS_MACHINIST )
+						{
+							steamAchievement("BARONY_ACH_LIKE_CLOCKWORK");
+						}
 
-				if ( stats[clientnum] && stats[clientnum]->appearance == 0 )
-				{
-					switch ( stats[clientnum]->playerRace )
-					{
-					case RACE_SKELETON:
-						steamAchievement("BARONY_ACH_BONY_BARON");
-						break;
-					case RACE_SUCCUBUS:
-						steamAchievement("BARONY_ACH_BOMBSHELL_BARON");
-						break;
-					case RACE_GOATMAN:
-						steamAchievement("BARONY_ACH_BLEATING_BARON");
-						break;
-					case RACE_VAMPIRE:
-						steamAchievement("BARONY_ACH_BUCKTOOTH_BARON");
-						break;
-					case RACE_INCUBUS:
-						steamAchievement("BARONY_ACH_BAD_BOY_BARON");
-						break;
-					case RACE_INSECTOID:
-						steamAchievement("BARONY_ACH_BUGGAR_BARON");
-						break;
-					case RACE_AUTOMATON:
-						steamAchievement("BARONY_ACH_BOILERPLATE_BARON");
-						break;
-					case RACE_GOBLIN:
-						steamAchievement("BARONY_ACH_BAYOU_BARON");
-						break;
-					default:
-						break;
+						if ( stats[i] && stats[i]->appearance == 0 )
+						{
+							switch ( stats[i]->playerRace )
+							{
+							case RACE_SKELETON:
+								steamAchievement("BARONY_ACH_BONY_BARON");
+								break;
+							case RACE_SUCCUBUS:
+								steamAchievement("BARONY_ACH_BOMBSHELL_BARON");
+								break;
+							case RACE_GOATMAN:
+								steamAchievement("BARONY_ACH_BLEATING_BARON");
+								break;
+							case RACE_VAMPIRE:
+								steamAchievement("BARONY_ACH_BUCKTOOTH_BARON");
+								break;
+							case RACE_INCUBUS:
+								steamAchievement("BARONY_ACH_BAD_BOY_BARON");
+								break;
+							case RACE_INSECTOID:
+								steamAchievement("BARONY_ACH_BUGGAR_BARON");
+								break;
+							case RACE_AUTOMATON:
+								steamAchievement("BARONY_ACH_BOILERPLATE_BARON");
+								break;
+							case RACE_GOBLIN:
+								steamAchievement("BARONY_ACH_BAYOU_BARON");
+								break;
+							default:
+								break;
+							}
+						}
 					}
 				}
 			}
