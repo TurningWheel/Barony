@@ -311,7 +311,8 @@ void Player::BookGUI_t::updateBookGUI()
 	auto nextPageBoundary = innerFrame->findFrame("next page mouse boundary");
 
 	// book gui
-	if ( Input::inputs[player.playernum].binaryToggle("MenuLeftClick") )
+	if ( Input::inputs[player.playernum].binaryToggle("MenuLeftClick")
+		&& inputs.bPlayerUsingKeyboardControl(player.playernum) )
 	{
 		//book_t GUI next page button.
 		if ( nextPageBoundary->capturesMouse() )
