@@ -5266,6 +5266,25 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			}
 			else
 			{
+				if ( entity && entity->behavior == &actPlayer && entity->skill[2] != pnum )
+				{
+					if ( cmd == CalloutRadialMenu::CALLOUT_CMD_LOOK
+						|| cmd == CalloutRadialMenu::CALLOUT_CMD_AFFIRMATIVE
+						|| cmd == CalloutRadialMenu::CALLOUT_CMD_NEGATIVE )
+					{
+						entity = players[pnum]->entity;
+					}
+					else if ( cmd == CalloutRadialMenu::CALLOUT_CMD_SOUTH
+						|| cmd == CalloutRadialMenu::CALLOUT_CMD_SOUTHWEST
+						|| cmd == CalloutRadialMenu::CALLOUT_CMD_SOUTHEAST )
+					{
+						int toPlayer = CalloutMenu[pnum].getPlayerForDirectPlayerCmd(pnum, cmd);
+						if ( toPlayer >= 0 )
+						{
+							entity = players[pnum]->entity;
+						}
+					}
+				}
 				if ( CalloutMenu[pnum].createParticleCallout(entity, cmd) )
 				{
 					CalloutMenu[pnum].sendCalloutText(cmd);
