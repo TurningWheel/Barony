@@ -2164,6 +2164,20 @@ void FollowerRadialMenu::drawFollowerMenu()
 	Uint32 textHighlightColor = followerBannerTextHighlightColor;
 	bool tinkeringFollower = false;
 
+	if ( recentEntity )
+	{
+		if ( recentEntity->monsterAllyIndex != gui_player ) // our ally left our service by charm or otherwise
+		{
+			recentEntity = nullptr;
+			if ( followerToCommand == recentEntity )
+			{
+				closeFollowerMenuGUI();
+				players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+				return;
+			}
+		}
+	}
+
 	if ( !followerToCommand && (!followerFrame->isDisabled() || players[gui_player]->gui_mode == GUI_MODE_FOLLOWERMENU) )
 	{
 		closeFollowerMenuGUI();
