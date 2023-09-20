@@ -1561,7 +1561,6 @@ int main(int argc, char** argv)
     }
 
 	// initialize
-	useModelCache = true;
 	verticalSync = true;
 	if ( (x = initApp("Barony Editor", fullscreen)) )
 	{

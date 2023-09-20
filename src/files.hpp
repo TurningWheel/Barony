@@ -269,6 +269,16 @@ public:
 	}
 };
 
+enum HolidayTheme {
+    THEME_NONE,
+    THEME_HALLOWEEN,
+    THEME_XMAS,
+    THEME_MAX
+};
+extern const char* holidayThemeDirs[HolidayTheme::THEME_MAX];
+HolidayTheme getCurrentHoliday();
+bool isCurrentHoliday();
+
 extern char datadir[PATH_MAX]; //PATH_MAX as defined in main.hpp -- maybe define in Config.hpp?
 extern char outputdir[PATH_MAX];
 void glLoadTexture(SDL_Surface* image, int texnum);

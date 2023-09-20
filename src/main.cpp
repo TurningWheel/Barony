@@ -210,10 +210,9 @@ int mainloop = 1;
 bool initialized = false;
 Uint32 ticks = 0;
 bool stop = false;
-char datadir[PATH_MAX];
-char outputdir[PATH_MAX];
 SDL_bool EnableMouseCapture = SDL_TRUE; // disable if mouse capture causes problem debugging in Linux
 bool& enableDebugKeys = cvar_enableDebugKeys.data;
+
 
 // input stuff
 Uint32 impulses[NUMIMPULSES];
@@ -829,3 +828,19 @@ char* getTimeAndDateFormatted(time_t t, char* buf, size_t size) {
     return buf;
 }
 #endif
+
+void getTimeAndDate(time_t t, int* year, int* month, int* day, int* hour, int* min, int* second) {
+    char buf[32];
+    getTimeAndDateFormatted(t, buf, sizeof(buf));
+    
+    int _year, _month, _day, _hour, _min, _second;
+    const int result = sscanf(buf, "%d-%d-%d %d-%d-%d", &_year, &_month, &_day, &_hour, &_min, &_second);
+    assert(result == 6);
+    
+    if (year) { *year = _year; }
+    if (month) { *month = _month; }
+    if (day) { *day = _day; }
+    if (hour) { *hour = _hour; }
+    if (min) { *min = _min; }
+    if (second) { *second = _second; }
+}

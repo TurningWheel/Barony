@@ -112,17 +112,32 @@ int initApp(char const * const title, int fullscreen)
 
 	if ( !PHYSFS_isInit() )
 	{
-		printlog("[PhysFS]: failed to initialize! Error: %s", PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+		printlog("[PhysFS]: failed to initialize! Error: %s",
+            PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 		return 13;
 	}
 	else
 	{
-		printlog("[PhysFS]: successfully initialized, last error: %s", PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+		printlog("[PhysFS]: successfully initialized, last error: %s",
+            PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 	}
+
+    if (isCurrentHoliday()) {
+        useModelCache = false; // don't use model cache on holidays.
+        const auto holiday = getCurrentHoliday();
+        const auto holiday_dir = holidayThemeDirs[holiday];
+        const auto holiday_dir_str = (std::string(datadir) + "/") + holiday_dir;
+        if (!PHYSFS_mount(holiday_dir_str.c_str(), NULL, 1)) {
+            printlog("[PhysFS]: unsuccessfully mounted holiday %s folder. Error: %s",
+                holiday_dir_str.c_str(), PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+            return 13;
+        }
+    }
 
 	if ( !PHYSFS_mount(datadir, NULL, 1) )
 	{
-		printlog("[PhysFS]: unsuccessfully mounted base %s folder. Error: %s", datadir, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+		printlog("[PhysFS]: unsuccessfully mounted base %s folder. Error: %s",
+            datadir, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 		return 13;
 	}
 

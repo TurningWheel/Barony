@@ -8144,8 +8144,15 @@ bool Mods::clearAllMountedPaths()
 	char** i;
 	for ( i = PHYSFS_getSearchPath(); *i != NULL; i++ )
 	{
+        const std::string xmas = (std::string(datadir) + "/") + holidayThemeDirs[HolidayTheme::THEME_XMAS];
+        const std::string halloween = (std::string(datadir) + "/") + holidayThemeDirs[HolidayTheme::THEME_HALLOWEEN];
+    
 		std::string line = *i;
-		if ( line.compare(outputdir) != 0 && line.compare(datadir) != 0 && line.compare("./") != 0 ) // don't unmount the base ./ directory
+		if (line.compare(outputdir) != 0 &&
+            line.compare(datadir) != 0 &&
+            line.compare(halloween) != 0 &&
+            line.compare(xmas) != 0 &&
+            line.compare("./") != 0) // don't unmount the base directories
 		{
 			if ( PHYSFS_unmount(*i) == 0 )
 			{

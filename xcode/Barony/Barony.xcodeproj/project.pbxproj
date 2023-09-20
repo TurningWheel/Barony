@@ -239,6 +239,7 @@
 		84C3DB30292028790084EAD5 /* playernames-male.txt in Resources */ = {isa = PBXBuildFile; fileRef = 84C3DB2D292028790084EAD5 /* playernames-male.txt */; };
 		84C3DB31292028790084EAD5 /* lang in Resources */ = {isa = PBXBuildFile; fileRef = 84C3DB2E292028790084EAD5 /* lang */; };
 		84C3DB32292028790084EAD5 /* playernames-female.txt in Resources */ = {isa = PBXBuildFile; fileRef = 84C3DB2F292028790084EAD5 /* playernames-female.txt */; };
+		84C69F2C2ABA83190014D8FF /* themes in Resources */ = {isa = PBXBuildFile; fileRef = 84C69F2B2ABA83190014D8FF /* themes */; };
 		84F71060292327D900AE0D03 /* libsteam_api.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F7105F292327D900AE0D03 /* libsteam_api.dylib */; };
 		84F710632923280500AE0D03 /* libEOSSDK-Mac-Shipping.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 84F71061292327F100AE0D03 /* libEOSSDK-Mac-Shipping.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		84F710642923280D00AE0D03 /* libsteam_api.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 84F7105F292327D900AE0D03 /* libsteam_api.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -560,6 +561,7 @@
 		84C3DB2D292028790084EAD5 /* playernames-male.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = "playernames-male.txt"; path = "../../playernames-male.txt"; sourceTree = "<group>"; };
 		84C3DB2E292028790084EAD5 /* lang */ = {isa = PBXFileReference; lastKnownFileType = folder; name = lang; path = ../../lang; sourceTree = "<group>"; };
 		84C3DB2F292028790084EAD5 /* playernames-female.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = "playernames-female.txt"; path = "../../playernames-female.txt"; sourceTree = "<group>"; };
+		84C69F2B2ABA83190014D8FF /* themes */ = {isa = PBXFileReference; lastKnownFileType = folder; name = themes; path = ../../../baronyupdate/themes; sourceTree = "<group>"; };
 		84F7105F292327D900AE0D03 /* libsteam_api.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsteam_api.dylib; path = ../../../steamworks/sdk/redistributable_bin/osx/libsteam_api.dylib; sourceTree = "<group>"; };
 		84F71061292327F100AE0D03 /* libEOSSDK-Mac-Shipping.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libEOSSDK-Mac-Shipping.dylib"; path = "../../../eos/EOS-SDK-21924193-v1/SDK/Bin/libEOSSDK-Mac-Shipping.dylib"; sourceTree = "<group>"; };
 		84F71089292350C500AE0D03 /* Vorbis.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Vorbis.framework; path = ../../../Vorbis.framework; sourceTree = "<group>"; };
@@ -873,6 +875,7 @@
 				84C3DB22292028630084EAD5 /* models */,
 				84C3DB21292028630084EAD5 /* music */,
 				84C3DB1F292028630084EAD5 /* sound */,
+				84C69F2B2ABA83190014D8FF /* themes */,
 				847B3BF1296BF89F002D8852 /* libphysfs.1.dylib */,
 				847B3BEF296BF890002D8852 /* libpng16.16.dylib */,
 				84C3DB12291F799D0084EAD5 /* Config.hpp */,
@@ -1021,6 +1024,7 @@
 				84C3DB31292028790084EAD5 /* lang in Resources */,
 				84C3DB24292028630084EAD5 /* items in Resources */,
 				84C3DB25292028630084EAD5 /* maps in Resources */,
+				84C69F2C2ABA83190014D8FF /* themes in Resources */,
 				84C3DB26292028630084EAD5 /* data in Resources */,
 				84C3DB27292028630084EAD5 /* books in Resources */,
 				84C3DB28292028630084EAD5 /* sound in Resources */,

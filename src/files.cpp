@@ -34,6 +34,52 @@
 #include "editor.hpp"
 #endif
 
+char datadir[PATH_MAX];
+char outputdir[PATH_MAX];
+const char* holidayThemeDirs[HolidayTheme::THEME_MAX] = {
+    "",
+    "themes/scarony/",
+    "themes/christmas/"
+};
+
+#ifndef EDITOR
+#include "interface/consolecommand.hpp"
+static ConsoleVariable<int> cvar_forceHoliday("/force_holiday", 0);
+static ConsoleVariable<bool> cvar_disableHoliday("/disable_holiday", false);
+#endif
+
+HolidayTheme getCurrentHoliday() {
+#ifndef EDITOR
+    if (*cvar_disableHoliday) {
+        return HolidayTheme::THEME_NONE;
+    }
+    if (*cvar_forceHoliday) {
+        const int holiday = std::clamp(*cvar_forceHoliday, 0, (int)HolidayTheme::THEME_MAX - 1);
+        return static_cast<HolidayTheme>(holiday);
+    }
+#endif
+    static bool gotTime = false;
+    static int year, month, day;
+    if (!gotTime) {
+        gotTime = true;
+        getTimeAndDate(getTime(), &year, &month, &day,
+            nullptr, nullptr, nullptr);
+    }
+    if (month == 10 || (month == 11 && day == 1)) {
+        return HolidayTheme::THEME_HALLOWEEN;
+    }
+    else if ((month == 11 && day >= 24) || (month == 12) || (month == 1 && day == 1)) {
+        return HolidayTheme::THEME_XMAS;
+    }
+    else {
+        return HolidayTheme::THEME_NONE;
+    }
+}
+
+bool isCurrentHoliday() {
+    return getCurrentHoliday() != HolidayTheme::THEME_NONE;
+}
+
 std::unordered_map<std::string, int> mapHashes = {
     { "boss.lmp", 2376307 },
     { "bramscastle.lmp", 3370696 },
@@ -1383,7 +1429,17 @@ bool completePath(char *dest, const char * const filename, const char *base) {
 	}
 #endif
 
-	snprintf(dest, PATH_MAX, "%s/%s", base, filename);
+    if (base == datadir && isCurrentHoliday()) {
+        const auto holiday = getCurrentHoliday();
+        const auto holiday_dir = holidayThemeDirs[holiday];
+        assert(holiday_dir[0]);
+        snprintf(dest, PATH_MAX, "%s/%s%s", base, holiday_dir, filename);
+        if (!dataPathExists(dest, false)) {
+            snprintf(dest, PATH_MAX, "%s/%s", base, filename);
+        }
+    } else {
+        snprintf(dest, PATH_MAX, "%s/%s", base, filename);
+    }
 	return true;
 }
 
@@ -1410,6 +1466,7 @@ DIR* openDataDir(const char * const name) {
 
 bool dataPathExists(const char * const path, bool complete) {
 #ifdef NINTENDO
+    // TODO for themes!!!
 	return true;
 #endif
     if (complete) {
