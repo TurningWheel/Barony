@@ -567,6 +567,7 @@ namespace MainMenu {
 		bool bobbing_enabled = true;
 		bool light_flicker_enabled = true;
 		bool hold_to_activate_enabled = true;
+        bool holiday_themes_enabled = true;
         struct Video video;
 		bool use_frame_interpolation = true;
 		bool vertical_split_enabled = false;
@@ -1742,7 +1743,6 @@ namespace MainMenu {
 		const char* okay_text,
 		void (*okay_callback)(Button&)
 	) {
-		soundActivate();
 		return monoPromptGeneric(window_text, okay_text, okay_callback, false);
 	}
 
@@ -2721,6 +2721,11 @@ namespace MainMenu {
 		bobbing = bobbing_enabled;
 		flickerLights = light_flicker_enabled;
 		*cvar_hold_to_activate = hold_to_activate_enabled;
+        bool oldDisableHoliday = *cvar_disableHoliday;
+        *cvar_disableHoliday = !holiday_themes_enabled;
+        if (oldDisableHoliday != *cvar_disableHoliday) {
+            (void)remountBaseDataFolders();
+        }
 		result |= video.save() ? VideoRefresh::Video : VideoRefresh::None;
 		*vertical_splitscreen = vertical_split_enabled;
 		*staggered_splitscreen = staggered_split_enabled;
@@ -2833,6 +2838,7 @@ namespace MainMenu {
 		settings.bobbing_enabled = bobbing;
 		settings.light_flicker_enabled = flickerLights;
 		settings.hold_to_activate_enabled = *cvar_hold_to_activate;
+        settings.holiday_themes_enabled = !*cvar_disableHoliday;
 		if (video) {
 			settings.video = Video::load();
 		} else {
@@ -2887,7 +2893,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 18;
+	    int version = 19;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -2929,6 +2935,7 @@ namespace MainMenu {
 		file->property("bobbing_enabled", bobbing_enabled);
 		file->property("light_flicker_enabled", light_flicker_enabled);
 		file->propertyVersion("hold_to_activate_enabled", version >= 17, hold_to_activate_enabled);
+		file->propertyVersion("holiday_themes_enabled", version >= 19, holiday_themes_enabled);
         if (version >= 1) {
             file->property("video", video);
             file->property("vertical_split_enabled", vertical_split_enabled);
@@ -6763,6 +6770,20 @@ bind_failed:
 			return;
 		}
 		int y = 0;
+  
+        auto holiday_credits_fn = [](Button& button){
+            monoPromptXL(Language::get(6028), Language::get(6029), [](Button&){soundCancel(); closeMono();});
+        };
+        
+		y += settingsAddSubHeader(*settings_subwindow, y, "holiday_themes", Language::get(6022));
+		y += settingsAddBooleanOption(*settings_subwindow, y, "holiday_themes", Language::get(6023), Language::get(6024),
+			allSettings.holiday_themes_enabled, [](Button& button){soundToggleSetting(button); allSettings.holiday_themes_enabled = button.isPressed();});
+        y += settingsAddCustomize(*settings_subwindow, y, "holiday_credits", Language::get(6025), Language::get(6027), holiday_credits_fn);
+        
+        auto holiday_credits_button = settings_subwindow->findButton("setting_holiday_credits_customize_button");
+        if (holiday_credits_button) {
+            holiday_credits_button->setText(Language::get(6026));
+        }
 
 #if 0
 		y += settingsAddSubHeader(*settings_subwindow, y, "general", Language::get(5241));
@@ -6770,9 +6791,9 @@ bind_failed:
 			allSettings.show_ip_address_enabled, [](Button& button){soundToggleSetting(button); allSettings.show_ip_address_enabled = button.isPressed();});
 #endif
 
+#ifndef NINTENDO
         char port_desc[1024];
         snprintf(port_desc, sizeof(port_desc), Language::get(5244), DEFAULT_PORT);
-
         char buf[16];
         snprintf(buf, sizeof(buf), "%hu", (Uint16)allSettings.port_number);
 		y += settingsAddSubHeader(*settings_subwindow, y, "lan", Language::get(5245));
@@ -6791,17 +6812,35 @@ bind_failed:
 					}
 				}
 			});
-#if defined(USE_EOS) && (defined(STEAMWORKS) || defined(NINTENDO))
+#endif
+            
+#if !defined(NINTENDO)
+#if defined(USE_EOS) && defined(STEAMWORKS)
 		y += settingsAddSubHeader(*settings_subwindow, y, "crossplay", Language::get(5247));
 		y += settingsAddBooleanOption(*settings_subwindow, y, "crossplay", Language::get(5248), Language::get(5249),
 		    allSettings.crossplay_enabled, [](Button& button){soundToggleSetting(button); allSettings.crossplay_enabled = button.isPressed();});
 
 		hookSettings(*settings_subwindow,
-			{{Setting::Type::Field, "port_number"},
-			{Setting::Type::Boolean, "crossplay"}});
+			{
+                {Setting::Type::Boolean, "holiday_themes"},
+                {Setting::Type::Customize, "holiday_credits"},
+                {Setting::Type::Field, "port_number"},
+                {Setting::Type::Boolean, "crossplay"},
+            });
 #else
 		hookSettings(*settings_subwindow,
-			{{Setting::Type::Field, "port_number"}});
+			{
+                {Setting::Type::Boolean, "holiday_themes"},
+                {Setting::Type::Customize, "holiday_credits"},
+                {Setting::Type::Field, "port_number"},
+            });
+#endif
+#else // defined(NINTENDO)
+		hookSettings(*settings_subwindow,
+			{
+                {Setting::Type::Boolean, "holiday_themes"},
+                {Setting::Type::Customize, "holiday_credits"},
+            });
 #endif
 
 		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Field, "port_number"});
@@ -20747,9 +20786,7 @@ failed:
 				"Controls",
 			};
 			if (intro) {
-#ifndef NINTENDO
 			    tabs.push_back("Online");
-#endif
 			} else {
 				tabs.push_back("Game");
 			}
@@ -20787,9 +20824,7 @@ failed:
 			{"Controls", Language::get(5621), settingsControls},
 		};
 		if (intro) {
-#ifndef NINTENDO
 		    tabs.push_back({"Online", Language::get(5622), settingsOnline});
-#endif
 		} else {
 			tabs.push_back({"Game", Language::get(5623), settingsGame});
 		}
@@ -20867,9 +20902,7 @@ failed:
 				"Controls",
 			};
 			if (intro) {
-#ifndef NINTENDO
 			    tabs.push_back("Online");
-#endif
 			} else {
 				tabs.push_back("Game");
 			}
@@ -20903,11 +20936,7 @@ failed:
 		tab_right->setWidgetBack("discard_and_exit");
 		tab_right->setWidgetPageLeft("tab_left");
 		tab_right->setWidgetPageRight("tab_right");
-#ifdef NINTENDO
-        tab_right->setWidgetLeft(intro ? "Controls" : "Game");
-#else
 		tab_right->setWidgetLeft(intro ? "Online" : "Game");
-#endif
 		tab_right->setWidgetDown("confirm_and_exit");
 		tab_right->addWidgetAction("MenuAlt1", "restore_defaults");
 		tab_right->addWidgetAction("MenuStart", "confirm_and_exit");
@@ -20920,9 +20949,7 @@ failed:
 				"General",
 			};
 			if (intro) {
-#ifndef NINTENDO
 				tabs.insert(tabs.begin(), "Online");
-#endif
 			} else {
 			    tabs.insert(tabs.begin(), "Game");
 			}
@@ -20980,9 +21007,7 @@ failed:
 				"General",
 			};
             if (intro) {
-#ifndef NINTENDO
 				tabs.insert(tabs.begin(), "Online");
-#endif
 			} else {
 			    tabs.insert(tabs.begin(), "Game");
 			}

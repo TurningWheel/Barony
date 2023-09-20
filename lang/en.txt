@@ -7724,4 +7724,13 @@ Upload#
 6020 Preload Music Files#
 6021 Preloading improves playback performance, but increases system memory usage. (Applied next game launch)#
 
+6022 Holiday Themes#
+6023 Festive Content#
+6024 Toggle holiday themed content on or off as desired. Bah, humbug!#
+6025 Credits#
+6026 Display#
+6027 View credits for holiday content.#
+6028 Credits go here#
+6029 Okay#
+
 6100 end#

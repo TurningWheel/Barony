@@ -26,7 +26,7 @@
 #include "init.hpp"
 #include "light.hpp"
 #include "net.hpp"
-#ifndef NINTENDO
+#ifdef EDITOR
  #include "editor.hpp"
 #endif // NINTENDO
 #include "menu.hpp"
@@ -46,6 +46,7 @@
 #include "ui/Button.hpp"
 #include "ui/LoadingScreen.hpp"
 #ifndef EDITOR
+#include "mod_tools.hpp"
 #include "ui/MainMenu.hpp"
 #include "interface/consolecommand.hpp"
 static ConsoleVariable<bool> cvar_sdl_disablejoystickrawinput("/sdl_joystick_rawinput_disable", false, "disable SDL rawinput for gamepads (helps SDL_HapticOpen())");
@@ -55,6 +56,104 @@ static ConsoleVariable<bool> cvar_sdl_disablejoystickrawinput("/sdl_joystick_raw
 #include <future>
 #include <chrono>
 
+bool mountBaseDataFolders() {
+    if (isCurrentHoliday()) {
+        useModelCache = false; // don't use model cache on holidays.
+        const auto holiday = getCurrentHoliday();
+        const auto holiday_dir = holidayThemeDirs[holiday];
+        const auto holiday_dir_str = (std::string(datadir) + "/") + holiday_dir;
+        if (!PHYSFS_mount(holiday_dir_str.c_str(), NULL, 1)) {
+            printlog("[PhysFS]: unsuccessfully mounted holiday %s folder. Error: %s",
+                holiday_dir_str.c_str(), PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+            return false;
+        }
+    }
+
+	if ( !PHYSFS_mount(datadir, NULL, 1) )
+	{
+		printlog("[PhysFS]: unsuccessfully mounted base %s folder. Error: %s",
+            datadir, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+		return false;
+	}
+
+	if ( PHYSFS_mount(outputdir, NULL, 1) )
+	{
+		printlog("[PhysFS]: successfully mounted output \"%s\" folder", outputdir);
+		if ( PHYSFS_setWriteDir(outputdir) )
+		{
+		    PHYSFS_mkdir("books");
+			PHYSFS_mkdir("savegames");
+			//TODO: Will these need special NINTENDO handling?
+			PHYSFS_mkdir("crashlogs");
+			PHYSFS_mkdir("logfiles");
+			PHYSFS_mkdir("data");
+			PHYSFS_mkdir("data/custom-monsters");
+			PHYSFS_mkdir("data/statues");
+			PHYSFS_mkdir("data/scripts");
+			PHYSFS_mkdir("config");
+#ifdef STEAMWORKS
+			PHYSFS_mkdir("workshop_cache");
+#endif
+#ifdef NINTENDO
+			PHYSFS_mkdir("mods");
+			std::string path = outputdir;
+			path.append(PHYSFS_getDirSeparator()).append("mods");
+			PHYSFS_setWriteDir(path.c_str()); //Umm...should it really be doing that? First off, it didn't actually create this directory. Second off, what about the rest of the directories it created?
+			printlog("[PhysFS]: successfully set write folder %s", path.c_str());
+#else // NINTENDO
+			if ( PHYSFS_mkdir("mods") )
+			{
+				std::string path = outputdir;
+				path.append(PHYSFS_getDirSeparator()).append("mods");
+				PHYSFS_setWriteDir(path.c_str());
+				printlog("[PhysFS]: successfully set write folder %s", path.c_str());
+			}
+			else
+			{
+				printlog("[PhysFS]: unsuccessfully created mods/ folder. Error: %s", PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+				return false;
+			}
+#endif // !NINTENDO
+		}
+	}
+	else
+	{
+		printlog("[PhysFS]: unsuccessfully mounted base %s folder. Error: %s", outputdir, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+		return false;
+	}
+ 
+    return true;
+}
+
+bool remountBaseDataFolders() {
+#ifdef EDITOR
+    return false; // don't do anything
+#else
+    // first unmount everything.
+    bool success = true;
+	char** i;
+	for ( i = PHYSFS_getSearchPath(); *i != NULL; i++ ) {
+        if ( PHYSFS_unmount(*i) == 0 ) {
+            success = false;
+            printlog("[%s] unsuccessfully removed from the search path.\n", *i);
+        } else {
+            printlog("[%s] is removed from the search path.\n", *i);
+        }
+	}
+	PHYSFS_freeList(*i);
+ 
+    // then mount base data folders
+    success = mountBaseDataFolders() ? success : false;
+    
+    // now mount any desired mods
+    success = Mods::mountAllExistingPaths() ? success : false;
+    
+    // and reload all content!
+    Mods::loadMods();
+    
+    return success;
+#endif
+}
 
 /*-------------------------------------------------------------------------------
 
@@ -122,70 +221,9 @@ int initApp(char const * const title, int fullscreen)
             PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 	}
 
-    if (isCurrentHoliday()) {
-        useModelCache = false; // don't use model cache on holidays.
-        const auto holiday = getCurrentHoliday();
-        const auto holiday_dir = holidayThemeDirs[holiday];
-        const auto holiday_dir_str = (std::string(datadir) + "/") + holiday_dir;
-        if (!PHYSFS_mount(holiday_dir_str.c_str(), NULL, 1)) {
-            printlog("[PhysFS]: unsuccessfully mounted holiday %s folder. Error: %s",
-                holiday_dir_str.c_str(), PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
-            return 13;
-        }
+    if (!mountBaseDataFolders()) {
+        return 13;
     }
-
-	if ( !PHYSFS_mount(datadir, NULL, 1) )
-	{
-		printlog("[PhysFS]: unsuccessfully mounted base %s folder. Error: %s",
-            datadir, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
-		return 13;
-	}
-
-	if ( PHYSFS_mount(outputdir, NULL, 1) )
-	{
-		printlog("[PhysFS]: successfully mounted output \"%s\" folder", outputdir);
-		if ( PHYSFS_setWriteDir(outputdir) )
-		{
-		    PHYSFS_mkdir("books");
-			PHYSFS_mkdir("savegames");
-			//TODO: Will these need special NINTENDO handling?
-			PHYSFS_mkdir("crashlogs");
-			PHYSFS_mkdir("logfiles");
-			PHYSFS_mkdir("data");
-			PHYSFS_mkdir("data/custom-monsters");
-			PHYSFS_mkdir("data/statues");
-			PHYSFS_mkdir("data/scripts");
-			PHYSFS_mkdir("config");
-#ifdef STEAMWORKS
-			PHYSFS_mkdir("workshop_cache");
-#endif
-#ifdef NINTENDO
-			PHYSFS_mkdir("mods");
-			std::string path = outputdir;
-			path.append(PHYSFS_getDirSeparator()).append("mods");
-			PHYSFS_setWriteDir(path.c_str()); //Umm...should it really be doing that? First off, it didn't actually create this directory. Second off, what about the rest of the directories it created?
-			printlog("[PhysFS]: successfully set write folder %s", path.c_str());
-#else // NINTENDO
-			if ( PHYSFS_mkdir("mods") )
-			{
-				std::string path = outputdir;
-				path.append(PHYSFS_getDirSeparator()).append("mods");
-				PHYSFS_setWriteDir(path.c_str());
-				printlog("[PhysFS]: successfully set write folder %s", path.c_str());
-			}
-			else
-			{
-				printlog("[PhysFS]: unsuccessfully created mods/ folder. Error: %s", PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
-				return 13;
-			}
-#endif // !NINTENDO
-		}
-	}
-	else
-	{
-		printlog("[PhysFS]: unsuccessfully mounted base %s folder. Error: %s", outputdir, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
-		return 13;
-	}
 
 	// initialize SDL
 	window_title = title;

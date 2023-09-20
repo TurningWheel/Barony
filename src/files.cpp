@@ -43,9 +43,8 @@ const char* holidayThemeDirs[HolidayTheme::THEME_MAX] = {
 };
 
 #ifndef EDITOR
-#include "interface/consolecommand.hpp"
-static ConsoleVariable<int> cvar_forceHoliday("/force_holiday", 0);
-static ConsoleVariable<bool> cvar_disableHoliday("/disable_holiday", false);
+ConsoleVariable<int> cvar_forceHoliday("/force_holiday", 0);
+ConsoleVariable<bool> cvar_disableHoliday("/disable_holiday", false);
 #endif
 
 HolidayTheme getCurrentHoliday() {
