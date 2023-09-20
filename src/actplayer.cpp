@@ -37,6 +37,9 @@ bool disablemouserotationlimit = true;
 bool settings_disablemouserotationlimit = false;
 bool swimDebuffMessageHasPlayed = false;
 bool partymode = false;
+static ConsoleVariable<float> cvar_calloutStartZ("/callout_start_z", -2.5);
+static ConsoleVariable<float> cvar_calloutMoveTo("/callout_moveto_z", 0.1);
+static ConsoleVariable<float> cvar_calloutStartZLimit("/callout_start_z_limit", 7.5);
 
 /*-------------------------------------------------------------------------------
 
@@ -47,12 +50,863 @@ bool partymode = false;
 
 -------------------------------------------------------------------------------*/
 
+#define GHOSTCAM_PLAYERNUM my->skill[2]
+
+#define GHOSTCAM_BOB my->fskill[0]
+#define GHOSTCAM_BOBMOVE my->fskill[1]
+#define GHOSTCAM_WEAPONYAW my->fskill[2]
+#define GHOSTCAM_DX my->fskill[3]
+#define GHOSTCAM_DY my->fskill[4]
+#define GHOSTCAM_DYAW my->fskill[5]
+#define GHOSTCAM_ROTX my->fskill[6]
+#define GHOSTCAM_ROTY my->fskill[7]
+
+void Player::Ghost_t::handleGhostCameraBobbing(bool useRefreshRateDelta)
+{
+}
+void Player::Ghost_t::handleGhostCameraPosition(bool useRefreshRateDelta)
+{
+}
+
+void Player::Ghost_t::handleGhostMovement(const bool useRefreshRateDelta)
+{
+	if ( !my ) { return; }
+
+	Input& input = Input::inputs[player.playernum];
+
+	double refreshRateDelta = 1.0;
+	if ( useRefreshRateDelta && fps > 0.0 )
+	{
+		refreshRateDelta *= TICKS_PER_SECOND / (real_t)fpsLimit;
+	}
+
+	// calculate movement forces
+	bool allowMovement = true;
+
+	if ( ((!player.usingCommand() && player.bControlEnabled && !gamePaused))
+		&& allowMovement )
+	{
+		//x_force and y_force represent the amount of percentage pushed on that respective axis. Given a keyboard, it's binary; either you're pushing "move left" or you aren't. On an analog stick, it can range from whatever value to whatever.
+		float x_force = 0;
+		float y_force = 0;
+
+		{
+			double backpedalMultiplier = 0.25;
+
+			if ( !inputs.hasController(player.playernum) )
+			{
+				x_force = (input.binary("Move Right") - input.binary("Move Left"));
+				y_force = input.binary("Move Forward") - (double)input.binary("Move Backward") * backpedalMultiplier;
+			}
+
+			if ( inputs.hasController(player.playernum) /*&& !input.binary("Move Left") && !input.binary("Move Right")*/ )
+			{
+				x_force = inputs.getController(player.playernum)->getLeftXPercentForPlayerMovement();
+			}
+
+			if ( inputs.hasController(player.playernum) /*&& !input.binary("Move Forward") && !input.binary("Move Backward")*/ )
+			{
+				y_force = inputs.getController(player.playernum)->getLeftYPercentForPlayerMovement();
+				if ( y_force < 0 )
+				{
+					y_force *= backpedalMultiplier;    //Move backwards more slowly.
+				}
+			}
+		}
+
+		real_t speedFactor = 12.0;// getSpeedFactor(weightratio, statGetDEX(stats[PLAYER_NUM], players[PLAYER_NUM]->entity));
+		speedFactor *= refreshRateDelta;
+		my->vel_x += y_force * cos(my->yaw) * .045 * speedFactor;
+		my->vel_y += y_force * sin(my->yaw) * .045 * speedFactor;
+		my->vel_x += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor;
+		my->vel_y += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor;
+
+	}
+	my->vel_x *= pow(0.75, refreshRateDelta);
+	my->vel_y *= pow(0.75, refreshRateDelta);
+
+	/*for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( players[i] && players[i]->entity )
+		{
+			if ( players[i]->entity == my )
+			{
+				continue;
+			}
+			if ( entityInsideEntity(my, players[i]->entity) )
+			{
+				double tangent = atan2(my->y - players[i]->entity->y, my->x - players[i]->entity->x);
+				PLAYER_VELX += cos(tangent) * 0.075 * refreshRateDelta;
+				PLAYER_VELY += sin(tangent) * 0.075 * refreshRateDelta;
+			}
+		}
+	}*/
+}
+
+void Player::Ghost_t::startQuickTurn()
+{
+	if ( !my )
+	{
+		return;
+	}
+	if ( bDoingQuickTurn )
+	{
+		return;
+	}
+
+	if ( gamePaused )
+	{
+		return;
+	}
+
+	quickTurnRotation = PI * player.settings.quickTurnDirection;
+	quickTurnStartTicks = my->ticks;
+	bDoingQuickTurn = true;
+}
+
+bool Player::Ghost_t::handleQuickTurn(bool useRefreshRateDelta)
+{
+	if ( !my ) { return false; }
+
+	if ( !bDoingQuickTurn )
+	{
+		quickTurnRotation = 0.0;
+		bDoingQuickTurn = false;
+		quickTurnStartTicks = 0;
+		return false;
+	}
+
+	Entity* my = players[player.playernum]->entity;
+	double refreshRateDelta = 1.0;
+	if ( useRefreshRateDelta && fps > 0.0 )
+	{
+		refreshRateDelta *= TICKS_PER_SECOND / (real_t)fpsLimit;
+	}
+
+	if ( abs(quickTurnRotation) > 0.001 )
+	{
+		int dir = ((quickTurnRotation > 0) ? 1 : -1);
+		if ( my->ticks - quickTurnStartTicks < 15 )
+		{
+			GHOSTCAM_ROTX = dir * players[player.playernum]->settings.quickTurnSpeed;
+		}
+		else
+		{
+			GHOSTCAM_ROTX = std::max(0.01, (dir * PI / 15) * pow(0.99, my->ticks - quickTurnStartTicks));
+		}
+
+		if ( dir == 1 )
+		{
+			quickTurnRotation = std::max(0.0, quickTurnRotation - GHOSTCAM_ROTX * refreshRateDelta);
+		}
+		else
+		{
+			quickTurnRotation = std::min(0.0, quickTurnRotation - GHOSTCAM_ROTX * refreshRateDelta);
+		}
+		return true;
+	}
+	else
+	{
+		bDoingQuickTurn = false;
+		return false;
+	}
+}
+
+void Player::Ghost_t::reset()
+{
+	quickTurnRotation = 0.0;
+	quickTurnStartTicks = 0;
+	bDoingQuickTurn = false;
+	my = nullptr;
+	uid = 0;
+}
+
+void Player::Ghost_t::handleActions()
+{
+	Input& input = Input::inputs[player.playernum];
+	CalloutRadialMenu& calloutMenu = CalloutMenu[player.playernum];
+	auto& b = (multiplayer != SINGLE && player.playernum != 0) ? Input::inputs[0].getBindings() : input.getBindings();
+
+	if ( !calloutMenu.calloutMenuIsOpen() )
+	{
+		bool clickedOnGUI = false;
+
+		EntityClickType clickType = ENTITY_CLICK_USE;
+		bool tempDisableWorldUI = false;
+		bool skipUse = false;
+		if ( player.worldUI.isEnabled() )
+		{
+			if ( !player.shootmode && input.input("Use").isBindingUsingGamepad() )
+			{
+				skipUse = true;
+			}
+			else if ( !player.shootmode && inputs.bPlayerUsingKeyboardControl(player.playernum) )
+			{
+				tempDisableWorldUI = true;
+			}
+			else if ( (!player.shootmode)
+				|| (player.hotbar.useHotbarFaceMenu
+					&& (player.hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE)) )
+			{
+				skipUse = true;
+			}
+		}
+		else if ( !player.worldUI.isEnabled() && input.input("Use").isBindingUsingGamepad()
+			&& !player.shootmode )
+		{
+			skipUse = true;
+		}
+
+		if ( !skipUse )
+		{
+			if ( tempDisableWorldUI )
+			{
+				player.worldUI.disable();
+			}
+			if ( player.worldUI.isEnabled() )
+			{
+				clickType = ENTITY_CLICK_USE_TOOLTIPS_ONLY;
+				Entity* activeTooltipEntity = uidToEntity(player.worldUI.uidForActiveTooltip);
+				if ( activeTooltipEntity && activeTooltipEntity->bEntityTooltipRequiresButtonHeld() )
+				{
+					clickType = ENTITY_CLICK_HELD_USE_TOOLTIPS_ONLY;
+				}
+			}
+
+			selectedEntity[player.playernum] = entityClicked(&clickedOnGUI, false, player.playernum, clickType); // using objects
+			if ( !selectedEntity[player.playernum] && !clickedOnGUI )
+			{
+				if ( clickType == ENTITY_CLICK_USE )
+				{
+					// otherwise if we hold right click we'll keep trying this function, FPS will drop.
+					if ( input.binary("Use") )
+					{
+						++player.movement.selectedEntityGimpTimer;
+					}
+				}
+			}
+
+			if ( tempDisableWorldUI )
+			{
+				player.worldUI.enable();
+			}
+		}
+		else
+		{
+			input.consumeBinaryToggle("Use");
+			//input.consumeBindingsSharedWithBinding("Use");
+			selectedEntity[player.playernum] = nullptr;
+		}
+	}
+	else if ( calloutMenu.calloutMenuIsOpen() )
+	{
+		selectedEntity[player.playernum] = NULL;
+		// TODO CALLOUT?
+		if ( !player.usingCommand() && player.bControlEnabled && !gamePaused && input.binaryToggle("Use") )
+		{
+			if ( !calloutMenu.menuToggleClick && calloutMenu.selectMoveTo )
+			{
+				if ( calloutMenu.optionSelected == CalloutRadialMenu::CALLOUT_CMD_SELECT )
+				{
+					// we're selecting a target for the ally.
+					Entity* target = entityClicked(nullptr, false, player.playernum, EntityClickType::ENTITY_CLICK_CALLOUT);
+					input.consumeBinaryToggle("Use");
+					//input.consumeBindingsSharedWithBinding("Use");
+					if ( target )
+					{
+						Entity* parent = uidToEntity(target->skill[2]);
+						if ( target->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
+						{
+							// see if we selected a limb
+							if ( parent )
+							{
+								target = parent;
+							}
+						}
+						else if ( target->sprite == 184 || target->sprite == 585 ) // switch base.
+						{
+							parent = uidToEntity(target->parent);
+							if ( parent )
+							{
+								target = parent;
+							}
+						}
+						if ( true /*&& calloutMenu.allowedInteractEntity(*target)*/ )
+						{
+							calloutMenu.lockOnEntityUid = target->getUID();
+							if ( target->behavior == &actPlayer && target->skill[2] != player.playernum )
+							{
+								target = my;
+							}
+
+							if ( calloutMenu.createParticleCallout(target) )
+							{
+								calloutMenu.sendCalloutText(CalloutRadialMenu::CALLOUT_CMD_LOOK);
+							}
+							/*calloutMenu.holdWheel = false;
+							calloutMenu.selectMoveTo = false;
+							calloutMenu.bOpen = true;
+							calloutMenu.optionSelected = ALLY_CMD_CANCEL;
+							calloutMenu.initCalloutMenuGUICursor(true);
+							Player::soundActivate();*/
+						}
+					}
+					else
+					{
+						// we're selecting a point in the world
+						if ( my )
+						{
+							real_t startx = cameras[player.playernum].x * 16.0;
+							real_t starty = cameras[player.playernum].y * 16.0;
+							real_t startz = cameras[player.playernum].z + (4.5 - cameras[player.playernum].z) / 2.0 + *cvar_calloutStartZ;
+							real_t pitch = cameras[player.playernum].vang;
+							if ( pitch < 0 || pitch > PI )
+							{
+								pitch = 0;
+							}
+
+							// draw line from the players height and direction until we hit the ground.
+							real_t previousx = startx;
+							real_t previousy = starty;
+							int index = 0;
+							const real_t yaw = cameras[player.playernum].ang;
+							for ( ; startz < *cvar_calloutStartZLimit; startz += abs((*cvar_calloutMoveTo) * tan(pitch)) )
+							{
+								startx += 0.1 * cos(yaw);
+								starty += 0.1 * sin(yaw);
+								const int index_x = static_cast<int>(startx) >> 4;
+								const int index_y = static_cast<int>(starty) >> 4;
+								index = (index_y)*MAPLAYERS + (index_x)*MAPLAYERS * map.height;
+								if ( !map.tiles[OBSTACLELAYER + index] )
+								{
+									// store the last known good coordinate
+									previousx = startx;// + 16 * cos(yaw);
+									previousy = starty;// + 16 * sin(yaw);
+								}
+								if ( map.tiles[OBSTACLELAYER + index] )
+								{
+									break;
+								}
+							}
+
+							calloutMenu.moveToX = previousx;
+							calloutMenu.moveToY = previousy;
+							calloutMenu.lockOnEntityUid = 0;
+							if ( calloutMenu.createParticleCallout(previousx, previousy, -4, 0, CalloutRadialMenu::CALLOUT_CMD_LOOK) )
+							{
+								calloutMenu.sendCalloutText(CalloutRadialMenu::CALLOUT_CMD_LOOK);
+							}
+						}
+					}
+
+					if ( player.worldUI.isEnabled() )
+					{
+						player.worldUI.reset();
+						player.worldUI.tooltipView = Player::WorldUI_t::TooltipView::TOOLTIP_VIEW_RESCAN;
+					}
+
+					calloutMenu.closeCalloutMenuGUI();
+					strcpy(calloutMenu.interactText, "");
+				}
+			}
+		}
+	}
+
+	if ( !player.usingCommand() && player.bControlEnabled
+		&& !gamePaused )
+	{
+		bool showCalloutCommandsOnGamepad = false;
+		auto showCalloutCommandsFind = b.find("Show Player Callouts");
+		std::string showCalloutCommandsInputStr = "";
+		if ( showCalloutCommandsFind != b.end() )
+		{
+			showCalloutCommandsOnGamepad = (*showCalloutCommandsFind).second.isBindingUsingGamepad();
+			showCalloutCommandsInputStr = (*showCalloutCommandsFind).second.input;
+		}
+
+		if ( player.worldUI.bTooltipInView && player.worldUI.tooltipsInRange.size() > 1 )
+		{
+			if ( showCalloutCommandsOnGamepad &&
+				(showCalloutCommandsInputStr == input.binding("Interact Tooltip Next")
+					|| showCalloutCommandsInputStr == input.binding("Interact Tooltip Prev")) )
+			{
+				input.consumeBinaryToggle("Show Player Callouts");
+				player.hud.bOpenCalloutsMenuDisabled = true;
+			}
+		}
+
+		if ( (input.binaryToggle("Show Player Callouts") && !showCalloutCommandsOnGamepad
+			&& player.shootmode)
+			|| (input.binaryToggle("Show Player Callouts") && showCalloutCommandsOnGamepad
+				&& player.shootmode /*&& !player.worldUI.bTooltipInView*/) )
+		{
+			if ( !calloutMenu.bOpen && !calloutMenu.selectMoveTo )
+			{
+				if ( !player.shootmode )
+				{
+					player.closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_CALLOUTGUI);
+				}
+				input.consumeBinaryToggle("Show Player Callouts");
+				calloutMenu.selectMoveTo = true;
+				calloutMenu.optionSelected = CalloutRadialMenu::CALLOUT_CMD_SELECT;
+				calloutMenu.lockOnEntityUid = 0;
+				Player::soundActivate();
+
+				if ( player.worldUI.isEnabled() )
+				{
+					player.worldUI.reset();
+					player.worldUI.tooltipView = Player::WorldUI_t::TooltipView::TOOLTIP_VIEW_RESCAN;
+					player.worldUI.gimpDisplayTimer = 0;
+				}
+			}
+			else if ( calloutMenu.selectMoveTo )
+			{
+				// we're selecting a target for the ally.
+				Entity* target = entityClicked(nullptr, true, player.playernum, EntityClickType::ENTITY_CLICK_CALLOUT);
+
+				if ( target )
+				{
+					Entity* parent = uidToEntity(target->skill[2]);
+					if ( target->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
+					{
+						// see if we selected a limb
+						if ( parent )
+						{
+							target = parent;
+						}
+					}
+					else if ( target->sprite == 184 || target->sprite == 585 ) // switch base.
+					{
+						parent = uidToEntity(target->parent);
+						if ( parent )
+						{
+							target = parent;
+						}
+					}
+
+					calloutMenu.holdWheel = true;
+					if ( showCalloutCommandsOnGamepad )
+					{
+						calloutMenu.holdWheel = false;
+					}
+					calloutMenu.selectMoveTo = false;
+					calloutMenu.bOpen = true;
+					calloutMenu.initCalloutMenuGUICursor(true);
+					Player::soundActivate();
+					calloutMenu.lockOnEntityUid = target->getUID();
+				}
+				else
+				{
+					// we're selecting a point in the world
+					if ( my )
+					{
+						real_t startx = cameras[player.playernum].x * 16.0;
+						real_t starty = cameras[player.playernum].y * 16.0;
+						real_t startz = cameras[player.playernum].z + (4.5 - cameras[player.playernum].z) / 2.0 + *cvar_calloutStartZ;
+						real_t pitch = cameras[player.playernum].vang;
+						if ( pitch < 0 || pitch > PI )
+						{
+							pitch = 0;
+						}
+
+						// draw line from the players height and direction until we hit the ground.
+						real_t previousx = startx;
+						real_t previousy = starty;
+						int index = 0;
+						const real_t yaw = cameras[player.playernum].ang;
+						for ( ; startz < *cvar_calloutStartZLimit; startz += abs((*cvar_calloutMoveTo) * tan(pitch)) )
+						{
+							startx += 0.1 * cos(yaw);
+							starty += 0.1 * sin(yaw);
+							const int index_x = static_cast<int>(startx) >> 4;
+							const int index_y = static_cast<int>(starty) >> 4;
+							index = (index_y)*MAPLAYERS + (index_x)*MAPLAYERS * map.height;
+							if ( !map.tiles[OBSTACLELAYER + index] )
+							{
+								// store the last known good coordinate
+								previousx = startx;// + 16 * cos(yaw);
+								previousy = starty;// + 16 * sin(yaw);
+							}
+							if ( map.tiles[OBSTACLELAYER + index] )
+							{
+								break;
+							}
+						}
+
+						calloutMenu.holdWheel = true;
+						if ( showCalloutCommandsOnGamepad )
+						{
+							calloutMenu.holdWheel = false;
+						}
+						calloutMenu.selectMoveTo = false;
+						calloutMenu.bOpen = true;
+						calloutMenu.lockOnEntityUid = 0;
+						calloutMenu.moveToX = previousx;
+						calloutMenu.moveToY = previousy;
+						calloutMenu.initCalloutMenuGUICursor(true);
+						//Player::soundActivate();
+					}
+					else
+					{
+						calloutMenu.closeCalloutMenuGUI();
+					}
+				}
+			}
+		}
+	}
+}
+
+void Player::Ghost_t::handleGhostCameraUpdate(const bool useRefreshRateDelta)
+{
+	if ( !my ) { return; }
+
+	real_t mousex_relative = mousexrel;
+	real_t mousey_relative = mouseyrel;
+
+	mousex_relative = inputs.getMouseFloat(player.playernum, Inputs::ANALOGUE_XREL);
+	mousey_relative = inputs.getMouseFloat(player.playernum, Inputs::ANALOGUE_YREL);
+
+	const bool smoothmouse = playerSettings[multiplayer ? 0 : player.playernum].smoothmouse;
+	const bool reversemouse = playerSettings[multiplayer ? 0 : player.playernum].reversemouse;
+	real_t mouse_speed = playerSettings[multiplayer ? 0 : player.playernum].mousespeed;
+	if ( inputs.getVirtualMouse(player.playernum)->lastMovementFromController )
+	{
+		mouse_speed = 32.0;
+	}
+
+	double refreshRateDelta = 1.0;
+	if ( useRefreshRateDelta && fps > 0.0 )
+	{
+		refreshRateDelta *= TICKS_PER_SECOND / (real_t)fpsLimit;
+	}
+
+	if ( player.shootmode && !player.usingCommand()
+		&& !gamePaused
+		&& player.bControlEnabled
+		&& player.hotbar.faceMenuButtonHeld == Player::Hotbar_t::FaceMenuGroup::GROUP_NONE )
+	{
+		if ( Input::inputs[player.playernum].consumeBinaryToggle("Quick Turn") )
+		{
+			startQuickTurn();
+		}
+	}
+
+	// rotate
+	if ( !player.usingCommand()
+		&& player.bControlEnabled && !gamePaused && my->isMobile() && !inputs.hasController(player.playernum) )
+	{
+		if ( noclip )
+		{
+			my->z -= (Input::inputs[player.playernum].analog("Turn Right")
+				- Input::inputs[player.playernum].analog("Turn Left")) * .25 * refreshRateDelta;
+		}
+		else
+		{
+			my->yaw += (Input::inputs[player.playernum].analog("Turn Right")
+				- Input::inputs[player.playernum].analog("Turn Left")) * .05 * refreshRateDelta;
+		}
+	}
+	bool shootmode = player.shootmode;
+
+	if ( handleQuickTurn(useRefreshRateDelta) )
+	{
+		// do nothing, override rotations.
+	}
+	else if ( shootmode && !gamePaused )
+	{
+		if ( smoothmouse )
+		{
+			if ( my->isMobile() )
+			{
+				GHOSTCAM_ROTX += mousex_relative * .006 * (mouse_speed / 128.f);
+			}
+			if ( !disablemouserotationlimit )
+			{
+				GHOSTCAM_ROTX = fmin(fmax(-0.35, GHOSTCAM_ROTX), 0.35);
+			}
+			GHOSTCAM_ROTX *= pow(0.5, refreshRateDelta);
+		}
+		else
+		{
+			if ( my->isMobile() )
+			{
+				if ( disablemouserotationlimit )
+				{
+					GHOSTCAM_ROTX = mousex_relative * .01f * (mouse_speed / 128.f);
+				}
+				else
+				{
+					GHOSTCAM_ROTX = std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mouse_speed / 128.f)), 0.35f);
+				}
+			}
+			else
+			{
+				GHOSTCAM_ROTX = 0;
+			}
+		}
+	}
+
+	my->yaw += GHOSTCAM_ROTX * refreshRateDelta;
+	while ( my->yaw >= PI * 2 )
+	{
+		my->yaw -= PI * 2;
+	}
+	while ( my->yaw < 0 )
+	{
+		my->yaw += PI * 2;
+	}
+
+	if ( smoothmouse )
+	{
+		GHOSTCAM_ROTX *= pow(0.5, refreshRateDelta);
+	}
+	else
+	{
+		GHOSTCAM_ROTX = 0;
+	}
+
+	// look up and down
+	if ( !player.usingCommand()
+		&& player.bControlEnabled && !gamePaused && my->isMobile() && !inputs.hasController(player.playernum) )
+	{
+		my->pitch += (Input::inputs[player.playernum].analog("Look Down")
+			- Input::inputs[player.playernum].analog("Look Up")) * .05 * refreshRateDelta;
+	}
+	if ( shootmode && !gamePaused )
+	{
+		if ( smoothmouse )
+		{
+			if ( my->isMobile() )
+			{
+				GHOSTCAM_ROTY += mousey_relative * .006 * (mouse_speed / 128.f) * (reversemouse * 2 - 1);
+			}
+			GHOSTCAM_ROTY = fmin(fmax(-0.35, GHOSTCAM_ROTY), 0.35);
+			GHOSTCAM_ROTY *= pow(0.5, refreshRateDelta);
+		}
+		else
+		{
+			if ( my->isMobile() )
+			{
+				GHOSTCAM_ROTY = std::min<float>(std::max<float>(-0.35f,
+					mousey_relative * .01f * (mouse_speed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
+			}
+			else
+			{
+				GHOSTCAM_ROTY = 0;
+			}
+		}
+	}
+	my->pitch -= GHOSTCAM_ROTY * refreshRateDelta;
+
+	if ( my->pitch > PI / 3 )
+	{
+		my->pitch = PI / 3;
+	}
+	if ( my->pitch < -PI / 3 )
+	{
+		my->pitch = -PI / 3;
+	}
+
+	if ( smoothmouse )
+	{
+		GHOSTCAM_ROTY *= pow(0.5, refreshRateDelta);
+	}
+	else
+	{
+		GHOSTCAM_ROTY = 0;
+	}
+
+	if ( TimerExperiments::bUseTimerInterpolation )
+	{
+		while ( TimerExperiments::cameraCurrentState[player.playernum].yaw.position >= PI * 2 )
+		{
+			TimerExperiments::cameraCurrentState[player.playernum].yaw.position -= PI * 2;
+		}
+		while ( TimerExperiments::cameraCurrentState[player.playernum].yaw.position < 0 )
+		{
+			TimerExperiments::cameraCurrentState[player.playernum].yaw.position += PI * 2;
+		}
+		real_t diff = my->yaw - TimerExperiments::cameraCurrentState[player.playernum].yaw.position;
+		if ( diff > PI )
+		{
+			diff -= 2 * PI;
+		}
+		else if ( diff < -PI )
+		{
+			diff += 2 * PI;
+		}
+		TimerExperiments::cameraCurrentState[player.playernum].yaw.velocity = diff * TimerExperiments::lerpFactor;
+		while ( TimerExperiments::cameraCurrentState[player.playernum].pitch.position >= PI )
+		{
+			TimerExperiments::cameraCurrentState[player.playernum].pitch.position -= PI * 2;
+		}
+		while ( TimerExperiments::cameraCurrentState[player.playernum].pitch.position < -PI )
+		{
+			TimerExperiments::cameraCurrentState[player.playernum].pitch.position += PI * 2;
+		}
+		diff = my->pitch - TimerExperiments::cameraCurrentState[player.playernum].pitch.position;
+		if ( diff >= PI )
+		{
+			diff -= 2 * PI;
+		}
+		else if ( diff < -PI )
+		{
+			diff += 2 * PI;
+		}
+		TimerExperiments::cameraCurrentState[player.playernum].pitch.velocity = diff * TimerExperiments::lerpFactor;
+	}
+}
+
+void actDeathGhost(Entity* my)
+{
+	int playernum = GHOSTCAM_PLAYERNUM;
+	if ( playernum < 0 || playernum >= MAXPLAYERS )
+	{
+		return;
+	}
+
+	players[playernum]->ghost.my = my;
+	players[playernum]->ghost.uid = my->getUID();
+
+	auto player = players[playernum];
+
+	my->removeLightField();
+	my->light = addLight(my->x / 16, my->y / 16, "deathcam");
+
+	if ( player->isLocalPlayer() )
+	{
+		bool inputsEnabled = false;
+		if ( player->shootmode
+			&& !players[playernum]->GUI.isGameoverActive()
+			&& players[playernum]->bControlEnabled
+			&& !players[playernum]->usingCommand()
+			&& !gamePaused )
+		{
+			inputsEnabled = true;
+		}
+
+		if ( !usecamerasmoothing )
+		{
+			player->ghost.handleGhostMovement(false);
+			player->ghost.handleGhostCameraUpdate(false);
+		}
+
+		if ( inputsEnabled )
+		{
+			player->ghost.handleActions();
+		}
+
+		real_t camx, camy, camz, camang, camvang;
+		camx = my->x / 16.f;
+		camy = my->y / 16.f;
+		camz = my->z * 2.f;
+		camang = my->yaw;
+		camvang = my->pitch;
+
+		camx -= cos(my->yaw) * cos(my->pitch) * 1.5;
+		camy -= sin(my->yaw) * cos(my->pitch) * 1.5;
+		camz -= sin(my->pitch) * 16;
+
+		if ( !TimerExperiments::bUseTimerInterpolation )
+		{
+			cameras[playernum].x = camx;
+			cameras[playernum].y = camy;
+			cameras[playernum].z = camz;
+			cameras[playernum].ang = camang;
+			cameras[playernum].vang = camvang;
+			return;
+		}
+		else
+		{
+			TimerExperiments::cameraCurrentState[playernum].x.velocity =
+				TimerExperiments::lerpFactor * (camx - TimerExperiments::cameraCurrentState[playernum].x.position);
+			TimerExperiments::cameraCurrentState[playernum].y.velocity =
+				TimerExperiments::lerpFactor * (camy - TimerExperiments::cameraCurrentState[playernum].y.position);
+			TimerExperiments::cameraCurrentState[playernum].z.velocity =
+				TimerExperiments::lerpFactor * (camz - TimerExperiments::cameraCurrentState[playernum].z.position);
+
+			real_t diff = camang - TimerExperiments::cameraCurrentState[playernum].yaw.position;
+			if ( diff > PI )
+			{
+				diff -= 2 * PI;
+			}
+			else if ( diff < -PI )
+			{
+				diff += 2 * PI;
+			}
+			TimerExperiments::cameraCurrentState[playernum].yaw.velocity = diff * TimerExperiments::lerpFactor;
+			diff = camvang - TimerExperiments::cameraCurrentState[playernum].pitch.position;
+			if ( diff >= PI )
+			{
+				diff -= 2 * PI;
+			}
+			else if ( diff < -PI )
+			{
+				diff += 2 * PI;
+			}
+			TimerExperiments::cameraCurrentState[playernum].pitch.velocity = diff * TimerExperiments::lerpFactor;
+		}
+	}
+
+	if ( player->isLocalPlayer() )
+	{
+		// send movement updates to server
+		if ( multiplayer == CLIENT )
+		{
+			strcpy((char*)net_packet->data, "GMOV");
+			net_packet->data[4] = playernum;
+			net_packet->data[5] = currentlevel;
+			SDLNet_Write16((Sint16)(my->x * 32), &net_packet->data[6]);
+			SDLNet_Write16((Sint16)(my->y * 32), &net_packet->data[8]);
+			SDLNet_Write16((Sint16)(my->vel_x * 128), &net_packet->data[10]);
+			SDLNet_Write16((Sint16)(my->vel_y * 128), &net_packet->data[12]);
+			SDLNet_Write16((Sint16)(my->yaw * 128), &net_packet->data[14]);
+			SDLNet_Write16((Sint16)(my->pitch * 128), &net_packet->data[16]);
+			net_packet->data[18] = secretlevel;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 19;
+			sendPacket(net_sock, -1, net_packet, 0);
+		}
+
+		// perform collision detection
+		real_t dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
+	}
+
+	if ( !player->isLocalPlayer() && multiplayer == SERVER )
+	{
+		// PLAYER_VEL* skills updated by messages sent to server from client
+
+		// move (dead reckoning)
+		/*if ( noclip == false )*/
+		{
+			// from PMOV in serverHandlePacket - new_x and new_y are accumulated positions
+			if ( my->new_x > 0.001 )
+			{
+				my->x = my->new_x;
+			}
+			if ( my->new_y > 0.001 )
+			{
+				my->y = my->new_y;
+			}
+
+			real_t dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
+		}
+	}
+
+	if ( !player->isLocalPlayer() && multiplayer == CLIENT )
+	{
+		real_t dist = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+	}
+}
+
 #define DEATHCAM_TIME my->skill[0]
 #define DEATHCAM_PLAYERTARGET my->skill[1]
 #define DEATHCAM_PLAYERNUM my->skill[2]
 #define DEATHCAM_IDLETIME my->skill[3]
 #define DEATHCAM_IDLEROTATEDIRYAW my->skill[4]
 #define DEATHCAM_IDLEROTATEPITCHINIT my->skill[5]
+#define DEATHCAM_CREATEDGHOST my->skill[6]
 #define DEATHCAM_ROTX my->fskill[0]
 #define DEATHCAM_ROTY my->fskill[1]
 #define DEATHCAM_IDLEPITCH my->fskill[2]
@@ -69,8 +923,9 @@ void actDeathCam(Entity* my)
 	}*/
 	DEATHCAM_TIME++;
 
-	Uint32 deathcamGameoverPromptTicks = *MainMenu::cvar_fastRestart ? TICKS_PER_SECOND :
-		(splitscreen ? TICKS_PER_SECOND * 3 : TICKS_PER_SECOND * 6);
+	/*Uint32 deathcamGameoverPromptTicks = *MainMenu::cvar_fastRestart ? TICKS_PER_SECOND :
+		(splitscreen ? TICKS_PER_SECOND * 3 : TICKS_PER_SECOND * 6);*/
+	Uint32 deathcamGameoverPromptTicks = 25;
 	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
 		deathcamGameoverPromptTicks = TICKS_PER_SECOND * 3;
@@ -117,7 +972,7 @@ void actDeathCam(Entity* my)
 	}
 
 	bool shootmode = players[DEATHCAM_PLAYERNUM]->shootmode;
-	if ( shootmode && !gamePaused )
+	if ( shootmode && !gamePaused && DEATHCAM_CREATEDGHOST == 0 )
 	{
 		if ( !players[DEATHCAM_PLAYERNUM]->GUI.isGameoverActive() )
 		{
@@ -249,6 +1104,56 @@ void actDeathCam(Entity* my)
 		&& (Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("Attack")
 			|| Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("MenuConfirm")) )
 	{
+		if ( DEATHCAM_CREATEDGHOST == 0 )
+		{
+			DEATHCAM_CREATEDGHOST = 1;
+
+			// deathcam
+			if ( multiplayer != CLIENT )
+			{
+				int sprite = 1233 + (DEATHCAM_PLAYERNUM < 4 ? DEATHCAM_PLAYERNUM : 4);
+				Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Ghost entity.
+				entity->x = my->x;
+				entity->y = my->y;
+				entity->z = -4;
+				entity->flags[PASSABLE] = true;
+				entity->flags[INVISIBLE] = false;// true;
+				entity->behavior = &actDeathGhost;
+				entity->skill[2] = DEATHCAM_PLAYERNUM;
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->yaw = my->yaw;
+				entity->pitch = 0;
+				if ( DEATHCAM_PLAYERNUM == clientnum && multiplayer == CLIENT )
+				{
+					entity->flags[UPDATENEEDED] = false;
+				}
+				else
+				{
+					entity->flags[UPDATENEEDED] = true;
+				}
+				players[DEATHCAM_PLAYERNUM]->ghost.my = entity;
+				players[DEATHCAM_PLAYERNUM]->ghost.uid = entity->getUID();
+			}
+
+			if ( multiplayer == CLIENT )
+			{
+				strcpy((char*)net_packet->data, "GHOS");
+				net_packet->data[4] = DEATHCAM_PLAYERNUM;
+				net_packet->data[5] = currentlevel;
+
+				int x = (my->x / 16) + 8;
+				int y = (my->y / 16) + 8;
+				SDLNet_Write16((Sint16)(x), &net_packet->data[6]);
+				SDLNet_Write16((Sint16)(y), &net_packet->data[8]);
+				net_packet->data[10] = secretlevel;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 11;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+		}
+
 		DEATHCAM_PLAYERTARGET++;
 		if (DEATHCAM_PLAYERTARGET >= MAXPLAYERS)
 		{
@@ -284,6 +1189,12 @@ void actDeathCam(Entity* my)
 	}
 
 	my->removeLightField();
+
+	if ( DEATHCAM_CREATEDGHOST != 0 )
+	{
+		return;
+	}
+
 	my->light = addLight(my->x / 16, my->y / 16, "deathcam");
 
 	real_t camx, camy, camz, camang, camvang;
@@ -4033,10 +4944,6 @@ void actPlayer(Entity* my)
 			PLAYER_BOBMODE = 0;
 		}
 	}
-
-	static ConsoleVariable<float> cvar_calloutStartZ("/callout_start_z", -2.5);
-	static ConsoleVariable<float> cvar_calloutMoveTo("/callout_moveto_z", 0.1);
-	static ConsoleVariable<float> cvar_calloutStartZLimit("/callout_start_z_limit", 7.5);
 
 	if ( players[PLAYER_NUM]->isLocalPlayer() )
 	{

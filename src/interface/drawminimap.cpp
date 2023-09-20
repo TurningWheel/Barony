@@ -767,7 +767,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 				int targetPlayer = -1;
 				for ( int j = 0; j < MAXPLAYERS; ++j )
 				{
-					if ( callout.second.entityUid == achievementObserver.playerUids[j] )
+					if ( CalloutRadialMenu::uidMatchesPlayer(j, callout.second.entityUid) )
 					{
 						selfCallout = true;
 						targetPlayer = j;

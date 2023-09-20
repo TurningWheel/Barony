@@ -1584,6 +1584,8 @@ struct CalloutRadialMenu
 	bool isTinkeringFollower(int type);*/
 	void setPlayer(const int p) { gui_player = p; }
 	const int getPlayer() const { return gui_player; }
+	static bool uidMatchesPlayer(const int playernum, const Uint32 uid);
+	static Uint32 getPlayerUid(const int playernum);
 	void update();
 };
 extern CalloutRadialMenu CalloutMenu[MAXPLAYERS];

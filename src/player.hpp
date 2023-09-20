@@ -696,6 +696,7 @@ public:
 	const bool bAlignGUINextToInventoryCompact() const; // if chest/shop etc appears alongside inventory as opposed to opposite of viewport in compact view
 	const bool usingCommand() const;
 	void clearGUIPointers();
+	static Entity* getPlayerInteractEntity(const int playernum);
 
 	enum PanelJustify_t
 	{
@@ -1755,6 +1756,31 @@ public:
 		void handlePlayerCameraPosition(bool useRefreshRateDelta);
 		void reset();
 	} movement;
+
+	class Ghost_t
+	{
+		real_t quickTurnRotation = 0.0;
+		Uint32 quickTurnStartTicks = 0;
+		bool bDoingQuickTurn = false;
+		Player& player;
+	public:
+		Ghost_t(Player& p) : player(p)
+		{};
+		~Ghost_t() {};
+
+		Entity* my = nullptr;
+		Uint32 uid = 0;
+
+		bool handleQuickTurn(bool useRefreshRateDelta);
+		void startQuickTurn();
+		void handleGhostCameraUpdate(bool useRefreshRateDelta);
+		void handleGhostCameraBobbing(bool useRefreshRateDelta);
+		void handleGhostMovement(bool useRefreshRateDelta);
+		void handleGhostCameraPosition(bool useRefreshRateDelta);
+		void handleActions();
+		bool isActive() { return my != nullptr; }
+		void reset();
+	} ghost;
 
 	class MessageZone_t
 	{

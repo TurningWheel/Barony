@@ -1689,6 +1689,7 @@ void gameLogic(void)
 						if ( gameloopFreezeEntities 
 							&& entity->behavior != &actPlayer
 							&& entity->behavior != &actPlayerLimb
+							&& entity->behavior != &actDeathGhost
 							&& entity->behavior != &actHudWeapon
 							&& entity->behavior != &actHudShield
 							&& entity->behavior != &actHudAdditional
@@ -1849,6 +1850,7 @@ void gameLogic(void)
 						players[i]->hud.weapon = nullptr;
 						players[i]->hud.magicLeftHand = nullptr;
 						players[i]->hud.magicRightHand = nullptr;
+						players[i]->ghost.reset();
 						FollowerMenu[i].recentEntity = nullptr;
 						FollowerMenu[i].followerToCommand = nullptr;
 						FollowerMenu[i].entityToInteractWith = nullptr;
@@ -2999,6 +3001,7 @@ void gameLogic(void)
 					{
 						if ( gameloopFreezeEntities
 							&& entity->behavior != &actPlayer
+							&& entity->behavior != &actDeathGhost
 							&& entity->behavior != &actPlayerLimb
 							&& entity->behavior != &actHudWeapon
 							&& entity->behavior != &actHudShield
@@ -3048,7 +3051,8 @@ void gameLogic(void)
 											double ox = 0, oy = 0, onewx = 0, onewy = 0;
 
 											// move the bodyparts of these otherwise the limbs will get left behind in this adjustment.
-											if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+											if ( entity->behavior == &actPlayer || entity->behavior == &actMonster
+												|| entity->behavior == &actDeathGhost )
 											{
 												ox = entity->x;
 												oy = entity->y;
@@ -3064,7 +3068,8 @@ void gameLogic(void)
 											}
 
 											// move the bodyparts of these otherwise the limbs will get left behind in this adjustment.
-											if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+											if ( entity->behavior == &actPlayer || entity->behavior == &actMonster
+												|| entity->behavior == &actDeathGhost )
 											{
 												for ( Entity *bodypart : entity->bodyparts )
 												{
@@ -3080,7 +3085,9 @@ void gameLogic(void)
 									if ( fabs(entity->vel_x) > 0.0001 || fabs(entity->vel_y) > 0.0001 )
 									{
 										double ox = 0, oy = 0, onewx = 0, onewy = 0;
-										if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+										if ( entity->behavior == &actPlayer 
+											|| entity->behavior == &actMonster
+											|| entity->behavior == &actDeathGhost )
 										{
 											ox = entity->x;
 											oy = entity->y;
@@ -3089,7 +3096,8 @@ void gameLogic(void)
 										}
 										real_t dist = clipMove(&entity->x, &entity->y, entity->vel_x, entity->vel_y, entity);
 										real_t new_dist = clipMove(&entity->new_x, &entity->new_y, entity->vel_x, entity->vel_y, entity);
-										if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+										if ( entity->behavior == &actPlayer || entity->behavior == &actMonster
+											|| entity->behavior == &actDeathGhost )
 										{
 											for (Entity *bodypart : entity->bodyparts)
 											{
@@ -5911,6 +5919,11 @@ void drawAllPlayerCameras() {
 					players[c]->movement.handlePlayerMovement(true);
 					players[c]->movement.handlePlayerCameraUpdate(true);
 					players[c]->movement.handlePlayerCameraPosition(true);
+
+					players[c]->ghost.handleGhostCameraBobbing(true);
+					players[c]->ghost.handleGhostMovement(true);
+					players[c]->ghost.handleGhostCameraUpdate(true);
+					players[c]->ghost.handleGhostCameraPosition(true);
 					//messagePlayer(0, "%3.2f | %3.2f", players[c]->entity->yaw, oldYaw);
 				}
 			}
@@ -6725,6 +6738,7 @@ int main(int argc, char** argv)
 						players[i]->hud.weapon = nullptr;
 						players[i]->hud.magicLeftHand = nullptr;
 						players[i]->hud.magicRightHand = nullptr;
+						players[i]->ghost.reset();
 						FollowerMenu[i].recentEntity = nullptr;
 						FollowerMenu[i].followerToCommand = nullptr;
 						FollowerMenu[i].entityToInteractWith = nullptr;

@@ -3012,6 +3012,7 @@ Player::Player(int in_playernum, bool in_local_host) :
 	characterSheet(*this),
 	skillSheet(*this),
 	movement(*this),
+	ghost(*this),
 	messageZone(*this),
 	worldUI(*this),
 	hotbar(*this),
@@ -3071,6 +3072,15 @@ const bool Player::isLocalPlayerAlive() const
 	return (isLocalPlayer() && entity && !client_disconnected[playernum]);
 }
 
+Entity* Player::getPlayerInteractEntity(const int playernum) 
+{
+	if ( playernum < 0 || playernum >= MAXPLAYERS )
+	{
+		return nullptr;
+	}
+	return players[playernum]->ghost.isActive() ? players[playernum]->ghost.my : players[playernum]->entity;
+}
+
 void Player::PlayerMovement_t::reset()
 {
 	quickTurnRotation = 0.0;
@@ -3098,6 +3108,10 @@ void Player::WorldUI_t::reset()
 
 bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 {
+	if ( !players[player]->entity )
+	{
+		return false;
+	}
 	if ( multiplayer != CLIENT )
 	{
 		if ( !entity.checkEnemy(players[player]->entity) )
@@ -3179,12 +3193,18 @@ bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 
 real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 {
-	if ( !players[player.playernum]->isLocalPlayerAlive() )
+	if ( !players[player.playernum]->isLocalPlayerAlive() && !player.ghost.isActive() )
 	{
 		return 0.0;
 	}
 
-	real_t dist = entityDist(&tooltip, players[player.playernum]->entity);
+	Entity* playerEntity = Player::getPlayerInteractEntity(player.playernum);
+	if ( !playerEntity )
+	{
+		return 0.0;
+	}
+
+	real_t dist = entityDist(&tooltip, playerEntity);
 	Entity* parent = uidToEntity(tooltip.parent);
 
 	real_t maxDist = 24.0;
@@ -3219,7 +3239,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 
 	if ( dist < maxDist && dist > minDist )
 	{
-		real_t tangent = atan2(tooltip.y - players[player.playernum]->entity->y, tooltip.x - players[player.playernum]->entity->x);
+		real_t tangent = atan2(tooltip.y - playerEntity->y, tooltip.x - playerEntity->x);
 		while ( tangent >= 2 * PI )
 		{
 			tangent -= 2 * PI;
@@ -3228,7 +3248,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 		{
 			tangent += 2 * PI;
 		}
-		real_t playerYaw = players[player.playernum]->entity->yaw;
+		real_t playerYaw = playerEntity->yaw;
 		while ( playerYaw >= 2 * PI )
 		{
 			playerYaw -= 2 * PI;
@@ -3265,9 +3285,15 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 				}
 
 				Entity* ohitentity = hit.entity;
-				real_t tangent2 = atan2(players[player.playernum]->entity->y - parent->y, players[player.playernum]->entity->x - parent->x);
-				lineTraceTarget(parent, parent->x, parent->y, tangent2, maxDist, 0, false, players[player.playernum]->entity);
-				if ( hit.entity != players[player.playernum]->entity )
+				real_t tangent2 = atan2(playerEntity->y - parent->y, playerEntity->x - parent->x);
+				bool oldPassable = playerEntity->flags[PASSABLE];
+				if ( playerEntity->behavior == &actDeathGhost )
+				{
+					playerEntity->flags[PASSABLE] = false; // hack to make ghosts linetraceable
+				}
+				lineTraceTarget(parent, parent->x, parent->y, tangent2, maxDist, 0, false, playerEntity);
+				playerEntity->flags[PASSABLE] = oldPassable;
+				if ( hit.entity != playerEntity )
 				{
 					// no line of sight through walls
 					hit.entity = ohitentity;
@@ -3390,9 +3416,15 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			if ( !selectInteract )
 			{
 				Entity* ohitentity = hit.entity;
-				real_t tangent2 = atan2(players[player.playernum]->entity->y - tooltip.y, players[player.playernum]->entity->x - tooltip.x);
-				lineTraceTarget(&tooltip, tooltip.x, tooltip.y, tangent2, maxDist, 0, false, players[player.playernum]->entity);
-				if ( hit.entity != players[player.playernum]->entity )
+				real_t tangent2 = atan2(playerEntity->y - tooltip.y, playerEntity->x - tooltip.x);
+				bool oldPassable = playerEntity->flags[PASSABLE];
+				if ( playerEntity->behavior == &actDeathGhost )
+				{
+					playerEntity->flags[PASSABLE] = false; // hack to make ghosts linetraceable
+				}
+				lineTraceTarget(&tooltip, tooltip.x, tooltip.y, tangent2, maxDist, 0, false, playerEntity);
+				playerEntity->flags[PASSABLE] = oldPassable;
+				if ( hit.entity != playerEntity )
 				{
 					// no line of sight through walls
 					hit.entity = ohitentity;
@@ -3408,10 +3440,10 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 				if ( false )
 				{
 					// old method, not entirely accurate
-					real_t startx = players[player.playernum]->entity->x;
-					real_t starty = players[player.playernum]->entity->y;
+					real_t startx = playerEntity->x;
+					real_t starty = playerEntity->y;
 					real_t startz = -4;
-					real_t pitch = players[player.playernum]->entity->pitch;
+					real_t pitch = playerEntity->pitch;
 					if ( pitch < 0 )
 					{
 						//pitch = 0; - unneeded - negative pitch looks in a cone upwards as well - good check
@@ -3423,9 +3455,9 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 					int index = 0;
 					for ( ; startz < 0.f; startz += abs(0.25 * tan(pitch)) )
 					{
-						startx += 0.5 * cos(players[player.playernum]->entity->yaw);
-						starty += 0.5 * sin(players[player.playernum]->entity->yaw);
-						index = (static_cast<int>(starty + 16 * sin(players[player.playernum]->entity->yaw)) >> 4) * MAPLAYERS + (static_cast<int>(startx + 16 * cos(players[player.playernum]->entity->yaw)) >> 4) * MAPLAYERS * map.height;
+						startx += 0.5 * cos(playerEntity->yaw);
+						starty += 0.5 * sin(playerEntity->yaw);
+						index = (static_cast<int>(starty + 16 * sin(playerEntity->yaw)) >> 4) * MAPLAYERS + (static_cast<int>(startx + 16 * cos(playerEntity->yaw)) >> 4) * MAPLAYERS * map.height;
 						if ( !map.tiles[OBSTACLELAYER + index] )
 						{
 							// store the last known good coordinate
@@ -3437,7 +3469,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 							break;
 						}
 					}
-					real_t lookDist = sqrt(pow(previousx - players[player.playernum]->entity->x, 2) + pow(previousy - players[player.playernum]->entity->y, 2));
+					real_t lookDist = sqrt(pow(previousx - playerEntity->x, 2) + pow(previousy - playerEntity->y, 2));
 					if ( lookDist < dist )
 					{
 						if ( abs(dist - lookDist) > 8.0 )
@@ -3446,7 +3478,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 						}
 					}
 
-					/*Entity* particle = spawnMagicParticle(players[player.playernum]->entity);
+					/*Entity* particle = spawnMagicParticle(playerEntity);
 					particle->sprite = 576;
 					particle->x = previousx;
 					particle->y = previousy;
@@ -3498,14 +3530,14 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 					static ConsoleVariable<bool> cvar_calloutboulderdebug("/calloutboulderdebug", false);
 					if ( *cvar_calloutboulderdebug )
 					{
-						Entity* particle = spawnMagicParticle(players[player.playernum]->entity);
+						Entity* particle = spawnMagicParticle(playerEntity);
 						particle->sprite = 942;
 						particle->x = previousx;
 						particle->y = previousy;
 						particle->z = startz;
 					}
 
-					real_t lookDist = sqrt(pow(previousx - players[player.playernum]->entity->x, 2) + pow(previousy - players[player.playernum]->entity->y, 2));
+					real_t lookDist = sqrt(pow(previousx - playerEntity->x, 2) + pow(previousy - playerEntity->y, 2));
 					if ( abs(dist - lookDist) > 8.25 )
 					{
 						return 0.0; // looking at a tile on the ground more than x units away from the tooltip
@@ -3551,7 +3583,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 						}
 					}
 
-					real_t lookDist = sqrt(pow(previousx - players[player.playernum]->entity->x, 2) + pow(previousy - players[player.playernum]->entity->y, 2));
+					real_t lookDist = sqrt(pow(previousx - playerEntity->x, 2) + pow(previousy - playerEntity->y, 2));
 					if ( callout )
 					{
 						if ( parent )
@@ -3596,7 +3628,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 						}
 					}
 
-					/*Entity* particle = spawnMagicParticle(players[player.playernum]->entity);
+					/*Entity* particle = spawnMagicParticle(playerEntity);
 					particle->sprite = 942;
 					particle->x = previousx;
 					particle->y = previousy;
@@ -4106,7 +4138,7 @@ void Player::WorldUI_t::handleTooltips()
 	for ( int player = 0; player < MAXPLAYERS && !gamePaused; ++player )
 	{
 		players[player]->worldUI.worldTooltipDialogue.update();
-		if ( !players[player]->isLocalPlayerAlive() )
+		if ( !players[player]->isLocalPlayerAlive() && !players[player]->ghost.isActive() )
 		{
 			players[player]->worldUI.reset();
 			players[player]->worldUI.tooltipView = Player::WorldUI_t::TooltipView::TOOLTIP_VIEW_RESCAN;
@@ -4118,6 +4150,8 @@ void Player::WorldUI_t::handleTooltips()
 			Input::inputs[player].consumeBinaryToggle("Use");
 			continue;
 		}
+
+		Entity* playerEntity = Player::getPlayerInteractEntity(player);
 
 #ifdef NINTENDO
 		players[player]->worldUI.bEnabled = true;
@@ -4226,8 +4260,8 @@ void Player::WorldUI_t::handleTooltips()
 		if ( !bDoingActionHideTooltips )
 		{
 			Entity* ohitentity = hit.entity;
-			lineTrace(players[player]->entity, players[player]->entity->x, players[player]->entity->y,
-				players[player]->entity->yaw, STRIKERANGE, 0, true);
+			lineTrace(playerEntity, playerEntity->x, playerEntity->y,
+				playerEntity->yaw, STRIKERANGE, 0, true);
 			if ( hit.entity )
 			{
 				if ( hit.entity->behavior == &actMonster && selectInteract )
@@ -4336,7 +4370,7 @@ void Player::WorldUI_t::handleTooltips()
 			}
 			if ( closestTooltip )
 			{
-				players[player]->worldUI.playerLastYaw = players[player]->entity->yaw;
+				players[player]->worldUI.playerLastYaw = playerEntity->yaw;
 				players[player]->worldUI.playerLastPitch = players[player]->camera().vang;
 				while ( players[player]->worldUI.playerLastYaw >= 4 * PI )
 				{
@@ -4380,7 +4414,7 @@ void Player::WorldUI_t::handleTooltips()
 				continue;
 			}
 
-			real_t currentYaw = players[player]->entity->yaw;
+			real_t currentYaw = playerEntity->yaw;
 			while ( currentYaw >= 4 * PI )
 			{
 				currentYaw -= 2 * PI;

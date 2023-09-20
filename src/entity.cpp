@@ -593,6 +593,11 @@ Entity::~Entity()
 			players[i]->entity = nullptr;    //TODO: PLAYERSWAP VERIFY. Should this do anything to the player itself?
 			players[i]->cleanUpOnEntityRemoval();
 		}
+		if ( this == players[i]->ghost.my )
+		{
+			players[i]->ghost.my = nullptr;
+			players[i]->ghost.reset();
+		}
 	}
 	// destroy my children
 	list_FreeAll(&this->children);

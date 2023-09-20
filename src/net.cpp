@@ -1869,6 +1869,35 @@ void clientActions(Entity* entity)
 		case 130:
 			entity->behavior = &actGoldBag;
 			break;
+		case 1233:
+		case 1234:
+		case 1235:
+		case 1236:
+		case 1237:
+			// player ghosts
+			playernum = SDLNet_Read32(&net_packet->data[30]);
+			if ( playernum >= 0 && playernum < MAXPLAYERS )
+			{
+				if ( players[playernum] )
+				{
+					players[playernum]->ghost.my = entity;
+				}
+				entity->skill[2] = playernum;
+				entity->behavior = &actDeathGhost;
+				if ( playernum == clientnum && multiplayer == CLIENT )
+				{
+					entity->flags[UPDATENEEDED] = false;
+				}
+				else
+				{
+					entity->flags[UPDATENEEDED] = true;
+				}
+				entity->flags[PASSABLE] = true;
+				entity->flags[INVISIBLE] = false;// true;
+				entity->sizex = 4;
+				entity->sizey = 4;
+			}
+			break;
 		default:
 			if ( entity->isPlayerHeadSprite() )
 			{
@@ -1980,6 +2009,7 @@ static void changeLevel() {
 		players[i]->hud.weapon = nullptr;
 		players[i]->hud.magicLeftHand = nullptr;
 		players[i]->hud.magicRightHand = nullptr;
+		players[i]->ghost.reset();
 		FollowerMenu[i].recentEntity = nullptr;
 		FollowerMenu[i].followerToCommand = nullptr;
 		FollowerMenu[i].entityToInteractWith = nullptr;
@@ -2274,6 +2304,10 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			{
 				// don't update my player
 			}
+			else if ( entity->behavior == &actDeathGhost && entity->skill[2] == clientnum )
+			{
+				// don't update my ghost
+			}
 			else if ( entity->flags[NOUPDATE] )
 			{
 				// inform the server that it tried to update a no-update entity
@@ -2467,6 +2501,16 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 		players[clientnum]->entity->x = ((Sint16)SDLNet_Read16(&net_packet->data[4])) / 32.0;
 		players[clientnum]->entity->y = ((Sint16)SDLNet_Read16(&net_packet->data[6])) / 32.0;
+	}},
+
+	// player ghost movement correction
+	{'GMOV', []() {
+		if ( players[clientnum] == nullptr || players[clientnum]->ghost.my == nullptr )
+		{
+			return;
+		}
+		players[clientnum]->ghost.my->x = ((Sint16)SDLNet_Read16(&net_packet->data[4])) / 32.0;
+		players[clientnum]->ghost.my->y = ((Sint16)SDLNet_Read16(&net_packet->data[6])) / 32.0;
 	}},
 
 	// update health
@@ -2935,6 +2979,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 						}
 						players[j]->entity = nullptr;
 						players[j]->cleanUpOnEntityRemoval();
+					}
+					else if ( entity == players[j]->ghost.my )
+					{
+						players[j]->ghost.my = nullptr;
+						players[j]->ghost.reset();
 					}
 				}
 				if ( entity->light )
@@ -5125,6 +5174,121 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 				}
 			}
 		}
+	}},
+
+	// player ghost move
+	{'GMOV', []() {
+		const int player = net_packet->data[4];
+		if ( player < 0 || player >= MAXPLAYERS )
+		{
+			return;
+		}
+		client_keepalive[player] = ticks;
+		if ( players[player] == nullptr || players[player]->ghost.my == nullptr )
+		{
+			return;
+		}
+
+		// check if the info is outdated
+		if ( net_packet->data[5] != currentlevel || net_packet->data[18] != secretlevel )
+		{
+			return;
+		}
+
+		// get info from client
+		auto dx = ((Sint16)SDLNet_Read16(&net_packet->data[6])) / 32.0;
+		auto dy = ((Sint16)SDLNet_Read16(&net_packet->data[8])) / 32.0;
+		auto velx = ((Sint16)SDLNet_Read16(&net_packet->data[10])) / 128.0;
+		auto vely = ((Sint16)SDLNet_Read16(&net_packet->data[12])) / 128.0;
+		auto yaw = ((Sint16)SDLNet_Read16(&net_packet->data[14])) / 128.0;
+		auto pitch = ((Sint16)SDLNet_Read16(&net_packet->data[16])) / 128.0;
+
+		// update rotation
+		players[player]->ghost.my->yaw = yaw;
+		players[player]->ghost.my->pitch = pitch;
+
+		// update player's internal velocity variables
+		players[player]->ghost.my->vel_x = velx; // PLAYER_VELX
+		players[player]->ghost.my->vel_y = vely; // PLAYER_VELY
+
+		// store old coordinates
+		// since this function runs more often than actPlayer runs, we need to keep track of the accumulated position in new_x/new_y
+		real_t ox = players[player]->ghost.my->x;
+		real_t oy = players[player]->ghost.my->y;
+		players[player]->ghost.my->x = players[player]->ghost.my->new_x;
+		players[player]->ghost.my->y = players[player]->ghost.my->new_y;
+
+		// calculate distance
+		dx -= players[player]->ghost.my->x;
+		dy -= players[player]->ghost.my->y;
+		auto dist = sqrt(dx * dx + dy * dy);
+
+		// move player with collision detection
+		real_t result = clipMove(&players[player]->ghost.my->x, &players[player]->ghost.my->y, dx, dy, players[player]->ghost.my);
+		if ( result < dist - .025 )
+		{
+			// player encountered obstacle on path
+			// stop updating position on server side and send client corrected position
+			const int j = net_packet->data[4];
+			if ( j > 0 && j < MAXPLAYERS )
+			{
+				strcpy((char*)net_packet->data, "GMOV");
+				SDLNet_Write16((Sint16)(players[j]->ghost.my->x * 32), &net_packet->data[4]);
+				SDLNet_Write16((Sint16)(players[j]->ghost.my->y * 32), &net_packet->data[6]);
+				net_packet->address.host = net_clients[j - 1].host;
+				net_packet->address.port = net_clients[j - 1].port;
+				net_packet->len = 8;
+				sendPacket(net_sock, -1, net_packet, j - 1);
+			}
+		}
+
+		// clipMove sent any corrections to the client, now let's save the updated coordinates.
+		players[player]->ghost.my->new_x = players[player]->ghost.my->x;
+		players[player]->ghost.my->new_y = players[player]->ghost.my->y;
+		// return x/y to their original state as this can update more than actPlayer and causes stuttering. use new_x/new_y in actPlayer.
+		players[player]->ghost.my->x = ox;
+		players[player]->ghost.my->y = oy;
+	}},
+
+	// player created ghost
+	{'GHOS', []() {
+		// check if the info is outdated
+		if ( net_packet->data[5] != currentlevel || net_packet->data[10] != secretlevel )
+		{
+			return;
+		}
+		
+		int player = net_packet->data[4];
+
+		if ( player < 0 || player >= MAXPLAYERS )
+		{
+			return;
+		}
+
+		if ( players[player]->ghost.my )
+		{
+			list_RemoveNode(players[player]->ghost.my->mynode);
+			players[player]->ghost.my = nullptr;
+		}
+		players[player]->ghost.reset();
+
+		// deathcam
+		int sprite = 1233 + (player < 4 ? player : 4);
+		Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Ghost entity.
+		players[player]->ghost.my = entity;
+		players[player]->ghost.uid = entity->getUID();
+		entity->x = SDLNet_Read16(&net_packet->data[6]);
+		entity->y = SDLNet_Read16(&net_packet->data[8]);
+		entity->z = -4;
+		entity->flags[PASSABLE] = true;
+		entity->flags[INVISIBLE] = false;// true;
+		entity->behavior = &actDeathGhost;
+		entity->skill[2] = player;
+		entity->yaw = 0.0;
+		entity->pitch = 0;
+		entity->sizex = 4;
+		entity->sizey = 4;
+		entity->flags[UPDATENEEDED] = true;
 	}},
 
 	// tried to update

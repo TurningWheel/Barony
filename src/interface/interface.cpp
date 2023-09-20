@@ -22283,17 +22283,20 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 	std::string key = "default";
 	Entity* entity = uidToEntity(lockOnEntityUid);
 	const int player = getPlayer();
+
+	Entity* playerEntity = Player::getPlayerInteractEntity(player);
+
 	if ( players[player]->isLocalPlayer() )
 	{
 		if ( lockOnEntityUid == 0 )
 		{
 			if ( cmd == CALLOUT_CMD_AFFIRMATIVE || cmd == CALLOUT_CMD_NEGATIVE )
 			{
-				entity = players[player]->entity;
+				entity = playerEntity;
 			}
 			else if ( cmd == CALLOUT_CMD_HELP )
 			{
-				entity = players[player]->entity;
+				entity = playerEntity;
 			}
 		}
 
@@ -22302,9 +22305,11 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 			|| cmd == CALLOUT_CMD_SOUTHEAST )
 		{
 			int toPlayer = getPlayerForDirectPlayerCmd(getPlayer(), cmd);
-			if ( toPlayer >= 0 && players[toPlayer] && players[toPlayer]->entity && !client_disconnected[toPlayer] )
+			Entity* toPlayerEntity = Player::getPlayerInteractEntity(toPlayer);
+			if ( toPlayer >= 0 && toPlayer < MAXPLAYERS
+				&& toPlayerEntity && !client_disconnected[toPlayer] )
 			{
-				entity = players[toPlayer]->entity;
+				entity = toPlayerEntity;
 			}
 		}
 	}
@@ -22333,9 +22338,20 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 		
 		int toPlayer = getPlayerForDirectPlayerCmd(getPlayer(), cmd);
 		key = "player_wave";
-		if ( toPlayer < 0 || client_disconnected[toPlayer] || (players[toPlayer] && !players[toPlayer]->entity) )
+
+
+		if ( toPlayer < 0 || toPlayer >= MAXPLAYERS 
+			|| client_disconnected[toPlayer] )
 		{
 			key = "unavailable";
+		}
+		else
+		{
+			Entity* toPlayerEntity = Player::getPlayerInteractEntity(toPlayer);
+			if ( !toPlayerEntity )
+			{
+				key = "unavailable";
+			}
 		}
 
 		if ( setType == SET_CALLOUT_ICON_KEY )
@@ -22402,8 +22418,8 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 		key = "location";
 		break;
 	case CALLOUT_TYPE_PLAYER:
-		if ( cmd == CALLOUT_CMD_HELP && entity && entity->behavior == &actPlayer 
-			&& player >= 0 && entity == players[player]->entity )
+		if ( cmd == CALLOUT_CMD_HELP && entity && (entity->behavior == &actPlayer || entity->behavior == &actDeathGhost)
+			&& player >= 0 && player < MAXPLAYERS && entity == playerEntity )
 		{
 			if ( players[player]->isLocalPlayer() )
 			{
@@ -22608,7 +22624,7 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 		else if ( cmd == CALLOUT_CMD_LOOK )
 		{
 			std::string targetPlayerName = "";
-			if ( entity && entity->behavior == &actPlayer )
+			if ( entity && (entity->behavior == &actPlayer || entity->behavior == &actDeathGhost) )
 			{
 				char shortname[32];
 				stringCopy(shortname, stats[entity->skill[2]]->name, sizeof(shortname), 22);
@@ -23444,7 +23460,7 @@ CalloutRadialMenu::CalloutType CalloutRadialMenu::getCalloutTypeForEntity(const 
 	}
 	CalloutType type = CALLOUT_TYPE_GENERIC_INTERACTABLE;
 
-	if ( parent->behavior == &actPlayer )
+	if ( parent->behavior == &actPlayer || parent->behavior == &actDeathGhost )
 	{
 		type = CALLOUT_TYPE_PLAYER;
 	}
@@ -23648,6 +23664,32 @@ CalloutRadialMenu::CalloutType CalloutRadialMenu::getCalloutTypeForUid(const int
 	return CalloutRadialMenu::getCalloutTypeForEntity(player, parent);
 }
 
+bool CalloutRadialMenu::uidMatchesPlayer(const int playernum, const Uint32 uid)
+{
+	if ( uid == 0 ) { return false; }
+	if ( achievementObserver.playerUids[playernum] == uid )
+	{
+		return true;
+	}
+	else if ( players[playernum]->ghost.uid == uid )
+	{
+		return true;
+	}
+	return false;
+}
+
+Uint32 CalloutRadialMenu::getPlayerUid(const int playernum)
+{
+	if ( players[playernum]->ghost.isActive() )
+	{
+		return players[playernum]->ghost.uid;
+	}
+	else
+	{
+		return achievementObserver.playerUids[playernum];
+	}
+}
+
 void CalloutRadialMenu::CalloutParticle_t::init(const int player)
 {
 	creationTick = ::ticks;
@@ -23655,7 +23697,7 @@ void CalloutRadialMenu::CalloutParticle_t::init(const int player)
 	lifetime = kParticleLifetime;
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		if ( i == player && entityUid == achievementObserver.playerUids[player] && players[i]->isLocalPlayer() )
+		if ( i == player && uidMatchesPlayer(player, entityUid) && players[i]->isLocalPlayer() )
 		{
 			lockOnScreen[i] = true;
 		}
@@ -23761,7 +23803,7 @@ void CalloutRadialMenu::drawCallouts(const int playernum)
 		for ( auto& callout : CalloutMenu[i].callouts )
 		{
 			bool selfCallout = false;
-			if ( callout.second.entityUid == achievementObserver.playerUids[playernum] )
+			if ( uidMatchesPlayer(playernum, callout.second.entityUid) )
 			{
 				if ( i == playernum && players[i]->entity && players[i]->entity->skill[3] == 1 )
 				{
@@ -23937,7 +23979,7 @@ void CalloutRadialMenu::drawCallouts(const int playernum)
 			{
 				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					if ( callout.second.entityUid == achievementObserver.playerUids[i] )
+					if ( uidMatchesPlayer(i, callout.second.entityUid) )
 					{
 						if ( callout.second.cmd == CALLOUT_CMD_AFFIRMATIVE
 							|| callout.second.cmd == CALLOUT_CMD_NEGATIVE
@@ -23962,9 +24004,11 @@ void CalloutRadialMenu::drawCallouts(const int playernum)
 			SDL_Rect iconPos = dest;
 
 			bool drawMini = false;
-			if ( players[playernum]->entity && players[playernum]->entity->bodyparts.size() > 0 )
+
+			Entity* playerEntity = Player::getPlayerInteractEntity(playernum);
+			if ( playerEntity && playerEntity->bodyparts.size() > 0 )
 			{
-				auto bodypart = players[playernum]->entity->bodyparts[0];
+				auto bodypart = playerEntity->bodyparts[0];
 				real_t tempx = bodypart->x;
 				real_t tempy = bodypart->y;
 				bodypart->x = callout.second.x;
@@ -23972,9 +24016,16 @@ void CalloutRadialMenu::drawCallouts(const int playernum)
 
 				real_t tangent = atan2(camera->y * 16.0 - bodypart->y, camera->x * 16.0 - bodypart->x);
 				Entity* ohitentity = hit.entity;
-				lineTraceTarget(bodypart, bodypart->x, bodypart->y, tangent, 256, 0, false, players[playernum]->entity);
 
-				if ( hit.entity != players[playernum]->entity )
+				bool oldPassable = playerEntity->flags[PASSABLE];
+				if ( playerEntity->behavior == &actDeathGhost )
+				{
+					playerEntity->flags[PASSABLE] = false; // hack to make ghosts linetraceable
+				}
+				lineTraceTarget(bodypart, bodypart->x, bodypart->y, tangent, 256, 0, false, playerEntity);
+				playerEntity->flags[PASSABLE] = oldPassable;
+				
+				if ( hit.entity != playerEntity )
 				{
 					// no line of sight through walls
 					drawMini = true;
@@ -24687,7 +24738,7 @@ void CalloutRadialMenu::drawCalloutMenu()
 			|| optionSelected == CALLOUT_CMD_SOUTHWEST )
 		{
 			int targetPlayer = getPlayerForDirectPlayerCmd(getPlayer(), (CalloutCommand)optionSelected);
-			if ( targetPlayer < 0 || client_disconnected[targetPlayer] || (players[targetPlayer] && !players[targetPlayer]->entity) )
+			if ( targetPlayer < 0 || client_disconnected[targetPlayer] || (!Player::getPlayerInteractEntity(targetPlayer)) )
 			{
 				disableOption = true;
 			}
@@ -24798,11 +24849,11 @@ void CalloutRadialMenu::drawCalloutMenu()
 						if ( (CalloutCommand)optionSelected == CALLOUT_CMD_AFFIRMATIVE
 							|| (CalloutCommand)optionSelected == CALLOUT_CMD_NEGATIVE )
 						{
-							lockOnEntityUid = achievementObserver.playerUids[gui_player];
+							lockOnEntityUid = getPlayerUid(gui_player);
 						}
 						else if ( (CalloutCommand)optionSelected == CALLOUT_CMD_HELP )
 						{
-							lockOnEntityUid = achievementObserver.playerUids[gui_player];
+							lockOnEntityUid = getPlayerUid(gui_player);
 						}
 					}
 
@@ -24813,7 +24864,7 @@ void CalloutRadialMenu::drawCalloutMenu()
 						int toPlayer = getPlayerForDirectPlayerCmd(getPlayer(), (CalloutCommand)optionSelected);
 						if ( toPlayer >= 0 )
 						{
-							lockOnEntityUid = achievementObserver.playerUids[toPlayer];
+							lockOnEntityUid = getPlayerUid(toPlayer);
 						}
 					}
 
@@ -24821,18 +24872,19 @@ void CalloutRadialMenu::drawCalloutMenu()
 					{
 						if ( Entity* target = uidToEntity(lockOnEntityUid) )
 						{
-							if ( target->behavior == &actPlayer && target->skill[2] != getPlayer() )
+							if ( (target->behavior == &actPlayer || target->behavior == &actDeathGhost)
+								&& target->skill[2] != getPlayer() )
 							{
 								if ( (CalloutCommand)optionSelected == CALLOUT_CMD_HELP )
 								{
-									lockOnEntityUid = achievementObserver.playerUids[getPlayer()];
+									lockOnEntityUid = getPlayerUid(getPlayer());
 									target = uidToEntity(lockOnEntityUid);
 								}
 								else if ( (CalloutCommand)optionSelected == CALLOUT_CMD_LOOK
 									|| (CalloutCommand)optionSelected == CALLOUT_CMD_AFFIRMATIVE
 									|| (CalloutCommand)optionSelected == CALLOUT_CMD_NEGATIVE )
 								{
-									target = players[getPlayer()]->entity;
+									target = Player::getPlayerInteractEntity(getPlayer());
 								}
 								else if ( (CalloutCommand)optionSelected == CALLOUT_CMD_SOUTH
 									|| (CalloutCommand)optionSelected == CALLOUT_CMD_SOUTHWEST
@@ -24841,7 +24893,7 @@ void CalloutRadialMenu::drawCalloutMenu()
 									int toPlayer = getPlayerForDirectPlayerCmd(getPlayer(), (CalloutCommand)optionSelected);
 									if ( toPlayer >= 0 )
 									{
-										target = players[getPlayer()]->entity;
+										target = Player::getPlayerInteractEntity(getPlayer());
 									}
 								}
 							}
@@ -25158,7 +25210,7 @@ void CalloutRadialMenu::drawCalloutMenu()
 					else if ( i == CALLOUT_CMD_SOUTH )
 					{
 						int targetPlayer = getPlayerForDirectPlayerCmd(getPlayer(), (CalloutCommand)i);
-						if ( targetPlayer < 0 || client_disconnected[targetPlayer] || (players[targetPlayer] && !players[targetPlayer]->entity) )
+						if ( targetPlayer < 0 || client_disconnected[targetPlayer] || !Player::getPlayerInteractEntity(targetPlayer) )
 						{
 							lockedOption = true;
 						}
@@ -25197,7 +25249,7 @@ void CalloutRadialMenu::drawCalloutMenu()
 					else if ( i == CALLOUT_CMD_SOUTHWEST )
 					{
 						int targetPlayer = getPlayerForDirectPlayerCmd(getPlayer(), (CalloutCommand)i);
-						if ( targetPlayer < 0 || client_disconnected[targetPlayer] || (players[targetPlayer] && !players[targetPlayer]->entity) )
+						if ( targetPlayer < 0 || client_disconnected[targetPlayer] || !Player::getPlayerInteractEntity(targetPlayer) )
 						{
 							lockedOption = true;
 						}
@@ -25236,7 +25288,7 @@ void CalloutRadialMenu::drawCalloutMenu()
 					else if ( i == CALLOUT_CMD_SOUTHEAST )
 					{
 						int targetPlayer = getPlayerForDirectPlayerCmd(getPlayer(), (CalloutCommand)i);
-						if ( targetPlayer < 0 || client_disconnected[targetPlayer] || (players[targetPlayer] && !players[targetPlayer]->entity) )
+						if ( targetPlayer < 0 || client_disconnected[targetPlayer] || !Player::getPlayerInteractEntity(targetPlayer) )
 						{
 							lockedOption = true;
 						}
@@ -25329,7 +25381,7 @@ void CalloutRadialMenu::drawCalloutMenu()
 				|| highlight == CALLOUT_CMD_SOUTHWEST )
 			{
 				int targetPlayer = getPlayerForDirectPlayerCmd(getPlayer(), (CalloutCommand)highlight);
-				if ( targetPlayer < 0 || client_disconnected[targetPlayer] || (players[targetPlayer] && !players[targetPlayer]->entity) )
+				if ( targetPlayer < 0 || client_disconnected[targetPlayer] || !Player::getPlayerInteractEntity(targetPlayer) )
 				{
 					disableOption = true;
 				}
@@ -25643,7 +25695,7 @@ bool CalloutRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updat
 		return false;
 	}
 
-	if ( !players[gui_player] || !players[gui_player]->entity )
+	if ( !players[gui_player] || !Player::getPlayerInteractEntity(gui_player) )
 	{
 		return false;
 	}
@@ -25895,7 +25947,7 @@ bool CalloutRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updat
 			strcat(interactText, getMonsterLocalizedName((Monster)monsterType).c_str());
 		}
 	}
-	else if ( selectedEntity.behavior == &actPlayer )
+	else if ( selectedEntity.behavior == &actPlayer || selectedEntity.behavior == &actDeathGhost )
 	{
 		if ( updateInteractText )
 		{
