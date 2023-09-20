@@ -1498,10 +1498,16 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 			}
 		}
 		if (player >= 0 && player < MAXPLAYERS) {
-            if ( CalloutMenu[player].calloutMenuIsOpen() )
-            {
-                return;
-            }
+            //if ( CalloutMenu[player].calloutMenuIsOpen() )
+            //{
+            //    real_t dx, dy;
+            //    dx = camera->x * 16.0 - entity->x;
+            //    dy = camera->y * 16.0 - entity->y;
+            //    if ( sqrt(dx * dx + dy * dy) > 24.0 )
+            //    {
+            //        return; // too far, ignore drawing
+            //    }
+            //}
 			if (entity->worldTooltipPlayer != player) {
 				return;
 			}
