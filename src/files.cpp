@@ -4160,20 +4160,22 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		list_FreeAll(&quads);
 	}
 #ifndef NINTENDO
-	std::string cache_path = std::string(outputdir) + "/models.cache";
-	if ( useModelCache && (model_cache = openDataFile(cache_path.c_str(), "wb")) )
-	{
-		char modelCacheHeader[32] = "BARONY";
-		strcat(modelCacheHeader, VERSION);
-		model_cache->write(&modelCacheHeader, sizeof(char), strlen(modelCacheHeader));
-		for ( size_t model_index = 0; model_index < nummodels; model_index++ )
-		{
-			polymodel_t* cur = &polymodels[model_index];
-			model_cache->write(&cur->numfaces, sizeof(cur->numfaces), 1);
-			model_cache->write(cur->faces, sizeof(polytriangle_t), cur->numfaces);
-		}
-		FileIO::close(model_cache);
-	}
+    if (!isCurrentHoliday()) {
+        std::string cache_path = std::string(outputdir) + "/models.cache";
+        if ( useModelCache && (model_cache = openDataFile(cache_path.c_str(), "wb")) )
+        {
+            char modelCacheHeader[32] = "BARONY";
+            strcat(modelCacheHeader, VERSION);
+            model_cache->write(&modelCacheHeader, sizeof(char), strlen(modelCacheHeader));
+            for ( size_t model_index = 0; model_index < nummodels; model_index++ )
+            {
+                polymodel_t* cur = &polymodels[model_index];
+                model_cache->write(&cur->numfaces, sizeof(cur->numfaces), 1);
+                model_cache->write(cur->faces, sizeof(polytriangle_t), cur->numfaces);
+            }
+            FileIO::close(model_cache);
+        }
+    }
 #endif
 }
 
