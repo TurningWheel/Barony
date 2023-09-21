@@ -19856,7 +19856,7 @@ void Entity::createWorldUITooltip()
 {
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		if ( !players[i]->isLocalPlayerAlive() )
+		if ( !players[i]->isLocalPlayer() )
 		{
 			continue;
 		}

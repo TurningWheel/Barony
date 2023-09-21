@@ -1780,6 +1780,7 @@ public:
 		void handleActions();
 		bool isActive() { return my != nullptr; }
 		void reset();
+		bool allowedInteractEntity(Entity& entity);
 	} ghost;
 
 	class MessageZone_t

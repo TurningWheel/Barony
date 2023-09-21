@@ -3310,7 +3310,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 				return 0.0;
 			}
 
-			if ( !selectInteract && stats[player.playernum] && stats[player.playernum]->defending )
+			if ( !selectInteract && stats[player.playernum] && stats[player.playernum]->defending && player.entity )
 			{
 				if ( stats[player.playernum]->shield && stats[player.playernum]->shield->type == TOOL_TINKERING_KIT )
 				{
@@ -3668,6 +3668,14 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 				return;
 			}
 		}
+		else if ( player.ghost.isActive() && !CalloutMenu[player.playernum].calloutMenuIsOpen() )
+		{
+			if ( !player.ghost.allowedInteractEntity(*parent) )
+			{
+				setTooltipDisabled(tooltip);
+				return;
+			}
+		}
 		parent->highlightForUI = 1.0;
 
 		if ( tooltip.worldTooltipRequiresButtonHeld == 1 && *MainMenu::cvar_hold_to_activate )
@@ -3680,7 +3688,7 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		}
 
 		bool foundTinkeringKit = false;
-		if ( stats[player.playernum] && stats[player.playernum]->defending )
+		if ( stats[player.playernum] && stats[player.playernum]->defending && player.entity )
 		{
 			if ( stats[player.playernum]->shield && stats[player.playernum]->shield->type == TOOL_TINKERING_KIT )
 			{
@@ -4123,6 +4131,10 @@ bool entityBlocksTooltipInteraction(const int player, Entity& entity)
 	}
 	else if ( entity.behavior == &actMonster )
 	{
+		if ( players[player]->ghost.isActive() )
+		{
+			return false;
+		}
 		if ( monsterIsFriendlyForTooltip(player, entity) )
 		{
 			return false;
@@ -4138,7 +4150,8 @@ void Player::WorldUI_t::handleTooltips()
 	for ( int player = 0; player < MAXPLAYERS && !gamePaused; ++player )
 	{
 		players[player]->worldUI.worldTooltipDialogue.update();
-		if ( !players[player]->isLocalPlayerAlive() && !players[player]->ghost.isActive() )
+		if ( !players[player]->isLocalPlayer()
+			|| (!players[player]->isLocalPlayerAlive() && !players[player]->ghost.isActive()) )
 		{
 			players[player]->worldUI.reset();
 			players[player]->worldUI.tooltipView = Player::WorldUI_t::TooltipView::TOOLTIP_VIEW_RESCAN;
@@ -4240,7 +4253,7 @@ void Player::WorldUI_t::handleTooltips()
 			// spells
 			bDoingActionHideTooltips = true;
 		}
-		else if ( stats[player] && stats[player]->defending )
+		else if ( stats[player] && stats[player]->defending && players[player]->entity )
 		{
 			if ( stats[player]->shield && stats[player]->shield->type == TOOL_TINKERING_KIT )
 			{

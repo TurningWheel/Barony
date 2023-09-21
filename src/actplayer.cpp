@@ -221,6 +221,21 @@ void Player::Ghost_t::reset()
 	uid = 0;
 }
 
+bool Player::Ghost_t::allowedInteractEntity(Entity& entity)
+{
+	if ( entity.behavior == &actItem
+		|| entity.behavior == &actDoor
+		|| entity.behavior == &actSwitch
+		|| entity.behavior == &actSwitchWithTimer
+		|| entity.behavior == &actPowerCrystal
+		|| entity.behavior == &actPowerCrystalBase
+		|| entity.behavior == &actTeleportShrine )
+	{
+		return true;
+	}
+	return false;
+}
+
 void Player::Ghost_t::handleActions()
 {
 	Input& input = Input::inputs[player.playernum];
@@ -1142,8 +1157,8 @@ void actDeathCam(Entity* my)
 				net_packet->data[4] = DEATHCAM_PLAYERNUM;
 				net_packet->data[5] = currentlevel;
 
-				int x = (my->x / 16) + 8;
-				int y = (my->y / 16) + 8;
+				int x = (my->x / 16);
+				int y = (my->y / 16);
 				SDLNet_Write16((Sint16)(x), &net_packet->data[6]);
 				SDLNet_Write16((Sint16)(y), &net_packet->data[8]);
 				net_packet->data[10] = secretlevel;
