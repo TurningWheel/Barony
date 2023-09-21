@@ -22516,7 +22516,7 @@ failed:
 		    void(*banner_funcs[])(Button&) = {
 		        [](Button&){ // banner #1
 					if (enabledDLCPack1 && enabledDLCPack2) {
-						openURLTryWithOverlay("https://www.baronygame.com/blog/qod-update-launched");
+						openURLTryWithOverlay("https://www.baronygame.com/blog/life-after-death-announcement");
 					} else {
 						openDLCPrompt(enabledDLCPack1 ? 1 : 0);
 					}
@@ -22527,8 +22527,8 @@ failed:
 #else
 			const char* banner_images[][2] = {
 				{
-					"*#images/ui/Main Menus/Banners/UI_MainMenu_QoDPatchNotes1_base.png",
-					"*#images/ui/Main Menus/Banners/UI_MainMenu_QoDPatchNotes1_high.png",
+					"*#images/ui/Main Menus/Banners/banner_lifeafterdeath-preview.png",
+					"*#images/ui/Main Menus/Banners/banner_lifeafterdeath-preview_hover.png",
 				},
 				{
 					"*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_base.png",
@@ -22549,7 +22549,7 @@ failed:
 			}
 			void(*banner_funcs[])(Button&) = {
 				[](Button&) { // banner #1
-					openURLTryWithOverlay("https://www.baronygame.com/blog/qod-update-launched");
+					openURLTryWithOverlay("https://www.baronygame.com/blog/life-after-death-announcement");
 				},
 				[](Button&) { // banner #2
 					 openDLCPrompt(enabledDLCPack1 ? 1 : 0);
