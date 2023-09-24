@@ -10112,7 +10112,12 @@ void Player::MessageZone_t::processChatbox()
 		{
 			entry->setDisabled(false);
 			entry->setColor(color);
-			entry->setText(current->text->data);
+
+			std::string data = messageSanitizePercentSign(current->text->data, nullptr);
+			char str[ADD_MESSAGE_BUFFER_LENGTH];
+			snprintf(str, sizeof(str), data.c_str());
+
+			entry->setText(str);
 			entry->setFont(useBigFont ? bigfont : smallfont);
 			entry->setPaddingPerLine(useBigFont ? 0 : *cvar_log_multiline_pady);
             Font* fontGet = Font::get(entry->getFont());

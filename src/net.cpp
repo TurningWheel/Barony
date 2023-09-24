@@ -319,6 +319,8 @@ bool messagePlayer(int player, Uint32 type, char const * const message, ...)
 	vsnprintf( str, Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH - 1, message, argptr );
 	va_end( argptr );
 
+	strncpy(str, messageSanitizePercentSign(str, nullptr).c_str(), Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH - 1);
+
 	return messagePlayerColor(player, type, 0xFFFFFFFF, str);
 }
 
