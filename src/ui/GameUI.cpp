@@ -8726,7 +8726,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 	}
 	else
 	{
-		if ( !player.entity )
+		if ( !player.entity && !player.ghost.isActive() )
 		{
 			cursor->disabled = true;
 		}
@@ -9782,7 +9782,7 @@ void Player::HUD_t::processHUD()
 #endif // NINTENDO
 	}
 
-	if ( !gamePaused && player.entity && player.shootmode )
+	if ( !gamePaused && (player.entity || player.ghost.isActive()) && player.shootmode)
 	{
 		inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 	}
