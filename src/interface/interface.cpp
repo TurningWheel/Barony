@@ -1374,7 +1374,8 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 	if ( inputs.hasController(playernum)
 		&& ((oldgui == GUI_MODE_NONE && whichGUIMode != GUI_MODE_NONE) 
 			|| (oldmodule != GUI.activeModule && GUI.activeModule == GUI_t::MODULE_INVENTORY))
-		&& !FollowerMenu[playernum].followerToCommand )
+		&& !FollowerMenu[playernum].followerToCommand
+		&& !CalloutMenu[playernum].bOpen )
 	{
 		warpMouseToInventorySlot = true;
 	}
