@@ -145,11 +145,8 @@ bool remountBaseDataFolders() {
     // then mount base data folders
     success = mountBaseDataFolders() ? success : false;
     
-    // now mount any desired mods
-    success = Mods::mountAllExistingPaths() ? success : false;
-    
-    // and reload all content!
-    Mods::loadMods();
+    // reload files
+    Mods::unloadMods(true);
     
     return success;
 #endif
@@ -920,10 +917,7 @@ int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 	languageCode = lang;
 
 	tmpEntries.clear();
-	if ( forceLoadBaseDirectory )
-	{
-		entries.clear();
-	}
+	entries.clear();
 
 	// read file
 	Uint32 line;

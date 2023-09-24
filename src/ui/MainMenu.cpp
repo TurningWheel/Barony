@@ -2723,7 +2723,7 @@ namespace MainMenu {
 		*cvar_hold_to_activate = hold_to_activate_enabled;
         bool oldDisableHoliday = *cvar_disableHoliday;
         *cvar_disableHoliday = !holiday_themes_enabled;
-        if (oldDisableHoliday != *cvar_disableHoliday) {
+        if (initialized && oldDisableHoliday != *cvar_disableHoliday) {
             (void)remountBaseDataFolders();
         }
 		result |= video.save() ? VideoRefresh::Video : VideoRefresh::None;

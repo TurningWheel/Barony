@@ -3276,7 +3276,7 @@ struct Mods
 	static bool clearAllMountedPaths();
 	static bool removePathFromMountedFiles(std::string findStr);
 	static bool isPathInMountedFiles(std::string findStr);
-	static void unloadMods();
+	static void unloadMods(bool force = false);
 	static void loadMods();
 	static void loadModels(int start, int end);
 	static void verifyAchievements(const char* fullpath, bool ignoreBaseFolder);

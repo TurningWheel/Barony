@@ -8267,7 +8267,7 @@ void Mods::loadModels(int start, int end) {
 	generateVBOs(start, end);
 }
 
-void Mods::unloadMods()
+void Mods::unloadMods(bool force)
 {
 #ifndef EDITOR
 	isLoading = true;
@@ -8284,8 +8284,21 @@ void Mods::unloadMods()
 
 	updateLoadingScreen(10);
 	doLoadingScreen();
+ 
+    if (force) {
+        modelsListModifiedIndexes.clear();
+        for (int c = 0; c < nummodels; ++c) {
+            modelsListModifiedIndexes.push_back(c);
+        }
+        for (int c = 0; c < numsounds; ++c) {
+            soundsListModifiedIndexes.push_back(c);
+        }
+        for (const auto& pair : systemResourceImages) {
+            Mods::systemResourceImagesToReload.push_back(pair);
+        }
+    }
 
-	if ( Mods::modelsListRequiresReloadUnmodded || !Mods::modelsListModifiedIndexes.empty() )
+	if ( force || Mods::modelsListRequiresReloadUnmodded || !Mods::modelsListModifiedIndexes.empty() )
 	{
 		int modelsIndexUpdateStart = 1;
 		int modelsIndexUpdateEnd = nummodels;
@@ -8304,7 +8317,7 @@ void Mods::unloadMods()
 	updateLoadingScreen(20);
 	doLoadingScreen();
 
-	if ( Mods::soundListRequiresReloadUnmodded || !Mods::soundsListModifiedIndexes.empty() )
+	if ( force || Mods::soundListRequiresReloadUnmodded || !Mods::soundsListModifiedIndexes.empty() )
 	{
 		physfsReloadSounds(true);
 		Mods::soundListRequiresReloadUnmodded = false;
@@ -8315,7 +8328,7 @@ void Mods::unloadMods()
 	updateLoadingScreen(30);
 	doLoadingScreen();
 
-	if ( Mods::tileListRequireReloadUnmodded )
+	if ( force || Mods::tileListRequireReloadUnmodded )
 	{
 		physfsReloadTiles(true);
 		Mods::tileListRequireReloadUnmodded = false;
@@ -8324,7 +8337,7 @@ void Mods::unloadMods()
 	updateLoadingScreen(40);
 	doLoadingScreen();
 
-	if ( Mods::spriteImagesRequireReloadUnmodded )
+	if ( force || Mods::spriteImagesRequireReloadUnmodded )
 	{
 		physfsReloadSprites(true);
 		Mods::spriteImagesRequireReloadUnmodded = false;
@@ -8333,7 +8346,7 @@ void Mods::unloadMods()
 	updateLoadingScreen(50);
 	doLoadingScreen();
 
-	if ( Mods::booksRequireReloadUnmodded )
+	if ( force || Mods::booksRequireReloadUnmodded )
 	{
 		physfsReloadBooks();
 		Mods::booksRequireReloadUnmodded = false;
@@ -8342,7 +8355,7 @@ void Mods::unloadMods()
 	updateLoadingScreen(60);
 	doLoadingScreen();
 
-	if ( Mods::musicRequireReloadUnmodded )
+	if ( force || Mods::musicRequireReloadUnmodded )
 	{
 		gamemodsUnloadCustomThemeMusic();
 		bool reloadIntroMusic = false;
@@ -8359,7 +8372,7 @@ void Mods::unloadMods()
 	updateLoadingScreen(70);
 	doLoadingScreen();
 
-	if ( Mods::langRequireReloadUnmodded )
+	if ( force || Mods::langRequireReloadUnmodded )
 	{
 		Language::reset();
 		Language::reloadLanguage();
@@ -8369,7 +8382,7 @@ void Mods::unloadMods()
 	updateLoadingScreen(80);
 	doLoadingScreen();
 
-	if ( Mods::monsterLimbsRequireReloadUnmodded )
+	if ( force || Mods::monsterLimbsRequireReloadUnmodded )
 	{
 		physfsReloadMonsterLimbFiles();
 		Mods::monsterLimbsRequireReloadUnmodded = false;
@@ -8378,7 +8391,7 @@ void Mods::unloadMods()
 	updateLoadingScreen(85);
 	doLoadingScreen();
 
-	if ( Mods::systemImagesReloadUnmodded )
+	if ( force || Mods::systemImagesReloadUnmodded )
 	{
 		physfsReloadSystemImages();
 		Mods::systemImagesReloadUnmodded = false;

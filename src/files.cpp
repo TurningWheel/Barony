@@ -67,7 +67,7 @@ HolidayTheme getCurrentHoliday() {
     if (month == 10 || (month == 11 && day == 1)) {
         return HolidayTheme::THEME_HALLOWEEN;
     }
-    else if ((month == 11 && day >= 24) || (month == 12) || (month == 1 && day == 1)) {
+    else if (month == 12 || (month == 1 && day == 1)) {
         return HolidayTheme::THEME_XMAS;
     }
     else {
