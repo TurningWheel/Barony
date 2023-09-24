@@ -3277,6 +3277,13 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 						return 0.0;
 					}
 				}
+				else if ( player.ghost.isActive() )
+				{
+					if ( !player.ghost.allowedInteractEntity(*parent) )
+					{
+						return 0.0;
+					}
+				}
 
 				if ( parent->behavior == &actPlayer && player.playernum == parent->skill[2] )
 				{
