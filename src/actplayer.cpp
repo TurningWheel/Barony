@@ -176,7 +176,6 @@ bool Player::Ghost_t::handleQuickTurn(bool useRefreshRateDelta)
 		return false;
 	}
 
-	Entity* my = players[player.playernum]->entity;
 	double refreshRateDelta = 1.0;
 	if ( useRefreshRateDelta && fps > 0.0 )
 	{
