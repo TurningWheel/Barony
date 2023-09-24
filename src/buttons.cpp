@@ -314,32 +314,20 @@ void buttonNew(button_t* my)
 	snprintf(skyboxtext, 4, "%d", map.skybox);
 	for ( int z = 0; z < MAPFLAGS; ++z )
 	{
-		snprintf(mapflagtext[z], 4, "%d", map.flags[z]);
+		if ( z < MAP_FLAG_GENBYTES1 || z > MAP_FLAG_GENBYTES6 )
+		{
+			snprintf(mapflagtext[z], 4, "%d", map.flags[z]);
+		}
 	}
-	if ( map.flags[MAP_FLAG_DISABLETRAPS] > 0 )
-	{
-		strcpy(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]");
-	}
-	else
-	{
-		strcpy(mapflagtext[MAP_FLAG_DISABLETRAPS], "[ ]");
-	}
-	if ( map.flags[MAP_FLAG_DISABLEMONSTERS] > 0 )
-	{
-		strcpy(mapflagtext[MAP_FLAG_DISABLEMONSTERS], "[x]");
-	}
-	else
-	{
-		strcpy(mapflagtext[MAP_FLAG_DISABLEMONSTERS], "[ ]");
-	}
-	if ( map.flags[MAP_FLAG_DISABLELOOT] > 0 )
-	{
-		strcpy(mapflagtext[MAP_FLAG_DISABLELOOT], "[x]");
-	}
-	else
-	{
-		strcpy(mapflagtext[MAP_FLAG_DISABLELOOT], "[ ]");
-	}
+	snprintf(mapflagtext[MAP_FLAG_GENTOTALMIN], 4, "%d", (map.flags[MAP_FLAG_GENBYTES1] >> 24) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_GENTOTALMAX], 4, "%d", (map.flags[MAP_FLAG_GENBYTES1] >> 16) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_GENMONSTERMIN], 4, "%d", (map.flags[MAP_FLAG_GENBYTES1] >> 8) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_GENMONSTERMAX], 4, "%d", (map.flags[MAP_FLAG_GENBYTES1] >> 0) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_GENLOOTMIN], 4, "%d", (map.flags[MAP_FLAG_GENBYTES2] >> 24) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_GENLOOTMAX], 4, "%d", (map.flags[MAP_FLAG_GENBYTES2] >> 16) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_GENDECORATIONMIN], 4, "%d", (map.flags[MAP_FLAG_GENBYTES2] >> 8) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_GENDECORATIONMAX], 4, "%d", (map.flags[MAP_FLAG_GENBYTES2] >> 0) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_PERIMETER_GAP], 4, "%d", (map.flags[MAP_FLAG_GENBYTES4] >> 0) & static_cast<int>(0xFF));
 	if ( (map.flags[MAP_FLAG_GENBYTES3] >> 24) & static_cast<int>(0xFF) )
 	{
 		strcpy(mapflagtext[MAP_FLAG_DISABLEDIGGING], "[x]");
@@ -348,6 +336,7 @@ void buttonNew(button_t* my)
 	{
 		strcpy(mapflagtext[MAP_FLAG_DISABLEDIGGING], "[ ]");
 	}
+
 	if ( (map.flags[MAP_FLAG_GENBYTES3] >> 16) & static_cast<int>(0xFF) )
 	{
 		strcpy(mapflagtext[MAP_FLAG_DISABLETELEPORT], "[x]");
@@ -356,6 +345,7 @@ void buttonNew(button_t* my)
 	{
 		strcpy(mapflagtext[MAP_FLAG_DISABLETELEPORT], "[ ]");
 	}
+
 	if ( (map.flags[MAP_FLAG_GENBYTES3] >> 8) & static_cast<int>(0xFF) )
 	{
 		strcpy(mapflagtext[MAP_FLAG_DISABLELEVITATION], "[x]");
@@ -364,6 +354,7 @@ void buttonNew(button_t* my)
 	{
 		strcpy(mapflagtext[MAP_FLAG_DISABLELEVITATION], "[ ]");
 	}
+
 	if ( (map.flags[MAP_FLAG_GENBYTES3] >> 0) & static_cast<int>(0xFF) )
 	{
 		strcpy(mapflagtext[MAP_FLAG_GENADJACENTROOMS], "[x]");
@@ -395,6 +386,31 @@ void buttonNew(button_t* my)
 	else
 	{
 		strcpy(mapflagtext[MAP_FLAG_DISABLEHUNGER], "[ ]");
+	}
+
+	if ( map.flags[MAP_FLAG_DISABLETRAPS] > 0 )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLETRAPS], "[ ]");
+	}
+	if ( map.flags[MAP_FLAG_DISABLEMONSTERS] > 0 )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEMONSTERS], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEMONSTERS], "[ ]");
+	}
+	if ( map.flags[MAP_FLAG_DISABLELOOT] > 0 )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLELOOT], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLELOOT], "[ ]");
 	}
 	cursorflash = ticks;
 	menuVisible = 0;
@@ -482,24 +498,40 @@ void buttonNewConfirm(button_t* my)
 				map.flags[MAP_FLAG_DISABLELOOT] = 0;
 			}
 		}
+		else if ( z == MAP_FLAG_GENBYTES1 )
+		{
+			map.flags[z] = 0;
+			map.flags[z] |= (atoi(mapflagtext[MAP_FLAG_GENTOTALMIN]) & 0xFF) << 24;
+			map.flags[z] |= (atoi(mapflagtext[MAP_FLAG_GENTOTALMAX]) & 0xFF) << 16;
+			map.flags[z] |= (atoi(mapflagtext[MAP_FLAG_GENMONSTERMIN]) & 0xFF) << 8;
+			map.flags[z] |= (atoi(mapflagtext[MAP_FLAG_GENMONSTERMAX]) & 0xFF) << 0;
+		}
+		else if ( z == MAP_FLAG_GENBYTES2 )
+		{
+			map.flags[z] = 0;
+			map.flags[z] |= (atoi(mapflagtext[MAP_FLAG_GENLOOTMIN]) & 0xFF) << 24;
+			map.flags[z] |= (atoi(mapflagtext[MAP_FLAG_GENLOOTMAX]) & 0xFF) << 16;
+			map.flags[z] |= (atoi(mapflagtext[MAP_FLAG_GENDECORATIONMIN]) & 0xFF) << 8;
+			map.flags[z] |= (atoi(mapflagtext[MAP_FLAG_GENDECORATIONMAX]) & 0xFF) << 0;
+		}
 		else if ( z == MAP_FLAG_GENBYTES3 )
 		{
 			map.flags[z] = 0;
 			if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEDIGGING], "[x]", 3) )
 			{
-				map.flags[z] |= (1 << 24) & 0xFF;
+				map.flags[z] |= (1 << 24);
 			}
 			if ( !strncmp(mapflagtext[MAP_FLAG_DISABLETELEPORT], "[x]", 3) )
 			{
-				map.flags[z] |= (1 << 16) & 0xFF;
+				map.flags[z] |= (1 << 16);
 			}
 			if ( !strncmp(mapflagtext[MAP_FLAG_DISABLELEVITATION], "[x]", 3) )
 			{
-				map.flags[z] |= (1 << 8) & 0xFF;
+				map.flags[z] |= (1 << 8);
 			}
 			if ( !strncmp(mapflagtext[MAP_FLAG_GENADJACENTROOMS], "[x]", 3) )
 			{
-				map.flags[z] |= (1 << 0) & 0xFF;
+				map.flags[z] |= (1 << 0);
 			}
 		}
 		else if ( z == MAP_FLAG_GENBYTES4 )
@@ -507,16 +539,17 @@ void buttonNewConfirm(button_t* my)
 			map.flags[z] = 0;
 			if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEOPENING], "[x]", 3) )
 			{
-				map.flags[z] |= (1 << 24) & 0xFF;
+				map.flags[z] |= (1 << 24);
 			}
 			if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEMESSAGES], "[x]", 3) )
 			{
-				map.flags[z] |= (1 << 16) & 0xFF;
+				map.flags[z] |= (1 << 16);
 			}
 			if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEHUNGER], "[x]", 3) )
 			{
-				map.flags[z] |= (1 << 8) & 0xFF;
+				map.flags[z] |= (1 << 8);
 			}
+			map.flags[z] |= atoi(mapflagtext[MAP_FLAG_PERIMETER_GAP]) & 0xFF;
 		}
 		else
 		{
