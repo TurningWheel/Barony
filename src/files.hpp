@@ -276,8 +276,8 @@ enum HolidayTheme {
     THEME_MAX
 };
 extern const char* holidayThemeDirs[HolidayTheme::THEME_MAX];
-HolidayTheme getCurrentHoliday();
-bool isCurrentHoliday();
+HolidayTheme getCurrentHoliday(bool force = false);
+bool isCurrentHoliday(bool force = false);
 
 #ifndef EDITOR
 #include "interface/consolecommand.hpp"

@@ -39,17 +39,17 @@ char outputdir[PATH_MAX];
 const char* holidayThemeDirs[HolidayTheme::THEME_MAX] = {
     "",
     "themes/scarony/",
-    "themes/christmas/"
+    "themes/merry/"
 };
 
 #ifndef EDITOR
-ConsoleVariable<int> cvar_forceHoliday("/force_holiday", 0);
+ConsoleVariable<int> cvar_forceHoliday("/force_holiday", 2);
 ConsoleVariable<bool> cvar_disableHoliday("/disable_holiday", false);
 #endif
 
-HolidayTheme getCurrentHoliday() {
+HolidayTheme getCurrentHoliday(bool force) {
 #ifndef EDITOR
-    if (*cvar_disableHoliday) {
+    if (*cvar_disableHoliday && !force) {
         return HolidayTheme::THEME_NONE;
     }
     if (*cvar_forceHoliday) {
@@ -75,8 +75,8 @@ HolidayTheme getCurrentHoliday() {
     }
 }
 
-bool isCurrentHoliday() {
-    return getCurrentHoliday() != HolidayTheme::THEME_NONE;
+bool isCurrentHoliday(bool force) {
+    return getCurrentHoliday(force) != HolidayTheme::THEME_NONE;
 }
 
 std::unordered_map<std::string, int> mapHashes = {
