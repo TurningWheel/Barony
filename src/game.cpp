@@ -5933,6 +5933,31 @@ void drawAllPlayerCameras() {
 			occlusionCulling(map, camera);
 			glBeginCamera(&camera, true);
 
+			// shared minimap progress
+			if ( !splitscreen/*gameplayCustomManager.inUse() && gameplayCustomManager.minimapShareProgress && !splitscreen*/ )
+			{
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( i != clientnum && players[i] && Player::getPlayerInteractEntity(i) )
+					{
+						if ( !players[i]->entity || (players[i]->entity && !players[i]->entity->isBlind()) )
+						{
+							real_t x = camera.x;
+							real_t y = camera.y;
+							real_t ang = camera.ang;
+
+							camera.x = Player::getPlayerInteractEntity(i)->x / 16.0;
+							camera.y = Player::getPlayerInteractEntity(i)->y / 16.0;
+							camera.ang = Player::getPlayerInteractEntity(i)->yaw;
+							raycast(camera, minimap, false); // update minimap from other players' perspectives, player or ghost
+							camera.x = x;
+							camera.y = y;
+							camera.ang = ang;
+						}
+					}
+				}
+			}
+
 			if ( players[c] && players[c]->entity )
 			{
 				if ( players[c]->entity->isBlind() )
@@ -6002,37 +6027,42 @@ void drawAllPlayerCameras() {
 				DebugStats.drawWorldT3 = std::chrono::high_resolution_clock::now();
 				if ( !players[c]->entity->isBlind() )
 				{
-				    raycast(camera, minimap); // update minimap
+				    raycast(camera, minimap, true); // update minimap
 				}
 				DebugStats.drawWorldT4 = std::chrono::high_resolution_clock::now();
 				glDrawWorld(&camera, REALCOLORS);
-
-				if ( gameplayCustomManager.inUse() && gameplayCustomManager.minimapShareProgress && !splitscreen )
-				{
-					for ( int i = 0; i < MAXPLAYERS; ++i )
-					{
-						if ( i != clientnum && players[i] && players[i]->entity )
-						{
-						    if ( !players[i]->entity->isBlind() )
-						    {
-							    real_t x = camera.x;
-							    real_t y = camera.y;
-							    real_t ang = camera.ang;
-
-							    camera.x = players[i]->entity->x / 16.0;
-							    camera.y = players[i]->entity->y / 16.0;
-							    camera.ang = players[i]->entity->yaw;
-							    raycast(camera, minimap); // update minimap from other players' perspectives
-							    camera.x = x;
-							    camera.y = y;
-							    camera.ang = ang;
-							}
-						}
-					}
-				}
 			}
 			else
 			{
+				// undo blindness effects
+				if ( globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_INUSE )
+				{
+					for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+					{
+						Entity* mapCreature = (Entity*)mapNode->element;
+						if ( mapCreature )
+						{
+							mapCreature->monsterEntityRenderAsTelepath = 0;
+						}
+					}
+				}
+				globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_DISSIPATING;
+				globalLightModifierEntities = 0.f;
+				if ( globalLightModifier < 1.f )
+				{
+					globalLightModifier += 0.01;
+				}
+				else
+				{
+					globalLightModifier = 1.01;
+					globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+				}
+
+				if ( players[c] && players[c]->ghost.isActive() )
+				{
+					raycast(camera, minimap, false); // update minimap for ghost
+				}
+
 			    // player is dead, spectate
 				glDrawWorld(&camera, REALCOLORS);
 			}
