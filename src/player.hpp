@@ -1781,6 +1781,11 @@ public:
 		bool isActive() { return my != nullptr; }
 		void reset();
 		bool allowedInteractEntity(Entity& entity);
+		static const int GHOST_MODEL_P1 = 1238;
+		static const int GHOST_MODEL_P2 = 1239;
+		static const int GHOST_MODEL_P3 = 1240;
+		static const int GHOST_MODEL_P4 = 1241;
+		static const int GHOST_MODEL_PX = 1242;
 	} ghost;
 
 	class MessageZone_t

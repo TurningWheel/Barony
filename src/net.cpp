@@ -1871,11 +1871,11 @@ void clientActions(Entity* entity)
 		case 130:
 			entity->behavior = &actGoldBag;
 			break;
-		case 1233:
-		case 1234:
-		case 1235:
-		case 1236:
-		case 1237:
+		case Player::Ghost_t::GHOST_MODEL_P1:
+		case Player::Ghost_t::GHOST_MODEL_P2:
+		case Player::Ghost_t::GHOST_MODEL_P3:
+		case Player::Ghost_t::GHOST_MODEL_P4:
+		case Player::Ghost_t::GHOST_MODEL_PX:
 			// player ghosts
 			playernum = SDLNet_Read32(&net_packet->data[30]);
 			if ( playernum >= 0 && playernum < MAXPLAYERS )
@@ -2553,6 +2553,25 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 	}},
 
+	// ghost interact item
+	{ 'GHOI', []() {
+		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		Entity* entity = uidToEntity(uid);
+		if ( entity )
+		{
+			entity->itemNotMoving = 0;
+			entity->itemNotMovingClient = 0;
+			entity->flags[USERFLAG1] = false; // enable collision
+
+			entity->x = ((Sint16)SDLNet_Read16(&net_packet->data[8])) / 32.0;
+			entity->y = ((Sint16)SDLNet_Read16(&net_packet->data[10])) / 32.0;
+			entity->z = ((Sint16)SDLNet_Read16(&net_packet->data[12])) / 32.0;
+			
+			entity->vel_x = ((Sint16)SDLNet_Read16(&net_packet->data[14])) / 32.0;
+			entity->vel_y = ((Sint16)SDLNet_Read16(&net_packet->data[16])) / 32.0;
+			entity->vel_z = ((Sint16)SDLNet_Read16(&net_packet->data[18])) / 32.0;
+		}
+	}},
 
 	// spawn an explosion
 	{'EXPL', [](){
@@ -5068,6 +5087,10 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			statusBeatitudeQuantityAppearance |= ((static_cast<Sint8>(entity->skill[12]) & 0xFF) << 16); // beatitude
 			statusBeatitudeQuantityAppearance |= ((static_cast<Uint8>(entity->skill[13]) & 0xFF) << 8); // quantity
 			Uint8 appearance = entity->skill[14] % items[entity->skill[10]].variations;
+			if ( entity->skill[10] == TOOL_PLAYER_LOOT_BAG )
+			{
+				appearance = (entity->skill[14] & 0xF) % items[entity->skill[10]].variations;
+			}
 			statusBeatitudeQuantityAppearance |= (static_cast<Uint8>(appearance) & 0xFF); // appearance
 
 			SDLNet_Write32(statusBeatitudeQuantityAppearance, &net_packet->data[12]);
@@ -5275,7 +5298,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		players[player]->ghost.reset();
 
 		// deathcam
-		int sprite = 1233 + (player < 4 ? player : 4);
+		int sprite = Player::Ghost_t::GHOST_MODEL_P1 + (player < 4 ? player : 4);
 		Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Ghost entity.
 		players[player]->ghost.my = entity;
 		players[player]->ghost.uid = entity->getUID();
@@ -5432,13 +5455,13 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			}
 			else
 			{
-				if ( entity && entity->behavior == &actPlayer && entity->skill[2] != pnum )
+				if ( entity && (entity->behavior == &actPlayer || entity->behavior == &actDeathGhost) && entity->skill[2] != pnum )
 				{
 					if ( cmd == CalloutRadialMenu::CALLOUT_CMD_LOOK
 						|| cmd == CalloutRadialMenu::CALLOUT_CMD_AFFIRMATIVE
 						|| cmd == CalloutRadialMenu::CALLOUT_CMD_NEGATIVE )
 					{
-						entity = players[pnum]->entity;
+						entity = Player::getPlayerInteractEntity(pnum);
 					}
 					else if ( cmd == CalloutRadialMenu::CALLOUT_CMD_SOUTH
 						|| cmd == CalloutRadialMenu::CALLOUT_CMD_SOUTHWEST
@@ -5447,7 +5470,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 						int toPlayer = CalloutMenu[pnum].getPlayerForDirectPlayerCmd(pnum, cmd);
 						if ( toPlayer >= 0 )
 						{
-							entity = players[pnum]->entity;
+							entity = Player::getPlayerInteractEntity(pnum);
 						}
 					}
 				}

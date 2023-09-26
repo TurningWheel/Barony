@@ -124,7 +124,7 @@ void actItem(Entity* my)
 			net_packet->len = 9;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
-		else if ( my->skill[10] == 0 && my->itemReceivedDetailsFromServer == 0 && players[clientnum] && players[clientnum]->entity )
+		else if ( my->skill[10] == 0 && my->itemReceivedDetailsFromServer == 0 && players[clientnum] )
 		{
 			// request itemtype and beatitude
 			if ( ticks % (TICKS_PER_SECOND * 6) == my->getUID() % (TICKS_PER_SECOND * 6) )
@@ -265,7 +265,39 @@ void actItem(Entity* my)
 		{
 			if ( selectedEntity[i] == my || client_selected[i] == my )
 			{
-				if ( inrange[i] && players[i] && players[i]->entity )
+				if ( inrange[i] && players[i] && players[i]->ghost.isActive() )
+				{
+					my->vel_x += 1.0 * cos(players[i]->ghost.my->yaw);
+					my->vel_y += 1.0 * sin(players[i]->ghost.my->yaw);
+					my->z = std::max(my->z - 0.1, 0.0);
+					my->vel_z = 2 * (-10 - local_rng.rand() % 20) * .01;
+					my->itemNotMoving = 0;
+					my->itemNotMovingClient = 0;
+					my->flags[USERFLAG1] = false; // enable collision
+					if ( multiplayer == SERVER )
+					{
+						for ( int c = 1; c < MAXPLAYERS; c++ )
+						{
+							if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+							{
+								continue;
+							}
+							strcpy((char*)net_packet->data, "GHOI");
+							SDLNet_Write32(my->getUID(), &net_packet->data[4]);
+							SDLNet_Write16((Sint16)(my->x * 32), &net_packet->data[8]);
+							SDLNet_Write16((Sint16)(my->y * 32), &net_packet->data[10]);
+							SDLNet_Write16((Sint16)(my->z * 32), &net_packet->data[12]);
+							SDLNet_Write16((Sint16)(my->vel_x * 32), &net_packet->data[14]);
+							SDLNet_Write16((Sint16)(my->vel_y * 32), &net_packet->data[16]);
+							SDLNet_Write16((Sint16)(my->vel_z * 32), &net_packet->data[18]);
+							net_packet->address.host = net_clients[c - 1].host;
+							net_packet->address.port = net_clients[c - 1].port;
+							net_packet->len = 20;
+							sendPacketSafe(net_sock, -1, net_packet, c - 1);
+						}
+					}
+				}
+				else if ( inrange[i] && players[i] && players[i]->entity )
 				{
 					bool trySalvage = false;
 					if ( static_cast<Uint32>(my->itemAutoSalvageByPlayer) == players[i]->entity->getUID() )
@@ -365,68 +397,83 @@ void actItem(Entity* my)
 		}
 	}
 
+	my->removeLightField();
+	switch ( my->sprite )
+	{
+	case 610: // orbs (blue)
+		if ( !my->light )
+		{
+			my->light = addLight(my->x / 16, my->y / 16, "orb_blue");
+		}
+		break;
+	case 611: // red
+		if ( !my->light )
+		{
+			my->light = addLight(my->x / 16, my->y / 16, "orb_red");
+		}
+		break;
+	case 612: // purple
+		if ( !my->light )
+		{
+			my->light = addLight(my->x / 16, my->y / 16, "orb_purple");
+		}
+		break;
+	case 613: // green
+		if ( !my->light )
+		{
+			my->light = addLight(my->x / 16, my->y / 16, "orb_green");
+		}
+		break;
+	case 1206: // loot bags (yellow)
+		if ( !my->light )
+		{
+			my->light = addLight(my->x / 16, my->y / 16, "lootbag_yellow");
+		}
+		break;
+	case 1207: // green
+		if ( !my->light )
+		{
+			my->light = addLight(my->x / 16, my->y / 16, "lootbag_green");
+		}
+		break;
+	case 1208: // red
+		if ( !my->light )
+		{
+			my->light = addLight(my->x / 16, my->y / 16, "lootbag_red");
+		}
+		break;
+	case 1209: // pink
+		if ( !my->light )
+		{
+			my->light = addLight(my->x / 16, my->y / 16, "lootbag_pink");
+		}
+		break;
+	case 1210: // white
+		if ( !my->light )
+		{
+			my->light = addLight(my->x / 16, my->y / 16, "lootbag_white");
+		}
+		break;
+	default:
+		break;
+	}
+
 	if ( my->itemNotMoving )
 	{
 		switch ( my->sprite )
 		{
 			case 610: // orbs (blue)
                 my->spawnAmbientParticles(80, my->sprite - 4, 10 + local_rng.rand() % 40, 1.0, false);
-                if ( !my->light )
-                {
-                    my->light = addLight(my->x / 16, my->y / 16, "orb_blue");
-                }
                 break;
 			case 611: // red
                 my->spawnAmbientParticles(80, my->sprite - 4, 10 + local_rng.rand() % 40, 1.0, false);
-                if ( !my->light )
-                {
-                    my->light = addLight(my->x / 16, my->y / 16, "orb_red");
-                }
                 break;
 			case 612: // purple
                 my->spawnAmbientParticles(80, my->sprite - 4, 10 + local_rng.rand() % 40, 1.0, false);
-                if ( !my->light )
-                {
-                    my->light = addLight(my->x / 16, my->y / 16, "orb_purple");
-                }
                 break;
 			case 613: // green
 				my->spawnAmbientParticles(80, my->sprite - 4, 10 + local_rng.rand() % 40, 1.0, false);
-				if ( !my->light )
-				{
-					my->light = addLight(my->x / 16, my->y / 16, "orb_green");
-				}
 				break;
-			case 1206: // loot bags (yellow)
-                if ( !my->light )
-                {
-                    my->light = addLight(my->x / 16, my->y / 16, "lootbag_yellow");
-                }
-                break;
-			case 1207: // green
-                if ( !my->light )
-                {
-                    my->light = addLight(my->x / 16, my->y / 16, "lootbag_green");
-                }
-                break;
-			case 1208: // red
-                if ( !my->light )
-                {
-                    my->light = addLight(my->x / 16, my->y / 16, "lootbag_red");
-                }
-                break;
-			case 1209: // pink
-				if ( !my->light )
-				{
-					my->light = addLight(my->x / 16, my->y / 16, "lootbag_pink");
-				}
-				break;
-            case 1210: // white
-                if ( !my->light )
-                {
-                    my->light = addLight(my->x / 16, my->y / 16, "lootbag_white");
-                }
-                break;
 			default:
 				break;
 		}

@@ -137,21 +137,22 @@ void actDoor(Entity* my)
 			{
 				if ( selectedEntity[i] == my || client_selected[i] == my )
 				{
-					if ( players[i]->entity && inrange[i])
+					if ( Player::getPlayerInteractEntity(i) && inrange[i])
 					{
+						Entity* playerEntity = Player::getPlayerInteractEntity(i);
 						if ( !my->doorLocked )   // door unlocked
 						{
 							if ( !my->doorDir && !my->doorStatus )
 							{
 								// open door
-								my->doorStatus = 1 + (players[i]->entity->x > my->x);
+								my->doorStatus = 1 + (playerEntity->x > my->x);
 								playSoundEntity(my, 21, 96);
 								messagePlayer(i, MESSAGE_INTERACTION, Language::get(464));
 							}
 							else if ( my->doorDir && !my->doorStatus )
 							{
 								// open door
-								my->doorStatus = 1 + (players[i]->entity->y < my->y);
+								my->doorStatus = 1 + (playerEntity->y < my->y);
 								playSoundEntity(my, 21, 96);
 								messagePlayer(i, MESSAGE_INTERACTION, Language::get(464));
 							}

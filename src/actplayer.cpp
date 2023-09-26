@@ -218,6 +218,8 @@ void Player::Ghost_t::reset()
 	bDoingQuickTurn = false;
 	my = nullptr;
 	uid = 0;
+
+	player.cleanUpOnEntityRemoval();
 }
 
 bool Player::Ghost_t::allowedInteractEntity(Entity& entity)
@@ -565,6 +567,63 @@ void Player::Ghost_t::handleActions()
 						calloutMenu.closeCalloutMenuGUI();
 					}
 				}
+			}
+		}
+	}
+
+	if ( selectedEntity[player.playernum] != NULL )
+	{
+		Entity* parent = uidToEntity(selectedEntity[player.playernum]->skill[2]);
+		if ( selectedEntity[player.playernum] )
+		{
+			input.consumeBinaryToggle("Use");
+			//input.consumeBindingsSharedWithBinding("Use");
+			if ( entityDist(my, selectedEntity[player.playernum]) <= TOUCHRANGE )
+			{
+				inrange[player.playernum] = true;
+			}
+			else
+			{
+				inrange[player.playernum] = false;
+			}
+			if ( multiplayer == CLIENT )
+			{
+				if ( inrange[player.playernum] )
+				{
+					strcpy((char*)net_packet->data, "CKIR");
+				}
+				else
+				{
+					strcpy((char*)net_packet->data, "CKOR");
+				}
+				net_packet->data[4] = player.playernum;
+				if ( selectedEntity[player.playernum]->behavior == &actPlayerLimb )
+				{
+					SDLNet_Write32((Uint32)players[selectedEntity[player.playernum]->skill[2]]->entity->getUID(), &net_packet->data[5]);
+				}
+				else
+				{
+					Entity* tempEntity = uidToEntity(selectedEntity[player.playernum]->skill[2]);
+					if ( tempEntity )
+					{
+						if ( tempEntity->behavior == &actMonster )
+						{
+							SDLNet_Write32((Uint32)tempEntity->getUID(), &net_packet->data[5]);
+						}
+						else
+						{
+							SDLNet_Write32((Uint32)selectedEntity[player.playernum]->getUID(), &net_packet->data[5]);
+						}
+					}
+					else
+					{
+						SDLNet_Write32((Uint32)selectedEntity[player.playernum]->getUID(), &net_packet->data[5]);
+					}
+				}
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 9;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
 		}
 	}
@@ -1125,7 +1184,7 @@ void actDeathCam(Entity* my)
 			// deathcam
 			if ( multiplayer != CLIENT )
 			{
-				int sprite = 1233 + (DEATHCAM_PLAYERNUM < 4 ? DEATHCAM_PLAYERNUM : 4);
+				int sprite = Player::Ghost_t::GHOST_MODEL_P1 + (DEATHCAM_PLAYERNUM < 4 ? DEATHCAM_PLAYERNUM : 4);
 				Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Ghost entity.
 				entity->x = my->x;
 				entity->y = my->y;
