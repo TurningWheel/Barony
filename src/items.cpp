@@ -966,7 +966,7 @@ Sint32 itemModel(const Item* const item)
 	{
 		if ( colorblind_lobby )
 		{
-			int playerOwner = (item->appearance) % MAXPLAYERS;
+			int playerOwner = item->getLootBagPlayer();
 			Uint32 index = 4;
 			switch ( playerOwner )
 			{
@@ -989,7 +989,7 @@ Sint32 itemModel(const Item* const item)
 		}
 		else
 		{
-			return items[item->type].index + item->appearance % MAXPLAYERS;
+			return items[item->type].index + item->getLootBagPlayer();
 		}
 	}
 	return items[item->type].index + item->appearance % items[item->type].variations;
@@ -1055,7 +1055,7 @@ SDL_Surface* itemSprite(Item* const item)
 		{
 			if ( colorblind_lobby )
 			{
-				int playerOwner = (item->appearance) % MAXPLAYERS;
+				int playerOwner = item->getLootBagPlayer();
 				Uint32 index = 4;
 				switch ( playerOwner )
 				{
@@ -1078,7 +1078,7 @@ SDL_Surface* itemSprite(Item* const item)
 			}
 			else
 			{
-				node = list_Node(&items[item->type].surfaces, (item->appearance) % MAXPLAYERS);
+				node = list_Node(&items[item->type].surfaces, item->getLootBagPlayer());
 			}
 		}
 		else
@@ -6185,7 +6185,7 @@ void clientUnequipSlotAndUpdateServer(const int player, const EquipItemSendToSer
 
 int Item::getLootBagPlayer() const
 {
-	return (int)(appearance & 0x000000FF) % MAXPLAYERS;
+	return (int)(appearance & 0xF) % MAXPLAYERS;
 }
 int Item::getLootBagNumItems() const
 {

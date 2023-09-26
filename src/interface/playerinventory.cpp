@@ -2224,7 +2224,7 @@ std::string getItemSpritePath(const int player, Item& item)
 		{
 			if ( colorblind_lobby )
 			{
-				int playerOwner = (item.appearance) % MAXPLAYERS;
+				int playerOwner = item.getLootBagPlayer();
 				Uint32 index = 4;
 				switch ( playerOwner )
 				{
@@ -2248,7 +2248,7 @@ std::string getItemSpritePath(const int player, Item& item)
 			}
 			else
 			{
-				imagePathsNode = list_Node(&items[item.type].images, item.appearance % MAXPLAYERS);
+				imagePathsNode = list_Node(&items[item.type].images, item.getLootBagPlayer());
 			}
 		}
 		else
