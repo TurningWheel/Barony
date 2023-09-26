@@ -529,6 +529,8 @@ void actItem(Entity* my)
 		}
 	}
 
+	my->flags[BURNING] = false;
+
 	if ( my->z < groundheight )
 	{
 		// fall
