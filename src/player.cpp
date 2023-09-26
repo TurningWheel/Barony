@@ -4231,7 +4231,7 @@ void Player::WorldUI_t::handleTooltips()
 
 		bool bDoingActionHideTooltips = false;
 		if ( players[player]->hotbar.useHotbarFaceMenu
-			&& players[player]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE )
+			&& players[player]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE && players[player]->entity )
 		{
 			bDoingActionHideTooltips = true;
 		}
@@ -4239,20 +4239,20 @@ void Player::WorldUI_t::handleTooltips()
 		{
 			bDoingActionHideTooltips = true;
 		}
-		else if ( FollowerMenu[player].selectMoveTo && FollowerMenu[player].optionSelected == ALLY_CMD_MOVETO_SELECT )
+		else if ( FollowerMenu[player].selectMoveTo && FollowerMenu[player].optionSelected == ALLY_CMD_MOVETO_SELECT && players[player]->entity )
 		{
 			bDoingActionHideTooltips = true;
 		}
-		else if ( (players[player]->hud.weapon && players[player]->hud.weapon->skill[0] != 0) && !selectInteract )
+		else if ( (players[player]->hud.weapon && players[player]->hud.weapon->skill[0] != 0) && !selectInteract && players[player]->entity )
 		{
 			// hudweapon chop
 			bDoingActionHideTooltips = true;
 		}
-		else if ( (players[player]->hud.bowFire || players[player]->hud.bowIsBeingDrawn) && !selectInteract )
+		else if ( (players[player]->hud.bowFire || players[player]->hud.bowIsBeingDrawn) && !selectInteract && players[player]->entity )
 		{
 			bDoingActionHideTooltips = true;
 		}
-		else if ( (cast_animation[player].active || cast_animation[player].active_spellbook) && !selectInteract )
+		else if ( (cast_animation[player].active || cast_animation[player].active_spellbook) && !selectInteract && players[player]->entity )
 		{
 			// spells
 			bDoingActionHideTooltips = true;
