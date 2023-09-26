@@ -46,12 +46,6 @@ static Mesh triangle_mesh = {
     {
          1.f,  .0f,  0.f,
         -.5f,  .5f,  0.f,
-         0.f,  .0f,  0.f,
-         1.f,  .0f,  0.f,
-         0.f,  0.f,  0.f,
-        -.5f, -.5f,  0.f,
-         0.f,  0.f,  0.f,
-        -.5f,  .5f,  0.f,
         -.5f, -.5f,  0.f,
     }, // positions
     {
@@ -821,6 +815,55 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 		}
 	}
 
+	auto drawTriangle = [](real_t x, real_t y, real_t ang, real_t size, SDL_Rect rect, Uint32 color, bool outlineOnly) {
+		const int mapGCD = std::max(map.width, map.height);
+		const int xmin = ((int)map.width - mapGCD) / 2;
+		const int ymin = ((int)map.height - mapGCD) / 2;
+		const real_t unitX = (real_t)rect.w / (real_t)mapGCD;
+		const real_t unitY = (real_t)rect.h / (real_t)mapGCD;
+		const real_t zoom = getMinimapZoom() / 100.0 * size;
+		x = (x - xmin) * unitX + rect.x;
+		y = (y - ymin) * unitY + rect.y;
+
+		// bind shader
+		auto& shader = minimap_shader;
+		shader.bind();
+
+		// upload color
+		Uint8 r, g, b, a;
+		getColor(color, &r, &g, &b, &a);
+		float cv[] = { r / 255.f, g / 255.f, b / 255.f, a / 255.f };
+		GL_CHECK_ERR(glUniform4fv(shader.uniform("uColor"), 1, cv));
+
+		vec4_t v;
+		mat4x4 m;
+
+		// projection matrix
+		mat4x4 proj(1.f);
+		(void)ortho(&proj, 0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1.f, 1.f);
+		GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, GL_FALSE, (float*)&proj));
+
+		// view matrix
+		mat4x4 view(1.f);
+		v = { (float)x, (float)(Frame::virtualScreenY - y), 0.f, 0.f };
+		(void)translate_mat(&m, &view, &v); view = m;
+		v = { (float)(unitX * zoom), (float)(unitY * zoom), 0.f, 0.f };
+		(void)scale_mat(&m, &view, &v); view = m;
+		v = { 0.f, 0.f, -1.f, 0.f };
+		(void)rotate_mat(&m, &view, ang * 180.f / PI, &v); view = m;
+		GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uView"), 1, GL_FALSE, (float*)&view));
+
+		// draw
+		if ( outlineOnly )
+		{
+			triangle_mesh.draw(GL_LINE_LOOP);
+		}
+		else
+		{
+			triangle_mesh.draw();
+		}
+	};
+
 	// draw minotaur, players, and allies
 	for ( int c = 0; c < 2; ++c )
 	{
@@ -946,60 +989,45 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
                     triangle_mesh.init();
                 }
 
-				auto drawTriangle = [](real_t x, real_t y, real_t ang, real_t size, SDL_Rect rect, Uint32 color){
-					const int mapGCD = std::max(map.width, map.height);
-					const int xmin = ((int)map.width - mapGCD) / 2;
-					const int ymin = ((int)map.height - mapGCD) / 2;
-					const real_t unitX = (real_t)rect.w / (real_t)mapGCD;
-					const real_t unitY = (real_t)rect.h / (real_t)mapGCD;
-           			const real_t zoom = getMinimapZoom() / 100.0 * size;
-					x = (x - xmin) * unitX + rect.x;
-					y = (y - ymin) * unitY + rect.y;
-                    
-                    // bind shader
-                    auto& shader = minimap_shader;
-                    shader.bind();
-                    
-                    // upload color
-                    Uint8 r, g, b, a;
-                    getColor(color, &r, &g, &b, &a);
-                    float cv[] = {r / 255.f, g / 255.f, b / 255.f, a / 255.f};
-                    GL_CHECK_ERR(glUniform4fv(shader.uniform("uColor"), 1, cv));
-                    
-                    vec4_t v;
-                    mat4x4 m;
-                    
-                    // projection matrix
-                    mat4x4 proj(1.f);
-                    (void)ortho(&proj, 0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1.f, 1.f);
-                    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, GL_FALSE, (float*)&proj));
-                    
-                    // view matrix
-                    mat4x4 view(1.f);
-                    v = {(float)x, (float)(Frame::virtualScreenY - y), 0.f, 0.f};
-                    (void)translate_mat(&m, &view, &v); view = m;
-                    v = {(float)(unitX * zoom), (float)(unitY * zoom), 0.f, 0.f};
-                    (void)scale_mat(&m, &view, &v); view = m;
-                    v = {0.f, 0.f, -1.f, 0.f};
-                    (void)rotate_mat(&m, &view, ang * 180.f / PI, &v); view = m;
-                    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uView"), 1, GL_FALSE, (float*)&view));
-                    
-                    // draw
-                    triangle_mesh.draw();
-				};
-
 				const real_t size = entity->sprite == 239 ? 2.0 : 1.0;
 				const real_t x = entity->x / 16.0;
 				const real_t y = entity->y / 16.0;
 				const real_t ang = entity->yaw;
 				if (*cvar_outlineTriangles) {
-            		drawTriangle(x, y, ang, size, rect, color_edge);
-            		drawTriangle(x, y, ang, size - 0.25, rect, color);
+            		drawTriangle(x, y, ang, size, rect, color, true);
 				} else {
-            		drawTriangle(x, y, ang, size, rect, color);
+            		drawTriangle(x, y, ang, size, rect, color, false);
 				}
 			}
 		}
+	}
+
+	// draw ghosts
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		Entity* entity = nullptr;
+		if ( players[i] && players[i]->ghost.isActive() )
+		{
+			entity = players[i]->ghost.my;
+		}
+		if ( !entity )
+		{
+			continue;
+		}
+		if ( blinkPlayers[i] )
+		{
+			continue; // skip this one since it's blinking from a callout
+		}
+		Uint32 color = playerColor(i, colorblind_lobby, false);
+		if ( !triangle_mesh.isInitialized() ) {
+			triangle_mesh.init();
+		}
+
+		const real_t size = entity->sprite == 239 ? 2.0 : 1.0;
+		const real_t x = entity->x / 16.0;
+		const real_t y = entity->y / 16.0;
+		const real_t ang = entity->yaw;
+		drawTriangle(x, y, ang, size, rect, color, true);
 	}
 }
 
