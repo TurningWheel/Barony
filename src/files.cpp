@@ -43,7 +43,7 @@ const char* holidayThemeDirs[HolidayTheme::THEME_MAX] = {
 };
 
 #ifndef EDITOR
-ConsoleVariable<int> cvar_forceHoliday("/force_holiday", 2);
+ConsoleVariable<int> cvar_forceHoliday("/force_holiday", 0);
 ConsoleVariable<bool> cvar_disableHoliday("/disable_holiday", false);
 #endif
 
