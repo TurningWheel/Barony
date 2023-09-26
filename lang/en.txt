@@ -6984,7 +6984,7 @@ Complexity:#
 5434 Enter a name for Player %d#
 5435 View Game Settings#
 5436 *** Press [LB] to suggest a class for your party ***#
-5437 *** Press [ZL] to suggest a class for your party ***#
+5437 *** Press [L] to suggest a class for your party ***#
 5438 *** Press [L1] to suggest a class for your party ***#
 5439 *** Press [L1] to suggest a class for your party ***#
 5440 Ready#
