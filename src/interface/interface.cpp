@@ -22611,6 +22611,11 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 					}
 				}
 
+				if ( stats[player]->HP == 0 || !players[player]->entity )
+				{
+					helpText = helpDescriptors["ghost"];
+				}
+
 				if ( setType == SET_CALLOUT_BANNER_TEXT )
 				{
 					setCalloutBannerTextFormatted(player, field, color, highlights, textMap.bannerText.c_str(), helpText.c_str());
