@@ -199,6 +199,16 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 			}
 		}
 	}
+	else
+	{
+		if ( playerEntity->behavior == &actDeathGhost && entity )
+		{
+			if ( !players[player]->ghost.allowedInteractEntity(*entity) )
+			{
+				return nullptr;
+			}
+		}
+	}
 
 	if ( !entity && !mute_player_monster_sounds && !clickCheckOverride 
 		&& clicktype != ENTITY_CLICK_CALLOUT )
@@ -637,6 +647,10 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			if ( (my->behavior == &actMonster || my->behavior == &actBoulder) && entity->behavior == &actDoorFrame )
 			{
 				continue;    // monsters don't have hard collision with door frames
+			}
+			if ( my->behavior == &actDeathGhost && (entity->behavior == &actMonster || entity->behavior == &actPlayer) )
+			{
+				continue;
 			}
 			Stat* myStats = stats; //my->getStats();	//SEB <<<
 			Stat* yourStats = entity->getStats();

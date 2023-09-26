@@ -243,6 +243,8 @@ void Player::Ghost_t::handleActions()
 	CalloutRadialMenu& calloutMenu = CalloutMenu[player.playernum];
 	auto& b = (multiplayer != SINGLE && player.playernum != 0) ? Input::inputs[0].getBindings() : input.getBindings();
 
+	clickDescription(player.playernum, NULL); // inspecting objects
+
 	if ( !calloutMenu.calloutMenuIsOpen() )
 	{
 		bool clickedOnGUI = false;
@@ -849,8 +851,7 @@ void actDeathGhost(Entity* my)
 	if ( player->isLocalPlayer() )
 	{
 		bool inputsEnabled = false;
-		if ( player->shootmode
-			&& !players[playernum]->GUI.isGameoverActive()
+		if ( !players[playernum]->GUI.isGameoverActive()
 			&& players[playernum]->bControlEnabled
 			&& !players[playernum]->usingCommand()
 			&& !gamePaused )
@@ -864,10 +865,7 @@ void actDeathGhost(Entity* my)
 			player->ghost.handleGhostCameraUpdate(false);
 		}
 
-		if ( inputsEnabled )
-		{
-			player->ghost.handleActions();
-		}
+		player->ghost.handleActions();
 
 		real_t camx, camy, camz, camang, camvang;
 		camx = my->x / 16.f;
