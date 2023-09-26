@@ -4495,7 +4495,7 @@ namespace MainMenu {
         int c = 5970;
 		if ( !strcmp(binding, "Show Player Callouts") )
 		{
-			return Language::get(6022);
+			return Language::get(6044);
 		}
 
         for (auto& b : defaultBindings[0].bindings) {
