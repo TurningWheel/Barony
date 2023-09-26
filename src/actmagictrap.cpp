@@ -389,7 +389,7 @@ void Entity::actTeleportShrine()
 	{
 		if ( selectedEntity[i] == this || client_selected[i] == this )
 		{
-			if ( inrange[i] && players[i]->entity )
+			if ( inrange[i] && Player::getPlayerInteractEntity(i) )
 			{
 				if ( shrineActivateDelay > 0 )
 				{
@@ -438,7 +438,7 @@ void Entity::actTeleportShrine()
 					spellTimer->particleTimerCountdownSprite = 625;
 					spellTimer->particleTimerTarget = static_cast<Sint32>(selectedShrine->getUID()); // get the target to teleport around.
 					spellTimer->particleTimerVariable1 = 1; // distance of teleport in tiles
-					spellTimer->particleTimerVariable2 = players[i]->entity->getUID(); // which player to teleport
+					spellTimer->particleTimerVariable2 = Player::getPlayerInteractEntity(i)->getUID(); // which player to teleport
 					if ( multiplayer == SERVER )
 					{
 						serverSpawnMiscParticles(this, PARTICLE_EFFECT_SHRINE_TELEPORT, 625);
