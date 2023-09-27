@@ -7822,7 +7822,8 @@ temple - Santa's Tricks by Myuu#
 
 6042 underworld00 - Ice Land (Part 1) by Myuu
 underworld01 - Deck the Halls by Myuu
-underworld02 - Winter Trouble by Myuu#
+underworld02 - Winter Trouble by Myuu
+intro - God Rest Ye Merry Gentlemen by NaturesEye#
 
 6043 No holiday currently active.#
 
