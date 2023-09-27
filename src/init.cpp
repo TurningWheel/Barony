@@ -58,7 +58,6 @@ static ConsoleVariable<bool> cvar_sdl_disablejoystickrawinput("/sdl_joystick_raw
 
 bool mountBaseDataFolders() {
     if (isCurrentHoliday()) {
-        useModelCache = false; // don't use model cache on holidays.
         const auto holiday = getCurrentHoliday();
         const auto holiday_dir = holidayThemeDirs[holiday];
         const auto holiday_dir_str = (std::string(datadir) + "/") + holiday_dir;

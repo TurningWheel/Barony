@@ -3247,7 +3247,6 @@ struct Mods
 	static bool disableSteamAchievements;
 	static bool lobbyDisableSteamAchievements;
 	static bool isLoading;
-	static Uint32 loadingTicks;
 #ifdef STEAMWORKS
 	static std::vector<SteamUGCDetails_t*> workshopSubscribedItemList;
 	static std::vector<std::pair<std::string, uint64>> workshopLoadedFileIDMap;

@@ -1464,12 +1464,8 @@ DIR* openDataDir(const char * const name) {
 
 
 bool dataPathExists(const char * const path, bool complete) {
-#ifdef NINTENDO
-    // TODO for themes!!!
-	return true;
-#endif
     if (complete) {
-	    char full_path[PATH_MAX];
+		char full_path[PATH_MAX];
 	    completePath(full_path, path);
 	    return access(full_path, F_OK) != -1;
     } else {
@@ -3018,7 +3014,7 @@ bool physfsSearchModelsToUpdate()
 	return false;
 }
 
-bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
+bool physfsModelIndexUpdate(int &start, int &end)
 {
 	if ( !PHYSFS_getRealDir("models/models.txt") )
 	{
@@ -3026,128 +3022,99 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 		return false;
 	}
 	
-	std::atomic_bool loading_done{ false };
-	auto loading_task = std::async(std::launch::async, [&loading_done, &start, &end]() {
-		std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
-		modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
 
-		File* fp = openDataFile(modelsDirectory.c_str(), "rb");
-		if ( !fp )
-		{
-			loading_done = true;
-			return 0;
-		}
-		char modelName[PATH_MAX];
-		int startnum = 0;
-		int endnum = nummodels;
-		for ( int c = 0; !fp->eof(); c++ )
-		{
-			fp->gets2(modelName, PATH_MAX);
-			bool modelHasBeenModified = false;
-			// has this model index been modified?
-			std::vector<int>::iterator it = Mods::modelsListModifiedIndexes.end();
-			if ( !Mods::modelsListModifiedIndexes.empty() )
-			{
-				it = std::find(Mods::modelsListModifiedIndexes.begin(),
-					Mods::modelsListModifiedIndexes.end(), c);
-				if ( it != Mods::modelsListModifiedIndexes.end() )
-				{
-					modelHasBeenModified = true; // found the model in the vector.
-				}
-			}
-
-			if ( !PHYSFS_getRealDir(modelName) )
-			{
-				printlog("error: could not find file: %s", modelName);
-				continue;
-			}
-			std::string modelPath = PHYSFS_getRealDir(modelName);
-			if ( modelHasBeenModified || modelPath.compare("./") != 0 )
-			{
-				if ( !modelHasBeenModified )
-				{
-					// add this model index to say we've modified it as the base dir is not default.
-					Mods::modelsListModifiedIndexes.push_back(c);
-				}
-				else
-				{
-					if ( modelPath.compare("./") == 0 )
-					{
-						// model returned to base directory, remove from the modified index list.
-						Mods::modelsListModifiedIndexes.erase(it);
-					}
-				}
-
-				if ( c < nummodels )
-				{
-					if ( models[c] != NULL )
-					{
-						if ( models[c]->data )
-						{
-							free(models[c]->data);
-						}
-						free(models[c]);
-					}
-				}
-				else
-				{
-					printlog("[PhysFS]: WARNING: Loading a new model: %d outside normal nummodels: %d range - Need special handling case to free model after use", c, nummodels);
-				}
-				models[c] = loadVoxel(modelName);
-
-				// this index is not found in the normal models folder.
-				// store the lowest found model number inside startnum.
-				if ( startnum == 0 || c < startnum )
-				{
-					startnum = c;
-				}
-
-				// store the higher end model num in endnum.
-				if ( endnum == nummodels )
-				{
-					endnum = c + 1;
-				}
-				else if ( c + 1 > endnum )
-				{
-					endnum = c + 1;
-				}
-			}
-		}
-		if ( startnum == endnum )
-		{
-			endnum = std::min(static_cast<int>(nummodels), endnum + 1); // if both indices are the same, then models won't load.
-		}
-		printlog("[PhysFS]: Models file not in default directory... reloading models from index %d to %d\n", startnum, endnum);
-		start = startnum;
-		end = endnum;
-
-		FileIO::close(fp);
-		loading_done = true;
-		return 0;
-	});
-	while ( !loading_done )
+	File* fp = openDataFile(modelsDirectory.c_str(), "rb");
+	if ( !fp )
 	{
-		doLoadingScreen();
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		return false;
 	}
+	char modelName[PATH_MAX];
+	int startnum = 0;
+	int endnum = nummodels;
+	for ( int c = 0; !fp->eof(); c++ )
+	{
+		fp->gets2(modelName, PATH_MAX);
+		bool modelHasBeenModified = false;
+		// has this model index been modified?
+		std::vector<int>::iterator it = Mods::modelsListModifiedIndexes.end();
+		if ( !Mods::modelsListModifiedIndexes.empty() )
+		{
+			it = std::find(Mods::modelsListModifiedIndexes.begin(),
+				Mods::modelsListModifiedIndexes.end(), c);
+			if ( it != Mods::modelsListModifiedIndexes.end() )
+			{
+				modelHasBeenModified = true; // found the model in the vector.
+			}
+		}
 
-	// now free polymodels as we'll be loading them up later.
-	if ( freePreviousModels ) {
-		for (int c = start; c < end && c < nummodels; ++c) {
-			if ( polymodels[c].faces ) {
-				free(polymodels[c].faces);
+		if ( !PHYSFS_getRealDir(modelName) )
+		{
+			printlog("error: could not find file: %s", modelName);
+			continue;
+		}
+		std::string modelPath = PHYSFS_getRealDir(modelName);
+		if ( modelHasBeenModified || modelPath.compare("./") != 0 )
+		{
+			if ( !modelHasBeenModified )
+			{
+				// add this model index to say we've modified it as the base dir is not default.
+				Mods::modelsListModifiedIndexes.push_back(c);
 			}
-            if ( polymodels[c].vao ) {
-                GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
-            }
-			if ( polymodels[c].vbo ) {
-                GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
+			else
+			{
+				if ( modelPath.compare("./") == 0 )
+				{
+					// model returned to base directory, remove from the modified index list.
+					Mods::modelsListModifiedIndexes.erase(it);
+				}
 			}
-			if ( polymodels[c].colors ) {
-                GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
+
+			if ( c < nummodels )
+			{
+				if ( models[c] != NULL )
+				{
+					if ( models[c]->data )
+					{
+						free(models[c]->data);
+					}
+					free(models[c]);
+				}
+			}
+			else
+			{
+				printlog("[PhysFS]: WARNING: Loading a new model: %d outside normal nummodels: %d range - Need special handling case to free model after use", c, nummodels);
+			}
+			models[c] = loadVoxel(modelName);
+
+			// this index is not found in the normal models folder.
+			// store the lowest found model number inside startnum.
+			if ( startnum == 0 || c < startnum )
+			{
+				startnum = c;
+			}
+
+			// store the higher end model num in endnum.
+			if ( endnum == nummodels )
+			{
+				endnum = c + 1;
+			}
+			else if ( c + 1 > endnum )
+			{
+				endnum = c + 1;
 			}
 		}
 	}
+	if ( startnum == endnum )
+	{
+		endnum = std::min(static_cast<int>(nummodels), endnum + 1); // if both indices are the same, then models won't load.
+	}
+	printlog("[PhysFS]: Models file not in default directory... reloading models from index %d to %d\n", startnum, endnum);
+	start = startnum;
+	end = endnum;
+
+	FileIO::close(fp);
 	return true;
 }
 
@@ -3159,6 +3126,30 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 	optimized)
 
 -------------------------------------------------------------------------------*/
+
+void saveModelCache() {
+	File* model_cache;
+	const std::string cache_path = std::string(outputdir) + "/models.cache";
+	if (model_cache = openDataFile(cache_path.c_str(), "wb")) {
+		char modelCacheHeader[32] = "BARONY";
+		strcat(modelCacheHeader, VERSION);
+		model_cache->write(&modelCacheHeader, sizeof(char), strlen(modelCacheHeader));
+		for (size_t model_index = 0; model_index < nummodels; model_index++) {
+			polymodel_t* cur = &polymodels[model_index];
+			model_cache->write(&cur->numfaces, sizeof(cur->numfaces), 1);
+			model_cache->write(cur->faces, sizeof(polytriangle_t), cur->numfaces);
+		}
+		FileIO::close(model_cache);
+	}
+}
+
+#ifndef EDITOR
+#include "interface/consolecommand.hpp"
+static ConsoleCommand ccmd_writeModelCache("/write_model_cache", "",
+	[](int argc, const char** argv){
+	saveModelCache();
+	});
+#endif
 
 void generatePolyModels(int start, int end, bool forceCacheRebuild)
 {
@@ -3215,10 +3206,7 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 				if ( !forceCacheRebuild )
 				{
 					for ( size_t model_index = 0; model_index < nummodels; model_index++ ) {
-						if ( !Mods::isLoading )
-						{
-							updateLoadingScreen(30 + ((real_t)model_index / nummodels) * 30.0);
-						}
+						updateLoadingScreen(30 + ((real_t)model_index / nummodels) * 30.0);
 						polymodel_t* cur = &polymodels[model_index];
 						model_cache->read(&cur->numfaces, sizeof(cur->numfaces), 1);
 						cur->faces = (polytriangle_t*)calloc(sizeof(polytriangle_t), cur->numfaces);
@@ -3240,14 +3228,7 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 
 	for ( c = start; c < end; ++c )
 	{
-		if ( !Mods::isLoading )
-		{
-			updateLoadingScreen(30 + ((real_t)(c - start) / (end - start)) * 30.0);
-		}
-		else
-		{
-			doLoadingScreen();
-		}
+		updateLoadingScreen(30 + ((real_t)(c - start) / (end - start)) * 30.0);
 		numquads = 0;
 		polymodels[c].numfaces = 0;
 		voxel_t* model = models[c];
@@ -4160,21 +4141,8 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		list_FreeAll(&quads);
 	}
 #ifndef NINTENDO
-    if (!isCurrentHoliday()) {
-        std::string cache_path = std::string(outputdir) + "/models.cache";
-        if ( useModelCache && (model_cache = openDataFile(cache_path.c_str(), "wb")) )
-        {
-            char modelCacheHeader[32] = "BARONY";
-            strcat(modelCacheHeader, VERSION);
-            model_cache->write(&modelCacheHeader, sizeof(char), strlen(modelCacheHeader));
-            for ( size_t model_index = 0; model_index < nummodels; model_index++ )
-            {
-                polymodel_t* cur = &polymodels[model_index];
-                model_cache->write(&cur->numfaces, sizeof(cur->numfaces), 1);
-                model_cache->write(cur->faces, sizeof(polytriangle_t), cur->numfaces);
-            }
-            FileIO::close(model_cache);
-        }
+    if (!isCurrentHoliday() && useModelCache) {
+		saveModelCache();
     }
 #endif
 }
@@ -4327,10 +4295,7 @@ void generateVBOs(int start, int end)
 #endif
 
 		const int current = (int)c - start;
-		if ( !Mods::isLoading )
-		{
-			updateLoadingScreen(80 + (10 * current) / count);
-		}
+		updateLoadingScreen(80 + (10 * current) / count);
 		doLoadingScreen();
 	}
 }
@@ -4467,11 +4432,7 @@ void physfsReloadSounds(bool reloadAll)
 					OPENAL_Sound_Release(sounds[c]);
 				}
 				OPENAL_CreateSound(soundFile.c_str(), true, &sounds[c]);
-#endif 
-				if ( Mods::isLoading )
-				{
-					doLoadingScreen();
-				}
+#endif
 			}
 		}
 	}

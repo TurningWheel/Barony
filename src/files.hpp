@@ -307,7 +307,7 @@ int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap, int forcemap
 int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed, int *checkMapHash = nullptr);
 std::list<std::string> physfsGetFileNamesInDirectory(const char* dir);
 std::string physfsFormatMapName(char const * const levelfilename);
-bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels);
+bool physfsModelIndexUpdate(int &start, int &end);
 bool physfsSearchModelsToUpdate();
 bool physfsSearchSoundsToUpdate();
 void physfsReloadSounds(bool reloadAll);

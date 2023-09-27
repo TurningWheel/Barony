@@ -22645,7 +22645,7 @@ failed:
                 }
             }
                 
-		    void(*banner_func[])(Button&) = {
+		    void(*banner_funcs[])(Button&) = {
 		        [](Button&){
                     openDLCPrompt(enabledDLCPack1 ? 1 : 0);
 		        }
