@@ -1410,12 +1410,14 @@ bool completePath(char *dest, const char * const filename, const char *base) {
 
 	// Already absolute
 	if (filename[0] == '/') {
-		strncpy(dest, filename, PATH_MAX);
+		strcpy(dest, filename);
 		return true;
 	}
+
 #ifdef NINTENDO
+	// Already absolute on nintendo
 	if (strncmp(filename, base, strlen(base)) == 0) {
-		strncpy(dest, filename, PATH_MAX);
+		strcpy(dest, filename);
 		return true;
 	}
 #endif
