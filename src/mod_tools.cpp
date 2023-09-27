@@ -8349,12 +8349,12 @@ void Mods::unloadMods(bool force)
 		if (Mods::modelsListRequiresReloadUnmodded || !Mods::modelsListModifiedIndexes.empty())
 		{
 			physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd);
-			for (int c = modelsIndexUpdateStart; c < modelsIndexUpdateEnd && c < nummodels; ++c) {
+			for (int c = 0; c < nummodels; ++c) {
 				if (polymodels[c].faces) {
 					free(polymodels[c].faces);
 				}
 			}
-			generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
+			generatePolyModels(0, nummodels, true);
 			Mods::modelsListRequiresReloadUnmodded = false;
 		}
 		Mods::modelsListModifiedIndexes.clear();
@@ -8399,7 +8399,7 @@ void Mods::unloadMods(bool force)
 
 	// final loading steps
 	initGameDatafiles(true);
-	for (int c = modelsIndexUpdateStart; c < modelsIndexUpdateEnd && c < nummodels; ++c) {
+	for (int c = 0; c < nummodels; ++c) {
 		if (polymodels[c].vao) {
 			GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
 		}
@@ -8410,7 +8410,7 @@ void Mods::unloadMods(bool force)
 			GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
 		}
 	}
-	generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+	generateVBOs(0, nummodels);
 	consoleCommand("/dumpcache");
 
 	// reload music
