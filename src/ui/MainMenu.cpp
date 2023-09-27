@@ -823,7 +823,9 @@ namespace MainMenu {
 			    Uint32 startTicks = SDL_GetTicks();
 			    Uint32 checkTicks = startTicks;
 			    while ((checkTicks - startTicks) < msMin) {
-				    EOS_Platform_Tick(EOS.PlatformHandle);
+					if (EOS.PlatformHandle) {
+						EOS_Platform_Tick(EOS.PlatformHandle);
+					}
 				    if (EOS.HandleReceivedMessagesAndIgnore(&newRemoteProductId)) {
 					    checkTicks = SDL_GetTicks(); // found a packet, extend the wait time.
 				    }

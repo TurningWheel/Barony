@@ -8354,7 +8354,7 @@ void Mods::unloadMods(bool force)
 					free(polymodels[c].faces);
 				}
 			}
-			generatePolyModels(0, nummodels, true);
+			generatePolyModels(0, nummodels, false);
 			Mods::modelsListRequiresReloadUnmodded = false;
 		}
 		Mods::modelsListModifiedIndexes.clear();

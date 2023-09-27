@@ -4435,6 +4435,9 @@ void physfsReloadSounds(bool reloadAll)
 				}
 				OPENAL_CreateSound(soundFile.c_str(), true, &sounds[c]);
 #endif
+				if (Mods::isLoading) {
+					updateLoadingScreen(20.f + (c / (float)numsounds) * 10.f);
+				}
 			}
 		}
 	}
@@ -4526,6 +4529,9 @@ void physfsReloadSprites(bool reloadAll) //TODO: NX PORT: Any changes needed her
 				}
 			}
 		}
+		if (Mods::isLoading) {
+			doLoadingScreen();
+		}
 	}
 	FileIO::close(fp);
 }
@@ -4575,6 +4581,9 @@ void physfsReloadTiles(bool reloadAll)
         } else {
             for ( int c = 0; !fp->eof(); c++ )
             {
+				if (Mods::isLoading) {
+					doLoadingScreen();
+				}
                 char name[PATH_MAX];
                 fp->gets2(name, PATH_MAX);
                 if ( PHYSFS_getRealDir(name) != NULL )
