@@ -3156,10 +3156,12 @@ static ConsoleCommand ccmd_writeModelCache("/write_model_cache", "",
 void generatePolyModels(int start, int end, bool forceCacheRebuild)
 {
 	const bool generateAll = start == 0 && end == nummodels;
+    constexpr auto LARGEST_POLYMODEL_FACES_ALLOWED = (1<<15); // 32768
 
 	if ( generateAll )
 	{
 		polymodels = (polymodel_t*)malloc(sizeof(polymodel_t) * nummodels);
+        memset(polymodels, 0, sizeof(polymodel_t) * nummodels);
 		if ( useModelCache && !forceCacheRebuild )
 		{
 #ifndef NINTENDO
@@ -3202,9 +3204,14 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
                     size_t readsize;
                     readsize = model_cache->read(&cur->numfaces, sizeof(cur->numfaces), 1);
                     if (readsize == 1) {
-                        cur->faces = (polytriangle_t*)calloc(sizeof(polytriangle_t), cur->numfaces);
-                        readsize = model_cache->read(polymodels[model_index].faces, sizeof(polytriangle_t), cur->numfaces);
-                        if (readsize != cur->numfaces) {
+                        readsize = 0;
+                        if (cur->numfaces && cur->numfaces <= LARGEST_POLYMODEL_FACES_ALLOWED) {
+                            cur->faces = (polytriangle_t*)calloc(sizeof(polytriangle_t), cur->numfaces);
+                            if (cur->faces) {
+                                readsize = model_cache->read(polymodels[model_index].faces, sizeof(polytriangle_t), cur->numfaces);
+                            }
+                        }
+                        if (!readsize || readsize != cur->numfaces) {
                             printlog("[MODEL CACHE]: Error loading model cache, rebuilding...");
                             FileIO::close(model_cache);
                             goto generate;
@@ -4127,6 +4134,9 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		}
 
 		// translate quads into triangles
+        if (polymodels[c].faces) {
+            free(polymodels[c].faces);
+        }
 		polymodels[c].faces = (polytriangle_t*)malloc(sizeof(polytriangle_t) * polymodels[c].numfaces);
 		for ( uint64_t i = 0; i < polymodels[c].numfaces; i++ )
 		{
@@ -4157,6 +4167,12 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		saveModelCache();
     }
 #endif
+
+    uint64_t greatest = 0;
+    for (uint32_t c = 0; c < nummodels; ++c) {
+        greatest = std::max(greatest, polymodels[c].numfaces);
+    }
+    printlog("greatest number of faces on any model: %lld", greatest);
 }
 
 void reloadModels(int start, int end) {
