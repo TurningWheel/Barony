@@ -3155,31 +3155,19 @@ static ConsoleCommand ccmd_writeModelCache("/write_model_cache", "",
 
 void generatePolyModels(int start, int end, bool forceCacheRebuild)
 {
-	Sint32 x, y, z;
-	Sint32 c, i;
-	Uint32 index, indexdown[3];
-	Uint8 newcolor, oldcolor;
-	bool buildingquad;
-	polyquad_t* quad1, * quad2;
-	Uint32 numquads;
-	list_t quads;
-	File* model_cache;
-	bool generateAll = start == 0 && end == nummodels;
-
-	quads.first = NULL;
-	quads.last = NULL;
+	const bool generateAll = start == 0 && end == nummodels;
 
 	if ( generateAll )
 	{
 		polymodels = (polymodel_t*)malloc(sizeof(polymodel_t) * nummodels);
-		if ( useModelCache )
+		if ( useModelCache && !forceCacheRebuild )
 		{
 #ifndef NINTENDO
 			std::string cache_path = std::string(outputdir) + "/models.cache";
 #else
 			std::string cache_path = "models.cache";
 #endif
-			model_cache = openDataFile(cache_path.c_str(), "rb");
+			auto model_cache = openDataFile(cache_path.c_str(), "rb");
 			if ( model_cache )
 			{
 				printlog("loading model cache...\n");
@@ -3195,38 +3183,60 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 					if ( strncmp(polymodelsVersionStr, VERSION, strlen(VERSION)) )
 					{
 						// different version.
-						forceCacheRebuild = true;
 						printlog("[MODEL CACHE]: Detected outdated version number %s - current is %s. Upgrading cache...", polymodelsVersionStr, VERSION);
+                        FileIO::close(model_cache);
+                        goto generate;
 					}
 				}
 				else
 				{
 					printlog("[MODEL CACHE]: Detected legacy cache without embedded version data, upgrading cache to %s...", VERSION);
-					model_cache->rewind();
-					forceCacheRebuild = true; // upgrade from legacy cache
-				}
-				if ( !forceCacheRebuild )
-				{
-					for ( size_t model_index = 0; model_index < nummodels; model_index++ ) {
-						updateLoadingScreen(30 + ((real_t)model_index / nummodels) * 30.0);
-						polymodel_t* cur = &polymodels[model_index];
-						model_cache->read(&cur->numfaces, sizeof(cur->numfaces), 1);
-						cur->faces = (polytriangle_t*)calloc(sizeof(polytriangle_t), cur->numfaces);
-						model_cache->read(polymodels[model_index].faces, sizeof(polytriangle_t), cur->numfaces);
-					}
 					FileIO::close(model_cache);
-					return;
+					goto generate;
 				}
-				else
-				{
-					printlog("failed to load model cache");
-					FileIO::close(model_cache);
-				}
+                
+                for ( size_t model_index = 0; model_index < nummodels; model_index++ ) {
+                    updateLoadingScreen(30 + ((real_t)model_index / nummodels) * 30.0);
+                    polymodel_t* cur = &polymodels[model_index];
+  
+                    size_t readsize;
+                    readsize = model_cache->read(&cur->numfaces, sizeof(cur->numfaces), 1);
+                    if (readsize == 1) {
+                        cur->faces = (polytriangle_t*)calloc(sizeof(polytriangle_t), cur->numfaces);
+                        readsize = model_cache->read(polymodels[model_index].faces, sizeof(polytriangle_t), cur->numfaces);
+                        if (readsize != cur->numfaces) {
+                            printlog("[MODEL CACHE]: Error loading model cache, rebuilding...");
+                            FileIO::close(model_cache);
+                            goto generate;
+                        }
+                    } else {
+                        printlog("[MODEL CACHE]: Error loading model cache, rebuilding...");
+                        FileIO::close(model_cache);
+                        goto generate;
+                    }
+                }
+                
+                printlog("successfully loaded model cache.\n");
+                FileIO::close(model_cache);
+                return;
 			}
 		}
 	}
 
 	printlog("generating poly models...\n");
+ 
+ generate:
+
+	Sint32 x, y, z;
+	Sint32 c, i;
+	Uint32 index, indexdown[3];
+	Uint8 newcolor, oldcolor;
+	bool buildingquad;
+	polyquad_t* quad1, * quad2;
+	Uint32 numquads;
+	list_t quads;
+	quads.first = NULL;
+	quads.last = NULL;
 
 	for ( c = start; c < end; ++c )
 	{
