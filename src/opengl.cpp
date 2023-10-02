@@ -1027,17 +1027,19 @@ void glEndCamera(view_t* camera, bool useHDR)
             // functor for crawling through the framebuffer collecting samples
             auto fn = [](GLhalf* pixels, GLhalf* end, const int step) {
                 std::vector<float> v(4);
-                for (; pixels < end; pixels += step) {
-                    const float p[4] = {
-                        toFloat32(*(pixels + 0)),
-                        toFloat32(*(pixels + 1)),
-                        toFloat32(*(pixels + 2)),
-                        toFloat32(*(pixels + 3)),
-                    };
-                    v[0] += p[0];
-                    v[1] += p[1];
-                    v[2] += p[2];
-                    v[3] += p[3];
+                if (step > 0) {
+                    for (; pixels < end; pixels += step) {
+                        const float p[4] = {
+                            toFloat32(*(pixels + 0)),
+                            toFloat32(*(pixels + 1)),
+                            toFloat32(*(pixels + 2)),
+                            toFloat32(*(pixels + 3)),
+                        };
+                        v[0] += p[0];
+                        v[1] += p[1];
+                        v[2] += p[2];
+                        v[3] += p[3];
+                    }
                 }
                 return v;
             };
@@ -1051,7 +1053,7 @@ void glEndCamera(view_t* camera, bool useHDR)
                 std::vector<std::future<std::vector<float>>> jobs;
                 const int size = camera->winw * camera->winh * 4;
                 const int step = ((size / 4) / hdr_samples) * 4;
-                const int section = size / cores;
+                const int section = ((size / cores) / 4) * 4;
                 auto begin = pixels;
                 for (int c = 0; c < cores; ++c, begin += section) {
                     jobs.emplace_back(std::async(std::launch::async, fn,
