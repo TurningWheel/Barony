@@ -48,7 +48,7 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 
 	for (c = 0; c < MAXPLAYERS; c++)
 	{
-		if (source == players[c]->entity)
+		if (source == players[c]->entity || source == players[c]->ghost.my )
 		{
 			player = c;
 			break;

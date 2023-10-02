@@ -1895,9 +1895,10 @@ void clientActions(Entity* entity)
 					entity->flags[UPDATENEEDED] = true;
 				}
 				entity->flags[PASSABLE] = true;
-				entity->flags[INVISIBLE] = false;// true;
-				entity->sizex = 4;
-				entity->sizey = 4;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[GENIUS] = true;
+				entity->sizex = 2;
+				entity->sizey = 2;
 			}
 			break;
 		default:
@@ -2357,6 +2358,15 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
         stats[player]->sneaking = net_packet->data[5];
         return;
     }},
+
+	// ghost sneaking
+	{ 'GHOD', []() {
+		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		if ( players[player]->ghost.my )
+		{
+			players[player]->ghost.my->skill[3] = net_packet->data[5];
+		}
+	}},
 
 	{'EFFE', [](){
 		/*
@@ -2927,24 +2937,25 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// teleport player
 	{'TELE', [](){
-		if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr)
+		if (players[clientnum] == nullptr || !Player::getPlayerInteractEntity(clientnum) )
 		{
 			return;
 		}
 		int tele_x = net_packet->data[4];
 		int tele_y = net_packet->data[5];
 		Sint16 degrees = (Sint16)SDLNet_Read16(&net_packet->data[6]);
-		players[clientnum]->entity->yaw = degrees * PI / 180;
-		players[clientnum]->entity->x = (tele_x << 4) + 8;
-		players[clientnum]->entity->y = (tele_y << 4) + 8;
-        players[clientnum]->entity->bNeedsRenderPositionInit = true;
-        for (auto part : players[clientnum]->entity->bodyparts) {
+		Entity* playerEntity = Player::getPlayerInteractEntity(clientnum);
+		playerEntity->yaw = degrees * PI / 180;
+		playerEntity->x = (tele_x << 4) + 8;
+		playerEntity->y = (tele_y << 4) + 8;
+		playerEntity->bNeedsRenderPositionInit = true;
+        for (auto part : playerEntity->bodyparts) {
             part->bNeedsRenderPositionInit = true;
         }
         for (auto node = map.entities->first; node != nullptr; node = node->next) {
             auto entity = (Entity*)node->element;
             if (entity && entity->behavior == &actSpriteNametag) {
-                if (entity->parent == players[clientnum]->entity->getUID()) {
+                if (entity->parent == playerEntity->getUID()) {
                     entity->bNeedsRenderPositionInit = true;
                 }
             }
@@ -2954,24 +2965,39 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// teleport player
 	{'TELM', [](){
-		if ( players[clientnum] == nullptr || players[clientnum]->entity == nullptr )
+		if ( players[clientnum] == nullptr || !Player::getPlayerInteractEntity(clientnum) )
 		{
 			return;
 		}
 		int tele_x = net_packet->data[4];
 		int tele_y = net_packet->data[5];
 		int type = net_packet->data[6];
-		players[clientnum]->entity->x = (tele_x << 4) + 8;
-		players[clientnum]->entity->y = (tele_y << 4) + 8;
+		Entity* playerEntity = Player::getPlayerInteractEntity(clientnum);
+		playerEntity->x = (tele_x << 4) + 8;
+		playerEntity->y = (tele_y << 4) + 8;
+		playerEntity->bNeedsRenderPositionInit = true;
+		for ( auto part : playerEntity->bodyparts ) {
+			part->bNeedsRenderPositionInit = true;
+		}
+
 		// play sound effect
 		if ( type == 0 || type == 1 )
 		{
-			playSoundEntityLocal(players[clientnum]->entity, 96, 64);
+			playSoundEntityLocal(playerEntity, 96, 64);
 		}
 		else if ( type == 2 )
 		{
-			playSoundEntityLocal(players[clientnum]->entity, 154, 64);
+			playSoundEntityLocal(playerEntity, 154, 64);
 		}
+		for ( auto node = map.entities->first; node != nullptr; node = node->next ) {
+			auto entity = (Entity*)node->element;
+			if ( entity && entity->behavior == &actSpriteNametag ) {
+				if ( entity->parent == playerEntity->getUID() ) {
+					entity->bNeedsRenderPositionInit = true;
+				}
+			}
+		}
+		temporarilyDisableDithering();
 	}},
 
 	// delete entity
@@ -5227,6 +5253,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		auto vely = ((Sint16)SDLNet_Read16(&net_packet->data[12])) / 128.0;
 		auto yaw = ((Sint16)SDLNet_Read16(&net_packet->data[14])) / 128.0;
 		auto pitch = ((Sint16)SDLNet_Read16(&net_packet->data[16])) / 128.0;
+		bool bounce = ((int)net_packet->data[19] == 1) ? true : false;
 
 		// update rotation
 		players[player]->ghost.my->yaw = yaw;
@@ -5273,6 +5300,27 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		// return x/y to their original state as this can update more than actPlayer and causes stuttering. use new_x/new_y in actPlayer.
 		players[player]->ghost.my->x = ox;
 		players[player]->ghost.my->y = oy;
+
+		if ( bounce )
+		{
+			players[player]->ghost.my->fskill[9] = Player::Ghost_t::GHOST_SQUISH_START_ANGLE / 100.f;
+			
+			for ( int c = 1; c < MAXPLAYERS; ++c ) // send to other players
+			{
+				if ( c == player || client_disconnected[c] || players[c]->isLocalPlayer() )
+				{
+					continue;
+				}
+				strcpy((char*)net_packet->data, "ENFS");
+				SDLNet_Write32(players[player]->ghost.my->getUID(), &net_packet->data[4]);
+				net_packet->data[8] = 9;
+				SDLNet_Write16(static_cast<Sint16>(players[player]->ghost.my->fskill[9] * 256), &net_packet->data[9]);
+				net_packet->address.host = net_clients[c - 1].host;
+				net_packet->address.port = net_clients[c - 1].port;
+				net_packet->len = 11;
+				sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			}
+		}
 	}},
 
 	// player created ghost
@@ -5298,7 +5346,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		players[player]->ghost.reset();
 
 		// deathcam
-		int sprite = Player::Ghost_t::GHOST_MODEL_P1 + (player < 4 ? player : 4);
+		int sprite = Player::Ghost_t::getSpriteForPlayer(player);
 		Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Ghost entity.
 		players[player]->ghost.my = entity;
 		players[player]->ghost.uid = entity->getUID();
@@ -5306,13 +5354,14 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		entity->y = (SDLNet_Read16(&net_packet->data[8]) * 16) + 8;
 		entity->z = -4;
 		entity->flags[PASSABLE] = true;
-		entity->flags[INVISIBLE] = false;// true;
+		entity->flags[INVISIBLE] = true;
+		entity->flags[GENIUS] = true;
 		entity->behavior = &actDeathGhost;
 		entity->skill[2] = player;
 		entity->yaw = 0.0;
 		entity->pitch = 0;
-		entity->sizex = 4;
-		entity->sizey = 4;
+		entity->sizex = 2;
+		entity->sizey = 2;
 		entity->flags[UPDATENEEDED] = true;
 	}},
 
@@ -5624,6 +5673,24 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
             net_packet->address.port = net_clients[c - 1].port;
             sendPacketSafe(net_sock, -1, net_packet, c - 1);
         }
+	}},
+
+	// ghost sneaking
+	{ 'GHOD', []() {
+		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		if ( players[player]->ghost.my )
+		{
+			players[player]->ghost.my->skill[3] = net_packet->data[5];
+			for ( int c = 1; c < MAXPLAYERS; ++c ) {
+				// relay packet to other players
+				if ( client_disconnected[c] || c == player ) {
+					continue;
+				}
+				net_packet->address.host = net_clients[c - 1].host;
+				net_packet->address.port = net_clients[c - 1].port;
+				sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			}
+		}
 	}},
 
 	// close shop
@@ -6112,6 +6179,21 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			else
 			{
 				castSpell(players[player]->entity->getUID(), thespell, false, false);
+			}
+		}
+	}},
+
+	//The client ghost cast a spell.
+	{'GHSP', []() {
+		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+
+		spell_t* thespell = getSpellFromID(SDLNet_Read32(&net_packet->data[5]));
+		if ( players[player] && players[player]->ghost.isActive() )
+		{
+			int power = net_packet->data[9];
+			if ( auto projectile = castSpell(players[player]->ghost.my->getUID(), thespell, false, true) )
+			{
+				projectile->actmagicSpellbookBonus = power * 100.0;
 			}
 		}
 	}},

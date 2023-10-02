@@ -3720,7 +3720,14 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 			}
 			else
 			{
-				interactText = Language::get(4000); // "Pick up item";
+				if ( player.ghost.isActive() )
+				{
+					interactText = Language::get(6045); // "Nudge item";
+				}
+				else
+				{
+					interactText = Language::get(4000); // "Pick up item";
+				}
 			}
 		}
 		else if ( parent->behavior == &actGoldBag )

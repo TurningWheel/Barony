@@ -1762,6 +1762,14 @@ public:
 		real_t quickTurnRotation = 0.0;
 		Uint32 quickTurnStartTicks = 0;
 		bool bDoingQuickTurn = false;
+		bool casting = false;
+		Uint32 castingHeldDuration = 0;
+		int actionPoints = 5;
+		int spawnX = -1;
+		int spawnY = -1;
+		int startRoomX = -1;
+		int startRoomY = -1;
+		int teleportToPlayer = -1;
 		Player& player;
 	public:
 		Ghost_t(Player& p) : player(p)
@@ -1778,14 +1786,21 @@ public:
 		void handleGhostMovement(bool useRefreshRateDelta);
 		void handleGhostCameraPosition(bool useRefreshRateDelta);
 		void handleActions();
+		void handleAttack();
 		bool isActive() { return my != nullptr; }
+		void initTeleportLocations(int x, int y);
+		void initStartRoomLocation(int x, int y);
 		void reset();
 		bool allowedInteractEntity(Entity& entity);
+		Uint8 getSpellPower() { return std::max(1, std::min((int)castingHeldDuration / TICKS_PER_SECOND, 5)); }
 		static const int GHOST_MODEL_P1 = 1238;
 		static const int GHOST_MODEL_P2 = 1239;
 		static const int GHOST_MODEL_P3 = 1240;
 		static const int GHOST_MODEL_P4 = 1241;
 		static const int GHOST_MODEL_PX = 1242;
+		static const int GHOST_SQUISH_START_ANGLE = 75;
+		static int getSpriteForPlayer(const int player);
+		void createBounceAnimate();
 	} ghost;
 
 	class MessageZone_t

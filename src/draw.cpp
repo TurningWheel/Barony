@@ -1955,12 +1955,26 @@ void drawEntities3D(view_t* camera, int mode)
         }
         if ( entity->flags[GENIUS] )
         {
-            // genius entities are not drawn when the camera is inside their bounding box
-            if ( camera->x >= (entity->x - entity->sizex) / 16 && camera->x <= (entity->x + entity->sizex) / 16 )
-                if ( camera->y >= (entity->y - entity->sizey) / 16 && camera->y <= (entity->y + entity->sizey) / 16 )
-                {
-                    continue;
-                }
+			// genius entities are not drawn when the camera is inside their bounding box
+#ifndef EDITOR
+			if ( entity->behavior == &actDeathGhost )
+			{
+				// ghost have small collision box
+				if ( camera->x >= (entity->x - std::max(4, entity->sizex)) / 16 && camera->x <= (entity->x + std::max(4, entity->sizex)) / 16 )
+					if ( camera->y >= (entity->y - std::max(4, entity->sizey)) / 16 && camera->y <= (entity->y + std::max(4, entity->sizey)) / 16 )
+					{
+						continue;
+					}
+			}
+			else
+#endif
+			{
+				if ( camera->x >= (entity->x - entity->sizex) / 16 && camera->x <= (entity->x + entity->sizex) / 16 )
+					if ( camera->y >= (entity->y - entity->sizey) / 16 && camera->y <= (entity->y + entity->sizey) / 16 )
+					{
+						continue;
+					}
+			}
         }
         if ( entity->flags[OVERDRAW] && splitscreen )
         {
@@ -1970,7 +1984,9 @@ void drawEntities3D(view_t* camera, int mode)
                 if ( entity->behavior == &actHudWeapon
                     || entity->behavior == &actHudArm
                     || entity->behavior == &actGib
-                    || entity->behavior == &actFlame )
+                    || entity->behavior == &actFlame
+					|| entity->behavior == &actHUDMagicParticle
+					|| entity->behavior == &actHUDMagicParticleCircling )
                 {
                     // the gibs are from casting magic in the HUD
                     if ( entity->skill[11] != currentPlayerViewport )

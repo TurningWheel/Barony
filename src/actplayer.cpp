@@ -50,19 +50,100 @@ static ConsoleVariable<float> cvar_calloutStartZLimit("/callout_start_z_limit", 
 
 -------------------------------------------------------------------------------*/
 
+#define GHOSTCAM_INIT my->skill[0]
 #define GHOSTCAM_PLAYERNUM my->skill[2]
-
+#define GHOSTCAM_SNEAKING my->skill[3]
+#define GHOSTCAM_BOBMODE my->skill[4]
+#define GHOSTCAM_SQUISH_TIME my->skill[5]
+#define GHOSTCAM_SQUISH_DELAY my->skill[6]
 #define GHOSTCAM_BOB my->fskill[0]
 #define GHOSTCAM_BOBMOVE my->fskill[1]
-#define GHOSTCAM_WEAPONYAW my->fskill[2]
 #define GHOSTCAM_DX my->fskill[3]
 #define GHOSTCAM_DY my->fskill[4]
 #define GHOSTCAM_DYAW my->fskill[5]
 #define GHOSTCAM_ROTX my->fskill[6]
 #define GHOSTCAM_ROTY my->fskill[7]
+#define GHOSTCAM_SQUISH my->fskill[8]
+#define GHOSTCAM_SQUISH_ANGLE my->fskill[9]
+#define GHOSTCAM_WEAVE my->fskill[10]
+#define GHOSTCAM_HOVER my->fskill[11]
 
 void Player::Ghost_t::handleGhostCameraBobbing(bool useRefreshRateDelta)
 {
+	if ( !my )
+	{
+		return;
+	}
+
+	int playernum = player.playernum;
+
+	double refreshRateDelta = 1.0;
+	if ( useRefreshRateDelta && fps > 0.0 )
+	{
+		refreshRateDelta *= TICKS_PER_SECOND / (real_t)fpsLimit;
+	}
+
+	Input& input = Input::inputs[playernum];
+	static ConsoleVariable<float> cvar_ghostBob("/ghost_bob", 0.25);
+	static ConsoleVariable<float> cvar_ghostBobSpeed("/ghost_bob_speed", 4.0);
+
+	// camera bobbing
+	if ( bobbing )
+	{
+		bool reset = false;
+
+		if ( !gamePaused
+			&& ((!inputs.hasController(playernum)
+				&& ((input.binary("Move Forward") || input.binary("Move Backward"))
+					|| (input.binary("Move Left") - input.binary("Move Right"))))
+				|| (inputs.hasController(playernum)
+					&& (inputs.getController(playernum)->getLeftXPercentForPlayerMovement()
+						|| inputs.getController(playernum)->getLeftYPercentForPlayerMovement()))) )
+		{
+			if ( !player.usingCommand()
+				&& player.bControlEnabled )
+			{
+				if ( !GHOSTCAM_SNEAKING )
+				{
+					GHOSTCAM_BOBMOVE += 0.0125 * *cvar_ghostBobSpeed;
+				}
+				else
+				{
+					//GHOSTCAM_BOBMOVE += 0.025;
+					reset = true;
+				}
+			}
+			else
+			{
+				reset = true;
+			}
+		}
+		else
+		{
+			reset = true;
+		}
+
+		if ( reset )
+		{
+			if ( GHOSTCAM_BOBMOVE > 0.001 && GHOSTCAM_BOBMOVE < 1.0 )
+			{
+				GHOSTCAM_BOBMOVE += 0.0125 * *cvar_ghostBobSpeed;
+			}
+		}
+		if ( GHOSTCAM_BOBMOVE >= 1.0 )
+		{
+			GHOSTCAM_BOBMOVE = 0.0;
+		}
+
+		real_t bobSpeed = *cvar_ghostBob;
+		GHOSTCAM_BOB = -bobSpeed + bobSpeed * sin((PI / 2) + GHOSTCAM_BOBMOVE * refreshRateDelta * 2 * PI);
+	}
+	else
+	{
+		GHOSTCAM_BOBMOVE = 0;
+		GHOSTCAM_BOB = 0;
+		GHOSTCAM_BOBMODE = 0;
+	}
 }
 void Player::Ghost_t::handleGhostCameraPosition(bool useRefreshRateDelta)
 {
@@ -82,6 +163,8 @@ void Player::Ghost_t::handleGhostMovement(const bool useRefreshRateDelta)
 
 	// calculate movement forces
 	bool allowMovement = true;
+	static ConsoleVariable<float> cvar_ghostSpeed("/ghost_speed", 1.5);
+	static ConsoleVariable<float> cvar_ghostDrag("/ghost_drag", 0.95);
 
 	if ( ((!player.usingCommand() && player.bControlEnabled && !gamePaused))
 		&& allowMovement )
@@ -114,16 +197,16 @@ void Player::Ghost_t::handleGhostMovement(const bool useRefreshRateDelta)
 			}
 		}
 
-		real_t speedFactor = 12.0;// getSpeedFactor(weightratio, statGetDEX(stats[PLAYER_NUM], players[PLAYER_NUM]->entity));
+		real_t speedFactor = *cvar_ghostSpeed;// getSpeedFactor(weightratio, statGetDEX(stats[PLAYER_NUM], players[PLAYER_NUM]->entity));
 		speedFactor *= refreshRateDelta;
-		my->vel_x += y_force * cos(my->yaw) * .045 * speedFactor;
-		my->vel_y += y_force * sin(my->yaw) * .045 * speedFactor;
-		my->vel_x += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor;
-		my->vel_y += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor;
+		my->vel_x += y_force * cos(my->yaw) * .045 * speedFactor / (1 + GHOSTCAM_SNEAKING);
+		my->vel_y += y_force * sin(my->yaw) * .045 * speedFactor / (1 + GHOSTCAM_SNEAKING);
+		my->vel_x += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor / (1 + GHOSTCAM_SNEAKING);
+		my->vel_y += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor / (1 + GHOSTCAM_SNEAKING);
 
 	}
-	my->vel_x *= pow(0.75, refreshRateDelta);
-	my->vel_y *= pow(0.75, refreshRateDelta);
+	my->vel_x *= pow(*cvar_ghostDrag, refreshRateDelta);
+	my->vel_y *= pow(*cvar_ghostDrag, refreshRateDelta);
 
 	/*for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
@@ -230,11 +313,318 @@ bool Player::Ghost_t::allowedInteractEntity(Entity& entity)
 		|| entity.behavior == &actSwitchWithTimer
 		|| entity.behavior == &actPowerCrystal
 		|| entity.behavior == &actPowerCrystalBase
-		|| entity.behavior == &actTeleportShrine )
+		|| entity.behavior == &actTeleportShrine
+		|| entity.behavior == &actTeleporter )
 	{
 		return true;
 	}
 	return false;
+}
+
+void Player::Ghost_t::handleAttack()
+{
+	if ( !casting )
+	{
+		castingHeldDuration = 0;
+	}
+	Input& input = Input::inputs[player.playernum];
+	bool attack = false;
+	bool defending = false;
+	if ( !player.usingCommand() 
+		&& player.bControlEnabled 
+		&& !gamePaused )
+	{
+		if ( player.shootmode && input.binaryToggle("Attack") )
+		{
+			attack = true;
+		}
+		if ( input.binary("Defend") )
+		{
+			defending = true;
+		}
+	}
+
+	if ( GHOSTCAM_SNEAKING != defending || ticks % 120 == 0 )
+	{
+		if ( multiplayer == CLIENT )
+		{
+			strcpy((char*)net_packet->data, "GHOD");
+			net_packet->data[4] = player.playernum;
+			net_packet->data[5] = defending;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 6;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+		else if ( multiplayer == SERVER )
+		{
+			strcpy((char*)net_packet->data, "GHOD");
+			net_packet->data[4] = player.playernum;
+			net_packet->data[5] = defending;
+			net_packet->len = 6;
+			for ( int c = 1; c < MAXPLAYERS; ++c )
+			{
+				// relay packet to other players
+				if ( client_disconnected[c] ) 
+				{
+					continue;
+				}
+				net_packet->address.host = net_clients[c - 1].host;
+				net_packet->address.port = net_clients[c - 1].port;
+				sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			}
+		}
+	}
+	GHOSTCAM_SNEAKING = defending;
+
+	const int castLoopDuration = 20;
+	const int teleportLoopDuration = 1;
+	bool pushSpell = true;
+	if ( !attack )
+	{
+		if ( casting && castingHeldDuration >= castLoopDuration )
+		{
+			if ( !pushSpell )
+			{
+				int tx = spawnX;
+				int ty = spawnY;
+				Entity* target = nullptr;
+				if ( teleportToPlayer >= MAXPLAYERS )
+				{
+					teleportToPlayer = -1;
+					tx = startRoomX;
+					ty = startRoomY;
+				}
+				else
+				{
+					++teleportToPlayer;
+					while ( teleportToPlayer >= 0 && teleportToPlayer < MAXPLAYERS )
+					{
+						if ( teleportToPlayer != player.playernum && Player::getPlayerInteractEntity(teleportToPlayer) )
+						{
+							target = Player::getPlayerInteractEntity(teleportToPlayer);
+							tx = static_cast<int>(target->x) / 16;
+							ty = static_cast<int>(target->y) / 16;
+							break;
+						}
+						++teleportToPlayer;
+					}
+					if ( !target )
+					{
+						if ( teleportToPlayer >= MAXPLAYERS )
+						{
+							tx = spawnX;
+							ty = spawnY;
+						}
+					}
+				}
+
+				Entity* spellTimer = createParticleTimer(my, 1, 593);
+				spellTimer->particleTimerPreDelay = 0; // wait x ticks before animation.
+				spellTimer->particleTimerEndAction = PARTICLE_EFFECT_GHOST_TELEPORT; // teleport behavior of timer.
+				spellTimer->particleTimerEndSprite = 593; // sprite to use for end of timer function.
+				spellTimer->particleTimerCountdownAction = 0;
+				spellTimer->particleTimerCountdownSprite = -1;
+				if ( target != nullptr )
+				{
+					spellTimer->particleTimerTarget = static_cast<Sint32>(target->getUID()); // get the target to teleport around.
+				}
+				spellTimer->particleTimerVariable1 = 1; // distance of teleport in tiles
+				spellTimer->particleTimerVariable2 = (tx & 0xFFFF) << 16;
+				spellTimer->particleTimerVariable2 |= ty & 0xFFFF;
+				if ( multiplayer == SERVER )
+				{
+					serverSpawnMiscParticles(my, PARTICLE_EFFECT_GHOST_TELEPORT, 593);
+				}
+			}
+			else
+			{
+				if ( auto projectile = castSpell(uid, &spell_ghost_bolt, false, true) )
+				{
+					projectile->actmagicSpellbookBonus = getSpellPower() * 100.0;
+				}
+			}
+			casting = false;
+			castingHeldDuration = 0;
+
+
+			for ( int i = 0; i < 5; ++i )
+			{
+				Entity* entity = spawnGib(my);
+				entity->flags[INVISIBLE] = false;
+				entity->flags[SPRITE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->flags[UPDATENEEDED] = false;
+				entity->flags[OVERDRAW] = true;
+				entity->lightBonus = vec4(0.2f, 0.2f, 0.2f, 0.f);
+				real_t scale = 0.15f;
+				entity->scalex = scale;
+				entity->scaley = scale;
+				entity->scalez = scale;
+				entity->sprite = 16;
+				entity->x = 8;
+				entity->y = 0;
+				entity->z = (cameras[player.playernum].z * .5 - my->z) + 7 + -2;
+				entity->z -= 4.75;
+				entity->z = local_rng.uniform(entity->z, entity->z - 4);
+				entity->z += 5.0;
+				entity->yaw = -cameravars[player.playernum].shakex2;
+				entity->yaw = ((local_rng.rand() % 6) * 60) * PI / 180.0;
+				entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+				entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+				entity->vel_x = cos(entity->yaw) * .1;
+				entity->vel_y = sin(entity->yaw) * .1;
+				entity->vel_z = -.15;
+				entity->fskill[3] = 0.01;
+				entity->skill[11] = player.playernum;
+			}
+			return;
+		}
+	}
+
+	if ( !casting )
+	{
+		if ( attack )
+		{
+			casting = true;
+			playSoundEntity(my, 170, 128);
+		}
+	}
+	else
+	{
+		++castingHeldDuration;
+
+		if ( !pushSpell )
+		{
+			float x = 6;
+			float y = 0.1;
+			float z = 5.5;
+			// boosty boost
+			for ( int i = 0; i < 3 && castingHeldDuration == 1; ++i )
+			{
+				Entity* entity = newEntity(1245, 1, map.entities, nullptr);
+				entity->yaw = i * 2 * PI / 3;
+				entity->x = x;
+				entity->y = y;
+				entity->z = z;
+				double missile_speed = 4;
+				entity->vel_x = 0.0;
+				entity->vel_y = 0.0;
+				entity->actmagicIsOrbiting = 2;
+				entity->actmagicOrbitDist = 16.0;
+				entity->actmagicOrbitStationaryCurrentDist = 0.0;
+				entity->actmagicOrbitStartZ = entity->z;
+				//entity->roll -= (PI / 8);
+				entity->actmagicOrbitVerticalSpeed = -0.3;
+				entity->actmagicOrbitVerticalDirection = 1;
+				entity->actmagicOrbitLifetime = TICKS_PER_SECOND;
+				entity->actmagicOrbitStationaryX = x;
+				entity->actmagicOrbitStationaryY = y;
+				entity->vel_z = -0.1;
+				entity->behavior = &actHUDMagicParticleCircling;
+
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->flags[UNCLICKABLE] = true;
+				entity->flags[UPDATENEEDED] = false;
+				entity->flags[OVERDRAW] = true;
+				entity->skill[11] = player.playernum;
+				if ( multiplayer != CLIENT )
+				{
+					entity_uids--;
+				}
+				entity->setUID(-3);
+			}
+
+			if ( ticks % 5 == 0 )
+			{
+				Entity* entity = spawnGib(my);
+				entity->flags[INVISIBLE] = false;
+				entity->flags[SPRITE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->flags[UPDATENEEDED] = false;
+				entity->flags[OVERDRAW] = true;
+				entity->lightBonus = vec4(0.2f, 0.2f, 0.2f, 0.f);
+				real_t scale = 0.15f;
+				entity->scalex = scale;
+				entity->scaley = scale;
+				entity->scalez = scale;
+				entity->sprite = 16;
+				entity->x = 8;
+				entity->y = 0;
+				entity->z = (cameras[player.playernum].z * .5 - my->z) + 7 + -2;
+				entity->z -= 6.75;
+				entity->z = local_rng.uniform(entity->z, entity->z - 4);
+				entity->z += 5.0;
+				entity->yaw = -cameravars[player.playernum].shakex2;
+				entity->yaw = ((local_rng.rand() % 6) * 60) * PI / 180.0;
+				entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+				entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+				entity->vel_x = cos(entity->yaw) * .1;
+				entity->vel_y = sin(entity->yaw) * .1;
+				entity->vel_z = -.15;
+				entity->fskill[3] = 0.01;
+				entity->skill[11] = player.playernum;
+			}
+		}
+		else
+		{
+			float x = 6;
+			float y = 0.1;
+			float z = 1.5;
+			// boosty boost
+			for ( int i = 1; i < 3; ++i )
+			{
+				Uint32 animTick = castingHeldDuration >= castLoopDuration ? castLoopDuration : castingHeldDuration;
+
+				Entity* entity = newEntity(1243, 1, map.entities, nullptr); //Particle entity.
+				entity->x = x - 0.01 * (5 + local_rng.rand() % 11);
+				entity->y = y - 0.01 * (5 + local_rng.rand() % 11);
+				entity->z = z - 0.01 * (10 + local_rng.rand() % 21);
+				if ( i == 1 )
+				{
+					entity->y += -2;
+					entity->y += -2 * sin(2 * PI * (animTick % 40) / 40.f);
+				}
+				else
+				{
+					entity->y += -(-2);
+					entity->y -= -2 * sin(2 * PI * (animTick % 40) / 40.f);
+				}
+
+				entity->focalz = -2;
+
+				real_t scale = 0.05f;
+				scale += (animTick) * 0.025f;
+				scale = std::min(scale, 0.5);
+
+				entity->scalex = scale;
+				entity->scaley = scale;
+				entity->scalez = scale;
+				entity->sizex = 1;
+				entity->sizey = 1;
+				entity->yaw = 0;
+				entity->roll = i * 2 * PI / 3;
+				entity->pitch = PI + ((animTick % 40) / 40.f) * 2 * PI;
+				entity->ditheringDisabled = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->flags[UNCLICKABLE] = true;
+				entity->flags[UPDATENEEDED] = false;
+				entity->flags[OVERDRAW] = true;
+				entity->lightBonus = vec4(0.25f, 0.25f,
+					0.25f, 0.f);
+				entity->behavior = &actHUDMagicParticle;
+				entity->vel_z = 0;
+				entity->skill[11] = player.playernum;
+				if ( multiplayer != CLIENT )
+				{
+					entity_uids--;
+				}
+				entity->setUID(-3);
+			}
+		}
+	}
 }
 
 void Player::Ghost_t::handleActions()
@@ -631,6 +1021,13 @@ void Player::Ghost_t::handleActions()
 	}
 }
 
+void Player::Ghost_t::createBounceAnimate()
+{
+	if ( !my ) { return; }
+
+	GHOSTCAM_SQUISH_ANGLE = Player::Ghost_t::GHOST_SQUISH_START_ANGLE / 100.f;
+}
+
 void Player::Ghost_t::handleGhostCameraUpdate(const bool useRefreshRateDelta)
 {
 	if ( !my ) { return; }
@@ -832,6 +1229,70 @@ void Player::Ghost_t::handleGhostCameraUpdate(const bool useRefreshRateDelta)
 	}
 }
 
+int Player::Ghost_t::getSpriteForPlayer(const int player)
+{
+	if ( !colorblind_lobby )
+	{
+		return ((player < 4) ? (GHOST_MODEL_P1 + player) : GHOST_MODEL_PX);
+	}
+	Uint32 index = 4;
+	switch ( player )
+	{
+	case 0:
+		index = 2;
+		break;
+	case 1:
+		index = 3;
+		break;
+	case 2:
+		index = 1;
+		break;
+	case 3:
+		index = 4;
+		break;
+	default:
+		break;
+	}
+	return GHOST_MODEL_P1 + index;
+}
+
+void actDeathGhostLimb(Entity* my)
+{
+	int playernum = GHOSTCAM_PLAYERNUM;
+	if ( playernum < 0 || playernum >= MAXPLAYERS )
+	{
+		return;
+	}
+
+	if ( !players[playernum] || !players[playernum]->ghost.my )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+}
+
+void Player::Ghost_t::initStartRoomLocation(int x, int y)
+{
+	startRoomX = x;
+	startRoomY = y;
+}
+
+void Player::Ghost_t::initTeleportLocations(int x, int y)
+{
+	teleportToPlayer = -1;
+	spawnX = x;
+	spawnY = y;
+
+	if ( startRoomX == -1 )
+	{
+		startRoomX = x;
+	}
+	if ( startRoomY == -1 )
+	{
+		startRoomY = y;
+	}
+}
+
 void actDeathGhost(Entity* my)
 {
 	int playernum = GHOSTCAM_PLAYERNUM;
@@ -843,40 +1304,136 @@ void actDeathGhost(Entity* my)
 	players[playernum]->ghost.my = my;
 	players[playernum]->ghost.uid = my->getUID();
 
+	if ( !GHOSTCAM_INIT )
+	{
+		GHOSTCAM_INIT = 1;
+
+		// body model
+		Entity* entity = newEntity(my->sprite, 1, map.entities, nullptr);
+		entity->behavior = &actDeathGhostLimb;
+		entity->sizex = 4;
+		entity->sizey = 4;
+		entity->flags[PASSABLE] = true;
+		entity->flags[UPDATENEEDED] = false;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[GENIUS] = true;
+		entity->skill[2] = GHOSTCAM_PLAYERNUM;
+		node_t* node = list_AddNodeLast(&my->children);
+		node->element = entity;
+		node->deconstructor = &emptyDeconstructor;
+		node->size = sizeof(Entity*);
+		my->bodyparts.push_back(entity);
+
+		// eyes model
+		entity = newEntity(1237, 1, map.entities, nullptr);
+		entity->behavior = &actDeathGhostLimb;
+		entity->sizex = 4;
+		entity->sizey = 4;
+		entity->flags[PASSABLE] = true;
+		entity->flags[UPDATENEEDED] = false;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[GENIUS] = true;
+		entity->skill[2] = GHOSTCAM_PLAYERNUM;
+		node = list_AddNodeLast(&my->children);
+		node->element = entity;
+		node->deconstructor = &emptyDeconstructor;
+		node->size = sizeof(Entity*);
+		my->bodyparts.push_back(entity);
+
+		players[playernum]->ghost.initTeleportLocations(my->x / 16, my->y / 16);
+	}
+
+
 	auto player = players[playernum];
 
 	my->removeLightField();
-	my->light = addLight(my->x / 16, my->y / 16, "deathcam");
+	char* light_type = nullptr;
+	bool ambientLight = false;
+	if ( GHOSTCAM_SNEAKING )
+	{
+		ambientLight = true;
+	}
+
+	if ( !ambientLight )
+	{
+		switch ( my->sprite )
+		{
+			case Player::Ghost_t::GHOST_MODEL_P1:
+				light_type = "ghost_yellow";
+				break;
+			case Player::Ghost_t::GHOST_MODEL_P2:
+				light_type = "ghost_green";
+				break;
+			case Player::Ghost_t::GHOST_MODEL_P3:
+				light_type = "ghost_red";
+				break;
+			case Player::Ghost_t::GHOST_MODEL_P4:
+				light_type = "ghost_pink";
+				break;
+			default:
+				light_type = "ghost_white";
+				break;
+		}
+
+		my->light = addLight(my->x / 16, my->y / 16, light_type, 0, 0);
+	}
+	else if ( players[playernum]->isLocalPlayer() )
+	{
+		switch ( my->sprite )
+		{
+		case Player::Ghost_t::GHOST_MODEL_P1:
+			light_type = "ghost_yellow_sneaking_ambient";
+			break;
+		case Player::Ghost_t::GHOST_MODEL_P2:
+			light_type = "ghost_green_sneaking_ambient";
+			break;
+		case Player::Ghost_t::GHOST_MODEL_P3:
+			light_type = "ghost_red_sneaking_ambient";
+			break;
+		case Player::Ghost_t::GHOST_MODEL_P4:
+			light_type = "ghost_pink_sneaking_ambient";
+			break;
+		default:
+			light_type = "ghost_white_sneaking_ambient";
+			break;
+		}
+		my->light = addLight(my->x / 16, my->y / 16, light_type, 0, playernum + 1);
+	}
+
+	static ConsoleVariable<float> cvar_ghostSquish("/ghost_squish", 6.f);
+	static ConsoleVariable<float> cvar_ghostSquishFactor("/ghost_squish_factor", 0.3f);
 
 	if ( player->isLocalPlayer() )
 	{
-		bool inputsEnabled = false;
-		if ( !players[playernum]->GUI.isGameoverActive()
-			&& players[playernum]->bControlEnabled
-			&& !players[playernum]->usingCommand()
-			&& !gamePaused )
+		if ( autoLimbReload && ticks % 20 == 0 && (playernum == clientnum) )
 		{
-			inputsEnabled = true;
+			consoleCommand("/reloadlimbs");
 		}
 
 		if ( !usecamerasmoothing )
 		{
+			player->ghost.handleGhostCameraBobbing(false);
 			player->ghost.handleGhostMovement(false);
 			player->ghost.handleGhostCameraUpdate(false);
 		}
 
 		player->ghost.handleActions();
+		player->ghost.handleAttack();
 
 		real_t camx, camy, camz, camang, camvang;
 		camx = my->x / 16.f;
 		camy = my->y / 16.f;
-		camz = my->z * 2.f;
+		camz = my->z * 2.f + GHOSTCAM_BOB;
 		camang = my->yaw;
 		camvang = my->pitch;
 
-		camx -= cos(my->yaw) * cos(my->pitch) * 1.5;
-		camy -= sin(my->yaw) * cos(my->pitch) * 1.5;
-		camz -= sin(my->pitch) * 16;
+		static ConsoleVariable<bool> cvar_ghostThirdPerson("/ghost_thirdperson", false);
+		if ( *cvar_ghostThirdPerson || !keystatus[SDLK_g] )
+		{
+			camx -= cos(my->yaw) * cos(my->pitch) * 1.5;
+			camy -= sin(my->yaw) * cos(my->pitch) * 1.5;
+			camz -= sin(my->pitch) * 16;
+		}
 
 		if ( !TimerExperiments::bUseTimerInterpolation )
 		{
@@ -885,7 +1442,6 @@ void actDeathGhost(Entity* my)
 			cameras[playernum].z = camz;
 			cameras[playernum].ang = camang;
 			cameras[playernum].vang = camvang;
-			return;
 		}
 		else
 		{
@@ -919,6 +1475,8 @@ void actDeathGhost(Entity* my)
 		}
 	}
 
+	static ConsoleVariable<float> cvar_ghostBounce("/ghost_bounce", -1.0);
+	real_t dist = 0.0;
 	if ( player->isLocalPlayer() )
 	{
 		// send movement updates to server
@@ -934,40 +1492,200 @@ void actDeathGhost(Entity* my)
 			SDLNet_Write16((Sint16)(my->yaw * 128), &net_packet->data[14]);
 			SDLNet_Write16((Sint16)(my->pitch * 128), &net_packet->data[16]);
 			net_packet->data[18] = secretlevel;
-			net_packet->address.host = net_server.host;
-			net_packet->address.port = net_server.port;
-			net_packet->len = 19;
-			sendPacket(net_sock, -1, net_packet, 0);
+			// continued after clipmove...
 		}
 
 		// perform collision detection
-		real_t dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
+		dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
+		bool bounceAnimate = false;
+		if ( dist != sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y) )
+		{
+			if ( !hit.side )
+			{
+				my->vel_x *= *cvar_ghostBounce;
+				my->vel_y *= *cvar_ghostBounce;
+				if ( abs(my->vel_x) > 0.15 || abs(my->vel_y) > 0.15 )
+				{
+					bounceAnimate = true;
+				}
+			}
+			else if ( hit.side == HORIZONTAL )
+			{
+				my->vel_x *= *cvar_ghostBounce;
+				if ( abs(my->vel_x) > 0.15 )
+				{
+					bounceAnimate = true;
+				}
+			}
+			else
+			{
+				my->vel_y *= *cvar_ghostBounce;
+				if ( abs(my->vel_y) > 0.15 )
+				{
+					bounceAnimate = true;
+				}
+			}
+			if ( bounceAnimate )
+			{
+				if ( GHOSTCAM_SQUISH_ANGLE < 0.01 && GHOSTCAM_SQUISH_DELAY == 0 )
+				{
+					GHOSTCAM_SQUISH_ANGLE = Player::Ghost_t::GHOST_SQUISH_START_ANGLE / 100.f;
+					GHOSTCAM_SQUISH_DELAY = TICKS_PER_SECOND / 2;
+				}
+				else
+				{
+					bounceAnimate = false;
+				}
+			}
+			my->vel_x = std::max(-4.0, std::min(my->vel_x, 4.0));
+			my->vel_y = std::max(-4.0, std::min(my->vel_y, 4.0));
+		}
+
+		if ( multiplayer == CLIENT )
+		{
+			net_packet->data[19] = bounceAnimate ? 1 : 0;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 20;
+			sendPacket(net_sock, -1, net_packet, 0);
+		}
+		if ( multiplayer == SERVER && bounceAnimate )
+		{
+			serverUpdateEntityFSkill(my, 9);
+		}
 	}
+
+	--GHOSTCAM_SQUISH_DELAY;
+	GHOSTCAM_SQUISH_DELAY = std::max(0, GHOSTCAM_SQUISH_DELAY);
 
 	if ( !player->isLocalPlayer() && multiplayer == SERVER )
 	{
 		// PLAYER_VEL* skills updated by messages sent to server from client
 
 		// move (dead reckoning)
-		/*if ( noclip == false )*/
+		// from GMOV in serverHandlePacket - new_x and new_y are accumulated positions
+		if ( my->new_x > 0.001 )
 		{
-			// from PMOV in serverHandlePacket - new_x and new_y are accumulated positions
-			if ( my->new_x > 0.001 )
-			{
-				my->x = my->new_x;
-			}
-			if ( my->new_y > 0.001 )
-			{
-				my->y = my->new_y;
-			}
-
-			real_t dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
+			my->x = my->new_x;
 		}
+		if ( my->new_y > 0.001 )
+		{
+			my->y = my->new_y;
+		}
+
+		dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
 	}
 
 	if ( !player->isLocalPlayer() && multiplayer == CLIENT )
 	{
-		real_t dist = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+		dist = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+	}
+
+
+	real_t dir = my->yaw - atan2(my->vel_y, my->vel_x);
+	while ( dir < 0 )
+	{
+		dir += 2 * PI;
+	}
+	while ( dir > 2 * PI )
+	{
+		dir -= 2 * PI;
+	}
+	//messagePlayer(0, MESSAGE_DEBUG, "%.2f", dir);
+
+	const real_t weaveSpeed = 0.05;
+	if ( dist < 0.15 || (abs(dir - PI / 2) < PI / 16) || (abs(dir - 3 * PI / 2) < PI / 16) )
+	{
+		if ( GHOSTCAM_WEAVE >= 0.0 )
+		{
+			GHOSTCAM_WEAVE -= weaveSpeed;
+			GHOSTCAM_WEAVE = std::max(GHOSTCAM_WEAVE, 0.0);
+		}
+		else
+		{
+			GHOSTCAM_WEAVE += weaveSpeed;
+			GHOSTCAM_WEAVE = std::min(GHOSTCAM_WEAVE, 0.0);
+		}
+	}
+	else if ( dir <= PI / 2 || dir >= 3 * PI / 2 )
+	{
+		GHOSTCAM_WEAVE += weaveSpeed;
+		GHOSTCAM_WEAVE = std::min(GHOSTCAM_WEAVE, PI / 8);
+	}
+	else if ( dir > PI / 2 && dir < 3 * PI / 2 )
+	{
+		GHOSTCAM_WEAVE -= weaveSpeed;
+		GHOSTCAM_WEAVE = std::max(GHOSTCAM_WEAVE, -PI / 8);
+	}
+
+
+	/*GHOSTCAM_WEAVE += weaveSpeed / 5;
+	while ( GHOSTCAM_WEAVE >= 1.0 )
+	{
+		GHOSTCAM_WEAVE -= 1.0;
+	}*/
+
+	if ( abs(GHOSTCAM_HOVER - (PI / 2)) < PI / 64 )
+	{
+		GHOSTCAM_HOVER += PI / 320;
+	}
+	else if ( abs(GHOSTCAM_HOVER - (3 * PI / 2)) < PI / 64 )
+	{
+		GHOSTCAM_HOVER += PI / 320;
+	}
+	else
+	{
+		GHOSTCAM_HOVER += PI / 64;
+	}
+	while ( GHOSTCAM_HOVER >= 2 * PI )
+	{
+		GHOSTCAM_HOVER -= 2 * PI;
+	}
+
+	const real_t squishRate = *cvar_ghostSquish;
+	real_t squishFactor = *cvar_ghostSquishFactor;
+	if ( GHOSTCAM_SQUISH_ANGLE < 0.0 )
+	{
+		squishFactor *= std::max(0.0, (1.0 + GHOSTCAM_SQUISH_ANGLE));
+	}
+	const real_t inc = squishRate * (PI / TICKS_PER_SECOND);
+	//GHOSTCAM_SQUISH = fmod(GHOSTCAM_SQUISH + inc, PI * 2);
+	GHOSTCAM_SQUISH = GHOSTCAM_SQUISH_ANGLE * 2 * PI;
+	const real_t squish = sin(GHOSTCAM_SQUISH) * squishFactor;
+	GHOSTCAM_SQUISH_ANGLE -= squishRate * (0.5 / TICKS_PER_SECOND);
+	GHOSTCAM_SQUISH_ANGLE = std::max(GHOSTCAM_SQUISH_ANGLE, -1.0);
+
+	my->flags[INVISIBLE] = true;
+	int index = -1;
+	for ( auto bodypart : my->bodyparts )
+	{
+		++index;
+
+		bodypart->yaw = my->yaw;
+		bodypart->pitch = my->pitch;
+		bodypart->roll = my->roll;
+		bodypart->x = my->x;
+		bodypart->y = my->y;
+		bodypart->z = my->z;
+		bodypart->scalex = 1.0 - squish;
+		bodypart->scaley = 1.0 - squish;
+		bodypart->scalez = 1.0 + squish;
+
+		if ( index == 0 )
+		{
+			bodypart->z += 0.5 * sin(GHOSTCAM_HOVER);
+			bodypart->pitch += GHOSTCAM_WEAVE;
+			bodypart->fskill[0] += PI / 64;
+			while ( bodypart->fskill[0] >= 2 * PI )
+			{
+				bodypart->fskill[0] -= 2 * PI;
+			}
+		}
+		else if ( index == 1 )
+		{
+			bodypart->z += 0.4 * sin(GHOSTCAM_HOVER);
+			bodypart->focalx = 2.25;
+		}
 	}
 }
 
@@ -1172,6 +1890,7 @@ void actDeathCam(Entity* my)
 		&& players[DEATHCAM_PLAYERNUM]->bControlEnabled
 		&& !players[DEATHCAM_PLAYERNUM]->usingCommand()
 		&& !gamePaused
+		&& !players[DEATHCAM_PLAYERNUM]->ghost.isActive()
 		&& (Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("Attack")
 			|| Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("MenuConfirm")) )
 	{
@@ -1182,17 +1901,18 @@ void actDeathCam(Entity* my)
 			// deathcam
 			if ( multiplayer != CLIENT )
 			{
-				int sprite = Player::Ghost_t::GHOST_MODEL_P1 + (DEATHCAM_PLAYERNUM < 4 ? DEATHCAM_PLAYERNUM : 4);
+				int sprite = Player::Ghost_t::getSpriteForPlayer(DEATHCAM_PLAYERNUM);
 				Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Ghost entity.
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = -4;
 				entity->flags[PASSABLE] = true;
-				entity->flags[INVISIBLE] = false;// true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[GENIUS] = true;
 				entity->behavior = &actDeathGhost;
 				entity->skill[2] = DEATHCAM_PLAYERNUM;
-				entity->sizex = 4;
-				entity->sizey = 4;
+				entity->sizex = 2;
+				entity->sizey = 2;
 				entity->yaw = my->yaw;
 				entity->pitch = 0;
 				if ( DEATHCAM_PLAYERNUM == clientnum && multiplayer == CLIENT )

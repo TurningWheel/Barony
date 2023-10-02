@@ -37,6 +37,7 @@ static const char* colorForSprite(int sprite, bool darker) {
         case 983:
         case 171: return "magic_green_flicker";
         case 592:
+		case 1244:
         case 172: return "magic_blue_flicker";
         case 625:
         case 173: return "magic_purple_flicker";
@@ -58,6 +59,7 @@ static const char* colorForSprite(int sprite, bool darker) {
         case 983:
         case 171: return "magic_green";
         case 592:
+		case 1244:
         case 172: return "magic_blue";
         case 625:
         case 173: return "magic_purple";
@@ -1108,7 +1110,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				if ( hit.entity )
 				{
 					// alert the hit entity if it was a monster
-					if ( hit.entity->behavior == &actMonster && parent != nullptr )
+					if ( hit.entity->behavior == &actMonster && parent != nullptr && parent->behavior != &actDeathGhost )
 					{
 						if ( parent->behavior == &actMagicTrap || parent->behavior == &actMagicTrapCeiling )
 						{
@@ -1249,9 +1251,16 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				}
 
 				real_t spellbookDamageBonus = (my->actmagicSpellbookBonus / 100.f);
-				if ( my->actmagicCastByMagicstaff == 0 && my->actmagicCastByTinkerTrap == 0 )
+				if ( parent && parent->behavior == &actDeathGhost )
 				{
-					spellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, nullptr, element);
+					// no extra bonus here
+				}
+				else
+				{
+					if ( my->actmagicCastByMagicstaff == 0 && my->actmagicCastByTinkerTrap == 0 )
+					{
+						spellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, nullptr, element);
+					}
 				}
 
 				if (!strcmp(element->element_internal_name, spellElement_force.element_internal_name))
@@ -2304,6 +2313,76 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
+				else if ( !strcmp(element->element_internal_name, spellElement_ghostBolt.element_internal_name) )
+				{
+					if ( hit.entity )
+					{
+						if ( hit.entity->behavior == &actMonster )
+						{
+							Entity* parent = uidToEntity(my->parent);
+							real_t pushbackMultiplier = 0.6;// +(0.2 * spellbookDamageBonus);
+							if ( !hit.entity->isMobile() )
+							{
+								pushbackMultiplier += 0.3;
+							}
+
+							bool doSlow = true;
+							const int duration = TICKS_PER_SECOND * 2;
+							if ( hitstats )
+							{
+								if ( hitstats->EFFECTS[EFF_SLOW] || hitstats->EFFECTS_TIMERS[EFF_SLOW] > duration )
+								{
+									doSlow = false;
+								}
+							}
+
+							if ( doSlow )
+							{
+								hit.entity->setEffect(EFF_SLOW, true, duration, false);
+							}
+
+							if ( hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
+							{
+								if ( parent )
+								{
+									real_t tangent = atan2(hit.entity->y - parent->y, hit.entity->x - parent->x);
+									hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
+									hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
+									hit.entity->monsterKnockbackVelocity = 0.01;
+									hit.entity->monsterKnockbackUID = my->parent;
+									hit.entity->monsterKnockbackTangentDir = tangent;
+									//hit.entity->lookAtEntity(*parent);
+								}
+								else
+								{
+									real_t tangent = atan2(hit.entity->y - my->y, hit.entity->x - my->x);
+									hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
+									hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
+									hit.entity->monsterKnockbackVelocity = 0.01;
+									hit.entity->monsterKnockbackTangentDir = tangent;
+									hit.entity->monsterKnockbackUID = 0;
+									//hit.entity->lookAtEntity(*my);
+								}
+							}
+							/*if ( hit.entity->monsterAttack == 0 )
+							{
+								hit.entity->monsterHitTime = std::max(HITRATE - 12, hit.entity->monsterHitTime);
+							}*/
+						}
+						else
+						{
+							//if ( parent )
+							//{
+							//	if ( parent->behavior == &actPlayer || parent->behavior == &actDeathGhost )
+							//	{
+							//		messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(401)); // "No telling what it did..."
+							//	}
+							//}
+						}
+
+						spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
+					}
+				}
 				else if (!strcmp(element->element_internal_name, spellElement_locking.element_internal_name))
 				{
 					if ( hit.entity )
@@ -3193,6 +3272,80 @@ void actMagicParticle(Entity* my)
 }
 
 static ConsoleVariable<float> cvar_magic_fx_light_bonus("/magic_fx_light_bonus", 0.25f);
+
+void actHUDMagicParticle(Entity* my)
+{
+	my->x += my->vel_x;
+	my->y += my->vel_y;
+	my->z += my->vel_z;
+	my->scalex -= 0.05;
+	my->scaley -= 0.05;
+	my->scalez -= 0.05;
+	if ( my->scalex <= 0 )
+	{
+		my->scalex = 0;
+		my->scaley = 0;
+		my->scalez = 0;
+		list_RemoveNode(my->mynode);
+		return;
+	}
+}
+
+void actHUDMagicParticleCircling(Entity* my)
+{
+	int turnRate = 4;
+	my->yaw += 0.2;
+	turnRate = 4;
+	my->x = my->actmagicOrbitStationaryX + my->actmagicOrbitStationaryCurrentDist * cos(my->yaw);
+	my->y = my->actmagicOrbitStationaryY + my->actmagicOrbitStationaryCurrentDist * sin(my->yaw);
+	my->actmagicOrbitStationaryCurrentDist =
+		std::min(my->actmagicOrbitStationaryCurrentDist + 0.5, static_cast<real_t>(my->actmagicOrbitDist));
+	my->z += my->vel_z * my->actmagicOrbitVerticalDirection;
+
+	my->vel_z = std::min(my->actmagicOrbitVerticalSpeed, my->vel_z / 0.95);
+	my->roll += (PI / 8) / (turnRate / my->vel_z) * my->actmagicOrbitVerticalDirection;
+	my->roll = std::max(my->roll, -PI / 4);
+
+	--my->actmagicOrbitLifetime;
+	if ( my->actmagicOrbitLifetime <= 0 )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+
+	{
+		Entity* entity;
+
+		entity = newEntity(my->sprite, 1, map.entities, nullptr); //Particle entity.
+
+		entity->x = my->x + (local_rng.rand() % 50 - 25) / 200.f;
+		entity->y = my->y + (local_rng.rand() % 50 - 25) / 200.f;
+		entity->z = my->z + (local_rng.rand() % 50 - 25) / 200.f;
+		entity->scalex = 0.7;
+		entity->scaley = 0.7;
+		entity->scalez = 0.7;
+		entity->sizex = 1;
+		entity->sizey = 1;
+		entity->yaw = my->yaw;
+		entity->pitch = my->pitch;
+		entity->roll = my->roll;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[PASSABLE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UPDATENEEDED] = false;
+		entity->flags[OVERDRAW] = true;
+		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+			*cvar_magic_fx_light_bonus, 0.f);
+		entity->behavior = &actHUDMagicParticle;
+		entity->skill[11] = my->skill[11];
+		if ( multiplayer != CLIENT )
+		{
+			entity_uids--;
+		}
+		entity->setUID(-3);
+	}
+}
 
 Entity* spawnMagicParticle(Entity* parentent)
 {
@@ -4448,6 +4601,84 @@ void actParticleTimer(Entity* my)
 							serverSpawnMiscParticles(toTeleport, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
 						}
 					}
+				}
+			}
+			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_GHOST_TELEPORT )
+			{
+				// teleport to target spell.
+				if ( Entity* parent = uidToEntity(my->parent) )
+				{
+					if ( my->particleTimerTarget != 0 )
+					{
+						if ( Entity* target = uidToEntity(static_cast<Uint32>(my->particleTimerTarget)) )
+						{
+							bool teleported = false;
+							createParticleErupt(parent, my->particleTimerEndSprite);
+							serverSpawnMiscParticles(parent, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
+							teleported = parent->teleportAroundEntity(target, my->particleTimerVariable1);
+							if ( teleported )
+							{
+								createParticleErupt(parent, my->particleTimerEndSprite);
+								// teleport success.
+								if ( multiplayer == SERVER )
+								{
+									serverSpawnMiscParticles(parent, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
+								}
+							}
+						}
+					}
+					else
+					{
+						int tx = (my->particleTimerVariable2 >> 16) & 0xFFFF;
+						int ty = (my->particleTimerVariable2 >> 0) & 0xFFFF;
+						int dist = my->particleTimerVariable1;
+						bool forceSpot = false;
+						std::vector<std::pair<int, int>> goodspots;
+						for ( int iy = std::max(1, ty - dist); !forceSpot && iy <= std::min(ty + dist, static_cast<int>(map.height) - 1); ++iy )
+						{
+							for ( int ix = std::max(1, tx - dist); !forceSpot && ix <= std::min(tx + dist, static_cast<int>(map.width) - 1); ++ix )
+							{
+								if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, parent, NULL) )
+								{
+									real_t tmpx = parent->x;
+									real_t tmpy = parent->y;
+									parent->x = (ix << 4) + 8;
+									parent->y = (iy << 4) + 8;
+									if ( !entityInsideSomething(parent) )
+									{
+										if ( ix == tx && iy == ty )
+										{
+											forceSpot = true; // directly ontop
+											goodspots.clear();
+										}
+										goodspots.push_back(std::make_pair(ix, iy));
+									}
+									// restore coordinates.
+									parent->x = tmpx;
+									parent->y = tmpy;
+								}
+							}
+						}
+
+						if ( !goodspots.empty() )
+						{
+							auto picked = goodspots.at(goodspots.size() - 1);
+							bool teleported = false;
+							createParticleErupt(parent, my->particleTimerEndSprite);
+							serverSpawnMiscParticles(parent, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
+							teleported = parent->teleport(picked.first, picked.second);
+							if ( teleported )
+							{
+								createParticleErupt(parent, my->particleTimerEndSprite);
+								// teleport success.
+								if ( multiplayer == SERVER )
+								{
+									serverSpawnMiscParticles(parent, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
+								}
+							}
+						}
+					}
+
 				}
 			}
 		}

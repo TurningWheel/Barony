@@ -1320,6 +1320,9 @@
         },
         "spell_crab_web": {
             "name": "Spray Web"
+		},
+		"spell_ghost_bolt": {
+			"name": "Ghostbolt"
 		}
     }
 }

@@ -308,6 +308,7 @@ void TimerExperiments::updateEntityInterpolationPosition(Entity* entity)
 		|| entity->behavior == &actHudArrowModel
 		|| entity->behavior == &actLeftHandMagic
 		|| entity->behavior == &actRightHandMagic
+		|| entity->behavior == &actCircuit
 		|| entity->behavior == &actDoor )
 	{
 		entity->bUseRenderInterpolation = false;
@@ -3046,7 +3047,8 @@ void gameLogic(void)
 									if ( ticks - entity->lastupdate <= TICKS_PER_SECOND / 16 )
 									{
 										// interpolate to new position
-										if ( entity->behavior != &actPlayerLimb || entity->skill[2] != clientnum )
+										if ( (entity->behavior != &actPlayerLimb && entity->behavior != &actDeathGhostLimb)
+											|| entity->skill[2] != clientnum )
 										{
 											double ox = 0, oy = 0, onewx = 0, onewy = 0;
 

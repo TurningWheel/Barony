@@ -74,6 +74,7 @@ spellElement_t spellElement_salvageItem;
 spellElement_t spellElement_flutter;
 spellElement_t spellElement_dash;
 spellElement_t spellElement_selfPolymorph;
+spellElement_t spellElement_ghostBolt;
 
 spell_t spell_forcebolt;
 spell_t spell_magicmissile;
@@ -128,6 +129,7 @@ spell_t spell_salvageItem;
 spell_t spell_flutter;
 spell_t spell_dash;
 spell_t spell_polymorph;
+spell_t spell_ghost_bolt;
 
 bool addSpell(int spell, int player, bool ignoreSkill)
 {
@@ -304,6 +306,9 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 		    break;
 		case SPELL_CRAB_WEB:
 			new_spell = copySpell(&spell_sprayWeb);
+			break;
+		case SPELL_GHOST_BOLT:
+			new_spell = copySpell(&spell_ghost_bolt);
 			break;
 		default:
 			return false;
@@ -852,6 +857,9 @@ spell_t* getSpellFromID(int ID)
 		case SPELL_CRAB_WEB:
 			spell = &spell_sprayWeb;
 			break;
+		case SPELL_GHOST_BOLT:
+			spell = &spell_ghost_bolt;
+			break;
 		default:
 			break;
 	}
@@ -1025,6 +1033,9 @@ int getSpellbookFromSpellID(int spellID)
 			break;
 		case SPELL_CRAB_WEB:
 			itemType = SPELLBOOK_10;
+			break;
+		case SPELL_GHOST_BOLT:
+			itemType = SPELLBOOK_9;
 			break;
 		default:
 			break;

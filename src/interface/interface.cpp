@@ -24409,6 +24409,11 @@ bool CalloutRadialMenu::createParticleCallout(Entity* entity, CalloutRadialMenu:
 		}
 	}
 
+	if ( players[getPlayer()]->ghost.isActive() )
+	{
+		players[getPlayer()]->ghost.createBounceAnimate();
+	}
+
 	return callout.doMessage;
 }
 bool CalloutRadialMenu::createParticleCallout(real_t x, real_t y, real_t z, Uint32 uid, CalloutRadialMenu::CalloutCommand _cmd)
@@ -24520,6 +24525,11 @@ bool CalloutRadialMenu::createParticleCallout(real_t x, real_t y, real_t z, Uint
 			net_packet->address.port = net_clients[i - 1].port;
 			sendPacketSafe(net_sock, -1, net_packet, i - 1);
 		}
+	}
+
+	if ( players[getPlayer()]->ghost.isActive() )
+	{
+		players[getPlayer()]->ghost.createBounceAnimate();
 	}
 
 	return callout.doMessage;

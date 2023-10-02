@@ -877,7 +877,7 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 			{
 				light /= 2; // halve for sneaking
 			}
-			light -= (light - TOUCHRANGE) * (1.0 * (myStats.PROFICIENCIES[PRO_STEALTH] / 100.0)); // reduce to 32 as sneak approaches 100
+			light -= (std::max(0, light - TOUCHRANGE)) * (1.0 * (myStats.PROFICIENCIES[PRO_STEALTH] / 100.0)); // reduce to 32 as sneak approaches 100
 			Stat* observerStats = observer->getStats();
 			if ( observerStats && observerStats->EFFECTS[EFF_BLIND] )
 			{
@@ -901,7 +901,7 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 			{
 				light /= 2; // halve for sneaking
 			}
-			light -= (light - TOUCHRANGE) * (1.0 * (myStats.PROFICIENCIES[PRO_STEALTH] / 100.0)); // reduce to 32 as sneak approaches 100
+			light -= (std::max(0, light - TOUCHRANGE)) * (1.0 * (myStats.PROFICIENCIES[PRO_STEALTH] / 100.0)); // reduce to 32 as sneak approaches 100
 		}
 	}
 	
@@ -10485,14 +10485,22 @@ bool Entity::teleport(int tele_x, int tele_y)
 		}
 	}
 
-	if ( strstr(map.name, "Minotaur") || checkObstacle((tele_x << 4) + 8, (tele_y << 4) + 8, this, NULL) )
+	if ( (strstr(map.name, "Minotaur") && behavior != &actDeathGhost) 
+		|| checkObstacle((tele_x << 4) + 8, (tele_y << 4) + 8, this, NULL) )
 	{
 		messagePlayer(player, MESSAGE_HINT, Language::get(707));
 		return false;
 	}
 
 	// play sound effect
-	playSoundEntity(this, 77, 64);
+	if ( behavior == &actDeathGhost )
+	{
+		playSoundEntity(this, 630 + local_rng.rand() % 3, 128);
+	}
+	else
+	{
+		playSoundEntity(this, 77, 64);
+	}
     spawnPoof(x, y, 0, 1.0, true);
 
 	// relocate entity
@@ -10542,7 +10550,14 @@ bool Entity::teleport(int tele_x, int tele_y)
 	}
 
 	// play second sound effect
-	playSoundEntity(this, 77, 64);
+	if ( behavior == &actDeathGhost )
+	{
+		playSoundEntity(this, 630 + local_rng.rand() % 3, 128);
+	}
+	else
+	{
+		playSoundEntity(this, 77, 64);
+	}
     const float poofx = x + cosf(yaw) * 4.f;
     const float poofy = y + sinf(yaw) * 4.f;
     spawnPoof(poofx, poofy, 0, 1.0, true);
@@ -10815,7 +10830,15 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 						y = (iy << 4) + 8;
 						if ( !entityInsideSomething(this) )
 						{
-							bool onTrap = teleportCoordHasTrap(ix, iy);
+							bool onTrap = true;
+							if ( behavior == &actDeathGhost )
+							{
+								onTrap = false;
+							}
+							else
+							{
+								onTrap = teleportCoordHasTrap(ix, iy);
+							}
 							if ( !onTrap )
 							{
 								forceSpot = true;
@@ -10845,7 +10868,14 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 						y = (iy << 4) + 8;
 						if ( !entityInsideSomething(this) )
 						{
-							goodspots.push_back(Coord_t(ix, iy, teleportCoordHasTrap(ix, iy)));
+							if ( behavior == &actDeathGhost )
+							{
+								goodspots.push_back(Coord_t(ix, iy, false));
+							}
+							else
+							{
+								goodspots.push_back(Coord_t(ix, iy, teleportCoordHasTrap(ix, iy)));
+							}
 							numlocations++;
 						}
 						// restore coordinates.
@@ -10932,7 +10962,7 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 			ty = coord.y;
 		}
 	}
-	if ( behavior == &actPlayer )
+	if ( behavior == &actPlayer || behavior == &actDeathGhost )
 	{
 		// pretend player has teleported, get the angle needed.
 		real_t tmpx = x;
