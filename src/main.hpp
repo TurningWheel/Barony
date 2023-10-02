@@ -928,6 +928,7 @@ void finishStackTraceUnique();
 extern bool ENABLE_STACK_TRACES;
 
 time_t getTime();
+void getTimeAndDate(time_t t, int* year, int* month, int* day, int* hour, int* min, int* second);
 char* getTimeFormatted(time_t t, char* buf, size_t size);
 char* getTimeAndDateFormatted(time_t t, char* buf, size_t size);
 

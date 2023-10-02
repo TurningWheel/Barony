@@ -6984,7 +6984,7 @@ Complexity:#
 5434 Enter a name for Player %d#
 5435 View Game Settings#
 5436 *** Press [LB] to suggest a class for your party ***#
-5437 *** Press [ZL] to suggest a class for your party ***#
+5437 *** Press [L] to suggest a class for your party ***#
 5438 *** Press [L1] to suggest a class for your party ***#
 5439 *** Press [L1] to suggest a class for your party ***#
 5440 Ready#
@@ -7440,7 +7440,7 @@ has been lost.#
 to complete the test!#
 5832 You will be revived if your
 party makes it to the next level.#
-5833 You placed at %d
+5833 You placed at position (%d)
 in local highscores!#
 5834 You failed to place
 in local highscores.#
@@ -7725,5 +7725,110 @@ Upload#
 6021 Preloading improves playback performance, but increases system memory usage. (Applied next game launch)#
 6044 Show Player Callouts#
 6045 Push item#
+
+6022 Holiday Themes#
+6023 Festive Content#
+6024 Toggle holiday themed content on or off as desired. Bah, humbug!#
+6025 Credits#
+6026 Display#
+6027 View credits for holiday content.#
+6028 Next
+Page#
+6029 Close#
+
+# Scarony Barony Credits:
+
+6030 caves00 - Among Us by Myuu
+caves01 - Fatal Shrine by Myuu
+caves02 - Tormented Souls by Myuu
+citadel00 - Evil Returns by Myuu
+citadel01 - Friday the 13th by Myuu
+citadel02 - October 31st by Myuu#
+
+6031 endgame - The Order's Theme by Myuu
+herxboss - Soul Rail by Myuu
+intermission - Echo by Myuu
+intro - Ghost Town by Myuu
+intro01 - Countdown by Myuu
+intro02 - Untold Secrets by Myuu#
+
+6032 labyrinth00 - Final Showdown by Myuu
+labyrinth01 - Living in the Dark by Myuu
+labyrinth02 - Silent Turmoil by Myuu
+library - Countdown by Myuu
+mines00 - Look Out by Myuu
+mines01 - Haunted House by Myuu#
+
+6033 mines02 - Nebula by Myuu
+mines03 - Strange Vision by Myuu
+mines04 - The Crypt by Myuu
+minetown - Haunted By Screams by Myuu
+minotaur00 - Run! by Myuu
+minotaur01 - Cornered by Myuu#
+
+6034 ruins00 - You're Next by Myuu
+ruins01 - Into the Depths by Myuu
+ruins02 - The Backrooms by Myuu
+sanctum - Metamorphosis by Myuu
+shop - Carnival Freaks by Myuu
+swamp00 - Poltergeist by Myuu#
+
+6035 swamp01 - Abyss by Myuu
+swamp02 - Danger by Myuu
+swamp03 - Growing Shadows
+temple - Extinction by Myuu#
+
+# Merry Barony credits:
+
+6036 caves00 - Sleigh Bells by Myuu
+caves01 - Deck the Halls by Myuu
+caves02 - Snow Wonders by Myuu
+citadel00 - Jingle Bells by Myuu
+citadel01 - Underneath the Christmas Tree by Myuu
+citadel02 - God Rest Ye Merry Gentlemen by Myuu#
+
+6037 endgame - Disintegrating by Myuu
+escape - Deck the Halls by Myuu
+hell00 - Deck the Halls by Myuu
+hell01 - Santa's Tricks by Myuu
+hell02 - Winter Trouble by Myuu
+herxboss - Krampus is Here by Myuu#
+
+6038 intermission - Disintegrating by Myuu
+introduction - Disintegrating by Myuu
+labyrinth00 - Ice Land (Part 1) by Myuu
+labyrinth01 - Holiday Macabre by Myuu
+labyrinth02 - Disintegrating by Myuu
+library - Santa's Tricks by Myuu#
+
+6039 mines00 - Sleigh Bells by Myuu
+mines01 - God Rest Ye Merry Gentlemen by Myuu
+mines02 - Silent Night by Myuu
+mines03 - Carol of the Bells by Myuu
+mines04 - Angels We Have Heard on High by Myuu
+minetown - Underneath the Christmas Tree by Myuu#
+
+6040 minotaur00 - Krampus is Here by Myuu
+minotaur01 - Deck the Halls by Myuu
+ruins00 - Ice Land (Part 2) by Myuu
+ruins01 - Winter Trouble by Myuu
+ruins02 - Snow Wonders by Myuu
+sanctum - Krampus is Here by Myuu#
+
+6041 shop - Sleigh Bells by Myuu
+swamp00 - Jingle Bells by Myuu
+swamp01 - Rudolph the Red Nosed Reindeer by Myuu
+swamp02 - Dance of the Sugar Plum Fairy by Myuu
+swamp03 - What Child is This by Myuu
+temple - Santa's Tricks by Myuu#
+
+6042 underworld00 - Ice Land (Part 1) by Myuu
+underworld01 - Deck the Halls by Myuu
+underworld02 - Winter Trouble by Myuu
+intro - God Rest Ye Merry Gentlemen by NaturesEye#
+
+6043 No holiday currently active.#
+
+6044 Show Player Callouts#
 
 6100 end#

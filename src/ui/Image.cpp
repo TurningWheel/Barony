@@ -23,14 +23,6 @@ Image::Image(const char* _name) {
 		}
 	} while (1);
 
-#ifdef NINTENDO
-	std::string path;
-	if (memcmp(clippedName, "rom:", 4) && memcmp(clippedName, "save:", 5)) {
-		path = std::string("rom:/") + clippedName;
-	} else {
-		path = clippedName;
-	}
-#else
 	std::string path = clippedName;
     if ( PHYSFS_getRealDir(clippedName) != nullptr )
     {
@@ -41,7 +33,6 @@ Image::Image(const char* _name) {
             path.insert(0, baseDir);
         }
     }
-#endif
 	printlog("loading image '%s'...", path.c_str());
 	if ((surf = IMG_Load(path.c_str())) == NULL) {
 		printlog("failed to load image '%s'", path.c_str());

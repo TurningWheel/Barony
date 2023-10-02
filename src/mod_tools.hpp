@@ -3247,7 +3247,6 @@ struct Mods
 	static bool disableSteamAchievements;
 	static bool lobbyDisableSteamAchievements;
 	static bool isLoading;
-	static Uint32 loadingTicks;
 #ifdef STEAMWORKS
 	static std::vector<SteamUGCDetails_t*> workshopSubscribedItemList;
 	static std::vector<std::pair<std::string, uint64>> workshopLoadedFileIDMap;
@@ -3276,7 +3275,7 @@ struct Mods
 	static bool clearAllMountedPaths();
 	static bool removePathFromMountedFiles(std::string findStr);
 	static bool isPathInMountedFiles(std::string findStr);
-	static void unloadMods();
+	static void unloadMods(bool force = false);
 	static void loadMods();
 	static void loadModels(int start, int end);
 	static void verifyAchievements(const char* fullpath, bool ignoreBaseFolder);

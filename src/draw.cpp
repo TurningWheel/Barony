@@ -16,7 +16,7 @@
 #include "entity.hpp"
 #include "player.hpp"
 #include "ui/Frame.hpp"
-#ifndef NINTENDO
+#ifdef EDITOR
 #include "editor.hpp"
 #endif
 #include "items.hpp"
@@ -2349,7 +2349,7 @@ void drawEntities2D(long camx, long camy)
 	// draw hover text for entities over the top of sprites.
 	for ( node = map.entities->first;
 		  node != nullptr
-#ifndef NINTENDO
+#ifdef EDITOR
 			&& (openwindow == 0
 			&& savewindow == 0)
 #endif
@@ -2770,7 +2770,7 @@ void drawEntities2D(long camx, long camy)
 				else if ( (omousex / TEXTURESIZE) * 32 == pos.x
 						&& (omousey / TEXTURESIZE) * 32 == pos.y
 						&& selectedEntity[0] == NULL
-#ifndef NINTENDO
+#ifdef EDITOR
 						&& hovertext
 #endif
 						)

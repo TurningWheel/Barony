@@ -34,6 +34,51 @@
 #include "editor.hpp"
 #endif
 
+char datadir[PATH_MAX];
+char outputdir[PATH_MAX];
+const char* holidayThemeDirs[HolidayTheme::THEME_MAX] = {
+    "",
+    "themes/scarony/",
+    "themes/merry/"
+};
+
+#ifndef EDITOR
+ConsoleVariable<int> cvar_forceHoliday("/force_holiday", 0);
+ConsoleVariable<bool> cvar_disableHoliday("/disable_holiday", false);
+#endif
+
+HolidayTheme getCurrentHoliday(bool force) {
+#ifndef EDITOR
+    if (*cvar_disableHoliday && !force) {
+        return HolidayTheme::THEME_NONE;
+    }
+    if (*cvar_forceHoliday) {
+        const int holiday = std::clamp(*cvar_forceHoliday, 0, (int)HolidayTheme::THEME_MAX - 1);
+        return static_cast<HolidayTheme>(holiday);
+    }
+#endif
+    static bool gotTime = false;
+    static int year, month, day;
+    if (!gotTime) {
+        gotTime = true;
+        getTimeAndDate(getTime(), &year, &month, &day,
+            nullptr, nullptr, nullptr);
+    }
+    if (month == 10 || (month == 11 && day == 1)) {
+        return HolidayTheme::THEME_HALLOWEEN;
+    }
+    else if (month == 12 || (month == 1 && day == 1)) {
+        return HolidayTheme::THEME_XMAS;
+    }
+    else {
+        return HolidayTheme::THEME_NONE;
+    }
+}
+
+bool isCurrentHoliday(bool force) {
+    return getCurrentHoliday(force) != HolidayTheme::THEME_NONE;
+}
+
 std::unordered_map<std::string, int> mapHashes = {
     { "boss.lmp", 2376307 },
     { "bramscastle.lmp", 3370696 },
@@ -1365,12 +1410,14 @@ bool completePath(char *dest, const char * const filename, const char *base) {
 
 	// Already absolute
 	if (filename[0] == '/') {
-		strncpy(dest, filename, PATH_MAX);
+		strcpy(dest, filename);
 		return true;
 	}
+
 #ifdef NINTENDO
+	// Already absolute on nintendo
 	if (strncmp(filename, base, strlen(base)) == 0) {
-		strncpy(dest, filename, PATH_MAX);
+		strcpy(dest, filename);
 		return true;
 	}
 #endif
@@ -1383,7 +1430,17 @@ bool completePath(char *dest, const char * const filename, const char *base) {
 	}
 #endif
 
-	snprintf(dest, PATH_MAX, "%s/%s", base, filename);
+    if (base == datadir && isCurrentHoliday()) {
+        const auto holiday = getCurrentHoliday();
+        const auto holiday_dir = holidayThemeDirs[holiday];
+        assert(holiday_dir[0]);
+        snprintf(dest, PATH_MAX, "%s/%s%s", base, holiday_dir, filename);
+        if (!dataPathExists(dest, false)) {
+            snprintf(dest, PATH_MAX, "%s/%s", base, filename);
+        }
+    } else {
+        snprintf(dest, PATH_MAX, "%s/%s", base, filename);
+    }
 	return true;
 }
 
@@ -1409,11 +1466,8 @@ DIR* openDataDir(const char * const name) {
 
 
 bool dataPathExists(const char * const path, bool complete) {
-#ifdef NINTENDO
-	return true;
-#endif
     if (complete) {
-	    char full_path[PATH_MAX];
+		char full_path[PATH_MAX];
 	    completePath(full_path, path);
 	    return access(full_path, F_OK) != -1;
     } else {
@@ -2962,7 +3016,7 @@ bool physfsSearchModelsToUpdate()
 	return false;
 }
 
-bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
+bool physfsModelIndexUpdate(int &start, int &end)
 {
 	if ( !PHYSFS_getRealDir("models/models.txt") )
 	{
@@ -2970,128 +3024,99 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 		return false;
 	}
 	
-	std::atomic_bool loading_done{ false };
-	auto loading_task = std::async(std::launch::async, [&loading_done, &start, &end]() {
-		std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
-		modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
 
-		File* fp = openDataFile(modelsDirectory.c_str(), "rb");
-		if ( !fp )
-		{
-			loading_done = true;
-			return 0;
-		}
-		char modelName[PATH_MAX];
-		int startnum = 0;
-		int endnum = nummodels;
-		for ( int c = 0; !fp->eof(); c++ )
-		{
-			fp->gets2(modelName, PATH_MAX);
-			bool modelHasBeenModified = false;
-			// has this model index been modified?
-			std::vector<int>::iterator it = Mods::modelsListModifiedIndexes.end();
-			if ( !Mods::modelsListModifiedIndexes.empty() )
-			{
-				it = std::find(Mods::modelsListModifiedIndexes.begin(),
-					Mods::modelsListModifiedIndexes.end(), c);
-				if ( it != Mods::modelsListModifiedIndexes.end() )
-				{
-					modelHasBeenModified = true; // found the model in the vector.
-				}
-			}
-
-			if ( !PHYSFS_getRealDir(modelName) )
-			{
-				printlog("error: could not find file: %s", modelName);
-				continue;
-			}
-			std::string modelPath = PHYSFS_getRealDir(modelName);
-			if ( modelHasBeenModified || modelPath.compare("./") != 0 )
-			{
-				if ( !modelHasBeenModified )
-				{
-					// add this model index to say we've modified it as the base dir is not default.
-					Mods::modelsListModifiedIndexes.push_back(c);
-				}
-				else
-				{
-					if ( modelPath.compare("./") == 0 )
-					{
-						// model returned to base directory, remove from the modified index list.
-						Mods::modelsListModifiedIndexes.erase(it);
-					}
-				}
-
-				if ( c < nummodels )
-				{
-					if ( models[c] != NULL )
-					{
-						if ( models[c]->data )
-						{
-							free(models[c]->data);
-						}
-						free(models[c]);
-					}
-				}
-				else
-				{
-					printlog("[PhysFS]: WARNING: Loading a new model: %d outside normal nummodels: %d range - Need special handling case to free model after use", c, nummodels);
-				}
-				models[c] = loadVoxel(modelName);
-
-				// this index is not found in the normal models folder.
-				// store the lowest found model number inside startnum.
-				if ( startnum == 0 || c < startnum )
-				{
-					startnum = c;
-				}
-
-				// store the higher end model num in endnum.
-				if ( endnum == nummodels )
-				{
-					endnum = c + 1;
-				}
-				else if ( c + 1 > endnum )
-				{
-					endnum = c + 1;
-				}
-			}
-		}
-		if ( startnum == endnum )
-		{
-			endnum = std::min(static_cast<int>(nummodels), endnum + 1); // if both indices are the same, then models won't load.
-		}
-		printlog("[PhysFS]: Models file not in default directory... reloading models from index %d to %d\n", startnum, endnum);
-		start = startnum;
-		end = endnum;
-
-		FileIO::close(fp);
-		loading_done = true;
-		return 0;
-	});
-	while ( !loading_done )
+	File* fp = openDataFile(modelsDirectory.c_str(), "rb");
+	if ( !fp )
 	{
-		doLoadingScreen();
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		return false;
 	}
+	char modelName[PATH_MAX];
+	int startnum = 0;
+	int endnum = nummodels;
+	for ( int c = 0; !fp->eof(); c++ )
+	{
+		fp->gets2(modelName, PATH_MAX);
+		bool modelHasBeenModified = false;
+		// has this model index been modified?
+		std::vector<int>::iterator it = Mods::modelsListModifiedIndexes.end();
+		if ( !Mods::modelsListModifiedIndexes.empty() )
+		{
+			it = std::find(Mods::modelsListModifiedIndexes.begin(),
+				Mods::modelsListModifiedIndexes.end(), c);
+			if ( it != Mods::modelsListModifiedIndexes.end() )
+			{
+				modelHasBeenModified = true; // found the model in the vector.
+			}
+		}
 
-	// now free polymodels as we'll be loading them up later.
-	if ( freePreviousModels ) {
-		for (int c = start; c < end && c < nummodels; ++c) {
-			if ( polymodels[c].faces ) {
-				free(polymodels[c].faces);
+		if ( !PHYSFS_getRealDir(modelName) )
+		{
+			printlog("error: could not find file: %s", modelName);
+			continue;
+		}
+		std::string modelPath = PHYSFS_getRealDir(modelName);
+		if ( modelHasBeenModified || modelPath.compare("./") != 0 )
+		{
+			if ( !modelHasBeenModified )
+			{
+				// add this model index to say we've modified it as the base dir is not default.
+				Mods::modelsListModifiedIndexes.push_back(c);
 			}
-            if ( polymodels[c].vao ) {
-                GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
-            }
-			if ( polymodels[c].vbo ) {
-                GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
+			else
+			{
+				if ( modelPath.compare("./") == 0 )
+				{
+					// model returned to base directory, remove from the modified index list.
+					Mods::modelsListModifiedIndexes.erase(it);
+				}
 			}
-			if ( polymodels[c].colors ) {
-                GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
+
+			if ( c < nummodels )
+			{
+				if ( models[c] != NULL )
+				{
+					if ( models[c]->data )
+					{
+						free(models[c]->data);
+					}
+					free(models[c]);
+				}
+			}
+			else
+			{
+				printlog("[PhysFS]: WARNING: Loading a new model: %d outside normal nummodels: %d range - Need special handling case to free model after use", c, nummodels);
+			}
+			models[c] = loadVoxel(modelName);
+
+			// this index is not found in the normal models folder.
+			// store the lowest found model number inside startnum.
+			if ( startnum == 0 || c < startnum )
+			{
+				startnum = c;
+			}
+
+			// store the higher end model num in endnum.
+			if ( endnum == nummodels )
+			{
+				endnum = c + 1;
+			}
+			else if ( c + 1 > endnum )
+			{
+				endnum = c + 1;
 			}
 		}
 	}
+	if ( startnum == endnum )
+	{
+		endnum = std::min(static_cast<int>(nummodels), endnum + 1); // if both indices are the same, then models won't load.
+	}
+	printlog("[PhysFS]: Models file not in default directory... reloading models from index %d to %d\n", startnum, endnum);
+	start = startnum;
+	end = endnum;
+
+	FileIO::close(fp);
 	return true;
 }
 
@@ -3104,33 +3129,47 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 
 -------------------------------------------------------------------------------*/
 
+void saveModelCache() {
+	File* model_cache;
+	const std::string cache_path = std::string(outputdir) + "/models.cache";
+	if (model_cache = openDataFile(cache_path.c_str(), "wb")) {
+		char modelCacheHeader[32] = "BARONY";
+		strcat(modelCacheHeader, VERSION);
+		model_cache->write(&modelCacheHeader, sizeof(char), strlen(modelCacheHeader));
+		for (size_t model_index = 0; model_index < nummodels; model_index++) {
+			polymodel_t* cur = &polymodels[model_index];
+			model_cache->write(&cur->numfaces, sizeof(cur->numfaces), 1);
+			model_cache->write(cur->faces, sizeof(polytriangle_t), cur->numfaces);
+		}
+		FileIO::close(model_cache);
+	}
+}
+
+#ifndef EDITOR
+#include "interface/consolecommand.hpp"
+static ConsoleCommand ccmd_writeModelCache("/write_model_cache", "",
+	[](int argc, const char** argv){
+	saveModelCache();
+	});
+#endif
+
 void generatePolyModels(int start, int end, bool forceCacheRebuild)
 {
-	Sint32 x, y, z;
-	Sint32 c, i;
-	Uint32 index, indexdown[3];
-	Uint8 newcolor, oldcolor;
-	bool buildingquad;
-	polyquad_t* quad1, * quad2;
-	Uint32 numquads;
-	list_t quads;
-	File* model_cache;
-	bool generateAll = start == 0 && end == nummodels;
-
-	quads.first = NULL;
-	quads.last = NULL;
+	const bool generateAll = start == 0 && end == nummodels;
+    constexpr auto LARGEST_POLYMODEL_FACES_ALLOWED = (1<<15); // 32768
 
 	if ( generateAll )
 	{
 		polymodels = (polymodel_t*)malloc(sizeof(polymodel_t) * nummodels);
-		if ( useModelCache )
+        memset(polymodels, 0, sizeof(polymodel_t) * nummodels);
+		if ( useModelCache && !forceCacheRebuild )
 		{
 #ifndef NINTENDO
 			std::string cache_path = std::string(outputdir) + "/models.cache";
 #else
 			std::string cache_path = "models.cache";
 #endif
-			model_cache = openDataFile(cache_path.c_str(), "rb");
+			auto model_cache = openDataFile(cache_path.c_str(), "rb");
 			if ( model_cache )
 			{
 				printlog("loading model cache...\n");
@@ -3146,52 +3185,69 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 					if ( strncmp(polymodelsVersionStr, VERSION, strlen(VERSION)) )
 					{
 						// different version.
-						forceCacheRebuild = true;
 						printlog("[MODEL CACHE]: Detected outdated version number %s - current is %s. Upgrading cache...", polymodelsVersionStr, VERSION);
+                        FileIO::close(model_cache);
+                        goto generate;
 					}
 				}
 				else
 				{
 					printlog("[MODEL CACHE]: Detected legacy cache without embedded version data, upgrading cache to %s...", VERSION);
-					model_cache->rewind();
-					forceCacheRebuild = true; // upgrade from legacy cache
-				}
-				if ( !forceCacheRebuild )
-				{
-					for ( size_t model_index = 0; model_index < nummodels; model_index++ ) {
-						if ( !Mods::isLoading )
-						{
-							updateLoadingScreen(30 + ((real_t)model_index / nummodels) * 30.0);
-						}
-						polymodel_t* cur = &polymodels[model_index];
-						model_cache->read(&cur->numfaces, sizeof(cur->numfaces), 1);
-						cur->faces = (polytriangle_t*)calloc(sizeof(polytriangle_t), cur->numfaces);
-						model_cache->read(polymodels[model_index].faces, sizeof(polytriangle_t), cur->numfaces);
-					}
 					FileIO::close(model_cache);
-					return;
+					goto generate;
 				}
-				else
-				{
-					printlog("failed to load model cache");
-					FileIO::close(model_cache);
-				}
+                
+                for ( size_t model_index = 0; model_index < nummodels; model_index++ ) {
+                    updateLoadingScreen(30 + ((real_t)model_index / nummodels) * 30.0);
+                    polymodel_t* cur = &polymodels[model_index];
+  
+                    size_t readsize;
+                    readsize = model_cache->read(&cur->numfaces, sizeof(cur->numfaces), 1);
+                    if (readsize == 1) {
+                        readsize = 0;
+                        if (cur->numfaces && cur->numfaces <= LARGEST_POLYMODEL_FACES_ALLOWED) {
+                            cur->faces = (polytriangle_t*)calloc(sizeof(polytriangle_t), cur->numfaces);
+                            if (cur->faces) {
+                                readsize = model_cache->read(polymodels[model_index].faces, sizeof(polytriangle_t), cur->numfaces);
+                            }
+                        }
+                        if (!readsize || readsize != cur->numfaces) {
+                            printlog("[MODEL CACHE]: Error loading model cache, rebuilding...");
+                            FileIO::close(model_cache);
+                            goto generate;
+                        }
+                    } else {
+                        printlog("[MODEL CACHE]: Error loading model cache, rebuilding...");
+                        FileIO::close(model_cache);
+                        goto generate;
+                    }
+                }
+                
+                printlog("successfully loaded model cache.\n");
+                FileIO::close(model_cache);
+                return;
 			}
 		}
 	}
 
 	printlog("generating poly models...\n");
+ 
+ generate:
+
+	Sint32 x, y, z;
+	Sint32 c, i;
+	Uint32 index, indexdown[3];
+	Uint8 newcolor, oldcolor;
+	bool buildingquad;
+	polyquad_t* quad1, * quad2;
+	Uint32 numquads;
+	list_t quads;
+	quads.first = NULL;
+	quads.last = NULL;
 
 	for ( c = start; c < end; ++c )
 	{
-		if ( !Mods::isLoading )
-		{
-			updateLoadingScreen(30 + ((real_t)(c - start) / (end - start)) * 30.0);
-		}
-		else
-		{
-			doLoadingScreen();
-		}
+		updateLoadingScreen(30 + ((real_t)(c - start) / (end - start)) * 30.0);
 		numquads = 0;
 		polymodels[c].numfaces = 0;
 		voxel_t* model = models[c];
@@ -4078,6 +4134,9 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		}
 
 		// translate quads into triangles
+        if (polymodels[c].faces) {
+            free(polymodels[c].faces);
+        }
 		polymodels[c].faces = (polytriangle_t*)malloc(sizeof(polytriangle_t) * polymodels[c].numfaces);
 		for ( uint64_t i = 0; i < polymodels[c].numfaces; i++ )
 		{
@@ -4104,21 +4163,16 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		list_FreeAll(&quads);
 	}
 #ifndef NINTENDO
-	std::string cache_path = std::string(outputdir) + "/models.cache";
-	if ( useModelCache && (model_cache = openDataFile(cache_path.c_str(), "wb")) )
-	{
-		char modelCacheHeader[32] = "BARONY";
-		strcat(modelCacheHeader, VERSION);
-		model_cache->write(&modelCacheHeader, sizeof(char), strlen(modelCacheHeader));
-		for ( size_t model_index = 0; model_index < nummodels; model_index++ )
-		{
-			polymodel_t* cur = &polymodels[model_index];
-			model_cache->write(&cur->numfaces, sizeof(cur->numfaces), 1);
-			model_cache->write(cur->faces, sizeof(polytriangle_t), cur->numfaces);
-		}
-		FileIO::close(model_cache);
-	}
+    if (!isCurrentHoliday() && useModelCache) {
+		saveModelCache();
+    }
 #endif
+
+    uint64_t greatest = 0;
+    for (uint32_t c = 0; c < nummodels; ++c) {
+        greatest = std::max(greatest, polymodels[c].numfaces);
+    }
+    printlog("greatest number of faces on any model: %lld", greatest);
 }
 
 void reloadModels(int start, int end) {
@@ -4269,10 +4323,7 @@ void generateVBOs(int start, int end)
 #endif
 
 		const int current = (int)c - start;
-		if ( !Mods::isLoading )
-		{
-			updateLoadingScreen(80 + (10 * current) / count);
-		}
+		updateLoadingScreen(80 + (10 * current) / count);
 		doLoadingScreen();
 	}
 }
@@ -4409,10 +4460,9 @@ void physfsReloadSounds(bool reloadAll)
 					OPENAL_Sound_Release(sounds[c]);
 				}
 				OPENAL_CreateSound(soundFile.c_str(), true, &sounds[c]);
-#endif 
-				if ( Mods::isLoading )
-				{
-					doLoadingScreen();
+#endif
+				if (Mods::isLoading) {
+					updateLoadingScreen(20.f + (c / (float)numsounds) * 10.f);
 				}
 			}
 		}
@@ -4505,6 +4555,9 @@ void physfsReloadSprites(bool reloadAll) //TODO: NX PORT: Any changes needed her
 				}
 			}
 		}
+		if (Mods::isLoading) {
+			doLoadingScreen();
+		}
 	}
 	FileIO::close(fp);
 }
@@ -4554,6 +4607,9 @@ void physfsReloadTiles(bool reloadAll)
         } else {
             for ( int c = 0; !fp->eof(); c++ )
             {
+				if (Mods::isLoading) {
+					doLoadingScreen();
+				}
                 char name[PATH_MAX];
                 fp->gets2(name, PATH_MAX);
                 if ( PHYSFS_getRealDir(name) != NULL )
