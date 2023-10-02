@@ -21,3 +21,5 @@ void reloadModels(int start, int end);
 void generateTileTextures();
 void destroyTileTextures();
 void bindTextureAtlas(int index);
+bool mountBaseDataFolders();
+bool remountBaseDataFolders();

@@ -269,6 +269,22 @@ public:
 	}
 };
 
+enum HolidayTheme {
+    THEME_NONE,
+    THEME_HALLOWEEN,
+    THEME_XMAS,
+    THEME_MAX
+};
+extern const char* holidayThemeDirs[HolidayTheme::THEME_MAX];
+HolidayTheme getCurrentHoliday(bool force = false);
+bool isCurrentHoliday(bool force = false);
+
+#ifndef EDITOR
+#include "interface/consolecommand.hpp"
+extern ConsoleVariable<int> cvar_forceHoliday;
+extern ConsoleVariable<bool> cvar_disableHoliday;
+#endif
+
 extern char datadir[PATH_MAX]; //PATH_MAX as defined in main.hpp -- maybe define in Config.hpp?
 extern char outputdir[PATH_MAX];
 void glLoadTexture(SDL_Surface* image, int texnum);
@@ -291,7 +307,7 @@ int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap, int forcemap
 int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed, int *checkMapHash = nullptr);
 std::list<std::string> physfsGetFileNamesInDirectory(const char* dir);
 std::string physfsFormatMapName(char const * const levelfilename);
-bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels);
+bool physfsModelIndexUpdate(int &start, int &end);
 bool physfsSearchModelsToUpdate();
 bool physfsSearchSoundsToUpdate();
 void physfsReloadSounds(bool reloadAll);

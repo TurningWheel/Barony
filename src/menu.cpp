@@ -1910,7 +1910,7 @@ static void handleMainMenu(bool mode)
 						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, Language::get(2990));
 						GO_SwapBuffers(screen);
 
-						physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
+						physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd);
 						generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
 						generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
 						gamemods_modelsListLastStartedUnmodded = true;

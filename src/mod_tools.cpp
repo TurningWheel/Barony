@@ -7836,7 +7836,6 @@ bool Mods::customContentLoadedFirstTime = false;
 bool Mods::disableSteamAchievements = false;
 bool Mods::lobbyDisableSteamAchievements = false;
 bool Mods::isLoading = false;
-Uint32 Mods::loadingTicks = 0;
 void Mods::updateModCounts()
 {
 	mods_loaded_local.clear();
@@ -8144,8 +8143,15 @@ bool Mods::clearAllMountedPaths()
 	char** i;
 	for ( i = PHYSFS_getSearchPath(); *i != NULL; i++ )
 	{
+        const std::string xmas = (std::string(datadir) + "/") + holidayThemeDirs[HolidayTheme::THEME_XMAS];
+        const std::string halloween = (std::string(datadir) + "/") + holidayThemeDirs[HolidayTheme::THEME_HALLOWEEN];
+    
 		std::string line = *i;
-		if ( line.compare(outputdir) != 0 && line.compare(datadir) != 0 && line.compare("./") != 0 ) // don't unmount the base ./ directory
+		if (line.compare(outputdir) != 0 &&
+            line.compare(datadir) != 0 &&
+            line.compare(halloween) != 0 &&
+            line.compare(xmas) != 0 &&
+            line.compare("./") != 0) // don't unmount the base directories
 		{
 			if ( PHYSFS_unmount(*i) == 0 )
 			{
@@ -8260,87 +8266,160 @@ void Mods::loadModels(int start, int end) {
 	generateVBOs(start, end);
 }
 
-void Mods::unloadMods()
+void Mods::unloadMods(bool force)
 {
 #ifndef EDITOR
 	isLoading = true;
-	loadingTicks = 0;
-
 	loading = true;
 	createLoadingScreen(5);
 	doLoadingScreen();
 
+	// start loading
 	mountedFilepathsSaved = mountedFilepaths;
 	clearAllMountedPaths();
 	mountedFilepaths.clear();
 	Mods::disableSteamAchievements = false;
-
+    if (force) {
+        modelsListModifiedIndexes.clear();
+        for (int c = 0; c < nummodels; ++c) {
+            modelsListModifiedIndexes.push_back(c);
+        }
+        for (int c = 0; c < numsounds; ++c) {
+            soundsListModifiedIndexes.push_back(c);
+        }
+        for (const auto& pair : systemResourceImages) {
+            Mods::systemResourceImagesToReload.push_back(pair);
+        }
+		Mods::tileListRequireReloadUnmodded = true;
+		Mods::modelsListRequiresReloadUnmodded = true;
+		Mods::spriteImagesRequireReloadUnmodded = true;
+		Mods::musicRequireReloadUnmodded = true;
+		Mods::langRequireReloadUnmodded = true;
+		Mods::monsterLimbsRequireReloadUnmodded = true;
+		Mods::systemImagesReloadUnmodded = true;
+    }
 	updateLoadingScreen(10);
 	doLoadingScreen();
 
-	if ( Mods::modelsListRequiresReloadUnmodded || !Mods::modelsListModifiedIndexes.empty() )
-	{
-		int modelsIndexUpdateStart = 1;
-		int modelsIndexUpdateEnd = nummodels;
-		physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
-		bool oldModelCache = useModelCache;
-		useModelCache = false;
-		//loadModels(modelsIndexUpdateStart, modelsIndexUpdateEnd);
-		generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
-		generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
-		useModelCache = oldModelCache;
-		Mods::modelsListRequiresReloadUnmodded = false;
-	}
-
-	Mods::modelsListModifiedIndexes.clear();
-
-	updateLoadingScreen(20);
-	doLoadingScreen();
-
-	if ( Mods::soundListRequiresReloadUnmodded || !Mods::soundsListModifiedIndexes.empty() )
-	{
-		physfsReloadSounds(true);
-		Mods::soundListRequiresReloadUnmodded = false;
-	}
-
-	Mods::soundsListModifiedIndexes.clear();
-
-	updateLoadingScreen(30);
-	doLoadingScreen();
-
-	if ( Mods::tileListRequireReloadUnmodded )
+	// update tiles
+	if (Mods::tileListRequireReloadUnmodded)
 	{
 		physfsReloadTiles(true);
 		Mods::tileListRequireReloadUnmodded = false;
 	}
-
-	updateLoadingScreen(40);
 	doLoadingScreen();
 
-	if ( Mods::spriteImagesRequireReloadUnmodded )
+	// reload sprites
+	if (Mods::spriteImagesRequireReloadUnmodded)
 	{
 		physfsReloadSprites(true);
 		Mods::spriteImagesRequireReloadUnmodded = false;
 	}
-
-	updateLoadingScreen(50);
 	doLoadingScreen();
 
-	if ( Mods::booksRequireReloadUnmodded )
+	// reload system images
+	if (Mods::systemImagesReloadUnmodded)
 	{
-		physfsReloadBooks();
-		Mods::booksRequireReloadUnmodded = false;
+		physfsReloadSystemImages();
+		Mods::systemImagesReloadUnmodded = false;
+		systemResourceImagesToReload.clear();
 	}
 
-	updateLoadingScreen(60);
+	updateLoadingScreen(20);
 	doLoadingScreen();
 
-	if ( Mods::musicRequireReloadUnmodded )
+	static int modelsIndexUpdateStart = 1;
+	static int modelsIndexUpdateEnd = nummodels;
+
+	// begin async load process
+	std::atomic_bool loading_done{ false };
+	auto loading_task = std::async(std::launch::async, [&loading_done]() {
+		initGameDatafilesAsync(true);
+
+		// update sounds
+		if (Mods::soundListRequiresReloadUnmodded || !Mods::soundsListModifiedIndexes.empty())
+		{
+			physfsReloadSounds(true);
+			Mods::soundListRequiresReloadUnmodded = false;
+		}
+		Mods::soundsListModifiedIndexes.clear();
+		updateLoadingScreen(30);
+
+		// update models
+		if (Mods::modelsListRequiresReloadUnmodded || !Mods::modelsListModifiedIndexes.empty())
+		{
+			physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+			for (int c = 0; c < nummodels; ++c) {
+				if (polymodels[c].faces) {
+					free(polymodels[c].faces);
+				}
+			}
+			generatePolyModels(0, nummodels, false);
+			Mods::modelsListRequiresReloadUnmodded = false;
+		}
+		Mods::modelsListModifiedIndexes.clear();
+		updateLoadingScreen(60);
+
+		// reload books
+		if (Mods::booksRequireReloadUnmodded)
+		{
+			physfsReloadBooks();
+			Mods::booksRequireReloadUnmodded = false;
+		}
+		updateLoadingScreen(70);
+
+		// reload lang file
+		if (Mods::langRequireReloadUnmodded)
+		{
+			Language::reset();
+			Language::reloadLanguage();
+			Mods::langRequireReloadUnmodded = false;
+		}
+
+		// reload monster limb offsets
+		if (Mods::monsterLimbsRequireReloadUnmodded)
+		{
+			physfsReloadMonsterLimbFiles();
+			Mods::monsterLimbsRequireReloadUnmodded = false;
+		}
+
+		// reload lights
+		loadLights();
+
+		updateLoadingScreen(80);
+
+		loading_done = true;
+		return 0;
+		});
+	while (!loading_done)
+	{
+		doLoadingScreen();
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+
+	// final loading steps
+	initGameDatafiles(true);
+	for (int c = 0; c < nummodels; ++c) {
+		if (polymodels[c].vao) {
+			GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
+		}
+		if (polymodels[c].vbo) {
+			GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
+		}
+		if (polymodels[c].colors) {
+			GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
+		}
+	}
+	generateVBOs(0, nummodels);
+	consoleCommand("/dumpcache");
+
+	// reload music
+	if (Mods::musicRequireReloadUnmodded)
 	{
 		gamemodsUnloadCustomThemeMusic();
 		bool reloadIntroMusic = false;
 		physfsReloadMusic(reloadIntroMusic, true);
-		if ( reloadIntroMusic )
+		if (reloadIntroMusic)
 		{
 #ifdef SOUND
 			playMusic(intromusic[local_rng.rand() % (NUMINTROMUSIC - 1)], false, true, true);
@@ -8348,66 +8427,6 @@ void Mods::unloadMods()
 		}
 		Mods::musicRequireReloadUnmodded = false;
 	}
-
-	updateLoadingScreen(70);
-	doLoadingScreen();
-
-	if ( Mods::langRequireReloadUnmodded )
-	{
-		Language::reset();
-		Language::reloadLanguage();
-		Mods::langRequireReloadUnmodded = false;
-	}
-
-	updateLoadingScreen(80);
-	doLoadingScreen();
-
-	if ( Mods::monsterLimbsRequireReloadUnmodded )
-	{
-		physfsReloadMonsterLimbFiles();
-		Mods::monsterLimbsRequireReloadUnmodded = false;
-	}
-
-	updateLoadingScreen(85);
-	doLoadingScreen();
-
-	if ( Mods::systemImagesReloadUnmodded )
-	{
-		physfsReloadSystemImages();
-		Mods::systemImagesReloadUnmodded = false;
-		systemResourceImagesToReload.clear();
-	}
-
-	updateLoadingScreen(90);
-	doLoadingScreen();
-
-	initGameDatafiles(true);
-
-	updateLoadingScreen(95);
-	doLoadingScreen();
-
-	std::atomic_bool loading_done{ false };
-	auto loading_task = std::async(std::launch::async, [&loading_done]() {
-		initGameDatafilesAsync(true);
-	loading_done = true;
-	return 0;
-		});
-	while ( !loading_done )
-	{
-		doLoadingScreen();
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	}
-
-	loadLights();
-
-	consoleCommand("/dumpcache");
-
-	while ( loadingTicks < TICKS_PER_SECOND / 2 ) // artificial delay to look nicer if loading time is short
-	{
-		doLoadingScreen();
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	}
-
 	destroyLoadingScreen();
 	loading = false;
 	isLoading = false;
@@ -8420,7 +8439,6 @@ void Mods::loadMods()
 	Mods::disableSteamAchievements = false;
 	Mods::verifyAchievements(nullptr, false);
 
-	loadingTicks = 0;
 	isLoading = true;
 	loading = true;
 	createLoadingScreen(5);
@@ -8438,8 +8456,21 @@ void Mods::loadMods()
 		int modelsIndexUpdateEnd = nummodels;
 		bool oldModelCache = useModelCache;
 		useModelCache = false;
-		physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
-		//loadModels(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+		physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+		for (int c = modelsIndexUpdateStart; c < modelsIndexUpdateEnd && c < nummodels; ++c) {
+			if (polymodels[c].faces) {
+				free(polymodels[c].faces);
+			}
+			if (polymodels[c].vao) {
+				GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
+			}
+			if (polymodels[c].vbo) {
+				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
+			}
+			if (polymodels[c].colors) {
+				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
+			}
+		}
 		generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
 		generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
 		useModelCache = oldModelCache;
@@ -8601,12 +8632,6 @@ void Mods::loadMods()
 	loadLights();
 
 	consoleCommand("/dumpcache");
-
-	while ( loadingTicks < TICKS_PER_SECOND / 2 ) // artificial delay to look nicer if loading time is short
-	{
-		doLoadingScreen();
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	}
 
 	destroyLoadingScreen();
 

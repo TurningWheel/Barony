@@ -46,12 +46,6 @@ static Mesh triangle_mesh = {
     {
          1.f,  .0f,  0.f,
         -.5f,  .5f,  0.f,
-         0.f,  .0f,  0.f,
-         1.f,  .0f,  0.f,
-         0.f,  0.f,  0.f,
-        -.5f, -.5f,  0.f,
-         0.f,  0.f,  0.f,
-        -.5f,  .5f,  0.f,
         -.5f, -.5f,  0.f,
     }, // positions
     {
@@ -889,6 +883,9 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
                     
                     // draw
                     triangle_mesh.draw();
+                    
+                    // for outline:
+                    //triangle_mesh.draw(GL_LINE_LOOP);
 				};
 
 				const real_t size = entity->sprite == 239 ? 2.0 : 1.0;
