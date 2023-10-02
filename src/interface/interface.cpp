@@ -24300,9 +24300,9 @@ void CalloutRadialMenu::update()
 	}
 }
 
-int CalloutRadialMenu::CALLOUT_SFX_NEUTRAL = 612;
-int CalloutRadialMenu::CALLOUT_SFX_NEGATIVE = 614;
-int CalloutRadialMenu::CALLOUT_SFX_POSITIVE = 613;
+int CalloutRadialMenu::CALLOUT_SFX_NEUTRAL = 605;
+int CalloutRadialMenu::CALLOUT_SFX_NEGATIVE = 607;
+int CalloutRadialMenu::CALLOUT_SFX_POSITIVE = 606;
 static ConsoleVariable<int> cvar_callout_sfx_vol("/callout_sfx_vol", 128);
 
 bool CalloutRadialMenu::createParticleCallout(Entity* entity, CalloutRadialMenu::CalloutCommand _cmd)

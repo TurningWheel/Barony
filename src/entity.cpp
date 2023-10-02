@@ -10495,7 +10495,7 @@ bool Entity::teleport(int tele_x, int tele_y)
 	// play sound effect
 	if ( behavior == &actDeathGhost )
 	{
-		playSoundEntity(this, 630 + local_rng.rand() % 3, 128);
+		playSoundEntity(this, 608 + local_rng.rand() % 3, 128);
 	}
 	else
 	{
@@ -10552,7 +10552,7 @@ bool Entity::teleport(int tele_x, int tele_y)
 	// play second sound effect
 	if ( behavior == &actDeathGhost )
 	{
-		playSoundEntity(this, 630 + local_rng.rand() % 3, 128);
+		playSoundEntity(this, 608 + local_rng.rand() % 3, 128);
 	}
 	else
 	{
