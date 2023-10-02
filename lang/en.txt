@@ -7723,9 +7723,6 @@ Upload#
 6019 Populate Hotbar#
 6020 Preload Music Files#
 6021 Preloading improves playback performance, but increases system memory usage. (Applied next game launch)#
-6044 Show Player Callouts#
-6045 Push item#
-
 6022 Holiday Themes#
 6023 Festive Content#
 6024 Toggle holiday themed content on or off as desired. Bah, humbug!#
@@ -7830,5 +7827,6 @@ intro - God Rest Ye Merry Gentlemen by NaturesEye#
 6043 No holiday currently active.#
 
 6044 Show Player Callouts#
+6045 Push item#
 
 6100 end#
