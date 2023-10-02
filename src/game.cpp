@@ -308,6 +308,7 @@ void TimerExperiments::updateEntityInterpolationPosition(Entity* entity)
 		|| entity->behavior == &actHudArrowModel
 		|| entity->behavior == &actLeftHandMagic
 		|| entity->behavior == &actRightHandMagic
+		|| entity->behavior == &actCircuit
 		|| entity->behavior == &actDoor )
 	{
 		entity->bUseRenderInterpolation = false;
@@ -1081,6 +1082,7 @@ void gameLogic(void)
 	    {
 			players[c]->hud.followerDisplay.bCommandNPCDisabled = false;
 			players[c]->hud.followerDisplay.bOpenFollowerMenuDisabled = false;
+			players[c]->hud.bOpenCalloutsMenuDisabled = false;
 
 	        if (c != clientnum && !splitscreen)
 	        {
@@ -1688,6 +1690,7 @@ void gameLogic(void)
 						if ( gameloopFreezeEntities 
 							&& entity->behavior != &actPlayer
 							&& entity->behavior != &actPlayerLimb
+							&& entity->behavior != &actDeathGhost
 							&& entity->behavior != &actHudWeapon
 							&& entity->behavior != &actHudShield
 							&& entity->behavior != &actHudAdditional
@@ -1848,9 +1851,11 @@ void gameLogic(void)
 						players[i]->hud.weapon = nullptr;
 						players[i]->hud.magicLeftHand = nullptr;
 						players[i]->hud.magicRightHand = nullptr;
+						players[i]->ghost.reset();
 						FollowerMenu[i].recentEntity = nullptr;
 						FollowerMenu[i].followerToCommand = nullptr;
 						FollowerMenu[i].entityToInteractWith = nullptr;
+						CalloutMenu[i].closeCalloutMenuGUI();
 					}
 
 					// stop all sounds
@@ -2113,6 +2118,7 @@ void gameLogic(void)
 						if ( players[i]->isLocalPlayer() )
 						{
 							FollowerMenu[i].closeFollowerMenuGUI(true);
+							CalloutMenu[i].closeCalloutMenuGUI();
 						}
 						players[i]->hud.followerBars.clear();
 					}
@@ -2996,6 +3002,7 @@ void gameLogic(void)
 					{
 						if ( gameloopFreezeEntities
 							&& entity->behavior != &actPlayer
+							&& entity->behavior != &actDeathGhost
 							&& entity->behavior != &actPlayerLimb
 							&& entity->behavior != &actHudWeapon
 							&& entity->behavior != &actHudShield
@@ -3040,12 +3047,14 @@ void gameLogic(void)
 									if ( ticks - entity->lastupdate <= TICKS_PER_SECOND / 16 )
 									{
 										// interpolate to new position
-										if ( entity->behavior != &actPlayerLimb || entity->skill[2] != clientnum )
+										if ( (entity->behavior != &actPlayerLimb && entity->behavior != &actDeathGhostLimb)
+											|| entity->skill[2] != clientnum )
 										{
 											double ox = 0, oy = 0, onewx = 0, onewy = 0;
 
 											// move the bodyparts of these otherwise the limbs will get left behind in this adjustment.
-											if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+											if ( entity->behavior == &actPlayer || entity->behavior == &actMonster
+												|| entity->behavior == &actDeathGhost )
 											{
 												ox = entity->x;
 												oy = entity->y;
@@ -3061,7 +3070,8 @@ void gameLogic(void)
 											}
 
 											// move the bodyparts of these otherwise the limbs will get left behind in this adjustment.
-											if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+											if ( entity->behavior == &actPlayer || entity->behavior == &actMonster
+												|| entity->behavior == &actDeathGhost )
 											{
 												for ( Entity *bodypart : entity->bodyparts )
 												{
@@ -3077,7 +3087,9 @@ void gameLogic(void)
 									if ( fabs(entity->vel_x) > 0.0001 || fabs(entity->vel_y) > 0.0001 )
 									{
 										double ox = 0, oy = 0, onewx = 0, onewy = 0;
-										if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+										if ( entity->behavior == &actPlayer 
+											|| entity->behavior == &actMonster
+											|| entity->behavior == &actDeathGhost )
 										{
 											ox = entity->x;
 											oy = entity->y;
@@ -3086,7 +3098,8 @@ void gameLogic(void)
 										}
 										real_t dist = clipMove(&entity->x, &entity->y, entity->vel_x, entity->vel_y, entity);
 										real_t new_dist = clipMove(&entity->new_x, &entity->new_y, entity->vel_x, entity->vel_y, entity);
-										if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+										if ( entity->behavior == &actPlayer || entity->behavior == &actMonster
+											|| entity->behavior == &actDeathGhost )
 										{
 											for (Entity *bodypart : entity->bodyparts)
 											{
@@ -5188,7 +5201,8 @@ void ingameHud()
 						}
 						if ( !shootmode ) // check we dont conflict with system bindings
 						{
-							if ( players[player]->messageZone.logWindow || players[player]->minimap.mapWindow || FollowerMenu[player].followerMenuIsOpen() )
+							if ( players[player]->messageZone.logWindow || players[player]->minimap.mapWindow 
+								|| FollowerMenu[player].followerMenuIsOpen() || CalloutMenu[player].calloutMenuIsOpen() )
 							{
 								allowCasting = false;
 							}
@@ -5213,7 +5227,7 @@ void ingameHud()
 						}
 						else
 						{
-							if ( FollowerMenu[player].followerMenuIsOpen() )
+							if ( FollowerMenu[player].followerMenuIsOpen() || CalloutMenu[player].calloutMenuIsOpen() )
 							{
 								if ( castMemorizedSpell )
 								{
@@ -5333,7 +5347,12 @@ void ingameHud()
 		}
 		players[player]->hud.followerDisplay.bCycleNextDisabled = (worldUIBlocksFollowerCycle && players[player]->shootmode);
 		bool allowCycle = true;
-		if ( FollowerMenu[player].followerMenuIsOpen() )
+		if ( CalloutMenu[player].calloutMenuIsOpen() && !players[player]->shootmode )
+		{
+			players[player]->hud.followerDisplay.bCycleNextDisabled = true;
+			allowCycle = false;
+		}
+		else if ( FollowerMenu[player].followerMenuIsOpen() )
 		{
 			std::string cycleNPCbinding = input.binding("Cycle NPCs");
 			if ( cycleNPCbinding == input.binding("MenuCancel") )
@@ -5473,6 +5492,7 @@ void ingameHud()
 		players[player]->skillSheet.processSkillSheet();
 		players[player]->signGUI.updateSignGUI();
 		players[player]->hud.updateStatusEffectTooltip(); // to create a tooltip in this order to draw over previous elements
+		CalloutRadialMenu::drawCallouts(player);
 		players[player]->inventoryUI.updateItemContextMenuClickFrame();
 		players[player]->GUI.handleModuleNavigation(false);
 		players[player]->inventoryUI.updateCursor();
@@ -5901,6 +5921,11 @@ void drawAllPlayerCameras() {
 					players[c]->movement.handlePlayerMovement(true);
 					players[c]->movement.handlePlayerCameraUpdate(true);
 					players[c]->movement.handlePlayerCameraPosition(true);
+
+					players[c]->ghost.handleGhostCameraBobbing(true);
+					players[c]->ghost.handleGhostMovement(true);
+					players[c]->ghost.handleGhostCameraUpdate(true);
+					players[c]->ghost.handleGhostCameraPosition(true);
 					//messagePlayer(0, "%3.2f | %3.2f", players[c]->entity->yaw, oldYaw);
 				}
 			}
@@ -5909,6 +5934,31 @@ void drawAllPlayerCameras() {
 			DebugStats.drawWorldT2 = std::chrono::high_resolution_clock::now();
 			occlusionCulling(map, camera);
 			glBeginCamera(&camera, true);
+
+			// shared minimap progress
+			if ( !splitscreen/*gameplayCustomManager.inUse() && gameplayCustomManager.minimapShareProgress && !splitscreen*/ )
+			{
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( i != clientnum && players[i] && Player::getPlayerInteractEntity(i) )
+					{
+						if ( !players[i]->entity || (players[i]->entity && !players[i]->entity->isBlind()) )
+						{
+							real_t x = camera.x;
+							real_t y = camera.y;
+							real_t ang = camera.ang;
+
+							camera.x = Player::getPlayerInteractEntity(i)->x / 16.0;
+							camera.y = Player::getPlayerInteractEntity(i)->y / 16.0;
+							camera.ang = Player::getPlayerInteractEntity(i)->yaw;
+							raycast(camera, minimap, false); // update minimap from other players' perspectives, player or ghost
+							camera.x = x;
+							camera.y = y;
+							camera.ang = ang;
+						}
+					}
+				}
+			}
 
 			if ( players[c] && players[c]->entity )
 			{
@@ -5979,37 +6029,42 @@ void drawAllPlayerCameras() {
 				DebugStats.drawWorldT3 = std::chrono::high_resolution_clock::now();
 				if ( !players[c]->entity->isBlind() )
 				{
-				    raycast(camera, minimap); // update minimap
+				    raycast(camera, minimap, true); // update minimap
 				}
 				DebugStats.drawWorldT4 = std::chrono::high_resolution_clock::now();
 				glDrawWorld(&camera, REALCOLORS);
-
-				if ( gameplayCustomManager.inUse() && gameplayCustomManager.minimapShareProgress && !splitscreen )
-				{
-					for ( int i = 0; i < MAXPLAYERS; ++i )
-					{
-						if ( i != clientnum && players[i] && players[i]->entity )
-						{
-						    if ( !players[i]->entity->isBlind() )
-						    {
-							    real_t x = camera.x;
-							    real_t y = camera.y;
-							    real_t ang = camera.ang;
-
-							    camera.x = players[i]->entity->x / 16.0;
-							    camera.y = players[i]->entity->y / 16.0;
-							    camera.ang = players[i]->entity->yaw;
-							    raycast(camera, minimap); // update minimap from other players' perspectives
-							    camera.x = x;
-							    camera.y = y;
-							    camera.ang = ang;
-							}
-						}
-					}
-				}
 			}
 			else
 			{
+				// undo blindness effects
+				if ( globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_INUSE )
+				{
+					for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+					{
+						Entity* mapCreature = (Entity*)mapNode->element;
+						if ( mapCreature )
+						{
+							mapCreature->monsterEntityRenderAsTelepath = 0;
+						}
+					}
+				}
+				globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_DISSIPATING;
+				globalLightModifierEntities = 0.f;
+				if ( globalLightModifier < 1.f )
+				{
+					globalLightModifier += 0.01;
+				}
+				else
+				{
+					globalLightModifier = 1.01;
+					globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+				}
+
+				if ( players[c] && players[c]->ghost.isActive() )
+				{
+					raycast(camera, minimap, false); // update minimap for ghost
+				}
+
 			    // player is dead, spectate
 				glDrawWorld(&camera, REALCOLORS);
 			}
@@ -6116,6 +6171,7 @@ static void doConsoleCommands() {
 		for (int i = 0; i < MAXPLAYERS; ++i) {
 			if (players[i]->isLocalPlayer() && inputs.bPlayerUsingKeyboardControl(i)) {
 				FollowerMenu[i].closeFollowerMenuGUI();
+				CalloutMenu[i].closeCalloutMenuGUI();
 			}
 		}
 	}
@@ -6190,7 +6246,7 @@ static void doConsoleCommands() {
 						strcat(chatstring, command_str);
 						Uint32 color = playerColor(commandPlayer, colorblind_lobby, false);
 						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
-							playSound(238, 64);
+							playSound(Message::CHAT_MESSAGE_SFX, 64);
 						}
 
 						// send message to server
@@ -6217,7 +6273,7 @@ static void doConsoleCommands() {
 						strcat(chatstring, command_str);
 						Uint32 color = playerColor(commandPlayer, colorblind_lobby, false);
 						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
-							playSound(238, 64);
+							playSound(Message::CHAT_MESSAGE_SFX, 64);
 						}
 						if (multiplayer == SERVER)
 						{
@@ -6714,9 +6770,11 @@ int main(int argc, char** argv)
 						players[i]->hud.weapon = nullptr;
 						players[i]->hud.magicLeftHand = nullptr;
 						players[i]->hud.magicRightHand = nullptr;
+						players[i]->ghost.reset();
 						FollowerMenu[i].recentEntity = nullptr;
 						FollowerMenu[i].followerToCommand = nullptr;
 						FollowerMenu[i].entityToInteractWith = nullptr;
+						CalloutMenu[i].closeCalloutMenuGUI();
 					}
 
 					// black background
@@ -7095,6 +7153,7 @@ int main(int argc, char** argv)
 				for ( int player = 0; player < MAXPLAYERS; ++player )
 				{
 					players[player]->messageZone.updateMessages();
+					CalloutMenu[player].update();
 				}
 				if ( !nohud )
 				{
@@ -7361,6 +7420,7 @@ int main(int argc, char** argv)
 				}
 			}
 			Text::dumpCacheInMainLoop();
+			achievementObserver.getCurrentPlayerUids();
 			DebugStats.t11End = std::chrono::high_resolution_clock::now();
 
 			// increase the cycle count

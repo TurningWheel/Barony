@@ -279,6 +279,15 @@ std::string messageSanitizePercentSign(std::string src, int* percentSignsFound)
 	{
 		while ( found != std::string::npos )
 		{
+			if ( found + 1 < commandString.size() )
+			{
+				if ( commandString.at(found + 1) == '%' )
+				{
+					// this command has already been escaped, no need for more %
+					found = commandString.find('%', found + 2);
+					continue;
+				}
+			}
 			commandString.insert(found, "%");
 			found = commandString.find('%', found + 2);
 			if ( percentSignsFound )

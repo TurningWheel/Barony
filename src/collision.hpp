@@ -21,7 +21,8 @@ enum EntityClickType
 	ENTITY_CLICK_USE,
 	ENTITY_CLICK_USE_TOOLTIPS_ONLY,
 	ENTITY_CLICK_HELD_USE_TOOLTIPS_ONLY,
-	ENTITY_CLICK_FOLLOWER_INTERACT
+	ENTITY_CLICK_FOLLOWER_INTERACT,
+	ENTITY_CLICK_CALLOUT
 };
 Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, EntityClickType clicktype);
 bool entityInsideTile(Entity* entity, int x, int y, int z, bool checkSafeTiles = false);

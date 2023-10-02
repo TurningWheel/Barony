@@ -341,6 +341,28 @@ void camelCaseString(std::string& str)
 	}
 }
 
+bool stringStartsWithVowel(std::string& str)
+{
+	if ( str.size() < 1 ) { return false; }
+	switch ( str[0] )
+	{
+		case 'a':
+		case 'e':
+		case 'i':
+		case 'o':
+		case 'u':
+		case 'A':
+		case 'E':
+		case 'I':
+		case 'O':
+		case 'U':
+			return true;
+		default:
+			break;
+	}
+	return false;
+}
+
 std::string EnemyBarSettings_t::getEnemyBarSpriteName(Entity* entity)
 {
 	if ( !entity ) { return "default"; }
@@ -2571,7 +2593,8 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 				const int selectorAnimW = 4;
 				if ( titleSelectorGlyph )
 				{
-					if ( halfWidthBars || (!players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen())
+					if ( halfWidthBars 
+						|| (!players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() && !CalloutMenu[player].calloutMenuIsOpen())
 						|| followerDisplay.bCycleNextDisabled || list_Size(&stats[player]->FOLLOWERS) <= 1 )
 					{
 						titleSelectorGlyph->disabled = true;
@@ -2738,7 +2761,9 @@ void updateAllyFollowerFrame(const int player)
 		return;
 	}
 
-	if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() && players[player]->gui_mode != GUI_MODE_NONE )
+	if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() 
+		&& !CalloutMenu[player].calloutMenuIsOpen()
+		&& players[player]->gui_mode != GUI_MODE_NONE )
 	{
 		baseFrame->setOpacity(0.0);
 		baseFrame->setInheritParentFrameOpacity(false);
@@ -3251,7 +3276,9 @@ void updateAllyPlayerFrame(const int player)
 		return;
 	}
 
-	if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() && players[player]->gui_mode != GUI_MODE_NONE )
+	if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() 
+		&& !CalloutMenu[player].calloutMenuIsOpen()
+		&& players[player]->gui_mode != GUI_MODE_NONE )
 	{
 		baseFrame->setOpacity(0.0);
 		baseFrame->setInheritParentFrameOpacity(false);
@@ -3976,7 +4003,8 @@ void Player::HUD_t::updateUINavigation()
 
 	bShowUINavigation = false;
 	if ( player.gui_mode != GUI_MODE_NONE 
-		&& player.gui_mode != GUI_MODE_FOLLOWERMENU 
+		&& player.gui_mode != GUI_MODE_FOLLOWERMENU
+		&& player.gui_mode != GUI_MODE_CALLOUT
 		&& player.gui_mode != GUI_MODE_SIGN
 		&& player.isLocalPlayer() && !player.shootmode )
 	{
@@ -8349,6 +8377,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 	SDL_Rect promptPos{ player.camera_virtualWidth() / 2, player.camera_virtualHeight() / 2, 0, 0 };
 
 	FollowerRadialMenu& followerMenu = FollowerMenu[player.playernum];
+	CalloutRadialMenu& calloutMenu = CalloutMenu[player.playernum];
 
 	auto icon = worldTooltipFrame->findImage("icon img");
 	icon->disabled = true;
@@ -8386,10 +8415,14 @@ void Player::HUD_t::updateWorldTooltipPrompts()
         }
     }
 
-	if ( followerMenu.selectMoveTo && (followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
-		|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
+	bool followerInteract = followerMenu.selectMoveTo && (followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
+		|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT);
+	bool calloutInteract = calloutMenu.selectMoveTo && (calloutMenu.optionSelected == CalloutRadialMenu::CALLOUT_CMD_SELECT);
+
+	if ( followerInteract || calloutInteract )
 	{
 		bool forceBlankInteractText = false;
+		auto optionSelected = followerInteract ? followerMenu.optionSelected : calloutMenu.optionSelected;
 		if ( !player.worldUI.isEnabled() )
 		{
 			cursor->path = "#*images/ui/Crosshairs/cursor_xB.png";
@@ -8407,7 +8440,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		}
 		else
 		{
-			if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
+			if ( optionSelected == ALLY_CMD_MOVETO_SELECT )
 			{
 				cursor->path = "#*images/ui/Crosshairs/cursor_xB.png";
 				if ( auto imgGet = Image::get(cursor->path.c_str()) )
@@ -8596,7 +8629,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		}
 		
 
-		if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
+		if ( followerInteract && optionSelected == ALLY_CMD_MOVETO_SELECT )
 		{
 			if ( followerMenu.followerToCommand
 				&& (followerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT
@@ -8632,35 +8665,51 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		}
 		else
 		{
-			if ( !strcmp(followerMenu.interactText, "") || forceBlankInteractText )
+			if ( followerInteract )
 			{
-				if ( followerMenu.followerToCommand )
+				if ( !strcmp(followerMenu.interactText, "") || forceBlankInteractText )
 				{
-					int type = followerMenu.followerToCommand->getMonsterTypeFromSprite();
-					if ( followerMenu.allowedInteractItems(type)
-						|| followerMenu.allowedInteractFood(type)
-						|| followerMenu.allowedInteractWorld(type)
-						)
+					if ( followerMenu.followerToCommand )
 					{
-						text->setDisabled(false);
-						text->setText(Language::get(4041)); // "Interact with..."
+						int type = followerMenu.followerToCommand->getMonsterTypeFromSprite();
+						if ( followerMenu.allowedInteractItems(type)
+							|| followerMenu.allowedInteractFood(type)
+							|| followerMenu.allowedInteractWorld(type)
+							)
+						{
+							text->setDisabled(false);
+							text->setText(Language::get(4041)); // "Interact with..."
+						}
+						else
+						{
+							text->setDisabled(false);
+							text->setText(Language::get(4042)); // "Attack..."
+						}
 					}
 					else
 					{
 						text->setDisabled(false);
-						text->setText(Language::get(4042)); // "Attack..."
+						text->setText(Language::get(4041)); // "Interact with..."
 					}
 				}
 				else
 				{
 					text->setDisabled(false);
-					text->setText(Language::get(4041)); // "Interact with..."
+					text->setText(followerMenu.interactText);
 				}
 			}
-			else
+			else if ( calloutInteract )
 			{
-				text->setDisabled(false);
-				text->setText(followerMenu.interactText);
+				if ( !strcmp(calloutMenu.interactText, "") || forceBlankInteractText )
+				{
+					text->setDisabled(false);
+					text->setText(Language::get(4348)); // "Call out..."
+				}
+				else
+				{
+					text->setDisabled(false);
+					text->setText(calloutMenu.interactText);
+				}
 			}
 		}
 
@@ -8677,7 +8726,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 	}
 	else
 	{
-		if ( !player.entity )
+		if ( !player.entity && !player.ghost.isActive() )
 		{
 			cursor->disabled = true;
 		}
@@ -9350,7 +9399,9 @@ void Player::HUD_t::updateActionPrompts()
 				continue;
 			}
 
-			if ( player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU || player.gui_mode == GUI_MODE_SIGN )
+			if ( player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU 
+				|| player.gui_mode == GUI_MODE_SIGN
+				|| player.gui_mode == GUI_MODE_CALLOUT )
 			{
 				promptText->setDisabled(true);
 			}
@@ -9438,7 +9489,9 @@ void Player::HUD_t::updateActionPrompts()
 			}
 			glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding(bindingName.c_str(), pressed);
 			glyph->disabled = prompt->isDisabled();
-			if ( !player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU || player.gui_mode == GUI_MODE_SIGN )
+			if ( !player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU 
+				|| player.gui_mode == GUI_MODE_SIGN
+				|| player.gui_mode == GUI_MODE_CALLOUT )
 			{
 				glyph->disabled = true;
 			}
@@ -9729,7 +9782,7 @@ void Player::HUD_t::processHUD()
 #endif // NINTENDO
 	}
 
-	if ( !gamePaused && player.entity && player.shootmode )
+	if ( !gamePaused && (player.entity || player.ghost.isActive()) && player.shootmode)
 	{
 		inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 	}
@@ -10059,7 +10112,12 @@ void Player::MessageZone_t::processChatbox()
 		{
 			entry->setDisabled(false);
 			entry->setColor(color);
-			entry->setText(current->text->data);
+
+			std::string data = messageSanitizePercentSign(current->text->data, nullptr);
+			char str[ADD_MESSAGE_BUFFER_LENGTH];
+			snprintf(str, sizeof(str), data.c_str());
+
+			entry->setText(str);
 			entry->setFont(useBigFont ? bigfont : smallfont);
 			entry->setPaddingPerLine(useBigFont ? 0 : *cvar_log_multiline_pady);
             Font* fontGet = Font::get(entry->getFont());
@@ -26108,6 +26166,7 @@ void Player::HUD_t::updateGameTimer()
 	bool overrideGameTimerSetting = false;
 	if ( splitscreen && !(player.bUseCompactGUIHeight() && player.bUseCompactGUIWidth())
 		&& !player.shootmode && !FollowerMenu[player.playernum].followerMenuIsOpen()
+		&& !CalloutMenu[player.playernum].calloutMenuIsOpen()
 		&& player.gui_mode != GUI_MODE_NONE )
 	{
 		if ( compactLayoutMode == COMPACT_LAYOUT_INVENTORY || player.bUseCompactGUIWidth() )
@@ -26224,7 +26283,8 @@ void Player::HUD_t::updateXPBar()
 	{
 		tempHideXP = true;
 	}
-	else if ( (player.gui_mode == GUI_MODE_FOLLOWERMENU || player.minimap.mapWindow || player.messageZone.logWindow)
+	else if ( (player.gui_mode == GUI_MODE_FOLLOWERMENU || player.gui_mode == GUI_MODE_CALLOUT
+		|| player.minimap.mapWindow || player.messageZone.logWindow)
 		&& player.bUseCompactGUIHeight() )
 	{
 		tempHideXP = true;
@@ -28898,6 +28958,7 @@ void Player::Hotbar_t::updateHotbar()
 	bool tempHideHotbar = false;
 	if ( player.bUseCompactGUIHeight()
 		&& (player.gui_mode == GUI_MODE_FOLLOWERMENU
+			|| player.gui_mode == GUI_MODE_CALLOUT
 			|| (player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET && !player.shootmode)
 			|| (player.gui_mode == GUI_MODE_MAGIC)
 			|| (player.shopGUI.bOpen)
@@ -28971,7 +29032,8 @@ void Player::Hotbar_t::updateHotbar()
 	hotbarStartY1 += animHide * abs(getHotbarStartY1());
 	hotbarStartY2 += animHide * abs(getHotbarStartY1());
 
-	if ( !player.shootmode || FollowerMenu[player.playernum].followerMenuIsOpen() )
+	if ( !player.shootmode || FollowerMenu[player.playernum].followerMenuIsOpen()
+		|| CalloutMenu[player.playernum].calloutMenuIsOpen() )
 	{
         if (player.hotbar.useHotbarFaceMenu)
         {
@@ -30427,6 +30489,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "GLOVE_DEGRADE_CHANCE" )
 		{
 			val = 100 + (stats[playernum]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
+			val += (static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20)) * 10;
 			if ( svFlags & SV_FLAG_HARDCORE )
 			{
 				val *= 2;
@@ -30444,6 +30507,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "GLOVE_DEGRADE0_CHANCE" )
 		{
 			val = 8 + (stats[playernum]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
+			val += static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20);
 			if ( svFlags & SV_FLAG_HARDCORE )
 			{
 				val *= 2;
@@ -33548,8 +33612,8 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 	{
 		if ( bOpen )
 		{
-		slider->setDisabled(false);
-	}
+			slider->setDisabled(false);
+		}
 		else
 		{
 			slider->setDisabled(true);
@@ -36551,7 +36615,21 @@ bool SkillUpAnimation_t::soundIndexUsedForNotification(const int index)
 	{
 		return true;
 	}
+	else if ( index == CalloutRadialMenu::CALLOUT_SFX_NEGATIVE
+		|| index == CalloutRadialMenu::CALLOUT_SFX_NEUTRAL
+		|| index == CalloutRadialMenu::CALLOUT_SFX_POSITIVE )
+	{
+		return true;
+	}
+	else if ( index == Message::CHAT_MESSAGE_SFX )
+	{
+		return true;
+	}
 	else if ( index == *cvar_lvl_ding_sfx )
+	{
+		return true;
+	}
+	else if ( index == *cvar_skill_newspell_sfx )
 	{
 		return true;
 	}

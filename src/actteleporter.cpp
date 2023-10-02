@@ -72,7 +72,7 @@ void Entity::actTeleporter()
 		{
 			if ( selectedEntity[i] == this || client_selected[i] == this )
 			{
-				if ( inrange[i] )
+				if ( inrange[i] && Player::getPlayerInteractEntity(i) )
 				{
 					switch ( teleporterType )
 					{
@@ -88,7 +88,7 @@ void Entity::actTeleporter()
 						default:
 							break;
 					}
-					players[i]->entity->teleporterMove(teleporterX, teleporterY, teleporterType);
+					Player::getPlayerInteractEntity(i)->teleporterMove(teleporterX, teleporterY, teleporterType);
 					return;
 				}
 			}

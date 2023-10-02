@@ -533,16 +533,16 @@ void createCommonDrawResources() {
         sprite_vertex_glsl, sizeof(sprite_vertex_glsl),
         sprite_dithered_fragment_glsl, sizeof(sprite_dithered_fragment_glsl));
     
-    static const char sprite_bright_vertex_glsl[] =
-        "in vec3 iPosition;"
-        "in vec2 iTexCoord;"
-        "uniform mat4 uProj;"
-        "uniform mat4 uView;"
-        "uniform mat4 uModel;"
-        "out vec2 TexCoord;"
-    
-        "void main() {"
-        "gl_Position = uProj * uView * uModel * vec4(iPosition, 1.0);"
+	static const char sprite_bright_vertex_glsl[] =
+		"in vec3 iPosition;"
+		"in vec2 iTexCoord;"
+		"uniform mat4 uProj;"
+		"uniform mat4 uView;"
+		"uniform mat4 uModel;"
+		"out vec2 TexCoord;"
+
+		"void main() {"
+		"gl_Position = uProj * uView * uModel * vec4(iPosition, 1.0);"
         "TexCoord = iTexCoord;"
         "}";
 
@@ -1601,7 +1601,7 @@ void drawClearBuffers()
 #include "net.hpp"
 #endif
 
-void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
+void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION], bool fillWithColor)
 {
     // originally we cast a ray for every column of pixels in the
     // camera viewport. now we just shoot out a few hundred rays to
@@ -1647,6 +1647,7 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
         const Sint32* tiles;
         const vec4_t* lights;
         Sint8 (*minimap)[MINIMAP_MAX_DIMENSION];
+		bool fillWithColor;
     };
     auto shoot_ray = [](const ins_t&& ins) -> std::vector<outs_t>{
         std::vector<outs_t> result;
@@ -1740,15 +1741,39 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
                         }
                         auto& l = lights[iny2 + inx2 * mh];
                         const auto light = std::max({0.f, l.x, l.y, l.z});
+						bool visible = light > 1.f;
+						if ( !visible && !ins.fillWithColor )
+						{
+							// remote players fill in the map within 3x3 area, as they do not have ambient light
+							real_t dist = pow(posx - inx2, 2) + pow(posy - iny2, 2);
+							if ( dist < 10.0 )
+							{
+								visible = true;
+							}
+						}
                         
                         // update minimap
                         if (d < 16 && z == OBSTACLELAYER) {
-                            if (light > 1.f) {
+                            if ( visible ) {
                                 // wall space
                                 if (WriteOutsSequentially) {
-                                    result.push_back({inx, iny, 2});
+									if ( ins.fillWithColor )
+									{
+										result.push_back({inx, iny, 2});
+									}
+									else if ( minimap[iny][inx] != 2 )
+									{
+										result.push_back({inx, iny, 4});
+									}
                                 } else {
-                                    minimap[iny][inx] = 2;
+									if ( ins.fillWithColor )
+									{
+										minimap[iny][inx] = 2;
+									}
+									else if ( minimap[iny][inx] != 2 )
+									{
+										minimap[iny][inx] = 4;
+									}
                                 }
                             }
                         }
@@ -1756,21 +1781,46 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
                         // update minimap to show empty region
                         auto& l = lights[iny2 + inx2 * mh];
                         const auto light = std::max({0.f, l.x, l.y, l.z});
+						bool visible = light > 1.f;
+						if ( !visible && !ins.fillWithColor )
+						{
+							// remote players fill in the map within 3x3 area, as they do not have ambient light
+							real_t dist = pow(posx - inx2, 2) + pow(posy - iny2, 2);
+							if ( dist < 10.0 )
+							{
+								visible = true;
+							}
+						}
+
                         if (d < 16) {
-                            if (light > 1.f && tiles[iny * MAPLAYERS + inx * MAPLAYERS * mh]) {
+                            if ( visible && tiles[iny * MAPLAYERS + inx * MAPLAYERS * mh]) {
                                 // walkable space
                                 if (WriteOutsSequentially) {
-                                    result.push_back({inx, iny, 1});
+									if ( ins.fillWithColor )
+									{
+										result.push_back({inx, iny, 1});
+									}
+									else if ( minimap[iny][inx] != 1 )
+									{
+										result.push_back({inx, iny, 3});
+									}
                                 } else {
-                                    minimap[iny][inx] = 1;
+									if ( ins.fillWithColor )
+									{
+										minimap[iny][inx] = 1;
+									}
+									else if ( minimap[iny][inx] != 1 )
+									{
+										minimap[iny][inx] = 3;
+									}
                                 }
                             } else if (tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * mh]) {
                                 // no floor
-                                if (WriteOutsSequentially) {
+                                /*if (WriteOutsSequentially) {
                                     result.push_back({inx, iny, 0});
                                 } else {
                                     minimap[iny][inx] = 0;
-                                }
+                                }*/
                             }
                         }
                     }
@@ -1806,7 +1856,7 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
         std::vector<std::future<std::vector<outs_t>>> tasks;
         for (int x = 0; x < NumRays; x += NumRaysPerJob) {
             tasks.emplace_back(std::async(std::launch::async, shoot_ray,
-                ins_t{x, (int)map.width, (int)map.height, camera, map.tiles, lightmap, minimap}));
+                ins_t{x, (int)map.width, (int)map.height, camera, map.tiles, lightmap, minimap, fillWithColor}));
         }
         for (int x = (int)tasks.size() - 1; x >= 0; --x) {
             auto out_list = tasks[x].get();
@@ -1817,7 +1867,7 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
         }
     } else {
         for (int x = 0; x < NumRays; x += NumRaysPerJob) {
-            auto out_list = shoot_ray(ins_t{x, (int)map.width, (int)map.height, camera, map.tiles, lightmap, minimap});
+            auto out_list = shoot_ray(ins_t{x, (int)map.width, (int)map.height, camera, map.tiles, lightmap, minimap, fillWithColor});
             for (auto& it : out_list) {
                 minimap[it.y][it.x] = it.value;
             }
@@ -1905,12 +1955,26 @@ void drawEntities3D(view_t* camera, int mode)
         }
         if ( entity->flags[GENIUS] )
         {
-            // genius entities are not drawn when the camera is inside their bounding box
-            if ( camera->x >= (entity->x - entity->sizex) / 16 && camera->x <= (entity->x + entity->sizex) / 16 )
-                if ( camera->y >= (entity->y - entity->sizey) / 16 && camera->y <= (entity->y + entity->sizey) / 16 )
-                {
-                    continue;
-                }
+			// genius entities are not drawn when the camera is inside their bounding box
+#ifndef EDITOR
+			if ( entity->behavior == &actDeathGhost )
+			{
+				// ghost have small collision box
+				if ( camera->x >= (entity->x - std::max(4, entity->sizex)) / 16 && camera->x <= (entity->x + std::max(4, entity->sizex)) / 16 )
+					if ( camera->y >= (entity->y - std::max(4, entity->sizey)) / 16 && camera->y <= (entity->y + std::max(4, entity->sizey)) / 16 )
+					{
+						continue;
+					}
+			}
+			else
+#endif
+			{
+				if ( camera->x >= (entity->x - entity->sizex) / 16 && camera->x <= (entity->x + entity->sizex) / 16 )
+					if ( camera->y >= (entity->y - entity->sizey) / 16 && camera->y <= (entity->y + entity->sizey) / 16 )
+					{
+						continue;
+					}
+			}
         }
         if ( entity->flags[OVERDRAW] && splitscreen )
         {
@@ -1920,7 +1984,9 @@ void drawEntities3D(view_t* camera, int mode)
                 if ( entity->behavior == &actHudWeapon
                     || entity->behavior == &actHudArm
                     || entity->behavior == &actGib
-                    || entity->behavior == &actFlame )
+                    || entity->behavior == &actFlame
+					|| entity->behavior == &actHUDMagicParticle
+					|| entity->behavior == &actHUDMagicParticleCircling )
                 {
                     // the gibs are from casting magic in the HUD
                     if ( entity->skill[11] != currentPlayerViewport )
@@ -1953,7 +2019,9 @@ void drawEntities3D(view_t* camera, int mode)
                 const int y = entity->y / 16;
                 if (x >= 0 && y >= 0 && x < map.width && y < map.height)
                 {
-                    if ( !camera->vismap[y + x * map.height] && entity->monsterEntityRenderAsTelepath != 1 )
+                    if ( !camera->vismap[y + x * map.height] 
+						&& entity->monsterEntityRenderAsTelepath != 1
+						&& !(entity->behavior == &actSpriteNametag && entity->ditheringDisabled) )
                     {
                         decrease = true;
                         goto end;

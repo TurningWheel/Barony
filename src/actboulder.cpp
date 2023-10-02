@@ -1296,14 +1296,26 @@ void actBoulder(Entity* my)
 
 #define BOULDERTRAP_FIRED my->skill[0]
 #define BOULDERTRAP_AMBIENCE my->skill[6]
+#define BOULDERTRAPHOLE_INIT my->skill[0]
 
 void actBoulderTrapHole(Entity* my)
 {
 	if ( multiplayer == CLIENT )
 	{
+		if ( !BOULDERTRAPHOLE_INIT )
+		{
+			BOULDERTRAPHOLE_INIT = 1;
+			my->createWorldUITooltip();
+		}
 		return;
 	}
 	if ( !my ) { return; }
+
+	if ( !BOULDERTRAPHOLE_INIT )
+	{
+		BOULDERTRAPHOLE_INIT = 1;
+		my->createWorldUITooltip();
+	}
 
 	if ( my->z > -11.0 && my->z < -10 )
 	{

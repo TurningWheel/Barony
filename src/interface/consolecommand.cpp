@@ -3729,6 +3729,11 @@ namespace ConsoleCommands {
 		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded follower_wheel.json");
 		});
 
+	static ConsoleCommand ccmd_loadcalloutwheel("/loadcalloutwheel", "", []CCMD{
+		CalloutRadialMenu::loadCalloutJSON();
+		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded callout_wheel.json");
+		});
+
 	static ConsoleCommand ccmd_printleaderlist("/printleaderlist", "", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{

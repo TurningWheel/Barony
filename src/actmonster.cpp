@@ -6918,12 +6918,32 @@ timeToGoAgain:
 				{
 					if ( myStats->type == LICH_FIRE )
 					{
-						playSoundPlayer(c, 376, 128);
+						if ( multiplayer == SINGLE )
+						{
+							if ( c == clientnum )
+							{
+								playSoundPlayer(c, 376, 128); // only play sfx once in splitscreen
+							}
+						}
+						else
+						{
+							playSoundPlayer(c, 376, 128);
+						}
 						messagePlayerColor(c, MESSAGE_WORLD, uint32ColorOrange, Language::get(2646));
 					}
 					else if ( myStats->type == LICH_ICE )
 					{
-						playSoundPlayer(c, 381, 128);
+						if ( multiplayer == SINGLE )
+						{
+							if ( c == clientnum )
+							{
+								playSoundPlayer(c, 381, 128); // only play sfx once in splitscreen
+							}
+						}
+						else
+						{
+							playSoundPlayer(c, 381, 128);
+						}
 						messagePlayerColor(c, MESSAGE_WORLD, uint32ColorBaronyBlue, Language::get(2648));
 					}
 				}

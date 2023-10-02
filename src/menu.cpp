@@ -5996,7 +5996,7 @@ static void handleMainMenu(bool mode)
 			keystatus[SDLK_RETURN] = 0;
 			if ( multiplayer != CLIENT )
 			{
-				playSound(238, 64);
+				playSound(Message::CHAT_MESSAGE_SFX, 64);
 			}
 
 			char shortname[32] = {0};
@@ -9543,6 +9543,7 @@ void doNewGame(bool makeHighscore) {
 	{
 		// clear follower menu entities.
 		FollowerMenu[i].closeFollowerMenuGUI(true);
+		CalloutMenu[i].closeCalloutMenuGUI();
 	}
 	for ( int c = 0; c < NUMMONSTERS; c++ )
 	{
@@ -9696,9 +9697,11 @@ void doNewGame(bool makeHighscore) {
 			players[i]->hud.weapon = nullptr;
 			players[i]->hud.magicLeftHand = nullptr;
 			players[i]->hud.magicRightHand = nullptr;
+			players[i]->ghost.reset();
 			FollowerMenu[i].recentEntity = nullptr;
 			FollowerMenu[i].followerToCommand = nullptr;
 			FollowerMenu[i].entityToInteractWith = nullptr;
+			CalloutMenu[i].closeCalloutMenuGUI();
 		}
 
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -9969,9 +9972,11 @@ void doNewGame(bool makeHighscore) {
 			players[i]->hud.weapon = nullptr;
 			players[i]->hud.magicLeftHand = nullptr;
 			players[i]->hud.magicRightHand = nullptr;
+			players[i]->ghost.reset();
 			FollowerMenu[i].recentEntity = nullptr;
 			FollowerMenu[i].followerToCommand = nullptr;
 			FollowerMenu[i].entityToInteractWith = nullptr;
+			CalloutMenu[i].closeCalloutMenuGUI();
 		}
 
 		client_disconnected[0] = false;
@@ -10240,7 +10245,7 @@ void doEndgame(bool saveHighscore) {
 	if ( victory )
 	{
 		int k = 0;
-		for ( c = 0; c < MAXPLAYERS; c++ )
+		for ( int c = 0; c < MAXPLAYERS; c++ )
 		{
 			if (players[c] && players[c]->entity)
 			{
@@ -10698,9 +10703,11 @@ void doEndgame(bool saveHighscore) {
 		players[i]->hud.weapon = nullptr;
 		players[i]->hud.magicLeftHand = nullptr;
 		players[i]->hud.magicRightHand = nullptr;
+		players[i]->ghost.reset();
 		FollowerMenu[i].recentEntity = nullptr;
 		FollowerMenu[i].followerToCommand = nullptr;
 		FollowerMenu[i].entityToInteractWith = nullptr;
+		CalloutMenu[i].closeCalloutMenuGUI();
 	}
 
 	// load menu level

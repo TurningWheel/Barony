@@ -114,6 +114,7 @@ namespace MainMenu {
                 {"Spell List", "B", hiddenBinding, emptyBinding},
                 {"Skill Sheet", "K", hiddenBinding, emptyBinding},
                 {"Autosort Inventory", "R", hiddenBinding, emptyBinding},
+				{"Show Player Callouts", "X", "DpadY+", emptyBinding},
                 {"Command NPC", "Q", "DpadX-", emptyBinding},
                 {"Show NPC Commands", "C", "DpadX+", emptyBinding},
                 {"Cycle NPCs", "E", "DpadY-", emptyBinding},
@@ -173,6 +174,7 @@ namespace MainMenu {
                 {"Spell List", "B", hiddenBinding, emptyBinding},
                 {"Skill Sheet", "K", hiddenBinding, emptyBinding},
                 {"Autosort Inventory", "R", hiddenBinding, emptyBinding},
+				{"Show Player Callouts", "X", "DpadY+", emptyBinding},
                 {"Command NPC", "Q", "DpadX-", emptyBinding},
                 {"Show NPC Commands", "C", "DpadX+", emptyBinding},
                 {"Cycle NPCs", "E", "DpadY-", emptyBinding},
@@ -232,6 +234,7 @@ namespace MainMenu {
                 {"Spell List", "B", hiddenBinding, emptyBinding},
                 {"Skill Sheet", "K", hiddenBinding, emptyBinding},
                 {"Autosort Inventory", "R", hiddenBinding, emptyBinding},
+				{"Show Player Callouts", "X", "DpadY+", emptyBinding},
 #ifdef NINTENDO
                 {"Command NPC", "Q", "ButtonY", emptyBinding},
                 {"Show NPC Commands", "C", "ButtonX", emptyBinding},
@@ -291,6 +294,7 @@ namespace MainMenu {
                 {"Spell List", "B", hiddenBinding, emptyBinding},
                 {"Skill Sheet", "K", hiddenBinding, emptyBinding},
                 {"Autosort Inventory", "R", hiddenBinding, emptyBinding},
+				{"Show Player Callouts", "X", emptyBinding, emptyBinding},
                 {"Command NPC", "Q", emptyBinding, emptyBinding},
                 {"Show NPC Commands", "C", emptyBinding, emptyBinding},
                 {"Cycle NPCs", "E", emptyBinding, emptyBinding},
@@ -4528,10 +4532,19 @@ namespace MainMenu {
  
     static const char* translateBinding(const char* binding) {
         int c = 5970;
+		if ( !strcmp(binding, "Show Player Callouts") )
+		{
+			return Language::get(6044);
+		}
+
         for (auto& b : defaultBindings[0].bindings) {
             if (b.action == binding) {
                 break;
             }
+			if ( b.action == "Show Player Callouts" )
+			{
+				continue; // don't increment c, not in the linear language entries
+			}
             ++c;
         }
         return Language::get(c);
@@ -8516,7 +8529,7 @@ bind_failed:
 		const Uint32 seconds = getTime() % seconds_in_day;
 
         if (add_to_list) {
-            playSound(238, 64);
+            playSound(Message::CHAT_MESSAGE_SFX, 64);
             new_lobby_chat_message_alert = ticks;
             lobby_chat_messages.emplace_back(LobbyChatMessage{seconds, color, msg});
             if (lobby_chat_messages.size() > lobby_chat_max_messages) {

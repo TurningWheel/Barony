@@ -38,6 +38,7 @@
 #include "../ui/Image.hpp"
 #include "../ui/Button.hpp"
 #include "../ui/Slider.hpp"
+#include "../collision.hpp"
 
 Uint32 svFlags = 30;
 Uint32 settings_svFlags = svFlags;
@@ -151,9 +152,10 @@ const int inscriptionSlotHeight = 40;
 DamageIndicatorHandler_t DamageIndicatorHandler;
 EnemyHPDamageBarHandler enemyHPDamageBarHandler[MAXPLAYERS];
 FollowerRadialMenu FollowerMenu[MAXPLAYERS];
+CalloutRadialMenu CalloutMenu[MAXPLAYERS];
 GenericGUIMenu GenericGUI[MAXPLAYERS];
 
-bool EnemyHPDamageBarHandler::bDamageGibTypesEnabled = false;
+bool EnemyHPDamageBarHandler::bDamageGibTypesEnabled = true;
 std::map<int, std::vector<int>> EnemyHPDamageBarHandler::damageGibAnimCurves;
 int EnemyHPDamageBarHandler::maxTickLifetime = 120;
 int EnemyHPDamageBarHandler::maxTickFurnitureLifetime = 60;
@@ -1318,6 +1320,10 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 	{
 		FollowerMenu[playernum].closeFollowerMenuGUI();
 	}
+	if ( whichGUIMode != GUI_MODE_NONE && whichGUIMode != GUI_MODE_CALLOUT )
+	{
+		CalloutMenu[playernum].closeCalloutMenuGUI();
+	}
 	GenericGUI[playernum].closeGUI();
 	if ( minimap.mapWindow )
 	{
@@ -1368,7 +1374,8 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 	if ( inputs.hasController(playernum)
 		&& ((oldgui == GUI_MODE_NONE && whichGUIMode != GUI_MODE_NONE) 
 			|| (oldmodule != GUI.activeModule && GUI.activeModule == GUI_t::MODULE_INVENTORY))
-		&& !FollowerMenu[playernum].followerToCommand )
+		&& !FollowerMenu[playernum].followerToCommand
+		&& !CalloutMenu[playernum].bOpen )
 	{
 		warpMouseToInventorySlot = true;
 	}
@@ -1409,6 +1416,10 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 	if ( whatToClose != CLOSEGUI_DONT_CLOSE_FOLLOWERGUI )
 	{
 		FollowerMenu[playernum].closeFollowerMenuGUI();
+	}
+	if ( whatToClose != CLOSEGUI_DONT_CLOSE_CALLOUTGUI )
+	{
+		CalloutMenu[playernum].closeCalloutMenuGUI();
 	}
 	if ( whatToClose != CLOSEGUI_DONT_CLOSE_CHEST )
 	{
@@ -2153,6 +2164,20 @@ void FollowerRadialMenu::drawFollowerMenu()
 	Frame::image_t* bannerImgCenter = nullptr;
 	Uint32 textHighlightColor = followerBannerTextHighlightColor;
 	bool tinkeringFollower = false;
+
+	if ( recentEntity )
+	{
+		if ( recentEntity->monsterAllyIndex != gui_player ) // our ally left our service by charm or otherwise
+		{
+			recentEntity = nullptr;
+			if ( followerToCommand == recentEntity )
+			{
+				closeFollowerMenuGUI();
+				players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+				return;
+			}
+		}
+	}
 
 	if ( !followerToCommand && (!followerFrame->isDisabled() || players[gui_player]->gui_mode == GUI_MODE_FOLLOWERMENU) )
 	{
@@ -6500,6 +6525,7 @@ void GenericGUIMenu::openGUI(int type, Item* effectItem, int effectBeatitude, in
 	}
 
 	FollowerMenu[gui_player].closeFollowerMenuGUI();
+	CalloutMenu[gui_player].closeCalloutMenuGUI();
 
 	if ( openedChest[gui_player] )
 	{
@@ -6537,6 +6563,7 @@ void GenericGUIMenu::openGUI(int type, bool experimenting, Item* itemOpenedWith)
 	alchemyGUI.openAlchemyMenu();
 
 	FollowerMenu[gui_player].closeFollowerMenuGUI();
+	CalloutMenu[gui_player].closeCalloutMenuGUI();
 
 	if ( openedChest[gui_player] )
 	{
@@ -6589,6 +6616,7 @@ void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
 	}
 
 	FollowerMenu[gui_player].closeFollowerMenuGUI();
+	CalloutMenu[gui_player].closeCalloutMenuGUI();
 
 	if ( openedChest[gui_player] )
 	{
@@ -21832,4 +21860,4150 @@ void GenericGUIMenu::ItemEffectGUI_t::createItemEffectMenu()
 			itemIncrementText->setOntop(true);
 		}
 	}
+}
+
+void CalloutRadialMenu::loadCalloutJSON()
+{
+	if ( !PHYSFS_getRealDir("/data/callout_wheel.json") )
+	{
+		printlog("[JSON]: Error: Could not find file: data/callout_wheel.json");
+	}
+	else
+	{
+		std::string inputPath = PHYSFS_getRealDir("/data/callout_wheel.json");
+		inputPath.append("/data/callout_wheel.json");
+
+		File* fp = FileIO::open(inputPath.c_str(), "rb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error: Could not open json file %s", inputPath.c_str());
+		}
+		else
+		{
+			char buf[65536];
+			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+			buf[count] = '\0';
+			rapidjson::StringStream is(buf);
+			FileIO::close(fp);
+			rapidjson::Document d;
+			d.ParseStream(is);
+			if ( !d.HasMember("version") )
+			{
+				printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+			}
+			else
+			{
+				if ( d.HasMember("panel_center_x_offset") )
+				{
+					CalloutRadialMenu::followerWheelFrameOffsetX = d["panel_center_x_offset"].GetInt();
+				}
+				if ( d.HasMember("panel_center_y_offset") )
+				{
+					CalloutRadialMenu::followerWheelFrameOffsetY = d["panel_center_y_offset"].GetInt();
+				}
+				if ( d.HasMember("panel_radius") )
+				{
+					CalloutRadialMenu::followerWheelRadius = d["panel_radius"].GetInt();
+				}
+				if ( d.HasMember("panel_button_thickness") )
+				{
+					CalloutRadialMenu::followerWheelButtonThickness = d["panel_button_thickness"].GetInt();
+				}
+				if ( d.HasMember("panel_inner_circle_radius_offset") )
+				{
+					CalloutRadialMenu::followerWheelInnerCircleRadiusOffset = d["panel_inner_circle_radius_offset"].GetInt();
+				}
+				if ( d.HasMember("colors") )
+				{
+					if ( d["colors"].HasMember("banner_default") )
+					{
+						followerBannerTextColor = makeColor(
+							d["colors"]["banner_default"]["r"].GetInt(),
+							d["colors"]["banner_default"]["g"].GetInt(),
+							d["colors"]["banner_default"]["b"].GetInt(),
+							d["colors"]["banner_default"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("banner_highlight_default") )
+					{
+						followerBannerTextHighlightColor = makeColor(
+							d["colors"]["banner_highlight_default"]["r"].GetInt(),
+							d["colors"]["banner_highlight_default"]["g"].GetInt(),
+							d["colors"]["banner_highlight_default"]["b"].GetInt(),
+							d["colors"]["banner_highlight_default"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("title") )
+					{
+						followerTitleColor = makeColor(
+							d["colors"]["title"]["r"].GetInt(),
+							d["colors"]["title"]["g"].GetInt(),
+							d["colors"]["title"]["b"].GetInt(),
+							d["colors"]["title"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("title_creature_highlight") )
+					{
+						followerTitleHighlightColor = makeColor(
+							d["colors"]["title_creature_highlight"]["r"].GetInt(),
+							d["colors"]["title_creature_highlight"]["g"].GetInt(),
+							d["colors"]["title_creature_highlight"]["b"].GetInt(),
+							d["colors"]["title_creature_highlight"]["a"].GetInt());
+					}
+				}
+				if ( d.HasMember("panels") )
+				{
+					CalloutRadialMenu::panelEntries.clear();
+					for ( rapidjson::Value::ConstValueIterator itr = d["panels"].Begin();
+						itr != d["panels"].End(); ++itr )
+					{
+						CalloutRadialMenu::panelEntries.push_back(CalloutRadialMenu::PanelEntry());
+						auto& entry = CalloutRadialMenu::panelEntries[CalloutRadialMenu::panelEntries.size() - 1];
+						if ( (*itr).HasMember("x") )
+						{
+							entry.x = (*itr)["x"].GetInt();
+						}
+						if ( (*itr).HasMember("y") )
+						{
+							entry.y = (*itr)["y"].GetInt();
+						}
+						if ( (*itr).HasMember("path") )
+						{
+							entry.path = (*itr)["path"].GetString();
+						}
+						if ( (*itr).HasMember("path_hover") )
+						{
+							entry.path_hover = (*itr)["path_hover"].GetString();
+						}
+						if ( (*itr).HasMember("icon_offset_x") )
+						{
+							entry.icon_offsetx = (*itr)["icon_offset_x"].GetInt();
+						}
+						if ( (*itr).HasMember("icon_offset_y") )
+						{
+							entry.icon_offsety = (*itr)["icon_offset_y"].GetInt();
+						}
+					}
+				}
+				if ( d.HasMember("help_strings") )
+				{
+					CalloutRadialMenu::helpDescriptors.clear();
+					for ( rapidjson::Value::ConstMemberIterator itr = d["help_strings"].MemberBegin();
+						itr != d["help_strings"].MemberEnd(); ++itr )
+					{
+						CalloutRadialMenu::helpDescriptors[itr->name.GetString()] = itr->value.GetString();
+					}
+				}
+				if ( d.HasMember("world_icons") )
+				{
+					CalloutRadialMenu::worldIconEntries.clear();
+					CalloutRadialMenu::worldIconIDToEntryKey.clear();
+					int id = 0;
+					for ( rapidjson::Value::ConstMemberIterator itr = d["world_icons"].MemberBegin();
+						itr != d["world_icons"].MemberEnd(); ++itr )
+					{
+						std::string key = (*itr).name.GetString();
+						auto& entry = worldIconEntries[key];
+
+						std::string basePath = "*images/ui/CalloutWheel/WorldIcons/";
+						entry.pathDefault = basePath + (*itr).value["default"].GetString();
+						entry.pathPlayer1 = basePath + (*itr).value["0"].GetString();
+						entry.pathPlayer2 = basePath + (*itr).value["1"].GetString();
+						entry.pathPlayer3 = basePath + (*itr).value["2"].GetString();
+						entry.pathPlayer4 = basePath + (*itr).value["3"].GetString();
+						entry.pathPlayerX = basePath + (*itr).value["4"].GetString();
+						entry.id = id;
+						CalloutRadialMenu::worldIconIDToEntryKey[id] = key;
+						++id;
+						/*if ( auto img = Image::get(entry.pathDefault.c_str()) )
+						{
+						}
+						if ( auto img = Image::get(entry.pathPlayer1.c_str()) )
+						{
+						}
+						if ( auto img = Image::get(entry.pathPlayer2.c_str()) )
+						{
+						}
+						if ( auto img = Image::get(entry.pathPlayer3.c_str()) )
+						{
+						}
+						if ( auto img = Image::get(entry.pathPlayer4.c_str()) )
+						{
+						}
+						if ( auto img = Image::get(entry.pathPlayerX.c_str()) )
+						{
+						}*/
+					}
+				}
+				if ( d.HasMember("icons") )
+				{
+					CalloutRadialMenu::iconEntries.clear();
+					for ( rapidjson::Value::ConstValueIterator itr = d["icons"].Begin();
+						itr != d["icons"].End(); ++itr )
+					{
+						std::string actionName = "";
+						if ( (*itr).HasMember("action") )
+						{
+							actionName = (*itr)["action"].GetString();
+						}
+						if ( actionName == "" )
+						{
+							continue;
+						}
+						CalloutRadialMenu::iconEntries[actionName] = CalloutRadialMenu::IconEntry();
+						CalloutRadialMenu::iconEntries[actionName].name = actionName;
+						if ( (*itr).HasMember("id") )
+						{
+							CalloutRadialMenu::iconEntries[actionName].id = (*itr)["id"].GetInt();
+						}
+						if ( (*itr).HasMember("path") )
+						{
+							CalloutRadialMenu::iconEntries[actionName].path = (*itr)["path"].GetString();
+						}
+						if ( (*itr).HasMember("path_active") )
+						{
+							CalloutRadialMenu::iconEntries[actionName].path_active = (*itr)["path_active"].GetString();
+						}
+						if ( (*itr).HasMember("path_hover") )
+						{
+							CalloutRadialMenu::iconEntries[actionName].path_hover = (*itr)["path_hover"].GetString();
+						}
+						if ( (*itr).HasMember("path_active_hover") )
+						{
+							CalloutRadialMenu::iconEntries[actionName].path_active_hover = (*itr)["path_active_hover"].GetString();
+						}
+						if ( (*itr).HasMember("text_maps") )
+						{
+							for ( rapidjson::Value::ConstValueIterator itr2 = (*itr)["text_maps"].Begin();
+								itr2 != (*itr)["text_maps"].End(); ++itr2 )
+							{
+								for ( rapidjson::Value::ConstMemberIterator itr3 = itr2->MemberBegin();
+									itr3 != itr2->MemberEnd(); ++itr3 )
+								{
+									std::string mapKey = itr3->name.GetString();
+									std::string mapText = itr3->value["text"].GetString();
+									std::set<int> mapHighlights;
+									for ( rapidjson::Value::ConstValueIterator highlightItr = itr3->value["word_highlights"].Begin();
+										highlightItr != itr3->value["word_highlights"].End(); ++highlightItr )
+									{
+										mapHighlights.insert(highlightItr->GetInt());
+									}
+									std::string worldMsg = "";
+									std::string worldMsgSays = "";
+									std::string worldMsgEmote = "";
+									std::string worldMsgEmoteYou = "";
+									std::string worldMsgEmoteToYou = "";
+									std::string worldIcon = "";
+									std::string worldIconMini = "";
+									if ( itr3->value.HasMember("msg") )
+									{
+										worldMsg = itr3->value["msg"].GetString();
+									}
+									if ( itr3->value.HasMember("msg_says") )
+									{
+										worldMsgSays = itr3->value["msg_says"].GetString();
+									}
+									if ( itr3->value.HasMember("msg_emote") )
+									{
+										worldMsgEmote = itr3->value["msg_emote"].GetString();
+									}
+									if ( itr3->value.HasMember("msg_emote_you") )
+									{
+										worldMsgEmoteYou = itr3->value["msg_emote_you"].GetString();
+									}
+									if ( itr3->value.HasMember("msg_emote_to_you") )
+									{
+										worldMsgEmoteToYou = itr3->value["msg_emote_to_you"].GetString();
+									}
+									if ( itr3->value.HasMember("world_icon") )
+									{
+										worldIcon = itr3->value["world_icon"].GetString();
+									}
+									if ( itr3->value.HasMember("world_icon_small") )
+									{
+										worldIconMini = itr3->value["world_icon_small"].GetString();
+									}
+									CalloutRadialMenu::iconEntries[actionName].text_map[mapKey] = CalloutRadialMenu::IconEntry::IconEntryText_t();
+									auto& entry = CalloutRadialMenu::iconEntries[actionName].text_map[mapKey];
+									entry.bannerText = mapText;
+									entry.bannerHighlights = mapHighlights;
+									entry.worldMsg = worldMsg;
+									entry.worldMsgSays = worldMsgSays;
+									entry.worldMsgEmote = worldMsgEmote;
+									entry.worldMsgEmoteYou = worldMsgEmoteYou;
+									entry.worldMsgEmoteToYou = worldMsgEmoteToYou;
+									entry.worldIconTag = worldIcon;
+									entry.worldIconTagMini = worldIconMini;
+
+									if ( worldIcon != "" )
+									{
+										assert(worldIconEntries.find(worldIcon) != worldIconEntries.end());
+									}
+									if ( worldIconMini != "" )
+									{
+										assert(worldIconEntries.find(worldIconMini) != worldIconEntries.end());
+									}
+								}
+							}
+						}
+					}
+				}
+				printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
+			}
+		}
+	}
+}
+
+void setCalloutBannerTextFormatted(const int player, Field* field, Uint32 color, std::set<int>& highlights, char const* const text, ...)
+{
+	if ( !field ) { return; }
+
+	char buf[256] = "";
+	va_list argptr;
+	va_start(argptr, text);
+	vsnprintf(buf, sizeof(buf), text, argptr);
+	va_end(argptr);
+
+	field->setText(buf);
+	field->clearWordsToHighlight();
+	for ( auto v : highlights )
+	{
+		field->addWordToHighlight(v, color);
+	}
+}
+
+void setCalloutBannerTextUnformatted(const int player, Field* field, const char* iconName, const char* textKey, Uint32 color)
+{
+	if ( !field ) { return; }
+	if ( CalloutMenu[player].iconEntries.find(iconName) == CalloutMenu[player].iconEntries.end() )
+	{
+		return;
+	}
+	auto& textMap = CalloutMenu[player].iconEntries[iconName].text_map[textKey];
+	field->setText(textMap.bannerText.c_str());
+	field->clearWordsToHighlight();
+	for ( auto v : textMap.bannerHighlights )
+	{
+		field->addWordToHighlight(v, color);
+	}
+}
+
+std::string CalloutRadialMenu::getCalloutMessage(const IconEntry::IconEntryText_t& text_map, const char* object, const int targetPlayer)
+{
+	if ( text_map.worldMsgEmote != "" )
+	{
+		char buf[512] = "";
+		if ( object )
+		{
+			if ( targetPlayer >= 0 && getPlayer() == targetPlayer && text_map.worldMsgEmoteYou != "" )
+			{
+				// messaging the player that owns the callout "you gesture to"
+				snprintf(buf, sizeof(buf), text_map.worldMsgEmoteYou.c_str(), object);
+			}
+			else
+			{
+				char shortname[32];
+				stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
+				snprintf(buf, sizeof(buf), text_map.worldMsgEmote.c_str(), shortname, object);
+			}
+		}
+		else
+		{
+			if ( targetPlayer >= 0 && getPlayer() == targetPlayer && text_map.worldMsgEmoteYou != "" )
+			{
+				// messaging the player that owns the callout "you gesture to"
+				snprintf(buf, sizeof(buf), text_map.worldMsgEmoteYou.c_str());
+			}
+			else
+			{
+				char shortname[32];
+				stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
+				snprintf(buf, sizeof(buf), text_map.worldMsgEmote.c_str(), shortname);
+			}
+		}
+		return buf;
+	}
+	else if ( text_map.worldMsgSays != "" )
+	{
+		char buf[512] = "";
+		if ( object )
+		{
+			if ( targetPlayer >= 0 && getPlayer() == targetPlayer )
+			{
+				// messaging the player that owns the callout "you say:"
+				snprintf(buf, sizeof(buf), text_map.worldMsgSays.c_str(), Language::get(739), object);
+			}
+			else
+			{
+				char shortname[32];
+				stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
+				std::string playerSays = shortname;
+				playerSays += ": ";
+				snprintf(buf, sizeof(buf), text_map.worldMsgSays.c_str(), playerSays.c_str(), object);
+			}
+		}
+		else
+		{
+			if ( targetPlayer >= 0 && getPlayer() == targetPlayer )
+			{
+				// messaging the player that owns the callout "you say:"
+				snprintf(buf, sizeof(buf), text_map.worldMsgSays.c_str(), Language::get(739));
+			}
+			else
+			{
+				char shortname[32];
+				stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
+				std::string playerSays = shortname;
+				playerSays += ": ";
+				snprintf(buf, sizeof(buf), text_map.worldMsgSays.c_str(), playerSays.c_str());
+			}
+		}
+		return buf;
+	}
+	else
+	{
+		char buf[512] = "";
+		if ( object )
+		{
+			snprintf(buf, sizeof(buf), text_map.worldMsg.c_str(), object);
+			return buf;
+		}
+		else
+		{
+			return text_map.worldMsg;
+		}
+	}
+}
+
+std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName, Uint32 color,
+	CalloutRadialMenu::CalloutCommand cmd, SetCalloutTextTypes setType, const int targetPlayer)
+{
+	if ( !field && setType == SET_CALLOUT_BANNER_TEXT ) { return ""; }
+	auto findIcon = CalloutRadialMenu::iconEntries.find(iconName);
+	if ( findIcon == CalloutRadialMenu::iconEntries.end() )
+	{
+		return "";
+	}
+	std::string key = "default";
+	Entity* entity = uidToEntity(lockOnEntityUid);
+	const int player = getPlayer();
+
+	Entity* playerEntity = Player::getPlayerInteractEntity(player);
+
+	if ( players[player]->isLocalPlayer() )
+	{
+		if ( lockOnEntityUid == 0 )
+		{
+			if ( cmd == CALLOUT_CMD_AFFIRMATIVE || cmd == CALLOUT_CMD_NEGATIVE )
+			{
+				entity = playerEntity;
+			}
+			else if ( cmd == CALLOUT_CMD_HELP )
+			{
+				entity = playerEntity;
+			}
+		}
+
+		if ( cmd == CALLOUT_CMD_SOUTH
+			|| cmd == CALLOUT_CMD_SOUTHWEST
+			|| cmd == CALLOUT_CMD_SOUTHEAST )
+		{
+			int toPlayer = getPlayerForDirectPlayerCmd(getPlayer(), cmd);
+			Entity* toPlayerEntity = Player::getPlayerInteractEntity(toPlayer);
+			if ( toPlayer >= 0 && toPlayer < MAXPLAYERS
+				&& toPlayerEntity && !client_disconnected[toPlayer] )
+			{
+				entity = toPlayerEntity;
+			}
+		}
+	}
+
+	if ( cmd == CALLOUT_CMD_MOVE )
+	{
+		if ( setType == SET_CALLOUT_BANNER_TEXT )
+		{
+			setCalloutBannerTextUnformatted(player, field, iconName, "default", color);
+		}
+		else if ( setType == SET_CALLOUT_ICON_KEY )
+		{
+			return "default";
+		}
+		else
+		{
+			return getCalloutMessage(findIcon->second.text_map["default"], nullptr, targetPlayer);
+		}
+		return "";
+	}
+	else if ( cmd == CALLOUT_CMD_SOUTH
+		|| cmd == CALLOUT_CMD_SOUTHWEST
+		|| cmd == CALLOUT_CMD_SOUTHEAST )
+	{
+		std::string targetPlayerName = "";
+		
+		int toPlayer = getPlayerForDirectPlayerCmd(getPlayer(), cmd);
+		key = "player_wave";
+
+
+		if ( toPlayer < 0 || toPlayer >= MAXPLAYERS 
+			|| client_disconnected[toPlayer] )
+		{
+			key = "unavailable";
+		}
+		else
+		{
+			Entity* toPlayerEntity = Player::getPlayerInteractEntity(toPlayer);
+			if ( !toPlayerEntity )
+			{
+				key = "unavailable";
+			}
+		}
+
+		if ( setType == SET_CALLOUT_ICON_KEY )
+		{
+			return key;
+		}
+
+		if ( key != "unavailable" )
+		{
+			char shortname[32];
+			stringCopy(shortname, stats[toPlayer]->name, sizeof(shortname), 22);
+			targetPlayerName = shortname;
+		}
+
+		auto& textMap = findIcon->second.text_map[key];
+		auto highlights = textMap.bannerHighlights;
+		if ( highlights.size() > 0 )
+		{
+			int indexStart = 0;
+			for ( auto highlight : highlights )
+			{
+				indexStart = std::max(highlight, indexStart);
+			}
+			for ( auto c : targetPlayerName )
+			{
+				if ( c == ' ' )
+				{
+					highlights.insert(indexStart + 1);
+					++indexStart;
+				}
+			}
+		}
+		if ( setType == SET_CALLOUT_BANNER_TEXT )
+		{
+			if ( key == "unavailable" )
+			{
+				color = hudColors.characterSheetRed;
+			}
+			setCalloutBannerTextFormatted(player, field, color, highlights, textMap.bannerText.c_str(), targetPlayerName.c_str());
+		}
+		else
+		{
+			if ( entity && entity->skill[2] == targetPlayer )
+			{
+				char shortname[32];
+				stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
+				char buf[128];
+				snprintf(buf, sizeof(buf), textMap.worldMsgEmoteToYou.c_str(), shortname);
+				return buf;
+			}
+			else
+			{
+				return getCalloutMessage(textMap, targetPlayerName.c_str(), targetPlayer);
+			}
+		}
+		return "";
+	}
+
+	auto calloutType = getCalloutTypeForEntity(player, entity);
+	auto& text_map = findIcon->second.text_map;
+	switch ( calloutType )
+	{
+	case CALLOUT_TYPE_NO_TARGET:
+		key = "location";
+		break;
+	case CALLOUT_TYPE_PLAYER:
+		if ( cmd == CALLOUT_CMD_HELP && entity && (entity->behavior == &actPlayer || entity->behavior == &actDeathGhost)
+			&& player >= 0 && player < MAXPLAYERS && entity == playerEntity )
+		{
+			if ( players[player]->isLocalPlayer() )
+			{
+				clientCalloutHelpFlags = 0;
+				auto& fx = StatusEffectQueue[player];
+				EntityHungerIntervals hunger = EntityHungerIntervals::HUNGER_INTERVAL_OVERSATIATED;
+				bool hungerBlood = false;
+				for ( auto& eff : fx.effectQueue )
+				{
+					if ( eff.effect == StatusEffectQueue_t::kEffectBread || eff.effect == StatusEffectQueue_t::kEffectBloodHunger )
+					{
+						if ( eff.effect == StatusEffectQueue_t::kEffectBloodHunger )
+						{
+							hungerBlood = true;
+						}
+						if ( eff.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_STARVING) )
+						{
+							clientCalloutHelpFlags |= hungerBlood ? CALLOUT_HELP_BLOOD_STARVING : CALLOUT_HELP_FOOD_STARVING;
+						}
+						else if ( eff.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_WEAK) )
+						{
+							clientCalloutHelpFlags |= hungerBlood ? CALLOUT_HELP_BLOOD_WEAK : CALLOUT_HELP_FOOD_WEAK;
+						}
+						else if ( eff.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_HUNGRY) )
+						{
+							clientCalloutHelpFlags |= hungerBlood ? CALLOUT_HELP_BLOOD_HUNGRY : CALLOUT_HELP_FOOD_HUNGRY;
+						}
+					}
+					else if ( eff.effect == StatusEffectQueue_t::kEffectAutomatonHunger )
+					{
+						if ( eff.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_AUTOMATON_CRITICAL) )
+						{
+							clientCalloutHelpFlags |= CALLOUT_HELP_STEAM_CRITICAL;
+						}
+					}
+					else if ( eff.effect >= 0 && eff.effect < NUMEFFECTS )
+					{
+						if ( stats[player]->statusEffectRemovedByCureAilment(eff.effect, players[player]->entity) )
+						{
+							clientCalloutHelpFlags |= CALLOUT_HELP_NEGATIVE_FX;
+						}
+					}
+				}
+				bool hpLow = stats[player]->HP < (3 * stats[player]->MAXHP / 5);
+				bool hpCritical = stats[player]->HP < (1 * stats[player]->MAXHP / 4);
+				clientCalloutHelpFlags |= hpLow ? CALLOUT_HELP_HP_LOW : 0;
+				clientCalloutHelpFlags |= hpCritical ? CALLOUT_HELP_HP_CRITICAL : 0;
+			}
+
+			if ( clientCalloutHelpFlags )
+			{
+				key = "help_all_conditions";
+				if ( setType == SET_CALLOUT_ICON_KEY )
+				{
+					if ( clientCalloutHelpFlags & CALLOUT_HELP_BLOOD_STARVING )
+					{
+						key = "condition_blood_starving";
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_FOOD_STARVING )
+					{
+						key = "condition_food_starving";
+					}
+					else if ( (clientCalloutHelpFlags & CALLOUT_HELP_STEAM_CRITICAL) && (svFlags & SV_FLAG_HUNGER) )
+					{
+						key = "condition_steam_empty";
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_BLOOD_WEAK )
+					{
+						key = "condition_blood_weak";
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_FOOD_WEAK )
+					{
+						key = "condition_food_weak";
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_BLOOD_HUNGRY )
+					{
+						key = "condition_blood_hungry";
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_FOOD_HUNGRY )
+					{
+						key = "condition_food_hungry";
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_HP_CRITICAL )
+					{
+						key = "condition_heal_urgent";
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_HP_LOW )
+					{
+						key = "condition_heal";
+					}
+					else if ( (clientCalloutHelpFlags & CALLOUT_HELP_STEAM_CRITICAL) && !(svFlags & SV_FLAG_HUNGER) )
+					{
+						key = "condition_steam_empty";
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_NEGATIVE_FX )
+					{
+						key = "condition_cure_ailment";
+					}
+					return key;
+				}
+
+				auto& textMap = text_map[key];
+				auto highlights = textMap.bannerHighlights;
+
+				std::string helpText = "";
+
+				// hunger stats
+				{
+					if ( clientCalloutHelpFlags & CALLOUT_HELP_BLOOD_STARVING )
+					{
+						helpText += helpDescriptors["starving_blood"];
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_FOOD_STARVING )
+					{
+						helpText += helpDescriptors["starving"];
+					}
+					else if ( (clientCalloutHelpFlags & CALLOUT_HELP_STEAM_CRITICAL) && (svFlags & SV_FLAG_HUNGER) )
+					{
+						helpText += helpDescriptors["empty_steam"];
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_BLOOD_WEAK )
+					{
+						helpText += helpDescriptors["very_hungry_blood"];
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_FOOD_WEAK )
+					{
+						helpText += helpDescriptors["very_hungry"];
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_BLOOD_HUNGRY )
+					{
+						helpText += helpDescriptors["hungry_blood"];
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_FOOD_HUNGRY )
+					{
+						helpText += helpDescriptors["hungry"];
+					}
+					else if ( (clientCalloutHelpFlags & CALLOUT_HELP_STEAM_CRITICAL) && !(svFlags & SV_FLAG_HUNGER) )
+					{
+						helpText += helpDescriptors["empty_steam"];
+					}
+				}
+
+				// health stats
+				{
+					if ( clientCalloutHelpFlags & CALLOUT_HELP_HP_CRITICAL )
+					{
+						if ( helpText.size() > 1 )
+						{
+							helpText += helpDescriptors["separator"];
+						}
+						helpText += helpDescriptors["healing_urgent"];
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_HP_LOW )
+					{
+						if ( helpText.size() > 1 )
+						{
+							helpText += helpDescriptors["separator"];
+						}
+						helpText += helpDescriptors["healing"];
+					}
+				}
+
+				// effects
+				if ( clientCalloutHelpFlags & CALLOUT_HELP_NEGATIVE_FX )
+				{
+					int numEffectsAdded = 0;
+					for ( int i = 0; i < NUMEFFECTS; ++i )
+					{
+						if ( numEffectsAdded >= 3 )
+						{
+							break;
+						}
+						if ( stats[player]->EFFECTS[i] 
+							&& (stats[player]->statusEffectRemovedByCureAilment(i, players[player]->entity)
+								|| i == EFF_WITHDRAWAL && stats[player]->EFFECTS_TIMERS[EFF_WITHDRAWAL] == -2) )
+						{
+							if ( StatusEffectQueue_t::StatusEffectDefinitions_t::allEffects[i].name == "" )
+							{
+								continue;
+							}
+							if ( helpText.size() > 1 )
+							{
+								helpText += helpDescriptors["separator"];
+							}
+							helpText += StatusEffectQueue_t::StatusEffectDefinitions_t::allEffects[i].name;
+							++numEffectsAdded;
+						}
+					}
+				}
+
+				if ( stats[player]->HP == 0 || !players[player]->entity )
+				{
+					helpText = helpDescriptors["ghost"];
+				}
+
+				if ( setType == SET_CALLOUT_BANNER_TEXT )
+				{
+					setCalloutBannerTextFormatted(player, field, color, highlights, textMap.bannerText.c_str(), helpText.c_str());
+				}
+				else
+				{
+					return getCalloutMessage(textMap, helpText.c_str(), targetPlayer);
+				}
+				return "";
+			}
+		}
+		else if ( cmd == CALLOUT_CMD_LOOK )
+		{
+			std::string targetPlayerName = "";
+			if ( entity && (entity->behavior == &actPlayer || entity->behavior == &actDeathGhost) )
+			{
+				char shortname[32];
+				stringCopy(shortname, stats[entity->skill[2]]->name, sizeof(shortname), 22);
+				targetPlayerName = shortname;
+			}
+
+			key = "player_wave";
+			if ( setType == SET_CALLOUT_ICON_KEY )
+			{
+				return key;
+			}
+
+			auto& textMap = text_map[key];
+			auto highlights = textMap.bannerHighlights;
+			if ( highlights.size() > 0 )
+			{
+				int indexStart = 0;
+				for ( auto highlight : highlights )
+				{
+					indexStart = std::max(highlight, indexStart);
+				}
+				for ( auto c : targetPlayerName )
+				{
+					if ( c == ' ' )
+					{
+						highlights.insert(indexStart + 1);
+						++indexStart;
+					}
+				}
+			}
+			if ( setType == SET_CALLOUT_BANNER_TEXT )
+			{
+				setCalloutBannerTextFormatted(player, field, color, highlights, textMap.bannerText.c_str(), targetPlayerName.c_str());
+			}
+			else
+			{
+				if ( entity && entity->skill[2] == targetPlayer )
+				{
+					char shortname[32];
+					stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
+					char buf[128];
+					snprintf(buf, sizeof(buf), textMap.worldMsgEmoteToYou.c_str(), shortname);
+					return buf;
+				}
+				else
+				{
+					return getCalloutMessage(textMap, targetPlayerName.c_str(), targetPlayer);
+				}
+			}
+			return "";
+		}
+		break;
+	case CALLOUT_TYPE_NPC:
+	case CALLOUT_TYPE_NPC_ENEMY:
+	case CALLOUT_TYPE_NPC_PLAYERALLY:
+		if ( entity->behavior == &actMonster )
+		{
+			int monsterType = entity->getMonsterTypeFromSprite();
+			if ( monsterType >= NOTHING && monsterType < NUMMONSTERS )
+			{
+				std::string monsterName = getMonsterLocalizedName((Monster)monsterType);
+				bool namedNPC = false;
+				if ( multiplayer != CLIENT && monsterType != SHOPKEEPER )
+				{
+					if ( Stat* stats = entity->getStats() )
+					{
+						if ( monsterNameIsGeneric(*stats) )
+						{
+							monsterName = stats->name;
+						}
+						else if ( strcmp(stats->name, "") )
+						{
+							monsterName = stats->name;
+							namedNPC = true;
+						}
+					}
+				}
+
+				std::string key = "npc";
+				if ( calloutType == CALLOUT_TYPE_NPC_PLAYERALLY )
+				{
+					key = "npc_ally";
+				}
+				else if ( calloutType == CALLOUT_TYPE_NPC_ENEMY )
+				{
+					key = "npc_enemy";
+				}
+
+				if ( namedNPC
+					&& text_map.find(std::string(key + "_named")) != text_map.end() )
+				{
+					key += "_named";
+				}
+				else if ( stringStartsWithVowel(monsterName)
+					&& text_map.find(std::string(key + "_an")) != text_map.end() )
+				{
+					key += "_an";
+				}
+
+				if ( text_map.find(key) == text_map.end() )
+				{
+					key = "default";
+				}
+
+				if ( setType == SET_CALLOUT_ICON_KEY )
+				{
+					return key;
+				}
+				auto& textMap = text_map[key];
+				auto highlights = textMap.bannerHighlights;
+				if ( highlights.size() > 0 )
+				{
+					int indexStart = 0;
+					for ( auto highlight : highlights )
+					{
+						indexStart = std::max(highlight, indexStart);
+					}
+					for ( auto c : monsterName )
+					{
+						if ( c == ' ' )
+						{
+							highlights.insert(indexStart + 1);
+							++indexStart;
+						}
+					}
+				}
+				if ( setType == SET_CALLOUT_BANNER_TEXT )
+				{
+					setCalloutBannerTextFormatted(player, field, color, highlights, textMap.bannerText.c_str(), monsterName.c_str());
+				}
+				else
+				{
+					return getCalloutMessage(textMap, monsterName.c_str(), targetPlayer);
+				}
+				return "";
+			}
+		}
+		break;
+	case CALLOUT_TYPE_SWITCH_ON:
+		key = "switch";
+		if ( text_map.find(std::string(key + "_on")) != text_map.end() )
+		{
+			key += "_on";
+		}
+		break;
+	case CALLOUT_TYPE_SWITCH_OFF:
+		key = "switch";
+		if ( text_map.find(std::string(key + "_off")) != text_map.end() )
+		{
+			key += "_off";
+		}
+		break;
+	case CALLOUT_TYPE_SWITCH:
+		key = "switch";
+		break;
+	case CALLOUT_TYPE_CHEST:
+		key = "chest";
+		break;
+	case CALLOUT_TYPE_ITEM:
+	{
+		std::string itemName;
+		if ( entity && (multiplayer != CLIENT || (multiplayer == CLIENT && entity->itemReceivedDetailsFromServer == 1)) )
+		{
+			if ( Item* item = newItemFromEntity(entity, true) )
+			{
+				if ( item->type >= WOODEN_SHIELD && item->type < NUMITEMS )
+				{
+					char buf[256];
+					bool manuallyInsertedNewline = false;
+					if ( !item->identified )
+					{
+						if ( itemCategory(item) == BOOK )
+						{
+							if ( setType == SET_CALLOUT_BANNER_TEXT )
+							{
+								snprintf(buf, sizeof(buf), "\"%s\" (?)", getBookNameFromIndex(item->appearance% numbooks).c_str());
+							}
+							else
+							{
+								snprintf(buf, sizeof(buf), "%s %s\n\"%s\" (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+									Language::get(4214), getBookNameFromIndex(item->appearance % numbooks).c_str());
+								manuallyInsertedNewline = true;
+							}
+						}
+						else if ( itemCategory(item) == SCROLL )
+						{
+							if ( setType == SET_CALLOUT_BANNER_TEXT )
+							{
+								snprintf(buf, sizeof(buf), "%s %s %s (?)",
+									items[item->type].getUnidentifiedName(), Language::get(4215), item->getScrollLabel());
+							}
+							else
+							{
+								snprintf(buf, sizeof(buf), "%s %s\n%s %s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+									items[item->type].getUnidentifiedName(), Language::get(4215), item->getScrollLabel());
+								manuallyInsertedNewline = true;
+							}
+						}
+						else
+						{
+							std::string name = item->getName();
+							if ( setType == SET_CALLOUT_WORLD_TEXT && (name.find(' ') != std::string::npos) )
+							{
+								snprintf(buf, sizeof(buf), "%s\n%s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), name.c_str());
+							}
+							else
+							{
+								snprintf(buf, sizeof(buf), "%s %s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), name.c_str());
+							}
+						}
+					}
+					else
+					{
+						if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT || item->type == TOOL_DUMMYBOT
+							|| item->type == TOOL_GYROBOT )
+						{
+							int health = 100;
+							if ( !item->tinkeringBotIsMaxHealth() )
+							{
+								health = 25 * (item->appearance % 10);
+								if ( health == 0 && item->status != BROKEN )
+								{
+									health = 5;
+								}
+							}
+							std::string name = item->getName();
+							if ( setType == SET_CALLOUT_WORLD_TEXT && (name.find(' ') != std::string::npos) )
+							{
+								std::vector<size_t> spaces;
+								size_t find = name.find(' ');
+								while ( find != std::string::npos )
+								{
+									spaces.push_back(find);
+									find = name.find(' ', find + 1);
+								}
+								if ( spaces.size() == 1 )
+								{
+									snprintf(buf, sizeof(buf), "%s\n%s",
+										ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), name.c_str());
+								}
+								else
+								{
+									size_t split = (spaces.size() / 2);
+									if ( spaces.size() > split )
+									{
+										name.at(spaces[split]) = '\n';
+									}
+									snprintf(buf, sizeof(buf), "%s %s",
+										ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), name.c_str());
+								}
+							}
+							else
+							{
+								snprintf(buf, sizeof(buf), "%s %s", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), 
+									name.c_str());
+							}
+						}
+						else if ( itemCategory(item) == BOOK )
+						{
+							if ( setType == SET_CALLOUT_BANNER_TEXT )
+							{
+								snprintf(buf, sizeof(buf), "\"%s\" (%+d)", getBookNameFromIndex(item->appearance % numbooks).c_str(),
+									item->beatitude);
+							}
+							else
+							{
+								snprintf(buf, sizeof(buf), "%s %s\n\"%s\" (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+									Language::get(4214), getBookNameFromIndex(item->appearance % numbooks).c_str(), item->beatitude); // brand new copy of
+								manuallyInsertedNewline = true;
+							}
+						}
+						else
+						{
+							std::string name = item->getName();
+							if ( setType == SET_CALLOUT_WORLD_TEXT && (name.find(' ') != std::string::npos) )
+							{
+								std::vector<size_t> spaces;
+								size_t find = name.find(' ');
+								while ( find != std::string::npos )
+								{
+									spaces.push_back(find);
+									find = name.find(' ', find + 1);
+								}
+								if ( spaces.size() == 1 )
+								{
+									snprintf(buf, sizeof(buf), "%s\n%s (%+d)", 
+										ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), name.c_str(), item->beatitude);
+								}
+								else
+								{
+									size_t split = (spaces.size() / 2);
+									if ( spaces.size() > split )
+									{
+										name.at(spaces[split]) = '\n';
+									}
+									snprintf(buf, sizeof(buf), "%s %s (%+d)",
+										ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), name.c_str(), item->beatitude);
+								}
+							}
+							else
+							{
+								snprintf(buf, sizeof(buf), "%s %s (%+d)", 
+									ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), name.c_str(), item->beatitude);
+							}
+						}
+					}
+					itemName = buf;
+					if ( itemName.size() > 0 && itemName[0] >= 'A' && itemName[0] <= 'Z' )
+					{
+						itemName[0] -= 'A' - 'a';
+					}
+				}
+				else
+				{
+					itemName = Language::get(3634);
+				}
+				free(item);
+			}
+		}
+		else
+		{
+			itemName = Language::get(3634);
+		}
+		std::string key = "item";
+		if ( stringStartsWithVowel(itemName) && text_map.find(std::string(key + "_an")) != text_map.end() )
+		{
+			key += "_an";
+		}
+
+		if ( text_map.find(key) == text_map.end() )
+		{
+			key = "default";
+		}
+		if ( setType == SET_CALLOUT_ICON_KEY )
+		{
+			return key;
+		}
+		auto& textMap = text_map[key];
+		auto highlights = textMap.bannerHighlights;
+		if ( highlights.size() > 0 )
+		{
+			int indexStart = 0;
+			for ( auto highlight : highlights )
+			{
+				indexStart = std::max(highlight, indexStart);
+			}
+			for ( auto c : itemName )
+			{
+				if ( c == ' ' )
+				{
+					highlights.insert(indexStart + 1);
+					++indexStart;
+				}
+			}
+		}
+		if ( setType == SET_CALLOUT_BANNER_TEXT )
+		{
+			setCalloutBannerTextFormatted(player, field, color, highlights, textMap.bannerText.c_str(), itemName.c_str());
+		}
+		else
+		{
+			return getCalloutMessage(textMap, itemName.c_str(), targetPlayer);
+		}
+		return "";
+	}
+	case CALLOUT_TYPE_BOULDER:
+		key = "boulder";
+		break;
+	case CALLOUT_TYPE_TRAP:
+	{
+		key = "trap";
+		if ( text_map.find(key) == text_map.end() )
+		{
+			key = "default";
+		}
+		if ( setType == SET_CALLOUT_ICON_KEY )
+		{
+			return key;
+		}
+		std::string trapName = Language::get(4362);
+		if ( entity )
+		{
+			if ( entity->behavior == &actBoulderTrapHole )
+			{
+				trapName = Language::get(4349);
+			}
+			else if ( entity->behavior == &actArrowTrap )
+			{
+				trapName = Language::get(4351);
+			}
+			else if ( entity->behavior == &actMagicTrap )
+			{
+				trapName = Language::get(4352);
+			}
+			else if ( entity->behavior == &actMagicTrapCeiling )
+			{
+				trapName = Language::get(4352);
+			}
+			else if ( entity->behavior == &actSpearTrap )
+			{
+				trapName = Language::get(4350);
+			}
+		}
+		auto& textMap = text_map[key];
+		auto highlights = textMap.bannerHighlights;
+		if ( highlights.size() > 0 )
+		{
+			int indexStart = 0;
+			for ( auto highlight : highlights )
+			{
+				indexStart = std::max(highlight, indexStart);
+			}
+			for ( auto c : trapName )
+			{
+				if ( c == ' ' )
+				{
+					highlights.insert(indexStart + 1);
+					++indexStart;
+				}
+			}
+		}
+		if ( setType == SET_CALLOUT_BANNER_TEXT )
+		{
+			setCalloutBannerTextFormatted(player, field, color, highlights,
+				textMap.bannerText.c_str(), trapName.c_str());
+		}
+		else
+		{
+			return getCalloutMessage(textMap, trapName.c_str(), targetPlayer);
+		}
+		return "";
+	}
+	case CALLOUT_TYPE_GENERIC_INTERACTABLE:
+	{
+		key = "generic_interactable";
+		if ( text_map.find(key) == text_map.end() )
+		{
+			key = "default";
+		}
+		if ( setType == SET_CALLOUT_ICON_KEY )
+		{
+			return key;
+		}
+		std::string objectName = Language::get(4366);
+		if ( entity )
+		{
+			if ( entity->behavior == &actSink )
+			{
+				objectName = Language::get(4354);
+			}
+			else if ( entity->behavior == &actHeadstone )
+			{
+				objectName = Language::get(4357);
+			}
+			else if ( entity->behavior == &actCampfire )
+			{
+				objectName = Language::get(4365);
+			}
+			else if ( entity->behavior == &actPowerCrystal )
+			{
+				objectName = Language::get(4356);
+			}
+			else if ( entity->behavior == &actPedestalBase )
+			{
+				objectName = Language::get(4364);
+			}
+			else if ( entity->behavior == &actFloorDecoration && entity->sprite == 991 )
+			{
+				objectName = Language::get(4363);
+			}
+		}
+		auto& textMap = text_map[key];
+		if ( setType == SET_CALLOUT_BANNER_TEXT )
+		{
+			setCalloutBannerTextFormatted(player, field, color, textMap.bannerHighlights,
+				textMap.bannerText.c_str(), objectName.c_str());
+		}
+		else
+		{
+			return getCalloutMessage(textMap, objectName.c_str(), targetPlayer);
+		}
+		return "";
+	}
+	case CALLOUT_TYPE_SHRINE:
+		key = "shrine";
+		break;
+	case CALLOUT_TYPE_EXIT:
+		key = "exit";
+		break;
+	case CALLOUT_TYPE_SECRET_EXIT:
+		key = "secret_exit";
+		break;
+	case CALLOUT_TYPE_SECRET_ENTRANCE:
+		key = "secret_entrance";
+		break;
+	case CALLOUT_TYPE_GOLD:
+		key = "gold";
+		break;
+	case CALLOUT_TYPE_FOUNTAIN:
+		key = "fountain";
+		break;
+	case CALLOUT_TYPE_SINK:
+		key = "sink";
+		break;
+	case CALLOUT_TYPE_TELEPORTER_LADDER_UP:
+		key = "teleporter";
+		if ( text_map.find(std::string(key + "_up")) != text_map.end() )
+		{
+			key += "_up";
+		}
+		break;
+	case CALLOUT_TYPE_TELEPORTER_LADDER_DOWN:
+		key = "teleporter";
+		if ( text_map.find(std::string(key + "_down")) != text_map.end() )
+		{
+			key += "_down";
+		}
+		break;
+	case CALLOUT_TYPE_TELEPORTER_PORTAL:
+		key = "teleporter";
+		if ( text_map.find(std::string(key + "_portal")) != text_map.end() )
+		{
+			key += "_portal";
+		}
+		break;
+	case CALLOUT_TYPE_BOMB_TRAP:
+	{
+		key = "bomb";
+		if ( setType == SET_CALLOUT_ICON_KEY )
+		{
+			return key;
+		}
+		std::string trapName = Language::get(4362);
+		if ( entity )
+		{
+			auto highlights = text_map[key].bannerHighlights;
+			if ( entity->behavior == &actBomb )
+			{
+				if ( entity->skill[21] >= WOODEN_SHIELD && entity->skill[21] < NUMITEMS )
+				{
+					trapName = items[entity->skill[21]].getIdentifiedName();
+					if ( highlights.size() > 0 )
+					{
+						highlights.insert(*highlights.begin() + 1);
+					}
+				}
+			}
+			else if ( entity->behavior == &actBeartrap )
+			{
+				trapName = items[TOOL_BEARTRAP].getIdentifiedName();
+			}
+			auto& textMap = text_map[key];
+			if ( setType == SET_CALLOUT_BANNER_TEXT )
+			{
+				setCalloutBannerTextFormatted(player, field, color, highlights,
+					textMap.bannerText.c_str(), trapName.c_str());
+			}
+			else
+			{
+				return getCalloutMessage(textMap, trapName.c_str(), targetPlayer);
+			}
+		}
+		return "";
+	}
+	case CALLOUT_TYPE_COLLIDER_BREAKABLE:
+	{
+		key = "collider";
+		if ( setType == SET_CALLOUT_ICON_KEY )
+		{
+			return key;
+		}
+		if ( entity )
+		{
+			auto highlights = text_map[key].bannerHighlights;
+			std::string objectName = Language::get(entity->getColliderLangName());
+
+			if ( highlights.size() > 0 )
+			{
+				int indexStart = *highlights.begin();
+				for ( auto c : objectName )
+				{
+					if ( c == ' ' )
+					{
+						highlights.insert(indexStart + 1);
+						++indexStart;
+					}
+				}
+			}
+			auto& textMap = text_map[key];
+			if ( setType == SET_CALLOUT_BANNER_TEXT )
+			{
+				setCalloutBannerTextFormatted(player, field, color, highlights,
+					textMap.bannerText.c_str(), objectName.c_str());
+			}
+
+			else
+			{
+				return getCalloutMessage(textMap, objectName.c_str(), targetPlayer);
+			}
+		}
+		return "";
+		break;
+	}
+		default:
+			break;
+	}
+
+	if ( text_map.find(key) == text_map.end() )
+	{
+		if ( setType == SET_CALLOUT_BANNER_TEXT )
+		{
+			setCalloutBannerTextUnformatted(player, field, iconName, "default", color);
+		}
+		else if ( setType == SET_CALLOUT_ICON_KEY )
+		{
+			return "default";
+		}
+		else
+		{
+			return getCalloutMessage(text_map["default"], nullptr, targetPlayer);
+		}
+		return "";
+	}
+	if ( setType == SET_CALLOUT_BANNER_TEXT )
+	{
+		setCalloutBannerTextUnformatted(player, field, iconName, key.c_str(), color);
+	}
+	else if ( setType == SET_CALLOUT_ICON_KEY )
+	{
+		return key;
+	}
+	else
+	{
+		return getCalloutMessage(text_map[key], nullptr, targetPlayer);
+	}
+	return "";
+}
+
+void CalloutRadialMenu::initCalloutMenuGUICursor(bool openInventory)
+{
+	bool oldshootmode = players[gui_player]->shootmode;
+	if ( openInventory )
+	{
+		//players[gui_player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+		players[gui_player]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_CALLOUTGUI);
+		players[gui_player]->openStatusScreen(GUI_MODE_CALLOUT, INVENTORY_MODE_ITEM);
+	}
+
+	if ( !oldshootmode )
+	{
+		Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER | Inputs::UNSET_RELATIVE_MOUSE);
+		inputs.warpMouse(gui_player,
+			players[gui_player]->camera_x1() + (players[gui_player]->camera_width() / 2),
+			players[gui_player]->camera_y1() + (players[gui_player]->camera_height() / 2), flags);
+	}
+
+	inputs.setMouse(gui_player, Inputs::OX, inputs.getMouse(gui_player, Inputs::X));
+	inputs.setMouse(gui_player, Inputs::OY, inputs.getMouse(gui_player, Inputs::Y));
+
+	if ( menuX == -1 )
+	{
+		menuX = inputs.getMouse(gui_player, Inputs::X);
+	}
+	if ( menuY == -1 )
+	{
+		menuY = inputs.getMouse(gui_player, Inputs::Y);
+	}
+}
+
+bool CalloutRadialMenu::calloutGUIHasBeenCreated() const
+{
+	if ( calloutFrame )
+	{
+		if ( !calloutFrame->getFrames().empty() )
+		{
+			for ( auto f : calloutFrame->getFrames() )
+			{
+				if ( !f->isToBeDeleted() )
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	return false;
+}
+
+void CalloutRadialMenu::createCalloutMenuGUI()
+{
+	const int player = getPlayer();
+	if ( !gui || !calloutFrame )
+	{
+		return;
+	}
+	if ( calloutGUIHasBeenCreated() )
+	{
+		return;
+	}
+
+	const int midx = calloutFrame->getSize().w / 2;
+	const int midy = calloutFrame->getSize().h / 2;
+
+	auto bgFrame = calloutFrame->addFrame("wheel base");
+	bgFrame->setSize(SDL_Rect{ 0, 0, calloutFrame->getSize().w, calloutFrame->getSize().h });
+	bgFrame->setHollow(false);
+	bgFrame->setDisabled(false);
+	bgFrame->setInheritParentFrameOpacity(false);
+	bgFrame->setOpacity(0.0);
+
+	const char* font = "fonts/pixel_maz_multiline.ttf#16#2";
+
+	int panelIndex = 0;
+	for ( auto& entry : panelEntries )
+	{
+		if ( panelIndex < PANEL_DIRECTION_END )
+		{
+			SDL_Rect pos{ entry.x + midx, entry.y + midy, 0, 0 };
+			char buf[32] = "";
+			snprintf(buf, sizeof(buf), "panel %d", panelIndex);
+			Frame::image_t* img = bgFrame->addImage(pos, 0xFFFFFFFF, entry.path.c_str(), buf);
+			if ( auto imgGet = Image::get(img->path.c_str()) )
+			{
+				img->pos.w = imgGet->getWidth();
+				img->pos.h = imgGet->getHeight();
+			}
+			img->ontop = true;
+		}
+		++panelIndex;
+	}
+
+	panelIndex = 0;
+	for ( auto& entry : panelEntries )
+	{
+		if ( panelIndex < PANEL_DIRECTION_END )
+		{
+			SDL_Rect pos{ entry.x + midx, entry.y + midy, 0, 0 };
+			char buf[32] = "";
+			snprintf(buf, sizeof(buf), "icon %d", panelIndex);
+			Frame::image_t* imgIcon = bgFrame->addImage(pos, 0xFFFFFFFF, "", buf);
+			imgIcon->disabled = true;
+			imgIcon->ontop = true;
+		}
+		++panelIndex;
+	}
+
+	{
+		// do center panel
+		auto& entry = panelEntries[panelEntries.size() - 1];
+		SDL_Rect pos{ entry.x + midx, entry.y + midy, 0, 0 };
+		char buf[32] = "";
+		snprintf(buf, sizeof(buf), "panel %d", PANEL_DIRECTION_END);
+		Frame::image_t* img = bgFrame->addImage(pos, 0xFFFFFFFF, entry.path.c_str(), buf);
+		if ( auto imgGet = Image::get(img->path.c_str()) )
+		{
+			img->pos.w = imgGet->getWidth();
+			img->pos.h = imgGet->getHeight();
+		}
+	}
+
+	auto bannerFrame = calloutFrame->addFrame("banner frame");
+	bannerFrame->setSize(SDL_Rect{ 0, 0, 0, 40 });
+	bannerFrame->setHollow(false);
+	bannerFrame->setDisabled(false);
+	bannerFrame->setInheritParentFrameOpacity(false);
+	bannerFrame->addImage(SDL_Rect{ 0, 0, 42, 40 }, 0xFFFFFFFF, "#*images/ui/FollowerWheel/banner-cmd_l.png", "banner left");
+	bannerFrame->addImage(SDL_Rect{ 0, 0, 42, 40 }, 0xFFFFFFFF, "#*images/ui/FollowerWheel/banner-cmd_r.png", "banner right");
+	bannerFrame->addImage(SDL_Rect{ 0, 12, 0, 28 }, 0xFFFFFFFF, "*images/ui/FollowerWheel/banner-cmd_c.png", "banner center");
+	auto bannerText = bannerFrame->addField("banner txt", 128);
+	bannerText->setFont(font);
+	bannerText->setText("");
+	bannerText->setHJustify(Field::justify_t::LEFT);
+	bannerText->setVJustify(Field::justify_t::TOP);
+	bannerText->setSize(SDL_Rect{ 0, 0, 0, 24 });
+	bannerText->setTextColor(followerBannerTextColor);
+	bannerText->setOutlineColor(makeColor(29, 16, 11, 255));
+	auto bannerGlyph = bannerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "banner glyph");
+	bannerGlyph->disabled = true;
+	auto bannerGlyph2 = bannerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "banner modifier glyph");
+	bannerGlyph2->disabled = true;
+
+	auto wheelTitleText = bgFrame->addField("wheel title", 128);
+	wheelTitleText->setFont(font);
+	wheelTitleText->setText("");
+	wheelTitleText->setHJustify(Field::justify_t::LEFT);
+	wheelTitleText->setVJustify(Field::justify_t::TOP);
+	wheelTitleText->setSize(SDL_Rect{ 0, 0, 240, 24 });
+	wheelTitleText->setTextColor(followerTitleColor);
+	wheelTitleText->setOutlineColor(makeColor(29, 16, 11, 255));
+
+	auto wheelSkillImg = bannerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "skill img");
+	wheelSkillImg->disabled = true;
+	auto wheelStatImg = bannerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "stat img");
+	wheelStatImg->disabled = true;
+}
+
+bool CalloutRadialMenu::calloutMenuIsOpen()
+{
+	if ( selectMoveTo || bOpen )
+	{
+		return true;
+	}
+	return false;
+}
+
+std::vector<CalloutRadialMenu::PanelEntry> CalloutRadialMenu::panelEntries;
+std::map<std::string, CalloutRadialMenu::IconEntry> CalloutRadialMenu::iconEntries;
+std::map<std::string, CalloutRadialMenu::WorldIconEntry_t> CalloutRadialMenu::worldIconEntries;
+std::map<std::string, std::string> CalloutRadialMenu::helpDescriptors;
+std::map<int, std::string> CalloutRadialMenu::worldIconIDToEntryKey;
+int CalloutRadialMenu::followerWheelButtonThickness = 70;
+int CalloutRadialMenu::followerWheelRadius = 140;
+int CalloutRadialMenu::followerWheelFrameOffsetX = 0;
+int CalloutRadialMenu::followerWheelFrameOffsetY = 0;
+int CalloutRadialMenu::followerWheelInnerCircleRadiusOffset = 0;
+int CalloutRadialMenu::followerWheelInnerCircleRadiusOffsetAlternate = 0;
+Uint32 CalloutRadialMenu::CalloutParticle_t::kParticleLifetime = TICKS_PER_SECOND * 5;
+
+std::vector<CalloutRadialMenu::PanelEntry>& getPanelEntriesForCallout()
+{
+	return CalloutRadialMenu::panelEntries;
+}
+
+CalloutRadialMenu::CalloutType CalloutRadialMenu::getCalloutTypeForEntity(const int player, Entity* parent)
+{
+	if ( !parent )
+	{
+		return CALLOUT_TYPE_NO_TARGET;
+	}
+	CalloutType type = CALLOUT_TYPE_GENERIC_INTERACTABLE;
+
+	if ( parent->behavior == &actPlayer || parent->behavior == &actDeathGhost )
+	{
+		type = CALLOUT_TYPE_PLAYER;
+	}
+	else if ( parent->behavior == &actItem )
+	{
+		type = CALLOUT_TYPE_ITEM;
+	}
+	else if ( parent->behavior == &actGoldBag )
+	{
+		type = CALLOUT_TYPE_GOLD;
+	}
+	else if ( parent->behavior == &actFountain )
+	{
+		type = CALLOUT_TYPE_FOUNTAIN;
+	}
+	else if ( parent->behavior == &actSink )
+	{
+		type = CALLOUT_TYPE_SINK;
+	}
+	else if ( parent->behavior == &actChestLid || parent->behavior == &actChest )
+	{
+		type = CALLOUT_TYPE_CHEST;
+	}
+	/*else if ( parent->behavior == &actTorch )
+	{
+	}*/
+	/*else if ( parent->behavior == &actCrystalShard )
+	{
+	}*/
+	else if ( parent->behavior == &actHeadstone )
+	{
+		type = CALLOUT_TYPE_GENERIC_INTERACTABLE;
+	}
+	else if ( parent->behavior == &actColliderDecoration && parent->isDamageableCollider() )
+	{
+		type = CALLOUT_TYPE_COLLIDER_BREAKABLE;
+	}
+	else if ( parent->behavior == &actMonster )
+	{
+		int monsterType = parent->getMonsterTypeFromSprite();
+		type = CALLOUT_TYPE_NPC;
+		if ( monsterType == SHOPKEEPER )
+		{
+			type = CALLOUT_TYPE_NPC;
+		}
+		else if ( (multiplayer != CLIENT && parent->checkEnemy(players[player]->entity) )
+			|| (multiplayer == CLIENT
+				&& !parent->monsterAllyGetPlayerLeader() 
+				&& !monsterally[monsterType][stats[player]->type]))
+		{
+			type = CALLOUT_TYPE_NPC_ENEMY;
+		}
+		else if ( parent->monsterAllyGetPlayerLeader() )
+		{
+			type = CALLOUT_TYPE_NPC_PLAYERALLY;
+		}
+	}
+	/*else if ( parent->behavior == &actGate )
+	{
+	}*/
+	else if ( parent->behavior == &actSwitch || parent->behavior == &actSwitchWithTimer )
+	{
+		if ( parent->skill[0] == 1 )
+		{
+			type = CALLOUT_TYPE_SWITCH_ON;
+		}
+		else
+		{
+			type = CALLOUT_TYPE_SWITCH_OFF;
+		}
+	}
+	else if ( parent->behavior == &actPowerCrystal )
+	{
+		type = CALLOUT_TYPE_GENERIC_INTERACTABLE;
+	}
+	else if ( parent->behavior == &actPedestalBase )
+	{
+		type = CALLOUT_TYPE_GENERIC_INTERACTABLE;
+	}
+	else if ( parent->behavior == &actCampfire )
+	{
+		type = CALLOUT_TYPE_GENERIC_INTERACTABLE;
+	}
+	else if ( parent->behavior == &actBoulderTrapHole )
+	{
+		type = CALLOUT_TYPE_TRAP;
+	}
+	else if ( parent->behavior == &actFloorDecoration && parent->sprite == 991 )
+	{
+		type = CALLOUT_TYPE_GENERIC_INTERACTABLE;
+	}
+	else if ( parent->behavior == &actBoulder )
+	{
+		type = CALLOUT_TYPE_BOULDER;
+	}
+	else if ( parent->behavior == &actLadder )
+	{
+		if ( secretlevel && parent->skill[3] == 1 ) // secret ladder
+		{
+			type = CALLOUT_TYPE_SECRET_EXIT;
+		}
+		else if ( !secretlevel && parent->skill[3] == 1 ) // secret ladder
+		{
+			type = CALLOUT_TYPE_SECRET_ENTRANCE;
+		}
+		else
+		{
+			type = CALLOUT_TYPE_EXIT;
+		}
+	}
+	else if ( parent->behavior == &actPortal )
+	{
+		if ( parent->skill[3] == 0 ) // secret entrance portal
+		{
+			if ( secretlevel )
+			{
+				type = CALLOUT_TYPE_SECRET_EXIT;
+			}
+			else
+			{
+				type = CALLOUT_TYPE_SECRET_ENTRANCE;
+			}
+		}
+		else
+		{
+			if ( !strcmp(map.name, "Hell") )
+			{
+				type = CALLOUT_TYPE_EXIT;
+			}
+			else if ( !strcmp(map.name, "Mages Guild") )
+			{
+				type = CALLOUT_TYPE_EXIT;
+			}
+			else
+			{
+				type = CALLOUT_TYPE_EXIT;
+			}
+		}
+	}
+	else if ( parent->behavior == &::actMidGamePortal )
+	{
+		type = CALLOUT_TYPE_EXIT;
+	}
+	else if ( parent->behavior == &actCustomPortal )
+	{
+		if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+		{
+			type = CALLOUT_TYPE_EXIT;
+		}
+		else
+		{
+			if ( parent->portalCustomSpriteAnimationFrames > 0 )
+			{
+				type = CALLOUT_TYPE_EXIT;
+			}
+			else
+			{
+				type = CALLOUT_TYPE_EXIT;
+			}
+		}
+	}
+	else if ( parent->behavior == &::actExpansionEndGamePortal
+		|| parent->behavior == &actWinningPortal )
+		{
+			type = CALLOUT_TYPE_EXIT;
+	}
+	else if ( parent->behavior == &actTeleporter )
+	{
+		if ( parent->teleporterType == 2 ) // portal
+		{
+			type = CALLOUT_TYPE_TELEPORTER_PORTAL;
+		}
+		else if ( parent->teleporterType == 1 ) // down ladder
+		{
+			type = CALLOUT_TYPE_TELEPORTER_LADDER_DOWN;
+		}
+		else if ( parent->teleporterType == 0 ) // up ladder
+		{
+			type = CALLOUT_TYPE_TELEPORTER_LADDER_UP;
+		}
+	}
+	else if ( parent->behavior == &::actTeleportShrine /*|| parent->behavior == &::actSpellShrine*/ )
+	{
+		type = CALLOUT_TYPE_SHRINE;
+	}
+	else if ( parent->behavior == &actBomb || parent->behavior == &actBeartrap )
+	{
+		type = CALLOUT_TYPE_BOMB_TRAP;
+	}
+	return type;
+}
+
+CalloutRadialMenu::CalloutType CalloutRadialMenu::getCalloutTypeForUid(const int player, Uint32 uid)
+{
+	Entity* parent = uidToEntity(uid);
+	if ( !parent )
+	{
+		return CALLOUT_TYPE_NO_TARGET;
+	}
+
+	return CalloutRadialMenu::getCalloutTypeForEntity(player, parent);
+}
+
+bool CalloutRadialMenu::uidMatchesPlayer(const int playernum, const Uint32 uid)
+{
+	if ( uid == 0 ) { return false; }
+	if ( achievementObserver.playerUids[playernum] == uid )
+	{
+		return true;
+	}
+	else if ( players[playernum]->ghost.uid == uid )
+	{
+		return true;
+	}
+	return false;
+}
+
+Uint32 CalloutRadialMenu::getPlayerUid(const int playernum)
+{
+	if ( players[playernum]->ghost.isActive() )
+	{
+		return players[playernum]->ghost.uid;
+	}
+	else
+	{
+		return achievementObserver.playerUids[playernum];
+	}
+}
+
+void CalloutRadialMenu::CalloutParticle_t::init(const int player)
+{
+	creationTick = ::ticks;
+	messageSentTick = ::ticks;
+	lifetime = kParticleLifetime;
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( i == player && uidMatchesPlayer(player, entityUid) && players[i]->isLocalPlayer() )
+		{
+			lockOnScreen[i] = true;
+		}
+		else
+		{
+			lockOnScreen[i] = true;
+		}
+		big[i] = true;
+		animateScaleForPlayerView[i] = 0.0;
+	}
+	Entity* parent = uidToEntity(entityUid);
+
+	if ( !parent )
+	{
+		return;
+	}
+
+	z = parent->z - 4;
+
+	type = CalloutRadialMenu::getCalloutTypeForEntity(player, parent);
+}
+
+void CalloutRadialMenu::closeCalloutMenuGUI()
+{
+	bOpen = false;
+	lockOnEntityUid = 0;
+	selectMoveTo = false;
+	menuX = -1;
+	menuY = -1;
+	moveToX = -1;
+	moveToY = -1;
+	menuToggleClick = false;
+	holdWheel = false;
+	optionSelected = -1;
+	if ( calloutFrame )
+	{
+		calloutFrame->setDisabled(true);
+		for ( auto f : calloutFrame->getFrames() )
+		{
+			f->removeSelf();
+		}
+	}
+	animTitle = 0.0;
+	animWheel = 0.0;
+	openedThisTick = 0;
+	animInvalidAction = 0.0;
+	animInvalidActionTicks = 0;
+}
+
+void CalloutRadialMenu::drawCallouts(const int playernum)
+{
+	auto& pingFrame = CalloutMenu[playernum].calloutPingFrame;
+	if ( !pingFrame )
+	{
+		pingFrame = gameUIFrame[playernum]->addFrame("callout pings");
+		pingFrame->setHollow(true);
+		pingFrame->setDisabled(true);
+		pingFrame->setInheritParentFrameOpacity(false);
+		pingFrame->setBorder(0);
+		pingFrame->setOwner(playernum);
+	}
+
+	if ( players[playernum]->hud.hudFrame )
+	{
+		pingFrame->setDisabled(players[playernum]->hud.hudFrame->isDisabled());
+	}
+
+	pingFrame->setSize(SDL_Rect{ players[playernum]->camera_virtualx1(),
+		players[playernum]->camera_virtualy1(),
+		players[playernum]->camera_virtualWidth(),
+		players[playernum]->camera_virtualHeight() });
+
+	struct CalloutToDraw_t
+	{
+		Uint32 creationTick = 0;
+		real_t dist = 0.0;
+		std::string imgPath = "";
+		Uint32 color = 0;
+		SDL_Rect pos;
+		CalloutToDraw_t(std::string _imgPath, Uint32 _color, SDL_Rect _pos, Uint32 _creationTick, real_t _dist)
+		{
+			imgPath = _imgPath;
+			color = _color;
+			pos = _pos;
+			creationTick = _creationTick;
+			dist = _dist;
+		}
+	};
+
+	auto compFunc = [](CalloutToDraw_t& lhs, CalloutToDraw_t& rhs)
+	{
+		return lhs.dist < rhs.dist;
+	};
+	auto compFunc2 = [](CalloutToDraw_t& lhs, CalloutToDraw_t& rhs)
+	{
+		return lhs.creationTick < rhs.creationTick;
+	};
+	std::priority_queue<CalloutToDraw_t, std::vector<CalloutToDraw_t>, decltype(compFunc)> priorityQueue(compFunc);
+	std::priority_queue<CalloutToDraw_t, std::vector<CalloutToDraw_t>, decltype(compFunc2)> priorityQueueSelf(compFunc2);
+
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		for ( auto& callout : CalloutMenu[i].callouts )
+		{
+			bool selfCallout = false;
+			if ( uidMatchesPlayer(playernum, callout.second.entityUid) )
+			{
+				if ( i == playernum && players[i]->entity && players[i]->entity->skill[3] == 1 )
+				{
+					// debug/thirdperson cam.
+				}
+				else
+				{
+					selfCallout = true;
+					//continue; // don't draw self callouts
+				}
+			}
+
+			auto* iconPaths = &CalloutRadialMenu::worldIconEntries[CalloutRadialMenu::worldIconIDToEntryKey[callout.second.tagID]];
+			auto& iconPathsMini = CalloutRadialMenu::worldIconEntries[CalloutRadialMenu::worldIconIDToEntryKey[callout.second.tagSmallID]];
+			if ( selfCallout )
+			{
+				std::string checkTag = CalloutRadialMenu::worldIconIDToEntryKey[callout.second.tagID] + "_display_self";
+				if ( CalloutRadialMenu::worldIconEntries.find(checkTag) != CalloutRadialMenu::worldIconEntries.end() )
+				{
+					iconPaths = &CalloutRadialMenu::worldIconEntries[checkTag];
+				}
+			}
+
+			std::string iconPath = "";
+			std::string iconPathMini = "";
+			int playerColor = i;
+			if ( callout.second.cmd == CALLOUT_CMD_SOUTH
+				|| callout.second.cmd == CALLOUT_CMD_SOUTHWEST
+				|| callout.second.cmd == CALLOUT_CMD_SOUTHEAST )
+			{
+				playerColor = CalloutMenu[i].getPlayerForDirectPlayerCmd(i, callout.second.cmd);
+				if ( playernum == playerColor )
+				{
+					iconPaths = &CalloutRadialMenu::worldIconEntries["tag_btn_player_wave_to_me"];
+				}
+			}
+
+			switch ( playerColor )
+			{
+			case 0:
+				iconPath = iconPaths->pathPlayer1;
+				iconPathMini = iconPathsMini.pathPlayer1;
+				break;
+			case 1:
+				iconPath = iconPaths->pathPlayer2;
+				iconPathMini = iconPathsMini.pathPlayer2;
+				break;
+			case 2:
+				iconPath = iconPaths->pathPlayer3;
+				iconPathMini = iconPathsMini.pathPlayer3;
+				break;
+			case 3:
+				iconPath = iconPaths->pathPlayer4;
+				iconPathMini = iconPathsMini.pathPlayer4;
+				break;
+			default:
+				iconPath = iconPaths->pathPlayerX;
+				iconPathMini = iconPathsMini.pathPlayerX;
+				break;
+			}
+
+			if ( iconPath == "" )
+			{
+				continue;
+			}
+
+			vec4_t v;
+			mat4x4_t m, t;
+
+			auto camera = &cameras[playernum];
+			auto& player = players[playernum];
+
+			const int offset = 40;
+			int leftOfWindow = player->camera_virtualx1() + offset;
+			int rightOfWindow = player->camera_virtualx1() + player->camera_virtualWidth() - offset;
+			int topOfWindow = player->camera_virtualy1() + offset;
+			int bottomOfWindow = player->camera_virtualy2() - offset;
+
+			mat4x4_t id;
+			vec4_t world{ (float)callout.second.x * 2.f, -(float)callout.second.z * 2.f, (float)callout.second.y * 2.f, 1.f };
+			if ( selfCallout )
+			{
+				world.x = 32.0 * camera->x + 32.0 * cos(camera->ang);
+				world.z = 32.0 * camera->y + 32.0 * sin(camera->ang);
+			}
+			vec4_t window2{ (float)0, (float)0,
+				(float)player->camera_virtualWidth(), (float)player->camera_virtualHeight() };
+			SDL_Rect dest{ 0, 0, 0, 0 };
+			if ( callout.second.lockOnScreen[playernum] )
+			{
+				auto screen_position = project_clipped2(&world, &id, &camera->projview, &window2);
+				dest = SDL_Rect{ player->camera_virtualx1() + (int)screen_position.clipped_coords.x,
+					player->camera_virtualy1() + Frame::virtualScreenY - (Frame::virtualScreenY - player->camera_virtualHeight()) - (int)screen_position.clipped_coords.y,
+				14, 22 };
+				if ( !screen_position.isBehind
+					&& (screen_position.direction == ClipResult::Direction::Front
+						|| screen_position.direction == ClipResult::Direction::Invalid) )
+				{
+					callout.second.lockOnScreen[playernum] = false;
+				}
+
+				dest.x = std::min(rightOfWindow, std::max(leftOfWindow, dest.x));
+				dest.y = std::min(bottomOfWindow, std::max(topOfWindow, dest.y));
+				real_t tangent = atan2(camera->y * 32.0 - world.z, camera->x * 32.0 - world.x);
+				real_t camang = camera->ang;
+				while ( tangent >= 2 * PI )
+				{
+					tangent -= PI * 2;
+				}
+				while ( tangent < 0 )
+				{
+					tangent += PI * 2;
+				}
+				while ( camang >= 2 * PI )
+				{
+					camang -= PI * 2;
+				}
+				while ( camang < 0 )
+				{
+					camang += PI * 2;
+				}
+				real_t result = tangent - camang;
+				while ( result >= PI )
+				{
+					result -= PI * 2;
+				}
+				while ( result < -PI )
+				{
+					result += PI * 2;
+				}
+				//messagePlayer(player->playernum, MESSAGE_DEBUG, "%f", ((PI - abs(abs(tangent - camang) - PI)) * 2));
+				//messagePlayer(player->playernum, MESSAGE_DEBUG, "%f", result);
+				if ( abs(result) < 0.0001 )
+				{
+					// really small angle due to camera fluctuations, affix to left side to prevent flicker
+					dest.x = leftOfWindow;
+				}
+				else if ( result >= 0.0 && result < PI / 2 )
+				{
+					dest.x = leftOfWindow;
+				}
+				else if ( result < 0.0 && result > -PI / 2 )
+				{
+					dest.x = rightOfWindow;
+				}
+
+				if ( abs(result) < (3 * PI / 4) )
+				{
+					real_t mult = std::min(1.0, ((3 * PI / 4) - abs(result)) / (PI / 2));
+					dest.y += ((player->camera_virtualy1() + (player->camera_virtualHeight() / 2)) - dest.y) * mult;
+				}
+			}
+			else
+			{
+				auto screen_position = project(&world, &id, &camera->projview, &window2);
+				if ( screen_position.z >= 1.0 || screen_position.z < 0.0 )
+				{
+					continue;
+				}
+				dest = SDL_Rect{ player->camera_virtualx1() + (int)screen_position.x,
+					player->camera_virtualy1() + Frame::virtualScreenY - (Frame::virtualScreenY - player->camera_virtualHeight()) -
+					(int)screen_position.y,
+				14, 22 };
+			}
+
+			real_t lifePercent = callout.second.ticks / (real_t)callout.second.lifetime;
+			if ( selfCallout )
+			{
+				// fade early for the self callout player, but not others in splitscreen
+				lifePercent = callout.second.ticks / (real_t)((TICKS_PER_SECOND * 4) / 5);
+			}
+			else
+			{
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( uidMatchesPlayer(i, callout.second.entityUid) )
+					{
+						if ( callout.second.cmd == CALLOUT_CMD_AFFIRMATIVE
+							|| callout.second.cmd == CALLOUT_CMD_NEGATIVE
+							|| callout.second.cmd == CALLOUT_CMD_LOOK
+							|| callout.second.cmd == CALLOUT_CMD_SOUTH 
+							|| callout.second.cmd == CALLOUT_CMD_SOUTHWEST 
+							|| callout.second.cmd == CALLOUT_CMD_SOUTHEAST )
+						{
+							// fade early for simple thumbs up/down for players
+							lifePercent = callout.second.ticks / (real_t)((TICKS_PER_SECOND * 4) / 5);
+						}
+						break;
+					}
+				}
+			}
+			Uint32 alpha = 255;
+			if ( lifePercent >= 0.8 )
+			{
+				alpha -= std::min((Uint32)255, (Uint32)(255 * (lifePercent - 0.8) / 0.2));
+			}
+			Uint32 color = makeColor(255, 255, 255, alpha);
+			SDL_Rect iconPos = dest;
+
+			bool drawMini = false;
+
+			Entity* playerEntity = Player::getPlayerInteractEntity(playernum);
+			if ( playerEntity && playerEntity->bodyparts.size() > 0 )
+			{
+				auto bodypart = playerEntity->bodyparts[0];
+				real_t tempx = bodypart->x;
+				real_t tempy = bodypart->y;
+				bodypart->x = callout.second.x;
+				bodypart->y = callout.second.y;
+
+				real_t tangent = atan2(camera->y * 16.0 - bodypart->y, camera->x * 16.0 - bodypart->x);
+				Entity* ohitentity = hit.entity;
+
+				bool oldPassable = playerEntity->flags[PASSABLE];
+				if ( playerEntity->behavior == &actDeathGhost )
+				{
+					playerEntity->flags[PASSABLE] = false; // hack to make ghosts linetraceable
+				}
+				lineTraceTarget(bodypart, bodypart->x, bodypart->y, tangent, 256, 0, false, playerEntity);
+				playerEntity->flags[PASSABLE] = oldPassable;
+				
+				if ( hit.entity != playerEntity )
+				{
+					// no line of sight through walls
+					drawMini = true;
+				}
+				hit.entity = ohitentity;
+				bodypart->x = tempx;
+				bodypart->y = tempy;
+			}
+
+			callout.second.big[playernum] = !drawMini;
+			drawMini = false;
+
+			real_t dist = pow(camera->y * 32.0 - world.z, 2) + pow(camera->x * 32.0 - world.x, 2);
+
+			if ( !drawMini )
+			{
+				if ( auto image = Image::get(iconPath.c_str()) )
+				{
+					real_t scale = callout.second.scale - callout.second.animateScaleForPlayerView[playernum] * .5;
+					iconPos.w = image->getWidth() * scale;
+					iconPos.h = image->getHeight() * scale;
+					const int heightOffset = image->getHeight() - iconPos.h;
+
+					if ( selfCallout )
+					{
+						real_t y = iconPos.y - players[playernum]->camera_virtualy1();
+						iconPos.y = players[playernum]->camera_virtualHeight() / 4;
+						real_t factor = players[playernum]->camera_virtualHeight() / (real_t)Frame::virtualScreenY;
+						iconPos.y += factor * 16.0 * (y - iconPos.y) 
+							/ (real_t)players[playernum]->camera_virtualHeight();
+						iconPos.y += players[playernum]->camera_virtualy1();
+					}
+
+					iconPos.x -= iconPos.w / 2;
+					iconPos.y -= iconPos.h + heightOffset / 2;
+					iconPos.y -= (iconPos.h / 4) * callout.second.animateBounce;
+					/*image->drawColor(nullptr, iconPos,
+						SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY }, color);*/
+
+					iconPos.x -= players[playernum]->camera_virtualx1();
+					iconPos.y -= players[playernum]->camera_virtualy1();
+
+					priorityQueue.push(CalloutToDraw_t(iconPath, color, iconPos, callout.second.creationTick, dist));
+				}
+			}
+			else
+			{
+				if ( auto image = Image::get(iconPathMini.c_str()) )
+				{
+					dest.w = image->getWidth();
+					dest.h = image->getHeight();
+					dest.x -= dest.w / 2;
+					dest.y -= dest.h;
+					image->drawColor(nullptr, dest,
+						SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY }, color);
+				}
+			}
+		}
+	}
+
+	auto& images = pingFrame->getImages();
+	while ( images.size() > priorityQueue.size() )
+	{
+		images.erase(images.begin());
+	}
+	while ( images.size() < priorityQueue.size() )
+	{
+		pingFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0, "", "img");
+	}
+
+	size_t index = 0;
+	for ( auto img : images )
+	{
+		img->disabled = true;
+	}
+	while ( !priorityQueue.empty() )
+	{
+		auto& top = priorityQueue.top();
+		if ( index < images.size() )
+		{
+			auto img = images[index];
+			img->color = top.color;
+			img->path = top.imgPath;
+			img->pos = top.pos;
+			img->disabled = false;
+		}
+		priorityQueue.pop();
+		++index;
+	}
+}
+
+void CalloutRadialMenu::CalloutParticle_t::animate()
+{
+	static ConsoleVariable<float> cvar_calloutanimspeed("/calloutanimspeed", 0.3);
+	static ConsoleVariable<float> cvar_calloutbouncespeed("/calloutbouncespeed", 0.9);
+	static ConsoleVariable<int> cvar_calloutbouncestate("/calloutbouncestate", 0);
+	real_t animspeed = 5.0 * *cvar_calloutanimspeed;
+	if ( animateState == 0 )
+	{
+		if ( animateStateInit == 0 )
+		{
+			animateStateInit = 1;
+			animateBounce = 0.0;
+		}
+
+		scale = 0.25 + 1.25 * animateX;
+		if ( animateX >= 1.0 )
+		{
+			++animateState;
+			animateX = 0.0;
+		}
+		animspeed *= 2.0;
+	}
+	else if ( animateState == 1 )
+	{
+		if ( animateStateInit == 1 )
+		{
+			animateStateInit = 2;
+		}
+
+		scale = 1.5 - .75 * animateX;
+		if ( animateX >= 1.0 )
+		{
+			++animateState;
+			animateX = 0.0;
+		}
+		animspeed *= 2.0;
+	}
+	else if ( animateState == 2 )
+	{
+		if ( animateStateInit == 2 )
+		{
+			animateStateInit = 3;
+		}
+
+		scale = 0.75 + 0.25 * animateX;
+		if ( animateX >= 1.0 )
+		{
+			++animateState;
+		}
+		animspeed *= 1.5;
+	}
+	//else if ( animateState == 4 )
+	//{
+	//	if ( animateStateInit == 4 )
+	//	{
+	//		animateStateInit = 5;
+	//	}
+
+	//	scale = 1.5 - 0.5 * animateX;
+	//	if ( animateX >= 1.0 )
+	//	{
+	//		++animateState;
+	//		animateX = 0.0;
+	//	}
+	//	animspeed /= 2.0;
+	//}
+	else
+	{
+		scale = 0.5 + 0.5 * animateX;
+	}
+
+	const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
+	if ( animateState <= 2 )
+	{
+		real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - animateX)) / (animspeed);
+		animateX += setpointDiffX;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			animateScaleForPlayerView[i] = 0.0;
+		}
+	}
+	else
+	{
+		animateX = 1.0;
+		/*if ( big )
+		{
+			real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - animateX)) / (animspeed);
+			animateX += setpointDiffX;
+		}
+		else
+		{
+			real_t setpointDiffX = fpsScale * std::max(.1, (animateX)) / (animspeed);
+			animateX -= setpointDiffX;
+		}*/
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( !big[i] )
+			{
+				real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - animateScaleForPlayerView[i])) / (animspeed);
+				animateScaleForPlayerView[i] += setpointDiffX;
+			}
+			else
+			{
+				real_t setpointDiffX = fpsScale * std::max(.1, (animateScaleForPlayerView[i])) / (animspeed);
+				animateScaleForPlayerView[i] -= setpointDiffX;
+			}
+			animateScaleForPlayerView[i] = std::max(0.0, std::min(1.0, animateScaleForPlayerView[i]));
+		}
+	}
+	animateX = std::max(0.0, std::min(1.0, animateX));
+
+	animateBounce = sin(animateY * PI * 2);
+	if ( animateState >= *cvar_calloutbouncestate )
+	{
+		animateY += fpsScale * 0.05 * *cvar_calloutbouncespeed;
+		animateY = std::min(1.0, animateY);
+	}
+}
+
+void CalloutRadialMenu::update()
+{
+	for ( auto& c : callouts )
+	{
+		auto& callout = c.second;
+		Entity* entity = uidToEntity(callout.entityUid);
+		callout.animate();
+		if ( entity )
+		{
+			if ( TimerExperiments::bUseTimerInterpolation && entity->bUseRenderInterpolation )
+			{
+				callout.x = entity->lerpRenderState.x.position * 16.0;
+				callout.y = entity->lerpRenderState.y.position * 16.0;
+				callout.z = entity->lerpRenderState.z.position + enemyBarSettings.getHeightOffset(entity);
+				callout.z -= 4;
+			}
+			else
+			{
+				callout.x = entity->x;
+				callout.y = entity->y;
+				callout.z = entity->z + enemyBarSettings.getHeightOffset(entity);
+				callout.z -= 4;
+			}
+		}
+		else if ( callout.entityUid != 0 )
+		{
+			callout.expired = true;
+		}
+	}
+
+
+	if ( updatedThisTick == 0 || ticks != updatedThisTick )
+	{
+		updatedThisTick = ticks;
+		for ( auto it = callouts.begin(); it != callouts.end(); ++it )
+		{
+			it->second.ticks++;
+			if ( it->second.ticks >= it->second.lifetime )
+			{
+				it->second.expired = true;
+			}
+		}
+	}
+
+	for ( auto it = callouts.begin(); it != callouts.end(); )
+	{
+		if ( it->second.expired )
+		{
+			it = callouts.erase(it);
+			continue;
+		}
+		else
+		{
+			++it;
+		}
+	}
+}
+
+int CalloutRadialMenu::CALLOUT_SFX_NEUTRAL = 605;
+int CalloutRadialMenu::CALLOUT_SFX_NEGATIVE = 607;
+int CalloutRadialMenu::CALLOUT_SFX_POSITIVE = 606;
+static ConsoleVariable<int> cvar_callout_sfx_vol("/callout_sfx_vol", 128);
+
+bool CalloutRadialMenu::createParticleCallout(Entity* entity, CalloutRadialMenu::CalloutCommand _cmd)
+{
+	if ( !entity ) { return false; }
+	if ( _cmd == CALLOUT_CMD_CANCEL ) { return false; }
+
+	Uint32 existingMessageSent = 0;
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( CalloutMenu[i].callouts.find(entity->getUID()) != CalloutMenu[i].callouts.end() )
+		{
+			auto& existingCallout = CalloutMenu[i].callouts[entity->getUID()];
+			if ( i == getPlayer() && existingCallout.cmd == _cmd )
+			{
+				existingMessageSent = existingCallout.messageSentTick;
+			}
+			CalloutMenu[i].callouts.erase(entity->getUID()); // delete other players pings on this object
+		}
+	}
+
+	auto& callout = callouts[entity->getUID()];
+	real_t x = entity->x;
+	real_t y = entity->y;
+	if ( TimerExperiments::bUseTimerInterpolation && entity->bUseRenderInterpolation )
+	{
+		x = entity->lerpRenderState.x.position * 16.0;
+		y = entity->lerpRenderState.y.position * 16.0;
+	}
+	callout = CalloutRadialMenu::CalloutParticle_t(getPlayer(), x, y, entity->z, entity->getUID(), _cmd);
+	if ( existingMessageSent > 0 && multiplayer != CLIENT )
+	{
+		if ( (callout.messageSentTick - existingMessageSent) < (TICKS_PER_SECOND * 3.5) )
+		{
+			callout.doMessage = false;
+			callout.messageSentTick = existingMessageSent;
+		}
+	}
+
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		while ( CalloutMenu[i].callouts.size() > 3 )
+		{
+			Uint32 earliestTick = ::ticks;
+			auto itToDelete = CalloutMenu[i].callouts.end();
+			for ( auto it = CalloutMenu[i].callouts.begin(); it != CalloutMenu[i].callouts.end(); ++it )
+			{
+				if ( it->second.creationTick < earliestTick )
+				{
+					earliestTick = it->second.creationTick;
+					itToDelete = it;
+				}
+			}
+			if ( itToDelete == CalloutMenu[i].callouts.end() )
+			{
+				break;
+			}
+			else
+			{
+				CalloutMenu[i].callouts.erase(itToDelete);
+			}
+		}
+	}
+
+	std::string calloutTypeKey = getCalloutKeyForCommand(_cmd);
+	Uint32 oldTarget = lockOnEntityUid;
+	lockOnEntityUid = entity->getUID();
+	std::string key = setCalloutText(nullptr, calloutTypeKey.c_str(), 0, _cmd, SET_CALLOUT_ICON_KEY, -1);
+	lockOnEntityUid = oldTarget;
+
+	callout.tagID = worldIconEntries[iconEntries[calloutTypeKey].text_map[key].worldIconTag].id;
+	callout.tagSmallID = worldIconEntries[iconEntries[calloutTypeKey].text_map[key].worldIconTagMini].id;
+
+	if ( callout.cmd == CALLOUT_CMD_AFFIRMATIVE )
+	{
+		playSound(CALLOUT_SFX_POSITIVE, *cvar_callout_sfx_vol);
+	}
+	else if ( callout.cmd == CALLOUT_CMD_NEGATIVE )
+	{
+		playSound(CALLOUT_SFX_NEGATIVE, *cvar_callout_sfx_vol);
+	}
+	else
+	{
+		playSound(CALLOUT_SFX_NEUTRAL, *cvar_callout_sfx_vol);
+	}
+
+	if ( multiplayer == SERVER )
+	{
+		for ( int i = 1; i < MAXPLAYERS; ++i )
+		{
+			if ( i == getPlayer() ) { continue; } // don't send clients their own callout
+			if ( players[i]->isLocalPlayer() ) { continue; }
+			if ( client_disconnected[i] ) { continue; }
+
+			strcpy((char*)net_packet->data, "CALL");
+			net_packet->data[4] = getPlayer();
+			SDLNet_Write32(entity->getUID(), &net_packet->data[5]);
+			net_packet->data[9] = (Uint8)_cmd;
+			SDLNet_Write32(clientCalloutHelpFlags, &net_packet->data[10]);
+			net_packet->len = 14;
+			net_packet->address.host = net_clients[i - 1].host;
+			net_packet->address.port = net_clients[i - 1].port;
+			sendPacketSafe(net_sock, -1, net_packet, i - 1);
+		}
+	}
+
+	if ( players[getPlayer()]->ghost.isActive() )
+	{
+		players[getPlayer()]->ghost.createBounceAnimate();
+	}
+
+	return callout.doMessage;
+}
+bool CalloutRadialMenu::createParticleCallout(real_t x, real_t y, real_t z, Uint32 uid, CalloutRadialMenu::CalloutCommand _cmd)
+{
+	if ( _cmd == CALLOUT_CMD_CANCEL ) { return false; }
+
+	//for ( int i = 0; i < MAXPLAYERS; ++i )
+	//{
+	//	if ( CalloutMenu[i].callouts.find(uid) != CalloutMenu[i].callouts.end() )
+	//	{
+	//		CalloutMenu[i].callouts.erase(uid);
+	//	}
+	//}
+	Uint32 existingMessageSent = 0;
+	if ( _cmd == CALLOUT_CMD_MOVE && callouts.find(uid) != callouts.end() )
+	{
+		auto& existingCallout = callouts[uid];
+		if ( existingCallout.cmd == _cmd )
+		{
+			existingMessageSent = existingCallout.messageSentTick;
+		}
+	}
+	auto& callout = callouts[uid];
+
+	callout = CalloutRadialMenu::CalloutParticle_t(getPlayer(), x, y, z, uid, _cmd);
+	if ( existingMessageSent > 0 && multiplayer != CLIENT )
+	{
+		if ( (callout.messageSentTick - existingMessageSent) < (TICKS_PER_SECOND * 3.5) )
+		{
+			callout.doMessage = false;
+			callout.messageSentTick = existingMessageSent;
+		}
+	}
+
+	if ( callout.cmd == CALLOUT_CMD_AFFIRMATIVE )
+	{
+		playSound(CALLOUT_SFX_POSITIVE, *cvar_callout_sfx_vol);
+	}
+	else if ( callout.cmd == CALLOUT_CMD_NEGATIVE )
+	{
+		playSound(CALLOUT_SFX_NEGATIVE, *cvar_callout_sfx_vol);
+	}
+	else
+	{
+		playSound(CALLOUT_SFX_NEUTRAL, *cvar_callout_sfx_vol);
+	}
+
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		while ( CalloutMenu[i].callouts.size() > 3 )
+		{
+			Uint32 earliestTick = ::ticks;
+			auto itToDelete = CalloutMenu[i].callouts.end();
+			for ( auto it = CalloutMenu[i].callouts.begin(); it != CalloutMenu[i].callouts.end(); ++it )
+			{
+				if ( it->second.creationTick < earliestTick )
+				{
+					earliestTick = it->second.creationTick;
+					itToDelete = it;
+				}
+			}
+			if ( itToDelete == CalloutMenu[i].callouts.end() )
+			{
+				break;
+			}
+			else
+			{
+				CalloutMenu[i].callouts.erase(itToDelete);
+			}
+		}
+	}
+
+	std::string calloutTypeKey = getCalloutKeyForCommand(_cmd);
+	Uint32 oldTarget = lockOnEntityUid;
+	lockOnEntityUid = uid;
+	std::string key = setCalloutText(nullptr, calloutTypeKey.c_str(), 0, _cmd, SET_CALLOUT_ICON_KEY, -1);
+	lockOnEntityUid = oldTarget;
+
+	callout.tagID = worldIconEntries[iconEntries[calloutTypeKey].text_map[key].worldIconTag].id;
+	callout.tagSmallID = worldIconEntries[iconEntries[calloutTypeKey].text_map[key].worldIconTagMini].id;
+	if ( uid == 0 && callout.cmd == CALLOUT_CMD_LOOK && multiplayer != CLIENT )
+	{
+		callout.doMessage = false;
+	}
+
+	if ( multiplayer == SERVER )
+	{
+		for ( int i = 1; i < MAXPLAYERS; ++i )
+		{
+			if ( i == getPlayer() ) { continue; } // don't send clients their own callout
+			if ( players[i]->isLocalPlayer() ) { continue; }
+			if ( client_disconnected[i] ) { continue; }
+
+			strcpy((char*)net_packet->data, "CALL");
+			net_packet->data[4] = getPlayer();
+			SDLNet_Write32(uid, &net_packet->data[5]);
+			net_packet->data[9] = (Uint8)_cmd;
+			SDLNet_Write32(clientCalloutHelpFlags, &net_packet->data[10]);
+			net_packet->len = 14;
+			if ( uid == 0 )
+			{
+				Uint16 _x = std::min<Uint16>(std::max<int>(0.0, x / 16), map.width - 1);
+				Uint16 _y = std::min<Uint16>(std::max<int>(0.0, y / 16), map.height - 1);
+				SDLNet_Write16(_x, &net_packet->data[14]);
+				SDLNet_Write16(_y, &net_packet->data[16]);
+				net_packet->len = 18;
+			}
+			net_packet->address.host = net_clients[i - 1].host;
+			net_packet->address.port = net_clients[i - 1].port;
+			sendPacketSafe(net_sock, -1, net_packet, i - 1);
+		}
+	}
+
+	if ( players[getPlayer()]->ghost.isActive() )
+	{
+		players[getPlayer()]->ghost.createBounceAnimate();
+	}
+
+	return callout.doMessage;
+}
+
+void CalloutRadialMenu::sendCalloutText(CalloutRadialMenu::CalloutCommand cmd)
+{
+	if ( cmd == CALLOUT_CMD_CANCEL || cmd == CALLOUT_CMD_END )
+	{
+		return;
+	}
+	if ( multiplayer == CLIENT )
+	{
+		strcpy((char*)net_packet->data, "CALL");
+		net_packet->data[4] = getPlayer();
+		SDLNet_Write32(lockOnEntityUid, &net_packet->data[5]);
+		net_packet->data[9] = (Uint8)cmd;
+		SDLNet_Write32(clientCalloutHelpFlags, &net_packet->data[10]);
+		net_packet->len = 14;
+		if ( lockOnEntityUid == 0 )
+		{
+			Uint16 _x = std::min<Uint16>(std::max<int>(0.0, moveToX / 16), map.width - 1);
+			Uint16 _y = std::min<Uint16>(std::max<int>(0.0, moveToY / 16), map.height - 1);
+			SDLNet_Write16(_x, &net_packet->data[14]);
+			SDLNet_Write16(_y, &net_packet->data[16]);
+			net_packet->len = 18;
+		}
+		net_packet->address.host = net_server.host;
+		net_packet->address.port = net_server.port;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+	}
+	else
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			std::string text = setCalloutText(nullptr, getCalloutKeyForCommand(cmd).c_str(), 0, cmd, SET_CALLOUT_WORLD_TEXT, i);
+			if ( text != "" )
+			{
+				messagePlayerColor(i, MESSAGE_INTERACTION, playerColor(getPlayer(), colorblind_lobby, false),
+					text.c_str());
+			}
+		}
+	}
+}
+
+std::string CalloutRadialMenu::getCalloutKeyForCommand(CalloutRadialMenu::CalloutCommand cmd)
+{
+	if ( cmd == CALLOUT_CMD_LOOK )
+	{
+		return "look_at";
+	}
+	else if ( cmd == CALLOUT_CMD_HELP )
+	{
+		return "help";
+	}
+	else if ( cmd == CALLOUT_CMD_AFFIRMATIVE )
+	{
+		return "affirmative";
+	}
+	else if ( cmd == CALLOUT_CMD_NEGATIVE )
+	{
+		return "negative";
+	}
+	else if ( cmd == CALLOUT_CMD_MOVE )
+	{
+		return "move";
+	}
+	else if ( cmd == CALLOUT_CMD_SOUTH )
+	{
+		return "player_wave_1";
+	}
+	else if ( cmd == CALLOUT_CMD_SOUTHWEST )
+	{
+		return "player_wave_2";
+	}
+	else if ( cmd == CALLOUT_CMD_SOUTHEAST )
+	{
+		return "player_wave_3";
+	}
+	return "";
+}
+
+int CalloutRadialMenu::getPlayerForDirectPlayerCmd(const int player, const CalloutRadialMenu::CalloutCommand cmd)
+{
+	if ( cmd == CALLOUT_CMD_SOUTH )
+	{
+		if ( player == 0 )
+		{
+			return 1;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	else if ( cmd == CALLOUT_CMD_SOUTHWEST )
+	{
+		if ( player == 0 )
+		{
+			return 2;
+		}
+		else
+		{
+			return player == 1 ? 2 : 1;
+		}
+	}
+	else if ( cmd == CALLOUT_CMD_SOUTHEAST )
+	{
+		if ( player == 0 || player == 1 )
+		{
+			return 3;
+		}
+		else
+		{
+			return player == 2 ? 3 : 2;
+		}
+	}
+	return -1;
+}
+
+void CalloutRadialMenu::drawCalloutMenu()
+{
+	auto player = players[gui_player];
+	if ( !player->isLocalPlayer() )
+	{
+		closeCalloutMenuGUI();
+		return;
+	}
+
+	Input& input = Input::inputs[gui_player];
+
+	if ( selectMoveTo )
+	{
+		if ( input.binaryToggle("MenuCancel") )
+		{
+			input.consumeBinaryToggle("MenuCancel");
+			input.consumeBindingsSharedWithBinding("MenuCancel");
+			closeCalloutMenuGUI();
+			Player::soundCancel();
+		}
+		if ( calloutFrame )
+		{
+			calloutFrame->setDisabled(true);
+		}
+		return;
+	}
+
+	if ( !calloutFrame )
+	{
+		return;
+	}
+
+	calloutFrame->setSize(SDL_Rect{ players[gui_player]->camera_virtualx1(),
+		players[gui_player]->camera_virtualy1(),
+		players[gui_player]->camera_virtualWidth(),
+		players[gui_player]->camera_virtualHeight() });
+
+	int disableOption = 0;
+	bool keepWheelOpen = false;
+
+	Sint32 omousex = inputs.getMouse(gui_player, Inputs::OX);
+	Sint32 omousey = inputs.getMouse(gui_player, Inputs::OY);
+
+	std::map<int, Frame::image_t*> panelImages;
+	std::map<int, Frame::image_t*> panelIcons;
+	Frame* bannerFrame = nullptr;
+	Field* bannerTxt = nullptr;
+	Frame::image_t* bannerImgLeft = nullptr;
+	Frame::image_t* bannerImgRight = nullptr;
+	Frame::image_t* bannerImgCenter = nullptr;
+	Uint32 textHighlightColor = followerBannerTextHighlightColor;
+
+	if ( !bOpen && (!calloutFrame->isDisabled() || players[gui_player]->gui_mode == GUI_MODE_CALLOUT) )
+	{
+		closeCalloutMenuGUI();
+		players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+		return;
+	}
+	if ( calloutMenuIsOpen() && input.binaryToggle("MenuCancel") )
+	{
+		input.consumeBinaryToggle("MenuCancel");
+		input.consumeBindingsSharedWithBinding("MenuCancel");
+		closeCalloutMenuGUI();
+		players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+		Player::soundCancel();
+		return;
+	}
+
+	//if ( ticks % 50 == 0 )
+	//{
+	//	consoleCommand("/loadfollowerwheel");
+	//}
+
+	bool modifierPressed = false;
+	bool modifierActiveForOption = false;
+	if ( input.binary("Defend") )
+	{
+		modifierPressed = true;
+	}
+
+	if ( bOpen )
+	{
+		{
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
+			real_t setpointDiff = fpsScale * std::max(.1, (1.0 - animTitle)) / 2.5;
+			animTitle += setpointDiff;
+			animTitle = std::min(1.0, animTitle);
+
+			real_t setpointDiff2 = fpsScale * std::max(.01, (1.0 - animWheel)) / 2.0;
+			animWheel += setpointDiff2;
+			animWheel = std::min(1.0, animWheel);
+
+			// shaking feedback for invalid action
+			// constant decay for animation
+			real_t setpointDiffX = fpsScale * 1.0 / 25.0;
+			animInvalidAction -= setpointDiffX;
+			animInvalidAction = std::max(0.0, animInvalidAction);
+		}
+
+		if ( optionSelected == CALLOUT_CMD_SOUTH
+			|| optionSelected == CALLOUT_CMD_SOUTHEAST
+			|| optionSelected == CALLOUT_CMD_SOUTHWEST )
+		{
+			int targetPlayer = getPlayerForDirectPlayerCmd(getPlayer(), (CalloutCommand)optionSelected);
+			if ( targetPlayer < 0 || client_disconnected[targetPlayer] || (!Player::getPlayerInteractEntity(targetPlayer)) )
+			{
+				disableOption = true;
+			}
+			else
+			{
+				disableOption = false;
+			}
+		}
+		else
+		{
+			disableOption = false;
+		}
+
+		bool menuConfirmOnGamepad = input.input("MenuConfirm").isBindingUsingGamepad();
+		bool menuLeftClickOnKeyboard = input.input("MenuLeftClick").isBindingUsingKeyboard() && !inputs.hasController(gui_player);
+
+		// process commands if option selected on the wheel.
+		if ( !(players[gui_player]->bControlEnabled && !gamePaused && !players[gui_player]->usingCommand()) )
+		{
+			// no action
+		}
+		else if ( (!menuToggleClick && !holdWheel
+			&& !input.binaryToggle("Use")
+			&& !input.binaryToggle("Show Player Callouts")
+			&& !(input.binaryToggle("MenuConfirm") && menuConfirmOnGamepad)
+			&& !(input.binaryToggle("MenuLeftClick") && menuLeftClickOnKeyboard))
+			|| (menuToggleClick && (input.binaryToggle("Use") || input.binaryToggle("Show Player Callouts")))
+			|| ((input.binaryToggle("MenuConfirm") && menuConfirmOnGamepad)
+				|| (input.binaryToggle("MenuLeftClick") && menuLeftClickOnKeyboard)
+				|| (input.binaryToggle("Use") && holdWheel))
+			|| (!input.binaryToggle("Show Player Callouts") && holdWheel && !menuToggleClick)
+			)
+		{
+			//bool usingShowCmdRelease = (!input.binaryToggle("Show Player Callouts") && holdWheel && !menuToggleClick);
+
+			if ( menuToggleClick )
+			{
+				menuToggleClick = false;
+				if ( optionSelected == -1 )
+				{
+					optionSelected = CALLOUT_CMD_CANCEL;
+				}
+			}
+
+			input.consumeBinaryToggle("Use");
+			input.consumeBinaryToggle("MenuConfirm");
+			input.consumeBinaryToggle("MenuLeftClick");
+			input.consumeBinaryToggle("Show Player Callouts");
+			input.consumeBindingsSharedWithBinding("Use");
+			input.consumeBindingsSharedWithBinding("MenuConfirm");
+			input.consumeBindingsSharedWithBinding("MenuLeftClick");
+			input.consumeBindingsSharedWithBinding("Show Player Callouts");
+
+			if ( disableOption != 0 )
+			{
+				keepWheelOpen = true;
+			}
+
+			bool sfxPlayed = false;
+			if ( disableOption != 0 )
+			{
+				animInvalidAction = 1.0;
+				animInvalidActionTicks = ticks;
+				//if ( !usingShowCmdRelease )
+				//{
+				//	// play bad feedback sfx
+				//}
+				playSound(90, 64);
+				sfxPlayed = true;
+			}
+
+			if ( optionSelected != -1 )
+			{
+				holdWheel = false;
+				if ( optionSelected != CALLOUT_CMD_SELECT )
+				{
+					if ( !sfxPlayed && optionSelected != CALLOUT_CMD_CANCEL )
+					{
+						//playSound(139, 64); // click
+						sfxPlayed = true;
+					}
+				}
+				else
+				{
+					playSound(399, 48); // ping
+				}
+				// return to shootmode and close guis etc. TODO: tidy up interface code into 1 spot?
+				if ( !keepWheelOpen )
+				{
+					if ( optionSelected == CALLOUT_CMD_CANCEL )
+					{
+						players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_CALLOUTGUI);
+					}
+				}
+
+				if ( disableOption == 0 )
+				{
+					if ( modifierPressed )
+					{
+						if ( stats[gui_player]->shield && itemCategory(stats[gui_player]->shield) == SPELLBOOK )
+						{
+							input.consumeBinaryToggle("Defend"); // don't try cast when menu closes.
+						}
+					}
+
+					if ( lockOnEntityUid == 0 )
+					{
+						if ( (CalloutCommand)optionSelected == CALLOUT_CMD_AFFIRMATIVE
+							|| (CalloutCommand)optionSelected == CALLOUT_CMD_NEGATIVE )
+						{
+							lockOnEntityUid = getPlayerUid(gui_player);
+						}
+						else if ( (CalloutCommand)optionSelected == CALLOUT_CMD_HELP )
+						{
+							lockOnEntityUid = getPlayerUid(gui_player);
+						}
+					}
+
+					if ( (CalloutCommand)optionSelected == CALLOUT_CMD_SOUTH
+						|| (CalloutCommand)optionSelected == CALLOUT_CMD_SOUTHWEST
+						|| (CalloutCommand)optionSelected == CALLOUT_CMD_SOUTHEAST )
+					{
+						int toPlayer = getPlayerForDirectPlayerCmd(getPlayer(), (CalloutCommand)optionSelected);
+						if ( toPlayer >= 0 )
+						{
+							lockOnEntityUid = getPlayerUid(toPlayer);
+						}
+					}
+
+					if ( lockOnEntityUid )
+					{
+						if ( Entity* target = uidToEntity(lockOnEntityUid) )
+						{
+							if ( (target->behavior == &actPlayer || target->behavior == &actDeathGhost)
+								&& target->skill[2] != getPlayer() )
+							{
+								if ( (CalloutCommand)optionSelected == CALLOUT_CMD_HELP )
+								{
+									lockOnEntityUid = getPlayerUid(getPlayer());
+									target = uidToEntity(lockOnEntityUid);
+								}
+								else if ( (CalloutCommand)optionSelected == CALLOUT_CMD_LOOK
+									|| (CalloutCommand)optionSelected == CALLOUT_CMD_AFFIRMATIVE
+									|| (CalloutCommand)optionSelected == CALLOUT_CMD_NEGATIVE )
+								{
+									target = Player::getPlayerInteractEntity(getPlayer());
+								}
+								else if ( (CalloutCommand)optionSelected == CALLOUT_CMD_SOUTH
+									|| (CalloutCommand)optionSelected == CALLOUT_CMD_SOUTHWEST
+									|| (CalloutCommand)optionSelected == CALLOUT_CMD_SOUTHEAST )
+								{
+									int toPlayer = getPlayerForDirectPlayerCmd(getPlayer(), (CalloutCommand)optionSelected);
+									if ( toPlayer >= 0 )
+									{
+										target = Player::getPlayerInteractEntity(getPlayer());
+									}
+								}
+							}
+
+							if ( createParticleCallout(target, (CalloutCommand)optionSelected) )
+							{
+								sendCalloutText((CalloutCommand)optionSelected);
+							}
+						}
+					}
+					else
+					{
+						if ( createParticleCallout((real_t)moveToX, (real_t)moveToY, -4, 0, (CalloutCommand)optionSelected) )
+						{
+							sendCalloutText((CalloutCommand)optionSelected);
+						}
+					}
+				}
+
+				if ( optionSelected == CALLOUT_CMD_CANCEL && !sfxPlayed )
+				{
+					Player::soundCancel();
+				}
+
+				if ( !keepWheelOpen )
+				{
+					closeCalloutMenuGUI();
+					players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+					return;
+				}
+				optionSelected = -1;
+			}
+			else
+			{
+				menuToggleClick = true;
+			}
+		}
+	}
+
+	if ( bOpen )
+	{
+		if ( !calloutGUIHasBeenCreated() )
+		{
+			createCalloutMenuGUI();
+		}
+		calloutFrame->setDisabled(false);
+
+		auto bgFrame = calloutFrame->findFrame("wheel base");
+		bgFrame->setOpacity(100.0 * animWheel);
+		bannerFrame = calloutFrame->findFrame("banner frame");
+		bannerImgLeft = bannerFrame->findImage("banner left");
+		bannerImgRight = bannerFrame->findImage("banner right");
+		bannerImgCenter = bannerFrame->findImage("banner center");
+		bannerTxt = bannerFrame->findField("banner txt");
+		bannerTxt->setText("");
+
+		int direction = NORTH;
+		const int midx = calloutFrame->getSize().w / 2;
+		const int midy = calloutFrame->getSize().h / 2;
+		for ( auto img : bgFrame->getImages() )
+		{
+			if ( direction < PANEL_DIRECTION_END )
+			{
+				panelImages[direction] = img;
+				img->pos.x = getPanelEntriesForCallout()[direction].x + midx + CalloutRadialMenu::followerWheelFrameOffsetX;
+				img->pos.y = getPanelEntriesForCallout()[direction].y + midy + CalloutRadialMenu::followerWheelFrameOffsetY;
+				img->path = getPanelEntriesForCallout()[direction].path;
+			}
+			else if ( direction < 2 * PANEL_DIRECTION_END )
+			{
+				img->disabled = true;
+				img->path = "";
+				int direction2 = direction - PANEL_DIRECTION_END;
+				panelIcons[direction2] = img;
+				panelIcons[direction2]->pos.x = panelImages[direction2]->pos.x + getPanelEntriesForCallout()[direction2].icon_offsetx;
+				panelIcons[direction2]->pos.y = panelImages[direction2]->pos.y + getPanelEntriesForCallout()[direction2].icon_offsety;
+			}
+			else if ( direction == 2 * PANEL_DIRECTION_END ) // center img
+			{
+				panelImages[PANEL_DIRECTION_END] = img;
+				img->pos.x = getPanelEntriesForCallout()[PANEL_DIRECTION_END].x + midx + CalloutRadialMenu::followerWheelFrameOffsetX;
+				img->pos.y = getPanelEntriesForCallout()[PANEL_DIRECTION_END].y + midy + CalloutRadialMenu::followerWheelFrameOffsetY;
+				img->path = getPanelEntriesForCallout()[PANEL_DIRECTION_END].path;
+			}
+			++direction;
+		}
+
+		const int centerx = players[gui_player]->camera_midx();
+		const int centery = players[gui_player]->camera_midy();
+
+		SDL_Rect src;
+		src.x = centerx;
+		src.y = centery;
+
+		int numoptions = 8;
+		real_t angleStart = PI / 2 - (PI / numoptions);
+		real_t angleMiddle = angleStart + PI / numoptions;
+		real_t angleEnd = angleMiddle + PI / numoptions;
+		int radius = 140;
+		int thickness = 70;
+		src.h = radius;
+		src.w = radius;
+		if ( players[gui_player]->camera_height() <= 768 )
+		{
+			radius = 110;
+			thickness = 70;
+			src.h = 125;
+			src.w = 125;
+		}
+
+		radius = CalloutRadialMenu::followerWheelRadius;
+		thickness = CalloutRadialMenu::followerWheelButtonThickness;
+		real_t menuScale = yres / (real_t)Frame::virtualScreenY;
+		radius *= menuScale;
+		thickness *= menuScale;
+		int centerButtonHighlightOffset = CalloutRadialMenu::followerWheelInnerCircleRadiusOffset;
+
+		int highlight = -1;
+		int i = 0;
+
+		if ( inputs.hasController(gui_player) )
+		{
+			auto controller = inputs.getController(gui_player);
+			if ( controller )
+			{
+				GameController::DpadDirection dir = controller->dpadDirToggle();
+				if ( dir != GameController::DpadDirection::INVALID )
+				{
+					if ( !controller->virtualDpad.consumed )
+					{
+						Player::soundMovement();
+					}
+					controller->consumeDpadDirToggle();
+					switch ( dir )
+					{
+					case GameController::DpadDirection::UP:
+						highlight = 0;
+						break;
+					case GameController::DpadDirection::UPLEFT:
+						highlight = 1;
+						break;
+					case GameController::DpadDirection::LEFT:
+						highlight = 2;
+						break;
+					case GameController::DpadDirection::DOWNLEFT:
+						highlight = 3;
+						break;
+					case GameController::DpadDirection::DOWN:
+						highlight = 4;
+						break;
+					case GameController::DpadDirection::DOWNRIGHT:
+						highlight = 5;
+						break;
+					case GameController::DpadDirection::RIGHT:
+						highlight = 6;
+						break;
+					case GameController::DpadDirection::UPRIGHT:
+						highlight = 7;
+						break;
+					default:
+						break;
+					}
+					real_t angleMiddleForOption = PI / 2 + dir * (2 * PI / numoptions);
+					omousex = centerx + (radius + thickness) * .75 * cos(angleMiddleForOption);
+					omousey = centery + (radius + thickness) * .75 * sin(angleMiddleForOption);
+					inputs.setMouse(gui_player, Inputs::OX, omousex);
+					inputs.setMouse(gui_player, Inputs::OY, omousey);
+					inputs.setMouse(gui_player, Inputs::X, omousex);
+					inputs.setMouse(gui_player, Inputs::Y, omousey);
+
+					if ( highlight != -1 )
+					{
+						inputs.getVirtualMouse(gui_player)->draw_cursor = false;
+					}
+				}
+			}
+		}
+
+		bool mouseInCenterButton = sqrt(pow((omousex - menuX), 2) + pow((omousey - menuY), 2)) < (radius - thickness);
+
+		angleStart = PI / 2 - (PI / numoptions);
+		angleMiddle = angleStart + PI / numoptions;
+		angleEnd = angleMiddle + PI / numoptions;
+
+		const real_t mouseDetectionAdjust = PI / 128;
+		for ( i = 0; i < numoptions; ++i )
+		{
+			// see if mouse cursor is within an option.
+			if ( highlight == -1 )
+			{
+				if ( !mouseInCenterButton )
+				{
+					real_t x1 = menuX + (radius + thickness + 45) * cos(angleEnd + mouseDetectionAdjust);
+					real_t y1 = menuY - (radius + thickness + 45) * sin(angleEnd + mouseDetectionAdjust);
+					real_t x2 = menuX + 5 * cos(angleMiddle);
+					real_t y2 = menuY - 5 * sin(angleMiddle);
+					real_t x3 = menuX + (radius + thickness + 45) * cos(angleStart - mouseDetectionAdjust);
+					real_t y3 = menuY - (radius + thickness + 45) * sin(angleStart - mouseDetectionAdjust);
+					real_t a = ((y2 - y3) * (omousex - x3) + (x3 - x2) * (omousey - y3)) / ((y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3));
+					real_t b = ((y3 - y1) * (omousex - x3) + (x1 - x3) * (omousey - y3)) / ((y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3));
+					real_t c = 1 - a - b;
+					if ( (0 <= a && a <= 1) && (0 <= b && b <= 1) && (0 <= c && c <= 1) )
+					{
+						//barycentric calc for figuring if mouse point is within triangle.
+						highlight = i;
+					}
+				}
+				if ( !inputs.hasController(gui_player) )
+				{
+					if ( highlight != -1 && optionSelected != highlight && optionSelected != -1 )
+					{
+						Player::soundMovement();
+					}
+				}
+			}
+
+			SDL_Rect txt;
+			txt.x = src.x + src.w * cos(angleMiddle);
+			txt.y = src.y - src.h * sin(angleMiddle);
+			txt.w = 0;
+			txt.h = 0;
+
+			// draw the text for the menu wheel.
+
+			bool lockedOption = false;
+			panelIcons[i]->color = makeColor(255, 255, 255, 255);
+			{
+				/*if ( i == ALLY_CMD_ATTACK_SELECT )
+				{
+					if ( i == highlight )
+					{
+						panelIcons[i]->path = iconEntries["leader_attack"].path_hover;
+						setCalloutBannerText(gui_player, bannerTxt, "leader_attack", "default", textHighlightColor);
+					}
+					else
+					{
+						panelIcons[i]->path = iconEntries["leader_attack"].path;
+					}
+				}
+				else if ( i == ALLY_CMD_MOVETO_SELECT )
+				{
+					if ( i == highlight )
+					{
+						panelIcons[i]->path = iconEntries["leader_moveto"].path_hover;
+						setCalloutBannerText(gui_player, bannerTxt, "leader_moveto", "default", textHighlightColor);
+					}
+					else
+					{
+						panelIcons[i]->path = iconEntries["leader_moveto"].path;
+					}
+				}
+				else*/
+				{
+					if ( i == CALLOUT_CMD_LOOK )
+					{
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["look_at"].path_hover;
+							setCalloutText(bannerTxt, "look_at", textHighlightColor, (CalloutCommand)i, SET_CALLOUT_BANNER_TEXT, -1);
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["look_at"].path;
+						}
+					}
+					else if ( i == CALLOUT_CMD_HELP )
+					{
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["help"].path_hover;
+							setCalloutText(bannerTxt, "help", textHighlightColor, (CalloutCommand)i, SET_CALLOUT_BANNER_TEXT, -1);
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["help"].path;
+						}
+					}
+					else if ( i == CALLOUT_CMD_AFFIRMATIVE )
+					{
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["affirmative"].path_hover;
+							setCalloutText(bannerTxt, "affirmative", textHighlightColor, (CalloutCommand)i, SET_CALLOUT_BANNER_TEXT, -1);
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["affirmative"].path;
+						}
+					}
+					else if ( i == CALLOUT_CMD_NEGATIVE )
+					{
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["negative"].path_hover;
+							setCalloutText(bannerTxt, "negative", textHighlightColor, (CalloutCommand)i, SET_CALLOUT_BANNER_TEXT, -1);
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["negative"].path;
+						}
+					}
+					else if ( i == CALLOUT_CMD_MOVE )
+					{
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["move"].path_hover;
+							setCalloutText(bannerTxt, "move", textHighlightColor, (CalloutCommand)i, SET_CALLOUT_BANNER_TEXT, -1);
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["move"].path;
+						}
+					}
+					else if ( i == CALLOUT_CMD_SOUTH )
+					{
+						int targetPlayer = getPlayerForDirectPlayerCmd(getPlayer(), (CalloutCommand)i);
+						if ( targetPlayer < 0 || client_disconnected[targetPlayer] || !Player::getPlayerInteractEntity(targetPlayer) )
+						{
+							lockedOption = true;
+						}
+						if ( i == highlight )
+						{
+							setCalloutText(bannerTxt, "player_wave_1", textHighlightColor, (CalloutCommand)i, SET_CALLOUT_BANNER_TEXT, -1);
+						}
+
+						std::string key = (i == highlight) ? "tag_btn_player_wave_hover" : "tag_btn_player_wave";
+						if ( lockedOption )
+						{
+							panelIcons[i]->color = makeColor(255, 255, 255, 64);
+						}
+						
+						{
+							switch ( targetPlayer )
+							{
+							case 0:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer1;
+								break;
+							case 1:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer2;
+								break;
+							case 2:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer3;
+								break;
+							case 3:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer4;
+								break;
+							default:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayerX;
+								break;
+							}
+						}
+					}
+					else if ( i == CALLOUT_CMD_SOUTHWEST )
+					{
+						int targetPlayer = getPlayerForDirectPlayerCmd(getPlayer(), (CalloutCommand)i);
+						if ( targetPlayer < 0 || client_disconnected[targetPlayer] || !Player::getPlayerInteractEntity(targetPlayer) )
+						{
+							lockedOption = true;
+						}
+						if ( i == highlight )
+						{
+							setCalloutText(bannerTxt, "player_wave_2", textHighlightColor, (CalloutCommand)i, SET_CALLOUT_BANNER_TEXT, -1);
+						}
+						
+						std::string key = (i == highlight) ? "tag_btn_player_wave_hover" : "tag_btn_player_wave";
+						if ( lockedOption )
+						{
+							panelIcons[i]->color = makeColor(255, 255, 255, 64);
+						}
+						
+						{
+							switch ( targetPlayer )
+							{
+							case 0:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer1;
+								break;
+							case 1:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer2;
+								break;
+							case 2:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer3;
+								break;
+							case 3:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer4;
+								break;
+							default:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayerX;
+								break;
+							}
+						}
+					}
+					else if ( i == CALLOUT_CMD_SOUTHEAST )
+					{
+						int targetPlayer = getPlayerForDirectPlayerCmd(getPlayer(), (CalloutCommand)i);
+						if ( targetPlayer < 0 || client_disconnected[targetPlayer] || !Player::getPlayerInteractEntity(targetPlayer) )
+						{
+							lockedOption = true;
+						}
+						if ( i == highlight )
+						{
+							setCalloutText(bannerTxt, "player_wave_3", textHighlightColor, (CalloutCommand)i, SET_CALLOUT_BANNER_TEXT, -1);
+						}
+						
+						std::string key = (i == highlight) ? "tag_btn_player_wave_hover" : "tag_btn_player_wave";
+						if ( lockedOption )
+						{
+							panelIcons[i]->color = makeColor(255, 255, 255, 64);
+						}
+						
+						{
+							switch ( targetPlayer )
+							{
+							case 0:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer1;
+								break;
+							case 1:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer2;
+								break;
+							case 2:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer3;
+								break;
+							case 3:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayer4;
+								break;
+							default:
+								panelIcons[i]->path = worldIconEntries[key].pathPlayerX;
+								break;
+							}
+						}
+					}
+				}
+			}
+
+			if ( lockedOption )
+			{
+				if ( highlight == i && !mouseInCenterButton )
+				{
+					panelImages[i]->path = getPanelEntriesForCallout()[i].path_hover;
+				}
+				else
+				{
+					panelImages[i]->path = getPanelEntriesForCallout()[i].path;
+				}
+			}
+			else if ( highlight == i && !mouseInCenterButton )
+			{
+				panelImages[i]->path = getPanelEntriesForCallout()[i].path_hover;
+			}
+
+
+			if ( /*!lockedOption &&*/ panelIcons[i]->path != "" )
+			{
+				if ( auto imgGet = Image::get(panelIcons[i]->path.c_str()) )
+				{
+					panelIcons[i]->disabled = false;
+					panelIcons[i]->pos.w = imgGet->getWidth();
+					panelIcons[i]->pos.h = imgGet->getHeight();
+					panelIcons[i]->pos.x -= panelIcons[i]->pos.w / 2;
+					panelIcons[i]->pos.y -= panelIcons[i]->pos.h / 2;
+				}
+			}
+
+			angleStart += 2 * PI / numoptions;
+			angleMiddle = angleStart + PI / numoptions;
+			angleEnd = angleMiddle + PI / numoptions;
+		}
+
+		// draw center text.
+		if ( mouseInCenterButton )
+		{
+			bool mouseInCenterHighlightArea = sqrt(pow((omousex - menuX), 2) + pow((omousey - menuY), 2)) < (radius - thickness + centerButtonHighlightOffset);
+			if ( mouseInCenterHighlightArea )
+			{
+				panelImages[PANEL_DIRECTION_END]->path = getPanelEntriesForCallout()[PANEL_DIRECTION_END].path_hover;
+			}
+
+			highlight = -1;
+		}
+
+		if ( optionSelected == -1 && disableOption == 0 && highlight != -1 )
+		{
+			// in case optionSelected is cleared, but we're still highlighting text (happens on next frame when clicking on disabled option.)
+			if ( highlight == CALLOUT_CMD_SOUTH
+				|| highlight == CALLOUT_CMD_SOUTHEAST
+				|| highlight == CALLOUT_CMD_SOUTHWEST )
+			{
+				int targetPlayer = getPlayerForDirectPlayerCmd(getPlayer(), (CalloutCommand)highlight);
+				if ( targetPlayer < 0 || client_disconnected[targetPlayer] || !Player::getPlayerInteractEntity(targetPlayer) )
+				{
+					disableOption = true;
+				}
+				else
+				{
+					disableOption = false;
+				}
+			}
+			else
+			{
+				disableOption = false;
+			}
+		}
+
+		if ( highlight == -1 )
+		{
+			setCalloutBannerTextUnformatted(gui_player, bannerTxt, "cancel", "default", hudColors.characterSheetRed);
+		}
+
+		bool disableActionGlyph = false;
+		bool missingSkillLevel = false;
+		if ( disableOption != 0 )
+		{
+			disableActionGlyph = true;
+		}
+		//	if ( disableOption == -2 ) // disabled due to cooldown
+		//	{
+		//		setCalloutBannerText(gui_player, bannerTxt, "invalid_action", "rest_cooldown", hudColors.characterSheetRed);
+		//	}
+		//	else if ( disableOption == -1 ) // disabled due to creature type
+		//	{
+		//		auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["command_unavailable"];
+		//		setCalloutBannerTextFormatted(gui_player, bannerTxt, hudColors.characterSheetRed,
+		//			textMap.second, textMap.first.c_str(),
+		//			getMonsterLocalizedName(HUMAN).c_str());
+		//	}
+		//	else if ( disableOption == -3 ) // disabled due to tinkerbot quality
+		//	{
+		//		auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["tinker_quality_low"];
+		//		setCalloutBannerTextFormatted(gui_player, bannerTxt, hudColors.characterSheetRed,
+		//			textMap.second, textMap.first.c_str(),
+		//			getMonsterLocalizedName(HUMAN).c_str());
+		//	}
+		//	else
+		//	{
+		//		std::string requirement = "";
+		//		std::string current = "";
+		//		int requirementVal = 0;
+		//		int currentVal = 0;
+		//		if ( highlight >= ALLY_CMD_DEFEND && highlight <= ALLY_CMD_END && highlight != CALLOUT_CMD_CANCEL )
+		//		{
+		//			switch ( std::min(disableOption, SKILL_LEVEL_LEGENDARY) )
+		//			{
+		//			case 0:
+		//				requirement = Language::get(363);
+		//				requirementVal = 0;
+		//				break;
+		//			case SKILL_LEVEL_NOVICE:
+		//				requirement = Language::get(364);
+		//				requirementVal = SKILL_LEVEL_NOVICE;
+		//				break;
+		//			case SKILL_LEVEL_BASIC:
+		//				requirement = Language::get(365);
+		//				requirementVal = SKILL_LEVEL_BASIC;
+		//				break;
+		//			case SKILL_LEVEL_SKILLED:
+		//				requirement = Language::get(366);
+		//				requirementVal = SKILL_LEVEL_SKILLED;
+		//				break;
+		//			case SKILL_LEVEL_EXPERT:
+		//				requirement = Language::get(367);
+		//				requirementVal = SKILL_LEVEL_EXPERT;
+		//				break;
+		//			case SKILL_LEVEL_MASTER:
+		//				requirement = Language::get(368);
+		//				requirementVal = SKILL_LEVEL_MASTER;
+		//				break;
+		//			case SKILL_LEVEL_LEGENDARY:
+		//				requirement = Language::get(369);
+		//				requirementVal = SKILL_LEVEL_LEGENDARY;
+		//				break;
+		//			default:
+		//				break;
+		//			}
+		//			requirement.erase(std::remove(requirement.begin(), requirement.end(), ' '), requirement.end()); // trim whitespace
+
+		//			current = Language::get(363);
+		//			current.erase(std::remove(current.begin(), current.end(), ' '), current.end()); // trim whitespace
+		//			currentVal = 0;
+		//		}
+
+		//		auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["skill_missing_leader"];
+		//		setFollowerBannerTextFormatted(gui_player, bannerTxt, hudColors.characterSheetRed,
+		//			textMap.second, textMap.first.c_str(),
+		//			currentVal, requirementVal);
+		//		missingSkillLevel = true;
+		//	}
+		//}
+
+		auto wheelSkillImg = bannerFrame->findImage("skill img");
+		wheelSkillImg->disabled = true;
+		auto wheelStatImg = bannerFrame->findImage("stat img");
+		wheelStatImg->disabled = true;
+
+		bannerFrame->setDisabled(false);
+		if ( auto textGet = bannerTxt->getTextObject() )
+		{
+			SDL_Rect txtPos = bannerTxt->getSize();
+			if ( !strcmp(bannerTxt->getText(), "") && txtPos.w == 0 )
+			{
+				txtPos.w = 82;
+			}
+			else if ( strcmp(bannerTxt->getText(), "") )
+			{
+				txtPos.w = textGet->getWidth();
+			}
+
+			auto bannerGlyph = bannerFrame->findImage("banner glyph");
+			bannerGlyph->disabled = true;
+			if ( inputs.hasController(gui_player) )
+			{
+				bannerGlyph->path = Input::inputs[gui_player].getGlyphPathForBinding("MenuConfirm");
+			}
+			else
+			{
+				bannerGlyph->path = Input::inputs[gui_player].getGlyphPathForBinding("MenuLeftClick");
+			}
+			//bannerGlyph->path = Input::inputs[gui_player].getGlyphPathForBinding("Use");
+			auto bannerGlyphModifier = bannerFrame->findImage("banner modifier glyph");
+			bannerGlyphModifier->disabled = true;
+			bannerGlyphModifier->path = Input::inputs[gui_player].getGlyphPathForBinding("Defend");
+			if ( auto imgGet = Image::get(bannerGlyph->path.c_str()) )
+			{
+				bannerGlyph->pos.w = imgGet->getWidth();
+				bannerGlyph->pos.h = imgGet->getHeight();
+				bannerGlyph->disabled = disableActionGlyph || !strcmp(bannerTxt->getText(), "");
+			}
+			if ( auto imgGet = Image::get(bannerGlyphModifier->path.c_str()) )
+			{
+				bannerGlyphModifier->pos.w = imgGet->getWidth();
+				bannerGlyphModifier->pos.h = imgGet->getHeight();
+				bannerGlyphModifier->disabled = bannerGlyph->disabled || !modifierActiveForOption;
+			}
+
+			if ( !bannerGlyph->disabled )
+			{
+				animInvalidAction = 0.0;
+			}
+
+			bannerImgCenter->pos.w = txtPos.w + 16
+				+ (bannerGlyph->disabled ? 0 : ((bannerGlyph->pos.w + 8) / 2))
+				+ (bannerGlyphModifier->disabled ? 0 : (bannerGlyphModifier->pos.w + 2));
+			int missingSkillLevelIconWidth = 0;
+			if ( missingSkillLevel )
+			{
+				missingSkillLevelIconWidth = wheelStatImg->pos.w + wheelSkillImg->pos.w + 8;
+			}
+			bannerImgCenter->pos.w += missingSkillLevelIconWidth / 2;
+			const int totalWidth = bannerImgLeft->pos.w + bannerImgRight->pos.w + bannerImgCenter->pos.w;
+
+			const int midx = calloutFrame->getSize().w / 2;
+			const int midy = calloutFrame->getSize().h / 2;
+
+			SDL_Rect bannerSize = bannerFrame->getSize();
+			bannerSize.w = totalWidth;
+			bannerSize.x = midx - (totalWidth / 2);
+			bannerSize.y = midy + CalloutRadialMenu::followerWheelRadius + CalloutRadialMenu::followerWheelButtonThickness + 4;
+			if ( players[gui_player]->bUseCompactGUIHeight() )
+			{
+				bannerSize.y -= 16;
+			}
+			//bannerSize.y += 32 * (1.0 - animTitle);
+			bannerFrame->setSize(bannerSize);
+			bannerFrame->setOpacity(100.0 * animTitle);
+			bannerImgLeft->pos.x = 0;
+			bannerImgCenter->pos.x = bannerImgLeft->pos.x + bannerImgLeft->pos.w;
+			bannerImgRight->pos.x = bannerImgCenter->pos.x + bannerImgCenter->pos.w;
+
+			txtPos.x = bannerImgCenter->pos.x + (bannerImgCenter->pos.w / 2) - (txtPos.w / 2);
+			txtPos.x += bannerGlyph->disabled ? 0 : ((bannerGlyph->pos.w + 8) / 2);
+			txtPos.x += bannerGlyphModifier->disabled ? 0 : ((bannerGlyphModifier->pos.w + 0) / 2);
+			if ( missingSkillLevel )
+			{
+				txtPos.x -= (missingSkillLevelIconWidth / 2) - 4;
+			}
+			if ( txtPos.x % 2 == 1 )
+			{
+				++txtPos.x;
+			}
+			if ( animInvalidAction > 0.01 )
+			{
+				txtPos.x += -2 + 2 * (cos(animInvalidAction * 4 * PI));
+			}
+			txtPos.y = 17;
+			bannerTxt->setSize(txtPos);
+
+			if ( missingSkillLevel )
+			{
+				wheelSkillImg->pos.x = txtPos.x + txtPos.w;
+				wheelSkillImg->pos.y = txtPos.y - 3;
+				wheelSkillImg->disabled = false;
+
+				wheelStatImg->pos.x = wheelSkillImg->pos.x + wheelSkillImg->pos.w;
+				wheelStatImg->pos.y = wheelSkillImg->pos.y;
+				wheelStatImg->disabled = false;
+			}
+
+			bannerGlyph->pos.x = txtPos.x - bannerGlyph->pos.w - 8;
+			if ( bannerGlyph->pos.x % 2 == 1 )
+			{
+				++bannerGlyph->pos.x;
+			}
+			bannerGlyph->pos.y = txtPos.y + txtPos.h / 2 - bannerGlyph->pos.h / 2;
+			if ( bannerGlyph->pos.y % 2 == 1 )
+			{
+				bannerGlyph->pos.y -= 1;
+			}
+			bannerSize.h = std::max(40, bannerGlyph->pos.y + bannerGlyph->pos.h);
+			if ( !bannerGlyphModifier->disabled )
+			{
+				bannerGlyphModifier->pos.x = txtPos.x - bannerGlyphModifier->pos.w - 8;
+				bannerGlyph->pos.x = bannerGlyphModifier->pos.x - bannerGlyph->pos.w - 2;
+
+				if ( bannerGlyphModifier->pos.x % 2 == 1 )
+				{
+					++bannerGlyphModifier->pos.x;
+				}
+				bannerGlyphModifier->pos.y = txtPos.y + txtPos.h / 2 - bannerGlyphModifier->pos.h / 2;
+				if ( bannerGlyphModifier->pos.y % 2 == 1 )
+				{
+					bannerGlyphModifier->pos.y -= 1;
+				}
+				bannerSize.h = std::max(bannerSize.h, bannerGlyphModifier->pos.y + bannerGlyphModifier->pos.h);
+			}
+			bannerFrame->setSize(bannerSize);
+
+			auto wheelTitleText = bgFrame->findField("wheel title");
+			if ( !strcmp(wheelTitleText->getText(), "") )
+			{
+				char buf[128] = "";
+				int spaces = 0;
+				int spaces2 = 0;
+
+				if ( Entity* target = uidToEntity(lockOnEntityUid) )
+				{
+					bool allowed = allowedInteractEntity(*target, true);
+					if ( allowed )
+					{
+						snprintf(buf, sizeof(buf), "%s...", interactText);
+					}
+					else
+					{
+						snprintf(buf, sizeof(buf), Language::get(4348));
+					}
+					spaces = 1;
+				}
+				else
+				{
+					snprintf(buf, sizeof(buf), Language::get(4348));
+					spaces = 1;
+				}
+
+				for ( int c = 0; c <= strlen(buf); ++c )
+				{
+					if ( buf[c] == '\0' )
+					{
+						break;
+					}
+					if ( buf[c] == ' ' )
+					{
+						++spaces2;
+					}
+				}
+				wheelTitleText->setText(buf);
+				wheelTitleText->clearWordsToHighlight();
+				int wordIndex = 2;
+				while ( spaces2 >= spaces ) // every additional space means +1 word to highlight for the monster's name
+				{
+					wheelTitleText->addWordToHighlight(wordIndex, followerTitleHighlightColor);
+					--spaces2;
+					++wordIndex;
+				}
+			}
+			SDL_Rect titlePos = wheelTitleText->getSize();
+			if ( auto textGet2 = wheelTitleText->getTextObject() )
+			{
+				titlePos.w = textGet2->getWidth();
+				titlePos.x = bannerSize.x + bannerSize.w / 2 - (titlePos.w / 2);
+				if ( titlePos.x % 2 == 1 )
+				{
+					++titlePos.x;
+				}
+				titlePos.y = midy - CalloutRadialMenu::followerWheelRadius - CalloutRadialMenu::followerWheelButtonThickness - 24;
+				titlePos.y -= 32 * (1.0 - animTitle);
+				++titlePos.y; // add 1 to be even pixeled
+				wheelTitleText->setSize(titlePos);
+			}
+		}
+
+		if ( !keepWheelOpen )
+		{
+			optionSelected = highlight; // don't reselect if we're keeping the wheel open by using a toggle option.
+		}
+	}
+}
+
+bool CalloutRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updateInteractText)
+{
+	if ( optionSelected != CALLOUT_CMD_SELECT )
+	{
+		return false;
+	}
+
+	if ( !players[gui_player] || !Player::getPlayerInteractEntity(gui_player) )
+	{
+		return false;
+	}
+
+	bool interactItems = true; //allowedInteractItems(followerStats->type) || allowedInteractFood(followerStats->type);
+	bool interactWorld = true; //allowedInteractWorld(followerStats->type);
+	bool enableAttack = true;
+
+	if ( updateInteractText )
+	{
+		strcpy(interactText, Language::get(4347)); // "Callout "
+	}
+
+	/*if ( selectedEntity.behavior == &actTorch && interactWorld )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, items[TOOL_TORCH].getIdentifiedName());
+		}
+	}*/
+	if ( (selectedEntity.behavior == &actSwitch || 
+		selectedEntity.behavior == &actSwitchWithTimer ||
+		selectedEntity.sprite == 184) && interactWorld )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(4044)); // "switch"
+		}
+	}
+	else if ( (selectedEntity.behavior == &actTeleportShrine) && (interactWorld || interactItems || enableAttack) )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(4309)); // "shrine"
+		}
+	}
+	else if ( (selectedEntity.behavior == &actTeleporter) && interactWorld )
+	{
+		if ( updateInteractText )
+		{
+			switch ( selectedEntity.teleporterType )
+			{
+			case 0:
+			case 1:
+				strcat(interactText, Language::get(4310)); // "ladder"
+				break;
+			case 2:
+				strcat(interactText, Language::get(4311)); // "portal"
+				break;
+			default:
+				break;
+			}
+		}
+	}
+	else if ( selectedEntity.behavior == &actLadder )
+	{
+		if ( updateInteractText )
+		{
+			if ( secretlevel && selectedEntity.skill[3] == 1 ) // secret ladder
+			{
+				strcat(interactText, Language::get(4360)); // "secret exit"
+			}
+			else if ( !secretlevel && selectedEntity.skill[3] == 1 ) // secret ladder
+			{
+				strcat(interactText, Language::get(4359)); // "secret entrance" 
+			}
+			else
+			{
+				strcat(interactText, Language::get(4361)); // "level exit" 
+			}
+		}
+	}
+	else if ( selectedEntity.behavior == &actPortal )
+	{
+		if ( updateInteractText )
+		{
+			if ( selectedEntity.skill[3] == 0 ) // secret entrance portal
+			{
+				if ( secretlevel )
+				{
+					strcat(interactText, Language::get(4360)); // "secret exit" 
+				}
+				else
+				{
+					strcat(interactText, Language::get(4359)); // "secret entrance" 
+				}
+			}
+			else
+			{
+				if ( !strcmp(map.name, "Hell") )
+				{
+					strcat(interactText, Language::get(4361)); // "level exit" 
+				}
+				else if ( !strcmp(map.name, "Mages Guild") )
+				{
+					strcat(interactText, Language::get(4361)); // "level exit"
+				}
+				else
+				{
+					strcat(interactText, Language::get(4361)); // "level exit"
+				}
+			}
+		}
+	}
+	else if ( selectedEntity.behavior == &::actMidGamePortal )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(4311)); // "portal"
+		}
+	}
+	else if ( selectedEntity.behavior == &actCustomPortal )
+	{
+		if ( updateInteractText )
+		{
+			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+			{
+				strcat(interactText, Language::get(4361)); // "level exit"
+			}
+			else
+			{
+				if ( selectedEntity.portalCustomSpriteAnimationFrames > 0 )
+				{
+					strcat(interactText, Language::get(4361)); // "level exit"
+				}
+				else
+				{
+					strcat(interactText, Language::get(4361)); // "level exit"
+				}
+			}
+		}
+	}
+	else if ( selectedEntity.behavior == &::actExpansionEndGamePortal
+		|| selectedEntity.behavior == &actWinningPortal )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(4311)); // "portal"
+		}
+	}
+	else if ( selectedEntity.behavior == &actBomb || selectedEntity.behavior == &actBeartrap )
+	{
+		if ( updateInteractText )
+		{
+			if ( selectedEntity.behavior == &actBomb )
+			{
+				if ( selectedEntity.skill[21] >= WOODEN_SHIELD && selectedEntity.skill[21] < NUMITEMS )
+				{
+					strcat(interactText, items[selectedEntity.skill[21]].getIdentifiedName());
+				}
+			}
+			else if ( selectedEntity.behavior == &actBeartrap )
+			{
+				strcat(interactText, items[TOOL_BEARTRAP].getIdentifiedName());
+			}
+		}
+	}
+	else if ( selectedEntity.behavior == &actBoulderTrapHole
+		&& interactWorld )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(4349)); // "trap"
+		}
+	}
+	else if ( selectedEntity.behavior == &actBoulder
+		&& interactWorld )
+		{
+			if ( updateInteractText )
+			{
+				strcat(interactText, Language::get(4358)); // "boulder"
+			}
+	}
+	else if ( selectedEntity.behavior == &actItem && interactItems )
+	{
+		if ( updateInteractText )
+		{
+			if ( multiplayer != CLIENT )
+			{
+				if ( selectedEntity.skill[15] == 0 )
+				{
+					strcat(interactText, items[selectedEntity.skill[10]].getUnidentifiedName());
+				}
+				else
+				{
+					strcat(interactText, items[selectedEntity.skill[10]].getIdentifiedName());
+				}
+			}
+			else
+			{
+				strcat(interactText, Language::get(4046)); // "item"
+			}
+		}
+	}
+	else if ( selectedEntity.behavior == &actGoldBag )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(4353)); // "gold"
+		}
+	}
+	else if ( selectedEntity.behavior == &actFountain )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(4355)); // "fountain"
+		}
+	}
+	else if ( selectedEntity.behavior == &actSink )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(4354)); // "sink"
+		}
+	}
+	else if ( selectedEntity.behavior == &actHeadstone )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(4357)); // "grave"
+		}
+	}
+	else if ( selectedEntity.behavior == &actCampfire )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(4365)); // "campfire"
+		}
+	}
+	else if ( selectedEntity.behavior == &actPowerCrystal || selectedEntity.behavior == &actPowerCrystalBase )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(4356)); // "crystal"
+		}
+	}
+	else if ( selectedEntity.behavior == &actChestLid || selectedEntity.behavior == &actChest )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(675)); // "chest"
+		}
+	}
+	else if ( selectedEntity.behavior == &actMonster && enableAttack && selectedEntity.getMonsterTypeFromSprite() != GYROBOT )
+	{
+		if ( updateInteractText )
+		{
+			int monsterType = selectedEntity.getMonsterTypeFromSprite();
+			strcat(interactText, getMonsterLocalizedName((Monster)monsterType).c_str());
+		}
+	}
+	else if ( selectedEntity.behavior == &actPlayer || selectedEntity.behavior == &actDeathGhost )
+	{
+		if ( updateInteractText )
+		{
+			int playernum = selectedEntity.skill[2];
+			if ( playernum >= 0 && playernum < MAXPLAYERS )
+			{
+				char shortname[32];
+				stringCopy(shortname, stats[playernum]->name, sizeof(shortname), 22);
+				strcat(interactText, shortname);
+			}
+		}
+	}
+	else if ( selectedEntity.behavior == &actColliderDecoration && selectedEntity.isDamageableCollider() )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(selectedEntity.getColliderLangName()));
+		}
+	}
+	else if ( selectedEntity.behavior == &actFloorDecoration && selectedEntity.sprite == 991 )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(4363)); // "sign"
+		}
+	}
+	else if ( selectedEntity.behavior == &actPedestalBase )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(4364));
+		}
+	}
+	else
+	{
+		if ( updateInteractText )
+		{
+			strcpy(interactText, "");
+		}
+		return false;
+	}
+	return true;
 }

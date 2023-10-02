@@ -61,8 +61,10 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 
 	Input& input = Input::inputs[player];
 
-	if ( gamePaused || movie || !players[player] || !players[player]->entity 
-		|| players[player]->entity->ticks < (TICKS_PER_SECOND / 2)
+	Entity* playerEntity = Player::getPlayerInteractEntity(player);
+
+	if ( gamePaused || movie || !players[player] || !playerEntity
+		|| playerEntity->ticks < (TICKS_PER_SECOND / 2)
 		|| fadeout
 		|| (players[player]->usingCommand() && input.input("Use").type == Input::binding_t::KEYBOARD) )
 	{
@@ -166,7 +168,9 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 				}
 				if ( players[player]->worldUI.bTooltipActiveForPlayer(*tooltip) )
 				{
-					if ( tooltip->worldTooltipRequiresButtonHeld == 1 && *MainMenu::cvar_hold_to_activate )
+					if ( tooltip->worldTooltipRequiresButtonHeld == 1 
+						&& *MainMenu::cvar_hold_to_activate
+						&& clicktype != ENTITY_CLICK_CALLOUT )
 					{
 						if ( input.binaryHeldToggle("Use") )
 						{
@@ -195,8 +199,19 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 			}
 		}
 	}
+	else
+	{
+		if ( playerEntity->behavior == &actDeathGhost && entity )
+		{
+			if ( !players[player]->ghost.allowedInteractEntity(*entity) )
+			{
+				return nullptr;
+			}
+		}
+	}
 
-	if ( !entity && !mute_player_monster_sounds && !clickCheckOverride )
+	if ( !entity && !mute_player_monster_sounds && !clickCheckOverride 
+		&& clicktype != ENTITY_CLICK_CALLOUT )
 	{
 		if ( players[player] && players[player]->entity && players[player]->movement.monsterEmoteGimpTimer == 0 )
 		{
@@ -406,6 +421,7 @@ bool entityInsideEntity(Entity* entity1, Entity* entity2)
 
 bool entityInsideSomething(Entity* entity)
 {
+	if ( !entity ) { return false; }
 	#ifdef __ARM_NEON__
     const float f[2] = { (float)entity->x, (float)entity->y };
 	int32x2_t xy = vcvt_s32_f32(vmul_n_f32(vld1_f32(f), 1.f/16.f));
@@ -434,6 +450,13 @@ bool entityInsideSomething(Entity* entity)
 			if ( testEntity == entity || testEntity->flags[PASSABLE] )
 			{
 				continue;
+			}
+			if ( entity->behavior == &actDeathGhost )
+			{
+				if ( testEntity->behavior == &actMonster || testEntity->behavior == &actPlayer )
+				{
+					continue;
+				}
 			}
 			if ( entityInsideEntity(entity, testEntity) )
 			{
@@ -633,6 +656,10 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				continue;    // monsters don't have hard collision with door frames
 			}
+			if ( my->behavior == &actDeathGhost && (entity->behavior == &actMonster || entity->behavior == &actPlayer) )
+			{
+				continue;
+			}
 			Stat* myStats = stats; //my->getStats();	//SEB <<<
 			Stat* yourStats = entity->getStats();
 			if ( my->behavior == &actPlayer && entity->behavior == &actPlayer )
@@ -695,10 +722,18 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 					continue;
 				}
 			}
-			else if ( multiplayer != CLIENT && parent && parentStats && yourStats 
-				&& tryReduceCollisionSize )
+			else if ( multiplayer != CLIENT && tryReduceCollisionSize )
 			{
-				reduceCollisionSize = useSmallCollision(*parent, *parentStats, *entity, *yourStats);
+				if ( parent && parentStats && yourStats )
+				{
+					reduceCollisionSize = useSmallCollision(*parent, *parentStats, *entity, *yourStats);
+				}
+				else if ( parent && parent->behavior == &actDeathGhost
+					&& (entity->behavior == &actPlayer
+						|| (entity->behavior == &actMonster && entity->monsterAllyGetPlayerLeader())) )
+				{
+					reduceCollisionSize = true;
+				}
 			}
 
 			if ( multiplayer == CLIENT )
@@ -1737,6 +1772,10 @@ int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntity
 						}
 						if ( isMonster && my->getMonsterTypeFromSprite() == MINOTAUR && entity->isDamageableCollider()
 							&& entity->colliderHasCollision == 2 )
+						{
+							continue;
+						}
+						if ( my && my->behavior == &actDeathGhost && (entity->behavior == &actPlayer || entity->behavior == &actMonster) )
 						{
 							continue;
 						}

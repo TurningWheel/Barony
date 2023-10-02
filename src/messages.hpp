@@ -45,6 +45,8 @@ typedef struct Message
 	 * To ensure everything always works right. I guess. Maybe not necessary. Whatever. There are much bigger problems to worry about.
 	 */
 	Sint16 alpha;
+
+	static const int CHAT_MESSAGE_SFX = 238;
 } Message;
 
 /*

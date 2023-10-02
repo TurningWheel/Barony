@@ -48,7 +48,7 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 
 	for (c = 0; c < MAXPLAYERS; c++)
 	{
-		if (source == players[c]->entity)
+		if (source == players[c]->entity || source == players[c]->ghost.my )
 		{
 			player = c;
 			break;
@@ -2511,7 +2511,7 @@ void drawStatusNew(const int player)
 		{
 			drawHotBarTooltipOnCycle = false;
 		}
-		if ( FollowerMenu[player].followerMenuIsOpen() )
+		if ( FollowerMenu[player].followerMenuIsOpen() || CalloutMenu[player].calloutMenuIsOpen() )
 		{
 			drawHotBarTooltipOnCycle = false;
 		}
@@ -2521,7 +2521,7 @@ void drawStatusNew(const int player)
 	Frame* tooltipSlotFrame = nullptr;
 	bool tooltipPromptFrameWasDisabled = true;
 
-	if ( (!shootmode && !FollowerMenu[player].followerMenuIsOpen()) || drawHotBarTooltipOnCycle)
+	if ( (!shootmode && !FollowerMenu[player].followerMenuIsOpen() && !CalloutMenu[player].calloutMenuIsOpen()) || drawHotBarTooltipOnCycle)
 	{
 		//Go back through all of the hotbar slots and draw the tooltips.
 		for ( int num = 0; num < NUM_HOTBAR_SLOTS; ++num )
@@ -3497,6 +3497,25 @@ void drawStatusNew(const int player)
 		FollowerMenu[player].followerFrame->setDisabled(true);
 	}
 	FollowerMenu[player].drawFollowerMenu();
+
+	if ( !CalloutMenu[player].calloutFrame )
+	{
+		auto frame = gameUIFrame[player]->findFrame("callout");
+		if ( !frame )
+		{
+			CalloutMenu[player].calloutFrame = gameUIFrame[player]->addFrame("callout");
+		}
+		else
+		{
+			CalloutMenu[player].calloutFrame = frame;
+		}
+		CalloutMenu[player].calloutFrame->setHollow(true);
+		CalloutMenu[player].calloutFrame->setBorder(0);
+		CalloutMenu[player].calloutFrame->setOwner(player);
+		CalloutMenu[player].calloutFrame->setInheritParentFrameOpacity(false);
+		CalloutMenu[player].calloutFrame->setDisabled(true);
+	}
+	CalloutMenu[player].drawCalloutMenu();
 }
 
 int drawSpellTooltip(const int player, spell_t* spell, Item* item, SDL_Rect* src)

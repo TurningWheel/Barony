@@ -334,20 +334,34 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 	if (clientnum != 0 && multiplayer == CLIENT)
 	{
-		strcpy( (char*)net_packet->data, "SPEL" );
-		net_packet->data[4] = clientnum;
-		SDLNet_Write32(spell->ID, &net_packet->data[5]);
-		if ( usingSpellbook )
+		if ( caster->behavior == &actDeathGhost )
 		{
-			net_packet->data[9] = 1;
+			strcpy((char*)net_packet->data, "GHSP");
+			net_packet->data[4] = clientnum;
+			SDLNet_Write32(spell->ID, &net_packet->data[5]);
+			if ( players[caster->skill[2]] )
+			{
+				net_packet->data[9] = players[caster->skill[2]]->ghost.getSpellPower();
+			}
+			net_packet->len = 10;
 		}
 		else
 		{
-			net_packet->data[9] = 0;
+			strcpy( (char*)net_packet->data, "SPEL" );
+			net_packet->data[4] = clientnum;
+			SDLNet_Write32(spell->ID, &net_packet->data[5]);
+			if ( usingSpellbook )
+			{
+				net_packet->data[9] = 1;
+			}
+			else
+			{
+				net_packet->data[9] = 0;
+			}
+			net_packet->len = 10;
 		}
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
-		net_packet->len = 10;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 		return NULL;
 	}
@@ -386,7 +400,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	bool playerCastingFromKnownSpellbook = false;
 	int spellBookBonusPercent = 0;
 	int spellBookBeatitude = 0;
-	if ( !using_magicstaff && !trap)
+	if ( !using_magicstaff && !trap && stat )
 	{
 		newbie = isSpellcasterBeginner(player, caster);
 
@@ -484,7 +498,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 	}
 
-	if ( newbie )
+	if ( newbie && stat )
 	{
 		//So This wizard is a newbie.
 
@@ -560,7 +574,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		{
 			waterwalkingboots = true;
 		}
-		if ( stat->shoes != NULL )
+		if ( stat && stat->shoes != NULL )
 		{
 			if (stat->shoes->type == IRON_BOOTS_WATERWALKING )
 			{
@@ -1990,6 +2004,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				traveltime = 15;
 				missileEntity->skill[5] = traveltime;
 			}
+			else if ( !strcmp(spell->spell_internal_name, spell_ghost_bolt.spell_internal_name) )
+			{
+				traveltime = 10;
+				missileEntity->skill[5] = traveltime;
+			}
 
 			int sound = spellGetCastSound(spell);
 			if ( volume > 0 && sound > 0 )
@@ -2234,6 +2253,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( propulsion == PROPULSION_MISSILE )
 				{
 					missileEntity->sprite = 170;
+				}
+			}
+			else if ( !strcmp(element->element_internal_name, spellElement_ghostBolt.element_internal_name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					missileEntity->sprite = 1244;
 				}
 			}
 			else if ( !strcmp(element->element_internal_name, spellElement_bleed.element_internal_name) )
@@ -2495,7 +2521,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 	}
 
-	if ( !trap && usingSpellbook ) // degrade spellbooks on use.
+	if ( !trap && usingSpellbook && stat ) // degrade spellbooks on use.
 	{
 		int chance = 8;
 		if ( stat->type == GOBLIN )
@@ -2588,6 +2614,10 @@ int spellGetCastSound(spell_t* spell)
 	else if ( !strcmp(spell->spell_internal_name, spell_lightning.spell_internal_name) )
 	{
 		return 171;
+	}
+	else if ( !strcmp(spell->spell_internal_name, spell_ghost_bolt.spell_internal_name) )
+	{
+		return 169;
 	}
 	else if ( !strcmp(spell->spell_internal_name, spell_cold.spell_internal_name) )
 	{

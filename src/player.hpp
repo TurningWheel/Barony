@@ -696,6 +696,7 @@ public:
 	const bool bAlignGUINextToInventoryCompact() const; // if chest/shop etc appears alongside inventory as opposed to opposite of viewport in compact view
 	const bool usingCommand() const;
 	void clearGUIPointers();
+	static Entity* getPlayerInteractEntity(const int playernum);
 
 	enum PanelJustify_t
 	{
@@ -1620,6 +1621,7 @@ public:
 		}
 		bool bShowActionPrompts = true;
 		bool bShortHPMPForActionBars = false;
+		bool bOpenCalloutsMenuDisabled = false;
 		enum ActionPrompts : int
 		{
 			ACTION_PROMPT_MAINHAND,
@@ -1755,6 +1757,52 @@ public:
 		void reset();
 	} movement;
 
+	class Ghost_t
+	{
+		real_t quickTurnRotation = 0.0;
+		Uint32 quickTurnStartTicks = 0;
+		bool bDoingQuickTurn = false;
+		bool casting = false;
+		Uint32 castingHeldDuration = 0;
+		int actionPoints = 5;
+		int spawnX = -1;
+		int spawnY = -1;
+		int startRoomX = -1;
+		int startRoomY = -1;
+		int teleportToPlayer = -1;
+		Player& player;
+	public:
+		Ghost_t(Player& p) : player(p)
+		{};
+		~Ghost_t() {};
+
+		Entity* my = nullptr;
+		Uint32 uid = 0;
+
+		bool handleQuickTurn(bool useRefreshRateDelta);
+		void startQuickTurn();
+		void handleGhostCameraUpdate(bool useRefreshRateDelta);
+		void handleGhostCameraBobbing(bool useRefreshRateDelta);
+		void handleGhostMovement(bool useRefreshRateDelta);
+		void handleGhostCameraPosition(bool useRefreshRateDelta);
+		void handleActions();
+		void handleAttack();
+		bool isActive() { return my != nullptr; }
+		void initTeleportLocations(int x, int y);
+		void initStartRoomLocation(int x, int y);
+		void reset();
+		bool allowedInteractEntity(Entity& entity);
+		Uint8 getSpellPower() { return std::max(1, std::min((int)castingHeldDuration / TICKS_PER_SECOND, 5)); }
+		static const int GHOST_MODEL_P1 = 1238;
+		static const int GHOST_MODEL_P2 = 1239;
+		static const int GHOST_MODEL_P3 = 1240;
+		static const int GHOST_MODEL_P4 = 1241;
+		static const int GHOST_MODEL_PX = 1242;
+		static const int GHOST_SQUISH_START_ANGLE = 75;
+		static int getSpriteForPlayer(const int player);
+		void createBounceAnimate();
+	} ghost;
+
 	class MessageZone_t
 	{
 		//Time in seconds before the message starts fading.
@@ -1813,13 +1861,13 @@ public:
 		bool bEnabled = true;
 		static const int UID_TOOLTIP_ACTIVE = -21;
 		static const int UID_TOOLTIP_DISABLED = -20;
+	public:
 		enum TooltipView
 		{
 			TOOLTIP_VIEW_FREE,
 			TOOLTIP_VIEW_LOCKED,
 			TOOLTIP_VIEW_RESCAN
 		};
-	public:
 		struct WorldTooltipItem_t
 		{
 			Player& player;
@@ -1951,6 +1999,7 @@ public:
 		std::vector<std::pair<Entity*, real_t>> tooltipsInRange;
 		static real_t tooltipHeightOffsetZ;
 		real_t playerLastYaw = 0.0;
+		real_t playerLastPitch = 0.0;
 		int gimpDisplayTimer = 0;
 		void reset();
 		void setTooltipActive(Entity& tooltip);

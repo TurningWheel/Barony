@@ -41,6 +41,30 @@ vec4_t project(
     const mat4x4_t* model,
     const mat4x4_t* projview,
     const vec4_t* window);
+struct ClipResult {
+    enum class Direction {
+        Invalid,
+        Left,
+        Right,
+        Top,
+        Bottom,
+        Front,
+        Behind,
+    };
+    Direction direction = Direction::Invalid;
+    bool isBehind = false;
+    vec4_t clipped_coords;
+};
+ClipResult project_clipped(
+    const vec4_t* world,
+    const mat4x4_t* model,
+    const mat4x4_t* projview,
+    const vec4_t* window);
+ClipResult project_clipped2( // project_clipped, but will draw mirroed behind camera
+    const vec4_t* world,
+    const mat4x4_t* model,
+    const mat4x4_t* projview,
+    const vec4_t* window);
 vec4_t unproject(
     const vec4_t* screenCoords,
     const mat4x4_t* model,
@@ -236,7 +260,7 @@ void drawLayer(long camx, long camy, int z, map_t* map);
 void drawBackground(long camx, long camy);
 void drawForeground(long camx, long camy);
 void drawClearBuffers();
-void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION]);
+void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION], bool fillWithColor);
 void drawFloors(view_t* camera);
 void drawSky(SDL_Surface* srfc);
 void drawVoxel(view_t* camera, Entity* entity);
