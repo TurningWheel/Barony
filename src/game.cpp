@@ -6474,14 +6474,14 @@ int main(int argc, char** argv)
 		printlog("Output path is %s", outputdir);
 
 		// load default language file (english)
-		if ( Language::loadLanguage("en", true) )
+		if ( int code = Language::loadLanguage("en", true); code )
 		{
 			printlog("Fatal error: failed to load default language file!\n");
 			if (logfile)
 			{
 				fclose(logfile);
 			}
-			exit(1);
+			exit(code);
 		}
         
         // init sdl
@@ -6490,7 +6490,7 @@ int main(int argc, char** argv)
         if (SDL_Init(init_flags) == -1)
         {
             printlog("failed to initialize SDL: %s\n", SDL_GetError());
-            return 1;
+            return 101;
         }
 
 		Input::defaultBindings();

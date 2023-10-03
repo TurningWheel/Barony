@@ -76,3 +76,8 @@ xcode/Barony/Barony.xcodeproj/project.xcworkspace/*
 xcode/Barony/Barony.xcodeproj/xcuserdata/*
 *.ps1
 !LICENSE.nativefiledialog.txt
+vcpkg_installed/
+*.ilk
+*.sdf
+.VSCodeCounter
+*.map

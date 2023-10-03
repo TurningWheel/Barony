@@ -82,1014 +82,321 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <PropertyGroup>
+    <IsDebug Condition="'$(Configuration)'=='Debug'">true</IsDebug>
+    <IsDebug Condition="'$(Configuration)'=='EOS Debug'">true</IsDebug>
+    <IsDebug Condition="'$(Configuration)'=='Steam Debug'">true</IsDebug>
+    <IsSteam Condition="'$(Configuration)'=='Steam Crossplay'">true</IsSteam>
+    <IsSteam Condition="'$(Configuration)'=='Steam Debug'">true</IsSteam>
+    <IsEOS Condition="'$(Configuration)'=='EOS'">true</IsEOS>
+    <IsEOS Condition="'$(Configuration)'=='EOS Debug'">true</IsEOS>
+    <IsEOS Condition="'$(Configuration)'=='16Player-EOS'">true</IsEOS>
+    <IsEOS Condition="'$(Configuration)'=='16-Player Crossplay'">true</IsEOS>
+    <IsEOS Condition="'$(Configuration)'=='Steam Crossplay'">true</IsEOS>
+    <IsEOS Condition="'$(Configuration)'=='Steam Debug'">true</IsEOS>
+    <Is16Player Condition="'$(Configuration)'=='16-Player Crossplay'">true</Is16Player>
+    <Is16Player Condition="'$(Configuration)'=='16Player-EOS'">true</Is16Player>
+    <Is16Player Condition="'$(Configuration)'=='16Player-Release'">true</Is16Player>
+    <UseFMod>false</UseFMod>
+    <FModPath>C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc</FModPath>
+  </PropertyGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A4A170FF-C081-4F33-94FE-5C60E89C5990}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>barony</RootNamespace>
-    <ProjectName>barony_test</ProjectName>
+    <ProjectName>barony</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
+  </PropertyGroup>
+  <PropertyGroup Label="DebugVsRelease">
+    <UseDebugLibraries Condition="'$(IsDebug)'=='true'">true</UseDebugLibraries>
+    <UseDebugLibraries Condition="'$(IsDebug)'!='true'">false</UseDebugLibraries>
+    <WholeProgramOptimization Condition="'$(IsDebug)'=='true'">false</WholeProgramOptimization>
+    <WholeProgramOptimization Condition="'$(IsDebug)'!='true'">true</WholeProgramOptimization>
+    <LinkIncremental Condition="'$(IsDebug)'=='true'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(IsDebug)'!='true'">false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Label="ExecutableNames">
+    <TargetName>barony</TargetName>
+    <TargetName Condition="'$(IsEOS)'=='true'">$(TargetName)-eos</TargetName>
+    <TargetName Condition="'$(Is16Player)'=='true'">$(TargetName)-16player</TargetName>
+    <TargetName Condition="'$(Platform)'=='x64'">$(TargetName)-x64</TargetName>
+    <TargetName Condition="'$(IsDebug)'=='true'">$(TargetName)-debug</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnabled>true</VcpkgEnabled>
+    <VcpkgConfiguration Condition="'$(IsDebug)'=='true'">Debug</VcpkgConfiguration>
+    <VcpkgConfiguration Condition="'$(IsDebug)'!='true'">Release</VcpkgConfiguration>
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+    <VcpkgUseStatic>false</VcpkgUseStatic>
+    <VcpkgManifestInstall>true</VcpkgManifestInstall>
+    <VcpkgLibrariesPath Condition="'$(IsDebug)'=='true'">$(SolutionDir)..\vcpkg_installed\x64-windows\x64-windows\debug\lib</VcpkgLibrariesPath>
+    <VcpkgLibrariesPath Condition="'$(IsDebug)'!='true'">$(SolutionDir)..\vcpkg_installed\x64-windows\x64-windows\lib</VcpkgLibrariesPath>
+    <VcpkgManualLinkedLibs Condition="'$(IsDebug)'=='true'">$(SolutionDir)..\vcpkg_installed\x64-windows\x64-windows\debug\lib\manual-link\SDL2maind.lib;</VcpkgManualLinkedLibs>
+    <VcpkgManualLinkedLibs Condition="'$(IsDebug)'!='true'">$(SolutionDir)..\vcpkg_installed\x64-windows\x64-windows\lib\manual-link\SDL2main.lib;</VcpkgManualLinkedLibs>
+  </PropertyGroup>
+  <PropertyGroup Label="FineTuning">
+    <EnableASAN Condition="'$(Configuration)|$(Platform)'=='Steam Crossplay|x64'">false</EnableASAN>
+    <PostBuildEventUseInBuild Condition="'$(Configuration)|$(Platform)'=='EOS Debug|Win32'">true</PostBuildEventUseInBuild>
+    <PostBuildEventUseInBuild Condition="'$(Configuration)|$(Platform)'=='Steam Debug|Win32'">true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='16-Player Crossplay|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Steam Crossplay|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='16-Player Crossplay|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Steam Crossplay|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-    <EnableASAN>false</EnableASAN>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EOS|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='16Player-EOS|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EOS|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='16Player-EOS|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EOS Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Steam Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EOS Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Steam Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NODRM|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NODRM|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='16Player-Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='16Player-Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='16-Player Crossplay|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Steam Crossplay|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='16-Player Crossplay|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Steam Crossplay|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='EOS|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='16Player-EOS|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='EOS|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='16Player-EOS|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='EOS Debug|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Steam Debug|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='EOS Debug|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Steam Debug|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='NODRM|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='NODRM|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='16Player-Release|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='16Player-Release|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\include;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\include;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\include;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\include;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\include;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\public;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\include;C:\programming\turning_wheel\GameLibs\missing_windows_includes;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;P:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\SDL2</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\lib;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\lib;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\redistributable_bin;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\lib\x86;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;$(SolutionDir)..\VS-libs</LibraryPath>
-    <TargetName>$(ProjectName)-debug</TargetName>
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
+  <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  <PropertyGroup Condition="'$(UseFMod)'=='true'">
+    <IncludePath>
+      $(IncludePath);
+      $(FModPath);
+    </IncludePath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)..\VS-libs</LibraryPath>
-    <TargetName>$(ProjectName)-debug</TargetName>
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
+  <PropertyGroup Condition="'$(UseTurningWheelSettings)'=='true' And '$(Platform)'=='Win32'">
+    <IncludePath>
+      C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;
+    </IncludePath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\include;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\include;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\include;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\include;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\include;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\public;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\include;C:\programming\turning_wheel\GameLibs\missing_windows_includes;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;P:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\SDL2</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\lib;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\lib;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\redistributable_bin;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\lib\x86;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;$(SolutionDir)..\VS-libs</LibraryPath>
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
-    <TargetName>barony_test</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='16-Player Crossplay|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\include;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\include;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\include;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\include;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\include;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\public;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\include;C:\programming\turning_wheel\GameLibs\missing_windows_includes;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;P:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\SDL2</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\lib;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\lib;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\redistributable_bin;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\lib\x86;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;$(SolutionDir)..\VS-libs</LibraryPath>
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
-    <TargetName>barony</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Steam Crossplay|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\include;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\include;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\include;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\include;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\include;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\public;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\include;C:\programming\turning_wheel\GameLibs\missing_windows_includes;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;P:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\SDL2</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\lib;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\lib;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\redistributable_bin;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\lib\x86;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;$(SolutionDir)..\VS-libs</LibraryPath>
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
-    <TargetName>barony</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)..\VS-libs</LibraryPath>
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
-    <TargetName>barony_test</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='16-Player Crossplay|x64'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)..\VS-libs</LibraryPath>
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
-    <TargetName>barony_test</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Steam Crossplay|x64'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)..\VS-libs</LibraryPath>
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
-    <TargetName>barony</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EOS|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\include;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\include;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\include;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\include;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\include;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\public;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\include;C:\programming\turning_wheel\GameLibs\missing_windows_includes;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;P:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\SDL2</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\lib;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\lib;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\redistributable_bin;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\lib\x86;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;$(SolutionDir)..\VS-libs</LibraryPath>
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
-    <TargetName>barony</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='16Player-EOS|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\include;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\include;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\include;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\include;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\include;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\public;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\include;C:\programming\turning_wheel\GameLibs\missing_windows_includes;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;P:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\SDL2</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\lib;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\lib;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\redistributable_bin;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\lib\x86;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;$(SolutionDir)..\VS-libs</LibraryPath>
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
-    <TargetName>barony</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EOS|x64'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)..\VS-libs</LibraryPath>
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
-    <TargetName>barony</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='16Player-EOS|x64'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)..\VS-libs</LibraryPath>
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
-    <TargetName>barony_test</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EOS Debug|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\include;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\include;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\include;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\include;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\include;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\public;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\include;C:\programming\turning_wheel\GameLibs\missing_windows_includes;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;P:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\SDL2;P:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\physfs</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\lib;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\lib;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\redistributable_bin;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\lib\x86;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;$(SolutionDir)..\VS-libs</LibraryPath>
-    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
-    <TargetName>barony</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Steam Debug|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\include;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\include;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\include;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\include;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\include;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\public;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\include;C:\programming\turning_wheel\GameLibs\missing_windows_includes;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;P:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\SDL2;P:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\physfs</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\lib;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\lib;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\redistributable_bin;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\lib\x86;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;$(SolutionDir)..\VS-libs</LibraryPath>
-    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
-    <TargetName>barony</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EOS Debug|x64'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)..\VS-libs</LibraryPath>
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
-    <TargetName>barony</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Steam Debug|x64'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)..\VS-libs</LibraryPath>
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
-    <TargetName>barony</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NODRM|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\include;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\include;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\include;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\include;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\include;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\public;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\include;C:\programming\turning_wheel\GameLibs\missing_windows_includes;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;P:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\SDL2</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\lib;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\lib;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\redistributable_bin;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\lib\x86;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;$(SolutionDir)..\VS-libs</LibraryPath>
-    <TargetName>barony</TargetName>
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NODRM|x64'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)..\VS-libs</LibraryPath>
-    <TargetName>barony</TargetName>
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='16Player-Release|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\include;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\include;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\include;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\include;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\include;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\public;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\include;C:\programming\turning_wheel\GameLibs\missing_windows_includes;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;P:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\SDL2</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;C:\programming\turning_wheel\GameLibs\SDL2-2.0.4\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_image-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\SDL2_net-2.0.0\lib\x86;C:\programming\turning_wheel\GameLibs\libpng-1.2.37-lib\lib;C:\programming\turning_wheel\GameLibs\zlib-1.2.3-lib\lib;C:\programming\turning_wheel\GameLibs\steamworks_sdk_138a\sdk\redistributable_bin;C:\programming\turning_wheel\GameLibs\SDL2_ttf-2.0.14\lib\x86;P:\Ben\Documents\Visual Studio 2015\Projects\libphysfs;$(SolutionDir)..\VS-libs</LibraryPath>
-    <TargetName>$(ProjectName)-16player</TargetName>
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='16Player-Release|x64'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)..\VS-libs</LibraryPath>
-    <TargetName>$(ProjectName)-16player</TargetName>
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
-  </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+  <ItemDefinitionGroup>
     <ClCompile>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ShowIncludes>true</ShowIncludes>
+      <WarningLevel>Level1</WarningLevel>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <PreprocessorDefinitions>
+        _CRT_SECURE_NO_WARNINGS;
+        WIN32;
+        _WINDOWS;
+      </PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng.lib;zlib.lib;steam_api.lib;SDL2_ttf.lib;physfs.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>
+        $(VcpkgLibrariesPath);
+        %(AdditionalLibraryDirectories)
+      </AdditionalLibraryDirectories>
+      <AdditionalDependencies>
+        $(VcpkgManualLinkedLibs);
+        %(AdditionalDependencies)
+      </AdditionalDependencies>
     </Link>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(IsDebug)'!='true'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>
+        %(PreprocessorDefinitions);
+        NDEBUG
+      </PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(IsDebug)'=='true'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>
+        %(PreprocessorDefinitions);
+      </PreprocessorDefinitions>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <SDLCheck>false</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <!--ImageHasSafeExceptionHandlers>true</ImageHasSafeExceptionHandlers-->
+      <EnableCOMDATFolding>false</EnableCOMDATFolding>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(IsSteam)'=='true'">
+    <ClCompile>
+      <PreprocessorDefinitions>
+        %(PreprocessorDefinitions);
+        STEAMWORKS
+      </PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Is16Player)'=='true'">
+    <ClCompile>
+      <PreprocessorDefinitions>
+        %(PreprocessorDefinitions);
+        BARONY_SUPER_MULTIPLAYER
+      </PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(IsEOS)'=='true'">
+    <ClCompile>
+      <PreprocessorDefinitions>
+        %(PreprocessorDefinitions);
+        USE_EOS
+      </PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <PostBuildEvent>
       <Command>robocopy "$(TargetDir)\" "$(SolutionDir)Release" $(TargetFileName)
 if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     </PostBuildEvent>
-    <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <ClCompile>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ShowIncludes>true</ShowIncludes>
-      <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmodex_vc.lib;libpng.lib;zlib.lib;steam_api.lib;SDL2_ttf.lib;physfs.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
     <PostBuildEvent>
       <Command>robocopy "$(TargetDir)\" "$(SolutionDir)Release" $(TargetFileName)
 if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     </PostBuildEvent>
-    <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
-    </Manifest>
+    <Link>
+      <AdditionalOptions>/VERBOSE:LIB /MAP %(AdditionalOptions)</AdditionalOptions>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);STEAMWORKS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng.lib;zlib.lib;steam_api.lib;SDL2_ttf.lib;physfs.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <Profile>true</Profile>
-    </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)Release\barony_test.exe" </Command>
     </PostBuildEvent>
-    <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='16-Player Crossplay|Win32'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);STEAMWORKS;BARONY_SUPER_MULTIPLAYER;USE_EOS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
       <AdditionalOptions>/DBUILD_PR="$(BARONY_BUILD_PR)" /DBUILD_CC="$(BARONY_BUILD_CC)" /DBUILD_CS="$(BARONY_BUILD_CS)" /DBUILD_DE="$(BARONY_BUILD_DE)" /DBUILD_SA="$(BARONY_BUILD_SA)" /DBUILD_GSE="$(BARONY_BUILD_GSTATS)" %(AdditionalOptions)</AdditionalOptions>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
     </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmodex_vc.lib;libpng.lib;zlib.lib;steam_api.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win32-Shipping.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <Profile>true</Profile>
-    </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)Release\barony_test.exe" </Command>
     </PostBuildEvent>
-    <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Steam Crossplay|Win32'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);USE_EOS;STEAMWORKS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
       <AdditionalOptions>/DBUILD_PR="$(BARONY_BUILD_PR)" /DBUILD_CC="$(BARONY_BUILD_CC)" /DBUILD_CS="$(BARONY_BUILD_CS)" /DBUILD_DE="$(BARONY_BUILD_DE)" /DBUILD_SA="$(BARONY_BUILD_SA)" /DBUILD_GSE="$(BARONY_BUILD_GSTATS)" %(AdditionalOptions)</AdditionalOptions>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
     </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng.lib;zlib.lib;steam_api.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win32-Shipping.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <Profile>true</Profile>
-    </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)Release\barony_test.exe" </Command>
     </PostBuildEvent>
-    <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmodex_vc.lib;libpng.lib;zlib.lib;steam_api.lib;SDL2_ttf.lib;physfs.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <Profile>true</Profile>
-    </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)Release\barony_test.exe" </Command>
     </PostBuildEvent>
-    <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='16-Player Crossplay|x64'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmodex_vc.lib;libpng.lib;zlib.lib;steam_api.lib;SDL2_ttf.lib;physfs.lib;nfd.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <Profile>true</Profile>
-    </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)Release\barony_test.exe" </Command>
     </PostBuildEvent>
-    <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Steam Crossplay|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);USE_EOS;STEAMWORKS;USE_THEORA_VIDEO;USE_IMGUI;CURL_STATICLIB;USE_LIBCURL</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);USE_THEORA_VIDEO;USE_IMGUI;CURL_STATICLIB;USE_LIBCURL</PreprocessorDefinitions>
       <AdditionalOptions>/DBUILD_PR="$(BARONY_BUILD_PR)" /DBUILD_CC="$(BARONY_BUILD_CC)" /DBUILD_CS="$(BARONY_BUILD_CS)" /DBUILD_DE="$(BARONY_BUILD_DE)" /DBUILD_SA="$(BARONY_BUILD_SA)" /DBUILD_GSE="$(BARONY_BUILD_GSTATS)" %(AdditionalOptions)</AdditionalOptions>
-      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng16.lib;zlib.lib;steam_api64.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win64-Shipping.lib;libtheoraplayer.lib;glew32.lib;nfd.lib;libcurl.lib;ws2_32.lib;Normaliz.lib;Crypt32.lib;Wldap32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <Profile>true</Profile>
-    </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)Release\barony_test.exe" </Command>
     </PostBuildEvent>
-    <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EOS|Win32'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);USE_EOS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
       <AdditionalOptions>/DBUILD_PR="$(BARONY_BUILD_PR)" /DBUILD_CC="$(BARONY_BUILD_CC)" /DBUILD_CS="$(BARONY_BUILD_CS)" /DBUILD_DE="$(BARONY_BUILD_DE)" /DBUILD_SA="$(BARONY_BUILD_SA)" /DBUILD_GSE="$(BARONY_BUILD_GSTATE)" %(AdditionalOptions)</AdditionalOptions>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
     </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng.lib;zlib.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win32-Shipping.lib;steam_api.lib;libtheoraplayer.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <Profile>true</Profile>
-    </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)Release\barony_test.exe" </Command>
     </PostBuildEvent>
-    <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='16Player-EOS|Win32'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);BARONY_SUPER_MULTIPLAYER;USE_EOS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
       <AdditionalOptions>/DBUILD_PR="$(BARONY_BUILD_PR)" /DBUILD_CC="$(BARONY_BUILD_CC)" /DBUILD_CS="$(BARONY_BUILD_CS)" /DBUILD_DE="$(BARONY_BUILD_DE)" /DBUILD_SA="$(BARONY_BUILD_SA)" /DBUILD_GSE="$(BARONY_BUILD_GSTATE)" %(AdditionalOptions)</AdditionalOptions>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
     </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmodex_vc.lib;libpng.lib;zlib.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win32-Shipping.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <Profile>true</Profile>
-    </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)Release\barony_test.exe" </Command>
     </PostBuildEvent>
-    <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EOS|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);USE_EOS; USE_IMGUI; USE_THEORA_VIDEO;CURL_STATICLIB;USE_LIBCURL</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);USE_IMGUI; USE_THEORA_VIDEO;CURL_STATICLIB;USE_LIBCURL</PreprocessorDefinitions>
       <AdditionalOptions>/DBUILD_PR="$(BARONY_BUILD_PR)" /DBUILD_CC="$(BARONY_BUILD_CC)" /DBUILD_CS="$(BARONY_BUILD_CS)" /DBUILD_DE="$(BARONY_BUILD_DE)" /DBUILD_SA="$(BARONY_BUILD_SA)" /DBUILD_GSE="$(BARONY_BUILD_GSTATE)" %(AdditionalOptions)</AdditionalOptions>
-      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng16.lib;zlib.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win64-Shipping.lib;libtheoraplayer.lib;glew32.lib;nfd.lib;libcurl.lib;ws2_32.lib;Normaliz.lib;Crypt32.lib;Wldap32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <Profile>true</Profile>
-    </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)Release\barony_test.exe" </Command>
     </PostBuildEvent>
-    <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='16Player-EOS|x64'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);USE_EOS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmodex_vc.lib;libpng.lib;zlib.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win32-Shipping.lib;nfd.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <Profile>true</Profile>
-    </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)Release\barony_test.exe" </Command>
     </PostBuildEvent>
-    <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EOS Debug|Win32'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>Disabled</Optimization>
-      <FunctionLevelLinking>false</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;%(PreprocessorDefinitions);USE_EOS;USE_IMGUI</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
-      <WholeProgramOptimization>false</WholeProgramOptimization>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <MinimalRebuild>false</MinimalRebuild>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);USE_IMGUI</PreprocessorDefinitions>
       <AdditionalOptions>/DBUILD_PR="$(BARONY_BUILD_PR)" /DBUILD_CC="$(BARONY_BUILD_CC)" /DBUILD_CS="$(BARONY_BUILD_CS)" /DBUILD_DE="$(BARONY_BUILD_DE)" /DBUILD_SA="$(BARONY_BUILD_SA)" /DBUILD_GSE="$(BARONY_BUILD_GSTATE)" %(AdditionalOptions)</AdditionalOptions>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
-      <SDLCheck>false</SDLCheck>
     </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng.lib;zlib.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win32-Shipping.lib;steam_api.lib;libtheoraplayer.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <Profile>true</Profile>
-    </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS\barony_test.exe" 
 copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS 3\barony_test.exe" 
 copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS 4\barony_test.exe" </Command>
     </PostBuildEvent>
-    <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Steam Debug|Win32'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>Disabled</Optimization>
-      <FunctionLevelLinking>false</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;%(PreprocessorDefinitions);USE_EOS;STEAMWORKS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
-      <WholeProgramOptimization>false</WholeProgramOptimization>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <MinimalRebuild>false</MinimalRebuild>
       <AdditionalOptions>/DBUILD_PR="$(BARONY_BUILD_PR)" /DBUILD_CC="$(BARONY_BUILD_CC)" /DBUILD_CS="$(BARONY_BUILD_CS)" /DBUILD_DE="$(BARONY_BUILD_DE)" /DBUILD_SA="$(BARONY_BUILD_SA)" /DBUILD_GSE="$(BARONY_BUILD_GSTATE)" %(AdditionalOptions)</AdditionalOptions>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
-      <SDLCheck>false</SDLCheck>
     </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng.lib;zlib.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win32-Shipping.lib;steam_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <Profile>true</Profile>
-    </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS\barony_test.exe" 
 copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS 3\barony_test.exe" 
 copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS 4\barony_test.exe" </Command>
     </PostBuildEvent>
-    <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EOS Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>Disabled</Optimization>
-      <FunctionLevelLinking>false</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;%(PreprocessorDefinitions);USE_EOS;USE_IMGUI;USE_THEORA_VIDEO;CURL_STATICLIB;USE_LIBCURL</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
-      <WholeProgramOptimization>false</WholeProgramOptimization>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <MinimalRebuild>false</MinimalRebuild>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);;USE_IMGUI;USE_THEORA_VIDEO;CURL_STATICLIB;USE_LIBCURL</PreprocessorDefinitions>
       <AdditionalOptions>/DBUILD_PR="$(BARONY_BUILD_PR)" /DBUILD_CC="$(BARONY_BUILD_CC)" /DBUILD_CS="$(BARONY_BUILD_CS)" /DBUILD_DE="$(BARONY_BUILD_DE)" /DBUILD_SA="$(BARONY_BUILD_SA)" /DBUILD_GSE="$(BARONY_BUILD_GSTATE)" %(AdditionalOptions)</AdditionalOptions>
-      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng16.lib;zlib.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win64-Shipping.lib;steam_api64.lib;libtheoraplayer.lib;glew32.lib;nfd.lib;libcurl.lib;ws2_32.lib;Normaliz.lib;Crypt32.lib;Wldap32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <Profile>true</Profile>
-    </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS\barony_test.exe" 
 copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS 3\barony_test.exe" 
 copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS 4\barony_test.exe" </Command>
     </PostBuildEvent>
-    <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Steam Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>Disabled</Optimization>
-      <FunctionLevelLinking>false</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;%(PreprocessorDefinitions);USE_EOS;STEAMWORKS;CURL_STATICLIB;USE_LIBCURL</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
-      <WholeProgramOptimization>false</WholeProgramOptimization>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <MinimalRebuild>false</MinimalRebuild>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);;;CURL_STATICLIB;USE_LIBCURL</PreprocessorDefinitions>
       <AdditionalOptions>/DBUILD_PR="$(BARONY_BUILD_PR)" /DBUILD_CC="$(BARONY_BUILD_CC)" /DBUILD_CS="$(BARONY_BUILD_CS)" /DBUILD_DE="$(BARONY_BUILD_DE)" /DBUILD_SA="$(BARONY_BUILD_SA)" /DBUILD_GSE="$(BARONY_BUILD_GSTATE)" %(AdditionalOptions)</AdditionalOptions>
-      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng16.lib;zlib.lib;steam_api64.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win64-Shipping.lib;libtheoraplayer.lib;glew32.lib;nfd.lib;libcurl.lib;ws2_32.lib;Normaliz.lib;Crypt32.lib;Wldap32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <Profile>true</Profile>
-    </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS\barony_test.exe" 
 copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS 3\barony_test.exe" 
 copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS 4\barony_test.exe" </Command>
     </PostBuildEvent>
-    <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='NODRM|Win32'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);BARONY_DRM_FREE;</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng.lib;zlib.lib;SDL2_ttf.lib;physfs.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <Profile>true</Profile>
-    </Link>
     <PostBuildEvent>
       <Command>robocopy "$(TargetDir)\" "$(SolutionDir)Release" $(TargetFileName)
 if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     </PostBuildEvent>
-    <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='NODRM|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);BARONY_DRM_FREE;USE_IMGUI;USE_THEORA_VIDEO;CURL_STATICLIB;</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);USE_IMGUI;USE_THEORA_VIDEO;CURL_STATICLIB;</PreprocessorDefinitions>
     </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng16.lib;zlib.lib;SDL2_ttf.lib;physfs.lib;libtheoraplayer.lib;glew32.lib;nfd.lib;libcurl.lib;ws2_32.lib;Normaliz.lib;Crypt32.lib;Wldap32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <Profile>true</Profile>
-    </Link>
     <PostBuildEvent>
       <Command>robocopy "$(TargetDir)\" "$(SolutionDir)Release" $(TargetFileName)
 if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     </PostBuildEvent>
-    <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='16Player-Release|Win32'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);BARONY_SUPER_MULTIPLAYER</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmodex_vc.lib;libpng.lib;zlib.lib;steam_api.lib;SDL2_ttf.lib;physfs.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <Profile>true</Profile>
-    </Link>
     <PostBuildEvent>
       <Command>robocopy "$(TargetDir)\" "$(SolutionDir)Release" $(TargetFileName)
 if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     </PostBuildEvent>
-    <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='16Player-Release|x64'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);BARONY_SUPER_MULTIPLAYER</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmodex_vc.lib;libpng.lib;zlib.lib;steam_api.lib;SDL2_ttf.lib;physfs.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <Profile>true</Profile>
-    </Link>
     <PostBuildEvent>
       <Command>robocopy "$(TargetDir)\" "$(SolutionDir)Release" $(TargetFileName)
 if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     </PostBuildEvent>
-    <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\actarrow.cpp" />
@@ -1304,6 +611,9 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\src\wingameicon.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\vcpkg.json" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

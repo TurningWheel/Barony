@@ -143,35 +143,35 @@ extern bool autoLimbReload;
 #ifndef WINDOWS
  #include <GL/glext.h>
 #endif
- #include "SDL_opengl.h"
+ #include "SDL2/SDL_opengl.h"
 #endif // !APPLE
 
 #ifdef APPLE
 #include <SDL2/SDL.h>
 #else
-#include "SDL.h"
+#include "SDL2/SDL.h"
 #endif
 #ifdef WINDOWS
-#include "SDL_syswm.h"
+#include "SDL2/SDL_syswm.h"
 #endif
 #ifdef APPLE
  #include <SDL2_image/SDL_image.h>
 #else // APPLE
  #ifndef NINTENDO
-  #include "SDL_image.h"
+  #include "SDL2/SDL_image.h"
  #endif // NINTENDO
 #endif // !APPLE
 #ifdef APPLE
 #include <SDL2_net/SDL_net.h>
 #else
 #ifndef NINTENDO
-#include "SDL_net.h"
+#include "SDL2/SDL_net.h"
 #endif
 #endif
 #ifdef APPLE
 #include <SDL2_ttf/SDL_ttf.h>
 #else
-#include "SDL_ttf.h"
+#include "SDL2/SDL_ttf.h"
 #endif
 //#include "sprig.h"
 #include "savepng.hpp"
