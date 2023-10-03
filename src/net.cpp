@@ -5257,7 +5257,8 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		auto vely = ((Sint16)SDLNet_Read16(&net_packet->data[12])) / 128.0;
 		auto yaw = ((Sint16)SDLNet_Read16(&net_packet->data[14])) / 128.0;
 		auto pitch = ((Sint16)SDLNet_Read16(&net_packet->data[16])) / 128.0;
-		bool bounce = ((int)net_packet->data[19] == 1) ? true : false;
+		bool bounce = ((int)(net_packet->data[19] & 1) == 1) ? true : false;
+		int deactivated = ((int)((net_packet->data[19] >> 1) & 1) == 1) ? 1 : 0;
 
 		// update rotation
 		players[player]->ghost.my->yaw = yaw;
@@ -5322,6 +5323,25 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 				net_packet->address.host = net_clients[c - 1].host;
 				net_packet->address.port = net_clients[c - 1].port;
 				net_packet->len = 11;
+				sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			}
+		}
+		if ( deactivated != players[player]->ghost.my->skill[7] )
+		{
+			players[player]->ghost.setActive(deactivated == 0 ? true : false);
+			for ( int c = 1; c < MAXPLAYERS; ++c ) // send to other players
+			{
+				if ( c == player || client_disconnected[c] || players[c]->isLocalPlayer() )
+				{
+					continue;
+				}
+				strcpy((char*)net_packet->data, "ENTS");
+				SDLNet_Write32(players[player]->ghost.my->getUID(), &net_packet->data[4]);
+				net_packet->data[8] = 7;
+				SDLNet_Write32(players[player]->ghost.my->skill[7], &net_packet->data[9]);
+				net_packet->address.host = net_clients[c - 1].host;
+				net_packet->address.port = net_clients[c - 1].port;
+				net_packet->len = 13;
 				sendPacketSafe(net_sock, -1, net_packet, c - 1);
 			}
 		}
@@ -6194,11 +6214,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		spell_t* thespell = getSpellFromID(SDLNet_Read32(&net_packet->data[5]));
 		if ( players[player] && players[player]->ghost.isActive() )
 		{
-			int power = net_packet->data[9];
-			if ( auto projectile = castSpell(players[player]->ghost.my->getUID(), thespell, false, true) )
-			{
-				projectile->actmagicSpellbookBonus = power * 100.0;
-			}
+			castSpell(players[player]->ghost.my->getUID(), thespell, false, true);
 		}
 	}},
 

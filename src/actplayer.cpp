@@ -56,6 +56,7 @@ static ConsoleVariable<float> cvar_calloutStartZLimit("/callout_start_z_limit", 
 #define GHOSTCAM_BOBMODE my->skill[4]
 #define GHOSTCAM_SQUISH_TIME my->skill[5]
 #define GHOSTCAM_SQUISH_DELAY my->skill[6]
+#define GHOSTCAM_DEACTIVATED my->skill[7]
 #define GHOSTCAM_BOB my->fskill[0]
 #define GHOSTCAM_BOBMOVE my->fskill[1]
 #define GHOSTCAM_DX my->fskill[3]
@@ -301,7 +302,14 @@ void Player::Ghost_t::reset()
 	bDoingQuickTurn = false;
 	my = nullptr;
 	uid = 0;
-
+	cooldownPush = 0;
+	cooldownPushTimeout = 0;
+	cooldownChill = 0;
+	cooldownTeleport = 0;
+	errorFlashPushTicks = 0;
+	errorFlashTeleportTicks = 0;
+	errorFlashChillTicks = 0;
+	pushPoints = MAX_PUSH_POINTS;
 	player.cleanUpOnEntityRemoval();
 }
 
@@ -321,22 +329,108 @@ bool Player::Ghost_t::allowedInteractEntity(Entity& entity)
 	return false;
 }
 
+bool Player::Ghost_t::isActive()
+{ 
+	if ( my )
+	{
+		if ( !GHOSTCAM_DEACTIVATED )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 void Player::Ghost_t::handleAttack()
 {
-	if ( !casting )
+	if ( !isActive() )
+	{
+		castingSpellAnimation = GHOST_SPELL_NONE;
+	}
+	if ( castingSpellAnimation == GHOST_SPELL_NONE )
 	{
 		castingHeldDuration = 0;
 	}
+
+	if ( cooldownPush > 0 )
+	{
+		--cooldownPush;
+		if ( cooldownPush == 0 )
+		{
+			pushPoints += MAX_PUSH_POINTS;
+			pushPoints = std::min(pushPoints, MAX_PUSH_POINTS);
+		}
+	}
+	if ( pushPoints < MAX_PUSH_POINTS && cooldownPush == 0 )
+	{
+		cooldownPush = TICKS_PER_SECOND;
+	}
+
+	if ( cooldownChill > 0 )
+	{
+		--cooldownChill;
+	}
+	if ( cooldownTeleport > 0 )
+	{
+		--cooldownTeleport;
+	}
+	if ( errorFlashChillTicks > 0 )
+	{
+		--errorFlashChillTicks;
+	}
+	if ( errorFlashPushTicks > 0 )
+	{
+		--errorFlashPushTicks;
+	}
+	if ( errorFlashTeleportTicks > 0 )
+	{
+		--errorFlashTeleportTicks;
+	}
+
 	Input& input = Input::inputs[player.playernum];
 	bool attack = false;
+	bool useSpell = false;
 	bool defending = false;
 	if ( !player.usingCommand() 
 		&& player.bControlEnabled 
 		&& !gamePaused )
 	{
-		if ( player.shootmode && input.binaryToggle("Attack") )
+		if ( player.shootmode )
 		{
-			attack = true;
+			if ( input.consumeBinaryToggle("Attack") )
+			{
+				if ( cooldownChill > 0 )
+				{
+					// no action
+					if ( errorFlashChillTicks == 0 && cooldownChill > (TICKS_PER_SECOND / 2)
+						&& (cooldownChillDelay - cooldownChill > (TICKS_PER_SECOND / 2)) )
+					{
+						errorFlashChillTicks = errorFlashTicks;
+						playSound(563, 64);
+					}
+				}
+				else
+				{
+					attack = true;
+				}
+			}
+			if ( input.consumeBinaryToggle("Cast Spell") )
+			{
+				if ( cooldownTeleport > 0 )
+				{
+					// no action
+					if ( errorFlashTeleportTicks == 0 && cooldownTeleport > (TICKS_PER_SECOND / 2)
+						&& (cooldownTeleportDelay - cooldownTeleport > (TICKS_PER_SECOND / 2)) )
+					{
+						errorFlashTeleportTicks = errorFlashTicks;
+						playSound(563, 64);
+					}
+				}
+				else
+				{
+					useSpell = true;
+				}
+			}
 		}
 		if ( input.binary("Defend") )
 		{
@@ -377,124 +471,101 @@ void Player::Ghost_t::handleAttack()
 	}
 	GHOSTCAM_SNEAKING = defending;
 
-	const int castLoopDuration = 20;
-	const int teleportLoopDuration = 1;
-	bool pushSpell = true;
-	if ( !attack )
+	const int castLoopDuration = 4 * TICKS_PER_SECOND / 10;
+	bool finishSpell = false;
+	if ( castingSpellAnimation == GHOST_SPELL_BOLT )
 	{
-		if ( casting && castingHeldDuration >= castLoopDuration )
+		if ( castingHeldDuration >= castLoopDuration )
 		{
-			if ( !pushSpell )
-			{
-				int tx = spawnX;
-				int ty = spawnY;
-				Entity* target = nullptr;
-				if ( teleportToPlayer >= MAXPLAYERS )
-				{
-					teleportToPlayer = -1;
-					tx = startRoomX;
-					ty = startRoomY;
-				}
-				else
-				{
-					++teleportToPlayer;
-					while ( teleportToPlayer >= 0 && teleportToPlayer < MAXPLAYERS )
-					{
-						if ( teleportToPlayer != player.playernum && Player::getPlayerInteractEntity(teleportToPlayer) )
-						{
-							target = Player::getPlayerInteractEntity(teleportToPlayer);
-							tx = static_cast<int>(target->x) / 16;
-							ty = static_cast<int>(target->y) / 16;
-							break;
-						}
-						++teleportToPlayer;
-					}
-					if ( !target )
-					{
-						if ( teleportToPlayer >= MAXPLAYERS )
-						{
-							tx = spawnX;
-							ty = spawnY;
-						}
-					}
-				}
-
-				Entity* spellTimer = createParticleTimer(my, 1, 593);
-				spellTimer->particleTimerPreDelay = 0; // wait x ticks before animation.
-				spellTimer->particleTimerEndAction = PARTICLE_EFFECT_GHOST_TELEPORT; // teleport behavior of timer.
-				spellTimer->particleTimerEndSprite = 593; // sprite to use for end of timer function.
-				spellTimer->particleTimerCountdownAction = 0;
-				spellTimer->particleTimerCountdownSprite = -1;
-				if ( target != nullptr )
-				{
-					spellTimer->particleTimerTarget = static_cast<Sint32>(target->getUID()); // get the target to teleport around.
-				}
-				spellTimer->particleTimerVariable1 = 1; // distance of teleport in tiles
-				spellTimer->particleTimerVariable2 = (tx & 0xFFFF) << 16;
-				spellTimer->particleTimerVariable2 |= ty & 0xFFFF;
-				if ( multiplayer == SERVER )
-				{
-					serverSpawnMiscParticles(my, PARTICLE_EFFECT_GHOST_TELEPORT, 593);
-				}
-			}
-			else
-			{
-				if ( auto projectile = castSpell(uid, &spell_ghost_bolt, false, true) )
-				{
-					projectile->actmagicSpellbookBonus = getSpellPower() * 100.0;
-				}
-			}
-			casting = false;
-			castingHeldDuration = 0;
-
-
-			for ( int i = 0; i < 5; ++i )
-			{
-				Entity* entity = spawnGib(my);
-				entity->flags[INVISIBLE] = false;
-				entity->flags[SPRITE] = true;
-				entity->flags[NOUPDATE] = true;
-				entity->flags[UPDATENEEDED] = false;
-				entity->flags[OVERDRAW] = true;
-				entity->lightBonus = vec4(0.2f, 0.2f, 0.2f, 0.f);
-				real_t scale = 0.15f;
-				entity->scalex = scale;
-				entity->scaley = scale;
-				entity->scalez = scale;
-				entity->sprite = 16;
-				entity->x = 8;
-				entity->y = 0;
-				entity->z = (cameras[player.playernum].z * .5 - my->z) + 7 + -2;
-				entity->z -= 4.75;
-				entity->z = local_rng.uniform(entity->z, entity->z - 4);
-				entity->z += 5.0;
-				entity->yaw = -cameravars[player.playernum].shakex2;
-				entity->yaw = ((local_rng.rand() % 6) * 60) * PI / 180.0;
-				entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
-				entity->roll = (local_rng.rand() % 360) * PI / 180.0;
-				entity->vel_x = cos(entity->yaw) * .1;
-				entity->vel_y = sin(entity->yaw) * .1;
-				entity->vel_z = -.15;
-				entity->fskill[3] = 0.01;
-				entity->skill[11] = player.playernum;
-			}
-			return;
+			finishSpell = true;
+		}
+	}
+	else if ( castingSpellAnimation == GHOST_SPELL_TELEPORT )
+	{
+		if ( castingHeldDuration >= castLoopDuration * 2 )
+		{
+			finishSpell = true;
 		}
 	}
 
-	if ( !casting )
+	if ( finishSpell )
+	{
+		if ( castingSpellAnimation == GHOST_SPELL_TELEPORT )
+		{
+			castSpell(uid, &spell_teleportation, false, true);
+			castingSpellAnimation = GHOST_SPELL_NONE;
+		}
+		else if ( castingSpellAnimation == GHOST_SPELL_BOLT )
+		{
+			castSpell(uid, &spell_ghost_bolt, false, true);
+			castingSpellAnimation = GHOST_SPELL_POST_CASTING;
+		}
+		castingHeldDuration = 0;
+
+
+		for ( int i = 0; i < 5; ++i )
+		{
+			Entity* entity = spawnGib(my);
+			entity->flags[INVISIBLE] = false;
+			entity->flags[SPRITE] = true;
+			entity->flags[NOUPDATE] = true;
+			entity->flags[UPDATENEEDED] = false;
+			entity->flags[OVERDRAW] = true;
+			entity->lightBonus = vec4(0.2f, 0.2f, 0.2f, 0.f);
+			real_t scale = 0.15f;
+			entity->scalex = scale;
+			entity->scaley = scale;
+			entity->scalez = scale;
+			entity->sprite = 16;
+			entity->x = 8;
+			entity->y = 0;
+			entity->z = (cameras[player.playernum].z * .5 - my->z) + 7 + -2;
+			entity->z -= 4.75;
+			entity->z = local_rng.uniform(entity->z, entity->z - 4);
+			entity->z += 5.0;
+			entity->yaw = -cameravars[player.playernum].shakex2;
+			entity->yaw = ((local_rng.rand() % 6) * 60) * PI / 180.0;
+			entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+			entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+			entity->vel_x = cos(entity->yaw) * .1;
+			entity->vel_y = sin(entity->yaw) * .1;
+			entity->vel_z = -.15;
+			entity->fskill[3] = 0.01;
+			entity->skill[11] = player.playernum;
+		}
+		return;
+	}
+
+	if ( castingSpellAnimation == GHOST_SPELL_POST_CASTING )
+	{
+		if ( !attack )
+		{
+			castingSpellAnimation = GHOST_SPELL_NONE;
+		}
+	}
+
+	if ( castingSpellAnimation == GHOST_SPELL_NONE )
 	{
 		if ( attack )
 		{
-			casting = true;
+			castingSpellAnimation = GHOST_SPELL_BOLT;
+			cooldownChill = cooldownChillDelay;
+			errorFlashChillTicks = 0;
+			playSoundEntity(my, 170, 128);
+		}
+		else if ( useSpell )
+		{
+			castingSpellAnimation = GHOST_SPELL_TELEPORT;
+			cooldownTeleport = cooldownTeleportDelay;
+			errorFlashTeleportTicks = 0;
 			playSoundEntity(my, 170, 128);
 		}
 	}
-	else
+	else if ( castingSpellAnimation == GHOST_SPELL_TELEPORT || castingSpellAnimation == GHOST_SPELL_BOLT )
 	{
 		++castingHeldDuration;
 
-		if ( !pushSpell )
+		if ( castingSpellAnimation == GHOST_SPELL_TELEPORT )
 		{
 			float x = 6;
 			float y = 0.1;
@@ -567,7 +638,7 @@ void Player::Ghost_t::handleAttack()
 				entity->skill[11] = player.playernum;
 			}
 		}
-		else
+		else if ( castingSpellAnimation == GHOST_SPELL_BOLT )
 		{
 			float x = 6;
 			float y = 0.1;
@@ -963,9 +1034,23 @@ void Player::Ghost_t::handleActions()
 		}
 	}
 
-	if ( selectedEntity[player.playernum] != NULL )
+	if ( selectedEntity[player.playernum] != nullptr )
 	{
 		Entity* parent = uidToEntity(selectedEntity[player.playernum]->skill[2]);
+		if ( selectedEntity[player.playernum]->behavior == &actItem && pushPoints == 0 )
+		{
+			selectedEntity[player.playernum] = nullptr;
+			input.consumeBinaryToggle("Use");
+			if ( cooldownPush > 0 )
+			{
+				// no action
+				if ( errorFlashPushTicks == 0 && cooldownPush > (TICKS_PER_SECOND / 2) )
+				{
+					errorFlashPushTicks = errorFlashTicks;
+					playSound(563, 64);
+				}
+			}
+		}
 		if ( selectedEntity[player.playernum] )
 		{
 			input.consumeBinaryToggle("Use");
@@ -973,6 +1058,15 @@ void Player::Ghost_t::handleActions()
 			if ( entityDist(my, selectedEntity[player.playernum]) <= TOUCHRANGE )
 			{
 				inrange[player.playernum] = true;
+				if ( selectedEntity[player.playernum]->behavior == &actItem )
+				{
+					--pushPoints;
+					pushPoints = std::max(0, pushPoints);
+					if ( pushPoints == 0 )
+					{
+						cooldownPush = cooldownPushDelay;
+					}
+				}
 			}
 			else
 			{
@@ -1229,6 +1323,10 @@ void Player::Ghost_t::handleGhostCameraUpdate(const bool useRefreshRateDelta)
 	}
 }
 
+Uint32 Player::Ghost_t::cooldownPushDelay = TICKS_PER_SECOND * 3;
+Uint32 Player::Ghost_t::cooldownChillDelay = TICKS_PER_SECOND * 3;
+Uint32 Player::Ghost_t::cooldownTeleportDelay = TICKS_PER_SECOND * 3;
+
 int Player::Ghost_t::getSpriteForPlayer(const int player)
 {
 	if ( !colorblind_lobby )
@@ -1293,6 +1391,22 @@ void Player::Ghost_t::initTeleportLocations(int x, int y)
 	}
 }
 
+void Player::Ghost_t::setActive(bool active)
+{
+	if ( my )
+	{
+		Uint32 deactivated = (active ? 0 : 1);
+		if ( deactivated != GHOSTCAM_DEACTIVATED )
+		{
+			GHOSTCAM_DEACTIVATED = deactivated;
+			if ( multiplayer == SERVER && player.isLocalPlayer() )
+			{
+				serverUpdateEntitySkill(my, 7);
+			}
+		}
+	}
+}
+
 void actDeathGhost(Entity* my)
 {
 	int playernum = GHOSTCAM_PLAYERNUM;
@@ -1354,7 +1468,11 @@ void actDeathGhost(Entity* my)
 		ambientLight = true;
 	}
 
-	if ( !ambientLight )
+	if ( !player->ghost.isActive() )
+	{
+		// no light
+	}
+	else if ( !ambientLight )
 	{
 		switch ( my->sprite )
 		{
@@ -1403,7 +1521,7 @@ void actDeathGhost(Entity* my)
 	static ConsoleVariable<float> cvar_ghostSquish("/ghost_squish", 6.f);
 	static ConsoleVariable<float> cvar_ghostSquishFactor("/ghost_squish_factor", 0.3f);
 
-	if ( player->isLocalPlayer() )
+	if ( player->isLocalPlayer() && player->ghost.isActive() )
 	{
 		if ( autoLimbReload && ticks % 20 == 0 && (playernum == clientnum) )
 		{
@@ -1428,6 +1546,11 @@ void actDeathGhost(Entity* my)
 		camvang = my->pitch;
 
 		static ConsoleVariable<bool> cvar_ghostThirdPerson("/ghost_thirdperson", false);
+		if ( keystatus[SDLK_h] )
+		{
+			keystatus[SDLK_h] = 0;
+			player->ghost.setActive(false);
+		}
 		if ( *cvar_ghostThirdPerson || !keystatus[SDLK_g] )
 		{
 			camx -= cos(my->yaw) * cos(my->pitch) * 1.5;
@@ -1544,6 +1667,10 @@ void actDeathGhost(Entity* my)
 		if ( multiplayer == CLIENT )
 		{
 			net_packet->data[19] = bounceAnimate ? 1 : 0;
+			if ( GHOSTCAM_DEACTIVATED )
+			{
+				net_packet->data[19] |= (1 << 1);
+			}
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
 			net_packet->len = 20;
@@ -1670,6 +1797,7 @@ void actDeathGhost(Entity* my)
 		bodypart->scalex = 1.0 - squish;
 		bodypart->scaley = 1.0 - squish;
 		bodypart->scalez = 1.0 + squish;
+		bodypart->flags[INVISIBLE] = !player->ghost.isActive();
 
 		if ( index == 0 )
 		{
@@ -1761,7 +1889,7 @@ void actDeathCam(Entity* my)
 	}
 
 	bool shootmode = players[DEATHCAM_PLAYERNUM]->shootmode;
-	if ( shootmode && !gamePaused && DEATHCAM_CREATEDGHOST == 0 )
+	if ( shootmode && !gamePaused && !players[DEATHCAM_PLAYERNUM]->ghost.isActive() )
 	{
 		if ( !players[DEATHCAM_PLAYERNUM]->GUI.isGameoverActive() )
 		{
@@ -1894,6 +2022,14 @@ void actDeathCam(Entity* my)
 		&& (Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("Attack")
 			|| Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("MenuConfirm")) )
 	{
+		if ( DEATHCAM_CREATEDGHOST == 1 )
+		{
+			if ( players[DEATHCAM_PLAYERNUM]->ghost.my )
+			{
+				players[DEATHCAM_PLAYERNUM]->ghost.setActive(true);
+			}
+		}
+
 		if ( DEATHCAM_CREATEDGHOST == 0 )
 		{
 			DEATHCAM_CREATEDGHOST = 1;
@@ -1981,7 +2117,7 @@ void actDeathCam(Entity* my)
 
 	my->removeLightField();
 
-	if ( DEATHCAM_CREATEDGHOST != 0 )
+	if ( DEATHCAM_CREATEDGHOST != 0 && players[DEATHCAM_PLAYERNUM]->ghost.isActive() )
 	{
 		return;
 	}

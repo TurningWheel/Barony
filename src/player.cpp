@@ -1375,6 +1375,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			}
 			else if ( inputs.getUIInteraction(player.playernum)->selectedItem || bCompactView )
 			{
+				if ( player.ghost.isActive() )
+				{
+					return MODULE_NONE;
+				}
 				if ( !checkDestinationOnly )
 				{
 					activateModule(MODULE_HOTBAR);
@@ -1407,7 +1411,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		else if ( activeModule == MODULE_SPELLS 
 			&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly) )
 		{
-			if ( player.shopGUI.bOpen || player.inventoryUI.chestGUI.bOpen )
+			if ( player.shopGUI.bOpen || player.inventoryUI.chestGUI.bOpen || player.ghost.isActive() )
 			{
 				return MODULE_NONE;
 			}
@@ -1593,9 +1597,41 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					warpControllerToModule(false);
 					input.consumeBinaryToggle("UINavLeftBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
-					soundModuleNavigation();
+					if ( !player.ghost.isActive() )
+					{
+						soundModuleNavigation();
+					}
 				}
 				return MODULE_CHARACTERSHEET;
+			}
+			else if ( player.ghost.isActive() )
+			{
+				if ( player.inventory_mode == INVENTORY_MODE_SPELL
+					&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly) )
+				{
+					if ( !checkDestinationOnly )
+					{
+						activateModule(MODULE_SPELLS);
+						warpControllerToModule(false);
+						input.consumeBinaryToggle("UINavLeftBumper");
+						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+						soundModuleNavigation();
+					}
+					return MODULE_SPELLS;
+				}
+				else if ( player.inventory_mode == INVENTORY_MODE_ITEM
+					&& (player.inventoryUI.bFirstTimeSnapCursor || checkDestinationOnly) )
+				{
+					if ( !checkDestinationOnly )
+					{
+						activateModule(MODULE_INVENTORY);
+						warpControllerToModule(false);
+						input.consumeBinaryToggle("UINavLeftBumper");
+						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+						soundModuleNavigation();
+					}
+					return MODULE_INVENTORY;
+				}
 			}
 			else if ( !checkDestinationOnly )
 			{
@@ -1657,6 +1693,27 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			{
 				return MODULE_NONE;
 			}
+			else if ( player.ghost.isActive() )
+			{
+				if ( bCompactView )
+				{
+					return MODULE_NONE;
+				}
+				if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_CHARACTERSHEET);
+					if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED
+						|| !player.characterSheet.isSheetElementAllowedToNavigateTo(player.characterSheet.selectedElement) )
+					{
+						player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+					}
+					warpControllerToModule(false);
+					input.consumeBinaryToggle("UINavRightBumper");
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					soundModuleNavigation();
+				}
+				return MODULE_CHARACTERSHEET;
+			}
 			else if ( GenericGUI[player.playernum].alchemyGUI.bOpen )
 			{
 				if ( inputs.getUIInteraction(player.playernum)->selectedItem )
@@ -1711,7 +1768,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		else if ( activeModule == MODULE_SPELLS 
 			&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly ) )
 		{
-			if ( player.shopGUI.bOpen || player.inventoryUI.chestGUI.bOpen )
+			if ( player.shopGUI.bOpen || player.inventoryUI.chestGUI.bOpen || player.ghost.isActive() )
 			{
 				return MODULE_NONE;
 			}
@@ -4784,6 +4841,28 @@ Player::Hotbar_t::FaceMenuGroup Player::Hotbar_t::getFaceMenuGroupForSlot(int ho
 
 const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::string& promptString) const
 {
+	if ( player.ghost.isActive() )
+	{
+		switch ( prompt )
+		{
+			case ACTION_PROMPT_MAGIC:
+				promptString = Language::get(6047); // Haunt
+				break;
+			case ACTION_PROMPT_MAINHAND:
+				promptString = Language::get(6046); // Chill
+				break;
+			case ACTION_PROMPT_OFFHAND:
+				promptString = Language::get(6048); // Push
+				break;
+			case ACTION_PROMPT_SNEAK:
+				promptString = Language::get(4077); // Sneak
+				break;
+			default:
+				break;
+		}
+		return -1;
+	}
+
 	if ( prompt == ACTION_PROMPT_MAGIC ) 
 	{ 
 		promptString = Language::get(4078);
