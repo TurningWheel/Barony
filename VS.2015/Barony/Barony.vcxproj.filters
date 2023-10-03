@@ -43,12 +43,6 @@
     <Filter Include="Source Files\engine\audio">
       <UniqueIdentifier>{c52b06e4-fd42-4bf6-9f24-3a747e841cab}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\imgui">
-      <UniqueIdentifier>{0259fbef-0f26-4925-b7b1-08639111a69b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\imgui">
-      <UniqueIdentifier>{0fe96c5c-85fb-48ef-a9a3-a6b0a97788fd}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\actarrow.cpp">
@@ -462,27 +456,6 @@
     <ClCompile Include="..\..\src\input.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\imgui\imgui.cpp">
-      <Filter>Source Files\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\imgui\imgui_demo.cpp">
-      <Filter>Source Files\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\imgui\imgui_draw.cpp">
-      <Filter>Source Files\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\imgui\imgui_impl_opengl3.cpp">
-      <Filter>Source Files\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\imgui\imgui_impl_sdl.cpp">
-      <Filter>Source Files\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\imgui\imgui_tables.cpp">
-      <Filter>Source Files\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\imgui\imgui_widgets.cpp">
-      <Filter>Source Files\imgui</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -631,36 +604,6 @@
     </ClInclude>
     <ClInclude Include="..\..\src\init.hpp">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\imgui\imconfig.h">
-      <Filter>Header Files\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\imgui\imgui.h">
-      <Filter>Header Files\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\imgui\imgui_impl_opengl2.h">
-      <Filter>Header Files\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\imgui\imgui_impl_opengl3.h">
-      <Filter>Header Files\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\imgui\imgui_impl_opengl3_loader.h">
-      <Filter>Header Files\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\imgui\imgui_impl_sdl.h">
-      <Filter>Header Files\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\imgui\imgui_internal.h">
-      <Filter>Header Files\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\imgui\imstb_rectpack.h">
-      <Filter>Header Files\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\imgui\imstb_textedit.h">
-      <Filter>Header Files\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\imgui\imstb_truetype.h">
-      <Filter>Header Files\imgui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\shader.hpp">
       <Filter>Header Files</Filter>

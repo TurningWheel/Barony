@@ -13,6 +13,7 @@
         "rapidjson",
         "dirent",
         "opengl",
-        "glew"
+        "glew",
+        "imgui"
     ]
 }
