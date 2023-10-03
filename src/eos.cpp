@@ -1233,11 +1233,11 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	PlatformOptions.CacheDirectory = nullptr; // important - needs double slashes and absolute path
 	PlatformOptions.TickBudgetInMilliseconds = 0; // do all available work
 
-	EOS_Platform_RTCOptions rtcOptions{};
-	rtcOptions.ApiVersion = EOS_PLATFORM_RTCOPTIONS_API_LATEST;
-	rtcOptions.BackgroundMode = EOS_ERTCBackgroundMode::EOS_RTCBM_KeepRoomsAlive;
-	rtcOptions.PlatformSpecificOptions = nullptr; // must be null initialized
-	PlatformOptions.RTCOptions = &rtcOptions;
+	//EOS_Platform_RTCOptions rtcOptions{};
+	//rtcOptions.ApiVersion = EOS_PLATFORM_RTCOPTIONS_API_LATEST;
+	//rtcOptions.BackgroundMode = EOS_ERTCBackgroundMode::EOS_RTCBM_KeepRoomsAlive;
+	//rtcOptions.PlatformSpecificOptions = nullptr; // must be null initialized
+	PlatformOptions.RTCOptions = nullptr;
 
 	PlatformOptions.IntegratedPlatformOptionsContainerHandle = nullptr; // must be null initialized
 	PlatformOptions.SystemSpecificOptions = nullptr; // must be null initialized
