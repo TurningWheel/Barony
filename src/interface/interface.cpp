@@ -22475,7 +22475,11 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 				key = "help_all_conditions";
 				if ( setType == SET_CALLOUT_ICON_KEY )
 				{
-					if ( clientCalloutHelpFlags & CALLOUT_HELP_BLOOD_STARVING )
+					if ( stats[player]->HP == 0 || !players[player]->entity )
+					{
+						key = "help_deceased";
+					}
+					else if ( clientCalloutHelpFlags & CALLOUT_HELP_BLOOD_STARVING )
 					{
 						key = "condition_blood_starving";
 					}
@@ -22520,6 +22524,11 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 						key = "condition_cure_ailment";
 					}
 					return key;
+				}
+
+				if ( stats[player]->HP == 0 || !players[player]->entity )
+				{
+					key = "help_deceased";
 				}
 
 				auto& textMap = text_map[key];
