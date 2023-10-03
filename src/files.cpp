@@ -3156,7 +3156,7 @@ static ConsoleCommand ccmd_writeModelCache("/write_model_cache", "",
 void generatePolyModels(int start, int end, bool forceCacheRebuild)
 {
 	const bool generateAll = start == 0 && end == nummodels;
-    constexpr auto LARGEST_POLYMODEL_FACES_ALLOWED = (1<<15); // 32768
+    constexpr auto LARGEST_POLYMODEL_FACES_ALLOWED = (1<<17); // 131072
 
 	if ( generateAll )
 	{
