@@ -1162,7 +1162,7 @@ void Entity::effectTimes()
 			{
 				if ( myStats->EFFECTS_TIMERS[c] == TICKS_PER_SECOND * 15 )
 				{
-					//playSoundPlayer(player, 32, 128);
+					playSoundPlayer(player, 611, 192);
 					messagePlayer(player, MESSAGE_STATUS, Language::get(3193));
 				}
 			}
@@ -1170,7 +1170,7 @@ void Entity::effectTimes()
 			{
 				if ( myStats->EFFECTS_TIMERS[c] == TICKS_PER_SECOND * 15 )
 				{
-					playSoundPlayer(player, 32, 128);
+					playSoundPlayer(player, 611, 192);
 					messagePlayer(player, MESSAGE_STATUS, Language::get(3475));
 				}
 			}
