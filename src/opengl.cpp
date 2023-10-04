@@ -924,7 +924,11 @@ void glBeginCamera(view_t* camera, bool useHDR)
     const auto fog_color = Vector4{0.f, 0.f, 0.f, 0.f};
 #else
     const bool hdr = useHDR ? *MainMenu::cvar_hdrEnabled : false;
-    const auto& fog_color = *cvar_fogColor;
+    auto fog_color = *cvar_fogColor;
+    fog_color.x *= fog_color.w;
+    fog_color.y *= fog_color.w;
+    fog_color.z *= fog_color.w;
+    fog_color.w = 1.f;
 #endif
     
     if (hdr) {
@@ -1868,17 +1872,24 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 
 -------------------------------------------------------------------------------*/
 
-static bool shouldDrawClouds(const map_t& map, int* cloudtile = nullptr) {
+static bool shouldDrawClouds(const map_t& map, int* cloudtile = nullptr, bool forceCheck = true) {
     bool clouds = false;
-    if (cloudtile) {
-        *cloudtile = 77; // hell clouds
-    }
-    if ((!strncmp(map.name, "Hell", 4) || map.skybox != 0) && smoothlighting) {
-        clouds = true;
+#ifdef EDITOR
+    const bool fog = false;
+#else
+    const bool fog = *cvar_fogDistance > 0.f;
+#endif
+    if (!fog || forceCheck) {
         if (cloudtile) {
-            if (strncmp(map.name, "Hell", 4)) {
-                // not a hell map, custom clouds
-                *cloudtile = map.skybox;
+            *cloudtile = 77; // hell clouds
+        }
+        if ((!strncmp(map.name, "Hell", 4) || map.skybox != 0) && smoothlighting) {
+            clouds = true;
+            if (cloudtile) {
+                if (strncmp(map.name, "Hell", 4)) {
+                    // not a hell map, custom clouds
+                    *cloudtile = map.skybox;
+                }
             }
         }
     }
@@ -1952,7 +1963,7 @@ void glDrawWorld(view_t* camera, int mode)
 
     // determine whether we should draw clouds, and their texture
     int cloudtile;
-    const bool clouds = shouldDrawClouds(map, &cloudtile);
+    const bool clouds = shouldDrawClouds(map, &cloudtile, false);
     
     // select texture atlas
     constexpr int numTileAtlases = sizeof(AnimatedTile::indices) / sizeof(AnimatedTile::indices[0]);
