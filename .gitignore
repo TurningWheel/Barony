@@ -81,3 +81,4 @@ vcpkg_installed/
 *.sdf
 .VSCodeCounter
 *.map
+/build/*
