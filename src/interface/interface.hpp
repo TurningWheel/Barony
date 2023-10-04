@@ -1426,6 +1426,7 @@ struct CalloutRadialMenu
 		std::string pathPlayer4 = "";
 		std::string pathPlayerX = "";
 		int id = 0;
+		std::string& getPlayerIconPath(const int playernum);
 	};
 	static std::map<std::string, WorldIconEntry_t> worldIconEntries;
 	static std::map<std::string, std::string> helpDescriptors;

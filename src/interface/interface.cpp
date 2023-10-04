@@ -23516,15 +23516,35 @@ CalloutRadialMenu::CalloutType CalloutRadialMenu::getCalloutTypeForEntity(const 
 	else if ( parent->behavior == &actMonster )
 	{
 		int monsterType = parent->getMonsterTypeFromSprite();
+		bool enemies = false;
+		if ( players[player]->entity )
+		{
+			if ( multiplayer != CLIENT && parent->checkEnemy(players[player]->entity) )
+			{
+				enemies = true;
+			}
+			else if ( multiplayer == CLIENT
+				&& !parent->monsterAllyGetPlayerLeader()
+				&& !monsterally[monsterType][stats[player]->type] )
+			{
+				enemies = true;
+			}
+		}
+		else
+		{
+			if ( !parent->monsterAllyGetPlayerLeader()
+				&& !monsterally[monsterType][stats[player]->type] )
+			{
+				enemies = true;
+			}
+		}
+
 		type = CALLOUT_TYPE_NPC;
 		if ( monsterType == SHOPKEEPER )
 		{
 			type = CALLOUT_TYPE_NPC;
 		}
-		else if ( (multiplayer != CLIENT && parent->checkEnemy(players[player]->entity) )
-			|| (multiplayer == CLIENT
-				&& !parent->monsterAllyGetPlayerLeader() 
-				&& !monsterally[monsterType][stats[player]->type]))
+		else if ( enemies )
 		{
 			type = CALLOUT_TYPE_NPC_ENEMY;
 		}
@@ -23737,6 +23757,10 @@ void CalloutRadialMenu::CalloutParticle_t::init(const int player)
 
 void CalloutRadialMenu::closeCalloutMenuGUI()
 {
+	if ( calloutMenuIsOpen() )
+	{
+		players[gui_player]->worldUI.reset();
+	}
 	bOpen = false;
 	lockOnEntityUid = 0;
 	selectMoveTo = false;
@@ -23760,6 +23784,44 @@ void CalloutRadialMenu::closeCalloutMenuGUI()
 	openedThisTick = 0;
 	animInvalidAction = 0.0;
 	animInvalidActionTicks = 0;
+}
+
+std::string& CalloutRadialMenu::WorldIconEntry_t::getPlayerIconPath(const int playernum)
+{
+	if ( colorblind_lobby )
+	{
+		switch ( playernum )
+		{
+		case 0:
+			return pathPlayer3;
+		case 1:
+			return pathPlayer4;
+		case 2:
+			return pathPlayer2;
+		case 3:
+			return pathPlayerX;
+		default:
+			return pathPlayerX;
+			break;
+		}
+	}
+	else
+	{
+		switch ( playernum )
+		{
+		case 0:
+			return pathPlayer1;
+		case 1:
+			return pathPlayer2;
+		case 2:
+			return pathPlayer3;
+		case 3:
+			return pathPlayer4;
+		default:
+			return pathPlayerX;
+			break;
+		}
+	}
 }
 
 void CalloutRadialMenu::drawCallouts(const int playernum)
@@ -23856,29 +23918,8 @@ void CalloutRadialMenu::drawCallouts(const int playernum)
 				}
 			}
 
-			switch ( playerColor )
-			{
-			case 0:
-				iconPath = iconPaths->pathPlayer1;
-				iconPathMini = iconPathsMini.pathPlayer1;
-				break;
-			case 1:
-				iconPath = iconPaths->pathPlayer2;
-				iconPathMini = iconPathsMini.pathPlayer2;
-				break;
-			case 2:
-				iconPath = iconPaths->pathPlayer3;
-				iconPathMini = iconPathsMini.pathPlayer3;
-				break;
-			case 3:
-				iconPath = iconPaths->pathPlayer4;
-				iconPathMini = iconPathsMini.pathPlayer4;
-				break;
-			default:
-				iconPath = iconPaths->pathPlayerX;
-				iconPathMini = iconPathsMini.pathPlayerX;
-				break;
-			}
+			iconPath = iconPaths->getPlayerIconPath(playerColor);
+			iconPathMini = iconPathsMini.getPlayerIconPath(playerColor);
 
 			if ( iconPath == "" )
 			{
@@ -24778,6 +24819,14 @@ void CalloutRadialMenu::drawCalloutMenu()
 		}
 
 		bool menuConfirmOnGamepad = input.input("MenuConfirm").isBindingUsingGamepad();
+		if ( menuConfirmOnGamepad )
+		{
+			if ( input.input("Call Out").input
+				== input.input("MenuConfirm").input )
+			{
+				menuConfirmOnGamepad = false;
+			}
+		}
 		bool menuLeftClickOnKeyboard = input.input("MenuLeftClick").isBindingUsingKeyboard() && !inputs.hasController(gui_player);
 
 		// process commands if option selected on the wheel.
@@ -24787,17 +24836,17 @@ void CalloutRadialMenu::drawCalloutMenu()
 		}
 		else if ( (!menuToggleClick && !holdWheel
 			&& !input.binaryToggle("Use")
-			&& !input.binaryToggle("Show Player Callouts")
+			&& !input.binaryToggle("Call Out")
 			&& !(input.binaryToggle("MenuConfirm") && menuConfirmOnGamepad)
 			&& !(input.binaryToggle("MenuLeftClick") && menuLeftClickOnKeyboard))
-			|| (menuToggleClick && (input.binaryToggle("Use") || input.binaryToggle("Show Player Callouts")))
+			|| (menuToggleClick && (input.binaryToggle("Use") || input.binaryToggle("Call Out")))
 			|| ((input.binaryToggle("MenuConfirm") && menuConfirmOnGamepad)
 				|| (input.binaryToggle("MenuLeftClick") && menuLeftClickOnKeyboard)
 				|| (input.binaryToggle("Use") && holdWheel))
-			|| (!input.binaryToggle("Show Player Callouts") && holdWheel && !menuToggleClick)
+			|| (!input.binaryToggle("Call Out") && holdWheel && !menuToggleClick)
 			)
 		{
-			//bool usingShowCmdRelease = (!input.binaryToggle("Show Player Callouts") && holdWheel && !menuToggleClick);
+			//bool usingShowCmdRelease = (!input.binaryToggle("Call Out") && holdWheel && !menuToggleClick);
 
 			if ( menuToggleClick )
 			{
@@ -24811,11 +24860,11 @@ void CalloutRadialMenu::drawCalloutMenu()
 			input.consumeBinaryToggle("Use");
 			input.consumeBinaryToggle("MenuConfirm");
 			input.consumeBinaryToggle("MenuLeftClick");
-			input.consumeBinaryToggle("Show Player Callouts");
+			input.consumeBinaryToggle("Call Out");
 			input.consumeBindingsSharedWithBinding("Use");
 			input.consumeBindingsSharedWithBinding("MenuConfirm");
 			input.consumeBindingsSharedWithBinding("MenuLeftClick");
-			input.consumeBindingsSharedWithBinding("Show Player Callouts");
+			input.consumeBindingsSharedWithBinding("Call Out");
 
 			if ( disableOption != 0 )
 			{
@@ -25251,24 +25300,7 @@ void CalloutRadialMenu::drawCalloutMenu()
 						}
 						
 						{
-							switch ( targetPlayer )
-							{
-							case 0:
-								panelIcons[i]->path = worldIconEntries[key].pathPlayer1;
-								break;
-							case 1:
-								panelIcons[i]->path = worldIconEntries[key].pathPlayer2;
-								break;
-							case 2:
-								panelIcons[i]->path = worldIconEntries[key].pathPlayer3;
-								break;
-							case 3:
-								panelIcons[i]->path = worldIconEntries[key].pathPlayer4;
-								break;
-							default:
-								panelIcons[i]->path = worldIconEntries[key].pathPlayerX;
-								break;
-							}
+							panelIcons[i]->path = worldIconEntries[key].getPlayerIconPath(targetPlayer);
 						}
 					}
 					else if ( i == CALLOUT_CMD_SOUTHWEST )
@@ -25290,24 +25322,7 @@ void CalloutRadialMenu::drawCalloutMenu()
 						}
 						
 						{
-							switch ( targetPlayer )
-							{
-							case 0:
-								panelIcons[i]->path = worldIconEntries[key].pathPlayer1;
-								break;
-							case 1:
-								panelIcons[i]->path = worldIconEntries[key].pathPlayer2;
-								break;
-							case 2:
-								panelIcons[i]->path = worldIconEntries[key].pathPlayer3;
-								break;
-							case 3:
-								panelIcons[i]->path = worldIconEntries[key].pathPlayer4;
-								break;
-							default:
-								panelIcons[i]->path = worldIconEntries[key].pathPlayerX;
-								break;
-							}
+							panelIcons[i]->path = worldIconEntries[key].getPlayerIconPath(targetPlayer);
 						}
 					}
 					else if ( i == CALLOUT_CMD_SOUTHEAST )
@@ -25329,24 +25344,7 @@ void CalloutRadialMenu::drawCalloutMenu()
 						}
 						
 						{
-							switch ( targetPlayer )
-							{
-							case 0:
-								panelIcons[i]->path = worldIconEntries[key].pathPlayer1;
-								break;
-							case 1:
-								panelIcons[i]->path = worldIconEntries[key].pathPlayer2;
-								break;
-							case 2:
-								panelIcons[i]->path = worldIconEntries[key].pathPlayer3;
-								break;
-							case 3:
-								panelIcons[i]->path = worldIconEntries[key].pathPlayer4;
-								break;
-							default:
-								panelIcons[i]->path = worldIconEntries[key].pathPlayerX;
-								break;
-							}
+							panelIcons[i]->path = worldIconEntries[key].getPlayerIconPath(targetPlayer);
 						}
 					}
 				}

@@ -146,9 +146,6 @@ void Player::Ghost_t::handleGhostCameraBobbing(bool useRefreshRateDelta)
 		GHOSTCAM_BOBMODE = 0;
 	}
 }
-void Player::Ghost_t::handleGhostCameraPosition(bool useRefreshRateDelta)
-{
-}
 
 void Player::Ghost_t::handleGhostMovement(const bool useRefreshRateDelta)
 {
@@ -303,13 +300,16 @@ void Player::Ghost_t::reset()
 	my = nullptr;
 	uid = 0;
 	cooldownPush = 0;
-	cooldownPushTimeout = 0;
 	cooldownChill = 0;
 	cooldownTeleport = 0;
 	errorFlashPushTicks = 0;
 	errorFlashTeleportTicks = 0;
 	errorFlashChillTicks = 0;
 	pushPoints = MAX_PUSH_POINTS;
+
+	castingSpellAnimation = GHOST_SPELL_NONE;
+	castingHeldDuration = 0;
+
 	player.cleanUpOnEntityRemoval();
 }
 
@@ -475,7 +475,7 @@ void Player::Ghost_t::handleAttack()
 	bool finishSpell = false;
 	if ( castingSpellAnimation == GHOST_SPELL_BOLT )
 	{
-		if ( castingHeldDuration >= castLoopDuration )
+		if ( castingHeldDuration >= castLoopDuration * 1.5 )
 		{
 			finishSpell = true;
 		}
@@ -895,7 +895,7 @@ void Player::Ghost_t::handleActions()
 		&& !gamePaused )
 	{
 		bool showCalloutCommandsOnGamepad = false;
-		auto showCalloutCommandsFind = b.find("Show Player Callouts");
+		auto showCalloutCommandsFind = b.find("Call Out");
 		std::string showCalloutCommandsInputStr = "";
 		if ( showCalloutCommandsFind != b.end() )
 		{
@@ -909,14 +909,14 @@ void Player::Ghost_t::handleActions()
 				(showCalloutCommandsInputStr == input.binding("Interact Tooltip Next")
 					|| showCalloutCommandsInputStr == input.binding("Interact Tooltip Prev")) )
 			{
-				input.consumeBinaryToggle("Show Player Callouts");
+				input.consumeBinaryToggle("Call Out");
 				player.hud.bOpenCalloutsMenuDisabled = true;
 			}
 		}
 
-		if ( (input.binaryToggle("Show Player Callouts") && !showCalloutCommandsOnGamepad
+		if ( (input.binaryToggle("Call Out") && !showCalloutCommandsOnGamepad
 			&& player.shootmode)
-			|| (input.binaryToggle("Show Player Callouts") && showCalloutCommandsOnGamepad
+			|| (input.binaryToggle("Call Out") && showCalloutCommandsOnGamepad
 				&& player.shootmode /*&& !player.worldUI.bTooltipInView*/) )
 		{
 			if ( !calloutMenu.bOpen && !calloutMenu.selectMoveTo )
@@ -925,7 +925,7 @@ void Player::Ghost_t::handleActions()
 				{
 					player.closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_CALLOUTGUI);
 				}
-				input.consumeBinaryToggle("Show Player Callouts");
+				input.consumeBinaryToggle("Call Out");
 				calloutMenu.selectMoveTo = true;
 				calloutMenu.optionSelected = CalloutRadialMenu::CALLOUT_CMD_SELECT;
 				calloutMenu.lockOnEntityUid = 0;
@@ -6259,7 +6259,7 @@ void actPlayer(Entity* my)
 				&& !gamePaused )
 			{
 				bool showCalloutCommandsOnGamepad = false;
-				auto showCalloutCommandsFind = b.find("Show Player Callouts");
+				auto showCalloutCommandsFind = b.find("Call Out");
 				std::string showCalloutCommandsInputStr = "";
 				if ( showCalloutCommandsFind != b.end() )
 				{
@@ -6273,34 +6273,37 @@ void actPlayer(Entity* my)
 						(showCalloutCommandsInputStr == input.binding("Interact Tooltip Next")
 							|| showCalloutCommandsInputStr == input.binding("Interact Tooltip Prev")) )
 					{
-						input.consumeBinaryToggle("Show Player Callouts");
+						input.consumeBinaryToggle("Call Out");
 						players[PLAYER_NUM]->hud.bOpenCalloutsMenuDisabled = true;
 					}
 				}
 
-				if ( (input.binaryToggle("Show Player Callouts") && !showCalloutCommandsOnGamepad
+				if ( (input.binaryToggle("Call Out") && !showCalloutCommandsOnGamepad
 						&& players[PLAYER_NUM]->shootmode)
-					|| (input.binaryToggle("Show Player Callouts") && showCalloutCommandsOnGamepad
+					|| (input.binaryToggle("Call Out") && showCalloutCommandsOnGamepad
 						&& players[PLAYER_NUM]->shootmode /*&& !players[PLAYER_NUM]->worldUI.bTooltipInView*/) )
 				{
 					if ( !calloutMenu.bOpen && !calloutMenu.selectMoveTo )
 					{
-						if ( !players[PLAYER_NUM]->shootmode )
+						if ( !followerMenu.followerMenuIsOpen() )
 						{
-							players[PLAYER_NUM]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_CALLOUTGUI);
-						}
-						input.consumeBinaryToggle("Show Player Callouts");
-						calloutMenu.selectMoveTo = true;
-						calloutMenu.optionSelected = CalloutRadialMenu::CALLOUT_CMD_SELECT;
-						calloutMenu.lockOnEntityUid = 0;
-						Player::soundActivate();
-						skipFollowerMenu = true;
+							if ( !players[PLAYER_NUM]->shootmode )
+							{
+								players[PLAYER_NUM]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_CALLOUTGUI);
+							}
+							input.consumeBinaryToggle("Call Out");
+							calloutMenu.selectMoveTo = true;
+							calloutMenu.optionSelected = CalloutRadialMenu::CALLOUT_CMD_SELECT;
+							calloutMenu.lockOnEntityUid = 0;
+							Player::soundActivate();
+							skipFollowerMenu = true;
 
-						if ( players[PLAYER_NUM]->worldUI.isEnabled() )
-						{
-							players[PLAYER_NUM]->worldUI.reset();
-							players[PLAYER_NUM]->worldUI.tooltipView = Player::WorldUI_t::TooltipView::TOOLTIP_VIEW_RESCAN;
-							players[PLAYER_NUM]->worldUI.gimpDisplayTimer = 0;
+							if ( players[PLAYER_NUM]->worldUI.isEnabled() )
+							{
+								players[PLAYER_NUM]->worldUI.reset();
+								players[PLAYER_NUM]->worldUI.tooltipView = Player::WorldUI_t::TooltipView::TOOLTIP_VIEW_RESCAN;
+								players[PLAYER_NUM]->worldUI.gimpDisplayTimer = 0;
+							}
 						}
 					}
 					else if ( calloutMenu.selectMoveTo )
@@ -6443,41 +6446,44 @@ void actPlayer(Entity* my)
 					}
 				}
 
-				if ( (input.binaryToggle("Show NPC Commands") && !showNPCCommandsOnGamepad)
-						|| (input.binaryToggle("Show NPC Commands") && showNPCCommandsOnGamepad 
-							&& players[PLAYER_NUM]->shootmode /*&& !players[PLAYER_NUM]->worldUI.bTooltipInView*/) )
+				if ( !calloutMenu.calloutMenuIsOpen() )
 				{
-					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
-						&& followerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
+					if ( (input.binaryToggle("Show NPC Commands") && !showNPCCommandsOnGamepad)
+							|| (input.binaryToggle("Show NPC Commands") && showNPCCommandsOnGamepad 
+								&& players[PLAYER_NUM]->shootmode /*&& !players[PLAYER_NUM]->worldUI.bTooltipInView*/) )
 					{
-						// your ally is angry at you!
-					}
-					else
-					{
-						selectedEntity[PLAYER_NUM] = followerMenu.recentEntity;
-						followerMenu.holdWheel = true;
-						if ( showNPCCommandsOnGamepad )
+						if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
+							&& followerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
 						{
-							followerMenu.holdWheel = false;
+							// your ally is angry at you!
+						}
+						else
+						{
+							selectedEntity[PLAYER_NUM] = followerMenu.recentEntity;
+							followerMenu.holdWheel = true;
+							if ( showNPCCommandsOnGamepad )
+							{
+								followerMenu.holdWheel = false;
+							}
 						}
 					}
-				}
-				else if ( (input.binaryToggle("Command NPC") && !lastNPCCommandOnGamepad)
-					|| (input.binaryToggle("Command NPC") && lastNPCCommandOnGamepad && players[PLAYER_NUM]->shootmode/*&& !players[PLAYER_NUM]->worldUI.bTooltipInView*/) )
-				{
-					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
-						&& followerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
+					else if ( (input.binaryToggle("Command NPC") && !lastNPCCommandOnGamepad)
+						|| (input.binaryToggle("Command NPC") && lastNPCCommandOnGamepad && players[PLAYER_NUM]->shootmode/*&& !players[PLAYER_NUM]->worldUI.bTooltipInView*/) )
 					{
-						// your ally is angry at you!
-						input.consumeBinaryToggle("Command NPC");
-					}
-					else if ( followerMenu.optionPrevious != -1 )
-					{
-						followerMenu.followerToCommand = followerMenu.recentEntity;
-					}
-					else
-					{
-						input.consumeBinaryToggle("Command NPC");
+						if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
+							&& followerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
+						{
+							// your ally is angry at you!
+							input.consumeBinaryToggle("Command NPC");
+						}
+						else if ( followerMenu.optionPrevious != -1 )
+						{
+							followerMenu.followerToCommand = followerMenu.recentEntity;
+						}
+						else
+						{
+							input.consumeBinaryToggle("Command NPC");
+						}
 					}
 				}
 			}

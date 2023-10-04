@@ -114,7 +114,7 @@ namespace MainMenu {
                 {"Spell List", "B", hiddenBinding, emptyBinding},
                 {"Skill Sheet", "K", hiddenBinding, emptyBinding},
                 {"Autosort Inventory", "R", hiddenBinding, emptyBinding},
-				{"Show Player Callouts", "X", "DpadY+", emptyBinding},
+				{"Call Out", "X", "ButtonLeftStick", emptyBinding},
                 {"Command NPC", "Q", "DpadX-", emptyBinding},
                 {"Show NPC Commands", "C", "DpadX+", emptyBinding},
                 {"Cycle NPCs", "E", "DpadY-", emptyBinding},
@@ -174,7 +174,7 @@ namespace MainMenu {
                 {"Spell List", "B", hiddenBinding, emptyBinding},
                 {"Skill Sheet", "K", hiddenBinding, emptyBinding},
                 {"Autosort Inventory", "R", hiddenBinding, emptyBinding},
-				{"Show Player Callouts", "X", "DpadY+", emptyBinding},
+				{"Call Out", "X", "ButtonA", emptyBinding},
                 {"Command NPC", "Q", "DpadX-", emptyBinding},
                 {"Show NPC Commands", "C", "DpadX+", emptyBinding},
                 {"Cycle NPCs", "E", "DpadY-", emptyBinding},
@@ -234,7 +234,7 @@ namespace MainMenu {
                 {"Spell List", "B", hiddenBinding, emptyBinding},
                 {"Skill Sheet", "K", hiddenBinding, emptyBinding},
                 {"Autosort Inventory", "R", hiddenBinding, emptyBinding},
-				{"Show Player Callouts", "X", "DpadY+", emptyBinding},
+				{"Call Out", "X", "ButtonLeftStick", emptyBinding},
 #ifdef NINTENDO
                 {"Command NPC", "Q", "ButtonY", emptyBinding},
                 {"Show NPC Commands", "C", "ButtonX", emptyBinding},
@@ -294,7 +294,7 @@ namespace MainMenu {
                 {"Spell List", "B", hiddenBinding, emptyBinding},
                 {"Skill Sheet", "K", hiddenBinding, emptyBinding},
                 {"Autosort Inventory", "R", hiddenBinding, emptyBinding},
-				{"Show Player Callouts", "X", emptyBinding, emptyBinding},
+				{"Call Out", "X", emptyBinding, emptyBinding},
                 {"Command NPC", "Q", emptyBinding, emptyBinding},
                 {"Show NPC Commands", "C", emptyBinding, emptyBinding},
                 {"Cycle NPCs", "E", emptyBinding, emptyBinding},
@@ -4532,7 +4532,7 @@ namespace MainMenu {
  
     static const char* translateBinding(const char* binding) {
         int c = 5970;
-		if ( !strcmp(binding, "Show Player Callouts") )
+		if ( !strcmp(binding, "Call Out") )
 		{
 			return Language::get(6044);
 		}
@@ -4541,7 +4541,7 @@ namespace MainMenu {
             if (b.action == binding) {
                 break;
             }
-			if ( b.action == "Show Player Callouts" )
+			if ( b.action == "Call Out" )
 			{
 				continue; // don't increment c, not in the linear language entries
 			}

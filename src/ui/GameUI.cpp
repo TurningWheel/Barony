@@ -902,6 +902,184 @@ void createAllyFollowerFrame(const int player)
 	}
 }
 
+void createCalloutPromptFrame(const int player)
+{
+	auto& hud_t = players[player]->hud;
+
+	auto frame = hud_t.hudFrame->addFrame("callout prompts");
+	hud_t.calloutPromptFrame = frame;
+	frame->setHollow(true);
+	frame->setSize(SDL_Rect{ 0, 0, 300, 0 });
+	frame->setDisabled(true);
+	frame->setScrollBarsEnabled(false);
+	frame->setAllowScrollBinds(false);
+
+	auto glyph = frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "glyph");
+	glyph->disabled = true;
+	auto icon = frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "icon");
+	icon->disabled = true;
+
+	auto text = frame->addField("prompt", 64);
+	text->setFont(smallfont_outline);
+	text->setHJustify(Field::justify_t::LEFT);
+	text->setVJustify(Field::justify_t::TOP);
+	text->setSize(SDL_Rect{ 0, 0, frame->getSize().w, 24 });
+	text->setText(Language::get(6049));
+	text->setColor(0xFFFFFFFF);
+	text->setOntop(true);
+	text->setDisabled(true);
+}
+
+const int kPlayerBarsEntryFrameWidth = 214;
+
+void updateCalloutPromptFrame(const int player)
+{
+	auto& hud_t = players[player]->hud;
+	auto frame = hud_t.calloutPromptFrame;
+	if ( !frame )
+	{
+		return;
+	}
+
+	if ( !Player::getPlayerInteractEntity(player) )
+	{
+		frame->setDisabled(true);
+		return;
+	}
+	else if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen()
+		&& !CalloutMenu[player].calloutMenuIsOpen() )
+	{
+		frame->setDisabled(true);
+		return;
+	}
+
+	int alignX = 8;
+	int alignY = 0;
+	static ConsoleVariable<bool> cvar_callout_prompt_horizontal("/callout_prompt_horizontal", false);
+	if ( hud_t.allyPlayerFrame && !hud_t.allyPlayerFrame->isDisabled()
+		&& hud_t.allyPlayerFrame->getOpacity() > 0.0 )
+	{
+		if ( hud_t.playerBars.size() > 0 )
+		{
+			if ( *cvar_callout_prompt_horizontal )
+			{
+				alignX += kPlayerBarsEntryFrameWidth;
+			}
+			else
+			{
+				alignY += hud_t.playerBars.size() * 36;
+			}
+		}
+	}
+
+	frame->setDisabled(false);
+	SDL_Rect framePos;
+	framePos.x = alignX;
+	framePos.y = players[player]->bUseCompactGUIWidth() ? AllyStatusBarSettings_t::FollowerBars_t::entrySettings.baseYSplitscreen : AllyStatusBarSettings_t::FollowerBars_t::entrySettings.baseY;
+	framePos.y -= 4;
+	framePos.y += alignY;
+	framePos.w = 300;
+	framePos.h = 50;
+	frame->setSize(framePos);
+
+	auto glyph = frame->findImage("glyph");
+	auto glyphPathUnpressed = Input::inputs[player].getGlyphPathForBinding("Call Out", false);
+	auto glyphPathPressed = Input::inputs[player].getGlyphPathForBinding("Call Out", true);
+	glyph->disabled = true;
+
+	const int nominalGlyphHeight = 26;
+	int unpressedHeight = 0;
+	int unpressedY = 0;
+	if ( ticks % 50 < 25 && (CalloutMenu[player].calloutMenuIsOpen() && CalloutMenu[player].selectMoveTo) )
+	{
+		glyph->path = glyphPathPressed;
+		if ( auto imgGet = Image::get(glyph->path.c_str()) )
+		{
+			glyph->disabled = false;
+			SDL_Rect glyphPos{ 0, 8, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+			glyph->pos = glyphPos;
+			if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
+			{
+				unpressedHeight = imgGetUnpressed->getHeight();
+				unpressedY = glyph->pos.y;
+				if ( unpressedHeight != glyph->pos.h )
+				{
+					glyph->pos.y -= (glyph->pos.h - unpressedHeight);
+				}
+
+				if ( unpressedHeight != nominalGlyphHeight )
+				{
+					unpressedY -= (unpressedHeight - nominalGlyphHeight) / 2;
+					glyph->pos.y -= (unpressedHeight - nominalGlyphHeight) / 2;
+				}
+			}
+		}
+	}
+	else
+	{
+		glyph->path = glyphPathUnpressed;
+		if ( auto imgGet = Image::get(glyph->path.c_str()) )
+		{
+			glyph->disabled = false;
+			SDL_Rect glyphPos{ 0, 8, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+			glyph->pos = glyphPos;
+			unpressedHeight = glyph->pos.h;
+			unpressedY = glyph->pos.y;
+			if ( glyph->pos.h != nominalGlyphHeight )
+			{
+				unpressedY -= (glyph->pos.h - nominalGlyphHeight) / 2;
+				glyph->pos.y -= (glyph->pos.h - nominalGlyphHeight) / 2;
+			}
+		}
+	}
+	
+	int glyphAlignY = unpressedY + (unpressedHeight - nominalGlyphHeight) / 2;
+
+	auto icon = frame->findImage("icon");
+	icon->disabled = true;
+	static ConsoleVariable<bool> cvar_callout_prompt_wheel("/callout_prompt_wheel", false);
+	if ( !glyph->disabled )
+	{
+		if ( *cvar_callout_prompt_wheel &&
+			CalloutMenu[player].calloutMenuIsOpen() && CalloutMenu[player].selectMoveTo )
+		{
+			icon->path = "*images/ui/HUD/HUD_Ally_Callout_Wheel_00.png";
+		}
+		else
+		{
+			icon->path = "*images/ui/HUD/HUD_Ally_Callout_00.png";
+		}
+		if ( auto imgGet = Image::get(icon->path.c_str()) )
+		{
+			icon->disabled = false;
+			icon->pos.w = imgGet->getWidth();
+			icon->pos.h = imgGet->getHeight();
+			icon->pos.x = glyph->pos.x + glyph->pos.w + 4;
+			icon->pos.y = unpressedY + (unpressedHeight) / 2 - icon->pos.h / 2;
+			if ( icon->pos.y % 2 == 1 )
+			{
+				++icon->pos.y;
+			}
+		}
+	}
+
+	auto text = frame->findField("prompt");
+	text->setDisabled(true);
+	static ConsoleVariable<bool> cvar_callout_prompt_text("/callout_prompt_text", false);
+	if ( !icon->disabled && *cvar_callout_prompt_text )
+	{
+		if ( CalloutMenu[player].calloutMenuIsOpen() && CalloutMenu[player].selectMoveTo )
+		{
+			text->setDisabled(false);
+			text->setText(Language::get(6049));
+			SDL_Rect pos = text->getSize();
+			pos.x = icon->pos.x + icon->pos.w + 4;
+			pos.y = glyphAlignY - 10;
+			text->setSize(pos);
+		}
+	}
+}
+
 void createAllyFollowerTitleFrame(const int player)
 {
 	auto& hud_t = players[player]->hud;
@@ -941,7 +1119,7 @@ Frame* createAllyPlayerEntry(const int player)
 
 	auto entry = baseFrame->addFrame("entry");
 	const int allyPlayerEntryHeight = 40;
-	entry->setSize(SDL_Rect{ 0, 0, 214, allyPlayerEntryHeight });
+	entry->setSize(SDL_Rect{ 0, 0, kPlayerBarsEntryFrameWidth, allyPlayerEntryHeight });
 	entry->setHollow(true);
 	entry->setInheritParentFrameOpacity(false);
 
@@ -8297,6 +8475,12 @@ void createWorldTooltipPrompts(const int player)
 	text2->setDisabled(true);
 	text2->setSize(SDL_Rect{ 0, 0, 0, 0 });
 
+	auto text3 = worldTooltipFrame->addField("prompt callout text", 256);
+	text3->setFont(promptFont);
+	text3->setText("");
+	text3->setDisabled(true);
+	text3->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
 	const int iconSize = 24;
 	SDL_Rect iconPos{ 0, 0, iconSize, iconSize };
 
@@ -8315,6 +8499,10 @@ void createWorldTooltipPrompts(const int player)
 	auto glyphAdditional2 = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 		0xFFFFFFFF, "images/system/white.png", "glyph img 3");
 	glyphAdditional2->disabled = true;
+
+	auto glyphAdditional3 = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+		0xFFFFFFFF, "images/system/white.png", "glyph img 4");
+	glyphAdditional3->disabled = true;
 
 	auto cursor = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 		0xFFFFFFFF, "images/system/white.png", "cursor img");
@@ -8405,8 +8593,12 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 	text->setDisabled(true);
 	auto textCycle = worldTooltipFrame->findField("prompt cycle text");
 	textCycle->setDisabled(true);
+	auto textCallout = worldTooltipFrame->findField("prompt callout text");
+	textCallout->setDisabled(true);
 	auto glyphCycle = worldTooltipFrame->findImage("glyph img 3");
 	glyphCycle->disabled = true;
+	auto glyphCallout = worldTooltipFrame->findImage("glyph img 4");
+	glyphCallout->disabled = true;
 
 	SDL_Rect textPos{ 0, 0, 0, 0 };
 	const int skillIconToGlyphPadding = 4;
@@ -8625,19 +8817,26 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 			}
 		}
 
-		for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+		if ( calloutInteract )
 		{
-			if ( skill.skillId == PRO_LEADERSHIP )
+			icon->path = "*images/ui/HUD/HUD_Ally_Callout_00.png";
+		}
+		else
+		{
+			for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
 			{
-				if ( skillCapstoneUnlocked(player.playernum, PRO_LEADERSHIP) )
+				if ( skill.skillId == PRO_LEADERSHIP )
 				{
-					icon->path = skill.skillIconPathLegend;
+					if ( skillCapstoneUnlocked(player.playernum, PRO_LEADERSHIP) )
+					{
+						icon->path = skill.skillIconPathLegend;
+					}
+					else
+					{
+						icon->path = skill.skillIconPath;
+					}
+					break;
 				}
-				else
-				{
-					icon->path = skill.skillIconPath;
-				}
-				break;
 			}
 		}
 
@@ -9008,6 +9207,94 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		promptPos.w = std::max(cursor->pos.x + cursor->pos.w, promptPos.w);
 		promptPos.h = std::max(cursor->pos.y + cursor->pos.h, promptPos.h);
 	}
+
+	auto prevGlyphPos = glyph->pos;
+	if ( false && !text->isDisabled() && !glyph->disabled )
+	{
+		if ( CalloutMenu[player.playernum].calloutMenuIsOpen() )
+		{
+			auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding("Call Out", false);
+			auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding("Call Out", true);
+
+			if ( ticks % 50 < 25 )
+			{
+				glyphCallout->path = glyphPathPressed;
+				if ( auto imgGet = Image::get(glyphCallout->path.c_str()) )
+				{
+					glyphCallout->disabled = false;
+					glyphCallout->pos = SDL_Rect{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+					glyphCallout->pos.y = std::max(icon->pos.y + icon->pos.h - 4, prevGlyphPos.y + prevGlyphPos.h) + 4;
+					glyphCallout->pos.x = prevGlyphPos.x + prevGlyphPos.w / 2 - glyphCallout->pos.w / 2;
+					if ( glyphCallout->pos.x % 2 == 1 )
+					{
+						++glyphCallout->pos.x;
+					}
+					if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
+					{
+						const int unpressedHeight = imgGetUnpressed->getHeight();
+						if ( unpressedHeight != glyphCallout->pos.h )
+						{
+							glyphCallout->pos.y -= (glyphCallout->pos.h - unpressedHeight);
+						}
+
+						/*if ( unpressedHeight != nominalGlyphHeight )
+						{
+							prevGlyphPos.y -= (unpressedHeight - nominalGlyphHeight) / 2;
+						}*/
+					}
+					textPos.x += prevGlyphPos.w;
+				}
+			}
+			else
+			{
+				glyphCallout->path = glyphPathUnpressed;
+				if ( auto imgGet = Image::get(glyphCallout->path.c_str()) )
+				{
+					glyphCallout->disabled = false;
+					glyphCallout->pos = SDL_Rect{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+					glyphCallout->pos.y = std::max(icon->pos.y + icon->pos.h - 4, prevGlyphPos.y + prevGlyphPos.h) + 4;
+					glyphCallout->pos.x = prevGlyphPos.x + prevGlyphPos.w / 2 - glyphCallout->pos.w / 2;
+					if ( glyphCallout->pos.x % 2 == 1 )
+					{
+						++glyphCallout->pos.x;
+					}
+				}
+			}
+
+			if ( !glyphCallout->disabled )
+			{
+				glyphCallout->color = makeColor(255, 255, 255, 255);
+				textCallout->setText(Language::get(6049));
+				textCallout->setColor(makeColor(255, 255, 255, 255));
+				SDL_Rect textPos = text->getSize();
+				textPos.x = glyphCallout->pos.x + glyphCallout->pos.w + 4;
+				textPos.y = glyphCallout->pos.y + 2;
+
+				if ( auto imgGet = Image::get(glyphPathPressed.c_str()) )
+				{
+					if ( imgGet->getHeight() != glyphCallout->pos.h )
+					{
+						textPos.y += (glyphCallout->pos.h - imgGet->getHeight()) / 2;
+					}
+				}
+				if ( glyphCallout->pos.h != nominalGlyphHeight )
+				{
+					textPos.y += (glyphCallout->pos.h - nominalGlyphHeight) / 2;
+				}
+				textPos.w = textCallout->getTextObject()->getWidth();
+				textCallout->setSize(textPos);
+				textCallout->setDisabled(false);
+
+				promptPos.w = std::max(textPos.x + textPos.w, promptPos.w);
+				promptPos.h = std::max(textPos.y + textPos.h, promptPos.h);
+				promptPos.w = std::max(glyphCallout->pos.x + glyphCallout->pos.w, promptPos.w);
+				promptPos.h = std::max(glyphCallout->pos.y + glyphCallout->pos.h, promptPos.h);
+
+				prevGlyphPos = glyphCallout->pos;
+			}
+		}
+	}
+
 	if ( player.worldUI.isEnabled() )
 	{
 		if ( !text->isDisabled() && !glyph->disabled && player.worldUI.tooltipsInRange.size() > 1 )
@@ -9024,8 +9311,8 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					{
 						glyphCycle->disabled = false;
 						glyphCycle->pos = SDL_Rect{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
-						glyphCycle->pos.y = glyph->pos.y + glyph->pos.h + 4;
-						glyphCycle->pos.x = glyph->pos.x + glyph->pos.w / 2 - glyphCycle->pos.w / 2;
+						glyphCycle->pos.y = prevGlyphPos.y + prevGlyphPos.h + 4;
+						glyphCycle->pos.x = prevGlyphPos.x + prevGlyphPos.w / 2 - glyphCycle->pos.w / 2;
 						if ( glyphCycle->pos.x % 2 == 1 )
 						{
 							++glyphCycle->pos.x;
@@ -9043,7 +9330,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 								glyph->pos.y -= (unpressedHeight - nominalGlyphHeight) / 2;
 							}*/
 						}
-						textPos.x += glyph->pos.w;
+						textPos.x += prevGlyphPos.w;
 					}
 				}
 				else
@@ -9053,8 +9340,8 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					{
 						glyphCycle->disabled = false;
 						glyphCycle->pos = SDL_Rect{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
-						glyphCycle->pos.y = glyph->pos.y + glyph->pos.h + 4;
-						glyphCycle->pos.x = glyph->pos.x + glyph->pos.w / 2 - glyphCycle->pos.w / 2;
+						glyphCycle->pos.y = prevGlyphPos.y + prevGlyphPos.h + 4;
+						glyphCycle->pos.x = prevGlyphPos.x + prevGlyphPos.w / 2 - glyphCycle->pos.w / 2;
 						if ( glyphCycle->pos.x % 2 == 1 )
 						{
 							++glyphCycle->pos.x;
@@ -9984,6 +10271,10 @@ void Player::HUD_t::processHUD()
 	{
 		createHPMPBars(player.playernum);
 	}
+	if ( !calloutPromptFrame )
+	{
+		createCalloutPromptFrame(player.playernum);
+	}
 	if ( !enemyBarFrame )
 	{
 		createEnemyBar(player.playernum, enemyBarFrame);
@@ -10016,6 +10307,7 @@ void Player::HUD_t::processHUD()
 	updateXPBar();
 	updateHPBar();
 	updateMPBar();
+	updateCalloutPromptFrame(player.playernum);
 	updateActionPrompts();
 	updateUINavigation();
 	enemyHPDamageBarHandler[player.playernum].cullExpiredHPBars();
@@ -10226,6 +10518,10 @@ void Player::MessageZone_t::processChatbox()
 	{
 		SDL_Rect xpFramePos = player.hud.xpFrame->getSize();
 		topAlignedPaddingY = std::max(topAlignedPaddingY, 4 + std::max(xpFramePos.y, 0) + xpFramePos.h);
+		if ( !(player.bUseCompactGUIHeight() && player.bUseCompactGUIWidth()) )
+		{
+			topAlignedPaddingY += 4;
+		}
 	}
 	SDL_Rect messageboxTopAlignedPos{
 	    topAlignedPaddingX,
@@ -20913,19 +21209,20 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 	::fov = fov;
 
 	//TempTexture* minimapTexture = new TempTexture();
+	auto playerEntity = Player::getPlayerInteractEntity(player);
 
-	if ( players[player] != nullptr && players[player]->entity != nullptr )
+	if ( playerEntity )
 	{
         GL_CHECK_ERR(glClear(GL_DEPTH_BUFFER_BIT));
 
 		static ConsoleVariable<bool> cvar_char_portrait_static_angle("/char_portrait_static_angle", true);
-		view.x = players[player]->entity->x / 16.0 + (.92 * cos(offsetyaw 
-			+ (*cvar_char_portrait_static_angle ? players[player]->entity->yaw : 0)));
-		view.y = players[player]->entity->y / 16.0 + (.92 * sin(offsetyaw 
-			+ (*cvar_char_portrait_static_angle ? players[player]->entity->yaw : 0)));
-		view.z = players[player]->entity->z * 2;
+		view.x = playerEntity->x / 16.0 + (.92 * cos(offsetyaw
+			+ (*cvar_char_portrait_static_angle ? playerEntity->yaw : 0)));
+		view.y = playerEntity->y / 16.0 + (.92 * sin(offsetyaw
+			+ (*cvar_char_portrait_static_angle ? playerEntity->yaw : 0)));
+		view.z = playerEntity->z * 2;
 		view.ang = (offsetyaw - PI
-			+ (*cvar_char_portrait_static_angle ? players[player]->entity->yaw : 0)); //5 * PI / 4;
+			+ (*cvar_char_portrait_static_angle ? playerEntity->yaw : 0)); //5 * PI / 4;
 		view.vang = PI / 20;
 
 		view.winx = pos.x;
@@ -20937,22 +21234,25 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 		view.winw = pos.w;
 		view.winh = pos.h;
 		glBeginCamera(&view, false);
-		bool b = players[player]->entity->flags[BRIGHT];
-        if (!dark) { players[player]->entity->flags[BRIGHT] = true; }
-		if ( !players[player]->entity->flags[INVISIBLE] )
+		bool b = playerEntity->flags[BRIGHT];
+        if (!dark) { playerEntity->flags[BRIGHT] = true; }
+		if ( !playerEntity->flags[INVISIBLE] )
 		{
-			glDrawVoxel(&view, players[player]->entity, REALCOLORS);
+			glDrawVoxel(&view, playerEntity, REALCOLORS);
 		}
-		players[player]->entity->flags[BRIGHT] = b;
+		playerEntity->flags[BRIGHT] = b;
 		int c = 0;
 		if ( multiplayer != CLIENT )
 		{
-			for ( node_t* node = players[player]->entity->children.first; node != nullptr; node = node->next )
+			for ( node_t* node = playerEntity->children.first; node != nullptr; node = node->next )
 			{
-				if ( c == 0 )
+				if ( playerEntity->behavior == &actPlayer )
 				{
-					c++;
-					continue;
+					if ( c == 0 )
+					{
+						c++;
+						continue;
+					}
 				}
 				Entity* entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] )
@@ -20981,21 +21281,34 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 			for ( node_t* node = map.entities->first; node != NULL; node = node->next )
 			{
 				Entity* entity = (Entity*)node->element;
-				if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == player && !entity->flags[INVISIBLE]) || (Sint32)entity->getUID() == -4 )
+				if ( playerEntity->behavior == &actPlayer )
 				{
-					if ( (Sint32)entity->getUID() == -4 ) // torch sprites
+					if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == player && !entity->flags[INVISIBLE]) || (Sint32)entity->getUID() == -4 )
 					{
-                        bool b = entity->flags[BRIGHT];
-                        if (!dark) { entity->flags[BRIGHT] = true; }
-						glDrawSprite(&view, entity, REALCOLORS);
-                        entity->flags[BRIGHT] = b;
+						if ( (Sint32)entity->getUID() == -4 ) // torch sprites
+						{
+							bool b = entity->flags[BRIGHT];
+							if (!dark) { entity->flags[BRIGHT] = true; }
+							glDrawSprite(&view, entity, REALCOLORS);
+							entity->flags[BRIGHT] = b;
+						}
+						else
+						{
+							bool b = entity->flags[BRIGHT];
+							if (!dark) { entity->flags[BRIGHT] = true; }
+							glDrawVoxel(&view, entity, REALCOLORS);
+							entity->flags[BRIGHT] = b;
+						}
 					}
-					else
+				}
+				else if ( playerEntity->behavior == &actDeathGhost )
+				{
+					if ( entity->behavior == &actDeathGhostLimb && entity->skill[2] == player && !entity->flags[INVISIBLE] )
 					{
-                        bool b = entity->flags[BRIGHT];
-                        if (!dark) { entity->flags[BRIGHT] = true; }
+						bool b = entity->flags[BRIGHT];
+						if ( !dark ) { entity->flags[BRIGHT] = true; }
 						glDrawVoxel(&view, entity, REALCOLORS);
-                        entity->flags[BRIGHT] = b;
+						entity->flags[BRIGHT] = b;
 					}
 				}
 			}
