@@ -1870,15 +1870,22 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 
 static bool shouldDrawClouds(const map_t& map, int* cloudtile = nullptr) {
     bool clouds = false;
-    if (cloudtile) {
-        *cloudtile = 77; // hell clouds
-    }
-    if ((!strncmp(map.name, "Hell", 4) || map.skybox != 0) && smoothlighting) {
-        clouds = true;
+#ifdef EDITOR
+    const bool fog = false;
+#else
+    const bool fog = *cvar_fogDistance > 0.f;
+#endif
+    if (!fog) {
         if (cloudtile) {
-            if (strncmp(map.name, "Hell", 4)) {
-                // not a hell map, custom clouds
-                *cloudtile = map.skybox;
+            *cloudtile = 77; // hell clouds
+        }
+        if ((!strncmp(map.name, "Hell", 4) || map.skybox != 0) && smoothlighting) {
+            clouds = true;
+            if (cloudtile) {
+                if (strncmp(map.name, "Hell", 4)) {
+                    // not a hell map, custom clouds
+                    *cloudtile = map.skybox;
+                }
             }
         }
     }
