@@ -8215,14 +8215,17 @@ void Mods::loadModels(int start, int end) {
 		char name[128];
 		fp->gets2(name, sizeof(name));
 		if ( c >= start && c < end ) {
-			if ( polymodels[c].vao ) {
+			if (polymodels[c].vao) {
 				GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
 			}
-			if ( polymodels[c].vbo ) {
-				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
+			if (polymodels[c].positions) {
+				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].positions));
 			}
-			if ( polymodels[c].colors ) {
+			if (polymodels[c].colors) {
 				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
+			}
+			if (polymodels[c].normals) {
+				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].normals));
 			}
 		}
 	}
@@ -8403,11 +8406,14 @@ void Mods::unloadMods(bool force)
 		if (polymodels[c].vao) {
 			GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
 		}
-		if (polymodels[c].vbo) {
-			GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
+		if (polymodels[c].positions) {
+			GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].positions));
 		}
 		if (polymodels[c].colors) {
 			GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
+		}
+		if (polymodels[c].normals) {
+			GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].normals));
 		}
 	}
 	generateVBOs(0, nummodels);
@@ -8464,11 +8470,14 @@ void Mods::loadMods()
 			if (polymodels[c].vao) {
 				GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
 			}
-			if (polymodels[c].vbo) {
-				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
+			if (polymodels[c].positions) {
+				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].positions));
 			}
 			if (polymodels[c].colors) {
 				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
+			}
+			if (polymodels[c].normals) {
+				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].normals));
 			}
 		}
 		generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);

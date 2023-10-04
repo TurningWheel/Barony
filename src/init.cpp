@@ -789,10 +789,6 @@ void Language::reset()
 
 int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 {
-	char filename[128] = { 0 };
-	File* fp;
-	int c;
-
 	// open log file
 	if ( !logfile )
 	{
@@ -800,6 +796,7 @@ int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 	}
 
 	// compose filename
+	char filename[128] = { 0 };
 	snprintf(filename, 127, "lang/%s.txt", lang);
 	std::string langFilepath;
 	if ( PHYSFS_isInit() && PHYSFS_getRealDir(filename) != NULL && !forceLoadBaseDirectory )
@@ -906,6 +903,7 @@ int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 	TTF_SetFontHinting(ttf16, TTF_HINTING_MONO);
 
 	// open language file
+	File* fp;
 	if ( (fp = openDataFile(langFilepath.c_str(), "rb")) == NULL )
 	{
 		printlog("error: unable to load language file: '%s'", langFilepath.c_str());
@@ -1251,12 +1249,15 @@ int deinitApp()
                 if (polymodels[c].vao) {
                     GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
                 }
-				if (polymodels[c].vbo) {
-                    GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
-				}
-				if (polymodels[c].colors) {
+                if (polymodels[c].positions) {
+                    GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].positions));
+                }
+                if (polymodels[c].colors) {
                     GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
-				}
+                }
+                if (polymodels[c].normals) {
+                    GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].normals));
+                }
 			}
 		}
 		free(polymodels);

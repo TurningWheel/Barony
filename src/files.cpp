@@ -4142,20 +4142,30 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		{
 			node_t* node = list_Node(&quads, (int)i / 2);
 			polyquad_t* quad = (polyquad_t*)node->element;
-			polymodels[c].faces[i].r = quad->r;
-			polymodels[c].faces[i].g = quad->g;
-			polymodels[c].faces[i].b = quad->b;
+            auto& face = polymodels[c].faces[i];
+            switch (quad->side) {
+            case 0: face.normal = { 1.f,  0.f,  0.f}; break; // front
+            case 1: face.normal = {-1.f,  0.f,  0.f}; break; // back
+            case 2: face.normal = { 0.f,  1.f,  0.f}; break; // right
+            case 3: face.normal = { 0.f, -1.f,  0.f}; break; // left
+            case 4: face.normal = { 0.f,  0.f,  1.f}; break; // bottom
+            case 5: face.normal = { 0.f,  0.f, -1.f}; break; // top
+            default: printlog("[MODELS] this should never happen!"); assert(0); break;
+            }
+			face.r = quad->r;
+			face.g = quad->g;
+			face.b = quad->b;
 			if ( i % 2 )
 			{
-				polymodels[c].faces[i].vertex[0] = quad->vertex[0];
-				polymodels[c].faces[i].vertex[1] = quad->vertex[1];
-				polymodels[c].faces[i].vertex[2] = quad->vertex[2];
+				face.vertex[0] = quad->vertex[0];
+				face.vertex[1] = quad->vertex[1];
+				face.vertex[2] = quad->vertex[2];
 			}
 			else
 			{
-				polymodels[c].faces[i].vertex[0] = quad->vertex[0];
-				polymodels[c].faces[i].vertex[1] = quad->vertex[2];
-				polymodels[c].faces[i].vertex[2] = quad->vertex[3];
+				face.vertex[0] = quad->vertex[0];
+				face.vertex[1] = quad->vertex[2];
+				face.vertex[2] = quad->vertex[3];
 			}
 		}
 
@@ -4205,15 +4215,18 @@ void reloadModels(int start, int end) {
 		char name[128];
 		fp->gets2(name, sizeof(name));
 		if ( c >= start && c < end ) {
-			if ( polymodels[c].vao ) {
+			if (polymodels[c].vao) {
 				GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
 			}
-			if ( polymodels[c].vbo ) {
-				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
-			}
-			if ( polymodels[c].colors ) {
-				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
-			}
+            if (polymodels[c].positions) {
+                GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].positions));
+            }
+            if (polymodels[c].colors) {
+                GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
+            }
+            if (polymodels[c].normals) {
+                GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].normals));
+            }
 		}
 	}
 
@@ -4265,17 +4278,21 @@ void generateVBOs(int start, int end)
 	std::unique_ptr<GLuint[]> vaos(new GLuint[count]);
 	GL_CHECK_ERR(glGenVertexArrays(count, vaos.get()));
 
-	std::unique_ptr<GLuint[]> vbos(new GLuint[count]);
-	GL_CHECK_ERR(glGenBuffers(count, vbos.get()));
+	std::unique_ptr<GLuint[]> position_vbos(new GLuint[count]);
+	GL_CHECK_ERR(glGenBuffers(count, position_vbos.get()));
 
-	std::unique_ptr<GLuint[]> color_buffers(new GLuint[count]);
-	GL_CHECK_ERR(glGenBuffers(count, color_buffers.get()));
+	std::unique_ptr<GLuint[]> color_vbos(new GLuint[count]);
+	GL_CHECK_ERR(glGenBuffers(count, color_vbos.get()));
+
+	std::unique_ptr<GLuint[]> normal_vbos(new GLuint[count]);
+	GL_CHECK_ERR(glGenBuffers(count, normal_vbos.get()));
 
 	for ( uint64_t c = (uint64_t)start; c < (uint64_t)end; ++c )
 	{
 		polymodel_t* model = &polymodels[c];
-		std::unique_ptr<GLfloat[]> points(new GLfloat[9 * model->numfaces]);
+		std::unique_ptr<GLfloat[]> positions(new GLfloat[9 * model->numfaces]);
 		std::unique_ptr<GLfloat[]> colors(new GLfloat[9 * model->numfaces]);
+		std::unique_ptr<GLfloat[]> normals(new GLfloat[9 * model->numfaces]);
 		for ( uint64_t i = 0; i < (uint64_t)model->numfaces; i++ )
 		{
 			const polytriangle_t* face = &model->faces[i];
@@ -4284,27 +4301,32 @@ void generateVBOs(int start, int end)
 				const uint64_t data_index = i * 9 + vert_index * 3;
 				const vertex_t* vert = &face->vertex[vert_index];
 
-				points[data_index] = vert->x;
-				points[data_index + 1] = -vert->z;
-				points[data_index + 2] = vert->y;
+				positions[data_index] = vert->x;
+				positions[data_index + 1] = -vert->z;
+				positions[data_index + 2] = vert->y;
 
 				colors[data_index] = face->r / 255.f;
 				colors[data_index + 1] = face->g / 255.f;
 				colors[data_index + 2] = face->b / 255.f;
+    
+				normals[data_index] = face->normal.x;
+				normals[data_index + 1] = -face->normal.z;
+				normals[data_index + 2] = face->normal.y;
 			}
 		}
 		model->vao = vaos[c - start];
-		model->vbo = vbos[c - start];
-		model->colors = color_buffers[c - start];
+		model->positions = position_vbos[c - start];
+		model->colors = color_vbos[c - start];
+		model->normals = normal_vbos[c - start];
 
 		// NOTE: OpenGL 2.1 does not support vertex array objects!
 #ifdef VERTEX_ARRAYS_ENABLED
 		GL_CHECK_ERR(glBindVertexArray(model->vao));
 #endif
 
-		// vertex data
-		GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, model->vbo));
-		GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, points.get(), GL_STATIC_DRAW));
+		// position data
+		GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, model->positions));
+		GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, positions.get(), GL_STATIC_DRAW));
 #ifdef VERTEX_ARRAYS_ENABLED
 		GL_CHECK_ERR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
 		GL_CHECK_ERR(glEnableVertexAttribArray(0));
@@ -4316,6 +4338,14 @@ void generateVBOs(int start, int end)
 #ifdef VERTEX_ARRAYS_ENABLED
 		GL_CHECK_ERR(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
 		GL_CHECK_ERR(glEnableVertexAttribArray(1));
+#endif
+
+		// normal data
+		GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, model->normals));
+		GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, normals.get(), GL_STATIC_DRAW));
+#ifdef VERTEX_ARRAYS_ENABLED
+		GL_CHECK_ERR(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
+		GL_CHECK_ERR(glEnableVertexAttribArray(2));
 #endif
 
 #ifndef VERTEX_ARRAYS_ENABLED
