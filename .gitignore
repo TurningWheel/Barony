@@ -76,3 +76,5 @@ xcode/Barony/Barony.xcodeproj/project.xcworkspace/*
 xcode/Barony/Barony.xcodeproj/xcuserdata/*
 *.ps1
 !LICENSE.nativefiledialog.txt
+#Ignore Jetbrains IDE project directories
+/.idea

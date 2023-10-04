@@ -9,7 +9,7 @@
 #  PNG_LIBRARY, where to find the PNG library.
 # None of the above will be defined unles zlib can be found.
 # PNG depends on Zlib
-INCLUDE(FindZLIB)
+find_package(ZLIB QUIET REQUIRED)
 
 IF(ZLIB_FOUND)
   FIND_PATH(PNG_PNG_INCLUDE_DIR png.h
