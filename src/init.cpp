@@ -453,6 +453,7 @@ int initApp(char const * const title, int fullscreen)
     if (!hdrEnabled) {
         main_framebuffer.bindForWriting();
     }
+    GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 1.f));
     GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	//SDL_EnableUNICODE(1);
@@ -1696,6 +1697,7 @@ bool changeVideoMode(int new_xres, int new_yres)
     if (!hdrEnabled) {
         main_framebuffer.bindForWriting();
     }
+    GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 1.f));
     GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	// success
@@ -1734,6 +1736,7 @@ bool resizeWindow(int new_xres, int new_yres)
     if (!hdrEnabled) {
         main_framebuffer.bindForWriting();
     }
+    GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 1.f));
     GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	// success
