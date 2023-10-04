@@ -14,9 +14,6 @@
 #include <string>
 #include <map>
 
-#include "../main.hpp"
-#include "../draw.hpp"
-
 const char* FindConsoleCommand(const char* str, int index);
 
 /*
