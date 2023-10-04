@@ -306,6 +306,7 @@ void Frame::predraw() {
 	}
 	gui_fb.bindForWriting();
 
+    GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 0.f));
     GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
     GL_CHECK_ERR(glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA));
 }
@@ -327,6 +328,7 @@ void Frame::postdraw() {
     gui_fb.bindForReading();
     if (*ui_downscale) {
         gui_fb_downscaled.bindForWriting();
+        GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 0.f));
         GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         gui_fb.draw();
         gui_fb_downscaled.unbindForWriting();
@@ -335,6 +337,7 @@ void Frame::postdraw() {
     }
     else if (*ui_upscale) {
         gui_fb_upscaled.bindForWriting();
+        GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 0.f));
         GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         gui_fb.draw();
         gui_fb_upscaled.unbindForWriting();
@@ -358,6 +361,7 @@ void Frame::predraw() {
 		return;
 	}
 	gui_fb.bindForWriting();
+    GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 0.f));
     GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 }
 

@@ -99,6 +99,7 @@ static void buildVoxelShader(
 	shader.compile(f, size_f, Shader::Type::Fragment);
 	shader.bindAttribLocation("iPosition", 0);
 	shader.bindAttribLocation("iColor", 1);
+	shader.bindAttribLocation("iNormal", 2);
 	shader.link();
     if (lightmap) {
         shader.bind();
@@ -180,7 +181,7 @@ void createCommonDrawResources() {
     static const char fb_hdr_fragment_glsl[] =
         "in vec2 TexCoord;"
         "uniform sampler2D uTexture;"
-        "uniform float uBrightness;"
+        "uniform vec4 uBrightness;"
         "uniform float uGamma;"
         "uniform float uExposure;"
         "out vec4 FragColor;"
@@ -206,7 +207,7 @@ void createCommonDrawResources() {
         // gamma correction
         "mapped = pow(mapped, vec3(1.0 / uGamma));"
     
-        "FragColor = vec4(mapped * uBrightness, color.a);"
+        "FragColor = vec4(mapped, color.a) * uBrightness;"
         "}";
     
     framebuffer::hdrShader.init("hdr framebuffer");
@@ -228,27 +229,34 @@ void createCommonDrawResources() {
     static const char vox_vertex_glsl[] =
         "in vec3 iPosition;"
         "in vec3 iColor;"
+        "in vec3 iNormal;"
         "uniform mat4 uProj;"
         "uniform mat4 uView;"
         "uniform mat4 uModel;"
         "out vec3 Color;"
         "out vec4 WorldPos;"
+        "out vec3 Normal;"
     
         "void main() {"
         "WorldPos = uModel * vec4(iPosition, 1.0);"
         "gl_Position = uProj * uView * WorldPos;"
         "Color = iColor;"
+        "Normal = (uModel * vec4(iNormal, 0.0)).xyz;"
         "}";
 
     static const char vox_fragment_glsl[] =
         "in vec3 Color;"
+        "in vec3 Normal;"
         "in vec4 WorldPos;"
         "uniform mat4 uColorRemap;"
         "uniform vec4 uLightFactor;"
         "uniform vec4 uLightColor;"
         "uniform vec4 uColorAdd;"
+        "uniform vec4 uCameraPos;"
         "uniform sampler2D uLightmap;"
         "uniform vec2 uMapDims;"
+        "uniform float uFogDistance;"
+        "uniform vec4 uFogColor;"
         "out vec4 FragColor;"
     
         "void main() {"
@@ -259,6 +267,12 @@ void createCommonDrawResources() {
         "vec2 TexCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
         "vec4 Lightmap = texture(uLightmap, TexCoord);"
         "FragColor = vec4(Remapped, 1.0) * uLightFactor * (Lightmap + uLightColor) + uColorAdd;"
+        
+        "if (uFogDistance > 0.0) {"
+        "float dist = length(uCameraPos.xyz - WorldPos.xyz);"
+        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, min(dist, uFogDistance) / uFogDistance);"
+        "FragColor = vec4(mixed, FragColor.a);"
+        "}"
         "}";
 
 	buildVoxelShader(voxelShader, "voxelShader", true,
@@ -267,11 +281,15 @@ void createCommonDrawResources() {
     
     static const char vox_bright_fragment_glsl[] =
         "in vec3 Color;"
+        "in vec3 Normal;"
         "in vec4 WorldPos;"
         "uniform mat4 uColorRemap;"
         "uniform vec4 uLightFactor;"
         "uniform vec4 uLightColor;"
         "uniform vec4 uColorAdd;"
+        "uniform vec4 uCameraPos;"
+        "uniform float uFogDistance;"
+        "uniform vec4 uFogColor;"
         "out vec4 FragColor;"
     
         "void main() {"
@@ -280,6 +298,12 @@ void createCommonDrawResources() {
         "    (uColorRemap[1].rgb * Color.g)+"
         "    (uColorRemap[2].rgb * Color.b);"
         "FragColor = vec4(Remapped, 1.0) * uLightFactor * uLightColor + uColorAdd;"
+        
+        "if (uFogDistance > 0.0) {"
+        "float dist = length(uCameraPos.xyz - WorldPos.xyz);"
+        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, min(dist, uFogDistance) / uFogDistance);"
+        "FragColor = vec4(mixed, FragColor.a);"
+        "}"
         "}";
 
     buildVoxelShader(voxelBrightShader, "voxelBrightShader", false,
@@ -288,14 +312,18 @@ void createCommonDrawResources() {
 
 	static const char vox_dithered_fragment_glsl[] =
 		"in vec3 Color;"
+        "in vec3 Normal;"
 		"in vec4 WorldPos;"
         "uniform float uDitherAmount;"
 		"uniform mat4 uColorRemap;"
         "uniform vec4 uLightFactor;"
         "uniform vec4 uLightColor;"
         "uniform vec4 uColorAdd;"
+        "uniform vec4 uCameraPos;"
         "uniform sampler2D uLightmap;"
 		"uniform vec2 uMapDims;"
+        "uniform float uFogDistance;"
+        "uniform vec4 uFogColor;"
         "out vec4 FragColor;"
     
         "void dither(ivec2 pos, float amount) {"
@@ -319,6 +347,12 @@ void createCommonDrawResources() {
 		"vec2 TexCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
         "vec4 Lightmap = texture(uLightmap, TexCoord);"
         "FragColor = vec4(Remapped, 1.0) * uLightFactor * (Lightmap + uLightColor) + uColorAdd;"
+        
+        "if (uFogDistance > 0.0) {"
+        "float dist = length(uCameraPos.xyz - WorldPos.xyz);"
+        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, min(dist, uFogDistance) / uFogDistance);"
+        "FragColor = vec4(mixed, FragColor.a);"
+        "}"
 		"}";
 
 	buildVoxelShader(voxelDitheredShader, "voxelDitheredShader", true,
@@ -352,12 +386,21 @@ void createCommonDrawResources() {
         "uniform sampler2D uTextures;"
         "uniform sampler2D uLightmap;"
         "uniform vec2 uMapDims;"
+        "uniform vec4 uCameraPos;"
+        "uniform float uFogDistance;"
+        "uniform vec4 uFogColor;"
         "out vec4 FragColor;"
     
         "void main() {"
         "vec2 LightCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
         "vec4 Lightmap = texture(uLightmap, LightCoord);"
         "FragColor = texture(uTextures, TexCoord) * vec4(Color, 1.f) * uLightFactor * Lightmap;"
+        
+        "if (uFogDistance > 0.0) {"
+        "float dist = length(uCameraPos.xyz - WorldPos.xyz);"
+        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, min(dist, uFogDistance) / uFogDistance);"
+        "FragColor = vec4(mixed, FragColor.a);"
+        "}"
         "}";
     
     buildWorldShader(worldShader, "worldShader", true,
@@ -373,6 +416,9 @@ void createCommonDrawResources() {
         "uniform sampler2D uTextures;"
         "uniform sampler2D uLightmap;"
         "uniform vec2 uMapDims;"
+        "uniform vec4 uCameraPos;"
+        "uniform float uFogDistance;"
+        "uniform vec4 uFogColor;"
         "out vec4 FragColor;"
     
         "void dither(ivec2 pos, float amount) {"
@@ -392,6 +438,12 @@ void createCommonDrawResources() {
         "vec2 LightCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
         "vec4 Lightmap = texture(uLightmap, LightCoord);"
         "FragColor = texture(uTextures, TexCoord) * vec4(Color, 1.f) * uLightFactor * Lightmap;"
+        
+        "if (uFogDistance > 0.0) {"
+        "float dist = length(uCameraPos.xyz - WorldPos.xyz);"
+        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, min(dist, uFogDistance) / uFogDistance);"
+        "FragColor = vec4(mixed, FragColor.a);"
+        "}"
         "}";
     
     buildWorldShader(worldDitheredShader, "worldDitheredShader", true,
@@ -479,9 +531,12 @@ void createCommonDrawResources() {
         "uniform vec4 uLightFactor;"
         "uniform vec4 uLightColor;"
         "uniform vec4 uColorAdd;"
+        "uniform vec4 uCameraPos;"
         "uniform sampler2D uTexture;"
         "uniform sampler2D uLightmap;"
         "uniform vec2 uMapDims;"
+        "uniform float uFogDistance;"
+        "uniform vec4 uFogColor;"
         "out vec4 FragColor;"
     
         "void main() {"
@@ -490,6 +545,12 @@ void createCommonDrawResources() {
         "vec4 Lightmap = texture(uLightmap, LightCoord);"
         "FragColor = Texture * uLightFactor * (Lightmap + uLightColor) + uColorAdd;"
         "if (FragColor.a <= 0) discard;"
+        
+        "if (uFogDistance > 0.0) {"
+        "float dist = length(uCameraPos.xyz - WorldPos.xyz);"
+        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, min(dist, uFogDistance) / uFogDistance);"
+        "FragColor = vec4(mixed, FragColor.a);"
+        "}"
         "}";
 
     buildSpriteShader(spriteShader, "spriteShader", true,
@@ -503,9 +564,12 @@ void createCommonDrawResources() {
         "uniform vec4 uLightFactor;"
         "uniform vec4 uLightColor;"
         "uniform vec4 uColorAdd;"
+        "uniform vec4 uCameraPos;"
         "uniform sampler2D uTexture;"
         "uniform sampler2D uLightmap;"
         "uniform vec2 uMapDims;"
+        "uniform float uFogDistance;"
+        "uniform vec4 uFogColor;"
         "out vec4 FragColor;"
     
         "void dither(ivec2 pos, float amount) {"
@@ -527,41 +591,44 @@ void createCommonDrawResources() {
         "vec4 Lightmap = texture(uLightmap, LightCoord);"
         "FragColor = Texture * uLightFactor * (Lightmap + uLightColor) + uColorAdd;"
         "if (FragColor.a <= 0) discard;"
+        
+        "if (uFogDistance > 0.0) {"
+        "float dist = length(uCameraPos.xyz - WorldPos.xyz);"
+        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, min(dist, uFogDistance) / uFogDistance);"
+        "FragColor = vec4(mixed, FragColor.a);"
+        "}"
         "}";
 
     buildSpriteShader(spriteDitheredShader, "spriteDitheredShader", true,
         sprite_vertex_glsl, sizeof(sprite_vertex_glsl),
         sprite_dithered_fragment_glsl, sizeof(sprite_dithered_fragment_glsl));
-    
-	static const char sprite_bright_vertex_glsl[] =
-		"in vec3 iPosition;"
-		"in vec2 iTexCoord;"
-		"uniform mat4 uProj;"
-		"uniform mat4 uView;"
-		"uniform mat4 uModel;"
-		"out vec2 TexCoord;"
-
-		"void main() {"
-		"gl_Position = uProj * uView * uModel * vec4(iPosition, 1.0);"
-        "TexCoord = iTexCoord;"
-        "}";
 
     static const char sprite_bright_fragment_glsl[] =
+        "in vec4 WorldPos;"
         "in vec2 TexCoord;"
         "uniform vec4 uLightFactor;"
         "uniform vec4 uLightColor;"
         "uniform vec4 uColorAdd;"
+        "uniform vec4 uCameraPos;"
         "uniform sampler2D uTexture;"
+        "uniform float uFogDistance;"
+        "uniform vec4 uFogColor;"
         "out vec4 FragColor;"
     
         "void main() {"
         "vec4 Texture = texture(uTexture, TexCoord);"
         "FragColor = Texture * uLightFactor * uLightColor + uColorAdd;"
         "if (FragColor.a <= 0) discard;"
+        
+        "if (uFogDistance > 0.0) {"
+        "float dist = length(uCameraPos.xyz - WorldPos.xyz);"
+        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, min(dist, uFogDistance) / uFogDistance);"
+        "FragColor = vec4(mixed, FragColor.a);"
+        "}"
         "}";
 
     buildSpriteShader(spriteBrightShader, "spriteBrightShader", false,
-        sprite_bright_vertex_glsl, sizeof(sprite_bright_vertex_glsl),
+        sprite_vertex_glsl, sizeof(sprite_vertex_glsl),
         sprite_bright_fragment_glsl, sizeof(sprite_bright_fragment_glsl));
     
     spriteMesh.init();
@@ -815,9 +882,9 @@ void framebuffer::draw(float brightness) {
 	mesh.draw();
 }
 
-void framebuffer::hdrDraw(float brightness, float gamma, float exposure) {
+void framebuffer::hdrDraw(const Vector4& brightness, float gamma, float exposure) {
     hdrShader.bind();
-    GL_CHECK_ERR(glUniform1f(hdrShader.uniform("uBrightness"), brightness));
+    GL_CHECK_ERR(glUniform4fv(hdrShader.uniform("uBrightness"), 1, (float*)&brightness));
     GL_CHECK_ERR(glUniform1f(hdrShader.uniform("uGamma"), gamma));
     GL_CHECK_ERR(glUniform1f(hdrShader.uniform("uExposure"), exposure));
     mesh.draw();
@@ -1582,8 +1649,8 @@ void drawForeground(long camx, long camy)
 
 void drawClearBuffers()
 {
+    GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 1.f));
     GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-	drawRect(NULL, 0, 255);
 }
 
 /*-------------------------------------------------------------------------------

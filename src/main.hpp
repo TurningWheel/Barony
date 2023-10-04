@@ -571,6 +571,7 @@ typedef struct polyquad_t
 typedef struct polytriangle_t
 {
 	vertex_t vertex[3];
+    vertex_t normal;
 	Uint8 r, g, b;
 } polytriangle_t;
 
@@ -580,8 +581,11 @@ typedef struct polymodel_t
 	polytriangle_t* faces;
 	uint64_t numfaces;
     GLuint vao;
-	GLuint vbo;
+    
+    // vbos
+	GLuint positions;
 	GLuint colors;
+    GLuint normals;
 	//GLuint colors_shifted;
 	//GLuint grayscale_colors;
 	//GLuint grayscale_colors_shifted;

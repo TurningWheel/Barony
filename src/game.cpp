@@ -6527,17 +6527,6 @@ int main(int argc, char** argv)
 		}
 		printlog("Data path is %s", datadir);
 		printlog("Output path is %s", outputdir);
-
-		// load default language file (english)
-		if ( Language::loadLanguage("en", true) )
-		{
-			printlog("Fatal error: failed to load default language file!\n");
-			if (logfile)
-			{
-				fclose(logfile);
-			}
-			exit(1);
-		}
         
         // init sdl
         Uint32 init_flags = SDL_INIT_VIDEO | SDL_INIT_EVENTS;
@@ -6548,9 +6537,9 @@ int main(int argc, char** argv)
             return 1;
         }
 
+        // load game config
 		Input::defaultBindings();
 		MainMenu::randomizeUsername();
-
         MainMenu::settingsReset();
         MainMenu::settingsApply();
 		bool load_successful = MainMenu::settingsLoad();
@@ -6559,6 +6548,17 @@ int main(int argc, char** argv)
 		}
 		else {
 			skipintro = false;
+		}
+
+		// load default language file (english)
+		if ( Language::loadLanguage("en", true) )
+		{
+			printlog("Fatal error: failed to load default language file!\n");
+			if (logfile)
+			{
+				fclose(logfile);
+			}
+			exit(1);
 		}
 
 		// initialize map

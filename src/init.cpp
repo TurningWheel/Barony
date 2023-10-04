@@ -453,6 +453,7 @@ int initApp(char const * const title, int fullscreen)
     if (!hdrEnabled) {
         main_framebuffer.bindForWriting();
     }
+    GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 1.f));
     GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	//SDL_EnableUNICODE(1);
@@ -789,10 +790,6 @@ void Language::reset()
 
 int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 {
-	char filename[128] = { 0 };
-	File* fp;
-	int c;
-
 	// open log file
 	if ( !logfile )
 	{
@@ -800,6 +797,7 @@ int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 	}
 
 	// compose filename
+	char filename[128] = { 0 };
 	snprintf(filename, 127, "lang/%s.txt", lang);
 	std::string langFilepath;
 	if ( PHYSFS_isInit() && PHYSFS_getRealDir(filename) != NULL && !forceLoadBaseDirectory )
@@ -906,6 +904,7 @@ int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 	TTF_SetFontHinting(ttf16, TTF_HINTING_MONO);
 
 	// open language file
+	File* fp;
 	if ( (fp = openDataFile(langFilepath.c_str(), "rb")) == NULL )
 	{
 		printlog("error: unable to load language file: '%s'", langFilepath.c_str());
@@ -1251,12 +1250,15 @@ int deinitApp()
                 if (polymodels[c].vao) {
                     GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
                 }
-				if (polymodels[c].vbo) {
-                    GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
-				}
-				if (polymodels[c].colors) {
+                if (polymodels[c].positions) {
+                    GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].positions));
+                }
+                if (polymodels[c].colors) {
                     GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
-				}
+                }
+                if (polymodels[c].normals) {
+                    GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].normals));
+                }
 			}
 		}
 		free(polymodels);
@@ -1695,6 +1697,7 @@ bool changeVideoMode(int new_xres, int new_yres)
     if (!hdrEnabled) {
         main_framebuffer.bindForWriting();
     }
+    GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 1.f));
     GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	// success
@@ -1733,6 +1736,7 @@ bool resizeWindow(int new_xres, int new_yres)
     if (!hdrEnabled) {
         main_framebuffer.bindForWriting();
     }
+    GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 1.f));
     GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	// success

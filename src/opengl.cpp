@@ -677,11 +677,26 @@ void beginGraphics() {
     updateChunks();
 }
 
+#ifndef EDITOR
+static ConsoleVariable<float> cvar_fogDistance("/fog_distance", 0.f);
+static ConsoleVariable<Vector4> cvar_fogColor("/fog_color", {0.f, 0.f, 0.f, 0.f});
+#endif
+
 static void uploadUniforms(Shader& shader, float* proj, float* view, float* mapDims) {
     shader.bind();
     if (proj) { GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, false, proj)); }
     if (view) { GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uView"), 1, false, view)); }
     if (mapDims) { GL_CHECK_ERR(glUniform2fv(shader.uniform("uMapDims"), 1, mapDims)); }
+    
+#ifdef EDITOR
+    float fogDistance = 0.f;
+    float fogColor[4] = { 1.f, 1.f, 1.f, 1.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uFogColor"), 1, fogColor));
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uFogDistance"), 1, fogDistance));
+#else
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uFogColor"), 1, (float*)&*cvar_fogColor));
+    GL_CHECK_ERR(glUniform1f(shader.uniform("uFogDistance"), *cvar_fogDistance));
+#endif
 }
 
 // hsv values:
@@ -726,6 +741,8 @@ static vec4_t* HSVtoRGB(vec4_t* result, const vec4_t* hsv){
 }
 
 static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, int mode, bool remap) {
+    const float cameraPos[4] = {(float)camera->x * 32.f, -(float)camera->z, (float)camera->y * 32.f, 1.f};
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uCameraPos"), 1, cameraPos));
     if (mode == REALCOLORS) {
         if (remap) {
             bool doGrayScale = false;
@@ -862,6 +879,7 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
     }
 }
 
+constexpr Vector4 defaultBrightness = {1.f, 1.f, 1.f, 1.f};
 constexpr float defaultGamma = 0.75f;           // default gamma level: 75%
 constexpr float defaultExposure = 0.5f;         // default exposure level: 50%
 constexpr float defaultAdjustmentRate = 0.1f;   // how fast your eyes adjust
@@ -883,6 +901,7 @@ bool hdrEnabled = true;
 static ConsoleVariable<bool> cvar_hdrMultithread("/hdr_multithread", defaultMultithread);
 static ConsoleVariable<float> cvar_hdrExposure("/hdr_exposure", defaultExposure);
 static ConsoleVariable<float> cvar_hdrGamma("/hdr_gamma", defaultGamma);
+static ConsoleVariable<Vector4> cvar_hdrBrightness("/hdr_brightness", defaultBrightness);
 static ConsoleVariable<float> cvar_hdrAdjustment("/hdr_adjust_rate", defaultAdjustmentRate);
 static ConsoleVariable<float> cvar_hdrLimitHigh("/hdr_limit_high", defaultLimitHigh);
 static ConsoleVariable<float> cvar_hdrLimitLow("/hdr_limit_low", defaultLimitLow);
@@ -902,8 +921,10 @@ void glBeginCamera(view_t* camera, bool useHDR)
     // setup viewport
 #ifdef EDITOR
     const bool hdr = useHDR;
+    const auto fog_color = Vector4{0.f, 0.f, 0.f, 0.f};
 #else
     const bool hdr = useHDR ? *MainMenu::cvar_hdrEnabled : false;
+    const auto& fog_color = *cvar_fogColor;
 #endif
     
     if (hdr) {
@@ -911,6 +932,7 @@ void glBeginCamera(view_t* camera, bool useHDR)
         const int fbIndex = camera->drawnFrames % numFbs;
         camera->fb[fbIndex].init(camera->winw, camera->winh, GL_LINEAR, GL_LINEAR);
         camera->fb[fbIndex].bindForWriting();
+        GL_CHECK_ERR(glClearColor(fog_color.x, fog_color.y, fog_color.z, fog_color.w));
         GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         GL_CHECK_ERR(glScissor(0, 0, camera->winw, camera->winh));
     } else {
@@ -994,6 +1016,7 @@ void glEndCamera(view_t* camera, bool useHDR)
     const bool hdr_multithread = defaultMultithread;
     const float hdr_exposure = defaultExposure;
     const float hdr_gamma = defaultGamma;
+    const Vector4& hdr_brightness = defaultBrightness;
     const float hdr_adjustment_rate = defaultAdjustmentRate;
     const float hdr_limit_high = defaultLimitHigh;
     const float hdr_limit_low = defaultLimitLow;
@@ -1004,6 +1027,7 @@ void glEndCamera(view_t* camera, bool useHDR)
     const bool hdr_multithread = *cvar_hdrMultithread;
     const float hdr_exposure = *cvar_hdrExposure;
     const float hdr_gamma = *cvar_hdrGamma;
+    const Vector4& hdr_brightness = *cvar_hdrBrightness;
     const float hdr_adjustment_rate = *cvar_hdrAdjustment;
     const float hdr_limit_high = *cvar_hdrLimitHigh;
     const float hdr_limit_low = *cvar_hdrLimitLow;
@@ -1094,7 +1118,7 @@ void glEndCamera(view_t* camera, bool useHDR)
         }
         camera->fb[fbIndex].unlock();
         const float exposure = std::min(std::max(hdr_limit_low, hdr_exposure / camera->luminance), hdr_limit_high);
-        const float brightness = 1.f;
+        const auto& brightness = hdr_brightness;
         const float gamma = hdr_gamma * vidgamma;
         
         // blit framebuffer
@@ -1204,6 +1228,8 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
         GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
         const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
         GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
+        const float cameraPos[4] = {(float)camera->x * 32.f, -(float)camera->z, (float)camera->y * 32.f, 1.f};
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uCameraPos"), 1, cameraPos));
     } else {
         uploadLightUniforms(camera, shader, entity, mode, true);
     }
@@ -1219,6 +1245,10 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors));
     GL_CHECK_ERR(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
     GL_CHECK_ERR(glEnableVertexAttribArray(1));
+    
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].normals));
+    GL_CHECK_ERR(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(2));
 #endif
     
     GL_CHECK_ERR(glDrawArrays(GL_TRIANGLES, 0, (int)(3 * polymodels[modelindex].numfaces)));
@@ -1228,6 +1258,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
 #else
     GL_CHECK_ERR(glDisableVertexAttribArray(0));
     GL_CHECK_ERR(glDisableVertexAttribArray(1));
+    GL_CHECK_ERR(glDisableVertexAttribArray(2));
 #endif
     
     // reset GL state
@@ -1362,6 +1393,8 @@ void glDrawEnemyBarSprite(view_t* camera, int mode, int playerViewport, void* en
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
     const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
+    const float cameraPos[4] = {(float)camera->x * 32.f, -(float)camera->z, (float)camera->y * 32.f, 1.f};
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uCameraPos"), 1, cameraPos));
 
     // draw
     spriteMesh.draw();
@@ -1462,6 +1495,8 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
     const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
+    const float cameraPos[4] = {(float)camera->x * 32.f, -(float)camera->z, (float)camera->y * 32.f, 1.f};
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uCameraPos"), 1, cameraPos));
 
     // draw
     spriteMesh.draw();
@@ -1599,6 +1634,8 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
     const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
+    const float cameraPos[4] = {(float)camera->x * 32.f, -(float)camera->z, (float)camera->y * 32.f, 1.f};
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uCameraPos"), 1, cameraPos));
     
     // draw
     spriteMesh.draw();
@@ -1689,6 +1726,8 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
         GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
         const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
         GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
+        const float cameraPos[4] = {(float)camera->x * 32.f, -(float)camera->z, (float)camera->y * 32.f, 1.f};
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uCameraPos"), 1, cameraPos));
     } else {
         uploadLightUniforms(camera, shader, entity, mode, false);
     }
@@ -1808,6 +1847,8 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
     const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
+    const float cameraPos[4] = {(float)camera->x * 32.f, -(float)camera->z, (float)camera->y * 32.f, 1.f};
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uCameraPos"), 1, cameraPos));
 
     // draw
     spriteMesh.draw();
@@ -1936,6 +1977,8 @@ void glDrawWorld(view_t* camera, int mode)
     if (&shader != &worldDarkShader) {
         const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
         GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
+        const float cameraPos[4] = {(float)camera->x * 32.f, -(float)camera->z, (float)camera->y * 32.f, 1.f};
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uCameraPos"), 1, cameraPos));
     }
     
     const bool ditheringDisabled = ticks - ditherDisabledTime < TICKS_PER_SECOND;
@@ -2092,6 +2135,7 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
     }
     
 	if (dirty) {
+        GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 0.f));
         GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 		glBeginCamera(&camera, false);
 		glDrawWorld(&camera, ENTITYUIDS);
@@ -2150,6 +2194,7 @@ void GO_SwapBuffers(SDL_Window* screen)
     if (!hdrEnabled) {
         main_framebuffer.unbindForWriting();
         main_framebuffer.bindForReading();
+        GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 0.f));
         GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         main_framebuffer.draw(vidgamma);
     }
