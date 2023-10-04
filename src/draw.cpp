@@ -270,7 +270,8 @@ void createCommonDrawResources() {
         
         "if (uFogDistance > 0.0) {"
         "float dist = length(uCameraPos.xyz - WorldPos.xyz);"
-        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, min(dist, uFogDistance) / uFogDistance);"
+        "float lerp = (min(dist, uFogDistance) / uFogDistance) * uFogColor.a;"
+        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, lerp);"
         "FragColor = vec4(mixed, FragColor.a);"
         "}"
         "}";
@@ -301,7 +302,8 @@ void createCommonDrawResources() {
         
         "if (uFogDistance > 0.0) {"
         "float dist = length(uCameraPos.xyz - WorldPos.xyz);"
-        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, min(dist, uFogDistance) / uFogDistance);"
+        "float lerp = (min(dist, uFogDistance) / uFogDistance) * uFogColor.a;"
+        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, lerp);"
         "FragColor = vec4(mixed, FragColor.a);"
         "}"
         "}";
@@ -350,7 +352,8 @@ void createCommonDrawResources() {
         
         "if (uFogDistance > 0.0) {"
         "float dist = length(uCameraPos.xyz - WorldPos.xyz);"
-        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, min(dist, uFogDistance) / uFogDistance);"
+        "float lerp = (min(dist, uFogDistance) / uFogDistance) * uFogColor.a;"
+        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, lerp);"
         "FragColor = vec4(mixed, FragColor.a);"
         "}"
 		"}";
@@ -398,7 +401,8 @@ void createCommonDrawResources() {
         
         "if (uFogDistance > 0.0) {"
         "float dist = length(uCameraPos.xyz - WorldPos.xyz);"
-        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, min(dist, uFogDistance) / uFogDistance);"
+        "float lerp = (min(dist, uFogDistance) / uFogDistance) * uFogColor.a;"
+        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, lerp);"
         "FragColor = vec4(mixed, FragColor.a);"
         "}"
         "}";
@@ -441,7 +445,8 @@ void createCommonDrawResources() {
         
         "if (uFogDistance > 0.0) {"
         "float dist = length(uCameraPos.xyz - WorldPos.xyz);"
-        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, min(dist, uFogDistance) / uFogDistance);"
+        "float lerp = (min(dist, uFogDistance) / uFogDistance) * uFogColor.a;"
+        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, lerp);"
         "FragColor = vec4(mixed, FragColor.a);"
         "}"
         "}";
@@ -548,7 +553,8 @@ void createCommonDrawResources() {
         
         "if (uFogDistance > 0.0) {"
         "float dist = length(uCameraPos.xyz - WorldPos.xyz);"
-        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, min(dist, uFogDistance) / uFogDistance);"
+        "float lerp = (min(dist, uFogDistance) / uFogDistance) * uFogColor.a;"
+        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, lerp);"
         "FragColor = vec4(mixed, FragColor.a);"
         "}"
         "}";
@@ -594,7 +600,8 @@ void createCommonDrawResources() {
         
         "if (uFogDistance > 0.0) {"
         "float dist = length(uCameraPos.xyz - WorldPos.xyz);"
-        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, min(dist, uFogDistance) / uFogDistance);"
+        "float lerp = (min(dist, uFogDistance) / uFogDistance) * uFogColor.a;"
+        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, lerp);"
         "FragColor = vec4(mixed, FragColor.a);"
         "}"
         "}";
@@ -622,7 +629,8 @@ void createCommonDrawResources() {
         
         "if (uFogDistance > 0.0) {"
         "float dist = length(uCameraPos.xyz - WorldPos.xyz);"
-        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, min(dist, uFogDistance) / uFogDistance);"
+        "float lerp = (min(dist, uFogDistance) / uFogDistance) * uFogColor.a;"
+        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, lerp);"
         "FragColor = vec4(mixed, FragColor.a);"
         "}"
         "}";
