@@ -692,7 +692,7 @@ static void uploadUniforms(Shader& shader, float* proj, float* view, float* mapD
     float fogDistance = 0.f;
     float fogColor[4] = { 1.f, 1.f, 1.f, 1.f };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uFogColor"), 1, fogColor));
-    GL_CHECK_ERR(glUniform4fv(shader.uniform("uFogDistance"), 1, fogDistance));
+    GL_CHECK_ERR(glUniform1f(shader.uniform("uFogDistance"), fogDistance));
 #else
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uFogColor"), 1, (float*)&*cvar_fogColor));
     GL_CHECK_ERR(glUniform1f(shader.uniform("uFogDistance"), *cvar_fogDistance));
