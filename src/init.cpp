@@ -768,7 +768,7 @@ int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 	{
 		// language file doesn't exist
 		printlog("error: unable to locate language file: '%s'", langFilepath.c_str());
-		return 11;
+		return 1;
 	}
 
 	// check if we've loaded this language already
@@ -784,7 +784,7 @@ int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 		if ( TTF_Init() == -1 )
 		{
 			printlog("failed to initialize SDL_ttf.\n");
-			return 12;
+			return 1;
 		}
 	}
 
@@ -819,7 +819,7 @@ int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 	if ( !dataPathExists(fontFilepath.c_str()) )
 	{
 		printlog("error: default game font 'lang/en.ttf' not found");
-		return 13;
+		return 1;
 	}
 	completePath(fontPath, fontFilepath.c_str());
 	if ( ttf8 )
@@ -829,7 +829,7 @@ int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 	if ((ttf8 = TTF_OpenFont(fontPath, TTF8_HEIGHT)) == NULL )
 	{
 		printlog("failed to load size 8 ttf: %s\n", TTF_GetError());
-		return 14;
+		return 1;
 	}
 	TTF_SetFontKerning(ttf8, 0);
 	TTF_SetFontHinting(ttf8, TTF_HINTING_MONO);
@@ -840,7 +840,7 @@ int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 	if ((ttf12 = TTF_OpenFont(fontPath, TTF12_HEIGHT)) == NULL )
 	{
 		printlog("failed to load size 12 ttf: %s\n", TTF_GetError());
-		return 15;
+		return 1;
 	}
 	TTF_SetFontKerning(ttf12, 0);
 	TTF_SetFontHinting(ttf12, TTF_HINTING_MONO);
@@ -851,7 +851,7 @@ int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 	if ((ttf16 = TTF_OpenFont(fontPath, TTF16_HEIGHT)) == NULL )
 	{
 		printlog("failed to load size 16 ttf: %s\n", TTF_GetError());
-		return 16;
+		return 1;
 	}
 	TTF_SetFontKerning(ttf16, 0);
 	TTF_SetFontHinting(ttf16, TTF_HINTING_MONO);
@@ -860,7 +860,7 @@ int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 	if ( (fp = openDataFile(langFilepath.c_str(), "rb")) == NULL )
 	{
 		printlog("error: unable to load language file: '%s'", langFilepath.c_str());
-		return 17;
+		return 1;
 	}
 
 	// store the new language code
