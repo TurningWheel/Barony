@@ -21321,6 +21321,30 @@ failed:
 	}
 
 	static void mainEndLife(Button& button) {
+		int player = getMenuOwner();
+		if ( multiplayer == CLIENT )
+		{
+			player = clientnum;
+		}
+
+		if ( Player::Ghost_t::gamemodeAllowsGhosts() )
+		{
+			if ( stats[player]->HP == 0 || !players[player]->entity )
+			{
+				if ( players[player]->ghost.isActive() )
+				{
+					Player::Ghost_t::pauseMenuSpectate(player);
+				}
+				else
+				{
+					Player::Ghost_t::pauseMenuSpawnGhost(player);
+				}
+				soundActivate();
+				closeMainMenu();
+				return;
+			}
+		}
+
 		binaryPrompt(
 			Language::get(5633), // window text
 			Language::get(5634), // okay text
@@ -23138,11 +23162,15 @@ failed:
             dismiss->setTextColor(makeColor(170, 134, 102, 255));
             dismiss->setTextHighlightColor(makeColor(170, 134, 102, 255));
             dismiss->setTickCallback(dismiss_tick);
+			dismiss->setUserData((void*)(intptr_t)(player + 1));
             dismiss->setCallback([](Button& button){
                 soundCancel();
                 auto window = static_cast<Frame*>(button.getParent());
                 auto frame = static_cast<Frame*>(window->getParent());
                 frame->removeSelf();
+
+				int player = reinterpret_cast<intptr_t>(button.getUserData()) - 1;
+				Player::Ghost_t::gameoverOnDismiss(player);
                 });
             dismiss->select();
         } else {
@@ -23261,11 +23289,15 @@ failed:
             dismiss->setTextColor(makeColor(170, 134, 102, 255));
             dismiss->setTextHighlightColor(makeColor(170, 134, 102, 255));
             dismiss->setTickCallback(dismiss_tick);
+			dismiss->setUserData((void*)(intptr_t)(player + 1));
             dismiss->setCallback([](Button& button){
                 soundCancel();
                 auto window = static_cast<Frame*>(button.getParent());
                 auto frame = static_cast<Frame*>(window->getParent());
                 frame->removeSelf();
+
+				int player = reinterpret_cast<intptr_t>(button.getUserData()) - 1;
+				Player::Ghost_t::gameoverOnDismiss(player);
                 });
             dismiss->setWidgetLeft("restart");
         }

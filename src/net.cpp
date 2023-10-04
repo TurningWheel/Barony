@@ -2372,6 +2372,16 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 	}},
 
+	// update ghost bounce
+	{'GHFS', []() {
+		Entity* entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
+		if ( entity )
+		{
+			entity->fskill[net_packet->data[8]] = (SDLNet_Read16(&net_packet->data[9]) / 256.0);
+			playSoundEntityLocal(entity, 612 + local_rng.rand() % 3, 64);
+		}
+	}},
+
 	{'EFFE', [](){
 		/*
 		* Packet breakdown:
@@ -2779,6 +2789,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 								entity->skill[2] = clientnum;
 								entity->yaw = cameras[clientnum].ang;
 								entity->pitch = PI / 8;
+								players[clientnum]->ghost.initTeleportLocations(entity->x / 16, entity->y / 16);
 							}
 						}
 					}
@@ -3577,6 +3588,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			entity->skill[2] = clientnum;
 			entity->yaw = cameras[clientnum].ang;
 			entity->pitch = PI / 8;
+			players[clientnum]->ghost.initTeleportLocations(entity->x / 16, entity->y / 16);
 		}
 
 		//deleteSaveGame(multiplayer); // stops save scumming c: //Not here, because it'll make the game unresumable if the game crashes but not all players have died.
@@ -5309,14 +5321,14 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		if ( bounce )
 		{
 			players[player]->ghost.my->fskill[9] = Player::Ghost_t::GHOST_SQUISH_START_ANGLE / 100.f;
-			
+			playSoundEntityLocal(players[player]->ghost.my, 612 + local_rng.rand() % 3, 64);
 			for ( int c = 1; c < MAXPLAYERS; ++c ) // send to other players
 			{
 				if ( c == player || client_disconnected[c] || players[c]->isLocalPlayer() )
 				{
 					continue;
 				}
-				strcpy((char*)net_packet->data, "ENFS");
+				strcpy((char*)net_packet->data, "GHFS");
 				SDLNet_Write32(players[player]->ghost.my->getUID(), &net_packet->data[4]);
 				net_packet->data[8] = 9;
 				SDLNet_Write16(static_cast<Sint16>(players[player]->ghost.my->fskill[9] * 256), &net_packet->data[9]);
@@ -5383,7 +5395,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		entity->behavior = &actDeathGhost;
 		entity->skill[2] = player;
 		entity->yaw = 0.0;
-		entity->pitch = 0;
+		entity->pitch = PI / 16;
 		entity->sizex = 2;
 		entity->sizey = 2;
 		entity->flags[UPDATENEEDED] = true;

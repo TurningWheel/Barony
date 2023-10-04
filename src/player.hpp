@@ -1810,6 +1810,12 @@ public:
 		void setActive(bool active);
 		void initTeleportLocations(int x, int y);
 		void initStartRoomLocation(int x, int y);
+		bool isControllable();
+		Entity* spawnGhost();
+		static void pauseMenuSpectate(const int player);
+		static void pauseMenuSpawnGhost(const int player);
+		static bool gameoverOnDismiss(const int player);
+		static bool gamemodeAllowsGhosts();
 		void reset();
 		bool allowedInteractEntity(Entity& entity);
 		static const int GHOST_MODEL_P1 = 1238;
