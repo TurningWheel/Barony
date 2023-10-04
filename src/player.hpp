@@ -1792,8 +1792,8 @@ public:
 		Uint32 errorFlashPushTicks = 0;
 		Uint32 errorFlashTeleportTicks = 0;
 		Uint32 errorFlashChillTicks = 0;
-		static const int errorFlashTicks = TICKS_PER_SECOND * 2.5;
-		static const int MAX_PUSH_POINTS = 5;
+		static constexpr int errorFlashTicks = TICKS_PER_SECOND * 2.5;
+		static constexpr int MAX_PUSH_POINTS = 5;
 		int pushPoints = MAX_PUSH_POINTS;
 		static Uint32 cooldownPushDelay;
 		static Uint32 cooldownChillDelay;
