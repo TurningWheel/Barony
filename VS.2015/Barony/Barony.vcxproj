@@ -151,12 +151,6 @@
         <PostBuildEventUseInBuild Condition="'$(Configuration)|$(Platform)'=='EOS Debug|Win32'">true</PostBuildEventUseInBuild>
         <PostBuildEventUseInBuild Condition="'$(Configuration)|$(Platform)'=='Steam Debug|Win32'">true</PostBuildEventUseInBuild>
     </PropertyGroup>
-    <Import Project="$(SolutionDir)..\common.props"/>
-    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props"
-        Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')"
-        Label="LocalAppDataPlatform" />
     <PropertyGroup Condition="'$(UseFMod)'=='true'">
         <IncludePath>
             $(IncludePath);
@@ -168,6 +162,12 @@
             C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;
         </IncludePath>
     </PropertyGroup>
+    <Import Project="$(SolutionDir)..\common.props"/>
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props"
+        Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')"
+        Label="LocalAppDataPlatform" />
     <ItemDefinitionGroup>
         <ClCompile>
             <WarningLevel>Level3</WarningLevel>
@@ -220,6 +220,7 @@
                 $(VcpkgManualLinkedLibs);
                 %(AdditionalDependencies)
             </AdditionalDependencies>
+            <ImageHasSafeExceptionHandlers Condition="'$(Platform)'!='x64'">true</ImageHasSafeExceptionHandlers>
         </Link>
         <Link Condition="'$(IsDebug)'!='true'">
             <OptimizeReferences>true</OptimizeReferences>
@@ -228,7 +229,6 @@
         </Link>
         <Link Condition="'$(IsDebug)'=='true'">
             <GenerateDebugInformation>true</GenerateDebugInformation>
-            <ImageHasSafeExceptionHandlers>true</ImageHasSafeExceptionHandlers>
             <EnableCOMDATFolding>false</EnableCOMDATFolding>
             <FunctionLevelLinking>false</FunctionLevelLinking>
         </Link>
@@ -236,61 +236,11 @@
             <EnableDpiAwareness>true</EnableDpiAwareness>
         </Manifest>
     </ItemDefinitionGroup>
-    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-        <PostBuildEvent>
-            <Command>robocopy "$(TargetDir)\" "$(SolutionDir)Release" $(TargetFileName)
-                if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
-        </PostBuildEvent>
-    </ItemDefinitionGroup>
-    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-        <PostBuildEvent>
-            <Command>robocopy "$(TargetDir)\" "$(SolutionDir)Release" $(TargetFileName)
-                if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
-        </PostBuildEvent>
-    </ItemDefinitionGroup>
-    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-        <PostBuildEvent>
-            <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)Release\barony_test.exe" </Command>
-        </PostBuildEvent>
-    </ItemDefinitionGroup>
-    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='16-Player Crossplay|Win32'">
-        <PostBuildEvent>
-            <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)Release\barony_test.exe" </Command>
-        </PostBuildEvent>
-    </ItemDefinitionGroup>
-    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Steam Crossplay|Win32'">
-        <PostBuildEvent>
-            <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)Release\barony_test.exe" </Command>
-        </PostBuildEvent>
-    </ItemDefinitionGroup>
-    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-        <PostBuildEvent>
-            <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)Release\barony_test.exe" </Command>
-        </PostBuildEvent>
-    </ItemDefinitionGroup>
-    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='16-Player Crossplay|x64'">
-        <PostBuildEvent>
-            <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)Release\barony_test.exe" </Command>
-        </PostBuildEvent>
-    </ItemDefinitionGroup>
+
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Steam Crossplay|x64'">
         <ClCompile>
             <PreprocessorDefinitions>
                 %(PreprocessorDefinitions);USE_THEORA_VIDEO;USE_IMGUI;CURL_STATICLIB;USE_LIBCURL</PreprocessorDefinitions>
-        </ClCompile>
-        <PostBuildEvent>
-            <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)Release\barony_test.exe" </Command>
-        </PostBuildEvent>
-    </ItemDefinitionGroup>
-    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EOS|Win32'">
-        <ClCompile>
-        </ClCompile>
-        <PostBuildEvent>
-            <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)Release\barony_test.exe" </Command>
-        </PostBuildEvent>
-    </ItemDefinitionGroup>
-    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='16Player-EOS|Win32'">
-        <ClCompile>
         </ClCompile>
         <PostBuildEvent>
             <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)Release\barony_test.exe" </Command>
@@ -301,82 +251,28 @@
             <PreprocessorDefinitions>%(PreprocessorDefinitions);USE_IMGUI;
                 USE_THEORA_VIDEO;CURL_STATICLIB;USE_LIBCURL</PreprocessorDefinitions>
         </ClCompile>
-        <PostBuildEvent>
-            <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)Release\barony_test.exe" </Command>
-        </PostBuildEvent>
-    </ItemDefinitionGroup>
-    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='16Player-EOS|x64'">
-        <PostBuildEvent>
-            <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)Release\barony_test.exe" </Command>
-        </PostBuildEvent>
     </ItemDefinitionGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EOS Debug|Win32'">
         <ClCompile>
             <PreprocessorDefinitions>%(PreprocessorDefinitions);USE_IMGUI</PreprocessorDefinitions>
         </ClCompile>
-        <PostBuildEvent>
-            <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS\barony_test.exe"
-                copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS 3\barony_test.exe"
-                copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS 4\barony_test.exe" </Command>
-        </PostBuildEvent>
-    </ItemDefinitionGroup>
-    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Steam Debug|Win32'">
-        <ClCompile>
-        </ClCompile>
-        <PostBuildEvent>
-            <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS\barony_test.exe"
-                copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS 3\barony_test.exe"
-                copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS 4\barony_test.exe" </Command>
-        </PostBuildEvent>
     </ItemDefinitionGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EOS Debug|x64'">
         <ClCompile>
             <PreprocessorDefinitions>
                 %(PreprocessorDefinitions);;USE_IMGUI;USE_THEORA_VIDEO;CURL_STATICLIB;USE_LIBCURL</PreprocessorDefinitions>
         </ClCompile>
-        <PostBuildEvent>
-            <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS\barony_test.exe"
-                copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS 3\barony_test.exe"
-                copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS 4\barony_test.exe" </Command>
-        </PostBuildEvent>
     </ItemDefinitionGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Steam Debug|x64'">
         <ClCompile>
             <PreprocessorDefinitions>%(PreprocessorDefinitions);CURL_STATICLIB;USE_LIBCURL</PreprocessorDefinitions>
         </ClCompile>
-        <PostBuildEvent>
-            <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS\barony_test.exe"
-                copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS 3\barony_test.exe"
-                copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS 4\barony_test.exe" </Command>
-        </PostBuildEvent>
-    </ItemDefinitionGroup>
-    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='NODRM|Win32'">
-        <PostBuildEvent>
-            <Command>robocopy "$(TargetDir)\" "$(SolutionDir)Release" $(TargetFileName)
-                if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
-        </PostBuildEvent>
     </ItemDefinitionGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='NODRM|x64'">
         <ClCompile>
             <PreprocessorDefinitions>
                 %(PreprocessorDefinitions);USE_IMGUI;USE_THEORA_VIDEO;CURL_STATICLIB;</PreprocessorDefinitions>
         </ClCompile>
-        <PostBuildEvent>
-            <Command>robocopy "$(TargetDir)\" "$(SolutionDir)Release" $(TargetFileName)
-                if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
-        </PostBuildEvent>
-    </ItemDefinitionGroup>
-    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='16Player-Release|Win32'">
-        <PostBuildEvent>
-            <Command>robocopy "$(TargetDir)\" "$(SolutionDir)Release" $(TargetFileName)
-                if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
-        </PostBuildEvent>
-    </ItemDefinitionGroup>
-    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='16Player-Release|x64'">
-        <PostBuildEvent>
-            <Command>robocopy "$(TargetDir)\" "$(SolutionDir)Release" $(TargetFileName)
-                if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
-        </PostBuildEvent>
     </ItemDefinitionGroup>
     <ItemGroup>
         <ClCompile Include="..\..\src\actarrow.cpp" />
@@ -578,6 +474,25 @@
     <ItemGroup>
         <None Include="..\..\vcpkg.json" />
     </ItemGroup>
+    <PropertyGroup>
+        <OutDir>$(ProjectDir)\$(Platform)\$(Configuration)\</OutDir>
+        <IntDir>$(ProjectDir)\obj\$(Platform)\$(Configuration)\</IntDir>
+    </PropertyGroup>
+    <Target Name="CopyResourceFolders" AfterTargets="AfterBuild">
+        <ItemGroup>
+            <ResourceFolder>
+                <TargetFolder>$(OutDir)\%(ResourceFolder.TargetFolderName)\%(ResourceFolder.RecursiveDir)\</TargetFolder>
+            </ResourceFolder>
+        </ItemGroup>
+        <Copy Condition="'$(BARONY_GAME_DIR)'!=''"
+              SourceFiles="@(ResourceFolder)"
+              DestinationFolder="%(ResourceFolder.TargetFolder)"
+              OverwriteReadOnlyFiles="true"
+              SkipUnchangedFiles="true"
+              UseHardlinksIfPossible="true"/>
+        <Warning Condition="'$(BARONY_GAME_DIR)'==''" Text="Environment variable 'BARONY_GAME_DIR' has not been set to the location of the currently installed game." />
+        <Warning Condition="'$(BARONY_GAME_DIR)'==''" Text="Build will not be able to copy resources from the installed game if left unset, and the game will not be able to run." />
+    </Target>
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
     <ImportGroup Label="ExtensionTargets">
     </ImportGroup>
