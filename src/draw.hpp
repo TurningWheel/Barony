@@ -13,6 +13,13 @@
 
 #include "shader.hpp"
 
+struct Vector4 {
+    float x;
+    float y;
+    float z;
+    float w;
+};
+
 vec4_t vec4_copy(const vec4_t* v);
 vec4_t* mul_mat_vec4(vec4_t* result, const mat4x4_t* m, const vec4_t* v);
 vec4_t* add_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b);
@@ -207,7 +214,7 @@ struct framebuffer {
     void unlock();
     
     void draw(float brightness = 1.f);
-    void hdrDraw(float brightness, float gamma, float exposure);
+    void hdrDraw(const Vector4& brightness, float gamma, float exposure);
     static void unbindForWriting();
     static void unbindForReading();
     static void unbindAll();
