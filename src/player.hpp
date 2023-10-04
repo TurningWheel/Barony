@@ -1648,6 +1648,7 @@ public:
 		const int ENEMYBAR_FRAME_START_Y = 182;
 		const int ENEMYBAR_FRAME_HEIGHT = 44;
 		static int actionPromptOffsetX;
+		static int actionPromptOffsetXGhostPrompts;
 		static int actionPromptOffsetY;
 		static int actionPromptBackingSize;
 		static int actionPromptIconSize;
@@ -1762,14 +1763,15 @@ public:
 		real_t quickTurnRotation = 0.0;
 		Uint32 quickTurnStartTicks = 0;
 		bool bDoingQuickTurn = false;
-		bool casting = false;
+		enum GhostSpells_t : int
+		{
+			GHOST_SPELL_NONE,
+			GHOST_SPELL_TELEPORT,
+			GHOST_SPELL_BOLT,
+			GHOST_SPELL_POST_CASTING
+		};
+		GhostSpells_t castingSpellAnimation = GHOST_SPELL_NONE;
 		Uint32 castingHeldDuration = 0;
-		int actionPoints = 5;
-		int spawnX = -1;
-		int spawnY = -1;
-		int startRoomX = -1;
-		int startRoomY = -1;
-		int teleportToPlayer = -1;
 		Player& player;
 	public:
 		Ghost_t(Player& p) : player(p)
@@ -1777,7 +1779,25 @@ public:
 		~Ghost_t() {};
 
 		Entity* my = nullptr;
+		int spawnX = -1;
+		int spawnY = -1;
+		int startRoomX = -1;
+		int startRoomY = -1;
+		int teleportToPlayer = -1;
 		Uint32 uid = 0;
+		Uint32 cooldownPush = 0;
+		Uint32 cooldownPushTimeout = 0;
+		Uint32 cooldownChill = 0;
+		Uint32 cooldownTeleport = 0;
+		Uint32 errorFlashPushTicks = 0;
+		Uint32 errorFlashTeleportTicks = 0;
+		Uint32 errorFlashChillTicks = 0;
+		static const int errorFlashTicks = TICKS_PER_SECOND * 2.5;
+		static const int MAX_PUSH_POINTS = 5;
+		int pushPoints = MAX_PUSH_POINTS;
+		static Uint32 cooldownPushDelay;
+		static Uint32 cooldownChillDelay;
+		static Uint32 cooldownTeleportDelay;
 
 		bool handleQuickTurn(bool useRefreshRateDelta);
 		void startQuickTurn();
@@ -1787,12 +1807,12 @@ public:
 		void handleGhostCameraPosition(bool useRefreshRateDelta);
 		void handleActions();
 		void handleAttack();
-		bool isActive() { return my != nullptr; }
+		bool isActive();
+		void setActive(bool active);
 		void initTeleportLocations(int x, int y);
 		void initStartRoomLocation(int x, int y);
 		void reset();
 		bool allowedInteractEntity(Entity& entity);
-		Uint8 getSpellPower() { return std::max(1, std::min((int)castingHeldDuration / TICKS_PER_SECOND, 5)); }
 		static const int GHOST_MODEL_P1 = 1238;
 		static const int GHOST_MODEL_P2 = 1239;
 		static const int GHOST_MODEL_P3 = 1240;

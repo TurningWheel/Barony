@@ -304,6 +304,7 @@ MinotaurWarning_t minotaurWarning[MAXPLAYERS];
 
 void updateLevelUpFrame(const int player);
 void updateSkillUpFrame(const int player);
+void drawClockwiseSquareMesh(const char* texture, float lerp, SDL_Rect rect, Uint32 color);
 
 void capitalizeString(std::string& str)
 {
@@ -6743,6 +6744,8 @@ void StatusEffectQueue_t::handleNavigation(std::map<int, StatusEffectQueueEntry_
 	}
 }
 
+const bool kAllowGhostStatusEffects = true;
+
 void StatusEffectQueue_t::updateAllQueuedEffects()
 {
 	std::unordered_set<int> effectSet;
@@ -6885,6 +6888,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			{
 				effectActive = false;
 			}
+			if ( !kAllowGhostStatusEffects && players[player]->ghost.isActive() )
+			{
+				effectActive = false;
+			}
 
 		    if ( effectActive )
 		    {
@@ -6933,6 +6940,13 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	for ( int i = kEffectBurning; i >= kEffectDrunkGoatman; --i )
 	{
 		miscEffects[i] = false;
+	}
+	if ( players[player] && players[player]->ghost.isActive() && kAllowGhostStatusEffects )
+	{
+		if ( players[player]->ghost.my->skill[3] == 1 ) // ghost sneaking
+		{
+			miscEffects[kEffectSneak] = true;
+		}
 	}
 	if ( players[player] && players[player]->entity )
 	{
@@ -8397,23 +8411,30 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 	SDL_Rect textPos{ 0, 0, 0, 0 };
 	const int skillIconToGlyphPadding = 4;
 	const int nominalGlyphHeight = 26;
-    
-    bool usingTinkeringKit = false;
-    bool useBracketsReticle = false;
+
+	bool usingTinkeringKit = false;
+	bool useBracketsReticle = false;
 	bool useSneakingReticle = false;
-    if (player.entity && stats[player.playernum]) {
-        if (stats[player.playernum]->defending) {
-            auto shield = stats[player.playernum]->shield;
-            if (shield && shield->type == TOOL_TINKERING_KIT) {
-                useBracketsReticle = true;
-                usingTinkeringKit = true;
-            }
-        }
-        if (stats[player.playernum]->sneaking) {
-            useBracketsReticle = true;
+	if ( player.entity && stats[player.playernum] ) {
+		if ( stats[player.playernum]->defending ) {
+			auto shield = stats[player.playernum]->shield;
+			if ( shield && shield->type == TOOL_TINKERING_KIT ) {
+				useBracketsReticle = true;
+				usingTinkeringKit = true;
+			}
+		}
+		if ( stats[player.playernum]->sneaking ) {
+			useBracketsReticle = true;
 			useSneakingReticle = true;
-        }
-    }
+		}
+	}
+	else if ( player.ghost.isActive() )
+	{
+		if ( player.ghost.my->skill[3] == 1 )
+		{
+			useSneakingReticle = true;
+		}
+	}
 
 	bool followerInteract = followerMenu.selectMoveTo && (followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
 		|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT);
@@ -9200,7 +9221,95 @@ void createActionPrompts(const int player)
 	sneakText->setHJustify(Field::justify_t::CENTER);
 }
 
+void drawActionPromptCooldownCallback(const Widget& widget, SDL_Rect rect)
+{
+	const int player = widget.getOwner();
+
+	const Frame* parent = static_cast<const Frame*>(widget.getParent());
+	{
+		SDL_Rect drawRect = rect;
+		drawRect.x += 22;
+		drawRect.y += 22;
+		drawRect.w = 44;
+		drawRect.h = 44;
+		real_t opacity = 192;
+		if ( parent && parent->getOpacity() < 100.0 )
+		{
+			opacity *= parent->getOpacity() / 100.0;
+		}
+		const auto& ghost = players[player]->ghost;
+		int prompt = reinterpret_cast<intptr_t>(widget.getUserData()) - 1;
+		real_t cooldownProgress = 0.0;
+		bool errorFlash = false;
+		int actionPoints = 0;
+		switch ( static_cast<Player::HUD_t::ActionPrompts>(prompt) )
+		{
+			case Player::HUD_t::ACTION_PROMPT_MAGIC:
+				cooldownProgress = (ghost.cooldownTeleport / (real_t)ghost.cooldownTeleportDelay);
+				if ( ghost.errorFlashTeleportTicks > 0 && (Player::Ghost_t::errorFlashTicks - ghost.errorFlashTeleportTicks) % 20 < 10 )
+				{
+					errorFlash = true;
+				}
+				break;
+			case Player::HUD_t::ACTION_PROMPT_OFFHAND:
+				if ( ghost.pushPoints > 0 )
+				{
+					cooldownProgress = 0.0;
+				}
+				else
+				{
+					cooldownProgress = (ghost.cooldownPush / (real_t)ghost.cooldownPushDelay);
+				}
+				actionPoints = ghost.pushPoints;
+				if ( ghost.errorFlashPushTicks > 0 && (Player::Ghost_t::errorFlashTicks - ghost.errorFlashPushTicks) % 20 < 10 )
+				{
+					errorFlash = true;
+				}
+				break;
+			case Player::HUD_t::ACTION_PROMPT_MAINHAND:
+				cooldownProgress = (ghost.cooldownChill / (real_t)ghost.cooldownChillDelay);
+				if ( ghost.errorFlashChillTicks > 0 && (Player::Ghost_t::errorFlashTicks - ghost.errorFlashChillTicks) % 20 < 10 )
+				{
+					errorFlash = true;
+				}
+				break;
+			case Player::HUD_t::ACTION_PROMPT_SNEAK:
+				break;
+			default:
+				break;
+		}
+		if ( cooldownProgress > 0.0 )
+		{
+			if ( errorFlash )
+			{
+				drawClockwiseSquareMesh("images/ui/HUD/HUD_ActionPromptBacking00_02_Cooldown.png",
+					cooldownProgress,
+					drawRect, makeColor(255, 255, 255, opacity));
+			}
+			else
+			{
+				Uint8 r, g, b, a;
+				getColor(hudColors.characterSheetRed, &r, &g, &b, &a);
+				drawClockwiseSquareMesh("images/ui/HUD/HUD_ActionPromptBacking00_02_Cooldown.png",
+					cooldownProgress,
+					drawRect, makeColor(r, g, b, opacity));
+			}
+		}
+		/*if ( actionPoints > 0 )
+		{
+			std::string str = std::to_string(actionPoints);
+			if ( auto textGet = Text::get(str.c_str(), smallfont_outline, makeColorRGB(255, 255, 255), 0) )
+			{
+				textGet->drawColor(SDL_Rect{ 0,0,0,0 }, SDL_Rect{ drawRect.x - 6, drawRect.y + 1, 0, 0 },
+					SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+					makeColor(255, 255, 255, 255));
+			}
+		}*/
+	}
+}
+
 int Player::HUD_t::actionPromptOffsetX = 280;
+int Player::HUD_t::actionPromptOffsetXGhostPrompts = 140;
 int Player::HUD_t::actionPromptOffsetY = 22;
 int Player::HUD_t::actionPromptBackingSize = 44;
 int Player::HUD_t::actionPromptIconSize = 32;
@@ -9232,11 +9341,12 @@ void Player::HUD_t::updateActionPrompts()
 	    }
 	}
 
+	bool ghostPrompts = player.ghost.isActive();
 	static ConsoleVariable<int> actionPromptCompactHeightY("/actionpromptcompactheighty", 16);
 	bShowActionPrompts = *disableActionPrompts;
 	bShortHPMPForActionBars = false;
 
-	if ( playercount == 2 && !*MainMenu::vertical_splitscreen 
+	if ( playercount == 2 && !*MainMenu::vertical_splitscreen && !ghostPrompts
 		&& !*disableActionPrompts && *MainMenu::clipped_splitscreen )
 	{
 		bShortHPMPForActionBars = true;
@@ -9250,9 +9360,12 @@ void Player::HUD_t::updateActionPrompts()
 				|| (!player.hotbar.useHotbarFaceMenu && *MainMenu::clipped_splitscreen))) 
 		|| *disableActionPrompts )
 	{
-		actionPromptsFrame->setDisabled(true);
-		bShowActionPrompts = false;
-		return;
+		if ( !ghostPrompts )
+		{
+			actionPromptsFrame->setDisabled(true);
+			bShowActionPrompts = false;
+			return;
+		}
 	}
 	actionPromptsFrame->setDisabled(false);
 	actionPromptsFrame->setSize(SDL_Rect{ 0, 0, hudFrame->getSize().w, hudFrame->getSize().h });
@@ -9282,8 +9395,16 @@ void Player::HUD_t::updateActionPrompts()
 	std::vector<PromptInfo> allPrompts;
 	const std::string blockBinding = Input::inputs[player.playernum].binding("Defend");
 	const std::string sneakBinding = Input::inputs[player.playernum].binding("Sneak");
-	const bool sneakingSeparateFromBlock = false;// blockBinding != sneakBinding;
-	if ( sneakingSeparateFromBlock )
+	bool sneakingSeparateFromBlock = false;// blockBinding != sneakBinding;
+	if ( ghostPrompts )
+	{
+		sneakingSeparateFromBlock = true;
+		allPrompts.emplace_back(PromptInfo{ "action sneak", ACTION_PROMPT_SNEAK, "Sneak" });
+		allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Use" });
+		allPrompts.emplace_back(PromptInfo{ "action magic", ACTION_PROMPT_MAGIC, "Cast Spell" });
+		allPrompts.emplace_back(PromptInfo{ "action mainhand", ACTION_PROMPT_MAINHAND, "Attack" });
+	}
+	else if ( sneakingSeparateFromBlock )
 	{
 		allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Defend" });
 		allPrompts.emplace_back(PromptInfo{ "action sneak", ACTION_PROMPT_SNEAK, "Sneak" });
@@ -9319,7 +9440,17 @@ void Player::HUD_t::updateActionPrompts()
 			promptPos.w = maxWidth;
 			promptPos.h = promptHeight;
 			int actionPromptOffsetXTotal = actionPromptOffsetX;
-			if ( !player.hotbar.useHotbarFaceMenu )
+			prompt->setDrawCallback(nullptr);
+			prompt->setUserData(nullptr);
+			if ( ghostPrompts )
+			{
+				actionPromptOffsetXTotal = actionPromptOffsetXGhostPrompts;
+				prompt->setUserData((void*)(intptr_t)(promptInfo.promptType + 1));
+				prompt->setDrawCallback([](const Widget& widget, SDL_Rect rect) {
+					drawActionPromptCooldownCallback(widget, rect);
+				});
+			}
+			else if ( !player.hotbar.useHotbarFaceMenu )
 			{
 				actionPromptOffsetXTotal += 22;
 			}
@@ -9388,7 +9519,7 @@ void Player::HUD_t::updateActionPrompts()
 
 			std::string textForPrompt = "";
 			int skillForPrompt = getActionIconForPlayer(promptInfo.promptType, textForPrompt);
-			if ( promptInfo.promptType == ACTION_PROMPT_OFFHAND && sneakingSeparateFromBlock
+			if ( promptInfo.promptType == ACTION_PROMPT_OFFHAND && sneakingSeparateFromBlock && !ghostPrompts
 				&& skillForPrompt == PRO_STEALTH )
 			{
 				// offhand wants to display sneak - redundant, hide this prompt
@@ -9457,6 +9588,46 @@ void Player::HUD_t::updateActionPrompts()
 					imgBacking->path = actionPromptBackingIconPath00;
 				}
 			}
+			else if ( ghostPrompts )
+			{
+				imgBacking->path = actionPromptBackingIconPath00;
+				switch ( promptInfo.promptType )
+				{
+					case ACTION_PROMPT_MAGIC:
+						skillImg = "*images/ui/HUD/HUD_Ghost_Haunt.png";
+						img->pos.x -= 2;
+						img->pos.y -= 2;
+						img->pos.w = 36;
+						img->pos.h = 36;
+						break;
+					case ACTION_PROMPT_MAINHAND:
+						skillImg = "*images/ui/HUD/HUD_Ghost_Chill.png";
+						img->pos.x -= 2;
+						img->pos.y -= 2;
+						img->pos.w = 36;
+						img->pos.h = 36;
+						break;
+					case ACTION_PROMPT_OFFHAND:
+						skillImg = "*images/ui/HUD/HUD_Ghost_Push.png";
+						img->pos.x -= 2;
+						img->pos.y -= 2;
+						img->pos.w = 36;
+						img->pos.h = 36;
+						break;
+					case ACTION_PROMPT_SNEAK:
+						for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+						{
+							if ( skill.skillId == PRO_STEALTH )
+							{
+								skillImg = skill.skillIconPath32px;
+								break;
+							}
+						}
+						break;
+				default:
+					break;
+				}
+			}
 			if ( skillImg == "" )
 			{
 				prompt->setDisabled(true);
@@ -9483,9 +9654,12 @@ void Player::HUD_t::updateActionPrompts()
 			}*/
 
 			std::string bindingName = promptInfo.inputName.c_str();
-			if ( skillForPrompt == PRO_STEALTH && promptInfo.promptType == ACTION_PROMPT_OFFHAND )
+			if ( !ghostPrompts )
 			{
-				bindingName = "Sneak";
+				if ( skillForPrompt == PRO_STEALTH && promptInfo.promptType == ACTION_PROMPT_OFFHAND )
+				{
+					bindingName = "Sneak";
+				}
 			}
 			glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding(bindingName.c_str(), pressed);
 			glyph->disabled = prompt->isDisabled();
@@ -9528,23 +9702,26 @@ void Player::HUD_t::updateActionPrompts()
 			}*/
 			glyph->pos.y = prompt->getSize().y + img->pos.y + img->pos.h - glyphToImgPadY + pressedOffset; // just above the skill img with some padding
 
-			if ( promptInfo.promptType == ACTION_PROMPT_SNEAK )
+			if ( !ghostPrompts )
 			{
-				if ( !(!stats[player.playernum]->defending && stats[player.playernum]->sneaking) )
+				if ( promptInfo.promptType == ACTION_PROMPT_SNEAK )
 				{
-					//glyph->disabled = true;
-					img->color = iconFadedColor;
-					//imgBacking->color = iconFadedBackingColor;
+					if ( !(!stats[player.playernum]->defending && stats[player.playernum]->sneaking) )
+					{
+						//glyph->disabled = true;
+						img->color = iconFadedColor;
+						//imgBacking->color = iconFadedBackingColor;
+					}
 				}
-			}
-			if ( promptInfo.promptType == ACTION_PROMPT_OFFHAND && skillForPrompt == PRO_SHIELD
-				&& sneakingSeparateFromBlock )
-			{
-				if ( !stats[player.playernum]->defending )
+				if ( promptInfo.promptType == ACTION_PROMPT_OFFHAND && skillForPrompt == PRO_SHIELD
+					&& sneakingSeparateFromBlock )
 				{
-					//glyph->disabled = true;
-					img->color = iconFadedColor;
-					//imgBacking->color = iconFadedBackingColor;
+					if ( !stats[player.playernum]->defending )
+					{
+						//glyph->disabled = true;
+						img->color = iconFadedColor;
+						//imgBacking->color = iconFadedBackingColor;
+					}
 				}
 			}
 		}
@@ -21810,6 +21987,10 @@ void loadHUDSettingsJSON()
 					{
 						Player::HUD_t::actionPromptOffsetX = d["action_prompts"]["x_offset"].GetInt();
 					}
+					if ( d["action_prompts"].HasMember("x_offset") )
+					{
+						Player::HUD_t::actionPromptOffsetXGhostPrompts = d["action_prompts"]["x_offset_ghost_prompts"].GetInt();
+					}
 					if ( d["action_prompts"].HasMember("y_offset") )
 					{
 						Player::HUD_t::actionPromptOffsetY = d["action_prompts"]["y_offset"].GetInt();
@@ -28463,6 +28644,8 @@ void Player::HUD_t::updateHPBar()
 			hpProgressEndCapFlash->section.w = hpProgressEndCapFlash->pos.w;
 		}
 	}
+
+	hpFrame->setDisabled(player.ghost.isActive());
 }
 
 void Player::HUD_t::updateMPBar()
@@ -28876,6 +29059,8 @@ void Player::HUD_t::updateMPBar()
 			player.magic.noManaFeedbackTicks = 0;
 		}
 	}
+
+	mpFrame->setDisabled(player.ghost.isActive());
 }
 
 bool hotbar_slot_t::matchesExactLastItem(int player, Item* item)
@@ -28956,7 +29141,11 @@ void Player::Hotbar_t::updateHotbar()
 
 	hotbarFrame->setOpacity(hotbarFrame->getParent()->getOpacity());
 	bool tempHideHotbar = false;
-	if ( player.bUseCompactGUIHeight()
+	if ( player.ghost.isActive() )
+	{
+		tempHideHotbar = true;
+	}
+	else if ( player.bUseCompactGUIHeight()
 		&& (player.gui_mode == GUI_MODE_FOLLOWERMENU
 			|| player.gui_mode == GUI_MODE_CALLOUT
 			|| (player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET && !player.shootmode)
@@ -29243,7 +29432,7 @@ void Player::Hotbar_t::updateHotbar()
 			if ( controller )
 			{
 				glyph->disabled = slot->isDisabled();
-				if ( !player.shootmode )
+				if ( !player.shootmode || !player.entity )
 				{
 					glyph->disabled = true;
 				}

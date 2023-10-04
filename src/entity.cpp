@@ -1162,7 +1162,7 @@ void Entity::effectTimes()
 			{
 				if ( myStats->EFFECTS_TIMERS[c] == TICKS_PER_SECOND * 15 )
 				{
-					//playSoundPlayer(player, 32, 128);
+					playSoundPlayer(player, 611, 192);
 					messagePlayer(player, MESSAGE_STATUS, Language::get(3193));
 				}
 			}
@@ -1170,7 +1170,7 @@ void Entity::effectTimes()
 			{
 				if ( myStats->EFFECTS_TIMERS[c] == TICKS_PER_SECOND * 15 )
 				{
-					playSoundPlayer(player, 32, 128);
+					playSoundPlayer(player, 611, 192);
 					messagePlayer(player, MESSAGE_STATUS, Language::get(3475));
 				}
 			}
@@ -10484,6 +10484,10 @@ bool Entity::teleport(int tele_x, int tele_y)
 			return false;
 		}
 	}
+	else if ( behavior == &actDeathGhost )
+	{
+		player = skill[2];
+	}
 
 	if ( (strstr(map.name, "Minotaur") && behavior != &actDeathGhost) 
 		|| checkObstacle((tele_x << 4) + 8, (tele_y << 4) + 8, this, NULL) )
@@ -10493,13 +10497,15 @@ bool Entity::teleport(int tele_x, int tele_y)
 	}
 
 	// play sound effect
+	int sfx = 77;
 	if ( behavior == &actDeathGhost )
 	{
-		playSoundEntity(this, 608 + local_rng.rand() % 3, 128);
+		sfx = 608 + local_rng.rand() % 3;
+		playSoundEntity(this, sfx, 128);
 	}
 	else
 	{
-		playSoundEntity(this, 77, 64);
+		playSoundEntity(this, sfx, 64);
 	}
     spawnPoof(x, y, 0, 1.0, true);
 
@@ -10523,7 +10529,7 @@ bool Entity::teleport(int tele_x, int tele_y)
 	{
 		TileEntityList.updateEntity(*this);
 	}
-	if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
+	if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
 	{
 		strcpy((char*)net_packet->data, "TELE");
 		net_packet->data[4] = tele_x;
@@ -10552,11 +10558,11 @@ bool Entity::teleport(int tele_x, int tele_y)
 	// play second sound effect
 	if ( behavior == &actDeathGhost )
 	{
-		playSoundEntity(this, 608 + local_rng.rand() % 3, 128);
+		playSoundEntity(this, sfx, 128);
 	}
 	else
 	{
-		playSoundEntity(this, 77, 64);
+		playSoundEntity(this, sfx, 64);
 	}
     const float poofx = x + cosf(yaw) * 4.f;
     const float poofy = y + sinf(yaw) * 4.f;
@@ -10610,8 +10616,8 @@ bool Entity::teleportRandom()
 			messagePlayerColor(player, MESSAGE_HINT, color, Language::get(2381));
 			return false;
 		}
-
 	}
+
 	for ( int iy = 1; iy < map.height; ++iy )
 	{
 		for ( int ix = 1; ix < map.width; ++ix )
@@ -10723,6 +10729,10 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 			messagePlayerColor(player, MESSAGE_HINT, color, Language::get(2381));
 			return false;
 		}
+	}
+	else if ( behavior == &actDeathGhost )
+	{
+		player = skill[2];
 	}
 
 	struct Coord_t
