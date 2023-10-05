@@ -24107,7 +24107,8 @@ void CalloutRadialMenu::drawCallouts(const int playernum)
 							|| callout.second.cmd == CALLOUT_CMD_LOOK
 							|| callout.second.cmd == CALLOUT_CMD_SOUTH 
 							|| callout.second.cmd == CALLOUT_CMD_SOUTHWEST 
-							|| callout.second.cmd == CALLOUT_CMD_SOUTHEAST )
+							|| callout.second.cmd == CALLOUT_CMD_SOUTHEAST
+							|| (callout.second.cmd == CALLOUT_CMD_HELP && players[i]->ghost.isActive()) )
 						{
 							// fade early for simple thumbs up/down for players
 							lifePercent = callout.second.ticks / (real_t)((TICKS_PER_SECOND * 4) / 5);
