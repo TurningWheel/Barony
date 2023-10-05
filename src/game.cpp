@@ -1856,6 +1856,7 @@ void gameLogic(void)
 						FollowerMenu[i].followerToCommand = nullptr;
 						FollowerMenu[i].entityToInteractWith = nullptr;
 						CalloutMenu[i].closeCalloutMenuGUI();
+						CalloutMenu[i].callouts.clear();
 					}
 
 					// stop all sounds
@@ -5024,6 +5025,10 @@ void ingameHud()
 		{
 			players[player]->bControlEnabled = true;
 		}
+		else if ( players[player]->ghost.isActive() )
+		{
+			players[player]->bControlEnabled = true;
+		}
 #ifdef USE_IMGUI
 		if ( ImGui_t::isInit )
 		{
@@ -6788,6 +6793,7 @@ int main(int argc, char** argv)
 						FollowerMenu[i].followerToCommand = nullptr;
 						FollowerMenu[i].entityToInteractWith = nullptr;
 						CalloutMenu[i].closeCalloutMenuGUI();
+						CalloutMenu[i].callouts.clear();
 					}
 
 					// black background
