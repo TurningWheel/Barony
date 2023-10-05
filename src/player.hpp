@@ -1430,6 +1430,7 @@ public:
 		Frame* allyFollowerTitleFrame = nullptr;
 		Frame* allyFollowerGlyphFrame = nullptr;
 		Frame* allyPlayerFrame = nullptr;
+		Frame* calloutPromptFrame = nullptr;
 		Frame* enemyBarFrame = nullptr;
 		Frame* enemyBarFrameHUD = nullptr;
 		Frame* actionPromptsFrame = nullptr;
@@ -1786,7 +1787,6 @@ public:
 		int teleportToPlayer = -1;
 		Uint32 uid = 0;
 		Uint32 cooldownPush = 0;
-		Uint32 cooldownPushTimeout = 0;
 		Uint32 cooldownChill = 0;
 		Uint32 cooldownTeleport = 0;
 		Uint32 errorFlashPushTicks = 0;
@@ -1804,13 +1804,18 @@ public:
 		void handleGhostCameraUpdate(bool useRefreshRateDelta);
 		void handleGhostCameraBobbing(bool useRefreshRateDelta);
 		void handleGhostMovement(bool useRefreshRateDelta);
-		void handleGhostCameraPosition(bool useRefreshRateDelta);
 		void handleActions();
 		void handleAttack();
 		bool isActive();
 		void setActive(bool active);
 		void initTeleportLocations(int x, int y);
 		void initStartRoomLocation(int x, int y);
+		bool isControllable();
+		Entity* spawnGhost();
+		static void pauseMenuSpectate(const int player);
+		static void pauseMenuSpawnGhost(const int player);
+		static bool gameoverOnDismiss(const int player);
+		static bool gamemodeAllowsGhosts();
 		void reset();
 		bool allowedInteractEntity(Entity& entity);
 		static const int GHOST_MODEL_P1 = 1238;

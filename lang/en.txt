@@ -7826,7 +7826,11 @@ intro - God Rest Ye Merry Gentlemen by NaturesEye#
 
 6043 No holiday currently active.#
 
-6044 Show Player Callouts#
+6044 Call Out#
 6045 Push item#
+6046 Chill#
+6047 Haunt#
+6048 Push#
+6049 View Wheel#
 
 6100 end#
