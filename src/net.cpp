@@ -2021,6 +2021,7 @@ static void changeLevel() {
 		FollowerMenu[i].followerToCommand = nullptr;
 		FollowerMenu[i].entityToInteractWith = nullptr;
 		CalloutMenu[i].closeCalloutMenuGUI();
+		CalloutMenu[i].callouts.clear();
 	}
 
 	// stop all sounds

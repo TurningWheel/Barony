@@ -9702,6 +9702,7 @@ void doNewGame(bool makeHighscore) {
 			FollowerMenu[i].followerToCommand = nullptr;
 			FollowerMenu[i].entityToInteractWith = nullptr;
 			CalloutMenu[i].closeCalloutMenuGUI();
+			CalloutMenu[i].callouts.clear();
 		}
 
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -9977,6 +9978,7 @@ void doNewGame(bool makeHighscore) {
 			FollowerMenu[i].followerToCommand = nullptr;
 			FollowerMenu[i].entityToInteractWith = nullptr;
 			CalloutMenu[i].closeCalloutMenuGUI();
+			CalloutMenu[i].callouts.clear();
 		}
 
 		client_disconnected[0] = false;
@@ -10708,6 +10710,7 @@ void doEndgame(bool saveHighscore) {
 		FollowerMenu[i].followerToCommand = nullptr;
 		FollowerMenu[i].entityToInteractWith = nullptr;
 		CalloutMenu[i].closeCalloutMenuGUI();
+		CalloutMenu[i].callouts.clear();
 	}
 
 	// load menu level
