@@ -2075,6 +2075,7 @@ void actDeathGhost(Entity* my)
 #define DEATHCAM_IDLETIME my->skill[3]
 #define DEATHCAM_IDLEROTATEDIRYAW my->skill[4]
 #define DEATHCAM_IDLEROTATEPITCHINIT my->skill[5]
+#define DEATHCAM_DISABLE_GAMEOVER my->skill[6]
 #define DEATHCAM_ROTX my->fskill[0]
 #define DEATHCAM_ROTY my->fskill[1]
 #define DEATHCAM_IDLEPITCH my->fskill[2]
@@ -2117,13 +2118,20 @@ void actDeathCam(Entity* my)
 		DEATHCAM_PLAYERTARGET = DEATHCAM_PLAYERNUM;
 		DEATHCAM_IDLEROTATEDIRYAW = (local_rng.rand() % 2 == 0) ? 1 : -1;
 	}
+	else if ( DEATHCAM_TIME < deathcamGameoverPromptTicks )
+	{
+		if ( players[DEATHCAM_PLAYERNUM]->ghost.isActive() )
+		{
+			DEATHCAM_DISABLE_GAMEOVER = 1;
+		}
+	}
 	else if ( DEATHCAM_TIME == deathcamGameoverPromptTicks )
 	{
 		if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 		{
 			gameModeManager.Tutorial.openGameoverWindow();
 		}
-		else if ( !players[DEATHCAM_PLAYERNUM]->ghost.isActive() )
+		else if ( !players[DEATHCAM_PLAYERNUM]->ghost.isActive() && DEATHCAM_DISABLE_GAMEOVER == 0 )
 		{
 			MainMenu::openGameoverWindow(DEATHCAM_PLAYERNUM);
 		}
