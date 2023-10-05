@@ -5929,6 +5929,13 @@ void drawAllPlayerCameras() {
 					//messagePlayer(0, "%3.2f | %3.2f", players[c]->entity->yaw, oldYaw);
 				}
 			}
+   
+            // activate ghost fog (if necessary)
+            if (players[c]->ghost.isActive()) {
+                *cvar_hdrBrightness = {0.9f, 0.9f, 1.2f, 1.0f};
+                *cvar_fogColor = {0.7f, 0.7f, 1.1f, 0.25f};
+                *cvar_fogDistance = 350.f;
+            }
 
 			// do occlusion culling from the perspective of this camera
 			DebugStats.drawWorldT2 = std::chrono::high_resolution_clock::now();
@@ -6072,6 +6079,13 @@ void drawAllPlayerCameras() {
 			DebugStats.drawWorldT5 = std::chrono::high_resolution_clock::now();
 			drawEntities3D(&camera, REALCOLORS);
 			glEndCamera(&camera, true);
+            
+            // undo ghost fog
+            if (players[c]->ghost.isActive()) {
+                *cvar_hdrBrightness = {1.0f, 1.0f, 1.0f, 1.0f};
+                *cvar_fogColor = {0.0f, 0.0f, 0.0f, 1.0f};
+                *cvar_fogDistance = 0.0f;
+            }
 
 			if (shaking && players[c] && players[c]->entity && !gamePaused)
 			{

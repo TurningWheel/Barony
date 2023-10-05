@@ -317,6 +317,7 @@ extern Mesh skyMesh;
 extern Shader spriteShader;
 extern Shader spriteDitheredShader;
 extern Shader spriteBrightShader;
+extern Shader spriteUIShader;
 extern Mesh spriteMesh;
 extern TempTexture* lightmapTexture[MAXPLAYERS + 1];
 
@@ -432,3 +433,10 @@ void glEndCamera(view_t* camera, bool useHDR);
 unsigned int GO_GetPixelU32(int x, int y, view_t& camera);
 
 extern bool hdrEnabled;
+
+#ifndef EDITOR
+#include "interface/consolecommand.hpp"
+extern ConsoleVariable<Vector4> cvar_hdrBrightness;
+extern ConsoleVariable<float> cvar_fogDistance;
+extern ConsoleVariable<Vector4> cvar_fogColor;
+#endif

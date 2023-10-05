@@ -76,6 +76,7 @@ Shader skyShader;
 Shader spriteShader;
 Shader spriteDitheredShader;
 Shader spriteBrightShader;
+Shader spriteUIShader;
 TempTexture* lightmapTexture[MAXPLAYERS + 1];
 
 static Shader gearShader;
@@ -638,6 +639,10 @@ void createCommonDrawResources() {
     buildSpriteShader(spriteBrightShader, "spriteBrightShader", false,
         sprite_vertex_glsl, sizeof(sprite_vertex_glsl),
         sprite_bright_fragment_glsl, sizeof(sprite_bright_fragment_glsl));
+
+    buildSpriteShader(spriteUIShader, "spriteUIShader", false,
+        sprite_vertex_glsl, sizeof(sprite_vertex_glsl),
+        sprite_bright_fragment_glsl, sizeof(sprite_bright_fragment_glsl));
     
     spriteMesh.init();
     
@@ -660,6 +665,7 @@ void destroyCommonDrawResources() {
     spriteShader.destroy();
     spriteDitheredShader.destroy();
     spriteBrightShader.destroy();
+    spriteUIShader.destroy();
     spriteMesh.destroy();
     lineShader.destroy();
     lineMesh.destroy();

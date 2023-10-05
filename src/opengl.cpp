@@ -678,8 +678,8 @@ void beginGraphics() {
 }
 
 #ifndef EDITOR
-static ConsoleVariable<float> cvar_fogDistance("/fog_distance", 0.f);
-static ConsoleVariable<Vector4> cvar_fogColor("/fog_color", {0.f, 0.f, 0.f, 0.f});
+ConsoleVariable<float> cvar_fogDistance("/fog_distance", 0.f);
+ConsoleVariable<Vector4> cvar_fogColor("/fog_color", {0.f, 0.f, 0.f, 0.f});
 #endif
 
 static void uploadUniforms(Shader& shader, float* proj, float* view, float* mapDims) {
@@ -694,8 +694,15 @@ static void uploadUniforms(Shader& shader, float* proj, float* view, float* mapD
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uFogColor"), 1, fogColor));
     GL_CHECK_ERR(glUniform1f(shader.uniform("uFogDistance"), fogDistance));
 #else
-    GL_CHECK_ERR(glUniform4fv(shader.uniform("uFogColor"), 1, (float*)&*cvar_fogColor));
-    GL_CHECK_ERR(glUniform1f(shader.uniform("uFogDistance"), *cvar_fogDistance));
+    if (shader == spriteUIShader) {
+        float fogDistance = 0.f;
+        float fogColor[4] = { 1.f, 1.f, 1.f, 1.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uFogColor"), 1, fogColor));
+        GL_CHECK_ERR(glUniform1f(shader.uniform("uFogDistance"), fogDistance));
+    } else {
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uFogColor"), 1, (float*)&*cvar_fogColor));
+        GL_CHECK_ERR(glUniform1f(shader.uniform("uFogDistance"), *cvar_fogDistance));
+    }
 #endif
 }
 
@@ -898,10 +905,10 @@ constexpr float defaultSamples = 4096;
 #ifdef EDITOR
 bool hdrEnabled = true;
 #else
+ConsoleVariable<Vector4> cvar_hdrBrightness("/hdr_brightness", defaultBrightness);
 static ConsoleVariable<bool> cvar_hdrMultithread("/hdr_multithread", defaultMultithread);
 static ConsoleVariable<float> cvar_hdrExposure("/hdr_exposure", defaultExposure);
 static ConsoleVariable<float> cvar_hdrGamma("/hdr_gamma", defaultGamma);
-static ConsoleVariable<Vector4> cvar_hdrBrightness("/hdr_brightness", defaultBrightness);
 static ConsoleVariable<float> cvar_hdrAdjustment("/hdr_adjust_rate", defaultAdjustmentRate);
 static ConsoleVariable<float> cvar_hdrLimitHigh("/hdr_limit_high", defaultLimitHigh);
 static ConsoleVariable<float> cvar_hdrLimitLow("/hdr_limit_low", defaultLimitLow);
@@ -1001,6 +1008,7 @@ void glBeginCamera(view_t* camera, bool useHDR)
     uploadUniforms(spriteShader, (float*)&proj, (float*)&view, (float*)&mapDims);
     uploadUniforms(spriteDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
     uploadUniforms(spriteBrightShader, (float*)&proj, (float*)&view, nullptr);
+    uploadUniforms(spriteUIShader, (float*)&proj, (float*)&view, nullptr);
 }
 
 #include <thread>
@@ -1329,7 +1337,7 @@ void glDrawEnemyBarSprite(view_t* camera, int mode, int playerViewport, void* en
     
     // bind shader
     GL_CHECK_ERR(glEnable(GL_BLEND));
-    auto& shader = spriteBrightShader;
+    auto& shader = spriteUIShader;
     shader.bind();
     
     vec4_t v;
@@ -1442,7 +1450,7 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
     
     // bind shader
     GL_CHECK_ERR(glEnable(GL_BLEND));
-    auto& shader = spriteBrightShader;
+    auto& shader = spriteUIShader;
     shader.bind();
     
     vec4_t v;
@@ -1607,7 +1615,7 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
     
     // bind shader
     GL_CHECK_ERR(glEnable(GL_BLEND));
-    auto& shader = spriteBrightShader;
+    auto& shader = spriteUIShader;
     shader.bind();
     
     vec4_t v;
@@ -1812,7 +1820,7 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 	}
     
     // bind shader
-    auto& shader = spriteBrightShader;
+    auto& shader = spriteUIShader;
     shader.bind();
     
     vec4_t v;
