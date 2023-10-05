@@ -4674,5 +4674,34 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_reloadtiles("/reloadtiles", "reloads tile textures", []CCMD{
 		generateTileTextures();
 	});
+
+	static ConsoleCommand ccmd_spawnghost("/respawnasghost", "respawn as a ghost", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		
+		if ( players[clientnum]->ghost.my )
+		{
+			players[clientnum]->ghost.setActive(!players[clientnum]->ghost.isActive());
+			return;
+		}
+
+		if ( stats[clientnum]->HP > 0 )
+		{
+			stats[clientnum]->HP = 0;
+		}
+
+		if ( players[clientnum]->entity )
+		{
+			players[clientnum]->ghost.initTeleportLocations(players[clientnum]->entity->x / 16, players[clientnum]->entity->y / 16);
+		}
+		else
+		{
+			players[clientnum]->ghost.initTeleportLocations(players[clientnum]->ghost.startRoomX, players[clientnum]->ghost.startRoomY);
+		}
+		players[clientnum]->ghost.spawnGhost();
+	});
 }
 
