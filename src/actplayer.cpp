@@ -1610,7 +1610,11 @@ void actDeathGhost(Entity* my)
 
 	const Sint32 spawnAnimationDuration = TICKS_PER_SECOND * 1.2;
 	const Sint32 spawnAnimationHalfway = TICKS_PER_SECOND * 0.8;
-	const bool spawnAnimationPlaying = GHOSTCAM_SPAWN_ANIM < spawnAnimationDuration;
+	bool spawnAnimationPlaying = GHOSTCAM_SPAWN_ANIM < spawnAnimationDuration;
+	if ( GHOSTCAM_DEACTIVATED )
+	{
+		spawnAnimationPlaying = false;
+	}
 	float floatAnimationPercent = std::min(1.f, (float)GHOSTCAM_SPAWN_ANIM / (spawnAnimationHalfway));
 	float thirdPersonAnimationPercent = 0.f;
 	if ( spawnAnimationPlaying )
@@ -1624,16 +1628,18 @@ void actDeathGhost(Entity* my)
 	}
 	if ( GHOSTCAM_SPAWN_ANIM < spawnAnimationDuration )
 	{
-
-		GHOSTCAM_SPAWN_ANIM++;
-		if ( GHOSTCAM_SPAWN_ANIM == 1 )
+		if ( !GHOSTCAM_DEACTIVATED )
 		{
-			playSoundEntityLocal(my, 167, 128);
-			createParticleDropRising(my, 174, 1.0);
-		}
-		if ( GHOSTCAM_SPAWN_ANIM == spawnAnimationHalfway )
-		{
-			players[playernum]->ghost.createBounceAnimate();
+			GHOSTCAM_SPAWN_ANIM++;
+			if ( GHOSTCAM_SPAWN_ANIM == 1 )
+			{
+				playSoundEntityLocal(my, 167, 128);
+				createParticleDropRising(my, 174, 1.0);
+			}
+			if ( GHOSTCAM_SPAWN_ANIM == spawnAnimationHalfway )
+			{
+				players[playernum]->ghost.createBounceAnimate();
+			}
 		}
 	}
 	else
