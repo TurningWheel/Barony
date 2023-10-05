@@ -1588,6 +1588,7 @@ struct CalloutRadialMenu
 	const int getPlayer() const { return gui_player; }
 	static bool uidMatchesPlayer(const int playernum, const Uint32 uid);
 	static Uint32 getPlayerUid(const int playernum);
+	static bool calloutMenuEnabledForGamemode();
 	void update();
 };
 extern CalloutRadialMenu CalloutMenu[MAXPLAYERS];

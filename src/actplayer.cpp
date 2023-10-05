@@ -900,7 +900,7 @@ void Player::Ghost_t::handleActions()
 	}
 
 	if ( !player.usingCommand() && player.bControlEnabled
-		&& !gamePaused )
+		&& !gamePaused && CalloutRadialMenu::calloutMenuEnabledForGamemode() )
 	{
 		bool showCalloutCommandsOnGamepad = false;
 		auto showCalloutCommandsFind = b.find("Call Out");
@@ -6447,7 +6447,7 @@ void actPlayer(Entity* my)
 
 			bool skipFollowerMenu = false;
 			if ( !players[PLAYER_NUM]->usingCommand() && players[PLAYER_NUM]->bControlEnabled
-				&& !gamePaused )
+				&& !gamePaused && CalloutRadialMenu::calloutMenuEnabledForGamemode() )
 			{
 				bool showCalloutCommandsOnGamepad = false;
 				auto showCalloutCommandsFind = b.find("Call Out");

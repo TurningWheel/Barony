@@ -23763,6 +23763,20 @@ CalloutRadialMenu::CalloutType CalloutRadialMenu::getCalloutTypeForUid(const int
 	return CalloutRadialMenu::getCalloutTypeForEntity(player, parent);
 }
 
+static ConsoleVariable<bool> cvar_callout_debug("/callout_debug", false);
+bool CalloutRadialMenu::calloutMenuEnabledForGamemode()
+{
+	if ( *cvar_callout_debug )
+	{
+		return true;
+	}
+	if ( multiplayer != SINGLE || (multiplayer == SINGLE && splitscreen) )
+	{
+		return true;
+	}
+	return false;
+}
+
 bool CalloutRadialMenu::uidMatchesPlayer(const int playernum, const Uint32 uid)
 {
 	if ( uid == 0 ) { return false; }

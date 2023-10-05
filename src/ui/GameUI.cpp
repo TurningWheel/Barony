@@ -941,9 +941,19 @@ void updateCalloutPromptFrame(const int player)
 		return;
 	}
 
+	if ( !CalloutRadialMenu::calloutMenuEnabledForGamemode() )
+	{
+		frame->setDisabled(true);
+		return;
+	}
 	if ( !Player::getPlayerInteractEntity(player) )
 	{
 		frame->setDisabled(true);
+		return;
+	}
+	if ( splitscreen && player == 3 )
+	{
+		frame->setDisabled(true); // we overlap the minimap, so don't draw this one
 		return;
 	}
 	else if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen()
