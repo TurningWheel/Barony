@@ -5388,6 +5388,8 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		players[player]->ghost.uid = entity->getUID();
 		entity->x = (SDLNet_Read16(&net_packet->data[6]) * 16) + 8;
 		entity->y = (SDLNet_Read16(&net_packet->data[8]) * 16) + 8;
+		entity->new_x = entity->x;
+		entity->new_y = entity->y;
 		entity->z = -4;
 		entity->flags[PASSABLE] = true;
 		entity->flags[INVISIBLE] = true;
@@ -5540,10 +5542,16 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			}
 			else
 			{
+				Uint32 overrideUID = 0;
 				if ( entity && (entity->behavior == &actPlayer || entity->behavior == &actDeathGhost) && entity->skill[2] != pnum )
 				{
-					if ( cmd == CalloutRadialMenu::CALLOUT_CMD_LOOK
-						|| cmd == CalloutRadialMenu::CALLOUT_CMD_AFFIRMATIVE
+					if ( cmd == CalloutRadialMenu::CALLOUT_CMD_AFFIRMATIVE
+						|| cmd == CalloutRadialMenu::CALLOUT_CMD_THANKS )
+					{
+						entity = Player::getPlayerInteractEntity(pnum);
+						overrideUID = CalloutMenu[pnum].lockOnEntityUid;
+					}
+					else if ( cmd == CalloutRadialMenu::CALLOUT_CMD_LOOK
 						|| cmd == CalloutRadialMenu::CALLOUT_CMD_NEGATIVE )
 					{
 						entity = Player::getPlayerInteractEntity(pnum);
@@ -5559,7 +5567,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 						}
 					}
 				}
-				if ( CalloutMenu[pnum].createParticleCallout(entity, cmd) )
+				if ( CalloutMenu[pnum].createParticleCallout(entity, cmd, overrideUID) )
 				{
 					CalloutMenu[pnum].sendCalloutText(cmd);
 				}

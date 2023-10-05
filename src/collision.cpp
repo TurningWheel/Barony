@@ -341,6 +341,10 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 
 bool entityInsideTile(Entity* entity, int x, int y, int z, bool checkSafeTiles)
 {
+	if ( !entity )
+	{
+		return false;
+	}
 	if ( x < 0 || x >= map.width || y < 0 || y >= map.height || z < 0 || z >= MAPLAYERS )
 	{
 		return false;
@@ -364,7 +368,10 @@ bool entityInsideTile(Entity* entity, int x, int y, int z, bool checkSafeTiles)
 					{
 						if ( !checkSafeTiles && !map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 						{
-							return true;
+							if ( entity->behavior != &actDeathGhost )
+							{
+								return true;
+							}
 						}
 						else if ( checkSafeTiles && map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 						{
@@ -656,7 +663,9 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				continue;    // monsters don't have hard collision with door frames
 			}
-			if ( my->behavior == &actDeathGhost && (entity->behavior == &actMonster || entity->behavior == &actPlayer) )
+			if ( my->behavior == &actDeathGhost && (entity->behavior == &actMonster 
+				|| entity->behavior == &actPlayer 
+				|| (entity->behavior == &actBoulder && entityInsideEntity(my, entity))) )
 			{
 				continue;
 			}

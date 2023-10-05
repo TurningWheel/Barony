@@ -22501,6 +22501,28 @@ failed:
 			button->setHJustify(Button::justify_t::LEFT);
 			button->setVJustify(Button::justify_t::CENTER);
 			button->setText(options[c].text);
+			if ( !strcmp(button->getName(), "End Life") )
+			{
+				int player = getMenuOwner();
+				if ( multiplayer == CLIENT )
+				{
+					player = clientnum;
+				}
+				if ( Player::Ghost_t::gamemodeAllowsGhosts() )
+				{
+					if ( stats[player]->HP == 0 || !players[player]->entity )
+					{
+						if ( players[player]->ghost.isActive() )
+						{
+							button->setText(Language::get(6050)); // spectate
+						}
+						else
+						{
+							button->setText(Language::get(6051)); // spawn as ghost
+						}
+					}
+				}
+			}
 			button->setFont(menu_option_font);
 			button->setBackground("*#images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
 			button->setHideSelectors(false);

@@ -1441,6 +1441,7 @@ public:
 		real_t hudDamageTextVelocityX = 0.0;
 		real_t hudDamageTextVelocityY = 0.0;
 		real_t animHideXP = 0.0;
+		real_t animHideActionPrompts = 0.0;
 
 		Entity* weapon = nullptr;
 		Entity* arm = nullptr;

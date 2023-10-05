@@ -826,7 +826,7 @@ void Player::Ghost_t::handleActions()
 								target = my;
 							}
 
-							if ( calloutMenu.createParticleCallout(target) )
+							if ( calloutMenu.createParticleCallout(target, CalloutRadialMenu::CALLOUT_CMD_LOOK) )
 							{
 								calloutMenu.sendCalloutText(CalloutRadialMenu::CALLOUT_CMD_LOOK);
 							}
@@ -2091,9 +2091,8 @@ void actDeathCam(Entity* my)
 	}*/
 	DEATHCAM_TIME++;
 
-	/*Uint32 deathcamGameoverPromptTicks = *MainMenu::cvar_fastRestart ? TICKS_PER_SECOND :
-		(splitscreen ? TICKS_PER_SECOND * 3 : TICKS_PER_SECOND * 6);*/
-	Uint32 deathcamGameoverPromptTicks = 25;
+	Uint32 deathcamGameoverPromptTicks = *MainMenu::cvar_fastRestart ? TICKS_PER_SECOND :
+		(splitscreen ? TICKS_PER_SECOND * 3 : TICKS_PER_SECOND * 6);
 	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
 		deathcamGameoverPromptTicks = TICKS_PER_SECOND * 3;
@@ -2124,7 +2123,7 @@ void actDeathCam(Entity* my)
 		{
 			gameModeManager.Tutorial.openGameoverWindow();
 		}
-		else
+		else if ( !players[DEATHCAM_PLAYERNUM]->ghost.isActive() )
 		{
 			MainMenu::openGameoverWindow(DEATHCAM_PLAYERNUM);
 		}
@@ -2279,7 +2278,7 @@ void actDeathCam(Entity* my)
 			DEATHCAM_PLAYERTARGET = 0;
 		}
 		int c = 0;
-		while (!players[DEATHCAM_PLAYERTARGET] || !players[DEATHCAM_PLAYERTARGET]->entity)
+		while ( !Player::getPlayerInteractEntity(DEATHCAM_PLAYERTARGET) )
 		{
 			if (c > MAXPLAYERS)
 			{
@@ -2296,10 +2295,10 @@ void actDeathCam(Entity* my)
 
 	if (DEATHCAM_PLAYERTARGET >= 0)
 	{
-		if (players[DEATHCAM_PLAYERTARGET] && players[DEATHCAM_PLAYERTARGET]->entity)
+		if ( auto entity = Player::getPlayerInteractEntity(DEATHCAM_PLAYERTARGET) )
 		{
-			my->x = players[DEATHCAM_PLAYERTARGET]->entity->x;
-			my->y = players[DEATHCAM_PLAYERTARGET]->entity->y;
+			my->x = entity->x;
+			my->y = entity->y;
 		}
 		else
 		{
@@ -6373,7 +6372,7 @@ void actPlayer(Entity* my)
 										target = my;
 									}
 
-									if ( calloutMenu.createParticleCallout(target) )
+									if ( calloutMenu.createParticleCallout(target, CalloutRadialMenu::CALLOUT_CMD_LOOK) )
 									{
 										calloutMenu.sendCalloutText(CalloutRadialMenu::CALLOUT_CMD_LOOK);
 									}

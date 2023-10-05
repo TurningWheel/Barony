@@ -6922,10 +6922,22 @@ void StatusEffectQueue_t::handleNavigation(std::map<int, StatusEffectQueueEntry_
 	}
 }
 
-const bool kAllowGhostStatusEffects = true;
+const bool kAllowGhostStatusEffects = false;
 
 void StatusEffectQueue_t::updateAllQueuedEffects()
 {
+	bool effectsEnabled = true;
+	if ( !players[player]->entity && ((multiplayer == SINGLE && splitscreen) || multiplayer != SINGLE) )
+	{
+		effectsEnabled = false;
+		resetQueue();
+	}
+	if ( players[player]->ghost.isActive() && !kAllowGhostStatusEffects )
+	{
+		effectsEnabled = false;
+		resetQueue();
+	}
+
 	std::unordered_set<int> effectSet;
 	for ( auto it = effectQueue.rbegin(); it != effectQueue.rend(); ++it )
 	{
@@ -6936,7 +6948,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	std::set<int> effectsToSkipAnim;
 	std::unordered_set<int> spellsActive;
 	int count = 0; //This is just for debugging purposes.
-	for ( node_t* node = channeledSpells[player].first; node; node = node->next, count++ )
+	for ( node_t* node = channeledSpells[player].first; node && effectsEnabled; node = node->next, count++ )
 	{
 		spell_t* spell = (spell_t*)node->element;
 		if ( !spell )
@@ -6991,7 +7003,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 	}
 
-	for ( int i = 0; i <= NUMEFFECTS; ++i )
+	for ( int i = 0; i <= NUMEFFECTS && effectsEnabled; ++i )
 	{
 		if ( i == NUMEFFECTS )
 		{
@@ -7066,9 +7078,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			{
 				effectActive = false;
 			}
-			if ( !kAllowGhostStatusEffects && players[player]->ghost.isActive() )
+			
+			if ( !players[player]->entity )
 			{
-				effectActive = false;
+				skipAnim = true;
 			}
 
 		    if ( effectActive )
@@ -7275,6 +7288,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 		else
 		{
+			if ( !players[player]->entity )
+			{
+				effectsToSkipAnim.insert(i);
+			}
 			if ( i == kEffectSneak )
 			{
 				effectsToSkipAnim.insert(i);
@@ -7306,6 +7323,21 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	bool hungerIconActive = (effectSet.find(kEffectBread) != effectSet.end() 
 		|| effectSet.find(kEffectBloodHunger) != effectSet.end()
 		|| effectSet.find(kEffectAutomatonHunger) != effectSet.end());
+	if ( !players[player]->entity )
+	{
+		if ( effectSet.find(kEffectBread) != effectSet.end() )
+		{
+			effectsToSkipAnimThisFrame.push_back(kEffectBread);
+		}
+		if ( effectSet.find(kEffectBloodHunger) != effectSet.end() )
+		{
+			effectsToSkipAnimThisFrame.push_back(kEffectBloodHunger);
+		}
+		if ( effectSet.find(kEffectAutomatonHunger) != effectSet.end() )
+		{
+			effectsToSkipAnimThisFrame.push_back(kEffectAutomatonHunger);
+		}
+	}
 
 	Frame* statusEffectFrame = getStatusEffectFrame();
 	auto automatonHungerFrame = statusEffectFrame->findFrame("automaton hunger notification");
@@ -8047,7 +8079,17 @@ void updateStatusEffectQueue(const int player)
 		statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectAutomatonHunger);
 	}
 
-	if ( stats[player] && stats[player]->type != AUTOMATON
+	bool effectsEnabled = true;
+	if ( !players[player]->entity && ((multiplayer == SINGLE && splitscreen) || multiplayer != SINGLE) )
+	{
+		effectsEnabled = false;
+	}
+	if ( players[player]->ghost.isActive() && !kAllowGhostStatusEffects )
+	{
+		effectsEnabled = false;
+	}
+
+	if ( effectsEnabled && stats[player] && stats[player]->type != AUTOMATON
 		&& (svFlags & SV_FLAG_HUNGER) 
 		&& (stats[player]->HUNGER <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_HUNGRY) 
 			|| stats[player]->HUNGER >= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_OVERSATIATED)) )
@@ -8158,7 +8200,7 @@ void updateStatusEffectQueue(const int player)
 			}
 		}
 	}
-	else
+	else if ( effectsEnabled )
 	{
 		statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectBloodHunger);
 		statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectBread);
@@ -9656,6 +9698,46 @@ void Player::HUD_t::updateActionPrompts()
 	}
 	actionPromptsFrame->setDisabled(false);
 	actionPromptsFrame->setSize(SDL_Rect{ 0, 0, hudFrame->getSize().w, hudFrame->getSize().h });
+
+	bool tempHideActionPrompts = false;
+	bool fadeOut = false;
+	if ( ghostPrompts )
+	{
+		if ( player.bUseCompactGUIHeight() && CalloutMenu[player.playernum].calloutMenuIsOpen() && !CalloutMenu[player.playernum].selectMoveTo )
+		{
+			tempHideActionPrompts = true;
+		}
+	}
+
+	if ( tempHideActionPrompts )
+	{
+		if ( fadeOut )
+		{
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
+			real_t setpointDiff = fpsScale * std::max(.1, (1.0 - animHideActionPrompts)) / 2.5;
+			animHideActionPrompts += setpointDiff;
+			animHideActionPrompts = std::min(1.0, animHideActionPrompts);
+		}
+		else
+		{
+			animHideActionPrompts = 1.0;
+		}
+	}
+	else
+	{
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
+		real_t setpointDiff = fpsScale * std::max(.1, (animHideActionPrompts)) / 2.5;
+		animHideActionPrompts -= setpointDiff;
+		animHideActionPrompts = std::max(0.0, animHideActionPrompts);
+	}
+
+	actionPromptsFrame->setInheritParentFrameOpacity(false);
+	real_t opacity = 1.0;
+	if ( auto parent = actionPromptsFrame->getParent() )
+	{
+		opacity *= actionPromptsFrame->getParent()->getOpacity() / 100.0;
+	}
+	actionPromptsFrame->setOpacity((opacity - animHideActionPrompts) * 100.0);
 
 	const int iconSize = Player::HUD_t::actionPromptIconSize;
 	const int glyphSize = 32;
