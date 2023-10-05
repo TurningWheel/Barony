@@ -5925,7 +5925,6 @@ void drawAllPlayerCameras() {
 					players[c]->ghost.handleGhostCameraBobbing(true);
 					players[c]->ghost.handleGhostMovement(true);
 					players[c]->ghost.handleGhostCameraUpdate(true);
-					players[c]->ghost.handleGhostCameraPosition(true);
 					//messagePlayer(0, "%3.2f | %3.2f", players[c]->entity->yaw, oldYaw);
 				}
 			}

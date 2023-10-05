@@ -2338,7 +2338,23 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 							if ( doSlow )
 							{
-								hit.entity->setEffect(EFF_SLOW, true, duration, false);
+								if ( hit.entity->setEffect(EFF_SLOW, true, duration, false) )
+								{
+									//playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
+									if ( parent )
+									{
+										Uint32 color = makeColorRGB(0, 255, 0);
+										if ( parent->behavior == &actPlayer || parent->behavior == &actDeathGhost )
+										{
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(394), Language::get(393), MSG_COMBAT);
+										}
+									}
+									/*Uint32 color = makeColorRGB(255, 0, 0);
+									if ( player >= 0 )
+									{
+										messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(395));
+									}*/
+								}
 							}
 
 							if ( hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )

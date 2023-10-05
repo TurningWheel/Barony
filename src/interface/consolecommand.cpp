@@ -2597,7 +2597,7 @@ namespace ConsoleCommands {
 		{
 			effects.push_back(1);
 		}
-		while ( num > 0 )
+		while ( num > 0 && players[clientnum]->entity )
 		{
 			--num;
 			auto picked = local_rng.discrete(effects.data(), effects.size());
