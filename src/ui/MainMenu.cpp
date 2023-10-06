@@ -255,7 +255,7 @@ namespace MainMenu {
                 {"Hotbar Right", "MouseWheelDown", "DpadX+", emptyBinding},
                 {"Hotbar Up / Select", "Mouse2", "DpadY-", emptyBinding},
                 {"Hotbar Down / Cancel", hiddenBinding, "DpadY+", emptyBinding},
-                {"Interact Tooltip Next", "R", "ButtonB", emptyBinding },
+                {"Interact Tooltip Next", "R", "DpadY+", emptyBinding },
                 {"Interact Tooltip Prev", emptyBinding, emptyBinding, emptyBinding },
                 {"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
                 {"Quick Turn", emptyBinding, "ButtonRightBumper", emptyBinding },
