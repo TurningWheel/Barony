@@ -48,7 +48,9 @@ ConsoleVariable<bool> cvar_disableHoliday("/disable_holiday", false);
 #endif
 
 HolidayTheme getCurrentHoliday(bool force) {
-#ifndef EDITOR
+#ifdef EDITOR
+    return HolidayTheme::THEME_NONE;
+#else
     if (*cvar_disableHoliday && !force) {
         return HolidayTheme::THEME_NONE;
     }
@@ -56,7 +58,6 @@ HolidayTheme getCurrentHoliday(bool force) {
         const int holiday = std::clamp(*cvar_forceHoliday, 0, (int)HolidayTheme::THEME_MAX - 1);
         return static_cast<HolidayTheme>(holiday);
     }
-#endif
     static bool gotTime = false;
     static int year, month, day;
     if (!gotTime) {
@@ -73,6 +74,7 @@ HolidayTheme getCurrentHoliday(bool force) {
     else {
         return HolidayTheme::THEME_NONE;
     }
+#endif
 }
 
 bool isCurrentHoliday(bool force) {
