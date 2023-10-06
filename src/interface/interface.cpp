@@ -22291,7 +22291,8 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 	{
 		if ( lockOnEntityUid == 0 )
 		{
-			if ( cmd == CALLOUT_CMD_AFFIRMATIVE || cmd == CALLOUT_CMD_NEGATIVE )
+			if ( cmd == CALLOUT_CMD_AFFIRMATIVE 
+				|| cmd == CALLOUT_CMD_NEGATIVE )
 			{
 				entity = playerEntity;
 			}
@@ -22647,6 +22648,69 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 			}
 
 			key = "player_wave";
+			if ( setType == SET_CALLOUT_ICON_KEY )
+			{
+				return key;
+			}
+
+			auto& textMap = text_map[key];
+			auto highlights = textMap.bannerHighlights;
+			if ( highlights.size() > 0 )
+			{
+				int indexStart = 0;
+				for ( auto highlight : highlights )
+				{
+					indexStart = std::max(highlight, indexStart);
+				}
+				for ( auto c : targetPlayerName )
+				{
+					if ( c == ' ' )
+					{
+						highlights.insert(indexStart + 1);
+						++indexStart;
+					}
+				}
+			}
+			if ( setType == SET_CALLOUT_BANNER_TEXT )
+			{
+				setCalloutBannerTextFormatted(player, field, color, highlights, textMap.bannerText.c_str(), targetPlayerName.c_str());
+			}
+			else
+			{
+				if ( entity && entity->skill[2] == targetPlayer )
+				{
+					char shortname[32];
+					stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
+					char buf[128];
+					snprintf(buf, sizeof(buf), textMap.worldMsgEmoteToYou.c_str(), shortname);
+					return buf;
+				}
+				else
+				{
+					return getCalloutMessage(textMap, targetPlayerName.c_str(), targetPlayer);
+				}
+			}
+			return "";
+		}
+		else if ( (cmd == CALLOUT_CMD_AFFIRMATIVE && !(lockOnEntityUid == 0 || (entity && playerEntity == entity)))
+			|| cmd == CALLOUT_CMD_THANKS )
+		{
+			std::string targetPlayerName = "";
+			if ( entity && (entity->behavior == &actPlayer || entity->behavior == &actDeathGhost) )
+			{
+				char shortname[32];
+				stringCopy(shortname, stats[entity->skill[2]]->name, sizeof(shortname), 22);
+				targetPlayerName = shortname;
+			}
+
+			if ( cmd == CALLOUT_CMD_THANKS )
+			{
+				key = "default";
+			}
+			else
+			{
+				key = "player_thanks";
+			}
 			if ( setType == SET_CALLOUT_ICON_KEY )
 			{
 				return key;
@@ -23699,6 +23763,20 @@ CalloutRadialMenu::CalloutType CalloutRadialMenu::getCalloutTypeForUid(const int
 	return CalloutRadialMenu::getCalloutTypeForEntity(player, parent);
 }
 
+static ConsoleVariable<bool> cvar_callout_debug("/callout_debug", false);
+bool CalloutRadialMenu::calloutMenuEnabledForGamemode()
+{
+	if ( *cvar_callout_debug )
+	{
+		return true;
+	}
+	if ( multiplayer != SINGLE || (multiplayer == SINGLE && splitscreen) )
+	{
+		return true;
+	}
+	return false;
+}
+
 bool CalloutRadialMenu::uidMatchesPlayer(const int playernum, const Uint32 uid)
 {
 	if ( uid == 0 ) { return false; }
@@ -24038,11 +24116,13 @@ void CalloutRadialMenu::drawCallouts(const int playernum)
 					if ( uidMatchesPlayer(i, callout.second.entityUid) )
 					{
 						if ( callout.second.cmd == CALLOUT_CMD_AFFIRMATIVE
+							|| callout.second.cmd == CALLOUT_CMD_THANKS
 							|| callout.second.cmd == CALLOUT_CMD_NEGATIVE
 							|| callout.second.cmd == CALLOUT_CMD_LOOK
 							|| callout.second.cmd == CALLOUT_CMD_SOUTH 
 							|| callout.second.cmd == CALLOUT_CMD_SOUTHWEST 
-							|| callout.second.cmd == CALLOUT_CMD_SOUTHEAST )
+							|| callout.second.cmd == CALLOUT_CMD_SOUTHEAST
+							|| (callout.second.cmd == CALLOUT_CMD_HELP && players[i]->ghost.isActive()) )
 						{
 							// fade early for simple thumbs up/down for players
 							lifePercent = callout.second.ticks / (real_t)((TICKS_PER_SECOND * 4) / 5);
@@ -24355,7 +24435,7 @@ int CalloutRadialMenu::CALLOUT_SFX_NEGATIVE = 607;
 int CalloutRadialMenu::CALLOUT_SFX_POSITIVE = 606;
 static ConsoleVariable<int> cvar_callout_sfx_vol("/callout_sfx_vol", 128);
 
-bool CalloutRadialMenu::createParticleCallout(Entity* entity, CalloutRadialMenu::CalloutCommand _cmd)
+bool CalloutRadialMenu::createParticleCallout(Entity* entity, CalloutRadialMenu::CalloutCommand _cmd, Uint32 overrideUID)
 {
 	if ( !entity ) { return false; }
 	if ( _cmd == CALLOUT_CMD_CANCEL ) { return false; }
@@ -24419,14 +24499,21 @@ bool CalloutRadialMenu::createParticleCallout(Entity* entity, CalloutRadialMenu:
 
 	std::string calloutTypeKey = getCalloutKeyForCommand(_cmd);
 	Uint32 oldTarget = lockOnEntityUid;
-	lockOnEntityUid = entity->getUID();
+	if ( overrideUID != 0 )
+	{
+		lockOnEntityUid = overrideUID;
+	}
+	else
+	{
+		lockOnEntityUid = entity->getUID();
+	}
 	std::string key = setCalloutText(nullptr, calloutTypeKey.c_str(), 0, _cmd, SET_CALLOUT_ICON_KEY, -1);
 	lockOnEntityUid = oldTarget;
 
 	callout.tagID = worldIconEntries[iconEntries[calloutTypeKey].text_map[key].worldIconTag].id;
 	callout.tagSmallID = worldIconEntries[iconEntries[calloutTypeKey].text_map[key].worldIconTagMini].id;
 
-	if ( callout.cmd == CALLOUT_CMD_AFFIRMATIVE )
+	if ( callout.cmd == CALLOUT_CMD_AFFIRMATIVE || callout.cmd == CALLOUT_CMD_THANKS )
 	{
 		playSound(CALLOUT_SFX_POSITIVE, *cvar_callout_sfx_vol);
 	}
@@ -24498,7 +24585,7 @@ bool CalloutRadialMenu::createParticleCallout(real_t x, real_t y, real_t z, Uint
 		}
 	}
 
-	if ( callout.cmd == CALLOUT_CMD_AFFIRMATIVE )
+	if ( callout.cmd == CALLOUT_CMD_AFFIRMATIVE || callout.cmd == CALLOUT_CMD_THANKS )
 	{
 		playSound(CALLOUT_SFX_POSITIVE, *cvar_callout_sfx_vol);
 	}
@@ -24639,6 +24726,10 @@ std::string CalloutRadialMenu::getCalloutKeyForCommand(CalloutRadialMenu::Callou
 	{
 		return "affirmative";
 	}
+	else if ( cmd == CALLOUT_CMD_THANKS )
+	{
+		return "thanks";
+	}
 	else if ( cmd == CALLOUT_CMD_NEGATIVE )
 	{
 		return "negative";
@@ -24711,14 +24802,24 @@ void CalloutRadialMenu::drawCalloutMenu()
 
 	Input& input = Input::inputs[gui_player];
 
+	bool allowMenuCancel = true;
+	if ( input.input("Call Out").input
+		== input.input("MenuCancel").input )
+	{
+		allowMenuCancel = false;
+	}
+
 	if ( selectMoveTo )
 	{
 		if ( input.binaryToggle("MenuCancel") )
 		{
 			input.consumeBinaryToggle("MenuCancel");
-			input.consumeBindingsSharedWithBinding("MenuCancel");
-			closeCalloutMenuGUI();
-			Player::soundCancel();
+			if ( allowMenuCancel )
+			{
+				input.consumeBindingsSharedWithBinding("MenuCancel");
+				closeCalloutMenuGUI();
+				Player::soundCancel();
+			}
 		}
 		if ( calloutFrame )
 		{
@@ -24761,11 +24862,14 @@ void CalloutRadialMenu::drawCalloutMenu()
 	if ( calloutMenuIsOpen() && input.binaryToggle("MenuCancel") )
 	{
 		input.consumeBinaryToggle("MenuCancel");
-		input.consumeBindingsSharedWithBinding("MenuCancel");
-		closeCalloutMenuGUI();
-		players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
-		Player::soundCancel();
-		return;
+		if ( allowMenuCancel || (optionSelected != -1 && optionSelected != CALLOUT_CMD_END && optionSelected != CALLOUT_CMD_SELECT) )
+		{
+			input.consumeBindingsSharedWithBinding("MenuCancel");
+			closeCalloutMenuGUI();
+			players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+			Player::soundCancel();
+			return;
+		}
 	}
 
 	//if ( ticks % 50 == 0 )
@@ -24946,6 +25050,7 @@ void CalloutRadialMenu::drawCalloutMenu()
 					{
 						if ( Entity* target = uidToEntity(lockOnEntityUid) )
 						{
+							Uint32 overrideUID = 0;
 							if ( (target->behavior == &actPlayer || target->behavior == &actDeathGhost)
 								&& target->skill[2] != getPlayer() )
 							{
@@ -24954,8 +25059,13 @@ void CalloutRadialMenu::drawCalloutMenu()
 									lockOnEntityUid = getPlayerUid(getPlayer());
 									target = uidToEntity(lockOnEntityUid);
 								}
+								else if ( (CalloutCommand)optionSelected == CALLOUT_CMD_AFFIRMATIVE )
+								{
+									target = Player::getPlayerInteractEntity(getPlayer());
+									overrideUID = lockOnEntityUid;
+									optionSelected = CALLOUT_CMD_THANKS;
+								}
 								else if ( (CalloutCommand)optionSelected == CALLOUT_CMD_LOOK
-									|| (CalloutCommand)optionSelected == CALLOUT_CMD_AFFIRMATIVE
 									|| (CalloutCommand)optionSelected == CALLOUT_CMD_NEGATIVE )
 								{
 									target = Player::getPlayerInteractEntity(getPlayer());
@@ -24972,7 +25082,7 @@ void CalloutRadialMenu::drawCalloutMenu()
 								}
 							}
 
-							if ( createParticleCallout(target, (CalloutCommand)optionSelected) )
+							if ( createParticleCallout(target, (CalloutCommand)optionSelected, overrideUID) )
 							{
 								sendCalloutText((CalloutCommand)optionSelected);
 							}

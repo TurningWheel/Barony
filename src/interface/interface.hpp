@@ -1453,7 +1453,8 @@ struct CalloutRadialMenu
 		CALLOUT_CMD_MOVE,
 		CALLOUT_CMD_CANCEL,
 		CALLOUT_CMD_SELECT,
-		CALLOUT_CMD_END
+		CALLOUT_CMD_END,
+		CALLOUT_CMD_THANKS
 	};
 	int getPlayerForDirectPlayerCmd(const int player, const CalloutCommand cmd);
 	enum CalloutType : int
@@ -1556,7 +1557,7 @@ struct CalloutRadialMenu
 	void closeCalloutMenuGUI();
 	bool allowedInteractEntity(Entity& selectedEntity, bool updateInteractText = true);
 	bool createParticleCallout(real_t x, real_t y, real_t z, Uint32 uid, CalloutCommand _cmd = CALLOUT_CMD_LOOK); // if true, send message
-	bool createParticleCallout(Entity* entity, CalloutCommand _cmd = CALLOUT_CMD_LOOK); // if true, send message
+	bool createParticleCallout(Entity* entity, CalloutCommand _cmd, Uint32 overrideUID = 0); // if true, send message
 	enum SetCalloutTextTypes : int {
 		SET_CALLOUT_BANNER_TEXT,
 		SET_CALLOUT_WORLD_TEXT,
@@ -1587,6 +1588,7 @@ struct CalloutRadialMenu
 	const int getPlayer() const { return gui_player; }
 	static bool uidMatchesPlayer(const int playernum, const Uint32 uid);
 	static Uint32 getPlayerUid(const int playernum);
+	static bool calloutMenuEnabledForGamemode();
 	void update();
 };
 extern CalloutRadialMenu CalloutMenu[MAXPLAYERS];

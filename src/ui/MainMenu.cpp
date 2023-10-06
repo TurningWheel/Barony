@@ -174,7 +174,11 @@ namespace MainMenu {
                 {"Spell List", "B", hiddenBinding, emptyBinding},
                 {"Skill Sheet", "K", hiddenBinding, emptyBinding},
                 {"Autosort Inventory", "R", hiddenBinding, emptyBinding},
+#ifdef NINTENDO
+				{"Call Out", "X", "DpadY+", emptyBinding},
+#else
 				{"Call Out", "X", "ButtonA", emptyBinding},
+#endif
                 {"Command NPC", "Q", "DpadX-", emptyBinding},
                 {"Show NPC Commands", "C", "DpadX+", emptyBinding},
                 {"Cycle NPCs", "E", "DpadY-", emptyBinding},
@@ -16201,7 +16205,11 @@ failed:
                 roomcode_header->setSize(SDL_Rect{Frame::virtualScreenX - 212 - 44 - 292 - 32, 0, 320, 35});
                 roomcode_header->setFont(smallfont_outline);
                 if (directConnect) {
-                    roomcode_header->setText(Language::get(5464));
+#ifdef NINTENDO
+					roomcode_header->setText("");
+#else
+					roomcode_header->setText(Language::get(5464));
+#endif
                 } else {
                     roomcode_header->setText(Language::get(5465));
                 }
@@ -22501,6 +22509,28 @@ failed:
 			button->setHJustify(Button::justify_t::LEFT);
 			button->setVJustify(Button::justify_t::CENTER);
 			button->setText(options[c].text);
+			if ( !strcmp(button->getName(), "End Life") )
+			{
+				int player = getMenuOwner();
+				if ( multiplayer == CLIENT )
+				{
+					player = clientnum;
+				}
+				if ( Player::Ghost_t::gamemodeAllowsGhosts() )
+				{
+					if ( stats[player]->HP == 0 || !players[player]->entity )
+					{
+						if ( players[player]->ghost.isActive() )
+						{
+							button->setText(Language::get(6050)); // spectate
+						}
+						else
+						{
+							button->setText(Language::get(6051)); // spawn as ghost
+						}
+					}
+				}
+			}
 			button->setFont(menu_option_font);
 			button->setBackground("*#images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
 			button->setHideSelectors(false);

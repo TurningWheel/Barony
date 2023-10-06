@@ -3135,6 +3135,10 @@ Entity* Player::getPlayerInteractEntity(const int playernum)
 	{
 		return nullptr;
 	}
+	if ( !players[playernum] )
+	{
+		return nullptr;
+	}
 	return players[playernum]->ghost.isActive() ? players[playernum]->ghost.my : players[playernum]->entity;
 }
 

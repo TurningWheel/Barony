@@ -8251,6 +8251,7 @@ void Mods::loadModels(int start, int end) {
 				if ( polymodels[c].faces )
 				{
 					free(polymodels[c].faces);
+					polymodels[c].faces = nullptr;
 				}
 				models[c] = loadVoxel(name);
 			}
@@ -8355,8 +8356,11 @@ void Mods::unloadMods(bool force)
 			for (int c = 0; c < nummodels; ++c) {
 				if (polymodels[c].faces) {
 					free(polymodels[c].faces);
+					polymodels[c].faces = nullptr;
 				}
 			}
+			free(polymodels);
+			polymodels = nullptr;
 			generatePolyModels(0, nummodels, false);
 			Mods::modelsListRequiresReloadUnmodded = false;
 		}
@@ -8466,6 +8470,7 @@ void Mods::loadMods()
 		for (int c = modelsIndexUpdateStart; c < modelsIndexUpdateEnd && c < nummodels; ++c) {
 			if (polymodels[c].faces) {
 				free(polymodels[c].faces);
+				polymodels[c].faces = nullptr;
 			}
 			if (polymodels[c].vao) {
 				GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
@@ -8480,6 +8485,8 @@ void Mods::loadMods()
 				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].normals));
 			}
 		}
+		free(polymodels);
+		polymodels = nullptr;
 		generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
 		generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
 		useModelCache = oldModelCache;

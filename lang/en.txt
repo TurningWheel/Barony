@@ -7832,5 +7832,7 @@ intro - God Rest Ye Merry Gentlemen by NaturesEye#
 6047 Haunt#
 6048 Push#
 6049 View Wheel#
+6050 SPECTATE#
+6051 SPAWN AS GHOST#
 
 6100 end#
