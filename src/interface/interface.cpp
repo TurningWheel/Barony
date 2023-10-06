@@ -24802,14 +24802,24 @@ void CalloutRadialMenu::drawCalloutMenu()
 
 	Input& input = Input::inputs[gui_player];
 
+	bool allowMenuCancel = true;
+	if ( input.input("Call Out").input
+		== input.input("MenuCancel").input )
+	{
+		allowMenuCancel = false;
+	}
+
 	if ( selectMoveTo )
 	{
 		if ( input.binaryToggle("MenuCancel") )
 		{
 			input.consumeBinaryToggle("MenuCancel");
-			input.consumeBindingsSharedWithBinding("MenuCancel");
-			closeCalloutMenuGUI();
-			Player::soundCancel();
+			if ( allowMenuCancel )
+			{
+				input.consumeBindingsSharedWithBinding("MenuCancel");
+				closeCalloutMenuGUI();
+				Player::soundCancel();
+			}
 		}
 		if ( calloutFrame )
 		{
@@ -24852,11 +24862,14 @@ void CalloutRadialMenu::drawCalloutMenu()
 	if ( calloutMenuIsOpen() && input.binaryToggle("MenuCancel") )
 	{
 		input.consumeBinaryToggle("MenuCancel");
-		input.consumeBindingsSharedWithBinding("MenuCancel");
-		closeCalloutMenuGUI();
-		players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
-		Player::soundCancel();
-		return;
+		if ( allowMenuCancel || (optionSelected != -1 && optionSelected != CALLOUT_CMD_END && optionSelected != CALLOUT_CMD_SELECT) )
+		{
+			input.consumeBindingsSharedWithBinding("MenuCancel");
+			closeCalloutMenuGUI();
+			players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+			Player::soundCancel();
+			return;
+		}
 	}
 
 	//if ( ticks % 50 == 0 )
