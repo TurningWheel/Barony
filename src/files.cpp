@@ -3160,6 +3160,16 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 
 	if ( generateAll )
 	{
+		if (polymodels) {
+			for (int c = 0; c < nummodels; ++c) {
+				if (polymodels[c].faces) {
+					free(polymodels[c].faces);
+					polymodels[c].faces = nullptr;
+				}
+			}
+			free(polymodels);
+			polymodels = nullptr;
+		}
 		polymodels = (polymodel_t*)malloc(sizeof(polymodel_t) * nummodels);
         memset(polymodels, 0, sizeof(polymodel_t) * nummodels);
 		if ( useModelCache && !forceCacheRebuild )
@@ -4136,6 +4146,7 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		// translate quads into triangles
         if (polymodels[c].faces) {
             free(polymodels[c].faces);
+			polymodels[c].faces = nullptr;
         }
 		polymodels[c].faces = (polytriangle_t*)malloc(sizeof(polytriangle_t) * polymodels[c].numfaces);
 		for ( uint64_t i = 0; i < polymodels[c].numfaces; i++ )
@@ -4251,6 +4262,7 @@ void reloadModels(int start, int end) {
 					if ( polymodels[c].faces )
 					{
 						free(polymodels[c].faces);
+						polymodels[c].faces = nullptr;
 					}
 					models[c] = loadVoxel(name);
 				}
