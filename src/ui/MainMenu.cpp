@@ -16201,6 +16201,11 @@ failed:
                 roomcode_header->setSize(SDL_Rect{Frame::virtualScreenX - 212 - 44 - 292 - 32, 0, 320, 35});
                 roomcode_header->setFont(smallfont_outline);
                 if (directConnect) {
+#ifdef NINTENDO
+					roomcode_header->setText("");
+#else
+					roomcode_header->setText(Language::get(5464));
+#endif
                     roomcode_header->setText(Language::get(5464));
                 } else {
                     roomcode_header->setText(Language::get(5465));
