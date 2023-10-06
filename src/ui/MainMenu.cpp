@@ -174,7 +174,11 @@ namespace MainMenu {
                 {"Spell List", "B", hiddenBinding, emptyBinding},
                 {"Skill Sheet", "K", hiddenBinding, emptyBinding},
                 {"Autosort Inventory", "R", hiddenBinding, emptyBinding},
+#ifdef NINTENDO
+				{"Call Out", "X", "DpadY+", emptyBinding},
+#else
 				{"Call Out", "X", "ButtonA", emptyBinding},
+#endif
                 {"Command NPC", "Q", "DpadX-", emptyBinding},
                 {"Show NPC Commands", "C", "DpadX+", emptyBinding},
                 {"Cycle NPCs", "E", "DpadY-", emptyBinding},
