@@ -174,7 +174,11 @@ namespace MainMenu {
                 {"Spell List", "B", hiddenBinding, emptyBinding},
                 {"Skill Sheet", "K", hiddenBinding, emptyBinding},
                 {"Autosort Inventory", "R", hiddenBinding, emptyBinding},
+#ifdef NINTENDO
+				{"Call Out", "X", "ButtonB", emptyBinding},
+#else
 				{"Call Out", "X", "ButtonA", emptyBinding},
+#endif
                 {"Command NPC", "Q", "DpadX-", emptyBinding},
                 {"Show NPC Commands", "C", "DpadX+", emptyBinding},
                 {"Cycle NPCs", "E", "DpadY-", emptyBinding},
@@ -192,7 +196,7 @@ namespace MainMenu {
 #endif
                 {"Hotbar Down / Cancel", hiddenBinding, "DpadY+", emptyBinding},
 #ifdef NINTENDO
-                {"Interact Tooltip Next", "R", "ButtonB", emptyBinding },
+                {"Interact Tooltip Next", "R", "DpadY+", emptyBinding },
 #else
                 {"Interact Tooltip Next", "R", "DpadY+", emptyBinding },
 #endif
