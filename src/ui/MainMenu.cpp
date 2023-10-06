@@ -175,7 +175,7 @@ namespace MainMenu {
                 {"Skill Sheet", "K", hiddenBinding, emptyBinding},
                 {"Autosort Inventory", "R", hiddenBinding, emptyBinding},
 #ifdef NINTENDO
-				{"Call Out", "X", "ButtonB", emptyBinding},
+				{"Call Out", "X", "DpadY+", emptyBinding},
 #else
 				{"Call Out", "X", "ButtonA", emptyBinding},
 #endif
@@ -198,7 +198,7 @@ namespace MainMenu {
 #ifdef NINTENDO
                 {"Interact Tooltip Next", "R", "DpadY+", emptyBinding },
 #else
-                {"Interact Tooltip Next", "R", "DpadY+", emptyBinding },
+                {"Interact Tooltip Next", "R", "ButtonB", emptyBinding },
 #endif
                 {"Interact Tooltip Prev", emptyBinding, emptyBinding, emptyBinding },
                 {"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
