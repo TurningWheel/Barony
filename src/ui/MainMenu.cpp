@@ -16206,7 +16206,6 @@ failed:
 #else
 					roomcode_header->setText(Language::get(5464));
 #endif
-                    roomcode_header->setText(Language::get(5464));
                 } else {
                     roomcode_header->setText(Language::get(5465));
                 }
