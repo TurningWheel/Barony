@@ -1251,10 +1251,15 @@ void ItemTooltips_t::readTooltipsFromFile(bool forceLoadBaseDirectory)
 			}
 			else
 			{
+				std::string template_name = template_itr->name.GetString();
+				if ( templates.find(template_name) != templates.end() )
+				{
+					templates[template_name].clear();
+				}
 				for ( auto lines = template_itr->value.Begin();
 					lines != template_itr->value.End(); ++lines )
 				{
-					templates[template_itr->name.GetString()].push_back(lines->GetString());
+					templates[template_name].push_back(lines->GetString());
 				}
 			}
 		}
