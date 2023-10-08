@@ -22392,7 +22392,7 @@ void loadHUDSettingsJSON()
 					{
 						Player::HUD_t::actionPromptOffsetX = d["action_prompts"]["x_offset"].GetInt();
 					}
-					if ( d["action_prompts"].HasMember("x_offset") )
+					if ( d["action_prompts"].HasMember("x_offset_ghost_prompts") )
 					{
 						Player::HUD_t::actionPromptOffsetXGhostPrompts = d["action_prompts"]["x_offset_ghost_prompts"].GetInt();
 					}
