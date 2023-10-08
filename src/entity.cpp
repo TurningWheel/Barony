@@ -17847,33 +17847,6 @@ char const * playerClassLangEntry(int classnum, int playernum)
 
 /*-------------------------------------------------------------------------------
 
-playerClassDescription
-get text string for the description of player chosen classes.
-
--------------------------------------------------------------------------------*/
-
-char const * playerClassDescription(int classnum, int playernum)
-{
-	if ( classnum >= CLASS_BARBARIAN && classnum <= CLASS_JOKER )
-	{
-		return Language::get(10 + classnum);
-	}
-	else if ( classnum >= CLASS_CONJURER )
-	{
-		return Language::get(3231 + classnum - CLASS_CONJURER);
-	}
-	else if ( classnum >= CLASS_SEXTON && classnum <= CLASS_MONK )
-	{
-		return Language::get(2560 + classnum - CLASS_SEXTON);
-	}
-	else
-	{
-		return "undefined description";
-	}
-}
-
-/*-------------------------------------------------------------------------------
-
 setHelmetLimbOffset
 Adjusts helmet offsets for all monsters, depending on the type of headwear.
 
