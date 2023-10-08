@@ -2715,8 +2715,8 @@ public:
 		void setColorFaintText(Uint32 color) { faintTextColor = color; }
 	};
 	void readItemsFromFile();
-	void readItemLocalizationsFromFile();
-	void readTooltipsFromFile();
+	void readItemLocalizationsFromFile(bool forceLoadBaseDirectory = false);
+	void readTooltipsFromFile(bool forceLoadBaseDirectory = false);
 	std::vector<tmpItem_t> tmpItems;
 	std::map<Sint32, spellItem_t> spellItems;
 	std::map<std::string, ItemTooltip_t> tooltips;
