@@ -221,6 +221,18 @@ int initApp(char const * const title, int fullscreen)
         return 13;
     }
 
+	// load default language file (english)
+	Language::languageCode = "en";
+	if ( Language::reloadLanguage() )
+	{
+		printlog("Fatal error: failed to load default language file!\n");
+		if ( logfile )
+		{
+			fclose(logfile);
+		}
+		exit(1);
+	}
+
 	// initialize SDL
 	window_title = title;
 	printlog("initializing SDL...\n");
@@ -904,8 +916,8 @@ int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 	TTF_SetFontHinting(ttf16, TTF_HINTING_MONO);
 
 	// open language file
-	File* fp;
-	if ( (fp = openDataFile(langFilepath.c_str(), "rb")) == NULL )
+	File* fp = FileIO::open(langFilepath.c_str(), "rb");
+	if ( !fp )
 	{
 		printlog("error: unable to load language file: '%s'", langFilepath.c_str());
 		return 1;
@@ -915,7 +927,10 @@ int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 	languageCode = lang;
 
 	tmpEntries.clear();
-	entries.clear();
+	if ( forceLoadBaseDirectory )
+	{
+		entries.clear();
+	}
 
 	// read file
 	Uint32 line;
@@ -992,7 +1007,6 @@ int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 	FileIO::close(fp);
 	printlog( "successfully loaded language file '%s'\n", langFilepath.c_str());
 
-	initMenuOptions();
 	return 0;
 }
 

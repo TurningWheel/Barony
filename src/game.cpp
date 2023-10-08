@@ -6569,17 +6569,6 @@ int main(int argc, char** argv)
 			skipintro = false;
 		}
 
-		// load default language file (english)
-		if ( Language::loadLanguage("en", true) )
-		{
-			printlog("Fatal error: failed to load default language file!\n");
-			if (logfile)
-			{
-				fclose(logfile);
-			}
-			exit(1);
-		}
-
 		// initialize map
 		map.tiles = nullptr;
 		map.entities = (list_t*) malloc(sizeof(list_t));
