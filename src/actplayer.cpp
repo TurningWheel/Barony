@@ -1650,7 +1650,7 @@ void actDeathGhost(Entity* my)
 	auto player = players[playernum];
 
 	my->removeLightField();
-	char* light_type = nullptr;
+	const char* light_type = nullptr;
 	bool ambientLight = false;
 	if ( GHOSTCAM_SNEAKING )
 	{

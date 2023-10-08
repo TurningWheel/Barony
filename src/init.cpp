@@ -1257,6 +1257,7 @@ int deinitApp()
 		for (int c = 0; c < nummodels; ++c) {
 			if (polymodels[c].faces) {
 				free(polymodels[c].faces);
+				polymodels[c].faces = nullptr;
 			}
 		}
 		if (!disablevbos) {
@@ -1276,6 +1277,7 @@ int deinitApp()
 			}
 		}
 		free(polymodels);
+		polymodels = nullptr;
 	}
 
 #ifndef EDITOR

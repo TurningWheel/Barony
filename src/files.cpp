@@ -48,7 +48,9 @@ ConsoleVariable<bool> cvar_disableHoliday("/disable_holiday", false);
 #endif
 
 HolidayTheme getCurrentHoliday(bool force) {
-#ifndef EDITOR
+#ifdef EDITOR
+    return HolidayTheme::THEME_NONE;
+#else
     if (*cvar_disableHoliday && !force) {
         return HolidayTheme::THEME_NONE;
     }
@@ -56,7 +58,6 @@ HolidayTheme getCurrentHoliday(bool force) {
         const int holiday = std::clamp(*cvar_forceHoliday, 0, (int)HolidayTheme::THEME_MAX - 1);
         return static_cast<HolidayTheme>(holiday);
     }
-#endif
     static bool gotTime = false;
     static int year, month, day;
     if (!gotTime) {
@@ -73,6 +74,7 @@ HolidayTheme getCurrentHoliday(bool force) {
     else {
         return HolidayTheme::THEME_NONE;
     }
+#endif
 }
 
 bool isCurrentHoliday(bool force) {
@@ -3160,6 +3162,16 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 
 	if ( generateAll )
 	{
+		if (polymodels) {
+			for (int c = 0; c < nummodels; ++c) {
+				if (polymodels[c].faces) {
+					free(polymodels[c].faces);
+					polymodels[c].faces = nullptr;
+				}
+			}
+			free(polymodels);
+			polymodels = nullptr;
+		}
 		polymodels = (polymodel_t*)malloc(sizeof(polymodel_t) * nummodels);
         memset(polymodels, 0, sizeof(polymodel_t) * nummodels);
 		if ( useModelCache && !forceCacheRebuild )
@@ -4136,6 +4148,7 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		// translate quads into triangles
         if (polymodels[c].faces) {
             free(polymodels[c].faces);
+			polymodels[c].faces = nullptr;
         }
 		polymodels[c].faces = (polytriangle_t*)malloc(sizeof(polytriangle_t) * polymodels[c].numfaces);
 		for ( uint64_t i = 0; i < polymodels[c].numfaces; i++ )
@@ -4251,6 +4264,7 @@ void reloadModels(int start, int end) {
 					if ( polymodels[c].faces )
 					{
 						free(polymodels[c].faces);
+						polymodels[c].faces = nullptr;
 					}
 					models[c] = loadVoxel(name);
 				}
