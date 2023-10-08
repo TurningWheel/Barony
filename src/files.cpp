@@ -3257,6 +3257,12 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 	quads.first = NULL;
 	quads.last = NULL;
 
+	if ( !polymodels )
+	{
+		polymodels = (polymodel_t*)malloc(sizeof(polymodel_t) * nummodels);
+		memset(polymodels, 0, sizeof(polymodel_t) * nummodels);
+	}
+
 	for ( c = start; c < end; ++c )
 	{
 		updateLoadingScreen(30 + ((real_t)(c - start) / (end - start)) * 30.0);
