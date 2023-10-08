@@ -7459,7 +7459,7 @@ bind_failed:
             assert(character_title);
             snprintf(buf, sizeof(buf), Language::get(5298),
                 score->stats->LVL,
-                Language::get(3821 + score->stats->playerRace),
+                Language::get(5369 + score->stats->playerRace),
                 playerClassLangEntry(score->classnum, 0));
             character_title->setText(buf);
 
