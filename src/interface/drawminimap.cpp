@@ -98,6 +98,10 @@ inline real_t getMinimapZoom()
 
 void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 {
+	if ( loading )
+	{
+		return;
+	}
 	if ( gameplayCustomManager.inUse() ) {
 		if ( CustomHelpers::isLevelPartOfSet(
 			currentlevel, secretlevel, gameplayCustomManager.minimapDisableFloors) ) {
