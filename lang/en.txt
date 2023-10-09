@@ -562,13 +562,13 @@ thou makest use of them.#
 
 # skill levels
 
-363 DEPRECATED#
-364 DEPRECATED#
-365 DEPRECATED#
-366 DEPRECATED#
-367 DEPRECATED#
-368 DEPRECATED#
-369 DEPRECATED#
+363                  None#
+364                Novice#
+365                 Basic#
+366               Skilled#
+367                Expert#
+368                Master#
+369                Legend#
 
 
 # rest of the character sheet
