@@ -179,19 +179,42 @@ light_t* lightSphere(int index, Sint32 x, Sint32 y, Sint32 radius, float r, floa
 #include "files.hpp"
 
 std::unordered_map<std::string, LightDef> lightDefs;
-bool loadLights() {
-    lightDefs.clear();
-    
-    File* fp = nullptr;
-    const char* path = "/data/lights.json";
-    if (PHYSFS_getRealDir(path)) {
-        std::string fullpath = PHYSFS_getRealDir(path);
-        fullpath.append(path);
-        fp = FileIO::open(fullpath.c_str(), "rb");
-    }
-    if (!fp) {
-        printlog("[JSON]: Error: Could not locate json file %s", path);
+bool loadLights(bool forceLoadBaseDirectory) {
+    if ( !PHYSFS_getRealDir("/data/lights.json") )
+    {
+        printlog("[JSON]: Error: Could not find file: data/lights.json");
         return false;
+    }
+
+    std::string inputPath = PHYSFS_getRealDir("/data/lights.json");
+    if ( forceLoadBaseDirectory )
+    {
+        inputPath = BASE_DATA_DIR;
+    }
+    else
+    {
+        if ( inputPath != BASE_DATA_DIR )
+        {
+            loadLights(true); // force load the base directory first, then modded paths later.
+        }
+        else
+        {
+            forceLoadBaseDirectory = true;
+        }
+    }
+
+    inputPath.append("/data/lights.json");
+
+    File* fp = FileIO::open(inputPath.c_str(), "rb");
+    if ( !fp )
+    {
+        printlog("[JSON]: Error: Could not open json file %s", inputPath.c_str());
+        return false;
+    }
+
+    if ( forceLoadBaseDirectory )
+    {
+        lightDefs.clear();
     }
     
     char buf[65536];
@@ -214,7 +237,7 @@ bool loadLights() {
             const auto& b = it.value["b"]; def.b = b.GetFloat();
             const auto& exp = it.value["falloff_exp"]; def.falloff_exp = exp.GetFloat();
             const auto& shadows = it.value["shadows"]; def.shadows = shadows.GetBool();
-            lightDefs.emplace(name, def);
+            lightDefs[name] = def;
         }
     }
     

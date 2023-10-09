@@ -957,7 +957,7 @@ void ItemTooltips_t::readItemsFromFile()
 }
 
 
-void ItemTooltips_t::readItemLocalizationsFromFile()
+void ItemTooltips_t::readItemLocalizationsFromFile(bool forceLoadBaseDirectory)
 {
 	if ( !PHYSFS_getRealDir("/lang/item_names.json") )
 	{
@@ -966,6 +966,22 @@ void ItemTooltips_t::readItemLocalizationsFromFile()
 	}
 
 	std::string inputPath = PHYSFS_getRealDir("/lang/item_names.json");
+	if ( forceLoadBaseDirectory )
+	{
+		inputPath = BASE_DATA_DIR;
+	}
+	else
+	{
+		if ( inputPath != BASE_DATA_DIR )
+		{
+			readItemLocalizationsFromFile(true); // force load the base directory first, then modded paths later.
+		}
+		else
+		{
+			forceLoadBaseDirectory = true;
+		}
+	}
+
 	inputPath.append("/lang/item_names.json");
 
 	File* fp = FileIO::open(inputPath.c_str(), "rb");
@@ -1008,7 +1024,10 @@ void ItemTooltips_t::readItemLocalizationsFromFile()
 
 	if ( d.HasMember("items") )
 	{
-		itemNameLocalizations.clear();
+		if ( forceLoadBaseDirectory )
+		{
+			itemNameLocalizations.clear();
+		}
 		for ( rapidjson::Value::ConstMemberIterator items_itr = d["items"].MemberBegin();
 			items_itr != d["items"].MemberEnd(); ++items_itr )
 		{
@@ -1033,7 +1052,10 @@ void ItemTooltips_t::readItemLocalizationsFromFile()
 
 	if ( d.HasMember("spell_names") )
 	{
-		spellNameLocalizations.clear();
+		if ( forceLoadBaseDirectory )
+		{
+			spellNameLocalizations.clear();
+		}
 		for ( rapidjson::Value::ConstMemberIterator spell_itr = d["spell_names"].MemberBegin();
 			spell_itr != d["spell_names"].MemberEnd(); ++spell_itr )
 		{
@@ -1086,7 +1108,7 @@ void ItemTooltips_t::readItemLocalizationsFromFile()
 }
 
 #ifndef EDITOR
-void ItemTooltips_t::readTooltipsFromFile()
+void ItemTooltips_t::readTooltipsFromFile(bool forceLoadBaseDirectory)
 {
 	if ( !PHYSFS_getRealDir("/items/item_tooltips.json") )
 	{
@@ -1095,6 +1117,22 @@ void ItemTooltips_t::readTooltipsFromFile()
 	}
 
 	std::string inputPath = PHYSFS_getRealDir("/items/item_tooltips.json");
+	if ( forceLoadBaseDirectory )
+	{
+		inputPath = BASE_DATA_DIR;
+	}
+	else
+	{
+		if ( inputPath != BASE_DATA_DIR )
+		{
+			readTooltipsFromFile(true); // force load the base directory first, then modded paths later.
+		}
+		else
+		{
+			forceLoadBaseDirectory = true;
+		}
+	}
+
 	inputPath.append("/items/item_tooltips.json");
 
 	File* fp = FileIO::open(inputPath.c_str(), "rb");
@@ -1128,24 +1166,30 @@ void ItemTooltips_t::readTooltipsFromFile()
 		return;
 	}
 
-	if ( !d.HasMember("version") || !d.HasMember("tooltips") )
+	if ( !d.HasMember("version") )
 	{
 		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
 		return;
 	}
 	int version = d["version"].GetInt();
 
-	adjectives.clear();
-	for ( rapidjson::Value::ConstMemberIterator adj_itr = d["adjectives"].MemberBegin();
-		adj_itr != d["adjectives"].MemberEnd(); ++adj_itr )
+	if ( forceLoadBaseDirectory )
 	{
-		std::map<std::string, std::string> m;
-		for ( rapidjson::Value::ConstMemberIterator inner_itr = adj_itr->value.MemberBegin();
-			inner_itr != adj_itr->value.MemberEnd(); ++inner_itr )
+		adjectives.clear();
+	}
+	if ( d.HasMember("adjectives") )
+	{
+		for ( rapidjson::Value::ConstMemberIterator adj_itr = d["adjectives"].MemberBegin();
+			adj_itr != d["adjectives"].MemberEnd(); ++adj_itr )
 		{
-			m[inner_itr->name.GetString()] = inner_itr->value.GetString();
+			std::map<std::string, std::string> m;
+			for ( rapidjson::Value::ConstMemberIterator inner_itr = adj_itr->value.MemberBegin();
+				inner_itr != adj_itr->value.MemberEnd(); ++inner_itr )
+			{
+				m[inner_itr->name.GetString()] = inner_itr->value.GetString();
+			}
+			adjectives[adj_itr->name.GetString()] = m;
 		}
-		adjectives[adj_itr->name.GetString()] = m;
 	}
 
 	if ( d.HasMember("default_text_colors") )
@@ -1192,7 +1236,10 @@ void ItemTooltips_t::readTooltipsFromFile()
 			d["default_text_colors"]["faint_text"]["a"].GetInt());
 	}
 
-	templates.clear();
+	if ( forceLoadBaseDirectory )
+	{
+		templates.clear();
+	}
 	if ( d.HasMember("templates") )
 	{
 		for ( rapidjson::Value::ConstMemberIterator template_itr = d["templates"].MemberBegin();
@@ -1204,188 +1251,198 @@ void ItemTooltips_t::readTooltipsFromFile()
 			}
 			else
 			{
+				std::string template_name = template_itr->name.GetString();
+				if ( templates.find(template_name) != templates.end() )
+				{
+					templates[template_name].clear();
+				}
 				for ( auto lines = template_itr->value.Begin();
 					lines != template_itr->value.End(); ++lines )
 				{
-					templates[template_itr->name.GetString()].push_back(lines->GetString());
+					templates[template_name].push_back(lines->GetString());
 				}
 			}
 		}
 	}
 
-	tooltips.clear();
-
+	if ( forceLoadBaseDirectory )
+	{
+		tooltips.clear();
+	}
 	std::unordered_set<std::string> tagsRead;
 
-	for ( rapidjson::Value::ConstMemberIterator tooltipType_itr = d["tooltips"].MemberBegin();
-		tooltipType_itr != d["tooltips"].MemberEnd(); ++tooltipType_itr )
+	if ( d.HasMember("tooltips") )
 	{
-		ItemTooltip_t tooltip;
-		tooltip.setColorHeading(this->defaultHeadingTextColor);
-		tooltip.setColorDescription(this->defaultDescriptionTextColor);
-		tooltip.setColorDetails(this->defaultDetailsTextColor);
-		tooltip.setColorPositive(this->defaultPositiveTextColor);
-		tooltip.setColorNegative(this->defaultNegativeTextColor);
-		tooltip.setColorStatus(this->defaultStatusEffectTextColor);
-		tooltip.setColorFaintText(this->defaultFaintTextColor);
-
-		if ( tooltipType_itr->value.HasMember("icons") )
+		for ( rapidjson::Value::ConstMemberIterator tooltipType_itr = d["tooltips"].MemberBegin();
+			tooltipType_itr != d["tooltips"].MemberEnd(); ++tooltipType_itr )
 		{
-			if ( !tooltipType_itr->value["icons"].IsArray() )
+			ItemTooltip_t tooltip;
+			tooltip.setColorHeading(this->defaultHeadingTextColor);
+			tooltip.setColorDescription(this->defaultDescriptionTextColor);
+			tooltip.setColorDetails(this->defaultDetailsTextColor);
+			tooltip.setColorPositive(this->defaultPositiveTextColor);
+			tooltip.setColorNegative(this->defaultNegativeTextColor);
+			tooltip.setColorStatus(this->defaultStatusEffectTextColor);
+			tooltip.setColorFaintText(this->defaultFaintTextColor);
+
+			if ( tooltipType_itr->value.HasMember("icons") )
 			{
-				printlog("[JSON]: Error: 'icons' entry for tooltip %s did not have [] format", tooltipType_itr->name.GetString());
-			}
-			else
-			{
-				for ( auto icons = tooltipType_itr->value["icons"].Begin();
-					icons != tooltipType_itr->value["icons"].End(); ++icons )
+				if ( !tooltipType_itr->value["icons"].IsArray() )
 				{
-					// you need to FindMember() if getting objects from an array...
-					auto textMember = icons->FindMember("text");
-					auto iconPathMember = icons->FindMember("icon_path");
-					if ( !textMember->value.IsString() || !iconPathMember->value.IsString() )
-					{
-						printlog("[JSON]: Error: Icon text or path was not string!");
-						continue;
-					}
-
-					tooltip.icons.push_back(ItemTooltipIcons_t(iconPathMember->value.GetString(), textMember->value.GetString()));
-
-					Uint32 color = this->defaultIconTextColor;
-					if ( icons->HasMember("color") && icons->FindMember("color")->value.HasMember("r") )
-					{
-						// icons->FindMember("color")->value.isObject() always returning true?? so check for "r" member instead
-						color = makeColor(
-							icons->FindMember("color")->value["r"].GetInt(),
-							icons->FindMember("color")->value["g"].GetInt(),
-							icons->FindMember("color")->value["b"].GetInt(),
-							icons->FindMember("color")->value["a"].GetInt());
-					}
-					tooltip.icons[tooltip.icons.size() - 1].setColor(color);
-					if ( icons->HasMember("conditional_attribute") )
-					{
-						tooltip.icons[tooltip.icons.size() - 1].setConditionalAttribute(icons->FindMember("conditional_attribute")->value.GetString());
-					}
-				}
-			}
-		}
-
-		if ( tooltipType_itr->value.HasMember("description") )
-		{
-			if ( tooltipType_itr->value["description"].IsString() )
-			{
-				//printlog("[JSON]: Found template string '%s' for tooltip '%s'", tooltipType_itr->value["description"].GetString(), tooltipType_itr->name.GetString());
-				if ( templates.find(tooltipType_itr->value["description"].GetString()) != templates.end() )
-				{
-					tooltip.descriptionText = templates[tooltipType_itr->value["description"].GetString()];
+					printlog("[JSON]: Error: 'icons' entry for tooltip %s did not have [] format", tooltipType_itr->name.GetString());
 				}
 				else
 				{
-					printlog("[JSON]: Error: Could not find template tag '%s'", tooltipType_itr->value["description"].GetString());
-				}
-			}
-			else
-			{
-				for ( auto descriptions = tooltipType_itr->value["description"].Begin();
-					descriptions != tooltipType_itr->value["description"].End(); ++descriptions )
-				{
-					tooltip.descriptionText.push_back(descriptions->GetString());
-				}
-			}
-		}
-
-		if ( tooltipType_itr->value.HasMember("details") )
-		{
-			if ( !tooltipType_itr->value["details"].IsArray() )
-			{
-				printlog("[JSON]: Error: 'details' entry for tooltip '%s' did not have [] format!", tooltipType_itr->name.GetString());
-			}
-			else
-			{
-				for ( auto details_itr = tooltipType_itr->value["details"].Begin();
-					details_itr != tooltipType_itr->value["details"].End(); ++details_itr )
-				{
-					for ( auto keyValue_itr = details_itr->MemberBegin();
-						keyValue_itr != details_itr->MemberEnd(); ++keyValue_itr )
+					for ( auto icons = tooltipType_itr->value["icons"].Begin();
+						icons != tooltipType_itr->value["icons"].End(); ++icons )
 					{
-						tagsRead.insert(keyValue_itr->name.GetString());
-						std::vector<std::string> detailEntry;
-						if ( keyValue_itr->value.IsString() )
+						// you need to FindMember() if getting objects from an array...
+						auto textMember = icons->FindMember("text");
+						auto iconPathMember = icons->FindMember("icon_path");
+						if ( !textMember->value.IsString() || !iconPathMember->value.IsString() )
 						{
-							//printlog("[JSON]: Found template string '%s' for tooltip '%s'", keyValue_itr->value.GetString(), tooltipType_itr->name.GetString());
-							if ( templates.find(keyValue_itr->value.GetString()) != templates.end() )
+							printlog("[JSON]: Error: Icon text or path was not string!");
+							continue;
+						}
+
+						tooltip.icons.push_back(ItemTooltipIcons_t(iconPathMember->value.GetString(), textMember->value.GetString()));
+
+						Uint32 color = this->defaultIconTextColor;
+						if ( icons->HasMember("color") && icons->FindMember("color")->value.HasMember("r") )
+						{
+							// icons->FindMember("color")->value.isObject() always returning true?? so check for "r" member instead
+							color = makeColor(
+								icons->FindMember("color")->value["r"].GetInt(),
+								icons->FindMember("color")->value["g"].GetInt(),
+								icons->FindMember("color")->value["b"].GetInt(),
+								icons->FindMember("color")->value["a"].GetInt());
+						}
+						tooltip.icons[tooltip.icons.size() - 1].setColor(color);
+						if ( icons->HasMember("conditional_attribute") )
+						{
+							tooltip.icons[tooltip.icons.size() - 1].setConditionalAttribute(icons->FindMember("conditional_attribute")->value.GetString());
+						}
+					}
+				}
+			}
+
+			if ( tooltipType_itr->value.HasMember("description") )
+			{
+				if ( tooltipType_itr->value["description"].IsString() )
+				{
+					//printlog("[JSON]: Found template string '%s' for tooltip '%s'", tooltipType_itr->value["description"].GetString(), tooltipType_itr->name.GetString());
+					if ( templates.find(tooltipType_itr->value["description"].GetString()) != templates.end() )
+					{
+						tooltip.descriptionText = templates[tooltipType_itr->value["description"].GetString()];
+					}
+					else
+					{
+						printlog("[JSON]: Error: Could not find template tag '%s'", tooltipType_itr->value["description"].GetString());
+					}
+				}
+				else
+				{
+					for ( auto descriptions = tooltipType_itr->value["description"].Begin();
+						descriptions != tooltipType_itr->value["description"].End(); ++descriptions )
+					{
+						tooltip.descriptionText.push_back(descriptions->GetString());
+					}
+				}
+			}
+
+			if ( tooltipType_itr->value.HasMember("details") )
+			{
+				if ( !tooltipType_itr->value["details"].IsArray() )
+				{
+					printlog("[JSON]: Error: 'details' entry for tooltip '%s' did not have [] format!", tooltipType_itr->name.GetString());
+				}
+				else
+				{
+					for ( auto details_itr = tooltipType_itr->value["details"].Begin();
+						details_itr != tooltipType_itr->value["details"].End(); ++details_itr )
+					{
+						for ( auto keyValue_itr = details_itr->MemberBegin();
+							keyValue_itr != details_itr->MemberEnd(); ++keyValue_itr )
+						{
+							tagsRead.insert(keyValue_itr->name.GetString());
+							std::vector<std::string> detailEntry;
+							if ( keyValue_itr->value.IsString() )
 							{
-								detailEntry = templates[keyValue_itr->value.GetString()];
+								//printlog("[JSON]: Found template string '%s' for tooltip '%s'", keyValue_itr->value.GetString(), tooltipType_itr->name.GetString());
+								if ( templates.find(keyValue_itr->value.GetString()) != templates.end() )
+								{
+									detailEntry = templates[keyValue_itr->value.GetString()];
+								}
+								else
+								{
+									printlog("[JSON]: Error: Could not find template tag '%s'", keyValue_itr->value.GetString());
+								}
 							}
 							else
 							{
-								printlog("[JSON]: Error: Could not find template tag '%s'", keyValue_itr->value.GetString());
+								for ( auto detailTag = keyValue_itr->value.Begin();
+									detailTag != keyValue_itr->value.End(); ++detailTag )
+								{
+									detailEntry.push_back(detailTag->GetString());
+								}
 							}
+							tooltip.detailsText[keyValue_itr->name.GetString()] = detailEntry;
+							tooltip.detailsTextInsertOrder.push_back(keyValue_itr->name.GetString());
 						}
-						else
-						{
-							for ( auto detailTag = keyValue_itr->value.Begin();
-								detailTag != keyValue_itr->value.End(); ++detailTag )
-							{
-								detailEntry.push_back(detailTag->GetString());
-							}
-						}
-						tooltip.detailsText[keyValue_itr->name.GetString()] = detailEntry;
-						tooltip.detailsTextInsertOrder.push_back(keyValue_itr->name.GetString());
 					}
 				}
 			}
-		}
 
-		if ( tooltipType_itr->value.HasMember("size") )
-		{
-			if ( tooltipType_itr->value["size"].HasMember("min_width") )
+			if ( tooltipType_itr->value.HasMember("size") )
 			{
-				tooltip.minWidths["default"] = tooltipType_itr->value["size"]["min_width"].GetInt();
-			}
-			else
-			{
-				tooltip.minWidths["default"] = 0;
-			}
-			if ( tooltipType_itr->value["size"].HasMember("max_width") )
-			{
-				tooltip.maxWidths["default"] = tooltipType_itr->value["size"]["max_width"].GetInt();
-			}
-			else
-			{
-				tooltip.maxWidths["default"] = 0;
-			}
-			if ( tooltipType_itr->value["size"].HasMember("max_header_width") )
-			{
-				tooltip.headerMaxWidths["default"] = tooltipType_itr->value["size"]["max_header_width"].GetInt();
-			}
-			else
-			{
-				tooltip.headerMaxWidths["default"] = 0;
-			}
-
-			if ( tooltipType_itr->value["size"].HasMember("item_overrides") )
-			{
-				for ( auto itemOverride_itr = tooltipType_itr->value["size"]["item_overrides"].MemberBegin();
-					itemOverride_itr != tooltipType_itr->value["size"]["item_overrides"].MemberEnd(); ++itemOverride_itr )
+				if ( tooltipType_itr->value["size"].HasMember("min_width") )
 				{
-					if ( itemOverride_itr->value.HasMember("min_width") )
+					tooltip.minWidths["default"] = tooltipType_itr->value["size"]["min_width"].GetInt();
+				}
+				else
+				{
+					tooltip.minWidths["default"] = 0;
+				}
+				if ( tooltipType_itr->value["size"].HasMember("max_width") )
+				{
+					tooltip.maxWidths["default"] = tooltipType_itr->value["size"]["max_width"].GetInt();
+				}
+				else
+				{
+					tooltip.maxWidths["default"] = 0;
+				}
+				if ( tooltipType_itr->value["size"].HasMember("max_header_width") )
+				{
+					tooltip.headerMaxWidths["default"] = tooltipType_itr->value["size"]["max_header_width"].GetInt();
+				}
+				else
+				{
+					tooltip.headerMaxWidths["default"] = 0;
+				}
+
+				if ( tooltipType_itr->value["size"].HasMember("item_overrides") )
+				{
+					for ( auto itemOverride_itr = tooltipType_itr->value["size"]["item_overrides"].MemberBegin();
+						itemOverride_itr != tooltipType_itr->value["size"]["item_overrides"].MemberEnd(); ++itemOverride_itr )
 					{
-						tooltip.minWidths[itemOverride_itr->name.GetString()] = itemOverride_itr->value["min_width"].GetInt();
-					}
-					if ( itemOverride_itr->value.HasMember("max_width") )
-					{
-						tooltip.maxWidths[itemOverride_itr->name.GetString()] = itemOverride_itr->value["max_width"].GetInt();
-					}
-					if ( itemOverride_itr->value.HasMember("max_header_width") )
-					{
-						tooltip.headerMaxWidths[itemOverride_itr->name.GetString()] = itemOverride_itr->value["max_header_width"].GetInt();
+						if ( itemOverride_itr->value.HasMember("min_width") )
+						{
+							tooltip.minWidths[itemOverride_itr->name.GetString()] = itemOverride_itr->value["min_width"].GetInt();
+						}
+						if ( itemOverride_itr->value.HasMember("max_width") )
+						{
+							tooltip.maxWidths[itemOverride_itr->name.GetString()] = itemOverride_itr->value["max_width"].GetInt();
+						}
+						if ( itemOverride_itr->value.HasMember("max_header_width") )
+						{
+							tooltip.headerMaxWidths[itemOverride_itr->name.GetString()] = itemOverride_itr->value["max_header_width"].GetInt();
+						}
 					}
 				}
 			}
-		}
 
-		tooltips[tooltipType_itr->name.GetString()] = tooltip;
+			tooltips[tooltipType_itr->name.GetString()] = tooltip;
+		}
 	}
 
 	printlog("[JSON]: Successfully read %d item tooltips from '%s'", tooltips.size(), inputPath.c_str());

@@ -2731,7 +2731,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 					if ( hitstats->monsterDemonHasBeenExorcised == 3 )
 					{
 						Uint32 color = makeColorRGB(0, 255, 0);
-						messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(3468));
+						messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(3737));
 					}
 				}
 			}
