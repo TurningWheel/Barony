@@ -140,7 +140,7 @@ int initGame()
 
 	// load achievement images
 #ifdef NINTENDO
-	Directory achievementsDir("rom:/images/achievements");
+	Directory achievementsDir(BASE_DATA_DIR"/images/achievements");
 #else
 	Directory achievementsDir("images/achievements");
 #endif
