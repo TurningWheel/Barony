@@ -839,78 +839,56 @@ int Entity::entityLight()
 
 Entity::entityLightAfterReductions
 
-Returns new entities' illumination,  
-after reductions depending on the entity stats and another entity observing
+Returns entity's visibility, based on:
+light level, stats, skills, distractions, and observer stats
 
 -------------------------------------------------------------------------------*/
 
-int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
-{
-	int player = -1;
-	const int minLight = (int)(TOUCHRANGE * 1.5);
-	int light = std::max(minLight, entityLight()); // max 255 light to start with.
-	bool invis = isInvisible();
-	if ( !invis )
-	{
-		bool sneaking = false;
-		if ( behavior == &actPlayer )
-		{
-			player = skill[2];
-			if ( player > -1 && stats[player] )
-			{
-				if ( stats[player]->sneaking == 1 && !stats[player]->defending )
-				{
-					sneaking = true;
-				}
-			}
-		}
-
-		if ( observer )
-		{
-			light += observer->getPER() * 4; // add light level for PER x 4
-			if ( sneaking )
-			{
-				light /= 2; // halve for sneaking
-			}
-			light -= (light - TOUCHRANGE) * (1.0 * (myStats.PROFICIENCIES[PRO_STEALTH] / 100.0)); // reduce to 32 as sneak approaches 100
-			Stat* observerStats = observer->getStats();
-			if ( observerStats && observerStats->EFFECTS[EFF_BLIND] )
-			{
-				light = TOUCHRANGE;
-			}
-			if ( observer->behavior == &actMonster
-				&& observer->monsterLastDistractedByNoisemaker > 0 
-				&& uidToEntity(observer->monsterLastDistractedByNoisemaker) )
-			{
-				if ( observer->monsterTarget == observer->monsterLastDistractedByNoisemaker
-					|| myStats.EFFECTS[EFF_DISORIENTED] )
-				{
-					// currently hunting noisemaker.
-					light = 16;
-				}
-			}
-		}
-		else
-		{
-			if ( sneaking )
-			{
-				light /= 2; // halve for sneaking
-			}
-			light -= (light - TOUCHRANGE) * (1.0 * (myStats.PROFICIENCIES[PRO_STEALTH] / 100.0)); // reduce to 32 as sneak approaches 100
-		}
-	}
-	
-	if ( invis )
-	{
-		light = std::min(light, TOUCHRANGE);
-	}
-
-	light = std::max(light, 0);
-	if ( myStats.type == DUMMYBOT )
-	{
-		light = std::max(light, 256); // dummybots can always be seen at least 16 tiles away.
-	}
-	return light;
+int Entity::entityLightAfterReductions(Stat &myStats, Entity *observer) {
+    int baseLight = TOUCHRANGE / 2; // The world glows a little, even without light sources.
+    int baseVis = TOUCHRANGE; // How far you can sense without any light at all.
+    int maxVisFromObservation = 1000; // Some situations will cap how badly you can fail at sneaking.
+    int observerSight = 0;
+    bool invisible = isInvisible();
+    float stealthVisMultiplier = invisible ? 0 : (1.0 - myStats.PROFICIENCIES[PRO_STEALTH] / 100.0);
+    float sneakMultiplier = 1;
+    if (behavior == &actPlayer) {
+        int player = skill[2];
+        if (player > -1 && stats[player] && stats[player]->sneaking == 1 && !stats[player]->defending) {
+            sneakMultiplier = 0.5;
+        }
+    }
+    if (observer) {
+        observerSight = observer->getPER() * 4;
+        Stat *observerStats = observer->getStats();
+        std::set<Monster> seesInvis = {LICH, MINOTAUR, DEVIL, SHOPKEEPER, LICH_FIRE, LICH_ICE, SHADOW};
+        if (seesInvis.find(observerStats->type) != seesInvis.end()) {
+            return 1000; // Don't even bother calculating. You've been made.
+        }
+        if (observerStats->type == SENTRYBOT || observerStats->type == SPELLBOT) {
+            baseVis += 150; // Sentries can see out to about 9-10 tiles even in complete darkness.
+        }
+        if (observerStats && observerStats->EFFECTS[EFF_BLIND]) {
+            maxVisFromObservation = 0;
+        }
+        if (observer->behavior == &actMonster
+            && observer->monsterLastDistractedByNoisemaker > 0
+            && uidToEntity(observer->monsterLastDistractedByNoisemaker)) {
+            if (observer->monsterTarget == observer->monsterLastDistractedByNoisemaker
+                || myStats.EFFECTS[EFF_DISORIENTED]) {
+                // currently hunting noisemaker.
+                baseVis = 16;
+                maxVisFromObservation = 0;
+            }
+        }
+    }
+    if (myStats.type == DUMMYBOT) {
+        baseVis += 256; // dummybots can always be seen at least 16 tiles away.
+    }
+    int lightEffect = std::max(entityLight() - baseLight - baseVis, 0); // Ignore light levels below our baseline.
+    int tileVis = std::max(baseLight + lightEffect + observerSight, 0); // Negative perception guard.
+    int entityVis = std::min((int) (tileVis * stealthVisMultiplier * sneakMultiplier), maxVisFromObservation);
+    return baseVis + entityVis;
 }
 
 /*-------------------------------------------------------------------------------

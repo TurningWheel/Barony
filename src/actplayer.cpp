@@ -3033,7 +3033,6 @@ void actPlayer(Entity* my)
 		if ( ticks % 4 == 0 )
 		{
 			int entityLight = my->entityLightAfterReductions(*stats[PLAYER_NUM], my);
-			entityLight = std::max(TOUCHRANGE, entityLight);
 			for ( int degree = 0; degree < 360; degree += 1 )
 			{
 				real_t rad = degree * PI / 180.0;

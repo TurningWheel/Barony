@@ -4207,15 +4207,6 @@ void actMonster(Entity* my)
 
 							// skip if light level is too low and distance is too high
 							int light = entity->entityLightAfterReductions(*hitstats, my);
-							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
-							{
-								//See invisible.
-								light = 1000;
-							}
-							else if ( myStats->type == SENTRYBOT || myStats->type == SPELLBOT )
-							{
-								light += 150;
-							}
 							double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
 
 							real_t monsterVisionRange = sightranges[myStats->type];
@@ -4846,15 +4837,6 @@ void actMonster(Entity* my)
 			{
 				// skip if light level is too low and distance is too high
 				int light = entity->entityLightAfterReductions(*hitstats, my);
-				if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
-				{
-					//See invisible.
-					light = 1000;
-				}
-				else if ( myStats->type == SENTRYBOT || myStats->type == SPELLBOT )
-				{
-					light += 150;
-				}
 				double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
 
 				real_t monsterVisionRange = sightranges[myStats->type];
@@ -5703,11 +5685,6 @@ timeToGoAgain:
 
 							// skip if light level is too low and distance is too high
 							int light = entity->entityLightAfterReductions(*hitstats, my);
-							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
-							{
-								//See invisible.
-								light = 1000;
-							}
 							double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
 
 							real_t monsterVisionRange = sightranges[myStats->type];
