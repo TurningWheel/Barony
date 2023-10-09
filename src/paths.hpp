@@ -40,7 +40,8 @@ enum GeneratePathTypes
 	GENERATE_PATH_PLAYER_ALLY_MOVETO,
 	GENERATE_PATH_PLAYER_GYRO_RETURN,
 	GENERATE_PATH_CHECK_EXIT,
-	GENERATE_PATH_MOVEASIDE
+	GENERATE_PATH_MOVEASIDE,
+	GENERATE_PATH_ACHIEVEMENT
 };
 extern int lastGeneratePathTries;
 list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target, GeneratePathTypes pathingType, bool lavaIsPassable = false);
