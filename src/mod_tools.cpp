@@ -8447,9 +8447,6 @@ void Mods::unloadMods(bool force)
 			Mods::monsterLimbsRequireReloadUnmodded = false;
 		}
 
-		// reload lights
-		loadLights();
-
 		updateLoadingScreen(80);
 
 		loading_done = true;

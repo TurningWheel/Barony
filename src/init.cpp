@@ -746,9 +746,6 @@ int initApp(char const * const title, int fullscreen)
 
 		updateLoadingScreen(80);
         
-        loadLights();
-        updateLoadingScreen(81);
-        
 		loading_done = true;
 		return 0;
 	});
@@ -763,6 +760,7 @@ int initApp(char const * const title, int fullscreen)
 	{
 		generateVBOs(0, nummodels);
         generateTileTextures();
+		loadLights();
 	}
 
 #ifdef EDITOR

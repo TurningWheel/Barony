@@ -1226,7 +1226,7 @@ FMOD_RESULT physfsReloadMusic_helper_reloadMusicArray(uint32_t numMusic, const c
 			if ( musicDir.compare("./") != 0 || reloadAll )
 			{
 				musicDir.append(PHYSFS_getDirSeparator()).append(tempstr);
-				printlog("[PhysFS]: Reloading music file %s...", tempstr);
+				printlog("[PhysFS]: Loading music file %s...", tempstr);
 				if ( musicArray )
 				{
 					musicArray[c]->release();
@@ -1300,7 +1300,7 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 			if ( musicDir.compare("./") != 0 || reloadAll )
 			{
 				musicDir += PHYSFS_getDirSeparator() + filename;
-				printlog("[PhysFS]: Reloading music file %s...", filename.c_str());
+				printlog("[PhysFS]: Loading music file %s...", filename.c_str());
 				switch ( index )
 				{
 					case 0:
@@ -1655,7 +1655,7 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 			if ( musicDir.compare("./") != 0 || reloadAll )
 			{
 				musicDir.append(PHYSFS_getDirSeparator()).append(tempstr);
-				printlog("[PhysFS]: Reloading music file %s...", tempstr);
+				printlog("[PhysFS]: Loading music file %s...", tempstr);
 				music = intromusic;
 				if ( music )
 				{

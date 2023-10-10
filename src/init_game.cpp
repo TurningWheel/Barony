@@ -71,6 +71,8 @@ void initGameDatafiles(bool moddedReload)
 	MainMenu::RaceDescriptions::readFromFile();
 	MainMenu::ClassDescriptions::readFromFile();
 	StatueManager.readAllStatues();
+
+	loadLights();
 }
 
 void initGameDatafilesAsync(bool moddedReload)
