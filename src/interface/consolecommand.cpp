@@ -4442,6 +4442,46 @@ namespace ConsoleCommands {
 		}
 	});
 
+	static ConsoleCommand ccmd_spawndummyhuman("/spawndummyhuman", "", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		if ( multiplayer == CLIENT )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(284));
+			return;
+		}
+		if ( players[clientnum]->entity )
+		{
+			if ( Entity* monster = summonMonster(HUMAN, players[clientnum]->entity->x, players[clientnum]->entity->y) )
+			{
+				if ( Stat* stat = monster->getStats() )
+				{
+					stat->HP = 5000;
+					stat->MAXHP = 5000;
+					stat->CON = 0;
+					stat->RANDOM_CON = 0;
+					stat->LVL = 50;
+					stat->EFFECTS[EFF_STUNNED] = true;
+					stat->monsterForceAllegiance = Stat::MONSTER_FORCE_PLAYER_ENEMY;
+					serverUpdateEntityStatFlag(monster, 20);
+					stat->EDITOR_ITEMS[ITEM_SLOT_HELM] = 0;
+					stat->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 0;
+					stat->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 0;
+					stat->EDITOR_ITEMS[ITEM_SLOT_ARMOR] = 0;
+					stat->EDITOR_ITEMS[ITEM_SLOT_BOOTS] = 0;
+					stat->EDITOR_ITEMS[ITEM_SLOT_RING] = 0;
+					stat->EDITOR_ITEMS[ITEM_SLOT_AMULET] = 0;
+					stat->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 0;
+					stat->EDITOR_ITEMS[ITEM_SLOT_MASK] = 0;
+					stat->EDITOR_ITEMS[ITEM_SLOT_GLOVES] = 0;
+				}
+			}
+		}
+	});
+
 	static ConsoleCommand ccmd_mesh_collider_debug("/mesh_collider_debug", "", []CCMD{
 		node_t* tmpNode = NULL;
 		Entity* tmpEnt = NULL;
