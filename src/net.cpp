@@ -91,8 +91,12 @@ void pollNetworkForShutdown() {
 	SteamAPI_RunCallbacks();
 #endif // STEAMWORKS
 #ifdef USE_EOS
-	EOS_Platform_Tick(EOS.PlatformHandle);
-	EOS_Platform_Tick(EOS.ServerPlatformHandle);
+	if (EOS.PlatformHandle) {
+		EOS_Platform_Tick(EOS.PlatformHandle);
+	}
+	if (EOS.ServerPlatformHandle) {
+		EOS_Platform_Tick(EOS.ServerPlatformHandle);
+	}
 #endif // USE_EOS
 }
 
