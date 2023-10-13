@@ -820,7 +820,7 @@ int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 #ifdef NINTENDO
 		langFilepath = std::string(BASE_DATA_DIR) + filename;
 #else
-		langFilepath = filename;
+		langFilepath = std::string(BASE_DATA_DIR) + filename;
 #endif
 	}
 
