@@ -3551,7 +3551,7 @@ last of your magic is drained!#
 3201 Bleh! Your body rejects the solids in your stomach!#
 3202 What a horrible night to have a curse...#
 3203 Blecch! This is disgusting!#
-3204 DEPRECATED#
+3204 Unarmed#
 3205 %s is stunned from your blow!#
 3206 The %s is stunned from your blow!#
 3207 You are stunned from %s's blow!#
@@ -3702,7 +3702,7 @@ last of your magic is drained!#
 3337 You have no familiar potions to combine!#
 3338 DEPRECATED#
 3339 Brew#
-3340 DEPRECATED#
+3340 Alchemy#
 3341 Stop Brewing#
 3342 You have no potions left to mix!#
 3343 DEPRECATED#
