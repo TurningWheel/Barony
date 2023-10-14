@@ -9397,9 +9397,13 @@ bind_failed:
 					}
 				}
 
-				char address[64];
+				char address[64] = { '\0' };
+				bool result = false;
+
 				nxGetWirelessAddress(address, sizeof(address));
-				bool result = nxUpdateLobby(address, MainMenu::getHostname(), svFlags, numplayers);
+				if (address[0]) {
+					result = nxUpdateLobby(address, MainMenu::getHostname(), svFlags, numplayers);
+				}
 				if (!result) {
 					disconnectFromLobby();
 					destroyMainMenu();
