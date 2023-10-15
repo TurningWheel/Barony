@@ -1240,7 +1240,9 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	PlatformOptions.RTCOptions = nullptr;
 
 	PlatformOptions.IntegratedPlatformOptionsContainerHandle = nullptr; // must be null initialized
+#ifndef LINUX
 	PlatformOptions.SystemSpecificOptions = nullptr; // must be null initialized
+#endif
 
 	PlatformHandle = EOS_Platform_Create(&PlatformOptions);
 	PlatformOptions.bIsServer = EOS_TRUE;
