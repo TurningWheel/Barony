@@ -14644,9 +14644,6 @@ failed:
 
 			auto card = static_cast<Frame*>(button.getParent());
 
-			// select a random sex
-			stats[index]->sex = (sex_t)(RNG.getU8() % 2);
-
 			// select a random race
 			// there are 9 legal races that the player can select from the start.
 			if (enabledDLCPack1 && enabledDLCPack2) {
@@ -14672,16 +14669,28 @@ failed:
 				stats[index]->appearance = 0;
 			}
 
-			// update sex buttons after race selection:
-			// we might have chosen a succubus or incubus
+			// select a random sex (unless you're a succubus or an incubus)
+            if (stats[index]->playerRace == RACE_SUCCUBUS) {
+                stats[index]->sex = sex_t::FEMALE;
+            }
+            else if (stats[index]->playerRace == RACE_INCUBUS) {
+                stats[index]->sex = sex_t::MALE;
+            }
+            else {
+                stats[index]->sex = (sex_t)(RNG.getU8() % 2);
+            }
+
+			// update sex buttons
 			auto bottom = card->findFrame("bottom");
 			if (bottom) {
 			    auto male_button = bottom->findButton("male");
-			    auto female_button = bottom->findButton("female");
-			    if (male_button && female_button) {
+			    if (male_button) {
 					male_button->setPressed(stats[index]->sex == MALE);
 					male_button->setColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
 					male_button->setHighlightColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+                }
+			    auto female_button = bottom->findButton("female");
+                if (female_button) {
 					female_button->setPressed(stats[index]->sex == FEMALE);
 					female_button->setColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
 					female_button->setHighlightColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
