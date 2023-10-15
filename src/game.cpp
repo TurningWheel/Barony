@@ -1304,14 +1304,16 @@ void gameLogic(void)
 					{
 						nextnode = node->next;
 
-						// send the delete entity command to the client
-						strcpy((char*)net_packet->data, "ENTD");
-						deleteent = (deleteent_t*)node->element;
-						SDLNet_Write32(deleteent->uid, &net_packet->data[4]);
-						net_packet->address.host = net_clients[i - 1].host;
-						net_packet->address.port = net_clients[i - 1].port;
-						net_packet->len = 8;
-						sendPacket(net_sock, -1, net_packet, i - 1);
+						if (net_packet && net_packet->data) {
+							// send the delete entity command to the client
+							strcpy((char*)net_packet->data, "ENTD");
+							deleteent = (deleteent_t*)node->element;
+							SDLNet_Write32(deleteent->uid, &net_packet->data[4]);
+							net_packet->address.host = net_clients[i - 1].host;
+							net_packet->address.port = net_clients[i - 1].port;
+							net_packet->len = 8;
+							sendPacket(net_sock, -1, net_packet, i - 1);
+						}
 
 						// quit reminding clients after a certain number of attempts
 						deleteent->tries++;
@@ -2027,7 +2029,7 @@ void gameLogic(void)
 						}
 					}
 
-					if ( multiplayer == SERVER )
+					if ( multiplayer == SERVER && net_packet && net_packet->data )
 					{
 						for ( c = 1; c < MAXPLAYERS; ++c )
 						{
@@ -2362,7 +2364,7 @@ void gameLogic(void)
 										steamAchievementClient(c, "BARONY_ACH_ESCORT");
 									}
 
-									if ( c > 0 && multiplayer == SERVER && !players[c]->isLocalPlayer() )
+									if ( c > 0 && multiplayer == SERVER && !players[c]->isLocalPlayer() && net_packet && net_packet->data )
 									{
 										strcpy((char*)net_packet->data, "LEAD");
 										SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
@@ -2486,16 +2488,18 @@ void gameLogic(void)
 						{
 							continue;
 						}
-						strcpy((char*)net_packet->data, "LVLC");
-						net_packet->data[4] = secretlevel;
-						SDLNet_Write32(mapseed, &net_packet->data[5]);
-						SDLNet_Write32(lastEntityUIDs, &net_packet->data[9]);
-						net_packet->data[13] = currentlevel;
-						net_packet->data[14] = 0;
-						net_packet->address.host = net_clients[c - 1].host;
-						net_packet->address.port = net_clients[c - 1].port;
-						net_packet->len = 15;
-						sendPacketSafe(net_sock, -1, net_packet, c - 1);
+						if (net_packet && net_packet->data) {
+							strcpy((char*)net_packet->data, "LVLC");
+							net_packet->data[4] = secretlevel;
+							SDLNet_Write32(mapseed, &net_packet->data[5]);
+							SDLNet_Write32(lastEntityUIDs, &net_packet->data[9]);
+							net_packet->data[13] = currentlevel;
+							net_packet->data[14] = 0;
+							net_packet->address.host = net_clients[c - 1].host;
+							net_packet->address.port = net_clients[c - 1].port;
+							net_packet->len = 15;
+							sendPacketSafe(net_sock, -1, net_packet, c - 1);
+						}
 					}
 				}
 
@@ -2558,7 +2562,7 @@ void gameLogic(void)
 				if (*cvar_enableKeepAlives) {
 					for ( c = 1; c < MAXPLAYERS; c++ )
 					{
-						if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+						if ( client_disconnected[c] || players[c]->isLocalPlayer() || !net_packet || !net_packet->data )
 						{
 							continue;
 						}
@@ -2609,12 +2613,14 @@ void gameLogic(void)
 						if ( oassailant[c] != assailant[c] )
 						{
 							oassailant[c] = assailant[c];
-							strcpy((char*)net_packet->data, "MUSM");
-							net_packet->address.host = net_clients[c - 1].host;
-							net_packet->address.port = net_clients[c - 1].port;
-							net_packet->data[4] = assailant[c];
-							net_packet->len = 5;
-							sendPacketSafe(net_sock, -1, net_packet, c - 1);
+							if (net_packet && net_packet->data) {
+								strcpy((char*)net_packet->data, "MUSM");
+								net_packet->address.host = net_clients[c - 1].host;
+								net_packet->address.port = net_clients[c - 1].port;
+								net_packet->data[4] = assailant[c];
+								net_packet->len = 5;
+								sendPacketSafe(net_sock, -1, net_packet, c - 1);
+							}
 						}
 					}
 				}
@@ -2778,7 +2784,7 @@ void gameLogic(void)
 		else if ( multiplayer == CLIENT )
 		{
 			// keep alives
-			if ( *cvar_enableKeepAlives )
+			if ( *cvar_enableKeepAlives && net_packet && net_packet->data )
 			{
 				if ( ticks % (TICKS_PER_SECOND * 1) == 0 )
 				{
@@ -2931,13 +2937,15 @@ void gameLogic(void)
 					{
 						if ( !entity->flags[NOUPDATE] && entity->getUID() > 0 && entity->getUID() != -2 && entity->getUID() != -3 && entity->getUID() != -4 )
 						{
-							strcpy((char*)net_packet->data, "ENTE");
-							net_packet->data[4] = clientnum;
-							SDLNet_Write32(entity->getUID(), &net_packet->data[5]);
-							net_packet->address.host = net_server.host;
-							net_packet->address.port = net_server.port;
-							net_packet->len = 9;
-							sendPacket(net_sock, -1, net_packet, 0);
+							if (net_packet && net_packet->data) {
+								strcpy((char*)net_packet->data, "ENTE");
+								net_packet->data[4] = clientnum;
+								SDLNet_Write32(entity->getUID(), &net_packet->data[5]);
+								net_packet->address.host = net_server.host;
+								net_packet->address.port = net_server.port;
+								net_packet->len = 9;
+								sendPacket(net_sock, -1, net_packet, 0);
+							}
 						}
 					}
 				}
@@ -3742,9 +3750,12 @@ bool handleEvents(void)
 							++numplayers;
 						}
 					}
-					char address[64];
+					char address[64] = { '\0' };
+					bool result = false;
 					nxGetWirelessAddress(address, sizeof(address));
-					bool result = nxUpdateLobby(address, MainMenu::getHostname(), svFlags, numplayers);
+					if (address[0]) {
+						result = nxUpdateLobby(address, MainMenu::getHostname(), svFlags, numplayers);
+					}
 					if (!result) {
 						MainMenu::timedOut();
 					}
@@ -4816,22 +4827,26 @@ void pauseGame(int mode /* 0 == toggle, 1 == force unpause, 2 == force pause */,
 				{
 					continue;
 				}
-				strcpy((char*)net_packet->data, "PAUS");
-				net_packet->data[4] = clientnum;
-				net_packet->address.host = net_clients[c - 1].host;
-				net_packet->address.port = net_clients[c - 1].port;
-				net_packet->len = 5;
-				sendPacketSafe(net_sock, -1, net_packet, c - 1);
+				if (net_packet && net_packet->data) {
+					strcpy((char*)net_packet->data, "PAUS");
+					net_packet->data[4] = clientnum;
+					net_packet->address.host = net_clients[c - 1].host;
+					net_packet->address.port = net_clients[c - 1].port;
+					net_packet->len = 5;
+					sendPacketSafe(net_sock, -1, net_packet, c - 1);
+				}
 			}
 		}
 		else if ( multiplayer == CLIENT && ignoreplayer )
 		{
-			strcpy((char*)net_packet->data, "PAUS");
-			net_packet->data[4] = clientnum;
-			net_packet->address.host = net_server.host;
-			net_packet->address.port = net_server.port;
-			net_packet->len = 5;
-			sendPacketSafe(net_sock, -1, net_packet, 0);
+			if (net_packet && net_packet->data) {
+				strcpy((char*)net_packet->data, "PAUS");
+				net_packet->data[4] = clientnum;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 5;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
 		}
 	}
 	else if ( (gamePaused && mode != 2) || mode == 1 )
@@ -4866,22 +4881,26 @@ void pauseGame(int mode /* 0 == toggle, 1 == force unpause, 2 == force pause */,
 				{
 					continue;
 				}
-				strcpy((char*)net_packet->data, "UNPS");
-				net_packet->data[4] = clientnum;
-				net_packet->address.host = net_clients[c - 1].host;
-				net_packet->address.port = net_clients[c - 1].port;
-				net_packet->len = 5;
-				sendPacketSafe(net_sock, -1, net_packet, c - 1);
+				if (net_packet && net_packet->data) {
+					strcpy((char*)net_packet->data, "UNPS");
+					net_packet->data[4] = clientnum;
+					net_packet->address.host = net_clients[c - 1].host;
+					net_packet->address.port = net_clients[c - 1].port;
+					net_packet->len = 5;
+					sendPacketSafe(net_sock, -1, net_packet, c - 1);
+				}
 			}
 		}
 		else if ( multiplayer == CLIENT && ignoreplayer )
 		{
-			strcpy((char*)net_packet->data, "UNPS");
-			net_packet->data[4] = clientnum;
-			net_packet->address.host = net_server.host;
-			net_packet->address.port = net_server.port;
-			net_packet->len = 5;
-			sendPacketSafe(net_sock, -1, net_packet, 0);
+			if (net_packet && net_packet->data) {
+				strcpy((char*)net_packet->data, "UNPS");
+				net_packet->data[4] = clientnum;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 5;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
 		}
 	}
 }
@@ -6268,14 +6287,16 @@ static void doConsoleCommands() {
 						}
 
 						// send message to server
-						strcpy((char*)net_packet->data, "MSGS");
-						net_packet->data[4] = commandPlayer;
-						SDLNet_Write32(color, &net_packet->data[5]);
-						strcpy((char*)(&net_packet->data[9]), command_str);
-						net_packet->address.host = net_server.host;
-						net_packet->address.port = net_server.port;
-						net_packet->len = 9 + strlen(command_str) + 1;
-						sendPacketSafe(net_sock, -1, net_packet, 0);
+						if (net_packet && net_packet->data) {
+							strcpy((char*)net_packet->data, "MSGS");
+							net_packet->data[4] = commandPlayer;
+							SDLNet_Write32(color, &net_packet->data[5]);
+							strcpy((char*)(&net_packet->data[9]), command_str);
+							net_packet->address.host = net_server.host;
+							net_packet->address.port = net_server.port;
+							net_packet->len = 9 + strlen(command_str) + 1;
+							sendPacketSafe(net_sock, -1, net_packet, 0);
+						}
 					}
 					else
 					{
@@ -6302,24 +6323,26 @@ static void doConsoleCommands() {
 								{
 									continue;
 								}
-								strcpy((char*)net_packet->data, "MSGS");
-								// strncpy() does not copy N bytes if a terminating null is encountered first
-								// see http://www.cplusplus.com/reference/cstring/strncpy/
-								// see https://en.cppreference.com/w/c/string/byte/strncpy
-								// GCC throws a warning (intended) when the length argument to strncpy() in any
-								// way depends on strlen(src) to discourage this (and related) construct(s).
+								if (net_packet && net_packet->data) {
+									strcpy((char*)net_packet->data, "MSGS");
+									// strncpy() does not copy N bytes if a terminating null is encountered first
+									// see http://www.cplusplus.com/reference/cstring/strncpy/
+									// see https://en.cppreference.com/w/c/string/byte/strncpy
+									// GCC throws a warning (intended) when the length argument to strncpy() in any
+									// way depends on strlen(src) to discourage this (and related) construct(s).
 
-								strncpy(chatstring, stats[0]->name, 22);
-								chatstring[std::min<size_t>(strlen(stats[0]->name), 22)] = 0; //TODO: Why are size_t and int being compared?
-								strcat(chatstring, ": ");
-								strcat(chatstring, command_str);
-								SDLNet_Write32(color, &net_packet->data[4]);
-								SDLNet_Write32((Uint32)MESSAGE_CHAT, &net_packet->data[8]);
-								strcpy((char*)(&net_packet->data[12]), chatstring);
-								net_packet->address.host = net_clients[c - 1].host;
-								net_packet->address.port = net_clients[c - 1].port;
-								net_packet->len = 12 + strlen(chatstring) + 1;
-								sendPacketSafe(net_sock, -1, net_packet, c - 1);
+									strncpy(chatstring, stats[0]->name, 22);
+									chatstring[std::min<size_t>(strlen(stats[0]->name), 22)] = 0; //TODO: Why are size_t and int being compared?
+									strcat(chatstring, ": ");
+									strcat(chatstring, command_str);
+									SDLNet_Write32(color, &net_packet->data[4]);
+									SDLNet_Write32((Uint32)MESSAGE_CHAT, &net_packet->data[8]);
+									strcpy((char*)(&net_packet->data[12]), chatstring);
+									net_packet->address.host = net_clients[c - 1].host;
+									net_packet->address.port = net_clients[c - 1].port;
+									net_packet->len = 12 + strlen(chatstring) + 1;
+									sendPacketSafe(net_sock, -1, net_packet, c - 1);
+								}
 							}
 						}
 					}
