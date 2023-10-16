@@ -1003,15 +1003,6 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 					damage /= (1 + (int)resistance);
 
 					hit.entity->colliderHandleDamageMagic(damage, my, parent);
-					if ( my.actmagicProjectileArc > 0 )
-					{
-						spawnMagicTower(parent, my.x, my.y, SPELL_DRAIN_SOUL, nullptr);
-					}
-					if ( !(my.actmagicIsOrbiting == 2) )
-					{
-						my.removeLightField();
-						list_RemoveNode(my.mynode);
-					}
 					return;
 				}
 				else if ( hit.entity->behavior == &actChest )
@@ -1020,15 +1011,6 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 					damage += (my.actmagicSpellbookBonus * damage);
 					damage /= (1 + (int)resistance);
 					hit.entity->chestHandleDamageMagic(damage, my, parent);
-					if ( my.actmagicProjectileArc > 0 )
-					{
-						spawnMagicTower(parent, my.x, my.y, SPELL_DRAIN_SOUL, nullptr);
-					}
-					if ( !(my.actmagicIsOrbiting == 2) )
-					{
-						my.removeLightField();
-						list_RemoveNode(my.mynode);
-					}
 					return;
 				}
 				else if ( hit.entity->behavior == &actFurniture )
@@ -1074,10 +1056,6 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 						}
 					}
 					playSoundEntity(hit.entity, 28, 128);
-					if ( my.actmagicProjectileArc > 0 )
-					{
-						spawnMagicTower(parent, my.x, my.y, SPELL_DRAIN_SOUL, nullptr);
-					}
 				}
 			}
 		}
