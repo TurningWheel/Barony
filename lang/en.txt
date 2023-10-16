@@ -5908,7 +5908,8 @@ Mod#
 Workshop#
 5881 Open
 Workshop#
-5882 Browse community created mods and 'subscribe' to\ndownload mods for use.
+5882 Browse community created mods and 'subscribe' to
+download mods for use.
 
 Subscribing while Barony is running may require
 closing the game in order for Steam to begin downloading.
