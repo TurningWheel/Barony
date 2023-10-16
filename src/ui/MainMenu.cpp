@@ -22752,7 +22752,7 @@ failed:
             
 			void(*banner_funcs[])(Button&) = {
 				[](Button&) { // banner #1
-					openURLTryWithOverlay("https://www.baronygame.com/blog/life-after-death-announcement");
+					openURLTryWithOverlay("https://www.baronygame.com/blog/410-update-summary");
 				},
 				[](Button&) { // banner #2
 					 openDLCPrompt(enabledDLCPack1 ? 1 : 0);
