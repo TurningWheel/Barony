@@ -1243,11 +1243,35 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				// check for magic resistance...
 				// resistance stacks diminishingly
 				int resistance = 0;
+				DamageGib dmgGib = DMG_DEFAULT;
+				real_t damageMultiplier = 1.0;
 				if ( hit.entity )
 				{
 					resistance = Entity::getMagicResistance(hit.entity->getStats());
-
-					// TODO - magic impact weak/strong messages?
+					if ( (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) && hitstats )
+					{
+						damageMultiplier = Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
+						if ( damageMultiplier <= 0.75 )
+						{
+							dmgGib = DMG_WEAKEST;
+						}
+						else if ( damageMultiplier <= 0.85 )
+						{
+							dmgGib = DMG_WEAKER;
+						}
+						else if ( damageMultiplier >= 1.25 )
+						{
+							dmgGib = resistance == 0 ? DMG_STRONGEST : DMG_WEAKER;
+						}
+						else if ( damageMultiplier >= 1.15 )
+						{
+							dmgGib = resistance == 0 ? DMG_STRONGER : DMG_WEAKER;
+						}
+						else if ( resistance > 0 )
+						{
+							dmgGib = DMG_WEAKEST;
+						}
+					}
 				}
 
 				real_t spellbookDamageBonus = (my->actmagicSpellbookBonus / 100.f);
@@ -1274,7 +1298,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= damageMultiplier;
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							for (i = 0; i < damage; i += 2)   //Spawn a gib for every two points of damage.
@@ -1292,12 +1316,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( !strcmp(hitstats->name, "") )
 							{
 								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
-									false, DamageGib::DMG_TODO);
+									false, dmgGib);
 							}
 							else
 							{
 								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
-									false, DamageGib::DMG_TODO);
+									false, dmgGib);
 							}
 
 							if ( hitstats->HP <= 0 && parent)
@@ -1406,7 +1430,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 
 
-							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= damageMultiplier;
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							for (i = 0; i < damage; i += 2)   //Spawn a gib for every two points of damage.
@@ -1425,12 +1449,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( !strcmp(hitstats->name, "") )
 							{
 								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
-									false, DamageGib::DMG_TODO);
+									false, dmgGib);
 							}
 							else
 							{
 								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
-									false, DamageGib::DMG_TODO);
+									false, dmgGib);
 							}
 
 							if ( hitstats->HP <= 0 && parent)
@@ -1621,7 +1645,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 								damage = damage - local_rng.rand() % ((damage / 8) + 1);
 							}
-							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= damageMultiplier;
 							if ( parent )
 							{
 								Stat* casterStats = parent->getStats();
@@ -1672,12 +1696,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( !strcmp(hitstats->name, "") )
 							{
 								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
-									false, DamageGib::DMG_TODO);
+									false, dmgGib);
 							}
 							else
 							{
 								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
-									false, DamageGib::DMG_TODO);
+									false, dmgGib);
 							}
 							if ( oldHP > 0 && hitstats->HP <= 0 )
 							{
@@ -1940,7 +1964,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							int oldHP = hitstats->HP;
-							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= damageMultiplier;
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							Entity* gib = spawnGib(hit.entity);
@@ -1956,12 +1980,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( !strcmp(hitstats->name, "") )
 							{
 								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
-									false, DamageGib::DMG_TODO);
+									false, dmgGib);
 							}
 							else
 							{
 								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
-									false, DamageGib::DMG_TODO);
+									false, dmgGib);
 							}
 							if ( parent )
 							{
@@ -2166,7 +2190,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							int oldHP = hitstats->HP;
-							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= damageMultiplier;
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 
@@ -2180,12 +2204,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( !strcmp(hitstats->name, "") )
 							{
 								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
-									false, DamageGib::DMG_TODO);
+									false, dmgGib);
 							}
 							else
 							{
 								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
-									false, DamageGib::DMG_TODO);
+									false, dmgGib);
 							}
 							if ( oldHP > 0 && hitstats->HP <= 0 && parent)
 							{
@@ -2721,7 +2745,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= damageMultiplier;
 							Stat* casterStats = nullptr;
 							if ( parent )
 							{
@@ -2795,12 +2819,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( !strcmp(hitstats->name, "") )
 							{
 								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
-									false, DamageGib::DMG_TODO);
+									false, dmgGib);
 							}
 							else
 							{
 								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
-									false, DamageGib::DMG_TODO);
+									false, dmgGib);
 							}
 
 							if ( hitstats->HP <= 0 && parent )
