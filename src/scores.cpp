@@ -3202,11 +3202,18 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 		hash = tm->tm_hour + tm->tm_mday * tm->tm_year + tm->tm_wday + tm->tm_yday;
 	}
 	if (info.players.size() > info.player_num) {
-		auto& stats = info.players[info.player_num].stats;
-		hash += stats.STR + stats.LVL + stats.DEX * stats.INT;
-		hash += stats.CON * stats.PER + std::min(stats.GOLD, 5000) - stats.CON;
-		hash += stats.HP - stats.MP;
-		hash += info.dungeon_lvl;
+		if ( info.game_version < 410 )
+		{
+			auto& stats = info.players[info.player_num].stats;
+			hash += stats.STR + stats.LVL + stats.DEX * stats.INT;
+			hash += stats.CON * stats.PER + std::min(stats.GOLD, 5000) - stats.CON;
+			hash += stats.HP - stats.MP;
+			hash += info.dungeon_lvl;
+		}
+		else
+		{
+			info.computeHash(info.player_num, hash);
+		}
 	}
 	if (hash != info.hash) {
 		info.hash = 0;
@@ -3403,6 +3410,11 @@ void updatePlayerConductsInMainLoop()
 		{
 			conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 1;
 		}
+	}
+	if ( ItemTooltips_t::itemsJsonHashRead != ItemTooltips_t::kItemsJsonHash )
+	{
+		conductGameChallenges[CONDUCT_MODDED] = 1;
+		Mods::disableSteamAchievements = true;
 	}
 	if ( !conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS] )
 	{
@@ -5280,6 +5292,139 @@ SteamGlobalStatIndexes getIndexForDeathType(int type)
 	return STEAM_GSTAT_INVALID;
 }
 
+void SaveGameInfo::computeHash(const int playernum, Uint32& hash)
+{
+	if ( players.size() <= playernum ) 
+	{
+		return;
+	}
+
+	Uint32 shift = 0;
+	hash += (Uint32)((Uint32)gamekey << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)mapseed << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)gametimer << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)svflags << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)multiplayer_type << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)dungeon_lvl << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)level_track << (shift % 32)); ++shift;
+
+	auto& player = players[playernum];
+	hash += (Uint32)((Uint32)player.char_class << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)player.race << (shift % 32)); ++shift;
+
+	for ( auto k : player.kills )
+	{
+		hash += (Uint32)((Uint32)k << (shift % 32)); ++shift;
+	}
+
+	hash += (Uint32)((Uint32)conductPenniless << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)conductFoodless << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)conductVegetarian << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)conductIlliterate << (shift % 32)); ++shift;
+	for ( int i = 0; i < NUM_CONDUCT_CHALLENGES; ++i )
+	{
+		hash += (Uint32)((Uint32)player.additionalConducts[i] << (shift % 32)); ++shift;
+	}
+	for ( int i = 0; i < NUM_GAMEPLAY_STATISTICS; ++i )
+	{
+		hash += (Uint32)((Uint32)player.gameStatistics[i] << (shift % 32)); ++shift;
+	}
+	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+	{
+		hash += (Uint32)((Uint32)player.hotbar[i] << (shift % 32)); ++shift;
+		for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
+		{
+			hash += (Uint32)((Uint32)player.hotbar_alternate[j][i] << (shift % 32)); ++shift;
+		}
+	}
+	for ( auto k : player.spells )
+	{
+		hash += (Uint32)((Uint32)k << (shift % 32)); ++shift;
+	}
+
+	std::vector<Player::stat_t*> statsArr;
+	statsArr.push_back(&players[playernum].stats);
+	for ( auto& s : players[playernum].followers )
+	{
+		statsArr.push_back(&s);
+	}
+
+	for ( auto stats : statsArr )
+	{
+		hash += (Uint32)((Uint32)stats->type << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)stats->sex << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)stats->appearance << (shift % 32)); ++shift;
+
+		hash += (Uint32)((Uint32)stats->HP << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)stats->maxHP << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)stats->MP << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)stats->maxMP << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)stats->STR << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)stats->DEX << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)stats->CON << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)stats->INT << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)stats->PER << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)stats->CHR << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)stats->EXP << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)stats->LVL << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)stats->GOLD << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)stats->HUNGER << (shift % 32)); ++shift;
+
+		for ( auto k : stats->PROFICIENCIES )
+		{
+			hash += (Uint32)((Uint32)k << (shift % 32)); ++shift;
+		}
+		for ( auto k : stats->EFFECTS )
+		{
+			hash += (Uint32)((Uint32)k << (shift % 32)); ++shift;
+		}
+		for ( auto k : stats->EFFECTS_TIMERS )
+		{
+			hash += (Uint32)((Uint32)k << (shift % 32)); ++shift;
+		}
+		for ( auto k : stats->MISC_FLAGS )
+		{
+			hash += (Uint32)((Uint32)k << (shift % 32)); ++shift;
+		}
+		for ( auto& pair : stats->player_equipment )
+		{
+			hash += (Uint32)((Uint32)pair.second << (shift % 32)); ++shift;
+		}
+		for ( auto& pair : stats->npc_equipment )
+		{
+			pair.second.computeHash(hash, shift);
+		}
+		for ( auto& item : stats->inventory )
+		{
+			item.computeHash(hash, shift);
+		}
+		for ( auto& bag : stats->player_lootbags )
+		{
+			hash += (Uint32)((Uint32)bag.first << (shift % 32)); ++shift;
+			hash += (Uint32)((Uint32)bag.second.spawn_x << (shift % 32)); ++shift;
+			hash += (Uint32)((Uint32)bag.second.spawn_y << (shift % 32)); ++shift;
+			hash += (Uint32)((Uint32)bag.second.looted << (shift % 32)); ++shift;
+			hash += (Uint32)((Uint32)bag.second.spawnedOnGround << (shift % 32)); ++shift;
+			for ( auto& item : bag.second.items )
+			{
+				item.computeHash(hash, shift);
+			}
+		}
+	}
+}
+
+void SaveGameInfo::Player::stat_t::item_t::computeHash(Uint32& hash, Uint32& shift)
+{
+	hash += (Uint32)((Uint32)type << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)status << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)appearance << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)beatitude << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)count << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)identified << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)x << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)y << (shift % 32)); ++shift;
+}
+
 int saveGame(int saveIndex) {
 	if (gameModeManager.getMode() != GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
 		return 1; // can't save tutorial games
@@ -5300,10 +5445,13 @@ int saveGame(int saveIndex) {
 
 	// savefile hash
 	info.hash = tm->tm_hour + tm->tm_mday * tm->tm_year + tm->tm_wday + tm->tm_yday;
-	info.hash += stats[clientnum]->STR + stats[clientnum]->LVL + stats[clientnum]->DEX * stats[clientnum]->INT;
-	info.hash += stats[clientnum]->CON * stats[clientnum]->PER + std::min(stats[clientnum]->GOLD, 5000) - stats[clientnum]->CON;
-	info.hash += stats[clientnum]->HP - stats[clientnum]->MP;
-	info.hash += currentlevel;
+	if ( info.game_version < 410 )
+	{
+		info.hash += stats[clientnum]->STR + stats[clientnum]->LVL + stats[clientnum]->DEX * stats[clientnum]->INT;
+		info.hash += stats[clientnum]->CON * stats[clientnum]->PER + std::min(stats[clientnum]->GOLD, 5000) - stats[clientnum]->CON;
+		info.hash += stats[clientnum]->HP - stats[clientnum]->MP;
+		info.hash += currentlevel;
+	}
 
 	// game info
 	info.gamename = stats[clientnum]->name;
@@ -5681,6 +5829,11 @@ int saveGame(int saveIndex) {
 	info.map_messages = Player::Minimap_t::mapDetails;
 
 	static ConsoleVariable<bool> cvar_saveText("/save_text_format", true);
+
+	if ( info.game_version >= 410 )
+	{
+		info.computeHash(info.player_num, info.hash);
+	}
 
 	char path[PATH_MAX] = "";
 	std::string savefile = setSaveGameFileName(multiplayer == SINGLE, SaveFileType::JSON, saveIndex);
