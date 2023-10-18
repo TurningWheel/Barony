@@ -2715,6 +2715,8 @@ public:
 		void setColorFaintText(Uint32 color) { faintTextColor = color; }
 	};
 	void readItemsFromFile();
+	static const Uint32 kItemsJsonHash = 255104943;
+	static Uint32 itemsJsonHashRead;
 	void readItemLocalizationsFromFile(bool forceLoadBaseDirectory = false);
 	void readTooltipsFromFile(bool forceLoadBaseDirectory = false);
 	std::vector<tmpItem_t> tmpItems;
