@@ -7539,6 +7539,46 @@ void actPlayer(Entity* my)
 				{
 					hit.entity->doorHealth = 0;
 				}
+				//else if ( hit.entity->behavior == &actDoorFrame &&
+				//	hit.entity->flags[INVISIBLE] )
+				//{
+				//	// code that almost fixes door frame collision
+				//	if ( hit.entity->yaw >= -0.1 && hit.entity->yaw <= 0.1 )
+				//	{
+				//		// east/west doorway
+				//		if ( my->y < floor(hit.entity->y / 16) * 16 + 8 )
+				//		{
+				//			// slide south
+				//			PLAYER_VELX = 0;
+				//			PLAYER_VELY = .25;
+				//		}
+				//		else
+				//		{
+				//			// slide north
+				//			PLAYER_VELX = 0;
+				//			PLAYER_VELY = -.25;
+				//		}
+				//	}
+				//	else
+				//	{
+				//		// north/south doorway
+				//		if ( my->x < floor(hit.entity->x / 16) * 16 + 8 )
+				//		{
+				//			// slide east
+				//			PLAYER_VELX = .25;
+				//			PLAYER_VELY = 0;
+				//		}
+				//		else
+				//		{
+				//			// slide west
+				//			PLAYER_VELX = -.25;
+				//			PLAYER_VELY = 0;
+				//		}
+				//	}
+				//	my->x += PLAYER_VELX;
+				//	my->y += PLAYER_VELY;
+				//	dist = sqrt(PLAYER_VELX * PLAYER_VELX + PLAYER_VELY * PLAYER_VELY);
+				//}
 			}
 		}
 		else

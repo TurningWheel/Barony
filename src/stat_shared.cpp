@@ -78,7 +78,7 @@ Stat::Stat(Sint32 sprite) :
 	this->RANDOM_MAXMP = 0;
 	this->RANDOM_MP = 0;
 	int c;
-	for ( c = 0; c < std::max<real_t>(NUMPROFICIENCIES, NUMEFFECTS); c++ )
+	for ( c = 0; c < std::max<int>(NUMPROFICIENCIES, NUMEFFECTS); c++ )
 	{
 		if ( c < NUMPROFICIENCIES )
 		{
