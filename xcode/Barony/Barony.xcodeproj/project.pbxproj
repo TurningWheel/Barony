@@ -13,6 +13,8 @@
 		843354EC2A771B6F0014D3CC /* libnfd.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 843354EA2A771B050014D3CC /* libnfd.a */; };
 		843354F32A771DA20014D3CC /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 843354F12A771D960014D3CC /* Cocoa.framework */; };
 		843354F62A771DAC0014D3CC /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 843354F12A771D960014D3CC /* Cocoa.framework */; };
+		843D8F9B2AD74AC9008E532C /* libEOSSDK-Mac-Shipping.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 843D8F9A2AD74AC9008E532C /* libEOSSDK-Mac-Shipping.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		843D8F9C2AD74AFD008E532C /* libEOSSDK-Mac-Shipping.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 843D8F9A2AD74AC9008E532C /* libEOSSDK-Mac-Shipping.dylib */; };
 		844D4A262925E64C005907BA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 844D4A252925E64C005907BA /* Assets.xcassets */; };
 		844D4A37292724EE005907BA /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84C3DB19291F8A1C0084EAD5 /* OpenGL.framework */; };
 		844D4A3C292724FE005907BA /* SDL2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 844D4A38292724FE005907BA /* SDL2.framework */; };
@@ -239,10 +241,9 @@
 		84C3DB30292028790084EAD5 /* playernames-male.txt in Resources */ = {isa = PBXBuildFile; fileRef = 84C3DB2D292028790084EAD5 /* playernames-male.txt */; };
 		84C3DB31292028790084EAD5 /* lang in Resources */ = {isa = PBXBuildFile; fileRef = 84C3DB2E292028790084EAD5 /* lang */; };
 		84C3DB32292028790084EAD5 /* playernames-female.txt in Resources */ = {isa = PBXBuildFile; fileRef = 84C3DB2F292028790084EAD5 /* playernames-female.txt */; };
+		84C69F2C2ABA83190014D8FF /* themes in Resources */ = {isa = PBXBuildFile; fileRef = 84C69F2B2ABA83190014D8FF /* themes */; };
 		84F71060292327D900AE0D03 /* libsteam_api.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F7105F292327D900AE0D03 /* libsteam_api.dylib */; };
-		84F710632923280500AE0D03 /* libEOSSDK-Mac-Shipping.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 84F71061292327F100AE0D03 /* libEOSSDK-Mac-Shipping.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		84F710642923280D00AE0D03 /* libsteam_api.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 84F7105F292327D900AE0D03 /* libsteam_api.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		84F7106529232BB100AE0D03 /* libEOSSDK-Mac-Shipping.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F71061292327F100AE0D03 /* libEOSSDK-Mac-Shipping.dylib */; };
 		84F7108D292350C500AE0D03 /* Vorbis.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F71089292350C500AE0D03 /* Vorbis.framework */; };
 		84F7108E292350C500AE0D03 /* Ogg.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F7108A292350C500AE0D03 /* Ogg.framework */; };
 		84F7108F292350C500AE0D03 /* Theora.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F7108B292350C500AE0D03 /* Theora.framework */; };
@@ -298,8 +299,8 @@
 				847B3BF2296BF89F002D8852 /* libphysfs.1.dylib in Embed Libraries */,
 				847B3BF0296BF890002D8852 /* libpng16.16.dylib in Embed Libraries */,
 				845F4BB92920302F00D6B9D7 /* libfmod.dylib in Embed Libraries */,
-				84F710632923280500AE0D03 /* libEOSSDK-Mac-Shipping.dylib in Embed Libraries */,
 				84F710642923280D00AE0D03 /* libsteam_api.dylib in Embed Libraries */,
+				843D8F9B2AD74AC9008E532C /* libEOSSDK-Mac-Shipping.dylib in Embed Libraries */,
 			);
 			name = "Embed Libraries";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -311,6 +312,7 @@
 		84222CCB29ECB510000BF08E /* npcnames-male.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = "npcnames-male.txt"; path = "../../npcnames-male.txt"; sourceTree = "<group>"; };
 		843354EA2A771B050014D3CC /* libnfd.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libnfd.a; path = "../../../nfd-build/libnfd.a"; sourceTree = "<group>"; };
 		843354F12A771D960014D3CC /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		843D8F9A2AD74AC9008E532C /* libEOSSDK-Mac-Shipping.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libEOSSDK-Mac-Shipping.dylib"; path = "../../../eos/EOS-SDK-27379709-v1/SDK/Bin/libEOSSDK-Mac-Shipping.dylib"; sourceTree = "<group>"; };
 		844D4A1F2925E64C005907BA /* Barony Editor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Barony Editor.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		844D4A252925E64C005907BA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		844D4A38292724FE005907BA /* SDL2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2.framework; path = ../../../../../../Library/Frameworks/SDL2.framework; sourceTree = "<group>"; };
@@ -560,8 +562,8 @@
 		84C3DB2D292028790084EAD5 /* playernames-male.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = "playernames-male.txt"; path = "../../playernames-male.txt"; sourceTree = "<group>"; };
 		84C3DB2E292028790084EAD5 /* lang */ = {isa = PBXFileReference; lastKnownFileType = folder; name = lang; path = ../../lang; sourceTree = "<group>"; };
 		84C3DB2F292028790084EAD5 /* playernames-female.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = "playernames-female.txt"; path = "../../playernames-female.txt"; sourceTree = "<group>"; };
+		84C69F2B2ABA83190014D8FF /* themes */ = {isa = PBXFileReference; lastKnownFileType = folder; name = themes; path = ../../../baronyupdate/themes; sourceTree = "<group>"; };
 		84F7105F292327D900AE0D03 /* libsteam_api.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsteam_api.dylib; path = ../../../steamworks/sdk/redistributable_bin/osx/libsteam_api.dylib; sourceTree = "<group>"; };
-		84F71061292327F100AE0D03 /* libEOSSDK-Mac-Shipping.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libEOSSDK-Mac-Shipping.dylib"; path = "../../../eos/EOS-SDK-21924193-v1/SDK/Bin/libEOSSDK-Mac-Shipping.dylib"; sourceTree = "<group>"; };
 		84F71089292350C500AE0D03 /* Vorbis.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Vorbis.framework; path = ../../../Vorbis.framework; sourceTree = "<group>"; };
 		84F7108A292350C500AE0D03 /* Ogg.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Ogg.framework; path = ../../../Ogg.framework; sourceTree = "<group>"; };
 		84F7108B292350C500AE0D03 /* Theora.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Theora.framework; path = ../../../Theora.framework; sourceTree = "<group>"; };
@@ -603,8 +605,8 @@
 				84BD1E70296E9F2A00DC6F44 /* libphysfs.1.dylib in Frameworks */,
 				84BD1E6F296E9F1700DC6F44 /* libpng16.16.dylib in Frameworks */,
 				84B7E1802920290E00D1F0C5 /* libfmod.dylib in Frameworks */,
-				84F7106529232BB100AE0D03 /* libEOSSDK-Mac-Shipping.dylib in Frameworks */,
 				84F71060292327D900AE0D03 /* libsteam_api.dylib in Frameworks */,
+				843D8F9C2AD74AFD008E532C /* libEOSSDK-Mac-Shipping.dylib in Frameworks */,
 				843354EC2A771B6F0014D3CC /* libnfd.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -873,8 +875,7 @@
 				84C3DB22292028630084EAD5 /* models */,
 				84C3DB21292028630084EAD5 /* music */,
 				84C3DB1F292028630084EAD5 /* sound */,
-				847B3BF1296BF89F002D8852 /* libphysfs.1.dylib */,
-				847B3BEF296BF890002D8852 /* libpng16.16.dylib */,
+				84C69F2B2ABA83190014D8FF /* themes */,
 				84C3DB12291F799D0084EAD5 /* Config.hpp */,
 				847E18F729239843003BD4E9 /* Info.plist */,
 				84222CCA29ECB510000BF08E /* npcnames-female.txt */,
@@ -904,6 +905,8 @@
 		84C3D8F0291F5D370084EAD5 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				847B3BEF296BF890002D8852 /* libpng16.16.dylib */,
+				847B3BF1296BF89F002D8852 /* libphysfs.1.dylib */,
 				843354F12A771D960014D3CC /* Cocoa.framework */,
 				843354EA2A771B050014D3CC /* libnfd.a */,
 				844D4A3B292724FE005907BA /* SDL2_image.framework */,
@@ -914,7 +917,7 @@
 				84F7108B292350C500AE0D03 /* Theora.framework */,
 				84F7108C292350C500AE0D03 /* theoraplayer.framework */,
 				84F71089292350C500AE0D03 /* Vorbis.framework */,
-				84F71061292327F100AE0D03 /* libEOSSDK-Mac-Shipping.dylib */,
+				843D8F9A2AD74AC9008E532C /* libEOSSDK-Mac-Shipping.dylib */,
 				84F7105F292327D900AE0D03 /* libsteam_api.dylib */,
 				84B7E17F2920290E00D1F0C5 /* libfmod.dylib */,
 				84C3DB19291F8A1C0084EAD5 /* OpenGL.framework */,
@@ -1021,6 +1024,7 @@
 				84C3DB31292028790084EAD5 /* lang in Resources */,
 				84C3DB24292028630084EAD5 /* items in Resources */,
 				84C3DB25292028630084EAD5 /* maps in Resources */,
+				84C69F2C2ABA83190014D8FF /* themes in Resources */,
 				84C3DB26292028630084EAD5 /* data in Resources */,
 				84C3DB27292028630084EAD5 /* books in Resources */,
 				84C3DB28292028630084EAD5 /* sound in Resources */,
@@ -1276,7 +1280,7 @@
 					"\"$(SRCROOT)/../../../lpng1639\"",
 					"\"$(SRCROOT)/../../../physfs-3.0.2/src\"",
 					"\"$(SRCROOT)/../../../fmod/api/core/inc\"",
-					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Include\"",
+					"\"$(SRCROOT)/../../../eos/EOS-SDK-27379709-v1/SDK/Include\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/public\"",
 					"\"$(SRCROOT)/../../../nfd-build\"",
 				);
@@ -1290,7 +1294,7 @@
 					"\"$(SRCROOT)/../../../lpng1639\"",
 					"\"$(SRCROOT)/../../../physfs-3.0.2/build\"",
 					"\"$(SRCROOT)/../../../fmod/api/core/lib\"",
-					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Bin\"",
+					"\"$(SRCROOT)/../../../eos/EOS-SDK-27379709-v1/SDK/Bin\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
 					"\"$(SRCROOT)/../../../nfd-build\"",
 				);
@@ -1333,7 +1337,7 @@
 					"\"$(SRCROOT)/../../../lpng1639\"",
 					"\"$(SRCROOT)/../../../physfs-3.0.2/src\"",
 					"\"$(SRCROOT)/../../../fmod/api/core/inc\"",
-					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Include\"",
+					"\"$(SRCROOT)/../../../eos/EOS-SDK-27379709-v1/SDK/Include\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/public\"",
 					"\"$(SRCROOT)/../../../nfd-build\"",
 				);
@@ -1347,7 +1351,7 @@
 					"\"$(SRCROOT)/../../../lpng1639\"",
 					"\"$(SRCROOT)/../../../physfs-3.0.2/build\"",
 					"\"$(SRCROOT)/../../../fmod/api/core/lib\"",
-					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Bin\"",
+					"\"$(SRCROOT)/../../../eos/EOS-SDK-27379709-v1/SDK/Bin\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
 					"\"$(SRCROOT)/../../../nfd-build\"",
 				);
@@ -1500,7 +1504,7 @@
 					"\"$(SRCROOT)/../../../lpng1639\"",
 					"\"$(SRCROOT)/../../../physfs-3.0.2/src\"",
 					"\"$(SRCROOT)/../../../fmod/api/core/inc\"",
-					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Include\"",
+					"\"$(SRCROOT)/../../../eos/EOS-SDK-27379709-v1/SDK/Include\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/public\"",
 					"\"$(SRCROOT)/../../../nfd-build\"",
 				);
@@ -1525,7 +1529,7 @@
 					"\"$(SRCROOT)/../../../lpng1639\"",
 					"\"$(SRCROOT)/../../../physfs-3.0.2/build\"",
 					"\"$(SRCROOT)/../../../fmod/api/core/lib\"",
-					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Bin\"",
+					"\"$(SRCROOT)/../../../eos/EOS-SDK-27379709-v1/SDK/Bin\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
 					"\"$(SRCROOT)/../../../nfd-build\"",
 				);
@@ -1577,7 +1581,7 @@
 					"\"$(SRCROOT)/../../../lpng1639\"",
 					"\"$(SRCROOT)/../../../physfs-3.0.2/src\"",
 					"\"$(SRCROOT)/../../../fmod/api/core/inc\"",
-					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Include\"",
+					"\"$(SRCROOT)/../../../eos/EOS-SDK-27379709-v1/SDK/Include\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/public\"",
 					"\"$(SRCROOT)/../../../nfd-build\"",
 				);
@@ -1602,7 +1606,7 @@
 					"\"$(SRCROOT)/../../../lpng1639\"",
 					"\"$(SRCROOT)/../../../physfs-3.0.2/build\"",
 					"\"$(SRCROOT)/../../../fmod/api/core/lib\"",
-					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Bin\"",
+					"\"$(SRCROOT)/../../../eos/EOS-SDK-27379709-v1/SDK/Bin\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
 					"\"$(SRCROOT)/../../../nfd-build\"",
 				);

@@ -2597,7 +2597,7 @@ namespace ConsoleCommands {
 		{
 			effects.push_back(1);
 		}
-		while ( num > 0 )
+		while ( num > 0 && players[clientnum]->entity )
 		{
 			--num;
 			auto picked = local_rng.discrete(effects.data(), effects.size());
@@ -3729,6 +3729,11 @@ namespace ConsoleCommands {
 		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded follower_wheel.json");
 		});
 
+	static ConsoleCommand ccmd_loadcalloutwheel("/loadcalloutwheel", "", []CCMD{
+		CalloutRadialMenu::loadCalloutJSON();
+		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded callout_wheel.json");
+		});
+
 	static ConsoleCommand ccmd_printleaderlist("/printleaderlist", "", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
@@ -4437,6 +4442,46 @@ namespace ConsoleCommands {
 		}
 	});
 
+	static ConsoleCommand ccmd_spawndummyhuman("/spawndummyhuman", "", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		if ( multiplayer == CLIENT )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(284));
+			return;
+		}
+		if ( players[clientnum]->entity )
+		{
+			if ( Entity* monster = summonMonster(HUMAN, players[clientnum]->entity->x, players[clientnum]->entity->y) )
+			{
+				if ( Stat* stat = monster->getStats() )
+				{
+					stat->HP = 5000;
+					stat->MAXHP = 5000;
+					stat->CON = 0;
+					stat->RANDOM_CON = 0;
+					stat->LVL = 50;
+					stat->EFFECTS[EFF_STUNNED] = true;
+					stat->monsterForceAllegiance = Stat::MONSTER_FORCE_PLAYER_ENEMY;
+					serverUpdateEntityStatFlag(monster, 20);
+					stat->EDITOR_ITEMS[ITEM_SLOT_HELM] = 0;
+					stat->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 0;
+					stat->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 0;
+					stat->EDITOR_ITEMS[ITEM_SLOT_ARMOR] = 0;
+					stat->EDITOR_ITEMS[ITEM_SLOT_BOOTS] = 0;
+					stat->EDITOR_ITEMS[ITEM_SLOT_RING] = 0;
+					stat->EDITOR_ITEMS[ITEM_SLOT_AMULET] = 0;
+					stat->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 0;
+					stat->EDITOR_ITEMS[ITEM_SLOT_MASK] = 0;
+					stat->EDITOR_ITEMS[ITEM_SLOT_GLOVES] = 0;
+				}
+			}
+		}
+	});
+
 	static ConsoleCommand ccmd_mesh_collider_debug("/mesh_collider_debug", "", []CCMD{
 		node_t* tmpNode = NULL;
 		Entity* tmpEnt = NULL;
@@ -4668,6 +4713,35 @@ namespace ConsoleCommands {
 
 	static ConsoleCommand ccmd_reloadtiles("/reloadtiles", "reloads tile textures", []CCMD{
 		generateTileTextures();
+	});
+
+	static ConsoleCommand ccmd_spawnghost("/respawnasghost", "respawn as a ghost", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		
+		if ( players[clientnum]->ghost.my )
+		{
+			players[clientnum]->ghost.setActive(!players[clientnum]->ghost.isActive());
+			return;
+		}
+
+		if ( stats[clientnum]->HP > 0 )
+		{
+			stats[clientnum]->HP = 0;
+		}
+
+		if ( players[clientnum]->entity )
+		{
+			players[clientnum]->ghost.initTeleportLocations(players[clientnum]->entity->x / 16, players[clientnum]->entity->y / 16);
+		}
+		else
+		{
+			players[clientnum]->ghost.initTeleportLocations(players[clientnum]->ghost.startRoomX, players[clientnum]->ghost.startRoomY);
+		}
+		players[clientnum]->ghost.spawnGhost();
 	});
 }
 

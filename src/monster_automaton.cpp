@@ -1521,7 +1521,14 @@ void Entity::automatonRecycleItem()
 		case 1:
 		case 2:
 			type = itemTypeWithinGoldValue(WEAPON, minGoldValue, maxGoldValue);
-			break;
+			if ( type == GEM_ROCK )
+			{
+				// fall through, try again with next category
+			}
+			else
+			{
+				break;
+			}
 		case 3:
 		case 4:
 		case 5:
@@ -1529,7 +1536,14 @@ void Entity::automatonRecycleItem()
 		case 7:
 		case 8:
 			type = itemTypeWithinGoldValue(ARMOR, minGoldValue, maxGoldValue);
-			break;
+			if ( type == GEM_ROCK )
+			{
+				// fall through, try again with next category
+			}
+			else
+			{
+				break;
+			}
 		case 9:
 			type = itemTypeWithinGoldValue(THROWN, minGoldValue, maxGoldValue);
 			break;
@@ -1540,16 +1554,19 @@ void Entity::automatonRecycleItem()
 	if ( type != GEM_ROCK ) // found an item in category
 	{
 		Item* item = nullptr;
+		Item* degraded = nullptr;
 		// recycle item1 or item2, reduce durability.
 		if ( local_rng.rand() % 2 == 0 )
 		{
 			item = newItem(type, item1->status, item1->beatitude, 1, local_rng.rand(), item1->identified, &myStats->inventory);
 			item1->status = static_cast<Status>(std::max(0, item1->status - 2));
+			degraded = item1;
 		}
 		else
 		{
 			item = newItem(type, item2->status, item2->beatitude, 1, local_rng.rand(), item2->identified, &myStats->inventory);
 			item2->status = static_cast<Status>(std::max(0, item2->status - 2));
+			degraded = item2;
 		}
 		// drop newly created item. To pickup if possible or leave behind if overburdened.
 		dropItemMonster(item, this, myStats);
@@ -1571,6 +1588,11 @@ void Entity::automatonRecycleItem()
 			}
 		}
 		//messagePlayer(0, "%d, %d", item1->ownerUid, item2->ownerUid);
+		if ( degraded && degraded->status == BROKEN && local_rng.rand() % 2 == 0 )
+		{
+			// chance to clear the slot for more items
+			list_RemoveNode(degraded->node);
+		}
 	}
 
 	return;

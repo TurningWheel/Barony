@@ -114,6 +114,7 @@ namespace MainMenu {
                 {"Spell List", "B", hiddenBinding, emptyBinding},
                 {"Skill Sheet", "K", hiddenBinding, emptyBinding},
                 {"Autosort Inventory", "R", hiddenBinding, emptyBinding},
+				{"Call Out", "X", "ButtonLeftStick", emptyBinding},
                 {"Command NPC", "Q", "DpadX-", emptyBinding},
                 {"Show NPC Commands", "C", "DpadX+", emptyBinding},
                 {"Cycle NPCs", "E", "DpadY-", emptyBinding},
@@ -173,6 +174,11 @@ namespace MainMenu {
                 {"Spell List", "B", hiddenBinding, emptyBinding},
                 {"Skill Sheet", "K", hiddenBinding, emptyBinding},
                 {"Autosort Inventory", "R", hiddenBinding, emptyBinding},
+#ifdef NINTENDO
+				{"Call Out", "X", "DpadY+", emptyBinding},
+#else
+				{"Call Out", "X", "ButtonA", emptyBinding},
+#endif
                 {"Command NPC", "Q", "DpadX-", emptyBinding},
                 {"Show NPC Commands", "C", "DpadX+", emptyBinding},
                 {"Cycle NPCs", "E", "DpadY-", emptyBinding},
@@ -232,6 +238,7 @@ namespace MainMenu {
                 {"Spell List", "B", hiddenBinding, emptyBinding},
                 {"Skill Sheet", "K", hiddenBinding, emptyBinding},
                 {"Autosort Inventory", "R", hiddenBinding, emptyBinding},
+				{"Call Out", "X", "ButtonLeftStick", emptyBinding},
 #ifdef NINTENDO
                 {"Command NPC", "Q", "ButtonY", emptyBinding},
                 {"Show NPC Commands", "C", "ButtonX", emptyBinding},
@@ -291,6 +298,7 @@ namespace MainMenu {
                 {"Spell List", "B", hiddenBinding, emptyBinding},
                 {"Skill Sheet", "K", hiddenBinding, emptyBinding},
                 {"Autosort Inventory", "R", hiddenBinding, emptyBinding},
+				{"Call Out", "X", emptyBinding, emptyBinding},
                 {"Command NPC", "Q", emptyBinding, emptyBinding},
                 {"Show NPC Commands", "C", emptyBinding, emptyBinding},
                 {"Cycle NPCs", "E", emptyBinding, emptyBinding},
@@ -567,6 +575,7 @@ namespace MainMenu {
 		bool bobbing_enabled = true;
 		bool light_flicker_enabled = true;
 		bool hold_to_activate_enabled = true;
+        bool holiday_themes_enabled = true;
         struct Video video;
 		bool use_frame_interpolation = true;
 		bool vertical_split_enabled = false;
@@ -822,7 +831,9 @@ namespace MainMenu {
 			    Uint32 startTicks = SDL_GetTicks();
 			    Uint32 checkTicks = startTicks;
 			    while ((checkTicks - startTicks) < msMin) {
-				    EOS_Platform_Tick(EOS.PlatformHandle);
+					if (EOS.PlatformHandle) {
+						EOS_Platform_Tick(EOS.PlatformHandle);
+					}
 				    if (EOS.HandleReceivedMessagesAndIgnore(&newRemoteProductId)) {
 					    checkTicks = SDL_GetTicks(); // found a packet, extend the wait time.
 				    }
@@ -842,6 +853,7 @@ namespace MainMenu {
 	static void settingsVideo(Button&);
 	static void settingsAudio(Button&);
 	static void settingsControls(Button&);
+	static void settingsOnlinePopulate(Button&, bool);
 	static void settingsOnline(Button&);
 	static void settingsGame(Button&);
 
@@ -1446,30 +1458,33 @@ namespace MainMenu {
 	    return field->getText(); // note: this will only be valid for one frame!
 	}
 
-	static Frame* binaryPrompt(
+	static Frame* binaryPromptGeneric(
 		const char* window_text,
 		const char* okay_text,
 		const char* cancel_text,
 		void (*okay_callback)(Button&),
 		void (*cancel_callback)(Button&),
-		bool leftRed = true,
-		bool rightRed = false
+		bool leftRed,
+		bool rightRed,
+        bool isSmall
 	) {
 		soundActivate();
 
-	    Frame* frame = createPrompt("binary_prompt");
+	    Frame* frame = createPrompt("binary_prompt", isSmall);
 	    if (!frame) {
 	        return nullptr;
 	    }
 
 		auto text = frame->addField("text", 1024);
-		text->setSize(SDL_Rect{30, 28, 304, 46});
+		text->setSize(SDL_Rect{30, 28, frame->getSize().w - 60, isSmall ? 46 : 134});
 		text->setFont(smallfont_no_outline);
 		text->setText(window_text);
 		text->setJustify(Field::justify_t::CENTER);
+  
+        const int buttonsWidth = (leftRed ? 130 : 108) + (rightRed ? 130 : 108) + 4;
 
 		auto okay = frame->addButton("okay");
-		okay->setSize(SDL_Rect{leftRed ? 58 : 72, 78, leftRed ? 130 : 108, 52});
+		okay->setSize(SDL_Rect{(frame->getSize().w - buttonsWidth) / 2, frame->getSize().h - 98, leftRed ? 130 : 108, 52});
 		okay->setBackground(leftRed ?
 		    "*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png" :
 		    "*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
@@ -1502,7 +1517,7 @@ namespace MainMenu {
 			});
 
 		auto cancel = frame->addButton("cancel");
-		cancel->setSize(SDL_Rect{leftRed ? 196 : 188, 78, rightRed ? 130 : 108, 52});
+		cancel->setSize(SDL_Rect{(frame->getSize().w - buttonsWidth) / 2 + (leftRed ? 130 : 108) + 4, frame->getSize().h - 98, rightRed ? 130 : 108, 52});
 		cancel->setBackground(rightRed ?
 		    "*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png" :
 		    "*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
@@ -1525,6 +1540,32 @@ namespace MainMenu {
 
 		return frame;
 	}
+
+	static Frame* binaryPrompt(
+		const char* window_text,
+		const char* okay_text,
+		const char* cancel_text,
+		void (*okay_callback)(Button&),
+		void (*cancel_callback)(Button&),
+		bool leftRed = true,
+		bool rightRed = false
+	) {
+        return binaryPromptGeneric(window_text, okay_text, cancel_text,
+            okay_callback, cancel_callback, leftRed, rightRed, true);
+    }
+
+	static Frame* binaryPromptXL(
+		const char* window_text,
+		const char* okay_text,
+		const char* cancel_text,
+		void (*okay_callback)(Button&),
+		void (*cancel_callback)(Button&),
+		bool leftRed = true,
+		bool rightRed = false
+	) {
+        return binaryPromptGeneric(window_text, okay_text, cancel_text,
+            okay_callback, cancel_callback, leftRed, rightRed, false);
+    }
 
 	static void closeBinary() {
 	    closePrompt("binary_prompt");
@@ -1742,7 +1783,6 @@ namespace MainMenu {
 		const char* okay_text,
 		void (*okay_callback)(Button&)
 	) {
-		soundActivate();
 		return monoPromptGeneric(window_text, okay_text, okay_callback, false);
 	}
 
@@ -2721,6 +2761,11 @@ namespace MainMenu {
 		bobbing = bobbing_enabled;
 		flickerLights = light_flicker_enabled;
 		*cvar_hold_to_activate = hold_to_activate_enabled;
+        bool oldDisableHoliday = *cvar_disableHoliday;
+        *cvar_disableHoliday = !holiday_themes_enabled;
+        if (initialized && oldDisableHoliday != *cvar_disableHoliday) {
+            (void)remountBaseDataFolders();
+        }
 		result |= video.save() ? VideoRefresh::Video : VideoRefresh::None;
 		*vertical_splitscreen = vertical_split_enabled;
 		*staggered_splitscreen = staggered_split_enabled;
@@ -2833,6 +2878,7 @@ namespace MainMenu {
 		settings.bobbing_enabled = bobbing;
 		settings.light_flicker_enabled = flickerLights;
 		settings.hold_to_activate_enabled = *cvar_hold_to_activate;
+        settings.holiday_themes_enabled = !*cvar_disableHoliday;
 		if (video) {
 			settings.video = Video::load();
 		} else {
@@ -2887,7 +2933,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 18;
+	    int version = 19;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -2929,6 +2975,7 @@ namespace MainMenu {
 		file->property("bobbing_enabled", bobbing_enabled);
 		file->property("light_flicker_enabled", light_flicker_enabled);
 		file->propertyVersion("hold_to_activate_enabled", version >= 17, hold_to_activate_enabled);
+		file->propertyVersion("holiday_themes_enabled", version >= 19, holiday_themes_enabled);
         if (version >= 1) {
             file->property("video", video);
             file->property("vertical_split_enabled", vertical_split_enabled);
@@ -4489,10 +4536,19 @@ namespace MainMenu {
  
     static const char* translateBinding(const char* binding) {
         int c = 5970;
+		if ( !strcmp(binding, "Call Out") )
+		{
+			return Language::get(6044);
+		}
+
         for (auto& b : defaultBindings[0].bindings) {
             if (b.action == binding) {
                 break;
             }
+			if ( b.action == "Call Out" )
+			{
+				continue; // don't increment c, not in the linear language entries
+			}
             ++c;
         }
         return Language::get(c);
@@ -4880,8 +4936,8 @@ namespace MainMenu {
 		return result;
 	}
 
-	static Frame* settingsSubwindowSetup(const char* tab) {
-		if (!video_refresh) {
+	static Frame* settingsSubwindowSetup(const char* tab, bool quiet) {
+		if (!quiet) {
 		    soundActivate();
 		}
 		settings_tab_name = tab;
@@ -5862,7 +5918,7 @@ bind_failed:
 
 	static void settingsGeneral(Button& button) {
 		Frame* settings_subwindow;
-		if ((settings_subwindow = settingsSubwindowSetup(button.getName())) == nullptr) {
+		if ((settings_subwindow = settingsSubwindowSetup(button.getName(), false)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 			settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "fast_restart"});
@@ -6017,7 +6073,7 @@ bind_failed:
 
 	static void settingsVideo(Button& button) {
 		Frame* settings_subwindow;
-		if ((settings_subwindow = settingsSubwindowSetup(button.getName())) == nullptr) {
+		if ((settings_subwindow = settingsSubwindowSetup(button.getName(), video_refresh != 0)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 #ifdef NINTENDO
@@ -6151,7 +6207,7 @@ bind_failed:
 
 	static void settingsAudio(Button& button) {
 		Frame* settings_subwindow;
-		if ((settings_subwindow = settingsSubwindowSetup(button.getName())) == nullptr) {
+		if ((settings_subwindow = settingsSubwindowSetup(button.getName(), false)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 #if defined(NINTENDO) || !defined(USE_FMOD)
@@ -6280,7 +6336,7 @@ bind_failed:
         bound_profile = profile;
         
         Frame* settings_subwindow;
-        if ((settings_subwindow = settingsSubwindowSetup("Controls")) == nullptr) {
+        if ((settings_subwindow = settingsSubwindowSetup("Controls", false)) == nullptr) {
             auto settings = main_menu_frame->findFrame("settings"); assert(settings);
             auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
             settingsSelect(*settings_subwindow, {Setting::Type::Customize, "bindings"});
@@ -6754,15 +6810,67 @@ bind_failed:
         settingsControlsPopulate(player, device, profile, {Setting::Type::Dropdown, "player_dropdown_button"});
 	}
 
-	static void settingsOnline(Button& button) {
+	static void settingsOnlinePopulate(Button& button, bool quiet) {
 		Frame* settings_subwindow;
-		if ((settings_subwindow = settingsSubwindowSetup(button.getName())) == nullptr) {
+		if ((settings_subwindow = settingsSubwindowSetup(button.getName(), quiet)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 		    settingsSelect(*settings_subwindow, {Setting::Type::Field, "port_number"});
 			return;
 		}
 		int y = 0;
+  
+        auto holiday_credits_fn = [](Button& button){
+            static int page_num, page_start;
+            
+            const auto holiday = getCurrentHoliday();
+            switch (holiday) {
+            default:
+            case HolidayTheme::THEME_NONE: page_num = page_start = 6043; break;
+            case HolidayTheme::THEME_HALLOWEEN: page_num = page_start = 6030; break;
+            case HolidayTheme::THEME_XMAS: page_num = page_start = 6036; break;
+            }
+            
+            auto next_page_fn = [](Button& button){
+                soundActivate();
+                ++page_num;
+                
+                int page_limit;
+                const auto holiday = getCurrentHoliday();
+                switch (holiday) {
+                default:
+                case HolidayTheme::THEME_NONE: page_num = page_limit = 6044; break;
+                case HolidayTheme::THEME_HALLOWEEN: page_limit = 6036; break;
+                case HolidayTheme::THEME_XMAS: page_limit = 6043; break;
+                }
+                if (page_num >= page_limit) {
+                    page_num = page_start;
+                }
+                
+                auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
+                auto text = frame->findField("text"); assert(text);
+                text->setText(Language::get(page_num));
+            };
+            
+            binaryPromptXL(Language::get(page_num), Language::get(6028), Language::get(6029),
+                next_page_fn, [](Button&){
+                    soundCancel();
+                    closeBinary();
+                    auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+                    auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+                    settingsSelect(*settings_subwindow, {Setting::Type::Customize, "holiday_credits"});
+                }, false, true);
+        };
+        
+		y += settingsAddSubHeader(*settings_subwindow, y, "holiday_themes", Language::get(6022));
+		y += settingsAddBooleanOption(*settings_subwindow, y, "holiday_themes", Language::get(6023), Language::get(6024),
+			allSettings.holiday_themes_enabled, [](Button& button){soundToggleSetting(button); allSettings.holiday_themes_enabled = button.isPressed();});
+        y += settingsAddCustomize(*settings_subwindow, y, "holiday_credits", Language::get(6025), Language::get(6027), holiday_credits_fn);
+        
+        auto holiday_credits_button = settings_subwindow->findButton("setting_holiday_credits_customize_button");
+        if (holiday_credits_button) {
+            holiday_credits_button->setText(Language::get(6026));
+        }
 
 #if 0
 		y += settingsAddSubHeader(*settings_subwindow, y, "general", Language::get(5241));
@@ -6770,9 +6878,9 @@ bind_failed:
 			allSettings.show_ip_address_enabled, [](Button& button){soundToggleSetting(button); allSettings.show_ip_address_enabled = button.isPressed();});
 #endif
 
+#ifndef NINTENDO
         char port_desc[1024];
         snprintf(port_desc, sizeof(port_desc), Language::get(5244), DEFAULT_PORT);
-
         char buf[16];
         snprintf(buf, sizeof(buf), "%hu", (Uint16)allSettings.port_number);
 		y += settingsAddSubHeader(*settings_subwindow, y, "lan", Language::get(5245));
@@ -6791,26 +6899,47 @@ bind_failed:
 					}
 				}
 			});
-#if defined(USE_EOS) && (defined(STEAMWORKS) || defined(NINTENDO))
+#endif
+            
+#if !defined(NINTENDO)
+#if defined(USE_EOS) && defined(STEAMWORKS)
 		y += settingsAddSubHeader(*settings_subwindow, y, "crossplay", Language::get(5247));
 		y += settingsAddBooleanOption(*settings_subwindow, y, "crossplay", Language::get(5248), Language::get(5249),
 		    allSettings.crossplay_enabled, [](Button& button){soundToggleSetting(button); allSettings.crossplay_enabled = button.isPressed();});
 
 		hookSettings(*settings_subwindow,
-			{{Setting::Type::Field, "port_number"},
-			{Setting::Type::Boolean, "crossplay"}});
+			{
+                {Setting::Type::Boolean, "holiday_themes"},
+                {Setting::Type::Customize, "holiday_credits"},
+                {Setting::Type::Field, "port_number"},
+                {Setting::Type::Boolean, "crossplay"},
+            });
 #else
 		hookSettings(*settings_subwindow,
-			{{Setting::Type::Field, "port_number"}});
+			{
+                {Setting::Type::Boolean, "holiday_themes"},
+                {Setting::Type::Customize, "holiday_credits"},
+                {Setting::Type::Field, "port_number"},
+            });
 #endif
-
-		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Field, "port_number"});
-		settingsSelect(*settings_subwindow, {Setting::Type::Field, "port_number"});
+#else // defined(NINTENDO)
+		hookSettings(*settings_subwindow,
+			{
+                {Setting::Type::Boolean, "holiday_themes"},
+                {Setting::Type::Customize, "holiday_credits"},
+            });
+#endif
+		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "holiday_themes"});
+		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "holiday_themes"});
 	}
+ 
+    static void settingsOnline(Button& button) {
+        settingsOnlinePopulate(button, false);
+    }
 
 	static void settingsGame(Button& button) {
 		Frame* settings_subwindow;
-		if ((settings_subwindow = settingsSubwindowSetup(button.getName())) == nullptr) {
+		if ((settings_subwindow = settingsSubwindowSetup(button.getName(), false)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 			settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "hunger"});
@@ -7330,7 +7459,7 @@ bind_failed:
             assert(character_title);
             snprintf(buf, sizeof(buf), Language::get(5298),
                 score->stats->LVL,
-                Language::get(3821 + score->stats->playerRace),
+                Language::get(5369 + score->stats->playerRace),
                 playerClassLangEntry(score->classnum, 0));
             character_title->setText(buf);
 
@@ -8404,7 +8533,7 @@ bind_failed:
 		const Uint32 seconds = getTime() % seconds_in_day;
 
         if (add_to_list) {
-            playSound(238, 64);
+            playSound(Message::CHAT_MESSAGE_SFX, 64);
             new_lobby_chat_message_alert = ticks;
             lobby_chat_messages.emplace_back(LobbyChatMessage{seconds, color, msg});
             if (lobby_chat_messages.size() > lobby_chat_max_messages) {
@@ -9268,9 +9397,13 @@ bind_failed:
 					}
 				}
 
-				char address[64];
+				char address[64] = { '\0' };
+				bool result = false;
+
 				nxGetWirelessAddress(address, sizeof(address));
-				bool result = nxUpdateLobby(address, MainMenu::getHostname(), svFlags, numplayers);
+				if (address[0]) {
+					result = nxUpdateLobby(address, MainMenu::getHostname(), svFlags, numplayers);
+				}
 				if (!result) {
 					disconnectFromLobby();
 					destroyMainMenu();
@@ -14515,9 +14648,6 @@ failed:
 
 			auto card = static_cast<Frame*>(button.getParent());
 
-			// select a random sex
-			stats[index]->sex = (sex_t)(RNG.getU8() % 2);
-
 			// select a random race
 			// there are 9 legal races that the player can select from the start.
 			if (enabledDLCPack1 && enabledDLCPack2) {
@@ -14543,16 +14673,28 @@ failed:
 				stats[index]->appearance = 0;
 			}
 
-			// update sex buttons after race selection:
-			// we might have chosen a succubus or incubus
+			// select a random sex (unless you're a succubus or an incubus)
+            if (stats[index]->playerRace == RACE_SUCCUBUS) {
+                stats[index]->sex = sex_t::FEMALE;
+            }
+            else if (stats[index]->playerRace == RACE_INCUBUS) {
+                stats[index]->sex = sex_t::MALE;
+            }
+            else {
+                stats[index]->sex = (sex_t)(RNG.getU8() % 2);
+            }
+
+			// update sex buttons
 			auto bottom = card->findFrame("bottom");
 			if (bottom) {
 			    auto male_button = bottom->findButton("male");
-			    auto female_button = bottom->findButton("female");
-			    if (male_button && female_button) {
+			    if (male_button) {
 					male_button->setPressed(stats[index]->sex == MALE);
 					male_button->setColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
 					male_button->setHighlightColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+                }
+			    auto female_button = bottom->findButton("female");
+                if (female_button) {
 					female_button->setPressed(stats[index]->sex == FEMALE);
 					female_button->setColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
 					female_button->setHighlightColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
@@ -16076,7 +16218,11 @@ failed:
                 roomcode_header->setSize(SDL_Rect{Frame::virtualScreenX - 212 - 44 - 292 - 32, 0, 320, 35});
                 roomcode_header->setFont(smallfont_outline);
                 if (directConnect) {
-                    roomcode_header->setText(Language::get(5464));
+#ifdef NINTENDO
+					roomcode_header->setText("");
+#else
+					roomcode_header->setText(Language::get(5464));
+#endif
                 } else {
                     roomcode_header->setText(Language::get(5465));
                 }
@@ -20747,9 +20893,7 @@ failed:
 				"Controls",
 			};
 			if (intro) {
-#ifndef NINTENDO
 			    tabs.push_back("Online");
-#endif
 			} else {
 				tabs.push_back("Game");
 			}
@@ -20787,9 +20931,7 @@ failed:
 			{"Controls", Language::get(5621), settingsControls},
 		};
 		if (intro) {
-#ifndef NINTENDO
 		    tabs.push_back({"Online", Language::get(5622), settingsOnline});
-#endif
 		} else {
 			tabs.push_back({"Game", Language::get(5623), settingsGame});
 		}
@@ -20867,9 +21009,7 @@ failed:
 				"Controls",
 			};
 			if (intro) {
-#ifndef NINTENDO
 			    tabs.push_back("Online");
-#endif
 			} else {
 				tabs.push_back("Game");
 			}
@@ -20903,11 +21043,7 @@ failed:
 		tab_right->setWidgetBack("discard_and_exit");
 		tab_right->setWidgetPageLeft("tab_left");
 		tab_right->setWidgetPageRight("tab_right");
-#ifdef NINTENDO
-        tab_right->setWidgetLeft(intro ? "Controls" : "Game");
-#else
 		tab_right->setWidgetLeft(intro ? "Online" : "Game");
-#endif
 		tab_right->setWidgetDown("confirm_and_exit");
 		tab_right->addWidgetAction("MenuAlt1", "restore_defaults");
 		tab_right->addWidgetAction("MenuStart", "confirm_and_exit");
@@ -20920,9 +21056,7 @@ failed:
 				"General",
 			};
 			if (intro) {
-#ifndef NINTENDO
 				tabs.insert(tabs.begin(), "Online");
-#endif
 			} else {
 			    tabs.insert(tabs.begin(), "Game");
 			}
@@ -20980,9 +21114,7 @@ failed:
 				"General",
 			};
             if (intro) {
-#ifndef NINTENDO
 				tabs.insert(tabs.begin(), "Online");
-#endif
 			} else {
 			    tabs.insert(tabs.begin(), "Game");
 			}
@@ -21210,6 +21342,30 @@ failed:
 	}
 
 	static void mainEndLife(Button& button) {
+		int player = getMenuOwner();
+		if ( multiplayer == CLIENT )
+		{
+			player = clientnum;
+		}
+
+		if ( Player::Ghost_t::gamemodeAllowsGhosts() )
+		{
+			if ( stats[player]->HP == 0 || !players[player]->entity )
+			{
+				if ( players[player]->ghost.isActive() )
+				{
+					Player::Ghost_t::pauseMenuSpectate(player);
+				}
+				else
+				{
+					Player::Ghost_t::pauseMenuSpawnGhost(player);
+				}
+				soundActivate();
+				closeMainMenu();
+				return;
+			}
+		}
+
 		binaryPrompt(
 			Language::get(5633), // window text
 			Language::get(5634), // okay text
@@ -22366,6 +22522,28 @@ failed:
 			button->setHJustify(Button::justify_t::LEFT);
 			button->setVJustify(Button::justify_t::CENTER);
 			button->setText(options[c].text);
+			if ( !strcmp(button->getName(), "End Life") )
+			{
+				int player = getMenuOwner();
+				if ( multiplayer == CLIENT )
+				{
+					player = clientnum;
+				}
+				if ( Player::Ghost_t::gamemodeAllowsGhosts() )
+				{
+					if ( stats[player]->HP == 0 || !players[player]->entity )
+					{
+						if ( players[player]->ghost.isActive() )
+						{
+							button->setText(Language::get(6050)); // spectate
+						}
+						else
+						{
+							button->setText(Language::get(6051)); // spawn as ghost
+						}
+					}
+				}
+			}
 			button->setFont(menu_option_font);
 			button->setBackground("*#images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
 			button->setHideSelectors(false);
@@ -22382,6 +22560,11 @@ failed:
 				});
 			int back = c - 1 < 0 ? num_options - 1 : c - 1;
 			int forward = c + 1 >= num_options ? 0 : c + 1;
+            if (!ingame && c == 0 && isCurrentHoliday(true)) {
+                button->setWidgetUp("holiday_banner");
+            } else {
+                button->setWidgetUp(options[back].name);
+            }
 #ifdef NINTENDO
             if (ingame || c + 1 < num_options || (enabledDLCPack1 && enabledDLCPack2)) {
                 button->setWidgetDown(options[forward].name);
@@ -22395,7 +22578,6 @@ failed:
 			    button->setWidgetDown("banner1");
 			}
 #endif
-			button->setWidgetUp(options[back].name);
 			if (!ingame) {
 			    button->setWidgetBack("back_button");
 			} else {
@@ -22477,38 +22659,80 @@ failed:
 		);
 
 		if (!ingame) {
+            // holiday notification
+            const char* holiday_banner_images[2] = { "", "" };
+            const auto holiday = getCurrentHoliday(true);
+            switch (holiday) {
+            default: break;
+            case HolidayTheme::THEME_HALLOWEEN:
+                holiday_banner_images[0] = "*#images/ui/Main Menus/Banners/banner_halloween.png";
+                holiday_banner_images[1] = "*#images/ui/Main Menus/Banners/banner_halloween_hover.png";
+                break;
+            case HolidayTheme::THEME_XMAS:
+                holiday_banner_images[0] = "*#images/ui/Main Menus/Banners/banner_holidays.png";
+                holiday_banner_images[1] = "*#images/ui/Main Menus/Banners/banner_holidays_hover.png";
+                break;
+            }
+            if (holiday != HolidayTheme::THEME_NONE) {
+                auto notification = main_menu_frame->findFrame("notification"); assert(notification);
+                const int note_y = notification->getSize().y;
+                notification->removeSelf();
+                notification = main_menu_frame->addFrame("notification");
+                notification->setSize(SDL_Rect{(Frame::virtualScreenX - 472) / 2, note_y, 472, 76});
+                notification->setActualSize(SDL_Rect{0, 0, notification->getSize().w, notification->getSize().h});
+                
+                auto banner_fn = [](Button& button){
+                    mainSettings(button);
+                    settingsOnlinePopulate(button, true);
+                };
+                
+				auto banner = notification->addButton("holiday_banner");
+				banner->setBackground(holiday_banner_images[0]);
+				banner->setBackgroundHighlighted(holiday_banner_images[1]);
+				banner->setSize(SDL_Rect{0, 0, 472, 76});
+				banner->setCallback(banner_fn);
+		        banner->setButtonsOffset(SDL_Rect{0, 8, 0, 0});
+				banner->setColor(uint32ColorWhite);
+				banner->setHighlightColor(uint32ColorWhite);
+			    banner->setWidgetBack("back_button");
+                banner->setWidgetDown("Play Game");
+#ifdef NINTENDO
+                banner->setWidgetUp("Settings");
+#else
+                banner->setWidgetUp("Quit");
+#endif
+            }
+        
 #ifdef NINTENDO
 		    const char* banner_images[][2] = {
 		        {
 		            "*#images/ui/Main Menus/Banners/UI_MainMenu_QoDPatchNotes1_base.png",
 		            "*#images/ui/Main Menus/Banners/UI_MainMenu_QoDPatchNotes1_high.png",
 		        },
-		        {
-		            "#images/ui/Main Menus/Banners/UI_MainMenu_DiscordLink_base.png",
-		            "#images/ui/Main Menus/Banners/UI_MainMenu_DiscordLink_high.png",
-		        },
 		    };
-		    if (!enabledDLCPack1 && !enabledDLCPack2) {
-		        banner_images[0][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_base.png";
-		        banner_images[0][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_high.png";
-		    }
-		    else if (!enabledDLCPack1) {
-		        banner_images[0][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_MnOBanner1_base.png";
-		        banner_images[0][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_MnOBanner1_high.png";
-		    }
-		    else if (!enabledDLCPack2) {
-		        banner_images[0][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_LnPBanner1_base.png";
-		        banner_images[0][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_LnPBanner1_high.png";
-		    }
+            
+            // customize DLC banner.
+            {
+                if (!enabledDLCPack1 && !enabledDLCPack2) {
+                    banner_images[0][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_base.png";
+                    banner_images[0][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_high.png";
+                }
+                else if (!enabledDLCPack1) {
+                    banner_images[0][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_MnOBanner1_base.png";
+                    banner_images[0][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_MnOBanner1_high.png";
+                }
+                else if (!enabledDLCPack2) {
+                    banner_images[0][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_LnPBanner1_base.png";
+                    banner_images[0][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_LnPBanner1_high.png";
+                }
+            }
+                
 		    void(*banner_funcs[])(Button&) = {
-		        [](Button&){ // banner #1
-					if (enabledDLCPack1 && enabledDLCPack2) {
-						openURLTryWithOverlay("https://www.baronygame.com/blog/life-after-death-announcement");
-					} else {
-						openDLCPrompt(enabledDLCPack1 ? 1 : 0);
-					}
+		        [](Button&){
+                    openDLCPrompt(enabledDLCPack1 ? 1 : 0);
 		        }
 		    };
+            
 			const int num_banners = (enabledDLCPack1 && enabledDLCPack2) ?
                 0 : 1;
 #else
@@ -22522,26 +22746,32 @@ failed:
 					"*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_high.png",
 				}
 			};
-			if ( !enabledDLCPack1 && !enabledDLCPack2 ) {
-				banner_images[1][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_base.png";
-				banner_images[1][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_high.png";
-			}
-			else if ( !enabledDLCPack1 ) {
-				banner_images[1][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_MnOBanner1_base.png";
-				banner_images[1][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_MnOBanner1_high.png";
-			}
-			else if ( !enabledDLCPack2 ) {
-				banner_images[1][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_LnPBanner1_base.png";
-				banner_images[1][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_LnPBanner1_high.png";
-			}
+   
+            // customize DLC banner.
+            {
+                if (!enabledDLCPack1 && !enabledDLCPack2) {
+                    banner_images[1][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_base.png";
+                    banner_images[1][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_high.png";
+                }
+                else if (!enabledDLCPack1) {
+                    banner_images[1][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_MnOBanner1_base.png";
+                    banner_images[1][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_MnOBanner1_high.png";
+                }
+                else if (!enabledDLCPack2) {
+                    banner_images[1][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_LnPBanner1_base.png";
+                    banner_images[1][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_LnPBanner1_high.png";
+                }
+            }
+            
 			void(*banner_funcs[])(Button&) = {
 				[](Button&) { // banner #1
-					openURLTryWithOverlay("https://www.baronygame.com/blog/life-after-death-announcement");
+					openURLTryWithOverlay("https://www.baronygame.com/blog/410-update-summary");
 				},
 				[](Button&) { // banner #2
 					 openDLCPrompt(enabledDLCPack1 ? 1 : 0);
 				},
 			};
+            
 		    const int num_banners = (enabledDLCPack1 && enabledDLCPack2) ? 1 : sizeof(banner_funcs) / sizeof(banner_funcs[0]);
 #endif
 		    auto banners = main_menu_frame->addFrame("banners");
@@ -22975,11 +23205,15 @@ failed:
             dismiss->setTextColor(makeColor(170, 134, 102, 255));
             dismiss->setTextHighlightColor(makeColor(170, 134, 102, 255));
             dismiss->setTickCallback(dismiss_tick);
+			dismiss->setUserData((void*)(intptr_t)(player + 1));
             dismiss->setCallback([](Button& button){
                 soundCancel();
                 auto window = static_cast<Frame*>(button.getParent());
                 auto frame = static_cast<Frame*>(window->getParent());
                 frame->removeSelf();
+
+				int player = reinterpret_cast<intptr_t>(button.getUserData()) - 1;
+				Player::Ghost_t::gameoverOnDismiss(player);
                 });
             dismiss->select();
         } else {
@@ -23098,11 +23332,15 @@ failed:
             dismiss->setTextColor(makeColor(170, 134, 102, 255));
             dismiss->setTextHighlightColor(makeColor(170, 134, 102, 255));
             dismiss->setTickCallback(dismiss_tick);
+			dismiss->setUserData((void*)(intptr_t)(player + 1));
             dismiss->setCallback([](Button& button){
                 soundCancel();
                 auto window = static_cast<Frame*>(button.getParent());
                 auto frame = static_cast<Frame*>(window->getParent());
                 frame->removeSelf();
+
+				int player = reinterpret_cast<intptr_t>(button.getUserData()) - 1;
+				Player::Ghost_t::gameoverOnDismiss(player);
                 });
             dismiss->setWidgetLeft("restart");
         }

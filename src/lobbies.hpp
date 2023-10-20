@@ -51,7 +51,6 @@ public:
 	LobbyServiceType searchType = LOBBY_DISABLE;
 	LobbyServiceType P2PType = LOBBY_DISABLE;
 	void handleLobbyListRequests();
-	void handleLobbyBrowser();
 	void updateSearchResults();
 	static void filterLobbyButton(button_t* my);
 	static void searchLobbyWithFilter(button_t* my);

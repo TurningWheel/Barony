@@ -619,6 +619,7 @@ public:
 
 	static Sint32 getAttack(Entity* my, Stat* myStats, bool isPlayer = false);
 	static real_t getACEffectiveness(Entity* my, Stat* myStats, bool isPlayer, Entity* attacker, Stat* attackerStats);
+	static void setMeleeDamageSkillModifiers(Entity* my, Stat* myStats, int skill, real_t& baseSkillModifier, real_t& variance);
 	Sint32 getBonusAttackOnTarget(Stat& hitstats);
 	Sint32 getRangedAttack();
 	Sint32 getThrownAttack();
@@ -1187,7 +1188,6 @@ static const int MSG_TOOL_BOMB = 6;
 static const int MSG_COMBAT_BASIC = 7;
 void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, const char* msgGeneric, const char* msgNamed, int detailType, Entity* optionalEntity = nullptr);
 char const * playerClassLangEntry(int classnum, int playernum);
-char const * playerClassDescription(int classnum, int playernum);
 
 //Some testing functions/commands.
 Entity* summonChest(long x, long y);

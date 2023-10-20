@@ -520,8 +520,10 @@ public:
 				{
 					//Makes Mac work because Apple had to do it different.
 				}
-#endif
-				EOS_Platform_Tick(PlatformHandle);
+#endif]
+				if (PlatformHandle) {
+					EOS_Platform_Tick(PlatformHandle);
+				}
 				SDL_Delay(1);
 				if (SDL_GetTicks() - shutdownTicks >= 1000)
 				{

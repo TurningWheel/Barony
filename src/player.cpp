@@ -299,7 +299,7 @@ void GameController::handleAnalog(int player)
 
 	//Right analog stick = look.
 
-	bool radialMenuOpen = FollowerMenu[player].followerMenuIsOpen();
+	bool radialMenuOpen = FollowerMenu[player].followerMenuIsOpen() || CalloutMenu[player].calloutMenuIsOpen();
 	if ( !radialMenuOpen )
 	{
 		consumeDpadDirToggle();
@@ -1210,6 +1210,7 @@ bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 		if ( player.bookGUI.bBookOpen || player.skillSheet.bSkillSheetOpen
 			|| player.signGUI.bSignOpen
 			|| FollowerMenu[player.playernum].followerMenuIsOpen()
+			|| CalloutMenu[player.playernum].calloutMenuIsOpen()
 			|| player.minimap.mapWindow || player.messageZone.logWindow )
 		{
 			return false;
@@ -1374,6 +1375,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			}
 			else if ( inputs.getUIInteraction(player.playernum)->selectedItem || bCompactView )
 			{
+				if ( player.ghost.isActive() )
+				{
+					return MODULE_NONE;
+				}
 				if ( !checkDestinationOnly )
 				{
 					activateModule(MODULE_HOTBAR);
@@ -1406,7 +1411,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		else if ( activeModule == MODULE_SPELLS 
 			&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly) )
 		{
-			if ( player.shopGUI.bOpen || player.inventoryUI.chestGUI.bOpen )
+			if ( player.shopGUI.bOpen || player.inventoryUI.chestGUI.bOpen || player.ghost.isActive() )
 			{
 				return MODULE_NONE;
 			}
@@ -1592,9 +1597,41 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					warpControllerToModule(false);
 					input.consumeBinaryToggle("UINavLeftBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
-					soundModuleNavigation();
+					if ( !player.ghost.isActive() )
+					{
+						soundModuleNavigation();
+					}
 				}
 				return MODULE_CHARACTERSHEET;
+			}
+			else if ( player.ghost.isActive() )
+			{
+				if ( player.inventory_mode == INVENTORY_MODE_SPELL
+					&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly) )
+				{
+					if ( !checkDestinationOnly )
+					{
+						activateModule(MODULE_SPELLS);
+						warpControllerToModule(false);
+						input.consumeBinaryToggle("UINavLeftBumper");
+						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+						soundModuleNavigation();
+					}
+					return MODULE_SPELLS;
+				}
+				else if ( player.inventory_mode == INVENTORY_MODE_ITEM
+					&& (player.inventoryUI.bFirstTimeSnapCursor || checkDestinationOnly) )
+				{
+					if ( !checkDestinationOnly )
+					{
+						activateModule(MODULE_INVENTORY);
+						warpControllerToModule(false);
+						input.consumeBinaryToggle("UINavLeftBumper");
+						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+						soundModuleNavigation();
+					}
+					return MODULE_INVENTORY;
+				}
 			}
 			else if ( !checkDestinationOnly )
 			{
@@ -1656,6 +1693,27 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			{
 				return MODULE_NONE;
 			}
+			else if ( player.ghost.isActive() )
+			{
+				if ( bCompactView )
+				{
+					return MODULE_NONE;
+				}
+				if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_CHARACTERSHEET);
+					if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED
+						|| !player.characterSheet.isSheetElementAllowedToNavigateTo(player.characterSheet.selectedElement) )
+					{
+						player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+					}
+					warpControllerToModule(false);
+					input.consumeBinaryToggle("UINavRightBumper");
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					soundModuleNavigation();
+				}
+				return MODULE_CHARACTERSHEET;
+			}
 			else if ( GenericGUI[player.playernum].alchemyGUI.bOpen )
 			{
 				if ( inputs.getUIInteraction(player.playernum)->selectedItem )
@@ -1710,7 +1768,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		else if ( activeModule == MODULE_SPELLS 
 			&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly ) )
 		{
-			if ( player.shopGUI.bOpen || player.inventoryUI.chestGUI.bOpen )
+			if ( player.shopGUI.bOpen || player.inventoryUI.chestGUI.bOpen || player.ghost.isActive() )
 			{
 				return MODULE_NONE;
 			}
@@ -3011,6 +3069,7 @@ Player::Player(int in_playernum, bool in_local_host) :
 	characterSheet(*this),
 	skillSheet(*this),
 	movement(*this),
+	ghost(*this),
 	messageZone(*this),
 	worldUI(*this),
 	hotbar(*this),
@@ -3070,6 +3129,19 @@ const bool Player::isLocalPlayerAlive() const
 	return (isLocalPlayer() && entity && !client_disconnected[playernum]);
 }
 
+Entity* Player::getPlayerInteractEntity(const int playernum) 
+{
+	if ( playernum < 0 || playernum >= MAXPLAYERS )
+	{
+		return nullptr;
+	}
+	if ( !players[playernum] )
+	{
+		return nullptr;
+	}
+	return players[playernum]->ghost.isActive() ? players[playernum]->ghost.my : players[playernum]->entity;
+}
+
 void Player::PlayerMovement_t::reset()
 {
 	quickTurnRotation = 0.0;
@@ -3097,6 +3169,10 @@ void Player::WorldUI_t::reset()
 
 bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 {
+	if ( !players[player]->entity )
+	{
+		return false;
+	}
 	if ( multiplayer != CLIENT )
 	{
 		if ( !entity.checkEnemy(players[player]->entity) )
@@ -3178,21 +3254,34 @@ bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 
 real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 {
-	if ( !players[player.playernum]->isLocalPlayerAlive() )
+	if ( !players[player.playernum]->isLocalPlayerAlive() && !player.ghost.isActive() )
 	{
 		return 0.0;
 	}
 
-	real_t dist = entityDist(&tooltip, players[player.playernum]->entity);
+	Entity* playerEntity = Player::getPlayerInteractEntity(player.playernum);
+	if ( !playerEntity )
+	{
+		return 0.0;
+	}
+
+	real_t dist = entityDist(&tooltip, playerEntity);
 	Entity* parent = uidToEntity(tooltip.parent);
 
 	real_t maxDist = 24.0;
 	real_t minDist = 4.0;
 
-	bool followerSelectInteract = false;
+	bool selectInteract = false;
+	bool callout = false;
 	if ( FollowerMenu[player.playernum].followerMenuIsOpen() && FollowerMenu[player.playernum].selectMoveTo )
 	{
-		followerSelectInteract = (FollowerMenu[player.playernum].optionSelected == ALLY_CMD_ATTACK_SELECT);
+		selectInteract = (FollowerMenu[player.playernum].optionSelected == ALLY_CMD_ATTACK_SELECT);
+		maxDist = 256;
+	}
+	else if ( CalloutMenu[player.playernum].calloutMenuIsOpen() && CalloutMenu[player.playernum].selectMoveTo )
+	{
+		selectInteract = (CalloutMenu[player.playernum].optionSelected == CalloutRadialMenu::CALLOUT_CMD_SELECT);
+		callout = true;
 		maxDist = 256;
 	}
 	else if ( parent 
@@ -3211,7 +3300,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 
 	if ( dist < maxDist && dist > minDist )
 	{
-		real_t tangent = atan2(tooltip.y - players[player.playernum]->entity->y, tooltip.x - players[player.playernum]->entity->x);
+		real_t tangent = atan2(tooltip.y - playerEntity->y, tooltip.x - playerEntity->x);
 		while ( tangent >= 2 * PI )
 		{
 			tangent -= 2 * PI;
@@ -3220,7 +3309,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 		{
 			tangent += 2 * PI;
 		}
-		real_t playerYaw = players[player.playernum]->entity->yaw;
+		real_t playerYaw = playerEntity->yaw;
 		while ( playerYaw >= 2 * PI )
 		{
 			playerYaw -= 2 * PI;
@@ -3233,17 +3322,39 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 		real_t interactAngle = (PI / 8);
 		if ( parent )
 		{
-			if ( followerSelectInteract )
+			if ( selectInteract )
 			{
-				if ( !FollowerMenu[player.playernum].allowedInteractEntity(*parent, false) )
+				if ( FollowerMenu[player.playernum].followerMenuIsOpen() && FollowerMenu[player.playernum].selectMoveTo )
 				{
+					if ( !FollowerMenu[player.playernum].allowedInteractEntity(*parent, false) )
+					{
+						return 0.0;
+					}
+				}
+				else if ( CalloutMenu[player.playernum].calloutMenuIsOpen() && CalloutMenu[player.playernum].selectMoveTo )
+				{
+					if ( !CalloutMenu[player.playernum].allowedInteractEntity(*parent, false) )
+					{
+						return 0.0;
+					}
+				}
+
+				if ( parent->behavior == &actPlayer && player.playernum == parent->skill[2] )
+				{
+					// can't select self
 					return 0.0;
 				}
 
 				Entity* ohitentity = hit.entity;
-				real_t tangent2 = atan2(players[player.playernum]->entity->y - parent->y, players[player.playernum]->entity->x - parent->x);
-				lineTraceTarget(parent, parent->x, parent->y, tangent2, maxDist, 0, false, players[player.playernum]->entity);
-				if ( hit.entity != players[player.playernum]->entity )
+				real_t tangent2 = atan2(playerEntity->y - parent->y, playerEntity->x - parent->x);
+				bool oldPassable = playerEntity->flags[PASSABLE];
+				if ( playerEntity->behavior == &actDeathGhost )
+				{
+					playerEntity->flags[PASSABLE] = false; // hack to make ghosts linetraceable
+				}
+				lineTraceTarget(parent, parent->x, parent->y, tangent2, maxDist, 0, false, playerEntity);
+				playerEntity->flags[PASSABLE] = oldPassable;
+				if ( hit.entity != playerEntity )
 				{
 					// no line of sight through walls
 					hit.entity = ohitentity;
@@ -3251,8 +3362,20 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 				}
 				hit.entity = ohitentity;
 			}
+			else if ( parent->behavior == &actBoulderTrapHole )
+			{
+				return 0.0;
+			}
+			else if ( parent->behavior == &actPlayer )
+			{
+				return 0.0;
+			}
+			else if ( player.ghost.isActive() && !player.ghost.allowedInteractEntity(*parent) )
+			{
+				return 0.0;
+			}
 
-			if ( !followerSelectInteract && stats[player.playernum] && stats[player.playernum]->defending )
+			if ( !selectInteract && stats[player.playernum] && stats[player.playernum]->defending && player.entity )
 			{
 				if ( stats[player.playernum]->shield && stats[player.playernum]->shield->type == TOOL_TINKERING_KIT )
 				{
@@ -3269,7 +3392,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			{
 				return 0.0;
 			}
-			if ( parent->getMonsterTypeFromSprite() == SHOPKEEPER )
+			if ( parent->getMonsterTypeFromSprite() == SHOPKEEPER && !selectInteract )
 			{
 				if ( !shopIsMysteriousShopkeeper(parent) && ShopkeeperPlayerHostility.isPlayerEnemy(player.playernum) )
 				{
@@ -3314,8 +3437,15 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			{
 				dist = std::max(0.02, dist - 4.0); // bonus priority for goldbag
 			}
+			else if ( (parent->behavior == &actTorch || parent->behavior == &actCrystalShard) )
+			{
+				if ( callout )
+				{
+					dist += 8.0; // distance penalty when calling out
+				}
+			}
 
-			if ( followerSelectInteract )
+			if ( selectInteract )
 			{
 				if ( parent->behavior == &actMonster 
 					&& ((multiplayer != CLIENT && parent->checkEnemy(player.entity)) 
@@ -3348,12 +3478,18 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 		if ( (abs(tangent - playerYaw) < (interactAngle)) || (abs(tangent - playerYaw) > (2 * PI - interactAngle)) )
 		{
 			//messagePlayer(0, "%.2f", tangent - playerYaw);
-			if ( !followerSelectInteract )
+			if ( !selectInteract )
 			{
 				Entity* ohitentity = hit.entity;
-				real_t tangent2 = atan2(players[player.playernum]->entity->y - tooltip.y, players[player.playernum]->entity->x - tooltip.x);
-				lineTraceTarget(&tooltip, tooltip.x, tooltip.y, tangent2, maxDist, 0, false, players[player.playernum]->entity);
-				if ( hit.entity != players[player.playernum]->entity )
+				real_t tangent2 = atan2(playerEntity->y - tooltip.y, playerEntity->x - tooltip.x);
+				bool oldPassable = playerEntity->flags[PASSABLE];
+				if ( playerEntity->behavior == &actDeathGhost )
+				{
+					playerEntity->flags[PASSABLE] = false; // hack to make ghosts linetraceable
+				}
+				lineTraceTarget(&tooltip, tooltip.x, tooltip.y, tangent2, maxDist, 0, false, playerEntity);
+				playerEntity->flags[PASSABLE] = oldPassable;
+				if ( hit.entity != playerEntity )
 				{
 					// no line of sight through walls
 					hit.entity = ohitentity;
@@ -3363,16 +3499,16 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 				return dist;
 			}
 
-			if ( followerSelectInteract )
+			if ( selectInteract )
 			{
 				// perform head pitch check
 				if ( false )
 				{
 					// old method, not entirely accurate
-					real_t startx = players[player.playernum]->entity->x;
-					real_t starty = players[player.playernum]->entity->y;
+					real_t startx = playerEntity->x;
+					real_t starty = playerEntity->y;
 					real_t startz = -4;
-					real_t pitch = players[player.playernum]->entity->pitch;
+					real_t pitch = playerEntity->pitch;
 					if ( pitch < 0 )
 					{
 						//pitch = 0; - unneeded - negative pitch looks in a cone upwards as well - good check
@@ -3384,9 +3520,9 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 					int index = 0;
 					for ( ; startz < 0.f; startz += abs(0.25 * tan(pitch)) )
 					{
-						startx += 0.5 * cos(players[player.playernum]->entity->yaw);
-						starty += 0.5 * sin(players[player.playernum]->entity->yaw);
-						index = (static_cast<int>(starty + 16 * sin(players[player.playernum]->entity->yaw)) >> 4) * MAPLAYERS + (static_cast<int>(startx + 16 * cos(players[player.playernum]->entity->yaw)) >> 4) * MAPLAYERS * map.height;
+						startx += 0.5 * cos(playerEntity->yaw);
+						starty += 0.5 * sin(playerEntity->yaw);
+						index = (static_cast<int>(starty + 16 * sin(playerEntity->yaw)) >> 4) * MAPLAYERS + (static_cast<int>(startx + 16 * cos(playerEntity->yaw)) >> 4) * MAPLAYERS * map.height;
 						if ( !map.tiles[OBSTACLELAYER + index] )
 						{
 							// store the last known good coordinate
@@ -3398,7 +3534,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 							break;
 						}
 					}
-					real_t lookDist = sqrt(pow(previousx - players[player.playernum]->entity->x, 2) + pow(previousy - players[player.playernum]->entity->y, 2));
+					real_t lookDist = sqrt(pow(previousx - playerEntity->x, 2) + pow(previousy - playerEntity->y, 2));
 					if ( lookDist < dist )
 					{
 						if ( abs(dist - lookDist) > 8.0 )
@@ -3407,11 +3543,74 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 						}
 					}
 
-					/*Entity* particle = spawnMagicParticle(players[player.playernum]->entity);
+					/*Entity* particle = spawnMagicParticle(playerEntity);
 					particle->sprite = 576;
 					particle->x = previousx;
 					particle->y = previousy;
 					particle->z = 7.5;*/
+				}
+				else if ( parent && parent->behavior == &actBoulderTrapHole )
+				{
+					// more accurate line of sight, look up
+					real_t startx = cameras[player.playernum].x * 16.0;
+					real_t starty = cameras[player.playernum].y * 16.0;
+					real_t startz = cameras[player.playernum].z + (4.5 - cameras[player.playernum].z) / 2.0 + -2.5;
+					real_t pitch = cameras[player.playernum].vang;
+					if ( pitch < PI ) // looking down
+					{
+						return 0.0;
+					}
+
+					// draw line from the players height and direction until we hit the ground.
+					real_t previousx = startx;
+					real_t previousy = starty;
+					int index = 0;
+					const real_t yaw = cameras[player.playernum].ang;
+
+					bool onCeilingLayer = parent->z > -11.0 && parent->z < -10;
+					real_t endz = onCeilingLayer ? -8.0 : -8.0 - 16.0;
+					for ( ; startz > endz; startz -= abs((0.1) * tan(pitch)) )
+					{
+						startx += 0.1 * cos(yaw);
+						starty += 0.1 * sin(yaw);
+						const int index_x = static_cast<int>(startx) >> 4;
+						const int index_y = static_cast<int>(starty) >> 4;
+						index = (index_y)*MAPLAYERS + (index_x)*MAPLAYERS * map.height;
+						if ( !map.tiles[(OBSTACLELAYER) + index] )
+						{
+							// store the last known good coordinate
+							previousx = startx;// + 16 * cos(yaw);
+							previousy = starty;// + 16 * sin(yaw);
+						}
+						if ( map.tiles[OBSTACLELAYER + index] )
+						{
+							break;
+						}
+						if ( map.tiles[(OBSTACLELAYER + 1) + index] && !onCeilingLayer )
+						{
+							break;
+						}
+					}
+
+					static ConsoleVariable<bool> cvar_calloutboulderdebug("/calloutboulderdebug", false);
+					if ( *cvar_calloutboulderdebug )
+					{
+						Entity* particle = spawnMagicParticle(playerEntity);
+						particle->sprite = 942;
+						particle->x = previousx;
+						particle->y = previousy;
+						particle->z = startz;
+					}
+
+					real_t lookDist = sqrt(pow(previousx - playerEntity->x, 2) + pow(previousy - playerEntity->y, 2));
+					if ( abs(dist - lookDist) > 8.25 )
+					{
+						return 0.0; // looking at a tile on the ground more than x units away from the tooltip
+					}
+					else if ( abs(startz - endz) > 0.25 )
+					{
+						return 0.0; // if we're not fixated on the tile of the object return
+					}
 				}
 				else
 				{
@@ -3449,8 +3648,44 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 						}
 					}
 
-					real_t lookDist = sqrt(pow(previousx - players[player.playernum]->entity->x, 2) + pow(previousy - players[player.playernum]->entity->y, 2));
-					if ( lookDist < dist )
+					real_t lookDist = sqrt(pow(previousx - playerEntity->x, 2) + pow(previousy - playerEntity->y, 2));
+					if ( callout )
+					{
+						if ( parent )
+						{
+							if ( cameras[player.playernum].vang > PI ) // looking above horizon
+							{
+								if ( parent->behavior == &actItem || parent->behavior == &actGoldBag
+									|| parent->behavior == &actLadder
+									|| parent->behavior == &actBeartrap
+									|| parent->behavior == &actBomb
+									|| parent->behavior == &actSwitch || parent->behavior == &actSwitchWithTimer )
+								{
+									return 0.0;
+								}
+							}
+						}
+						if ( (lookDist < dist) )
+						{
+							if ( abs(dist - lookDist) > 16.0 )
+							{
+								return 0.0; // looking at a tile on the ground more than x units away from the tooltip
+							}
+						}
+						else if ( parent && ((parent->behavior == &actItem && parent->z > 4) || parent->behavior == &actGoldBag
+							|| parent->behavior == &actLadder
+							|| parent->behavior == &actBeartrap
+							|| parent->behavior == &actBomb
+							|| parent->behavior == &actSwitch || parent->behavior == &actSwitchWithTimer) )
+						{
+							if ( dist < 32.0 && abs(dist - lookDist) > 16.0
+								|| dist >= 32.0 && abs(dist - lookDist) > 24.0 )
+							{
+								return 0.0; // looking at a tile on the ground more than x units away from the tooltip
+							}
+						}
+					}
+					else if ( lookDist < dist )
 					{
 						if ( abs(dist - lookDist) > 24.0 )
 						{
@@ -3458,7 +3693,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 						}
 					}
 
-					/*Entity* particle = spawnMagicParticle(players[player.playernum]->entity);
+					/*Entity* particle = spawnMagicParticle(playerEntity);
 					particle->sprite = 942;
 					particle->x = previousx;
 					particle->y = previousy;
@@ -3484,6 +3719,28 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 			setTooltipDisabled(tooltip);
 			return;
 		}
+		else if ( parent->behavior == &actColliderDecoration )
+		{
+			if ( CalloutMenu[player.playernum].calloutMenuIsOpen()
+				&& CalloutMenu[player.playernum].selectMoveTo
+				&& CalloutMenu[player.playernum].optionSelected == CalloutRadialMenu::CALLOUT_CMD_SELECT )
+			{
+				// allowed in callout mode, otherwise no
+			}
+			else
+			{
+				setTooltipDisabled(tooltip);
+				return;
+			}
+		}
+		else if ( player.ghost.isActive() && !CalloutMenu[player.playernum].calloutMenuIsOpen() )
+		{
+			if ( !player.ghost.allowedInteractEntity(*parent) )
+			{
+				setTooltipDisabled(tooltip);
+				return;
+			}
+		}
 		parent->highlightForUI = 1.0;
 
 		if ( tooltip.worldTooltipRequiresButtonHeld == 1 && *MainMenu::cvar_hold_to_activate )
@@ -3496,7 +3753,7 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		}
 
 		bool foundTinkeringKit = false;
-		if ( stats[player.playernum] && stats[player.playernum]->defending )
+		if ( stats[player.playernum] && stats[player.playernum]->defending && player.entity )
 		{
 			if ( stats[player.playernum]->shield && stats[player.playernum]->shield->type == TOOL_TINKERING_KIT )
 			{
@@ -3510,6 +3767,12 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		{
 			FollowerMenu[player.playernum].allowedInteractEntity(*parent, true);
 		}
+		else if ( CalloutMenu[player.playernum].calloutMenuIsOpen()
+			&& CalloutMenu[player.playernum].selectMoveTo
+			&& CalloutMenu[player.playernum].optionSelected == CalloutRadialMenu::CALLOUT_CMD_SELECT )
+		{
+			CalloutMenu[player.playernum].allowedInteractEntity(*parent, true);
+		}
 		else if ( parent->behavior == &actItem )
 		{
 			if ( foundTinkeringKit )
@@ -3518,7 +3781,14 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 			}
 			else
 			{
-				interactText = Language::get(4000); // "Pick up item";
+				if ( player.ghost.isActive() )
+				{
+					interactText = Language::get(6045); // "Nudge item";
+				}
+				else
+				{
+					interactText = Language::get(4000); // "Pick up item";
+				}
 			}
 		}
 		else if ( parent->behavior == &actGoldBag )
@@ -3933,6 +4203,10 @@ bool entityBlocksTooltipInteraction(const int player, Entity& entity)
 	}
 	else if ( entity.behavior == &actMonster )
 	{
+		if ( players[player]->ghost.isActive() )
+		{
+			return false;
+		}
 		if ( monsterIsFriendlyForTooltip(player, entity) )
 		{
 			return false;
@@ -3948,9 +4222,11 @@ void Player::WorldUI_t::handleTooltips()
 	for ( int player = 0; player < MAXPLAYERS && !gamePaused; ++player )
 	{
 		players[player]->worldUI.worldTooltipDialogue.update();
-		if ( !players[player]->isLocalPlayerAlive() )
+		if ( !players[player]->isLocalPlayer()
+			|| (!players[player]->isLocalPlayerAlive() && !players[player]->ghost.isActive()) )
 		{
 			players[player]->worldUI.reset();
+			players[player]->worldUI.tooltipView = Player::WorldUI_t::TooltipView::TOOLTIP_VIEW_RESCAN;
 			continue;
 		}
 		if ( players[player]->entity && players[player]->entity->ticks < TICKS_PER_SECOND / 2 )
@@ -3959,6 +4235,8 @@ void Player::WorldUI_t::handleTooltips()
 			Input::inputs[player].consumeBinaryToggle("Use");
 			continue;
 		}
+
+		Entity* playerEntity = Player::getPlayerInteractEntity(player);
 
 #ifdef NINTENDO
 		players[player]->worldUI.bEnabled = true;
@@ -3993,7 +4271,7 @@ void Player::WorldUI_t::handleTooltips()
 
 		bool foundTinkeringKit = false;
 		bool radialMenuOpen = FollowerMenu[player].followerMenuIsOpen();
-		bool followerSelectInteract = false;
+		bool selectInteract = false;
 		if ( radialMenuOpen )
 		{
 			// follower menu can be "open" but selectMoveTo == true means the GUI is closed and selecting move or interact.
@@ -4002,12 +4280,26 @@ void Player::WorldUI_t::handleTooltips()
 				radialMenuOpen = true;
 			}
 			radialMenuOpen = false;
-			followerSelectInteract = (FollowerMenu[player].optionSelected == ALLY_CMD_ATTACK_SELECT);
+			selectInteract = (FollowerMenu[player].optionSelected == ALLY_CMD_ATTACK_SELECT);
+		}
+		else
+		{
+			radialMenuOpen = CalloutMenu[player].calloutMenuIsOpen();
+			if ( radialMenuOpen )
+			{
+				// callout menu can be "open" but selectMoveTo == true means the GUI is closed and selecting interact.
+				if ( CalloutMenu[player].selectMoveTo == false )
+				{
+					radialMenuOpen = true;
+				}
+				radialMenuOpen = false;
+				selectInteract = (CalloutMenu[player].optionSelected == CalloutRadialMenu::CALLOUT_CMD_SELECT);
+			}
 		}
 
 		bool bDoingActionHideTooltips = false;
 		if ( players[player]->hotbar.useHotbarFaceMenu
-			&& players[player]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE )
+			&& players[player]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE && players[player]->entity )
 		{
 			bDoingActionHideTooltips = true;
 		}
@@ -4015,25 +4307,25 @@ void Player::WorldUI_t::handleTooltips()
 		{
 			bDoingActionHideTooltips = true;
 		}
-		else if ( FollowerMenu[player].selectMoveTo && FollowerMenu[player].optionSelected == ALLY_CMD_MOVETO_SELECT )
+		else if ( FollowerMenu[player].selectMoveTo && FollowerMenu[player].optionSelected == ALLY_CMD_MOVETO_SELECT && players[player]->entity )
 		{
 			bDoingActionHideTooltips = true;
 		}
-		else if ( players[player]->hud.weapon && players[player]->hud.weapon->skill[0] != 0 )
+		else if ( (players[player]->hud.weapon && players[player]->hud.weapon->skill[0] != 0) && !selectInteract && players[player]->entity )
 		{
 			// hudweapon chop
 			bDoingActionHideTooltips = true;
 		}
-		else if ( players[player]->hud.bowFire || players[player]->hud.bowIsBeingDrawn )
+		else if ( (players[player]->hud.bowFire || players[player]->hud.bowIsBeingDrawn) && !selectInteract && players[player]->entity )
 		{
 			bDoingActionHideTooltips = true;
 		}
-		else if ( cast_animation[player].active || cast_animation[player].active_spellbook )
+		else if ( (cast_animation[player].active || cast_animation[player].active_spellbook) && !selectInteract && players[player]->entity )
 		{
 			// spells
 			bDoingActionHideTooltips = true;
 		}
-		else if ( stats[player] && stats[player]->defending )
+		else if ( stats[player] && stats[player]->defending && players[player]->entity )
 		{
 			if ( stats[player]->shield && stats[player]->shield->type == TOOL_TINKERING_KIT )
 			{
@@ -4043,7 +4335,7 @@ void Player::WorldUI_t::handleTooltips()
 			else
 			{
 				bDoingActionHideTooltips = true;
-				if ( FollowerMenu[player].selectMoveTo )
+				if ( selectInteract )
 				{
 					bDoingActionHideTooltips = false; // selecting follower target is OK if defending
 				}
@@ -4053,11 +4345,11 @@ void Player::WorldUI_t::handleTooltips()
 		if ( !bDoingActionHideTooltips )
 		{
 			Entity* ohitentity = hit.entity;
-			lineTrace(players[player]->entity, players[player]->entity->x, players[player]->entity->y,
-				players[player]->entity->yaw, STRIKERANGE, 0, true);
+			lineTrace(playerEntity, playerEntity->x, playerEntity->y,
+				playerEntity->yaw, STRIKERANGE, 0, true);
 			if ( hit.entity )
 			{
-				if ( hit.entity->behavior == &actMonster && followerSelectInteract )
+				if ( hit.entity->behavior == &actMonster && selectInteract )
 				{
 					// don't let hostile monsters get in the way of selection
 				}
@@ -4145,7 +4437,7 @@ void Player::WorldUI_t::handleTooltips()
 				if ( newDist > 0.01 )
 				{
 					players[player]->worldUI.tooltipsInRange.push_back(std::make_pair(tooltip, newDist));
-					if ( followerSelectInteract && parent && closestTooltip && parent->behavior != &actMonster )
+					if ( selectInteract && parent && closestTooltip && parent->behavior != &actMonster )
 					{
 						// follower interaction - monsters have higher priority than interactibles.
 						Entity* closestParent = uidToEntity(closestTooltip->parent);
@@ -4163,7 +4455,8 @@ void Player::WorldUI_t::handleTooltips()
 			}
 			if ( closestTooltip )
 			{
-				players[player]->worldUI.playerLastYaw = players[player]->entity->yaw;
+				players[player]->worldUI.playerLastYaw = playerEntity->yaw;
+				players[player]->worldUI.playerLastPitch = players[player]->camera().vang;
 				while ( players[player]->worldUI.playerLastYaw >= 4 * PI )
 				{
 					players[player]->worldUI.playerLastYaw -= 2 * PI;
@@ -4171,6 +4464,14 @@ void Player::WorldUI_t::handleTooltips()
 				while ( players[player]->worldUI.playerLastYaw < 2 * PI )
 				{
 					players[player]->worldUI.playerLastYaw += 2 * PI;
+				}
+				while ( players[player]->worldUI.playerLastPitch >= 4 * PI )
+				{
+					players[player]->worldUI.playerLastPitch -= 2 * PI;
+				}
+				while ( players[player]->worldUI.playerLastPitch < 2 * PI )
+				{
+					players[player]->worldUI.playerLastPitch += 2 * PI;
 				}
 				players[player]->worldUI.setTooltipActive(*closestTooltip);
 			}
@@ -4198,7 +4499,7 @@ void Player::WorldUI_t::handleTooltips()
 				continue;
 			}
 
-			real_t currentYaw = players[player]->entity->yaw;
+			real_t currentYaw = playerEntity->yaw;
 			while ( currentYaw >= 4 * PI )
 			{
 				currentYaw -= 2 * PI;
@@ -4208,6 +4509,16 @@ void Player::WorldUI_t::handleTooltips()
 				currentYaw += 2 * PI;
 			}
 			real_t yawDiff = players[player]->worldUI.playerLastYaw - currentYaw;
+			real_t currentPitch = players[player]->camera().vang;
+			while ( currentPitch >= 4 * PI )
+			{
+				currentPitch -= 2 * PI;
+			}
+			while ( currentPitch < 2 * PI )
+			{
+				currentPitch += 2 * PI;
+			}
+			real_t pitchDiff = players[player]->worldUI.playerLastPitch - currentPitch;
 			if ( inputs.hasController(player) )
 			{
 				real_t floatx = inputs.getController(player)->getLeftXPercent();
@@ -4230,7 +4541,7 @@ void Player::WorldUI_t::handleTooltips()
 					continue;
 				}
 			}
-			if ( abs(yawDiff) > PI / 16 )
+			if ( abs(yawDiff) > PI / 16 || abs(pitchDiff) > PI / 64 )
 			{
 				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
 				continue;
@@ -4534,6 +4845,28 @@ Player::Hotbar_t::FaceMenuGroup Player::Hotbar_t::getFaceMenuGroupForSlot(int ho
 
 const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::string& promptString) const
 {
+	if ( player.ghost.isActive() )
+	{
+		switch ( prompt )
+		{
+			case ACTION_PROMPT_MAGIC:
+				promptString = Language::get(6047); // Haunt
+				break;
+			case ACTION_PROMPT_MAINHAND:
+				promptString = Language::get(6046); // Chill
+				break;
+			case ACTION_PROMPT_OFFHAND:
+				promptString = Language::get(6048); // Push
+				break;
+			case ACTION_PROMPT_SNEAK:
+				promptString = Language::get(4077); // Sneak
+				break;
+			default:
+				break;
+		}
+		return -1;
+	}
+
 	if ( prompt == ACTION_PROMPT_MAGIC ) 
 	{ 
 		promptString = Language::get(4078);
@@ -6297,6 +6630,7 @@ void Player::clearGUIPointers()
 	hud.allyFollowerTitleFrame = nullptr;
 	hud.allyFollowerGlyphFrame = nullptr;
 	hud.allyPlayerFrame = nullptr;
+	hud.calloutPromptFrame = nullptr;
 	hud.enemyBarFrame = nullptr;
 	hud.enemyBarFrameHUD = nullptr;
 	hud.actionPromptsFrame = nullptr;
@@ -6369,6 +6703,8 @@ void Player::clearGUIPointers()
 	playerInventoryFrames[playernum].autosortFrame = nullptr;
 
 	FollowerMenu[playernum].followerFrame = nullptr;
+	CalloutMenu[playernum].calloutFrame = nullptr;
+	CalloutMenu[playernum].calloutPingFrame = nullptr;
 }
 
 const char* Player::getAccountName() const {

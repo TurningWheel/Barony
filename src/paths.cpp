@@ -646,6 +646,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 	static ConsoleVariable<int> cvar_pathlimit_allyfollow("/pathlimit_allyfollow", 200);
 	static ConsoleVariable<int> cvar_pathlimit_bosses("/pathlimit_bosses", 2000);
 	static ConsoleVariable<int> cvar_pathlimit_commandmove("/pathlimit_commandmove", 1000);
+	static ConsoleVariable<int> cvar_pathlimit_achievement("/pathlimit_achievement", 1600);
 	if (pathingType == GeneratePathTypes::GENERATE_PATH_IDLE_WALK ||
         pathingType == GeneratePathTypes::GENERATE_PATH_MOVEASIDE ||
 		pathingType == GeneratePathTypes::GENERATE_PATH_MONSTER_MOVE_BACKWARDS)
@@ -677,6 +678,10 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		pathingType == GeneratePathTypes::GENERATE_PATH_INTERACT_MOVE)
 	{
 		maxtries = *cvar_pathlimit_commandmove;
+	}
+	else if ( pathingType == GeneratePathTypes::GENERATE_PATH_ACHIEVEMENT )
+	{
+		maxtries = *cvar_pathlimit_achievement;
 	}
 	else if ( pathingType == GeneratePathTypes::GENERATE_PATH_BOSS_TRACKING_HUNT
 		|| pathingType == GeneratePathTypes::GENERATE_PATH_BOSS_TRACKING_IDLE

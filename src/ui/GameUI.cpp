@@ -304,6 +304,7 @@ MinotaurWarning_t minotaurWarning[MAXPLAYERS];
 
 void updateLevelUpFrame(const int player);
 void updateSkillUpFrame(const int player);
+void drawClockwiseSquareMesh(const char* texture, float lerp, SDL_Rect rect, Uint32 color);
 
 void capitalizeString(std::string& str)
 {
@@ -339,6 +340,28 @@ void camelCaseString(std::string& str)
 		}
 		prevLetter = letter;
 	}
+}
+
+bool stringStartsWithVowel(std::string& str)
+{
+	if ( str.size() < 1 ) { return false; }
+	switch ( str[0] )
+	{
+		case 'a':
+		case 'e':
+		case 'i':
+		case 'o':
+		case 'u':
+		case 'A':
+		case 'E':
+		case 'I':
+		case 'O':
+		case 'U':
+			return true;
+		default:
+			break;
+	}
+	return false;
 }
 
 std::string EnemyBarSettings_t::getEnemyBarSpriteName(Entity* entity)
@@ -879,6 +902,194 @@ void createAllyFollowerFrame(const int player)
 	}
 }
 
+void createCalloutPromptFrame(const int player)
+{
+	auto& hud_t = players[player]->hud;
+
+	auto frame = hud_t.hudFrame->addFrame("callout prompts");
+	hud_t.calloutPromptFrame = frame;
+	frame->setHollow(true);
+	frame->setSize(SDL_Rect{ 0, 0, 300, 0 });
+	frame->setDisabled(true);
+	frame->setScrollBarsEnabled(false);
+	frame->setAllowScrollBinds(false);
+
+	auto glyph = frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "glyph");
+	glyph->disabled = true;
+	auto icon = frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "icon");
+	icon->disabled = true;
+
+	auto text = frame->addField("prompt", 64);
+	text->setFont(smallfont_outline);
+	text->setHJustify(Field::justify_t::LEFT);
+	text->setVJustify(Field::justify_t::TOP);
+	text->setSize(SDL_Rect{ 0, 0, frame->getSize().w, 24 });
+	text->setText(Language::get(6049));
+	text->setColor(0xFFFFFFFF);
+	text->setOntop(true);
+	text->setDisabled(true);
+}
+
+const int kPlayerBarsEntryFrameWidth = 214;
+
+void updateCalloutPromptFrame(const int player)
+{
+	auto& hud_t = players[player]->hud;
+	auto frame = hud_t.calloutPromptFrame;
+	if ( !frame )
+	{
+		return;
+	}
+
+	if ( !CalloutRadialMenu::calloutMenuEnabledForGamemode() )
+	{
+		frame->setDisabled(true);
+		return;
+	}
+	if ( !Player::getPlayerInteractEntity(player) )
+	{
+		frame->setDisabled(true);
+		return;
+	}
+	if ( splitscreen && player == 3 )
+	{
+		frame->setDisabled(true); // we overlap the minimap, so don't draw this one
+		return;
+	}
+	else if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen()
+		&& !CalloutMenu[player].calloutMenuIsOpen() )
+	{
+		frame->setDisabled(true);
+		return;
+	}
+
+	int alignX = 8;
+	int alignY = 0;
+	static ConsoleVariable<bool> cvar_callout_prompt_horizontal("/callout_prompt_horizontal", false);
+	if ( hud_t.allyPlayerFrame && !hud_t.allyPlayerFrame->isDisabled()
+		&& hud_t.allyPlayerFrame->getOpacity() > 0.0 )
+	{
+		if ( hud_t.playerBars.size() > 0 )
+		{
+			if ( *cvar_callout_prompt_horizontal )
+			{
+				alignX += kPlayerBarsEntryFrameWidth;
+			}
+			else
+			{
+				alignY += hud_t.playerBars.size() * 36;
+			}
+		}
+	}
+
+	frame->setDisabled(false);
+	SDL_Rect framePos;
+	framePos.x = alignX;
+	framePos.y = players[player]->bUseCompactGUIWidth() ? AllyStatusBarSettings_t::FollowerBars_t::entrySettings.baseYSplitscreen : AllyStatusBarSettings_t::FollowerBars_t::entrySettings.baseY;
+	framePos.y -= 4;
+	framePos.y += alignY;
+	framePos.w = 300;
+	framePos.h = 50;
+	frame->setSize(framePos);
+
+	auto glyph = frame->findImage("glyph");
+	auto glyphPathUnpressed = Input::inputs[player].getGlyphPathForBinding("Call Out", false);
+	auto glyphPathPressed = Input::inputs[player].getGlyphPathForBinding("Call Out", true);
+	glyph->disabled = true;
+
+	const int nominalGlyphHeight = 26;
+	int unpressedHeight = 0;
+	int unpressedY = 0;
+	if ( ticks % 50 < 25 && (CalloutMenu[player].calloutMenuIsOpen() && CalloutMenu[player].selectMoveTo) )
+	{
+		glyph->path = glyphPathPressed;
+		if ( auto imgGet = Image::get(glyph->path.c_str()) )
+		{
+			glyph->disabled = false;
+			SDL_Rect glyphPos{ 0, 8, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+			glyph->pos = glyphPos;
+			if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
+			{
+				unpressedHeight = imgGetUnpressed->getHeight();
+				unpressedY = glyph->pos.y;
+				if ( unpressedHeight != glyph->pos.h )
+				{
+					glyph->pos.y -= (glyph->pos.h - unpressedHeight);
+				}
+
+				if ( unpressedHeight != nominalGlyphHeight )
+				{
+					unpressedY -= (unpressedHeight - nominalGlyphHeight) / 2;
+					glyph->pos.y -= (unpressedHeight - nominalGlyphHeight) / 2;
+				}
+			}
+		}
+	}
+	else
+	{
+		glyph->path = glyphPathUnpressed;
+		if ( auto imgGet = Image::get(glyph->path.c_str()) )
+		{
+			glyph->disabled = false;
+			SDL_Rect glyphPos{ 0, 8, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+			glyph->pos = glyphPos;
+			unpressedHeight = glyph->pos.h;
+			unpressedY = glyph->pos.y;
+			if ( glyph->pos.h != nominalGlyphHeight )
+			{
+				unpressedY -= (glyph->pos.h - nominalGlyphHeight) / 2;
+				glyph->pos.y -= (glyph->pos.h - nominalGlyphHeight) / 2;
+			}
+		}
+	}
+	
+	int glyphAlignY = unpressedY + (unpressedHeight - nominalGlyphHeight) / 2;
+
+	auto icon = frame->findImage("icon");
+	icon->disabled = true;
+	static ConsoleVariable<bool> cvar_callout_prompt_wheel("/callout_prompt_wheel", false);
+	if ( !glyph->disabled )
+	{
+		if ( *cvar_callout_prompt_wheel &&
+			CalloutMenu[player].calloutMenuIsOpen() && CalloutMenu[player].selectMoveTo )
+		{
+			icon->path = "*images/ui/HUD/HUD_Ally_Callout_Wheel_00.png";
+		}
+		else
+		{
+			icon->path = "*images/ui/HUD/HUD_Ally_Callout_00.png";
+		}
+		if ( auto imgGet = Image::get(icon->path.c_str()) )
+		{
+			icon->disabled = false;
+			icon->pos.w = imgGet->getWidth();
+			icon->pos.h = imgGet->getHeight();
+			icon->pos.x = glyph->pos.x + glyph->pos.w + 4;
+			icon->pos.y = unpressedY + (unpressedHeight) / 2 - icon->pos.h / 2;
+			if ( icon->pos.y % 2 == 1 )
+			{
+				++icon->pos.y;
+			}
+		}
+	}
+
+	auto text = frame->findField("prompt");
+	text->setDisabled(true);
+	static ConsoleVariable<bool> cvar_callout_prompt_text("/callout_prompt_text", false);
+	if ( !icon->disabled && *cvar_callout_prompt_text )
+	{
+		if ( CalloutMenu[player].calloutMenuIsOpen() && CalloutMenu[player].selectMoveTo )
+		{
+			text->setDisabled(false);
+			text->setText(Language::get(6049));
+			SDL_Rect pos = text->getSize();
+			pos.x = icon->pos.x + icon->pos.w + 4;
+			pos.y = glyphAlignY - 10;
+			text->setSize(pos);
+		}
+	}
+}
+
 void createAllyFollowerTitleFrame(const int player)
 {
 	auto& hud_t = players[player]->hud;
@@ -918,7 +1129,7 @@ Frame* createAllyPlayerEntry(const int player)
 
 	auto entry = baseFrame->addFrame("entry");
 	const int allyPlayerEntryHeight = 40;
-	entry->setSize(SDL_Rect{ 0, 0, 214, allyPlayerEntryHeight });
+	entry->setSize(SDL_Rect{ 0, 0, kPlayerBarsEntryFrameWidth, allyPlayerEntryHeight });
 	entry->setHollow(true);
 	entry->setInheritParentFrameOpacity(false);
 
@@ -2571,7 +2782,8 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 				const int selectorAnimW = 4;
 				if ( titleSelectorGlyph )
 				{
-					if ( halfWidthBars || (!players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen())
+					if ( halfWidthBars 
+						|| (!players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() && !CalloutMenu[player].calloutMenuIsOpen())
 						|| followerDisplay.bCycleNextDisabled || list_Size(&stats[player]->FOLLOWERS) <= 1 )
 					{
 						titleSelectorGlyph->disabled = true;
@@ -2738,7 +2950,9 @@ void updateAllyFollowerFrame(const int player)
 		return;
 	}
 
-	if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() && players[player]->gui_mode != GUI_MODE_NONE )
+	if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() 
+		&& !CalloutMenu[player].calloutMenuIsOpen()
+		&& players[player]->gui_mode != GUI_MODE_NONE )
 	{
 		baseFrame->setOpacity(0.0);
 		baseFrame->setInheritParentFrameOpacity(false);
@@ -3251,7 +3465,9 @@ void updateAllyPlayerFrame(const int player)
 		return;
 	}
 
-	if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() && players[player]->gui_mode != GUI_MODE_NONE )
+	if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() 
+		&& !CalloutMenu[player].calloutMenuIsOpen()
+		&& players[player]->gui_mode != GUI_MODE_NONE )
 	{
 		baseFrame->setOpacity(0.0);
 		baseFrame->setInheritParentFrameOpacity(false);
@@ -3976,7 +4192,8 @@ void Player::HUD_t::updateUINavigation()
 
 	bShowUINavigation = false;
 	if ( player.gui_mode != GUI_MODE_NONE 
-		&& player.gui_mode != GUI_MODE_FOLLOWERMENU 
+		&& player.gui_mode != GUI_MODE_FOLLOWERMENU
+		&& player.gui_mode != GUI_MODE_CALLOUT
 		&& player.gui_mode != GUI_MODE_SIGN
 		&& player.isLocalPlayer() && !player.shootmode )
 	{
@@ -6715,8 +6932,22 @@ void StatusEffectQueue_t::handleNavigation(std::map<int, StatusEffectQueueEntry_
 	}
 }
 
+const bool kAllowGhostStatusEffects = false;
+
 void StatusEffectQueue_t::updateAllQueuedEffects()
 {
+	bool effectsEnabled = true;
+	if ( !players[player]->entity && ((multiplayer == SINGLE && splitscreen) || multiplayer != SINGLE) )
+	{
+		effectsEnabled = false;
+		resetQueue();
+	}
+	if ( players[player]->ghost.isActive() && !kAllowGhostStatusEffects )
+	{
+		effectsEnabled = false;
+		resetQueue();
+	}
+
 	std::unordered_set<int> effectSet;
 	for ( auto it = effectQueue.rbegin(); it != effectQueue.rend(); ++it )
 	{
@@ -6727,7 +6958,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	std::set<int> effectsToSkipAnim;
 	std::unordered_set<int> spellsActive;
 	int count = 0; //This is just for debugging purposes.
-	for ( node_t* node = channeledSpells[player].first; node; node = node->next, count++ )
+	for ( node_t* node = channeledSpells[player].first; node && effectsEnabled; node = node->next, count++ )
 	{
 		spell_t* spell = (spell_t*)node->element;
 		if ( !spell )
@@ -6782,7 +7013,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 	}
 
-	for ( int i = 0; i <= NUMEFFECTS; ++i )
+	for ( int i = 0; i <= NUMEFFECTS && effectsEnabled; ++i )
 	{
 		if ( i == NUMEFFECTS )
 		{
@@ -6857,6 +7088,11 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			{
 				effectActive = false;
 			}
+			
+			if ( !players[player]->entity )
+			{
+				skipAnim = true;
+			}
 
 		    if ( effectActive )
 		    {
@@ -6905,6 +7141,13 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	for ( int i = kEffectBurning; i >= kEffectDrunkGoatman; --i )
 	{
 		miscEffects[i] = false;
+	}
+	if ( players[player] && players[player]->ghost.isActive() && kAllowGhostStatusEffects )
+	{
+		if ( players[player]->ghost.my->skill[3] == 1 ) // ghost sneaking
+		{
+			miscEffects[kEffectSneak] = true;
+		}
 	}
 	if ( players[player] && players[player]->entity )
 	{
@@ -7055,6 +7298,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 		else
 		{
+			if ( !players[player]->entity )
+			{
+				effectsToSkipAnim.insert(i);
+			}
 			if ( i == kEffectSneak )
 			{
 				effectsToSkipAnim.insert(i);
@@ -7086,6 +7333,21 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	bool hungerIconActive = (effectSet.find(kEffectBread) != effectSet.end() 
 		|| effectSet.find(kEffectBloodHunger) != effectSet.end()
 		|| effectSet.find(kEffectAutomatonHunger) != effectSet.end());
+	if ( !players[player]->entity )
+	{
+		if ( effectSet.find(kEffectBread) != effectSet.end() )
+		{
+			effectsToSkipAnimThisFrame.push_back(kEffectBread);
+		}
+		if ( effectSet.find(kEffectBloodHunger) != effectSet.end() )
+		{
+			effectsToSkipAnimThisFrame.push_back(kEffectBloodHunger);
+		}
+		if ( effectSet.find(kEffectAutomatonHunger) != effectSet.end() )
+		{
+			effectsToSkipAnimThisFrame.push_back(kEffectAutomatonHunger);
+		}
+	}
 
 	Frame* statusEffectFrame = getStatusEffectFrame();
 	auto automatonHungerFrame = statusEffectFrame->findFrame("automaton hunger notification");
@@ -7827,7 +8089,17 @@ void updateStatusEffectQueue(const int player)
 		statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectAutomatonHunger);
 	}
 
-	if ( stats[player] && stats[player]->type != AUTOMATON
+	bool effectsEnabled = true;
+	if ( !players[player]->entity && ((multiplayer == SINGLE && splitscreen) || multiplayer != SINGLE) )
+	{
+		effectsEnabled = false;
+	}
+	if ( players[player]->ghost.isActive() && !kAllowGhostStatusEffects )
+	{
+		effectsEnabled = false;
+	}
+
+	if ( effectsEnabled && stats[player] && stats[player]->type != AUTOMATON
 		&& (svFlags & SV_FLAG_HUNGER) 
 		&& (stats[player]->HUNGER <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_HUNGRY) 
 			|| stats[player]->HUNGER >= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_OVERSATIATED)) )
@@ -7938,7 +8210,7 @@ void updateStatusEffectQueue(const int player)
 			}
 		}
 	}
-	else
+	else if ( effectsEnabled )
 	{
 		statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectBloodHunger);
 		statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectBread);
@@ -8255,6 +8527,12 @@ void createWorldTooltipPrompts(const int player)
 	text2->setDisabled(true);
 	text2->setSize(SDL_Rect{ 0, 0, 0, 0 });
 
+	auto text3 = worldTooltipFrame->addField("prompt callout text", 256);
+	text3->setFont(promptFont);
+	text3->setText("");
+	text3->setDisabled(true);
+	text3->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
 	const int iconSize = 24;
 	SDL_Rect iconPos{ 0, 0, iconSize, iconSize };
 
@@ -8273,6 +8551,10 @@ void createWorldTooltipPrompts(const int player)
 	auto glyphAdditional2 = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 		0xFFFFFFFF, "images/system/white.png", "glyph img 3");
 	glyphAdditional2->disabled = true;
+
+	auto glyphAdditional3 = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+		0xFFFFFFFF, "images/system/white.png", "glyph img 4");
+	glyphAdditional3->disabled = true;
 
 	auto cursor = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 		0xFFFFFFFF, "images/system/white.png", "cursor img");
@@ -8349,6 +8631,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 	SDL_Rect promptPos{ player.camera_virtualWidth() / 2, player.camera_virtualHeight() / 2, 0, 0 };
 
 	FollowerRadialMenu& followerMenu = FollowerMenu[player.playernum];
+	CalloutRadialMenu& calloutMenu = CalloutMenu[player.playernum];
 
 	auto icon = worldTooltipFrame->findImage("icon img");
 	icon->disabled = true;
@@ -8362,34 +8645,49 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 	text->setDisabled(true);
 	auto textCycle = worldTooltipFrame->findField("prompt cycle text");
 	textCycle->setDisabled(true);
+	auto textCallout = worldTooltipFrame->findField("prompt callout text");
+	textCallout->setDisabled(true);
 	auto glyphCycle = worldTooltipFrame->findImage("glyph img 3");
 	glyphCycle->disabled = true;
+	auto glyphCallout = worldTooltipFrame->findImage("glyph img 4");
+	glyphCallout->disabled = true;
 
 	SDL_Rect textPos{ 0, 0, 0, 0 };
 	const int skillIconToGlyphPadding = 4;
 	const int nominalGlyphHeight = 26;
-    
-    bool usingTinkeringKit = false;
-    bool useBracketsReticle = false;
-	bool useSneakingReticle = false;
-    if (player.entity && stats[player.playernum]) {
-        if (stats[player.playernum]->defending) {
-            auto shield = stats[player.playernum]->shield;
-            if (shield && shield->type == TOOL_TINKERING_KIT) {
-                useBracketsReticle = true;
-                usingTinkeringKit = true;
-            }
-        }
-        if (stats[player.playernum]->sneaking) {
-            useBracketsReticle = true;
-			useSneakingReticle = true;
-        }
-    }
 
-	if ( followerMenu.selectMoveTo && (followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
-		|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
+	bool usingTinkeringKit = false;
+	bool useBracketsReticle = false;
+	bool useSneakingReticle = false;
+	if ( player.entity && stats[player.playernum] ) {
+		if ( stats[player.playernum]->defending ) {
+			auto shield = stats[player.playernum]->shield;
+			if ( shield && shield->type == TOOL_TINKERING_KIT ) {
+				useBracketsReticle = true;
+				usingTinkeringKit = true;
+			}
+		}
+		if ( stats[player.playernum]->sneaking ) {
+			useBracketsReticle = true;
+			useSneakingReticle = true;
+		}
+	}
+	else if ( player.ghost.isActive() )
+	{
+		if ( player.ghost.my->skill[3] == 1 )
+		{
+			useSneakingReticle = true;
+		}
+	}
+
+	bool followerInteract = followerMenu.selectMoveTo && (followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
+		|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT);
+	bool calloutInteract = calloutMenu.selectMoveTo && (calloutMenu.optionSelected == CalloutRadialMenu::CALLOUT_CMD_SELECT);
+
+	if ( followerInteract || calloutInteract )
 	{
 		bool forceBlankInteractText = false;
+		auto optionSelected = followerInteract ? followerMenu.optionSelected : calloutMenu.optionSelected;
 		if ( !player.worldUI.isEnabled() )
 		{
 			cursor->path = "#*images/ui/Crosshairs/cursor_xB.png";
@@ -8407,7 +8705,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		}
 		else
 		{
-			if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
+			if ( optionSelected == ALLY_CMD_MOVETO_SELECT )
 			{
 				cursor->path = "#*images/ui/Crosshairs/cursor_xB.png";
 				if ( auto imgGet = Image::get(cursor->path.c_str()) )
@@ -8571,19 +8869,26 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 			}
 		}
 
-		for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+		if ( calloutInteract )
 		{
-			if ( skill.skillId == PRO_LEADERSHIP )
+			icon->path = "*images/ui/HUD/HUD_Ally_Callout_00.png";
+		}
+		else
+		{
+			for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
 			{
-				if ( skillCapstoneUnlocked(player.playernum, PRO_LEADERSHIP) )
+				if ( skill.skillId == PRO_LEADERSHIP )
 				{
-					icon->path = skill.skillIconPathLegend;
+					if ( skillCapstoneUnlocked(player.playernum, PRO_LEADERSHIP) )
+					{
+						icon->path = skill.skillIconPathLegend;
+					}
+					else
+					{
+						icon->path = skill.skillIconPath;
+					}
+					break;
 				}
-				else
-				{
-					icon->path = skill.skillIconPath;
-				}
-				break;
 			}
 		}
 
@@ -8596,7 +8901,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		}
 		
 
-		if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
+		if ( followerInteract && optionSelected == ALLY_CMD_MOVETO_SELECT )
 		{
 			if ( followerMenu.followerToCommand
 				&& (followerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT
@@ -8632,35 +8937,51 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		}
 		else
 		{
-			if ( !strcmp(followerMenu.interactText, "") || forceBlankInteractText )
+			if ( followerInteract )
 			{
-				if ( followerMenu.followerToCommand )
+				if ( !strcmp(followerMenu.interactText, "") || forceBlankInteractText )
 				{
-					int type = followerMenu.followerToCommand->getMonsterTypeFromSprite();
-					if ( followerMenu.allowedInteractItems(type)
-						|| followerMenu.allowedInteractFood(type)
-						|| followerMenu.allowedInteractWorld(type)
-						)
+					if ( followerMenu.followerToCommand )
 					{
-						text->setDisabled(false);
-						text->setText(Language::get(4041)); // "Interact with..."
+						int type = followerMenu.followerToCommand->getMonsterTypeFromSprite();
+						if ( followerMenu.allowedInteractItems(type)
+							|| followerMenu.allowedInteractFood(type)
+							|| followerMenu.allowedInteractWorld(type)
+							)
+						{
+							text->setDisabled(false);
+							text->setText(Language::get(4041)); // "Interact with..."
+						}
+						else
+						{
+							text->setDisabled(false);
+							text->setText(Language::get(4042)); // "Attack..."
+						}
 					}
 					else
 					{
 						text->setDisabled(false);
-						text->setText(Language::get(4042)); // "Attack..."
+						text->setText(Language::get(4041)); // "Interact with..."
 					}
 				}
 				else
 				{
 					text->setDisabled(false);
-					text->setText(Language::get(4041)); // "Interact with..."
+					text->setText(followerMenu.interactText);
 				}
 			}
-			else
+			else if ( calloutInteract )
 			{
-				text->setDisabled(false);
-				text->setText(followerMenu.interactText);
+				if ( !strcmp(calloutMenu.interactText, "") || forceBlankInteractText )
+				{
+					text->setDisabled(false);
+					text->setText(Language::get(4348)); // "Call out..."
+				}
+				else
+				{
+					text->setDisabled(false);
+					text->setText(calloutMenu.interactText);
+				}
 			}
 		}
 
@@ -8677,7 +8998,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 	}
 	else
 	{
-		if ( !player.entity )
+		if ( !player.entity && !player.ghost.isActive() )
 		{
 			cursor->disabled = true;
 		}
@@ -8938,6 +9259,94 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		promptPos.w = std::max(cursor->pos.x + cursor->pos.w, promptPos.w);
 		promptPos.h = std::max(cursor->pos.y + cursor->pos.h, promptPos.h);
 	}
+
+	auto prevGlyphPos = glyph->pos;
+	if ( false && !text->isDisabled() && !glyph->disabled )
+	{
+		if ( CalloutMenu[player.playernum].calloutMenuIsOpen() )
+		{
+			auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding("Call Out", false);
+			auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding("Call Out", true);
+
+			if ( ticks % 50 < 25 )
+			{
+				glyphCallout->path = glyphPathPressed;
+				if ( auto imgGet = Image::get(glyphCallout->path.c_str()) )
+				{
+					glyphCallout->disabled = false;
+					glyphCallout->pos = SDL_Rect{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+					glyphCallout->pos.y = std::max(icon->pos.y + icon->pos.h - 4, prevGlyphPos.y + prevGlyphPos.h) + 4;
+					glyphCallout->pos.x = prevGlyphPos.x + prevGlyphPos.w / 2 - glyphCallout->pos.w / 2;
+					if ( glyphCallout->pos.x % 2 == 1 )
+					{
+						++glyphCallout->pos.x;
+					}
+					if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
+					{
+						const int unpressedHeight = imgGetUnpressed->getHeight();
+						if ( unpressedHeight != glyphCallout->pos.h )
+						{
+							glyphCallout->pos.y -= (glyphCallout->pos.h - unpressedHeight);
+						}
+
+						/*if ( unpressedHeight != nominalGlyphHeight )
+						{
+							prevGlyphPos.y -= (unpressedHeight - nominalGlyphHeight) / 2;
+						}*/
+					}
+					textPos.x += prevGlyphPos.w;
+				}
+			}
+			else
+			{
+				glyphCallout->path = glyphPathUnpressed;
+				if ( auto imgGet = Image::get(glyphCallout->path.c_str()) )
+				{
+					glyphCallout->disabled = false;
+					glyphCallout->pos = SDL_Rect{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+					glyphCallout->pos.y = std::max(icon->pos.y + icon->pos.h - 4, prevGlyphPos.y + prevGlyphPos.h) + 4;
+					glyphCallout->pos.x = prevGlyphPos.x + prevGlyphPos.w / 2 - glyphCallout->pos.w / 2;
+					if ( glyphCallout->pos.x % 2 == 1 )
+					{
+						++glyphCallout->pos.x;
+					}
+				}
+			}
+
+			if ( !glyphCallout->disabled )
+			{
+				glyphCallout->color = makeColor(255, 255, 255, 255);
+				textCallout->setText(Language::get(6049));
+				textCallout->setColor(makeColor(255, 255, 255, 255));
+				SDL_Rect textPos = text->getSize();
+				textPos.x = glyphCallout->pos.x + glyphCallout->pos.w + 4;
+				textPos.y = glyphCallout->pos.y + 2;
+
+				if ( auto imgGet = Image::get(glyphPathPressed.c_str()) )
+				{
+					if ( imgGet->getHeight() != glyphCallout->pos.h )
+					{
+						textPos.y += (glyphCallout->pos.h - imgGet->getHeight()) / 2;
+					}
+				}
+				if ( glyphCallout->pos.h != nominalGlyphHeight )
+				{
+					textPos.y += (glyphCallout->pos.h - nominalGlyphHeight) / 2;
+				}
+				textPos.w = textCallout->getTextObject()->getWidth();
+				textCallout->setSize(textPos);
+				textCallout->setDisabled(false);
+
+				promptPos.w = std::max(textPos.x + textPos.w, promptPos.w);
+				promptPos.h = std::max(textPos.y + textPos.h, promptPos.h);
+				promptPos.w = std::max(glyphCallout->pos.x + glyphCallout->pos.w, promptPos.w);
+				promptPos.h = std::max(glyphCallout->pos.y + glyphCallout->pos.h, promptPos.h);
+
+				prevGlyphPos = glyphCallout->pos;
+			}
+		}
+	}
+
 	if ( player.worldUI.isEnabled() )
 	{
 		if ( !text->isDisabled() && !glyph->disabled && player.worldUI.tooltipsInRange.size() > 1 )
@@ -8954,8 +9363,8 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					{
 						glyphCycle->disabled = false;
 						glyphCycle->pos = SDL_Rect{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
-						glyphCycle->pos.y = glyph->pos.y + glyph->pos.h + 4;
-						glyphCycle->pos.x = glyph->pos.x + glyph->pos.w / 2 - glyphCycle->pos.w / 2;
+						glyphCycle->pos.y = prevGlyphPos.y + prevGlyphPos.h + 4;
+						glyphCycle->pos.x = prevGlyphPos.x + prevGlyphPos.w / 2 - glyphCycle->pos.w / 2;
 						if ( glyphCycle->pos.x % 2 == 1 )
 						{
 							++glyphCycle->pos.x;
@@ -8973,7 +9382,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 								glyph->pos.y -= (unpressedHeight - nominalGlyphHeight) / 2;
 							}*/
 						}
-						textPos.x += glyph->pos.w;
+						textPos.x += prevGlyphPos.w;
 					}
 				}
 				else
@@ -8983,8 +9392,8 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					{
 						glyphCycle->disabled = false;
 						glyphCycle->pos = SDL_Rect{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
-						glyphCycle->pos.y = glyph->pos.y + glyph->pos.h + 4;
-						glyphCycle->pos.x = glyph->pos.x + glyph->pos.w / 2 - glyphCycle->pos.w / 2;
+						glyphCycle->pos.y = prevGlyphPos.y + prevGlyphPos.h + 4;
+						glyphCycle->pos.x = prevGlyphPos.x + prevGlyphPos.w / 2 - glyphCycle->pos.w / 2;
 						if ( glyphCycle->pos.x % 2 == 1 )
 						{
 							++glyphCycle->pos.x;
@@ -9151,7 +9560,95 @@ void createActionPrompts(const int player)
 	sneakText->setHJustify(Field::justify_t::CENTER);
 }
 
+void drawActionPromptCooldownCallback(const Widget& widget, SDL_Rect rect)
+{
+	const int player = widget.getOwner();
+
+	const Frame* parent = static_cast<const Frame*>(widget.getParent());
+	{
+		SDL_Rect drawRect = rect;
+		drawRect.x += 22;
+		drawRect.y += 22;
+		drawRect.w = 44;
+		drawRect.h = 44;
+		real_t opacity = 192;
+		if ( parent && parent->getOpacity() < 100.0 )
+		{
+			opacity *= parent->getOpacity() / 100.0;
+		}
+		const auto& ghost = players[player]->ghost;
+		int prompt = reinterpret_cast<intptr_t>(widget.getUserData()) - 1;
+		real_t cooldownProgress = 0.0;
+		bool errorFlash = false;
+		int actionPoints = 0;
+		switch ( static_cast<Player::HUD_t::ActionPrompts>(prompt) )
+		{
+			case Player::HUD_t::ACTION_PROMPT_MAGIC:
+				cooldownProgress = (ghost.cooldownTeleport / (real_t)ghost.cooldownTeleportDelay);
+				if ( ghost.errorFlashTeleportTicks > 0 && (Player::Ghost_t::errorFlashTicks - ghost.errorFlashTeleportTicks) % 20 < 10 )
+				{
+					errorFlash = true;
+				}
+				break;
+			case Player::HUD_t::ACTION_PROMPT_OFFHAND:
+				if ( ghost.pushPoints > 0 )
+				{
+					cooldownProgress = 0.0;
+				}
+				else
+				{
+					cooldownProgress = (ghost.cooldownPush / (real_t)ghost.cooldownPushDelay);
+				}
+				actionPoints = ghost.pushPoints;
+				if ( ghost.errorFlashPushTicks > 0 && (Player::Ghost_t::errorFlashTicks - ghost.errorFlashPushTicks) % 20 < 10 )
+				{
+					errorFlash = true;
+				}
+				break;
+			case Player::HUD_t::ACTION_PROMPT_MAINHAND:
+				cooldownProgress = (ghost.cooldownChill / (real_t)ghost.cooldownChillDelay);
+				if ( ghost.errorFlashChillTicks > 0 && (Player::Ghost_t::errorFlashTicks - ghost.errorFlashChillTicks) % 20 < 10 )
+				{
+					errorFlash = true;
+				}
+				break;
+			case Player::HUD_t::ACTION_PROMPT_SNEAK:
+				break;
+			default:
+				break;
+		}
+		if ( cooldownProgress > 0.0 )
+		{
+			if ( errorFlash )
+			{
+				drawClockwiseSquareMesh("images/ui/HUD/HUD_ActionPromptBacking00_02_Cooldown.png",
+					cooldownProgress,
+					drawRect, makeColor(255, 255, 255, opacity));
+			}
+			else
+			{
+				Uint8 r, g, b, a;
+				getColor(hudColors.characterSheetRed, &r, &g, &b, &a);
+				drawClockwiseSquareMesh("images/ui/HUD/HUD_ActionPromptBacking00_02_Cooldown.png",
+					cooldownProgress,
+					drawRect, makeColor(r, g, b, opacity));
+			}
+		}
+		/*if ( actionPoints > 0 )
+		{
+			std::string str = std::to_string(actionPoints);
+			if ( auto textGet = Text::get(str.c_str(), smallfont_outline, makeColorRGB(255, 255, 255), 0) )
+			{
+				textGet->drawColor(SDL_Rect{ 0,0,0,0 }, SDL_Rect{ drawRect.x - 6, drawRect.y + 1, 0, 0 },
+					SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+					makeColor(255, 255, 255, 255));
+			}
+		}*/
+	}
+}
+
 int Player::HUD_t::actionPromptOffsetX = 280;
+int Player::HUD_t::actionPromptOffsetXGhostPrompts = 140;
 int Player::HUD_t::actionPromptOffsetY = 22;
 int Player::HUD_t::actionPromptBackingSize = 44;
 int Player::HUD_t::actionPromptIconSize = 32;
@@ -9183,11 +9680,12 @@ void Player::HUD_t::updateActionPrompts()
 	    }
 	}
 
+	bool ghostPrompts = player.ghost.isActive();
 	static ConsoleVariable<int> actionPromptCompactHeightY("/actionpromptcompactheighty", 16);
 	bShowActionPrompts = *disableActionPrompts;
 	bShortHPMPForActionBars = false;
 
-	if ( playercount == 2 && !*MainMenu::vertical_splitscreen 
+	if ( playercount == 2 && !*MainMenu::vertical_splitscreen && !ghostPrompts
 		&& !*disableActionPrompts && *MainMenu::clipped_splitscreen )
 	{
 		bShortHPMPForActionBars = true;
@@ -9201,12 +9699,55 @@ void Player::HUD_t::updateActionPrompts()
 				|| (!player.hotbar.useHotbarFaceMenu && *MainMenu::clipped_splitscreen))) 
 		|| *disableActionPrompts )
 	{
-		actionPromptsFrame->setDisabled(true);
-		bShowActionPrompts = false;
-		return;
+		if ( !ghostPrompts )
+		{
+			actionPromptsFrame->setDisabled(true);
+			bShowActionPrompts = false;
+			return;
+		}
 	}
 	actionPromptsFrame->setDisabled(false);
 	actionPromptsFrame->setSize(SDL_Rect{ 0, 0, hudFrame->getSize().w, hudFrame->getSize().h });
+
+	bool tempHideActionPrompts = false;
+	bool fadeOut = false;
+	if ( ghostPrompts )
+	{
+		if ( player.bUseCompactGUIHeight() && CalloutMenu[player.playernum].calloutMenuIsOpen() && !CalloutMenu[player.playernum].selectMoveTo )
+		{
+			tempHideActionPrompts = true;
+		}
+	}
+
+	if ( tempHideActionPrompts )
+	{
+		if ( fadeOut )
+		{
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
+			real_t setpointDiff = fpsScale * std::max(.1, (1.0 - animHideActionPrompts)) / 2.5;
+			animHideActionPrompts += setpointDiff;
+			animHideActionPrompts = std::min(1.0, animHideActionPrompts);
+		}
+		else
+		{
+			animHideActionPrompts = 1.0;
+		}
+	}
+	else
+	{
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
+		real_t setpointDiff = fpsScale * std::max(.1, (animHideActionPrompts)) / 2.5;
+		animHideActionPrompts -= setpointDiff;
+		animHideActionPrompts = std::max(0.0, animHideActionPrompts);
+	}
+
+	actionPromptsFrame->setInheritParentFrameOpacity(false);
+	real_t opacity = 1.0;
+	if ( auto parent = actionPromptsFrame->getParent() )
+	{
+		opacity *= actionPromptsFrame->getParent()->getOpacity() / 100.0;
+	}
+	actionPromptsFrame->setOpacity((opacity - animHideActionPrompts) * 100.0);
 
 	const int iconSize = Player::HUD_t::actionPromptIconSize;
 	const int glyphSize = 32;
@@ -9233,8 +9774,16 @@ void Player::HUD_t::updateActionPrompts()
 	std::vector<PromptInfo> allPrompts;
 	const std::string blockBinding = Input::inputs[player.playernum].binding("Defend");
 	const std::string sneakBinding = Input::inputs[player.playernum].binding("Sneak");
-	const bool sneakingSeparateFromBlock = false;// blockBinding != sneakBinding;
-	if ( sneakingSeparateFromBlock )
+	bool sneakingSeparateFromBlock = false;// blockBinding != sneakBinding;
+	if ( ghostPrompts )
+	{
+		sneakingSeparateFromBlock = true;
+		allPrompts.emplace_back(PromptInfo{ "action sneak", ACTION_PROMPT_SNEAK, "Sneak" });
+		allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Use" });
+		allPrompts.emplace_back(PromptInfo{ "action magic", ACTION_PROMPT_MAGIC, "Cast Spell" });
+		allPrompts.emplace_back(PromptInfo{ "action mainhand", ACTION_PROMPT_MAINHAND, "Attack" });
+	}
+	else if ( sneakingSeparateFromBlock )
 	{
 		allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Defend" });
 		allPrompts.emplace_back(PromptInfo{ "action sneak", ACTION_PROMPT_SNEAK, "Sneak" });
@@ -9270,7 +9819,17 @@ void Player::HUD_t::updateActionPrompts()
 			promptPos.w = maxWidth;
 			promptPos.h = promptHeight;
 			int actionPromptOffsetXTotal = actionPromptOffsetX;
-			if ( !player.hotbar.useHotbarFaceMenu )
+			prompt->setDrawCallback(nullptr);
+			prompt->setUserData(nullptr);
+			if ( ghostPrompts )
+			{
+				actionPromptOffsetXTotal = actionPromptOffsetXGhostPrompts;
+				prompt->setUserData((void*)(intptr_t)(promptInfo.promptType + 1));
+				prompt->setDrawCallback([](const Widget& widget, SDL_Rect rect) {
+					drawActionPromptCooldownCallback(widget, rect);
+				});
+			}
+			else if ( !player.hotbar.useHotbarFaceMenu )
 			{
 				actionPromptOffsetXTotal += 22;
 			}
@@ -9339,7 +9898,7 @@ void Player::HUD_t::updateActionPrompts()
 
 			std::string textForPrompt = "";
 			int skillForPrompt = getActionIconForPlayer(promptInfo.promptType, textForPrompt);
-			if ( promptInfo.promptType == ACTION_PROMPT_OFFHAND && sneakingSeparateFromBlock
+			if ( promptInfo.promptType == ACTION_PROMPT_OFFHAND && sneakingSeparateFromBlock && !ghostPrompts
 				&& skillForPrompt == PRO_STEALTH )
 			{
 				// offhand wants to display sneak - redundant, hide this prompt
@@ -9350,7 +9909,9 @@ void Player::HUD_t::updateActionPrompts()
 				continue;
 			}
 
-			if ( player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU || player.gui_mode == GUI_MODE_SIGN )
+			if ( player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU 
+				|| player.gui_mode == GUI_MODE_SIGN
+				|| player.gui_mode == GUI_MODE_CALLOUT )
 			{
 				promptText->setDisabled(true);
 			}
@@ -9406,6 +9967,46 @@ void Player::HUD_t::updateActionPrompts()
 					imgBacking->path = actionPromptBackingIconPath00;
 				}
 			}
+			else if ( ghostPrompts )
+			{
+				imgBacking->path = actionPromptBackingIconPath00;
+				switch ( promptInfo.promptType )
+				{
+					case ACTION_PROMPT_MAGIC:
+						skillImg = "*images/ui/HUD/HUD_Ghost_Haunt.png";
+						img->pos.x -= 2;
+						img->pos.y -= 2;
+						img->pos.w = 36;
+						img->pos.h = 36;
+						break;
+					case ACTION_PROMPT_MAINHAND:
+						skillImg = "*images/ui/HUD/HUD_Ghost_Chill.png";
+						img->pos.x -= 2;
+						img->pos.y -= 2;
+						img->pos.w = 36;
+						img->pos.h = 36;
+						break;
+					case ACTION_PROMPT_OFFHAND:
+						skillImg = "*images/ui/HUD/HUD_Ghost_Push.png";
+						img->pos.x -= 2;
+						img->pos.y -= 2;
+						img->pos.w = 36;
+						img->pos.h = 36;
+						break;
+					case ACTION_PROMPT_SNEAK:
+						for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+						{
+							if ( skill.skillId == PRO_STEALTH )
+							{
+								skillImg = skill.skillIconPath32px;
+								break;
+							}
+						}
+						break;
+				default:
+					break;
+				}
+			}
 			if ( skillImg == "" )
 			{
 				prompt->setDisabled(true);
@@ -9432,13 +10033,18 @@ void Player::HUD_t::updateActionPrompts()
 			}*/
 
 			std::string bindingName = promptInfo.inputName.c_str();
-			if ( skillForPrompt == PRO_STEALTH && promptInfo.promptType == ACTION_PROMPT_OFFHAND )
+			if ( !ghostPrompts )
 			{
-				bindingName = "Sneak";
+				if ( skillForPrompt == PRO_STEALTH && promptInfo.promptType == ACTION_PROMPT_OFFHAND )
+				{
+					bindingName = "Sneak";
+				}
 			}
 			glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding(bindingName.c_str(), pressed);
 			glyph->disabled = prompt->isDisabled();
-			if ( !player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU || player.gui_mode == GUI_MODE_SIGN )
+			if ( !player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU 
+				|| player.gui_mode == GUI_MODE_SIGN
+				|| player.gui_mode == GUI_MODE_CALLOUT )
 			{
 				glyph->disabled = true;
 			}
@@ -9475,23 +10081,26 @@ void Player::HUD_t::updateActionPrompts()
 			}*/
 			glyph->pos.y = prompt->getSize().y + img->pos.y + img->pos.h - glyphToImgPadY + pressedOffset; // just above the skill img with some padding
 
-			if ( promptInfo.promptType == ACTION_PROMPT_SNEAK )
+			if ( !ghostPrompts )
 			{
-				if ( !(!stats[player.playernum]->defending && stats[player.playernum]->sneaking) )
+				if ( promptInfo.promptType == ACTION_PROMPT_SNEAK )
 				{
-					//glyph->disabled = true;
-					img->color = iconFadedColor;
-					//imgBacking->color = iconFadedBackingColor;
+					if ( !(!stats[player.playernum]->defending && stats[player.playernum]->sneaking) )
+					{
+						//glyph->disabled = true;
+						img->color = iconFadedColor;
+						//imgBacking->color = iconFadedBackingColor;
+					}
 				}
-			}
-			if ( promptInfo.promptType == ACTION_PROMPT_OFFHAND && skillForPrompt == PRO_SHIELD
-				&& sneakingSeparateFromBlock )
-			{
-				if ( !stats[player.playernum]->defending )
+				if ( promptInfo.promptType == ACTION_PROMPT_OFFHAND && skillForPrompt == PRO_SHIELD
+					&& sneakingSeparateFromBlock )
 				{
-					//glyph->disabled = true;
-					img->color = iconFadedColor;
-					//imgBacking->color = iconFadedBackingColor;
+					if ( !stats[player.playernum]->defending )
+					{
+						//glyph->disabled = true;
+						img->color = iconFadedColor;
+						//imgBacking->color = iconFadedBackingColor;
+					}
 				}
 			}
 		}
@@ -9573,6 +10182,71 @@ static void checkControllerState(int player) {
     controllerFrame->setHollow(true);
 }
 
+void HUDDrawGameEndHint(const int player, SDL_Rect rect)
+{
+	if ( multiplayer == CLIENT || multiplayer == SERVER )
+	{
+		bool everyonedead = true;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( players[i] )
+			{
+				if ( multiplayer == SERVER && (!client_disconnected[i] && players[i]->entity) )
+				{
+					everyonedead = false;
+				}
+				else if ( multiplayer == CLIENT && players[i]->entity )
+				{
+					everyonedead = false;
+				}
+			}
+		}
+
+		if ( players[player]->bControlEnabled )
+		{
+			players[player]->hud.animDeadPromptDisplay = true;
+		}
+
+		if ( everyonedead && players[player]->hud.animDeadPromptDisplay )
+		{
+			static ConsoleVariable<float> cvar_anim_dead_prompt_speed("/anim_dead_prompt_speed", 0.003);
+			players[player]->hud.animDeadPrompt += *cvar_anim_dead_prompt_speed;
+			if ( players[player]->hud.animDeadPrompt >= 1.0 )
+			{
+				players[player]->hud.animDeadPrompt = 0.0;
+			}
+			rect.x += rect.w / 2;
+			rect.y += 8 - 1;
+			if ( players[player]->hud.xpFrame && !players[player]->hud.xpFrame->isDisabled() )
+			{
+				rect.y += players[player]->hud.xpFrame->getSize().y;
+				rect.y += players[player]->hud.xpFrame->getSize().h;
+			}
+			if ( auto textGet = Text::get(Language::get(6052), smallfont_outline, makeColorRGB(255, 255, 255), 0) )
+			{
+				Uint8 r, g, b, a;
+				getColor(hudColors.characterSheetRed, &r, &g, &b, nullptr);
+				real_t opacity = 0.5 + .4 * (1.0 * cos(players[player]->hud.animDeadPrompt * 2 * PI) + 1.0);
+				Uint32 color = makeColor(r, g, b, std::max(0.25, std::min(opacity, 1.0)) * 255);
+				rect.x -= textGet->getWidth() / 2;
+				textGet->drawColor(SDL_Rect{ 0, 0, 0, 0 }, SDL_Rect{ rect.x, rect.y, 0, 0 },
+					SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+					color);
+			}
+		}
+		else
+		{
+			players[player]->hud.animDeadPromptDisplay = false;
+			players[player]->hud.animDeadPrompt = 0.0;
+		}
+	}
+	else
+	{
+		players[player]->hud.animDeadPromptDisplay = false;
+		players[player]->hud.animDeadPrompt = 0.0;
+	}
+}
+
 void Player::HUD_t::processHUD()
 {
 	const SDL_Rect hudSize{
@@ -9589,6 +10263,9 @@ void Player::HUD_t::processHUD()
 		hudFrame->setHollow(true);
 		hudFrame->setBorder(0);
 		hudFrame->setOwner(player.playernum);
+		hudFrame->setDrawCallback([](const Widget& widget, SDL_Rect rect) {
+			HUDDrawGameEndHint(widget.getOwner(), rect);
+		});
 	}
 
 	if ( !minotaurSharedDisplay && player.playernum == 0 )
@@ -9729,7 +10406,7 @@ void Player::HUD_t::processHUD()
 #endif // NINTENDO
 	}
 
-	if ( !gamePaused && player.entity && player.shootmode )
+	if ( !gamePaused && (player.entity || player.ghost.isActive()) && player.shootmode)
 	{
 		inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 	}
@@ -9753,6 +10430,10 @@ void Player::HUD_t::processHUD()
 	if ( !hpFrame )
 	{
 		createHPMPBars(player.playernum);
+	}
+	if ( !calloutPromptFrame )
+	{
+		createCalloutPromptFrame(player.playernum);
 	}
 	if ( !enemyBarFrame )
 	{
@@ -9786,6 +10467,7 @@ void Player::HUD_t::processHUD()
 	updateXPBar();
 	updateHPBar();
 	updateMPBar();
+	updateCalloutPromptFrame(player.playernum);
 	updateActionPrompts();
 	updateUINavigation();
 	enemyHPDamageBarHandler[player.playernum].cullExpiredHPBars();
@@ -9996,6 +10678,10 @@ void Player::MessageZone_t::processChatbox()
 	{
 		SDL_Rect xpFramePos = player.hud.xpFrame->getSize();
 		topAlignedPaddingY = std::max(topAlignedPaddingY, 4 + std::max(xpFramePos.y, 0) + xpFramePos.h);
+		if ( !(player.bUseCompactGUIHeight() && player.bUseCompactGUIWidth()) )
+		{
+			topAlignedPaddingY += 4;
+		}
 	}
 	SDL_Rect messageboxTopAlignedPos{
 	    topAlignedPaddingX,
@@ -10059,7 +10745,12 @@ void Player::MessageZone_t::processChatbox()
 		{
 			entry->setDisabled(false);
 			entry->setColor(color);
-			entry->setText(current->text->data);
+
+			std::string data = messageSanitizePercentSign(current->text->data, nullptr);
+			char str[ADD_MESSAGE_BUFFER_LENGTH];
+			snprintf(str, sizeof(str), data.c_str());
+
+			entry->setText(str);
 			entry->setFont(useBigFont ? bigfont : smallfont);
 			entry->setPaddingPerLine(useBigFont ? 0 : *cvar_log_multiline_pady);
             Font* fontGet = Font::get(entry->getFont());
@@ -20678,19 +21369,20 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 	::fov = fov;
 
 	//TempTexture* minimapTexture = new TempTexture();
+	auto playerEntity = Player::getPlayerInteractEntity(player);
 
-	if ( players[player] != nullptr && players[player]->entity != nullptr )
+	if ( playerEntity )
 	{
         GL_CHECK_ERR(glClear(GL_DEPTH_BUFFER_BIT));
 
 		static ConsoleVariable<bool> cvar_char_portrait_static_angle("/char_portrait_static_angle", true);
-		view.x = players[player]->entity->x / 16.0 + (.92 * cos(offsetyaw 
-			+ (*cvar_char_portrait_static_angle ? players[player]->entity->yaw : 0)));
-		view.y = players[player]->entity->y / 16.0 + (.92 * sin(offsetyaw 
-			+ (*cvar_char_portrait_static_angle ? players[player]->entity->yaw : 0)));
-		view.z = players[player]->entity->z * 2;
+		view.x = playerEntity->x / 16.0 + (.92 * cos(offsetyaw
+			+ (*cvar_char_portrait_static_angle ? playerEntity->yaw : 0)));
+		view.y = playerEntity->y / 16.0 + (.92 * sin(offsetyaw
+			+ (*cvar_char_portrait_static_angle ? playerEntity->yaw : 0)));
+		view.z = playerEntity->z * 2;
 		view.ang = (offsetyaw - PI
-			+ (*cvar_char_portrait_static_angle ? players[player]->entity->yaw : 0)); //5 * PI / 4;
+			+ (*cvar_char_portrait_static_angle ? playerEntity->yaw : 0)); //5 * PI / 4;
 		view.vang = PI / 20;
 
 		view.winx = pos.x;
@@ -20702,22 +21394,25 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 		view.winw = pos.w;
 		view.winh = pos.h;
 		glBeginCamera(&view, false);
-		bool b = players[player]->entity->flags[BRIGHT];
-        if (!dark) { players[player]->entity->flags[BRIGHT] = true; }
-		if ( !players[player]->entity->flags[INVISIBLE] )
+		bool b = playerEntity->flags[BRIGHT];
+        if (!dark) { playerEntity->flags[BRIGHT] = true; }
+		if ( !playerEntity->flags[INVISIBLE] )
 		{
-			glDrawVoxel(&view, players[player]->entity, REALCOLORS);
+			glDrawVoxel(&view, playerEntity, REALCOLORS);
 		}
-		players[player]->entity->flags[BRIGHT] = b;
+		playerEntity->flags[BRIGHT] = b;
 		int c = 0;
 		if ( multiplayer != CLIENT )
 		{
-			for ( node_t* node = players[player]->entity->children.first; node != nullptr; node = node->next )
+			for ( node_t* node = playerEntity->children.first; node != nullptr; node = node->next )
 			{
-				if ( c == 0 )
+				if ( playerEntity->behavior == &actPlayer )
 				{
-					c++;
-					continue;
+					if ( c == 0 )
+					{
+						c++;
+						continue;
+					}
 				}
 				Entity* entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] )
@@ -20746,21 +21441,34 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 			for ( node_t* node = map.entities->first; node != NULL; node = node->next )
 			{
 				Entity* entity = (Entity*)node->element;
-				if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == player && !entity->flags[INVISIBLE]) || (Sint32)entity->getUID() == -4 )
+				if ( playerEntity->behavior == &actPlayer )
 				{
-					if ( (Sint32)entity->getUID() == -4 ) // torch sprites
+					if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == player && !entity->flags[INVISIBLE]) || (Sint32)entity->getUID() == -4 )
 					{
-                        bool b = entity->flags[BRIGHT];
-                        if (!dark) { entity->flags[BRIGHT] = true; }
-						glDrawSprite(&view, entity, REALCOLORS);
-                        entity->flags[BRIGHT] = b;
+						if ( (Sint32)entity->getUID() == -4 ) // torch sprites
+						{
+							bool b = entity->flags[BRIGHT];
+							if (!dark) { entity->flags[BRIGHT] = true; }
+							glDrawSprite(&view, entity, REALCOLORS);
+							entity->flags[BRIGHT] = b;
+						}
+						else
+						{
+							bool b = entity->flags[BRIGHT];
+							if (!dark) { entity->flags[BRIGHT] = true; }
+							glDrawVoxel(&view, entity, REALCOLORS);
+							entity->flags[BRIGHT] = b;
+						}
 					}
-					else
+				}
+				else if ( playerEntity->behavior == &actDeathGhost )
+				{
+					if ( entity->behavior == &actDeathGhostLimb && entity->skill[2] == player && !entity->flags[INVISIBLE] )
 					{
-                        bool b = entity->flags[BRIGHT];
-                        if (!dark) { entity->flags[BRIGHT] = true; }
+						bool b = entity->flags[BRIGHT];
+						if ( !dark ) { entity->flags[BRIGHT] = true; }
 						glDrawVoxel(&view, entity, REALCOLORS);
-                        entity->flags[BRIGHT] = b;
+						entity->flags[BRIGHT] = b;
 					}
 				}
 			}
@@ -21751,6 +22459,10 @@ void loadHUDSettingsJSON()
 					if ( d["action_prompts"].HasMember("x_offset") )
 					{
 						Player::HUD_t::actionPromptOffsetX = d["action_prompts"]["x_offset"].GetInt();
+					}
+					if ( d["action_prompts"].HasMember("x_offset_ghost_prompts") )
+					{
+						Player::HUD_t::actionPromptOffsetXGhostPrompts = d["action_prompts"]["x_offset_ghost_prompts"].GetInt();
 					}
 					if ( d["action_prompts"].HasMember("y_offset") )
 					{
@@ -26108,6 +26820,7 @@ void Player::HUD_t::updateGameTimer()
 	bool overrideGameTimerSetting = false;
 	if ( splitscreen && !(player.bUseCompactGUIHeight() && player.bUseCompactGUIWidth())
 		&& !player.shootmode && !FollowerMenu[player.playernum].followerMenuIsOpen()
+		&& !CalloutMenu[player.playernum].calloutMenuIsOpen()
 		&& player.gui_mode != GUI_MODE_NONE )
 	{
 		if ( compactLayoutMode == COMPACT_LAYOUT_INVENTORY || player.bUseCompactGUIWidth() )
@@ -26224,7 +26937,8 @@ void Player::HUD_t::updateXPBar()
 	{
 		tempHideXP = true;
 	}
-	else if ( (player.gui_mode == GUI_MODE_FOLLOWERMENU || player.minimap.mapWindow || player.messageZone.logWindow)
+	else if ( (player.gui_mode == GUI_MODE_FOLLOWERMENU || player.gui_mode == GUI_MODE_CALLOUT
+		|| player.minimap.mapWindow || player.messageZone.logWindow)
 		&& player.bUseCompactGUIHeight() )
 	{
 		tempHideXP = true;
@@ -28403,6 +29117,8 @@ void Player::HUD_t::updateHPBar()
 			hpProgressEndCapFlash->section.w = hpProgressEndCapFlash->pos.w;
 		}
 	}
+
+	hpFrame->setDisabled(player.ghost.isActive());
 }
 
 void Player::HUD_t::updateMPBar()
@@ -28816,6 +29532,8 @@ void Player::HUD_t::updateMPBar()
 			player.magic.noManaFeedbackTicks = 0;
 		}
 	}
+
+	mpFrame->setDisabled(player.ghost.isActive());
 }
 
 bool hotbar_slot_t::matchesExactLastItem(int player, Item* item)
@@ -28896,8 +29614,13 @@ void Player::Hotbar_t::updateHotbar()
 
 	hotbarFrame->setOpacity(hotbarFrame->getParent()->getOpacity());
 	bool tempHideHotbar = false;
-	if ( player.bUseCompactGUIHeight()
+	if ( player.ghost.isActive() )
+	{
+		tempHideHotbar = true;
+	}
+	else if ( player.bUseCompactGUIHeight()
 		&& (player.gui_mode == GUI_MODE_FOLLOWERMENU
+			|| player.gui_mode == GUI_MODE_CALLOUT
 			|| (player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET && !player.shootmode)
 			|| (player.gui_mode == GUI_MODE_MAGIC)
 			|| (player.shopGUI.bOpen)
@@ -28971,7 +29694,8 @@ void Player::Hotbar_t::updateHotbar()
 	hotbarStartY1 += animHide * abs(getHotbarStartY1());
 	hotbarStartY2 += animHide * abs(getHotbarStartY1());
 
-	if ( !player.shootmode || FollowerMenu[player.playernum].followerMenuIsOpen() )
+	if ( !player.shootmode || FollowerMenu[player.playernum].followerMenuIsOpen()
+		|| CalloutMenu[player.playernum].calloutMenuIsOpen() )
 	{
         if (player.hotbar.useHotbarFaceMenu)
         {
@@ -29181,7 +29905,7 @@ void Player::Hotbar_t::updateHotbar()
 			if ( controller )
 			{
 				glyph->disabled = slot->isDisabled();
-				if ( !player.shootmode )
+				if ( !player.shootmode || !player.entity )
 				{
 					glyph->disabled = true;
 				}
@@ -30427,6 +31151,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "GLOVE_DEGRADE_CHANCE" )
 		{
 			val = 100 + (stats[playernum]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
+			val += (static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20)) * 10;
 			if ( svFlags & SV_FLAG_HARDCORE )
 			{
 				val *= 2;
@@ -30444,6 +31169,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "GLOVE_DEGRADE0_CHANCE" )
 		{
 			val = 8 + (stats[playernum]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
+			val += static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20);
 			if ( svFlags & SV_FLAG_HARDCORE )
 			{
 				val *= 2;
@@ -33548,8 +34274,8 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 	{
 		if ( bOpen )
 		{
-		slider->setDisabled(false);
-	}
+			slider->setDisabled(false);
+		}
 		else
 		{
 			slider->setDisabled(true);
@@ -36551,7 +37277,21 @@ bool SkillUpAnimation_t::soundIndexUsedForNotification(const int index)
 	{
 		return true;
 	}
+	else if ( index == CalloutRadialMenu::CALLOUT_SFX_NEGATIVE
+		|| index == CalloutRadialMenu::CALLOUT_SFX_NEUTRAL
+		|| index == CalloutRadialMenu::CALLOUT_SFX_POSITIVE )
+	{
+		return true;
+	}
+	else if ( index == Message::CHAT_MESSAGE_SFX )
+	{
+		return true;
+	}
 	else if ( index == *cvar_lvl_ding_sfx )
+	{
+		return true;
+	}
+	else if ( index == *cvar_skill_newspell_sfx )
 	{
 		return true;
 	}

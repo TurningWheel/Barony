@@ -78,6 +78,7 @@ void freeSpells()
 	list_FreeAll(&spell_flutter.elements);
 	list_FreeAll(&spell_dash.elements);
 	list_FreeAll(&spell_polymorph.elements);
+	list_FreeAll(&spell_ghost_bolt.elements);
 }
 
 void spell_magicMap(int player)
@@ -259,10 +260,35 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				resistance += 2;
 				hasamulet = true;
 			}
+
+			DamageGib dmgGib = DMG_DEFAULT;
+			real_t damageMultiplier = Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
+			if ( damageMultiplier <= 0.75 )
+			{
+				dmgGib = DMG_WEAKEST;
+			}
+			else if ( damageMultiplier <= 0.85 )
+			{
+				dmgGib = DMG_WEAKER;
+			}
+			else if ( damageMultiplier >= 1.25 )
+			{
+				dmgGib = resistance == 0 ? DMG_STRONGEST : DMG_WEAKER;
+			}
+			else if ( damageMultiplier >= 1.15 )
+			{
+				dmgGib = resistance == 0 ? DMG_STRONGER : DMG_WEAKER;
+			}
+			else if ( resistance > 0 )
+			{
+				dmgGib = DMG_WEAKEST;
+			}
+
 			int oldHP = hitstats->HP;
 			damage /= (1 + (int)resistance);
-			damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
+			damage *= damageMultiplier;
 			hit.entity->modHP(-damage);
+
 
 			// write the obituary
 			if ( parent )
@@ -317,12 +343,12 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			if ( !strcmp(hitstats->name, "") )
 			{
 				updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
-					false, DamageGib::DMG_TODO);
+					false, dmgGib);
 			}
 			else
 			{
 				updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
-					false, DamageGib::DMG_TODO);
+					false, dmgGib);
 			}
 
 			if ( oldHP > 0 && hitstats->HP <= 0 && parent )
@@ -416,8 +442,32 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 				resistance += 2;
 				hasamulet = true;
 			}
+
+			DamageGib dmgGib = DMG_DEFAULT;
+			real_t damageMultiplier = Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
+			if ( damageMultiplier <= 0.75 )
+			{
+				dmgGib = DMG_WEAKEST;
+			}
+			else if ( damageMultiplier <= 0.85 )
+			{
+				dmgGib = DMG_WEAKER;
+			}
+			else if ( damageMultiplier >= 1.25 )
+			{
+				dmgGib = resistance == 0 ? DMG_STRONGEST : DMG_WEAKER;
+			}
+			else if ( damageMultiplier >= 1.15 )
+			{
+				dmgGib = resistance == 0 ? DMG_STRONGER : DMG_WEAKER;
+			}
+			else if ( resistance > 0 )
+			{
+				dmgGib = DMG_WEAKEST;
+			}
+
 			damage /= (1 + (int)resistance);
-			damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
+			damage *= damageMultiplier;
 			hit.entity->modHP(-damage);
 
 			// write the obituary
@@ -457,12 +507,12 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 			if ( !strcmp(hitstats->name, "") )
 			{
 				updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
-					false, DamageGib::DMG_TODO);
+					false, dmgGib);
 			}
 			else
 			{
 				updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
-					false, DamageGib::DMG_TODO);
+					false, dmgGib);
 			}
 
 			if ( hitstats->HP <= 0 && parent )
@@ -870,11 +920,34 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 				return;
 			}
 
+			DamageGib dmgGib = DMG_DEFAULT;
+			real_t damageMultiplier = Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
+			if ( damageMultiplier <= 0.75 )
+			{
+				dmgGib = DMG_WEAKEST;
+			}
+			else if ( damageMultiplier <= 0.85 )
+			{
+				dmgGib = DMG_WEAKER;
+			}
+			else if ( damageMultiplier >= 1.25 )
+			{
+				dmgGib = resistance == 0 ? DMG_STRONGEST : DMG_WEAKER;
+			}
+			else if ( damageMultiplier >= 1.15 )
+			{
+				dmgGib = resistance == 0 ? DMG_STRONGER : DMG_WEAKER;
+			}
+			else if ( resistance > 0 )
+			{
+				dmgGib = DMG_WEAKEST;
+			}
+
 			int damage = element.damage;
 			damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, nullptr, &element));
 			//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 			damage /= (1 + (int)resistance);
-			damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
+			damage *= damageMultiplier;
 
 			if ( parent )
 			{
@@ -911,12 +984,12 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			if ( !strcmp(hitstats->name, "") )
 			{
 				updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
-					false, DamageGib::DMG_TODO);
+					false, dmgGib);
 			}
 			else
 			{
 				updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
-					false, DamageGib::DMG_TODO);
+					false, dmgGib);
 			}
 
 			Uint32 color = makeColorRGB(255, 0, 0);
@@ -1002,15 +1075,6 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 					damage /= (1 + (int)resistance);
 
 					hit.entity->colliderHandleDamageMagic(damage, my, parent);
-					if ( my.actmagicProjectileArc > 0 )
-					{
-						spawnMagicTower(parent, my.x, my.y, SPELL_DRAIN_SOUL, nullptr);
-					}
-					if ( !(my.actmagicIsOrbiting == 2) )
-					{
-						my.removeLightField();
-						list_RemoveNode(my.mynode);
-					}
 					return;
 				}
 				else if ( hit.entity->behavior == &actChest )
@@ -1019,15 +1083,6 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 					damage += (my.actmagicSpellbookBonus * damage);
 					damage /= (1 + (int)resistance);
 					hit.entity->chestHandleDamageMagic(damage, my, parent);
-					if ( my.actmagicProjectileArc > 0 )
-					{
-						spawnMagicTower(parent, my.x, my.y, SPELL_DRAIN_SOUL, nullptr);
-					}
-					if ( !(my.actmagicIsOrbiting == 2) )
-					{
-						my.removeLightField();
-						list_RemoveNode(my.mynode);
-					}
 					return;
 				}
 				else if ( hit.entity->behavior == &actFurniture )
@@ -1073,10 +1128,6 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 						}
 					}
 					playSoundEntity(hit.entity, 28, 128);
-					if ( my.actmagicProjectileArc > 0 )
-					{
-						spawnMagicTower(parent, my.x, my.y, SPELL_DRAIN_SOUL, nullptr);
-					}
 				}
 			}
 		}
@@ -2730,7 +2781,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 					if ( hitstats->monsterDemonHasBeenExorcised == 3 )
 					{
 						Uint32 color = makeColorRGB(0, 255, 0);
-						messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(3468));
+						messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(3737));
 					}
 				}
 			}

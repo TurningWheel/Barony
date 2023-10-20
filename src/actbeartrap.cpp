@@ -629,12 +629,12 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 				if ( !strcmp(stat->name, "") )
 				{
 					updateEnemyBar(parent, triggered, getMonsterLocalizedName(stat->type).c_str(), stat->HP, stat->MAXHP,
-						false, DamageGib::DMG_TODO);
+						false, DamageGib::DMG_DEFAULT);
 				}
 				else
 				{
 					updateEnemyBar(parent, triggered, stat->name, stat->HP, stat->MAXHP,
-						false, DamageGib::DMG_TODO);
+						false, DamageGib::DMG_DEFAULT);
 				}
 				Entity* gib = spawnGib(triggered);
 				serverSpawnGibForClient(gib);

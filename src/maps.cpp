@@ -4142,6 +4142,9 @@ void assignActions(map_t* map)
 					}
 					entity->behavior = &actPlayer;
 					entity->addToCreatureList(map->creatures);
+
+					players[numplayers]->ghost.initStartRoomLocation(entity->x / 16, entity->y / 16);
+
 					entity->x += 8;
 					entity->y += 8;
 					entity->z = -1;

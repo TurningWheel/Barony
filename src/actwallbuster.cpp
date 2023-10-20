@@ -87,7 +87,11 @@ void actWallBuilder(Entity* my)
 			for ( node_t* node = currentList->first; node != nullptr; node = node->next )
 			{
 				Entity* entity = (Entity*)node->element;
-				if ( entity == my || entity->flags[PASSABLE] || entity->behavior == &actDoorFrame || (entity->behavior != &actMonster && entity->behavior != &actPlayer) )
+				if ( entity == my || (entity->flags[PASSABLE] && entity->behavior != &actDeathGhost)
+					|| entity->behavior == &actDoorFrame 
+					|| (entity->behavior != &actMonster 
+						&& entity->behavior != &actPlayer
+						&& entity->behavior != &actDeathGhost) )
 				{
 					continue;
 				}

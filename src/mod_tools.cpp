@@ -595,6 +595,8 @@ void IRCHandler_t::handleMessage(std::string& msg)
 }
 #endif // !NINTENDO
 
+Uint32 ItemTooltips_t::itemsJsonHashRead = 0;
+
 void ItemTooltips_t::readItemsFromFile()
 {
 	printlog("loading items...\n");
@@ -686,7 +688,8 @@ void ItemTooltips_t::readItemsFromFile()
 
 	//itemValueTable.clear();
 	//itemValueTableByCategory.clear();
-
+	Uint32 shift = 0;
+	Uint32 hash = 0;
 	for ( int i = 0; i < NUMITEMS && i < itemsRead; ++i )
 	{
 		assert(i == tmpItems[i].itemId);
@@ -827,6 +830,9 @@ void ItemTooltips_t::readItemsFromFile()
 			items[i].item_slot = ItemEquippableSlot::EQUIPPABLE_IN_SLOT_HELM;
 		}
 
+		hash += (Uint32)((Uint32)items[i].weight << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)items[i].value << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)items[i].level << (shift % 32)); ++shift;
 		/*{
 			auto pair = std::make_pair(items[i].value, i);
 			auto lower = std::lower_bound(itemValueTable.begin(), itemValueTable.end(), pair,
@@ -844,6 +850,16 @@ void ItemTooltips_t::readItemsFromFile()
 				});
 			itemValueTableByCategory[items[i].category].insert(lower, pair);
 		}*/
+	}
+
+	itemsJsonHashRead = hash;
+	if ( itemsJsonHashRead != kItemsJsonHash )
+	{
+		printlog("[JSON]: Notice: items.json unknown hash, achievements are disabled: %d", itemsJsonHashRead);
+	}
+	else
+	{
+		printlog("[JSON]: items.json hash verified successfully.");
 	}
 
 	spellItems.clear();
@@ -957,7 +973,7 @@ void ItemTooltips_t::readItemsFromFile()
 }
 
 
-void ItemTooltips_t::readItemLocalizationsFromFile()
+void ItemTooltips_t::readItemLocalizationsFromFile(bool forceLoadBaseDirectory)
 {
 	if ( !PHYSFS_getRealDir("/lang/item_names.json") )
 	{
@@ -966,6 +982,22 @@ void ItemTooltips_t::readItemLocalizationsFromFile()
 	}
 
 	std::string inputPath = PHYSFS_getRealDir("/lang/item_names.json");
+	if ( forceLoadBaseDirectory )
+	{
+		inputPath = BASE_DATA_DIR;
+	}
+	else
+	{
+		if ( inputPath != BASE_DATA_DIR )
+		{
+			readItemLocalizationsFromFile(true); // force load the base directory first, then modded paths later.
+		}
+		else
+		{
+			forceLoadBaseDirectory = true;
+		}
+	}
+
 	inputPath.append("/lang/item_names.json");
 
 	File* fp = FileIO::open(inputPath.c_str(), "rb");
@@ -1008,7 +1040,10 @@ void ItemTooltips_t::readItemLocalizationsFromFile()
 
 	if ( d.HasMember("items") )
 	{
-		itemNameLocalizations.clear();
+		if ( forceLoadBaseDirectory )
+		{
+			itemNameLocalizations.clear();
+		}
 		for ( rapidjson::Value::ConstMemberIterator items_itr = d["items"].MemberBegin();
 			items_itr != d["items"].MemberEnd(); ++items_itr )
 		{
@@ -1033,7 +1068,10 @@ void ItemTooltips_t::readItemLocalizationsFromFile()
 
 	if ( d.HasMember("spell_names") )
 	{
-		spellNameLocalizations.clear();
+		if ( forceLoadBaseDirectory )
+		{
+			spellNameLocalizations.clear();
+		}
 		for ( rapidjson::Value::ConstMemberIterator spell_itr = d["spell_names"].MemberBegin();
 			spell_itr != d["spell_names"].MemberEnd(); ++spell_itr )
 		{
@@ -1086,7 +1124,7 @@ void ItemTooltips_t::readItemLocalizationsFromFile()
 }
 
 #ifndef EDITOR
-void ItemTooltips_t::readTooltipsFromFile()
+void ItemTooltips_t::readTooltipsFromFile(bool forceLoadBaseDirectory)
 {
 	if ( !PHYSFS_getRealDir("/items/item_tooltips.json") )
 	{
@@ -1095,6 +1133,22 @@ void ItemTooltips_t::readTooltipsFromFile()
 	}
 
 	std::string inputPath = PHYSFS_getRealDir("/items/item_tooltips.json");
+	if ( forceLoadBaseDirectory )
+	{
+		inputPath = BASE_DATA_DIR;
+	}
+	else
+	{
+		if ( inputPath != BASE_DATA_DIR )
+		{
+			readTooltipsFromFile(true); // force load the base directory first, then modded paths later.
+		}
+		else
+		{
+			forceLoadBaseDirectory = true;
+		}
+	}
+
 	inputPath.append("/items/item_tooltips.json");
 
 	File* fp = FileIO::open(inputPath.c_str(), "rb");
@@ -1128,24 +1182,30 @@ void ItemTooltips_t::readTooltipsFromFile()
 		return;
 	}
 
-	if ( !d.HasMember("version") || !d.HasMember("tooltips") )
+	if ( !d.HasMember("version") )
 	{
 		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
 		return;
 	}
 	int version = d["version"].GetInt();
 
-	adjectives.clear();
-	for ( rapidjson::Value::ConstMemberIterator adj_itr = d["adjectives"].MemberBegin();
-		adj_itr != d["adjectives"].MemberEnd(); ++adj_itr )
+	if ( forceLoadBaseDirectory )
 	{
-		std::map<std::string, std::string> m;
-		for ( rapidjson::Value::ConstMemberIterator inner_itr = adj_itr->value.MemberBegin();
-			inner_itr != adj_itr->value.MemberEnd(); ++inner_itr )
+		adjectives.clear();
+	}
+	if ( d.HasMember("adjectives") )
+	{
+		for ( rapidjson::Value::ConstMemberIterator adj_itr = d["adjectives"].MemberBegin();
+			adj_itr != d["adjectives"].MemberEnd(); ++adj_itr )
 		{
-			m[inner_itr->name.GetString()] = inner_itr->value.GetString();
+			std::map<std::string, std::string> m;
+			for ( rapidjson::Value::ConstMemberIterator inner_itr = adj_itr->value.MemberBegin();
+				inner_itr != adj_itr->value.MemberEnd(); ++inner_itr )
+			{
+				m[inner_itr->name.GetString()] = inner_itr->value.GetString();
+			}
+			adjectives[adj_itr->name.GetString()] = m;
 		}
-		adjectives[adj_itr->name.GetString()] = m;
 	}
 
 	if ( d.HasMember("default_text_colors") )
@@ -1192,7 +1252,10 @@ void ItemTooltips_t::readTooltipsFromFile()
 			d["default_text_colors"]["faint_text"]["a"].GetInt());
 	}
 
-	templates.clear();
+	if ( forceLoadBaseDirectory )
+	{
+		templates.clear();
+	}
 	if ( d.HasMember("templates") )
 	{
 		for ( rapidjson::Value::ConstMemberIterator template_itr = d["templates"].MemberBegin();
@@ -1204,188 +1267,198 @@ void ItemTooltips_t::readTooltipsFromFile()
 			}
 			else
 			{
+				std::string template_name = template_itr->name.GetString();
+				if ( templates.find(template_name) != templates.end() )
+				{
+					templates[template_name].clear();
+				}
 				for ( auto lines = template_itr->value.Begin();
 					lines != template_itr->value.End(); ++lines )
 				{
-					templates[template_itr->name.GetString()].push_back(lines->GetString());
+					templates[template_name].push_back(lines->GetString());
 				}
 			}
 		}
 	}
 
-	tooltips.clear();
-
+	if ( forceLoadBaseDirectory )
+	{
+		tooltips.clear();
+	}
 	std::unordered_set<std::string> tagsRead;
 
-	for ( rapidjson::Value::ConstMemberIterator tooltipType_itr = d["tooltips"].MemberBegin();
-		tooltipType_itr != d["tooltips"].MemberEnd(); ++tooltipType_itr )
+	if ( d.HasMember("tooltips") )
 	{
-		ItemTooltip_t tooltip;
-		tooltip.setColorHeading(this->defaultHeadingTextColor);
-		tooltip.setColorDescription(this->defaultDescriptionTextColor);
-		tooltip.setColorDetails(this->defaultDetailsTextColor);
-		tooltip.setColorPositive(this->defaultPositiveTextColor);
-		tooltip.setColorNegative(this->defaultNegativeTextColor);
-		tooltip.setColorStatus(this->defaultStatusEffectTextColor);
-		tooltip.setColorFaintText(this->defaultFaintTextColor);
-
-		if ( tooltipType_itr->value.HasMember("icons") )
+		for ( rapidjson::Value::ConstMemberIterator tooltipType_itr = d["tooltips"].MemberBegin();
+			tooltipType_itr != d["tooltips"].MemberEnd(); ++tooltipType_itr )
 		{
-			if ( !tooltipType_itr->value["icons"].IsArray() )
+			ItemTooltip_t tooltip;
+			tooltip.setColorHeading(this->defaultHeadingTextColor);
+			tooltip.setColorDescription(this->defaultDescriptionTextColor);
+			tooltip.setColorDetails(this->defaultDetailsTextColor);
+			tooltip.setColorPositive(this->defaultPositiveTextColor);
+			tooltip.setColorNegative(this->defaultNegativeTextColor);
+			tooltip.setColorStatus(this->defaultStatusEffectTextColor);
+			tooltip.setColorFaintText(this->defaultFaintTextColor);
+
+			if ( tooltipType_itr->value.HasMember("icons") )
 			{
-				printlog("[JSON]: Error: 'icons' entry for tooltip %s did not have [] format", tooltipType_itr->name.GetString());
-			}
-			else
-			{
-				for ( auto icons = tooltipType_itr->value["icons"].Begin();
-					icons != tooltipType_itr->value["icons"].End(); ++icons )
+				if ( !tooltipType_itr->value["icons"].IsArray() )
 				{
-					// you need to FindMember() if getting objects from an array...
-					auto textMember = icons->FindMember("text");
-					auto iconPathMember = icons->FindMember("icon_path");
-					if ( !textMember->value.IsString() || !iconPathMember->value.IsString() )
-					{
-						printlog("[JSON]: Error: Icon text or path was not string!");
-						continue;
-					}
-
-					tooltip.icons.push_back(ItemTooltipIcons_t(iconPathMember->value.GetString(), textMember->value.GetString()));
-
-					Uint32 color = this->defaultIconTextColor;
-					if ( icons->HasMember("color") && icons->FindMember("color")->value.HasMember("r") )
-					{
-						// icons->FindMember("color")->value.isObject() always returning true?? so check for "r" member instead
-						color = makeColor(
-							icons->FindMember("color")->value["r"].GetInt(),
-							icons->FindMember("color")->value["g"].GetInt(),
-							icons->FindMember("color")->value["b"].GetInt(),
-							icons->FindMember("color")->value["a"].GetInt());
-					}
-					tooltip.icons[tooltip.icons.size() - 1].setColor(color);
-					if ( icons->HasMember("conditional_attribute") )
-					{
-						tooltip.icons[tooltip.icons.size() - 1].setConditionalAttribute(icons->FindMember("conditional_attribute")->value.GetString());
-					}
-				}
-			}
-		}
-
-		if ( tooltipType_itr->value.HasMember("description") )
-		{
-			if ( tooltipType_itr->value["description"].IsString() )
-			{
-				//printlog("[JSON]: Found template string '%s' for tooltip '%s'", tooltipType_itr->value["description"].GetString(), tooltipType_itr->name.GetString());
-				if ( templates.find(tooltipType_itr->value["description"].GetString()) != templates.end() )
-				{
-					tooltip.descriptionText = templates[tooltipType_itr->value["description"].GetString()];
+					printlog("[JSON]: Error: 'icons' entry for tooltip %s did not have [] format", tooltipType_itr->name.GetString());
 				}
 				else
 				{
-					printlog("[JSON]: Error: Could not find template tag '%s'", tooltipType_itr->value["description"].GetString());
-				}
-			}
-			else
-			{
-				for ( auto descriptions = tooltipType_itr->value["description"].Begin();
-					descriptions != tooltipType_itr->value["description"].End(); ++descriptions )
-				{
-					tooltip.descriptionText.push_back(descriptions->GetString());
-				}
-			}
-		}
-
-		if ( tooltipType_itr->value.HasMember("details") )
-		{
-			if ( !tooltipType_itr->value["details"].IsArray() )
-			{
-				printlog("[JSON]: Error: 'details' entry for tooltip '%s' did not have [] format!", tooltipType_itr->name.GetString());
-			}
-			else
-			{
-				for ( auto details_itr = tooltipType_itr->value["details"].Begin();
-					details_itr != tooltipType_itr->value["details"].End(); ++details_itr )
-				{
-					for ( auto keyValue_itr = details_itr->MemberBegin();
-						keyValue_itr != details_itr->MemberEnd(); ++keyValue_itr )
+					for ( auto icons = tooltipType_itr->value["icons"].Begin();
+						icons != tooltipType_itr->value["icons"].End(); ++icons )
 					{
-						tagsRead.insert(keyValue_itr->name.GetString());
-						std::vector<std::string> detailEntry;
-						if ( keyValue_itr->value.IsString() )
+						// you need to FindMember() if getting objects from an array...
+						auto textMember = icons->FindMember("text");
+						auto iconPathMember = icons->FindMember("icon_path");
+						if ( !textMember->value.IsString() || !iconPathMember->value.IsString() )
 						{
-							//printlog("[JSON]: Found template string '%s' for tooltip '%s'", keyValue_itr->value.GetString(), tooltipType_itr->name.GetString());
-							if ( templates.find(keyValue_itr->value.GetString()) != templates.end() )
+							printlog("[JSON]: Error: Icon text or path was not string!");
+							continue;
+						}
+
+						tooltip.icons.push_back(ItemTooltipIcons_t(iconPathMember->value.GetString(), textMember->value.GetString()));
+
+						Uint32 color = this->defaultIconTextColor;
+						if ( icons->HasMember("color") && icons->FindMember("color")->value.HasMember("r") )
+						{
+							// icons->FindMember("color")->value.isObject() always returning true?? so check for "r" member instead
+							color = makeColor(
+								icons->FindMember("color")->value["r"].GetInt(),
+								icons->FindMember("color")->value["g"].GetInt(),
+								icons->FindMember("color")->value["b"].GetInt(),
+								icons->FindMember("color")->value["a"].GetInt());
+						}
+						tooltip.icons[tooltip.icons.size() - 1].setColor(color);
+						if ( icons->HasMember("conditional_attribute") )
+						{
+							tooltip.icons[tooltip.icons.size() - 1].setConditionalAttribute(icons->FindMember("conditional_attribute")->value.GetString());
+						}
+					}
+				}
+			}
+
+			if ( tooltipType_itr->value.HasMember("description") )
+			{
+				if ( tooltipType_itr->value["description"].IsString() )
+				{
+					//printlog("[JSON]: Found template string '%s' for tooltip '%s'", tooltipType_itr->value["description"].GetString(), tooltipType_itr->name.GetString());
+					if ( templates.find(tooltipType_itr->value["description"].GetString()) != templates.end() )
+					{
+						tooltip.descriptionText = templates[tooltipType_itr->value["description"].GetString()];
+					}
+					else
+					{
+						printlog("[JSON]: Error: Could not find template tag '%s'", tooltipType_itr->value["description"].GetString());
+					}
+				}
+				else
+				{
+					for ( auto descriptions = tooltipType_itr->value["description"].Begin();
+						descriptions != tooltipType_itr->value["description"].End(); ++descriptions )
+					{
+						tooltip.descriptionText.push_back(descriptions->GetString());
+					}
+				}
+			}
+
+			if ( tooltipType_itr->value.HasMember("details") )
+			{
+				if ( !tooltipType_itr->value["details"].IsArray() )
+				{
+					printlog("[JSON]: Error: 'details' entry for tooltip '%s' did not have [] format!", tooltipType_itr->name.GetString());
+				}
+				else
+				{
+					for ( auto details_itr = tooltipType_itr->value["details"].Begin();
+						details_itr != tooltipType_itr->value["details"].End(); ++details_itr )
+					{
+						for ( auto keyValue_itr = details_itr->MemberBegin();
+							keyValue_itr != details_itr->MemberEnd(); ++keyValue_itr )
+						{
+							tagsRead.insert(keyValue_itr->name.GetString());
+							std::vector<std::string> detailEntry;
+							if ( keyValue_itr->value.IsString() )
 							{
-								detailEntry = templates[keyValue_itr->value.GetString()];
+								//printlog("[JSON]: Found template string '%s' for tooltip '%s'", keyValue_itr->value.GetString(), tooltipType_itr->name.GetString());
+								if ( templates.find(keyValue_itr->value.GetString()) != templates.end() )
+								{
+									detailEntry = templates[keyValue_itr->value.GetString()];
+								}
+								else
+								{
+									printlog("[JSON]: Error: Could not find template tag '%s'", keyValue_itr->value.GetString());
+								}
 							}
 							else
 							{
-								printlog("[JSON]: Error: Could not find template tag '%s'", keyValue_itr->value.GetString());
+								for ( auto detailTag = keyValue_itr->value.Begin();
+									detailTag != keyValue_itr->value.End(); ++detailTag )
+								{
+									detailEntry.push_back(detailTag->GetString());
+								}
 							}
+							tooltip.detailsText[keyValue_itr->name.GetString()] = detailEntry;
+							tooltip.detailsTextInsertOrder.push_back(keyValue_itr->name.GetString());
 						}
-						else
-						{
-							for ( auto detailTag = keyValue_itr->value.Begin();
-								detailTag != keyValue_itr->value.End(); ++detailTag )
-							{
-								detailEntry.push_back(detailTag->GetString());
-							}
-						}
-						tooltip.detailsText[keyValue_itr->name.GetString()] = detailEntry;
-						tooltip.detailsTextInsertOrder.push_back(keyValue_itr->name.GetString());
 					}
 				}
 			}
-		}
 
-		if ( tooltipType_itr->value.HasMember("size") )
-		{
-			if ( tooltipType_itr->value["size"].HasMember("min_width") )
+			if ( tooltipType_itr->value.HasMember("size") )
 			{
-				tooltip.minWidths["default"] = tooltipType_itr->value["size"]["min_width"].GetInt();
-			}
-			else
-			{
-				tooltip.minWidths["default"] = 0;
-			}
-			if ( tooltipType_itr->value["size"].HasMember("max_width") )
-			{
-				tooltip.maxWidths["default"] = tooltipType_itr->value["size"]["max_width"].GetInt();
-			}
-			else
-			{
-				tooltip.maxWidths["default"] = 0;
-			}
-			if ( tooltipType_itr->value["size"].HasMember("max_header_width") )
-			{
-				tooltip.headerMaxWidths["default"] = tooltipType_itr->value["size"]["max_header_width"].GetInt();
-			}
-			else
-			{
-				tooltip.headerMaxWidths["default"] = 0;
-			}
-
-			if ( tooltipType_itr->value["size"].HasMember("item_overrides") )
-			{
-				for ( auto itemOverride_itr = tooltipType_itr->value["size"]["item_overrides"].MemberBegin();
-					itemOverride_itr != tooltipType_itr->value["size"]["item_overrides"].MemberEnd(); ++itemOverride_itr )
+				if ( tooltipType_itr->value["size"].HasMember("min_width") )
 				{
-					if ( itemOverride_itr->value.HasMember("min_width") )
+					tooltip.minWidths["default"] = tooltipType_itr->value["size"]["min_width"].GetInt();
+				}
+				else
+				{
+					tooltip.minWidths["default"] = 0;
+				}
+				if ( tooltipType_itr->value["size"].HasMember("max_width") )
+				{
+					tooltip.maxWidths["default"] = tooltipType_itr->value["size"]["max_width"].GetInt();
+				}
+				else
+				{
+					tooltip.maxWidths["default"] = 0;
+				}
+				if ( tooltipType_itr->value["size"].HasMember("max_header_width") )
+				{
+					tooltip.headerMaxWidths["default"] = tooltipType_itr->value["size"]["max_header_width"].GetInt();
+				}
+				else
+				{
+					tooltip.headerMaxWidths["default"] = 0;
+				}
+
+				if ( tooltipType_itr->value["size"].HasMember("item_overrides") )
+				{
+					for ( auto itemOverride_itr = tooltipType_itr->value["size"]["item_overrides"].MemberBegin();
+						itemOverride_itr != tooltipType_itr->value["size"]["item_overrides"].MemberEnd(); ++itemOverride_itr )
 					{
-						tooltip.minWidths[itemOverride_itr->name.GetString()] = itemOverride_itr->value["min_width"].GetInt();
-					}
-					if ( itemOverride_itr->value.HasMember("max_width") )
-					{
-						tooltip.maxWidths[itemOverride_itr->name.GetString()] = itemOverride_itr->value["max_width"].GetInt();
-					}
-					if ( itemOverride_itr->value.HasMember("max_header_width") )
-					{
-						tooltip.headerMaxWidths[itemOverride_itr->name.GetString()] = itemOverride_itr->value["max_header_width"].GetInt();
+						if ( itemOverride_itr->value.HasMember("min_width") )
+						{
+							tooltip.minWidths[itemOverride_itr->name.GetString()] = itemOverride_itr->value["min_width"].GetInt();
+						}
+						if ( itemOverride_itr->value.HasMember("max_width") )
+						{
+							tooltip.maxWidths[itemOverride_itr->name.GetString()] = itemOverride_itr->value["max_width"].GetInt();
+						}
+						if ( itemOverride_itr->value.HasMember("max_header_width") )
+						{
+							tooltip.headerMaxWidths[itemOverride_itr->name.GetString()] = itemOverride_itr->value["max_header_width"].GetInt();
+						}
 					}
 				}
 			}
-		}
 
-		tooltips[tooltipType_itr->name.GetString()] = tooltip;
+			tooltips[tooltipType_itr->name.GetString()] = tooltip;
+		}
 	}
 
 	printlog("[JSON]: Successfully read %d item tooltips from '%s'", tooltips.size(), inputPath.c_str());
@@ -7836,7 +7909,6 @@ bool Mods::customContentLoadedFirstTime = false;
 bool Mods::disableSteamAchievements = false;
 bool Mods::lobbyDisableSteamAchievements = false;
 bool Mods::isLoading = false;
-Uint32 Mods::loadingTicks = 0;
 void Mods::updateModCounts()
 {
 	mods_loaded_local.clear();
@@ -8092,6 +8164,10 @@ void Mods::verifyAchievements(const char* fullpath, bool ignoreBaseFolder)
 	{
 		disableSteamAchievements = true;
 	}
+	if ( ItemTooltips_t::itemsJsonHashRead != ItemTooltips_t::kItemsJsonHash )
+	{
+		disableSteamAchievements = true;
+	}
 }
 
 bool Mods::isPathInMountedFiles(std::string findStr)
@@ -8144,8 +8220,15 @@ bool Mods::clearAllMountedPaths()
 	char** i;
 	for ( i = PHYSFS_getSearchPath(); *i != NULL; i++ )
 	{
+        const std::string xmas = (std::string(datadir) + "/") + holidayThemeDirs[HolidayTheme::THEME_XMAS];
+        const std::string halloween = (std::string(datadir) + "/") + holidayThemeDirs[HolidayTheme::THEME_HALLOWEEN];
+    
 		std::string line = *i;
-		if ( line.compare(outputdir) != 0 && line.compare(datadir) != 0 && line.compare("./") != 0 ) // don't unmount the base ./ directory
+		if (line.compare(outputdir) != 0 &&
+            line.compare(datadir) != 0 &&
+            line.compare(halloween) != 0 &&
+            line.compare(xmas) != 0 &&
+            line.compare("./") != 0) // don't unmount the base directories
 		{
 			if ( PHYSFS_unmount(*i) == 0 )
 			{
@@ -8209,14 +8292,17 @@ void Mods::loadModels(int start, int end) {
 		char name[128];
 		fp->gets2(name, sizeof(name));
 		if ( c >= start && c < end ) {
-			if ( polymodels[c].vao ) {
+			if (polymodels[c].vao) {
 				GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
 			}
-			if ( polymodels[c].vbo ) {
-				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
+			if (polymodels[c].positions) {
+				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].positions));
 			}
-			if ( polymodels[c].colors ) {
+			if (polymodels[c].colors) {
 				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
+			}
+			if (polymodels[c].normals) {
+				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].normals));
 			}
 		}
 	}
@@ -8242,6 +8328,7 @@ void Mods::loadModels(int start, int end) {
 				if ( polymodels[c].faces )
 				{
 					free(polymodels[c].faces);
+					polymodels[c].faces = nullptr;
 				}
 				models[c] = loadVoxel(name);
 			}
@@ -8260,87 +8347,163 @@ void Mods::loadModels(int start, int end) {
 	generateVBOs(start, end);
 }
 
-void Mods::unloadMods()
+void Mods::unloadMods(bool force)
 {
 #ifndef EDITOR
 	isLoading = true;
-	loadingTicks = 0;
-
 	loading = true;
 	createLoadingScreen(5);
 	doLoadingScreen();
 
+	// start loading
 	mountedFilepathsSaved = mountedFilepaths;
 	clearAllMountedPaths();
 	mountedFilepaths.clear();
 	Mods::disableSteamAchievements = false;
-
+    if (force) {
+        modelsListModifiedIndexes.clear();
+        for (int c = 0; c < nummodels; ++c) {
+            modelsListModifiedIndexes.push_back(c);
+        }
+        for (int c = 0; c < numsounds; ++c) {
+            soundsListModifiedIndexes.push_back(c);
+        }
+        for (const auto& pair : systemResourceImages) {
+            Mods::systemResourceImagesToReload.push_back(pair);
+        }
+		Mods::tileListRequireReloadUnmodded = true;
+		Mods::modelsListRequiresReloadUnmodded = true;
+		Mods::spriteImagesRequireReloadUnmodded = true;
+		Mods::musicRequireReloadUnmodded = true;
+		Mods::langRequireReloadUnmodded = true;
+		Mods::monsterLimbsRequireReloadUnmodded = true;
+		Mods::systemImagesReloadUnmodded = true;
+    }
 	updateLoadingScreen(10);
 	doLoadingScreen();
 
-	if ( Mods::modelsListRequiresReloadUnmodded || !Mods::modelsListModifiedIndexes.empty() )
-	{
-		int modelsIndexUpdateStart = 1;
-		int modelsIndexUpdateEnd = nummodels;
-		physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
-		bool oldModelCache = useModelCache;
-		useModelCache = false;
-		//loadModels(modelsIndexUpdateStart, modelsIndexUpdateEnd);
-		generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
-		generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
-		useModelCache = oldModelCache;
-		Mods::modelsListRequiresReloadUnmodded = false;
-	}
-
-	Mods::modelsListModifiedIndexes.clear();
-
-	updateLoadingScreen(20);
-	doLoadingScreen();
-
-	if ( Mods::soundListRequiresReloadUnmodded || !Mods::soundsListModifiedIndexes.empty() )
-	{
-		physfsReloadSounds(true);
-		Mods::soundListRequiresReloadUnmodded = false;
-	}
-
-	Mods::soundsListModifiedIndexes.clear();
-
-	updateLoadingScreen(30);
-	doLoadingScreen();
-
-	if ( Mods::tileListRequireReloadUnmodded )
+	// update tiles
+	if (Mods::tileListRequireReloadUnmodded)
 	{
 		physfsReloadTiles(true);
 		Mods::tileListRequireReloadUnmodded = false;
 	}
-
-	updateLoadingScreen(40);
 	doLoadingScreen();
 
-	if ( Mods::spriteImagesRequireReloadUnmodded )
+	// reload sprites
+	if (Mods::spriteImagesRequireReloadUnmodded)
 	{
 		physfsReloadSprites(true);
 		Mods::spriteImagesRequireReloadUnmodded = false;
 	}
-
-	updateLoadingScreen(50);
 	doLoadingScreen();
 
-	if ( Mods::booksRequireReloadUnmodded )
+	// reload system images
+	if (Mods::systemImagesReloadUnmodded)
 	{
-		physfsReloadBooks();
-		Mods::booksRequireReloadUnmodded = false;
+		physfsReloadSystemImages();
+		Mods::systemImagesReloadUnmodded = false;
+		systemResourceImagesToReload.clear();
 	}
 
-	updateLoadingScreen(60);
+	updateLoadingScreen(20);
 	doLoadingScreen();
 
-	if ( Mods::musicRequireReloadUnmodded )
+	static int modelsIndexUpdateStart = 1;
+	static int modelsIndexUpdateEnd = nummodels;
+
+	// begin async load process
+	std::atomic_bool loading_done{ false };
+	auto loading_task = std::async(std::launch::async, [&loading_done]() {
+		initGameDatafilesAsync(true);
+
+		// update sounds
+		if (Mods::soundListRequiresReloadUnmodded || !Mods::soundsListModifiedIndexes.empty())
+		{
+			physfsReloadSounds(true);
+			Mods::soundListRequiresReloadUnmodded = false;
+		}
+		Mods::soundsListModifiedIndexes.clear();
+		updateLoadingScreen(30);
+
+		// update models
+		if (Mods::modelsListRequiresReloadUnmodded || !Mods::modelsListModifiedIndexes.empty())
+		{
+			physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+			for (int c = 0; c < nummodels; ++c) {
+				if (polymodels[c].faces) {
+					free(polymodels[c].faces);
+					polymodels[c].faces = nullptr;
+				}
+			}
+			free(polymodels);
+			polymodels = nullptr;
+			generatePolyModels(0, nummodels, false);
+			Mods::modelsListRequiresReloadUnmodded = false;
+		}
+		Mods::modelsListModifiedIndexes.clear();
+		updateLoadingScreen(60);
+
+		// reload books
+		if (Mods::booksRequireReloadUnmodded)
+		{
+			physfsReloadBooks();
+			Mods::booksRequireReloadUnmodded = false;
+		}
+		updateLoadingScreen(70);
+
+		// reload lang file
+		if (Mods::langRequireReloadUnmodded)
+		{
+			Language::reset();
+			Language::reloadLanguage();
+			Mods::langRequireReloadUnmodded = false;
+		}
+
+		// reload monster limb offsets
+		if (Mods::monsterLimbsRequireReloadUnmodded)
+		{
+			physfsReloadMonsterLimbFiles();
+			Mods::monsterLimbsRequireReloadUnmodded = false;
+		}
+
+		updateLoadingScreen(80);
+
+		loading_done = true;
+		return 0;
+		});
+	while (!loading_done)
+	{
+		doLoadingScreen();
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+
+	// final loading steps
+	initGameDatafiles(true);
+	for (int c = 0; c < nummodels; ++c) {
+		if (polymodels[c].vao) {
+			GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
+		}
+		if (polymodels[c].positions) {
+			GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].positions));
+		}
+		if (polymodels[c].colors) {
+			GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
+		}
+		if (polymodels[c].normals) {
+			GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].normals));
+		}
+	}
+	generateVBOs(0, nummodels);
+	consoleCommand("/dumpcache");
+
+	// reload music
+	if (Mods::musicRequireReloadUnmodded)
 	{
 		gamemodsUnloadCustomThemeMusic();
 		bool reloadIntroMusic = false;
 		physfsReloadMusic(reloadIntroMusic, true);
-		if ( reloadIntroMusic )
+		if (reloadIntroMusic)
 		{
 #ifdef SOUND
 			playMusic(intromusic[local_rng.rand() % (NUMINTROMUSIC - 1)], false, true, true);
@@ -8348,66 +8511,6 @@ void Mods::unloadMods()
 		}
 		Mods::musicRequireReloadUnmodded = false;
 	}
-
-	updateLoadingScreen(70);
-	doLoadingScreen();
-
-	if ( Mods::langRequireReloadUnmodded )
-	{
-		Language::reset();
-		Language::reloadLanguage();
-		Mods::langRequireReloadUnmodded = false;
-	}
-
-	updateLoadingScreen(80);
-	doLoadingScreen();
-
-	if ( Mods::monsterLimbsRequireReloadUnmodded )
-	{
-		physfsReloadMonsterLimbFiles();
-		Mods::monsterLimbsRequireReloadUnmodded = false;
-	}
-
-	updateLoadingScreen(85);
-	doLoadingScreen();
-
-	if ( Mods::systemImagesReloadUnmodded )
-	{
-		physfsReloadSystemImages();
-		Mods::systemImagesReloadUnmodded = false;
-		systemResourceImagesToReload.clear();
-	}
-
-	updateLoadingScreen(90);
-	doLoadingScreen();
-
-	initGameDatafiles(true);
-
-	updateLoadingScreen(95);
-	doLoadingScreen();
-
-	std::atomic_bool loading_done{ false };
-	auto loading_task = std::async(std::launch::async, [&loading_done]() {
-		initGameDatafilesAsync(true);
-	loading_done = true;
-	return 0;
-		});
-	while ( !loading_done )
-	{
-		doLoadingScreen();
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	}
-
-	loadLights();
-
-	consoleCommand("/dumpcache");
-
-	while ( loadingTicks < TICKS_PER_SECOND / 2 ) // artificial delay to look nicer if loading time is short
-	{
-		doLoadingScreen();
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	}
-
 	destroyLoadingScreen();
 	loading = false;
 	isLoading = false;
@@ -8420,7 +8523,6 @@ void Mods::loadMods()
 	Mods::disableSteamAchievements = false;
 	Mods::verifyAchievements(nullptr, false);
 
-	loadingTicks = 0;
 	isLoading = true;
 	loading = true;
 	createLoadingScreen(5);
@@ -8438,8 +8540,27 @@ void Mods::loadMods()
 		int modelsIndexUpdateEnd = nummodels;
 		bool oldModelCache = useModelCache;
 		useModelCache = false;
-		physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
-		//loadModels(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+		physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+		for (int c = modelsIndexUpdateStart; c < modelsIndexUpdateEnd && c < nummodels; ++c) {
+			if (polymodels[c].faces) {
+				free(polymodels[c].faces);
+				polymodels[c].faces = nullptr;
+			}
+			if (polymodels[c].vao) {
+				GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
+			}
+			if (polymodels[c].positions) {
+				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].positions));
+			}
+			if (polymodels[c].colors) {
+				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
+			}
+			if (polymodels[c].normals) {
+				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].normals));
+			}
+		}
+		free(polymodels);
+		polymodels = nullptr;
 		generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
 		generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
 		useModelCache = oldModelCache;
@@ -8601,12 +8722,6 @@ void Mods::loadMods()
 	loadLights();
 
 	consoleCommand("/dumpcache");
-
-	while ( loadingTicks < TICKS_PER_SECOND / 2 ) // artificial delay to look nicer if loading time is short
-	{
-		doLoadingScreen();
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	}
 
 	destroyLoadingScreen();
 

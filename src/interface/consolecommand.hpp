@@ -14,15 +14,7 @@
 #include <string>
 #include <map>
 
-
 const char* FindConsoleCommand(const char* str, int index);
-
-struct Vector4 {
-    float x;
-    float y;
-    float z;
-    float w;
-};
 
 /*
  * How to define a console command:

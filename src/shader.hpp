@@ -35,6 +35,10 @@ public:
     void bindAttribLocation(const char* attribute, int location);
     bool compile(const char* source, size_t len, Type type);
     bool link();
+    
+    bool operator==(const Shader& rhs) const {
+        return program == rhs.program;
+    }
 
 private:
     const char* name = "untitled";

@@ -195,7 +195,7 @@ void Entity::actPowerCrystal()
 		{
 			if ( inrange[i] )
 			{
-				if ( players[i] && players[i]->entity && crystalInitialised )
+				if ( players[i] && Player::getPlayerInteractEntity(i) && crystalInitialised )
 				{
 					playSoundEntity(this, 151, 128);
 					crystalTurning = 1;

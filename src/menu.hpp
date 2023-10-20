@@ -87,7 +87,6 @@ void buttonLoadSingleplayerGame(button_t* my);
 void buttonLoadMultiplayerGame(button_t* my);
 void buttonRandomCharacter(button_t* my);
 bool replayLastCharacter(const int index, int multiplayer);
-void buttonDeleteScoreWindow(button_t* my);
 void buttonOpenScoresWindow(button_t* my);
 void buttonRandomName(button_t* my);
 void buttonGamemodsOpenDirectory(button_t* my);
@@ -290,9 +289,6 @@ void openConfirmResolutionWindow();
 void buttonAcceptResolution(button_t* my);
 void buttonRevertResolution(button_t* my);
 void revertResolution();
-
-extern std::vector<std::pair<std::string, int>> menuOptions;
-void initMenuOptions();
 
 class Stat;
 int isCharacterValidFromDLC(Stat& myStats, int characterClass);

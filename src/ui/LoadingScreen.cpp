@@ -106,6 +106,7 @@ static void baseCreateLoadingScreen(real_t progress, const char* background_imag
 	    // create framebuffer for background
 	    loading_fb.init(xres, yres, GL_LINEAR, GL_LINEAR);
 	    loading_fb.bindForWriting();
+        GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 0.f));
         GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 	    drawAllPlayerCameras();
         loading_fb.unbindForWriting();
@@ -156,12 +157,6 @@ void doLoadingScreen() {
 	const Uint32 oldTicks = loadingticks;
 	(void)handleEvents();
 	if (oldTicks != loadingticks) {
-
-		if ( Mods::isLoading )
-		{
-			++Mods::loadingTicks;
-		}
-
 		// spinning widget
 		auto spinning_widget = loading_frame->findImage("spinning_widget");
 		if (spinning_widget) {

@@ -308,6 +308,7 @@ void TimerExperiments::updateEntityInterpolationPosition(Entity* entity)
 		|| entity->behavior == &actHudArrowModel
 		|| entity->behavior == &actLeftHandMagic
 		|| entity->behavior == &actRightHandMagic
+		|| entity->behavior == &actCircuit
 		|| entity->behavior == &actDoor )
 	{
 		entity->bUseRenderInterpolation = false;
@@ -1081,6 +1082,7 @@ void gameLogic(void)
 	    {
 			players[c]->hud.followerDisplay.bCommandNPCDisabled = false;
 			players[c]->hud.followerDisplay.bOpenFollowerMenuDisabled = false;
+			players[c]->hud.bOpenCalloutsMenuDisabled = false;
 
 	        if (c != clientnum && !splitscreen)
 	        {
@@ -1302,14 +1304,16 @@ void gameLogic(void)
 					{
 						nextnode = node->next;
 
-						// send the delete entity command to the client
-						strcpy((char*)net_packet->data, "ENTD");
-						deleteent = (deleteent_t*)node->element;
-						SDLNet_Write32(deleteent->uid, &net_packet->data[4]);
-						net_packet->address.host = net_clients[i - 1].host;
-						net_packet->address.port = net_clients[i - 1].port;
-						net_packet->len = 8;
-						sendPacket(net_sock, -1, net_packet, i - 1);
+						if (net_packet && net_packet->data) {
+							// send the delete entity command to the client
+							strcpy((char*)net_packet->data, "ENTD");
+							deleteent = (deleteent_t*)node->element;
+							SDLNet_Write32(deleteent->uid, &net_packet->data[4]);
+							net_packet->address.host = net_clients[i - 1].host;
+							net_packet->address.port = net_clients[i - 1].port;
+							net_packet->len = 8;
+							sendPacket(net_sock, -1, net_packet, i - 1);
+						}
 
 						// quit reminding clients after a certain number of attempts
 						deleteent->tries++;
@@ -1688,6 +1692,7 @@ void gameLogic(void)
 						if ( gameloopFreezeEntities 
 							&& entity->behavior != &actPlayer
 							&& entity->behavior != &actPlayerLimb
+							&& entity->behavior != &actDeathGhost
 							&& entity->behavior != &actHudWeapon
 							&& entity->behavior != &actHudShield
 							&& entity->behavior != &actHudAdditional
@@ -1848,9 +1853,12 @@ void gameLogic(void)
 						players[i]->hud.weapon = nullptr;
 						players[i]->hud.magicLeftHand = nullptr;
 						players[i]->hud.magicRightHand = nullptr;
+						players[i]->ghost.reset();
 						FollowerMenu[i].recentEntity = nullptr;
 						FollowerMenu[i].followerToCommand = nullptr;
 						FollowerMenu[i].entityToInteractWith = nullptr;
+						CalloutMenu[i].closeCalloutMenuGUI();
+						CalloutMenu[i].callouts.clear();
 					}
 
 					// stop all sounds
@@ -2021,7 +2029,7 @@ void gameLogic(void)
 						}
 					}
 
-					if ( multiplayer == SERVER )
+					if ( multiplayer == SERVER && net_packet && net_packet->data )
 					{
 						for ( c = 1; c < MAXPLAYERS; ++c )
 						{
@@ -2113,6 +2121,7 @@ void gameLogic(void)
 						if ( players[i]->isLocalPlayer() )
 						{
 							FollowerMenu[i].closeFollowerMenuGUI(true);
+							CalloutMenu[i].closeCalloutMenuGUI();
 						}
 						players[i]->hud.followerBars.clear();
 					}
@@ -2355,7 +2364,7 @@ void gameLogic(void)
 										steamAchievementClient(c, "BARONY_ACH_ESCORT");
 									}
 
-									if ( c > 0 && multiplayer == SERVER && !players[c]->isLocalPlayer() )
+									if ( c > 0 && multiplayer == SERVER && !players[c]->isLocalPlayer() && net_packet && net_packet->data )
 									{
 										strcpy((char*)net_packet->data, "LEAD");
 										SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
@@ -2479,16 +2488,18 @@ void gameLogic(void)
 						{
 							continue;
 						}
-						strcpy((char*)net_packet->data, "LVLC");
-						net_packet->data[4] = secretlevel;
-						SDLNet_Write32(mapseed, &net_packet->data[5]);
-						SDLNet_Write32(lastEntityUIDs, &net_packet->data[9]);
-						net_packet->data[13] = currentlevel;
-						net_packet->data[14] = 0;
-						net_packet->address.host = net_clients[c - 1].host;
-						net_packet->address.port = net_clients[c - 1].port;
-						net_packet->len = 15;
-						sendPacketSafe(net_sock, -1, net_packet, c - 1);
+						if (net_packet && net_packet->data) {
+							strcpy((char*)net_packet->data, "LVLC");
+							net_packet->data[4] = secretlevel;
+							SDLNet_Write32(mapseed, &net_packet->data[5]);
+							SDLNet_Write32(lastEntityUIDs, &net_packet->data[9]);
+							net_packet->data[13] = currentlevel;
+							net_packet->data[14] = 0;
+							net_packet->address.host = net_clients[c - 1].host;
+							net_packet->address.port = net_clients[c - 1].port;
+							net_packet->len = 15;
+							sendPacketSafe(net_sock, -1, net_packet, c - 1);
+						}
 					}
 				}
 
@@ -2551,7 +2562,7 @@ void gameLogic(void)
 				if (*cvar_enableKeepAlives) {
 					for ( c = 1; c < MAXPLAYERS; c++ )
 					{
-						if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+						if ( client_disconnected[c] || players[c]->isLocalPlayer() || !net_packet || !net_packet->data )
 						{
 							continue;
 						}
@@ -2602,12 +2613,14 @@ void gameLogic(void)
 						if ( oassailant[c] != assailant[c] )
 						{
 							oassailant[c] = assailant[c];
-							strcpy((char*)net_packet->data, "MUSM");
-							net_packet->address.host = net_clients[c - 1].host;
-							net_packet->address.port = net_clients[c - 1].port;
-							net_packet->data[4] = assailant[c];
-							net_packet->len = 5;
-							sendPacketSafe(net_sock, -1, net_packet, c - 1);
+							if (net_packet && net_packet->data) {
+								strcpy((char*)net_packet->data, "MUSM");
+								net_packet->address.host = net_clients[c - 1].host;
+								net_packet->address.port = net_clients[c - 1].port;
+								net_packet->data[4] = assailant[c];
+								net_packet->len = 5;
+								sendPacketSafe(net_sock, -1, net_packet, c - 1);
+							}
 						}
 					}
 				}
@@ -2771,7 +2784,7 @@ void gameLogic(void)
 		else if ( multiplayer == CLIENT )
 		{
 			// keep alives
-			if ( *cvar_enableKeepAlives )
+			if ( *cvar_enableKeepAlives && net_packet && net_packet->data )
 			{
 				if ( ticks % (TICKS_PER_SECOND * 1) == 0 )
 				{
@@ -2924,13 +2937,15 @@ void gameLogic(void)
 					{
 						if ( !entity->flags[NOUPDATE] && entity->getUID() > 0 && entity->getUID() != -2 && entity->getUID() != -3 && entity->getUID() != -4 )
 						{
-							strcpy((char*)net_packet->data, "ENTE");
-							net_packet->data[4] = clientnum;
-							SDLNet_Write32(entity->getUID(), &net_packet->data[5]);
-							net_packet->address.host = net_server.host;
-							net_packet->address.port = net_server.port;
-							net_packet->len = 9;
-							sendPacket(net_sock, -1, net_packet, 0);
+							if (net_packet && net_packet->data) {
+								strcpy((char*)net_packet->data, "ENTE");
+								net_packet->data[4] = clientnum;
+								SDLNet_Write32(entity->getUID(), &net_packet->data[5]);
+								net_packet->address.host = net_server.host;
+								net_packet->address.port = net_server.port;
+								net_packet->len = 9;
+								sendPacket(net_sock, -1, net_packet, 0);
+							}
 						}
 					}
 				}
@@ -2996,6 +3011,7 @@ void gameLogic(void)
 					{
 						if ( gameloopFreezeEntities
 							&& entity->behavior != &actPlayer
+							&& entity->behavior != &actDeathGhost
 							&& entity->behavior != &actPlayerLimb
 							&& entity->behavior != &actHudWeapon
 							&& entity->behavior != &actHudShield
@@ -3040,12 +3056,14 @@ void gameLogic(void)
 									if ( ticks - entity->lastupdate <= TICKS_PER_SECOND / 16 )
 									{
 										// interpolate to new position
-										if ( entity->behavior != &actPlayerLimb || entity->skill[2] != clientnum )
+										if ( (entity->behavior != &actPlayerLimb && entity->behavior != &actDeathGhostLimb)
+											|| entity->skill[2] != clientnum )
 										{
 											double ox = 0, oy = 0, onewx = 0, onewy = 0;
 
 											// move the bodyparts of these otherwise the limbs will get left behind in this adjustment.
-											if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+											if ( entity->behavior == &actPlayer || entity->behavior == &actMonster
+												|| entity->behavior == &actDeathGhost )
 											{
 												ox = entity->x;
 												oy = entity->y;
@@ -3061,7 +3079,8 @@ void gameLogic(void)
 											}
 
 											// move the bodyparts of these otherwise the limbs will get left behind in this adjustment.
-											if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+											if ( entity->behavior == &actPlayer || entity->behavior == &actMonster
+												|| entity->behavior == &actDeathGhost )
 											{
 												for ( Entity *bodypart : entity->bodyparts )
 												{
@@ -3077,7 +3096,9 @@ void gameLogic(void)
 									if ( fabs(entity->vel_x) > 0.0001 || fabs(entity->vel_y) > 0.0001 )
 									{
 										double ox = 0, oy = 0, onewx = 0, onewy = 0;
-										if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+										if ( entity->behavior == &actPlayer 
+											|| entity->behavior == &actMonster
+											|| entity->behavior == &actDeathGhost )
 										{
 											ox = entity->x;
 											oy = entity->y;
@@ -3086,7 +3107,8 @@ void gameLogic(void)
 										}
 										real_t dist = clipMove(&entity->x, &entity->y, entity->vel_x, entity->vel_y, entity);
 										real_t new_dist = clipMove(&entity->new_x, &entity->new_y, entity->vel_x, entity->vel_y, entity);
-										if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+										if ( entity->behavior == &actPlayer || entity->behavior == &actMonster
+											|| entity->behavior == &actDeathGhost )
 										{
 											for (Entity *bodypart : entity->bodyparts)
 											{
@@ -3728,9 +3750,12 @@ bool handleEvents(void)
 							++numplayers;
 						}
 					}
-					char address[64];
+					char address[64] = { '\0' };
+					bool result = false;
 					nxGetWirelessAddress(address, sizeof(address));
-					bool result = nxUpdateLobby(address, MainMenu::getHostname(), svFlags, numplayers);
+					if (address[0]) {
+						result = nxUpdateLobby(address, MainMenu::getHostname(), svFlags, numplayers);
+					}
 					if (!result) {
 						MainMenu::timedOut();
 					}
@@ -4802,22 +4827,26 @@ void pauseGame(int mode /* 0 == toggle, 1 == force unpause, 2 == force pause */,
 				{
 					continue;
 				}
-				strcpy((char*)net_packet->data, "PAUS");
-				net_packet->data[4] = clientnum;
-				net_packet->address.host = net_clients[c - 1].host;
-				net_packet->address.port = net_clients[c - 1].port;
-				net_packet->len = 5;
-				sendPacketSafe(net_sock, -1, net_packet, c - 1);
+				if (net_packet && net_packet->data) {
+					strcpy((char*)net_packet->data, "PAUS");
+					net_packet->data[4] = clientnum;
+					net_packet->address.host = net_clients[c - 1].host;
+					net_packet->address.port = net_clients[c - 1].port;
+					net_packet->len = 5;
+					sendPacketSafe(net_sock, -1, net_packet, c - 1);
+				}
 			}
 		}
 		else if ( multiplayer == CLIENT && ignoreplayer )
 		{
-			strcpy((char*)net_packet->data, "PAUS");
-			net_packet->data[4] = clientnum;
-			net_packet->address.host = net_server.host;
-			net_packet->address.port = net_server.port;
-			net_packet->len = 5;
-			sendPacketSafe(net_sock, -1, net_packet, 0);
+			if (net_packet && net_packet->data) {
+				strcpy((char*)net_packet->data, "PAUS");
+				net_packet->data[4] = clientnum;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 5;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
 		}
 	}
 	else if ( (gamePaused && mode != 2) || mode == 1 )
@@ -4852,22 +4881,26 @@ void pauseGame(int mode /* 0 == toggle, 1 == force unpause, 2 == force pause */,
 				{
 					continue;
 				}
-				strcpy((char*)net_packet->data, "UNPS");
-				net_packet->data[4] = clientnum;
-				net_packet->address.host = net_clients[c - 1].host;
-				net_packet->address.port = net_clients[c - 1].port;
-				net_packet->len = 5;
-				sendPacketSafe(net_sock, -1, net_packet, c - 1);
+				if (net_packet && net_packet->data) {
+					strcpy((char*)net_packet->data, "UNPS");
+					net_packet->data[4] = clientnum;
+					net_packet->address.host = net_clients[c - 1].host;
+					net_packet->address.port = net_clients[c - 1].port;
+					net_packet->len = 5;
+					sendPacketSafe(net_sock, -1, net_packet, c - 1);
+				}
 			}
 		}
 		else if ( multiplayer == CLIENT && ignoreplayer )
 		{
-			strcpy((char*)net_packet->data, "UNPS");
-			net_packet->data[4] = clientnum;
-			net_packet->address.host = net_server.host;
-			net_packet->address.port = net_server.port;
-			net_packet->len = 5;
-			sendPacketSafe(net_sock, -1, net_packet, 0);
+			if (net_packet && net_packet->data) {
+				strcpy((char*)net_packet->data, "UNPS");
+				net_packet->data[4] = clientnum;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 5;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
 		}
 	}
 }
@@ -5008,6 +5041,10 @@ void ingameHud()
 			continue;
 		}
 		if ( players[player]->isLocalPlayerAlive() )
+		{
+			players[player]->bControlEnabled = true;
+		}
+		else if ( players[player]->ghost.isActive() )
 		{
 			players[player]->bControlEnabled = true;
 		}
@@ -5188,7 +5225,8 @@ void ingameHud()
 						}
 						if ( !shootmode ) // check we dont conflict with system bindings
 						{
-							if ( players[player]->messageZone.logWindow || players[player]->minimap.mapWindow || FollowerMenu[player].followerMenuIsOpen() )
+							if ( players[player]->messageZone.logWindow || players[player]->minimap.mapWindow 
+								|| FollowerMenu[player].followerMenuIsOpen() || CalloutMenu[player].calloutMenuIsOpen() )
 							{
 								allowCasting = false;
 							}
@@ -5213,7 +5251,7 @@ void ingameHud()
 						}
 						else
 						{
-							if ( FollowerMenu[player].followerMenuIsOpen() )
+							if ( FollowerMenu[player].followerMenuIsOpen() || CalloutMenu[player].calloutMenuIsOpen() )
 							{
 								if ( castMemorizedSpell )
 								{
@@ -5333,7 +5371,12 @@ void ingameHud()
 		}
 		players[player]->hud.followerDisplay.bCycleNextDisabled = (worldUIBlocksFollowerCycle && players[player]->shootmode);
 		bool allowCycle = true;
-		if ( FollowerMenu[player].followerMenuIsOpen() )
+		if ( CalloutMenu[player].calloutMenuIsOpen() && !players[player]->shootmode )
+		{
+			players[player]->hud.followerDisplay.bCycleNextDisabled = true;
+			allowCycle = false;
+		}
+		else if ( FollowerMenu[player].followerMenuIsOpen() )
 		{
 			std::string cycleNPCbinding = input.binding("Cycle NPCs");
 			if ( cycleNPCbinding == input.binding("MenuCancel") )
@@ -5473,6 +5516,7 @@ void ingameHud()
 		players[player]->skillSheet.processSkillSheet();
 		players[player]->signGUI.updateSignGUI();
 		players[player]->hud.updateStatusEffectTooltip(); // to create a tooltip in this order to draw over previous elements
+		CalloutRadialMenu::drawCallouts(player);
 		players[player]->inventoryUI.updateItemContextMenuClickFrame();
 		players[player]->GUI.handleModuleNavigation(false);
 		players[player]->inventoryUI.updateCursor();
@@ -5901,14 +5945,50 @@ void drawAllPlayerCameras() {
 					players[c]->movement.handlePlayerMovement(true);
 					players[c]->movement.handlePlayerCameraUpdate(true);
 					players[c]->movement.handlePlayerCameraPosition(true);
+
+					players[c]->ghost.handleGhostCameraBobbing(true);
+					players[c]->ghost.handleGhostMovement(true);
+					players[c]->ghost.handleGhostCameraUpdate(true);
 					//messagePlayer(0, "%3.2f | %3.2f", players[c]->entity->yaw, oldYaw);
 				}
 			}
+   
+            // activate ghost fog (if necessary)
+            if (players[c]->ghost.isActive()) {
+                *cvar_hdrBrightness = {0.9f, 0.9f, 1.2f, 1.0f};
+                *cvar_fogColor = {0.7f, 0.7f, 1.1f, 0.25f};
+                *cvar_fogDistance = 350.f;
+            }
 
 			// do occlusion culling from the perspective of this camera
 			DebugStats.drawWorldT2 = std::chrono::high_resolution_clock::now();
 			occlusionCulling(map, camera);
 			glBeginCamera(&camera, true);
+
+			// shared minimap progress
+			if ( !splitscreen/*gameplayCustomManager.inUse() && gameplayCustomManager.minimapShareProgress && !splitscreen*/ )
+			{
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( i != clientnum && players[i] && Player::getPlayerInteractEntity(i) )
+					{
+						if ( !players[i]->entity || (players[i]->entity && !players[i]->entity->isBlind()) )
+						{
+							real_t x = camera.x;
+							real_t y = camera.y;
+							real_t ang = camera.ang;
+
+							camera.x = Player::getPlayerInteractEntity(i)->x / 16.0;
+							camera.y = Player::getPlayerInteractEntity(i)->y / 16.0;
+							camera.ang = Player::getPlayerInteractEntity(i)->yaw;
+							raycast(camera, minimap, false); // update minimap from other players' perspectives, player or ghost
+							camera.x = x;
+							camera.y = y;
+							camera.ang = ang;
+						}
+					}
+				}
+			}
 
 			if ( players[c] && players[c]->entity )
 			{
@@ -5979,37 +6059,42 @@ void drawAllPlayerCameras() {
 				DebugStats.drawWorldT3 = std::chrono::high_resolution_clock::now();
 				if ( !players[c]->entity->isBlind() )
 				{
-				    raycast(camera, minimap); // update minimap
+				    raycast(camera, minimap, true); // update minimap
 				}
 				DebugStats.drawWorldT4 = std::chrono::high_resolution_clock::now();
 				glDrawWorld(&camera, REALCOLORS);
-
-				if ( gameplayCustomManager.inUse() && gameplayCustomManager.minimapShareProgress && !splitscreen )
-				{
-					for ( int i = 0; i < MAXPLAYERS; ++i )
-					{
-						if ( i != clientnum && players[i] && players[i]->entity )
-						{
-						    if ( !players[i]->entity->isBlind() )
-						    {
-							    real_t x = camera.x;
-							    real_t y = camera.y;
-							    real_t ang = camera.ang;
-
-							    camera.x = players[i]->entity->x / 16.0;
-							    camera.y = players[i]->entity->y / 16.0;
-							    camera.ang = players[i]->entity->yaw;
-							    raycast(camera, minimap); // update minimap from other players' perspectives
-							    camera.x = x;
-							    camera.y = y;
-							    camera.ang = ang;
-							}
-						}
-					}
-				}
 			}
 			else
 			{
+				// undo blindness effects
+				if ( globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_INUSE )
+				{
+					for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+					{
+						Entity* mapCreature = (Entity*)mapNode->element;
+						if ( mapCreature )
+						{
+							mapCreature->monsterEntityRenderAsTelepath = 0;
+						}
+					}
+				}
+				globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_DISSIPATING;
+				globalLightModifierEntities = 0.f;
+				if ( globalLightModifier < 1.f )
+				{
+					globalLightModifier += 0.01;
+				}
+				else
+				{
+					globalLightModifier = 1.01;
+					globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+				}
+
+				if ( players[c] && players[c]->ghost.isActive() )
+				{
+					raycast(camera, minimap, false); // update minimap for ghost
+				}
+
 			    // player is dead, spectate
 				glDrawWorld(&camera, REALCOLORS);
 			}
@@ -6017,6 +6102,13 @@ void drawAllPlayerCameras() {
 			DebugStats.drawWorldT5 = std::chrono::high_resolution_clock::now();
 			drawEntities3D(&camera, REALCOLORS);
 			glEndCamera(&camera, true);
+            
+            // undo ghost fog
+            if (players[c]->ghost.isActive()) {
+                *cvar_hdrBrightness = {1.0f, 1.0f, 1.0f, 1.0f};
+                *cvar_fogColor = {0.0f, 0.0f, 0.0f, 1.0f};
+                *cvar_fogDistance = 0.0f;
+            }
 
 			if (shaking && players[c] && players[c]->entity && !gamePaused)
 			{
@@ -6116,6 +6208,7 @@ static void doConsoleCommands() {
 		for (int i = 0; i < MAXPLAYERS; ++i) {
 			if (players[i]->isLocalPlayer() && inputs.bPlayerUsingKeyboardControl(i)) {
 				FollowerMenu[i].closeFollowerMenuGUI();
+				CalloutMenu[i].closeCalloutMenuGUI();
 			}
 		}
 	}
@@ -6190,18 +6283,20 @@ static void doConsoleCommands() {
 						strcat(chatstring, command_str);
 						Uint32 color = playerColor(commandPlayer, colorblind_lobby, false);
 						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
-							playSound(238, 64);
+							playSound(Message::CHAT_MESSAGE_SFX, 64);
 						}
 
 						// send message to server
-						strcpy((char*)net_packet->data, "MSGS");
-						net_packet->data[4] = commandPlayer;
-						SDLNet_Write32(color, &net_packet->data[5]);
-						strcpy((char*)(&net_packet->data[9]), command_str);
-						net_packet->address.host = net_server.host;
-						net_packet->address.port = net_server.port;
-						net_packet->len = 9 + strlen(command_str) + 1;
-						sendPacketSafe(net_sock, -1, net_packet, 0);
+						if (net_packet && net_packet->data) {
+							strcpy((char*)net_packet->data, "MSGS");
+							net_packet->data[4] = commandPlayer;
+							SDLNet_Write32(color, &net_packet->data[5]);
+							strcpy((char*)(&net_packet->data[9]), command_str);
+							net_packet->address.host = net_server.host;
+							net_packet->address.port = net_server.port;
+							net_packet->len = 9 + strlen(command_str) + 1;
+							sendPacketSafe(net_sock, -1, net_packet, 0);
+						}
 					}
 					else
 					{
@@ -6217,7 +6312,7 @@ static void doConsoleCommands() {
 						strcat(chatstring, command_str);
 						Uint32 color = playerColor(commandPlayer, colorblind_lobby, false);
 						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
-							playSound(238, 64);
+							playSound(Message::CHAT_MESSAGE_SFX, 64);
 						}
 						if (multiplayer == SERVER)
 						{
@@ -6228,24 +6323,26 @@ static void doConsoleCommands() {
 								{
 									continue;
 								}
-								strcpy((char*)net_packet->data, "MSGS");
-								// strncpy() does not copy N bytes if a terminating null is encountered first
-								// see http://www.cplusplus.com/reference/cstring/strncpy/
-								// see https://en.cppreference.com/w/c/string/byte/strncpy
-								// GCC throws a warning (intended) when the length argument to strncpy() in any
-								// way depends on strlen(src) to discourage this (and related) construct(s).
+								if (net_packet && net_packet->data) {
+									strcpy((char*)net_packet->data, "MSGS");
+									// strncpy() does not copy N bytes if a terminating null is encountered first
+									// see http://www.cplusplus.com/reference/cstring/strncpy/
+									// see https://en.cppreference.com/w/c/string/byte/strncpy
+									// GCC throws a warning (intended) when the length argument to strncpy() in any
+									// way depends on strlen(src) to discourage this (and related) construct(s).
 
-								strncpy(chatstring, stats[0]->name, 22);
-								chatstring[std::min<size_t>(strlen(stats[0]->name), 22)] = 0; //TODO: Why are size_t and int being compared?
-								strcat(chatstring, ": ");
-								strcat(chatstring, command_str);
-								SDLNet_Write32(color, &net_packet->data[4]);
-								SDLNet_Write32((Uint32)MESSAGE_CHAT, &net_packet->data[8]);
-								strcpy((char*)(&net_packet->data[12]), chatstring);
-								net_packet->address.host = net_clients[c - 1].host;
-								net_packet->address.port = net_clients[c - 1].port;
-								net_packet->len = 12 + strlen(chatstring) + 1;
-								sendPacketSafe(net_sock, -1, net_packet, c - 1);
+									strncpy(chatstring, stats[0]->name, 22);
+									chatstring[std::min<size_t>(strlen(stats[0]->name), 22)] = 0; //TODO: Why are size_t and int being compared?
+									strcat(chatstring, ": ");
+									strcat(chatstring, command_str);
+									SDLNet_Write32(color, &net_packet->data[4]);
+									SDLNet_Write32((Uint32)MESSAGE_CHAT, &net_packet->data[8]);
+									strcpy((char*)(&net_packet->data[12]), chatstring);
+									net_packet->address.host = net_clients[c - 1].host;
+									net_packet->address.port = net_clients[c - 1].port;
+									net_packet->len = 12 + strlen(chatstring) + 1;
+									sendPacketSafe(net_sock, -1, net_packet, c - 1);
+								}
 							}
 						}
 					}
@@ -6472,17 +6569,6 @@ int main(int argc, char** argv)
 		}
 		printlog("Data path is %s", datadir);
 		printlog("Output path is %s", outputdir);
-
-		// load default language file (english)
-		if ( Language::loadLanguage("en", true) )
-		{
-			printlog("Fatal error: failed to load default language file!\n");
-			if (logfile)
-			{
-				fclose(logfile);
-			}
-			exit(1);
-		}
         
         // init sdl
         Uint32 init_flags = SDL_INIT_VIDEO | SDL_INIT_EVENTS;
@@ -6493,9 +6579,9 @@ int main(int argc, char** argv)
             return 1;
         }
 
+        // load game config
 		Input::defaultBindings();
 		MainMenu::randomizeUsername();
-
         MainMenu::settingsReset();
         MainMenu::settingsApply();
 		bool load_successful = MainMenu::settingsLoad();
@@ -6714,9 +6800,12 @@ int main(int argc, char** argv)
 						players[i]->hud.weapon = nullptr;
 						players[i]->hud.magicLeftHand = nullptr;
 						players[i]->hud.magicRightHand = nullptr;
+						players[i]->ghost.reset();
 						FollowerMenu[i].recentEntity = nullptr;
 						FollowerMenu[i].followerToCommand = nullptr;
 						FollowerMenu[i].entityToInteractWith = nullptr;
+						CalloutMenu[i].closeCalloutMenuGUI();
+						CalloutMenu[i].callouts.clear();
 					}
 
 					// black background
@@ -7095,6 +7184,7 @@ int main(int argc, char** argv)
 				for ( int player = 0; player < MAXPLAYERS; ++player )
 				{
 					players[player]->messageZone.updateMessages();
+					CalloutMenu[player].update();
 				}
 				if ( !nohud )
 				{
@@ -7361,6 +7451,7 @@ int main(int argc, char** argv)
 				}
 			}
 			Text::dumpCacheInMainLoop();
+			achievementObserver.getCurrentPlayerUids();
 			DebugStats.t11End = std::chrono::high_resolution_clock::now();
 
 			// increase the cycle count

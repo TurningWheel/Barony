@@ -13,6 +13,13 @@
 
 #include "shader.hpp"
 
+struct Vector4 {
+    float x;
+    float y;
+    float z;
+    float w;
+};
+
 vec4_t vec4_copy(const vec4_t* v);
 vec4_t* mul_mat_vec4(vec4_t* result, const mat4x4_t* m, const vec4_t* v);
 vec4_t* add_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b);
@@ -37,6 +44,30 @@ mat4x4_t* fast_perspective(mat4x4_t* result, float fov, float aspect, float near
 mat4x4_t* mat_from_array(mat4x4_t* result, float matArray[16]);
 bool invertMatrix4x4(mat4x4_t* result, const mat4x4_t* m);
 vec4_t project(
+    const vec4_t* world,
+    const mat4x4_t* model,
+    const mat4x4_t* projview,
+    const vec4_t* window);
+struct ClipResult {
+    enum class Direction {
+        Invalid,
+        Left,
+        Right,
+        Top,
+        Bottom,
+        Front,
+        Behind,
+    };
+    Direction direction = Direction::Invalid;
+    bool isBehind = false;
+    vec4_t clipped_coords;
+};
+ClipResult project_clipped(
+    const vec4_t* world,
+    const mat4x4_t* model,
+    const mat4x4_t* projview,
+    const vec4_t* window);
+ClipResult project_clipped2( // project_clipped, but will draw mirroed behind camera
     const vec4_t* world,
     const mat4x4_t* model,
     const mat4x4_t* projview,
@@ -183,7 +214,7 @@ struct framebuffer {
     void unlock();
     
     void draw(float brightness = 1.f);
-    void hdrDraw(float brightness, float gamma, float exposure);
+    void hdrDraw(const Vector4& brightness, float gamma, float exposure);
     static void unbindForWriting();
     static void unbindForReading();
     static void unbindAll();
@@ -236,7 +267,7 @@ void drawLayer(long camx, long camy, int z, map_t* map);
 void drawBackground(long camx, long camy);
 void drawForeground(long camx, long camy);
 void drawClearBuffers();
-void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION]);
+void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION], bool fillWithColor);
 void drawFloors(view_t* camera);
 void drawSky(SDL_Surface* srfc);
 void drawVoxel(view_t* camera, Entity* entity);
@@ -286,6 +317,7 @@ extern Mesh skyMesh;
 extern Shader spriteShader;
 extern Shader spriteDitheredShader;
 extern Shader spriteBrightShader;
+extern Shader spriteUIShader;
 extern Mesh spriteMesh;
 extern TempTexture* lightmapTexture[MAXPLAYERS + 1];
 
@@ -401,3 +433,10 @@ void glEndCamera(view_t* camera, bool useHDR);
 unsigned int GO_GetPixelU32(int x, int y, view_t& camera);
 
 extern bool hdrEnabled;
+
+#ifndef EDITOR
+#include "interface/consolecommand.hpp"
+extern ConsoleVariable<Vector4> cvar_hdrBrightness;
+extern ConsoleVariable<float> cvar_fogDistance;
+extern ConsoleVariable<Vector4> cvar_fogColor;
+#endif

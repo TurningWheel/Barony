@@ -26,7 +26,7 @@
 #include "init.hpp"
 #include "light.hpp"
 #include "net.hpp"
-#ifndef NINTENDO
+#ifdef EDITOR
  #include "editor.hpp"
 #endif // NINTENDO
 #include "menu.hpp"
@@ -46,6 +46,7 @@
 #include "ui/Button.hpp"
 #include "ui/LoadingScreen.hpp"
 #ifndef EDITOR
+#include "mod_tools.hpp"
 #include "ui/MainMenu.hpp"
 #include "interface/consolecommand.hpp"
 static ConsoleVariable<bool> cvar_sdl_disablejoystickrawinput("/sdl_joystick_rawinput_disable", false, "disable SDL rawinput for gamepads (helps SDL_HapticOpen())");
@@ -55,6 +56,100 @@ static ConsoleVariable<bool> cvar_sdl_disablejoystickrawinput("/sdl_joystick_raw
 #include <future>
 #include <chrono>
 
+bool mountBaseDataFolders() {
+    if (isCurrentHoliday()) {
+        const auto holiday = getCurrentHoliday();
+        const auto holiday_dir = holidayThemeDirs[holiday];
+        const auto holiday_dir_str = (std::string(datadir) + "/") + holiday_dir;
+        if (!PHYSFS_mount(holiday_dir_str.c_str(), NULL, 1)) {
+            printlog("[PhysFS]: unsuccessfully mounted holiday %s folder. Error: %s",
+                holiday_dir_str.c_str(), PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+            return false;
+        }
+    }
+
+	if ( !PHYSFS_mount(datadir, NULL, 1) )
+	{
+		printlog("[PhysFS]: unsuccessfully mounted base %s folder. Error: %s",
+            datadir, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+		return false;
+	}
+
+	if ( PHYSFS_mount(outputdir, NULL, 1) )
+	{
+		printlog("[PhysFS]: successfully mounted output \"%s\" folder", outputdir);
+		if ( PHYSFS_setWriteDir(outputdir) )
+		{
+		    PHYSFS_mkdir("books");
+			PHYSFS_mkdir("savegames");
+			//TODO: Will these need special NINTENDO handling?
+			PHYSFS_mkdir("crashlogs");
+			PHYSFS_mkdir("logfiles");
+			PHYSFS_mkdir("data");
+			PHYSFS_mkdir("data/custom-monsters");
+			PHYSFS_mkdir("data/statues");
+			PHYSFS_mkdir("data/scripts");
+			PHYSFS_mkdir("config");
+#ifdef STEAMWORKS
+			PHYSFS_mkdir("workshop_cache");
+#endif
+#ifdef NINTENDO
+			PHYSFS_mkdir("mods");
+			std::string path = outputdir;
+			path.append(PHYSFS_getDirSeparator()).append("mods");
+			PHYSFS_setWriteDir(path.c_str()); //Umm...should it really be doing that? First off, it didn't actually create this directory. Second off, what about the rest of the directories it created?
+			printlog("[PhysFS]: successfully set write folder %s", path.c_str());
+#else // NINTENDO
+			if ( PHYSFS_mkdir("mods") )
+			{
+				std::string path = outputdir;
+				path.append(PHYSFS_getDirSeparator()).append("mods");
+				PHYSFS_setWriteDir(path.c_str());
+				printlog("[PhysFS]: successfully set write folder %s", path.c_str());
+			}
+			else
+			{
+				printlog("[PhysFS]: unsuccessfully created mods/ folder. Error: %s", PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+				return false;
+			}
+#endif // !NINTENDO
+		}
+	}
+	else
+	{
+		printlog("[PhysFS]: unsuccessfully mounted base %s folder. Error: %s", outputdir, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+		return false;
+	}
+ 
+    return true;
+}
+
+bool remountBaseDataFolders() {
+#ifdef EDITOR
+    return false; // don't do anything
+#else
+    // first unmount everything.
+    bool success = true;
+	char** i;
+	for ( i = PHYSFS_getSearchPath(); *i != NULL; i++ ) {
+        if ( PHYSFS_unmount(*i) == 0 ) {
+            success = false;
+            printlog("[%s] unsuccessfully removed from the search path.\n", *i);
+        } else {
+            printlog("[%s] is removed from the search path.\n", *i);
+        }
+	}
+	PHYSFS_freeList(*i);
+ 
+    // then mount base data folders
+    success = mountBaseDataFolders() ? success : false;
+    
+    // reload files
+    Mods::unloadMods(true);
+    
+    return success;
+#endif
+}
 
 /*-------------------------------------------------------------------------------
 
@@ -112,64 +207,30 @@ int initApp(char const * const title, int fullscreen)
 
 	if ( !PHYSFS_isInit() )
 	{
-		printlog("[PhysFS]: failed to initialize! Error: %s", PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+		printlog("[PhysFS]: failed to initialize! Error: %s",
+            PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 		return 13;
 	}
 	else
 	{
-		printlog("[PhysFS]: successfully initialized, last error: %s", PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+		printlog("[PhysFS]: successfully initialized, last error: %s",
+            PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 	}
 
-	if ( !PHYSFS_mount(datadir, NULL, 1) )
-	{
-		printlog("[PhysFS]: unsuccessfully mounted base %s folder. Error: %s", datadir, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
-		return 13;
-	}
+    if (!mountBaseDataFolders()) {
+        return 13;
+    }
 
-	if ( PHYSFS_mount(outputdir, NULL, 1) )
+	// load default language file (english)
+	Language::languageCode = "en";
+	if ( Language::reloadLanguage() )
 	{
-		printlog("[PhysFS]: successfully mounted output \"%s\" folder", outputdir);
-		if ( PHYSFS_setWriteDir(outputdir) )
+		printlog("Fatal error: failed to load default language file!\n");
+		if ( logfile )
 		{
-		    PHYSFS_mkdir("books");
-			PHYSFS_mkdir("savegames");
-			//TODO: Will these need special NINTENDO handling?
-			PHYSFS_mkdir("crashlogs");
-			PHYSFS_mkdir("logfiles");
-			PHYSFS_mkdir("data");
-			PHYSFS_mkdir("data/custom-monsters");
-			PHYSFS_mkdir("data/statues");
-			PHYSFS_mkdir("data/scripts");
-			PHYSFS_mkdir("config");
-#ifdef STEAMWORKS
-			PHYSFS_mkdir("workshop_cache");
-#endif
-#ifdef NINTENDO
-			PHYSFS_mkdir("mods");
-			std::string path = outputdir;
-			path.append(PHYSFS_getDirSeparator()).append("mods");
-			PHYSFS_setWriteDir(path.c_str()); //Umm...should it really be doing that? First off, it didn't actually create this directory. Second off, what about the rest of the directories it created?
-			printlog("[PhysFS]: successfully set write folder %s", path.c_str());
-#else // NINTENDO
-			if ( PHYSFS_mkdir("mods") )
-			{
-				std::string path = outputdir;
-				path.append(PHYSFS_getDirSeparator()).append("mods");
-				PHYSFS_setWriteDir(path.c_str());
-				printlog("[PhysFS]: successfully set write folder %s", path.c_str());
-			}
-			else
-			{
-				printlog("[PhysFS]: unsuccessfully created mods/ folder. Error: %s", PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
-				return 13;
-			}
-#endif // !NINTENDO
+			fclose(logfile);
 		}
-	}
-	else
-	{
-		printlog("[PhysFS]: unsuccessfully mounted base %s folder. Error: %s", outputdir, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
-		return 13;
+		exit(1);
 	}
 
 	// initialize SDL
@@ -404,6 +465,7 @@ int initApp(char const * const title, int fullscreen)
     if (!hdrEnabled) {
         main_framebuffer.bindForWriting();
     }
+    GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 1.f));
     GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	//SDL_EnableUNICODE(1);
@@ -684,9 +746,6 @@ int initApp(char const * const title, int fullscreen)
 
 		updateLoadingScreen(80);
         
-        loadLights();
-        updateLoadingScreen(81);
-        
 		loading_done = true;
 		return 0;
 	});
@@ -701,6 +760,7 @@ int initApp(char const * const title, int fullscreen)
 	{
 		generateVBOs(0, nummodels);
         generateTileTextures();
+		loadLights();
 	}
 
 #ifdef EDITOR
@@ -740,10 +800,6 @@ void Language::reset()
 
 int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 {
-	char filename[128] = { 0 };
-	File* fp;
-	int c;
-
 	// open log file
 	if ( !logfile )
 	{
@@ -751,7 +807,8 @@ int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 	}
 
 	// compose filename
-	snprintf(filename, 127, "lang/%s.txt", lang);
+	char filename[128] = { 0 };
+	snprintf(filename, 127, "/lang/%s.txt", lang);
 	std::string langFilepath;
 	if ( PHYSFS_isInit() && PHYSFS_getRealDir(filename) != NULL && !forceLoadBaseDirectory )
 	{
@@ -760,7 +817,11 @@ int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 	}
 	else
 	{
-		langFilepath = filename;
+#ifdef NINTENDO
+		langFilepath = std::string(BASE_DATA_DIR) + filename;
+#else
+		langFilepath = std::string(BASE_DATA_DIR) + filename;
+#endif
 	}
 
 	// check if language file is valid
@@ -857,7 +918,8 @@ int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 	TTF_SetFontHinting(ttf16, TTF_HINTING_MONO);
 
 	// open language file
-	if ( (fp = openDataFile(langFilepath.c_str(), "rb")) == NULL )
+	File* fp = FileIO::open(langFilepath.c_str(), "rb");
+	if ( !fp )
 	{
 		printlog("error: unable to load language file: '%s'", langFilepath.c_str());
 		return 1;
@@ -947,7 +1009,6 @@ int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 	FileIO::close(fp);
 	printlog( "successfully loaded language file '%s'\n", langFilepath.c_str());
 
-	initMenuOptions();
 	return 0;
 }
 
@@ -964,7 +1025,7 @@ int Language::reloadLanguage()
 	if ( PHYSFS_isInit() && PHYSFS_getRealDir("lang/en.txt") != NULL )
 	{
 		std::string langRealDir = PHYSFS_getRealDir("lang/en.txt");
-		if ( langRealDir != "./" )
+		if ( langRealDir != BASE_DATA_DIR )
 		{
 			loadLanguage("en", true); // force load the base directory first, then modded paths later.
 		}
@@ -1198,6 +1259,7 @@ int deinitApp()
 		for (int c = 0; c < nummodels; ++c) {
 			if (polymodels[c].faces) {
 				free(polymodels[c].faces);
+				polymodels[c].faces = nullptr;
 			}
 		}
 		if (!disablevbos) {
@@ -1205,15 +1267,19 @@ int deinitApp()
                 if (polymodels[c].vao) {
                     GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
                 }
-				if (polymodels[c].vbo) {
-                    GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
-				}
-				if (polymodels[c].colors) {
+                if (polymodels[c].positions) {
+                    GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].positions));
+                }
+                if (polymodels[c].colors) {
                     GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
-				}
+                }
+                if (polymodels[c].normals) {
+                    GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].normals));
+                }
 			}
 		}
 		free(polymodels);
+		polymodels = nullptr;
 	}
 
 #ifndef EDITOR
@@ -1649,6 +1715,7 @@ bool changeVideoMode(int new_xres, int new_yres)
     if (!hdrEnabled) {
         main_framebuffer.bindForWriting();
     }
+    GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 1.f));
     GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	// success
@@ -1687,6 +1754,7 @@ bool resizeWindow(int new_xres, int new_yres)
     if (!hdrEnabled) {
         main_framebuffer.bindForWriting();
     }
+    GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 1.f));
     GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	// success

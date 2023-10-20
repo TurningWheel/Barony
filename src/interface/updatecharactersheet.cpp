@@ -1883,15 +1883,22 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 				output.mainAttributeBonus = statGetSTR(stats[player], entity); // bonus from main attribute
 				output.equipmentAndEffectBonus = attack - statGetSTR(stats[player], entity) - BASE_PLAYER_UNARMED_DAMAGE - output.proficiencyBonus; // bonus from equipment
 
-				// get damage variances.
-				Sint32 variance = (attack / 2) * (100 - stats[player]->PROFICIENCIES[PRO_UNARMED]) / 100.f;
-				output.attackMaxRange = attack;
-				attack -= (variance / 2); // attack is the midpoint between max and min damage.
-				output.attackMinRange = output.totalAttack - variance;
-				output.proficiencyVariance = ((variance / 2) / static_cast<real_t>(attack)) * 100.f;// return percent variance
-				output.totalAttack = attack;
-				output.proficiency = PRO_UNARMED;
-				output.totalAttack = output.attackMaxRange - ((output.attackMaxRange - output.attackMinRange) / 2.0);
+				{
+					real_t variance = 20;
+					real_t baseSkillModifier = 50.0; // 40-60 base
+					Entity::setMeleeDamageSkillModifiers(players[player]->entity, stats[player], PRO_UNARMED, baseSkillModifier, variance);
+					real_t skillModifierMin = baseSkillModifier - (variance / 2) + (stats[player]->PROFICIENCIES[PRO_UNARMED] / 2.0);
+					real_t skillModifierMax = skillModifierMin + variance;
+					skillModifierMin /= 100.0;
+					skillModifierMin = std::min(skillModifierMin, 1.0);
+					skillModifierMax /= 100.0;
+					skillModifierMax = std::min(skillModifierMax, 1.0);
+					output.proficiencyVariance = variance;
+					output.attackMaxRange = attack - static_cast<int>((1.0 - skillModifierMax) * attack);
+					output.attackMinRange = attack - static_cast<int>((1.0 - skillModifierMin) * attack);
+					output.proficiency = PRO_UNARMED;
+					output.totalAttack = output.attackMaxRange - ((output.attackMaxRange - output.attackMinRange) / 2.0);
+				}
 			}
 			else
 			{
@@ -1918,14 +1925,22 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 						output.equipmentAndEffectBonus += attack - output.mainAttributeBonus
 							- BASE_RANGED_DAMAGE - output.weaponBonus; // bonus from equipment
 
-						Sint32 variance = (attack / 2) * (100 - stats[player]->PROFICIENCIES[weaponskill]) / 100.f;
-						output.attackMaxRange = attack;
-						attack -= (variance / 2);
-						output.attackMinRange = output.totalAttack - variance;
-						output.proficiencyVariance = ((variance / 2) / static_cast<real_t>(attack)) * 100.f;// return percent variance
-						output.totalAttack = attack;
-						output.proficiency = weaponskill;
-						output.totalAttack = output.attackMaxRange - ((output.attackMaxRange - output.attackMinRange) / 2.0);
+						{
+							real_t variance = 20;
+							real_t baseSkillModifier = 50.0; // 40-60 base
+							Entity::setMeleeDamageSkillModifiers(players[player]->entity, stats[player], weaponskill, baseSkillModifier, variance);
+							real_t skillModifierMin = baseSkillModifier - (variance / 2) + (stats[player]->PROFICIENCIES[weaponskill] / 2.0);
+							real_t skillModifierMax = skillModifierMin + variance;
+							skillModifierMin /= 100.0;
+							skillModifierMin = std::min(skillModifierMin, 1.0);
+							skillModifierMax /= 100.0;
+							skillModifierMax = std::min(skillModifierMax, 1.0);
+							output.proficiencyVariance = variance;
+							output.attackMaxRange = attack - static_cast<int>((1.0 - skillModifierMax) * attack);
+							output.attackMinRange = attack - static_cast<int>((1.0 - skillModifierMin) * attack);
+							output.proficiency = weaponskill;
+							output.totalAttack = output.attackMaxRange - ((output.attackMaxRange - output.attackMinRange) / 2.0);
+						}
 					}
 					else if ( stats[player]->weapon && stats[player]->weapon->type == TOOL_WHIP )
 					{
@@ -1943,14 +1958,22 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 						output.equipmentAndEffectBonus += attack - totalAttributeBonus
 							- BASE_MELEE_DAMAGE - output.weaponBonus; // bonus from equipment
 
-						Sint32 variance = (attack / 2) * (100 - stats[player]->PROFICIENCIES[weaponskill]) / 100.f;
-						output.attackMaxRange = attack;
-						attack -= (variance / 2);
-						output.attackMinRange = output.totalAttack - variance;
-						output.proficiencyVariance = ((variance / 2) / static_cast<real_t>(attack)) * 100.f;// return percent variance
-						output.totalAttack = attack;
-						output.proficiency = weaponskill;
-						output.totalAttack = output.attackMaxRange - ((output.attackMaxRange - output.attackMinRange) / 2.0);
+						{
+							real_t variance = 20;
+							real_t baseSkillModifier = 50.0; // 40-60 base
+							Entity::setMeleeDamageSkillModifiers(players[player]->entity, stats[player], weaponskill, baseSkillModifier, variance);
+							real_t skillModifierMin = baseSkillModifier - (variance / 2) + (stats[player]->PROFICIENCIES[weaponskill] / 2.0);
+							real_t skillModifierMax = skillModifierMin + variance;
+							skillModifierMin /= 100.0;
+							skillModifierMin = std::min(skillModifierMin, 1.0);
+							skillModifierMax /= 100.0;
+							skillModifierMax = std::min(skillModifierMax, 1.0);
+							output.proficiencyVariance = variance;
+							output.attackMaxRange = attack - static_cast<int>((1.0 - skillModifierMax) * attack);
+							output.attackMinRange = attack - static_cast<int>((1.0 - skillModifierMin) * attack);
+							output.proficiency = weaponskill;
+							output.totalAttack = output.attackMaxRange - ((output.attackMaxRange - output.attackMinRange) / 2.0);
+						}
 					}
 					else
 					{
@@ -2036,27 +2059,23 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 						output.totalAttack += 1;
 						attack += 1;
 					}
-					// get damage variances.
-					Sint32 variance = 0;
-					if ( weaponskill == PRO_POLEARM )
+
 					{
-						variance = (attack / 3) * (100 - stats[player]->PROFICIENCIES[weaponskill]) / 100.f;
-						if ( stats[player]->weapon->type == ARTIFACT_SPEAR )
-						{
-							variance = 0;
-						}
+						real_t variance = 20;
+						real_t baseSkillModifier = 50.0; // 40-60 base
+						Entity::setMeleeDamageSkillModifiers(players[player]->entity, stats[player], weaponskill, baseSkillModifier, variance);
+						real_t skillModifierMin = baseSkillModifier - (variance / 2) + (stats[player]->PROFICIENCIES[weaponskill] / 2.0);
+						real_t skillModifierMax = skillModifierMin + variance;
+						skillModifierMin /= 100.0;
+						skillModifierMin = std::min(skillModifierMin, 1.0);
+						skillModifierMax /= 100.0;
+						skillModifierMax = std::min(skillModifierMax, 1.0);
+						output.proficiencyVariance = variance;
+						output.attackMaxRange = attack - static_cast<int>((1.0 - skillModifierMax) * attack);
+						output.attackMinRange = attack - static_cast<int>((1.0 - skillModifierMin) * attack);
+						output.proficiency = weaponskill;
+						output.totalAttack = output.attackMaxRange - ((output.attackMaxRange - output.attackMinRange) / 2.0);
 					}
-					else
-					{
-						variance = (attack / 2) * (100 - stats[player]->PROFICIENCIES[weaponskill]) / 100.f;
-					}
-					output.attackMaxRange = attack;
-					attack -= (variance / 2); // attack is the midpoint between max and min damage.
-					output.attackMinRange = output.totalAttack - variance;
-					output.proficiencyVariance = ((variance / 2) / static_cast<real_t>(attack)) * 100.f;// return percent variance
-					output.totalAttack = attack;
-					output.proficiency = weaponskill;
-					output.totalAttack = output.attackMaxRange - ((output.attackMaxRange - output.attackMinRange) / 2.0);
 				}
 				else if ( itemCategory(stats[player]->weapon) == MAGICSTAFF ) // staffs.
 				{

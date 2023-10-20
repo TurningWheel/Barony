@@ -334,20 +334,30 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 	if (clientnum != 0 && multiplayer == CLIENT)
 	{
-		strcpy( (char*)net_packet->data, "SPEL" );
-		net_packet->data[4] = clientnum;
-		SDLNet_Write32(spell->ID, &net_packet->data[5]);
-		if ( usingSpellbook )
+		if ( caster->behavior == &actDeathGhost )
 		{
-			net_packet->data[9] = 1;
+			strcpy((char*)net_packet->data, "GHSP");
+			net_packet->data[4] = clientnum;
+			SDLNet_Write32(spell->ID, &net_packet->data[5]);
+			net_packet->len = 9;
 		}
 		else
 		{
-			net_packet->data[9] = 0;
+			strcpy( (char*)net_packet->data, "SPEL" );
+			net_packet->data[4] = clientnum;
+			SDLNet_Write32(spell->ID, &net_packet->data[5]);
+			if ( usingSpellbook )
+			{
+				net_packet->data[9] = 1;
+			}
+			else
+			{
+				net_packet->data[9] = 0;
+			}
+			net_packet->len = 10;
 		}
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
-		net_packet->len = 10;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 		return NULL;
 	}
@@ -386,7 +396,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	bool playerCastingFromKnownSpellbook = false;
 	int spellBookBonusPercent = 0;
 	int spellBookBeatitude = 0;
-	if ( !using_magicstaff && !trap)
+	if ( !using_magicstaff && !trap && stat )
 	{
 		newbie = isSpellcasterBeginner(player, caster);
 
@@ -484,7 +494,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 	}
 
-	if ( newbie )
+	if ( newbie && stat )
 	{
 		//So This wizard is a newbie.
 
@@ -560,7 +570,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		{
 			waterwalkingboots = true;
 		}
-		if ( stat->shoes != NULL )
+		if ( stat && stat->shoes != NULL )
 		{
 			if (stat->shoes->type == IRON_BOOTS_WATERWALKING )
 			{
@@ -852,7 +862,61 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if (!strcmp(element->element_internal_name, spellElement_teleportation.element_internal_name))
 		{
-			if ( caster->creatureShadowTaggedThisUid != 0 )
+			if ( caster->behavior == &actDeathGhost )
+			{
+				auto& ghost = players[caster->skill[2]]->ghost;
+				int tx = ghost.spawnX;
+				int ty = ghost.spawnY;
+				Entity* target = nullptr;
+				if ( ghost.teleportToPlayer >= MAXPLAYERS )
+				{
+					ghost.teleportToPlayer = -1;
+					tx = ghost.startRoomX;
+					ty = ghost.startRoomY;
+				}
+				else
+				{
+					++ghost.teleportToPlayer;
+					while ( ghost.teleportToPlayer >= 0 && ghost.teleportToPlayer < MAXPLAYERS )
+					{
+						if ( ghost.teleportToPlayer != caster->skill[2] && Player::getPlayerInteractEntity(ghost.teleportToPlayer) )
+						{
+							target = Player::getPlayerInteractEntity(ghost.teleportToPlayer);
+							tx = static_cast<int>(target->x) / 16;
+							ty = static_cast<int>(target->y) / 16;
+							break;
+						}
+						++ghost.teleportToPlayer;
+					}
+					if ( !target )
+					{
+						if ( ghost.teleportToPlayer >= MAXPLAYERS )
+						{
+							tx = ghost.spawnX;
+							ty = ghost.spawnY;
+						}
+					}
+				}
+
+				Entity* spellTimer = createParticleTimer(caster, 1, 593);
+				spellTimer->particleTimerPreDelay = 0; // wait x ticks before animation.
+				spellTimer->particleTimerEndAction = PARTICLE_EFFECT_GHOST_TELEPORT; // teleport behavior of timer.
+				spellTimer->particleTimerEndSprite = 593; // sprite to use for end of timer function.
+				spellTimer->particleTimerCountdownAction = 0;
+				spellTimer->particleTimerCountdownSprite = -1;
+				if ( target != nullptr )
+				{
+					spellTimer->particleTimerTarget = static_cast<Sint32>(target->getUID()); // get the target to teleport around.
+				}
+				spellTimer->particleTimerVariable1 = 1; // distance of teleport in tiles
+				spellTimer->particleTimerVariable2 = (tx & 0xFFFF) << 16;
+				spellTimer->particleTimerVariable2 |= ty & 0xFFFF;
+				if ( multiplayer == SERVER )
+				{
+					serverSpawnMiscParticles(caster, PARTICLE_EFFECT_GHOST_TELEPORT, 593);
+				}
+			}
+			else if ( caster->creatureShadowTaggedThisUid != 0 )
 			{
 				Entity* entityToTeleport = uidToEntity(caster->creatureShadowTaggedThisUid);
 				if ( entityToTeleport )
@@ -1990,6 +2054,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				traveltime = 15;
 				missileEntity->skill[5] = traveltime;
 			}
+			else if ( !strcmp(spell->spell_internal_name, spell_ghost_bolt.spell_internal_name) )
+			{
+				traveltime = 10;
+				missileEntity->skill[5] = traveltime;
+			}
 
 			int sound = spellGetCastSound(spell);
 			if ( volume > 0 && sound > 0 )
@@ -2236,6 +2305,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					missileEntity->sprite = 170;
 				}
 			}
+			else if ( !strcmp(element->element_internal_name, spellElement_ghostBolt.element_internal_name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					missileEntity->sprite = 1244;
+				}
+			}
 			else if ( !strcmp(element->element_internal_name, spellElement_bleed.element_internal_name) )
 			{
 				if ( propulsion == PROPULSION_MISSILE )
@@ -2456,12 +2532,19 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					magicChance *= 2;
 				}
 				//messagePlayer(0, "Difficulty: %d, chance 1 in %d, 1 in %d", castDifficulty, spellCastChance, magicChance);
-				if ( (!strcmp(element->element_internal_name, spellElement_light.element_internal_name) || spell->ID == SPELL_REVERT_FORM)
-						&& stat->PROFICIENCIES[PRO_SPELLCASTING] >= SKILL_LEVEL_SKILLED
-						&& stat->PROFICIENCIES[PRO_MAGIC] >= SKILL_LEVEL_SKILLED )
+				if ( (!strcmp(element->element_internal_name, spellElement_light.element_internal_name) || spell->ID == SPELL_REVERT_FORM) )
 				{
+					if ( stat->PROFICIENCIES[PRO_SPELLCASTING] >= SKILL_LEVEL_SKILLED )
+					{
+						spellCastChance = 0;
+					}
+					if ( stat->PROFICIENCIES[PRO_MAGIC] >= SKILL_LEVEL_SKILLED )
+					{
+						magicChance = 0;
+					}
+
 					// light provides no levelling past 40 in both spellcasting and magic.
-					if ( local_rng.rand() % 20 == 0 )
+					if ( (magicChance == 0 && spellCastChance == 0) && local_rng.rand() % 20 == 0 )
 					{
 						for ( int i = 0; i < MAXPLAYERS; ++i )
 						{
@@ -2472,30 +2555,31 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						}
 					}
 				}
-				else
-				{
-					if ( local_rng.rand() % spellCastChance == 0 )
-					{
-						caster->increaseSkill(PRO_SPELLCASTING);
-					}
 
-					if ( local_rng.rand() % magicChance == 0 )
+
+				if ( spellCastChance > 0 && (local_rng.rand() % spellCastChance == 0) )
+				{
+					caster->increaseSkill(PRO_SPELLCASTING);
+				}
+
+				bool magicIncreased = false;
+				if ( magicChance > 0 && (local_rng.rand() % magicChance == 0) )
+				{
+					caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
+					magicIncreased = true;
+				}
+				if ( magicIncreased && usingSpellbook && caster->behavior == &actPlayer )
+				{
+					if ( stats[caster->skill[2]] && stats[caster->skill[2]]->playerRace == RACE_INSECTOID && stats[caster->skill[2]]->appearance == 0 )
 					{
-						caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
-						if ( usingSpellbook && caster->behavior == &actPlayer )
-						{
-							if ( stats[caster->skill[2]] && stats[caster->skill[2]]->playerRace == RACE_INSECTOID && stats[caster->skill[2]]->appearance == 0 )
-							{
-								steamStatisticUpdateClient(caster->skill[2], STEAM_STAT_BOOKWORM, STEAM_STAT_INT, 1);
-							}
-						}
+						steamStatisticUpdateClient(caster->skill[2], STEAM_STAT_BOOKWORM, STEAM_STAT_INT, 1);
 					}
 				}
 			}
 		}
 	}
 
-	if ( !trap && usingSpellbook ) // degrade spellbooks on use.
+	if ( !trap && usingSpellbook && stat ) // degrade spellbooks on use.
 	{
 		int chance = 8;
 		if ( stat->type == GOBLIN )
@@ -2588,6 +2672,10 @@ int spellGetCastSound(spell_t* spell)
 	else if ( !strcmp(spell->spell_internal_name, spell_lightning.spell_internal_name) )
 	{
 		return 171;
+	}
+	else if ( !strcmp(spell->spell_internal_name, spell_ghost_bolt.spell_internal_name) )
+	{
+		return 169;
 	}
 	else if ( !strcmp(spell->spell_internal_name, spell_cold.spell_internal_name) )
 	{

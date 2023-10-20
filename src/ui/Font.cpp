@@ -21,16 +21,12 @@ Font::Font(const char* _name) {
 	} else {
 		path = name;
 	}
-#ifdef NINTENDO
-	path = "rom:/" + path;
-#else
 	if ( PHYSFS_getRealDir(path.c_str()) )
 	{
 		std::string realPath = PHYSFS_getRealDir(path.c_str());
 		path.insert(0, PHYSFS_getDirSeparator());
 		path.insert(0, realPath);
 	}
-#endif
 	if ((font = TTF_OpenFont(path.c_str(), pointSize)) == NULL) {
 		printlog("failed to load '%s': %s", path.c_str(), TTF_GetError());
 		return;

@@ -69,6 +69,8 @@ GenericGUIMenu GenericGUI[MAXPLAYERS];
 void actGib(Entity* my) {} // dummy for draw.cpp
 void actHudArm(Entity* my) {} // dummy for draw.cpp
 void actHudWeapon(Entity* my) {} // dummy for draw.cpp
+void actHUDMagicParticle(Entity* my) {} // dummy for draw.cpp
+void actHUDMagicParticleCircling(Entity* my) {} // dummy for draw.cpp
 void actHudShield(Entity* my) {} // dummy for draw.cpp
 void actHudAdditional(Entity* my) {} // dummy for draw.cpp
 void actHudArrowModel(Entity* my) {} // dummy for draw.cpp
@@ -1561,7 +1563,6 @@ int main(int argc, char** argv)
     }
 
 	// initialize
-	useModelCache = true;
 	verticalSync = true;
 	if ( (x = initApp("Barony Editor", fullscreen)) )
 	{

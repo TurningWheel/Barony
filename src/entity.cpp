@@ -593,6 +593,11 @@ Entity::~Entity()
 			players[i]->entity = nullptr;    //TODO: PLAYERSWAP VERIFY. Should this do anything to the player itself?
 			players[i]->cleanUpOnEntityRemoval();
 		}
+		if ( this == players[i]->ghost.my )
+		{
+			players[i]->ghost.my = nullptr;
+			players[i]->ghost.reset();
+		}
 	}
 	// destroy my children
 	list_FreeAll(&this->children);
@@ -872,7 +877,7 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 			{
 				light /= 2; // halve for sneaking
 			}
-			light -= (light - TOUCHRANGE) * (1.0 * (myStats.PROFICIENCIES[PRO_STEALTH] / 100.0)); // reduce to 32 as sneak approaches 100
+			light -= (std::max(0, light - TOUCHRANGE)) * (1.0 * (myStats.PROFICIENCIES[PRO_STEALTH] / 100.0)); // reduce to 32 as sneak approaches 100
 			Stat* observerStats = observer->getStats();
 			if ( observerStats && observerStats->EFFECTS[EFF_BLIND] )
 			{
@@ -896,7 +901,7 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 			{
 				light /= 2; // halve for sneaking
 			}
-			light -= (light - TOUCHRANGE) * (1.0 * (myStats.PROFICIENCIES[PRO_STEALTH] / 100.0)); // reduce to 32 as sneak approaches 100
+			light -= (std::max(0, light - TOUCHRANGE)) * (1.0 * (myStats.PROFICIENCIES[PRO_STEALTH] / 100.0)); // reduce to 32 as sneak approaches 100
 		}
 	}
 	
@@ -1157,7 +1162,7 @@ void Entity::effectTimes()
 			{
 				if ( myStats->EFFECTS_TIMERS[c] == TICKS_PER_SECOND * 15 )
 				{
-					//playSoundPlayer(player, 32, 128);
+					playSoundPlayer(player, 611, 192);
 					messagePlayer(player, MESSAGE_STATUS, Language::get(3193));
 				}
 			}
@@ -1165,7 +1170,7 @@ void Entity::effectTimes()
 			{
 				if ( myStats->EFFECTS_TIMERS[c] == TICKS_PER_SECOND * 15 )
 				{
-					playSoundPlayer(player, 32, 128);
+					playSoundPlayer(player, 611, 192);
 					messagePlayer(player, MESSAGE_STATUS, Language::get(3475));
 				}
 			}
@@ -7934,26 +7939,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							damage = (damage - chance) + (local_rng.rand() % chance) + 1;
 						}*/
-						 real_t variance = 20;
-						 real_t baseSkillModifier = 50.0; // 40-60 base
-						if ( weaponskill == PRO_UNARMED )
-						{
-							variance = 30.0;
-							baseSkillModifier = 45.0; // 30-60 base
-						}
-						else if ( weaponskill == PRO_POLEARM )
-						{
-							if ( gungnir )
-							{
-								variance = 0.0;
-								baseSkillModifier = 60.0;
-							}
-							else
-							{
-								variance = 10.0;
-								baseSkillModifier = 55.0; // 50-60 base
-							}
-						}
+						real_t variance = 20;
+						real_t baseSkillModifier = 50.0; // 40-60 base
+						Entity::setMeleeDamageSkillModifiers(this, myStats, weaponskill, baseSkillModifier, variance);
 						real_t skillModifier = baseSkillModifier - (variance / 2) + (myStats->PROFICIENCIES[weaponskill] / 2.0);
 						skillModifier += (local_rng.rand() % (1 + static_cast<int>(variance)));
 						skillModifier /= 100.0;
@@ -10479,15 +10467,29 @@ bool Entity::teleport(int tele_x, int tele_y)
 			return false;
 		}
 	}
+	else if ( behavior == &actDeathGhost )
+	{
+		player = skill[2];
+	}
 
-	if ( strstr(map.name, "Minotaur") || checkObstacle((tele_x << 4) + 8, (tele_y << 4) + 8, this, NULL) )
+	if ( (strstr(map.name, "Minotaur") && behavior != &actDeathGhost) 
+		|| checkObstacle((tele_x << 4) + 8, (tele_y << 4) + 8, this, NULL) )
 	{
 		messagePlayer(player, MESSAGE_HINT, Language::get(707));
 		return false;
 	}
 
 	// play sound effect
-	playSoundEntity(this, 77, 64);
+	int sfx = 77;
+	if ( behavior == &actDeathGhost )
+	{
+		sfx = 608 + local_rng.rand() % 3;
+		playSoundEntity(this, sfx, 128);
+	}
+	else
+	{
+		playSoundEntity(this, sfx, 64);
+	}
     spawnPoof(x, y, 0, 1.0, true);
 
 	// relocate entity
@@ -10510,7 +10512,7 @@ bool Entity::teleport(int tele_x, int tele_y)
 	{
 		TileEntityList.updateEntity(*this);
 	}
-	if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
+	if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
 	{
 		strcpy((char*)net_packet->data, "TELE");
 		net_packet->data[4] = tele_x;
@@ -10537,7 +10539,14 @@ bool Entity::teleport(int tele_x, int tele_y)
 	}
 
 	// play second sound effect
-	playSoundEntity(this, 77, 64);
+	if ( behavior == &actDeathGhost )
+	{
+		playSoundEntity(this, sfx, 128);
+	}
+	else
+	{
+		playSoundEntity(this, sfx, 64);
+	}
     const float poofx = x + cosf(yaw) * 4.f;
     const float poofy = y + sinf(yaw) * 4.f;
     spawnPoof(poofx, poofy, 0, 1.0, true);
@@ -10590,8 +10599,8 @@ bool Entity::teleportRandom()
 			messagePlayerColor(player, MESSAGE_HINT, color, Language::get(2381));
 			return false;
 		}
-
 	}
+
 	for ( int iy = 1; iy < map.height; ++iy )
 	{
 		for ( int ix = 1; ix < map.width; ++ix )
@@ -10704,6 +10713,10 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 			return false;
 		}
 	}
+	else if ( behavior == &actDeathGhost )
+	{
+		player = skill[2];
+	}
 
 	struct Coord_t
 	{
@@ -10810,7 +10823,15 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 						y = (iy << 4) + 8;
 						if ( !entityInsideSomething(this) )
 						{
-							bool onTrap = teleportCoordHasTrap(ix, iy);
+							bool onTrap = true;
+							if ( behavior == &actDeathGhost )
+							{
+								onTrap = false;
+							}
+							else
+							{
+								onTrap = teleportCoordHasTrap(ix, iy);
+							}
 							if ( !onTrap )
 							{
 								forceSpot = true;
@@ -10840,7 +10861,14 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 						y = (iy << 4) + 8;
 						if ( !entityInsideSomething(this) )
 						{
-							goodspots.push_back(Coord_t(ix, iy, teleportCoordHasTrap(ix, iy)));
+							if ( behavior == &actDeathGhost )
+							{
+								goodspots.push_back(Coord_t(ix, iy, false));
+							}
+							else
+							{
+								goodspots.push_back(Coord_t(ix, iy, teleportCoordHasTrap(ix, iy)));
+							}
 							numlocations++;
 						}
 						// restore coordinates.
@@ -10927,7 +10955,7 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 			ty = coord.y;
 		}
 	}
-	if ( behavior == &actPlayer )
+	if ( behavior == &actPlayer || behavior == &actDeathGhost )
 	{
 		// pretend player has teleported, get the angle needed.
 		real_t tmpx = x;
@@ -12978,6 +13006,43 @@ int getStatForProficiency(int skill)
 	}
 
 	return statForProficiency;
+}
+
+void Entity::setMeleeDamageSkillModifiers(Entity* my, Stat* myStats, int skill, real_t& baseSkillModifier, real_t& variance)
+{
+	bool shapeshifted = (my && my->behavior == &actPlayer && my->effectShapeshift != NOTHING);
+	bool gungnir = false;
+
+	variance = 20;
+	baseSkillModifier = 50.0; // 40-60 base
+
+	if ( !shapeshifted )
+	{
+		if ( myStats && myStats->weapon && myStats->weapon->type == ARTIFACT_SPEAR )
+		{
+			gungnir = true;
+		}
+	}
+
+	if ( skill == PRO_UNARMED )
+	{
+		variance = 30.0;
+		baseSkillModifier = 45.0; // 30-60 base
+	}
+	else if ( skill == PRO_POLEARM )
+	{
+		if ( gungnir )
+		{
+			variance = 0.0;
+			baseSkillModifier = 60.0;
+		}
+		else
+		{
+			variance = 10.0;
+			baseSkillModifier = 55.0; // 50-60 base
+		}
+	}
+	return;
 }
 
 
@@ -17802,33 +17867,6 @@ char const * playerClassLangEntry(int classnum, int playernum)
 
 /*-------------------------------------------------------------------------------
 
-playerClassDescription
-get text string for the description of player chosen classes.
-
--------------------------------------------------------------------------------*/
-
-char const * playerClassDescription(int classnum, int playernum)
-{
-	if ( classnum >= CLASS_BARBARIAN && classnum <= CLASS_JOKER )
-	{
-		return Language::get(10 + classnum);
-	}
-	else if ( classnum >= CLASS_CONJURER )
-	{
-		return Language::get(3231 + classnum - CLASS_CONJURER);
-	}
-	else if ( classnum >= CLASS_SEXTON && classnum <= CLASS_MONK )
-	{
-		return Language::get(2560 + classnum - CLASS_SEXTON);
-	}
-	else
-	{
-		return "undefined description";
-	}
-}
-
-/*-------------------------------------------------------------------------------
-
 setHelmetLimbOffset
 Adjusts helmet offsets for all monsters, depending on the type of headwear.
 
@@ -19851,7 +19889,7 @@ void Entity::createWorldUITooltip()
 {
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		if ( !players[i]->isLocalPlayerAlive() )
+		if ( !players[i]->isLocalPlayer() )
 		{
 			continue;
 		}

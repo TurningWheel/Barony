@@ -37,6 +37,9 @@ bool disablemouserotationlimit = true;
 bool settings_disablemouserotationlimit = false;
 bool swimDebuffMessageHasPlayed = false;
 bool partymode = false;
+static ConsoleVariable<float> cvar_calloutStartZ("/callout_start_z", -2.5);
+static ConsoleVariable<float> cvar_calloutMoveTo("/callout_moveto_z", 0.1);
+static ConsoleVariable<float> cvar_calloutStartZLimit("/callout_start_z_limit", 7.5);
 
 /*-------------------------------------------------------------------------------
 
@@ -47,12 +50,2032 @@ bool partymode = false;
 
 -------------------------------------------------------------------------------*/
 
+#define GHOSTCAM_INIT my->skill[0]
+#define GHOSTCAM_PLAYERNUM my->skill[2]
+#define GHOSTCAM_SNEAKING my->skill[3]
+#define GHOSTCAM_BOBMODE my->skill[4]
+#define GHOSTCAM_SQUISH_TIME my->skill[5]
+#define GHOSTCAM_SQUISH_DELAY my->skill[6]
+#define GHOSTCAM_DEACTIVATED my->skill[7]
+#define GHOSTCAM_SPAWN_ANIM my->skill[8]
+#define GHOSTCAM_SPAWN_ANIM_COMPLETE my->skill[9]
+#define GHOSTCAM_BOB my->fskill[0]
+#define GHOSTCAM_BOBMOVE my->fskill[1]
+#define GHOSTCAM_DX my->fskill[3]
+#define GHOSTCAM_DY my->fskill[4]
+#define GHOSTCAM_DYAW my->fskill[5]
+#define GHOSTCAM_ROTX my->fskill[6]
+#define GHOSTCAM_ROTY my->fskill[7]
+#define GHOSTCAM_SQUISH my->fskill[8]
+#define GHOSTCAM_SQUISH_ANGLE my->fskill[9]
+#define GHOSTCAM_WEAVE my->fskill[10]
+#define GHOSTCAM_HOVER my->fskill[11]
+
+void Player::Ghost_t::handleGhostCameraBobbing(bool useRefreshRateDelta)
+{
+	if ( !my )
+	{
+		return;
+	}
+
+	int playernum = player.playernum;
+
+	double refreshRateDelta = 1.0;
+	if ( useRefreshRateDelta && fps > 0.0 )
+	{
+		refreshRateDelta *= TICKS_PER_SECOND / (real_t)fpsLimit;
+	}
+
+	Input& input = Input::inputs[playernum];
+	static ConsoleVariable<float> cvar_ghostBob("/ghost_bob", 0.25);
+	static ConsoleVariable<float> cvar_ghostBobSpeed("/ghost_bob_speed", 4.0);
+
+	// camera bobbing
+	if ( bobbing )
+	{
+		bool reset = false;
+
+		if ( !gamePaused
+			&& ((!inputs.hasController(playernum)
+				&& ((input.binary("Move Forward") || input.binary("Move Backward"))
+					|| (input.binary("Move Left") - input.binary("Move Right"))))
+				|| (inputs.hasController(playernum)
+					&& (inputs.getController(playernum)->getLeftXPercentForPlayerMovement()
+						|| inputs.getController(playernum)->getLeftYPercentForPlayerMovement()))) )
+		{
+			if ( !player.usingCommand()
+				&& player.bControlEnabled )
+			{
+				if ( !GHOSTCAM_SNEAKING )
+				{
+					GHOSTCAM_BOBMOVE += 0.0125 * *cvar_ghostBobSpeed;
+				}
+				else
+				{
+					//GHOSTCAM_BOBMOVE += 0.025;
+					reset = true;
+				}
+			}
+			else
+			{
+				reset = true;
+			}
+		}
+		else
+		{
+			reset = true;
+		}
+
+		if ( reset )
+		{
+			if ( GHOSTCAM_BOBMOVE > 0.001 && GHOSTCAM_BOBMOVE < 1.0 )
+			{
+				GHOSTCAM_BOBMOVE += 0.0125 * *cvar_ghostBobSpeed;
+			}
+		}
+		if ( GHOSTCAM_BOBMOVE >= 1.0 )
+		{
+			GHOSTCAM_BOBMOVE = 0.0;
+		}
+
+		real_t bobSpeed = *cvar_ghostBob;
+		GHOSTCAM_BOB = -bobSpeed + bobSpeed * sin((PI / 2) + GHOSTCAM_BOBMOVE * refreshRateDelta * 2 * PI);
+	}
+	else
+	{
+		GHOSTCAM_BOBMOVE = 0;
+		GHOSTCAM_BOB = 0;
+		GHOSTCAM_BOBMODE = 0;
+	}
+}
+
+void Player::Ghost_t::handleGhostMovement(const bool useRefreshRateDelta)
+{
+	if ( !my ) { return; }
+
+	Input& input = Input::inputs[player.playernum];
+
+	double refreshRateDelta = 1.0;
+	if ( useRefreshRateDelta && fps > 0.0 )
+	{
+		refreshRateDelta *= TICKS_PER_SECOND / (real_t)fpsLimit;
+	}
+
+	// calculate movement forces
+	bool allowMovement = isControllable();
+	static ConsoleVariable<float> cvar_ghostSpeed("/ghost_speed", 1.5);
+	static ConsoleVariable<float> cvar_ghostDrag("/ghost_drag", 0.95);
+
+	if ( ((!player.usingCommand() && player.bControlEnabled && !gamePaused))
+		&& allowMovement )
+	{
+		//x_force and y_force represent the amount of percentage pushed on that respective axis. Given a keyboard, it's binary; either you're pushing "move left" or you aren't. On an analog stick, it can range from whatever value to whatever.
+		float x_force = 0;
+		float y_force = 0;
+
+		{
+			double backpedalMultiplier = 0.25;
+
+			if ( !inputs.hasController(player.playernum) )
+			{
+				x_force = (input.binary("Move Right") - input.binary("Move Left"));
+				y_force = input.binary("Move Forward") - (double)input.binary("Move Backward") * backpedalMultiplier;
+			}
+
+			if ( inputs.hasController(player.playernum) /*&& !input.binary("Move Left") && !input.binary("Move Right")*/ )
+			{
+				x_force = inputs.getController(player.playernum)->getLeftXPercentForPlayerMovement();
+			}
+
+			if ( inputs.hasController(player.playernum) /*&& !input.binary("Move Forward") && !input.binary("Move Backward")*/ )
+			{
+				y_force = inputs.getController(player.playernum)->getLeftYPercentForPlayerMovement();
+				if ( y_force < 0 )
+				{
+					y_force *= backpedalMultiplier;    //Move backwards more slowly.
+				}
+			}
+		}
+
+		real_t speedFactor = *cvar_ghostSpeed;// getSpeedFactor(weightratio, statGetDEX(stats[PLAYER_NUM], players[PLAYER_NUM]->entity));
+		speedFactor *= refreshRateDelta;
+		my->vel_x += y_force * cos(my->yaw) * .045 * speedFactor / (1 + GHOSTCAM_SNEAKING);
+		my->vel_y += y_force * sin(my->yaw) * .045 * speedFactor / (1 + GHOSTCAM_SNEAKING);
+		my->vel_x += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor / (1 + GHOSTCAM_SNEAKING);
+		my->vel_y += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor / (1 + GHOSTCAM_SNEAKING);
+
+	}
+	my->vel_x *= pow(*cvar_ghostDrag, refreshRateDelta);
+	my->vel_y *= pow(*cvar_ghostDrag, refreshRateDelta);
+
+	/*for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( players[i] && players[i]->entity )
+		{
+			if ( players[i]->entity == my )
+			{
+				continue;
+			}
+			if ( entityInsideEntity(my, players[i]->entity) )
+			{
+				double tangent = atan2(my->y - players[i]->entity->y, my->x - players[i]->entity->x);
+				PLAYER_VELX += cos(tangent) * 0.075 * refreshRateDelta;
+				PLAYER_VELY += sin(tangent) * 0.075 * refreshRateDelta;
+			}
+		}
+	}*/
+}
+
+void Player::Ghost_t::startQuickTurn()
+{
+	if ( !my )
+	{
+		return;
+	}
+	if ( bDoingQuickTurn )
+	{
+		return;
+	}
+
+	if ( gamePaused )
+	{
+		return;
+	}
+
+	quickTurnRotation = PI * player.settings.quickTurnDirection;
+	quickTurnStartTicks = my->ticks;
+	bDoingQuickTurn = true;
+}
+
+bool Player::Ghost_t::handleQuickTurn(bool useRefreshRateDelta)
+{
+	if ( !my ) { return false; }
+
+	if ( !bDoingQuickTurn )
+	{
+		quickTurnRotation = 0.0;
+		bDoingQuickTurn = false;
+		quickTurnStartTicks = 0;
+		return false;
+	}
+
+	double refreshRateDelta = 1.0;
+	if ( useRefreshRateDelta && fps > 0.0 )
+	{
+		refreshRateDelta *= TICKS_PER_SECOND / (real_t)fpsLimit;
+	}
+
+	if ( abs(quickTurnRotation) > 0.001 )
+	{
+		int dir = ((quickTurnRotation > 0) ? 1 : -1);
+		if ( my->ticks - quickTurnStartTicks < 15 )
+		{
+			GHOSTCAM_ROTX = dir * players[player.playernum]->settings.quickTurnSpeed;
+		}
+		else
+		{
+			GHOSTCAM_ROTX = std::max(0.01, (dir * PI / 15) * pow(0.99, my->ticks - quickTurnStartTicks));
+		}
+
+		if ( dir == 1 )
+		{
+			quickTurnRotation = std::max(0.0, quickTurnRotation - GHOSTCAM_ROTX * refreshRateDelta);
+		}
+		else
+		{
+			quickTurnRotation = std::min(0.0, quickTurnRotation - GHOSTCAM_ROTX * refreshRateDelta);
+		}
+		return true;
+	}
+	else
+	{
+		bDoingQuickTurn = false;
+		return false;
+	}
+}
+
+void Player::Ghost_t::reset()
+{
+	quickTurnRotation = 0.0;
+	quickTurnStartTicks = 0;
+	bDoingQuickTurn = false;
+	my = nullptr;
+	uid = 0;
+	cooldownPush = 0;
+	cooldownChill = 0;
+	cooldownTeleport = 0;
+	errorFlashPushTicks = 0;
+	errorFlashTeleportTicks = 0;
+	errorFlashChillTicks = 0;
+	pushPoints = MAX_PUSH_POINTS;
+
+	castingSpellAnimation = GHOST_SPELL_NONE;
+	castingHeldDuration = 0;
+
+	player.cleanUpOnEntityRemoval();
+}
+
+bool Player::Ghost_t::allowedInteractEntity(Entity& entity)
+{
+	if ( entity.behavior == &actItem
+		|| entity.behavior == &actDoor
+		|| entity.behavior == &actSwitch
+		|| entity.behavior == &actSwitchWithTimer
+		|| entity.behavior == &actPowerCrystal
+		|| entity.behavior == &actPowerCrystalBase
+		|| entity.behavior == &actTeleportShrine
+		|| entity.behavior == &actTeleporter )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool Player::Ghost_t::isActive()
+{ 
+	if ( my )
+	{
+		if ( !GHOSTCAM_DEACTIVATED )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+void Player::Ghost_t::handleAttack()
+{
+	if ( !isActive() )
+	{
+		castingSpellAnimation = GHOST_SPELL_NONE;
+	}
+	if ( castingSpellAnimation == GHOST_SPELL_NONE )
+	{
+		castingHeldDuration = 0;
+	}
+
+	if ( cooldownPush > 0 )
+	{
+		--cooldownPush;
+		if ( cooldownPush == 0 )
+		{
+			pushPoints += MAX_PUSH_POINTS;
+			pushPoints = std::min(pushPoints, MAX_PUSH_POINTS);
+		}
+	}
+	if ( pushPoints < MAX_PUSH_POINTS && cooldownPush == 0 )
+	{
+		cooldownPush = TICKS_PER_SECOND;
+	}
+
+	if ( cooldownChill > 0 )
+	{
+		--cooldownChill;
+	}
+	if ( cooldownTeleport > 0 )
+	{
+		--cooldownTeleport;
+	}
+	if ( errorFlashChillTicks > 0 )
+	{
+		--errorFlashChillTicks;
+	}
+	if ( errorFlashPushTicks > 0 )
+	{
+		--errorFlashPushTicks;
+	}
+	if ( errorFlashTeleportTicks > 0 )
+	{
+		--errorFlashTeleportTicks;
+	}
+
+	Input& input = Input::inputs[player.playernum];
+	bool attack = false;
+	bool useSpell = false;
+	bool defending = false;
+	if ( !player.usingCommand() 
+		&& player.bControlEnabled 
+		&& !gamePaused
+		&& isControllable() )
+	{
+		if ( player.shootmode )
+		{
+			if ( input.consumeBinaryToggle("Attack") )
+			{
+				if ( cooldownChill > 0 )
+				{
+					// no action
+					if ( errorFlashChillTicks == 0 && cooldownChill > (TICKS_PER_SECOND / 2)
+						&& (cooldownChillDelay - cooldownChill > (TICKS_PER_SECOND / 2)) )
+					{
+						errorFlashChillTicks = errorFlashTicks;
+						playSound(563, 64);
+					}
+				}
+				else
+				{
+					attack = true;
+				}
+			}
+			if ( input.consumeBinaryToggle("Cast Spell") )
+			{
+				if ( cooldownTeleport > 0 )
+				{
+					// no action
+					if ( errorFlashTeleportTicks == 0 && cooldownTeleport > (TICKS_PER_SECOND / 2)
+						&& (cooldownTeleportDelay - cooldownTeleport > (TICKS_PER_SECOND / 2)) )
+					{
+						errorFlashTeleportTicks = errorFlashTicks;
+						playSound(563, 64);
+					}
+				}
+				else
+				{
+					useSpell = true;
+				}
+			}
+		}
+		if ( input.binary("Defend") )
+		{
+			defending = true;
+		}
+	}
+
+	if ( GHOSTCAM_SNEAKING != defending || ticks % 120 == 0 )
+	{
+		if ( multiplayer == CLIENT )
+		{
+			strcpy((char*)net_packet->data, "GHOD");
+			net_packet->data[4] = player.playernum;
+			net_packet->data[5] = defending;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 6;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+		else if ( multiplayer == SERVER )
+		{
+			strcpy((char*)net_packet->data, "GHOD");
+			net_packet->data[4] = player.playernum;
+			net_packet->data[5] = defending;
+			net_packet->len = 6;
+			for ( int c = 1; c < MAXPLAYERS; ++c )
+			{
+				// relay packet to other players
+				if ( client_disconnected[c] ) 
+				{
+					continue;
+				}
+				net_packet->address.host = net_clients[c - 1].host;
+				net_packet->address.port = net_clients[c - 1].port;
+				sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			}
+		}
+	}
+	GHOSTCAM_SNEAKING = defending;
+
+	const int castLoopDuration = 4 * TICKS_PER_SECOND / 10;
+	bool finishSpell = false;
+	if ( castingSpellAnimation == GHOST_SPELL_BOLT )
+	{
+		if ( castingHeldDuration >= castLoopDuration * 1.5 )
+		{
+			finishSpell = true;
+		}
+	}
+	else if ( castingSpellAnimation == GHOST_SPELL_TELEPORT )
+	{
+		if ( castingHeldDuration >= castLoopDuration * 2 )
+		{
+			finishSpell = true;
+		}
+	}
+
+	if ( finishSpell )
+	{
+		if ( castingSpellAnimation == GHOST_SPELL_TELEPORT )
+		{
+			castSpell(uid, &spell_teleportation, false, true);
+			castingSpellAnimation = GHOST_SPELL_NONE;
+		}
+		else if ( castingSpellAnimation == GHOST_SPELL_BOLT )
+		{
+			castSpell(uid, &spell_ghost_bolt, false, true);
+			castingSpellAnimation = GHOST_SPELL_POST_CASTING;
+		}
+		castingHeldDuration = 0;
+
+
+		for ( int i = 0; i < 5; ++i )
+		{
+			Entity* entity = spawnGib(my);
+			entity->flags[INVISIBLE] = false;
+			entity->flags[SPRITE] = true;
+			entity->flags[NOUPDATE] = true;
+			entity->flags[UPDATENEEDED] = false;
+			entity->flags[OVERDRAW] = true;
+			entity->lightBonus = vec4(0.2f, 0.2f, 0.2f, 0.f);
+			real_t scale = 0.15f;
+			entity->scalex = scale;
+			entity->scaley = scale;
+			entity->scalez = scale;
+			entity->sprite = 16;
+			entity->x = 8;
+			entity->y = 0;
+			entity->z = (cameras[player.playernum].z * .5 - my->z) + 7 + -2;
+			entity->z -= 4.75;
+			entity->z = local_rng.uniform(entity->z, entity->z - 4);
+			entity->z += 5.0;
+			entity->yaw = -cameravars[player.playernum].shakex2;
+			entity->yaw = ((local_rng.rand() % 6) * 60) * PI / 180.0;
+			entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+			entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+			entity->vel_x = cos(entity->yaw) * .1;
+			entity->vel_y = sin(entity->yaw) * .1;
+			entity->vel_z = -.15;
+			entity->fskill[3] = 0.01;
+			entity->skill[11] = player.playernum;
+		}
+		return;
+	}
+
+	if ( castingSpellAnimation == GHOST_SPELL_POST_CASTING )
+	{
+		if ( !attack )
+		{
+			castingSpellAnimation = GHOST_SPELL_NONE;
+		}
+	}
+
+	if ( castingSpellAnimation == GHOST_SPELL_NONE )
+	{
+		if ( attack )
+		{
+			castingSpellAnimation = GHOST_SPELL_BOLT;
+			cooldownChill = cooldownChillDelay;
+			errorFlashChillTicks = 0;
+			playSoundEntity(my, 170, 128);
+		}
+		else if ( useSpell )
+		{
+			castingSpellAnimation = GHOST_SPELL_TELEPORT;
+			cooldownTeleport = cooldownTeleportDelay;
+			errorFlashTeleportTicks = 0;
+			playSoundEntity(my, 170, 128);
+		}
+	}
+	else if ( castingSpellAnimation == GHOST_SPELL_TELEPORT || castingSpellAnimation == GHOST_SPELL_BOLT )
+	{
+		++castingHeldDuration;
+
+		if ( castingSpellAnimation == GHOST_SPELL_TELEPORT )
+		{
+			float x = 6;
+			float y = 0.1;
+			float z = 5.5;
+			// boosty boost
+			for ( int i = 0; i < 3 && castingHeldDuration == 1; ++i )
+			{
+				Entity* entity = newEntity(1245, 1, map.entities, nullptr);
+				entity->yaw = i * 2 * PI / 3;
+				entity->x = x;
+				entity->y = y;
+				entity->z = z;
+				double missile_speed = 4;
+				entity->vel_x = 0.0;
+				entity->vel_y = 0.0;
+				entity->actmagicIsOrbiting = 2;
+				entity->actmagicOrbitDist = 16.0;
+				entity->actmagicOrbitStationaryCurrentDist = 0.0;
+				entity->actmagicOrbitStartZ = entity->z;
+				//entity->roll -= (PI / 8);
+				entity->actmagicOrbitVerticalSpeed = -0.3;
+				entity->actmagicOrbitVerticalDirection = 1;
+				entity->actmagicOrbitLifetime = TICKS_PER_SECOND;
+				entity->actmagicOrbitStationaryX = x;
+				entity->actmagicOrbitStationaryY = y;
+				entity->vel_z = -0.1;
+				entity->behavior = &actHUDMagicParticleCircling;
+
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->flags[UNCLICKABLE] = true;
+				entity->flags[UPDATENEEDED] = false;
+				entity->flags[OVERDRAW] = true;
+				entity->skill[11] = player.playernum;
+				if ( multiplayer != CLIENT )
+				{
+					entity_uids--;
+				}
+				entity->setUID(-3);
+			}
+
+			if ( ticks % 5 == 0 )
+			{
+				Entity* entity = spawnGib(my);
+				entity->flags[INVISIBLE] = false;
+				entity->flags[SPRITE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->flags[UPDATENEEDED] = false;
+				entity->flags[OVERDRAW] = true;
+				entity->lightBonus = vec4(0.2f, 0.2f, 0.2f, 0.f);
+				real_t scale = 0.15f;
+				entity->scalex = scale;
+				entity->scaley = scale;
+				entity->scalez = scale;
+				entity->sprite = 16;
+				entity->x = 8;
+				entity->y = 0;
+				entity->z = (cameras[player.playernum].z * .5 - my->z) + 7 + -2;
+				entity->z -= 6.75;
+				entity->z = local_rng.uniform(entity->z, entity->z - 4);
+				entity->z += 5.0;
+				entity->yaw = -cameravars[player.playernum].shakex2;
+				entity->yaw = ((local_rng.rand() % 6) * 60) * PI / 180.0;
+				entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+				entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+				entity->vel_x = cos(entity->yaw) * .1;
+				entity->vel_y = sin(entity->yaw) * .1;
+				entity->vel_z = -.15;
+				entity->fskill[3] = 0.01;
+				entity->skill[11] = player.playernum;
+			}
+		}
+		else if ( castingSpellAnimation == GHOST_SPELL_BOLT )
+		{
+			float x = 6;
+			float y = 0.1;
+			float z = 1.5;
+			// boosty boost
+			for ( int i = 1; i < 3; ++i )
+			{
+				Uint32 animTick = castingHeldDuration >= castLoopDuration ? castLoopDuration : castingHeldDuration;
+
+				Entity* entity = newEntity(1243, 1, map.entities, nullptr); //Particle entity.
+				entity->x = x - 0.01 * (5 + local_rng.rand() % 11);
+				entity->y = y - 0.01 * (5 + local_rng.rand() % 11);
+				entity->z = z - 0.01 * (10 + local_rng.rand() % 21);
+				if ( i == 1 )
+				{
+					entity->y += -2;
+					entity->y += -2 * sin(2 * PI * (animTick % 40) / 40.f);
+				}
+				else
+				{
+					entity->y += -(-2);
+					entity->y -= -2 * sin(2 * PI * (animTick % 40) / 40.f);
+				}
+
+				entity->focalz = -2;
+
+				real_t scale = 0.05f;
+				scale += (animTick) * 0.025f;
+				scale = std::min(scale, 0.5);
+
+				entity->scalex = scale;
+				entity->scaley = scale;
+				entity->scalez = scale;
+				entity->sizex = 1;
+				entity->sizey = 1;
+				entity->yaw = 0;
+				entity->roll = i * 2 * PI / 3;
+				entity->pitch = PI + ((animTick % 40) / 40.f) * 2 * PI;
+				entity->ditheringDisabled = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->flags[UNCLICKABLE] = true;
+				entity->flags[UPDATENEEDED] = false;
+				entity->flags[OVERDRAW] = true;
+				entity->lightBonus = vec4(0.25f, 0.25f,
+					0.25f, 0.f);
+				entity->behavior = &actHUDMagicParticle;
+				entity->vel_z = 0;
+				entity->skill[11] = player.playernum;
+				if ( multiplayer != CLIENT )
+				{
+					entity_uids--;
+				}
+				entity->setUID(-3);
+			}
+		}
+	}
+}
+
+void Player::Ghost_t::handleActions()
+{
+	if ( !isControllable() )
+	{
+		return;
+	}
+
+	Input& input = Input::inputs[player.playernum];
+	CalloutRadialMenu& calloutMenu = CalloutMenu[player.playernum];
+	auto& b = (multiplayer != SINGLE && player.playernum != 0) ? Input::inputs[0].getBindings() : input.getBindings();
+
+	clickDescription(player.playernum, NULL); // inspecting objects
+
+	if ( !calloutMenu.calloutMenuIsOpen() )
+	{
+		bool clickedOnGUI = false;
+
+		EntityClickType clickType = ENTITY_CLICK_USE;
+		bool tempDisableWorldUI = false;
+		bool skipUse = false;
+		if ( player.worldUI.isEnabled() )
+		{
+			if ( !player.shootmode && input.input("Use").isBindingUsingGamepad() )
+			{
+				skipUse = true;
+			}
+			else if ( !player.shootmode && inputs.bPlayerUsingKeyboardControl(player.playernum) )
+			{
+				tempDisableWorldUI = true;
+			}
+			else if ( (!player.shootmode)
+				|| (player.hotbar.useHotbarFaceMenu
+					&& (player.hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE)) )
+			{
+				skipUse = true;
+			}
+		}
+		else if ( !player.worldUI.isEnabled() && input.input("Use").isBindingUsingGamepad()
+			&& !player.shootmode )
+		{
+			skipUse = true;
+		}
+
+		if ( !skipUse )
+		{
+			if ( tempDisableWorldUI )
+			{
+				player.worldUI.disable();
+			}
+			if ( player.worldUI.isEnabled() )
+			{
+				clickType = ENTITY_CLICK_USE_TOOLTIPS_ONLY;
+				Entity* activeTooltipEntity = uidToEntity(player.worldUI.uidForActiveTooltip);
+				if ( activeTooltipEntity && activeTooltipEntity->bEntityTooltipRequiresButtonHeld() )
+				{
+					clickType = ENTITY_CLICK_HELD_USE_TOOLTIPS_ONLY;
+				}
+			}
+
+			selectedEntity[player.playernum] = entityClicked(&clickedOnGUI, false, player.playernum, clickType); // using objects
+			if ( !selectedEntity[player.playernum] && !clickedOnGUI )
+			{
+				if ( clickType == ENTITY_CLICK_USE )
+				{
+					// otherwise if we hold right click we'll keep trying this function, FPS will drop.
+					if ( input.binary("Use") )
+					{
+						++player.movement.selectedEntityGimpTimer;
+					}
+				}
+			}
+
+			if ( tempDisableWorldUI )
+			{
+				player.worldUI.enable();
+			}
+		}
+		else
+		{
+			input.consumeBinaryToggle("Use");
+			//input.consumeBindingsSharedWithBinding("Use");
+			selectedEntity[player.playernum] = nullptr;
+		}
+	}
+	else if ( calloutMenu.calloutMenuIsOpen() )
+	{
+		selectedEntity[player.playernum] = NULL;
+		// TODO CALLOUT?
+		if ( !player.usingCommand() && player.bControlEnabled && !gamePaused && input.binaryToggle("Use") )
+		{
+			if ( !calloutMenu.menuToggleClick && calloutMenu.selectMoveTo )
+			{
+				if ( calloutMenu.optionSelected == CalloutRadialMenu::CALLOUT_CMD_SELECT )
+				{
+					// we're selecting a target for the ally.
+					Entity* target = entityClicked(nullptr, false, player.playernum, EntityClickType::ENTITY_CLICK_CALLOUT);
+					input.consumeBinaryToggle("Use");
+					//input.consumeBindingsSharedWithBinding("Use");
+					if ( target )
+					{
+						Entity* parent = uidToEntity(target->skill[2]);
+						if ( target->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
+						{
+							// see if we selected a limb
+							if ( parent )
+							{
+								target = parent;
+							}
+						}
+						else if ( target->sprite == 184 || target->sprite == 585 ) // switch base.
+						{
+							parent = uidToEntity(target->parent);
+							if ( parent )
+							{
+								target = parent;
+							}
+						}
+						if ( true /*&& calloutMenu.allowedInteractEntity(*target)*/ )
+						{
+							calloutMenu.lockOnEntityUid = target->getUID();
+							if ( target->behavior == &actPlayer && target->skill[2] != player.playernum )
+							{
+								target = my;
+							}
+
+							if ( calloutMenu.createParticleCallout(target, CalloutRadialMenu::CALLOUT_CMD_LOOK) )
+							{
+								calloutMenu.sendCalloutText(CalloutRadialMenu::CALLOUT_CMD_LOOK);
+							}
+							/*calloutMenu.holdWheel = false;
+							calloutMenu.selectMoveTo = false;
+							calloutMenu.bOpen = true;
+							calloutMenu.optionSelected = ALLY_CMD_CANCEL;
+							calloutMenu.initCalloutMenuGUICursor(true);
+							Player::soundActivate();*/
+						}
+					}
+					else
+					{
+						// we're selecting a point in the world
+						if ( my )
+						{
+							real_t startx = cameras[player.playernum].x * 16.0;
+							real_t starty = cameras[player.playernum].y * 16.0;
+							real_t startz = cameras[player.playernum].z + (4.5 - cameras[player.playernum].z) / 2.0 + *cvar_calloutStartZ;
+							real_t pitch = cameras[player.playernum].vang;
+							if ( pitch < 0 || pitch > PI )
+							{
+								pitch = 0;
+							}
+
+							// draw line from the players height and direction until we hit the ground.
+							real_t previousx = startx;
+							real_t previousy = starty;
+							int index = 0;
+							const real_t yaw = cameras[player.playernum].ang;
+							for ( ; startz < *cvar_calloutStartZLimit; startz += abs((*cvar_calloutMoveTo) * tan(pitch)) )
+							{
+								startx += 0.1 * cos(yaw);
+								starty += 0.1 * sin(yaw);
+								const int index_x = static_cast<int>(startx) >> 4;
+								const int index_y = static_cast<int>(starty) >> 4;
+								index = (index_y)*MAPLAYERS + (index_x)*MAPLAYERS * map.height;
+								if ( !map.tiles[OBSTACLELAYER + index] )
+								{
+									// store the last known good coordinate
+									previousx = startx;// + 16 * cos(yaw);
+									previousy = starty;// + 16 * sin(yaw);
+								}
+								if ( map.tiles[OBSTACLELAYER + index] )
+								{
+									break;
+								}
+							}
+
+							calloutMenu.moveToX = previousx;
+							calloutMenu.moveToY = previousy;
+							calloutMenu.lockOnEntityUid = 0;
+							if ( calloutMenu.createParticleCallout(previousx, previousy, -4, 0, CalloutRadialMenu::CALLOUT_CMD_LOOK) )
+							{
+								calloutMenu.sendCalloutText(CalloutRadialMenu::CALLOUT_CMD_LOOK);
+							}
+						}
+					}
+
+					if ( player.worldUI.isEnabled() )
+					{
+						player.worldUI.reset();
+						player.worldUI.tooltipView = Player::WorldUI_t::TooltipView::TOOLTIP_VIEW_RESCAN;
+					}
+
+					calloutMenu.closeCalloutMenuGUI();
+					strcpy(calloutMenu.interactText, "");
+				}
+			}
+		}
+	}
+
+	if ( !player.usingCommand() && player.bControlEnabled
+		&& !gamePaused && CalloutRadialMenu::calloutMenuEnabledForGamemode() )
+	{
+		bool showCalloutCommandsOnGamepad = false;
+		auto showCalloutCommandsFind = b.find("Call Out");
+		std::string showCalloutCommandsInputStr = "";
+		if ( showCalloutCommandsFind != b.end() )
+		{
+			showCalloutCommandsOnGamepad = (*showCalloutCommandsFind).second.isBindingUsingGamepad();
+			showCalloutCommandsInputStr = (*showCalloutCommandsFind).second.input;
+		}
+
+		if ( player.worldUI.bTooltipInView && player.worldUI.tooltipsInRange.size() > 1 )
+		{
+			if ( showCalloutCommandsOnGamepad &&
+				(showCalloutCommandsInputStr == input.binding("Interact Tooltip Next")
+					|| showCalloutCommandsInputStr == input.binding("Interact Tooltip Prev")) )
+			{
+				input.consumeBinaryToggle("Call Out");
+				player.hud.bOpenCalloutsMenuDisabled = true;
+			}
+		}
+
+		if ( (input.binaryToggle("Call Out") && !showCalloutCommandsOnGamepad
+			&& player.shootmode)
+			|| (input.binaryToggle("Call Out") && showCalloutCommandsOnGamepad
+				&& player.shootmode /*&& !player.worldUI.bTooltipInView*/) )
+		{
+			if ( !calloutMenu.bOpen && !calloutMenu.selectMoveTo )
+			{
+				if ( !player.shootmode )
+				{
+					player.closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_CALLOUTGUI);
+				}
+				input.consumeBinaryToggle("Call Out");
+				calloutMenu.selectMoveTo = true;
+				calloutMenu.optionSelected = CalloutRadialMenu::CALLOUT_CMD_SELECT;
+				calloutMenu.lockOnEntityUid = 0;
+				Player::soundActivate();
+
+				if ( player.worldUI.isEnabled() )
+				{
+					player.worldUI.reset();
+					player.worldUI.tooltipView = Player::WorldUI_t::TooltipView::TOOLTIP_VIEW_RESCAN;
+					player.worldUI.gimpDisplayTimer = 0;
+				}
+			}
+			else if ( calloutMenu.selectMoveTo )
+			{
+				// we're selecting a target for the ally.
+				Entity* target = entityClicked(nullptr, true, player.playernum, EntityClickType::ENTITY_CLICK_CALLOUT);
+
+				if ( target )
+				{
+					Entity* parent = uidToEntity(target->skill[2]);
+					if ( target->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
+					{
+						// see if we selected a limb
+						if ( parent )
+						{
+							target = parent;
+						}
+					}
+					else if ( target->sprite == 184 || target->sprite == 585 ) // switch base.
+					{
+						parent = uidToEntity(target->parent);
+						if ( parent )
+						{
+							target = parent;
+						}
+					}
+
+					calloutMenu.holdWheel = true;
+					if ( showCalloutCommandsOnGamepad )
+					{
+						calloutMenu.holdWheel = false;
+					}
+					calloutMenu.selectMoveTo = false;
+					calloutMenu.bOpen = true;
+					calloutMenu.initCalloutMenuGUICursor(true);
+					Player::soundActivate();
+					calloutMenu.lockOnEntityUid = target->getUID();
+				}
+				else
+				{
+					// we're selecting a point in the world
+					if ( my )
+					{
+						real_t startx = cameras[player.playernum].x * 16.0;
+						real_t starty = cameras[player.playernum].y * 16.0;
+						real_t startz = cameras[player.playernum].z + (4.5 - cameras[player.playernum].z) / 2.0 + *cvar_calloutStartZ;
+						real_t pitch = cameras[player.playernum].vang;
+						if ( pitch < 0 || pitch > PI )
+						{
+							pitch = 0;
+						}
+
+						// draw line from the players height and direction until we hit the ground.
+						real_t previousx = startx;
+						real_t previousy = starty;
+						int index = 0;
+						const real_t yaw = cameras[player.playernum].ang;
+						for ( ; startz < *cvar_calloutStartZLimit; startz += abs((*cvar_calloutMoveTo) * tan(pitch)) )
+						{
+							startx += 0.1 * cos(yaw);
+							starty += 0.1 * sin(yaw);
+							const int index_x = static_cast<int>(startx) >> 4;
+							const int index_y = static_cast<int>(starty) >> 4;
+							index = (index_y)*MAPLAYERS + (index_x)*MAPLAYERS * map.height;
+							if ( !map.tiles[OBSTACLELAYER + index] )
+							{
+								// store the last known good coordinate
+								previousx = startx;// + 16 * cos(yaw);
+								previousy = starty;// + 16 * sin(yaw);
+							}
+							if ( map.tiles[OBSTACLELAYER + index] )
+							{
+								break;
+							}
+						}
+
+						calloutMenu.holdWheel = true;
+						if ( showCalloutCommandsOnGamepad )
+						{
+							calloutMenu.holdWheel = false;
+						}
+						calloutMenu.selectMoveTo = false;
+						calloutMenu.bOpen = true;
+						calloutMenu.lockOnEntityUid = 0;
+						calloutMenu.moveToX = previousx;
+						calloutMenu.moveToY = previousy;
+						calloutMenu.initCalloutMenuGUICursor(true);
+						//Player::soundActivate();
+					}
+					else
+					{
+						calloutMenu.closeCalloutMenuGUI();
+					}
+				}
+			}
+		}
+	}
+
+	if ( selectedEntity[player.playernum] != nullptr )
+	{
+		Entity* parent = uidToEntity(selectedEntity[player.playernum]->skill[2]);
+		if ( selectedEntity[player.playernum]->behavior == &actItem && pushPoints == 0 )
+		{
+			selectedEntity[player.playernum] = nullptr;
+			input.consumeBinaryToggle("Use");
+			if ( cooldownPush > 0 )
+			{
+				// no action
+				if ( errorFlashPushTicks == 0 && cooldownPush > (TICKS_PER_SECOND / 2) )
+				{
+					errorFlashPushTicks = errorFlashTicks;
+					playSound(563, 64);
+				}
+			}
+		}
+		if ( selectedEntity[player.playernum] )
+		{
+			input.consumeBinaryToggle("Use");
+			//input.consumeBindingsSharedWithBinding("Use");
+			if ( entityDist(my, selectedEntity[player.playernum]) <= TOUCHRANGE )
+			{
+				inrange[player.playernum] = true;
+				if ( selectedEntity[player.playernum]->behavior == &actItem )
+				{
+					--pushPoints;
+					pushPoints = std::max(0, pushPoints);
+					if ( pushPoints == 0 )
+					{
+						cooldownPush = cooldownPushDelay;
+					}
+				}
+			}
+			else
+			{
+				inrange[player.playernum] = false;
+			}
+			if ( multiplayer == CLIENT )
+			{
+				if ( inrange[player.playernum] )
+				{
+					strcpy((char*)net_packet->data, "CKIR");
+				}
+				else
+				{
+					strcpy((char*)net_packet->data, "CKOR");
+				}
+				net_packet->data[4] = player.playernum;
+				if ( selectedEntity[player.playernum]->behavior == &actPlayerLimb )
+				{
+					SDLNet_Write32((Uint32)players[selectedEntity[player.playernum]->skill[2]]->entity->getUID(), &net_packet->data[5]);
+				}
+				else
+				{
+					Entity* tempEntity = uidToEntity(selectedEntity[player.playernum]->skill[2]);
+					if ( tempEntity )
+					{
+						if ( tempEntity->behavior == &actMonster )
+						{
+							SDLNet_Write32((Uint32)tempEntity->getUID(), &net_packet->data[5]);
+						}
+						else
+						{
+							SDLNet_Write32((Uint32)selectedEntity[player.playernum]->getUID(), &net_packet->data[5]);
+						}
+					}
+					else
+					{
+						SDLNet_Write32((Uint32)selectedEntity[player.playernum]->getUID(), &net_packet->data[5]);
+					}
+				}
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 9;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+		}
+	}
+}
+
+void Player::Ghost_t::createBounceAnimate()
+{
+	if ( !my ) { return; }
+
+	GHOSTCAM_SQUISH_ANGLE = Player::Ghost_t::GHOST_SQUISH_START_ANGLE / 100.f;
+}
+
+bool Player::Ghost_t::isControllable()
+{
+	if ( !my ) { return false; }
+
+	if ( GHOSTCAM_SPAWN_ANIM_COMPLETE == 1 )
+	{
+		return true;
+	}
+	return false;
+}
+
+void Player::Ghost_t::pauseMenuSpectate(const int player)
+{
+	if ( !players[player]->isLocalPlayer() )
+	{
+		return;
+	}
+
+	if ( players[player]->ghost.my )
+	{
+		players[player]->ghost.setActive(false);
+	}
+}
+
+void Player::Ghost_t::pauseMenuSpawnGhost(const int player)
+{
+	if ( !players[player]->isLocalPlayer() )
+	{
+		return;
+	}
+
+	if ( players[player]->ghost.my )
+	{
+		players[player]->ghost.setActive(true);
+	}
+	else
+	{
+		players[player]->ghost.spawnGhost();
+	}
+}
+
+bool Player::Ghost_t::gamemodeAllowsGhosts()
+{
+	if ( gameModeManager.getMode() == GameModeManager_t::GameModes::GAME_MODE_TUTORIAL )
+	{
+		return false;
+	}
+	if ( multiplayer != SINGLE
+		|| (multiplayer == SINGLE && splitscreen) )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool Player::Ghost_t::gameoverOnDismiss(const int player)
+{
+	if ( !players[player]->isLocalPlayer() )
+	{
+		return false;
+	}
+
+	if ( gamemodeAllowsGhosts() )
+	{
+		pauseMenuSpawnGhost(player);
+		return true;
+	}
+	return false;
+}
+
+Entity* Player::Ghost_t::spawnGhost()
+{
+	if ( !player.isLocalPlayer() )
+	{
+		return nullptr;
+	}
+
+	if ( multiplayer != CLIENT )
+	{
+		int sprite = Player::Ghost_t::getSpriteForPlayer(player.playernum);
+		Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Ghost entity.
+		entity->x = spawnX * 16.0 + 8;
+		entity->y = spawnY * 16.0 + 8;
+		entity->z = -4;
+		entity->flags[PASSABLE] = true;
+		entity->flags[INVISIBLE] = true;
+		entity->flags[GENIUS] = true;
+		entity->behavior = &actDeathGhost;
+		entity->skill[2] = player.playernum;
+		entity->sizex = 2;
+		entity->sizey = 2;
+		entity->yaw = 0.0;
+		entity->pitch = PI / 16;
+		if ( player.playernum == clientnum && multiplayer == CLIENT )
+		{
+			entity->flags[UPDATENEEDED] = false;
+		}
+		else
+		{
+			entity->flags[UPDATENEEDED] = true;
+		}
+		players[player.playernum]->ghost.my = entity;
+		players[player.playernum]->ghost.uid = entity->getUID();
+		return entity;
+	}
+
+	if ( multiplayer == CLIENT )
+	{
+		strcpy((char*)net_packet->data, "GHOS");
+		net_packet->data[4] = player.playernum;
+		net_packet->data[5] = currentlevel;
+
+		int x = (spawnX);
+		int y = (spawnY);
+		SDLNet_Write16((Sint16)(x), &net_packet->data[6]);
+		SDLNet_Write16((Sint16)(y), &net_packet->data[8]);
+		net_packet->data[10] = secretlevel;
+		net_packet->address.host = net_server.host;
+		net_packet->address.port = net_server.port;
+		net_packet->len = 11;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+	}
+	return nullptr;
+}
+
+void Player::Ghost_t::handleGhostCameraUpdate(const bool useRefreshRateDelta)
+{
+	if ( !my ) { return; }
+
+	bool controllable = isControllable();
+
+	real_t mousex_relative = mousexrel;
+	real_t mousey_relative = mouseyrel;
+
+	mousex_relative = inputs.getMouseFloat(player.playernum, Inputs::ANALOGUE_XREL);
+	mousey_relative = inputs.getMouseFloat(player.playernum, Inputs::ANALOGUE_YREL);
+
+	const bool smoothmouse = playerSettings[multiplayer ? 0 : player.playernum].smoothmouse;
+	const bool reversemouse = playerSettings[multiplayer ? 0 : player.playernum].reversemouse;
+	real_t mouse_speed = playerSettings[multiplayer ? 0 : player.playernum].mousespeed;
+	if ( inputs.getVirtualMouse(player.playernum)->lastMovementFromController )
+	{
+		mouse_speed = 32.0;
+	}
+
+	double refreshRateDelta = 1.0;
+	if ( useRefreshRateDelta && fps > 0.0 )
+	{
+		refreshRateDelta *= TICKS_PER_SECOND / (real_t)fpsLimit;
+	}
+
+	if ( player.shootmode && !player.usingCommand()
+		&& !gamePaused
+		&& player.bControlEnabled
+		&& controllable )
+	{
+		if ( Input::inputs[player.playernum].consumeBinaryToggle("Quick Turn") )
+		{
+			startQuickTurn();
+		}
+	}
+
+	// rotate
+	if ( !player.usingCommand() && controllable
+		&& player.bControlEnabled && !gamePaused && my->isMobile() && !inputs.hasController(player.playernum) )
+	{
+		if ( noclip )
+		{
+			my->z -= (Input::inputs[player.playernum].analog("Turn Right")
+				- Input::inputs[player.playernum].analog("Turn Left")) * .25 * refreshRateDelta;
+		}
+		else
+		{
+			my->yaw += (Input::inputs[player.playernum].analog("Turn Right")
+				- Input::inputs[player.playernum].analog("Turn Left")) * .05 * refreshRateDelta;
+		}
+	}
+	bool shootmode = player.shootmode;
+
+	if ( handleQuickTurn(useRefreshRateDelta) )
+	{
+		// do nothing, override rotations.
+	}
+	else if ( shootmode && !gamePaused && controllable )
+	{
+		if ( smoothmouse )
+		{
+			if ( my->isMobile() )
+			{
+				GHOSTCAM_ROTX += mousex_relative * .006 * (mouse_speed / 128.f);
+			}
+			if ( !disablemouserotationlimit )
+			{
+				GHOSTCAM_ROTX = fmin(fmax(-0.35, GHOSTCAM_ROTX), 0.35);
+			}
+			GHOSTCAM_ROTX *= pow(0.5, refreshRateDelta);
+		}
+		else
+		{
+			if ( my->isMobile() )
+			{
+				if ( disablemouserotationlimit )
+				{
+					GHOSTCAM_ROTX = mousex_relative * .01f * (mouse_speed / 128.f);
+				}
+				else
+				{
+					GHOSTCAM_ROTX = std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mouse_speed / 128.f)), 0.35f);
+				}
+			}
+			else
+			{
+				GHOSTCAM_ROTX = 0;
+			}
+		}
+	}
+
+	my->yaw += GHOSTCAM_ROTX * refreshRateDelta;
+	while ( my->yaw >= PI * 2 )
+	{
+		my->yaw -= PI * 2;
+	}
+	while ( my->yaw < 0 )
+	{
+		my->yaw += PI * 2;
+	}
+
+	if ( smoothmouse )
+	{
+		GHOSTCAM_ROTX *= pow(0.5, refreshRateDelta);
+	}
+	else
+	{
+		GHOSTCAM_ROTX = 0;
+	}
+
+	// look up and down
+	if ( controllable )
+	{
+		if ( !player.usingCommand()
+			&& player.bControlEnabled && !gamePaused && my->isMobile() && !inputs.hasController(player.playernum) )
+		{
+			my->pitch += (Input::inputs[player.playernum].analog("Look Down")
+				- Input::inputs[player.playernum].analog("Look Up")) * .05 * refreshRateDelta;
+		}
+		if ( shootmode && !gamePaused )
+		{
+			if ( smoothmouse )
+			{
+				if ( my->isMobile() )
+				{
+					GHOSTCAM_ROTY += mousey_relative * .006 * (mouse_speed / 128.f) * (reversemouse * 2 - 1);
+				}
+				GHOSTCAM_ROTY = fmin(fmax(-0.35, GHOSTCAM_ROTY), 0.35);
+				GHOSTCAM_ROTY *= pow(0.5, refreshRateDelta);
+			}
+			else
+			{
+				if ( my->isMobile() )
+				{
+					GHOSTCAM_ROTY = std::min<float>(std::max<float>(-0.35f,
+						mousey_relative * .01f * (mouse_speed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
+				}
+				else
+				{
+					GHOSTCAM_ROTY = 0;
+				}
+			}
+		}
+		my->pitch -= GHOSTCAM_ROTY * refreshRateDelta;
+	}
+	else
+	{
+		my->pitch = PI / 16;
+	}
+
+	if ( my->pitch > PI / 3 )
+	{
+		my->pitch = PI / 3;
+	}
+	if ( my->pitch < -PI / 3 )
+	{
+		my->pitch = -PI / 3;
+	}
+
+	if ( smoothmouse )
+	{
+		GHOSTCAM_ROTY *= pow(0.5, refreshRateDelta);
+	}
+	else
+	{
+		GHOSTCAM_ROTY = 0;
+	}
+
+	if ( TimerExperiments::bUseTimerInterpolation )
+	{
+		while ( TimerExperiments::cameraCurrentState[player.playernum].yaw.position >= PI * 2 )
+		{
+			TimerExperiments::cameraCurrentState[player.playernum].yaw.position -= PI * 2;
+		}
+		while ( TimerExperiments::cameraCurrentState[player.playernum].yaw.position < 0 )
+		{
+			TimerExperiments::cameraCurrentState[player.playernum].yaw.position += PI * 2;
+		}
+		real_t diff = my->yaw - TimerExperiments::cameraCurrentState[player.playernum].yaw.position;
+		if ( diff > PI )
+		{
+			diff -= 2 * PI;
+		}
+		else if ( diff < -PI )
+		{
+			diff += 2 * PI;
+		}
+		TimerExperiments::cameraCurrentState[player.playernum].yaw.velocity = diff * TimerExperiments::lerpFactor;
+		while ( TimerExperiments::cameraCurrentState[player.playernum].pitch.position >= PI )
+		{
+			TimerExperiments::cameraCurrentState[player.playernum].pitch.position -= PI * 2;
+		}
+		while ( TimerExperiments::cameraCurrentState[player.playernum].pitch.position < -PI )
+		{
+			TimerExperiments::cameraCurrentState[player.playernum].pitch.position += PI * 2;
+		}
+		diff = my->pitch - TimerExperiments::cameraCurrentState[player.playernum].pitch.position;
+		if ( diff >= PI )
+		{
+			diff -= 2 * PI;
+		}
+		else if ( diff < -PI )
+		{
+			diff += 2 * PI;
+		}
+		TimerExperiments::cameraCurrentState[player.playernum].pitch.velocity = diff * TimerExperiments::lerpFactor;
+	}
+}
+
+Uint32 Player::Ghost_t::cooldownPushDelay = TICKS_PER_SECOND * 3;
+Uint32 Player::Ghost_t::cooldownChillDelay = TICKS_PER_SECOND * 3;
+Uint32 Player::Ghost_t::cooldownTeleportDelay = TICKS_PER_SECOND * 3;
+
+int Player::Ghost_t::getSpriteForPlayer(const int player)
+{
+	if ( !colorblind_lobby )
+	{
+		return ((player < 4) ? (GHOST_MODEL_P1 + player) : GHOST_MODEL_PX);
+	}
+	Uint32 index = 4;
+	switch ( player )
+	{
+	case 0:
+		index = 2;
+		break;
+	case 1:
+		index = 3;
+		break;
+	case 2:
+		index = 1;
+		break;
+	case 3:
+		index = 4;
+		break;
+	default:
+		break;
+	}
+	return GHOST_MODEL_P1 + index;
+}
+
+void actDeathGhostLimb(Entity* my)
+{
+	int playernum = GHOSTCAM_PLAYERNUM;
+	if ( playernum < 0 || playernum >= MAXPLAYERS )
+	{
+		return;
+	}
+
+	if ( !players[playernum] || !players[playernum]->ghost.my )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+}
+
+void Player::Ghost_t::initStartRoomLocation(int x, int y)
+{
+	startRoomX = x;
+	startRoomY = y;
+}
+
+void Player::Ghost_t::initTeleportLocations(int x, int y)
+{
+	teleportToPlayer = -1;
+	spawnX = x;
+	spawnY = y;
+
+	if ( startRoomX == -1 )
+	{
+		startRoomX = x;
+	}
+	if ( startRoomY == -1 )
+	{
+		startRoomY = y;
+	}
+}
+
+void Player::Ghost_t::setActive(bool active)
+{
+	if ( my )
+	{
+		Uint32 deactivated = (active ? 0 : 1);
+		if ( deactivated != GHOSTCAM_DEACTIVATED )
+		{
+			GHOSTCAM_DEACTIVATED = deactivated;
+			if ( multiplayer == SERVER && player.isLocalPlayer() )
+			{
+				serverUpdateEntitySkill(my, 7);
+			}
+		}
+	}
+}
+
+void actDeathGhost(Entity* my)
+{
+	int playernum = GHOSTCAM_PLAYERNUM;
+	if ( playernum < 0 || playernum >= MAXPLAYERS )
+	{
+		return;
+	}
+
+	players[playernum]->ghost.my = my;
+	players[playernum]->ghost.uid = my->getUID();
+
+	if ( !GHOSTCAM_INIT )
+	{
+		GHOSTCAM_INIT = 1;
+
+		// body model
+		Entity* entity = newEntity(my->sprite, 1, map.entities, nullptr);
+		entity->behavior = &actDeathGhostLimb;
+		entity->sizex = 4;
+		entity->sizey = 4;
+		entity->flags[PASSABLE] = true;
+		entity->flags[UPDATENEEDED] = false;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[GENIUS] = true;
+		entity->skill[2] = GHOSTCAM_PLAYERNUM;
+		node_t* node = list_AddNodeLast(&my->children);
+		node->element = entity;
+		node->deconstructor = &emptyDeconstructor;
+		node->size = sizeof(Entity*);
+		my->bodyparts.push_back(entity);
+
+		// eyes model
+		entity = newEntity(1237, 1, map.entities, nullptr);
+		entity->behavior = &actDeathGhostLimb;
+		entity->sizex = 4;
+		entity->sizey = 4;
+		entity->flags[PASSABLE] = true;
+		entity->flags[UPDATENEEDED] = false;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[GENIUS] = true;
+		entity->skill[2] = GHOSTCAM_PLAYERNUM;
+		node = list_AddNodeLast(&my->children);
+		node->element = entity;
+		node->deconstructor = &emptyDeconstructor;
+		node->size = sizeof(Entity*);
+		my->bodyparts.push_back(entity);
+
+		if ( multiplayer == SERVER )
+		{
+			players[playernum]->ghost.initTeleportLocations(my->x / 16, my->y / 16);
+		}
+	}
+
+	if ( GHOSTCAM_DEACTIVATED )
+	{
+		GHOSTCAM_SPAWN_ANIM = 0;
+		GHOSTCAM_SPAWN_ANIM_COMPLETE = 0;
+	}
+
+	const Sint32 spawnAnimationDuration = TICKS_PER_SECOND * 1.2;
+	const Sint32 spawnAnimationHalfway = TICKS_PER_SECOND * 0.8;
+	bool spawnAnimationPlaying = GHOSTCAM_SPAWN_ANIM < spawnAnimationDuration;
+	if ( GHOSTCAM_DEACTIVATED )
+	{
+		spawnAnimationPlaying = false;
+	}
+	float floatAnimationPercent = std::min(1.f, (float)GHOSTCAM_SPAWN_ANIM / (spawnAnimationHalfway));
+	float thirdPersonAnimationPercent = 0.f;
+	if ( spawnAnimationPlaying )
+	{
+		thirdPersonAnimationPercent = 1.f;
+		if ( GHOSTCAM_SPAWN_ANIM > (spawnAnimationHalfway) )
+		{
+			thirdPersonAnimationPercent -= (GHOSTCAM_SPAWN_ANIM - (spawnAnimationHalfway)) / (float)(spawnAnimationDuration - (spawnAnimationHalfway));
+		}
+		thirdPersonAnimationPercent = std::max(0.f, thirdPersonAnimationPercent);
+	}
+	if ( GHOSTCAM_SPAWN_ANIM < spawnAnimationDuration )
+	{
+		if ( !GHOSTCAM_DEACTIVATED )
+		{
+			GHOSTCAM_SPAWN_ANIM++;
+			if ( GHOSTCAM_SPAWN_ANIM == 1 )
+			{
+				playSoundEntityLocal(my, 167, 128);
+				createParticleDropRising(my, 174, 1.0);
+			}
+			if ( GHOSTCAM_SPAWN_ANIM == spawnAnimationHalfway )
+			{
+				players[playernum]->ghost.createBounceAnimate();
+			}
+		}
+	}
+	else
+	{
+		GHOSTCAM_SPAWN_ANIM_COMPLETE = 1;
+	}
+
+	auto player = players[playernum];
+
+	my->removeLightField();
+	const char* light_type = nullptr;
+	bool ambientLight = false;
+	if ( GHOSTCAM_SNEAKING )
+	{
+		ambientLight = true;
+	}
+
+	if ( !player->ghost.isActive() )
+	{
+		// no light
+	}
+	else if ( !ambientLight )
+	{
+		switch ( my->sprite )
+		{
+			case Player::Ghost_t::GHOST_MODEL_P1:
+				light_type = "ghost_yellow";
+				break;
+			case Player::Ghost_t::GHOST_MODEL_P2:
+				light_type = "ghost_green";
+				break;
+			case Player::Ghost_t::GHOST_MODEL_P3:
+				light_type = "ghost_red";
+				break;
+			case Player::Ghost_t::GHOST_MODEL_P4:
+				light_type = "ghost_pink";
+				break;
+			default:
+				light_type = "ghost_white";
+				break;
+		}
+
+		my->light = addLight(my->x / 16, my->y / 16, light_type, 0, 0);
+	}
+	else if ( players[playernum]->isLocalPlayer() )
+	{
+		switch ( my->sprite )
+		{
+		case Player::Ghost_t::GHOST_MODEL_P1:
+			light_type = "ghost_yellow_sneaking_ambient";
+			break;
+		case Player::Ghost_t::GHOST_MODEL_P2:
+			light_type = "ghost_green_sneaking_ambient";
+			break;
+		case Player::Ghost_t::GHOST_MODEL_P3:
+			light_type = "ghost_red_sneaking_ambient";
+			break;
+		case Player::Ghost_t::GHOST_MODEL_P4:
+			light_type = "ghost_pink_sneaking_ambient";
+			break;
+		default:
+			light_type = "ghost_white_sneaking_ambient";
+			break;
+		}
+		my->light = addLight(my->x / 16, my->y / 16, light_type, 0, playernum + 1);
+	}
+
+	static ConsoleVariable<float> cvar_ghostSquish("/ghost_squish", 6.f);
+	static ConsoleVariable<float> cvar_ghostSquishFactor("/ghost_squish_factor", 0.3f);
+
+	if ( player->isLocalPlayer() && !player->ghost.isActive() )
+	{
+		my->vel_x = 0.0;
+		my->vel_y = 0.0;
+	}
+	if ( player->isLocalPlayer() && player->ghost.isActive() )
+	{
+		if ( autoLimbReload && ticks % 20 == 0 && (playernum == clientnum) )
+		{
+			consoleCommand("/reloadlimbs");
+		}
+
+		if ( !usecamerasmoothing )
+		{
+			player->ghost.handleGhostCameraBobbing(false);
+			player->ghost.handleGhostMovement(false);
+			player->ghost.handleGhostCameraUpdate(false);
+		}
+
+		player->ghost.handleActions();
+		player->ghost.handleAttack();
+
+		real_t camx, camy, camz, camang, camvang;
+		camx = my->x / 16.f;
+		camy = my->y / 16.f;
+		camz = my->z * 2.f + GHOSTCAM_BOB;
+		camang = my->yaw;
+		camvang = my->pitch;
+
+		static ConsoleVariable<bool> cvar_ghostThirdPerson("/ghost_thirdperson", false);
+		/*if ( keystatus[SDLK_h] )
+		{
+			keystatus[SDLK_h] = 0;
+			player->ghost.setActive(false);
+		}*/
+		if ( *cvar_ghostThirdPerson || spawnAnimationPlaying )
+		{
+			real_t dist = 1.0;
+			if ( spawnAnimationPlaying )
+			{
+				dist = cos((1.0 - thirdPersonAnimationPercent) * PI / 2);
+			}
+			camx -= dist * cos(my->yaw) * cos(my->pitch) * 1.5;
+			camy -= dist * sin(my->yaw) * cos(my->pitch) * 1.5;
+			camz -= dist * sin(my->pitch) * 16;
+		}
+
+		if ( !TimerExperiments::bUseTimerInterpolation )
+		{
+			cameras[playernum].x = camx;
+			cameras[playernum].y = camy;
+			cameras[playernum].z = camz;
+			cameras[playernum].ang = camang;
+			cameras[playernum].vang = camvang;
+		}
+		else
+		{
+			TimerExperiments::cameraCurrentState[playernum].x.velocity =
+				TimerExperiments::lerpFactor * (camx - TimerExperiments::cameraCurrentState[playernum].x.position);
+			TimerExperiments::cameraCurrentState[playernum].y.velocity =
+				TimerExperiments::lerpFactor * (camy - TimerExperiments::cameraCurrentState[playernum].y.position);
+			TimerExperiments::cameraCurrentState[playernum].z.velocity =
+				TimerExperiments::lerpFactor * (camz - TimerExperiments::cameraCurrentState[playernum].z.position);
+
+			real_t diff = camang - TimerExperiments::cameraCurrentState[playernum].yaw.position;
+			if ( diff > PI )
+			{
+				diff -= 2 * PI;
+			}
+			else if ( diff < -PI )
+			{
+				diff += 2 * PI;
+			}
+			TimerExperiments::cameraCurrentState[playernum].yaw.velocity = diff * TimerExperiments::lerpFactor;
+			diff = camvang - TimerExperiments::cameraCurrentState[playernum].pitch.position;
+			if ( diff >= PI )
+			{
+				diff -= 2 * PI;
+			}
+			else if ( diff < -PI )
+			{
+				diff += 2 * PI;
+			}
+			TimerExperiments::cameraCurrentState[playernum].pitch.velocity = diff * TimerExperiments::lerpFactor;
+		}
+	}
+
+	static ConsoleVariable<float> cvar_ghostBounce("/ghost_bounce", -1.0);
+	real_t dist = 0.0;
+	if ( player->isLocalPlayer() )
+	{
+		// send movement updates to server
+		if ( multiplayer == CLIENT )
+		{
+			strcpy((char*)net_packet->data, "GMOV");
+			net_packet->data[4] = playernum;
+			net_packet->data[5] = currentlevel;
+			SDLNet_Write16((Sint16)(my->x * 32), &net_packet->data[6]);
+			SDLNet_Write16((Sint16)(my->y * 32), &net_packet->data[8]);
+			SDLNet_Write16((Sint16)(my->vel_x * 128), &net_packet->data[10]);
+			SDLNet_Write16((Sint16)(my->vel_y * 128), &net_packet->data[12]);
+			SDLNet_Write16((Sint16)(my->yaw * 128), &net_packet->data[14]);
+			SDLNet_Write16((Sint16)(my->pitch * 128), &net_packet->data[16]);
+			net_packet->data[18] = secretlevel;
+			// continued after clipmove...
+		}
+
+		// perform collision detection
+		dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
+		bool bounceAnimate = false;
+		if ( dist != sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y) )
+		{
+			if ( !hit.side )
+			{
+				my->vel_x *= *cvar_ghostBounce;
+				my->vel_y *= *cvar_ghostBounce;
+				if ( abs(my->vel_x) > 0.15 || abs(my->vel_y) > 0.15 )
+				{
+					bounceAnimate = true;
+				}
+			}
+			else if ( hit.side == HORIZONTAL )
+			{
+				my->vel_x *= *cvar_ghostBounce;
+				if ( abs(my->vel_x) > 0.15 )
+				{
+					bounceAnimate = true;
+				}
+			}
+			else
+			{
+				my->vel_y *= *cvar_ghostBounce;
+				if ( abs(my->vel_y) > 0.15 )
+				{
+					bounceAnimate = true;
+				}
+			}
+			if ( bounceAnimate )
+			{
+				if ( GHOSTCAM_SQUISH_ANGLE < 0.01 && GHOSTCAM_SQUISH_DELAY == 0 )
+				{
+					GHOSTCAM_SQUISH_ANGLE = Player::Ghost_t::GHOST_SQUISH_START_ANGLE / 100.f;
+					playSoundEntityLocal(my, 612 + local_rng.rand() % 3, 64);
+					GHOSTCAM_SQUISH_DELAY = TICKS_PER_SECOND / 2;
+				}
+				else
+				{
+					bounceAnimate = false;
+				}
+			}
+			my->vel_x = std::max(-4.0, std::min(my->vel_x, 4.0));
+			my->vel_y = std::max(-4.0, std::min(my->vel_y, 4.0));
+		}
+
+		if ( multiplayer == CLIENT )
+		{
+			net_packet->data[19] = bounceAnimate ? 1 : 0;
+			if ( GHOSTCAM_DEACTIVATED )
+			{
+				net_packet->data[19] |= (1 << 1);
+			}
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 20;
+			sendPacket(net_sock, -1, net_packet, 0);
+		}
+		if ( multiplayer == SERVER && bounceAnimate )
+		{
+			for ( int c = 1; c < MAXPLAYERS; ++c ) // send to other players
+			{
+				if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+				{
+					continue;
+				}
+				strcpy((char*)net_packet->data, "GHFS");
+				SDLNet_Write32(player->ghost.my->getUID(), &net_packet->data[4]);
+				net_packet->data[8] = 9;
+				SDLNet_Write16(static_cast<Sint16>(player->ghost.my->fskill[9] * 256), &net_packet->data[9]);
+				net_packet->address.host = net_clients[c - 1].host;
+				net_packet->address.port = net_clients[c - 1].port;
+				net_packet->len = 11;
+				sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			}
+		}
+	}
+
+	--GHOSTCAM_SQUISH_DELAY;
+	GHOSTCAM_SQUISH_DELAY = std::max(0, GHOSTCAM_SQUISH_DELAY);
+
+	if ( !player->isLocalPlayer() && multiplayer == SERVER )
+	{
+		// PLAYER_VEL* skills updated by messages sent to server from client
+
+		// move (dead reckoning)
+		// from GMOV in serverHandlePacket - new_x and new_y are accumulated positions
+		if ( my->new_x > 0.001 )
+		{
+			my->x = my->new_x;
+		}
+		if ( my->new_y > 0.001 )
+		{
+			my->y = my->new_y;
+		}
+
+		dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
+	}
+
+	if ( !player->isLocalPlayer() && multiplayer == CLIENT )
+	{
+		dist = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+	}
+
+
+	real_t dir = my->yaw - atan2(my->vel_y, my->vel_x);
+	while ( dir < 0 )
+	{
+		dir += 2 * PI;
+	}
+	while ( dir > 2 * PI )
+	{
+		dir -= 2 * PI;
+	}
+	//messagePlayer(0, MESSAGE_DEBUG, "%.2f", dir);
+
+	const bool animateGhostAsRotation = true;
+	if ( !animateGhostAsRotation )
+	{
+		const real_t weaveSpeed = 0.05;
+		if ( dist < 0.15 || (abs(dir - PI / 2) < PI / 16) || (abs(dir - 3 * PI / 2) < PI / 16) )
+		{
+			if ( GHOSTCAM_WEAVE >= 0.0 )
+			{
+				GHOSTCAM_WEAVE -= weaveSpeed;
+				GHOSTCAM_WEAVE = std::max(GHOSTCAM_WEAVE, 0.0);
+			}
+			else
+			{
+				GHOSTCAM_WEAVE += weaveSpeed;
+				GHOSTCAM_WEAVE = std::min(GHOSTCAM_WEAVE, 0.0);
+			}
+		}
+		else if ( dir <= PI / 2 || dir >= 3 * PI / 2 )
+		{
+			GHOSTCAM_WEAVE += weaveSpeed;
+			GHOSTCAM_WEAVE = std::min(GHOSTCAM_WEAVE, PI / 8);
+		}
+		else if ( dir > PI / 2 && dir < 3 * PI / 2 )
+		{
+			GHOSTCAM_WEAVE -= weaveSpeed;
+			GHOSTCAM_WEAVE = std::max(GHOSTCAM_WEAVE, -PI / 8);
+		}
+	}
+	else
+	{
+		const real_t weaveSpeed = 0.1;
+		if ( spawnAnimationPlaying )
+		{
+			GHOSTCAM_WEAVE += (weaveSpeed / 5) * (4.0 - 3.0 * floatAnimationPercent);
+		}
+		else
+		{
+			GHOSTCAM_WEAVE += weaveSpeed / 5;
+		}
+		while ( GHOSTCAM_WEAVE >= 1.0 )
+		{
+			GHOSTCAM_WEAVE -= 1.0;
+		}
+	}
+
+	if ( abs(GHOSTCAM_HOVER - (PI / 2)) < PI / 64 )
+	{
+		GHOSTCAM_HOVER += PI / 320;
+	}
+	else if ( abs(GHOSTCAM_HOVER - (3 * PI / 2)) < PI / 64 )
+	{
+		GHOSTCAM_HOVER += PI / 320;
+	}
+	else
+	{
+		GHOSTCAM_HOVER += PI / 64;
+	}
+	while ( GHOSTCAM_HOVER >= 2 * PI )
+	{
+		GHOSTCAM_HOVER -= 2 * PI;
+	}
+
+	const real_t squishRate = *cvar_ghostSquish;
+	real_t squishFactor = *cvar_ghostSquishFactor;
+	if ( GHOSTCAM_SQUISH_ANGLE < 0.0 )
+	{
+		squishFactor *= std::max(0.0, (1.0 + GHOSTCAM_SQUISH_ANGLE));
+	}
+	const real_t inc = squishRate * (PI / TICKS_PER_SECOND);
+	//GHOSTCAM_SQUISH = fmod(GHOSTCAM_SQUISH + inc, PI * 2);
+	GHOSTCAM_SQUISH = GHOSTCAM_SQUISH_ANGLE * 2 * PI;
+	const real_t squish = sin(GHOSTCAM_SQUISH) * squishFactor;
+	GHOSTCAM_SQUISH_ANGLE -= squishRate * (0.5 / TICKS_PER_SECOND);
+	GHOSTCAM_SQUISH_ANGLE = std::max(GHOSTCAM_SQUISH_ANGLE, -1.0);
+
+	my->flags[INVISIBLE] = true;
+	int index = -1;
+
+	for ( auto bodypart : my->bodyparts )
+	{
+		++index;
+
+		if ( animateGhostAsRotation )
+		{
+			if ( index == 0 )
+			{
+				bodypart->yaw = GHOSTCAM_WEAVE * 2 * PI;
+				bodypart->pitch = 0.0;
+			}
+			else
+			{
+				bodypart->yaw = my->yaw;
+				bodypart->pitch = my->pitch;
+			}
+		}
+		else
+		{
+			bodypart->yaw = my->yaw;
+			bodypart->pitch = my->pitch;
+		}
+		bodypart->roll = my->roll;
+		bodypart->x = my->x;
+		bodypart->y = my->y;
+		bodypart->z = my->z;
+		bodypart->scalex = 1.0 - squish;
+		bodypart->scaley = 1.0 - squish;
+		bodypart->scalez = 1.0 + squish;
+		bodypart->flags[INVISIBLE] = !player->ghost.isActive();
+
+		if ( spawnAnimationPlaying )
+		{
+			bodypart->z += 7.5 * std::max(0.0, (1.0 - 2 * floatAnimationPercent));
+		}
+
+		if ( index == 0 )
+		{
+			bodypart->z += 0.5 * sin(GHOSTCAM_HOVER);
+			if ( !animateGhostAsRotation )
+			{
+				bodypart->pitch += GHOSTCAM_WEAVE;
+			}
+			bodypart->fskill[0] += PI / 64;
+			while ( bodypart->fskill[0] >= 2 * PI )
+			{
+				bodypart->fskill[0] -= 2 * PI;
+			}
+		}
+		else if ( index == 1 )
+		{
+			bodypart->z += 0.4 * sin(GHOSTCAM_HOVER);
+			bodypart->focalx = 2.25;
+		}
+	}
+}
+
 #define DEATHCAM_TIME my->skill[0]
 #define DEATHCAM_PLAYERTARGET my->skill[1]
 #define DEATHCAM_PLAYERNUM my->skill[2]
 #define DEATHCAM_IDLETIME my->skill[3]
 #define DEATHCAM_IDLEROTATEDIRYAW my->skill[4]
 #define DEATHCAM_IDLEROTATEPITCHINIT my->skill[5]
+#define DEATHCAM_DISABLE_GAMEOVER my->skill[6]
 #define DEATHCAM_ROTX my->fskill[0]
 #define DEATHCAM_ROTY my->fskill[1]
 #define DEATHCAM_IDLEPITCH my->fskill[2]
@@ -95,13 +2118,20 @@ void actDeathCam(Entity* my)
 		DEATHCAM_PLAYERTARGET = DEATHCAM_PLAYERNUM;
 		DEATHCAM_IDLEROTATEDIRYAW = (local_rng.rand() % 2 == 0) ? 1 : -1;
 	}
+	else if ( DEATHCAM_TIME < deathcamGameoverPromptTicks )
+	{
+		if ( players[DEATHCAM_PLAYERNUM]->ghost.isActive() )
+		{
+			DEATHCAM_DISABLE_GAMEOVER = 1;
+		}
+	}
 	else if ( DEATHCAM_TIME == deathcamGameoverPromptTicks )
 	{
 		if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 		{
 			gameModeManager.Tutorial.openGameoverWindow();
 		}
-		else
+		else if ( !players[DEATHCAM_PLAYERNUM]->ghost.isActive() && DEATHCAM_DISABLE_GAMEOVER == 0 )
 		{
 			MainMenu::openGameoverWindow(DEATHCAM_PLAYERNUM);
 		}
@@ -117,7 +2147,7 @@ void actDeathCam(Entity* my)
 	}
 
 	bool shootmode = players[DEATHCAM_PLAYERNUM]->shootmode;
-	if ( shootmode && !gamePaused )
+	if ( shootmode && !gamePaused && !players[DEATHCAM_PLAYERNUM]->ghost.isActive() )
 	{
 		if ( !players[DEATHCAM_PLAYERNUM]->GUI.isGameoverActive() )
 		{
@@ -246,6 +2276,7 @@ void actDeathCam(Entity* my)
 		&& players[DEATHCAM_PLAYERNUM]->bControlEnabled
 		&& !players[DEATHCAM_PLAYERNUM]->usingCommand()
 		&& !gamePaused
+		&& !players[DEATHCAM_PLAYERNUM]->ghost.isActive()
 		&& (Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("Attack")
 			|| Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("MenuConfirm")) )
 	{
@@ -255,7 +2286,7 @@ void actDeathCam(Entity* my)
 			DEATHCAM_PLAYERTARGET = 0;
 		}
 		int c = 0;
-		while (!players[DEATHCAM_PLAYERTARGET] || !players[DEATHCAM_PLAYERTARGET]->entity)
+		while ( !Player::getPlayerInteractEntity(DEATHCAM_PLAYERTARGET) )
 		{
 			if (c > MAXPLAYERS)
 			{
@@ -272,10 +2303,10 @@ void actDeathCam(Entity* my)
 
 	if (DEATHCAM_PLAYERTARGET >= 0)
 	{
-		if (players[DEATHCAM_PLAYERTARGET] && players[DEATHCAM_PLAYERTARGET]->entity)
+		if ( auto entity = Player::getPlayerInteractEntity(DEATHCAM_PLAYERTARGET) )
 		{
-			my->x = players[DEATHCAM_PLAYERTARGET]->entity->x;
-			my->y = players[DEATHCAM_PLAYERTARGET]->entity->y;
+			my->x = entity->x;
+			my->y = entity->y;
 		}
 		else
 		{
@@ -284,6 +2315,12 @@ void actDeathCam(Entity* my)
 	}
 
 	my->removeLightField();
+
+	if ( players[DEATHCAM_PLAYERNUM]->ghost.isActive() )
+	{
+		return;
+	}
+
 	my->light = addLight(my->x / 16, my->y / 16, "deathcam");
 
 	real_t camx, camy, camz, camang, camvang;
@@ -2193,6 +4230,7 @@ void actPlayer(Entity* my)
 		nametag->scalex = 0.2;
 		nametag->scaley = 0.2;
 		nametag->scalez = 0.2;
+		nametag->ditheringDisabled = true;
 		nametag->skill[0] = PLAYER_NUM;
 		nametag->skill[1] = playerColor(PLAYER_NUM, colorblind_lobby, false);
 
@@ -2579,6 +4617,11 @@ void actPlayer(Entity* my)
 
 	if ( !intro )
 	{
+		if ( PLAYER_ALIVETIME == 0 )
+		{
+			my->createWorldUITooltip();
+		}
+
 		PLAYER_ALIVETIME++;
 		if ( PLAYER_NUM == clientnum ) // specifically the host - in splitscreen we only process this once for all players.
 		{
@@ -4042,6 +6085,7 @@ void actPlayer(Entity* my)
 
 		bool shootmode = players[PLAYER_NUM]->shootmode;
 		FollowerRadialMenu& followerMenu = FollowerMenu[PLAYER_NUM];
+		CalloutRadialMenu& calloutMenu = CalloutMenu[PLAYER_NUM];
 
 		// object interaction
 		if ( intro == false )
@@ -4101,8 +6145,9 @@ void actPlayer(Entity* my)
 			}
 
 			Input& input = Input::inputs[PLAYER_NUM];
+			auto& b = (multiplayer != SINGLE && PLAYER_NUM != 0) ? Input::inputs[0].getBindings() : input.getBindings();
 
-			if ( followerMenu.followerToCommand == nullptr && followerMenu.selectMoveTo == false )
+			if ( !followerMenu.followerMenuIsOpen() && !calloutMenu.calloutMenuIsOpen() )
 			{
 				bool clickedOnGUI = false;
 
@@ -4173,7 +6218,7 @@ void actPlayer(Entity* my)
 					selectedEntity[PLAYER_NUM] = nullptr;
 				}
 			}
-			else
+			else if ( followerMenu.followerMenuIsOpen() )
 			{
 				selectedEntity[PLAYER_NUM] = NULL;
 
@@ -4284,6 +6329,8 @@ void actPlayer(Entity* my)
 							if ( players[PLAYER_NUM]->worldUI.isEnabled() )
 							{
 								players[PLAYER_NUM]->worldUI.reset();
+								players[PLAYER_NUM]->worldUI.tooltipView = Player::WorldUI_t::TooltipView::TOOLTIP_VIEW_RESCAN;
+								players[PLAYER_NUM]->worldUI.gimpDisplayTimer = 0;
 							}
 
 							followerMenu.selectMoveTo = false;
@@ -4292,9 +6339,274 @@ void actPlayer(Entity* my)
 					}
 				}
 			}
+			else if ( calloutMenu.calloutMenuIsOpen() )
+			{
+				selectedEntity[PLAYER_NUM] = NULL;
+				// TODO CALLOUT?
+				if ( !players[PLAYER_NUM]->usingCommand() && players[PLAYER_NUM]->bControlEnabled && !gamePaused && input.binaryToggle("Use") )
+				{
+					if ( !calloutMenu.menuToggleClick && calloutMenu.selectMoveTo )
+					{
+						if ( calloutMenu.optionSelected == CalloutRadialMenu::CALLOUT_CMD_SELECT )
+						{
+							// we're selecting a target for the ally.
+							Entity* target = entityClicked(nullptr, false, PLAYER_NUM, EntityClickType::ENTITY_CLICK_CALLOUT);
+							input.consumeBinaryToggle("Use");
+							//input.consumeBindingsSharedWithBinding("Use");
+							if ( target )
+							{
+								Entity* parent = uidToEntity(target->skill[2]);
+								if ( target->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
+								{
+									// see if we selected a limb
+									if ( parent )
+									{
+										target = parent;
+									}
+								}
+								else if ( target->sprite == 184 || target->sprite == 585 ) // switch base.
+								{
+									parent = uidToEntity(target->parent);
+									if ( parent )
+									{
+										target = parent;
+									}
+								}
+								if ( true /*&& calloutMenu.allowedInteractEntity(*target)*/ )
+								{
+									calloutMenu.lockOnEntityUid = target->getUID();
+									if ( target->behavior == &actPlayer && target->skill[2] != PLAYER_NUM )
+									{
+										target = my;
+									}
+
+									if ( calloutMenu.createParticleCallout(target, CalloutRadialMenu::CALLOUT_CMD_LOOK) )
+									{
+										calloutMenu.sendCalloutText(CalloutRadialMenu::CALLOUT_CMD_LOOK);
+									}
+									/*calloutMenu.holdWheel = false;
+									calloutMenu.selectMoveTo = false;
+									calloutMenu.bOpen = true;
+									calloutMenu.optionSelected = ALLY_CMD_CANCEL;
+									calloutMenu.initCalloutMenuGUICursor(true);
+									Player::soundActivate();*/
+								}
+							}
+							else
+							{
+								// we're selecting a point in the world
+								if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity )
+								{
+									real_t startx = cameras[PLAYER_NUM].x * 16.0;
+									real_t starty = cameras[PLAYER_NUM].y * 16.0;
+									real_t startz = cameras[PLAYER_NUM].z + (4.5 - cameras[PLAYER_NUM].z) / 2.0 + *cvar_calloutStartZ;
+									real_t pitch = cameras[PLAYER_NUM].vang;
+									if ( pitch < 0 || pitch > PI )
+									{
+										pitch = 0;
+									}
+
+									// draw line from the players height and direction until we hit the ground.
+									real_t previousx = startx;
+									real_t previousy = starty;
+									int index = 0;
+									const real_t yaw = cameras[PLAYER_NUM].ang;
+									for ( ; startz < *cvar_calloutStartZLimit; startz += abs((*cvar_calloutMoveTo) * tan(pitch)) )
+									{
+										startx += 0.1 * cos(yaw);
+										starty += 0.1 * sin(yaw);
+										const int index_x = static_cast<int>(startx) >> 4;
+										const int index_y = static_cast<int>(starty) >> 4;
+										index = (index_y)*MAPLAYERS + (index_x)*MAPLAYERS * map.height;
+										if ( !map.tiles[OBSTACLELAYER + index] )
+										{
+											// store the last known good coordinate
+											previousx = startx;// + 16 * cos(yaw);
+											previousy = starty;// + 16 * sin(yaw);
+										}
+										if ( map.tiles[OBSTACLELAYER + index] )
+										{
+											break;
+										}
+									}
+
+									calloutMenu.moveToX = previousx;
+									calloutMenu.moveToY = previousy;
+									calloutMenu.lockOnEntityUid = 0;
+									if ( calloutMenu.createParticleCallout(previousx, previousy, -4, 0, CalloutRadialMenu::CALLOUT_CMD_LOOK) )
+									{
+										calloutMenu.sendCalloutText(CalloutRadialMenu::CALLOUT_CMD_LOOK);
+									}
+								}
+							}
+
+							if ( players[PLAYER_NUM]->worldUI.isEnabled() )
+							{
+								players[PLAYER_NUM]->worldUI.reset();
+								players[PLAYER_NUM]->worldUI.tooltipView = Player::WorldUI_t::TooltipView::TOOLTIP_VIEW_RESCAN;
+							}
+
+							calloutMenu.closeCalloutMenuGUI();
+							strcpy(calloutMenu.interactText, "");
+						}
+					}
+				}
+			}
+
+			bool skipFollowerMenu = false;
+			if ( !players[PLAYER_NUM]->usingCommand() && players[PLAYER_NUM]->bControlEnabled
+				&& !gamePaused && CalloutRadialMenu::calloutMenuEnabledForGamemode() )
+			{
+				bool showCalloutCommandsOnGamepad = false;
+				auto showCalloutCommandsFind = b.find("Call Out");
+				std::string showCalloutCommandsInputStr = "";
+				if ( showCalloutCommandsFind != b.end() )
+				{
+					showCalloutCommandsOnGamepad = (*showCalloutCommandsFind).second.isBindingUsingGamepad();
+					showCalloutCommandsInputStr = (*showCalloutCommandsFind).second.input;
+				}
+
+				if ( players[PLAYER_NUM]->worldUI.bTooltipInView && players[PLAYER_NUM]->worldUI.tooltipsInRange.size() > 1 )
+				{
+					if ( showCalloutCommandsOnGamepad &&
+						(showCalloutCommandsInputStr == input.binding("Interact Tooltip Next")
+							|| showCalloutCommandsInputStr == input.binding("Interact Tooltip Prev")) )
+					{
+						input.consumeBinaryToggle("Call Out");
+						players[PLAYER_NUM]->hud.bOpenCalloutsMenuDisabled = true;
+					}
+				}
+
+				if ( (input.binaryToggle("Call Out") && !showCalloutCommandsOnGamepad
+						&& players[PLAYER_NUM]->shootmode)
+					|| (input.binaryToggle("Call Out") && showCalloutCommandsOnGamepad
+						&& players[PLAYER_NUM]->shootmode /*&& !players[PLAYER_NUM]->worldUI.bTooltipInView*/) )
+				{
+					if ( !calloutMenu.bOpen && !calloutMenu.selectMoveTo )
+					{
+						if ( !followerMenu.followerMenuIsOpen() )
+						{
+							if ( !players[PLAYER_NUM]->shootmode )
+							{
+								players[PLAYER_NUM]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_CALLOUTGUI);
+							}
+							input.consumeBinaryToggle("Call Out");
+							calloutMenu.selectMoveTo = true;
+							calloutMenu.optionSelected = CalloutRadialMenu::CALLOUT_CMD_SELECT;
+							calloutMenu.lockOnEntityUid = 0;
+							Player::soundActivate();
+							skipFollowerMenu = true;
+
+							if ( players[PLAYER_NUM]->worldUI.isEnabled() )
+							{
+								players[PLAYER_NUM]->worldUI.reset();
+								players[PLAYER_NUM]->worldUI.tooltipView = Player::WorldUI_t::TooltipView::TOOLTIP_VIEW_RESCAN;
+								players[PLAYER_NUM]->worldUI.gimpDisplayTimer = 0;
+							}
+						}
+					}
+					else if ( calloutMenu.selectMoveTo )
+					{
+						// we're selecting a target for the ally.
+						Entity* target = entityClicked(nullptr, true, PLAYER_NUM, EntityClickType::ENTITY_CLICK_CALLOUT);
+
+						if ( target )
+						{
+							Entity* parent = uidToEntity(target->skill[2]);
+							if ( target->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
+							{
+								// see if we selected a limb
+								if ( parent )
+								{
+									target = parent;
+								}
+							}
+							else if ( target->sprite == 184 || target->sprite == 585 ) // switch base.
+							{
+								parent = uidToEntity(target->parent);
+								if ( parent )
+								{
+									target = parent;
+								}
+							}
+
+							calloutMenu.holdWheel = true;
+							if ( showCalloutCommandsOnGamepad )
+							{
+								calloutMenu.holdWheel = false;
+							}
+							skipFollowerMenu = true;
+							calloutMenu.selectMoveTo = false;
+							calloutMenu.bOpen = true;
+							calloutMenu.initCalloutMenuGUICursor(true);
+							Player::soundActivate();
+							calloutMenu.lockOnEntityUid = target->getUID();
+						}
+						else
+						{
+							// we're selecting a point in the world
+							if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity )
+							{
+								real_t startx = cameras[PLAYER_NUM].x * 16.0;
+								real_t starty = cameras[PLAYER_NUM].y * 16.0;
+								real_t startz = cameras[PLAYER_NUM].z + (4.5 - cameras[PLAYER_NUM].z) / 2.0 + *cvar_calloutStartZ;
+								real_t pitch = cameras[PLAYER_NUM].vang;
+								if ( pitch < 0 || pitch > PI )
+								{
+									pitch = 0;
+								}
+
+								// draw line from the players height and direction until we hit the ground.
+								real_t previousx = startx;
+								real_t previousy = starty;
+								int index = 0;
+								const real_t yaw = cameras[PLAYER_NUM].ang;
+								for ( ; startz < *cvar_calloutStartZLimit; startz += abs((*cvar_calloutMoveTo) * tan(pitch)) )
+								{
+									startx += 0.1 * cos(yaw);
+									starty += 0.1 * sin(yaw);
+									const int index_x = static_cast<int>(startx) >> 4;
+									const int index_y = static_cast<int>(starty) >> 4;
+									index = (index_y)*MAPLAYERS + (index_x)*MAPLAYERS * map.height;
+									if ( !map.tiles[OBSTACLELAYER + index] )
+									{
+										// store the last known good coordinate
+										previousx = startx;// + 16 * cos(yaw);
+										previousy = starty;// + 16 * sin(yaw);
+									}
+									if ( map.tiles[OBSTACLELAYER + index] )
+									{
+										break;
+									}
+								}
+
+								calloutMenu.holdWheel = true;
+								if ( showCalloutCommandsOnGamepad )
+								{
+									calloutMenu.holdWheel = false;
+								}
+								skipFollowerMenu = true;
+								calloutMenu.selectMoveTo = false;
+								calloutMenu.bOpen = true;
+								calloutMenu.lockOnEntityUid = 0;
+								calloutMenu.moveToX = previousx;
+								calloutMenu.moveToY = previousy;
+								calloutMenu.initCalloutMenuGUICursor(true);
+								//Player::soundActivate();
+							}
+							else
+							{
+								calloutMenu.closeCalloutMenuGUI();
+							}
+						}
+					}
+				}
+			}
+
 
 			if ( !players[PLAYER_NUM]->usingCommand() && players[PLAYER_NUM]->bControlEnabled
 				&& !gamePaused
+				&& !skipFollowerMenu
 				&& !followerMenu.followerToCommand && followerMenu.recentEntity )
 			{
 				auto& b = (multiplayer != SINGLE && PLAYER_NUM != 0) ? Input::inputs[0].getBindings() : input.getBindings();
@@ -4333,41 +6645,44 @@ void actPlayer(Entity* my)
 					}
 				}
 
-				if ( (input.binaryToggle("Show NPC Commands") && !showNPCCommandsOnGamepad)
-						|| (input.binaryToggle("Show NPC Commands") && showNPCCommandsOnGamepad 
-							&& players[PLAYER_NUM]->shootmode /*&& !players[PLAYER_NUM]->worldUI.bTooltipInView*/) )
+				if ( !calloutMenu.calloutMenuIsOpen() )
 				{
-					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
-						&& followerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
+					if ( (input.binaryToggle("Show NPC Commands") && !showNPCCommandsOnGamepad)
+							|| (input.binaryToggle("Show NPC Commands") && showNPCCommandsOnGamepad 
+								&& players[PLAYER_NUM]->shootmode /*&& !players[PLAYER_NUM]->worldUI.bTooltipInView*/) )
 					{
-						// your ally is angry at you!
-					}
-					else
-					{
-						selectedEntity[PLAYER_NUM] = followerMenu.recentEntity;
-						followerMenu.holdWheel = true;
-						if ( showNPCCommandsOnGamepad )
+						if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
+							&& followerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
 						{
-							followerMenu.holdWheel = false;
+							// your ally is angry at you!
+						}
+						else
+						{
+							selectedEntity[PLAYER_NUM] = followerMenu.recentEntity;
+							followerMenu.holdWheel = true;
+							if ( showNPCCommandsOnGamepad )
+							{
+								followerMenu.holdWheel = false;
+							}
 						}
 					}
-				}
-				else if ( (input.binaryToggle("Command NPC") && !lastNPCCommandOnGamepad)
-					|| (input.binaryToggle("Command NPC") && lastNPCCommandOnGamepad && players[PLAYER_NUM]->shootmode/*&& !players[PLAYER_NUM]->worldUI.bTooltipInView*/) )
-				{
-					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
-						&& followerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
+					else if ( (input.binaryToggle("Command NPC") && !lastNPCCommandOnGamepad)
+						|| (input.binaryToggle("Command NPC") && lastNPCCommandOnGamepad && players[PLAYER_NUM]->shootmode/*&& !players[PLAYER_NUM]->worldUI.bTooltipInView*/) )
 					{
-						// your ally is angry at you!
-						input.consumeBinaryToggle("Command NPC");
-					}
-					else if ( followerMenu.optionPrevious != -1 )
-					{
-						followerMenu.followerToCommand = followerMenu.recentEntity;
-					}
-					else
-					{
-						input.consumeBinaryToggle("Command NPC");
+						if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
+							&& followerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
+						{
+							// your ally is angry at you!
+							input.consumeBinaryToggle("Command NPC");
+						}
+						else if ( followerMenu.optionPrevious != -1 )
+						{
+							followerMenu.followerToCommand = followerMenu.recentEntity;
+						}
+						else
+						{
+							input.consumeBinaryToggle("Command NPC");
+						}
 					}
 				}
 			}
@@ -4682,6 +6997,7 @@ void actPlayer(Entity* my)
 							entity->yaw = my->yaw;
 							entity->pitch = PI / 8;
 							my->playerCreatedDeathCam = 1;
+							players[PLAYER_NUM]->ghost.initTeleportLocations(my->x / 16, my->y / 16);
 						}
 						createParticleExplosionCharge(my, 174, 100, 0.25);
 						serverSpawnMiscParticles(my, PARTICLE_EFFECT_PLAYER_AUTOMATON_DEATH, 174);
@@ -4885,6 +7201,7 @@ void actPlayer(Entity* my)
 								entity->skill[2] = PLAYER_NUM;
 								entity->yaw = my->yaw;
 								entity->pitch = PI / 8;
+								players[PLAYER_NUM]->ghost.initTeleportLocations(my->x / 16, my->y / 16);
 							}
 							node_t* nextnode;
 
@@ -5222,6 +7539,46 @@ void actPlayer(Entity* my)
 				{
 					hit.entity->doorHealth = 0;
 				}
+				//else if ( hit.entity->behavior == &actDoorFrame &&
+				//	hit.entity->flags[INVISIBLE] )
+				//{
+				//	// code that almost fixes door frame collision
+				//	if ( hit.entity->yaw >= -0.1 && hit.entity->yaw <= 0.1 )
+				//	{
+				//		// east/west doorway
+				//		if ( my->y < floor(hit.entity->y / 16) * 16 + 8 )
+				//		{
+				//			// slide south
+				//			PLAYER_VELX = 0;
+				//			PLAYER_VELY = .25;
+				//		}
+				//		else
+				//		{
+				//			// slide north
+				//			PLAYER_VELX = 0;
+				//			PLAYER_VELY = -.25;
+				//		}
+				//	}
+				//	else
+				//	{
+				//		// north/south doorway
+				//		if ( my->x < floor(hit.entity->x / 16) * 16 + 8 )
+				//		{
+				//			// slide east
+				//			PLAYER_VELX = .25;
+				//			PLAYER_VELY = 0;
+				//		}
+				//		else
+				//		{
+				//			// slide west
+				//			PLAYER_VELX = -.25;
+				//			PLAYER_VELY = 0;
+				//		}
+				//	}
+				//	my->x += PLAYER_VELX;
+				//	my->y += PLAYER_VELY;
+				//	dist = sqrt(PLAYER_VELX * PLAYER_VELX + PLAYER_VELY * PLAYER_VELY);
+				//}
 			}
 		}
 		else
