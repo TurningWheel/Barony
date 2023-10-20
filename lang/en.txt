@@ -6205,5 +6205,6 @@ intro - God Rest Ye Merry Gentlemen by NaturesEye#
 6049 View Wheel#
 6050 SPECTATE#
 6051 SPAWN AS GHOST#
+6052 Your party has been wiped out...#
 
 6100 end#
