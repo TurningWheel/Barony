@@ -944,7 +944,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 					// Only degrade the equipment if Friendly Fire is ON or if it is (OFF && target is an enemy)
 					bool bShouldEquipmentDegrade = false;
-					if ( (svFlags & SV_FLAG_FRIENDLYFIRE) )
+					if ( parent && parent->behavior == &actDeathGhost )
+					{
+						bShouldEquipmentDegrade = false;
+					}
+					else if ( (svFlags & SV_FLAG_FRIENDLYFIRE) )
 					{
 						// Friendly Fire is ON, equipment should always degrade, as hit will register
 						bShouldEquipmentDegrade = true;
