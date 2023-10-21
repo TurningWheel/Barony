@@ -11682,7 +11682,7 @@ failed:
 			    stats[index]->playerRace = RACE_INCUBUS;
 			    auto race = card->findButton("race");
 			    if (race) {
-				    race->setText(Language::get(3827));
+				    race->setText(Language::get(5375));
 			    }
 			    auto incubus = subframe ? subframe->findButton("Incubus") : nullptr;
 			    if (incubus) {
