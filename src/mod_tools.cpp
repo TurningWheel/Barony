@@ -8559,8 +8559,6 @@ void Mods::loadMods()
 				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].normals));
 			}
 		}
-		free(polymodels);
-		polymodels = nullptr;
 		generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
 		generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
 		useModelCache = oldModelCache;
