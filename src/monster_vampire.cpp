@@ -41,6 +41,8 @@ void initVampire(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
+		auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+
 		if ( myStats != nullptr )
 		{
 		    if (myStats->sex == FEMALE)
@@ -80,11 +82,11 @@ void initVampire(Entity* my, Stat* myStats)
 				myStats->RANDOM_CHR = 0;
 				myStats->EXP = 0;
 				myStats->LVL = 18;
-				myStats->GOLD = 50 + local_rng.rand() % 50;
+				myStats->GOLD = 50 + rng.rand() % 50;
 				myStats->RANDOM_GOLD = 0;
 				for ( c = 0; c < 4; ++c )
 				{
-					if ( local_rng.rand() % 2 == 0 )
+					if ( rng.rand() % 2 == 0 )
 					{
 						Entity* entity = summonMonster(GHOUL, my->x, my->y);
 						if ( entity )
@@ -96,6 +98,7 @@ void initVampire(Entity* my, Stat* myStats)
 								strcpy(followerStats->name, "enslaved ghoul");
 								followerStats->leader_uid = entity->parent;
 							}
+							entity->seedEntityRNG(rng.getU32());
 						}
 					}
 				}
@@ -112,16 +115,16 @@ void initVampire(Entity* my, Stat* myStats)
 			}
 
 			// apply random stat increases if set in stat_shared.cpp or editor
-			setRandomMonsterStats(myStats);
+			setRandomMonsterStats(myStats, rng);
 
 			// generate 6 items max, less if there are any forced items from boss variants
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// generates equipment and weapons if available from editor
-			createMonsterEquipment(myStats);
+			createMonsterEquipment(myStats, rng);
 
 			// create any custom inventory items from editor if available
-			createCustomInventory(myStats, customItemsToGenerate);
+			createCustomInventory(myStats, customItemsToGenerate, rng);
 
 			// count if any custom inventory items from editor
 			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
@@ -142,14 +145,14 @@ void initVampire(Entity* my, Stat* myStats)
 				case 4:
 				case 3:
 				case 2:
-					if ( local_rng.rand() % 4 == 0 ) // 1 in 4
+					if ( rng.rand() % 4 == 0 ) // 1 in 4
 					{
-						newItem(MAGICSTAFF_BLEED, static_cast<Status>(DECREPIT + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
+						newItem(MAGICSTAFF_BLEED, static_cast<Status>(DECREPIT + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
 					}
 				case 1:
-					if ( local_rng.rand() % 10 == 0 ) // 1 in 10
+					if ( rng.rand() % 10 == 0 ) // 1 in 10
 					{
-						newItem(VAMPIRE_DOUBLET, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
+						newItem(VAMPIRE_DOUBLET, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
 					}
 					break;
 				default:
@@ -159,23 +162,23 @@ void initVampire(Entity* my, Stat* myStats)
 			//give weapon
 			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
-				switch ( local_rng.rand() % 10 )
+				switch ( rng.rand() % 10 )
 				{
 					case 0:
 					case 1:
 					case 2:
 					case 3:
-						//myStats->weapon = newItem(SHORTBOW, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
+						//myStats->weapon = newItem(SHORTBOW, WORN, -1 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
 						break;
 					case 4:
 					case 5:
 					case 6:
 					case 7:
-						//myStats->weapon = newItem(CROSSBOW, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
+						//myStats->weapon = newItem(CROSSBOW, WORN, -1 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
 						break;
 					case 8:
 					case 9:
-						//myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
+						//myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -1 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
 						break;
 				}
 			}
@@ -183,7 +186,7 @@ void initVampire(Entity* my, Stat* myStats)
 			//give helmet
 			if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 			{
-				switch ( local_rng.rand() % 10 )
+				switch ( rng.rand() % 10 )
 				{
 					case 0:
 					case 1:
@@ -192,13 +195,13 @@ void initVampire(Entity* my, Stat* myStats)
 					case 4:
 						break;
 					case 5:
-						//myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + local_rng.rand() % 2, 1, 0, false, nullptr);
+						//myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + rng.rand() % 2, 1, 0, false, nullptr);
 						break;
 					case 6:
 					case 7:
 					case 8:
 					case 9:
-						//myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + local_rng.rand() % 2, 1, 0, false, nullptr);
+						//myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + rng.rand() % 2, 1, 0, false, nullptr);
 						break;
 				}
 			}
@@ -206,7 +209,7 @@ void initVampire(Entity* my, Stat* myStats)
 			//give shield
 			if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 			{
-				switch ( local_rng.rand() % 10 )
+				switch ( rng.rand() % 10 )
 				{
 					case 0:
 					case 1:
@@ -217,13 +220,13 @@ void initVampire(Entity* my, Stat* myStats)
 						break;
 					case 6:
 					case 7:
-						//myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
+						//myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
 						break;
 					case 8:
-						//myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
+						//myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
 						break;
 					case 9:
-						//myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
+						//myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
 						break;
 				}
 			}

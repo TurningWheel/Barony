@@ -48,6 +48,8 @@ void initShadow(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
+		auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+
 		if ( myStats != nullptr )
 		{
 			if ( !strncmp(map.name, "Underworld", 10) && currentlevel <= 7 && my->monsterStoreType == 0 )
@@ -60,13 +62,13 @@ void initShadow(Entity* my, Stat* myStats)
 			}
 
 			// apply random stat increases if set in stat_shared.cpp or editor
-			setRandomMonsterStats(myStats);
+			setRandomMonsterStats(myStats, rng);
 
 			// generate 6 items max, less if there are any forced items from boss variants
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			const bool boss =
-			    local_rng.rand() % 50 == 0 &&
+			    rng.rand() % 50 == 0 &&
 			    !my->flags[USERFLAG2] &&
 			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 
@@ -78,14 +80,14 @@ void initShadow(Entity* my, Stat* myStats)
 				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
 				myStats->sex = FEMALE;
 				my->monsterShadowDontChangeName = 1;
-				myStats->weapon = newItem(ARTIFACT_BOW, WORN, 0, 1, local_rng.rand(), false, nullptr);
+				myStats->weapon = newItem(ARTIFACT_BOW, WORN, 0, 1, rng.rand(), false, nullptr);
 
-				ItemType type = static_cast<ItemType>(QUIVER_SILVER + local_rng.rand() % 7);
-				int amount = 10 + local_rng.rand() % 11;
+				ItemType type = static_cast<ItemType>(QUIVER_SILVER + rng.rand() % 7);
+				int amount = 10 + rng.rand() % 11;
 				newItem(type, SERVICABLE, 0, amount, ITEM_GENERATED_QUIVER_APPEARANCE, true, &myStats->inventory);
 
-				type = static_cast<ItemType>(QUIVER_SILVER + local_rng.rand() % 7);
-				amount = 10 + local_rng.rand() % 11;
+				type = static_cast<ItemType>(QUIVER_SILVER + rng.rand() % 7);
+				amount = 10 + rng.rand() % 11;
 				newItem(type, SERVICABLE, 0, amount, ITEM_GENERATED_QUIVER_APPEARANCE, true, &myStats->inventory);
 			}
 			else if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
@@ -111,10 +113,10 @@ void initShadow(Entity* my, Stat* myStats)
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
 			// generates equipment and weapons if available from editor
-			createMonsterEquipment(myStats);
+			createMonsterEquipment(myStats, rng);
 
 			// create any custom inventory items from editor if available
-			createCustomInventory(myStats, customItemsToGenerate);
+			createCustomInventory(myStats, customItemsToGenerate, rng);
 
 			// count if any custom inventory items from editor
 			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.

@@ -2882,7 +2882,14 @@ int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed, int* check
 			mapName = physfsFormatMapName(tempstr);
 			if ( useRandSeed )
 			{
-			    mapseed = local_rng.rand();
+			    //mapseed = local_rng.rand(); -- old
+				int rng_cycles = std::max(0, currentlevel + secretlevel ? 100 : 0);
+				while ( rng_cycles > 0 )
+				{
+					map_sequence_rng.rand(); // dummy advance
+					--rng_cycles;
+				}
+				mapseed = map_sequence_rng.rand();
 			}
 			return loadMap(mapName.c_str(), &map, map.entities, map.creatures, checkMapHash);
 		}

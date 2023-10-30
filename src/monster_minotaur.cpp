@@ -40,6 +40,8 @@ void initMinotaur(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
+		auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+
 		if ( myStats != NULL )
 		{
 			if ( !myStats->leader_uid )
@@ -48,7 +50,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 			}
 
 			// apply random stat increases if set in stat_shared.cpp or editor
-			setRandomMonsterStats(myStats);
+			setRandomMonsterStats(myStats, rng);
 
 			// generate 6 items max, less if there are any forced items from boss variants
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
@@ -78,10 +80,10 @@ void initMinotaur(Entity* my, Stat* myStats)
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
 			// generates equipment and weapons if available from editor
-			createMonsterEquipment(myStats);
+			createMonsterEquipment(myStats, rng);
 
 			// create any custom inventory items from editor if available
-			createCustomInventory(myStats, customItemsToGenerate);
+			createCustomInventory(myStats, customItemsToGenerate, rng);
 
 			// count if any custom inventory items from editor
 			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
@@ -103,7 +105,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					switch ( local_rng.rand() % 4 )
+					switch ( rng.rand() % 4 )
 					{
 						case 0:
 							gemtype = GEM_RUBY;
@@ -118,7 +120,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 							gemtype = GEM_DIAMOND;
 							break;
 					}
-					newItem(gemtype, EXCELLENT, 0, 1, local_rng.rand(), true, &myStats->inventory);
+					newItem(gemtype, EXCELLENT, 0, 1, rng.rand(), true, &myStats->inventory);
 					break;
 				default:
 					break;
@@ -626,6 +628,8 @@ void actMinotaurTrap(Entity* my)
 		return;
 	}
 
+	auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+
 	// received on signal
 	if ( my->skill[28] == 2)
 	{
@@ -659,6 +663,7 @@ void actMinotaurTrap(Entity* my)
 						messagePlayerColor(c, MESSAGE_HINT, color, Language::get(1113));
 					}
 				}
+				monster->seedEntityRNG(rng.getU32());
 			}
 		}
 	}
@@ -669,11 +674,14 @@ void actMinotaurTrap(Entity* my)
 
 void actMinotaurTimer(Entity* my)
 {
+	if ( !my ) { return; }
+	auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+
 	MINOTAURTIMER_LIFE++;
 	if (( (currentlevel < 25 && MINOTAURTIMER_LIFE == TICKS_PER_SECOND * 120)
 			|| (currentlevel >= 25 && MINOTAURTIMER_LIFE == TICKS_PER_SECOND * 180)
 		)
-		&& local_rng.rand() % 5 == 0 )   // two minutes if currentlevel < 25, else 3 minutes.
+		&& rng.rand() % 5 == 0 )   // two minutes if currentlevel < 25, else 3 minutes.
 	{
 		int c;
 		bool spawnedsomebody = false;
@@ -694,6 +702,7 @@ void actMinotaurTimer(Entity* my)
 					Stat* monsterStats = monster->getStats();
 					monsterStats->leader_uid = zapLeaderUid;
 				}
+				monster->seedEntityRNG(rng.getU32());
 			}
 		}
 
@@ -745,6 +754,7 @@ void actMinotaurTimer(Entity* my)
 				messagePlayerColor(c, MESSAGE_HINT, color, Language::get(1115));
 			}
 			MINOTAURTIMER_ACTIVE = MINOTAURTIMER_LIFE;
+			monster->seedEntityRNG(rng.getU32());
 		}
 	}
 	if ( MINOTAURTIMER_ACTIVE && MINOTAURTIMER_LIFE >= MINOTAURTIMER_ACTIVE + TICKS_PER_SECOND * 3 )
@@ -1054,7 +1064,7 @@ void actMinotaurCeilingBuster(Entity* my)
 	}
 }
 
-void createMinotaurTimer(Entity* entity, map_t* map)
+void createMinotaurTimer(Entity* entity, map_t* map, Uint32 seed)
 {
 	if ( !entity )
 	{
@@ -1072,4 +1082,7 @@ void createMinotaurTimer(Entity* entity, map_t* map)
 	childEntity->flags[NOUPDATE] = true;
 	childEntity->setUID(-3);
 	entity_uids--;
+
+	childEntity->entity_rng = new BaronyRNG();
+	childEntity->entity_rng->seedBytes(&seed, sizeof(seed));
 }

@@ -30,6 +30,7 @@ See LICENSE for details.
 
 MonsterStatCustomManager monsterStatCustomManager;
 MonsterCurveCustomManager monsterCurveCustomManager;
+BaronyRNG MonsterStatCustomManager::monster_stat_rng;
 GameplayCustomManager gameplayCustomManager;
 GameModeManager_t gameModeManager;
 ItemTooltips_t ItemTooltips;

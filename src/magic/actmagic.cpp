@@ -6462,6 +6462,9 @@ bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 
 		boulderLavaOrArcaneOnDestroy(hit.entity, hit.entity->sprite, nullptr);
 
+		auto& rng = hit.entity->entity_rng ? *hit.entity->entity_rng : local_rng;
+		Uint32 monsterSpawnSeed = rng.getU32();
+
 		// destroy the boulder
 		playSoundEntity(hit.entity, 67, 128);
 		list_RemoveNode(hit.entity->mynode);
@@ -6487,8 +6490,8 @@ bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 			}
 			if ( monster )
 			{
-				int c;
-				for ( c = 0; c < MAXPLAYERS; c++ )
+				monster->seedEntityRNG(monsterSpawnSeed);
+				for ( int c = 0; c < MAXPLAYERS; c++ )
 				{
 					Uint32 color = makeColorRGB(255, 128, 0);
 					messagePlayerColor(c, MESSAGE_HINT, color, Language::get(406));

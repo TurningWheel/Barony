@@ -73,8 +73,9 @@ void Entity::actChest()
 
 	if (!chestInit)
 	{
+		auto& rng = entity_rng ? *entity_rng : local_rng;
 		chestInit = 1;
-		chestHealth = 90 + local_rng.rand() % 20;
+		chestHealth = 90 + rng.rand() % 20;
 		chestMaxHealth = chestHealth;
 		chestOldHealth = chestHealth;
 		chestPreventLockpickCapstoneExploit = 1;
@@ -83,7 +84,7 @@ void Entity::actChest()
 
 		if ( chestLocked == -1 )
 		{
-			roll = local_rng.rand() % 10;
+			roll = rng.rand() % 10;
 			if ( roll == 0 )   // 10% chance //TODO: This should be weighted, depending on chest type.
 			{
 				chestLocked = 1;
@@ -97,7 +98,7 @@ void Entity::actChest()
 		}
 		else  if ( chestLocked >= 0 )
 		{
-			roll = local_rng.rand() % 100;
+			roll = rng.rand() % 100;
 			if ( roll < chestLocked )
 			{
 				chestLocked = 1;
@@ -131,7 +132,7 @@ void Entity::actChest()
 		{
 			if (strcmp(map.name, "The Mystic Library")) 
 			{
-				chesttype = local_rng.rand() % 8;
+				chesttype = rng.rand() % 8;
 				if ( chesttype == 1 )
 				{
 					if ( currentlevel > 10 )
@@ -139,15 +140,15 @@ void Entity::actChest()
 						// re-roll the garbage chest.
 						while ( chesttype == 1 )
 						{
-							chesttype = local_rng.rand() % 8;
+							chesttype = rng.rand() % 8;
 						}
 					}
 					else
 					{
 						// re-roll the garbage chest 50% chance
-						if ( local_rng.rand() % 2 == 0 )
+						if ( rng.rand() % 2 == 0 )
 						{
-							chesttype = local_rng.rand() % 8;
+							chesttype = rng.rand() % 8;
 						}
 					}
 				}
@@ -170,7 +171,7 @@ void Entity::actChest()
 
 		if ( chestHasVampireBook )
 		{
-			newItem(SPELLBOOK_VAMPIRIC_AURA, EXCELLENT, 0, 1, local_rng.rand(), true, inventory);
+			newItem(SPELLBOOK_VAMPIRIC_AURA, EXCELLENT, 0, 1, rng.rand(), true, inventory);
 		}
 
 		switch (chesttype)   //Note that all of this needs to be properly balanced over time.
@@ -178,19 +179,19 @@ void Entity::actChest()
 			//TODO: Make all applicable item additions work on a category based search?
 			case 0:
 				//Completely random.
-				itemcount = (local_rng.rand() % 5) + 1;
+				itemcount = (rng.rand() % 5) + 1;
 				for (i = 0; i < itemcount; ++i)
 				{
 					//And add the current entity to it.
-					//int itemnum = local_rng.rand() % NUMITEMS;
+					//int itemnum = rng.rand() % NUMITEMS;
 					//while (itemnum == SPELL_ITEM || (items[itemnum].level == -1) || items[itemnum].level > currentlevel + 5 )
 					//{
 					//	//messagePlayer(0, "Skipping item %d, level %d", itemnum, items[itemnum].level);
-					//	itemnum = local_rng.rand() % NUMITEMS;    //Keep trying until you don't get a spell or invalid item.
+					//	itemnum = rng.rand() % NUMITEMS;    //Keep trying until you don't get a spell or invalid item.
 					//}
-					//newItem(static_cast<ItemType>(itemnum), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
-					int cat = local_rng.rand() % (NUMCATEGORIES - 1); // exclude spell_cat
-					Item* currentItem = newItem(itemLevelCurve(static_cast<Category>(cat), 0, currentlevel + 5), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+					//newItem(static_cast<ItemType>(itemnum), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+					int cat = rng.rand() % (NUMCATEGORIES - 1); // exclude spell_cat
+					Item* currentItem = newItem(itemLevelCurve(static_cast<Category>(cat), 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 					if ( currentItem )
 					{
 						if ( currentItem->type >= BRONZE_TOMAHAWK && currentItem->type <= CRYSTAL_SHURIKEN )
@@ -203,59 +204,59 @@ void Entity::actChest()
 				break;
 			case 1:
 				//Garbage chest
-				if (local_rng.rand() % 2)
+				if (rng.rand() % 2)
 				{
 					//Empty.
 				}
 				else
 				{
 					//Some worthless garbage. Like a rock. //TODO: Sometimes spawn item 139, worthless piece of glass. Maybe go a step further and have a random amount of items, say 1 - 5, and they can be either rock or the worthless piece of glass or any other garbage.
-					itemcount = (local_rng.rand() % 3) + 1;
-					int itemStatus = WORN + local_rng.rand() % 3;
+					itemcount = (rng.rand() % 3) + 1;
+					int itemStatus = WORN + rng.rand() % 3;
 					for ( i = 0; i < itemcount; ++i )
 					{
-						newItem(GEM_ROCK, static_cast<Status>(itemStatus), 0, 1, local_rng.rand(), false, inventory);
+						newItem(GEM_ROCK, static_cast<Status>(itemStatus), 0, 1, rng.rand(), false, inventory);
 					}
 				}
 				break;
 			case 2:
 				//Food.
 				//Items 152 - 158 are all food.
-				itemcount = (local_rng.rand() % 5) + 1;
+				itemcount = (rng.rand() % 5) + 1;
 				for (i = 0; i < itemcount; ++i)
 				{
-					//newItem(static_cast<ItemType>(FOOD_BREAD + (local_rng.rand() % 7)), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
-					newItem(itemLevelCurve(FOOD, 0, currentlevel + 5), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+					//newItem(static_cast<ItemType>(FOOD_BREAD + (rng.rand() % 7)), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+					newItem(itemLevelCurve(FOOD, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 				}
 				break;
 			case 3:
 				//Treasures, jewelry, gems 'n stuff.
-				itemcount = (local_rng.rand() % 5) + 1;
+				itemcount = (rng.rand() % 5) + 1;
 				for (i = 0; i < itemcount; ++i)
 				{
-					if ( local_rng.rand() % 4 )
+					if ( rng.rand() % 4 )
 					{
-						newItem(static_cast<ItemType>(GEM_GARNET + local_rng.rand() % 15), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+						newItem(static_cast<ItemType>(GEM_GARNET + rng.rand() % 15), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 					}
 					else
 					{
-						newItem(GEM_GLASS, static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+						newItem(GEM_GLASS, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 					}
 				}
 				//Random chance to spawn a ring or an amulet or some other jewelry.
-				if (local_rng.rand() % 2)
+				if (rng.rand() % 2)
 				{
-					if (local_rng.rand() % 2)
+					if (rng.rand() % 2)
 					{
 						//Spawn a ring.
-						//newItem(static_cast<ItemType>(RING_ADORNMENT + local_rng.rand() % 12), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
-						newItem(itemLevelCurve(RING, 0, currentlevel + 5), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+						//newItem(static_cast<ItemType>(RING_ADORNMENT + rng.rand() % 12), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+						newItem(itemLevelCurve(RING, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 					}
 					else
 					{
 						//Spawn an amulet.
-						//newItem(static_cast<ItemType>(AMULET_SEXCHANGE + local_rng.rand() % 6), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
-						newItem(itemLevelCurve(AMULET, 0, currentlevel + 5), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+						//newItem(static_cast<ItemType>(AMULET_SEXCHANGE + rng.rand() % 6), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+						newItem(itemLevelCurve(AMULET, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 					}
 				}
 				break;
@@ -263,24 +264,24 @@ void Entity::actChest()
 				//Weapons, armor, stuff.
 				//Further break this down into either spawning only weapon(s), only armor(s), or a combo, like a set.
 
-				switch (local_rng.rand() % 3)   //TODO: Note, switch to local_rng.rand()%4 if/when case 3 is implemented.
+				switch (rng.rand() % 3)   //TODO: Note, switch to rng.rand()%4 if/when case 3 is implemented.
 				{
 					case 0:
 						//Only a weapon. Items 0 - 16.
 					{
-						//int item = local_rng.rand() % 18;
+						//int item = rng.rand() % 18;
 						////Since the weapons are not a continuous set, check to see if the weapon is part of the continuous set. If it is not, move on to the next block. In this case, there's only one weapon that is not part of the continous set: the crossbow.
 						//if (item < 16)
 						//	//Almost every weapon.
 						//{
-						//	newItem(static_cast<ItemType>(local_rng.rand() % 17), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+						//	newItem(static_cast<ItemType>(rng.rand() % 17), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 						//}
 						//else
 						//	//Crossbow.
 						//{
-						//	newItem(CROSSBOW, static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+						//	newItem(CROSSBOW, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 						//}
-						newItem(itemLevelCurve(WEAPON, minimumQuality, currentlevel + 5), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+						newItem(itemLevelCurve(WEAPON, minimumQuality, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 					}
 					break;
 					case 1:
@@ -292,52 +293,52 @@ void Entity::actChest()
 						 * 6 - 15 are the boots & shirts (as in, breastplates and all variants), items 28 - 37.
 						 * 16 - 19 are the hats & helmets, items 40 - 43
 						 */
-						//int item = local_rng.rand() % 15;
+						//int item = rng.rand() % 15;
 						//if (item <= 1)
 						//	//Steel shields. Items 17 & 18.
 						//{
-						//	newItem(static_cast<ItemType>(17 + local_rng.rand() % 2), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+						//	newItem(static_cast<ItemType>(17 + rng.rand() % 2), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 						//}
 						//else if (item <= 5)
 						//	//Gauntlets. Items 20 - 23.
 						//{
-						//	if ( local_rng.rand() % 3 > 0 )
+						//	if ( rng.rand() % 3 > 0 )
 						//	{
-						//		newItem(static_cast<ItemType>(20 + local_rng.rand() % 4), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+						//		newItem(static_cast<ItemType>(20 + rng.rand() % 4), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 						//	}
 						//	else
 						//	{
 						//		// new gauntlets
-						//		newItem(static_cast<ItemType>(BRASS_KNUCKLES + local_rng.rand() % 3), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+						//		newItem(static_cast<ItemType>(BRASS_KNUCKLES + rng.rand() % 3), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 						//	}
 						//}
 						//else if (item <= 10)
 						//	//Hats & helmets. Items 40 - 43.
 						//{
-						//	newItem(static_cast<ItemType>(40 + local_rng.rand() % 4), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+						//	newItem(static_cast<ItemType>(40 + rng.rand() % 4), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 						//}
 						//else if (item <= 15)
 						//	//Boots & shirts. Items 28 - 37.
 						//{
-						//	newItem(static_cast<ItemType>(28 + local_rng.rand() % 10), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+						//	newItem(static_cast<ItemType>(28 + rng.rand() % 10), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 						//}
-						newItem(itemLevelCurve(ARMOR, minimumQuality, currentlevel + 5), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+						newItem(itemLevelCurve(ARMOR, minimumQuality, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 					}
 					break;
 					case 2:
 						//A weapon and an armor, chance of thrown.
 					{
-						//int item = local_rng.rand() % 18;
+						//int item = rng.rand() % 18;
 						////Since the weapons are not a continuous set, check to see if the weapon is part of the continuous set. If it is not, move on to the next block. In this case, there's only one weapon that is not part of the continous set: the crossbow.
 						//if (item < 16)
 						//	//Almost every weapon.
 						//{
-						//	newItem(static_cast<ItemType>(local_rng.rand() % 17), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+						//	newItem(static_cast<ItemType>(rng.rand() % 17), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 						//}
 						//else
 						//	//Crossbow.
 						//{
-						//	newItem(static_cast<ItemType>(19), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+						//	newItem(static_cast<ItemType>(19), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 						//}
 
 						///*
@@ -346,44 +347,44 @@ void Entity::actChest()
 						// * 6 - 15 are the boots & shirts (as in, breastplates and all variants), items 28 - 37.
 						// * 16 - 19 are the hats & helmets, items 40 - 43
 						// */
-						//item = local_rng.rand() % 20;
+						//item = rng.rand() % 20;
 						//if (item <= 1)
 						//	//Steel shields. Items 17 & 18.
 						//{
-						//	newItem(static_cast<ItemType>(17 + local_rng.rand() % 2), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+						//	newItem(static_cast<ItemType>(17 + rng.rand() % 2), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 						//}
 						//else if (item <= 5)
 						//	//Gauntlets. Items 20 - 23.
 						//{
-						//	if ( local_rng.rand() % 3 > 0 )
+						//	if ( rng.rand() % 3 > 0 )
 						//	{
-						//		newItem(static_cast<ItemType>(20 + local_rng.rand() % 4), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+						//		newItem(static_cast<ItemType>(20 + rng.rand() % 4), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 						//	}
 						//	else
 						//	{
 						//		// new gauntlets
-						//		newItem(static_cast<ItemType>(BRASS_KNUCKLES + local_rng.rand() % 3), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+						//		newItem(static_cast<ItemType>(BRASS_KNUCKLES + rng.rand() % 3), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 						//	}
 						//}
 						//else if (item <= 10)
 						//	//Hats & helmets. Items 40 - 43.
 						//{
-						//	newItem(static_cast<ItemType>(40 + local_rng.rand() % 4), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+						//	newItem(static_cast<ItemType>(40 + rng.rand() % 4), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 						//}
 						//else if (item <= 15)
 						//	//Boots & shirts. Items 28 - 37.
 						//{
-						//	newItem(static_cast<ItemType>(28 + local_rng.rand() % 10), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+						//	newItem(static_cast<ItemType>(28 + rng.rand() % 10), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 						//}
 
-						newItem(itemLevelCurve(WEAPON, minimumQuality, currentlevel + 5), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
-						newItem(itemLevelCurve(ARMOR, minimumQuality, currentlevel + 5), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+						newItem(itemLevelCurve(WEAPON, minimumQuality, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+						newItem(itemLevelCurve(ARMOR, minimumQuality, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 						
 						// try for thrown items.
-						itemcount = 0 + local_rng.rand() % 2;
+						itemcount = 0 + rng.rand() % 2;
 						for ( i = 0; i < itemcount; ++i )
 						{
-							Item* thrown = newItem(itemLevelCurve(THROWN, minimumQuality, currentlevel), WORN, 0, 3 + local_rng.rand() % 3, local_rng.rand(), false, inventory);
+							Item* thrown = newItem(itemLevelCurve(THROWN, minimumQuality, currentlevel, rng), WORN, 0, 3 + rng.rand() % 3, rng.rand(), false, inventory);
 							if ( thrown )
 							{
 								if ( thrown->type >= BRONZE_TOMAHAWK && thrown->type <= CRYSTAL_SHURIKEN )
@@ -403,38 +404,38 @@ void Entity::actChest()
 			case 5:
 			{
 				//Tools.
-				Status durability = static_cast<Status>(WORN + local_rng.rand() % 3);
-				switch ( local_rng.rand() % 3 )
+				Status durability = static_cast<Status>(WORN + rng.rand() % 3);
+				switch ( rng.rand() % 3 )
 				{
 					case 0:
-						itemcount = local_rng.rand() % 3;
+						itemcount = rng.rand() % 3;
 						for ( i = 0; i < itemcount; ++i )
 						{
-							newItem(TOOL_BEARTRAP, durability, 0, 1 + local_rng.rand() % 3, local_rng.rand(), false, inventory);
+							newItem(TOOL_BEARTRAP, durability, 0, 1 + rng.rand() % 3, rng.rand(), false, inventory);
 						}
 						// fall through
 					case 1:
-						itemcount = 1 + local_rng.rand() % 2;
+						itemcount = 1 + rng.rand() % 2;
 						for (i = 0; i < itemcount; ++i)
 						{
-							newItem(static_cast<ItemType>(TOOL_PICKAXE + local_rng.rand() % 12), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+							newItem(static_cast<ItemType>(TOOL_PICKAXE + rng.rand() % 12), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 						}
-						if ( local_rng.rand() % 20 == 0 )
+						if ( rng.rand() % 20 == 0 )
 						{
-							newItem(CLOAK_BACKPACK, durability, 0, 1, local_rng.rand(), false, inventory);
+							newItem(CLOAK_BACKPACK, durability, 0, 1, rng.rand(), false, inventory);
 						}
-						if ( local_rng.rand() % 20 == 0 )
+						if ( rng.rand() % 20 == 0 )
 						{
-							newItem(TOOL_TINKERING_KIT, DECREPIT, 0, 1, local_rng.rand(), false, inventory);
-							newItem(TOOL_METAL_SCRAP, DECREPIT, 0, 10 + local_rng.rand() % 11, 0, true, inventory);
-							newItem(TOOL_MAGIC_SCRAP, DECREPIT, 0, 10 + local_rng.rand() % 11, 0, true, inventory);
+							newItem(TOOL_TINKERING_KIT, DECREPIT, 0, 1, rng.rand(), false, inventory);
+							newItem(TOOL_METAL_SCRAP, DECREPIT, 0, 10 + rng.rand() % 11, 0, true, inventory);
+							newItem(TOOL_MAGIC_SCRAP, DECREPIT, 0, 10 + rng.rand() % 11, 0, true, inventory);
 						}
 						break;
 					case 2:
-						itemcount = 1 + local_rng.rand() % 2;
+						itemcount = 1 + rng.rand() % 2;
 						for ( i = 0; i < itemcount; ++i )
 						{
-							Item* thrown = newItem(itemLevelCurve(THROWN, minimumQuality, currentlevel), WORN, 0, 3 + local_rng.rand() % 3, local_rng.rand(), false, inventory);
+							Item* thrown = newItem(itemLevelCurve(THROWN, minimumQuality, currentlevel, rng), WORN, 0, 3 + rng.rand() % 3, rng.rand(), false, inventory);
 							if ( thrown )
 							{
 								if ( thrown->type >= BRONZE_TOMAHAWK && thrown->type <= CRYSTAL_SHURIKEN )
@@ -461,21 +462,21 @@ void Entity::actChest()
 				 * * Staff chest. Staff or 2.
 				 * * Wizard's chest, which will contain 1-2 scrolls, a magic book, a staff, and either a wizard/magician/whatever implement of some sort or a piece of armor.
 				 */
-				int magic_type = local_rng.rand() % 4;
+				int magic_type = rng.rand() % 4;
 
 				switch (magic_type)
 				{
 					case 0:
 						//Have 3-5 scrolls.
-						itemcount = 3 + (local_rng.rand() % 3);
+						itemcount = 3 + (rng.rand() % 3);
 						for (i = 0; i < itemcount; ++i)
 						{
-							//newItem(static_cast<ItemType>(SCROLL_IDENTIFY + local_rng.rand() % 12), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
-							newItem(itemLevelCurve(SCROLL, 0, currentlevel + 5), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+							//newItem(static_cast<ItemType>(SCROLL_IDENTIFY + rng.rand() % 12), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+							newItem(itemLevelCurve(SCROLL, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 						}
-						if ( local_rng.rand() % 10 == 0 )
+						if ( rng.rand() % 10 == 0 )
 						{
-							if ( local_rng.rand() % 5 == 0 )
+							if ( rng.rand() % 5 == 0 )
 							{
 								newItem(ENCHANTED_FEATHER, EXCELLENT, 0, 1, ENCHANTED_FEATHER_MAX_DURABILITY - 1, false, inventory);
 							}
@@ -483,79 +484,79 @@ void Entity::actChest()
 							{
 								newItem(ENCHANTED_FEATHER, SERVICABLE, 0, 1, (3 * (ENCHANTED_FEATHER_MAX_DURABILITY - 1)) / 4, false, inventory);
 							}
-							if ( local_rng.rand() % 2 == 0 )
+							if ( rng.rand() % 2 == 0 )
 							{
-								newItem(SCROLL_BLANK, static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1 + local_rng.rand() % 3, local_rng.rand(), false, inventory);
+								newItem(SCROLL_BLANK, static_cast<Status>(WORN + rng.rand() % 3), 0, 1 + rng.rand() % 3, rng.rand(), false, inventory);
 							}
 						}
 						break;
 					case 1:
 						//Have 1-3 books.
-						itemcount = 1 + (local_rng.rand() % 3);
+						itemcount = 1 + (rng.rand() % 3);
 						for (i = 0; i < itemcount; ++i)
 						{
-							//newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + local_rng.rand() % 22), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
-							newItem(itemLevelCurve(SPELLBOOK, 0, currentlevel + 6), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+							//newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rng.rand() % 22), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+							newItem(itemLevelCurve(SPELLBOOK, 0, currentlevel + 6, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 						}
 						break;
 					case 2:
 						//A staff.
-						//newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + local_rng.rand() % 10), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
-						newItem(itemLevelCurve(MAGICSTAFF, 0, currentlevel + 5), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+						//newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rng.rand() % 10), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+						newItem(itemLevelCurve(MAGICSTAFF, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 						break;
 					case 3:
 						//So spawn several items at once. A wizard's chest!
 
 						//First the scrolls (1 - 2).
-						itemcount = 1 + local_rng.rand() % 2;
+						itemcount = 1 + rng.rand() % 2;
 						for (i = 0; i < itemcount; ++i)
 						{
-							//newItem(static_cast<ItemType>(SCROLL_IDENTIFY + local_rng.rand() % 12), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
-							newItem(itemLevelCurve(SCROLL, 0, currentlevel + 5), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+							//newItem(static_cast<ItemType>(SCROLL_IDENTIFY + rng.rand() % 12), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+							newItem(itemLevelCurve(SCROLL, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 						}
 
-						//newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + local_rng.rand() % 22), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
-						newItem(itemLevelCurve(SPELLBOOK, 0, currentlevel + 6), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
-						//newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + local_rng.rand() % 10), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
-						newItem(itemLevelCurve(MAGICSTAFF, 0, currentlevel + 5), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
-						switch (local_rng.rand() % 7)
+						//newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rng.rand() % 22), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+						newItem(itemLevelCurve(SPELLBOOK, 0, currentlevel + 6, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+						//newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rng.rand() % 10), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+						newItem(itemLevelCurve(MAGICSTAFF, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+						switch (rng.rand() % 7)
 						{
 							case 0:
 								//A cloak. Item 24.
-								newItem(CLOAK, static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+								newItem(CLOAK, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 								break;
 							case 1:
 								//A cloak of magic resistance. Item 25.
-								newItem(CLOAK_MAGICREFLECTION, static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+								newItem(CLOAK_MAGICREFLECTION, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 								break;
 							case 2:
 								//A cloak of invisibility. Item 26.
-								newItem(CLOAK_INVISIBILITY, static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+								newItem(CLOAK_INVISIBILITY, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 								break;
 							case 3:
 								//A cloak of protection. Item 27.
-								newItem(CLOAK_PROTECTION, static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+								newItem(CLOAK_PROTECTION, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 								break;
 							case 4:
 								//A phyregian's hat/fez hat. Item 38.
-								if ( local_rng.rand() % 5 == 0 )
+								if ( rng.rand() % 5 == 0 )
 								{
-									newItem(HAT_FEZ, static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+									newItem(HAT_FEZ, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 								}
 								else
 								{
-									newItem(HAT_PHRYGIAN, static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+									newItem(HAT_PHRYGIAN, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 								}
 								break;
 							case 5:
 								//A wizard's hat. Item 39.
-								newItem(HAT_WIZARD, static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+								newItem(HAT_WIZARD, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 								break;
 							case 6:
 								newItem(ENCHANTED_FEATHER, EXCELLENT, 0, 1, ENCHANTED_FEATHER_MAX_DURABILITY - 1, false, inventory);
-								if ( local_rng.rand() % 2 == 0 )
+								if ( rng.rand() % 2 == 0 )
 								{
-									newItem(SCROLL_BLANK, static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1 + local_rng.rand() % 3, local_rng.rand(), false, inventory);
+									newItem(SCROLL_BLANK, static_cast<Status>(WORN + rng.rand() % 3), 0, 1 + rng.rand() % 3, rng.rand(), false, inventory);
 								}
 								break;
 						}
@@ -566,31 +567,31 @@ void Entity::actChest()
 			case 7:
 				//Potions.
 				//Items 50 - 64 are potions.
-				itemcount = (local_rng.rand() % 3) + 1;
+				itemcount = (rng.rand() % 3) + 1;
 				for (i = 0; i < itemcount; ++i)
 				{
-					//newItem(static_cast<ItemType>(POTION_WATER + (local_rng.rand() % 15)), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
-					newItem(itemLevelCurve(POTION, 0, currentlevel + 7), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
+					//newItem(static_cast<ItemType>(POTION_WATER + (rng.rand() % 15)), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+					newItem(itemLevelCurve(POTION, 0, currentlevel + 7, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 				}
-				if ( local_rng.rand() % 8 == 0 )
+				if ( rng.rand() % 8 == 0 )
 				{
-					newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, inventory);
-					newItem(POTION_EMPTY, SERVICABLE, 0, 2 + local_rng.rand() % 3, 0, true, inventory);
+					newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + rng.rand() % 3), -1 + rng.rand() % 3, 1, rng.rand(), false, inventory);
+					newItem(POTION_EMPTY, SERVICABLE, 0, 2 + rng.rand() % 3, 0, true, inventory);
 				}
-				else if ( local_rng.rand() % 16 == 0 )
+				else if ( rng.rand() % 16 == 0 )
 				{
-					newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, inventory);
+					newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + rng.rand() % 3), -1 + rng.rand() % 3, 1, rng.rand(), false, inventory);
 				}
-				if ( local_rng.rand() % 4 == 0 )
+				if ( rng.rand() % 4 == 0 )
 				{
-					newItem(POTION_EMPTY, SERVICABLE, 0, 1 + local_rng.rand() % 3, 0, true, inventory);
+					newItem(POTION_EMPTY, SERVICABLE, 0, 1 + rng.rand() % 3, 0, true, inventory);
 				}
 				break;
 			case 8:
 				break;
 			default:
 				//Default case. Should never be reached.
-				newItem(static_cast<ItemType>(0), BROKEN, 0, 1, local_rng.rand(), false, inventory);
+				newItem(static_cast<ItemType>(0), BROKEN, 0, 1, rng.rand(), false, inventory);
 				printlog("warning: default cause in chest init theme type reached. This should never happen.");
 				break;
 		}
@@ -624,13 +625,15 @@ void Entity::actChest()
 
 	if ( chestHealth <= 0 )
 	{
+		auto& rng = entity_rng ? *entity_rng : local_rng;
+
 		// the chest busts open, drops some items randomly, then destroys itself.
 		node_t* nextnode;
 		for ( node = inventory->first; node != NULL; node = nextnode )
 		{
 			nextnode = node->next;
 			item = (Item*)node->element;
-			if ( local_rng.rand() % 2 == 0 )
+			if ( rng.rand() % 2 == 0 )
 			{
 				dropItemMonster(item, this, NULL);
 			}

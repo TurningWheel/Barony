@@ -8209,7 +8209,7 @@ void GenericGUIMenu::alchemyLearnRecipeOnLevelUp(int skill)
 
 	if ( !learned && skill % 5 == 0 )
 	{
-		ItemType potion = itemLevelCurve(POTION, 0, currentlevel);
+		ItemType potion = itemLevelCurve(POTION, 0, currentlevel, local_rng);
 		alchemyLearnRecipe(potion, false);
 	}
 }

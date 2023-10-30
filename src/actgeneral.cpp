@@ -128,8 +128,10 @@ void actFurniture(Entity* my)
 
 void Entity::actFurniture()
 {
+
 	if ( !furnitureInit )
 	{
+		auto& rng = entity_rng ? *entity_rng : local_rng;
 		if ( furnitureType == FURNITURE_BUNKBED )
 		{
 			this->createWorldUITooltip();
@@ -137,11 +139,11 @@ void Entity::actFurniture()
 		furnitureInit = 1;
 		if ( furnitureType == FURNITURE_TABLE || furnitureType == FURNITURE_BUNKBED || furnitureType == FURNITURE_BED || furnitureType == FURNITURE_PODIUM )
 		{
-			furnitureHealth = 15 + local_rng.rand() % 5;
+			furnitureHealth = 15 + rng.rand() % 5;
 		}
 		else
 		{
-			furnitureHealth = 4 + local_rng.rand() % 4;
+			furnitureHealth = 4 + rng.rand() % 4;
 		}
 		furnitureMaxHealth = furnitureHealth;
 		furnitureOldHealth = furnitureHealth;

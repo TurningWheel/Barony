@@ -1971,15 +1971,6 @@ void gameLogic(void)
 						}
 					}
 
-					// signal clients about level change
-					mapseed = local_rng.rand();
-					lastEntityUIDs = entity_uids;
-					if ( forceMapSeed > 0 )
-					{
-						mapseed = forceMapSeed;
-						forceMapSeed = 0;
-					}
-
 					bool loadingTheSameFloorAsCurrent = false;
 					if ( skipLevelsOnLoad > 0 )
 					{
@@ -1998,6 +1989,23 @@ void gameLogic(void)
 						++currentlevel;
 					}
 					skipLevelsOnLoad = 0;
+
+					// signal clients about level change
+					// mapseed = local_rng.rand(); -- old
+					map_sequence_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+					int rng_cycles = std::max(0, currentlevel + secretlevel ? 100 : 0);
+					while ( rng_cycles > 0 )
+					{
+						map_sequence_rng.rand(); // dummy advance
+						--rng_cycles;
+					}
+					mapseed = map_sequence_rng.rand();
+					lastEntityUIDs = entity_uids;
+					if ( forceMapSeed > 0 )
+					{
+						mapseed = forceMapSeed;
+						forceMapSeed = 0;
+					}
 
 					if ( !secretlevel )
 					{

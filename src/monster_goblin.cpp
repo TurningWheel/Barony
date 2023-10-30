@@ -40,6 +40,8 @@ void initGoblin(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
+		auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+
 		if ( myStats != nullptr )
 		{
 		    if (myStats->sex == FEMALE)
@@ -52,7 +54,7 @@ void initGoblin(Entity* my, Stat* myStats)
 			}
 
 			// apply random stat increases if set in stat_shared.cpp or editor
-			setRandomMonsterStats(myStats);
+			setRandomMonsterStats(myStats, rng);
 
 			// generate 6 items max, less if there are any forced items from boss variants
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
@@ -60,7 +62,7 @@ void initGoblin(Entity* my, Stat* myStats)
 			// boss variants
 			bool potatoking = false;
 			const bool boss =
-			    local_rng.rand() % 50 == 0 &&
+			    rng.rand() % 50 == 0 &&
 			    !my->flags[USERFLAG2] &&
 			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
@@ -75,8 +77,8 @@ void initGoblin(Entity* my, Stat* myStats)
 				myStats->OLDHP = myStats->HP;
 				myStats->STR += 6;
 				int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
-				myStats->weapon = newItem(ARTIFACT_MACE, static_cast<Status>(status), 1, 1, local_rng.rand(), true, nullptr);
-				myStats->helmet = newItem(HAT_JESTER, SERVICABLE, 3 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+				myStats->weapon = newItem(ARTIFACT_MACE, static_cast<Status>(status), 1, 1, rng.rand(), true, nullptr);
+				myStats->helmet = newItem(HAT_JESTER, SERVICABLE, 3 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 
 				int c;
 				for ( c = 0; c < 3; c++ )
@@ -89,22 +91,23 @@ void initGoblin(Entity* my, Stat* myStats)
 						{
 							followerStats->leader_uid = entity->parent;
 						}
+						entity->seedEntityRNG(rng.getU32());
 					}
 				}
 			}
 
 			// random effects
-			if ( local_rng.rand() % 8 == 0 )
+			if ( rng.rand() % 8 == 0 )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + local_rng.rand() % 1800;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rng.rand() % 1800;
 			}
 
 			// generates equipment and weapons if available from editor
-			createMonsterEquipment(myStats);
+			createMonsterEquipment(myStats, rng);
 
 			// create any custom inventory items from editor if available
-			createCustomInventory(myStats, customItemsToGenerate);
+			createCustomInventory(myStats, customItemsToGenerate, rng);
 
 			// count if any custom inventory items from editor
 			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
@@ -133,27 +136,27 @@ void initGoblin(Entity* my, Stat* myStats)
 			    //give weapon
 			    if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			    {
-				    switch ( local_rng.rand() % 10 )
+				    switch ( rng.rand() % 10 )
 				    {
 					    case 0:
 					    case 1:
 					    case 2:
-						    myStats->weapon = newItem(SHORTBOW, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    myStats->weapon = newItem(SHORTBOW, WORN, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 						    break;
 					    case 3:
 					    case 4:
 					    case 5:
-						    myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 						    break;
 					    case 6:
 					    case 7:
-						    myStats->weapon = newItem(IRON_MACE, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    myStats->weapon = newItem(IRON_MACE, WORN, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 						    break;
 					    case 8:
-						    myStats->weapon = newItem(IRON_AXE, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    myStats->weapon = newItem(IRON_AXE, WORN, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 						    break;
 					    case 9:
-						    myStats->weapon = newItem(MAGICSTAFF_FIRE, EXCELLENT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    myStats->weapon = newItem(MAGICSTAFF_FIRE, EXCELLENT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 						    break;
 				    }
 			    }
@@ -173,11 +176,11 @@ void initGoblin(Entity* my, Stat* myStats)
 				    else
 				    {
 					    // give shield
-					    switch ( local_rng.rand() % 10 )
+					    switch ( rng.rand() % 10 )
 					    {
 						    case 0:
 						    case 1:
-							    myStats->shield = newItem(TOOL_TORCH, SERVICABLE, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+							    myStats->shield = newItem(TOOL_TORCH, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 							    break;
 						    case 2:
 						    case 3:
@@ -185,14 +188,14 @@ void initGoblin(Entity* my, Stat* myStats)
 							    break;
 						    case 5:
 						    case 6:
-							    myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+							    myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 							    break;
 						    case 7:
 						    case 8:
-							    myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+							    myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 							    break;
 						    case 9:
-							    myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+							    myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 							    break;
 					    }
 				    }
@@ -201,7 +204,7 @@ void initGoblin(Entity* my, Stat* myStats)
 			    // give cloak
 			    if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
 			    {
-				    switch ( local_rng.rand() % 10 )
+				    switch ( rng.rand() % 10 )
 				    {
 					    case 0:
 					    case 1:
@@ -213,10 +216,10 @@ void initGoblin(Entity* my, Stat* myStats)
 					    case 6:
 					    case 7:
 					    case 8:
-						    myStats->cloak = newItem(CLOAK, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    myStats->cloak = newItem(CLOAK, WORN, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 						    break;
 					    case 9:
-						    myStats->cloak = newItem(CLOAK_MAGICREFLECTION, WORN, 0, 1, local_rng.rand(), false, nullptr);
+						    myStats->cloak = newItem(CLOAK_MAGICREFLECTION, WORN, 0, 1, rng.rand(), false, nullptr);
 						    break;
 				    }
 			    }
@@ -224,7 +227,7 @@ void initGoblin(Entity* my, Stat* myStats)
 			    // give helmet
 			    if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 			    {
-				    switch ( local_rng.rand() % 10 )
+				    switch ( rng.rand() % 10 )
 				    {
 					    case 0:
 					    case 1:
@@ -232,18 +235,18 @@ void initGoblin(Entity* my, Stat* myStats)
 						    break;
 					    case 3:
 					    case 4:
-						    myStats->helmet = newItem(HAT_PHRYGIAN, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    myStats->helmet = newItem(HAT_PHRYGIAN, WORN, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 						    break;
 					    case 5:
-						    myStats->helmet = newItem(HAT_WIZARD, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    myStats->helmet = newItem(HAT_WIZARD, WORN, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 						    break;
 					    case 6:
 					    case 7:
-						    myStats->helmet = newItem(LEATHER_HELM, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    myStats->helmet = newItem(LEATHER_HELM, WORN, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 						    break;
 					    case 8:
 					    case 9:
-						    myStats->helmet = newItem(IRON_HELM, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    myStats->helmet = newItem(IRON_HELM, WORN, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 						    break;
 				    }
 			    }
@@ -251,7 +254,7 @@ void initGoblin(Entity* my, Stat* myStats)
 			    // give armor
 			    if ( myStats->breastplate == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
 			    {
-				    switch ( local_rng.rand() % 10 )
+				    switch ( rng.rand() % 10 )
 				    {
 					    case 0:
 					    case 1:
@@ -262,11 +265,11 @@ void initGoblin(Entity* my, Stat* myStats)
 					    case 5:
 					    case 6:
 					    case 7:
-						    myStats->breastplate = newItem(LEATHER_BREASTPIECE, DECREPIT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    myStats->breastplate = newItem(LEATHER_BREASTPIECE, DECREPIT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 						    break;
 					    case 8:
 					    case 9:
-						    myStats->breastplate = newItem(IRON_BREASTPIECE, DECREPIT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    myStats->breastplate = newItem(IRON_BREASTPIECE, DECREPIT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 						    break;
 				    }
 			    }

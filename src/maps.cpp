@@ -31,6 +31,7 @@
 
 int startfloor = 0;
 BaronyRNG map_rng;
+BaronyRNG map_server_rng;
 
 Sint32 doorFrameSprite() {
     if (stringStr(map.name, "Caves", sizeof(map_t::name), 5)) {
@@ -914,9 +915,10 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	// store this map's seed
 	mapseed = seed;
 	map_rng.seedBytes(&mapseed, sizeof(mapseed));
+	map_server_rng.seedBytes(&mapseed, sizeof(mapseed));
 
 	// generate a custom monster curve if file exists
-	monsterCurveCustomManager.readFromFile();
+	monsterCurveCustomManager.readFromFile(mapseed);
 
 	// determine whether shop level or not
 	if ( gameplayCustomManager.processedShopFloor(currentlevel, secretlevel, map.name, shoplevel) )
@@ -3663,7 +3665,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								entity = newEntity(27, 1, map.entities, map.creatures);  // human
 								if ( multiplayer != CLIENT && currentlevel > 5 )
 								{
-									entity->monsterStoreType = (currentlevel / 5) * 3 + (local_rng.rand() % 4); // scale humans with depth.  3 LVL each 5 floors, + 0-3.
+									entity->monsterStoreType = (currentlevel / 5) * 3 + (map_server_rng.rand() % 4); // scale humans with depth.  3 LVL each 5 floors, + 0-3.
 								}
 							}
 						}
@@ -3855,7 +3857,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 										entity = newEntity(27, 1, map.entities, map.creatures);  // human
 										if ( multiplayer != CLIENT && currentlevel > 5 )
 										{
-											entity->monsterStoreType = (currentlevel / 5) * 3 + (local_rng.rand() % 4); // scale humans with depth. 3 LVL each 5 floors, + 0-3.
+											entity->monsterStoreType = (currentlevel / 5) * 3 + (map_server_rng.rand() % 4); // scale humans with depth. 3 LVL each 5 floors, + 0-3.
 										}
 									}
 								}
@@ -4025,6 +4027,7 @@ void assignActions(map_t* map)
 	// seed the random generator
 
 	map_rng.seedBytes(&mapseed, sizeof(mapseed));
+	map_server_rng.seedBytes(&mapseed, sizeof(mapseed));
 
 	int balance = 0;
 	for ( int i = 0; i < MAXPLAYERS; i++ )
@@ -4038,7 +4041,7 @@ void assignActions(map_t* map)
 	bool customMonsterCurveExists = false;
 	if ( !monsterCurveCustomManager.inUse() )
 	{
-		monsterCurveCustomManager.readFromFile();
+		monsterCurveCustomManager.readFromFile(mapseed);
 	}
 	if ( monsterCurveCustomManager.curveExistsForCurrentMapName(map->name) )
 	{
@@ -4179,7 +4182,7 @@ void assignActions(map_t* map)
 					{
 						if ( numplayers == 0 && minotaurlevel )
 						{
-							createMinotaurTimer(entity, map);
+							createMinotaurTimer(entity, map, map_server_rng.getU32());
 						}
 					}
 					++numplayers;
@@ -4216,6 +4219,7 @@ void assignActions(map_t* map)
 				childEntity->behavior = &actDoor;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->skill[0] = 0; // signify behavior code of DOOR_DIR
+				childEntity->seedEntityRNG(map_server_rng.getU32());
 
 				// copy editor options from frame to door itself.
 				childEntity->doorDisableLockpicks = entity->doorDisableLockpicks;
@@ -4265,6 +4269,7 @@ void assignActions(map_t* map)
 				childEntity->behavior = &actDoor;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->skill[0] = 1; // signify behavior code of DOOR_DIR
+				childEntity->seedEntityRNG(map_server_rng.getU32());
 
 				// copy editor options from frame to door itself.
 				childEntity->doorDisableLockpicks = entity->doorDisableLockpicks;
@@ -4438,7 +4443,7 @@ void assignActions(map_t* map)
 									{
 										randType = map_rng.rand() % (NUMCATEGORIES - 1);
 									}
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType), 0, currentlevel);
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType), 0, currentlevel, map_rng);
 								}
 								else
 								{
@@ -4456,12 +4461,12 @@ void assignActions(map_t* map)
 											randType++;
 										}
 									}
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType), 0, currentlevel);
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType), 0, currentlevel, map_rng);
 								}
 							}
 							else
 							{
-								entity->skill[10] = itemLevelCurve(FOOD, 0, currentlevel);
+								entity->skill[10] = itemLevelCurve(FOOD, 0, currentlevel, map_rng);
 							}
 						}
 					}
@@ -4470,7 +4475,7 @@ void assignActions(map_t* map)
 						// editor set the random category of the item to be spawned.
 						if ( entity->skill[16] > 0 && entity->skill[16] <= 13 )
 						{
-							entity->skill[10] = itemLevelCurve(static_cast<Category>(entity->skill[16] - 1), 0, currentlevel);
+							entity->skill[10] = itemLevelCurve(static_cast<Category>(entity->skill[16] - 1), 0, currentlevel, map_rng);
 						}
 						else
 						{
@@ -4481,11 +4486,11 @@ void assignActions(map_t* map)
 								randType = map_rng.rand() % 2;
 								if ( randType == 0 )
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(WEAPON), 0, currentlevel);
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(WEAPON), 0, currentlevel, map_rng);
 								}
 								else if ( randType == 1 )
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(ARMOR), 0, currentlevel);
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(ARMOR), 0, currentlevel, map_rng);
 								}
 							}
 							else if ( entity->skill[16] == 15 )
@@ -4494,11 +4499,11 @@ void assignActions(map_t* map)
 								randType = map_rng.rand() % 2;
 								if ( randType == 0 )
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(AMULET), 0, currentlevel);
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(AMULET), 0, currentlevel, map_rng);
 								}
 								else
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(RING), 0, currentlevel);
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(RING), 0, currentlevel, map_rng);
 								}
 							}
 							else if ( entity->skill[16] == 16 )
@@ -4507,15 +4512,15 @@ void assignActions(map_t* map)
 								randType = map_rng.rand() % 3;
 								if ( randType == 0 )
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(SCROLL), 0, currentlevel);
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(SCROLL), 0, currentlevel, map_rng);
 								}
 								else if ( randType == 1 )
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(MAGICSTAFF), 0, currentlevel);
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(MAGICSTAFF), 0, currentlevel, map_rng);
 								}
 								else
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(SPELLBOOK), 0, currentlevel);
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(SPELLBOOK), 0, currentlevel, map_rng);
 								}
 							}
 						}
@@ -4843,7 +4848,7 @@ void assignActions(map_t* map)
 						// monster is random, but generated from editor
 						// stat struct is already created, need to set stats
 						setDefaultMonsterStats(myStats, monsterType + 1000);
-						setRandomMonsterStats(myStats);
+						setRandomMonsterStats(myStats, map_server_rng);
 					}
 
 					std::string checkName = myStats->name;
@@ -4872,6 +4877,8 @@ void assignActions(map_t* map)
 							monsterCurveCustomManager.createMonsterFromFile(entity, myStats, variantName, monsterType);
 						}
 					}
+
+					entity->seedEntityRNG(map_server_rng.getU32());
 				}
 				if ( multiplayer != CLIENT )
 				{
@@ -4927,6 +4934,8 @@ void assignActions(map_t* map)
 				entity->behavior = &actFountain;
 				entity->sprite = 163; //Fountain
 				entity->skill[0] = 1; //Fountain is full.
+				entity->seedEntityRNG(map_server_rng.getU32());
+
 				//Randomly determine effect.
 				int effect = map_rng.rand() % 10; //3 possible effects.
 				entity->skill[28] = 1; //TODO: This is just for testing purposes.
@@ -4967,6 +4976,7 @@ void assignActions(map_t* map)
 			}
 			//Sink.
 			case 15:
+			{
 				entity->sizex = 4;
 				entity->sizey = 4;
 				entity->x += 8;
@@ -5002,7 +5012,10 @@ void assignActions(map_t* map)
 					default:
 						break;
 				}
+
+				entity->seedEntityRNG(map_server_rng.getU32());
 				break;
+			}
 			//Switch.
 			case 17:
             {
@@ -5157,6 +5170,8 @@ void assignActions(map_t* map)
 				entity->sprite = 188;
 				//entity->skill[9] = -1; //Set default chest as random category < 0
 
+				entity->seedEntityRNG(map_server_rng.getU32());
+
 				auto childEntity = newEntity(216, 0, map->entities, nullptr); //Chest lid entity.
 				childEntity->parent = entity->getUID();
 				entity->parent = childEntity->getUID();
@@ -5266,6 +5281,7 @@ void assignActions(map_t* map)
 				break;
 			// minotaur spawn trap
 			case 37:
+			{
 				entity->skill[28] = 1; // is a mechanism
 				entity->sizex = 2;
 				entity->sizey = 2;
@@ -5276,9 +5292,12 @@ void assignActions(map_t* map)
 				entity->flags[INVISIBLE] = true;
 				entity->flags[PASSABLE] = true;
 				entity->flags[NOUPDATE] = true;
+				entity->seedEntityRNG(map_server_rng.getU32());
 				break;
+			}
 			// summon monster trap
 			case 97:
+			{
 				entity->skill[28] = 1; // is a mechanism
 				if ( entity->skill[1] == 0 )
 				{
@@ -5314,7 +5333,9 @@ void assignActions(map_t* map)
 				entity->flags[INVISIBLE] = true;
 				entity->flags[PASSABLE] = true;
 				entity->flags[NOUPDATE] = true;
+				entity->seedEntityRNG(map_server_rng.getU32());
 				break;
+			}
 			// boulder trap
 			case 38:
 			{
@@ -5379,6 +5400,7 @@ void assignActions(map_t* map)
 			}
 			// headstone
 			case 39:
+			{
 				entity->sizex = 4;
 				entity->sizey = 4;
 				entity->x += 8;
@@ -5392,7 +5414,9 @@ void assignActions(map_t* map)
 					entity->flags[INVISIBLE] = true;
 					entity->flags[PASSABLE] = true;
 				}
+				entity->seedEntityRNG(map_server_rng.getU32());
 				break;
+			}
 			// model tester
 			case 40:
 				entity->behavior = &actRotate;
@@ -5481,6 +5505,7 @@ void assignActions(map_t* map)
 				entity->focalz = -3;
 				entity->sprite = 271;
 				entity->behavior = &actFurniture;
+				entity->seedEntityRNG(map_server_rng.getU32());
 				entity->flags[BURNABLE] = true;
 				entity->furnitureType = FURNITURE_TABLE;
 				if ( entity->furnitureDir != -1 )
@@ -5581,6 +5606,7 @@ void assignActions(map_t* map)
 			}
 			// chair
 			case 60:
+			{
 				entity->furnitureType = FURNITURE_CHAIR; // so everything knows I'm a chair
 				entity->sizex = 2;
 				entity->sizey = 2;
@@ -5590,6 +5616,7 @@ void assignActions(map_t* map)
 				entity->focalz = -5;
 				entity->sprite = 272;
 				entity->behavior = &actFurniture;
+				entity->seedEntityRNG(map_server_rng.getU32());
 				entity->flags[BURNABLE] = true;
 				if ( entity->furnitureDir == -1 )
 				{
@@ -5603,6 +5630,7 @@ void assignActions(map_t* map)
 					entity->yaw = entity->furnitureDir * 45 * (PI / 180.f);
 				}
 				break;
+			}
 			// MC easter egg:
 			case 61:
 				entity->sizex = 2;
@@ -5664,6 +5692,7 @@ void assignActions(map_t* map)
             }
 			// magic trap:
 			case 65:
+			{
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->x += 8;
@@ -5673,7 +5702,9 @@ void assignActions(map_t* map)
 				entity->flags[INVISIBLE] = true;
 				entity->flags[PASSABLE] = true;
 				entity->skill[28] = 1; // is a mechanism
+				entity->seedEntityRNG(map_server_rng.getU32());
 				break;
+			}
 			// wall buster:
 			case 66:
 				entity->sizex = 2;
@@ -6385,6 +6416,7 @@ void assignActions(map_t* map)
 				entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
 				entity->spellTrapRefireRate = entity->spellTrapRefireRate * TICKS_PER_SECOND; // convert seconds to ticks from editor
+				entity->seedEntityRNG(map_server_rng.getU32());
 
 				const int x = ((int)(entity->x)) >> 4;
 				const int y = ((int)(entity->y)) >> 4;
@@ -6432,6 +6464,7 @@ void assignActions(map_t* map)
 			}
 			// arcane chair
 			case 121:
+			{
 				entity->furnitureType = FURNITURE_CHAIR; // so everything knows I'm a chair
 				entity->sizex = 2;
 				entity->sizey = 2;
@@ -6441,6 +6474,7 @@ void assignActions(map_t* map)
 				entity->focalz = -5;
 				entity->sprite = 626;
 				entity->behavior = &actFurniture;
+				entity->seedEntityRNG(map_server_rng.getU32());
 				entity->flags[BURNABLE] = true;
 				if ( entity->furnitureDir == -1 && !entity->yaw )
 				{
@@ -6451,14 +6485,17 @@ void assignActions(map_t* map)
 					entity->yaw = entity->furnitureDir * 45 * (PI / 180.f);
 				}
 				break;
+			}
 			// arcane bed
 			case 122:
+			{
 				entity->furnitureType = FURNITURE_BED; // so everything knows I'm a bed
 				entity->x += 8;
 				entity->y += 8;
 				entity->z = 4;
 				entity->sprite = 627;
 				entity->behavior = &actFurniture;
+				entity->seedEntityRNG(map_server_rng.getU32());
 				entity->flags[BURNABLE] = true;
 				if ( entity->furnitureDir == -1 && !entity->yaw )
 				{
@@ -6486,14 +6523,17 @@ void assignActions(map_t* map)
 					entity->sizey = 8;
 				}
 				break;
+			}
 			// bunk bed
 			case 123:
+			{
 				entity->furnitureType = FURNITURE_BUNKBED; // so everything knows I'm a bunkbed
 				entity->x += 8;
 				entity->y += 8;
 				entity->z = 1.75;
 				entity->sprite = 628;
 				entity->behavior = &actFurniture;
+				entity->seedEntityRNG(map_server_rng.getU32());
 				entity->flags[BURNABLE] = true;
 				if ( entity->furnitureDir == -1 && !entity->yaw )
 				{
@@ -6521,6 +6561,7 @@ void assignActions(map_t* map)
 					entity->sizey = 8;
 				}
 				break;
+			}
 			// column.
 			case 124:
 			{
@@ -6545,6 +6586,7 @@ void assignActions(map_t* map)
 				entity->focalz = -3;
 				entity->sprite = 630;
 				entity->behavior = &actFurniture;
+				entity->seedEntityRNG(map_server_rng.getU32());
 				entity->furnitureType = FURNITURE_PODIUM;
 				entity->flags[BURNABLE] = true;
 				if ( entity->furnitureDir == -1 && !entity->yaw )

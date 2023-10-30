@@ -801,7 +801,7 @@ void actDemonCeilingBuster(Entity* my);
 
 void actDevilTeleport(Entity* my);
 
-void createMinotaurTimer(Entity* entity, map_t* map);
+void createMinotaurTimer(Entity* entity, map_t* map, Uint32 seed);
 
 void actSummonTrap(Entity* my);
 int monsterCurve(int level);

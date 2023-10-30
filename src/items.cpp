@@ -314,7 +314,7 @@ Item* uidToItem(const Uint32 uid)
 
 -------------------------------------------------------------------------------*/
 
-ItemType itemCurve(const Category cat)
+ItemType itemCurve(const Category cat, BaronyRNG& rng)
 {
 	const int numitems = NUMITEMS - ( NUMITEMS - static_cast<int>(ARTIFACT_SWORD) );
 	bool chances[NUMITEMS];
@@ -368,13 +368,13 @@ ItemType itemCurve(const Category cat)
 				switch ( static_cast<ItemType>(c) )
 				{
 					case TOOL_TINOPENER:
-						if ( map_rng.rand() % 2 )   // 50% chance
+						if ( rng.rand() % 2 )   // 50% chance
 						{
 							chances[c] = true;
 						}
 						break;
 					case TOOL_LANTERN:
-						if ( map_rng.rand() % 4 )   // 75% chance
+						if ( rng.rand() % 4 )   // 75% chance
 						{
 							chances[c] = true;
 						}
@@ -420,14 +420,14 @@ ItemType itemCurve(const Category cat)
 	// most gems are worthless pieces of glass
 	if ( cat == GEM )
 	{
-		if ( map_rng.rand() % 10 )
+		if ( rng.rand() % 10 )
 		{
 			return GEM_GLASS;
 		}
 	}
 
 	// pick the item
-	Uint32 pick = map_rng.rand() % numleft;
+	Uint32 pick = rng.rand() % numleft;
 	for ( c = 0; c < numitems; c++ )
 	{
 		if ( items[c].category == cat )
@@ -458,7 +458,7 @@ dungeon level and defined level of the item
 
 -------------------------------------------------------------------------------*/
 
-ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLevel)
+ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLevel, BaronyRNG& rng)
 {
 	const int numitems = NUMITEMS;
 	bool chances[NUMITEMS];
@@ -485,13 +485,13 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 					switch ( static_cast<ItemType>(c) )
 					{
 						case TOOL_TINOPENER:
-							if ( map_rng.rand() % 2 )   // 50% chance
+							if ( rng.rand() % 2 )   // 50% chance
 							{
 								chances[c] = false;
 							}
 							break;
 						case TOOL_LANTERN:
-							if ( map_rng.rand() % 4 == 0 )   // 25% chance
+							if ( rng.rand() % 4 == 0 )   // 25% chance
 							{
 								chances[c] = false;
 							}
@@ -505,7 +505,7 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 					switch ( static_cast<ItemType>(c) )
 					{
 						case CLOAK_BACKPACK:
-							if ( map_rng.rand() % 4 )   // 25% chance
+							if ( rng.rand() % 4 )   // 25% chance
 							{
 								chances[c] = false;
 							}
@@ -540,14 +540,14 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 	// most gems are worthless pieces of glass
 	if ( cat == GEM )
 	{
-		if ( map_rng.rand() % 10 )
+		if ( rng.rand() % 10 )
 		{
 			return GEM_GLASS;
 		}
 	}
 
 	// pick the item
-	Uint32 pick = map_rng.rand() % numleft;
+	Uint32 pick = rng.rand() % numleft;
 	for ( c = 0; c < numitems; c++ )
 	{
 		if ( items[c].category == cat )
@@ -4967,12 +4967,12 @@ bool isPotionBad(const Item& potion)
 	return false;
 }
 
-void createCustomInventory(Stat* const stats, const int itemLimit)
+void createCustomInventory(Stat* const stats, const int itemLimit, BaronyRNG& rng)
 {
 	int itemSlots[6] = { ITEM_SLOT_INV_1, ITEM_SLOT_INV_2, ITEM_SLOT_INV_3, ITEM_SLOT_INV_4, ITEM_SLOT_INV_5, ITEM_SLOT_INV_6 };
 	int i = 0;
 	Sint32 itemId = -1;
-	int itemAppearance = local_rng.rand();
+	int itemAppearance = rng.rand();
 	int category = 0;
 	bool itemIdentified;
 	int itemsGenerated = 0;
@@ -4987,7 +4987,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 			{
 				if ( category > 0 && category <= 13 )
 				{
-					itemId = itemLevelCurve(static_cast<Category>(category - 1), 0, currentlevel);
+					itemId = itemLevelCurve(static_cast<Category>(category - 1), 0, currentlevel, rng);
 				}
 				else
 				{
@@ -4995,44 +4995,44 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 					if ( category == 14 )
 					{
 						// equipment
-						randType = local_rng.rand() % 2;
+						randType = rng.rand() % 2;
 						if ( randType == 0 )
 						{
-							itemId = itemLevelCurve(static_cast<Category>(WEAPON), 0, currentlevel);
+							itemId = itemLevelCurve(static_cast<Category>(WEAPON), 0, currentlevel, rng);
 						}
 						else if ( randType == 1 )
 						{
-							itemId = itemLevelCurve(static_cast<Category>(ARMOR), 0, currentlevel);
+							itemId = itemLevelCurve(static_cast<Category>(ARMOR), 0, currentlevel, rng);
 						}
 					}
 					else if ( category == 15 )
 					{
 						// jewelry
-						randType = local_rng.rand() % 2;
+						randType = rng.rand() % 2;
 						if ( randType == 0 )
 						{
-							itemId = itemLevelCurve(static_cast<Category>(AMULET), 0, currentlevel);
+							itemId = itemLevelCurve(static_cast<Category>(AMULET), 0, currentlevel, rng);
 						}
 						else
 						{
-							itemId = itemLevelCurve(static_cast<Category>(RING), 0, currentlevel);
+							itemId = itemLevelCurve(static_cast<Category>(RING), 0, currentlevel, rng);
 						}
 					}
 					else if ( category == 16 )
 					{
 						// magical
-						randType = local_rng.rand() % 3;
+						randType = rng.rand() % 3;
 						if ( randType == 0 )
 						{
-							itemId = itemLevelCurve(static_cast<Category>(SCROLL), 0, currentlevel);
+							itemId = itemLevelCurve(static_cast<Category>(SCROLL), 0, currentlevel, rng);
 						}
 						else if ( randType == 1 )
 						{
-							itemId = itemLevelCurve(static_cast<Category>(MAGICSTAFF), 0, currentlevel);
+							itemId = itemLevelCurve(static_cast<Category>(MAGICSTAFF), 0, currentlevel, rng);
 						}
 						else
 						{
-							itemId = itemLevelCurve(static_cast<Category>(SPELLBOOK), 0, currentlevel);
+							itemId = itemLevelCurve(static_cast<Category>(SPELLBOOK), 0, currentlevel, rng);
 						}
 					}
 				}
@@ -5047,7 +5047,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 				Status itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemSlots[i] + 1]);
 				if ( itemStatus == 0 )
 				{
-					itemStatus = static_cast<Status>(DECREPIT + local_rng.rand() % 4);
+					itemStatus = static_cast<Status>(DECREPIT + rng.rand() % 4);
 				}
 				else if ( itemStatus > BROKEN )
 				{
@@ -5056,7 +5056,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 				int itemBless = stats->EDITOR_ITEMS[itemSlots[i] + 2];
 				if ( itemBless == 10 )
 				{
-					itemBless = -1 + local_rng.rand() % 3;
+					itemBless = -1 + rng.rand() % 3;
 				}
 				const int itemCount = stats->EDITOR_ITEMS[itemSlots[i] + 3];
 				if ( stats->EDITOR_ITEMS[itemSlots[i] + 4] == 1 )
@@ -5065,15 +5065,15 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 				}
 				else if ( stats->EDITOR_ITEMS[itemSlots[i] + 4] == 2 )
 				{
-					itemIdentified = local_rng.rand() % 2;
+					itemIdentified = rng.rand() % 2;
 				}
 				else
 				{
 					itemIdentified = false;
 				}
-				itemAppearance = local_rng.rand();
+				itemAppearance = rng.rand();
 				chance = stats->EDITOR_ITEMS[itemSlots[i] + 5];
-				if ( local_rng.rand() % 100 < chance )
+				if ( rng.rand() % 100 < chance )
 				{
 					newItem(static_cast<ItemType>(itemId), itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, &stats->inventory);
 				}
@@ -5391,7 +5391,7 @@ void copyItem(Item* const itemToSet, const Item* const itemToCopy) //This should
 	itemToSet->isDroppable = itemToCopy->isDroppable;
 }
 
-ItemType itemTypeWithinGoldValue(const int cat, const int minValue, const int maxValue)
+ItemType itemTypeWithinGoldValue(const int cat, const int minValue, const int maxValue, BaronyRNG& rng)
 {
 	const int numitems = NUMITEMS;
 	int numoftype = 0;
@@ -5431,7 +5431,7 @@ ItemType itemTypeWithinGoldValue(const int cat, const int minValue, const int ma
 	}
 
 	// pick the item
-	int pick = local_rng.rand() % numoftype;// map_rng.rand() % numoftype;
+	int pick = rng.rand() % numoftype;// rng.rand() % numoftype;
 	for ( c = 0; c < numitems; c++ )
 	{
 		if ( chances[c] == true )

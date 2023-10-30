@@ -75,6 +75,7 @@ public:
 	static const std::vector<std::string> itemStatusStrings;
 	static const std::vector<std::string> shopkeeperTypeStrings;
 	MonsterStatCustomManager() = default;
+	static BaronyRNG monster_stat_rng;
 
 	int getSlotFromKeyName(std::string keyName)
 	{
@@ -178,7 +179,7 @@ public:
 			{
 				return invalidEntry;
 			}
-			return (arr[rapidjson::SizeType(local_rng.rand() % arr.Size())].GetString());
+			return (arr[rapidjson::SizeType(monster_stat_rng.rand() % arr.Size())].GetString());
 		}
 		int getRandomArrayInt(const rapidjson::GenericArray<true, rapidjson::GenericValue<rapidjson::UTF8<>>>& arr, int invalidEntry)
 		{
@@ -186,7 +187,7 @@ public:
 			{
 				return invalidEntry;
 			}
-			return (arr[rapidjson::SizeType(local_rng.rand() % arr.Size())].GetInt());
+			return (arr[rapidjson::SizeType(monster_stat_rng.rand() % arr.Size())].GetInt());
 		}
 
 		bool readKeyToItemEntry(rapidjson::Value::ConstMemberIterator& itr)
@@ -266,7 +267,7 @@ public:
 			{
 				if ( itr->value.IsArray() )
 				{
-					this->appearance = static_cast<Uint32>(getRandomArrayInt(itr->value.GetArray(), local_rng.rand()));
+					this->appearance = static_cast<Uint32>(getRandomArrayInt(itr->value.GetArray(), monster_stat_rng.rand()));
 				}
 				else if ( itr->value.IsInt() )
 				{
@@ -277,7 +278,7 @@ public:
 					std::string str = itr->value.GetString();
 					if ( str.compare("random") == 0 )
 					{
-						this->appearance = local_rng.rand();
+						this->appearance = monster_stat_rng.rand();
 					}
 				}
 				return true;
@@ -295,7 +296,7 @@ public:
 			else if ( name.compare("drop_percent_chance") == 0 )
 			{
 				this->dropChance = itr->value.GetInt();
-				if ( local_rng.rand() % 100 >= this->dropChance )
+				if ( monster_stat_rng.rand() % 100 >= this->dropChance )
 				{
 					this->dropItemOnDeath = false;
 				}
@@ -404,7 +405,7 @@ public:
 					++index;
 				}
 
-				int result = local_rng.discrete(variantChances.data(), variantChances.size());
+				int result = monster_stat_rng.discrete(variantChances.data(), variantChances.size());
 				return followerVariants.at(result).first;
 			}
 			return "none";
@@ -502,7 +503,7 @@ public:
 				equippedSlots.insert(it.second);
 				if ( it.first.percentChance < 100 )
 				{
-					if ( local_rng.rand() % 100 >= it.first.percentChance )
+					if ( monster_stat_rng.rand() % 100 >= it.first.percentChance )
 					{
 						continue;
 					}
@@ -611,7 +612,7 @@ public:
 				}
 				if ( it.percentChance < 100 )
 				{
-					if ( local_rng.rand() % 100 >= it.percentChance )
+					if ( monster_stat_rng.rand() % 100 >= it.percentChance )
 					{
 						continue;
 					}
@@ -685,7 +686,7 @@ public:
 				{
 					if ( shopkeeperMinItems >= 0 && shopkeeperMaxItems >= 0 )
 					{
-						numItems = shopkeeperMinItems + local_rng.rand() % std::max(1, (shopkeeperMaxItems - shopkeeperMinItems + 1));
+						numItems = shopkeeperMinItems + monster_stat_rng.rand() % std::max(1, (shopkeeperMaxItems - shopkeeperMinItems + 1));
 						myStats->MISC_FLAGS[STAT_FLAG_SHOPKEEPER_CUSTOM_PROPERTIES] |= numItems + 1;
 					}
 					if ( shopkeeperMaxGeneratedBlessing >= 0 )
@@ -1161,7 +1162,7 @@ public:
 							++index;
 						}
 
-						int result = local_rng.discrete(itemChances.data(), itemChances.size());
+						int result = monster_stat_rng.discrete(itemChances.data(), itemChances.size());
 						statEntry->equipped_items.push_back(std::make_pair(itemsToChoose.at(result).first, itemsToChoose.at(result).second));
 					}
 				}
@@ -1201,7 +1202,7 @@ public:
 							++index;
 						}
 
-						int result = local_rng.discrete(itemChances.data(), itemChances.size());
+						int result = monster_stat_rng.discrete(itemChances.data(), itemChances.size());
 						statEntry->inventory_items.push_back(itemsToChoose.at(result));
 					}
 				}
@@ -1293,7 +1294,7 @@ public:
 							++index;
 						}
 
-						std::string result = statEntry->shopkeeperStoreTypes.at(local_rng.discrete(storeChances.data(), storeChances.size())).first;
+						std::string result = statEntry->shopkeeperStoreTypes.at(monster_stat_rng.discrete(storeChances.data(), storeChances.size())).first;
 						index = 0;
 						for ( auto& lookup : shopkeeperTypeStrings )
 						{
@@ -1340,6 +1341,7 @@ class MonsterCurveCustomManager
 	bool usingCustomManager = false;
 public:
 	MonsterCurveCustomManager() = default;
+	BaronyRNG monster_curve_rng;
 
 	class MonsterCurveEntry
 	{
@@ -1375,8 +1377,11 @@ public:
 	std::vector<LevelCurve> allLevelCurves;
 	inline bool inUse() { return usingCustomManager; };
 
-	void readFromFile()
+	void readFromFile(Uint32 seed)
 	{
+		monster_curve_rng.seedBytes(&seed, sizeof(seed));
+		MonsterStatCustomManager::monster_stat_rng.seedBytes(&seed, sizeof(seed));
+
 		allLevelCurves.clear();
 		usingCustomManager = false;
 		if ( PHYSFS_getRealDir("/data/monstercurve.json") )
@@ -1537,7 +1542,7 @@ public:
 						}
 					}
 				}
-				int result = local_rng.discrete(monsterCurveChances.data(), monsterCurveChances.size());
+				int result = monster_curve_rng.discrete(monsterCurveChances.data(), monsterCurveChances.size());
 				//printlog("[MonsterCurveCustomManager]: Rolled: %d", result);
 				return result;
 			}
@@ -1579,7 +1584,7 @@ public:
 				}
 				if ( !variantResults.empty() )
 				{
-					int result = local_rng.discrete(variantChances.data(), variantChances.size());
+					int result = monster_curve_rng.discrete(variantChances.data(), variantChances.size());
 					return variantResults[result];
 				}
 			}
@@ -1604,7 +1609,7 @@ public:
 							++index;
 						}
 
-						int result = local_rng.discrete(variantChances.data(), variantChances.size());
+						int result = monster_curve_rng.discrete(variantChances.data(), variantChances.size());
 						return monster.variants.at(result).first;
 					}
 				}
@@ -1636,6 +1641,7 @@ public:
 								followerEntry->setStatsAndEquipmentToMonster(summonedFollower->getStats());
 								summonedFollower->getStats()->leader_uid = entity->getUID();
 							}
+							summonedFollower->seedEntityRNG(monster_curve_rng.getU32());
 						}
 						delete followerEntry;
 					}
@@ -1648,6 +1654,7 @@ public:
 							{
 								summonedFollower->getStats()->leader_uid = entity->getUID();
 							}
+							summonedFollower->seedEntityRNG(monster_curve_rng.getU32());
 						}
 					}
 				}

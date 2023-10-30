@@ -42,6 +42,8 @@ void initSkeleton(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
+		auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+
 		if ( myStats != nullptr )
 		{
 		    if ( myStats->sex == FEMALE )
@@ -225,14 +227,14 @@ void initSkeleton(Entity* my, Stat* myStats)
 			}
 			else
 			{
-				setRandomMonsterStats(myStats);
+				setRandomMonsterStats(myStats, rng);
 
 				// generate 6 items max, less if there are any forced items from boss variants
 				int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 				// boss variants
 			    const bool boss =
-			        local_rng.rand() % 50 == 0 &&
+			        rng.rand() % 50 == 0 &&
 			        !my->flags[USERFLAG2] &&
 			        !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 			    if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
@@ -245,7 +247,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 					myStats->MAXHP = 100;
 					myStats->STR += 6;
 					int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
-					myStats->weapon = newItem(ARTIFACT_AXE, static_cast<Status>(status), 1, 1, local_rng.rand(), true, nullptr);
+					myStats->weapon = newItem(ARTIFACT_AXE, static_cast<Status>(status), 1, 1, rng.rand(), true, nullptr);
 					myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, nullptr);
 			    }
 				else
@@ -256,27 +258,27 @@ void initSkeleton(Entity* my, Stat* myStats)
 						//give weapon
 						if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 						{
-							switch ( local_rng.rand() % 10 )
+							switch ( rng.rand() % 10 )
 							{
 								case 0:
 								case 1:
-									myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
+									myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
 									break;
 								case 2:
 								case 3:
-									myStats->weapon = newItem(BRONZE_SWORD, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
+									myStats->weapon = newItem(BRONZE_SWORD, WORN, -1 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
 									break;
 								case 4:
 								case 5:
-									myStats->weapon = newItem(IRON_SPEAR, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
+									myStats->weapon = newItem(IRON_SPEAR, WORN, -1 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
 									break;
 								case 6:
 								case 7:
-									myStats->weapon = newItem(IRON_AXE, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
+									myStats->weapon = newItem(IRON_AXE, WORN, -1 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
 									break;
 								case 8:
 								case 9:
-									myStats->weapon = newItem(IRON_SWORD, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
+									myStats->weapon = newItem(IRON_SWORD, WORN, -1 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
 									break;
 							}
 						}
@@ -286,10 +288,10 @@ void initSkeleton(Entity* my, Stat* myStats)
 				// random effects
 
 				// generates equipment and weapons if available from editor
-				createMonsterEquipment(myStats);
+				createMonsterEquipment(myStats, rng);
 
 				// create any custom inventory items from editor if available
-				createCustomInventory(myStats, customItemsToGenerate);
+				createCustomInventory(myStats, customItemsToGenerate, rng);
 
 				// count if any custom inventory items from editor
 				int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
@@ -316,23 +318,23 @@ void initSkeleton(Entity* my, Stat* myStats)
 				//give weapon
 				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 				{
-					switch ( local_rng.rand() % 10 )
+					switch ( rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
 						case 2:
 						case 3:
-							myStats->weapon = newItem(SHORTBOW, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
+							myStats->weapon = newItem(SHORTBOW, WORN, -1 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
 							break;
 						case 4:
 						case 5:
 						case 6:
 						case 7:
-							myStats->weapon = newItem(CROSSBOW, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
+							myStats->weapon = newItem(CROSSBOW, WORN, -1 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
 							break;
 						case 8:
 						case 9:
-							myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
+							myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -1 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
 							break;
 					}
 				}
@@ -340,7 +342,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 				//give helmet
 				if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 				{
-					switch ( local_rng.rand() % 10 )
+					switch ( rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
@@ -349,13 +351,13 @@ void initSkeleton(Entity* my, Stat* myStats)
 						case 4:
 							break;
 						case 5:
-							myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
+							myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
 							break;
 						case 6:
 						case 7:
 						case 8:
 						case 9:
-							myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
+							myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
 							break;
 					}
 				}
@@ -369,7 +371,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 					}
 					else
 					{
-						switch ( local_rng.rand() % 10 )
+						switch ( rng.rand() % 10 )
 						{
 							case 0:
 							case 1:
@@ -380,13 +382,13 @@ void initSkeleton(Entity* my, Stat* myStats)
 								break;
 							case 6:
 							case 7:
-								myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
+								myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
 								break;
 							case 8:
-								myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
+								myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
 								break;
 							case 9:
-								myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
+								myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
 								break;
 						}
 					}

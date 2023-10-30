@@ -610,6 +610,10 @@ Entity::~Entity()
 	{
 		delete clientStats;
 	}
+	if ( entity_rng )
+	{
+		delete entity_rng;
+	}
 }
 
 /*-------------------------------------------------------------------------------
@@ -7668,6 +7672,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 						Entity* monster = summonMonster(SLIME, x, y);
 						if ( monster )
 						{
+							auto& rng = hit.entity->entity_rng ? *hit.entity->entity_rng : local_rng;
+							monster->seedEntityRNG(rng.getU32());
+
 							messagePlayer(player, MESSAGE_HINT, Language::get(582));
 							Stat* monsterStats = monster->getStats();
 							monsterStats->LVL = 4;
@@ -12266,13 +12273,13 @@ bool Entity::checkFriend(Entity* your)
 }
 
 
-void createMonsterEquipment(Stat* stats)
+void createMonsterEquipment(Stat* stats, BaronyRNG& rng)
 {
 	int itemIndex = 0;
 	ItemType itemId;
 	Status itemStatus;
 	int itemBless;
-	int itemAppearance = local_rng.rand();
+	int itemAppearance = rng.rand();
 	int itemCount;
 	int chance = 1;
 	int category = 0;
@@ -12287,7 +12294,7 @@ void createMonsterEquipment(Stat* stats)
 			{
 				if ( category > 0 && category <= 13 )
 				{
-					itemId = itemLevelCurve(static_cast<Category>(category - 1), 0, currentlevel);
+					itemId = itemLevelCurve(static_cast<Category>(category - 1), 0, currentlevel, rng);
 				}
 				else
 				{
@@ -12295,44 +12302,44 @@ void createMonsterEquipment(Stat* stats)
 					if ( category == 14 )
 					{
 						// equipment
-						randType = local_rng.rand() % 2;
+						randType = rng.rand() % 2;
 						if ( randType == 0 )
 						{
-							itemId = itemLevelCurve(static_cast<Category>(WEAPON), 0, currentlevel);
+							itemId = itemLevelCurve(static_cast<Category>(WEAPON), 0, currentlevel, rng);
 						}
 						else if ( randType == 1 )
 						{
-							itemId = itemLevelCurve(static_cast<Category>(ARMOR), 0, currentlevel);
+							itemId = itemLevelCurve(static_cast<Category>(ARMOR), 0, currentlevel, rng);
 						}
 					}
 					else if ( category == 15 )
 					{
 						// jewelry
-						randType = local_rng.rand() % 2;
+						randType = rng.rand() % 2;
 						if ( randType == 0 )
 						{
-							itemId = itemLevelCurve(static_cast<Category>(AMULET), 0, currentlevel);
+							itemId = itemLevelCurve(static_cast<Category>(AMULET), 0, currentlevel, rng);
 						}
 						else
 						{
-							itemId = itemLevelCurve(static_cast<Category>(RING), 0, currentlevel);
+							itemId = itemLevelCurve(static_cast<Category>(RING), 0, currentlevel, rng);
 						}
 					}
 					else if ( category == 16 )
 					{
 						// magical
-						randType = local_rng.rand() % 3;
+						randType = rng.rand() % 3;
 						if ( randType == 0 )
 						{
-							itemId = itemLevelCurve(static_cast<Category>(SCROLL), 0, currentlevel);
+							itemId = itemLevelCurve(static_cast<Category>(SCROLL), 0, currentlevel, rng);
 						}
 						else if ( randType == 1 )
 						{
-							itemId = itemLevelCurve(static_cast<Category>(MAGICSTAFF), 0, currentlevel);
+							itemId = itemLevelCurve(static_cast<Category>(MAGICSTAFF), 0, currentlevel, rng);
 						}
 						else
 						{
-							itemId = itemLevelCurve(static_cast<Category>(SPELLBOOK), 0, currentlevel);
+							itemId = itemLevelCurve(static_cast<Category>(SPELLBOOK), 0, currentlevel, rng);
 						}
 					}
 				}
@@ -12355,7 +12362,7 @@ void createMonsterEquipment(Stat* stats)
 				itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 1]);
 				if ( itemStatus == 0 )
 				{
-					itemStatus = static_cast<Status>(DECREPIT + local_rng.rand() % 4);
+					itemStatus = static_cast<Status>(DECREPIT + rng.rand() % 4);
 				}
 				else if ( itemStatus > BROKEN )
 				{
@@ -12364,7 +12371,7 @@ void createMonsterEquipment(Stat* stats)
 				itemBless = stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 2];
 				if ( itemBless == 10 )
 				{
-					itemBless = -2 + local_rng.rand() % 5;
+					itemBless = -2 + rng.rand() % 5;
 				}
 				itemCount = stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 3];
 				if ( stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 4] == 1 )
@@ -12373,16 +12380,16 @@ void createMonsterEquipment(Stat* stats)
 				}
 				else if ( stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 4] == 2 )
 				{
-					itemIdentified = local_rng.rand() % 2;
+					itemIdentified = rng.rand() % 2;
 				}
 				else
 				{
 					itemIdentified = false;
 				}
-				itemAppearance = local_rng.rand();
+				itemAppearance = rng.rand();
 				chance = stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 5];
 
-				if ( local_rng.rand() % 100 < chance )
+				if ( rng.rand() % 100 < chance )
 				{
 					switch ( itemIndex ) {
 						case 0:
@@ -12456,7 +12463,7 @@ int countDefaultItems(Stat* stats)
 	return defaultItemSlotCount;
 }
 
-void setRandomMonsterStats(Stat* stats)
+void setRandomMonsterStats(Stat* stats, BaronyRNG& rng)
 {
 	if ( stats != nullptr )
 	{
@@ -12466,7 +12473,7 @@ void setRandomMonsterStats(Stat* stats)
 
 		if ( stats->MAXHP == stats->HP )
 		{
-			stats->MAXHP += local_rng.rand() % (stats->RANDOM_MAXHP + 1);
+			stats->MAXHP += rng.rand() % (stats->RANDOM_MAXHP + 1);
 
 			if ( stats->RANDOM_MAXHP == stats->RANDOM_HP )
 			{
@@ -12476,14 +12483,14 @@ void setRandomMonsterStats(Stat* stats)
 			else
 			{
 				// roll the current hp
-				stats->HP += local_rng.rand() % (stats->RANDOM_HP + 1);
+				stats->HP += rng.rand() % (stats->RANDOM_HP + 1);
 			}
 		}
 		else
 		{
 			// roll both ranges independently
-			stats->MAXHP += local_rng.rand() % (stats->RANDOM_MAXHP + 1);
-			stats->HP += local_rng.rand() % (stats->RANDOM_HP + 1);
+			stats->MAXHP += rng.rand() % (stats->RANDOM_MAXHP + 1);
+			stats->HP += rng.rand() % (stats->RANDOM_HP + 1);
 		}
 
 		if ( stats->HP > stats->MAXHP )
@@ -12499,7 +12506,7 @@ void setRandomMonsterStats(Stat* stats)
 
 		if ( stats->MAXMP == stats->MP )
 		{
-			stats->MAXMP += local_rng.rand() % (stats->RANDOM_MAXMP + 1);
+			stats->MAXMP += rng.rand() % (stats->RANDOM_MAXMP + 1);
 
 			if ( stats->RANDOM_MAXMP == stats->RANDOM_MP )
 			{
@@ -12509,14 +12516,14 @@ void setRandomMonsterStats(Stat* stats)
 			else
 			{
 				// roll the current mp
-				stats->MP += local_rng.rand() % (stats->RANDOM_MP + 1);
+				stats->MP += rng.rand() % (stats->RANDOM_MP + 1);
 			}
 		}
 		else
 		{
 			// roll both ranges independently
-			stats->MAXMP += local_rng.rand() % (stats->RANDOM_MAXMP + 1);
-			stats->MP += local_rng.rand() % (stats->RANDOM_MP + 1);
+			stats->MAXMP += rng.rand() % (stats->RANDOM_MAXMP + 1);
+			stats->MP += rng.rand() % (stats->RANDOM_MP + 1);
 		}
 
 		if ( stats->MP > stats->MAXMP )
@@ -12529,15 +12536,15 @@ void setRandomMonsterStats(Stat* stats)
 		// REST OF STATS
 		//**************************************
 
-		stats->STR += local_rng.rand() % (stats->RANDOM_STR + 1);
-		stats->DEX += local_rng.rand() % (stats->RANDOM_DEX + 1);
-		stats->CON += local_rng.rand() % (stats->RANDOM_CON + 1);
-		stats->INT += local_rng.rand() % (stats->RANDOM_INT + 1);
-		stats->PER += local_rng.rand() % (stats->RANDOM_PER + 1);
-		stats->CHR += local_rng.rand() % (stats->RANDOM_CHR + 1);
+		stats->STR += rng.rand() % (stats->RANDOM_STR + 1);
+		stats->DEX += rng.rand() % (stats->RANDOM_DEX + 1);
+		stats->CON += rng.rand() % (stats->RANDOM_CON + 1);
+		stats->INT += rng.rand() % (stats->RANDOM_INT + 1);
+		stats->PER += rng.rand() % (stats->RANDOM_PER + 1);
+		stats->CHR += rng.rand() % (stats->RANDOM_CHR + 1);
 
-		stats->LVL += local_rng.rand() % (stats->RANDOM_LVL + 1);
-		stats->GOLD += local_rng.rand() % (stats->RANDOM_GOLD + 1);
+		stats->LVL += rng.rand() % (stats->RANDOM_LVL + 1);
+		stats->GOLD += rng.rand() % (stats->RANDOM_GOLD + 1);
 	}
 
 	// debug print out each monster spawned
@@ -18431,30 +18438,32 @@ int Entity::getMagicResistance(Stat* myStats)
 
 void Entity::setHardcoreStats(Stat& stats)
 {
+	auto& rng = entity_rng ? *entity_rng : local_rng;
+
 	if ( (svFlags & SV_FLAG_HARDCORE) && stats.MISC_FLAGS[STAT_FLAG_MONSTER_DISABLE_HC_SCALING] == 0 )
 	{
 		// spice up some stats...
 		int statIncrease = ((abs(stats.HP) / 20 + 1) * 20); // each 20 HP add 20 random HP
-		stats.HP += statIncrease - (local_rng.rand() % (std::max(statIncrease / 5, 1))); // 80%-100% of increased value
+		stats.HP += statIncrease - (rng.rand() % (std::max(statIncrease / 5, 1))); // 80%-100% of increased value
 		stats.MAXHP = stats.HP;
 		stats.OLDHP = stats.HP;
 
 		statIncrease = (abs(stats.STR) / 5 + 1) * 5; // each 5 STR add 5 more STR.
-		stats.STR += (statIncrease - (local_rng.rand() % (std::max(statIncrease / 4, 1)))); // 75%-100% of increased value.
+		stats.STR += (statIncrease - (rng.rand() % (std::max(statIncrease / 4, 1)))); // 75%-100% of increased value.
 
 		statIncrease = (abs(stats.PER) / 5 + 1) * 5; // each 5 PER add 5 more PER.
-		stats.PER += (statIncrease - (local_rng.rand() % (std::max(statIncrease / 4, 1)))); // 75%-100% of increased value.
+		stats.PER += (statIncrease - (rng.rand() % (std::max(statIncrease / 4, 1)))); // 75%-100% of increased value.
 
 		statIncrease = std::min((abs(stats.DEX) / 4 + 1) * 1, 8); // each 4 DEX add 1 more DEX, capped at 8.
-		stats.DEX += (statIncrease - (local_rng.rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
+		stats.DEX += (statIncrease - (rng.rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
 
 		statIncrease = (abs(stats.CON) / 5 + 1) * 1; // each 5 CON add 1 more CON.
-		stats.CON += (statIncrease - (local_rng.rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
+		stats.CON += (statIncrease - (rng.rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
 
 		statIncrease = (abs(stats.INT) / 5 + 1) * 5; // each 5 INT add 5 more INT.
-		stats.INT += (statIncrease - (local_rng.rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
+		stats.INT += (statIncrease - (rng.rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
 
-		int lvlIncrease = local_rng.rand() % 4;
+		int lvlIncrease = rng.rand() % 4;
 		lvlIncrease = std::max(0, lvlIncrease - 1);
 		stats.LVL += std::max(0, lvlIncrease - 1); // increase by 1 or 2 50%, else stay same.
 	}
@@ -20159,4 +20168,16 @@ void Entity::alertAlliesOnBeingHit(Entity* attacker, std::unordered_set<Entity*>
 		}
 	}
 	hit.entity = ohitentity;
+}
+
+void Entity::seedEntityRNG(Uint32 seed)
+{
+	if ( !entity_rng )
+	{
+		entity_rng = new BaronyRNG();
+	}
+	if ( entity_rng )
+	{
+		entity_rng->seedBytes(&seed, sizeof(seed));
+	}
 }

@@ -38,6 +38,8 @@ void initImp(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
+		auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+
 		if ( myStats != nullptr )
 		{
 			if ( !myStats->leader_uid )
@@ -46,7 +48,7 @@ void initImp(Entity* my, Stat* myStats)
 			}
 
 			// apply random stat increases if set in stat_shared.cpp or editor
-			setRandomMonsterStats(myStats);
+			setRandomMonsterStats(myStats, rng);
 
 			// generate 6 items max, less if there are any forced items from boss variants
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
@@ -57,17 +59,17 @@ void initImp(Entity* my, Stat* myStats)
 			myStats->EFFECTS[EFF_LEVITATING] = true;
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
-			if ( local_rng.rand() % 4 == 0 && strncmp(map.name, "Hell Boss", 9) )
+			if ( rng.rand() % 4 == 0 && strncmp(map.name, "Hell Boss", 9) )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + local_rng.rand() % 3600;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rng.rand() % 3600;
 			}
 
 			// generates equipment and weapons if available from editor
-			createMonsterEquipment(myStats);
+			createMonsterEquipment(myStats, rng);
 
 			// create any custom inventory items from editor if available
-			createCustomInventory(myStats, customItemsToGenerate);
+			createCustomInventory(myStats, customItemsToGenerate, rng);
 
 			// count if any custom inventory items from editor
 			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
@@ -86,9 +88,9 @@ void initImp(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( local_rng.rand() % 4 == 0 )
+					if ( rng.rand() % 4 == 0 )
 					{
-						newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + local_rng.rand() % 21), static_cast<Status>(1 + local_rng.rand() % 4), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
+						newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rng.rand() % 21), static_cast<Status>(1 + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
 					}
 					break;
 				default:

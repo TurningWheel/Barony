@@ -162,6 +162,9 @@ public:
 	int mapGenerationRoomX = 0; // captures the x/y of the 'room' this spawned in on generate dungeon
 	int mapGenerationRoomY = 0; // captures the x/y of the 'room' this spawned in on generate dungeon
 
+	BaronyRNG* entity_rng = nullptr;
+	void seedEntityRNG(Uint32 seed);
+
 	//--PUBLIC CHEST SKILLS--
 
 	//skill[4]
@@ -1155,11 +1158,11 @@ extern char monsterEditorNameStrings[NUMMONSTERS][16];
 extern char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32];
 extern char itemNameStrings[NUM_ITEM_STRINGS][32];
 int canWearEquip(Entity* entity, int category);
-void createMonsterEquipment(Stat* stats);
+void createMonsterEquipment(Stat* stats, BaronyRNG& rng);
 int countCustomItems(Stat* stats);
 int countDefaultItems(Stat* stats);
 void copyMonsterStatToPropertyStrings(Stat* tmpSpriteStats);
-void setRandomMonsterStats(Stat* stats);
+void setRandomMonsterStats(Stat* stats, BaronyRNG& rng);
 
 int checkEquipType(const Item *ITEM);
 
@@ -1219,7 +1222,7 @@ int getEntityHungerInterval(int player, Entity* my, Stat* myStats, EntityHungerI
 //Fountain potion drop chance variables.
 extern const std::vector<unsigned int> fountainPotionDropChances;
 extern const std::vector<std::pair<int, int>> potionStandardAppearanceMap;
-std::pair<int, int> fountainGeneratePotionDrop();
+std::pair<int, int> fountainGeneratePotionDrop(BaronyRNG& rng);
 
 class TextSourceScript
 {

@@ -1820,6 +1820,9 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 			return nullptr;
 		}
 
+		auto& rng = target->entity_rng ? *target->entity_rng : local_rng;
+		summonedEntity->seedEntityRNG(rng.getU32());
+
 		Stat* summonedStats = summonedEntity->getStats();
 		if ( !summonedStats )
 		{

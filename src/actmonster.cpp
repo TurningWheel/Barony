@@ -3027,7 +3027,8 @@ void actMonster(Entity* my)
 				bool wasDroppable = item->isDroppable;
 				if ( myStats->type == SHOPKEEPER )
 				{
-					if ( local_rng.rand() % 2 )
+					auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+					if ( rng.rand() % 2 )
 					{
 						item->isDroppable = false; // sometimes don't drop inventory
 					}
@@ -11673,19 +11674,22 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 	{
 		return;
 	}
+
+	auto& rng = entity_rng ? *entity_rng : local_rng;
+
 	int ammo = 5;
 	if ( currentlevel >= 15 )
 	{
-		ammo += 5 + local_rng.rand() % 16;
+		ammo += 5 + rng.rand() % 16;
 	}
 	else
 	{
-		ammo += local_rng.rand() % 11;
+		ammo += rng.rand() % 11;
 	}
 	switch ( myStats->type )
 	{
 		case HUMAN:
-			switch ( local_rng.rand() % 5 )
+			switch ( rng.rand() % 5 )
 			{
 				case 0:
 				case 1:
@@ -11698,7 +11702,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 				case 4:
 					if ( currentlevel >= 18 )
 					{
-						if ( local_rng.rand() % 2 )
+						if ( rng.rand() % 2 )
 						{
 							myStats->shield = newItem(QUIVER_CRYSTAL, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
 						}
@@ -11717,7 +11721,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 			}
 			break;
 		case GOBLIN:
-			switch ( local_rng.rand() % 5 )
+			switch ( rng.rand() % 5 )
 			{
 				case 0:
 				case 1:
@@ -11730,7 +11734,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 				case 4:
 					if ( currentlevel >= 18 )
 					{
-						if ( local_rng.rand() % 2 )
+						if ( rng.rand() % 2 )
 						{
 							myStats->shield = newItem(QUIVER_FIRE, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
 						}
@@ -11749,7 +11753,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 			}
 			break;
 		case INSECTOID:
-			switch ( local_rng.rand() % 5 )
+			switch ( rng.rand() % 5 )
 			{
 				case 0:
 				case 1:
@@ -11762,7 +11766,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 				case 4:
 					if ( currentlevel >= 18 )
 					{
-						if ( local_rng.rand() % 2 )
+						if ( rng.rand() % 2 )
 						{
 							myStats->shield = newItem(QUIVER_CRYSTAL, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
 						}
@@ -11781,7 +11785,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 			}
 			break;
 		case KOBOLD:
-			switch ( local_rng.rand() % 5 )
+			switch ( rng.rand() % 5 )
 			{
 				case 0:
 				case 1:
@@ -11794,7 +11798,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 				case 4:
 					if ( currentlevel >= 28 )
 					{
-						if ( local_rng.rand() % 2 )
+						if ( rng.rand() % 2 )
 						{
 							myStats->shield = newItem(QUIVER_CRYSTAL, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
 						}
@@ -11813,7 +11817,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 			}
 			break;
 		case INCUBUS:
-			switch ( local_rng.rand() % 5 )
+			switch ( rng.rand() % 5 )
 			{
 				case 0:
 				case 1:
@@ -11826,7 +11830,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 				case 4:
 					if ( currentlevel >= 18 )
 					{
-						if ( local_rng.rand() % 2 )
+						if ( rng.rand() % 2 )
 						{
 							myStats->shield = newItem(QUIVER_CRYSTAL, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
 						}
@@ -11845,7 +11849,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 			}
 			break;
 		case SKELETON:
-			switch ( local_rng.rand() % 5 )
+			switch ( rng.rand() % 5 )
 			{
 				case 0:
 				case 1:
@@ -11858,7 +11862,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 				case 4:
 					if ( currentlevel >= 18 )
 					{
-						if ( local_rng.rand() % 2 )
+						if ( rng.rand() % 2 )
 						{
 							myStats->shield = newItem(QUIVER_FIRE, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
 						}

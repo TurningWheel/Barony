@@ -1708,7 +1708,7 @@ namespace ConsoleCommands {
 		});
 
 	static ConsoleCommand ccmd_mapseed("/mapseed", "display map seed", []CCMD{
-		messagePlayer(clientnum, MESSAGE_MISC, "%d", mapseed);
+		messagePlayer(clientnum, MESSAGE_MISC, "Mapseed: %d | Gamekey: %lu", mapseed, uniqueGameKey);
 		});
 
 	static ConsoleCommand ccmd_reloadlang("/reloadlang", "reload language file", []CCMD{
@@ -2171,7 +2171,7 @@ namespace ConsoleCommands {
 		if (!minotaurlevel)
 		{
 			minotaurlevel = 1;
-			createMinotaurTimer(players[0]->entity, &map);
+			createMinotaurTimer(players[0]->entity, &map, local_rng.getU32());
 		}
 		});
 

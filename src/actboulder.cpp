@@ -368,6 +368,9 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 
 					boulderLavaOrArcaneOnDestroy(my, my->sprite, entity);
 
+					auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+					Uint32 monsterSpawnSeed = rng.getU32();
+
 					// destroy the boulder
 					playSoundEntity(my, 67, 128);
 					list_RemoveNode(my->mynode);
@@ -386,8 +389,8 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 						}
 						if ( monster )
 						{
-							int c;
-							for ( c = 0; c < MAXPLAYERS; c++ )
+							monster->seedEntityRNG(monsterSpawnSeed);
+							for ( int c = 0; c < MAXPLAYERS; c++ )
 							{
 								Uint32 color = makeColorRGB(255, 128, 0);
 								messagePlayerColor(c, MESSAGE_HINT, color, Language::get(406));

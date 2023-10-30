@@ -52,6 +52,8 @@ void initSpider(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
+		auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+
 		if ( myStats != NULL )
 		{
 			if ( !myStats->leader_uid )
@@ -60,14 +62,14 @@ void initSpider(Entity* my, Stat* myStats)
 			}
 
 			// apply random stat increases if set in stat_shared.cpp or editor
-			setRandomMonsterStats(myStats);
+			setRandomMonsterStats(myStats, rng);
 
 			// generate 6 items max, less if there are any forced items from boss variants
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
 			const bool boss =
-			    local_rng.rand() % 50 == 0 &&
+			    rng.rand() % 50 == 0 &&
 			    !my->flags[USERFLAG2] &&
 			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
@@ -92,9 +94,9 @@ void initSpider(Entity* my, Stat* myStats)
 				myStats->PER = 10;
 				myStats->CHR = 10;
 				myStats->LVL = 15;
-				newItem(RING_INVISIBILITY, EXCELLENT, -5, 1, local_rng.rand(), false, &myStats->inventory);
+				newItem(RING_INVISIBILITY, EXCELLENT, -5, 1, rng.rand(), false, &myStats->inventory);
 				int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
-				newItem(ARTIFACT_SWORD, static_cast<Status>(status), 1, 1, local_rng.rand(), false, &myStats->inventory);
+				newItem(ARTIFACT_SWORD, static_cast<Status>(status), 1, 1, rng.rand(), false, &myStats->inventory);
 				customItemsToGenerate -= 2;
 				int c;
 				for ( c = 0; c < 3; c++ )
@@ -107,6 +109,7 @@ void initSpider(Entity* my, Stat* myStats)
 						{
 							followerStats->leader_uid = entity->parent;
 						}
+						entity->seedEntityRNG(rng.getU32());
 					}
 				}
 			}
@@ -114,10 +117,10 @@ void initSpider(Entity* my, Stat* myStats)
 			// random effects
 
 			// generates equipment and weapons if available from editor
-			createMonsterEquipment(myStats);
+			createMonsterEquipment(myStats, rng);
 
 			// create any custom inventory items from editor if available
-			createCustomInventory(myStats, customItemsToGenerate);
+			createCustomInventory(myStats, customItemsToGenerate, rng);
 
 			// count if any custom inventory items from editor
 			int customItems = countCustomItems(myStats);
