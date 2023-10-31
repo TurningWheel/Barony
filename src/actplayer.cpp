@@ -2094,7 +2094,7 @@ void actDeathCam(Entity* my)
 
 	Uint32 deathcamGameoverPromptTicks = *MainMenu::cvar_fastRestart ? TICKS_PER_SECOND :
 		(splitscreen ? TICKS_PER_SECOND * 3 : TICKS_PER_SECOND * 6);
-	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+	if ( gameModeManager.isFastDeathGrave() )
 	{
 		deathcamGameoverPromptTicks = TICKS_PER_SECOND * 3;
 	}
@@ -7205,7 +7205,7 @@ void actPlayer(Entity* my)
 							}
 							node_t* nextnode;
 
-							if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_DEFAULT )
+							if ( gameModeManager.allowsSaves() )
 							{
 								if ( multiplayer == SINGLE )
 								{

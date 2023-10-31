@@ -5459,6 +5459,7 @@ void assignActions(map_t* map)
             }
 			// boulder
 			case 44:
+			{
 				entity->x += 8;
 				entity->y += 8;
 				entity->sprite = 245;
@@ -5466,7 +5467,9 @@ void assignActions(map_t* map)
 				entity->sizey = 7;
 				entity->behavior = &actBoulder;
 				entity->skill[0] = 1; // BOULDER_STOPPED
+				entity->seedEntityRNG(map_server_rng.getU32());
 				break;
+			}
 			// portal
 			case 45:
 				entity->x += 8;

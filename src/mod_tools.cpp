@@ -407,6 +407,57 @@ void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::buttonPromptEnterTutorial
 	gameModeManager.Tutorial.writeToDocument();
 }
 
+void GameModeManager_t::SeededRun_t::setup(std::string _seedString)
+{
+	seed = djb2Hash(const_cast<char*>(_seedString.c_str()));
+}
+
+bool GameModeManager_t::allowsSaves()
+{
+	if ( currentMode == GAME_MODE_DEFAULT || currentMode == GAME_MODE_SEEDED )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool GameModeManager_t::allowsStatisticsOrAchievements()
+{
+	if ( currentMode == GAME_MODE_DEFAULT || currentMode == GAME_MODE_TUTORIAL || currentMode == GAME_MODE_SEEDED )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool GameModeManager_t::allowsHiscores()
+{
+	if ( currentMode == GAME_MODE_DEFAULT || currentMode == GAME_MODE_SEEDED )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool GameModeManager_t::isFastDeathGrave()
+{
+	if ( currentMode == GAME_MODE_TUTORIAL || currentMode == GAME_MODE_TUTORIAL_INIT
+		|| currentMode == GAME_MODE_CUSTOM_RUN )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool GameModeManager_t::allowsBoulderBreak()
+{
+	if ( currentMode != GAME_MODE_TUTORIAL )
+	{
+		return true;
+	}
+	return false;
+}
+
 #ifndef NINTENDO
 bool IRCHandler_t::readFromFile()
 {

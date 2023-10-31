@@ -5426,7 +5426,7 @@ void SaveGameInfo::Player::stat_t::item_t::computeHash(Uint32& hash, Uint32& shi
 }
 
 int saveGame(int saveIndex) {
-	if (gameModeManager.getMode() != GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+	if (!gameModeManager.allowsSaves()) {
 		return 1; // can't save tutorial games
 	}
 	if (!intro) {

@@ -1711,6 +1711,24 @@ namespace ConsoleCommands {
 		messagePlayer(clientnum, MESSAGE_MISC, "Mapseed: %d | Gamekey: %lu", mapseed, uniqueGameKey);
 		});
 
+	static ConsoleCommand ccmd_seedgame("/seedgame", "set custom seed", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		if ( multiplayer == CLIENT )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(284));
+		}
+
+		if ( argc > 1 ) {
+			gameModeManager.setMode(GameModeManager_t::GAME_MODE_SEEDED);
+			gameModeManager.seededRun.setup(argv[1]);
+			messagePlayer(clientnum, MESSAGE_DEBUG, "Seed is %lu", gameModeManager.seededRun.seed);
+		}
+		});
+
 	static ConsoleCommand ccmd_reloadlang("/reloadlang", "reload language file", []CCMD{
 		Language::reloadLanguage();
 		});

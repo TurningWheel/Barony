@@ -1664,6 +1664,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 
 	if ( target->behavior == &actMonster )
 	{
+		auto& rng = target->entity_rng ? *target->entity_rng : local_rng;
 		Monster monsterSummonType;
 
 		if ( targetStats->type == SHADOW )
@@ -1694,7 +1695,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 					possibleTypes.push_back(mon);
 				}
 			}
-			monsterSummonType = possibleTypes.at(local_rng.rand() % possibleTypes.size());
+			monsterSummonType = possibleTypes.at(rng.rand() % possibleTypes.size());
 		}
 
 		bool summonCanEquipItems = false;
@@ -1820,7 +1821,6 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 			return nullptr;
 		}
 
-		auto& rng = target->entity_rng ? *target->entity_rng : local_rng;
 		summonedEntity->seedEntityRNG(rng.getU32());
 
 		Stat* summonedStats = summonedEntity->getStats();
