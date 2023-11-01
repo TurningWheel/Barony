@@ -427,6 +427,7 @@ struct SaveGameInfo {
 					fp->property("y", y);
 					return true;
 				}
+				void computeHash(Uint32& hash, Uint32& shift);
 			};
 
 			struct lootbag_t
@@ -590,6 +591,8 @@ struct SaveGameInfo {
 		fp->property("map_messages", map_messages);
 		return true;
 	}
+
+	void computeHash(const int playernum, Uint32& hash);
 };
 
 int saveGame(int saveIndex = savegameCurrentFileIndex);

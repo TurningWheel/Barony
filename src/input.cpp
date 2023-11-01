@@ -490,10 +490,10 @@ std::string Input::getGlyphPathForInput(const char* input, bool pressed, Control
             {"StickRightY+", {"Stick_Switch_R_Down_00.png", "Stick_Switch_R_Down_Pressed_00.png"}},
             {"LeftTrigger", {"G_Switch_ZL00.png", "G_Switch_ZL_Press00.png"}},
             {"RightTrigger", {"G_Switch_ZR00.png", "G_Switch_ZR_Press00.png"}},
-            {"DpadX-", {"G_Direct_Left_Press00.png", "G_Direct_00.png"}},
-            {"DpadX+", {"G_Direct_Right_Press00.png", "G_Direct_00.png"}},
-            {"DpadY-", {"G_Direct_Up_Press00.png", "G_Direct_00.png"}},
-            {"DpadY+", {"G_Direct_Down_Press00.png", "G_Direct_00.png"}},
+            {"DpadX-", {"G_Switch_Direct_Left_Press00.png", "G_Switch_Direct_00.png"}},
+            {"DpadX+", {"G_Switch_Direct_Right_Press00.png", "G_Switch_Direct_00.png"}},
+            {"DpadY-", {"G_Switch_Direct_Up_Press00.png", "G_Switch_Direct_00.png"}},
+            {"DpadY+", {"G_Switch_Direct_Down_Press00.png", "G_Switch_Direct_00.png"}},
         };
         
         // look for glyph in table

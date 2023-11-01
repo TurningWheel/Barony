@@ -3058,7 +3058,8 @@ namespace MainMenu {
 		file->property("extra_life_enabled", extra_life_enabled);
 		file->property("cheats_enabled", cheats_enabled);
 		file->property("skipintro", skipintro);
-		file->property("use_model_cache", useModelCache);
+        bool no = false;
+		file->property("use_model_cache", no);
 		file->property("debug_keys_enabled", enableDebugKeys);
 		file->property("port_number", port_number);
 		file->propertyVersion("show_lobby_code", version >= 12, show_lobby_code);
@@ -11682,7 +11683,7 @@ failed:
 			    stats[index]->playerRace = RACE_INCUBUS;
 			    auto race = card->findButton("race");
 			    if (race) {
-				    race->setText(Language::get(3827));
+				    race->setText(Language::get(5375));
 			    }
 			    auto incubus = subframe ? subframe->findButton("Incubus") : nullptr;
 			    if (incubus) {
@@ -14648,9 +14649,6 @@ failed:
 
 			auto card = static_cast<Frame*>(button.getParent());
 
-			// select a random sex
-			stats[index]->sex = (sex_t)(RNG.getU8() % 2);
-
 			// select a random race
 			// there are 9 legal races that the player can select from the start.
 			if (enabledDLCPack1 && enabledDLCPack2) {
@@ -14676,16 +14674,28 @@ failed:
 				stats[index]->appearance = 0;
 			}
 
-			// update sex buttons after race selection:
-			// we might have chosen a succubus or incubus
+			// select a random sex (unless you're a succubus or an incubus)
+            if (stats[index]->playerRace == RACE_SUCCUBUS) {
+                stats[index]->sex = sex_t::FEMALE;
+            }
+            else if (stats[index]->playerRace == RACE_INCUBUS) {
+                stats[index]->sex = sex_t::MALE;
+            }
+            else {
+                stats[index]->sex = (sex_t)(RNG.getU8() % 2);
+            }
+
+			// update sex buttons
 			auto bottom = card->findFrame("bottom");
 			if (bottom) {
 			    auto male_button = bottom->findButton("male");
-			    auto female_button = bottom->findButton("female");
-			    if (male_button && female_button) {
+			    if (male_button) {
 					male_button->setPressed(stats[index]->sex == MALE);
 					male_button->setColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
 					male_button->setHighlightColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+                }
+			    auto female_button = bottom->findButton("female");
+                if (female_button) {
 					female_button->setPressed(stats[index]->sex == FEMALE);
 					female_button->setColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
 					female_button->setHighlightColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
@@ -22756,7 +22766,7 @@ failed:
             
 			void(*banner_funcs[])(Button&) = {
 				[](Button&) { // banner #1
-					openURLTryWithOverlay("https://www.baronygame.com/blog/life-after-death-announcement");
+					openURLTryWithOverlay("https://www.baronygame.com/blog/410-update-summary");
 				},
 				[](Button&) { // banner #2
 					 openDLCPrompt(enabledDLCPack1 ? 1 : 0);

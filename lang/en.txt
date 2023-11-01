@@ -4202,7 +4202,7 @@ any gyrobot findings.#
 3824 DEPRECATED#
 3825 DEPRECATED#
 3826 DEPRECATED#
-3827 DEPRECATED#
+3827 Incubus#
 3828 DEPRECATED#
 3829 DEPRECATED#
 3830 DEPRECATED#
@@ -5908,7 +5908,8 @@ Mod#
 Workshop#
 5881 Open
 Workshop#
-5882 Browse community created mods and 'subscribe' to\ndownload mods for use.
+5882 Browse community created mods and 'subscribe' to
+download mods for use.
 
 Subscribing while Barony is running may require
 closing the game in order for Steam to begin downloading.
@@ -6204,5 +6205,6 @@ intro - God Rest Ye Merry Gentlemen by NaturesEye#
 6049 View Wheel#
 6050 SPECTATE#
 6051 SPAWN AS GHOST#
+6052 Your party has been wiped out...#
 
 6100 end#

@@ -1656,6 +1656,8 @@ public:
 		static int actionPromptIconSize;
 		static int actionPromptIconOpacity;
 		static int actionPromptIconBackingOpacity;
+		real_t animDeadPrompt = 0.0;
+		bool animDeadPromptDisplay = false;
 		int offsetHUDAboveHotbarHeight = 0;
 		void updateEnemyBar(Frame* whichFrame);
 		void updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails);

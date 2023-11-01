@@ -1,13 +1,8 @@
 ![Linux-CI_fmod_steam](https://github.com/TurningWheel/Barony/workflows/Linux-CI_fmod_steam/badge.svg) ![Linux-CI_fmod_steam_eos](https://github.com/TurningWheel/Barony/workflows/Linux-CI_fmod_steam_eos/badge.svg)
 
-# Update - 4th Feb 2021
+# Update - 3rd October 2023
 
-The current 'master' branch contains in-development features for our latest update. From here we're branching to 'develop' and continuing on work for splitscreen/gamepad/new UI.
-
-If you'd like to compile the code for your own modding or casual uses, we recommend forking from the current stable V3.3.7 build on Steam/Epic/GOG - check the Releases section on Github for the commit. 
-[https://github.com/TurningWheel/Barony/releases/tag/v3.3.7](https://github.com/TurningWheel/Barony/releases/tag/v3.3.7).
-
-For bugfixes + PRs, open them against 'master'. To build the code from 'master' you'll need some additional assets to get the game running, 'tmp-master-assets.zip' found at [https://github.com/TurningWheel/Barony/releases/tag/V3.3.7-dev](https://github.com/TurningWheel/Barony/releases/tag/V3.3.7-dev) and place them in the root Barony directory.
+The current 'develop' branch contains in-development features for our latest update. For bugfixes + PRs, open them against 'master'.
 
 # Compilation Instructions
 
