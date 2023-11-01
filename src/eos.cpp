@@ -1477,7 +1477,7 @@ bool EOSFuncs::HandleReceivedMessages(EOS_ProductUserId* remoteIdReturn)
 
 	if (!EOS.PlatformHandle)
 	{
-		return;
+		return false;
 	}
 
 	EOS_HP2P P2PHandle = EOS_Platform_GetP2PInterface(PlatformHandle);
@@ -1528,7 +1528,7 @@ bool EOSFuncs::HandleReceivedMessagesAndIgnore(EOS_ProductUserId* remoteIdReturn
 
 	if (!EOS.PlatformHandle)
 	{
-		return;
+		return false;
 	}
 
 	EOS_HP2P P2PHandle = EOS_Platform_GetP2PInterface(PlatformHandle);
@@ -1688,7 +1688,7 @@ bool EOSFuncs::LobbyData_t::updateLobbyForHost(HostUpdateLobbyTypes updateType)
 
 	if (!EOS.PlatformHandle)
 	{
-		return;
+		return false;
 	}
 
 	EOS_HLobby LobbyHandle = EOS_Platform_GetLobbyInterface(EOS.PlatformHandle);
@@ -1785,7 +1785,7 @@ bool EOSFuncs::LobbyData_t::modifyLobbyMemberAttributeForCurrentUser()
 
 	if (!EOS.PlatformHandle)
 	{
-		return;
+		return false;
 	}
 
 	EOS_HLobby LobbyHandle = EOS_Platform_GetLobbyInterface(EOS.PlatformHandle);
