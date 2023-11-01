@@ -8975,7 +8975,10 @@ void doNewGame(bool makeHighscore) {
 
 		if ( multiplayer == SINGLE )
 		{
-			saveGame();
+			if ( gameModeManager.allowsSaves() )
+			{
+				saveGame();
+			}
 		}
 	}
 	else // if ( multiplayer != CLIENT ) (ergo in the block below, it is)
@@ -9251,6 +9254,7 @@ void doEndgame(bool saveHighscore) {
 	int c, x;
 	bool endTutorial = false;
 	bool allowedHighscores = gameModeManager.allowsHiscores();
+	bool allowedSavegames = gameModeManager.allowsSaves();
 	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
 		victory = 0;
@@ -9597,10 +9601,12 @@ void doEndgame(bool saveHighscore) {
 		}
 	}
 
-	if ( !endTutorial && victory > 0 )
+	if ( !endTutorial && victory > 0 && allowedSavegames )
 	{
 		deleteSaveGame(multiplayer);
 	}
+
+	gameModeManager.currentSession.seededRun.reset();
 
 	// disable cheats
 	noclip = false;
@@ -10986,32 +10992,12 @@ void buttonDeleteSavedMultiplayerGame(button_t* my)
 
 void buttonConfirmDeleteSoloFile(button_t* my)
 {
-	// close current window
-	buttonCloseSubwindow(nullptr);
-	list_FreeAll(&button_l);
-	deleteallbuttons = true;
-	loadGameSaveShowRectangle = 0;
-	deleteSaveGame(SINGLE);
-	if ( anySaveFileExists() ) // check for saved game to load up
-	{
-		openNewLoadGameWindow(nullptr);
-	}
-	playSound(153, 96);
+	// deprecated
 }
 
 void buttonConfirmDeleteMultiplayerFile(button_t* my)
 {
-	// close current window
-	buttonCloseSubwindow(nullptr);
-	list_FreeAll(&button_l);
-	deleteallbuttons = true;
-	loadGameSaveShowRectangle = 0;
-	deleteSaveGame(CLIENT);
-	if ( anySaveFileExists() ) // check for saved game to load up
-	{
-		openNewLoadGameWindow(nullptr);
-	}
-	playSound(153, 96);
+	// deprecated
 }
 
 void buttonOpenCharacterCreationWindow(button_t* my)

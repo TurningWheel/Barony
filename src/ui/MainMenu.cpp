@@ -9231,6 +9231,29 @@ bind_failed:
 	    }
 	}
 
+	static void sendCustomSeedOverNet()
+	{
+		if ( multiplayer == SERVER ) {
+			// packet header
+			memcpy(net_packet->data, "CSEE", 4);
+
+			// encode name
+			stringCopy((char*)net_packet->data + 4, gameModeManager.currentSession.seededRun.seedString.c_str(),
+				32, gameModeManager.currentSession.seededRun.seedString.size());
+			// send packet
+			net_packet->len = 36;
+
+			for ( int i = 1; i < MAXPLAYERS; i++ ) {
+				if ( client_disconnected[i] ) {
+					continue;
+				}
+				net_packet->address.host = net_clients[i - 1].host;
+				net_packet->address.port = net_clients[i - 1].port;
+				sendPacketSafe(net_sock, -1, net_packet, i - 1);
+			}
+		}
+	}
+
 	static void sendSvFlagsOverNet() {
 	    if (multiplayer == SERVER) {
 	        memcpy(net_packet->data, "SVFL", 4);
@@ -9271,6 +9294,8 @@ bind_failed:
 				net_packet->address.port = net_clients[c - 1].port;
 				sendPacketSafe(net_sock, -1, net_packet, c - 1);
 			}
+
+			sendCustomSeedOverNet();
 	    } else if (multiplayer == CLIENT) {
 	        memcpy(net_packet->data, "SVFL", 4);
 			net_packet->len = 4;
@@ -9576,6 +9601,8 @@ bind_failed:
 				net_packet->address.port = net_clients[c - 1].port;
 				sendPacketSafe(net_sock, -1, net_packet, c - 1);
 			}
+
+			sendCustomSeedOverNet();
 		}},
 
 		// keepalive
@@ -9910,6 +9937,13 @@ bind_failed:
 		// update mod achievement status
 		{ 'MODS', []() {
 			Mods::lobbyDisableSteamAchievements = net_packet->data[4] == 0 ? false : true;
+		} },
+
+		// update custom seed string
+		{ 'CSEE', []() {
+			char buf[64];
+			stringCopy(buf, (char*)(&net_packet->data[4]), sizeof(buf), 32);
+			gameModeManager.currentSession.seededRun.setup(buf);
 		}},
 
 	    // keepalive
@@ -12065,7 +12099,8 @@ failed:
 		const bool local = currentLobbyType == LobbyType::LobbyLocal || currentLobbyType == LobbyType::LobbyJoined;
 		const bool online = currentLobbyType == LobbyType::LobbyOnline;
 
-		auto card = initCharacterCard(index, 424);
+		const int height = 580;
+		auto card = initCharacterCard(index, height);
         if (!card) {
             return;
         }
@@ -12095,10 +12130,17 @@ failed:
 		header->setText(Language::get(5391));
 		header->setJustify(Field::justify_t::CENTER);
 
+		auto gamerules_header = card->addField("gamerules_header", 64);
+		gamerules_header->setSize(SDL_Rect{ 30, 65, 264, 50 });
+		gamerules_header->setFont(smallfont_outline);
+		gamerules_header->setText(Language::get(6053));
+		gamerules_header->setHJustify(Field::justify_t::CENTER);
+		gamerules_header->setVJustify(Field::justify_t::TOP);
+
 		auto custom_difficulty = card->addButton("custom_difficulty");
 		custom_difficulty->setColor(makeColor(255, 255, 255, 255));
 		custom_difficulty->setHighlightColor(makeColor(255, 255, 255, 255));
-		custom_difficulty->setSize(SDL_Rect{102, 68, 120, 48});
+		custom_difficulty->setSize(SDL_Rect{102, gamerules_header->getSize().y + 23, 120, 48});
 		custom_difficulty->setBackground("*images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Customize00A.png");
 		custom_difficulty->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_CustomizeHigh00A.png");
 		custom_difficulty->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_CustomizePress00A.png");
@@ -12110,7 +12152,14 @@ failed:
 		custom_difficulty->addWidgetAction("MenuPageLeftAlt", "privacy");
 		custom_difficulty->setWidgetBack("back_button");
 		custom_difficulty->setWidgetUp("hard");
-		custom_difficulty->setWidgetDown(online ? "invite" : "player_count_2");
+		if ( index != 0 )
+		{
+			custom_difficulty->setWidgetDown(online ? "invite" : "player_count_2");
+		}
+		else
+		{
+			custom_difficulty->setWidgetDown("seed");
+		}
 		custom_difficulty->setWidgetRight("custom");
 		custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(button.getOwner());});
 		custom_difficulty->setTickCallback([](Widget& widget){
@@ -12125,11 +12174,166 @@ failed:
 			});
 		custom_difficulty->select();
 
+		auto customseed_header = card->addField("customseed_header", 64);
+		customseed_header->setSize(SDL_Rect{ 30, gamerules_header->getSize().y + 112, 264, 50 });
+		customseed_header->setFont(smallfont_outline);
+		customseed_header->setText(Language::get(6054));
+		customseed_header->setHJustify(Field::justify_t::CENTER);
+		customseed_header->setVJustify(Field::justify_t::TOP);
+
+		if ( index != 0 )
+		{
+			auto seed_box = card->addImage(
+				SDL_Rect{ 64, customseed_header->getSize().y + 23, 196, 36 },
+				0xffffffff,
+				"*images/ui/Main Menus/Play/PlayerCreation/SeedField_Inactive_00.png",
+				"seed_box"
+			);
+
+			auto customseed_client_text = card->addField("customseed_client_text", 32);
+			customseed_client_text->setSize(SDL_Rect{ seed_box->pos.x + 2, seed_box->pos.y + 4, seed_box->pos.w - 4, 28 });
+			customseed_client_text->setFont(smallfont_outline);
+			customseed_client_text->setText(Language::get(6055));
+			customseed_client_text->setHJustify(Field::justify_t::CENTER);
+			customseed_client_text->setVJustify(Field::justify_t::CENTER);
+			customseed_client_text->setColor(makeColor(255, 255, 255, 255));
+			customseed_client_text->setBackgroundColor(makeColor(32, 35, 43, 255));
+			customseed_client_text->setTickCallback([](Widget& widget) {
+				auto field = static_cast<Field*>(&widget);
+				auto parent = static_cast<Frame*>(widget.getParent());
+
+				size_t old_len = gameModeManager.currentSession.seededRun.seedString.length();
+				size_t new_len = strlen(field->getText());
+				if ( gameModeManager.currentSession.seededRun.seedString == "" )
+				{
+					field->setText(Language::get(6056));
+					gameModeManager.currentSession.seededRun.reset();
+				}
+				else if ( new_len != old_len || (gameModeManager.currentSession.seededRun.seedString != field->getText()) )
+				{
+					gameModeManager.currentSession.seededRun.setup(gameModeManager.currentSession.seededRun.seedString);
+					field->setText(gameModeManager.currentSession.seededRun.seedString.c_str());
+				}
+
+				if ( gameModeManager.currentSession.seededRun.seed == 0 )
+				{
+					field->setColor(makeColor(128, 128, 128, 255));
+				}
+				else
+				{
+					field->setColor(makeColor(255, 255, 255, 255));
+				}
+			});
+		}
+		else if ( index == 0 )
+		{
+			auto seed_box = card->addImage(
+				SDL_Rect{ 40, customseed_header->getSize().y + 23, 196, 36 },
+				0xffffffff,
+				"*images/ui/Main Menus/Play/PlayerCreation/SeedField_00.png",
+				"seed_box"
+			);
+
+			auto seed_tip = card->addField("seed_tip", 32);
+			seed_tip->setSize(SDL_Rect{ seed_box->pos.x + 2, seed_box->pos.y + 4, seed_box->pos.w - 4, 28 });
+			seed_tip->setFont(smallfont_outline);
+			seed_tip->setText(Language::get(6055));
+			seed_tip->setHJustify(Field::justify_t::LEFT);
+			seed_tip->setVJustify(Field::justify_t::CENTER);
+			seed_tip->setColor(makeColor(166, 123, 81, 127));
+			seed_tip->setBackgroundColor(makeColor(52, 30, 22, 255));
+			seed_tip->setTickCallback([](Widget& widget) {
+				auto seed_tip = static_cast<Field*>(&widget);
+				auto parent = static_cast<Frame*>(widget.getParent());
+				auto field = parent->findField("seed");
+				if ( field && field->getText()[0] != '\0' ) {
+					seed_tip->setText("");
+				}
+				else {
+					seed_tip->setText(Language::get(6055));
+				}
+			});
+
+			static auto seed_field_fn = [](const char* text, int index) {
+				size_t old_len = gameModeManager.currentSession.seededRun.seedString.length();
+				size_t new_len = strlen(text);
+				if ( new_len != old_len || (gameModeManager.currentSession.seededRun.seedString != text) )
+				{
+					gameModeManager.currentSession.seededRun.setup(text);
+					sendCustomSeedOverNet();
+				}
+			};
+
+			auto seed_field = card->addField("seed", 24);
+			seed_field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+			seed_field->setSelectorOffset(SDL_Rect{ -7, -7, 7, 7 });
+			seed_field->setButtonsOffset(SDL_Rect{ 11, 0, 0, 0 });
+			seed_field->setScroll(true);
+			seed_field->setGuide(Language::get(6055));
+			seed_field->setFont(smallfont_outline);
+			seed_field->setText(gameModeManager.currentSession.seededRun.seedString.c_str());
+			seed_field->setSize(seed_tip->getSize());
+			seed_field->setColor(makeColor(166, 123, 81, 255));
+			//seed_field->setBackgroundColor(makeColor(52, 30, 22, 255));
+			//seed_field->setBackgroundSelectAllColor(makeColor(52, 30, 22, 255));
+			//seed_field->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
+			seed_field->setHJustify(Field::justify_t::LEFT);
+			seed_field->setVJustify(Field::justify_t::CENTER);
+			seed_field->setEditable(true);
+			seed_field->setWidgetSearchParent(name.c_str());
+			seed_field->addWidgetAction("MenuPageRightAlt", "chat");
+			seed_field->addWidgetAction("MenuPageLeftAlt", "privacy");
+			seed_field->setWidgetBack("back_button");
+			seed_field->setWidgetUp("custom_difficulty");
+			seed_field->setWidgetDown(online ? "invite" : "player_count_2");
+			seed_field->setWidgetRight("randomize_seed");
+			seed_field->setCallback([](Field& field) {seed_field_fn(field.getText(), field.getOwner()); });
+			seed_field->setTickCallback([](Widget& widget) {
+				Field* field = static_cast<Field*>(&widget);
+				seed_field_fn(field->getText(), field->getOwner());
+			});
+
+			auto randomize_seed = card->addButton("randomize_seed");
+			randomize_seed->setColor(makeColor(255, 255, 255, 255));
+			randomize_seed->setHighlightColor(makeColor(255, 255, 255, 255));
+			randomize_seed->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Icon_Randomize_00.png");
+			randomize_seed->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Icon_RandomizeHigh_00.png");
+			randomize_seed->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Icon_RandomizePress_00.png");
+			randomize_seed->setSize(SDL_Rect{ 238, seed_field->getSize().y - 12, 54, 54});
+			randomize_seed->setWidgetSearchParent(name.c_str());
+			randomize_seed->addWidgetAction("MenuPageRightAlt", "chat");
+			randomize_seed->addWidgetAction("MenuPageLeftAlt", "privacy");
+			randomize_seed->setWidgetBack("back_button");
+			randomize_seed->setWidgetUp("custom_difficulty");
+			randomize_seed->setWidgetDown(online ? "invite" : "player_count_2");
+			randomize_seed->setWidgetLeft("seed");
+			static auto randomize_seed_fn = [](Button& button, int index) {
+				auto& prefixes = GameModeManager_t::CurrentSession_t::SeededRun_t::prefixes;
+				auto& suffixes = GameModeManager_t::CurrentSession_t::SeededRun_t::suffixes;
+				char buf[64] = "";
+				if ( !prefixes.empty() && !suffixes.empty() )
+				{
+					auto choice1 = RNG.uniform(0, (int)prefixes.size() - 1);
+					auto prefix = prefixes[choice1].c_str();
+
+					auto choice2 = RNG.uniform(0, (int)suffixes.size() - 1);
+					auto suffix = suffixes[choice2].c_str();
+					
+					snprintf(buf, sizeof(buf), "%s %s", prefix, suffix);
+				}
+				seed_field_fn(buf, index);
+				auto card = static_cast<Frame*>(button.getParent());
+				auto field = card->findField("seed"); assert(field);
+				field->setText(buf);
+			};
+			randomize_seed->setCallback([](Button& button) {soundActivate(); randomize_seed_fn(button, button.getOwner()); });
+		}
+
 		auto invite_label = card->addField("invite_label", 64);
 #ifdef NINTENDO
-		invite_label->setSize(SDL_Rect{ 82, 158, 122, 26 });
+		invite_label->setSize(SDL_Rect{ 82, height - 266, 122, 26 });
 #else
-		invite_label->setSize(SDL_Rect{ 82, 146, 122, 26 });
+		invite_label->setSize(SDL_Rect{ 82, height - 278, 122, 26 });
 #endif
 		invite_label->setFont(smallfont_outline);
 		invite_label->setText(Language::get(5393));
@@ -12138,7 +12342,7 @@ failed:
 			invite_label->setColor(makeColor(70, 62, 59, 255));
 
 			auto invite = card->addImage(
-				SDL_Rect{204, 146, 26, 26},
+				SDL_Rect{204, height - 278, 26, 26},
 				0xffffffff,
 				"*images/ui/Main Menus/sublist_item-locked.png",
 				"invite"
@@ -12148,9 +12352,9 @@ failed:
 
 			auto invite = card->addButton("invite");
 #ifdef NINTENDO
-			invite->setSize(SDL_Rect{ 202, 156, 30, 30 });
+			invite->setSize(SDL_Rect{ 202, height - 268, 30, 30 });
 #else
-			invite->setSize(SDL_Rect{ 202, 144, 30, 30 });
+			invite->setSize(SDL_Rect{ 202, height - 280, 30, 30 });
 #endif
 			invite->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
 			invite->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-unpickedHigh.png");
@@ -12166,7 +12370,14 @@ failed:
 			invite->addWidgetAction("MenuPageRightAlt", "chat");
 			invite->addWidgetAction("MenuPageLeftAlt", "privacy");
 			invite->setWidgetBack("back_button");
-			invite->setWidgetUp("custom_difficulty");
+			if ( index != 0 )
+			{
+				invite->setWidgetUp("custom_difficulty");
+			}
+			else
+			{
+				invite->setWidgetUp("seed");
+			}
 #ifdef NINTENDO
 			invite->setWidgetDown("open");
 #else
@@ -12225,7 +12436,7 @@ failed:
 
 #ifndef NINTENDO
 		auto friends_label = card->addField("friends_label", 64);
-		friends_label->setSize(SDL_Rect{82, 178, 122, 26});
+		friends_label->setSize(SDL_Rect{82, height - 246, 122, 26});
 		friends_label->setFont(smallfont_outline);
 		friends_label->setText(Language::get(5394));
 		friends_label->setJustify(Field::justify_t::CENTER);
@@ -12233,7 +12444,7 @@ failed:
 			friends_label->setColor(makeColor(70, 62, 59, 255));
 
 			auto friends = card->addImage(
-				SDL_Rect{204, 178, 26, 26},
+				SDL_Rect{204, height - 246, 26, 26},
 				0xffffffff,
 				"*images/ui/Main Menus/sublist_item-locked.png",
 				"friends"
@@ -12242,7 +12453,7 @@ failed:
 			friends_label->setColor(makeColor(166, 123, 81, 255));
 
 			auto friends = card->addButton("friends");
-			friends->setSize(SDL_Rect{202, 176, 30, 30});
+			friends->setSize(SDL_Rect{202, height - 248, 30, 30});
 			friends->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
 			friends->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-unpickedHigh.png");
 			friends->setBackgroundActivated("*images/ui/Main Menus/sublist_item-unpickedPress.png");
@@ -12317,9 +12528,9 @@ failed:
 
 		auto open_label = card->addField("open_label", 64);
 #ifdef NINTENDO
-		open_label->setSize(SDL_Rect{ 82, 198, 122, 26 });
+		open_label->setSize(SDL_Rect{ 82, height - 226, 122, 26 });
 #else
-		open_label->setSize(SDL_Rect{ 82, 210, 122, 26 });
+		open_label->setSize(SDL_Rect{ 82, height - 214, 122, 26 });
 #endif
 		open_label->setFont(smallfont_outline);
 		open_label->setText(Language::get(5395));
@@ -12328,7 +12539,7 @@ failed:
 			open_label->setColor(makeColor(70, 62, 59, 255));
 
 			auto open = card->addImage(
-				SDL_Rect{204, 210, 26, 26},
+				SDL_Rect{204, height - 214, 26, 26},
 				0xffffffff,
 				"*images/ui/Main Menus/sublist_item-locked.png",
 				"open"
@@ -12338,9 +12549,9 @@ failed:
 
 			auto open = card->addButton("open");
 #ifdef NINTENDO
-			open->setSize(SDL_Rect{ 202, 196, 30, 30 });
+			open->setSize(SDL_Rect{ 202, height - 228, 30, 30 });
 #else
-			open->setSize(SDL_Rect{ 202, 208, 30, 30 });
+			open->setSize(SDL_Rect{ 202, height - 216, 30, 30 });
 #endif
 			open->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
 			open->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-unpickedHigh.png");
@@ -12420,7 +12631,7 @@ failed:
 		}
 
 		auto player_count_label = card->addField("player_count_label", 64);
-		player_count_label->setSize(SDL_Rect{40, 266, 116, 40});
+		player_count_label->setSize(SDL_Rect{40, height - 158, 116, 40});
 		player_count_label->setFont(smallfont_outline);
 		player_count_label->setText(Language::get(6018));
 		player_count_label->setJustify(Field::justify_t::CENTER);
@@ -12428,7 +12639,7 @@ failed:
         for (int c = 0; c < 3; ++c) {
             const std::string button_name = std::string("player_count_") + std::to_string(c + 2);
 		    auto player_count = card->addButton(button_name.c_str());
-		    player_count->setSize(SDL_Rect{156 + 44 * c, 266, 40, 40});
+		    player_count->setSize(SDL_Rect{156 + 44 * c, height - 158, 40, 40});
 		    player_count->setFont(smallfont_outline);
 		    player_count->setText(std::to_string(c + 2).c_str());
 		    player_count->setBorder(0);
@@ -12549,7 +12760,7 @@ failed:
         }
 
 		auto kick_player_label = card->addField("kick_player_label", 64);
-		kick_player_label->setSize(SDL_Rect{40, 310, 116, 40});
+		kick_player_label->setSize(SDL_Rect{40, height - 114, 116, 40});
 		kick_player_label->setFont(smallfont_outline);
 		kick_player_label->setText(Language::get(5402));
 		kick_player_label->setJustify(Field::justify_t::CENTER);
@@ -12557,7 +12768,7 @@ failed:
         for (int c = 0; c < 3; ++c) {
             const std::string button_name = std::string("kick_player_") + std::to_string(c + 2);
 		    auto kick_player = card->addButton(button_name.c_str());
-		    kick_player->setSize(SDL_Rect{156 + 44 * c, 310, 40, 40});
+		    kick_player->setSize(SDL_Rect{156 + 44 * c, height - 114, 40, 40});
 		    kick_player->setFont(smallfont_outline);
 		    kick_player->setText(std::to_string(c + 2).c_str());
 		    kick_player->setBorder(0);
@@ -15593,9 +15804,9 @@ failed:
 
 	        // set unique game key
 	        local_rng.seedTime();
-			if ( gameModeManager.seededRun.seed > 0 )
+			if ( gameModeManager.currentSession.seededRun.seed > 0 )
 			{
-				uniqueGameKey = gameModeManager.seededRun.seed;
+				uniqueGameKey = gameModeManager.currentSession.seededRun.seed;
 			}
 			else
 			{
@@ -15819,6 +16030,7 @@ failed:
 		}
 
 		GameplayPreferences_t::reset();
+		gameModeManager.currentSession.seededRun.reset();
 
         if (type == LobbyType::LobbyJoined) {
             sendPlayerOverNet();
@@ -21455,9 +21667,9 @@ failed:
 
 				// set unique game key
 				local_rng.seedTime();
-				if ( gameModeManager.seededRun.seed > 0 )
+				if ( gameModeManager.currentSession.seededRun.seed > 0 )
 				{
-					uniqueGameKey = gameModeManager.seededRun.seed;
+					uniqueGameKey = gameModeManager.currentSession.seededRun.seed;
 				}
 				else
 				{
@@ -23279,7 +23491,10 @@ failed:
                     //auto frame = static_cast<Frame*>(window->getParent());
                     //frame->removeSelf();
 
-					deleteSaveGame(multiplayer);
+					if ( gameModeManager.allowsSaves() )
+					{
+						deleteSaveGame(multiplayer);
+					}
 				    pauseGame(2, 0);
 				    destroyMainMenu();
 				    createDummyMainMenu();
@@ -23325,9 +23540,9 @@ failed:
 
 				// set unique game key
 				local_rng.seedTime();
-				if ( gameModeManager.seededRun.seed > 0 )
+				if ( gameModeManager.currentSession.seededRun.seed > 0 )
 				{
-					uniqueGameKey = gameModeManager.seededRun.seed;
+					uniqueGameKey = gameModeManager.currentSession.seededRun.seed;
 				}
 				else
 				{

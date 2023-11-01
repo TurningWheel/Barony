@@ -1723,10 +1723,12 @@ namespace ConsoleCommands {
 		}
 
 		if ( argc > 1 ) {
-			gameModeManager.setMode(GameModeManager_t::GAME_MODE_SEEDED);
-			gameModeManager.seededRun.setup(argv[1]);
-			messagePlayer(clientnum, MESSAGE_DEBUG, "Seed is %lu", gameModeManager.seededRun.seed);
+			gameModeManager.currentSession.seededRun.setup(argv[1]);
 		}
+		messagePlayer(clientnum, MESSAGE_DEBUG, "Seed is %lu | name: %s | key: %lu", 
+			gameModeManager.currentSession.seededRun.seed,
+			gameModeManager.currentSession.seededRun.seedString.c_str(),
+			uniqueGameKey);
 		});
 
 	static ConsoleCommand ccmd_reloadlang("/reloadlang", "reload language file", []CCMD{

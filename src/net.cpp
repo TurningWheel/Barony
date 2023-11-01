@@ -2278,7 +2278,10 @@ static void changeLevel() {
 		Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_hunger", ""));
 	}
 
-	saveGame();
+	if ( gameModeManager.allowsSaves() )
+	{
+		saveGame();
+	}
 #ifdef LOCAL_ACHIEVEMENTS
 	LocalAchievements_t::writeToFile();
 #endif
@@ -4805,7 +4808,10 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	    if (net_packet->data[12] == 0) {
 		    loadingsavegame = 0;
 	    }
-		deleteSaveGame(multiplayer);
+		if ( gameModeManager.allowsSaves() )
+		{
+			deleteSaveGame(multiplayer);
+		}
 		MainMenu::beginFade(MainMenu::FadeDestination::GameStart);
 		pauseGame(2, 0);
 	}},
@@ -4814,7 +4820,10 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	{'DSAV', [](){
 		if ( multiplayer == CLIENT )
 		{
-			deleteSaveGame(multiplayer);
+			if ( gameModeManager.allowsSaves() )
+			{
+				deleteSaveGame(multiplayer);
+			}
 		}
 	}},
 
@@ -7305,6 +7314,11 @@ int steamPacketThread(void* data)
 void deleteMultiplayerSaveGames()
 {
 	if ( multiplayer != SERVER )
+	{
+		return;
+	}
+
+	if ( !gameModeManager.allowsSaves() )
 	{
 		return;
 	}
