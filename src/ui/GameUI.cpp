@@ -32422,7 +32422,13 @@ void sliderSkillsheetUpdateSelectorOnHighlight(const int player, Slider* slider)
 	}
 }
 
+#ifdef NINTENDO
+// this causes nintendo to crash unless it is false!!
+static ConsoleVariable<bool> cvar_skillsheet_optimise("/skillsheet_optimise", false);
+#else
 static ConsoleVariable<bool> cvar_skillsheet_optimise("/skillsheet_optimise", true);
+#endif
+
 void Player::SkillSheet_t::processSkillSheet()
 {
 	//DebugTimers.addTimePoint("skill 1", "start");
