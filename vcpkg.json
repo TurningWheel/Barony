@@ -1,0 +1,19 @@
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+    "name": "barony",
+    "version": "1.0.0",
+    "dependencies": [
+        "sdl2",
+        "sdl2-image",
+        "sdl2-net",
+        "sdl2-ttf",
+        "libpng",
+        "zlib",
+        "physfs",
+        "rapidjson",
+        "dirent",
+        "opengl",
+        "glew",
+        "imgui"
+    ]
+}

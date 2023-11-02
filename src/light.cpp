@@ -228,7 +228,7 @@ bool loadLights(bool forceLoadBaseDirectory) {
     
     const auto& lights = d["lights"];
     if (lights.IsObject()) {
-        for (const auto& it : lights.GetObject()) {
+        for (const auto& it : lights.GetObj()) {
             LightDef def;
             const auto& name = it.name.GetString();
             const auto& radius = it.value["radius"]; def.radius = radius.GetInt();

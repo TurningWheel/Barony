@@ -11,7 +11,7 @@
 #ifdef APPLE
 #include <SDL2/SDL_video.h>
 #else
-#include <SDL_video.h>
+#include "SDL2/SDL_video.h"
 #endif
 /*
  * Save an SDL_Surface as a PNG file.

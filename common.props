@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <ItemGroup>
+        <ResourceFolder Include="$(BARONY_GAME_DIR)\books\**">
+            <TargetFolderName>books\</TargetFolderName>
+        </ResourceFolder>
+        <ResourceFolder Include="$(BARONY_GAME_DIR)\config\**">
+            <TargetFolderName>config\</TargetFolderName>
+        </ResourceFolder>
+        <ResourceFolder Include="$(BARONY_GAME_DIR)\data\**">
+            <TargetFolderName>data\</TargetFolderName>
+        </ResourceFolder>
+        <ResourceFolder Include="$(BARONY_GAME_DIR)\fonts\**">
+            <TargetFolderName>fonts\</TargetFolderName>
+        </ResourceFolder>
+        <ResourceFolder Include="$(BARONY_GAME_DIR)\images\**">
+            <TargetFolderName>images\</TargetFolderName>
+        </ResourceFolder>
+        <ResourceFolder Include="$(BARONY_GAME_DIR)\items\**">
+            <TargetFolderName>items\</TargetFolderName>
+        </ResourceFolder>
+        <ResourceFolder Include="$(BARONY_GAME_DIR)\lang\**">
+            <TargetFolderName>lang\</TargetFolderName>
+        </ResourceFolder>
+        <ResourceFolder Include="$(BARONY_GAME_DIR)\maps\**">
+            <TargetFolderName>maps\</TargetFolderName>
+        </ResourceFolder>
+        <ResourceFolder Include="$(BARONY_GAME_DIR)\models\**">
+            <TargetFolderName>models\</TargetFolderName>
+        </ResourceFolder>
+        <ResourceFolder Include="$(BARONY_GAME_DIR)\music\**">
+            <TargetFolderName>music\</TargetFolderName>
+        </ResourceFolder>
+        <ResourceFolder Include="$(BARONY_GAME_DIR)\sound\**">
+            <TargetFolderName>sound\</TargetFolderName>
+        </ResourceFolder>
+    </ItemGroup>
+</Project>
