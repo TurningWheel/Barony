@@ -24,14 +24,16 @@ Image::Image(const char* _name) {
 	} while (1);
 
 	std::string path = clippedName;
-    if ( PHYSFS_getRealDir(clippedName) != nullptr )
+    if ( PHYSFS_getRealDir(path.c_str()) != nullptr )
     {
-        const char* baseDir = PHYSFS_getRealDir(clippedName);
-        if ( baseDir && strcmp(baseDir, "./") )
-        {
-            path.insert(0, PHYSFS_getDirSeparator());
-            path.insert(0, baseDir);
-        }
+        const char* baseDir = PHYSFS_getRealDir(path.c_str());
+        path.insert(0, PHYSFS_getDirSeparator());
+        path.insert(0, baseDir);
+    } else {
+#ifdef NINTENDO
+        path.insert(0, PHYSFS_getDirSeparator());
+        path.insert(0, BASE_DATA_DIR);
+#endif
     }
 	printlog("loading image '%s'...", path.c_str());
 	if ((surf = IMG_Load(path.c_str())) == NULL) {
