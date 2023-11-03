@@ -15,6 +15,10 @@ FIND_PATH(FMOD_INCLUDE_DIR
   fmod.hpp
   PATHS
   $ENV{FMOD_DIR}/api/core/inc/
+  ${FMOD_DIR}/api/core/inc/
+  IF (WIN32)
+  	${FMOD_DIR}/include/
+  ENDIF (WIN32)
   /usr/local/include/
   /usr/local/include/fmodstudio/
   /usr/include/
@@ -32,7 +36,11 @@ FIND_LIBRARY(FMOD_LIBRARY
     $ENV{FMOD_DIR}/api/core/lib/
   ELSE (APPLE)
     $ENV{FMOD_DIR}/api/core/lib/x86_64/
+    ${FMOD_DIR}/api/core/lib/x86_64/
   ENDIF (APPLE)
+  IF (WIN32)
+  	${FMOD_DIR}/lib/
+  ENDIF (WIN32)
   /usr/local/lib64
   /usr/local/lib
   /usr/lib64
