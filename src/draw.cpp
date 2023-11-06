@@ -2369,15 +2369,19 @@ void drawEntities2D(long camx, long camy)
 					switch ( entity->signalInputDirection )
 					{
 						case 0:
+							pos.x -= pos.w;
 							drawImageRotatedAlpha(sprites[entity->sprite], nullptr, &pos, 0.f, 255);
 							break;
 						case 1:
+							pos.y += pos.h;
 							drawImageRotatedAlpha(sprites[entity->sprite], nullptr, &pos, 3 * PI / 2, 255);
 							break;
 						case 2:
+							pos.x += pos.w;
 							drawImageRotatedAlpha(sprites[entity->sprite], nullptr, &pos, PI, 255);
 							break;
 						case 3:
+							pos.y -= pos.h;
 							drawImageRotatedAlpha(sprites[entity->sprite], nullptr, &pos, PI / 2, 255);
 							break;
 					}
