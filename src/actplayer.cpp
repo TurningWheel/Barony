@@ -4632,8 +4632,10 @@ void actPlayer(Entity* my)
 				//auto screenshot_path = setSaveGameFileName(multiplayer == SINGLE, SaveFileType::SCREENSHOT);
 				//takeScreenshot(screenshot_path.c_str());
 			}
-			if ( !strcmp(map.name, "Boss") && !my->skill[29] )
+			if ( !strcmp(map.name, "Boss") )
 			{
+				if ( !my->skill[29] && PLAYER_ALIVETIME > 5 ) // herx's sprite isn't init on the first entity tick, so wait a little.
+				{
 				bool foundherx = false;
 				for ( node = map.creatures->first; node != nullptr; node = node->next ) //Herx is in the creature list, so only search that.
 				{
@@ -4658,6 +4660,7 @@ void actPlayer(Entity* my)
 						messageLocalPlayersColor(color, MESSAGE_WORLD, Language::get(89));
 					}
 				}
+			}
 			}
 			else
 			{
