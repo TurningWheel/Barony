@@ -33684,7 +33684,7 @@ void Player::SkillSheet_t::processSkillSheet()
 				legendText->setSize(legendTextPos);
 				legendText->reflowTextToFit(0);
 				legendTextPos.h = legendText->getNumTextLines() * actualFontHeight;
-				legendTextPos.y = tm->pos.y + tm->pos.h / 2 + 2;
+				legendTextPos.y = tm->pos.y + tm->pos.h / 2 /*+ 2*/;
 				legendTextPos.h += 4; // handle hanging chars
 				legendText->setSize(legendTextPos);
 
@@ -33707,7 +33707,7 @@ void Player::SkillSheet_t::processSkillSheet()
 				br->pos.x = legendPos.w - br->pos.w;
 
 
-				legendPos.h = bl->pos.y + bl->pos.h;
+				legendPos.h = bl->pos.y + bl->pos.h - 4;
 				legendFrame->setSize(legendPos);
 
 
