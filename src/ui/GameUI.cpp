@@ -19832,7 +19832,7 @@ void drawUnidentifiedItemEffectHotbarCallback(const Widget& widget, SDL_Rect rec
 			opacity *= parent->getOpacity() / 100.0;
 		}
         const auto& appraisal = players[player]->inventoryUI.appraisal;
-        drawClockwiseSquareMesh("images/ui/Inventory/Appraisal_Icon_OutlineHotbar.png",
+        drawClockwiseSquareMesh("images/ui/HUD/hotbar/Appraisal_Icon_OutlineHotbar.png",
             (appraisal.timermax - appraisal.timer) / (float)appraisal.timermax,
             drawRect, makeColor(255, 255, 255, opacity));
 	}
