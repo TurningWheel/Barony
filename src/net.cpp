@@ -3563,9 +3563,12 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		        char name[128];
 		        Uint32 len = net_packet->data[8];
 		        len = std::min((Uint32)(sizeof(name) - 1), len);
-		        memcpy(name, &net_packet->data[9], len);
+		        memcpy(name, &net_packet->data[13], len);
 		        name[len] = '\0';
 		        stats[clientnum]->killer_name = name;
+
+				Monster monster = (Monster)SDLNet_Read32(&net_packet->data[9]);
+				stats[clientnum]->killer_monster = monster;
 		    } else { // anonymous monster
 		        Monster monster = (Monster)SDLNet_Read32(&net_packet->data[9]);
 		        stats[clientnum]->killer_monster = monster;

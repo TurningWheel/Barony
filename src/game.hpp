@@ -27,7 +27,7 @@
 #ifdef NINTENDO
 static const char VERSION[] = "v4.1.0";
 #else
-static const char VERSION[] = "v4.1.0";
+static const char VERSION[] = "v4.1.2";
 #endif
 #define GAME_CODE
 

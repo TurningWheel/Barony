@@ -98,6 +98,11 @@ score_t* scoreConstructor(int player)
 	//score->stats->appearance |= stats[player]->playerRace << 8;
 	strcpy(score->stats->name, stats[player]->name);
 	strcpy(score->stats->obituary, stats[player]->obituary);
+	score->stats->killer = stats[player]->killer;
+	score->stats->killer_monster = stats[player]->killer_monster;
+	score->stats->killer_item = stats[player]->killer_item;
+	score->stats->killer_name = stats[player]->killer_name;
+	score->totalscore = -1;
 	score->victory = victory;
 	score->dungeonlevel = currentlevel;
 	score->classnum = client_classes[player];
@@ -233,6 +238,23 @@ score_t* scoreConstructor(int player)
 	return score;
 }
 
+score_t* scoreConstructor(int player, SaveGameInfo& info)
+{
+	if ( loadGame(player, info) == 0 )
+	{
+		if ( score_t* score = scoreConstructor(player) )
+		{
+			score->victory = info.hiscore_victory;
+			score->stats->killer = (KilledBy)info.hiscore_killed_by;
+			score->stats->killer_monster = (Monster)info.hiscore_killed_monster;
+			score->stats->killer_item = (ItemType)info.hiscore_killed_item;
+			score->totalscore = info.hiscore_totalscore;
+			return score;
+		}
+	}
+	return nullptr;
+}
+
 /*-------------------------------------------------------------------------------
 
 	scoreDeconstructor
@@ -343,8 +365,7 @@ int totalScore(score_t* score)
 {
 	int amount = 0;
 
-	node_t* node;
-	for ( node = score->stats->inventory.first; node != NULL; node = node->next )
+	for ( node_t* node = score->stats->inventory.first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*)node->element;
 		amount += items[item->type].value;
@@ -372,7 +393,7 @@ int totalScore(score_t* score)
 	amount += score->dungeonlevel * 500;
 	if ( score->victory >= 3 )
 	{
-		amount += score->victory * 20000;
+		amount += 3 * 20000;
 	}
 	else
 	{
@@ -385,11 +406,11 @@ int totalScore(score_t* score)
 		amount += score->conductFoodless * 5000;
 		amount += score->conductVegetarian * 5000;
 		amount += score->conductIlliterate * 5000;
-		amount += conductGameChallenges[CONDUCT_BOOTS_SPEED] * 20000;
-		amount += conductGameChallenges[CONDUCT_BRAWLER] * 20000;
-		amount += conductGameChallenges[CONDUCT_RANGED_ONLY] * 20000;
-		amount += conductGameChallenges[CONDUCT_ACCURSED] * 50000;
-		amount += conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED] * 100000;
+		amount += score->conductGameChallenges[CONDUCT_BOOTS_SPEED] * 20000;
+		amount += score->conductGameChallenges[CONDUCT_BRAWLER] * 20000;
+		amount += score->conductGameChallenges[CONDUCT_RANGED_ONLY] * 20000;
+		amount += score->conductGameChallenges[CONDUCT_ACCURSED] * 50000;
+		amount += score->conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED] * 100000;
 		if ( score->conductGameChallenges[CONDUCT_HARDCORE] == 1
 			&& score->conductGameChallenges[CONDUCT_CHEATS_ENABLED] == 0 )
 		{
@@ -655,6 +676,13 @@ void saveAllScores(const std::string& scoresfilename)
 		raceAndAppearance |= (score->stats->appearance);
 		fp->write(&raceAndAppearance, sizeof(Uint32), 1);
 		fp->write(score->stats->name, sizeof(char), 32);
+		fp->write(&score->stats->killer_monster, sizeof(Uint32), 1);
+		fp->write(&score->stats->killer_item, sizeof(Uint32), 1);
+		fp->write(&score->stats->killer, sizeof(Uint32), 1);
+		char buf[64] = "";
+		memset(buf, 0, sizeof(buf));
+		snprintf(buf, sizeof(buf), "%s", score->stats->killer_name.c_str());
+		fp->write(&buf, sizeof(char), 64);
 		fp->write(&score->classnum, sizeof(Sint32), 1);
 		fp->write(&score->dungeonlevel, sizeof(Sint32), 1);
 		fp->write(&score->victory, sizeof(int), 1);
@@ -1038,6 +1066,23 @@ void loadAllScores(const std::string& scoresfilename)
 			score->stats->appearance = (score->stats->appearance & 0xFF);
 		}
 		fp->read(&score->stats->name, sizeof(char), 32);
+		if ( versionNumber >= 412 )
+		{
+			fp->read(&score->stats->killer_monster, sizeof(Uint32), 1);
+			fp->read(&score->stats->killer_item, sizeof(Uint32), 1);
+			fp->read(&score->stats->killer, sizeof(Uint32), 1);
+			char buf[64] = "";
+			memset(buf, 0, sizeof(buf));
+			fp->read(&buf, sizeof(char), 64);
+			score->stats->killer_name = buf;
+		}
+		else
+		{
+			score->stats->killer = KilledBy::UNKNOWN;
+			score->stats->killer_item = WOODEN_SHIELD;
+			score->stats->killer_monster = NOTHING;
+			score->stats->killer_name = "";
+		}
 		fp->read(&score->classnum, sizeof(Sint32), 1);
 		fp->read(&score->dungeonlevel, sizeof(Sint32), 1);
 		fp->read(&score->victory, sizeof(int), 1);
@@ -5426,57 +5471,56 @@ void SaveGameInfo::Player::stat_t::item_t::computeHash(Uint32& hash, Uint32& shi
 	hash += (Uint32)((Uint32)y << (shift % 32)); ++shift;
 }
 
-int saveGame(int saveIndex) {
-	if (!gameModeManager.allowsSaves()) {
-		return 1; // can't save tutorial games
-	}
-	if (!intro) {
-		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1121));
-	}
-	
-	SaveGameInfo info;
-	
-    auto t = getTime();
+int SaveGameInfo::populateFromSession(const int playernum)
+{
+	auto info = this;
+
+	auto t = getTime();
 	struct tm* tm = localtime(&t); assert(tm);
 
 	// save info
-    char buf[64];
-	info.game_version = getSavegameVersion(VERSION);
-	info.timestamp = getTimeAndDateFormatted(t, buf, sizeof(buf));
+	char buf[64];
+	info->game_version = getSavegameVersion(VERSION);
+	info->timestamp = getTimeAndDateFormatted(t, buf, sizeof(buf));
 
 	// savefile hash
-	info.hash = tm->tm_hour + tm->tm_mday * tm->tm_year + tm->tm_wday + tm->tm_yday;
-	if ( info.game_version < 410 )
+	info->hash = tm->tm_hour + tm->tm_mday * tm->tm_year + tm->tm_wday + tm->tm_yday;
+	if ( info->game_version < 410 )
 	{
-		info.hash += stats[clientnum]->STR + stats[clientnum]->LVL + stats[clientnum]->DEX * stats[clientnum]->INT;
-		info.hash += stats[clientnum]->CON * stats[clientnum]->PER + std::min(stats[clientnum]->GOLD, 5000) - stats[clientnum]->CON;
-		info.hash += stats[clientnum]->HP - stats[clientnum]->MP;
-		info.hash += currentlevel;
+		info->hash += stats[playernum]->STR + stats[playernum]->LVL + stats[playernum]->DEX * stats[playernum]->INT;
+		info->hash += stats[playernum]->CON * stats[playernum]->PER + std::min(stats[playernum]->GOLD, 5000) - stats[playernum]->CON;
+		info->hash += stats[playernum]->HP - stats[playernum]->MP;
+		info->hash += currentlevel;
 	}
 
 	// game info
-	info.gamename = stats[clientnum]->name;
-	info.gamekey = uniqueGameKey;
-	info.mapseed = mapseed;
-	info.customseed = gameModeManager.currentSession.seededRun.seed;
-	info.customseed_string = gameModeManager.currentSession.seededRun.seedString;
-	info.gametimer = completionTime;
-	info.svflags = svFlags;
-	info.player_num = clientnum;
+	info->gamename = stats[playernum]->name;
+	info->gamekey = uniqueGameKey;
+	info->mapseed = mapseed;
+	info->customseed = gameModeManager.currentSession.seededRun.seed;
+	info->customseed_string = gameModeManager.currentSession.seededRun.seedString;
+	info->gametimer = completionTime;
+	info->svflags = svFlags;
+	info->player_num = playernum;
+	info->hiscore_killed_by = stats[playernum]->killer;
+	info->hiscore_killed_item = stats[playernum]->killer_item;
+	info->hiscore_killed_monster = stats[playernum]->killer_monster;
 
 	// multiplayer type
-	if (multiplayer == SINGLE) {
-	    info.multiplayer_type = splitscreen ? SPLITSCREEN : SINGLE;
-	} else {
-		if (directConnect) {
-			info.multiplayer_type = multiplayer == SERVER ? DIRECTSERVER : DIRECTCLIENT;
-		} else {
-			if (multiplayer == SERVER) {
-				info.multiplayer_type = LobbyHandler.hostingType == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY ?
+	if ( multiplayer == SINGLE ) {
+		info->multiplayer_type = splitscreen ? SPLITSCREEN : SINGLE;
+	}
+	else {
+		if ( directConnect ) {
+			info->multiplayer_type = multiplayer == SERVER ? DIRECTSERVER : DIRECTCLIENT;
+		}
+		else {
+			if ( multiplayer == SERVER ) {
+				info->multiplayer_type = LobbyHandler.hostingType == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY ?
 					SERVERCROSSPLAY : SERVER;
 			}
-			else if (multiplayer == CLIENT) {
-				info.multiplayer_type = CLIENT;
+			else if ( multiplayer == CLIENT ) {
+				info->multiplayer_type = CLIENT;
 			}
 			else {
 				printlog("saveGame(): failed to save, unknown game type!");
@@ -5485,55 +5529,56 @@ int saveGame(int saveIndex) {
 		}
 	}
 
-	info.dungeon_lvl = currentlevel;
-	info.level_track = secretlevel ? 1 : 0;
-	info.players_connected.resize(MAXPLAYERS);
-	info.players.resize(MAXPLAYERS);
-	for (int c = 0; c < MAXPLAYERS; ++c) {
-		info.players_connected[c] = client_disconnected[c] ? 0 : 1;
-		if (info.players_connected[c]) {
-			auto& player = info.players[c];
+	info->dungeon_lvl = currentlevel;
+	info->level_track = secretlevel ? 1 : 0;
+	info->players_connected.resize(MAXPLAYERS);
+	info->players.resize(MAXPLAYERS);
+	for ( int c = 0; c < MAXPLAYERS; ++c ) {
+		info->players_connected[c] = client_disconnected[c] ? 0 : 1;
+		if ( info->players_connected[c] ) {
+			auto& player = info->players[c];
 			player.char_class = client_classes[c];
 			player.race = stats[c]->playerRace;
 
 			// the following player info is shared by all players currently
 			player.kills.resize(NUMMONSTERS);
-			for (int i = 0; i < NUMMONSTERS; ++i) {
+			for ( int i = 0; i < NUMMONSTERS; ++i ) {
 				player.kills[i] = kills[i];
 			}
 			player.conductPenniless = conductPenniless;
 			player.conductFoodless = conductFoodless;
 			player.conductVegetarian = conductVegetarian;
 			player.conductIlliterate = conductIlliterate;
-			for (int i = 0; i < NUM_CONDUCT_CHALLENGES; ++i) {
+			for ( int i = 0; i < NUM_CONDUCT_CHALLENGES; ++i ) {
 				player.additionalConducts[i] = conductGameChallenges[i];
 			}
-			for (int i = 0; i < NUM_GAMEPLAY_STATISTICS; ++i) {
+			for ( int i = 0; i < NUM_GAMEPLAY_STATISTICS; ++i ) {
 				player.gameStatistics[i] = gameStatistics[i];
 			}
 
 			// hotbar
-			if ( players[c]->isLocalPlayer() )
+			if ( ::players[c]->isLocalPlayer() )
 			{
-				spell_t* oldSelectedSpell = players[c]->magic.selectedSpell();
-				auto lastSelectedSpellAppearance = players[c]->magic.selected_spell_last_appearance;
+				spell_t* oldSelectedSpell = ::players[c]->magic.selectedSpell();
+				auto lastSelectedSpellAppearance = ::players[c]->magic.selected_spell_last_appearance;
 
 				bool reinitShapeshiftHotbar = false;
-				if ( players[c]->hotbar.swapHotbarOnShapeshift > 0 )
+				if ( ::players[c]->hotbar.swapHotbarOnShapeshift > 0 )
 				{
 					reinitShapeshiftHotbar = true;
 					deinitShapeshiftHotbar(c);
 				}
-				for (int i = 0; i < NUM_HOTBAR_SLOTS; ++i) {
-					auto item = uidToItem(players[c]->hotbar.slots()[i].item);
-					if (item) {
+				for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i ) {
+					auto item = uidToItem(::players[c]->hotbar.slots()[i].item);
+					if ( item ) {
 						player.hotbar[i] = list_Index(item->node);
-					} else {
+					}
+					else {
 						player.hotbar[i] = UINT32_MAX;
 					}
 
 					for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j ) {
-						auto item = uidToItem(players[c]->hotbar.slotsAlternate()[j][i].item);
+						auto item = uidToItem(::players[c]->hotbar.slotsAlternate()[j][i].item);
 						if ( item )
 						{
 							player.hotbar_alternate[j][i] = list_Index(item->node);
@@ -5554,18 +5599,18 @@ int saveGame(int saveIndex) {
 					player.selected_spell_alternate[i] = UINT32_MAX;
 				}
 
-				for ( node_t* node = players[c]->magic.spellList.first;
+				for ( node_t* node = ::players[c]->magic.spellList.first;
 					node != nullptr; node = node->next ) {
 					auto spell = (spell_t*)node->element;
 					player.spells.push_back(spell->ID);
 
-					if ( players[c]->magic.selectedSpell() == spell )
+					if ( ::players[c]->magic.selectedSpell() == spell )
 					{
 						player.selected_spell = list_Index(node);
 					}
 					for ( int i = 0; i < NUM_HOTBAR_ALTERNATES; ++i )
 					{
-						if ( players[c]->magic.selected_spell_alternate[i] == spell )
+						if ( ::players[c]->magic.selected_spell_alternate[i] == spell )
 						{
 							player.selected_spell_alternate[i] = list_Index(node);
 						}
@@ -5577,8 +5622,8 @@ int saveGame(int saveIndex) {
 					initShapeshiftHotbar(c);
 				}
 
-				players[c]->magic.equipSpell(oldSelectedSpell);
-				players[c]->magic.selected_spell_last_appearance = lastSelectedSpellAppearance;
+				::players[c]->magic.equipSpell(oldSelectedSpell);
+				::players[c]->magic.selected_spell_last_appearance = lastSelectedSpellAppearance;
 			}
 			else
 			{
@@ -5600,7 +5645,7 @@ int saveGame(int saveIndex) {
 
 			// known alchemy recipes and known scrolls
 			player.known_recipes = clientLearnedAlchemyRecipes[c];
-			for (auto& entry : clientLearnedScrollLabels[c]) {
+			for ( auto& entry : clientLearnedScrollLabels[c] ) {
 				player.known_scrolls.push_back(entry);
 			}
 
@@ -5624,18 +5669,18 @@ int saveGame(int saveIndex) {
 			player.stats.GOLD = stats[c]->GOLD;
 			player.stats.HUNGER = stats[c]->HUNGER;
 			player.stats.PROFICIENCIES.resize(NUMPROFICIENCIES);
-			for (int i = 0 ; i < NUMPROFICIENCIES; ++i) {
+			for ( int i = 0; i < NUMPROFICIENCIES; ++i ) {
 				player.stats.PROFICIENCIES[i] = stats[c]->PROFICIENCIES[i];
 			}
 			player.stats.EFFECTS.resize(NUMEFFECTS);
 			player.stats.EFFECTS_TIMERS.resize(NUMEFFECTS);
-			for (int i = 0 ; i < NUMEFFECTS; ++i) {
+			for ( int i = 0; i < NUMEFFECTS; ++i ) {
 				player.stats.EFFECTS[i] = stats[c]->EFFECTS[i];
 				player.stats.EFFECTS_TIMERS[i] = stats[c]->EFFECTS_TIMERS[i];
 			}
 			constexpr int NUMMISCFLAGS = sizeof(Stat::MISC_FLAGS) / sizeof(Stat::MISC_FLAGS[0]);
 			player.stats.MISC_FLAGS.resize(NUMMISCFLAGS);
-			for (int i = 0 ; i < NUMMISCFLAGS; ++i) {
+			for ( int i = 0; i < NUMMISCFLAGS; ++i ) {
 				player.stats.MISC_FLAGS[i] = stats[c]->MISC_FLAGS[i];
 			}
 			//player.stats.attributes = ; // players have no key/value table
@@ -5688,19 +5733,20 @@ int saveGame(int saveIndex) {
 				{"ring", stats[c]->ring},
 				{"mask", stats[c]->mask},
 			};
-			if (players[c]->isLocalPlayer()) {
+			if ( ::players[c]->isLocalPlayer() ) {
 				// if this is a local player, we have their inventory, and can store
 				// item indexes in the player_equipment table
-				for (auto& slot : player_slots) {
+				for ( auto& slot : player_slots ) {
 					player.stats.player_equipment.push_back(std::make_pair(slot.first,
 						slot.second ? list_Index(slot.second->node) : UINT32_MAX));
 				}
-			} else {
+			}
+			else {
 				// if this is not a local player, we don't have the inventory.
 				// we must save whole items for each slot which the host will
 				// restore later
-				for (auto& slot : player_slots) {
-					if (slot.second) {
+				for ( auto& slot : player_slots ) {
+					if ( slot.second ) {
 						player.stats.npc_equipment.push_back(std::make_pair(
 							slot.first, SaveGameInfo::Player::stat_t::item_t{
 								(Uint32)slot.second->type,
@@ -5717,8 +5763,8 @@ int saveGame(int saveIndex) {
 			}
 
 			// inventory
-			for (node_t* node = stats[c]->inventory.first;
-				node != nullptr; node = node->next) {
+			for ( node_t* node = stats[c]->inventory.first;
+				node != nullptr; node = node->next ) {
 				auto item = (Item*)node->element;
 				player.stats.inventory.push_back(
 					SaveGameInfo::Player::stat_t::item_t{
@@ -5734,11 +5780,11 @@ int saveGame(int saveIndex) {
 			}
 
 			// followers
-			for (node_t* node = stats[c]->FOLLOWERS.first;
-				node != nullptr; node = node->next) {
+			for ( node_t* node = stats[c]->FOLLOWERS.first;
+				node != nullptr; node = node->next ) {
 				auto entity = uidToEntity(*((Uint32*)node->element));
 				Stat* follower = entity ? entity->getStats() : nullptr;
-				if (follower) {
+				if ( follower ) {
 					SaveGameInfo::Player::stat_t stats;
 					stats.name = follower->name;
 					stats.type = follower->type;
@@ -5759,20 +5805,20 @@ int saveGame(int saveIndex) {
 					stats.GOLD = follower->GOLD;
 					stats.HUNGER = follower->HUNGER;
 					stats.PROFICIENCIES.resize(NUMPROFICIENCIES);
-					for (int i = 0 ; i < NUMPROFICIENCIES; ++i) {
+					for ( int i = 0; i < NUMPROFICIENCIES; ++i ) {
 						stats.PROFICIENCIES[i] = follower->PROFICIENCIES[i];
 					}
 					stats.EFFECTS.resize(NUMEFFECTS);
 					stats.EFFECTS_TIMERS.resize(NUMEFFECTS);
-					for (int i = 0 ; i < NUMEFFECTS; ++i) {
+					for ( int i = 0; i < NUMEFFECTS; ++i ) {
 						stats.EFFECTS[i] = follower->EFFECTS[i];
 						stats.EFFECTS_TIMERS[i] = follower->EFFECTS_TIMERS[i];
 					}
 					stats.MISC_FLAGS.resize(NUMMISCFLAGS);
-					for (int i = 0 ; i < NUMMISCFLAGS; ++i) {
+					for ( int i = 0; i < NUMMISCFLAGS; ++i ) {
 						stats.MISC_FLAGS[i] = follower->MISC_FLAGS[i];
 					}
-					for (auto& attribute : follower->attributes) {
+					for ( auto& attribute : follower->attributes ) {
 						stats.attributes.push_back(attribute);
 					}
 
@@ -5789,8 +5835,8 @@ int saveGame(int saveIndex) {
 						{"ring", follower->ring},
 						{"mask", follower->mask},
 					};
-					for (auto& slot : npc_slots) {
-						if (slot.second) {
+					for ( auto& slot : npc_slots ) {
+						if ( slot.second ) {
 							stats.npc_equipment.push_back(std::make_pair(
 								slot.first, SaveGameInfo::Player::stat_t::item_t{
 									(Uint32)slot.second->type,
@@ -5806,8 +5852,8 @@ int saveGame(int saveIndex) {
 					}
 
 					// inventory
-					for (node_t* node = follower->inventory.first;
-						node != nullptr; node = node->next) {
+					for ( node_t* node = follower->inventory.first;
+						node != nullptr; node = node->next ) {
 						auto item = (Item*)node->element;
 						stats.inventory.push_back(
 							SaveGameInfo::Player::stat_t::item_t{
@@ -5829,20 +5875,257 @@ int saveGame(int saveIndex) {
 		}
 	}
 
-	info.map_messages = Player::Minimap_t::mapDetails;
+	info->map_messages = ::Player::Minimap_t::mapDetails;
+
+	if ( info->game_version >= 410 )
+	{
+		info->computeHash(info->player_num, info->hash);
+	}
+	return 0;
+}
+
+int saveGame(int saveIndex) {
+	if (!gameModeManager.allowsSaves()) {
+		return 1; // can't save tutorial games
+	}
+	if (!intro) {
+		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1121));
+	}
+	
+	SaveGameInfo info;
+	if ( info.populateFromSession(clientnum) != 0 )
+	{
+		return 1;
+	}
 
 	static ConsoleVariable<bool> cvar_saveText("/save_text_format", true);
-
-	if ( info.game_version >= 410 )
-	{
-		info.computeHash(info.player_num, info.hash);
-	}
 
 	char path[PATH_MAX] = "";
 	std::string savefile = setSaveGameFileName(multiplayer == SINGLE, SaveFileType::JSON, saveIndex);
 	completePath(path, savefile.c_str(), outputdir);
 	auto result = FileHelper::writeObject(path, *cvar_saveText ? EFileFormat::Json : EFileFormat::Binary, info);
 	return result == true ? 0 : 1;
+}
+
+int SaveGameInfo::getTotalScore(const int playernum, const int victory)
+{
+	auto player = players[playernum];
+	Player::stat_t* stats = &players[playernum].stats;
+	int amount = 0;
+
+	for ( auto& item : stats->inventory )
+	{
+		amount += items[item.type].value;
+	}
+	amount += stats->GOLD;
+	amount += stats->EXP;
+	amount += stats->LVL * 500;
+
+	for ( int c = 0; c < NUMPROFICIENCIES; c++ )
+	{
+		amount += stats->PROFICIENCIES[c];
+	}
+	for ( int c = 0; c < NUMMONSTERS; c++ )
+	{
+		if ( c != HUMAN )
+		{
+			amount += player.kills[c] * 100;
+		}
+		else
+		{
+			amount -= player.kills[c] * 100;
+		}
+	}
+
+	amount += this->dungeon_lvl * 500;
+	if ( victory >= 3 )
+	{
+		amount += 3 * 20000;
+	}
+	else
+	{
+		amount += victory * 10000;
+	}
+
+	Uint32 gametimer = std::min(this->gametimer, (Uint32)0xFFFFFF);
+
+	amount -= gametimer / TICKS_PER_SECOND;
+	if ( victory )
+	{
+		amount += player.conductPenniless * 5000;
+		amount += player.conductFoodless * 5000;
+		amount += player.conductVegetarian * 5000;
+		amount += player.conductIlliterate * 5000;
+		amount += player.additionalConducts[CONDUCT_BOOTS_SPEED] * 20000;
+		amount += player.additionalConducts[CONDUCT_BRAWLER] * 20000;
+		amount += player.additionalConducts[CONDUCT_RANGED_ONLY] * 20000;
+		amount += player.additionalConducts[CONDUCT_ACCURSED] * 50000;
+		amount += player.additionalConducts[CONDUCT_BLESSED_BOOTS_SPEED] * 100000;
+		if ( player.additionalConducts[CONDUCT_HARDCORE] == 1
+			&& player.additionalConducts[CONDUCT_CHEATS_ENABLED] == 0 )
+		{
+			amount *= 2;
+		}
+		if ( player.additionalConducts[CONDUCT_KEEPINVENTORY] &&
+			player.additionalConducts[CONDUCT_MULTIPLAYER] )
+		{
+			amount /= 2;
+		}
+		if ( player.additionalConducts[CONDUCT_LIFESAVING] )
+		{
+			amount /= 4;
+		}
+	}
+	if ( amount < 0 )
+	{
+		amount = 0;
+	}
+
+	return amount;
+}
+
+std::string SaveGameInfo::serializeToOnlineHiscore(const int playernum, const int victory)
+{
+	rapidjson::Document d;
+	d.SetObject();
+
+	rapidjson::Value character(rapidjson::kObjectType);
+
+	auto& player = players[playernum];
+	auto& myStats = players[playernum].stats;
+
+	Uint32 gametimer = std::min(this->gametimer, (Uint32)0xFFFFFF);
+
+	character.AddMember("version", rapidjson::Value(1), d.GetAllocator());
+	character.AddMember("leaderboard", rapidjson::Value("lid", d.GetAllocator()), d.GetAllocator());
+	character.AddMember("time", rapidjson::Value(gametimer), d.GetAllocator());
+	character.AddMember("totalscore", rapidjson::Value(getTotalScore(playernum, victory)), d.GetAllocator());
+
+	character.AddMember("victory", rapidjson::Value(victory), d.GetAllocator());
+	int multi = multiplayer;
+	if ( multi == 0 )
+	{
+		if ( player.additionalConducts[CONDUCT_MULTIPLAYER] )
+		{
+			multi = CLIENT; // failsafe to set if session wrapped up prematurely
+		}
+	}
+	character.AddMember("multiplayer", rapidjson::Value(multi), d.GetAllocator());
+	character.AddMember("splitscreen", rapidjson::Value(splitscreen), d.GetAllocator());
+	character.AddMember("flags", rapidjson::Value(svflags), d.GetAllocator());
+	character.AddMember("lvl", rapidjson::Value(dungeon_lvl), d.GetAllocator());
+	character.AddMember("secret", rapidjson::Value(level_track), d.GetAllocator());
+
+	{
+		rapidjson::Value statsObj(rapidjson::kObjectType);
+		statsObj.AddMember("name", rapidjson::Value(myStats.name.c_str(), d.GetAllocator()), d.GetAllocator());
+		statsObj.AddMember("MAXHP", myStats.maxHP, d.GetAllocator());
+		statsObj.AddMember("MAXMP", myStats.maxMP, d.GetAllocator());
+		statsObj.AddMember("STR", myStats.STR, d.GetAllocator());
+		statsObj.AddMember("DEX", myStats.DEX, d.GetAllocator());
+		statsObj.AddMember("CON", myStats.CON, d.GetAllocator());
+		statsObj.AddMember("INT", myStats.INT, d.GetAllocator());
+		statsObj.AddMember("PER", myStats.PER, d.GetAllocator());
+		statsObj.AddMember("CHR", myStats.CHR, d.GetAllocator());
+
+		statsObj.AddMember("LVL", myStats.LVL, d.GetAllocator());
+		statsObj.AddMember("EXP", myStats.EXP, d.GetAllocator());
+		statsObj.AddMember("race", player.race, d.GetAllocator());
+		statsObj.AddMember("appearance", myStats.appearance, d.GetAllocator());
+		statsObj.AddMember("sex", myStats.sex, d.GetAllocator());
+		statsObj.AddMember("class", player.char_class, d.GetAllocator());
+
+		statsObj.AddMember("GOLD", myStats.GOLD, d.GetAllocator());
+		statsObj.AddMember("kill_by", hiscore_killed_by, d.GetAllocator());
+		statsObj.AddMember("kill_mon", hiscore_killed_monster, d.GetAllocator());
+		statsObj.AddMember("kill_item", hiscore_killed_item, d.GetAllocator());
+
+		character.AddMember("stats", statsObj, d.GetAllocator());
+
+		rapidjson::Value attrObj(rapidjson::kObjectType);
+		rapidjson::Value killsArr(rapidjson::kArrayType);
+		for ( int i = 0; i < NUMMONSTERS; ++i )
+		{
+			killsArr.PushBack(player.kills[i], d.GetAllocator());
+		}
+		attrObj.AddMember("kills", killsArr, d.GetAllocator());
+
+		rapidjson::Value profArr(rapidjson::kArrayType);
+		for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+		{
+			profArr.PushBack(myStats.PROFICIENCIES[i], d.GetAllocator());
+		}
+		attrObj.AddMember("proficiencies", profArr, d.GetAllocator());
+
+		rapidjson::Value conductsArr(rapidjson::kArrayType);
+		conductsArr.PushBack((int)player.conductPenniless, d.GetAllocator());
+		conductsArr.PushBack((int)player.conductFoodless, d.GetAllocator());
+		conductsArr.PushBack((int)player.conductVegetarian, d.GetAllocator());
+		conductsArr.PushBack((int)player.conductIlliterate, d.GetAllocator());
+		for ( int i = 0; i < NUM_CONDUCT_CHALLENGES; ++i )
+		{
+			conductsArr.PushBack(player.additionalConducts[i], d.GetAllocator());
+		}
+		attrObj.AddMember("conducts", conductsArr, d.GetAllocator());
+
+		rapidjson::Value statisticsArr(rapidjson::kArrayType);
+		for ( int i = 0; i < NUM_GAMEPLAY_STATISTICS; ++i )
+		{
+			statisticsArr.PushBack(player.gameStatistics[i], d.GetAllocator());
+		}
+		attrObj.AddMember("statistics", statisticsArr, d.GetAllocator());
+
+		character.AddMember("attributes", attrObj, d.GetAllocator());
+	}
+
+	rapidjson::Value inventory(rapidjson::kArrayType);
+	for ( const auto& item : myStats.inventory )
+	{
+		rapidjson::Value itemArray(rapidjson::kArrayType);
+		itemArray.PushBack((int)item.type, d.GetAllocator());
+		itemArray.PushBack((int)item.status, d.GetAllocator());
+		itemArray.PushBack((int)item.beatitude, d.GetAllocator());
+		itemArray.PushBack((int)item.count, d.GetAllocator());
+		itemArray.PushBack((int)item.appearance, d.GetAllocator());
+		itemArray.PushBack((int)item.identified, d.GetAllocator());
+		itemArray.PushBack((int)0 /* blank uid */, d.GetAllocator());
+		itemArray.PushBack((int)item.x, d.GetAllocator());
+		itemArray.PushBack((int)item.y, d.GetAllocator());
+
+		inventory.PushBack(itemArray, d.GetAllocator());
+	}
+
+	{
+		// equip slots
+		for ( const auto& equipment : player.stats.player_equipment )
+		{
+			rapidjson::Value itemArray(rapidjson::kArrayType);
+			if ( equipment.second != UINT32_MAX && equipment.second < player.stats.inventory.size() )
+			{
+				auto& item = player.stats.inventory[equipment.second];
+				itemArray.PushBack((int)item.type, d.GetAllocator());
+				itemArray.PushBack((int)item.status, d.GetAllocator());
+				itemArray.PushBack((int)item.beatitude, d.GetAllocator());
+				itemArray.PushBack((int)item.count, d.GetAllocator());
+				itemArray.PushBack((int)item.appearance, d.GetAllocator());
+				itemArray.PushBack((int)item.identified, d.GetAllocator());
+				itemArray.PushBack((int)0 /* blank uid */, d.GetAllocator());
+				itemArray.PushBack((int)item.x, d.GetAllocator());
+				itemArray.PushBack((int)item.y, d.GetAllocator());
+			}
+			rapidjson::Value key(equipment.first.c_str(), d.GetAllocator());
+			character.AddMember(key, itemArray, d.GetAllocator());
+		}
+	}
+
+	character.AddMember("inventory", inventory, d.GetAllocator());
+
+	d.AddMember("score", character, d.GetAllocator());
+
+	rapidjson::StringBuffer os;
+	rapidjson::Writer<rapidjson::StringBuffer> writer(os);
+	d.Accept(writer);
+	return os.GetString();
 }
 
 int loadGame(int player, const SaveGameInfo& info) {
@@ -5866,9 +6149,12 @@ int loadGame(int player, const SaveGameInfo& info) {
 		return 1;
 	}
 
-	if (!info.hash) {
-		printlog("loadGame() warning: hash check failed");
-		gameStatistics[STATISTICS_DISABLE_UPLOAD] = 1;
+	if ( !info.hiscore_dummy_loading )
+	{
+		if (!info.hash) {
+			printlog("loadGame() warning: hash check failed");
+			gameStatistics[STATISTICS_DISABLE_UPLOAD] = 1;
+		}
 	}
 
 	stats[player]->clearStats();
@@ -5878,33 +6164,39 @@ int loadGame(int player, const SaveGameInfo& info) {
 	mapseed = info.mapseed;
 	completionTime = info.gametimer;
 	clientnum = info.player_num;
-	switch (info.multiplayer_type) {
-	default:
-	case SINGLE: multiplayer = SINGLE; splitscreen = false; directConnect = false; break;
-	case SERVER: multiplayer = SERVER; splitscreen = false; directConnect = false; break;
-	case CLIENT: multiplayer = CLIENT; splitscreen = false; directConnect = false; break;
-	case DIRECTSERVER: multiplayer = SERVER; splitscreen = false; directConnect = true; break;
-	case DIRECTCLIENT: multiplayer = CLIENT; splitscreen = false; directConnect = true; break;
-	case SERVERCROSSPLAY: multiplayer = SERVER; splitscreen = false; directConnect = false; break; // TODO!
-	case SPLITSCREEN: multiplayer = SINGLE; splitscreen = true; directConnect = false; break;
+	if ( !info.hiscore_dummy_loading )
+	{
+		switch (info.multiplayer_type) {
+		default:
+		case SINGLE: multiplayer = SINGLE; splitscreen = false; directConnect = false; break;
+		case SERVER: multiplayer = SERVER; splitscreen = false; directConnect = false; break;
+		case CLIENT: multiplayer = CLIENT; splitscreen = false; directConnect = false; break;
+		case DIRECTSERVER: multiplayer = SERVER; splitscreen = false; directConnect = true; break;
+		case DIRECTCLIENT: multiplayer = CLIENT; splitscreen = false; directConnect = true; break;
+		case SERVERCROSSPLAY: multiplayer = SERVER; splitscreen = false; directConnect = false; break; // TODO!
+		case SPLITSCREEN: multiplayer = SINGLE; splitscreen = true; directConnect = false; break;
+		}
 	}
 	currentlevel = info.dungeon_lvl;
 	secretlevel = info.level_track != 0;
 
-	if ( clientnum == player )
+	if ( !info.hiscore_dummy_loading )
 	{
-		gameModeManager.currentSession.saveServerFlags();
-		if ( multiplayer == CLIENT )
+		if ( clientnum == player )
 		{
-			lobbyWindowSvFlags = info.svflags;
+			gameModeManager.currentSession.saveServerFlags();
+			if ( multiplayer == CLIENT )
+			{
+				lobbyWindowSvFlags = info.svflags;
+			}
+			else
+			{
+				svFlags = info.svflags;
+			}
+			printlog("[SESSION]: Using savegame server flags");
+			gameModeManager.currentSession.seededRun.seed = info.customseed;
+			gameModeManager.currentSession.seededRun.seedString = info.customseed_string;
 		}
-		else
-		{
-			svFlags = info.svflags;
-		}
-		printlog("[SESSION]: Using savegame server flags");
-		gameModeManager.currentSession.seededRun.seed = info.customseed;
-		gameModeManager.currentSession.seededRun.seedString = info.customseed_string;
 	}
 
 	// load player data

@@ -28,6 +28,9 @@
 #include <steam/steam_api.h>
 #include "steam.hpp"
 #endif
+#ifdef USE_PLAYFAB
+#include "playfab.hpp"
+#endif
 #include "menu.hpp"
 #include "paths.hpp"
 #include "player.hpp"
@@ -132,6 +135,9 @@ int initGame()
  #ifdef USE_EOS
 	cpp_SteamServerClientWrapper_OnRequestEncryptedAppTicket = &steam_OnRequestEncryptedAppTicket;
  #endif //USE_EOS
+#endif
+#ifdef USE_PLAYFAB
+	playfabUser.init();
 #endif
 
 	initGameControllers();

@@ -33,6 +33,9 @@
 #include <steam/steam_api.h>
 #include "steam.hpp"
 #endif
+#ifdef USE_PLAYFAB
+#include "playfab.hpp"
+#endif
 #include "prng.hpp"
 #include "collision.hpp"
 #include "paths.hpp"
@@ -6758,6 +6761,10 @@ int main(int argc, char** argv)
 				g_SteamLeaderboards->ProcessLeaderboardUpload();
 			}
 			SteamAPI_RunCallbacks();
+#endif
+#ifdef USE_PLAYFAB
+			PlayFab::PlayFabClientAPI::Update();
+			playfabUser.update();
 #endif
 #ifdef USE_EOS
 			if (EOS.PlatformHandle) {

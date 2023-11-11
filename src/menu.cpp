@@ -33,6 +33,9 @@
 #include <steam/steam_api.h>
 #include "steam.hpp"
 #endif
+#ifdef USE_PLAYFAB
+#include "playfab.hpp"
+#endif
 #include "prng.hpp"
 #include "credits.hpp"
 #include "paths.hpp"
@@ -8442,10 +8445,16 @@ void doNewGame(bool makeHighscore) {
                 for (int c = 0; c < MAXPLAYERS; ++c) {
                     if (!client_disconnected[c]) {
                         saveScore(c);
+#ifdef USE_PLAYFAB
+						playfabUser.postScore(c);
+#endif
                     }
                 }
             } else {
                 saveScore(clientnum);
+#ifdef USE_PLAYFAB
+				playfabUser.postScore(clientnum);
+#endif
             }
             saveAllScores(SCORESFILE);
             saveAllScores(SCORESFILE_MULTIPLAYER);
@@ -9354,10 +9363,16 @@ void doEndgame(bool saveHighscore) {
             for (int c = 0; c < MAXPLAYERS; ++c) {
                 if (!client_disconnected[c]) {
                     saveScore(c);
+#ifdef USE_PLAYFAB
+					playfabUser.postScore(c);
+#endif
                 }
             }
         } else {
             saveScore(clientnum);
+#ifdef USE_PLAYFAB
+			playfabUser.postScore(clientnum);
+#endif
         }
         saveAllScores(SCORESFILE);
         saveAllScores(SCORESFILE_MULTIPLAYER);
