@@ -6041,6 +6041,7 @@ void actPlayer(Entity* my)
 						{
 							messagePlayer(PLAYER_NUM, MESSAGE_STATUS, Language::get(3703));
 							stats[PLAYER_NUM]->HUNGER += 50;
+							stats[PLAYER_NUM]->HUNGER = std::min(1500, stats[PLAYER_NUM]->HUNGER);
 							serverUpdateHunger(PLAYER_NUM);
 						}
 					}
