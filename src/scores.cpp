@@ -55,6 +55,7 @@ bool usedClass[NUMCLASSES] = {0};
 bool usedRace[NUMRACES] = { 0 };
 Uint32 loadingsavegame = 0;
 bool achievementBrawlerMode = false;
+bool achievementPenniless = false;
 bool achievementRangedMode[MAXPLAYERS] = { 0 };
 int savegameCurrentFileIndex = 0;
 score_t steamLeaderboardScore;
@@ -298,28 +299,6 @@ int saveScore(int player)
 	{
 		scoresPtr = &topscoresMultiplayer;
 	}
-
-#ifdef STEAMWORKS
-	// temp disable leaderboard scores until fix 
-	/*if ( g_SteamLeaderboards )
-	{
-		if ( steamLeaderboardSetScore(currentscore) )
-		{
-			g_SteamLeaderboards->LeaderboardUpload.score = totalScore(currentscore);
-			g_SteamLeaderboards->LeaderboardUpload.time = currentscore->completionTime / TICKS_PER_SECOND;
-			g_SteamLeaderboards->LeaderboardUpload.status = LEADERBOARD_STATE_FIND_LEADERBOARD_TIME;
-			printlog("[STEAM]: Initialising leaderboard score upload...");
-		}
-		else
-		{
-			printlog("[STEAM]: Did not qualify for leaderboard score upload.");
-			if ( currentscore->gameStatistics[STATISTICS_DISABLE_UPLOAD] == 1 )
-			{
-				printlog("[STEAM]: Loaded data did not match hash as expected.");
-			}
-		}
-	}*/
-#endif // STEAMWORKS
 
     int c;
     node_t* node;
@@ -3491,6 +3470,16 @@ void updatePlayerConductsInMainLoop()
 			//Mods::disableSteamAchievements = true;
 		}
 	}
+	if ( conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS]
+		|| conductGameChallenges[CONDUCT_CHEATS_ENABLED]
+		|| conductGameChallenges[CONDUCT_LIFESAVING] )
+	{
+		gameStatistics[STATISTICS_DISABLE_UPLOAD] = 1;
+	}
+	if ( !gameModeManager.allowsGlobalHiscores() )
+	{
+		gameStatistics[STATISTICS_DISABLE_UPLOAD] = 1;
+	}
 
 	achievementObserver.achievementTimersTickDown();
 }
@@ -6000,6 +5989,8 @@ std::string SaveGameInfo::serializeToOnlineHiscore(const int playernum, const in
 	character.AddMember("leaderboard", rapidjson::Value("lid", d.GetAllocator()), d.GetAllocator());
 	character.AddMember("time", rapidjson::Value(gametimer), d.GetAllocator());
 	character.AddMember("totalscore", rapidjson::Value(getTotalScore(playernum, victory)), d.GetAllocator());
+	character.AddMember("seed", rapidjson::Value(customseed), d.GetAllocator());
+	character.AddMember("seed_str", rapidjson::Value(customseed_string.c_str(), d.GetAllocator()), d.GetAllocator());
 
 	character.AddMember("victory", rapidjson::Value(victory), d.GetAllocator());
 	int multi = multiplayer;

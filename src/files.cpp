@@ -2725,11 +2725,11 @@ out_input_file:
 
 -------------------------------------------------------------------------------*/
 
-std::list<std::string> directoryContents(const char* directory, bool includeSubdirectory, bool includeFiles)
+std::list<std::string> directoryContents(const char* directory, bool includeSubdirectory, bool includeFiles, const char* base)
 {
 	std::list<std::string> list;
 	char fullPath[PATH_MAX];
-	completePath(fullPath, directory);
+	completePath(fullPath, directory, base);
 	DIR* dir = opendir(fullPath);
 	struct dirent* entry = NULL;
 
