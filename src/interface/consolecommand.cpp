@@ -2663,6 +2663,22 @@ namespace ConsoleCommands {
 		}
 		});
 
+	static ConsoleCommand ccmd_pennilessmode("/pennilessmode", "activate penniless mode", []CCMD{
+		achievementPenniless = !achievementPenniless;
+		if ( achievementPenniless && conductPenniless )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(6058));
+		}
+		else if ( achievementPenniless && !conductPenniless )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(6060));
+		}
+		else if ( !achievementPenniless )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(6059));
+		}
+		});
+
 	static ConsoleCommand ccmd_rangermode("/rangermode", "activate ranger mode", []CCMD{
 		int player = -1;
 		if (argc > 1)
