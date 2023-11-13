@@ -7108,12 +7108,11 @@ void actPlayer(Entity* my)
 			                    SDLNet_Write32((Uint32)stats[PLAYER_NUM]->killer, &net_packet->data[4]);
 			                    if (stats[PLAYER_NUM]->killer == KilledBy::MONSTER) {
 			                        net_packet->data[8] = (Uint8)stats[PLAYER_NUM]->killer_name.size();
-			                        if (net_packet->data[8]) {
-			                            memcpy(&net_packet->data[9], stats[PLAYER_NUM]->killer_name.c_str(), net_packet->data[8]);
-			                            net_packet->len = 9 + net_packet->data[8];
-			                        } else {
 			                            SDLNet_Write32((Uint32)stats[PLAYER_NUM]->killer_monster, &net_packet->data[9]);
 			                            net_packet->len = 13;
+			                        if (net_packet->data[8]) {
+			                            memcpy(&net_packet->data[13], stats[PLAYER_NUM]->killer_name.c_str(), net_packet->data[8]);
+			                            net_packet->len = 13 + net_packet->data[8];
 			                        }
 			                    }
 			                    else if (stats[PLAYER_NUM]->killer == KilledBy::ITEM) {

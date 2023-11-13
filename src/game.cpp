@@ -1994,15 +1994,21 @@ void gameLogic(void)
 					skipLevelsOnLoad = 0;
 
 					// signal clients about level change
-					// mapseed = local_rng.rand(); -- old
-					map_sequence_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
-					int rng_cycles = std::max(0, currentlevel + (secretlevel ? 100 : 0));
-					while ( rng_cycles > 0 )
+					if ( gameModeManager.currentSession.seededRun.seed == 0 )
 					{
-						map_sequence_rng.rand(); // dummy advance
-						--rng_cycles;
+						mapseed = local_rng.rand();
 					}
-					mapseed = map_sequence_rng.rand();
+					else
+					{
+						map_sequence_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+						int rng_cycles = std::max(0, currentlevel + (secretlevel ? 100 : 0));
+						while ( rng_cycles > 0 )
+						{
+							map_sequence_rng.rand(); // dummy advance
+							--rng_cycles;
+						}
+						mapseed = map_sequence_rng.rand();
+					}
 					lastEntityUIDs = entity_uids;
 					if ( forceMapSeed > 0 )
 					{

@@ -279,6 +279,7 @@ extern std::vector<Uint32> achievementStrobeVec[MAXPLAYERS];
 extern bool achievementStatusStrobe[MAXPLAYERS];
 extern bool playerFailedRangedOnlyConduct[MAXPLAYERS];
 extern bool achievementBrawlerMode;
+extern bool achievementPenniless;
 extern bool achievementRangedMode[MAXPLAYERS];
 
 score_t* scoreConstructor(int player);

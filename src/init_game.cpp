@@ -757,6 +757,9 @@ void deinitGame()
 #ifdef USE_IMGUI
 	ImGui_t::deinit();
 #endif
+#ifdef USE_PLAYFAB
+	playfabUser.postScoreHandler.deinit();
+#endif
 }
 
 void loadAchievementData(const char* path) {
