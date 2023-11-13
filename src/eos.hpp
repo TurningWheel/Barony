@@ -63,6 +63,7 @@ public:
 		bool loginCriticalErrorOccurred = false;
 		std::string authToken = "";
 		Uint32 authTokenRefresh = 0;
+		Uint32 authTokenTicks = 0;
 		enum PopupType
 		{
 			POPUP_FULL,

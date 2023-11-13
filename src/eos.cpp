@@ -49,12 +49,14 @@ std::string EOSFuncs::getAuthToken()
 {
 	if ( AccountManager.authTokenRefresh > 0 )
 	{
+		logInfo("Recieved cached auth token");
 		return AccountManager.authToken;
 	}
 
 	if ( !AuthHandle
 		|| AccountManager.AccountAuthenticationStatus != EOS_EResult::EOS_Success )
 	{
+		logInfo("Recieved cached auth token, unknown login status");
 		return AccountManager.authToken;
 	}
 
@@ -68,9 +70,11 @@ std::string EOSFuncs::getAuthToken()
 		EOS_Auth_Token_Release(UserAuthToken);
 
 		AccountManager.authToken = str;
-		AccountManager.authTokenRefresh = TICKS_PER_SECOND * 60 * 60 * 6; // 6 hour refresh
+		AccountManager.authTokenRefresh = TICKS_PER_SECOND * 60 * 60 * 5; // x hour refresh
+		logInfo("Generated auth token");
 		return str;
 	}
+	logInfo("Unable to generate auth token");
 	return AccountManager.authToken;
 }
 
@@ -3473,19 +3477,20 @@ void EOSFuncs::LobbySearchResults_t::sortResults()
 
 void EOSFuncs::Accounts_t::handleLogin()
 {
+	if ( authTokenTicks != ticks )
+	{
+		if ( authTokenRefresh > 0 )
+		{
+			--authTokenRefresh;
+		}
+		authTokenTicks = ticks;
+	}
+
 #if defined(STEAMWORKS) || defined(NINTENDO)
 	// can return early
 	return;
 #endif
 
-	if ( authTokenRefresh > 0 )
-	{
-		--authTokenRefresh;
-		if ( authTokenRefresh == 0 )
-		{
-			EOS.getAuthToken();
-		}
-	}
 
 	if (!initPopupWindow && popupType == POPUP_TOAST)
 	{
