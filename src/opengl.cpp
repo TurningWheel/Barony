@@ -628,7 +628,7 @@ static void loadLightmapTexture(int which) {
 #ifdef EDITOR
     const bool fullbright = false;
 #else
-    const bool fullbright = *cvar_fullBright;
+    const bool fullbright = conductGameChallenges[CONDUCT_CHEATS_ENABLED] ? *cvar_fullBright : false;
 #endif
     
     // build lightmap texture data
