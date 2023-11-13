@@ -6027,13 +6027,16 @@ void actPlayer(Entity* my)
 						{
 							messagePlayer(PLAYER_NUM, MESSAGE_STATUS, Language::get(3702));
 							stats[PLAYER_NUM]->HUNGER -= 25;
+							stats[PLAYER_NUM]->HUNGER = std::max(stats[PLAYER_NUM]->HUNGER, 0);
 							serverUpdateHunger(PLAYER_NUM);
 						}
 					}
 				}
 				else if ( ticks % 10 == 0 ) // Lava deals damage every 10 ticks
 				{
-					my->modHP(-2 - local_rng.rand() % 2);
+					int damage = (2 + local_rng.rand() % 2);
+					damage = std::max(damage, stats[PLAYER_NUM]->MAXHP / 20);
+					my->modHP(-damage);
 					if ( stats[PLAYER_NUM]->type == AUTOMATON )
 					{
 						my->modMP(2);
