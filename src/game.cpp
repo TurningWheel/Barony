@@ -5983,6 +5983,11 @@ void drawAllPlayerCameras() {
 					{
 						if ( !players[i]->entity || (players[i]->entity && !players[i]->entity->isBlind()) )
 						{
+							if ( players[i]->entity && players[i]->entity->ticks < TICKS_PER_SECOND * 1 )
+							{
+								continue; // don't share for first x ticks due to level change warping
+							}
+
 							real_t x = camera.x;
 							real_t y = camera.y;
 							real_t ang = camera.ang;
