@@ -595,6 +595,8 @@ void IRCHandler_t::handleMessage(std::string& msg)
 }
 #endif // !NINTENDO
 
+Uint32 ItemTooltips_t::itemsJsonHashRead = 0;
+
 void ItemTooltips_t::readItemsFromFile()
 {
 	printlog("loading items...\n");
@@ -686,7 +688,8 @@ void ItemTooltips_t::readItemsFromFile()
 
 	//itemValueTable.clear();
 	//itemValueTableByCategory.clear();
-
+	Uint32 shift = 0;
+	Uint32 hash = 0;
 	for ( int i = 0; i < NUMITEMS && i < itemsRead; ++i )
 	{
 		assert(i == tmpItems[i].itemId);
@@ -827,6 +830,9 @@ void ItemTooltips_t::readItemsFromFile()
 			items[i].item_slot = ItemEquippableSlot::EQUIPPABLE_IN_SLOT_HELM;
 		}
 
+		hash += (Uint32)((Uint32)items[i].weight << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)items[i].value << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)items[i].level << (shift % 32)); ++shift;
 		/*{
 			auto pair = std::make_pair(items[i].value, i);
 			auto lower = std::lower_bound(itemValueTable.begin(), itemValueTable.end(), pair,
@@ -844,6 +850,16 @@ void ItemTooltips_t::readItemsFromFile()
 				});
 			itemValueTableByCategory[items[i].category].insert(lower, pair);
 		}*/
+	}
+
+	itemsJsonHashRead = hash;
+	if ( itemsJsonHashRead != kItemsJsonHash )
+	{
+		printlog("[JSON]: Notice: items.json unknown hash, achievements are disabled: %d", itemsJsonHashRead);
+	}
+	else
+	{
+		printlog("[JSON]: items.json hash verified successfully.");
 	}
 
 	spellItems.clear();
@@ -8145,6 +8161,10 @@ void Mods::verifyAchievements(const char* fullpath, bool ignoreBaseFolder)
 		disableSteamAchievements = true;
 	}
 	else if ( !verifyMapFiles(fullpath, ignoreBaseFolder) )
+	{
+		disableSteamAchievements = true;
+	}
+	if ( ItemTooltips_t::itemsJsonHashRead != ItemTooltips_t::kItemsJsonHash )
 	{
 		disableSteamAchievements = true;
 	}

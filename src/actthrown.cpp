@@ -1167,12 +1167,12 @@ void actThrown(Entity* my)
 					if ( !strcmp(hitstats->name, "") )
 					{
 						updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
-							false, DamageGib::DMG_TODO);
+							false, DamageGib::DMG_DEFAULT);
 					}
 					else
 					{
 						updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
-							false, DamageGib::DMG_TODO);
+							false, DamageGib::DMG_DEFAULT);
 					}
 				}
 

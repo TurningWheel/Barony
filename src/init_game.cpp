@@ -558,8 +558,8 @@ void deinitGame()
 		bramscastlemusic->release();
 		hamletmusic->release();
 		tutorialmusic->release();
-		introstorymusic->release();
 		gameovermusic->release();
+		introstorymusic->release();
 
 		for ( int c = 0; c < NUMMINESMUSIC; c++ )
 		{

@@ -3058,7 +3058,8 @@ namespace MainMenu {
 		file->property("extra_life_enabled", extra_life_enabled);
 		file->property("cheats_enabled", cheats_enabled);
 		file->property("skipintro", skipintro);
-		file->property("use_model_cache", useModelCache);
+        bool no = false;
+		file->property("use_model_cache", no);
 		file->property("debug_keys_enabled", enableDebugKeys);
 		file->property("port_number", port_number);
 		file->propertyVersion("show_lobby_code", version >= 12, show_lobby_code);
@@ -11682,7 +11683,7 @@ failed:
 			    stats[index]->playerRace = RACE_INCUBUS;
 			    auto race = card->findButton("race");
 			    if (race) {
-				    race->setText(Language::get(3827));
+				    race->setText(Language::get(5375));
 			    }
 			    auto incubus = subframe ? subframe->findButton("Incubus") : nullptr;
 			    if (incubus) {

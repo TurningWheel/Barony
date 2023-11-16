@@ -10182,6 +10182,71 @@ static void checkControllerState(int player) {
     controllerFrame->setHollow(true);
 }
 
+void HUDDrawGameEndHint(const int player, SDL_Rect rect)
+{
+	if ( multiplayer == CLIENT || multiplayer == SERVER )
+	{
+		bool everyonedead = true;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( players[i] )
+			{
+				if ( multiplayer == SERVER && (!client_disconnected[i] && players[i]->entity) )
+				{
+					everyonedead = false;
+				}
+				else if ( multiplayer == CLIENT && players[i]->entity )
+				{
+					everyonedead = false;
+				}
+			}
+		}
+
+		if ( players[player]->bControlEnabled )
+		{
+			players[player]->hud.animDeadPromptDisplay = true;
+		}
+
+		if ( everyonedead && players[player]->hud.animDeadPromptDisplay )
+		{
+			static ConsoleVariable<float> cvar_anim_dead_prompt_speed("/anim_dead_prompt_speed", 0.003);
+			players[player]->hud.animDeadPrompt += *cvar_anim_dead_prompt_speed;
+			if ( players[player]->hud.animDeadPrompt >= 1.0 )
+			{
+				players[player]->hud.animDeadPrompt = 0.0;
+			}
+			rect.x += rect.w / 2;
+			rect.y += 8 - 1;
+			if ( players[player]->hud.xpFrame && !players[player]->hud.xpFrame->isDisabled() )
+			{
+				rect.y += players[player]->hud.xpFrame->getSize().y;
+				rect.y += players[player]->hud.xpFrame->getSize().h;
+			}
+			if ( auto textGet = Text::get(Language::get(6052), smallfont_outline, makeColorRGB(255, 255, 255), 0) )
+			{
+				Uint8 r, g, b, a;
+				getColor(hudColors.characterSheetRed, &r, &g, &b, nullptr);
+				real_t opacity = 0.5 + .4 * (1.0 * cos(players[player]->hud.animDeadPrompt * 2 * PI) + 1.0);
+				Uint32 color = makeColor(r, g, b, std::max(0.25, std::min(opacity, 1.0)) * 255);
+				rect.x -= textGet->getWidth() / 2;
+				textGet->drawColor(SDL_Rect{ 0, 0, 0, 0 }, SDL_Rect{ rect.x, rect.y, 0, 0 },
+					SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+					color);
+			}
+		}
+		else
+		{
+			players[player]->hud.animDeadPromptDisplay = false;
+			players[player]->hud.animDeadPrompt = 0.0;
+		}
+	}
+	else
+	{
+		players[player]->hud.animDeadPromptDisplay = false;
+		players[player]->hud.animDeadPrompt = 0.0;
+	}
+}
+
 void Player::HUD_t::processHUD()
 {
 	const SDL_Rect hudSize{
@@ -10198,6 +10263,9 @@ void Player::HUD_t::processHUD()
 		hudFrame->setHollow(true);
 		hudFrame->setBorder(0);
 		hudFrame->setOwner(player.playernum);
+		hudFrame->setDrawCallback([](const Widget& widget, SDL_Rect rect) {
+			HUDDrawGameEndHint(widget.getOwner(), rect);
+		});
 	}
 
 	if ( !minotaurSharedDisplay && player.playernum == 0 )
