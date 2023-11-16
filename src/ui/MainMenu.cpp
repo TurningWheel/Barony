@@ -29,6 +29,9 @@
 #ifdef STEAMWORKS
 #include <nfd.h>
 #endif
+#ifdef USE_PLAYFAB
+#include "../playfab.hpp"
+#endif
 
 // quick restart:
 
@@ -1283,7 +1286,14 @@ namespace MainMenu {
 		return back_button;
 	}
 
-	static Frame* createPrompt(const char* name, bool issmall = true) {
+	enum PromptSize
+	{
+		SIZE_SMALL,
+		SIZE_BIG,
+		SIZE_TALL
+	};
+
+	static Frame* createPrompt(const char* name, PromptSize size) {
 	    if (!main_menu_frame) {
 	        return nullptr;
 	    }
@@ -1300,7 +1310,7 @@ namespace MainMenu {
 		auto frame = dimmer->addFrame(name);
 		frame->setColor(0);
 		frame->setBorder(0);
-		if ( issmall ) {
+		if ( size == SIZE_SMALL ) {
 		    frame->setSize(SDL_Rect{(Frame::virtualScreenX - 364) / 2, (Frame::virtualScreenY - 176) / 2, 364, 176});
 		    frame->setActualSize(SDL_Rect{0, 0, 364, 176});
 		    frame->addImage(
@@ -1309,7 +1319,9 @@ namespace MainMenu {
 			    "*#images/ui/Main Menus/Disconnect/UI_Disconnect_Window00.png",
 			    "background"
 		    );
-		} else {
+		} 
+		else if ( size == SIZE_BIG ) 
+		{
 		    frame->setSize(SDL_Rect{(Frame::virtualScreenX - 548) / 2, (Frame::virtualScreenY - 264) / 2, 548, 264});
 		    frame->setActualSize(SDL_Rect{0, 0, 548, 264});
 		    frame->addImage(
@@ -1318,6 +1330,17 @@ namespace MainMenu {
 			    "*#images/ui/Main Menus/TextboxWindowL_00.png",
 			    "background"
 		    );
+		}
+		else if ( size == SIZE_TALL )
+		{
+			frame->setSize(SDL_Rect{ (Frame::virtualScreenX - 404) / 2, (Frame::virtualScreenY - 374) / 2, 404, 374 });
+			frame->setActualSize(SDL_Rect{ 0, 0, 404, 374 });
+			frame->addImage(
+				frame->getActualSize(),
+				0xffffffff,
+				"*#images/ui/Main Menus/TextboxWindowTall_00.png",
+				"background"
+			);
 		}
 
 		return frame;
@@ -1347,7 +1370,7 @@ namespace MainMenu {
 	) {
 		soundActivate();
 
-	    Frame* frame = createPrompt("text_field_prompt");
+	    Frame* frame = createPrompt("text_field_prompt", PromptSize::SIZE_SMALL);
 	    if (!frame) {
 	        return nullptr;
 	    }
@@ -1466,17 +1489,17 @@ namespace MainMenu {
 		void (*cancel_callback)(Button&),
 		bool leftRed,
 		bool rightRed,
-        bool isSmall
+		PromptSize size
 	) {
 		soundActivate();
 
-	    Frame* frame = createPrompt("binary_prompt", isSmall);
+	    Frame* frame = createPrompt("binary_prompt", size);
 	    if (!frame) {
 	        return nullptr;
 	    }
 
 		auto text = frame->addField("text", 1024);
-		text->setSize(SDL_Rect{30, 28, frame->getSize().w - 60, isSmall ? 46 : 134});
+		text->setSize(SDL_Rect{30, 28, frame->getSize().w - 60, (size == PromptSize::SIZE_SMALL) ? 46 : 134});
 		text->setFont(smallfont_no_outline);
 		text->setText(window_text);
 		text->setJustify(Field::justify_t::CENTER);
@@ -1551,7 +1574,7 @@ namespace MainMenu {
 		bool rightRed = false
 	) {
         return binaryPromptGeneric(window_text, okay_text, cancel_text,
-            okay_callback, cancel_callback, leftRed, rightRed, true);
+            okay_callback, cancel_callback, leftRed, rightRed, PromptSize::SIZE_SMALL);
     }
 
 	static Frame* binaryPromptXL(
@@ -1564,8 +1587,21 @@ namespace MainMenu {
 		bool rightRed = false
 	) {
         return binaryPromptGeneric(window_text, okay_text, cancel_text,
-            okay_callback, cancel_callback, leftRed, rightRed, false);
+            okay_callback, cancel_callback, leftRed, rightRed, PromptSize::SIZE_BIG);
     }
+
+	static Frame* binaryPromptTall(
+		const char* window_text,
+		const char* okay_text,
+		const char* cancel_text,
+		void (*okay_callback)(Button&),
+		void (*cancel_callback)(Button&),
+		bool leftRed = true,
+		bool rightRed = false
+	) {
+		return binaryPromptGeneric(window_text, okay_text, cancel_text,
+			okay_callback, cancel_callback, leftRed, rightRed, PromptSize::SIZE_TALL);
+	}
 
 	static void closeBinary() {
 	    closePrompt("binary_prompt");
@@ -1582,7 +1618,7 @@ namespace MainMenu {
 	) {
 		soundActivate();
 
-	    Frame* frame = createPrompt("trinary_prompt", false);
+	    Frame* frame = createPrompt("trinary_prompt", PromptSize::SIZE_BIG);
 	    if (!frame) {
 	        return nullptr;
 	    }
@@ -1672,7 +1708,7 @@ namespace MainMenu {
 	) {
 		soundActivate();
 
-	    Frame* frame = createPrompt(name);
+	    Frame* frame = createPrompt(name, PromptSize::SIZE_SMALL);
 	    if (!frame) {
 	        return nullptr;
 	    }
@@ -1722,7 +1758,7 @@ namespace MainMenu {
 	) {
 		soundActivate();
 
-	    Frame* frame = createPrompt("mono_prompt", issmall);
+	    Frame* frame = createPrompt("mono_prompt", issmall ? PromptSize::SIZE_SMALL : PromptSize::SIZE_BIG);
 	    if (!frame) {
 	        return nullptr;
 	    }
@@ -1798,7 +1834,7 @@ namespace MainMenu {
 	    ) {
 		soundActivate();
 
-	    Frame* frame = createPrompt(name, issmall);
+	    Frame* frame = createPrompt(name, issmall ? PromptSize::SIZE_SMALL : PromptSize::SIZE_BIG);
 	    if (!frame) {
 	        return nullptr;
 	    }
@@ -7039,6 +7075,840 @@ bind_failed:
 		}
 	}
 
+	static void createOnlineLeaderboardsFilter()
+	{
+		if ( playfabUser.leaderboardData.leaderboards[playfabUser.leaderboardData.currentSearch].loading )
+		{
+			return;
+		}
+
+		closeBinary();
+
+#ifdef USE_PLAYFAB
+		PromptSize size = playfabUser.leaderboardSearch.daily ? SIZE_BIG : SIZE_TALL;
+		auto prompt = binaryPromptGeneric(Language::get(6078), Language::get(6074), Language::get(5926),
+			[](Button& button) {
+				soundActivate();
+
+				if ( auto frame = static_cast<Frame*>(button.getParent()) )
+				{
+					for ( auto b : frame->getButtons() )
+					{
+						if ( !strcmp(b->getName(), "filter_win") )
+						{
+							int val = reinterpret_cast<intptr_t>(b->getUserData());
+							playfabUser.leaderboardSearch.victory = std::max(1, std::min(val, 3));
+						}
+						if ( !b->isPressed() )
+						{
+							continue;
+						}
+						if ( !strcmp(b->getName(), "filter1_top") )
+						{
+							playfabUser.leaderboardSearch.win = true;
+						}
+						else if ( !strcmp(b->getName(), "filter1_bottom") )
+						{
+							playfabUser.leaderboardSearch.win = false;
+						}
+						else if ( !strcmp(b->getName(), "filter2_top") )
+						{
+							playfabUser.leaderboardSearch.scoresNearMe = false;
+						}
+						else if ( !strcmp(b->getName(), "filter2_bottom") )
+						{
+							playfabUser.leaderboardSearch.scoresNearMe = true;
+						}
+						else if ( !strcmp(b->getName(), "filter3_top") )
+						{
+							playfabUser.leaderboardSearch.scoreType = PlayfabUser_t::LeaderboardSearch_t::RANK_TOTALSCORE;
+						}
+						else if ( !strcmp(b->getName(), "filter3_bottom") )
+						{
+							playfabUser.leaderboardSearch.scoreType = PlayfabUser_t::LeaderboardSearch_t::RANK_TIME;
+						}
+						else if ( !strcmp(b->getName(), "filter4_top") )
+						{
+							playfabUser.leaderboardSearch.multiplayer = false;
+						}
+						else if ( !strcmp(b->getName(), "filter4_bottom") )
+						{
+							playfabUser.leaderboardSearch.multiplayer = true;
+						}
+						else if ( !strcmp(b->getName(), "filter5_top") )
+						{
+							playfabUser.leaderboardSearch.dlc = false;
+						}
+						else if ( !strcmp(b->getName(), "filter5_bottom") )
+						{
+							playfabUser.leaderboardSearch.dlc = true;
+						}
+						else if ( !strcmp(b->getName(), "filter6_top") )
+						{
+							playfabUser.leaderboardSearch.hardcore = false;
+						}
+						else if ( !strcmp(b->getName(), "filter6_bottom") )
+						{
+							playfabUser.leaderboardSearch.hardcore = true;
+						}
+					}
+				}
+				closeBinary();
+				playfabUser.leaderboardSearch.requiresRefresh = true;
+		},
+		[](Button&) {
+			soundCancel();
+			closeBinary();
+			playfabUser.leaderboardSearch.requiresRefresh = true;
+		},
+		false, true, size);
+
+		if ( !prompt ) {
+			return;
+		}
+		if ( Field* text = prompt->findField("text") )
+		{
+			text->setVJustify(Field::justify_t::TOP);
+			text->setFont(bigfont_outline);
+			auto pos = text->getSize();
+			pos.y -= ((size == SIZE_TALL) ? 8 : 0);
+			text->setSize(pos);
+		}
+		if ( Button* okay = prompt->findButton("okay") )
+		{
+			okay->setWidgetUp(size == SIZE_TALL ? "filter5_bottom" : "filter2_bottom");
+			if ( size == SIZE_TALL )
+			{
+				auto pos = okay->getSize();
+				pos.y += 16;
+				okay->setSize(pos);
+			}
+		}
+		if ( Button* cancel = prompt->findButton("cancel") )
+		{
+			cancel->setWidgetUp(size == SIZE_TALL ? "filter6_bottom" : "filter3_bottom");
+			if ( size == SIZE_TALL )
+			{
+				auto pos = cancel->getSize();
+				pos.y += 16;
+				cancel->setSize(pos);
+			}
+		}
+
+		const int upperRowY = (size == SIZE_TALL) ? 12 : 32;
+		const int middleRowY = upperRowY + 74;
+		const int lowerRowY = middleRowY + 74;
+		const int pairY = 32;
+		const int baseY = 52;
+		const int columnLeftX = 48;
+		const int columnMiddleX = (size == SIZE_TALL) ? 232 : 214;
+		const int columnRightX = 372;
+
+		std::vector<std::pair<int, int>> gridPos;
+		if ( size == SIZE_TALL )
+		{
+			gridPos.push_back(std::make_pair(columnLeftX, baseY + upperRowY));
+			gridPos.push_back(std::make_pair(columnMiddleX, baseY + upperRowY));
+
+			gridPos.push_back(std::make_pair(columnLeftX, baseY + middleRowY));
+			gridPos.push_back(std::make_pair(columnMiddleX, baseY + middleRowY));
+
+			gridPos.push_back(std::make_pair(columnLeftX, baseY + lowerRowY));
+			gridPos.push_back(std::make_pair(columnMiddleX, baseY + lowerRowY));
+		}
+		else if ( size == SIZE_BIG )
+		{
+			gridPos.push_back(std::make_pair(columnLeftX, baseY + upperRowY));
+			gridPos.push_back(std::make_pair(columnMiddleX, baseY + upperRowY));
+			gridPos.push_back(std::make_pair(columnRightX, baseY + upperRowY));
+		}
+
+		{
+			Button* button = prompt->addButton("filter1_top");
+
+			button->select();
+			button->setPressed(playfabUser.leaderboardSearch.win);
+
+			button->setSize(SDL_Rect{ gridPos[0].first, gridPos[0].second, 30, 30});
+			button->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
+			button->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-unpickedHigh.png");
+			button->setBackgroundActivated("*images/ui/Main Menus/sublist_item-unpickedPress.png");
+			button->setIcon("*images/ui/Main Menus/sublist_item-picked.png");
+			button->setStyle(Button::style_t::STYLE_RADIO);
+			button->setBorder(0);
+			button->setBorderColor(0);
+			button->setColor(0xffffffff);
+			button->setHighlightColor(0xffffffff);
+			button->setWidgetSearchParent(prompt->getName());
+			button->addWidgetAction("MenuStart", "okay");
+			button->setWidgetBack("cancel");
+
+			button->setWidgetDown("filter1_bottom");
+			button->setWidgetRight(size == SIZE_TALL ? "filter_win" : "filter2_top");
+
+			button->setCallback([](Button& button) {
+				soundCheckmark();
+				if ( button.getParent() )
+				{
+					if ( auto button2 = static_cast<Frame*>(button.getParent())->findButton("filter1_bottom") )
+					{
+						button2->setPressed(false);
+					}
+				}
+			});
+
+			{
+				Field* field = prompt->addField("filter1_top_txt", 64);
+				SDL_Rect pos = button->getSize();
+				pos.x += pos.w + 8;
+				pos.y += 4;
+				pos.w = 100;
+				field->setSize(pos);
+				field->setJustify(Field::justify_t::LEFT);
+				field->setFont(smallfont_outline);
+				field->setColor(makeColor(170, 134, 102, 255));
+				field->setText(Language::get(6064));
+
+				if ( size == SIZE_TALL )
+				{
+					auto button = prompt->addButton("filter_win");
+					button->setSize(SDL_Rect{ pos.x + 42, pos.y - 4, 82, 26 });
+					button->setBackground("*images/ui/Main Menus/Leaderboards/Button_FilterWin_00.png");
+					button->setBackgroundHighlighted("*images/ui/Main Menus/Leaderboards/Button_FilterWinHigh_00.png");
+					button->setBackgroundActivated("*images/ui/Main Menus/Leaderboards/Button_FilterWinPress_00.png");
+					button->setHighlightColor(makeColor(255, 255, 255, 255));
+					button->setColor(makeColor(255, 255, 255, 255));
+					button->setTextColor(makeColor(255, 255, 255, 255));
+					switch ( playfabUser.leaderboardSearch.victory )
+					{
+					case 1:
+						button->setText(Language::get(6076));
+						button->setUserData((void*)(intptr_t)(1));
+						break;
+					case 2:
+						button->setText(Language::get(6077));
+						button->setUserData((void*)(intptr_t)(2));
+						break;
+					case 3:
+					case 4:
+					case 5:
+					default:
+						button->setText(Language::get(6075));
+						button->setUserData((void*)(intptr_t)(3));
+						break;
+					}
+					button->setFont(smallfont_outline);
+					button->setButtonsOffset(SDL_Rect{ 0, 8, 0, 0 });
+
+					button->setWidgetDown("filter1_bottom");
+					button->setWidgetRight("filter2_top");
+					button->setWidgetLeft("filter1_top");
+					button->addWidgetAction("MenuStart", "okay");
+					button->setWidgetBack("cancel");
+					button->setCallback([](Button& button) {
+						soundActivate();
+					int val = reinterpret_cast<intptr_t>(button.getUserData());
+					if ( val >= 3 )
+					{
+						val = 1;
+					}
+					else
+					{
+						++val;
+					}
+					switch ( val )
+					{
+					case 1:
+						button.setText(Language::get(6076));
+						break;
+					case 2:
+						button.setText(Language::get(6077));
+						break;
+					case 3:
+					case 4:
+					case 5:
+					default:
+						button.setText(Language::get(6075));
+						break;
+					}
+					button.setUserData((void*)(intptr_t)(val));
+
+					if ( auto frame = static_cast<Frame*>(button.getParent()) )
+					{
+						if ( auto b = frame->findButton("filter1_top") )
+						{
+							b->setPressed(true);
+						}
+						if ( auto b = frame->findButton("filter1_bottom") )
+						{
+							b->setPressed(false);
+						}
+					}
+						});
+				}
+			}
+
+			button = prompt->addButton("filter1_bottom");
+			button->setPressed(!playfabUser.leaderboardSearch.win);
+
+			button->setSize(SDL_Rect{ gridPos[0].first, gridPos[0].second + pairY, 30, 30 });
+			button->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
+			button->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-unpickedHigh.png");
+			button->setBackgroundActivated("*images/ui/Main Menus/sublist_item-unpickedPress.png");
+			button->setIcon("*images/ui/Main Menus/sublist_item-picked.png");
+			button->setStyle(Button::style_t::STYLE_RADIO);
+			button->setBorder(0);
+			button->setBorderColor(0);
+			button->setColor(0xffffffff);
+			button->setHighlightColor(0xffffffff);
+			button->setWidgetSearchParent(prompt->getName());
+			button->addWidgetAction("MenuStart", "okay");
+			button->setWidgetBack("cancel");
+
+			button->setWidgetUp("filter1_top");
+			button->setWidgetDown(size == SIZE_TALL ? "filter3_top" : "okay");
+			button->setWidgetRight("filter2_bottom");
+
+			button->setCallback([](Button& button) {
+				soundCheckmark();
+			if ( button.getParent() )
+			{
+				if ( auto button2 = static_cast<Frame*>(button.getParent())->findButton("filter1_top") )
+				{
+					button2->setPressed(false);
+				}
+			}
+				});
+
+			{
+				Field* field = prompt->addField("filter1_bottom_txt", 64);
+				SDL_Rect pos = button->getSize();
+				pos.x += pos.w + 8;
+				pos.y += 4;
+				pos.w = 100;
+				field->setSize(pos);
+				field->setJustify(Field::justify_t::LEFT);
+				field->setFont(smallfont_outline);
+				field->setColor(makeColor(170, 134, 102, 255));
+				field->setText(Language::get(6065));
+			}
+		}
+
+		{
+			Button* button = prompt->addButton("filter2_top");
+			button->setPressed(!playfabUser.leaderboardSearch.scoresNearMe);
+
+			button->setSize(SDL_Rect{ gridPos[1].first, gridPos[1].second, 30, 30 });
+			button->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
+			button->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-unpickedHigh.png");
+			button->setBackgroundActivated("*images/ui/Main Menus/sublist_item-unpickedPress.png");
+			button->setIcon("*images/ui/Main Menus/sublist_item-picked.png");
+			button->setStyle(Button::style_t::STYLE_RADIO);
+			button->setBorder(0);
+			button->setBorderColor(0);
+			button->setColor(0xffffffff);
+			button->setHighlightColor(0xffffffff);
+			button->setWidgetSearchParent(prompt->getName());
+			button->addWidgetAction("MenuStart", "okay");
+			button->setWidgetBack("cancel");
+
+			button->setWidgetDown("filter2_bottom");
+			if ( size != SIZE_TALL )
+			{
+				button->setWidgetRight("filter3_top");
+			}
+			button->setWidgetLeft(size == SIZE_TALL ? "filter_win" : "filter1_top");
+
+			button->setCallback([](Button& button) {
+				soundCheckmark();
+			if ( button.getParent() )
+			{
+				if ( auto button2 = static_cast<Frame*>(button.getParent())->findButton("filter2_bottom") )
+				{
+					button2->setPressed(false);
+				}
+			}
+				});
+
+			{
+				Field* field = prompt->addField("filter2_top_txt", 64);
+				SDL_Rect pos = button->getSize();
+				pos.x += pos.w + 8;
+				pos.y += 4;
+				pos.w = 100;
+				field->setSize(pos);
+				field->setJustify(Field::justify_t::LEFT);
+				field->setFont(smallfont_outline);
+				field->setColor(makeColor(170, 134, 102, 255));
+				field->setText(Language::get(6062));
+			}
+
+			button = prompt->addButton("filter2_bottom");
+			button->setPressed(playfabUser.leaderboardSearch.scoresNearMe);
+
+			button->setSize(SDL_Rect{ gridPos[1].first, gridPos[1].second + pairY, 30, 30 });
+			button->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
+			button->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-unpickedHigh.png");
+			button->setBackgroundActivated("*images/ui/Main Menus/sublist_item-unpickedPress.png");
+			button->setIcon("*images/ui/Main Menus/sublist_item-picked.png");
+			button->setStyle(Button::style_t::STYLE_RADIO);
+			button->setBorder(0);
+			button->setBorderColor(0);
+			button->setColor(0xffffffff);
+			button->setHighlightColor(0xffffffff);
+			button->setWidgetSearchParent(prompt->getName());
+			button->addWidgetAction("MenuStart", "okay");
+			button->setWidgetBack("cancel");
+
+			button->setWidgetUp("filter2_top");
+			button->setWidgetDown(size == SIZE_TALL ? "filter4_top" : "okay");
+			if ( size != SIZE_TALL )
+			{
+				button->setWidgetRight("filter3_bottom");
+			}
+			button->setWidgetLeft("filter1_bottom");
+
+			button->setCallback([](Button& button) {
+				soundCheckmark();
+			if ( button.getParent() )
+			{
+				if ( auto button2 = static_cast<Frame*>(button.getParent())->findButton("filter2_top") )
+				{
+					button2->setPressed(false);
+				}
+			}
+				});
+
+			{
+				Field* field = prompt->addField("filter2_bottom_txt", 64);
+				SDL_Rect pos = button->getSize();
+				pos.x += pos.w + 8;
+				pos.y += 4;
+				pos.w = 100;
+				field->setSize(pos);
+				field->setJustify(Field::justify_t::LEFT);
+				field->setFont(smallfont_outline);
+				field->setColor(makeColor(170, 134, 102, 255));
+				field->setText(Language::get(6063));
+			}
+		}
+
+		{
+			Button* button = prompt->addButton("filter3_top");
+			button->setPressed(playfabUser.leaderboardSearch.scoreType == PlayfabUser_t::LeaderboardSearch_t::RANK_TOTALSCORE);
+
+			button->setSize(SDL_Rect{ gridPos[2].first, gridPos[2].second, 30, 30 });
+			button->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
+			button->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-unpickedHigh.png");
+			button->setBackgroundActivated("*images/ui/Main Menus/sublist_item-unpickedPress.png");
+			button->setIcon("*images/ui/Main Menus/sublist_item-picked.png");
+			button->setStyle(Button::style_t::STYLE_RADIO);
+			button->setBorder(0);
+			button->setBorderColor(0);
+			button->setColor(0xffffffff);
+			button->setHighlightColor(0xffffffff);
+			button->setWidgetSearchParent(prompt->getName());
+			button->addWidgetAction("MenuStart", "okay");
+			button->setWidgetBack("cancel");
+
+			if ( size == SIZE_TALL )
+			{
+				button->setWidgetUp("filter1_bottom");
+				button->setWidgetRight("filter4_top");
+				button->setWidgetDown("filter3_bottom");
+			}
+			else
+			{
+				button->setWidgetDown("filter3_bottom");
+				button->setWidgetLeft("filter2_top");
+			}
+
+			button->setCallback([](Button& button) {
+				soundCheckmark();
+				if ( button.getParent() )
+				{
+					if ( auto button2 = static_cast<Frame*>(button.getParent())->findButton("filter3_bottom") )
+					{
+						button2->setPressed(false);
+					}
+				}
+			});
+
+			{
+				Field* field = prompt->addField("filter3_top_txt", 64);
+				SDL_Rect pos = button->getSize();
+				pos.x += pos.w + 8;
+				pos.y += 4;
+				pos.w = 100;
+				field->setSize(pos);
+				field->setJustify(Field::justify_t::LEFT);
+				field->setFont(smallfont_outline);
+				field->setColor(makeColor(170, 134, 102, 255));
+				field->setText(Language::get(6066));
+				field->setTickCallback([](Widget& widget) {
+					auto field = static_cast<Field*>(&widget);
+				field->setColor(makeColor(170, 134, 102, 255));
+					if ( auto frame = static_cast<Frame*>(widget.getParent()) )
+					{
+						if ( auto button = frame->findButton("filter1_bottom") )
+						{
+							if ( button->isPressed() )
+							{
+								field->setColor(makeColor(64, 64, 64, 255));
+							}
+						}
+					}
+				});
+			}
+
+			button = prompt->addButton("filter3_bottom");
+			button->setPressed(playfabUser.leaderboardSearch.scoreType == PlayfabUser_t::LeaderboardSearch_t::RANK_TIME);
+
+			button->setSize(SDL_Rect{ gridPos[2].first, gridPos[2].second + pairY, 30, 30 });
+			button->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
+			button->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-unpickedHigh.png");
+			button->setBackgroundActivated("*images/ui/Main Menus/sublist_item-unpickedPress.png");
+			button->setIcon("*images/ui/Main Menus/sublist_item-picked.png");
+			button->setStyle(Button::style_t::STYLE_RADIO);
+			button->setBorder(0);
+			button->setBorderColor(0);
+			button->setColor(0xffffffff);
+			button->setHighlightColor(0xffffffff);
+			button->setWidgetSearchParent(prompt->getName());
+			button->addWidgetAction("MenuStart", "okay");
+			button->setWidgetBack("cancel");
+
+			button->setWidgetUp("filter3_top");
+			button->setWidgetDown(size == SIZE_TALL ? "filter5_top" : "cancel");
+			if ( size == SIZE_TALL )
+			{
+				button->setWidgetRight("filter4_bottom");
+			}
+			else
+			{
+				button->setWidgetLeft("filter2_bottom");
+			}
+
+			button->setCallback([](Button& button) {
+				soundCheckmark();
+				if ( button.getParent() )
+				{
+					if ( auto button2 = static_cast<Frame*>(button.getParent())->findButton("filter3_top") )
+					{
+						button2->setPressed(false);
+					}
+				}
+			});
+
+			{
+				Field* field = prompt->addField("filter3_bottom_txt", 64);
+				SDL_Rect pos = button->getSize();
+				pos.x += pos.w + 8;
+				pos.y += 4;
+				pos.w = 100;
+				field->setSize(pos);
+				field->setJustify(Field::justify_t::LEFT);
+				field->setFont(smallfont_outline);
+				field->setColor(makeColor(170, 134, 102, 255));
+				field->setText(Language::get(6067));
+
+				field->setTickCallback([](Widget& widget) {
+					auto field = static_cast<Field*>(&widget);
+					field->setColor(makeColor(170, 134, 102, 255));
+					if ( auto frame = static_cast<Frame*>(widget.getParent()) )
+					{
+						if ( auto button = frame->findButton("filter1_bottom") )
+						{
+							if ( button->isPressed() )
+							{
+								field->setColor(makeColor(64, 64, 64, 255));
+							}
+						}
+					}
+				});
+			}
+		}
+
+		if ( size == SIZE_TALL )
+		{
+			Button* button = prompt->addButton("filter4_top");
+			button->setPressed(!playfabUser.leaderboardSearch.multiplayer);
+
+			button->setSize(SDL_Rect{ gridPos[3].first, gridPos[3].second, 30, 30 });
+			button->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
+			button->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-unpickedHigh.png");
+			button->setBackgroundActivated("*images/ui/Main Menus/sublist_item-unpickedPress.png");
+			button->setIcon("*images/ui/Main Menus/sublist_item-picked.png");
+			button->setStyle(Button::style_t::STYLE_RADIO);
+			button->setBorder(0);
+			button->setBorderColor(0);
+			button->setColor(0xffffffff);
+			button->setHighlightColor(0xffffffff);
+			button->setWidgetSearchParent(prompt->getName());
+			button->addWidgetAction("MenuStart", "okay");
+			button->setWidgetBack("cancel");
+
+			button->setWidgetUp("filter2_bottom");
+			button->setWidgetLeft("filter3_top");
+			button->setWidgetDown("filter4_bottom");
+
+			button->setCallback([](Button& button) {
+				soundCheckmark();
+			if ( button.getParent() )
+			{
+				if ( auto button2 = static_cast<Frame*>(button.getParent())->findButton("filter4_bottom") )
+				{
+					button2->setPressed(false);
+				}
+			}
+				});
+
+			{
+				Field* field = prompt->addField("filter4_top_txt", 64);
+				SDL_Rect pos = button->getSize();
+				pos.x += pos.w + 8;
+				pos.y += 4;
+				pos.w = 100;
+				field->setSize(pos);
+				field->setJustify(Field::justify_t::LEFT);
+				field->setFont(smallfont_outline);
+				field->setColor(makeColor(170, 134, 102, 255));
+				field->setText(Language::get(6068));
+			}
+
+			button = prompt->addButton("filter4_bottom");
+			button->setPressed(playfabUser.leaderboardSearch.multiplayer);
+
+			button->setSize(SDL_Rect{ gridPos[3].first, gridPos[3].second + pairY, 30, 30 });
+			button->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
+			button->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-unpickedHigh.png");
+			button->setBackgroundActivated("*images/ui/Main Menus/sublist_item-unpickedPress.png");
+			button->setIcon("*images/ui/Main Menus/sublist_item-picked.png");
+			button->setStyle(Button::style_t::STYLE_RADIO);
+			button->setBorder(0);
+			button->setBorderColor(0);
+			button->setColor(0xffffffff);
+			button->setHighlightColor(0xffffffff);
+			button->setWidgetSearchParent(prompt->getName());
+			button->addWidgetAction("MenuStart", "okay");
+			button->setWidgetBack("cancel");
+
+			button->setWidgetUp("filter4_top");
+			button->setWidgetLeft("filter3_bottom");
+			button->setWidgetDown("filter6_top");
+
+			button->setCallback([](Button& button) {
+				soundCheckmark();
+			if ( button.getParent() )
+			{
+				if ( auto button2 = static_cast<Frame*>(button.getParent())->findButton("filter4_top") )
+				{
+					button2->setPressed(false);
+				}
+			}
+				});
+
+			{
+				Field* field = prompt->addField("filter4_bottom_txt", 64);
+				SDL_Rect pos = button->getSize();
+				pos.x += pos.w + 8;
+				pos.y += 4;
+				pos.w = 100;
+				field->setSize(pos);
+				field->setJustify(Field::justify_t::LEFT);
+				field->setFont(smallfont_outline);
+				field->setColor(makeColor(170, 134, 102, 255));
+				field->setText(Language::get(6069));
+			}
+		}
+
+		if ( size == SIZE_TALL )
+		{
+			Button* button = prompt->addButton("filter5_top");
+			button->setPressed(!playfabUser.leaderboardSearch.dlc);
+
+			button->setSize(SDL_Rect{ gridPos[4].first, gridPos[4].second, 30, 30 });
+			button->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
+			button->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-unpickedHigh.png");
+			button->setBackgroundActivated("*images/ui/Main Menus/sublist_item-unpickedPress.png");
+			button->setIcon("*images/ui/Main Menus/sublist_item-picked.png");
+			button->setStyle(Button::style_t::STYLE_RADIO);
+			button->setBorder(0);
+			button->setBorderColor(0);
+			button->setColor(0xffffffff);
+			button->setHighlightColor(0xffffffff);
+			button->setWidgetSearchParent(prompt->getName());
+			button->addWidgetAction("MenuStart", "okay");
+			button->setWidgetBack("cancel");
+
+			button->setWidgetUp("filter3_bottom");
+			button->setWidgetDown("filter5_bottom");
+			button->setWidgetRight("filter6_top");
+
+			button->setCallback([](Button& button) {
+				soundCheckmark();
+			if ( button.getParent() )
+			{
+				if ( auto button2 = static_cast<Frame*>(button.getParent())->findButton("filter5_bottom") )
+				{
+					button2->setPressed(false);
+				}
+			}
+				});
+
+			{
+				Field* field = prompt->addField("filter5_top_txt", 64);
+				SDL_Rect pos = button->getSize();
+				pos.x += pos.w + 8;
+				pos.y += 4;
+				pos.w = 100;
+				field->setSize(pos);
+				field->setJustify(Field::justify_t::LEFT);
+				field->setFont(smallfont_outline);
+				field->setColor(makeColor(170, 134, 102, 255));
+				field->setText(Language::get(6070));
+			}
+
+			button = prompt->addButton("filter5_bottom");
+			button->setPressed(playfabUser.leaderboardSearch.dlc);
+
+			button->setSize(SDL_Rect{ gridPos[4].first, gridPos[4].second + pairY, 30, 30 });
+			button->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
+			button->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-unpickedHigh.png");
+			button->setBackgroundActivated("*images/ui/Main Menus/sublist_item-unpickedPress.png");
+			button->setIcon("*images/ui/Main Menus/sublist_item-picked.png");
+			button->setStyle(Button::style_t::STYLE_RADIO);
+			button->setBorder(0);
+			button->setBorderColor(0);
+			button->setColor(0xffffffff);
+			button->setHighlightColor(0xffffffff);
+			button->setWidgetSearchParent(prompt->getName());
+			button->addWidgetAction("MenuStart", "okay");
+			button->setWidgetBack("cancel");
+
+			button->setWidgetUp("filter5_top");
+			button->setWidgetDown("okay");
+			button->setWidgetRight("filter6_bottom");
+
+			button->setCallback([](Button& button) {
+				soundCheckmark();
+			if ( button.getParent() )
+			{
+				if ( auto button2 = static_cast<Frame*>(button.getParent())->findButton("filter5_top") )
+				{
+					button2->setPressed(false);
+				}
+			}
+				});
+
+			{
+				Field* field = prompt->addField("filter5_bottom_txt", 64);
+				SDL_Rect pos = button->getSize();
+				pos.x += pos.w + 8;
+				pos.y += 4;
+				pos.w = 100;
+				field->setSize(pos);
+				field->setJustify(Field::justify_t::LEFT);
+				field->setFont(smallfont_outline);
+				field->setColor(makeColor(170, 134, 102, 255));
+				field->setText(Language::get(6071));
+			}
+		}
+
+		if ( size == SIZE_TALL )
+		{
+			Button* button = prompt->addButton("filter6_top");
+			button->setPressed(!playfabUser.leaderboardSearch.hardcore);
+
+			button->setSize(SDL_Rect{ gridPos[5].first, gridPos[5].second, 30, 30 });
+			button->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
+			button->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-unpickedHigh.png");
+			button->setBackgroundActivated("*images/ui/Main Menus/sublist_item-unpickedPress.png");
+			button->setIcon("*images/ui/Main Menus/sublist_item-picked.png");
+			button->setStyle(Button::style_t::STYLE_RADIO);
+			button->setBorder(0);
+			button->setBorderColor(0);
+			button->setColor(0xffffffff);
+			button->setHighlightColor(0xffffffff);
+			button->setWidgetSearchParent(prompt->getName());
+			button->addWidgetAction("MenuStart", "okay");
+			button->setWidgetBack("cancel");
+
+			button->setWidgetUp("filter4_bottom");
+			button->setWidgetDown("filter6_bottom");
+			button->setWidgetLeft("filter5_top");
+
+			button->setCallback([](Button& button) {
+				soundCheckmark();
+			if ( button.getParent() )
+			{
+				if ( auto button2 = static_cast<Frame*>(button.getParent())->findButton("filter6_bottom") )
+				{
+					button2->setPressed(false);
+				}
+			}
+				});
+
+			{
+				Field* field = prompt->addField("filter6_top_txt", 64);
+				SDL_Rect pos = button->getSize();
+				pos.x += pos.w + 8;
+				pos.y += 4;
+				pos.w = 100;
+				field->setSize(pos);
+				field->setJustify(Field::justify_t::LEFT);
+				field->setFont(smallfont_outline);
+				field->setColor(makeColor(170, 134, 102, 255));
+				field->setText(Language::get(6072));
+			}
+
+			button = prompt->addButton("filter6_bottom");
+			button->setPressed(playfabUser.leaderboardSearch.hardcore);
+
+			button->setSize(SDL_Rect{ gridPos[5].first, gridPos[5].second + pairY, 30, 30 });
+			button->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
+			button->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-unpickedHigh.png");
+			button->setBackgroundActivated("*images/ui/Main Menus/sublist_item-unpickedPress.png");
+			button->setIcon("*images/ui/Main Menus/sublist_item-picked.png");
+			button->setStyle(Button::style_t::STYLE_RADIO);
+			button->setBorder(0);
+			button->setBorderColor(0);
+			button->setColor(0xffffffff);
+			button->setHighlightColor(0xffffffff);
+			button->setWidgetSearchParent(prompt->getName());
+			button->addWidgetAction("MenuStart", "okay");
+			button->setWidgetBack("cancel");
+
+			button->setWidgetUp("filter6_top");
+			button->setWidgetDown("cancel");
+			button->setWidgetLeft("filter5_bottom");
+
+			button->setCallback([](Button& button) {
+				soundCheckmark();
+			if ( button.getParent() )
+			{
+				if ( auto button2 = static_cast<Frame*>(button.getParent())->findButton("filter6_top") )
+				{
+					button2->setPressed(false);
+				}
+			}
+				});
+
+			{
+				Field* field = prompt->addField("filter6_bottom_txt", 64);
+				SDL_Rect pos = button->getSize();
+				pos.x += pos.w + 8;
+				pos.y += 4;
+				pos.w = 100;
+				field->setSize(pos);
+				field->setJustify(Field::justify_t::LEFT);
+				field->setFont(smallfont_outline);
+				field->setColor(makeColor(170, 134, 102, 255));
+				field->setText(Language::get(6073));
+			}
+		}
+#endif
+	}
 /******************************************************************************/
 
     static void createLeaderboards() {
@@ -7165,10 +8035,9 @@ bind_failed:
 		conduct->addWidgetMovement("MenuListCancel", "conduct");
 		conduct->addWidgetAction("MenuCancel", "back_button");
 		conduct->addWidgetAction("MenuAlt1", "delete_entry");
+		conduct->addWidgetAction("MenuAlt2", "open_filters");
         conduct->addWidgetAction("MenuPageLeft", "tab_left");
         conduct->addWidgetAction("MenuPageRight", "tab_right");
-        conduct->addWidgetAction("MenuPageLeftAlt", "category_left");
-        conduct->addWidgetAction("MenuPageRightAlt", "category_right");
         conduct->setWidgetRight("kills_left");
         conduct->setSelectedEntryColor(makeColor(151, 115, 58, 255));
 		conduct->setScrollWithLeftControls(false);
@@ -7255,10 +8124,9 @@ bind_failed:
 		kills_left->addWidgetMovement("MenuListCancel", "kills_left");
 		kills_left->addWidgetAction("MenuCancel", "back_button");
 		kills_left->addWidgetAction("MenuAlt1", "delete_entry");
+		kills_left->addWidgetAction("MenuAlt2", "open_filters");
         kills_left->addWidgetAction("MenuPageLeft", "tab_left");
         kills_left->addWidgetAction("MenuPageRight", "tab_right");
-        kills_left->addWidgetAction("MenuPageLeftAlt", "category_left");
-        kills_left->addWidgetAction("MenuPageRightAlt", "category_right");
 		kills_left->setWidgetLeft("conduct");
 		kills_left->addSyncScrollTarget("kills_right");
         kills_left->setSelectedEntryColor(makeColor(101, 78, 39, 255));
@@ -7297,8 +8165,8 @@ bind_failed:
         enum BoardType {
             LOCAL_SINGLE,
             LOCAL_MULTI,
-            ONLINE_FRIENDS,
-            ONLINE_WORLD
+            ONLINE_WORLD,
+            ONLINE_FRIENDS
         };
         static BoardType boardType;
         boardType = BoardType::LOCAL_SINGLE;
@@ -7371,16 +8239,45 @@ bind_failed:
             }
             auto& victory = victories[score->victory];
 
-            char victory_text[1024];
-            if (boardType == BoardType::LOCAL_SINGLE || boardType == BoardType::LOCAL_MULTI) {
-                snprintf(victory_text, sizeof(victory_text), victory.text, score->stats->name);
-            } else {
-#ifdef STEAMWORKS
-                const int index = (int)strtol(button.getName() + 3, nullptr, 10) - 1;
-                snprintf(victory_text, sizeof(victory_text), victory.text,
-                    g_SteamLeaderboards->leaderBoardSteamUsernames[index].c_str());
-#endif
-            }
+            char victory_text[1024] = "";
+			if ( score->victory == 0 && score->stats->killer != KilledBy::UNKNOWN )
+			{
+				std::string cause_of_death = "";
+				switch ( score->stats->killer ) {
+					case KilledBy::MONSTER: {
+						if ( score->stats->killer_name.empty() ) 
+						{
+							if ( score->stats->killer_monster >= 0 && score->stats->killer_monster < NUMMONSTERS )
+							{
+								cause_of_death = getMonsterLocalizedName(score->stats->killer_monster);
+								cause_of_death[0] = (char)toupper((int)cause_of_death[0]);
+							}
+						}
+						else 
+						{
+							cause_of_death = score->stats->killer_name;
+						}
+						break;
+					}
+					case KilledBy::ITEM: {
+						if ( score->stats->killer_item >= 0 && score->stats->killer_item < NUMITEMS )
+						{
+							cause_of_death = items[score->stats->killer_item].getIdentifiedName();
+						}
+						break;
+					}
+					default: 
+					{
+						cause_of_death = Language::get(5794 + (int)score->stats->killer);
+						break;
+					}
+				}
+				snprintf(victory_text, sizeof(victory_text), Language::get(6057), score->stats->name, cause_of_death.c_str());
+			}
+			else
+			{
+				snprintf(victory_text, sizeof(victory_text), victory.text, score->stats->name);
+			}
 
             victory_plate_text->setText(victory_text);
             victory_plate_text->setTextColor(victory.textColor);
@@ -7537,7 +8434,15 @@ bind_failed:
             const Uint32 min = (time / 60) % 60;
             const Uint32 sec = time % 60;
 
-            int total_score = totalScore(score);
+			int total_score = 0;
+			if ( score->totalscore >= 0 )
+			{
+				total_score = score->totalscore;
+			}
+			else
+			{
+				total_score = totalScore(score);
+			}
 
 		    auto time_and_score = subframe->findField("time_and_score");
 		    assert(time_and_score);
@@ -7545,43 +8450,15 @@ bind_failed:
                 hour, min, sec, total_score);
             time_and_score->setText(buf);
             };
-
-        // TODO: Replace these with new leaderboard categories
-        static const char* categories[] = {
-	        "None",
-	        "Fastest Time\nNormal", "Highest Score\nNormal",
-	        "Fastest Time\nMultiplayer", "Highest Score\nMultiplayer",
-	        "Fastest Time\nHell Route", "Highest Score\nHell Route",
-	        "Fastest Time\nHardcore", "Highest Score\nHardcore",
-	        "Fastest Time\nClassic", "Highest Score\nClassic",
-	        "Fastest Time\nClassic Hardcore", "Highest Score\nClassic Hardcore",
-	        "Fastest Time\nMultiplayer Classic", "Highest Score\nMultiplayer Classic",
-	        "Fastest Time\nMultiplayer Hell Route", "Highest Score\nMultiplayer Hell Route",
-	        "Fastest Time\nNormal - Monsters Only", "Highest Score\nNormal - Monsters Only",
-	        "Fastest Time\nMultiplayer - Monsters Only", "Highest Score\nMultiplayer - Monsters Only",
-	        "Fastest Time\nHell Route - Monsters Only", "Highest Score\nHell Route - Monsters Only",
-	        "Fastest Time\nHardcore - Monsters Only", "Highest Score\nHardcore - Monsters Only",
-	        "Fastest Time\nClassic - Monsters Only", "Highest Score\nClassic - Monsters Only",
-	        "Fastest Time\nClassic Hardcore - Monsters Only", "Highest Score\nClassic Hardcore - Monsters Only",
-            "Fastest Time\nMultiplayer Classic - Monsters Only", "Highest Score\nMultiplayer Classic - Monsters Only",
-	        "Fastest Time\nMultiplayer Hell Route - Monsters Only", "Highest Score\nMultiplayer Hell Route - Monsters Only",
-        };
-        static constexpr int num_categories = sizeof(categories) / sizeof(categories[0]);
-        static int category;
-        category = 1;
-        
+       
         static auto set_links = [](const char* name){
             assert(main_menu_frame);
             auto window = main_menu_frame->findFrame("leaderboards"); assert(window);
             auto list = window->findFrame("list"); assert(list);
-            auto category_right = window->findButton("category_right"); assert(category_right);
-            auto category_left = window->findButton("category_left"); assert(category_left);
             auto delete_entry = window->findButton("delete_entry"); assert(delete_entry);
             auto slider = window->findSlider("scroll_slider"); assert(slider);
             auto subframe = window->findFrame("subframe"); assert(subframe);
             auto conduct = subframe->findFrame("conduct"); assert(conduct);
-            category_right->setWidgetUp(name);
-            category_left->setWidgetUp(name);
             delete_entry->setWidgetUp(name);
             slider->setWidgetRight(name);
             conduct->setWidgetLeft(name);
@@ -7617,10 +8494,9 @@ bind_failed:
             button->setWidgetSearchParent("leaderboards");
             button->addWidgetAction("MenuCancel", "back_button");
             button->addWidgetAction("MenuAlt1", "delete_entry");
+			button->addWidgetAction("MenuAlt2", "open_filters");
             button->addWidgetAction("MenuPageLeft", "tab_left");
             button->addWidgetAction("MenuPageRight", "tab_right");
-            button->addWidgetAction("MenuPageLeftAlt", "category_left");
-            button->addWidgetAction("MenuPageRightAlt", "category_right");
             button->setWidgetRight("conduct");
             button->setWidgetUp(prev ? prev : "");
             button->setWidgetDown(next ? next : "");
@@ -7679,7 +8555,12 @@ bind_failed:
                 });
 
             if (index == 0) {
-                button->select();
+				if ( !main_menu_frame->findFrame("binary_prompt") )
+				{
+					button->select();
+				}
+				button->setTextColor(makeColor(231, 213, 173, 255));
+				button->setBackground("*images/ui/Main Menus/Leaderboards/AA_NameList_Selected_00.png");
                 selectedScore = score;
                 updateStats(*button, score);
                 loadScore(score);
@@ -7762,21 +8643,51 @@ bind_failed:
                     set_links("");
                 }
             } else {
-#ifdef STEAMWORKS
-                scores_loaded = 0;
-                g_SteamLeaderboards->FindLeaderboard(
-                    CSteamLeaderboards::leaderboardNames[category].c_str());
-                auto field = window->findField("wait_message");
-                if (!field) {
-                    field = window->addField("wait_message", 1024);
-                    field->setFont(bigfont_outline);
-                    field->setText(Language::get(5307));
-                    field->setSize(SDL_Rect{30, 148, 932, 468});
-                    field->setJustify(Field::justify_t::CENTER);
-                } else {
-                    field->setText(Language::get(5307));
-                }
-                set_links("");
+#ifdef USE_PLAYFAB
+				if ( !playfabUser.bLoggedIn )
+				{
+					if ( playfabUser.authenticationRefresh > 0
+						&& playfabUser.authenticationRefresh < TICKS_PER_SECOND * 60 )
+					{
+						playfabUser.authenticationRefresh = 1; // try force login
+					}
+				}
+
+				scores_loaded = 0;
+				if ( boardType == BoardType::ONLINE_FRIENDS )
+				{
+					playfabUser.leaderboardSearch.daily = true;
+				}
+				else if ( boardType == BoardType::ONLINE_WORLD )
+				{
+					playfabUser.leaderboardSearch.daily = false;
+				}
+				playfabUser.leaderboardData.currentSearch = playfabUser.leaderboardSearch.getLeaderboardID();
+				playfabUser.leaderboardData.currentDisplayName = playfabUser.leaderboardSearch.getLeaderboardDisplayName();
+				if ( playfabUser.leaderboardSearch.scoresNearMe )
+				{
+					playfabUser.getLeaderboardAroundMe(playfabUser.leaderboardData.currentSearch);
+				}
+				else
+				{
+					playfabUser.getLeaderboardTop100(playfabUser.leaderboardData.currentSearch);
+				}
+				auto field = window->findField("wait_message");
+				if ( !field ) {
+					field = window->addField("wait_message", 1024);
+					field->setFont(bigfont_outline);
+					field->setText(Language::get(5307));
+					field->setSize(SDL_Rect{ 30, 148, 932, 468 });
+					field->setJustify(Field::justify_t::CENTER);
+				}
+				else {
+					field->setText(Language::get(5307));
+				}
+				if ( auto category_text = window->findField("category_text") )
+				{
+					category_text->setText(playfabUser.leaderboardData.currentDisplayName.c_str());
+				}
+				set_links("");
 #endif
             }
             };
@@ -7808,140 +8719,206 @@ bind_failed:
         auto category_text = window->addField("category_text", 256);
         category_text->setSize(panel_pos);
         category_text->setJustify(Field::justify_t::CENTER);
+		category_text->setPaddingPerLine(-2);
         category_text->setFont(smallfont_outline);
         category_text->setColor(makeColor(170, 134, 102, 255));
-        category_text->setText(categories[category]);
+#ifdef USE_PLAYFAB
+		if ( boardType == BoardType::ONLINE_FRIENDS )
+		{
+			playfabUser.leaderboardSearch.daily = true;
+		}
+		else if ( boardType == BoardType::ONLINE_WORLD )
+		{
+			playfabUser.leaderboardSearch.daily = false;
+		}
+		playfabUser.leaderboardData.currentSearch = playfabUser.leaderboardSearch.getLeaderboardID();
+		playfabUser.leaderboardData.currentDisplayName = playfabUser.leaderboardSearch.getLeaderboardDisplayName();
+        category_text->setText(playfabUser.leaderboardData.currentDisplayName.c_str());
+#endif
         category_text->setTickCallback(disableIfNotOnline);
         category_text->setInvisible(true);
 
-        auto category_left = window->addButton("category_left");
-        category_left->setSize(SDL_Rect{panel_pos.x - 24, 646, 20, 30});
-		category_left->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_LArrowTiny_00.png");
-		category_left->setBackgroundHighlighted("*images/ui/Main Menus/Leaderboards/AA_Button_LArrowTinyHigh_00.png");
-		category_left->setBackgroundActivated("*images/ui/Main Menus/Leaderboards/AA_Button_LArrowTinyPress_00.png");
-		category_left->setColor(makeColor(255, 255, 255, 255));
-		category_left->setHighlightColor(makeColor(255, 255, 255, 255));
-		category_left->setWidgetSearchParent(window->getName());
-		category_left->setTickCallback(disableIfNotOnline);
-		category_left->setCallback([](Button& button){
-            if (!button.isInvisible()) {
-                soundActivate();
-                --category;
-                if (category <= 0) {
-                    category = num_categories - 1;
-                }
-                repopulate_list(boardType);
-                auto window = static_cast<Frame*>(button.getParent());
-                auto category_text = window->findField("category_text");
-                if (category_text) {
-                    category_text->setText(categories[category]);
-                }
-            }
-		    });
-        category_left->addWidgetAction("MenuCancel", "back_button");
-        category_left->addWidgetAction("MenuAlt1", "delete_entry");
-        category_left->addWidgetAction("MenuPageLeft", "tab_left");
-        category_left->addWidgetAction("MenuPageRight", "tab_right");
-        category_left->addWidgetAction("MenuPageLeftAlt", "category_left");
-        category_left->addWidgetAction("MenuPageRightAlt", "category_right");
-        category_left->setWidgetRight("category_right");
-        category_left->setInvisible(true);
-
-        auto category_right = window->addButton("category_right");
-        category_right->setSize(SDL_Rect{panel_pos.x + panel_pos.w + 4, 646, 20, 30});
-		category_right->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_RArrowTiny_00.png");
-		category_right->setBackgroundHighlighted("*images/ui/Main Menus/Leaderboards/AA_Button_RArrowTinyHigh_00.png");
-		category_right->setBackgroundActivated("*images/ui/Main Menus/Leaderboards/AA_Button_RArrowTinyPress_00.png");
-		category_right->setColor(makeColor(255, 255, 255, 255));
-		category_right->setHighlightColor(makeColor(255, 255, 255, 255));
-		category_right->setTickCallback(disableIfNotOnline);
-		category_right->setCallback([](Button& button){
-            if (!button.isInvisible()) {
-                soundActivate();
-                ++category;
-                if (category >= num_categories) {
-                    category = 1;
-                }
-                repopulate_list(boardType);
-                auto window = static_cast<Frame*>(button.getParent());
-                auto category_text = window->findField("category_text");
-                if (category_text) {
-                    category_text->setText(categories[category]);
-                }
-            }
-		    });
-		category_right->setWidgetSearchParent(window->getName());
-        category_right->addWidgetAction("MenuCancel", "back_button");
-        category_right->addWidgetAction("MenuAlt1", "delete_entry");
-        category_right->addWidgetAction("MenuPageLeft", "tab_left");
-        category_right->addWidgetAction("MenuPageRight", "tab_right");
-        category_right->addWidgetAction("MenuPageLeftAlt", "category_left");
-        category_right->addWidgetAction("MenuPageRightAlt", "category_right");
-        category_right->setWidgetRight("delete_entry");
-        category_right->setWidgetLeft("category_left");
-        category_right->setInvisible(true);
-
         // poll for downloaded scores
-#ifdef STEAMWORKS
-        list->setTickCallback([](Widget& widget){
-            if (boardType != BoardType::ONLINE_FRIENDS &&
-                boardType != BoardType::ONLINE_WORLD) {
-                return;
-            }
-            auto window = static_cast<Frame*>(widget.getParent());
-            if (scores_loaded == 0 && g_SteamLeaderboards->b_LeaderboardInit) {
-                scores_loaded++;
-                g_SteamLeaderboards->DownloadScores(
-                    boardType == BoardType::ONLINE_FRIENDS ?
-                    k_ELeaderboardDataRequestFriends :
-                    k_ELeaderboardDataRequestGlobal,
-                    0, CSteamLeaderboards::k_numEntriesToRetrieve);
-            }
-            else if (scores_loaded == 1 && g_SteamLeaderboards->b_ScoresDownloaded) {
-                scores_loaded++;
-                if (g_SteamLeaderboards->m_nLeaderboardEntries == 0) {
-                    auto field = window->findField("wait_message");
-                    if (!field) {
-                        field = window->addField("wait_message", 1024);
-                        field->setFont(bigfont_outline);
-                        field->setText(Language::get(5306));
-                        field->setSize(SDL_Rect{30, 148, 932, 468});
-                        field->setJustify(Field::justify_t::CENTER);
-                    } else {
-                        field->setText(Language::get(5306));
-                    }
-                } else {
-                    (void)window->remove("wait_message");
-                    int num_scores = g_SteamLeaderboards->m_nLeaderboardEntries;
-                    for (int index = 0; index < num_scores; ++index) {
-                        steamLeaderboardReadScore(g_SteamLeaderboards->downloadedTags[index]);
-                        auto score = scoreConstructor(clientnum);
-                        downloadedScores.scores.push_back(score);
-                        auto name = g_SteamLeaderboards->leaderBoardSteamUsernames[index].c_str();
-                        char prev_buf[128] = "";
-                        if (index > 0) {
-                            snprintf(prev_buf, sizeof(prev_buf), fmt, index,
-                                g_SteamLeaderboards->leaderBoardSteamUsernames[index - 1].c_str());
-                        } else {
+#ifdef USE_PLAYFAB
+		list->setTickCallback([](Widget& widget) {
+			bool tryRefresh = false;
+			if ( playfabUser.leaderboardSearch.requiresRefresh )
+			{
+				tryRefresh = true;
+				playfabUser.leaderboardSearch.requiresRefresh = false;
+
+				if ( !playfabUser.bLoggedIn )
+				{
+					if ( playfabUser.authenticationRefresh > 0
+						&& playfabUser.authenticationRefresh < TICKS_PER_SECOND * 60 )
+					{
+						playfabUser.authenticationRefresh = 1; // try force login
+					}
+				}
+			}
+			if ( boardType != BoardType::ONLINE_FRIENDS &&
+				boardType != BoardType::ONLINE_WORLD ) {
+				return;
+			}
+			auto window = static_cast<Frame*>(widget.getParent());
+			if ( !playfabUser.bLoggedIn )
+			{
+				auto field = window->findField("wait_message");
+				if ( !field ) {
+					field = window->addField("wait_message", 1024);
+					field->setFont(bigfont_outline);
+					field->setText(Language::get(6061));
+					field->setSize(SDL_Rect{ 30, 148, 932, 468 });
+					field->setJustify(Field::justify_t::CENTER);
+				}
+				else {
+					field->setText(Language::get(6061));
+				}
+				scores_loaded = 2;
+				return;
+			}
+
+			if ( tryRefresh )
+			{
+				repopulate_list(boardType);
+				return;
+			}
+
+			if ( scores_loaded == 0 ) {
+				scores_loaded++;
+			}
+			else if ( scores_loaded == 2 )
+			{
+				auto& leaderboard = playfabUser.leaderboardData.leaderboards[playfabUser.leaderboardData.currentSearch];
+				auto& leaderboardRanks = leaderboard.displayedRanks;
+				int num_scores = leaderboardRanks.size();
+				int index = -1;
+				for ( auto& entry : leaderboardRanks )
+				{
+					++index;
+					if ( !entry.readIntoScore )
+					{
+						if ( auto window = main_menu_frame->findFrame("leaderboards") )
+						{
+							if ( auto list = window->findFrame("list") )
+							{
+								char buf[128];
+								snprintf(buf, sizeof(buf), fmt, index + 1, entry.displayName.c_str());
+								if ( auto button = list->findButton(buf) )
+								{
+									if ( button->getUserData() == nullptr )
+									{
+										auto& info = leaderboard.playerData[entry.id];
+										info.hiscore_dummy_loading = true;
+										if ( info.hiscore_loadstatus == 0 )
+										{
+											if ( button->isPressed() 
+												|| 
+												(!isMouseVisible() 
+												&& !strcmp(button->getBackground(), "*images/ui/Main Menus/Leaderboards/AA_NameList_Selected_00.png")) )
+											{
+												leaderboard.requestPlayerData(10 * (index / 10), 10);
+												info.hiscore_loadstatus = 1;
+											}
+										}
+										if ( info.hiscore_loadstatus == 1 )
+										{
+											if ( selectedScore == nullptr )
+											{
+												if ( !strcmp(button->getBackground(), "*images/ui/Main Menus/Leaderboards/AA_NameList_Selected_00.png") )
+												{
+													if ( auto score = scoreConstructor(0, info) )
+													{
+														button->setUserData(score);
+														selectedScore = score;
+														updateStats(*button, score);
+														loadScore(score);
+														entry.readIntoScore = true;
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			else if ( scores_loaded == 1
+				&& playfabUser.leaderboardData.leaderboards[playfabUser.leaderboardData.currentSearch].errorReceivingLeaderboard() )
+			{
+				auto field = window->findField("wait_message");
+				if ( !field ) {
+					field = window->addField("wait_message", 1024);
+					field->setFont(bigfont_outline);
+					field->setText(Language::get(6061));
+					field->setSize(SDL_Rect{ 30, 148, 932, 468 });
+					field->setJustify(Field::justify_t::CENTER);
+				}
+				else {
+					field->setText(Language::get(6061));
+				}
+				scores_loaded = 2;
+				return;
+			}
+			else if ( scores_loaded == 1 
+				&& (playfabUser.leaderboardData.leaderboards[playfabUser.leaderboardData.currentSearch].loading == false) )
+			{
+				scores_loaded++;
+				auto& leaderboard = playfabUser.leaderboardData.leaderboards[playfabUser.leaderboardData.currentSearch];
+				auto& leaderboardRanks = leaderboard.displayedRanks;
+				if ( leaderboardRanks.size() == 0 ) {
+					auto field = window->findField("wait_message");
+					if ( !field ) {
+						field = window->addField("wait_message", 1024);
+						field->setFont(bigfont_outline);
+						field->setText(Language::get(5306));
+						field->setSize(SDL_Rect{ 30, 148, 932, 468 });
+						field->setJustify(Field::justify_t::CENTER);
+					}
+					else {
+						field->setText(Language::get(5306));
+					}
+				}
+				else {
+					(void)window->remove("wait_message");
+					int num_scores = leaderboardRanks.size();
+					int index = -1;
+					for ( auto& entry : leaderboardRanks )
+					{
+						++index;
+						auto& info = leaderboard.playerData[entry.id];
+						info.hiscore_dummy_loading = true;
+						auto score = scoreConstructor(0, info);
+						auto name = entry.displayName.c_str();
+						char prev_buf[128] = "";
+						if ( index > 0 ) {
+							snprintf(prev_buf, sizeof(prev_buf), fmt, index,
+								leaderboardRanks[index - 1].displayName.c_str());
+						}
+						else {
 							snprintf(prev_buf, sizeof(prev_buf), fmt, num_scores,
-								g_SteamLeaderboards->leaderBoardSteamUsernames[num_scores - 1].c_str());
+								leaderboardRanks[num_scores - 1].displayName.c_str());
 						}
-                        char next_buf[128] = "";
-                        if (index < num_scores - 1) {
-                            snprintf(next_buf, sizeof(next_buf), fmt, index + 2,
-                                g_SteamLeaderboards->leaderBoardSteamUsernames[index + 1].c_str());
-                        } else {
+						char next_buf[128] = "";
+						if ( index < num_scores - 1 ) {
+							snprintf(next_buf, sizeof(next_buf), fmt, index + 2,
+								leaderboardRanks[index + 1].displayName.c_str());
+						}
+						else {
 							snprintf(next_buf, sizeof(next_buf), fmt, 1,
-								g_SteamLeaderboards->leaderBoardSteamUsernames[0].c_str());
+								leaderboardRanks[0].displayName.c_str());
 						}
-                        add_score(score, name, prev_buf, next_buf, index);
-                    }
-                    if (num_scores == 0) {
-                        set_links("");
-                    }
-                }
-            }
-            });
+						entry.readIntoScore = score != nullptr;
+						add_score(score, name, prev_buf, next_buf, index);
+						if ( num_scores == 0 ) {
+							set_links("");
+						}
+					}
+				}
+			}
+		});
 #endif
 
 #define TAB_FN(X) [](Button& button){\
@@ -7958,10 +8935,9 @@ bind_failed:
         static const Tab tabs[] = {
             {"local", Language::get(5308), TAB_FN(BoardType::LOCAL_SINGLE)},
             {"lan", Language::get(5309), TAB_FN(BoardType::LOCAL_MULTI)},
-#ifdef STEAMWORKS
-            // TODO for now these are disabled, @wallofjustice make better leaderboards in future
-            //{"friends", Language::get(5310), TAB_FN(BoardType::ONLINE_FRIENDS)},
-            //{"world", Language::get(5311), TAB_FN(BoardType::ONLINE_WORLD)},
+#ifdef USE_PLAYFAB
+            {"world", Language::get(5311), TAB_FN(BoardType::ONLINE_WORLD)},
+            {"friends", Language::get(5310), TAB_FN(BoardType::ONLINE_FRIENDS)},
 #endif
         };
         static constexpr int num_tabs = sizeof(tabs) / sizeof(tabs[0]);
@@ -8006,10 +8982,9 @@ bind_failed:
 		    tab->setWidgetSearchParent(window->getName());
             tab->addWidgetAction("MenuCancel", "back_button");
             tab->addWidgetAction("MenuAlt1", "delete_entry");
+			tab->addWidgetAction("MenuAlt2", "open_filters");
             tab->addWidgetAction("MenuPageLeft", "tab_left");
             tab->addWidgetAction("MenuPageRight", "tab_right");
-            tab->addWidgetAction("MenuPageLeftAlt", "category_left");
-            tab->addWidgetAction("MenuPageRightAlt", "category_right");
             if (c > 0) {
                 tab->setWidgetLeft(tabs[c - 1].name);
             }
@@ -8037,10 +9012,9 @@ bind_failed:
 		tab_left->setWidgetSearchParent(window->getName());
         tab_left->addWidgetAction("MenuCancel", "back_button");
         tab_left->addWidgetAction("MenuAlt1", "delete_entry");
+		tab_left->addWidgetAction("MenuAlt2", "open_filters");
         tab_left->addWidgetAction("MenuPageLeft", "tab_left");
         tab_left->addWidgetAction("MenuPageRight", "tab_right");
-        tab_left->addWidgetAction("MenuPageLeftAlt", "category_left");
-        tab_left->addWidgetAction("MenuPageRightAlt", "category_right");
         tab_left->setWidgetRight(tabs[0].name);
 
 		auto tab_right = window->addButton("tab_right");
@@ -8062,10 +9036,9 @@ bind_failed:
 		tab_right->setWidgetSearchParent(window->getName());
         tab_right->addWidgetAction("MenuCancel", "back_button");
         tab_right->addWidgetAction("MenuAlt1", "delete_entry");
+		tab_right->addWidgetAction("MenuAlt2", "open_filters");
         tab_right->addWidgetAction("MenuPageLeft", "tab_left");
         tab_right->addWidgetAction("MenuPageRight", "tab_right");
-        tab_right->addWidgetAction("MenuPageLeftAlt", "category_left");
-        tab_right->addWidgetAction("MenuPageRightAlt", "category_right");
         tab_right->setWidgetLeft(tabs[num_tabs - 1].name);
 
         auto slider = window->addSlider("scroll_slider");
@@ -8096,10 +9069,9 @@ bind_failed:
         slider->setWidgetSearchParent("leaderboards");
         slider->addWidgetAction("MenuCancel", "back_button");
         slider->addWidgetAction("MenuAlt1", "delete_entry");
+		slider->addWidgetAction("MenuAlt2", "open_filters");
         slider->addWidgetAction("MenuPageLeft", "tab_left");
         slider->addWidgetAction("MenuPageRight", "tab_right");
-        slider->addWidgetAction("MenuPageLeftAlt", "category_left");
-        slider->addWidgetAction("MenuPageRightAlt", "category_right");
 
 		auto delete_entry = window->addButton("delete_entry");
 		delete_entry->setSize(SDL_Rect{740, 630, 164, 62});
@@ -8181,9 +9153,37 @@ bind_failed:
         delete_entry->addWidgetAction("MenuAlt1", "delete_entry");
         delete_entry->addWidgetAction("MenuPageLeft", "tab_left");
         delete_entry->addWidgetAction("MenuPageRight", "tab_right");
-        delete_entry->addWidgetAction("MenuPageLeftAlt", "category_left");
-        delete_entry->addWidgetAction("MenuPageRightAlt", "category_right");
-        delete_entry->setWidgetLeft("category_right");
+
+		auto open_filters = window->addButton("open_filters");
+		open_filters->setSize(SDL_Rect{ 84, 630, 164, 62 });
+		open_filters->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_00.png");
+		open_filters->setBackgroundHighlighted("*images/ui/Main Menus/Leaderboards/AA_ButtonHigh_00.png");
+		open_filters->setBackgroundActivated("*images/ui/Main Menus/Leaderboards/AA_ButtonPress_00.png");
+		open_filters->setColor(makeColor(255, 255, 255, 255));
+		open_filters->setHighlightColor(makeColor(255, 255, 255, 255));
+		open_filters->setGlyphPosition(Widget::glyph_position_t::CENTERED_BOTTOM);
+		open_filters->setFont(smallfont_outline);
+		open_filters->setText(Language::get(6079));
+		open_filters->setTickCallback([](Widget& widget) {
+			if ( boardType == BoardType::LOCAL_SINGLE || boardType == BoardType::LOCAL_MULTI ) {
+				widget.setInvisible(true);
+			}
+			else if ( boardType == BoardType::ONLINE_FRIENDS || boardType == BoardType::ONLINE_WORLD ) {
+				widget.setInvisible(false);
+			}
+		});
+		open_filters->setCallback([](Button& button) {
+			if ( boardType == BoardType::LOCAL_SINGLE || boardType == BoardType::LOCAL_MULTI )
+			{
+				return;
+			}
+			createOnlineLeaderboardsFilter();
+		});
+		open_filters->setWidgetSearchParent(window->getName());
+		open_filters->addWidgetAction("MenuCancel", "back_button");
+		open_filters->addWidgetAction("MenuAlt2", "open_filters");
+		open_filters->addWidgetAction("MenuPageLeft", "tab_left");
+		open_filters->addWidgetAction("MenuPageRight", "tab_right");
 
         Button* tab = window->findButton(tabs[0].name);
         tab->select();
@@ -8242,7 +9242,7 @@ bind_failed:
 
 		// set tooltip text
 		char tooltip_buf[256] = { '\0' };
-		const int percent = (num_unlocked * 100) / num_achievements;
+		const int percent = (num_unlocked * 100) / std::max(1, num_achievements);
 		snprintf(tooltip_buf, sizeof(tooltip_buf), Language::get(5319),
 			num_unlocked, num_achievements, percent);
 		auto tooltip = window->findField("tooltip"); assert(tooltip);
@@ -12120,7 +13120,7 @@ failed:
 		auto backdrop = card->addImage(
 			card->getActualSize(),
 			0xffffffff,
-			"*images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Window00.png",
+			"*images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Window01.png",
 			"backdrop"
 		);
 
@@ -23697,7 +24697,7 @@ failed:
 		}
 
 		bool issmall = false;
-		Frame* prompt = createPrompt("mono_prompt", issmall);
+		Frame* prompt = createPrompt("mono_prompt", issmall ? SIZE_SMALL : SIZE_BIG);
 		if ( !prompt ) {
 			return;
 		}
@@ -25327,7 +26327,7 @@ failed:
 	) {
 		soundActivate();
 
-		Frame* frame = createPrompt("binary_prompt", false);
+		Frame* frame = createPrompt("binary_prompt", SIZE_BIG);
 		if ( !frame ) {
 			return nullptr;
 		}
