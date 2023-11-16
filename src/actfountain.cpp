@@ -207,7 +207,10 @@ void actFountain(Entity* my)
 
 						if ( potionDropQuantity > 0 )
 						{
-							steamStatisticUpdateClient(i, STEAM_STAT_BOTTLE_NOSED, STEAM_STAT_INT, 1);
+							if ( stats[i]->playerRace == RACE_GOATMAN && stats[i]->appearance == 0 )
+							{
+								steamStatisticUpdateClient(i, STEAM_STAT_BOTTLE_NOSED, STEAM_STAT_INT, 1);
+							}
 						}
 
 						for ( int j = 0; j < potionDropQuantity; ++j )
