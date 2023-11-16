@@ -328,6 +328,7 @@ struct SaveGameInfo {
     int multiplayer_type = SINGLE;
     int dungeon_lvl = 0;
 	int level_track = 0;
+	int hiscore_loadstatus = 0;
 	int hiscore_totalscore = 0;
 	int hiscore_rank = 0;
 	int hiscore_victory = 0;

@@ -241,9 +241,11 @@ score_t* scoreConstructor(int player)
 
 score_t* scoreConstructor(int player, SaveGameInfo& info)
 {
+	// for online leaderboard loading
 	if ( loadGame(player, info) == 0 )
 	{
-		if ( score_t* score = scoreConstructor(player) )
+		// store in last player slot to not override current player view
+		if ( score_t* score = scoreConstructor(MAXPLAYERS - 1) )
 		{
 			score->victory = info.hiscore_victory;
 			score->stats->killer = (KilledBy)info.hiscore_killed_by;
@@ -424,6 +426,7 @@ int totalScore(score_t* score)
 
 void loadScore(score_t* score)
 {
+	if ( !score ) { return; }
 	stats[0]->clearStats();
 
 	for ( int c = 0; c < NUMMONSTERS; c++ )
@@ -461,6 +464,12 @@ void loadScore(score_t* score)
 	stats[0]->LVL = score->stats->LVL;
 	stats[0]->GOLD = score->stats->GOLD;
 	stats[0]->HUNGER = score->stats->HUNGER;
+
+	stats[0]->killer = score->stats->killer;
+	stats[0]->killer_monster = score->stats->killer_monster;
+	stats[0]->killer_item = score->stats->killer_item;
+	stats[0]->killer_name = score->stats->killer_name;
+
 	for ( int c = 0; c < NUMPROFICIENCIES; c++ )
 	{
 		stats[0]->PROFICIENCIES[c] = score->stats->PROFICIENCIES[c];
@@ -602,6 +611,24 @@ void saveAllScores(const std::string& scoresfilename)
 	fp->printf("BARONYSCORES");
 	fp->printf(VERSION);
 
+	int versionNumber = 300;
+	char versionStr[4] = "000";
+	int i = 0;
+	for ( int j = 0; j < strlen(VERSION); ++j )
+	{
+		if ( VERSION[j] >= '0' && VERSION[j] <= '9' )
+		{
+			versionStr[i] = VERSION[j]; // copy all integers into versionStr.
+			++i;
+			if ( i == 3 )
+			{
+				versionStr[i] = '\0';
+				break; // written 3 characters, add termination and break loop.
+			}
+		}
+	}
+	versionNumber = atoi(versionStr); // convert from string to int.
+
 	// header info
 	int booksReadNum = list_Size(&booksRead);
 	fp->write(&booksReadNum, sizeof(Uint32), 1);
@@ -655,13 +682,23 @@ void saveAllScores(const std::string& scoresfilename)
 		raceAndAppearance |= (score->stats->appearance);
 		fp->write(&raceAndAppearance, sizeof(Uint32), 1);
 		fp->write(score->stats->name, sizeof(char), 32);
-		fp->write(&score->stats->killer_monster, sizeof(Uint32), 1);
-		fp->write(&score->stats->killer_item, sizeof(Uint32), 1);
-		fp->write(&score->stats->killer, sizeof(Uint32), 1);
-		char buf[64] = "";
-		memset(buf, 0, sizeof(buf));
-		snprintf(buf, sizeof(buf), "%s", score->stats->killer_name.c_str());
-		fp->write(&buf, sizeof(char), 64);
+		if ( versionNumber >= 412 )
+		{
+			fp->write(&score->stats->killer_monster, sizeof(Uint32), 1);
+			fp->write(&score->stats->killer_item, sizeof(Uint32), 1);
+			fp->write(&score->stats->killer, sizeof(Uint32), 1);
+			char buf[64] = "";
+			memset(buf, 0, sizeof(buf));
+			snprintf(buf, sizeof(buf), "%s", score->stats->killer_name.c_str());
+			fp->write(&buf, sizeof(char), 64);
+		}
+		else
+		{
+			score->stats->killer = KilledBy::UNKNOWN;
+			score->stats->killer_item = WOODEN_SHIELD;
+			score->stats->killer_monster = NOTHING;
+			score->stats->killer_name = "";
+		}
 		fp->write(&score->classnum, sizeof(Sint32), 1);
 		fp->write(&score->dungeonlevel, sizeof(Sint32), 1);
 		fp->write(&score->victory, sizeof(int), 1);
@@ -6135,11 +6172,15 @@ int loadGame(int player, const SaveGameInfo& info) {
 	//	return 1;
 	//}
 
-	if (!info.players_connected[player]) {
-		printlog("loadGame() failed: given player is not connected");
+	if ( (info.players_connected.size() <= player) || !info.players_connected[player]) {
+		if ( !info.hiscore_dummy_loading )
+		{
+			printlog("loadGame() failed: given player is not connected");
+		}
 		return 1;
 	}
 
+	int statsPlayer = player;
 	if ( !info.hiscore_dummy_loading )
 	{
 		if (!info.hash) {
@@ -6147,8 +6188,12 @@ int loadGame(int player, const SaveGameInfo& info) {
 			gameStatistics[STATISTICS_DISABLE_UPLOAD] = 1;
 		}
 	}
+	else
+	{
+		statsPlayer = MAXPLAYERS - 1; // read into non 0 player slot to not affect leaderboard
+	}
 
-	stats[player]->clearStats();
+	stats[statsPlayer]->clearStats();
 
 	// load game info
 	uniqueGameKey = info.gamekey;
@@ -6191,8 +6236,8 @@ int loadGame(int player, const SaveGameInfo& info) {
 	}
 
 	// load player data
-	client_classes[player] = info.players[player].char_class;
-	stats[player]->playerRace = info.players[player].race;
+	client_classes[statsPlayer] = info.players[player].char_class;
+	stats[statsPlayer]->playerRace = info.players[player].race;
 	for (int c = 0; c < NUMMONSTERS && c < info.players[player].kills.size(); ++c) {
 		kills[c] = info.players[player].kills[c];
 	}
@@ -6208,77 +6253,77 @@ int loadGame(int player, const SaveGameInfo& info) {
 	}
 
 	// read spells
-	list_FreeAll(&players[player]->magic.spellList);
+	list_FreeAll(&players[statsPlayer]->magic.spellList);
 	Uint32 spellIndex = 0;
 	for (auto& s : info.players[player].spells) {
 		spell_t* spell = copySpell(getSpellFromID(s));
-		node_t* node = list_AddNodeLast(&players[player]->magic.spellList);
+		node_t* node = list_AddNodeLast(&players[statsPlayer]->magic.spellList);
 		node->element = spell;
 		node->deconstructor = &spellDeconstructor;
 		node->size = sizeof(spell);
 
 		if ( info.players[player].selected_spell == spellIndex )
 		{
-			players[player]->magic.equipSpell(spell);
+			players[statsPlayer]->magic.equipSpell(spell);
 		}
 		for ( int i = 0; i < NUM_HOTBAR_ALTERNATES; ++i )
 		{
 			if ( info.players[player].selected_spell_alternate[i] == spellIndex )
 			{
-				players[player]->magic.selected_spell_alternate[i] = spell;
+				players[statsPlayer]->magic.selected_spell_alternate[i] = spell;
 			}
 		}
 
 		++spellIndex;
 	}
-	players[player]->magic.selected_spell_last_appearance = info.players[player].selected_spell_last_appearance;
+	players[statsPlayer]->magic.selected_spell_last_appearance = info.players[player].selected_spell_last_appearance;
 
 	// read alchemy recipes
-	clientLearnedAlchemyRecipes[player].clear();
+	clientLearnedAlchemyRecipes[statsPlayer].clear();
 	for (auto& r : info.players[player].known_recipes) {
-		clientLearnedAlchemyRecipes[player].push_back(r);
+		clientLearnedAlchemyRecipes[statsPlayer].push_back(r);
 	}
 
 	// read scroll labels
-	clientLearnedScrollLabels[player].clear();
+	clientLearnedScrollLabels[statsPlayer].clear();
 	for (auto& s : info.players[player].known_scrolls) {
-		clientLearnedScrollLabels[player].insert(s);
+		clientLearnedScrollLabels[statsPlayer].insert(s);
 	}
 
 	// player stats
 	auto& p = info.players[player].stats;
-	stringCopy(stats[player]->name, p.name.c_str(), sizeof(Stat::name), p.name.size());
-	stats[player]->sex = static_cast<sex_t>(p.sex);
-	stats[player]->appearance = p.appearance;
-	stats[player]->HP = p.HP;
-	stats[player]->MAXHP = p.maxHP;
-	stats[player]->MP = p.MP;
-	stats[player]->MAXMP = p.maxMP;
-	stats[player]->STR = p.STR;
-	stats[player]->DEX = p.DEX;
-	stats[player]->CON = p.CON;
-	stats[player]->INT = p.INT;
-	stats[player]->PER = p.PER;
-	stats[player]->CHR = p.CHR;
-	stats[player]->EXP = p.EXP;
-	stats[player]->LVL = p.LVL;
-	stats[player]->GOLD = p.GOLD;
-	stats[player]->HUNGER = p.HUNGER;
+	stringCopy(stats[statsPlayer]->name, p.name.c_str(), sizeof(Stat::name), p.name.size());
+	stats[statsPlayer]->sex = static_cast<sex_t>(p.sex);
+	stats[statsPlayer]->appearance = p.appearance;
+	stats[statsPlayer]->HP = p.HP;
+	stats[statsPlayer]->MAXHP = p.maxHP;
+	stats[statsPlayer]->MP = p.MP;
+	stats[statsPlayer]->MAXMP = p.maxMP;
+	stats[statsPlayer]->STR = p.STR;
+	stats[statsPlayer]->DEX = p.DEX;
+	stats[statsPlayer]->CON = p.CON;
+	stats[statsPlayer]->INT = p.INT;
+	stats[statsPlayer]->PER = p.PER;
+	stats[statsPlayer]->CHR = p.CHR;
+	stats[statsPlayer]->EXP = p.EXP;
+	stats[statsPlayer]->LVL = p.LVL;
+	stats[statsPlayer]->GOLD = p.GOLD;
+	stats[statsPlayer]->HUNGER = p.HUNGER;
 	for (int c = 0; c < NUMPROFICIENCIES && c < p.PROFICIENCIES.size(); ++c) {
-		stats[player]->PROFICIENCIES[c] = p.PROFICIENCIES[c];
+		stats[statsPlayer]->PROFICIENCIES[c] = p.PROFICIENCIES[c];
 	}
 	for (int c = 0; c < NUMEFFECTS && c < p.EFFECTS.size(); ++c) {
-		stats[player]->EFFECTS[c] = p.EFFECTS[c];
-		stats[player]->EFFECTS_TIMERS[c] = p.EFFECTS_TIMERS[c];
+		stats[statsPlayer]->EFFECTS[c] = p.EFFECTS[c];
+		stats[statsPlayer]->EFFECTS_TIMERS[c] = p.EFFECTS_TIMERS[c];
 	}
 	constexpr int NUMMISCFLAGS = sizeof(Stat::MISC_FLAGS) / sizeof(Stat::MISC_FLAGS[0]);
 	for (int c = 0; c < NUMMISCFLAGS && c < p.MISC_FLAGS.size(); ++c) {
-		stats[player]->MISC_FLAGS[c] = p.MISC_FLAGS[c];
+		stats[statsPlayer]->MISC_FLAGS[c] = p.MISC_FLAGS[c];
 	}
-	//stats[player]->attributes = p.attributes; // skip attributes for now
+	//stats[statsPlayer]->attributes = p.attributes; // skip attributes for now
 	for ( auto& loot : p.player_lootbags )
 	{
-		auto& player_lootbag = stats[player]->player_lootbags[loot.first];
+		auto& player_lootbag = stats[statsPlayer]->player_lootbags[loot.first];
 		player_lootbag.spawn_x = loot.second.spawn_x;
 		player_lootbag.spawn_y = loot.second.spawn_y;
 		player_lootbag.spawnedOnGround = loot.second.spawnedOnGround;
@@ -6307,32 +6352,32 @@ int loadGame(int player, const SaveGameInfo& info) {
 		Uint32 appearance = item.appearance;
 		bool identified = item.identified;
 		Item* i = newItem(type, status, beatitude, count,
-			appearance, identified, &stats[player]->inventory);
+			appearance, identified, &stats[statsPlayer]->inventory);
 		i->x = item.x;
 		i->y = item.y;
 	}
 
 	// equipment
 	const std::unordered_map<std::string, Item*&> slots = {
-		{"helmet", stats[player]->helmet},
-		{"breastplate", stats[player]->breastplate},
-		{"gloves", stats[player]->gloves},
-		{"shoes", stats[player]->shoes},
-		{"shield", stats[player]->shield},
-		{"weapon", stats[player]->weapon},
-		{"cloak", stats[player]->cloak},
-		{"amulet", stats[player]->amulet},
-		{"ring", stats[player]->ring},
-		{"mask", stats[player]->mask},
+		{"helmet", stats[statsPlayer]->helmet},
+		{"breastplate", stats[statsPlayer]->breastplate},
+		{"gloves", stats[statsPlayer]->gloves},
+		{"shoes", stats[statsPlayer]->shoes},
+		{"shield", stats[statsPlayer]->shield},
+		{"weapon", stats[statsPlayer]->weapon},
+		{"cloak", stats[statsPlayer]->cloak},
+		{"amulet", stats[statsPlayer]->amulet},
+		{"ring", stats[statsPlayer]->ring},
+		{"mask", stats[statsPlayer]->mask},
 	};
-	if (players[player]->isLocalPlayer()) {
+	if (players[statsPlayer]->isLocalPlayer()) {
 		// if this is a local player, we have their inventory, and can
 		// restore equipment using item indexes in the player_equipment table
 		for (auto& item : p.player_equipment) {
 			auto find = slots.find(item.first);
 			if (find != slots.end()) {
 				auto& slot = find->second;
-				auto node = list_Node(&stats[player]->inventory, item.second);
+				auto node = list_Node(&stats[statsPlayer]->inventory, item.second);
 				if (node) {
 					slot = (Item*)node->element;
 				} else {
@@ -6363,10 +6408,10 @@ int loadGame(int player, const SaveGameInfo& info) {
 	}
 
 	// assign hotbar items
-	auto& hotbar = players[player]->hotbar.slots();
-	auto& hotbar_alternate = players[player]->hotbar.slotsAlternate();
+	auto& hotbar = players[statsPlayer]->hotbar.slots();
+	auto& hotbar_alternate = players[statsPlayer]->hotbar.slotsAlternate();
 	for (int c = 0; c < NUM_HOTBAR_SLOTS; ++c) {
-		node_t* node = list_Node(&stats[player]->inventory,
+		node_t* node = list_Node(&stats[statsPlayer]->inventory,
 			info.players[player].hotbar[c]);
 		if (node) {
 			Item* item = (Item*)node->element;
@@ -6379,7 +6424,7 @@ int loadGame(int player, const SaveGameInfo& info) {
 
 		for ( int d = 0; d < NUM_HOTBAR_ALTERNATES; ++d )
 		{
-			node_t* node = list_Node(&stats[player]->inventory,
+			node_t* node = list_Node(&stats[statsPlayer]->inventory,
 				info.players[player].hotbar_alternate[d][c]);
 			if ( node ) {
 				Item* item = (Item*)node->element;
@@ -6395,14 +6440,14 @@ int loadGame(int player, const SaveGameInfo& info) {
 	}
 
 	// reset certain variables
-	list_FreeAll(&stats[player]->FOLLOWERS);
-	stats[player]->monster_sound = nullptr;
-	stats[player]->monster_idlevar = 0;
-	stats[player]->leader_uid = 0;
-	stats[player]->stache_x1 = 0;
-	stats[player]->stache_x2 = 0;
-	stats[player]->stache_y1 = 0;
-	stats[player]->stache_y2 = 0;
+	list_FreeAll(&stats[statsPlayer]->FOLLOWERS);
+	stats[statsPlayer]->monster_sound = nullptr;
+	stats[statsPlayer]->monster_idlevar = 0;
+	stats[statsPlayer]->leader_uid = 0;
+	stats[statsPlayer]->stache_x1 = 0;
+	stats[statsPlayer]->stache_x2 = 0;
+	stats[statsPlayer]->stache_y1 = 0;
+	stats[statsPlayer]->stache_y2 = 0;
 
 	// shuffle enchanted feather list
     {
@@ -6420,7 +6465,7 @@ int loadGame(int player, const SaveGameInfo& info) {
 
 	// shopkeeper hostility
 	{
-		auto& h = ShopkeeperPlayerHostility.playerHostility[player];
+		auto& h = ShopkeeperPlayerHostility.playerHostility[statsPlayer];
 		h.clear();
 		for ( auto& hostility : info.players[player].shopkeeperHostility )
 		{
