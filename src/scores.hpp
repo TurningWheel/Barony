@@ -321,6 +321,8 @@ struct SaveGameInfo {
 	Uint32 mapseed = 0;
 	Uint32 gametimer = 0;
 	Uint32 svflags = 0;
+	Uint32 customseed = 0;
+	std::string customseed_string = "";
     int player_num = 0;
     int multiplayer_type = SINGLE;
     int dungeon_lvl = 0;
@@ -597,6 +599,8 @@ struct SaveGameInfo {
 		fp->property("multiplayer_type", multiplayer_type);
 		fp->property("dungeon_lvl", dungeon_lvl);
 		fp->property("level_track", level_track);
+		fp->property("customseed", customseed);
+		fp->property("customseed_string", customseed_string);
 		fp->property("players_connected", players_connected);
 		fp->property("players", players);
 		fp->property("additional_data", additional_data);

@@ -2461,7 +2461,10 @@ void gameLogic(void)
 					}
 
                     // save at end of level change
-					saveGame();
+					if ( gameModeManager.allowsSaves() )
+					{
+						saveGame();
+					}
 #ifdef LOCAL_ACHIEVEMENTS
 					LocalAchievements_t::writeToFile();
 #endif

@@ -23266,7 +23266,10 @@ failed:
                     //auto frame = static_cast<Frame*>(window->getParent());
                     //frame->removeSelf();
 
-					deleteSaveGame(multiplayer);
+					if ( gameModeManager.allowsSaves() )
+					{
+						deleteSaveGame(multiplayer);
+					}
 				    pauseGame(2, 0);
 				    destroyMainMenu();
 				    createDummyMainMenu();

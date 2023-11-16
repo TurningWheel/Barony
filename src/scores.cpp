@@ -5352,6 +5352,7 @@ void SaveGameInfo::computeHash(const int playernum, Uint32& hash)
 	hash += (Uint32)((Uint32)multiplayer_type << (shift % 32)); ++shift;
 	hash += (Uint32)((Uint32)dungeon_lvl << (shift % 32)); ++shift;
 	hash += (Uint32)((Uint32)level_track << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)customseed << (shift % 32)); ++shift;
 
 	auto& player = players[playernum];
 	hash += (Uint32)((Uint32)player.char_class << (shift % 32)); ++shift;

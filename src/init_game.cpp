@@ -74,7 +74,7 @@ void initGameDatafiles(bool moddedReload)
 	MainMenu::RaceDescriptions::readFromFile();
 	MainMenu::ClassDescriptions::readFromFile();
 	StatueManager.readAllStatues();
-
+	GameModeManager_t::CurrentSession_t::SeededRun_t::readSeedNamesFromFile();
 	loadLights();
 }
 
