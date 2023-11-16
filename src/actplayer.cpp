@@ -30,6 +30,9 @@
 #include "classdescriptions.hpp"
 #include "ui/MainMenu.hpp"
 #include "interface/consolecommand.hpp"
+#ifdef USE_PLAYFAB
+#include "playfab.hpp"
+#endif
 
 bool settings_smoothmouse = false;
 bool usecamerasmoothing = false;
@@ -4636,31 +4639,31 @@ void actPlayer(Entity* my)
 			{
 				if ( !my->skill[29] && PLAYER_ALIVETIME > 5 ) // herx's sprite isn't init on the first entity tick, so wait a little.
 				{
-				bool foundherx = false;
-				for ( node = map.creatures->first; node != nullptr; node = node->next ) //Herx is in the creature list, so only search that.
-				{
-					Entity* entity = (Entity*)node->element;
-					if ( entity->sprite == 274 )
+					bool foundherx = false;
+					for ( node = map.creatures->first; node != nullptr; node = node->next ) //Herx is in the creature list, so only search that.
 					{
-						foundherx = true;
-						break;
+						Entity* entity = (Entity*)node->element;
+						if ( entity->sprite == 274 )
+						{
+							foundherx = true;
+							break;
+						}
+					}
+					if ( !foundherx )
+					{
+						// ding, dong, the witch is dead
+						my->skill[29] = PLAYER_ALIVETIME;
+					}
+					else
+					{
+						if ( PLAYER_ALIVETIME == 300 )
+						{
+							playSound(185, 128);
+							messageLocalPlayersColor(color, MESSAGE_WORLD, Language::get(537));
+							messageLocalPlayersColor(color, MESSAGE_WORLD, Language::get(89));
+						}
 					}
 				}
-				if ( !foundherx )
-				{
-					// ding, dong, the witch is dead
-					my->skill[29] = PLAYER_ALIVETIME;
-				}
-				else
-				{
-					if ( PLAYER_ALIVETIME == 300 )
-					{
-						playSound(185, 128);
-						messageLocalPlayersColor(color, MESSAGE_WORLD, Language::get(537));
-						messageLocalPlayersColor(color, MESSAGE_WORLD, Language::get(89));
-					}
-				}
-			}
 			}
 			else
 			{
@@ -4990,6 +4993,13 @@ void actPlayer(Entity* my)
 		{
 			consoleCommand("/jumplevel -1");
 		}
+//		if ( keystatus[SDLK_LCTRL] && keystatus[SDLK_p] )
+//		{
+//			keystatus[SDLK_p] = 0;
+//#ifdef USE_PLAYFAB
+//			playfabUser.postScore(PLAYER_NUM);
+//#endif
+//		}
 		if ( keystatus[SDLK_LCTRL] && keystatus[SDLK_KP_1] )
 	    {
 		    Input::waitingToBindControllerForPlayer = 0;
@@ -7108,8 +7118,8 @@ void actPlayer(Entity* my)
 			                    SDLNet_Write32((Uint32)stats[PLAYER_NUM]->killer, &net_packet->data[4]);
 			                    if (stats[PLAYER_NUM]->killer == KilledBy::MONSTER) {
 			                        net_packet->data[8] = (Uint8)stats[PLAYER_NUM]->killer_name.size();
-			                            SDLNet_Write32((Uint32)stats[PLAYER_NUM]->killer_monster, &net_packet->data[9]);
-			                            net_packet->len = 13;
+			                        SDLNet_Write32((Uint32)stats[PLAYER_NUM]->killer_monster, &net_packet->data[9]);
+			                        net_packet->len = 13;
 			                        if (net_packet->data[8]) {
 			                            memcpy(&net_packet->data[13], stats[PLAYER_NUM]->killer_name.c_str(), net_packet->data[8]);
 			                            net_packet->len = 13 + net_packet->data[8];
