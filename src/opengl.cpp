@@ -807,7 +807,16 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
             GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&remap));
         }
 
-        if (entity->monsterEntityRenderAsTelepath) {
+        int player = -1;
+        for ( player = 0; player < MAXPLAYERS; ++player ) {
+            if ( &cameras[player] == camera ) {
+                break;
+            }
+        }
+
+        if (entity->monsterEntityRenderAsTelepath && player >= 0 && player < MAXPLAYERS
+            && players[player] && players[player]->entity
+            && stats[player]->mask && stats[player]->mask->type == TOOL_BLINDFOLD_TELEPATHY ) {
             const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f, };
             GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
 
@@ -833,12 +842,6 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
         // highlighting
         bool highlightEntity = false;
         bool highlightEntityFromParent = false;
-        int player = -1;
-        for (player = 0; player < MAXPLAYERS; ++player) {
-            if (&cameras[player] == camera) {
-                break;
-            }
-        }
         highlightEntity = entity->bEntityHighlightedForPlayer(player);
         if (!highlightEntity) {
             Entity* parent = uidToEntity(entity->parent);
@@ -1178,8 +1181,22 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
 	if (mode == REALCOLORS) {
         GL_CHECK_ERR(glEnable(GL_BLEND));
 	}
+
+    int player = -1;
+    for ( player = 0; player < MAXPLAYERS; ++player ) {
+        if ( &cameras[player] == camera ) {
+            break;
+        }
+    }
+
+    bool telepath =
+        (entity->monsterEntityRenderAsTelepath == 1 && !intro 
+            && player >= 0 && player < MAXPLAYERS && players[player] && players[player]->entity
+            && stats[player]->mask && stats[player]->mask->type == TOOL_BLINDFOLD_TELEPATHY);
+
     bool changedDepthRange = false;
-	if (entity->flags[OVERDRAW] || (entity->monsterEntityRenderAsTelepath == 1 && !intro) 
+	if (entity->flags[OVERDRAW] 
+        || telepath
 		|| modelindex == FOLLOWER_SELECTED_PARTICLE
 		|| modelindex == FOLLOWER_TARGET_PARTICLE ) {
         changedDepthRange = true;
@@ -1188,7 +1205,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     
     // bind shader
     auto& dither = entity->dithering[camera];
-    auto& shader = !entity->flags[BRIGHT] && !entity->monsterEntityRenderAsTelepath ?
+    auto& shader = !entity->flags[BRIGHT] && !telepath ?
         (dither.value < Entity::Dither::MAX ? voxelDitheredShader : voxelShader):
         voxelBrightShader;
     shader.bind();
