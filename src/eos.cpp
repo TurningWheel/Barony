@@ -44,6 +44,36 @@ void EOS_CALL EOSFuncs::LoggingCallback(const EOS_LogMessage* log)
 {
 	printlog("[EOS Logging]: %s:%s", log->Category, log->Message);
 }
+
+std::string EOSFuncs::getAuthToken()
+{
+	if ( AccountManager.authTokenRefresh > 0 )
+	{
+		return AccountManager.authToken;
+	}
+
+	if ( !AuthHandle
+		|| AccountManager.AccountAuthenticationStatus != EOS_EResult::EOS_Success )
+	{
+		return AccountManager.authToken;
+	}
+
+	EOS_Auth_Token* UserAuthToken = nullptr;
+	EOS_Auth_CopyUserAuthTokenOptions CopyTokenOptions = { 0 };
+	CopyTokenOptions.ApiVersion = EOS_AUTH_COPYUSERAUTHTOKEN_API_LATEST;
+	if ( EOS_Auth_CopyUserAuthToken(AuthHandle, &CopyTokenOptions,
+		EOSFuncs::Helpers_t::epicIdFromString(CurrentUserInfo.epicAccountId.c_str()), &UserAuthToken) == EOS_EResult::EOS_Success )
+	{
+		std::string str = UserAuthToken->AccessToken;
+		EOS_Auth_Token_Release(UserAuthToken);
+
+		AccountManager.authToken = str;
+		AccountManager.authTokenRefresh = TICKS_PER_SECOND * 60 * 60 * 6; // 6 hour refresh
+		return str;
+	}
+	return AccountManager.authToken;
+}
+
 void EOS_CALL EOSFuncs::AuthLoginCompleteCallback(const EOS_Auth_LoginCallbackInfo* data)
 {
 	if (!EOS.PlatformHandle)
@@ -75,6 +105,7 @@ void EOS_CALL EOSFuncs::AuthLoginCompleteCallback(const EOS_Auth_LoginCallbackIn
 				UserInfoQueryType::USER_INFO_QUERY_LOCAL, accIndex);
 			EOS.initConnectLogin();
 			EOS.queryDLCOwnership();
+			EOS.getAuthToken();
 		}
 		return;
 	}
@@ -3384,7 +3415,6 @@ bool EOSFuncs::initAuth(std::string hostname, std::string tokenName)
 	LoginOptions.Credentials = &Credentials;
 
 	EOS_Auth_Login(AuthHandle, &LoginOptions, NULL, AuthLoginCompleteCallback);
-
 	AddConnectAuthExpirationNotification();
 
 	EOS.AccountManager.waitingForCallback = true;
@@ -3447,6 +3477,15 @@ void EOSFuncs::Accounts_t::handleLogin()
 	// can return early
 	return;
 #endif
+
+	if ( authTokenRefresh > 0 )
+	{
+		--authTokenRefresh;
+		if ( authTokenRefresh == 0 )
+		{
+			EOS.getAuthToken();
+		}
+	}
 
 	if (!initPopupWindow && popupType == POPUP_TOAST)
 	{
