@@ -489,6 +489,9 @@
     <ClCompile Include="..\..\src\engine\audio\init_audio.cpp">
       <Filter>Source Files\engine\audio</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\playfab.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\book.hpp">
@@ -663,6 +666,9 @@
       <Filter>Header Files\imgui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\shader.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\playfab.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
