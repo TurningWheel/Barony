@@ -9263,7 +9263,6 @@ void doEndgame(bool saveHighscore) {
 	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
 		victory = 0;
-		gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
 		endTutorial = true;
 		gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
 	}
