@@ -464,6 +464,12 @@ void loadScore(score_t* score)
 	stats[0]->LVL = score->stats->LVL;
 	stats[0]->GOLD = score->stats->GOLD;
 	stats[0]->HUNGER = score->stats->HUNGER;
+
+	stats[0]->killer = score->stats->killer;
+	stats[0]->killer_monster = score->stats->killer_monster;
+	stats[0]->killer_item = score->stats->killer_item;
+	stats[0]->killer_name = score->stats->killer_name;
+
 	for ( int c = 0; c < NUMPROFICIENCIES; c++ )
 	{
 		stats[0]->PROFICIENCIES[c] = score->stats->PROFICIENCIES[c];
@@ -605,6 +611,24 @@ void saveAllScores(const std::string& scoresfilename)
 	fp->printf("BARONYSCORES");
 	fp->printf(VERSION);
 
+	int versionNumber = 300;
+	char versionStr[4] = "000";
+	int i = 0;
+	for ( int j = 0; j < strlen(VERSION); ++j )
+	{
+		if ( VERSION[j] >= '0' && VERSION[j] <= '9' )
+		{
+			versionStr[i] = VERSION[j]; // copy all integers into versionStr.
+			++i;
+			if ( i == 3 )
+			{
+				versionStr[i] = '\0';
+				break; // written 3 characters, add termination and break loop.
+			}
+		}
+	}
+	versionNumber = atoi(versionStr); // convert from string to int.
+
 	// header info
 	int booksReadNum = list_Size(&booksRead);
 	fp->write(&booksReadNum, sizeof(Uint32), 1);
@@ -658,13 +682,23 @@ void saveAllScores(const std::string& scoresfilename)
 		raceAndAppearance |= (score->stats->appearance);
 		fp->write(&raceAndAppearance, sizeof(Uint32), 1);
 		fp->write(score->stats->name, sizeof(char), 32);
-		fp->write(&score->stats->killer_monster, sizeof(Uint32), 1);
-		fp->write(&score->stats->killer_item, sizeof(Uint32), 1);
-		fp->write(&score->stats->killer, sizeof(Uint32), 1);
-		char buf[64] = "";
-		memset(buf, 0, sizeof(buf));
-		snprintf(buf, sizeof(buf), "%s", score->stats->killer_name.c_str());
-		fp->write(&buf, sizeof(char), 64);
+		if ( versionNumber >= 412 )
+		{
+			fp->write(&score->stats->killer_monster, sizeof(Uint32), 1);
+			fp->write(&score->stats->killer_item, sizeof(Uint32), 1);
+			fp->write(&score->stats->killer, sizeof(Uint32), 1);
+			char buf[64] = "";
+			memset(buf, 0, sizeof(buf));
+			snprintf(buf, sizeof(buf), "%s", score->stats->killer_name.c_str());
+			fp->write(&buf, sizeof(char), 64);
+		}
+		else
+		{
+			score->stats->killer = KilledBy::UNKNOWN;
+			score->stats->killer_item = WOODEN_SHIELD;
+			score->stats->killer_monster = NOTHING;
+			score->stats->killer_name = "";
+		}
 		fp->write(&score->classnum, sizeof(Sint32), 1);
 		fp->write(&score->dungeonlevel, sizeof(Sint32), 1);
 		fp->write(&score->victory, sizeof(int), 1);
