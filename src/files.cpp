@@ -2265,7 +2265,8 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 #if defined (USE_FMOD) || defined(USE_OPENAL)
 		if ( strcmp(oldmapname, map.name) )
 		{
-			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_DEFAULT )
+			if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_TUTORIAL
+				&& gameModeManager.getMode() != GameModeManager_t::GAME_MODE_TUTORIAL_INIT )
 			{
 				levelmusicplaying = false;
 			}

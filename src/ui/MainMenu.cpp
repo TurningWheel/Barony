@@ -15588,7 +15588,7 @@ failed:
             createDummyMainMenu();
             beginFade(MainMenu::FadeDestination::GameStart);
 
-			if (!intro && gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+			if (!intro && gameModeManager.allowsSaves()) {
 				deleteSaveGame(multiplayer);
 			}
 
@@ -21421,7 +21421,8 @@ failed:
 
 	static void mainRestartGame(Button& button) {
 	    const char* prompt;
-	    if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+	    if (gameModeManager.currentMode != GameModeManager_t::GameModes::GAME_MODE_TUTORIAL
+			&& gameModeManager.currentMode != GameModeManager_t::GameModes::GAME_MODE_TUTORIAL_INIT ) {
 	        prompt = Language::get(5639);
 	    } else {
 	        prompt = Language::get(5640);
@@ -21434,8 +21435,12 @@ failed:
 				soundActivate();
 				destroyMainMenu();
 				createDummyMainMenu();
-				if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+				if ( gameModeManager.currentMode != GameModeManager_t::GameModes::GAME_MODE_TUTORIAL
+					&& gameModeManager.currentMode != GameModeManager_t::GameModes::GAME_MODE_TUTORIAL_INIT ) {
+					if ( gameModeManager.allowsSaves() )
+					{
 					deleteSaveGame(multiplayer);
+					}
 					beginFade(MainMenu::FadeDestination::GameStart);
 				} else {
 				    tutorial_map_destination = map.filename;
@@ -21468,7 +21473,8 @@ failed:
 				assert(main_menu_frame);
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 				Button* quit_button;
-				if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+				if ( gameModeManager.currentMode != GameModeManager_t::GameModes::GAME_MODE_TUTORIAL
+					&& gameModeManager.currentMode != GameModeManager_t::GameModes::GAME_MODE_TUTORIAL_INIT ) {
 				    quit_button = buttons->findButton("Restart Game"); assert(quit_button);
 				} else {
 				    quit_button = buttons->findButton("Restart Trial"); assert(quit_button);
@@ -21803,6 +21809,8 @@ failed:
 			else if (main_menu_fade_destination == FadeDestination::GameStart) {
 				gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
 
+				if ( gameModeManager.allowsSaves() )
+				{
 				// set save game file index
 				if (!loadingsavegame) {
 					const bool singleplayer = (multiplayer == SINGLE);
@@ -21830,6 +21838,7 @@ failed:
 							});
 						savegameCurrentFileIndex = savegames.front().first;
 					}
+				}
 				}
 
 				// set clientnum and client_disconnected[] based on the state of the lobby
@@ -22432,7 +22441,8 @@ failed:
 #endif
 		        {"Settings", Language::get(5765), mainSettings},
 		        });
-			if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+			if ( gameModeManager.currentMode != GameModeManager_t::GameModes::GAME_MODE_TUTORIAL
+				&& gameModeManager.currentMode != GameModeManager_t::GameModes::GAME_MODE_TUTORIAL_INIT ) {
 			    options.insert(options.end(), {
 				    {"End Life", Language::get(5766), mainEndLife},
 				    });
@@ -23288,8 +23298,12 @@ failed:
 				pauseGame(2, 0);
 				destroyMainMenu();
 				createDummyMainMenu();
-				if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+				if ( gameModeManager.currentMode != GameModeManager_t::GameModes::GAME_MODE_TUTORIAL
+					&& gameModeManager.currentMode != GameModeManager_t::GameModes::GAME_MODE_TUTORIAL_INIT ) {
+					if ( gameModeManager.allowsSaves() )
+					{
 					deleteSaveGame(multiplayer);
+					}
 					beginFade(MainMenu::FadeDestination::GameStart);
 				} else {
 				    tutorial_map_destination = map.filename;

@@ -8436,7 +8436,7 @@ void doNewGame(bool makeHighscore) {
         Input::inputs[i].refresh();
     }
 
-	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_DEFAULT )
+	if ( gameModeManager.allowsHiscores() )
 	{
 		if ( makeHighscore )
 		{
@@ -8458,6 +8458,13 @@ void doNewGame(bool makeHighscore) {
             }
             saveAllScores(SCORESFILE);
             saveAllScores(SCORESFILE_MULTIPLAYER);
+		}
+	}
+
+	if ( gameModeManager.allowsSaves() )
+	{
+		if ( makeHighscore )
+		{
 			deleteSaveGame(multiplayer);
 			loadingsavegame = 0;
 		}
@@ -9252,11 +9259,13 @@ void doCredits() {
 void doEndgame(bool saveHighscore) {
 	int c, x;
 	bool endTutorial = false;
-	if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_DEFAULT )
+	bool allowedHighscores = gameModeManager.allowsHiscores();
+	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
 		victory = 0;
 		gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
 		endTutorial = true;
+		gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
 	}
 
 	// in greater numbers achievement
@@ -9345,7 +9354,7 @@ void doEndgame(bool saveHighscore) {
 	}
 
 	// make a highscore!
-	if ( !endTutorial && saveHighscore )
+	if ( !endTutorial && allowedHighscores && saveHighscore )
 	{
         if (splitscreen) {
             for (int c = 0; c < MAXPLAYERS; ++c) {

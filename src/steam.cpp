@@ -809,6 +809,12 @@ void steamAchievement(const char* achName)
 	}
 	else
 	{
+		if ( !gameModeManager.allowsStatisticsOrAchievements() )
+		{
+#ifndef DEBUG_ACHIEVEMENTS
+			return;
+#endif
+		}
 		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 			|| conductGameChallenges[CONDUCT_LIFESAVING]
 			|| conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS]
@@ -930,6 +936,12 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 	}
 	else
 	{
+		if ( !gameModeManager.allowsStatisticsOrAchievements() )
+		{
+#ifndef DEBUG_ACHIEVEMENTS
+			return;
+#endif
+		}
 		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 			|| conductGameChallenges[CONDUCT_LIFESAVING]
 			|| conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS]
@@ -1176,6 +1188,12 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 	}
 	else
 	{
+		if ( !gameModeManager.allowsStatisticsOrAchievements() )
+		{
+#ifndef DEBUG_ACHIEVEMENTS
+			return;
+#endif
+		}
 		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 			|| conductGameChallenges[CONDUCT_LIFESAVING]
 			|| conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS]
