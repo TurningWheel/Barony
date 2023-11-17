@@ -1829,7 +1829,8 @@ Be inventive. Every item has its use.#
 1378 The server is already full.#
 1379 Game version mismatch.#
 1380 Lobby does not require a savegame.#
-1381 Compatible savegame required.#
+1381 Compatible save file not found.
+(Host is continuing from a save file)#
 1382 Savegames do not match.#
 1383 Savegames do not match.#
 1384 Bad response from server.#

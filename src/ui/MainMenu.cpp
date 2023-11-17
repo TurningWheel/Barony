@@ -1822,12 +1822,34 @@ namespace MainMenu {
 
     static void connectionErrorPrompt(const char* str) {
         resetLobbyJoinFlowState();
-        errorPrompt(str, "Okay",
+        auto prompt = errorPrompt(str, "Okay",
             [](Button& button) {
             soundCancel();
             multiplayer = SINGLE;
             closeMono();
             });
+		if ( prompt )
+		{
+			if ( auto text = prompt->findField("text") )
+			{
+				if ( auto textGet = text->getTextObject() )
+				{
+					if ( textGet->getNumTextLines() > 2 )
+					{
+						SDL_Rect textPos = text->getSize();
+						textPos.y -= 8;
+						textPos.h += 16;
+						text->setSize(textPos);
+						if ( auto okay = prompt->findButton("okay") )
+						{
+							SDL_Rect pos = okay->getSize();
+							pos.y += 8;
+							okay->setSize(pos);
+						}
+					}
+				}
+			}
+		}
     };
 
 	static void systemErrorPrompt(const char* str) {
