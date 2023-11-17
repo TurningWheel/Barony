@@ -22771,8 +22771,8 @@ failed:
 #else
 			const char* banner_images[][2] = {
 				{
-					"*#images/ui/Main Menus/Banners/banner_latestnews-preview-preview.png",
-					"*#images/ui/Main Menus/Banners/banner_latestnews-preview-preview_hover.png",
+					"*#images/ui/Main Menus/Banners/banner_latestnews-preview.png",
+					"*#images/ui/Main Menus/Banners/banner_latestnews-preview_hover.png",
 				},
 				{
 					"*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_base.png",
