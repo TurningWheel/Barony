@@ -8886,7 +8886,8 @@ bind_failed:
 				return;
 			}
 			else if ( scores_loaded == 1 
-				&& (playfabUser.leaderboardData.leaderboards[playfabUser.leaderboardData.currentSearch].loading == false) )
+				&& (playfabUser.leaderboardData.leaderboards[playfabUser.leaderboardData.currentSearch].loading == false
+					&& playfabUser.leaderboardData.leaderboards[playfabUser.leaderboardData.currentSearch].playerDataLoading == false) )
 			{
 				scores_loaded++;
 				auto& leaderboard = playfabUser.leaderboardData.leaderboards[playfabUser.leaderboardData.currentSearch];

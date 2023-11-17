@@ -109,6 +109,7 @@ public:
 				int score = 0;
 			};
 			bool loading = true;
+			bool playerDataLoading = false;
 			std::vector<Entry_t> ranks;
 			std::priority_queue<std::pair<int, std::string>> sortedData;
 			std::vector<Entry_t> displayedRanks;

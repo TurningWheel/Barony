@@ -553,7 +553,7 @@ void PlayfabUser_t::OnFunctionExecute(const PlayFab::CloudScriptModels::ExecuteF
                     }
                     if ( leaderboard.awaitingResponse.empty() )
                     {
-                        leaderboard.loading = false;
+                        leaderboard.playerDataLoading = false;
                         if ( intro )
                         {
                             for ( auto& entry : leaderboard.displayedRanks )
@@ -731,10 +731,11 @@ void PlayfabUser_t::LeaderboardData_t::LeaderBoard_t::requestPlayerData(int star
 {
     if ( !playfabUser.bLoggedIn ) { return; }
 
-    loading = true;
+    playerDataLoading = true;
 
     Json::Value json;
     json["lid"] = name;
+    //json["version"] = scoreVersion;
     int added = 0;
 
     int end = std::max(start, start + (numEntries - 1));
@@ -1068,20 +1069,33 @@ void PlayfabUser_t::OnLeaderboardAroundMeGet(const PlayFab::ClientModels::GetLea
             {
                 leaderboard.displayedRanks.clear();
                 leaderboard.playerData.clear();
-                for ( auto& entry : result.Leaderboard )
+
+                bool emptyLeaderboard = false;
+                if ( result.Leaderboard.size() == 1 && result.Leaderboard.begin()->Position == 0 )
                 {
-                    leaderboard.displayedRanks.push_back(LeaderboardData_t::LeaderBoard_t::Entry_t());
-                    auto& rank = leaderboard.displayedRanks.back();
-                    rank.displayName = entry.DisplayName;
-                    rank.rank = entry.Position;
-                    rank.id = entry.PlayFabId;
-                    rank.score = entry.StatValue;
+                    emptyLeaderboard = true;
+                }
+
+                if ( !emptyLeaderboard )
+                {
+                    for ( auto& entry : result.Leaderboard )
+                    {
+                        leaderboard.displayedRanks.push_back(LeaderboardData_t::LeaderBoard_t::Entry_t());
+                        auto& rank = leaderboard.displayedRanks.back();
+                        rank.displayName = entry.DisplayName;
+                        rank.rank = entry.Position;
+                        rank.id = entry.PlayFabId;
+                        rank.score = entry.StatValue;
+                    }
                 }
 
                 if ( leaderboard.awaitingResponse.empty() )
                 {
                     leaderboard.loading = false;
-                    leaderboard.requestPlayerData(0, 10);
+                    if ( !emptyLeaderboard )
+                    {
+                        leaderboard.requestPlayerData(0, 10);
+                    }
                 }
             }
         }
