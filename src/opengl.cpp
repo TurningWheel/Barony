@@ -814,9 +814,15 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
             }
         }
 
-        if (entity->monsterEntityRenderAsTelepath && player >= 0 && player < MAXPLAYERS
+        bool telepathy =
+#ifdef EDITOR
+            false;
+#else
+            entity->monsterEntityRenderAsTelepath && player >= 0 && player < MAXPLAYERS
             && players[player] && players[player]->entity
-            && stats[player]->mask && stats[player]->mask->type == TOOL_BLINDFOLD_TELEPATHY ) {
+            && stats[player]->mask&& stats[player]->mask->type == TOOL_BLINDFOLD_TELEPATHY;
+#endif
+        if ( telepathy ) {
             const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f, };
             GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
 
@@ -1190,9 +1196,13 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     }
 
     bool telepath =
+#ifdef EDITOR
+        false;
+#else
         (entity->monsterEntityRenderAsTelepath == 1 && !intro 
             && player >= 0 && player < MAXPLAYERS && players[player] && players[player]->entity
             && stats[player]->mask && stats[player]->mask->type == TOOL_BLINDFOLD_TELEPATHY);
+#endif
 
     bool changedDepthRange = false;
 	if (entity->flags[OVERDRAW] 

@@ -23998,8 +23998,8 @@ failed:
 #else
 			const char* banner_images[][2] = {
 				{
-					"*#images/ui/Main Menus/Banners/banner_lifeafterdeath-preview.png",
-					"*#images/ui/Main Menus/Banners/banner_lifeafterdeath-preview_hover.png",
+					"*#images/ui/Main Menus/Banners/banner_latestnews-preview.png",
+					"*#images/ui/Main Menus/Banners/banner_latestnews-preview_hover.png",
 				},
 				{
 					"*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_base.png",
@@ -24025,7 +24025,7 @@ failed:
             
 			void(*banner_funcs[])(Button&) = {
 				[](Button&) { // banner #1
-					openURLTryWithOverlay("https://www.baronygame.com/blog/410-update-summary");
+					openURLTryWithOverlay("https://www.baronygame.com/blog/eat-my-hat-announcement");
 				},
 				[](Button&) { // banner #2
 					 openDLCPrompt(enabledDLCPack1 ? 1 : 0);
