@@ -20,6 +20,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "prng.hpp"
+#include "scores.hpp"
 
 void initTroll(Entity* my, Stat* myStats)
 {
@@ -60,7 +61,7 @@ void initTroll(Entity* my, Stat* myStats)
 		        !my->flags[USERFLAG2] &&
 		        !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] &&
 		        myStats->leader_uid == 0;
-		    if ( boss || *cvar_summonBosses )
+		    if ( boss || (*cvar_summonBosses && conductGameChallenges[CONDUCT_CHEATS_ENABLED]) )
 			{
 				myStats->setAttribute("special_npc", "thumpus");
 				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());

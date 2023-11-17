@@ -23,6 +23,7 @@ See LICENSE for details.
 #include "magic/magic.hpp"
 #include "prng.hpp"
 #include "interface/consolecommand.hpp"
+#include "scores.hpp"
 
 static ConsoleVariable<bool> cvar_spawnArtemisia("/spawn_artemisia", false);
 
@@ -90,7 +91,7 @@ void initShadow(Entity* my, Stat* myStats)
 				amount = 10 + rng.rand() % 11;
 				newItem(type, SERVICABLE, 0, amount, ITEM_GENERATED_QUIVER_APPEARANCE, true, &myStats->inventory);
 			}
-			else if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
+			else if ( (boss || (*cvar_summonBosses && conductGameChallenges[CONDUCT_CHEATS_ENABLED])) && myStats->leader_uid == 0 )
 			{
 				myStats->setAttribute("special_npc", "baratheon"); //Long live the king, who commands his grue army.
 				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());

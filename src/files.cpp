@@ -3191,7 +3191,20 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		if ( useModelCache && !forceCacheRebuild )
 		{
 #ifndef NINTENDO
-			std::string cache_path = std::string(outputdir) + "/models.cache";
+            std::string cache_path;
+            if (isCurrentHoliday()) {
+                const auto holiday = getCurrentHoliday();
+                switch (holiday) {
+                case HolidayTheme::THEME_NONE:
+                    cache_path = std::string(outputdir) + "/models.cache";
+                    break;
+                default:
+                    cache_path = "models.cache";
+                    break;         
+                }
+            } else {
+                cache_path = std::string(outputdir) + "/models.cache";
+            }
 #else
 			std::string cache_path = "models.cache";
 #endif

@@ -20,6 +20,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "prng.hpp"
+#include "scores.hpp"
 
 void initGoblin(Entity* my, Stat* myStats)
 {
@@ -65,7 +66,7 @@ void initGoblin(Entity* my, Stat* myStats)
 			    rng.rand() % 50 == 0 &&
 			    !my->flags[USERFLAG2] &&
 			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
-			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
+			if ( (boss || (*cvar_summonBosses && conductGameChallenges[CONDUCT_CHEATS_ENABLED])) && myStats->leader_uid == 0 )
 			{
 			    potatoking = true;
 				myStats->setAttribute("special_npc", "potato king");

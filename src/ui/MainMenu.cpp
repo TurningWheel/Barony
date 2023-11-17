@@ -1858,12 +1858,34 @@ namespace MainMenu {
 
     static void connectionErrorPrompt(const char* str) {
         resetLobbyJoinFlowState();
-        errorPrompt(str, "Okay",
+        auto prompt = errorPrompt(str, "Okay",
             [](Button& button) {
             soundCancel();
             multiplayer = SINGLE;
             closeMono();
             });
+		if ( prompt )
+		{
+			if ( auto text = prompt->findField("text") )
+			{
+				if ( auto textGet = text->getTextObject() )
+				{
+					if ( textGet->getNumTextLines() > 2 )
+					{
+						SDL_Rect textPos = text->getSize();
+						textPos.y -= 8;
+						textPos.h += 16;
+						text->setSize(textPos);
+						if ( auto okay = prompt->findButton("okay") )
+						{
+							SDL_Rect pos = okay->getSize();
+							pos.y += 8;
+							okay->setSize(pos);
+						}
+					}
+				}
+			}
+		}
     };
 
 	static void systemErrorPrompt(const char* str) {
@@ -3094,7 +3116,8 @@ namespace MainMenu {
 		file->property("extra_life_enabled", extra_life_enabled);
 		file->property("cheats_enabled", cheats_enabled);
 		file->property("skipintro", skipintro);
-		file->property("use_model_cache", useModelCache);
+        bool no = false;
+		file->property("use_model_cache", no);
 		file->property("debug_keys_enabled", enableDebugKeys);
 		file->property("port_number", port_number);
 		file->propertyVersion("show_lobby_code", version >= 12, show_lobby_code);

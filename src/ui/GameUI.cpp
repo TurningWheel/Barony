@@ -32009,6 +32009,10 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			for ( auto it = allGameSpells.begin(); it != allGameSpells.end(); ++it )
 			{
 				auto spellEntry = *it;
+				if ( spellEntry->ID == SPELL_WEAKNESS || spellEntry->ID == SPELL_GHOST_BOLT )
+				{
+					continue;
+				}
 				if ( spellEntry && spellEntry->difficulty == (skillLVL * 20) )
 				{
 					if ( magics != "" )

@@ -931,7 +931,6 @@ void gameLogic(void)
 	Entity* entity;
 	int c = 0;
 	Uint32 i = 0, j;
-	deleteent_t* deleteent;
 	bool entitydeletedself;
 
 #ifdef NINTENDO
@@ -1307,6 +1306,7 @@ void gameLogic(void)
 					{
 						nextnode = node->next;
 
+						deleteent_t* deleteent = nullptr;
 						if (net_packet && net_packet->data) {
 							// send the delete entity command to the client
 							strcpy((char*)net_packet->data, "ENTD");
@@ -1316,14 +1316,17 @@ void gameLogic(void)
 							net_packet->address.port = net_clients[i - 1].port;
 							net_packet->len = 8;
 							sendPacket(net_sock, -1, net_packet, i - 1);
+
+							// quit reminding clients after a certain number of attempts]
+							if (deleteent) {
+								deleteent->tries++;
+								if (deleteent->tries >= MAXTRIES)
+								{
+									list_RemoveNode(node);
+								}
+							}
 						}
 
-						// quit reminding clients after a certain number of attempts
-						deleteent->tries++;
-						if ( deleteent->tries >= MAXTRIES )
-						{
-							list_RemoveNode(node);
-						}
 						j++;
 						if ( j >= MAXDELETES )
 						{
@@ -5994,6 +5997,11 @@ void drawAllPlayerCameras() {
 					{
 						if ( !players[i]->entity || (players[i]->entity && !players[i]->entity->isBlind()) )
 						{
+							if ( players[i]->entity && players[i]->entity->ticks < TICKS_PER_SECOND * 1 )
+							{
+								continue; // don't share for first x ticks due to level change warping
+							}
+
 							real_t x = camera.x;
 							real_t y = camera.y;
 							real_t ang = camera.ang;

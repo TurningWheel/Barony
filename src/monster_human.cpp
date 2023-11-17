@@ -21,6 +21,7 @@
 #include "classdescriptions.hpp"
 #include "player.hpp"
 #include "prng.hpp"
+#include "scores.hpp"
 
 void initHuman(Entity* my, Stat* myStats)
 {
@@ -66,7 +67,7 @@ void initHuman(Entity* my, Stat* myStats)
 			// generate special loadout
 			if ( my->monsterSpecialTimer == 0 )
 			{
-				if ( (*cvar_summonBosses || rng.rand() % 25 == 0) && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
+				if ( ((*cvar_summonBosses && conductGameChallenges[CONDUCT_CHEATS_ENABLED]) || rng.rand() % 25 == 0) && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
 					&& strcmp(myStats->name, "scriptNPC") && myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0
 					&& myStats->leader_uid == 0 )
 				{

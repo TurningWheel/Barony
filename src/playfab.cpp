@@ -12,6 +12,7 @@
 #define STRINGIZE2(s) #s
 #define STRINGIZE(s) STRINGIZE2(s)
 #define BUILD_ENV_PFTID STRINGIZE(BUILD_PFTID)
+#define BUILD_ENV_PFHID STRINGIZE(BUILD_PFHID)
 #endif
 
 PlayfabUser_t playfabUser;
@@ -799,6 +800,24 @@ void PlayfabUser_t::LeaderboardData_t::LeaderBoard_t::requestPlayerData(int star
     }
 }
 
+unsigned long djb2Hash2(char* str)
+{
+    unsigned long hash = 5381;
+    int c;
+
+    while ( c = *str++ )
+    {
+        hash = ((hash << 5) + hash) + c;    /* hash * 33 + c */
+    }
+    const char* str2 = BUILD_ENV_PFHID;
+    while ( c = *str2++ )
+    {
+        hash = ((hash << 5) + hash) + c;    /* hash * 33 + c */
+    }
+
+    return hash;
+}
+
 void PlayfabUser_t::postScore(const int player)
 {
 #ifdef NDEBUG
@@ -820,7 +839,7 @@ void PlayfabUser_t::postScore(const int player)
     info.populateFromSession(player);
 
     std::string scorestring = info.serializeToOnlineHiscore(player, victory);
-    auto hash = djb2Hash(const_cast<char*>(scorestring.c_str()));
+    auto hash = djb2Hash2(const_cast<char*>(scorestring.c_str()));
 
     postScoreHandler.queue.push_back(PostScoreHandler_t::ScoreUpdate_t(scorestring, std::to_string(hash)));
     auto& entry = postScoreHandler.queue.back();
@@ -932,7 +951,7 @@ void PlayfabUser_t::PostScoreHandler_t::readFromFiles()
         queue.push_back(ScoreUpdate_t(score, hashStr));
         queue.back().writtenToFile = inputPath;
 
-        if ( (Uint32)djb2Hash(const_cast<char*>(score.c_str())) != hash )
+        if ( (Uint32)djb2Hash2(const_cast<char*>(score.c_str())) != hash )
         {
             printlog("[JSON]: Error: %s hash check failed", inputPath.c_str());
             queue.back().expired = true;

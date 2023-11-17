@@ -8446,7 +8446,10 @@ void doNewGame(bool makeHighscore) {
                     if (!client_disconnected[c]) {
                         saveScore(c);
 #ifdef USE_PLAYFAB
-						playfabUser.postScore(c);
+						if ( c == 0 )
+						{
+							playfabUser.postScore(c);
+						}
 #endif
                     }
                 }
@@ -9364,7 +9367,10 @@ void doEndgame(bool saveHighscore) {
                 if (!client_disconnected[c]) {
                     saveScore(c);
 #ifdef USE_PLAYFAB
-					playfabUser.postScore(c);
+					if ( c == 0 )
+					{
+						playfabUser.postScore(c);
+					}
 #endif
                 }
             }

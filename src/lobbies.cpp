@@ -68,7 +68,7 @@ std::string LobbyHandler_t::getLobbyJoinFailedConnectString(int result)
 			snprintf(buf, 1023, "Unable to join lobby:\nGame in progress not joinable.");
 			break;
 		case EResult_LobbyFailures::LOBBY_USING_SAVEGAME:
-			snprintf(buf, 1023, "Unable to join lobby:\nCompatible save required.");
+			snprintf(buf, 1023, "Unable to join lobby:\n%s", Language::get(1381));
 			break;
 		case EResult_LobbyFailures::LOBBY_NOT_USING_SAVEGAME:
 			snprintf(buf, 1023, "Unable to join lobby:\nOnly new characters allowed.");

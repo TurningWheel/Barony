@@ -900,7 +900,10 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 
 				if ( potionDropQuantity > 0 )
 				{
-					steamStatisticUpdateClient(player, STEAM_STAT_BOTTLE_NOSED, STEAM_STAT_INT, 1);
+					if ( stats[player]->playerRace == RACE_GOATMAN && stats[player]->appearance == 0 )
+					{
+						steamStatisticUpdateClient(player, STEAM_STAT_BOTTLE_NOSED, STEAM_STAT_INT, 1);
+					}
 				}
 
 				for ( int j = 0; j < potionDropQuantity; ++j )

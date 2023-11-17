@@ -1560,6 +1560,16 @@ void actDeathGhost(Entity* my)
 		return;
 	}
 
+	if ( multiplayer != CLIENT )
+	{
+		if ( client_disconnected[playernum] )
+		{
+			my->removeLightField();
+			list_RemoveNode(my->mynode);
+			return;
+		}
+	}
+
 	players[playernum]->ghost.my = my;
 	players[playernum]->ghost.uid = my->getUID();
 

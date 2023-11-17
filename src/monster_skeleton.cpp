@@ -21,6 +21,7 @@
 #include "player.hpp"
 #include "magic/magic.hpp"
 #include "prng.hpp"
+#include "scores.hpp"
 
 void initSkeleton(Entity* my, Stat* myStats)
 {
@@ -237,7 +238,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 			        rng.rand() % 50 == 0 &&
 			        !my->flags[USERFLAG2] &&
 			        !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
-			    if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
+			    if ( (boss || (*cvar_summonBosses && conductGameChallenges[CONDUCT_CHEATS_ENABLED])) && myStats->leader_uid == 0 )
 			    {
 					myStats->setAttribute("special_npc", "funny bones");
 					strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());

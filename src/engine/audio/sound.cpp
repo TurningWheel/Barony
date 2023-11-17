@@ -537,8 +537,8 @@ OPENAL_BUFFER* caveslairmusic = NULL;
 OPENAL_BUFFER* bramscastlemusic = NULL;
 OPENAL_BUFFER* hamletmusic = NULL;
 OPENAL_BUFFER* tutorialmusic = nullptr;
-OPENAL_BUFFER* introstorymusic = nullptr;
 OPENAL_BUFFER* gameovermusic = nullptr;
+OPENAL_BUFFER* introstorymusic = nullptr;
 bool levelmusicplaying = false;
 
 OPENAL_SOUND* music_channel = nullptr;
@@ -1160,6 +1160,7 @@ bool physfsSearchMusicToUpdate()
 	themeMusic.push_back("music/hamlet.ogg");
 	themeMusic.push_back("music/tutorial.ogg");
 	themeMusic.push_back("sound/Death.ogg");
+	themeMusic.push_back("sound/ui/StoryMusicV3.ogg");
 
 	for ( std::vector<std::string>::iterator it = themeMusic.begin(); it != themeMusic.end(); ++it )
 	{
@@ -1281,6 +1282,7 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 	themeMusic.push_back("music/hamlet.ogg");
 	themeMusic.push_back("music/tutorial.ogg");
 	themeMusic.push_back("sound/Death.ogg");
+	themeMusic.push_back("sound/ui/StoryMusicV3.ogg");
 
 	int index = 0;
 #ifdef USE_OPENAL
@@ -1581,6 +1583,20 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 						else
 						{
 							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_DEFAULT, nullptr, &gameovermusic);
+						}
+						break;
+					case 20:
+						if ( introstorymusic )
+						{
+							introstorymusic->release();
+						}
+						if ( musicPreload )
+						{
+							fmod_result = fmod_system->createSound(musicDir.c_str(), FMOD_DEFAULT, nullptr, &introstorymusic);
+						}
+						else
+						{
+							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_DEFAULT, nullptr, &introstorymusic);
 						}
 						break;
 					default:
