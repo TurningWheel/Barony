@@ -241,6 +241,7 @@ typedef struct score_t
 	Sint32 classnum;
 	Sint32 dungeonlevel;
 	int victory;
+	int totalscore = -1;
 
 	Uint32 completionTime;
 	bool conductPenniless;
@@ -278,6 +279,7 @@ extern std::vector<Uint32> achievementStrobeVec[MAXPLAYERS];
 extern bool achievementStatusStrobe[MAXPLAYERS];
 extern bool playerFailedRangedOnlyConduct[MAXPLAYERS];
 extern bool achievementBrawlerMode;
+extern bool achievementPenniless;
 extern bool achievementRangedMode[MAXPLAYERS];
 
 score_t* scoreConstructor(int player);
@@ -320,11 +322,25 @@ struct SaveGameInfo {
 	Uint32 mapseed = 0;
 	Uint32 gametimer = 0;
 	Uint32 svflags = 0;
+	Uint32 customseed = 0;
+	std::string customseed_string = "";
     int player_num = 0;
     int multiplayer_type = SINGLE;
     int dungeon_lvl = 0;
 	int level_track = 0;
+	int hiscore_loadstatus = 0;
+	int hiscore_totalscore = 0;
+	int hiscore_rank = 0;
+	int hiscore_victory = 0;
+	int hiscore_killed_by = 0;
+	int hiscore_killed_monster = 0;
+	int hiscore_killed_item = 0;
+	bool hiscore_dummy_loading = false;
     std::vector<int> players_connected;
+
+	int populateFromSession(const int playernum);
+	int getTotalScore(const int playernum, const int victory);
+	std::string serializeToOnlineHiscore(const int playernum, const int victory);
 
 	struct Player {
 		Uint32 char_class = 0;
@@ -585,6 +601,8 @@ struct SaveGameInfo {
 		fp->property("multiplayer_type", multiplayer_type);
 		fp->property("dungeon_lvl", dungeon_lvl);
 		fp->property("level_track", level_track);
+		fp->property("customseed", customseed);
+		fp->property("customseed_string", customseed_string);
 		fp->property("players_connected", players_connected);
 		fp->property("players", players);
 		fp->property("additional_data", additional_data);
@@ -599,6 +617,7 @@ int saveGame(int saveIndex = savegameCurrentFileIndex);
 int loadGame(int player, const SaveGameInfo& info);
 list_t* loadGameFollowers(const SaveGameInfo& info);
 
+score_t* scoreConstructor(int player, SaveGameInfo& info);
 SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
 const char* getSaveGameName(const SaveGameInfo& info);
 int getSaveGameType(const SaveGameInfo& info);

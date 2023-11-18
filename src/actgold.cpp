@@ -18,6 +18,7 @@
 #include "entity.hpp"
 #include "player.hpp"
 #include "prng.hpp"
+#include "scores.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -82,6 +83,11 @@ void actGoldBag(Entity* my)
 			{
 				if (inrange[i])
 				{
+					if ( achievementPenniless && i == clientnum )
+					{
+						messagePlayer(clientnum, MESSAGE_MISC, Language::get(6058));
+						return;
+					}
 					if (players[i] && players[i]->entity)
 					{
 						playSoundEntity(players[i]->entity, 242 + local_rng.rand() % 4, 64 );

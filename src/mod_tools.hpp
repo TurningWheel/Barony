@@ -1819,7 +1819,7 @@ public:
 	int globalGoldPercent = 100;
 	bool minimapShareProgress = false;
 	int playerWeightPercent = 100;
-	double playerSpeedMax = 18.0;
+	double playerSpeedMax = 12.5;
 	inline bool inUse() { return usingCustomManager; };
 	void resetValues()
 	{
@@ -1829,7 +1829,7 @@ public:
 		globalGoldPercent = 100;
 		minimapShareProgress = false;
 		playerWeightPercent = 100;
-		playerSpeedMax = 18.0;
+		playerSpeedMax = 12.5;
 
 		minotaurForceEnableFloors.first.clear();
 		minotaurForceEnableFloors.second.clear();
@@ -2416,11 +2416,20 @@ public:
 	{
 		GAME_MODE_DEFAULT,
 		GAME_MODE_TUTORIAL_INIT,
-		GAME_MODE_TUTORIAL
+		GAME_MODE_TUTORIAL,
+		GAME_MODE_CUSTOM_RUN_ONESHOT,
+		GAME_MODE_CUSTOM_RUN
 	};
 	GameModes currentMode = GAME_MODE_DEFAULT;
 	GameModes getMode() const { return currentMode; };
 	void setMode(const GameModes mode) { currentMode = mode; };
+	bool allowsSaves();
+	bool isFastDeathGrave();
+	bool allowsBoulderBreak();
+	bool allowsHiscores();
+	bool allowsStatisticsOrAchievements();
+	bool allowsGlobalHiscores();
+
 	class CurrentSession_t
 	{
 	public:
@@ -2441,6 +2450,19 @@ public:
 			bHasSavedServerFlags = true;
 			printlog("[SESSION]: Saving server flags\n");
 		}
+
+		class SeededRun_t
+		{
+		public:
+			std::string seedString = "";
+			Uint32 seed = 0;
+			void setup(std::string _seedString);
+			void reset();
+
+			static std::vector<std::string> prefixes;
+			static std::vector<std::string> suffixes;
+			static void readSeedNamesFromFile();
+		} seededRun;
 	} currentSession;
 	bool isServerflagDisabledForCurrentMode(int i)
 	{

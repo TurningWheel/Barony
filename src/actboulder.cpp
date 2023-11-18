@@ -52,7 +52,7 @@ bool boulderCheckIfBlockedExit(Entity* my)
 	//{
 	//	return true; // ignore for custom maps.
 	//}
-	if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_DEFAULT )
+	if ( !gameModeManager.allowsBoulderBreak() )
 	{
 		return true; // ignore for custom modes.
 	}

@@ -218,10 +218,10 @@ public:
 
 	// Obituary stuff
 	char obituary[128];
-	KilledBy killer;
+	KilledBy killer = KilledBy::UNKNOWN;
 	Monster killer_monster;
 	ItemType killer_item;
-	std::string killer_name;
+	std::string killer_name = "";
 
 	// attributes
 	Sint32 HP, MAXHP, OLDHP;

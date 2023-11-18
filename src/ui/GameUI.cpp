@@ -19832,7 +19832,7 @@ void drawUnidentifiedItemEffectHotbarCallback(const Widget& widget, SDL_Rect rec
 			opacity *= parent->getOpacity() / 100.0;
 		}
         const auto& appraisal = players[player]->inventoryUI.appraisal;
-        drawClockwiseSquareMesh("images/ui/Inventory/Appraisal_Icon_OutlineHotbar.png",
+        drawClockwiseSquareMesh("images/ui/HUD/hotbar/Appraisal_Icon_OutlineHotbar.png",
             (appraisal.timermax - appraisal.timer) / (float)appraisal.timermax,
             drawRect, makeColor(255, 255, 255, opacity));
 	}
@@ -32009,6 +32009,10 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			for ( auto it = allGameSpells.begin(); it != allGameSpells.end(); ++it )
 			{
 				auto spellEntry = *it;
+				if ( spellEntry->ID == SPELL_WEAKNESS || spellEntry->ID == SPELL_GHOST_BOLT )
+				{
+					continue;
+				}
 				if ( spellEntry && spellEntry->difficulty == (skillLVL * 20) )
 				{
 					if ( magics != "" )
@@ -33684,7 +33688,7 @@ void Player::SkillSheet_t::processSkillSheet()
 				legendText->setSize(legendTextPos);
 				legendText->reflowTextToFit(0);
 				legendTextPos.h = legendText->getNumTextLines() * actualFontHeight;
-				legendTextPos.y = tm->pos.y + tm->pos.h / 2 + 2;
+				legendTextPos.y = tm->pos.y + tm->pos.h / 2 /*+ 2*/;
 				legendTextPos.h += 4; // handle hanging chars
 				legendText->setSize(legendTextPos);
 
@@ -33707,7 +33711,7 @@ void Player::SkillSheet_t::processSkillSheet()
 				br->pos.x = legendPos.w - br->pos.w;
 
 
-				legendPos.h = bl->pos.y + bl->pos.h;
+				legendPos.h = bl->pos.y + bl->pos.h - 4;
 				legendFrame->setSize(legendPos);
 
 

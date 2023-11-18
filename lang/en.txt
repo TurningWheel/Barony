@@ -1829,7 +1829,8 @@ Be inventive. Every item has its use.#
 1378 The server is already full.#
 1379 Game version mismatch.#
 1380 Lobby does not require a savegame.#
-1381 Compatible savegame required.#
+1381 Host is continuing from a save file -
+Compatible save file not found.#
 1382 Savegames do not match.#
 1383 Savegames do not match.#
 1384 Bad response from server.#
@@ -5183,10 +5184,10 @@ Score:#
 Singleplayer#
 5309 Local
 Multiplayer#
-5310 Leaderboard
-Friends#
-5311 Leaderboard
-World#
+5310 World
+Daily#
+5311 World
+All-Time#
 5312 Delete Entry#
 5313 Are you sure you want to delete
 "%s"?#
@@ -6206,5 +6207,38 @@ intro - God Rest Ye Merry Gentlemen by NaturesEye#
 6050 SPECTATE#
 6051 SPAWN AS GHOST#
 6052 Your party has been wiped out...#
+6053 CUSTOMIZE RULES#
+6054 CUSTOM SEED#
+6055 Enter seed name...#
+6056 None#
+6057 Here lies
+%s
+Death by: %s#
+6058 Penniless-mode active, gold pickup is disabled!#
+6059 Penniless-mode deactivated, gold pickup is enabled.#
+6060 Player savefile is not eligible for Penniless Achievement. Restart game to reset.#
+6061 Unable to connect to global leaderboards.
+Try again later.#
+6062 Top 100#
+6063 Near me#
+6064 Wins#
+6065 Losses#
+6066 Top Scores#
+6067 Best Times#
+6068 Solo#
+6069 Co-op#
+6070 Humans#
+6071 Monsters#
+6072 Normal#
+6073 Hardcore#
+6074 Apply
+Filter#
+6075 Citadel#
+6076 Classic#
+6077 Hell#
+6078 Leaderboard Filters#
+6079 Leaderboard
+Filters#
+6080 Depth#
 
 6100 end#

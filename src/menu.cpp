@@ -33,6 +33,9 @@
 #include <steam/steam_api.h>
 #include "steam.hpp"
 #endif
+#ifdef USE_PLAYFAB
+#include "playfab.hpp"
+#endif
 #include "prng.hpp"
 #include "credits.hpp"
 #include "paths.hpp"
@@ -8433,7 +8436,7 @@ void doNewGame(bool makeHighscore) {
         Input::inputs[i].refresh();
     }
 
-	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_DEFAULT )
+	if ( gameModeManager.allowsHiscores() )
 	{
 		if ( makeHighscore )
 		{
@@ -8442,13 +8445,29 @@ void doNewGame(bool makeHighscore) {
                 for (int c = 0; c < MAXPLAYERS; ++c) {
                     if (!client_disconnected[c]) {
                         saveScore(c);
+#ifdef USE_PLAYFAB
+						if ( c == 0 )
+						{
+							playfabUser.postScore(c);
+						}
+#endif
                     }
                 }
             } else {
                 saveScore(clientnum);
+#ifdef USE_PLAYFAB
+				playfabUser.postScore(clientnum);
+#endif
             }
             saveAllScores(SCORESFILE);
             saveAllScores(SCORESFILE_MULTIPLAYER);
+		}
+	}
+
+	if ( gameModeManager.allowsSaves() )
+	{
+		if ( makeHighscore )
+		{
 			deleteSaveGame(multiplayer);
 			loadingsavegame = 0;
 		}
@@ -8968,7 +8987,10 @@ void doNewGame(bool makeHighscore) {
 
 		if ( multiplayer == SINGLE )
 		{
-			saveGame();
+			if ( gameModeManager.allowsSaves() )
+			{
+				saveGame();
+			}
 		}
 	}
 	else // if ( multiplayer != CLIENT ) (ergo in the block below, it is)
@@ -9243,11 +9265,13 @@ void doCredits() {
 void doEndgame(bool saveHighscore) {
 	int c, x;
 	bool endTutorial = false;
-	if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_DEFAULT )
+	bool allowedHighscores = gameModeManager.allowsHiscores();
+	bool allowedSavegames = gameModeManager.allowsSaves();
+	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
 		victory = 0;
-		gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
 		endTutorial = true;
+		gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
 	}
 
 	// in greater numbers achievement
@@ -9336,16 +9360,25 @@ void doEndgame(bool saveHighscore) {
 	}
 
 	// make a highscore!
-	if ( !endTutorial && saveHighscore )
+	if ( !endTutorial && allowedHighscores && saveHighscore )
 	{
         if (splitscreen) {
             for (int c = 0; c < MAXPLAYERS; ++c) {
                 if (!client_disconnected[c]) {
                     saveScore(c);
+#ifdef USE_PLAYFAB
+					if ( c == 0 )
+					{
+						playfabUser.postScore(c);
+					}
+#endif
                 }
             }
         } else {
             saveScore(clientnum);
+#ifdef USE_PLAYFAB
+			playfabUser.postScore(clientnum);
+#endif
         }
         saveAllScores(SCORESFILE);
         saveAllScores(SCORESFILE_MULTIPLAYER);
@@ -9589,10 +9622,12 @@ void doEndgame(bool saveHighscore) {
 		}
 	}
 
-	if ( !endTutorial && victory > 0 )
+	if ( !endTutorial && victory > 0 && allowedSavegames )
 	{
 		deleteSaveGame(multiplayer);
 	}
+
+	gameModeManager.currentSession.seededRun.reset();
 
 	// disable cheats
 	noclip = false;
@@ -10978,32 +11013,12 @@ void buttonDeleteSavedMultiplayerGame(button_t* my)
 
 void buttonConfirmDeleteSoloFile(button_t* my)
 {
-	// close current window
-	buttonCloseSubwindow(nullptr);
-	list_FreeAll(&button_l);
-	deleteallbuttons = true;
-	loadGameSaveShowRectangle = 0;
-	deleteSaveGame(SINGLE);
-	if ( anySaveFileExists() ) // check for saved game to load up
-	{
-		openNewLoadGameWindow(nullptr);
-	}
-	playSound(153, 96);
+	// deprecated
 }
 
 void buttonConfirmDeleteMultiplayerFile(button_t* my)
 {
-	// close current window
-	buttonCloseSubwindow(nullptr);
-	list_FreeAll(&button_l);
-	deleteallbuttons = true;
-	loadGameSaveShowRectangle = 0;
-	deleteSaveGame(CLIENT);
-	if ( anySaveFileExists() ) // check for saved game to load up
-	{
-		openNewLoadGameWindow(nullptr);
-	}
-	playSound(153, 96);
+	// deprecated
 }
 
 void buttonOpenCharacterCreationWindow(button_t* my)

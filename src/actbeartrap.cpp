@@ -742,6 +742,18 @@ void actBomb(Entity* my)
 
 	// launch bomb
 	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
+	std::vector<Entity*> entitiesWithinRadius;
+	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+	{
+		list_t* currentList = *it;
+		node_t* node;
+		for ( node = currentList->first; node != nullptr; node = node->next )
+		{
+			entitiesWithinRadius.push_back((Entity*)node->element);
+		}
+	}
+
+
 	Entity* triggered = nullptr;
 	real_t entityDistance = 0.f;
 	bool bombExplodeAOETargets = false;
@@ -870,126 +882,121 @@ void actBomb(Entity* my)
 		}
 	}
 
-	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !triggered; ++it )
+	for ( auto it = entitiesWithinRadius.begin(); it != entitiesWithinRadius.end() && !triggered; ++it )
 	{
-		list_t* currentList = *it;
-		node_t* node;
-		for ( node = currentList->first; node != nullptr && !triggered; node = node->next )
+		Entity* entity = *it;
+		if ( !entity )
 		{
-			Entity* entity = (Entity*)node->element;
-			if ( !entity )
+			continue;
+		}
+		if ( my->parent == entity->getUID() && !(BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TRIGGER_ALL) )
+		{
+			continue;
+		}
+		if ( entity->behavior == &actMonster || entity->behavior == &actPlayer )
+		{
+			Stat* stat = entity->getStats();
+			if ( stat )
 			{
-				continue;
-			}
-			if ( my->parent == entity->getUID() && !(BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TRIGGER_ALL) )
-			{
-				continue;
-			}
-			if ( entity->behavior == &actMonster || entity->behavior == &actPlayer )
-			{
-				Stat* stat = entity->getStats();
-				if ( stat )
+				Entity* parent = uidToEntity(my->parent);
+				if ( parent && parent->checkFriend(entity) && !(BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TRIGGER_ALL) )
 				{
-					Entity* parent = uidToEntity(my->parent);
-					if ( parent && parent->checkFriend(entity) && !(BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TRIGGER_ALL) )
+					continue;
+				}
+				if ( stat->type == GYROBOT )
+				{
+					continue;
+				}
+				if ( !parent && BOMB_PLAYER_OWNER >= 0 && !(BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TRIGGER_ALL) )
+				{
+					if ( entity->behavior == &actPlayer )
 					{
-						continue;
+						continue; // players won't trigger if owner dead.
 					}
-					if ( stat->type == GYROBOT )
+					else if ( entity->monsterAllyGetPlayerLeader() )
 					{
-						continue;
+						continue; // player followers won't trigger if owner dead.
 					}
-					if ( !parent && BOMB_PLAYER_OWNER >= 0 && !(BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TRIGGER_ALL) )
+				}
+				if ( BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_FLOOR )
+				{
+					entityDistance = entityDist(my, entity);
+					if ( entityDistance < 6.5 )
 					{
-						if ( entity->behavior == &actPlayer )
-						{
-							continue; // players won't trigger if owner dead.
-						}
-						else if ( entity->monsterAllyGetPlayerLeader() )
-						{
-							continue; // player followers won't trigger if owner dead.
-						}
+						spawnExplosionFromSprite(explosionSprite, my->x - 4 + local_rng.rand() % 9, my->y + local_rng.rand() % 9, my->z - 2);
+						triggered = entity;
 					}
-					if ( BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_FLOOR )
+				}
+				else if ( bombExplodeAOETargets )
+				{
+					Entity* onEntity = uidToEntity(static_cast<Uint32>(BOMB_ENTITY_ATTACHED_TO));
+					if ( onEntity )
 					{
-						entityDistance = entityDist(my, entity);
-						if ( entityDistance < 6.5 )
+						entityDistance = entityDist(onEntity, entity);
+						if ( entityDistance < STRIKERANGE )
 						{
-							spawnExplosionFromSprite(explosionSprite, my->x - 4 + local_rng.rand() % 9, my->y + local_rng.rand() % 9, my->z - 2);
-							triggered = entity;
-						}
-					}
-					else if ( bombExplodeAOETargets )
-					{
-						Entity* onEntity = uidToEntity(static_cast<Uint32>(BOMB_ENTITY_ATTACHED_TO));
-						if ( onEntity )
-						{
-							entityDistance = entityDist(onEntity, entity);
-							if ( entityDistance < STRIKERANGE )
-							{
-								spawnExplosionFromSprite(explosionSprite, entity->x, entity->y, entity->z);
-								bombDoEffect(my, entity, entityDistance, true, true);
-							}
-						}
-						else
-						{
-							entityDistance = entityDist(my, entity);
-							if ( entityDistance < STRIKERANGE )
-							{
-								spawnExplosionFromSprite(explosionSprite, entity->x, entity->y, entity->z);
-								bombDoEffect(my, entity, entityDistance, true, true);
-							}
+							spawnExplosionFromSprite(explosionSprite, entity->x, entity->y, entity->z);
+							bombDoEffect(my, entity, entityDistance, true, true);
 						}
 					}
 					else
 					{
-						real_t oldx = my->x;
-						real_t oldy = my->y;
-						// pretend the bomb is in the center of the tile it's facing.
-						switch ( BOMB_DIRECTION )
+						entityDistance = entityDist(my, entity);
+						if ( entityDistance < STRIKERANGE )
 						{
-							case Item::ItemBombFacingDirection::BOMB_EAST:
-								my->x += 8;
-								entityDistance = entityDist(my, entity);
-								if ( entityDistance < 12 )
-								{
-									triggered = entity;
-									spawnExplosionFromSprite(explosionSprite, my->x - local_rng.rand() % 9, my->y - 4 + local_rng.rand() % 9, my->z);
-								}
-								break;
-							case Item::ItemBombFacingDirection::BOMB_WEST:
-								my->x -= 8;
-								entityDistance = entityDist(my, entity);
-								if ( entityDistance < 12 )
-								{
-									triggered = entity;
-									spawnExplosionFromSprite(explosionSprite, my->x + local_rng.rand() % 9, my->y - 4 + local_rng.rand() % 9, my->z);
-								}
-								break;
-							case Item::ItemBombFacingDirection::BOMB_SOUTH:
-								my->y += 8;
-								entityDistance = entityDist(my, entity);
-								if ( entityDistance < 12 )
-								{
-									triggered = entity;
-									spawnExplosionFromSprite(explosionSprite, my->x - 4 + local_rng.rand() % 9, my->y - local_rng.rand() % 9, my->z);
-								}
-								break;
-							case Item::ItemBombFacingDirection::BOMB_NORTH:
-								my->y -= 8;
-								entityDistance = entityDist(my, entity);
-								if ( entityDistance < 12 )
-								{
-									triggered = entity;
-									spawnExplosionFromSprite(explosionSprite, my->x - 4 + local_rng.rand() % 9, my->y + local_rng.rand() % 9, my->z);
-								}
-								break;
-							default:
-								break;
+							spawnExplosionFromSprite(explosionSprite, entity->x, entity->y, entity->z);
+							bombDoEffect(my, entity, entityDistance, true, true);
 						}
-						my->x = oldx;
-						my->y = oldy;
 					}
+				}
+				else
+				{
+					real_t oldx = my->x;
+					real_t oldy = my->y;
+					// pretend the bomb is in the center of the tile it's facing.
+					switch ( BOMB_DIRECTION )
+					{
+						case Item::ItemBombFacingDirection::BOMB_EAST:
+							my->x += 8;
+							entityDistance = entityDist(my, entity);
+							if ( entityDistance < 12 )
+							{
+								triggered = entity;
+								spawnExplosionFromSprite(explosionSprite, my->x - local_rng.rand() % 9, my->y - 4 + local_rng.rand() % 9, my->z);
+							}
+							break;
+						case Item::ItemBombFacingDirection::BOMB_WEST:
+							my->x -= 8;
+							entityDistance = entityDist(my, entity);
+							if ( entityDistance < 12 )
+							{
+								triggered = entity;
+								spawnExplosionFromSprite(explosionSprite, my->x + local_rng.rand() % 9, my->y - 4 + local_rng.rand() % 9, my->z);
+							}
+							break;
+						case Item::ItemBombFacingDirection::BOMB_SOUTH:
+							my->y += 8;
+							entityDistance = entityDist(my, entity);
+							if ( entityDistance < 12 )
+							{
+								triggered = entity;
+								spawnExplosionFromSprite(explosionSprite, my->x - 4 + local_rng.rand() % 9, my->y - local_rng.rand() % 9, my->z);
+							}
+							break;
+						case Item::ItemBombFacingDirection::BOMB_NORTH:
+							my->y -= 8;
+							entityDistance = entityDist(my, entity);
+							if ( entityDistance < 12 )
+							{
+								triggered = entity;
+								spawnExplosionFromSprite(explosionSprite, my->x - 4 + local_rng.rand() % 9, my->y + local_rng.rand() % 9, my->z);
+							}
+							break;
+						default:
+							break;
+					}
+					my->x = oldx;
+					my->y = oldy;
 				}
 			}
 		}

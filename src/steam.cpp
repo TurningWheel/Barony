@@ -194,17 +194,11 @@ public:
 	}
 
 	STEAM_GAMESERVER_CALLBACK(SteamServerWrapper, OnSteamServersConnected, SteamServersConnected_t, m_CallbackSteamServersConnected);
-
 	STEAM_GAMESERVER_CALLBACK(SteamServerWrapper, OnSteamServersDisconnected, SteamServersDisconnected_t, m_CallbackSteamServersDisconnected);
-
 	STEAM_GAMESERVER_CALLBACK(SteamServerWrapper, OnSteamServersConnectFailure, SteamServerConnectFailure_t, m_CallbackSteamServersConnectFailure);
-
 	STEAM_GAMESERVER_CALLBACK(SteamServerWrapper, OnPolicyResponse, GSPolicyResponse_t, m_CallbackPolicyResponse);
-
 	STEAM_GAMESERVER_CALLBACK(SteamServerWrapper, OnValidateAuthTicketResponse, ValidateAuthTicketResponse_t, m_CallbackGSAuthTicketResponse);
-
 	STEAM_GAMESERVER_CALLBACK(SteamServerWrapper, OnP2PSessionRequest, P2PSessionRequest_t, m_CallbackP2PSessionRequest);
-
 	STEAM_GAMESERVER_CALLBACK(SteamServerWrapper, OnP2PSessionConnectFail, P2PSessionConnectFail_t, m_CallbackP2PSessionConnectFail);
 }* steam_server_wrapper;
 
@@ -317,34 +311,18 @@ public:
 
 	STEAM_CALLBACK(SteamServerClientWrapper, OnLobbyDataUpdate, LobbyDataUpdate_t, m_CallbackLobbyDataUpdate);
 	STEAM_CALLBACK(SteamServerClientWrapper, OnLobbyMemberUpdate, LobbyChatUpdate_t, m_CallbackLobbyMemberUpdate);
-
 	STEAM_CALLBACK(SteamServerClientWrapper, OnLobbyGameCreated, LobbyGameCreated_t, m_LobbyGameCreated);
-
 	STEAM_CALLBACK(SteamServerClientWrapper, OnGameJoinRequested, GameLobbyJoinRequested_t, m_GameJoinRequested);
-
-	//STEAM_CALLBACK( CSpaceWarClient, OnAvatarImageLoaded, AvatarImageLoaded_t, m_AvatarImageLoadedCreated );
 	STEAM_CALLBACK(SteamServerClientWrapper, OnAvatarImageLoaded, AvatarImageLoaded_t, m_AvatarImageLoadedCreated); //TODO: Finish.
-
 	STEAM_CALLBACK(SteamServerClientWrapper, OnSteamServersConnected, SteamServersConnected_t, m_SteamServersConnected);
-
 	STEAM_CALLBACK(SteamServerClientWrapper, OnSteamServersDisconnected, SteamServersDisconnected_t, m_SteamServersDisconnected);
-
 	STEAM_CALLBACK(SteamServerClientWrapper, OnSteamServerConnectFailure, SteamServerConnectFailure_t, m_SteamServerConnectFailure);
-
 	STEAM_CALLBACK(SteamServerClientWrapper, OnGameOverlayActivated, GameOverlayActivated_t, m_CallbackGameOverlayActivated);
-
-	//STEAM_CALLBACK( CSpaceWarClient, OnGameWebCallback, GameWebCallback_t, m_CallbackGameWebCallback );
 	STEAM_CALLBACK(SteamServerClientWrapper, OnGameWebCallback, GameWebCallback_t, m_CallbackGameWebCallback); //TODO: Finish.
-
-	//STEAM_CALLBACK(CSpaceWarClient, OnWorkshopItemInstalled, ItemInstalled_t, m_CallbackWorkshopItemInstalled);
 	STEAM_CALLBACK(SteamServerClientWrapper, OnWorkshopItemInstalled, ItemInstalled_t, m_CallbackWorkshopItemInstalled); //TODO: Finish.
-
 	STEAM_CALLBACK(SteamServerClientWrapper, OnP2PSessionConnectFail, P2PSessionConnectFail_t, m_CallbackP2PSessionConnectFail);
-
 	STEAM_CALLBACK(SteamServerClientWrapper, OnIPCFailure, IPCFailure_t, m_IPCFailureCallback);
-
 	STEAM_CALLBACK(SteamServerClientWrapper, OnSteamShutdown, SteamShutdown_t, m_SteamShutdownCallback);
-
 	STEAM_CALLBACK(SteamServerClientWrapper, OnP2PSessionRequest, P2PSessionRequest_t, m_CallbackP2PSessionRequest);
 
 	void OnLobbyCreated(LobbyCreated_t* pCallback, bool bIOFailure);
@@ -365,55 +343,75 @@ public:
 	void m_SteamCallResultEncryptedAppTicket_Set(SteamAPICall_t hSteamAPICall);
 	void RetrieveSteamIDFromGameServer( uint32_t m_unServerIP, uint16_t m_usServerPort );
 	void GetNumberOfCurrentPlayers();
+	std::string SteamServerClientWrapper::requestAuthTicket();
+	void consumeAuthTicket();
+	std::string authTicket = "";
+	HAuthTicket authTicketHandle = 0;
 private:
 	void OnGetNumberOfCurrentPlayers( NumberOfCurrentPlayers_t *pCallback, bool bIOFailure );
 	CCallResult< SteamServerClientWrapper, NumberOfCurrentPlayers_t > m_NumberOfCurrentPlayersCallResult;
-	// simple class to marshal callbacks from pinging a game server
-	class CGameServerPing : public ISteamMatchmakingPingResponse
-	{
-	public:
-		CGameServerPing()
-		{
-			m_hGameServerQuery = HSERVERQUERY_INVALID;
-			m_pClient = NULL;
-		}
-
-		void RetrieveSteamIDFromGameServer( SteamServerClientWrapper* pClient, uint32_t unIP, uint16_t unPort )
-		{
-			m_pClient = pClient;
-			m_hGameServerQuery = SteamMatchmakingServers()->PingServer( unIP, unPort, this );
-		}
-
-		void CancelPing()
-		{
-			m_hGameServerQuery = HSERVERQUERY_INVALID;
-		}
-
-		// Server has responded successfully and has updated data
-		virtual void ServerResponded( gameserveritem_t& server )
-		{
-			if ( m_hGameServerQuery != HSERVERQUERY_INVALID && server.m_steamID.IsValid() )
-			{
-				(*cpp_SteamServerClientWrapper_GameServerPingOnServerResponded)( static_cast<void*>(&server.m_steamID) );
-			}
-
-			m_hGameServerQuery = HSERVERQUERY_INVALID;
-		}
-
-		// Server failed to respond to the ping request
-		virtual void ServerFailedToRespond()
-		{
-			m_hGameServerQuery = HSERVERQUERY_INVALID;
-		}
-
-	private:
-		HServerQuery m_hGameServerQuery;	// we're pinging a game server so we can convert IP:Port to a steamID
-		SteamServerClientWrapper* m_pClient;
-	};
-	CGameServerPing m_GameServerPing;
 }* steam_server_client_wrapper; //TODO: Initialize this...where?
 
+void SteamClientConsumeAuthTicket()
+{
+	if ( steam_server_client_wrapper )
+	{
+		steam_server_client_wrapper->consumeAuthTicket();
+	}
+}
 
+void SteamServerClientWrapper::consumeAuthTicket()
+{
+	if ( authTicketHandle != k_HAuthTicketInvalid )
+	{
+		SteamUser()->CancelAuthTicket(authTicketHandle);
+	}
+	authTicketHandle = k_HAuthTicketInvalid;
+	authTicket = "";
+}
+
+std::string SteamClientRequestAuthTicket()
+{
+	if ( steam_server_client_wrapper )
+	{
+		return steam_server_client_wrapper->requestAuthTicket();
+	}
+	return "";
+}
+
+std::string SteamServerClientWrapper::requestAuthTicket()
+{
+	if ( !SteamUser()->BLoggedOn() )
+	{
+		printlog("[STEAM]: requestAuthTicket() not logged in");
+		return "";
+	}
+
+	uint8 rgubTicket[1024];
+	memset(rgubTicket, 0, sizeof(rgubTicket));
+	uint32 cubTicket;
+
+	consumeAuthTicket();
+
+	if ( authTicketHandle = SteamUser()->GetAuthSessionTicket(rgubTicket, sizeof(rgubTicket), &cubTicket, nullptr) )
+	{
+		char buf[1024] = "";
+		Uint32 len = cubTicket;
+		memcpy(buf, rgubTicket, cubTicket);
+		buf[cubTicket] = 0;
+		printlog("[STEAM]: GetAuthSessionTicket() request success");
+
+		authTicket = "";
+		char hexBuf[32];
+		for ( int i = 0; i < cubTicket; ++i )
+		{
+			snprintf(hexBuf, sizeof(hexBuf), "%02hhx", buf[i]);
+			authTicket += hexBuf;
+		}
+	}
+
+	return authTicket;
+}
 
 void SteamServerClientWrapper::OnLobbyDataUpdate(LobbyDataUpdate_t* pCallback)
 {
@@ -498,16 +496,6 @@ void SteamServerClientWrapper::OnP2PSessionRequest(P2PSessionRequest_t* pCallbac
 	{
 		(*cpp_SteamServerClientWrapper_OnP2PSessionRequest)(pCallback);
 	}
-}
-
-void c_RetrieveSteamIDFromGameServer( uint32_t m_unServerIP, uint16_t m_usServerPort )
-{
-	steam_server_client_wrapper->RetrieveSteamIDFromGameServer( m_unServerIP, m_usServerPort );
-}
-
-void SteamServerClientWrapper::RetrieveSteamIDFromGameServer( uint32_t m_unServerIP, uint16_t m_usServerPort )
-{
-	m_GameServerPing.RetrieveSteamIDFromGameServer( this, m_unServerIP, m_usServerPort );
 }
 
 void SteamServerClientWrapper::OnLobbyGameCreated(LobbyGameCreated_t* pCallback)
@@ -821,6 +809,12 @@ void steamAchievement(const char* achName)
 	}
 	else
 	{
+		if ( !gameModeManager.allowsStatisticsOrAchievements() )
+		{
+#ifndef DEBUG_ACHIEVEMENTS
+			return;
+#endif
+		}
 		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 			|| conductGameChallenges[CONDUCT_LIFESAVING]
 			|| conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS]
@@ -942,6 +936,12 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 	}
 	else
 	{
+		if ( !gameModeManager.allowsStatisticsOrAchievements() )
+		{
+#ifndef DEBUG_ACHIEVEMENTS
+			return;
+#endif
+		}
 		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 			|| conductGameChallenges[CONDUCT_LIFESAVING]
 			|| conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS]
@@ -1188,6 +1188,12 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 	}
 	else
 	{
+		if ( !gameModeManager.allowsStatisticsOrAchievements() )
+		{
+#ifndef DEBUG_ACHIEVEMENTS
+			return;
+#endif
+		}
 		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 			|| conductGameChallenges[CONDUCT_LIFESAVING]
 			|| conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS]

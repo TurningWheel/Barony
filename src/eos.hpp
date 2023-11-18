@@ -61,6 +61,9 @@ public:
 		Uint32 popupCurrentTicks = 0;
 		Uint32 loadingTicks = 0;
 		bool loginCriticalErrorOccurred = false;
+		std::string authToken = "";
+		Uint32 authTokenRefresh = 0;
+		Uint32 authTokenTicks = 0;
 		enum PopupType
 		{
 			POPUP_FULL,
@@ -68,18 +71,10 @@ public:
 		};
 		PopupType popupType = POPUP_TOAST;
 
-		SDL_Surface* loginBanner = nullptr;
-
-		void createLoginDialogue();
-		void drawDialogue();
 		void handleLogin();
-
 		void deinit()
 		{
-			if ( loginBanner )
-			{
-				SDL_FreeSurface(loginBanner);
-			}
+
 		}
 	} AccountManager;
 
@@ -570,6 +565,7 @@ public:
 	bool initAchievements();
 	bool initAuth(std::string hostname, std::string tokenName);
 	void initConnectLogin();
+	std::string getAuthToken();
 
 	void queryFriends()
 	{

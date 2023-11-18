@@ -28,6 +28,9 @@
 #include <steam/steam_api.h>
 #include "steam.hpp"
 #endif
+#ifdef USE_PLAYFAB
+#include "playfab.hpp"
+#endif
 #include "menu.hpp"
 #include "paths.hpp"
 #include "player.hpp"
@@ -71,7 +74,7 @@ void initGameDatafiles(bool moddedReload)
 	MainMenu::RaceDescriptions::readFromFile();
 	MainMenu::ClassDescriptions::readFromFile();
 	StatueManager.readAllStatues();
-
+	GameModeManager_t::CurrentSession_t::SeededRun_t::readSeedNamesFromFile();
 	loadLights();
 }
 
@@ -132,6 +135,9 @@ int initGame()
  #ifdef USE_EOS
 	cpp_SteamServerClientWrapper_OnRequestEncryptedAppTicket = &steam_OnRequestEncryptedAppTicket;
  #endif //USE_EOS
+#endif
+#ifdef USE_PLAYFAB
+	playfabUser.init();
 #endif
 
 	initGameControllers();
@@ -750,6 +756,9 @@ void deinitGame()
 #endif
 #ifdef USE_IMGUI
 	ImGui_t::deinit();
+#endif
+#ifdef USE_PLAYFAB
+	playfabUser.postScoreHandler.deinit();
 #endif
 }
 

@@ -406,6 +406,139 @@ void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::buttonPromptEnterTutorial
 	gameModeManager.Tutorial.writeToDocument();
 }
 
+void GameModeManager_t::CurrentSession_t::SeededRun_t::setup(std::string _seedString)
+{
+	if ( _seedString == "" )
+	{
+		seed = 0;
+		seedString = "";
+		return;
+	}
+	int num = atoi(_seedString.c_str());
+	if ( num == 0 )
+	{
+		seed = djb2Hash(const_cast<char*>(_seedString.c_str()));
+	}
+	else
+	{
+		seed = num;
+	}
+	seedString = _seedString;
+}
+
+void GameModeManager_t::CurrentSession_t::SeededRun_t::reset()
+{
+	seed = 0;
+	seedString = "";
+}
+
+bool GameModeManager_t::allowsSaves()
+{
+	if ( currentMode == GAME_MODE_DEFAULT )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool GameModeManager_t::allowsStatisticsOrAchievements()
+{
+	if ( currentMode == GAME_MODE_DEFAULT || currentMode == GAME_MODE_TUTORIAL )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool GameModeManager_t::allowsHiscores()
+{
+	if ( currentMode == GAME_MODE_DEFAULT )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool GameModeManager_t::isFastDeathGrave()
+{
+	if ( currentMode == GAME_MODE_TUTORIAL || currentMode == GAME_MODE_TUTORIAL_INIT
+		|| currentMode == GAME_MODE_CUSTOM_RUN )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool GameModeManager_t::allowsGlobalHiscores()
+{
+	if ( currentMode == GAME_MODE_DEFAULT )
+	{
+		if ( currentSession.seededRun.seed == 0 )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool GameModeManager_t::allowsBoulderBreak()
+{
+	if ( currentMode != GAME_MODE_TUTORIAL )
+	{
+		return true;
+	}
+	return false;
+}
+
+std::vector<std::string> GameModeManager_t::CurrentSession_t::SeededRun_t::prefixes;
+std::vector<std::string> GameModeManager_t::CurrentSession_t::SeededRun_t::suffixes;
+
+void GameModeManager_t::CurrentSession_t::SeededRun_t::readSeedNamesFromFile()
+{
+	const std::string filename = "data/seed_names.json";
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		return;
+	}
+
+	char buf[10000];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.HasMember("version") || !d.HasMember("prefixes") || !d.HasMember("suffixes") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	prefixes.clear();
+	suffixes.clear();
+	for ( auto it = d["prefixes"].Begin(); it != d["prefixes"].End(); ++it )
+	{
+		prefixes.push_back(it->GetString());
+	}
+	for ( auto it = d["suffixes"].Begin(); it != d["suffixes"].End(); ++it )
+	{
+		suffixes.push_back(it->GetString());
+	}
+}
+
 #ifndef NINTENDO
 bool IRCHandler_t::readFromFile()
 {

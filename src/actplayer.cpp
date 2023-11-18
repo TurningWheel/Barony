@@ -1557,6 +1557,16 @@ void actDeathGhost(Entity* my)
 		return;
 	}
 
+	if ( multiplayer != CLIENT )
+	{
+		if ( client_disconnected[playernum] )
+		{
+			my->removeLightField();
+			list_RemoveNode(my->mynode);
+			return;
+		}
+	}
+
 	players[playernum]->ghost.my = my;
 	players[playernum]->ghost.uid = my->getUID();
 
@@ -2094,7 +2104,7 @@ void actDeathCam(Entity* my)
 
 	Uint32 deathcamGameoverPromptTicks = *MainMenu::cvar_fastRestart ? TICKS_PER_SECOND :
 		(splitscreen ? TICKS_PER_SECOND * 3 : TICKS_PER_SECOND * 6);
-	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+	if ( gameModeManager.isFastDeathGrave() )
 	{
 		deathcamGameoverPromptTicks = TICKS_PER_SECOND * 3;
 	}
@@ -4632,8 +4642,10 @@ void actPlayer(Entity* my)
 				//auto screenshot_path = setSaveGameFileName(multiplayer == SINGLE, SaveFileType::SCREENSHOT);
 				//takeScreenshot(screenshot_path.c_str());
 			}
-			if ( !strcmp(map.name, "Boss") && !my->skill[29] )
+			if ( !strcmp(map.name, "Boss") )
 			{
+				if ( !my->skill[29] && PLAYER_ALIVETIME > 5 ) // herx's sprite isn't init on the first entity tick, so wait a little.
+				{
 				bool foundherx = false;
 				for ( node = map.creatures->first; node != nullptr; node = node->next ) //Herx is in the creature list, so only search that.
 				{
@@ -4658,6 +4670,7 @@ void actPlayer(Entity* my)
 						messageLocalPlayersColor(color, MESSAGE_WORLD, Language::get(89));
 					}
 				}
+			}
 			}
 			else
 			{
@@ -6024,13 +6037,16 @@ void actPlayer(Entity* my)
 						{
 							messagePlayer(PLAYER_NUM, MESSAGE_STATUS, Language::get(3702));
 							stats[PLAYER_NUM]->HUNGER -= 25;
+							stats[PLAYER_NUM]->HUNGER = std::max(stats[PLAYER_NUM]->HUNGER, 0);
 							serverUpdateHunger(PLAYER_NUM);
 						}
 					}
 				}
 				else if ( ticks % 10 == 0 ) // Lava deals damage every 10 ticks
 				{
-					my->modHP(-2 - local_rng.rand() % 2);
+					int damage = (2 + local_rng.rand() % 2);
+					damage = std::max(damage, stats[PLAYER_NUM]->MAXHP / 20);
+					my->modHP(-damage);
 					if ( stats[PLAYER_NUM]->type == AUTOMATON )
 					{
 						my->modMP(2);
@@ -6038,6 +6054,7 @@ void actPlayer(Entity* my)
 						{
 							messagePlayer(PLAYER_NUM, MESSAGE_STATUS, Language::get(3703));
 							stats[PLAYER_NUM]->HUNGER += 50;
+							stats[PLAYER_NUM]->HUNGER = std::min(1500, stats[PLAYER_NUM]->HUNGER);
 							serverUpdateHunger(PLAYER_NUM);
 						}
 					}
@@ -7205,7 +7222,7 @@ void actPlayer(Entity* my)
 							}
 							node_t* nextnode;
 
-							if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_DEFAULT )
+							if ( gameModeManager.allowsSaves() )
 							{
 								if ( multiplayer == SINGLE )
 								{

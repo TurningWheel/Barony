@@ -33,6 +33,9 @@
 #include <steam/steam_api.h>
 #include "steam.hpp"
 #endif
+#ifdef USE_PLAYFAB
+#include "playfab.hpp"
+#endif
 #include "prng.hpp"
 #include "collision.hpp"
 #include "paths.hpp"
@@ -2458,7 +2461,10 @@ void gameLogic(void)
 					}
 
                     // save at end of level change
-					saveGame();
+					if ( gameModeManager.allowsSaves() )
+					{
+						saveGame();
+					}
 #ifdef LOCAL_ACHIEVEMENTS
 					LocalAchievements_t::writeToFile();
 #endif
@@ -5977,6 +5983,11 @@ void drawAllPlayerCameras() {
 					{
 						if ( !players[i]->entity || (players[i]->entity && !players[i]->entity->isBlind()) )
 						{
+							if ( players[i]->entity && players[i]->entity->ticks < TICKS_PER_SECOND * 1 )
+							{
+								continue; // don't share for first x ticks due to level change warping
+							}
+
 							real_t x = camera.x;
 							real_t y = camera.y;
 							real_t ang = camera.ang;
@@ -6750,6 +6761,10 @@ int main(int argc, char** argv)
 				g_SteamLeaderboards->ProcessLeaderboardUpload();
 			}
 			SteamAPI_RunCallbacks();
+#endif
+#ifdef USE_PLAYFAB
+			PlayFab::PlayFabClientAPI::Update();
+			playfabUser.update();
 #endif
 #ifdef USE_EOS
 			if (EOS.PlatformHandle) {

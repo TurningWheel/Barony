@@ -1822,12 +1822,34 @@ namespace MainMenu {
 
     static void connectionErrorPrompt(const char* str) {
         resetLobbyJoinFlowState();
-        errorPrompt(str, "Okay",
+        auto prompt = errorPrompt(str, "Okay",
             [](Button& button) {
             soundCancel();
             multiplayer = SINGLE;
             closeMono();
             });
+		if ( prompt )
+		{
+			if ( auto text = prompt->findField("text") )
+			{
+				if ( auto textGet = text->getTextObject() )
+				{
+					if ( textGet->getNumTextLines() > 2 )
+					{
+						SDL_Rect textPos = text->getSize();
+						textPos.y -= 8;
+						textPos.h += 16;
+						text->setSize(textPos);
+						if ( auto okay = prompt->findButton("okay") )
+						{
+							SDL_Rect pos = okay->getSize();
+							pos.y += 8;
+							okay->setSize(pos);
+						}
+					}
+				}
+			}
+		}
     };
 
 	static void systemErrorPrompt(const char* str) {
@@ -15588,7 +15610,7 @@ failed:
             createDummyMainMenu();
             beginFade(MainMenu::FadeDestination::GameStart);
 
-			if (!intro && gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+			if (!intro && gameModeManager.allowsSaves()) {
 				deleteSaveGame(multiplayer);
 			}
 
@@ -21421,7 +21443,8 @@ failed:
 
 	static void mainRestartGame(Button& button) {
 	    const char* prompt;
-	    if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+	    if (gameModeManager.currentMode != GameModeManager_t::GameModes::GAME_MODE_TUTORIAL
+			&& gameModeManager.currentMode != GameModeManager_t::GameModes::GAME_MODE_TUTORIAL_INIT ) {
 	        prompt = Language::get(5639);
 	    } else {
 	        prompt = Language::get(5640);
@@ -21434,8 +21457,12 @@ failed:
 				soundActivate();
 				destroyMainMenu();
 				createDummyMainMenu();
-				if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+				if ( gameModeManager.currentMode != GameModeManager_t::GameModes::GAME_MODE_TUTORIAL
+					&& gameModeManager.currentMode != GameModeManager_t::GameModes::GAME_MODE_TUTORIAL_INIT ) {
+					if ( gameModeManager.allowsSaves() )
+					{
 					deleteSaveGame(multiplayer);
+					}
 					beginFade(MainMenu::FadeDestination::GameStart);
 				} else {
 				    tutorial_map_destination = map.filename;
@@ -21468,7 +21495,8 @@ failed:
 				assert(main_menu_frame);
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 				Button* quit_button;
-				if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+				if ( gameModeManager.currentMode != GameModeManager_t::GameModes::GAME_MODE_TUTORIAL
+					&& gameModeManager.currentMode != GameModeManager_t::GameModes::GAME_MODE_TUTORIAL_INIT ) {
 				    quit_button = buttons->findButton("Restart Game"); assert(quit_button);
 				} else {
 				    quit_button = buttons->findButton("Restart Trial"); assert(quit_button);
@@ -21803,6 +21831,8 @@ failed:
 			else if (main_menu_fade_destination == FadeDestination::GameStart) {
 				gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
 
+				if ( gameModeManager.allowsSaves() )
+				{
 				// set save game file index
 				if (!loadingsavegame) {
 					const bool singleplayer = (multiplayer == SINGLE);
@@ -21830,6 +21860,7 @@ failed:
 							});
 						savegameCurrentFileIndex = savegames.front().first;
 					}
+				}
 				}
 
 				// set clientnum and client_disconnected[] based on the state of the lobby
@@ -22432,7 +22463,8 @@ failed:
 #endif
 		        {"Settings", Language::get(5765), mainSettings},
 		        });
-			if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+			if ( gameModeManager.currentMode != GameModeManager_t::GameModes::GAME_MODE_TUTORIAL
+				&& gameModeManager.currentMode != GameModeManager_t::GameModes::GAME_MODE_TUTORIAL_INIT ) {
 			    options.insert(options.end(), {
 				    {"End Life", Language::get(5766), mainEndLife},
 				    });
@@ -22739,8 +22771,8 @@ failed:
 #else
 			const char* banner_images[][2] = {
 				{
-					"*#images/ui/Main Menus/Banners/banner_lifeafterdeath-preview.png",
-					"*#images/ui/Main Menus/Banners/banner_lifeafterdeath-preview_hover.png",
+					"*#images/ui/Main Menus/Banners/banner_latestnews-preview.png",
+					"*#images/ui/Main Menus/Banners/banner_latestnews-preview_hover.png",
 				},
 				{
 					"*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_base.png",
@@ -22766,7 +22798,7 @@ failed:
             
 			void(*banner_funcs[])(Button&) = {
 				[](Button&) { // banner #1
-					openURLTryWithOverlay("https://www.baronygame.com/blog/410-update-summary");
+					openURLTryWithOverlay("https://www.baronygame.com/blog/eat-my-hat-announcement");
 				},
 				[](Button&) { // banner #2
 					 openDLCPrompt(enabledDLCPack1 ? 1 : 0);
@@ -23256,7 +23288,10 @@ failed:
                     //auto frame = static_cast<Frame*>(window->getParent());
                     //frame->removeSelf();
 
-					deleteSaveGame(multiplayer);
+					if ( gameModeManager.allowsSaves() )
+					{
+						deleteSaveGame(multiplayer);
+					}
 				    pauseGame(2, 0);
 				    destroyMainMenu();
 				    createDummyMainMenu();
@@ -23288,8 +23323,12 @@ failed:
 				pauseGame(2, 0);
 				destroyMainMenu();
 				createDummyMainMenu();
-				if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+				if ( gameModeManager.currentMode != GameModeManager_t::GameModes::GAME_MODE_TUTORIAL
+					&& gameModeManager.currentMode != GameModeManager_t::GameModes::GAME_MODE_TUTORIAL_INIT ) {
+					if ( gameModeManager.allowsSaves() )
+					{
 					deleteSaveGame(multiplayer);
+					}
 					beginFade(MainMenu::FadeDestination::GameStart);
 				} else {
 				    tutorial_map_destination = map.filename;

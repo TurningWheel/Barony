@@ -3362,6 +3362,10 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 				}
 				hit.entity = ohitentity;
 			}
+			else if ( parent->behavior == &actGoldBag && achievementPenniless )
+			{
+				return 0.0;
+			}
 			else if ( parent->behavior == &actBoulderTrapHole )
 			{
 				return 0.0;

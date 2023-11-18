@@ -296,7 +296,7 @@ int loadConfig(char* filename);
 int loadDefaultConfig();
 int saveMap(const char* filename);
 char* readFile(char* filename);
-std::list<std::string> directoryContents(const char* directory, bool includeSubdirectory, bool includeFiles);
+std::list<std::string> directoryContents(const char* directory, bool includeSubdirectory, bool includeFiles, const char* base = datadir);
 File *openDataFile(const char *const filename, const char * const mode);
 DIR * openDataDir(const char *const);
 bool dataPathExists(const char *const, bool complete = true);
