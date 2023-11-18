@@ -7100,6 +7100,7 @@ bind_failed:
 
 	static void createOnlineLeaderboardsFilter()
 	{
+#ifdef USE_PLAYFAB
 		if ( playfabUser.leaderboardData.leaderboards[playfabUser.leaderboardData.currentSearch].loading )
 		{
 			return;
@@ -7107,7 +7108,6 @@ bind_failed:
 
 		closeBinary();
 
-#ifdef USE_PLAYFAB
 		PromptSize size = playfabUser.leaderboardSearch.daily ? SIZE_BIG : SIZE_TALL;
 		auto prompt = binaryPromptGeneric(Language::get(6078), Language::get(6074), Language::get(5926),
 			[](Button& button) {
