@@ -6181,14 +6181,7 @@ int loadGame(int player, const SaveGameInfo& info) {
 	}
 
 	int statsPlayer = player;
-	if ( !info.hiscore_dummy_loading )
-	{
-		if (!info.hash) {
-			printlog("loadGame() warning: hash check failed");
-			gameStatistics[STATISTICS_DISABLE_UPLOAD] = 1;
-		}
-	}
-	else
+	if ( info.hiscore_dummy_loading )
 	{
 		statsPlayer = MAXPLAYERS - 1; // read into non 0 player slot to not affect leaderboard
 	}
@@ -6480,6 +6473,14 @@ int loadGame(int player, const SaveGameInfo& info) {
 	}
 
 	Player::Minimap_t::mapDetails = info.map_messages;
+
+	if ( !info.hiscore_dummy_loading )
+	{
+		if ( !info.hash ) {
+			printlog("loadGame() warning: hash check failed");
+			gameStatistics[STATISTICS_DISABLE_UPLOAD] = 1;
+		}
+	}
 
 	return 0;
 }
