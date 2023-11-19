@@ -1658,19 +1658,21 @@ Increases the given skill of the given entity by 1.
 
 -------------------------------------------------------------------------------*/
 
-void Entity::increaseSkill(int skill, bool notify)
+bool Entity::increaseSkill(int skill, bool notify)
 {
 	Stat* myStats = this->getStats();
 	int player = -1;
 
 	if ( myStats == NULL )
 	{
-		return;
+		return false;
 	}
 	if ( this->behavior == &actPlayer )
 	{
 		player = this->skill[2];
 	}
+
+	bool increased = false;
 
 	Uint32 color = makeColorRGB(255, 255, 0);
 	if ( myStats->PROFICIENCIES[skill] < 100 )
@@ -1786,6 +1788,7 @@ void Entity::increaseSkill(int skill, bool notify)
 			}
 		}
 		myStats->EXP += 2;
+		increased = true;
 	}
 
 	int statBonusSkill = getStatForProficiency(skill);
@@ -1835,6 +1838,8 @@ void Entity::increaseSkill(int skill, bool notify)
 		net_packet->len = 21;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
+
+	return increased;
 }
 
 /*-------------------------------------------------------------------------------
@@ -8047,8 +8052,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->PROFICIENCIES[weaponskill] < SKILL_LEVEL_BASIC) )
 								{
-									this->increaseSkill(weaponskill, notify);
-									skillIncreased = true;
+									skillIncreased = this->increaseSkill(weaponskill, notify);
 								}
 							}
 						}
@@ -8069,8 +8073,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 							if ( local_rng.rand() % chance == 0 )
 							{
-								this->increaseSkill(weaponskill, notify);
-								skillIncreased = true;
+								skillIncreased = this->increaseSkill(weaponskill, notify);
 							}
 						}
 						else
@@ -8086,8 +8089,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->PROFICIENCIES[weaponskill] < SKILL_LEVEL_BASIC) )
 								{
-									this->increaseSkill(weaponskill, notify);
-									skillIncreased = true;
+									skillIncreased = this->increaseSkill(weaponskill, notify);
 								}
 							}
 						}
@@ -8096,27 +8098,28 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( skillIncreased && myStats->type == GOBLIN && weaponskill != PRO_RANGED )
 					{
 						// goblins level up all combat skills at once.
+						int numIncreases = 0;
 						if ( weaponskill != PRO_SWORD )
 						{
-							this->increaseSkill(PRO_SWORD, false);
+							numIncreases += this->increaseSkill(PRO_SWORD, false) ? 1 : 0;
 						}
 						if ( weaponskill != PRO_MACE )
 						{
-							this->increaseSkill(PRO_MACE, false);
+							numIncreases += this->increaseSkill(PRO_MACE, false) ? 1 : 0;
 						}
 						if ( weaponskill != PRO_AXE )
 						{
-							this->increaseSkill(PRO_AXE, false);
+							numIncreases += this->increaseSkill(PRO_AXE, false) ? 1 : 0;
 						}
 						if ( weaponskill != PRO_POLEARM )
 						{
-							this->increaseSkill(PRO_POLEARM, false);
+							numIncreases += this->increaseSkill(PRO_POLEARM, false) ? 1 : 0;
 						}
 						if ( weaponskill != PRO_UNARMED )
 						{
-							this->increaseSkill(PRO_UNARMED, false);
+							numIncreases += this->increaseSkill(PRO_UNARMED, false) ? 1 : 0;
 						}
-						if ( player >= 0 )
+						if ( player >= 0 && numIncreases > 0 )
 						{
 							Uint32 color = makeColorRGB(255, 255, 0);
 							messagePlayerColor(player, MESSAGE_PROGRESSION, color, Language::get(3446));

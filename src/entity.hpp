@@ -605,7 +605,7 @@ public:
 	void handleEffectsClient();
 
 	void effectTimes();
-	void increaseSkill(int skill, bool notify = true);
+	bool increaseSkill(int skill, bool notify = true);
 
 	Stat* getStats() const;
 
