@@ -8052,7 +8052,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->PROFICIENCIES[weaponskill] < SKILL_LEVEL_BASIC) )
 								{
-									skillIncreased = this->increaseSkill(weaponskill, notify);
+									this->increaseSkill(weaponskill, notify);
+									skillIncreased = true;
 								}
 							}
 						}
@@ -8073,7 +8074,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 							if ( local_rng.rand() % chance == 0 )
 							{
-								skillIncreased = this->increaseSkill(weaponskill, notify);
+								this->increaseSkill(weaponskill, notify);
+								skillIncreased = true;
 							}
 						}
 						else
@@ -8089,7 +8091,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->PROFICIENCIES[weaponskill] < SKILL_LEVEL_BASIC) )
 								{
-									skillIncreased = this->increaseSkill(weaponskill, notify);
+									this->increaseSkill(weaponskill, notify);
+									skillIncreased = true;
 								}
 							}
 						}
