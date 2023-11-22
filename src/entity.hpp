@@ -974,7 +974,7 @@ public:
 	void lichFireSetNextAttack(Stat& myStats);
 	void lichIceSetNextAttack(Stat& myStats);
 
-	void monsterMoveBackwardsAndPath(); // monster tries to move backwards in a cross shaped area if stuck against an entity.
+	void monsterMoveBackwardsAndPath(bool trySidesFirst = false); // monster tries to move backwards in a cross shaped area if stuck against an entity.
 	bool monsterHasLeader(); // return true if monsterstats->leader_uid is not 0.
 	void monsterAllySendCommand(int command, int destX, int destY, Uint32 uid = 0); // update the behavior of allied NPCs.
 	bool monsterAllySetInteract(); // set interact flags for allied NPCs.
