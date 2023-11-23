@@ -4612,7 +4612,7 @@ int main(int argc, char** argv)
 									{
 										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, colorRandom, "Completely random monster");
 									}
-									else if ( propertyInt == 6 || propertyInt == 12 || propertyInt == 16 )
+									else if ( propertyInt == 6 || propertyInt == 12 )
 									{
 										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, colorBad, "Error: Unused monster ID, will reset to 0");
 									}

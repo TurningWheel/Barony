@@ -1276,6 +1276,18 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->LVL = 1;
 			stats->monsterTinkeringStatus = DECREPIT; // store the type of item that was used to summon me.
 			break;
+		case (1000 + MIMIC):
+			stats->MAXHP = 50;
+			stats->HP = stats->MAXHP;
+			stats->OLDHP = stats->HP;
+			stats->STR = 0;
+			stats->DEX = -3;
+			stats->CON = 0;
+			stats->PER = 0;
+			stats->CHR = 0;
+			stats->EXP = 0;
+			stats->LVL = 1;
+			break;
 		case 10:
 		default:
 			break;

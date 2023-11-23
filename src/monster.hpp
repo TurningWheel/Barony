@@ -173,6 +173,7 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 
     // MIMIC
     {
+		1247
     },
 
     // LICH
@@ -435,7 +436,7 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 0.9, 1.f, 1.f, 0.9, 1.1, 1.1, 1.f }, // gnome
 	{ 0.9, 0.8, 1.f, 0.8, 0.9, 1.1, 0.8 }, // demon
 	{ 1.2, 1.f, 1.f, 0.9, 1.f, 0.8, 1.f }, // succubus
-	{ 0.8, 1.1, 1.3, 1.f, 0.7, 1.2, 1.f }, // mimic
+	{ 0.1, 0.1, 1.0, 0.1, 0.0, 1.0, 0.1 }, // mimic
 	{ 2.5, 2.5, 2.5, 2.5, 1.3, 1.f, 1.8 }, // lich
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // minotaur
 	{ 2.f, 2.f, 2.f, 2.f, 1.f, 1.f, 1.f }, // devil
@@ -692,6 +693,7 @@ void initLichIce(Entity* my, Stat* myStats);
 void initSentryBot(Entity* my, Stat* myStats);
 void initGyroBot(Entity* my, Stat* myStats);
 void initDummyBot(Entity* my, Stat* myStats);
+void initMimic(Entity* my, Stat* myStats);
 
 //--act*Limb functions--
 void actHumanLimb(Entity* my);
@@ -724,6 +726,7 @@ void actLichIceLimb(Entity* my);
 void actSentryBotLimb(Entity* my);
 void actGyroBotLimb(Entity* my);
 void actDummyBotLimb(Entity* my);
+void actMimicLimb(Entity* my);
 
 //--*Die functions--
 void humanDie(Entity* my);
@@ -758,6 +761,7 @@ void lichIceDie(Entity* my);
 void sentryBotDie(Entity* my);
 void gyroBotDie(Entity* my);
 void dummyBotDie(Entity* my);
+void mimicDie(Entity* my);
 
 //--*MoveBodyparts functions--
 void humanMoveBodyparts(Entity* my, Stat* myStats, double dist);
@@ -792,6 +796,7 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist);
 void sentryBotAnimate(Entity* my, Stat* myStats, double dist);
 void gyroBotAnimate(Entity* my, Stat* myStats, double dist);
 void dummyBotAnimate(Entity* my, Stat* myStats, double dist);
+void mimicAnimate(Entity* my, Stat* myStats, double dist);
 
 //--misc functions--
 void actMinotaurTrap(Entity* my);
@@ -1039,6 +1044,11 @@ static const int GYRO_START_FLYING = 4;
 
 //--Dummybot--
 static const int DUMMYBOT_RETURN_FORM = 1;
+
+//--Mimic--
+static const int MIMIC_ACTIVE = 0;
+static const int MIMIC_INERT = 1;
+static const int MIMIC_MAGIC = 2;
 
 struct MonsterData_t
 {

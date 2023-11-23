@@ -36,7 +36,7 @@ float limbs[NUMMONSTERS][20][3];
 bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
 {
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // NOTHING
-	{ 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0 }, // HUMAN
+	{ 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0 }, // HUMAN
 	{ 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1 }, // RAT
 	{ 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1 }, // GOBLIN
 	{ 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1 }, // SLIME
@@ -51,9 +51,9 @@ bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1 }, // GNOME
 	{ 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1 }, // DEMON
 	{ 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1 }, // SUCCUBUS
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 }, // MIMIC
+	{ 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1 }, // MIMIC
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1 }, // LICH
-	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1 }, // MINOTAUR
+	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1 }, // MINOTAUR
 	{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 }, // DEVIL
 	{ 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SHOPKEEPER
 	{ 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1 }, // KOBOLD
@@ -68,8 +68,8 @@ bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0 }, // AUTOMATON
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 }, // LICH_ICE
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 }, // LICH_FIRE
-	{ 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0 }, // SENTRYBOT
-	{ 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0 }, // SPELLBOT
+	{ 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0 }, // SENTRYBOT
+	{ 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0 }, // SPELLBOT
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GYROBOT
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }  // DUMMYBOT
 };
@@ -93,7 +93,7 @@ bool monsterally[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GNOME
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0 }, // DEMON
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0 }, // SUCCUBUS
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MIMIC
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MIMIC
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0 }, // LICH
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MINOTAUR
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0 }, // DEVIL
@@ -135,7 +135,7 @@ double sightranges[NUMMONSTERS] =
 	128,  // GNOME
 	256,  // DEMON
 	256,  // SUCCUBUS
-	0,    // MIMIC
+	256,  // MIMIC
 	512,  // LICH
 	512,  // MINOTAUR
 	1024, // DEVIL
@@ -545,6 +545,14 @@ void Entity::updateEntityOnHit(Entity* attacker, bool alertTarget)
 						ShopkeeperPlayerHostility.onShopkeeperHit(this, myStats, leader);
 					}
 				}*/
+			}
+		}
+		else if ( myStats->type == MIMIC )
+		{
+			if ( monsterSpecialState == MIMIC_INERT )
+			{
+				monsterSpecialState = MIMIC_ACTIVE;
+				serverUpdateEntitySkill(this, 33);
 			}
 		}
 	}
@@ -1006,7 +1014,14 @@ Entity* summonMonsterNoSmoke(Monster creature, long x, long y, bool forceLocatio
 	entity->x = x;
 	entity->y = y;
 	entity->z = 6;
-	entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+	if ( creature == MIMIC )
+	{
+		entity->yaw = 90 * (local_rng.rand() % 4) * PI / 180.0;
+	}
+	else
+	{
+		entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+	}
 	entity->behavior = &actMonster;
 	entity->flags[UPDATENEEDED] = true;
 	entity->flags[INVISIBLE] = true;
@@ -2135,6 +2150,7 @@ void actMonster(Entity* my)
 			case SPELLBOT: initSentryBot(my, nullptr); break;
 			case GYROBOT: initGyroBot(my, nullptr); break;
 			case DUMMYBOT: initDummyBot(my, nullptr); break;
+			case MIMIC: initMimic(my, nullptr); break;
 			default: printlog("Unknown monster, can't init!"); break;
 			}
 		}
@@ -2175,6 +2191,7 @@ void actMonster(Entity* my)
 			case SPELLBOT: sentryBotAnimate(my, nullptr, dist); break;
 			case GYROBOT: gyroBotAnimate(my, nullptr, dist); break;
 			case DUMMYBOT: dummyBotAnimate(my, nullptr, dist); break;
+			case MIMIC: mimicAnimate(my, nullptr, dist); break;
 			default: break;
 			}
 
@@ -2262,6 +2279,7 @@ void actMonster(Entity* my)
 				case SPELLBOT: my->sprite = 885; initSentryBot(my, myStats); break;
 				case GYROBOT: initGyroBot(my, myStats); break;
 				case DUMMYBOT: initDummyBot(my, myStats); break;
+				case MIMIC: initMimic(my, myStats); break;
 				default: break; //This should never be reached.
 			}
 		}
@@ -3294,6 +3312,9 @@ void actMonster(Entity* my)
 			case DUMMYBOT:
 				dummyBotDie(my);
 				break;
+			case MIMIC:
+				mimicDie(my);
+				break;
 			default:
 				break; //This should never be reached.
 		}
@@ -3540,6 +3561,7 @@ void actMonster(Entity* my)
 		case SPELLBOT:
 		case GYROBOT:
 		case DUMMYBOT:
+		case MIMIC:
 			handleinvisible = false;
 			break;
 		default:
@@ -6269,6 +6291,41 @@ timeToGoAgain:
 								{
 									hit.entity->skill[3] = 0; // chestHealth
 								}
+								else if ( hit.entity->behavior == &actChest )
+								{
+									Entity* ohitentity = hit.entity;
+									real_t slipFactor = sqrt(pow(my->vel_x, 2) + pow(my->vel_y, 2));
+									if ( hit.side == VERTICAL )
+									{
+										if ( my->vel_x > 0.0 )
+										{
+											clipMove(&my->x, &my->y, slipFactor, 0.0, my);
+										}
+										else
+										{
+											clipMove(&my->x, &my->y, -slipFactor, 0.0, my);
+										}
+									}
+									else if ( hit.side == HORIZONTAL )
+									{
+										if ( my->vel_y > 0.0 )
+										{
+											clipMove(&my->x, &my->y, 0.0, slipFactor, my);
+										}
+										else
+										{
+											clipMove(&my->x, &my->y, 0.0, -slipFactor, my);
+										}
+									}
+
+									++my->monsterPathCount;
+									if ( my->monsterPathCount > 50 )
+									{
+										my->monsterPathCount = 0;
+										//messagePlayer(0, MESSAGE_DEBUG, "remaking path!");
+										my->monsterMoveBackwardsAndPath(true);
+									}
+								}
 								else if ( hit.entity->isDamageableCollider() && myStats->type == MINOTAUR )
 								{
 									hit.entity->colliderCurrentHP = 0;
@@ -8117,6 +8174,7 @@ timeToGoAgain:
 		case SPELLBOT: sentryBotAnimate(my, myStats, dist); break;
 		case GYROBOT: gyroBotAnimate(my, myStats, dist); break;
 		case DUMMYBOT: dummyBotAnimate(my, myStats, dist); break;
+		case MIMIC: mimicAnimate(my, myStats, dist); break;
 		default: break;
 		}
 	}

@@ -3126,7 +3126,7 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				break;
 			case 4: //summoning traps
 				if ( (Sint32)atoi(spriteProperties[0]) < -1 || (Sint32)atoi(spriteProperties[0]) == 6
-					|| (Sint32)atoi(spriteProperties[0]) == 12 || (Sint32)atoi(spriteProperties[0]) == 16 )
+					|| (Sint32)atoi(spriteProperties[0]) == 12 )
 				{
 					selectedEntity[0]->skill[0] = 0;
 				}

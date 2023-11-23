@@ -160,7 +160,8 @@ void Entity::initMonster(int mySprite)
 			monsterSpellAnimation = MONSTER_SPELLCAST_HUMANOID;
 			break;
 		case MIMIC:
-			// unused
+			monsterFootstepType = MONSTER_FOOTSTEP_NONE;
+			monsterSpellAnimation = MONSTER_SPELLCAST_NONE;
 			break;
 		case LICH:
 			monsterFootstepType = MONSTER_FOOTSTEP_NONE;

@@ -935,7 +935,7 @@ char monsterEditorNameStrings[NUMMONSTERS][16] =
 	"gnome",
 	"demon",
 	"succubus",
-	"invalid",
+	"mimic",
 	"lich",
 	"minotaur",
 	"devil",
@@ -1246,6 +1246,7 @@ int canWearEquip(Entity* entity, int category)
 				case SCARAB:
 				case CRYSTALGOLEM:
 				case COCKATRICE:
+				case MIMIC:
 					equipType = 0;
 					break;
 

@@ -373,6 +373,13 @@ std::string EnemyBarSettings_t::getEnemyBarSpriteName(Entity* entity)
 		int type = entity->getMonsterTypeFromSprite();
 		if ( type < NUMMONSTERS && type >= 0 )
 		{
+			if ( type == MIMIC )
+			{
+				if ( entity->monsterSpecialState == MIMIC_INERT )
+				{
+					return "chest_mimic";
+				}
+			}
 			return monstertypename[type];
 		}
 	}

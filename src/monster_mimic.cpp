@@ -42,6 +42,8 @@ void initMimic(Entity* my, Stat* myStats)
 	{
 		auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
 
+		my->monsterSpecialState = MIMIC_INERT;
+
 		if ( myStats != nullptr )
 		{
 			if ( !myStats->leader_uid )
@@ -192,20 +194,6 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 		my->monsterAttack = MONSTER_POSE_MELEE_WINDUP1;
 		my->monsterAttackTime = 0;
 	}
-	//if ( keystatus[SDLK_c] )
-	//{
-	//	keystatus[SDLK_c] = 0;
-	//	if ( keystatus[SDLK_LCTRL] )
-	//	{
-	//		my->fskill[6] -= 0.1;
-	//	}
-	//	else
-	//	{
-	//		my->fskill[6] += 0.1;
-	//	}
-	//}
-
-	my->yaw += my->fskill[6];
 
 	if ( keystatus[SDLK_n] )
 	{
@@ -230,29 +218,133 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 		entity->z = my->z;
 		entity->yaw = my->yaw;
 
+
 		if ( bodypart == MIMIC_TRUNK )
 		{
 			head = entity;
 
-			if ( keystatus[SDLK_LCTRL] && keystatus[SDLK_h] )
+			auto& attackStageSwing = entity->skill[0];
+			auto& attackStageRoll = entity->skill[1];
+
+			auto& walkCycle = entity->skill[3];
+			auto& walkEndDelay = entity->skill[4];
+			auto& walkShuffleRollDelay = entity->skill[5];
+			auto& walkShuffleYaw = entity->fskill[3];
+			auto& bounceFromRoll = entity->fskill[4];
+
+			bool aggressiveMove = (my->monsterState == MONSTER_STATE_ATTACK || my->monsterState == MONSTER_STATE_HUNT) && dist > 0.1;
+
+			if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP1 )
 			{
-				entity->monsterWeaponYaw += 0.01;
-				if ( entity->monsterWeaponYaw >= 1.0 )
+				if ( my->monsterAttackTime == 0 )
 				{
-					entity->monsterWeaponYaw = 1.0;
+					attackStageSwing = 0;
+					attackStageRoll = 0;
+					entity->monsterWeaponYaw = 0.0;
+					entity->roll = 0.0;
+					walkShuffleYaw = 0;
+					walkCycle = 0;
+					walkShuffleRollDelay = 1;
+					entity->fskill[2] = -1.0 + 0.4 * (local_rng.rand() % 6); // random roll adjustment for attack
+				}
+
+				const real_t rollRate = entity->fskill[2] * limbs[MIMIC][11][0];
+				const real_t rollSetpoint = entity->fskill[2] * limbs[MIMIC][11][1];
+
+				if ( my->monsterAttackTime >= limbs[MIMIC][9][2] )
+				{
+					if ( limbAngleWithinRange(entity->roll, rollRate, rollSetpoint) )
+					{
+						entity->roll = rollSetpoint;
+					}
+					else
+					{
+						entity->roll += rollRate;
+					}
+
+					if ( limbAngleWithinRange(entity->monsterWeaponYaw, limbs[MIMIC][9][0], limbs[MIMIC][9][1]) )
+					{
+						entity->monsterWeaponYaw = limbs[MIMIC][9][1];
+						if ( my->monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+						{
+							if ( multiplayer != CLIENT )
+							{
+								my->attack(1, 0, nullptr);
+							}
+						}
+					}
+					else
+					{
+						entity->monsterWeaponYaw += limbs[MIMIC][9][0];
+					}
 				}
 			}
-			else if ( !keystatus[SDLK_h] )
+			else if ( my->monsterAttack == 1 )
 			{
-				/*entity->monsterWeaponYaw -= 0.01;
-				if ( entity->monsterWeaponYaw <= -1.0 )
+				const real_t rollRate = entity->fskill[2] * limbs[MIMIC][11][0] * 2;
+				const real_t rollSetpoint = entity->fskill[2] * limbs[MIMIC][11][1] * 2;
+
+				if ( attackStageRoll == 0 )
 				{
-					entity->monsterWeaponYaw = -1.0;
-				}*/
+					if ( limbAngleWithinRange(entity->roll, -rollRate, -rollSetpoint) )
+					{
+						entity->roll = -rollSetpoint;
+						attackStageRoll = 1;
+					}
+					else
+					{
+						entity->roll += -rollRate;
+					}
+				}
+				else if ( attackStageRoll == 1 )
+				{
+					if ( limbAngleWithinRange(entity->roll, rollRate, 0.0) )
+					{
+						entity->roll = 0.0;
+						attackStageRoll = 2;
+					}
+					else
+					{
+						entity->roll += rollRate;
+					}
+				}
+
+				if ( attackStageSwing == 0 )
+				{
+					if ( limbAngleWithinRange(entity->monsterWeaponYaw, limbs[MIMIC][10][0], limbs[MIMIC][10][1]) )
+					{
+						attackStageSwing = 1;
+						entity->monsterWeaponYaw = limbs[MIMIC][10][1];
+					}
+					else
+					{
+						entity->monsterWeaponYaw += limbs[MIMIC][10][0];
+					}
+				}
+				else if ( attackStageSwing == 1 )
+				{
+					if ( limbAngleWithinRange(entity->monsterWeaponYaw, 0.025 * 4, 0.0) )
+					{
+						attackStageSwing = 0;
+						entity->monsterWeaponYaw = 0.0;
+						my->monsterAttack = 0;
+					}
+					else
+					{
+						entity->monsterWeaponYaw += 0.025;
+					}
+				}
+			}
+			else if ( my->monsterAttack == 0 && !(my->monsterSpecialState == MIMIC_INERT) )
+			{
 				// walk cycle
 				bWalkCycle = true;
-				auto& walkCycle = entity->skill[3];
-				auto& walkEndDelay = entity->skill[4];
+			}
+
+			bounceFromRoll = 0.0;
+
+			if ( bWalkCycle )
+			{
 				if ( walkCycle % 2 == 0 )
 				{
 					entity->monsterWeaponYaw -= limbs[MIMIC][12][1];
@@ -269,7 +361,14 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 					{
 						entity->monsterWeaponYaw = 0.0;
 						++walkEndDelay;
-						if ( walkEndDelay >= TICKS_PER_SECOND / 25 )
+
+						bool longStep = !aggressiveMove;
+						Sint32 stepTime = TICKS_PER_SECOND / 25;
+						if ( longStep )
+						{
+							stepTime = TICKS_PER_SECOND / 5;
+						}
+						if ( walkEndDelay >= stepTime )
 						{
 							walkEndDelay = 0;
 							walkCycle++;
@@ -284,18 +383,29 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 				real_t rate = limbs[MIMIC][13][0];
 				if ( walkCycle % 4 < 2 )
 				{
-					entity->fskill[3] += rate;
-					entity->fskill[3] = std::min(entity->fskill[3], 1.0);
+					walkShuffleYaw += rate;
+					if ( walkShuffleRollDelay > 0 )
+					{
+						walkShuffleYaw += rate;
+					}
+					walkShuffleYaw = std::min(walkShuffleYaw, 1.0);
+					if ( walkShuffleYaw >= 1.0 )
+					{
+						if ( walkShuffleRollDelay > 0 )
+						{
+							walkShuffleRollDelay = 0;
+						}
+					}
 				}
 				else
 				{
-					entity->fskill[3] -= rate;
-					entity->fskill[3] = std::max(entity->fskill[3], -1.0);
+					walkShuffleYaw -= rate;
+					walkShuffleYaw = std::max(walkShuffleYaw, -1.0);
 				}
 
-				real_t rotate = -PI / 32 * (-1.0 + cos((PI / 2) * entity->fskill[3]));
-				real_t roll = PI / 16 * sin((PI / 2) + (PI / 2) * abs(entity->fskill[3]));
-				if ( entity->fskill[3] >= 0.0 )
+				real_t rotate = -PI / 16 * (-1.0 + cos((PI / 2) * walkShuffleYaw));
+
+				if ( walkShuffleYaw >= 0.0 )
 				{
 					entity->yaw += -rotate;
 				}
@@ -303,152 +413,33 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 				{
 					entity->yaw += rotate;
 				}
-				if ( keystatus[SDLK_LSHIFT] )
+				if ( !keystatus[SDLK_LSHIFT] )
 				{
-					entity->roll = walkCycle % 4 < 2 ? -roll : roll;
-				}
-			}
-			else
-			{
-				if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP1 )
-				{
-					if ( my->monsterAttackTime == 0 )
+					real_t roll = sin((PI / 2) + (PI / 2) * abs(walkShuffleYaw));
+					if ( walkShuffleRollDelay > 0 )
 					{
-						entity->skill[0] = 0;
-						entity->monsterWeaponYaw = 0.0;
-						entity->skill[1] = 0;
-						entity->roll = 0.0;
-						entity->fskill[3] = 0;
-						entity->fskill[2] = -1.0 + 0.4 * (local_rng.rand() % 6); // random roll adjustment for attack
+						roll = 0.0;
 					}
+					entity->roll = (PI / 16) * (walkCycle % 4 < 2 ? -roll : roll);
 
-					const real_t rollRate = entity->fskill[2] * limbs[MIMIC][11][0];
-					const real_t rollSetpoint = entity->fskill[2] * limbs[MIMIC][11][1];
-
-					if ( my->monsterAttackTime >= limbs[MIMIC][9][2] )
-					{
-						if ( limbAngleWithinRange(entity->roll, rollRate, rollSetpoint) )
-						{
-							entity->roll = rollSetpoint;
-						}
-						else
-						{
-							entity->roll += rollRate;
-						}
-
-						if ( limbAngleWithinRange(entity->monsterWeaponYaw, limbs[MIMIC][9][0], limbs[MIMIC][9][1]) )
-						{
-							entity->monsterWeaponYaw = limbs[MIMIC][9][1];
-							if ( my->monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
-							{
-								if ( multiplayer != CLIENT )
-								{
-									my->attack(1, 0, nullptr);
-								}
-							}
-						}
-						else
-						{
-							entity->monsterWeaponYaw += limbs[MIMIC][9][0];
-						}
-					}
-				}
-				else if ( my->monsterAttack == 1 )
-				{
-					const real_t rollRate = entity->fskill[2] * limbs[MIMIC][11][0] * 2;
-					const real_t rollSetpoint = entity->fskill[2] * limbs[MIMIC][11][1] * 2;
-
-					if ( entity->skill[1] == 0 )
-					{
-						if ( limbAngleWithinRange(entity->roll, -rollRate, -rollSetpoint) )
-						{
-							entity->roll = -rollSetpoint;
-							entity->skill[1] = 1;
-						}
-						else
-						{
-							entity->roll += -rollRate;
-						}
-					}
-					else if ( entity->skill[1] == 1 )
-					{
-						if ( limbAngleWithinRange(entity->roll, rollRate, 0.0) )
-						{
-							entity->roll = 0.0;
-							entity->skill[1] = 2;
-						}
-						else
-						{
-							entity->roll += rollRate;
-						}
-					}
-
-					if ( entity->skill[0] == 0 )
-					{
-						if ( limbAngleWithinRange(entity->monsterWeaponYaw, limbs[MIMIC][10][0], limbs[MIMIC][10][1]) )
-						{
-							entity->skill[0] = 1;
-							entity->monsterWeaponYaw = limbs[MIMIC][10][1];
-						}
-						else
-						{
-							entity->monsterWeaponYaw += limbs[MIMIC][10][0];
-						}
-					}
-					else if ( entity->skill[0] == 1 )
-					{
-						if ( limbAngleWithinRange(entity->monsterWeaponYaw, 0.025, 0.0) )
-						{
-							entity->skill[0] = 0;
-							entity->monsterWeaponYaw = 0.0;
-							my->monsterAttack = 0;
-						}
-						else
-						{
-							entity->monsterWeaponYaw += 0.025;
-						}
-					}
-				}
-
-
-				/*if ( entity->skill[0] == 0 )
-				{
-					entity->monsterWeaponYaw += 0.02;
-					if ( entity->monsterWeaponYaw >= 1.0 )
-					{
-						entity->monsterWeaponYaw = 1.0;
-						entity->skill[0] = 1;
-					}
-				}
-				else if ( entity->skill[0] == 1 )
-				{
-					entity->monsterWeaponYaw -= 0.02;
-					if ( entity->monsterWeaponYaw <= -0.25 )
-					{
-						entity->monsterWeaponYaw = -0.25;
-						entity->skill[0] = 0;
-					}
-				}*/
-			}
-
-			if ( keystatus[SDLK_v] )
-			{
-				keystatus[SDLK_v] = 0;
-				if ( keystatus[SDLK_LCTRL] )
-				{
-					entity->fskill[1] += 0.05;
+					real_t bounceAmount = (aggressiveMove ? 2.0 : 1.0) + limbs[MIMIC][13][1];
+					bounceFromRoll = roll * bounceAmount;
+					entity->z -= bounceFromRoll;
 				}
 				else
 				{
-					entity->fskill[1] -= 0.05;
+					entity->roll = 0.0;
 				}
 			}
-			entity->roll += entity->fskill[1];
 
 			entity->pitch = sin(PI * entity->monsterWeaponYaw / 3);
 		}
 		else if ( bodypart == MIMIC_LID )
 		{
+			auto& attackStageSwing = entity->skill[0];
+			auto& lidBounceStage = entity->skill[1];
+			auto& lidBounceAngle = entity->fskill[1];
+
 			entity->pitch = head->pitch;
 			if ( keystatus[SDLK_g] )
 			{
@@ -456,8 +447,8 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 				{
 					keystatus[SDLK_g] = 0;
 
-					entity->skill[1] = 1;
-					entity->fskill[1] = 0.0;
+					lidBounceStage = 1;
+					lidBounceAngle = 0.0;
 				}
 				else
 				{
@@ -469,14 +460,15 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 			{
 				if ( my->monsterAttackTime == 0 )
 				{
-					entity->skill[0] = 0;
-					entity->skill[1] = 0;
+					lidBounceStage = 0;
+					attackStageSwing = 0;
 					entity->monsterWeaponYaw = 0.0;
 				}
 
 				if ( limbAngleWithinRange(entity->monsterWeaponYaw, limbs[MIMIC][8][0], limbs[MIMIC][8][1]) )
 				{
-					entity->skill[0] = 1;
+					entity->monsterWeaponYaw = limbs[MIMIC][8][1];
+					attackStageSwing = 1;
 				}
 				else
 				{
@@ -487,10 +479,13 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 			{
 				if ( limbAngleWithinRange(entity->monsterWeaponYaw, limbs[MIMIC][8][2], 0) )
 				{
-					entity->skill[0] = 1;
 					entity->monsterWeaponYaw = 0.0;
-					entity->skill[1] = 1;
-					entity->fskill[1] = 0.0;
+					if ( attackStageSwing == 1 )
+					{
+						lidBounceStage = 1;
+						lidBounceAngle = 0.0;
+					}
+					attackStageSwing = 2;
 				}
 				else
 				{
@@ -498,20 +493,21 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 				}
 			}
 
-			if ( entity->skill[1] > 0 )
+			if ( lidBounceStage > 0 )
 			{
-				entity->fskill[1] += PI / 16;
+				lidBounceAngle += PI / 16;
 
-				if ( entity->fskill[1] >= PI )
+				if ( lidBounceAngle >= PI )
 				{
-					entity->fskill[1] = 0.0;
-					++entity->skill[1];
+					lidBounceAngle = 0.0;
+					++lidBounceStage;
 
-					if ( entity->skill[1] > 1 )
+					int numBounces = bWalkCycle ? 1 : 2;
+					if ( lidBounceStage > numBounces )
 					{
-						entity->skill[1] = 0;
+						lidBounceStage = 0;
 						entity->monsterWeaponYaw = 0.0;
-						entity->fskill[1] = 0.0;
+						lidBounceAngle = 0.0;
 					}
 				}
 			}
@@ -525,39 +521,37 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 				entity->monsterWeaponYaw += 2 * PI;
 			}
 
-			entity->pitch += entity->monsterWeaponYaw * PI / 8 - 0.5 * sin(entity->fskill[1]) / (entity->skill[1] + 1.0);
+			entity->pitch += entity->monsterWeaponYaw * PI / 8 - 0.5 * sin(lidBounceAngle) / (lidBounceStage + 1.0);
 
 			entity->roll = head->roll;
 
-			// walk cycle
+			// walk shuffle yaw
 			if ( head->fskill[3] >= 0.0 )
 			{
-				entity->yaw += PI / 32 * (-1.0 + cos((PI / 2) * head->fskill[3]));
+				entity->yaw += PI / 16 * (-1.0 + cos((PI / 2) * head->fskill[3]));
 			}
 			else
 			{
-				entity->yaw += -PI / 32 * (-1.0 + cos((PI / 2) * head->fskill[3]));
+				entity->yaw += -PI / 16 * (-1.0 + cos((PI / 2) * head->fskill[3]));
 			}
+			// walk cycle z offset
+			auto& headBounceFromRoll = head->fskill[4];
+			entity->z -= headBounceFromRoll;
 
-			auto& walkCycle = entity->skill[3];
-			if ( head->skill[3] != walkCycle )
+
+			if ( bWalkCycle )
 			{
-				walkCycle = head->skill[3];
-				if ( walkCycle % 2 == 1 )
+				auto& walkCycle = entity->skill[3];
+				if ( head->skill[3] != walkCycle )
 				{
-					entity->skill[1] = 1;
-					entity->fskill[1] = 0.0;
+					walkCycle = head->skill[3];
+					if ( walkCycle % 2 == 1 )
+					{
+						lidBounceStage = 1;
+						lidBounceAngle = 0.0;
+					}
 				}
 			}
-
-			/*if ( my->monsterAttack == 0 )
-			{
-				entity->monsterWeaponYaw = -0.3 * cos((PI / 2) * head->fskill[3]);
-				if ( entity->skill[1] == 0 )
-				{
-
-				}
-			}*/
 		}
 
 		switch ( bodypart )

@@ -10971,6 +10971,17 @@ void EnemyHPDamageBarHandler::EnemyHPDetails::updateWorldCoordinates()
 				worldX -= 5;
 			}
 		}
+		if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == MIMIC )
+		{
+			if ( entity->monsterSpecialState == MIMIC_INERT )
+			{
+				enemy_name = Language::get(675);
+			}
+			else
+			{
+				enemy_name = getMonsterLocalizedName(MIMIC);
+			}
+		}
 		screenDistance = enemyBarSettings.getScreenDistanceOffset(entity);
 	}
 }

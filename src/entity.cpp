@@ -813,6 +813,21 @@ void Entity::killedByMonsterObituary(Entity* victim)
 			case LICH_FIRE:
 				victim->setObituary(Language::get(2161));
 				break;
+			case SENTRYBOT:
+				victim->setObituary(Language::get(2162));
+				break;
+			case SPELLBOT:
+				victim->setObituary(Language::get(2163));
+				break;
+			case GYROBOT:
+				victim->setObituary(Language::get(2164));
+				break;
+			case DUMMYBOT:
+				victim->setObituary(Language::get(2165));
+				break;
+			case MIMIC:
+				victim->setObituary(Language::get(2166));
+				break;
 			default:
 				victim->setObituary(Language::get(1500));
 				break;
@@ -6048,6 +6063,12 @@ bool Entity::isMobile()
 
 	// stunned
 	if ( entitystats->EFFECTS[EFF_STUNNED] )
+	{
+		return false;
+	}
+
+	if ( entitystats->type == MIMIC
+		&& (monsterSpecialState == MIMIC_INERT) )
 	{
 		return false;
 	}
@@ -13384,6 +13405,7 @@ int Entity::getAttackPose() const
 			type == CREATURE_IMP || type == SUCCUBUS ||
 			type == SHOPKEEPER || type == MINOTAUR ||
 			type == SHADOW || type == RAT || type == SPIDER || type == CRAB ||
+			type == MIMIC ||
 			type == SLIME || (type == SCARAB && sprite != 1078 && sprite != 1079))
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;

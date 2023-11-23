@@ -1289,6 +1289,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				case LICH_ICE:
 				case LICH_FIRE:
 				case MINOTAUR:
+				case MIMIC:
 					difficulty = 666;
 					break;
 			}
@@ -1650,6 +1651,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 	if ( targetStats->type == LICH || targetStats->type == SHOPKEEPER || targetStats->type == DEVIL
 		|| targetStats->type == MINOTAUR || targetStats->type == LICH_FIRE || targetStats->type == LICH_ICE
 		|| (target->behavior == &actMonster && target->monsterAllySummonRank != 0)
+		|| targetStats->type == MIMIC
 		|| (targetStats->type == INCUBUS && !strncmp(targetStats->name, "inner demon", strlen("inner demon")))
 		|| targetStats->type == SENTRYBOT || targetStats->type == SPELLBOT || targetStats->type == GYROBOT
 		|| targetStats->type == DUMMYBOT
