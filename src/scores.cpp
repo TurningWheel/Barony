@@ -5521,8 +5521,8 @@ int SaveGameInfo::populateFromSession(const int playernum)
 
 	// game info
 	info->gamename = stats[playernum]->name;
-	info->gamekey = uniqueGameKey;
-	info->mapseed = mapseed;
+	info->gamekey = ::uniqueGameKey;
+	info->mapseed = ::mapseed;
 	info->customseed = gameModeManager.currentSession.seededRun.seed;
 	info->customseed_string = gameModeManager.currentSession.seededRun.seedString;
 	info->gametimer = completionTime;
