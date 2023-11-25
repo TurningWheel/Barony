@@ -1185,9 +1185,10 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 			real_t height = 0;
 			if ( placement == BOMB_CHEST )
 			{
-				if ( onEntity->yaw == 0 || onEntity->yaw == PI ) //EAST/WEST FACING
+				if ( (onEntity->yaw >= 0 && onEntity->yaw < PI / 4) || (onEntity->yaw >= ((3 * PI / 2) + PI / 4))
+					|| (onEntity->yaw >= PI - (PI / 4)) && (onEntity->yaw < PI + (PI / 4)) ) //EAST/WEST FACING
 				{
-					if ( hit.side == HORIZONTAL )
+					if ( hit.side == VERTICAL )
 					{
 						height = 5.25;
 					}
@@ -1196,7 +1197,8 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 						height = 4.25;
 					}
 				}
-				else if ( onEntity->yaw == PI / 2 || onEntity->yaw == 3 * PI / 2 ) //SOUTH/NORTH FACING
+				else if ( (onEntity->yaw >= ((PI / 2) - (PI / 4))) && (onEntity->yaw < (PI / 2) + (PI / 4))
+					|| (onEntity->yaw >= ((3 * PI / 2) - (PI / 4))) && (onEntity->yaw < (3 * PI / 2) + (PI / 4)) ) //SOUTH/NORTH FACING
 				{
 					if ( hit.side == VERTICAL )
 					{
@@ -1242,16 +1244,18 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 				case BOMB_EAST:
 					entity->yaw = 3 * PI / 2;
 					entity->x = onEntity->x;
-					if ( onEntity->yaw == 0 && placement == BOMB_CHEST )
+					if ( (onEntity->yaw >= 0 && onEntity->yaw < PI / 4) || (onEntity->yaw >= ((3 * PI / 2) + PI / 4)) 
+						&& placement == BOMB_CHEST )
 					{
-						height += 0.5;
+						height -= 0.5;
 					}
 					entity->x += height;
 					break;
 				case BOMB_SOUTH:
 					entity->yaw = 0;
 					entity->y = onEntity->y;
-					if ( onEntity->yaw == PI / 2 && placement == BOMB_CHEST )
+					if ( (onEntity->yaw >= ((PI / 2) - (PI / 4))) && (onEntity->yaw < (PI / 2) + (PI / 4)) 
+						&& placement == BOMB_CHEST )
 					{
 						height -= 0.5;
 					}
@@ -1260,7 +1264,8 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 				case BOMB_WEST:
 					entity->yaw = PI / 2;
 					entity->x = onEntity->x;
-					if ( onEntity->yaw == PI && placement == BOMB_CHEST )
+					if ( (onEntity->yaw >= PI - (PI / 4)) && (onEntity->yaw < PI + (PI / 4))
+						&& placement == BOMB_CHEST )
 					{
 						height -= 0.5;
 					}
@@ -1269,9 +1274,10 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 				case BOMB_NORTH:
 					entity->yaw = PI;
 					entity->y = onEntity->y;
-					if ( onEntity->yaw == 3 * PI / 2 && placement == BOMB_CHEST )
+					if ( (onEntity->yaw >= ((3 * PI / 2) - (PI / 4))) && (onEntity->yaw < (3 * PI / 2) + (PI / 4))
+						&& placement == BOMB_CHEST )
 					{
-						height += 0.5;
+						height -= 0.5;
 					}
 					entity->y -= height;
 					break;
@@ -1303,7 +1309,7 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 			{
 				entity->skill[19] = onEntity->doorHealth;
 			}
-			else if ( placement == BOMB_CHEST )
+			else if ( placement == BOMB_CHEST && onEntity->behavior != &actMonster )
 			{
 				entity->skill[19] = onEntity->skill[3]; //chestHealth
 				entity->skill[23] = onEntity->skill[1];
