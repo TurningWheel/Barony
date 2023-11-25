@@ -2225,7 +2225,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 			createParticleDropRising(target, 593, 1.f);
 			serverSpawnMiscParticles(target, PARTICLE_EFFECT_RISING_DROP, 593);
 
-			if ( targetStats->playerRace == RACE_HUMAN )
+			if ( targetStats->playerRace == RACE_HUMAN || (targetStats->playerRace != RACE_HUMAN && targetStats->appearance != 0) )
 			{
 				int roll = (RACE_HUMAN + 1) + local_rng.rand() % 8;
 				if ( target->effectPolymorph == 0 )
