@@ -550,9 +550,9 @@ void Entity::updateEntityOnHit(Entity* attacker, bool alertTarget)
 		else if ( myStats->type == MIMIC )
 		{
 			disturbMimic(attacker, true, true);
-			}
 		}
 	}
+}
 
 MonsterAllyFormation_t monsterAllyFormations;
 bool MonsterAllyFormation_t::getFollowLocation(Uint32 uid, Uint32 leaderUid, std::pair<int, int>& outPos)
@@ -3640,8 +3640,8 @@ void actMonster(Entity* my)
 			}
 			else
 			{
-			messagePlayerMonsterEvent(monsterclicked, 0xFFFFFFFF, *myStats, Language::get(514), Language::get(515), MSG_COMBAT);
-		}
+				messagePlayerMonsterEvent(monsterclicked, 0xFFFFFFFF, *myStats, Language::get(514), Language::get(515), MSG_COMBAT);
+			}
 		}
 		else
 		{
@@ -5191,6 +5191,7 @@ timeToGoAgain:
 											{
 												my->monsterAttack = my->getAttackPose(); // random attack motion
 												my->monsterHitTime = 0;
+												my->monsterAttackTime = 0;
 												hit.entity->doorHealth--; // decrease door health
 												if ( myStats->STR > 20 )
 												{
@@ -5242,6 +5243,7 @@ timeToGoAgain:
 										{
 											my->monsterAttack = my->getAttackPose(); // random attack motion
 											my->monsterHitTime = HITRATE / 4;
+											my->monsterAttackTime = 0;
 											hit.entity->furnitureHealth--; // decrease door health
 											if ( myStats->STR > 20 )
 											{
@@ -6265,6 +6267,7 @@ timeToGoAgain:
 										if ( my->monsterHitTime >= HITRATE )
 										{
 											my->monsterAttack = my->getAttackPose(); // random attack motion
+											my->monsterAttackTime = 0;
 											my->monsterHitTime = 0;
 											hit.entity->doorHealth--; // decrease door health
 											if ( myStats->STR > 20 )
@@ -6301,6 +6304,7 @@ timeToGoAgain:
 									if ( my->monsterHitTime >= HITRATE )
 									{
 										my->monsterAttack = my->getAttackPose(); // random attack motion
+										my->monsterAttackTime = 0;
 										my->monsterHitTime = HITRATE / 4;
 										hit.entity->furnitureHealth--; // decrease door health
 										if ( myStats->STR > 20 )
