@@ -6581,7 +6581,7 @@ timeToGoAgain:
 						if ( !target && myStats->type == MIMIC )
 						{
 							// reset to inert after wandering with no target
-							my->monsterSpecialState = MIMIC_INERT;
+							my->monsterSpecialState = MIMIC_INERT_SECOND;
 							serverUpdateEntitySkill(my, 33);
 
 							int x = (static_cast<int>(my->x) >> 4);
@@ -8194,6 +8194,92 @@ timeToGoAgain:
 		if ( my->isInertMimic() )
 		{
 			my->monsterReleaseAttackTarget();
+
+			if ( myReflex && my->monsterSpecialState == MIMIC_INERT_SECOND )
+			{
+				for ( node_t* node2 = map.creatures->first; node2 != nullptr; node2 = node2->next )
+				{
+					Entity* entity = (Entity*)node2->element;
+					if ( entity == my || entity->flags[PASSABLE] )
+					{
+						continue;
+					}
+					Stat* hitstats = entity->getStats();
+					if ( hitstats != nullptr )
+					{
+						if ( (my->checkEnemy(entity) || my->monsterTarget == entity->getUID() || ringconflict) )
+						{
+							if ( entity->behavior != &actPlayer )
+							{
+								continue;
+							}
+							tangent = atan2(entity->y - my->y, entity->x - my->x);
+							dir = my->yaw - tangent;
+							while ( dir >= PI )
+							{
+								dir -= PI * 2;
+							}
+							while ( dir < -PI )
+							{
+								dir += PI * 2;
+							}
+
+							// skip if light level is too low and distance is too high
+							int light = entity->entityLightAfterReductions(*hitstats, my);
+							double targetdist = sqrt(pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2));
+
+							real_t monsterVisionRange = 24.0; //sightranges[myStats->type];
+
+							if ( targetdist > monsterVisionRange )
+							{
+								continue;
+							}
+							if ( targetdist > TOUCHRANGE && targetdist > light )
+							{
+								continue;
+							}
+							bool visiontest = false;
+							if ( dir >= -7 * PI / 16 && dir <= 7 * PI / 16 )
+							{
+								visiontest = true;
+							}
+
+							if ( visiontest )   // vision cone
+							{
+								lineTrace(my, my->x, my->y, tangent, monsterVisionRange, LINETRACE_IGNORE_ENTITIES, false);
+								if ( !hit.entity )
+								{
+									lineTrace(my, my->x, my->y, tangent, TOUCHRANGE, 0, false);
+								}
+								if ( hit.entity == entity )
+								{
+									// charge state
+									Entity* attackTarget = hit.entity;
+									if ( my->disturbMimic(attackTarget, false, true) )
+									{
+										my->monsterAcquireAttackTarget(*attackTarget, MONSTER_STATE_ATTACK);
+
+										if ( MONSTER_SOUND == nullptr )
+										{
+											MONSTER_SOUND = playSoundEntity(my, MONSTER_SPOTSND + local_rng.rand() % MONSTER_SPOTVAR, 128);
+										}
+
+										if ( entity != nullptr )
+										{
+											if ( entity->behavior == &actPlayer )
+											{
+												assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
+												assailantTimer[entity->skill[2]] = COMBAT_MUSIC_COOLDOWN;
+											}
+										}
+									}
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 		if ( myStats->EFFECTS[EFF_KNOCKBACK] )
 		{
@@ -12153,7 +12239,8 @@ bool Entity::isFollowerFreeToPathToPlayer(Stat* myStats)
 
 bool Entity::isInertMimic() const
 {
-	if ( behavior == &actMonster && getMonsterTypeFromSprite() == MIMIC && monsterSpecialState == MIMIC_INERT )
+	if ( behavior == &actMonster && getMonsterTypeFromSprite() == MIMIC 
+		&& (monsterSpecialState == MIMIC_INERT || monsterSpecialState == MIMIC_INERT_SECOND) )
 	{
 		return true;
 	}

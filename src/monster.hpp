@@ -1051,6 +1051,7 @@ static const int DUMMYBOT_RETURN_FORM = 1;
 static const int MIMIC_ACTIVE = 0;
 static const int MIMIC_INERT = 1;
 static const int MIMIC_MAGIC = 2;
+static const int MIMIC_INERT_SECOND = 3;
 
 struct MonsterData_t
 {

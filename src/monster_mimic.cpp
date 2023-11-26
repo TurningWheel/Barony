@@ -716,7 +716,7 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 
 bool Entity::disturbMimic(Entity* touched, bool takenDamage, bool doMessage)
 {
-	if ( monsterSpecialState != MIMIC_INERT )
+	if ( monsterSpecialState != MIMIC_INERT && monsterSpecialState != MIMIC_INERT_SECOND )
 	{
 		return false;
 	}
