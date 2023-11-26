@@ -549,14 +549,10 @@ void Entity::updateEntityOnHit(Entity* attacker, bool alertTarget)
 		}
 		else if ( myStats->type == MIMIC )
 		{
-			if ( monsterSpecialState == MIMIC_INERT )
-			{
-				monsterSpecialState = MIMIC_ACTIVE;
-				serverUpdateEntitySkill(this, 33);
+			disturbMimic(attacker, true, true);
 			}
 		}
 	}
-}
 
 MonsterAllyFormation_t monsterAllyFormations;
 bool MonsterAllyFormation_t::getFollowLocation(Uint32 uid, Uint32 leaderUid, std::pair<int, int>& outPos)
@@ -1017,6 +1013,7 @@ Entity* summonMonsterNoSmoke(Monster creature, long x, long y, bool forceLocatio
 	if ( creature == MIMIC )
 	{
 		entity->yaw = 90 * (local_rng.rand() % 4) * PI / 180.0;
+		entity->monsterLookDir = entity->yaw;
 	}
 	else
 	{
@@ -2285,7 +2282,11 @@ void actMonster(Entity* my)
 		}
 
 		MONSTER_INIT = 2;
-		if ( myStats->type != LICH && myStats->type != DEVIL )
+		if ( myStats->type == MIMIC )
+		{
+			// no turn, handled earlier
+		}
+		else if ( myStats->type != LICH && myStats->type != DEVIL )
 		{
 			my->monsterLookDir = (local_rng.rand() % 360) * PI / 180;
 		}
@@ -3629,7 +3630,18 @@ void actMonster(Entity* my)
 		if ( !my->isMobile() )
 		{
 			// message the player, "the %s doesn't respond"
+			if ( my->isInertMimic() )
+			{
+				// wake up
+				if ( my->disturbMimic(players[monsterclicked]->entity, false, false) )
+				{
+					messagePlayer(monsterclicked, MESSAGE_INTERACTION, Language::get(6081));
+				}
+			}
+			else
+			{
 			messagePlayerMonsterEvent(monsterclicked, 0xFFFFFFFF, *myStats, Language::get(514), Language::get(515), MSG_COMBAT);
+		}
 		}
 		else
 		{
@@ -4635,6 +4647,10 @@ void actMonster(Entity* my)
 							my->monsterLookDir = (local_rng.rand() % 360) * PI / 180;
 						}
 					}
+					else if ( myStats->type == MIMIC )
+					{
+						my->monsterLookDir = 90 * (local_rng.rand() % 4) * PI / 180;
+					}
 					else
 					{
 						my->monsterLookDir = (local_rng.rand() % 360) * PI / 180;
@@ -4720,14 +4736,26 @@ void actMonster(Entity* my)
 			{
 				std::vector<std::pair<int, int>> possibleCoordinates;
 				my->monsterMoveTime = local_rng.rand() % 30;
+				if ( myStats->type == MIMIC )
+				{
+					my->monsterMoveTime = 2 + local_rng.rand() % 4;
+				}
 				int goodspots = 0;
 				int centerX = static_cast<int>(my->x / 16); // grab the coordinates in small form.
 				int centerY = static_cast<int>(my->y / 16); // grab the coordinates in small form.
-				int lowerX = std::max<int>(0, centerX - (map.width / 2)); // assigned upper/lower x coords from entity start position.
-				int upperX = std::min<int>(centerX + (map.width / 2), map.width);
 
-				int lowerY = std::max<int>(0, centerY - (map.height / 2)); // assigned upper/lower y coords from entity start position.
-				int upperY = std::min<int>(centerY + (map.height / 2), map.height);
+				int searchLimitX = (map.width / 2);
+				int searchLimitY = (map.height / 2);
+				if ( myStats->type == MIMIC )
+				{
+					searchLimitX = 5;
+					searchLimitY = 5;
+				}
+				int lowerX = std::max<int>(0, centerX - searchLimitX); // assigned upper/lower x coords from entity start position.
+				int upperX = std::min<int>(centerX + searchLimitX, map.width);
+
+				int lowerY = std::max<int>(0, centerY - searchLimitY); // assigned upper/lower y coords from entity start position.
+				int upperY = std::min<int>(centerY + searchLimitY, map.height);
 				//messagePlayer(0, "my x: %d, my y: %d, rangex: (%d-%d), rangey: (%d-%d)", centerX, centerY, lowerX, upperX, lowerY, upperY);
 
 				if ( myStats->type != SHOPKEEPER && (myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 && my->monsterAllyState == ALLY_STATE_DEFAULT) )
@@ -6546,7 +6574,77 @@ timeToGoAgain:
 							}*/
 						}
 						my->monsterState = MONSTER_STATE_WAIT; // no path, return to wait state
-						if ( my->monsterAllyState == ALLY_STATE_MOVETO )
+						if ( !target && myStats->type == MIMIC )
+						{
+							// reset to inert after wandering with no target
+							my->monsterSpecialState = MIMIC_INERT;
+							serverUpdateEntitySkill(my, 33);
+
+							int x = (static_cast<int>(my->x) >> 4);
+							int y = (static_cast<int>(my->y) >> 4);
+							// look for a wall to turn against
+
+							std::vector<std::pair<int, int>> tilesToCheck;
+							tilesToCheck.push_back(std::make_pair(x + 1, y));
+							tilesToCheck.push_back(std::make_pair(x - 1, y));
+							tilesToCheck.push_back(std::make_pair(x, y + 1));
+							tilesToCheck.push_back(std::make_pair(x, y - 1));
+
+							bool foundWall = false;
+							for ( auto& pair : tilesToCheck )
+							{
+								int tx = pair.first;
+								int ty = pair.second;
+								if ( map.tiles[OBSTACLELAYER + ((ty)*MAPLAYERS + (tx)*MAPLAYERS * map.height)] )
+								{
+									if ( tx == x + 1 )
+									{
+										my->monsterLookDir = PI;
+									}
+									else if ( tx == x - 1 )
+									{
+										my->monsterLookDir = 0.0;
+									}
+									else if ( ty == y - 1 )
+									{
+										my->monsterLookDir = PI / 2;
+									}
+									else if ( ty == y + 1 )
+									{
+										my->monsterLookDir = 3 * PI / 2;
+									}
+									foundWall = true;
+								}
+							}
+
+							if ( !foundWall )
+							{
+								for ( auto& pair : tilesToCheck )
+								{
+									int tx = pair.first;
+									int ty = pair.second;
+
+									if ( checkObstacle((tx << 4) + 8, (ty << 4) + 8, my, false) )
+									{
+										if ( tx == x + 1 || tx == x - 1 )
+										{
+											my->monsterLookDir = PI / 2 + (local_rng.rand() % 2) * PI;
+										}
+										else if ( ty == y + 1 || ty == y - 1 )
+										{
+											my->monsterLookDir = 0.0 + (local_rng.rand() % 2) * PI;
+										}
+										foundWall = true;
+										break;
+									}
+								}
+							}
+							if ( !foundWall )
+							{
+								my->monsterLookDir = (PI / 2) * (local_rng.rand() % 4);
+							}
+						}
+						else if ( my->monsterAllyState == ALLY_STATE_MOVETO )
 						{
 							if ( my->monsterAllyInteractTarget != 0 )
 							{
@@ -8089,6 +8187,10 @@ timeToGoAgain:
 	}
 	else
 	{
+		if ( my->isInertMimic() )
+		{
+			my->monsterReleaseAttackTarget();
+		}
 		if ( myStats->EFFECTS[EFF_KNOCKBACK] )
 		{
 			my->monsterHandleKnockbackVelocity(my->monsterKnockbackTangentDir, weightratio);
@@ -12043,4 +12145,13 @@ bool Entity::isFollowerFreeToPathToPlayer(Stat* myStats)
 		}
 	}
 	return true;
+}
+
+bool Entity::isInertMimic() const
+{
+	if ( behavior == &actMonster && getMonsterTypeFromSprite() == MIMIC && monsterSpecialState == MIMIC_INERT )
+	{
+		return true;
+	}
+	return false;
 }
