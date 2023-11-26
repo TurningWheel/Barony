@@ -1488,12 +1488,14 @@ void Entity::lockChest()
 
 void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster)
 {
-	chestHealth -= damage; //Decrease chest health.
-	if ( caster )
+	if ( behavior == &actMonster )
 	{
-		if ( caster->behavior == &actPlayer )
+		modHP(-damage); // do the damage
+
+		Stat* stats = getStats();
+		if ( caster && caster->behavior == &actPlayer )
 		{
-			if ( chestHealth <= 0 )
+			if ( stats && stats->HP <= 0 )
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
@@ -1516,8 +1518,47 @@ void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity 
 				}
 			}
 		}
-		updateEnemyBar(caster, this, Language::get(675), chestHealth, chestMaxHealth,
-			false, DamageGib::DMG_DEFAULT);
+
+		if ( stats )
+		{
+			// update enemy bar for attacker
+			updateEnemyBar(caster, this, Language::get(675), stats->HP, stats->MAXHP, false,
+				DamageGib::DMG_DEFAULT);
+		}
+	}
+	else
+	{
+		chestHealth -= damage; //Decrease chest health.
+		if ( caster )
+		{
+			if ( caster->behavior == &actPlayer )
+			{
+				if ( chestHealth <= 0 )
+				{
+					if ( magicProjectile.behavior == &actBomb )
+					{
+						messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3617), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(675));
+					}
+					else
+					{
+						messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2520));
+					}
+				}
+				else
+				{
+					if ( magicProjectile.behavior == &actBomb )
+					{
+						messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(3618), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(675));
+					}
+					else
+					{
+						messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(378), Language::get(675));
+					}
+				}
+			}
+			updateEnemyBar(caster, this, Language::get(675), chestHealth, chestMaxHealth,
+				false, DamageGib::DMG_DEFAULT);
+		}
 	}
 	playSoundEntity(this, 28, 128);
 }

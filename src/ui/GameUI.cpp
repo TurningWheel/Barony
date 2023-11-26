@@ -375,7 +375,7 @@ std::string EnemyBarSettings_t::getEnemyBarSpriteName(Entity* entity)
 		{
 			if ( type == MIMIC )
 			{
-				if ( entity->monsterSpecialState == MIMIC_INERT )
+				if ( entity->isInertMimic() )
 				{
 					return "chest_mimic";
 				}

@@ -4819,6 +4819,7 @@ void assignActions(map_t* map)
 				if ( monsterType == MIMIC )
 				{
 					entity->yaw = 90 * (map_rng.rand() % 4) * PI / 180.0;
+					entity->monsterLookDir = entity->yaw;
 				}
 
 				if ( multiplayer != CLIENT )

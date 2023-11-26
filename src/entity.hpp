@@ -52,29 +52,6 @@ class Entity
 	Sint32& switch_power;	// Switch/mechanism power status.
 	Sint32& chanceToPutOutFire; // skill[37] - Value between 5 and 10, with 10 being the default starting chance, and 5 being absolute minimum
 
-	//Chest skills.
-	//skill[0]
-	Sint32& chestInit;
-	//skill[1]
-	//0 = closed. 1 = open.
-	//0 = closed. 1 = open.
-	Sint32& chestStatus;
-	//skill[2] is reserved for all entities.
-	//skill[3]
-	Sint32& chestHealth;
-	//skill[5]
-	//Index of the player the chest was opened by.
-	Sint32& chestOpener;
-	//skill[6]
-	Sint32& chestLidClicked;
-	//skill[7]
-	Sint32& chestAmbience;
-	//skill[8]
-	Sint32& chestMaxHealth;
-	//skill[9]
-	//field to be set if the chest sprite is 75-81 in the editor, otherwise should stay at value 0
-	Sint32& chestType;
-
 	// Power crystal skills
 	Sint32& crystalInitialised; // 1 if init, else 0 skill[1]
 	Sint32& crystalTurning; // 1 if currently rotating, else 0 skill[3]
@@ -166,6 +143,29 @@ public:
 	void seedEntityRNG(Uint32 seed);
 
 	//--PUBLIC CHEST SKILLS--
+
+	//Chest skills.
+	//skill[0]
+	Sint32& chestInit;
+	//skill[1]
+	//0 = closed. 1 = open.
+	//0 = closed. 1 = open.
+	Sint32& chestStatus;
+	//skill[2] is reserved for all entities.
+	//skill[3]
+	Sint32& chestHealth;
+	//skill[5]
+	//Index of the player the chest was opened by.
+	Sint32& chestOpener;
+	//skill[6]
+	Sint32& chestLidClicked;
+	//skill[7]
+	Sint32& chestAmbience;
+	//skill[8]
+	Sint32& chestMaxHealth;
+	//skill[9]
+	//field to be set if the chest sprite is 75-81 in the editor, otherwise should stay at value 0
+	Sint32& chestType;
 
 	//skill[4]
 	//0 = unlocked. 1 = locked.
@@ -1016,6 +1016,8 @@ public:
 	int getColliderSfxOnBreak() const;
 	int getColliderLangName() const;
 	static void monsterRollLevelUpStats(int increasestat[3]);
+	bool disturbMimic(Entity* touched, bool takenDamage, bool doMessage);
+	bool isInertMimic() const;
 };
 
 Monster getMonsterFromPlayerRace(int playerRace); // convert playerRace into the relevant monster type

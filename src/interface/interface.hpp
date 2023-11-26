@@ -142,8 +142,7 @@ public:
 				{
 					barType = BAR_TYPE_FURNITURE;
 				}
-				else if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == MIMIC
-					&& entity->monsterSpecialState == MIMIC_INERT )
+				else if ( entity->isInertMimic() )
 				{
 					barType = BAR_TYPE_FURNITURE;
 				}

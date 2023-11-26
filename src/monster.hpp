@@ -870,6 +870,8 @@ static const int MONSTER_POSE_AUTOMATON_MALFUNCTION = 31;
 static const int MONSTER_POSE_LICH_FIRE_SWORD = 32;
 static const int PLAYER_POSE_GOLEM_SMASH = 33;
 static const int MONSTER_POSE_INCUBUS_TAUNT = 34;
+static const int MONSTER_POSE_MIMIC_DISTURBED = 35;
+static const int MONSTER_POSE_MIMIC_DISTURBED2 = 36;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;

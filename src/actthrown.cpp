@@ -700,7 +700,7 @@ void actThrown(Entity* my)
 			}
 			if ( item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB )
 			{
-				if ( hit.entity->behavior == &actChest )
+				if ( hit.entity->behavior == &actChest || hit.entity->isInertMimic() )
 				{
 					item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_CHEST, Item::ItemBombFacingDirection::BOMB_UP, my, hit.entity);
 					free(item);
@@ -723,7 +723,8 @@ void actThrown(Entity* my)
 					return;
 				}
 			}
-			else if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+			else if ( (hit.entity->behavior == &actMonster && !hit.entity->isInertMimic())
+				|| hit.entity->behavior == &actPlayer )
 			{
 				int oldHP = 0;
 				oldHP = hit.entity->getHP();
@@ -1450,6 +1451,38 @@ void actThrown(Entity* my)
 						spawnMagicTower(parent, my->x, my->y, SPELL_LIGHTNING, hit.entity);
 						break;
 					default:
+						if ( hit.entity->behavior == &actChest || hit.entity->isInertMimic() )
+						{
+							if ( cat == THROWN )
+							{
+								playSoundEntity(hit.entity, 66, 64); //*tink*
+							}
+
+							if ( parent )
+							{
+								if ( parent->behavior == &actPlayer )
+								{
+									messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, Language::get(667));
+									if ( cat == THROWN )
+									{
+										messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, Language::get(447));
+									}
+								}
+								if ( hit.entity->behavior == &actMonster )
+								{
+									if ( hitstats )
+									{
+										updateEnemyBar(parent, hit.entity, Language::get(675), hitstats->HP, hitstats->MAXHP,
+											false, DamageGib::DMG_WEAKEST);
+									}
+								}
+								else
+								{
+									updateEnemyBar(parent, hit.entity, Language::get(675), hit.entity->chestHealth, hit.entity->chestMaxHealth,
+										false, DamageGib::DMG_WEAKEST);
+								}
+							}
+						}
 						break;
 				}
 			}

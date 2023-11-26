@@ -4264,7 +4264,9 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 			}
 		}
 	}
-	else if ( selectedEntity.behavior == &actMonster && enableAttack && selectedEntity.getMonsterTypeFromSprite() != GYROBOT )
+	else if ( selectedEntity.behavior == &actMonster 
+		&& enableAttack && selectedEntity.getMonsterTypeFromSprite() != GYROBOT
+		&& !selectedEntity.isInertMimic() )
 	{
 		if ( updateInteractText )
 		{
@@ -10973,7 +10975,7 @@ void EnemyHPDamageBarHandler::EnemyHPDetails::updateWorldCoordinates()
 		}
 		if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == MIMIC )
 		{
-			if ( entity->monsterSpecialState == MIMIC_INERT )
+			if ( entity->isInertMimic() )
 			{
 				enemy_name = Language::get(675);
 			}
@@ -23570,7 +23572,7 @@ CalloutRadialMenu::CalloutType CalloutRadialMenu::getCalloutTypeForEntity(const 
 	{
 		type = CALLOUT_TYPE_SINK;
 	}
-	else if ( parent->behavior == &actChestLid || parent->behavior == &actChest )
+	else if ( parent->behavior == &actChestLid || parent->behavior == &actChest || parent->isInertMimic() )
 	{
 		type = CALLOUT_TYPE_CHEST;
 	}
@@ -26076,7 +26078,8 @@ bool CalloutRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updat
 			strcat(interactText, Language::get(4356)); // "crystal"
 		}
 	}
-	else if ( selectedEntity.behavior == &actChestLid || selectedEntity.behavior == &actChest )
+	else if ( selectedEntity.behavior == &actChestLid || selectedEntity.behavior == &actChest
+		|| selectedEntity.isInertMimic() )
 	{
 		if ( updateInteractText )
 		{

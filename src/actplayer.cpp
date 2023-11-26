@@ -7550,14 +7550,11 @@ void actPlayer(Entity* my)
 				if ( !everybodyfriendly && hit.entity->behavior == &actMonster )
 				{
 					bool enemy = my->checkEnemy(hit.entity);
-					if ( enemy )
+					if ( enemy && !hit.entity->isInertMimic() )
 					{
 						if ( hit.entity->monsterState == MONSTER_STATE_WAIT || (hit.entity->monsterState == MONSTER_STATE_HUNT && hit.entity->monsterTarget == 0) )
 						{
-							double tangent = atan2( my->y - hit.entity->y, my->x - hit.entity->x );
-							hit.entity->skill[4] = 1;
-							hit.entity->skill[6] = local_rng.rand() % 10 + 1;
-							hit.entity->fskill[4] = tangent;
+							hit.entity->lookAtEntity(*my);
 						}
 					}
 				}
@@ -7641,14 +7638,11 @@ void actPlayer(Entity* my)
 				if ( !everybodyfriendly && hit.entity->behavior == &actMonster )
 				{
 					bool enemy = my->checkEnemy(hit.entity);
-					if ( enemy )
+					if ( enemy && !hit.entity->isInertMimic() )
 					{
 						if ( hit.entity->monsterState == MONSTER_STATE_WAIT || (hit.entity->monsterState == MONSTER_STATE_HUNT && hit.entity->monsterTarget == 0) )
 						{
-							double tangent = atan2( my->y - hit.entity->y, my->x - hit.entity->x );
-							hit.entity->skill[4] = 1;
-							hit.entity->skill[6] = local_rng.rand() % 10 + 1;
-							hit.entity->fskill[4] = tangent;
+							hit.entity->lookAtEntity(*my);
 						}
 					}
 				}

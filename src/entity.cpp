@@ -6067,8 +6067,7 @@ bool Entity::isMobile()
 		return false;
 	}
 
-	if ( entitystats->type == MIMIC
-		&& (monsterSpecialState == MIMIC_INERT) )
+	if ( isInertMimic() )
 	{
 		return false;
 	}
@@ -6320,6 +6319,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 			else if ( (myStats->type == INCUBUS && (pose == MONSTER_POSE_INCUBUS_TELEPORT || pose == MONSTER_POSE_INCUBUS_TAUNT))
 				|| (myStats->type == VAMPIRE && (pose == MONSTER_POSE_VAMPIRE_DRAIN || pose == MONSTER_POSE_VAMPIRE_AURA_CHARGE))
+				|| (myStats->type == MIMIC && (pose == MONSTER_POSE_MIMIC_DISTURBED || pose == MONSTER_POSE_MIMIC_DISTURBED2))
 				|| (myStats->type == LICH_FIRE && pose == MONSTER_POSE_MAGIC_CAST1)
 				|| (myStats->type == LICH_ICE && pose == MONSTER_POSE_MAGIC_CAST1)
 				|| (myStats->type == LICH_ICE 
@@ -6347,7 +6347,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 			{
 				monsterAttack = 0;
 			}
-			else if ( myStats->weapon != nullptr || myStats->type == CRYSTALGOLEM || myStats->type == COCKATRICE )
+			else if ( myStats->weapon != nullptr 
+				|| myStats->type == CRYSTALGOLEM || myStats->type == COCKATRICE
+				|| myStats->type == MIMIC )
 			{
 				monsterAttack = pose;
 			}
@@ -7138,6 +7140,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 		if ( hit.entity != nullptr )
 		{
+			bool mimic = hit.entity->isInertMimic();
+
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 			{
 				// test for friendly fire
@@ -7329,7 +7333,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					playSoundPos(hit.x, hit.y, 183, 64);
 				}
 			}
-			else if ( hit.entity->behavior == &actMonster )
+			else if ( hit.entity->behavior == &actMonster && !mimic )
 			{
 				previousMonsterState = hit.entity->monsterState;
 				hitstats = hit.entity->getStats();
@@ -7452,8 +7456,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 			}
 			else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &::actFurniture || hit.entity->behavior == &::actChest
+				|| mimic
 				|| (hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMelee()) )
 			{
+				if ( mimic )
+				{
+					hitstats = hit.entity->getStats();
+				}
+
 				int axe = 0;
 				int damage = 1;
 				int weaponskill = -1;
@@ -7494,7 +7504,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 						}
 					}
-					else if ( hit.entity->behavior != &::actChest )
+					else if ( hit.entity->behavior != &::actChest && !mimic )
 					{
 						axe = (myStats->PROFICIENCIES[PRO_UNARMED] / 20);
 						if ( myStats->PROFICIENCIES[PRO_UNARMED] >= SKILL_LEVEL_LEGENDARY )
@@ -7509,7 +7519,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						axe += 20;
 					}
-					else if ( hit.entity->behavior == &::actChest )
+					else if ( hit.entity->behavior == &::actChest || mimic )
 					{
 						axe = std::min(axe + 50, 50);
 					}
@@ -7526,8 +7536,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 				int& entityHP = hit.entity->behavior == &actColliderDecoration ? hit.entity->colliderCurrentHP :
 					(hit.entity->behavior == &::actChest ? hit.entity->chestHealth :
-					(hit.entity->behavior == &actDoor ? hit.entity->doorHealth :
-						hit.entity->furnitureHealth));
+					(hit.entity->behavior == &actDoor ? hit.entity->doorHealth : 
+					((mimic && hitstats) ? hitstats->HP :
+						hit.entity->furnitureHealth)));
 
 				entityHP -= damage;
 
@@ -7553,6 +7564,28 @@ void Entity::attack(int pose, int charge, Entity* target)
 					else if ( hit.entity->behavior == &::actChest )
 					{
 						messagePlayer(player, MESSAGE_COMBAT_BASIC, Language::get(667));
+					}
+					else if ( mimic )
+					{
+						messagePlayer(player, MESSAGE_COMBAT_BASIC, Language::get(667));
+						previousMonsterState = hit.entity->monsterState;
+						bool alertTarget = true;
+						if ( behavior == &actMonster && monsterAllyIndex != -1 && hit.entity->monsterAllyIndex != -1 )
+						{
+							// if we're both allies of players, don't alert the hit target.
+							alertTarget = false;
+						}
+
+						// alert the monster!
+						if ( hit.entity->monsterState != MONSTER_STATE_ATTACK )
+						{
+							if ( alertTarget )
+							{
+								hit.entity->monsterAcquireAttackTarget(*this, MONSTER_STATE_PATH, true);
+							}
+						}
+
+						hit.entity->updateEntityOnHit(this, alertTarget);
 					}
 					else if ( hit.entity->isDamageableCollider() )
 					{
@@ -7599,6 +7632,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 					else if ( hit.entity->behavior == &::actChest )
+					{
+						messagePlayer(player, MESSAGE_COMBAT, Language::get(671));
+					}
+					else if ( mimic )
 					{
 						messagePlayer(player, MESSAGE_COMBAT, Language::get(671));
 					}
@@ -7674,6 +7711,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 							break;
 					}
 				}
+				else if ( mimic && hitstats )
+				{
+					updateEnemyBar(this, hit.entity, Language::get(675), entityHP, hit.entity->getStats()->MAXHP, false,
+						DamageGib::DMG_DEFAULT);
+
+					// kill monster
+					if ( hitstats->HP == 0 && hitstats->OLDHP > 0 )
+					{
+						messagePlayerMonsterEvent(player, makeColorRGB(0, 255, 0), *hitstats, Language::get(692), Language::get(692), MSG_COMBAT);
+						awardXP(hit.entity, true, true);
+					}
+				}
 			}
 			else if ( hit.entity->behavior == &actSink )
 			{
@@ -7728,7 +7777,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 			}
 
-			if ( hitstats != nullptr )
+			if ( hitstats != nullptr && !mimic )
 			{
 				// hit chance
 				//int hitskill=5; // for unarmed combat
@@ -11602,6 +11651,22 @@ bool Entity::checkEnemy(Entity* your)
 	{
 		return true;
 	}
+	/*else if ( your->behavior == &actPlayer && myStats->type == MIMIC )
+	{
+		if ( monsterAllyGetPlayerLeader() )
+		{
+			return false;
+		}
+		return true;
+	}
+	else if ( behavior == &actPlayer && yourStats->type == MIMIC )
+	{
+		if ( your->monsterAllyGetPlayerLeader() )
+		{
+			return false;
+		}
+		return true;
+	}*/
 	else if ( behavior == &actMonster && myStats->type == INCUBUS && !strncmp(myStats->name, "inner demon", strlen("inner demon")) )
 	{
 		Entity* parentEntity = uidToEntity(this->parent);
@@ -15088,7 +15153,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 	bool hadOldTarget = (uidToEntity(monsterTarget) != nullptr);
 	Sint32 oldMonsterState = monsterState;
 
-	if ( target.getRace() == GYROBOT )
+	if ( target.getRace() == GYROBOT || target.isInertMimic() )
 	{
 		return;
 	}
@@ -15105,6 +15170,10 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 				return;
 			}
 		}
+	}
+	else if ( myStats->type == MIMIC && isInertMimic() )
+	{
+		return;
 	}
 	else if ( monsterIsImmobileTurret(this, myStats) )
 	{
@@ -16290,6 +16359,10 @@ double Entity::monsterRotate()
 	{
 		yaw -= dir / 4;
 	}
+	else if ( race == MIMIC )
+	{
+		yaw -= dir / 4;
+	}
 	else
 	{
 		yaw -= dir / 2;
@@ -16546,6 +16619,10 @@ bool Entity::shouldRetreat(Stat& myStats)
 		return false;
 	}
 	else if ( myStats.type == SHOPKEEPER )
+	{
+		return false;
+	}
+	else if ( myStats.type == MIMIC )
 	{
 		return false;
 	}
@@ -20005,7 +20082,8 @@ bool Entity::bEntityHighlightedForPlayer(const int player) const
 	{
 		return true;
 	}
-	if ( behavior == &actMonster || behavior == &actPlayer )
+	if ( (behavior == &actMonster && !isInertMimic())
+		|| behavior == &actPlayer )
 	{
 		return false;
 	}

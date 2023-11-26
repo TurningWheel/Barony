@@ -397,7 +397,33 @@ void actArrow(Entity* my)
 				Entity* parent = uidToEntity(my->parent);
 				Stat* hitstats = hit.entity->getStats();
 				playSoundEntity(my, 72 + local_rng.rand() % 3, 64);
-				if ( hitstats != NULL && hit.entity != parent )
+				if ( hit.entity->behavior == &actChest || hit.entity->isInertMimic() )
+				{
+					playSoundEntity(hit.entity, 66, 64); //*tink*
+
+					if ( parent )
+					{
+						if ( parent->behavior == &actPlayer )
+						{
+							messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, Language::get(667));
+							messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, Language::get(447));
+						}
+						if ( hit.entity->behavior == &actMonster )
+						{
+							if ( hitstats )
+							{
+								updateEnemyBar(parent, hit.entity, Language::get(675), hitstats->HP, hitstats->MAXHP,
+									false, DamageGib::DMG_WEAKEST);
+							}
+						}
+						else
+						{
+							updateEnemyBar(parent, hit.entity, Language::get(675), hit.entity->chestHealth, hit.entity->chestMaxHealth,
+								false, DamageGib::DMG_WEAKEST);
+						}
+					}
+				}
+				else if ( hitstats != NULL && hit.entity != parent )
 				{
 					if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 					{
@@ -492,6 +518,7 @@ void actArrow(Entity* my)
 					real_t targetACEffectiveness = Entity::getACEffectiveness(hit.entity, hitstats, hit.entity->behavior == &actPlayer, parent, parent ? parent->getStats() : nullptr);
 					int attackAfterReductions = static_cast<int>(std::max(0.0, ((my->arrowPower * targetACEffectiveness - enemyAC))) + (1.0 - targetACEffectiveness) * my->arrowPower);
 					int damage = attackAfterReductions;
+
 					damage = std::max(0, damage);
 
 					if ( silverDamage || huntingDamage )
