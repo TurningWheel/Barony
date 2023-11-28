@@ -2062,6 +2062,8 @@ void sentrybotPickSpotNoise(Entity* my, Stat* myStats)
 	}
 }
 
+void mimicResetIdle(Entity* my);
+
 void actMonster(Entity* my)
 {
 	if (!my)
@@ -3633,7 +3635,12 @@ void actMonster(Entity* my)
 			if ( my->isInertMimic() )
 			{
 				// wake up
-				if ( my->disturbMimic(players[monsterclicked]->entity, false, false) )
+				if ( myStats->EFFECTS[EFF_MIMIC_LOCKED] )
+				{
+					messagePlayer(monsterclicked, MESSAGE_INTERACTION, Language::get(462));
+					playSoundEntity(my, 152, 64);
+				}
+				else if ( my->disturbMimic(players[monsterclicked]->entity, false, false) )
 				{
 					messagePlayer(monsterclicked, MESSAGE_INTERACTION, Language::get(6081));
 				}
@@ -6580,73 +6587,7 @@ timeToGoAgain:
 						my->monsterState = MONSTER_STATE_WAIT; // no path, return to wait state
 						if ( !target && myStats->type == MIMIC )
 						{
-							// reset to inert after wandering with no target
-							my->monsterSpecialState = MIMIC_INERT_SECOND;
-							serverUpdateEntitySkill(my, 33);
-
-							int x = (static_cast<int>(my->x) >> 4);
-							int y = (static_cast<int>(my->y) >> 4);
-							// look for a wall to turn against
-
-							std::vector<std::pair<int, int>> tilesToCheck;
-							tilesToCheck.push_back(std::make_pair(x + 1, y));
-							tilesToCheck.push_back(std::make_pair(x - 1, y));
-							tilesToCheck.push_back(std::make_pair(x, y + 1));
-							tilesToCheck.push_back(std::make_pair(x, y - 1));
-
-							bool foundWall = false;
-							for ( auto& pair : tilesToCheck )
-							{
-								int tx = pair.first;
-								int ty = pair.second;
-								if ( map.tiles[OBSTACLELAYER + ((ty)*MAPLAYERS + (tx)*MAPLAYERS * map.height)] )
-								{
-									if ( tx == x + 1 )
-									{
-										my->monsterLookDir = PI;
-									}
-									else if ( tx == x - 1 )
-									{
-										my->monsterLookDir = 0.0;
-									}
-									else if ( ty == y - 1 )
-									{
-										my->monsterLookDir = PI / 2;
-									}
-									else if ( ty == y + 1 )
-									{
-										my->monsterLookDir = 3 * PI / 2;
-									}
-									foundWall = true;
-								}
-							}
-
-							if ( !foundWall )
-							{
-								for ( auto& pair : tilesToCheck )
-								{
-									int tx = pair.first;
-									int ty = pair.second;
-
-									if ( checkObstacle((tx << 4) + 8, (ty << 4) + 8, my, false) )
-									{
-										if ( tx == x + 1 || tx == x - 1 )
-										{
-											my->monsterLookDir = PI / 2 + (local_rng.rand() % 2) * PI;
-										}
-										else if ( ty == y + 1 || ty == y - 1 )
-										{
-											my->monsterLookDir = 0.0 + (local_rng.rand() % 2) * PI;
-										}
-										foundWall = true;
-										break;
-									}
-								}
-							}
-							if ( !foundWall )
-							{
-								my->monsterLookDir = (PI / 2) * (local_rng.rand() % 4);
-							}
+							mimicResetIdle(my);
 						}
 						else if ( my->monsterAllyState == ALLY_STATE_MOVETO )
 						{
@@ -6771,7 +6712,11 @@ timeToGoAgain:
 						}*/
 					}
 					my->monsterState = MONSTER_STATE_WAIT; // no path, return to wait state
-					if ( my->monsterAllyState == ALLY_STATE_MOVETO )
+					if ( !target && myStats->type == MIMIC )
+					{
+						mimicResetIdle(my);
+					}
+					else if ( my->monsterAllyState == ALLY_STATE_MOVETO )
 					{
 						//messagePlayer(0, "Couldn't reach, retrying.");
 						if ( target )
@@ -8191,7 +8136,24 @@ timeToGoAgain:
 	}
 	else
 	{
-		if ( my->isInertMimic() )
+		if ( myStats && myStats->type == MIMIC && myStats->EFFECTS[EFF_MIMIC_LOCKED] && !my->isInertMimic() )
+		{
+			my->monsterHitTime++;
+			if ( my->monsterHitTime >= HITRATE )
+			{
+				my->attack(MONSTER_POSE_MIMIC_LOCKED, 0, nullptr);
+				my->monsterHitTime = 0;
+				
+				if ( !uidToEntity(my->monsterTarget) && myStats->monsterMimicLockedBy != 0 )
+				{
+					if ( Entity* lockedMe = uidToEntity(myStats->monsterMimicLockedBy) )
+					{
+						my->monsterAcquireAttackTarget(*lockedMe, MONSTER_STATE_ATTACK);
+					}
+				}
+			}
+		}
+		else if ( my->isInertMimic() )
 		{
 			my->monsterReleaseAttackTarget();
 
@@ -8239,7 +8201,7 @@ timeToGoAgain:
 								continue;
 							}
 							bool visiontest = false;
-							if ( dir >= -7 * PI / 16 && dir <= 7 * PI / 16 )
+							if ( dir >= -9 * PI / 16 && dir <= 9 * PI / 16 )
 							{
 								visiontest = true;
 							}
@@ -12239,10 +12201,84 @@ bool Entity::isFollowerFreeToPathToPlayer(Stat* myStats)
 
 bool Entity::isInertMimic() const
 {
-	if ( behavior == &actMonster && getMonsterTypeFromSprite() == MIMIC 
-		&& (monsterSpecialState == MIMIC_INERT || monsterSpecialState == MIMIC_INERT_SECOND) )
+	if ( behavior == &actMonster && getMonsterTypeFromSprite() == MIMIC )
 	{
-		return true;
+		if ( monsterSpecialState == MIMIC_INERT || monsterSpecialState == MIMIC_INERT_SECOND )
+		{
+			return true;
+		}
 	}
 	return false;
+}
+
+void mimicResetIdle(Entity* my)
+{
+	if ( !my ) { return; }
+	// reset to inert after wandering with no target
+	my->monsterSpecialState = MIMIC_INERT_SECOND;
+	serverUpdateEntitySkill(my, 33);
+
+	int x = (static_cast<int>(my->x) >> 4);
+	int y = (static_cast<int>(my->y) >> 4);
+	// look for a wall to turn against
+
+	std::vector<std::pair<int, int>> tilesToCheck;
+	tilesToCheck.push_back(std::make_pair(x + 1, y));
+	tilesToCheck.push_back(std::make_pair(x - 1, y));
+	tilesToCheck.push_back(std::make_pair(x, y + 1));
+	tilesToCheck.push_back(std::make_pair(x, y - 1));
+
+	bool foundWall = false;
+	for ( auto& pair : tilesToCheck )
+	{
+		int tx = pair.first;
+		int ty = pair.second;
+		if ( map.tiles[OBSTACLELAYER + ((ty)*MAPLAYERS + (tx)*MAPLAYERS * map.height)] )
+		{
+			if ( tx == x + 1 )
+			{
+				my->monsterLookDir = PI;
+			}
+			else if ( tx == x - 1 )
+			{
+				my->monsterLookDir = 0.0;
+			}
+			else if ( ty == y - 1 )
+			{
+				my->monsterLookDir = PI / 2;
+			}
+			else if ( ty == y + 1 )
+			{
+				my->monsterLookDir = 3 * PI / 2;
+			}
+			foundWall = true;
+		}
+	}
+
+	if ( !foundWall )
+	{
+		for ( auto& pair : tilesToCheck )
+		{
+			int tx = pair.first;
+			int ty = pair.second;
+
+			if ( checkObstacle((tx << 4) + 8, (ty << 4) + 8, my, false) )
+			{
+				if ( tx == x + 1 || tx == x - 1 )
+				{
+					my->monsterLookDir = PI / 2 + (local_rng.rand() % 2) * PI;
+				}
+				else if ( ty == y + 1 || ty == y - 1 )
+				{
+					my->monsterLookDir = 0.0 + (local_rng.rand() % 2) * PI;
+				}
+				foundWall = true;
+				break;
+			}
+		}
+	}
+	if ( !foundWall )
+	{
+		my->monsterLookDir = (PI / 2) * (local_rng.rand() % 4);
+	}
 }

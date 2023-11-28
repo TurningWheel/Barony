@@ -70,7 +70,12 @@ void initMimic(Entity* my, Stat* myStats)
 			// count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
 
-			//my->setHardcoreStats(*myStats);
+			my->setHardcoreStats(*myStats);
+
+			if ( rng.rand() % 10 == 0 )
+			{
+				my->setEffect(EFF_MIMIC_LOCKED, true, -1, false);
+			}
 		}
 	}
 
@@ -83,7 +88,7 @@ void initMimic(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->yaw = my->yaw;
 	entity->z = 6;
-	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[MIMIC][1][0];
 	entity->focaly = limbs[MIMIC][1][1];
 	entity->focalz = limbs[MIMIC][1][2];
@@ -103,7 +108,7 @@ void initMimic(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->yaw = my->yaw;
-	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[MIMIC][2][0];
 	entity->focaly = limbs[MIMIC][2][1];
 	entity->focalz = limbs[MIMIC][2][2];
@@ -128,43 +133,40 @@ void actMimicLimb(Entity* my)
 
 void mimicDie(Entity* my)
 {
-	bool gibs = true;
+	int c;
+	for ( c = 0; c < 5; c++ )
+	{
+		Entity* entity = spawnGib(my);
+		if ( entity )
+		{
+			serverSpawnGibForClient(entity);
+		}
+	}
+
+	my->spawnBlood();
+
+	// wood chunk particles
+	for ( c = 0; c < 10; c++ )
+	{
+		Entity* entity = spawnGib(my);
+		entity->skill[5] = 1; // poof
+		entity->flags[INVISIBLE] = false;
+		entity->sprite = 187; // Splinter.vox
+		entity->x = my->x;
+		entity->y = my->y;
+		entity->z = -7 + local_rng.rand() % 14;
+		entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+		entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+		entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+		entity->vel_x = cos(entity->yaw) * (0.5 + (local_rng.rand() % 100) / 100.f);
+		entity->vel_y = sin(entity->yaw) * (0.5 + (local_rng.rand() % 100) / 100.f);
+		entity->vel_z = -.25;
+		entity->fskill[3] = 0.04;
+		serverSpawnGibForClient(entity);
+	}
+	playSoundEntity(my, 177, 64);
 
 	my->removeMonsterDeathNodes();
-	//if ( gibs )
-	//{
-	//	playSoundEntity(my, 451 + local_rng.rand() % 2, 128);
-	//	int c;
-	//	for ( c = 0; c < 5; c++ )
-	//	{
-	//		Entity* entity = spawnGib(my);
-	//		if ( entity )
-	//		{
-	//		    entity->skill[5] = 1; // poof
-	//			switch ( c )
-	//			{
-	//				case 0:
-	//					entity->sprite = 889;
-	//					break;
-	//				case 1:
-	//					entity->sprite = 890;
-	//					break;
-	//				case 2:
-	//					entity->sprite = 891;
-	//					break;
-	//				case 3:
-	//					entity->sprite = 892;
-	//					break;
-	//				case 4:
-	//					entity->sprite = 893;
-	//					break;
-	//				default:
-	//					break;
-	//			}
-	//			serverSpawnGibForClient(entity);
-	//		}
-	//	}
-	//}
 
 	list_RemoveNode(my->mynode);
 	return;
@@ -188,20 +190,6 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 	if ( multiplayer != CLIENT )
 	{
 		my->z = limbs[MIMIC][5][2];
-	}
-	if ( keystatus[SDLK_j] )
-	{
-		keystatus[SDLK_j] = 0;
-		my->monsterAttack = MONSTER_POSE_MELEE_WINDUP1;
-		my->monsterAttackTime = 0;
-	}
-
-	if ( keystatus[SDLK_n] )
-	{
-		keystatus[SDLK_n] = 0;
-		my->monsterSpecialState = MIMIC_INERT;
-		//myStats->EFFECTS[EFF_PARALYZED] = !myStats->EFFECTS[EFF_PARALYZED];
-		//myStats->EFFECTS_TIMERS[EFF_PARALYZED] = -1;
 	}
 
 	if ( multiplayer != CLIENT )
@@ -253,7 +241,8 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 
 
 			if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP1
-				|| my->monsterAttack == MONSTER_POSE_MIMIC_DISTURBED )
+				|| my->monsterAttack == MONSTER_POSE_MIMIC_DISTURBED
+				|| my->monsterAttack == MONSTER_POSE_MIMIC_LOCKED )
 			{
 				if ( my->monsterAttackTime == 0 )
 				{
@@ -268,6 +257,10 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 					if ( my->monsterAttack == MONSTER_POSE_MIMIC_DISTURBED )
 					{
 						entity->fskill[2] = -0.5 + (local_rng.rand() % 2) * 1.0;
+					}
+					else if ( my->monsterAttack == MONSTER_POSE_MIMIC_LOCKED )
+					{
+						entity->fskill[2] = -1.0 + (local_rng.rand() % 2) * 2.0; // strong shake
 					}
 				}
 
@@ -294,7 +287,16 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 						{
 							if ( multiplayer != CLIENT )
 							{
-								my->attack(my->monsterAttack == MONSTER_POSE_MELEE_WINDUP1 ? 1 : MONSTER_POSE_MIMIC_DISTURBED2, 0, nullptr);
+								int pose = 1;
+								if ( my->monsterAttack == MONSTER_POSE_MIMIC_DISTURBED )
+								{
+									pose = MONSTER_POSE_MIMIC_DISTURBED2;
+								}
+								else if ( my->monsterAttack == MONSTER_POSE_MIMIC_LOCKED )
+								{
+									pose = MONSTER_POSE_MIMIC_LOCKED2;
+								}
+								my->attack(pose, 0, nullptr);
 							}
 						}
 					}
@@ -304,7 +306,8 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 					}
 				}
 			}
-			else if ( my->monsterAttack == 1 || my->monsterAttack == MONSTER_POSE_MIMIC_DISTURBED2 )
+			else if ( my->monsterAttack == 1 || my->monsterAttack == MONSTER_POSE_MIMIC_DISTURBED2
+				|| my->monsterAttack == MONSTER_POSE_MIMIC_LOCKED2 )
 			{
 				real_t rollRate = entity->fskill[2] * limbs[MIMIC][11][0] * 2;
 				const real_t rollSetpoint = entity->fskill[2] * limbs[MIMIC][11][1] * 2;
@@ -509,23 +512,10 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 			auto& lidBounceAngle = entity->fskill[1];
 
 			entity->pitch = head->pitch;
-			if ( keystatus[SDLK_g] )
-			{
-				if ( keystatus[SDLK_LCTRL] )
-				{
-					keystatus[SDLK_g] = 0;
-
-					lidBounceStage = 1;
-					lidBounceAngle = 0.0;
-				}
-				/*else
-				{
-					entity->monsterWeaponYaw -= 0.05;
-				}*/
-			}
 
 			if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP1
-				|| my->monsterAttack == MONSTER_POSE_MIMIC_DISTURBED )
+				|| my->monsterAttack == MONSTER_POSE_MIMIC_DISTURBED
+				|| my->monsterAttack == MONSTER_POSE_MIMIC_LOCKED )
 			{
 				if ( my->monsterAttackTime == 0 )
 				{
@@ -571,7 +561,8 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 					}
 				}
 			}
-			else if ( my->monsterAttack == 1 )
+			else if ( my->monsterAttack == 1
+				|| my->monsterAttack == MONSTER_POSE_MIMIC_LOCKED2 )
 			{
 				real_t rate = 0.5;
 				if ( limbAngleWithinRange(entity->monsterWeaponYaw, rate, 0) )
@@ -619,7 +610,12 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 			}
 
 			real_t bounceAmount = aggressiveMove ? 1.0 : 0.5;
-			entity->pitch += entity->monsterWeaponYaw * PI / 8 - bounceAmount * sin(lidBounceAngle) / (lidBounceStage + 1.0);
+			real_t pitchAmount = entity->monsterWeaponYaw * PI / 8 - bounceAmount * sin(lidBounceAngle) / (lidBounceStage + 1.0);
+			if ( my->monsterAttack == MONSTER_POSE_MIMIC_LOCKED || my->monsterAttack == MONSTER_POSE_MIMIC_LOCKED2 )
+			{
+				pitchAmount *= .1;
+			}
+			entity->pitch += pitchAmount;
 
 			entity->roll = head->roll;
 
@@ -700,6 +696,8 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 
 	if ( MONSTER_ATTACK > 0 && (MONSTER_ATTACK <= MONSTER_POSE_MAGIC_CAST3 
 		|| MONSTER_ATTACK == MONSTER_POSE_MIMIC_DISTURBED
+		|| MONSTER_ATTACK == MONSTER_POSE_MIMIC_LOCKED
+		|| MONSTER_ATTACK == MONSTER_POSE_MIMIC_LOCKED2
 		|| MONSTER_ATTACK == MONSTER_POSE_MIMIC_DISTURBED2) )
 	{
 		MONSTER_ATTACKTIME++;
@@ -732,6 +730,12 @@ bool Entity::disturbMimic(Entity* touched, bool takenDamage, bool doMessage)
 		}
 	}
 
+	if ( myStats && myStats->EFFECTS[EFF_MIMIC_LOCKED] && myStats->EFFECTS_TIMERS[EFF_MIMIC_LOCKED] == -1 )
+	{
+		// started locked, force open
+		setEffect(EFF_MIMIC_LOCKED, false, 0, false);
+	}
+
 	monsterSpecialState = MIMIC_ACTIVE;
 	serverUpdateEntitySkill(this, 33);
 
@@ -753,5 +757,6 @@ bool Entity::disturbMimic(Entity* touched, bool takenDamage, bool doMessage)
 		}
 	}
 	attack(MONSTER_POSE_MIMIC_DISTURBED, 0, nullptr);
+	playSoundEntity(this, 21, 64);
 	return true;
 }

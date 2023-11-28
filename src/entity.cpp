@@ -1207,6 +1207,13 @@ void Entity::effectTimes()
 							myStats->EFFECTS_TIMERS[EFF_HP_REGEN] = 0;
 						}
 						break;
+					case EFF_MIMIC_LOCKED:
+						if ( myStats->type == MIMIC )
+						{
+							monsterHitTime = std::max(HITRATE - 12, monsterHitTime); // ready to attack
+							myStats->monsterMimicLockedBy = 0;
+						}
+						break;
 					case EFF_HP_REGEN:
 						//messagePlayer(player, MESSAGE_STATUS, Language::get(3476));
 						updateClient = true;
@@ -6067,7 +6074,7 @@ bool Entity::isMobile()
 		return false;
 	}
 
-	if ( isInertMimic() )
+	if ( isInertMimic() || (entitystats->type == MIMIC && entitystats->EFFECTS[EFF_MIMIC_LOCKED]) )
 	{
 		return false;
 	}
@@ -6319,7 +6326,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 			else if ( (myStats->type == INCUBUS && (pose == MONSTER_POSE_INCUBUS_TELEPORT || pose == MONSTER_POSE_INCUBUS_TAUNT))
 				|| (myStats->type == VAMPIRE && (pose == MONSTER_POSE_VAMPIRE_DRAIN || pose == MONSTER_POSE_VAMPIRE_AURA_CHARGE))
-				|| (myStats->type == MIMIC && (pose == MONSTER_POSE_MIMIC_DISTURBED || pose == MONSTER_POSE_MIMIC_DISTURBED2))
+				|| (myStats->type == MIMIC 
+					&& (pose == MONSTER_POSE_MIMIC_DISTURBED || pose == MONSTER_POSE_MIMIC_DISTURBED2
+						|| pose == MONSTER_POSE_MIMIC_LOCKED || pose == MONSTER_POSE_MIMIC_LOCKED2))
 				|| (myStats->type == LICH_FIRE && pose == MONSTER_POSE_MAGIC_CAST1)
 				|| (myStats->type == LICH_ICE && pose == MONSTER_POSE_MAGIC_CAST1)
 				|| (myStats->type == LICH_ICE 
@@ -6341,6 +6350,36 @@ void Entity::attack(int pose, int charge, Entity* target)
 					serverUpdateEntitySkill(this, 8);
 					serverUpdateEntitySkill(this, 9);
 				}
+
+				if ( myStats->type == MIMIC && pose == MONSTER_POSE_MIMIC_LOCKED2 )
+				{
+					int lockhurt = std::max(3, (myStats->MAXHP / 20));
+					if ( lockhurt > 3 )
+					{
+						lockhurt -= local_rng.rand() % (std::max(1, lockhurt / 4));
+					}
+					int oldHP = myStats->HP;
+					this->modHP(-lockhurt);
+					for ( int tmp = 0; tmp < 3; ++tmp )
+					{
+						Entity* gib = spawnGib(this);
+						serverSpawnGibForClient(gib);
+					}
+					playSoundEntity(this, 28, 64);
+					playSoundEntity(this, 152, 64);
+					Entity* killer = uidToEntity(myStats->monsterMimicLockedBy);
+					if ( killer )
+					{
+						if ( myStats->HP <= 0 && oldHP > 0 )
+						{
+							killer->awardXP(this, true, true);
+						}
+
+						updateEnemyBar(killer, this, getMonsterLocalizedName(myStats->type).c_str(), myStats->HP, myStats->MAXHP, true,
+							DMG_DEFAULT);
+					}
+				}
+
 				return; // don't execute the attack, let the monster animation call the attack() function again.
 			}
 			else if ( myStats->type == VAMPIRE && pose == MONSTER_POSE_VAMPIRE_AURA_CAST )
@@ -7539,7 +7578,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					(hit.entity->behavior == &actDoor ? hit.entity->doorHealth : 
 					((mimic && hitstats) ? hitstats->HP :
 						hit.entity->furnitureHealth)));
-
+				int oldHP = entityHP;
 				entityHP -= damage;
 
 				if ( whip )
@@ -7717,7 +7756,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						DamageGib::DMG_DEFAULT);
 
 					// kill monster
-					if ( hitstats->HP == 0 && hitstats->OLDHP > 0 )
+					if ( hitstats->HP == 0 && oldHP > 0 )
 					{
 						messagePlayerMonsterEvent(player, makeColorRGB(0, 255, 0), *hitstats, Language::get(692), Language::get(692), MSG_COMBAT);
 						awardXP(hit.entity, true, true);
@@ -10520,6 +10559,11 @@ int AC(Stat* stat)
 			//messagePlayer(0, "shield up! +%d", 5 + stat->PROFICIENCIES[PRO_SHIELD] / 5);
 			armor += stat->getActiveShieldBonus(true);
 		}
+	}
+
+	if ( stat->type == MIMIC && stat->EFFECTS[EFF_MIMIC_LOCKED] )
+	{
+		armor *= 2;
 	}
 
 	return armor;
@@ -15106,6 +15150,13 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 				break;
 			default:
 				break;
+		}
+	}
+	else
+	{
+		if ( effect == EFF_MIMIC_LOCKED )
+		{
+			myStats->monsterMimicLockedBy = 0;
 		}
 	}
 	myStats->EFFECTS[effect] = value;

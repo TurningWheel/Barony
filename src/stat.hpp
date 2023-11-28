@@ -60,6 +60,7 @@ static const int EFF_TROLLS_BLOOD = 35;
 static const int EFF_FLUTTER = 36;
 static const int EFF_DASH = 37;
 static const int EFF_DISTRACTED_COOLDOWN = 38;
+static const int EFF_MIMIC_LOCKED = 39;
 static const int NUMEFFECTS = 40;
 
 // stats
@@ -260,6 +261,7 @@ public:
 	Sint32& monsterIsCharmed; // MISC_FLAGS[12]
 	Sint32& playerShapeshiftStorage; // MISC_FLAGS[13]
 	Sint32& monsterTinkeringStatus; // MISC_FLAGS[14]
+	Sint32& monsterMimicLockedBy; // MISC_FLAGS[14]
 	Sint32& monsterDemonHasBeenExorcised; // MISC_FLAGS[15]
 	Sint32& bleedInflictedBy; // MISC_FLAGS[17]
 	Sint32& burningInflictedBy; // MISC_FLAGS[18]

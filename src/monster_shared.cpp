@@ -80,6 +80,11 @@ void Entity::initMonster(int mySprite)
 	    focalx = limbs[monsterType][0][0];
 	    focaly = limbs[monsterType][0][1];
 	    focalz = limbs[monsterType][0][2];
+
+		if ( monsterType == MIMIC )
+		{
+			z = limbs[MIMIC][5][2];
+		}
 	} else {
 		if (arachnophobia_filter)
 		{

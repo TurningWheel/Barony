@@ -872,6 +872,8 @@ static const int PLAYER_POSE_GOLEM_SMASH = 33;
 static const int MONSTER_POSE_INCUBUS_TAUNT = 34;
 static const int MONSTER_POSE_MIMIC_DISTURBED = 35;
 static const int MONSTER_POSE_MIMIC_DISTURBED2 = 36;
+static const int MONSTER_POSE_MIMIC_LOCKED = 37;
+static const int MONSTER_POSE_MIMIC_LOCKED2 = 38;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;

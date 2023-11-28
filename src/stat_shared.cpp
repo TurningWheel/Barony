@@ -33,6 +33,7 @@ Stat::Stat(Sint32 sprite) :
 	monsterIsCharmed(MISC_FLAGS[12]),
 	playerShapeshiftStorage(MISC_FLAGS[13]),
 	monsterTinkeringStatus(MISC_FLAGS[14]),
+	monsterMimicLockedBy(MISC_FLAGS[14]),
 	monsterDemonHasBeenExorcised(MISC_FLAGS[15]),
 	bleedInflictedBy(MISC_FLAGS[17]),
 	burningInflictedBy(MISC_FLAGS[18]),

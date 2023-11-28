@@ -60,6 +60,56 @@ void Item::applySkeletonKey(int player, Entity& entity)
 			entity.doorLocked = 1;
 		}
 	}
+	else if ( entity.behavior == &actMonster && entity.getMonsterTypeFromSprite() == MIMIC )
+	{
+		if ( Stat* myStats = entity.getStats() )
+		{
+			if ( entity.isInertMimic() )
+			{
+				playSoundEntity(&entity, 91, 64);
+				if ( myStats->EFFECTS[EFF_MIMIC_LOCKED] )
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(1097));
+					entity.setEffect(EFF_MIMIC_LOCKED, false, 0, false);
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(1098));
+					entity.setEffect(EFF_MIMIC_LOCKED, true, -1, false);
+				}
+			}
+			else
+			{
+				if ( myStats->EFFECTS[EFF_MIMIC_LOCKED] )
+				{
+					playSoundEntity(&entity, 91, 64);
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(1097));
+					entity.setEffect(EFF_MIMIC_LOCKED, false, 0, false);
+				}
+				else
+				{
+					if ( entity.monsterAttack != 0 )
+					{
+						// fail to lock
+						playSoundEntity(&entity, 92, 64);
+						messagePlayer(player, MESSAGE_INTERACTION, Language::get(6084));
+					}
+					else
+					{
+						playSoundEntity(&entity, 91, 64);
+						messagePlayer(player, MESSAGE_INTERACTION, Language::get(1098));
+						entity.setEffect(EFF_MIMIC_LOCKED, true, TICKS_PER_SECOND * 5, false);
+
+						entity.monsterHitTime = HITRATE - 2;
+						if ( players[player] )
+						{
+							myStats->monsterMimicLockedBy = players[player]->entity ? players[player]->entity->getUID() : 0;
+						}
+					}
+				}
+			}
+		}
+	}
 	else
 	{
 		messagePlayer(player, MESSAGE_INTERACTION, Language::get(1101), getName());
@@ -384,7 +434,21 @@ void Item::applyLockpick(int player, Entity& entity)
 	else if ( entity.behavior == &actMonster )
 	{
 		Stat* myStats = entity.getStats();
-		if ( myStats && myStats->type == AUTOMATON 
+		if ( myStats && entity.isInertMimic() )
+		{
+			if ( myStats->EFFECTS[EFF_MIMIC_LOCKED] && local_rng.rand() % 4 > 0 )
+			{
+				//Failed to unlock mimic
+				playSoundEntity(&entity, 92, 64);
+				messagePlayer(player, MESSAGE_INTERACTION, Language::get(1102));
+			}
+			else if ( players[player] && players[player]->entity && entity.disturbMimic(players[player]->entity, false, false) )
+			{
+				playSoundEntity(&entity, 91, 64);
+				messagePlayer(player, MESSAGE_INTERACTION, Language::get(6081));
+			}
+		}
+		else if ( myStats && myStats->type == AUTOMATON 
 			&& entity.monsterSpecialState == 0
 			&& !myStats->EFFECTS[EFF_CONFUSED] )
 		{
