@@ -10983,6 +10983,12 @@ void EnemyHPDamageBarHandler::EnemyHPDetails::updateWorldCoordinates()
 			{
 				enemy_name = getMonsterLocalizedName(MIMIC);
 			}
+
+			if ( entity->bodyparts.size() > 0 )
+			{
+				auto limb = entity->bodyparts[0];
+				worldZ += (limb->z - entity->z) / 2; // offset to trunk animation
+			}
 		}
 		screenDistance = enemyBarSettings.getScreenDistanceOffset(entity);
 	}
@@ -11033,10 +11039,10 @@ EnemyHPDamageBarHandler::EnemyHPDetails* EnemyHPDamageBarHandler::addEnemyToList
 		details->updateWorldCoordinates();
 	}
 
-			details->enemy_statusEffects1 = 0;
-			details->enemy_statusEffects2 = 0;
-			details->enemy_statusEffectsLowDuration1 = 0;
-			details->enemy_statusEffectsLowDuration2 = 0;
+	details->enemy_statusEffects1 = 0;
+	details->enemy_statusEffects2 = 0;
+	details->enemy_statusEffectsLowDuration1 = 0;
+	details->enemy_statusEffectsLowDuration2 = 0;
 
 	if ( entity && (entity->behavior == &actPlayer || entity->behavior == &actMonster) && multiplayer != CLIENT )
 	{
