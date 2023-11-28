@@ -136,7 +136,7 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		return false;
 	}
 
-	if ( hit.entity->behavior != &actMonster )
+	if ( hit.entity->behavior != &actMonster || hit.entity->isInertMimic() )
 	{
 		return false;
 	}
@@ -155,6 +155,7 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		|| hitstats->type == LICH_ICE 
 		|| hitstats->type == LICH_FIRE 
 		|| hitstats->type == SHADOW
+		|| hitstats->type == MIMIC
 		|| (hitstats->type == VAMPIRE && MonsterData_t::nameMatchesSpecialNPCName(*hitstats, "bram kindly"))
 		|| (hitstats->type == COCKATRICE && !strncmp(map.name, "Cockatrice Lair", 15))
 		)
@@ -235,7 +236,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 		damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, nullptr, &element));
 		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 
-		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+		if ( (hit.entity->behavior == &actMonster && !hit.entity->isInertMimic()) || hit.entity->behavior == &actPlayer )
 		{
 			Entity* parent = uidToEntity(my.parent);
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
@@ -418,7 +419,7 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 		damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, nullptr, &element));
 		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 
-		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+		if ( (hit.entity->behavior == &actMonster && !hit.entity->isInertMimic()) || hit.entity->behavior == &actPlayer )
 		{
 			Entity* parent = uidToEntity(my.parent);
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
@@ -557,7 +558,7 @@ bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, E
 		return false;
 	}
 
-	if ( target->behavior == &actMonster || target->behavior == &actPlayer )
+	if ( (target->behavior == &actMonster && !target->isInertMimic()) || target->behavior == &actPlayer )
 	{
 		Entity* parent = forceParent;
 		if ( my && !parent )
@@ -650,7 +651,7 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 {
 	if ( hit.entity )
 	{
-		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+		if ( (hit.entity->behavior == &actMonster && !hit.entity->isInertMimic()) || hit.entity->behavior == &actPlayer )
 		{
 			Entity* parent = uidToEntity(my.parent);
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
@@ -747,7 +748,7 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 {
 	if ( hit.entity )
 	{
-		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+		if ( (hit.entity->behavior == &actMonster && !hit.entity->isInertMimic()) || hit.entity->behavior == &actPlayer )
 		{
 			Entity* parent = uidToEntity(my.parent);
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
@@ -902,7 +903,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 {
 	if ( hit.entity )
 	{
-		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+		if ( (hit.entity->behavior == &actMonster && !hit.entity->isInertMimic()) || hit.entity->behavior == &actPlayer )
 		{
 			Entity* parent = uidToEntity(my.parent);
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
@@ -1077,7 +1078,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 					hit.entity->colliderHandleDamageMagic(damage, my, parent);
 					return;
 				}
-				else if ( hit.entity->behavior == &actChest )
+				else if ( hit.entity->behavior == &actChest || hit.entity->isInertMimic() )
 				{
 					int damage = element.damage;
 					damage += (my.actmagicSpellbookBonus * damage);
@@ -1221,7 +1222,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 {
 	if ( hit.entity )
 	{
-		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+		if ( (hit.entity->behavior == &actMonster && !hit.entity->isInertMimic()) || hit.entity->behavior == &actPlayer )
 		{
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 			{
@@ -2304,7 +2305,7 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 		//int damage = element.damage;
 		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 
-		if ( target->behavior == &actMonster || target->behavior == &actPlayer 
+		if ( (target->behavior == &actMonster && !target->isInertMimic()) || target->behavior == &actPlayer
 			/*|| target->behavior == &actDoor || target->behavior == &actChest*/ )
 		{
 			Stat* hitstats = target->getStats();
@@ -2521,7 +2522,7 @@ void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, i
 		//int damage = element.damage;
 		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 
-		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+		if ( (hit.entity->behavior == &actMonster && !hit.entity->isInertMimic()) || hit.entity->behavior == &actPlayer )
 		{
 			playSoundEntity(&my, 174, 128);
 			Stat* hitstats = hit.entity->getStats();
@@ -2611,7 +2612,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 		//int damage = element.damage;
 		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 
-		if ( target->behavior == &actMonster || target->behavior == &actPlayer )
+		if ( (target->behavior == &actMonster && !target->isInertMimic()) || target->behavior == &actPlayer )
 		{
 			Stat* hitstats = target->getStats();
 			if ( !hitstats )
@@ -2622,6 +2623,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 			if ( hitstats->type == INCUBUS || hitstats->type == SUCCUBUS 
 				|| hitstats->type == AUTOMATON || hitstats->type == DEVIL || hitstats->type == DEMON || hitstats->type == CREATURE_IMP
 				|| hitstats->type == SHADOW
+				|| hitstats->type == MIMIC
 				|| (hitstats->type == INCUBUS && !strncmp(hitstats->name, "inner demon", strlen("inner demon"))) )
 			{
 				if ( parent && parent->behavior == &actPlayer )

@@ -743,6 +743,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				//element = (spellElement_t *) element->elements->first->element;
 				element = (spellElement_t*)node->element;
 				//if (hit.entity != NULL) {
+				bool mimic = hit.entity && hit.entity->isInertMimic();
 				Stat* hitstats = nullptr;
 				int player = -1;
 
@@ -851,13 +852,16 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									if ( reflection == 0 )
 									{
 										yourSpellHitsTheMonster = true;
-										if ( ItemTooltips.bSpellHasBasicHitMessage(spell->ID) )
+										if ( !hit.entity->isInertMimic() )
 										{
-											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(378), Language::get(377), MSG_COMBAT_BASIC);
-										}
-										else
-										{
-											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(378), Language::get(377), MSG_COMBAT);
+											if ( ItemTooltips.bSpellHasBasicHitMessage(spell->ID) )
+											{
+												messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(378), Language::get(377), MSG_COMBAT_BASIC);
+											}
+											else
+											{
+												messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(378), Language::get(377), MSG_COMBAT);
+											}
 										}
 									}
 								}
@@ -1295,7 +1299,17 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				{
 					if (hit.entity)
 					{
-						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
+						if ( mimic )
+						{
+							int damage = element->damage;
+							damage += (spellbookDamageBonus * damage);
+							damage /= (1 + (int)resistance);
+							hit.entity->chestHandleDamageMagic(damage, *my, parent);
+							my->removeLightField();
+							list_RemoveNode(my->mynode);
+							return;
+						}
+						else if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
 							Entity* parent = uidToEntity(my->parent);
 							playSoundEntity(hit.entity, 28, 128);
@@ -1415,7 +1429,29 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					spawnExplosion(my->x, my->y, my->z);
 					if (hit.entity)
 					{
-						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
+						if ( mimic )
+						{
+							int damage = element->damage;
+							damage += (spellbookDamageBonus * damage);
+							damage /= (1 + (int)resistance);
+							hit.entity->chestHandleDamageMagic(damage, *my, parent);
+							if ( my->actmagicProjectileArc > 0 )
+							{
+								Entity* caster = uidToEntity(spell->caster);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+							}
+							if ( !(my->actmagicIsOrbiting == 2) )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
+							else
+							{
+								spawnExplosion(my->x, my->y, my->z);
+							}
+							return;
+						}
+						else if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
 							Entity* parent = uidToEntity(my->parent);
 							playSoundEntity(hit.entity, 28, 128);
@@ -1607,7 +1643,29 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						// Attempt to set the Entity on fire
 						hit.entity->SetEntityOnFire();
 
-						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
+						if ( mimic )
+						{
+							int damage = element->damage;
+							damage += (spellbookDamageBonus * damage);
+							damage /= (1 + (int)resistance);
+							hit.entity->chestHandleDamageMagic(damage, *my, parent);
+							if ( my->actmagicProjectileArc > 0 )
+							{
+								Entity* caster = uidToEntity(spell->caster);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+							}
+							if ( !(my->actmagicIsOrbiting == 2) )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
+							else
+							{
+								spawnExplosion(my->x, my->y, my->z);
+							}
+							return;
+						}
+						else if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
 							//playSoundEntity(my, 153, 64);
 							playSoundEntity(hit.entity, 28, 128);
@@ -1871,7 +1929,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				{
 					if (hit.entity)
 					{
-						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
+						if ( (!mimic && hit.entity->behavior == &actMonster) || hit.entity->behavior == &actPlayer)
 						{
 							playSoundEntity(hit.entity, 174, 64);
 							int duration = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
@@ -1917,7 +1975,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					playSoundEntity(my, 197, 128);
 					if (hit.entity)
 					{
-						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
+						if ( (!mimic && hit.entity->behavior == &actMonster) || hit.entity->behavior == &actPlayer)
 						{
 							playSoundEntity(hit.entity, 28, 128);
 							hitstats->EFFECTS[EFF_SLOW] = true;
@@ -2042,7 +2100,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				{
 					if (hit.entity)
 					{
-						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
+						if ( (!mimic && hit.entity->behavior == &actMonster) || hit.entity->behavior == &actPlayer)
 						{
 							playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
 							hitstats->EFFECTS[EFF_SLOW] = true;
@@ -2077,7 +2135,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				{
 					if (hit.entity)
 					{
-						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
+						if ( (!mimic && hit.entity->behavior == &actMonster) || hit.entity->behavior == &actPlayer)
 						{
 							playSoundEntity(hit.entity, 174, 64);
 							int effectDuration = 0;
@@ -2152,7 +2210,25 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					playSoundEntity(my, 173, 128);
 					if (hit.entity)
 					{
-						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
+						if ( mimic )
+						{
+							int damage = element->damage;
+							damage += (spellbookDamageBonus * damage);
+							damage /= (1 + (int)resistance);
+							hit.entity->chestHandleDamageMagic(damage, *my, parent);
+							if ( my->actmagicProjectileArc > 0 )
+							{
+								Entity* caster = uidToEntity(spell->caster);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+							}
+							if ( !(my->actmagicIsOrbiting == 2) )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
+							return;
+						}
+						else if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
 							Entity* parent = uidToEntity(my->parent);
 							playSoundEntity(my, 173, 64);
@@ -2345,7 +2421,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				{
 					if ( hit.entity )
 					{
-						if ( hit.entity->behavior == &actMonster )
+						if ( (!mimic && hit.entity->behavior == &actMonster) )
 						{
 							Entity* parent = uidToEntity(my->parent);
 							real_t pushbackMultiplier = 0.6;// +(0.2 * spellbookDamageBonus);
@@ -2472,6 +2548,46 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										if ( parent->behavior == &actPlayer )
 										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(400));
+										}
+									}
+								}
+							}
+						}
+						else if ( hit.entity->behavior == &actMonster && hit.entity->getMonsterTypeFromSprite() == MIMIC )
+						{
+							//Lock chest
+							playSoundEntity(hit.entity, 92, 64);
+
+							if ( hitstats )
+							{
+								//if ( MFLAG_DISABLEOPENING )
+								//{
+								//	if ( parent && parent->behavior == &actPlayer )
+								//	{
+								//		Uint32 color = makeColorRGB(255, 0, 255);
+								//		messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, Language::get(3096), Language::get(3099));
+								//		messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(3100)); // disabled locking spell.
+								//	}
+								//}
+								//else
+								{
+									if ( parent && parent->behavior == &actPlayer )
+									{
+										if ( mimic )
+										{
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(400));
+										}
+										else
+										{
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(6083));
+										}
+									}
+									if ( !hitstats->EFFECTS[EFF_MIMIC_LOCKED] )
+									{
+										if ( hit.entity->setEffect(EFF_MIMIC_LOCKED, true, TICKS_PER_SECOND * 5, false) )
+										{
+											hit.entity->monsterHitTime = HITRATE - 2;
+											hitstats->monsterMimicLockedBy = parent ? parent->getUID() : 0;
 										}
 									}
 								}
@@ -2624,6 +2740,51 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 						}
+						else if ( hit.entity->behavior == &actMonster && hit.entity->getMonsterTypeFromSprite() == MIMIC )
+						{
+							if ( hit.entity->isInertMimic() )
+							{
+								if ( hitstats->EFFECTS[EFF_MIMIC_LOCKED] )
+								{
+									hit.entity->setEffect(EFF_MIMIC_LOCKED, false, 0, false);
+								}
+								if ( hit.entity->disturbMimic(parent, false, true) )
+								{
+									if ( parent )
+									{
+										if ( parent->behavior == &actPlayer )
+										{
+											messagePlayer(parent->skill[2], MESSAGE_INTERACTION, Language::get(6081));
+										}
+									}
+								}
+							}
+							else
+							{
+								if ( hitstats )
+								{
+									//if ( MFLAG_DISABLEOPENING )
+									//{
+									//	if ( parent && parent->behavior == &actPlayer )
+									//	{
+									//		Uint32 color = makeColorRGB(255, 0, 255);
+									//		messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, Language::get(3096), Language::get(3099));
+									//		messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(3100)); // disabled locking spell.
+									//	}
+									//}
+									//else
+									{
+										if ( hitstats->EFFECTS[EFF_MIMIC_LOCKED] )
+										{
+											if ( hit.entity->setEffect(EFF_MIMIC_LOCKED, false, 0, false) )
+											{
+												hit.entity->monsterHitTime = std::max(hit.entity->monsterHitTime, HITRATE / 2);
+											}
+										}
+									}
+								}
+							}
+						}
 						else
 						{
 							if ( parent )
@@ -2689,7 +2850,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				{
 					if ( hit.entity )
 					{
-						if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+						if ( (!mimic && hit.entity->behavior == &actMonster) || hit.entity->behavior == &actPlayer )
 						{
 							int effectDuration = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							effectDuration /= (1 + (int)resistance);
@@ -2741,7 +2902,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					playSoundEntity(my, 173, 128);
 					if ( hit.entity )
 					{
-						if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+						if ( (hit.entity->behavior == &actMonster && !mimic) || hit.entity->behavior == &actPlayer )
 						{
 							Entity* parent = uidToEntity(my->parent);
 							playSoundEntity(my, 173, 64);
@@ -2899,7 +3060,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									}
 									return;
 								}
-								else if ( hit.entity->behavior == &actChest )
+								else if ( hit.entity->behavior == &actChest || mimic )
 								{
 									int damage = element->damage;
 									damage += (spellbookDamageBonus * damage);
@@ -5616,6 +5777,7 @@ bool Entity::magicOrbitingCollision()
 				&& entity->behavior != &actPlayer
 				&& entity->behavior != &actDoor
 				&& !(entity->isDamageableCollider() && entity->isColliderDamageableByMagic())
+				&& !entity->isInertMimic()
 				&& entity->behavior != &::actChest 
 				&& entity->behavior != &::actFurniture )
 			{
