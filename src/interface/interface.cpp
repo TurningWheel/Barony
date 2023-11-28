@@ -10988,7 +10988,7 @@ void EnemyHPDamageBarHandler::EnemyHPDetails::updateWorldCoordinates()
 	}
 }
 
-void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 uid, const char* name, bool isLowPriority, DamageGib gibDmgType)
+EnemyHPDamageBarHandler::EnemyHPDetails* EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 uid, const char* name, bool isLowPriority, DamageGib gibDmgType)
 {
 	auto find = HPBars.find(uid);
 	EnemyHPDetails* details = nullptr;
@@ -11032,14 +11032,16 @@ void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 old
 	{
 		details->updateWorldCoordinates();
 	}
-	if ( entity && (entity->behavior == &actPlayer || entity->behavior == &actMonster) )
-	{
-		if ( Stat* stat = entity->getStats() )
-		{
+
 			details->enemy_statusEffects1 = 0;
 			details->enemy_statusEffects2 = 0;
 			details->enemy_statusEffectsLowDuration1 = 0;
 			details->enemy_statusEffectsLowDuration2 = 0;
+
+	if ( entity && (entity->behavior == &actPlayer || entity->behavior == &actMonster) && multiplayer != CLIENT )
+	{
+		if ( Stat* stat = entity->getStats() )
+		{
 			for ( int i = 0; i < NUMEFFECTS; ++i )
 			{
 				if ( stat->EFFECTS[i] )
@@ -11064,6 +11066,7 @@ void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 old
 			}
 		}
 	}
+	return details;
 }
 
 const int GenericGUIMenu::TinkerGUI_t::MAX_TINKER_X = 5;

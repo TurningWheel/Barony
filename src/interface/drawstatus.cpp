@@ -150,6 +150,7 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 		gibType = DamageGib::DMG_DEFAULT;
 	}
 
+	EnemyHPDamageBarHandler::EnemyHPDetails* details = nullptr;
 	if ( player >= 0 /*&& players[player]->isLocalPlayer()*/ )
 	{
 		// add enemy bar to the server
@@ -174,11 +175,11 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 		}
 		if ( stats )
 		{
-			enemyHPDamageBarHandler[p].addEnemyToList(hp, maxhp, oldhp, target->getUID(), name, lowPriorityTick, gibType);
+			details = enemyHPDamageBarHandler[p].addEnemyToList(hp, maxhp, oldhp, target->getUID(), name, lowPriorityTick, gibType);
 		}
 		else
 		{
-			enemyHPDamageBarHandler[p].addEnemyToList(hp, maxhp, oldhp, target->getUID(), name, lowPriorityTick, gibType);
+			details = enemyHPDamageBarHandler[p].addEnemyToList(hp, maxhp, oldhp, target->getUID(), name, lowPriorityTick, gibType);
 		}
 	}
 	
@@ -210,11 +211,25 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 				{
 					net_packet->data[14] |= (gibType << 1) & 0xFE;
 				}
-				strcpy((char*)(&net_packet->data[15]), name);
-				net_packet->data[15 + strlen(name)] = 0;
+				if ( stats && details )
+				{
+					SDLNet_Write32(details->enemy_statusEffects1, &net_packet->data[15]);
+					SDLNet_Write32(details->enemy_statusEffects2, &net_packet->data[19]);
+					SDLNet_Write32(details->enemy_statusEffectsLowDuration1, &net_packet->data[23]);
+					SDLNet_Write32(details->enemy_statusEffectsLowDuration2, &net_packet->data[27]);
+				}
+				else
+				{
+					SDLNet_Write32(0, &net_packet->data[15]);
+					SDLNet_Write32(0, &net_packet->data[19]);
+					SDLNet_Write32(0, &net_packet->data[23]);
+					SDLNet_Write32(0, &net_packet->data[27]);
+				}
+				strcpy((char*)(&net_packet->data[31]), name);
+				net_packet->data[31 + strlen(name)] = 0;
 				net_packet->address.host = net_clients[p - 1].host;
 				net_packet->address.port = net_clients[p - 1].port;
-				net_packet->len = 15 + strlen(name) + 1;
+				net_packet->len = 31 + strlen(name) + 1;
 				sendPacketSafe(net_sock, -1, net_packet, p - 1);
 
 			}

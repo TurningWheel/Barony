@@ -2893,9 +2893,16 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			}
 		}
 		char enemy_name[128] = "";
-		strcpy(enemy_name, (char*)(&net_packet->data[15]));
-		enemyHPDamageBarHandler[clientnum].addEnemyToList(static_cast<Sint32>(enemy_hp), 
+		strcpy(enemy_name, (char*)(&net_packet->data[31]));
+		auto details = enemyHPDamageBarHandler[clientnum].addEnemyToList(static_cast<Sint32>(enemy_hp), 
 			static_cast<Sint32>(enemy_maxhp), static_cast<Sint32>(oldhp), uid, enemy_name, lowPriorityTick, gib);
+		if ( details )
+		{
+			details->enemy_statusEffects1 = SDLNet_Read32(&net_packet->data[15]);
+			details->enemy_statusEffects2 = SDLNet_Read32(&net_packet->data[19]);
+			details->enemy_statusEffectsLowDuration1 = SDLNet_Read32(&net_packet->data[23]);
+			details->enemy_statusEffectsLowDuration2 = SDLNet_Read32(&net_packet->data[27]);
+		}
 	}},
 
 	// ping
