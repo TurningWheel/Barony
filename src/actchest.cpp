@@ -1490,12 +1490,13 @@ void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity 
 {
 	if ( behavior == &actMonster )
 	{
+		Stat* stats = getStats();
+		bool oldHP = stats ? stats->HP : 0;
 		modHP(-damage); // do the damage
 
-		Stat* stats = getStats();
-		if ( caster && caster->behavior == &actPlayer )
+		if ( stats && stats->HP <= 0 )
 		{
-			if ( stats && stats->HP <= 0 )
+			if ( caster && caster->behavior == &actPlayer )
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
@@ -1505,8 +1506,20 @@ void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity 
 				{
 					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2520));
 				}
+				if ( oldHP > 0 )
+				{
+					messagePlayerMonsterEvent(caster->skill[2], makeColorRGB(0, 255, 0),
+						*stats, Language::get(692), Language::get(692), MSG_COMBAT);
+				}	
 			}
-			else
+			if ( caster && oldHP > 0 )
+			{
+				awardXP(caster, true, true);
+			}
+		}
+		else
+		{
+			if ( caster && caster->behavior == &actPlayer )
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
@@ -1516,6 +1529,10 @@ void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity 
 				{
 					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(378), Language::get(675));
 				}
+			}
+			if ( caster && isInertMimic() )
+			{
+				disturbMimic(caster, true, true);
 			}
 		}
 
