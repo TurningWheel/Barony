@@ -61,7 +61,8 @@ static const int EFF_FLUTTER = 36;
 static const int EFF_DASH = 37;
 static const int EFF_DISTRACTED_COOLDOWN = 38;
 static const int EFF_MIMIC_LOCKED = 39;
-static const int NUMEFFECTS = 40;
+static const int EFF_ROOTED = 40;
+static const int NUMEFFECTS = 64;
 
 // stats
 static const int STAT_STR = 0;

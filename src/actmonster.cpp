@@ -4489,6 +4489,7 @@ void actMonster(Entity* my)
 				&& my->monsterAllyState == ALLY_STATE_DEFAULT 
 				&& !myStats->EFFECTS[EFF_FEAR]
 				&& !myStats->EFFECTS[EFF_DISORIENTED]
+				&& !myStats->EFFECTS[EFF_ROOTED]
 				&& !isIllusionTaunt
 				&& !monsterIsImmobileTurret(my, myStats)
 				&& my->getUID() % TICKS_PER_SECOND == ticks % monsterAllyFormations.getFollowerChaseLeaderInterval(*my, *myStats)
@@ -4709,7 +4710,7 @@ void actMonster(Entity* my)
 					{
 						if ( myStats->type != MINOTAUR )
 						{
-							if ( !my->monsterAllyGetPlayerLeader() || (my->monsterAllyGetPlayerLeader() && local_rng.rand() % 3 == 0) || myStats->type == DUMMYBOT )
+							if ( !my->monsterAllyGetPlayerLeader() || (my->monsterAllyGetPlayerLeader() && local_rng.rand() % 8 == 0) || myStats->type == DUMMYBOT )
 							{
 								// idle sounds. if player follower, reduce noise frequency by 66%.
 								MONSTER_SOUND = playSoundEntity(my, MONSTER_IDLESND + (local_rng.rand() % MONSTER_IDLEVAR), 128);
@@ -4737,6 +4738,7 @@ void actMonster(Entity* my)
 				&& (uidToEntity(myStats->leader_uid) == NULL || my->monsterAllyState == ALLY_STATE_DEFEND)
 				&& !myStats->EFFECTS[EFF_FEAR] 
 				&& !myStats->EFFECTS[EFF_DISORIENTED]
+				&& !myStats->EFFECTS[EFF_ROOTED]
 				&& !isIllusionTaunt
 				&& !(monsterIsImmobileTurret(my, myStats))
 				&& myStats->type != DEVIL )
@@ -5152,7 +5154,7 @@ timeToGoAgain:
 								}
 							}
 
-							if ( monsterIsImmobileTurret(my, myStats) )
+							if ( monsterIsImmobileTurret(my, myStats) || myStats->EFFECTS[EFF_ROOTED] )
 							{
 								// this is just so that the monster rotates. it doesn't actually move
 								MONSTER_VELX = maxVelX * 0.01;
@@ -6045,6 +6047,7 @@ timeToGoAgain:
 				&& myStats->leader_uid != 0 
 				&& my->monsterAllyState == ALLY_STATE_DEFAULT 
 				&& !monsterIsImmobileTurret(my, myStats)
+				&& !myStats->EFFECTS[EFF_ROOTED]
 				&& my->getUID() % TICKS_PER_SECOND == ticks % monsterAllyFormations.getFollowerChaseLeaderInterval(*my, *myStats)
 				 )
 			{
@@ -6191,7 +6194,7 @@ timeToGoAgain:
 				if ( my->children.first->element != NULL )
 				{
 					path = (list_t*)my->children.first->element;
-					if ( path->first != NULL )
+					if ( path->first != NULL && !myStats->EFFECTS[EFF_ROOTED] )
 					{
 						auto pathnode = (pathnode_t*)path->first->element;
 						dist = sqrt( pow(pathnode->y * 16 + 8 - my->y, 2) + pow(pathnode->x * 16 + 8 - my->x, 2) );

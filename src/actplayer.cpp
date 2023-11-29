@@ -3218,7 +3218,12 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 
 	bool allowMovement = my->isMobile();
 	bool pacified = stats[PLAYER_NUM]->EFFECTS[EFF_PACIFY];
-	if ( !allowMovement && pacified )
+	bool rooted = stats[PLAYER_NUM]->EFFECTS[EFF_ROOTED];
+	if ( rooted )
+	{
+		allowMovement = false;
+	}
+	if ( !allowMovement && pacified && !rooted )
 	{
 		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_PARALYZED] && !stats[PLAYER_NUM]->EFFECTS[EFF_STUNNED]
 			&& !stats[PLAYER_NUM]->EFFECTS[EFF_ASLEEP] )
@@ -3376,9 +3381,12 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 			}
 			if ( entityInsideEntity(my, players[i]->entity) )
 			{
-				double tangent = atan2(my->y - players[i]->entity->y, my->x - players[i]->entity->x);
-				PLAYER_VELX += cos(tangent) * 0.075 * refreshRateDelta;
-				PLAYER_VELY += sin(tangent) * 0.075 * refreshRateDelta;
+				if ( !rooted )
+				{
+					double tangent = atan2(my->y - players[i]->entity->y, my->x - players[i]->entity->x);
+					PLAYER_VELX += cos(tangent) * 0.075 * refreshRateDelta;
+					PLAYER_VELY += sin(tangent) * 0.075 * refreshRateDelta;
+				}
 			}
 		}
 	}
@@ -6849,9 +6857,12 @@ void actPlayer(Entity* my)
 					messagePlayer(PLAYER_NUM, MESSAGE_INTERACTION, Language::get(576), stats[i]->name);
 					if ( players[PLAYER_NUM]->isLocalPlayer() && players[i] && players[i]->entity)
 					{
-						double tangent = atan2(my->y - players[i]->entity->y, my->x - players[i]->entity->x);
-						PLAYER_VELX += cos(tangent);
-						PLAYER_VELY += sin(tangent);
+						if ( !stats[PLAYER_NUM]->EFFECTS[EFF_ROOTED] )
+						{
+							double tangent = atan2(my->y - players[i]->entity->y, my->x - players[i]->entity->x);
+							PLAYER_VELX += cos(tangent);
+							PLAYER_VELY += sin(tangent);
+						}
 					}
 				}
 			}

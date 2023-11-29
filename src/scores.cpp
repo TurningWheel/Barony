@@ -1176,6 +1176,22 @@ void loadAllScores(const std::string& scoresfilename)
 				}
 			}
 		}
+		else if ( versionNumber <= 411 )
+		{
+			for ( int c = 0; c < NUMEFFECTS; c++ )
+			{
+				if ( c < 40 )
+				{
+					fp->read(&score->stats->EFFECTS[c], sizeof(bool), 1);
+					fp->read(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1);
+				}
+				else
+				{
+					score->stats->EFFECTS[c] = false;
+					score->stats->EFFECTS_TIMERS[c] = 0;
+				}
+			}
+		}
 		else
 		{
 			for ( int c = 0; c < NUMEFFECTS; c++ )
@@ -6305,9 +6321,18 @@ int loadGame(int player, const SaveGameInfo& info) {
 	for (int c = 0; c < NUMPROFICIENCIES && c < p.PROFICIENCIES.size(); ++c) {
 		stats[statsPlayer]->PROFICIENCIES[c] = p.PROFICIENCIES[c];
 	}
-	for (int c = 0; c < NUMEFFECTS && c < p.EFFECTS.size(); ++c) {
-		stats[statsPlayer]->EFFECTS[c] = p.EFFECTS[c];
-		stats[statsPlayer]->EFFECTS_TIMERS[c] = p.EFFECTS_TIMERS[c];
+
+	for (int c = 0; c < NUMEFFECTS; ++c) {
+		if ( c < p.EFFECTS.size() )
+		{
+			stats[statsPlayer]->EFFECTS[c] = p.EFFECTS[c];
+			stats[statsPlayer]->EFFECTS_TIMERS[c] = p.EFFECTS_TIMERS[c];
+		}
+		else
+		{
+			stats[statsPlayer]->EFFECTS[c] = 0;
+			stats[statsPlayer]->EFFECTS_TIMERS[c] = 0;
+		}
 	}
 	constexpr int NUMMISCFLAGS = sizeof(Stat::MISC_FLAGS) / sizeof(Stat::MISC_FLAGS[0]);
 	for (int c = 0; c < NUMMISCFLAGS && c < p.MISC_FLAGS.size(); ++c) {
@@ -6550,9 +6575,17 @@ list_t* loadGameFollowers(const SaveGameInfo& info) {
 			for (int c = 0; c < NUMPROFICIENCIES && c < follower.PROFICIENCIES.size(); ++c) {
 				stats->PROFICIENCIES[c] = follower.PROFICIENCIES[c];
 			}
-			for (int c = 0; c < NUMEFFECTS && c < follower.EFFECTS.size(); ++c) {
-				stats->EFFECTS[c] = follower.EFFECTS[c];
-				stats->EFFECTS_TIMERS[c] = follower.EFFECTS_TIMERS[c];
+			for (int c = 0; c < NUMEFFECTS; ++c) {
+				if ( c < follower.EFFECTS.size() )
+				{
+					stats->EFFECTS[c] = follower.EFFECTS[c];
+					stats->EFFECTS_TIMERS[c] = follower.EFFECTS_TIMERS[c];
+				}
+				else
+				{
+					stats->EFFECTS[c] = 0;
+					stats->EFFECTS_TIMERS[c] = 0;
+				}
 			}
 			constexpr int NUMMISCFLAGS = sizeof(Stat::MISC_FLAGS) / sizeof(Stat::MISC_FLAGS[0]);
 			for (int c = 0; c < NUMMISCFLAGS && c < follower.MISC_FLAGS.size(); ++c) {

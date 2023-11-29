@@ -15121,6 +15121,7 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 				}
 				break;
 			case EFF_DISORIENTED:
+			case EFF_ROOTED:
 				if ( myStats->type == LICH || myStats->type == DEVIL
 					|| myStats->type == LICH_FIRE || myStats->type == LICH_ICE
 					|| myStats->type == SHADOW || myStats->type == SHOPKEEPER )
@@ -16661,6 +16662,10 @@ bool Entity::shouldRetreat(Stat& myStats)
 	{
 		return false;
 	}
+	if ( myStats.EFFECTS[EFF_ROOTED] )
+	{
+		return false;
+	}
 	if ( myStats.type == VAMPIRE )
 	{
 		return false;
@@ -16771,6 +16776,10 @@ bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon
 	}
 
 	if ( (myStats.EFFECTS[EFF_DASH] || (myStats.weapon && myStats.weapon->type == SPELLBOOK_DASH)) && behavior == &actMonster )
+	{
+		return false;
+	}
+	if ( myStats.EFFECTS[EFF_ROOTED] )
 	{
 		return false;
 	}
