@@ -51,7 +51,6 @@ void initHuman(Entity* my, Stat* myStats)
 
 			my->createPathBoundariesNPC();
 
-			Stat baseStats(HUMAN);
 			bool isDefaultStats = isMonsterStatsDefault(*myStats);
 
 			// apply random stat increases if set in stat_shared.cpp or editor
