@@ -928,6 +928,7 @@ public:
 	void succubusChooseWeapon(const Entity* target, double dist);
 	void skeletonSummonSetEquipment(Stat* myStats, int rank);
 	static void tinkerBotSetStats(Stat* myStats, int rank);
+	static void mimicSetStats(Stat* myStats);
 	bool monsterInMeleeRange(const Entity* target, double dist) const
 	{
 		return (dist < STRIKERANGE);
@@ -1110,6 +1111,7 @@ void actChest(Entity* my);
 void actChestLid(Entity* my);
 void closeChestClientside(const int player); //Called by the client to manage all clientside stuff relating to closing a chest.
 Item* addItemToChestClientside(const int player, Item* item, bool forceNewStack, Item* specificDestinationStack); //Called by the client to manage all clientside stuff relating to adding an item to a chest.
+void createChestInventory(Entity* my, int chestType);
 
 //---Stalag functions---
 void actStalagFloor(Entity* my);

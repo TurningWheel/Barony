@@ -52,6 +52,11 @@ void initMimic(Entity* my, Stat* myStats)
 				myStats->leader_uid = 0;
 			}
 
+			if ( isMonsterStatsDefault(*myStats) )
+			{
+				my->mimicSetStats(myStats);
+			}
+
 			// apply random stat increases if set in stat_shared.cpp or editor
 			setRandomMonsterStats(myStats, rng);
 
@@ -736,10 +741,18 @@ bool Entity::disturbMimic(Entity* touched, bool takenDamage, bool doMessage)
 		setEffect(EFF_MIMIC_LOCKED, false, 0, false);
 	}
 
+	if ( monsterSpecialState == MIMIC_INERT )
+	{
+		// longer stun
+		setEffect(EFF_STUNNED, true, 50, false);
+	}
+	else
+	{
+		setEffect(EFF_STUNNED, true, 20, false);
+	}
+
 	monsterSpecialState = MIMIC_ACTIVE;
 	serverUpdateEntitySkill(this, 33);
-
-	setEffect(EFF_STUNNED, true, 20, false);
 
 	monsterHitTime = HITRATE / 2;
 
@@ -759,4 +772,31 @@ bool Entity::disturbMimic(Entity* touched, bool takenDamage, bool doMessage)
 	attack(MONSTER_POSE_MIMIC_DISTURBED, 0, nullptr);
 	playSoundEntity(this, 21, 64);
 	return true;
+}
+
+void Entity::mimicSetStats(Stat* myStats)
+{
+	if ( !myStats )
+	{
+		return;
+	}
+
+	myStats->HP = 90;
+	myStats->STR = 15;
+	myStats->CON = 3;
+	myStats->LVL = 10;
+	myStats->DEX = 0;
+	myStats->PER = 5;
+	
+	int level = std::max(currentlevel, 0) / LENGTH_OF_LEVEL_REGION;
+	myStats->LVL += 5 * level;
+	myStats->STR += 3 * level;
+	myStats->CON += 4 * level;
+	myStats->DEX += 1 * level;
+	myStats->HP += 50 * level;
+	myStats->PER += 1 * level;
+
+
+	myStats->MAXHP = myStats->HP;
+	myStats->OLDHP = myStats->HP;
 }

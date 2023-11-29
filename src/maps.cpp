@@ -4822,6 +4822,8 @@ void assignActions(map_t* map)
 					entity->monsterLookDir = entity->yaw;
 				}
 
+				entity->seedEntityRNG(map_server_rng.getU32());
+
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats == nullptr )
@@ -4854,7 +4856,12 @@ void assignActions(map_t* map)
 						// monster is random, but generated from editor
 						// stat struct is already created, need to set stats
 						setDefaultMonsterStats(myStats, monsterType + 1000);
-						setRandomMonsterStats(myStats, map_server_rng);
+
+						Uint32 monsterseed = 0;
+						entity->entity_rng->getSeed(&monsterseed, sizeof(monsterseed));
+						BaronyRNG tmpRng;
+						tmpRng.seedBytes(&monsterseed, sizeof(monsterseed));
+						setRandomMonsterStats(myStats, tmpRng);
 					}
 
 					std::string checkName = myStats->name;
@@ -4883,8 +4890,6 @@ void assignActions(map_t* map)
 							monsterCurveCustomManager.createMonsterFromFile(entity, myStats, variantName, monsterType);
 						}
 					}
-
-					entity->seedEntityRNG(map_server_rng.getU32());
 				}
 				if ( multiplayer != CLIENT )
 				{
@@ -7066,6 +7071,79 @@ void assignActions(map_t* map)
 			if ( postProcessEntity->behavior == &actTextSource )
 			{
 				textSourceScript.parseScriptInMapGeneration(*postProcessEntity);
+			}
+		}
+	}
+
+	for ( auto node = map->entities->first; node != nullptr; )
+	{
+		Entity* postProcessEntity = (Entity*)node->element;
+		node = node->next;
+		if ( postProcessEntity )
+		{
+			if ( postProcessEntity->behavior == &actChest )
+			{
+				if ( !(postProcessEntity == vampireQuestChest) && postProcessEntity->entity_rng->rand() % 2 == 0 )
+				{
+					// mimic
+					Entity* entity = newEntity(10, 1, map->entities, map->creatures);
+					entity->sizex = 4;
+					entity->sizey = 4;
+					entity->x = postProcessEntity->x;
+					entity->y = postProcessEntity->y;
+					entity->z = 6;
+					entity->yaw = postProcessEntity->yaw;
+					entity->behavior = &actMonster;
+					entity->flags[UPDATENEEDED] = true;
+					entity->flags[INVISIBLE] = true;
+					entity->skill[5] = -1;
+					//Assign entity creature list pointer.
+					entity->addToCreatureList(map->creatures);
+
+					Monster monsterType = MIMIC;
+					entity->monsterLookDir = entity->yaw;
+
+					bool monsterIsFixedSprite = true;
+					Stat* myStats = nullptr;
+					if ( multiplayer != CLIENT )
+					{
+						if ( myStats == nullptr )
+						{
+							// need to give the entity its list stuff.
+							// create an empty first node for traversal purposes
+							node_t* node2 = list_AddNodeFirst(&entity->children);
+							node2->element = nullptr;
+							node2->deconstructor = &emptyDeconstructor;
+
+							// Create the stat struct again for the new monster
+							myStats = new Stat(monsterType + 1000);
+							myStats->type = monsterType;
+
+							node2 = list_AddNodeLast(&entity->children);
+							node2->element = myStats;
+							node2->deconstructor = &statDeconstructor;
+							node2->size = sizeof(myStats);
+						}
+
+					}
+
+					Uint32 chestseed = 0;
+					postProcessEntity->entity_rng->getSeed(&chestseed, sizeof(chestseed));
+					entity->seedEntityRNG(chestseed);
+					createChestInventory(entity, postProcessEntity->chestType);
+
+					// remove chest entities
+					Entity* parentEntity = uidToEntity(postProcessEntity->parent);
+					if ( parentEntity )
+					{
+						list_RemoveNode(parentEntity->mynode);    // remove lid
+					}
+					list_RemoveNode(postProcessEntity->mynode);
+				}
+				else
+				{
+					createChestInventory(postProcessEntity, postProcessEntity->chestType);
+				}
 			}
 		}
 	}

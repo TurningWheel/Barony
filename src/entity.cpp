@@ -7994,7 +7994,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					bool backstab = false;
 					bool flanking = false;
-					if ( player >= 0 && !monsterIsImmobileTurret(hit.entity, hitstats) )
+					if ( player >= 0 && !monsterIsImmobileTurret(hit.entity, hitstats) && !(hitstats->type == MIMIC) )
 					{
 						real_t hitAngle = hit.entity->yawDifferenceFromPlayer(player);
 						if ( (hitAngle >= 0 && hitAngle <= 2 * PI / 3) ) // 120 degree arc
@@ -9725,7 +9725,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					DamageGib dmgGib = DMG_DEFAULT;
 					bool charged = std::max(charge, MAXCHARGE / 2) / ((double)(MAXCHARGE / 2)) > 1;
-					if ( weaponMultipliers >= 1.15 )
+					if ( weaponMultipliers >= 1.15 || (weaponskill == PRO_AXE && hitstats->type == MIMIC) )
 					{
 						dmgGib = DMG_STRONGER;
 						if ( charged )
