@@ -2506,10 +2506,11 @@ Compatible save file not found.#
 2159 gets terminated by an automaton.#
 2160 failed to foil Erudyce's plans.#
 2161 couldn't stand against Orpheus' power.#
-2162 gets terminated by a sentry bot.#
-2163 gets terminated by a spell bot.#
+2162 gets terminated by a sentrybot.#
+2163 gets terminated by a spellbot.#
 2164 gets terminated by a gyrobot.#
 2165 gets terminated by a dummybot.#
+2166 gets looted by a mimic.#
 
 # items, reserve (2200-2349) for new items
 2200 DEPRECATED_ITEM_NAME#
@@ -6240,5 +6241,10 @@ Filter#
 6079 Leaderboard
 Filters#
 6080 Depth#
+6081 The mimic swings open!#
+6082 Wait! That's a mimic!#
+6083 You lock the mimic!#
+6084 The mimic evades your skeleton key!#
+6085 The mimic eats your %s!#
 
 6100 end#

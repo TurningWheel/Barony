@@ -871,26 +871,36 @@ bool Entity::disturbMimic(Entity* touched, bool takenDamage, bool doMessage)
 		}
 	}
 
-	if ( myStats && myStats->EFFECTS[EFF_MIMIC_LOCKED] && myStats->EFFECTS_TIMERS[EFF_MIMIC_LOCKED] == -1 )
+	if ( myStats && myStats->EFFECTS[EFF_MIMIC_LOCKED] )
 	{
-		// started locked, force open
-		setEffect(EFF_MIMIC_LOCKED, false, 0, false);
+		if ( myStats->EFFECTS_TIMERS[EFF_MIMIC_LOCKED] == -1 )
+		{
+			// started locked, force open
+			setEffect(EFF_MIMIC_LOCKED, false, 0, false);
+		}
+		else
+		{
+			monsterHitTime = HITRATE;
+		}
 	}
 
-	if ( monsterSpecialState == MIMIC_INERT )
+	if ( !myStats->EFFECTS[EFF_MIMIC_LOCKED] )
 	{
-		// longer stun
-		setEffect(EFF_STUNNED, true, 50, false);
-	}
-	else
-	{
-		setEffect(EFF_STUNNED, true, 20, false);
+		if ( monsterSpecialState == MIMIC_INERT )
+		{
+			// longer stun
+			setEffect(EFF_STUNNED, true, 50, false);
+		}
+		else
+		{
+			setEffect(EFF_STUNNED, true, 20, false);
+		}
+		monsterHitTime = HITRATE / 2;
 	}
 
 	monsterSpecialState = MIMIC_ACTIVE;
 	serverUpdateEntitySkill(this, 33);
 
-	monsterHitTime = HITRATE / 2;
 
 	if ( touched )
 	{
@@ -905,8 +915,12 @@ bool Entity::disturbMimic(Entity* touched, bool takenDamage, bool doMessage)
 			}
 		}
 	}
-	attack(MONSTER_POSE_MIMIC_DISTURBED, 0, nullptr);
-	playSoundEntity(this, 21, 64);
+
+	if ( !myStats->EFFECTS[EFF_MIMIC_LOCKED] )
+	{
+		attack(MONSTER_POSE_MIMIC_DISTURBED, 0, nullptr);
+		playSoundEntity(this, 21, 64);
+	}
 	return true;
 }
 
@@ -931,6 +945,7 @@ void Entity::mimicSetStats(Stat* myStats)
 	myStats->DEX += 1 * level;
 	myStats->HP += 50 * level;
 	myStats->PER += 1 * level;
+	myStats->RANDOM_GOLD = 50 + 50 * level;
 
 
 	myStats->MAXHP = myStats->HP;

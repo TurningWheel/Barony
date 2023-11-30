@@ -27912,6 +27912,17 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 	if ( entity )
 	{
 		//enemyDetails->updateWorldCoordinates(); --moved to main loop before drawEntities3D
+		if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == MIMIC )
+		{
+			if ( entity->isInertMimic() )
+			{
+				enemyDetails->barType = EnemyHPDamageBarHandler::BAR_TYPE_FURNITURE;
+			}
+			else
+			{
+				enemyDetails->barType = EnemyHPDamageBarHandler::BAR_TYPE_CREATURE;
+			}
+		}
 	}
 	else
 	{

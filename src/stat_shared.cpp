@@ -1294,8 +1294,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->CHR = 0;
 			stats->EXP = 0;
 			stats->LVL = 10;
-			stats->GOLD = 50;
-			stats->RANDOM_GOLD = 450;
+			stats->GOLD = 0;
+			stats->RANDOM_GOLD = 0;
 			break;
 		case 10:
 		default:
