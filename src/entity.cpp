@@ -8962,6 +8962,80 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 						}
 					}
+					else if ( myStats->type == MIMIC && local_rng.rand() % 4 == 0 )
+					{
+						Item* armor = nullptr;
+						int armornum = 0;
+						if ( behavior == &actPlayer )
+						{
+							armor = nullptr;
+						}
+						else
+						{
+							if ( hitstats->defending )
+							{
+								// try eat shield
+								armornum = hitstats->pickRandomEquippedItem(&armor, true, false, true, true);
+								if ( !armor )
+								{
+									armornum = hitstats->pickRandomEquippedItem(&armor, true, false, false, false);
+								}
+							}
+							else
+							{
+								armornum = hitstats->pickRandomEquippedItem(&armor, true, false, false, false);
+							}
+						}
+						if ( armor != nullptr )
+						{
+							int qty = 1;
+							int startCount = armor->count;
+							if ( itemTypeIsQuiver(armor->type) )
+							{
+								qty = armor->count;
+								armor->count = 0;
+							}
+							else
+							{
+								armor->count--;
+							}
+							messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(6085), armor->getName());
+							Item* stolenArmor = newItem(armor->type, armor->status, armor->beatitude, qty, armor->appearance, armor->identified, &myStats->inventory);
+							stolenArmor->ownerUid = hit.entity->getUID();
+							if ( playerhit > 0 && multiplayer == SERVER && !players[playerhit]->isLocalPlayer() )
+							{
+								strcpy((char*)net_packet->data, "STLA");
+								net_packet->data[4] = armornum;
+								SDLNet_Write32(static_cast<Uint32>(armor->type), &net_packet->data[5]);
+								SDLNet_Write32(static_cast<Uint32>(armor->status), &net_packet->data[9]);
+								SDLNet_Write32(static_cast<Uint32>(armor->beatitude), &net_packet->data[13]);
+								SDLNet_Write32(static_cast<Uint32>(startCount), &net_packet->data[17]);
+								SDLNet_Write32(static_cast<Uint32>(armor->appearance), &net_packet->data[21]);
+								net_packet->data[25] = armor->identified;
+								net_packet->address.host = net_clients[playerhit - 1].host;
+								net_packet->address.port = net_clients[playerhit - 1].port;
+								net_packet->len = 26;
+								sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
+							}
+
+							if ( armor->count <= 0 )
+							{
+								Item** slot = itemSlot(hitstats, armor);
+								if ( slot )
+								{
+									*slot = NULL;
+								}
+								if ( armor->node )
+								{
+									list_RemoveNode(armor->node);
+								}
+								else
+								{
+									free(armor);
+								}
+							}
+						}
+					}
 					else if ( (damage > 0 || hitstats->EFFECTS[EFF_PACIFY] || hitstats->EFFECTS[EFF_FEAR]) && local_rng.rand() % 4 == 0 )
 					{
 						switch ( myStats->type )
@@ -9043,39 +9117,53 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 							if ( armor != nullptr )
 							{
-								if ( (playerhit >= 0 && players[playerhit]->isLocalPlayer()) || playerhit < 0 )
+								int startCount = armor->count;
+								int qty = 1;
+								if ( itemTypeIsQuiver(armor->type) )
 								{
-									if ( armor->count > 1 )
-									{
-										newItem(armor->type, armor->status, armor->beatitude, armor->count - 1, armor->appearance, armor->identified, &hitstats->inventory);
-									}
-								}
-								armor->count = 1;
-								messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(688), armor->getName());
-								Item* stolenArmor = newItem(armor->type, armor->status, armor->beatitude, armor->count, armor->appearance, armor->identified, &myStats->inventory);
-								stolenArmor->ownerUid = hit.entity->getUID();
-								Item** slot = itemSlot(hitstats, armor);
-								if ( slot )
-								{
-									*slot = NULL;
-								}
-								if ( armor->node )
-								{
-									list_RemoveNode(armor->node);
+									qty = armor->count;
+									armor->count = 0;
 								}
 								else
 								{
-									free(armor);
+									armor->count--;
 								}
+								messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(688), armor->getName());
+								Item* stolenArmor = newItem(armor->type, armor->status, armor->beatitude, qty, armor->appearance, armor->identified, &myStats->inventory);
+								stolenArmor->ownerUid = hit.entity->getUID();
 								if ( playerhit > 0 && multiplayer == SERVER && !players[playerhit]->isLocalPlayer() )
 								{
 									strcpy((char*)net_packet->data, "STLA");
 									net_packet->data[4] = armornum;
+									SDLNet_Write32(static_cast<Uint32>(armor->type), &net_packet->data[5]);
+									SDLNet_Write32(static_cast<Uint32>(armor->status), &net_packet->data[9]);
+									SDLNet_Write32(static_cast<Uint32>(armor->beatitude), &net_packet->data[13]);
+									SDLNet_Write32(static_cast<Uint32>(startCount), &net_packet->data[17]);
+									SDLNet_Write32(static_cast<Uint32>(armor->appearance), &net_packet->data[21]);
+									net_packet->data[25] = armor->identified;
 									net_packet->address.host = net_clients[playerhit - 1].host;
 									net_packet->address.port = net_clients[playerhit - 1].port;
-									net_packet->len = 5;
+									net_packet->len = 26;
 									sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
 								}
+
+								if ( armor->count <= 0 )
+								{
+									Item** slot = itemSlot(hitstats, armor);
+									if ( slot )
+									{
+										*slot = NULL;
+									}
+									if ( armor->node )
+									{
+										list_RemoveNode(armor->node);
+									}
+									else
+									{
+										free(armor);
+									}
+								}
+
 								teleportRandom();
 
 								// the succubus loses interest after this

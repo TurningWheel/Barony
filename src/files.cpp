@@ -1749,6 +1749,22 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 
 	list_FreeAll(entlist);
 
+	if ( destmap->trapexcludelocations )
+	{
+		free(destmap->trapexcludelocations);
+		destmap->trapexcludelocations = nullptr;
+	}
+	if ( destmap->monsterexcludelocations )
+	{
+		free(destmap->monsterexcludelocations);
+		destmap->monsterexcludelocations = nullptr;
+	}
+	if ( destmap->lootexcludelocations )
+	{
+		free(destmap->lootexcludelocations);
+		destmap->lootexcludelocations = nullptr;
+	}
+
 	if ( destmap == &map )
 	{
 		// remove old lights

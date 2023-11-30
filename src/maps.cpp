@@ -855,9 +855,22 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	map_t shopmap;
 	map_t secretlevelmap;
 	int secretlevelexit = 0;
-	bool *trapexcludelocations;
-	bool *monsterexcludelocations;
-	bool *lootexcludelocations;
+
+	if ( map.trapexcludelocations )
+	{
+		free(map.trapexcludelocations);
+		map.trapexcludelocations = nullptr;
+	}
+	if ( map.monsterexcludelocations )
+	{
+		free(map.monsterexcludelocations);
+		map.monsterexcludelocations = nullptr;
+	}
+	if ( map.lootexcludelocations )
+	{
+		free(map.lootexcludelocations);
+		map.lootexcludelocations = nullptr;
+	}
 
 	if ( std::get<LEVELPARAM_CHANCE_SECRET>(mapParameters) == -1
 		&& std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) == -1
@@ -1131,6 +1144,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		tempMap->creatures->first = nullptr;
 		tempMap->creatures->last = nullptr;
 		tempMap->worldUI = nullptr;
+		tempMap->trapexcludelocations = nullptr;
+		tempMap->monsterexcludelocations = nullptr;
+		tempMap->lootexcludelocations = nullptr;
 		if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), tempMap, tempMap->entities, tempMap->creatures, &checkMapHash) == -1 )
 		{
 			mapDeconstructor((void*)tempMap);
@@ -1284,6 +1300,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			subRoomMap->creatures->first = nullptr;
 			subRoomMap->creatures->last = nullptr;
 			subRoomMap->worldUI = nullptr;
+			subRoomMap->trapexcludelocations = nullptr;
+			subRoomMap->monsterexcludelocations = nullptr;
+			subRoomMap->lootexcludelocations = nullptr;
 			if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), subRoomMap, subRoomMap->entities, subRoomMap->creatures, &checkMapHash) == -1 )
 			{
 				mapDeconstructor((void*)subRoomMap);
@@ -1437,6 +1456,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		subRoomMap->creatures->first = nullptr;
 		subRoomMap->creatures->last = nullptr;
 		subRoomMap->worldUI = nullptr;
+		subRoomMap->trapexcludelocations = nullptr;
+		subRoomMap->monsterexcludelocations = nullptr;
+		subRoomMap->lootexcludelocations = nullptr;
 		if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), subRoomMap, subRoomMap->entities, subRoomMap->creatures, &checkMapHash) == -1 )
 		{
 			mapDeconstructor((void*)subRoomMap);
@@ -1553,9 +1575,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	if ( numlevels > 1 )
 	{
 		possiblelocations = (bool*) malloc(sizeof(bool) * map.width * map.height);
-		trapexcludelocations = (bool*)malloc(sizeof(bool) * map.width * map.height);
-		monsterexcludelocations = (bool*)malloc(sizeof(bool) * map.width * map.height);
-		lootexcludelocations = (bool*)malloc(sizeof(bool) * map.width * map.height);
+		map.trapexcludelocations = (bool*)malloc(sizeof(bool) * map.width * map.height);
+		map.monsterexcludelocations = (bool*)malloc(sizeof(bool) * map.width * map.height);
+		map.lootexcludelocations = (bool*)malloc(sizeof(bool) * map.width * map.height);
 		for ( y = 0; y < map.height; y++ )
 		{
 			for ( x = 0; x < map.width; x++ )
@@ -1571,24 +1593,24 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				{
 					possiblelocations[x + y * map.width] = true;
 				}
-				trapexcludelocations[x + y * map.width] = false;
+				map.trapexcludelocations[x + y * map.width] = false;
 				if ( map.flags[MAP_FLAG_DISABLEMONSTERS] == 1 )
 				{
 					// the base map excludes all monsters
-					monsterexcludelocations[x + y * map.width] = true;
+					map.monsterexcludelocations[x + y * map.width] = true;
 				}
 				else
 				{
-					monsterexcludelocations[x + y * map.width] = false;
+					map.monsterexcludelocations[x + y * map.width] = false;
 				}
 				if ( map.flags[MAP_FLAG_DISABLELOOT] == 1 )
 				{
 					// the base map excludes all monsters
-					lootexcludelocations[x + y * map.width] = true;
+					map.lootexcludelocations[x + y * map.width] = true;
 				}
 				else
 				{
-					lootexcludelocations[x + y * map.width] = false;
+					map.lootexcludelocations[x + y * map.width] = false;
 				}
 			}
 		}
@@ -1761,9 +1783,21 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					free(possiblerooms);
 					free(possiblelocations);
 					free(possiblelocations2);
-					free(trapexcludelocations);
-					free(monsterexcludelocations);
-					free(lootexcludelocations);
+					if ( map.trapexcludelocations )
+					{
+						free(map.trapexcludelocations);
+						map.trapexcludelocations = nullptr;
+					}
+					if ( map.monsterexcludelocations )
+					{
+						free(map.monsterexcludelocations);
+						map.monsterexcludelocations = nullptr;
+					}
+					if ( map.lootexcludelocations )
+					{
+						free(map.lootexcludelocations);
+						map.lootexcludelocations = nullptr;
+					}
 					free(firstroomtile);
 					free(sublevelname);
 					free(subRoomName);
@@ -2054,16 +2088,16 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								// apply submap disable flags
 								if ( subRoomMap->flags[MAP_FLAG_DISABLETRAPS] == 1 )
 								{
-									trapexcludelocations[x0 + y0 * map.width] = true;
+									map.trapexcludelocations[x0 + y0 * map.width] = true;
 									//map.tiles[z + y0 * MAPLAYERS + x0 * MAPLAYERS * map.height] = 83;
 								}
 								if ( subRoomMap->flags[MAP_FLAG_DISABLEMONSTERS] == 1 )
 								{
-									monsterexcludelocations[x0 + y0 * map.width] = true;
+									map.monsterexcludelocations[x0 + y0 * map.width] = true;
 								}
 								if ( subRoomMap->flags[MAP_FLAG_DISABLELOOT] == 1 )
 								{
-									lootexcludelocations[x0 + y0 * map.width] = true;
+									map.lootexcludelocations[x0 + y0 * map.width] = true;
 								}
 							}
 
@@ -2088,16 +2122,16 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							possiblelocations[x0 + y0 * map.width] = false;
 							if ( tempMap->flags[MAP_FLAG_DISABLETRAPS] == 1 )
 							{
-								trapexcludelocations[x0 + y0 * map.width] = true;
+								map.trapexcludelocations[x0 + y0 * map.width] = true;
 								//map.tiles[z + y0 * MAPLAYERS + x0 * MAPLAYERS * map.height] = 83;
 							}
 							if ( tempMap->flags[MAP_FLAG_DISABLEMONSTERS] == 1 )
 							{
-								monsterexcludelocations[x0 + y0 * map.width] = true;
+								map.monsterexcludelocations[x0 + y0 * map.width] = true;
 							}
 							if ( tempMap->flags[MAP_FLAG_DISABLELOOT] == 1 )
 							{
-								lootexcludelocations[x0 + y0 * map.width] = true;
+								map.lootexcludelocations[x0 + y0 * map.width] = true;
 							}
 							if ( c == 0 )
 							{
@@ -2776,7 +2810,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				{
 					side = 3;
 				}
-				if ( sides == 1 && (trapexcludelocations[x + y * map.width] == false) )
+				if ( sides == 1 && (map.trapexcludelocations[x + y * map.width] == false) )
 				{
 					possiblelocations[y + x * map.height] = true;
 					numpossiblelocations++;
@@ -3169,7 +3203,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				i++;
 			}
 			while ( !map.tiles[OBSTACLELAYER + testy * MAPLAYERS + testx * MAPLAYERS * map.height] 
-				&& !trapexcludelocations[testx + testy * map.width]
+				&& !map.trapexcludelocations[testx + testy * map.width]
 				&& !(!arrowtrap && !map.tiles[testy * MAPLAYERS + testx * MAPLAYERS * map.height]) // boulders stop wiring at pit edges
 				&& i <= 10 );
 		}
@@ -3638,7 +3672,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				if ( forcedMonsterSpawns > 0 )
 				{
 					--forcedMonsterSpawns;
-					if ( monsterexcludelocations[x + y * map.width] == false )
+					if ( map.monsterexcludelocations[x + y * map.width] == false )
 					{
 						bool doNPC = false;
 						if ( gameplayCustomManager.processedPropertyForFloor(currentlevel, secretlevel, map.name, GameplayCustomManager::PROPERTY_NPC, doNPC) )
@@ -3680,7 +3714,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				else if ( forcedLootSpawns > 0 )
 				{
 					--forcedLootSpawns;
-					if ( lootexcludelocations[x + y * map.width] == false )
+					if ( map.lootexcludelocations[x + y * map.width] == false )
 					{
 						if ( map_rng.rand() % 10 == 0 )   // 10% chance
 						{
@@ -3813,7 +3847,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					{
 						if ( map_rng.rand() % balance )
 						{
-							if ( lootexcludelocations[x + y * map.width] == false )
+							if ( map.lootexcludelocations[x + y * map.width] == false )
 							{
 								if ( map_rng.rand() % 10 == 0 )   // 10% chance
 								{
@@ -3830,7 +3864,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						}
 						else
 						{
-							if ( monsterexcludelocations[x + y * map.width] == false )
+							if ( map.monsterexcludelocations[x + y * map.width] == false )
 							{
 								bool doNPC = false;
 								if ( gameplayCustomManager.processedPropertyForFloor(currentlevel, secretlevel, map.name, GameplayCustomManager::PROPERTY_NPC, doNPC) )
@@ -3976,9 +4010,6 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	}*/
 
 	free(possiblelocations);
-	free(trapexcludelocations);
-	free(monsterexcludelocations);
-	free(lootexcludelocations);
 	free(firstroomtile);
 	free(subRoomName);
 	free(sublevelname);
@@ -3988,6 +4019,30 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	printlog("successfully generated a dungeon with %d rooms, %d monsters, %d gold, %d items, %d decorations.\n", roomcount, nummonsters, numGenGold, numGenItems, numGenDecorations);
 	//messagePlayer(0, "successfully generated a dungeon with %d rooms, %d monsters, %d gold, %d items, %d decorations.", roomcount, nummonsters, numGenGold, numGenItems, numGenDecorations);
 	return secretlevelexit;
+}
+
+bool allowedGenerateMimicOnChest(int x, int y, map_t& map)
+{
+	if ( gameModeManager.getMode() == gameModeManager.GAME_MODE_TUTORIAL
+		|| gameModeManager.getMode() == gameModeManager.GAME_MODE_TUTORIAL_INIT )
+	{
+		return false;
+	}
+	if ( !(svFlags & SV_FLAG_TRAPS) )
+	{
+		return false;
+	}
+	/*if ( map.trapexcludelocations )
+	{
+		if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+		{
+			if ( map.trapexcludelocations[x + y * map.width] )
+			{
+				return false;
+			}
+		}
+	}*/
+	return true;
 }
 
 /*-------------------------------------------------------------------------------
@@ -7075,6 +7130,8 @@ void assignActions(map_t* map)
 		}
 	}
 
+	static ConsoleVariable<int> cvar_mimic_chance("/mimic_chance", 1);
+
 	for ( auto node = map->entities->first; node != nullptr; )
 	{
 		Entity* postProcessEntity = (Entity*)node->element;
@@ -7083,7 +7140,19 @@ void assignActions(map_t* map)
 		{
 			if ( postProcessEntity->behavior == &actChest )
 			{
-				if ( !(postProcessEntity == vampireQuestChest) && postProcessEntity->entity_rng->rand() % 2 == 0 )
+				bool doMimic = false;
+				if ( !(postProcessEntity == vampireQuestChest) 
+					&& allowedGenerateMimicOnChest(postProcessEntity->x / 16, postProcessEntity->y / 16, *map) )
+				{
+					int chance = 1;
+					if ( svFlags & SV_FLAG_CHEATS )
+					{
+						chance = std::min(100, std::max(0, *cvar_mimic_chance));
+					}
+					doMimic = postProcessEntity->entity_rng->rand() % 100 < chance;
+				}
+
+				if ( doMimic )
 				{
 					// mimic
 					Entity* entity = newEntity(10, 1, map->entities, map->creatures);

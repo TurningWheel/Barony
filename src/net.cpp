@@ -3203,8 +3203,9 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// steal armor (destroy it)
 	{'STLA', [](){
-	    Item* item;
-		switch ( net_packet->data[4] )
+	    Item* item = nullptr;
+		int armornum = net_packet->data[4];
+		switch ( armornum )
 		{
 			case 0:
 				item = stats[clientnum]->helmet;
@@ -3240,14 +3241,93 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				item = NULL;
 				break;
 		}
-		Item** slot = itemSlot(stats[clientnum], item);
-		if ( slot != NULL )
-		{
-			*slot = NULL;
-		}
+
+		
+		ItemType checkType = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[5]));
+		Status checkStatus = static_cast<Status>(SDLNet_Read32(&net_packet->data[9]));
+		Sint16 checkBeatitude = static_cast<Sint16>(SDLNet_Read32(&net_packet->data[13]));
+		Sint16 checkCount = static_cast<Sint16>(SDLNet_Read32(&net_packet->data[17]));
+		Uint32 checkAppearance = static_cast<Uint32>(SDLNet_Read32(&net_packet->data[21]));
+		bool checkIdentified = net_packet->data[25] == 1 ? true : false;
+		
 		if ( item )
 		{
-			list_RemoveNode(item->node);
+			if ( item->type == checkType
+				&& item->status == checkStatus
+				&& item->beatitude == checkBeatitude
+				&& item->count == checkCount
+				&& item->appearance == checkAppearance
+				/*&& item->identified == checkIdentified*/ )
+			{
+				// ok
+				if ( itemTypeIsQuiver(item->type) || armornum == 5 /*weapon*/ )
+				{
+					item->count = 0;
+				}
+				else
+				{
+					item->count--;
+				}
+
+				if ( item->count <= 0 )
+				{
+					Item** slot = itemSlot(stats[clientnum], item);
+					if ( slot != NULL )
+					{
+						*slot = NULL;
+					}
+					if ( item )
+					{
+						list_RemoveNode(item->node);
+					}
+				}
+				return;
+			}
+			else
+			{
+				item = nullptr;
+			}
+		}
+
+		if ( !item )
+		{
+			for ( node_t* node = stats[clientnum]->inventory.first; node != nullptr; node = node->next )
+			{
+				if ( Item* item2 = static_cast<Item*>(node->element) )
+				{
+					if ( item2->type == checkType
+						&& item2->status == checkStatus
+						&& item2->beatitude == checkBeatitude
+						&& item2->count == checkCount
+						&& item2->appearance == checkAppearance
+						/*&& item2->identified == checkIdentified*/ )
+					{
+						// next best match
+						if ( itemTypeIsQuiver(item2->type) || armornum == 5 /*weapon*/ )
+						{
+							item2->count = 0;
+						}
+						else
+						{
+							item2->count--;
+						}
+
+						if ( item2->count <= 0 )
+						{
+							Item** slot = itemSlot(stats[clientnum], item2);
+							if ( slot != NULL )
+							{
+								*slot = NULL;
+							}
+							if ( item2 )
+							{
+								list_RemoveNode(item2->node);
+							}
+						}
+						return;
+					}
+				}
+			}
 		}
 	}},
 

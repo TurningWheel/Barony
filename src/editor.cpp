@@ -1091,6 +1091,9 @@ void makeUndo()
 	undomap->entities->last = nullptr;
 	undomap->creatures = nullptr;
 	undomap->worldUI = nullptr;
+	undomap->trapexcludelocations = nullptr;
+	undomap->monsterexcludelocations = nullptr;
+	undomap->lootexcludelocations = nullptr;
 	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
 		Entity* entity = newEntity(((Entity*)node->element)->sprite, 1, undomap->entities, nullptr);

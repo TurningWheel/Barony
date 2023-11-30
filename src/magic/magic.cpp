@@ -845,6 +845,22 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 					{
 						// player.
 						Item* weapon = hitstats->weapon;
+						if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
+						{
+							strcpy((char*)net_packet->data, "STLA");
+							net_packet->data[4] = 5; // steal weapon index in STLA netcode.
+							SDLNet_Write32(static_cast<Uint32>(weapon->type), &net_packet->data[5]);
+							SDLNet_Write32(static_cast<Uint32>(weapon->status), &net_packet->data[9]);
+							SDLNet_Write32(static_cast<Uint32>(weapon->beatitude), &net_packet->data[13]);
+							SDLNet_Write32(static_cast<Uint32>(weapon->count), &net_packet->data[17]);
+							SDLNet_Write32(static_cast<Uint32>(weapon->appearance), &net_packet->data[21]);
+							net_packet->data[25] = weapon->identified;
+							net_packet->address.host = net_clients[player - 1].host;
+							net_packet->address.port = net_clients[player - 1].port;
+							net_packet->len = 26;
+							sendPacketSafe(net_sock, -1, net_packet, player - 1);
+						}
+
 						Item** slot = itemSlot(hitstats, weapon);
 						if ( slot )
 						{
@@ -857,15 +873,6 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 						else
 						{
 							free(weapon);
-						}
-						if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
-						{
-							strcpy((char*)net_packet->data, "STLA");
-							net_packet->data[4] = 5; // steal weapon index in STLA netcode.
-							net_packet->address.host = net_clients[player - 1].host;
-							net_packet->address.port = net_clients[player - 1].port;
-							net_packet->len = 5;
-							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
 				}
