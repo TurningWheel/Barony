@@ -56,7 +56,7 @@ std::string EOSFuncs::getAuthToken()
 	if ( !AuthHandle
 		|| AccountManager.AccountAuthenticationStatus != EOS_EResult::EOS_Success )
 	{
-		logInfo("Recieved cached auth token, unknown login status");
+		//logInfo("Recieved cached auth token, unknown login status");
 		return AccountManager.authToken;
 	}
 

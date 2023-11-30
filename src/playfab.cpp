@@ -82,6 +82,7 @@ void PlayfabUser_t::loginEpic()
     if ( EOS.getAuthToken() == "" )
     {
         playfabUser.authenticationRefresh = TICKS_PER_SECOND * 5;
+        playfabUser.errorLogin = true;
         return;
     }
     playfabUser.loggingIn = true;
