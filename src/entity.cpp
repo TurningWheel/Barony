@@ -6074,7 +6074,8 @@ bool Entity::isMobile()
 		return false;
 	}
 
-	if ( isInertMimic() || (entitystats->type == MIMIC && entitystats->EFFECTS[EFF_MIMIC_LOCKED]) )
+	if ( isInertMimic() || (entitystats->type == MIMIC 
+		&& (entitystats->EFFECTS[EFF_MIMIC_LOCKED] || monsterSpecialState == MIMIC_MAGIC)) )
 	{
 		return false;
 	}
@@ -6328,7 +6329,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 				|| (myStats->type == VAMPIRE && (pose == MONSTER_POSE_VAMPIRE_DRAIN || pose == MONSTER_POSE_VAMPIRE_AURA_CHARGE))
 				|| (myStats->type == MIMIC 
 					&& (pose == MONSTER_POSE_MIMIC_DISTURBED || pose == MONSTER_POSE_MIMIC_DISTURBED2
-						|| pose == MONSTER_POSE_MIMIC_LOCKED || pose == MONSTER_POSE_MIMIC_LOCKED2))
+						|| pose == MONSTER_POSE_MIMIC_LOCKED || pose == MONSTER_POSE_MIMIC_LOCKED2
+						|| pose == MONSTER_POSE_MIMIC_MAGIC1 || pose == MONSTER_POSE_MIMIC_MAGIC2))
 				|| (myStats->type == LICH_FIRE && pose == MONSTER_POSE_MAGIC_CAST1)
 				|| (myStats->type == LICH_ICE && pose == MONSTER_POSE_MAGIC_CAST1)
 				|| (myStats->type == LICH_ICE 
@@ -13335,6 +13337,14 @@ int Entity::getAttackPose() const
 		{
 			pose = MONSTER_POSE_MAGIC_WINDUP1;
 		}
+		else if ( myStats->type == MIMIC )
+		{
+			pose = MONSTER_POSE_MELEE_WINDUP1;
+			if ( monsterSpecialState == MIMIC_MAGIC )
+			{
+				pose = MONSTER_POSE_MIMIC_MAGIC1;
+			}
+		}
 		else if ( itemCategory(myStats->weapon) == MAGICSTAFF )
 		{
 			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
@@ -13518,6 +13528,10 @@ int Entity::getAttackPose() const
 			type == SLIME || (type == SCARAB && sprite != 1078 && sprite != 1079))
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
+			if ( type == MIMIC && monsterSpecialState == MIMIC_MAGIC )
+			{
+				pose = MONSTER_POSE_MIMIC_MAGIC1;
+			}
 		}
 		else if ( myStats->type == CRYSTALGOLEM )
 		{

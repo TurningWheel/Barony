@@ -874,6 +874,8 @@ static const int MONSTER_POSE_MIMIC_DISTURBED = 35;
 static const int MONSTER_POSE_MIMIC_DISTURBED2 = 36;
 static const int MONSTER_POSE_MIMIC_LOCKED = 37;
 static const int MONSTER_POSE_MIMIC_LOCKED2 = 38;
+static const int MONSTER_POSE_MIMIC_MAGIC1 = 39;
+static const int MONSTER_POSE_MIMIC_MAGIC2 = 40;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
@@ -899,6 +901,7 @@ static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_TARGET = 200;
 static const int MONSTER_SPECIAL_COOLDOWN_VAMPIRE_AURA = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_VAMPIRE_DRAIN = 300;
 static const int MONSTER_SPECIAL_COOLDOWN_SUCCUBUS_CHARM = 400;
+static const int MONSTER_SPECIAL_COOLDOWN_MIMIC_EAT = 500;
 
 //--monster target search types
 static const int MONSTER_TARGET_ENEMY = 0;

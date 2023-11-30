@@ -9198,6 +9198,34 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 
 			switch ( myStats->type )
 			{
+				//case MIMIC:
+				//	if ( monsterSpecialState == MIMIC_ACTIVE && !myStats->EFFECTS[EFF_MIMIC_LOCKED] )
+				//	{
+				//		if ( local_rng.rand() % 5 == 0 )
+				//		{
+				//			int tx = this->x / 16;
+				//			int ty = this->y / 16;
+				//			list_t* itemsList = nullptr;
+				//			for ( int i = -1; i <= 1; ++i )
+				//			{
+				//				for ( int j = -1; j <= 1; ++j )
+				//				{
+				//					getItemsOnTile(tx + i, ty + j, &itemsList); //Check the tile the monster is on for items.
+				//				}
+				//			}
+
+				//			if ( itemsList )
+				//			{
+				//				createParticleDropRising(this, 593, 1.f);
+				//				serverSpawnMiscParticles(this, PARTICLE_EFFECT_RISING_DROP, 593);
+				//				this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_MIMIC_EAT;
+				//				this->monsterSpecialState = MIMIC_MAGIC;
+				//				serverUpdateEntitySkill(this, 33);
+				//			}
+				//			break;
+				//		}
+				//	}
+				//	break;
 				case KOBOLD:
 					if ( (hasrangedweapon && !(myStats->weapon && itemCategory(myStats->weapon) == SPELLBOOK)) || myStats->weapon == nullptr )
 					{

@@ -180,6 +180,8 @@ void mimicDie(Entity* my)
 #define MIMIC_TRUNK 2
 #define MIMIC_LID 3
 
+void mimicSpecialEat(Entity* my, Stat* myStats); // unused
+
 void mimicAnimate(Entity* my, Stat* myStats, double dist)
 {
 	node_t* node;
@@ -196,6 +198,12 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 	{
 		my->z = limbs[MIMIC][5][2];
 	}
+
+	/*if ( keystatus[SDLK_g] )
+	{
+		keystatus[SDLK_g] = 0;
+		mimicSpecialEat(my, myStats);
+	}*/
 
 	if ( multiplayer != CLIENT )
 	{
@@ -311,8 +319,47 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 					}
 				}
 			}
+			else if ( my->monsterAttack == MONSTER_POSE_MIMIC_MAGIC1 )
+			{
+				if ( my->monsterAttackTime == 0 )
+				{
+					attackStageSwing = 0;
+					attackStageRoll = 0;
+					entity->monsterWeaponYaw = 0.0;
+					entity->roll = 0.0;
+					walkShuffleYaw = 0;
+					walkCycle = 0;
+					walkShuffleRollDelay = 1;
+					entity->fskill[2] = 0.0;
+				}
+
+				if ( my->monsterAttackTime >= 0 )
+				{
+					real_t rate = limbs[MIMIC][16][0];
+					real_t setpoint = limbs[MIMIC][16][1];
+					if ( limbAngleWithinRange(entity->monsterWeaponYaw, rate, setpoint) )
+					{
+						entity->monsterWeaponYaw = setpoint;
+						//if ( my->monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+						{
+							if ( multiplayer != CLIENT )
+							{
+								int pose = MONSTER_POSE_MIMIC_MAGIC2;
+								my->attack(pose, 0, nullptr);
+							}
+						}
+					}
+					else
+					{
+						entity->monsterWeaponYaw += rate;
+					}
+
+					entity->z -= -4 * sin(entity->monsterWeaponYaw * PI);
+				}
+			}
 			else if ( my->monsterAttack == 1 || my->monsterAttack == MONSTER_POSE_MIMIC_DISTURBED2
-				|| my->monsterAttack == MONSTER_POSE_MIMIC_LOCKED2 )
+				|| my->monsterAttack == MONSTER_POSE_MIMIC_LOCKED2
+				|| my->monsterAttack == MONSTER_POSE_MIMIC_MAGIC2 )
 			{
 				real_t rollRate = entity->fskill[2] * limbs[MIMIC][11][0] * 2;
 				const real_t rollSetpoint = entity->fskill[2] * limbs[MIMIC][11][1] * 2;
@@ -363,6 +410,22 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 						else
 						{
 							entity->monsterWeaponYaw -= 0.025 * 4;
+						}
+					}
+				}
+				else if ( my->monsterAttack == MONSTER_POSE_MIMIC_MAGIC2 )
+				{
+					if ( my->monsterAttackTime >= TICKS_PER_SECOND / 20 )
+					{
+						if ( limbAngleWithinRange(entity->monsterWeaponYaw, limbs[MIMIC][14][0], limbs[MIMIC][14][1]) )
+						{
+							attackStageSwing = 0;
+							entity->monsterWeaponYaw = limbs[MIMIC][14][1];
+							my->monsterAttack = 0;
+						}
+						else
+						{
+							entity->monsterWeaponYaw += limbs[MIMIC][14][0];
 						}
 					}
 				}
@@ -585,6 +648,68 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 					entity->monsterWeaponYaw += rate;
 				}
 			}
+			else if ( my->monsterAttack == MONSTER_POSE_MIMIC_MAGIC1 
+				|| my->monsterAttack == MONSTER_POSE_MIMIC_MAGIC2 )
+			{
+				if ( my->monsterAttackTime == 0 && my->monsterAttack == MONSTER_POSE_MIMIC_MAGIC1 )
+				{
+					lidBounceStage = 0;
+					lidBounceAngle = 0.0;
+					attackStageSwing = 0;
+					//entity->monsterWeaponYaw = 0.0;
+				}
+
+				if ( attackStageSwing == 0 )
+				{
+					real_t rate = limbs[MIMIC][15][1];
+					real_t setpoint = limbs[MIMIC][15][2];
+					if ( limbAngleWithinRange(entity->monsterWeaponYaw, rate, setpoint) )
+					{
+						entity->monsterWeaponYaw = setpoint;
+						attackStageSwing = 1;
+					}
+					else
+					{
+						entity->monsterWeaponYaw += rate;
+					}
+				}
+				else
+				{
+					real_t rate = limbs[MIMIC][15][0];
+					if ( limbAngleWithinRange(entity->monsterWeaponYaw, rate, 0.0) )
+					{
+						entity->monsterWeaponYaw = 0.0;
+						/*if ( attackStageSwing == 1 )
+						{
+							lidBounceStage = 1;
+							lidBounceAngle = 0.0;
+						}*/
+						attackStageSwing = 2;
+					}
+					else
+					{
+						entity->monsterWeaponYaw += rate;
+					}
+				}
+
+				if ( my->monsterAttack == MONSTER_POSE_MIMIC_MAGIC1 )
+				{
+					entity->z -= -4 * sin(head->monsterWeaponYaw * PI);
+				}
+			}
+
+			if ( (my->monsterAttack == 0 && my->monsterSpecialState == MIMIC_MAGIC) )
+			{
+				real_t rate = -0.15;
+				if ( limbAngleWithinRange(entity->monsterWeaponYaw, rate, -2.0) )
+				{
+					entity->monsterWeaponYaw = -2.0;
+				}
+				else
+				{
+					entity->monsterWeaponYaw += rate;
+				}
+			}
 
 			if ( lidBounceStage > 0 )
 			{
@@ -599,7 +724,10 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 					if ( lidBounceStage > numBounces )
 					{
 						lidBounceStage = 0;
-						entity->monsterWeaponYaw = 0.0;
+						if ( !(my->monsterAttack == 0 && my->monsterSpecialState == MIMIC_MAGIC) )
+						{
+							entity->monsterWeaponYaw = 0.0;
+						}
 						lidBounceAngle = 0.0;
 					}
 				}
@@ -703,7 +831,9 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 		|| MONSTER_ATTACK == MONSTER_POSE_MIMIC_DISTURBED
 		|| MONSTER_ATTACK == MONSTER_POSE_MIMIC_LOCKED
 		|| MONSTER_ATTACK == MONSTER_POSE_MIMIC_LOCKED2
-		|| MONSTER_ATTACK == MONSTER_POSE_MIMIC_DISTURBED2) )
+		|| MONSTER_ATTACK == MONSTER_POSE_MIMIC_DISTURBED2
+		|| MONSTER_ATTACK == MONSTER_POSE_MIMIC_MAGIC1
+		|| MONSTER_ATTACK == MONSTER_POSE_MIMIC_MAGIC2) )
 	{
 		MONSTER_ATTACKTIME++;
 	}
@@ -719,6 +849,12 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 
 bool Entity::disturbMimic(Entity* touched, bool takenDamage, bool doMessage)
 {
+	if ( monsterSpecialState == MIMIC_MAGIC )
+	{
+		monsterSpecialState = MIMIC_ACTIVE;
+		serverUpdateEntitySkill(this, 33);
+		return false;
+	}
 	if ( monsterSpecialState != MIMIC_INERT && monsterSpecialState != MIMIC_INERT_SECOND )
 	{
 		return false;
@@ -799,4 +935,84 @@ void Entity::mimicSetStats(Stat* myStats)
 
 	myStats->MAXHP = myStats->HP;
 	myStats->OLDHP = myStats->HP;
+}
+
+void mimicSpecialEat(Entity* my, Stat* myStats)
+{
+	//my->monsterSpecialState = MIMIC_MAGIC;
+	//serverUpdateEntitySkill(my, 33);
+
+	//my->setEffect(EFF_MIMIC_LOCKED, false, 0, false);
+
+	//my->attack(MONSTER_POSE_MIMIC_MAGIC1, 0, nullptr);
+
+	//list_t* itemsList = nullptr;
+
+	//int tx = my->x / 16;
+	//int ty = my->y / 16;
+	//getItemsOnTile(tx, ty, &itemsList); //Check the tile the monster is on for items.
+	//getItemsOnTile(tx - 1, ty, &itemsList); //Check tile to the left.
+	//getItemsOnTile(tx + 1, ty, &itemsList); //Check tile to the right.
+	//getItemsOnTile(tx, ty - 1, &itemsList); //Check tile up.
+	//getItemsOnTile(tx, ty + 1, &itemsList); //Check tile down.
+	//getItemsOnTile(tx - 1, ty - 1, &itemsList); //Check tile diagonal up left.
+	//getItemsOnTile(tx + 1, ty - 1, &itemsList); //Check tile diagonal up right.
+	//getItemsOnTile(tx - 1, ty + 1, &itemsList); //Check tile diagonal down left.
+	//getItemsOnTile(tx + 1, ty + 1, &itemsList); //Check tile diagonal down right.
+
+	//if ( itemsList )
+	//{
+	//	for ( node_t* node = itemsList->first; node != nullptr; node = node->next )
+	//	{
+	//		if ( node->element )
+	//		{
+	//			/*if ( list_Size(&myStats->inventory) >= maxInventoryItems + 1 )
+	//			{
+	//				break;
+	//			}*/
+
+	//			Entity* entity = (Entity*)node->element;
+	//			if ( entity->flags[INVISIBLE] )
+	//			{
+	//				continue; // ignore invisible items like Sokoban gloves or other scripted events.
+	//			}
+
+	//			if ( entity->behavior != &actItem )
+	//			{
+	//				continue;
+	//			}
+
+	//			double dist = sqrt(pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2));
+	//			if ( std::floor(dist) > 16.0 )
+	//			{
+	//				// item was too far away, continue.
+	//				continue;
+	//			}
+
+	//			Item* item = newItemFromEntity(entity);
+	//			if ( !item ) { continue; }
+
+	//			Entity* spellEntity = createParticleSapCenter(my, entity, SPELL_STEAL_WEAPON, 175, 175);
+	//			//playSoundEntity(my, 174, 128); // succeeded spell sound
+	//			spellEntity->skill[7] = 1; // found weapon
+
+	//			// store weapon data
+	//			spellEntity->skill[10] = item->type;
+	//			spellEntity->skill[11] = item->status;
+	//			spellEntity->skill[12] = item->beatitude;
+	//			spellEntity->skill[13] = item->count;
+	//			spellEntity->skill[14] = item->appearance;
+	//			spellEntity->skill[15] = item->identified;
+
+	//			if ( item != nullptr )
+	//			{
+	//				free(item);
+	//			}
+
+	//			item = nullptr;
+	//			list_RemoveNode(entity->mynode);
+	//			break;
+	//		}
+	//	}
+	//}
 }
