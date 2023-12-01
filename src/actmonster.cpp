@@ -11951,9 +11951,17 @@ int Entity::monsterGetDexterityForMovement()
 	{
 		myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP);
 	}
-	if ( this->getStats()->EFFECTS[EFF_DASH] )
+	Stat* myStats = getStats();
+	if ( myStats )
 	{
-		myDex += 30;
+		if ( myStats->EFFECTS[EFF_DASH] )
+		{
+			myDex += 30;
+		}
+		if ( myStats->type == MIMIC && monsterAttack == MONSTER_POSE_MELEE_WINDUP1 )
+		{
+			myDex += 3;
+		}
 	}
 	return myDex;
 }
