@@ -1210,3 +1210,13 @@ struct MonsterAllyFormation_t
 	int getFollowerTryExtendedPathSearch(Entity& my, Stat& myStats);
 };
 extern MonsterAllyFormation_t monsterAllyFormations;
+
+struct MimicGenerator
+{
+	BaronyRNG mimic_rng;
+	std::unordered_set<unsigned int> mimic_floors;
+	std::unordered_set<unsigned int> mimic_secret_floors;
+	void init();
+	bool bForceSpawnForCurrentFloor();
+};
+extern MimicGenerator mimic_generator;

@@ -952,6 +952,58 @@ void Entity::mimicSetStats(Stat* myStats)
 	myStats->OLDHP = myStats->HP;
 }
 
+MimicGenerator mimic_generator;
+
+static ConsoleVariable<bool> cvar_mimic_test2("/mimic_test2", false);
+
+void MimicGenerator::init()
+{
+	mimic_floors.clear();
+	mimic_secret_floors.clear();
+	mimic_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+
+	for ( int i = 0; i <= 35; i += 5 )
+	{
+		for ( int j = 0; j < 2; ++j )
+		{
+			auto& floors = (j == 0) ? mimic_floors : mimic_secret_floors;
+			std::vector<unsigned int> chances = { 0, 10, 7, 7, 10 };
+			if ( i == 0 && j == 0 )
+			{
+				chances[0] = 0;
+				chances[1] = 0;
+			}
+
+			unsigned int res1 = mimic_rng.discrete(chances.data(), chances.size());
+			chances[res1] = 0;
+			unsigned int res2 = mimic_rng.discrete(chances.data(), chances.size());
+
+			if ( (svFlags & SV_FLAG_CHEATS) && *cvar_mimic_test2 )
+			{
+				floors.insert(i + res1);
+				floors.insert(i + res2);
+			}
+			else
+			{
+				auto chosen = mimic_rng.rand() % 2 == 0 ? res1 : res2;
+				floors.insert(i + chosen);
+			}
+		}
+	}
+}
+
+bool MimicGenerator::bForceSpawnForCurrentFloor()
+{
+	if ( secretlevel )
+	{
+		return mimic_secret_floors.find(currentlevel) != mimic_secret_floors.end();
+	}
+	else
+	{
+		return mimic_floors.find(currentlevel) != mimic_floors.end();
+	}
+}
+
 void mimicSpecialEat(Entity* my, Stat* myStats)
 {
 	//my->monsterSpecialState = MIMIC_MAGIC;

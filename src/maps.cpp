@@ -32,6 +32,8 @@
 int startfloor = 0;
 BaronyRNG map_rng;
 BaronyRNG map_server_rng;
+int numChests = 0;
+int numMimics = 0;
 
 Sint32 doorFrameSprite() {
     if (stringStr(map.name, "Caves", sizeof(map_t::name), 5)) {
@@ -7117,6 +7119,8 @@ void assignActions(map_t* map)
 		}
 	}
 
+	std::vector<Entity*> chests;
+
 	for ( auto node = map->entities->first; node != nullptr; )
 	{
 		Entity* postProcessEntity = (Entity*)node->element;
@@ -7127,96 +7131,127 @@ void assignActions(map_t* map)
 			{
 				textSourceScript.parseScriptInMapGeneration(*postProcessEntity);
 			}
-		}
-	}
-
-	static ConsoleVariable<int> cvar_mimic_chance("/mimic_chance", 1);
-
-	for ( auto node = map->entities->first; node != nullptr; )
-	{
-		Entity* postProcessEntity = (Entity*)node->element;
-		node = node->next;
-		if ( postProcessEntity )
-		{
 			if ( postProcessEntity->behavior == &actChest )
 			{
-				bool doMimic = false;
-				if ( !(postProcessEntity == vampireQuestChest) 
-					&& allowedGenerateMimicOnChest(postProcessEntity->x / 16, postProcessEntity->y / 16, *map) )
-				{
-					int chance = 1;
-					if ( svFlags & SV_FLAG_CHEATS )
-					{
-						chance = std::min(100, std::max(0, *cvar_mimic_chance));
-					}
-					doMimic = postProcessEntity->entity_rng->rand() % 100 < chance;
-				}
-
-				if ( doMimic )
-				{
-					// mimic
-					Entity* entity = newEntity(10, 1, map->entities, map->creatures);
-					entity->sizex = 4;
-					entity->sizey = 4;
-					entity->x = postProcessEntity->x;
-					entity->y = postProcessEntity->y;
-					entity->z = 6;
-					entity->yaw = postProcessEntity->yaw;
-					entity->behavior = &actMonster;
-					entity->flags[UPDATENEEDED] = true;
-					entity->flags[INVISIBLE] = true;
-					entity->skill[5] = -1;
-					//Assign entity creature list pointer.
-					entity->addToCreatureList(map->creatures);
-
-					Monster monsterType = MIMIC;
-					entity->monsterLookDir = entity->yaw;
-
-					bool monsterIsFixedSprite = true;
-					Stat* myStats = nullptr;
-					if ( multiplayer != CLIENT )
-					{
-						if ( myStats == nullptr )
-						{
-							// need to give the entity its list stuff.
-							// create an empty first node for traversal purposes
-							node_t* node2 = list_AddNodeFirst(&entity->children);
-							node2->element = nullptr;
-							node2->deconstructor = &emptyDeconstructor;
-
-							// Create the stat struct again for the new monster
-							myStats = new Stat(monsterType + 1000);
-							myStats->type = monsterType;
-
-							node2 = list_AddNodeLast(&entity->children);
-							node2->element = myStats;
-							node2->deconstructor = &statDeconstructor;
-							node2->size = sizeof(myStats);
-						}
-
-					}
-
-					Uint32 chestseed = 0;
-					postProcessEntity->entity_rng->getSeed(&chestseed, sizeof(chestseed));
-					entity->seedEntityRNG(chestseed);
-					createChestInventory(entity, postProcessEntity->chestType);
-
-					// remove chest entities
-					Entity* parentEntity = uidToEntity(postProcessEntity->parent);
-					if ( parentEntity )
-					{
-						list_RemoveNode(parentEntity->mynode);    // remove lid
-					}
-					list_RemoveNode(postProcessEntity->mynode);
-				}
-				else
-				{
-					createChestInventory(postProcessEntity, postProcessEntity->chestType);
-				}
+				chests.push_back(postProcessEntity);
 			}
 		}
 	}
-                            
+
+	if ( true /*currentlevel == 0*/ )
+	{
+		numChests = 0;
+		numMimics = 0;
+	}
+
+	static ConsoleVariable<int> cvar_mimic_chance("/mimic_chance", 2);
+	static ConsoleVariable<bool> cvar_mimic_debug("/mimic_debug", false);
+
+	std::vector<Entity*> mimics;
+	if ( chests.size() > 0 )
+	{
+		if ( mimic_generator.bForceSpawnForCurrentFloor() )
+		{
+			auto chosen = map_rng.rand() % chests.size();
+			if ( allowedGenerateMimicOnChest(chests[chosen]->x / 16, chests[chosen]->y / 16, *map) )
+			{
+				mimics.push_back(chests[chosen]);
+				chests.erase(chests.begin() + chosen);
+			}
+		}
+
+		for ( auto it = chests.begin(); it != chests.end(); )
+		{
+			bool doMimic = false;
+			Entity* chest = *it;
+			if ( allowedGenerateMimicOnChest(chest->x / 16, chest->y / 16, *map) )
+			{
+				int chance = 10;
+				if ( svFlags & SV_FLAG_CHEATS )
+				{
+					chance = std::min(100, std::max(0, *cvar_mimic_chance));
+				}
+				doMimic = chest->entity_rng->rand() % 100 < chance;
+			}
+
+			if ( doMimic )
+			{
+				mimics.push_back(chest);
+				it = chests.erase(it);
+			}
+			else
+			{
+				createChestInventory(chest, chest->chestType);
+				++numChests;
+				++it;
+			}
+		}
+	}
+
+	if ( *cvar_mimic_debug && (svFlags & SV_FLAG_CHEATS) )
+	{
+		messagePlayer(clientnum, MESSAGE_INSPECTION, "Mimics: [%d]", mimics.size());
+	}
+
+	for ( auto chest : mimics )
+	{
+		// mimic
+		numMimics++;
+		Entity* entity = newEntity(10, 1, map->entities, map->creatures);
+		entity->sizex = 4;
+		entity->sizey = 4;
+		entity->x = chest->x;
+		entity->y = chest->y;
+		entity->z = 6;
+		entity->yaw = chest->yaw;
+		entity->behavior = &actMonster;
+		entity->flags[UPDATENEEDED] = true;
+		entity->flags[INVISIBLE] = true;
+		entity->skill[5] = -1;
+		//Assign entity creature list pointer.
+		entity->addToCreatureList(map->creatures);
+
+		Monster monsterType = MIMIC;
+		entity->monsterLookDir = entity->yaw;
+
+		bool monsterIsFixedSprite = true;
+		Stat* myStats = nullptr;
+		if ( multiplayer != CLIENT )
+		{
+			if ( myStats == nullptr )
+			{
+				// need to give the entity its list stuff.
+				// create an empty first node for traversal purposes
+				node_t* node2 = list_AddNodeFirst(&entity->children);
+				node2->element = nullptr;
+				node2->deconstructor = &emptyDeconstructor;
+
+				// Create the stat struct again for the new monster
+				myStats = new Stat(monsterType + 1000);
+				myStats->type = monsterType;
+
+				node2 = list_AddNodeLast(&entity->children);
+				node2->element = myStats;
+				node2->deconstructor = &statDeconstructor;
+				node2->size = sizeof(myStats);
+			}
+
+		}
+
+		Uint32 chestseed = 0;
+		chest->entity_rng->getSeed(&chestseed, sizeof(chestseed));
+		entity->seedEntityRNG(chestseed);
+		createChestInventory(entity, chest->chestType);
+
+		// remove chest entities
+		Entity* parentEntity = uidToEntity(chest->parent);
+		if ( parentEntity )
+		{
+			list_RemoveNode(parentEntity->mynode);    // remove lid
+		}
+		list_RemoveNode(chest->mynode);
+	}
+                           
     keepInventoryGlobal = svFlags & SV_FLAG_KEEPINVENTORY;
 }
 
@@ -7408,4 +7443,3 @@ int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap, int forcemap
 		return -1;
 	}
 }
-

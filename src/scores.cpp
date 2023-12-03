@@ -6481,6 +6481,11 @@ int loadGame(int player, const SaveGameInfo& info) {
 	    }
 	}
 
+	// generate mimics
+	{
+		mimic_generator.init();
+	}
+
 	// shopkeeper hostility
 	{
 		auto& h = ShopkeeperPlayerHostility.playerHostility[statsPlayer];

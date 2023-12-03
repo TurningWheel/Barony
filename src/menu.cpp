@@ -8651,6 +8651,11 @@ void doNewGame(bool makeHighscore) {
 		saveGameInfo = getSaveGameInfo(multiplayer == SINGLE);
 	}
 
+	// generate mimics
+	{
+		mimic_generator.init();
+	}
+
 	// load dungeon
 	if ( multiplayer != CLIENT )
 	{
