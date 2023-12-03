@@ -884,12 +884,16 @@ bool Entity::disturbMimic(Entity* touched, bool takenDamage, bool doMessage)
 		}
 	}
 
-	if ( !myStats->EFFECTS[EFF_MIMIC_LOCKED] )
+	if ( myStats && !myStats->EFFECTS[EFF_MIMIC_LOCKED] )
 	{
 		if ( monsterSpecialState == MIMIC_INERT )
 		{
 			// longer stun
-			setEffect(EFF_STUNNED, true, 50, false);
+			int duration = TICKS_PER_SECOND;
+			int mimicLvl = currentlevel / 5;
+			duration -= mimicLvl * 10;
+			duration = std::max(duration, 20);
+			setEffect(EFF_STUNNED, true, duration, false);
 		}
 		else
 		{
