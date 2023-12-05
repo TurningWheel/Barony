@@ -4227,7 +4227,7 @@ void actMonster(Entity* my)
 				for ( node2 = map.creatures->first; node2 != nullptr; node2 = node2->next ) //So my concern is that this never explicitly checks for actMonster or actPlayer, instead it relies on there being stats. Now, only monsters and players have stats, so that's not a problem, except...actPlayerLimb can still return a stat from getStat()! D: Meh, if you can find the player's hand, you can find the actual player too, so it shouldn't be an issue.
 				{
 					entity = (Entity*)node2->element;
-					if ( entity == my || entity->flags[PASSABLE] )
+					if ( entity == my || entity->flags[PASSABLE] || entity->isInertMimic() )
 					{
 						continue;
 					}
@@ -4854,6 +4854,11 @@ void actMonster(Entity* my)
 		else if ( my->monsterState == MONSTER_STATE_ATTACK ) //Begin charge state
 		{
 			entity = uidToEntity(my->monsterTarget);
+			if ( entity && entity->isInertMimic() )
+			{
+				entity = nullptr;
+				my->monsterReleaseAttackTarget();
+			}
 			if ( entity == nullptr )
 			{
 				my->monsterState = MONSTER_STATE_WAIT;
@@ -5632,8 +5637,10 @@ timeToGoAgain:
 				return;
 			}
 
+			entity = uidToEntity(my->monsterTarget);
+
 			//Don't path if your target dieded!
-			if ( uidToEntity(my->monsterTarget) == nullptr && my->monsterTarget != 0 )
+			if ( entity == nullptr && my->monsterTarget != 0 )
 			{
 				my->monsterReleaseAttackTarget(true);
 				my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -5644,7 +5651,6 @@ timeToGoAgain:
 				return;
 			}
 
-			entity = uidToEntity(my->monsterTarget);
 			if ( entity != nullptr )
 			{
 				if ( entity->behavior == &actPlayer )
@@ -5743,7 +5749,7 @@ timeToGoAgain:
 				for ( node2 = map.creatures->first; node2 != nullptr; node2 = node2->next ) //Stats only exist on a creature, so don't iterate all map.entities.
 				{
 					entity = (Entity*)node2->element;
-					if ( entity == my || entity->flags[PASSABLE] )
+					if ( entity == my || entity->flags[PASSABLE] || entity->isInertMimic() )
 					{
 						continue;
 					}
@@ -6638,7 +6644,7 @@ timeToGoAgain:
 								for ( node = map.creatures->first; node != nullptr; node = node->next )
 								{
 									Entity* target = (Entity*)node->element;
-									if ( target && target->behavior == &actMonster && my->checkEnemy(target) )
+									if ( target && target->behavior == &actMonster && !target->isInertMimic() && my->checkEnemy(target) )
 									{
 										real_t oldDist = dist;
 										dist = sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2));
@@ -6679,7 +6685,7 @@ timeToGoAgain:
 							for ( node = map.creatures->first; node != nullptr; node = node->next )
 							{
 								Entity* target = (Entity*)node->element;
-								if ( target && target->behavior == &actMonster && my->checkEnemy(target) )
+								if ( target && target->behavior == &actMonster && !target->isInertMimic() && my->checkEnemy(target) )
 								{
 									real_t oldDist = dist;
 									dist = sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2));
@@ -6791,7 +6797,7 @@ timeToGoAgain:
 							for ( node = map.creatures->first; node != nullptr; node = node->next )
 							{
 								Entity* target = (Entity*)node->element;
-								if ( target && target->behavior == &actMonster && my->checkEnemy(target) )
+								if ( target && target->behavior == &actMonster && !target->isInertMimic() && my->checkEnemy(target) )
 								{
 									real_t oldDist = dist;
 									dist = sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2));
