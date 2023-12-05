@@ -852,11 +852,13 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
         if (!highlightEntity) {
             Entity* parent = uidToEntity(entity->parent);
             if (parent && parent->bEntityHighlightedForPlayer(player)) {
+#ifndef EDITOR
                 if ( parent->isInertMimic() )
                 {
                     entity->highlightForUIGlow = (0.05 * (entity->ticks % 41));
                 }
                 else
+#endif
                 {
                     entity->highlightForUIGlow = parent->highlightForUIGlow;
                 }
