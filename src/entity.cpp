@@ -18631,6 +18631,8 @@ Entity* summonChest(long x, long y)
 	tempNode->element = nullptr;
 	tempNode->deconstructor = &emptyDeconstructor;
 
+	createChestInventory(entity, entity->chestType);
+
 	return entity;
 }
 
