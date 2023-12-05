@@ -4779,5 +4779,9 @@ namespace ConsoleCommands {
 		}
 		players[clientnum]->ghost.spawnGhost();
 	});
+
+	static ConsoleCommand ccmd_reloadequipmentoffsets("/reloadequipmentoffsets", "reloads equipment model offsets", []CCMD{
+		EquipmentModelOffsets.readFromFile(monstertypename[stats[clientnum]->type]);
+	});
 }
 

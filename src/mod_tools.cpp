@@ -9028,3 +9028,347 @@ int Mods::createBlankModDirectory(std::string foldername)
 	}
 	return 2;
 }
+
+EquipmentModelOffsets_t EquipmentModelOffsets;
+
+bool EquipmentModelOffsets_t::modelOffsetExists(int monster, int sprite)
+{
+	auto find = monsterModelsMap.find(monster);
+	if ( find != monsterModelsMap.end() )
+	{
+		auto find2 = find->second.find(sprite);
+		if ( find2 != find->second.end() )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+EquipmentModelOffsets_t::ModelOffset_t& EquipmentModelOffsets_t::getModelOffset(int monster, int sprite)
+{
+	return monsterModelsMap[monster][sprite];
+}
+
+bool EquipmentModelOffsets_t::expandHelmToFitMask(int monster, int helmSprite, int maskSprite)
+{
+	if ( modelOffsetExists(monster, maskSprite) )
+	{
+		auto& maskOffset = getModelOffset(monster, maskSprite);
+		if ( maskOffset.oversizedMask )
+		{
+			if ( modelOffsetExists(monster, helmSprite) )
+			{
+				auto& helmOffset = getModelOffset(monster, helmSprite);
+				if ( helmOffset.expandToFitMask )
+				{
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+bool EquipmentModelOffsets_t::maskHasAdjustmentForExpandedHelm(int monster, int helmSprite, int maskSprite)
+{
+	if ( modelOffsetExists(monster, maskSprite) )
+	{
+		auto& maskOffset = getModelOffset(monster, maskSprite);
+		if ( maskOffset.adjustToExpandedHelm.find(helmSprite) != maskOffset.adjustToExpandedHelm.end() )
+		{
+			return true;
+		}
+		else if ( maskOffset.adjustToExpandedHelm.find(-1) != maskOffset.adjustToExpandedHelm.end() )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+EquipmentModelOffsets_t::ModelOffset_t::AdditionalOffset_t EquipmentModelOffsets_t::getExpandHelmOffset(int monster, 
+	int helmSprite, int maskSprite)
+{
+	if ( modelOffsetExists(monster, helmSprite) )
+	{
+		auto& helmOffset = getModelOffset(monster, helmSprite);
+		if ( helmOffset.adjustToOversizeMask.find(maskSprite) != helmOffset.adjustToOversizeMask.end() )
+		{
+			return helmOffset.adjustToOversizeMask[maskSprite];
+		}
+		else if ( helmOffset.adjustToOversizeMask.find(-1) != helmOffset.adjustToOversizeMask.end() )
+		{
+			return helmOffset.adjustToOversizeMask[-1];
+		}
+	}
+	return EquipmentModelOffsets_t::ModelOffset_t::AdditionalOffset_t();
+}
+
+EquipmentModelOffsets_t::ModelOffset_t::AdditionalOffset_t EquipmentModelOffsets_t::getMaskOffsetForExpandHelm(int monster, 
+	int helmSprite, int maskSprite)
+{
+	if ( modelOffsetExists(monster, maskSprite) )
+	{
+		auto& maskOffset = getModelOffset(monster, maskSprite);
+		if ( maskOffset.adjustToExpandedHelm.find(helmSprite) != maskOffset.adjustToExpandedHelm.end() )
+		{
+			return maskOffset.adjustToExpandedHelm[helmSprite];
+		}
+		else if ( maskOffset.adjustToExpandedHelm.find(-1) != maskOffset.adjustToExpandedHelm.end() )
+		{
+			return maskOffset.adjustToExpandedHelm[-1];
+		}
+	}
+	return EquipmentModelOffsets_t::ModelOffset_t::AdditionalOffset_t();
+}
+
+void EquipmentModelOffsets_t::readFromFile(std::string monsterName)
+{
+	int monsterType = 0;
+	for ( int i = 0; i < NUMMONSTERS; ++i )
+	{
+		if ( monstertypename[i] == monsterName )
+		{
+			monsterType = i;
+			break;
+		}
+	}
+
+	if ( monsterType == 0 )
+	{
+		return;
+	}
+
+	std::string filename = "models/creatures/";
+	filename += monstertypename[monsterType];
+	filename += "/model_positions.json";
+
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		return;
+	}
+
+	char buf[20000];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.IsObject() )
+	{
+		return;
+	}
+	if ( !d.HasMember("version") || !d.HasMember("items") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	monsterModelsMap[monsterType].clear();
+
+	real_t baseFocalX = 0.0;
+	real_t baseFocalY = 0.0;
+	real_t baseFocalZ = 0.0;
+	if ( d.HasMember("base_offsets") )
+	{
+		if ( d["base_offsets"].HasMember("focalx") )
+		{
+			baseFocalX = d["base_offsets"]["focalx"].GetDouble();
+		}
+		if ( d["base_offsets"].HasMember("focaly") )
+		{
+			baseFocalY = d["base_offsets"]["focaly"].GetDouble();
+		}
+		if ( d["base_offsets"].HasMember("focalz") )
+		{
+			baseFocalZ = d["base_offsets"]["focalz"].GetDouble();
+		}
+	}
+
+	auto& itemsArr = d["items"];
+	for ( auto it = itemsArr.Begin(); it != itemsArr.End(); ++it )
+	{
+		for ( auto it2 = it->MemberBegin(); it2 != it->MemberEnd(); ++it2 )
+		{
+			std::string itemName = it2->name.GetString();
+			if ( ItemTooltips.itemNameStringToItemID.find(itemName) == ItemTooltips.itemNameStringToItemID.end() )
+			{
+				continue;
+			}
+			ItemType itemType = (ItemType)ItemTooltips.itemNameStringToItemID[itemName];
+			std::vector<int> models;
+			if ( it2->value.HasMember("models") )
+			{
+				if ( it2->value["models"].IsArray() )
+				{
+					if ( it2->value["models"].Size() == 0 )
+					{
+						for ( int i = items[itemType].index; i < items[itemType].index + items[itemType].variations; ++i )
+						{
+							models.push_back(i);
+						}
+					}
+					else
+					{
+						for ( auto itArr = it2->value["models"].Begin(); itArr != it2->value["models"].End(); ++itArr )
+						{
+							if ( itArr->IsInt() )
+							{
+								models.push_back(itArr->GetInt());
+							}
+						}
+					}
+				}
+			}
+
+			real_t focalx = it2->value["focalx"].GetDouble();
+			real_t focaly = it2->value["focaly"].GetDouble();
+			real_t focalz = it2->value["focalz"].GetDouble();
+			real_t scalex = 0.0;
+			if ( it2->value.HasMember("scalex") )
+			{
+				scalex = it2->value["scalex"].GetDouble();
+			}
+			real_t scaley = 0.0;
+			if ( it2->value.HasMember("scaley") )
+			{
+				scaley = it2->value["scaley"].GetDouble();
+			}
+			real_t scalez = 0.0;
+			if ( it2->value.HasMember("scalez") )
+			{
+				scalez = it2->value["scalez"].GetDouble();
+			}
+			real_t rotation = it2->value["rotation"].GetDouble();
+			int limbsIndex = it2->value["limbs_index"].GetInt();
+			bool oversizedMask = it2->value.HasMember("oversize_mask") ? 
+				it2->value["oversize_mask"].GetBool() : false;
+			bool expandToFitMask = it2->value.HasMember("expand_to_fit_oversize_mask") ?
+				it2->value["expand_to_fit_oversize_mask"].GetBool() : false;
+
+			for ( auto index : models )
+			{
+				auto& entry = monsterModelsMap[monsterType][index];
+				entry.focalx = focalx + baseFocalX;
+				entry.focaly = focaly + baseFocalY;
+				entry.focalz = focalz + baseFocalZ;
+				entry.scalex = scalex;
+				entry.scaley = scaley;
+				entry.scalez = scalez;
+				entry.rotation = rotation * (PI / 2);
+				entry.limbsIndex = limbsIndex;
+				entry.expandToFitMask = expandToFitMask;
+				entry.oversizedMask = oversizedMask;
+
+				if ( it2->value.HasMember("adjust_on_oversize_mask") )
+				{
+					auto& itr = it2->value["adjust_on_oversize_mask"];
+					for ( auto adjItr = itr.Begin(); adjItr != itr.End(); ++adjItr )
+					{
+						std::vector<int> models;
+						if ( (*adjItr)["mask_sprite"].Size() == 0 )
+						{
+							models.push_back(-1);
+						}
+						else
+						{
+							for ( auto itr2 = (*adjItr)["mask_sprite"].Begin(); itr2 != (*adjItr)["mask_sprite"].End(); ++itr2 )
+							{
+								models.push_back(itr2->GetInt());
+							}
+						}
+						for ( auto model : models )
+						{
+							if ( (*adjItr).HasMember("focalx") )
+							{
+								entry.adjustToOversizeMask[model].focalx = (*adjItr)["focalx"].GetDouble();
+							}
+							if ( (*adjItr).HasMember("focaly") )
+							{
+								entry.adjustToOversizeMask[model].focaly = (*adjItr)["focaly"].GetDouble();
+							}
+							if ( (*adjItr).HasMember("focalz") )
+							{
+								entry.adjustToOversizeMask[model].focalz = (*adjItr)["focalz"].GetDouble();
+							}
+							if ( (*adjItr).HasMember("scalex") )
+							{
+								entry.adjustToOversizeMask[model].scalex = (*adjItr)["scalex"].GetDouble();
+							}
+							if ( (*adjItr).HasMember("scaley") )
+							{
+								entry.adjustToOversizeMask[model].scaley = (*adjItr)["scaley"].GetDouble();
+							}
+							if ( (*adjItr).HasMember("scalez") )
+							{
+								entry.adjustToOversizeMask[model].scalez = (*adjItr)["scalez"].GetDouble();
+							}
+						}
+					}
+				}
+
+				if ( it2->value.HasMember("adjust_on_expand_helm") )
+				{
+					auto& itr = it2->value["adjust_on_expand_helm"];
+					for ( auto adjItr = itr.Begin(); adjItr != itr.End(); ++adjItr )
+					{
+						std::vector<int> models;
+						if ( (*adjItr)["helm_sprite"].Size() == 0 )
+						{
+							models.push_back(-1);
+						}
+						else
+						{
+							for ( auto itr2 = (*adjItr)["helm_sprite"].Begin(); itr2 != (*adjItr)["helm_sprite"].End(); ++itr2 )
+							{
+								models.push_back(itr2->GetInt());
+							}
+						}
+						for ( auto model : models )
+						{
+							if ( (*adjItr).HasMember("focalx") )
+							{
+								entry.adjustToExpandedHelm[model].focalx = (*adjItr)["focalx"].GetDouble();
+							}
+							if ( (*adjItr).HasMember("focaly") )
+							{
+								entry.adjustToExpandedHelm[model].focaly = (*adjItr)["focaly"].GetDouble();
+							}
+							if ( (*adjItr).HasMember("focalz") )
+							{
+								entry.adjustToExpandedHelm[model].focalz = (*adjItr)["focalz"].GetDouble();
+							}
+							if ( (*adjItr).HasMember("scalex") )
+							{
+								entry.adjustToExpandedHelm[model].scalex = (*adjItr)["scalex"].GetDouble();
+							}
+							if ( (*adjItr).HasMember("scaley") )
+							{
+								entry.adjustToExpandedHelm[model].scaley = (*adjItr)["scaley"].GetDouble();
+							}
+							if ( (*adjItr).HasMember("scalez") )
+							{
+								entry.adjustToExpandedHelm[model].scalez = (*adjItr)["scalez"].GetDouble();
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

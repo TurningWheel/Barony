@@ -845,7 +845,7 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( multiplayer != CLIENT )
 				{
 					bool hasSteelHelm = false;
-					if ( myStats->helmet )
+					/*if ( myStats->helmet )
 					{
 						if ( myStats->helmet->type == STEEL_HELM
 							|| myStats->helmet->type == CRYSTAL_HELM
@@ -853,7 +853,7 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							hasSteelHelm = true;
 						}
-					}
+					}*/
 					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;

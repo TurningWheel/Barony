@@ -199,12 +199,6 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 		my->z = limbs[MIMIC][5][2];
 	}
 
-	/*if ( keystatus[SDLK_g] )
-	{
-		keystatus[SDLK_g] = 0;
-		mimicSpecialEat(my, myStats);
-	}*/
-
 	if ( multiplayer != CLIENT )
 	{
 		if ( my->monsterAttack == MONSTER_POSE_MIMIC_DISTURBED )

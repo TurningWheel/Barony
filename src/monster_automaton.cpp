@@ -1250,7 +1250,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( multiplayer != CLIENT )
 				{
 					bool hasSteelHelm = false;
-					if ( myStats->helmet )
+					/*if ( myStats->helmet )
 					{
 						if ( myStats->helmet->type == STEEL_HELM
 							|| myStats->helmet->type == CRYSTAL_HELM
@@ -1258,7 +1258,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							hasSteelHelm = true;
 						}
-					}
+					}*/
 					if ( myStats->mask == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;

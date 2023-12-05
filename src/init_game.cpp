@@ -56,6 +56,10 @@
 
 void initGameDatafiles(bool moddedReload)
 {
+	for ( int i = 0; i < NUMITEMS && i < (NUM_ITEM_STRINGS - 2); ++i )
+	{
+		ItemTooltips.itemNameStringToItemID[itemNameStrings[i + 2]] = i;
+	}
 	ItemTooltips.readItemsFromFile();
 	ItemTooltips.readTooltipsFromFile();
 	ItemTooltips.readItemLocalizationsFromFile();

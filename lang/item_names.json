@@ -1156,7 +1156,151 @@
 		"tool_player_loot_bag": {
             "name_identified": "death box",
             "name_unidentified": "death box"
-        }
+        },
+		"mask_bandit": {
+			"name_identified": "bandit mask",
+			"name_unidentified": "bandit mask"
+		},
+		"mask_eyepatch": {
+			"name_identified": "eyepatch",
+			"name_unidentified": "eyepatch"
+		},
+		"mask_masquerade": {
+			"name_identified": "masquerade mask",
+			"name_unidentified": "masquerade mask"
+		},
+		"mask_mouth_rose": {
+			"name_identified": "mouth rose",
+			"name_unidentified": "mouth rose"
+		},
+		"mask_golden": {
+			"name_identified": "golden mask",
+			"name_unidentified": "golden mask"
+		},
+		"mask_spooky": {
+			"name_identified": "spooky mask",
+			"name_unidentified": "spooky mask"
+		},
+		"mask_tech_goggles": {
+			"name_identified": "tech goggles",
+			"name_unidentified": "tech goggles"
+		},
+		"mask_hazard_goggles": {
+			"name_identified": "hazard goggles",
+			"name_unidentified": "hazard goggles"
+		},
+		"mask_phantom": {
+			"name_identified": "phantom mask",
+			"name_unidentified": "phantom mask"
+		},
+		"mask_pipe": {
+			"name_identified": "pipe",
+			"name_unidentified": "pipe"
+		},
+		"mask_grass_sprig": {
+			"name_identified": "sweetgrass sprig",
+			"name_unidentified": "sweetgrass sprig"
+		},
+		"mask_plague": {
+			"name_identified": "plague mask",
+			"name_unidentified": "plague mask"
+		},
+		"mask_mouthknife": {
+			"name_identified": "mouth knife",
+			"name_unidentified": "mouth knife"
+		},
+		"hat_silken_bow": {
+			"name_identified": "silken bow",
+			"name_unidentified": "silken bow"
+		},
+		"hat_plumed_cap": {
+			"name_identified": "plumed cap",
+			"name_unidentified": "plumed cap"
+		},
+		"hat_bycocket": {
+			"name_identified": "bycocket",
+			"name_unidentified": "bycocket"
+		},
+		"hat_tophat": {
+			"name_identified": "top hat",
+			"name_unidentified": "top hat"
+		},
+		"hat_bandana": {
+			"name_identified": "bandana",
+			"name_unidentified": "bandana"
+		},
+		"hat_circlet": {
+			"name_identified": "circlet",
+			"name_unidentified": "circlet"
+		},
+		"hat_crown": {
+			"name_identified": "crown",
+			"name_unidentified": "crown"
+		},
+		"hat_laurels": {
+			"name_identified": "laurels",
+			"name_unidentified": "laurels"
+		},
+		"hat_turban": {
+			"name_identified": "turban",
+			"name_unidentified": "turban"
+		},
+		"hat_crowned_helm": {
+			"name_identified": "crowned helmet",
+			"name_unidentified": "crowned helmet"
+		},
+		"hat_warm": {
+			"name_identified": "warm hat",
+			"name_unidentified": "warm hat"
+		},
+		"hat_wolf_hood": {
+			"name_identified": "wolf hood",
+			"name_unidentified": "wolf hood"
+		},
+		"hat_bear_hood": {
+			"name_identified": "bear hood",
+			"name_unidentified": "bear hood"
+		},
+		"hat_stag_hood": {
+			"name_identified": "stag hood",
+			"name_unidentified": "stag hood"
+		},
+		"hat_bunny_hood": {
+			"name_identified": "bunny hood",
+			"name_unidentified": "bunny hood"
+		},
+		"hat_bountyhunter": {
+			"name_identified": "bounty hunter's hat",
+			"name_unidentified": "bounty hunter's hat"
+		},
+		"hat_miter": {
+			"name_identified": "priestly miter",
+			"name_unidentified": "priestly miter"
+		},
+		"hat_headdress": {
+			"name_identified": "magus' headdress",
+			"name_unidentified": "magus' headdress"
+		},
+		"hat_chef": {
+			"name_identified": "chef's toque",
+			"name_unidentified": "chef's toque"
+		},
+		"helm_mining": {
+			"name_identified": "mining helmet",
+			"name_unidentified": "mining helmet"
+		},
+		"mask_steel_visor": {
+			"name_identified": "steel visor",
+			"name_unidentified": "steel visor"
+		},
+		"mask_crystal_visor": {
+			"name_identified": "crystal visor",
+			"name_unidentified": "crystal visor"
+		},
+		"mask_artifact_visor": {
+			"name_identified": "artifact visor",
+			"name_unidentified": "artifact visor"
+		}
     },
 	"spell_names": {
         "spell_forcebolt": {

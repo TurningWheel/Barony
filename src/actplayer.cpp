@@ -4061,7 +4061,14 @@ void actPlayer(Entity* my)
 	}
 	if ( autoLimbReload && ticks % 20 == 0 && (PLAYER_NUM == clientnum) )
 	{
-		consoleCommand("/reloadlimbs");
+		if ( ticks % 40 == 0 )
+		{
+			consoleCommand("/reloadlimbs");
+		}
+		else
+		{
+			consoleCommand("/reloadequipmentoffsets");
+		}
 	}
 
 	Entity* entity;
@@ -8905,7 +8912,7 @@ void actPlayer(Entity* my)
 					if ( multiplayer != CLIENT )
 					{
 						bool hasSteelHelm = false;
-						if ( stats[PLAYER_NUM]->helmet )
+						/*if ( stats[PLAYER_NUM]->helmet )
 						{
 							if ( stats[PLAYER_NUM]->helmet->type == STEEL_HELM
 								|| stats[PLAYER_NUM]->helmet->type == CRYSTAL_HELM 
@@ -8913,7 +8920,7 @@ void actPlayer(Entity* my)
 							{
 								hasSteelHelm = true;
 							}
-						}
+						}*/
 						if ( stats[PLAYER_NUM]->mask == NULL || my->isInvisible() || hasSteelHelm )
 						{
 							entity->flags[INVISIBLE] = true;
@@ -9015,6 +9022,11 @@ void actPlayer(Entity* my)
 					else if ( entity->sprite == items[MASK_SHAMAN].index )
 					{
 						entity->roll = 0;
+						my->setHelmetLimbOffset(entity);
+						my->setHelmetLimbOffsetWithMask(helmet, entity);
+					}
+					else if ( EquipmentModelOffsets.modelOffsetExists(playerRace, entity->sprite) )
+					{
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);
 					}

@@ -2762,6 +2762,7 @@ public:
 	};
 	std::map<std::string, ItemLocalization_t> itemNameLocalizations;
 	std::map<std::string, std::string> spellNameLocalizations;
+	std::map<std::string, int> itemNameStringToItemID;
 	std::string defaultString = "";
 	char buf[2048];
 	bool autoReload = false;
@@ -3341,3 +3342,41 @@ struct LibCURL_t
 };
 extern LibCURL_t LibCURL;
 #endif
+
+struct EquipmentModelOffsets_t
+{
+	struct ModelOffset_t
+	{
+		real_t focalx = 0.0;
+		real_t focaly = 0.0;
+		real_t focalz = 0.0;
+		real_t scalex = 0.0;
+		real_t scaley = 0.0;
+		real_t scalez = 0.0;
+		real_t rotation = 0.0;
+		int limbsIndex = 0;
+		bool oversizedMask = false;
+		bool expandToFitMask = false;
+
+		struct AdditionalOffset_t
+		{
+			real_t focalx = 0.0;
+			real_t focaly = 0.0;
+			real_t focalz = 0.0;
+			real_t scalex = 0.0;
+			real_t scaley = 0.0;
+			real_t scalez = 0.0;
+		};
+		std::map<int, AdditionalOffset_t> adjustToOversizeMask;
+		std::map<int, AdditionalOffset_t> adjustToExpandedHelm;
+	};
+	std::map<int, std::map<int, ModelOffset_t>> monsterModelsMap;
+	void readFromFile(std::string monsterName);
+	bool modelOffsetExists(int monster, int sprite);
+	bool expandHelmToFitMask(int monster, int helmSprite, int maskSprite);
+	bool maskHasAdjustmentForExpandedHelm(int monster, int helmSprite, int maskSprite);
+	ModelOffset_t::AdditionalOffset_t getExpandHelmOffset(int monster, int helmSprite, int maskSprite);
+	ModelOffset_t::AdditionalOffset_t getMaskOffsetForExpandHelm(int monster, int helmSprite, int maskSprite);
+	ModelOffset_t& getModelOffset(int monster, int sprite);
+};
+extern EquipmentModelOffsets_t EquipmentModelOffsets;

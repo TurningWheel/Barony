@@ -2229,6 +2229,26 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case HAT_HOOD_RED:
 		case HAT_HOOD_SILVER:
 		case PUNISHER_HOOD:
+		case HAT_SILKEN_BOW:
+		case HAT_PLUMED_CAP:
+		case HAT_BYCOCKET:
+		case HAT_TOPHAT:
+		case HAT_BANDANA:
+		case HAT_CIRCLET:
+		case HAT_CROWN:
+		case HAT_LAURELS:
+		case HAT_TURBAN:
+		case HAT_CROWNED_HELM:
+		case HAT_WARM:
+		case HAT_WOLF_HOOD:
+		case HAT_BEAR_HOOD:
+		case HAT_STAG_HOOD:
+		case HAT_BUNNY_HOOD:
+		case HAT_BOUNTYHUNTER:
+		case HAT_MITER:
+		case HAT_HEADDRESS:
+		case HAT_CHEF:
+		case HELM_MINING:
 			equipItemResult = equipItem(item, &stats[player]->helmet, player, checkInventorySpaceForPaperDoll);
 			break;
 		case AMULET_SEXCHANGE:
@@ -2599,6 +2619,22 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case TOOL_GLASSES:
 		case MONOCLE:
 		case MASK_SHAMAN:
+		case MASK_BANDIT:
+		case MASK_EYEPATCH:
+		case MASK_MASQUERADE:
+		case MASK_MOUTH_ROSE:
+		case MASK_GOLDEN:
+		case MASK_SPOOKY:
+		case MASK_TECH_GOGGLES:
+		case MASK_HAZARD_GOGGLES:
+		case MASK_PHANTOM:
+		case MASK_PIPE:
+		case MASK_GRASS_SPRIG:
+		case MASK_PLAGUE:
+		case MASK_MOUTHKNIFE:
+		case MASK_STEEL_VISOR:
+		case MASK_CRYSTAL_VISOR:
+		case MASK_ARTIFACT_VISOR:
 			equipItemResult = equipItem(item, &stats[player]->mask, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_BEARTRAP:
