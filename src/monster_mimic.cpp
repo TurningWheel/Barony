@@ -33,8 +33,8 @@ void initMimic(Entity* my, Stat* myStats)
 	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = -1;
-		MONSTER_SPOTVAR = 1;
+		MONSTER_SPOTSND = 619;
+		MONSTER_SPOTVAR = 3;
 		MONSTER_IDLESND = -1;
 		MONSTER_IDLEVAR = 1;
 	}
@@ -169,6 +169,7 @@ void mimicDie(Entity* my)
 		entity->fskill[3] = 0.04;
 		serverSpawnGibForClient(entity);
 	}
+	playSoundEntity(my, 625 + local_rng.rand() % 3, 64);
 	playSoundEntity(my, 177, 64);
 
 	my->removeMonsterDeathNodes();
@@ -253,6 +254,10 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 			{
 				if ( my->monsterAttackTime == 0 )
 				{
+					if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP1 )
+					{
+						playSoundEntityLocal(my, 622 + local_rng.rand() % 3, 64);
+					}
 					attackStageSwing = 0;
 					attackStageRoll = 0;
 					entity->monsterWeaponYaw = 0.0;
@@ -481,6 +486,19 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 					{
 						entity->monsterWeaponYaw = limbs[MIMIC][12][2];
 						walkCycle++;
+
+						if ( !aggressiveMove )
+						{
+							playSoundEntityLocal(my, 628 + local_rng.rand() % 4, 24);
+						}
+						else if ( dist > 0.001 )
+						{
+							playSoundEntityLocal(my, 615 + local_rng.rand() % 4, 48);
+						}
+						else
+						{
+							playSoundEntityLocal(my, 615 + local_rng.rand() % 4, 32);
+						}
 					}
 				}
 				else if ( walkCycle % 2 == 1 )
@@ -918,6 +936,7 @@ bool Entity::disturbMimic(Entity* touched, bool takenDamage, bool doMessage)
 	{
 		attack(MONSTER_POSE_MIMIC_DISTURBED, 0, nullptr);
 		playSoundEntity(this, 21, 64);
+		playSoundEntity(this, 619 + local_rng.rand() % 3, 64);
 	}
 	return true;
 }

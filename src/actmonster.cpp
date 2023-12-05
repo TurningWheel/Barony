@@ -12263,6 +12263,8 @@ void mimicResetIdle(Entity* my)
 	my->monsterSpecialState = MIMIC_INERT_SECOND;
 	serverUpdateEntitySkill(my, 33);
 
+	playSoundEntity(my, 22, 64);
+
 	int x = (static_cast<int>(my->x) >> 4);
 	int y = (static_cast<int>(my->y) >> 4);
 	// look for a wall to turn against
