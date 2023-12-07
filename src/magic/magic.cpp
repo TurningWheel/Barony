@@ -1324,11 +1324,11 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				{
 					if ( magicstaff )
 					{
-						chance += ((parent->getCHR() + casterStats->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 10;
+						chance += ((parent->getCHR() + casterStats->getModifiedProficiency(PRO_LEADERSHIP)) / 20) * 10;
 					}
 					else
 					{
-						chance += ((parent->getCHR() + casterStats->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 5;
+						chance += ((parent->getCHR() + casterStats->getModifiedProficiency(PRO_LEADERSHIP)) / 20) * 5;
 						chance += (parent->getINT() * 2);
 					}
 

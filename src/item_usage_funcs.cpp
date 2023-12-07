@@ -39,7 +39,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			skillLVL = usedByStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 		}
 	}
 
@@ -413,7 +413,7 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			skillLVL = usedByStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 		}
 	}
 
@@ -564,7 +564,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			skillLVL = usedByStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 		}
 	}
 
@@ -749,7 +749,7 @@ bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			skillLVL = usedByStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 		}
 	}
 
@@ -858,7 +858,7 @@ bool item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			skillLVL = usedByStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 		}
 	}
 
@@ -953,7 +953,7 @@ bool item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			skillLVL = usedByStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 		}
 	}
 
@@ -1083,7 +1083,7 @@ bool item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			skillLVL = usedByStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 		}
 	}
 
@@ -1164,7 +1164,7 @@ bool item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			skillLVL = usedByStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 		}
 	}
 
@@ -1255,7 +1255,7 @@ bool item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			skillLVL = usedByStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 		}
 	}
 
@@ -1335,7 +1335,7 @@ bool item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			skillLVL = usedByStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 		}
 	}
 
@@ -1434,7 +1434,7 @@ bool item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			skillLVL = usedByStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 		}
 	}
 
@@ -1523,7 +1523,7 @@ bool item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			skillLVL = usedByStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 		}
 	}
 
@@ -1617,7 +1617,7 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			skillLVL = usedByStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 		}
 	}
 
@@ -1773,7 +1773,7 @@ bool item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			skillLVL = usedByStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 		}
 	}
 
@@ -1856,7 +1856,7 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			skillLVL = usedByStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 		}
 	}
 
@@ -2004,7 +2004,7 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			skillLVL = usedByStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 		}
 	}
 
@@ -2151,7 +2151,7 @@ bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			skillLVL = usedByStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 		}
 	}
 
@@ -2276,7 +2276,7 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			skillLVL = usedByStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 		}
 	}
 
@@ -2347,7 +2347,7 @@ void onScrollUseAppraisalIncrease(Item* item, int player)
 	if ( !item ) { return; }
 	if ( !item->identified && players[player] && players[player]->isLocalPlayer() )
 	{
-		if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] < SKILL_LEVEL_BASIC )
+		if ( stats[player]->getProficiency(PRO_APPRAISAL) < SKILL_LEVEL_BASIC )
 		{
 			if ( stats[player] && players[player]->entity )
 			{

@@ -3989,8 +3989,8 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	// update skill
 	{'SKIL', [](){
 	    const int pro = std::min(net_packet->data[5], (Uint8)(NUMPROFICIENCIES - 1));
-		int oldSkill = stats[clientnum]->PROFICIENCIES[pro];
-		stats[clientnum]->PROFICIENCIES[pro] = (net_packet->data[6] & 0x7F);
+		int oldSkill = stats[clientnum]->getProficiency(pro);
+		stats[clientnum]->setProficiency(pro, (net_packet->data[6] & 0x7F));
 		bool notify = (net_packet->data[6] & (1 << 7)) != 0;
 
 		int statBonusSkill = getStatForProficiency(pro);
@@ -4004,13 +4004,13 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 		if ( pro == PRO_ALCHEMY )
 		{
-			GenericGUI[clientnum].alchemyLearnRecipeOnLevelUp(stats[clientnum]->PROFICIENCIES[pro]);
+			GenericGUI[clientnum].alchemyLearnRecipeOnLevelUp(stats[clientnum]->getProficiency(pro));
 		}
 		if ( oldSkill < 100 )
 		{
 			if ( notify )
 			{
-				skillUpAnimation[clientnum].addSkillUp(pro, oldSkill, stats[clientnum]->PROFICIENCIES[pro] - oldSkill);
+				skillUpAnimation[clientnum].addSkillUp(pro, oldSkill, stats[clientnum]->getProficiency(pro) - oldSkill);
 			}
 		}
 	}},
@@ -4861,7 +4861,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		stats[clientnum]->GOLD = (Sint32)SDLNet_Read32(&net_packet->data[21]);
 		for ( int i = 0; i < NUMPROFICIENCIES; ++i )
 		{
-			stats[clientnum]->PROFICIENCIES[i] = (Sint8)net_packet->data[27 + i];
+			stats[clientnum]->setProficiency(i, (Sint8)net_packet->data[27 + i]);
 		}
 	} },
 
@@ -5940,7 +5940,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			{
 				if ( buyValue <= 1 )
 				{
-					if ( stats[client]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
+					if ( stats[client]->getProficiency(PRO_TRADING) < SKILL_LEVEL_SKILLED )
 					{
 						players[client]->entity->increaseSkill(PRO_TRADING);
 					}

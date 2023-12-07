@@ -3403,8 +3403,8 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 	bool swimming = isPlayerSwimming();
 	if ( swimming && !amuletwaterbreathing )
 	{
-		PLAYER_VELX *= (((stats[PLAYER_NUM]->PROFICIENCIES[PRO_SWIMMING] / 100.f) * 50.f) + 50) / 100.f;
-		PLAYER_VELY *= (((stats[PLAYER_NUM]->PROFICIENCIES[PRO_SWIMMING] / 100.f) * 50.f) + 50) / 100.f;
+		PLAYER_VELX *= (((stats[PLAYER_NUM]->getModifiedProficiency(PRO_SWIMMING) / 100.f) * 50.f) + 50) / 100.f;
+		PLAYER_VELY *= (((stats[PLAYER_NUM]->getModifiedProficiency(PRO_SWIMMING) / 100.f) * 50.f) + 50) / 100.f;
 
 		if ( stats[PLAYER_NUM]->type == SKELETON )
 		{
@@ -5271,15 +5271,15 @@ void actPlayer(Entity* my)
 
 					//Cool. Time to identify the item.
 					bool success = false;
-					if ( stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL] < 100 )
+					if ( stats[PLAYER_NUM]->getModifiedProficiency(PRO_APPRAISAL) < 100 )
 					{
 						if ( tempItem->type != GEM_GLASS )
 						{
-							success = (stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL] + my->getPER() * 5 >= items[tempItem->type].value / 10);
+							success = (stats[PLAYER_NUM]->getModifiedProficiency(PRO_APPRAISAL) + my->getPER() * 5 >= items[tempItem->type].value / 10);
 						}
 						else
 						{
-							success = (stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL] + my->getPER() * 5 >= 100);
+							success = (stats[PLAYER_NUM]->getModifiedProficiency(PRO_APPRAISAL) + my->getPER() * 5 >= 100);
 						}
 					}
 					else
@@ -5332,7 +5332,7 @@ void actPlayer(Entity* my)
 								// hardest
 								appraisalEaseOfDifficulty = -1;
 							}
-							appraisalEaseOfDifficulty += stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL] / 20;
+							appraisalEaseOfDifficulty += stats[PLAYER_NUM]->getProficiency(PRO_APPRAISAL) / 20;
 							// difficulty ranges from 1-in-1 to 1-in-6
 							appraisalEaseOfDifficulty = std::max(appraisalEaseOfDifficulty, 1);
 							//messagePlayer(0, "Appraisal level up chance: 1 in %d", appraisalEaseOfDifficulty);

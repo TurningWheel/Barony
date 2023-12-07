@@ -2813,7 +2813,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			}
 			if ( tryLevelAppraiseFromPotion )
 			{
-				if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] < SKILL_LEVEL_BASIC )
+				if ( stats[player]->getProficiency(PRO_APPRAISAL) < SKILL_LEVEL_BASIC )
 				{
 					if ( stats[player] && players[player]->entity )
 					{
@@ -2838,7 +2838,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 					}
 				}
 			}
-			const int skillLVL = stats[player]->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			const int skillLVL = stats[player]->getModifiedProficiency(PRO_ALCHEMY) / 20;
 			if ( tryEmptyBottle && local_rng.rand() % 100 < std::min(80, (60 + skillLVL * 10)) ) // 60 - 80% chance
 			{
 				Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
@@ -3009,7 +3009,7 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 	}
 	Item* item2;
 
-	if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
+	if ( stats[player]->getProficiency(PRO_APPRAISAL) >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
 	{
 		if ( !(player != 0 && multiplayer == SERVER && !players[player]->isLocalPlayer()) )
 		{
@@ -4765,7 +4765,7 @@ int Item::buyValue(const int player) const
 	value *= (static_cast<int>(status) + 5) / 10.f;
 
 	// trading bonus
-	value /= (50 + stats[player]->PROFICIENCIES[PRO_TRADING]) / 150.f;
+	value /= (50 + stats[player]->getModifiedProficiency(PRO_TRADING)) / 150.f;
 
 	// charisma bonus
 	/*value /= 1.f + statGetCHR(stats[player], players[player]->entity) / 20.f;*/
@@ -4826,7 +4826,7 @@ int Item::sellValue(const int player) const
 	value *= (static_cast<int>(status) + 5) / 10.f;
 
 	// trading bonus
-	value *= (50 + stats[player]->PROFICIENCIES[PRO_TRADING]) / 150.f;
+	value *= (50 + stats[player]->getModifiedProficiency(PRO_TRADING)) / 150.f;
 
 	// charisma bonus
 	value *= 1.f + statGetCHR(stats[player], players[player]->entity) / 20.f;
@@ -4941,7 +4941,7 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 					&& stats[player] && stats[player]->weapon
 					&& (stats[player]->weapon->type == TOOL_LOCKPICK || stats[player]->weapon->type == TOOL_SKELETONKEY) )
 				{
-					const int skill = std::max(1, stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10);
+					const int skill = std::max(1, stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 10);
 					bool failed = false;
 					if ( skill < 2 || local_rng.rand() % skill == 0 ) // 20 skill requirement.
 					{
@@ -5919,7 +5919,7 @@ real_t getArtifactWeaponEffectChance(const ItemType type, Stat& wielder, real_t*
 {
 	if ( type == ARTIFACT_AXE )
 	{
-		const real_t percent = 25 * (wielder.PROFICIENCIES[PRO_AXE]) / 100.f; //0-25%
+		const real_t percent = 25 * (wielder.getModifiedProficiency(PRO_AXE)) / 100.f; //0-25%
 		if ( effectAmount )
 		{
 			*effectAmount = 1.5; //1.5x damage.
@@ -5929,17 +5929,17 @@ real_t getArtifactWeaponEffectChance(const ItemType type, Stat& wielder, real_t*
 	}
 	else if ( type == ARTIFACT_SWORD )
 	{
-		const real_t percent = (wielder.PROFICIENCIES[PRO_SWORD]); //0-100%
+		const real_t percent = (wielder.getModifiedProficiency(PRO_SWORD)); //0-100%
 		if ( effectAmount )
 		{
-			*effectAmount = (wielder.PROFICIENCIES[PRO_SWORD]) / 200.f + 0.5; //0.5x-1.0x add to weapon multiplier
+			*effectAmount = (wielder.getModifiedProficiency(PRO_SWORD)) / 200.f + 0.5; //0.5x-1.0x add to weapon multiplier
 		}
 
 		return percent;
 	}
 	else if ( type == ARTIFACT_SPEAR )
 	{
-		const real_t percent = 25 * (wielder.PROFICIENCIES[PRO_POLEARM]) / 100.f; //0-25%
+		const real_t percent = 25 * (wielder.getModifiedProficiency(PRO_POLEARM)) / 100.f; //0-25%
 		if ( effectAmount )
 		{
 			*effectAmount = .5; // bypasses 50% enemies' armor.
@@ -5952,14 +5952,14 @@ real_t getArtifactWeaponEffectChance(const ItemType type, Stat& wielder, real_t*
 		const real_t percent = 1.f; //100%
 		if ( effectAmount )
 		{
-			*effectAmount = wielder.PROFICIENCIES[PRO_MACE]; // 0-2 second bonus mana regen
+			*effectAmount = wielder.getModifiedProficiency(PRO_MACE); // 0-2 second bonus mana regen
 		}
 
 		return percent;
 	}
 	else if ( type == ARTIFACT_BOW )
 	{
-		const real_t percent = wielder.PROFICIENCIES[PRO_RANGED] / 2.f; //0-50%
+		const real_t percent = wielder.getModifiedProficiency(PRO_RANGED) / 2.f; //0-50%
 		if ( effectAmount )
 		{
 			*effectAmount = 0.f; // no use here.
@@ -6020,7 +6020,7 @@ int maximumTinkeringBotsCanBeDeployed(const Stat* const myStats)
 		return 0;
 	}
 	int maxFollowers = 2;
-	const int skillLVL = myStats->PROFICIENCIES[PRO_LOCKPICKING] / 20; // 0-5.
+	const int skillLVL = myStats->getModifiedProficiency(PRO_LOCKPICKING) / 20; // 0-5.
 	switch ( skillLVL )
 	{
 		case 0:

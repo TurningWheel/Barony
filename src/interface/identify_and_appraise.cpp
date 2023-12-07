@@ -366,11 +366,11 @@ bool Player::Inventory_t::Appraisal_t::appraisalPossible(Item* item)
 
 	if ( item->identified ) { return false; }
 
-	if ( stats[player.playernum]->PROFICIENCIES[PRO_APPRAISAL] < 100 )
+	if ( stats[player.playernum]->getModifiedProficiency(PRO_APPRAISAL) < 100 )
 	{
 		if ( item->type == GEM_GLASS )
 		{
-			if ( (stats[player.playernum]->PROFICIENCIES[PRO_APPRAISAL] 
+			if ( (stats[player.playernum]->getModifiedProficiency(PRO_APPRAISAL)
 				+ statGetPER(stats[player.playernum], player.entity) * 5) >= 100 )
 			{
 				return true;
@@ -378,7 +378,7 @@ bool Player::Inventory_t::Appraisal_t::appraisalPossible(Item* item)
 		}
 		else
 		{
-			if ( (stats[player.playernum]->PROFICIENCIES[PRO_APPRAISAL]
+			if ( (stats[player.playernum]->getModifiedProficiency(PRO_APPRAISAL)
 				+ statGetPER(stats[player.playernum], player.entity) * 5) >= items[item->type].value / 10 )
 			{
 				return true;
@@ -430,7 +430,7 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 	//Appraising.
 
 	//If appraisal skill >= LEGENDARY, then auto-complete appraisal. Else, do the normal routine.
-	if ( stats[player.playernum]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
+	if ( stats[player.playernum]->getProficiency(PRO_APPRAISAL) >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
 	{
 		item->identified = true;
 		item->notifyIcon = true;
@@ -470,6 +470,10 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 		//Once the timer hits zero, roll to see if the item is identified.
 		//If it is identified, identify it and print out a message for the player.
 		timer = getAppraisalTime(item);
+		if ( stats[player.playernum]->getModifiedProficiency(PRO_APPRAISAL) >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
+		{
+			timer = 1; // our modified proficiency is legendary, so make a really short timer to almost be instant
+		}
 		timermax = timer;
 		if ( oldItemToUpdate && current_item != item->uid )
 		{
@@ -514,7 +518,7 @@ int Player::Inventory_t::Appraisal_t::getAppraisalTime(Item* item)
 
 	if ( item->type != GEM_GLASS )
 	{
-		appraisal_time = (items[item->type].value * 60) / (stats[this->player.playernum]->PROFICIENCIES[PRO_APPRAISAL] + 1);    // time in ticks until item is appraised
+		appraisal_time = (items[item->type].value * 60) / (stats[this->player.playernum]->getModifiedProficiency(PRO_APPRAISAL) + 1);    // time in ticks until item is appraised
 		if ( stats[player.playernum] && stats[player.playernum]->mask && stats[player.playernum]->mask->type == MONOCLE )
 		{
 			real_t mult = 1.0;
@@ -552,7 +556,7 @@ int Player::Inventory_t::Appraisal_t::getAppraisalTime(Item* item)
 	}
 	else
 	{
-		appraisal_time = (1000 * 60) / (stats[this->player.playernum]->PROFICIENCIES[PRO_APPRAISAL] + 1);    // time in ticks until item is appraised+-
+		appraisal_time = (1000 * 60) / (stats[this->player.playernum]->getModifiedProficiency(PRO_APPRAISAL) + 1);    // time in ticks until item is appraised+-
 		if ( stats[player.playernum] && stats[player.playernum]->mask && stats[player.playernum]->mask->type == MONOCLE )
 		{
 			real_t mult = 1.0;

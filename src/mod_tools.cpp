@@ -2039,7 +2039,7 @@ std::string ItemTooltips_t::getSpellIconText(const int player, Item& item)
 	{
 		int numSummons = 1;
 		if ( (statGetINT(stats[player], players[player]->entity)
-			+ stats[player]->PROFICIENCIES[PRO_MAGIC]) >= SKILL_LEVEL_EXPERT )
+			+ stats[player]->getModifiedProficiency(PRO_MAGIC)) >= SKILL_LEVEL_EXPERT )
 		{
 			numSummons = 2;
 		}
@@ -3037,7 +3037,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("shield_durability") == 0 )
 		{
-			int skillLVL = stats[player]->PROFICIENCIES[PRO_SHIELD] / 10;
+			int skillLVL = stats[player]->getModifiedProficiency(PRO_SHIELD) / 10;
 			int durabilityBonus = skillLVL * 10;
 			if ( itemCategory(&item) == ARMOR )
 			{
@@ -3051,7 +3051,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("knuckle_skill_modifier") == 0 )
 		{
-			int atk = (stats[player]->PROFICIENCIES[PRO_UNARMED] / 20); // 0 - 5
+			int atk = (stats[player]->getModifiedProficiency(PRO_UNARMED) / 20); // 0 - 5
 			snprintf(buf, sizeof(buf), str.c_str(), atk, getItemProficiencyName(PRO_UNARMED).c_str());
 		}
 		else if ( detailTag.compare("knuckle_knockback_modifier") == 0 )
@@ -3070,7 +3070,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("weapon_durability") == 0 )
 		{
-			int skillLVL = stats[player]->PROFICIENCIES[PRO_UNARMED] / 20;
+			int skillLVL = stats[player]->getModifiedProficiency(PRO_UNARMED) / 20;
 			int durabilityBonus = skillLVL * 20;
 			snprintf(buf, sizeof(buf), str.c_str(), durabilityBonus, getItemProficiencyName(PRO_UNARMED).c_str());
 		}
@@ -3168,7 +3168,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("thrown_skill_modifier") == 0 )
 		{
-			int skillLVL = stats[player]->PROFICIENCIES[proficiency] / 10;
+			int skillLVL = stats[player]->getModifiedProficiency(proficiency) / 10;
 			snprintf(buf, sizeof(buf), str.c_str(), skillLVL,
 				getItemProficiencyName(proficiency).c_str());
 		}
@@ -3250,7 +3250,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("thrown_skill_modifier") == 0 )
 		{
-			int skillLVL = stats[player]->PROFICIENCIES[proficiency] / 20;
+			int skillLVL = stats[player]->getModifiedProficiency(proficiency) / 20;
 			snprintf(buf, sizeof(buf), str.c_str(), static_cast<int>(100 * thrownDamageSkillMultipliers[std::min(skillLVL, 5)] - 100),
 				getItemProficiencyName(proficiency).c_str());
 		}
@@ -3325,12 +3325,12 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			if ( proficiency == PRO_POLEARM )
 			{
 				//int weaponEffectiveness = -8 + (stats[player]->PROFICIENCIES[proficiency] / 3); // -8% to +25%
-				int weaponEffectiveness = -25 + (stats[player]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+				int weaponEffectiveness = -25 + (stats[player]->getModifiedProficiency(proficiency) / 2); // -25% to +25%
 				snprintf(buf, sizeof(buf), str.c_str(), weaponEffectiveness, getItemProficiencyName(proficiency).c_str());
 			}
 			else
 			{
-				int weaponEffectiveness = -25 + (stats[player]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+				int weaponEffectiveness = -25 + (stats[player]->getModifiedProficiency(proficiency) / 2); // -25% to +25%
 				snprintf(buf, sizeof(buf), str.c_str(), weaponEffectiveness, getItemProficiencyName(proficiency).c_str());
 			}
 		}
@@ -3354,7 +3354,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("weapon_durability") == 0 )
 		{
-			int skillLVL = stats[player]->PROFICIENCIES[proficiency] / 20;
+			int skillLVL = stats[player]->getModifiedProficiency(proficiency) / 20;
 			int durabilityBonus = skillLVL * 20;
 			snprintf(buf, sizeof(buf), str.c_str(), durabilityBonus, getItemProficiencyName(proficiency).c_str());
 		}
@@ -3476,7 +3476,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("potion_multiplier") == 0 )
 		{
-			int skillLVL = stats[player]->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			int skillLVL = stats[player]->getModifiedProficiency(PRO_ALCHEMY) / 20;
 			snprintf(buf, sizeof(buf), str.c_str(), static_cast<int>(100 * potionDamageSkillMultipliers[std::min(skillLVL, 5)] - 100), 
 				getItemPotionHarmAllyAdjective(item).c_str());
 		}
@@ -3486,8 +3486,8 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		Sint32 PER = statGetPER(stats[player], players[player]->entity);
 		if ( detailTag.compare("lockpick_chestsdoors_unlock_chance") == 0 )
 		{
-			int chance = stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 2; // lockpick chests/doors
-			if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] == SKILL_LEVEL_LEGENDARY )
+			int chance = stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 2; // lockpick chests/doors
+			if ( stats[player]->getModifiedProficiency(PRO_LOCKPICKING) == SKILL_LEVEL_LEGENDARY )
 			{
 				chance = 100;
 			}
@@ -3495,13 +3495,13 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("lockpick_chests_scrap_chance") == 0 )
 		{
-			int chance = std::min(100, stats[player]->PROFICIENCIES[PRO_LOCKPICKING] + 50);
+			int chance = std::min(100, stats[player]->getModifiedProficiency(PRO_LOCKPICKING) + 50);
 			snprintf(buf, sizeof(buf), str.c_str(), chance);
 		}
 		else if ( detailTag.compare("lockpick_arrow_disarm") == 0 )
 		{
-			int chance = (100 - 100 / (std::max(1, static_cast<int>(stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10)))); // disarm arrow traps
-			if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_BASIC )
+			int chance = (100 - 100 / (std::max(1, static_cast<int>(stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 10)))); // disarm arrow traps
+			if ( stats[player]->getModifiedProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_BASIC )
 			{
 				chance = 0;
 			}
@@ -3510,13 +3510,13 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		else if ( detailTag.compare("lockpick_automaton_disarm") == 0 )
 		{
 			int chance = 0;
-			if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_EXPERT )
+			if ( stats[player]->getModifiedProficiency(PRO_LOCKPICKING) >= SKILL_LEVEL_EXPERT )
 			{
 				chance = 100; // lockpick automatons
 			}
 			else
 			{
-				chance = (100 - 100 / (static_cast<int>(stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 20 + 1))); // lockpick automatons
+				chance = (100 - 100 / (static_cast<int>(stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 20 + 1))); // lockpick automatons
 			}
 			snprintf(buf, sizeof(buf), str.c_str(), chance);
 		}
@@ -3530,8 +3530,8 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		Sint32 PER = statGetPER(stats[player], players[player]->entity);
 		if ( detailTag.compare("lockpick_arrow_disarm") == 0 )
 		{
-			int chance = (100 - 100 / (std::max(1, static_cast<int>(stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10)))); // disarm arrow traps
-			if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_BASIC )
+			int chance = (100 - 100 / (std::max(1, static_cast<int>(stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 10)))); // disarm arrow traps
+			if ( stats[player]->getModifiedProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_BASIC )
 			{
 				chance = 0;
 			}
@@ -3640,7 +3640,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
 			if ( !spell ) { return; }
 
-			int skillLVL = std::min(100, stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity));
+			int skillLVL = std::min(100, stats[player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[player], players[player]->entity));
 			if ( !playerLearnedSpellbook(player, &item) && (spell && spell->difficulty > skillLVL) )
 			{
 				str.insert((size_t)0, 1, '^'); // red line character
@@ -3660,13 +3660,13 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
 			if ( !spell ) { return; }
 
-			int skillLVL = std::min(100, stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity));
+			int skillLVL = std::min(100, stats[player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[player], players[player]->entity));
 			if ( !playerLearnedSpellbook(player, &item) && (spell && spell->difficulty > skillLVL) )
 			{
 				str.insert((size_t)0, 1, '^'); // red line character
 			}
 			Sint32 INT = stats[player] ? statGetINT(stats[player], players[player]->entity) : 0;
-			Sint32 skill = stats[player] ? stats[player]->PROFICIENCIES[PRO_MAGIC] : 0;
+			Sint32 skill = stats[player] ? stats[player]->getModifiedProficiency(PRO_MAGIC) : 0;
 			Sint32 total = std::min(SKILL_LEVEL_LEGENDARY, INT + skill);
 			snprintf(buf, sizeof(buf), str.c_str(), INT + skill, getProficiencyLevelName(INT + skill).c_str());
 		}
@@ -3703,14 +3703,14 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("spell_cast_success") == 0 )
 		{
-			int spellcastingAbility = std::min(std::max(0, stats[player]->PROFICIENCIES[PRO_SPELLCASTING]
+			int spellcastingAbility = std::min(std::max(0, stats[player]->getModifiedProficiency(PRO_SPELLCASTING)
 				+ statGetINT(stats[player], players[player]->entity)), 100);
 			int chance = ((10 - (spellcastingAbility / 10)) * 20 / 3.0); // 33% after rolling to fizzle, 66% success
 			snprintf(buf, sizeof(buf), str.c_str(), chance);
 		}
 		else if ( detailTag.compare("spell_extramana_chance") == 0 )
 		{
-			int spellcastingAbility = std::min(std::max(0, stats[player]->PROFICIENCIES[PRO_SPELLCASTING]
+			int spellcastingAbility = std::min(std::max(0, stats[player]->getModifiedProficiency(PRO_SPELLCASTING)
 				+ statGetINT(stats[player], players[player]->entity)), 100);
 			int chance = (10 - (spellcastingAbility / 10)) * 10;
 			snprintf(buf, sizeof(buf), str.c_str(), chance);
@@ -3718,7 +3718,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		else if ( detailTag.compare("attribute_spell_charm") == 0 )
 		{
 			int leaderChance = ((statGetCHR(stats[player], players[player]->entity) + 
-				stats[player]->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 5;
+				stats[player]->getModifiedProficiency(PRO_LEADERSHIP)) / 20) * 5;
 			int intChance = (statGetINT(stats[player], players[player]->entity) * 2);
 			snprintf(buf, sizeof(buf), str.c_str(), intChance, leaderChance);
 		}
@@ -3746,7 +3746,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		else if ( detailTag.compare("attribute_spell_charm") == 0 )
 		{
 			int leaderChance = ((statGetCHR(stats[player], players[player]->entity) +
-				stats[player]->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 10;
+				stats[player]->getModifiedProficiency(PRO_LEADERSHIP)) / 20) * 10;
 			snprintf(buf, sizeof(buf), str.c_str(), leaderChance);
 		}
 		else

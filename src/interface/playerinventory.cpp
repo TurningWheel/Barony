@@ -4836,7 +4836,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                              && icon.conditionalAttribute.find("SPELLBOOK_") != std::string::npos )
                     {
                         spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
-                        int skillLVL = std::min(100, stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity));
+                        int skillLVL = std::min(100, stats[player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[player], players[player]->entity));
                         bool isGoblin = (stats[player]
                                          && (stats[player]->type == GOBLIN
                                              || (stats[player]->playerRace == RACE_GOBLIN && stats[player]->appearance == 0)));
@@ -5141,7 +5141,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                     if ( tag.compare("weapon_durability") == 0 )
                     {
                         int proficiency = itemCategory(item) == ARMOR ? PRO_UNARMED : getWeaponSkill(item);
-                        if ( stats[player]->PROFICIENCIES[proficiency] == SKILL_LEVEL_LEGENDARY )
+                        if ( stats[player]->getModifiedProficiency(proficiency) == SKILL_LEVEL_LEGENDARY )
                         {
                             continue;
                         }
@@ -5149,7 +5149,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                     else if ( tag.compare("weapon_legendary_durability") == 0 )
                     {
                         int proficiency = itemCategory(item) == ARMOR ? PRO_UNARMED: getWeaponSkill(item);
-                        if ( stats[player]->PROFICIENCIES[proficiency] != SKILL_LEVEL_LEGENDARY )
+                        if ( stats[player]->getModifiedProficiency(proficiency) != SKILL_LEVEL_LEGENDARY )
                         {
                             continue;
                         }
@@ -5388,7 +5388,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                         {
                             continue;
                         }
-                        if ( stats[player]->PROFICIENCIES[PRO_SHIELD] == SKILL_LEVEL_LEGENDARY )
+                        if ( stats[player]->getModifiedProficiency(PRO_SHIELD) == SKILL_LEVEL_LEGENDARY )
                         {
                             continue;
                         }
@@ -5399,7 +5399,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                         {
                             continue;
                         }
-                        if ( stats[player]->PROFICIENCIES[PRO_SHIELD] != SKILL_LEVEL_LEGENDARY )
+                        if ( stats[player]->getModifiedProficiency(PRO_SHIELD) != SKILL_LEVEL_LEGENDARY )
                         {
                             continue;
                         }

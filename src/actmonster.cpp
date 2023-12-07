@@ -1511,7 +1511,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 			}
 		}
 		if ( strcmp(myStats->name, "") && !monsterNameIsGeneric(*myStats)
-			&& ((stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] + stats[monsterclicked]->CHR) < 60) )
+			&& ((stats[monsterclicked]->getModifiedProficiency(PRO_LEADERSHIP) + stats[monsterclicked]->CHR) < 60) )
 		{
 			if ( race != HUMAN )
 			{
@@ -1523,7 +1523,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 		{
 			if ( myStats->leader_uid == 0 )
 			{
-				int allowedFollowers = std::min(8, std::max(4, 2 * (stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] / 20)));
+				int allowedFollowers = std::min(8, std::max(4, 2 * (stats[monsterclicked]->getModifiedProficiency(PRO_LEADERSHIP) / 20)));
 				int numFollowers = 0;
 				for ( node_t* node = stats[monsterclicked]->FOLLOWERS.first; node; node = node->next )
 				{
@@ -1886,7 +1886,7 @@ void printFollowerTableForSkillsheet(int monsterclicked, Entity* my, Stat* mySta
 	if ( !my || !myStats ) { return; }
 
 	std::string outputList = "{";
-	int originalLeadershipSkill = stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP];
+	int originalLeadershipSkill = stats[monsterclicked]->getModifiedProficiency(PRO_LEADERSHIP);
 	Sint32 originalCHR = stats[monsterclicked]->CHR;
 	stats[monsterclicked]->CHR = 10;
 
@@ -1898,12 +1898,12 @@ void printFollowerTableForSkillsheet(int monsterclicked, Entity* my, Stat* mySta
 		outputList += ",";
 		if ( iterations == 0 )
 		{
-			stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] = 50;
+			stats[monsterclicked]->setProficiency(PRO_LEADERSHIP, 50);
 			outputList += "\"leadership_allies_base\":";
 		}
 		else if ( iterations == 1 )
 		{
-			stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] = 100;
+			stats[monsterclicked]->setProficiency(PRO_LEADERSHIP, 100);
 			outputList += "\"leadership_allies_legendary\":";
 		}
 
@@ -1991,7 +1991,7 @@ void printFollowerTableForSkillsheet(int monsterclicked, Entity* my, Stat* mySta
 		}
 	}
 
-	stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] = originalLeadershipSkill;
+	stats[monsterclicked]->setProficiency(PRO_LEADERSHIP, originalLeadershipSkill);
 	stats[monsterclicked]->CHR = originalCHR;
 
 	// special exeptions here.
@@ -10234,8 +10234,8 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 	int skillLVL = 0;
 	if ( stats[monsterAllyIndex] )
 	{
-		tinkeringLVL = stats[monsterAllyIndex]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[monsterAllyIndex], players[monsterAllyIndex]->entity);
-		skillLVL = stats[monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[monsterAllyIndex], players[monsterAllyIndex]->entity);
+		tinkeringLVL = stats[monsterAllyIndex]->getModifiedProficiency(PRO_LOCKPICKING) + statGetPER(stats[monsterAllyIndex], players[monsterAllyIndex]->entity);
+		skillLVL = stats[monsterAllyIndex]->getModifiedProficiency(PRO_LOCKPICKING) + statGetCHR(stats[monsterAllyIndex], players[monsterAllyIndex]->entity);
 		if ( isTinkeringFollower )
 		{
 			skillLVL = tinkeringLVL;
@@ -11474,14 +11474,14 @@ int Entity::shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat&
 	{
 		if ( stats[monsterAllyIndex] && players[monsterAllyIndex] && players[monsterAllyIndex]->entity )
 		{
-			int leaderSkill = std::max(players[monsterAllyIndex]->entity->getCHR(), 0) + stats[monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP];
+			int leaderSkill = std::max(players[monsterAllyIndex]->entity->getCHR(), 0) + stats[monsterAllyIndex]->getModifiedProficiency(PRO_LEADERSHIP);
 			blockChance += std::max(0, (leaderSkill / 20) * 2); // 0-25% bonus to blockchance.
 		}
 	}
 
-	if ( myStats.PROFICIENCIES[PRO_SHIELD] > 0 )
+	if ( myStats.getModifiedProficiency(PRO_SHIELD) > 0 )
 	{
-		blockChance += std::min(myStats.PROFICIENCIES[PRO_SHIELD] / 10, 5); // 0-25% bonus to blockchance.
+		blockChance += std::min(myStats.getModifiedProficiency(PRO_SHIELD) / 10, 5); // 0-25% bonus to blockchance.
 	}
 
 	bool retreatBonus = false;

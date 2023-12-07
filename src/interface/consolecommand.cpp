@@ -1103,7 +1103,7 @@ namespace ConsoleCommands {
 			myStats->cloak = newItem(CLOAK_BLACK, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
 			consoleCommand("/levelskill 9");
 			//consoleCommand("/nextlevel");
-			while (myStats->PROFICIENCIES[PRO_APPRAISAL] < 50)
+			while (myStats->getProficiency(PRO_APPRAISAL) < 50)
 			{
 				consoleCommand("/levelskill 3");
 			}
@@ -1148,9 +1148,8 @@ namespace ConsoleCommands {
 			{
 				if (c != PRO_STEALTH)
 				{
-					while (stats[clientnum]->PROFICIENCIES[c] < 100)
+					while (stats[clientnum]->getProficiency(c) < 100 )
 					{
-						//++stats[clientnum]->PROFICIENCIES[c];
 						players[clientnum]->entity->increaseSkill(c, false);
 					}
 				}
@@ -1187,10 +1186,8 @@ namespace ConsoleCommands {
 			consoleCommand("/spawnitem magicstaff of lightning");
 			for (c = 0; c < NUMPROFICIENCIES; c++)
 			{
-				//for ( int j = 0; j < 100; ++j )
-				while (stats[clientnum]->PROFICIENCIES[c] < 100)
+				while (stats[clientnum]->getProficiency(c) < 100)
 				{
-					//++stats[clientnum]->PROFICIENCIES[c];
 					players[clientnum]->entity->increaseSkill(c, false);
 				}
 			}
@@ -2317,7 +2314,7 @@ namespace ConsoleCommands {
 		}
 		else
 		{
-			for (int i = players[clientnum]->entity->getStats()->PROFICIENCIES[skill]; i < 100; ++i)
+			for (int i = players[clientnum]->entity->getStats()->getProficiency(skill); i < 100; ++i)
 			{
 				players[clientnum]->entity->increaseSkill(skill);
 			}

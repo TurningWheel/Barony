@@ -424,7 +424,7 @@ void actThrown(Entity* my)
 						}
 						else if ( item->isTinkeringItemWithThrownLimit() && !tinkeringItemCanBePlaced )
 						{
-							if ( stats[parent->skill[2]]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_LEGENDARY )
+							if ( stats[parent->skill[2]]->getModifiedProficiency(PRO_LOCKPICKING) >= SKILL_LEVEL_LEGENDARY )
 							{
 								messagePlayer(parent->skill[2], MESSAGE_MISC, Language::get(3884));
 							}
@@ -733,7 +733,7 @@ void actThrown(Entity* my)
 				{
 					if ( itemCategory(item) == POTION )
 					{
-						int skillLVL = parentStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+						int skillLVL = parentStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 						//int dex = parent->getDEX() / 4;
 						//damage += dex;
 						damage = damage * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
@@ -1258,7 +1258,7 @@ void actThrown(Entity* my)
 					if ( doSkillIncrease && (local_rng.rand() % chance == 0) && parent && parent->getStats() )
 					{
 						if ( hitstats->type != DUMMYBOT 
-							|| (hitstats->type == DUMMYBOT && parent->getStats()->PROFICIENCIES[PRO_RANGED] < SKILL_LEVEL_BASIC) )
+							|| (hitstats->type == DUMMYBOT && parent->getStats()->getProficiency(PRO_RANGED) < SKILL_LEVEL_BASIC) )
 						{
 							parent->increaseSkill(PRO_RANGED);
 						}

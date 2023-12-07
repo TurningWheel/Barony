@@ -1687,7 +1687,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										Stat* playerStats = parent->getStats();
 										if ( playerStats )
 										{
-											int skillLVL = playerStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+											int skillLVL = playerStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 											damage = (14 + skillLVL * 1.5);
 										}
 									}
@@ -2004,7 +2004,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										Stat* playerStats = parent->getStats();
 										if ( playerStats )
 										{
-											int skillLVL = playerStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+											int skillLVL = playerStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 											damage = (18 + skillLVL * 1.5);
 										}
 									}
@@ -2248,7 +2248,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										Stat* playerStats = parent->getStats();
 										if ( playerStats )
 										{
-											int skillLVL = playerStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+											int skillLVL = playerStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 											damage = (22 + skillLVL * 1.5);
 										}
 									}
@@ -5363,7 +5363,7 @@ void actParticleSapCenter(Entity* my)
 							monster->setEffect(EFF_STUNNED, true, 20, false);
 							bool spawnSecondAlly = false;
 							
-							if ( (caster->getINT() + stats[caster->skill[2]]->PROFICIENCIES[PRO_MAGIC]) >= SKILL_LEVEL_EXPERT )
+							if ( (caster->getINT() + stats[caster->skill[2]]->getModifiedProficiency(PRO_MAGIC)) >= SKILL_LEVEL_EXPERT )
 							{
 								spawnSecondAlly = true;
 							}

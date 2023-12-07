@@ -1239,16 +1239,8 @@ public:
 		CharacterSheet_t(Player& p) : player(p)
 		{};
 		~CharacterSheet_t() {};
-		SDL_Rect skillsSheetBox;
-		SDL_Rect partySheetBox;
-		SDL_Rect characterSheetBox;
-		SDL_Rect statsSheetBox;
 
 		Player::PanelJustify_t panelJustify = PANEL_JUSTIFY_RIGHT;
-
-		void setDefaultSkillsSheetBox();
-		void setDefaultPartySheetBox();
-		void setDefaultCharacterSheetBox();
 
 		bool lock_right_sidebar = false;
 		int proficienciesPage = 0;

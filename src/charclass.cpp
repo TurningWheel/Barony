@@ -49,12 +49,12 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP -= 10;
 
 		// skills
-		stat->PROFICIENCIES[PRO_SWIMMING] = 25;
-		stat->PROFICIENCIES[PRO_SHIELD] = 25;
-		stat->PROFICIENCIES[PRO_AXE] = 50;
-		stat->PROFICIENCIES[PRO_MACE] = 25;
-		stat->PROFICIENCIES[PRO_UNARMED] = 20;
-		stat->PROFICIENCIES[PRO_ALCHEMY] = 10;
+		stat->setProficiency(PRO_SWIMMING, 25);
+		stat->setProficiency(PRO_SHIELD, 25);
+		stat->setProficiency(PRO_AXE, 50);
+		stat->setProficiency(PRO_MACE, 25);
+		stat->setProficiency(PRO_UNARMED, 20);
+		stat->setProficiency(PRO_ALCHEMY, 10);
 	}
 	// warrior
 	else if ( classnum == CLASS_WARRIOR )
@@ -71,12 +71,12 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP -= 10;
 
 		// skills
-		stat->PROFICIENCIES[PRO_LEADERSHIP] = 40;
-		stat->PROFICIENCIES[PRO_RANGED] = 25;
-		stat->PROFICIENCIES[PRO_SWORD] = 25;
-		stat->PROFICIENCIES[PRO_POLEARM] = 50;
-		stat->PROFICIENCIES[PRO_SHIELD] = 25;
-		stat->PROFICIENCIES[PRO_UNARMED] = 10;
+		stat->setProficiency(PRO_LEADERSHIP, 40);
+		stat->setProficiency(PRO_RANGED, 25);
+		stat->setProficiency(PRO_SWORD, 25);
+		stat->setProficiency(PRO_POLEARM, 50);
+		stat->setProficiency(PRO_SHIELD, 25);
+		stat->setProficiency(PRO_UNARMED, 10);
 	}
 	// healer
 	else if ( classnum == CLASS_HEALER )
@@ -93,13 +93,13 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP += 10;
 
 		// skills
-		stat->PROFICIENCIES[PRO_SPELLCASTING] = 50;
-		stat->PROFICIENCIES[PRO_MAGIC] = 25;
-		stat->PROFICIENCIES[PRO_SWIMMING] = 25;
-		stat->PROFICIENCIES[PRO_POLEARM] = 25;
-		stat->PROFICIENCIES[PRO_ALCHEMY] = 30;
-		stat->PROFICIENCIES[PRO_APPRAISAL] = 10;
-		stat->PROFICIENCIES[PRO_SHIELD] = 10;
+		stat->setProficiency(PRO_SPELLCASTING, 50);
+		stat->setProficiency(PRO_MAGIC, 25);
+		stat->setProficiency(PRO_SWIMMING, 25);
+		stat->setProficiency(PRO_POLEARM, 25);
+		stat->setProficiency(PRO_ALCHEMY, 30);
+		stat->setProficiency(PRO_APPRAISAL, 10);
+		stat->setProficiency(PRO_SHIELD, 10);
 	}
 	// rogue
 	else if ( classnum == CLASS_ROGUE )
@@ -117,12 +117,12 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP -= 10;
 
 		// skills
-		stat->PROFICIENCIES[PRO_APPRAISAL] = 25;
-		stat->PROFICIENCIES[PRO_STEALTH] = 50;
-		stat->PROFICIENCIES[PRO_LOCKPICKING] = 40;
-		stat->PROFICIENCIES[PRO_RANGED] = 25;
-		stat->PROFICIENCIES[PRO_SWORD] = 25;
-		stat->PROFICIENCIES[PRO_ALCHEMY] = 20;
+		stat->setProficiency(PRO_APPRAISAL, 25);
+		stat->setProficiency(PRO_STEALTH, 50);
+		stat->setProficiency(PRO_LOCKPICKING, 40);
+		stat->setProficiency(PRO_RANGED, 25);
+		stat->setProficiency(PRO_SWORD, 25);
+		stat->setProficiency(PRO_ALCHEMY, 20);
 	}
 	// wanderer
 	else if ( classnum == CLASS_WANDERER )
@@ -140,13 +140,13 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP -= 10;
 
 		// skills
-		stat->PROFICIENCIES[PRO_STEALTH] = 25;
-		stat->PROFICIENCIES[PRO_SWIMMING] = 50;
-		stat->PROFICIENCIES[PRO_POLEARM] = 25;
-		stat->PROFICIENCIES[PRO_RANGED] = 25;
-		stat->PROFICIENCIES[PRO_TRADING] = 25;
-		stat->PROFICIENCIES[PRO_UNARMED] = 10;
-		stat->PROFICIENCIES[PRO_ALCHEMY] = 30;
+		stat->setProficiency(PRO_STEALTH, 25);
+		stat->setProficiency(PRO_SWIMMING, 50);
+		stat->setProficiency(PRO_POLEARM, 25);
+		stat->setProficiency(PRO_RANGED, 25);
+		stat->setProficiency(PRO_TRADING, 25);
+		stat->setProficiency(PRO_UNARMED, 10);
+		stat->setProficiency(PRO_ALCHEMY, 30);
 	}
 	// cleric
 	else if ( classnum == CLASS_CLERIC )
@@ -158,13 +158,13 @@ void initClassStats(const int classnum, void* myStats)
 		stat->CHR -= 0;
 
 		// skills
-		stat->PROFICIENCIES[PRO_MACE] = 25;
-		stat->PROFICIENCIES[PRO_SWIMMING] = 25;
-		stat->PROFICIENCIES[PRO_MAGIC] = 25;
-		stat->PROFICIENCIES[PRO_SPELLCASTING] = 25;
-		stat->PROFICIENCIES[PRO_LEADERSHIP] = 20;
-		stat->PROFICIENCIES[PRO_ALCHEMY] = 20;
-		stat->PROFICIENCIES[PRO_SHIELD] = 10;
+		stat->setProficiency(PRO_MACE, 25);
+		stat->setProficiency(PRO_SWIMMING, 25);
+		stat->setProficiency(PRO_MAGIC, 25);
+		stat->setProficiency(PRO_SPELLCASTING, 25);
+		stat->setProficiency(PRO_LEADERSHIP, 20);
+		stat->setProficiency(PRO_ALCHEMY, 20);
+		stat->setProficiency(PRO_SHIELD, 10);
 	}
 	// merchant
 	else if ( classnum == CLASS_MERCHANT )
@@ -180,12 +180,12 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP -= 10;
 
 		// skills
-		stat->PROFICIENCIES[PRO_AXE] = 25;
-		stat->PROFICIENCIES[PRO_LEADERSHIP] = 20;
-		stat->PROFICIENCIES[PRO_APPRAISAL] = 50;
-		stat->PROFICIENCIES[PRO_TRADING] = 50;
-		stat->PROFICIENCIES[PRO_ALCHEMY] = 10;
-		stat->PROFICIENCIES[PRO_LOCKPICKING] = 10;
+		stat->setProficiency(PRO_AXE, 25);
+		stat->setProficiency(PRO_LEADERSHIP, 20);
+		stat->setProficiency(PRO_APPRAISAL, 50);
+		stat->setProficiency(PRO_TRADING, 50);
+		stat->setProficiency(PRO_ALCHEMY, 10);
+		stat->setProficiency(PRO_LOCKPICKING, 10);
 	}
 	// wizard
 	else if ( classnum == CLASS_WIZARD )
@@ -202,11 +202,11 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP += 20;
 
 		// skills
-		stat->PROFICIENCIES[PRO_POLEARM] = 25;
-		stat->PROFICIENCIES[PRO_SPELLCASTING] = 50;
-		stat->PROFICIENCIES[PRO_MAGIC] = 50;
-		stat->PROFICIENCIES[PRO_ALCHEMY] = 10;
-		stat->PROFICIENCIES[PRO_APPRAISAL] = 10;
+		stat->setProficiency(PRO_POLEARM, 25);
+		stat->setProficiency(PRO_SPELLCASTING, 50);
+		stat->setProficiency(PRO_MAGIC, 50);
+		stat->setProficiency(PRO_ALCHEMY, 10);
+		stat->setProficiency(PRO_APPRAISAL, 10);
 	}
 	// arcanist
 	else if ( classnum == CLASS_ARCANIST )
@@ -225,11 +225,11 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP += 10;
 
 		// skills
-		stat->PROFICIENCIES[PRO_MAGIC] = 25;
-		stat->PROFICIENCIES[PRO_SPELLCASTING] = 50;
-		stat->PROFICIENCIES[PRO_STEALTH] = 25;
-		stat->PROFICIENCIES[PRO_LOCKPICKING] = 25;
-		stat->PROFICIENCIES[PRO_RANGED] = 25;
+		stat->setProficiency(PRO_MAGIC, 25);
+		stat->setProficiency(PRO_SPELLCASTING, 50);
+		stat->setProficiency(PRO_STEALTH, 25);
+		stat->setProficiency(PRO_LOCKPICKING, 25);
+		stat->setProficiency(PRO_RANGED, 25);
 	}
 	// joker
 	else if ( classnum == CLASS_JOKER )
@@ -242,14 +242,14 @@ void initClassStats(const int classnum, void* myStats)
 		stat->GOLD += 200;
 
 		// skills
-		stat->PROFICIENCIES[PRO_LOCKPICKING] = 25;
-		stat->PROFICIENCIES[PRO_TRADING] = 25;
-		stat->PROFICIENCIES[PRO_LEADERSHIP] = 20;
-		stat->PROFICIENCIES[PRO_MAGIC] = 25;
-		stat->PROFICIENCIES[PRO_SPELLCASTING] = 25;
-		stat->PROFICIENCIES[PRO_ALCHEMY] = 10;
-		stat->PROFICIENCIES[PRO_RANGED] = 20;
-		stat->PROFICIENCIES[PRO_STEALTH] = 10;
+		stat->setProficiency(PRO_LOCKPICKING, 25);
+		stat->setProficiency(PRO_TRADING, 25);
+		stat->setProficiency(PRO_LEADERSHIP, 20);
+		stat->setProficiency(PRO_MAGIC, 25);
+		stat->setProficiency(PRO_SPELLCASTING, 25);
+		stat->setProficiency(PRO_ALCHEMY, 10);
+		stat->setProficiency(PRO_RANGED, 20);
+		stat->setProficiency(PRO_STEALTH, 10);
 	}
 	// sexton
 	else if ( classnum == CLASS_SEXTON )
@@ -264,13 +264,13 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP += 5;
 
 		// skills
-		stat->PROFICIENCIES[PRO_MACE] = 10;
-		stat->PROFICIENCIES[PRO_SHIELD] = 10;
-		stat->PROFICIENCIES[PRO_STEALTH] = 40;
-		stat->PROFICIENCIES[PRO_SPELLCASTING] = 40;
-		stat->PROFICIENCIES[PRO_MAGIC] = 40;
-		stat->PROFICIENCIES[PRO_RANGED] = 20;
-		stat->PROFICIENCIES[PRO_ALCHEMY] = 20;
+		stat->setProficiency(PRO_MACE, 10);
+		stat->setProficiency(PRO_SHIELD, 10);
+		stat->setProficiency(PRO_STEALTH, 40);
+		stat->setProficiency(PRO_SPELLCASTING, 40);
+		stat->setProficiency(PRO_MAGIC, 40);
+		stat->setProficiency(PRO_RANGED, 20);
+		stat->setProficiency(PRO_ALCHEMY, 20);
 	}
 	// ninja
 	else if ( classnum == CLASS_NINJA )
@@ -286,9 +286,9 @@ void initClassStats(const int classnum, void* myStats)
 		stat->HP += 5;
 
 		// skills
-		stat->PROFICIENCIES[PRO_STEALTH] = 60;
-		stat->PROFICIENCIES[PRO_SWORD] = 60;
-		stat->PROFICIENCIES[PRO_RANGED] = 40;
+		stat->setProficiency(PRO_STEALTH, 60);
+		stat->setProficiency(PRO_SWORD, 60);
+		stat->setProficiency(PRO_RANGED, 40);
 	}
 	// monk
 	else if ( classnum == CLASS_MONK )
@@ -303,13 +303,13 @@ void initClassStats(const int classnum, void* myStats)
 		stat->HP += 10;
 
 		// skills
-		stat->PROFICIENCIES[PRO_SHIELD] = 40;
-		stat->PROFICIENCIES[PRO_SPELLCASTING] = 20;
-		stat->PROFICIENCIES[PRO_LEADERSHIP] = 10;
-		stat->PROFICIENCIES[PRO_MAGIC] = 10;
-		stat->PROFICIENCIES[PRO_UNARMED] = 50;
-		stat->PROFICIENCIES[PRO_ALCHEMY] = 20;
-		stat->PROFICIENCIES[PRO_SWIMMING] = 10;
+		stat->setProficiency(PRO_SHIELD, 40);
+		stat->setProficiency(PRO_SPELLCASTING, 20);
+		stat->setProficiency(PRO_LEADERSHIP, 10);
+		stat->setProficiency(PRO_MAGIC, 10);
+		stat->setProficiency(PRO_UNARMED, 50);
+		stat->setProficiency(PRO_ALCHEMY, 20);
+		stat->setProficiency(PRO_SWIMMING, 10);
 	}
 	// start DLC
 	else if ( classnum == CLASS_CONJURER )
@@ -326,12 +326,12 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP += 15;
 
 		// skills
-		stat->PROFICIENCIES[PRO_MAGIC] = 40;
-		stat->PROFICIENCIES[PRO_SPELLCASTING] = 40;
-		stat->PROFICIENCIES[PRO_STEALTH] = 20;
-		stat->PROFICIENCIES[PRO_RANGED] = 20;
-		stat->PROFICIENCIES[PRO_LEADERSHIP] = 40;
-		stat->PROFICIENCIES[PRO_ALCHEMY] = 20;
+		stat->setProficiency(PRO_MAGIC, 40);
+		stat->setProficiency(PRO_SPELLCASTING, 40);
+		stat->setProficiency(PRO_STEALTH, 20);
+		stat->setProficiency(PRO_RANGED, 20);
+		stat->setProficiency(PRO_LEADERSHIP, 40);
+		stat->setProficiency(PRO_ALCHEMY, 20);
 	}
 	else if ( classnum == CLASS_ACCURSED )
 	{
@@ -348,11 +348,11 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP += 10;
 
 		// skills
-		stat->PROFICIENCIES[PRO_MAGIC] = 70;
-		stat->PROFICIENCIES[PRO_SPELLCASTING] = 40;
-		stat->PROFICIENCIES[PRO_STEALTH] = 40;
-		stat->PROFICIENCIES[PRO_APPRAISAL] = 20;
-		stat->PROFICIENCIES[PRO_UNARMED] = 40;
+		stat->setProficiency(PRO_MAGIC, 70);
+		stat->setProficiency(PRO_SPELLCASTING, 40);
+		stat->setProficiency(PRO_STEALTH, 40);
+		stat->setProficiency(PRO_APPRAISAL, 20);
+		stat->setProficiency(PRO_UNARMED, 40);
 	}
 	else if ( classnum == CLASS_MESMER )
 	{
@@ -370,10 +370,10 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP += 10;
 
 		// skills
-		stat->PROFICIENCIES[PRO_MAGIC] = 60;
-		stat->PROFICIENCIES[PRO_SPELLCASTING] = 40;
-		stat->PROFICIENCIES[PRO_POLEARM] = 20;
-		stat->PROFICIENCIES[PRO_LEADERSHIP] = 60;
+		stat->setProficiency(PRO_MAGIC, 60);
+		stat->setProficiency(PRO_SPELLCASTING, 40);
+		stat->setProficiency(PRO_POLEARM, 20);
+		stat->setProficiency(PRO_LEADERSHIP, 60);
 	}
 	else if ( classnum == CLASS_BREWER )
 	{
@@ -393,14 +393,14 @@ void initClassStats(const int classnum, void* myStats)
 		stat->GOLD = 100;
 
 		// skills
-		/*stat->PROFICIENCIES[PRO_MACE] = 60;
-		stat->PROFICIENCIES[PRO_SHIELD] = 40;*/
-		stat->PROFICIENCIES[PRO_AXE] = 10;
-		stat->PROFICIENCIES[PRO_UNARMED] = 25;
-		stat->PROFICIENCIES[PRO_TRADING] = 10;
-		stat->PROFICIENCIES[PRO_APPRAISAL] = 10;
-		stat->PROFICIENCIES[PRO_LEADERSHIP] = 25;
-		stat->PROFICIENCIES[PRO_ALCHEMY] = 50;
+		/*stat->setProficiency(PRO_MACE, 60);
+		stat->setProficiency(PRO_SHIELD, 40);*/
+		stat->setProficiency(PRO_AXE, 10);
+		stat->setProficiency(PRO_UNARMED, 25);
+		stat->setProficiency(PRO_TRADING, 10);
+		stat->setProficiency(PRO_APPRAISAL, 10);
+		stat->setProficiency(PRO_LEADERSHIP, 25);
+		stat->setProficiency(PRO_ALCHEMY, 50);
 	}
 	else if ( classnum == CLASS_SHAMAN )
 	{
@@ -417,15 +417,15 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP += 10;
 
 		// skills
-		stat->PROFICIENCIES[PRO_SPELLCASTING] = 40;
-		stat->PROFICIENCIES[PRO_MAGIC] = 40;
-		stat->PROFICIENCIES[PRO_UNARMED] = 10;
-		stat->PROFICIENCIES[PRO_ALCHEMY] = 10;
-		stat->PROFICIENCIES[PRO_STEALTH] = 10;
-		/*stat->PROFICIENCIES[PRO_SHIELD] = 40;
-		stat->PROFICIENCIES[PRO_LEADERSHIP] = 10;
-		stat->PROFICIENCIES[PRO_POLEARM] = 10;
-		stat->PROFICIENCIES[PRO_RANGED] = 10;*/
+		stat->setProficiency(PRO_SPELLCASTING, 40);
+		stat->setProficiency(PRO_MAGIC, 40);
+		stat->setProficiency(PRO_UNARMED, 10);
+		stat->setProficiency(PRO_ALCHEMY, 10);
+		stat->setProficiency(PRO_STEALTH, 10);
+		/*stat->setProficiency(PRO_SHIELD, 40);
+		stat->setProficiency(PRO_LEADERSHIP, 10);
+		stat->setProficiency(PRO_POLEARM, 10);
+		stat->setProficiency(PRO_RANGED, 10);*/
 	}
 	else if ( classnum == CLASS_PUNISHER )
 	{
@@ -442,15 +442,15 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP += 10;*/
 
 		// skills
-		stat->PROFICIENCIES[PRO_SPELLCASTING] = 40;
-		stat->PROFICIENCIES[PRO_MAGIC] = 20;
-		stat->PROFICIENCIES[PRO_RANGED] = 25;
-		stat->PROFICIENCIES[PRO_AXE] = 25;
-		/*stat->PROFICIENCIES[PRO_SHIELD] = 40;
-		stat->PROFICIENCIES[PRO_LEADERSHIP] = 10;
-		stat->PROFICIENCIES[PRO_POLEARM] = 10;
-		stat->PROFICIENCIES[PRO_UNARMED] = 50;
-		stat->PROFICIENCIES[PRO_ALCHEMY] = 20;*/
+		stat->setProficiency(PRO_SPELLCASTING, 40);
+		stat->setProficiency(PRO_MAGIC, 20);
+		stat->setProficiency(PRO_RANGED, 25);
+		stat->setProficiency(PRO_AXE, 25);
+		/*stat->setProficiency(PRO_SHIELD, 40);
+		stat->setProficiency(PRO_LEADERSHIP, 10);
+		stat->setProficiency(PRO_POLEARM, 10);
+		stat->setProficiency(PRO_UNARMED, 50);
+		stat->setProficiency(PRO_ALCHEMY, 20);*/
 	}
 	else if ( classnum == CLASS_HUNTER )
 	{
@@ -467,12 +467,12 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP -= 10;
 
 		// skills
-		stat->PROFICIENCIES[PRO_SPELLCASTING] = 10;
-		stat->PROFICIENCIES[PRO_APPRAISAL] = 20;
-		stat->PROFICIENCIES[PRO_STEALTH] = 25;
-		stat->PROFICIENCIES[PRO_SWIMMING] = 50;
-		stat->PROFICIENCIES[PRO_RANGED] = 50;
-		stat->PROFICIENCIES[PRO_LOCKPICKING] = 10;
+		stat->setProficiency(PRO_SPELLCASTING, 10);
+		stat->setProficiency(PRO_APPRAISAL, 20);
+		stat->setProficiency(PRO_STEALTH, 25);
+		stat->setProficiency(PRO_SWIMMING, 50);
+		stat->setProficiency(PRO_RANGED, 50);
+		stat->setProficiency(PRO_LOCKPICKING, 10);
 	}
 	else if ( classnum == CLASS_MACHINIST )
 	{
@@ -490,10 +490,10 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP -= 10;
 
 		// skills
-		stat->PROFICIENCIES[PRO_LOCKPICKING] = 40;
-		stat->PROFICIENCIES[PRO_RANGED] = 10;
-		stat->PROFICIENCIES[PRO_ALCHEMY] = 10;
-		stat->PROFICIENCIES[PRO_TRADING] = 10;
+		stat->setProficiency(PRO_LOCKPICKING, 40);
+		stat->setProficiency(PRO_RANGED, 10);
+		stat->setProficiency(PRO_ALCHEMY, 10);
+		stat->setProficiency(PRO_TRADING, 10);
 	}
 }
 
@@ -2782,27 +2782,27 @@ void initClass(const int player)
 			addSpell(SPELL_SALVAGE, player, true);
 		}
 
-		if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] >= 0 )
+		if ( stats[player]->getProficiency(PRO_ALCHEMY) >= 0 )
 		{
 			bool learned = false;
-			if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] >= 0 )
+			if ( stats[player]->getProficiency(PRO_ALCHEMY) >= 0 )
 			{
 				ItemType potion = POTION_WATER;
 				learned = GenericGUI[player].alchemyLearnRecipe(potion, false, false);
 			}
-			if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] >= 20 )
+			if ( stats[player]->getProficiency(PRO_ALCHEMY) >= 20 )
 			{
 				ItemType potion = POTION_JUICE;
 				learned = GenericGUI[player].alchemyLearnRecipe(potion, false, false);
 				potion = POTION_BOOZE;
 				learned = GenericGUI[player].alchemyLearnRecipe(potion, false, false);
 			}
-			if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] >= 40 )
+			if ( stats[player]->getProficiency(PRO_ALCHEMY) >= 40 )
 			{
 				ItemType potion = POTION_ACID;
 				learned = GenericGUI[player].alchemyLearnRecipe(potion, false, false);
 			}
-			if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] >= 60 )
+			if ( stats[player]->getProficiency(PRO_ALCHEMY) >= 60 )
 			{
 				ItemType potion = POTION_INVISIBILITY;
 				learned = GenericGUI[player].alchemyLearnRecipe(potion, false, false);

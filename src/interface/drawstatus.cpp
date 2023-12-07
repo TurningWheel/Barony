@@ -1053,8 +1053,8 @@ void drawStatus(int player)
 								spell_t* currentSpell = getSpellFromID(getSpellIDFromSpellbook(item->type));
 								if ( currentSpell )
 								{
-									int skillLVL = stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity);
-									if ( stats[player]->PROFICIENCIES[PRO_MAGIC] >= 100 )
+									int skillLVL = stats[player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[player], players[player]->entity);
+									if ( stats[player]->getModifiedProficiency(PRO_MAGIC) >= 100 )
 									{
 										skillLVL = 100;
 									}
@@ -1353,7 +1353,7 @@ void drawStatus(int player)
 								if ( !learnedSpellbook && stats[player] && players[player] && players[player]->entity )
 								{
 									// spellbook tooltip shows if you have the magic requirement as well (for goblins)
-									int skillLVL = stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity);
+									int skillLVL = stats[player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[player], players[player]->entity);
 									spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
 									if ( spell && skillLVL >= spell->difficulty )
 									{
@@ -1396,7 +1396,7 @@ void drawStatus(int player)
 						}
 
 						int furthestX = players[player]->camera_x2();
-						if ( players[player]->characterSheet.proficienciesPage == 0 )
+						/*if ( players[player]->characterSheet.proficienciesPage == 0 )
 						{
 							if ( src.y < players[player]->characterSheet.skillsSheetBox.y + players[player]->characterSheet.skillsSheetBox.h )
 							{
@@ -1409,7 +1409,7 @@ void drawStatus(int player)
 							{
 								furthestX = players[player]->camera_x2() - players[player]->characterSheet.partySheetBox.w;
 							}
-						}
+						}*/
 
 						if ( drawHotBarTooltipOnCycle && players[player]->hotbar.useHotbarFaceMenu )
 						{
@@ -2001,8 +2001,8 @@ void drawStatus(int player)
 				spell_t* currentSpell = getSpellFromID(getSpellIDFromSpellbook(item->type));
 				if ( currentSpell && stats[player] )
 				{
-					int skillLVL = stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity);
-					if ( stats[player]->PROFICIENCIES[PRO_MAGIC] >= 100 )
+					int skillLVL = stats[player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[player], players[player]->entity);
+					if ( stats[player]->getModifiedProficiency(PRO_MAGIC) >= 100 )
 					{
 						skillLVL = 100;
 					}
@@ -2107,33 +2107,33 @@ void drawStatus(int player)
 
 	FollowerMenu[player].drawFollowerMenu();
 
-	// stat increase icons
-	pos.w = 64;
-	pos.h = 64;
-	pos.x = players[player]->camera_x2() - pos.w * 3 - 9;
-	pos.y = players[player]->characterSheet.skillsSheetBox.h + (32 + pos.h * 2 + 3); // 131px from end of prof window.
+	//// stat increase icons
+	//pos.w = 64;
+	//pos.h = 64;
+	//pos.x = players[player]->camera_x2() - pos.w * 3 - 9;
+	//pos.y = players[player]->characterSheet.skillsSheetBox.h + (32 + pos.h * 2 + 3); // 131px from end of prof window.
 
-	if ( (!shootmode || players[player]->characterSheet.lock_right_sidebar) && players[player]->characterSheet.proficienciesPage == 1
-		&& pos.y < (players[player]->characterSheet.partySheetBox.y + players[player]->characterSheet.partySheetBox.h + 16) )
-	{
-		pos.y = players[player]->characterSheet.partySheetBox.y + players[player]->characterSheet.partySheetBox.h + 16;
-	}
+	//if ( (!shootmode || players[player]->characterSheet.lock_right_sidebar) && players[player]->characterSheet.proficienciesPage == 1
+	//	&& pos.y < (players[player]->characterSheet.partySheetBox.y + players[player]->characterSheet.partySheetBox.h + 16) )
+	//{
+	//	pos.y = players[player]->characterSheet.partySheetBox.y + players[player]->characterSheet.partySheetBox.h + 16;
+	//}
 
-	if ( splitscreen )
-	{
-		// todo - adjust position.
-		pos.w = 48;
-		pos.h = 48;
-		pos.x = players[player]->camera_x2() - pos.w * 3 - 9;
-		pos.y = players[player]->characterSheet.skillsSheetBox.h + (16 + pos.h * 2 + 3);
-	}
-	else
-	{
-		if ( pos.y + pos.h > (players[player]->camera_y2() - minimaps[player].y - minimaps[player].h) ) // check if overlapping minimap
-		{
-			pos.y = (players[player]->camera_y2() - minimaps[player].y - minimaps[player].h) - (64 + 3); // align above minimap
-		}
-	}
+	//if ( splitscreen )
+	//{
+	//	// todo - adjust position.
+	//	pos.w = 48;
+	//	pos.h = 48;
+	//	pos.x = players[player]->camera_x2() - pos.w * 3 - 9;
+	//	pos.y = players[player]->characterSheet.skillsSheetBox.h + (16 + pos.h * 2 + 3);
+	//}
+	//else
+	//{
+	//	if ( pos.y + pos.h > (players[player]->camera_y2() - minimaps[player].y - minimaps[player].h) ) // check if overlapping minimap
+	//	{
+	//		pos.y = (players[player]->camera_y2() - minimaps[player].y - minimaps[player].h) - (64 + 3); // align above minimap
+	//	}
+	//}
 	
 	SDL_Surface *tmp_bmp = NULL;
 
@@ -3385,8 +3385,8 @@ void drawStatusNew(const int player)
 				spell_t* currentSpell = getSpellFromID(getSpellIDFromSpellbook(item->type));
 				if ( currentSpell && stats[player] )
 				{
-					int skillLVL = stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity);
-					if ( stats[player]->PROFICIENCIES[PRO_MAGIC] >= 100 )
+					int skillLVL = stats[player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[player], players[player]->entity);
+					if ( stats[player]->getModifiedProficiency(PRO_MAGIC) >= 100 )
 					{
 						skillLVL = 100;
 					}

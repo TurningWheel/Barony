@@ -2087,10 +2087,10 @@ std::vector<Entity*> getAllOtherFollowersForSendAllCommand(const int gui_player,
 					}
 				}
 				
-				int skillLVL2 = stats[gui_player]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[gui_player], players[gui_player]->entity);
+				int skillLVL2 = stats[gui_player]->getModifiedProficiency(PRO_LEADERSHIP) + statGetCHR(stats[gui_player], players[gui_player]->entity);
 				if ( FollowerMenu[gui_player].isTinkeringFollower(follower2Type) )
 				{
-					skillLVL2 = stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity);
+					skillLVL2 = stats[gui_player]->getModifiedProficiency(PRO_LOCKPICKING) + statGetPER(stats[gui_player], players[gui_player]->entity);
 				}
 				if ( follower2->monsterAllySummonRank != 0 )
 				{
@@ -2271,10 +2271,10 @@ void FollowerRadialMenu::drawFollowerMenu()
 			}
 			if ( optionSelected >= ALLY_CMD_DEFEND && optionSelected < ALLY_CMD_END && optionSelected != ALLY_CMD_ATTACK_CONFIRM )
 			{
-				skillLVL = stats[gui_player]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[gui_player], players[gui_player]->entity);
+				skillLVL = stats[gui_player]->getModifiedProficiency(PRO_LEADERSHIP) + statGetCHR(stats[gui_player], players[gui_player]->entity);
 				if ( tinkeringFollower )
 				{
-					skillLVL = stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity);
+					skillLVL = stats[gui_player]->getModifiedProficiency(PRO_LOCKPICKING) + statGetPER(stats[gui_player], players[gui_player]->entity);
 				}
 				if ( followerToCommand->monsterAllySummonRank != 0 )
 				{
@@ -2627,10 +2627,10 @@ void FollowerRadialMenu::drawFollowerMenu()
 		bool tinkeringFollower = isTinkeringFollower(followerStats->type);
 		if ( stats[gui_player] && players[gui_player] && players[gui_player]->entity )
 		{
-			skillLVL = stats[gui_player]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[gui_player], players[gui_player]->entity);
+			skillLVL = stats[gui_player]->getModifiedProficiency(PRO_LEADERSHIP) + statGetCHR(stats[gui_player], players[gui_player]->entity);
 			if ( tinkeringFollower )
 			{
-				skillLVL = stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity);
+				skillLVL = stats[gui_player]->getModifiedProficiency(PRO_LOCKPICKING) + statGetPER(stats[gui_player], players[gui_player]->entity);
 			}
 			else if ( followerToCommand->monsterAllySummonRank != 0 )
 			{
@@ -4158,10 +4158,10 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 	bool interactItems = allowedInteractItems(followerStats->type) || allowedInteractFood(followerStats->type);
 	bool interactWorld = allowedInteractWorld(followerStats->type);
 	bool tinkeringFollower = isTinkeringFollower(followerStats->type);
-	int skillLVL = stats[gui_player]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[gui_player], players[gui_player]->entity);
+	int skillLVL = stats[gui_player]->getModifiedProficiency(PRO_LEADERSHIP) + statGetCHR(stats[gui_player], players[gui_player]->entity);
 	if ( tinkeringFollower )
 	{
-		skillLVL = stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity);
+		skillLVL = stats[gui_player]->getModifiedProficiency(PRO_LOCKPICKING) + statGetPER(stats[gui_player], players[gui_player]->entity);
 	}
 	if ( followerToCommand->monsterAllySummonRank != 0 )
 	{
@@ -6821,12 +6821,6 @@ bool GenericGUIMenu::isItemMixable(const Item* item)
 		return false; // don't want to deal with client/server desync problems here.
 	}
 
-	//int skillLVL = 0;
-	//if ( stats[gui_player] )
-	//{
-	//	skillLVL = stats[gui_player]->PROFICIENCIES[PRO_ALCHEMY] / 20; // 0 to 5;
-	//}
-
 	if ( experimentingAlchemy )
 	{
 		if ( !basePotion )
@@ -7561,7 +7555,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 	int skillLVL = 0;
 	if ( stats[gui_player] )
 	{
-		skillLVL = stats[gui_player]->PROFICIENCIES[PRO_ALCHEMY] / 20; // 0 to 5;
+		skillLVL = stats[gui_player]->getModifiedProficiency(PRO_ALCHEMY) / 20; // 0 to 5;
 	}
 
 	Status status = EXCELLENT;
@@ -8283,7 +8277,7 @@ void GenericGUIMenu::tinkeringCreateCraftableItemList()
 			int requiredSkill = tinkeringPlayerHasSkillLVLToCraft(item);
 			if ( stats[gui_player] && players[gui_player] )
 			{
-				skillLVL = (stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity)) / 20; // 0 to 5
+				skillLVL = (stats[gui_player]->getModifiedProficiency(PRO_LOCKPICKING) + statGetPER(stats[gui_player], players[gui_player]->entity)) / 20; // 0 to 5
 				skillLVL = std::min(skillLVL, 5);
 			}
 			if ( item->type == TOOL_DUMMYBOT || item->type == TOOL_SENTRYBOT
@@ -8416,7 +8410,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 	int bonusMagicScrap = 0;
 	if ( stats[player] && players[player] && item->status > BROKEN )
 	{
-   		skillLVL = (stats[player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[player], players[player]->entity)) / 20;
+   		skillLVL = (stats[player]->getModifiedProficiency(PRO_LOCKPICKING) + statGetPER(stats[player], players[player]->entity)) / 20;
 		skillLVL = std::min(skillLVL, 5);
 		switch ( skillLVL )
 		{
@@ -8547,7 +8541,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 		{
 			if ( local_rng.rand() % 2 == 0 ) // 50%
 			{
-				if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_EXPERT )
+				if ( stats[player]->getProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_EXPERT )
 				{
 					increaseSkill = true;
 				}
@@ -8561,7 +8555,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 		{
 			if ( local_rng.rand() % 5 == 0 ) // 20%
 			{
-				if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_EXPERT )
+				if ( stats[player]->getProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_EXPERT )
 				{
 					increaseSkill = true;
 				}
@@ -8797,7 +8791,7 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 				}
 				else
 				{
-					if ( stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_BASIC )
+					if ( stats[gui_player]->getProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_BASIC )
 					{
 						if ( local_rng.rand() % 10 == 0 )
 						{
@@ -9527,7 +9521,7 @@ bool GenericGUIMenu::tinkeringGetRepairCost(Item* item, int* metal, int* magic)
 			{
 				int requirement = tinkeringRepairGeneralItemSkillRequirement(item);
 				if ( requirement >= 0 && stats[gui_player]
-					&& ((stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity)) >= requirement) )
+					&& ((stats[gui_player]->getModifiedProficiency(PRO_LOCKPICKING) + statGetPER(stats[gui_player], players[gui_player]->entity)) >= requirement) )
 				{
 					getGeneralItemRepairCostWithoutRequirements(gui_player, item, *metal, *magic);
 				}
@@ -9633,7 +9627,7 @@ int GenericGUIMenu::tinkeringPlayerHasSkillLVLToCraft(const Item* item)
 	int skillLVL = 0;
 	if ( stats[gui_player] && players[gui_player] )
 	{
-		skillLVL = (stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity)) / 20; // 0 to 5
+		skillLVL = (stats[gui_player]->getModifiedProficiency(PRO_LOCKPICKING) + statGetPER(stats[gui_player], players[gui_player]->entity)) / 20; // 0 to 5
 	}
 
 	switch ( item->type )
@@ -9642,7 +9636,7 @@ int GenericGUIMenu::tinkeringPlayerHasSkillLVLToCraft(const Item* item)
 		case TOOL_GLASSES:
 		case POTION_EMPTY:
 		case TOOL_DECOY:
-			if ( stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity) >= TINKER_MIN_ITEM_SKILL_REQ ) // 10 requirement
+			if ( stats[gui_player]->getModifiedProficiency(PRO_LOCKPICKING) + statGetPER(stats[gui_player], players[gui_player]->entity) >= TINKER_MIN_ITEM_SKILL_REQ ) // 10 requirement
 			{
 				return 0;
 			}
@@ -10139,7 +10133,7 @@ int GenericGUIMenu::tinkeringUpgradeMaxStatus(Item* item)
 	int skillLVL = 0;
 	if ( stats[gui_player] && players[gui_player] )
 	{
-		skillLVL = (stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity)) / 20; // 0 to 5
+		skillLVL = (stats[gui_player]->getModifiedProficiency(PRO_LOCKPICKING) + statGetPER(stats[gui_player], players[gui_player]->entity)) / 20; // 0 to 5
 		int craftRequirement = tinkeringPlayerHasSkillLVLToCraft(item);
 		if ( skillLVL >= 5 )
 		{
@@ -10471,7 +10465,7 @@ void GenericGUIMenu::scribingGetChargeCost(Item* itemUsedWith, int& outChargeCos
 		int skillLVL = 0;
 		if ( stats[gui_player] && players[gui_player] )
 		{
-			skillLVL = (stats[gui_player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[gui_player], players[gui_player]->entity)) / 20; // 0 to 5
+			skillLVL = (stats[gui_player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[gui_player], players[gui_player]->entity)) / 20; // 0 to 5
 		}
 		if ( scribingToolItem->beatitude > 0 )
 		{
@@ -12125,7 +12119,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	auto actionPromptImg = baseFrame->findImage("action prompt glyph");
 	auto actionModifierImg = baseFrame->findImage("action modifier glyph");
 
-	int skillLVL = (stats[playernum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[playernum], players[playernum]->entity));
+	int skillLVL = (stats[playernum]->getModifiedProficiency(PRO_LOCKPICKING) + statGetPER(stats[playernum], players[playernum]->entity));
 	Uint32 negativeColor = hudColors.characterSheetRed;
 	Uint32 neutralColor = hudColors.characterSheetLightNeutral;
 	Uint32 positiveColor = hudColors.characterSheetGreen;
@@ -13590,8 +13584,8 @@ GenericGUIMenu::TinkerGUI_t::TinkerActions_t GenericGUIMenu::TinkerGUI_t::setIte
 
 			if ( !checkStatusOnly )
 			{
-				int oldTinkering = stats[player]->PROFICIENCIES[PRO_LOCKPICKING];
-				stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 100;
+				int oldTinkering = stats[player]->getProficiency(PRO_LOCKPICKING);
+				stats[player]->setProficiencyUnsafe(PRO_LOCKPICKING, 999);
 				Sint32 oldPER = stats[player]->PER;
 				stats[player]->PER += -statGetPER(stats[player], players[player]->entity);
 				itemRequirement = parentGUI.tinkeringPlayerHasSkillLVLToCraft(item) * 20; // manually hack this to max to get requirement
@@ -13600,7 +13594,7 @@ GenericGUIMenu::TinkerGUI_t::TinkerActions_t GenericGUIMenu::TinkerGUI_t::setIte
 					itemRequirement = TINKER_MIN_ITEM_SKILL_REQ;
 				}
 				stats[player]->PER = oldPER;
-				stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = oldTinkering;
+				stats[player]->setProficiency(PRO_LOCKPICKING, oldTinkering);
 			}
 		}
 		else if ( !parentGUI.tinkeringPlayerCanAffordCraft(item) )
@@ -13687,7 +13681,7 @@ GenericGUIMenu::TinkerGUI_t::TinkerActions_t GenericGUIMenu::TinkerGUI_t::setIte
 		}
 		int requirement = parentGUI.tinkeringRepairGeneralItemSkillRequirement(item);
 
-		int skillLVL = stats[player]->PROFICIENCIES[PRO_LOCKPICKING] 
+		int skillLVL = stats[player]->getModifiedProficiency(PRO_LOCKPICKING) 
 			+ statGetPER(stats[player], players[player]->entity);
 		if ( !item->identified )
 		{
@@ -13730,8 +13724,8 @@ GenericGUIMenu::TinkerGUI_t::TinkerActions_t GenericGUIMenu::TinkerGUI_t::setIte
 			if ( !checkStatusOnly )
 			{
 				// can't craft, figure out base requirement
-				int oldTinkering = stats[player]->PROFICIENCIES[PRO_LOCKPICKING];
-				stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 100;
+				int oldTinkering = stats[player]->getProficiency(PRO_LOCKPICKING);
+				stats[player]->setProficiencyUnsafe(PRO_LOCKPICKING, 999);
 				Sint32 oldPER = stats[player]->PER;
 				stats[player]->PER += -statGetPER(stats[player], players[player]->entity);
 				itemRequirement = parentGUI.tinkeringPlayerHasSkillLVLToCraft(item) * 20; // manually hack this to max to get requirement
@@ -13740,7 +13734,7 @@ GenericGUIMenu::TinkerGUI_t::TinkerActions_t GenericGUIMenu::TinkerGUI_t::setIte
 					itemRequirement = TINKER_MIN_ITEM_SKILL_REQ;
 				}
 				stats[player]->PER = oldPER;
-				stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = oldTinkering;
+				stats[player]->setProficiency(PRO_LOCKPICKING, oldTinkering);
 			}
 		}
 		else if ( isTinkeringBot && item->tinkeringBotIsMaxHealth()
@@ -13780,8 +13774,8 @@ GenericGUIMenu::TinkerGUI_t::TinkerActions_t GenericGUIMenu::TinkerGUI_t::setIte
 				}
 				else
 				{
-					int oldTinkering = stats[player]->PROFICIENCIES[PRO_LOCKPICKING];
-					stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 100;
+					int oldTinkering = stats[player]->getProficiency(PRO_LOCKPICKING);
+					stats[player]->setProficiencyUnsafe(PRO_LOCKPICKING, 999);
 					Sint32 oldPER = stats[player]->PER;
 					stats[player]->PER += -statGetPER(stats[player], players[player]->entity);
 					itemRequirement = parentGUI.tinkeringPlayerHasSkillLVLToCraft(item) * 20; // manually hack this to max to get requirement
@@ -13790,7 +13784,7 @@ GenericGUIMenu::TinkerGUI_t::TinkerActions_t GenericGUIMenu::TinkerGUI_t::setIte
 						itemRequirement = TINKER_MIN_ITEM_SKILL_REQ;
 					}
 					stats[player]->PER = oldPER;
-					stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = oldTinkering;
+					stats[player]->setProficiency(PRO_LOCKPICKING, oldTinkering);
 				}
 			}
 		}
@@ -14799,7 +14793,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		}
 	}
 
-	int skillLVL = (stats[playernum]->PROFICIENCIES[PRO_ALCHEMY] + statGetINT(stats[playernum], players[playernum]->entity));
+	int skillLVL = (stats[playernum]->getModifiedProficiency(PRO_ALCHEMY) + statGetINT(stats[playernum], players[playernum]->entity));
 	Uint32 negativeColor = hudColors.characterSheetRed;
 	Uint32 neutralColor = hudColors.characterSheetLightNeutral;
 	Uint32 positiveColor = hudColors.characterSheetGreen;
@@ -16375,7 +16369,7 @@ void GenericGUIMenu::AlchemyGUI_t::setItemDisplayNameAndPrice(Item* item, bool i
 			int skillLVL = 0;
 			if ( stats[parentGUI.getPlayer()] )
 			{
-				skillLVL = stats[parentGUI.getPlayer()]->PROFICIENCIES[PRO_ALCHEMY] / 20; // 0 to 5;
+				skillLVL = stats[parentGUI.getPlayer()]->getModifiedProficiency(PRO_ALCHEMY) / 20; // 0 to 5;
 			}
 			snprintf(buf, sizeof(buf), "%s\n%d%%", Language::get(4163), 50 + skillLVL * 10);
 		}
@@ -21302,7 +21296,6 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 	auto actionPromptImg = baseFrame->findImage("action prompt glyph");
 	//auto actionModifierImg = baseFrame->findImage("action modifier glyph");
 
-	//int skillLVL = (stats[playernum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[playernum], players[playernum]->entity));
 	Uint32 negativeColor = hudColors.characterSheetRed;
 	Uint32 neutralColor = hudColors.characterSheetLightNeutral;
 	Uint32 positiveColor = hudColors.characterSheetGreen;

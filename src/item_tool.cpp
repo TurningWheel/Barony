@@ -119,7 +119,7 @@ void Item::applySkeletonKey(int player, Entity& entity)
 
 void Item::applyLockpick(int player, Entity& entity)
 {
-	bool capstoneUnlocked = (stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= CAPSTONE_LOCKPICKING_UNLOCK);
+	bool capstoneUnlocked = (stats[player]->getModifiedProficiency(PRO_LOCKPICKING) >= CAPSTONE_LOCKPICKING_UNLOCK);
 	if ( entity.behavior == &actBomb )
 	{
 		Entity* gyrobotUsing = nullptr;
@@ -198,12 +198,12 @@ void Item::applyLockpick(int player, Entity& entity)
 			// 20 skill is 4-5 damage
 			// 60 skill is 6-11 damage
 			// 100 skill is 8-17 damage
-			int lockpickDamageToChest = 3 + stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 20
-				+ local_rng.rand() % std::max(1, stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10);
+			int lockpickDamageToChest = 3 + stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 20
+				+ local_rng.rand() % std::max(1, stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 10);
 			entity.chestLockpickHealth = std::max(0, entity.chestLockpickHealth - lockpickDamageToChest);
 			bool unlockedFromLockpickHealth = (entity.chestLockpickHealth == 0);
 
-			if ( capstoneUnlocked || stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > local_rng.rand() % 200
+			if ( capstoneUnlocked || stats[player]->getModifiedProficiency(PRO_LOCKPICKING) > local_rng.rand() % 200
 				|| unlockedFromLockpickHealth )
 			{
 				//Unlock chest.
@@ -226,7 +226,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				}
 				if ( !entity.chestPreventLockpickCapstoneExploit )
 				{
-					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_EXPERT )
+					if ( stats[player]->getProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_EXPERT )
 					{
 						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 					}
@@ -239,7 +239,7 @@ void Item::applyLockpick(int player, Entity& entity)
 					}
 
 					// based on tinkering skill, add some bonus scrap materials inside chest. (50-150%)
-					if ( (50 + 10 * (stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10)) > local_rng.rand() % 100 )
+					if ( (50 + 10 * (stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 10)) > local_rng.rand() % 100 )
 					{
 						int metalscrap = 5 + local_rng.rand() % 6;
 						int magicscrap = 5 + local_rng.rand() % 11;
@@ -264,7 +264,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				bool tryDegradeLockpick = true;
 				if ( !entity.chestPreventLockpickCapstoneExploit )
 				{
-					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_EXPERT )
+					if ( stats[player]->getProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_EXPERT )
 					{
 						if ( local_rng.rand() % 10 == 0 )
 						{
@@ -331,8 +331,8 @@ void Item::applyLockpick(int player, Entity& entity)
 			// 20 skill is 4-5 damage
 			// 60 skill is 6-11 damage
 			// 100 skill is 8-17 damage
-			int lockpickDamageToDoor = 3 + stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 20
-				+ local_rng.rand() % std::max(1, stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10);
+			int lockpickDamageToDoor = 3 + stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 20
+				+ local_rng.rand() % std::max(1, stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 10);
 			entity.doorLockpickHealth = std::max(0, entity.doorLockpickHealth - lockpickDamageToDoor);
 			bool unlockedFromLockpickHealth = (entity.doorLockpickHealth == 0);
 
@@ -342,7 +342,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(3101)); // disabled.
 			}
 			else if ( capstoneUnlocked 
-				|| stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > local_rng.rand() % 200
+				|| stats[player]->getModifiedProficiency(PRO_LOCKPICKING) > local_rng.rand() % 200
 				|| unlockedFromLockpickHealth )
 			{
 				//Unlock door.
@@ -351,7 +351,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				entity.doorLocked = 0;
 				if ( !entity.doorPreventLockpickExploit )
 				{
-					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_SKILLED )
+					if ( stats[player]->getProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_SKILLED )
 					{
 						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 					}
@@ -373,7 +373,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				bool tryDegradeLockpick = true;
 				if ( !entity.doorPreventLockpickExploit )
 				{
-					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_SKILLED )
+					if ( stats[player]->getProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_SKILLED )
 					{
 						if ( local_rng.rand() % 10 == 0 )
 						{
@@ -461,8 +461,8 @@ void Item::applyLockpick(int player, Entity& entity)
 					auto& rng = entity.entity_rng ? *entity.entity_rng : local_rng;
 
 					messagePlayer(player, MESSAGE_INTERACTION, Language::get(2524), getName(), getMonsterLocalizedName(myStats->type).c_str());
-					int chance = stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 20 + 1;
-					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= 60 || (local_rng.rand() % chance > 0) )
+					int chance = stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 20 + 1;
+					if ( stats[player]->getModifiedProficiency(PRO_LOCKPICKING) >= 60 || (local_rng.rand() % chance > 0) )
 					{
 						// 100% >= 60 lockpicking. 40 = 66%, 20 = 50%, 0 = 0%
 						entity.monsterSpecialState = AUTOMATON_MALFUNCTION_START;
@@ -483,17 +483,17 @@ void Item::applyLockpick(int player, Entity& entity)
 						int qtyMagicScrap = 8 + rng.rand() % 6;
 						if ( stats[player] )
 						{
-							if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_MASTER )
+							if ( stats[player]->getModifiedProficiency(PRO_LOCKPICKING) >= SKILL_LEVEL_MASTER )
 							{
 								qtyMetalScrap += 5 + rng.rand() % 6; // 10-20 total
 								qtyMagicScrap += 8 + rng.rand() % 11; // 16-31 total
 							}
-							else if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_EXPERT )
+							else if ( stats[player]->getModifiedProficiency(PRO_LOCKPICKING) >= SKILL_LEVEL_EXPERT )
 							{
 								qtyMetalScrap += 3 + rng.rand() % 4; // 8-16 total
 								qtyMagicScrap += 5 + rng.rand() % 8; // 13-25 total
 							}
-							else if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_SKILLED )
+							else if ( stats[player]->getModifiedProficiency(PRO_LOCKPICKING) >= SKILL_LEVEL_SKILLED )
 							{
 								qtyMetalScrap += 1 + rng.rand() % 4; // 6-14 total
 								qtyMagicScrap += 3 + rng.rand() % 4; // 11-19 total

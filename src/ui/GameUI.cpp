@@ -9962,15 +9962,15 @@ void Player::HUD_t::updateActionPrompts()
 						break;
 					}
 				}
-				if ( stats[player.playernum]->PROFICIENCIES[skillForPrompt] >= SKILL_LEVEL_LEGENDARY )
+				if ( stats[player.playernum]->getModifiedProficiency(skillForPrompt) >= SKILL_LEVEL_LEGENDARY )
 				{
 					imgBacking->path = actionPromptBackingIconPath100;
 				}
-				else if ( stats[player.playernum]->PROFICIENCIES[skillForPrompt] >= SKILL_LEVEL_EXPERT )
+				else if ( stats[player.playernum]->getModifiedProficiency(skillForPrompt) >= SKILL_LEVEL_EXPERT )
 				{
 					imgBacking->path = actionPromptBackingIconPath60;
 				}
-				else if ( stats[player.playernum]->PROFICIENCIES[skillForPrompt] >= SKILL_LEVEL_BASIC )
+				else if ( stats[player.playernum]->getModifiedProficiency(skillForPrompt) >= SKILL_LEVEL_BASIC )
 				{
 					imgBacking->path = actionPromptBackingIconPath20;
 				}
@@ -14836,7 +14836,7 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 		if ( skill.skillId == attackHoverTextInfo.proficiency )
 		{
 			skillName = skill.name;
-			skillLVL = stats[playernum]->PROFICIENCIES[attackHoverTextInfo.proficiency];
+			skillLVL = stats[playernum]->getModifiedProficiency(attackHoverTextInfo.proficiency);
 			break;
 		}
 	}
@@ -16001,7 +16001,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					break;
 				case SHEET_CHR:
 				{
-					real_t val = 1 / ((50 + stats[player.playernum]->PROFICIENCIES[PRO_TRADING]) / 150.f); // buy value
+					real_t val = 1 / ((50 + stats[player.playernum]->getModifiedProficiency(PRO_TRADING)) / 150.f); // buy value
 					real_t normalVal = val;
 					//normalVal /= (1.f + statGetCHR(stats[player.playernum], players[player.playernum]->entity) / 20.f);
 					normalVal = std::max(1.0, normalVal);
@@ -16142,7 +16142,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					break;
 				case SHEET_CHR:
 				{
-					real_t val = (50 + stats[player.playernum]->PROFICIENCIES[PRO_TRADING]) / 150.f; // sell value
+					real_t val = (50 + stats[player.playernum]->getModifiedProficiency(PRO_TRADING)) / 150.f; // sell value
 					real_t normalVal = val;
 					normalVal *= (1.f + statGetCHR(stats[player.playernum], players[player.playernum]->entity) / 20.f);
 					normalVal = std::min(1.0, normalVal);
@@ -16750,15 +16750,15 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 								break;
 							}
 						}
-						if ( stats[player.playernum]->PROFICIENCIES[attackHoverTextInfo.proficiency] >= SKILL_LEVEL_LEGENDARY )
+						if ( stats[player.playernum]->getModifiedProficiency(attackHoverTextInfo.proficiency) >= SKILL_LEVEL_LEGENDARY )
 						{
 							glyphBacking->path = actionPromptBackingIconPath100;
 						}
-						else if ( stats[player.playernum]->PROFICIENCIES[attackHoverTextInfo.proficiency] >= SKILL_LEVEL_EXPERT )
+						else if ( stats[player.playernum]->getModifiedProficiency(attackHoverTextInfo.proficiency) >= SKILL_LEVEL_EXPERT )
 						{
 							glyphBacking->path = actionPromptBackingIconPath60;
 						}
-						else if ( stats[player.playernum]->PROFICIENCIES[attackHoverTextInfo.proficiency] >= SKILL_LEVEL_BASIC )
+						else if ( stats[player.playernum]->getModifiedProficiency(attackHoverTextInfo.proficiency) >= SKILL_LEVEL_BASIC )
 						{
 							glyphBacking->path = actionPromptBackingIconPath20;
 						}
@@ -16785,15 +16785,15 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 							break;
 						}
 					}
-					if ( stats[player.playernum]->PROFICIENCIES[PRO_SHIELD] >= SKILL_LEVEL_LEGENDARY )
+					if ( stats[player.playernum]->getModifiedProficiency(PRO_SHIELD) >= SKILL_LEVEL_LEGENDARY )
 					{
 						glyphBacking->path = actionPromptBackingIconPath100;
 					}
-					else if ( stats[player.playernum]->PROFICIENCIES[PRO_SHIELD] >= SKILL_LEVEL_EXPERT )
+					else if ( stats[player.playernum]->getModifiedProficiency(PRO_SHIELD) >= SKILL_LEVEL_EXPERT )
 					{
 						glyphBacking->path = actionPromptBackingIconPath60;
 					}
-					else if ( stats[player.playernum]->PROFICIENCIES[PRO_SHIELD] >= SKILL_LEVEL_BASIC )
+					else if ( stats[player.playernum]->getModifiedProficiency(PRO_SHIELD) >= SKILL_LEVEL_BASIC )
 					{
 						glyphBacking->path = actionPromptBackingIconPath20;
 					}
@@ -16944,7 +16944,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 						if ( skill.skillId == PRO_SHIELD )
 						{
 							skillName = skill.name;
-							skillLVL = stats[player.playernum]->PROFICIENCIES[skill.skillId];
+							skillLVL = stats[player.playernum]->getModifiedProficiency(skill.skillId);
 							break;
 						}
 					}
@@ -17437,14 +17437,14 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_ac_entry_items_bonus").c_str());
 					Sint32 CON = statGetCON(stats[player.playernum], players[player.playernum]->entity);
 
-					Sint32 oldSkillLVL = stats[player.playernum]->PROFICIENCIES[PRO_SHIELD];
+					Sint32 oldSkillLVL = stats[player.playernum]->getProficiency(PRO_SHIELD);
 					bool oldDefending = stats[player.playernum]->defending;
 					stats[player.playernum]->defending = false;
-					stats[player.playernum]->PROFICIENCIES[PRO_SHIELD] = 0;
+					stats[player.playernum]->setProficiencyUnsafe(PRO_SHIELD, -999);
 
 					Sint32 armor = AC(stats[player.playernum]);
 					stats[player.playernum]->defending = oldDefending;
-					stats[player.playernum]->PROFICIENCIES[PRO_SHIELD] = oldSkillLVL;
+					stats[player.playernum]->setProficiency(PRO_SHIELD, oldSkillLVL);
 
 					Sint32 itemsEffectBonus = armor - CON;
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_ac_bonus_format").c_str(), itemsEffectBonus);
@@ -17699,14 +17699,14 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				{
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_ac_passive_bonus").c_str());
 
-					Sint32 oldSkillLVL = stats[player.playernum]->PROFICIENCIES[PRO_SHIELD];
+					Sint32 oldSkillLVL = stats[player.playernum]->getProficiency(PRO_SHIELD);
 					bool oldDefending = stats[player.playernum]->defending;
 					stats[player.playernum]->defending = false;
 
 					Sint32 armor = AC(stats[player.playernum]);
-					stats[player.playernum]->PROFICIENCIES[PRO_SHIELD] = 0;
+					stats[player.playernum]->setProficiencyUnsafe(PRO_SHIELD, -999);
 					Sint32 armorNoSkill = AC(stats[player.playernum]);
-					stats[player.playernum]->PROFICIENCIES[PRO_SHIELD] = oldSkillLVL;
+					stats[player.playernum]->setProficiency(PRO_SHIELD, oldSkillLVL);
 					stats[player.playernum]->defending = oldDefending;
 
 					Sint32 passiveBonus = armor - armorNoSkill;
@@ -20215,7 +20215,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 	bool hiddenItemInGUI = false;
 	if ( item->itemSpecialShopConsumable )
 	{
-		if ( stats[player]->PROFICIENCIES[PRO_TRADING] + statGetCHR(stats[player], players[player]->entity) < (((int)item->itemRequireTradingSkillInShop) * SHOP_CONSUMABLE_SKILL_REQ_PER_POINT) )
+		if ( stats[player]->getModifiedProficiency(PRO_TRADING) + statGetCHR(stats[player], players[player]->entity) < (((int)item->itemRequireTradingSkillInShop) * SHOP_CONSUMABLE_SKILL_REQ_PER_POINT) )
 		{
 			hiddenItemInGUI = true;
 		}
@@ -31000,18 +31000,18 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 	{
 		if ( tag == "STEALTH_VIS_REDUCTION" )
 		{
-			//val = stats[playernum]->PROFICIENCIES[proficiency] * 2 * 100 / 512.f; // % visibility reduction
-			val = 100.f * (255 - TOUCHRANGE) * (1.0 * (stats[playernum]->PROFICIENCIES[PRO_STEALTH] / 100.f)) / 255.f;
+			//val = stats[playernum]->getModifiedProficiency(proficiency) * 2 * 100 / 512.f; // % visibility reduction
+			val = 100.f * (255 - TOUCHRANGE) * (1.0 * (stats[playernum]->getModifiedProficiency(PRO_STEALTH) / 100.f)) / 255.f;
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "STEALTH_SNEAK_VIS" )
 		{
-			val = (2 + (stats[playernum]->PROFICIENCIES[proficiency] / 40)); // night vision when sneaking
+			val = (2 + (stats[playernum]->getModifiedProficiency(proficiency) / 40)); // night vision when sneaking
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "STEALTH_BACKSTAB" )
 		{
-			val = (stats[playernum]->PROFICIENCIES[proficiency] / 20 + 2) * 2; // backstab dmg
+			val = (stats[playernum]->getModifiedProficiency(proficiency) / 20 + 2) * 2; // backstab dmg
 			if ( skillCapstoneUnlocked(playernum, proficiency) )
 			{
 				val *= 2;
@@ -31039,11 +31039,11 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		{
 			if ( proficiency == PRO_POLEARM )
 			{
-				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 3.f; // lowest damage roll
+				val = 100 - (100 - stats[playernum]->getModifiedProficiency(proficiency)) / 3.f; // lowest damage roll
 			}
 			else
 			{
-				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 2.f; // lowest damage roll
+				val = 100 - (100 - stats[playernum]->getModifiedProficiency(proficiency)) / 2.f; // lowest damage roll
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
@@ -31051,21 +31051,21 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		{
 			if ( proficiency == PRO_POLEARM )
 			{
-				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+				val = -25 + (stats[playernum]->getModifiedProficiency(proficiency) / 2); // -25% to +25%
 			}
 			else
 			{
-				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+				val = -25 + (stats[playernum]->getModifiedProficiency(proficiency) / 2); // -25% to +25%
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "RANGED_DEGRADE_CHANCE" )
 		{
-			val = 50 + static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20) * 10;
+			val = 50 + static_cast<int>(stats[playernum]->getModifiedProficiency(proficiency) / 20) * 10;
 			if ( stats[playernum]->type == GOBLIN )
 			{
 				val += 20;
-				if ( stats[playernum]->PROFICIENCIES[proficiency] < SKILL_LEVEL_LEGENDARY )
+				if ( stats[playernum]->getModifiedProficiency(proficiency) < SKILL_LEVEL_LEGENDARY )
 				{
 					val = std::min(val, 90.0);
 				}
@@ -31082,7 +31082,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "RANGED_THROWN_DMG" )
 		{
-			int skillLVL = stats[playernum]->PROFICIENCIES[proficiency] / 20; // thrown dmg bonus
+			int skillLVL = stats[playernum]->getModifiedProficiency(proficiency) / 20; // thrown dmg bonus
 			// +0% baseline
 			val = 100 * (thrownDamageSkillMultipliers[std::min(skillLVL, 5)] - thrownDamageSkillMultipliers[0]);
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
@@ -31109,7 +31109,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "BLOCK_DEGRADE_NORMAL_CHANCE" )
 		{
 			val = 25 + (stats[playernum]->type == GOBLIN ? 10 : 0); // degrade > 0 dmg taken
-			val += 2 * (static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 10));
+			val += 2 * (static_cast<int>(stats[playernum]->getModifiedProficiency(proficiency) / 10));
 			if ( skillCapstoneUnlocked(playernum, proficiency) )
 			{
 				val = 0.0;
@@ -31127,7 +31127,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			{
 				val = 40 + (stats[playernum]->type == GOBLIN ? 10 : 0);
 			}
-			val += 2 * (static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 10));
+			val += 2 * (static_cast<int>(stats[playernum]->getModifiedProficiency(proficiency) / 10));
 			if ( skillCapstoneUnlocked(playernum, proficiency) )
 			{
 				val = 0.0;
@@ -31146,11 +31146,11 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		{
 			if ( proficiency == PRO_POLEARM )
 			{
-				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 3.f; // lowest damage roll
+				val = 100 - (100 - stats[playernum]->getModifiedProficiency(proficiency)) / 3.f; // lowest damage roll
 			}
 			else
 			{
-				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 2.f; // lowest damage roll
+				val = 100 - (100 - stats[playernum]->getModifiedProficiency(proficiency)) / 2.f; // lowest damage roll
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
@@ -31158,23 +31158,23 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		{
 			if ( proficiency == PRO_POLEARM )
 			{
-				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+				val = -25 + (stats[playernum]->getModifiedProficiency(proficiency) / 2); // -25% to +25%
 			}
 			else
 			{
-				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+				val = -25 + (stats[playernum]->getModifiedProficiency(proficiency) / 2); // -25% to +25%
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "UNARMED_BONUS_DMG" )
 		{
-			val = static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20);
+			val = static_cast<int>(stats[playernum]->getModifiedProficiency(proficiency) / 20);
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "GLOVE_DEGRADE_CHANCE" )
 		{
 			val = 100 + (stats[playernum]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
-			val += (static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20)) * 10;
+			val += (static_cast<int>(stats[playernum]->getModifiedProficiency(proficiency) / 20)) * 10;
 			if ( svFlags & SV_FLAG_HARDCORE )
 			{
 				val *= 2;
@@ -31192,7 +31192,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "GLOVE_DEGRADE0_CHANCE" )
 		{
 			val = 8 + (stats[playernum]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
-			val += static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20);
+			val += static_cast<int>(stats[playernum]->getModifiedProficiency(proficiency) / 20);
 			if ( svFlags & SV_FLAG_HARDCORE )
 			{
 				val *= 2;
@@ -31209,7 +31209,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "UNARMED_KNOCKBACK_DIST" )
 		{
-			val = static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20) * 20;
+			val = static_cast<int>(stats[playernum]->getModifiedProficiency(proficiency) / 20) * 20;
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		return buf;
@@ -31220,11 +31220,11 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		{
 			if ( proficiency == PRO_POLEARM )
 			{
-				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 3.f; // lowest damage roll
+				val = 100 - (100 - stats[playernum]->getModifiedProficiency(proficiency)) / 3.f; // lowest damage roll
 			}
 			else
 			{
-				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 2.f; // lowest damage roll
+				val = 100 - (100 - stats[playernum]->getModifiedProficiency(proficiency)) / 2.f; // lowest damage roll
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
@@ -31232,18 +31232,18 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		{
 			if ( proficiency == PRO_POLEARM )
 			{
-				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+				val = -25 + (stats[playernum]->getModifiedProficiency(proficiency) / 2); // -25% to +25%
 			}
 			else
 			{
-				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+				val = -25 + (stats[playernum]->getModifiedProficiency(proficiency) / 2); // -25% to +25%
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "SWORD_DEGRADE_CHANCE" )
 		{
 			val = 50 + (stats[playernum]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
-			val += (static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20)) * 10;
+			val += (static_cast<int>(stats[playernum]->getModifiedProficiency(proficiency) / 20)) * 10;
 			if ( svFlags & SV_FLAG_HARDCORE )
 			{
 				val *= 2;
@@ -31261,7 +31261,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "SWORD_DEGRADE0_CHANCE" )
 		{
 			val = 4 + (stats[playernum]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
-			val += static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20);
+			val += static_cast<int>(stats[playernum]->getModifiedProficiency(proficiency) / 20);
 			if ( svFlags & SV_FLAG_HARDCORE )
 			{
 				val *= 2;
@@ -31284,11 +31284,11 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		{
 			if ( proficiency == PRO_POLEARM )
 			{
-				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 3.f; // lowest damage roll
+				val = 100 - (100 - stats[playernum]->getModifiedProficiency(proficiency)) / 3.f; // lowest damage roll
 			}
 			else
 			{
-				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 2.f; // lowest damage roll
+				val = 100 - (100 - stats[playernum]->getModifiedProficiency(proficiency)) / 2.f; // lowest damage roll
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
@@ -31296,18 +31296,18 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		{
 			if ( proficiency == PRO_POLEARM )
 			{
-				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+				val = -25 + (stats[playernum]->getModifiedProficiency(proficiency) / 2); // -25% to +25%
 			}
 			else
 			{
-				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+				val = -25 + (stats[playernum]->getModifiedProficiency(proficiency) / 2); // -25% to +25%
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "POLEARM_DEGRADE_CHANCE" )
 		{
 			val = 50 + (stats[playernum]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
-			val += (static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20)) * 10;
+			val += (static_cast<int>(stats[playernum]->getModifiedProficiency(proficiency) / 20)) * 10;
 			if ( svFlags & SV_FLAG_HARDCORE )
 			{
 				val *= 2;
@@ -31325,7 +31325,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "POLEARM_DEGRADE0_CHANCE" )
 		{
 			val = 4 + (stats[playernum]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
-			val += static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20);
+			val += static_cast<int>(stats[playernum]->getModifiedProficiency(proficiency) / 20);
 			if ( svFlags & SV_FLAG_HARDCORE )
 			{
 				val *= 2;
@@ -31348,11 +31348,11 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		{
 			if ( proficiency == PRO_POLEARM )
 			{
-				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 3.f; // lowest damage roll
+				val = 100 - (100 - stats[playernum]->getModifiedProficiency(proficiency)) / 3.f; // lowest damage roll
 			}
 			else
 			{
-				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 2.f; // lowest damage roll
+				val = 100 - (100 - stats[playernum]->getModifiedProficiency(proficiency)) / 2.f; // lowest damage roll
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
@@ -31360,18 +31360,18 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		{
 			if ( proficiency == PRO_POLEARM )
 			{
-				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+				val = -25 + (stats[playernum]->getModifiedProficiency(proficiency) / 2); // -25% to +25%
 			}
 			else
 			{
-				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+				val = -25 + (stats[playernum]->getModifiedProficiency(proficiency) / 2); // -25% to +25%
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "AXE_DEGRADE_CHANCE" )
 		{
 			val = 50 + (stats[playernum]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
-			val += (static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20)) * 10;
+			val += (static_cast<int>(stats[playernum]->getModifiedProficiency(proficiency) / 20)) * 10;
 			if ( svFlags & SV_FLAG_HARDCORE )
 			{
 				val *= 2;
@@ -31389,7 +31389,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "AXE_DEGRADE0_CHANCE" )
 		{
 			val = 4 + (stats[playernum]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
-			val += static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20);
+			val += static_cast<int>(stats[playernum]->getModifiedProficiency(proficiency) / 20);
 			if ( svFlags & SV_FLAG_HARDCORE )
 			{
 				val *= 2;
@@ -31412,11 +31412,11 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		{
 			if ( proficiency == PRO_POLEARM )
 			{
-				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 3.f; // lowest damage roll
+				val = 100 - (100 - stats[playernum]->getModifiedProficiency(proficiency)) / 3.f; // lowest damage roll
 			}
 			else
 			{
-				val = 100 - (100 - stats[playernum]->PROFICIENCIES[proficiency]) / 2.f; // lowest damage roll
+				val = 100 - (100 - stats[playernum]->getModifiedProficiency(proficiency)) / 2.f; // lowest damage roll
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
@@ -31424,18 +31424,18 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		{
 			if ( proficiency == PRO_POLEARM )
 			{
-				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+				val = -25 + (stats[playernum]->getModifiedProficiency(proficiency) / 2); // -25% to +25%
 			}
 			else
 			{
-				val = -25 + (stats[playernum]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+				val = -25 + (stats[playernum]->getModifiedProficiency(proficiency) / 2); // -25% to +25%
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "MACE_DEGRADE_CHANCE" )
 		{
 			val = 50 + (stats[playernum]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
-			val += (static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20)) * 10;
+			val += (static_cast<int>(stats[playernum]->getModifiedProficiency(proficiency) / 20)) * 10;
 			if ( svFlags & SV_FLAG_HARDCORE )
 			{
 				val *= 2;
@@ -31453,7 +31453,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "MACE_DEGRADE0_CHANCE" )
 		{
 			val = 4 + (stats[playernum]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
-			val += static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20);
+			val += static_cast<int>(stats[playernum]->getModifiedProficiency(proficiency) / 20);
 			if ( svFlags & SV_FLAG_HARDCORE )
 			{
 				val *= 2;
@@ -31474,7 +31474,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 	{
 		if ( tag == "SWIM_SPEED_TOTAL" )
 		{
-			val = (((stats[playernum]->PROFICIENCIES[proficiency] / 100.f) * 50.f) + 50); // water movement speed
+			val = (((stats[playernum]->getModifiedProficiency(proficiency) / 100.f) * 50.f) + 50); // water movement speed
 			if ( stats[playernum]->type == SKELETON )
 			{
 				val *= .5;
@@ -31492,7 +31492,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "SWIM_SPEED_BONUS" )
 		{
-			val = (((stats[playernum]->PROFICIENCIES[proficiency] / 100.f) * 50.f)); // water movement speed
+			val = (((stats[playernum]->getModifiedProficiency(proficiency) / 100.f) * 50.f)); // water movement speed
 			if ( stats[playernum]->type == SKELETON )
 			{
 				val *= .5;
@@ -31505,17 +31505,17 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 	{
 		if ( tag == "LEADER_MAX_FOLLOWERS" )
 		{
-			val = std::min(8, std::max(4, 2 * (stats[playernum]->PROFICIENCIES[proficiency] / 20))); // max followers
+			val = std::min(8, std::max(4, 2 * (stats[playernum]->getModifiedProficiency(proficiency) / 20))); // max followers
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "LEADER_FOLLOWER_SPEED" )
 		{
-			val = 1 + (stats[playernum]->PROFICIENCIES[proficiency] / 20);
+			val = 1 + (stats[playernum]->getModifiedProficiency(proficiency) / 20);
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "LEADER_CHARM_MONSTER" )
 		{
-			val = 80 + ((statGetCHR(stats[playernum], player) + stats[playernum]->PROFICIENCIES[proficiency]) / 20) * 10;
+			val = 80 + ((statGetCHR(stats[playernum], player) + stats[playernum]->getModifiedProficiency(proficiency)) / 20) * 10;
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "LIST_LEADER_AVAILABLE_FOLLOWERS" )
@@ -31598,7 +31598,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 	{
 		if ( tag == "TRADING_BUY_PRICE" )
 		{
-			val = 1 / ((50 + stats[playernum]->PROFICIENCIES[proficiency]) / 150.f); // buy value
+			val = 1 / ((50 + stats[playernum]->getModifiedProficiency(proficiency)) / 150.f); // buy value
 			//val /= 1.f + statGetCHR(stats[playernum], players[playernum]->entity) / 20.f;
 			val = std::max(1.0, val);
 			val = val * 100.0 - 100.0;
@@ -31606,7 +31606,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "TRADING_SELL_PRICE" )
 		{
-			val = (50 + stats[playernum]->PROFICIENCIES[proficiency]) / 150.f; // sell value
+			val = (50 + stats[playernum]->getModifiedProficiency(proficiency)) / 150.f; // sell value
 			val *= 1.f + statGetCHR(stats[playernum], players[playernum]->entity) / 20.f;
 			val = std::min(1.0, val);
 			val = val * 100.0 - 100.0;
@@ -31624,7 +31624,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			}
 			else
 			{
-				val = (60.f / (stats[playernum]->PROFICIENCIES[proficiency] + 1)) / (TICKS_PER_SECOND); // appraisal time per gold value
+				val = (60.f / (stats[playernum]->getModifiedProficiency(proficiency) + 1)) / (TICKS_PER_SECOND); // appraisal time per gold value
 				snprintf(buf, sizeof(buf), rawValue.c_str(), val);
 			}
 		}
@@ -31636,7 +31636,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			}
 			else
 			{
-				val = 10 * (stats[playernum]->PROFICIENCIES[proficiency] + (statGetPER(stats[playernum], player) * 5)); // max gold value can appraise
+				val = 10 * (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * 5)); // max gold value can appraise
 				if ( val < 0.0 )
 				{
 					snprintf(buf, sizeof(buf), "??? Gold");
@@ -31654,7 +31654,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "APPRAISE_WORTHLESS_GLASS" )
 		{
-			if ( (stats[playernum]->PROFICIENCIES[proficiency] + (statGetPER(stats[playernum], player) * 5)) >= 100 )
+			if ( (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * 5)) >= 100 )
 			{
 				snprintf(buf, sizeof(buf), rawValue.c_str(), Language::get(1314)); // yes
 			}
@@ -31670,8 +31670,8 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		Sint32 PER = statGetPER(stats[playernum], player);
 		if ( tag == "TINKERING_LOCKPICK_CHESTS_DOORS" )
 		{
-			val = stats[playernum]->PROFICIENCIES[proficiency] / 2.f; // lockpick chests/doors
-			if ( stats[playernum]->PROFICIENCIES[proficiency] == SKILL_LEVEL_LEGENDARY )
+			val = stats[playernum]->getModifiedProficiency(proficiency) / 2.f; // lockpick chests/doors
+			if ( stats[playernum]->getModifiedProficiency(proficiency) == SKILL_LEVEL_LEGENDARY )
 			{
 				val = 100.f;
 			}
@@ -31679,25 +31679,25 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "TINKERING_SCRAP_CHESTS" )
 		{
-			val = std::min(100.f, stats[playernum]->PROFICIENCIES[proficiency] + 50.f);
+			val = std::min(100.f, stats[playernum]->getModifiedProficiency(proficiency) + 50.f);
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "TINKERING_SCRAP_AUTOMATONS" )
 		{
-			if ( stats[playernum]->PROFICIENCIES[proficiency] >= SKILL_LEVEL_EXPERT )
+			if ( stats[playernum]->getModifiedProficiency(proficiency) >= SKILL_LEVEL_EXPERT )
 			{
 				val = 100.f; // lockpick automatons
 			}
 			else
 			{
-				val = (100 - 100 / (static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20 + 1))); // lockpick automatons
+				val = (100 - 100 / (static_cast<int>(stats[playernum]->getModifiedProficiency(proficiency) / 20 + 1))); // lockpick automatons
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "TINKERING_DISARM_ARROWS" )
 		{
-			val = (100 - 100 / (std::max(1, static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 10)))); // disarm arrow traps
-			if ( stats[playernum]->PROFICIENCIES[proficiency] < SKILL_LEVEL_BASIC )
+			val = (100 - 100 / (std::max(1, static_cast<int>(stats[playernum]->getModifiedProficiency(proficiency) / 10)))); // disarm arrow traps
+			if ( stats[playernum]->getModifiedProficiency(proficiency) < SKILL_LEVEL_BASIC )
 			{
 				val = 0.f;
 			}
@@ -31706,7 +31706,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "TINKERING_KIT_SCRAP_BONUS" )
 		{
 			// bonus scrapping chances.
-			int skillLVL = std::min(5, static_cast<int>((stats[playernum]->PROFICIENCIES[proficiency] + PER) / 20));
+			int skillLVL = std::min(5, static_cast<int>((stats[playernum]->getModifiedProficiency(proficiency) + PER) / 20));
 			skillLVL = std::max(0, skillLVL);
 			switch ( skillLVL )
 			{
@@ -31736,11 +31736,11 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			std::string canRepairItems = Language::get(4057); // none
 			char metalbuf[64] = "";
 			char magicbuf[64] = "";
-			if ( (stats[playernum]->PROFICIENCIES[proficiency] + PER + (stats[playernum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_LEGENDARY )
+			if ( (stats[playernum]->getModifiedProficiency(proficiency) + PER + (stats[playernum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_LEGENDARY )
 			{
 				canRepairItems = Language::get(4058); // all
 			}
-			else if ( (stats[playernum]->PROFICIENCIES[proficiency] + PER + (stats[playernum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_MASTER )
+			else if ( (stats[playernum]->getModifiedProficiency(proficiency) + PER + (stats[playernum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_MASTER )
 			{
 				// 2/0
 				snprintf(metalbuf, sizeof(metalbuf), Language::get(4059), 2);
@@ -31751,7 +31751,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 				canRepairItems += "\x1E ";
 				canRepairItems += magicbuf;
 			}
-			else if ( (stats[playernum]->PROFICIENCIES[proficiency] + PER + (stats[playernum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_EXPERT )
+			else if ( (stats[playernum]->getModifiedProficiency(proficiency) + PER + (stats[playernum]->type == AUTOMATON ? 20 : 0)) >= SKILL_LEVEL_EXPERT )
 			{
 				// 1/0
 				snprintf(metalbuf, sizeof(metalbuf), Language::get(4059), 1);
@@ -31775,31 +31775,31 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 	{
 		if ( tag == "ALCHEMY_POTION_EFFECT_DMG" )
 		{
-			int skillLVL = stats[playernum]->PROFICIENCIES[proficiency] / 20;
+			int skillLVL = stats[playernum]->getModifiedProficiency(proficiency) / 20;
 			// +0% baseline
 			val = 100 * (potionDamageSkillMultipliers[std::min(skillLVL, 5)] - potionDamageSkillMultipliers[0]);
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "ALCHEMY_THROWN_IMPACT_DMG" )
 		{
-			int skillLVL = stats[playernum]->PROFICIENCIES[proficiency] / 20;
+			int skillLVL = stats[playernum]->getModifiedProficiency(proficiency) / 20;
 			// +0% baseline
 			val = 100 * (potionDamageSkillMultipliers[std::min(skillLVL, 5)] - potionDamageSkillMultipliers[0]);
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "ALCHEMY_DUPLICATION_CHANCE" )
 		{
-			val = 50.f + static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20) * 10;
+			val = 50.f + static_cast<int>(stats[playernum]->getModifiedProficiency(proficiency) / 20) * 10;
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "ALCHEMY_EMPTY_BOTTLE_CONSUME" )
 		{
-			val = std::min(80, (60 + static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20) * 10));
+			val = std::min(80, (60 + static_cast<int>(stats[playernum]->getModifiedProficiency(proficiency) / 20) * 10));
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "ALCHEMY_EMPTY_BOTTLE_BREW" )
 		{
-			val = 50.f + static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 20) * 5;
+			val = 50.f + static_cast<int>(stats[playernum]->getModifiedProficiency(proficiency) / 20) * 5;
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "ALCHEMY_LEARNT_INGREDIENTS_BASE" )
@@ -31894,13 +31894,13 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			else
 			{
 				val = 0.0;
-				int skill = stats[playernum]->PROFICIENCIES[proficiency];
+				int skill = stats[playernum]->getModifiedProficiency(proficiency);
 				int multiplier = (skill / 20) + 1;
 				val = multiplier;
 				//real_t normalValue = player->getBaseManaRegen(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
-				//stats[playernum]->PROFICIENCIES[proficiency] = 0;
+				//stats[playernum]->getModifiedProficiency(proficiency) = 0;
 				//real_t zeroValue = player->getBaseManaRegen(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
-				//stats[playernum]->PROFICIENCIES[proficiency] = skill;
+				//stats[playernum]->getModifiedProficiency(proficiency) = skill;
 				//
 				//val = (100 * zeroValue / normalValue) - 100;
 				snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
@@ -31909,11 +31909,11 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "CASTING_MP_REGEN_SKILL_BONUS" )
 		{
 			val = 0.0;
-			int skill = stats[playernum]->PROFICIENCIES[proficiency];
+			int skill = stats[playernum]->getProficiency(proficiency);
 			real_t normalValue = getBaseManaRegen(player, *(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
-			stats[playernum]->PROFICIENCIES[proficiency] = 0;
+			stats[playernum]->setProficiencyUnsafe(proficiency, -999);
 			real_t zeroValue = getBaseManaRegen(player, *(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
-			stats[playernum]->PROFICIENCIES[proficiency] = skill;
+			stats[playernum]->setProficiency(proficiency, skill);
 				
 			val = (100 * zeroValue / normalValue) - 100;
 			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
@@ -31943,7 +31943,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "CASTING_SPELLBOOK_FUMBLE" )
 		{
-			int skillLVL = std::min(std::max(0, stats[playernum]->PROFICIENCIES[proficiency] + statGetINT(stats[playernum], player)), 100);
+			int skillLVL = std::min(std::max(0, stats[playernum]->getModifiedProficiency(proficiency) + statGetINT(stats[playernum], player)), 100);
 			skillLVL /= 20;
 			std::string tierName = Language::get(4061);
 			tierName += " ";
@@ -31980,7 +31980,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		if ( tag == "MAGIC_CURRENT_TIER" )
 		{
 			std::string tierName = Language::get(4061);
-			int skillLVL = std::min(stats[playernum]->PROFICIENCIES[proficiency] + statGetINT(stats[playernum], player), 100);
+			int skillLVL = std::min(stats[playernum]->getModifiedProficiency(proficiency) + statGetINT(stats[playernum], player), 100);
 			if ( skillLVL < 0 )
 			{
 				tierName = Language::get(4057); // none
@@ -32023,7 +32023,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "MAGIC_CURRENT_TIER_SPELLS" )
 		{
-			int skillLVL = std::min(stats[playernum]->PROFICIENCIES[proficiency] + statGetINT(stats[playernum], player), 100);
+			int skillLVL = std::min(stats[playernum]->getModifiedProficiency(proficiency) + statGetINT(stats[playernum], player), 100);
 			if ( skillLVL >= 0 )
 			{
 				skillLVL /= 20;
@@ -32609,14 +32609,14 @@ void Player::SkillSheet_t::processSkillSheet()
 		{
 			if ( index >= 8 )
 			{
-				if ( stats[player.playernum]->PROFICIENCIES[skillEntry.skillId] >= SKILL_LEVEL_LEGENDARY )
+				if ( stats[player.playernum]->getModifiedProficiency(skillEntry.skillId) >= SKILL_LEVEL_LEGENDARY )
 				{
 					leftBinary[7 - (index - 8)] = '1';
 				}
 			}
 			else
 			{
-				if ( stats[player.playernum]->PROFICIENCIES[skillEntry.skillId] >= SKILL_LEVEL_LEGENDARY )
+				if ( stats[player.playernum]->getModifiedProficiency(skillEntry.skillId) >= SKILL_LEVEL_LEGENDARY )
 				{
 					rightBinary[7 - index] = '1';
 				}
@@ -33047,16 +33047,16 @@ void Player::SkillSheet_t::processSkillSheet()
 			}
 
 			if ( !bSkillSheetEntryLoaded
-				|| skillsheetCache[player.playernum][proficiency].proficiencyLevelCached != stats[player.playernum]->PROFICIENCIES[proficiency]
+				|| skillsheetCache[player.playernum][proficiency].proficiencyLevelCached != stats[player.playernum]->getModifiedProficiency(proficiency)
 				|| skillsheetCache[player.playernum][proficiency].selectedSkill != selectedSkill
 				|| skillsheetCache[player.playernum][proficiency].highlightedSkill != highlightedSkill )
 			{
-				if ( skillsheetCache[player.playernum][proficiency].proficiencyLevelCached != stats[player.playernum]->PROFICIENCIES[proficiency]
+				if ( skillsheetCache[player.playernum][proficiency].proficiencyLevelCached != stats[player.playernum]->getModifiedProficiency(proficiency)
 					|| skillsheetCache[player.playernum][proficiency].selectedSkill != selectedSkill )
 				{
 					reblitFrame = true;
 				}
-				skillsheetCache[player.playernum][proficiency].proficiencyLevelCached = stats[player.playernum]->PROFICIENCIES[proficiency];
+				skillsheetCache[player.playernum][proficiency].proficiencyLevelCached = stats[player.playernum]->getModifiedProficiency(proficiency);
 				skillsheetCache[player.playernum][proficiency].selectedSkill = selectedSkill;
 				skillsheetCache[player.playernum][proficiency].highlightedSkill = highlightedSkill;
 				updateSkillAssets = true;
@@ -33066,7 +33066,7 @@ void Player::SkillSheet_t::processSkillSheet()
 			{
 				auto skillLevel = entry->findField("skill level");
 				char skillLevelText[32];
-				snprintf(skillLevelText, sizeof(skillLevelText), "%d", stats[player.playernum]->PROFICIENCIES[proficiency]);
+				snprintf(skillLevelText, sizeof(skillLevelText), "%d", stats[player.playernum]->getModifiedProficiency(proficiency));
 				skillLevel->setText(skillLevelText);
 
 				auto skillIconBg = entry->findImage("skill icon bg");
@@ -33097,7 +33097,7 @@ void Player::SkillSheet_t::processSkillSheet()
 					}
 				}
 
-				if ( stats[player.playernum]->PROFICIENCIES[proficiency] >= SKILL_LEVEL_LEGENDARY )
+				if ( stats[player.playernum]->getModifiedProficiency(proficiency) >= SKILL_LEVEL_LEGENDARY )
 				{
 					//skillIconFg->path = skillSheetData.skillEntries[i].skillIconPathLegend;
 					skillLevel->setTextColor(skillSheetData.legendTextColor);
@@ -33110,7 +33110,7 @@ void Player::SkillSheet_t::processSkillSheet()
 						skillIconBg->path = skillSheetData.iconBgPathLegend;
 					}
 				}
-				else if ( stats[player.playernum]->PROFICIENCIES[proficiency] >= SKILL_LEVEL_EXPERT )
+				else if ( stats[player.playernum]->getModifiedProficiency(proficiency) >= SKILL_LEVEL_EXPERT )
 				{
 					skillLevel->setTextColor(skillSheetData.expertTextColor);
 					if ( selectedSkill == i )
@@ -33122,7 +33122,7 @@ void Player::SkillSheet_t::processSkillSheet()
 						skillIconBg->path = skillSheetData.iconBgPathExpert;
 					}
 				}
-				else if ( stats[player.playernum]->PROFICIENCIES[proficiency] >= SKILL_LEVEL_BASIC )
+				else if ( stats[player.playernum]->getModifiedProficiency(proficiency) >= SKILL_LEVEL_BASIC )
 				{
 					skillLevel->setTextColor(skillSheetData.noviceTextColor);
 					if ( selectedSkill == i )
@@ -33192,7 +33192,7 @@ void Player::SkillSheet_t::processSkillSheet()
 		if ( selectedSkill >= 0 && selectedSkill < skillSheetData.skillEntries.size() )
 		{
 			int proficiency = skillSheetData.skillEntries[selectedSkill].skillId;
-			int proficiencyValue = stats[player.playernum]->PROFICIENCIES[proficiency];
+			int proficiencyValue = stats[player.playernum]->getModifiedProficiency(proficiency);
 
 			bool updateTitle = false;
 			for ( auto& eff_t : skillSheetData.skillEntries[selectedSkill].effects )
@@ -33238,7 +33238,7 @@ void Player::SkillSheet_t::processSkillSheet()
 					skillLvlTitle = Language::get(363);
 				}
 				skillLvlTitle.erase(std::remove(skillLvlTitle.begin(), skillLvlTitle.end(), ' '), skillLvlTitle.end()); // trim whitespace
-				snprintf(skillLvl, sizeof(skillLvl), "%s (%d)", skillLvlTitle.c_str(), stats[player.playernum]->PROFICIENCIES[proficiency]);
+				snprintf(skillLvl, sizeof(skillLvl), "%s (%d)", skillLvlTitle.c_str(), stats[player.playernum]->getModifiedProficiency(proficiency));
 				skillLvlHeaderVal->setText(skillLvl);
 
 				SDL_Rect skillLvlHeaderValPos = skillLvlHeaderVal->getSize();
@@ -33369,11 +33369,11 @@ void Player::SkillSheet_t::processSkillSheet()
 
 					bool bEffUpdated = false;
 					if ( (effect_t.bAllowRealtimeUpdate && (ticks % (std::max(TICKS_PER_SECOND, MAXPLAYERS * 10))) == (player.playernum * 10))
-						|| effect_t.effectUpdatedAtSkillLevel != stats[player.playernum]->PROFICIENCIES[proficiency]
+						|| effect_t.effectUpdatedAtSkillLevel != stats[player.playernum]->getModifiedProficiency(proficiency)
 						|| effect_t.effectUpdatedAtMonsterType != stats[player.playernum]->type
 						|| effect_t.value == "" )
 					{
-						if ( effect_t.effectUpdatedAtSkillLevel != stats[player.playernum]->PROFICIENCIES[proficiency] )
+						if ( effect_t.effectUpdatedAtSkillLevel != stats[player.playernum]->getModifiedProficiency(proficiency) )
 						{
 							skillLVLUpdated = true;
 							bEffUpdated = true;
@@ -33382,7 +33382,7 @@ void Player::SkillSheet_t::processSkillSheet()
 						{
 							bEffUpdated = true;
 						}
-						effect_t.effectUpdatedAtSkillLevel = stats[player.playernum]->PROFICIENCIES[proficiency];
+						effect_t.effectUpdatedAtSkillLevel = stats[player.playernum]->getModifiedProficiency(proficiency);
 						effect_t.effectUpdatedAtMonsterType = stats[player.playernum]->type;
 						std::string oldValue = effect_t.value;
 						effect_t.value = formatSkillSheetEffects(player.playernum, proficiency, effect_t.tag, effect_t.rawValue);

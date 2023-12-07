@@ -3099,9 +3099,6 @@ void Player::init() // for use on new/restart game, UI related
 	hud.resetBars();
 	hud.compactLayoutMode = HUD_t::COMPACT_LAYOUT_INVENTORY;
 	inventoryUI.resetInventory();
-	characterSheet.setDefaultSkillsSheetBox();
-	characterSheet.setDefaultPartySheetBox();
-	characterSheet.setDefaultCharacterSheetBox();
 	paperDoll.clear();
 	minotaurWarning[playernum].deinit();
 	levelUpAnimation[playernum].lvlUps.clear();

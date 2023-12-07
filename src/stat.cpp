@@ -22,6 +22,14 @@
 
 Stat* stats[MAXPLAYERS];
 
+Sint32 Stat::getModifiedProficiency(int skill) const
+{
+	if ( skill >= 0 && skill < NUMPROFICIENCIES )
+	{
+		return std::min(100, std::max(0, PROFICIENCIES[skill]));
+	}
+	return 0;
+}
 
 //Destructor
 Stat::~Stat()
@@ -1236,7 +1244,7 @@ int Stat::getActiveShieldBonus(bool checkShield) const
 {
 	if ( !checkShield )
 	{
-		return (5 + (PROFICIENCIES[PRO_SHIELD] / 5));
+		return (5 + (getModifiedProficiency(PRO_SHIELD) / 5));
 	}
 
 	if ( shield )
@@ -1245,7 +1253,7 @@ int Stat::getActiveShieldBonus(bool checkShield) const
 		{
 			return 0;
 		}
-		return (5 + (PROFICIENCIES[PRO_SHIELD] / 5));
+		return (5 + (getModifiedProficiency(PRO_SHIELD) / 5));
 	}
 	else
 	{
@@ -1257,7 +1265,7 @@ int Stat::getPassiveShieldBonus(bool checkShield) const
 {
 	if ( !checkShield )
 	{
-		return (PROFICIENCIES[PRO_SHIELD] / 25);
+		return (getModifiedProficiency(PRO_SHIELD) / 25);
 	}
 
 	if ( shield )
@@ -1267,7 +1275,7 @@ int Stat::getPassiveShieldBonus(bool checkShield) const
 		{
 			return 0;
 		}
-		return (PROFICIENCIES[PRO_SHIELD] / 25);
+		return (getModifiedProficiency(PRO_SHIELD) / 25);
 	}
 	else
 	{

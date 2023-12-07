@@ -896,7 +896,7 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 			{
 				light /= 2; // halve for sneaking
 			}
-			light -= (std::max(0, light - TOUCHRANGE)) * (1.0 * (myStats.PROFICIENCIES[PRO_STEALTH] / 100.0)); // reduce to 32 as sneak approaches 100
+			light -= (std::max(0, light - TOUCHRANGE)) * (1.0 * (myStats.getModifiedProficiency(PRO_STEALTH) / 100.0)); // reduce to 32 as sneak approaches 100
 			Stat* observerStats = observer->getStats();
 			if ( observerStats && observerStats->EFFECTS[EFF_BLIND] )
 			{
@@ -920,7 +920,7 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 			{
 				light /= 2; // halve for sneaking
 			}
-			light -= (std::max(0, light - TOUCHRANGE)) * (1.0 * (myStats.PROFICIENCIES[PRO_STEALTH] / 100.0)); // reduce to 32 as sneak approaches 100
+			light -= (std::max(0, light - TOUCHRANGE)) * (1.0 * (myStats.getModifiedProficiency(PRO_STEALTH) / 100.0)); // reduce to 32 as sneak approaches 100
 		}
 	}
 	
@@ -1697,9 +1697,9 @@ bool Entity::increaseSkill(int skill, bool notify)
 	bool increased = false;
 
 	Uint32 color = makeColorRGB(255, 255, 0);
-	if ( myStats->PROFICIENCIES[skill] < 100 )
+	if ( myStats->getProficiency(skill) < 100 )
 	{
-		myStats->PROFICIENCIES[skill]++;
+		myStats->setProficiency(skill, myStats->getProficiency(skill) + 1);
 		if ( notify )
 		{
 			if ( player >= 0 )
@@ -1707,11 +1707,11 @@ bool Entity::increaseSkill(int skill, bool notify)
 				messagePlayerColor(player, MESSAGE_SPAM_MISC, color, Language::get(615), getSkillLangEntry(skill));
 				if ( players[player]->isLocalPlayer() )
 				{
-					skillUpAnimation[player].addSkillUp(skill, myStats->PROFICIENCIES[skill] - 1, 1);
+					skillUpAnimation[player].addSkillUp(skill, myStats->getProficiency(skill) - 1, 1);
 				}
 			}
 		}
-		switch ( myStats->PROFICIENCIES[skill] )
+		switch ( myStats->getProficiency(skill) )
 		{
 			case 20:
 				messagePlayerColor(player, MESSAGE_PROGRESSION, color, Language::get(616), getSkillLangEntry(skill));
@@ -1752,7 +1752,7 @@ bool Entity::increaseSkill(int skill, bool notify)
 			}
 		}
 
-		if ( skill == PRO_STEALTH && myStats->PROFICIENCIES[skill] == 100 )
+		if ( skill == PRO_STEALTH && myStats->getProficiency(skill) == 100 )
 		{
 			if ( player >= 0 && client_classes[player] == CLASS_ACCURSED )
 			{
@@ -1761,7 +1761,7 @@ bool Entity::increaseSkill(int skill, bool notify)
 		}
 
 		if ( player >= 0 && stats[player]->playerRace == RACE_GOBLIN && stats[player]->appearance == 0
-			&& myStats->PROFICIENCIES[skill] == 100 )
+			&& myStats->getProficiency(skill) == 100 )
 		{
 			switch ( skill )
 			{
@@ -1781,7 +1781,7 @@ bool Entity::increaseSkill(int skill, bool notify)
 		{
 			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
-				GenericGUI[player].alchemyLearnRecipeOnLevelUp(myStats->PROFICIENCIES[skill]);
+				GenericGUI[player].alchemyLearnRecipeOnLevelUp(myStats->getProficiency(skill));
 			}
 		}
 
@@ -1830,7 +1830,7 @@ bool Entity::increaseSkill(int skill, bool notify)
 		strcpy((char*)net_packet->data, "SKIL");
 		net_packet->data[4] = clientnum;
 		net_packet->data[5] = skill;
-		net_packet->data[6] = myStats->PROFICIENCIES[skill];
+		net_packet->data[6] = myStats->getProficiency(skill);
 		if ( notify )
 		{
 			net_packet->data[6] |= (1 << 7);
@@ -4924,7 +4924,7 @@ Sint32 Entity::getAttack(Entity* my, Stat* myStats, bool isPlayer)
 		if ( isPlayer )
 		{
 			attack = BASE_PLAYER_UNARMED_DAMAGE;
-			attack += (myStats->PROFICIENCIES[PRO_UNARMED] / 20); // 0, 1, 2, 3, 4, 5 damage from total
+			attack += (myStats->getModifiedProficiency(PRO_UNARMED) / 20); // 0, 1, 2, 3, 4, 5 damage from total
 		}
 		if ( myStats->gloves && !shapeshifted )
 		{
@@ -4993,7 +4993,7 @@ Sint32 Entity::getRangedAttack()
 		if ( behavior == &actMonster )
 		{
 			attack += getPER(); // monsters take PER into their ranged attacks to avoid having to increase their speed.
-			attack += entitystats->PROFICIENCIES[PRO_RANGED] / 20; // 0 to 5 bonus attack for monsters
+			attack += entitystats->getModifiedProficiency(PRO_RANGED) / 20; // 0 to 5 bonus attack for monsters
 		}
 	}
 	else
@@ -5022,7 +5022,7 @@ Sint32 Entity::getThrownAttack()
 		return attack;
 	}
 
-	int skillLVL = entitystats->PROFICIENCIES[PRO_RANGED] / 20;
+	int skillLVL = entitystats->getModifiedProficiency(PRO_RANGED) / 20;
 
 	if ( entitystats->weapon )
 	{
@@ -5035,7 +5035,7 @@ Sint32 Entity::getThrownAttack()
 		}
 		else if ( itemCategory(entitystats->weapon) == POTION )
 		{
-			int skillLVL = entitystats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			int skillLVL = entitystats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 			attack += entitystats->weapon->weaponGetAttack(entitystats);
 			/*int dex = getDEX() / 4;
 			attack += dex;*/
@@ -5046,7 +5046,7 @@ Sint32 Entity::getThrownAttack()
 			int dex = getDEX() / 4;
 			attack += dex;
 			attack += entitystats->weapon->weaponGetAttack(entitystats);
-			attack += entitystats->PROFICIENCIES[PRO_RANGED] / 10; // 0 to 10 bonus attack.
+			attack += entitystats->getModifiedProficiency(PRO_RANGED) / 10; // 0 to 10 bonus attack.
 		}
 	}
 	else
@@ -5346,7 +5346,7 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 	{
 		if ( stats[my->monsterAllyIndex] )
 		{
-			DEX += 1 + (stats[my->monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] / 20);
+			DEX += 1 + (stats[my->monsterAllyIndex]->getModifiedProficiency(PRO_LEADERSHIP) / 20);
 		}
 	}
 
@@ -6857,12 +6857,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 				int bowDegradeChance = 50;
 				if ( behavior == &actPlayer )
 				{
-					bowDegradeChance += (stats[skill[2]]->PROFICIENCIES[PRO_RANGED] / 20) * 10;
+					bowDegradeChance += (stats[skill[2]]->getModifiedProficiency(PRO_RANGED) / 20) * 10;
 				}
 				if ( myStats->type == GOBLIN )
 				{
 					bowDegradeChance += 20;
-					if ( myStats->PROFICIENCIES[PRO_RANGED] < SKILL_LEVEL_LEGENDARY )
+					if ( myStats->getModifiedProficiency(PRO_RANGED) < SKILL_LEVEL_LEGENDARY )
 					{
 						bowDegradeChance = std::min(bowDegradeChance, 90);
 					}
@@ -7563,8 +7563,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( weaponskill >= 0 && hit.entity->isColliderWeakToSkill(weaponskill) )
 						{
-							axe = (myStats->PROFICIENCIES[weaponskill] / 20);
-							if ( myStats->PROFICIENCIES[weaponskill] >= SKILL_LEVEL_LEGENDARY )
+							axe = (myStats->getModifiedProficiency(weaponskill) / 20);
+							if ( myStats->getModifiedProficiency(weaponskill) >= SKILL_LEVEL_LEGENDARY )
 							{
 								axe = 9;
 							}
@@ -7572,8 +7572,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else if ( weaponskill == PRO_AXE )
 					{
-						axe = (myStats->PROFICIENCIES[weaponskill] / 20);
-						if ( myStats->PROFICIENCIES[weaponskill] >= SKILL_LEVEL_LEGENDARY )
+						axe = (myStats->getModifiedProficiency(weaponskill) / 20);
+						if ( myStats->getModifiedProficiency(weaponskill) >= SKILL_LEVEL_LEGENDARY )
 						{
 							axe = 9;
 						}
@@ -7586,8 +7586,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( hit.entity->isColliderWeakToSkill(weaponskill) )
 						{
-							axe = (myStats->PROFICIENCIES[weaponskill] / 20);
-							if ( myStats->PROFICIENCIES[weaponskill] >= SKILL_LEVEL_LEGENDARY )
+							axe = (myStats->getModifiedProficiency(weaponskill) / 20);
+							if ( myStats->getModifiedProficiency(weaponskill) >= SKILL_LEVEL_LEGENDARY )
 							{
 								axe = 9;
 							}
@@ -7595,8 +7595,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else if ( hit.entity->behavior != &::actChest && !mimic )
 					{
-						axe = (myStats->PROFICIENCIES[PRO_UNARMED] / 20);
-						if ( myStats->PROFICIENCIES[PRO_UNARMED] >= SKILL_LEVEL_LEGENDARY )
+						axe = (myStats->getModifiedProficiency(weaponskill) / 20);
+						if ( myStats->getModifiedProficiency(weaponskill) >= SKILL_LEVEL_LEGENDARY )
 						{
 							axe = 9;
 						}
@@ -8061,7 +8061,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								// unaware monster, get backstab damage.
 								backstab = true;
-								damage += (stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 2) * (2 * stealthCapstoneBonus);
+								damage += (stats[player]->getModifiedProficiency(PRO_STEALTH) / 20 + 2) * (2 * stealthCapstoneBonus);
 								if ( local_rng.rand() % 4 > 0 && hit.entity->behavior != &actPlayer )
 								{
 									this->increaseSkill(PRO_STEALTH);
@@ -8072,7 +8072,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								// monster currently engaged in some form of combat maneuver
 								// 1 in 2 chance to flank defenses.
 								flanking = true;
-								damage += (stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 1) * (stealthCapstoneBonus);
+								damage += (stats[player]->getModifiedProficiency(PRO_STEALTH) / 20 + 1) * (stealthCapstoneBonus);
 								if ( local_rng.rand() % 20 == 0 && hit.entity->behavior != &actPlayer )
 								{
 									this->increaseSkill(PRO_STEALTH);
@@ -8098,11 +8098,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 							int chance = 0;
 							if ( weaponskill == PRO_POLEARM )
 							{
-								chance = (damage / 3) * (100 - myStats->PROFICIENCIES[weaponskill]) / 100.f;
+								chance = (damage / 3) * (100 - myStats->getModifiedProficiency(weaponskill)) / 100.f;
 							}
 							else
 							{
-								chance = (damage / 2) * (100 - myStats->PROFICIENCIES[weaponskill]) / 100.f;
+								chance = (damage / 2) * (100 - myStats->getModifiedProficiency(weaponskill)) / 100.f;
 							}
 							messagePlayer(0, MESSAGE_DEBUG, "Old range minmax: %d-%d", damage - chance, damage);
 						}
@@ -8113,7 +8113,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						real_t variance = 20;
 						real_t baseSkillModifier = 50.0; // 40-60 base
 						Entity::setMeleeDamageSkillModifiers(this, myStats, weaponskill, baseSkillModifier, variance);
-						real_t skillModifier = baseSkillModifier - (variance / 2) + (myStats->PROFICIENCIES[weaponskill] / 2.0);
+						real_t skillModifier = baseSkillModifier - (variance / 2) + (myStats->getModifiedProficiency(weaponskill) / 2.0);
 						skillModifier += (local_rng.rand() % (1 + static_cast<int>(variance)));
 						skillModifier /= 100.0;
 						skillModifier = std::min(skillModifier, 1.0);
@@ -8209,7 +8209,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 							if ( local_rng.rand() % chance == 0 )
 							{
-								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->PROFICIENCIES[weaponskill] < SKILL_LEVEL_BASIC) )
+								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->getProficiency(weaponskill) < SKILL_LEVEL_BASIC) )
 								{
 									this->increaseSkill(weaponskill, notify);
 									skillIncreased = true;
@@ -8248,7 +8248,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 							if ( local_rng.rand() % chance == 0 )
 							{
-								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->PROFICIENCIES[weaponskill] < SKILL_LEVEL_BASIC) )
+								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->getProficiency(weaponskill) < SKILL_LEVEL_BASIC) )
 								{
 									this->increaseSkill(weaponskill, notify);
 									skillIncreased = true;
@@ -8366,7 +8366,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( behavior == &actPlayer && ((weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM) 
 								|| weaponskill == PRO_UNARMED || weaponskill == PRO_RANGED) )
 							{
-								int skillLVL = myStats->PROFICIENCIES[weaponskill] / 20;
+								int skillLVL = myStats->getModifiedProficiency(weaponskill) / 20;
 								degradeOnZeroDMG += skillLVL; // increase by 1-5
 								degradeOnNormalDMG += (skillLVL * 10); // increase by 10-50
 							}
@@ -8506,10 +8506,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 						if ( hit.entity->behavior == &actPlayer && armornum == 4 )
 						{
-							armorDegradeChance += (hitstats->PROFICIENCIES[PRO_SHIELD] / 10);
+							armorDegradeChance += (hitstats->getModifiedProficiency(PRO_SHIELD) / 10);
 							if ( itemCategory(hitstats->shield) == ARMOR )
 							{
-								armorDegradeChance += (hitstats->PROFICIENCIES[PRO_SHIELD] / 10); // 2x shield bonus offhand
+								armorDegradeChance += (hitstats->getModifiedProficiency(PRO_SHIELD) / 10); // 2x shield bonus offhand
 							}
 							if ( skillCapstoneUnlocked(hit.entity->skill[2], PRO_SHIELD) )
 							{
@@ -8585,7 +8585,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										increaseSkill = false;
 									}
 									else if ( itemCategory(hitstats->shield) != ARMOR
-										&& hitstats->PROFICIENCIES[PRO_SHIELD] >= SKILL_LEVEL_SKILLED )
+										&& hitstats->getProficiency(PRO_SHIELD) >= SKILL_LEVEL_SKILLED )
 									{
 										increaseSkill = false; // non-shield offhands dont increase skill past 40.
 									}
@@ -8610,10 +8610,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 							if ( hit.entity->behavior == &actPlayer )
 							{
-								shieldDegradeChance += (hitstats->PROFICIENCIES[PRO_SHIELD] / 10);
+								shieldDegradeChance += (hitstats->getModifiedProficiency(PRO_SHIELD) / 10);
 								if ( itemCategory(hitstats->shield) == ARMOR )
 								{
-									shieldDegradeChance += (hitstats->PROFICIENCIES[PRO_SHIELD] / 10); // 2x shield bonus offhand
+									shieldDegradeChance += (hitstats->getModifiedProficiency(PRO_SHIELD) / 10); // 2x shield bonus offhand
 								}
 								if ( skillCapstoneUnlocked(hit.entity->skill[2], PRO_SHIELD) )
 								{
@@ -8761,7 +8761,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						int chance = 0;
 						bool inflictParalyze = false;
-						switch ( myStats->PROFICIENCIES[PRO_UNARMED] / 20 )
+						switch ( myStats->getModifiedProficiency(PRO_UNARMED) / 20 )
 						{
 							case 0:
 								break;
@@ -8815,7 +8815,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										break;
 								}
 							}
-							real_t pushbackMultiplier = baseMultiplier + 0.1 * (myStats->PROFICIENCIES[PRO_UNARMED] / 20);
+							real_t pushbackMultiplier = baseMultiplier + 0.1 * (myStats->getModifiedProficiency(PRO_UNARMED) / 20);
 							/*if ( myStats->shield && hasMeleeGloves )
 							{
 								pushbackMultiplier /= 2;
@@ -8877,7 +8877,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							capstoneDamage = 10;
 						}
 						int chance = 0;
-						switch ( myStats->PROFICIENCIES[weaponskill] / 20 )
+						switch ( myStats->getModifiedProficiency(weaponskill) / 20 )
 						{
 							case 0:
 							case 1:
@@ -8899,7 +8899,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								if ( hit.entity->behavior == &actMonster && hit.entity->setEffect(EFF_KNOCKBACK, true, 20, false) )
 								{
-									real_t pushbackMultiplier = 0.3 + 0.075 * (myStats->PROFICIENCIES[PRO_POLEARM] / 20);
+									real_t pushbackMultiplier = 0.3 + 0.075 * (myStats->getModifiedProficiency(PRO_POLEARM) / 20);
 									if ( !hit.entity->isMobile() )
 									{
 										pushbackMultiplier += 0.3;
@@ -17660,7 +17660,7 @@ int Entity::getHealthRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
 int getBaseManaRegen(Entity* my, Stat& myStats)
 {
 	// reduced time from intelligence and spellcasting ability, 0-200 ticks of 300.
-	int profMultiplier = (myStats.PROFICIENCIES[PRO_SPELLCASTING] / 20) + 1; // 1 to 6
+	int profMultiplier = (myStats.getModifiedProficiency(PRO_SPELLCASTING) / 20) + 1; // 1 to 6
 	int statMultiplier = std::max(statGetINT(&myStats, my), 0); // get intelligence
 	if ( myStats.type == AUTOMATON )
 	{
@@ -17808,7 +17808,7 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats, int opti
 	attack += marksman.getRangedAttack();
 	real_t variance = 20;
 	real_t baseSkillModifier = 50.0; // 40-60 base
-	real_t skillModifier = baseSkillModifier - (variance / 2) + (myStats.PROFICIENCIES[PRO_RANGED] / 2.0);
+	real_t skillModifier = baseSkillModifier - (variance / 2) + (myStats.getModifiedProficiency(PRO_RANGED) / 2.0);
 	skillModifier += (local_rng.rand() % (1 + static_cast<int>(variance)));
 	skillModifier /= 100.0;
 	skillModifier = std::min(skillModifier, 1.0);

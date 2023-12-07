@@ -451,7 +451,7 @@ public:
 			}
 			for ( int i = 0; i < NUMPROFICIENCIES; ++i )
 			{
-				PROFICIENCIES[i] = myStats->PROFICIENCIES[i];
+				PROFICIENCIES[i] = myStats->getProficiency(i);
 			}
 		}
 
@@ -491,7 +491,7 @@ public:
 
 			for ( int i = 0; i < NUMPROFICIENCIES; ++i )
 			{
-				myStats->PROFICIENCIES[i] = PROFICIENCIES[i];
+				myStats->setProficiency(i, PROFICIENCIES[i]);
 			}
 		}
 

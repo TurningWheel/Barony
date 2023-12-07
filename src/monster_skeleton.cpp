@@ -654,7 +654,7 @@ void skeletonDie(Entity* my)
 			{
 				// refund mana to caster.
 				int spellCost = getCostOfSpell(&spell_summon, leader);
-				if ( (leader->getINT() + leaderStats->PROFICIENCIES[PRO_MAGIC]) >= SKILL_LEVEL_EXPERT )
+				if ( (leader->getINT() + leaderStats->getModifiedProficiency(PRO_MAGIC)) >= SKILL_LEVEL_EXPERT )
 				{
 					// we summoned 2 units, halve the return rate.
 					spellCost /= 2;

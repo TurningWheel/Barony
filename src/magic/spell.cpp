@@ -367,8 +367,8 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 			return false;
 		}
 	}
-	int skillLVL = stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity);
-	if ( stats[player]->PROFICIENCIES[PRO_MAGIC] >= 100 )
+	int skillLVL = stats[player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[player], players[player]->entity);
+	if ( stats[player]->getModifiedProficiency(PRO_MAGIC) >= 100 )
 	{
 		skillLVL = 100;
 	}

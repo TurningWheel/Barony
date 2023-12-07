@@ -2545,7 +2545,7 @@ void actHudWeapon(Entity* my)
 						&& !playerCanSpawnMoreTinkeringBots(stats[HUDWEAPON_PLAYERNUM]) )
 					{
 						throwGimpTimer = TICKS_PER_SECOND / 2; // limits how often you can throw objects
-						if ( stats[HUDWEAPON_PLAYERNUM]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_LEGENDARY )
+						if ( stats[HUDWEAPON_PLAYERNUM]->getModifiedProficiency(PRO_LOCKPICKING) >= SKILL_LEVEL_LEGENDARY )
 						{
 							messagePlayer(HUDWEAPON_PLAYERNUM, MESSAGE_MISC, Language::get(3884));
 						}

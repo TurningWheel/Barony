@@ -756,7 +756,7 @@ public:
 			return false;
 		}
 
-		return (getStats()->PROFICIENCIES[proficiency] >= CAPSTONE_UNLOCK_LEVEL[proficiency]);
+		return (getStats()->getModifiedProficiency(proficiency) >= CAPSTONE_UNLOCK_LEVEL[proficiency]);
 	}
 
 	/*

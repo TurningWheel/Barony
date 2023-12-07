@@ -2784,9 +2784,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 							Stat* stats = entity->getStats();
 							if ( stats )
 							{
-								stats->PROFICIENCIES[i] = result;
-								stats->PROFICIENCIES[i] = std::min(stats->PROFICIENCIES[i], 100);
-								stats->PROFICIENCIES[i] = std::max(stats->PROFICIENCIES[i], 0);
+								stats->setProficiency(i, result);
 							}
 						}
 					}
@@ -2831,9 +2829,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 							Stat* stats = entity->getStats();
 							if ( stats )
 							{
-								stats->PROFICIENCIES[i] += result;
-								stats->PROFICIENCIES[i] = std::min(stats->PROFICIENCIES[i], 100);
-								stats->PROFICIENCIES[i] = std::max(stats->PROFICIENCIES[i], 0);
+								stats->setProficiency(i, result);
 							}
 						}
 					}
@@ -3115,7 +3111,7 @@ void TextSourceScript::updateClientInformation(int player, bool clearInventory, 
 
 		for ( int i = 0; i < NUMPROFICIENCIES; ++i )
 		{
-			net_packet->data[27 + i] = (Uint8)stats[player]->PROFICIENCIES[i];
+			net_packet->data[27 + i] = (Uint8)stats[player]->getProficiency(i);
 		}
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;

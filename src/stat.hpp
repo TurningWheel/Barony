@@ -209,6 +209,7 @@ enum KilledBy {
 
 class Stat
 {
+	Sint32 PROFICIENCIES[NUMPROFICIENCIES];
 public:
 	Monster type;
 	sex_t sex;
@@ -244,7 +245,26 @@ public:
 	Sint32 PLAYER_LVL_STAT_TIMER[NUMSTATS * 2];
 
 	// skills and effects
-	Sint32 PROFICIENCIES[NUMPROFICIENCIES];
+	Sint32 getProficiency(int skill) const
+	{
+		if ( skill >= 0 && skill < NUMPROFICIENCIES )
+		{
+			return PROFICIENCIES[skill];
+		}
+		return 0;
+	}
+	Sint32 getModifiedProficiency(int skill) const;
+	void setProficiency(int skill, int value)
+	{
+		if ( skill >= 0 && skill < NUMPROFICIENCIES )
+		{
+			PROFICIENCIES[skill] = std::min(std::max(0, value), 100);
+		}
+	}
+	void setProficiencyUnsafe(int skill, int value)
+	{
+		PROFICIENCIES[skill] = value;
+	}
 	bool EFFECTS[NUMEFFECTS];
 	Sint32 EFFECTS_TIMERS[NUMEFFECTS];
 	bool defending;
@@ -346,7 +366,7 @@ extern Stat* stats[MAXPLAYERS];
 
 inline bool skillCapstoneUnlocked(int player, int proficiency)
 {
-	return (stats[player]->PROFICIENCIES[proficiency] >= CAPSTONE_UNLOCK_LEVEL[proficiency]);
+	return (stats[player]->getModifiedProficiency(proficiency) >= CAPSTONE_UNLOCK_LEVEL[proficiency]);
 }
 
 void setDefaultMonsterStats(Stat* stats, int sprite);

@@ -1030,10 +1030,6 @@ extern GenericGUIMenu GenericGUI[MAXPLAYERS];
  */
 bool mouseInBounds(const int player, int x1, int x2, int y1, int y2);
 
-void updateCharacterSheet(const int player);
-void drawPartySheet(const int player);
-void drawSkillsSheet(const int player);
-
 //Right sidebar defines.
 //#define RIGHTSIDEBAR_X (xres - rightsidebar_titlebar_img->w)
 //#define RIGHTSIDEBAR_Y 0
@@ -1133,7 +1129,6 @@ static const int SCANCODE_UNASSIGNED_BINDING = 399;
 
 const bool hotbarGamepadControlEnabled(const int player);
 
-void printStatBonus(TTF_Font* outputFont, Sint32 stat, Sint32 statWithModifiers, int x, int y);
 struct AttackHoverText_t
 {
 	enum HoverTypes
@@ -1163,7 +1158,6 @@ struct AttackHoverText_t
 	Sint32 equipmentAndEffectBonus = 0;
 	int proficiency = -1;
 };
-void attackHoverText(const int player, AttackHoverText_t& output);
 Sint32 displayAttackPower(const int player, AttackHoverText_t& output);
 
 class MinimapPing

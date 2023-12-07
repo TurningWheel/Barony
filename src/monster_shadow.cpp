@@ -1494,7 +1494,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	std::vector<int> skillsCanMimic;
 	for ( int i = 0; i < NUMPROFICIENCIES; ++i )
 	{
-		if ( targetStats->PROFICIENCIES[i] > myStats->PROFICIENCIES[i] )
+		if ( targetStats->getModifiedProficiency(i) > myStats->getProficiency(i) )
 		{
 			//Target is better, can mimic this proficiency.
 			skillsCanMimic.push_back(i);
@@ -1504,7 +1504,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	for ( int skillsMimicked = 0; skillsCanMimic.size() && skillsMimicked < numSkillsToMimic; ++skillsMimicked )
 	{
 		int choosen = local_rng.rand()%skillsCanMimic.size();
-		myStats->PROFICIENCIES[skillsCanMimic[choosen]] = targetStats->PROFICIENCIES[skillsCanMimic[choosen]];
+		myStats->setProficiency(skillsCanMimic[choosen], targetStats->getModifiedProficiency(skillsCanMimic[choosen]));
 
 		//messagePlayer(clientnum, "DEBUG: Shadow mimicked skill %d.", skillsCanMimic[choosen]);
 		skillsCanMimic.erase(skillsCanMimic.begin() + choosen); //No longer an eligible skill.
