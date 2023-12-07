@@ -6882,6 +6882,21 @@ void actPlayer(Entity* my)
     const char* light_type = nullptr;
     static ConsoleVariable<bool> cvar_playerLight("/player_light_enabled", true);
 	int range_bonus = std::min(std::max(0, statGetPER(stats[PLAYER_NUM], my) / 5), 2);
+	int equipmentBonus = 0;
+	if ( stats[PLAYER_NUM]->mask && stats[PLAYER_NUM]->mask->type == MASK_EYEPATCH )
+	{
+		bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats[PLAYER_NUM]);
+		equipmentBonus = 2;
+		if ( stats[PLAYER_NUM]->mask->beatitude >= 0 || cursedItemIsBuff )
+		{
+			equipmentBonus += abs(stats[PLAYER_NUM]->mask->beatitude);
+		}
+		else if ( stats[PLAYER_NUM]->mask->beatitude < 0 )
+		{
+			equipmentBonus = -range_bonus + 3 * stats[PLAYER_NUM]->mask->beatitude;
+		}
+		equipmentBonus = std::max(-6, std::min(equipmentBonus, 4));
+	}
 	if (!intro && *cvar_playerLight) {
         if (!players[PLAYER_NUM]->isLocalPlayer() && multiplayer == CLIENT) {
             switch (PLAYER_TORCH) {
@@ -6929,6 +6944,7 @@ void actPlayer(Entity* my)
                     ambientLight = true;
 					if ( stats[PLAYER_NUM]->sneaking ) {
 						light_type = "player_sneaking";
+						range_bonus += equipmentBonus;
 					}
 					else
 					{
@@ -6983,6 +6999,7 @@ void actPlayer(Entity* my)
 				}
                 else if (stats[PLAYER_NUM]->sneaking) {
                     light_type = "player_sneaking";
+					range_bonus += equipmentBonus;
                 }
                 else {
                     light_type = "player_ambient";
