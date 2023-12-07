@@ -5179,6 +5179,13 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 			STR += (cursedItemIsBuff ? abs(entitystats->gloves->beatitude) : entitystats->gloves->beatitude);
 		}
 	}
+	if ( entitystats->helmet != nullptr )
+	{
+		if ( entitystats->helmet->type == HAT_WOLF_HOOD )
+		{
+			STR += (cursedItemIsBuff ? abs(entitystats->helmet->beatitude) : entitystats->helmet->beatitude);
+		}
+	}
 	if ( entitystats->ring != nullptr )
 	{
 		if ( entitystats->ring->type == RING_STRENGTH )
@@ -5402,6 +5409,17 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 			DEX += (cursedItemIsBuff ? abs(entitystats->shoes->beatitude) : entitystats->shoes->beatitude);
 		}
 	}
+	if ( entitystats->helmet != nullptr )
+	{
+		if ( entitystats->helmet->type == HAT_BUNNY_HOOD )
+		{
+			DEX += (cursedItemIsBuff ? abs(entitystats->helmet->beatitude) : entitystats->helmet->beatitude);
+		}
+		if ( entitystats->helmet->type == HAT_BYCOCKET )
+		{
+			DEX += (cursedItemIsBuff ? abs(entitystats->helmet->beatitude) : entitystats->helmet->beatitude);
+		}
+	}
 	if ( entitystats->gloves != nullptr )
 	{
 		if ( entitystats->gloves->type == GLOVES_DEXTERITY )
@@ -5531,6 +5549,13 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 				CON++;
 			}
 			CON += (cursedItemIsBuff ? abs(entitystats->ring->beatitude) : entitystats->ring->beatitude);
+		}
+	}
+	if ( entitystats->helmet != nullptr )
+	{
+		if ( entitystats->helmet->type == HAT_BEAR_HOOD )
+		{
+			CON += (cursedItemIsBuff ? abs(entitystats->helmet->beatitude) : entitystats->helmet->beatitude);
 		}
 	}
 	if ( entitystats->gloves != nullptr )
@@ -5771,6 +5796,10 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 			}
 			PER += (cursedItemIsBuff ? abs(entitystats->mask->beatitude) : entitystats->mask->beatitude);
 		}
+		else if ( entitystats->mask->type == MASK_HAZARD_GOGGLES || entitystats->mask->type == MASK_TECH_GOGGLES )
+		{
+			PER += (cursedItemIsBuff ? abs(entitystats->mask->beatitude) : entitystats->mask->beatitude);
+		}
 	}
 	if ( entitystats->breastplate )
 	{
@@ -5781,6 +5810,13 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 				PER += 2;
 			}
 			PER += (cursedItemIsBuff ? abs(entitystats->breastplate->beatitude) : entitystats->breastplate->beatitude);
+		}
+	}
+	if ( entitystats->helmet )
+	{
+		if ( entitystats->helmet->type == HAT_STAG_HOOD )
+		{
+			PER += (cursedItemIsBuff ? abs(entitystats->helmet->beatitude) : entitystats->helmet->beatitude);
 		}
 	}
 
@@ -5864,13 +5900,25 @@ Sint32 statGetCHR(Stat* entitystats, Entity* my)
 
 	if ( entitystats->helmet != nullptr )
 	{
-		if ( entitystats->helmet->type == HAT_JESTER )
+		if ( entitystats->helmet->type == HAT_JESTER || entitystats->helmet->type == HAT_SILKEN_BOW
+			|| entitystats->helmet->type == HAT_PLUMED_CAP )
 		{
 			if ( entitystats->helmet->beatitude >= 0 || cursedItemIsBuff )
 			{
 				CHR++;
 			}
 			CHR += (cursedItemIsBuff ? abs(entitystats->helmet->beatitude) : entitystats->helmet->beatitude);
+		}
+	}
+	if ( entitystats->mask != nullptr )
+	{
+		if ( entitystats->mask->type == MASK_MASQUERADE || entitystats->mask->type == MASK_MOUTH_ROSE )
+		{
+			if ( entitystats->mask->beatitude >= 0 || cursedItemIsBuff )
+			{
+				CHR++;
+			}
+			CHR += (cursedItemIsBuff ? abs(entitystats->mask->beatitude) : entitystats->mask->beatitude);
 		}
 	}
 	if ( entitystats->ring != nullptr )
@@ -10628,6 +10676,10 @@ int AC(Stat* stat)
 	{
 		armor += stat->ring->armorGetAC(stat);
 	}
+	if ( stat->mask )
+	{
+		armor += stat->mask->armorGetAC(stat);
+	}
 
 	if ( stat->type == TROLL || stat->type == RAT || stat->type == SPIDER || stat->type == CREATURE_IMP )
 	{
@@ -12079,6 +12131,30 @@ bool Entity::checkEnemy(Entity* your)
 						default:
 							break;
 					}
+				}
+			}
+
+			if ( result )
+			{
+				if ( myStats->mask && (myStats->mask->type == MASK_MASQUERADE || myStats->mask->type == MASK_MOUTH_ROSE)
+					&& (yourStats->type == INCUBUS || yourStats->type == SUCCUBUS) && your->behavior == &actMonster )
+				{
+					result = false;
+				}
+				else if ( yourStats->mask && (yourStats->mask->type == MASK_MASQUERADE || yourStats->mask->type == MASK_MOUTH_ROSE)
+					&& (myStats->type == INCUBUS || myStats->type == SUCCUBUS) && behavior == &actMonster )
+				{
+					result = false;
+				}
+				else if ( myStats->mask && myStats->mask->type == MASK_SPOOKY
+					&& (yourStats->type == GHOUL || yourStats->type == SHADOW) && your->behavior == &actMonster )
+				{
+					result = false;
+				}
+				else if ( yourStats->mask && yourStats->mask->type == MASK_SPOOKY
+					&& (myStats->type == GHOUL || myStats->type == SHADOW) && behavior == &actMonster )
+				{
+					result = false;
 				}
 			}
 		}
@@ -18163,6 +18239,7 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 		helm->scaley += entry.scaley;
 		helm->scalez += entry.scalez;
 		helm->roll = entry.rotation;
+		helm->pitch += entry.pitch;
 	}
 	else if ( helm->sprite == items[HAT_PHRYGIAN].index )
 	{
