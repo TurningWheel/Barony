@@ -8972,7 +8972,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						else
 						{
-							if ( hitstats->defending )
+							if ( hitstats->defending && hitstats->shield && itemCategory(hitstats->shield) == ARMOR )
 							{
 								// try eat shield
 								armornum = hitstats->pickRandomEquippedItem(&armor, true, false, true, true);
