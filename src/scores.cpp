@@ -5732,6 +5732,9 @@ int SaveGameInfo::populateFromSession(const int playernum)
 				auto& h2 = player.shopkeeperHostility.at(player.shopkeeperHostility.size() - 1);
 				h2.second.wantedLevel = h.second.wantedLevel;
 				h2.second.playerRace = h.second.playerRace;
+				h2.second.sex = h.second.sex;
+				h2.second.equipment = h.second.equipment;
+				h2.second.type = h.second.type;
 				h2.second.player = h.second.player;
 				h2.second.numKills = h.second.numKills;
 				h2.second.numAggressions = h.second.numAggressions;
@@ -6492,13 +6495,32 @@ int loadGame(int player, const SaveGameInfo& info) {
 		h.clear();
 		for ( auto& hostility : info.players[player].shopkeeperHostility )
 		{
-			h[(Monster)hostility.first] = ShopkeeperPlayerHostility_t::PlayerRaceHostility_t();
-			h[(Monster)hostility.first].wantedLevel = (ShopkeeperPlayerHostility_t::WantedLevel)hostility.second.wantedLevel;
-			h[(Monster)hostility.first].playerRace = (Monster)hostility.second.playerRace;
-			h[(Monster)hostility.first].player = hostility.second.player;
-			h[(Monster)hostility.first].numAggressions = hostility.second.numAggressions;
-			h[(Monster)hostility.first].numKills = hostility.second.numKills;
-			h[(Monster)hostility.first].numAccessories = hostility.second.numAccessories;
+			h[(Uint32)hostility.first] = ShopkeeperPlayerHostility_t::PlayerRaceHostility_t();
+			h[(Uint32)hostility.first].wantedLevel = (ShopkeeperPlayerHostility_t::WantedLevel)hostility.second.wantedLevel;
+			if ( info.game_version < 412 )
+			{
+				if ( h[(Uint32)hostility.first].wantedLevel > ShopkeeperPlayerHostility_t::NO_WANTED_LEVEL )
+				{
+					// we increased the wanted levels in 412
+					h[(Uint32)hostility.first].wantedLevel = 
+						(ShopkeeperPlayerHostility_t::WantedLevel)(h[(Uint32)hostility.first].wantedLevel + 1);
+				}
+			}
+			h[(Uint32)hostility.first].playerRace = (Monster)hostility.second.playerRace;
+			if ( info.game_version < 412 )
+			{
+				h[(Uint32)hostility.first].type = h[(Uint32)hostility.first].playerRace;
+			}
+			else
+			{
+				h[(Uint32)hostility.first].sex = (sex_t)hostility.second.sex;
+				h[(Uint32)hostility.first].equipment = (Uint8)hostility.second.equipment;
+				h[(Uint32)hostility.first].type = (Uint32)hostility.second.type;
+			}
+			h[(Uint32)hostility.first].player = hostility.second.player;
+			h[(Uint32)hostility.first].numAggressions = hostility.second.numAggressions;
+			h[(Uint32)hostility.first].numKills = hostility.second.numKills;
+			h[(Uint32)hostility.first].numAccessories = hostility.second.numAccessories;
 		}
 	}
 

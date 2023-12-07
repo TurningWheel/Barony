@@ -229,12 +229,15 @@ void ShopkeeperPlayerHostility_t::resetPlayerHostility(const int player, bool cl
 	Monster type = stats[player]->type;
 	if ( auto h = getPlayerHostility(player) )
 	{
-		if ( h->wantedLevel != NO_WANTED_LEVEL )
+		if ( h->wantedLevel != NO_WANTED_LEVEL && h->wantedLevel != FAILURE_TO_IDENTIFY )
 		{
 			messagePlayerColor(player, MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(4304));
 		}
-		h->wantedLevel = NO_WANTED_LEVEL;
-		h->bRequiresNetUpdate = true;
+		if ( h->wantedLevel != FAILURE_TO_IDENTIFY )
+		{
+			h->wantedLevel = NO_WANTED_LEVEL;
+			h->bRequiresNetUpdate = true;
+		}
 	}
 	if ( clearAll )
 	{
@@ -244,7 +247,7 @@ void ShopkeeperPlayerHostility_t::resetPlayerHostility(const int player, bool cl
 			{
 				continue;
 			}
-			if ( h2->second.wantedLevel != NO_WANTED_LEVEL )
+			if ( h2->second.wantedLevel != NO_WANTED_LEVEL && h2->second.wantedLevel != FAILURE_TO_IDENTIFY )
 			{
 				h2->second.wantedLevel = NO_WANTED_LEVEL;
 				h2->second.bRequiresNetUpdate = true;
@@ -286,11 +289,35 @@ bool ShopkeeperPlayerHostility_t::playerRaceCheckHostility(const int player, con
 	return true;
 }
 
-ShopkeeperPlayerHostility_t::PlayerRaceHostility_t* ShopkeeperPlayerHostility_t::getPlayerHostility(const int player, Monster overrideType)
+ShopkeeperPlayerHostility_t::PlayerRaceHostility_t* ShopkeeperPlayerHostility_t::getPlayerHostility(const int player, Uint32 overrideType)
 {
 	if ( player < 0 || player >= MAXPLAYERS ) { return nullptr; }
 
-	Monster type = stats[player]->type;
+	Uint32 type = stats[player]->type;
+	Uint8 equipment = 0;
+	if ( type == SUCCUBUS || type == INCUBUS
+		|| type == TROLL || type == RAT || type == SPIDER || type == CREATURE_IMP )
+	{
+		// no sex modifier
+	}
+	else
+	{
+		type |= (stats[player]->sex == sex_t::MALE ? 0 : 1) << 8;
+	}
+
+	if ( type == TROLL || type == RAT || type == SPIDER || type == CREATURE_IMP )
+	{
+		// no equipment modifier
+	}
+	else
+	{
+		if ( stats[player]->mask && stats[player]->mask->type == MASK_BANDIT )
+		{
+			equipment = 1 + (stats[player]->mask->appearance % items[MASK_BANDIT].variations);
+		}
+		type |= (0x7F & (equipment)) << 9;
+	}
+
 	if ( overrideType != NOTHING )
 	{
 		type = overrideType;
@@ -298,7 +325,12 @@ ShopkeeperPlayerHostility_t::PlayerRaceHostility_t* ShopkeeperPlayerHostility_t:
 
 	if ( playerHostility[player].find(type) == playerHostility[player].end() )
 	{
-		playerHostility[player].emplace(std::make_pair(type, PlayerRaceHostility_t(type, NO_WANTED_LEVEL, player)));
+		auto wantedLevel = NO_WANTED_LEVEL;
+		if ( equipment >= 1 && equipment <= 3 )
+		{
+			wantedLevel = FAILURE_TO_IDENTIFY;
+		}
+		playerHostility[player].emplace(std::make_pair(type, PlayerRaceHostility_t(type, wantedLevel, player)));
 	}
 	return &playerHostility[player][type];
 }
@@ -508,14 +540,14 @@ void ShopkeeperPlayerHostility_t::serverSendClientUpdate(const bool force)
 
 			strcpy((char*)net_packet->data, "SHPH");
 			net_packet->data[4] = (int)hostility.wantedLevel;
-			net_packet->data[5] = (int)hostility.playerRace;
 			const Uint16 max = 0xFFFF;
-			SDLNet_Write16(std::min(max, (Uint16)hostility.numKills), &net_packet->data[6]);
-			SDLNet_Write16(std::min(max, (Uint16)hostility.numAggressions), &net_packet->data[8]);
-			SDLNet_Write16(std::min(max, (Uint16)hostility.numAccessories), &net_packet->data[10]);
+			SDLNet_Write16(std::min(max, (Uint16)hostility.numKills), &net_packet->data[5]);
+			SDLNet_Write16(std::min(max, (Uint16)hostility.numAggressions), &net_packet->data[7]);
+			SDLNet_Write16(std::min(max, (Uint16)hostility.numAccessories), &net_packet->data[9]);
+			SDLNet_Write32(hostility.type, &net_packet->data[11]);
 			net_packet->address.host = net_clients[c - 1].host;
 			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 12;
+			net_packet->len = 15;
 			sendPacketSafe(net_sock, -1, net_packet, c - 1);
 		}
 	}

@@ -371,6 +371,9 @@ struct SaveGameInfo {
 			int numKills = 0;
 			int numAccessories = 0;
 			int playerRace = NOTHING;
+			int sex = sex_t::MALE;
+			int equipment = 0;
+			int type = 0;
 			int wantedLevel = ShopkeeperPlayerHostility_t::NO_WANTED_LEVEL;
 			int player = -1;
 
@@ -381,6 +384,9 @@ struct SaveGameInfo {
 			{
 				wantedLevel = h.wantedLevel;
 				playerRace = h.playerRace;
+				sex = h.sex;
+				equipment = h.equipment;
+				type = h.type;
 				player = h.player;
 				numAggressions = h.numAggressions;
 				numKills = h.numKills;
@@ -390,6 +396,9 @@ struct SaveGameInfo {
 			{
 				fp->property("wanted_level", wantedLevel);
 				fp->property("player_race", playerRace);
+				fp->property("equipment", equipment);
+				fp->property("type", type);
+				fp->property("sex", sex);
 				fp->property("player", player);
 				fp->property("num_aggressions", numAggressions);
 				fp->property("num_kills", numKills);

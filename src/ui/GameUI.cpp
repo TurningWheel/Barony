@@ -6573,6 +6573,11 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 						memset(buf, 0, sizeof(buf));
 						snprintf(buf, sizeof(buf), definition.getDesc(0).c_str(), getMonsterLocalizedName(h->playerRace).c_str());
 						std::string descStr = buf;
+						if ( h->wantedLevel == ShopkeeperPlayerHostility.FAILURE_TO_IDENTIFY )
+						{
+							if ( descStr != "" ) { descStr += '\n'; }
+							descStr += definition.getDesc(4);
+						}
 						if ( h->numKills > 0 )
 						{
 							//snprintf(buf, sizeof(buf), definition.getDesc(1).c_str(), h->numKills);

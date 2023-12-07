@@ -4930,14 +4930,16 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	// shopkeeper player hostility
 	{ 'SHPH', []() {
 		ShopkeeperPlayerHostility_t::WantedLevel wantedLevel = (ShopkeeperPlayerHostility_t::WantedLevel)net_packet->data[4];
-		Monster playerRace = (Monster)net_packet->data[5];
-		Uint16 numKills = SDLNet_Read16(&net_packet->data[6]);
-		Uint16 numAggressions = SDLNet_Read16(&net_packet->data[8]);
-		Uint16 numAccessories = SDLNet_Read16(&net_packet->data[10]);
-		if ( auto hostility = ShopkeeperPlayerHostility.getPlayerHostility(clientnum, playerRace) )
+		Uint16 numKills = SDLNet_Read16(&net_packet->data[5]);
+		Uint16 numAggressions = SDLNet_Read16(&net_packet->data[7]);
+		Uint16 numAccessories = SDLNet_Read16(&net_packet->data[9]);
+		Uint32 type = SDLNet_Read32(&net_packet->data[11]);
+		if ( auto hostility = ShopkeeperPlayerHostility.getPlayerHostility(clientnum, type) )
 		{
 			hostility->wantedLevel = wantedLevel;
-			hostility->playerRace = playerRace;
+			hostility->playerRace = (Monster)(type & 0xFF);
+			hostility->sex = ((type >> 8) & 0x1) ? sex_t::MALE : sex_t::FEMALE;
+			hostility->equipment = ((type >> 9) & 0x7F);
 			hostility->numKills = (int)numKills;
 			hostility->numAggressions = (int)numAggressions;
 			hostility->numAccessories = (int)numAccessories;
