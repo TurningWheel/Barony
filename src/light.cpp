@@ -262,8 +262,8 @@ light_t* addLight(Sint32 x, Sint32 y, const char* name, int range_bonus, int ind
     }
     const auto& def = find->second;
     if (def.shadows) {
-        return lightSphereShadow(index, x, y, def.radius + range_bonus, def.r, def.g, def.b, def.falloff_exp);
+        return lightSphereShadow(index, x, y, std::max(def.radius + range_bonus, 1), def.r, def.g, def.b, def.falloff_exp);
     } else {
-        return lightSphere(index, x, y, def.radius + range_bonus, def.r, def.g, def.b, def.falloff_exp);
+        return lightSphere(index, x, y, std::max(def.radius + range_bonus, 1), def.r, def.g, def.b, def.falloff_exp);
     }
 }

@@ -9255,6 +9255,8 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName)
 				scalez = it2->value["scalez"].GetDouble();
 			}
 			real_t rotation = it2->value["rotation"].GetDouble();
+			real_t pitch = it2->value.HasMember("pitch") ?
+				it2->value["pitch"].GetDouble() : 0.0;
 			int limbsIndex = it2->value["limbs_index"].GetInt();
 			bool oversizedMask = it2->value.HasMember("oversize_mask") ? 
 				it2->value["oversize_mask"].GetBool() : false;
@@ -9271,6 +9273,7 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName)
 				entry.scaley = scaley;
 				entry.scalez = scalez;
 				entry.rotation = rotation * (PI / 2);
+				entry.pitch = pitch * (PI / 2);
 				entry.limbsIndex = limbsIndex;
 				entry.expandToFitMask = expandToFitMask;
 				entry.oversizedMask = oversizedMask;

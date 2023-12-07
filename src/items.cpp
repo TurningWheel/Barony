@@ -3958,8 +3958,35 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 
 bool Item::doesItemProvideBeatitudeAC() const
 {
-	if ( itemTypeIsQuiver(type) || itemCategory(this) == SPELLBOOK || itemCategory(this) == AMULET )
+	if ( itemTypeIsQuiver(type) || itemCategory(this) == SPELLBOOK 
+		|| itemCategory(this) == AMULET )
 	{
+		return false;
+	}
+	if ( items[type].item_slot == EQUIPPABLE_IN_SLOT_HELM )
+	{
+		if ( type == HAT_SILKEN_BOW
+			|| type == HAT_PLUMED_CAP
+			|| type == HAT_BYCOCKET
+			|| type == HAT_CIRCLET
+			|| type == HAT_CROWN 
+			|| type == HAT_LAURELS 
+			|| type == HAT_TURBAN )
+		{
+			return false;
+		}
+	}
+	else if ( items[type].item_slot == EQUIPPABLE_IN_SLOT_MASK )
+	{
+		if ( type == MASK_SPOOKY
+			|| type == MASK_GOLDEN
+			|| type == MASK_STEEL_VISOR
+			|| type == MASK_CRYSTAL_VISOR 
+			|| type == MASK_ARTIFACT_VISOR
+			|| type == MASK_PLAGUE )
+		{
+			return true;
+		}
 		return false;
 	}
 	return true;
@@ -4492,13 +4519,38 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	{
 		armor += 1;
 	}
-	else if ( type == WIZARD_DOUBLET || type == HEALER_DOUBLET )
+	else if ( type == WIZARD_DOUBLET 
+		|| type == HEALER_DOUBLET
+		|| type == MASK_GOLDEN
+		|| type == MASK_SPOOKY
+		|| type == MASK_PLAGUE
+		|| type == HAT_TOPHAT
+		|| type == HAT_BANDANA
+		|| type == HAT_WARM
+		|| type == HAT_MITER
+		|| type == HAT_HEADDRESS
+		|| type == HAT_CHEF )
 	{
 		armor += 0;
 	}
-	else if ( type == VAMPIRE_DOUBLET )
+	else if ( type == VAMPIRE_DOUBLET
+		|| type == HELM_MINING
+		|| type == HAT_BOUNTYHUNTER
+		|| type == MASK_STEEL_VISOR )
 	{
 		armor += 1;
+	}
+	else if ( type == HAT_WOLF_HOOD
+		|| type == HAT_BEAR_HOOD
+		|| type == HAT_STAG_HOOD
+		|| type == HAT_BUNNY_HOOD )
+	{
+		armor += 2;
+	}
+	else if ( type == MASK_CRYSTAL_VISOR
+		|| type == MASK_ARTIFACT_VISOR )
+	{
+		armor += 2;
 	}
 	else if ( type == GLOVES || type == GLOVES_DEXTERITY )
 	{

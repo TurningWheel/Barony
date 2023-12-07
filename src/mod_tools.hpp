@@ -3354,6 +3354,7 @@ struct EquipmentModelOffsets_t
 		real_t scaley = 0.0;
 		real_t scalez = 0.0;
 		real_t rotation = 0.0;
+		real_t pitch = 0.0;
 		int limbsIndex = 0;
 		bool oversizedMask = false;
 		bool expandToFitMask = false;

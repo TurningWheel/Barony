@@ -1111,6 +1111,7 @@ public:
 	enum WantedLevel : int
 	{
 		NO_WANTED_LEVEL,
+		FAILURE_TO_IDENTIFY,
 		WANTED_FOR_AGGRESSION_SHOPKEEP_INITIATED,
 		WANTED_FOR_ACCESSORY,
 		WANTED_FOR_AGGRESSION,
@@ -1123,30 +1124,39 @@ public:
 		int numKills = 0;
 		int numAccessories = 0;
 		Monster playerRace = NOTHING;
+		sex_t sex = sex_t::MALE;
+		Uint8 equipment = 0;
+		Uint32 type = NOTHING;
 		WantedLevel wantedLevel = NO_WANTED_LEVEL;
 		int player = -1;
 		bool bRequiresNetUpdate = false;
 		PlayerRaceHostility_t()
 		{
 			wantedLevel = NO_WANTED_LEVEL;
+			type = NOTHING;
 			playerRace = NOTHING;
+			sex = sex_t::MALE;
+			equipment = 0;
 			player = -1;
 			numAggressions = 0;
 			numKills = 0;
 			numAccessories = 0;
 		};
-		PlayerRaceHostility_t(const Monster _playerRace, const WantedLevel _wantedLevel, const int _player) :
+		PlayerRaceHostility_t(const Uint32 _type, const WantedLevel _wantedLevel, const int _player) :
 			PlayerRaceHostility_t()
 		{
 			wantedLevel = _wantedLevel;
-			playerRace = _playerRace;
+			type = _type;
+			playerRace = (Monster)(_type & 0xFF);
+			sex = ((_type >> 8) & 0x1) ? sex_t::MALE : sex_t::FEMALE;
+			equipment = ((_type >> 9) & 0x7F);
 			player = _player;
 		}
 
 		bool serialize(FileInterface* fp);
 	};
 	bool playerRaceCheckHostility(const int player, const Monster type) const;
-	PlayerRaceHostility_t* getPlayerHostility(const int player, Monster overrideType = NOTHING);
+	PlayerRaceHostility_t* getPlayerHostility(const int player, Uint32 overrideType = NOTHING);
 	void serverSendClientUpdate(const bool force = false);
 	void reset();
 	void resetPlayerHostility(const int player, bool clearAll = false);
@@ -1157,7 +1167,7 @@ public:
 	void onShopkeeperDeath(Entity* my, Stat* myStats, Entity* attacker);
 	void onShopkeeperHit(Entity* my, Stat* myStats, Entity* attacker);
 	void updateShopkeeperActMonster(Entity& my, Stat& myStats, bool ringconflict);
-	std::map<Monster, PlayerRaceHostility_t> playerHostility[MAXPLAYERS];
+	std::map<Uint32, PlayerRaceHostility_t> playerHostility[MAXPLAYERS];
 };
 extern ShopkeeperPlayerHostility_t ShopkeeperPlayerHostility;
 
