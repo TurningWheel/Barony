@@ -6246,5 +6246,7 @@ Filters#
 6083 You lock the mimic!#
 6084 The mimic evades your skeleton key!#
 6085 The mimic eats your %s!#
+6086 The %s poisons you!#
+6087 Hey! That %s stole your %s!#
 
 6100 end#
