@@ -82,7 +82,7 @@ void initGameDatafiles(bool moddedReload)
 	loadLights();
 	for ( int c = 1; c < NUMMONSTERS; ++c )
 	{
-		EquipmentModelOffsets.readFromFile(monstertypename[c]);
+		EquipmentModelOffsets.readFromFile(monstertypename[c], c);
 	}
 }
 

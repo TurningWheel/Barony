@@ -4780,5 +4780,12 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_reloadequipmentoffsets("/reloadequipmentoffsets", "reloads equipment model offsets", []CCMD{
 		EquipmentModelOffsets.readFromFile(monstertypename[stats[clientnum]->type]);
 	});
+
+	static ConsoleCommand ccmd_reloadequipmentoffsets("/reloadequipmentoffsets_all", "reloads all equipment model offsets", []CCMD{
+		for ( int c = 1; c < NUMMONSTERS; ++c )
+		{
+			EquipmentModelOffsets.readFromFile(monstertypename[c], c);
+		}
+	});
 }
 
