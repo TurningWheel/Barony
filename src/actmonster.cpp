@@ -1297,7 +1297,7 @@ int devilsummonedtimes = 0;
 bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], 
 	Entity* my, Stat* myStats, bool checkReturnValueOnly)
 {
-	if ( !myStats )
+	if ( !myStats || monsterclicked < 0 || monsterclicked >= MAXPLAYERS )
 	{
 		return false;
 	}
@@ -1360,6 +1360,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 	}
 
 	bool canAlly = false;
+	bool roseEvent = false;
 	if ( skillCapstoneUnlocked(monsterclicked, PRO_LEADERSHIP) )
 	{
 		int allowedFollowers = 8;
@@ -1494,6 +1495,15 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 			{
 				canAlly = true;
 			}
+			if ( stats[monsterclicked]->mask && stats[monsterclicked]->mask->type == MASK_MOUTH_ROSE
+				&& players[monsterclicked]->entity->effectShapeshift == NOTHING )
+			{
+				if ( race == INCUBUS || race == SUCCUBUS )
+				{
+					canAlly = true;
+					roseEvent = true;
+				}
+			}
 		}
 		else
 		{
@@ -1506,6 +1516,14 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 		if ( stats[monsterclicked]->type == SUCCUBUS )
 		{
 			if ( race == HUMAN && (myStats->EFFECTS[EFF_DRUNK] || myStats->EFFECTS[EFF_CONFUSED]) )
+			{
+				tryAlly = true;
+			}
+		}
+		if ( stats[monsterclicked]->mask && stats[monsterclicked]->mask->type == MASK_MOUTH_ROSE
+			&& players[monsterclicked]->entity->effectShapeshift == NOTHING )
+		{
+			if ( race == INCUBUS || race == SUCCUBUS )
 			{
 				tryAlly = true;
 			}
@@ -1648,6 +1666,15 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 					if ( myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_RECRUITABLE )
 					{
 						canAlly = true;
+					}
+					if ( stats[monsterclicked]->mask && stats[monsterclicked]->mask->type == MASK_MOUTH_ROSE
+						&& players[monsterclicked]->entity->effectShapeshift == NOTHING )
+					{
+						if ( race == INCUBUS || race == SUCCUBUS )
+						{
+							tryAlly = true;
+							roseEvent = true;
+						}
 					}
 				}
 				else
@@ -1874,6 +1901,58 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 		if ( players[monsterclicked]->entity->effectPolymorph != 0 || players[monsterclicked]->entity->effectShapeshift != 0 )
 		{
 			achievementObserver.playerAchievements[monsterclicked].socialButterfly++;
+		}
+	}
+
+	if ( roseEvent && stats[monsterclicked]->mask )
+	{
+		Item* armor = stats[monsterclicked]->mask;
+		if ( !myStats->mask )
+		{
+			if ( myStats->mask = newItem(armor->type, armor->status,
+				armor->beatitude, armor->count, armor->appearance,
+				armor->identified, nullptr) )
+			{
+				myStats->mask->ownerUid = players[monsterclicked]->entity->getUID();
+			}
+		}
+		else
+		{
+			if ( Item* stolenArmor = newItem(armor->type, armor->status,
+				armor->beatitude, armor->count, armor->appearance,
+				armor->identified, &myStats->inventory) )
+			{
+				stolenArmor->ownerUid = players[monsterclicked]->entity->getUID();
+			}
+		}
+
+		if ( monsterclicked > 0 && multiplayer == SERVER && !players[monsterclicked]->isLocalPlayer() )
+		{
+			strcpy((char*)net_packet->data, "STLA");
+			net_packet->data[4] = 9;
+			SDLNet_Write32(static_cast<Uint32>(armor->type), &net_packet->data[5]);
+			SDLNet_Write32(static_cast<Uint32>(armor->status), &net_packet->data[9]);
+			SDLNet_Write32(static_cast<Uint32>(armor->beatitude), &net_packet->data[13]);
+			SDLNet_Write32(static_cast<Uint32>(armor->count), &net_packet->data[17]);
+			SDLNet_Write32(static_cast<Uint32>(armor->appearance), &net_packet->data[21]);
+			net_packet->data[25] = armor->identified;
+			net_packet->address.host = net_clients[monsterclicked - 1].host;
+			net_packet->address.port = net_clients[monsterclicked - 1].port;
+			net_packet->len = 26;
+			sendPacketSafe(net_sock, -1, net_packet, monsterclicked - 1);
+		}
+
+		messagePlayer(monsterclicked, MESSAGE_COMBAT, Language::get(6087), 
+			getMonsterLocalizedName(myStats->type).c_str(), armor->getName());
+
+		stats[monsterclicked]->mask = nullptr;
+		if ( armor->node )
+		{
+			list_RemoveNode(armor->node);
+		}
+		else
+		{
+			free(armor);
 		}
 	}
 
