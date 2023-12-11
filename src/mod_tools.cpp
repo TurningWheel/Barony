@@ -9123,19 +9123,21 @@ EquipmentModelOffsets_t::ModelOffset_t::AdditionalOffset_t EquipmentModelOffsets
 	return EquipmentModelOffsets_t::ModelOffset_t::AdditionalOffset_t();
 }
 
-void EquipmentModelOffsets_t::readFromFile(std::string monsterName)
+void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterType)
 {
-	int monsterType = 0;
-	for ( int i = 0; i < NUMMONSTERS; ++i )
+	if ( monsterType == NOTHING )
 	{
-		if ( monstertypename[i] == monsterName )
+		for ( int i = 0; i < NUMMONSTERS; ++i )
 		{
-			monsterType = i;
-			break;
+			if ( monstertypename[i] == monsterName )
+			{
+				monsterType = i;
+				break;
+			}
 		}
 	}
 
-	if ( monsterType == 0 )
+	if ( monsterType == NOTHING )
 	{
 		return;
 	}
@@ -9146,7 +9148,7 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName)
 
 	if ( !PHYSFS_getRealDir(filename.c_str()) )
 	{
-		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		//printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
 		return;
 	}
 
@@ -9374,4 +9376,6 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName)
 			}
 		}
 	}
+
+	printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
 }

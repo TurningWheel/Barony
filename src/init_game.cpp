@@ -80,6 +80,10 @@ void initGameDatafiles(bool moddedReload)
 	StatueManager.readAllStatues();
 	GameModeManager_t::CurrentSession_t::SeededRun_t::readSeedNamesFromFile();
 	loadLights();
+	for ( int c = 1; c < NUMMONSTERS; ++c )
+	{
+		EquipmentModelOffsets.readFromFile(monstertypename[c]);
+	}
 }
 
 void initGameDatafilesAsync(bool moddedReload)

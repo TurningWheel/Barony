@@ -3372,7 +3372,7 @@ struct EquipmentModelOffsets_t
 		std::map<int, AdditionalOffset_t> adjustToExpandedHelm;
 	};
 	std::map<int, std::map<int, ModelOffset_t>> monsterModelsMap;
-	void readFromFile(std::string monsterName);
+	void readFromFile(std::string monsterName, int monsterType = NOTHING);
 	bool modelOffsetExists(int monster, int sprite);
 	bool expandHelmToFitMask(int monster, int helmSprite, int maskSprite);
 	bool maskHasAdjustmentForExpandedHelm(int monster, int helmSprite, int maskSprite);
