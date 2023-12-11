@@ -14,12 +14,6 @@
 
 
 Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creaturelist) :
-	char_gonnavomit(skill[26]),
-	char_heal(skill[22]),
-	char_energize(skill[23]),
-	char_torchtime(skill[25]),
-	char_poison(skill[21]),
-	char_fire(skill[36]),
 	chanceToPutOutFire(skill[37]),
 	circuit_status(skill[28]),
 	switch_power(skill[0]),
@@ -36,6 +30,13 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	chestHasVampireBook(skill[11]),
 	chestLockpickHealth(skill[12]),
 	chestOldHealth(skill[15]),
+	char_gonnavomit(skill[26]),
+	char_heal(skill[22]),
+	char_energize(skill[23]),
+	char_drunk(skill[24]),
+	char_torchtime(skill[25]),
+	char_poison(skill[21]),
+	char_fire(skill[36]),
 	monsterState(skill[0]),
 	monsterTarget(skill[1]),
 	monsterTargetX(fskill[2]),

@@ -6305,7 +6305,24 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 	    const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
 		if ( players[player] && players[player]->entity )
 		{
-			spawnMagicTower(nullptr, players[player]->entity->x, players[player]->entity->y, SPELL_FIREBALL, nullptr);
+			bool protection = false;
+			if ( stats[player]->mask && stats[player]->mask->type == MASK_HAZARD_GOGGLES )
+			{
+				bool shapeshifted = false;
+				if ( stats[player]->type != HUMAN )
+				{
+					if ( players[player]->entity->effectShapeshift != NOTHING )
+					{
+						shapeshifted = true;
+					}
+				}
+				if ( !shapeshifted )
+				{
+					protection = true;
+				}
+			}
+			spawnMagicTower(protection ? players[player]->entity : nullptr, 
+				players[player]->entity->x, players[player]->entity->y, SPELL_FIREBALL, nullptr);
 			players[player]->entity->setObituary(Language::get(3350));
 			stats[player]->killer = KilledBy::FAILED_ALCHEMY;
 		}

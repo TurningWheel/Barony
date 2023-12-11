@@ -7791,6 +7791,22 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		{
 			bool lowDuration = stats[player]->EFFECTS_TIMERS[q.effect] > 0 &&
 				(stats[player]->EFFECTS_TIMERS[q.effect] < TICKS_PER_SECOND * 5);
+			if ( q.effect == EFF_NAUSEA_PROTECTION )
+			{
+				lowDuration = false;
+			}
+			else if ( q.effect == EFF_BLIND && stats[player]->mask
+				&& (stats[player]->mask->type == TOOL_BLINDFOLD
+					|| stats[player]->mask->type == TOOL_BLINDFOLD_FOCUS
+					|| stats[player]->mask->type == TOOL_BLINDFOLD_TELEPATHY) )
+			{
+				lowDuration = false;
+			}
+			else if ( q.effect == EFF_TELEPATH && stats[player]->mask
+				&& (stats[player]->mask->type == TOOL_BLINDFOLD_TELEPATHY) )
+			{
+				lowDuration = false;
+			}
 			q.lowDuration = lowDuration;
 			if ( lowDuration && lowDurationFlash )
 			{
@@ -17804,7 +17820,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					int weight = player.movement.getCharacterModifiedWeight();
 					int equippedWeightTotal = player.movement.getCharacterEquippedWeight();
 					int equippedWeight = player.movement.getCharacterModifiedWeight(&equippedWeightTotal);
-					int goldWeightTotal = stats[player.playernum]->GOLD / 100;
+					int goldWeightTotal = stats[player.playernum]->getGoldWeight();
 					int goldWeight = player.movement.getCharacterModifiedWeight(&goldWeightTotal);
 					Sint32 STR = statGetSTR(stats[player.playernum], player.entity);
 					Sint32 DEX = statGetDEX(stats[player.playernum], player.entity);
@@ -17994,7 +18010,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					int weight = player.movement.getCharacterModifiedWeight();
 					int equippedWeightTotal = player.movement.getCharacterEquippedWeight();
 					int equippedWeight = player.movement.getCharacterModifiedWeight(&equippedWeightTotal);
-					int goldWeightTotal = stats[player.playernum]->GOLD / 100;
+					int goldWeightTotal = stats[player.playernum]->getGoldWeight();
 					int goldWeight = player.movement.getCharacterModifiedWeight(&goldWeightTotal);
 					Sint32 STR = statGetSTR(stats[player.playernum], player.entity);
 					Sint32 DEX = statGetDEX(stats[player.playernum], player.entity);
@@ -19713,7 +19729,7 @@ void Player::CharacterSheet_t::updateAttributes()
 				weight += item->getWeight();
 			}
 		}
-		weight += stats[player.playernum]->GOLD / 100;
+		weight += stats[player.playernum]->getGoldWeight();
 		snprintf(buf, sizeof(buf), "%d", weight);
 		if ( strcmp(buf, field->getText()) )
 		{

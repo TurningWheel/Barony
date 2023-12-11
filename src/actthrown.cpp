@@ -1071,8 +1071,8 @@ void actThrown(Entity* my)
 										{
 											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3878), Language::get(3879), MSG_COMBAT);
 										}
+										disableAlertBlindStatus = true; // don't aggro target.
 									}
-									disableAlertBlindStatus = true; // don't aggro target.
 								}
 								else if ( hit.entity->behavior == &actPlayer )
 								{

@@ -2605,24 +2605,38 @@ void actHudWeapon(Entity* my)
 	}
 	else if ( HUDWEAPON_CHOP == 15 )     // return from second swing
 	{
-		HUDWEAPON_MOVEX -= .25;
+		real_t speedFactor = 1.0;
+		if ( stats[HUDWEAPON_PLAYERNUM]->mask && stats[HUDWEAPON_PLAYERNUM]->mask->type == MASK_TECH_GOGGLES )
+		{
+			bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats[HUDWEAPON_PLAYERNUM]);
+			if ( stats[HUDWEAPON_PLAYERNUM]->mask->beatitude >= 0 || cursedItemIsBuff )
+			{
+				speedFactor = std::min(speedFactor + abs(stats[HUDWEAPON_PLAYERNUM]->mask->beatitude) * 0.25, 2.0);
+			}
+			else
+			{
+				speedFactor = std::max(speedFactor - abs(stats[HUDWEAPON_PLAYERNUM]->mask->beatitude) * 0.25, 0.5);
+			}
+		}
+
+		HUDWEAPON_MOVEX -= .25 * speedFactor;
 		if ( HUDWEAPON_MOVEX < 0 )
 		{
 			HUDWEAPON_MOVEX = 0;
 		}
-		HUDWEAPON_MOVEY -= .25;
+		HUDWEAPON_MOVEY -= .25 * speedFactor;
 		if ( HUDWEAPON_MOVEY < 0 )
 		{
 			HUDWEAPON_MOVEY = 0;
 		}
-		HUDWEAPON_ROLL += .05;
+		HUDWEAPON_ROLL += .05 * speedFactor;
 
-		HUDWEAPON_YAW -= .05;
+		HUDWEAPON_YAW -= .05 * speedFactor;
 		if ( HUDWEAPON_YAW < -.1 )
 		{
 			HUDWEAPON_YAW = -.1;
 		}
-		HUDWEAPON_MOVEZ += .35;
+		HUDWEAPON_MOVEZ += .35 * speedFactor;
 		if ( HUDWEAPON_MOVEZ > 0 )
 		{
 			HUDWEAPON_MOVEZ = 0;

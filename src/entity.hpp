@@ -42,12 +42,6 @@ struct spell_t;
 // entity class
 class Entity
 {
-	Sint32& char_gonnavomit;
-	Sint32& char_heal;
-	Sint32& char_energize;
-	Sint32& char_torchtime;
-	Sint32& char_poison;
-	Sint32& char_fire;		// skill[36] - Counter for how many ticks Entity will be on fire
 	Sint32& circuit_status;	// Use CIRCUIT_OFF and CIRCUIT_ON.
 	Sint32& switch_power;	// Switch/mechanism power status.
 	Sint32& chanceToPutOutFire; // skill[37] - Value between 5 and 10, with 10 being the default starting chance, and 5 being absolute minimum
@@ -182,6 +176,14 @@ public:
 	Sint32& chestHasVampireBook; // skill[11]
 	Sint32& chestLockpickHealth; // skill[12]
 	Sint32& chestOldHealth; //skill[15]
+
+	Sint32& char_gonnavomit; // skill[26]
+	Sint32& char_heal; // skill[22]
+	Sint32& char_energize; // skill[23]
+	Sint32& char_drunk; // skill[24]
+	Sint32& char_torchtime; // skill[25]
+	Sint32& char_poison; // skill[21]
+	Sint32& char_fire;		// skill[36] - Counter for how many ticks Entity will be on fire
 
 	//--PUBLIC MONSTER SKILLS--
 	Sint32& monsterState; //skill[0]
@@ -1019,6 +1021,7 @@ public:
 	static void monsterRollLevelUpStats(int increasestat[3]);
 	bool disturbMimic(Entity* touched, bool takenDamage, bool doMessage);
 	bool isInertMimic() const;
+	bool entityCanVomit() const;
 };
 
 Monster getMonsterFromPlayerRace(int playerRace); // convert playerRace into the relevant monster type
@@ -1032,13 +1035,6 @@ extern list_t entitiesToDelete[MAXPLAYERS];
 extern Uint32 entity_uids, lastEntityUIDs;
 //extern Entity *players[4];
 extern Uint32 nummonsters;
-
-#define CHAR_POISON my->skill[21] //TODO: Being replaced with Entity char_poison
-#define CHAR_HEAL my->skill[22] //TODO: Being replaced with Entity::char_heal
-#define CHAR_ENERGIZE my->skill[23] //TODO: Being replaced with Entity::char_energize
-#define CHAR_DRUNK my->skill[24]
-#define CHAR_TORCHTIME my->skill[25] //TODO: Being replaced with Entity::char_torchtime
-#define CHAR_GONNAVOMIT my->skill[26] //TODO: Being replaced with Entity::char_gonnavomit
 
 class Item;
 

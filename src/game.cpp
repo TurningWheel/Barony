@@ -1107,6 +1107,30 @@ void gameLogic(void)
 			    }
 			    else
 			    {
+					bool shapeshifted = false;
+					if ( stats[c]->type != HUMAN )
+					{
+						if ( players[c]->entity && players[c]->entity->effectShapeshift != NOTHING )
+						{
+							shapeshifted = true;
+						}
+					}
+					if ( !shapeshifted )
+					{
+						if ( stats[c]->mask && stats[c]->mask->type == MASK_HAZARD_GOGGLES )
+						{
+							// return to normal.
+							if ( drunkextend[c] > 0 )
+							{
+								drunkextend[c] -= .005;
+								if ( drunkextend[c] < 0 )
+								{
+									drunkextend[c] = 0;
+								}
+							}
+							continue;
+						}
+					}
 				    if ( drunkextend[c] < 0.5 )
 				    {
 					    drunkextend[c] += .005;

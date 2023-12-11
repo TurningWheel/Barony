@@ -3536,7 +3536,7 @@ void actMonster(Entity* my)
 	{
 		weight += myStats->mask->getWeight();
 	}
-	weight += myStats->GOLD / 100;
+	weight += myStats->getGoldWeight();
 	weight /= 2; // on monsters weight shouldn't matter so much
 	double weightratio = (1000 + my->getSTR() * 100 - weight) / (double)(1000 + my->getSTR() * 100);
 	weightratio = fmin(fmax(0, weightratio), 1);
@@ -11601,8 +11601,11 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 	if ( local_rng.rand() % pukeChance == 0 && pukeChance < 100 )
 	{
 		buffDuration = 0;
-		this->char_gonnavomit = 40 + local_rng.rand() % 10;
-		puking = true;
+		if ( this->entityCanVomit() )
+		{
+			this->char_gonnavomit = 40 + local_rng.rand() % 10;
+			puking = true;
+		}
 	}
 	else
 	{

@@ -46,12 +46,6 @@ Construct an Entity
 
 Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creaturelist) :
 	lightBonus(0.f),
-	char_gonnavomit(skill[26]),
-	char_heal(skill[22]),
-	char_energize(skill[23]),
-	char_torchtime(skill[25]),
-	char_poison(skill[21]),
-	char_fire(skill[36]),
 	chanceToPutOutFire(skill[37]),
 	circuit_status(skill[28]),
 	switch_power(skill[0]),
@@ -68,6 +62,13 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	chestHasVampireBook(skill[11]),
 	chestLockpickHealth(skill[12]),
 	chestOldHealth(skill[15]),
+	char_gonnavomit(skill[26]),
+	char_heal(skill[22]),
+	char_energize(skill[23]),
+	char_drunk(skill[24]),
+	char_torchtime(skill[25]),
+	char_poison(skill[21]),
+	char_fire(skill[36]),
 	monsterState(skill[0]),
 	monsterTarget(skill[1]),
 	monsterTargetX(fskill[2]),
@@ -1223,7 +1224,17 @@ void Entity::effectTimes()
 						updateClient = true;
 						break;
 					case EFF_POISONED:
-						messagePlayer(player, MESSAGE_STATUS, Language::get(594));
+						if ( myStats->mask != nullptr && myStats->mask->type == MASK_PLAGUE
+							&& !(myStats->type != HUMAN && effectShapeshift != NOTHING)
+							&& !(myStats->mask->beatitude >= 0 || shouldInvertEquipmentBeatitude(myStats)) )
+						{
+							// don't play any messages since we'll reset the counter in due time.
+							// likely to happen on level change.
+						}
+						else
+						{
+							messagePlayer(player, MESSAGE_STATUS, Language::get(594));
+						}
 						break;
 					case EFF_STUNNED:
 						//messagePlayer(player, MESSAGE_STATUS, Language::get(595));
@@ -1345,6 +1356,23 @@ void Entity::effectTimes()
 							if ( !isLevitating(myStats) )
 							{
 								messagePlayer(player, MESSAGE_STATUS, Language::get(607));
+							}
+						}
+						break;
+					case EFF_NAUSEA_PROTECTION:
+						if ( myStats->mask != nullptr && myStats->mask->type == MASK_PLAGUE
+							&& !(myStats->type != HUMAN && effectShapeshift != NOTHING) )
+						{
+							// don't play any messages since we'll reset the counter in due time.
+							// likely to happen on level change.
+						}
+						else
+						{
+							setEffect(EFF_NAUSEA_PROTECTION, false, 0, true);
+							if ( players[player]->entity->entityCanVomit() && !stats[player]->EFFECTS[EFF_VOMITING] )
+							{
+								messagePlayer(player, MESSAGE_STATUS, Language::get(634));
+								players[player]->entity->char_gonnavomit = 140 + local_rng.rand() % 60;
 							}
 						}
 						break;
@@ -3524,7 +3552,7 @@ void Entity::handleEffects(Stat* myStats)
 
 	// "random" vomiting
 	if ( !this->char_gonnavomit && !myStats->EFFECTS[EFF_VOMITING] 
-		&& myStats->type != SKELETON && effectShapeshift == NOTHING && myStats->type != AUTOMATON )
+		&& this->entityCanVomit() )
 	{
 		if ( myStats->HUNGER > 1500 && local_rng.rand() % 1000 == 0 )
 		{
@@ -3549,7 +3577,7 @@ void Entity::handleEffects(Stat* myStats)
 	if ( this->char_gonnavomit > 0 )
 	{
 		this->char_gonnavomit--;
-		if ( this->char_gonnavomit == 0 )
+		if ( this->char_gonnavomit == 0 && this->entityCanVomit() )
 		{
 			messagePlayer(player, MESSAGE_STATUS, Language::get(635));
 			myStats->EFFECTS[EFF_VOMITING] = true;
@@ -4025,10 +4053,19 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			if ( local_rng.rand() % 5 == 0 && getCON() >= -3 )
 			{
-				messagePlayer(player, MESSAGE_STATUS, Language::get(641));
-				myStats->EFFECTS_TIMERS[EFF_POISONED] = 0;
-				myStats->EFFECTS[EFF_POISONED] = false;
-				serverUpdateEffects(player);
+				if ( myStats->mask != nullptr && myStats->mask->type == MASK_PLAGUE
+					&& !(myStats->type != HUMAN && effectShapeshift != NOTHING)
+					&& !(myStats->mask->beatitude >= 0 || shouldInvertEquipmentBeatitude(myStats)) )
+				{
+					// don't cure wearing cursed plague mask
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_STATUS, Language::get(641));
+					myStats->EFFECTS_TIMERS[EFF_POISONED] = 0;
+					myStats->EFFECTS[EFF_POISONED] = false;
+					serverUpdateEffects(player);
+				}
 			}
 		}
 	}
@@ -4741,12 +4778,42 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
-	if ( player >= 0 
-		&& myStats->mask != nullptr
-		&& myStats->mask->type == TOOL_BLINDFOLD_TELEPATHY 
-		&& (ticks % 45 == 0 || !myStats->EFFECTS[EFF_TELEPATH]) )
+	if ( player >= 0 && myStats->mask != nullptr )
 	{
-		setEffect(EFF_TELEPATH, true, 60, true);
+		if ( myStats->mask->type == TOOL_BLINDFOLD_TELEPATHY
+			&& (ticks % 45 == 0 || !myStats->EFFECTS[EFF_TELEPATH]) )
+		{
+			setEffect(EFF_TELEPATH, true, 60, true);
+		}
+		else if ( myStats->mask->type == MASK_PLAGUE && !(myStats->type != HUMAN && effectShapeshift != NOTHING) )
+		{
+			if ( ticks % 45 == 0 || !myStats->EFFECTS[EFF_NAUSEA_PROTECTION] )
+			{
+				setEffect(EFF_NAUSEA_PROTECTION, true, 60, true);
+			}
+			if ( ticks % 45 == 0 || !myStats->EFFECTS[EFF_POISONED] )
+			{
+				if ( !(myStats->type == INSECTOID || (myStats->amulet && myStats->amulet->type == AMULET_POISONRESISTANCE)) )
+				{
+					bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(myStats);
+					if ( myStats->mask->beatitude >= 0 || cursedItemIsBuff )
+					{
+						// nothing, good
+					}
+					else
+					{
+						bool poisoned = myStats->EFFECTS[EFF_POISONED];
+						setEffect(EFF_POISONED, true, (TICKS_PER_SECOND + 1) * 3, true);
+						if ( !poisoned && myStats->EFFECTS[EFF_POISONED] )
+						{
+							myStats->poisonKiller = 0;
+							messagePlayerColor(player, MESSAGE_STATUS, makeColorRGB(255, 0, 0), 
+								Language::get(6086), myStats->mask->getName());
+						}
+					}
+				}
+			}
+		}
 	}
 
 	bool freeAction = false;
@@ -5796,7 +5863,8 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 			}
 			PER += (cursedItemIsBuff ? abs(entitystats->mask->beatitude) : entitystats->mask->beatitude);
 		}
-		else if ( entitystats->mask->type == MASK_HAZARD_GOGGLES || entitystats->mask->type == MASK_TECH_GOGGLES )
+		else if ( entitystats->mask->type == MASK_HAZARD_GOGGLES
+			|| entitystats->mask->type == MASK_TECH_GOGGLES )
 		{
 			PER += (cursedItemIsBuff ? abs(entitystats->mask->beatitude) : entitystats->mask->beatitude);
 		}
@@ -15265,6 +15333,23 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 	{
 		switch ( effect )
 		{
+			case EFF_MESSY:
+				if ( myStats->mask && myStats->mask->type == MASK_HAZARD_GOGGLES )
+				{
+					bool shapeshifted = false;
+					if ( behavior == &actPlayer && myStats->type != HUMAN )
+					{
+						if ( effectShapeshift != NOTHING )
+						{
+							shapeshifted = true;
+						}
+					}
+					if ( !shapeshifted )
+					{
+						return false;
+					}
+				}
+				break;
 			case EFF_GREASY:
 				if ( myStats->type == GOATMAN )
 				{
@@ -15285,6 +15370,24 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 			case EFF_KNOCKBACK:
 			case EFF_BLIND:
 			case EFF_WEBBED:
+				if ( effect == EFF_BLIND )
+				{
+					if ( myStats->mask && myStats->mask->type == MASK_HAZARD_GOGGLES )
+					{
+						bool shapeshifted = false;
+						if ( behavior == &actPlayer && myStats->type != HUMAN )
+						{
+							if ( effectShapeshift != NOTHING )
+							{
+								shapeshifted = true;
+							}
+						}
+						if ( !shapeshifted )
+						{
+							return false;
+						}
+					}
+				}
 				if ( (myStats->type >= LICH && myStats->type < KOBOLD)
 					|| myStats->type == COCKATRICE || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 				{
@@ -20602,4 +20705,47 @@ void Entity::seedEntityRNG(Uint32 seed)
 	{
 		entity_rng->seedBytes(&seed, sizeof(seed));
 	}
+}
+
+bool Entity::entityCanVomit() const
+{
+	if ( behavior != &actMonster && behavior != actPlayer )
+	{
+		return false;
+	}
+
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return false;
+	}
+
+	bool shapeshifted = false;
+	if ( behavior == &actPlayer )
+	{
+		if ( myStats->type != HUMAN )
+		{
+			if ( effectShapeshift != NOTHING )
+			{
+				return false;
+			}
+		}
+	}
+
+	if ( myStats->type == SKELETON || myStats->type == AUTOMATON )
+	{
+		return false;
+	}
+
+	if ( !shapeshifted && myStats->mask && myStats->mask->type == MASK_PLAGUE )
+	{
+		return false;
+	}
+
+	if ( myStats->EFFECTS[EFF_NAUSEA_PROTECTION] )
+	{
+		return false;
+	}
+
+	return true;
 }

@@ -62,6 +62,7 @@ static const int EFF_DASH = 37;
 static const int EFF_DISTRACTED_COOLDOWN = 38;
 static const int EFF_MIMIC_LOCKED = 39;
 static const int EFF_ROOTED = 40;
+static const int EFF_NAUSEA_PROTECTION = 41;
 static const int NUMEFFECTS = 64;
 
 // stats
@@ -265,6 +266,7 @@ public:
 	{
 		PROFICIENCIES[skill] = value;
 	}
+	int getGoldWeight() const;
 	bool EFFECTS[NUMEFFECTS];
 	Sint32 EFFECTS_TIMERS[NUMEFFECTS];
 	bool defending;

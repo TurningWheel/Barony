@@ -941,15 +941,13 @@ void actArrow(Entity* my)
 								}
 								if ( hit.entity->behavior == &actPlayer )
 								{
-									if ( local_rng.rand() % 8 == 0 && hit.entity->skill[26] == 0 && !hitstats->EFFECTS[EFF_VOMITING] )
+									if ( local_rng.rand() % 8 == 0 && hit.entity->char_gonnavomit == 0 && !hitstats->EFFECTS[EFF_VOMITING] )
 									{
 										// maybe vomit
 										messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, Language::get(634));
-										if ( hitstats->type != SKELETON
-											&& hit.entity->effectShapeshift == NOTHING
-											&& hitstats->type != AUTOMATON )
+										if ( hit.entity->entityCanVomit() )
 										{
-											hit.entity->skill[26] = 140 + local_rng.rand() % 60; 
+											hit.entity->char_gonnavomit = 140 + local_rng.rand() % 60;
 										}
 									}
 									Uint32 color = makeColorRGB(255, 0, 0);

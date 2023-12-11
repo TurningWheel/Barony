@@ -1128,22 +1128,20 @@ bool item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 		return true;
 	}
 
-	if ( entity->behavior == &actMonster && !entity->isBossMonster() )
-	{
-		entity->monsterReleaseAttackTarget();
-	}
-	messagePlayer(player, MESSAGE_HINT, Language::get(765));
-	stats->EFFECTS[EFF_BLIND] = true;
+	int duration = item->potionGetEffectDurationRandom(entity, stats);
 	if ( player >= 0 )
 	{
-		stats->EFFECTS_TIMERS[EFF_BLIND] = item->potionGetEffectDurationRandom(entity, stats);
-		stats->EFFECTS_TIMERS[EFF_BLIND] = std::max(300, stats->EFFECTS_TIMERS[EFF_BLIND] - (entity->getPER() + entity->getCON()) * 5);
+		duration = std::max(300, stats->EFFECTS_TIMERS[EFF_BLIND] - (entity->getPER() + entity->getCON()) * 5);
 	}
-	else
+
+	if ( entity->setEffect(EFF_BLIND, true, duration, true) )
 	{
-		entity->setEffect(EFF_BLIND, true, item->potionGetEffectDurationRandom(entity, stats), true);
+		if ( entity->behavior == &actMonster && !entity->isBossMonster() )
+		{
+			entity->monsterReleaseAttackTarget();
+		}
+		messagePlayer(player, MESSAGE_HINT, Language::get(765));
 	}
-	serverUpdateEffects(player);
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
@@ -1484,16 +1482,14 @@ bool item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		messagePlayer(player, MESSAGE_HINT, Language::get(2900));
 		//Cursed effect blinds you.
-		messagePlayer(player, MESSAGE_HINT, Language::get(765));
-		stats->EFFECTS[EFF_BLIND] = true;
+		int duration = item->potionGetCursedEffectDurationRandom(entity, stats);
 		if ( player >= 0 )
 		{
-			stats->EFFECTS_TIMERS[EFF_BLIND] = item->potionGetCursedEffectDurationRandom(entity, stats);
-			stats->EFFECTS_TIMERS[EFF_BLIND] = std::max(300, stats->EFFECTS_TIMERS[EFF_BLIND] - (entity->getPER() + entity->getCON()) * 5);
+			duration = std::max(300, stats->EFFECTS_TIMERS[EFF_BLIND] - (entity->getPER() + entity->getCON()) * 5);
 		}
-		else
+		if ( entity->setEffect(EFF_BLIND, true, duration, true) )
 		{
-			entity->setEffect(EFF_BLIND, true, item->potionGetCursedEffectDurationRandom(entity, stats), true);
+			messagePlayer(player, MESSAGE_HINT, Language::get(765));
 		}
 	}
 	else
@@ -4296,7 +4292,7 @@ void item_Food(Item*& item, int player)
 	int oldcount;
 	int pukeChance;
 
-	if ( !stats[player] )
+	if ( player < 0 || player >= MAXPLAYERS || !stats[player] )
 	{
 		return;
 	}
@@ -4444,11 +4440,9 @@ void item_Food(Item*& item, int player)
 		}
 		if ( stats[player] && players[player] && players[player]->entity )
 		{
-			if ( stats[player]->type != SKELETON
-				&& players[player]->entity->effectShapeshift == NOTHING
-				&& stats[player]->type != AUTOMATON )
+			if ( players[player]->entity->entityCanVomit() )
 			{
-				players[player]->entity->skill[26] = 40 + local_rng.rand() % 10;
+				players[player]->entity->char_gonnavomit = 40 + local_rng.rand() % 10;
 			}
 		}
 		consumeItem(item, player);
@@ -4457,10 +4451,10 @@ void item_Food(Item*& item, int player)
 	if ( item->beatitude < 0 && item->type == FOOD_CREAMPIE )
 	{
 		messagePlayer(player, MESSAGE_COMBAT | MESSAGE_STATUS, Language::get(909));
-		messagePlayer(player, MESSAGE_COMBAT | MESSAGE_STATUS, Language::get(910));
-		stats[player]->EFFECTS[EFF_MESSY] = true;
-		stats[player]->EFFECTS_TIMERS[EFF_MESSY] = 600; // ten seconds
-		serverUpdateEffects(player);
+		if ( players[player] && players[player]->entity && players[player]->entity->setEffect(EFF_MESSY, true, 600, false) )
+		{
+			messagePlayer(player, MESSAGE_COMBAT | MESSAGE_STATUS, Language::get(910));
+		}
 		consumeItem(item, player);
 		return;
 	}
@@ -4731,11 +4725,9 @@ void item_FoodTin(Item*& item, int player)
 
 		if ( stats[player] && players[player] && players[player]->entity )
 		{
-			if ( stats[player]->type != SKELETON
-				&& players[player]->entity->effectShapeshift == NOTHING
-				&& stats[player]->type != AUTOMATON )
+			if ( players[player]->entity->entityCanVomit() )
 			{
-				players[player]->entity->skill[26] = 40 + local_rng.rand() % 10;
+				players[player]->entity->char_gonnavomit = 40 + local_rng.rand() % 10;
 			}
 		}
 		consumeItem(item, player);
@@ -5304,10 +5296,10 @@ void item_FoodAutomaton(Item*& item, int player)
 	if ( item->beatitude < 0 && item->type == FOOD_CREAMPIE )
 	{
 		messagePlayer(player, MESSAGE_STATUS | MESSAGE_COMBAT, Language::get(909));
-		messagePlayer(player, MESSAGE_STATUS | MESSAGE_COMBAT, Language::get(910));
-		stats[player]->EFFECTS[EFF_MESSY] = true;
-		stats[player]->EFFECTS_TIMERS[EFF_MESSY] = 600; // ten seconds
-		serverUpdateEffects(player);
+		if ( players[player]->entity && players[player]->entity->setEffect(EFF_MESSY, true, 600, false) )
+		{
+			messagePlayer(player, MESSAGE_COMBAT | MESSAGE_STATUS, Language::get(910));
+		}
 		consumeItem(item, player);
 		return;
 	}
@@ -5621,9 +5613,9 @@ void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten)
 			else
 			{
 				messagePlayer(my->skill[2], MESSAGE_STATUS, Language::get(917));
-				if ( myStats->type != SKELETON && myStats->type != AUTOMATON )
+				if ( my->entityCanVomit() )
 				{
-					my->skill[26] = 40 + local_rng.rand() % 10;
+					my->char_gonnavomit = 40 + local_rng.rand() % 10;
 				}
 			}
 		}

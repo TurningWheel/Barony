@@ -3082,7 +3082,6 @@ int Player::PlayerMovement_t::getCharacterEquippedWeight()
 			}
 		}
 	}
-	//weight += stats[player.playernum]->GOLD / 100;
 	return weight;
 }
 
@@ -3100,7 +3099,7 @@ int Player::PlayerMovement_t::getCharacterWeight()
 			}
 		}
 	}
-	weight += stats[player.playernum]->GOLD / 100;
+	weight += stats[player.playernum]->getGoldWeight();
 	return weight;
 }
 
@@ -7509,7 +7508,7 @@ void actPlayer(Entity* my)
 		if ( (stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK] && (stats[PLAYER_NUM]->type != GOATMAN))
 			|| stats[PLAYER_NUM]->EFFECTS[EFF_WITHDRAWAL] )
 		{
-			CHAR_DRUNK++;
+			my->char_drunk++;
 			int drunkInterval = TICKS_PER_SECOND * 6;
 			if ( stats[PLAYER_NUM]->EFFECTS[EFF_WITHDRAWAL] )
 			{
@@ -7523,9 +7522,9 @@ void actPlayer(Entity* my)
 				}
 			}
 
-			if ( CHAR_DRUNK >= drunkInterval )
+			if ( my->char_drunk >= drunkInterval )
 			{
-				CHAR_DRUNK = 0;
+				my->char_drunk = 0;
 				messagePlayer(PLAYER_NUM, MESSAGE_WORLD, Language::get(579));
 				cameravars[PLAYER_NUM].shakex -= .04;
 				cameravars[PLAYER_NUM].shakey -= 5;

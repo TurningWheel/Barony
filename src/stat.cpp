@@ -22,13 +22,88 @@
 
 Stat* stats[MAXPLAYERS];
 
+int Stat::getGoldWeight() const
+{
+	bool cursedItemIsBuff = false;
+	bool isPlayer = false;
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( this == stats[i] )
+		{
+			isPlayer = true;
+			break;
+		}
+	}
+	if ( isPlayer )
+	{
+		cursedItemIsBuff = shouldInvertEquipmentBeatitude(this);
+	}
+
+	int weight = GOLD / 100;
+	if ( mask && mask->type == MASK_GOLDEN )
+	{
+		real_t equipmentBonus = 100.0;
+		if ( mask->beatitude >= 0 || cursedItemIsBuff )
+		{
+			equipmentBonus -= 50.0 * (1 + abs(mask->beatitude));
+			equipmentBonus = std::max(0.0, equipmentBonus);
+		}
+		else
+		{
+			equipmentBonus += abs(mask->beatitude) * 100;
+		}
+
+		weight *= (equipmentBonus / 100.0);
+	}
+
+	return weight;
+}
+
 Sint32 Stat::getModifiedProficiency(int skill) const
 {
-	if ( skill >= 0 && skill < NUMPROFICIENCIES )
+	if ( !(skill >= 0 && skill < NUMPROFICIENCIES) )
 	{
-		return std::min(100, std::max(0, PROFICIENCIES[skill]));
+		return 0;
 	}
-	return 0;
+
+	Sint32 base = std::min(100, std::max(0, PROFICIENCIES[skill]));
+	Sint32 equipmentBonus = 0;
+
+	bool cursedItemIsBuff = false;
+	bool isPlayer = false;
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( this == stats[i] )
+		{
+			isPlayer = true;
+			break;
+		}
+	}
+	if ( isPlayer )
+	{
+		cursedItemIsBuff = shouldInvertEquipmentBeatitude(this);
+	}
+
+	const int maxEquipmentBonus = 20;
+	if ( skill == PRO_ALCHEMY )
+	{
+		if ( mask )
+		{
+			if ( mask->type == MASK_HAZARD_GOGGLES )
+			{
+				if ( mask->beatitude >= 0 || cursedItemIsBuff )
+				{
+					equipmentBonus += std::min(maxEquipmentBonus, (1 + abs(mask->beatitude)) * 10);
+				}
+				else
+				{
+					equipmentBonus -= abs(mask->beatitude) * 10;
+				}
+			}
+		}
+	}
+
+	return std::min(100, std::max(0, base + equipmentBonus));
 }
 
 //Destructor

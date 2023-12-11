@@ -7864,7 +7864,24 @@ void GenericGUIMenu::alchemyCombinePotions()
 		}
 		else
 		{
-			spawnMagicTower(nullptr, players[gui_player]->entity->x, players[gui_player]->entity->y, SPELL_FIREBALL, nullptr);
+			bool protection = false;
+			if ( stats[gui_player]->mask && stats[gui_player]->mask->type == MASK_HAZARD_GOGGLES )
+			{
+				bool shapeshifted = false;
+				if ( stats[gui_player]->type != HUMAN )
+				{
+					if ( players[gui_player]->entity->effectShapeshift != NOTHING )
+					{
+						shapeshifted = true;
+					}
+				}
+				if ( !shapeshifted )
+				{
+					protection = true;
+				}
+			}
+			spawnMagicTower(protection ? players[gui_player]->entity : nullptr, 
+				players[gui_player]->entity->x, players[gui_player]->entity->y, SPELL_FIREBALL, nullptr);
 			players[gui_player]->entity->setObituary(Language::get(3350));
 		    stats[gui_player]->killer = KilledBy::FAILED_ALCHEMY;
 		}

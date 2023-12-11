@@ -736,6 +736,16 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				if ( parent && parentStats && yourStats )
 				{
 					reduceCollisionSize = useSmallCollision(*parent, *parentStats, *entity, *yourStats);
+					if ( reduceCollisionSize )
+					{
+						if ( parent->monsterIsTinkeringCreation()
+							&& yourStats->mask && yourStats->mask->type == MASK_TECH_GOGGLES
+							&& (parentStats->leader_uid == entity->getUID()
+								|| parent->monsterAllyGetPlayerLeader() == entity) )
+						{
+							continue;
+						}
+					}
 				}
 				else if ( parent && parent->behavior == &actDeathGhost
 					&& (entity->behavior == &actPlayer

@@ -233,21 +233,105 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 				playSoundEntity(my, 181, 128);
 				playSoundEntity(entity, 28, 64);
 				Entity* gib = spawnGib(entity);
+
+				int damage = 80;
+				if ( my->sprite == BOULDER_LAVA_SPRITE
+					|| my->sprite == BOULDER_ARCANE_SPRITE )
+				{
+					damage = 50;
+				}
+
+				if ( stats->helmet )
+				{
+					bool shapeshifted = (entity->behavior == &actPlayer && entity->effectShapeshift != NOTHING);
+
+					if ( !shapeshifted 
+						&& (stats->helmet->type == HELM_MINING || stats->helmet->type == HAT_TOPHAT) )
+					{
+						if ( stats->helmet->type == HAT_TOPHAT )
+						{
+							bool cursedItemIsBuff = false;
+							if ( entity->behavior == &actPlayer )
+							{
+								cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats);
+							}
+
+							if ( stats->helmet->beatitude >= 0 || cursedItemIsBuff )
+							{
+								damage = 0;
+							}
+							stats->helmet->status = BROKEN;
+						}
+						else if ( stats->helmet->type == HELM_MINING )
+						{
+							real_t mult = 0.5;
+							bool cursedItemIsBuff = false;
+							if ( entity->behavior == &actPlayer )
+							{
+								cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats);
+							}
+
+							if ( stats->helmet->beatitude >= 0 || cursedItemIsBuff )
+							{
+								mult -= 0.25 * abs(stats->helmet->beatitude);
+								mult = std::max(0.0, mult);
+							}
+							else
+							{
+								mult = 1.0;
+								mult += 0.25 * abs(stats->helmet->beatitude);
+							}
+
+							damage *= mult;
+							if ( stats->helmet->status > BROKEN )
+							{
+								stats->helmet->status = (Status)((int)stats->helmet->status - 1);
+							}
+						}
+
+						playSoundEntity(entity, 76, 64);
+
+						if ( entity->behavior == &actPlayer )
+						{
+							int player = entity->skill[2];
+							if ( stats->helmet->status > BROKEN )
+							{
+								messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(681), stats->helmet->getName());
+							}
+							else
+							{
+								messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(682), stats->helmet->getName());
+							}
+
+							if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
+							{
+								strcpy((char*)net_packet->data, "ARMR");
+								net_packet->data[4] = 0;
+								net_packet->data[5] = stats->helmet->status;
+								net_packet->address.host = net_clients[player - 1].host;
+								net_packet->address.port = net_clients[player - 1].port;
+								net_packet->len = 6;
+								sendPacketSafe(net_sock, -1, net_packet, player - 1);
+							}
+						}
+					}
+				}
+
 				if ( my->sprite == BOULDER_LAVA_SPRITE )
 				{
-					entity->modHP(-50);
+					entity->modHP(-damage);
 					entity->setObituary(Language::get(3898));
 					stats->killer = KilledBy::BOULDER;
 				}
 				else if ( my->sprite == BOULDER_ARCANE_SPRITE )
 				{
-					entity->modHP(-50);
+					entity->modHP(-damage);
 					entity->setObituary(Language::get(3899));
 					stats->killer = KilledBy::BOULDER;
 				}
 				else
 				{
-					entity->modHP(-80);
+					entity->modHP(-damage);
 					entity->setObituary(Language::get(1505));
 					stats->killer = KilledBy::BOULDER;
 				}
