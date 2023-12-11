@@ -3562,6 +3562,274 @@ void statueCycleItem(Item& item, bool dirForward)
 	}
 }
 
+void followerDebugEquipment(int player)
+{
+	static ConsoleVariable<bool> cvar_followerdebugequipment("/followerdebugequipment", false);
+	Entity* follower = nullptr;
+	if ( *cvar_followerdebugequipment && (svFlags & SV_FLAG_CHEATS) )
+	{
+		for ( node_t* node = stats[player]->FOLLOWERS.first; node != nullptr; node = node->next )
+		{
+			Uint32* c = (Uint32*)node->element;
+			if ( c )
+			{
+				follower = uidToEntity(*c);
+				break;
+			}
+		}
+	}
+
+	if ( follower )
+	{
+		Stat* stats = follower->getStats();
+		follower->setEffect(EFF_STUNNED, true, 50, false);
+
+		follower->flags[USERFLAG2] = false;
+		for ( auto bodypart : follower->bodyparts )
+		{
+			bodypart->flags[USERFLAG2] = false;
+		}
+
+		if ( keystatus[SDLK_F3] )
+		{
+			keystatus[SDLK_F3] = 0;
+			if ( stats->sex == MALE )
+			{
+				stats->sex = FEMALE;
+			}
+			else
+			{
+				stats->sex = MALE;
+			}
+		}
+
+		if ( keystatus[SDLK_1] )
+		{
+			Input::inputs[player].refresh();
+			keystatus[SDLK_1] = 0;
+			if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
+			{
+				if ( stats->helmet )
+				{
+					list_RemoveNode(stats->helmet->node);
+					stats->helmet = nullptr;
+				}
+			}
+			else
+			{
+				if ( !stats->helmet )
+				{
+					stats->helmet = newItem(LEATHER_HELM, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
+				}
+				if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
+				{
+					statueCycleItem(*stats->helmet, false);
+				}
+				else
+				{
+					statueCycleItem(*stats->helmet, true);
+				}
+			}
+		}
+		if ( keystatus[SDLK_2] )
+		{
+			Input::inputs[player].refresh();
+			keystatus[SDLK_2] = 0;
+			if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
+			{
+				if ( stats->breastplate )
+				{
+					list_RemoveNode(stats->breastplate->node);
+					stats->breastplate = nullptr;
+				}
+			}
+			else
+			{
+				if ( !stats->breastplate )
+				{
+					stats->breastplate = newItem(LEATHER_BREASTPIECE, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
+				}
+				if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
+				{
+					statueCycleItem(*stats->breastplate, false);
+				}
+				else
+				{
+					statueCycleItem(*stats->breastplate, true);
+				}
+			}
+		}
+		if ( keystatus[SDLK_3] )
+		{
+			Input::inputs[player].refresh();
+			keystatus[SDLK_3] = 0;
+			if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
+			{
+				if ( stats->gloves )
+				{
+					list_RemoveNode(stats->gloves->node);
+					stats->gloves = nullptr;
+				}
+			}
+			else
+			{
+				if ( !stats->gloves )
+				{
+					stats->gloves = newItem(GLOVES, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
+				}
+				if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
+				{
+					statueCycleItem(*stats->gloves, false);
+				}
+				else
+				{
+					statueCycleItem(*stats->gloves, true);
+				}
+			}
+		}
+		if ( keystatus[SDLK_4] )
+		{
+			Input::inputs[player].refresh();
+			keystatus[SDLK_4] = 0;
+			if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
+			{
+				if ( stats->shoes )
+				{
+					list_RemoveNode(stats->shoes->node);
+					stats->shoes = nullptr;
+				}
+			}
+			else
+			{
+				if ( !stats->shoes )
+				{
+					stats->shoes = newItem(LEATHER_BOOTS, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
+				}
+				if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
+				{
+					statueCycleItem(*stats->shoes, false);
+				}
+				else
+				{
+					statueCycleItem(*stats->shoes, true);
+				}
+			}
+		}
+		if ( keystatus[SDLK_5] )
+		{
+			Input::inputs[player].refresh();
+			keystatus[SDLK_5] = 0;
+			if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
+			{
+				if ( stats->weapon )
+				{
+					list_RemoveNode(stats->weapon->node);
+					stats->weapon = nullptr;
+				}
+			}
+			else
+			{
+				if ( !stats->weapon )
+				{
+					stats->weapon = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
+				}
+				if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
+				{
+					statueCycleItem(*stats->weapon, false);
+				}
+				else
+				{
+					statueCycleItem(*stats->weapon, true);
+				}
+			}
+		}
+		if ( keystatus[SDLK_6] )
+		{
+			Input::inputs[player].refresh();
+			keystatus[SDLK_6] = 0;
+			if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
+			{
+				if ( stats->shield )
+				{
+					list_RemoveNode(stats->shield->node);
+					stats->shield = nullptr;
+				}
+			}
+			else
+			{
+				if ( !stats->shield )
+				{
+					stats->shield = newItem(WOODEN_SHIELD, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
+				}
+				if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
+				{
+					statueCycleItem(*stats->shield, false);
+				}
+				else
+				{
+					statueCycleItem(*stats->shield, true);
+				}
+			}
+		}
+		if ( keystatus[SDLK_7] )
+		{
+			Input::inputs[player].refresh();
+			keystatus[SDLK_7] = 0;
+			if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
+			{
+				if ( stats->mask )
+				{
+					list_RemoveNode(stats->mask->node);
+					stats->mask = nullptr;
+				}
+			}
+			else
+			{
+				if ( !stats->mask )
+				{
+					stats->mask = newItem(TOOL_GLASSES, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
+				}
+				if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
+				{
+					statueCycleItem(*stats->mask, false);
+				}
+				else
+				{
+					statueCycleItem(*stats->mask, true);
+				}
+			}
+		}
+		if ( keystatus[SDLK_8] )
+		{
+			Input::inputs[player].refresh();
+			keystatus[SDLK_8] = 0;
+			if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
+			{
+				if ( stats->cloak )
+				{
+					list_RemoveNode(stats->cloak->node);
+					stats->cloak = nullptr;
+				}
+			}
+			else
+			{
+				if ( !stats->cloak )
+				{
+					stats->cloak = newItem(CLOAK, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
+				}
+				if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
+				{
+					statueCycleItem(*stats->cloak, false);
+				}
+				else
+				{
+					statueCycleItem(*stats->cloak, true);
+				}
+			}
+		}
+	}
+}
+
 void doStatueEditor(int player)
 {
 	if ( !StatueManager.activeEditing ) { return; }
@@ -6133,6 +6401,10 @@ void actPlayer(Entity* my)
 		{
 			clickDescription(PLAYER_NUM, NULL); // inspecting objects
 			doStatueEditor(PLAYER_NUM);
+			if ( svFlags & SV_FLAG_CHEATS )
+			{
+				followerDebugEquipment(PLAYER_NUM);
+			}
 
 			if ( followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT )
 			{
@@ -8992,7 +9264,7 @@ void actPlayer(Entity* my)
 					if ( entity->sprite == 165 || entity->sprite == 1196 )
 					{
 						entity->focalx = limbs[playerRace][10][0] + .25; // .25
-						entity->focaly = limbs[playerRace][10][1] - 2.25; // -2.25
+						entity->focaly = limbs[playerRace][10][1] - 2.5; // -2.25
 						entity->focalz = limbs[playerRace][10][2]; // .5
 						if ( entity->sprite == 1196 ) // MonocleWorn.vox
 						{
