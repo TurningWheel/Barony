@@ -244,6 +244,7 @@ public:
 	real_t& highlightForUI; //fskill[29] for highlighting interactibles
 	real_t& highlightForUIGlow; //fskill[28] for highlighting animation
 	real_t& grayscaleGLRender; //fskill[27] for grayscale rendering
+	real_t& noColorChangeAllyLimb; // fskill[26] for ignoring recolor of follower limbs
 
 	//--PUBLIC PLAYER SKILLS--
 	Sint32& playerLevelEntrySpeech; //skill[18]

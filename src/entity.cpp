@@ -339,6 +339,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	highlightForUI(fskill[29]),
 	highlightForUIGlow(fskill[28]),
 	grayscaleGLRender(fskill[27]),
+	noColorChangeAllyLimb(fskill[26]),
 	soundSourceFired(skill[0]),
 	soundSourceToPlay(skill[1]),
 	soundSourceVolume(skill[2]),
@@ -8001,7 +8002,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 				bool dyrnwynSmite = false;
 				bool gugnirProc = false;
-				if ( weaponskill == PRO_SWORD && myStats->weapon && myStats->weapon->type == ARTIFACT_SWORD )
+				if ( weaponskill == PRO_SWORD && myStats->weapon && myStats->weapon->type == ARTIFACT_SWORD && !shapeshifted )
 				{
 					switch ( hitstats->type )
 					{
@@ -8063,7 +8064,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					int myAttack = std::max(0, (Entity::getAttack(this, myStats, behavior == &actPlayer) * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats));
 					int enemyAC = AC(hitstats);
-					if ( weaponskill == PRO_POLEARM && myStats->weapon && myStats->weapon->type == ARTIFACT_SPEAR )
+					if ( weaponskill == PRO_POLEARM && myStats->weapon && myStats->weapon->type == ARTIFACT_SPEAR && !shapeshifted )
 					{
 						real_t amount = 0.f;
 						real_t percent = getArtifactWeaponEffectChance(ARTIFACT_SPEAR, *myStats, &amount);
@@ -8204,7 +8205,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					int olddamage = damage;
 					damage *= std::max(charge, MAXCHARGE / 2) / ((double)(MAXCHARGE / 2));
 					bool parashuProc = false;
-					if ( myStats->weapon )
+					if ( myStats->weapon && !shapeshifted )
 					{
 						if ( myStats->weapon->type == ARTIFACT_AXE )
 						{
@@ -12204,22 +12205,26 @@ bool Entity::checkEnemy(Entity* your)
 
 			if ( result )
 			{
-				if ( myStats->mask && (myStats->mask->type == MASK_MASQUERADE || myStats->mask->type == MASK_MOUTH_ROSE)
+				if ( !(behavior == &actPlayer && effectShapeshift != NOTHING)
+					&& myStats->mask && (myStats->mask->type == MASK_MASQUERADE || myStats->mask->type == MASK_MOUTH_ROSE)
 					&& (yourStats->type == INCUBUS || yourStats->type == SUCCUBUS) && your->behavior == &actMonster )
 				{
 					result = false;
 				}
-				else if ( yourStats->mask && (yourStats->mask->type == MASK_MASQUERADE || yourStats->mask->type == MASK_MOUTH_ROSE)
+				else if ( !(your->behavior == &actPlayer && your->effectShapeshift != NOTHING)
+					&& yourStats->mask && (yourStats->mask->type == MASK_MASQUERADE || yourStats->mask->type == MASK_MOUTH_ROSE)
 					&& (myStats->type == INCUBUS || myStats->type == SUCCUBUS) && behavior == &actMonster )
 				{
 					result = false;
 				}
-				else if ( myStats->mask && myStats->mask->type == MASK_SPOOKY
+				else if ( !(behavior == &actPlayer && effectShapeshift != NOTHING)
+					&& myStats->mask && myStats->mask->type == MASK_SPOOKY
 					&& (yourStats->type == GHOUL || yourStats->type == SHADOW) && your->behavior == &actMonster )
 				{
 					result = false;
 				}
-				else if ( yourStats->mask && yourStats->mask->type == MASK_SPOOKY
+				else if ( !(your->behavior == &actPlayer && your->effectShapeshift != NOTHING)
+					&& yourStats->mask && yourStats->mask->type == MASK_SPOOKY
 					&& (myStats->type == GHOUL || myStats->type == SHADOW) && behavior == &actMonster )
 				{
 					result = false;
@@ -20279,7 +20284,7 @@ bool monsterChangesColorWhenAlly(Stat* myStats, Entity* entity)
 		race = myStats->type;
 	}
 	
-	if ( race == HUMAN || race == SENTRYBOT
+	if ( race == HUMAN || race == SENTRYBOT || race == NOTHING
 		|| race == SPELLBOT || race == AUTOMATON || race == GYROBOT || race == DUMMYBOT )
 	{
 		return false;

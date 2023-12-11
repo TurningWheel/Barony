@@ -310,6 +310,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	highlightForUI(fskill[29]),
 	highlightForUIGlow(fskill[28]),
 	grayscaleGLRender(fskill[27]),
+	noColorChangeAllyLimb(fskill[26]),
 	soundSourceFired(skill[0]),
 	soundSourceToPlay(skill[1]),
 	soundSourceVolume(skill[2]),
