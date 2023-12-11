@@ -21,6 +21,7 @@
 #include "player.hpp"
 #include "prng.hpp"
 #include "scores.hpp"
+#include "mod_tools.hpp"
 
 const int NUM_GOATMAN_POTIONS = 4;
 const int NUM_GOATMAN_THROWN_WEAPONS = 2;
@@ -619,6 +620,7 @@ void initGoatman(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[GOATMAN][6][0]; // 1.5
 	entity->focaly = limbs[GOATMAN][6][1]; // 0
 	entity->focalz = limbs[GOATMAN][6][2]; // -.5
@@ -639,6 +641,7 @@ void initGoatman(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[GOATMAN][7][0]; // 2
 	entity->focaly = limbs[GOATMAN][7][1]; // 0
 	entity->focalz = limbs[GOATMAN][7][2]; // 0
@@ -658,6 +661,7 @@ void initGoatman(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[GOATMAN][8][0]; // 0
 	entity->focaly = limbs[GOATMAN][8][1]; // 0
 	entity->focalz = limbs[GOATMAN][8][2]; // 4
@@ -680,6 +684,7 @@ void initGoatman(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[GOATMAN][9][0]; // 0
 	entity->focaly = limbs[GOATMAN][9][1]; // 0
 	entity->focalz = limbs[GOATMAN][9][2]; // -2
@@ -699,6 +704,7 @@ void initGoatman(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[GOATMAN][10][0]; // 0
 	entity->focaly = limbs[GOATMAN][10][1]; // 0
 	entity->focalz = limbs[GOATMAN][10][2]; // .25
@@ -1355,6 +1361,11 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( entity->sprite == items[MASK_SHAMAN].index )
 					{
 						entity->roll = 0;
+						my->setHelmetLimbOffset(entity);
+						my->setHelmetLimbOffsetWithMask(helmet, entity);
+					}
+					else if ( EquipmentModelOffsets.modelOffsetExists(GOATMAN, entity->sprite) )
+					{
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);
 					}

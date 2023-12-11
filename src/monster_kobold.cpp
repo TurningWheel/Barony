@@ -382,6 +382,7 @@ void initKobold(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[KOBOLD][6][0]; // 2
 	entity->focaly = limbs[KOBOLD][6][1]; // 0
 	entity->focalz = limbs[KOBOLD][6][2]; // -.5
@@ -403,6 +404,7 @@ void initKobold(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[KOBOLD][7][0]; // 0
 	entity->focaly = limbs[KOBOLD][7][1]; // 0
 	entity->focalz = limbs[KOBOLD][7][2]; // 1.5
@@ -426,6 +428,7 @@ void initKobold(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[KOBOLD][8][0]; // 0
 	entity->focaly = limbs[KOBOLD][8][1]; // 0
 	entity->focalz = limbs[KOBOLD][8][2]; // 4
@@ -448,6 +451,7 @@ void initKobold(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[KOBOLD][9][0]; // 0
 	entity->focaly = limbs[KOBOLD][9][1]; // 0
 	entity->focalz = limbs[KOBOLD][9][2]; // -2

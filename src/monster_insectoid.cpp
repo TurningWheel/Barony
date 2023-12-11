@@ -21,6 +21,7 @@
 #include "player.hpp"
 #include "magic/magic.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 void initInsectoid(Entity* my, Stat* myStats)
 {
@@ -551,6 +552,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[INSECTOID][6][0]; // 1.5
 	entity->focaly = limbs[INSECTOID][6][1]; // 0
 	entity->focalz = limbs[INSECTOID][6][2]; // -.5
@@ -571,6 +573,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[INSECTOID][7][0]; // 2
 	entity->focaly = limbs[INSECTOID][7][1]; // 0
 	entity->focalz = limbs[INSECTOID][7][2]; // 0
@@ -590,6 +593,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[INSECTOID][8][0]; // 0
 	entity->focaly = limbs[INSECTOID][8][1]; // 0
 	entity->focalz = limbs[INSECTOID][8][2]; // 4
@@ -612,6 +616,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[INSECTOID][9][0]; // 0
 	entity->focaly = limbs[INSECTOID][9][1]; // 0
 	entity->focalz = limbs[INSECTOID][9][2]; // -2
@@ -631,6 +636,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[INSECTOID][10][0]; // 0
 	entity->focaly = limbs[INSECTOID][10][1]; // 0
 	entity->focalz = limbs[INSECTOID][10][2]; // .25
@@ -1430,6 +1436,11 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( entity->sprite == items[MASK_SHAMAN].index )
 					{
 						entity->roll = 0;
+						my->setHelmetLimbOffset(entity);
+						my->setHelmetLimbOffsetWithMask(helmet, entity);
+					}
+					else if ( EquipmentModelOffsets.modelOffsetExists(INSECTOID, entity->sprite) )
+					{
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);
 					}

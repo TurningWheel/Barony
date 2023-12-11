@@ -21,6 +21,7 @@
 #include "player.hpp"
 #include "magic/magic.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 void initIncubus(Entity* my, Stat* myStats)
 {
@@ -406,6 +407,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[INCUBUS][6][0]; // 
 	entity->focaly = limbs[INCUBUS][6][1]; // 
 	entity->focalz = limbs[INCUBUS][6][2]; // 
@@ -426,6 +428,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[INCUBUS][7][0]; // 
 	entity->focaly = limbs[INCUBUS][7][1]; // 
 	entity->focalz = limbs[INCUBUS][7][2]; // 
@@ -449,6 +452,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[INCUBUS][8][0]; // 0
 	entity->focaly = limbs[INCUBUS][8][1]; // 0
 	entity->focalz = limbs[INCUBUS][8][2]; // 4
@@ -472,6 +476,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[INCUBUS][9][0]; // 0
 	entity->focaly = limbs[INCUBUS][9][1]; // 0
 	entity->focalz = limbs[INCUBUS][9][2]; // -2
@@ -492,6 +497,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[INCUBUS][10][0]; // 0
 	entity->focaly = limbs[INCUBUS][10][1]; // 0
 	entity->focalz = limbs[INCUBUS][10][2]; // .5
@@ -1335,17 +1341,22 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);
 					}
+					else if ( EquipmentModelOffsets.modelOffsetExists(INCUBUS, entity->sprite) )
+					{
+						my->setHelmetLimbOffset(entity);
+						my->setHelmetLimbOffsetWithMask(helmet, entity);
+					}
 					else
 					{
 						entity->focalx = limbs[INCUBUS][10][0] + .35; // .35
-						entity->focaly = limbs[INCUBUS][10][1] - 2; // -2
+						entity->focaly = limbs[INCUBUS][10][1] - 2.5; // -2
 						entity->focalz = limbs[INCUBUS][10][2]; // .5
 					}
 				}
 				else
 				{
 					entity->focalx = limbs[INCUBUS][10][0] + .25; // .25
-					entity->focaly = limbs[INCUBUS][10][1] - 2.25; // -2.25
+					entity->focaly = limbs[INCUBUS][10][1] - 2.5; // -2.25
 					entity->focalz = limbs[INCUBUS][10][2]; // .5
 
 					if ( entity->sprite == 1196 ) // MonocleWorn.vox

@@ -22,6 +22,7 @@ See LICENSE for details.
 #include "player.hpp"
 #include "magic/magic.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 void initVampire(Entity* my, Stat* myStats)
 {
@@ -336,6 +337,7 @@ void initVampire(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[VAMPIRE][6][0]; // 1.5
 	entity->focaly = limbs[VAMPIRE][6][1]; // 0
 	entity->focalz = limbs[VAMPIRE][6][2]; // -.5
@@ -356,6 +358,7 @@ void initVampire(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[VAMPIRE][7][0]; // 2
 	entity->focaly = limbs[VAMPIRE][7][1]; // 0
 	entity->focalz = limbs[VAMPIRE][7][2]; // 0
@@ -378,6 +381,7 @@ void initVampire(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[VAMPIRE][8][0]; // 0
 	entity->focaly = limbs[VAMPIRE][8][1]; // 0
 	entity->focalz = limbs[VAMPIRE][8][2]; // 4
@@ -400,6 +404,7 @@ void initVampire(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[VAMPIRE][9][0]; // 0
 	entity->focaly = limbs[VAMPIRE][9][1]; // 0
 	entity->focalz = limbs[VAMPIRE][9][2]; // -1.75
@@ -422,6 +427,7 @@ void initVampire(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[VAMPIRE][10][0]; // 0
 	entity->focaly = limbs[VAMPIRE][10][1]; // 0
 	entity->focalz = limbs[VAMPIRE][10][2]; // .5
@@ -1266,6 +1272,11 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( entity->sprite == items[MASK_SHAMAN].index )
 					{
 						entity->roll = 0;
+						my->setHelmetLimbOffset(entity);
+						my->setHelmetLimbOffsetWithMask(helmet, entity);
+					}
+					else if ( EquipmentModelOffsets.modelOffsetExists(VAMPIRE, entity->sprite) )
+					{
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);
 					}

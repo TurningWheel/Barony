@@ -21,6 +21,7 @@
 #include "player.hpp"
 #include "prng.hpp"
 #include "scores.hpp"
+#include "mod_tools.hpp"
 
 void initSuccubus(Entity* my, Stat* myStats)
 {
@@ -233,6 +234,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SUCCUBUS][6][0]; // 
 	entity->focaly = limbs[SUCCUBUS][6][1]; // 
 	entity->focalz = limbs[SUCCUBUS][6][2]; // 
@@ -253,6 +255,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SUCCUBUS][7][0]; // 
 	entity->focaly = limbs[SUCCUBUS][7][1]; // 
 	entity->focalz = limbs[SUCCUBUS][7][2]; // 
@@ -276,6 +279,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SUCCUBUS][8][0]; // 0
 	entity->focaly = limbs[SUCCUBUS][8][1]; // 0
 	entity->focalz = limbs[SUCCUBUS][8][2]; // 4
@@ -299,6 +303,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SUCCUBUS][9][0]; // 0
 	entity->focaly = limbs[SUCCUBUS][9][1]; // 0
 	entity->focalz = limbs[SUCCUBUS][9][2]; // -2
@@ -319,6 +324,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SUCCUBUS][10][0]; // 0
 	entity->focaly = limbs[SUCCUBUS][10][1]; // 0
 	entity->focalz = limbs[SUCCUBUS][10][2]; // .5
@@ -908,6 +914,11 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( entity->sprite == items[MASK_SHAMAN].index )
 					{
 						entity->roll = 0;
+						my->setHelmetLimbOffset(entity);
+						my->setHelmetLimbOffsetWithMask(helmet, entity);
+					}
+					else if ( EquipmentModelOffsets.modelOffsetExists(SUCCUBUS, entity->sprite) )
+					{
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);
 					}

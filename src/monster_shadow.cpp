@@ -259,6 +259,7 @@ void initShadow(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SHADOW][6][0]; // 1.5
 	entity->focaly = limbs[SHADOW][6][1]; // 0
 	entity->focalz = limbs[SHADOW][6][2]; // -.5
@@ -279,6 +280,7 @@ void initShadow(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SHADOW][7][0]; // 2
 	entity->focaly = limbs[SHADOW][7][1]; // 0
 	entity->focalz = limbs[SHADOW][7][2]; // 0
@@ -298,6 +300,7 @@ void initShadow(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SHADOW][8][0]; // 0
 	entity->focaly = limbs[SHADOW][8][1]; // 0
 	entity->focalz = limbs[SHADOW][8][2]; // 4
@@ -320,6 +323,7 @@ void initShadow(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SHADOW][9][0]; // 0
 	entity->focaly = limbs[SHADOW][9][1]; // 0
 	entity->focalz = limbs[SHADOW][9][2]; // -2
@@ -339,6 +343,7 @@ void initShadow(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SHADOW][10][0]; // 0
 	entity->focaly = limbs[SHADOW][10][1]; // 0
 	entity->focalz = limbs[SHADOW][10][2]; // .25

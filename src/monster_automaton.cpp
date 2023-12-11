@@ -21,6 +21,7 @@
 #include "player.hpp"
 #include "magic/magic.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 void initAutomaton(Entity* my, Stat* myStats)
 {
@@ -399,6 +400,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[AUTOMATON][6][0]; // 2.5
 	entity->focaly = limbs[AUTOMATON][6][1]; // 0
 	entity->focalz = limbs[AUTOMATON][6][2]; // 0
@@ -420,6 +422,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[AUTOMATON][7][0]; // 2
 	entity->focaly = limbs[AUTOMATON][7][1]; // 0
 	entity->focalz = limbs[AUTOMATON][7][2]; // 0
@@ -443,6 +446,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[AUTOMATON][8][0]; // 0
 	entity->focaly = limbs[AUTOMATON][8][1]; // 0
 	entity->focalz = limbs[AUTOMATON][8][2]; // 4
@@ -466,6 +470,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[AUTOMATON][9][0]; // 0
 	entity->focaly = limbs[AUTOMATON][9][1]; // 0
 	entity->focalz = limbs[AUTOMATON][9][2]; // -2
@@ -486,6 +491,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[AUTOMATON][10][0]; // 0
 	entity->focaly = limbs[AUTOMATON][10][1]; // 0
 	entity->focalz = limbs[AUTOMATON][10][2]; // .5
@@ -1313,6 +1319,11 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( entity->sprite == items[MASK_SHAMAN].index )
 					{
 						entity->roll = 0;
+						my->setHelmetLimbOffset(entity);
+						my->setHelmetLimbOffsetWithMask(helmet, entity);
+					}
+					else if ( EquipmentModelOffsets.modelOffsetExists(AUTOMATON, entity->sprite) )
+					{
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);
 					}

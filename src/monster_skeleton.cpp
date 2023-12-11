@@ -22,6 +22,7 @@
 #include "magic/magic.hpp"
 #include "prng.hpp"
 #include "scores.hpp"
+#include "mod_tools.hpp"
 
 void initSkeleton(Entity* my, Stat* myStats)
 {
@@ -502,6 +503,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SKELETON][6][0]; // 2.5
 	entity->focaly = limbs[SKELETON][6][1]; // 0
 	entity->focalz = limbs[SKELETON][6][2]; // 0
@@ -523,6 +525,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SKELETON][7][0]; // 2
 	entity->focaly = limbs[SKELETON][7][1]; // 0
 	entity->focalz = limbs[SKELETON][7][2]; // 0
@@ -546,6 +549,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SKELETON][8][0]; // 0
 	entity->focaly = limbs[SKELETON][8][1]; // 0
 	entity->focalz = limbs[SKELETON][8][2]; // 4
@@ -569,6 +573,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SKELETON][9][0]; // 0
 	entity->focaly = limbs[SKELETON][9][1]; // 0
 	entity->focalz = limbs[SKELETON][9][2]; // -2
@@ -589,6 +594,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SKELETON][10][0]; // 0
 	entity->focaly = limbs[SKELETON][10][1]; // 0
 	entity->focalz = limbs[SKELETON][10][2]; // .5
@@ -1438,6 +1444,11 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( entity->sprite == items[MASK_SHAMAN].index )
 					{
 						entity->roll = 0;
+						my->setHelmetLimbOffset(entity);
+						my->setHelmetLimbOffsetWithMask(helmet, entity);
+					}
+					else if ( EquipmentModelOffsets.modelOffsetExists(SKELETON, entity->sprite) )
+					{
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);
 					}

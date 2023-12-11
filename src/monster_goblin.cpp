@@ -21,6 +21,7 @@
 #include "player.hpp"
 #include "prng.hpp"
 #include "scores.hpp"
+#include "mod_tools.hpp"
 
 void initGoblin(Entity* my, Stat* myStats)
 {
@@ -390,6 +391,7 @@ void initGoblin(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[GOBLIN][6][0]; // 1.5
 	entity->focaly = limbs[GOBLIN][6][1]; // 0
 	entity->focalz = limbs[GOBLIN][6][2]; // -.5
@@ -410,6 +412,7 @@ void initGoblin(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[GOBLIN][7][0]; // 2
 	entity->focaly = limbs[GOBLIN][7][1]; // 0
 	entity->focalz = limbs[GOBLIN][7][2]; // 0
@@ -429,6 +432,7 @@ void initGoblin(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[GOBLIN][8][0]; // 0
 	entity->focaly = limbs[GOBLIN][8][1]; // 0
 	entity->focalz = limbs[GOBLIN][8][2]; // 4
@@ -451,6 +455,7 @@ void initGoblin(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[GOBLIN][9][0]; // 0
 	entity->focaly = limbs[GOBLIN][9][1]; // 0
 	entity->focalz = limbs[GOBLIN][9][2]; // -2
@@ -470,6 +475,7 @@ void initGoblin(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[GOBLIN][10][0]; // 0
 	entity->focaly = limbs[GOBLIN][10][1]; // 0
 	entity->focalz = limbs[GOBLIN][10][2]; // .25
@@ -1078,6 +1084,11 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( entity->sprite == items[MASK_SHAMAN].index )
 					{
 						entity->roll = 0;
+						my->setHelmetLimbOffset(entity);
+						my->setHelmetLimbOffsetWithMask(helmet, entity);
+					}
+					else if ( EquipmentModelOffsets.modelOffsetExists(GOBLIN, entity->sprite) )
+					{
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);
 					}

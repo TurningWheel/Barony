@@ -1048,6 +1048,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SHOPKEEPER][6][0]; // 1.5
 	entity->focaly = limbs[SHOPKEEPER][6][1]; // 0
 	entity->focalz = limbs[SHOPKEEPER][6][2]; // -.5
@@ -1068,6 +1069,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SHOPKEEPER][7][0]; // 2
 	entity->focaly = limbs[SHOPKEEPER][7][1]; // 0
 	entity->focalz = limbs[SHOPKEEPER][7][2]; // 0
@@ -1090,6 +1092,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SHOPKEEPER][8][0]; // 0
 	entity->focaly = limbs[SHOPKEEPER][8][1]; // 0
 	entity->focalz = limbs[SHOPKEEPER][8][2]; // 4
@@ -1112,6 +1115,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SHOPKEEPER][9][0]; // 0
 	entity->focaly = limbs[SHOPKEEPER][9][1]; // 0
 	entity->focalz = limbs[SHOPKEEPER][9][2]; // -1.75
@@ -1134,6 +1138,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SHOPKEEPER][10][0]; // 0
 	entity->focaly = limbs[SHOPKEEPER][10][1]; // 0
 	entity->focalz = limbs[SHOPKEEPER][10][2]; // .5
@@ -1809,6 +1814,11 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( entity->sprite == items[MASK_SHAMAN].index )
 					{
 						entity->roll = 0;
+						my->setHelmetLimbOffset(entity);
+						my->setHelmetLimbOffsetWithMask(helmet, entity);
+					}
+					else if ( EquipmentModelOffsets.modelOffsetExists(SHOPKEEPER, entity->sprite) )
+					{
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);
 					}

@@ -22,6 +22,7 @@
 #include "player.hpp"
 #include "prng.hpp"
 #include "scores.hpp"
+#include "mod_tools.hpp"
 
 void initHuman(Entity* my, Stat* myStats)
 {
@@ -729,6 +730,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[HUMAN][6][0]; // 1.5
 	entity->focaly = limbs[HUMAN][6][1]; // 0
 	entity->focalz = limbs[HUMAN][6][2]; // -.5
@@ -749,6 +751,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[HUMAN][7][0]; // 2
 	entity->focaly = limbs[HUMAN][7][1]; // 0
 	entity->focalz = limbs[HUMAN][7][2]; // 0
@@ -771,6 +774,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[HUMAN][8][0]; // 0
 	entity->focaly = limbs[HUMAN][8][1]; // 0
 	entity->focalz = limbs[HUMAN][8][2]; // 4
@@ -793,6 +797,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[HUMAN][9][0]; // 0
 	entity->focaly = limbs[HUMAN][9][1]; // 0
 	entity->focalz = limbs[HUMAN][9][2]; // -1.75
@@ -815,6 +820,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[HUMAN][10][0]; // 0
 	entity->focaly = limbs[HUMAN][10][1]; // 0
 	entity->focalz = limbs[HUMAN][10][2]; // .5
@@ -1726,6 +1732,11 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( entity->sprite == items[MASK_SHAMAN].index )
 					{
 						entity->roll = 0;
+						my->setHelmetLimbOffset(entity);
+						my->setHelmetLimbOffsetWithMask(helmet, entity);
+					}
+					else if ( EquipmentModelOffsets.modelOffsetExists(HUMAN, entity->sprite) )
+					{
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);
 					}

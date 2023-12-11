@@ -288,6 +288,7 @@ void initGnome(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[GNOME][6][0]; // 2
 	entity->focaly = limbs[GNOME][6][1]; // 0
 	entity->focalz = limbs[GNOME][6][2]; // -.5
@@ -309,6 +310,7 @@ void initGnome(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[GNOME][7][0]; // 0
 	entity->focaly = limbs[GNOME][7][1]; // 0
 	entity->focalz = limbs[GNOME][7][2]; // 1.5
@@ -332,6 +334,7 @@ void initGnome(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[GNOME][8][0]; // 0
 	entity->focaly = limbs[GNOME][8][1]; // 0
 	entity->focalz = limbs[GNOME][8][2]; // 4
