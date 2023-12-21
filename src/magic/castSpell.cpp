@@ -1466,7 +1466,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						}
 					}
 					// spellbook 100-150%, 50 INT = 200%.
-					amount += amount * ((spellBookBonusPercent * 1 / 100.f) + getBonusFromCasterOfSpellElement(caster, nullptr, element));
+					amount += amount * ((spellBookBonusPercent * 1 / 100.f) + getBonusFromCasterOfSpellElement(caster, nullptr, element, spell ? spell->ID : SPELL_NONE));
 
 					int totalHeal = 0;
 					int oldHP = players[i]->entity->getHP();

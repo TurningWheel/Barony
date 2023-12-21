@@ -462,7 +462,8 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 
 			bounceFromRoll = 0.0;
 
-			bool resetAnimation = my->isInertMimic() && my->monsterAttack == 0;
+			bool resetAnimation = (my->isInertMimic() && my->monsterAttack == 0) 
+				|| (my->monsterSpecialState == MIMIC_STATUS_IMMOBILE);
 			if ( !resetAnimation )
 			{
 				resetToInert = 1.0;

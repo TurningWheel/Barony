@@ -2249,6 +2249,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case HAT_HEADDRESS:
 		case HAT_CHEF:
 		case HELM_MINING:
+		case HAT_CIRCLET_WISDOM:
 			equipItemResult = equipItem(item, &stats[player]->helmet, player, checkInventorySpaceForPaperDoll);
 			break;
 		case AMULET_SEXCHANGE:
@@ -3956,10 +3957,10 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	return attack;
 }
 
-bool Item::doesItemProvideBeatitudeAC() const
+bool Item::doesItemProvideBeatitudeAC(ItemType type)
 {
-	if ( itemTypeIsQuiver(type) || itemCategory(this) == SPELLBOOK 
-		|| itemCategory(this) == AMULET )
+	if ( itemTypeIsQuiver(type) || items[type].category == SPELLBOOK
+		|| items[type].category == AMULET )
 	{
 		return false;
 	}
@@ -3969,6 +3970,7 @@ bool Item::doesItemProvideBeatitudeAC() const
 			|| type == HAT_PLUMED_CAP
 			|| type == HAT_BYCOCKET
 			|| type == HAT_CIRCLET
+			|| type == HAT_CIRCLET_WISDOM
 			|| type == HAT_CROWN 
 			|| type == HAT_LAURELS 
 			|| type == HAT_TURBAN )
@@ -4486,7 +4488,7 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 		}
 	}
 
-	if ( !doesItemProvideBeatitudeAC() )
+	if ( !Item::doesItemProvideBeatitudeAC(type) )
 	{
 		armor = 0;
 	}

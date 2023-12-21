@@ -12119,7 +12119,7 @@ failed:
 			return;
 		}
 
-		static char buf[16000];
+		static char buf[32000];
 		const int count = (int)fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 		buf[count] = '\0';
 		rapidjson::StringStream is(buf);

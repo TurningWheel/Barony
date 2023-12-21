@@ -821,6 +821,7 @@ void actThrown(Entity* my)
 				    hitstats->killer_item = item->type;
 				}
 				bool skipMessage = false;
+				bool goggleProtection = false;
 				Entity* polymorphedTarget = nullptr;
 				bool disableAlertBlindStatus = false;
 				bool ignorePotion = false;
@@ -882,6 +883,18 @@ void actThrown(Entity* my)
 							if ( damage != 0 && friendlyHit )
 							{
 								ignorePotion = true;
+							}
+						}
+
+						if ( hitstats->mask && hitstats->mask->type == MASK_HAZARD_GOGGLES )
+						{
+							if ( !(hit.entity->behavior == &actPlayer && hit.entity->effectShapeshift != NOTHING) )
+							{
+								if ( itemCategory(item) == POTION && item->doesPotionHarmAlliesOnThrown() )
+								{
+									ignorePotion = true;
+									goggleProtection = true;
+								}
 							}
 						}
 					}
@@ -1076,11 +1089,22 @@ void actThrown(Entity* my)
 								}
 								else if ( hit.entity->behavior == &actPlayer )
 								{
-									hit.entity->setEffect(EFF_MESSY, true, 250, false);
-									serverUpdateEffects(hit.entity->skill[2]);
 									Uint32 color = makeColorRGB(255, 0, 0);
 									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(3877));
-									messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, Language::get(910));
+									if ( hit.entity->setEffect(EFF_MESSY, true, 250, false) )
+									{
+										messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, Language::get(910));
+									}
+									else
+									{
+										if ( hitstats->mask && hitstats->mask->type == MASK_HAZARD_GOGGLES )
+										{
+											if ( !(hit.entity->behavior == &actPlayer && hit.entity->effectShapeshift != NOTHING) )
+											{
+												messagePlayerColor(hit.entity->skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6088));
+											}
+										}
+									}
 								}
 								for ( int i = 0; i < 5; ++i )
 								{
@@ -1293,7 +1317,7 @@ void actThrown(Entity* my)
 				if ( hitstats->HP <= 0 && parent )
 				{
 					parent->awardXP(hit.entity, true, true);
-					spawnBloodVialOnMonsterDeath(hit.entity, hitstats);
+					spawnBloodVialOnMonsterDeath(hit.entity, hitstats, parent);
 				}
 
 				bool doAlert = true;
@@ -1422,6 +1446,10 @@ void actThrown(Entity* my)
 					if ( damage == 0 && !wasPotion )
 					{
 						messagePlayer(hit.entity->skill[2], MESSAGE_COMBAT, Language::get(452));
+					}
+					if ( goggleProtection )
+					{
+						messagePlayerColor(hit.entity->skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6088));
 					}
 				}
 			}

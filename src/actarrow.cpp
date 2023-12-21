@@ -566,6 +566,21 @@ void actArrow(Entity* my)
 					{
 						damage *= damageMultiplier;
 					}
+
+					int trapResist = 0;
+					if ( parent )
+					{
+						if ( parent->behavior == &actArrowTrap )
+						{
+							trapResist = hit.entity->getFollowerBonusTrapResist();
+							if ( trapResist != 0 )
+							{
+								real_t mult = std::max(0.0, 1.0 - (trapResist / 100.0));
+								damage *= mult;
+							}
+						}
+					}
+
 					/*messagePlayer(0, "My damage: %d, AC: %d, Pierce: %d", my->arrowPower, AC(hitstats), my->arrowArmorPierce);
 					messagePlayer(0, "Resolved to %d damage.", damage);*/
 					hit.entity->modHP(-damage);
@@ -678,7 +693,7 @@ void actArrow(Entity* my)
 					if ( hitstats->HP <= 0 && parent)
 					{
 						parent->awardXP( hit.entity, true, true );
-						spawnBloodVialOnMonsterDeath(hit.entity, hitstats);
+						spawnBloodVialOnMonsterDeath(hit.entity, hitstats, parent);
 					}
 
 					// alert the monster
@@ -799,7 +814,15 @@ void actArrow(Entity* my)
 					bool statusEffectApplied = false;
 					if ( hitstats->HP > 0 )
 					{
-						if ( my->arrowQuiverType == QUIVER_FIRE )
+						bool procEffect = true;
+						if ( trapResist > 0 )
+						{
+							if ( local_rng.rand() % 100 < trapResist )
+							{
+								procEffect = false;
+							}
+						}
+						if ( my->arrowQuiverType == QUIVER_FIRE && procEffect )
 						{
 							bool burning = hit.entity->flags[BURNING];
 							hit.entity->SetEntityOnFire(my);
@@ -829,7 +852,7 @@ void actArrow(Entity* my)
 								statusEffectApplied = true;
 							}
 						}
-						else if ( my->arrowQuiverType == QUIVER_KNOCKBACK && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
+						else if ( my->arrowQuiverType == QUIVER_KNOCKBACK && procEffect && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
 						{
 							real_t pushbackMultiplier = 0.6;
 							if ( !hit.entity->isMobile() )
@@ -910,7 +933,7 @@ void actArrow(Entity* my)
 							statusEffectApplied = true;
 						}
 						else if ( my->arrowQuiverType == QUIVER_HUNTING && !(hitstats->amulet && hitstats->amulet->type == AMULET_POISONRESISTANCE)
-							&& !(hitstats->type == INSECTOID) )
+							&& !(hitstats->type == INSECTOID) && procEffect )
 						{
 							if ( !hitstats->EFFECTS[EFF_POISONED] )
 							{

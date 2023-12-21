@@ -1300,6 +1300,10 @@
 		"mask_artifact_visor": {
 			"name_identified": "artifact visor",
 			"name_unidentified": "artifact visor"
+		},
+		"hat_circlet_wisdom": {
+			"name_identified": "circlet of wisdom",
+			"name_unidentified": "circlet"
 		}
     },
 	"spell_names": {

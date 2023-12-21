@@ -46,11 +46,12 @@ int Stat::getGoldWeight() const
 		if ( mask->beatitude >= 0 || cursedItemIsBuff )
 		{
 			equipmentBonus -= 50.0 * (1 + abs(mask->beatitude));
-			equipmentBonus = std::max(0.0, equipmentBonus);
+			equipmentBonus = std::max(-50.0, equipmentBonus);
 		}
 		else
 		{
-			equipmentBonus += abs(mask->beatitude) * 100;
+			equipmentBonus -= 50.0 * (abs(mask->beatitude));
+			equipmentBonus = std::max(0.0, equipmentBonus);
 		}
 
 		weight *= (equipmentBonus / 100.0);
@@ -59,6 +60,7 @@ int Stat::getGoldWeight() const
 	return weight;
 }
 
+int Stat::maxEquipmentBonusToSkill = 25;
 Sint32 Stat::getModifiedProficiency(int skill) const
 {
 	if ( !(skill >= 0 && skill < NUMPROFICIENCIES) )
@@ -84,21 +86,66 @@ Sint32 Stat::getModifiedProficiency(int skill) const
 		cursedItemIsBuff = shouldInvertEquipmentBeatitude(this);
 	}
 
-	const int maxEquipmentBonus = 20;
-	if ( skill == PRO_ALCHEMY )
+	if ( mask )
 	{
-		if ( mask )
+		if ( mask->type == MASK_HAZARD_GOGGLES && skill == PRO_ALCHEMY )
 		{
-			if ( mask->type == MASK_HAZARD_GOGGLES )
+			if ( mask->beatitude >= 0 || cursedItemIsBuff )
 			{
-				if ( mask->beatitude >= 0 || cursedItemIsBuff )
-				{
-					equipmentBonus += std::min(maxEquipmentBonus, (1 + abs(mask->beatitude)) * 10);
-				}
-				else
-				{
-					equipmentBonus -= abs(mask->beatitude) * 10;
-				}
+				equipmentBonus += std::min(maxEquipmentBonusToSkill, (1 + abs(mask->beatitude)) * 10);
+			}
+			else
+			{
+				equipmentBonus -= abs(mask->beatitude) * 10;
+			}
+		}
+		else if ( mask->type == MASK_GOLDEN && skill == PRO_TRADING )
+		{
+			if ( mask->beatitude >= 0 || cursedItemIsBuff )
+			{
+				equipmentBonus += std::min(maxEquipmentBonusToSkill, (1 + abs(mask->beatitude)) * 10);
+			}
+			else
+			{
+				equipmentBonus -= 999;
+			}
+		}
+		else if ( (mask->type == MASK_STEEL_VISOR || mask->type == MASK_CRYSTAL_VISOR)
+			&& (skill == PRO_SWORD || skill == PRO_AXE || skill == PRO_POLEARM || skill == PRO_MACE) )
+		{
+			if ( mask->beatitude >= 0 || cursedItemIsBuff )
+			{
+				equipmentBonus += std::min(maxEquipmentBonusToSkill, (1 + abs(mask->beatitude)) * 5);
+			}
+			else
+			{
+				equipmentBonus -= abs(mask->beatitude) * 5;
+			}
+		}
+		else if ( (mask->type == MASK_ARTIFACT_VISOR)
+			&& (skill == PRO_SWORD || skill == PRO_AXE || skill == PRO_POLEARM || skill == PRO_MACE) )
+		{
+			if ( mask->beatitude >= 0 || cursedItemIsBuff )
+			{
+				equipmentBonus += std::min(maxEquipmentBonusToSkill, (1 + abs(mask->beatitude)) * 10);
+			}
+			else
+			{
+				equipmentBonus -= abs(mask->beatitude) * 10;
+			}
+		}
+	}
+	if ( helmet )
+	{
+		if ( helmet->type == HAT_PLUMED_CAP && skill == PRO_LEADERSHIP )
+		{
+			if ( helmet->beatitude >= 0 || cursedItemIsBuff )
+			{
+				equipmentBonus += std::min(maxEquipmentBonusToSkill, (1 + abs(helmet->beatitude)) * 10);
+			}
+			else
+			{
+				equipmentBonus -= abs(helmet->beatitude) * 10;
 			}
 		}
 	}
@@ -778,8 +825,12 @@ int Stat::pickRandomEquippedItemToDegradeOnHit(Item** returnItem, bool excludeWe
 	{
 		excludeShield = true;
 	}
-	Item* maskItem = mask; // exclude mask
-	mask = nullptr;
+	Item* maskItem = mask; 
+	if ( mask && !Item::doesItemProvideBeatitudeAC(mask->type) )
+	{
+		// exclude mask
+		mask = nullptr;
+	}
 	int result = pickRandomEquippedItem(returnItem, excludeWeapon, excludeShield, excludeArmor, excludeJewelry);
 	mask = maskItem;
 	return result;

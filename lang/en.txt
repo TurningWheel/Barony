@@ -6248,5 +6248,16 @@ Filters#
 6085 The mimic eats your %s!#
 6086 The %s poisons you!#
 6087 Hey! That %s stole your %s!#
+6088 But the goggles protect you!#
+6089 Your goggles protect you from the explosion!#
+6090 The goggles do nothing!#
+6091 *cough*#
+6092 Your hat is sweltering!#
+6093 ATK#
+6094 AC#
+6095 PWR#
+6096 RES#
+6097 RGN#
+6098 WGT#
 
 6100 end#

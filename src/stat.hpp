@@ -363,6 +363,7 @@ public:
 	void addItemToLootingBag(const int player, const real_t x, const real_t y, Item& item);
 	Uint32 getLootingBagKey(const int player);
 	static bool emptyLootingBag(const int player, Uint32 key);
+	static int maxEquipmentBonusToSkill;
 };
 extern Stat* stats[MAXPLAYERS];
 

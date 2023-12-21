@@ -311,7 +311,7 @@ ShopkeeperPlayerHostility_t::PlayerRaceHostility_t* ShopkeeperPlayerHostility_t:
 	}
 	else
 	{
-		if ( stats[player]->mask && stats[player]->mask->type == MASK_BANDIT )
+		if ( stats[player]->mask && stats[player]->mask->type == MASK_BANDIT && !(players[player]->entity && players[player]->entity->isInvisible()) )
 		{
 			equipment = 1 + (stats[player]->mask->appearance % items[MASK_BANDIT].variations);
 		}
@@ -4236,6 +4236,14 @@ void actMonster(Entity* my)
 		if ( myStats->type == AUTOMATON )
 		{
 			my->automatonRecycleItem();
+		}
+		else if ( myStats->type == MIMIC )
+		{
+			if ( my->monsterSpecialState != MIMIC_ACTIVE )
+			{
+				my->monsterSpecialState = MIMIC_ACTIVE;
+				serverUpdateEntitySkill(my, 33);
+			}
 		}
 
 		if ( myStats->EFFECTS[EFF_PACIFY] || myStats->EFFECTS[EFF_FEAR] )
@@ -8270,6 +8278,17 @@ timeToGoAgain:
 					{
 						my->monsterAcquireAttackTarget(*lockedMe, MONSTER_STATE_ATTACK);
 					}
+				}
+			}
+		}
+		else if ( myStats && myStats->type == MIMIC && !my->isInertMimic() )
+		{
+			if ( myStats->EFFECTS[EFF_ASLEEP] || myStats->EFFECTS[EFF_PARALYZED] )
+			{
+				if ( my->monsterSpecialState != MIMIC_STATUS_IMMOBILE )
+				{
+					my->monsterSpecialState = MIMIC_STATUS_IMMOBILE;
+					serverUpdateEntitySkill(my, 33);
 				}
 			}
 		}

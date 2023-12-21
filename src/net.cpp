@@ -6319,6 +6319,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 				if ( !shapeshifted )
 				{
 					protection = true;
+					messagePlayerColor(player, MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6089));
 				}
 			}
 			spawnMagicTower(protection ? players[player]->entity : nullptr, 

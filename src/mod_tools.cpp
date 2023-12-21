@@ -1936,8 +1936,8 @@ int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell,
 				{
 					bonus = getSpellbookBonusPercent(players[player]->entity, stats[player], spellbook);
 				}
-				damage += (damage * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], primaryElement)));
-				heal += (heal * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], primaryElement)));
+				damage += (damage * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], primaryElement, spell ? spell->ID : SPELL_NONE)));
+				heal += (heal * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], primaryElement, spell ? spell->ID : SPELL_NONE)));
 			}
 		}
 		if ( spell->ID == SPELL_HEALING || spell->ID == SPELL_EXTRAHEALING )
@@ -2782,6 +2782,419 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 				int manaring = 1;
 				snprintf(buf, sizeof(buf), str.c_str(), manaring,
 					getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+			}
+			else if ( conditionalAttribute == "EFF_COLDRESIST" )
+			{
+				if ( item.type == HAT_WARM )
+				{
+					real_t coldMultiplier = 1.0;
+					if ( !(players[player]->entity && players[player]->entity->effectShapeshift != NOTHING) )
+					{
+						if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+						{
+							coldMultiplier = std::max(0.0, 0.5 - 0.25 * (abs(item.beatitude)));
+						}
+						else
+						{
+							coldMultiplier = 0.50;
+						}
+					}
+					snprintf(buf, sizeof(buf), str.c_str(), (int)((100 - (int)(coldMultiplier * 100))),
+						getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+				}
+			}
+			else if ( conditionalAttribute == "EFF_TECH_GOGGLES1" )
+			{
+				real_t speedFactor = 1.0;
+				if ( item.type == MASK_TECH_GOGGLES )
+				{
+					bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats[player]);
+					if ( item.beatitude >= 0 || cursedItemIsBuff )
+					{
+						speedFactor = std::min(speedFactor + (1 + abs(item.beatitude)) * 0.5, 3.0);
+					}
+					else
+					{
+						speedFactor = speedFactor + 0.5;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), (int)((speedFactor - 1.0) * 100));
+			}
+			else if ( conditionalAttribute == "EFF_EYEPATCH" )
+			{
+				int bonus = 0;
+				if ( item.type == MASK_EYEPATCH )
+				{
+					bonus = 2;
+					bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats[player]);
+					if ( item.beatitude >= 0 || cursedItemIsBuff )
+					{
+						bonus += abs(item.beatitude);
+					}
+					else if ( item.beatitude < 0 )
+					{
+						bonus = 2;
+					}
+				}
+				bonus = std::max(-6, std::min(bonus, 4));
+				snprintf(buf, sizeof(buf), str.c_str(), bonus);
+			}
+			else if ( conditionalAttribute == "EFF_STRAFE" )
+			{
+				double backpedalMultiplier = 0.25;
+				if ( item.type == HAT_BANDANA )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						backpedalMultiplier += 0.5 * (1 + abs(item.beatitude)) * 0.25;
+						backpedalMultiplier = std::min(0.75, backpedalMultiplier);
+					}
+					else
+					{
+						backpedalMultiplier += 0.5 * (1 + abs(item.beatitude)) * 0.25;
+						backpedalMultiplier = std::min(0.75, backpedalMultiplier);
+					}
+				}
+				int multBackpedal = 100 * (backpedalMultiplier - 0.25);
+				snprintf(buf, sizeof(buf), str.c_str(), multBackpedal);
+			}
+			else if ( conditionalAttribute == "EFF_MASK_GOLDEN" )
+			{
+				int equipmentBonus = 100;
+				if ( item.type == MASK_GOLDEN )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						equipmentBonus -= 50 * (1 + abs(item.beatitude));
+						equipmentBonus = std::max(-50, equipmentBonus);
+					}
+					else
+					{
+						equipmentBonus -= 50 * (abs(item.beatitude));
+						equipmentBonus = std::max(0, equipmentBonus);
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), 100 - equipmentBonus);
+			}
+			else if ( conditionalAttribute == "EFF_PIPE" )
+			{
+				int chance = 0;
+				if ( item.type == MASK_PIPE )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						chance = std::min(25 + (10 * abs(item.beatitude)), 50);
+					}
+					else
+					{
+						chance = std::min(25 + (10 * abs(item.beatitude)), 50);
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), chance);
+			}
+			else if ( conditionalAttribute == "EFF_THORNS" )
+			{
+				int dmg = 0;
+				if ( item.type == MASK_MOUTHKNIFE )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						dmg = (1 + abs(item.beatitude)) * 2;
+					}
+					else
+					{
+						dmg = -2 * (1 + abs(item.beatitude));
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), abs(dmg));
+			}
+			else if ( conditionalAttribute == "EFF_CHEF" )
+			{
+				real_t foodMult = 1.0;
+				if ( item.type == HAT_CHEF )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						if ( svFlags & SV_FLAG_HUNGER )
+						{
+							foodMult += 0.2 + abs(item.beatitude) * 0.1;
+						}
+						else
+						{
+							foodMult += 0.5 + abs(item.beatitude) * 0.25;
+						}
+					}
+					else
+					{
+						foodMult += 0.2;
+					}
+					foodMult = std::max(0.2, foodMult);
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), (int)(foodMult * 100) - 100);
+			}
+			else if ( conditionalAttribute == "EFF_CHEF2" )
+			{
+				int chance = 0;
+				if ( item.type == HAT_CHEF )
+				{
+					chance = 20;
+					bool cursedChef = false;
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						chance -= 5 * abs(item.beatitude);
+						chance = std::max(10, chance);
+					}
+					else
+					{
+						chance -= 5 * abs(item.beatitude);
+						chance = std::max(10, chance);
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), 100.0 / chance);
+			}
+			else if ( conditionalAttribute == "EFF_INSPIRATION" )
+			{
+				int inspiration = 0;
+				if ( item.type == HAT_LAURELS
+					|| item.type == HAT_TURBAN
+					|| item.type == HAT_CROWN )
+				{
+					if ( item.beatitude >= 0 )
+					{
+						inspiration = 25 + (item.beatitude * 25);
+					}
+					else if ( shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						inspiration = 25 + (abs(item.beatitude) * 25);
+					}
+					else
+					{
+						inspiration = 25;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), inspiration);
+			}
+			else if ( conditionalAttribute == "EFF_CELEBRATION" )
+			{
+				int hpMod = 0;
+				if ( item.type == HAT_CROWN )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						hpMod += ((20 + 10 * (abs(item.beatitude))));
+					}
+					else
+					{
+						hpMod = 20;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), hpMod);
+			}
+			else if ( conditionalAttribute == "EFF_FOLLOWER_REGEN" )
+			{
+				int regen = 0;
+				if ( item.type == HAT_LAURELS )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						regen = 1 + abs(item.beatitude) * 1;
+					}
+					else
+					{
+						regen = 1;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), 2 * regen);
+			}
+			else if ( conditionalAttribute == "EFF_FOLLOWER_TRAPRESIST" )
+			{
+				int resist = 0;
+				if ( item.type == HAT_TURBAN )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						resist = std::min(100, 50 + abs(item.beatitude) * 25);
+					}
+					else
+					{
+						resist = 50;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), resist);
+			}
+			else if ( conditionalAttribute == "EFF_FOLLOWER_DMGRESIST" )
+			{
+				int resist = 0;
+				if ( item.type == HAT_CROWNED_HELM )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						resist = std::min(50, 20 + abs(item.beatitude) * 10);
+					}
+					else
+					{
+						resist = 20;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), resist);
+			}
+			else if ( conditionalAttribute == "EFF_SPRIG" )
+			{
+				real_t mult = 0.0;
+				if ( item.type == MASK_GRASS_SPRIG )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						mult = std::min(1.25 + (0.25 * abs(item.beatitude)), 2.0);
+					}
+					else
+					{
+						mult = 1.25;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), ((1.0 / mult)));
+			}
+			else if ( conditionalAttribute == "EFF_SKILL_MELEE_STEEL" )
+			{
+				int equipmentBonus = 0;
+				if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+				{
+					equipmentBonus += std::min(Stat::maxEquipmentBonusToSkill, (1 + abs(item.beatitude)) * 5);
+				}
+				else
+				{
+					equipmentBonus += 5;
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), equipmentBonus);
+			}
+			else if ( conditionalAttribute == "EFF_SKILL_MELEE_ARTIFACT" )
+			{
+				int equipmentBonus = 0;
+				if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+				{
+					equipmentBonus += std::min(Stat::maxEquipmentBonusToSkill, (1 + abs(item.beatitude)) * 10);
+				}
+				else
+				{
+					equipmentBonus += 10;
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), equipmentBonus);
+			}
+			else if ( conditionalAttribute.find("EFF_SKILL_") != std::string::npos )
+			{
+				int skill = std::stoi(conditionalAttribute.substr(strlen("EFF_SKILL_"), std::string::npos));
+				int equipmentBonus = 0;
+				if ( (skill == PRO_TRADING && item.type == MASK_GOLDEN)
+					|| (skill == PRO_LEADERSHIP && item.type == HAT_PLUMED_CAP)
+					|| (skill == PRO_ALCHEMY && item.type == MASK_HAZARD_GOGGLES) )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						equipmentBonus += std::min(Stat::maxEquipmentBonusToSkill, (1 + abs(item.beatitude)) * 10);
+					}
+					else
+					{
+						equipmentBonus += 10;
+					}
+				}
+
+				std::string skillName = "";
+				for ( auto s : Player::SkillSheet_t::skillSheetData.skillEntries )
+				{
+					if ( s.skillId == skill )
+					{
+						skillName = s.name;
+						break;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), equipmentBonus, skillName.c_str());
+			}
+			else if ( conditionalAttribute == "EFF_BOULDER_RES" )
+			{
+				real_t mult = 1.0;
+				if ( item.type == HAT_TOPHAT )
+				{
+					mult = 0.0;
+				}
+				else if ( item.type == HELM_MINING )
+				{
+					mult = 0.5;
+					bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats[player]);
+					if ( item.beatitude >= 0 || cursedItemIsBuff )
+					{
+						mult -= 0.25 * abs(item.beatitude);
+						mult = std::max(0.0, mult);
+					}
+					else
+					{
+						mult = 0.5;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), 100 - (int)(mult * 100));
+			}
+			else if ( conditionalAttribute.find("EFF_PWR") != std::string::npos )
+			{
+				real_t bonus = 0.0;
+				if ( conditionalAttribute == "EFF_PWR" )
+				{
+					if ( item.type == HAT_CIRCLET
+						|| item.type == HAT_CIRCLET_WISDOM )
+					{
+						if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+						{
+							bonus += (0.05 + (0.05 * abs(item.beatitude)));
+						}
+						else
+						{
+							bonus = 0.05;
+						}
+					}
+					else if ( item.type == HAT_MITER || item.type == HAT_HEADDRESS )
+					{
+						if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+						{
+							bonus += (0.10 + (0.05 * abs(item.beatitude)));
+						}
+						else
+						{
+							bonus = 0.1;
+						}
+					}
+					snprintf(buf, sizeof(buf), str.c_str(), (int)(bonus * 100),
+						getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+				}
+				else if ( conditionalAttribute == "EFF_PWR_DMG" )
+				{
+					if ( item.type == HAT_MITER || item.type == HAT_HEADDRESS )
+					{
+						if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+						{
+							bonus += (0.10 + (0.05 * abs(item.beatitude)));
+						}
+						else
+						{
+							bonus = 0.1;
+						}
+					}
+					snprintf(buf, sizeof(buf), str.c_str(), (int)(bonus * 100),
+						getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+				}
+				else if ( conditionalAttribute == "EFF_PWR_HEAL" )
+				{
+					if ( item.type == HAT_MITER || item.type == HAT_HEADDRESS )
+					{
+						if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+						{
+							bonus += (0.10 + (0.05 * abs(item.beatitude)));
+						}
+						else
+						{
+							bonus = 0.1;
+						}
+					}
+					snprintf(buf, sizeof(buf), str.c_str(), (int)(bonus * 100),
+						getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+				}
 			}
 			else if ( conditionalAttribute.find("EFF_ARTIFACT_") != std::string::npos )
 			{
@@ -3682,14 +4095,18 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			spell_t* spell = getSpellFromItem(player, &item);
 			if ( !spell ) { return; }
 
-			int totalDamage = getSpellDamageOrHealAmount(player, spell, nullptr);
+			//int totalDamage = getSpellDamageOrHealAmount(player, spell, nullptr);
 			Sint32 oldINT = stats[player]->INT;
 			stats[player]->INT = 0;
 
-			int baseDamage = getSpellDamageOrHealAmount(player, spell, nullptr);
+			int baseDamage = getSpellDamageOrHealAmount(-1, spell, nullptr);
+
+			real_t bonusEquipPercent = 100.0 * getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], nullptr, spell ? spell->ID : SPELL_NONE);
+
 			stats[player]->INT = oldINT;
 
-			real_t bonusPercent = 100.0 * getBonusFromCasterOfSpellElement(players[player]->entity, stats[player]);
+			real_t bonusINTPercent = 100.0 * getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], nullptr, spell ? spell->ID : SPELL_NONE);
+			bonusINTPercent -= bonusEquipPercent;
 
 			std::string damageOrHealing = adjectives["spell_strings"]["damage"];
 			if ( spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_HEALING)
@@ -3699,7 +4116,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			}
 			std::string attribute("INT");
 			snprintf(buf, sizeof(buf), str.c_str(), damageOrHealing.c_str(), baseDamage, damageOrHealing.c_str(), 
-				bonusPercent, damageOrHealing.c_str(), getItemStatShortName(attribute).c_str());
+				bonusINTPercent, damageOrHealing.c_str(), getItemStatShortName(attribute).c_str(), bonusEquipPercent, damageOrHealing.c_str());
 		}
 		else if ( detailTag.compare("spell_cast_success") == 0 )
 		{

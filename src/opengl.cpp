@@ -772,7 +772,7 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
                 remap.z.z = 1.f / 3.f;
             }
             else if (entity->flags[USERFLAG2]) {
-                if ((entity->behavior != &actMonster && entity->noColorChangeAllyLimb < 0.01) 
+                if ((entity->behavior != &actMonster /*&& entity->noColorChangeAllyLimb < 0.01*/) 
                     || monsterChangesColorWhenAlly(nullptr, entity)) {
                     // certain allies use G/B/R color map
                     remap = mat4x4_t(0.f);

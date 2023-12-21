@@ -7878,6 +7878,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 				if ( !shapeshifted )
 				{
 					protection = true;
+					messagePlayerColor(gui_player, MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6089));
 				}
 			}
 			spawnMagicTower(protection ? players[gui_player]->entity : nullptr, 
@@ -9416,6 +9417,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case ARTIFACT_HELM:
 		case ARTIFACT_BOOTS:
 		case ARTIFACT_GLOVES:
+		case MASK_ARTIFACT_VISOR:
 			*metal = 8;
 			*magic = 16;
 			break;

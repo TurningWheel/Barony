@@ -12878,7 +12878,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textBase->setFont(attributeFont);
 				textPos.x = headingLeftX;
 				textBase->setSize(textPos);
-				textBase->setText("ATK");
+				textBase->setText(Language::get(6093));
 				textBase->setColor(statTextColor);
 				auto textStat = attributesInnerFrame->addField("atk text stat", 32);
 				textStat->setVJustify(Field::justify_t::CENTER);
@@ -12910,7 +12910,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textBase->setFont(attributeFont);
 				textPos.x = headingLeftX;
 				textBase->setSize(textPos);
-				textBase->setText("AC");
+				textBase->setText(Language::get(6094));
 				textBase->setColor(statTextColor);
 				auto textStat = attributesInnerFrame->addField("ac text stat", 32);
 				textStat->setVJustify(Field::justify_t::CENTER);
@@ -12941,7 +12941,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textBase->setFont(attributeFont);
 				textPos.x = headingLeftX;
 				textBase->setSize(textPos);
-				textBase->setText("PWR");
+				textBase->setText(Language::get(6095));
 				textBase->setColor(statTextColor);
 				auto textStat = attributesInnerFrame->addField("pwr text stat", 32);
 				textStat->setVJustify(Field::justify_t::CENTER);
@@ -12972,7 +12972,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textBase->setFont(attributeFont);
 				textPos.x = headingLeftX;
 				textBase->setSize(textPos);
-				textBase->setText("RES");
+				textBase->setText(Language::get(6096));
 				textBase->setColor(statTextColor);
 				auto textStat = attributesInnerFrame->addField("res text stat", 32);
 				textStat->setVJustify(Field::justify_t::CENTER);
@@ -13003,7 +13003,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textBase->setFont(attributeFont);
 				textPos.x = headingLeftX;
 				textBase->setSize(textPos);
-				textBase->setText("RGN");
+				textBase->setText(Language::get(6097));
 				textBase->setColor(statTextColor);
 
 				auto textDiv = attributesInnerFrame->addField("regen text divider", 4);
@@ -13067,7 +13067,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textBase->setFont(attributeFont);
 				textPos.x = headingLeftX;
 				textBase->setSize(textPos);
-				textBase->setText("WGT");
+				textBase->setText(Language::get(6098));
 				textBase->setColor(statTextColor);
 				auto textStat = attributesInnerFrame->addField("weight text stat", 32);
 				textStat->setVJustify(Field::justify_t::CENTER);
@@ -13215,7 +13215,12 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				auto statGrowths = classTooltip->addFrame("stat growths");
 				// stats definitions
 				const char* class_stats_text[] = {
-					"STR", "DEX", "CON", "INT", "PER", "CHR"
+					ItemTooltips.getItemStatShortName(std::string("STR")).c_str(), 
+					ItemTooltips.getItemStatShortName(std::string("DEX")).c_str(),
+					ItemTooltips.getItemStatShortName(std::string("CON")).c_str(),
+					ItemTooltips.getItemStatShortName(std::string("INT")).c_str(),
+					ItemTooltips.getItemStatShortName(std::string("PER")).c_str(),
+					ItemTooltips.getItemStatShortName(std::string("CHR")).c_str()
 				};
 				constexpr int num_class_stats = sizeof(class_stats_text) / sizeof(class_stats_text[0]);
 				constexpr SDL_Rect bottom{ 0, 0, 236, 30 };
@@ -16005,7 +16010,14 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					break;
 				case SHEET_INT:
 				{
-					real_t val = getBonusFromCasterOfSpellElement(players[player.playernum]->entity, stats[player.playernum]) * 100.0;
+					//real_t val = getBonusFromCasterOfSpellElement(players[player.playernum]->entity, stats[player.playernum], nullptr, SPELL_NONE) * 100.0;
+					int INT = statGetINT(stats[player.playernum], players[player.playernum]->entity);
+					real_t bonus = 0.0;
+					if ( INT > 0 )
+					{
+						bonus += INT / 100.0;
+					}
+					real_t val = bonus * 100.0;
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_pwr_value_format").c_str(), val);
 				}
 					break;
@@ -16658,7 +16670,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_POW:
 				{
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_base").c_str());
-					std::string tag = "MAGIC_SPELLPOWER";
+					std::string tag = "MAGIC_SPELLPOWER_TOTAL";
 					std::string formatValue = "%d";
 					std::string pwrBonus = formatSkillSheetEffects(player.playernum, PRO_MAGIC, tag, formatValue);
 					Sint32 pwr = 100 + std::stoi(pwrBonus);
@@ -16973,7 +16985,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_POW:
 				{
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_spellbook").c_str());
-					std::string tag = "MAGIC_SPELLPOWER";
+					std::string tag = "MAGIC_SPELLPOWER_INT";
 					std::string formatValue = "%d";
 					std::string pwrBonus = formatSkillSheetEffects(player.playernum, PRO_MAGIC, tag, formatValue);
 					Sint32 pwr = std::stoi(pwrBonus) / 2;
@@ -17469,7 +17481,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_POW:
 				{
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_entry_attr_bonus").c_str());
-					std::string tag = "MAGIC_SPELLPOWER";
+					std::string tag = "MAGIC_SPELLPOWER_INT";
 					std::string pwrINTBonus = formatSkillSheetEffects(player.playernum, PRO_MAGIC, tag, getHoverTextString("attributes_pwr_bonus_format"));
 					snprintf(valueBuf, sizeof(valueBuf), "%s", pwrINTBonus.c_str());
 				}
@@ -17732,8 +17744,9 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_POW:
 				{
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_entry_items_bonus").c_str());
-					// maybe one day add intrinsic spell power buffs. for now, 0
-					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_pwr_bonus_format").c_str(), 0);
+					std::string tag = "MAGIC_SPELLPOWER_EQUIPMENT";
+					std::string pwrINTBonus = formatSkillSheetEffects(player.playernum, PRO_MAGIC, tag, getHoverTextString("attributes_pwr_bonus_format"));
+					snprintf(valueBuf, sizeof(valueBuf), "%s", pwrINTBonus.c_str());
 				}
 					break;
 				case SHEET_RES:
@@ -18029,7 +18042,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 
 					real_t displayValue = (currentSpeedPercent - noWeightSpeedPercent) 
 						- (noGoldSpeedPercent - noWeightSpeedPercent);
-					if ( displayValue >= 0.0 )
+					if ( displayValue >= 0.001 )
+					{
+						// do nothing
+					}
+					else if ( displayValue >= 0.0 )
 					{
 						displayValue = -.000001; // so there is a negative sign
 					}
@@ -19611,7 +19628,7 @@ void Player::CharacterSheet_t::updateAttributes()
 
 	if ( auto field = attributesInnerFrame->findField("pwr text stat") )
 	{
-		real_t spellPower = (getBonusFromCasterOfSpellElement(player.entity, stats[player.playernum]) * 100.0) + 100.0;
+		real_t spellPower = (getBonusFromCasterOfSpellElement(player.entity, stats[player.playernum], nullptr, SPELL_NONE) * 100.0) + 100.0;
 		snprintf(buf, sizeof(buf), "%.f%%", spellPower);
 		if ( strcmp(buf, field->getText()) )
 		{
@@ -32032,9 +32049,33 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), tierName.c_str());
 		}
-		else if ( tag == "MAGIC_SPELLPOWER" )
+		else if ( tag == "MAGIC_SPELLPOWER_TOTAL" )
 		{
-			val = (getBonusFromCasterOfSpellElement(player, stats[playernum]) * 100.0);
+			val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE) * 100.0);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "MAGIC_SPELLPOWER_INT" )
+		{
+			//val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE) * 100.0);
+			int INT = statGetINT(stats[playernum], players[playernum]->entity);
+			real_t bonus = 0.0;
+			if ( INT > 0 )
+			{
+				bonus += INT / 100.0;
+			}
+			val = bonus * 100.0;
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "MAGIC_SPELLPOWER_EQUIPMENT" )
+		{
+			val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE) * 100.0);
+			int INT = statGetINT(stats[playernum], players[playernum]->entity);
+			real_t bonus = 0.0;
+			if ( INT > 0 )
+			{
+				bonus += INT / 100.0;
+			}
+			val -= bonus * 100.0;
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "MAGIC_CURRENT_TIER_SPELLS" )

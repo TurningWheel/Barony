@@ -4658,6 +4658,7 @@ bool AchievementObserver::updateOnLevelChange()
 			playerAchievements[i].ironicPunishmentTargets.clear();
 			playerAchievements[i].gastricBypassSpell = std::make_pair(0, 0);
 			playerAchievements[i].rat5000secondRule.clear();
+			playerAchievements[i].phantomMaskFirstStrikes.clear();
 		}
 		levelObserved = currentlevel;
 		return true;
@@ -5095,6 +5096,7 @@ void AchievementObserver::clearPlayerAchievementData()
 		playerAchievements[i].flutterShyCoordinates = std::make_pair(0.0, 0.0);
 		playerAchievements[i].gastricBypassSpell = std::make_pair(0, 0);
 		playerAchievements[i].rat5000secondRule.clear();
+		playerAchievements[i].phantomMaskFirstStrikes.clear();
 	}
 }
 

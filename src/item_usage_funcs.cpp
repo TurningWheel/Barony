@@ -3534,7 +3534,7 @@ void item_ScrollDestroyArmor(Item* item, int player)
 	messagePlayer(player, MESSAGE_INVENTORY, Language::get(848));
 
 	int armornum = 0;
-	int tryIndex = 1 + local_rng.rand() % 6;
+	int tryIndex = 1 + local_rng.rand() % 7;
 	int startIndex = tryIndex;
 	bool breakloop = false;
 	while ( !armor && !breakloop )
@@ -3592,8 +3592,15 @@ void item_ScrollDestroyArmor(Item* item, int player)
 					armornum = 6;
 					break;
 				}
+			case 7:
+				if ( stats[player]->mask != nullptr )
+				{
+					armor = stats[player]->mask;
+					armornum = 7;
+					break;
+				}
 				++tryIndex;
-				if ( tryIndex > 6 )
+				if ( tryIndex > 7 )
 				{
 					// loop back around.
 					tryIndex = 1;
@@ -4419,6 +4426,26 @@ void item_Food(Item*& item, int player)
 		pukeChance = 99; // make it so you will vomit
 	}
 
+	if ( item->beatitude < 0 && item->type == FOOD_CREAMPIE )
+	{
+		messagePlayer(player, MESSAGE_COMBAT | MESSAGE_STATUS, Language::get(909));
+		if ( players[player] && players[player]->entity && players[player]->entity->setEffect(EFF_MESSY, true, 600, false) )
+		{
+			messagePlayer(player, MESSAGE_COMBAT | MESSAGE_STATUS, Language::get(910));
+		}
+		else
+		{
+			if ( stats[player]->mask && stats[player]->mask->type == MASK_HAZARD_GOGGLES )
+			{
+				if ( !(players[player]->entity->behavior == &actPlayer && players[player]->entity->effectShapeshift != NOTHING) )
+				{
+					messagePlayerColor(player, MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6088));
+				}
+			}
+		}
+		consumeItem(item, player);
+		return;
+	}
 	if (((item->beatitude < 0 && item->type != FOOD_CREAMPIE) || (local_rng.rand() % pukeChance == 0)) && pukeChance < 100)
 	{
 		if (players[player] && players[player]->entity && !(svFlags & SV_FLAG_HUNGER))
@@ -4448,15 +4475,27 @@ void item_Food(Item*& item, int player)
 		consumeItem(item, player);
 		return;
 	}
-	if ( item->beatitude < 0 && item->type == FOOD_CREAMPIE )
+
+	real_t foodMult = 1.0;
+	//int bonusFoodHeal = 0;
+	if ( stats[player]->helmet && stats[player]->helmet->type == HAT_CHEF )
 	{
-		messagePlayer(player, MESSAGE_COMBAT | MESSAGE_STATUS, Language::get(909));
-		if ( players[player] && players[player]->entity && players[player]->entity->setEffect(EFF_MESSY, true, 600, false) )
+		if ( stats[player]->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
 		{
-			messagePlayer(player, MESSAGE_COMBAT | MESSAGE_STATUS, Language::get(910));
+			if ( svFlags & SV_FLAG_HUNGER )
+			{
+				foodMult += 0.2 + abs(stats[player]->helmet->beatitude) * 0.1;
+			}
+			else
+			{
+				foodMult += 0.5 + abs(stats[player]->helmet->beatitude) * 0.25;
+			}
 		}
-		consumeItem(item, player);
-		return;
+		else
+		{
+			foodMult = 0.6 - abs(stats[player]->helmet->beatitude) * 0.1;
+		}
+		foodMult = std::max(0.2, foodMult);
 	}
 
 	// replenish nutrition points
@@ -4501,13 +4540,13 @@ void item_Food(Item*& item, int player)
 				hungerIncrease = 10;
 				break;
 		}
-		stats[player]->HUNGER += hungerIncrease;
+		stats[player]->HUNGER += hungerIncrease * foodMult;
 	}
 	else
 	{
 		if (players[player] && players[player]->entity)
 		{
-			players[player]->entity->modHP(5);
+			players[player]->entity->modHP(std::max(1, (int)(5 * foodMult)));
 			messagePlayer(player, MESSAGE_WORLD, Language::get(911));
 
 
@@ -4547,6 +4586,7 @@ void item_Food(Item*& item, int player)
 					default:
 						break;
 				}
+				manaRegenPercent *= foodMult;
 				int manaAmount = stats[player]->MAXMP * manaRegenPercent;
 				players[player]->entity->modMP(manaAmount);
 			}
@@ -4744,10 +4784,33 @@ void item_FoodTin(Item*& item, int player)
 		buffDuration -= local_rng.rand() % ((buffDuration / 4) + 1); // 75-100% duration
 	}
 
+	real_t foodMult = 1.0;
+	//int bonusFoodHeal = 0;
+	if ( stats[player]->helmet && stats[player]->helmet->type == HAT_CHEF )
+	{
+		if ( stats[player]->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+		{
+			if ( svFlags & SV_FLAG_HUNGER )
+			{
+				foodMult += 0.2 + abs(stats[player]->helmet->beatitude) * 0.1;
+			}
+			else
+			{
+				foodMult += 0.5 + abs(stats[player]->helmet->beatitude) * 0.25;
+			}
+		}
+		else
+		{
+			foodMult = 0.6 - abs(stats[player]->helmet->beatitude) * 0.1;
+		}
+		foodMult = std::min(1.0, foodMult);
+		foodMult = std::max(0.2, foodMult);
+	}
+
 	// replenish nutrition points
 	if (svFlags & SV_FLAG_HUNGER)
 	{
-		stats[player]->HUNGER += 600;
+		stats[player]->HUNGER += 600 * foodMult;
 		stats[player]->EFFECTS[EFF_HP_REGEN] = hpBuff;
 		stats[player]->EFFECTS[EFF_MP_REGEN] = mpBuff;
 		stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] = buffDuration;
@@ -4757,11 +4820,11 @@ void item_FoodTin(Item*& item, int player)
 	{
 		if (players[player] && players[player]->entity)
 		{
-			players[player]->entity->modHP(5);
+			players[player]->entity->modHP(std::max(1, (int)(5 * foodMult)));
 			messagePlayer(player, MESSAGE_WORLD, Language::get(911));
 			if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
 			{
-				real_t manaRegenPercent = 0.6;
+				real_t manaRegenPercent = 0.6 * foodMult;
 				int manaAmount = stats[player]->MAXMP * manaRegenPercent;
 				players[player]->entity->modMP(manaAmount);
 			}

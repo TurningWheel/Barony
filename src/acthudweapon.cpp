@@ -2494,10 +2494,24 @@ void actHudWeapon(Entity* my)
 	}
 	else if ( HUDWEAPON_CHOP == 13 ) // tool placing
 	{
+		real_t speedFactor = 1.0;
+		if ( stats[HUDWEAPON_PLAYERNUM]->mask && stats[HUDWEAPON_PLAYERNUM]->mask->type == MASK_TECH_GOGGLES )
+		{
+			bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats[HUDWEAPON_PLAYERNUM]);
+			if ( stats[HUDWEAPON_PLAYERNUM]->mask->beatitude >= 0 || cursedItemIsBuff )
+			{
+				speedFactor = std::min(speedFactor + (1 + abs(stats[HUDWEAPON_PLAYERNUM]->mask->beatitude)) * 0.5, 3.0);
+			}
+			else
+			{
+				speedFactor = std::max(speedFactor - abs(stats[HUDWEAPON_PLAYERNUM]->mask->beatitude) * 0.5, 0.5);
+			}
+		}
+
 		int targetZ = -4;
 		real_t targetRoll = -PI / 2;
-		real_t rateY = .1;
-		real_t rateRoll = .25;
+		real_t rateY = .1 * speedFactor;
+		real_t rateRoll = .25 * speedFactor;
 		int targetY = 1;
 		if ( !swingweapon )
 		{
@@ -2506,17 +2520,17 @@ void actHudWeapon(Entity* my)
 		real_t targetPitch = 0.f;
 
 		HUDWEAPON_YAW = 0;
-		HUDWEAPON_PITCH -= .25;
+		HUDWEAPON_PITCH -= .25 * speedFactor;
 		if ( HUDWEAPON_PITCH < targetPitch )
 		{
 			HUDWEAPON_PITCH = targetPitch;
 		}
-		HUDWEAPON_MOVEX -= .35;
+		HUDWEAPON_MOVEX -= .35 * speedFactor;
 		if ( HUDWEAPON_MOVEX < 0 )
 		{
 			HUDWEAPON_MOVEX = 0;
 		}
-		HUDWEAPON_MOVEZ -= .75;
+		HUDWEAPON_MOVEZ -= .75 * speedFactor;
 		if ( HUDWEAPON_MOVEZ < targetZ )
 		{
 			HUDWEAPON_MOVEZ = targetZ;
@@ -2611,11 +2625,11 @@ void actHudWeapon(Entity* my)
 			bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats[HUDWEAPON_PLAYERNUM]);
 			if ( stats[HUDWEAPON_PLAYERNUM]->mask->beatitude >= 0 || cursedItemIsBuff )
 			{
-				speedFactor = std::min(speedFactor + abs(stats[HUDWEAPON_PLAYERNUM]->mask->beatitude) * 0.25, 2.0);
+				speedFactor = std::min(speedFactor + (1 + abs(stats[HUDWEAPON_PLAYERNUM]->mask->beatitude)) * 0.5, 3.0);
 			}
 			else
 			{
-				speedFactor = std::max(speedFactor - abs(stats[HUDWEAPON_PLAYERNUM]->mask->beatitude) * 0.25, 0.5);
+				speedFactor = std::max(speedFactor - abs(stats[HUDWEAPON_PLAYERNUM]->mask->beatitude) * 0.5, 0.5);
 			}
 		}
 

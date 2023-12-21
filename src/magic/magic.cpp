@@ -233,7 +233,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 	if ( hit.entity )
 	{
 		int damage = element.damage;
-		damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, nullptr, &element));
+		damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, nullptr, &element, SPELL_ACID_SPRAY));
 		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 
 		if ( (hit.entity->behavior == &actMonster && !hit.entity->isInertMimic()) || hit.entity->behavior == &actPlayer )
@@ -256,10 +256,19 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				return;
 			}
 			bool hasamulet = false;
+			bool hasgoggles = false;
 			if ( (hitstats->amulet && hitstats->amulet->type == AMULET_POISONRESISTANCE) || hitstats->type == INSECTOID )
 			{
 				resistance += 2;
 				hasamulet = true;
+			}
+			if ( hitstats->mask && hitstats->mask->type == MASK_HAZARD_GOGGLES )
+			{
+				if ( !(hit.entity->behavior == &actPlayer && hit.entity->effectShapeshift != NOTHING) )
+				{
+					hasgoggles = true;
+					resistance += 2;
+				}
 			}
 
 			DamageGib dmgGib = DMG_DEFAULT;
@@ -288,8 +297,10 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			int oldHP = hitstats->HP;
 			damage /= (1 + (int)resistance);
 			damage *= damageMultiplier;
-			hit.entity->modHP(-damage);
-
+			if ( !hasgoggles )
+			{
+				hit.entity->modHP(-damage);
+			}
 
 			// write the obituary
 			if ( parent )
@@ -301,7 +312,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			int duration = 6 * TICKS_PER_SECOND;
 			duration /= (1 + (int)resistance);
 			bool recentlyHitBySameSpell = false;
-			if ( !hasamulet )
+			if ( !hasamulet && !hasgoggles )
 			{
 				hitstats->EFFECTS[EFF_POISONED] = true;
 				hitstats->EFFECTS_TIMERS[EFF_POISONED] = duration; // 6 seconds.
@@ -316,7 +327,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				hitstats->poisonKiller = my.parent;
 			}
 			
-			if ( !recentlyHitBySameSpell )
+			if ( !recentlyHitBySameSpell && !hasgoggles )
 			{
 				playSoundEntity(hit.entity, 249, 64);
 			}
@@ -355,7 +366,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			if ( oldHP > 0 && hitstats->HP <= 0 && parent )
 			{
 				parent->awardXP(hit.entity, true, true);
-				spawnBloodVialOnMonsterDeath(hit.entity, hitstats);
+				spawnBloodVialOnMonsterDeath(hit.entity, hitstats, parent);
 			}
 
 			Uint32 color = makeColorRGB(255, 0, 0);
@@ -370,10 +381,14 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				if ( !recentlyHitBySameSpell )
 				{
 					messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(2432));
+					if ( hasgoggles )
+					{
+						messagePlayerColor(player, MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6088));
+					}
 				}
 			}
 
-			if ( hitstats->HP > 0 )
+			if ( hitstats->HP > 0 && !hasgoggles )
 			{
 				// damage armor
 				Item* armor = nullptr;
@@ -416,7 +431,7 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 	if ( hit.entity )
 	{
 		int damage = element.damage;
-		damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, nullptr, &element));
+		damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, nullptr, &element, SPELL_POISON));
 		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 
 		if ( (hit.entity->behavior == &actMonster && !hit.entity->isInertMimic()) || hit.entity->behavior == &actPlayer )
@@ -519,7 +534,7 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 			if ( hitstats->HP <= 0 && parent )
 			{
 				parent->awardXP(hit.entity, true, true);
-				spawnBloodVialOnMonsterDeath(hit.entity, hitstats);
+				spawnBloodVialOnMonsterDeath(hit.entity, hitstats, parent);
 			}
 
 			Uint32 color = makeColorRGB(255, 0, 0);
@@ -952,7 +967,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			}
 
 			int damage = element.damage;
-			damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, nullptr, &element));
+			damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, nullptr, &element, SPELL_DRAIN_SOUL));
 			//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 			damage /= (1 + (int)resistance);
 			damage *= damageMultiplier;
@@ -1011,7 +1026,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			if ( hitstats->HP <= 0 && parent )
 			{
 				parent->awardXP(hit.entity, true, true);
-				spawnBloodVialOnMonsterDeath(hit.entity, hitstats);
+				spawnBloodVialOnMonsterDeath(hit.entity, hitstats, parent);
 			}
 
 			if ( damageHP > 0 && parent )

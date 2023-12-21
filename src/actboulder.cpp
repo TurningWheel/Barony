@@ -241,6 +241,13 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 					damage = 50;
 				}
 
+				int trapResist = entity->getFollowerBonusTrapResist();
+				if ( trapResist != 0 )
+				{
+					real_t mult = std::max(0.0, 1.0 - (trapResist / 100.0));
+					damage *= mult;
+				}
+
 				if ( stats->helmet )
 				{
 					bool shapeshifted = (entity->behavior == &actPlayer && entity->effectShapeshift != NOTHING);
@@ -250,12 +257,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 					{
 						if ( stats->helmet->type == HAT_TOPHAT )
 						{
-							bool cursedItemIsBuff = false;
-							if ( entity->behavior == &actPlayer )
-							{
-								cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats);
-							}
-
+							bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats);
 							if ( stats->helmet->beatitude >= 0 || cursedItemIsBuff )
 							{
 								damage = 0;
@@ -265,12 +267,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 						else if ( stats->helmet->type == HELM_MINING )
 						{
 							real_t mult = 0.5;
-							bool cursedItemIsBuff = false;
-							if ( entity->behavior == &actPlayer )
-							{
-								cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats);
-							}
-
+							bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats);
 							if ( stats->helmet->beatitude >= 0 || cursedItemIsBuff )
 							{
 								mult -= 0.25 * abs(stats->helmet->beatitude);

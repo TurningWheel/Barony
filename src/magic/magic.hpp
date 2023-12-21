@@ -506,7 +506,7 @@ int spellGetCastSound(spell_t* spell);
 int getSpellcastingAbilityFromUsingSpellbook(spell_t* spell, Entity* caster, Stat* casterStats);
 bool isSpellcasterBeginnerFromSpellbook(int player, Entity* caster, Stat* stat, spell_t* spell, Item* spellbookItem);
 int getSpellbookBonusPercent(Entity* caster, Stat* stat, Item* spellbookItem);
-real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spellElement_t* spellElement = nullptr);
+real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spellElement_t* spellElement, int spellID);
 #endif
 bool isSpellcasterBeginner(int player, Entity* caster);
 void actMagicTrap(Entity* my);

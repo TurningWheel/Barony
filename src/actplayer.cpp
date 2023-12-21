@@ -3250,6 +3250,23 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		else
 		{
 			double backpedalMultiplier = 0.25;
+			double lateralMultiplier = 1.0;
+			if ( stats[PLAYER_NUM]->helmet && stats[PLAYER_NUM]->helmet->type == HAT_BANDANA )
+			{
+				if ( stats[PLAYER_NUM]->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[PLAYER_NUM]) )
+				{
+					backpedalMultiplier += 0.5 * (1 + abs(stats[PLAYER_NUM]->helmet->beatitude)) * 0.25;
+					backpedalMultiplier = std::min(0.75, backpedalMultiplier);
+					lateralMultiplier += 0.5 * (1 + abs(stats[PLAYER_NUM]->helmet->beatitude)) * 0.25;
+					lateralMultiplier = std::min(1.5, lateralMultiplier);
+				}
+				else
+				{
+					backpedalMultiplier += 0.5 * (1 + abs(stats[PLAYER_NUM]->helmet->beatitude)) * 0.25;
+					backpedalMultiplier = std::min(0.75, backpedalMultiplier);
+					lateralMultiplier = 0.0;
+				}
+			}
 			if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] )
 			{
 				backpedalMultiplier = 1.25;
@@ -3302,6 +3319,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 					y_force *= backpedalMultiplier;    //Move backwards more slowly.
 				}
 			}
+			x_force *= lateralMultiplier;
 		}
 
 		real_t speedFactor = getSpeedFactor(weightratio, statGetDEX(stats[PLAYER_NUM], players[PLAYER_NUM]->entity));
@@ -3364,11 +3382,11 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 	PLAYER_VELX *= pow(0.75, refreshRateDelta);
 	PLAYER_VELY *= pow(0.75, refreshRateDelta);
 
-	//if ( keystatus[SDLK_G] )
-	//{
-		//messagePlayer(0, MESSAGE_DEBUG, "X: %5.5f, Y: %5.5f, Total: %5.5f", PLAYER_VELX, PLAYER_VELY, sqrt(pow(PLAYER_VELX, 2) + pow(PLAYER_VELY, 2)));
-		//messagePlayer(0, MESSAGE_DEBUG, "Vel: %5.5f", getCurrentMovementSpeed());
-	//}
+	/*if ( keystatus[SDLK_g] )
+	{
+		messagePlayer(0, MESSAGE_DEBUG, "X: %5.5f, Y: %5.5f, Total: %5.5f", PLAYER_VELX, PLAYER_VELY, sqrt(pow(PLAYER_VELX, 2) + pow(PLAYER_VELY, 2)));
+		messagePlayer(0, MESSAGE_DEBUG, "Vel: %5.5f", getCurrentMovementSpeed());
+	}*/
 
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
@@ -6251,12 +6269,26 @@ void actPlayer(Entity* my)
 					{
 						messagePlayer(PLAYER_NUM, MESSAGE_STATUS, Language::get(3703));
 					}
+					if ( stats[PLAYER_NUM]->mask && stats[PLAYER_NUM]->mask->type == MASK_HAZARD_GOGGLES )
+					{
+						if ( my->effectShapeshift == NOTHING )
+						{
+							messagePlayer(PLAYER_NUM, MESSAGE_STATUS, Language::get(6090));
+						}
+					}
 					cameravars[PLAYER_NUM].shakex += .1;
 					cameravars[PLAYER_NUM].shakey += 10;
 				}
 				else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && stats[PLAYER_NUM]->type == VAMPIRE )
 				{
 					messagePlayerColor(PLAYER_NUM, MESSAGE_STATUS, makeColorRGB(255, 0, 0), Language::get(3183));
+					if ( stats[PLAYER_NUM]->mask && stats[PLAYER_NUM]->mask->type == MASK_HAZARD_GOGGLES )
+					{
+						if ( my->effectShapeshift == NOTHING )
+						{
+							messagePlayer(PLAYER_NUM, MESSAGE_STATUS, Language::get(6090));
+						}
+					}
 					playSoundPlayer(PLAYER_NUM, 28, 128);
 					playSoundPlayer(PLAYER_NUM, 249, 128);
 					cameravars[PLAYER_NUM].shakex += .1;

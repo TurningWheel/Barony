@@ -787,6 +787,7 @@ public:
 		std::pair<real_t, real_t> flutterShyCoordinates;
 		std::pair<int, Uint32> gastricBypassSpell;
 		std::unordered_set<Uint32> rat5000secondRule;
+		std::unordered_set<Uint32> phantomMaskFirstStrikes;
 		
 		PlayerAchievements()
 		{

@@ -2668,7 +2668,7 @@ class ItemTooltips_t
 		SPELL_TYPE_AREA,
 		SPELL_TYPE_SELF_SUSTAIN
 	};
-
+public:
 	enum SpellTagTypes : int
 	{
 		SPELL_TAG_DAMAGE,
@@ -2678,7 +2678,7 @@ class ItemTooltips_t
 		SPELL_TAG_CURE,
 		SPELL_TAG_BASIC_HIT_MESSAGE
 	};
-
+private:
 	struct spellItem_t
 	{
 		Sint32 id;

@@ -344,9 +344,10 @@ typedef enum ItemType
 	HELM_MINING,
 	MASK_STEEL_VISOR,
 	MASK_CRYSTAL_VISOR,
-	MASK_ARTIFACT_VISOR
+	MASK_ARTIFACT_VISOR,
+	HAT_CIRCLET_WISDOM
 } ItemType;
-const int NUMITEMS = 325;
+const int NUMITEMS = 326;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -497,7 +498,7 @@ public:
 	int getMaxStackLimit(int player) const;
 
 	bool isShield() const;
-	bool doesItemProvideBeatitudeAC() const;
+	static bool doesItemProvideBeatitudeAC(ItemType type);
 	bool doesItemProvidePassiveShieldBonus() const;
 	bool doesPotionHarmAlliesOnThrown() const;
 

@@ -978,6 +978,11 @@ public:
 	void lichFireSetNextAttack(Stat& myStats);
 	void lichIceSetNextAttack(Stat& myStats);
 
+	int getEntityInspirationFromAllies();
+	int getFollowerBonusDamageResist();
+	int getFollowerBonusTrapResist();
+	int getFollowerBonusHPRegen();
+	int getHPRestoreOnLevelUp();
 	void monsterMoveBackwardsAndPath(bool trySidesFirst = false); // monster tries to move backwards in a cross shaped area if stuck against an entity.
 	bool monsterHasLeader(); // return true if monsterstats->leader_uid is not 0.
 	void monsterAllySendCommand(int command, int destX, int destY, Uint32 uid = 0); // update the behavior of allied NPCs.
@@ -1140,7 +1145,7 @@ void actTextSource(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-static const int NUM_ITEM_STRINGS = 329;
+static const int NUM_ITEM_STRINGS = 330;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 129;
 static const int NUM_EDITOR_SPRITES = 180;
 static const int NUM_EDITOR_TILES = 350;
@@ -1207,7 +1212,7 @@ int playerEntityMatchesUid(Uint32 uid); // Returns >= 0 if player uid matches ui
 bool monsterNameIsGeneric(Stat& monsterStats); // returns true if a monster's name is a generic decription rather than a miniboss.
 
 bool playerRequiresBloodToSustain(int player); // vampire type or accursed class
-void spawnBloodVialOnMonsterDeath(Entity* entity, Stat* hitstats);
+void spawnBloodVialOnMonsterDeath(Entity* entity, Stat* hitstats, Entity* killer);
 
 enum EntityHungerIntervals : int
 {
