@@ -591,6 +591,8 @@ struct SaveGameInfo {
 			fp->property("shopkeeper_hostility", shopkeeperHostility);
 			return true;
 		}
+
+		int isCharacterValidFromDLC();
 	};
 	std::vector<Player> players;
 	std::vector<std::pair<std::string, std::string>> map_messages; // map modifiers "sound of pickaxes striking rock" "walls are fortified" etc

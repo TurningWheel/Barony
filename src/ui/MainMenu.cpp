@@ -21083,7 +21083,63 @@ failed:
 			unModdedSavegameWarning = true;
 		}
 
-		if ( moddedSavegameWarning || unModdedSavegameWarning )
+		// check DLC entitlement
+		int validCharacter = VALID_OK_CHARACTER;
+		int index = -1;
+		for ( auto& player : saveGameInfo.players )
+		{
+			++index;
+			if ( saveGameInfo.multiplayer_type == SPLITSCREEN )
+			{
+				if ( index < saveGameInfo.players_connected.size() )
+				{
+					if ( saveGameInfo.players_connected[index] )
+					{
+						validCharacter = player.isCharacterValidFromDLC();
+						if ( validCharacter != VALID_OK_CHARACTER )
+						{
+							break;
+						}
+					}
+				}
+			}
+			else
+			{
+				if ( index == saveGameInfo.player_num )
+				{
+					validCharacter = player.isCharacterValidFromDLC();
+					break;
+				}
+			}
+		}
+
+		if ( validCharacter != VALID_OK_CHARACTER )
+		{
+			snprintf(window_text, sizeof(window_text), Language::get(6099), shortened_name, validCharacter);
+			monoPromptXL(
+				window_text, Language::get(5591), 
+				[](Button& button) { // Cancel button
+					soundCancel();
+				if ( savegame_selected ) {
+					savegame_selected->select();
+				}
+				else {
+					assert(main_menu_frame);
+					auto window = main_menu_frame->findFrame("continue_window"); assert(window);
+					if ( load_singleplayer ) {
+						auto b = window->findButton("singleplayer");
+						b->select();
+					}
+					else {
+						auto b = window->findButton("multiplayer");
+						b->select();
+					}
+				}
+				closeMono();
+				});
+			soundError();
+		}
+		else if ( moddedSavegameWarning || unModdedSavegameWarning )
 		{
 			if ( moddedSavegameWarning )
 			{

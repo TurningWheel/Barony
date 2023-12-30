@@ -2105,10 +2105,20 @@ void EOSFuncs::joinLobby(LobbyData_t* lobby)
 		{
 			// try reload from your other savefiles since this didn't match the default savegameIndex.
 			bool foundSave = false;
+			int checkDLC = VALID_OK_CHARACTER;
 			for (int c = 0; c < SAVE_GAMES_MAX; ++c) {
 				auto info = getSaveGameInfo(false, c);
 				if (info.game_version != -1) {
 					if (info.gamekey == lobby->LobbyAttributes.isLobbyLoadingSavedGame) {
+						if ( info.player_num < info.players.size() )
+						{
+							checkDLC = info.players[info.player_num].isCharacterValidFromDLC();
+							if ( checkDLC != VALID_OK_CHARACTER )
+							{
+								foundSave = false;
+								break;
+							}
+						}
 						savegameCurrentFileIndex = c;
 						foundSave = true;
 						break;
@@ -2116,7 +2126,12 @@ void EOSFuncs::joinLobby(LobbyData_t* lobby)
 				}
 			}
 
-			if (foundSave) {
+			if ( checkDLC != VALID_OK_CHARACTER )
+			{
+				ConnectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_SAVEGAME_REQUIRES_DLC;
+				errorOnJoin = true;
+			}
+			else if (foundSave) {
 				loadingsavegame = lobby->LobbyAttributes.isLobbyLoadingSavedGame;
 				auto info = getSaveGameInfo(false, savegameCurrentFileIndex);
 				for (int c = 0; c < MAXPLAYERS; ++c) {

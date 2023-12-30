@@ -88,6 +88,9 @@ std::string LobbyHandler_t::getLobbyJoinFailedConnectString(int result)
 		case EResult_LobbyFailures::LOBBY_TOO_MANY_PLAYERS:
 			snprintf(buf, 1023, "Unable to join lobby:\nLobby is full.");
 			break;
+		case EResult_LobbyFailures::LOBBY_SAVEGAME_REQUIRES_DLC:
+			snprintf(buf, 1023, "Unable to join lobby:\n%s", Language::get(6100));
+			break;
 #ifdef USE_EOS
 #ifdef STEAMWORKS
 		case static_cast<int>(EOS_EResult::EOS_InvalidUser):
@@ -157,9 +160,19 @@ bool LobbyHandler_t::validateSteamLobbyDataOnJoin()
 			{
 				// try reload from your other savefiles since this didn't match the default savegameIndex.
 				bool foundSave = false;
+				int checkDLC = VALID_OK_CHARACTER;
 				for ( int c = 0; c < SAVE_GAMES_MAX; ++c ) {
 					auto info = getSaveGameInfo(false, c);
 					if ( info.game_version != -1 ) {
+						if ( info.player_num < info.players.size() )
+						{
+							checkDLC = info.players[info.player_num].isCharacterValidFromDLC();
+							if ( checkDLC != VALID_OK_CHARACTER )
+							{
+								foundSave = false;
+								break;
+							}
+						}
 						if ( info.gamekey == lsg ) {
 							savegameCurrentFileIndex = c;
 							foundSave = true;
@@ -168,7 +181,12 @@ bool LobbyHandler_t::validateSteamLobbyDataOnJoin()
 					}
 				}
 
-				if ( foundSave )
+				if ( checkDLC != VALID_OK_CHARACTER )
+				{
+					connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_SAVEGAME_REQUIRES_DLC;
+					errorOnJoin = true;
+				}
+				else if ( foundSave )
 				{
 					loadingsavegame = lsg;
 					auto info = getSaveGameInfo(false, savegameCurrentFileIndex);

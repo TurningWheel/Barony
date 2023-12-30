@@ -337,3 +337,5 @@ struct LastCreatedCharacter {
 	}
 };
 extern LastCreatedCharacter LastCreatedCharacterSettings;
+
+bool isAchievementUnlockedForClassUnlock(PlayerRaces race);
