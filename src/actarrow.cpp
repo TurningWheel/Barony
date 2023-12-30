@@ -219,7 +219,11 @@ void actArrow(Entity* my)
 
 	if ( multiplayer != CLIENT )
 	{
-		my->skill[2] = -(1000 + my->arrowShotByWeapon); // invokes actArrow for clients.
+		Sint32 val = (1 << 31);
+		val |= (Uint8)(17);
+		val |= (((Uint16)(my->arrowShotByWeapon) & 0xFFF) << 8);
+		val |= (my->arrowDropOffEquipmentModifier + 8) << 20;
+		my->skill[2] = val;//-(1000 + my->arrowShotByWeapon); // invokes actArrow for clients.
 		my->flags[INVISIBLE] = false;
 	}
 
@@ -519,6 +523,67 @@ void actArrow(Entity* my)
 					int attackAfterReductions = static_cast<int>(std::max(0.0, ((my->arrowPower * targetACEffectiveness - enemyAC))) + (1.0 - targetACEffectiveness) * my->arrowPower);
 					int damage = attackAfterReductions;
 
+					bool backstab = false;
+					bool flanking = false;
+					if ( parent && parent->getStats() )
+					{
+						Stat* parentStats = parent->getStats();
+						if ( parentStats->helmet && parentStats->helmet->type == HAT_HOOD_WHISPERS 
+							&& !monsterIsImmobileTurret(hit.entity, hitstats) && !(hitstats->type == MIMIC) )
+						{
+							real_t hitAngle = hit.entity->yawDifferenceFromEntity(my);
+							if ( (hitAngle >= 0 && hitAngle <= 2 * PI / 3) ) // 120 degree arc
+							{
+								int stealthCapstoneBonus = 1;
+								if ( parent->skillCapstoneUnlockedEntity(PRO_STEALTH) )
+								{
+									stealthCapstoneBonus = 2;
+								}
+
+								real_t equipmentModifier = 0.0;
+								real_t bonusModifier = 1.0;
+								if ( parentStats->helmet && parentStats->helmet->type == HAT_HOOD_WHISPERS )
+								{
+									if ( parentStats->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(parentStats) )
+									{
+										equipmentModifier += (std::min(50 + (10 * abs(parentStats->helmet->beatitude)), 100)) / 100.0;
+									}
+									else
+									{
+										equipmentModifier = 0.5;
+										bonusModifier = 0.5;
+									}
+								}
+
+								if ( hit.entity->monsterState == MONSTER_STATE_WAIT
+									|| hit.entity->monsterState == MONSTER_STATE_PATH
+									|| (hit.entity->monsterState == MONSTER_STATE_HUNT && uidToEntity(hit.entity->monsterTarget) == nullptr) )
+								{
+									// unaware monster, get backstab damage.
+									int bonus = (parentStats->getModifiedProficiency(PRO_STEALTH) / 20 + 2) * (2 * stealthCapstoneBonus);
+									damage += ((bonus * equipmentModifier) * bonusModifier);
+									if ( local_rng.rand() % 10 == 0 && hit.entity->behavior != &actPlayer )
+									{
+										parent->increaseSkill(PRO_STEALTH);
+									}
+									backstab = true;
+								}
+								else if ( local_rng.rand() % 2 == 0 )
+								{
+									// monster currently engaged in some form of combat maneuver
+									// 1 in 2 chance to flank defenses.
+									int bonus = (parentStats->getModifiedProficiency(PRO_STEALTH) / 20 + 1) * (stealthCapstoneBonus);
+									damage += ((bonus * equipmentModifier) * bonusModifier);
+									if ( local_rng.rand() % 20 == 0 && hit.entity->behavior != &actPlayer )
+									{
+										parent->increaseSkill(PRO_STEALTH);
+									}
+									flanking = true;
+								}
+							}
+						}
+					}
+
 					damage = std::max(0, damage);
 
 					if ( silverDamage || huntingDamage )
@@ -743,7 +808,11 @@ void actArrow(Entity* my)
 								// smites the %s!
 								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3743), Language::get(3744), MSG_COMBAT);
 							}
-							else if ( damage <= (nominalDamage * .7) )
+							else if ( backstab && hitstats->HP > 0 )
+							{
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(6104), Language::get(6105), MSG_COMBAT);
+							}
+							else if ( damage <= (nominalDamage * .7) && hitstats->HP > 0 )
 							{
 								// weak shot.
 								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3733), Language::get(3734), MSG_COMBAT);
@@ -990,7 +1059,14 @@ void actArrow(Entity* my)
 						if ( parent && parent->behavior == &actPlayer )
 						{
 							Uint32 color = makeColorRGB(0, 255, 0);
-							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(692), Language::get(697), MSG_COMBAT);
+							if ( backstab )
+							{
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2547), Language::get(2548), MSG_COMBAT);
+							}
+							else
+							{
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(692), Language::get(697), MSG_COMBAT);
+							}
 						}
 					}
 

@@ -307,156 +307,95 @@ Item* uidToItem(const Uint32 uid)
 
 /*-------------------------------------------------------------------------------
 
-	itemCurve
-
-	Selects an item type from the given category of items by factoring in
-	dungeon level, value of the item, etc.
-
--------------------------------------------------------------------------------*/
-
-ItemType itemCurve(const Category cat, BaronyRNG& rng)
-{
-	const int numitems = NUMITEMS - ( NUMITEMS - static_cast<int>(ARTIFACT_SWORD) );
-	bool chances[NUMITEMS];
-	int c;
-
-	if ( cat < 0 || cat >= NUMCATEGORIES )
-	{
-		printlog("warning: itemCurve() called with bad category value!\n");
-		return GEM_ROCK;
-	}
-
-	// find highest value of items in category
-	Uint32 highestvalue = 0;
-	Uint32 lowestvalue = 0;
-	Uint32 numoftype = 0;
-	for ( c = 0; c < numitems; c++ )
-	{
-		if ( items[c].category == cat )
-		{
-			highestvalue = std::max<Uint32>(highestvalue, items[c].value); //TODO: Why are Uint32 and int being compared?
-			lowestvalue = std::min<Uint32>(lowestvalue, items[c].value); //TODO: Why are Uint32 and int being compared?
-			numoftype++;
-		}
-	}
-	if ( numoftype == 0 )
-	{
-		printlog("warning: category passed to itemCurve has no items!\n");
-		return GEM_ROCK;
-	}
-
-	if ( cat == SCROLL || cat == POTION || cat == BOOK )
-	{
-		// these item categories will spawn anything of their type
-		for ( c = 0; c < numitems; c++ )
-		{
-			chances[c] = false;
-			if ( items[c].category == cat )
-			{
-				chances[c] = true;
-			}
-		}
-	}
-	else if ( cat == TOOL )
-	{
-		// this category will spawn specific items more frequently regardless of level
-		for ( c = 0; c < numitems; c++ )
-		{
-			chances[c] = false;
-			if ( items[c].category == cat )
-			{
-				switch ( static_cast<ItemType>(c) )
-				{
-					case TOOL_TINOPENER:
-						if ( rng.rand() % 2 )   // 50% chance
-						{
-							chances[c] = true;
-						}
-						break;
-					case TOOL_LANTERN:
-						if ( rng.rand() % 4 )   // 75% chance
-						{
-							chances[c] = true;
-						}
-						break;
-					case TOOL_SKELETONKEY:
-						chances[c] = false; // 0% chance
-						break;
-					default:
-						chances[c] = true;
-						break;
-				}
-			}
-		}
-	}
-	else
-	{
-		// other categories get a special chance algorithm based on item value and dungeon level
-		const int acceptablehigh = std::max<Uint32>(highestvalue * fmin(1.0, (currentlevel + 10) / 25.0), lowestvalue); //TODO: Why are double and Uint32 being compared?
-		for ( c = 0; c < numitems; c++ )
-		{
-			chances[c] = false;
-			if ( items[c].category == cat && items[c].value <= acceptablehigh )
-			{
-				chances[c] = true;
-			}
-		}
-	}
-
-	// calculate number of items left
-	Uint32 numleft = 0;
-	for ( c = 0; c < numitems; c++ )
-	{
-		if ( chances[c] == true )
-		{
-			numleft++;
-		}
-	}
-	if ( numleft == 0 )
-	{
-		return GEM_ROCK;
-	}
-
-	// most gems are worthless pieces of glass
-	if ( cat == GEM )
-	{
-		if ( rng.rand() % 10 )
-		{
-			return GEM_GLASS;
-		}
-	}
-
-	// pick the item
-	Uint32 pick = rng.rand() % numleft;
-	for ( c = 0; c < numitems; c++ )
-	{
-		if ( items[c].category == cat )
-		{
-			if ( chances[c] == true )
-			{
-				if ( pick == 0 )
-				{
-					return static_cast<ItemType>(c);
-				}
-				else
-				{
-					pick--;
-				}
-			}
-		}
-	}
-
-	return GEM_ROCK;
-}
-
-/*-------------------------------------------------------------------------------
-
 itemLevelCurve
 
 Selects an item type from the given category of items by factoring in
 dungeon level and defined level of the item
 
 -------------------------------------------------------------------------------*/
+enum ItemLevelCurveType
+{
+	ITEM_LEVEL_CURVE_TYPE_DEFAULT,
+	ITEM_LEVEL_CURVE_TYPE_CHEST,
+	ITEM_LEVEL_CURVE_TYPE_SHOP
+};
+
+ItemLevelCurveType itemLevelCurveType = ITEM_LEVEL_CURVE_TYPE_DEFAULT;
+int itemLevelCurveShop = -1;
+ItemType itemLevelCurveEntity(Entity& my, Category cat, int minLevel, int maxLevel, BaronyRNG& rng)
+{
+	itemLevelCurveType = ITEM_LEVEL_CURVE_TYPE_DEFAULT;
+	itemLevelCurveShop = -1;
+	if ( my.behavior == &actMonster && my.getMonsterTypeFromSprite() == SHOPKEEPER )
+	{
+		itemLevelCurveType = ITEM_LEVEL_CURVE_TYPE_SHOP;
+		itemLevelCurveShop = my.monsterStoreType;
+	}
+	else if ( my.behavior == &actChest )
+	{
+		itemLevelCurveType = ITEM_LEVEL_CURVE_TYPE_CHEST;
+	}
+
+	auto result = itemLevelCurve(cat, minLevel, maxLevel, rng);
+	itemLevelCurveType = ITEM_LEVEL_CURVE_TYPE_DEFAULT;
+	itemLevelCurveShop = -1;
+	return result;
+}
+
+bool isHatShopItem(ItemType hat)
+{
+	switch ( hat )
+	{
+	case HAT_PHRYGIAN:
+	case HAT_HOOD:
+	case HAT_WIZARD:
+	case HAT_JESTER:
+	case LEATHER_HELM:
+	case IRON_HELM:
+	case STEEL_HELM:
+	case CRYSTAL_HELM:
+	case HAT_FEZ:
+	case HAT_HOOD_SILVER:
+	case HAT_HOOD_RED:
+
+	case MASK_EYEPATCH:
+	case MASK_MASQUERADE:
+	case MASK_GOLDEN:
+	case MASK_SPOOKY:
+	case MASK_HAZARD_GOGGLES:
+	case MASK_PHANTOM:
+	case MASK_PLAGUE:
+	case HAT_SILKEN_BOW:
+	case HAT_PLUMED_CAP:
+	case HAT_BYCOCKET:
+	case HAT_TOPHAT:
+	case HAT_BANDANA:
+	case HAT_CIRCLET:
+	case HAT_CROWN:
+	case HAT_LAURELS:
+	case HAT_TURBAN:
+	case HAT_CROWNED_HELM:
+	case HAT_WARM:
+	case HAT_WOLF_HOOD:
+	case HAT_BEAR_HOOD:
+	case HAT_STAG_HOOD:
+	case HAT_BUNNY_HOOD:
+	case HAT_MITER:
+	case HAT_HEADDRESS:
+	case HAT_CHEF:
+	case HELM_MINING:
+	case MASK_STEEL_VISOR:
+	case MASK_CRYSTAL_VISOR:
+	case HAT_CIRCLET_WISDOM:
+	case HAT_HOOD_APPRENTICE:
+	case HAT_HOOD_ASSASSIN:
+	case HAT_HOOD_WHISPERS:
+		return true;
+		default:
+			break;
+	}
+	return false;
+}
 
 ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLevel, BaronyRNG& rng)
 {
@@ -480,6 +419,35 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 			{
 				chances[c] = true;
 				numoftype++;
+
+				if ( itemLevelCurveType == ITEM_LEVEL_CURVE_TYPE_SHOP )
+				{
+					if ( itemLevelCurveShop == 1 ) // hat store
+					{
+						if ( !isHatShopItem(static_cast<ItemType>(c)) )
+						{
+							chances[c] = false;
+							continue;
+						}
+					}
+					if ( items[c].hasAttribute("SHOP_EXCLUDE_FROM_CATEGORY_1") )
+					{
+						if ( items[c].attributes["SHOP_EXCLUDE_FROM_CATEGORY_1"] == itemLevelCurveShop )
+						{
+							chances[c] = false;
+							continue;
+						}
+					}
+					if ( items[c].hasAttribute("SHOP_EXCLUDE_FROM_CATEGORY_2") )
+					{
+						if ( items[c].attributes["SHOP_EXCLUDE_FROM_CATEGORY_2"] == itemLevelCurveShop )
+						{
+							chances[c] = false;
+							continue;
+						}
+					}
+				}
+
 				if ( cat == TOOL )
 				{
 					switch ( static_cast<ItemType>(c) )
@@ -506,6 +474,13 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 					{
 						case CLOAK_BACKPACK:
 							if ( rng.rand() % 4 )   // 25% chance
+							{
+								chances[c] = false;
+							}
+							break;
+						case MASK_GRASS_SPRIG: // swamp only
+							if ( !(!strncmp(map.name, "The Swamp", 9)
+								&& itemLevelCurveType == ITEM_LEVEL_CURVE_TYPE_DEFAULT) )
 							{
 								chances[c] = false;
 							}
@@ -2250,6 +2225,9 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case HAT_CHEF:
 		case HELM_MINING:
 		case HAT_CIRCLET_WISDOM:
+		case HAT_HOOD_APPRENTICE:
+		case HAT_HOOD_ASSASSIN:
+		case HAT_HOOD_WHISPERS:
 			equipItemResult = equipItem(item, &stats[player]->helmet, player, checkInventorySpaceForPaperDoll);
 			break;
 		case AMULET_SEXCHANGE:
@@ -3973,7 +3951,11 @@ bool Item::doesItemProvideBeatitudeAC(ItemType type)
 			|| type == HAT_CIRCLET_WISDOM
 			|| type == HAT_CROWN 
 			|| type == HAT_LAURELS 
-			|| type == HAT_TURBAN )
+			|| type == HAT_TURBAN
+			|| type == HAT_HOOD_APPRENTICE
+			|| type == HAT_HOOD_ASSASSIN
+			|| type == HAT_HOOD_WHISPERS
+			)
 		{
 			return false;
 		}
@@ -5837,6 +5819,20 @@ real_t rangedAttackGetSpeedModifier(const Stat* const myStats)
 
 	real_t bowModifier = 1.00;
 	real_t arrowModifier = 0.0;
+	real_t equipmentModifier = 0.0;
+
+	if ( myStats->helmet && myStats->helmet->type == HAT_BYCOCKET )
+	{
+		if ( myStats->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(myStats) )
+		{
+			equipmentModifier -= std::min(0.3, 0.1 + 0.1 * abs(myStats->helmet->beatitude));
+		}
+		else
+		{
+			equipmentModifier += std::min(0.6, 0.3 * abs(myStats->helmet->beatitude));
+		}
+	}
+
 	if ( myStats->shield )
 	{
 		if ( myStats->shield->type == QUIVER_LIGHTWEIGHT )
@@ -5851,7 +5847,7 @@ real_t rangedAttackGetSpeedModifier(const Stat* const myStats)
 	}
 	else if ( myStats->weapon->type == ARTIFACT_BOW )
 	{
-		bowModifier = 0.9;
+		bowModifier = 0.75;
 	}
 	else if ( myStats->weapon->type == COMPOUND_BOW )
 	{
@@ -5866,14 +5862,14 @@ real_t rangedAttackGetSpeedModifier(const Stat* const myStats)
 	else if ( myStats->weapon->type == HEAVY_CROSSBOW )
 	{
 		bowModifier = 0.4;
-		return std::max(0.1, bowModifier + arrowModifier);
+		return std::max(0.1, bowModifier + arrowModifier + equipmentModifier);
 	}
 	else
 	{
 		bowModifier = 1.00;
 	}
 
-	return std::max(0.25, bowModifier + arrowModifier);
+	return std::max(0.25, bowModifier + arrowModifier + equipmentModifier);
 }
 
 bool rangedWeaponUseQuiverOnAttack(const Stat* const myStats)
@@ -5888,29 +5884,6 @@ bool rangedWeaponUseQuiverOnAttack(const Stat* const myStats)
 	}
 
 	if ( myStats->shield && itemTypeIsQuiver(myStats->shield->type) && !(myStats->weapon && myStats->weapon->type == SLING) )
-	{
-		return true;
-	}
-	return false;
-}
-
-bool itemSpriteIsBreastpiece(const int sprite)
-{
-	if ( sprite < 0 || sprite > NUMITEMS )
-	{
-		return false;
-	}
-	if ( sprite == items[LEATHER_BREASTPIECE].index
-		|| sprite == items[IRON_BREASTPIECE].index
-		|| sprite == items[STEEL_BREASTPIECE].index
-		|| sprite == items[CRYSTAL_BREASTPIECE].index
-		|| sprite == items[VAMPIRE_DOUBLET].index
-		|| sprite == items[WIZARD_DOUBLET].index
-		|| sprite == items[HEALER_DOUBLET].index
-		|| sprite == items[SILVER_DOUBLET].index
-		|| sprite == items[ARTIFACT_BREASTPIECE].index
-		|| sprite == items[TUNIC].index
-		|| sprite == items[MACHINIST_APRON].index )
 	{
 		return true;
 	}

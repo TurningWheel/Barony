@@ -148,6 +148,39 @@ Sint32 Stat::getModifiedProficiency(int skill) const
 				equipmentBonus -= abs(helmet->beatitude) * 10;
 			}
 		}
+		else if ( helmet->type == HAT_BOUNTYHUNTER && skill == PRO_RANGED )
+		{
+			if ( helmet->beatitude >= 0 || cursedItemIsBuff )
+			{
+				equipmentBonus += std::min(maxEquipmentBonusToSkill, (1 + abs(helmet->beatitude)) * 10);
+			}
+			else
+			{
+				equipmentBonus -= abs(helmet->beatitude) * 10;
+			}
+		}
+		else if ( helmet->type == HAT_HOOD_WHISPERS && skill == PRO_STEALTH )
+		{
+			if ( helmet->beatitude >= 0 || cursedItemIsBuff )
+			{
+				equipmentBonus += std::min(maxEquipmentBonusToSkill, (1 + abs(helmet->beatitude)) * 10);
+			}
+			else
+			{
+				equipmentBonus -= abs(helmet->beatitude) * 10;
+			}
+		}
+		else if ( (helmet->type == HAT_CIRCLET || helmet->type == HAT_CIRCLET_WISDOM) && skill == PRO_SPELLCASTING )
+		{
+			if ( helmet->beatitude >= 0 || cursedItemIsBuff )
+			{
+				equipmentBonus += std::min(maxEquipmentBonusToSkill, (1 + abs(helmet->beatitude)) * 10);
+			}
+			else
+			{
+				equipmentBonus -= abs(helmet->beatitude) * 10;
+			}
+		}
 	}
 
 	return std::min(100, std::max(0, base + equipmentBonus));

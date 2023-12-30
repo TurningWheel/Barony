@@ -1170,8 +1170,8 @@
 			"name_unidentified": "masquerade mask"
 		},
 		"mask_mouth_rose": {
-			"name_identified": "mouth rose",
-			"name_unidentified": "mouth rose"
+			"name_identified": "rose",
+			"name_unidentified": "rose"
 		},
 		"mask_golden": {
 			"name_identified": "golden mask",
@@ -1304,6 +1304,18 @@
 		"hat_circlet_wisdom": {
 			"name_identified": "circlet of wisdom",
 			"name_unidentified": "circlet"
+		},
+		"hat_hood_apprentice": {
+			"name_identified": "apprentice's hood",
+			"name_unidentified": "hood"
+		},
+		"hat_hood_assassin": {
+			"name_identified": "assassin's hood",
+			"name_unidentified": "hood"
+		},
+		"hat_hood_whispers": {
+			"name_identified": "hood of whispers",
+			"name_unidentified": "hood"
 		}
     },
 	"spell_names": {

@@ -89,9 +89,15 @@ void initGhoul(Entity* my, Stat* myStats)
 			// generate 6 items max, less if there are any forced items from boss variants
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
+			int bosschance = 50;
+			if ( !strncmp(map.name, "The Haunted Castle", 18) )
+			{
+				bosschance = 100;
+			}
+
 			// boss variants
 			const bool boss =
-				rng.rand() % 50 == 0 &&
+				rng.rand() % bosschance == 0 &&
 			    !my->flags[USERFLAG2] &&
 			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 			if ( (boss || (*cvar_summonBosses && conductGameChallenges[CONDUCT_CHEATS_ENABLED])) && myStats->leader_uid == 0 )
@@ -120,7 +126,8 @@ void initGhoul(Entity* my, Stat* myStats)
 				myStats->DEX = 2;
 				myStats->STR = 13;
 				newItem(GEM_GARNET, EXCELLENT, 0, 1, rng.rand(), false, &myStats->inventory);
-				customItemsToGenerate -= 1;
+				newItem(HAT_BOUNTYHUNTER, EXCELLENT, -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+				customItemsToGenerate -= 2;
 			}
 			else
 			{

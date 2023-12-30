@@ -455,7 +455,7 @@ void Item::applyLockpick(int player, Entity& entity)
 			if ( players[player] && players[player]->entity )
 			{
 				// calculate facing direction from player, < PI is facing away from player
-				real_t yawDiff = entity.yawDifferenceFromPlayer(player);
+				real_t yawDiff = entity.yawDifferenceFromEntity(players[player]->entity);
 				if ( yawDiff < PI )
 				{
 					auto& rng = entity.entity_rng ? *entity.entity_rng : local_rng;

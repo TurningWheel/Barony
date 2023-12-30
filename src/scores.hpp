@@ -788,6 +788,9 @@ public:
 		std::pair<int, Uint32> gastricBypassSpell;
 		std::unordered_set<Uint32> rat5000secondRule;
 		std::unordered_set<Uint32> phantomMaskFirstStrikes;
+		std::unordered_set<Uint32> bountyTargets;
+		bool updatedBountyTargets = false;
+		bool wearingBountyHat = false;
 		
 		PlayerAchievements()
 		{
@@ -799,6 +802,7 @@ public:
 		bool checkTraditionKill(Entity* player, Entity* target);
 	} playerAchievements[MAXPLAYERS];
 
+	void updateClientBounties(bool firstSend);
 	void clearPlayerAchievementData();
 	void checkMapScriptsOnVariableSet();
 	void updateGlobalStat(int index, int value = 1);

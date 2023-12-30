@@ -1240,6 +1240,70 @@ spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_
 	return channeled_spell;
 }
 
+int getCharmMonsterDifficulty(Entity& my, Stat& myStats)
+{
+	int difficulty = 0;
+
+	switch ( myStats.type )
+	{
+	default:
+		difficulty = 0;
+		break;
+	case HUMAN:
+	case RAT:
+	case SLIME:
+	case SPIDER:
+	case SKELETON:
+	case SCORPION:
+	case SHOPKEEPER:
+		difficulty = 0;
+		break;
+	case GOBLIN:
+	case TROLL:
+	case GHOUL:
+	case GNOME:
+	case SCARAB:
+	case AUTOMATON:
+	case SUCCUBUS:
+		difficulty = 1;
+		break;
+	case CREATURE_IMP:
+	case DEMON:
+	case KOBOLD:
+	case INCUBUS:
+	case INSECTOID:
+	case GOATMAN:
+		difficulty = 2;
+		break;
+	case CRYSTALGOLEM:
+	case VAMPIRE:
+		difficulty = 5;
+		break;
+	case COCKATRICE:
+	case SHADOW:
+	case LICH:
+	case DEVIL:
+	case LICH_ICE:
+	case LICH_FIRE:
+	case MINOTAUR:
+	case MIMIC:
+		difficulty = 666;
+		break;
+	}
+
+
+	/************** CHANCE CALCULATION ***********/
+	if ( myStats.EFFECTS[EFF_CONFUSED] || myStats.EFFECTS[EFF_DRUNK] || my.behavior == &actPlayer )
+	{
+		difficulty -= 1; // players and confused/drunk monsters have lower resistance.
+	}
+	if ( strcmp(myStats.name, "") && !monsterNameIsGeneric(myStats) )
+	{
+		difficulty += 1; // minibosses +1 difficulty.
+	}
+	return difficulty;
+}
+
 void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent, int resistance, bool magicstaff)
 {
 	if ( hit.entity )
@@ -1269,69 +1333,13 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				player = hit.entity->skill[2];
 			}
 
-			int difficulty;
-			switch ( hitstats->type )
-			{
-				default:
-					difficulty = 0;
-					break;
-				case HUMAN:
-				case RAT:
-				case SLIME:
-				case SPIDER:
-				case SKELETON:
-				case SCORPION:
-				case SHOPKEEPER:
-					difficulty = 0;
-					break;
-				case GOBLIN:
-				case TROLL:
-				case GHOUL:
-				case GNOME:
-				case SCARAB:
-				case AUTOMATON:
-				case SUCCUBUS:
-					difficulty = 1;
-					break;
-				case CREATURE_IMP:
-				case DEMON:
-				case KOBOLD:
-				case INCUBUS:
-				case INSECTOID:
-				case GOATMAN:
-					difficulty = 2;
-					break;
-				case CRYSTALGOLEM:
-				case VAMPIRE:
-					difficulty = 5;
-					break;
-				case COCKATRICE:
-				case SHADOW:
-				case LICH:
-				case DEVIL:
-				case LICH_ICE:
-				case LICH_FIRE:
-				case MINOTAUR:
-				case MIMIC:
-					difficulty = 666;
-					break;
-			}
+			int difficulty = getCharmMonsterDifficulty(*hit.entity, *hitstats);
 
 			int chance = 80;
+			chance -= difficulty * 30;
 			bool allowStealFollowers = false;
 			Stat* casterStats = nullptr;
 			int currentCharmedFollowerCount = 0;
-
-			/************** CHANCE CALCULATION ***********/
-			if ( hitstats->EFFECTS[EFF_CONFUSED] || hitstats->EFFECTS[EFF_DRUNK] || player >= 0 )
-			{
-				difficulty -= 1; // players and confused/drunk monsters have lower resistance.
-			}
-			if ( strcmp(hitstats->name, "") && !monsterNameIsGeneric(*hitstats) )
-			{
-				difficulty += 1; // minibosses +1 difficulty.
-			}
-			chance -= difficulty * 30;
 			if ( parent )
 			{
 				casterStats = parent->getStats();
@@ -1633,6 +1641,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 					playSoundEntity(hit.entity, 163, 64); // FailedSpell1V1.ogg
 					if ( parent && parent->behavior == &actPlayer )
 					{
+						color = makeColorRGB(255, 0, 0);
 						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3142), Language::get(3143), MSG_COMBAT);
 					}
 					if ( player >= 0 )
@@ -2048,7 +2057,12 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 				if ( monsterSummonType == KOBOLD || monsterSummonType == GNOME )
 				{
 					// kobold/gnomes can't equip non-hoods, drop the rest
-					if ( (*slot)->type == HAT_HOOD )
+					if ( (*slot)->type == HAT_HOOD
+						|| (*slot)->type == HAT_HOOD_SILVER
+						|| (*slot)->type == HAT_HOOD_RED
+						|| (*slot)->type == HAT_HOOD_APPRENTICE
+						|| (*slot)->type == HAT_HOOD_WHISPERS
+						|| (*slot)->type == HAT_HOOD_ASSASSIN )
 					{
 						summonedStats->helmet = newItem((*slot)->type, (*slot)->status, (*slot)->beatitude,
 							(*slot)->count, (*slot)->appearance, (*slot)->identified, nullptr);

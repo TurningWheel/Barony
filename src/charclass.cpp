@@ -876,7 +876,7 @@ void initClass(const int player)
 		}
 
 		// hood (green)
-		item = newItem(HAT_HOOD, WORN, 0, 1, 0, true, nullptr);
+		item = newItem(HAT_HOOD_WHISPERS, WORN, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
@@ -972,7 +972,7 @@ void initClass(const int player)
 		}
 
 		// brown hood
-		item = newItem(HAT_HOOD, SERVICABLE, 0, 1, 1, true, nullptr);
+		item = newItem(HAT_HOOD_WHISPERS, SERVICABLE, 0, 1, 1, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
@@ -1488,7 +1488,7 @@ void initClass(const int player)
 		}
 
 		// hood (purple)
-		item = newItem(HAT_HOOD, WORN, 0, 1, 3, true, nullptr);
+		item = newItem(HAT_HOOD_APPRENTICE, WORN, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
@@ -1805,7 +1805,20 @@ void initClass(const int player)
 		}
 
 		// black hood
-		item = newItem(HAT_HOOD, SERVICABLE, 0, 1, 2, true, nullptr);
+		item = newItem(HAT_HOOD_ASSASSIN, SERVICABLE, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		// black mask
+		item = newItem(MASK_BANDIT, SERVICABLE, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
@@ -1998,7 +2011,7 @@ void initClass(const int player)
 		}
 
 		// red hood
-		item = newItem(HAT_HOOD_RED, SERVICABLE, 0, 1, 1, true, nullptr);
+		item = newItem(HAT_HOOD_APPRENTICE, SERVICABLE, 0, 1, 2, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
@@ -2130,7 +2143,7 @@ void initClass(const int player)
 		}
 
 		// hood silver
-		item = newItem(HAT_HOOD_SILVER, SERVICABLE, 0, 1, 0, true, nullptr);
+		item = newItem(HAT_HOOD_APPRENTICE, SERVICABLE, 0, 1, 1, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);

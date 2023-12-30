@@ -164,6 +164,7 @@ struct StatusEffectQueue_t
 	static const int kEffectPush;
 	static const int kEffectSneak;
 	static const int kEffectDrunkGoatman;
+	static const int kEffectBountyTarget;
 	
 	Frame* statusEffectFrame = nullptr;
 	Frame* statusEffectTooltipFrame = nullptr;

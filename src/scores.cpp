@@ -3543,6 +3543,8 @@ void updatePlayerConductsInMainLoop()
 		gameStatistics[STATISTICS_DISABLE_UPLOAD] = 1;
 	}
 
+	achievementObserver.updateClientBounties(false);
+
 	achievementObserver.achievementTimersTickDown();
 }
 
@@ -4659,6 +4661,9 @@ bool AchievementObserver::updateOnLevelChange()
 			playerAchievements[i].gastricBypassSpell = std::make_pair(0, 0);
 			playerAchievements[i].rat5000secondRule.clear();
 			playerAchievements[i].phantomMaskFirstStrikes.clear();
+			playerAchievements[i].bountyTargets.clear();
+			playerAchievements[i].updatedBountyTargets = false;
+			playerAchievements[i].wearingBountyHat = false;
 		}
 		levelObserved = currentlevel;
 		return true;
@@ -4678,6 +4683,119 @@ int AchievementObserver::checkUidIsFromPlayer(Uint32 uid)
 	return -1;
 }
 
+void AchievementObserver::updateClientBounties(bool firstSend)
+{
+	bool bountyLost = false;
+	if ( multiplayer != CLIENT )
+	{
+		// check if any bounties had become followers, then remove them
+		for ( int c = 0; c < MAXPLAYERS; ++c )
+		{
+			for ( node_t* node = stats[c]->FOLLOWERS.first; node != nullptr; node = node->next )
+			{
+				if ( (Uint32*)node->element )
+				{
+					Uint32 uid = *((Uint32*)node->element);
+					for ( int d = 0; d < MAXPLAYERS; ++d )
+					{
+						if ( playerAchievements[d].bountyTargets.find(uid)
+							!= playerAchievements[d].bountyTargets.end() )
+						{
+							bountyLost = true;
+							playerAchievements[d].bountyTargets.erase(uid);
+							
+							if ( stats[d] && stats[d]->helmet && stats[d]->helmet->type == HAT_BOUNTYHUNTER )
+							{
+								// failed to finish your bounty
+								messagePlayerColor(d, MESSAGE_COMBAT | MESSAGE_HINT, makeColorRGB(255, 0, 0), Language::get(6102));
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if ( multiplayer == SERVER )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( client_disconnected[i] ) { continue; }
+
+			bool hat = false;
+			if ( stats[i] && stats[i]->helmet && stats[i]->helmet->type == HAT_BOUNTYHUNTER )
+			{
+				hat = true;
+			}
+
+			if ( hat != playerAchievements[i].wearingBountyHat )
+			{
+				playerAchievements[i].wearingBountyHat = hat;
+
+				for ( int c = 1; c < MAXPLAYERS; ++c )
+				{
+					strcpy((char*)net_packet->data, "BNTH");
+					net_packet->data[4] = i;
+					net_packet->data[5] = playerAchievements[i].wearingBountyHat ? 1 : 0;
+					net_packet->address.host = net_clients[c - 1].host;
+					net_packet->address.port = net_clients[c - 1].port;
+					net_packet->len = 6;
+					sendPacketSafe(net_sock, -1, net_packet, c - 1);
+				}
+			}
+
+			if ( i == 0 )
+			{
+				continue;
+			}
+
+			if ( !firstSend )
+			{
+				bool update = false;
+				if ( !playerAchievements[i].updatedBountyTargets )
+				{
+					if ( hat )
+					{
+						update = true;
+						playerAchievements[i].updatedBountyTargets = true;
+					}
+				}
+				else if ( bountyLost )
+				{
+					update = true;
+				}
+				else if ( ticks % (13 * TICKS_PER_SECOND) == 0 )
+				{
+					update = true;
+				}
+
+				if ( !update )
+				{
+					continue;
+				}
+			}
+
+			for ( int c = 0; c < MAXPLAYERS; ++c )
+			{
+				auto& bounties = playerAchievements[c].bountyTargets;
+				strcpy((char*)net_packet->data, "BNTY");
+				net_packet->data[4] = c;
+				net_packet->data[5] = (Uint8)bounties.size();
+				int index = 6;
+				for ( auto uid : bounties )
+				{
+					SDLNet_Write32(uid, &net_packet->data[index]);
+					index += 4;
+				}
+				net_packet->address.host = net_clients[i - 1].host;
+				net_packet->address.port = net_clients[i - 1].port;
+				net_packet->len = 6 + (bounties.size() * 4);
+				sendPacketSafe(net_sock, -1, net_packet, i - 1);
+			}
+		}
+	}
+}
+
 void AchievementObserver::updateData()
 {
 	getCurrentPlayerUids();
@@ -4688,6 +4806,59 @@ void AchievementObserver::updateData()
 		messagePlayer(0, MESSAGE_DEBUG, "[DEBUG]: Achievement data reset for floor.");
 #endif
 	}
+
+	std::vector<Entity*> monstersGeneratedOnLevel;
+	for ( node_t* node = map.creatures->first; node; node = node->next )
+	{
+		Entity* mapCreature = (Entity*)node->element;
+		if ( mapCreature && mapCreature->behavior == &actMonster )
+		{
+			monstersGeneratedOnLevel.push_back(mapCreature);
+		}
+	}
+
+	BaronyRNG bountySeed;
+	bountySeed.seedBytes(&mapseed, sizeof(mapseed));
+	if ( multiplayer != CLIENT )
+	{
+		std::vector<Entity*> bountyTargets;
+		for ( auto monster : monstersGeneratedOnLevel )
+		{
+			bountyTargets.push_back(monster);
+		}
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			achievementObserver.playerAchievements[i].bountyTargets.clear();
+			if ( client_disconnected[i] )
+			{
+				continue;
+			}
+			if ( bountyTargets.size() > 0 )
+			{
+				size_t index = bountySeed.rand() % bountyTargets.size();
+				achievementObserver.playerAchievements[i].bountyTargets.insert(bountyTargets[index]->getUID());
+				bountyTargets.erase(bountyTargets.begin() + index);
+
+				if ( stats[i]->helmet && stats[i]->helmet->type == HAT_BOUNTYHUNTER )
+				{
+					if ( stats[i]->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[i]) )
+					{
+						if ( abs(stats[i]->helmet->beatitude) >= 2 )
+						{
+							if ( bountyTargets.size() > 0 )
+							{
+								// additional bounty
+								index = bountySeed.rand() % bountyTargets.size();
+								achievementObserver.playerAchievements[i].bountyTargets.insert(bountyTargets[index]->getUID());
+								bountyTargets.erase(bountyTargets.begin() + index);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	updateClientBounties(true);
 }
 
 bool AchievementObserver::addEntityAchievementTimer(Entity* entity, int achievement, int ticks, bool resetTimerIfActive, int optionalIncrement)
@@ -5097,6 +5268,9 @@ void AchievementObserver::clearPlayerAchievementData()
 		playerAchievements[i].gastricBypassSpell = std::make_pair(0, 0);
 		playerAchievements[i].rat5000secondRule.clear();
 		playerAchievements[i].phantomMaskFirstStrikes.clear();
+		playerAchievements[i].bountyTargets.clear();
+		playerAchievements[i].updatedBountyTargets = false;
+		playerAchievements[i].wearingBountyHat = false;
 	}
 }
 
@@ -6689,3 +6863,131 @@ list_t* loadGameFollowers(const SaveGameInfo& info) {
 
 	return followers;
 } 
+
+int SaveGameInfo::Player::isCharacterValidFromDLC()
+{
+	switch ( this->char_class )
+	{
+	case CLASS_CONJURER:
+	case CLASS_ACCURSED:
+	case CLASS_MESMER:
+	case CLASS_BREWER:
+		if ( !enabledDLCPack1 )
+		{
+			return INVALID_REQUIREDLC1;
+		}
+		break;
+	case CLASS_MACHINIST:
+	case CLASS_PUNISHER:
+	case CLASS_SHAMAN:
+	case CLASS_HUNTER:
+		if ( !enabledDLCPack2 )
+		{
+			return INVALID_REQUIREDLC2;
+		}
+		break;
+	default:
+		break;
+	}
+
+	switch ( this->race )
+	{
+	case RACE_SKELETON:
+	case RACE_VAMPIRE:
+	case RACE_SUCCUBUS:
+	case RACE_GOATMAN:
+		if ( !enabledDLCPack1 )
+		{
+			return INVALID_REQUIREDLC1;
+		}
+		break;
+	case RACE_AUTOMATON:
+	case RACE_INCUBUS:
+	case RACE_GOBLIN:
+	case RACE_INSECTOID:
+		if ( !enabledDLCPack2 )
+		{
+			return INVALID_REQUIREDLC2;
+		}
+		break;
+	default:
+		break;
+	}
+
+	if ( this->race == RACE_HUMAN )
+	{
+		return VALID_OK_CHARACTER;
+	}
+	else if ( this->race > RACE_HUMAN && this->stats.appearance == 1 )
+	{
+		return VALID_OK_CHARACTER; // aesthetic only option.
+	}
+	if ( this->char_class <= CLASS_MONK )
+	{
+		return VALID_OK_CHARACTER;
+	}
+
+	switch ( this->char_class )
+	{
+	case CLASS_CONJURER:
+		if ( this->race == RACE_SKELETON )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_SKELETON) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		break;
+	case CLASS_ACCURSED:
+		if ( this->race == RACE_VAMPIRE )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_VAMPIRE) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		break;
+	case CLASS_MESMER:
+		if ( this->race == RACE_SUCCUBUS )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_SUCCUBUS) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		break;
+	case CLASS_BREWER:
+		if ( this->race == RACE_GOATMAN )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_GOATMAN) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		break;
+	case CLASS_MACHINIST:
+		if ( this->race == RACE_AUTOMATON )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_AUTOMATON) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		break;
+	case CLASS_PUNISHER:
+		if ( this->race == RACE_INCUBUS )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_INCUBUS) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		break;
+	case CLASS_SHAMAN:
+		if ( this->race == RACE_GOBLIN )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_GOBLIN) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		break;
+	case CLASS_HUNTER:
+		if ( this->race == RACE_INSECTOID )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_INSECTOID) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		break;
+	default:
+		break;
+	}
+
+	return INVALID_CHARACTER;
+}

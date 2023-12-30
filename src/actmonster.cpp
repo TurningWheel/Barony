@@ -1528,7 +1528,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 				tryAlly = true;
 			}
 		}
-		if ( strcmp(myStats->name, "") && !monsterNameIsGeneric(*myStats)
+		else if ( strcmp(myStats->name, "") && !monsterNameIsGeneric(*myStats)
 			&& ((stats[monsterclicked]->getModifiedProficiency(PRO_LEADERSHIP) + stats[monsterclicked]->CHR) < 60) )
 		{
 			if ( race != HUMAN )
@@ -1672,7 +1672,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 					{
 						if ( race == INCUBUS || race == SUCCUBUS )
 						{
-							tryAlly = true;
+							canAlly = true;
 							roseEvent = true;
 						}
 					}
@@ -10333,7 +10333,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 	if ( stats[monsterAllyIndex] )
 	{
 		tinkeringLVL = stats[monsterAllyIndex]->getModifiedProficiency(PRO_LOCKPICKING) + statGetPER(stats[monsterAllyIndex], players[monsterAllyIndex]->entity);
-		skillLVL = stats[monsterAllyIndex]->getModifiedProficiency(PRO_LOCKPICKING) + statGetCHR(stats[monsterAllyIndex], players[monsterAllyIndex]->entity);
+		skillLVL = stats[monsterAllyIndex]->getModifiedProficiency(PRO_LEADERSHIP) + statGetCHR(stats[monsterAllyIndex], players[monsterAllyIndex]->entity);
 		if ( isTinkeringFollower )
 		{
 			skillLVL = tinkeringLVL;
@@ -11887,7 +11887,13 @@ bool Entity::monsterAllyEquipmentInClass(const Item& item) const
 				case ARMOR:
 					if ( checkEquipType(&item) == TYPE_HAT )
 					{
-						if ( myStats->type == KOBOLD && item.type == HAT_HOOD )
+						if ( myStats->type == KOBOLD && 
+							(item.type == HAT_HOOD
+								|| item.type == HAT_HOOD_SILVER
+								|| item.type == HAT_HOOD_RED
+								|| item.type == HAT_HOOD_APPRENTICE
+								|| item.type == HAT_HOOD_WHISPERS
+								|| item.type == HAT_HOOD_ASSASSIN) )
 						{
 							return true;
 						}

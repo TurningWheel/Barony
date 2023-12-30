@@ -78,6 +78,9 @@ void initTroll(Entity* my, Stat* myStats)
 							followerStats->leader_uid = entity->parent;
 						}
 						entity->seedEntityRNG(rng.getU32());
+
+						// one for my friends
+						newItem(MASK_MOUTH_ROSE, static_cast<Status>(1 + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
 					}
 				}
 				myStats->HP *= 2;
@@ -117,6 +120,10 @@ void initTroll(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
+					if ( rng.rand() % 20 == 0 )
+					{
+						newItem(MASK_MOUTH_ROSE, static_cast<Status>(1 + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+					}
 					if ( rng.rand() % 3 == 0 )
 					{
 						int i = 1 + rng.rand() % 3;

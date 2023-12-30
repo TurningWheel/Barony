@@ -279,6 +279,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	arrowShotByWeapon(skill[7]),
 	arrowQuiverType(skill[8]),
 	arrowShotByParent(skill[9]),
+	arrowDropOffEquipmentModifier(skill[14]),
 	actmagicIsVertical(skill[6]),
 	actmagicIsOrbiting(skill[7]),
 	actmagicOrbitDist(skill[8]),

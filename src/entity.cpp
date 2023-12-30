@@ -308,6 +308,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	arrowShotByWeapon(skill[7]),
 	arrowQuiverType(skill[8]),
 	arrowShotByParent(skill[9]),
+	arrowDropOffEquipmentModifier(skill[14]),
 	actmagicIsVertical(skill[6]),
 	actmagicIsOrbiting(skill[7]),
 	actmagicOrbitDist(skill[8]),
@@ -3759,6 +3760,25 @@ void Entity::handleEffects(Stat* myStats)
 					mpMod -= 1;
 					hpMod -= 1;
 				}
+			}
+		}
+	}
+	if ( myStats->helmet && myStats->helmet->type == HAT_HOOD_APPRENTICE )
+	{
+		if ( myStats->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(myStats) )
+		{
+			int chance = std::min(10 + (10 * abs(myStats->helmet->beatitude)), 30);
+			if ( local_rng.rand() % 100 < chance )
+			{
+				mpMod += 1;
+			}
+		}
+		else
+		{
+			int chance = std::min(10 + (10 * abs(myStats->helmet->beatitude)), 30);
+			if ( local_rng.rand() % 100 < chance )
+			{
+				mpMod -= 1;
 			}
 		}
 	}
@@ -8102,6 +8122,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 				// hit chance
 				//int hitskill=5; // for unarmed combat
 
+				if ( hit.entity->doSilkenBowOnAttack(this) )
+				{
+					return;
+				}
+
 				if ( behavior == &actPlayer )
 				{
 					if ( !players[skill[2]]->isLocalPlayer() )
@@ -8222,7 +8247,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				if( c > 10+std::min(std::max(-3,hit.entity->getDEX()-my->getDEX()),3) ) {
 				hitsuccess=true;
 				}
-				if( hitsuccess )*/
+				if ( hitsuccess ) */
 				{
 					// calculate and perform damage to opponent
 					int damage = 0;
@@ -8291,7 +8316,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					bool flanking = false;
 					if ( player >= 0 && !monsterIsImmobileTurret(hit.entity, hitstats) && !(hitstats->type == MIMIC) )
 					{
-						real_t hitAngle = hit.entity->yawDifferenceFromPlayer(player);
+						real_t hitAngle = hit.entity->yawDifferenceFromEntity(this);
 						if ( (hitAngle >= 0 && hitAngle <= 2 * PI / 3) ) // 120 degree arc
 						{
 							int stealthCapstoneBonus = 1; 
@@ -8306,7 +8331,19 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								// unaware monster, get backstab damage.
 								backstab = true;
-								damage += (stats[player]->getModifiedProficiency(PRO_STEALTH) / 20 + 2) * (2 * stealthCapstoneBonus);
+								int bonus = (stats[player]->getModifiedProficiency(PRO_STEALTH) / 20 + 2) * (2 * stealthCapstoneBonus);
+								if ( myStats->helmet && myStats->helmet->type == HAT_HOOD_ASSASSIN )
+								{
+									if ( myStats->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(myStats) )
+									{
+										bonus += std::min(4 + (2 * abs(myStats->helmet->beatitude)), 8);
+									}
+									else
+									{
+										bonus /= 2;
+									}
+								}
+								damage += bonus;
 								if ( local_rng.rand() % 4 > 0 && hit.entity->behavior != &actPlayer )
 								{
 									this->increaseSkill(PRO_STEALTH);
@@ -9635,7 +9672,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								messagePlayerMonsterEvent(player, color, *hitstats, Language::get(692), Language::get(692), MSG_COMBAT);
 								if ( player >= 0 && hit.entity && hit.entity->behavior == &actMonster )
 								{
-									real_t hitAngle = hit.entity->yawDifferenceFromPlayer(player);
+									real_t hitAngle = hit.entity->yawDifferenceFromEntity(this);
 									if ( (hitAngle >= 0 && hitAngle <= 2 * PI / 3) ) // 120 degree arc
 									{
 										if ( hit.entity->monsterState == MONSTER_STATE_ATTACK && hit.entity->monsterTarget != 0
@@ -9813,7 +9850,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								messagePlayerMonsterEvent(player, color, *hitstats, Language::get(692), Language::get(697), MSG_COMBAT);
 								if ( player >= 0 && hit.entity && hit.entity->behavior == &actMonster )
 								{
-									real_t hitAngle = hit.entity->yawDifferenceFromPlayer(player);
+									real_t hitAngle = hit.entity->yawDifferenceFromEntity(this);
 									if ( (hitAngle >= 0 && hitAngle <= 2 * PI / 3) ) // 120 degree arc
 									{
 										if ( hit.entity->monsterState == MONSTER_STATE_ATTACK && hit.entity->monsterTarget != 0
@@ -12029,7 +12066,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 				kills[srcStats->type]++;
 			}
 		}
-		else if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
+		else if ( multiplayer == SERVER && player > 0 && !client_disconnected[player] && !players[player]->isLocalPlayer() )
 		{
 			// inform client of kill
 			strcpy((char*)net_packet->data, "MKIL");
@@ -12065,6 +12102,50 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			net_packet->address.port = net_clients[player - 1].port;
 			net_packet->len = 21;
 			sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		}
+
+		if ( root )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( stats[i]->helmet && stats[i]->helmet->type == HAT_BOUNTYHUNTER )
+				{
+					auto& bounties = achievementObserver.playerAchievements[i].bountyTargets;
+					if ( bounties.find(src->getUID()) != bounties.end() )
+					{
+						if ( player == i )
+						{
+							int bountyGold = 1;
+							if ( stats[i]->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[i]) )
+							{
+								bountyGold = 10 + currentlevel + local_rng.rand() % 50;
+							}
+							else
+							{
+								bountyGold = 1 + local_rng.rand() % 10;
+							}
+							messagePlayerColor(i, MESSAGE_COMBAT | MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6101), bountyGold);
+
+							stats[i]->GOLD += bountyGold;
+							playSoundEntity(players[i]->entity, 242 + local_rng.rand() % 4, 64);
+							if ( multiplayer == SERVER && i > 0 && !client_disconnected[i] && !players[i]->isLocalPlayer() )
+							{
+								// send the client info on the gold it picked up
+								strcpy((char*)net_packet->data, "GOLD");
+								SDLNet_Write32(stats[i]->GOLD, &net_packet->data[4]);
+								net_packet->address.host = net_clients[i - 1].host;
+								net_packet->address.port = net_clients[i - 1].port;
+								net_packet->len = 8;
+								sendPacketSafe(net_sock, -1, net_packet, i - 1);
+							}
+						}
+						else
+						{
+							messagePlayerColor(i, MESSAGE_COMBAT | MESSAGE_HINT, makeColorRGB(255, 0, 0), Language::get(6102));
+						}
+					}
+				}
+			}
 		}
 	}
 	else
@@ -12104,6 +12185,51 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 					if ( leader->getStats()->playerRace == RACE_INSECTOID && leader->getStats()->appearance == 0 )
 					{
 						steamStatisticUpdateClient(leader->skill[2], STEAM_STAT_MONARCH, STEAM_STAT_INT, 1);
+					}
+				}
+			}
+		}
+
+
+		if ( root )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( stats[i]->helmet && stats[i]->helmet->type == HAT_BOUNTYHUNTER )
+				{
+					auto& bounties = achievementObserver.playerAchievements[i].bountyTargets;
+					if ( bounties.find(src->getUID()) != bounties.end() )
+					{
+						if ( leader && leader->behavior == &actPlayer && leader->skill[2] == i )
+						{
+							int bountyGold = 1;
+							if ( stats[i]->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[i]) )
+							{
+								bountyGold = 10 + currentlevel + local_rng.rand() % 50;
+							}
+							else
+							{
+								bountyGold = 1 + local_rng.rand() % 10;
+							}
+							messagePlayerColor(i, MESSAGE_COMBAT | MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6101), bountyGold);
+
+							stats[i]->GOLD += bountyGold;
+							playSoundEntity(players[i]->entity, 242 + local_rng.rand() % 4, 64);
+							if ( multiplayer == SERVER && i > 0 && !client_disconnected[i] && !players[i]->isLocalPlayer() )
+							{
+								// send the client info on the gold it picked up
+								strcpy((char*)net_packet->data, "GOLD");
+								SDLNet_Write32(stats[i]->GOLD, &net_packet->data[4]);
+								net_packet->address.host = net_clients[i - 1].host;
+								net_packet->address.port = net_clients[i - 1].port;
+								net_packet->len = 8;
+								sendPacketSafe(net_sock, -1, net_packet, i - 1);
+							}
+						}
+						else
+						{
+							messagePlayerColor(i, MESSAGE_COMBAT | MESSAGE_HINT, makeColorRGB(255, 0, 0), Language::get(6102));
+						}
 					}
 				}
 			}
@@ -12700,6 +12826,25 @@ bool Entity::checkFriend(Entity* your)
 	{
 		Entity* illusionTauntingThisEntity = uidToEntity(static_cast<Uint32>(your->monsterIllusionTauntingThisUid));
 		if ( illusionTauntingThisEntity == this )
+		{
+			return false;
+		}
+	}
+
+	if ( behavior == &actPlayer && your->behavior == &actMonster 
+		&& myStats->helmet && myStats->helmet->type == HAT_BOUNTYHUNTER )
+	{
+		if ( achievementObserver.playerAchievements[skill[2]].bountyTargets.find(your->getUID())
+			!= achievementObserver.playerAchievements[skill[2]].bountyTargets.end() )
+		{
+			return false;
+		}
+	}
+	else if ( your->behavior == &actPlayer && behavior == &actMonster
+		&& yourStats->helmet && yourStats->helmet->type == HAT_BOUNTYHUNTER )
+	{
+		if ( achievementObserver.playerAchievements[your->skill[2]].bountyTargets.find(getUID())
+			!= achievementObserver.playerAchievements[your->skill[2]].bountyTargets.end() )
 		{
 			return false;
 		}
@@ -13376,6 +13521,9 @@ int checkEquipType(const Item *item)
 		case HELM_MINING:
 		case HAT_CIRCLET_WISDOM:
 		case HAT_BUNNY_HOOD:
+		case HAT_HOOD_APPRENTICE:
+		case HAT_HOOD_ASSASSIN:
+		case HAT_HOOD_WHISPERS:
 			return TYPE_HAT;
 			break;
 
@@ -18192,6 +18340,24 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats, int opti
 			}
 		}
 
+		this->arrowDropOffEquipmentModifier = 0;
+		if ( marksman.behavior == &actPlayer || marksman.behavior == &actMonster )
+		{
+			int dropOffModifier = 0;
+			if ( myStats.helmet && myStats.helmet->type == HAT_BYCOCKET )
+			{
+				if ( myStats.helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(&myStats) )
+				{
+					dropOffModifier = std::min(3, 1 + abs(myStats.helmet->beatitude));
+				}
+				else
+				{
+					dropOffModifier = std::max(-4, -2 * abs(myStats.helmet->beatitude));
+				}
+			}
+			arrowDropOffEquipmentModifier = std::min(7, std::max(-7, dropOffModifier));
+		}
+
 		if ( marksman.behavior == &actPlayer )
 		{
 			this->setArrowProjectileProperties(this->arrowShotByWeapon);
@@ -18210,9 +18376,14 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats, int opti
 				this->arrowShotByParent = ARROW_SHOT_BY_MONSTER;
 			}
 		}
+
 		if ( multiplayer == SERVER )
 		{
-			skill[2] = -(1000 + arrowShotByWeapon); // invokes actArrow for clients.
+			Sint32 val = (1 << 31);
+			val |= (Uint8)(17);
+			val |= (((Uint16)(arrowShotByWeapon) & 0xFFF) << 8);
+			val |= (arrowDropOffEquipmentModifier + 8) << 20;
+			skill[2] = val;// -(1000 + arrowShotByWeapon); // invokes actArrow for clients.
 		}
 	}
 
@@ -18302,6 +18473,15 @@ bool Entity::setArrowProjectileProperties(int weaponType)
 
 		this->vel_x = cos(this->yaw) * this->arrowSpeed;
 		this->vel_y = sin(this->yaw) * this->arrowSpeed;
+
+		if ( this->arrowDropOffEquipmentModifier > 0 )
+		{
+			this->arrowBoltDropOffRange += 2 * (this->arrowDropOffEquipmentModifier);
+		}
+		else if ( this->arrowDropOffEquipmentModifier < 0 )
+		{
+			this->arrowBoltDropOffRange = 0;
+		}
 		return true;
 	}
 	else
@@ -18324,6 +18504,15 @@ bool Entity::setArrowProjectileProperties(int weaponType)
 		this->arrowBoltDropOffRange = 0;
 		this->vel_x = cos(this->yaw) * this->arrowSpeed;
 		this->vel_y = sin(this->yaw) * this->arrowSpeed;
+
+		if ( this->arrowDropOffEquipmentModifier > 0 )
+		{
+			this->arrowFallSpeed *= 1.0 - (this->arrowDropOffEquipmentModifier) / 10.0;
+		}
+		else if ( this->arrowDropOffEquipmentModifier < 0 )
+		{
+			this->arrowFallSpeed *= 1.0 + (-this->arrowDropOffEquipmentModifier) / 10.0;
+		}
 		return true;
 	}
 	return false;
@@ -18748,7 +18937,10 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 	}
 	else if ( (helm->sprite >= items[HAT_HOOD].index && helm->sprite < items[HAT_HOOD].index + items[HAT_HOOD].variations)
 		|| helm->sprite == items[HAT_HOOD_RED].index || helm->sprite == items[HAT_HOOD_SILVER].index 
-		|| helm->sprite == items[PUNISHER_HOOD].index )
+		|| helm->sprite == items[PUNISHER_HOOD].index
+		|| (helm->sprite >= items[HAT_HOOD_APPRENTICE].index && helm->sprite < items[HAT_HOOD_APPRENTICE].index + items[HAT_HOOD_APPRENTICE].variations)
+		|| (helm->sprite >= items[HAT_HOOD_ASSASSIN].index && helm->sprite < items[HAT_HOOD_ASSASSIN].index + items[HAT_HOOD_ASSASSIN].variations)
+		|| (helm->sprite >= items[HAT_HOOD_WHISPERS].index && helm->sprite < items[HAT_HOOD_WHISPERS].index + items[HAT_HOOD_WHISPERS].variations) )
 	{
 		switch ( monster )
 		{
@@ -18757,11 +18949,13 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				helm->focalx = limbs[monster][9][0] - .5;
 				helm->focaly = limbs[monster][9][1] - 2.5;
 				helm->focalz = limbs[monster][9][2] + 2.25;
-				if ( helm->sprite == (items[HAT_HOOD].index + 2) )
+				if ( helm->sprite == (items[HAT_HOOD].index + 2)
+					|| helm->sprite == (items[HAT_HOOD_ASSASSIN].index) )
 				{
 					helm->focaly += 0.5; // black hood
 				}
-				else if ( helm->sprite == (items[HAT_HOOD].index + 3) )
+				else if ( helm->sprite == (items[HAT_HOOD].index + 3) 
+					|| helm->sprite == (items[HAT_HOOD_APPRENTICE].index) )
 				{
 					helm->focaly -= 0.5; // purple hood
 				}
@@ -18776,7 +18970,8 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				helm->focalx = limbs[monster][9][0] - .5;
 				helm->focaly = limbs[monster][9][1] - 2.5;
 				helm->focalz = limbs[monster][9][2] + 2.5;
-				if ( helm->sprite == (items[HAT_HOOD].index + 3) )
+				if ( helm->sprite == (items[HAT_HOOD].index + 3)
+					|| helm->sprite == (items[HAT_HOOD_APPRENTICE].index) )
 				{
 					helm->focaly -= 0.5; // purple hood
 				}
@@ -18804,11 +18999,13 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				helm->focalx = limbs[monster][9][0] - .5;
 				helm->focaly = limbs[monster][9][1] - 2.75;
 				helm->focalz = limbs[monster][9][2] + 2.75;
-				if ( helm->sprite == (items[HAT_HOOD].index + 2) )
+				if ( helm->sprite == (items[HAT_HOOD].index + 2)
+					|| helm->sprite == (items[HAT_HOOD_ASSASSIN].index) )
 				{
 					helm->focaly -= 0.25; // black hood
 				}
-				else if ( helm->sprite == (items[HAT_HOOD].index + 3) )
+				else if ( helm->sprite == (items[HAT_HOOD].index + 3)
+					|| helm->sprite == (items[HAT_HOOD_APPRENTICE].index) )
 				{
 					helm->focaly -= 0.5; // purple hood
 				}
@@ -18817,11 +19014,13 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				helm->focalx = limbs[monster][9][0] - .5;
 				helm->focaly = limbs[monster][9][1] - 2.15;
 				helm->focalz = limbs[monster][9][2] + 2.25;
-				if ( helm->sprite == (items[HAT_HOOD].index + 2) )
+				if ( helm->sprite == (items[HAT_HOOD].index + 2)
+					|| helm->sprite == (items[HAT_HOOD_ASSASSIN].index) )
 				{
 					helm->focaly += 0.25; // black hood
 				}
-				else if ( helm->sprite == (items[HAT_HOOD].index + 3) )
+				else if ( helm->sprite == (items[HAT_HOOD].index + 3)
+					|| helm->sprite == (items[HAT_HOOD_APPRENTICE].index) )
 				{
 					helm->focaly -= 0.5; // purple hood
 				}
@@ -18838,7 +19037,8 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				helm->focalz = limbs[monster][9][2] + 2.5;
 				if ( monster == GOBLIN && (this->sprite == 752 || this->sprite == 1039) ) // special female offset.
 				{
-					if ( helm->sprite == (items[HAT_HOOD].index + 3) )
+					if ( helm->sprite == (items[HAT_HOOD].index + 3)
+						|| helm->sprite == (items[HAT_HOOD_APPRENTICE].index) )
 					{
 						helm->focaly -= 0.5; // purple hood
 					}
@@ -19017,9 +19217,9 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 	}
 }
 
-real_t Entity::yawDifferenceFromPlayer(int player)
+real_t Entity::yawDifferenceFromEntity(Entity* entity)
 {
-	if ( player >= 0 && players[player] && players[player]->entity )
+	if ( entity )
 	{
 		real_t targetYaw = this->yaw;
 		while ( targetYaw >= 2 * PI )
@@ -19030,7 +19230,7 @@ real_t Entity::yawDifferenceFromPlayer(int player)
 		{
 			targetYaw += PI * 2;
 		}
-		return (PI - abs(abs(players[player]->entity->yaw - targetYaw) - PI)) * 2;
+		return (PI - abs(abs(entity->yaw - targetYaw) - PI)) * 2;
 	}
 	return 0.f;
 }
@@ -20452,6 +20652,9 @@ void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
 		|| (helm->sprite >= items[HAT_HOOD].index && helm->sprite < items[HAT_HOOD].index + items[HAT_HOOD].variations)
 		|| helm->sprite == items[HAT_HOOD_RED].index
 		|| helm->sprite == items[HAT_HOOD_SILVER].index
+		|| (helm->sprite >= items[HAT_HOOD_APPRENTICE].index && helm->sprite < items[HAT_HOOD_APPRENTICE].index + items[HAT_HOOD_APPRENTICE].variations)
+		|| (helm->sprite >= items[HAT_HOOD_ASSASSIN].index && helm->sprite < items[HAT_HOOD_ASSASSIN].index + items[HAT_HOOD_ASSASSIN].variations)
+		|| (helm->sprite >= items[HAT_HOOD_WHISPERS].index && helm->sprite < items[HAT_HOOD_WHISPERS].index + items[HAT_HOOD_WHISPERS].variations)
 		|| helm->sprite == items[PUNISHER_HOOD].index )
 	{
 		helm->scalex = 1.05;
@@ -20530,7 +20733,8 @@ void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
 			{
 				helm->focalz -= 0.2;
 			}
-			else if ( helm->sprite == (items[HAT_HOOD].index + 2) )
+			else if ( helm->sprite == (items[HAT_HOOD].index + 2)
+				|| helm->sprite == (items[HAT_HOOD_ASSASSIN].index) )
 			{
 				// black hood
 				helm->focalx += 0.25;
@@ -20582,7 +20786,8 @@ void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
 			{
 				helm->focalz -= 0.2;
 			}
-			else if ( helm->sprite == (items[HAT_HOOD].index + 2) )
+			else if ( helm->sprite == (items[HAT_HOOD].index + 2)
+				|| helm->sprite == (items[HAT_HOOD_ASSASSIN].index) )
 			{
 				// black hood
 				helm->focalx += 0.25;
@@ -21387,4 +21592,121 @@ int Entity::getEntityInspirationFromAllies()
 		return std::max(0, inspiration);
 	}
 	return 0;
+}
+
+bool Entity::doSilkenBowOnAttack(Entity* attacker)
+{
+	Stat* hitstats = getStats();
+	if ( !hitstats || !attacker || !(attacker->behavior == &actMonster || attacker->behavior == &actPlayer) ) { return false; }
+
+	if ( attacker == this ) { return false; }
+
+	Stat* attackerStats = attacker->getStats();
+	if ( !attackerStats ) { return false; }
+
+	int attackerPlayer = (attacker->behavior == &actPlayer) ? attacker->skill[2] : -1;
+	int playerHit = this->behavior == &actPlayer ? this->skill[2] : -1;
+
+	bool tryEffect = false;
+	if ( hitstats->helmet && hitstats->helmet->type == HAT_SILKEN_BOW )
+	{
+		int roll = local_rng.rand() % 100;
+		int chance = 0;
+
+		if ( hitstats->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(hitstats) )
+		{
+			chance = 3 + 1 * std::min(5, abs(hitstats->helmet->beatitude));
+			chance += std::min(10, (hitstats->getModifiedProficiency(PRO_LEADERSHIP)
+				+ std::max(0, 3 * statGetCHR(hitstats, this))) / 10);
+			chance = std::min(15, chance);
+		}
+		else
+		{
+			chance = 1;
+		}
+
+		if ( roll < chance )
+		{
+			tryEffect = true;
+		}
+	}
+
+	if ( tryEffect )
+	{
+		int difficulty = getCharmMonsterDifficulty(*attacker, *attackerStats);
+
+		int chance = 80;
+		chance -= difficulty * 30;
+
+		// special cases:
+		if ( (attackerStats->type == VAMPIRE && MonsterData_t::nameMatchesSpecialNPCName(*attackerStats, "bram kindly"))
+			|| (attackerStats->type == COCKATRICE && !strncmp(map.name, "Cockatrice Lair", 15))
+			)
+		{
+			chance = 0;
+		}
+		else if ( attacker->behavior == &actMonster
+			&& (attacker->monsterAllySummonRank != 0
+				|| (attackerStats->type == INCUBUS && !strncmp(attackerStats->name, "inner demon", strlen("inner demon"))))
+			)
+		{
+			chance = 0; // not allowed to control summons
+		}
+
+		bool pacify = true;// (local_rng.rand() % 20 == 0);
+
+		if ( chance <= 0 )
+		{
+			// no effect.
+			//playSoundEntity(hit.entity, 163, 64); // FailedSpell1V1.ogg
+			if ( attackerPlayer >= 0 )
+			{
+				Uint32 color = makeColorRGB(0, 255, 0);
+				messagePlayerColor(attackerPlayer, MESSAGE_COMBAT, color, Language::get(3141));
+			}
+			if ( playerHit >= 0 )
+			{
+				Uint32 color = makeColorRGB(255, 0, 0);
+				messagePlayerMonsterEvent(playerHit, color, *attackerStats, Language::get(3142), Language::get(3143), MSG_COMBAT);
+			}
+			return false;
+		}
+
+		// loses will to attack.
+		int duration = TICKS_PER_SECOND;
+		if ( attacker->setEffect(EFF_PACIFY, true, duration, true) )
+		{
+			playSoundEntity(attacker, 168, 128); // Healing.ogg
+			if ( attackerPlayer >= 0 )
+			{
+				Uint32 color = makeColorRGB(255, 0, 0);
+				messagePlayerColor(attackerPlayer, MESSAGE_COMBAT, color, Language::get(3144));
+			}
+			if ( playerHit >= 0 )
+			{
+				Uint32 color = makeColorRGB(0, 255, 0);
+				messagePlayerMonsterEvent(playerHit, color, *attackerStats, Language::get(3139), Language::get(3140), MSG_COMBAT);
+			}
+			spawnMagicEffectParticles(attacker->x, attacker->y, attacker->z, 685);
+			return true;
+		}
+		else
+		{
+			// resists the charm.
+			//playSoundEntity(attacker, 163, 64); // FailedSpell1V1.ogg
+			if ( attackerPlayer >= 0 )
+			{
+				Uint32 color = makeColorRGB(0, 255, 0);
+				messagePlayerColor(attackerPlayer, MESSAGE_COMBAT, color, Language::get(3141));
+			}
+			if ( playerHit >= 0 )
+			{
+				Uint32 color = makeColorRGB(255, 0, 0);
+				messagePlayerMonsterEvent(playerHit, color, *attackerStats, Language::get(3142), Language::get(3143), MSG_COMBAT);
+			}
+			return false;
+		}
+	}
+
+	return false;
 }

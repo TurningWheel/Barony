@@ -6616,10 +6616,19 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 					tooltipDesc->setText(definition.getDesc(variation).c_str());
 					tooltipInnerWidth = definition.tooltipWidth;
 				}
+				else if ( effectID == StatusEffectQueue_t::kEffectBountyTarget )
+				{
+					std::string newHeader = definition.getName(1).c_str();
+					uppercaseString(newHeader);
+					tooltipHeader->setText(newHeader.c_str());
+					tooltipDesc->setText(definition.getDesc(variation).c_str());
+					tooltipInnerWidth = definition.tooltipWidth;
+				}
 
 				if ( effectID != StatusEffectQueue_t::kEffectAutomatonHunger
 					&& effectID != StatusEffectQueue_t::kEffectWanted
 					&& effectID != StatusEffectQueue_t::kEffectWantedInShop
+					&& effectID != StatusEffectQueue_t::kEffectBountyTarget
 					&& effectID != StatusEffectQueue_t::kEffectDisabledHPRegen )
 				{
 					std::string newHeader = definition.getName(variation).c_str();
@@ -6708,6 +6717,7 @@ const int StatusEffectQueue_t::kEffectLifesaving = -19;
 const int StatusEffectQueue_t::kEffectPush = -20;
 const int StatusEffectQueue_t::kEffectSneak = -21;
 const int StatusEffectQueue_t::kEffectDrunkGoatman = -22;
+const int StatusEffectQueue_t::kEffectBountyTarget = -23;
 const int StatusEffectQueue_t::kSpellEffectOffset = 10000;
 
 Frame* StatusEffectQueue_t::getStatusEffectFrame()
@@ -7150,7 +7160,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	bool inshop = false;
 
 	std::map<int, bool> miscEffects;
-	for ( int i = kEffectBurning; i >= kEffectDrunkGoatman; --i )
+	for ( int i = kEffectBurning; i >= kEffectBountyTarget; --i )
 	{
 		miscEffects[i] = false;
 	}
@@ -7182,6 +7192,17 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			if ( stats[player]->type == GOATMAN && stats[player]->EFFECTS[EFF_DRUNK] )
 			{
 				miscEffects[kEffectDrunkGoatman] = true;
+			}
+			if ( stats[player]->helmet && stats[player]->helmet->type == HAT_BOUNTYHUNTER )
+			{
+				for ( auto target : achievementObserver.playerAchievements[player].bountyTargets )
+				{
+					if ( uidToEntity(target) )
+					{
+						miscEffects[kEffectBountyTarget] = true;
+						break;
+					}
+				}
 			}
 			if ( stats[player]->shoes && stats[player]->shoes->type == ARTIFACT_BOOTS )
 			{
@@ -7299,7 +7320,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 	}
 
-	for ( int i = kEffectBurning; i >= kEffectDrunkGoatman; --i )
+	for ( int i = kEffectBurning; i >= kEffectBountyTarget; --i )
 	{
 		if ( miscEffects[i] == false )
 		{
@@ -7553,6 +7574,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 							{
 								variation = 1;
 							}
+						}
+						else if ( effectID == StatusEffectQueue_t::kEffectBountyTarget )
+						{
+							variation = 0;
 						}
 						else if ( effectID == EFF_VAMPIRICAURA )
 						{
@@ -33254,7 +33279,8 @@ void Player::SkillSheet_t::processSkillSheet()
 			bool updateTitle = false;
 			for ( auto& eff_t : skillSheetData.skillEntries[selectedSkill].effects )
 			{
-				if ( eff_t.effectUpdatedAtSkillLevel != proficiencyValue )
+				if ( eff_t.effectUpdatedAtSkillLevel != proficiencyValue
+					|| eff_t.effectUpdatedAtBaseSkillLevel != stats[player.playernum]->getProficiency(proficiency) )
 				{
 					updateTitle = true;
 					break;
@@ -33295,7 +33321,25 @@ void Player::SkillSheet_t::processSkillSheet()
 					skillLvlTitle = Language::get(363);
 				}
 				skillLvlTitle.erase(std::remove(skillLvlTitle.begin(), skillLvlTitle.end(), ' '), skillLvlTitle.end()); // trim whitespace
-				snprintf(skillLvl, sizeof(skillLvl), "%s (%d)", skillLvlTitle.c_str(), stats[player.playernum]->getModifiedProficiency(proficiency));
+				int effectsModifier = stats[player.playernum]->getModifiedProficiency(proficiency) - stats[player.playernum]->getProficiency(proficiency);
+				if ( proficiencyValue > 100 )
+				{
+					effectsModifier = std::max(effectsModifier - (proficiencyValue - 100), 0);
+				}
+				if ( effectsModifier > 0 )
+				{
+					snprintf(skillLvl, sizeof(skillLvl), "%s (%d + %d)", skillLvlTitle.c_str(), 
+						stats[player.playernum]->getProficiency(proficiency), effectsModifier);
+				}
+				else if ( effectsModifier < 0 )
+				{
+					snprintf(skillLvl, sizeof(skillLvl), "%s (%d - %d)", skillLvlTitle.c_str(), 
+						stats[player.playernum]->getProficiency(proficiency), abs(effectsModifier));
+				}
+				else
+				{
+					snprintf(skillLvl, sizeof(skillLvl), "%s (%d)", skillLvlTitle.c_str(), stats[player.playernum]->getModifiedProficiency(proficiency));
+				}
 				skillLvlHeaderVal->setText(skillLvl);
 
 				SDL_Rect skillLvlHeaderValPos = skillLvlHeaderVal->getSize();
@@ -33427,10 +33471,12 @@ void Player::SkillSheet_t::processSkillSheet()
 					bool bEffUpdated = false;
 					if ( (effect_t.bAllowRealtimeUpdate && (ticks % (std::max(TICKS_PER_SECOND, MAXPLAYERS * 10))) == (player.playernum * 10))
 						|| effect_t.effectUpdatedAtSkillLevel != stats[player.playernum]->getModifiedProficiency(proficiency)
+						|| effect_t.effectUpdatedAtBaseSkillLevel != stats[player.playernum]->getProficiency(proficiency)
 						|| effect_t.effectUpdatedAtMonsterType != stats[player.playernum]->type
 						|| effect_t.value == "" )
 					{
-						if ( effect_t.effectUpdatedAtSkillLevel != stats[player.playernum]->getModifiedProficiency(proficiency) )
+						if ( effect_t.effectUpdatedAtSkillLevel != stats[player.playernum]->getModifiedProficiency(proficiency)
+							|| effect_t.effectUpdatedAtBaseSkillLevel != stats[player.playernum]->getProficiency(proficiency) )
 						{
 							skillLVLUpdated = true;
 							bEffUpdated = true;
@@ -33440,6 +33486,7 @@ void Player::SkillSheet_t::processSkillSheet()
 							bEffUpdated = true;
 						}
 						effect_t.effectUpdatedAtSkillLevel = stats[player.playernum]->getModifiedProficiency(proficiency);
+						effect_t.effectUpdatedAtBaseSkillLevel = stats[player.playernum]->getProficiency(proficiency);
 						effect_t.effectUpdatedAtMonsterType = stats[player.playernum]->type;
 						std::string oldValue = effect_t.value;
 						effect_t.value = formatSkillSheetEffects(player.playernum, proficiency, effect_t.tag, effect_t.rawValue);

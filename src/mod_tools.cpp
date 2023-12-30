@@ -750,7 +750,7 @@ void ItemTooltips_t::readItemsFromFile()
 		return;
 	}
 
-	const int bufSize = 200000;
+	const int bufSize = 240000;
 	char buf[bufSize];
 	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
@@ -2892,6 +2892,74 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 				}
 				snprintf(buf, sizeof(buf), str.c_str(), chance);
 			}
+			else if ( conditionalAttribute == "EFF_HOOD_APPRENTICE" )
+			{
+				int chance = 0;
+				if ( item.type == HAT_HOOD_APPRENTICE )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						chance = std::min(10 + (10 * abs(item.beatitude)), 30);
+					}
+					else
+					{
+						chance = std::min(10 + (10 * abs(item.beatitude)), 30);
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), chance);
+			}
+			else if ( conditionalAttribute == "EFF_HOOD_ASSASSIN" )
+			{
+				int bonus = 0;
+				if ( item.type == HAT_HOOD_ASSASSIN )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						bonus = std::min(4 + (2 * abs(item.beatitude)), 8);
+					}
+					else
+					{
+						bonus = 4;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), bonus);
+			}
+			else if ( conditionalAttribute == "EFF_HOOD_WHISPERS" )
+			{
+				/*int bonus = 0;
+				if ( item.type == HAT_HOOD_WHISPERS )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						bonus = std::min(50 + (10 * abs(item.beatitude)), 100);
+					}
+					else
+					{
+						bonus = 50;
+					}
+				}*/
+
+				int val = (stats[player]->getModifiedProficiency(PRO_STEALTH) / 20 + 2) * 2; // backstab dmg
+				if ( skillCapstoneUnlocked(player, PRO_STEALTH) )
+				{
+					val *= 2;
+				}
+
+				real_t equipmentModifier = 0.0;
+				real_t bonusModifier = 1.0;
+				if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+				{
+					equipmentModifier += (std::min(50 + (10 * abs(item.beatitude)), 100)) / 100.0;
+				}
+				else
+				{
+					equipmentModifier = 0.5;
+					bonusModifier = 0.5;
+				}
+				val = ((val * equipmentModifier) * bonusModifier);
+
+				snprintf(buf, sizeof(buf), str.c_str(), val);
+			}
 			else if ( conditionalAttribute == "EFF_THORNS" )
 			{
 				int dmg = 0;
@@ -3080,12 +3148,70 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 				}
 				snprintf(buf, sizeof(buf), str.c_str(), equipmentBonus);
 			}
+			else if ( conditionalAttribute == "EFF_BOUNTY" )
+			{
+				int equipmentBonus = 0;
+				if ( item.type == HAT_BOUNTYHUNTER )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						if ( abs(item.beatitude) >= 2 )
+						{
+							equipmentBonus += 2;
+						}
+						else
+						{
+							equipmentBonus += 1;
+						}
+					}
+					else
+					{
+						equipmentBonus += 1;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), equipmentBonus);
+			}
+			else if ( conditionalAttribute == "EFF_RANGED_DISTANCE" )
+			{
+				int dropOffModifier = 0;
+				if ( item.type == HAT_BYCOCKET )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						dropOffModifier = std::min(3, 1 + abs(item.beatitude));
+					}
+					else
+					{
+						dropOffModifier = 1;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), dropOffModifier);
+			}
+			else if ( conditionalAttribute == "EFF_RANGED_FIRERATE" )
+			{
+				int equipmentBonus = 0;
+				if ( item.type == HAT_BYCOCKET )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						equipmentBonus -= std::min(30, 10 + 10 * abs(item.beatitude));
+					}
+					else
+					{
+						equipmentBonus -= 30;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), -equipmentBonus);
+			}
 			else if ( conditionalAttribute.find("EFF_SKILL_") != std::string::npos )
 			{
 				int skill = std::stoi(conditionalAttribute.substr(strlen("EFF_SKILL_"), std::string::npos));
 				int equipmentBonus = 0;
 				if ( (skill == PRO_TRADING && item.type == MASK_GOLDEN)
 					|| (skill == PRO_LEADERSHIP && item.type == HAT_PLUMED_CAP)
+					|| (skill == PRO_RANGED && item.type == HAT_BOUNTYHUNTER)
+					|| (skill == PRO_STEALTH && item.type == HAT_HOOD_WHISPERS)
+					|| (skill == PRO_SPELLCASTING && (item.type == HAT_CIRCLET || item.type == HAT_CIRCLET_WISDOM))
 					|| (skill == PRO_ALCHEMY && item.type == MASK_HAZARD_GOGGLES) )
 				{
 					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
@@ -3539,6 +3665,73 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				int beatitude = shouldInvertEquipmentBeatitude(stats[player]) ? abs(item.beatitude) : item.beatitude;
 				int radius = std::max(3, 11 + 5 * beatitude);
 				snprintf(buf, sizeof(buf), str.c_str(), radius, getItemBeatitudeAdjective(item.beatitude).c_str());
+			}
+			else if ( detailTag == "EFF_HOOD_WHISPERS" )
+			{
+				//int val = (stats[player]->getModifiedProficiency(PRO_STEALTH) / 20 + 2) * 2; // backstab dmg
+				//if ( skillCapstoneUnlocked(player, PRO_STEALTH) )
+				//{
+				//	val *= 2;
+				//}
+
+				//real_t equipmentModifier = 0.0;
+				//real_t bonusModifier = 1.0;
+				//if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+				//{
+				//	equipmentModifier += (std::min(50 + (10 * abs(item.beatitude)), 100)) / 100.0;
+				//}
+				//else
+				//{
+				//	equipmentModifier = 0.5;
+				//	bonusModifier = 0.5;
+				//}
+				//val = ((val * equipmentModifier) * bonusModifier);
+
+				std::string skillName = "";
+				for ( auto s : Player::SkillSheet_t::skillSheetData.skillEntries )
+				{
+					if ( s.skillId == PRO_STEALTH )
+					{
+						skillName = s.name;
+						break;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), skillName.c_str());
+			}
+			else if ( detailTag == "EFF_SILKEN_BOW" )
+			{
+				int baseBonus = 5;
+				int chanceBonus = 0;
+				if ( item.type == HAT_SILKEN_BOW )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						baseBonus = 3 + 1 * std::min(5, abs(item.beatitude));
+						chanceBonus += std::min(10, (stats[player]->getModifiedProficiency(PRO_LEADERSHIP)
+							+ std::max(0, 3 * statGetCHR(stats[player], players[player]->entity))) / 10);
+
+						if ( baseBonus + chanceBonus > 15 )
+						{
+							chanceBonus -= (baseBonus + chanceBonus) - 15;
+						}
+					}
+					else
+					{
+						baseBonus = 1;
+					}
+				}
+
+				std::string skillName = "";
+				for ( auto s : Player::SkillSheet_t::skillSheetData.skillEntries )
+				{
+					if ( s.skillId == PRO_LEADERSHIP )
+					{
+						skillName = s.name;
+						break;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), baseBonus,
+					chanceBonus, skillName.c_str(), getItemStatShortName(std::string("CHR")).c_str());
 			}
 			else
 			{
@@ -9580,7 +9773,7 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterT
 		return;
 	}
 
-	char buf[20000];
+	static char buf[32000];
 	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
 	rapidjson::StringStream is(buf);

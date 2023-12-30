@@ -3487,11 +3487,11 @@ last of your magic is drained!#
 3136 DEPRECATED#
 3137 The %s is charmed into your service!#
 3138 %s is charmed into your service!#
-3139 The charm seizes the %s's will to fight!#
-3140 The charm seizes %s's will to fight!#
+3139 Your charm seizes the %s's will to fight!#
+3140 Your charm seizes %s's will to fight!#
 3141 You resist the effects of the charm!#
-3142 The charm had no effect on the %s!#
-3143 The charm had no effect on %s!#
+3142 Your charm had no effect on the %s!#
+3143 Your charm had no effect on %s!#
 3144 A magical charm seizes your will to fight!#
 3145 The slime envelops and consumes the %s!#
 
@@ -6259,5 +6259,16 @@ Filters#
 6096 RES#
 6097 RGN#
 6098 WGT#
+6099 Error: Unable to load save file: "%s".
+Error code: %d
 
-6100 end#
+Could not verify required DLC installed
+to load this save file.
+
+Check DLC is installed correctly and
+relaunch the game to try again.#
+6100 Could not verify DLC is installed
+to load your matching save file.#
+6101 You fulfilled your bounty for %d gold!#
+6102 You failed to finish your bounty target.#
+6103 Effects Modifier:#

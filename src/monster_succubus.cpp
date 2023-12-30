@@ -80,6 +80,8 @@ void initSuccubus(Entity* my, Stat* myStats)
 						entity->seedEntityRNG(rng.getU32());
 					}
 				}
+				newItem(MASK_MOUTH_ROSE, EXCELLENT, -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+				customItemsToGenerate -= 1;
 			}
 
 			// random effects
@@ -109,7 +111,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( !strcmp(myStats->name, "Lilith") && rng.rand() % 4 > 0 )
+					if ( myStats->getAttribute("special_npc") == "lilith" && rng.rand() % 4 > 0 )
 					{
 						newItem(MAGICSTAFF_CHARM, EXCELLENT, -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory); // 75% chance
 					}

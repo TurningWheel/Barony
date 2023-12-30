@@ -464,6 +464,7 @@ public:
 	Sint32& arrowShotByWeapon; //skill[7]
 	Sint32& arrowQuiverType; //skill[8]
 	Sint32& arrowShotByParent; //skill[9]
+	Sint32& arrowDropOffEquipmentModifier; //skill[14]
 	enum arrowShotBy : int
 	{
 		ARROW_SHOT_BY_TRAP,
@@ -840,7 +841,7 @@ public:
 	// calc damage/effects for ranged weapons.
 	void setRangedProjectileAttack(Entity& marksman, Stat& myStats, int optionalOverrideForArrowType = 0);
 	bool setArrowProjectileProperties(int weaponType);
-	real_t yawDifferenceFromPlayer(int player); // calc targets yaw compared to a player, returns 0 - 2 * PI, where > PI is facing towards player.
+	real_t yawDifferenceFromEntity(Entity* entity); // calc targets yaw compared to an entity, returns 0 - 2 * PI, where > PI is facing towards player.
 	spell_t* getActiveMagicEffect(int spellID);
 
 	/*
@@ -1028,6 +1029,7 @@ public:
 	bool disturbMimic(Entity* touched, bool takenDamage, bool doMessage);
 	bool isInertMimic() const;
 	bool entityCanVomit() const;
+	bool doSilkenBowOnAttack(Entity* attacker);
 };
 
 Monster getMonsterFromPlayerRace(int playerRace); // convert playerRace into the relevant monster type
@@ -1145,7 +1147,7 @@ void actTextSource(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-static const int NUM_ITEM_STRINGS = 330;
+static const int NUM_ITEM_STRINGS = 333;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 129;
 static const int NUM_EDITOR_SPRITES = 180;
 static const int NUM_EDITOR_TILES = 350;

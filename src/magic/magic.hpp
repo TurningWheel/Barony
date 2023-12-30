@@ -625,6 +625,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_to_use);
+int getCharmMonsterDifficulty(Entity& my, Stat& myStats);
 void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent, int resistance, bool magicstaff);
 Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell, int customDuration = 0); // returns nullptr if target was monster, otherwise returns pointer to new creature
 void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int resistance);

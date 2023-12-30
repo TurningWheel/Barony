@@ -253,7 +253,11 @@ void actArrowTrap(Entity* my)
 					entity->vel_y = sin(entity->yaw) * entity->arrowSpeed;
 					if ( multiplayer == SERVER )
 					{
-						entity->skill[2] = -(1000 + TOOL_SENTRYBOT); // invokes actArrow for clients.
+						Sint32 val = (1 << 31);
+						val |= (Uint8)(17);
+						val |= (((Uint16)(TOOL_SENTRYBOT) & 0xFFF) << 8);
+						val |= (8) << 20;
+						entity->skill[2] = val;//-(1000 + TOOL_SENTRYBOT); // invokes actArrow for clients.
 						entity->arrowShotByWeapon = TOOL_SENTRYBOT;
 					}
 					if ( targetToAutoHit )

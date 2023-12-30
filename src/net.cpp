@@ -1926,7 +1926,7 @@ void clientActions(Entity* entity)
 	// if the above method failed, we check the value of skill[2] (stored in net_packet->data[30]) and assign an action based on that
 	if ( entity->behavior == NULL )
 	{
-		int c = (int)SDLNet_Read32(&net_packet->data[30]);
+		Sint32 c = (Sint32)SDLNet_Read32(&net_packet->data[30]);
 		if ( c < 0 )
 		{
 			switch ( c )
@@ -1975,9 +1975,11 @@ void clientActions(Entity* entity)
 					entity->behavior = &actBoulder;
 					break;
 				default:
-					if ( c < -1000 && c > -2000 )
+					if ( static_cast<Uint8>(c & 0xFF) == 17 )
 					{
-						entity->arrowShotByWeapon = -(c + 1000);
+						entity->arrowShotByWeapon = (c >> 8) & 0xFFF;
+						int dropOffModifier = (c >> 20) & 0xF;
+						entity->arrowDropOffEquipmentModifier = dropOffModifier - 8;
 						entity->behavior = &actArrow;
 					}
 					break;
@@ -4946,7 +4948,32 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			hostility->player = clientnum;
 		}
 		return;
+	} },
+
+	{ 'BNTY', []() {
+		int player = (int)net_packet->data[4];
+		if ( player >= 0 && player < MAXPLAYERS )
+		{
+			size_t numBounties = (size_t)net_packet->data[5];
+			int index = 6;
+			achievementObserver.playerAchievements[player].bountyTargets.clear();
+			while ( numBounties > 0 )
+			{
+				Uint32 uid = SDLNet_Read32(&net_packet->data[index]);
+				achievementObserver.playerAchievements[player].bountyTargets.insert(uid);
+				--numBounties;
+				index += 4;
+			}
+		}
 	}},
+
+	{ 'BNTH', []() {
+		int player = (int)net_packet->data[4];
+		if ( player >= 0 && player < MAXPLAYERS )
+		{
+			achievementObserver.playerAchievements[player].wearingBountyHat = net_packet->data[5] > 0 ? true : false;
+		}
+	}}
 };
 
 void clientHandlePacket()

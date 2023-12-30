@@ -1212,6 +1212,10 @@ void actHudWeapon(Entity* my)
 
 									// set delay before crossbow can fire again
 									throwGimpTimer = 40;
+									if ( stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW )
+									{
+										throwGimpTimer *= rangedAttackGetSpeedModifier(stats[HUDWEAPON_PLAYERNUM]);
+									}
 
 									HUDWEAPON_CHOP = CROSSBOW_CHOP_RELOAD_START;
 									HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_SHOOT;
@@ -2751,6 +2755,11 @@ void actHudWeapon(Entity* my)
 		}
 		if ( stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW )
 		{
+			real_t reloadSpeed = 1.0;
+			if ( rangedAttackGetSpeedModifier(stats[HUDWEAPON_PLAYERNUM]) < 0.125 )
+			{
+				reloadSpeed = 6.0;
+			}
 			if ( HUDWEAPON_MOVEZ > 1 )
 			{
 				HUDWEAPON_MOVEZ -= .1; // just in case we're overshooting from another animation or something move faster.
@@ -2760,7 +2769,7 @@ void actHudWeapon(Entity* my)
 				if ( rangedWeaponUseQuiverOnAttack(stats[HUDWEAPON_PLAYERNUM]) )
 				{
 				// we fired a quiver shot, the crossbow will be lower here so move faster.
-					HUDWEAPON_MOVEZ -= .02;
+					HUDWEAPON_MOVEZ -= .02 * reloadSpeed;
 					if ( HUDWEAPON_MOVEZ < 0.5 )
 					{
 						HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_RELOAD_END;
@@ -2772,7 +2781,7 @@ void actHudWeapon(Entity* my)
 				}
 				else
 				{
-					HUDWEAPON_MOVEZ -= .01;
+					HUDWEAPON_MOVEZ -= .01 * reloadSpeed;
 					if ( HUDWEAPON_MOVEZ < 0.25 )
 					{
 						HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_RELOAD_END;

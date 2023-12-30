@@ -3195,6 +3195,15 @@ bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 			return true;
 		}
 	}
+	else if ( targetEntityType == SUCCUBUS || targetEntityType == INCUBUS )
+	{
+		if ( stats[player]->mask && stats[player]->mask->type == MASK_MOUTH_ROSE
+			&& !(playerRace == RAT || playerRace == SPIDER
+				|| playerRace == TROLL || playerRace == CREATURE_IMP) )
+		{
+			return true;
+		}
+	}
 	if ( targetEntityType != NOTHING )
 	{
 		std::map<Monster, std::vector<Monster>>* allyTable = &Player::SkillSheet_t::skillSheetData.leadershipAllyTableBase;

@@ -491,6 +491,9 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"mask_crystal_visor",
 	"mask_artifact_visor",
 	"hat_circlet_wisdom",
+	"hat_hood_apprentice",
+	"hat_hood_assassin",
+	"hat_hood_whispers",
 	""
 };
 
@@ -534,6 +537,9 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"hat_chef",
 		"helm_mining",
 		"hat_circlet_wisdom",
+		"hat_hood_apprentice",
+		"hat_hood_assassin",
+		"hat_hood_whispers",
 		""
 	},
 	{

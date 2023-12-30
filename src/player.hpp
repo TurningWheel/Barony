@@ -1367,6 +1367,7 @@ public:
 					Uint32 marqueeTicks[MAXPLAYERS] = { 0 };
 					bool marqueeCompleted[MAXPLAYERS] = { false };
 					int effectUpdatedAtSkillLevel = -1;
+					int effectUpdatedAtBaseSkillLevel = -1;
 					int effectUpdatedAtMonsterType = -1;
 					int cachedWidth = -1;
 				};

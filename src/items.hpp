@@ -345,9 +345,12 @@ typedef enum ItemType
 	MASK_STEEL_VISOR,
 	MASK_CRYSTAL_VISOR,
 	MASK_ARTIFACT_VISOR,
-	HAT_CIRCLET_WISDOM
+	HAT_CIRCLET_WISDOM,
+	HAT_HOOD_APPRENTICE,
+	HAT_HOOD_ASSASSIN,
+	HAT_HOOD_WHISPERS
 } ItemType;
-const int NUMITEMS = 326;
+const int NUMITEMS = 329;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -640,7 +643,7 @@ void item_ToolLootBag(Item*& item, int player);
 //General functions.
 Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory);
 Item* uidToItem(Uint32 uid);
-ItemType itemCurve(Category cat, BaronyRNG& rng);
+ItemType itemLevelCurveEntity(Entity& my, Category cat, int minLevel, int maxLevel, BaronyRNG& rng);
 ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel, BaronyRNG& rng);
 Item* newItemFromEntity(const Entity* entity, bool discardUid = false); //Make sure to call free(item). discardUid will free the new items uid if this is for temp purposes
 Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 count = 1);
@@ -768,7 +771,6 @@ ItemType itemTypeWithinGoldValue(int cat, int minValue, int maxValue, BaronyRNG&
 bool itemSpriteIsQuiverThirdPersonModel(int sprite);
 bool itemSpriteIsQuiverBaseThirdPersonModel(int sprite);
 bool itemTypeIsQuiver(ItemType type);
-bool itemSpriteIsBreastpiece(int sprite);
 real_t rangedAttackGetSpeedModifier(const Stat* myStats);
 bool rangedWeaponUseQuiverOnAttack(const Stat* myStats);
 real_t getArtifactWeaponEffectChance(ItemType type, Stat& wielder, real_t* effectAmount);

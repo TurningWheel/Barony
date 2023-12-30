@@ -7251,7 +7251,7 @@ void assignActions(map_t* map)
 		}
 		list_RemoveNode(chest->mynode);
 	}
-                           
+
     keepInventoryGlobal = svFlags & SV_FLAG_KEEPINVENTORY;
 }
 

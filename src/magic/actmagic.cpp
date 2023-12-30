@@ -821,7 +821,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						// calculate facing angle to projectile, need to be facing projectile to reflect.
 						else if ( player >= 0 && players[player] && players[player]->entity )
 						{
-							real_t yawDiff = my->yawDifferenceFromPlayer(player);
+							real_t yawDiff = my->yawDifferenceFromEntity(players[player]->entity);
 							if ( yawDiff < (6 * PI / 5) )
 							{
 								reflection = 0;
