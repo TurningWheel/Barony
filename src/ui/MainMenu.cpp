@@ -8960,8 +8960,8 @@ bind_failed:
             {"local", Language::get(5308), TAB_FN(BoardType::LOCAL_SINGLE)},
             {"lan", Language::get(5309), TAB_FN(BoardType::LOCAL_MULTI)},
 #ifdef USE_PLAYFAB
-            {"world", Language::get(5311), TAB_FN(BoardType::ONLINE_WORLD)},
-            {"friends", Language::get(5310), TAB_FN(BoardType::ONLINE_FRIENDS)},
+            //{"world", Language::get(5311), TAB_FN(BoardType::ONLINE_WORLD)},
+            //{"friends", Language::get(5310), TAB_FN(BoardType::ONLINE_FRIENDS)},
 #endif
         };
         static constexpr int num_tabs = sizeof(tabs) / sizeof(tabs[0]);
