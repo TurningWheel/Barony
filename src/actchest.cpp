@@ -177,7 +177,14 @@ void createChestInventory(Entity* my, int chestType)
 			int itemStatus = WORN + rng.rand() % 3;
 			for ( i = 0; i < itemcount; ++i )
 			{
-				newItem(GEM_ROCK, static_cast<Status>(itemStatus), 0, 1, rng.rand(), false, inventory);
+				if ( rng.rand() % 20 == 0 )
+				{
+					newItem(MASK_MOUTH_ROSE, static_cast<Status>(itemStatus), -1 + rng.rand() % 3, 1, rng.rand(), false, inventory);
+				}
+				else
+				{
+					newItem(GEM_ROCK, static_cast<Status>(itemStatus), 0, 1, rng.rand(), false, inventory);
+				}
 			}
 		}
 		break;
@@ -189,6 +196,14 @@ void createChestInventory(Entity* my, int chestType)
 		{
 			//newItem(static_cast<ItemType>(FOOD_BREAD + (rng.rand() % 7)), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			newItem(itemLevelCurve(FOOD, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+		}
+		if ( rng.rand() % 10 == 0 )
+		{
+			newItem(HAT_CHEF, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+		}
+		else if ( rng.rand() % 20 == 0 )
+		{
+			newItem(MASK_GRASS_SPRIG, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 		}
 		break;
 	case 3:
@@ -392,6 +407,10 @@ void createChestInventory(Entity* my, int chestType)
 				newItem(TOOL_METAL_SCRAP, DECREPIT, 0, 10 + rng.rand() % 11, 0, true, inventory);
 				newItem(TOOL_MAGIC_SCRAP, DECREPIT, 0, 10 + rng.rand() % 11, 0, true, inventory);
 			}
+			else if ( rng.rand() % 20 == 0 )
+			{
+				newItem(MASK_MOUTHKNIFE, durability, 0, 1, rng.rand(), false, inventory);
+			}
 			break;
 		case 2:
 			itemcount = 1 + rng.rand() % 2;
@@ -481,7 +500,7 @@ void createChestInventory(Entity* my, int chestType)
 			newItem(itemLevelCurve(SPELLBOOK, 0, currentlevel + 6, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			//newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rng.rand() % 10), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			newItem(itemLevelCurve(MAGICSTAFF, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
-			switch ( rng.rand() % 7 )
+			switch ( rng.rand() % 9 )
 			{
 			case 0:
 				//A cloak. Item 24.
@@ -521,6 +540,14 @@ void createChestInventory(Entity* my, int chestType)
 					newItem(SCROLL_BLANK, static_cast<Status>(WORN + rng.rand() % 3), 0, 1 + rng.rand() % 3, rng.rand(), false, inventory);
 				}
 				break;
+			case 7:
+				newItem(HAT_MITER, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+				break;
+			case 8:
+				newItem(HAT_HEADDRESS, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+				break;
+			default:
+				break;
 			}
 			break;
 		}
@@ -547,6 +574,16 @@ void createChestInventory(Entity* my, int chestType)
 		if ( rng.rand() % 4 == 0 )
 		{
 			newItem(POTION_EMPTY, SERVICABLE, 0, 1 + rng.rand() % 3, 0, true, inventory);
+		}
+		if ( rng.rand() % 10 == 0 )
+		{
+			newItem(MASK_HAZARD_GOGGLES, static_cast<Status>(WORN + rng.rand() % 3), 
+				0, 1, rng.rand(), false, inventory);
+		}
+		else if ( rng.rand() % 20 == 0 )
+		{
+			newItem(MASK_PLAGUE, static_cast<Status>(WORN + rng.rand() % 3),
+				0, 1, rng.rand(), false, inventory);
 		}
 		break;
 	case 8:

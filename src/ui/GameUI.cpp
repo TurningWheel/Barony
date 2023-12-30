@@ -6718,6 +6718,8 @@ const int StatusEffectQueue_t::kEffectPush = -20;
 const int StatusEffectQueue_t::kEffectSneak = -21;
 const int StatusEffectQueue_t::kEffectDrunkGoatman = -22;
 const int StatusEffectQueue_t::kEffectBountyTarget = -23;
+const int StatusEffectQueue_t::kEffectInspiration = -24;
+const int StatusEffectQueue_t::kEffectRetaliation = -25;
 const int StatusEffectQueue_t::kSpellEffectOffset = 10000;
 
 Frame* StatusEffectQueue_t::getStatusEffectFrame()
@@ -7160,7 +7162,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	bool inshop = false;
 
 	std::map<int, bool> miscEffects;
-	for ( int i = kEffectBurning; i >= kEffectBountyTarget; --i )
+	for ( int i = kEffectBurning; i >= kEffectRetaliation; --i )
 	{
 		miscEffects[i] = false;
 	}
@@ -7203,6 +7205,17 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 						break;
 					}
 				}
+			}
+			if ( stats[player]->mask && stats[player]->mask->type == MASK_MOUTHKNIFE )
+			{
+				miscEffects[kEffectRetaliation] = true;
+			}
+			if ( stats[player]->helmet && 
+				(stats[player]->helmet->type == HAT_LAURELS
+					|| stats[player]->helmet->type == HAT_TURBAN
+					|| stats[player]->helmet->type == HAT_CROWN) )
+			{
+				miscEffects[kEffectInspiration] = true;
 			}
 			if ( stats[player]->shoes && stats[player]->shoes->type == ARTIFACT_BOOTS )
 			{
@@ -7320,7 +7333,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 	}
 
-	for ( int i = kEffectBurning; i >= kEffectBountyTarget; --i )
+	for ( int i = kEffectBurning; i >= kEffectRetaliation; --i )
 	{
 		if ( miscEffects[i] == false )
 		{
@@ -31073,6 +31086,17 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			if ( skillCapstoneUnlocked(playernum, proficiency) )
 			{
 				val *= 2;
+			}
+			if ( stats[playernum]->helmet && stats[playernum]->helmet->type == HAT_HOOD_ASSASSIN )
+			{
+				if ( stats[playernum]->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[playernum]) )
+				{
+					val += std::min(4 + (2 * abs(stats[playernum]->helmet->beatitude)), 8);
+				}
+				else
+				{
+					val /= 2;
+				}
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}

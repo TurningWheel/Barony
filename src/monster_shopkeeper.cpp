@@ -315,6 +315,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 			bool doneBackpack = false;
 			bool doneTinkeringKit = false;
 			bool doneFeather = false;
+			int doneHardwareHat = 0;
 			switch ( my->monsterStoreType )
 			{
 				case -1:
@@ -334,16 +335,16 @@ void initShopkeeper(Entity* my, Stat* myStats)
 							{
 								if ( rng.rand() % 10 == 0 )
 								{
-									tmpItem = newItem(itemLevelCurve(THROWN, 8, currentlevel, rng), static_cast<Status>(SERVICABLE + rng.rand() % 2), 0, 3 + rng.rand() % 3, rng.rand(), false, &myStats->inventory);
+									tmpItem = newItem(itemLevelCurveEntity(*my, THROWN, 8, currentlevel, rng), static_cast<Status>(SERVICABLE + rng.rand() % 2), 0, 3 + rng.rand() % 3, rng.rand(), false, &myStats->inventory);
 								}
 								else
 								{
-									tmpItem = newItem(itemLevelCurve(ARMOR, 5, currentlevel, rng), static_cast<Status>(WORN + rng.rand() % 3), rng.rand() % blessedShopkeeper, 1 + rng.rand() % 4, rng.rand(), false, &myStats->inventory);
+									tmpItem = newItem(itemLevelCurveEntity(*my, ARMOR, 5, currentlevel, rng), static_cast<Status>(WORN + rng.rand() % 3), rng.rand() % blessedShopkeeper, 1 + rng.rand() % 4, rng.rand(), false, &myStats->inventory);
 								}
 							}
 							else
 							{
-								tmpItem = newItem(itemLevelCurve(WEAPON, 10, currentlevel, rng), static_cast<Status>(WORN + rng.rand() % 3), rng.rand() % blessedShopkeeper, 1 + rng.rand() % 4, rng.rand(), false, &myStats->inventory);
+								tmpItem = newItem(itemLevelCurveEntity(*my, WEAPON, 10, currentlevel, rng), static_cast<Status>(WORN + rng.rand() % 3), rng.rand() % blessedShopkeeper, 1 + rng.rand() % 4, rng.rand(), false, &myStats->inventory);
 							}
 						}
 						else
@@ -352,7 +353,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 							{
 								if ( rng.rand() % 8 == 0 )
 								{
-									tmpItem = newItem(itemLevelCurve(THROWN, 0, currentlevel + 20, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 3 + rng.rand() % 3, rng.rand(), false, &myStats->inventory);
+									tmpItem = newItem(itemLevelCurveEntity(*my, THROWN, 0, currentlevel + 20, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 3 + rng.rand() % 3, rng.rand(), false, &myStats->inventory);
 								}
 								else
 								{
@@ -397,7 +398,13 @@ void initShopkeeper(Entity* my, Stat* myStats)
 					// hat store
 					for ( c = 0; c < numitems; c++ )
 					{
-						tmpItem = newItem(static_cast<ItemType>(HAT_PHRYGIAN + rng.rand() % 7), static_cast<Status>(WORN + rng.rand() % 3), rng.rand() % blessedShopkeeper, 1 + rng.rand() % 6, rng.rand(), false, &myStats->inventory);
+						//if ( blessedShopkeeper > 0 )
+						//{
+						//	numitems += rng.rand() % 5; // offset some of the quantity reduction.
+						//}
+						tmpItem = newItem(itemLevelCurveEntity(*my, ARMOR, 0, currentlevel + 5, rng), 
+							static_cast<Status>(WORN + rng.rand() % 3), rng.rand() % blessedShopkeeper, 
+							1 + ((rng.rand() % 4 == 0 ? 1 : 0)) /* 1 hat, random % to be +qty */, rng.rand(), false, &myStats->inventory);
 						// post-processing
 						if ( tmpItem && tmpItem->beatitude > 0 )
 						{
@@ -413,10 +420,10 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						switch ( rng.rand() % 3 )
 						{
 							case 0:
-								tmpItem = newItem(itemLevelCurve(AMULET, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), rng.rand() % blessedShopkeeper, 1 + rng.rand() % 2, rng.rand(), false, &myStats->inventory);
+								tmpItem = newItem(itemLevelCurveEntity(*my, AMULET, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), rng.rand() % blessedShopkeeper, 1 + rng.rand() % 2, rng.rand(), false, &myStats->inventory);
 								break;
 							case 1:
-								tmpItem = newItem(itemLevelCurve(RING, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), rng.rand() % blessedShopkeeper, 1 + rng.rand() % 2, rng.rand(), false, &myStats->inventory);
+								tmpItem = newItem(itemLevelCurveEntity(*my, RING, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), rng.rand() % blessedShopkeeper, 1 + rng.rand() % 2, rng.rand(), false, &myStats->inventory);
 								break;
 							case 2:
 								tmpItem = newItem(static_cast<ItemType>(GEM_GARNET + rng.rand() % 16), static_cast<Status>(WORN + rng.rand() % 3), 0, 1 + rng.rand() % 2, rng.rand(), false, &myStats->inventory);
@@ -439,7 +446,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 							case 0:
 								if ( currentlevel >= 18 )
 								{
-									tmpItem = newItem(itemLevelCurve(SPELLBOOK, 0, currentlevel, rng), static_cast<Status>(WORN + rng.rand() % 3), rng.rand() % blessedShopkeeper, 1 + rng.rand() % 2, rng.rand(), true, &myStats->inventory);
+									tmpItem = newItem(itemLevelCurveEntity(*my, SPELLBOOK, 0, currentlevel, rng), static_cast<Status>(WORN + rng.rand() % 3), rng.rand() % blessedShopkeeper, 1 + rng.rand() % 2, rng.rand(), true, &myStats->inventory);
 								}
 								else
 								{
@@ -447,12 +454,12 @@ void initShopkeeper(Entity* my, Stat* myStats)
 								}
 								break;
 							case 1:
-								tmpItem = newItem(itemLevelCurve(SCROLL, 0, 35, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1 + rng.rand() % 2, rng.rand(), true, &myStats->inventory);
+								tmpItem = newItem(itemLevelCurveEntity(*my, SCROLL, 0, 35, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1 + rng.rand() % 2, rng.rand(), true, &myStats->inventory);
 								break;
 							case 2:
 								if ( rng.rand() % 3 == 0 )
 								{
-									tmpItem = newItem(itemLevelCurve(SCROLL, 0, 35, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1 + rng.rand() % 2, rng.rand(), true, &myStats->inventory);
+									tmpItem = newItem(itemLevelCurveEntity(*my, SCROLL, 0, 35, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1 + rng.rand() % 2, rng.rand(), true, &myStats->inventory);
 								}
 								else
 								{
@@ -527,11 +534,11 @@ void initShopkeeper(Entity* my, Stat* myStats)
 					{
 						if ( currentlevel >= 18 )
 						{
-							tmpItem = newItem(itemLevelCurve(MAGICSTAFF, 0, currentlevel, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), true, &myStats->inventory);
+							tmpItem = newItem(itemLevelCurveEntity(*my, MAGICSTAFF, 0, currentlevel, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), true, &myStats->inventory);
 						}
 						else
 						{
-							tmpItem = newItem(itemLevelCurve(MAGICSTAFF, 0, 15, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), true, &myStats->inventory);
+							tmpItem = newItem(itemLevelCurveEntity(*my, MAGICSTAFF, 0, 15, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), true, &myStats->inventory);
 						}
 						// post-processing
 						if ( rng.rand() % blessedShopkeeper > 0 )
@@ -558,7 +565,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 					{
 						if ( rng.rand() % 20 == 0 )
 						{
-							tmpItem = newItem(itemLevelCurve(THROWN, 0, currentlevel + 20, rng), static_cast<Status>(SERVICABLE + rng.rand() % 2), 0, 3 + rng.rand() % 3, rng.rand(), false, &myStats->inventory);
+							tmpItem = newItem(itemLevelCurveEntity(*my, THROWN, 0, currentlevel + 20, rng), static_cast<Status>(SERVICABLE + rng.rand() % 2), 0, 3 + rng.rand() % 3, rng.rand(), false, &myStats->inventory);
 						}
 						else
 						{
@@ -623,6 +630,51 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						newItem(CLOAK_BACKPACK, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), true, &myStats->inventory);
 						doneBackpack = true;
 					}
+					if ( (doneHardwareHat == 0 && rng.rand() % 5 == 0) || (doneHardwareHat == 1 && rng.rand() % 20 == 0) )
+					{
+						doneHardwareHat++;
+						int numHats = 1 + ((rng.rand() % 4 == 0) ? 1 : 0);
+						while ( numHats > 0 )
+						{
+							--numHats;
+							int roll = rng.rand() % 15;
+							ItemType hat = WOODEN_SHIELD;
+							switch ( roll )
+							{
+								case 0:
+								case 1:
+								case 2:
+								case 3:
+								case 4:
+								case 5:
+								case 6:
+								case 7:
+								case 8:
+								case 9:
+									hat = HELM_MINING;
+									break;
+								case 10:
+								case 11:
+								case 12:
+									hat = MASK_HAZARD_GOGGLES;
+									break;
+								case 13:
+									hat = MASK_PIPE;
+									break;
+								case 14:
+									hat = MASK_MOUTHKNIFE;
+									break;
+								default:
+									break;
+							}
+							Item* tmpItem = newItem(hat, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), true, &myStats->inventory);
+							if ( rng.rand() % blessedShopkeeper > 0 )
+							{
+								tmpItem->status = static_cast<Status>(SERVICABLE + rng.rand() % 2);
+								tmpItem->beatitude += rng.rand() % blessedShopkeeper;
+							}
+						}
+					}
 					break;
 				case 8:
 					// weapon/hunting store
@@ -674,11 +726,11 @@ void initShopkeeper(Entity* my, Stat* myStats)
 								// standard weapons
 								if ( currentlevel >= 18 )
 								{
-									tmpItem = newItem(itemLevelCurve(WEAPON, 10, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), rng.rand() % blessedShopkeeper, 1, rng.rand(), false, &myStats->inventory);
+									tmpItem = newItem(itemLevelCurveEntity(*my, WEAPON, 10, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), rng.rand() % blessedShopkeeper, 1, rng.rand(), false, &myStats->inventory);
 								}
 								else
 								{
-									tmpItem = newItem(itemLevelCurve(WEAPON, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), rng.rand() % blessedShopkeeper, 1, rng.rand(), false, &myStats->inventory);
+									tmpItem = newItem(itemLevelCurveEntity(*my, WEAPON, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), rng.rand() % blessedShopkeeper, 1, rng.rand(), false, &myStats->inventory);
 								}
 								break;
 							case 12:
@@ -704,11 +756,11 @@ void initShopkeeper(Entity* my, Stat* myStats)
 								{
 									if ( currentlevel >= 18 )
 									{
-										tmpItem = newItem(itemLevelCurve(THROWN, 0, currentlevel + 20, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 3 + rng.rand() % 3, rng.rand(), false, &myStats->inventory);
+										tmpItem = newItem(itemLevelCurveEntity(*my, THROWN, 0, currentlevel + 20, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 3 + rng.rand() % 3, rng.rand(), false, &myStats->inventory);
 									}
 									else
 									{
-										tmpItem = newItem(itemLevelCurve(THROWN, 0, 8, rng), static_cast<Status>(SERVICABLE + rng.rand() % 2), 0, 3 + rng.rand() % 3, rng.rand(), false, &myStats->inventory);
+										tmpItem = newItem(itemLevelCurveEntity(*my, THROWN, 0, 8, rng), static_cast<Status>(SERVICABLE + rng.rand() % 2), 0, 3 + rng.rand() % 3, rng.rand(), false, &myStats->inventory);
 									}
 								}
 								break;
@@ -765,7 +817,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 					for ( c = 0; c < numitems; c++ )
 					{
 						Category cat = static_cast<Category>(rng.rand() % (NUMCATEGORIES - 1));
-						tmpItem = newItem(itemLevelCurve(cat, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1 + rng.rand() % 3, rng.rand(), false, &myStats->inventory);
+						tmpItem = newItem(itemLevelCurveEntity(*my, cat, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1 + rng.rand() % 3, rng.rand(), false, &myStats->inventory);
 						if ( tmpItem && (itemCategory(tmpItem) == WEAPON || itemCategory(tmpItem) == ARMOR || itemCategory(tmpItem) == RING || itemCategory(tmpItem) == AMULET) )
 						{
 							tmpItem->beatitude += rng.rand() % blessedShopkeeper;

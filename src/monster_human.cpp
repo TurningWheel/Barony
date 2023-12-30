@@ -128,6 +128,7 @@ void initHuman(Entity* my, Stat* myStats)
 							int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
 							myStats->weapon = newItem(ARTIFACT_SWORD, static_cast<Status>(status), 1, 1, rng.rand(), true, nullptr);
 							myStats->shield = newItem(STEEL_SHIELD_RESISTANCE, EXCELLENT, 1, 1, 1, true, nullptr);
+							myStats->helmet = newItem(HAT_CROWNED_HELM, EXCELLENT, 1, 1, rng.rand(), false, nullptr);
 							break;
 						}
 						case 2:
@@ -152,6 +153,7 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->cloak = newItem(CLOAK_PROTECTION, EXCELLENT, 5, 1, 3, false, nullptr);
 							myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, 2, 1, 2, false, nullptr);
 							myStats->amulet = newItem(AMULET_MAGICREFLECTION, EXCELLENT, 2, 1, 2, false, nullptr);
+							myStats->mask = newItem(MASK_PIPE, EXCELLENT, rng.rand() % 3, 1, rng.rand(), false, nullptr);
 							break;
 						case 3:
 							// robin hood
@@ -174,6 +176,7 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->shoes = newItem(LEATHER_BOOTS, SERVICABLE, 1, 1, 3, true, nullptr);
 							myStats->cloak = newItem(CLOAK, EXCELLENT, 1, 1, 0, true, nullptr);
 							myStats->weapon = newItem(SHORTBOW, EXCELLENT, 1, 1, 3, true, nullptr);
+							myStats->helmet = newItem(HAT_BYCOCKET, EXCELLENT, 1 + rng.rand() % 2, 1, 0, false, nullptr);
 							break;
 						case 4:
 							// conan
@@ -192,7 +195,7 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->INT = 3;
 							myStats->PER = 3;
 							myStats->CHR = 20;
-							myStats->helmet = newItem(LEATHER_HELM, EXCELLENT, 2, 1, rng.rand(), false, nullptr);
+							myStats->helmet = newItem(HAT_CROWN, EXCELLENT, 1, 1, 1 + (rng.rand() / 2), false, nullptr);
 							myStats->shield = newItem(WOODEN_SHIELD, EXCELLENT, 2, 1, rng.rand(), false, nullptr);
 							myStats->weapon = newItem(STEEL_AXE, EXCELLENT, 2, 1, rng.rand(), false, nullptr);
 							break;
@@ -217,6 +220,7 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->breastplate = newItem(IRON_BREASTPIECE, EXCELLENT, 1, 1, rng.rand(), false, nullptr);
 							myStats->weapon = newItem(STEEL_SWORD, EXCELLENT, 2, 1, rng.rand(), false, nullptr);
 							myStats->cloak = newItem(CLOAK, EXCELLENT, 0, 1, 2, false, nullptr);
+							myStats->helmet = newItem(HAT_TURBAN, EXCELLENT, 1, 1, rng.rand(), false, nullptr);
 							break;
 						case 6:
 						{
@@ -236,7 +240,7 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->INT = 20;
 							myStats->PER = 20;
 							myStats->CHR = 10;
-							myStats->helmet = newItem(HAT_JESTER, EXCELLENT, 5, 1, rng.rand(), false, nullptr);
+							myStats->helmet = newItem(HAT_CIRCLET_WISDOM, EXCELLENT, -2 + rng.rand() % 5, 1, rng.rand(), false, nullptr);
 							int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
 							myStats->weapon = newItem(ARTIFACT_MACE, static_cast<Status>(status), 1, 1, rng.rand(), false, nullptr);
 							int c;
@@ -254,6 +258,7 @@ void initHuman(Entity* my, Stat* myStats)
 									entity->seedEntityRNG(rng.getU32());
 								}
 							}
+							newItem(SPELLBOOK_SPIDER_FORM, DECREPIT, 0, 1, rng.rand(), false, &myStats->inventory);
 							break;
 						}
 						case 7:
@@ -322,6 +327,7 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->cloak = newItem(CLOAK_MAGICREFLECTION, EXCELLENT, 1, 1, 2, false, nullptr);
 							myStats->shoes = newItem(LEATHER_BOOTS_SPEED, EXCELLENT, 1, 1, rng.rand(), false, nullptr);
 							myStats->weapon = newItem(SPELLBOOK_FIREBALL, EXCELLENT, 1, 1, rng.rand(), false, nullptr);
+							myStats->helmet = newItem(HAT_CIRCLET, EXCELLENT, 2, 1, rng.rand(), false, nullptr);
 							break;
 						default:
 							break;
@@ -506,29 +512,71 @@ void initHuman(Entity* my, Stat* myStats)
 				// give helmet
 				if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 				{
-					switch ( rng.rand() % 10 )
+					if ( myStats->weapon && isRangedWeapon(*myStats->weapon) && rng.rand() % 4 == 0 )
 					{
-						case 0:
-						case 1:
-						case 2:
-							break;
-						case 3:
-							myStats->helmet = newItem(HAT_HOOD, WORN, 0, 1, rng.rand() % 4, false, nullptr);
-							break;
-						case 4:
-							myStats->helmet = newItem(HAT_PHRYGIAN, WORN, 0, 1, rng.rand(), false, nullptr);
-							break;
-						case 5:
-							myStats->helmet = newItem(HAT_WIZARD, WORN, 0, 1, rng.rand(), false, nullptr);
-							break;
-						case 6:
-						case 7:
-							myStats->helmet = newItem(LEATHER_HELM, WORN, 0, 1, rng.rand(), false, nullptr);
-							break;
-						case 8:
-						case 9:
-							myStats->helmet = newItem(IRON_HELM, WORN, 0, 1, rng.rand(), false, nullptr);
-							break;
+						myStats->helmet = newItem(HAT_BYCOCKET, WORN, 0, 1, rng.rand(), false, nullptr);
+					}
+					else
+					{
+						switch ( rng.rand() % 13 )
+						{
+							case 0:
+							case 1:
+							case 2:
+								break;
+							case 3:
+								myStats->helmet = newItem(HAT_HOOD, WORN, 0, 1, rng.rand() % 4, false, nullptr);
+								break;
+							case 4:
+								myStats->helmet = newItem(HAT_PHRYGIAN, WORN, 0, 1, rng.rand(), false, nullptr);
+								break;
+							case 5:
+								myStats->helmet = newItem(HAT_WIZARD, WORN, 0, 1, rng.rand(), false, nullptr);
+								break;
+							case 6:
+							case 7:
+								myStats->helmet = newItem(LEATHER_HELM, WORN, 0, 1, rng.rand(), false, nullptr);
+								break;
+							case 8:
+							case 9:
+								myStats->helmet = newItem(IRON_HELM, WORN, 0, 1, rng.rand(), false, nullptr);
+								break;
+							case 10:
+							case 11:
+							case 12:
+							{
+								switch ( rng.rand() % 5 )
+								{
+								case 0:
+									myStats->helmet = newItem(HAT_BANDANA, WORN, 0, 1, rng.rand(), false, nullptr);
+									break;
+								case 1:
+									myStats->helmet = newItem(HELM_MINING, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, nullptr);
+									break;
+								case 2:
+									myStats->helmet = newItem(HAT_HOOD_ASSASSIN, WORN, 0, 1, rng.rand(), false, nullptr);
+									break;
+								case 3:
+									myStats->helmet = newItem(HAT_HOOD_WHISPERS, WORN, 0, 1, rng.rand(), false, nullptr);
+									break;
+								case 4:
+									if ( myStats->sex == sex_t::FEMALE && rng.rand() % 2 == 0 )
+									{
+										myStats->helmet = newItem(HAT_SILKEN_BOW, WORN, 0, 1, rng.rand(), false, nullptr);
+									}
+									else
+									{
+										myStats->helmet = newItem(HAT_PLUMED_CAP, WORN, 0, 1, rng.rand(), false, nullptr);
+									}
+									break;
+								default:
+									break;
+								}
+							}
+								break;
+							default:
+								break;
+						}
 					}
 				}
 
@@ -621,6 +669,32 @@ void initHuman(Entity* my, Stat* myStats)
 						case 9:
 							myStats->shoes = newItem(IRON_BOOTS, WORN, 0, 1, rng.rand(), false, nullptr);
 							break;
+					}
+				}
+
+				// give mask
+				if ( myStats->mask == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_MASK] == 1 )
+				{
+					if ( !(myStats->weapon && isRangedWeapon(*myStats->weapon)) )
+					{
+						switch ( rng.rand() % 20 )
+						{
+						case 0:
+							if ( currentlevel >= 15 )
+							{
+								myStats->mask = newItem(MASK_CRYSTAL_VISOR, WORN, 0, 1, rng.rand(), false, nullptr);
+							}
+							else
+							{
+								myStats->mask = newItem(MASK_STEEL_VISOR, WORN, 0, 1, rng.rand(), false, nullptr);
+							}
+							break;
+						case 1:
+							myStats->mask = newItem(MASK_EYEPATCH, WORN, 0, 1, rng.rand(), false, nullptr);
+							break;
+						default:
+							break;
+						}
 					}
 				}
 			}

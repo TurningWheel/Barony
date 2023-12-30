@@ -210,7 +210,14 @@ void initIncubus(Entity* my, Stat* myStats)
 					case 2:
 						if ( rng.rand() % 5 == 0 ) // 1 in 5
 						{
-							newItem(POTION_CONFUSION, SERVICABLE, 0, 1 + rng.rand() % 2, rng.rand(), false, &myStats->inventory);
+							if ( rng.rand() % 2 == 0 )
+							{
+								newItem(MASK_MASQUERADE, WORN, -2 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+							}
+							else
+							{
+								newItem(POTION_CONFUSION, SERVICABLE, 0, 1 + rng.rand() % 2, rng.rand(), false, &myStats->inventory);
+							}
 						}
 					case 1:
 						if ( rng.rand() % 3 == 0 ) // 1 in 3

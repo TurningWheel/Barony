@@ -678,7 +678,7 @@
             "name_unidentified": "artifact breastpiece"
         },
         "artifact_helm": {
-            "name_identified": "Sphinx's Veil",
+            "name_identified": "Sphinx's Casque",
             "name_unidentified": "artifact helm"
         },
         "artifact_boots": {
@@ -1298,7 +1298,7 @@
 			"name_unidentified": "crystal visor"
 		},
 		"mask_artifact_visor": {
-			"name_identified": "artifact visor",
+			"name_identified": "Valkyrie's Veil",
 			"name_unidentified": "artifact visor"
 		},
 		"hat_circlet_wisdom": {

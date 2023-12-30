@@ -2744,7 +2744,7 @@ public:
 		void setColorFaintText(Uint32 color) { faintTextColor = color; }
 	};
 	void readItemsFromFile();
-	static const Uint32 kItemsJsonHash = 255104943;
+	static const Uint32 kItemsJsonHash = 2419644190;
 	static Uint32 itemsJsonHashRead;
 	void readItemLocalizationsFromFile(bool forceLoadBaseDirectory = false);
 	void readTooltipsFromFile(bool forceLoadBaseDirectory = false);

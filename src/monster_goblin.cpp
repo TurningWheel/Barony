@@ -233,7 +233,10 @@ void initGoblin(Entity* my, Stat* myStats)
 				    {
 					    case 0:
 					    case 1:
+							break;
 					    case 2:
+							myStats->helmet = newItem(static_cast<ItemType>(HAT_WOLF_HOOD + rng.rand() % 4), 
+								WORN, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 						    break;
 					    case 3:
 					    case 4:
@@ -243,6 +246,11 @@ void initGoblin(Entity* my, Stat* myStats)
 						    myStats->helmet = newItem(HAT_WIZARD, WORN, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 						    break;
 					    case 6:
+							if ( myStats->weapon && itemCategory(myStats->weapon) == MAGICSTAFF )
+							{
+								myStats->helmet = newItem(HAT_HEADDRESS, WORN, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+								break;
+							}
 					    case 7:
 						    myStats->helmet = newItem(LEATHER_HELM, WORN, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 						    break;
@@ -275,6 +283,18 @@ void initGoblin(Entity* my, Stat* myStats)
 						    break;
 				    }
 			    }
+
+				if ( myStats->mask == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_MASK] == 1 )
+				{
+					switch ( rng.rand() % 20 )
+					{
+					case 0:
+						myStats->mask = newItem(MASK_GRASS_SPRIG, WORN, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+						break;
+					default:
+						break;
+					}
+				}
 			}
 		}
 	}

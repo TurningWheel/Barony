@@ -101,6 +101,7 @@ void initShadow(Entity* my, Stat* myStats)
 				myStats->GOLD = 1000;
 				myStats->RANDOM_GOLD = 500;
 				myStats->LVL = 50; // >:U
+				newItem(MASK_PHANTOM, static_cast<Status>(WORN + rng.rand() % 3), -2 + rng.rand() % 5, 1, rng.rand(), false, &myStats->inventory);
 			}
 			else if ( my->monsterStoreType == 2 )
 			{
@@ -136,6 +137,10 @@ void initShadow(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
+					if ( rng.rand() % 20 == 0 )
+					{
+						newItem(MASK_SPOOKY, static_cast<Status>(WORN + rng.rand() % 3), -2 + rng.rand() % 5, 1, rng.rand(), false, &myStats->inventory);
+					}
 					break;
 				default:
 					break;

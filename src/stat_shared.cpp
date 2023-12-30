@@ -319,6 +319,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_HELM] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_MASK] = 1;
 
 			stats->setProficiency(PRO_SWORD, 35);
 			stats->setProficiency(PRO_MACE, 50);
@@ -441,6 +442,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_GLOVES] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_MASK] = 1;
 
 			stats->setProficiency(PRO_SWORD, 45);
 			stats->setProficiency(PRO_MACE, 35);
@@ -714,6 +716,9 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->setProficiency(PRO_SHIELD, 25);
 			stats->setProficiency(PRO_MAGIC, 80);
 			stats->setProficiency(PRO_SPELLCASTING, 80);
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 5; //Spooky mask
 			break;
 		case 90:
 		case (1000 + COCKATRICE):

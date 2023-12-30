@@ -249,8 +249,9 @@ void initSkeleton(Entity* my, Stat* myStats)
 					myStats->MAXHP = 100;
 					myStats->STR += 6;
 					int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
-					myStats->weapon = newItem(ARTIFACT_AXE, static_cast<Status>(status), 1, 1, rng.rand(), true, nullptr);
-					myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, nullptr);
+					myStats->weapon = newItem(ARTIFACT_AXE, static_cast<Status>(status), 1, 1, rng.rand(), false, nullptr);
+					myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, false, nullptr);
+					newItem(MASK_EYEPATCH, WORN, -1 + rng.rand() % 2, 1, rng.rand(), false, &myStats->inventory);
 			    }
 				else
 				{

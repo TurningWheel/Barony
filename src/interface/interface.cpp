@@ -8280,7 +8280,7 @@ void GenericGUIMenu::tinkeringCreateCraftableItemList()
 	items.push_back(newItem(TOOL_SPELLBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items[items.size() - 1]->x = 3;
 	items[items.size() - 1]->y = 2;
-	items.push_back(newItem(TOOL_ALEMBIC, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(MASK_TECH_GOGGLES, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items[items.size() - 1]->x = 4;
 	items[items.size() - 1]->y = 2;
 	items.push_back(newItem(CLOAK_BACKPACK, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
@@ -9048,9 +9048,9 @@ bool GenericGUIMenu::tinkeringGetCraftingCost(const Item* item, int* metal, int*
 			*metal = 8;
 			*magic = 16;
 			break;
-		case TOOL_ALEMBIC:
-			*metal = 16;
-			*magic = 16;
+		case MASK_TECH_GOGGLES:
+			*metal = 10;
+			*magic = 40;
 			break;
 		case TOOL_DECOY:
 			*metal = 8;
@@ -9125,6 +9125,47 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case SILVER_DOUBLET:
 		case CLOAK_SILVER:
 		case TOOL_LOCKPICK:
+
+		// todos
+		case MASK_BANDIT:
+		case MASK_EYEPATCH:
+		case MASK_MASQUERADE:
+		case MASK_MOUTH_ROSE:
+		case MASK_GOLDEN:
+		case MASK_SPOOKY:
+		case MASK_TECH_GOGGLES:
+		case MASK_HAZARD_GOGGLES:
+		case MASK_PHANTOM:
+		case MASK_PIPE:
+		case MASK_GRASS_SPRIG:
+		case MASK_PLAGUE:
+		case MASK_MOUTHKNIFE:
+		case HAT_SILKEN_BOW:
+		case HAT_PLUMED_CAP:
+		case HAT_BYCOCKET:
+		case HAT_TOPHAT:
+		case HAT_BANDANA:
+		case HAT_CIRCLET:
+		case HAT_CROWN:
+		case HAT_LAURELS:
+		case HAT_TURBAN:
+		case HAT_CROWNED_HELM:
+		case HAT_WARM:
+		case HAT_WOLF_HOOD:
+		case HAT_BEAR_HOOD:
+		case HAT_STAG_HOOD:
+		case HAT_BUNNY_HOOD:
+		case HAT_BOUNTYHUNTER:
+		case HAT_MITER:
+		case HAT_HEADDRESS:
+		case HAT_CHEF:
+		case HELM_MINING:
+		case MASK_STEEL_VISOR:
+		case MASK_CRYSTAL_VISOR:
+		case HAT_CIRCLET_WISDOM:
+		case HAT_HOOD_APPRENTICE:
+		case HAT_HOOD_ASSASSIN:
+		case HAT_HOOD_WHISPERS:
 			*metal = 1;
 			*magic = 0;
 			break;
@@ -9680,7 +9721,7 @@ int GenericGUIMenu::tinkeringPlayerHasSkillLVLToCraft(const Item* item)
 			}
 			break;
 		case TOOL_SPELLBOT:
-		case TOOL_ALEMBIC:
+		case MASK_TECH_GOGGLES:
 			if ( skillLVL >= 3 ) // 60 requirement
 			{
 				return 3;

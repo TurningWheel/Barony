@@ -99,10 +99,17 @@ void initGnome(Entity* my, Stat* myStats)
 				case 2:
 					if ( rng.rand() % 10 == 0 )
 					{
-						int i = 1 + rng.rand() % 4;
-						for ( c = 0; c < i; c++ )
+						if ( rng.rand() % 2 == 0 )
 						{
-							newItem(static_cast<ItemType>(GEM_GARNET + rng.rand() % 15), static_cast<Status>(1 + rng.rand() % 4), 0, 1, rng.rand(), false, &myStats->inventory);
+							newItem(MASK_PIPE, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+						}
+						else
+						{
+							int i = 1 + rng.rand() % 4;
+							for ( c = 0; c < i; c++ )
+							{
+								newItem(static_cast<ItemType>(GEM_GARNET + rng.rand() % 15), static_cast<Status>(1 + rng.rand() % 4), 0, 1, rng.rand(), false, &myStats->inventory);
+							}
 						}
 					}
 				case 1:

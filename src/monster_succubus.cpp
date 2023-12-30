@@ -119,6 +119,10 @@ void initSuccubus(Entity* my, Stat* myStats)
 					{
 						newItem(MAGICSTAFF_CHARM, static_cast<Status>(DECREPIT + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory); // 10% chance
 					}
+					else if ( rng.rand() % 10 == 0 )
+					{
+						newItem(MASK_MASQUERADE, WORN, -2 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+					}
 					break;
 				default:
 					break;

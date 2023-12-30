@@ -6272,3 +6272,5 @@ to load your matching save file.#
 6101 You fulfilled your bounty for %d gold!#
 6102 You failed to finish your bounty target.#
 6103 Effects Modifier:#
+6104 Your shot catches the %s unaware!#
+6105 Your shot catches %s unaware!#
