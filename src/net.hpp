@@ -65,7 +65,7 @@ enum NetworkingLobbyJoinRequestResult : int
 	NET_LOBBY_JOIN_DIRECTIP_FAILURE,
 	NET_LOBBY_JOIN_DIRECTIP_SUCCESS
 };
-NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool lockedSlots[4]);
+NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool lockedSlots[MAXPLAYERS]);
 Entity* receiveEntity(Entity* entity);
 void clientActions(Entity* entity);
 void clientHandleMessages(Uint32 framerateBreakInterval);

@@ -1,6 +1,11 @@
 #pragma once
 
 #include "main.hpp"
+#include "stat.hpp"
+#include "scores.hpp"
+
+#ifdef USE_PLAYFAB
+
 #include <playfab/PlayFabClientApi.h>
 #include <playfab/PlayFabClientDataModels.h>
 #include <playfab/PlayFabClientInstanceApi.h>
@@ -9,10 +14,6 @@
 #include <playfab/PlayFabCloudScriptApi.h>
 #include <playfab/PlayFabCloudScriptDataModels.h>
 #include <playfab/PlayFabCloudScriptInstanceApi.h>
-#include "stat.hpp"
-#include "scores.hpp"
-
-#ifdef USE_PLAYFAB
 
 class PlayfabUser_t
 {

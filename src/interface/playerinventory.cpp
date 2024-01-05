@@ -1985,7 +1985,24 @@ std::string getItemSpritePath(const int player, Item& item)
 			}
 			else
 			{
-				imagePathsNode = list_Node(&items[item.type].images, item.getLootBagPlayer());
+				int playerOwner = item.getLootBagPlayer();
+				Uint32 index = playerOwner;
+				switch (playerOwner)
+				{
+					case 5:
+						index = 2;
+						break;
+					case 6:
+						index = 3;
+						break;
+					case 7:
+						index = 4;
+						break;
+					default:
+						break;
+				}
+
+				imagePathsNode = list_Node(&items[item.type].images, index);
 			}
 		}
 		else
