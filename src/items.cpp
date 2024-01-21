@@ -3952,9 +3952,6 @@ bool Item::doesItemProvideBeatitudeAC(ItemType type)
 			|| type == HAT_CROWN 
 			|| type == HAT_LAURELS 
 			|| type == HAT_TURBAN
-			|| type == HAT_HOOD_APPRENTICE
-			|| type == HAT_HOOD_ASSASSIN
-			|| type == HAT_HOOD_WHISPERS
 			)
 		{
 			return false;
