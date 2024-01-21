@@ -4019,7 +4019,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	//Add spell.
 	{'ASPL', [](){
-		addSpell(net_packet->data[5], clientnum);
+		addSpell(net_packet->data[5], clientnum, true);
 	}},
 
 	// update hunger

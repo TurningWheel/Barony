@@ -362,7 +362,10 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 		else
 		{
 			// can't learn, already have it.
-			messagePlayer(player, MESSAGE_STATUS, Language::get(439), new_spell->getSpellName());
+			if ( !(spell == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_SPELLCASTING)) )
+			{
+				messagePlayer(player, MESSAGE_STATUS, Language::get(439), new_spell->getSpellName());
+			}
 			spellDeconstructor((void*)new_spell);
 			return false;
 		}
