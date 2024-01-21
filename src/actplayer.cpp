@@ -10438,7 +10438,7 @@ bool playerRequiresBloodToSustain(int player)
 	{
 		return true;
 	}
-	if ( stats[player]->playerRace == VAMPIRE && stats[player]->appearance == 0 )
+	if ( stats[player]->playerRace == RACE_VAMPIRE && stats[player]->appearance == 0 )
 	{
 		return true;
 	}
