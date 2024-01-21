@@ -9337,6 +9337,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(6085), armor->getName());
 							Item* stolenArmor = newItem(armor->type, armor->status, armor->beatitude, qty, armor->appearance, armor->identified, &myStats->inventory);
 							stolenArmor->ownerUid = hit.entity->getUID();
+							stolenArmor->isDroppable = armor->isDroppable;
 							if ( playerhit > 0 && multiplayer == SERVER && !players[playerhit]->isLocalPlayer() )
 							{
 								strcpy((char*)net_packet->data, "STLA");

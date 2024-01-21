@@ -1967,6 +1967,15 @@ void Entity::skeletonSummonSetEquipment(Stat* myStats, int rank)
 					myStats->helmet->type = HAT_HOOD;
 					myStats->helmet->appearance = 2;
 				}
+				if ( !myStats->mask )
+				{
+					myStats->mask = newItem(MASK_BANDIT, DECREPIT, 0, 1, 0, false, nullptr);
+				}
+				else
+				{
+					myStats->mask->type = MASK_BANDIT;
+					myStats->mask->appearance = 0;
+				}
 				if ( !myStats->cloak )
 				{
 					myStats->cloak = newItem(CLOAK_BLACK, DECREPIT, 0, 1, 1, false, nullptr);
@@ -1994,6 +2003,19 @@ void Entity::skeletonSummonSetEquipment(Stat* myStats, int rank)
 				break;
 			default:
 				break;
+		}
+
+		if ( myStats->helmet )
+		{
+			myStats->helmet->isDroppable = false;
+		}
+		if ( myStats->cloak )
+		{
+			myStats->cloak->isDroppable = false;
+		}
+		if ( myStats->mask )
+		{
+			myStats->mask->isDroppable = false;
 		}
 	}
 }
