@@ -1023,6 +1023,7 @@ void loadAllScores(const std::string& scoresfilename)
 		}
 		// Stat set to 0 as monster type not needed, values will be overwritten by the savegame data
 		score->stats = new Stat(0);
+		score->totalscore = -1;
 		if ( !score->stats )
 		{
 			printlog( "failed to allocate memory for new stat!\n" );
