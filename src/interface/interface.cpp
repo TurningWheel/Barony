@@ -13721,7 +13721,7 @@ GenericGUIMenu::TinkerGUI_t::TinkerActions_t GenericGUIMenu::TinkerGUI_t::setIte
 		if ( !checkStatusOnly )
 		{
 			repairable = parentGUI.tinkeringGetRepairCost(item, &metalScrapPrice, &magicScrapPrice);
-			if ( !isTinkeringBot )
+			if ( !isTinkeringBot && item->type != TOOL_TINKERING_KIT )
 			{
 				int metalTmp = 0;
 				int magicTmp = 0;
