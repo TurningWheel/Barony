@@ -3805,7 +3805,7 @@ void createXPBar(const int player)
 	const int textWidth = 72;
 	auto font = "fonts/pixel_maz.ttf#32#2";
 	auto textStatic = hud_t.xpFrame->addField("xp text static", 16);
-	textStatic->setText("/ 100 XP");
+	textStatic->setText(Language::get(6106));
 	textStatic->setOntop(true);
 	textStatic->setSize(SDL_Rect{ pos.w / 2 - 4, 0, textWidth, pos.h }); // x - 4 to center the slash
 	textStatic->setFont(font);
@@ -27218,12 +27218,10 @@ void Player::HUD_t::updateXPBar()
 		SDL_Rect xpTextStaticPos = xpTextStatic->getSize();
 
 		int offsetx = pos.w / 2 - xpTextStaticPos.w - 24;
-		static ConsoleVariable<int> cvar_asdasd("/xp_txt", 0);
 		if ( bCompactWidth )
 		{
 			xpTextStatic->setDisabled(true);
-			//offsetx += *cvar_asdasd;
-			snprintf(playerXPText, sizeof(playerXPText), "%.f XP", xpBar.animateValue / 10);
+			snprintf(playerXPText, sizeof(playerXPText), "%.f %s", xpBar.animateValue / 10, Language::get(6107));
 		}
 		else
 		{

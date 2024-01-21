@@ -6274,3 +6274,6 @@ to load your matching save file.#
 6103 Effects Modifier:#
 6104 Your shot catches the %s unaware!#
 6105 Your shot catches %s unaware!#
+6106 / 100 XP#
+6107 XP#
+6108 END#
