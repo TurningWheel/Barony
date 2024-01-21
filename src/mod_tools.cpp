@@ -2899,11 +2899,11 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 				{
 					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
 					{
-						chance = std::min(10 + (10 * abs(item.beatitude)), 30);
+						chance = std::min(30 + (10 * abs(item.beatitude)), 50);
 					}
 					else
 					{
-						chance = std::min(10 + (10 * abs(item.beatitude)), 30);
+						chance = std::min(30 + (10 * abs(item.beatitude)), 50);
 					}
 				}
 				snprintf(buf, sizeof(buf), str.c_str(), chance);

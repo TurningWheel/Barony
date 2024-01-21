@@ -3767,7 +3767,7 @@ void Entity::handleEffects(Stat* myStats)
 	{
 		if ( myStats->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(myStats) )
 		{
-			int chance = std::min(10 + (10 * abs(myStats->helmet->beatitude)), 30);
+			int chance = std::min(30 + (10 * abs(myStats->helmet->beatitude)), 50);
 			if ( local_rng.rand() % 100 < chance )
 			{
 				mpMod += 1;
@@ -3775,7 +3775,7 @@ void Entity::handleEffects(Stat* myStats)
 		}
 		else
 		{
-			int chance = std::min(10 + (10 * abs(myStats->helmet->beatitude)), 30);
+			int chance = std::min(30 + (10 * abs(myStats->helmet->beatitude)), 50);
 			if ( local_rng.rand() % 100 < chance )
 			{
 				mpMod -= 1;
