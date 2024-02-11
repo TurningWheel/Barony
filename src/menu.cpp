@@ -8534,13 +8534,21 @@ void doNewGame(bool makeHighscore) {
 	{
 		if ( bWasOnMainMenu )
 		{
-			gameModeManager.currentSession.saveServerFlags();
+			if ( !(gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT
+				|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN) )
+			{
+				gameModeManager.currentSession.saveServerFlags();
+			}
 		}
 		svFlags = lobbyWindowSvFlags;
 	}
 	else if ( !loadingsavegame && bWasOnMainMenu )
 	{
-		gameModeManager.currentSession.saveServerFlags();
+		if ( !(gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT
+			|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN) )
+		{
+			gameModeManager.currentSession.saveServerFlags();
+		}
 	}
 
 	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
@@ -9278,6 +9286,14 @@ void doEndgame(bool saveHighscore) {
 		endTutorial = true;
 		gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
 	}
+	else if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT )
+	{
+		gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
+	}
+	else if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN )
+	{
+		gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
+	}
 
 	// in greater numbers achievement
 	if ( victory )
@@ -9633,6 +9649,7 @@ void doEndgame(bool saveHighscore) {
 	}
 
 	gameModeManager.currentSession.seededRun.reset();
+	gameModeManager.currentSession.challengeRun.reset();
 
 	// disable cheats
 	noclip = false;

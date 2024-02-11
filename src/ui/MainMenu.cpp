@@ -869,6 +869,8 @@ namespace MainMenu {
 
 	static void playNew(Button&);
 	static void playContinue(Button&);
+	static void playChallenge();
+	static void playChallengeLoadingWindow(Button&);
 
 	static void mainPlayGame(Button&);
 	static void mainArchives(Button&);
@@ -7109,6 +7111,10 @@ bind_failed:
 		closeBinary();
 
 		PromptSize size = playfabUser.leaderboardSearch.daily ? SIZE_BIG : SIZE_TALL;
+		if ( playfabUser.leaderboardSearch.challengeBoard != playfabUser.leaderboardSearch.CHALLENGE_BOARD_NONE )
+		{
+			size = SIZE_BIG;
+		}
 		auto prompt = binaryPromptGeneric(Language::get(6078), Language::get(6074), Language::get(5926),
 			[](Button& button) {
 				soundActivate();
@@ -7934,7 +7940,7 @@ bind_failed:
 	}
 /******************************************************************************/
 
-    static void createLeaderboards() {
+    static void createLeaderboards(std::string leaderboard_type) {
         assert(main_menu_frame);
 
         static score_t* selectedScore;
@@ -7959,20 +7965,77 @@ bind_failed:
         window->setBorder(0);
         window->setColor(0);
 
-		auto back = createBackWidget(window, [](Button& button){
-			soundCancel();
-			auto frame = static_cast<Frame*>(button.getParent());
-			frame = static_cast<Frame*>(frame->getParent());
-			frame = static_cast<Frame*>(frame->getParent());
-			frame->removeSelf();
-			if (!main_menu_frame) {
-				return;
-			}
-			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-			auto leaderboards = buttons->findButton("Leaderboards"); assert(leaderboards);
-			leaderboards->select();
-			});
-		back->select();
+		if ( leaderboard_type == "" )
+		{
+			auto back = createBackWidget(window, [](Button& button){
+				soundCancel();
+				auto frame = static_cast<Frame*>(button.getParent());
+				frame = static_cast<Frame*>(frame->getParent());
+				frame = static_cast<Frame*>(frame->getParent());
+				frame->removeSelf();
+				if (!main_menu_frame) {
+					return;
+				}
+				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+				auto leaderboards = buttons->findButton("Leaderboards"); assert(leaderboards);
+				leaderboards->select();
+				});
+			back->select();
+		}
+		else if ( leaderboard_type == "lid_seed_oneshot" )
+		{
+			auto back = createBackWidget(window, [](Button& button) {
+				soundCancel();
+				auto frame = static_cast<Frame*>(button.getParent());
+				frame = static_cast<Frame*>(frame->getParent());
+				frame = static_cast<Frame*>(frame->getParent());
+				frame->removeSelf();
+				if ( !main_menu_frame ) {
+					return;
+				}
+				auto challenge_window = main_menu_frame->findFrame("challenge_window"); assert(challenge_window);
+				auto challenge1_leaderboards = challenge_window->findButton("challenge1_leaderboards");
+				assert(challenge1_leaderboards);
+				challenge1_leaderboards->select();
+				});
+			back->select();
+		}
+		else if ( leaderboard_type == "lid_seed_unlimited" )
+		{
+			auto back = createBackWidget(window, [](Button& button) {
+				soundCancel();
+				auto frame = static_cast<Frame*>(button.getParent());
+				frame = static_cast<Frame*>(frame->getParent());
+				frame = static_cast<Frame*>(frame->getParent());
+				frame->removeSelf();
+				if ( !main_menu_frame ) {
+					return;
+				}
+				auto challenge_window = main_menu_frame->findFrame("challenge_window"); assert(challenge_window);
+				auto challenge2_leaderboards = challenge_window->findButton("challenge2_leaderboards");
+				assert(challenge2_leaderboards);
+				challenge2_leaderboards->select();
+				});
+			back->select();
+		}
+		else if ( leaderboard_type == "lid_seed_challenge" )
+		{
+			auto back = createBackWidget(window, [](Button& button) {
+				soundCancel();
+				auto frame = static_cast<Frame*>(button.getParent());
+				frame = static_cast<Frame*>(frame->getParent());
+				frame = static_cast<Frame*>(frame->getParent());
+				frame->removeSelf();
+				if ( !main_menu_frame ) {
+					return;
+				}
+				auto challenge_window = main_menu_frame->findFrame("challenge_window"); assert(challenge_window);
+				auto challenge3_leaderboards = challenge_window->findButton("challenge3_leaderboards");
+				assert(challenge3_leaderboards);
+				challenge3_leaderboards->select();
+				});
+			back->select();
+		}
 
         auto background = window->addImage(
 			SDL_Rect{10, 0, 972, 714},
@@ -8189,10 +8252,28 @@ bind_failed:
             LOCAL_SINGLE,
             LOCAL_MULTI,
             ONLINE_WORLD,
-            ONLINE_FRIENDS
+            ONLINE_FRIENDS,
+			ONLINE_ONESHOT,
+			ONLINE_UNLIMITED,
+			ONLINE_CHALLENGE
         };
         static BoardType boardType;
         boardType = BoardType::LOCAL_SINGLE;
+
+#ifdef USE_PLAYFAB
+		if ( leaderboard_type == "lid_seed_oneshot" )
+		{
+			boardType = BoardType::ONLINE_ONESHOT;
+		}
+		else if ( leaderboard_type == "lid_seed_unlimited" )
+		{
+			boardType = BoardType::ONLINE_UNLIMITED;
+		}
+		else if ( leaderboard_type == "lid_seed_challenge" )
+		{
+			boardType = BoardType::ONLINE_CHALLENGE;
+		}
+#endif
 
         static auto updateStats = [](const Button& button, score_t* score){
             if (!score) {
@@ -8677,6 +8758,7 @@ bind_failed:
 				}
 
 				scores_loaded = 0;
+				playfabUser.leaderboardSearch.challengeBoard = PlayfabUser_t::LeaderboardSearch_t::CHALLENGE_BOARD_NONE;
 				if ( boardType == BoardType::ONLINE_FRIENDS )
 				{
 					playfabUser.leaderboardSearch.daily = true;
@@ -8685,11 +8767,28 @@ bind_failed:
 				{
 					playfabUser.leaderboardSearch.daily = false;
 				}
+				else
+				{
+					playfabUser.leaderboardSearch.daily = false;
+					if ( boardType == BoardType::ONLINE_ONESHOT )
+					{
+						playfabUser.leaderboardSearch.challengeBoard = PlayfabUser_t::LeaderboardSearch_t::ChallengeBoards::CHALLENGE_BOARD_ONESHOT;
+					}
+					else if ( boardType == BoardType::ONLINE_UNLIMITED )
+					{
+						playfabUser.leaderboardSearch.challengeBoard = PlayfabUser_t::LeaderboardSearch_t::ChallengeBoards::CHALLENGE_BOARD_UNLIMITED;
+					}
+					else if ( boardType == BoardType::ONLINE_CHALLENGE )
+					{
+						playfabUser.leaderboardSearch.challengeBoard = PlayfabUser_t::LeaderboardSearch_t::ChallengeBoards::CHALLENGE_BOARD_CHALLENGE;
+					}
+				}
 				playfabUser.leaderboardData.currentSearch = playfabUser.leaderboardSearch.getLeaderboardID();
 				playfabUser.leaderboardData.currentDisplayName = playfabUser.leaderboardSearch.getLeaderboardDisplayName();
 				if ( playfabUser.leaderboardSearch.scoresNearMe )
 				{
-					playfabUser.getLeaderboardAroundMe(playfabUser.leaderboardData.currentSearch);
+					//playfabUser.getLeaderboardAroundMe(playfabUser.leaderboardData.currentSearch);
+					playfabUser.checkLocalPlayerHasEntryOnLeaderboard(playfabUser.leaderboardData.currentSearch);
 				}
 				else
 				{
@@ -8746,6 +8845,7 @@ bind_failed:
         category_text->setFont(smallfont_outline);
         category_text->setColor(makeColor(170, 134, 102, 255));
 #ifdef USE_PLAYFAB
+		playfabUser.leaderboardSearch.challengeBoard = PlayfabUser_t::LeaderboardSearch_t::CHALLENGE_BOARD_NONE;
 		if ( boardType == BoardType::ONLINE_FRIENDS )
 		{
 			playfabUser.leaderboardSearch.daily = true;
@@ -8753,6 +8853,22 @@ bind_failed:
 		else if ( boardType == BoardType::ONLINE_WORLD )
 		{
 			playfabUser.leaderboardSearch.daily = false;
+		}
+		else
+		{
+			playfabUser.leaderboardSearch.daily = false;
+			if ( boardType == BoardType::ONLINE_ONESHOT )
+			{
+				playfabUser.leaderboardSearch.challengeBoard = PlayfabUser_t::LeaderboardSearch_t::ChallengeBoards::CHALLENGE_BOARD_ONESHOT;
+			}
+			else if ( boardType == BoardType::ONLINE_UNLIMITED )
+			{
+				playfabUser.leaderboardSearch.challengeBoard = PlayfabUser_t::LeaderboardSearch_t::ChallengeBoards::CHALLENGE_BOARD_UNLIMITED;
+			}
+			else if ( boardType == BoardType::ONLINE_CHALLENGE )
+			{
+				playfabUser.leaderboardSearch.challengeBoard = PlayfabUser_t::LeaderboardSearch_t::ChallengeBoards::CHALLENGE_BOARD_CHALLENGE;
+			}
 		}
 		playfabUser.leaderboardData.currentSearch = playfabUser.leaderboardSearch.getLeaderboardID();
 		playfabUser.leaderboardData.currentDisplayName = playfabUser.leaderboardSearch.getLeaderboardDisplayName();
@@ -8779,8 +8895,8 @@ bind_failed:
 					}
 				}
 			}
-			if ( boardType != BoardType::ONLINE_FRIENDS &&
-				boardType != BoardType::ONLINE_WORLD ) {
+			if ( boardType == BoardType::LOCAL_MULTI
+				|| boardType == BoardType::LOCAL_SINGLE ) {
 				return;
 			}
 			auto window = static_cast<Frame*>(widget.getParent());
@@ -8894,15 +9010,22 @@ bind_failed:
 				auto& leaderboardRanks = leaderboard.displayedRanks;
 				if ( leaderboardRanks.size() == 0 ) {
 					auto field = window->findField("wait_message");
+					int msg = 5306;
+					if ( playfabUser.leaderboardSearch.scoresNearMe
+						&& playfabUser.playerCheckLeaderboardData.find(playfabUser.leaderboardData.currentSearch) != playfabUser.playerCheckLeaderboardData.end()
+						&& !playfabUser.playerCheckLeaderboardData[playfabUser.leaderboardData.currentSearch].hasData )
+					{
+						msg = 6108; // you do not have any scores to compare
+					}
 					if ( !field ) {
 						field = window->addField("wait_message", 1024);
 						field->setFont(bigfont_outline);
-						field->setText(Language::get(5306));
+						field->setText(Language::get(msg));
 						field->setSize(SDL_Rect{ 30, 148, 932, 468 });
 						field->setJustify(Field::justify_t::CENTER);
 					}
 					else {
-						field->setText(Language::get(5306));
+						field->setText(Language::get(msg));
 					}
 				}
 				else {
@@ -8956,16 +9079,33 @@ bind_failed:
             const char* text;
             void (*func)(Button& button);
         };
-        static const Tab tabs[] = {
+		static std::vector<Tab> tabs;
+		tabs = {
             {"local", Language::get(5308), TAB_FN(BoardType::LOCAL_SINGLE)},
             {"lan", Language::get(5309), TAB_FN(BoardType::LOCAL_MULTI)},
 #ifdef USE_PLAYFAB
-            //{"world", Language::get(5311), TAB_FN(BoardType::ONLINE_WORLD)},
-            //{"friends", Language::get(5310), TAB_FN(BoardType::ONLINE_FRIENDS)},
+            {"world", Language::get(5311), TAB_FN(BoardType::ONLINE_WORLD)},
+            {"friends", Language::get(5310), TAB_FN(BoardType::ONLINE_FRIENDS)},
 #endif
         };
-        static constexpr int num_tabs = sizeof(tabs) / sizeof(tabs[0]);
-        for (int c = 0; c < num_tabs; ++c) {
+
+		if ( boardType == BoardType::ONLINE_ONESHOT )
+		{
+			tabs.clear();
+			tabs.push_back({ "oneshot", Language::get(6110), TAB_FN(BoardType::ONLINE_ONESHOT) });
+		}
+		else if ( boardType == BoardType::ONLINE_UNLIMITED )
+		{
+			tabs.clear();
+			tabs.push_back({ "unlimited", Language::get(6111), TAB_FN(BoardType::ONLINE_UNLIMITED) });
+		}
+		else if ( boardType == BoardType::ONLINE_CHALLENGE )
+		{
+			tabs.clear();
+			tabs.push_back({ "challenge", Language::get(6112), TAB_FN(BoardType::ONLINE_CHALLENGE) });
+		}
+
+        for (int c = 0; c < tabs.size(); ++c) {
             Button* tab = window->addButton(tabs[c].name);
             tab->setText(tabs[c].text);
             tab->setFont(bigfont_outline);
@@ -8979,7 +9119,7 @@ bind_failed:
 			tab->setTickCallback([](Widget& widget){
 			    auto tab = static_cast<Button*>(&widget);
 			    int index = 0;
-			    for (; index < num_tabs; ++index) {
+			    for (; index < tabs.size(); ++index) {
 			        if (!strcmp(tabs[index].name, tab->getName())) {
 			            break;
 			        }
@@ -8998,8 +9138,8 @@ bind_failed:
 			    }
 			    });
 
-            constexpr int fullw = 184 * num_tabs + 20 * (num_tabs - 1);
-            constexpr int xbegin = (992 - fullw) / 2;
+            const int fullw = 184 * tabs.size() + 20 * (tabs.size() - 1);
+            const int xbegin = (992 - fullw) / 2;
             const int x = xbegin + (184 + 20) * c;
             tab->setSize(SDL_Rect{x, 70, 184, 64});
 
@@ -9012,7 +9152,7 @@ bind_failed:
             if (c > 0) {
                 tab->setWidgetLeft(tabs[c - 1].name);
             }
-            if (c < num_tabs - 1) {
+            if (c < tabs.size() - 1) {
                 tab->setWidgetRight(tabs[c + 1].name);
             }
         }
@@ -9028,9 +9168,23 @@ bind_failed:
 		tab_left->setCallback([](Button& button){
 		    auto window = static_cast<Frame*>(button.getParent());
             int tab_index = static_cast<int>(boardType);
+			if ( boardType == BoardType::ONLINE_ONESHOT )
+			{
+				return;
+			}
+			if ( boardType == BoardType::ONLINE_UNLIMITED )
+			{
+				return;
+			}
+			if ( boardType == BoardType::ONLINE_CHALLENGE )
+			{
+				return;
+			}
             if (tab_index > 0) {
-                auto tab = window->findButton(tabs[tab_index - 1].name); assert(tab);
-                tab->activate();
+				if ( auto tab = window->findButton(tabs[tab_index - 1].name) )
+				{
+					tab->activate();
+				}
             }
 		    });
 		tab_left->setWidgetSearchParent(window->getName());
@@ -9052,9 +9206,23 @@ bind_failed:
 		tab_right->setCallback([](Button& button){
 		    auto window = static_cast<Frame*>(button.getParent());
             int tab_index = static_cast<int>(boardType);
-            if (tab_index < num_tabs - 1) {
-                auto tab = window->findButton(tabs[tab_index + 1].name); assert(tab);
-                tab->activate();
+			if ( boardType == BoardType::ONLINE_ONESHOT )
+			{
+				return;
+			}
+			if ( boardType == BoardType::ONLINE_UNLIMITED )
+			{
+				return;
+			}
+			if ( boardType == BoardType::ONLINE_CHALLENGE )
+			{
+				return;
+			}
+            if (tab_index < tabs.size() - 1) {
+				if ( auto tab = window->findButton(tabs[tab_index + 1].name) )
+				{
+					tab->activate();
+				}
             }
 		    });
 		tab_right->setWidgetSearchParent(window->getName());
@@ -9063,7 +9231,7 @@ bind_failed:
 		tab_right->addWidgetAction("MenuAlt2", "open_filters");
         tab_right->addWidgetAction("MenuPageLeft", "tab_left");
         tab_right->addWidgetAction("MenuPageRight", "tab_right");
-        tab_right->setWidgetLeft(tabs[num_tabs - 1].name);
+        tab_right->setWidgetLeft(tabs[tabs.size() - 1].name);
 
         auto slider = window->addSlider("scroll_slider");
         slider->setRailSize(SDL_Rect{38, 170, 30, 420});
@@ -9113,7 +9281,8 @@ bind_failed:
                     &topscores : &topscoresMultiplayer;
                 widget.setInvisible(scores->first == nullptr);
             }
-            else if (boardType == BoardType::ONLINE_FRIENDS || boardType == BoardType::ONLINE_WORLD) {
+            else
+			{
                 widget.setInvisible(true);
             }
 		    });
@@ -9192,7 +9361,8 @@ bind_failed:
 			if ( boardType == BoardType::LOCAL_SINGLE || boardType == BoardType::LOCAL_MULTI ) {
 				widget.setInvisible(true);
 			}
-			else if ( boardType == BoardType::ONLINE_FRIENDS || boardType == BoardType::ONLINE_WORLD ) {
+			else 
+			{
 				widget.setInvisible(false);
 			}
 		});
@@ -9488,7 +9658,7 @@ bind_failed:
 /******************************************************************************/
 
 	static void archivesLeaderboards(Button& button) {
-        createLeaderboards();
+        createLeaderboards("");
 	}
 
 	static void archivesDungeonCompendium(Button& button) {
@@ -9926,6 +10096,8 @@ bind_failed:
 		currentLobbyType = LobbyType::None;
 
 		gameModeManager.currentSession.restoreSavedServerFlags();
+		gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
+		gameModeManager.currentSession.challengeRun.reset();
 
 	    closeNetworkInterfaces();
 
@@ -12987,8 +13159,19 @@ failed:
 			setting->setDisabled(index != 0);
 			switch (c) {
 			case 0:
+				if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_HUNGER) )
+				{
+					label->setColor(makeColor(128, 128, 128, 255));
+				}
 				setting->setPressed(!allSettings.hunger_enabled);
-				setting->setCallback([](Button& button){soundCheckmark(); allSettings.hunger_enabled = !button.isPressed();});
+				setting->setCallback([](Button& button){
+					if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_HUNGER) )
+					{
+						soundError();
+						button.setPressed(!allSettings.hunger_enabled);
+						return;
+					}
+					soundCheckmark(); allSettings.hunger_enabled = !button.isPressed();});
                 if (multiplayer != CLIENT) {
                     setting->setTickCallback([](Widget& widget) {
 						if (!main_menu_frame) {
@@ -13001,36 +13184,124 @@ failed:
                 }
 				break;
 			case 1:
+				if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_MINOTAURS) )
+				{
+					label->setColor(makeColor(128, 128, 128, 255));
+				}
 				setting->setPressed(!allSettings.minotaur_enabled);
-				setting->setCallback([](Button& button){soundCheckmark(); allSettings.minotaur_enabled = !button.isPressed();});
+				setting->setCallback([](Button& button){
+					if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_MINOTAURS) )
+					{
+						soundError();
+						button.setPressed(!allSettings.minotaur_enabled);
+						return;
+					}
+					soundCheckmark(); allSettings.minotaur_enabled = !button.isPressed();});
 				break;
 			case 2:
+				if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_LIFESAVING) )
+				{
+					label->setColor(makeColor(128, 128, 128, 255));
+				}
 				setting->setPressed(allSettings.extra_life_enabled);
-				setting->setCallback([](Button& button){soundCheckmark(); allSettings.extra_life_enabled = button.isPressed();});
+				setting->setCallback([](Button& button){
+					if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_LIFESAVING) )
+					{
+						soundError();
+						button.setPressed(allSettings.extra_life_enabled);
+						return;
+					}
+					soundCheckmark(); allSettings.extra_life_enabled = button.isPressed();});
 				break;
 			case 3:
+				if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_KEEPINVENTORY) )
+				{
+					label->setColor(makeColor(128, 128, 128, 255));
+				}
 				setting->setPressed(allSettings.keep_inventory_enabled);
-				setting->setCallback([](Button& button){soundCheckmark(); allSettings.keep_inventory_enabled = button.isPressed();});
+				setting->setCallback([](Button& button){
+					if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_KEEPINVENTORY) )
+					{
+						soundError();
+						button.setPressed(allSettings.keep_inventory_enabled);
+						return;
+					}
+					soundCheckmark(); allSettings.keep_inventory_enabled = button.isPressed();});
 				break;
 			case 4:
+				if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_TRAPS) )
+				{
+					label->setColor(makeColor(128, 128, 128, 255));
+				}
 				setting->setPressed(!allSettings.random_traps_enabled);
-				setting->setCallback([](Button& button){soundCheckmark(); allSettings.random_traps_enabled = !button.isPressed();});
+				setting->setCallback([](Button& button){
+					if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_TRAPS) )
+					{
+						soundError();
+						button.setPressed(!allSettings.random_traps_enabled);
+						return;
+					}
+					soundCheckmark(); allSettings.random_traps_enabled = !button.isPressed();});
 				break;
 			case 5:
+				if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_FRIENDLYFIRE) )
+				{
+					label->setColor(makeColor(128, 128, 128, 255));
+				}
 				setting->setPressed(!allSettings.friendly_fire_enabled);
-				setting->setCallback([](Button& button){soundCheckmark(); allSettings.friendly_fire_enabled = !button.isPressed();});
+				setting->setCallback([](Button& button){
+					if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_FRIENDLYFIRE) )
+					{
+						soundError();
+						button.setPressed(!allSettings.friendly_fire_enabled);
+						return;
+					}
+					soundCheckmark(); allSettings.friendly_fire_enabled = !button.isPressed();});
 				break;
 			case 6:
+				if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_CLASSIC) )
+				{
+					label->setColor(makeColor(128, 128, 128, 255));
+				}
 				setting->setPressed(allSettings.classic_mode_enabled);
-				setting->setCallback([](Button& button){soundCheckmark(); allSettings.classic_mode_enabled = button.isPressed();});
+				setting->setCallback([](Button& button){
+					if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_CLASSIC) )
+					{
+						soundError();
+						button.setPressed(allSettings.classic_mode_enabled);
+						return;
+					}
+					soundCheckmark(); allSettings.classic_mode_enabled = button.isPressed();});
 				break;
 			case 7:
+				if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_HARDCORE) )
+				{
+					label->setColor(makeColor(128, 128, 128, 255));
+				}
 				setting->setPressed(allSettings.hardcore_mode_enabled);
-				setting->setCallback([](Button& button){soundCheckmark(); allSettings.hardcore_mode_enabled = button.isPressed();});
+				setting->setCallback([](Button& button){
+					if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_HARDCORE) )
+					{
+						soundError();
+						button.setPressed(allSettings.hardcore_mode_enabled);
+						return;
+					}
+					soundCheckmark(); allSettings.hardcore_mode_enabled = button.isPressed();});
 				break;
 			case 8:
+				if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_CHEATS) )
+				{
+					label->setColor(makeColor(128, 128, 128, 255));
+				}
 				setting->setPressed(allSettings.cheats_enabled);
-				setting->setCallback([](Button& button){soundCheckmark(); allSettings.cheats_enabled = button.isPressed();});
+				setting->setCallback([](Button& button){
+					if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_CHEATS) )
+					{
+						soundError();
+						button.setPressed(allSettings.cheats_enabled);
+						return;
+					}
+					soundCheckmark(); allSettings.cheats_enabled = button.isPressed();});
 				break;
 			}
 		}
@@ -13176,7 +13447,8 @@ failed:
 		custom_difficulty->addWidgetAction("MenuPageLeftAlt", "privacy");
 		custom_difficulty->setWidgetBack("back_button");
 		custom_difficulty->setWidgetUp("hard");
-		if ( index != 0 )
+		if ( index != 0 || gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT
+			|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN )
 		{
 			custom_difficulty->setWidgetDown(online ? "invite" : "player_count_2");
 		}
@@ -13205,7 +13477,8 @@ failed:
 		customseed_header->setHJustify(Field::justify_t::CENTER);
 		customseed_header->setVJustify(Field::justify_t::TOP);
 
-		if ( index != 0 )
+		if ( index != 0 || gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT
+			|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN )
 		{
 			auto seed_box = card->addImage(
 				SDL_Rect{ 64, customseed_header->getSize().y + 23, 196, 36 },
@@ -13214,7 +13487,8 @@ failed:
 				"seed_box"
 			);
 
-			auto customseed_client_text = card->addField("customseed_client_text", 32);
+			std::string name = index != 0 ? "customseed_client_text" : "customseed_server_text";
+			auto customseed_client_text = card->addField(name.c_str(), 32);
 			customseed_client_text->setSize(SDL_Rect{ seed_box->pos.x + 2, seed_box->pos.y + 4, seed_box->pos.w - 4, 28 });
 			customseed_client_text->setFont(smallfont_outline);
 			customseed_client_text->setText(Language::get(6055));
@@ -13236,6 +13510,10 @@ failed:
 				else if ( new_len != old_len || (gameModeManager.currentSession.seededRun.seedString != field->getText()) )
 				{
 					gameModeManager.currentSession.seededRun.setup(gameModeManager.currentSession.seededRun.seedString);
+					if ( !strcmp(field->getName(), "customseed_server_text") )
+					{
+						sendCustomSeedOverNet();
+					}
 					field->setText(gameModeManager.currentSession.seededRun.seedString.c_str());
 				}
 
@@ -13276,7 +13554,7 @@ failed:
 				else {
 					seed_tip->setText(Language::get(6055));
 				}
-			});
+				});
 
 			static auto seed_field_fn = [](const char* text, int index) {
 				size_t old_len = gameModeManager.currentSession.seededRun.seedString.length();
@@ -13350,7 +13628,15 @@ failed:
 				auto field = card->findField("seed"); assert(field);
 				field->setText(buf);
 			};
-			randomize_seed->setCallback([](Button& button) {soundActivate(); randomize_seed_fn(button, button.getOwner()); });
+			randomize_seed->setCallback([](Button& button) {
+				if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT
+					|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN )
+				{
+					soundError();
+					return;
+				}
+				soundActivate(); randomize_seed_fn(button, button.getOwner()); 
+			});
 		}
 
 		auto invite_label = card->addField("invite_label", 64);
@@ -13394,7 +13680,8 @@ failed:
 			invite->addWidgetAction("MenuPageRightAlt", "chat");
 			invite->addWidgetAction("MenuPageLeftAlt", "privacy");
 			invite->setWidgetBack("back_button");
-			if ( index != 0 )
+			if ( index != 0 || gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT
+				|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN )
 			{
 				invite->setWidgetUp("custom_difficulty");
 			}
@@ -13678,7 +13965,15 @@ failed:
 			player_count->addWidgetAction("MenuPageRightAlt", "chat");
 			player_count->addWidgetAction("MenuPageLeftAlt", "privacy");
 			player_count->setWidgetBack("back_button");
-			player_count->setWidgetUp(online ? "open" : "custom_difficulty");
+			if ( index != 0 || gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT
+				|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN )
+			{
+				player_count->setWidgetUp(online ? "open" : "seed");
+			}
+			else
+			{
+				player_count->setWidgetUp(online ? "open" : "custom_difficulty");
+			}
 		    player_count->setWidgetLeft((std::string("player_count_") + std::to_string(c + 1)).c_str());
 		    player_count->setWidgetRight((std::string("player_count_") + std::to_string(c + 3)).c_str());
 		    player_count->setWidgetDown((std::string("kick_player_") + std::to_string(c + 2)).c_str());
@@ -17055,6 +17350,14 @@ failed:
 
 		GameplayPreferences_t::reset();
 		gameModeManager.currentSession.seededRun.reset();
+		if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN
+			|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT )
+		{
+			if ( gameModeManager.currentSession.challengeRun.isActive() )
+			{
+				gameModeManager.currentSession.seededRun.setup(std::to_string(gameModeManager.currentSession.challengeRun.seed));
+			}
+		}
 
         if (type == LobbyType::LobbyJoined) {
             sendPlayerOverNet();
@@ -18721,7 +19024,9 @@ failed:
 		    closeNetworkInterfaces();
 		    createLocalOrNetworkMenu();
 
-			gameModeManager.currentSession.restoreSavedServerFlags();
+			//gameModeManager.currentSession.restoreSavedServerFlags();
+			//gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
+			//gameModeManager.currentSession.challengeRun.reset();
 
 #ifdef NINTENDO
 			nxEnableAutoSleep();
@@ -20203,6 +20508,8 @@ failed:
 
 	static void createPlayWindow() {
 		multiplayer = SINGLE;
+		gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
+		gameModeManager.currentSession.challengeRun.reset();
 
 		auto dimmer = main_menu_frame->addFrame("dimmer");
 		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
@@ -20235,26 +20542,45 @@ failed:
 
 		bool continueAvailable = anySaveFileExists();
 
-		auto hall_of_trials_button = window->addButton("hall_of_trials");
-		hall_of_trials_button->setSize(SDL_Rect{134, 176, 168, 52});
-		hall_of_trials_button->setBackground("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrials00.png");
-		hall_of_trials_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrialsHigh00.png");
-		hall_of_trials_button->setBackgroundActivated("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrialsPress00.png");
-		hall_of_trials_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		hall_of_trials_button->setColor(makeColor(255, 255, 255, 255));
-		hall_of_trials_button->setText(Language::get(5560));
-		hall_of_trials_button->setFont(smallfont_outline);
-		hall_of_trials_button->setWidgetSearchParent(window->getName());
+		auto challenge_button = window->addButton("challenges");
+		challenge_button->setSize(SDL_Rect{134, 176, 168, 52});
+		challenge_button->setBackground("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrials00.png");
+		challenge_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrialsHigh00.png");
+		challenge_button->setBackgroundActivated("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrialsPress00.png");
+		challenge_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		challenge_button->setColor(makeColor(255, 255, 255, 255));
+		challenge_button->setText(Language::get(5560));
+		challenge_button->setFont(smallfont_outline);
+		challenge_button->setWidgetSearchParent(window->getName());
 		if (continueAvailable) {
-			hall_of_trials_button->setWidgetUp("continue");
+			challenge_button->setWidgetUp("continue");
 		} else {
-			hall_of_trials_button->setWidgetUp("new");
+			challenge_button->setWidgetUp("new");
 		}
-		hall_of_trials_button->setWidgetBack("back_button");
-		hall_of_trials_button->setCallback([](Button&){
-			soundActivate();
-			createHallofTrialsMenu();
-			});
+		challenge_button->setWidgetBack("back_button");
+		challenge_button->setCallback(playChallengeLoadingWindow);
+
+		//auto hall_of_trials_button = window->addButton("hall_of_trials");
+		//hall_of_trials_button->setSize(SDL_Rect{ 134, 176, 168, 52 });
+		//hall_of_trials_button->setBackground("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrials00.png");
+		//hall_of_trials_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrialsHigh00.png");
+		//hall_of_trials_button->setBackgroundActivated("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrialsPress00.png");
+		//hall_of_trials_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		//hall_of_trials_button->setColor(makeColor(255, 255, 255, 255));
+		//hall_of_trials_button->setText(Language::get(5560));
+		//hall_of_trials_button->setFont(smallfont_outline);
+		//hall_of_trials_button->setWidgetSearchParent(window->getName());
+		//if ( continueAvailable ) {
+		//	hall_of_trials_button->setWidgetUp("continue");
+		//}
+		//else {
+		//	hall_of_trials_button->setWidgetUp("new");
+		//}
+		//hall_of_trials_button->setWidgetBack("back_button");
+		//hall_of_trials_button->setCallback([](Button&){
+		//	soundActivate();
+		//	createHallofTrialsMenu();
+		//	});
 
 		(void)createBackWidget(window, [](Button& button){
 			soundCancel();
@@ -20326,7 +20652,7 @@ failed:
 				new_button->select();
 			}
 		} else {
-			hall_of_trials_button->select();
+			//hall_of_trials_button->select();
 		}
 	}
 
@@ -20684,6 +21010,11 @@ failed:
 			frame = static_cast<Frame*>(frame->getParent());
 			frame = static_cast<Frame*>(frame->getParent());
 			frame->removeSelf();
+
+			gameModeManager.currentSession.restoreSavedServerFlags();
+			gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
+			gameModeManager.currentSession.challengeRun.reset();
+
 			createPlayWindow();
 			}, SDL_Rect{42, 4, 0, 0});
 
@@ -23112,7 +23443,12 @@ failed:
 #endif
 			}
 			else if (main_menu_fade_destination == FadeDestination::GameStart) {
-				gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
+				if ( gameModeManager.currentMode == GameModeManager_t::GAME_MODE_TUTORIAL
+					|| gameModeManager.currentMode == GameModeManager_t::GAME_MODE_TUTORIAL_INIT )
+				{
+					gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
+				}
+
 
 				if ( gameModeManager.allowsSaves() )
 				{
@@ -28994,4 +29330,1031 @@ failed:
 		});
 	}
 #endif
+
+	static void playChallengeBegin(PlayfabUser_t::PeriodicalEvents_t::Event_t& e)
+	{
+		if ( e.lid.find("oneshot") != std::string::npos )
+		{
+			gameModeManager.setMode(GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT);
+		}
+		else
+		{
+			gameModeManager.setMode(GameModeManager_t::GAME_MODE_CUSTOM_RUN);
+		}
+		gameModeManager.currentSession.challengeRun.setup(e.scenario);
+
+		assert(main_menu_frame);
+		auto window = main_menu_frame->findFrame("challenge_window");
+		if ( window ) {
+			auto dimmer = static_cast<Frame*>(window->getParent()); assert(dimmer);
+			dimmer->removeSelf();
+		}
+
+		gameModeManager.currentSession.saveServerFlags();
+		gameModeManager.currentSession.challengeRun.applySettings();
+
+		createLocalOrNetworkMenu();
+
+		if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT )
+		{
+			if ( auto frame = main_menu_frame->findFrame("local_or_network_window") )
+			{
+				if ( auto local_btn = frame->findButton("local") )
+				{
+					local_btn->activate();
+				}
+			}
+		}
+	}
+
+	static void playChallengeEventExpiringWarning(std::string _lid)
+	{
+		static std::string lid;
+		lid = _lid;
+		auto prompt = binaryPrompt(
+			Language::get(6109),
+			Language::get(5884),
+			Language::get(5860),
+			[](Button&) {
+				// proceed to game
+				for ( auto& e : playfabUser.periodicalEvents.periodicalEvents )
+				{
+					if ( e.lid == lid )
+					{
+						soundActivate();
+						closeBinary();
+						playChallengeBegin(e);
+						return;
+					}
+				}
+
+				// error?
+				soundCancel();
+				closeBinary();
+				assert(main_menu_frame);
+
+				auto challenge_window = main_menu_frame->findFrame("challenge_window"); assert(challenge_window);
+				auto challenge_btn = challenge_window->findButton(lid.c_str());
+				assert(challenge_btn);
+				challenge_btn->select();
+			},
+			[](Button&) {
+				soundCancel();
+				closeBinary();
+				assert(main_menu_frame);
+
+				auto challenge_window = main_menu_frame->findFrame("challenge_window"); assert(challenge_window);
+				auto challenge_btn = challenge_window->findButton(lid.c_str());
+				assert(challenge_btn);
+				challenge_btn->select();
+			}, false, false);
+		if ( auto text = prompt->findField("text") )
+		{
+			SDL_Rect pos = text->getSize();
+			pos.y -= 4;
+			text->setSize(pos);
+		}
+	}
+
+	const int hoursLeftWarning = 48;
+	static void playChallengeVerifyEvent(Button& button)
+	{
+		static std::string lid;
+		lid = button.getName();
+
+		auto prompt = monoPrompt(
+			"Loading challenge...",
+			Language::get(5860),
+			[](Button&) {
+				soundCancel();
+				closeMono();
+				assert(main_menu_frame);
+				
+				auto challenge_window = main_menu_frame->findFrame("challenge_window"); assert(challenge_window);
+				auto challenge_btn = challenge_window->findButton(lid.c_str());
+				assert(challenge_btn);
+				challenge_btn->select();
+			});
+
+		prompt->setTickCallback([](Widget& widget) {
+			Frame* frame = static_cast<Frame*>(&widget);
+
+			int throwError = 0;
+
+			std::string prompt = "Loading challenge";
+			if ( playfabUser.bLoggedIn )
+			{
+				for ( auto& e : playfabUser.periodicalEvents.periodicalEvents )
+				{
+					if ( e.lid == lid )
+					{
+						if ( !e.loading )
+						{
+							if ( e.verifiedForGameStart )
+							{
+								soundActivate();
+								closeMono();
+								if ( !e.attempted )
+								{
+									if ( e.hoursLeft < hoursLeftWarning )
+									{
+										// warning on timer
+										playChallengeEventExpiringWarning(lid);
+										return;
+									}
+									else
+									{
+										// advance to lobby
+										playChallengeBegin(e);
+										return;
+									}
+								}
+								else
+								{
+									// hook for re-attempts
+								}
+							}
+							else if ( e.errorType != 0 )
+							{
+								throwError = e.errorType;
+							}
+						}
+						break;
+					}
+				}
+				
+				if ( frame->getTicks() > TICKS_PER_SECOND * 15
+					|| !playfabUser.bLoggedIn
+					|| throwError
+				)
+				{
+					closeMono();
+					if ( throwError == 2 )
+					{
+						errorPrompt(Language::get(6116), Language::get(5884), [](Button&) {
+							soundCancel();
+							closeMono();
+
+							assert(main_menu_frame);
+							destroyMainMenu();
+							createMainMenu(false);
+							});
+					}
+					else
+					{
+						errorPrompt(Language::get(6115), Language::get(5884), [](Button&) {
+							soundCancel();
+							closeMono();
+
+							assert(main_menu_frame);
+							destroyMainMenu();
+							createMainMenu(false);
+						});
+					}
+
+					// error, throw to main menu
+					return;
+				}
+			}
+
+			int dots = 1 + (frame->getTicks() % 150) / 50;
+			while ( dots > 0 )
+			{
+				prompt += '.';
+				--dots;
+			}
+			if ( auto txt = frame->findField("text") )
+			{
+				txt->setText(prompt.c_str());
+			}
+		});
+	}
+
+	static void playChallengeLoadingWindow(Button& button) {
+		playfabUser.periodicalEvents.periodicalEvents.clear();
+		playfabUser.periodicalEvents.awaitingData = false;
+		playfabUser.periodicalEvents.error = false;
+
+		auto prompt = monoPrompt(
+			Language::get(6113),
+			Language::get(5860),
+			[](Button&) {
+				soundCancel();
+				closeMono();
+
+				assert(main_menu_frame);
+				auto window = main_menu_frame->findFrame("play_game_window");
+				if ( window ) {
+					if ( auto challenge_button = window->findButton("challenges") )
+					{
+						challenge_button->select();
+					}
+				}
+			});
+		if ( !playfabUser.bLoggedIn )
+		{
+			if ( playfabUser.authenticationRefresh > 0
+				&& playfabUser.authenticationRefresh < TICKS_PER_SECOND * 60 )
+			{
+				playfabUser.authenticationRefresh = 1; // try force login
+			}
+		}
+		prompt->setTickCallback([](Widget& widget) {
+			Frame* frame = static_cast<Frame*>(&widget);
+
+			if ( frame->getTicks() > TICKS_PER_SECOND * 15 || playfabUser.periodicalEvents.error )
+			{
+				closeMono();
+				errorPrompt(playfabUser.periodicalEvents.error ? Language::get(6117) : Language::get(6114),
+					Language::get(5884), [](Button&) {
+					soundCancel();
+					closeMono();
+
+					assert(main_menu_frame);
+					auto window = main_menu_frame->findFrame("play_game_window");
+					if ( window ) {
+						if ( auto challenge_button = window->findButton("challenges") )
+						{
+							challenge_button->select();
+						}
+					}
+				});
+
+				// error
+				return;
+			}
+
+			std::string prompt = Language::get(6113);
+			if ( playfabUser.bLoggedIn && !playfabUser.periodicalEvents.error )
+			{
+				if ( !playfabUser.periodicalEvents.awaitingData 
+					&& playfabUser.periodicalEvents.periodicalEvents.size() == 0 )
+				{
+					playfabUser.periodicalEvents.getPeriodicalEvents();
+					if ( playfabUser.periodicalEvents.awaitingData )
+					{
+						// in transit
+					}
+					else
+					{
+						// unknown failure
+					}
+				}
+				else if ( playfabUser.periodicalEvents.awaitingData )
+				{
+					prompt = "Fetching data";
+				}
+				else if ( !playfabUser.periodicalEvents.awaitingData 
+					&& playfabUser.periodicalEvents.periodicalEvents.size() == 3 )
+				{
+					// success
+					closeMono();
+					soundActivate();
+
+					// remove "Play Game" window
+					auto window = main_menu_frame->findFrame("play_game_window");
+					if ( window ) {
+						window = static_cast<Frame*>(window->getParent());
+						window->removeSelf();
+					}
+
+					playChallenge();
+					return;
+				}
+			}
+
+			int dots = 1 + (frame->getTicks() % 150) / 50;
+			while ( dots > 0 )
+			{
+				prompt += '.';
+				--dots;
+			}
+			if ( auto txt = frame->findField("text") )
+			{
+				txt->setText(prompt.c_str());
+			}
+		});
+	}
+
+	static void playChallenge() {
+		multiplayer = SINGLE;
+
+		auto dimmer = main_menu_frame->addFrame("dimmer");
+		dimmer->setSize(SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY });
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(makeColor(0, 0, 0, 63));
+		dimmer->setBorder(0);
+
+		auto window = dimmer->addFrame("challenge_window");
+		window->setSize(SDL_Rect{
+			(Frame::virtualScreenX - 404) / 2,
+			(Frame::virtualScreenY - 426) / 2,
+			404,
+			426 });
+		window->setActualSize(SDL_Rect{ 0, 0, 404, 426 });
+		window->setColor(0);
+		window->setBorder(0);
+
+		auto background = window->addImage(
+			window->getActualSize(),
+			0xffffffff,
+			"*images/ui/Main Menus/Challenges/UI_SeedMenu_Window02.png",
+			"background"
+		);
+
+		auto banner_title = window->addField("banner", 32);
+		banner_title->setSize(SDL_Rect{ 404 / 2 - 196 / 2, 10, 196, 48 });
+		banner_title->setText(Language::get(6119));
+		banner_title->setFont(smallfont_outline);
+		banner_title->setJustify(Field::justify_t::CENTER);
+
+		auto tooltip = window->addField("tooltip", 128);
+		tooltip->setSize(SDL_Rect{ 54, window->getSize().h - 94, 296, 46 });
+		tooltip->setText(Language::get(6119));
+		tooltip->setFont(smallfont_outline);
+		tooltip->setJustify(Field::justify_t::CENTER);
+		tooltip->setColor(makeColor(183, 155, 119, 255));
+		tooltip->setTickCallback([](Widget& widget) {
+			Field* txt = static_cast<Field*>(&widget);
+			if ( Frame* parent = static_cast<Frame*>(txt->getParent()) )
+			{
+				if ( auto btn = parent->findButton("lid_victory_seed_oneshot") )
+				{
+					if ( btn->isSelected() )
+					{
+						txt->setText(Language::get(6120));
+					}
+				}
+				if ( auto btn = parent->findButton("challenge1_leaderboards") )
+				{
+					if ( btn->isSelected() )
+					{
+						txt->setText(Language::get(6120));
+					}
+				}
+				if ( auto btn = parent->findButton("lid_victory_seed_unlimited") )
+				{
+					if ( btn->isSelected() )
+					{
+						txt->setText(Language::get(6121));
+					}
+				}
+				if ( auto btn = parent->findButton("challenge2_leaderboards") )
+				{
+					if ( btn->isSelected() )
+					{
+						txt->setText(Language::get(6121));
+					}
+				}
+				if ( auto btn = parent->findButton("lid_victory_seed_challenge") )
+				{
+					if ( btn->isSelected() )
+					{
+						txt->setText(Language::get(6122));
+					}
+				}
+				if ( auto btn = parent->findButton("challenge3_leaderboards") )
+				{
+					if ( btn->isSelected() )
+					{
+						txt->setText(Language::get(6122));
+					}
+				}
+			}
+			});
+
+		const int baseX = 0;
+		const int baseY = 4;
+
+		auto challenge1_time = window->addImage(
+			SDL_Rect{baseX + 254, baseY + 72, 102, 30},
+			0xffffffff,
+			"*images/ui/Main Menus/Challenges/UI_SeedMenu_Period00.png",
+			"challenge1_time"
+		);
+
+		auto challenge1_completion = window->addImage(
+			SDL_Rect{ baseX + 34, baseY + 78, 40, 46 },
+			0xffffffff,
+			"*images/ui/Main Menus/Challenges/seed_attempted.png",
+			"challenge1_completion"
+		);
+		challenge1_completion->disabled = true;
+
+		if ( auto challenge1_time_txt = window->addField("challenge1_time_txt", 128) )
+		{
+			SDL_Rect pos = challenge1_time->pos;
+			pos.x += 24 + 4;
+			pos.y += 6;
+			pos.w = 64;
+			pos.h = 22;
+			challenge1_time_txt->setSize(pos);
+			challenge1_time_txt->setFont(smallfont_outline);
+			challenge1_time_txt->setText("-");
+			challenge1_time_txt->setColor(makeColor(183, 155, 119, 255));
+			challenge1_time_txt->setHJustify(Field::justify_t::LEFT);
+			challenge1_time_txt->setVJustify(Field::justify_t::TOP);
+			challenge1_time_txt->setTickCallback([](Widget& widget) {
+				Field* txt = static_cast<Field*>(&widget);
+				txt->setColor(makeColor(183, 155, 119, 255));
+
+				Frame::image_t* completion_img = nullptr;
+				if ( auto frame = static_cast<Frame*>(widget.getParent()) )
+				{
+					completion_img = frame->findImage("challenge1_completion");
+				}
+
+				for ( auto& e : playfabUser.periodicalEvents.periodicalEvents )
+				{
+					if ( e.lid == "lid_victory_seed_oneshot" )
+					{
+						std::string timeLeft = "";
+						char buf[128] = "";
+						if ( e.hoursLeft >= 24 )
+						{
+							int days = e.hoursLeft / 24;
+							int hours = e.hoursLeft - days * 24;
+							snprintf(buf, sizeof(buf), "%dd %dh", days, hours);
+						}
+						else
+						{
+							snprintf(buf, sizeof(buf), "%dh %dm", e.hoursLeft, e.minutesLeft);
+							if ( e.hoursLeft < hoursLeftWarning )
+							{
+								txt->setColor(hudColors.characterSheetRed);
+							}
+						}
+						if ( completion_img )
+						{
+							completion_img->disabled = !e.attempted;
+						}
+						txt->setText(buf);
+						break;
+					}
+				}
+				});
+		}
+
+		auto challenge1_leaderboard_img = window->addImage(
+			SDL_Rect{ baseX + 260, baseY + 110, 22, 18 },
+			0xffffffff,
+			"*images/ui/Main Menus/Challenges/leaderboard_icon.png",
+			"challenge1_leaderboards_img"
+		);
+		challenge1_leaderboard_img->disabled = true;
+
+		if ( auto challenge1_button = window->addButton("lid_victory_seed_oneshot") )
+		{
+			challenge1_button->setSize(SDL_Rect{ baseX + 80, baseY + 70, 168, 62 });
+			challenge1_button->setBackground("*images/ui/Main Menus/Challenges/UI_SeedMenu_Button_00.png");
+			challenge1_button->setBackgroundHighlighted("*images/ui/Main Menus/Challenges/UI_SeedMenu_ButtonHigh_00.png");
+			challenge1_button->setBackgroundActivated("*images/ui/Main Menus/Challenges/UI_SeedMenu_ButtonPress_00.png");
+			challenge1_button->setHighlightColor(makeColor(255, 255, 255, 255));
+			challenge1_button->setColor(makeColor(255, 255, 255, 255));
+			challenge1_button->setText(Language::get(6110));
+			challenge1_button->setFont(smallfont_outline);
+			challenge1_button->setWidgetSearchParent(window->getName());
+			challenge1_button->setWidgetDown("lid_victory_seed_unlimited");
+			challenge1_button->setWidgetRight("challenge1_leaderboards");
+			challenge1_button->setWidgetBack("back_button");
+			challenge1_button->setTickCallback([](Widget& widget) {
+				for ( auto& e : playfabUser.periodicalEvents.periodicalEvents )
+				{
+					Button* button = static_cast<Button*>(&widget);
+					if ( e.lid == button->getName() )
+					{
+						Frame* parent = static_cast<Frame*>(widget.getParent());
+						auto leaderboard_btn = parent->findButton(button->getWidgetMovements().at("MenuRight").c_str());
+						if ( leaderboard_btn )
+						{
+							leaderboard_btn->setDisabled(e.locked);
+							leaderboard_btn->setInvisible(e.locked);
+							std::string imgPath = leaderboard_btn->getName();
+							imgPath += "_img";
+							if ( auto leaderboard_img = parent->findImage(imgPath.c_str()) )
+							{
+								leaderboard_img->disabled = leaderboard_btn->isInvisible();
+							}
+						}
+
+						if ( e.locked )
+						{
+							button->setBackground("*images/ui/Main Menus/Challenges/Disabled_Button_00.png");
+							button->setBackgroundHighlighted("*images/ui/Main Menus/Challenges/Disabled_ButtonHigh_00.png");
+							button->setBackgroundActivated("*images/ui/Main Menus/Challenges/Disabled_ButtonPress_00.png");
+						}
+						else
+						{
+							button->setBackground("*images/ui/Main Menus/Challenges/UI_SeedMenu_Button_00.png");
+							button->setBackgroundHighlighted("*images/ui/Main Menus/Challenges/UI_SeedMenu_ButtonHigh_00.png");
+							button->setBackgroundActivated("*images/ui/Main Menus/Challenges/UI_SeedMenu_ButtonPress_00.png");
+						}
+
+						break;
+					}
+				}
+				});
+			challenge1_button->setCallback([](Button& button) {
+				for ( auto& e : playfabUser.periodicalEvents.periodicalEvents )
+				{
+					if ( e.lid == button.getName() )
+					{
+						if ( e.locked )
+						{
+							soundError();
+							return;
+						}
+						e.verifyGameStartSeedForEvent();
+						break;
+					}
+				}
+				soundActivate();
+				playChallengeVerifyEvent(button);
+			});
+			challenge1_button->select();
+		}
+
+		if ( auto challenge1_leaderboards = window->addButton("challenge1_leaderboards") )
+		{
+			challenge1_leaderboards->setSize(SDL_Rect{ baseX + 284, baseY + 106, 72, 26 });
+			challenge1_leaderboards->setBackground("*images/ui/Main Menus/Challenges/tinybtn_base.png");
+			challenge1_leaderboards->setBackgroundHighlighted("*images/ui/Main Menus/Challenges/tinybtn_h.png");
+			challenge1_leaderboards->setBackgroundActivated("*images/ui/Main Menus/Challenges/tinybtn_press.png");
+			challenge1_leaderboards->setHighlightColor(makeColor(255, 255, 255, 255));
+			challenge1_leaderboards->setColor(makeColor(255, 255, 255, 255));
+			challenge1_leaderboards->setText("View");
+			challenge1_leaderboards->setDisabled(true);
+			challenge1_leaderboards->setInvisible(true);
+			challenge1_leaderboards->setFont(smallfont_outline);
+			challenge1_leaderboards->setWidgetSearchParent(window->getName());
+			challenge1_leaderboards->setWidgetDown("challenge2_leaderboards");
+			challenge1_leaderboards->setWidgetLeft("lid_victory_seed_oneshot");
+			challenge1_leaderboards->setWidgetBack("back_button");
+			challenge1_leaderboards->setCallback([](Button&) {
+				soundActivate();
+				createLeaderboards("lid_seed_oneshot");
+				});
+		}
+
+		auto challenge2_time = window->addImage(
+			SDL_Rect{ baseX + 254, baseY + 142, 102, 30 },
+			0xffffffff,
+			"*images/ui/Main Menus/Challenges/UI_SeedMenu_Period00.png",
+			"challenge2_time"
+		);
+
+		auto challenge2_completion = window->addImage(
+			SDL_Rect{ baseX + 34, baseY + 148, 40, 46 },
+			0xffffffff,
+			"*images/ui/Main Menus/Challenges/seed_attempted.png",
+			"challenge2_completion"
+		);
+		challenge2_completion->disabled = true;
+
+		if ( auto challenge2_time_txt = window->addField("challenge2_time_txt", 128) )
+		{
+			SDL_Rect pos = challenge2_time->pos;
+			pos.x += 24 + 4;
+			pos.y += 6;
+			pos.w = 64;
+			pos.h = 22;
+			challenge2_time_txt->setSize(pos);
+			challenge2_time_txt->setFont(smallfont_outline);
+			challenge2_time_txt->setText("-");
+			challenge2_time_txt->setColor(makeColor(183, 155, 119, 255));
+			challenge2_time_txt->setHJustify(Field::justify_t::LEFT);
+			challenge2_time_txt->setVJustify(Field::justify_t::TOP);
+			challenge2_time_txt->setTickCallback([](Widget& widget) {
+				Field* txt = static_cast<Field*>(&widget);
+				txt->setColor(makeColor(183, 155, 119, 255));
+
+				Frame::image_t* completion_img = nullptr;
+				if ( auto frame = static_cast<Frame*>(widget.getParent()) )
+				{
+					completion_img = frame->findImage("challenge2_completion");
+				}
+
+				for ( auto& e : playfabUser.periodicalEvents.periodicalEvents )
+				{
+					if ( e.lid == "lid_victory_seed_unlimited" )
+					{
+						std::string timeLeft = "";
+						char buf[128] = "";
+						if ( e.hoursLeft >= 24 )
+						{
+							int days = e.hoursLeft / 24;
+							int hours = e.hoursLeft - days * 24;
+							snprintf(buf, sizeof(buf), "%dd %dh", days, hours);
+						}
+						else
+						{
+							snprintf(buf, sizeof(buf), "%dh %dm", e.hoursLeft, e.minutesLeft);
+							if ( e.hoursLeft < 12 )
+							{
+								txt->setColor(hudColors.characterSheetRed);
+							}
+						}
+						if ( completion_img )
+						{
+							completion_img->disabled = !e.attempted;
+						}
+						txt->setText(buf);
+						break;
+					}
+				}
+				});
+		}
+
+		auto challenge2_leaderboard_img = window->addImage(
+			SDL_Rect{ baseX + 260, baseY + 180, 22, 18 },
+			0xffffffff,
+			"*images/ui/Main Menus/Challenges/leaderboard_icon.png",
+			"challenge2_leaderboards_img"
+		);
+		challenge2_leaderboard_img->disabled = true;
+
+		if ( auto challenge2_button = window->addButton("lid_victory_seed_unlimited") )
+		{
+			challenge2_button->setSize(SDL_Rect{ baseX + 80, baseY + 140, 168, 62 });
+			challenge2_button->setBackground("*images/ui/Main Menus/Challenges/UI_SeedMenu_Button_00.png");
+			challenge2_button->setBackgroundHighlighted("*images/ui/Main Menus/Challenges/UI_SeedMenu_ButtonHigh_00.png");
+			challenge2_button->setBackgroundActivated("*images/ui/Main Menus/Challenges/UI_SeedMenu_ButtonPress_00.png");
+			challenge2_button->setHighlightColor(makeColor(255, 255, 255, 255));
+			challenge2_button->setColor(makeColor(255, 255, 255, 255));
+			challenge2_button->setText(Language::get(6111));
+			challenge2_button->setFont(smallfont_outline);
+			challenge2_button->setWidgetSearchParent(window->getName());
+			challenge2_button->setWidgetUp("lid_victory_seed_oneshot");
+			challenge2_button->setWidgetDown("lid_victory_seed_challenge");
+			challenge2_button->setWidgetRight("challenge2_leaderboards");
+			challenge2_button->setWidgetBack("back_button");
+			challenge2_button->setTickCallback([](Widget& widget) {
+				for ( auto& e : playfabUser.periodicalEvents.periodicalEvents )
+				{
+					Button* button = static_cast<Button*>(&widget);
+					if ( e.lid == button->getName() )
+					{
+						Frame* parent = static_cast<Frame*>(widget.getParent());
+						auto leaderboard_btn = parent->findButton(button->getWidgetMovements().at("MenuRight").c_str());
+						if ( leaderboard_btn )
+						{
+							leaderboard_btn->setDisabled(e.locked);
+							leaderboard_btn->setInvisible(e.locked);
+							std::string imgPath = leaderboard_btn->getName();
+							imgPath += "_img";
+							if ( auto leaderboard_img = parent->findImage(imgPath.c_str()) )
+							{
+								leaderboard_img->disabled = leaderboard_btn->isInvisible();
+							}
+						}
+
+						if ( e.locked )
+						{
+							button->setBackground("*images/ui/Main Menus/Challenges/Disabled_Button_00.png");
+							button->setBackgroundHighlighted("*images/ui/Main Menus/Challenges/Disabled_ButtonHigh_00.png");
+							button->setBackgroundActivated("*images/ui/Main Menus/Challenges/Disabled_ButtonPress_00.png");
+						}
+						else
+						{
+							button->setBackground("*images/ui/Main Menus/Challenges/UI_SeedMenu_Button_00.png");
+							button->setBackgroundHighlighted("*images/ui/Main Menus/Challenges/UI_SeedMenu_ButtonHigh_00.png");
+							button->setBackgroundActivated("*images/ui/Main Menus/Challenges/UI_SeedMenu_ButtonPress_00.png");
+						}
+						break;
+					}
+				}
+				});
+			challenge2_button->setCallback([](Button& button) {
+				soundActivate();
+				for ( auto& e : playfabUser.periodicalEvents.periodicalEvents )
+				{
+					if ( e.lid == button.getName() )
+					{
+						if ( e.locked )
+						{
+							soundError();
+							return;
+						}
+						e.verifyGameStartSeedForEvent();
+						break;
+					}
+				}
+				playChallengeVerifyEvent(button);
+				});
+		}
+
+		if ( auto challenge2_leaderboards = window->addButton("challenge2_leaderboards") )
+		{
+			challenge2_leaderboards->setSize(SDL_Rect{ baseX + 284, baseY + 176, 72, 26 });
+			challenge2_leaderboards->setBackground("*images/ui/Main Menus/Challenges/tinybtn_base.png");
+			challenge2_leaderboards->setBackgroundHighlighted("*images/ui/Main Menus/Challenges/tinybtn_h.png");
+			challenge2_leaderboards->setBackgroundActivated("*images/ui/Main Menus/Challenges/tinybtn_press.png");
+			challenge2_leaderboards->setHighlightColor(makeColor(255, 255, 255, 255));
+			challenge2_leaderboards->setColor(makeColor(255, 255, 255, 255));
+			challenge2_leaderboards->setText("View");
+			challenge2_leaderboards->setDisabled(true);
+			challenge2_leaderboards->setInvisible(true);
+			challenge2_leaderboards->setFont(smallfont_outline);
+			challenge2_leaderboards->setWidgetSearchParent(window->getName());
+			challenge2_leaderboards->setWidgetUp("challenge1_leaderboards");
+			challenge2_leaderboards->setWidgetDown("challenge3_leaderboards");
+			challenge2_leaderboards->setWidgetLeft("lid_victory_seed_unlimited");
+			challenge2_leaderboards->setWidgetBack("back_button");
+			challenge2_leaderboards->setCallback([](Button&) {
+				soundActivate();
+				createLeaderboards("lid_seed_unlimited");
+				});
+		}
+
+		auto challenge3_time = window->addImage(
+			SDL_Rect{ baseX + 254, baseY + 212, 102, 30 },
+			0xffffffff,
+			"*images/ui/Main Menus/Challenges/UI_SeedMenu_Period00.png",
+			"challenge3_time"
+		);
+
+		auto challenge3_completion = window->addImage(
+			SDL_Rect{ baseX + 34, baseY + 218, 40, 46 },
+			0xffffffff,
+			"*images/ui/Main Menus/Challenges/seed_attempted.png",
+			"challenge3_completion"
+		);
+		challenge3_completion->disabled = true;
+
+		if ( auto challenge3_time_txt = window->addField("challenge3_time_txt", 128) )
+		{
+			SDL_Rect pos = challenge3_time->pos;
+			pos.x += 24 + 4;
+			pos.y += 6;
+			pos.w = 64;
+			pos.h = 72;
+			challenge3_time_txt->setSize(pos);
+			challenge3_time_txt->setFont(smallfont_outline);
+			challenge3_time_txt->setText("-");
+			challenge3_time_txt->setColor(makeColor(183, 155, 119, 255));
+			challenge3_time_txt->setHJustify(Field::justify_t::LEFT);
+			challenge3_time_txt->setVJustify(Field::justify_t::TOP);
+			challenge3_time_txt->setPaddingPerLine(-6);
+			challenge3_time_txt->setTickCallback([](Widget& widget) {
+				Field* txt = static_cast<Field*>(&widget);
+				txt->setColor(makeColor(183, 155, 119, 255));
+
+				Frame::image_t* completion_img = nullptr;
+				Frame::image_t* time_img = nullptr;
+				if ( auto frame = static_cast<Frame*>(widget.getParent()) )
+				{
+					time_img = frame->findImage("challenge3_time");
+					completion_img = frame->findImage("challenge3_completion");
+				}
+
+				for ( auto& e : playfabUser.periodicalEvents.periodicalEvents )
+				{
+					if ( e.lid == "lid_victory_seed_challenge" )
+					{
+						std::string timeLeft = "";
+						char buf[128] = "";
+						if ( e.hoursLeft >= 24 )
+						{
+							int days = e.hoursLeft / 24;
+							int hours = e.hoursLeft - days * 24;
+							if ( e.locked )
+							{
+								snprintf(buf, sizeof(buf), "%s\n%dd %dh", Language::get(6118), days, hours);
+							}
+							else
+							{
+								snprintf(buf, sizeof(buf), "%dd %dh", days, hours);
+							}
+						}
+						else
+						{
+							if ( e.locked )
+							{
+								snprintf(buf, sizeof(buf), "%s\n%dh %dm", Language::get(6118), e.hoursLeft, e.minutesLeft);
+							}
+							else
+							{
+								snprintf(buf, sizeof(buf), "%dh %dm", e.hoursLeft, e.minutesLeft);
+							}
+							if ( e.hoursLeft < 12 )
+							{
+								txt->setColor(hudColors.characterSheetRed);
+							}
+						}
+
+						if ( e.locked )
+						{
+							txt->setColor(makeColor(128, 128, 128, 255));
+						}
+
+						if ( time_img )
+						{
+							if ( e.locked )
+							{
+								time_img->path = "*images/ui/Main Menus/Challenges/UI_SeedMenu_Period_Large00.png";
+								time_img->pos.h = 58;
+							}
+							else
+							{
+								time_img->path = "*images/ui/Main Menus/Challenges/UI_SeedMenu_Period00.png";
+								time_img->pos.h = 30;
+							}
+						}
+						if ( completion_img )
+						{
+							completion_img->disabled = !e.attempted;
+						}
+						txt->setText(buf);
+						break;
+					}
+				}
+				});
+		}
+
+		auto challenge3_leaderboard_img = window->addImage(
+			SDL_Rect{ baseX + 260, baseY + 250, 22, 18 },
+			0xffffffff,
+			"*images/ui/Main Menus/Challenges/leaderboard_icon.png",
+			"challenge3_leaderboards_img"
+		);
+		challenge3_leaderboard_img->disabled = true;
+
+		if ( auto challenge3_button = window->addButton("lid_victory_seed_challenge") )
+		{
+			challenge3_button->setSize(SDL_Rect{ baseX + 80, baseY + 210, 168, 62 });
+			challenge3_button->setBackground("*images/ui/Main Menus/Challenges/UI_SeedMenu_Button_00.png");
+			challenge3_button->setBackgroundHighlighted("*images/ui/Main Menus/Challenges/UI_SeedMenu_ButtonHigh_00.png");
+			challenge3_button->setBackgroundActivated("*images/ui/Main Menus/Challenges/UI_SeedMenu_ButtonPress_00.png");
+			challenge3_button->setHighlightColor(makeColor(255, 255, 255, 255));
+			challenge3_button->setColor(makeColor(255, 255, 255, 255));
+			challenge3_button->setText(Language::get(6112));
+			challenge3_button->setFont(smallfont_outline);
+			challenge3_button->setWidgetSearchParent(window->getName());
+			challenge3_button->setWidgetUp("lid_victory_seed_unlimited");
+			challenge3_button->setWidgetRight("challenge3_leaderboards");
+			challenge3_button->setWidgetBack("back_button");
+			challenge3_button->setTickCallback([](Widget& widget) {
+				for ( auto& e : playfabUser.periodicalEvents.periodicalEvents )
+				{
+					Button* button = static_cast<Button*>(&widget);
+					Frame* parent = static_cast<Frame*>(widget.getParent());
+					auto leaderboard_btn = parent->findButton(button->getWidgetMovements().at("MenuRight").c_str());
+					if ( leaderboard_btn ) 
+					{ 
+						leaderboard_btn->setDisabled(e.locked); 
+						leaderboard_btn->setInvisible(e.locked); 
+						std::string imgPath = leaderboard_btn->getName();
+						imgPath += "_img";
+						if ( auto leaderboard_img = parent->findImage(imgPath.c_str()) )
+						{
+							leaderboard_img->disabled = leaderboard_btn->isInvisible();
+						}
+					}
+
+
+					if ( e.lid == button->getName() )
+					{
+						if ( e.locked )
+						{
+							button->setBackground("*images/ui/Main Menus/Challenges/Disabled_Button_00.png");
+							button->setBackgroundHighlighted("*images/ui/Main Menus/Challenges/Disabled_ButtonHigh_00.png");
+							button->setBackgroundActivated("*images/ui/Main Menus/Challenges/Disabled_ButtonPress_00.png");
+						}
+						else
+						{
+							button->setBackground("*images/ui/Main Menus/Challenges/UI_SeedMenu_Button_00.png");
+							button->setBackgroundHighlighted("*images/ui/Main Menus/Challenges/UI_SeedMenu_ButtonHigh_00.png");
+							button->setBackgroundActivated("*images/ui/Main Menus/Challenges/UI_SeedMenu_ButtonPress_00.png");
+						}
+						break;
+					}
+				}
+			});
+			challenge3_button->setCallback([](Button& button) {
+				soundActivate();
+				for ( auto& e : playfabUser.periodicalEvents.periodicalEvents )
+				{
+					if ( e.lid == button.getName() )
+					{
+						if ( e.locked )
+						{
+							soundError();
+							return;
+						}
+						e.verifyGameStartSeedForEvent();
+						break;
+					}
+				}
+				playChallengeVerifyEvent(button);
+				});
+		}
+
+		if ( auto challenge3_leaderboards = window->addButton("challenge3_leaderboards") )
+		{
+			challenge3_leaderboards->setSize(SDL_Rect{ baseX + 284, baseY + 246, 72, 26 });
+			challenge3_leaderboards->setBackground("*images/ui/Main Menus/Challenges/tinybtn_base.png");
+			challenge3_leaderboards->setBackgroundHighlighted("*images/ui/Main Menus/Challenges/tinybtn_h.png");
+			challenge3_leaderboards->setBackgroundActivated("*images/ui/Main Menus/Challenges/tinybtn_press.png");
+			challenge3_leaderboards->setHighlightColor(makeColor(255, 255, 255, 255));
+			challenge3_leaderboards->setColor(makeColor(255, 255, 255, 255));
+			challenge3_leaderboards->setText("View");
+			challenge3_leaderboards->setDisabled(true);
+			challenge3_leaderboards->setInvisible(true);
+			challenge3_leaderboards->setFont(smallfont_outline);
+			challenge3_leaderboards->setWidgetSearchParent(window->getName());
+			challenge3_leaderboards->setWidgetUp("challenge2_leaderboards");
+			challenge3_leaderboards->setWidgetLeft("lid_victory_seed_challenge");
+			challenge3_leaderboards->setWidgetBack("back_button");
+			challenge3_leaderboards->setCallback([](Button&) {
+				soundActivate();
+				createLeaderboards("lid_seed_challenge");
+				});
+		}
+
+		/*bool continueAvailable = anySaveFileExists();
+
+		auto hall_of_trials_button = window->addButton("hall_of_trials");
+		hall_of_trials_button->setSize(SDL_Rect{ 134, 176, 168, 52 });
+		hall_of_trials_button->setBackground("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrials00.png");
+		hall_of_trials_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrialsHigh00.png");
+		hall_of_trials_button->setBackgroundActivated("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrialsPress00.png");
+		hall_of_trials_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		hall_of_trials_button->setColor(makeColor(255, 255, 255, 255));
+		hall_of_trials_button->setText(Language::get(5560));
+		hall_of_trials_button->setFont(smallfont_outline);
+		hall_of_trials_button->setWidgetSearchParent(window->getName());
+		if ( continueAvailable ) {
+			hall_of_trials_button->setWidgetUp("continue");
+		}
+		else {
+			hall_of_trials_button->setWidgetUp("new");
+		}
+		hall_of_trials_button->setWidgetBack("back_button");
+		hall_of_trials_button->setCallback([](Button&) {
+			soundActivate();
+			createHallofTrialsMenu();
+			});*/
+
+		(void)createBackWidget(window, [](Button& button) {
+			soundCancel();
+			auto frame = static_cast<Frame*>(button.getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame->removeSelf();
+			assert(main_menu_frame);
+
+			createPlayWindow();
+			}/*, SDL_Rect{ -4, -4, 0, 0 }*/);
+
+		/*auto continue_button = window->addButton("continue");
+		continue_button->setSize(SDL_Rect{ 39 * 2, 36 * 2, 66 * 2, 50 * 2 });
+		continue_button->setBackground("*images/ui/Main Menus/Play/UI_PlayMenu_Button_ContinueB00.png");
+		continue_button->setTextColor(makeColor(180, 180, 180, 255));
+		continue_button->setTextHighlightColor(makeColor(180, 133, 13, 255));
+		continue_button->setText(Language::get(5561));
+		continue_button->setFont(smallfont_outline);
+		if ( continueAvailable ) {
+			continue_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/UI_PlayMenu_Button_ContinueA00.png");
+			continue_button->setCallback([](Button& button) {soundActivate(); playContinue(button); });
+		}
+		else {
+			continue_button->setCallback([](Button&) {soundError(); });
+		}
+		continue_button->setWidgetSearchParent(window->getName());
+		continue_button->setWidgetRight("new");
+		continue_button->setWidgetDown("hall_of_trials");
+		continue_button->setWidgetBack("back_button");
+		continue_button->setGlyphPosition(Widget::glyph_position_t::CENTERED);
+		continue_button->setButtonsOffset(SDL_Rect{ 0, 29, 0, 0, });
+		continue_button->setSelectorOffset(SDL_Rect{ -1, -1, 1, 1 });
+
+		auto new_button = window->addButton("new");
+		new_button->setSize(SDL_Rect{ 114 * 2, 36 * 2, 68 * 2, 56 * 2 });
+		new_button->setBackground("*images/ui/Main Menus/Play/UI_PlayMenu_NewB00.png");
+		new_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/UI_PlayMenu_NewA00.png");
+		new_button->setTextColor(makeColor(180, 180, 180, 255));
+		new_button->setTextHighlightColor(makeColor(180, 133, 13, 255));
+		new_button->setText(Language::get(5562));
+		new_button->setFont(smallfont_outline);
+		new_button->setCallback(playNew);
+		new_button->setWidgetSearchParent(window->getName());
+		new_button->setWidgetLeft("continue");
+		new_button->setWidgetDown("hall_of_trials");
+		new_button->setWidgetBack("back_button");
+		new_button->setGlyphPosition(Widget::glyph_position_t::CENTERED);
+		new_button->setButtonsOffset(SDL_Rect{ 0, 29, 0, 0, });
+		new_button->setSelectorOffset(SDL_Rect{ -1, -1, -3, -11 });*/
+
+		/*if ( !gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt ) {
+			if ( continueAvailable ) {
+				continue_button->select();
+			}
+			else {
+				new_button->select();
+			}
+		}
+		else {
+			hall_of_trials_button->select();
+		}*/
+	}
 }

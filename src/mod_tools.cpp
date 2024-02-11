@@ -442,6 +442,11 @@ bool GameModeManager_t::allowsSaves()
 	return false;
 }
 
+void GameModeManager_t::setMode(const GameModes mode)
+{
+	currentMode = mode;
+}
+
 bool GameModeManager_t::allowsStatisticsOrAchievements()
 {
 	if ( currentMode == GAME_MODE_DEFAULT || currentMode == GAME_MODE_TUTORIAL )
@@ -9988,4 +9993,343 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterT
 	}
 
 	printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
+}
+
+void GameModeManager_t::CurrentSession_t::ChallengeRun_t::applySettings()
+{
+	if ( !inUse ) { return; }
+
+	svFlags = setFlags;
+	svFlags |= SV_FLAG_HUNGER;
+}
+
+void GameModeManager_t::CurrentSession_t::ChallengeRun_t::setup(std::string _scenario)
+{
+	reset();
+	scenarioStr = _scenario;
+	if ( scenarioStr == "" )
+	{
+		return;
+	}
+
+	inUse = loadScenario();
+	if ( inUse )
+	{
+		printlog("[Challenge]: Loaded scenario");
+	}
+}
+
+void GameModeManager_t::CurrentSession_t::ChallengeRun_t::reset()
+{
+	if ( inUse )
+	{
+		printlog("[Challenge]: Resetting");
+	}
+	inUse = false;
+
+	if ( !baseStats )
+	{
+		baseStats = new Stat(0);
+	}
+	if ( !addStats )
+	{
+		addStats = new Stat(0);
+	}
+
+	addStats->clearStats();
+	addStats->HP = 0;
+	addStats->MAXHP = 0;
+	addStats->MP = 0;
+	addStats->MAXMP = 0;
+
+	baseStats->clearStats();
+	baseStats->HP = 0;
+	baseStats->MAXHP = 0;
+	baseStats->MP = 0;
+	baseStats->MAXMP = 0;
+
+	seed = 0;
+	lockedFlags = 0;
+	setFlags = 0;
+	classnum = -1;
+	race = -1;
+	customBaseStats = false;
+	customAddStats = false;
+
+	globalXPPercent = 100;
+	globalGoldPercent = 100;
+	playerWeightPercent = 100;
+	playerSpeedMax = 12.5;
+
+	eventType = -1;
+	winLevel = -1;
+	startLevel = -1;
+	winCondition = -1;
+	numKills = -1;
+
+}
+
+bool GameModeManager_t::CurrentSession_t::ChallengeRun_t::loadScenario()
+{
+	rapidjson::Document d;
+	const char* json = scenarioStr.c_str();
+	d.Parse(json);
+
+	if ( !d.HasMember("version") || !d.HasMember("seed") || !d.HasMember("lockedFlags") || !d.HasMember("setFlags") )
+	{
+		printlog("[JSON]: Error: Scenario has no 'version' value in json file, or JSON syntax incorrect!");
+		reset();
+		return false;
+	}
+
+	seed = d["seed"].GetUint();
+	lockedFlags = d["lockedFlags"].GetUint();
+	setFlags = d["setFlags"].GetUint();
+
+	if ( d.HasMember("base_stats") )
+	{
+		const rapidjson::Value& stats = d["base_stats"];
+		for ( auto itr = stats.MemberBegin(); itr != stats.MemberEnd(); ++itr )
+		{
+			std::string name = itr->name.GetString();
+			if ( name.compare("enabled") == 0 )
+			{
+				customBaseStats = itr->value.GetInt() == 0 ? false : true;
+			}
+			else if ( name.compare("HP") == 0 )
+			{
+				baseStats->HP = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("MAXHP") == 0 )
+			{
+				baseStats->MAXHP = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("MP") == 0 )
+			{
+				baseStats->MP = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("MAXMP") == 0 )
+			{
+				baseStats->MAXMP = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("STR") == 0 )
+			{
+				baseStats->STR = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("DEX") == 0 )
+			{
+				baseStats->DEX = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("CON") == 0 )
+			{
+				baseStats->CON = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("INT") == 0 )
+			{
+				baseStats->INT = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("PER") == 0 )
+			{
+				baseStats->PER = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("CHR") == 0 )
+			{
+				baseStats->CHR = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("EXP") == 0 )
+			{
+				baseStats->EXP = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("LVL") == 0 )
+			{
+				baseStats->LVL = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("GOLD") == 0 )
+			{
+				baseStats->GOLD = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("PROFICIENCIES") == 0 )
+			{
+				int index = -1;
+				for ( auto arr_itr = itr->value.Begin(); arr_itr != itr->value.End(); ++arr_itr )
+				{
+					++index;
+					if ( index >= NUMPROFICIENCIES )
+					{
+						break;
+					}
+					baseStats->setProficiency(index, arr_itr->GetInt());
+				}
+			}
+		}
+	}
+
+	if ( d.HasMember("add_stats") )
+	{
+		const rapidjson::Value& stats = d["add_stats"];
+		for ( auto itr = stats.MemberBegin(); itr != stats.MemberEnd(); ++itr )
+		{
+			std::string name = itr->name.GetString();
+			if ( name.compare("enabled") == 0 )
+			{
+				customAddStats = itr->value.GetInt() == 0 ? false : true;
+			}
+			else if ( name.compare("HP") == 0 )
+			{
+				addStats->HP = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("MAXHP") == 0 )
+			{
+				addStats->MAXHP = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("MP") == 0 )
+			{
+				addStats->MP = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("MAXMP") == 0 )
+			{
+				addStats->MAXMP = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("STR") == 0 )
+			{
+				addStats->STR = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("DEX") == 0 )
+			{
+				addStats->DEX = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("CON") == 0 )
+			{
+				addStats->CON = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("INT") == 0 )
+			{
+				addStats->INT = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("PER") == 0 )
+			{
+				addStats->PER = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("CHR") == 0 )
+			{
+				addStats->CHR = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("EXP") == 0 )
+			{
+				addStats->EXP = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("LVL") == 0 )
+			{
+				addStats->LVL = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("GOLD") == 0 )
+			{
+				addStats->GOLD = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("PROFICIENCIES") == 0 )
+			{
+				int index = -1;
+				for ( auto arr_itr = itr->value.Begin(); arr_itr != itr->value.End(); ++arr_itr )
+				{
+					++index;
+					if ( index >= NUMPROFICIENCIES )
+					{
+						break;
+					}
+					addStats->setProficiency(index, arr_itr->GetInt());
+				}
+			}
+		}
+	}
+
+	if ( d.HasMember("character") )
+	{
+		const rapidjson::Value& stats = d["character"];
+		for ( auto itr = stats.MemberBegin(); itr != stats.MemberEnd(); ++itr )
+		{
+			std::string name = itr->name.GetString();
+			if ( name.compare("class") == 0 )
+			{
+				classnum = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("race") == 0 )
+			{
+				race = static_cast<Sint32>(itr->value.GetInt());
+			}
+		}
+	}
+	
+	if ( d.HasMember("gameplay") )
+	{
+		const rapidjson::Value& stats = d["gameplay"];
+		for ( auto itr = stats.MemberBegin(); itr != stats.MemberEnd(); ++itr )
+		{
+			std::string name = itr->name.GetString();
+			if ( name.compare("winLevel") == 0 )
+			{
+				if ( itr->value.GetInt() >= 0 )
+				{
+					winLevel = static_cast<Sint32>(itr->value.GetInt());
+				}
+			}
+			else if ( name.compare("event_type") == 0 )
+			{
+				if ( itr->value.GetInt() >= 0 )
+				{
+					eventType = static_cast<Sint32>(itr->value.GetInt());
+				}
+			}
+			else if ( name.compare("numKills") == 0 )
+			{
+				if ( itr->value.GetInt() >= 0 )
+				{
+					numKills = static_cast<Sint32>(itr->value.GetInt());
+				}
+			}
+			else if ( name.compare("startLevel") == 0 )
+			{
+				if ( itr->value.GetInt() >= 0 )
+				{
+					startLevel = static_cast<Sint32>(itr->value.GetInt());
+				}
+			}
+			else if ( name.compare("winCondition") == 0 )
+			{
+				if ( itr->value.GetInt() >= 0 )
+				{
+					winCondition = static_cast<Sint32>(itr->value.GetInt());
+				}
+			}
+			else if ( name.compare("globalXPPercent") == 0 )
+			{
+				if ( itr->value.GetInt() >= 0 )
+				{
+					globalXPPercent = static_cast<Sint32>(itr->value.GetInt());
+				}
+			}
+			else if ( name.compare("globalGoldPercent") == 0 )
+			{
+				if ( itr->value.GetInt() >= 0 )
+				{
+					globalGoldPercent = static_cast<Sint32>(itr->value.GetInt());
+				}
+			}
+			else if ( name.compare("playerWeightPercent") == 0 )
+			{
+				if ( itr->value.GetInt() >= 0 )
+				{
+					playerWeightPercent = static_cast<Sint32>(itr->value.GetInt());
+				}
+			}
+			else if ( name.compare("playerSpeedMax") == 0 )
+			{
+				if ( itr->value.GetFloat() >= 0 )
+				{
+					playerSpeedMax = static_cast<Sint32>(itr->value.GetFloat());
+				}
+			}
+		}
+	}
+
+	return true;
 }

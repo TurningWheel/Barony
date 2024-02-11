@@ -42,8 +42,44 @@ public:
 	void getLeaderboardTop100(std::string lid);
 	void getLeaderboardAroundMe(std::string lid);
 
+	struct PlayerCheckLeaderboardData_t
+	{
+		bool hasData = false;
+		bool loading = true;
+		std::map<int, std::pair<Uint32, PlayFab::PlayFabErrorCode>> awaitingResponse;
+		static int sequenceIDs;
+	};
+	std::map<std::string, PlayerCheckLeaderboardData_t> playerCheckLeaderboardData;
+	void checkLocalPlayerHasEntryOnLeaderboard(std::string lid);
+
 	bool bInit = false;
 	void init();
+
+	struct PeriodicalEvents_t
+	{
+		void getPeriodicalEvents();
+		struct Event_t
+		{
+			string lid = "";
+			Uint32 seed = 0;
+			int hoursLeft = 0;
+			int minutesLeft = 0;
+			int lid_version = 0;
+			bool verifiedForGameStart = false;
+			int errorType = 0;
+			void verifyGameStartSeedForEvent();
+			bool attempted = false;
+			bool loading = false;
+			int rolloverConflict = 0;
+			bool locked = false;
+			std::string scenario = "";
+		};
+		std::vector<Event_t> periodicalEvents;
+		bool awaitingData = false;
+		bool error = false;
+		int sequence = 0;
+		int waitingForSequence = 0;
+	} periodicalEvents;
 
 	struct PostScoreHandler_t
 	{
@@ -127,6 +163,14 @@ public:
 		bool daily = false;
 		bool hardcore = false;
 		bool multiplayer = false;
+		enum ChallengeBoards
+		{
+			CHALLENGE_BOARD_NONE,
+			CHALLENGE_BOARD_ONESHOT,
+			CHALLENGE_BOARD_UNLIMITED,
+			CHALLENGE_BOARD_CHALLENGE
+		};
+		ChallengeBoards challengeBoard = CHALLENGE_BOARD_NONE;
 		enum ScoreType
 		{
 			RANK_TOTALSCORE,
@@ -143,8 +187,68 @@ public:
 		{
 			int victory = this->victory;
 			if ( win == false ) { victory = 0; }
-			std::string lid = ((scoreType == RANK_TOTALSCORE || win) ? "lid_" : "lid_time_");
-			if ( daily )
+			std::string lid = ((scoreType == RANK_TOTALSCORE/* || win*/) ? "lid_" : "lid_time_");
+			if ( challengeBoard == CHALLENGE_BOARD_ONESHOT )
+			{
+				if ( victory > 0 )
+				{
+					lid += "victory_";
+				}
+				else
+				{
+					lid += "novictory_";
+				}
+
+				if ( scoreType == RANK_TOTALSCORE )
+				{
+					lid = "seed_oneshot";
+				}
+				else if ( scoreType == RANK_TIME )
+				{
+					lid = "seed_oneshot";
+				}
+			}
+			else if ( challengeBoard == CHALLENGE_BOARD_UNLIMITED )
+			{
+				if ( victory > 0 )
+				{
+					lid += "victory_";
+				}
+				else
+				{
+					lid += "novictory_";
+				}
+
+				if ( scoreType == RANK_TOTALSCORE )
+				{
+					lid += "seed_unlimited";
+				}
+				else if ( scoreType == RANK_TIME )
+				{
+					lid += "seed_unlimited";
+				}
+			}
+			else if ( challengeBoard == CHALLENGE_BOARD_CHALLENGE )
+			{
+				if ( victory > 0 )
+				{
+					lid += "victory_";
+				}
+				else
+				{
+					lid += "novictory_";
+				}
+
+				if ( scoreType == RANK_TOTALSCORE )
+				{
+					lid += "seed_challenge";
+				}
+				else if ( scoreType == RANK_TIME )
+				{
+					lid += "seed_challenge";
+				}
+			}
+			else if ( daily )
 			{
 				if ( victory > 0 )
 				{

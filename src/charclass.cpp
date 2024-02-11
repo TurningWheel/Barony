@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "charclass.hpp"
 #include "player.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -495,6 +496,63 @@ void initClassStats(const int classnum, void* myStats)
 		stat->setProficiency(PRO_ALCHEMY, 10);
 		stat->setProficiency(PRO_TRADING, 10);
 	}
+
+	if ( gameModeManager.currentSession.challengeRun.isActive() )
+	{
+		if ( gameModeManager.currentSession.challengeRun.customBaseStats )
+		{
+			auto& s = gameModeManager.currentSession.challengeRun.baseStats;
+			stat->HP = s->HP;
+			stat->MAXHP = s->MAXHP;
+			stat->MP = s->MP;
+			stat->MAXMP = s->MAXMP;
+
+			stat->STR = s->STR;
+			stat->DEX = s->DEX;
+			stat->CON = s->CON;
+			stat->INT = s->INT;
+			stat->PER = s->PER;
+			stat->CHR = s->CHR;
+
+			stat->EXP = s->EXP;
+			stat->LVL = s->LVL;
+			stat->GOLD = s->GOLD;
+
+			for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+			{
+				stat->setProficiency(i, s->getProficiency(i));
+			}
+		}
+		if ( gameModeManager.currentSession.challengeRun.customAddStats )
+		{
+			auto& s = gameModeManager.currentSession.challengeRun.addStats;
+			stat->HP += s->HP;
+			stat->MAXHP += s->MAXHP;
+			stat->MP += s->MP;
+			stat->MAXMP += s->MAXMP;
+
+			stat->STR += s->STR;
+			stat->DEX += s->DEX;
+			stat->CON += s->CON;
+			stat->INT += s->INT;
+			stat->PER += s->PER;
+			stat->CHR += s->CHR;
+
+			stat->EXP += s->EXP;
+			stat->LVL += s->LVL;
+			stat->GOLD += s->GOLD;
+
+			for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+			{
+				stat->setProficiency(i, stat->getProficiency(i) + s->getProficiency(i));
+			}
+		}
+	}
+	stat->HP = std::max(1, stat->HP);
+	stat->MAXHP = std::max(1, stat->MAXHP);
+	stat->MP = std::max(1, stat->MP);
+	stat->MAXMP = std::max(1, stat->MAXMP);
+	stat->OLDHP = stat->HP;
 }
 
 void initClass(const int player)

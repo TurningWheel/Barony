@@ -129,6 +129,10 @@ void jsonValueToInt(Json::Value& val, std::string key, Uint32& set)
         {
             set = val[key].asInt();
         }
+        else if ( val[key].isUInt() )
+        {
+            set = val[key].asUInt();
+        }
     }
 }
 
@@ -509,6 +513,144 @@ void PlayfabUser_t::OnFunctionExecute(const PlayFab::CloudScriptModels::ExecuteF
             }
         }
     }
+    else if ( result.FunctionName == "LeaderboardWeeklyGetTimeLeft" )
+    {
+        int sequence = reinterpret_cast<intptr_t>(customData);
+        if ( sequence == playfabUser.periodicalEvents.waitingForSequence )
+        {
+            playfabUser.periodicalEvents.error = false;
+            if ( code == PlayFab::PlayFabErrorCode::PlayFabErrorSuccess )
+            {
+                for ( auto itr = data.begin(); itr != data.end(); ++itr )
+                {
+                    if ( itr->type() == Json::ValueType::stringValue )
+                    {
+                        PlayfabUser_t::PeriodicalEvents_t::Event_t e;
+
+                        Json::Value v;
+                        Json::Reader reader;
+                        if ( reader.parse(itr->asCString(), v) )
+                        {
+                            for ( auto& key : v.getMemberNames() )
+                            {
+                                if ( key == "lid" )
+                                {
+                                    jsonValueToString(v, key, e.lid);
+                                }
+                                else if ( key == "lid_version" )
+                                {
+                                    jsonValueToInt(v, key, e.lid_version);
+                                }
+                                else if ( key == "seed" )
+                                {
+                                    jsonValueToInt(v, key, (Uint32)e.seed);
+                                }
+                                else if ( key == "hours_left" )
+                                {
+                                    jsonValueToInt(v, key, e.hoursLeft);
+                                }
+                                else if ( key == "minutes_left" )
+                                {
+                                    jsonValueToInt(v, key, e.minutesLeft);
+                                }
+                                else if ( key == "conflict" )
+                                {
+                                    jsonValueToInt(v, key, e.rolloverConflict);
+                                }
+                                else if ( key == "attempted" )
+                                {
+                                    int res = 0;
+                                    jsonValueToInt(v, key, res);
+                                    e.attempted = res == 1 ? true : false;
+                                }
+                                else if ( key == "locked" )
+                                {
+                                    int res = 0;
+                                    jsonValueToInt(v, key, res);
+                                    e.locked = res == 1 ? true : false;
+                                }
+                                else if ( key == "scenario" )
+                                {
+                                    jsonValueToString(v, key, e.scenario);
+                                }
+                            }
+                        }
+                        playfabUser.periodicalEvents.periodicalEvents.push_back(e);
+                        auto& checkEvent = playfabUser.periodicalEvents.periodicalEvents.back();
+                        checkEvent.verifyGameStartSeedForEvent();
+                    }
+                }
+            }
+            else
+            {
+                playfabUser.periodicalEvents.error = true;
+            }
+            playfabUser.periodicalEvents.awaitingData = false;
+        }
+    }
+    else if ( result.FunctionName == "LeaderboardVerifyEvent" )
+    {
+        for ( auto itr = data.begin(); itr != data.end(); ++itr )
+        {
+            if ( itr->type() == Json::ValueType::stringValue )
+            {
+                std::string lid = "";
+                bool attempted = false;
+                bool conflictRollover = false;
+                Json::Value v;
+                Json::Reader reader;
+                if ( reader.parse(itr->asCString(), v) )
+                {
+                    for ( auto& key : v.getMemberNames() )
+                    {
+                        if ( key == "lid" )
+                        {
+                            jsonValueToString(v, key, lid);
+                        }
+                        else if ( key == "attempted" )
+                        {
+                            int res = 0;
+                            jsonValueToInt(v, key, res);
+                            attempted = res == 1 ? true : false;
+                        }
+                        else if ( key == "conflict" )
+                        {
+                            int res = 0;
+                            jsonValueToInt(v, key, res);
+                            conflictRollover = res == 1 ? true : false;
+                        }
+                    }
+                }
+
+                for ( auto& e : playfabUser.periodicalEvents.periodicalEvents )
+                {
+                    if ( e.lid == lid )
+                    {
+                        e.attempted = attempted;
+                        e.loading = false;
+                        if ( code == PlayFab::PlayFabErrorCode::PlayFabErrorSuccess )
+                        {
+                            if ( conflictRollover )
+                            {
+                                e.verifiedForGameStart = false;
+                                e.errorType = 2;
+                            }
+                            else
+                            {
+                                e.verifiedForGameStart = true;
+                            }
+                        }
+                        else
+                        {
+                            e.verifiedForGameStart = false;
+                            e.errorType = 1;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
     else if ( result.FunctionName == "LeaderboardGetPlayerData" )
     {
         int sequence = reinterpret_cast<intptr_t>(customData);
@@ -571,6 +713,68 @@ void PlayfabUser_t::OnFunctionExecute(const PlayFab::CloudScriptModels::ExecuteF
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+    else if ( result.FunctionName == "PlayerHasEntryOnLeaderboard" )
+    {
+        int sequence = reinterpret_cast<intptr_t>(customData);
+        if ( result.Request["FunctionParameter"].isMember("lid") )
+        {
+            std::string lid = result.Request["FunctionParameter"]["lid"].asString();
+
+            auto& checkLeaderboard = playfabUser.playerCheckLeaderboardData[lid];
+            bool foundResponse = false;
+            if ( code == PlayFab::PlayFabErrorCode::PlayFabErrorSuccess )
+            {
+                if ( checkLeaderboard.awaitingResponse.find(sequence) != checkLeaderboard.awaitingResponse.end() )
+                {
+                    checkLeaderboard.awaitingResponse.erase(sequence);
+                    if ( intro )
+                    {
+                        for ( auto itr = data.begin(); itr != data.end(); ++itr )
+                        {
+                            if ( itr->type() == Json::ValueType::stringValue )
+                            {
+                                Json::Value v;
+                                Json::Reader reader;
+                                if ( reader.parse(itr->asCString(), v) )
+                                {
+                                    for ( auto& key : v.getMemberNames() )
+                                    {
+                                        if ( key == "found" )
+                                        {
+                                            int res = 0;
+                                            jsonValueToInt(v, key, res);
+                                            checkLeaderboard.hasData = (res == 1 ? true : false);
+                                            if ( checkLeaderboard.hasData )
+                                            {
+                                                playfabUser.getLeaderboardAroundMe(lid);
+                                            }
+                                            else
+                                            {
+                                                playfabUser.leaderboardData.leaderboards[lid].loading = false;
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if ( checkLeaderboard.awaitingResponse.empty() )
+                {
+                    checkLeaderboard.loading = false;
+                }
+            }
+            else
+            {
+                if ( checkLeaderboard.awaitingResponse.find(sequence) != checkLeaderboard.awaitingResponse.end() )
+                {
+                    checkLeaderboard.awaitingResponse[sequence].second = code;
+                    playfabUser.leaderboardData.leaderboards[lid].loading = false;
                 }
             }
         }
@@ -694,6 +898,43 @@ void PlayfabUser_t::getLeaderboardTop100Data(std::string lid, int start, int num
     PlayFab::PlayFabCloudScriptAPI::ExecuteFunction(request, OnFunctionExecute, OnCloudScriptFailure,
         (void*)(intptr_t)(LeaderboardData_t::sequenceIDs));
     ++LeaderboardData_t::sequenceIDs;
+}
+
+void PlayfabUser_t::PeriodicalEvents_t::Event_t::verifyGameStartSeedForEvent()
+{
+    if ( !playfabUser.bLoggedIn ) { return; }
+
+    PlayFab::CloudScriptModels::ExecuteFunctionRequest request;
+    request.FunctionName = "LeaderboardVerifyEvent";
+    request.GeneratePlayStreamEvent = false;
+    request.CustomTags["default"] = 1;
+    request.CustomTags["lid"] = lid;
+    request.CustomTags["seed"] = std::to_string(seed);
+
+    verifiedForGameStart = false;
+    errorType = 0;
+    loading = true;
+
+    PlayFab::PlayFabCloudScriptAPI::ExecuteFunction(request, OnFunctionExecute, OnCloudScriptFailure,
+        nullptr/*(void*)(intptr_t)(LeaderboardData_t::sequenceIDs)*/);
+}
+
+void PlayfabUser_t::PeriodicalEvents_t::getPeriodicalEvents()
+{
+    if ( !playfabUser.bLoggedIn ) { return; }
+
+    PlayFab::CloudScriptModels::ExecuteFunctionRequest request;
+    request.FunctionName = "LeaderboardWeeklyGetTimeLeft";
+    request.GeneratePlayStreamEvent = false;
+    request.CustomTags["default"] = 1;
+
+    PlayFab::PlayFabCloudScriptAPI::ExecuteFunction(request, OnFunctionExecute, OnCloudScriptFailure,
+        (void*)(intptr_t)(playfabUser.periodicalEvents.sequence));
+
+    periodicalEvents.clear();
+    awaitingData = true;
+    waitingForSequence = sequence;
+    ++sequence;
 }
 
 void PlayfabUser_t::PostScoreHandler_t::ScoreUpdate_t::post()
@@ -1072,7 +1313,7 @@ void PlayfabUser_t::OnLeaderboardAroundMeGet(const PlayFab::ClientModels::GetLea
                 leaderboard.playerData.clear();
 
                 bool emptyLeaderboard = false;
-                if ( result.Leaderboard.size() == 1 && result.Leaderboard.begin()->Position == 0 )
+                if ( result.Leaderboard.size() == 1 && result.Leaderboard.begin()->Position == 0 && result.Leaderboard.begin()->StatValue == 0 )
                 {
                     emptyLeaderboard = true;
                 }
@@ -1101,6 +1342,57 @@ void PlayfabUser_t::OnLeaderboardAroundMeGet(const PlayFab::ClientModels::GetLea
             }
         }
     }
+}
+
+int PlayfabUser_t::PlayerCheckLeaderboardData_t::sequenceIDs = 0;
+void PlayfabUser_t::checkLocalPlayerHasEntryOnLeaderboard(std::string lid)
+{
+    if ( !bLoggedIn )
+    {
+        return;
+    }
+
+    if ( playerCheckLeaderboardData[lid].loading )
+    {
+        for ( auto& pair : playerCheckLeaderboardData[lid].awaitingResponse )
+        {
+            if ( (ticks - pair.second.first) < 5 * TICKS_PER_SECOND )
+            {
+                return; // waiting on a leaderboard to load in
+            }
+        }
+    }
+
+    if ( leaderboardData.leaderboards[lid].loading )
+    {
+        for ( auto& pair : leaderboardData.leaderboards[lid].awaitingResponse )
+        {
+            if ( (ticks - pair.second.first) < 5 * TICKS_PER_SECOND )
+            {
+                return; // waiting on a leaderboard to load in
+            }
+        }
+    }
+
+    leaderboardData.leaderboards.erase(lid);
+    playerCheckLeaderboardData.erase(lid);
+
+    PlayFab::CloudScriptModels::ExecuteFunctionRequest request;
+    request.FunctionName = "PlayerHasEntryOnLeaderboard";
+    request.GeneratePlayStreamEvent = false;
+    request.CustomTags["default"] = 1;
+    request.CustomTags["lid"] = lid;
+
+    Json::Value v;
+    v["lid"] = lid;
+    request.FunctionParameter = v;
+
+    playerCheckLeaderboardData[lid].awaitingResponse[PlayerCheckLeaderboardData_t::sequenceIDs] =
+        std::make_pair(ticks, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
+
+    PlayFab::PlayFabCloudScriptAPI::ExecuteFunction(request, OnFunctionExecute, OnCloudScriptFailure,
+        (void*)(intptr_t)(PlayerCheckLeaderboardData_t::sequenceIDs));
+    ++PlayerCheckLeaderboardData_t::sequenceIDs;
 }
 
 void PlayfabUser_t::getLeaderboardAroundMe(std::string lid)
@@ -1235,7 +1527,20 @@ std::string PlayfabUser_t::LeaderboardSearch_t::getLeaderboardDisplayName()
         score = "Furthest Depth";
     }
 
-    if ( daily )
+    if ( challengeBoard == CHALLENGE_BOARD_ONESHOT )
+    {
+        period = "One-Shot Challenge ";
+    }
+    else if ( challengeBoard == CHALLENGE_BOARD_UNLIMITED )
+    {
+        period = "Weekly Unlimited ";
+    }
+    else if ( challengeBoard == CHALLENGE_BOARD_CHALLENGE )
+    {
+        period = "Event Challenge ";
+    }
+
+    if ( daily || challengeBoard != CHALLENGE_BOARD_NONE )
     {
         return period + results + "\n" + (win ? "Wins" : "Losses") + " - Ranked by: " + score;
     }

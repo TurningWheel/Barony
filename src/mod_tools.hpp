@@ -2429,7 +2429,7 @@ public:
 	};
 	GameModes currentMode = GAME_MODE_DEFAULT;
 	GameModes getMode() const { return currentMode; };
-	void setMode(const GameModes mode) { currentMode = mode; };
+	void setMode(const GameModes mode);
 	bool allowsSaves();
 	bool isFastDeathGrave();
 	bool allowsBoulderBreak();
@@ -2470,14 +2470,46 @@ public:
 			static std::vector<std::string> suffixes;
 			static void readSeedNamesFromFile();
 		} seededRun;
+
+		class ChallengeRun_t
+		{
+			bool inUse = false;
+		public:
+			bool isActive() { return inUse; }
+			std::string scenarioStr = "";
+			Uint32 seed = 0;
+			Uint32 lockedFlags = 0;
+			Uint32 setFlags = 0;
+			int classnum = -1;
+			int race = -1;
+			bool customBaseStats = false;
+			bool customAddStats = false;
+			Stat* baseStats = nullptr;
+			Stat* addStats = nullptr;
+			int eventType = -1;
+			int winLevel = -1;
+			int startLevel = -1;
+			int winCondition = -1;
+			int globalXPPercent = 100;
+			int globalGoldPercent = 100;
+			int playerWeightPercent = 100;
+			double playerSpeedMax = 12.5;
+			int numKills = -1;
+
+			void setup(std::string _scenario);
+			void reset();
+			bool loadScenario();
+			void applySettings();
+		} challengeRun;
 	} currentSession;
+
 	bool isServerflagDisabledForCurrentMode(int i)
 	{
 		if ( getMode() == GAME_MODE_DEFAULT )
 		{
 			return false;
 		}
-		else if ( getMode() == GAME_MODE_TUTORIAL )
+		/*else if ( getMode() == GAME_MODE_TUTORIAL )
 		{
 			int flag = power(2, i);
 			switch ( flag )
@@ -2496,9 +2528,19 @@ public:
 					break;
 			}
 			return false;
+		}*/
+		else if ( getMode() == GAME_MODE_CUSTOM_RUN_ONESHOT
+			|| getMode() == GAME_MODE_CUSTOM_RUN )
+		{
+			if ( currentSession.challengeRun.lockedFlags & i )
+			{
+				return true;
+			}
+			return false;
 		}
 		return false;
 	}
+
 	class Tutorial_t
 	{
 		std::string currentMap = "";
