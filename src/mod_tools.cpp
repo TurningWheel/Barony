@@ -439,6 +439,10 @@ bool GameModeManager_t::allowsSaves()
 	{
 		return true;
 	}
+	else if ( currentMode == GAME_MODE_CUSTOM_RUN )
+	{
+		return true;
+	}
 	return false;
 }
 
@@ -449,7 +453,14 @@ void GameModeManager_t::setMode(const GameModes mode)
 
 bool GameModeManager_t::allowsStatisticsOrAchievements()
 {
-	if ( currentMode == GAME_MODE_DEFAULT || currentMode == GAME_MODE_TUTORIAL )
+	if ( currentMode == GAME_MODE_CUSTOM_RUN && currentSession.challengeRun.isActive()
+		&& currentSession.challengeRun.lid.find("challenge") != std::string::npos )
+	{
+		return false;
+	}
+	if ( currentMode == GAME_MODE_DEFAULT || currentMode == GAME_MODE_TUTORIAL
+		|| currentMode == GAME_MODE_CUSTOM_RUN 
+		|| currentMode == GAME_MODE_CUSTOM_RUN_ONESHOT )
 	{
 		return true;
 	}
@@ -458,7 +469,13 @@ bool GameModeManager_t::allowsStatisticsOrAchievements()
 
 bool GameModeManager_t::allowsHiscores()
 {
-	if ( currentMode == GAME_MODE_DEFAULT )
+	if ( currentMode == GAME_MODE_CUSTOM_RUN && currentSession.challengeRun.isActive()
+		&& currentSession.challengeRun.lid.find("challenge") != std::string::npos )
+	{
+		return false;
+	}
+	if ( currentMode == GAME_MODE_DEFAULT || currentMode == GAME_MODE_CUSTOM_RUN
+		|| currentMode == GAME_MODE_CUSTOM_RUN_ONESHOT )
 	{
 		return true;
 	}
@@ -467,8 +484,7 @@ bool GameModeManager_t::allowsHiscores()
 
 bool GameModeManager_t::isFastDeathGrave()
 {
-	if ( currentMode == GAME_MODE_TUTORIAL || currentMode == GAME_MODE_TUTORIAL_INIT
-		|| currentMode == GAME_MODE_CUSTOM_RUN )
+	if ( currentMode == GAME_MODE_TUTORIAL || currentMode == GAME_MODE_TUTORIAL_INIT )
 	{
 		return true;
 	}
@@ -483,6 +499,11 @@ bool GameModeManager_t::allowsGlobalHiscores()
 		{
 			return true;
 		}
+	}
+	else if ( (currentMode == GAME_MODE_CUSTOM_RUN
+		|| currentMode == GAME_MODE_CUSTOM_RUN_ONESHOT) )
+	{
+		return true;
 	}
 	return false;
 }
@@ -10083,8 +10104,11 @@ bool GameModeManager_t::CurrentSession_t::ChallengeRun_t::loadScenario()
 	}
 
 	seed = d["seed"].GetUint();
+	seed_word = d["seed_word"].GetString();
 	lockedFlags = d["lockedFlags"].GetUint();
 	setFlags = d["setFlags"].GetUint();
+	lid = d["lid"].GetString();
+	lid_version = d["lid_version"].GetInt();
 
 	if ( d.HasMember("base_stats") )
 	{

@@ -8436,7 +8436,8 @@ void doNewGame(bool makeHighscore) {
         Input::inputs[i].refresh();
     }
 
-	if ( gameModeManager.allowsHiscores() )
+	bool localScores = gameModeManager.allowsHiscores();
+	bool onlineScores = gameModeManager.allowsGlobalHiscores();
 	{
 		if ( makeHighscore )
 		{
@@ -8444,19 +8445,31 @@ void doNewGame(bool makeHighscore) {
             if (splitscreen) {
                 for (int c = 0; c < MAXPLAYERS; ++c) {
                     if (!client_disconnected[c]) {
-                        saveScore(c);
+						if ( localScores )
+						{
+							saveScore(c);
+						}
 #ifdef USE_PLAYFAB
 						if ( c == 0 )
 						{
-							playfabUser.postScore(c);
+							if ( onlineScores )
+							{
+								playfabUser.postScore(c);
+							}
 						}
 #endif
                     }
                 }
             } else {
-                saveScore(clientnum);
+				if ( localScores )
+				{
+					saveScore(clientnum);
+				}
 #ifdef USE_PLAYFAB
-				playfabUser.postScore(clientnum);
+				if ( onlineScores )
+				{
+					playfabUser.postScore(clientnum);
+				}
 #endif
             }
             saveAllScores(SCORESFILE);
@@ -8470,6 +8483,7 @@ void doNewGame(bool makeHighscore) {
 		{
 			deleteSaveGame(multiplayer);
 			loadingsavegame = 0;
+			loadinglobbykey = 0;
 		}
 	}
 	camera_charsheet_offsetyaw = (330) * PI / 180; // reset player camera view.
@@ -9202,6 +9216,7 @@ void doNewGame(bool makeHighscore) {
 	if ( loadingsavegame && multiplayer != CLIENT )
 	{
 		loadingsavegame = 0;
+		loadinglobbykey = 0;
 	}
 
     // shuffle scroll names
@@ -9278,7 +9293,8 @@ void doCredits() {
 void doEndgame(bool saveHighscore) {
 	int c, x;
 	bool endTutorial = false;
-	bool allowedHighscores = gameModeManager.allowsHiscores();
+	bool localScores = gameModeManager.allowsHiscores();
+	bool onlineScores = gameModeManager.allowsGlobalHiscores();
 	bool allowedSavegames = gameModeManager.allowsSaves();
 	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
@@ -9381,24 +9397,36 @@ void doEndgame(bool saveHighscore) {
 	}
 
 	// make a highscore!
-	if ( !endTutorial && allowedHighscores && saveHighscore )
+	if ( !endTutorial && saveHighscore )
 	{
         if (splitscreen) {
             for (int c = 0; c < MAXPLAYERS; ++c) {
                 if (!client_disconnected[c]) {
-                    saveScore(c);
+					if ( localScores )
+					{
+						saveScore(c);
+					}
 #ifdef USE_PLAYFAB
 					if ( c == 0 )
 					{
-						playfabUser.postScore(c);
+						if ( onlineScores )
+						{
+							playfabUser.postScore(c);
+						}
 					}
 #endif
                 }
             }
         } else {
-            saveScore(clientnum);
+			if ( localScores )
+			{
+				saveScore(clientnum);
+			}
 #ifdef USE_PLAYFAB
-			playfabUser.postScore(clientnum);
+			if ( onlineScores )
+			{
+				playfabUser.postScore(clientnum);
+			}
 #endif
         }
         saveAllScores(SCORESFILE);
@@ -11049,6 +11077,7 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 
 	playing_random_char = false;
 	loadingsavegame = 0;
+	loadinglobbykey = 0;
 	loadGameSaveShowRectangle = 0;
 	// reset class loadout
 	clientnum = 0;

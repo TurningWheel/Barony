@@ -264,6 +264,7 @@ extern list_t booksRead;
 extern bool usedClass[NUMCLASSES];
 extern bool usedRace[NUMRACES];
 extern Uint32 loadingsavegame;
+extern Uint32 loadinglobbykey;
 extern Sint32 conductGameChallenges[NUM_CONDUCT_CHALLENGES];
 extern Sint32 gameStatistics[NUM_GAMEPLAY_STATISTICS];
 extern std::vector<std::pair<Uint32, Uint32>> achievementRhythmOfTheKnightVec[MAXPLAYERS];
@@ -319,6 +320,7 @@ struct SaveGameInfo {
 	Uint32 hash = 0;
 	std::string gamename;
 	Uint32 gamekey = 0;
+	Uint32 lobbykey = 0;
 	Uint32 mapseed = 0;
 	Uint32 gametimer = 0;
 	Uint32 svflags = 0;
@@ -605,6 +607,7 @@ struct SaveGameInfo {
 		fp->property("hash", hash);
 		fp->property("game_name", gamename);
 		fp->property("gamekey", gamekey);
+		fp->property("lobbykey", lobbykey);
 		fp->property("mapseed", mapseed);
 		fp->property("gametimer", gametimer);
 		fp->property("svflags", svflags);
@@ -634,7 +637,6 @@ const char* getSaveGameName(const SaveGameInfo& info);
 int getSaveGameType(const SaveGameInfo& info);
 int getSaveGameClientnum(const SaveGameInfo& info);
 Uint32 getSaveGameMapSeed(const SaveGameInfo& info);
-Uint32 getSaveGameUniqueGameKey(const SaveGameInfo& info);
 int getSaveGameVersionNum(const SaveGameInfo& info);
 
 int getSavegameVersion(const char* checkstr); // returns -1 on invalid version, otherwise converts to 3 digit int

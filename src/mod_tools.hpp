@@ -2477,7 +2477,10 @@ public:
 		public:
 			bool isActive() { return inUse; }
 			std::string scenarioStr = "";
+			std::string lid = "";
+			int lid_version = -1;
 			Uint32 seed = 0;
+			std::string seed_word = "";
 			Uint32 lockedFlags = 0;
 			Uint32 setFlags = 0;
 			int classnum = -1;

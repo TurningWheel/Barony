@@ -6284,7 +6284,6 @@ bind_failed:
 		int selected_device = 0;
 		int num_drivers = 0;
 		(void)fmod_system->getNumDrivers(&num_drivers);
-
 		audio_drivers.clear();
 		audio_drivers.reserve(num_drivers);
 		for (int c = 0; c < num_drivers; ++c) {
@@ -6309,9 +6308,12 @@ bind_failed:
 		}
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "output", Language::get(5182));
-		y += settingsAddDropdown(*settings_subwindow, y, "device", Language::get(5183), Language::get(5184),
-            true, drivers_formatted_ptrs, drivers_formatted_ptrs[selected_device],
-            settingsAudioDevice);
+		if ( num_drivers > 0 )
+		{
+			y += settingsAddDropdown(*settings_subwindow, y, "device", Language::get(5183), Language::get(5184),
+			    true, drivers_formatted_ptrs, drivers_formatted_ptrs[selected_device],
+			    settingsAudioDevice);
+		}
 #endif
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "volume", Language::get(5185));
@@ -6355,21 +6357,39 @@ bind_failed:
 #endif
 
 #ifndef NINTENDO
-		hookSettings(*settings_subwindow,
+		if ( num_drivers > 0 )
+		{
+			hookSettings(*settings_subwindow,
 			{
 #ifdef USE_FMOD
-			{Setting::Type::Dropdown, "device"},
+				{Setting::Type::Dropdown, "device"},
 #endif
-			{Setting::Type::Slider, "master_volume"},
-			{Setting::Type::Slider, "gameplay_volume"},
-			{Setting::Type::Slider, "ambient_volume"},
-			{Setting::Type::Slider, "environment_volume"},
-			{Setting::Type::Slider, "notification_volume"},
-			{Setting::Type::Slider, "music_volume"},
-			{Setting::Type::Boolean, "minimap_pings"},
-			{Setting::Type::Boolean, "player_monster_sounds"},
-			{Setting::Type::Boolean, "out_of_focus_audio"},
-			{Setting::Type::Boolean, "music_preload"}});
+				{Setting::Type::Slider, "master_volume"},
+				{Setting::Type::Slider, "gameplay_volume"},
+				{Setting::Type::Slider, "ambient_volume"},
+				{Setting::Type::Slider, "environment_volume"},
+				{Setting::Type::Slider, "notification_volume"},
+				{Setting::Type::Slider, "music_volume"},
+				{Setting::Type::Boolean, "minimap_pings"},
+				{Setting::Type::Boolean, "player_monster_sounds"},
+				{Setting::Type::Boolean, "out_of_focus_audio"},
+				{Setting::Type::Boolean, "music_preload"}});
+		}
+		else // no devices found, skip device dropdown
+		{
+			hookSettings(*settings_subwindow,
+				{
+				{Setting::Type::Slider, "master_volume"},
+				{Setting::Type::Slider, "gameplay_volume"},
+				{Setting::Type::Slider, "ambient_volume"},
+				{Setting::Type::Slider, "environment_volume"},
+				{Setting::Type::Slider, "notification_volume"},
+				{Setting::Type::Slider, "music_volume"},
+				{Setting::Type::Boolean, "minimap_pings"},
+				{Setting::Type::Boolean, "player_monster_sounds"},
+				{Setting::Type::Boolean, "out_of_focus_audio"},
+				{Setting::Type::Boolean, "music_preload"}});
+		}
 #else
 		hookSettings(*settings_subwindow,
 			{{Setting::Type::Slider, "master_volume"},
@@ -6383,8 +6403,16 @@ bind_failed:
 #endif
 
 #if !defined(NINTENDO) && defined(USE_FMOD)
-		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Dropdown, "device"});
-		settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "device"});
+		if ( num_drivers > 0 )
+		{
+			settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Dropdown, "device"});
+			settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "device"});
+		}
+		else
+		{
+			settingsSubwindowFinalize(*settings_subwindow, y, { Setting::Type::Slider, "master_volume" });
+			settingsSelect(*settings_subwindow, { Setting::Type::Slider, "master_volume" });
+		}
 #else
 		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Slider, "master_volume"});
 		settingsSelect(*settings_subwindow, {Setting::Type::Slider, "master_volume"});
@@ -8869,6 +8897,7 @@ bind_failed:
 			{
 				playfabUser.leaderboardSearch.challengeBoard = PlayfabUser_t::LeaderboardSearch_t::ChallengeBoards::CHALLENGE_BOARD_CHALLENGE;
 			}
+			playfabUser.leaderboardSearch.applySavedChallengeSearchIfExists();
 		}
 		playfabUser.leaderboardData.currentSearch = playfabUser.leaderboardSearch.getLeaderboardID();
 		playfabUser.leaderboardData.currentDisplayName = playfabUser.leaderboardSearch.getLeaderboardDisplayName();
@@ -10051,6 +10080,8 @@ bind_failed:
         return frame;
     }
 
+	static std::map<int, std::string> lobbyCustomScenarioClient;
+
 	static void disconnectFromLobby(bool informRemotes = true) {
 		if (informRemotes) {
 			if (multiplayer == SERVER) {
@@ -10095,6 +10126,7 @@ bind_failed:
 	    }
 		currentLobbyType = LobbyType::None;
 
+		lobbyCustomScenarioClient.clear();
 		gameModeManager.currentSession.restoreSavedServerFlags();
 		gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
 		gameModeManager.currentSession.challengeRun.reset();
@@ -10256,6 +10288,13 @@ bind_failed:
 
 	static void saveLastCharacter(const int index, int multiplayer)
 	{
+		if ( gameModeManager.currentSession.challengeRun.isActive()
+			|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN
+			|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT )
+		{
+			return;
+		}
+
 		if ( !loadingsavegame )
 		{
 			if ( multiplayer != SINGLE )
@@ -10427,6 +10466,82 @@ bind_failed:
 	    }
 	}
 
+	static void sendCustomScenarioOverNet(const int playernum)
+	{
+		if ( multiplayer == SERVER ) {
+			if ( playernum == 0 ) {
+				return;
+			}
+			if ( gameModeManager.currentSession.challengeRun.isActive() )
+			{
+				// packet header
+				memcpy(net_packet->data, "CSCN", 4);
+				Uint8 sequence = 0;
+				// encode name
+				int chunksize = 256;
+				const size_t len = gameModeManager.currentSession.challengeRun.scenarioStr.size();
+				const int numchunks = 1 + (len / chunksize);
+				for ( int c = 0; c < len; c += chunksize )
+				{
+					sequence += 1;
+
+					if ( c + chunksize > len )
+					{
+						chunksize = len - c;
+					}
+					net_packet->data[4] = sequence; // chunk index
+					net_packet->data[4] |= ((numchunks) << 4); // upper bits num chunks
+
+					std::string substr = gameModeManager.currentSession.challengeRun.scenarioStr.substr(c, chunksize);
+					stringCopy((char*)net_packet->data + 5, substr.c_str(),
+						256 + 1, substr.size());
+
+					net_packet->len = 5 + substr.size();
+
+					for ( int i = 1; i < MAXPLAYERS; i++ ) {
+						if ( client_disconnected[i] ) {
+							continue;
+						}
+						if ( playernum != i )
+						{
+							continue;
+						}
+						net_packet->address.host = net_clients[i - 1].host;
+						net_packet->address.port = net_clients[i - 1].port;
+						sendPacketSafe(net_sock, -1, net_packet, i - 1);
+					}
+				}
+			}
+			else
+			{
+				// packet header
+				memcpy(net_packet->data, "CSCN", 4);
+				net_packet->data[4] = 0;
+				net_packet->len = 5;
+				for ( int i = 1; i < MAXPLAYERS; i++ ) {
+					if ( client_disconnected[i] ) {
+						continue;
+					}
+					if ( playernum != i )
+					{
+						continue;
+					}
+					net_packet->address.host = net_clients[i - 1].host;
+					net_packet->address.port = net_clients[i - 1].port;
+					sendPacketSafe(net_sock, -1, net_packet, i - 1);
+				}
+			}
+		}
+		 else if ( multiplayer == CLIENT ) {
+			 memcpy(net_packet->data, "CSCN", 4);
+			 net_packet->data[4] = playernum;
+			 net_packet->len = 5;
+			 net_packet->address.host = net_server.host;
+			 net_packet->address.port = net_server.port;
+			 sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+	}
+
 	static void sendCustomSeedOverNet()
 	{
 		if ( multiplayer == SERVER ) {
@@ -10494,7 +10609,8 @@ bind_failed:
 			sendCustomSeedOverNet();
 	    } else if (multiplayer == CLIENT) {
 	        memcpy(net_packet->data, "SVFL", 4);
-			net_packet->len = 4;
+			net_packet->data[4] = clientnum;
+			net_packet->len = 5;
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
@@ -10765,6 +10881,11 @@ bind_failed:
             }
 		}},
 
+		// client requesting game scenario
+		{ 'CSCN', []() {
+			sendCustomScenarioOverNet(net_packet->data[4]);
+		} },
+
 		// client requesting new svFlags
 		{'SVFL', [](){
 			// update svFlags for everyone
@@ -10953,6 +11074,12 @@ bind_failed:
 #endif
 					}
 					sendSvFlagsOverNet();
+					sendCustomScenarioOverNet(playerNum);
+				}
+				else if ( result == NetworkingLobbyJoinRequestResult::NET_LOBBY_JOIN_DIRECTIP_SUCCESS )
+				{
+					sendSvFlagsOverNet();
+					sendCustomScenarioOverNet(playerNum);
 				}
 
 			    // assume success after this point
@@ -10988,6 +11115,7 @@ bind_failed:
             createDummyMainMenu();
 	        lobbyWindowSvFlags = SDLNet_Read32(&net_packet->data[4]);
 	        uniqueGameKey = SDLNet_Read32(&net_packet->data[8]);
+			uniqueLobbyKey = SDLNet_Read32(&net_packet->data[13]);
 	        local_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
 	        net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
 	        beginFade(FadeDestination::GameStart);
@@ -11133,6 +11261,42 @@ bind_failed:
 		// update mod achievement status
 		{ 'MODS', []() {
 			Mods::lobbyDisableSteamAchievements = net_packet->data[4] == 0 ? false : true;
+		} },
+
+		// update custom scenario string
+		{ 'CSCN', []() {
+			int sequence = (net_packet->data[4] & 0xF);
+			int numchunks = (net_packet->data[4] >> 4) & 0xF;
+			if ( numchunks == 0 )
+			{
+				lobbyCustomScenarioClient.clear();
+				if ( gameModeManager.currentSession.challengeRun.isActive() )
+				{
+					gameModeManager.currentSession.challengeRun.reset();
+					disconnectFromLobby(true);
+					destroyMainMenu();
+					createMainMenu(false);
+					connectionErrorPrompt(Language::get(6124));
+					return;
+				}
+				gameModeManager.currentSession.challengeRun.reset();
+				return;
+			}
+			char buf[512];
+			stringCopy(buf, (char*)(&net_packet->data[5]), sizeof(buf), std::max(0, (int)net_packet->len - 5));
+			lobbyCustomScenarioClient[sequence] = buf;
+			if ( (int)lobbyCustomScenarioClient.size() == numchunks )
+			{
+				// parse the scenario.
+				std::string str = "";
+				for ( int i = 1; i <= numchunks; ++i )
+				{
+					str += lobbyCustomScenarioClient[i];
+				}
+				gameModeManager.setMode(GameModeManager_t::GAME_MODE_CUSTOM_RUN);
+				gameModeManager.currentSession.challengeRun.setup(str);
+				lobbyCustomScenarioClient.clear();
+			}
 		} },
 
 		// update custom seed string
@@ -11291,6 +11455,7 @@ bind_failed:
                     case MAXPLAYERS + 3: error_str = Language::get(1381); break;
                     case MAXPLAYERS + 4: error_str = Language::get(1382); break;
                     case MAXPLAYERS + 5: error_str = Language::get(1383); break;
+					case MAXPLAYERS + 6: error_str = Language::get(6123); break;
                     default: error_str = Language::get(1384); break;
                     }
 
@@ -11613,9 +11778,10 @@ bind_failed:
 		    SDLNet_Write32(0, &net_packet->data[57]);
 	    }
 	    SDLNet_Write32(loadingsavegame, &net_packet->data[61]); // send unique game key
+		SDLNet_Write32(loadinglobbykey, &net_packet->data[65]); // send unique lobby key
 	    net_packet->address.host = net_server.host;
 	    net_packet->address.port = net_server.port;
-	    net_packet->len = 65;
+	    net_packet->len = 69;
 
 	    /*if (!directConnect) {
 		    sendPacket(net_sock, -1, net_packet, 0);
@@ -11646,6 +11812,7 @@ bind_failed:
 	    client_keepalive[0] = ticks;
 		PingNetworkStatus_t::reset();
 		Mods::lobbyDisableSteamAchievements = false;
+		lobbyCustomScenarioClient.clear();
 
 	    // open wait prompt
         cancellablePrompt("connect_prompt", "", "Cancel", [](Widget& widget){
@@ -15881,6 +16048,7 @@ failed:
 
 		if (multiplayer == CLIENT) {
 			sendSvFlagsOverNet();
+			sendCustomScenarioOverNet(index);
 		}
 
 		auto countdown = lobby->findFrame("countdown");
@@ -17131,6 +17299,7 @@ failed:
 			{
 				local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
 			}
+			uniqueLobbyKey = local_rng.getU32();
 	        net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
 
 	        // send start signal to each player
@@ -17147,9 +17316,10 @@ failed:
 		            SDLNet_Write32(svFlags, &net_packet->data[4]);
 		            SDLNet_Write32(uniqueGameKey, &net_packet->data[8]);
 		            net_packet->data[12] = loadingsavegame ? 1 : 0;
+					SDLNet_Write32(uniqueLobbyKey, &net_packet->data[13]);
 		            net_packet->address.host = net_clients[c - 1].host;
 		            net_packet->address.port = net_clients[c - 1].port;
-		            net_packet->len = 13;
+		            net_packet->len = 17;
 		            sendPacketSafe(net_sock, -1, net_packet, c - 1);
 	            }
 	        }
@@ -17355,7 +17525,7 @@ failed:
 		{
 			if ( gameModeManager.currentSession.challengeRun.isActive() )
 			{
-				gameModeManager.currentSession.seededRun.setup(std::to_string(gameModeManager.currentSession.challengeRun.seed));
+				gameModeManager.currentSession.seededRun.setup(gameModeManager.currentSession.challengeRun.seed_word);
 			}
 		}
 
@@ -17463,11 +17633,195 @@ failed:
 				});
 		}
 
+		static auto float_warning_add = [](Frame* _frame, const char* name, std::string text) {
+			_frame->setDisabled(false);
+			Frame* frame = _frame->findFrame(name);
+			if ( !frame )
+			{
+				frame = _frame->addFrame(name);
+				frame->setHollow(true);
+				frame->addImage(SDL_Rect{ 0, 0, 16, 38 }, 0xFFFFFFFF,
+					"*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_Lobby_Warning_Left.png", "bg_left");
+
+				auto field = frame->addField("txt", 32);
+				field->setFont(smallfont_outline);
+				field->setColor(makeColor(134, 159, 165, 255));
+			}
+
+			auto find = text.find('\n');
+			if ( find != std::string::npos )
+			{
+				text.at(find) = ' ';
+			}
+
+			if ( auto field = frame->findField("txt") )
+			{
+				field->setText(text.c_str());
+				if ( auto textGet = field->getTextObject() )
+				{
+					field->setSize(SDL_Rect{ 36, 9, (int)textGet->getWidth(), 26 });
+
+					SDL_Rect right_pos = SDL_Rect{ field->getSize().x + field->getSize().w - 4, 0, 16, 38 };
+					Frame::image_t* right = frame->findImage("bg_right");
+					if ( !right )
+					{
+						right = frame->addImage(right_pos, 0xFFFFFFFF,
+						"*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_Lobby_Warning_Right.png", "bg_right");
+					}
+					right->pos = right_pos;
+
+					SDL_Rect mid_pos = SDL_Rect{ 16, 0, right->pos.x - 16, 38 };
+					Frame::image_t* mid = frame->findImage("bg_mid");
+					if ( !mid )
+					{
+						mid = frame->addImage(mid_pos, 0xFFFFFFFF,
+							"*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_Lobby_Warning_Mid.png", "bg_mid");
+					}
+					mid->pos = mid_pos;
+
+					Frame::image_t* icon = frame->findImage("icon");
+					if ( !icon )
+					{
+						icon = frame->addImage(SDL_Rect{12, 10, 18, 18}, 0xFFFFFFFF,
+							"", "icon");
+					}
+
+					if ( !strcmp(name, "1") || !strcmp(name, "2") )
+					{
+						icon->path = "*#images/ui/Main Menus/Challenges/seed_icon_sm.png";
+						icon->pos.y = 6;
+						icon->pos.w = 16;
+						icon->pos.h = 24;
+						icon->disabled = false;
+					}
+					else if ( !strcmp(name, "3") )
+					{
+						icon->path = "*#images/ui/HUD/warning_glyph.png";
+						icon->pos.y = 10;
+						icon->pos.w = 18;
+						icon->pos.h = 18;
+						icon->disabled = false;
+					}
+					else
+					{
+						icon->disabled = true;
+					}
+
+					SDL_Rect pos = frame->getSize();
+					pos.w = right->pos.x + right->pos.w;
+					pos.h = right->pos.h;
+					frame->setSize(pos);
+					frame->setDisabled(false);
+				}
+			}
+		};
+		static auto lobby_float_warning_fn = [](Frame& frame) {
+
+			Frame* lobbyWarnings = frame.findFrame("lobby_float_warnings");
+			if ( !lobbyWarnings )
+			{
+				lobbyWarnings = frame.addFrame("lobby_float_warnings");
+				lobbyWarnings->setHollow(true);
+			}
+			lobbyWarnings->setDisabled(true);
+			if ( frame.findFrame("countdown") )
+			{
+				return;
+			}
+			for ( auto f : lobbyWarnings->getFrames() )
+			{
+				f->setDisabled(true);
+			}
+
+			SDL_Rect pos = frame.getSize();
+			pos.y = 60;
+			lobbyWarnings->setSize(pos);
+
+			int customRunType = 0;
+			bool customSeed = false;
+			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN
+				|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT )
+			{
+				if ( gameModeManager.currentSession.challengeRun.isActive() )
+				{
+					auto& lid = gameModeManager.currentSession.challengeRun.lid;
+					if ( lid.find("oneshot") != std::string::npos )
+					{
+						float_warning_add(lobbyWarnings, "1", Language::get(6110));
+					}
+					else if ( lid.find("unlimited") != std::string::npos )
+					{
+						float_warning_add(lobbyWarnings, "1", Language::get(6111));
+					}
+					else if ( lid.find("challenge") != std::string::npos )
+					{
+						float_warning_add(lobbyWarnings, "1", Language::get(6112));
+					}
+				}
+			}
+			if ( gameModeManager.currentSession.seededRun.seed > 0 )
+			{
+				float_warning_add(lobbyWarnings, "2", gameModeManager.currentSession.seededRun.seedString);
+			}
+			if ( multiplayer == CLIENT && (lobbyWindowSvFlags & SV_FLAG_HARDCORE) )
+			{
+				float_warning_add(lobbyWarnings, "3", "Hardcore Enabled");
+			}
+			else if ( multiplayer != CLIENT && (svFlags & SV_FLAG_HARDCORE) )
+			{
+				float_warning_add(lobbyWarnings, "3", "Hardcore Enabled");
+			}
+
+			int totalWidth = 0;
+			for ( auto f : lobbyWarnings->getFrames() )
+			{
+				if ( !f->isDisabled() )
+				{
+					if ( totalWidth != 0 )
+					{
+						totalWidth += 8;
+					}
+					totalWidth += f->getSize().w;
+				}
+			}
+			pos.x = pos.w / 2 - totalWidth / 2;
+			totalWidth += 8;
+			if ( pos.x % 2 == 1 )
+			{
+				++pos.x;
+			}
+			pos.w = totalWidth;
+
+			int prevWidth = 0;
+			for ( auto f : lobbyWarnings->getFrames() )
+			{
+				if ( !f->isDisabled() )
+				{
+					SDL_Rect pos = f->getSize();
+					pos.x = prevWidth;
+					f->setSize(pos);
+					prevWidth = pos.x + pos.w + 8;
+				}
+			}
+			lobbyWarnings->setSize(pos);
+
+			lobbyWarnings->setInheritParentFrameOpacity(false);
+			real_t opacity = 1.0;
+			int period = 5;
+			if ( (ticks % (period * TICKS_PER_SECOND)) > (period * 0.75) * TICKS_PER_SECOND )
+			{
+				real_t percent = ((ticks % (period * TICKS_PER_SECOND)) - (period * 0.75) * TICKS_PER_SECOND) / ((period * 0.25) * TICKS_PER_SECOND);
+				opacity += 0.25 * (-1 * sin(percent * PI));
+			}
+			lobbyWarnings->setOpacity(100.0 * opacity);
+		};
+
 		auto banner = lobby->addFrame("banner");
         banner->setTickCallback([](Widget& widget){
             auto banner = static_cast<Frame*>(&widget); assert(banner);
             auto lobby = static_cast<Frame*>(widget.getParent()); assert(lobby);
             banner->setSize(SDL_Rect{lobby->getActualSize().x, 0, Frame::virtualScreenX, 66});
+			lobby_float_warning_fn(*lobby);
             });
         {
             auto background = banner->addImage(
@@ -18269,6 +18623,7 @@ failed:
 	struct LobbyInfo {
 	    std::string name;
         std::string version;
+		std::string challengeLid;
 	    int players;
 	    int ping;
 	    bool locked;
@@ -18286,7 +18641,8 @@ failed:
 	        Uint32 _flags = 0,
 	        const char* _address = "",
 			int _numMods = 0,
-			bool _modsDisableAchievements = false):
+			bool _modsDisableAchievements = false,
+			const char* _challengeLid = "" ):
 	        name(_name),
             version(_version),
 	        players(_players),
@@ -18295,7 +18651,8 @@ failed:
 	        flags(_flags),
 	        address(_address),
 			numMods(_numMods),
-			modsDisableAchievements(_modsDisableAchievements)
+			modsDisableAchievements(_modsDisableAchievements),
+			challengeLid(_challengeLid)
 	    {}
 	};
 
@@ -18361,6 +18718,73 @@ failed:
                 }
 				if ( !privateLobby )
 				{
+					if ( info.challengeLid.find("oneshot") != std::string::npos )
+					{
+						std::string prefix = Language::get(6110);
+						for ( auto& c : prefix )
+						{
+							if ( c == '\n' ) 
+							{
+								c = ' ';
+							}
+						}
+						info.name = ("[" + prefix + "]") + (" " + info.name);
+						lobbies.back().name = info.name;
+					}
+					else if ( info.challengeLid.find("unlimited") != std::string::npos )
+					{
+						std::string prefix = Language::get(6111);
+						for ( auto& c : prefix )
+						{
+							if ( c == '\n' )
+							{
+								c = ' ';
+							}
+						}
+						info.name = ("[" + prefix + "]") + (" " + info.name);
+						lobbies.back().name = info.name;
+					}
+					else if ( info.challengeLid.find("challenge") != std::string::npos )
+					{
+						std::string prefix = Language::get(6112);
+						for ( auto& c : prefix )
+						{
+							if ( c == '\n' )
+							{
+								c = ' ';
+							}
+						}
+						info.name = ("[" + prefix + "]") + (" " + info.name);
+						lobbies.back().name = info.name;
+					}
+
+#ifdef NINTENDO
+					if ( info.challengeLid != "" )
+					{
+						info.locked = true;
+						lobbies.back().locked = info.locked;
+					}
+#else
+					if ( info.challengeLid != "" )
+					{
+						if ( gameModeManager.currentSession.challengeRun.isActive()
+							&& gameModeManager.currentSession.challengeRun.lid != info.challengeLid )
+						{
+							info.locked = true;
+							lobbies.back().locked = info.locked;
+						}
+					}
+					else
+					{
+						if ( gameModeManager.currentSession.challengeRun.isActive()
+							&& gameModeManager.currentSession.challengeRun.lid != "" )
+						{
+							info.locked = true;
+							lobbies.back().locked = info.locked;
+						}
+					}
+#endif
+
 					if ( info.numMods > 0 )
 					{
 						if ( info.name.find(Language::get(5479)) == std::string::npos )
@@ -18418,6 +18842,72 @@ failed:
                 }
 				if ( !privateLobby )
 				{
+					if ( info.challengeLid.find("oneshot") != std::string::npos )
+					{
+						std::string prefix = Language::get(6110);
+						for ( auto& c : prefix )
+						{
+							if ( c == '\n' )
+							{
+								c = ' ';
+							}
+						}
+						info.name = ("[" + prefix + "]") + (" " + info.name);
+						lobbies.back().name = info.name;
+					}
+					else if ( info.challengeLid.find("unlimited") != std::string::npos )
+					{
+						std::string prefix = Language::get(6111);
+						for ( auto& c : prefix )
+						{
+							if ( c == '\n' )
+							{
+								c = ' ';
+							}
+						}
+						info.name = ("[" + prefix + "]") + (" " + info.name);
+						lobbies.back().name = info.name;
+					}
+					else if ( info.challengeLid.find("challenge") != std::string::npos )
+					{
+						std::string prefix = Language::get(6112);
+						for ( auto& c : prefix )
+						{
+							if ( c == '\n' )
+							{
+								c = ' ';
+							}
+						}
+						info.name = ("[" + prefix + "]") + (" " + info.name);
+						lobbies.back().name = info.name;
+					}
+
+#ifdef NINTENDO
+					if ( info.challengeLid != "" )
+					{
+						info.locked = true;
+						lobbies.back().locked = info.locked;
+					}
+#else
+					if ( info.challengeLid != "" )
+					{
+						if ( gameModeManager.currentSession.challengeRun.isActive()
+							&& gameModeManager.currentSession.challengeRun.lid != info.challengeLid )
+						{
+							info.locked = true;
+							lobbies.back().locked = info.locked;
+						}
+					}
+					else
+					{
+						if ( gameModeManager.currentSession.challengeRun.isActive()
+							&& gameModeManager.currentSession.challengeRun.lid != "" )
+						{
+							info.locked = true;
+							lobbies.back().locked = info.locked;
+						}
+					}
+#endif
 					if ( info.numMods > 0 )
 					{
 						if ( info.name.find(Language::get(5479)) == std::string::npos )
@@ -18558,6 +19048,41 @@ failed:
 							else
 #endif
 							{
+#ifdef NINTENDO
+								if ( lobby.challengeLid != "" )
+								{
+									errorPrompt(Language::get(6130), Language::get(5482),
+										[](Button&) {soundCancel(); closeMono(); });
+									return;
+								}
+#else
+								if ( Mods::numCurrentModsLoaded >= 0 )
+								{
+									errorPrompt(Language::get(6132), Language::get(5482),
+										[](Button&) {soundCancel(); closeMono(); });
+									return;
+								}
+#endif
+								if ( lobby.challengeLid != "" )
+								{
+									if ( gameModeManager.currentSession.challengeRun.isActive()
+										&& gameModeManager.currentSession.challengeRun.lid != lobby.challengeLid )
+									{
+										errorPrompt(Language::get(6129), Language::get(5482),
+											[](Button&) {soundCancel(); closeMono(); });
+										return;
+									}
+								}
+								else
+								{
+									if ( gameModeManager.currentSession.challengeRun.isActive()
+										&& gameModeManager.currentSession.challengeRun.lid != "" )
+									{
+										errorPrompt(Language::get(6129), Language::get(5482),
+											[](Button&) {soundCancel(); closeMono(); });
+										return;
+									}
+								}
 								errorPrompt(Language::get(5481), Language::get(5482),
 									[](Button&) {soundCancel(); closeMono(); });
 							}
@@ -18738,6 +19263,7 @@ failed:
 	                info.players = lobbyPlayers[c];
 					info.numMods = lobbyNumMods[c];
 					info.modsDisableAchievements = lobbyModDisableAchievements[c];
+					info.challengeLid = lobbyChallengeRun[c];
 	                info.ping = 50; // TODO
 	                info.locked = false; // this will always be false because steam only reported joinable lobbies
 	                info.flags = (Uint32)flags;
@@ -18755,6 +19281,7 @@ failed:
 						info.players = MAXPLAYERS - lobby->FreeSlots;
 						info.numMods = lobby->LobbyAttributes.numServerMods;
 						info.modsDisableAchievements = lobby->LobbyAttributes.modsDisableAchievements;
+						info.challengeLid = lobby->LobbyAttributes.challengeLid;
 						info.ping = 50; // TODO
 						info.locked = lobby->LobbyAttributes.gameCurrentLevel != -1;
 						info.flags = lobby->LobbyAttributes.serverFlags;
@@ -18861,6 +19388,7 @@ failed:
 				// error
 				multiplayer = SINGLE;
 				loadingsavegame = 0;
+				loadinglobbykey = 0;
 				soundError();
 				closeNetworkInterfaces();
 				nxEnableAutoSleep();
@@ -18911,6 +19439,7 @@ failed:
 		if (!nxInitWireless()) {
 			multiplayer = SINGLE;
 			loadingsavegame = 0;
+			loadinglobbykey = 0;
 			soundError();
 			closeNetworkInterfaces();
 			destroyMainMenu();
@@ -19019,14 +19548,20 @@ failed:
 
 		(void)createBackWidget(window, [](Button& button){
 			multiplayer = SINGLE;
+
+			bool gotoMainMenu = false;
+			if ( loadingsavegame > 0 )
+			{
+				gotoMainMenu = true;
+				gameModeManager.currentSession.restoreSavedServerFlags();
+				gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
+				gameModeManager.currentSession.challengeRun.reset();
+			}
+
 		    loadingsavegame = 0;
+			loadinglobbykey = 0;
 		    soundCancel();
 		    closeNetworkInterfaces();
-		    createLocalOrNetworkMenu();
-
-			//gameModeManager.currentSession.restoreSavedServerFlags();
-			//gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
-			//gameModeManager.currentSession.challengeRun.reset();
 
 #ifdef NINTENDO
 			nxEnableAutoSleep();
@@ -19035,11 +19570,20 @@ failed:
 			nxShutdownWireless();
 #endif
 
-		    // remove parent window
-		    auto frame = static_cast<Frame*>(button.getParent());
-		    frame = static_cast<Frame*>(frame->getParent());
-		    frame = static_cast<Frame*>(frame->getParent());
-		    frame->removeSelf();
+			if ( gotoMainMenu )
+			{
+				destroyMainMenu();
+				createMainMenu(false);
+			}
+			else
+			{
+				createLocalOrNetworkMenu();
+				// remove parent window
+				auto frame = static_cast<Frame*>(button.getParent());
+				frame = static_cast<Frame*>(frame->getParent());
+				frame = static_cast<Frame*>(frame->getParent());
+				frame->removeSelf();
+			}
 		    }, SDL_Rect{292, 4, 0, 0});
 
 		auto background = window->addImage(
@@ -19446,6 +19990,7 @@ failed:
 			} else {
 				multiplayer = SINGLE;
 				loadingsavegame = 0;
+				loadinglobbykey = 0;
 				soundError();
 				closeNetworkInterfaces();
 				destroyMainMenu();
@@ -19561,6 +20106,47 @@ failed:
                         button.deselect();
                     }
                 } else {
+#ifdef NINTENDO
+					if ( lobby.numMods > 0 )
+					{
+						errorPrompt(Language::get(5480), Language::get(5482),
+							[](Button&) {soundCancel(); closeMono(); });
+						return;
+					}
+					if ( lobby.challengeLid != "" )
+					{
+						errorPrompt(Language::get(6130), Language::get(5482),
+							[](Button&) {soundCancel(); closeMono(); });
+						return;
+					}
+#else
+					if ( Mods::numCurrentModsLoaded >= 0 )
+					{
+						errorPrompt(Language::get(6132), Language::get(5482),
+							[](Button&) {soundCancel(); closeMono(); });
+						return;
+					}
+#endif
+					if ( lobby.challengeLid != "" )
+					{
+						if ( gameModeManager.currentSession.challengeRun.isActive()
+							&& gameModeManager.currentSession.challengeRun.lid != lobby.challengeLid )
+						{
+							errorPrompt(Language::get(6129), Language::get(5482),
+								[](Button&) {soundCancel(); closeMono(); });
+							return;
+						}
+					}
+					else
+					{
+						if ( gameModeManager.currentSession.challengeRun.isActive()
+							&& gameModeManager.currentSession.challengeRun.lid != "" )
+						{
+							errorPrompt(Language::get(6129), Language::get(5482),
+								[](Button&) {soundCancel(); closeMono(); });
+							return;
+						}
+					}
 					errorPrompt(Language::get(5481), Language::get(5482),
 						[](Button&) {soundCancel(); closeMono();});
                 }
@@ -20518,21 +21104,29 @@ failed:
 		dimmer->setBorder(0);
 
 		auto window = dimmer->addFrame("play_game_window");
-		window->setSize(SDL_Rect{
-			(Frame::virtualScreenX - 218 * 2) / 2,
-			(Frame::virtualScreenY - 130 * 2) / 2,
-			218 * 2,
-			130 * 2});
-		window->setActualSize(SDL_Rect{0, 0, 218 * 2, 130 * 2});
-		window->setColor(0);
-		window->setBorder(0);
 
 		auto background = window->addImage(
-			window->getActualSize(),
+			SDL_Rect{ 0, 0, 436, 260 },
 			0xffffffff,
 			"*images/ui/Main Menus/Play/UI_PlayGame_Window_02.png",
 			"background"
 		);
+#ifdef USE_PLAYFAB
+#ifndef NINTENDO
+		background->path = "*images/ui/Main Menus/Play/UI_PlayGame_Window_02_Events.png";
+		background->pos.h = 340;
+#endif
+#endif
+
+		window->setSize(SDL_Rect{
+			(Frame::virtualScreenX - background->pos.w) / 2,
+			(Frame::virtualScreenY - background->pos.h) / 2,
+			background->pos.w,
+			background->pos.h});
+		window->setActualSize(SDL_Rect{0, 0, window->getSize().w, window->getSize().h});
+		window->setColor(0);
+		window->setBorder(0);
+
 
 		auto banner_title = window->addField("banner", 32);
 		banner_title->setSize(SDL_Rect{170, 24, 98, 18});
@@ -20542,45 +21136,62 @@ failed:
 
 		bool continueAvailable = anySaveFileExists();
 
+		auto hall_of_trials_button = window->addButton("hall_of_trials");
+		hall_of_trials_button->setSize(SDL_Rect{ 134, 176, 168, 52 });
+
+#ifdef USE_PLAYFAB
+#ifndef NINTENDO
+		hall_of_trials_button->setSize(SDL_Rect{ 134, 176 + 14, 168, 52 });
+
 		auto challenge_button = window->addButton("challenges");
-		challenge_button->setSize(SDL_Rect{134, 176, 168, 52});
-		challenge_button->setBackground("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrials00.png");
-		challenge_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrialsHigh00.png");
-		challenge_button->setBackgroundActivated("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrialsPress00.png");
+		challenge_button->setSize(SDL_Rect{134, 244 + 6, 168, 52});
+		if ( Mods::numCurrentModsLoaded >= 0 )
+		{
+			challenge_button->setBackground("*images/ui/Main Menus/Play/UI_PlayMenu_Button_Disabled00.png");
+			challenge_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/UI_PlayMenu_Button_DisabledHigh00.png");
+			challenge_button->setBackgroundActivated("*images/ui/Main Menus/Play/UI_PlayMenu_Button_DisabledPress00.png");
+		}
+		else
+		{
+			challenge_button->setBackground("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrials00.png");
+			challenge_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrialsHigh00.png");
+			challenge_button->setBackgroundActivated("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrialsPress00.png");
+		}
 		challenge_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		challenge_button->setColor(makeColor(255, 255, 255, 255));
-		challenge_button->setText(Language::get(5560));
+		challenge_button->setText(Language::get(6119));
 		challenge_button->setFont(smallfont_outline);
 		challenge_button->setWidgetSearchParent(window->getName());
-		if (continueAvailable) {
-			challenge_button->setWidgetUp("continue");
-		} else {
-			challenge_button->setWidgetUp("new");
-		}
+		challenge_button->setWidgetUp("hall_of_trials");
 		challenge_button->setWidgetBack("back_button");
 		challenge_button->setCallback(playChallengeLoadingWindow);
+#endif
+#endif
 
-		//auto hall_of_trials_button = window->addButton("hall_of_trials");
-		//hall_of_trials_button->setSize(SDL_Rect{ 134, 176, 168, 52 });
-		//hall_of_trials_button->setBackground("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrials00.png");
-		//hall_of_trials_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrialsHigh00.png");
-		//hall_of_trials_button->setBackgroundActivated("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrialsPress00.png");
-		//hall_of_trials_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		//hall_of_trials_button->setColor(makeColor(255, 255, 255, 255));
-		//hall_of_trials_button->setText(Language::get(5560));
-		//hall_of_trials_button->setFont(smallfont_outline);
-		//hall_of_trials_button->setWidgetSearchParent(window->getName());
-		//if ( continueAvailable ) {
-		//	hall_of_trials_button->setWidgetUp("continue");
-		//}
-		//else {
-		//	hall_of_trials_button->setWidgetUp("new");
-		//}
-		//hall_of_trials_button->setWidgetBack("back_button");
-		//hall_of_trials_button->setCallback([](Button&){
-		//	soundActivate();
-		//	createHallofTrialsMenu();
-		//	});
+		hall_of_trials_button->setBackground("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrials00.png");
+		hall_of_trials_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrialsHigh00.png");
+		hall_of_trials_button->setBackgroundActivated("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrialsPress00.png");
+		hall_of_trials_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		hall_of_trials_button->setColor(makeColor(255, 255, 255, 255));
+		hall_of_trials_button->setText(Language::get(5560));
+		hall_of_trials_button->setFont(smallfont_outline);
+		hall_of_trials_button->setWidgetSearchParent(window->getName());
+		if ( continueAvailable ) {
+			hall_of_trials_button->setWidgetUp("continue");
+		}
+		else {
+			hall_of_trials_button->setWidgetUp("new");
+		}
+		hall_of_trials_button->setWidgetBack("back_button");
+#ifdef USE_PLAYFAB
+#ifndef NINTENDO
+		hall_of_trials_button->setWidgetDown("challenges");
+#endif
+#endif
+		hall_of_trials_button->setCallback([](Button&){
+			soundActivate();
+			createHallofTrialsMenu();
+		});
 
 		(void)createBackWidget(window, [](Button& button){
 			soundCancel();
@@ -20652,7 +21263,7 @@ failed:
 				new_button->select();
 			}
 		} else {
-			//hall_of_trials_button->select();
+			hall_of_trials_button->select();
 		}
 	}
 
@@ -21197,6 +21808,7 @@ failed:
 
 	static void playNew(Button& button) {
 	    loadingsavegame = 0;
+		loadinglobbykey = 0;
 
 	    soundActivate();
 	    createLocalOrNetworkMenu();
@@ -21292,7 +21904,8 @@ failed:
 
 		savegameCurrentFileIndex = load_save_index;
 		auto info = getSaveGameInfo(load_singleplayer, savegameCurrentFileIndex);
-		loadingsavegame = getSaveGameUniqueGameKey(info);
+		loadingsavegame = info.gamekey;
+		loadinglobbykey = info.lobbykey;
 
 		if ( info.multiplayer_type == SPLITSCREEN || info.multiplayer_type == SINGLE ) {
 			multiplayer = SINGLE;
@@ -21405,6 +22018,26 @@ failed:
 		const bool modded = saveGameInfo.players[saveGameInfo.player_num].additionalConducts[CONDUCT_MODDED];
 		bool moddedSavegameWarning = false;
 		bool unModdedSavegameWarning = false;
+		int challengeEventSave = 0;
+		for ( auto& pair : saveGameInfo.additional_data )
+		{
+			if ( pair.first == "game_scenario" )
+			{
+				if ( pair.second.find("\"lid\":\"lid_victory_seed_oneshot\"") != std::string::npos )
+				{
+					challengeEventSave = 1;
+				}
+				else if ( pair.second.find("\"lid\":\"lid_victory_seed_unlimited\"") != std::string::npos )
+				{
+					challengeEventSave = 2;
+				}
+				else if ( pair.second.find("\"lid\":\"lid_victory_seed_challenge\"") != std::string::npos )
+				{
+					challengeEventSave = 3;
+				}
+				break;
+			}
+		}
 		if ( modded && Mods::numCurrentModsLoaded <= 0 )
 		{
 			moddedSavegameWarning = true;
@@ -21467,6 +22100,31 @@ failed:
 					}
 				}
 				closeMono();
+				});
+			soundError();
+		}
+		else if ( challengeEventSave && Mods::numCurrentModsLoaded >= 0 )
+		{
+			monoPrompt(
+				Language::get(6133), Language::get(5591),
+				[](Button& button) { // Cancel button
+					soundCancel();
+					if ( savegame_selected ) {
+						savegame_selected->select();
+					}
+					else {
+						assert(main_menu_frame);
+						auto window = main_menu_frame->findFrame("continue_window"); assert(window);
+						if ( load_singleplayer ) {
+							auto b = window->findButton("singleplayer");
+							b->select();
+						}
+						else {
+							auto b = window->findButton("multiplayer");
+							b->select();
+						}
+					}
+					closeMono();
 				});
 			soundError();
 		}
@@ -21746,6 +22404,26 @@ failed:
 
                 // extract savegame info
                 const bool modded = saveGameInfo.players[saveGameInfo.player_num].additionalConducts[CONDUCT_MODDED];
+				int challengeEventSave = 0;
+				for ( auto& pair : saveGameInfo.additional_data )
+				{
+					if ( pair.first == "game_scenario" )
+					{
+						if ( pair.second.find("\"lid\":\"lid_victory_seed_oneshot\"") != std::string::npos )
+						{
+							challengeEventSave = 1;
+						}
+						else if ( pair.second.find("\"lid\":\"lid_victory_seed_unlimited\"") != std::string::npos )
+						{
+							challengeEventSave = 2;
+						}
+						else if ( pair.second.find("\"lid\":\"lid_victory_seed_challenge\"") != std::string::npos )
+						{
+							challengeEventSave = 3;
+						}
+						break;
+					}
+				}
                 const std::string& game_name = saveGameInfo.gamename;
                 const auto timestamp = saveGameInfo.timestamp;
 				int numplayers = 0;
@@ -21890,7 +22568,13 @@ failed:
 				screenshot->section.x = (image->getWidth() - image->getHeight()) / 2;
 				screenshot->section.w = image->getHeight();
     
-                if (modded) {
+				if ( challengeEventSave )
+				{
+					savegame_book->setBackground("*images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_02.png");
+					savegame_book->setTextColor(makeColor(193, 187, 120, 255));
+					savegame_book->setTextHighlightColor(makeColor(193, 187, 120, 255));
+				}
+                else if (modded) {
                     savegame_book->setBackground("*images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_01.png");
                     savegame_book->setTextColor(makeColor(73, 255, 182, 255));
                     savegame_book->setTextHighlightColor(makeColor(73, 255, 182, 255));
@@ -21904,11 +22588,71 @@ failed:
 		        auto overlay = cover->addImage(
 		            SDL_Rect{32, 16, 160, 162},
 		            0xffffffff,
-                    modded ?
+					challengeEventSave ? "*images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_Corners_02.png" : (modded ?
                         "*images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_Corners_01.png":
-                        "*images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_Corners_00.png",
+                        "*images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_Corners_00.png"),
 		            (str + "_overlay").c_str()
 		        );
+
+				if ( challengeEventSave >= 1 && challengeEventSave <= 3 )
+				{
+					std::string title = Language::get(6110 + (challengeEventSave - 1));
+					for ( auto& c : title )
+					{
+						if ( c == '\n' )
+						{
+							c = ' ';
+						}
+					}
+
+					auto frame = cover->addFrame("event_label");
+					frame->setHollow(true);
+					auto left = frame->addImage(SDL_Rect{ 0, 0, 16, 38 }, 0xFFFFFFFF,
+						"*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_Lobby_Warning_Left.png", "bg_left");
+					left->disabled = true;
+
+					auto field = frame->addField("txt", 32);
+					field->setFont(smallfont_outline);
+					field->setColor(makeColor(193, 163, 124, 255));
+
+					if ( auto field = frame->findField("txt") )
+					{
+						field->setText(title.c_str());
+						if ( auto textGet = field->getTextObject() )
+						{
+							field->setSize(SDL_Rect{ 36, 9, (int)textGet->getWidth(), 26 });
+
+							SDL_Rect right_pos = SDL_Rect{ field->getSize().x + field->getSize().w - 4, 0, 16, 38 };
+							Frame::image_t* right = frame->addImage(right_pos, 0xFFFFFFFF,
+									"*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_Lobby_Warning_Right.png", "bg_right");
+							right->pos = right_pos;
+							right->disabled = true;
+
+							SDL_Rect mid_pos = SDL_Rect{ 16, 0, right->pos.x - 16, 38 };
+							Frame::image_t* mid = frame->addImage(mid_pos, 0xFFFFFFFF,
+								"*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_Lobby_Warning_Mid.png", "bg_mid");
+							mid->pos = mid_pos;
+							mid->disabled = true;
+
+							Frame::image_t* icon = frame->addImage(SDL_Rect{ 12, 10, 18, 18 }, 0xFFFFFFFF,
+								"", "icon");
+
+							icon->path = "*#images/ui/Main Menus/Challenges/seed_icon_sm.png";
+							icon->pos.y = 6;
+							icon->pos.w = 16;
+							icon->pos.h = 24;
+							icon->disabled = false;
+
+							SDL_Rect pos = frame->getSize();
+							pos.w = right->pos.x + right->pos.w;
+							pos.h = right->pos.h;
+							pos.x = cover->getSize().w / 2 - pos.w / 2;
+							pos.y = cover->getSize().h - pos.h + 4;
+							frame->setSize(pos);
+							frame->setDisabled(false);
+						}
+					}
+				}
                     
                 // add player info
                 if (numplayers == 1) {
@@ -23086,6 +23830,7 @@ failed:
 				{
 					local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
 				}
+				uniqueLobbyKey = local_rng.getU32();
 				net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
 
 				if (multiplayer == SERVER) {
@@ -23097,9 +23842,10 @@ failed:
 	                    SDLNet_Write32(svFlags, &net_packet->data[4]);
 	                    SDLNet_Write32(uniqueGameKey, &net_packet->data[8]);
 	                    net_packet->data[12] = 0;
+						SDLNet_Write32(uniqueLobbyKey, &net_packet->data[13]);
 	                    net_packet->address.host = net_clients[c - 1].host;
 	                    net_packet->address.port = net_clients[c - 1].port;
-	                    net_packet->len = 13;
+	                    net_packet->len = 17;
 	                    sendPacketSafe(net_sock, -1, net_packet, c - 1);
                     }
 				}
@@ -23524,6 +24270,7 @@ failed:
 				multiplayer = SINGLE;
 				numplayers = 0;
 				loadingsavegame = 0;
+				loadinglobbykey = 0;
 				gameModeManager.setMode(GameModeManager_t::GAME_MODE_TUTORIAL_INIT);
 
                 // don't show the first time prompt anymore
@@ -24824,6 +25571,31 @@ failed:
                 } else {
                     snprintf(highscore_buf, sizeof(highscore_buf), "%s", Language::get(5834));
                 }
+
+				// post online scores
+				if ( gameModeManager.allowsGlobalHiscores() )
+				{
+					if ( splitscreen ) 
+					{
+						for ( int c = 0; c < MAXPLAYERS; ++c ) {
+							if ( !client_disconnected[c] ) {
+#ifdef USE_PLAYFAB
+								if ( c == 0 )
+								{
+									playfabUser.postScore(c);
+								}
+#endif
+							}
+						}
+					}
+					else 
+					{
+#ifdef USE_PLAYFAB
+						playfabUser.postScore(clientnum);
+#endif
+					}
+				}
+
                 footer->setText(highscore_buf);
             }
         }
@@ -24964,6 +25736,7 @@ failed:
 				{
 					local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
 				}
+				uniqueLobbyKey = local_rng.getU32();
 				net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
 
 				if (multiplayer == SERVER) {
@@ -24975,9 +25748,10 @@ failed:
 	                    SDLNet_Write32(svFlags, &net_packet->data[4]);
 	                    SDLNet_Write32(uniqueGameKey, &net_packet->data[8]);
 	                    net_packet->data[12] = 0;
+						SDLNet_Write32(uniqueLobbyKey, &net_packet->data[13]);
 	                    net_packet->address.host = net_clients[c - 1].host;
 	                    net_packet->address.port = net_clients[c - 1].port;
-	                    net_packet->len = 13;
+	                    net_packet->len = 17;
 	                    sendPacketSafe(net_sock, -1, net_packet, c - 1);
                     }
 				}
@@ -29333,6 +30107,9 @@ failed:
 
 	static void playChallengeBegin(PlayfabUser_t::PeriodicalEvents_t::Event_t& e)
 	{
+		loadingsavegame = 0;
+		loadinglobbykey = 0;
+
 		if ( e.lid.find("oneshot") != std::string::npos )
 		{
 			gameModeManager.setMode(GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT);
@@ -29363,6 +30140,182 @@ failed:
 				{
 					local_btn->activate();
 				}
+			}
+		}
+	}
+
+	static void playChallengeEventOneshotAttempted(std::string _lid)
+	{
+		static std::string lid;
+		lid = _lid;
+
+		auto check = VALID_OK_CHARACTER;
+		for ( auto& e : playfabUser.periodicalEvents.periodicalEvents )
+		{
+			if ( e.lid == lid )
+			{
+				auto challenge = GameModeManager_t::CurrentSession_t::ChallengeRun_t();
+				challenge.setup(e.scenario);
+				if ( challenge.isActive() )
+				{
+					switch ( challenge.classnum )
+					{
+					case CLASS_CONJURER:
+					case CLASS_ACCURSED:
+					case CLASS_MESMER:
+					case CLASS_BREWER:
+						if ( !enabledDLCPack1 )
+						{
+							check = INVALID_REQUIREDLC1;
+						}
+						break;
+					case CLASS_MACHINIST:
+					case CLASS_PUNISHER:
+					case CLASS_SHAMAN:
+					case CLASS_HUNTER:
+						if ( !enabledDLCPack2 )
+						{
+							check = INVALID_REQUIREDLC2;
+						}
+						break;
+					default:
+						break;
+					}
+					switch ( challenge.race )
+					{
+					case RACE_SKELETON:
+					case RACE_VAMPIRE:
+					case RACE_SUCCUBUS:
+					case RACE_GOATMAN:
+						if ( !enabledDLCPack1 )
+						{
+							check = INVALID_REQUIREDLC1;
+						}
+						break;
+					case RACE_AUTOMATON:
+					case RACE_INCUBUS:
+					case RACE_GOBLIN:
+					case RACE_INSECTOID:
+						if ( !enabledDLCPack2 )
+						{
+							check = INVALID_REQUIREDLC2;
+						}
+						break;
+					default:
+						break;
+					}
+				}
+				break;
+			}
+		}
+
+		std::string txt;
+		if ( check == INVALID_REQUIREDLC1 )
+		{
+			txt = Language::get(6126);
+			txt += Language::get(5002);
+		}
+		else if ( check == INVALID_REQUIREDLC2 )
+		{
+			txt = Language::get(6127);
+			txt += Language::get(5002);
+		}
+		else
+		{
+			txt = Language::get(6125);
+		}
+
+		if ( check == INVALID_REQUIREDLC1 || check == INVALID_REQUIREDLC2 )
+		{
+			auto prompt = binaryPromptXL(
+				txt.c_str(),
+				Language::get(5003),
+				Language::get(5004),
+				[](Button&) {
+#if defined(STEAMWORKS)
+					soundActivate();
+					openURLTryWithOverlay("https://store.steampowered.com/dlc/371970/Barony/");
+#elif defined(NINTENDO)
+					nxShowAllDLC();
+					/*if (nxShowDLCPage(dlcPromptIndex) == false) {
+						soundError();
+					}*/
+#elif defined(USE_EOS)
+					soundActivate();
+					openURLTryWithOverlay("https://store.epicgames.com/en-US/all-dlc/barony");
+#endif
+					// fixes a bug where you could get spammed with 100s of browser tabs...
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+					Input::mouseButtons[SDL_BUTTON_LEFT] = 0;
+					closeBinary();
+					assert(main_menu_frame);
+
+					auto challenge_window = main_menu_frame->findFrame("challenge_window"); assert(challenge_window);
+					auto challenge_btn = challenge_window->findButton(lid.c_str());
+					assert(challenge_btn);
+					challenge_btn->select();
+				},
+				[](Button&) {
+					soundCancel();
+					closeBinary();
+					assert(main_menu_frame);
+
+					auto challenge_window = main_menu_frame->findFrame("challenge_window"); assert(challenge_window);
+					auto challenge_btn = challenge_window->findButton(lid.c_str());
+					assert(challenge_btn);
+					challenge_btn->select();
+				}, false, false);
+			if ( auto text = prompt->findField("text") )
+			{
+				SDL_Rect pos = text->getSize();
+				pos.y -= 4;
+				text->setSize(pos);
+			}
+		}
+		else
+		{
+			auto prompt = binaryPromptXL(
+				txt.c_str(),
+				Language::get(5884),
+				Language::get(5860),
+				[](Button&) {
+					// proceed to game
+					for ( auto& e : playfabUser.periodicalEvents.periodicalEvents )
+					{
+						if ( e.lid == lid )
+						{
+							soundActivate();
+							closeBinary();
+							playChallengeBegin(e);
+							return;
+						}
+					}
+
+					// error?
+					soundCancel();
+					closeBinary();
+					assert(main_menu_frame);
+
+					auto challenge_window = main_menu_frame->findFrame("challenge_window"); assert(challenge_window);
+					auto challenge_btn = challenge_window->findButton(lid.c_str());
+					assert(challenge_btn);
+					challenge_btn->select();
+				},
+				[](Button&) {
+					soundCancel();
+					closeBinary();
+					assert(main_menu_frame);
+
+					auto challenge_window = main_menu_frame->findFrame("challenge_window"); assert(challenge_window);
+					auto challenge_btn = challenge_window->findButton(lid.c_str());
+					assert(challenge_btn);
+					challenge_btn->select();
+				}, false, false);
+			if ( auto text = prompt->findField("text") )
+			{
+				SDL_Rect pos = text->getSize();
+				pos.y -= 4;
+				text->setSize(pos);
 			}
 		}
 	}
@@ -29416,7 +30369,7 @@ failed:
 		}
 	}
 
-	const int hoursLeftWarning = 48;
+	const int hoursLeftWarning = 12;
 	static void playChallengeVerifyEvent(Button& button)
 	{
 		static std::string lid;
@@ -29454,7 +30407,7 @@ failed:
 							{
 								soundActivate();
 								closeMono();
-								if ( !e.attempted )
+								if ( !e.attempted || (e.attempted && lid.find("oneshot") == std::string::npos) )
 								{
 									if ( e.hoursLeft < hoursLeftWarning )
 									{
@@ -29472,6 +30425,7 @@ failed:
 								else
 								{
 									// hook for re-attempts
+									playChallengeEventOneshotAttempted(lid);
 								}
 							}
 							else if ( e.errorType != 0 )
@@ -29534,6 +30488,27 @@ failed:
 		playfabUser.periodicalEvents.periodicalEvents.clear();
 		playfabUser.periodicalEvents.awaitingData = false;
 		playfabUser.periodicalEvents.error = false;
+
+		if ( Mods::numCurrentModsLoaded >= 0 )
+		{
+			auto prompt = errorPrompt(
+				Language::get(6131),
+				Language::get(5884),
+				[](Button&) {
+					soundCancel();
+					closeMono();
+
+					assert(main_menu_frame);
+					auto window = main_menu_frame->findFrame("play_game_window");
+					if ( window ) {
+						if ( auto challenge_button = window->findButton("challenges") )
+						{
+							challenge_button->select();
+						}
+					}
+				});
+			return;
+		}
 
 		auto prompt = monoPrompt(
 			Language::get(6113),
@@ -29786,7 +30761,7 @@ failed:
 						}
 						if ( completion_img )
 						{
-							completion_img->disabled = !e.attempted;
+							completion_img->disabled = !e.attempted || e.locked;
 						}
 						txt->setText(buf);
 						break;
@@ -29949,14 +30924,14 @@ failed:
 						else
 						{
 							snprintf(buf, sizeof(buf), "%dh %dm", e.hoursLeft, e.minutesLeft);
-							if ( e.hoursLeft < 12 )
+							if ( e.hoursLeft < hoursLeftWarning )
 							{
 								txt->setColor(hudColors.characterSheetRed);
 							}
 						}
 						if ( completion_img )
 						{
-							completion_img->disabled = !e.attempted;
+							completion_img->disabled = !e.attempted || e.locked;
 						}
 						txt->setText(buf);
 						break;
@@ -30136,7 +31111,7 @@ failed:
 							{
 								snprintf(buf, sizeof(buf), "%dh %dm", e.hoursLeft, e.minutesLeft);
 							}
-							if ( e.hoursLeft < 12 )
+							if ( e.hoursLeft < hoursLeftWarning )
 							{
 								txt->setColor(hudColors.characterSheetRed);
 							}
@@ -30162,7 +31137,7 @@ failed:
 						}
 						if ( completion_img )
 						{
-							completion_img->disabled = !e.attempted;
+							completion_img->disabled = !e.attempted || e.locked;
 						}
 						txt->setText(buf);
 						break;

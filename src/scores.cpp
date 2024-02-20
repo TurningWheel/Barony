@@ -54,6 +54,7 @@ list_t booksRead;
 bool usedClass[NUMCLASSES] = {0};
 bool usedRace[NUMRACES] = { 0 };
 Uint32 loadingsavegame = 0;
+Uint32 loadinglobbykey = 0;
 bool achievementBrawlerMode = false;
 bool achievementPenniless = false;
 bool achievementRangedMode[MAXPLAYERS] = { 0 };
@@ -3324,19 +3325,6 @@ const char* getSaveGameName(const SaveGameInfo& info)
 
 /*-------------------------------------------------------------------------------
 
-	getSaveGameUniqueGameKey
-
-	Returns the uniqueGameKey variable stored in the save game
-
--------------------------------------------------------------------------------*/
-
-Uint32 getSaveGameUniqueGameKey(const SaveGameInfo& info)
-{
-	return info.gamekey;
-}
-
-/*-------------------------------------------------------------------------------
-
 getSaveGameVersionNum
 
 Returns the savefile version
@@ -5686,6 +5674,12 @@ void SaveGameInfo::computeHash(const int playernum, Uint32& hash)
 			}
 		}
 	}
+
+	for ( auto& pair : additional_data )
+	{
+		hash += djb2Hash(const_cast<char*>(pair.first.c_str()));
+		hash += djb2Hash(const_cast<char*>(pair.second.c_str()));
+	}
 }
 
 void SaveGameInfo::Player::stat_t::item_t::computeHash(Uint32& hash, Uint32& shift)
@@ -5725,6 +5719,7 @@ int SaveGameInfo::populateFromSession(const int playernum)
 	// game info
 	info->gamename = stats[playernum]->name;
 	info->gamekey = ::uniqueGameKey;
+	info->lobbykey = ::uniqueLobbyKey;
 	info->mapseed = ::mapseed;
 	info->customseed = gameModeManager.currentSession.seededRun.seed;
 	info->customseed_string = gameModeManager.currentSession.seededRun.seedString;
@@ -6108,6 +6103,10 @@ int SaveGameInfo::populateFromSession(const int playernum)
 	}
 
 	info->map_messages = ::Player::Minimap_t::mapDetails;
+	if ( gameModeManager.currentSession.challengeRun.isActive() )
+	{
+		info->additional_data.push_back(std::make_pair("game_scenario", gameModeManager.currentSession.challengeRun.scenarioStr));
+	}
 
 	if ( info->game_version >= 410 )
 	{
@@ -6228,8 +6227,27 @@ std::string SaveGameInfo::serializeToOnlineHiscore(const int playernum, const in
 
 	Uint32 gametimer = std::min(this->gametimer, (Uint32)0xFFFFFF);
 
+	std::string lid = "lid";
+	int lid_version = 0;
+	int challengeEventSave = 0;
+	for ( auto& pair : additional_data )
+	{
+		if ( pair.first == "game_scenario" )
+		{
+			GameModeManager_t::CurrentSession_t::ChallengeRun_t run;
+			run.setup(pair.second);
+			if ( run.isActive() )
+			{
+				lid = run.lid;
+				lid_version = run.lid_version;
+			}
+			break;
+		}
+	}
+
 	character.AddMember("version", rapidjson::Value(1), d.GetAllocator());
-	character.AddMember("leaderboard", rapidjson::Value("lid", d.GetAllocator()), d.GetAllocator());
+	character.AddMember("leaderboard", rapidjson::Value(lid.c_str(), d.GetAllocator()), d.GetAllocator());
+	character.AddMember("leaderboard_version", rapidjson::Value(lid_version), d.GetAllocator());
 	character.AddMember("time", rapidjson::Value(gametimer), d.GetAllocator());
 	character.AddMember("totalscore", rapidjson::Value(getTotalScore(playernum, victory)), d.GetAllocator());
 	character.AddMember("seed", rapidjson::Value(customseed), d.GetAllocator());
@@ -6396,6 +6414,7 @@ int loadGame(int player, const SaveGameInfo& info) {
 
 	// load game info
 	uniqueGameKey = info.gamekey;
+	uniqueLobbyKey = info.lobbykey;
 	mapseed = info.mapseed;
 	completionTime = info.gametimer;
 	clientnum = info.player_num;
@@ -6431,6 +6450,28 @@ int loadGame(int player, const SaveGameInfo& info) {
 			printlog("[SESSION]: Using savegame server flags");
 			gameModeManager.currentSession.seededRun.seed = info.customseed;
 			gameModeManager.currentSession.seededRun.seedString = info.customseed_string;
+			for ( auto& pair : info.additional_data )
+			{
+				if ( pair.first == "game_scenario" )
+				{
+					gameModeManager.currentSession.challengeRun.setup(pair.second);
+					if ( gameModeManager.currentSession.challengeRun.isActive() )
+					{
+						if ( gameModeManager.currentSession.challengeRun.lid.find("oneshot") != std::string::npos )
+						{
+							gameModeManager.setMode(GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT);
+						}
+						else if ( gameModeManager.currentSession.challengeRun.lid.find("unlimited") != std::string::npos )
+						{
+							gameModeManager.setMode(GameModeManager_t::GAME_MODE_CUSTOM_RUN);
+						}
+						else if ( gameModeManager.currentSession.challengeRun.lid.find("challenge") != std::string::npos )
+						{
+							gameModeManager.setMode(GameModeManager_t::GAME_MODE_CUSTOM_RUN);
+						}
+					}
+				}
+			}
 		}
 	}
 

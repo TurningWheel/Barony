@@ -2,6 +2,7 @@
 #include "scores.hpp"
 #include "files.hpp"
 #include "mod_tools.hpp"
+#include "interface/ui.hpp"
 #ifdef STEAMWORKS
 #include "steam.hpp"
 #endif
@@ -485,7 +486,7 @@ void PlayfabUser_t::OnFunctionExecute(const PlayFab::CloudScriptModels::ExecuteF
             result.FunctionName.c_str(), (int)code, message.c_str(), result.ExecutionTimeMilliseconds);
     }
 
-    if ( result.FunctionName == "PostScore" )
+    if ( result.FunctionName == "PostScore" || result.FunctionName == "PostScoreDebug" )
     {
         int sequence = reinterpret_cast<intptr_t>(customData);
         for ( auto it = playfabUser.postScoreHandler.queue.begin();
@@ -495,11 +496,19 @@ void PlayfabUser_t::OnFunctionExecute(const PlayFab::CloudScriptModels::ExecuteF
             {
                 (*it).inprogress = false;
                 (*it).code = code;
-                Uint32 retryTicks = (retry > 0 ? (ticks + TICKS_PER_SECOND * retry) : 0);
+                Uint32 retryTicks = (retry > 0 ? (processTick + TICKS_PER_SECOND * retry) : 0);
                 (*it).retryTicks = retryTicks;
                 if ( code == PlayFab::PlayFabErrorCode::PlayFabErrorSuccess
                     || ((int)code >= 400 && (int)code < 500 && (*it).retryTicks == 0) )
                 {
+                    if ( code == PlayFab::PlayFabErrorCode::PlayFabErrorSuccess )
+                    {
+                        if ( message.find("Score successfully published") != std::string::npos )
+                        {
+                            // notification
+                            UIToastNotificationManager.createLeaderboardNotification(message);
+                        }
+                    }
                     playfabUser.postScoreHandler.queue.erase(it);
                 }
                 else
@@ -536,6 +545,10 @@ void PlayfabUser_t::OnFunctionExecute(const PlayFab::CloudScriptModels::ExecuteF
                                 if ( key == "lid" )
                                 {
                                     jsonValueToString(v, key, e.lid);
+                                }
+                                else if ( key == "seed_word" )
+                                {
+                                    jsonValueToString(v, key, e.seed_word);
                                 }
                                 else if ( key == "lid_version" )
                                 {
@@ -861,7 +874,7 @@ void PlayfabUser_t::getLeaderboardTop100(std::string lid)
     {
         for ( auto pair : leaderboardData.leaderboards[lid].awaitingResponse )
         {
-            if ( (ticks - pair.second.first) < 5 * TICKS_PER_SECOND )
+            if ( (processTick - pair.second.first) < 5 * TICKS_PER_SECOND )
             {
                 return; // waiting on a leaderboard to load in
             }
@@ -893,7 +906,7 @@ void PlayfabUser_t::getLeaderboardTop100Data(std::string lid, int start, int num
     request.FunctionParameter = v;
 
     playfabUser.leaderboardData.leaderboards[lid].awaitingResponse[LeaderboardData_t::sequenceIDs] = 
-        std::make_pair(ticks, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
+        std::make_pair(processTick, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
 
     PlayFab::PlayFabCloudScriptAPI::ExecuteFunction(request, OnFunctionExecute, OnCloudScriptFailure,
         (void*)(intptr_t)(LeaderboardData_t::sequenceIDs));
@@ -944,7 +957,12 @@ void PlayfabUser_t::PostScoreHandler_t::ScoreUpdate_t::post()
     Json::Value json;
     json["scorestr"] = score;
     PlayFab::CloudScriptModels::ExecuteFunctionRequest request;
+#ifdef NDEBUG
     request.FunctionName = "PostScore";
+    //request.FunctionName = "PostScoreDebug";
+#else
+    request.FunctionName = "PostScoreDebug";
+#endif
     request.GeneratePlayStreamEvent = false;
     request.CustomTags["default"] = "1";
     request.CustomTags["hash"] = hash;
@@ -953,8 +971,8 @@ void PlayfabUser_t::PostScoreHandler_t::ScoreUpdate_t::post()
         (void*)(intptr_t)(sequence));
 
     inprogress = true;
-    postTick = ticks;
-    PlayfabUser_t::PostScoreHandler_t::lastPostTicks = ticks;
+    postTick = processTick;
+    PlayfabUser_t::PostScoreHandler_t::lastPostTicks = processTick;
 }
 
 bool PlayfabUser_t::LeaderboardData_t::LeaderBoard_t::errorReceivingLeaderboard()
@@ -1015,7 +1033,7 @@ void PlayfabUser_t::LeaderboardData_t::LeaderBoard_t::requestPlayerData(int star
             request.FunctionParameter = json;
 
             playfabUser.leaderboardData.leaderboards[name].awaitingResponse[LeaderboardData_t::sequenceIDs] =
-                std::make_pair(ticks, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
+                std::make_pair(processTick, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
 
             PlayFab::PlayFabCloudScriptAPI::ExecuteFunction(request, OnFunctionExecute, OnCloudScriptFailure
                 , (void*)(intptr_t)(LeaderboardData_t::sequenceIDs));
@@ -1035,7 +1053,7 @@ void PlayfabUser_t::LeaderboardData_t::LeaderBoard_t::requestPlayerData(int star
         request.FunctionParameter = json;
 
         playfabUser.leaderboardData.leaderboards[name].awaitingResponse[LeaderboardData_t::sequenceIDs] =
-            std::make_pair(ticks, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
+            std::make_pair(processTick, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
 
         PlayFab::PlayFabCloudScriptAPI::ExecuteFunction(request, OnFunctionExecute, OnCloudScriptFailure
             ,(void*)(intptr_t)(LeaderboardData_t::sequenceIDs));
@@ -1078,16 +1096,35 @@ void PlayfabUser_t::postScore(const int player)
 }
 #endif
 
+    if ( postScoreHandler.sessionsPosted.size() > 100 )
+    {
+        postScoreHandler.sessionsPosted.clear();
+    }
+
     SaveGameInfo info;
     info.populateFromSession(player);
+    if ( info.dungeon_lvl == 0 )
+    {
+        return; // skip entries on start lvl
+    }
 
     std::string scorestring = info.serializeToOnlineHiscore(player, victory);
     auto hash = djb2Hash2(const_cast<char*>(scorestring.c_str()));
+
+    if ( postScoreHandler.sessionsPosted.find(info.hash) != postScoreHandler.sessionsPosted.end() )
+    {
+        // already saved and queued
+        logInfo("Score already queued");
+        postScoreHandler.sessionsPosted.erase(info.hash);
+        return;
+    }
+    postScoreHandler.sessionsPosted.insert(info.hash);
 
     postScoreHandler.queue.push_back(PostScoreHandler_t::ScoreUpdate_t(scorestring, std::to_string(hash)));
     auto& entry = postScoreHandler.queue.back();
     entry.inprogress = false;
     entry.saveToFile();
+
 }
 
 bool PlayfabUser_t::PostScoreHandler_t::ScoreUpdate_t::saveToFile()
@@ -1245,11 +1282,11 @@ void PlayfabUser_t::PostScoreHandler_t::update()
         ++it;
     }
 
-    if ( !anyInProgress && ((ticks - lastPostTicks) > TICKS_PER_SECOND * 10) )
+    if ( !anyInProgress && ((processTick - lastPostTicks) > TICKS_PER_SECOND * 10) )
     {
         for ( auto it = queue.begin(); it != queue.end(); ++it)
         {
-            if ( it->retryTicks == 0 || (ticks > it->retryTicks) )
+            if ( it->retryTicks == 0 || (processTick > it->retryTicks) )
             {
                 it->post();
                 break;
@@ -1257,6 +1294,8 @@ void PlayfabUser_t::PostScoreHandler_t::update()
         }
     }
 }
+
+Uint32 PlayfabUser_t::processTick = 0;
 
 void PlayfabUser_t::OnLeaderboardGet(const PlayFab::ClientModels::GetLeaderboardResult& result, void* customData)
 {
@@ -1356,7 +1395,7 @@ void PlayfabUser_t::checkLocalPlayerHasEntryOnLeaderboard(std::string lid)
     {
         for ( auto& pair : playerCheckLeaderboardData[lid].awaitingResponse )
         {
-            if ( (ticks - pair.second.first) < 5 * TICKS_PER_SECOND )
+            if ( (processTick - pair.second.first) < 5 * TICKS_PER_SECOND )
             {
                 return; // waiting on a leaderboard to load in
             }
@@ -1367,7 +1406,7 @@ void PlayfabUser_t::checkLocalPlayerHasEntryOnLeaderboard(std::string lid)
     {
         for ( auto& pair : leaderboardData.leaderboards[lid].awaitingResponse )
         {
-            if ( (ticks - pair.second.first) < 5 * TICKS_PER_SECOND )
+            if ( (processTick - pair.second.first) < 5 * TICKS_PER_SECOND )
             {
                 return; // waiting on a leaderboard to load in
             }
@@ -1388,7 +1427,7 @@ void PlayfabUser_t::checkLocalPlayerHasEntryOnLeaderboard(std::string lid)
     request.FunctionParameter = v;
 
     playerCheckLeaderboardData[lid].awaitingResponse[PlayerCheckLeaderboardData_t::sequenceIDs] =
-        std::make_pair(ticks, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
+        std::make_pair(processTick, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
 
     PlayFab::PlayFabCloudScriptAPI::ExecuteFunction(request, OnFunctionExecute, OnCloudScriptFailure,
         (void*)(intptr_t)(PlayerCheckLeaderboardData_t::sequenceIDs));
@@ -1403,7 +1442,7 @@ void PlayfabUser_t::getLeaderboardAroundMe(std::string lid)
     {
         for ( auto& pair : leaderboardData.leaderboards[lid].awaitingResponse )
         {
-            if ( (ticks - pair.second.first) < 5 * TICKS_PER_SECOND )
+            if ( (processTick - pair.second.first) < 5 * TICKS_PER_SECOND )
             {
                 return; // waiting on a leaderboard to load in
             }
@@ -1423,7 +1462,7 @@ void PlayfabUser_t::getLeaderboardAroundMe(std::string lid)
     request.ProfileConstraints = constraints;
     
     playfabUser.leaderboardData.leaderboards[lid].awaitingResponse[LeaderboardData_t::sequenceIDs] =
-        std::make_pair(ticks, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
+        std::make_pair(processTick, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
 
     PlayFab::PlayFabClientAPI::GetLeaderboardAroundPlayer(request, OnLeaderboardAroundMeGet, OnLeaderboardFail,
         (void*)(intptr_t)(LeaderboardData_t::sequenceIDs));
@@ -1445,6 +1484,7 @@ void PlayfabUser_t::update()
     {
         processedOnTick = ticks;
         tickUpdate = true;
+        ++processTick;
     }
 
     if ( tickUpdate )
@@ -1514,6 +1554,22 @@ void PlayfabUser_t::init()
 #endif // STEAMWORKS
 
     postScoreHandler.readFromFiles();
+}
+
+void PlayfabUser_t::LeaderboardSearch_t::applySavedChallengeSearchIfExists()
+{
+    if ( savedSearchesFromNotification.find(challengeBoard) == savedSearchesFromNotification.end() )
+    {
+        return;
+    }
+
+    auto lid = savedSearchesFromNotification[challengeBoard];
+    scoresNearMe = true;
+    win = lid.find("_victory_") != std::string::npos;
+    //victory = win ? 3 : 0;
+    scoreType = (lid.find("_time_") != std::string::npos) ? RANK_TIME : RANK_TOTALSCORE;
+
+    savedSearchesFromNotification.erase(challengeBoard);
 }
 
 std::string PlayfabUser_t::LeaderboardSearch_t::getLeaderboardDisplayName()

@@ -237,6 +237,7 @@ TileEntityListHandler TileEntityList;
 // undefine SOUND, MUSIC (see sound.h)
 int game = 1;
 Uint32 uniqueGameKey = 0;
+Uint32 uniqueLobbyKey = 0;
 DebugStatsClass DebugStats;
 Uint32 networkTickrate = 0;
 bool gameloopFreezeEntities = false;
@@ -6950,6 +6951,7 @@ int main(int argc, char** argv)
 						// generate unique game key
 						local_rng.seedTime();
 						local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
+						uniqueLobbyKey = local_rng.getU32();
 						net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
 						doNewGame(false);
 					}

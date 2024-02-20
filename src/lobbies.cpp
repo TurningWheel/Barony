@@ -150,10 +150,12 @@ bool LobbyHandler_t::validateSteamLobbyDataOnJoin()
 {
 	bool errorOnJoin = false;
 	const char* lsgStr = SteamMatchmaking()->GetLobbyData(steamLobbyToValidate, "loadingsavegame");
+	const char* lukStr = SteamMatchmaking()->GetLobbyData(steamLobbyToValidate, "lobbyuniquekey");
 	if ( lsgStr )
 	{
 		Uint32 lsg = atoi(lsgStr);
-		if ( lsg != loadingsavegame )
+		Uint32 luk = lukStr ? atoi(lukStr) : 0;
+		if ( lsg != loadingsavegame || luk != loadinglobbykey )
 		{
 			// loading save game, but incorrect assertion from client side.
 			if ( loadingsavegame == 0 )
@@ -173,7 +175,7 @@ bool LobbyHandler_t::validateSteamLobbyDataOnJoin()
 								break;
 							}
 						}
-						if ( info.gamekey == lsg ) {
+						if ( info.gamekey == lsg && info.lobbykey == luk ) {
 							savegameCurrentFileIndex = c;
 							foundSave = true;
 							break;
@@ -189,6 +191,7 @@ bool LobbyHandler_t::validateSteamLobbyDataOnJoin()
 				else if ( foundSave )
 				{
 					loadingsavegame = lsg;
+					loadinglobbykey = luk;
 					auto info = getSaveGameInfo(false, savegameCurrentFileIndex);
 					for ( int c = 0; c < MAXPLAYERS; ++c ) {
 						if ( info.players_connected[c] ) {
@@ -207,7 +210,7 @@ bool LobbyHandler_t::validateSteamLobbyDataOnJoin()
 				connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_NOT_USING_SAVEGAME;
 				errorOnJoin = true;
 			}
-			else if ( loadingsavegame > 0 && lsg > 0 )
+			else if ( (loadingsavegame > 0 && lsg > 0) || (loadinglobbykey > 0 && luk > 0) )
 			{
 				connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_WRONG_SAVEGAME;
 				errorOnJoin = true;

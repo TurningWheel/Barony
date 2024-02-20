@@ -1430,6 +1430,7 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 	{
 		Uint32 clientms = SDLNet_Read32(&net_packet->data[57]);
 		Uint32 clientlsg = SDLNet_Read32(&net_packet->data[61]);
+		Uint32 clientlobbyKey = (net_packet->len > 65) ? SDLNet_Read32(&net_packet->data[65]) : 0;
 		if ( net_packet->data[56] == 0 )
 		{
 			// client will enter any player spot
@@ -1469,6 +1470,10 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 		else if ( loadingsavegame && savegameinfo.mapseed != clientms )
 		{
 			result = MAXPLAYERS + 5;  // client is trying to join the game with a slightly incompatible save (wrong level)
+		}
+		else if ( (loadingsavegame && clientlobbyKey != savegameinfo.lobbykey) )
+		{
+			result = MAXPLAYERS + 6; // lobby key not matching
 		}
 	}
 	outResult = result;
@@ -4897,8 +4902,10 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		uniqueGameKey = SDLNet_Read32(&net_packet->data[8]);
 		local_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
 		net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+		uniqueLobbyKey = SDLNet_Read32(&net_packet->data[13]);
 	    if (net_packet->data[12] == 0) {
 		    loadingsavegame = 0;
+			loadinglobbykey = 0;
 	    }
 		if ( gameModeManager.allowsSaves() )
 		{

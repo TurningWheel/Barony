@@ -33,6 +33,7 @@ public:
 	bool errorLogin = false;
 	Uint32 authenticationRefresh = 0;
 	Uint32 processedOnTick = 0;
+	static Uint32 processTick;
 	void loginEpic();
 	void loginSteam();
 	void resetLogin();
@@ -61,6 +62,7 @@ public:
 		struct Event_t
 		{
 			string lid = "";
+			string seed_word = "";
 			Uint32 seed = 0;
 			int hoursLeft = 0;
 			int minutesLeft = 0;
@@ -113,6 +115,7 @@ public:
 		};
 		static int sequenceIDs;
 		static char buf[65535];
+		std::set<Uint32> sessionsPosted;
 		std::deque<ScoreUpdate_t> queue;
 		static Uint32 lastPostTicks;
 		void update();
@@ -171,6 +174,7 @@ public:
 			CHALLENGE_BOARD_CHALLENGE
 		};
 		ChallengeBoards challengeBoard = CHALLENGE_BOARD_NONE;
+		std::map<ChallengeBoards, std::string> savedSearchesFromNotification;
 		enum ScoreType
 		{
 			RANK_TOTALSCORE,
@@ -182,12 +186,13 @@ public:
 		int victory = 3;
 		bool win = true;
 		bool requiresRefresh = false;
+		void applySavedChallengeSearchIfExists();
 		std::string getLeaderboardDisplayName();
 		std::string getLeaderboardID()
 		{
 			int victory = this->victory;
 			if ( win == false ) { victory = 0; }
-			std::string lid = ((scoreType == RANK_TOTALSCORE/* || win*/) ? "lid_" : "lid_time_");
+			std::string lid = ((scoreType == RANK_TIME || !win) ? "lid_time_" : "lid_");
 			if ( challengeBoard == CHALLENGE_BOARD_ONESHOT )
 			{
 				if ( victory > 0 )
@@ -201,11 +206,11 @@ public:
 
 				if ( scoreType == RANK_TOTALSCORE )
 				{
-					lid = "seed_oneshot";
+					lid += "seed_oneshot";
 				}
 				else if ( scoreType == RANK_TIME )
 				{
-					lid = "seed_oneshot";
+					lid += "seed_oneshot";
 				}
 			}
 			else if ( challengeBoard == CHALLENGE_BOARD_UNLIMITED )
