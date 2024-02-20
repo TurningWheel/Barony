@@ -102,6 +102,9 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->helmet = newItem(HAT_HOOD_RED, EXCELLENT, 1, 1, rng.rand(), false, nullptr);
 							myStats->cloak = newItem(CLOAK, EXCELLENT, 1, 1, 2, false, nullptr);
 							myStats->weapon = newItem(QUARTERSTAFF, EXCELLENT, 1, 1, rng.rand(), false, nullptr);
+
+							// one for my friends
+							newItem(HAT_WOLF_HOOD, EXCELLENT, 1, 1, rng.rand(), false, &myStats->inventory);
 							break;
 						case 1:
 						{
