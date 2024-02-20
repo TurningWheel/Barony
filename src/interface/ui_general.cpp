@@ -16,6 +16,9 @@
 #ifdef WINDOWS
 #include <shellapi.h>
 #endif
+#ifdef USE_PLAYFAB
+#include "../playfab.hpp"
+#endif
 
 #include "../ui/Button.hpp"
 #include "../ui/Field.hpp"
@@ -724,6 +727,114 @@ void UIToastNotificationManager_t::createGenericNotification(const char* header,
 	n->setIdleSeconds(10);
 }
 
+void UIToastNotificationManager_t::createLeaderboardNotification(std::string info)
+{
+#ifdef USE_PLAYFAB
+	bool challenge = info.find("_seed_") != std::string::npos;
+	if ( !challenge ) { return; }
+
+	char buf[128];
+	if ( info.find("oneshot") != std::string::npos )
+	{
+		std::string prefix = Language::get(6110);
+		for ( auto& c : prefix )
+		{
+			if ( c == '\n' )
+			{
+				c = ' ';
+			}
+		}
+		snprintf(buf, sizeof(buf), Language::get(6134), prefix.c_str());
+
+		if ( info.find("lid_victory_seed_oneshot") != std::string::npos )
+		{
+			playfabUser.leaderboardSearch.savedSearchesFromNotification[PlayfabUser_t::LeaderboardSearch_t::CHALLENGE_BOARD_ONESHOT] =
+				"lid_time_victory_seed_oneshot";
+		}
+		else if ( info.find("lid_time_victory_seed_oneshot") != std::string::npos )
+		{
+			playfabUser.leaderboardSearch.savedSearchesFromNotification[PlayfabUser_t::LeaderboardSearch_t::CHALLENGE_BOARD_ONESHOT] =
+				"lid_time_victory_seed_oneshot";
+		}
+		else if ( info.find("lid_time_novictory_seed_oneshot") != std::string::npos )
+		{
+			playfabUser.leaderboardSearch.savedSearchesFromNotification[PlayfabUser_t::LeaderboardSearch_t::CHALLENGE_BOARD_ONESHOT] =
+				"lid_time_novictory_seed_oneshot";
+		}
+	}
+	else if ( info.find("unlimited") != std::string::npos )
+	{
+		std::string prefix = Language::get(6111);
+		for ( auto& c : prefix )
+		{
+			if ( c == '\n' )
+			{
+				c = ' ';
+			}
+		}
+		snprintf(buf, sizeof(buf), Language::get(6134), prefix.c_str());
+
+		if ( info.find("lid_victory_seed_unlimited") != std::string::npos )
+		{
+			playfabUser.leaderboardSearch.savedSearchesFromNotification[PlayfabUser_t::LeaderboardSearch_t::CHALLENGE_BOARD_UNLIMITED] =
+				"lid_victory_seed_unlimited";
+		}
+		else if ( info.find("lid_time_victory_seed_unlimited") != std::string::npos )
+		{
+			playfabUser.leaderboardSearch.savedSearchesFromNotification[PlayfabUser_t::LeaderboardSearch_t::CHALLENGE_BOARD_UNLIMITED] =
+				"lid_time_victory_seed_unlimited";
+		}
+		else if ( info.find("lid_time_novictory_seed_unlimited") != std::string::npos )
+		{
+			playfabUser.leaderboardSearch.savedSearchesFromNotification[PlayfabUser_t::LeaderboardSearch_t::CHALLENGE_BOARD_UNLIMITED] =
+				"lid_time_novictory_seed_unlimited";
+		}
+	}
+	else if ( info.find("challenge") != std::string::npos )
+	{
+		std::string prefix = Language::get(6112);
+		for ( auto& c : prefix )
+		{
+			if ( c == '\n' )
+			{
+				c = ' ';
+			}
+		}
+		snprintf(buf, sizeof(buf), Language::get(6134), prefix.c_str());
+
+		if ( info.find("lid_victory_seed_challenge") != std::string::npos )
+		{
+			playfabUser.leaderboardSearch.savedSearchesFromNotification[PlayfabUser_t::LeaderboardSearch_t::CHALLENGE_BOARD_CHALLENGE] =
+				"lid_victory_seed_challenge";
+		}
+		else if ( info.find("lid_time_victory_seed_challenge") != std::string::npos )
+		{
+			playfabUser.leaderboardSearch.savedSearchesFromNotification[PlayfabUser_t::LeaderboardSearch_t::CHALLENGE_BOARD_CHALLENGE] =
+				"lid_time_victory_seed_challenge";
+		}
+		else if ( info.find("lid_time_novictory_seed_challenge") != std::string::npos )
+		{
+			playfabUser.leaderboardSearch.savedSearchesFromNotification[PlayfabUser_t::LeaderboardSearch_t::CHALLENGE_BOARD_CHALLENGE] =
+				"lid_time_novictory_seed_challenge";
+		}
+	}
+	else
+	{
+		return;
+	}
+
+	UIToastNotification* n = UIToastNotificationManager.addNotification("*#images/ui/Main Menus/Challenges/seed_attempted64px.png");
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE);
+	n->cardType = UIToastNotification::CardType::UI_CARD_DEFAULT;
+	n->showHeight = 112;
+	n->setHeaderText(Language::get(6128));
+	n->setMainText(buf);
+	n->setIdleSeconds(5);
+#endif
+}
+
 void truncateMainText(std::string& str)
 {
 	if ( str.length() > 24 )
@@ -899,6 +1010,17 @@ static ConsoleCommand ccmd_toastTestAchievement("/toast_test_achievement", "",
 			messagePlayer(clientnum, MESSAGE_DEBUG,
 				"Give the name of a valid achievement\n"
 				"ex: %s <BARONY_ACH_xxx>", argv[0]);
+		}
+	});
+
+static ConsoleCommand ccmd_toastTestLeaderboard("/toast_test_leaderboard", "",
+	[](int argc, const char** argv) {
+		if ( argc > 1 ) {
+			UIToastNotificationManager.createLeaderboardNotification(argv[1]);
+		}
+		else
+		{
+			UIToastNotificationManager.createLeaderboardNotification("");
 		}
 	});
 

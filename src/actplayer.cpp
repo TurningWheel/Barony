@@ -5303,13 +5303,6 @@ void actPlayer(Entity* my)
 		{
 			consoleCommand("/jumplevel -1");
 		}
-//		if ( keystatus[SDLK_LCTRL] && keystatus[SDLK_p] )
-//		{
-//			keystatus[SDLK_p] = 0;
-//#ifdef USE_PLAYFAB
-//			playfabUser.postScore(PLAYER_NUM);
-//#endif
-//		}
 		if ( keystatus[SDLK_LCTRL] && keystatus[SDLK_KP_1] )
 	    {
 		    Input::waitingToBindControllerForPlayer = 0;

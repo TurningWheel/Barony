@@ -257,6 +257,7 @@ public:
 	void createAchievementsDisabledNotification();
 	void createGenericNotification(const char* header, const char* text);
 	void createAchievementNotification(const char* name);
+	void createLeaderboardNotification(std::string info);
 	void createStatisticUpdateNotification(const char* name, int currentValue, int maxValue);
 	void undockAllCards();
 

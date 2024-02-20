@@ -1705,7 +1705,7 @@ namespace ConsoleCommands {
 		});
 
 	static ConsoleCommand ccmd_mapseed("/mapseed", "display map seed", []CCMD{
-		messagePlayer(clientnum, MESSAGE_MISC, "Mapseed: %d | Gamekey: %lu", mapseed, uniqueGameKey);
+		messagePlayer(clientnum, MESSAGE_MISC, "Mapseed: %d | Gamekey: %lu | Lobby: %lu", mapseed, uniqueGameKey, uniqueLobbyKey);
 		});
 
 	static ConsoleCommand ccmd_seedgame("/seedgame", "set custom seed", []CCMD{
@@ -4659,38 +4659,38 @@ namespace ConsoleCommands {
         }
     });
 
-    static ConsoleCommand ccmd_quickstart("/quickstart", "quickly starts a new game (eg /quickstart monk)", []CCMD{
-        if (multiplayer != SINGLE) {
-            messagePlayer(clientnum, MESSAGE_MISC, "Can only be done in singleplayer.");
-            return;
-        }
-        
-        // choose class
-        const char* classtoquickstart = argc > 1 ? argv[1] : "barbarian";
-        for (int c = 0; c <= CLASS_MONK; ++c) {
-            if (!strcmp(classtoquickstart, playerClassLangEntry(c, clientnum))) {
-                client_classes[clientnum] = c;
-                break;
-            }
-        }
+    //static ConsoleCommand ccmd_quickstart("/quickstart", "quickly starts a new game (eg /quickstart monk)", []CCMD{
+    //    if (multiplayer != SINGLE) {
+    //        messagePlayer(clientnum, MESSAGE_MISC, "Can only be done in singleplayer.");
+    //        return;
+    //    }
+    //    
+    //    // choose class
+    //    const char* classtoquickstart = argc > 1 ? argv[1] : "barbarian";
+    //    for (int c = 0; c <= CLASS_MONK; ++c) {
+    //        if (!strcmp(classtoquickstart, playerClassLangEntry(c, clientnum))) {
+    //            client_classes[clientnum] = c;
+    //            break;
+    //        }
+    //    }
 
-        // initialize class
-        strcpy(stats[clientnum]->name, "Avatar");
-        stats[clientnum]->playerRace = RACE_HUMAN;
-        stats[clientnum]->sex = static_cast<sex_t>(local_rng.rand() % 2);
-        stats[clientnum]->appearance = local_rng.rand() % NUMAPPEARANCES;
-        stats[clientnum]->clearStats();
-        initClass(clientnum);
+    //    // initialize class
+    //    strcpy(stats[clientnum]->name, "Avatar");
+    //    stats[clientnum]->playerRace = RACE_HUMAN;
+    //    stats[clientnum]->sex = static_cast<sex_t>(local_rng.rand() % 2);
+    //    stats[clientnum]->appearance = local_rng.rand() % NUMAPPEARANCES;
+    //    stats[clientnum]->clearStats();
+    //    initClass(clientnum);
 
-        // generate unique game key
-        local_rng.seedTime();
-        local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
-        net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
-        doNewGame(false);
-        
-        // this just fixes the command buffer coming up again immediately after doNewGame()
-        Input::inputs[clientnum].consumeBinary("Chat");
-    });
+    //    // generate unique game key
+    //    local_rng.seedTime();
+    //    local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
+    //    net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+    //    doNewGame(false);
+    //    
+    //    // this just fixes the command buffer coming up again immediately after doNewGame()
+    //    Input::inputs[clientnum].consumeBinary("Chat");
+    //});
 
 	static ConsoleCommand ccmd_cast_spell_debug("/cast_spell_debug", "shoot every spell", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )

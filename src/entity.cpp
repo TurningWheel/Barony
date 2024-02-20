@@ -19311,6 +19311,11 @@ Entity* summonChest(long x, long y)
 		}
 	}
 
+	if ( !entity )
+	{
+		return nullptr;
+	}
+
 	entity->sizex = 3;
 	entity->sizey = 2;
 	entity->x = x;
