@@ -18,6 +18,19 @@
 #include "../../ui/MainMenu.hpp"
 #endif
 
+FMOD_SPEAKERMODE fmod_speakermode = FMOD_SPEAKERMODE_DEFAULT;
+const char* fmod_speakermode_strings[FMOD_SPEAKERMODE_MAX] = {
+    "FMOD_SPEAKERMODE_DEFAULT",
+    "FMOD_SPEAKERMODE_RAW",
+    "FMOD_SPEAKERMODE_MONO",
+    "FMOD_SPEAKERMODE_STEREO",
+    "FMOD_SPEAKERMODE_QUAD",
+    "FMOD_SPEAKERMODE_SURROUND",
+    "FMOD_SPEAKERMODE_5POINT1",
+    "FMOD_SPEAKERMODE_7POINT1",
+    "FMOD_SPEAKERMODE_7POINT1POINT4",
+};
+
 bool initSoundEngine()
 {
 #ifdef USE_FMOD
@@ -29,6 +42,12 @@ bool initSoundEngine()
 		no_sound = true;
 		return false;
 	}
+ 
+    int numRawSpeakers{};
+    int sampleRate{};
+    FMOD_SPEAKERMODE speakerMode{};
+    fmod_system->getSoftwareFormat(&sampleRate, &speakerMode, &numRawSpeakers);
+    fmod_system->setSoftwareFormat(sampleRate, fmod_speakermode, numRawSpeakers);
 
 	if (!no_sound)
 	{
@@ -45,18 +64,20 @@ bool initSoundEngine()
 		fmod_system->getNumDrivers(&numDrivers);
 		for ( int i = 0; i < numDrivers; ++i )
 		{
-			constexpr int driverNameLen = 64;
-			char driverName[driverNameLen] = "";
-			FMOD_GUID guid;
-			fmod_result = fmod_system->getDriverInfo(i, driverName, driverNameLen, &guid, nullptr, nullptr, nullptr);
+            constexpr int driverNameLen = 64;
+            char driverName[driverNameLen] = "";
+            FMOD_GUID guid;
+            int rate{}, channels{};
+            FMOD_SPEAKERMODE mode{};
+            fmod_result = fmod_system->getDriverInfo(i, driverName, driverNameLen, &guid, &rate, &mode, &channels);
 			if ( FMODErrorCheck() )
 			{
 				printlog("[FMOD]: Failed to read audio device index: %d", i);
 			}
-			else
-			{
-				printlog("[FMOD]: Audio device found: %d %s | %08x %04x %04x", i, driverName, guid.Data1, guid.Data2, guid.Data3);
-			}
+        
+            mode = (FMOD_SPEAKERMODE)std::clamp((int)mode, (int)0, (int)FMOD_SPEAKERMODE_MAX - 1);
+            printlog("[FMOD] Audio device found: %d %s | %08x %04x %04x | rate: %d | mode: %s | channels: %d",
+                i, driverName, guid.Data1, guid.Data2, guid.Data3, rate, fmod_speakermode_strings[mode], channels);
 
 #ifndef EDITOR
 			uint32_t _1; memcpy(&_1, &guid.Data1, sizeof(_1));

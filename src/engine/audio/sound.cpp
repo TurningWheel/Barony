@@ -125,17 +125,24 @@ void sound_update(int player, int index, int numplayers)
 
 	auto& camera = cameras[index];
 
-	position.x = -camera.y;
-	position.y = -camera.z / 32;
-	position.z = -camera.x;
+	position.x = (float)(camera.x);
+	position.y = (float)(camera.z / (real_t)32.0);
+	position.z = (float)(camera.y);
 
-	forward.x = 1 * sin(camera.ang);
-	forward.y = 0;
-	forward.z = 1 * cos(camera.ang);
+	/*forward.x = -1.0 * cos(camera.ang) * cos(camera.vang);
+	forward.y =  1.0 * sin(camera.vang);
+	forward.z = -1.0 * sin(camera.ang) * cos(camera.vang);*/
+ 
+    forward.x = (float)((real_t)1.0 * cos(camera.ang));
+    forward.y = 0.f;
+    forward.z = (float)((real_t)1.0 * sin(camera.ang));
 
-	up.x = 0;
-	up.y = 1;
-	up.z = 0;
+	/*up.x = -1.0 * cos(camera.ang) * sin(camera.vang);
+	up.y =  1.0 * cos(camera.vang);
+	up.z = -1.0 * sin(camera.ang) * sin(camera.vang);*/
+    up.x = 0.f;
+    up.y = 1.f;
+    up.z = 0.f;
 
 	//FMOD_System_Set3DListenerAttributes(fmod_system, 0, &position, &velocity, &forward, &up);
 	fmod_system->set3DNumListeners(numplayers);
@@ -150,7 +157,7 @@ void sound_update(int player, int index, int numplayers)
 	time1 = std::chrono::high_resolution_clock::now();
 #endif
 
-	fmod_system->set3DListenerAttributes(player, &position, 0, &forward, &up);
+	fmod_system->set3DListenerAttributes(player, &position, nullptr, &forward, &up);
 
 #ifdef DEBUG_EVENT_TIMERS
 	time2 = std::chrono::high_resolution_clock::now();

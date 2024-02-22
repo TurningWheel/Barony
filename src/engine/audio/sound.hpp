@@ -37,11 +37,14 @@ void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambien
 void setAudioDevice(const std::string& device);
 bool loadMusic();
 
-//Pointer to the FMOD system.
 #ifdef USE_FMOD
 
 #define SOUND
 #define MUSIC
+
+extern FMOD_SPEAKERMODE fmod_speakermode;
+
+extern const char* fmod_speakermode_strings[FMOD_SPEAKERMODE_MAX]; 
 
 extern FMOD::System* fmod_system;
 
