@@ -3055,11 +3055,11 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 				{
 					if ( item.beatitude >= 0 )
 					{
-						inspiration = 25 + (item.beatitude * 25);
+						inspiration = std::min(300, 25 + (item.beatitude * 25));
 					}
 					else if ( shouldInvertEquipmentBeatitude(stats[player]) )
 					{
-						inspiration = 25 + (abs(item.beatitude) * 25);
+						inspiration = std::min(300, 25 + (abs(item.beatitude) * 25));
 					}
 					else
 					{
@@ -3075,7 +3075,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 				{
 					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
 					{
-						hpMod += ((20 + 10 * (abs(item.beatitude))));
+						hpMod += std::min(50, ((20 + 10 * (abs(item.beatitude)))));
 					}
 					else
 					{
@@ -10090,6 +10090,11 @@ void GameModeManager_t::CurrentSession_t::ChallengeRun_t::reset()
 
 }
 
+#ifndef NDEBUG
+static ConsoleVariable<int> cvar_race("/challengerace", -1);
+static ConsoleVariable<int> cvar_class("/challengeclass", -1);
+#endif
+
 bool GameModeManager_t::CurrentSession_t::ChallengeRun_t::loadScenario()
 {
 	rapidjson::Document d;
@@ -10282,6 +10287,17 @@ bool GameModeManager_t::CurrentSession_t::ChallengeRun_t::loadScenario()
 			}
 		}
 	}
+
+#ifndef NDEBUG
+	if ( *cvar_race >= 0 )
+	{
+		race = *cvar_race;
+	}
+	if ( *cvar_class >= 0 )
+	{
+		classnum = *cvar_class;
+	}
+#endif
 	
 	if ( d.HasMember("gameplay") )
 	{

@@ -2475,6 +2475,16 @@ public:
 		{
 			bool inUse = false;
 		public:
+			enum ChallengeEvents_t
+			{
+				CHEVENT_XP_250,
+				CHEVENT_NOXP_LVL_20,
+				CHEVENT_SHOPPING_SPREE,
+				CHEVENT_KILLS_100,
+				CHEVENT_NOSKILLS,
+				CHEVENT_ENUM_END
+			};
+
 			bool isActive() { return inUse; }
 			std::string scenarioStr = "";
 			std::string lid = "";

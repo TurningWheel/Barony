@@ -11779,6 +11779,11 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	{
 		xpGain = (gameplayCustomManager.globalXPPercent / 100.f) * xpGain;
 	}
+	else if ( gameModeManager.currentSession.challengeRun.isActive()
+		&& gameModeManager.currentSession.challengeRun.globalXPPercent != 100 )
+	{
+		xpGain *= gameModeManager.currentSession.challengeRun.globalXPPercent / 100.0;
+	}
 
 	// save hit struct
 	hit_t tempHit;
@@ -11790,13 +11795,6 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	tempHit.y = hit.y;
 
 	int shareRange = gameplayCustomManager.inUse() ? gameplayCustomManager.xpShareRange : XPSHARERANGE;
-
-	int inspiration = getEntityInspirationFromAllies();
-	real_t inspirationMult = (1.0 + (inspiration / 100.0));
-	if ( inspiration )
-	{
-		xpGain *= inspirationMult;
-	}
 
 	// divide shares
 	if ( player >= 0 )
@@ -11908,7 +11906,14 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	// award XP to main victor
 	if ( !this->monsterIsTinkeringCreation() )
 	{
-		destStats->EXP += xpGain;
+		int inspiration = getEntityInspirationFromAllies();
+		real_t inspirationMult = (1.0 + (inspiration / 100.0));
+		int gain = xpGain;
+		if ( inspiration )
+		{
+			gain *= inspirationMult;
+		}
+		destStats->EXP += gain;
 	}
 
 	if ( (srcStats->type == LICH || srcStats->type == LICH_FIRE || srcStats->type == LICH_ICE) && root
@@ -21372,7 +21377,7 @@ int Entity::getHPRestoreOnLevelUp()
 		{
 			if ( myStats->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(myStats) )
 			{
-				hpMod += ((20 + 10 * (abs(myStats->helmet->beatitude))) / 100.0) * myStats->MAXHP;
+				hpMod += (std::min(50, (20 + 10 * (abs(myStats->helmet->beatitude)))) / 100.0) * myStats->MAXHP;
 			}
 			else
 			{
@@ -21508,11 +21513,11 @@ int Entity::getEntityInspirationFromAllies()
 						{
 							if ( stat->helmet->beatitude >= 0 )
 							{
-								inspiration = 25 + (stat->helmet->beatitude * 25);
+								inspiration = std::min(300, 25 + (stat->helmet->beatitude * 25));
 							}
 							else if ( shouldInvertEquipmentBeatitude(stat) )
 							{
-								inspiration = 25 + (abs(stat->helmet->beatitude) * 25);
+								inspiration = std::min(300, 25 + (abs(stat->helmet->beatitude) * 25));
 							}
 							else
 							{
@@ -21540,11 +21545,11 @@ int Entity::getEntityInspirationFromAllies()
 							{
 								if ( stat->helmet->beatitude >= 0 )
 								{
-									inspiration = 25 + (stat->helmet->beatitude * 25);
+									inspiration = std::min(300, 25 + (stat->helmet->beatitude * 25));
 								}
 								else if ( shouldInvertEquipmentBeatitude(stat) )
 								{
-									inspiration = 25 + (abs(stat->helmet->beatitude) * 25);
+									inspiration = std::min(300, 25 + (abs(stat->helmet->beatitude) * 25));
 								}
 								else
 								{
@@ -21576,11 +21581,11 @@ int Entity::getEntityInspirationFromAllies()
 									{
 										if ( stat->helmet->beatitude >= 0 )
 										{
-											inspiration = 25 + (stat->helmet->beatitude * 25);
+											inspiration = std::min(300, 25 + (stat->helmet->beatitude * 25));
 										}
 										else if ( shouldInvertEquipmentBeatitude(stat) )
 										{
-											inspiration = 25 + (abs(stat->helmet->beatitude) * 25);
+											inspiration = std::min(300, 25 + (abs(stat->helmet->beatitude) * 25));
 										}
 										else
 										{
