@@ -9343,6 +9343,15 @@ void actPlayer(Entity* my)
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);
 					}
+					else if ( playerRace == INCUBUS
+						&& (entity->sprite == items[TOOL_BLINDFOLD].index
+							|| entity->sprite == items[TOOL_BLINDFOLD_FOCUS].index
+							|| entity->sprite == items[TOOL_BLINDFOLD_TELEPATHY].index) )
+					{
+						entity->focalx = limbs[playerRace][10][0] + .35; // .35
+						entity->focaly = limbs[playerRace][10][1] - 2.5; // -2
+						entity->focalz = limbs[playerRace][10][2]; // .5
+					}
 					else
 					{
 						entity->focalx = limbs[playerRace][10][0] + .35; // .35
