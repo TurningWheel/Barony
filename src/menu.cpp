@@ -438,6 +438,22 @@ bool isAchievementUnlockedForClassUnlock(PlayerRaces race)
 
 int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 {
+	bool challengeClass = false;
+	bool challengeRace = false;
+	if ( gameModeManager.currentSession.challengeRun.isActive() )
+	{
+		if ( gameModeManager.currentSession.challengeRun.classnum >= 0
+			&& gameModeManager.currentSession.challengeRun.classnum < NUMCLASSES )
+		{
+			challengeClass = (characterClass == gameModeManager.currentSession.challengeRun.classnum);
+		}
+		if ( gameModeManager.currentSession.challengeRun.race >= 0
+			&& gameModeManager.currentSession.challengeRun.race <= RACE_INSECTOID )
+		{
+			challengeRace = (myStats.playerRace == gameModeManager.currentSession.challengeRun.race);
+		}
+	}
+
 	switch ( characterClass )
 	{
 		case CLASS_CONJURER:
@@ -446,7 +462,10 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 		case CLASS_BREWER:
 			if ( !enabledDLCPack1 )
 			{
-				return INVALID_REQUIREDLC1;
+				if ( !challengeClass )
+				{
+					return INVALID_REQUIREDLC1;
+				}
 			}
 			break;
 		case CLASS_MACHINIST:
@@ -455,7 +474,10 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 		case CLASS_HUNTER:
 			if ( !enabledDLCPack2 )
 			{
-				return INVALID_REQUIREDLC2;
+				if ( !challengeClass )
+				{
+					return INVALID_REQUIREDLC2;
+				}
 			}
 			break;
 		default:
@@ -470,7 +492,10 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 		case RACE_GOATMAN:
 			if ( !enabledDLCPack1 )
 			{
-				return INVALID_REQUIREDLC1;
+				if ( !challengeRace )
+				{
+					return INVALID_REQUIREDLC1;
+				}
 			}
 			break;
 		case RACE_AUTOMATON:
@@ -479,7 +504,10 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 		case RACE_INSECTOID:
 			if ( !enabledDLCPack2 )
 			{
-				return INVALID_REQUIREDLC2;
+				if ( !challengeRace )
+				{
+					return INVALID_REQUIREDLC2;
+				}
 			}
 			break;
 		default:

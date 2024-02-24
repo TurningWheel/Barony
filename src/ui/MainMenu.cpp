@@ -8247,6 +8247,17 @@ bind_failed:
 		kills_left->setSelectorOffset(SDL_Rect{-12, -4, 18, 0,});
 		kills_left->setScrollWithLeftControls(false);
 		kills_left->setClickable(true);
+		kills_left->setTickCallback([](Widget& widget){
+			auto frame = static_cast<Frame*>(&widget);
+			if ( frame->isSelected() )
+			{
+				frame->setAllowScrollBinds(true);
+			}
+			else
+			{
+				frame->setAllowScrollBinds(false);
+			}
+			});
 
 		auto kills_right = subframe->addFrame("kills_right");
 		kills_right->setScrollBarsEnabled(false);
@@ -8260,6 +8271,17 @@ bind_failed:
 		kills_right->setEntrySize(28);
 		kills_right->setBorder(0);
 		kills_right->setColor(0);
+		kills_right->setTickCallback([](Widget& widget) {
+			auto frame = static_cast<Frame*>(&widget);
+			if ( frame->isSelected() )
+			{
+				frame->setAllowScrollBinds(true);
+			}
+			else
+			{
+				frame->setAllowScrollBinds(false);
+			}
+			});
 
 		auto time_and_score_titles = subframe->addField("time_and_score_titles", 256);
 		time_and_score_titles->setFont(bigfont_outline);
@@ -8598,14 +8620,33 @@ bind_failed:
 
         static const char* fmt = "  #%d %s";
 
-        static auto add_score = [](score_t* score, const char* name, const char* prev, const char* next, int index){
+		static std::set<std::string> statChecks;
+		static ConsoleCommand ccmd_leaderboard_stat_checks(
+			"/leaderboard_stat_checks", "",
+			[](int argc, const char** argv) {
+				for ( auto& s : statChecks )
+				{
+					printlog("%s", s.c_str());
+				}
+				statChecks.clear();
+			});
+
+        static auto add_score = [](score_t* score, const char* name, const char* prev, const char* next, int index,
+			int rank, int selectIndex){
             auto window = main_menu_frame->findFrame("leaderboards"); assert(window);
             auto list = window->findFrame("list"); assert(list);
 
             const int y = 6 + 38 * index;
 
             char buf[128];
-            snprintf(buf, sizeof(buf), fmt, index + 1, name);
+			if ( rank >= 0 )
+			{
+				snprintf(buf, sizeof(buf), fmt, rank + 1, name); // ranks 0 indexed
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), fmt, index + 1, name);
+			}
             
             if (index == 0) {
                 set_links(buf);
@@ -8647,13 +8688,87 @@ bind_failed:
                     if (b == &button) {
                         continue;
                     }
-                    b->setTextColor(makeColor(203,171,101,255));
+					b->setTextColor(makeColor(203,171,101,255));
                     b->setBackground("*images/ui/Main Menus/Leaderboards/AA_NameList_Unselected_00.png");
                 }
                 auto score = (score_t*)button.getUserData();
                 selectedScore = score;
                 updateStats(button, score);
                 loadScore(score);
+
+				if ( score && score->stats->LVL > 1 )
+				{
+					int maxStats = 10 + (score->stats->LVL - 1) * 6;
+					if ( (score->stats->STR + score->stats->DEX
+						+ score->stats->INT + score->stats->PER
+						+ score->stats->CON + score->stats->CHR) > maxStats )
+					{
+						//printlog("%d: [%s]: total stats", entry.rank, entry.id.c_str());
+						button.setTextColor(makeColor(255, 0, 0, 255));
+						button.setTextHighlightColor(makeColor(255, 0, 0, 255));
+						statChecks.insert(score->stats->name);
+					}
+					int totalKills = 0;
+					for ( int i = 0; i < NUMMONSTERS; ++i )
+					{
+						totalKills += score->kills[i];
+					}
+					if ( (int)(totalKills * 100 / 100.0) < (score->stats->LVL - 1) )
+					{
+						button.setTextColor(makeColor(255, 128, 0, 255));
+						button.setTextHighlightColor(makeColor(255, 128, 0, 255));
+						statChecks.insert(score->stats->name);
+					}
+					if ( score->stats->GOLD > 5000000 )
+					{
+						button.setTextColor(makeColor(255, 0, 255, 255));
+						button.setTextHighlightColor(makeColor(255, 0, 255, 255));
+						statChecks.insert(score->stats->name);
+					}
+					{
+						int xpTotal = totalKills * 50;
+						int skillTotal = 0;
+						for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+						{
+							skillTotal += 2 * score->stats->getProficiency(i);
+						}
+						xpTotal += skillTotal;
+						if ( score->stats->LVL > 25 )
+						{
+							if ( (xpTotal / 100) < (score->stats->LVL - 1) )
+							{
+								button.setTextColor(makeColor(0, 255, 255, 255));
+								button.setTextHighlightColor(makeColor(0, 255, 255, 255));
+								statChecks.insert(score->stats->name);
+							}
+						}
+						real_t xprate = (score->stats->LVL * 100 - skillTotal) / (float)totalKills;
+						if ( xprate >= 35 && score->stats->LVL > 25 )
+						{
+							button.setTextColor(makeColor(0, 255, 255, 255));
+							button.setTextHighlightColor(makeColor(0, 255, 255, 255));
+							statChecks.insert(score->stats->name);
+						}
+						else if ( xprate >= 50 && score->stats->LVL > 10 )
+						{
+							button.setTextColor(makeColor(0, 255, 255, 255));
+							button.setTextHighlightColor(makeColor(0, 255, 255, 255));
+							statChecks.insert(score->stats->name);
+						}
+
+						int statLimit = score->stats->LVL * 1.25;
+						if ( score->stats->STR > statLimit
+							|| score->stats->DEX > statLimit
+							|| score->stats->CON > statLimit
+							|| score->stats->INT > statLimit
+							|| score->stats->PER > statLimit
+							|| score->stats->CHR > statLimit )
+						{
+							button.setTextColor(makeColor(0, 255, 255, 255));
+							button.setTextHighlightColor(makeColor(0, 255, 255, 255));
+						}
+					}
+				}
                 });
             button->setTickCallback([](Widget& widget){
                 auto button = static_cast<Button*>(&widget);
@@ -8686,10 +8801,12 @@ bind_failed:
                 }
                 });
 
-            if (index == 0) {
+            auto size = list->getActualSize();
+            if (index == selectIndex) {
 				if ( !main_menu_frame->findFrame("binary_prompt") )
 				{
 					button->select();
+					size.y = std::max(0, y - 6);
 				}
 				button->setTextColor(makeColor(231, 213, 173, 255));
 				button->setBackground("*images/ui/Main Menus/Leaderboards/AA_NameList_Selected_00.png");
@@ -8698,7 +8815,6 @@ bind_failed:
                 loadScore(score);
             }
 
-            auto size = list->getActualSize();
             size.h = std::max(list->getSize().h, y + 38);
             list->setActualSize(size);
             };
@@ -8759,7 +8875,7 @@ bind_failed:
 							auto next = (score_t*)node->list->first->element;
 							snprintf(next_buf, sizeof(next_buf), fmt, 1, next->stats->name);
 						}
-                        add_score(score, score->stats->name, prev_buf, next_buf, index);
+                        add_score(score, score->stats->name, prev_buf, next_buf, index, -1, 0);
                     }
                 } else {
                     auto field = window->findField("wait_message");
@@ -8820,19 +8936,18 @@ bind_failed:
 				}
 				else
 				{
-					playfabUser.getLeaderboardTop100(playfabUser.leaderboardData.currentSearch);
+					//playfabUser.getLeaderboardTop100(playfabUser.leaderboardData.currentSearch);
+					playfabUser.getLeaderboardTop100Alternate(playfabUser.leaderboardData.currentSearch);
 				}
 				auto field = window->findField("wait_message");
 				if ( !field ) {
 					field = window->addField("wait_message", 1024);
 					field->setFont(bigfont_outline);
-					field->setText(Language::get(5307));
 					field->setSize(SDL_Rect{ 30, 148, 932, 468 });
 					field->setJustify(Field::justify_t::CENTER);
 				}
-				else {
-					field->setText(Language::get(5307));
-				}
+				field->setText(Language::get(5307));
+
 				if ( auto category_text = window->findField("category_text") )
 				{
 					category_text->setText(playfabUser.leaderboardData.currentDisplayName.c_str());
@@ -8971,7 +9086,7 @@ bind_failed:
 							if ( auto list = window->findFrame("list") )
 							{
 								char buf[128];
-								snprintf(buf, sizeof(buf), fmt, index + 1, entry.displayName.c_str());
+								snprintf(buf, sizeof(buf), fmt, /*index + 1*/entry.rank + 1, entry.displayName.c_str());
 								if ( auto button = list->findButton(buf) )
 								{
 									if ( button->getUserData() == nullptr )
@@ -8985,7 +9100,8 @@ bind_failed:
 												(!isMouseVisible() 
 												&& !strcmp(button->getBackground(), "*images/ui/Main Menus/Leaderboards/AA_NameList_Selected_00.png")) )
 											{
-												leaderboard.requestPlayerData(10 * (index / 10), 10);
+												const int numEntriesRequest = 25;
+												leaderboard.requestPlayerData(numEntriesRequest * (index / numEntriesRequest), numEntriesRequest);
 												info.hiscore_loadstatus = 1;
 											}
 										}
@@ -8997,11 +9113,35 @@ bind_failed:
 												{
 													if ( auto score = scoreConstructor(0, info) )
 													{
+														strcpy(score->stats->name, entry.id.c_str());
 														button->setUserData(score);
 														selectedScore = score;
 														updateStats(*button, score);
 														loadScore(score);
 														entry.readIntoScore = true;
+													}
+													if ( entry.awaitingData )
+													{
+														auto field = window->findField("wait_message");
+														if ( !field ) {
+															field = window->addField("wait_message", 1024);
+															field->setFont(bigfont_outline);
+															field->setSize(SDL_Rect{ 30, 148, 932, 468 });
+															field->setJustify(Field::justify_t::CENTER);
+														}
+														Uint32 interval = ticks % int(1 * TICKS_PER_SECOND);
+														int numDots = (interval / (TICKS_PER_SECOND / 5));
+														std::string status = "";
+														while ( numDots >= 0 )
+														{
+															--numDots;
+															status += '.';
+														}
+														field->setText(status.c_str());
+													}
+													else
+													{
+														(void)window->remove("wait_message");
 													}
 												}
 											}
@@ -9046,6 +9186,10 @@ bind_failed:
 					{
 						msg = 6108; // you do not have any scores to compare
 					}
+					else
+					{
+						msg = 6151;
+					}
 					if ( !field ) {
 						field = window->addField("wait_message", 1024);
 						field->setFont(bigfont_outline);
@@ -9061,6 +9205,22 @@ bind_failed:
 					(void)window->remove("wait_message");
 					int num_scores = leaderboardRanks.size();
 					int index = -1;
+
+					int selectIndex = 0;
+					if ( playfabUser.leaderboardSearch.scoresNearMe )
+					{
+						for ( auto& entry : leaderboardRanks )
+						{
+							++index;
+							if ( entry.id == playfabUser.currentUser )
+							{
+								selectIndex = index;
+								break;
+							}
+						}
+					}
+
+					index = -1;
 					for ( auto& entry : leaderboardRanks )
 					{
 						++index;
@@ -9068,30 +9228,43 @@ bind_failed:
 						info.hiscore_dummy_loading = true;
 						auto score = scoreConstructor(0, info);
 						auto name = entry.displayName.c_str();
+
+						if ( score )
+						{
+							strcpy(score->stats->name, entry.id.c_str());
+						}
+
 						char prev_buf[128] = "";
 						if ( index > 0 ) {
-							snprintf(prev_buf, sizeof(prev_buf), fmt, index,
+							snprintf(prev_buf, sizeof(prev_buf), fmt, entry.rank,
 								leaderboardRanks[index - 1].displayName.c_str());
 						}
 						else {
-							snprintf(prev_buf, sizeof(prev_buf), fmt, num_scores,
+							snprintf(prev_buf, sizeof(prev_buf), fmt, leaderboardRanks[num_scores - 1].rank + 1,
 								leaderboardRanks[num_scores - 1].displayName.c_str());
 						}
 						char next_buf[128] = "";
 						if ( index < num_scores - 1 ) {
-							snprintf(next_buf, sizeof(next_buf), fmt, index + 2,
+							snprintf(next_buf, sizeof(next_buf), fmt, entry.rank + 2,
 								leaderboardRanks[index + 1].displayName.c_str());
 						}
 						else {
-							snprintf(next_buf, sizeof(next_buf), fmt, 1,
+							snprintf(next_buf, sizeof(next_buf), fmt, leaderboardRanks[0].rank + 1,
 								leaderboardRanks[0].displayName.c_str());
 						}
 						entry.readIntoScore = score != nullptr;
-						add_score(score, name, prev_buf, next_buf, index);
+						add_score(score, name, prev_buf, next_buf, index, entry.rank, selectIndex);
 						if ( num_scores == 0 ) {
 							set_links("");
 						}
+						if ( selectIndex >= 25 && index == selectIndex)
+						{
+							const int numEntriesRequest = 25;
+							leaderboard.requestPlayerData(numEntriesRequest * (selectIndex / numEntriesRequest), numEntriesRequest);
+							leaderboard.playerData[entry.id].hiscore_loadstatus = 1;
+						}
 					}
+
 				}
 			}
 		});
@@ -9153,7 +9326,7 @@ bind_failed:
 			            break;
 			        }
 			    }
-			    if (index == (int)boardType) {
+			    if (index == (int)boardType || tabs.size() == 1) {
 					tab->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_Selected_00.png");
 					tab->setBackgroundHighlighted("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_SelectedHigh_00.png");
 					tab->setBackgroundActivated("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_SelectedPress_00.png");
@@ -12947,10 +13120,24 @@ failed:
         const bool wasHuman = stats[index]->playerRace == RACE_HUMAN;
 		auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
         bool success = false;
+		bool fixedRace = gameModeManager.currentSession.challengeRun.isActive()
+			&& gameModeManager.currentSession.challengeRun.race >= 0 && gameModeManager.currentSession.challengeRun.race <= RACE_INSECTOID;
+
 		for (int c = 0; c < num_races; ++c) {
 			auto race = Language::get(5369 + c);
 			if (strcmp(button.getName(), race) == 0) {
-				if (!override_dlc &&
+				if ( fixedRace && !override_dlc && gameModeManager.currentSession.challengeRun.race != c )
+				{
+					// this class is not available to the player
+					button.setPressed(false);
+					errorPrompt(Language::get(6136), Language::get(5884),
+						[](Button& button) {
+							soundCancel();
+							closeMono();
+						});
+					return;
+				}
+				else if (!override_dlc && !fixedRace &&
                     ((!enabledDLCPack1 && c >= 1 && c <= 4) ||
 					(!enabledDLCPack2 && c >= 5 && c <= 8))) {
 					// this class is not available to the player
@@ -13013,7 +13200,16 @@ failed:
 					if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
 						// perhaps the class is not valid for this race.
 						// if so, change the class to the default (Barbarian)
-						client_classes[index] = 0;
+						client_classes[index] = 0; // TODO CHALLENGE RUN
+
+						if ( gameModeManager.currentSession.challengeRun.isActive() )
+						{
+							if ( gameModeManager.currentSession.challengeRun.classnum >= 0
+								&& gameModeManager.currentSession.challengeRun.classnum < NUMCLASSES )
+							{
+								client_classes[index] = gameModeManager.currentSession.challengeRun.classnum;
+							}
+						}
 					}
 				}
 				break;
@@ -13072,10 +13268,10 @@ failed:
 		if (stats[index]->playerRace == RACE_SUCCUBUS) {
 		    auto subframe = card->findFrame("subframe");
 		    auto succubus = subframe ? subframe->findButton("Succubus") : nullptr;
-		    if (succubus) {
-			    succubus->setPressed(false);
-		    }
-		    if (enabledDLCPack2) {
+			if (succubus) {
+				succubus->setPressed(false);
+			}
+			if (enabledDLCPack2) {
 			    stats[index]->playerRace = RACE_INCUBUS;
 			    auto race = card->findButton("race");
 			    if (race) {
@@ -13480,7 +13676,13 @@ failed:
 		achievements->setTickCallback([](Widget& widget){
 			Field* achievements = static_cast<Field*>(&widget);
             if (multiplayer != CLIENT) {
-				if ( Mods::disableSteamAchievements ) {
+				if ( gameModeManager.currentSession.challengeRun.isActive()
+					&& gameModeManager.currentSession.challengeRun.lid.find("challenge") != std::string::npos )
+				{
+					achievements->setColor(makeColor(180, 37, 37, 255));
+					achievements->setText(Language::get(6137));
+				}
+				else if ( Mods::disableSteamAchievements ) {
 					achievements->setColor(makeColor(180, 37, 37, 255));
 					achievements->setText(Language::get(5387));
 				} else if ( allSettings.cheats_enabled ||
@@ -13492,7 +13694,13 @@ failed:
                     achievements->setText(Language::get(5390));
                 }
             } else {
-				if ( Mods::disableSteamAchievements ) {
+				if ( gameModeManager.currentSession.challengeRun.isActive()
+					&& gameModeManager.currentSession.challengeRun.lid.find("challenge") != std::string::npos )
+				{
+					achievements->setColor(makeColor(180, 37, 37, 255));
+					achievements->setText(Language::get(6137));
+				}
+				else if ( Mods::disableSteamAchievements ) {
 					achievements->setColor(makeColor(180, 37, 37, 255));
 					achievements->setText(Language::get(5387));
 				} else if ( Mods::lobbyDisableSteamAchievements ) {
@@ -14861,7 +15069,23 @@ failed:
         for (int c = 0; c < num_races; ++c) {
 		    auto race = subframe->addButton(Language::get(5369 + c));
 		    race->setSize(SDL_Rect{0, c * 36 + 2, 30, 30});
-		    if (!enabledDLCPack1 && c >= 1 && c <= 4) {
+
+			bool fixedRace = gameModeManager.currentSession.challengeRun.isActive()
+				&& gameModeManager.currentSession.challengeRun.race >= 0 && gameModeManager.currentSession.challengeRun.race <= RACE_INSECTOID;
+
+			if ( fixedRace && gameModeManager.currentSession.challengeRun.race != c )
+			{
+				race->setBackground("*#images/ui/Main Menus/sublist_item-locked.png");
+				race->setBackgroundHighlighted("");
+				race->setBackgroundActivated("");
+			}
+			else if ( fixedRace && gameModeManager.currentSession.challengeRun.race == c )
+			{
+				race->setBackground("*#images/ui/Main Menus/sublist_item-unpicked.png");
+				race->setBackgroundHighlighted("*#images/ui/Main Menus/sublist_item-unpickedHigh.png");
+				race->setBackgroundActivated("*#images/ui/Main Menus/sublist_item-unpickedPress.png");
+			}
+		    else if (!enabledDLCPack1 && c >= 1 && c <= 4) {
 		        race->setBackground("*#images/ui/Main Menus/sublist_item-locked.png");
 		    }
 		    else if (!enabledDLCPack2 && c >= 5 && c <= 8) {
@@ -15185,7 +15409,14 @@ failed:
 			auto parent = static_cast<Frame*>(widget.getParent()); assert(parent);
 			auto button = parent->findButton("disable_abilities"); assert(button);
 			const auto player = widget.getOwner();
-			if (stats[player]->playerRace == RACE_HUMAN) {
+			if ( gameModeManager.currentSession.challengeRun.isActive()
+				&& gameModeManager.currentSession.challengeRun.race >= 0 && gameModeManager.currentSession.challengeRun.race <= RACE_INSECTOID )
+			{
+				field->setTextColor(makeColor(127, 96, 81, 255));
+				button->setDisabled(true);
+				button->setPressed(false);
+			}
+			else if (stats[player]->playerRace == RACE_HUMAN) {
 				field->setTextColor(makeColor(127, 96, 81, 255));
 				button->setDisabled(true);
 				button->setPressed(false);
@@ -15215,6 +15446,15 @@ failed:
 			disable_abilities->setPressed(stats[index]->appearance != 0);
 		}
 		static auto disable_abilities_fn = [](Button& button, int index){
+			if ( gameModeManager.currentSession.challengeRun.isActive()
+				&& gameModeManager.currentSession.challengeRun.race >= 0 && gameModeManager.currentSession.challengeRun.race <= RACE_INSECTOID )
+			{
+				// fixed race, no change abilities
+				soundError();
+				button.setPressed(false);
+				return;
+			}
+
 			if (stats[index]->playerRace == RACE_HUMAN) {
 				soundError();
 			} else {
@@ -15265,9 +15505,20 @@ failed:
 		male_button->setWidgetUp("disable_abilities");
 		male_button->setWidgetDown("confirm");
 		male_button->setWidgetRight("female");
-		male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, button.getOwner());});
-	    male_button->addWidgetAction("MenuPageLeft", "male");
-	    male_button->addWidgetAction("MenuPageRight", "female");
+		male_button->setCallback([](Button& button){
+			if ( gameModeManager.currentSession.challengeRun.isActive()
+				&& gameModeManager.currentSession.challengeRun.race == RACE_SUCCUBUS
+				&& stats[button.getOwner()]->playerRace == RACE_SUCCUBUS)
+			{
+				//soundError();
+				button.setPressed(false);
+				return;
+			}
+			soundActivate(); 
+			male_button_fn(button, button.getOwner());
+			});
+		male_button->addWidgetAction("MenuPageLeft", "male");
+		male_button->addWidgetAction("MenuPageRight", "female");
 	    male_button->addWidgetAction("MenuAlt1", "disable_abilities");
 	    male_button->addWidgetAction("MenuAlt2", "show_race_info");
 		male_button->setTickCallback([](Widget& widget){
@@ -15312,9 +15563,20 @@ failed:
 		female_button->setWidgetDown("confirm");
 		female_button->setWidgetLeft("male");
 		female_button->setWidgetRight("show_race_info");
-		female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, button.getOwner());});
-	    female_button->addWidgetAction("MenuPageLeft", "male");
-	    female_button->addWidgetAction("MenuPageRight", "female");
+		female_button->setCallback([](Button& button){
+			if ( gameModeManager.currentSession.challengeRun.isActive()
+				&& gameModeManager.currentSession.challengeRun.race == RACE_INCUBUS
+				&& stats[button.getOwner()]->playerRace == RACE_INCUBUS )
+			{
+				//soundError();
+				button.setPressed(false);
+				return;
+			}
+			soundActivate(); 
+			female_button_fn(button, button.getOwner());
+			});
+		female_button->addWidgetAction("MenuPageLeft", "male");
+		female_button->addWidgetAction("MenuPageRight", "female");
 	    female_button->addWidgetAction("MenuAlt1", "disable_abilities");
 	    female_button->addWidgetAction("MenuAlt2", "show_race_info");
 		female_button->setTickCallback([](Widget& widget){
@@ -15752,6 +16014,17 @@ failed:
         randomize_class->setWidgetBack("back_button");
         randomize_class->setGlyphPosition(Widget::glyph_position_t::CENTERED_BOTTOM);
         randomize_class->setCallback([](Button& button){
+			if ( gameModeManager.currentSession.challengeRun.isActive() )
+			{
+				if ( gameModeManager.currentSession.challengeRun.classnum >= 0
+					&& gameModeManager.currentSession.challengeRun.classnum < NUMCLASSES )
+				{
+					// forced class pick, error and return.
+					soundError();
+					return;
+				}
+			}
+
             const int index = button.getOwner();
             soundActivate();
 
@@ -15868,6 +16141,23 @@ failed:
 					lock_name.c_str());
 				lock->ontop = true;
 			}
+			else if ( gameModeManager.currentSession.challengeRun.isActive() )
+			{
+				if ( gameModeManager.currentSession.challengeRun.classnum >= 0
+					&& gameModeManager.currentSession.challengeRun.classnum < NUMCLASSES )
+				{
+					if ( c != gameModeManager.currentSession.challengeRun.classnum )
+					{
+						const auto lock_name = std::string(button->getName()) + "lock";
+						auto lock = subframe->addImage(
+							button->getSize(),
+							0xffffffff,
+							"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassLocked_Icon_00.png",
+							lock_name.c_str());
+						lock->ontop = true;
+					}
+				}
+			}
 
 			static auto button_fn = [](Button& button, int index){
 				// figure out which class button we clicked based on name
@@ -15881,27 +16171,41 @@ failed:
                 // set class
                 bool success = false;
                 if (c < num_classes) {
-                    auto check = isCharacterValidFromDLC(*stats[index], c);
-                    if (check != VALID_OK_CHARACTER) {
-                        switch (check) {
-                        default:
-                        case INVALID_CHARACTER:
-                        case INVALID_REQUIRE_ACHIEVEMENT:
-                            soundError();
-                            break;
-                        case INVALID_REQUIREDLC1:
-                            openDLCPrompt(0);
-                            break;
-                        case INVALID_REQUIREDLC2:
-                            openDLCPrompt(1);
-                            break;
-                        }
-                    } else {
-                        success = true;
-                        soundActivate();
-                        button.setColor(makeColor(255, 255, 255, 255)); // highlight this button
-                        client_classes[index] = c;
-                    }
+					if ( gameModeManager.currentSession.challengeRun.isActive() 
+						&& gameModeManager.currentSession.challengeRun.classnum >= 0
+						&& gameModeManager.currentSession.challengeRun.classnum < NUMCLASSES
+						&& gameModeManager.currentSession.challengeRun.classnum != c )
+					{
+						errorPrompt(Language::get(6135), Language::get(5884),
+							[](Button& button) {
+								soundCancel();
+								closeMono();
+							});
+					}
+					else
+					{
+						auto check = isCharacterValidFromDLC(*stats[index], c);
+						if (check != VALID_OK_CHARACTER) {
+							switch (check) {
+							default:
+							case INVALID_CHARACTER:
+							case INVALID_REQUIRE_ACHIEVEMENT:
+								soundError();
+								break;
+							case INVALID_REQUIREDLC1:
+								openDLCPrompt(0);
+								break;
+							case INVALID_REQUIREDLC2:
+								openDLCPrompt(1);
+								break;
+							}
+						} else {
+							success = true;
+							soundActivate();
+							button.setColor(makeColor(255, 255, 255, 255)); // highlight this button
+							client_classes[index] = c;
+						}
+					}
                     
                     stats[index]->clearStats();
                     initClass(index);
@@ -16254,7 +16558,18 @@ failed:
 		male_button->setWidgetRight("female");
 		male_button->setWidgetUp("game_settings");
 		male_button->setWidgetDown("class");
-		male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, button.getOwner());});
+		male_button->setCallback([](Button& button){
+			if ( gameModeManager.currentSession.challengeRun.isActive()
+				&& gameModeManager.currentSession.challengeRun.race == RACE_SUCCUBUS
+				&& stats[button.getOwner()]->playerRace == RACE_SUCCUBUS )
+			{
+				//soundError();
+				button.setPressed(false);
+				return;
+			}
+			soundActivate(); 
+			male_button_fn(button, button.getOwner());
+		});
 		male_button->setTickCallback([](Widget& widget){
 			const int index = widget.getOwner();
 			auto button = static_cast<Button*>(&widget); assert(button);
@@ -16297,7 +16612,18 @@ failed:
 		female_button->setWidgetRight("race");
 		female_button->setWidgetUp("game_settings");
 		female_button->setWidgetDown("class");
-		female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, button.getOwner());});
+		female_button->setCallback([](Button& button){
+			if ( gameModeManager.currentSession.challengeRun.isActive()
+				&& gameModeManager.currentSession.challengeRun.race == RACE_INCUBUS
+				&& stats[button.getOwner()]->playerRace == RACE_INCUBUS )
+			{
+				//soundError();
+				button.setPressed(false);
+				return;
+			}
+			soundActivate(); 
+			female_button_fn(button, button.getOwner());
+			});
 		female_button->setTickCallback([](Widget& widget){
 			const int index = widget.getOwner();
 			auto button = static_cast<Button*>(&widget); assert(button);
@@ -16346,20 +16672,72 @@ failed:
 
 			auto card = static_cast<Frame*>(button.getParent());
 
-			// select a random race
-			// there are 9 legal races that the player can select from the start.
-			if (enabledDLCPack1 && enabledDLCPack2) {
-			    stats[index]->playerRace = RNG.uniform(0, NUMPLAYABLERACES - 1);
-			} else if (enabledDLCPack1) {
-			    stats[index]->playerRace = RNG.uniform(0, 4);
-			} else if (enabledDLCPack2) {
-			    stats[index]->playerRace = RNG.uniform(0, 4);
-			    if (stats[index]->playerRace > 0) {
-			        stats[index]->playerRace += 4;
-			    }
-			} else {
-			    stats[index]->playerRace = RACE_HUMAN;
+			bool forcedClass = false;
+			bool forcedRace = false;
+			if ( gameModeManager.currentSession.challengeRun.isActive() )
+			{
+				if ( gameModeManager.currentSession.challengeRun.classnum >= 0
+					&& gameModeManager.currentSession.challengeRun.classnum < NUMCLASSES )
+				{
+					forcedClass = true;
+				}
+				if ( gameModeManager.currentSession.challengeRun.race >= 0
+					&& gameModeManager.currentSession.challengeRun.race <= RACE_INSECTOID )
+				{
+					forcedRace = true;
+				}
 			}
+
+			if ( !forcedRace )
+			{
+				if ( forcedClass )
+				{
+					std::vector<unsigned int> chances;
+					chances.resize(RACE_INSECTOID + 1);
+					auto oldRace = stats[index]->playerRace;
+					Uint32 oldAppearance = stats[index]->appearance;
+					stats[index]->appearance = 0;
+
+					bool chanceFound = false;
+					for ( int race = RACE_HUMAN; race <= RACE_INSECTOID; ++race )
+					{
+						stats[index]->playerRace = race;
+						chances[race] = 0;
+						if ( isCharacterValidFromDLC(*stats[index], index) == VALID_OK_CHARACTER )
+						{
+							chances[race] = 1;
+							chanceFound = true;
+						}
+					}
+					stats[index]->appearance = oldAppearance;
+					if ( !chanceFound )
+					{
+						stats[index]->playerRace = RACE_HUMAN;
+					}
+					else
+					{
+						stats[index]->playerRace = RNG.discrete(chances.data(), chances.size());
+					}
+				}
+				else
+				{
+					// select a random race
+					// there are 9 legal races that the player can select from the start.
+					if (enabledDLCPack1 && enabledDLCPack2) {
+						stats[index]->playerRace = RNG.uniform(0, NUMPLAYABLERACES - 1);
+					} else if (enabledDLCPack1) {
+						stats[index]->playerRace = RNG.uniform(0, 4);
+					} else if (enabledDLCPack2) {
+						stats[index]->playerRace = RNG.uniform(0, 4);
+						if (stats[index]->playerRace > 0) {
+							stats[index]->playerRace += 4;
+						}
+					} else {
+						stats[index]->playerRace = RACE_HUMAN;
+					}
+				}
+			}
+
 			auto race_button = card->findButton("race");
 			race_button->setText(Language::get(5369 + stats[index]->playerRace));
 
@@ -16399,14 +16777,17 @@ failed:
 			    }
 			}
 
-			// select a random class
-			const auto reduced_class_list = reducedClassList(index);
-			const auto class_choice = RNG.uniform(0, (int)reduced_class_list.size() - 1);
-			const auto random_class = reduced_class_list[class_choice];
-			for (int c = 0; c < num_classes; ++c) {
-				if (strcmp(random_class, classes_in_order[c]) == 0) {
-					client_classes[index] = c;
-					break;
+			if ( !forcedClass )
+			{
+				// select a random class
+				const auto reduced_class_list = reducedClassList(index);
+				const auto class_choice = RNG.uniform(0, (int)reduced_class_list.size() - 1);
+				const auto random_class = reduced_class_list[class_choice];
+				for (int c = 0; c < num_classes; ++c) {
+					if (strcmp(random_class, classes_in_order[c]) == 0) {
+						client_classes[index] = c;
+						break;
+					}
 				}
 			}
 
@@ -17494,16 +17875,52 @@ failed:
 					{
 						replayedLastCharacter = replayLastCharacter(c, SINGLE);
 					}
+
 					if ( !replayedLastCharacter )
 					{
 						stats[c]->playerRace = RACE_HUMAN;
 						stats[c]->sex = static_cast<sex_t>(RNG.getU8() % 2);
 						stats[c]->appearance = RNG.uniform(0, NUMAPPEARANCES - 1);
 						client_classes[c] = 0;
+					}
 
+					bool challengeRunModified = false;
+					if ( gameModeManager.currentSession.challengeRun.isActive() )
+					{
+						if ( gameModeManager.currentSession.challengeRun.classnum >= 0
+							&& gameModeManager.currentSession.challengeRun.classnum < NUMCLASSES )
+						{
+							client_classes[c] = gameModeManager.currentSession.challengeRun.classnum;
+							challengeRunModified = true;
+						}
+						if ( gameModeManager.currentSession.challengeRun.race >= 0
+							&& gameModeManager.currentSession.challengeRun.race <= RACE_INSECTOID )
+						{
+							stats[c]->playerRace = gameModeManager.currentSession.challengeRun.race;
+							if ( stats[c]->playerRace != RACE_HUMAN )
+							{
+								stats[c]->appearance = 0;
+							}
+							if ( stats[c]->playerRace == RACE_INCUBUS )
+							{
+								stats[c]->sex = sex_t::MALE;
+							}
+							else if ( stats[c]->playerRace == RACE_SUCCUBUS )
+							{
+								stats[c]->sex = sex_t::FEMALE;
+							}
+							challengeRunModified = true;
+						}
+					}
+
+					if ( challengeRunModified || !replayedLastCharacter )
+					{
 						stats[c]->clearStats();
 						initClass(c);
+					}
 
+					if ( !replayedLastCharacter )
+					{
 						// random name
 						auto& names = stats[c]->sex == sex_t::MALE ?
 						    randomPlayerNamesMale : randomPlayerNamesFemale;
@@ -24997,7 +25414,13 @@ failed:
 			achievements->setVJustify(Field::justify_t::TOP);
 			achievements->setTickCallback([](Widget& widget) {
 				Field* achievements = static_cast<Field*>(&widget);
-				if ( multiplayer == CLIENT && Mods::lobbyDisableSteamAchievements )
+				if ( gameModeManager.currentSession.challengeRun.isActive()
+					&& gameModeManager.currentSession.challengeRun.lid.find("challenge") != std::string::npos )
+				{
+					achievements->setColor(makeColor(180, 37, 37, 255));
+					achievements->setText(Language::get(6138));
+				}
+				else if ( multiplayer == CLIENT && Mods::lobbyDisableSteamAchievements )
 				{
 					achievements->setColor(makeColor(180, 37, 37, 255));
 					achievements->setText(Language::get(5781));

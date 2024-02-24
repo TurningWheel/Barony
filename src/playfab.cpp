@@ -286,6 +286,12 @@ int parseOnlineHiscore(SaveGameInfo& info, Json::Value score)
                 {
                     jsonValueToInt(score[m], s, player.stats.LVL);
                 }
+                else if ( s == "EXP" )
+                {
+                    int xp = 0;
+                    jsonValueToInt(score[m], s, xp);
+                    player.stats.EXP = std::min(99, std::max(0, xp));
+                }
                 else if ( s == "class" )
                 {
                     jsonValueToInt(score[m], s, player.char_class);
@@ -721,7 +727,10 @@ void PlayfabUser_t::OnFunctionExecute(const PlayFab::CloudScriptModels::ExecuteF
                                     entry.hasData = true;
                                 }
                                 entry.awaitingData = false;
-                                entry.rank = info.hiscore_rank;
+                                if ( info.hiscore_rank >= 0 )
+                                {
+                                    entry.rank = info.hiscore_rank;
+                                }
                                 entry.score = info.hiscore_totalscore;
                             }
                         }
@@ -1023,7 +1032,7 @@ void PlayfabUser_t::LeaderboardData_t::LeaderBoard_t::requestPlayerData(int star
         entry.hasData = false;
 
         ++added;
-        if ( added == 50 )
+        if ( added > 0 && (added % 25 == 0) ) // grab 25 entries per batch
         {
             PlayFab::CloudScriptModels::ExecuteFunctionRequest request;
             request.FunctionName = "LeaderboardGetPlayerData";
@@ -1375,7 +1384,53 @@ void PlayfabUser_t::OnLeaderboardAroundMeGet(const PlayFab::ClientModels::GetLea
                     leaderboard.loading = false;
                     if ( !emptyLeaderboard )
                     {
-                        leaderboard.requestPlayerData(0, 10);
+                        leaderboard.requestPlayerData(0, 25);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void PlayfabUser_t::OnLeaderboardTop100AlternateGet(const PlayFab::ClientModels::GetLeaderboardResult& result, void* customData)
+{
+    if ( result.Request["CustomTags"].isMember("lid") )
+    {
+        std::string lid = result.Request["CustomTags"]["lid"].asString();
+        auto& leaderboard = playfabUser.leaderboardData.leaderboards[lid];
+        leaderboard.name = lid;
+
+        int sequence = reinterpret_cast<intptr_t>(customData);
+        if ( leaderboard.awaitingResponse.find(sequence) != leaderboard.awaitingResponse.end() )
+        {
+            leaderboard.awaitingResponse.erase(sequence);
+
+            if ( intro )
+            {
+                leaderboard.displayedRanks.clear();
+                leaderboard.playerData.clear();
+
+                bool emptyLeaderboard = result.Leaderboard.size() == 0;
+
+                if ( !emptyLeaderboard )
+                {
+                    for ( auto& entry : result.Leaderboard )
+                    {
+                        leaderboard.displayedRanks.push_back(LeaderboardData_t::LeaderBoard_t::Entry_t());
+                        auto& rank = leaderboard.displayedRanks.back();
+                        rank.displayName = entry.DisplayName;
+                        rank.rank = entry.Position;
+                        rank.id = entry.PlayFabId;
+                        rank.score = entry.StatValue;
+                    }
+                }
+
+                if ( leaderboard.awaitingResponse.empty() )
+                {
+                    leaderboard.loading = false;
+                    if ( !emptyLeaderboard )
+                    {
+                        leaderboard.requestPlayerData(0, /*result.Leaderboard.size()*/25);
                     }
                 }
             }
@@ -1465,6 +1520,43 @@ void PlayfabUser_t::getLeaderboardAroundMe(std::string lid)
         std::make_pair(processTick, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
 
     PlayFab::PlayFabClientAPI::GetLeaderboardAroundPlayer(request, OnLeaderboardAroundMeGet, OnLeaderboardFail,
+        (void*)(intptr_t)(LeaderboardData_t::sequenceIDs));
+    ++LeaderboardData_t::sequenceIDs;
+}
+
+static ConsoleVariable<int> cvar_leaderboard_search_start("/leaderboard_search_start", 0);
+
+void PlayfabUser_t::getLeaderboardTop100Alternate(std::string lid)
+{
+    if ( !bLoggedIn ) { return; }
+
+    if ( leaderboardData.leaderboards[lid].loading )
+    {
+        for ( auto& pair : leaderboardData.leaderboards[lid].awaitingResponse )
+        {
+            if ( (processTick - pair.second.first) < 5 * TICKS_PER_SECOND )
+            {
+                return; // waiting on a leaderboard to load in
+            }
+        }
+    }
+
+    leaderboardData.leaderboards.erase(lid);
+
+    PlayFab::ClientModels::GetLeaderboardRequest request;
+    request.StatisticName = lid;
+    request.MaxResultsCount = 100;
+    request.StartPosition = leaderboardSearch.searchStartIndex + *cvar_leaderboard_search_start;
+    request.CustomTags["lid"] = lid;
+
+    PlayFab::ClientModels::PlayerProfileViewConstraints constraints;
+    constraints.ShowDisplayName = true;
+    request.ProfileConstraints = constraints;
+
+    playfabUser.leaderboardData.leaderboards[lid].awaitingResponse[LeaderboardData_t::sequenceIDs] =
+        std::make_pair(processTick, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
+
+    PlayFab::PlayFabClientAPI::GetLeaderboard(request, OnLeaderboardTop100AlternateGet, OnLeaderboardFail,
         (void*)(intptr_t)(LeaderboardData_t::sequenceIDs));
     ++LeaderboardData_t::sequenceIDs;
 }

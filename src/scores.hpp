@@ -332,7 +332,7 @@ struct SaveGameInfo {
 	int level_track = 0;
 	int hiscore_loadstatus = 0;
 	int hiscore_totalscore = 0;
-	int hiscore_rank = 0;
+	int hiscore_rank = -1;
 	int hiscore_victory = 0;
 	int hiscore_killed_by = 0;
 	int hiscore_killed_monster = 0;

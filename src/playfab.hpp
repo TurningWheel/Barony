@@ -42,6 +42,7 @@ public:
 	void getLeaderboardTop100Data(std::string lid, int start, int numEntries);
 	void getLeaderboardTop100(std::string lid);
 	void getLeaderboardAroundMe(std::string lid);
+	void getLeaderboardTop100Alternate(std::string lid);
 
 	struct PlayerCheckLeaderboardData_t
 	{
@@ -186,6 +187,7 @@ public:
 		int victory = 3;
 		bool win = true;
 		bool requiresRefresh = false;
+		int searchStartIndex = 0;
 		void applySavedChallengeSearchIfExists();
 		std::string getLeaderboardDisplayName();
 		std::string getLeaderboardID()
@@ -313,6 +315,7 @@ public:
 	static void OnCloudScriptFailure(const PlayFab::PlayFabError& error, void* customData);
 	static void OnLeaderboardGet(const PlayFab::ClientModels::GetLeaderboardResult& result, void* customData);
 	static void OnLeaderboardAroundMeGet(const PlayFab::ClientModels::GetLeaderboardAroundPlayerResult& result, void* customData);
+	static void OnLeaderboardTop100AlternateGet(const PlayFab::ClientModels::GetLeaderboardResult& result, void* customData);
 	static void OnLeaderboardFail(const PlayFab::PlayFabError& error, void* customData);
 
 	static void logInfo(const char* str, ...)
