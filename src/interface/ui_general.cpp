@@ -449,7 +449,21 @@ void UIToastNotificationManager_t::drawNotifications(bool isMoviePlaying, bool b
 	}
 
 	if (achievementsCheck && !intro) {
-		if (conductGameChallenges[CONDUCT_CHEATS_ENABLED]
+		if ( gameModeManager.currentSession.challengeRun.isActive()
+			&& gameModeManager.currentSession.challengeRun.lid.find("challenge") != std::string::npos )
+		{
+			achievementsCheck = false;
+			if ( *cvar_achievements_warning )
+			{
+				createAchievementsDisabledNotification();
+				if ( auto n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_ACHIEVEMENTS_DISABLED) )
+				{
+					n->setIdleSeconds(3);
+					n->setHeaderText(Language::get(6139));
+				}
+			}
+		}
+		else if (conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 			|| conductGameChallenges[CONDUCT_LIFESAVING]
 			|| Mods::disableSteamAchievements) {
 			achievementsCheck = false;
@@ -711,7 +725,7 @@ void UIToastNotificationManager_t::createAchievementsDisabledNotification()
 		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
 		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE);
 		n->cardType = UIToastNotification::CardType::UI_CARD_ACHIEVEMENTS_DISABLED;
-		n->setIdleSeconds(8);
+		n->setIdleSeconds(5);
 	}
 }
 
