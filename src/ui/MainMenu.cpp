@@ -2808,7 +2808,7 @@ namespace MainMenu {
 			playerSettings[i].shootmodeCrosshair = shootmode_crosshair;
 			playerSettings[i].shootmodeCrosshairOpacity = shootmode_crosshair_opacity;
 		}
-		*cvar_hdrEnabled = true;// hdr_enabled;
+		*cvar_hdrEnabled = hdr_enabled;
         uiScale = ui_scale / 100.f;
         result |= (oldUIFilter != *ui_filter || oldUIScale != uiScale) ?
             VideoRefresh::General : VideoRefresh::None;
@@ -2934,7 +2934,7 @@ namespace MainMenu {
 			100.f * (Player::WorldUI_t::tooltipHeightOffsetZ - 6) / -6;
 		settings.shootmode_crosshair = playerSettings[0].shootmodeCrosshair;
 		settings.shootmode_crosshair_opacity = playerSettings[0].shootmodeCrosshairOpacity;
-		settings.hdr_enabled = true;// *cvar_hdrEnabled;
+		settings.hdr_enabled = *cvar_hdrEnabled;
 		settings.show_messages_enabled = !disable_messages;
 		settings.show_messages = Messages::load();
 		settings.show_player_nametags_enabled = !hide_playertags;
@@ -6254,8 +6254,8 @@ bind_failed:
         
 		y += settingsAddSlider(*settings_subwindow, y, "fps", Language::get(5169), Language::get(5170),
 			allSettings.fps ? allSettings.fps : AUTO_FPS, MIN_FPS, AUTO_FPS, sliderFPS, [](Slider& slider){soundSliderSetting(slider, true); allSettings.fps = slider.getValue();});
-		/*y += settingsAddBooleanOption(*settings_subwindow, y, "hdr_enabled", Language::get(5171), Language::get(5172),
-			allSettings.hdr_enabled, [](Button& button) {soundToggleSetting(button); allSettings.hdr_enabled = button.isPressed(); });*/
+		y += settingsAddBooleanOption(*settings_subwindow, y, "hdr_enabled", Language::get(5171), Language::get(5172),
+			allSettings.hdr_enabled, [](Button& button) {soundToggleSetting(button); allSettings.hdr_enabled = button.isPressed(); });
 		y += settingsAddBooleanOption(*settings_subwindow, y, "use_frame_interpolation", Language::get(5173), Language::get(5174),
 			allSettings.use_frame_interpolation, [](Button& button) {soundToggleSetting(button); allSettings.use_frame_interpolation = button.isPressed();});
 #endif
@@ -6275,7 +6275,7 @@ bind_failed:
 			{Setting::Type::Slider, "gamma"},
 			{Setting::Type::Slider, "fov"},
 			{Setting::Type::Slider, "fps"},
-			/*{Setting::Type::Boolean, "hdr_enabled"},*/
+			{Setting::Type::Boolean, "hdr_enabled"},
 			{Setting::Type::Boolean, "use_frame_interpolation"},
 			{Setting::Type::Boolean, "vertical_split"},
 			{Setting::Type::Boolean, "clipped_split"},
