@@ -30557,6 +30557,7 @@ failed:
 	}
 #endif
 
+#ifdef USE_PLAYFAB
 	static void playChallengeBegin(PlayfabUser_t::PeriodicalEvents_t::Event_t& e)
 	{
 		loadingsavegame = 0;
@@ -32189,4 +32190,5 @@ failed:
 			hall_of_trials_button->select();
 		}*/
 	}
+#endif
 }

@@ -10020,6 +10020,7 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterT
 	printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
 }
 
+#ifndef EDITOR
 void GameModeManager_t::CurrentSession_t::ChallengeRun_t::updateKillEvent(Entity* entity)
 {
 	if ( multiplayer == CLIENT || !isActive() || !entity )
@@ -10447,3 +10448,4 @@ bool GameModeManager_t::CurrentSession_t::ChallengeRun_t::loadScenario()
 
 	return true;
 }
+#endif
