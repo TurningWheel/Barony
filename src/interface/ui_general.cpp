@@ -347,8 +347,15 @@ void UIToastNotification::drawMainCard()
 				setStatisticCurrentValue(pendingStatisticUpdateCurrent);
 				if (statisticUpdateCurrent >= statisticUpdateMax)
 				{
-					this->setHeaderText("Achievement Unlocked!");
-					notificationImage = std::string("*#images/achievements/") + this->achievementID + std::string(".png");
+					if ( actionFlags & UI_NOTIFICATION_CHALLENGE_UPDATE )
+					{
+						this->setHeaderText(Language::get(6156));
+					}
+					else
+					{
+						this->setHeaderText("Achievement Unlocked!");
+						notificationImage = std::string("*#images/achievements/") + this->achievementID + std::string(".png");
+					}
 				}
 				pendingStatisticUpdateCurrent = -1;
 			}
@@ -925,19 +932,34 @@ void UIToastNotificationManager_t::createStatisticUpdateNotification(const char*
 
 	const bool unlocked = (currentValue >= maxValue);
 	const char* achievementName = "Unknown Achievement";
+	bool challenge = false;
+	if ( !strcmp(name, "CHALLENGE_MONSTER_KILLS") )
+	{
+		challenge = true;
+		achievementName = Language::get(6155);
+		n = UIToastNotificationManager.addNotification("*#images/ui/Main Menus/Challenges/seed_attempted64px.png");
+		n->setHeaderText(unlocked ? Language::get(6156) : Language::get(6154));
+	}
+	else if ( !strcmp(name, "CHALLENGE_FURNITURE_KILLS") )
+	{
+		challenge = true;
+		achievementName = Language::get(6157);
+		n = UIToastNotificationManager.addNotification("*#images/ui/Main Menus/Challenges/seed_attempted64px.png");
+		n->setHeaderText(unlocked ? Language::get(6156) : Language::get(6154));
+	}
+	else
 	{
 		auto it = achievementNames.find(name);
 		if ( it != achievementNames.end() )
 		{
 			achievementName = it->second.c_str();
 		}
+		const std::string imgName = unlocked ?
+			std::string("*#images/achievements/") + name + std::string(".png"):
+			std::string("*#images/achievements/") + name + std::string("_l.png");
+		n = UIToastNotificationManager.addNotification(imgName.c_str());
+		n->setHeaderText(unlocked ? "Achievement Unlocked!" : "Achievement Updated!");
 	}
-
-	const std::string imgName = unlocked ?
-		std::string("*#images/achievements/") + name + std::string(".png"):
-		std::string("*#images/achievements/") + name + std::string("_l.png");
-	n = UIToastNotificationManager.addNotification(imgName.c_str());
-	n->setHeaderText(unlocked ? "Achievement Unlocked!" : "Achievement Updated!");
 
 	std::string achStr = std::string(achievementName);
 	truncateMainText(achStr);
@@ -947,6 +969,10 @@ void UIToastNotificationManager_t::createStatisticUpdateNotification(const char*
 	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE);
 	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
 	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
+	if ( challenge )
+	{
+		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CHALLENGE_UPDATE);
+	}
 	n->cardType = UIToastNotification::CardType::UI_CARD_ACHIEVEMENT;
 	n->setStatisticCurrentValue(currentValue);
 	n->setStatisticMaxValue(maxValue);

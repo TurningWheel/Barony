@@ -30,6 +30,7 @@ See LICENSE for details.
 #include "scores.hpp"
 #include "menu.hpp"
 #include "mod_tools.hpp"
+#include "interface/ui.hpp"
 #ifdef __ARM_NEON__
 #include <arm_neon.h>
 #endif
@@ -1722,6 +1723,12 @@ bool Entity::increaseSkill(int skill, bool notify)
 	if ( this->behavior == &actPlayer )
 	{
 		player = this->skill[2];
+
+		if ( gameModeManager.currentSession.challengeRun.isActive()
+			&& gameModeManager.currentSession.challengeRun.eventType == GameModeManager_t::CurrentSession_t::ChallengeRun_t::CHEVENT_NOSKILLS )
+		{
+			return false;
+		}
 	}
 
 	bool increased = false;
@@ -7986,6 +7993,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else if ( hit.entity->behavior == &::actFurniture )
 					{
+						if ( oldHP > 0 && behavior == &actPlayer )
+						{
+							gameModeManager.currentSession.challengeRun.updateKillEvent(hit.entity);
+						}
 						switch ( hit.entity->furnitureType )
 						{
 							case FURNITURE_CHAIR:
@@ -11968,6 +11979,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		}
 	}
 
+	bool killIncrementEvent = false;
 
 	// award bonus XP and update kill counters
 	if ( player >= 0 )
@@ -12047,12 +12059,14 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 					this->increaseSkill(PRO_LOCKPICKING);
 				}
 			}
+			killIncrementEvent = true;
 		}
 
 		if ( root && srcStats->type == SHOPKEEPER )
 		{
 			ShopkeeperPlayerHostility.onShopkeeperDeath(src, srcStats, players[player]->entity);
 		}
+
 		if ( player == 0 )
 		{
 			if ( srcStats->type == LICH )
@@ -12193,6 +12207,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 						steamStatisticUpdateClient(leader->skill[2], STEAM_STAT_MONARCH, STEAM_STAT_INT, 1);
 					}
 				}
+				killIncrementEvent = true;
 			}
 		}
 
@@ -12240,6 +12255,11 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 				}
 			}
 		}
+	}
+
+	if ( killIncrementEvent )
+	{
+		gameModeManager.currentSession.challengeRun.updateKillEvent(src);
 	}
 
 	// restore hit struct

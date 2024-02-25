@@ -2480,12 +2480,16 @@ public:
 				CHEVENT_XP_250,
 				CHEVENT_NOXP_LVL_20,
 				CHEVENT_SHOPPING_SPREE,
-				CHEVENT_KILLS_100,
+				CHEVENT_BFG,
+				CHEVENT_KILLS_FURNITURE,
+				CHEVENT_KILLS_MONSTERS,
 				CHEVENT_NOSKILLS,
+				CHEVENT_STRONG_TRAPS,
 				CHEVENT_ENUM_END
 			};
 
 			bool isActive() { return inUse; }
+			bool isActive(ChallengeEvents_t _eventType) { return inUse && (eventType == _eventType); }
 			std::string scenarioStr = "";
 			std::string lid = "";
 			int lid_version = -1;
@@ -2513,6 +2517,7 @@ public:
 			void reset();
 			bool loadScenario();
 			void applySettings();
+			void updateKillEvent(Entity* entity);
 		} challengeRun;
 	} currentSession;
 

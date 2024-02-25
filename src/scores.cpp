@@ -373,7 +373,15 @@ int totalScore(score_t* score)
 	}
 
 	amount += score->dungeonlevel * 500;
-	if ( score->victory >= 3 )
+	if ( score->victory == 100 )
+	{
+		amount += 2 * 20000;
+	}
+	else if ( score->victory == 101 )
+	{
+		amount += 5 * 20000;
+	}
+	else if ( score->victory >= 3 )
 	{
 		amount += 3 * 20000;
 	}
@@ -4653,6 +4661,7 @@ bool AchievementObserver::updateOnLevelChange()
 			playerAchievements[i].bountyTargets.clear();
 			playerAchievements[i].updatedBountyTargets = false;
 			playerAchievements[i].wearingBountyHat = false;
+			playerAchievements[i].totalKillsTickUpdate = false;
 		}
 		levelObserved = currentlevel;
 		return true;
@@ -5260,6 +5269,7 @@ void AchievementObserver::clearPlayerAchievementData()
 		playerAchievements[i].bountyTargets.clear();
 		playerAchievements[i].updatedBountyTargets = false;
 		playerAchievements[i].wearingBountyHat = false;
+		playerAchievements[i].totalKillsTickUpdate = false;
 	}
 }
 
@@ -6169,7 +6179,15 @@ int SaveGameInfo::getTotalScore(const int playernum, const int victory)
 	}
 
 	amount += this->dungeon_lvl * 500;
-	if ( victory >= 3 )
+	if ( victory == 100 )
+	{
+		amount += 2 * 20000;
+	}
+	else if ( victory == 101 )
+	{
+		amount += 5 * 20000;
+	}
+	else if ( victory >= 3 )
 	{
 		amount += 3 * 20000;
 	}

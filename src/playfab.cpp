@@ -596,6 +596,7 @@ void PlayfabUser_t::OnFunctionExecute(const PlayFab::CloudScriptModels::ExecuteF
                         }
                         playfabUser.periodicalEvents.periodicalEvents.push_back(e);
                         auto& checkEvent = playfabUser.periodicalEvents.periodicalEvents.back();
+                        checkEvent.scenarioInfo.setup(e.scenario);
                         checkEvent.verifyGameStartSeedForEvent();
                     }
                 }

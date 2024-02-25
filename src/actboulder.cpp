@@ -662,6 +662,12 @@ void actBoulder(Entity* my)
 		}
 	}
 
+	real_t boulderModifier = 1.0;
+	if ( gameModeManager.currentSession.challengeRun.isActive(GameModeManager_t::CurrentSession_t::ChallengeRun_t::CHEVENT_STRONG_TRAPS) )
+	{
+		boulderModifier = 2.0;
+	}
+
 	// gravity
 	bool nobounce = true;
 	if ( !BOULDER_NOGROUND )
@@ -735,7 +741,7 @@ void actBoulder(Entity* my)
 		if ( fabs(my->vel_z) > 1 )
 		{
 			playSoundEntity(my, 182, 128);
-			my->vel_z = -(my->vel_z / 2);
+			my->vel_z = -(my->vel_z / 2) * (1 / boulderModifier);
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
 				if ( players[i]->isLocalPlayer() )
@@ -810,6 +816,7 @@ void actBoulder(Entity* my)
 		{
 			maxSpeed = 2.5;
 		}
+		maxSpeed *= boulderModifier;
 		if ( my->vel_x > maxSpeed )
 		{
 			my->vel_x = maxSpeed;

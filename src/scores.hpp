@@ -53,6 +53,7 @@ static const int STATISTICS_PIMPING_AINT_EASY = 12;
 static const int STATISTICS_TRIBE_SUBSCRIBE = 13;
 static const int STATISTICS_POP_QUIZ_1 = 14;
 static const int STATISTICS_POP_QUIZ_2 = 15;
+static const int STATISTICS_TOTAL_KILLS = 16;
 static const int STATISTICS_DISABLE_UPLOAD = 31;
 
 enum SteamStatIndexes : int
@@ -783,6 +784,7 @@ public:
 		int socialButterfly = 0;
 		int rollTheBones = 0;
 		int trashCompactor = 0;
+		bool totalKillsTickUpdate = false;
 
 		std::pair<int, int> realBoy;
 		std::unordered_map<Uint32, int> caughtInAMoshTargets;

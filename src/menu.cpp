@@ -8557,6 +8557,17 @@ void doNewGame(bool makeHighscore) {
 		conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 1;
 	}
 
+	std::string challengeRunCustomStartLevel = "";
+	bool quickStartPortal = (gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN || gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT) && !loadingsavegame;
+	if ( gameModeManager.currentSession.challengeRun.isActive(GameModeManager_t::CurrentSession_t::ChallengeRun_t::CHEVENT_SHOPPING_SPREE) )
+	{
+		if ( currentlevel == 0 && !loadingsavegame )
+		{
+			challengeRunCustomStartLevel = "minetown";
+			secretlevel = true;
+		}
+	}
+
 	if ( Mods::numCurrentModsLoaded <= 0 )
 	{
 		Mods::disableSteamAchievements = false;
@@ -8745,6 +8756,10 @@ void doNewGame(bool makeHighscore) {
         if ( !loadingsavegame )
         {
 			mapseed = 0;
+			if ( challengeRunCustomStartLevel != "" )
+			{
+				mapseed = uniqueGameKey;
+			}
 		}
 
 		// reset class loadout
@@ -8761,6 +8776,14 @@ void doNewGame(bool makeHighscore) {
 			{
 				// restore flags as we saved them in the lobby before this game started
 				gameModeManager.currentSession.serverFlags = oldSvFlags;
+			}
+			if ( gameModeManager.currentSession.challengeRun.isActive(GameModeManager_t::CurrentSession_t::ChallengeRun_t::CHEVENT_SHOPPING_SPREE) )
+			{
+				if ( currentlevel == 0 )
+				{
+					challengeRunCustomStartLevel = "minetown";
+					secretlevel = true;
+				}
 			}
 		} else {
 			for (int c = 0; c < MAXPLAYERS; ++c) {
@@ -8805,11 +8828,34 @@ void doNewGame(bool makeHighscore) {
 		int checkMapHash = -1;
 		if ( loadingmap == false )
 		{
-			physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
-			if (!verifyMapHash(map.filename, checkMapHash))
+			if ( challengeRunCustomStartLevel != "" )
 			{
-				conductGameChallenges[CONDUCT_MODDED] = 1;
-				Mods::disableSteamAchievements = true;
+				std::string fullMapName = physfsFormatMapName(challengeRunCustomStartLevel.c_str());
+				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures, &checkMapHash);
+				if ( !verifyMapHash(fullMapName.c_str(), checkMapHash) )
+				{
+					conductGameChallenges[CONDUCT_MODDED] = 1;
+				}
+			}
+			else
+			{
+				physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
+				if (!verifyMapHash(map.filename, checkMapHash))
+				{
+					conductGameChallenges[CONDUCT_MODDED] = 1;
+					Mods::disableSteamAchievements = true;
+				}
+
+				if ( quickStartPortal && !strcmp(map.name, "Start Map") && currentlevel == 0 )
+				{
+					Entity* portal = newEntity(118, 0, map.entities, map.creatures);
+					setSpriteAttributes(portal, nullptr, nullptr);
+					portal->x = 6 * 16;
+					portal->y = 13 * 16;
+					portal->teleporterX = 6;
+					portal->teleporterY = 25;
+					portal->teleporterType = 2;
+				}
 			}
 		}
 		else
@@ -8830,6 +8876,34 @@ void doNewGame(bool makeHighscore) {
 			}
 		}
 		assignActions(&map);
+
+		if ( !loadingsavegame && challengeRunCustomStartLevel == "minetown" )
+		{
+			std::vector<Entity*> shopkeepersToInsert;
+			for ( node_t* node = map.creatures->first; node; node = node->next )
+			{
+				Entity* entity = (Entity*)node->element;
+				if ( entity->sprite == 35 )
+				{
+					shopkeepersToInsert.push_back(entity);
+				}
+			}
+
+			for ( auto entity : shopkeepersToInsert )
+			{
+				if ( auto monster = summonMonsterNoSmoke(SHOPKEEPER, entity->x, entity->y, true) )
+				{
+					if ( entity->entity_rng )
+					{
+						BaronyRNG shop_rng;
+						Uint32 tmpSeed = entity->entity_rng->getU32();
+						shop_rng.seedBytes(&tmpSeed, sizeof(tmpSeed));
+						monster->seedEntityRNG(shop_rng.getU32());
+					}
+				}
+			}
+		}
+
 		generatePathMaps();
         clearChunks();
         createChunks();
@@ -9075,6 +9149,10 @@ void doNewGame(bool makeHighscore) {
 				initClass(c);
 			}
 			mapseed = 0;
+			if ( challengeRunCustomStartLevel != "" )
+			{
+				mapseed = uniqueGameKey;
+			}
 		}
 		else
 		{
@@ -9085,6 +9163,14 @@ void doNewGame(bool makeHighscore) {
 			{
 				// restore flags as we saved them in the lobby before this game started
 				gameModeManager.currentSession.serverFlags = oldSvFlags;
+			}
+			if ( gameModeManager.currentSession.challengeRun.isActive(GameModeManager_t::CurrentSession_t::ChallengeRun_t::CHEVENT_SHOPPING_SPREE) )
+			{
+				if ( currentlevel == 0 )
+				{
+					challengeRunCustomStartLevel = "minetown";
+					secretlevel = true;
+				}
 			}
 		}
 
@@ -9134,11 +9220,34 @@ void doNewGame(bool makeHighscore) {
 		int checkMapHash = -1;
 		if ( loadingmap == false )
 		{
-			physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
-			if (!verifyMapHash(map.filename, checkMapHash))
+			if ( challengeRunCustomStartLevel != "" )
 			{
-				conductGameChallenges[CONDUCT_MODDED] = 1;
-				Mods::disableSteamAchievements = true;
+				std::string fullMapName = physfsFormatMapName(challengeRunCustomStartLevel.c_str());
+				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures, &checkMapHash);
+				if ( !verifyMapHash(fullMapName.c_str(), checkMapHash) )
+				{
+					conductGameChallenges[CONDUCT_MODDED] = 1;
+				}
+			}
+			else
+			{
+				physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
+				if (!verifyMapHash(map.filename, checkMapHash))
+				{
+					conductGameChallenges[CONDUCT_MODDED] = 1;
+					Mods::disableSteamAchievements = true;
+				}
+
+				if ( quickStartPortal && !strcmp(map.name, "Start Map") && currentlevel == 0 )
+				{
+					Entity* portal = newEntity(118, 0, map.entities, map.creatures);
+					setSpriteAttributes(portal, nullptr, nullptr);
+					portal->x = 6 * 16;
+					portal->y = 13 * 16;
+					portal->teleporterX = 6;
+					portal->teleporterY = 25;
+					portal->teleporterType = 2;
+				}
 			}
 		}
 		else
@@ -9340,7 +9449,7 @@ void doEndgame(bool saveHighscore) {
 	}
 
 	// in greater numbers achievement
-	if ( victory )
+	if ( victory && victory <= 5 )
 	{
 		int k = 0;
 		for ( int c = 0; c < MAXPLAYERS; c++ )

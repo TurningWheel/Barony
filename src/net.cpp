@@ -39,6 +39,7 @@
 #include "ui/MainMenu.hpp"
 #include "ui/LoadingScreen.hpp"
 #include "ui/GameUI.hpp"
+#include "interface/ui.hpp"
 
 #include <atomic>
 #include <future>
@@ -2932,11 +2933,24 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		steamAchievement((char*)(&net_packet->data[4]));
 	}},
 
-		// update steam statistic
+	// update steam statistic
 	{'SSTA', []() {
 		const int statisticNum = static_cast<int>(net_packet->data[4]);
 		int value = static_cast<int>(SDLNet_Read16(&net_packet->data[6]));
 		steamStatisticUpdate(statisticNum, static_cast<ESteamStatTypes>(net_packet->data[5]), value);
+	}},
+
+	// update challenge counter
+	{ 'CHCT', []() {
+		int value = static_cast<int>(SDLNet_Read16(&net_packet->data[4]));
+		int max = static_cast<int>(SDLNet_Read16(&net_packet->data[6]));
+		const char* challengeName = "CHALLENGE_MONSTER_KILLS";
+		int eventType = net_packet->data[8];
+		if ( eventType == (int)GameModeManager_t::CurrentSession_t::ChallengeRun_t::CHEVENT_KILLS_FURNITURE )
+		{
+			challengeName = "CHALLENGE_FURNITURE_KILLS";
+		}
+		UIToastNotificationManager.createStatisticUpdateNotification(challengeName, value, max);
 	}},
 
 	// pause game
@@ -4606,6 +4620,17 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// win the game
 	{'WING', [](){
+		if ( net_packet->data[4] == 100 || net_packet->data[4] == 101 )
+		{
+			movie = true;
+			pauseGame(2, 0);
+			MainMenu::destroyMainMenu();
+			MainMenu::createDummyMainMenu();
+			beginFade(MainMenu::FadeDestination::Endgame);
+			return;
+		}
+
+
 		int victoryType;
 		int race = RACE_HUMAN;
 		if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )

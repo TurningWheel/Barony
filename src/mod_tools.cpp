@@ -488,6 +488,10 @@ bool GameModeManager_t::isFastDeathGrave()
 	{
 		return true;
 	}
+	if ( currentMode == GAME_MODE_CUSTOM_RUN )
+	{
+		return true;
+	}
 	return false;
 }
 
@@ -10016,6 +10020,71 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterT
 	printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
 }
 
+void GameModeManager_t::CurrentSession_t::ChallengeRun_t::updateKillEvent(Entity* entity)
+{
+	if ( multiplayer == CLIENT || !isActive() || !entity )
+	{
+		return;
+	}
+
+	if ( gameModeManager.currentSession.challengeRun.numKills < 0 )
+	{
+		return;
+	}
+	if ( !(eventType == CHEVENT_KILLS_MONSTERS
+		|| eventType == CHEVENT_KILLS_FURNITURE) )
+	{
+		return;
+	}
+
+	if ( entity->behavior == &actMonster && eventType != CHEVENT_KILLS_MONSTERS )
+	{
+		return;
+	}
+	if ( entity->behavior == &actFurniture && eventType != CHEVENT_KILLS_FURNITURE )
+	{
+		return;
+	}
+
+	auto& killTotal = gameStatistics[STATISTICS_TOTAL_KILLS];
+	killTotal++;
+
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		achievementObserver.playerAchievements[i].totalKillsTickUpdate = true;
+	}
+
+	if ( killTotal <= gameModeManager.currentSession.challengeRun.numKills )
+	{
+		if ( killTotal % 10 == 0 || killTotal == 1 || killTotal == gameModeManager.currentSession.challengeRun.numKills )
+		{
+			const char* challengeName = "CHALLENGE_MONSTER_KILLS";
+			if ( eventType == CHEVENT_KILLS_FURNITURE )
+			{
+				challengeName = "CHALLENGE_FURNITURE_KILLS";
+			}
+			UIToastNotificationManager.createStatisticUpdateNotification(challengeName, killTotal, gameModeManager.currentSession.challengeRun.numKills);
+			if ( multiplayer == SERVER )
+			{
+				for ( int i = 1; i < MAXPLAYERS; ++i )
+				{
+					if ( !client_disconnected[i] && !players[i]->isLocalPlayer() )
+					{
+						strcpy((char*)net_packet->data, "CHCT");
+						SDLNet_Write16((Sint16)killTotal, &net_packet->data[4]);
+						SDLNet_Write16((Sint16)gameModeManager.currentSession.challengeRun.numKills, &net_packet->data[6]);
+						net_packet->data[8] = eventType;
+						net_packet->address.host = net_clients[i - 1].host;
+						net_packet->address.port = net_clients[i - 1].port;
+						net_packet->len = 9;
+						sendPacketSafe(net_sock, -1, net_packet, i - 1);
+					}
+				}
+			}
+		}
+	}
+}
+
 void GameModeManager_t::CurrentSession_t::ChallengeRun_t::applySettings()
 {
 	if ( !inUse ) { return; }
@@ -10091,8 +10160,9 @@ void GameModeManager_t::CurrentSession_t::ChallengeRun_t::reset()
 }
 
 #ifndef NDEBUG
-static ConsoleVariable<int> cvar_race("/challengerace", -1);
-static ConsoleVariable<int> cvar_class("/challengeclass", -1);
+static ConsoleVariable<int> cvar_challengerace("/challengerace", -1);
+static ConsoleVariable<int> cvar_challengeclass("/challengeclass", -1);
+static ConsoleVariable<int> cvar_challengeevent("/challengeevent", -1);
 #endif
 
 bool GameModeManager_t::CurrentSession_t::ChallengeRun_t::loadScenario()
@@ -10288,17 +10358,6 @@ bool GameModeManager_t::CurrentSession_t::ChallengeRun_t::loadScenario()
 		}
 	}
 
-#ifndef NDEBUG
-	if ( *cvar_race >= 0 )
-	{
-		race = *cvar_race;
-	}
-	if ( *cvar_class >= 0 )
-	{
-		classnum = *cvar_class;
-	}
-#endif
-	
 	if ( d.HasMember("gameplay") )
 	{
 		const rapidjson::Value& stats = d["gameplay"];
@@ -10370,6 +10429,21 @@ bool GameModeManager_t::CurrentSession_t::ChallengeRun_t::loadScenario()
 			}
 		}
 	}
+
+#ifndef NDEBUG
+	if ( *cvar_challengerace >= 0 )
+	{
+		race = *cvar_challengerace;
+	}
+	if ( *cvar_challengeclass >= 0 )
+	{
+		classnum = *cvar_challengeclass;
+	}
+	if ( *cvar_challengeevent >= 0 )
+	{
+		eventType = *cvar_challengeevent;
+	}
+#endif
 
 	return true;
 }

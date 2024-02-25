@@ -206,6 +206,7 @@ enum KilledBy {
     FOUNTAIN,
     SINK,
     FAILED_ALCHEMY,
+	FAILED_CHALLENGE
 };
 
 class Stat

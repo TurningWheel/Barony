@@ -17,6 +17,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -152,6 +153,10 @@ void actSpearTrap(Entity* my)
 								}
 
 								int damage = 50;
+								if ( gameModeManager.currentSession.challengeRun.isActive(GameModeManager_t::CurrentSession_t::ChallengeRun_t::CHEVENT_STRONG_TRAPS) )
+								{
+									damage *= 1.5;
+								}
 								int trapResist = entity->getFollowerBonusTrapResist();
 								if ( trapResist != 0 )
 								{

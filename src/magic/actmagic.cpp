@@ -1353,6 +1353,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						spellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, nullptr, element, spell ? spell->ID : SPELL_NONE);
 					}
+					if ( parent && (parent->behavior == &actMagicTrap || parent->behavior == &actMagicTrapCeiling) )
+					{
+						if ( gameModeManager.currentSession.challengeRun.isActive(GameModeManager_t::CurrentSession_t::ChallengeRun_t::CHEVENT_STRONG_TRAPS) )
+						{
+							spellbookDamageBonus += 1.0;
+						}
+					}
 				}
 
 				if (!strcmp(element->element_internal_name, spellElement_force.element_internal_name))
@@ -1443,35 +1450,56 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
+							int oldHP = hit.entity->furnitureHealth;
 							hit.entity->furnitureHealth -= damage;
 							if ( parent )
 							{
 								if ( parent->behavior == &actPlayer )
 								{
+									bool destroyed = oldHP > 0 && hit.entity->furnitureHealth <= 0;
+									if ( destroyed )
+									{
+										gameModeManager.currentSession.challengeRun.updateKillEvent(hit.entity);
+									}
 									switch ( hit.entity->furnitureType )
 									{
 										case FURNITURE_CHAIR:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
+											if ( destroyed )
+											{
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
+											}
 											updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
 												false, DamageGib::DMG_DEFAULT);
 											break;
 										case FURNITURE_TABLE:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
+											if ( destroyed )
+											{
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
+											}
 											updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
 												false, DamageGib::DMG_DEFAULT);
 											break;
 										case FURNITURE_BED:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
+											if ( destroyed )
+											{
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
+											}
 											updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
 												false, DamageGib::DMG_DEFAULT);
 											break;
 										case FURNITURE_BUNKBED:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
+											if ( destroyed )
+											{
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
+											}
 											updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
 												false, DamageGib::DMG_DEFAULT);
 											break;
 										case FURNITURE_PODIUM:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
+											if ( destroyed )
+											{
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
+											}
 											updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
 												false, DamageGib::DMG_DEFAULT);
 											break;
@@ -1636,40 +1664,61 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
+							int oldHP = hit.entity->furnitureHealth;
 							hit.entity->furnitureHealth -= damage;
 							if ( parent )
 							{
 								if ( parent->behavior == &actPlayer )
 								{
+									bool destroyed = oldHP > 0 && hit.entity->furnitureHealth <= 0;
+									if ( destroyed )
+									{
+										gameModeManager.currentSession.challengeRun.updateKillEvent(hit.entity);
+									}
 									switch ( hit.entity->furnitureType )
 									{
-										case FURNITURE_CHAIR:
+									case FURNITURE_CHAIR:
+										if ( destroyed )
+										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
-											updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-												false, DamageGib::DMG_DEFAULT);
-											break;
-										case FURNITURE_TABLE:
+										}
+										updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+											false, DamageGib::DMG_DEFAULT);
+										break;
+									case FURNITURE_TABLE:
+										if ( destroyed )
+										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
-											updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-												false, DamageGib::DMG_DEFAULT);
-											break;
-										case FURNITURE_BED:
+										}
+										updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+											false, DamageGib::DMG_DEFAULT);
+										break;
+									case FURNITURE_BED:
+										if ( destroyed )
+										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
-											updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-												false, DamageGib::DMG_DEFAULT);
-											break;
-										case FURNITURE_BUNKBED:
+										}
+										updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+											false, DamageGib::DMG_DEFAULT);
+										break;
+									case FURNITURE_BUNKBED:
+										if ( destroyed )
+										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
-											updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-												false, DamageGib::DMG_DEFAULT);
-											break;
-										case FURNITURE_PODIUM:
+										}
+										updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+											false, DamageGib::DMG_DEFAULT);
+										break;
+									case FURNITURE_PODIUM:
+										if ( destroyed )
+										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
-											updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-												false, DamageGib::DMG_DEFAULT);
-											break;
-										default:
-											break;
+										}
+										updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+											false, DamageGib::DMG_DEFAULT);
+										break;
+									default:
+										break;
 									}
 								}
 							}
@@ -1946,40 +1995,61 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
+							int oldHP = hit.entity->furnitureHealth;
 							hit.entity->furnitureHealth -= damage;
 							if ( parent )
 							{
 								if ( parent->behavior == &actPlayer )
 								{
+									bool destroyed = oldHP > 0 && hit.entity->furnitureHealth <= 0;
+									if ( destroyed )
+									{
+										gameModeManager.currentSession.challengeRun.updateKillEvent(hit.entity);
+									}
 									switch ( hit.entity->furnitureType )
 									{
-										case FURNITURE_CHAIR:
+									case FURNITURE_CHAIR:
+										if ( destroyed )
+										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
-											updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-												false, DamageGib::DMG_DEFAULT);
-											break;
-										case FURNITURE_TABLE:
+										}
+										updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+											false, DamageGib::DMG_DEFAULT);
+										break;
+									case FURNITURE_TABLE:
+										if ( destroyed )
+										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
-											updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-												false, DamageGib::DMG_DEFAULT);
-											break;
-										case FURNITURE_BED:
+										}
+										updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+											false, DamageGib::DMG_DEFAULT);
+										break;
+									case FURNITURE_BED:
+										if ( destroyed )
+										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
-											updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-												false, DamageGib::DMG_DEFAULT);
-											break;
-										case FURNITURE_BUNKBED:
+										}
+										updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+											false, DamageGib::DMG_DEFAULT);
+										break;
+									case FURNITURE_BUNKBED:
+										if ( destroyed )
+										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
-											updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-												false, DamageGib::DMG_DEFAULT);
-											break;
-										case FURNITURE_PODIUM:
+										}
+										updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+											false, DamageGib::DMG_DEFAULT);
+										break;
+									case FURNITURE_PODIUM:
+										if ( destroyed )
+										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
-											updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-												false, DamageGib::DMG_DEFAULT);
-											break;
-										default:
-											break;
+										}
+										updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+											false, DamageGib::DMG_DEFAULT);
+										break;
+									default:
+										break;
 									}
 								}
 							}
@@ -2495,40 +2565,61 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
+							int oldHP = hit.entity->furnitureHealth;
 							hit.entity->furnitureHealth -= damage;
 							if ( parent )
 							{
 								if ( parent->behavior == &actPlayer )
 								{
+									bool destroyed = oldHP > 0 && hit.entity->furnitureHealth <= 0;
+									if ( destroyed )
+									{
+										gameModeManager.currentSession.challengeRun.updateKillEvent(hit.entity);
+									}
 									switch ( hit.entity->furnitureType )
 									{
-										case FURNITURE_CHAIR:
+									case FURNITURE_CHAIR:
+										if ( destroyed )
+										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
-											updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-												false, DamageGib::DMG_DEFAULT);
-											break;
-										case FURNITURE_TABLE:
+										}
+										updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+											false, DamageGib::DMG_DEFAULT);
+										break;
+									case FURNITURE_TABLE:
+										if ( destroyed )
+										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
-											updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-												false, DamageGib::DMG_DEFAULT);
-											break;
-										case FURNITURE_BED:
+										}
+										updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+											false, DamageGib::DMG_DEFAULT);
+										break;
+									case FURNITURE_BED:
+										if ( destroyed )
+										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
-											updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-												false, DamageGib::DMG_DEFAULT);
-											break;
-										case FURNITURE_BUNKBED:
+										}
+										updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+											false, DamageGib::DMG_DEFAULT);
+										break;
+									case FURNITURE_BUNKBED:
+										if ( destroyed )
+										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
-											updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-												false, DamageGib::DMG_DEFAULT);
-											break;
-										case FURNITURE_PODIUM:
+										}
+										updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+											false, DamageGib::DMG_DEFAULT);
+										break;
+									case FURNITURE_PODIUM:
+										if ( destroyed )
+										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
-											updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-												false, DamageGib::DMG_DEFAULT);
-											break;
-										default:
-											break;
+										}
+										updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
+											false, DamageGib::DMG_DEFAULT);
+										break;
+									default:
+										break;
 									}
 								}
 							}
@@ -3207,35 +3298,56 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									int damage = element->damage;
 									damage += (spellbookDamageBonus * damage);
 									damage /= (1 + (int)resistance);
+									int oldHP = hit.entity->furnitureHealth;
 									hit.entity->furnitureHealth -= damage;
 									if ( parent )
 									{
 										if ( parent->behavior == &actPlayer )
 										{
+											bool destroyed = oldHP > 0 && hit.entity->furnitureHealth <= 0;
+											if ( destroyed )
+											{
+												gameModeManager.currentSession.challengeRun.updateKillEvent(hit.entity);
+											}
 											switch ( hit.entity->furnitureType )
 											{
 											case FURNITURE_CHAIR:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
+												if ( destroyed )
+												{
+													messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
+												}
 												updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
 													false, DamageGib::DMG_DEFAULT);
 												break;
 											case FURNITURE_TABLE:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
+												if ( destroyed )
+												{
+													messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
+												}
 												updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
 													false, DamageGib::DMG_DEFAULT);
 												break;
 											case FURNITURE_BED:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
+												if ( destroyed )
+												{
+													messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
+												}
 												updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
 													false, DamageGib::DMG_DEFAULT);
 												break;
 											case FURNITURE_BUNKBED:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
+												if ( destroyed )
+												{
+													messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
+												}
 												updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
 													false, DamageGib::DMG_DEFAULT);
 												break;
 											case FURNITURE_PODIUM:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
+												if ( destroyed )
+												{
+													messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
+												}
 												updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
 													false, DamageGib::DMG_DEFAULT);
 												break;

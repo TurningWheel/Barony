@@ -120,6 +120,13 @@ void actLadder(Entity* my)
 						{
 							skipLevelsOnLoad = -1; // don't skip a regular level anymore. still skip if in underworld.
 						}
+						if ( currentlevel == 0 )
+						{
+							if ( gameModeManager.currentSession.challengeRun.isActive(GameModeManager_t::CurrentSession_t::ChallengeRun_t::CHEVENT_SHOPPING_SPREE) )
+							{
+								skipLevelsOnLoad = 0;
+							}
+						}
 					}
 					if ( LADDER_SECRET_ENTRANCE )
 					{

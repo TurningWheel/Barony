@@ -2825,6 +2825,20 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 	}
+	if ( gameModeManager.currentSession.challengeRun.isActive(GameModeManager_t::CurrentSession_t::ChallengeRun_t::CHEVENT_BFG) )
+	{
+		item = newItem(HEAVY_CROSSBOW, EXCELLENT, curseItems ? -99 : 99, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+	}
 	if ( isLocalPlayer )
 	{
 		if ( stats[player]->playerRace == RACE_VAMPIRE && stats[player]->appearance == 0 )

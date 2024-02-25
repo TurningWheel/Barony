@@ -3,6 +3,7 @@
 #include "main.hpp"
 #include "stat.hpp"
 #include "scores.hpp"
+#include "mod_tools.hpp"
 #ifdef USE_PLAYFAB
 #include <playfab/PlayFabClientApi.h>
 #include <playfab/PlayFabClientDataModels.h>
@@ -76,6 +77,7 @@ public:
 			int rolloverConflict = 0;
 			bool locked = false;
 			std::string scenario = "";
+			GameModeManager_t::CurrentSession_t::ChallengeRun_t scenarioInfo;
 		};
 		std::vector<Event_t> periodicalEvents;
 		bool awaitingData = false;

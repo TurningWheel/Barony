@@ -33,8 +33,6 @@
 #include "../playfab.hpp"
 #endif
 
-// quick restart:
-
 #ifdef NINTENDO
 #define NETWORK_PORT_CLIENT 56175
 #define NETWORK_SCAN_PORT_CLIENT 56176
@@ -8388,10 +8386,19 @@ bind_failed:
             };
             const int num_victories = sizeof(victories) / sizeof(victories[0]);
 
-            if (score->victory < 0 || score->victory >= num_victories) {
+			int which_victory = score->victory;
+			if ( score->victory == 100 )
+			{
+				which_victory = 4;
+			}
+			else if ( score->victory == 101 )
+			{
+				which_victory = 4;
+			}
+            else if (score->victory < 0 || score->victory >= num_victories) {
                 return;
             }
-            auto& victory = victories[score->victory];
+            auto& victory = victories[which_victory];
 
             char victory_text[1024] = "";
 			if ( score->victory == 0 && score->stats->killer != KilledBy::UNKNOWN )
@@ -8420,6 +8427,9 @@ bind_failed:
 						}
 						break;
 					}
+					case KilledBy::FAILED_CHALLENGE:
+						cause_of_death = Language::get(6153);
+						break;
 					default: 
 					{
 						cause_of_death = Language::get(5794 + (int)score->stats->killer);
@@ -8430,7 +8440,18 @@ bind_failed:
 			}
 			else
 			{
-				snprintf(victory_text, sizeof(victory_text), victory.text, score->stats->name);
+				if ( score->victory == 100 )
+				{
+					snprintf(victory_text, sizeof(victory_text), Language::get(6166), score->stats->name);
+				}
+				else if ( score->victory == 101 )
+				{
+					snprintf(victory_text, sizeof(victory_text), Language::get(6167), score->stats->name);
+				}
+				else
+				{
+					snprintf(victory_text, sizeof(victory_text), victory.text, score->stats->name);
+				}
 			}
 
             victory_plate_text->setText(victory_text);
@@ -8695,80 +8716,6 @@ bind_failed:
                 selectedScore = score;
                 updateStats(button, score);
                 loadScore(score);
-
-				if ( score && score->stats->LVL > 1 )
-				{
-					int maxStats = 10 + (score->stats->LVL - 1) * 6;
-					if ( (score->stats->STR + score->stats->DEX
-						+ score->stats->INT + score->stats->PER
-						+ score->stats->CON + score->stats->CHR) > maxStats )
-					{
-						//printlog("%d: [%s]: total stats", entry.rank, entry.id.c_str());
-						button.setTextColor(makeColor(255, 0, 0, 255));
-						button.setTextHighlightColor(makeColor(255, 0, 0, 255));
-						statChecks.insert(score->stats->name);
-					}
-					int totalKills = 0;
-					for ( int i = 0; i < NUMMONSTERS; ++i )
-					{
-						totalKills += score->kills[i];
-					}
-					if ( (int)(totalKills * 100 / 100.0) < (score->stats->LVL - 1) )
-					{
-						button.setTextColor(makeColor(255, 128, 0, 255));
-						button.setTextHighlightColor(makeColor(255, 128, 0, 255));
-						statChecks.insert(score->stats->name);
-					}
-					if ( score->stats->GOLD > 5000000 )
-					{
-						button.setTextColor(makeColor(255, 0, 255, 255));
-						button.setTextHighlightColor(makeColor(255, 0, 255, 255));
-						statChecks.insert(score->stats->name);
-					}
-					{
-						int xpTotal = totalKills * 50;
-						int skillTotal = 0;
-						for ( int i = 0; i < NUMPROFICIENCIES; ++i )
-						{
-							skillTotal += 2 * score->stats->getProficiency(i);
-						}
-						xpTotal += skillTotal;
-						if ( score->stats->LVL > 25 )
-						{
-							if ( (xpTotal / 100) < (score->stats->LVL - 1) )
-							{
-								button.setTextColor(makeColor(0, 255, 255, 255));
-								button.setTextHighlightColor(makeColor(0, 255, 255, 255));
-								statChecks.insert(score->stats->name);
-							}
-						}
-						real_t xprate = (score->stats->LVL * 100 - skillTotal) / (float)totalKills;
-						if ( xprate >= 35 && score->stats->LVL > 25 )
-						{
-							button.setTextColor(makeColor(0, 255, 255, 255));
-							button.setTextHighlightColor(makeColor(0, 255, 255, 255));
-							statChecks.insert(score->stats->name);
-						}
-						else if ( xprate >= 50 && score->stats->LVL > 10 )
-						{
-							button.setTextColor(makeColor(0, 255, 255, 255));
-							button.setTextHighlightColor(makeColor(0, 255, 255, 255));
-							statChecks.insert(score->stats->name);
-						}
-
-						int statLimit = score->stats->LVL * 1.25;
-						if ( score->stats->STR > statLimit
-							|| score->stats->DEX > statLimit
-							|| score->stats->CON > statLimit
-							|| score->stats->INT > statLimit
-							|| score->stats->PER > statLimit
-							|| score->stats->CHR > statLimit )
-						{
-							button.setTextColor(makeColor(0, 255, 255, 255));
-							button.setTextHighlightColor(makeColor(0, 255, 255, 255));
-						}
-					}
-				}
                 });
             button->setTickCallback([](Widget& widget){
                 auto button = static_cast<Button*>(&widget);
@@ -9097,8 +9044,8 @@ bind_failed:
 										{
 											if ( button->isPressed() 
 												|| 
-												(!isMouseVisible() 
-												&& !strcmp(button->getBackground(), "*images/ui/Main Menus/Leaderboards/AA_NameList_Selected_00.png")) )
+												(/*!isMouseVisible() 
+												&& */!strcmp(button->getBackground(), "*images/ui/Main Menus/Leaderboards/AA_NameList_Selected_00.png")) )
 											{
 												const int numEntriesRequest = 25;
 												leaderboard.requestPlayerData(numEntriesRequest * (index / numEntriesRequest), numEntriesRequest);
@@ -9113,7 +9060,11 @@ bind_failed:
 												{
 													if ( auto score = scoreConstructor(0, info) )
 													{
-														strcpy(score->stats->name, entry.id.c_str());
+														static ConsoleVariable<bool> cvar_leaderboard_show_id("/leaderboard_show_id", false);
+														if ( *cvar_leaderboard_show_id )
+														{
+															strcpy(score->stats->name, entry.id.c_str());
+														}
 														button->setUserData(score);
 														selectedScore = score;
 														updateStats(*button, score);
@@ -11469,6 +11420,35 @@ bind_failed:
 				gameModeManager.setMode(GameModeManager_t::GAME_MODE_CUSTOM_RUN);
 				gameModeManager.currentSession.challengeRun.setup(str);
 				lobbyCustomScenarioClient.clear();
+
+				if ( gameModeManager.currentSession.challengeRun.isActive() )
+				{
+					if ( gameModeManager.currentSession.challengeRun.classnum >= 0
+						&& gameModeManager.currentSession.challengeRun.classnum < NUMCLASSES )
+					{
+						client_classes[clientnum] = gameModeManager.currentSession.challengeRun.classnum;
+					}
+					if ( gameModeManager.currentSession.challengeRun.race >= 0
+						&& gameModeManager.currentSession.challengeRun.race <= RACE_INSECTOID )
+					{
+						stats[clientnum]->playerRace = gameModeManager.currentSession.challengeRun.race;
+						if ( stats[clientnum]->playerRace != RACE_HUMAN )
+						{
+							stats[clientnum]->appearance = 0;
+						}
+						if ( stats[clientnum]->playerRace == RACE_INCUBUS )
+						{
+							stats[clientnum]->sex = sex_t::MALE;
+						}
+						else if ( stats[clientnum]->playerRace == RACE_SUCCUBUS )
+						{
+							stats[clientnum]->sex = sex_t::FEMALE;
+						}
+					}
+					stats[clientnum]->clearStats();
+					initClass(clientnum);
+					sendPlayerOverNet();
+				}
 			}
 		} },
 
@@ -16789,6 +16769,10 @@ failed:
 						break;
 					}
 				}
+			}
+			else
+			{
+				client_classes[index] = gameModeManager.currentSession.challengeRun.classnum;
 			}
 
 			stats[index]->clearStats();
@@ -25945,6 +25929,9 @@ failed:
             cause_of_death = items[stats[player]->killer_item].getIdentifiedName();
             break;
         }
+		case KilledBy::FAILED_CHALLENGE:
+			cause_of_death = Language::get(6153);
+			break;
         default: {
             cause_of_death = Language::get(5794 + (int)stats[player]->killer);
             break;
@@ -31049,16 +31036,421 @@ failed:
 			(Frame::virtualScreenY - 426) / 2,
 			404,
 			426 });
-		window->setActualSize(SDL_Rect{ 0, 0, 404, 426 });
 		window->setColor(0);
 		window->setBorder(0);
 
 		auto background = window->addImage(
-			window->getActualSize(),
+			SDL_Rect{ 0, 0, window->getSize().w, window->getSize().h },
 			0xffffffff,
 			"*images/ui/Main Menus/Challenges/UI_SeedMenu_Window02.png",
 			"background"
 		);
+
+		{
+			auto side_panel = window->addFrame("side_panel");
+			side_panel->setSize(SDL_Rect{ window->getSize().w - 16, 16, 304, window->getSize().h - 16 });
+			SDL_Rect pos = window->getSize();
+			pos.w += (side_panel->getSize().x - (window->getSize().w)) + side_panel->getSize().w;
+			window->setSize(pos);
+
+			auto details_panel = side_panel->addFrame("details");
+			details_panel->setSize(SDL_Rect{ 0, 0, side_panel->getSize().w, side_panel->getSize().h});
+			auto details_bg = details_panel->addImage(SDL_Rect{ 0, 0, 304, 194 }, 0xFFFFFFFF,
+				"*images/ui/Main Menus/Challenges/seed_oneshot-panel00.png",
+				"details_bg");
+
+			side_panel->setTickCallback([](Widget& widget) {
+				Frame* root = static_cast<Frame*>(&widget);
+				Frame* frame = root->findFrame("details");
+				if ( !frame )
+				{
+					return;
+				}
+
+				frame->setDisabled(true);
+
+				static std::string previous_rules;
+				auto rules_frame = frame->findFrame("rules_frame");
+				if ( rules_frame )
+				{
+					if ( rules_frame->isDisabled() ) { previous_rules = ""; }
+					rules_frame->setDisabled(true);
+				}
+
+				if ( playfabUser.periodicalEvents.periodicalEvents.empty() )
+				{
+					return;
+				}
+
+				int eventIndex = -1;
+				if ( Frame* parent = static_cast<Frame*>(root->getParent()) )
+				{
+					if ( auto btn = parent->findButton("lid_victory_seed_oneshot") )
+					{
+						if ( btn->isSelected() )
+						{
+							int tmp = -1;
+							for ( auto& e : playfabUser.periodicalEvents.periodicalEvents )
+							{
+								++tmp;
+								if ( e.lid == "lid_victory_seed_oneshot" )
+								{
+									eventIndex = tmp;
+									break;
+								}
+							}
+						}
+					}
+					if ( auto btn = parent->findButton("challenge1_leaderboards") )
+					{
+						if ( btn->isSelected() )
+						{
+							int tmp = -1;
+							for ( auto& e : playfabUser.periodicalEvents.periodicalEvents )
+							{
+								++tmp;
+								if ( e.lid == "lid_victory_seed_oneshot" )
+								{
+									eventIndex = tmp;
+									break;
+								}
+							}
+						}
+					}
+					if ( auto btn = parent->findButton("lid_victory_seed_unlimited") )
+					{
+						if ( btn->isSelected() )
+						{
+							int tmp = -1;
+							for ( auto& e : playfabUser.periodicalEvents.periodicalEvents )
+							{
+								++tmp;
+								if ( e.lid == "lid_victory_seed_unlimited" )
+								{
+									eventIndex = tmp;
+									break;
+								}
+							}
+						}
+					}
+					if ( auto btn = parent->findButton("challenge2_leaderboards") )
+					{
+						if ( btn->isSelected() )
+						{
+							int tmp = -1;
+							for ( auto& e : playfabUser.periodicalEvents.periodicalEvents )
+							{
+								++tmp;
+								if ( e.lid == "lid_victory_seed_unlimited" )
+								{
+									eventIndex = tmp;
+									break;
+								}
+							}
+						}
+					}
+					if ( auto btn = parent->findButton("lid_victory_seed_challenge") )
+					{
+						if ( btn->isSelected() )
+						{
+							int tmp = -1;
+							for ( auto& e : playfabUser.periodicalEvents.periodicalEvents )
+							{
+								++tmp;
+								if ( e.lid == "lid_victory_seed_challenge" )
+								{
+									eventIndex = tmp;
+									break;
+								}
+							}
+						}
+					}
+					if ( auto btn = parent->findButton("challenge3_leaderboards") )
+					{
+						if ( btn->isSelected() )
+						{
+							int tmp = -1;
+							for ( auto& e : playfabUser.periodicalEvents.periodicalEvents )
+							{
+								++tmp;
+								if ( e.lid == "lid_victory_seed_challenge" )
+								{
+									eventIndex = tmp;
+									break;
+								}
+							}
+						}
+					}
+				}
+				
+				frame->setDisabled(false);
+				if ( eventIndex == -1 )
+				{
+					return;
+				}
+
+				auto& e = playfabUser.periodicalEvents.periodicalEvents[eventIndex];
+				if ( e.locked )
+				{
+					frame->setDisabled(true);
+				}
+
+				if ( Field* txt = frame->findField("details_race") )
+				{
+					if ( e.scenarioInfo.race == -1 )
+					{
+						txt->setText(Language::get(6161));
+						txt->setColor(makeColor(255, 255, 255, 255));
+					}
+					else if ( e.scenarioInfo.race >= RACE_HUMAN && e.scenarioInfo.race < RACE_INSECTOID )
+					{
+						std::string s = getMonsterLocalizedName(getMonsterFromPlayerRace(e.scenarioInfo.race));
+						camelCaseString(s);
+						txt->setText(s.c_str());
+						if ( e.scenarioInfo.race == RACE_HUMAN )
+						{
+							txt->setColor(hudColors.characterBaseClassText);
+						}
+						else if ( e.scenarioInfo.race >= RACE_SKELETON && e.scenarioInfo.race <= RACE_GOATMAN )
+						{
+							txt->setColor(hudColors.characterDLC1ClassText);
+						}
+						else if ( e.scenarioInfo.race >= RACE_AUTOMATON && e.scenarioInfo.race <= RACE_INSECTOID )
+						{
+							txt->setColor(hudColors.characterDLC2ClassText);
+						}
+					}
+				}
+				if ( Field* txt = frame->findField("details_class") )
+				{
+					if ( e.scenarioInfo.classnum == -1 )
+					{
+						txt->setText(Language::get(6161));
+						txt->setColor(makeColor(255, 255, 255, 255));
+					}
+					else if ( e.scenarioInfo.classnum >= 0 && e.scenarioInfo.classnum < NUMCLASSES )
+					{
+						std::string s = playerClassLangEntry(e.scenarioInfo.classnum, 0);
+						camelCaseString(s);
+						txt->setText(s.c_str());
+						if ( e.scenarioInfo.classnum <= CLASS_MONK )
+						{
+							txt->setColor(hudColors.characterBaseClassText);
+						}
+						else if ( e.scenarioInfo.classnum >= CLASS_CONJURER && e.scenarioInfo.classnum <= CLASS_BREWER )
+						{
+							txt->setColor(hudColors.characterDLC1ClassText);
+						}
+						else if ( e.scenarioInfo.classnum >= CLASS_MACHINIST && e.scenarioInfo.classnum <= CLASS_HUNTER )
+						{
+							txt->setColor(hudColors.characterDLC2ClassText);
+						}
+					}
+				}
+				if ( Field* txt = frame->findField("gamemode") )
+				{
+					if ( e.scenarioInfo.setFlags & SV_FLAG_CLASSIC )
+					{
+						txt->setText(Language::get(6076));
+					}
+					else
+					{
+						txt->setText(Language::get(6072));
+					}
+				}
+
+				if ( eventIndex == 2 && !e.locked )
+				{
+					rules_frame->setDisabled(false);
+					if ( Field* txt = rules_frame->findField("ruleset") )
+					{
+						txt->clearLinesToColor();
+
+						std::string rules;
+						switch ( e.scenarioInfo.eventType )
+						{
+							default:
+								rules_frame->setDisabled(true);
+							break;
+							case e.scenarioInfo.CHEVENT_XP_250:
+								rules.append("Quick Learner:");
+								rules.append("\n");
+								rules.append(u8"\x1E ");
+								rules.append(std::to_string(e.scenarioInfo.globalXPPercent));
+								rules.append("% Kill EXP");
+								break;
+							case e.scenarioInfo.CHEVENT_NOXP_LVL_20:
+								rules.append("Maxed Out:");
+								rules.append("\n");
+								rules.append(u8"\x1E Base Character LVL: ");
+								rules.append(std::to_string((e.scenarioInfo.addStats->EXP) / 100 + 1));
+								rules.append("\n");
+								rules.append(u8"\x1E ");
+								rules.append(std::to_string(e.scenarioInfo.globalXPPercent));
+								rules.append("% Kill EXP");
+								break;
+							case e.scenarioInfo.CHEVENT_SHOPPING_SPREE:
+								rules.append("Shopping Spree:");
+								rules.append("\n");
+								rules.append(u8"\x1E ");
+								rules.append("+");
+								rules.append(std::to_string(e.scenarioInfo.addStats->GOLD));
+								rules.append(" Gold");
+								rules.append("\n");
+								rules.append(u8"\x1E ");
+								rules.append("+");
+								rules.append(std::to_string(e.scenarioInfo.addStats->getProficiency(PRO_TRADING)));
+								rules.append(" Trading skill");
+								rules.append("\n");
+								rules.append(u8"\x1E ");
+								rules.append("Start Map: Minetown");
+								break;
+							case e.scenarioInfo.CHEVENT_BFG:
+								rules.append("BFG:");
+								rules.append("\n");
+								rules.append(u8"\x1E ");
+								rules.append("Start with a +99 blessed arbalest");
+								rules.append("\n");
+								rules.append(u8"\x1E ");
+								rules.append(std::to_string(e.scenarioInfo.addStats->CON));
+								rules.append(" base CON");
+								break;
+							case e.scenarioInfo.CHEVENT_KILLS_FURNITURE:
+								rules.append("Removalist:");
+								rules.append("\n");
+								rules.append(u8"\x1E ");
+								rules.append("To Win: Destroy ");
+								rules.append(std::to_string(e.scenarioInfo.numKills));
+								rules.append(" pieces of furniture");
+								break;
+							case e.scenarioInfo.CHEVENT_KILLS_MONSTERS:
+								rules.append("Slayer:");
+								rules.append("\n");
+								rules.append(u8"\x1E ");
+								rules.append("To Win: Slay any ");
+								rules.append(std::to_string(e.scenarioInfo.numKills));
+								rules.append(" monsters");
+								break;
+							case e.scenarioInfo.CHEVENT_NOSKILLS:
+								rules.append("Purist:");
+								rules.append("\n");
+								rules.append(u8"\x1E ");
+								rules.append("Skills are unable to increase");
+								break;
+							case e.scenarioInfo.CHEVENT_STRONG_TRAPS:
+								rules.append("The One Where Dungeon Traps Are Stronger:");
+								rules.append("\n");
+								rules.append(u8"\x1E ");
+								rules.append("Avoid deadlier traps");
+								break;
+						}
+
+						if ( rules != previous_rules )
+						{
+							previous_rules = rules;
+							txt->setText(rules.c_str());
+							txt->reflowTextToFit(0);
+						}
+
+						txt->addColorToLine(0, makeColor(178, 131, 84, 255));
+						std::string checkStr = txt->getText();
+						auto find = checkStr.find(":");
+						if ( find != std::string::npos )
+						{
+							int lines = 1;
+							for ( size_t c = 0; c < find; ++c )
+							{
+								if ( checkStr.at(c) == '\n' )
+								{
+									txt->addColorToLine(lines, makeColor(178, 131, 84, 255));
+									++lines;
+								}
+							}
+						}
+					}
+				}
+				});
+
+			auto details_header = details_panel->addField("details_header", 64);
+			details_header->setText(Language::get(6158));
+			details_header->setFont(smallfont_outline);
+			details_header->setJustify(Field::justify_t::CENTER);
+			details_header->setSize(SDL_Rect{ 80, 45, 144, 28 });
+
+			auto details_race_header = details_panel->addField("details_race_header", 64);
+			details_race_header->setText(Language::get(6159));
+			details_race_header->setColor(makeColor(178, 131, 84, 255));
+			details_race_header->setFont(smallfont_outline);
+			details_race_header->setHJustify(Field::justify_t::CENTER);
+			details_race_header->setVJustify(Field::justify_t::TOP);
+			details_race_header->setSize(SDL_Rect{ 38, 76, 110, 28 });
+
+			auto details_race = details_panel->addField("details_race", 64);
+			details_race->setText("");
+			details_race->setFont(smallfont_outline);
+			details_race->setHJustify(Field::justify_t::CENTER);
+			details_race->setVJustify(Field::justify_t::TOP);
+			details_race->setSize(SDL_Rect{ 38, details_race_header->getSize().y + 20, 110, 28 });
+
+			auto details_class_header = details_panel->addField("details_class_header", 64);
+			details_class_header->setText(Language::get(6160));
+			details_class_header->setColor(makeColor(178, 131, 84, 255));
+			details_class_header->setFont(smallfont_outline);
+			details_class_header->setHJustify(Field::justify_t::CENTER);
+			details_class_header->setVJustify(Field::justify_t::TOP);
+			details_class_header->setSize(SDL_Rect{ 158, 76, 110, 28 });
+
+			auto details_class = details_panel->addField("details_class", 64);
+			details_class->setText("");
+			details_class->setFont(smallfont_outline);
+			details_class->setHJustify(Field::justify_t::CENTER);
+			details_class->setVJustify(Field::justify_t::TOP);
+			details_class->setSize(SDL_Rect{ 158, details_class_header->getSize().y + 20, 110, 28});
+
+			auto gamemode_header = details_panel->addField("gamemode_header", 64);
+			gamemode_header->setText(Language::get(6162));
+			gamemode_header->setColor(makeColor(178, 131, 84, 255));
+			gamemode_header->setFont(smallfont_outline);
+			gamemode_header->setHJustify(Field::justify_t::CENTER);
+			gamemode_header->setVJustify(Field::justify_t::TOP);
+			gamemode_header->setSize(SDL_Rect{ details_race_header->getSize().x, 
+				details_class->getSize().y + 8 + 20, 
+				details_class_header->getSize().x + details_class_header->getSize().w - details_race_header->getSize().x, 28});
+
+			auto gamemode = details_panel->addField("gamemode", 64);
+			gamemode->setText("");
+			gamemode->setFont(smallfont_outline);
+			gamemode->setHJustify(Field::justify_t::CENTER);
+			gamemode->setVJustify(Field::justify_t::TOP);
+			gamemode->setSize(SDL_Rect{ gamemode_header->getSize().x, gamemode_header->getSize().y + 20, gamemode_header->getSize().w, 28});
+
+			auto rules_frame = details_panel->addFrame("rules_frame");
+			SDL_Rect rulesPos{ 0, 194 + 0, 304, 266 };
+			rules_frame->setSize(rulesPos);
+
+			auto rules_bg = rules_frame->addImage(SDL_Rect{ 0, 0, 304, 266 }, 
+				0xFFFFFFFF,
+				"*images/ui/Main Menus/Challenges/seed_rules-panel00.png",
+				"rules_img");
+
+			auto ruleset_header = rules_frame->addField("ruleset_header", 64);
+			ruleset_header->setText(Language::get(6163));
+			ruleset_header->setFont(smallfont_outline);
+			ruleset_header->setHJustify(Field::justify_t::CENTER);
+			ruleset_header->setVJustify(Field::justify_t::TOP);
+			ruleset_header->setSize(SDL_Rect{ gamemode_header->getSize().x,
+				21,
+				gamemode_header->getSize().w, 28});
+
+			auto ruleset = rules_frame->addField("ruleset", 1024);
+			ruleset->setText("");
+			ruleset->setFont(smallfont_outline);
+			ruleset->setHJustify(Field::justify_t::LEFT);
+			ruleset->setVJustify(Field::justify_t::TOP);
+			ruleset->setSize(SDL_Rect{ ruleset_header->getSize().x, ruleset_header->getSize().y + 20 + 7, 228, 
+				rules_frame->getSize().h - (ruleset_header->getSize().y + 20)});
+		}
+
 
 		auto banner_title = window->addField("banner", 32);
 		banner_title->setSize(SDL_Rect{ 404 / 2 - 196 / 2, 10, 196, 48 });
@@ -31144,7 +31536,7 @@ failed:
 			SDL_Rect pos = challenge1_time->pos;
 			pos.x += 24 + 4;
 			pos.y += 6;
-			pos.w = 64;
+			pos.w = 72;
 			pos.h = 22;
 			challenge1_time_txt->setSize(pos);
 			challenge1_time_txt->setFont(smallfont_outline);
@@ -31314,7 +31706,7 @@ failed:
 			SDL_Rect pos = challenge2_time->pos;
 			pos.x += 24 + 4;
 			pos.y += 6;
-			pos.w = 64;
+			pos.w = 72;
 			pos.h = 22;
 			challenge2_time_txt->setSize(pos);
 			challenge2_time_txt->setFont(smallfont_outline);
@@ -31484,7 +31876,7 @@ failed:
 			SDL_Rect pos = challenge3_time->pos;
 			pos.x += 24 + 4;
 			pos.y += 6;
-			pos.w = 64;
+			pos.w = 72;
 			pos.h = 72;
 			challenge3_time_txt->setSize(pos);
 			challenge3_time_txt->setFont(smallfont_outline);

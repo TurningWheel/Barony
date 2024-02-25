@@ -2804,6 +2804,56 @@ void gameLogic(void)
 			{
 				steamAchievement("BARONY_ACH_HOMICIDAL_MANIAC");
 			}
+
+
+			if ( gameModeManager.currentSession.challengeRun.isActive()
+				&& (gameModeManager.currentSession.challengeRun.eventType == gameModeManager.currentSession.challengeRun.CHEVENT_KILLS_MONSTERS
+					|| gameModeManager.currentSession.challengeRun.eventType == gameModeManager.currentSession.challengeRun.CHEVENT_KILLS_FURNITURE)
+				&& gameModeManager.currentSession.challengeRun.numKills >= 0 )
+			{
+				/*if ( gameStatistics[STATISTICS_TOTAL_KILLS] >= gameModeManager.currentSession.challengeRun.numKills
+					&& achievementObserver.playerAchievements[PLAYER_NUM].totalKillsTickUpdate )
+				{
+					my->setHP(0);
+					my->setObituary(Language::get(6152));
+					stats[PLAYER_NUM]->killer = KilledBy::FAILED_CHALLENGE;
+				}*/
+				if ( gameStatistics[STATISTICS_TOTAL_KILLS] >= gameModeManager.currentSession.challengeRun.numKills
+					&& achievementObserver.playerAchievements[clientnum].totalKillsTickUpdate )
+				{
+					if ( !fadeout )
+					{
+						victory = 100;
+						if ( gameModeManager.currentSession.challengeRun.eventType == gameModeManager.currentSession.challengeRun.CHEVENT_KILLS_FURNITURE )
+						{
+							victory = 101;
+						}
+						if ( multiplayer == SERVER )
+						{
+							for ( int c = 1; c < MAXPLAYERS; c++ )
+							{
+								if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
+								{
+									continue;
+								}
+								strcpy((char*)net_packet->data, "WING");
+								net_packet->data[4] = victory;
+								net_packet->data[5] = 0;
+								net_packet->address.host = net_clients[c - 1].host;
+								net_packet->address.port = net_clients[c - 1].port;
+								net_packet->len = 6;
+								sendPacketSafe(net_sock, -1, net_packet, c - 1);
+							}
+						}
+						movie = true;
+						pauseGame(2, 0);
+						MainMenu::destroyMainMenu();
+						MainMenu::createDummyMainMenu();
+						beginFade(MainMenu::FadeDestination::Endgame);
+					}
+				}
+			}
+			achievementObserver.playerAchievements[clientnum].totalKillsTickUpdate = false;
 		}
 		else if ( multiplayer == CLIENT )
 		{
