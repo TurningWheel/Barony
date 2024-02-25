@@ -185,9 +185,9 @@ FMOD::Channel* playSoundPosLocal(real_t x, real_t y, Uint16 snd, Uint8 vol)
 	}
 
 	FMOD_VECTOR position;
-	position.x = -y / 16; //Left/right.
-	position.y = 0; //Up/down. //Should be z, but that's not passed. Ignore? Ignoring. Useful for sounds in the floor and ceiling though.
-	position.z = -x / 16; //Forward/backward.
+	position.x = (float)(x / (real_t)16.0);
+	position.y = (float)(0.0);
+	position.z = (float)(y / (real_t)16.0);
 
 	if ( soundAmbient_group && getChannelGroupForSoundIndex(snd) == soundAmbient_group )
 	{
@@ -225,6 +225,7 @@ FMOD::Channel* playSoundPosLocal(real_t x, real_t y, Uint16 snd, Uint8 vol)
 
 	channel->setVolume(vol / 255.f);
 	channel->set3DAttributes(&position, nullptr);
+    channel->setMode(FMOD_3D_WORLDRELATIVE);
 	channel->setPaused(false);
 
 	return channel;
@@ -293,12 +294,12 @@ FMOD::Channel* playSound(Uint16 snd, Uint8 vol)
     if (fmod_result == FMOD_OK && channel) {
         //Faux 3D. Set to 0 and then set the channel's mode to be relative  to the player's head to achieve global sound.
         FMOD_VECTOR position;
-        position.x = 0;
-        position.y = 0;
-        position.z = 0;
+        position.x = 0.f;
+        position.y = 0.f;
+        position.z = 0.f;
         
-        channel->set3DAttributes(&position, nullptr);
         channel->setVolume(vol / 255.f);
+        channel->set3DAttributes(&position, nullptr);
         channel->setMode(FMOD_3D_HEADRELATIVE);
         
         if (FMODErrorCheck())
@@ -331,12 +332,12 @@ FMOD::Channel* playSoundNotification(Uint16 snd, Uint8 vol)
 	fmod_result = fmod_system->playSound(sounds[snd], music_notification_group, true, &channel);
 	//Faux 3D. Set to 0 and then set the channel's mode to be relative  to the player's head to achieve global sound.
 	FMOD_VECTOR position;
-	position.x = 0;
-	position.y = 0;
-	position.z = 0;
+	position.x = 0.f;
+	position.y = 0.f;
+	position.z = 0.f;
 
-	channel->set3DAttributes(&position, nullptr);
 	channel->setVolume(vol / 255.f);
+	channel->set3DAttributes(&position, nullptr);
 	channel->setMode(FMOD_3D_HEADRELATIVE);
 
 	if ( FMODErrorCheck() )
