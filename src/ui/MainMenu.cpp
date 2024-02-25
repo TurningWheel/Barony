@@ -369,6 +369,10 @@ namespace MainMenu {
         Video = 1 << 1,
     };
     static int video_refresh = VideoRefresh::None;
+    
+    // if the following is set true, a restart prompt will appear when the user
+    // saves/applies the settings menu
+    static bool restartPromptRequired = false;
 
 	static FadeDestination main_menu_fade_destination = FadeDestination::None;
 	static std::string tutorial_map_destination;
@@ -589,6 +593,7 @@ namespace MainMenu {
 		float fov = 60.f;
 		float fps = AUTO_FPS;
 		std::string audio_device = "";
+        int speaker_mode = 0;
 		float master_volume = 100.f;
 		float gameplay_volume = 100.f;
 		float ambient_volume = 100.f;
@@ -2851,6 +2856,12 @@ namespace MainMenu {
             fpsLimit = std::min(std::max(MIN_FPS, *cvar_desiredFps), MAX_FPS);
         }
 		current_audio_device = audio_device;
+        if (fmod_speakermode != speaker_mode) {
+            fmod_speakermode = (FMOD_SPEAKERMODE)speaker_mode;
+            if (initialized) {
+                restartPromptRequired = true;
+            }
+        }
 		MainMenu::master_volume = std::min(std::max(0.f, master_volume / 100.f), 1.f);
 		sfxvolume = std::min(std::max(0.f, gameplay_volume / 100.f), 1.f);
 		sfxAmbientVolume = std::min(std::max(0.f, ambient_volume / 100.f), 1.f);
@@ -2949,6 +2960,7 @@ namespace MainMenu {
 		settings.fov = ::fov;
 		settings.fps = *cvar_desiredFps;
 		settings.audio_device = current_audio_device;
+        settings.speaker_mode = (int)fmod_speakermode;
 		settings.master_volume = MainMenu::master_volume * 100.f;
 		settings.gameplay_volume = (float)sfxvolume * 100.f;
 		settings.ambient_volume = (float)sfxAmbientVolume * 100.f;
@@ -2991,7 +3003,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 19;
+	    int version = 20;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -3064,6 +3076,7 @@ namespace MainMenu {
         }
 		file->propertyVersion("use_hdr", version >= 11, hdr_enabled);
 		file->propertyVersion("audio_device", version >= 4, audio_device);
+		file->propertyVersion("speaker_mode", version >= 20, speaker_mode);
 		file->property("master_volume", master_volume);
 		file->property("gameplay_volume", gameplay_volume);
 		file->property("ambient_volume", ambient_volume);
@@ -4466,6 +4479,28 @@ namespace MainMenu {
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 			auto button = settings_subwindow->findButton("setting_device_dropdown_button"); assert(button);
 			auto dropdown = settings_subwindow->findFrame("setting_device_dropdown"); assert(dropdown);
+			button->setText(entry.name.c_str());
+			dropdown->removeSelf();
+			button->select();
+			});
+	}
+
+	static void settingsAudioSpeakerMode(Button& button) {
+		settingsOpenDropdown(button, "speaker_mode", DropdownType::Wide, [](Frame::entry_t& entry){
+			soundActivate();
+
+			// store speaker mode
+            for (int c = 6141; c <= 6149; ++c) {
+                if (entry.text == Language::get(c)) {
+                    allSettings.speaker_mode = (int)(FMOD_SPEAKERMODE_DEFAULT + c - 6141);
+                    break;
+                }
+            }
+
+			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+			auto button = settings_subwindow->findButton("setting_speaker_mode_dropdown_button"); assert(button);
+			auto dropdown = settings_subwindow->findFrame("setting_speaker_mode_dropdown"); assert(dropdown);
 			button->setText(entry.name.c_str());
 			dropdown->removeSelf();
 			button->select();
@@ -6304,6 +6339,12 @@ bind_failed:
 		for (auto& d : audio_drivers) {
 			drivers_formatted_ptrs.push_back(d.name);
 		}
+  
+		std::vector<const char*> modes_ptrs;
+		modes_ptrs.reserve(6149 - 6141 + 1);
+		for (int c = 6141; c <= 6149; ++c) {
+			modes_ptrs.push_back(Language::get(c));
+		}
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "output", Language::get(5182));
 		if ( num_drivers > 0 )
@@ -6311,6 +6352,8 @@ bind_failed:
 			y += settingsAddDropdown(*settings_subwindow, y, "device", Language::get(5183), Language::get(5184),
 			    true, drivers_formatted_ptrs, drivers_formatted_ptrs[selected_device],
 			    settingsAudioDevice);
+			y += settingsAddDropdown(*settings_subwindow, y, "speaker_mode", Language::get(6140), Language::get(6150),
+				true, modes_ptrs, modes_ptrs[allSettings.speaker_mode], settingsAudioSpeakerMode);
 		}
 #endif
 
@@ -6360,7 +6403,8 @@ bind_failed:
 			hookSettings(*settings_subwindow,
 			{
 #ifdef USE_FMOD
-				{Setting::Type::Dropdown, "device"},
+			{Setting::Type::Dropdown, "device"},
+			{Setting::Type::Dropdown, "speaker_mode"},
 #endif
 				{Setting::Type::Slider, "master_volume"},
 				{Setting::Type::Slider, "gameplay_volume"},
@@ -24034,10 +24078,6 @@ failed:
 		confirm_and_exit->setHighlightColor(makeColor(255, 255, 255, 255));
 		confirm_and_exit->setCallback([](Button& button){
             settingsApply();
-			if (video_refresh == VideoRefresh::None) {
-			    // resolution confirm prompt makes this sound
-			    soundActivate();
-			}
 			(void)settingsSave();
 
 			static auto return_to_main_menu = [](Button& button){
@@ -24056,26 +24096,28 @@ failed:
 #if defined(VIDEO_RESTART_NEEDED)
 			if (video_refresh != VideoRefresh::None) {
 				if (video_refresh & VideoRefresh::Video) {
-					// non-windows platforms need to throw a prompt to restart to apply video settings
-					monoPrompt(Language::get(5631), Language::get(5632),
-						[](Button& button) {
-							soundCancel();
-							closeMono();
-							return_to_main_menu(button);
-						});
+                    // non-windows platforms need to throw a prompt
+                    // to restart to apply video settings
                     video_refresh &= ~VideoRefresh::Video;
+                    restartPromptRequired = true;
 				} else {
-                    if (video_refresh) {
-                        soundActivate();
-                    }
-					return_to_main_menu(button);
+                    soundActivate();
 				}
-			} else {
-				return_to_main_menu(button);
 			}
-#else
-			return_to_main_menu(button);
 #endif
+
+            if (restartPromptRequired) {
+                restartPromptRequired = false;
+                monoPrompt(Language::get(5631), Language::get(5632),
+                    [](Button& button) {
+                        soundCancel();
+                        closeMono();
+                        return_to_main_menu(button);
+                    });
+            } else {
+			    soundActivate();
+                return_to_main_menu(button);
+            }
 			});
 		confirm_and_exit->setWidgetSearchParent("settings");
 		confirm_and_exit->setWidgetBack("discard_and_exit");

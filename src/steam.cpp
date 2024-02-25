@@ -344,7 +344,7 @@ public:
 	void m_SteamCallResultEncryptedAppTicket_Set(SteamAPICall_t hSteamAPICall);
 	void RetrieveSteamIDFromGameServer( uint32_t m_unServerIP, uint16_t m_usServerPort );
 	void GetNumberOfCurrentPlayers();
-	std::string SteamServerClientWrapper::requestAuthTicket();
+	std::string requestAuthTicket();
 	void consumeAuthTicket();
 	std::string authTicket = "";
 	HAuthTicket authTicketHandle = 0;
@@ -394,7 +394,14 @@ std::string SteamServerClientWrapper::requestAuthTicket()
 
 	consumeAuthTicket();
 
-	if ( authTicketHandle = SteamUser()->GetAuthSessionTicket(rgubTicket, sizeof(rgubTicket), &cubTicket, nullptr) )
+#if defined(LINUX) || defined(APPLE)
+    // TODO update steamworks SDK for linux and mac
+    authTicketHandle = SteamUser()->GetAuthSessionTicket(rgubTicket, sizeof(rgubTicket), &cubTicket);
+#else
+    authTicketHandle = SteamUser()->GetAuthSessionTicket(rgubTicket, sizeof(rgubTicket), &cubTicket, nullptr);
+#endif
+ 
+	if ( authTicketHandle )
 	{
 		char buf[1024] = "";
 		Uint32 len = cubTicket;

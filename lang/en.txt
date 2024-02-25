@@ -6352,6 +6352,18 @@ allowed in this challenge!#
 (CHALLENGE EVENT)#
 6138 ACHIEVEMENTS DISABLED (CHALLENGE EVENT)#
 6139 Challenge Event!#
+# Audio speaker mode settings
+6140 Configuration#
+6141 Default#
+6142 Raw#
+6143 Mono#
+6144 Stereo#
+6145 Quad#
+6146 Surround Sound#
+6147 5.1 Surround Sound#
+6148 7.1 Surround Sound#
+6149 7.1.4 Surround Sound#
+6150 The desired speaker configuration.#
 6151 No scores found with current filter.
 Try different leaderboard filters
 to see more results.#
