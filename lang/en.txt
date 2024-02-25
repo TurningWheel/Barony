@@ -6355,5 +6355,26 @@ allowed in this challenge!#
 6151 No scores found with current filter.
 Try different leaderboard filters
 to see more results.#
+6152 fails the challenge.#
+6153 Challenge#
+6154 Challenge Progress#
+6155 Party Kill Count#
+6156 Challenge Complete!#
+6157 Furniture Destroyed#
+6158 Details:#
+6159 Race:#
+6160 Class:#
+6161 Any#
+6162 Game Mode:#
+6163 Active Event:#
+6164 Make Way For
+%s
+the Breaker!#
+6165 Make Way For
+%s
+the Breaker!#
+6166 Tremble Before
+%s
+the Slayer!#
 
 6200 END#
