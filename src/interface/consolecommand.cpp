@@ -4632,6 +4632,13 @@ namespace ConsoleCommands {
     });
 
     static ConsoleCommand ccmd_enable_cheats("/enablecheats", "enables cheats", []CCMD{
+		if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN
+			|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN )
+		{
+#ifdef NDEBUG
+			return;
+#endif
+		}
         if ( multiplayer == CLIENT )
         {
             messagePlayer(clientnum, MESSAGE_MISC, "Can only be done by the server.");
