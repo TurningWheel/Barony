@@ -76,6 +76,12 @@ void PlayfabUser_t::OnDisplayNameUpdateSuccess(const PlayFab::ClientModels::Upda
 
 void PlayfabUser_t::loginEpic()
 {
+#ifdef USE_EOS
+    if ( EOS.AccountManager.AccountAuthenticationStatus == EOS_EResult::EOS_NotConfigured )
+    {
+        return;
+    }
+
     PlayFab::ClientModels::LoginWithOpenIdConnectRequest request;
     request.CreateAccount = true;
     request.ConnectionId = "openid_epic";
@@ -88,6 +94,7 @@ void PlayfabUser_t::loginEpic()
     }
     playfabUser.loggingIn = true;
     PlayFab::PlayFabClientAPI::LoginWithOpenIdConnect(request, OnLoginSuccess, OnLoginFail);
+#endif
 }
 
 void PlayfabUser_t::loginSteam()

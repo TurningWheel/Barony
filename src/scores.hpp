@@ -785,6 +785,7 @@ public:
 		int rollTheBones = 0;
 		int trashCompactor = 0;
 		bool totalKillsTickUpdate = false;
+		static bool allPlayersDeadEvent;
 
 		std::pair<int, int> realBoy;
 		std::unordered_map<Uint32, int> caughtInAMoshTargets;

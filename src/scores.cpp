@@ -4796,6 +4796,7 @@ void AchievementObserver::updateClientBounties(bool firstSend)
 
 void AchievementObserver::updateData()
 {
+	PlayerAchievements::allPlayersDeadEvent = false;
 	getCurrentPlayerUids();
 	if ( updateOnLevelChange() )
 	{
@@ -5235,8 +5236,11 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 #endif
 }
 
+bool AchievementObserver::PlayerAchievements::allPlayersDeadEvent = false;
+
 void AchievementObserver::clearPlayerAchievementData()
 {
+	PlayerAchievements::allPlayersDeadEvent = false;
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		playerAchievements[i].caughtInAMosh = false;
@@ -6264,6 +6268,7 @@ std::string SaveGameInfo::serializeToOnlineHiscore(const int playernum, const in
 	}
 
 	character.AddMember("version", rapidjson::Value(1), d.GetAllocator());
+	character.AddMember("game_ver", rapidjson::Value(VERSION, d.GetAllocator()), d.GetAllocator());
 	character.AddMember("leaderboard", rapidjson::Value(lid.c_str(), d.GetAllocator()), d.GetAllocator());
 	character.AddMember("leaderboard_version", rapidjson::Value(lid_version), d.GetAllocator());
 	character.AddMember("time", rapidjson::Value(gametimer), d.GetAllocator());

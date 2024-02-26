@@ -7785,6 +7785,43 @@ void actPlayer(Entity* my)
 						{
 							messagePlayer(PLAYER_NUM, MESSAGE_HINT, Language::get(578));
 						}
+
+						bool allDead = true;
+						for ( int i = 0; i < MAXPLAYERS; ++i )
+						{
+							if ( players[i] && players[i]->entity && stats[i]->HP > 0 )
+							{
+								allDead = false;
+							}
+						}
+						if ( allDead && !AchievementObserver::PlayerAchievements::allPlayersDeadEvent )
+						{
+							AchievementObserver::PlayerAchievements::allPlayersDeadEvent = true;
+
+							// post online scores
+							if ( gameModeManager.allowsGlobalHiscores() )
+							{
+								if ( splitscreen )
+								{
+									for ( int c = 0; c < MAXPLAYERS; ++c ) {
+										if ( !client_disconnected[c] ) {
+#ifdef USE_PLAYFAB
+											if ( c == 0 )
+											{
+												playfabUser.postScore(c);
+											}
+#endif
+										}
+									}
+								}
+								else
+								{
+#ifdef USE_PLAYFAB
+									playfabUser.postScore(clientnum);
+#endif
+								}
+							}
+						}
 					}
 					my->removeLightField();
 					list_RemoveNode(my->mynode);

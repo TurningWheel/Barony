@@ -361,7 +361,7 @@ void changeSettingsTab(int option)
 	}
 }
 
-bool isAchievementUnlockedForClassUnlock(PlayerRaces race)
+bool isAchievementUnlockedForClassUnlock(int race)
 {
 #ifdef STEAMWORKS
 	bool unlocked = false;
