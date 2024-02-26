@@ -924,8 +924,11 @@ void Player::ShopGUI_t::setItemDisplayNameAndPrice(Item* item)
 				{
 					ItemType oldType = item->type;
 					item->type = (ItemType)orbCategories.first;
-					orbImg->path = getItemSpritePath(player.playernum, *item);
-					orbImg->disabled = false;
+					if ( orbImg )
+					{
+						orbImg->path = getItemSpritePath(player.playernum, *item);
+						orbImg->disabled = false;
+					}
 					item->type = oldType;
 					break;
 				}

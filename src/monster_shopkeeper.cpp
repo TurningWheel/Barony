@@ -895,6 +895,10 @@ void initShopkeeper(Entity* my, Stat* myStats)
 									{
 										status = SERVICABLE;
 									}
+									else if ( itemInCategory == MASK_ARTIFACT_VISOR )
+									{
+										status = EXCELLENT;
+									}
 									Item* item = newItem(static_cast<ItemType>(itemInCategory), status, bless, 1, rng.rand(), true, &myStats->inventory);
 									item->x = itemx;
 									item->y = itemy;
