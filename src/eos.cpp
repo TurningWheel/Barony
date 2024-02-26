@@ -42,6 +42,10 @@ void LobbyLeaveCleanup(EOSFuncs::LobbyData_t& lobby)
 
 void EOS_CALL EOSFuncs::LoggingCallback(const EOS_LogMessage* log)
 {
+	if ( !strcmp(log->Category, "LogHttp") )
+	{
+		return;
+	}
 	printlog("[EOS Logging]: %s:%s", log->Category, log->Message);
 }
 
