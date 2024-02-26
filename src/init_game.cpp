@@ -807,6 +807,12 @@ void loadAchievementData(const char* path) {
 			return;
 		}
 		auto achName = it.name.GetString();
+#ifdef NINTENDO
+		if ( !strcmp(achName, "BARONY_ACH_LOCAL_CUSTOMS") )
+		{
+			continue;
+		}
+#endif
 		const auto& ach = it.value.GetObject();
 		if (ach.HasMember("name") && ach["name"].IsString()) {
 			achievementNames[achName] = ach["name"].GetString();
