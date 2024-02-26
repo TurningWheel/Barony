@@ -31751,7 +31751,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		if ( tag == "TINKERING_LOCKPICK_CHESTS_DOORS" )
 		{
 			val = stats[playernum]->getModifiedProficiency(proficiency) / 2.f; // lockpick chests/doors
-			if ( stats[playernum]->getModifiedProficiency(proficiency) == SKILL_LEVEL_LEGENDARY )
+			if ( stats[playernum]->getModifiedProficiency(proficiency) >= SKILL_LEVEL_LEGENDARY )
 			{
 				val = 100.f;
 			}
