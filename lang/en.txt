@@ -6379,14 +6379,16 @@ to see more results.#
 6161 Any#
 6162 Game Mode:#
 6163 Active Event:#
-6164 Make Way For
-%s
-the Breaker!#
+6164 Skills:#
 6165 Make Way For
 %s
 the Breaker!#
 6166 Tremble Before
 %s
 the Slayer!#
+6167 Quitting here does not count to
+your One-Shot score attempt.#
+6168 Quitting now will end this run and
+submit it as your One-Shot score.#
 
 6200 END#
