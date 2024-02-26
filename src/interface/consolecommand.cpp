@@ -1523,6 +1523,41 @@ namespace ConsoleCommands {
 		}
 		});
 
+	static ConsoleCommand ccmd_summonshop("/summonshop", "summon a shop (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		if ( multiplayer == CLIENT )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(284));
+		}
+		else if ( players[clientnum] && players[clientnum]->entity )
+		{
+			if ( argc < 2 ) {
+				return;
+			}
+			int type = atoi(argv[1]);
+
+			playSoundEntity(players[clientnum]->entity, 153, 64);
+
+			//Spawn monster
+			Entity* monster = summonMonster(SHOPKEEPER, players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw));
+			if ( monster )
+			{
+				messagePlayer(clientnum, MESSAGE_MISC, Language::get(302), getMonsterLocalizedName(SHOPKEEPER).c_str());
+				if ( auto stat = monster->getStats() )
+				{
+					stat->MISC_FLAGS[STAT_FLAG_NPC] = 1 + std::max(0, std::min(9, type));
+				}
+			}
+			else
+			{
+				messagePlayer(clientnum, MESSAGE_MISC, Language::get(303), getMonsterLocalizedName(SHOPKEEPER).c_str());
+			}
+		}
+	});
 	static ConsoleCommand ccmd_summon("/summon", "summon a monster (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{

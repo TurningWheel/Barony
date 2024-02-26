@@ -238,11 +238,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 				my->monsterStoreType = myStats->MISC_FLAGS[STAT_FLAG_NPC] - 1;
 				if ( my->monsterStoreType > 9 )
 				{
-					my->monsterStoreType = rng.rand() % 9;
-					if ( my->monsterStoreType == 8 )
-					{
-						my->monsterStoreType++;
-					}
+					my->monsterStoreType = rng.rand() % 10;
 				}
 			}
 			else
