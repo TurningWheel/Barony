@@ -9125,47 +9125,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case SILVER_DOUBLET:
 		case CLOAK_SILVER:
 		case TOOL_LOCKPICK:
-
-		// todos
-		case MASK_BANDIT:
 		case MASK_EYEPATCH:
-		case MASK_MASQUERADE:
-		case MASK_MOUTH_ROSE:
-		case MASK_GOLDEN:
-		case MASK_SPOOKY:
-		case MASK_TECH_GOGGLES:
-		case MASK_HAZARD_GOGGLES:
-		case MASK_PHANTOM:
-		case MASK_PIPE:
-		case MASK_GRASS_SPRIG:
-		case MASK_PLAGUE:
-		case MASK_MOUTHKNIFE:
-		case HAT_SILKEN_BOW:
-		case HAT_PLUMED_CAP:
-		case HAT_BYCOCKET:
-		case HAT_TOPHAT:
-		case HAT_BANDANA:
-		case HAT_CIRCLET:
-		case HAT_CROWN:
-		case HAT_LAURELS:
-		case HAT_TURBAN:
-		case HAT_CROWNED_HELM:
-		case HAT_WARM:
-		case HAT_WOLF_HOOD:
-		case HAT_BEAR_HOOD:
-		case HAT_STAG_HOOD:
-		case HAT_BUNNY_HOOD:
-		case HAT_BOUNTYHUNTER:
-		case HAT_MITER:
-		case HAT_HEADDRESS:
-		case HAT_CHEF:
-		case HELM_MINING:
-		case MASK_STEEL_VISOR:
-		case MASK_CRYSTAL_VISOR:
-		case HAT_CIRCLET_WISDOM:
-		case HAT_HOOD_APPRENTICE:
-		case HAT_HOOD_ASSASSIN:
-		case HAT_HOOD_WHISPERS:
 			*metal = 1;
 			*magic = 0;
 			break;
@@ -9190,6 +9150,9 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case GEM_GLASS:
 		case TOOL_CRYSTALSHARD:
 		case HAT_FEZ:
+		case HAT_SILKEN_BOW:
+		case HAT_BANDANA:
+		case HAT_CHEF:
 			*metal = 1;
 			*magic = 1;
 			break;
@@ -9210,6 +9173,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case GEM_EMERALD:
 		case GEM_AMETHYST:
 		case GEM_FLUORITE:
+		case MASK_PIPE:
 			*metal = 1;
 			*magic = 2;
 			break;
@@ -9244,8 +9208,19 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case MAGICSTAFF_STONEBLOOD:
 		case MAGICSTAFF_SUMMON:
 		case MASK_SHAMAN:
+		case HAT_CIRCLET:
+		case HAT_LAURELS:
+		case HAT_HOOD_APPRENTICE:
+		case HAT_HOOD_WHISPERS:
+		case HAT_HOOD_ASSASSIN:
 			*metal = 1;
 			*magic = 4;
+			break;
+
+		case MASK_MOUTH_ROSE:
+		case MASK_GRASS_SPRIG:
+			*metal = 0;
+			*magic = 1;
 			break;
 
 		case SCROLL_LIGHT:
@@ -9282,9 +9257,15 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 			*magic = 4;
 			break;
 
-		case TOOL_BLINDFOLD_TELEPATHY:
+		case HAT_CIRCLET_WISDOM:
 			*metal = 1;
-			*magic = 6;
+			*magic = 12;
+			break;
+		case TOOL_BLINDFOLD_TELEPATHY:
+		case HAT_MITER:
+		case HAT_HEADDRESS:
+			*metal = 1;
+			*magic = 8;
 			break;
 
 		case SCROLL_ENCHANTWEAPON:
@@ -9355,18 +9336,31 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case TOOL_BEARTRAP:
 		case IRON_DAGGER:
 		case MONOCLE:
+		case MASK_BANDIT:
 			*metal = 2;
 			*magic = 0;
+			break;
+
+		case MASK_MOUTHKNIFE:
+		case HAT_PLUMED_CAP:
+		case HAT_BYCOCKET:
+		case MASK_STEEL_VISOR:
+			*metal = 2;
+			*magic = 1;
 			break;
 
 		case BRACERS_CONSTITUTION:
 		case TOOL_ALEMBIC:
 		case PUNISHER_HOOD:
+		case MASK_MASQUERADE:
+		case MASK_PLAGUE:
+		case HAT_BOUNTYHUNTER:
 			*metal = 2;
 			*magic = 2;
 			break;
 
 		case IRON_BOOTS_WATERWALKING:
+		case MASK_SPOOKY:
 			*metal = 2;
 			*magic = 3;
 			break;
@@ -9391,11 +9385,23 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case TOOL_WHIP:
 		case MACHINIST_APRON:
 		case LONGBOW:
+		case MASK_HAZARD_GOGGLES:
 			*metal = 3;
 			*magic = 0;
 			break;
 
+		case HAT_WARM:
+		case HAT_WOLF_HOOD:
+		case HAT_BEAR_HOOD:
+		case HAT_STAG_HOOD:
+		case HAT_BUNNY_HOOD:
+		case HAT_TOPHAT:
+			*metal = 3;
+			*magic = 1;
+			break;
+
 		case GAUNTLETS_STRENGTH:
+		case HELM_MINING:
 			*metal = 3;
 			*magic = 2;
 			break;
@@ -9432,8 +9438,27 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 			break;
 
 		case STEEL_BOOTS_LEVITATION:
+		case HAT_CROWN:
+		case HAT_CROWNED_HELM:
+		case MASK_CRYSTAL_VISOR:
 			*metal = 4;
 			*magic = 4;
+			break;
+
+		case MASK_PHANTOM:
+		case HAT_TURBAN:
+			*metal = 2;
+			*magic = 6;
+			break;
+
+		case MASK_TECH_GOGGLES:
+			*metal = 6;
+			*magic = 6;
+			break;
+
+		case MASK_GOLDEN:
+			*metal = 4;
+			*magic = 8;
 			break;
 
 		case ARTIFACT_BOW:
@@ -9492,6 +9517,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 			*metal = 2;
 			*magic = 4;
 			break;
+
 		default:
 			*metal = 0;
 			*magic = 0;
