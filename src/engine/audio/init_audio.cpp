@@ -18,6 +18,8 @@
 #include "../../ui/MainMenu.hpp"
 #endif
 
+#ifdef USE_FMOD
+
 FMOD_SPEAKERMODE fmod_speakermode = FMOD_SPEAKERMODE_DEFAULT;
 const char* fmod_speakermode_strings[FMOD_SPEAKERMODE_MAX] = {
     "FMOD_SPEAKERMODE_DEFAULT",
@@ -30,6 +32,8 @@ const char* fmod_speakermode_strings[FMOD_SPEAKERMODE_MAX] = {
     "FMOD_SPEAKERMODE_7POINT1",
     "FMOD_SPEAKERMODE_7POINT1POINT4",
 };
+
+#endif
 
 bool initSoundEngine()
 {
