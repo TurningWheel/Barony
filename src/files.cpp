@@ -204,7 +204,7 @@ std::unordered_map<std::string, int> mapHashes = {
     { "citadelsecret.lmp", 104229 },
     { "gnomishmines.lmp", 603055 },
     { "greatcastle.lmp", 9978472 },
-    { "hamlet.lmp", 7279683 },
+    { "hamlet.lmp", 8390565 },
     { "hell.lmp", 3511919 },
     { "hell00.lmp", 28651 },
     { "hell01.lmp", 22399 },
