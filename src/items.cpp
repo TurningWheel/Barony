@@ -989,7 +989,24 @@ Sint32 itemModel(const Item* const item)
 		}
 		else
 		{
-			return items[item->type].index + item->getLootBagPlayer();
+			int playerOwner = item->getLootBagPlayer();
+			Uint32 index = playerOwner;
+			switch (playerOwner)
+			{
+				case 5:
+					index = 2;
+					break;
+				case 6:
+					index = 3;
+					break;
+				case 7:
+					index = 4;
+					break;
+				default:
+					break;
+			}
+
+			return items[item->type].index + index;
 		}
 	}
 	return items[item->type].index + item->appearance % items[item->type].variations;
@@ -1078,7 +1095,24 @@ SDL_Surface* itemSprite(Item* const item)
 			}
 			else
 			{
-				node = list_Node(&items[item->type].surfaces, item->getLootBagPlayer());
+				int playerOwner = item->getLootBagPlayer();
+				Uint32 index = playerOwner;
+				switch (playerOwner)
+				{
+					case 5:
+						index = 2;
+						break;
+					case 6:
+						index = 3;
+						break;
+					case 7:
+						index = 4;
+						break;
+					default:
+						break;
+				}
+
+				node = list_Node(&items[item->type].surfaces, index);
 			}
 		}
 		else
