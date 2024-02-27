@@ -8,7 +8,7 @@
 #define USE_THEORA_VIDEO
 #define GL_SILENCE_DEPRECATION
 //#define USE_IMGUI
-#define USE_PLAYFAB
+//#define USE_PLAYFAB
 #endif
 
 // defines tags necessary for USE_EOS,
