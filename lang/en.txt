@@ -6392,7 +6392,7 @@ your One-Shot score attempt.#
 submit it as your One-Shot score.#
 6169 New Seed Events Available!#
 6170 
-Visit the Play Game menu
-to view new Seed Events.#
+Visit the Seed Events menu
+to participate.#
 
 6200 END#

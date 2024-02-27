@@ -21757,6 +21757,14 @@ failed:
 		gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
 		gameModeManager.currentSession.challengeRun.reset();
 
+#ifdef USE_PLAYFAB
+		if ( playfabUser.bLoggedIn && playfabUser.newSeedsAvailable && intro )
+		{
+			playfabUser.newSeedsAvailable = false;
+			UIToastNotificationManager.createNewSeedNotification();
+		}
+#endif
+
 		auto dimmer = main_menu_frame->addFrame("dimmer");
 		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		dimmer->setActualSize(dimmer->getSize());

@@ -1671,12 +1671,6 @@ void PlayfabUser_t::update()
     }
 
     playfabUser.postScoreHandler.update();
-
-    if ( bLoggedIn && playfabUser.newSeedsAvailable && intro )
-    {
-        playfabUser.newSeedsAvailable = false;
-        UIToastNotificationManager.createNewSeedNotification();
-    }
 }
 
 void PlayfabUser_t::init()
