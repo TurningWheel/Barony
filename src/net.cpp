@@ -40,6 +40,9 @@
 #include "ui/LoadingScreen.hpp"
 #include "ui/GameUI.hpp"
 #include "interface/ui.hpp"
+#ifdef USE_PLAYFAB
+#include "playfab.hpp"
+#endif
 
 #include <atomic>
 #include <future>
@@ -4948,6 +4951,16 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			{
 				deleteSaveGame(multiplayer);
 			}
+		}
+	}},
+
+	// post online hiscore
+	{ 'DEND', []() {
+		if ( multiplayer == CLIENT )
+		{
+#ifdef USE_PLAYFAB
+			playfabUser.postScore(clientnum);
+#endif
 		}
 	}},
 

@@ -7820,6 +7820,22 @@ void actPlayer(Entity* my)
 									playfabUser.postScore(clientnum);
 #endif
 								}
+
+								if ( multiplayer == SERVER )
+								{
+									for ( int i = 1; i < MAXPLAYERS; ++i )
+									{
+										if ( client_disconnected[i] )
+										{
+											continue;
+										}
+										strcpy((char*)net_packet->data, "DEND"); //Post your hiscores here, we're all dead
+										net_packet->address.host = net_clients[i - 1].host;
+										net_packet->address.port = net_clients[i - 1].port;
+										net_packet->len = 4;
+										sendPacketSafe(net_sock, -1, net_packet, i - 1);
+									}
+								}
 							}
 						}
 					}
