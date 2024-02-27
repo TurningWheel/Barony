@@ -39,6 +39,8 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
+		auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+
 		if ( myStats != nullptr )
 		{
 			if ( !myStats->leader_uid )
@@ -47,7 +49,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 			}
 
 			// apply random stat increases if set in stat_shared.cpp or editor
-			setRandomMonsterStats(myStats);
+			setRandomMonsterStats(myStats, rng);
 
 			// generate 6 items max, less if there are any forced items from boss variants
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
@@ -55,17 +57,17 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 			// boss variants
 
 			// random effects
-			if ( local_rng.rand() % 8 == 0 )
+			if ( rng.rand() % 8 == 0 )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + local_rng.rand() % 3600;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rng.rand() % 3600;
 			}
 
 			// generates equipment and weapons if available from editor
-			createMonsterEquipment(myStats);
+			createMonsterEquipment(myStats, rng);
 
 			// create any custom inventory items from editor if available
-			createCustomInventory(myStats, customItemsToGenerate);
+			createCustomInventory(myStats, customItemsToGenerate, rng);
 
 			// count if any custom inventory items from editor
 			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
@@ -82,43 +84,43 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 				case 5:
 				case 4:
 				case 3:
-					if ( local_rng.rand() % 10 == 0 ) // 10% for gemstone, rock to obsidian.
+					if ( rng.rand() % 10 == 0 ) // 10% for gemstone, rock to obsidian.
 					{
-						newItem(static_cast<ItemType>(GEM_ROCK + local_rng.rand() % 17), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, &myStats->inventory);
+						newItem(static_cast<ItemType>(GEM_ROCK + rng.rand() % 17), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, &myStats->inventory);
 					}
 				case 2:
-					if ( local_rng.rand() % 20 == 0 ) // 5% for secondary armor/weapon.
+					if ( rng.rand() % 20 == 0 ) // 5% for secondary armor/weapon.
 					{
-						if ( local_rng.rand() % 2 == 0 ) // 50% armor
+						if ( rng.rand() % 2 == 0 ) // 50% armor
 						{
-							newItem(static_cast<ItemType>(CRYSTAL_BREASTPIECE + local_rng.rand() % 5), static_cast<Status>(DECREPIT + local_rng.rand() % 4), -2 + local_rng.rand() % 5, 1, local_rng.rand(), false, &myStats->inventory);
+							newItem(static_cast<ItemType>(CRYSTAL_BREASTPIECE + rng.rand() % 5), static_cast<Status>(DECREPIT + rng.rand() % 4), -2 + rng.rand() % 5, 1, rng.rand(), false, &myStats->inventory);
 						}
 						else // 50% weapon
 						{
-							if ( local_rng.rand() % 5 == 0 ) // 1 in 5 is shuriken, 1-3 count.
+							if ( rng.rand() % 5 == 0 ) // 1 in 5 is shuriken, 1-3 count.
 							{
-								newItem(static_cast<ItemType>(CRYSTAL_SHURIKEN), EXCELLENT, -2 + local_rng.rand() % 5, 1 + local_rng.rand() % 3, local_rng.rand(), false, &myStats->inventory);
+								newItem(static_cast<ItemType>(CRYSTAL_SHURIKEN), EXCELLENT, -2 + rng.rand() % 5, 1 + rng.rand() % 3, rng.rand(), false, &myStats->inventory);
 							}
 							else // pick 1 of 4 normal weapons.
 							{
-								newItem(static_cast<ItemType>(CRYSTAL_SWORD + local_rng.rand() % 4), static_cast<Status>(DECREPIT + local_rng.rand() % 4), -2 + local_rng.rand() % 5, 1, local_rng.rand(), false, &myStats->inventory);
+								newItem(static_cast<ItemType>(CRYSTAL_SWORD + rng.rand() % 4), static_cast<Status>(DECREPIT + rng.rand() % 4), -2 + rng.rand() % 5, 1, rng.rand(), false, &myStats->inventory);
 							}
 						}
 					}
 				case 1:
-					if ( local_rng.rand() % 2 == 0 ) // 50% armor
+					if ( rng.rand() % 2 == 0 ) // 50% armor
 					{
-						newItem(static_cast<ItemType>(CRYSTAL_BREASTPIECE + local_rng.rand() % 5), static_cast<Status>(DECREPIT + local_rng.rand() % 4), -2 + local_rng.rand() % 5, 1, local_rng.rand(), false, &myStats->inventory);
+						newItem(static_cast<ItemType>(CRYSTAL_BREASTPIECE + rng.rand() % 5), static_cast<Status>(DECREPIT + rng.rand() % 4), -2 + rng.rand() % 5, 1, rng.rand(), false, &myStats->inventory);
 					}
 					else // 50% weapon
 					{
-						if ( local_rng.rand() % 5 == 0 ) // 1 in 5 is shuriken, 1-3 count.
+						if ( rng.rand() % 5 == 0 ) // 1 in 5 is shuriken, 1-3 count.
 						{
-							newItem(static_cast<ItemType>(CRYSTAL_SHURIKEN), EXCELLENT, -2 + local_rng.rand() % 5, 1 + local_rng.rand() % 3, local_rng.rand(), false, &myStats->inventory);
+							newItem(static_cast<ItemType>(CRYSTAL_SHURIKEN), EXCELLENT, -2 + rng.rand() % 5, 1 + rng.rand() % 3, rng.rand(), false, &myStats->inventory);
 						}
 						else // pick 1 of 4 normal weapons.
 						{
-							newItem(static_cast<ItemType>(CRYSTAL_SWORD + local_rng.rand() % 4), static_cast<Status>(DECREPIT + local_rng.rand() % 4), -2 + local_rng.rand() % 5, 1, local_rng.rand(), false, &myStats->inventory);
+							newItem(static_cast<ItemType>(CRYSTAL_SWORD + rng.rand() % 4), static_cast<Status>(DECREPIT + rng.rand() % 4), -2 + rng.rand() % 5, 1, rng.rand(), false, &myStats->inventory);
 						}
 					}
 					break;

@@ -40,6 +40,8 @@ void initTroll(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
+		auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+
 		if ( myStats != NULL )
 		{
 			if ( !myStats->leader_uid )
@@ -48,14 +50,14 @@ void initTroll(Entity* my, Stat* myStats)
 			}
 
 			// apply random stat increases if set in stat_shared.cpp or editor
-			setRandomMonsterStats(myStats);
+			setRandomMonsterStats(myStats, rng);
 
 			// generate 6 items max, less if there are any forced items from boss variants
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
 		    const bool boss =
-		        local_rng.rand() % 50 == 0 &&
+		        rng.rand() % 50 == 0 &&
 		        !my->flags[USERFLAG2] &&
 		        !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] &&
 		        myStats->leader_uid == 0;
@@ -75,6 +77,10 @@ void initTroll(Entity* my, Stat* myStats)
 						{
 							followerStats->leader_uid = entity->parent;
 						}
+						entity->seedEntityRNG(rng.getU32());
+
+						// one for my friends
+						newItem(MASK_MOUTH_ROSE, static_cast<Status>(1 + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
 					}
 				}
 				myStats->HP *= 2;
@@ -85,17 +91,17 @@ void initTroll(Entity* my, Stat* myStats)
 			}
 
 			// random effects
-			if ( local_rng.rand() % 4 == 0 )
+			if ( rng.rand() % 4 == 0 )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + local_rng.rand() % 3600;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rng.rand() % 3600;
 			}
 
 			// generates equipment and weapons if available from editor
-			createMonsterEquipment(myStats);
+			createMonsterEquipment(myStats, rng);
 
 			// create any custom inventory items from editor if available
-			createCustomInventory(myStats, customItemsToGenerate);
+			createCustomInventory(myStats, customItemsToGenerate, rng);
 
 			// count if any custom inventory items from editor
 			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
@@ -114,13 +120,17 @@ void initTroll(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( local_rng.rand() % 3 == 0 )
+					if ( rng.rand() % 20 == 0 )
 					{
-						int i = 1 + local_rng.rand() % 3;
+						newItem(MASK_MOUTH_ROSE, static_cast<Status>(1 + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+					}
+					if ( rng.rand() % 3 == 0 )
+					{
+						int i = 1 + rng.rand() % 3;
 						for ( c = 0; c < i; c++ )
 						{
-							Category cat = static_cast<Category>(local_rng.rand() % (NUMCATEGORIES - 1));
-							newItem(static_cast<ItemType>(itemLevelCurve(cat, 0, currentlevel + 10)), static_cast<Status>(1 + local_rng.rand() % 4), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
+							Category cat = static_cast<Category>(rng.rand() % (NUMCATEGORIES - 1));
+							newItem(static_cast<ItemType>(itemLevelCurve(cat, 0, currentlevel + 10, rng)), static_cast<Status>(1 + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
 						}
 					}
 					break;

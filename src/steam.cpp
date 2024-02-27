@@ -43,6 +43,7 @@ char lobbyVersion[MAX_STEAM_LOBBIES][64];
 void* lobbyIDs[MAX_STEAM_LOBBIES] = { NULL };
 int lobbyPlayers[MAX_STEAM_LOBBIES] = { 0 };
 int lobbyNumMods[MAX_STEAM_LOBBIES] = { 0 };
+char lobbyChallengeRun[MAX_STEAM_LOBBIES][64];
 bool lobbyModDisableAchievements[MAX_STEAM_LOBBIES] = { false };
 bool steamAwaitingLobbyCreation = false;
 
@@ -1482,6 +1483,7 @@ void steam_OnLobbyMatchListCallback( void* pCallback, bool bIOFailure )
 		const int numPlayers = SteamMatchmaking()->GetNumLobbyMembers(lobby);
 		const char* svNumMods = SteamMatchmaking()->GetLobbyData(lobby, "svNumMods");
 		const char* svModsDisableAchievements = SteamMatchmaking()->GetLobbyData(lobby, "svModDisableAch");
+		const char* lobbyChallengeRun = SteamMatchmaking()->GetLobbyData(lobby, "challengelid");
 
 		if ( lobbyName && lobbyName[0] && lobbyVersion && lobbyVersion[0] && numPlayers )
 		{
@@ -1490,6 +1492,7 @@ void steam_OnLobbyMatchListCallback( void* pCallback, bool bIOFailure )
 			lobbyPlayers[iLobby] = numPlayers;
 			lobbyNumMods[iLobby] = atoi(svNumMods);
 			lobbyModDisableAchievements[iLobby] = atoi(svModsDisableAchievements);
+			stringCopyUnsafe(::lobbyChallengeRun[iLobby], lobbyChallengeRun, sizeof(::lobbyChallengeRun[iLobby]));
 		}
 		else
 		{
@@ -1696,6 +1699,19 @@ void steam_OnLobbyCreated( void* pCallback, bool bIOFailure )
 		snprintf(loadingsavegameChar, 15, "%d", loadingsavegame);
 		SteamMatchmaking()->SetLobbyData(*lobby, "loadingsavegame", loadingsavegameChar);
 
+		char loadinglobbykeyChar[16];
+		snprintf(loadinglobbykeyChar, 15, "%d", loadinglobbykey);
+		SteamMatchmaking()->SetLobbyData(*lobby, "lobbyuniquekey", loadinglobbykeyChar);
+
+		if ( gameModeManager.currentSession.challengeRun.isActive() )
+		{
+			SteamMatchmaking()->SetLobbyData(*lobby, "challengelid", gameModeManager.currentSession.challengeRun.lid.c_str());
+		}
+		else
+		{
+			SteamMatchmaking()->SetLobbyData(*lobby, "challengelid", "");
+		}
+
 		char svNumMods[16];
 		snprintf(svNumMods, 15, "%d", Mods::numCurrentModsLoaded);
 		SteamMatchmaking()->SetLobbyData(*lobby, "svNumMods", svNumMods);
@@ -1803,18 +1819,25 @@ bool processLobbyInvite(void* lobbyToConnectTo)
 	const char* pchLoadingSaveGame = SteamMatchmaking()->GetLobbyData(*lobby, "loadingsavegame");
 	assert(pchLoadingSaveGame && pchLoadingSaveGame[0]);
 
+	const char* pchLobbyUniqueKey = SteamMatchmaking()->GetLobbyData(*lobby, "lobbyuniquekey");
+	assert(pchLoadingSaveGame && pchLoadingSaveGame[0]);
+
 	SaveGameInfo savegameinfo;
 	if (loadingsavegame) {
 		savegameinfo = getSaveGameInfo(false);
 	}
 
 	Uint32 saveGameKey = atoi(pchLoadingSaveGame);      // get the savegame key of the server.
-	Uint32 gameKey = getSaveGameUniqueGameKey(savegameinfo);   // maybe we were already loading a compatible save.
-	if ( gameKey && saveGameKey && saveGameKey == gameKey) {
+	Uint32 lobbyUniqueKey = pchLobbyUniqueKey ? atoi(pchLobbyUniqueKey) : 0;      // get the lobby key of the server.
+	Uint32 gameKey = savegameinfo.gamekey;   // maybe we were already loading a compatible save.
+	Uint32 lobbyKey = savegameinfo.lobbykey;
+	if ( gameKey && saveGameKey && saveGameKey == gameKey && lobbyUniqueKey == lobbyKey ) {
 		loadingsavegame = saveGameKey; // save game matches! load game.
+		loadinglobbykey = lobbyUniqueKey;
 	}
 	else if (!saveGameKey) {
 		loadingsavegame = 0; // cancel our savegame load. when we enter the lobby, our character will be flushed.
+		loadinglobbykey = 0;
 	}
 	else {
 		// try reload from your other savefiles since this didn't match the default savegameIndex.
@@ -1822,7 +1845,7 @@ bool processLobbyInvite(void* lobbyToConnectTo)
 		for (int c = 0; c < SAVE_GAMES_MAX; ++c) {
 			auto info = getSaveGameInfo(false, c);
 			if (info.game_version != -1) {
-				if (info.gamekey == saveGameKey ) {
+				if (info.gamekey == saveGameKey && info.lobbykey == lobbyUniqueKey ) {
 					savegameCurrentFileIndex = c;
 					foundSave = true;
 					break;
@@ -1831,6 +1854,7 @@ bool processLobbyInvite(void* lobbyToConnectTo)
 		}
 		if (foundSave) {
 			loadingsavegame = saveGameKey;
+			loadinglobbykey = lobbyUniqueKey;
 		} else {
 			printlog("warning: received invitation to lobby with which you have no compatible save game.\n");
 			return false;

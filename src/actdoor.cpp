@@ -40,13 +40,15 @@ void actDoor(Entity* my)
 	Entity* entity;
 	int i, c;
 
+	auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+
 	if ( !my->doorInit )
 	{
 		my->createWorldUITooltip();
 
 		my->doorInit = 1;
 		my->doorStartAng = my->yaw;
-		my->doorHealth = 15 + local_rng.rand() % 5;
+		my->doorHealth = 15 + rng.rand() % 5;
 		my->doorMaxHealth = my->doorHealth;
 		my->doorOldHealth = my->doorHealth;
 		my->doorPreventLockpickExploit = 1;
@@ -55,7 +57,7 @@ void actDoor(Entity* my)
 		{
 			my->doorLocked = 0; // force unlocked.
 		}
-		else if ( local_rng.rand() % 20 == 0 || (!strncmp(map.name, "The Great Castle", 16) && local_rng.rand() % 2 == 0) || my->doorForceLockedUnlocked == 1 )   // 5% chance
+		else if ( rng.rand() % 20 == 0 || (!strncmp(map.name, "The Great Castle", 16) && rng.rand() % 2 == 0) || my->doorForceLockedUnlocked == 1 )   // 5% chance
 		{
 			my->doorLocked = 1;
 			my->doorPreventLockpickExploit = 0;

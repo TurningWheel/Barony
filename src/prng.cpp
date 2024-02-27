@@ -8,6 +8,7 @@
 
 BaronyRNG local_rng;
 BaronyRNG net_rng;
+BaronyRNG map_sequence_rng;
 
 #ifndef EDITOR
 #include "interface/consolecommand.hpp"

@@ -34,7 +34,7 @@ See LICENSE for details.
 
 void actSummonTrap(Entity* my)
 {
-	if ( my->skill[28] == 0 || (SUMMONTRAP_INITIALIZED && SUMMONTRAP_FIRED) )
+	if ( !my || my->skill[28] == 0 || (SUMMONTRAP_INITIALIZED && SUMMONTRAP_FIRED) )
 	{
 		return;
 	}
@@ -54,6 +54,8 @@ void actSummonTrap(Entity* my)
 
 			if ( !SUMMONTRAP_FIRED && SUMMONTRAP_SPAWNCYCLES > 0 )
 			{
+				auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+
 				bool useCustomMonsters = monsterCurveCustomManager.curveExistsForCurrentMapName(map.name);
 				bool fixedCustomMonster = true;
 				Monster customMonsterType = NOTHING;
@@ -95,7 +97,7 @@ void actSummonTrap(Entity* my)
 							possibleTypes.push_back(mon);
 						}
 					}
-	                SUMMONTRAP_MONSTER = possibleTypes.at(local_rng.rand() % possibleTypes.size());
+	                SUMMONTRAP_MONSTER = possibleTypes.at(rng.rand() % possibleTypes.size());
 				}
 
 				int count = 0;
@@ -110,6 +112,7 @@ void actSummonTrap(Entity* my)
 					monster = summonMonster(static_cast<Monster>(typeToSpawn), my->x, my->y);
 					if ( monster && monster->getStats() )
 					{
+						monster->seedEntityRNG(rng.getU32());
 						if ( useCustomMonsters )
 						{
 							std::string variantName = "default";
@@ -154,7 +157,7 @@ void actSummonTrap(Entity* my)
 					SUMMONTRAP_MONSTER = -1;
 				}
 
-				if ( (SUMMONTRAP_FAILURERATE != 0) && (local_rng.rand() % 100 < SUMMONTRAP_FAILURERATE) )
+				if ( (SUMMONTRAP_FAILURERATE != 0) && (rng.rand() % 100 < SUMMONTRAP_FAILURERATE) )
 				{
 					// trap breaks!
 					SUMMONTRAP_FIRED = 1;

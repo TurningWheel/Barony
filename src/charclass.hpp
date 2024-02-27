@@ -65,7 +65,8 @@ public:
 		{
 			char str[64];
 			snprintf(str, 64, "%s", getSkillLangEntry(i));
-			file->property(str, classStats->PROFICIENCIES[i]);
+			int prof = classStats->getProficiency(i);
+			file->property(str, prof);
 		}
 		file->endObject();
 		return true;

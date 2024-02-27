@@ -3099,9 +3099,6 @@ void Player::init() // for use on new/restart game, UI related
 	hud.resetBars();
 	hud.compactLayoutMode = HUD_t::COMPACT_LAYOUT_INVENTORY;
 	inventoryUI.resetInventory();
-	characterSheet.setDefaultSkillsSheetBox();
-	characterSheet.setDefaultPartySheetBox();
-	characterSheet.setDefaultCharacterSheetBox();
 	paperDoll.clear();
 	minotaurWarning[playernum].deinit();
 	levelUpAnimation[playernum].lvlUps.clear();
@@ -3194,6 +3191,15 @@ bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 	if ( targetEntityType == SHOPKEEPER )
 	{
 		if ( shopIsMysteriousShopkeeper(&entity) || !ShopkeeperPlayerHostility.isPlayerEnemy(player) )
+		{
+			return true;
+		}
+	}
+	else if ( targetEntityType == SUCCUBUS || targetEntityType == INCUBUS )
+	{
+		if ( stats[player]->mask && stats[player]->mask->type == MASK_MOUTH_ROSE
+			&& !(playerRace == RAT || playerRace == SPIDER
+				|| playerRace == TROLL || playerRace == CREATURE_IMP) )
 		{
 			return true;
 		}
@@ -3403,7 +3409,8 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 					return 0.0;
 				}
 			}
-			if ( parent->behavior == &actPlayer || parent->behavior == &actMonster )
+			if ( parent->behavior == &actPlayer 
+				|| (parent->behavior == &actMonster && !(parent->isInertMimic())) )
 			{
 				interactAngle = PI / 16;
 			}
@@ -3452,6 +3459,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			if ( selectInteract )
 			{
 				if ( parent->behavior == &actMonster 
+					&& !(parent->isInertMimic())
 					&& ((multiplayer != CLIENT && parent->checkEnemy(player.entity)) 
 						|| (multiplayer == CLIENT 
 							&& !parent->monsterAllyGetPlayerLeader() && !monsterally[parent->getMonsterTypeFromSprite()][stats[player.playernum]->type])) )
@@ -3847,35 +3855,42 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		else if ( parent->behavior == &actMonster )
 		{
 			int monsterType = parent->getMonsterTypeFromSprite();
-			std::string name = Language::get(4011); // "follower" 
-			if ( parent->getStats() && strcmp(parent->getStats()->name, "") )
+			if ( parent->isInertMimic() )
 			{
-				name = parent->getStats()->name;
+				interactText = Language::get(4005); // "Open chest" 
 			}
 			else
 			{
-				name = getMonsterLocalizedName((Monster)monsterType).c_str();
-			}
-
-			if ( parent->monsterAllyGetPlayerLeader() 
-				&& parent->monsterAllyGetPlayerLeader() == players[player.playernum]->entity )
-			{
-				if ( parent->monsterIsTinkeringCreation() )
+				std::string name = Language::get(4011); // "follower" 
+				if ( parent->getStats() && strcmp(parent->getStats()->name, "") )
 				{
-					interactText = Language::get(4012) + name; // "Command "
+					name = parent->getStats()->name;
 				}
 				else
 				{
-					interactText = Language::get(4012) + name; // "Command "
+					name = getMonsterLocalizedName((Monster)monsterType).c_str();
 				}
-			}
-			else if ( parent->getMonsterTypeFromSprite() == SHOPKEEPER )
-			{
-				interactText = Language::get(4013) + name; // "Trade with "
-			}
-			else
-			{
-				interactText = Language::get(4014) + name; // "Interact with "
+
+				if ( parent->monsterAllyGetPlayerLeader() 
+					&& parent->monsterAllyGetPlayerLeader() == players[player.playernum]->entity )
+				{
+					if ( parent->monsterIsTinkeringCreation() )
+					{
+						interactText = Language::get(4012) + name; // "Command "
+					}
+					else
+					{
+						interactText = Language::get(4012) + name; // "Command "
+					}
+				}
+				else if ( parent->getMonsterTypeFromSprite() == SHOPKEEPER )
+				{
+					interactText = Language::get(4013) + name; // "Trade with "
+				}
+				else
+				{
+					interactText = Language::get(4014) + name; // "Interact with "
+				}
 			}
 		}
 		else if ( parent->behavior == &actDoor )
@@ -4211,6 +4226,10 @@ bool entityBlocksTooltipInteraction(const int player, Entity& entity)
 		{
 			return false;
 		}
+		if ( entity.isInertMimic() )
+		{
+			return false;
+		}
 		if ( monsterIsFriendlyForTooltip(player, entity) )
 		{
 			return false;
@@ -4353,7 +4372,8 @@ void Player::WorldUI_t::handleTooltips()
 				playerEntity->yaw, STRIKERANGE, 0, true);
 			if ( hit.entity )
 			{
-				if ( hit.entity->behavior == &actMonster && selectInteract )
+				if ( hit.entity->behavior == &actMonster && selectInteract
+					&& !(hit.entity->isInertMimic()) )
 				{
 					// don't let hostile monsters get in the way of selection
 				}
@@ -4429,7 +4449,8 @@ void Player::WorldUI_t::handleTooltips()
 				}
 				parent = uidToEntity(tooltip->parent);
 				if ( parent && parent->flags[INVISIBLE] 
-					&& !(parent->behavior == &actMonster && parent->getMonsterTypeFromSprite() == DUMMYBOT) )
+					&& !(parent->behavior == &actMonster && 
+						(parent->getMonsterTypeFromSprite() == DUMMYBOT || parent->getMonsterTypeFromSprite() == MIMIC)) )
 				{
 					continue;
 				}

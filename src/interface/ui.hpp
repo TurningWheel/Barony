@@ -56,6 +56,7 @@ public:
 		UI_NOTIFICATION_REMOVABLE = 8,
 		UI_NOTIFICATION_STATISTIC_UPDATE = 16,
 		UI_NOTIFICATION_ACTION_BUTTON = 32,
+		UI_NOTIFICATION_CHALLENGE_UPDATE = 64
 	};
 	enum class CardType : Uint32
 	{
@@ -257,7 +258,9 @@ public:
 	void createAchievementsDisabledNotification();
 	void createGenericNotification(const char* header, const char* text);
 	void createAchievementNotification(const char* name);
+	void createLeaderboardNotification(std::string info);
 	void createStatisticUpdateNotification(const char* name, int currentValue, int maxValue);
+	void createNewSeedNotification();
 	void undockAllCards();
 
 	/// @param image nullptr for default barony icon

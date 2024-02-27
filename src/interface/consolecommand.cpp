@@ -1103,7 +1103,7 @@ namespace ConsoleCommands {
 			myStats->cloak = newItem(CLOAK_BLACK, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
 			consoleCommand("/levelskill 9");
 			//consoleCommand("/nextlevel");
-			while (myStats->PROFICIENCIES[PRO_APPRAISAL] < 50)
+			while (myStats->getProficiency(PRO_APPRAISAL) < 50)
 			{
 				consoleCommand("/levelskill 3");
 			}
@@ -1148,9 +1148,8 @@ namespace ConsoleCommands {
 			{
 				if (c != PRO_STEALTH)
 				{
-					while (stats[clientnum]->PROFICIENCIES[c] < 100)
+					while (stats[clientnum]->getProficiency(c) < 100 )
 					{
-						//++stats[clientnum]->PROFICIENCIES[c];
 						players[clientnum]->entity->increaseSkill(c, false);
 					}
 				}
@@ -1187,10 +1186,8 @@ namespace ConsoleCommands {
 			consoleCommand("/spawnitem magicstaff of lightning");
 			for (c = 0; c < NUMPROFICIENCIES; c++)
 			{
-				//for ( int j = 0; j < 100; ++j )
-				while (stats[clientnum]->PROFICIENCIES[c] < 100)
+				while (stats[clientnum]->getProficiency(c) < 100)
 				{
-					//++stats[clientnum]->PROFICIENCIES[c];
 					players[clientnum]->entity->increaseSkill(c, false);
 				}
 			}
@@ -1526,6 +1523,41 @@ namespace ConsoleCommands {
 		}
 		});
 
+	static ConsoleCommand ccmd_summonshop("/summonshop", "summon a shop (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		if ( multiplayer == CLIENT )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(284));
+		}
+		else if ( players[clientnum] && players[clientnum]->entity )
+		{
+			if ( argc < 2 ) {
+				return;
+			}
+			int type = atoi(argv[1]);
+
+			playSoundEntity(players[clientnum]->entity, 153, 64);
+
+			//Spawn monster
+			Entity* monster = summonMonster(SHOPKEEPER, players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw));
+			if ( monster )
+			{
+				messagePlayer(clientnum, MESSAGE_MISC, Language::get(302), getMonsterLocalizedName(SHOPKEEPER).c_str());
+				if ( auto stat = monster->getStats() )
+				{
+					stat->MISC_FLAGS[STAT_FLAG_NPC] = 1 + std::max(0, std::min(9, type));
+				}
+			}
+			else
+			{
+				messagePlayer(clientnum, MESSAGE_MISC, Language::get(303), getMonsterLocalizedName(SHOPKEEPER).c_str());
+			}
+		}
+	});
 	static ConsoleCommand ccmd_summon("/summon", "summon a monster (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
@@ -1708,7 +1740,27 @@ namespace ConsoleCommands {
 		});
 
 	static ConsoleCommand ccmd_mapseed("/mapseed", "display map seed", []CCMD{
-		messagePlayer(clientnum, MESSAGE_MISC, "%d", mapseed);
+		messagePlayer(clientnum, MESSAGE_MISC, "Mapseed: %d | Gamekey: %lu | Lobby: %lu", mapseed, uniqueGameKey, uniqueLobbyKey);
+		});
+
+	static ConsoleCommand ccmd_seedgame("/seedgame", "set custom seed", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		if ( multiplayer == CLIENT )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(284));
+		}
+
+		if ( argc > 1 ) {
+			gameModeManager.currentSession.seededRun.setup(argv[1]);
+		}
+		messagePlayer(clientnum, MESSAGE_DEBUG, "Seed is %lu | name: %s | key: %lu", 
+			gameModeManager.currentSession.seededRun.seed,
+			gameModeManager.currentSession.seededRun.seedString.c_str(),
+			uniqueGameKey);
 		});
 
 	static ConsoleCommand ccmd_reloadlang("/reloadlang", "reload language file", []CCMD{
@@ -2171,7 +2223,7 @@ namespace ConsoleCommands {
 		if (!minotaurlevel)
 		{
 			minotaurlevel = 1;
-			createMinotaurTimer(players[0]->entity, &map);
+			createMinotaurTimer(players[0]->entity, &map, local_rng.getU32());
 		}
 		});
 
@@ -2297,7 +2349,7 @@ namespace ConsoleCommands {
 		}
 		else
 		{
-			for (int i = players[clientnum]->entity->getStats()->PROFICIENCIES[skill]; i < 100; ++i)
+			for (int i = players[clientnum]->entity->getStats()->getProficiency(skill); i < 100; ++i)
 			{
 				players[clientnum]->entity->increaseSkill(skill);
 			}
@@ -4615,6 +4667,13 @@ namespace ConsoleCommands {
     });
 
     static ConsoleCommand ccmd_enable_cheats("/enablecheats", "enables cheats", []CCMD{
+		if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN
+			|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN )
+		{
+#ifdef NDEBUG
+			return;
+#endif
+		}
         if ( multiplayer == CLIENT )
         {
             messagePlayer(clientnum, MESSAGE_MISC, "Can only be done by the server.");
@@ -4642,38 +4701,38 @@ namespace ConsoleCommands {
         }
     });
 
-    static ConsoleCommand ccmd_quickstart("/quickstart", "quickly starts a new game (eg /quickstart monk)", []CCMD{
-        if (multiplayer != SINGLE) {
-            messagePlayer(clientnum, MESSAGE_MISC, "Can only be done in singleplayer.");
-            return;
-        }
-        
-        // choose class
-        const char* classtoquickstart = argc > 1 ? argv[1] : "barbarian";
-        for (int c = 0; c <= CLASS_MONK; ++c) {
-            if (!strcmp(classtoquickstart, playerClassLangEntry(c, clientnum))) {
-                client_classes[clientnum] = c;
-                break;
-            }
-        }
+    //static ConsoleCommand ccmd_quickstart("/quickstart", "quickly starts a new game (eg /quickstart monk)", []CCMD{
+    //    if (multiplayer != SINGLE) {
+    //        messagePlayer(clientnum, MESSAGE_MISC, "Can only be done in singleplayer.");
+    //        return;
+    //    }
+    //    
+    //    // choose class
+    //    const char* classtoquickstart = argc > 1 ? argv[1] : "barbarian";
+    //    for (int c = 0; c <= CLASS_MONK; ++c) {
+    //        if (!strcmp(classtoquickstart, playerClassLangEntry(c, clientnum))) {
+    //            client_classes[clientnum] = c;
+    //            break;
+    //        }
+    //    }
 
-        // initialize class
-        strcpy(stats[clientnum]->name, "Avatar");
-        stats[clientnum]->playerRace = RACE_HUMAN;
-        stats[clientnum]->sex = static_cast<sex_t>(local_rng.rand() % 2);
-        stats[clientnum]->appearance = local_rng.rand() % NUMAPPEARANCES;
-        stats[clientnum]->clearStats();
-        initClass(clientnum);
+    //    // initialize class
+    //    strcpy(stats[clientnum]->name, "Avatar");
+    //    stats[clientnum]->playerRace = RACE_HUMAN;
+    //    stats[clientnum]->sex = static_cast<sex_t>(local_rng.rand() % 2);
+    //    stats[clientnum]->appearance = local_rng.rand() % NUMAPPEARANCES;
+    //    stats[clientnum]->clearStats();
+    //    initClass(clientnum);
 
-        // generate unique game key
-        local_rng.seedTime();
-        local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
-        net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
-        doNewGame(false);
-        
-        // this just fixes the command buffer coming up again immediately after doNewGame()
-        Input::inputs[clientnum].consumeBinary("Chat");
-    });
+    //    // generate unique game key
+    //    local_rng.seedTime();
+    //    local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
+    //    net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+    //    doNewGame(false);
+    //    
+    //    // this just fixes the command buffer coming up again immediately after doNewGame()
+    //    Input::inputs[clientnum].consumeBinary("Chat");
+    //});
 
 	static ConsoleCommand ccmd_cast_spell_debug("/cast_spell_debug", "shoot every spell", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
@@ -4759,5 +4818,94 @@ namespace ConsoleCommands {
 		}
 		players[clientnum]->ghost.spawnGhost();
 	});
+
+	static ConsoleCommand ccmd_reloadequipmentoffsets("/reloadequipmentoffsets", "reloads equipment model offsets", []CCMD{
+		EquipmentModelOffsets.readFromFile(monstertypename[stats[clientnum]->type]);
+	});
+
+	static ConsoleCommand ccmd_reloadequipmentoffsets_all("/reloadequipmentoffsets_all", "reloads all equipment model offsets", []CCMD{
+		for ( int c = 1; c < NUMMONSTERS; ++c )
+		{
+			EquipmentModelOffsets.readFromFile(monstertypename[c], c);
+		}
+	});
+
+	static ConsoleCommand ccmd_mapdebugfixedmonsters("/mapdebugfixedmonsters", "prints fixed monster spawns", []CCMD{
+	#ifndef NINTENDO
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		for ( auto f : directoryContents(".\\maps\\", false, true) )
+		{
+			std::string mapPath = "maps/";
+			mapPath += f;
+			bool foundNumber = std::find_if(f.begin(), f.end(), ::isdigit) != f.end();
+			if ( /*foundNumber &&*/ PHYSFS_getRealDir(mapPath.c_str()) )
+			{
+				std::string fullMapPath = PHYSFS_getRealDir(mapPath.c_str());
+				fullMapPath += PHYSFS_getDirSeparator();
+				fullMapPath += mapPath;
+
+				if ( fullMapPath.find(".txt") != std::string::npos )
+				{
+					continue;
+				}
+
+				loadMap(fullMapPath.c_str(), &map, map.entities, map.creatures, nullptr);
+				for ( node_t* node = map.entities->first; node; node = node->next )
+				{
+					if ( Entity* entity = (Entity*)node->element )
+					{
+						Monster monsterType = NOTHING;
+						switch ( entity->sprite ) {
+						case 27: monsterType = HUMAN; break;
+						case 30: monsterType = TROLL; break;
+						case 35: monsterType = SHOPKEEPER; break;
+						case 36: monsterType = GOBLIN; break;
+						case 48: monsterType = SPIDER; break;
+						case 62: monsterType = LICH; break;
+						case 70: monsterType = GNOME; break;
+						case 71: monsterType = DEVIL; break;
+						case 75: monsterType = DEMON; break;
+						case 76: monsterType = CREATURE_IMP; break;
+						case 77: monsterType = MINOTAUR; break;
+						case 78: monsterType = SCORPION; break;
+						case 79: monsterType = SLIME; break;
+						case 80: monsterType = SUCCUBUS; break;
+						case 81: monsterType = RAT; break;
+						case 82: monsterType = GHOUL; break;
+						case 83: monsterType = SKELETON; break;
+						case 84: monsterType = KOBOLD; break;
+						case 85: monsterType = SCARAB; break;
+						case 86: monsterType = CRYSTALGOLEM; break;
+						case 87: monsterType = INCUBUS; break;
+						case 88: monsterType = VAMPIRE; break;
+						case 89: monsterType = SHADOW; break;
+						case 90: monsterType = COCKATRICE; break;
+						case 91: monsterType = INSECTOID; break;
+						case 92: monsterType = GOATMAN; break;
+						case 93: monsterType = AUTOMATON; break;
+						case 94: monsterType = LICH_ICE; break;
+						case 95: monsterType = LICH_FIRE; break;
+						case 163: monsterType = SENTRYBOT; break;
+						case 164: monsterType = SPELLBOT; break;
+						case 165: monsterType = DUMMYBOT; break;
+						case 166: monsterType = GYROBOT; break;
+						default:
+							break;
+						}
+						if ( monsterType != NOTHING )
+						{
+							printlog("Map [%s]: Monster: %s", f.c_str(), monstertypename[monsterType]);
+						}
+					}
+				}
+				// will crash the game but will show results of every map load :)
+			}
+		}
+#endif
+		});
 }
 

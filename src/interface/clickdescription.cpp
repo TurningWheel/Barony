@@ -91,7 +91,14 @@ void clickDescription(int player, Entity* entity)
 							Stat* stats = parent->getStats();
 							if ( stats )
 							{
-								messagePlayerMonsterEvent(player, 0xFFFFFFFF, *stats, Language::get(254), Language::get(253), MSG_DESCRIPTION, parent);
+								if ( parent->isInertMimic() )
+								{
+									messagePlayer(player, MESSAGE_INSPECTION, Language::get(266));
+								}
+								else
+								{
+									messagePlayerMonsterEvent(player, 0xFFFFFFFF, *stats, Language::get(254), Language::get(253), MSG_DESCRIPTION, parent);
+								}
 							}
 						}
 					}

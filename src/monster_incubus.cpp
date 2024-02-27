@@ -21,6 +21,7 @@
 #include "player.hpp"
 #include "magic/magic.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 void initIncubus(Entity* my, Stat* myStats)
 {
@@ -39,6 +40,8 @@ void initIncubus(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
+		auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+
 		if ( myStats != nullptr )
 		{
 			if ( !myStats->leader_uid )
@@ -156,7 +159,7 @@ void initIncubus(Entity* my, Stat* myStats)
 					myStats->LVL = 15;
 				}
 				// apply random stat increases if set in stat_shared.cpp or editor
-				setRandomMonsterStats(myStats);
+				setRandomMonsterStats(myStats, rng);
 
 				// generate 6 items max, less if there are any forced items from boss variants
 				int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
@@ -166,10 +169,10 @@ void initIncubus(Entity* my, Stat* myStats)
 				// random effects
 
 				// generates equipment and weapons if available from editor
-				createMonsterEquipment(myStats);
+				createMonsterEquipment(myStats, rng);
 
 				// create any custom inventory items from editor if available
-				createCustomInventory(myStats, customItemsToGenerate);
+				createCustomInventory(myStats, customItemsToGenerate, rng);
 
 				// count if any custom inventory items from editor
 				int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
@@ -183,13 +186,13 @@ void initIncubus(Entity* my, Stat* myStats)
 				newItem(SPELLBOOK_STEAL_WEAPON, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 				newItem(SPELLBOOK_CHARM_MONSTER, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 
-				if ( local_rng.rand() % 4 == 0 ) // 1 in 4
+				if ( rng.rand() % 4 == 0 ) // 1 in 4
 				{
-					newItem(POTION_CONFUSION, SERVICABLE, 0, 0 + local_rng.rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+					newItem(POTION_CONFUSION, SERVICABLE, 0, 0 + rng.rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 				}
 				else // 3 in 4
 				{
-					newItem(POTION_BOOZE, SERVICABLE, 0, 1 + local_rng.rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+					newItem(POTION_BOOZE, SERVICABLE, 0, 1 + rng.rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 				}
 
 
@@ -200,19 +203,26 @@ void initIncubus(Entity* my, Stat* myStats)
 					case 5:
 					case 4:
 					case 3:
-						if ( local_rng.rand() % 2 == 0 && !lesserMonster ) // 1 in 2
+						if ( rng.rand() % 2 == 0 && !lesserMonster ) // 1 in 2
 						{
-							newItem(MAGICSTAFF_COLD, SERVICABLE, 0, 1, local_rng.rand(), false, &myStats->inventory);
+							newItem(MAGICSTAFF_COLD, SERVICABLE, 0, 1, rng.rand(), false, &myStats->inventory);
 						}
 					case 2:
-						if ( local_rng.rand() % 5 == 0 ) // 1 in 5
+						if ( rng.rand() % 5 == 0 ) // 1 in 5
 						{
-							newItem(POTION_CONFUSION, SERVICABLE, 0, 1 + local_rng.rand() % 2, local_rng.rand(), false, &myStats->inventory);
+							if ( rng.rand() % 2 == 0 )
+							{
+								newItem(MASK_MASQUERADE, WORN, -2 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+							}
+							else
+							{
+								newItem(POTION_CONFUSION, SERVICABLE, 0, 1 + rng.rand() % 2, rng.rand(), false, &myStats->inventory);
+							}
 						}
 					case 1:
-						if ( local_rng.rand() % 3 == 0 ) // 1 in 3
+						if ( rng.rand() % 3 == 0 ) // 1 in 3
 						{
-							newItem(POTION_BOOZE, SERVICABLE, 0, 1 + local_rng.rand() % 3, local_rng.rand(), false, &myStats->inventory);
+							newItem(POTION_BOOZE, SERVICABLE, 0, 1 + rng.rand() % 3, rng.rand(), false, &myStats->inventory);
 						}
 						break;
 					default:
@@ -224,11 +234,11 @@ void initIncubus(Entity* my, Stat* myStats)
 				{
 					if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 					{
-						switch ( local_rng.rand() % 10 )
+						switch ( rng.rand() % 10 )
 						{
 							case 0:
 							case 1:
-								myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+								myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 								break;
 							case 2:
 							case 3:
@@ -237,35 +247,35 @@ void initIncubus(Entity* my, Stat* myStats)
 							case 6:
 							case 7:
 							case 8:
-								myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+								myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 								break;
 							case 9:
-								myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+								myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 								break;
 						}
 					}
 				}
 				else if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 				{
-					switch ( local_rng.rand() % 10 )
+					switch ( rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
 						case 2:
 						case 3:
-							myStats->weapon = newItem(CRYSTAL_SPEAR, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+							myStats->weapon = newItem(CRYSTAL_SPEAR, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 							break;
 						case 4:
 						case 5:
 						case 6:
-							myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+							myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 							break;
 						case 7:
 						case 8:
-							myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+							myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 							break;
 						case 9:
-							myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+							myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 							break;
 					}
 				}
@@ -279,7 +289,7 @@ void initIncubus(Entity* my, Stat* myStats)
 					}
 					else
 					{
-						switch ( local_rng.rand() % 10 )
+						switch ( rng.rand() % 10 )
 						{
 							case 0:
 							case 1:
@@ -292,7 +302,7 @@ void initIncubus(Entity* my, Stat* myStats)
 								break;
 							case 8:
 							case 9:
-								myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+								myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 								break;
 						}
 					}
@@ -404,6 +414,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[INCUBUS][6][0]; // 
 	entity->focaly = limbs[INCUBUS][6][1]; // 
 	entity->focalz = limbs[INCUBUS][6][2]; // 
@@ -424,6 +435,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[INCUBUS][7][0]; // 
 	entity->focaly = limbs[INCUBUS][7][1]; // 
 	entity->focalz = limbs[INCUBUS][7][2]; // 
@@ -447,6 +459,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[INCUBUS][8][0]; // 0
 	entity->focaly = limbs[INCUBUS][8][1]; // 0
 	entity->focalz = limbs[INCUBUS][8][2]; // 4
@@ -470,6 +483,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[INCUBUS][9][0]; // 0
 	entity->focaly = limbs[INCUBUS][9][1]; // 0
 	entity->focalz = limbs[INCUBUS][9][2]; // -2
@@ -490,6 +504,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[INCUBUS][10][0]; // 0
 	entity->focaly = limbs[INCUBUS][10][1]; // 0
 	entity->focalz = limbs[INCUBUS][10][2]; // .5
@@ -1267,7 +1282,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( multiplayer != CLIENT )
 				{
 					bool hasSteelHelm = false;
-					if ( myStats->helmet )
+					/*if ( myStats->helmet )
 					{
 						if ( myStats->helmet->type == STEEL_HELM
 							|| myStats->helmet->type == CRYSTAL_HELM
@@ -1275,7 +1290,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							hasSteelHelm = true;
 						}
-					}
+					}*/
 					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
@@ -1333,17 +1348,22 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);
 					}
+					else if ( EquipmentModelOffsets.modelOffsetExists(INCUBUS, entity->sprite) )
+					{
+						my->setHelmetLimbOffset(entity);
+						my->setHelmetLimbOffsetWithMask(helmet, entity);
+					}
 					else
 					{
 						entity->focalx = limbs[INCUBUS][10][0] + .35; // .35
-						entity->focaly = limbs[INCUBUS][10][1] - 2; // -2
+						entity->focaly = limbs[INCUBUS][10][1] - 2.5; // -2
 						entity->focalz = limbs[INCUBUS][10][2]; // .5
 					}
 				}
 				else
 				{
 					entity->focalx = limbs[INCUBUS][10][0] + .25; // .25
-					entity->focaly = limbs[INCUBUS][10][1] - 2.25; // -2.25
+					entity->focaly = limbs[INCUBUS][10][1] - 2.5; // -2.25
 					entity->focalz = limbs[INCUBUS][10][2]; // .5
 
 					if ( entity->sprite == 1196 ) // MonocleWorn.vox

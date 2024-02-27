@@ -772,7 +772,8 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
                 remap.z.z = 1.f / 3.f;
             }
             else if (entity->flags[USERFLAG2]) {
-                if (entity->behavior != &actMonster || monsterChangesColorWhenAlly(nullptr, entity)) {
+                if ((entity->behavior != &actMonster /*&& entity->noColorChangeAllyLimb < 0.01*/) 
+                    || monsterChangesColorWhenAlly(nullptr, entity)) {
                     // certain allies use G/B/R color map
                     remap = mat4x4_t(0.f);
                     remap.x.y = 1.f;
@@ -852,7 +853,16 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
         if (!highlightEntity) {
             Entity* parent = uidToEntity(entity->parent);
             if (parent && parent->bEntityHighlightedForPlayer(player)) {
-                entity->highlightForUIGlow = parent->highlightForUIGlow;
+#ifndef EDITOR
+                if ( parent->isInertMimic() )
+                {
+                    entity->highlightForUIGlow = (0.05 * (entity->ticks % 41));
+                }
+                else
+#endif
+                {
+                    entity->highlightForUIGlow = parent->highlightForUIGlow;
+                }
                 highlightEntityFromParent = true;
                 highlightEntity = highlightEntityFromParent;
             }
@@ -1372,10 +1382,9 @@ void glDrawEnemyBarSprite(view_t* camera, int mode, int playerViewport, void* en
     
     // model matrix
     const float height = (float)enemybar->worldZ - 6.f;
-    const float drawOffsetY = 0.f;
-    /*const float drawOffsetY = enemybar->worldSurfaceSpriteStatusEffects ?
-        enemybar->worldSurfaceSpriteStatusEffects->h / -2.f : 0.f;*/
-    v = vec4((float)enemybar->worldX * 2.f, drawOffsetY - height * 2.f, (float)enemybar->worldY * 2.f, 0.f);
+    const float drawOffsetY = enemybar->worldSurfaceSpriteStatusEffects ?
+        enemybar->worldSurfaceSpriteStatusEffects->h / -2.f : 0.f;
+    v = vec4((float)enemybar->worldX * 2.f, -height * 2.f, (float)enemybar->worldY * 2.f, 0.f);
     (void)translate_mat(&t, &m, &v); m = t;
     mat4x4_t i;
     (void)rotate_mat(&t, &m, -90.f - camera->ang * (180.f / PI), &i.y); m = t;
@@ -1404,17 +1413,22 @@ void glDrawEnemyBarSprite(view_t* camera, int mode, int playerViewport, void* en
             // otherwise push approx below XP bar, 26 pixels
             topOfWindow += factorY * (sprite->h > 50 ? 0 : -26); 
         }
+        float pixelOffset = drawOffsetY;
 		vec4_t screenCoordinates = project(&worldCoords, &m, &camera->projview, &window);
         if (screenCoordinates.y >= topOfWindow && screenCoordinates.z >= 0.f) {
             // above camera limit
-			const float pixelOffset = fabs(screenCoordinates.y - topOfWindow);
-			screenCoordinates.y -= pixelOffset;
+			pixelOffset += fabs(screenCoordinates.y - topOfWindow);
             
+		}
+
+        if ( fabs(pixelOffset) > 0.001 )
+        {
+		    screenCoordinates.y -= pixelOffset;
             // convert back into worldCoords
-			vec4_t worldCoords2 = unproject(&screenCoordinates, &m, &camera->projview, &window);
+		    vec4_t worldCoords2 = unproject(&screenCoordinates, &m, &camera->projview, &window);
             worldCoords2.y -= scale * tex->h * 0.5f;
             m.w = worldCoords2;
-		}
+        }
 	}
 
     // upload model matrix

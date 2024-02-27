@@ -27,7 +27,7 @@
 #ifdef NINTENDO
 static const char VERSION[] = "v4.1.1";
 #else
-static const char VERSION[] = "v4.1.1";
+static const char VERSION[] = "v4.1.2";
 #endif
 #define GAME_CODE
 
@@ -89,6 +89,7 @@ extern bool loadingmap, loadingconfig;
 extern int startfloor;
 extern bool skipintro;
 extern Uint32 uniqueGameKey;
+extern Uint32 uniqueLobbyKey;
 extern bool arachnophobia_filter;
 extern bool colorblind_lobby;
 

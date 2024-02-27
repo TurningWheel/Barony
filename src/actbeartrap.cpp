@@ -123,6 +123,10 @@ void actBeartrap(Entity* my)
 				{
 					continue;
 				}
+				if ( entity->isInertMimic() )
+				{
+					continue;
+				}
 				if ( !parent && BEARTRAP_OWNER >= 0 )
 				{
 					if ( entity->behavior == &actPlayer )
@@ -823,6 +827,17 @@ void actBomb(Entity* my)
 					shouldExplode = true;
 				}
 			}
+			else if ( onEntity->behavior == &actMonster && onEntity->getMonsterTypeFromSprite() == MIMIC )
+			{
+				if ( !onEntity->isInertMimic() || BOMB_HIT_BY_PROJECTILE == 1 )
+				{
+					if ( onEntity->isInertMimic() )
+					{
+						onEntity->chestHandleDamageMagic(20, *my, uidToEntity(my->parent));
+					}
+					shouldExplode = true;
+				}
+			}
 			else if ( onEntity->behavior == &actChest )
 			{
 				if ( onEntity->skill[3] < BOMB_ENTITY_ATTACHED_START_HP || BOMB_CHEST_STATUS != onEntity->skill[1]
@@ -904,6 +919,10 @@ void actBomb(Entity* my)
 					continue;
 				}
 				if ( stat->type == GYROBOT )
+				{
+					continue;
+				}
+				if ( entity->isInertMimic() )
 				{
 					continue;
 				}

@@ -173,6 +173,7 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 
     // MIMIC
     {
+		1247
     },
 
     // LICH
@@ -435,7 +436,7 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 0.9, 1.f, 1.f, 0.9, 1.1, 1.1, 1.f }, // gnome
 	{ 0.9, 0.8, 1.f, 0.8, 0.9, 1.1, 0.8 }, // demon
 	{ 1.2, 1.f, 1.f, 0.9, 1.f, 0.8, 1.f }, // succubus
-	{ 0.8, 1.1, 1.3, 1.f, 0.7, 1.2, 1.f }, // mimic
+	{ 0.5, 0.5, 1.0, 0.5, 0.5, 1.3, 0.5 }, // mimic
 	{ 2.5, 2.5, 2.5, 2.5, 1.3, 1.f, 1.8 }, // lich
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // minotaur
 	{ 2.f, 2.f, 2.f, 2.f, 1.f, 1.f, 1.f }, // devil
@@ -692,6 +693,7 @@ void initLichIce(Entity* my, Stat* myStats);
 void initSentryBot(Entity* my, Stat* myStats);
 void initGyroBot(Entity* my, Stat* myStats);
 void initDummyBot(Entity* my, Stat* myStats);
+void initMimic(Entity* my, Stat* myStats);
 
 //--act*Limb functions--
 void actHumanLimb(Entity* my);
@@ -724,6 +726,7 @@ void actLichIceLimb(Entity* my);
 void actSentryBotLimb(Entity* my);
 void actGyroBotLimb(Entity* my);
 void actDummyBotLimb(Entity* my);
+void actMimicLimb(Entity* my);
 
 //--*Die functions--
 void humanDie(Entity* my);
@@ -758,6 +761,7 @@ void lichIceDie(Entity* my);
 void sentryBotDie(Entity* my);
 void gyroBotDie(Entity* my);
 void dummyBotDie(Entity* my);
+void mimicDie(Entity* my);
 
 //--*MoveBodyparts functions--
 void humanMoveBodyparts(Entity* my, Stat* myStats, double dist);
@@ -792,6 +796,7 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist);
 void sentryBotAnimate(Entity* my, Stat* myStats, double dist);
 void gyroBotAnimate(Entity* my, Stat* myStats, double dist);
 void dummyBotAnimate(Entity* my, Stat* myStats, double dist);
+void mimicAnimate(Entity* my, Stat* myStats, double dist);
 
 //--misc functions--
 void actMinotaurTrap(Entity* my);
@@ -801,7 +806,7 @@ void actDemonCeilingBuster(Entity* my);
 
 void actDevilTeleport(Entity* my);
 
-void createMinotaurTimer(Entity* entity, map_t* map);
+void createMinotaurTimer(Entity* entity, map_t* map, Uint32 seed);
 
 void actSummonTrap(Entity* my);
 int monsterCurve(int level);
@@ -865,6 +870,12 @@ static const int MONSTER_POSE_AUTOMATON_MALFUNCTION = 31;
 static const int MONSTER_POSE_LICH_FIRE_SWORD = 32;
 static const int PLAYER_POSE_GOLEM_SMASH = 33;
 static const int MONSTER_POSE_INCUBUS_TAUNT = 34;
+static const int MONSTER_POSE_MIMIC_DISTURBED = 35;
+static const int MONSTER_POSE_MIMIC_DISTURBED2 = 36;
+static const int MONSTER_POSE_MIMIC_LOCKED = 37;
+static const int MONSTER_POSE_MIMIC_LOCKED2 = 38;
+static const int MONSTER_POSE_MIMIC_MAGIC1 = 39;
+static const int MONSTER_POSE_MIMIC_MAGIC2 = 40;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
@@ -890,6 +901,7 @@ static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_TARGET = 200;
 static const int MONSTER_SPECIAL_COOLDOWN_VAMPIRE_AURA = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_VAMPIRE_DRAIN = 300;
 static const int MONSTER_SPECIAL_COOLDOWN_SUCCUBUS_CHARM = 400;
+static const int MONSTER_SPECIAL_COOLDOWN_MIMIC_EAT = 500;
 
 //--monster target search types
 static const int MONSTER_TARGET_ENEMY = 0;
@@ -1040,6 +1052,13 @@ static const int GYRO_START_FLYING = 4;
 //--Dummybot--
 static const int DUMMYBOT_RETURN_FORM = 1;
 
+//--Mimic--
+static const int MIMIC_ACTIVE = 0;
+static const int MIMIC_INERT = 1;
+static const int MIMIC_MAGIC = 2;
+static const int MIMIC_INERT_SECOND = 3;
+static const int MIMIC_STATUS_IMMOBILE = 4;
+
 struct MonsterData_t
 {
 	struct MonsterDataEntry_t
@@ -1093,6 +1112,7 @@ public:
 	enum WantedLevel : int
 	{
 		NO_WANTED_LEVEL,
+		FAILURE_TO_IDENTIFY,
 		WANTED_FOR_AGGRESSION_SHOPKEEP_INITIATED,
 		WANTED_FOR_ACCESSORY,
 		WANTED_FOR_AGGRESSION,
@@ -1105,30 +1125,39 @@ public:
 		int numKills = 0;
 		int numAccessories = 0;
 		Monster playerRace = NOTHING;
+		sex_t sex = sex_t::MALE;
+		Uint8 equipment = 0;
+		Uint32 type = NOTHING;
 		WantedLevel wantedLevel = NO_WANTED_LEVEL;
 		int player = -1;
 		bool bRequiresNetUpdate = false;
 		PlayerRaceHostility_t()
 		{
 			wantedLevel = NO_WANTED_LEVEL;
+			type = NOTHING;
 			playerRace = NOTHING;
+			sex = sex_t::MALE;
+			equipment = 0;
 			player = -1;
 			numAggressions = 0;
 			numKills = 0;
 			numAccessories = 0;
 		};
-		PlayerRaceHostility_t(const Monster _playerRace, const WantedLevel _wantedLevel, const int _player) :
+		PlayerRaceHostility_t(const Uint32 _type, const WantedLevel _wantedLevel, const int _player) :
 			PlayerRaceHostility_t()
 		{
 			wantedLevel = _wantedLevel;
-			playerRace = _playerRace;
+			type = _type;
+			playerRace = (Monster)(_type & 0xFF);
+			sex = ((_type >> 8) & 0x1) ? sex_t::MALE : sex_t::FEMALE;
+			equipment = ((_type >> 9) & 0x7F);
 			player = _player;
 		}
 
 		bool serialize(FileInterface* fp);
 	};
 	bool playerRaceCheckHostility(const int player, const Monster type) const;
-	PlayerRaceHostility_t* getPlayerHostility(const int player, Monster overrideType = NOTHING);
+	PlayerRaceHostility_t* getPlayerHostility(const int player, Uint32 overrideType = NOTHING);
 	void serverSendClientUpdate(const bool force = false);
 	void reset();
 	void resetPlayerHostility(const int player, bool clearAll = false);
@@ -1139,7 +1168,7 @@ public:
 	void onShopkeeperDeath(Entity* my, Stat* myStats, Entity* attacker);
 	void onShopkeeperHit(Entity* my, Stat* myStats, Entity* attacker);
 	void updateShopkeeperActMonster(Entity& my, Stat& myStats, bool ringconflict);
-	std::map<Monster, PlayerRaceHostility_t> playerHostility[MAXPLAYERS];
+	std::map<Uint32, PlayerRaceHostility_t> playerHostility[MAXPLAYERS];
 };
 extern ShopkeeperPlayerHostility_t ShopkeeperPlayerHostility;
 
@@ -1192,3 +1221,13 @@ struct MonsterAllyFormation_t
 	int getFollowerTryExtendedPathSearch(Entity& my, Stat& myStats);
 };
 extern MonsterAllyFormation_t monsterAllyFormations;
+
+struct MimicGenerator
+{
+	BaronyRNG mimic_rng;
+	std::unordered_set<unsigned int> mimic_floors;
+	std::unordered_set<unsigned int> mimic_secret_floors;
+	void init();
+	bool bForceSpawnForCurrentFloor();
+};
+extern MimicGenerator mimic_generator;

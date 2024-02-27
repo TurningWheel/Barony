@@ -90,10 +90,11 @@ void actHeadstone(Entity* my)
 
 	if ( !HEADSTONE_INIT )
 	{
+		auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
 		my->createWorldUITooltip();
 		HEADSTONE_INIT = 1;
-		HEADSTONE_MESSAGE = local_rng.rand();
-		HEADSTONE_GHOUL = (local_rng.rand() % 4 == 0);
+		HEADSTONE_MESSAGE = rng.rand();
+		HEADSTONE_GHOUL = (rng.rand() % 4 == 0);
 	}
 
 	bool shouldspawn = false;
@@ -135,6 +136,8 @@ void actHeadstone(Entity* my)
 			Entity* monster = summonMonsterNoSmoke(GHOUL, my->x, my->y, false);
 			if ( monster )
 			{
+				auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+				monster->seedEntityRNG(rng.getU32());
 				monster->z = 13;
 				if ( currentlevel >= 15 || !strncmp(map.name, "The Haunted Castle", 18) )
 				{

@@ -31,6 +31,9 @@
 
 int startfloor = 0;
 BaronyRNG map_rng;
+BaronyRNG map_server_rng;
+int numChests = 0;
+int numMimics = 0;
 
 Sint32 doorFrameSprite() {
     if (stringStr(map.name, "Caves", sizeof(map_t::name), 5)) {
@@ -854,9 +857,22 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	map_t shopmap;
 	map_t secretlevelmap;
 	int secretlevelexit = 0;
-	bool *trapexcludelocations;
-	bool *monsterexcludelocations;
-	bool *lootexcludelocations;
+
+	if ( map.trapexcludelocations )
+	{
+		free(map.trapexcludelocations);
+		map.trapexcludelocations = nullptr;
+	}
+	if ( map.monsterexcludelocations )
+	{
+		free(map.monsterexcludelocations);
+		map.monsterexcludelocations = nullptr;
+	}
+	if ( map.lootexcludelocations )
+	{
+		free(map.lootexcludelocations);
+		map.lootexcludelocations = nullptr;
+	}
 
 	if ( std::get<LEVELPARAM_CHANCE_SECRET>(mapParameters) == -1
 		&& std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) == -1
@@ -914,9 +930,10 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	// store this map's seed
 	mapseed = seed;
 	map_rng.seedBytes(&mapseed, sizeof(mapseed));
+	map_server_rng.seedBytes(&mapseed, sizeof(mapseed));
 
 	// generate a custom monster curve if file exists
-	monsterCurveCustomManager.readFromFile();
+	monsterCurveCustomManager.readFromFile(mapseed);
 
 	// determine whether shop level or not
 	if ( gameplayCustomManager.processedShopFloor(currentlevel, secretlevel, map.name, shoplevel) )
@@ -1129,6 +1146,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		tempMap->creatures->first = nullptr;
 		tempMap->creatures->last = nullptr;
 		tempMap->worldUI = nullptr;
+		tempMap->trapexcludelocations = nullptr;
+		tempMap->monsterexcludelocations = nullptr;
+		tempMap->lootexcludelocations = nullptr;
 		if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), tempMap, tempMap->entities, tempMap->creatures, &checkMapHash) == -1 )
 		{
 			mapDeconstructor((void*)tempMap);
@@ -1282,6 +1302,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			subRoomMap->creatures->first = nullptr;
 			subRoomMap->creatures->last = nullptr;
 			subRoomMap->worldUI = nullptr;
+			subRoomMap->trapexcludelocations = nullptr;
+			subRoomMap->monsterexcludelocations = nullptr;
+			subRoomMap->lootexcludelocations = nullptr;
 			if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), subRoomMap, subRoomMap->entities, subRoomMap->creatures, &checkMapHash) == -1 )
 			{
 				mapDeconstructor((void*)subRoomMap);
@@ -1435,6 +1458,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		subRoomMap->creatures->first = nullptr;
 		subRoomMap->creatures->last = nullptr;
 		subRoomMap->worldUI = nullptr;
+		subRoomMap->trapexcludelocations = nullptr;
+		subRoomMap->monsterexcludelocations = nullptr;
+		subRoomMap->lootexcludelocations = nullptr;
 		if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), subRoomMap, subRoomMap->entities, subRoomMap->creatures, &checkMapHash) == -1 )
 		{
 			mapDeconstructor((void*)subRoomMap);
@@ -1551,9 +1577,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	if ( numlevels > 1 )
 	{
 		possiblelocations = (bool*) malloc(sizeof(bool) * map.width * map.height);
-		trapexcludelocations = (bool*)malloc(sizeof(bool) * map.width * map.height);
-		monsterexcludelocations = (bool*)malloc(sizeof(bool) * map.width * map.height);
-		lootexcludelocations = (bool*)malloc(sizeof(bool) * map.width * map.height);
+		map.trapexcludelocations = (bool*)malloc(sizeof(bool) * map.width * map.height);
+		map.monsterexcludelocations = (bool*)malloc(sizeof(bool) * map.width * map.height);
+		map.lootexcludelocations = (bool*)malloc(sizeof(bool) * map.width * map.height);
 		for ( y = 0; y < map.height; y++ )
 		{
 			for ( x = 0; x < map.width; x++ )
@@ -1569,24 +1595,24 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				{
 					possiblelocations[x + y * map.width] = true;
 				}
-				trapexcludelocations[x + y * map.width] = false;
+				map.trapexcludelocations[x + y * map.width] = false;
 				if ( map.flags[MAP_FLAG_DISABLEMONSTERS] == 1 )
 				{
 					// the base map excludes all monsters
-					monsterexcludelocations[x + y * map.width] = true;
+					map.monsterexcludelocations[x + y * map.width] = true;
 				}
 				else
 				{
-					monsterexcludelocations[x + y * map.width] = false;
+					map.monsterexcludelocations[x + y * map.width] = false;
 				}
 				if ( map.flags[MAP_FLAG_DISABLELOOT] == 1 )
 				{
 					// the base map excludes all monsters
-					lootexcludelocations[x + y * map.width] = true;
+					map.lootexcludelocations[x + y * map.width] = true;
 				}
 				else
 				{
-					lootexcludelocations[x + y * map.width] = false;
+					map.lootexcludelocations[x + y * map.width] = false;
 				}
 			}
 		}
@@ -1759,9 +1785,21 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					free(possiblerooms);
 					free(possiblelocations);
 					free(possiblelocations2);
-					free(trapexcludelocations);
-					free(monsterexcludelocations);
-					free(lootexcludelocations);
+					if ( map.trapexcludelocations )
+					{
+						free(map.trapexcludelocations);
+						map.trapexcludelocations = nullptr;
+					}
+					if ( map.monsterexcludelocations )
+					{
+						free(map.monsterexcludelocations);
+						map.monsterexcludelocations = nullptr;
+					}
+					if ( map.lootexcludelocations )
+					{
+						free(map.lootexcludelocations);
+						map.lootexcludelocations = nullptr;
+					}
 					free(firstroomtile);
 					free(sublevelname);
 					free(subRoomName);
@@ -2052,16 +2090,16 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								// apply submap disable flags
 								if ( subRoomMap->flags[MAP_FLAG_DISABLETRAPS] == 1 )
 								{
-									trapexcludelocations[x0 + y0 * map.width] = true;
+									map.trapexcludelocations[x0 + y0 * map.width] = true;
 									//map.tiles[z + y0 * MAPLAYERS + x0 * MAPLAYERS * map.height] = 83;
 								}
 								if ( subRoomMap->flags[MAP_FLAG_DISABLEMONSTERS] == 1 )
 								{
-									monsterexcludelocations[x0 + y0 * map.width] = true;
+									map.monsterexcludelocations[x0 + y0 * map.width] = true;
 								}
 								if ( subRoomMap->flags[MAP_FLAG_DISABLELOOT] == 1 )
 								{
-									lootexcludelocations[x0 + y0 * map.width] = true;
+									map.lootexcludelocations[x0 + y0 * map.width] = true;
 								}
 							}
 
@@ -2086,16 +2124,16 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							possiblelocations[x0 + y0 * map.width] = false;
 							if ( tempMap->flags[MAP_FLAG_DISABLETRAPS] == 1 )
 							{
-								trapexcludelocations[x0 + y0 * map.width] = true;
+								map.trapexcludelocations[x0 + y0 * map.width] = true;
 								//map.tiles[z + y0 * MAPLAYERS + x0 * MAPLAYERS * map.height] = 83;
 							}
 							if ( tempMap->flags[MAP_FLAG_DISABLEMONSTERS] == 1 )
 							{
-								monsterexcludelocations[x0 + y0 * map.width] = true;
+								map.monsterexcludelocations[x0 + y0 * map.width] = true;
 							}
 							if ( tempMap->flags[MAP_FLAG_DISABLELOOT] == 1 )
 							{
-								lootexcludelocations[x0 + y0 * map.width] = true;
+								map.lootexcludelocations[x0 + y0 * map.width] = true;
 							}
 							if ( c == 0 )
 							{
@@ -2774,7 +2812,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				{
 					side = 3;
 				}
-				if ( sides == 1 && (trapexcludelocations[x + y * map.width] == false) )
+				if ( sides == 1 && (map.trapexcludelocations[x + y * map.width] == false) )
 				{
 					possiblelocations[y + x * map.height] = true;
 					numpossiblelocations++;
@@ -3167,7 +3205,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				i++;
 			}
 			while ( !map.tiles[OBSTACLELAYER + testy * MAPLAYERS + testx * MAPLAYERS * map.height] 
-				&& !trapexcludelocations[testx + testy * map.width]
+				&& !map.trapexcludelocations[testx + testy * map.width]
 				&& !(!arrowtrap && !map.tiles[testy * MAPLAYERS + testx * MAPLAYERS * map.height]) // boulders stop wiring at pit edges
 				&& i <= 10 );
 		}
@@ -3636,7 +3674,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				if ( forcedMonsterSpawns > 0 )
 				{
 					--forcedMonsterSpawns;
-					if ( monsterexcludelocations[x + y * map.width] == false )
+					if ( map.monsterexcludelocations[x + y * map.width] == false )
 					{
 						bool doNPC = false;
 						if ( gameplayCustomManager.processedPropertyForFloor(currentlevel, secretlevel, map.name, GameplayCustomManager::PROPERTY_NPC, doNPC) )
@@ -3663,7 +3701,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								entity = newEntity(27, 1, map.entities, map.creatures);  // human
 								if ( multiplayer != CLIENT && currentlevel > 5 )
 								{
-									entity->monsterStoreType = (currentlevel / 5) * 3 + (local_rng.rand() % 4); // scale humans with depth.  3 LVL each 5 floors, + 0-3.
+									entity->monsterStoreType = (currentlevel / 5) * 3 + (map_server_rng.rand() % 4); // scale humans with depth.  3 LVL each 5 floors, + 0-3.
 								}
 							}
 						}
@@ -3678,7 +3716,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				else if ( forcedLootSpawns > 0 )
 				{
 					--forcedLootSpawns;
-					if ( lootexcludelocations[x + y * map.width] == false )
+					if ( map.lootexcludelocations[x + y * map.width] == false )
 					{
 						if ( map_rng.rand() % 10 == 0 )   // 10% chance
 						{
@@ -3811,7 +3849,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					{
 						if ( map_rng.rand() % balance )
 						{
-							if ( lootexcludelocations[x + y * map.width] == false )
+							if ( map.lootexcludelocations[x + y * map.width] == false )
 							{
 								if ( map_rng.rand() % 10 == 0 )   // 10% chance
 								{
@@ -3828,7 +3866,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						}
 						else
 						{
-							if ( monsterexcludelocations[x + y * map.width] == false )
+							if ( map.monsterexcludelocations[x + y * map.width] == false )
 							{
 								bool doNPC = false;
 								if ( gameplayCustomManager.processedPropertyForFloor(currentlevel, secretlevel, map.name, GameplayCustomManager::PROPERTY_NPC, doNPC) )
@@ -3855,7 +3893,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 										entity = newEntity(27, 1, map.entities, map.creatures);  // human
 										if ( multiplayer != CLIENT && currentlevel > 5 )
 										{
-											entity->monsterStoreType = (currentlevel / 5) * 3 + (local_rng.rand() % 4); // scale humans with depth. 3 LVL each 5 floors, + 0-3.
+											entity->monsterStoreType = (currentlevel / 5) * 3 + (map_server_rng.rand() % 4); // scale humans with depth. 3 LVL each 5 floors, + 0-3.
 										}
 									}
 								}
@@ -3974,9 +4012,6 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	}*/
 
 	free(possiblelocations);
-	free(trapexcludelocations);
-	free(monsterexcludelocations);
-	free(lootexcludelocations);
 	free(firstroomtile);
 	free(subRoomName);
 	free(sublevelname);
@@ -3986,6 +4021,30 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	printlog("successfully generated a dungeon with %d rooms, %d monsters, %d gold, %d items, %d decorations.\n", roomcount, nummonsters, numGenGold, numGenItems, numGenDecorations);
 	//messagePlayer(0, "successfully generated a dungeon with %d rooms, %d monsters, %d gold, %d items, %d decorations.", roomcount, nummonsters, numGenGold, numGenItems, numGenDecorations);
 	return secretlevelexit;
+}
+
+bool allowedGenerateMimicOnChest(int x, int y, map_t& map)
+{
+	if ( gameModeManager.getMode() == gameModeManager.GAME_MODE_TUTORIAL
+		|| gameModeManager.getMode() == gameModeManager.GAME_MODE_TUTORIAL_INIT )
+	{
+		return false;
+	}
+	if ( !(svFlags & SV_FLAG_TRAPS) )
+	{
+		return false;
+	}
+	/*if ( map.trapexcludelocations )
+	{
+		if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+		{
+			if ( map.trapexcludelocations[x + y * map.width] )
+			{
+				return false;
+			}
+		}
+	}*/
+	return true;
 }
 
 /*-------------------------------------------------------------------------------
@@ -4025,6 +4084,7 @@ void assignActions(map_t* map)
 	// seed the random generator
 
 	map_rng.seedBytes(&mapseed, sizeof(mapseed));
+	map_server_rng.seedBytes(&mapseed, sizeof(mapseed));
 
 	int balance = 0;
 	for ( int i = 0; i < MAXPLAYERS; i++ )
@@ -4038,7 +4098,7 @@ void assignActions(map_t* map)
 	bool customMonsterCurveExists = false;
 	if ( !monsterCurveCustomManager.inUse() )
 	{
-		monsterCurveCustomManager.readFromFile();
+		monsterCurveCustomManager.readFromFile(mapseed);
 	}
 	if ( monsterCurveCustomManager.curveExistsForCurrentMapName(map->name) )
 	{
@@ -4179,7 +4239,7 @@ void assignActions(map_t* map)
 					{
 						if ( numplayers == 0 && minotaurlevel )
 						{
-							createMinotaurTimer(entity, map);
+							createMinotaurTimer(entity, map, map_server_rng.getU32());
 						}
 					}
 					++numplayers;
@@ -4216,6 +4276,7 @@ void assignActions(map_t* map)
 				childEntity->behavior = &actDoor;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->skill[0] = 0; // signify behavior code of DOOR_DIR
+				childEntity->seedEntityRNG(map_server_rng.getU32());
 
 				// copy editor options from frame to door itself.
 				childEntity->doorDisableLockpicks = entity->doorDisableLockpicks;
@@ -4265,6 +4326,7 @@ void assignActions(map_t* map)
 				childEntity->behavior = &actDoor;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->skill[0] = 1; // signify behavior code of DOOR_DIR
+				childEntity->seedEntityRNG(map_server_rng.getU32());
 
 				// copy editor options from frame to door itself.
 				childEntity->doorDisableLockpicks = entity->doorDisableLockpicks;
@@ -4438,7 +4500,7 @@ void assignActions(map_t* map)
 									{
 										randType = map_rng.rand() % (NUMCATEGORIES - 1);
 									}
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType), 0, currentlevel);
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType), 0, currentlevel, map_rng);
 								}
 								else
 								{
@@ -4456,12 +4518,12 @@ void assignActions(map_t* map)
 											randType++;
 										}
 									}
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType), 0, currentlevel);
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType), 0, currentlevel, map_rng);
 								}
 							}
 							else
 							{
-								entity->skill[10] = itemLevelCurve(FOOD, 0, currentlevel);
+								entity->skill[10] = itemLevelCurve(FOOD, 0, currentlevel, map_rng);
 							}
 						}
 					}
@@ -4470,7 +4532,7 @@ void assignActions(map_t* map)
 						// editor set the random category of the item to be spawned.
 						if ( entity->skill[16] > 0 && entity->skill[16] <= 13 )
 						{
-							entity->skill[10] = itemLevelCurve(static_cast<Category>(entity->skill[16] - 1), 0, currentlevel);
+							entity->skill[10] = itemLevelCurve(static_cast<Category>(entity->skill[16] - 1), 0, currentlevel, map_rng);
 						}
 						else
 						{
@@ -4481,11 +4543,11 @@ void assignActions(map_t* map)
 								randType = map_rng.rand() % 2;
 								if ( randType == 0 )
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(WEAPON), 0, currentlevel);
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(WEAPON), 0, currentlevel, map_rng);
 								}
 								else if ( randType == 1 )
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(ARMOR), 0, currentlevel);
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(ARMOR), 0, currentlevel, map_rng);
 								}
 							}
 							else if ( entity->skill[16] == 15 )
@@ -4494,11 +4556,11 @@ void assignActions(map_t* map)
 								randType = map_rng.rand() % 2;
 								if ( randType == 0 )
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(AMULET), 0, currentlevel);
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(AMULET), 0, currentlevel, map_rng);
 								}
 								else
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(RING), 0, currentlevel);
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(RING), 0, currentlevel, map_rng);
 								}
 							}
 							else if ( entity->skill[16] == 16 )
@@ -4507,15 +4569,15 @@ void assignActions(map_t* map)
 								randType = map_rng.rand() % 3;
 								if ( randType == 0 )
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(SCROLL), 0, currentlevel);
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(SCROLL), 0, currentlevel, map_rng);
 								}
 								else if ( randType == 1 )
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(MAGICSTAFF), 0, currentlevel);
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(MAGICSTAFF), 0, currentlevel, map_rng);
 								}
 								else
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(SPELLBOOK), 0, currentlevel);
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(SPELLBOOK), 0, currentlevel, map_rng);
 								}
 							}
 						}
@@ -4811,6 +4873,14 @@ void assignActions(map_t* map)
 					break;
 				}
 
+				if ( monsterType == MIMIC )
+				{
+					entity->yaw = 90 * (map_rng.rand() % 4) * PI / 180.0;
+					entity->monsterLookDir = entity->yaw;
+				}
+
+				entity->seedEntityRNG(map_server_rng.getU32());
+
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats == nullptr )
@@ -4843,7 +4913,12 @@ void assignActions(map_t* map)
 						// monster is random, but generated from editor
 						// stat struct is already created, need to set stats
 						setDefaultMonsterStats(myStats, monsterType + 1000);
-						setRandomMonsterStats(myStats);
+
+						Uint32 monsterseed = 0;
+						entity->entity_rng->getSeed(&monsterseed, sizeof(monsterseed));
+						BaronyRNG tmpRng;
+						tmpRng.seedBytes(&monsterseed, sizeof(monsterseed));
+						setRandomMonsterStats(myStats, tmpRng);
 					}
 
 					std::string checkName = myStats->name;
@@ -4927,6 +5002,8 @@ void assignActions(map_t* map)
 				entity->behavior = &actFountain;
 				entity->sprite = 163; //Fountain
 				entity->skill[0] = 1; //Fountain is full.
+				entity->seedEntityRNG(map_server_rng.getU32());
+
 				//Randomly determine effect.
 				int effect = map_rng.rand() % 10; //3 possible effects.
 				entity->skill[28] = 1; //TODO: This is just for testing purposes.
@@ -4967,6 +5044,7 @@ void assignActions(map_t* map)
 			}
 			//Sink.
 			case 15:
+			{
 				entity->sizex = 4;
 				entity->sizey = 4;
 				entity->x += 8;
@@ -5002,7 +5080,10 @@ void assignActions(map_t* map)
 					default:
 						break;
 				}
+
+				entity->seedEntityRNG(map_server_rng.getU32());
 				break;
+			}
 			//Switch.
 			case 17:
             {
@@ -5157,6 +5238,8 @@ void assignActions(map_t* map)
 				entity->sprite = 188;
 				//entity->skill[9] = -1; //Set default chest as random category < 0
 
+				entity->seedEntityRNG(map_server_rng.getU32());
+
 				auto childEntity = newEntity(216, 0, map->entities, nullptr); //Chest lid entity.
 				childEntity->parent = entity->getUID();
 				entity->parent = childEntity->getUID();
@@ -5266,6 +5349,7 @@ void assignActions(map_t* map)
 				break;
 			// minotaur spawn trap
 			case 37:
+			{
 				entity->skill[28] = 1; // is a mechanism
 				entity->sizex = 2;
 				entity->sizey = 2;
@@ -5276,9 +5360,12 @@ void assignActions(map_t* map)
 				entity->flags[INVISIBLE] = true;
 				entity->flags[PASSABLE] = true;
 				entity->flags[NOUPDATE] = true;
+				entity->seedEntityRNG(map_server_rng.getU32());
 				break;
+			}
 			// summon monster trap
 			case 97:
+			{
 				entity->skill[28] = 1; // is a mechanism
 				if ( entity->skill[1] == 0 )
 				{
@@ -5314,7 +5401,9 @@ void assignActions(map_t* map)
 				entity->flags[INVISIBLE] = true;
 				entity->flags[PASSABLE] = true;
 				entity->flags[NOUPDATE] = true;
+				entity->seedEntityRNG(map_server_rng.getU32());
 				break;
+			}
 			// boulder trap
 			case 38:
 			{
@@ -5379,6 +5468,7 @@ void assignActions(map_t* map)
 			}
 			// headstone
 			case 39:
+			{
 				entity->sizex = 4;
 				entity->sizey = 4;
 				entity->x += 8;
@@ -5392,7 +5482,9 @@ void assignActions(map_t* map)
 					entity->flags[INVISIBLE] = true;
 					entity->flags[PASSABLE] = true;
 				}
+				entity->seedEntityRNG(map_server_rng.getU32());
 				break;
+			}
 			// model tester
 			case 40:
 				entity->behavior = &actRotate;
@@ -5435,6 +5527,7 @@ void assignActions(map_t* map)
             }
 			// boulder
 			case 44:
+			{
 				entity->x += 8;
 				entity->y += 8;
 				entity->sprite = 245;
@@ -5442,7 +5535,9 @@ void assignActions(map_t* map)
 				entity->sizey = 7;
 				entity->behavior = &actBoulder;
 				entity->skill[0] = 1; // BOULDER_STOPPED
+				entity->seedEntityRNG(map_server_rng.getU32());
 				break;
+			}
 			// portal
 			case 45:
 				entity->x += 8;
@@ -5481,6 +5576,7 @@ void assignActions(map_t* map)
 				entity->focalz = -3;
 				entity->sprite = 271;
 				entity->behavior = &actFurniture;
+				entity->seedEntityRNG(map_server_rng.getU32());
 				entity->flags[BURNABLE] = true;
 				entity->furnitureType = FURNITURE_TABLE;
 				if ( entity->furnitureDir != -1 )
@@ -5581,6 +5677,7 @@ void assignActions(map_t* map)
 			}
 			// chair
 			case 60:
+			{
 				entity->furnitureType = FURNITURE_CHAIR; // so everything knows I'm a chair
 				entity->sizex = 2;
 				entity->sizey = 2;
@@ -5590,6 +5687,7 @@ void assignActions(map_t* map)
 				entity->focalz = -5;
 				entity->sprite = 272;
 				entity->behavior = &actFurniture;
+				entity->seedEntityRNG(map_server_rng.getU32());
 				entity->flags[BURNABLE] = true;
 				if ( entity->furnitureDir == -1 )
 				{
@@ -5603,6 +5701,7 @@ void assignActions(map_t* map)
 					entity->yaw = entity->furnitureDir * 45 * (PI / 180.f);
 				}
 				break;
+			}
 			// MC easter egg:
 			case 61:
 				entity->sizex = 2;
@@ -5664,6 +5763,7 @@ void assignActions(map_t* map)
             }
 			// magic trap:
 			case 65:
+			{
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->x += 8;
@@ -5673,7 +5773,9 @@ void assignActions(map_t* map)
 				entity->flags[INVISIBLE] = true;
 				entity->flags[PASSABLE] = true;
 				entity->skill[28] = 1; // is a mechanism
+				entity->seedEntityRNG(map_server_rng.getU32());
 				break;
+			}
 			// wall buster:
 			case 66:
 				entity->sizex = 2;
@@ -6385,6 +6487,7 @@ void assignActions(map_t* map)
 				entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
 				entity->spellTrapRefireRate = entity->spellTrapRefireRate * TICKS_PER_SECOND; // convert seconds to ticks from editor
+				entity->seedEntityRNG(map_server_rng.getU32());
 
 				const int x = ((int)(entity->x)) >> 4;
 				const int y = ((int)(entity->y)) >> 4;
@@ -6432,6 +6535,7 @@ void assignActions(map_t* map)
 			}
 			// arcane chair
 			case 121:
+			{
 				entity->furnitureType = FURNITURE_CHAIR; // so everything knows I'm a chair
 				entity->sizex = 2;
 				entity->sizey = 2;
@@ -6441,6 +6545,7 @@ void assignActions(map_t* map)
 				entity->focalz = -5;
 				entity->sprite = 626;
 				entity->behavior = &actFurniture;
+				entity->seedEntityRNG(map_server_rng.getU32());
 				entity->flags[BURNABLE] = true;
 				if ( entity->furnitureDir == -1 && !entity->yaw )
 				{
@@ -6451,14 +6556,17 @@ void assignActions(map_t* map)
 					entity->yaw = entity->furnitureDir * 45 * (PI / 180.f);
 				}
 				break;
+			}
 			// arcane bed
 			case 122:
+			{
 				entity->furnitureType = FURNITURE_BED; // so everything knows I'm a bed
 				entity->x += 8;
 				entity->y += 8;
 				entity->z = 4;
 				entity->sprite = 627;
 				entity->behavior = &actFurniture;
+				entity->seedEntityRNG(map_server_rng.getU32());
 				entity->flags[BURNABLE] = true;
 				if ( entity->furnitureDir == -1 && !entity->yaw )
 				{
@@ -6486,14 +6594,17 @@ void assignActions(map_t* map)
 					entity->sizey = 8;
 				}
 				break;
+			}
 			// bunk bed
 			case 123:
+			{
 				entity->furnitureType = FURNITURE_BUNKBED; // so everything knows I'm a bunkbed
 				entity->x += 8;
 				entity->y += 8;
 				entity->z = 1.75;
 				entity->sprite = 628;
 				entity->behavior = &actFurniture;
+				entity->seedEntityRNG(map_server_rng.getU32());
 				entity->flags[BURNABLE] = true;
 				if ( entity->furnitureDir == -1 && !entity->yaw )
 				{
@@ -6521,6 +6632,7 @@ void assignActions(map_t* map)
 					entity->sizey = 8;
 				}
 				break;
+			}
 			// column.
 			case 124:
 			{
@@ -6545,6 +6657,7 @@ void assignActions(map_t* map)
 				entity->focalz = -3;
 				entity->sprite = 630;
 				entity->behavior = &actFurniture;
+				entity->seedEntityRNG(map_server_rng.getU32());
 				entity->furnitureType = FURNITURE_PODIUM;
 				entity->flags[BURNABLE] = true;
 				if ( entity->furnitureDir == -1 && !entity->yaw )
@@ -7006,6 +7119,8 @@ void assignActions(map_t* map)
 		}
 	}
 
+	std::vector<Entity*> chests;
+
 	for ( auto node = map->entities->first; node != nullptr; )
 	{
 		Entity* postProcessEntity = (Entity*)node->element;
@@ -7016,9 +7131,127 @@ void assignActions(map_t* map)
 			{
 				textSourceScript.parseScriptInMapGeneration(*postProcessEntity);
 			}
+			if ( postProcessEntity->behavior == &actChest )
+			{
+				chests.push_back(postProcessEntity);
+			}
 		}
 	}
-                            
+
+	if ( true /*currentlevel == 0*/ )
+	{
+		numChests = 0;
+		numMimics = 0;
+	}
+
+	static ConsoleVariable<int> cvar_mimic_chance("/mimic_chance", 2);
+	static ConsoleVariable<bool> cvar_mimic_debug("/mimic_debug", false);
+
+	std::vector<Entity*> mimics;
+	if ( chests.size() > 0 )
+	{
+		if ( mimic_generator.bForceSpawnForCurrentFloor() )
+		{
+			auto chosen = map_rng.rand() % chests.size();
+			if ( allowedGenerateMimicOnChest(chests[chosen]->x / 16, chests[chosen]->y / 16, *map) )
+			{
+				mimics.push_back(chests[chosen]);
+				chests.erase(chests.begin() + chosen);
+			}
+		}
+
+		for ( auto it = chests.begin(); it != chests.end(); )
+		{
+			bool doMimic = false;
+			Entity* chest = *it;
+			if ( allowedGenerateMimicOnChest(chest->x / 16, chest->y / 16, *map) )
+			{
+				int chance = 10;
+				if ( svFlags & SV_FLAG_CHEATS )
+				{
+					chance = std::min(100, std::max(0, *cvar_mimic_chance));
+				}
+				doMimic = chest->entity_rng->rand() % 100 < chance;
+			}
+
+			if ( doMimic )
+			{
+				mimics.push_back(chest);
+				it = chests.erase(it);
+			}
+			else
+			{
+				createChestInventory(chest, chest->chestType);
+				++numChests;
+				++it;
+			}
+		}
+	}
+
+	if ( *cvar_mimic_debug && (svFlags & SV_FLAG_CHEATS) )
+	{
+		messagePlayer(clientnum, MESSAGE_INSPECTION, "Mimics: [%d]", mimics.size());
+	}
+
+	for ( auto chest : mimics )
+	{
+		// mimic
+		numMimics++;
+		Entity* entity = newEntity(10, 1, map->entities, map->creatures);
+		entity->sizex = 4;
+		entity->sizey = 4;
+		entity->x = chest->x;
+		entity->y = chest->y;
+		entity->z = 6;
+		entity->yaw = chest->yaw;
+		entity->behavior = &actMonster;
+		entity->flags[UPDATENEEDED] = true;
+		entity->flags[INVISIBLE] = true;
+		entity->skill[5] = -1;
+		//Assign entity creature list pointer.
+		entity->addToCreatureList(map->creatures);
+
+		Monster monsterType = MIMIC;
+		entity->monsterLookDir = entity->yaw;
+
+		bool monsterIsFixedSprite = true;
+		Stat* myStats = nullptr;
+		if ( multiplayer != CLIENT )
+		{
+			if ( myStats == nullptr )
+			{
+				// need to give the entity its list stuff.
+				// create an empty first node for traversal purposes
+				node_t* node2 = list_AddNodeFirst(&entity->children);
+				node2->element = nullptr;
+				node2->deconstructor = &emptyDeconstructor;
+
+				// Create the stat struct again for the new monster
+				myStats = new Stat(monsterType + 1000);
+				myStats->type = monsterType;
+
+				node2 = list_AddNodeLast(&entity->children);
+				node2->element = myStats;
+				node2->deconstructor = &statDeconstructor;
+				node2->size = sizeof(myStats);
+			}
+
+		}
+
+		Uint32 chestseed = 0;
+		chest->entity_rng->getSeed(&chestseed, sizeof(chestseed));
+		entity->seedEntityRNG(chestseed);
+		createChestInventory(entity, chest->chestType);
+
+		// remove chest entities
+		Entity* parentEntity = uidToEntity(chest->parent);
+		if ( parentEntity )
+		{
+			list_RemoveNode(parentEntity->mynode);    // remove lid
+		}
+		list_RemoveNode(chest->mynode);
+	}
+
     keepInventoryGlobal = svFlags & SV_FLAG_KEEPINVENTORY;
 }
 
@@ -7210,4 +7443,3 @@ int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap, int forcemap
 		return -1;
 	}
 }
-

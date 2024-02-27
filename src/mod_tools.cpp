@@ -30,6 +30,7 @@ See LICENSE for details.
 
 MonsterStatCustomManager monsterStatCustomManager;
 MonsterCurveCustomManager monsterCurveCustomManager;
+BaronyRNG MonsterStatCustomManager::monster_stat_rng;
 GameplayCustomManager gameplayCustomManager;
 GameModeManager_t gameModeManager;
 ItemTooltips_t ItemTooltips;
@@ -438,12 +439,28 @@ bool GameModeManager_t::allowsSaves()
 	{
 		return true;
 	}
+	else if ( currentMode == GAME_MODE_CUSTOM_RUN )
+	{
+		return true;
+	}
 	return false;
+}
+
+void GameModeManager_t::setMode(const GameModes mode)
+{
+	currentMode = mode;
 }
 
 bool GameModeManager_t::allowsStatisticsOrAchievements()
 {
-	if ( currentMode == GAME_MODE_DEFAULT || currentMode == GAME_MODE_TUTORIAL )
+	if ( currentMode == GAME_MODE_CUSTOM_RUN && currentSession.challengeRun.isActive()
+		&& currentSession.challengeRun.lid.find("challenge") != std::string::npos )
+	{
+		return false;
+	}
+	if ( currentMode == GAME_MODE_DEFAULT || currentMode == GAME_MODE_TUTORIAL
+		|| currentMode == GAME_MODE_CUSTOM_RUN 
+		|| currentMode == GAME_MODE_CUSTOM_RUN_ONESHOT )
 	{
 		return true;
 	}
@@ -452,7 +469,13 @@ bool GameModeManager_t::allowsStatisticsOrAchievements()
 
 bool GameModeManager_t::allowsHiscores()
 {
-	if ( currentMode == GAME_MODE_DEFAULT )
+	if ( currentMode == GAME_MODE_CUSTOM_RUN && currentSession.challengeRun.isActive()
+		&& currentSession.challengeRun.lid.find("challenge") != std::string::npos )
+	{
+		return false;
+	}
+	if ( currentMode == GAME_MODE_DEFAULT || currentMode == GAME_MODE_CUSTOM_RUN
+		|| currentMode == GAME_MODE_CUSTOM_RUN_ONESHOT )
 	{
 		return true;
 	}
@@ -461,8 +484,11 @@ bool GameModeManager_t::allowsHiscores()
 
 bool GameModeManager_t::isFastDeathGrave()
 {
-	if ( currentMode == GAME_MODE_TUTORIAL || currentMode == GAME_MODE_TUTORIAL_INIT
-		|| currentMode == GAME_MODE_CUSTOM_RUN )
+	if ( currentMode == GAME_MODE_TUTORIAL || currentMode == GAME_MODE_TUTORIAL_INIT )
+	{
+		return true;
+	}
+	if ( currentMode == GAME_MODE_CUSTOM_RUN )
 	{
 		return true;
 	}
@@ -477,6 +503,11 @@ bool GameModeManager_t::allowsGlobalHiscores()
 		{
 			return true;
 		}
+	}
+	else if ( (currentMode == GAME_MODE_CUSTOM_RUN
+		|| currentMode == GAME_MODE_CUSTOM_RUN_ONESHOT) )
+	{
+		return true;
 	}
 	return false;
 }
@@ -749,7 +780,7 @@ void ItemTooltips_t::readItemsFromFile()
 		return;
 	}
 
-	const int bufSize = 200000;
+	const int bufSize = 240000;
 	char buf[bufSize];
 	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
@@ -1935,8 +1966,8 @@ int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell,
 				{
 					bonus = getSpellbookBonusPercent(players[player]->entity, stats[player], spellbook);
 				}
-				damage += (damage * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], primaryElement)));
-				heal += (heal * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], primaryElement)));
+				damage += (damage * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], primaryElement, spell ? spell->ID : SPELL_NONE)));
+				heal += (heal * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], primaryElement, spell ? spell->ID : SPELL_NONE)));
 			}
 		}
 		if ( spell->ID == SPELL_HEALING || spell->ID == SPELL_EXTRAHEALING )
@@ -2038,7 +2069,7 @@ std::string ItemTooltips_t::getSpellIconText(const int player, Item& item)
 	{
 		int numSummons = 1;
 		if ( (statGetINT(stats[player], players[player]->entity)
-			+ stats[player]->PROFICIENCIES[PRO_MAGIC]) >= SKILL_LEVEL_EXPERT )
+			+ stats[player]->getModifiedProficiency(PRO_MAGIC)) >= SKILL_LEVEL_EXPERT )
 		{
 			numSummons = 2;
 		}
@@ -2782,6 +2813,545 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 				snprintf(buf, sizeof(buf), str.c_str(), manaring,
 					getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
 			}
+			else if ( conditionalAttribute == "EFF_COLDRESIST" )
+			{
+				if ( item.type == HAT_WARM )
+				{
+					real_t coldMultiplier = 1.0;
+					if ( !(players[player]->entity && players[player]->entity->effectShapeshift != NOTHING) )
+					{
+						if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+						{
+							coldMultiplier = std::max(0.0, 0.5 - 0.25 * (abs(item.beatitude)));
+						}
+						else
+						{
+							coldMultiplier = 0.50;
+						}
+					}
+					snprintf(buf, sizeof(buf), str.c_str(), (int)((100 - (int)(coldMultiplier * 100))),
+						getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+				}
+			}
+			else if ( conditionalAttribute == "EFF_TECH_GOGGLES1" )
+			{
+				real_t speedFactor = 1.0;
+				if ( item.type == MASK_TECH_GOGGLES )
+				{
+					bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats[player]);
+					if ( item.beatitude >= 0 || cursedItemIsBuff )
+					{
+						speedFactor = std::min(speedFactor + (1 + abs(item.beatitude)) * 0.5, 3.0);
+					}
+					else
+					{
+						speedFactor = speedFactor + 0.5;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), (int)((speedFactor - 1.0) * 100));
+			}
+			else if ( conditionalAttribute == "EFF_EYEPATCH" )
+			{
+				int bonus = 0;
+				if ( item.type == MASK_EYEPATCH )
+				{
+					bonus = 2;
+					bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats[player]);
+					if ( item.beatitude >= 0 || cursedItemIsBuff )
+					{
+						bonus += abs(item.beatitude);
+					}
+					else if ( item.beatitude < 0 )
+					{
+						bonus = 2;
+					}
+				}
+				bonus = std::max(-6, std::min(bonus, 4));
+				snprintf(buf, sizeof(buf), str.c_str(), bonus);
+			}
+			else if ( conditionalAttribute == "EFF_STRAFE" )
+			{
+				double backpedalMultiplier = 0.25;
+				if ( item.type == HAT_BANDANA )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						backpedalMultiplier += 0.5 * (1 + abs(item.beatitude)) * 0.25;
+						backpedalMultiplier = std::min(0.75, backpedalMultiplier);
+					}
+					else
+					{
+						backpedalMultiplier += 0.5 * (1 + abs(item.beatitude)) * 0.25;
+						backpedalMultiplier = std::min(0.75, backpedalMultiplier);
+					}
+				}
+				int multBackpedal = 100 * (backpedalMultiplier - 0.25);
+				snprintf(buf, sizeof(buf), str.c_str(), multBackpedal);
+			}
+			else if ( conditionalAttribute == "EFF_MASK_GOLDEN" )
+			{
+				int equipmentBonus = 100;
+				if ( item.type == MASK_GOLDEN )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						equipmentBonus -= 50 * (1 + abs(item.beatitude));
+						equipmentBonus = std::max(-50, equipmentBonus);
+					}
+					else
+					{
+						equipmentBonus -= 50 * (abs(item.beatitude));
+						equipmentBonus = std::max(0, equipmentBonus);
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), 100 - equipmentBonus);
+			}
+			else if ( conditionalAttribute == "EFF_PIPE" )
+			{
+				int chance = 0;
+				if ( item.type == MASK_PIPE )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						chance = std::min(25 + (10 * abs(item.beatitude)), 50);
+					}
+					else
+					{
+						chance = std::min(25 + (10 * abs(item.beatitude)), 50);
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), chance);
+			}
+			else if ( conditionalAttribute == "EFF_HOOD_APPRENTICE" )
+			{
+				int chance = 0;
+				if ( item.type == HAT_HOOD_APPRENTICE )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						chance = std::min(30 + (10 * abs(item.beatitude)), 50);
+					}
+					else
+					{
+						chance = std::min(30 + (10 * abs(item.beatitude)), 50);
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), chance);
+			}
+			else if ( conditionalAttribute == "EFF_HOOD_ASSASSIN" )
+			{
+				int bonus = 0;
+				if ( item.type == HAT_HOOD_ASSASSIN )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						bonus = std::min(4 + (2 * abs(item.beatitude)), 8);
+					}
+					else
+					{
+						bonus = 4;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), bonus);
+			}
+			else if ( conditionalAttribute == "EFF_HOOD_WHISPERS" )
+			{
+				/*int bonus = 0;
+				if ( item.type == HAT_HOOD_WHISPERS )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						bonus = std::min(50 + (10 * abs(item.beatitude)), 100);
+					}
+					else
+					{
+						bonus = 50;
+					}
+				}*/
+
+				int val = (stats[player]->getModifiedProficiency(PRO_STEALTH) / 20 + 2) * 2; // backstab dmg
+				if ( skillCapstoneUnlocked(player, PRO_STEALTH) )
+				{
+					val *= 2;
+				}
+
+				real_t equipmentModifier = 0.0;
+				real_t bonusModifier = 1.0;
+				if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+				{
+					equipmentModifier += (std::min(50 + (10 * abs(item.beatitude)), 100)) / 100.0;
+				}
+				else
+				{
+					equipmentModifier = 0.5;
+					bonusModifier = 0.5;
+				}
+				val = ((val * equipmentModifier) * bonusModifier);
+
+				snprintf(buf, sizeof(buf), str.c_str(), val);
+			}
+			else if ( conditionalAttribute == "EFF_THORNS" )
+			{
+				int dmg = 0;
+				if ( item.type == MASK_MOUTHKNIFE )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						dmg = (1 + abs(item.beatitude)) * 2;
+					}
+					else
+					{
+						dmg = -2 * (1 + abs(item.beatitude));
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), abs(dmg));
+			}
+			else if ( conditionalAttribute == "EFF_CHEF" )
+			{
+				real_t foodMult = 1.0;
+				if ( item.type == HAT_CHEF )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						if ( svFlags & SV_FLAG_HUNGER )
+						{
+							foodMult += 0.2 + abs(item.beatitude) * 0.1;
+						}
+						else
+						{
+							foodMult += 0.5 + abs(item.beatitude) * 0.25;
+						}
+					}
+					else
+					{
+						foodMult += 0.2;
+					}
+					foodMult = std::max(0.2, foodMult);
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), (int)(foodMult * 100) - 100);
+			}
+			else if ( conditionalAttribute == "EFF_CHEF2" )
+			{
+				int chance = 0;
+				if ( item.type == HAT_CHEF )
+				{
+					chance = 20;
+					bool cursedChef = false;
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						chance -= 5 * abs(item.beatitude);
+						chance = std::max(10, chance);
+					}
+					else
+					{
+						chance -= 5 * abs(item.beatitude);
+						chance = std::max(10, chance);
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), 100.0 / chance);
+			}
+			else if ( conditionalAttribute == "EFF_INSPIRATION" )
+			{
+				int inspiration = 0;
+				if ( item.type == HAT_LAURELS
+					|| item.type == HAT_TURBAN
+					|| item.type == HAT_CROWN )
+				{
+					if ( item.beatitude >= 0 )
+					{
+						inspiration = std::min(300, 25 + (item.beatitude * 25));
+					}
+					else if ( shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						inspiration = std::min(300, 25 + (abs(item.beatitude) * 25));
+					}
+					else
+					{
+						inspiration = 25;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), inspiration);
+			}
+			else if ( conditionalAttribute == "EFF_CELEBRATION" )
+			{
+				int hpMod = 0;
+				if ( item.type == HAT_CROWN )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						hpMod += std::min(50, ((20 + 10 * (abs(item.beatitude)))));
+					}
+					else
+					{
+						hpMod = 20;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), hpMod);
+			}
+			else if ( conditionalAttribute == "EFF_FOLLOWER_REGEN" )
+			{
+				int regen = 0;
+				if ( item.type == HAT_LAURELS )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						regen = 1 + abs(item.beatitude) * 1;
+					}
+					else
+					{
+						regen = 1;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), 2 * regen);
+			}
+			else if ( conditionalAttribute == "EFF_FOLLOWER_TRAPRESIST" )
+			{
+				int resist = 0;
+				if ( item.type == HAT_TURBAN )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						resist = std::min(100, 50 + abs(item.beatitude) * 25);
+					}
+					else
+					{
+						resist = 50;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), resist);
+			}
+			else if ( conditionalAttribute == "EFF_FOLLOWER_DMGRESIST" )
+			{
+				int resist = 0;
+				if ( item.type == HAT_CROWNED_HELM )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						resist = std::min(50, 20 + abs(item.beatitude) * 10);
+					}
+					else
+					{
+						resist = 20;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), resist);
+			}
+			else if ( conditionalAttribute == "EFF_SPRIG" )
+			{
+				real_t mult = 0.0;
+				if ( item.type == MASK_GRASS_SPRIG )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						mult = std::min(1.25 + (0.25 * abs(item.beatitude)), 2.0);
+					}
+					else
+					{
+						mult = 1.25;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), ((1.0 / mult)));
+			}
+			else if ( conditionalAttribute == "EFF_SKILL_MELEE_STEEL" )
+			{
+				int equipmentBonus = 0;
+				if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+				{
+					equipmentBonus += std::min(Stat::maxEquipmentBonusToSkill, (1 + abs(item.beatitude)) * 5);
+				}
+				else
+				{
+					equipmentBonus += 5;
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), equipmentBonus);
+			}
+			else if ( conditionalAttribute == "EFF_SKILL_MELEE_ARTIFACT" )
+			{
+				int equipmentBonus = 0;
+				if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+				{
+					equipmentBonus += std::min(Stat::maxEquipmentBonusToSkill, (1 + abs(item.beatitude)) * 10);
+				}
+				else
+				{
+					equipmentBonus += 10;
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), equipmentBonus);
+			}
+			else if ( conditionalAttribute == "EFF_BOUNTY" )
+			{
+				int equipmentBonus = 0;
+				if ( item.type == HAT_BOUNTYHUNTER )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						if ( abs(item.beatitude) >= 2 )
+						{
+							equipmentBonus += 2;
+						}
+						else
+						{
+							equipmentBonus += 1;
+						}
+					}
+					else
+					{
+						equipmentBonus += 1;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), equipmentBonus);
+			}
+			else if ( conditionalAttribute == "EFF_RANGED_DISTANCE" )
+			{
+				int dropOffModifier = 0;
+				if ( item.type == HAT_BYCOCKET )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						dropOffModifier = std::min(3, 1 + abs(item.beatitude));
+					}
+					else
+					{
+						dropOffModifier = 1;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), dropOffModifier);
+			}
+			else if ( conditionalAttribute == "EFF_RANGED_FIRERATE" )
+			{
+				int equipmentBonus = 0;
+				if ( item.type == HAT_BYCOCKET )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						equipmentBonus -= std::min(30, 10 + 10 * abs(item.beatitude));
+					}
+					else
+					{
+						equipmentBonus -= 30;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), -equipmentBonus);
+			}
+			else if ( conditionalAttribute.find("EFF_SKILL_") != std::string::npos )
+			{
+				int skill = std::stoi(conditionalAttribute.substr(strlen("EFF_SKILL_"), std::string::npos));
+				int equipmentBonus = 0;
+				if ( (skill == PRO_TRADING && item.type == MASK_GOLDEN)
+					|| (skill == PRO_LEADERSHIP && item.type == HAT_PLUMED_CAP)
+					|| (skill == PRO_RANGED && item.type == HAT_BOUNTYHUNTER)
+					|| (skill == PRO_STEALTH && item.type == HAT_HOOD_WHISPERS)
+					|| (skill == PRO_SPELLCASTING && (item.type == HAT_CIRCLET || item.type == HAT_CIRCLET_WISDOM))
+					|| (skill == PRO_ALCHEMY && item.type == MASK_HAZARD_GOGGLES) )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						equipmentBonus += std::min(Stat::maxEquipmentBonusToSkill, (1 + abs(item.beatitude)) * 10);
+					}
+					else
+					{
+						equipmentBonus += 10;
+					}
+				}
+
+				std::string skillName = "";
+				for ( auto s : Player::SkillSheet_t::skillSheetData.skillEntries )
+				{
+					if ( s.skillId == skill )
+					{
+						skillName = s.name;
+						break;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), equipmentBonus, skillName.c_str());
+			}
+			else if ( conditionalAttribute == "EFF_BOULDER_RES" )
+			{
+				real_t mult = 1.0;
+				if ( item.type == HAT_TOPHAT )
+				{
+					mult = 0.0;
+				}
+				else if ( item.type == HELM_MINING )
+				{
+					mult = 0.5;
+					bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats[player]);
+					if ( item.beatitude >= 0 || cursedItemIsBuff )
+					{
+						mult -= 0.25 * abs(item.beatitude);
+						mult = std::max(0.0, mult);
+					}
+					else
+					{
+						mult = 0.5;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), 100 - (int)(mult * 100));
+			}
+			else if ( conditionalAttribute.find("EFF_PWR") != std::string::npos )
+			{
+				real_t bonus = 0.0;
+				if ( conditionalAttribute == "EFF_PWR" )
+				{
+					if ( item.type == HAT_CIRCLET
+						|| item.type == HAT_CIRCLET_WISDOM )
+					{
+						if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+						{
+							bonus += (0.05 + (0.05 * abs(item.beatitude)));
+						}
+						else
+						{
+							bonus = 0.05;
+						}
+					}
+					else if ( item.type == HAT_MITER || item.type == HAT_HEADDRESS )
+					{
+						if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+						{
+							bonus += (0.10 + (0.05 * abs(item.beatitude)));
+						}
+						else
+						{
+							bonus = 0.1;
+						}
+					}
+					snprintf(buf, sizeof(buf), str.c_str(), (int)(bonus * 100),
+						getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+				}
+				else if ( conditionalAttribute == "EFF_PWR_DMG" )
+				{
+					if ( item.type == HAT_MITER || item.type == HAT_HEADDRESS )
+					{
+						if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+						{
+							bonus += (0.10 + (0.05 * abs(item.beatitude)));
+						}
+						else
+						{
+							bonus = 0.1;
+						}
+					}
+					snprintf(buf, sizeof(buf), str.c_str(), (int)(bonus * 100),
+						getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+				}
+				else if ( conditionalAttribute == "EFF_PWR_HEAL" )
+				{
+					if ( item.type == HAT_MITER || item.type == HAT_HEADDRESS )
+					{
+						if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+						{
+							bonus += (0.10 + (0.05 * abs(item.beatitude)));
+						}
+						else
+						{
+							bonus = 0.1;
+						}
+					}
+					snprintf(buf, sizeof(buf), str.c_str(), (int)(bonus * 100),
+						getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+				}
+			}
 			else if ( conditionalAttribute.find("EFF_ARTIFACT_") != std::string::npos )
 			{
 				real_t amount = 0.0;
@@ -3036,7 +3606,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("shield_durability") == 0 )
 		{
-			int skillLVL = stats[player]->PROFICIENCIES[PRO_SHIELD] / 10;
+			int skillLVL = stats[player]->getModifiedProficiency(PRO_SHIELD) / 10;
 			int durabilityBonus = skillLVL * 10;
 			if ( itemCategory(&item) == ARMOR )
 			{
@@ -3050,7 +3620,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("knuckle_skill_modifier") == 0 )
 		{
-			int atk = (stats[player]->PROFICIENCIES[PRO_UNARMED] / 20); // 0 - 5
+			int atk = (stats[player]->getModifiedProficiency(PRO_UNARMED) / 20); // 0 - 5
 			snprintf(buf, sizeof(buf), str.c_str(), atk, getItemProficiencyName(PRO_UNARMED).c_str());
 		}
 		else if ( detailTag.compare("knuckle_knockback_modifier") == 0 )
@@ -3069,7 +3639,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("weapon_durability") == 0 )
 		{
-			int skillLVL = stats[player]->PROFICIENCIES[PRO_UNARMED] / 20;
+			int skillLVL = stats[player]->getModifiedProficiency(PRO_UNARMED) / 20;
 			int durabilityBonus = skillLVL * 20;
 			snprintf(buf, sizeof(buf), str.c_str(), durabilityBonus, getItemProficiencyName(PRO_UNARMED).c_str());
 		}
@@ -3126,6 +3696,73 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				int radius = std::max(3, 11 + 5 * beatitude);
 				snprintf(buf, sizeof(buf), str.c_str(), radius, getItemBeatitudeAdjective(item.beatitude).c_str());
 			}
+			else if ( detailTag == "EFF_HOOD_WHISPERS" )
+			{
+				//int val = (stats[player]->getModifiedProficiency(PRO_STEALTH) / 20 + 2) * 2; // backstab dmg
+				//if ( skillCapstoneUnlocked(player, PRO_STEALTH) )
+				//{
+				//	val *= 2;
+				//}
+
+				//real_t equipmentModifier = 0.0;
+				//real_t bonusModifier = 1.0;
+				//if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+				//{
+				//	equipmentModifier += (std::min(50 + (10 * abs(item.beatitude)), 100)) / 100.0;
+				//}
+				//else
+				//{
+				//	equipmentModifier = 0.5;
+				//	bonusModifier = 0.5;
+				//}
+				//val = ((val * equipmentModifier) * bonusModifier);
+
+				std::string skillName = "";
+				for ( auto s : Player::SkillSheet_t::skillSheetData.skillEntries )
+				{
+					if ( s.skillId == PRO_STEALTH )
+					{
+						skillName = s.name;
+						break;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), skillName.c_str());
+			}
+			else if ( detailTag == "EFF_SILKEN_BOW" )
+			{
+				int baseBonus = 5;
+				int chanceBonus = 0;
+				if ( item.type == HAT_SILKEN_BOW )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						baseBonus = 3 + 1 * std::min(5, abs(item.beatitude));
+						chanceBonus += std::min(10, (stats[player]->getModifiedProficiency(PRO_LEADERSHIP)
+							+ std::max(0, 3 * statGetCHR(stats[player], players[player]->entity))) / 10);
+
+						if ( baseBonus + chanceBonus > 15 )
+						{
+							chanceBonus -= (baseBonus + chanceBonus) - 15;
+						}
+					}
+					else
+					{
+						baseBonus = 1;
+					}
+				}
+
+				std::string skillName = "";
+				for ( auto s : Player::SkillSheet_t::skillSheetData.skillEntries )
+				{
+					if ( s.skillId == PRO_LEADERSHIP )
+					{
+						skillName = s.name;
+						break;
+					}
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), baseBonus,
+					chanceBonus, skillName.c_str(), getItemStatShortName(std::string("CHR")).c_str());
+			}
 			else
 			{
 				return;
@@ -3167,7 +3804,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("thrown_skill_modifier") == 0 )
 		{
-			int skillLVL = stats[player]->PROFICIENCIES[proficiency] / 10;
+			int skillLVL = stats[player]->getModifiedProficiency(proficiency) / 10;
 			snprintf(buf, sizeof(buf), str.c_str(), skillLVL,
 				getItemProficiencyName(proficiency).c_str());
 		}
@@ -3249,7 +3886,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("thrown_skill_modifier") == 0 )
 		{
-			int skillLVL = stats[player]->PROFICIENCIES[proficiency] / 20;
+			int skillLVL = stats[player]->getModifiedProficiency(proficiency) / 20;
 			snprintf(buf, sizeof(buf), str.c_str(), static_cast<int>(100 * thrownDamageSkillMultipliers[std::min(skillLVL, 5)] - 100),
 				getItemProficiencyName(proficiency).c_str());
 		}
@@ -3324,12 +3961,12 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			if ( proficiency == PRO_POLEARM )
 			{
 				//int weaponEffectiveness = -8 + (stats[player]->PROFICIENCIES[proficiency] / 3); // -8% to +25%
-				int weaponEffectiveness = -25 + (stats[player]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+				int weaponEffectiveness = -25 + (stats[player]->getModifiedProficiency(proficiency) / 2); // -25% to +25%
 				snprintf(buf, sizeof(buf), str.c_str(), weaponEffectiveness, getItemProficiencyName(proficiency).c_str());
 			}
 			else
 			{
-				int weaponEffectiveness = -25 + (stats[player]->PROFICIENCIES[proficiency] / 2); // -25% to +25%
+				int weaponEffectiveness = -25 + (stats[player]->getModifiedProficiency(proficiency) / 2); // -25% to +25%
 				snprintf(buf, sizeof(buf), str.c_str(), weaponEffectiveness, getItemProficiencyName(proficiency).c_str());
 			}
 		}
@@ -3353,7 +3990,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("weapon_durability") == 0 )
 		{
-			int skillLVL = stats[player]->PROFICIENCIES[proficiency] / 20;
+			int skillLVL = stats[player]->getModifiedProficiency(proficiency) / 20;
 			int durabilityBonus = skillLVL * 20;
 			snprintf(buf, sizeof(buf), str.c_str(), durabilityBonus, getItemProficiencyName(proficiency).c_str());
 		}
@@ -3475,7 +4112,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("potion_multiplier") == 0 )
 		{
-			int skillLVL = stats[player]->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			int skillLVL = stats[player]->getModifiedProficiency(PRO_ALCHEMY) / 20;
 			snprintf(buf, sizeof(buf), str.c_str(), static_cast<int>(100 * potionDamageSkillMultipliers[std::min(skillLVL, 5)] - 100), 
 				getItemPotionHarmAllyAdjective(item).c_str());
 		}
@@ -3485,8 +4122,8 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		Sint32 PER = statGetPER(stats[player], players[player]->entity);
 		if ( detailTag.compare("lockpick_chestsdoors_unlock_chance") == 0 )
 		{
-			int chance = stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 2; // lockpick chests/doors
-			if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] == SKILL_LEVEL_LEGENDARY )
+			int chance = stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 2; // lockpick chests/doors
+			if ( stats[player]->getModifiedProficiency(PRO_LOCKPICKING) == SKILL_LEVEL_LEGENDARY )
 			{
 				chance = 100;
 			}
@@ -3494,13 +4131,13 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("lockpick_chests_scrap_chance") == 0 )
 		{
-			int chance = std::min(100, stats[player]->PROFICIENCIES[PRO_LOCKPICKING] + 50);
+			int chance = std::min(100, stats[player]->getModifiedProficiency(PRO_LOCKPICKING) + 50);
 			snprintf(buf, sizeof(buf), str.c_str(), chance);
 		}
 		else if ( detailTag.compare("lockpick_arrow_disarm") == 0 )
 		{
-			int chance = (100 - 100 / (std::max(1, static_cast<int>(stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10)))); // disarm arrow traps
-			if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_BASIC )
+			int chance = (100 - 100 / (std::max(1, static_cast<int>(stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 10)))); // disarm arrow traps
+			if ( stats[player]->getModifiedProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_BASIC )
 			{
 				chance = 0;
 			}
@@ -3509,13 +4146,13 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		else if ( detailTag.compare("lockpick_automaton_disarm") == 0 )
 		{
 			int chance = 0;
-			if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_EXPERT )
+			if ( stats[player]->getModifiedProficiency(PRO_LOCKPICKING) >= SKILL_LEVEL_EXPERT )
 			{
 				chance = 100; // lockpick automatons
 			}
 			else
 			{
-				chance = (100 - 100 / (static_cast<int>(stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 20 + 1))); // lockpick automatons
+				chance = (100 - 100 / (static_cast<int>(stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 20 + 1))); // lockpick automatons
 			}
 			snprintf(buf, sizeof(buf), str.c_str(), chance);
 		}
@@ -3529,8 +4166,8 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		Sint32 PER = statGetPER(stats[player], players[player]->entity);
 		if ( detailTag.compare("lockpick_arrow_disarm") == 0 )
 		{
-			int chance = (100 - 100 / (std::max(1, static_cast<int>(stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10)))); // disarm arrow traps
-			if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_BASIC )
+			int chance = (100 - 100 / (std::max(1, static_cast<int>(stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 10)))); // disarm arrow traps
+			if ( stats[player]->getModifiedProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_BASIC )
 			{
 				chance = 0;
 			}
@@ -3639,7 +4276,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
 			if ( !spell ) { return; }
 
-			int skillLVL = std::min(100, stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity));
+			int skillLVL = std::min(100, stats[player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[player], players[player]->entity));
 			if ( !playerLearnedSpellbook(player, &item) && (spell && spell->difficulty > skillLVL) )
 			{
 				str.insert((size_t)0, 1, '^'); // red line character
@@ -3659,13 +4296,13 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
 			if ( !spell ) { return; }
 
-			int skillLVL = std::min(100, stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity));
+			int skillLVL = std::min(100, stats[player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[player], players[player]->entity));
 			if ( !playerLearnedSpellbook(player, &item) && (spell && spell->difficulty > skillLVL) )
 			{
 				str.insert((size_t)0, 1, '^'); // red line character
 			}
 			Sint32 INT = stats[player] ? statGetINT(stats[player], players[player]->entity) : 0;
-			Sint32 skill = stats[player] ? stats[player]->PROFICIENCIES[PRO_MAGIC] : 0;
+			Sint32 skill = stats[player] ? stats[player]->getModifiedProficiency(PRO_MAGIC) : 0;
 			Sint32 total = std::min(SKILL_LEVEL_LEGENDARY, INT + skill);
 			snprintf(buf, sizeof(buf), str.c_str(), INT + skill, getProficiencyLevelName(INT + skill).c_str());
 		}
@@ -3681,14 +4318,18 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			spell_t* spell = getSpellFromItem(player, &item);
 			if ( !spell ) { return; }
 
-			int totalDamage = getSpellDamageOrHealAmount(player, spell, nullptr);
+			//int totalDamage = getSpellDamageOrHealAmount(player, spell, nullptr);
 			Sint32 oldINT = stats[player]->INT;
 			stats[player]->INT = 0;
 
-			int baseDamage = getSpellDamageOrHealAmount(player, spell, nullptr);
+			int baseDamage = getSpellDamageOrHealAmount(-1, spell, nullptr);
+
+			real_t bonusEquipPercent = 100.0 * getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], nullptr, spell ? spell->ID : SPELL_NONE);
+
 			stats[player]->INT = oldINT;
 
-			real_t bonusPercent = 100.0 * getBonusFromCasterOfSpellElement(players[player]->entity, stats[player]);
+			real_t bonusINTPercent = 100.0 * getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], nullptr, spell ? spell->ID : SPELL_NONE);
+			bonusINTPercent -= bonusEquipPercent;
 
 			std::string damageOrHealing = adjectives["spell_strings"]["damage"];
 			if ( spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_HEALING)
@@ -3698,18 +4339,18 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			}
 			std::string attribute("INT");
 			snprintf(buf, sizeof(buf), str.c_str(), damageOrHealing.c_str(), baseDamage, damageOrHealing.c_str(), 
-				bonusPercent, damageOrHealing.c_str(), getItemStatShortName(attribute).c_str());
+				bonusINTPercent, damageOrHealing.c_str(), getItemStatShortName(attribute).c_str(), bonusEquipPercent, damageOrHealing.c_str());
 		}
 		else if ( detailTag.compare("spell_cast_success") == 0 )
 		{
-			int spellcastingAbility = std::min(std::max(0, stats[player]->PROFICIENCIES[PRO_SPELLCASTING]
+			int spellcastingAbility = std::min(std::max(0, stats[player]->getModifiedProficiency(PRO_SPELLCASTING)
 				+ statGetINT(stats[player], players[player]->entity)), 100);
 			int chance = ((10 - (spellcastingAbility / 10)) * 20 / 3.0); // 33% after rolling to fizzle, 66% success
 			snprintf(buf, sizeof(buf), str.c_str(), chance);
 		}
 		else if ( detailTag.compare("spell_extramana_chance") == 0 )
 		{
-			int spellcastingAbility = std::min(std::max(0, stats[player]->PROFICIENCIES[PRO_SPELLCASTING]
+			int spellcastingAbility = std::min(std::max(0, stats[player]->getModifiedProficiency(PRO_SPELLCASTING)
 				+ statGetINT(stats[player], players[player]->entity)), 100);
 			int chance = (10 - (spellcastingAbility / 10)) * 10;
 			snprintf(buf, sizeof(buf), str.c_str(), chance);
@@ -3717,7 +4358,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		else if ( detailTag.compare("attribute_spell_charm") == 0 )
 		{
 			int leaderChance = ((statGetCHR(stats[player], players[player]->entity) + 
-				stats[player]->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 5;
+				stats[player]->getModifiedProficiency(PRO_LEADERSHIP)) / 20) * 5;
 			int intChance = (statGetINT(stats[player], players[player]->entity) * 2);
 			snprintf(buf, sizeof(buf), str.c_str(), intChance, leaderChance);
 		}
@@ -3745,7 +4386,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		else if ( detailTag.compare("attribute_spell_charm") == 0 )
 		{
 			int leaderChance = ((statGetCHR(stats[player], players[player]->entity) +
-				stats[player]->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 10;
+				stats[player]->getModifiedProficiency(PRO_LEADERSHIP)) / 20) * 10;
 			snprintf(buf, sizeof(buf), str.c_str(), leaderChance);
 		}
 		else
@@ -9027,3 +9668,784 @@ int Mods::createBlankModDirectory(std::string foldername)
 	}
 	return 2;
 }
+
+EquipmentModelOffsets_t EquipmentModelOffsets;
+
+bool EquipmentModelOffsets_t::modelOffsetExists(int monster, int sprite)
+{
+	auto find = monsterModelsMap.find(monster);
+	if ( find != monsterModelsMap.end() )
+	{
+		auto find2 = find->second.find(sprite);
+		if ( find2 != find->second.end() )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+EquipmentModelOffsets_t::ModelOffset_t& EquipmentModelOffsets_t::getModelOffset(int monster, int sprite)
+{
+	return monsterModelsMap[monster][sprite];
+}
+
+bool EquipmentModelOffsets_t::expandHelmToFitMask(int monster, int helmSprite, int maskSprite)
+{
+	if ( modelOffsetExists(monster, maskSprite) )
+	{
+		auto& maskOffset = getModelOffset(monster, maskSprite);
+		if ( maskOffset.oversizedMask )
+		{
+			if ( modelOffsetExists(monster, helmSprite) )
+			{
+				auto& helmOffset = getModelOffset(monster, helmSprite);
+				if ( helmOffset.expandToFitMask )
+				{
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+bool EquipmentModelOffsets_t::maskHasAdjustmentForExpandedHelm(int monster, int helmSprite, int maskSprite)
+{
+	if ( modelOffsetExists(monster, maskSprite) )
+	{
+		auto& maskOffset = getModelOffset(monster, maskSprite);
+		if ( maskOffset.adjustToExpandedHelm.find(helmSprite) != maskOffset.adjustToExpandedHelm.end() )
+		{
+			return true;
+		}
+		else if ( maskOffset.adjustToExpandedHelm.find(-1) != maskOffset.adjustToExpandedHelm.end() )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+EquipmentModelOffsets_t::ModelOffset_t::AdditionalOffset_t EquipmentModelOffsets_t::getExpandHelmOffset(int monster, 
+	int helmSprite, int maskSprite)
+{
+	if ( modelOffsetExists(monster, helmSprite) )
+	{
+		auto& helmOffset = getModelOffset(monster, helmSprite);
+		if ( helmOffset.adjustToOversizeMask.find(maskSprite) != helmOffset.adjustToOversizeMask.end() )
+		{
+			return helmOffset.adjustToOversizeMask[maskSprite];
+		}
+		else if ( helmOffset.adjustToOversizeMask.find(-1) != helmOffset.adjustToOversizeMask.end() )
+		{
+			return helmOffset.adjustToOversizeMask[-1];
+		}
+	}
+	return EquipmentModelOffsets_t::ModelOffset_t::AdditionalOffset_t();
+}
+
+EquipmentModelOffsets_t::ModelOffset_t::AdditionalOffset_t EquipmentModelOffsets_t::getMaskOffsetForExpandHelm(int monster, 
+	int helmSprite, int maskSprite)
+{
+	if ( modelOffsetExists(monster, maskSprite) )
+	{
+		auto& maskOffset = getModelOffset(monster, maskSprite);
+		if ( maskOffset.adjustToExpandedHelm.find(helmSprite) != maskOffset.adjustToExpandedHelm.end() )
+		{
+			return maskOffset.adjustToExpandedHelm[helmSprite];
+		}
+		else if ( maskOffset.adjustToExpandedHelm.find(-1) != maskOffset.adjustToExpandedHelm.end() )
+		{
+			return maskOffset.adjustToExpandedHelm[-1];
+		}
+	}
+	return EquipmentModelOffsets_t::ModelOffset_t::AdditionalOffset_t();
+}
+
+void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterType)
+{
+	if ( monsterType == NOTHING )
+	{
+		for ( int i = 0; i < NUMMONSTERS; ++i )
+		{
+			if ( monstertypename[i] == monsterName )
+			{
+				monsterType = i;
+				break;
+			}
+		}
+	}
+
+	if ( monsterType == NOTHING )
+	{
+		return;
+	}
+
+	std::string filename = "models/creatures/";
+	filename += monstertypename[monsterType];
+	filename += "/model_positions.json";
+
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		//printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		return;
+	}
+
+	static char buf[32000];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.IsObject() )
+	{
+		return;
+	}
+	if ( !d.HasMember("version") || !d.HasMember("items") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	monsterModelsMap[monsterType].clear();
+
+	real_t baseFocalX = 0.0;
+	real_t baseFocalY = 0.0;
+	real_t baseFocalZ = 0.0;
+	if ( d.HasMember("base_offsets") )
+	{
+		if ( d["base_offsets"].HasMember("focalx") )
+		{
+			baseFocalX = d["base_offsets"]["focalx"].GetDouble();
+		}
+		if ( d["base_offsets"].HasMember("focaly") )
+		{
+			baseFocalY = d["base_offsets"]["focaly"].GetDouble();
+		}
+		if ( d["base_offsets"].HasMember("focalz") )
+		{
+			baseFocalZ = d["base_offsets"]["focalz"].GetDouble();
+		}
+	}
+
+	auto& itemsArr = d["items"];
+	for ( auto it = itemsArr.Begin(); it != itemsArr.End(); ++it )
+	{
+		for ( auto it2 = it->MemberBegin(); it2 != it->MemberEnd(); ++it2 )
+		{
+			std::string itemName = it2->name.GetString();
+			if ( ItemTooltips.itemNameStringToItemID.find(itemName) == ItemTooltips.itemNameStringToItemID.end() )
+			{
+				continue;
+			}
+			ItemType itemType = (ItemType)ItemTooltips.itemNameStringToItemID[itemName];
+			std::vector<int> models;
+			if ( it2->value.HasMember("models") )
+			{
+				if ( it2->value["models"].IsArray() )
+				{
+					if ( it2->value["models"].Size() == 0 )
+					{
+						for ( int i = items[itemType].index; i < items[itemType].index + items[itemType].variations; ++i )
+						{
+							models.push_back(i);
+						}
+					}
+					else
+					{
+						for ( auto itArr = it2->value["models"].Begin(); itArr != it2->value["models"].End(); ++itArr )
+						{
+							if ( itArr->IsInt() )
+							{
+								models.push_back(itArr->GetInt());
+							}
+						}
+					}
+				}
+			}
+
+			real_t focalx = it2->value["focalx"].GetDouble();
+			real_t focaly = it2->value["focaly"].GetDouble();
+			real_t focalz = it2->value["focalz"].GetDouble();
+			real_t scalex = 0.0;
+			if ( it2->value.HasMember("scalex") )
+			{
+				scalex = it2->value["scalex"].GetDouble();
+			}
+			real_t scaley = 0.0;
+			if ( it2->value.HasMember("scaley") )
+			{
+				scaley = it2->value["scaley"].GetDouble();
+			}
+			real_t scalez = 0.0;
+			if ( it2->value.HasMember("scalez") )
+			{
+				scalez = it2->value["scalez"].GetDouble();
+			}
+			real_t rotation = it2->value["rotation"].GetDouble();
+			real_t pitch = it2->value.HasMember("pitch") ?
+				it2->value["pitch"].GetDouble() : 0.0;
+			int limbsIndex = it2->value["limbs_index"].GetInt();
+			bool oversizedMask = it2->value.HasMember("oversize_mask") ? 
+				it2->value["oversize_mask"].GetBool() : false;
+			bool expandToFitMask = it2->value.HasMember("expand_to_fit_oversize_mask") ?
+				it2->value["expand_to_fit_oversize_mask"].GetBool() : false;
+
+			for ( auto index : models )
+			{
+				auto& entry = monsterModelsMap[monsterType][index];
+				entry.focalx = focalx + baseFocalX;
+				entry.focaly = focaly + baseFocalY;
+				entry.focalz = focalz + baseFocalZ;
+				entry.scalex = scalex;
+				entry.scaley = scaley;
+				entry.scalez = scalez;
+				entry.rotation = rotation * (PI / 2);
+				entry.pitch = pitch * (PI / 2);
+				entry.limbsIndex = limbsIndex;
+				entry.expandToFitMask = expandToFitMask;
+				entry.oversizedMask = oversizedMask;
+
+				if ( it2->value.HasMember("adjust_on_oversize_mask") )
+				{
+					auto& itr = it2->value["adjust_on_oversize_mask"];
+					for ( auto adjItr = itr.Begin(); adjItr != itr.End(); ++adjItr )
+					{
+						std::vector<int> models;
+						if ( (*adjItr)["mask_sprite"].Size() == 0 )
+						{
+							models.push_back(-1);
+						}
+						else
+						{
+							for ( auto itr2 = (*adjItr)["mask_sprite"].Begin(); itr2 != (*adjItr)["mask_sprite"].End(); ++itr2 )
+							{
+								models.push_back(itr2->GetInt());
+							}
+						}
+						for ( auto model : models )
+						{
+							if ( (*adjItr).HasMember("focalx") )
+							{
+								entry.adjustToOversizeMask[model].focalx = (*adjItr)["focalx"].GetDouble();
+							}
+							if ( (*adjItr).HasMember("focaly") )
+							{
+								entry.adjustToOversizeMask[model].focaly = (*adjItr)["focaly"].GetDouble();
+							}
+							if ( (*adjItr).HasMember("focalz") )
+							{
+								entry.adjustToOversizeMask[model].focalz = (*adjItr)["focalz"].GetDouble();
+							}
+							if ( (*adjItr).HasMember("scalex") )
+							{
+								entry.adjustToOversizeMask[model].scalex = (*adjItr)["scalex"].GetDouble();
+							}
+							if ( (*adjItr).HasMember("scaley") )
+							{
+								entry.adjustToOversizeMask[model].scaley = (*adjItr)["scaley"].GetDouble();
+							}
+							if ( (*adjItr).HasMember("scalez") )
+							{
+								entry.adjustToOversizeMask[model].scalez = (*adjItr)["scalez"].GetDouble();
+							}
+						}
+					}
+				}
+
+				if ( it2->value.HasMember("adjust_on_expand_helm") )
+				{
+					auto& itr = it2->value["adjust_on_expand_helm"];
+					for ( auto adjItr = itr.Begin(); adjItr != itr.End(); ++adjItr )
+					{
+						std::vector<int> models;
+						if ( (*adjItr)["helm_sprite"].Size() == 0 )
+						{
+							models.push_back(-1);
+						}
+						else
+						{
+							for ( auto itr2 = (*adjItr)["helm_sprite"].Begin(); itr2 != (*adjItr)["helm_sprite"].End(); ++itr2 )
+							{
+								models.push_back(itr2->GetInt());
+							}
+						}
+						for ( auto model : models )
+						{
+							if ( (*adjItr).HasMember("focalx") )
+							{
+								entry.adjustToExpandedHelm[model].focalx = (*adjItr)["focalx"].GetDouble();
+							}
+							if ( (*adjItr).HasMember("focaly") )
+							{
+								entry.adjustToExpandedHelm[model].focaly = (*adjItr)["focaly"].GetDouble();
+							}
+							if ( (*adjItr).HasMember("focalz") )
+							{
+								entry.adjustToExpandedHelm[model].focalz = (*adjItr)["focalz"].GetDouble();
+							}
+							if ( (*adjItr).HasMember("scalex") )
+							{
+								entry.adjustToExpandedHelm[model].scalex = (*adjItr)["scalex"].GetDouble();
+							}
+							if ( (*adjItr).HasMember("scaley") )
+							{
+								entry.adjustToExpandedHelm[model].scaley = (*adjItr)["scaley"].GetDouble();
+							}
+							if ( (*adjItr).HasMember("scalez") )
+							{
+								entry.adjustToExpandedHelm[model].scalez = (*adjItr)["scalez"].GetDouble();
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
+}
+
+#ifndef EDITOR
+void GameModeManager_t::CurrentSession_t::ChallengeRun_t::updateKillEvent(Entity* entity)
+{
+	if ( multiplayer == CLIENT || !isActive() || !entity )
+	{
+		return;
+	}
+
+	if ( gameModeManager.currentSession.challengeRun.numKills < 0 )
+	{
+		return;
+	}
+	if ( !(eventType == CHEVENT_KILLS_MONSTERS
+		|| eventType == CHEVENT_KILLS_FURNITURE) )
+	{
+		return;
+	}
+
+	if ( entity->behavior == &actMonster && eventType != CHEVENT_KILLS_MONSTERS )
+	{
+		return;
+	}
+	if ( entity->behavior == &actFurniture && eventType != CHEVENT_KILLS_FURNITURE )
+	{
+		return;
+	}
+
+	auto& killTotal = gameStatistics[STATISTICS_TOTAL_KILLS];
+	killTotal++;
+
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		achievementObserver.playerAchievements[i].totalKillsTickUpdate = true;
+	}
+
+	if ( killTotal <= gameModeManager.currentSession.challengeRun.numKills )
+	{
+		if ( killTotal % 10 == 0 || killTotal == 1 || killTotal == gameModeManager.currentSession.challengeRun.numKills )
+		{
+			const char* challengeName = "CHALLENGE_MONSTER_KILLS";
+			if ( eventType == CHEVENT_KILLS_FURNITURE )
+			{
+				challengeName = "CHALLENGE_FURNITURE_KILLS";
+			}
+			UIToastNotificationManager.createStatisticUpdateNotification(challengeName, killTotal, gameModeManager.currentSession.challengeRun.numKills);
+			if ( multiplayer == SERVER )
+			{
+				for ( int i = 1; i < MAXPLAYERS; ++i )
+				{
+					if ( !client_disconnected[i] && !players[i]->isLocalPlayer() )
+					{
+						strcpy((char*)net_packet->data, "CHCT");
+						SDLNet_Write16((Sint16)killTotal, &net_packet->data[4]);
+						SDLNet_Write16((Sint16)gameModeManager.currentSession.challengeRun.numKills, &net_packet->data[6]);
+						net_packet->data[8] = eventType;
+						net_packet->address.host = net_clients[i - 1].host;
+						net_packet->address.port = net_clients[i - 1].port;
+						net_packet->len = 9;
+						sendPacketSafe(net_sock, -1, net_packet, i - 1);
+					}
+				}
+			}
+		}
+	}
+}
+
+void GameModeManager_t::CurrentSession_t::ChallengeRun_t::applySettings()
+{
+	if ( !inUse ) { return; }
+
+	svFlags = setFlags;
+	svFlags |= SV_FLAG_HUNGER;
+}
+
+void GameModeManager_t::CurrentSession_t::ChallengeRun_t::setup(std::string _scenario)
+{
+	reset();
+	scenarioStr = _scenario;
+	if ( scenarioStr == "" )
+	{
+		return;
+	}
+
+	inUse = loadScenario();
+	if ( inUse )
+	{
+		printlog("[Challenge]: Loaded scenario");
+	}
+}
+
+void GameModeManager_t::CurrentSession_t::ChallengeRun_t::reset()
+{
+	if ( inUse )
+	{
+		printlog("[Challenge]: Resetting");
+	}
+	inUse = false;
+
+	if ( !baseStats )
+	{
+		baseStats = new Stat(0);
+	}
+	if ( !addStats )
+	{
+		addStats = new Stat(0);
+	}
+
+	addStats->clearStats();
+	addStats->HP = 0;
+	addStats->MAXHP = 0;
+	addStats->MP = 0;
+	addStats->MAXMP = 0;
+
+	baseStats->clearStats();
+	baseStats->HP = 0;
+	baseStats->MAXHP = 0;
+	baseStats->MP = 0;
+	baseStats->MAXMP = 0;
+
+	seed = 0;
+	lockedFlags = 0;
+	setFlags = 0;
+	classnum = -1;
+	race = -1;
+	customBaseStats = false;
+	customAddStats = false;
+
+	globalXPPercent = 100;
+	globalGoldPercent = 100;
+	playerWeightPercent = 100;
+	playerSpeedMax = 12.5;
+
+	eventType = -1;
+	winLevel = -1;
+	startLevel = -1;
+	winCondition = -1;
+	numKills = -1;
+
+}
+
+#ifndef NDEBUG
+static ConsoleVariable<int> cvar_challengerace("/challengerace", -1);
+static ConsoleVariable<int> cvar_challengeclass("/challengeclass", -1);
+static ConsoleVariable<int> cvar_challengeevent("/challengeevent", -1);
+#endif
+
+bool GameModeManager_t::CurrentSession_t::ChallengeRun_t::loadScenario()
+{
+	rapidjson::Document d;
+	const char* json = scenarioStr.c_str();
+	d.Parse(json);
+
+	if ( !d.HasMember("version") || !d.HasMember("seed") || !d.HasMember("lockedFlags") || !d.HasMember("setFlags") )
+	{
+		printlog("[JSON]: Error: Scenario has no 'version' value in json file, or JSON syntax incorrect!");
+		reset();
+		return false;
+	}
+
+	seed = d["seed"].GetUint();
+	seed_word = d["seed_word"].GetString();
+	lockedFlags = d["lockedFlags"].GetUint();
+	setFlags = d["setFlags"].GetUint();
+	lid = d["lid"].GetString();
+	lid_version = d["lid_version"].GetInt();
+
+	if ( d.HasMember("base_stats") )
+	{
+		const rapidjson::Value& stats = d["base_stats"];
+		for ( auto itr = stats.MemberBegin(); itr != stats.MemberEnd(); ++itr )
+		{
+			std::string name = itr->name.GetString();
+			if ( name.compare("enabled") == 0 )
+			{
+				customBaseStats = itr->value.GetInt() == 0 ? false : true;
+			}
+			else if ( name.compare("HP") == 0 )
+			{
+				baseStats->HP = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("MAXHP") == 0 )
+			{
+				baseStats->MAXHP = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("MP") == 0 )
+			{
+				baseStats->MP = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("MAXMP") == 0 )
+			{
+				baseStats->MAXMP = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("STR") == 0 )
+			{
+				baseStats->STR = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("DEX") == 0 )
+			{
+				baseStats->DEX = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("CON") == 0 )
+			{
+				baseStats->CON = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("INT") == 0 )
+			{
+				baseStats->INT = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("PER") == 0 )
+			{
+				baseStats->PER = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("CHR") == 0 )
+			{
+				baseStats->CHR = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("EXP") == 0 )
+			{
+				baseStats->EXP = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("LVL") == 0 )
+			{
+				baseStats->LVL = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("GOLD") == 0 )
+			{
+				baseStats->GOLD = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("PROFICIENCIES") == 0 )
+			{
+				int index = -1;
+				for ( auto arr_itr = itr->value.Begin(); arr_itr != itr->value.End(); ++arr_itr )
+				{
+					++index;
+					if ( index >= NUMPROFICIENCIES )
+					{
+						break;
+					}
+					baseStats->setProficiency(index, arr_itr->GetInt());
+				}
+			}
+		}
+	}
+
+	if ( d.HasMember("add_stats") )
+	{
+		const rapidjson::Value& stats = d["add_stats"];
+		for ( auto itr = stats.MemberBegin(); itr != stats.MemberEnd(); ++itr )
+		{
+			std::string name = itr->name.GetString();
+			if ( name.compare("enabled") == 0 )
+			{
+				customAddStats = itr->value.GetInt() == 0 ? false : true;
+			}
+			else if ( name.compare("HP") == 0 )
+			{
+				addStats->HP = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("MAXHP") == 0 )
+			{
+				addStats->MAXHP = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("MP") == 0 )
+			{
+				addStats->MP = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("MAXMP") == 0 )
+			{
+				addStats->MAXMP = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("STR") == 0 )
+			{
+				addStats->STR = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("DEX") == 0 )
+			{
+				addStats->DEX = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("CON") == 0 )
+			{
+				addStats->CON = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("INT") == 0 )
+			{
+				addStats->INT = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("PER") == 0 )
+			{
+				addStats->PER = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("CHR") == 0 )
+			{
+				addStats->CHR = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("EXP") == 0 )
+			{
+				addStats->EXP = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("LVL") == 0 )
+			{
+				addStats->LVL = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("GOLD") == 0 )
+			{
+				addStats->GOLD = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("PROFICIENCIES") == 0 )
+			{
+				int index = -1;
+				for ( auto arr_itr = itr->value.Begin(); arr_itr != itr->value.End(); ++arr_itr )
+				{
+					++index;
+					if ( index >= NUMPROFICIENCIES )
+					{
+						break;
+					}
+					addStats->setProficiency(index, arr_itr->GetInt());
+				}
+			}
+		}
+	}
+
+	if ( d.HasMember("character") )
+	{
+		const rapidjson::Value& stats = d["character"];
+		for ( auto itr = stats.MemberBegin(); itr != stats.MemberEnd(); ++itr )
+		{
+			std::string name = itr->name.GetString();
+			if ( name.compare("class") == 0 )
+			{
+				classnum = static_cast<Sint32>(itr->value.GetInt());
+			}
+			else if ( name.compare("race") == 0 )
+			{
+				race = static_cast<Sint32>(itr->value.GetInt());
+			}
+		}
+	}
+
+	if ( d.HasMember("gameplay") )
+	{
+		const rapidjson::Value& stats = d["gameplay"];
+		for ( auto itr = stats.MemberBegin(); itr != stats.MemberEnd(); ++itr )
+		{
+			std::string name = itr->name.GetString();
+			if ( name.compare("winLevel") == 0 )
+			{
+				if ( itr->value.GetInt() >= 0 )
+				{
+					winLevel = static_cast<Sint32>(itr->value.GetInt());
+				}
+			}
+			else if ( name.compare("event_type") == 0 )
+			{
+				if ( itr->value.GetInt() >= 0 )
+				{
+					eventType = static_cast<Sint32>(itr->value.GetInt());
+				}
+			}
+			else if ( name.compare("numKills") == 0 )
+			{
+				if ( itr->value.GetInt() >= 0 )
+				{
+					numKills = static_cast<Sint32>(itr->value.GetInt());
+				}
+			}
+			else if ( name.compare("startLevel") == 0 )
+			{
+				if ( itr->value.GetInt() >= 0 )
+				{
+					startLevel = static_cast<Sint32>(itr->value.GetInt());
+				}
+			}
+			else if ( name.compare("winCondition") == 0 )
+			{
+				if ( itr->value.GetInt() >= 0 )
+				{
+					winCondition = static_cast<Sint32>(itr->value.GetInt());
+				}
+			}
+			else if ( name.compare("globalXPPercent") == 0 )
+			{
+				if ( itr->value.GetInt() >= 0 )
+				{
+					globalXPPercent = static_cast<Sint32>(itr->value.GetInt());
+				}
+			}
+			else if ( name.compare("globalGoldPercent") == 0 )
+			{
+				if ( itr->value.GetInt() >= 0 )
+				{
+					globalGoldPercent = static_cast<Sint32>(itr->value.GetInt());
+				}
+			}
+			else if ( name.compare("playerWeightPercent") == 0 )
+			{
+				if ( itr->value.GetInt() >= 0 )
+				{
+					playerWeightPercent = static_cast<Sint32>(itr->value.GetInt());
+				}
+			}
+			else if ( name.compare("playerSpeedMax") == 0 )
+			{
+				if ( itr->value.GetFloat() >= 0 )
+				{
+					playerSpeedMax = static_cast<Sint32>(itr->value.GetFloat());
+				}
+			}
+		}
+	}
+
+#ifndef NDEBUG
+	if ( *cvar_challengerace >= 0 )
+	{
+		race = *cvar_challengerace;
+	}
+	if ( *cvar_challengeclass >= 0 )
+	{
+		classnum = *cvar_challengeclass;
+	}
+	if ( *cvar_challengeevent >= 0 )
+	{
+		eventType = *cvar_challengeevent;
+	}
+#endif
+
+	return true;
+}
+#endif

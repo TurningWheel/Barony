@@ -167,9 +167,24 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 					continue;
 				}
 			}
-			if ( entity->behavior == &actMonster && entity->monsterAllyIndex < 0 )
+			if ( entity->behavior == &actMonster )
 			{
-				entityPointsOfInterest.push_back(entity);
+				if ( entity->monsterAllyIndex < 0 )
+				{
+					entityPointsOfInterest.push_back(entity);
+				}
+				else
+				{
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( achievementObserver.playerAchievements[i].bountyTargets.find(entity->getUID())
+							!= achievementObserver.playerAchievements[i].bountyTargets.end() )
+						{
+							entityPointsOfInterest.push_back(entity);
+							break;
+						}
+					}
+				}
 			}
 			else if ( entity->isBoulderSprite() )
 			{
@@ -368,6 +383,38 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
         imgGet->drawColor(&src, dest, viewport, color);
 	};
 
+	auto drawBountySkull = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
+		const int mapGCD = std::max(map.width, map.height);
+		const int xmin = ((int)map.width - mapGCD) / 2;
+		const int ymin = ((int)map.height - mapGCD) / 2;
+		const real_t unitX = (real_t)rect.w / (real_t)mapGCD;
+		const real_t unitY = (real_t)rect.h / (real_t)mapGCD;
+		x = (x - xmin) * unitX + rect.x;
+		y = (y - ymin) * unitY + rect.y;
+
+		auto imgGet = Image::get("*images/ui/HUD/death_skull1.png");
+
+		const real_t sx = unitX * (getMinimapZoom() / 100.0) * size;
+		const real_t sy = unitY * (getMinimapZoom() / 100.0) * size;
+
+		const SDL_Rect src{
+			0,
+			0,
+			imgGet->getSurf()->w,
+			imgGet->getSurf()->h,
+		};
+		const SDL_Rect dest{
+			(int)(x - sx / 2.0),
+			(int)(y - sy / 2.0),
+			(int)(sx),
+			(int)(sy),
+		};
+		const SDL_Rect viewport{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
+		imgGet->drawColor(&src, dest, viewport, color);
+	};
+
+	static ConsoleVariable<float> cvar_skullbountyscale("/minimap_skullbountyscale", 1.5);
+
 	// draw special points of interest (exits, items, revealed monsters, etc)
 	for ( auto entity : entityPointsOfInterest )
 	{
@@ -390,6 +437,54 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 		}
 		else
 		{
+			if ( entity->behavior == &actMonster )
+			{
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					//if ( !players[i]->isLocalPlayer() ) { continue; }
+					if ( client_disconnected[i] ) { continue; }
+					if ( !players[i]->entity ) { continue; }
+
+					bool hat = multiplayer != CLIENT && stats[i]->helmet && stats[i]->helmet->type == HAT_BOUNTYHUNTER;
+					if ( multiplayer == CLIENT )
+					{
+						if ( !players[i]->isLocalPlayer() )
+						{
+							hat = achievementObserver.playerAchievements[i].wearingBountyHat;
+						}
+						else
+						{
+							hat = stats[i]->helmet && stats[i]->helmet->type == HAT_BOUNTYHUNTER;
+						}
+					}
+					if ( hat )
+					{
+						if ( achievementObserver.playerAchievements[i].bountyTargets.find(entity->getUID())
+							!= achievementObserver.playerAchievements[i].bountyTargets.end() )
+						{
+							int x = floor(entity->x / 16);
+							int y = floor(entity->y / 16);
+
+							Uint32 color = playerColor(i, colorblind_lobby, false);
+							Uint8 r, g, b, a;
+							getColor(color, &r, &g, &b, &a);
+							const int glowRate = TICKS_PER_SECOND * 2;
+							const int intensity = 4;
+							if ( ticks % (glowRate) < (glowRate / 2) )
+							{
+								a = (255 - (glowRate / 2) * intensity) + (ticks % (glowRate)) * intensity;
+							}
+							else
+							{
+								a = 255 - ((ticks % (glowRate)) - (glowRate / 2)) * intensity;
+							}
+							color = makeColor(r, g, b, a);
+							drawBountySkull((real_t)x + 0.5, (real_t)y + 0.5, *cvar_skullbountyscale, rect, color);
+							break;
+						}
+					}
+				}
+			}
 			if ( entity->behavior == &actMonster && entity->monsterAllyIndex < 0 )
 			{
 				bool warningEffect = false;
