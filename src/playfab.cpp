@@ -6,6 +6,9 @@
 #ifdef STEAMWORKS
 #include "steam.hpp"
 #endif
+#ifdef USE_EOS
+#include "eos.hpp"
+#endif
 
 #ifdef USE_PLAYFAB
 
@@ -41,6 +44,7 @@ void PlayfabUser_t::OnLoginSuccess(const PlayFab::ClientModels::LoginResult& res
 #endif
         break;
     case PlayerType_Epic:
+#ifdef USE_EOS
         if ( EOS.CurrentUserInfo.bUserLoggedIn )
         {
             if ( !EOS.CurrentUserInfo.bUserInfoRequireUpdate )
@@ -49,6 +53,7 @@ void PlayfabUser_t::OnLoginSuccess(const PlayFab::ClientModels::LoginResult& res
                 request.DisplayName = request.DisplayName.substr(0, 25);
             }
         }
+#endif
         break;
     default:
         break;
@@ -139,15 +144,11 @@ void jsonValueToInt(Json::Value& val, std::string key, int& set)
     }
 }
 
-void jsonValueToInt(Json::Value& val, std::string key, Uint32& set)
+void jsonValueToUint(Json::Value& val, std::string key, Uint32& set)
 {
     if ( val.isMember(key) )
     {
-        if ( val[key].isInt() )
-        {
-            set = val[key].asInt();
-        }
-        else if ( val[key].isUInt() )
+        if ( val[key].isUInt() )
         {
             set = val[key].asUInt();
         }
@@ -311,15 +312,15 @@ int parseOnlineHiscore(SaveGameInfo& info, Json::Value score)
                 }
                 else if ( s == "class" )
                 {
-                    jsonValueToInt(score[m], s, player.char_class);
+                    jsonValueToUint(score[m], s, player.char_class);
                 }
                 else if ( s == "appearance" )
                 {
-                    jsonValueToInt(score[m], s, player.stats.appearance);
+                    jsonValueToUint(score[m], s, player.stats.appearance);
                 }
                 else if ( s == "race" )
                 {
-                    jsonValueToInt(score[m], s, player.race);
+                    jsonValueToUint(score[m], s, player.race);
                 }
                 else if ( s == "name" )
                 {
@@ -327,7 +328,7 @@ int parseOnlineHiscore(SaveGameInfo& info, Json::Value score)
                 }
                 else if ( s == "sex" )
                 {
-                    jsonValueToInt(score[m], s, player.stats.sex);
+                    jsonValueToUint(score[m], s, player.stats.sex);
                 }
                 else if ( s == "kill_by" )
                 {
@@ -385,7 +386,7 @@ int parseOnlineHiscore(SaveGameInfo& info, Json::Value score)
         }
         else if ( m == "time" )
         {
-            jsonValueToInt(score, m, info.gametimer);
+            jsonValueToUint(score, m, info.gametimer);
         }
         else if ( m == "totalscore" )
         {
@@ -393,7 +394,7 @@ int parseOnlineHiscore(SaveGameInfo& info, Json::Value score)
         }
         else if ( m == "flags" )
         {
-            jsonValueToInt(score, m, info.svflags);
+            jsonValueToUint(score, m, info.svflags);
         }
         else if ( m == "attributes" )
         {
@@ -605,7 +606,7 @@ void PlayfabUser_t::OnFunctionExecute(const PlayFab::CloudScriptModels::ExecuteF
                                 }
                                 else if ( key == "seed" )
                                 {
-                                    jsonValueToInt(v, key, (Uint32)e.seed);
+                                    jsonValueToUint(v, key, e.seed);
                                 }
                                 else if ( key == "hours_left" )
                                 {

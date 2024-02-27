@@ -2833,8 +2833,8 @@ public:
 	std::string& getItemPotionHarmAllyAdjective(Item& item);
 	std::string& getItemProficiencyName(int proficiency);
 	std::string& getItemSlotName(ItemEquippableSlot slotname);
-	std::string& getItemStatShortName(std::string& attribute);
-	std::string& getItemStatFullName(std::string& attribute);
+	std::string& getItemStatShortName(const char* attribute);
+	std::string& getItemStatFullName(const char* attribute);
 	std::string& getItemEquipmentEffectsForIconText(std::string& attribute);
 	std::string& getItemEquipmentEffectsForAttributesText(std::string& attribute);
 	std::string& getProficiencyLevelName(Sint32 proficiencyLevel);
