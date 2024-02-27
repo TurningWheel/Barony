@@ -6390,5 +6390,9 @@ the Slayer!#
 your One-Shot score attempt.#
 6168 Quitting now will end this run and
 submit it as your One-Shot score.#
+6169 New Seed Events Available!#
+6170 
+Visit the Play Game menu
+to view new Seed Events.#
 
 6200 END#
