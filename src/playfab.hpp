@@ -34,6 +34,7 @@ public:
 	bool errorLogin = false;
 	Uint32 authenticationRefresh = 0;
 	Uint32 processedOnTick = 0;
+	bool newSeedsAvailable = false;
 	static Uint32 processTick;
 	void loginEpic();
 	void loginSteam();

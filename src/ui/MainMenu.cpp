@@ -21813,9 +21813,9 @@ failed:
 		}
 		else
 		{
-			challenge_button->setBackground("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrials00.png");
-			challenge_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrialsHigh00.png");
-			challenge_button->setBackgroundActivated("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrialsPress00.png");
+			challenge_button->setBackground("*images/ui/Main Menus/Play/UI_PlayMenu_Button_Seed00.png");
+			challenge_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/UI_PlayMenu_Button_SeedHigh00.png");
+			challenge_button->setBackgroundActivated("*images/ui/Main Menus/Play/UI_PlayMenu_Button_SeedPress00.png");
 		}
 		challenge_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		challenge_button->setColor(makeColor(255, 255, 255, 255));
@@ -25816,8 +25816,8 @@ failed:
 #else
 			const char* banner_images[][2] = {
 				{
-					"*#images/ui/Main Menus/Banners/banner_latestnews-preview.png",
-					"*#images/ui/Main Menus/Banners/banner_latestnews-preview_hover.png",
+					"*#images/ui/Main Menus/Banners/banner_eatmyhat.png",
+					"*#images/ui/Main Menus/Banners/banner_eatmyhat-hover.png",
 				},
 				{
 					"*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_base.png",
@@ -25843,7 +25843,7 @@ failed:
             
 			void(*banner_funcs[])(Button&) = {
 				[](Button&) { // banner #1
-					openURLTryWithOverlay("https://www.baronygame.com/blog/eat-my-hat-announcement");
+					openURLTryWithOverlay("https://www.baronygame.com/blog/eat-my-hat-release");
 				},
 				[](Button&) { // banner #2
 					 openDLCPrompt(enabledDLCPack1 ? 1 : 0);

@@ -57,11 +57,21 @@ void PlayfabUser_t::OnLoginSuccess(const PlayFab::ClientModels::LoginResult& res
     {
         PlayFab::PlayFabClientAPI::UpdateUserTitleDisplayName(request, OnDisplayNameUpdateSuccess);
     }
+
+    {
+        PlayFab::CloudScriptModels::ExecuteFunctionRequest request;
+        request.FunctionName = "LoginMOTD";
+        request.GeneratePlayStreamEvent = false;
+        request.CustomTags["default"] = 1;
+
+        PlayFab::PlayFabCloudScriptAPI::ExecuteFunction(request, OnFunctionExecute, OnCloudScriptFailure,
+            (void*)(intptr_t)(PlayerCheckLeaderboardData_t::sequenceIDs));
+    }
 }
 
 void PlayfabUser_t::OnLoginFail(const PlayFab::PlayFabError& error, void* customData)
 {
-    logError("Failed to login: %s", error.ErrorMessage.c_str());
+    logError("Failed to login: %s | %s", error.ErrorName.c_str(), error.ErrorMessage.c_str());
     playfabUser.loggingIn = false;
     playfabUser.bLoggedIn = false;
     playfabUser.errorLogin = true;
@@ -532,6 +542,32 @@ void PlayfabUser_t::OnFunctionExecute(const PlayFab::CloudScriptModels::ExecuteF
                     }
                 }
                 break;
+            }
+        }
+    }
+    else if ( result.FunctionName == "LoginMOTD" )
+    {
+        if ( code == PlayFab::PlayFabErrorCode::PlayFabErrorSuccess )
+        {
+            for ( auto itr = data.begin(); itr != data.end(); ++itr )
+            {
+                Json::Value v;
+                Json::Reader reader;
+                if ( reader.parse(itr->asCString(), v) )
+                {
+                    for ( auto& key : v.getMemberNames() )
+                    {
+                        if ( key == "newseeds" )
+                        {
+                            int val = 0;
+                            jsonValueToInt(v, key, val);
+                            if ( val == 1 )
+                            {
+                                playfabUser.newSeedsAvailable = true;
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -1635,6 +1671,12 @@ void PlayfabUser_t::update()
     }
 
     playfabUser.postScoreHandler.update();
+
+    if ( bLoggedIn && playfabUser.newSeedsAvailable && intro )
+    {
+        playfabUser.newSeedsAvailable = false;
+        UIToastNotificationManager.createNewSeedNotification();
+    }
 }
 
 void PlayfabUser_t::init()

@@ -920,6 +920,18 @@ void UIToastNotificationManager_t::createAchievementNotification(const char* nam
 	n->setIdleSeconds(5);
 }
 
+void UIToastNotificationManager_t::createNewSeedNotification()
+{
+	UIToastNotification* n = UIToastNotificationManager.addNotification("*#images/ui/Main Menus/Challenges/seed_attempted64px.png");
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE);
+	n->cardType = UIToastNotification::CardType::UI_CARD_DEFAULT;
+	n->setHeaderText(Language::get(6169));
+	n->setMainText(Language::get(6170));
+	n->setIdleSeconds(10);
+}
+
 void UIToastNotificationManager_t::createStatisticUpdateNotification(const char* name, int currentValue, int maxValue)
 {
 	UIToastNotification* n = nullptr;
@@ -1076,6 +1088,11 @@ static ConsoleCommand ccmd_toastTestStatistic("/toast_test_statistic", "",
 				"Give the name of a valid achievement\n"
 				"ex: %s <BARONY_ACH_xxx> [current] [maximum]", argv[0]);
 		}
+	});
+
+static ConsoleCommand ccmd_toastTestSeeds("/toast_test_seeds", "",
+	[](int argc, const char** argv) {
+		UIToastNotificationManager.createNewSeedNotification();
 	});
 
 static ConsoleCommand ccmd_toastTestAchievementsDisabled("/toast_test_achievements_disabled", "",
