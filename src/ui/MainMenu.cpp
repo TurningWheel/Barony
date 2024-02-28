@@ -31555,14 +31555,14 @@ failed:
 							default:
 								rules_frame->setDisabled(true);
 							break;
-							case e.scenarioInfo.CHEVENT_XP_250:
+							case GameModeManager_t::CurrentSession_t::ChallengeRun_t::ChallengeEvents_t::CHEVENT_XP_250:
 								rules.append("Quick Learner:");
 								rules.append("\n");
 								rules.append(u8"\x1E ");
 								rules.append(std::to_string(e.scenarioInfo.globalXPPercent));
 								rules.append("% Kill EXP");
 								break;
-							case e.scenarioInfo.CHEVENT_NOXP_LVL_20:
+							case GameModeManager_t::CurrentSession_t::ChallengeRun_t::ChallengeEvents_t::CHEVENT_NOXP_LVL_20:
 								rules.append("Maxed Out:");
 								rules.append("\n");
 								rules.append(u8"\x1E Base Character LVL: ");
@@ -31572,7 +31572,7 @@ failed:
 								rules.append(std::to_string(e.scenarioInfo.globalXPPercent));
 								rules.append("% Kill EXP");
 								break;
-							case e.scenarioInfo.CHEVENT_SHOPPING_SPREE:
+							case GameModeManager_t::CurrentSession_t::ChallengeRun_t::ChallengeEvents_t::CHEVENT_SHOPPING_SPREE:
 								rules.append("Shopping Spree:");
 								rules.append("\n");
 								rules.append(u8"\x1E ");
@@ -31588,7 +31588,7 @@ failed:
 								rules.append(u8"\x1E ");
 								rules.append("Start Map: Minetown");
 								break;
-							case e.scenarioInfo.CHEVENT_BFG:
+							case GameModeManager_t::CurrentSession_t::ChallengeRun_t::ChallengeEvents_t::CHEVENT_BFG:
 								rules.append("BFG:");
 								rules.append("\n");
 								rules.append(u8"\x1E ");
@@ -31598,7 +31598,7 @@ failed:
 								rules.append(std::to_string(e.scenarioInfo.addStats->CON));
 								rules.append(" base CON");
 								break;
-							case e.scenarioInfo.CHEVENT_KILLS_FURNITURE:
+							case GameModeManager_t::CurrentSession_t::ChallengeRun_t::ChallengeEvents_t::CHEVENT_KILLS_FURNITURE:
 								rules.append("Removalist:");
 								rules.append("\n");
 								rules.append(u8"\x1E ");
@@ -31606,7 +31606,7 @@ failed:
 								rules.append(std::to_string(e.scenarioInfo.numKills));
 								rules.append(" pieces of furniture");
 								break;
-							case e.scenarioInfo.CHEVENT_KILLS_MONSTERS:
+							case GameModeManager_t::CurrentSession_t::ChallengeRun_t::ChallengeEvents_t::CHEVENT_KILLS_MONSTERS:
 								rules.append("Slayer:");
 								rules.append("\n");
 								rules.append(u8"\x1E ");
@@ -31614,13 +31614,13 @@ failed:
 								rules.append(std::to_string(e.scenarioInfo.numKills));
 								rules.append(" monsters");
 								break;
-							case e.scenarioInfo.CHEVENT_NOSKILLS:
+							case GameModeManager_t::CurrentSession_t::ChallengeRun_t::ChallengeEvents_t::CHEVENT_NOSKILLS:
 								rules.append("Purist:");
 								rules.append("\n");
 								rules.append(u8"\x1E ");
 								rules.append("Skills are unable to increase");
 								break;
-							case e.scenarioInfo.CHEVENT_STRONG_TRAPS:
+							case GameModeManager_t::CurrentSession_t::ChallengeRun_t::ChallengeEvents_t::CHEVENT_STRONG_TRAPS:
 								rules.append("The One Where Dungeon Traps Are Stronger:");
 								rules.append("\n");
 								rules.append(u8"\x1E ");

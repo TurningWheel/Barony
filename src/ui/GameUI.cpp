@@ -13253,12 +13253,12 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				auto statGrowths = classTooltip->addFrame("stat growths");
 				// stats definitions
 				const char* class_stats_text[] = {
-					ItemTooltips.getItemStatShortName(std::string("STR")).c_str(), 
-					ItemTooltips.getItemStatShortName(std::string("DEX")).c_str(),
-					ItemTooltips.getItemStatShortName(std::string("CON")).c_str(),
-					ItemTooltips.getItemStatShortName(std::string("INT")).c_str(),
-					ItemTooltips.getItemStatShortName(std::string("PER")).c_str(),
-					ItemTooltips.getItemStatShortName(std::string("CHR")).c_str()
+					ItemTooltips.getItemStatShortName("STR").c_str(), 
+					ItemTooltips.getItemStatShortName("DEX").c_str(),
+					ItemTooltips.getItemStatShortName("CON").c_str(),
+					ItemTooltips.getItemStatShortName("INT").c_str(),
+					ItemTooltips.getItemStatShortName("PER").c_str(),
+					ItemTooltips.getItemStatShortName("CHR").c_str()
 				};
 				constexpr int num_class_stats = sizeof(class_stats_text) / sizeof(class_stats_text[0]);
 				constexpr SDL_Rect bottom{ 0, 0, 236, 30 };

@@ -12448,7 +12448,7 @@ void mimicResetIdle(Entity* my)
 			int tx = pair.first;
 			int ty = pair.second;
 
-			if ( checkObstacle((tx << 4) + 8, (ty << 4) + 8, my, false) )
+			if ( checkObstacle((tx << 4) + 8, (ty << 4) + 8, my, nullptr, false) )
 			{
 				if ( tx == x + 1 || tx == x - 1 )
 				{
