@@ -27,7 +27,7 @@ if [ $download_zip = true ]; then
 	cd dependencies
 
 	# 1.b) Fetch the encrypted dependencies zip.
-	wget https://github.com/TurningWheel/Barony/releases/download/ci_deps_1.6/dependencies_linux.zip.enc -O dependencies.zip.enc
+	wget https://github.com/TurningWheel/Barony/releases/download/ci_deps_1.7/dependencies_linux.zip.enc -O dependencies.zip.enc
 	RESULT=$?
 	if [ $RESULT -ne 0 ]; then
 		echo "Fetching encrypted dependencies zip failed. Aborting."

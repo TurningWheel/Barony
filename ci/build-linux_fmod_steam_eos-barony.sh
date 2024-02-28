@@ -27,7 +27,7 @@ if [ $download_zip = true ]; then
 	cd dependencies
 
 	# 1.b) Fetch the encrypted dependencies zip.
-	wget https://github.com/TurningWheel/Barony/releases/download/ci_deps_1.6/dependencies_linux.zip.enc -O dependencies.zip.enc
+	wget https://github.com/TurningWheel/Barony/releases/download/ci_deps_1.7/dependencies_linux.zip.enc -O dependencies.zip.enc
 	RESULT=$?
 	if [ $RESULT -ne 0 ]; then
 		echo "Fetching encrypted dependencies zip failed. Aborting."
@@ -62,6 +62,8 @@ source "${DEPENDENCIES_DIR}/eos-steam.env"
 export NFD_DIR="${DEPENDENCIES_DIR}/nfd/"
 export RAPID_JSON_DIR="${DEPENDENCIES_DIR}/"
 export PHYSFSDIR="${DEPENDENCIES_DIR}/physfs/"
+export PLAYFAB_ENABLED=1
+export PLAYFAB_DIR="${DEPENDENCIES_DIR}/playfab/"
 export EOS_ENABLED=1
 export EOS_DIR="${DEPENDENCIES_DIR}/eos-sdk/"
 export EDITOR_ENABLED=0
