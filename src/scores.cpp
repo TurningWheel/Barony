@@ -5594,10 +5594,10 @@ void SaveGameInfo::computeHash(const int playernum, Uint32& hash)
 		hash += (Uint32)((Uint32)k << (shift % 32)); ++shift;
 	}
 
-	hash += (Uint32)((Uint32)conductPenniless << (shift % 32)); ++shift;
-	hash += (Uint32)((Uint32)conductFoodless << (shift % 32)); ++shift;
-	hash += (Uint32)((Uint32)conductVegetarian << (shift % 32)); ++shift;
-	hash += (Uint32)((Uint32)conductIlliterate << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)player.conductPenniless << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)player.conductFoodless << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)player.conductVegetarian << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)player.conductIlliterate << (shift % 32)); ++shift;
 	for ( int i = 0; i < NUM_CONDUCT_CHALLENGES; ++i )
 	{
 		hash += (Uint32)((Uint32)player.additionalConducts[i] << (shift % 32)); ++shift;
