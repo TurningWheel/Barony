@@ -17,8 +17,10 @@
 #endif
 
 PlayfabUser_t playfabUser;
+int loginFailures = 1;
 void PlayfabUser_t::OnLoginSuccess(const PlayFab::ClientModels::LoginResult& result, void* customData)
 {
+    loginFailures = 1;
     logInfo("Logged in successfully");
     playfabUser.loggingIn = false;
     playfabUser.bLoggedIn = true;
@@ -72,6 +74,8 @@ void PlayfabUser_t::OnLoginSuccess(const PlayFab::ClientModels::LoginResult& res
 void PlayfabUser_t::OnLoginFail(const PlayFab::PlayFabError& error, void* customData)
 {
     logError("Failed to login: %s | %s", error.ErrorName.c_str(), error.ErrorMessage.c_str());
+    logError(error.GenerateErrorReport().c_str());
+
     playfabUser.loggingIn = false;
     playfabUser.bLoggedIn = false;
     playfabUser.errorLogin = true;
@@ -98,8 +102,9 @@ void PlayfabUser_t::loginEpic()
     request.IdToken = EOS.getAuthToken();
     if ( EOS.getAuthToken() == "" )
     {
-        playfabUser.authenticationRefresh = TICKS_PER_SECOND * 5;
+        playfabUser.authenticationRefresh = TICKS_PER_SECOND * 5 * loginFailures;
         playfabUser.errorLogin = true;
+        loginFailures = std::min(20, loginFailures + 3);
         return;
     }
     playfabUser.loggingIn = true;
@@ -113,6 +118,13 @@ void PlayfabUser_t::loginSteam()
     PlayFab::ClientModels::LoginWithSteamRequest request;
     request.CreateAccount = true;
     request.SteamTicket = SteamClientRequestAuthTicket();
+    if ( request.SteamTicket == "" )
+    {
+        playfabUser.authenticationRefresh = TICKS_PER_SECOND * 5 * loginFailures;
+        playfabUser.errorLogin = true;
+        loginFailures = std::min(20, loginFailures + 3);
+        return;
+    }
     playfabUser.loggingIn = true;
     PlayFab::PlayFabClientAPI::LoginWithSteam(request, OnLoginSuccess, OnLoginFail);
 #endif
@@ -125,6 +137,17 @@ void PlayfabUser_t::OnCloudScriptExecute(const PlayFab::ClientModels::ExecuteClo
 
 void PlayfabUser_t::OnCloudScriptFailure(const PlayFab::PlayFabError& error, void* customData)
 {
+    /*if ( error.ErrorCode == PlayFab::PlayFabErrorCode::PlayFabErrorEntityTokenExpired )
+    {
+    // i think this response is from the server, so dont need to re-log
+        if ( playfabUser.bLoggedIn )
+        {
+            if ( playfabUser.authenticationRefresh > TICKS_PER_SECOND * 5 )
+            {
+                playfabUser.authenticationRefresh = TICKS_PER_SECOND * 5;
+            }
+        }
+    }*/
     logError("Update failure: %s", error.ErrorMessage.c_str());
 }
 
