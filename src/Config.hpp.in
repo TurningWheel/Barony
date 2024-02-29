@@ -44,6 +44,10 @@
 	#define USE_IMGUI
 #endif
 
+#if @CURL_ENABLED@
+    #define USE_LIBCURL
+#endif
+
 #if @FMOD@
 	#define USE_FMOD
 #endif
