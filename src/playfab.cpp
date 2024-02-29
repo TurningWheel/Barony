@@ -1191,7 +1191,7 @@ void PlayfabUser_t::postScore(const int player)
     }
 
     std::string scorestring = info.serializeToOnlineHiscore(player, victory);
-    auto hash = djb2Hash2(const_cast<char*>(scorestring.c_str()));
+    Uint32 hash = djb2Hash2(const_cast<char*>(scorestring.c_str()));
 
     if ( postScoreHandler.sessionsPosted.find(info.hash) != postScoreHandler.sessionsPosted.end() )
     {
