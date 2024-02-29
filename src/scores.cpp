@@ -6293,7 +6293,7 @@ std::string SaveGameInfo::serializeToOnlineHiscore(const int playernum, const in
 
 	{
 		rapidjson::Value statsObj(rapidjson::kObjectType);
-		statsObj.AddMember("name", rapidjson::Value(myStats.name.c_str(), d.GetAllocator()), d.GetAllocator());
+		//statsObj.AddMember("name", rapidjson::Value(myStats.name.c_str(), d.GetAllocator()), d.GetAllocator());
 		statsObj.AddMember("MAXHP", myStats.maxHP, d.GetAllocator());
 		statsObj.AddMember("MAXMP", myStats.maxMP, d.GetAllocator());
 		statsObj.AddMember("STR", myStats.STR, d.GetAllocator());

@@ -20557,6 +20557,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 		{
 			flameEntity->flags[GENIUS] = true;
 			flameEntity->setUID(-4);
+			flameEntity->skill[1] = player + 1;
 		}
 		else
 		{

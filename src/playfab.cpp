@@ -1043,6 +1043,7 @@ void PlayfabUser_t::PostScoreHandler_t::ScoreUpdate_t::post()
     request.GeneratePlayStreamEvent = false;
     request.CustomTags["default"] = "1";
     request.CustomTags["hash"] = hash;
+    request.CustomTags["name"] = name;
     request.FunctionParameter = json;
     PlayFab::PlayFabCloudScriptAPI::ExecuteFunction(request, OnFunctionExecute, OnCloudScriptFailure,
         (void*)(intptr_t)(sequence));
@@ -1158,6 +1159,10 @@ unsigned long djb2Hash2(char* str)
 
 void PlayfabUser_t::postScore(const int player)
 {
+    if ( player < 0 || player >= MAPLAYERS )
+    {
+        return;
+    }
 #ifdef NDEBUG
 {
     if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
@@ -1197,7 +1202,8 @@ void PlayfabUser_t::postScore(const int player)
     }
     postScoreHandler.sessionsPosted.insert(info.hash);
 
-    postScoreHandler.queue.push_back(PostScoreHandler_t::ScoreUpdate_t(scorestring, std::to_string(hash)));
+    postScoreHandler.queue.push_back(PostScoreHandler_t::ScoreUpdate_t(scorestring, std::to_string(hash), 
+        info.players[player].stats.name));
     auto& entry = postScoreHandler.queue.back();
     entry.inprogress = false;
     entry.saveToFile();
@@ -1237,6 +1243,7 @@ bool PlayfabUser_t::PostScoreHandler_t::ScoreUpdate_t::saveToFile()
 
     d.AddMember("version", rapidjson::Value(1), d.GetAllocator());
     d.AddMember("hash", rapidjson::Value(hash.c_str(), d.GetAllocator()), d.GetAllocator());
+    d.AddMember("name", rapidjson::Value(hash.c_str(), d.GetAllocator()), d.GetAllocator());
     d.AddMember("score", rapidjson::Value(score.c_str(), d.GetAllocator()), d.GetAllocator());
 
     File* fp = FileIO::open(outputPath.c_str(), "wb");
@@ -1303,9 +1310,14 @@ void PlayfabUser_t::PostScoreHandler_t::readFromFiles()
         int version = d["version"].GetInt();
         std::string score = d["score"].GetString();
         std::string hashStr = d["hash"].GetString();
+        std::string name = "";
+        if ( d.HasMember("name") )
+        {
+            name = d["name"].GetString();
+        }
         Uint32 hash = std::stoul(hashStr);
 
-        queue.push_back(ScoreUpdate_t(score, hashStr));
+        queue.push_back(ScoreUpdate_t(score, hashStr, name));
         queue.back().writtenToFile = inputPath;
 
         if ( (Uint32)djb2Hash2(const_cast<char*>(score.c_str())) != hash )
