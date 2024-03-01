@@ -813,6 +813,28 @@ void loadAchievementData(const char* path) {
 			continue;
 		}
 #endif
+#ifndef USE_PLAYFAB
+		if ( !strcmp(achName, "BARONY_ACH_BLOOM_PLANTED") )
+		{
+			continue;
+		}
+		if ( !strcmp(achName, "BARONY_ACH_DUNGEONSEED") )
+		{
+			continue;
+		}
+		if ( !strcmp(achName, "BARONY_ACH_GROWTH_MINDSET") )
+		{
+			continue;
+		}
+		if ( !strcmp(achName, "BARONY_ACH_REAP_SOW") )
+		{
+			continue;
+		}
+		if ( !strcmp(achName, "BARONY_ACH_SPROUTS") )
+		{
+			continue;
+		}
+#endif
 		const auto& ach = it.value.GetObject();
 		if (ach.HasMember("name") && ach["name"].IsString()) {
 			achievementNames[achName] = ach["name"].GetString();
