@@ -48,6 +48,10 @@
     #define USE_LIBCURL
 #endif
 
+#if @THEORAPLAYER_ENABLED@
+    #define USE_THEORA_VIDEO
+#endif
+
 #if @FMOD@
 	#define USE_FMOD
 #endif
