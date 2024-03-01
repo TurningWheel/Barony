@@ -43,6 +43,8 @@ public:
     // report number of bytes read since seeding
     size_t bytesRead() const;
 
+    bool isSeeded() const { return seeded; };
+
     uint8_t  getU8();   // get number in range [0 - 2^8)
     uint16_t getU16();  // get number in range [0 - 2^16)
     uint32_t getU32();  // get number in range [0 - 2^32)
@@ -84,3 +86,5 @@ private:
 extern BaronyRNG local_rng; // RNG for anything that does not require client synchronization
 extern BaronyRNG net_rng;   // RNG which must always be synchronized among all clients
 extern BaronyRNG map_rng;   // used strictly during map generation
+extern BaronyRNG map_server_rng; // used during map generation for server only to seed local entity rng
+extern BaronyRNG map_sequence_rng; // used to determine the next map seed

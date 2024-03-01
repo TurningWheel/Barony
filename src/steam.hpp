@@ -38,6 +38,7 @@ extern void* lobbyIDs[MAX_STEAM_LOBBIES];
 extern int lobbyPlayers[MAX_STEAM_LOBBIES];
 extern int lobbyNumMods[MAX_STEAM_LOBBIES];
 extern bool lobbyModDisableAchievements[MAX_STEAM_LOBBIES];
+extern char lobbyChallengeRun[MAX_STEAM_LOBBIES][64];
 
 extern void* steamIDRemote[MAXPLAYERS]; //TODO: Bugger void pointer.
 

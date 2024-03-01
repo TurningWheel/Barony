@@ -53,6 +53,7 @@ static const int STATISTICS_PIMPING_AINT_EASY = 12;
 static const int STATISTICS_TRIBE_SUBSCRIBE = 13;
 static const int STATISTICS_POP_QUIZ_1 = 14;
 static const int STATISTICS_POP_QUIZ_2 = 15;
+static const int STATISTICS_TOTAL_KILLS = 16;
 static const int STATISTICS_DISABLE_UPLOAD = 31;
 
 enum SteamStatIndexes : int
@@ -105,7 +106,13 @@ enum SteamStatIndexes : int
 	STEAM_STAT_EXTRA_CREDIT_LVLS,
 	STEAM_STAT_DIPLOMA,
 	STEAM_STAT_DIPLOMA_LVLS,
-	STEAM_STAT_TUTORIAL_ENTERED
+	STEAM_STAT_TUTORIAL_ENTERED,
+	STEAM_STAT_I_NEEDED_THAT,
+	STEAM_STAT_DAPPER_1,
+	STEAM_STAT_DAPPER_2,
+	STEAM_STAT_DAPPER_3,
+	STEAM_STAT_DAPPER,
+	STEAM_STAT_DUNGEONSEED
 };
 
 enum SteamGlobalStatIndexes : int
@@ -181,7 +188,7 @@ enum SteamGlobalStatIndexes : int
 
 SteamGlobalStatIndexes getIndexForDeathType(int type);
 
-static const std::pair<std::string, int> steamStatAchStringsAndMaxVals[] = 
+static const std::pair<std::string, int> steamStatAchStringsAndMaxVals[] =
 {
 	std::make_pair("BARONY_ACH_NONE", 999999),				// STEAM_STAT_BOULDER_DEATHS,
 	std::make_pair("BARONY_ACH_RHINESTONE_COWBOY", 50),		// STEAM_STAT_RHINESTONE_COWBOY,
@@ -231,7 +238,13 @@ static const std::pair<std::string, int> steamStatAchStringsAndMaxVals[] =
 	std::make_pair("BARONY_ACH_NONE", 1023),				// STEAM_STAT_EXTRA_CREDIT_LVLS,
 	std::make_pair("BARONY_ACH_DIPLOMA", 10),				// STEAM_STAT_DIPLOMA
 	std::make_pair("BARONY_ACH_NONE", 1023),				// STEAM_STAT_DIPLOMA_LVLS,
-	std::make_pair("BARONY_ACH_NONE", 1)					// STEAM_STAT_TUTORIAL_ENTERED,
+	std::make_pair("BARONY_ACH_NONE", 1),					// STEAM_STAT_TUTORIAL_ENTERED,
+	std::make_pair("BARONY_ACH_I_NEEDED_THAT", 10),			// STEAM_STAT_I_NEEDED_THAT
+	std::make_pair("BARONY_ACH_NONE", 0xFFFFFFFF),			// STEAM_STAT_DAPPER_1
+	std::make_pair("BARONY_ACH_NONE", 0xFFFFFFFF),			// STEAM_STAT_DAPPER_2
+	std::make_pair("BARONY_ACH_NONE", 0xFFFFFFFF),			// STEAM_STAT_DAPPER_3
+	std::make_pair("BARONY_ACH_DAPPER", 30),				// STEAM_STAT_DAPPER
+	std::make_pair("BARONY_ACH_DUNGEONSEED", 12)			// STEAM_STAT_DUNGEONSEED
 };
 
 typedef struct score_t
@@ -264,6 +277,7 @@ extern list_t booksRead;
 extern bool usedClass[NUMCLASSES];
 extern bool usedRace[NUMRACES];
 extern Uint32 loadingsavegame;
+extern Uint32 loadinglobbykey;
 extern Sint32 conductGameChallenges[NUM_CONDUCT_CHALLENGES];
 extern Sint32 gameStatistics[NUM_GAMEPLAY_STATISTICS];
 extern std::vector<std::pair<Uint32, Uint32>> achievementRhythmOfTheKnightVec[MAXPLAYERS];
@@ -319,6 +333,7 @@ struct SaveGameInfo {
 	Uint32 hash = 0;
 	std::string gamename;
 	Uint32 gamekey = 0;
+	Uint32 lobbykey = 0;
 	Uint32 mapseed = 0;
 	Uint32 gametimer = 0;
 	Uint32 svflags = 0;
@@ -330,7 +345,7 @@ struct SaveGameInfo {
 	int level_track = 0;
 	int hiscore_loadstatus = 0;
 	int hiscore_totalscore = 0;
-	int hiscore_rank = 0;
+	int hiscore_rank = -1;
 	int hiscore_victory = 0;
 	int hiscore_killed_by = 0;
 	int hiscore_killed_monster = 0;
@@ -371,6 +386,9 @@ struct SaveGameInfo {
 			int numKills = 0;
 			int numAccessories = 0;
 			int playerRace = NOTHING;
+			int sex = sex_t::MALE;
+			int equipment = 0;
+			int type = 0;
 			int wantedLevel = ShopkeeperPlayerHostility_t::NO_WANTED_LEVEL;
 			int player = -1;
 
@@ -381,6 +399,9 @@ struct SaveGameInfo {
 			{
 				wantedLevel = h.wantedLevel;
 				playerRace = h.playerRace;
+				sex = h.sex;
+				equipment = h.equipment;
+				type = h.type;
 				player = h.player;
 				numAggressions = h.numAggressions;
 				numKills = h.numKills;
@@ -390,6 +411,9 @@ struct SaveGameInfo {
 			{
 				fp->property("wanted_level", wantedLevel);
 				fp->property("player_race", playerRace);
+				fp->property("equipment", equipment);
+				fp->property("type", type);
+				fp->property("sex", sex);
 				fp->property("player", player);
 				fp->property("num_aggressions", numAggressions);
 				fp->property("num_kills", numKills);
@@ -582,6 +606,8 @@ struct SaveGameInfo {
 			fp->property("shopkeeper_hostility", shopkeeperHostility);
 			return true;
 		}
+
+		int isCharacterValidFromDLC();
 	};
 	std::vector<Player> players;
 	std::vector<std::pair<std::string, std::string>> map_messages; // map modifiers "sound of pickaxes striking rock" "walls are fortified" etc
@@ -594,6 +620,7 @@ struct SaveGameInfo {
 		fp->property("hash", hash);
 		fp->property("game_name", gamename);
 		fp->property("gamekey", gamekey);
+		fp->property("lobbykey", lobbykey);
 		fp->property("mapseed", mapseed);
 		fp->property("gametimer", gametimer);
 		fp->property("svflags", svflags);
@@ -623,7 +650,6 @@ const char* getSaveGameName(const SaveGameInfo& info);
 int getSaveGameType(const SaveGameInfo& info);
 int getSaveGameClientnum(const SaveGameInfo& info);
 Uint32 getSaveGameMapSeed(const SaveGameInfo& info);
-Uint32 getSaveGameUniqueGameKey(const SaveGameInfo& info);
 int getSaveGameVersionNum(const SaveGameInfo& info);
 
 int getSavegameVersion(const char* checkstr); // returns -1 on invalid version, otherwise converts to 3 digit int
@@ -685,7 +711,9 @@ public:
 		BARONY_ACH_DIPLOMA,
 		BARONY_ACH_BACK_TO_BASICS,
 		BARONY_ACH_FAST_LEARNER,
-		BARONY_ACH_MASTER
+		BARONY_ACH_MASTER,
+		BARONY_ACH_DAPPER,
+		BARONY_ACH_SPROUTS
 	};
 	enum AchievementEvent : int
 	{
@@ -698,7 +726,8 @@ public:
 		EXTRA_CREDIT_SECRET,
 		DIPLOMA_LEVEL_COMPLETE,
 		BACK_TO_BASICS_LEVEL_COMPLETE,
-		FAST_LEARNER_TIME_UPDATE
+		FAST_LEARNER_TIME_UPDATE,
+		DAPPER_EQUIPMENT_CHECK
 	};
 	void updatePlayerAchievement(int player, Achievement achievement, AchievementEvent achEvent);
 	bool bIsAchievementAllowedDuringTutorial(std::string achievementStr)
@@ -770,6 +799,8 @@ public:
 		int socialButterfly = 0;
 		int rollTheBones = 0;
 		int trashCompactor = 0;
+		bool totalKillsTickUpdate = false;
+		static bool allPlayersDeadEvent;
 
 		std::pair<int, int> realBoy;
 		std::unordered_map<Uint32, int> caughtInAMoshTargets;
@@ -778,6 +809,11 @@ public:
 		std::pair<real_t, real_t> flutterShyCoordinates;
 		std::pair<int, Uint32> gastricBypassSpell;
 		std::unordered_set<Uint32> rat5000secondRule;
+		std::unordered_set<Uint32> phantomMaskFirstStrikes;
+		std::unordered_set<Uint32> bountyTargets;
+		bool updatedBountyTargets = false;
+		bool wearingBountyHat = false;
+		static std::set<ItemType> startingClassItems;
 		
 		PlayerAchievements()
 		{
@@ -787,8 +823,10 @@ public:
 		};
 		bool checkPathBetweenObjects(Entity* player, Entity* target, int achievement);
 		bool checkTraditionKill(Entity* player, Entity* target);
+		int getItemIndexForDapperAchievement(Item* item);
 	} playerAchievements[MAXPLAYERS];
 
+	void updateClientBounties(bool firstSend);
 	void clearPlayerAchievementData();
 	void checkMapScriptsOnVariableSet();
 	void updateGlobalStat(int index, int value = 1);

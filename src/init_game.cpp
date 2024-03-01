@@ -56,6 +56,10 @@
 
 void initGameDatafiles(bool moddedReload)
 {
+	for ( int i = 0; i < NUMITEMS && i < (NUM_ITEM_STRINGS - 2); ++i )
+	{
+		ItemTooltips.itemNameStringToItemID[itemNameStrings[i + 2]] = i;
+	}
 	ItemTooltips.readItemsFromFile();
 	ItemTooltips.readTooltipsFromFile();
 	ItemTooltips.readItemLocalizationsFromFile();
@@ -76,6 +80,10 @@ void initGameDatafiles(bool moddedReload)
 	StatueManager.readAllStatues();
 	GameModeManager_t::CurrentSession_t::SeededRun_t::readSeedNamesFromFile();
 	loadLights();
+	for ( int c = 1; c < NUMMONSTERS; ++c )
+	{
+		EquipmentModelOffsets.readFromFile(monstertypename[c], c);
+	}
 }
 
 void initGameDatafilesAsync(bool moddedReload)
@@ -799,6 +807,12 @@ void loadAchievementData(const char* path) {
 			return;
 		}
 		auto achName = it.name.GetString();
+#ifdef NINTENDO
+		if ( !strcmp(achName, "BARONY_ACH_LOCAL_CUSTOMS") )
+		{
+			continue;
+		}
+#endif
 		const auto& ach = it.value.GetObject();
 		if (ach.HasMember("name") && ach["name"].IsString()) {
 			achievementNames[achName] = ach["name"].GetString();

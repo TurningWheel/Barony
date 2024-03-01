@@ -30,6 +30,9 @@
 #include "classdescriptions.hpp"
 #include "ui/MainMenu.hpp"
 #include "interface/consolecommand.hpp"
+#ifdef USE_PLAYFAB
+#include "playfab.hpp"
+#endif
 
 bool settings_smoothmouse = false;
 bool usecamerasmoothing = false;
@@ -3079,7 +3082,6 @@ int Player::PlayerMovement_t::getCharacterEquippedWeight()
 			}
 		}
 	}
-	//weight += stats[player.playernum]->GOLD / 100;
 	return weight;
 }
 
@@ -3097,7 +3099,7 @@ int Player::PlayerMovement_t::getCharacterWeight()
 			}
 		}
 	}
-	weight += stats[player.playernum]->GOLD / 100;
+	weight += stats[player.playernum]->getGoldWeight();
 	return weight;
 }
 
@@ -3215,7 +3217,12 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 
 	bool allowMovement = my->isMobile();
 	bool pacified = stats[PLAYER_NUM]->EFFECTS[EFF_PACIFY];
-	if ( !allowMovement && pacified )
+	bool rooted = stats[PLAYER_NUM]->EFFECTS[EFF_ROOTED];
+	if ( rooted )
+	{
+		allowMovement = false;
+	}
+	if ( !allowMovement && pacified && !rooted )
 	{
 		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_PARALYZED] && !stats[PLAYER_NUM]->EFFECTS[EFF_STUNNED]
 			&& !stats[PLAYER_NUM]->EFFECTS[EFF_ASLEEP] )
@@ -3243,6 +3250,23 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		else
 		{
 			double backpedalMultiplier = 0.25;
+			double lateralMultiplier = 1.0;
+			if ( stats[PLAYER_NUM]->helmet && stats[PLAYER_NUM]->helmet->type == HAT_BANDANA )
+			{
+				if ( stats[PLAYER_NUM]->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[PLAYER_NUM]) )
+				{
+					backpedalMultiplier += 0.5 * (1 + abs(stats[PLAYER_NUM]->helmet->beatitude)) * 0.25;
+					backpedalMultiplier = std::min(0.75, backpedalMultiplier);
+					lateralMultiplier += 0.5 * (1 + abs(stats[PLAYER_NUM]->helmet->beatitude)) * 0.25;
+					lateralMultiplier = std::min(1.5, lateralMultiplier);
+				}
+				else
+				{
+					backpedalMultiplier += 0.5 * (1 + abs(stats[PLAYER_NUM]->helmet->beatitude)) * 0.25;
+					backpedalMultiplier = std::min(0.75, backpedalMultiplier);
+					lateralMultiplier = 0.0;
+				}
+			}
 			if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] )
 			{
 				backpedalMultiplier = 1.25;
@@ -3295,6 +3319,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 					y_force *= backpedalMultiplier;    //Move backwards more slowly.
 				}
 			}
+			x_force *= lateralMultiplier;
 		}
 
 		real_t speedFactor = getSpeedFactor(weightratio, statGetDEX(stats[PLAYER_NUM], players[PLAYER_NUM]->entity));
@@ -3357,11 +3382,11 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 	PLAYER_VELX *= pow(0.75, refreshRateDelta);
 	PLAYER_VELY *= pow(0.75, refreshRateDelta);
 
-	//if ( keystatus[SDLK_G] )
-	//{
-		//messagePlayer(0, MESSAGE_DEBUG, "X: %5.5f, Y: %5.5f, Total: %5.5f", PLAYER_VELX, PLAYER_VELY, sqrt(pow(PLAYER_VELX, 2) + pow(PLAYER_VELY, 2)));
-		//messagePlayer(0, MESSAGE_DEBUG, "Vel: %5.5f", getCurrentMovementSpeed());
-	//}
+	/*if ( keystatus[SDLK_g] )
+	{
+		messagePlayer(0, MESSAGE_DEBUG, "X: %5.5f, Y: %5.5f, Total: %5.5f", PLAYER_VELX, PLAYER_VELY, sqrt(pow(PLAYER_VELX, 2) + pow(PLAYER_VELY, 2)));
+		messagePlayer(0, MESSAGE_DEBUG, "Vel: %5.5f", getCurrentMovementSpeed());
+	}*/
 
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
@@ -3373,9 +3398,12 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 			}
 			if ( entityInsideEntity(my, players[i]->entity) )
 			{
-				double tangent = atan2(my->y - players[i]->entity->y, my->x - players[i]->entity->x);
-				PLAYER_VELX += cos(tangent) * 0.075 * refreshRateDelta;
-				PLAYER_VELY += sin(tangent) * 0.075 * refreshRateDelta;
+				if ( !rooted )
+				{
+					double tangent = atan2(my->y - players[i]->entity->y, my->x - players[i]->entity->x);
+					PLAYER_VELX += cos(tangent) * 0.075 * refreshRateDelta;
+					PLAYER_VELY += sin(tangent) * 0.075 * refreshRateDelta;
+				}
 			}
 		}
 	}
@@ -3392,8 +3420,8 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 	bool swimming = isPlayerSwimming();
 	if ( swimming && !amuletwaterbreathing )
 	{
-		PLAYER_VELX *= (((stats[PLAYER_NUM]->PROFICIENCIES[PRO_SWIMMING] / 100.f) * 50.f) + 50) / 100.f;
-		PLAYER_VELY *= (((stats[PLAYER_NUM]->PROFICIENCIES[PRO_SWIMMING] / 100.f) * 50.f) + 50) / 100.f;
+		PLAYER_VELX *= (((stats[PLAYER_NUM]->getModifiedProficiency(PRO_SWIMMING) / 100.f) * 50.f) + 50) / 100.f;
+		PLAYER_VELY *= (((stats[PLAYER_NUM]->getModifiedProficiency(PRO_SWIMMING) / 100.f) * 50.f) + 50) / 100.f;
 
 		if ( stats[PLAYER_NUM]->type == SKELETON )
 		{
@@ -3547,6 +3575,274 @@ void statueCycleItem(Item& item, bool dirForward)
 			{
 				item.type = ItemType(i);
 				break;
+			}
+		}
+	}
+}
+
+void followerDebugEquipment(int player)
+{
+	static ConsoleVariable<bool> cvar_followerdebugequipment("/followerdebugequipment", false);
+	Entity* follower = nullptr;
+	if ( *cvar_followerdebugequipment && (svFlags & SV_FLAG_CHEATS) )
+	{
+		for ( node_t* node = stats[player]->FOLLOWERS.first; node != nullptr; node = node->next )
+		{
+			Uint32* c = (Uint32*)node->element;
+			if ( c )
+			{
+				follower = uidToEntity(*c);
+				break;
+			}
+		}
+	}
+
+	if ( follower )
+	{
+		Stat* stats = follower->getStats();
+		follower->setEffect(EFF_STUNNED, true, 50, false);
+
+		follower->flags[USERFLAG2] = false;
+		for ( auto bodypart : follower->bodyparts )
+		{
+			bodypart->flags[USERFLAG2] = false;
+		}
+
+		if ( keystatus[SDLK_F3] )
+		{
+			keystatus[SDLK_F3] = 0;
+			if ( stats->sex == MALE )
+			{
+				stats->sex = FEMALE;
+			}
+			else
+			{
+				stats->sex = MALE;
+			}
+		}
+
+		if ( keystatus[SDLK_1] )
+		{
+			Input::inputs[player].refresh();
+			keystatus[SDLK_1] = 0;
+			if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
+			{
+				if ( stats->helmet )
+				{
+					list_RemoveNode(stats->helmet->node);
+					stats->helmet = nullptr;
+				}
+			}
+			else
+			{
+				if ( !stats->helmet )
+				{
+					stats->helmet = newItem(LEATHER_HELM, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
+				}
+				if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
+				{
+					statueCycleItem(*stats->helmet, false);
+				}
+				else
+				{
+					statueCycleItem(*stats->helmet, true);
+				}
+			}
+		}
+		if ( keystatus[SDLK_2] )
+		{
+			Input::inputs[player].refresh();
+			keystatus[SDLK_2] = 0;
+			if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
+			{
+				if ( stats->breastplate )
+				{
+					list_RemoveNode(stats->breastplate->node);
+					stats->breastplate = nullptr;
+				}
+			}
+			else
+			{
+				if ( !stats->breastplate )
+				{
+					stats->breastplate = newItem(LEATHER_BREASTPIECE, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
+				}
+				if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
+				{
+					statueCycleItem(*stats->breastplate, false);
+				}
+				else
+				{
+					statueCycleItem(*stats->breastplate, true);
+				}
+			}
+		}
+		if ( keystatus[SDLK_3] )
+		{
+			Input::inputs[player].refresh();
+			keystatus[SDLK_3] = 0;
+			if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
+			{
+				if ( stats->gloves )
+				{
+					list_RemoveNode(stats->gloves->node);
+					stats->gloves = nullptr;
+				}
+			}
+			else
+			{
+				if ( !stats->gloves )
+				{
+					stats->gloves = newItem(GLOVES, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
+				}
+				if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
+				{
+					statueCycleItem(*stats->gloves, false);
+				}
+				else
+				{
+					statueCycleItem(*stats->gloves, true);
+				}
+			}
+		}
+		if ( keystatus[SDLK_4] )
+		{
+			Input::inputs[player].refresh();
+			keystatus[SDLK_4] = 0;
+			if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
+			{
+				if ( stats->shoes )
+				{
+					list_RemoveNode(stats->shoes->node);
+					stats->shoes = nullptr;
+				}
+			}
+			else
+			{
+				if ( !stats->shoes )
+				{
+					stats->shoes = newItem(LEATHER_BOOTS, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
+				}
+				if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
+				{
+					statueCycleItem(*stats->shoes, false);
+				}
+				else
+				{
+					statueCycleItem(*stats->shoes, true);
+				}
+			}
+		}
+		if ( keystatus[SDLK_5] )
+		{
+			Input::inputs[player].refresh();
+			keystatus[SDLK_5] = 0;
+			if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
+			{
+				if ( stats->weapon )
+				{
+					list_RemoveNode(stats->weapon->node);
+					stats->weapon = nullptr;
+				}
+			}
+			else
+			{
+				if ( !stats->weapon )
+				{
+					stats->weapon = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
+				}
+				if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
+				{
+					statueCycleItem(*stats->weapon, false);
+				}
+				else
+				{
+					statueCycleItem(*stats->weapon, true);
+				}
+			}
+		}
+		if ( keystatus[SDLK_6] )
+		{
+			Input::inputs[player].refresh();
+			keystatus[SDLK_6] = 0;
+			if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
+			{
+				if ( stats->shield )
+				{
+					list_RemoveNode(stats->shield->node);
+					stats->shield = nullptr;
+				}
+			}
+			else
+			{
+				if ( !stats->shield )
+				{
+					stats->shield = newItem(WOODEN_SHIELD, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
+				}
+				if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
+				{
+					statueCycleItem(*stats->shield, false);
+				}
+				else
+				{
+					statueCycleItem(*stats->shield, true);
+				}
+			}
+		}
+		if ( keystatus[SDLK_7] )
+		{
+			Input::inputs[player].refresh();
+			keystatus[SDLK_7] = 0;
+			if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
+			{
+				if ( stats->mask )
+				{
+					list_RemoveNode(stats->mask->node);
+					stats->mask = nullptr;
+				}
+			}
+			else
+			{
+				if ( !stats->mask )
+				{
+					stats->mask = newItem(TOOL_GLASSES, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
+				}
+				if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
+				{
+					statueCycleItem(*stats->mask, false);
+				}
+				else
+				{
+					statueCycleItem(*stats->mask, true);
+				}
+			}
+		}
+		if ( keystatus[SDLK_8] )
+		{
+			Input::inputs[player].refresh();
+			keystatus[SDLK_8] = 0;
+			if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
+			{
+				if ( stats->cloak )
+				{
+					list_RemoveNode(stats->cloak->node);
+					stats->cloak = nullptr;
+				}
+			}
+			else
+			{
+				if ( !stats->cloak )
+				{
+					stats->cloak = newItem(CLOAK, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
+				}
+				if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
+				{
+					statueCycleItem(*stats->cloak, false);
+				}
+				else
+				{
+					statueCycleItem(*stats->cloak, true);
+				}
 			}
 		}
 	}
@@ -4050,7 +4346,14 @@ void actPlayer(Entity* my)
 	}
 	if ( autoLimbReload && ticks % 20 == 0 && (PLAYER_NUM == clientnum) )
 	{
-		consoleCommand("/reloadlimbs");
+		if ( ticks % 40 == 0 )
+		{
+			consoleCommand("/reloadlimbs");
+		}
+		else
+		{
+			consoleCommand("/reloadequipmentoffsets");
+		}
 	}
 
 	Entity* entity;
@@ -4646,31 +4949,31 @@ void actPlayer(Entity* my)
 			{
 				if ( !my->skill[29] && PLAYER_ALIVETIME > 5 ) // herx's sprite isn't init on the first entity tick, so wait a little.
 				{
-				bool foundherx = false;
-				for ( node = map.creatures->first; node != nullptr; node = node->next ) //Herx is in the creature list, so only search that.
-				{
-					Entity* entity = (Entity*)node->element;
-					if ( entity->sprite == 274 )
+					bool foundherx = false;
+					for ( node = map.creatures->first; node != nullptr; node = node->next ) //Herx is in the creature list, so only search that.
 					{
-						foundherx = true;
-						break;
+						Entity* entity = (Entity*)node->element;
+						if ( entity->sprite == 274 )
+						{
+							foundherx = true;
+							break;
+						}
+					}
+					if ( !foundherx )
+					{
+						// ding, dong, the witch is dead
+						my->skill[29] = PLAYER_ALIVETIME;
+					}
+					else
+					{
+						if ( PLAYER_ALIVETIME == 300 )
+						{
+							playSound(185, 128);
+							messageLocalPlayersColor(color, MESSAGE_WORLD, Language::get(537));
+							messageLocalPlayersColor(color, MESSAGE_WORLD, Language::get(89));
+						}
 					}
 				}
-				if ( !foundherx )
-				{
-					// ding, dong, the witch is dead
-					my->skill[29] = PLAYER_ALIVETIME;
-				}
-				else
-				{
-					if ( PLAYER_ALIVETIME == 300 )
-					{
-						playSound(185, 128);
-						messageLocalPlayersColor(color, MESSAGE_WORLD, Language::get(537));
-						messageLocalPlayersColor(color, MESSAGE_WORLD, Language::get(89));
-					}
-				}
-			}
 			}
 			else
 			{
@@ -5246,15 +5549,15 @@ void actPlayer(Entity* my)
 
 					//Cool. Time to identify the item.
 					bool success = false;
-					if ( stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL] < 100 )
+					if ( stats[PLAYER_NUM]->getModifiedProficiency(PRO_APPRAISAL) < 100 )
 					{
 						if ( tempItem->type != GEM_GLASS )
 						{
-							success = (stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL] + my->getPER() * 5 >= items[tempItem->type].value / 10);
+							success = (stats[PLAYER_NUM]->getModifiedProficiency(PRO_APPRAISAL) + my->getPER() * 5 >= items[tempItem->type].value / 10);
 						}
 						else
 						{
-							success = (stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL] + my->getPER() * 5 >= 100);
+							success = (stats[PLAYER_NUM]->getModifiedProficiency(PRO_APPRAISAL) + my->getPER() * 5 >= 100);
 						}
 					}
 					else
@@ -5307,7 +5610,7 @@ void actPlayer(Entity* my)
 								// hardest
 								appraisalEaseOfDifficulty = -1;
 							}
-							appraisalEaseOfDifficulty += stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL] / 20;
+							appraisalEaseOfDifficulty += stats[PLAYER_NUM]->getProficiency(PRO_APPRAISAL) / 20;
 							// difficulty ranges from 1-in-1 to 1-in-6
 							appraisalEaseOfDifficulty = std::max(appraisalEaseOfDifficulty, 1);
 							//messagePlayer(0, "Appraisal level up chance: 1 in %d", appraisalEaseOfDifficulty);
@@ -5959,12 +6262,26 @@ void actPlayer(Entity* my)
 					{
 						messagePlayer(PLAYER_NUM, MESSAGE_STATUS, Language::get(3703));
 					}
+					if ( stats[PLAYER_NUM]->mask && stats[PLAYER_NUM]->mask->type == MASK_HAZARD_GOGGLES )
+					{
+						if ( my->effectShapeshift == NOTHING )
+						{
+							messagePlayer(PLAYER_NUM, MESSAGE_STATUS, Language::get(6090));
+						}
+					}
 					cameravars[PLAYER_NUM].shakex += .1;
 					cameravars[PLAYER_NUM].shakey += 10;
 				}
 				else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && stats[PLAYER_NUM]->type == VAMPIRE )
 				{
 					messagePlayerColor(PLAYER_NUM, MESSAGE_STATUS, makeColorRGB(255, 0, 0), Language::get(3183));
+					if ( stats[PLAYER_NUM]->mask && stats[PLAYER_NUM]->mask->type == MASK_HAZARD_GOGGLES )
+					{
+						if ( my->effectShapeshift == NOTHING )
+						{
+							messagePlayer(PLAYER_NUM, MESSAGE_STATUS, Language::get(6090));
+						}
+					}
 					playSoundPlayer(PLAYER_NUM, 28, 128);
 					playSoundPlayer(PLAYER_NUM, 249, 128);
 					cameravars[PLAYER_NUM].shakex += .1;
@@ -6109,6 +6426,10 @@ void actPlayer(Entity* my)
 		{
 			clickDescription(PLAYER_NUM, NULL); // inspecting objects
 			doStatueEditor(PLAYER_NUM);
+			if ( svFlags & SV_FLAG_CHEATS )
+			{
+				followerDebugEquipment(PLAYER_NUM);
+			}
 
 			if ( followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT )
 			{
@@ -6839,9 +7160,12 @@ void actPlayer(Entity* my)
 					messagePlayer(PLAYER_NUM, MESSAGE_INTERACTION, Language::get(576), stats[i]->name);
 					if ( players[PLAYER_NUM]->isLocalPlayer() && players[i] && players[i]->entity)
 					{
-						double tangent = atan2(my->y - players[i]->entity->y, my->x - players[i]->entity->x);
-						PLAYER_VELX += cos(tangent);
-						PLAYER_VELY += sin(tangent);
+						if ( !stats[PLAYER_NUM]->EFFECTS[EFF_ROOTED] )
+						{
+							double tangent = atan2(my->y - players[i]->entity->y, my->x - players[i]->entity->x);
+							PLAYER_VELX += cos(tangent);
+							PLAYER_VELY += sin(tangent);
+						}
 					}
 				}
 			}
@@ -6854,6 +7178,21 @@ void actPlayer(Entity* my)
     const char* light_type = nullptr;
     static ConsoleVariable<bool> cvar_playerLight("/player_light_enabled", true);
 	int range_bonus = std::min(std::max(0, statGetPER(stats[PLAYER_NUM], my) / 5), 2);
+	int equipmentBonus = 0;
+	if ( stats[PLAYER_NUM]->mask && stats[PLAYER_NUM]->mask->type == MASK_EYEPATCH )
+	{
+		bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats[PLAYER_NUM]);
+		equipmentBonus = 2;
+		if ( stats[PLAYER_NUM]->mask->beatitude >= 0 || cursedItemIsBuff )
+		{
+			equipmentBonus += abs(stats[PLAYER_NUM]->mask->beatitude);
+		}
+		else if ( stats[PLAYER_NUM]->mask->beatitude < 0 )
+		{
+			equipmentBonus = -range_bonus + 3 * stats[PLAYER_NUM]->mask->beatitude;
+		}
+		equipmentBonus = std::max(-6, std::min(equipmentBonus, 4));
+	}
 	if (!intro && *cvar_playerLight) {
         if (!players[PLAYER_NUM]->isLocalPlayer() && multiplayer == CLIENT) {
             switch (PLAYER_TORCH) {
@@ -6901,6 +7240,7 @@ void actPlayer(Entity* my)
                     ambientLight = true;
 					if ( stats[PLAYER_NUM]->sneaking ) {
 						light_type = "player_sneaking";
+						range_bonus += equipmentBonus;
 					}
 					else
 					{
@@ -6955,6 +7295,7 @@ void actPlayer(Entity* my)
 				}
                 else if (stats[PLAYER_NUM]->sneaking) {
                     light_type = "player_sneaking";
+					range_bonus += equipmentBonus;
                 }
                 else {
                     light_type = "player_ambient";
@@ -6984,7 +7325,7 @@ void actPlayer(Entity* my)
 		if ( !intro )
 		{
 			my->handleEffects(stats[PLAYER_NUM]); // hunger, regaining hp/mp, poison, etc.
-			
+
 			if ( client_disconnected[PLAYER_NUM] || stats[PLAYER_NUM]->HP <= 0 )
 			{
 				bool doDeathProcedure = true;
@@ -7118,12 +7459,11 @@ void actPlayer(Entity* my)
 			                    SDLNet_Write32((Uint32)stats[PLAYER_NUM]->killer, &net_packet->data[4]);
 			                    if (stats[PLAYER_NUM]->killer == KilledBy::MONSTER) {
 			                        net_packet->data[8] = (Uint8)stats[PLAYER_NUM]->killer_name.size();
+			                        SDLNet_Write32((Uint32)stats[PLAYER_NUM]->killer_monster, &net_packet->data[9]);
+			                        net_packet->len = 13;
 			                        if (net_packet->data[8]) {
-			                            memcpy(&net_packet->data[9], stats[PLAYER_NUM]->killer_name.c_str(), net_packet->data[8]);
-			                            net_packet->len = 9 + net_packet->data[8];
-			                        } else {
-			                            SDLNet_Write32((Uint32)stats[PLAYER_NUM]->killer_monster, &net_packet->data[9]);
-			                            net_packet->len = 13;
+			                            memcpy(&net_packet->data[13], stats[PLAYER_NUM]->killer_name.c_str(), net_packet->data[8]);
+			                            net_packet->len = 13 + net_packet->data[8];
 			                        }
 			                    }
 			                    else if (stats[PLAYER_NUM]->killer == KilledBy::ITEM) {
@@ -7445,6 +7785,59 @@ void actPlayer(Entity* my)
 						{
 							messagePlayer(PLAYER_NUM, MESSAGE_HINT, Language::get(578));
 						}
+
+						bool allDead = true;
+						for ( int i = 0; i < MAXPLAYERS; ++i )
+						{
+							if ( players[i] && players[i]->entity && stats[i]->HP > 0 )
+							{
+								allDead = false;
+							}
+						}
+						if ( allDead && !AchievementObserver::PlayerAchievements::allPlayersDeadEvent )
+						{
+							AchievementObserver::PlayerAchievements::allPlayersDeadEvent = true;
+
+							// post online scores
+							if ( gameModeManager.allowsGlobalHiscores() )
+							{
+								if ( splitscreen )
+								{
+									for ( int c = 0; c < MAXPLAYERS; ++c ) {
+										if ( !client_disconnected[c] ) {
+#ifdef USE_PLAYFAB
+											if ( c == 0 )
+											{
+												playfabUser.postScore(c);
+											}
+#endif
+										}
+									}
+								}
+								else
+								{
+#ifdef USE_PLAYFAB
+									playfabUser.postScore(clientnum);
+#endif
+								}
+
+								if ( multiplayer == SERVER )
+								{
+									for ( int i = 1; i < MAXPLAYERS; ++i )
+									{
+										if ( client_disconnected[i] )
+										{
+											continue;
+										}
+										strcpy((char*)net_packet->data, "DEND"); //Post your hiscores here, we're all dead
+										net_packet->address.host = net_clients[i - 1].host;
+										net_packet->address.port = net_clients[i - 1].port;
+										net_packet->len = 4;
+										sendPacketSafe(net_sock, -1, net_packet, i - 1);
+									}
+								}
+							}
+						}
 					}
 					my->removeLightField();
 					list_RemoveNode(my->mynode);
@@ -7465,7 +7858,7 @@ void actPlayer(Entity* my)
 		if ( (stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK] && (stats[PLAYER_NUM]->type != GOATMAN))
 			|| stats[PLAYER_NUM]->EFFECTS[EFF_WITHDRAWAL] )
 		{
-			CHAR_DRUNK++;
+			my->char_drunk++;
 			int drunkInterval = TICKS_PER_SECOND * 6;
 			if ( stats[PLAYER_NUM]->EFFECTS[EFF_WITHDRAWAL] )
 			{
@@ -7479,9 +7872,9 @@ void actPlayer(Entity* my)
 				}
 			}
 
-			if ( CHAR_DRUNK >= drunkInterval )
+			if ( my->char_drunk >= drunkInterval )
 			{
-				CHAR_DRUNK = 0;
+				my->char_drunk = 0;
 				messagePlayer(PLAYER_NUM, MESSAGE_WORLD, Language::get(579));
 				cameravars[PLAYER_NUM].shakex -= .04;
 				cameravars[PLAYER_NUM].shakey -= 5;
@@ -7541,14 +7934,11 @@ void actPlayer(Entity* my)
 				if ( !everybodyfriendly && hit.entity->behavior == &actMonster )
 				{
 					bool enemy = my->checkEnemy(hit.entity);
-					if ( enemy )
+					if ( enemy && !hit.entity->isInertMimic() )
 					{
 						if ( hit.entity->monsterState == MONSTER_STATE_WAIT || (hit.entity->monsterState == MONSTER_STATE_HUNT && hit.entity->monsterTarget == 0) )
 						{
-							double tangent = atan2( my->y - hit.entity->y, my->x - hit.entity->x );
-							hit.entity->skill[4] = 1;
-							hit.entity->skill[6] = local_rng.rand() % 10 + 1;
-							hit.entity->fskill[4] = tangent;
+							hit.entity->lookAtEntity(*my);
 						}
 					}
 				}
@@ -7632,14 +8022,11 @@ void actPlayer(Entity* my)
 				if ( !everybodyfriendly && hit.entity->behavior == &actMonster )
 				{
 					bool enemy = my->checkEnemy(hit.entity);
-					if ( enemy )
+					if ( enemy && !hit.entity->isInertMimic() )
 					{
 						if ( hit.entity->monsterState == MONSTER_STATE_WAIT || (hit.entity->monsterState == MONSTER_STATE_HUNT && hit.entity->monsterTarget == 0) )
 						{
-							double tangent = atan2( my->y - hit.entity->y, my->x - hit.entity->x );
-							hit.entity->skill[4] = 1;
-							hit.entity->skill[6] = local_rng.rand() % 10 + 1;
-							hit.entity->fskill[4] = tangent;
+							hit.entity->lookAtEntity(*my);
 						}
 					}
 				}
@@ -8891,7 +9278,7 @@ void actPlayer(Entity* my)
 					if ( multiplayer != CLIENT )
 					{
 						bool hasSteelHelm = false;
-						if ( stats[PLAYER_NUM]->helmet )
+						/*if ( stats[PLAYER_NUM]->helmet )
 						{
 							if ( stats[PLAYER_NUM]->helmet->type == STEEL_HELM
 								|| stats[PLAYER_NUM]->helmet->type == CRYSTAL_HELM 
@@ -8899,7 +9286,7 @@ void actPlayer(Entity* my)
 							{
 								hasSteelHelm = true;
 							}
-						}
+						}*/
 						if ( stats[PLAYER_NUM]->mask == NULL || my->isInvisible() || hasSteelHelm )
 						{
 							entity->flags[INVISIBLE] = true;
@@ -8955,7 +9342,7 @@ void actPlayer(Entity* my)
 					if ( entity->sprite == 165 || entity->sprite == 1196 )
 					{
 						entity->focalx = limbs[playerRace][10][0] + .25; // .25
-						entity->focaly = limbs[playerRace][10][1] - 2.25; // -2.25
+						entity->focaly = limbs[playerRace][10][1] - 2.5; // -2.25
 						entity->focalz = limbs[playerRace][10][2]; // .5
 						if ( entity->sprite == 1196 ) // MonocleWorn.vox
 						{
@@ -9003,6 +9390,20 @@ void actPlayer(Entity* my)
 						entity->roll = 0;
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);
+					}
+					else if ( EquipmentModelOffsets.modelOffsetExists(playerRace, entity->sprite) )
+					{
+						my->setHelmetLimbOffset(entity);
+						my->setHelmetLimbOffsetWithMask(helmet, entity);
+					}
+					else if ( playerRace == INCUBUS
+						&& (entity->sprite == items[TOOL_BLINDFOLD].index
+							|| entity->sprite == items[TOOL_BLINDFOLD_FOCUS].index
+							|| entity->sprite == items[TOOL_BLINDFOLD_TELEPATHY].index) )
+					{
+						entity->focalx = limbs[playerRace][10][0] + .35; // .35
+						entity->focaly = limbs[playerRace][10][1] - 2.5; // -2
+						entity->focalz = limbs[playerRace][10][2]; // .5
 					}
 					else
 					{
@@ -10092,7 +10493,7 @@ bool playerRequiresBloodToSustain(int player)
 	{
 		return true;
 	}
-	if ( stats[player]->playerRace == VAMPIRE && stats[player]->appearance == 0 )
+	if ( stats[player]->playerRace == RACE_VAMPIRE && stats[player]->appearance == 0 )
 	{
 		return true;
 	}

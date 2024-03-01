@@ -21,6 +21,7 @@
 #include "player.hpp"
 #include "prng.hpp"
 #include "scores.hpp"
+#include "mod_tools.hpp"
 
 void initSuccubus(Entity* my, Stat* myStats)
 {
@@ -40,6 +41,8 @@ void initSuccubus(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
+		auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+
 		if ( myStats != nullptr )
 		{
 			if ( !myStats->leader_uid )
@@ -48,14 +51,14 @@ void initSuccubus(Entity* my, Stat* myStats)
 			}
 
 			// apply random stat increases if set in stat_shared.cpp or editor
-			setRandomMonsterStats(myStats);
+			setRandomMonsterStats(myStats, rng);
 
 			// generate 6 items max, less if there are any forced items from boss variants
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
 		    const bool boss =
-		        local_rng.rand() % 50 == 0 &&
+		        rng.rand() % 50 == 0 &&
 		        !my->flags[USERFLAG2] &&
 		        !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 		    if ( (boss || (*cvar_summonBosses && conductGameChallenges[CONDUCT_CHEATS_ENABLED])) && myStats->leader_uid == 0 )
@@ -74,17 +77,20 @@ void initSuccubus(Entity* my, Stat* myStats)
 						{
 							followerStats->leader_uid = entity->parent;
 						}
+						entity->seedEntityRNG(rng.getU32());
 					}
 				}
+				newItem(MASK_MOUTH_ROSE, EXCELLENT, -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+				customItemsToGenerate -= 1;
 			}
 
 			// random effects
 
 			// generates equipment and weapons if available from editor
-			createMonsterEquipment(myStats);
+			createMonsterEquipment(myStats, rng);
 
 			// create any custom inventory items from editor if available
-			createCustomInventory(myStats, customItemsToGenerate);
+			createCustomInventory(myStats, customItemsToGenerate, rng);
 
 			// count if any custom inventory items from editor
 			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
@@ -105,13 +111,17 @@ void initSuccubus(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( !strcmp(myStats->name, "Lilith") && local_rng.rand() % 4 > 0 )
+					if ( myStats->getAttribute("special_npc") == "lilith" && rng.rand() % 4 > 0 )
 					{
-						newItem(MAGICSTAFF_CHARM, EXCELLENT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory); // 75% chance
+						newItem(MAGICSTAFF_CHARM, EXCELLENT, -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory); // 75% chance
 					}
-					else if ( local_rng.rand() % 10 == 0 )
+					else if ( rng.rand() % 10 == 0 )
 					{
-						newItem(MAGICSTAFF_CHARM, static_cast<Status>(DECREPIT + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory); // 10% chance
+						newItem(MAGICSTAFF_CHARM, static_cast<Status>(DECREPIT + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory); // 10% chance
+					}
+					else if ( rng.rand() % 10 == 0 )
+					{
+						newItem(MASK_MASQUERADE, WORN, -2 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
 					}
 					break;
 				default:
@@ -230,6 +240,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SUCCUBUS][6][0]; // 
 	entity->focaly = limbs[SUCCUBUS][6][1]; // 
 	entity->focalz = limbs[SUCCUBUS][6][2]; // 
@@ -250,6 +261,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SUCCUBUS][7][0]; // 
 	entity->focaly = limbs[SUCCUBUS][7][1]; // 
 	entity->focalz = limbs[SUCCUBUS][7][2]; // 
@@ -273,6 +285,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SUCCUBUS][8][0]; // 0
 	entity->focaly = limbs[SUCCUBUS][8][1]; // 0
 	entity->focalz = limbs[SUCCUBUS][8][2]; // 4
@@ -296,6 +309,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SUCCUBUS][9][0]; // 0
 	entity->focaly = limbs[SUCCUBUS][9][1]; // 0
 	entity->focalz = limbs[SUCCUBUS][9][2]; // -2
@@ -316,6 +330,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
 	entity->focalx = limbs[SUCCUBUS][10][0]; // 0
 	entity->focaly = limbs[SUCCUBUS][10][1]; // 0
 	entity->focalz = limbs[SUCCUBUS][10][2]; // .5
@@ -842,7 +857,7 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( multiplayer != CLIENT )
 				{
 					bool hasSteelHelm = false;
-					if ( myStats->helmet )
+					/*if ( myStats->helmet )
 					{
 						if ( myStats->helmet->type == STEEL_HELM
 							|| myStats->helmet->type == CRYSTAL_HELM
@@ -850,7 +865,7 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							hasSteelHelm = true;
 						}
-					}
+					}*/
 					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
@@ -905,6 +920,11 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( entity->sprite == items[MASK_SHAMAN].index )
 					{
 						entity->roll = 0;
+						my->setHelmetLimbOffset(entity);
+						my->setHelmetLimbOffsetWithMask(helmet, entity);
+					}
+					else if ( EquipmentModelOffsets.modelOffsetExists(SUCCUBUS, entity->sprite) )
+					{
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);
 					}

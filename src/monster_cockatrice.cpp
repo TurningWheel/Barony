@@ -39,6 +39,8 @@ void initCockatrice(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
+		auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+
 		if ( myStats != nullptr )
 		{
 			if ( !myStats->leader_uid )
@@ -47,7 +49,7 @@ void initCockatrice(Entity* my, Stat* myStats)
 			}
 
 			// apply random stat increases if set in stat_shared.cpp or editor
-			setRandomMonsterStats(myStats);
+			setRandomMonsterStats(myStats, rng);
 
 			// generate 6 items max, less if there are any forced items from boss variants
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
@@ -59,17 +61,17 @@ void initCockatrice(Entity* my, Stat* myStats)
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
 			// cockatrices don't sleep!
-			/*if ( local_rng.rand() % 4 == 0 )
+			/*if ( rng.rand() % 4 == 0 )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + local_rng.rand() % 3600;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rng.rand() % 3600;
 			}*/
 
 			// generates equipment and weapons if available from editor
-			createMonsterEquipment(myStats);
+			createMonsterEquipment(myStats, rng);
 
 			// create any custom inventory items from editor if available
-			createCustomInventory(myStats, customItemsToGenerate);
+			createCustomInventory(myStats, customItemsToGenerate, rng);
 
 			// count if any custom inventory items from editor
 			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
@@ -85,10 +87,10 @@ void initCockatrice(Entity* my, Stat* myStats)
 			int minValue = 70;
 			int maxValue = 80;
 			int numRolls = 1; // 0-2 extra rolls
-			if ( local_rng.rand() % 2 == 0 ) // 50% chance
+			if ( rng.rand() % 2 == 0 ) // 50% chance
 			{
 				++numRolls;
-				if ( local_rng.rand() % 2 == 0 ) // 25% chance, including the previous roll
+				if ( rng.rand() % 2 == 0 ) // 25% chance, including the previous roll
 				{
 					++numRolls;
 				}
@@ -101,37 +103,37 @@ void initCockatrice(Entity* my, Stat* myStats)
 				case 5:
 					// TODO: cockatrice head.
 				case 4:
-					if ( local_rng.rand() % 20 == 0 ) // 5% drop stoneblood spellbook
+					if ( rng.rand() % 20 == 0 ) // 5% drop stoneblood spellbook
 					{
-						newItem(static_cast<ItemType>(SPELLBOOK_STONEBLOOD), static_cast<Status>(1 + local_rng.rand() % 4), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
+						newItem(static_cast<ItemType>(SPELLBOOK_STONEBLOOD), static_cast<Status>(1 + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
 					}
 				case 3:
-					if ( local_rng.rand() % 5 == 0 ) // 20% for gemstone, luckstone to obsidian. qty 1-2.
+					if ( rng.rand() % 5 == 0 ) // 20% for gemstone, luckstone to obsidian. qty 1-2.
 					{
-						if ( local_rng.rand() % 3 == 0 )
+						if ( rng.rand() % 3 == 0 )
 						{
 							newItem(ENCHANTED_FEATHER, WORN, 0, 1, (2 * (ENCHANTED_FEATHER_MAX_DURABILITY - 1)) / 4, false, &myStats->inventory);
 						}
 						else
 						{
-							newItem(static_cast<ItemType>(GEM_LUCK + local_rng.rand() % 16), static_cast<Status>(EXCELLENT), 0, 1 + local_rng.rand() % 2, local_rng.rand(), false, &myStats->inventory);
+							newItem(static_cast<ItemType>(GEM_LUCK + rng.rand() % 16), static_cast<Status>(EXCELLENT), 0, 1 + rng.rand() % 2, rng.rand(), false, &myStats->inventory);
 						}
 					}
 				case 2:
-					if ( local_rng.rand() % 10 < 3 ) // 30% drop stoneblood magicstaff
+					if ( rng.rand() % 10 < 3 ) // 30% drop stoneblood magicstaff
 					{
-						newItem(static_cast<ItemType>(MAGICSTAFF_STONEBLOOD), static_cast<Status>(1 + local_rng.rand() % 4), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
+						newItem(static_cast<ItemType>(MAGICSTAFF_STONEBLOOD), static_cast<Status>(1 + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
 					}
 				case 1:
 					for ( int i = 0; i < numRolls; ++i )
 					{
-						if ( local_rng.rand() % 3 == 0 ) // 33% chance to choose high value item
+						if ( rng.rand() % 3 == 0 ) // 33% chance to choose high value item
 						{
 							minValue = 100;
 							maxValue = 100;
 						}
-						ItemType itemType = itemTypeWithinGoldValue(Category::POTION, minValue, maxValue);
-						newItem(itemType, static_cast<Status>(1 + local_rng.rand() % 4), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
+						ItemType itemType = itemTypeWithinGoldValue(Category::POTION, minValue, maxValue, rng);
+						newItem(itemType, static_cast<Status>(1 + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
 						// reset values for next loop.
 						minValue = 70;
 						maxValue = 80;

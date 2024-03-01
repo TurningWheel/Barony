@@ -60,7 +60,10 @@ static const int EFF_TROLLS_BLOOD = 35;
 static const int EFF_FLUTTER = 36;
 static const int EFF_DASH = 37;
 static const int EFF_DISTRACTED_COOLDOWN = 38;
-static const int NUMEFFECTS = 40;
+static const int EFF_MIMIC_LOCKED = 39;
+static const int EFF_ROOTED = 40;
+static const int EFF_NAUSEA_PROTECTION = 41;
+static const int NUMEFFECTS = 64;
 
 // stats
 static const int STAT_STR = 0;
@@ -203,10 +206,12 @@ enum KilledBy {
     FOUNTAIN,
     SINK,
     FAILED_ALCHEMY,
+	FAILED_CHALLENGE
 };
 
 class Stat
 {
+	Sint32 PROFICIENCIES[NUMPROFICIENCIES];
 public:
 	Monster type;
 	sex_t sex;
@@ -242,7 +247,27 @@ public:
 	Sint32 PLAYER_LVL_STAT_TIMER[NUMSTATS * 2];
 
 	// skills and effects
-	Sint32 PROFICIENCIES[NUMPROFICIENCIES];
+	Sint32 getProficiency(int skill) const
+	{
+		if ( skill >= 0 && skill < NUMPROFICIENCIES )
+		{
+			return PROFICIENCIES[skill];
+		}
+		return 0;
+	}
+	Sint32 getModifiedProficiency(int skill) const;
+	void setProficiency(int skill, int value)
+	{
+		if ( skill >= 0 && skill < NUMPROFICIENCIES )
+		{
+			PROFICIENCIES[skill] = std::min(std::max(0, value), 100);
+		}
+	}
+	void setProficiencyUnsafe(int skill, int value)
+	{
+		PROFICIENCIES[skill] = value;
+	}
+	int getGoldWeight() const;
 	bool EFFECTS[NUMEFFECTS];
 	Sint32 EFFECTS_TIMERS[NUMEFFECTS];
 	bool defending;
@@ -260,6 +285,7 @@ public:
 	Sint32& monsterIsCharmed; // MISC_FLAGS[12]
 	Sint32& playerShapeshiftStorage; // MISC_FLAGS[13]
 	Sint32& monsterTinkeringStatus; // MISC_FLAGS[14]
+	Sint32& monsterMimicLockedBy; // MISC_FLAGS[14]
 	Sint32& monsterDemonHasBeenExorcised; // MISC_FLAGS[15]
 	Sint32& bleedInflictedBy; // MISC_FLAGS[17]
 	Sint32& burningInflictedBy; // MISC_FLAGS[18]
@@ -338,12 +364,13 @@ public:
 	void addItemToLootingBag(const int player, const real_t x, const real_t y, Item& item);
 	Uint32 getLootingBagKey(const int player);
 	static bool emptyLootingBag(const int player, Uint32 key);
+	static int maxEquipmentBonusToSkill;
 };
 extern Stat* stats[MAXPLAYERS];
 
 inline bool skillCapstoneUnlocked(int player, int proficiency)
 {
-	return (stats[player]->PROFICIENCIES[proficiency] >= CAPSTONE_UNLOCK_LEVEL[proficiency]);
+	return (stats[player]->getModifiedProficiency(proficiency) >= CAPSTONE_UNLOCK_LEVEL[proficiency]);
 }
 
 void setDefaultMonsterStats(Stat* stats, int sprite);

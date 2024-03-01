@@ -88,6 +88,9 @@ std::string LobbyHandler_t::getLobbyJoinFailedConnectString(int result)
 		case EResult_LobbyFailures::LOBBY_TOO_MANY_PLAYERS:
 			snprintf(buf, 1023, "Unable to join lobby:\nLobby is full.");
 			break;
+		case EResult_LobbyFailures::LOBBY_SAVEGAME_REQUIRES_DLC:
+			snprintf(buf, 1023, "Unable to join lobby:\n%s", Language::get(6100));
+			break;
 #ifdef USE_EOS
 #ifdef STEAMWORKS
 		case static_cast<int>(EOS_EResult::EOS_InvalidUser):
@@ -147,20 +150,32 @@ bool LobbyHandler_t::validateSteamLobbyDataOnJoin()
 {
 	bool errorOnJoin = false;
 	const char* lsgStr = SteamMatchmaking()->GetLobbyData(steamLobbyToValidate, "loadingsavegame");
+	const char* lukStr = SteamMatchmaking()->GetLobbyData(steamLobbyToValidate, "lobbyuniquekey");
 	if ( lsgStr )
 	{
 		Uint32 lsg = atoi(lsgStr);
-		if ( lsg != loadingsavegame )
+		Uint32 luk = lukStr ? atoi(lukStr) : 0;
+		if ( lsg != loadingsavegame || luk != loadinglobbykey )
 		{
 			// loading save game, but incorrect assertion from client side.
 			if ( loadingsavegame == 0 )
 			{
 				// try reload from your other savefiles since this didn't match the default savegameIndex.
 				bool foundSave = false;
+				int checkDLC = VALID_OK_CHARACTER;
 				for ( int c = 0; c < SAVE_GAMES_MAX; ++c ) {
 					auto info = getSaveGameInfo(false, c);
 					if ( info.game_version != -1 ) {
-						if ( info.gamekey == lsg ) {
+						if ( info.player_num < info.players.size() )
+						{
+							checkDLC = info.players[info.player_num].isCharacterValidFromDLC();
+							if ( checkDLC != VALID_OK_CHARACTER )
+							{
+								foundSave = false;
+								break;
+							}
+						}
+						if ( info.gamekey == lsg && info.lobbykey == luk ) {
 							savegameCurrentFileIndex = c;
 							foundSave = true;
 							break;
@@ -168,9 +183,15 @@ bool LobbyHandler_t::validateSteamLobbyDataOnJoin()
 					}
 				}
 
-				if ( foundSave )
+				if ( checkDLC != VALID_OK_CHARACTER )
+				{
+					connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_SAVEGAME_REQUIRES_DLC;
+					errorOnJoin = true;
+				}
+				else if ( foundSave )
 				{
 					loadingsavegame = lsg;
+					loadinglobbykey = luk;
 					auto info = getSaveGameInfo(false, savegameCurrentFileIndex);
 					for ( int c = 0; c < MAXPLAYERS; ++c ) {
 						if ( info.players_connected[c] ) {
@@ -189,7 +210,7 @@ bool LobbyHandler_t::validateSteamLobbyDataOnJoin()
 				connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_NOT_USING_SAVEGAME;
 				errorOnJoin = true;
 			}
-			else if ( loadingsavegame > 0 && lsg > 0 )
+			else if ( (loadingsavegame > 0 && lsg > 0) || (loadinglobbykey > 0 && luk > 0) )
 			{
 				connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_WRONG_SAVEGAME;
 				errorOnJoin = true;

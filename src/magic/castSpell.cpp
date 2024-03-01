@@ -220,7 +220,7 @@ int getSpellcastingAbilityFromUsingSpellbook(spell_t* spell, Entity* caster, Sta
 		return 0;
 	}
 
-	int spellcastingAbility = std::min(std::max(0, casterStats->PROFICIENCIES[PRO_SPELLCASTING] + statGetINT(casterStats, caster)), 100);
+	int spellcastingAbility = std::min(std::max(0, casterStats->getModifiedProficiency(PRO_SPELLCASTING) + statGetINT(casterStats, caster)), 100);
 
 
 	// penalty for not knowing spellbook. e.g 40 spellcasting, 80 difficulty = 40% more chance to fumble/use mana.
@@ -271,7 +271,7 @@ bool isSpellcasterBeginner(int player, Entity* caster)
 	{
 		return false;
 	}
-	else if ( std::min(std::max(0, myStats->PROFICIENCIES[PRO_SPELLCASTING] + statGetINT(myStats, caster)), 100) < SPELLCASTING_BEGINNER )
+	else if ( std::min(std::max(0, myStats->getModifiedProficiency(PRO_SPELLCASTING) + statGetINT(myStats, caster)), 100) < SPELLCASTING_BEGINNER )
 	{
 		return true; //The caster has lower spellcasting skill. Cue happy fun times.
 	}
@@ -285,7 +285,7 @@ bool isSpellcasterBeginnerFromSpellbook(int player, Entity* caster, Stat* stat, 
 		return false;
 	}
 
-	int spellcastingLvl = std::min(std::max(0, stat->PROFICIENCIES[PRO_SPELLCASTING] + statGetINT(stat, caster)), 100);
+	int spellcastingLvl = std::min(std::max(0, stat->getModifiedProficiency(PRO_SPELLCASTING) + statGetINT(stat, caster)), 100);
 	bool newbie = false;
 
 	if ( spellcastingLvl >= spell->difficulty || playerLearnedSpellbook(player, spellbookItem) )
@@ -330,7 +330,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	}
 
 	Entity* result = NULL; //If the spell spawns an entity (like a magic light ball or a magic missile), it gets stored here and returned.
-#define spellcasting std::min(std::max(0,stat->PROFICIENCIES[PRO_SPELLCASTING]+statGetINT(stat, caster)),100) //Shortcut!
+#define spellcasting std::min(std::max(0,stat->getModifiedProficiency(PRO_SPELLCASTING)+statGetINT(stat, caster)),100) //Shortcut!
 
 	if (clientnum != 0 && multiplayer == CLIENT)
 	{
@@ -1466,7 +1466,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						}
 					}
 					// spellbook 100-150%, 50 INT = 200%.
-					amount += amount * ((spellBookBonusPercent * 1 / 100.f) + getBonusFromCasterOfSpellElement(caster, nullptr, element));
+					amount += amount * ((spellBookBonusPercent * 1 / 100.f) + getBonusFromCasterOfSpellElement(caster, nullptr, element, spell ? spell->ID : SPELL_NONE));
 
 					int totalHeal = 0;
 					int oldHP = players[i]->entity->getHP();
@@ -2449,14 +2449,14 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			if ( stat )
 			{
 				// spellcasting increase chances.
-				if ( stat->PROFICIENCIES[PRO_SPELLCASTING] < 60 )
+				if ( stat->getProficiency(PRO_SPELLCASTING) < 60 )
 				{
 					if ( local_rng.rand() % 6 == 0 ) //16.67%
 					{
 						caster->increaseSkill(PRO_SPELLCASTING);
 					}
 				}
-				else if ( stat->PROFICIENCIES[PRO_SPELLCASTING] < 80 )
+				else if ( stat->getProficiency(PRO_SPELLCASTING) < 80 )
 				{
 					if ( local_rng.rand() % 9 == 0 ) //11.11%
 					{
@@ -2472,14 +2472,14 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 
 				// magic increase chances.
-				if ( stat->PROFICIENCIES[PRO_MAGIC] < 60 )
+				if ( stat->getProficiency(PRO_SPELLCASTING) < 60 )
 				{
 					if ( local_rng.rand() % 7 == 0 ) //14.2%
 					{
 						caster->increaseSkill(PRO_MAGIC);
 					}
 				}
-				else if ( stat->PROFICIENCIES[PRO_MAGIC] < 80 )
+				else if ( stat->getProficiency(PRO_SPELLCASTING) < 80 )
 				{
 					if ( local_rng.rand() % 10 == 0 ) //10.00%
 					{
@@ -2501,7 +2501,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				int spellCastChance = 5; // 20%
 				int magicChance = 6; // 16.67%
-				int castDifficulty = stat->PROFICIENCIES[PRO_SPELLCASTING] / 20 - spell->difficulty / 20;
+				int castDifficulty = stat->getProficiency(PRO_SPELLCASTING) / 20 - spell->difficulty / 20;
 				if ( castDifficulty <= -1 )
 				{
 					// spell was harder.
@@ -2534,11 +2534,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				//messagePlayer(0, "Difficulty: %d, chance 1 in %d, 1 in %d", castDifficulty, spellCastChance, magicChance);
 				if ( (!strcmp(element->element_internal_name, spellElement_light.element_internal_name) || spell->ID == SPELL_REVERT_FORM) )
 				{
-					if ( stat->PROFICIENCIES[PRO_SPELLCASTING] >= SKILL_LEVEL_SKILLED )
+					if ( stat->getProficiency(PRO_SPELLCASTING) >= SKILL_LEVEL_SKILLED )
 					{
 						spellCastChance = 0;
 					}
-					if ( stat->PROFICIENCIES[PRO_MAGIC] >= SKILL_LEVEL_SKILLED )
+					if ( stat->getProficiency(PRO_MAGIC) >= SKILL_LEVEL_SKILLED )
 					{
 						magicChance = 0;
 					}

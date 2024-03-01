@@ -128,8 +128,10 @@ void actFurniture(Entity* my)
 
 void Entity::actFurniture()
 {
+
 	if ( !furnitureInit )
 	{
+		auto& rng = entity_rng ? *entity_rng : local_rng;
 		if ( furnitureType == FURNITURE_BUNKBED )
 		{
 			this->createWorldUITooltip();
@@ -137,11 +139,11 @@ void Entity::actFurniture()
 		furnitureInit = 1;
 		if ( furnitureType == FURNITURE_TABLE || furnitureType == FURNITURE_BUNKBED || furnitureType == FURNITURE_BED || furnitureType == FURNITURE_PODIUM )
 		{
-			furnitureHealth = 15 + local_rng.rand() % 5;
+			furnitureHealth = 15 + rng.rand() % 5;
 		}
 		else
 		{
-			furnitureHealth = 4 + local_rng.rand() % 4;
+			furnitureHealth = 4 + rng.rand() % 4;
 		}
 		furnitureMaxHealth = furnitureHealth;
 		furnitureOldHealth = furnitureHealth;
@@ -2782,9 +2784,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 							Stat* stats = entity->getStats();
 							if ( stats )
 							{
-								stats->PROFICIENCIES[i] = result;
-								stats->PROFICIENCIES[i] = std::min(stats->PROFICIENCIES[i], 100);
-								stats->PROFICIENCIES[i] = std::max(stats->PROFICIENCIES[i], 0);
+								stats->setProficiency(i, result);
 							}
 						}
 					}
@@ -2829,9 +2829,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 							Stat* stats = entity->getStats();
 							if ( stats )
 							{
-								stats->PROFICIENCIES[i] += result;
-								stats->PROFICIENCIES[i] = std::min(stats->PROFICIENCIES[i], 100);
-								stats->PROFICIENCIES[i] = std::max(stats->PROFICIENCIES[i], 0);
+								stats->setProficiency(i, result);
 							}
 						}
 					}
@@ -3113,7 +3111,7 @@ void TextSourceScript::updateClientInformation(int player, bool clearInventory, 
 
 		for ( int i = 0; i < NUMPROFICIENCIES; ++i )
 		{
-			net_packet->data[27 + i] = (Uint8)stats[player]->PROFICIENCIES[i];
+			net_packet->data[27 + i] = (Uint8)stats[player]->getProficiency(i);
 		}
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;

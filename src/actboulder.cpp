@@ -233,21 +233,115 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 				playSoundEntity(my, 181, 128);
 				playSoundEntity(entity, 28, 64);
 				Entity* gib = spawnGib(entity);
+
+				int damage = 80;
+				if ( my->sprite == BOULDER_LAVA_SPRITE
+					|| my->sprite == BOULDER_ARCANE_SPRITE )
+				{
+					damage = 50;
+				}
+
+				int trapResist = entity->getFollowerBonusTrapResist();
+				if ( trapResist != 0 )
+				{
+					real_t mult = std::max(0.0, 1.0 - (trapResist / 100.0));
+					damage *= mult;
+				}
+
+				if ( stats->helmet )
+				{
+					bool shapeshifted = (entity->behavior == &actPlayer && entity->effectShapeshift != NOTHING);
+
+					if ( !shapeshifted 
+						&& (stats->helmet->type == HELM_MINING || stats->helmet->type == HAT_TOPHAT) )
+					{
+						if ( stats->helmet->type == HAT_TOPHAT )
+						{
+							bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats);
+							if ( stats->helmet->beatitude >= 0 || cursedItemIsBuff )
+							{
+								if ( stats->HP <= damage )
+								{
+									// saved us
+									steamAchievementEntity(entity, "BARONY_ACH_CRUMPLE_ZONES");
+								}
+								damage = 0;
+							}
+							stats->helmet->status = BROKEN;
+						}
+						else if ( stats->helmet->type == HELM_MINING )
+						{
+							real_t mult = 0.5;
+							bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats);
+							if ( stats->helmet->beatitude >= 0 || cursedItemIsBuff )
+							{
+								mult -= 0.25 * abs(stats->helmet->beatitude);
+								mult = std::max(0.0, mult);
+							}
+							else
+							{
+								mult = 1.0;
+								mult += 0.25 * abs(stats->helmet->beatitude);
+							}
+
+							if ( stats->HP <= damage )
+							{
+								// saved us
+								if ( stats->HP > (damage * mult) )
+								{
+									steamAchievementEntity(entity, "BARONY_ACH_CRUMPLE_ZONES");
+								}
+							}
+							damage *= mult;
+							if ( stats->helmet->status > BROKEN )
+							{
+								stats->helmet->status = (Status)((int)stats->helmet->status - 1);
+							}
+						}
+
+						playSoundEntity(entity, 76, 64);
+
+						if ( entity->behavior == &actPlayer )
+						{
+							int player = entity->skill[2];
+							if ( stats->helmet->status > BROKEN )
+							{
+								messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(681), stats->helmet->getName());
+							}
+							else
+							{
+								messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(682), stats->helmet->getName());
+							}
+
+							if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
+							{
+								strcpy((char*)net_packet->data, "ARMR");
+								net_packet->data[4] = 0;
+								net_packet->data[5] = stats->helmet->status;
+								net_packet->address.host = net_clients[player - 1].host;
+								net_packet->address.port = net_clients[player - 1].port;
+								net_packet->len = 6;
+								sendPacketSafe(net_sock, -1, net_packet, player - 1);
+							}
+						}
+					}
+				}
+
 				if ( my->sprite == BOULDER_LAVA_SPRITE )
 				{
-					entity->modHP(-50);
+					entity->modHP(-damage);
 					entity->setObituary(Language::get(3898));
 					stats->killer = KilledBy::BOULDER;
 				}
 				else if ( my->sprite == BOULDER_ARCANE_SPRITE )
 				{
-					entity->modHP(-50);
+					entity->modHP(-damage);
 					entity->setObituary(Language::get(3899));
 					stats->killer = KilledBy::BOULDER;
 				}
 				else
 				{
-					entity->modHP(-80);
+					entity->modHP(-damage);
 					entity->setObituary(Language::get(1505));
 					stats->killer = KilledBy::BOULDER;
 				}
@@ -368,6 +462,9 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 
 					boulderLavaOrArcaneOnDestroy(my, my->sprite, entity);
 
+					auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+					Uint32 monsterSpawnSeed = rng.getU32();
+
 					// destroy the boulder
 					playSoundEntity(my, 67, 128);
 					list_RemoveNode(my->mynode);
@@ -386,8 +483,8 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 						}
 						if ( monster )
 						{
-							int c;
-							for ( c = 0; c < MAXPLAYERS; c++ )
+							monster->seedEntityRNG(monsterSpawnSeed);
+							for ( int c = 0; c < MAXPLAYERS; c++ )
 							{
 								Uint32 color = makeColorRGB(255, 128, 0);
 								messagePlayerColor(c, MESSAGE_HINT, color, Language::get(406));
@@ -578,6 +675,12 @@ void actBoulder(Entity* my)
 		}
 	}
 
+	real_t boulderModifier = 1.0;
+	if ( gameModeManager.currentSession.challengeRun.isActive(GameModeManager_t::CurrentSession_t::ChallengeRun_t::CHEVENT_STRONG_TRAPS) )
+	{
+		boulderModifier = 2.0;
+	}
+
 	// gravity
 	bool nobounce = true;
 	if ( !BOULDER_NOGROUND )
@@ -651,7 +754,7 @@ void actBoulder(Entity* my)
 		if ( fabs(my->vel_z) > 1 )
 		{
 			playSoundEntity(my, 182, 128);
-			my->vel_z = -(my->vel_z / 2);
+			my->vel_z = -(my->vel_z / 2) * (1 / boulderModifier);
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
 				if ( players[i]->isLocalPlayer() )
@@ -726,6 +829,7 @@ void actBoulder(Entity* my)
 		{
 			maxSpeed = 2.5;
 		}
+		maxSpeed *= boulderModifier;
 		if ( my->vel_x > maxSpeed )
 		{
 			my->vel_x = maxSpeed;

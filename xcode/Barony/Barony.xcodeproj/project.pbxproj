@@ -75,6 +75,10 @@
 		847B3BF4296BF8C2002D8852 /* libphysfs.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 847B3BF1296BF89F002D8852 /* libphysfs.1.dylib */; };
 		847B3BF5296BF8CA002D8852 /* libphysfs.1.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 847B3BF1296BF89F002D8852 /* libphysfs.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		847B3BF6296BF8CA002D8852 /* libpng16.16.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 847B3BEF296BF890002D8852 /* libpng16.16.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		84B4ACC22B8E8C9200027417 /* playfab.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84B4ACC12B8E8C9200027417 /* playfab.cpp */; };
+		84B4ACC82B8E98EF00027417 /* libXPlatCpp_MacOS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 84B4ACC72B8E98EF00027417 /* libXPlatCpp_MacOS.a */; };
+		84B4ACCA2B8E991B00027417 /* monster_mimic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84B4ACC92B8E991B00027417 /* monster_mimic.cpp */; };
+		84B4ACCD2B8E9A0800027417 /* lib_json.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 84B4ACCB2B8E998C00027417 /* lib_json.a */; };
 		84B7E1802920290E00D1F0C5 /* libfmod.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 84B7E17F2920290E00D1F0C5 /* libfmod.dylib */; };
 		84BD1E65296E9E4600DC6F44 /* eos_editor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84BD1E5E296E9E4600DC6F44 /* eos_editor.cpp */; };
 		84BD1E66296E9E4600DC6F44 /* buttons.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84BD1E5F296E9E4600DC6F44 /* buttons.cpp */; };
@@ -341,6 +345,12 @@
 		847B3BEF296BF890002D8852 /* libpng16.16.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpng16.16.dylib; path = ../../../lpng1639/libpng16.16.dylib; sourceTree = "<group>"; };
 		847B3BF1296BF89F002D8852 /* libphysfs.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libphysfs.1.dylib; path = "../../../physfs-3.0.2/build/libphysfs.1.dylib"; sourceTree = "<group>"; };
 		847E18F729239843003BD4E9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; name = Info.plist; path = Barony/Info.plist; sourceTree = "<group>"; };
+		84B4ACC12B8E8C9200027417 /* playfab.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = playfab.cpp; path = ../../src/playfab.cpp; sourceTree = "<group>"; };
+		84B4ACC32B8E8CA700027417 /* playfab.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = playfab.hpp; path = ../../src/playfab.hpp; sourceTree = "<group>"; };
+		84B4ACC52B8E985700027417 /* libXPlatCpp_iOS.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libXPlatCpp_iOS.a; path = ../../../PlayFab/include/libXPlatCpp_iOS.a; sourceTree = "<group>"; };
+		84B4ACC72B8E98EF00027417 /* libXPlatCpp_MacOS.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libXPlatCpp_MacOS.a; path = ../../../PlayFab/include/libXPlatCpp_MacOS.a; sourceTree = "<group>"; };
+		84B4ACC92B8E991B00027417 /* monster_mimic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = monster_mimic.cpp; path = ../../src/monster_mimic.cpp; sourceTree = "<group>"; };
+		84B4ACCB2B8E998C00027417 /* lib_json.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = lib_json.a; path = ../../../PlayFab/include/lib_json.a; sourceTree = "<group>"; };
 		84B7E17F2920290E00D1F0C5 /* libfmod.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfmod.dylib; path = ../../../fmod/api/core/lib/libfmod.dylib; sourceTree = "<group>"; };
 		84BD1E24296E9C2100DC6F44 /* lobbies.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = lobbies.hpp; path = ../../src/lobbies.hpp; sourceTree = "<group>"; };
 		84BD1E25296E9C2100DC6F44 /* scrolls.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = scrolls.hpp; path = ../../src/scrolls.hpp; sourceTree = "<group>"; };
@@ -608,6 +618,8 @@
 				84F71060292327D900AE0D03 /* libsteam_api.dylib in Frameworks */,
 				843D8F9C2AD74AFD008E532C /* libEOSSDK-Mac-Shipping.dylib in Frameworks */,
 				843354EC2A771B6F0014D3CC /* libnfd.a in Frameworks */,
+				84B4ACC82B8E98EF00027417 /* libXPlatCpp_MacOS.a in Frameworks */,
+				84B4ACCD2B8E9A0800027417 /* lib_json.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -677,6 +689,7 @@
 				84BD1E33296E9C2300DC6F44 /* net.hpp */,
 				84BD1E3E296E9C2500DC6F44 /* paths.hpp */,
 				84BD1E26296E9C2100DC6F44 /* player.hpp */,
+				84B4ACC32B8E8CA700027417 /* playfab.hpp */,
 				84BD1E38296E9C2400DC6F44 /* prng.hpp */,
 				84BD1E32296E9C2300DC6F44 /* savepng.hpp */,
 				84BD1E48296E9C2600DC6F44 /* scores.hpp */,
@@ -800,6 +813,7 @@
 				84C3DA62291F78EF0084EAD5 /* monster_lich.cpp */,
 				84C3DA69291F78EF0084EAD5 /* monster_lichfire.cpp */,
 				84C3DA75291F78F00084EAD5 /* monster_lichice.cpp */,
+				84B4ACC92B8E991B00027417 /* monster_mimic.cpp */,
 				84C3DA7F291F78F00084EAD5 /* monster_minotaur.cpp */,
 				84C3DA6D291F78EF0084EAD5 /* monster_rat.cpp */,
 				84C3DA7E291F78F00084EAD5 /* monster_scarab.cpp */,
@@ -821,6 +835,7 @@
 				84C3DAB5291F79150084EAD5 /* paths.cpp */,
 				84C3DAAF291F79150084EAD5 /* player.cpp */,
 				84C3DAD7291F79510084EAD5 /* playerinventory.cpp */,
+				84B4ACC12B8E8C9200027417 /* playfab.cpp */,
 				84C3DAB3291F79150084EAD5 /* prng.cpp */,
 				84C3DAD1291F79510084EAD5 /* removecurse.cpp */,
 				84C3DAAE291F79150084EAD5 /* savepng.cpp */,
@@ -905,6 +920,9 @@
 		84C3D8F0291F5D370084EAD5 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				84B4ACCB2B8E998C00027417 /* lib_json.a */,
+				84B4ACC72B8E98EF00027417 /* libXPlatCpp_MacOS.a */,
+				84B4ACC52B8E985700027417 /* libXPlatCpp_iOS.a */,
 				847B3BEF296BF890002D8852 /* libpng16.16.dylib */,
 				847B3BF1296BF89F002D8852 /* libphysfs.1.dylib */,
 				843354F12A771D960014D3CC /* Cocoa.framework */,
@@ -1121,11 +1139,13 @@
 				84C3DA20291F787E0084EAD5 /* actboulder.cpp in Sources */,
 				84C3DA21291F787E0084EAD5 /* actdoor.cpp in Sources */,
 				84C3DA22291F787E0084EAD5 /* actarrowtrap.cpp in Sources */,
+				84B4ACC22B8E8C9200027417 /* playfab.cpp in Sources */,
 				84C3DA23291F787E0084EAD5 /* actmagictrap.cpp in Sources */,
 				84C3DA24291F787E0084EAD5 /* actsummontrap.cpp in Sources */,
 				84C3DA25291F787E0084EAD5 /* actthrown.cpp in Sources */,
 				84C3DA26291F787E0084EAD5 /* actwallbuster.cpp in Sources */,
 				84C3DA27291F787E0084EAD5 /* actitem.cpp in Sources */,
+				84B4ACCA2B8E991B00027417 /* monster_mimic.cpp in Sources */,
 				84C3DA28291F787E0084EAD5 /* actspeartrap.cpp in Sources */,
 				84C3DA29291F787E0084EAD5 /* actpedestal.cpp in Sources */,
 				84C3DA2A291F787E0084EAD5 /* actladder.cpp in Sources */,
@@ -1507,6 +1527,7 @@
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-27379709-v1/SDK/Include\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/public\"",
 					"\"$(SRCROOT)/../../../nfd-build\"",
+					"\"$(SRCROOT)/../../../PlayFab/include\"",
 				);
 				INFOPLIST_FILE = Barony/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.role-playing-games";
@@ -1532,6 +1553,7 @@
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-27379709-v1/SDK/Bin\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
 					"\"$(SRCROOT)/../../../nfd-build\"",
+					"\"$(SRCROOT)/../../../PlayFab/include\"",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MARKETING_VERSION = 1.0;
@@ -1584,6 +1606,7 @@
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-27379709-v1/SDK/Include\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/public\"",
 					"\"$(SRCROOT)/../../../nfd-build\"",
+					"\"$(SRCROOT)/../../../PlayFab/include\"",
 				);
 				INFOPLIST_FILE = Barony/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.role-playing-games";
@@ -1609,6 +1632,7 @@
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-27379709-v1/SDK/Bin\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
 					"\"$(SRCROOT)/../../../nfd-build\"",
+					"\"$(SRCROOT)/../../../PlayFab/include\"",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MARKETING_VERSION = 1.0;

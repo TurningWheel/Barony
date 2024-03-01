@@ -867,7 +867,7 @@ void Player::ShopGUI_t::setItemDisplayNameAndPrice(Item* item)
 		if ( item->itemSpecialShopConsumable )
 		{
 			itemSkillReq = ((int)item->itemRequireTradingSkillInShop) * SHOP_CONSUMABLE_SKILL_REQ_PER_POINT;
-			if ( stats[player.playernum]->PROFICIENCIES[PRO_TRADING] + statGetCHR(stats[player.playernum], players[player.playernum]->entity) < itemSkillReq )
+			if ( stats[player.playernum]->getModifiedProficiency(PRO_TRADING) + statGetCHR(stats[player.playernum], players[player.playernum]->entity) < itemSkillReq )
 			{
 				hiddenItemInGUI = true;
 				itemUnknownPreventPurchase = true;
@@ -924,8 +924,11 @@ void Player::ShopGUI_t::setItemDisplayNameAndPrice(Item* item)
 				{
 					ItemType oldType = item->type;
 					item->type = (ItemType)orbCategories.first;
-					orbImg->path = getItemSpritePath(player.playernum, *item);
-					orbImg->disabled = false;
+					if ( orbImg )
+					{
+						orbImg->path = getItemSpritePath(player.playernum, *item);
+						orbImg->disabled = false;
+					}
 					item->type = oldType;
 					break;
 				}
@@ -1722,7 +1725,7 @@ void Player::ShopGUI_t::updateShop()
 				}
 			}
 			discountLabelText->setText(s.c_str());
-			shopModifier = 1 / ((50 + stats[player.playernum]->PROFICIENCIES[PRO_TRADING]) / 150.f); // buy value
+			shopModifier = 1 / ((50 + stats[player.playernum]->getModifiedProficiency(PRO_TRADING)) / 150.f); // buy value
 			//shopModifier /= 1.f + statGetCHR(stats[player.playernum], players[player.playernum]->entity) / 20.f;
 			shopModifier = std::max(1.0, shopModifier);
 			shopModifier = shopModifier * 100.0 - 100.0;
@@ -1742,7 +1745,7 @@ void Player::ShopGUI_t::updateShop()
 				}
 			}
 			discountLabelText->setText(s.c_str());
-			shopModifier = (50 + stats[player.playernum]->PROFICIENCIES[PRO_TRADING]) / 150.f; // sell value
+			shopModifier = (50 + stats[player.playernum]->getModifiedProficiency(PRO_TRADING)) / 150.f; // sell value
 			shopModifier *= 1.f + statGetCHR(stats[player.playernum], players[player.playernum]->entity) / 20.f;
 			shopModifier = std::min(1.0, shopModifier);
 			shopModifier = shopModifier * 100.0 - 100.0;

@@ -2,8 +2,12 @@
 #include "scores.hpp"
 #include "files.hpp"
 #include "mod_tools.hpp"
+#include "interface/ui.hpp"
 #ifdef STEAMWORKS
 #include "steam.hpp"
+#endif
+#ifdef USE_EOS
+#include "eos.hpp"
 #endif
 
 #ifdef USE_PLAYFAB
@@ -16,8 +20,10 @@
 #endif
 
 PlayfabUser_t playfabUser;
+int loginFailures = 1;
 void PlayfabUser_t::OnLoginSuccess(const PlayFab::ClientModels::LoginResult& result, void* customData)
 {
+    loginFailures = 1;
     logInfo("Logged in successfully");
     playfabUser.loggingIn = false;
     playfabUser.bLoggedIn = true;
@@ -40,6 +46,7 @@ void PlayfabUser_t::OnLoginSuccess(const PlayFab::ClientModels::LoginResult& res
 #endif
         break;
     case PlayerType_Epic:
+#ifdef USE_EOS
         if ( EOS.CurrentUserInfo.bUserLoggedIn )
         {
             if ( !EOS.CurrentUserInfo.bUserInfoRequireUpdate )
@@ -48,6 +55,7 @@ void PlayfabUser_t::OnLoginSuccess(const PlayFab::ClientModels::LoginResult& res
                 request.DisplayName = request.DisplayName.substr(0, 25);
             }
         }
+#endif
         break;
     default:
         break;
@@ -56,11 +64,23 @@ void PlayfabUser_t::OnLoginSuccess(const PlayFab::ClientModels::LoginResult& res
     {
         PlayFab::PlayFabClientAPI::UpdateUserTitleDisplayName(request, OnDisplayNameUpdateSuccess);
     }
+
+    {
+        PlayFab::CloudScriptModels::ExecuteFunctionRequest request;
+        request.FunctionName = "LoginMOTD";
+        request.GeneratePlayStreamEvent = false;
+        request.CustomTags["default"] = 1;
+
+        PlayFab::PlayFabCloudScriptAPI::ExecuteFunction(request, OnFunctionExecute, OnCloudScriptFailure,
+            (void*)(intptr_t)(PlayerCheckLeaderboardData_t::sequenceIDs));
+    }
 }
 
 void PlayfabUser_t::OnLoginFail(const PlayFab::PlayFabError& error, void* customData)
 {
-    logError("Failed to login: %s", error.ErrorMessage.c_str());
+    logError("Failed to login: %s | %s", error.ErrorName.c_str(), error.ErrorMessage.c_str());
+    logError(error.GenerateErrorReport().c_str());
+
     playfabUser.loggingIn = false;
     playfabUser.bLoggedIn = false;
     playfabUser.errorLogin = true;
@@ -75,17 +95,26 @@ void PlayfabUser_t::OnDisplayNameUpdateSuccess(const PlayFab::ClientModels::Upda
 
 void PlayfabUser_t::loginEpic()
 {
+#ifdef USE_EOS
+    if ( EOS.AccountManager.AccountAuthenticationStatus == EOS_EResult::EOS_NotConfigured )
+    {
+        return;
+    }
+
     PlayFab::ClientModels::LoginWithOpenIdConnectRequest request;
     request.CreateAccount = true;
     request.ConnectionId = "openid_epic";
     request.IdToken = EOS.getAuthToken();
     if ( EOS.getAuthToken() == "" )
     {
-        playfabUser.authenticationRefresh = TICKS_PER_SECOND * 5;
+        playfabUser.authenticationRefresh = TICKS_PER_SECOND * 5 * loginFailures;
+        playfabUser.errorLogin = true;
+        loginFailures = std::min(20, loginFailures + 3);
         return;
     }
     playfabUser.loggingIn = true;
     PlayFab::PlayFabClientAPI::LoginWithOpenIdConnect(request, OnLoginSuccess, OnLoginFail);
+#endif
 }
 
 void PlayfabUser_t::loginSteam()
@@ -94,6 +123,13 @@ void PlayfabUser_t::loginSteam()
     PlayFab::ClientModels::LoginWithSteamRequest request;
     request.CreateAccount = true;
     request.SteamTicket = SteamClientRequestAuthTicket();
+    if ( request.SteamTicket == "" )
+    {
+        playfabUser.authenticationRefresh = TICKS_PER_SECOND * 5 * loginFailures;
+        playfabUser.errorLogin = true;
+        loginFailures = std::min(20, loginFailures + 3);
+        return;
+    }
     playfabUser.loggingIn = true;
     PlayFab::PlayFabClientAPI::LoginWithSteam(request, OnLoginSuccess, OnLoginFail);
 #endif
@@ -106,6 +142,17 @@ void PlayfabUser_t::OnCloudScriptExecute(const PlayFab::ClientModels::ExecuteClo
 
 void PlayfabUser_t::OnCloudScriptFailure(const PlayFab::PlayFabError& error, void* customData)
 {
+    /*if ( error.ErrorCode == PlayFab::PlayFabErrorCode::PlayFabErrorEntityTokenExpired )
+    {
+    // i think this response is from the server, so dont need to re-log
+        if ( playfabUser.bLoggedIn )
+        {
+            if ( playfabUser.authenticationRefresh > TICKS_PER_SECOND * 5 )
+            {
+                playfabUser.authenticationRefresh = TICKS_PER_SECOND * 5;
+            }
+        }
+    }*/
     logError("Update failure: %s", error.ErrorMessage.c_str());
 }
 
@@ -120,13 +167,13 @@ void jsonValueToInt(Json::Value& val, std::string key, int& set)
     }
 }
 
-void jsonValueToInt(Json::Value& val, std::string key, Uint32& set)
+void jsonValueToUint(Json::Value& val, std::string key, Uint32& set)
 {
     if ( val.isMember(key) )
     {
-        if ( val[key].isInt() )
+        if ( val[key].isUInt() )
         {
-            set = val[key].asInt();
+            set = val[key].asUInt();
         }
     }
 }
@@ -280,17 +327,23 @@ int parseOnlineHiscore(SaveGameInfo& info, Json::Value score)
                 {
                     jsonValueToInt(score[m], s, player.stats.LVL);
                 }
+                else if ( s == "EXP" )
+                {
+                    int xp = 0;
+                    jsonValueToInt(score[m], s, xp);
+                    player.stats.EXP = std::min(99, std::max(0, xp));
+                }
                 else if ( s == "class" )
                 {
-                    jsonValueToInt(score[m], s, player.char_class);
+                    jsonValueToUint(score[m], s, player.char_class);
                 }
                 else if ( s == "appearance" )
                 {
-                    jsonValueToInt(score[m], s, player.stats.appearance);
+                    jsonValueToUint(score[m], s, player.stats.appearance);
                 }
                 else if ( s == "race" )
                 {
-                    jsonValueToInt(score[m], s, player.race);
+                    jsonValueToUint(score[m], s, player.race);
                 }
                 else if ( s == "name" )
                 {
@@ -298,7 +351,7 @@ int parseOnlineHiscore(SaveGameInfo& info, Json::Value score)
                 }
                 else if ( s == "sex" )
                 {
-                    jsonValueToInt(score[m], s, player.stats.sex);
+                    jsonValueToUint(score[m], s, player.stats.sex);
                 }
                 else if ( s == "kill_by" )
                 {
@@ -356,7 +409,7 @@ int parseOnlineHiscore(SaveGameInfo& info, Json::Value score)
         }
         else if ( m == "time" )
         {
-            jsonValueToInt(score, m, info.gametimer);
+            jsonValueToUint(score, m, info.gametimer);
         }
         else if ( m == "totalscore" )
         {
@@ -364,7 +417,7 @@ int parseOnlineHiscore(SaveGameInfo& info, Json::Value score)
         }
         else if ( m == "flags" )
         {
-            jsonValueToInt(score, m, info.svflags);
+            jsonValueToUint(score, m, info.svflags);
         }
         else if ( m == "attributes" )
         {
@@ -480,7 +533,7 @@ void PlayfabUser_t::OnFunctionExecute(const PlayFab::CloudScriptModels::ExecuteF
             result.FunctionName.c_str(), (int)code, message.c_str(), result.ExecutionTimeMilliseconds);
     }
 
-    if ( result.FunctionName == "PostScore" )
+    if ( result.FunctionName == "PostScore" || result.FunctionName == "PostScoreDebug" )
     {
         int sequence = reinterpret_cast<intptr_t>(customData);
         for ( auto it = playfabUser.postScoreHandler.queue.begin();
@@ -490,11 +543,86 @@ void PlayfabUser_t::OnFunctionExecute(const PlayFab::CloudScriptModels::ExecuteF
             {
                 (*it).inprogress = false;
                 (*it).code = code;
-                Uint32 retryTicks = (retry > 0 ? (ticks + TICKS_PER_SECOND * retry) : 0);
+                Uint32 retryTicks = (retry > 0 ? (processTick + TICKS_PER_SECOND * retry) : 0);
                 (*it).retryTicks = retryTicks;
                 if ( code == PlayFab::PlayFabErrorCode::PlayFabErrorSuccess
                     || ((int)code >= 400 && (int)code < 500 && (*it).retryTicks == 0) )
                 {
+                    if ( code == PlayFab::PlayFabErrorCode::PlayFabErrorSuccess )
+                    {
+                        std::set<string> lidsImproved;
+                        std::set<string> lidsNew;
+                        std::set<string> lidsTotal;
+                        int dungeonlvl = -1;
+                        for ( auto itr = data.begin(); itr != data.end(); ++itr )
+                        {
+                            std::string key = itr.name();
+                            {
+                                if ( key == "dungeonlvl" )
+                                {
+                                    if ( data[key].isInt() )
+                                    {
+                                        dungeonlvl = data[key].asInt();
+                                    }
+                                }
+                                else if ( key == "improved_lids" )
+                                {
+                                    for ( int i = 0; i < data[key].size(); ++i )
+                                    {
+                                        if ( data[key][i].isString() )
+                                        {
+                                            lidsImproved.insert(data[key][i].asString());
+                                        }
+                                    }
+                                }
+                                else if ( key == "new_lids" )
+                                {
+                                    for ( int i = 0; i < data[key].size(); ++i )
+                                    {
+                                        if ( data[key][i].isString() )
+                                        {
+                                            lidsNew.insert(data[key][i].asString());
+                                        }
+                                    }
+                                }
+                                else if ( key == "lids" )
+                                {
+                                    for ( int i = 0; i < data[key].size(); ++i )
+                                    {
+                                        if ( data[key][i].isString() )
+                                        {
+                                            lidsTotal.insert(data[key][i].asString());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if ( message.find("Score successfully published") != std::string::npos )
+                        {
+                            // notification
+                            UIToastNotificationManager.createLeaderboardNotification(message);
+                            if ( dungeonlvl >= 5 )
+                            {
+                                for ( auto& lid : lidsNew )
+                                {
+                                    if ( lid.find("_seed_") != std::string::npos )
+                                    {
+                                        steamStatisticUpdate(STEAM_STAT_DUNGEONSEED, STEAM_STAT_INT, 1);
+                                        break;
+                                    }
+                                }
+                                for ( auto& lid : lidsImproved )
+                                {
+                                    if ( lid.find("_seed_") != std::string::npos )
+                                    {
+                                        steamAchievement("BARONY_ACH_GROWTH_MINDSET");
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
                     playfabUser.postScoreHandler.queue.erase(it);
                 }
                 else
@@ -505,6 +633,175 @@ void PlayfabUser_t::OnFunctionExecute(const PlayFab::CloudScriptModels::ExecuteF
                     }
                 }
                 break;
+            }
+        }
+    }
+    else if ( result.FunctionName == "LoginMOTD" )
+    {
+        if ( code == PlayFab::PlayFabErrorCode::PlayFabErrorSuccess )
+        {
+            for ( auto itr = data.begin(); itr != data.end(); ++itr )
+            {
+                Json::Value v;
+                Json::Reader reader;
+                if ( reader.parse(itr->asCString(), v) )
+                {
+                    for ( auto& key : v.getMemberNames() )
+                    {
+                        if ( key == "newseeds" )
+                        {
+                            int val = 0;
+                            jsonValueToInt(v, key, val);
+                            if ( val == 1 )
+                            {
+                                playfabUser.newSeedsAvailable = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    else if ( result.FunctionName == "LeaderboardWeeklyGetTimeLeft" )
+    {
+        int sequence = reinterpret_cast<intptr_t>(customData);
+        if ( sequence == playfabUser.periodicalEvents.waitingForSequence )
+        {
+            playfabUser.periodicalEvents.error = false;
+            if ( code == PlayFab::PlayFabErrorCode::PlayFabErrorSuccess )
+            {
+                for ( auto itr = data.begin(); itr != data.end(); ++itr )
+                {
+                    if ( itr->type() == Json::ValueType::stringValue )
+                    {
+                        PlayfabUser_t::PeriodicalEvents_t::Event_t e;
+
+                        Json::Value v;
+                        Json::Reader reader;
+                        if ( reader.parse(itr->asCString(), v) )
+                        {
+                            for ( auto& key : v.getMemberNames() )
+                            {
+                                if ( key == "lid" )
+                                {
+                                    jsonValueToString(v, key, e.lid);
+                                }
+                                else if ( key == "seed_word" )
+                                {
+                                    jsonValueToString(v, key, e.seed_word);
+                                }
+                                else if ( key == "lid_version" )
+                                {
+                                    jsonValueToInt(v, key, e.lid_version);
+                                }
+                                else if ( key == "seed" )
+                                {
+                                    jsonValueToUint(v, key, e.seed);
+                                }
+                                else if ( key == "hours_left" )
+                                {
+                                    jsonValueToInt(v, key, e.hoursLeft);
+                                }
+                                else if ( key == "minutes_left" )
+                                {
+                                    jsonValueToInt(v, key, e.minutesLeft);
+                                }
+                                else if ( key == "conflict" )
+                                {
+                                    jsonValueToInt(v, key, e.rolloverConflict);
+                                }
+                                else if ( key == "attempted" )
+                                {
+                                    int res = 0;
+                                    jsonValueToInt(v, key, res);
+                                    e.attempted = res == 1 ? true : false;
+                                }
+                                else if ( key == "locked" )
+                                {
+                                    int res = 0;
+                                    jsonValueToInt(v, key, res);
+                                    e.locked = res == 1 ? true : false;
+                                }
+                                else if ( key == "scenario" )
+                                {
+                                    jsonValueToString(v, key, e.scenario);
+                                }
+                            }
+                        }
+                        playfabUser.periodicalEvents.periodicalEvents.push_back(e);
+                        auto& checkEvent = playfabUser.periodicalEvents.periodicalEvents.back();
+                        checkEvent.scenarioInfo.setup(e.scenario);
+                        checkEvent.verifyGameStartSeedForEvent();
+                    }
+                }
+            }
+            else
+            {
+                playfabUser.periodicalEvents.error = true;
+            }
+            playfabUser.periodicalEvents.awaitingData = false;
+        }
+    }
+    else if ( result.FunctionName == "LeaderboardVerifyEvent" )
+    {
+        for ( auto itr = data.begin(); itr != data.end(); ++itr )
+        {
+            if ( itr->type() == Json::ValueType::stringValue )
+            {
+                std::string lid = "";
+                bool attempted = false;
+                bool conflictRollover = false;
+                Json::Value v;
+                Json::Reader reader;
+                if ( reader.parse(itr->asCString(), v) )
+                {
+                    for ( auto& key : v.getMemberNames() )
+                    {
+                        if ( key == "lid" )
+                        {
+                            jsonValueToString(v, key, lid);
+                        }
+                        else if ( key == "attempted" )
+                        {
+                            int res = 0;
+                            jsonValueToInt(v, key, res);
+                            attempted = res == 1 ? true : false;
+                        }
+                        else if ( key == "conflict" )
+                        {
+                            int res = 0;
+                            jsonValueToInt(v, key, res);
+                            conflictRollover = res == 1 ? true : false;
+                        }
+                    }
+                }
+
+                for ( auto& e : playfabUser.periodicalEvents.periodicalEvents )
+                {
+                    if ( e.lid == lid )
+                    {
+                        e.attempted = attempted;
+                        e.loading = false;
+                        if ( code == PlayFab::PlayFabErrorCode::PlayFabErrorSuccess )
+                        {
+                            if ( conflictRollover )
+                            {
+                                e.verifiedForGameStart = false;
+                                e.errorType = 2;
+                            }
+                            else
+                            {
+                                e.verifiedForGameStart = true;
+                            }
+                        }
+                        else
+                        {
+                            e.verifiedForGameStart = false;
+                            e.errorType = 1;
+                        }
+                        break;
+                    }
+                }
             }
         }
     }
@@ -553,7 +850,7 @@ void PlayfabUser_t::OnFunctionExecute(const PlayFab::CloudScriptModels::ExecuteF
                     }
                     if ( leaderboard.awaitingResponse.empty() )
                     {
-                        leaderboard.loading = false;
+                        leaderboard.playerDataLoading = false;
                         if ( intro )
                         {
                             for ( auto& entry : leaderboard.displayedRanks )
@@ -565,11 +862,76 @@ void PlayfabUser_t::OnFunctionExecute(const PlayFab::CloudScriptModels::ExecuteF
                                     entry.hasData = true;
                                 }
                                 entry.awaitingData = false;
-                                entry.rank = info.hiscore_rank;
+                                if ( info.hiscore_rank >= 0 )
+                                {
+                                    entry.rank = info.hiscore_rank;
+                                }
                                 entry.score = info.hiscore_totalscore;
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+    else if ( result.FunctionName == "PlayerHasEntryOnLeaderboard" )
+    {
+        int sequence = reinterpret_cast<intptr_t>(customData);
+        if ( result.Request["FunctionParameter"].isMember("lid") )
+        {
+            std::string lid = result.Request["FunctionParameter"]["lid"].asString();
+
+            auto& checkLeaderboard = playfabUser.playerCheckLeaderboardData[lid];
+            bool foundResponse = false;
+            if ( code == PlayFab::PlayFabErrorCode::PlayFabErrorSuccess )
+            {
+                if ( checkLeaderboard.awaitingResponse.find(sequence) != checkLeaderboard.awaitingResponse.end() )
+                {
+                    checkLeaderboard.awaitingResponse.erase(sequence);
+                    if ( intro )
+                    {
+                        for ( auto itr = data.begin(); itr != data.end(); ++itr )
+                        {
+                            if ( itr->type() == Json::ValueType::stringValue )
+                            {
+                                Json::Value v;
+                                Json::Reader reader;
+                                if ( reader.parse(itr->asCString(), v) )
+                                {
+                                    for ( auto& key : v.getMemberNames() )
+                                    {
+                                        if ( key == "found" )
+                                        {
+                                            int res = 0;
+                                            jsonValueToInt(v, key, res);
+                                            checkLeaderboard.hasData = (res == 1 ? true : false);
+                                            if ( checkLeaderboard.hasData )
+                                            {
+                                                playfabUser.getLeaderboardAroundMe(lid);
+                                            }
+                                            else
+                                            {
+                                                playfabUser.leaderboardData.leaderboards[lid].loading = false;
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if ( checkLeaderboard.awaitingResponse.empty() )
+                {
+                    checkLeaderboard.loading = false;
+                }
+            }
+            else
+            {
+                if ( checkLeaderboard.awaitingResponse.find(sequence) != checkLeaderboard.awaitingResponse.end() )
+                {
+                    checkLeaderboard.awaitingResponse[sequence].second = code;
+                    playfabUser.leaderboardData.leaderboards[lid].loading = false;
                 }
             }
         }
@@ -656,7 +1018,7 @@ void PlayfabUser_t::getLeaderboardTop100(std::string lid)
     {
         for ( auto pair : leaderboardData.leaderboards[lid].awaitingResponse )
         {
-            if ( (ticks - pair.second.first) < 5 * TICKS_PER_SECOND )
+            if ( (processTick - pair.second.first) < 5 * TICKS_PER_SECOND )
             {
                 return; // waiting on a leaderboard to load in
             }
@@ -688,11 +1050,48 @@ void PlayfabUser_t::getLeaderboardTop100Data(std::string lid, int start, int num
     request.FunctionParameter = v;
 
     playfabUser.leaderboardData.leaderboards[lid].awaitingResponse[LeaderboardData_t::sequenceIDs] = 
-        std::make_pair(ticks, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
+        std::make_pair(processTick, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
 
     PlayFab::PlayFabCloudScriptAPI::ExecuteFunction(request, OnFunctionExecute, OnCloudScriptFailure,
         (void*)(intptr_t)(LeaderboardData_t::sequenceIDs));
     ++LeaderboardData_t::sequenceIDs;
+}
+
+void PlayfabUser_t::PeriodicalEvents_t::Event_t::verifyGameStartSeedForEvent()
+{
+    if ( !playfabUser.bLoggedIn ) { return; }
+
+    PlayFab::CloudScriptModels::ExecuteFunctionRequest request;
+    request.FunctionName = "LeaderboardVerifyEvent";
+    request.GeneratePlayStreamEvent = false;
+    request.CustomTags["default"] = 1;
+    request.CustomTags["lid"] = lid;
+    request.CustomTags["seed"] = std::to_string(seed);
+
+    verifiedForGameStart = false;
+    errorType = 0;
+    loading = true;
+
+    PlayFab::PlayFabCloudScriptAPI::ExecuteFunction(request, OnFunctionExecute, OnCloudScriptFailure,
+        nullptr/*(void*)(intptr_t)(LeaderboardData_t::sequenceIDs)*/);
+}
+
+void PlayfabUser_t::PeriodicalEvents_t::getPeriodicalEvents()
+{
+    if ( !playfabUser.bLoggedIn ) { return; }
+
+    PlayFab::CloudScriptModels::ExecuteFunctionRequest request;
+    request.FunctionName = "LeaderboardWeeklyGetTimeLeft";
+    request.GeneratePlayStreamEvent = false;
+    request.CustomTags["default"] = 1;
+
+    PlayFab::PlayFabCloudScriptAPI::ExecuteFunction(request, OnFunctionExecute, OnCloudScriptFailure,
+        (void*)(intptr_t)(playfabUser.periodicalEvents.sequence));
+
+    periodicalEvents.clear();
+    awaitingData = true;
+    waitingForSequence = sequence;
+    ++sequence;
 }
 
 void PlayfabUser_t::PostScoreHandler_t::ScoreUpdate_t::post()
@@ -702,17 +1101,23 @@ void PlayfabUser_t::PostScoreHandler_t::ScoreUpdate_t::post()
     Json::Value json;
     json["scorestr"] = score;
     PlayFab::CloudScriptModels::ExecuteFunctionRequest request;
+#ifdef NDEBUG
     request.FunctionName = "PostScore";
+    //request.FunctionName = "PostScoreDebug";
+#else
+    request.FunctionName = "PostScoreDebug";
+#endif
     request.GeneratePlayStreamEvent = false;
     request.CustomTags["default"] = "1";
     request.CustomTags["hash"] = hash;
+    request.CustomTags["name"] = name;
     request.FunctionParameter = json;
     PlayFab::PlayFabCloudScriptAPI::ExecuteFunction(request, OnFunctionExecute, OnCloudScriptFailure,
         (void*)(intptr_t)(sequence));
 
     inprogress = true;
-    postTick = ticks;
-    PlayfabUser_t::PostScoreHandler_t::lastPostTicks = ticks;
+    postTick = processTick;
+    PlayfabUser_t::PostScoreHandler_t::lastPostTicks = processTick;
 }
 
 bool PlayfabUser_t::LeaderboardData_t::LeaderBoard_t::errorReceivingLeaderboard()
@@ -731,10 +1136,11 @@ void PlayfabUser_t::LeaderboardData_t::LeaderBoard_t::requestPlayerData(int star
 {
     if ( !playfabUser.bLoggedIn ) { return; }
 
-    loading = true;
+    playerDataLoading = true;
 
     Json::Value json;
     json["lid"] = name;
+    //json["version"] = scoreVersion;
     int added = 0;
 
     int end = std::max(start, start + (numEntries - 1));
@@ -762,7 +1168,7 @@ void PlayfabUser_t::LeaderboardData_t::LeaderBoard_t::requestPlayerData(int star
         entry.hasData = false;
 
         ++added;
-        if ( added == 50 )
+        if ( added > 0 && (added % 25 == 0) ) // grab 25 entries per batch
         {
             PlayFab::CloudScriptModels::ExecuteFunctionRequest request;
             request.FunctionName = "LeaderboardGetPlayerData";
@@ -772,7 +1178,7 @@ void PlayfabUser_t::LeaderboardData_t::LeaderBoard_t::requestPlayerData(int star
             request.FunctionParameter = json;
 
             playfabUser.leaderboardData.leaderboards[name].awaitingResponse[LeaderboardData_t::sequenceIDs] =
-                std::make_pair(ticks, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
+                std::make_pair(processTick, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
 
             PlayFab::PlayFabCloudScriptAPI::ExecuteFunction(request, OnFunctionExecute, OnCloudScriptFailure
                 , (void*)(intptr_t)(LeaderboardData_t::sequenceIDs));
@@ -792,7 +1198,7 @@ void PlayfabUser_t::LeaderboardData_t::LeaderBoard_t::requestPlayerData(int star
         request.FunctionParameter = json;
 
         playfabUser.leaderboardData.leaderboards[name].awaitingResponse[LeaderboardData_t::sequenceIDs] =
-            std::make_pair(ticks, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
+            std::make_pair(processTick, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
 
         PlayFab::PlayFabCloudScriptAPI::ExecuteFunction(request, OnFunctionExecute, OnCloudScriptFailure
             ,(void*)(intptr_t)(LeaderboardData_t::sequenceIDs));
@@ -820,6 +1226,10 @@ unsigned long djb2Hash2(char* str)
 
 void PlayfabUser_t::postScore(const int player)
 {
+    if ( player < 0 || player >= MAPLAYERS )
+    {
+        return;
+    }
 #ifdef NDEBUG
 {
     if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
@@ -835,16 +1245,36 @@ void PlayfabUser_t::postScore(const int player)
 }
 #endif
 
+    if ( postScoreHandler.sessionsPosted.size() > 100 )
+    {
+        postScoreHandler.sessionsPosted.clear();
+    }
+
     SaveGameInfo info;
     info.populateFromSession(player);
+    if ( info.dungeon_lvl == 0 )
+    {
+        return; // skip entries on start lvl
+    }
 
     std::string scorestring = info.serializeToOnlineHiscore(player, victory);
-    auto hash = djb2Hash2(const_cast<char*>(scorestring.c_str()));
+    Uint32 hash = djb2Hash2(const_cast<char*>(scorestring.c_str()));
 
-    postScoreHandler.queue.push_back(PostScoreHandler_t::ScoreUpdate_t(scorestring, std::to_string(hash)));
+    if ( postScoreHandler.sessionsPosted.find(info.hash) != postScoreHandler.sessionsPosted.end() )
+    {
+        // already saved and queued
+        logInfo("Score already queued");
+        postScoreHandler.sessionsPosted.erase(info.hash);
+        return;
+    }
+    postScoreHandler.sessionsPosted.insert(info.hash);
+
+    postScoreHandler.queue.push_back(PostScoreHandler_t::ScoreUpdate_t(scorestring, std::to_string(hash), 
+        info.players[player].stats.name));
     auto& entry = postScoreHandler.queue.back();
     entry.inprogress = false;
     entry.saveToFile();
+
 }
 
 bool PlayfabUser_t::PostScoreHandler_t::ScoreUpdate_t::saveToFile()
@@ -880,6 +1310,7 @@ bool PlayfabUser_t::PostScoreHandler_t::ScoreUpdate_t::saveToFile()
 
     d.AddMember("version", rapidjson::Value(1), d.GetAllocator());
     d.AddMember("hash", rapidjson::Value(hash.c_str(), d.GetAllocator()), d.GetAllocator());
+    d.AddMember("name", rapidjson::Value(hash.c_str(), d.GetAllocator()), d.GetAllocator());
     d.AddMember("score", rapidjson::Value(score.c_str(), d.GetAllocator()), d.GetAllocator());
 
     File* fp = FileIO::open(outputPath.c_str(), "wb");
@@ -946,9 +1377,14 @@ void PlayfabUser_t::PostScoreHandler_t::readFromFiles()
         int version = d["version"].GetInt();
         std::string score = d["score"].GetString();
         std::string hashStr = d["hash"].GetString();
+        std::string name = "";
+        if ( d.HasMember("name") )
+        {
+            name = d["name"].GetString();
+        }
         Uint32 hash = std::stoul(hashStr);
 
-        queue.push_back(ScoreUpdate_t(score, hashStr));
+        queue.push_back(ScoreUpdate_t(score, hashStr, name));
         queue.back().writtenToFile = inputPath;
 
         if ( (Uint32)djb2Hash2(const_cast<char*>(score.c_str())) != hash )
@@ -1002,11 +1438,11 @@ void PlayfabUser_t::PostScoreHandler_t::update()
         ++it;
     }
 
-    if ( !anyInProgress && ((ticks - lastPostTicks) > TICKS_PER_SECOND * 10) )
+    if ( !anyInProgress && ((processTick - lastPostTicks) > TICKS_PER_SECOND * 10) )
     {
         for ( auto it = queue.begin(); it != queue.end(); ++it)
         {
-            if ( it->retryTicks == 0 || (ticks > it->retryTicks) )
+            if ( it->retryTicks == 0 || (processTick > it->retryTicks) )
             {
                 it->post();
                 break;
@@ -1014,6 +1450,8 @@ void PlayfabUser_t::PostScoreHandler_t::update()
         }
     }
 }
+
+Uint32 PlayfabUser_t::processTick = 0;
 
 void PlayfabUser_t::OnLeaderboardGet(const PlayFab::ClientModels::GetLeaderboardResult& result, void* customData)
 {
@@ -1068,24 +1506,134 @@ void PlayfabUser_t::OnLeaderboardAroundMeGet(const PlayFab::ClientModels::GetLea
             {
                 leaderboard.displayedRanks.clear();
                 leaderboard.playerData.clear();
-                for ( auto& entry : result.Leaderboard )
+
+                bool emptyLeaderboard = false;
+                if ( result.Leaderboard.size() == 1 && result.Leaderboard.begin()->Position == 0 && result.Leaderboard.begin()->StatValue == 0 )
                 {
-                    leaderboard.displayedRanks.push_back(LeaderboardData_t::LeaderBoard_t::Entry_t());
-                    auto& rank = leaderboard.displayedRanks.back();
-                    rank.displayName = entry.DisplayName;
-                    rank.rank = entry.Position;
-                    rank.id = entry.PlayFabId;
-                    rank.score = entry.StatValue;
+                    emptyLeaderboard = true;
+                }
+
+                if ( !emptyLeaderboard )
+                {
+                    for ( auto& entry : result.Leaderboard )
+                    {
+                        leaderboard.displayedRanks.push_back(LeaderboardData_t::LeaderBoard_t::Entry_t());
+                        auto& rank = leaderboard.displayedRanks.back();
+                        rank.displayName = entry.DisplayName;
+                        rank.rank = entry.Position;
+                        rank.id = entry.PlayFabId;
+                        rank.score = entry.StatValue;
+                    }
                 }
 
                 if ( leaderboard.awaitingResponse.empty() )
                 {
                     leaderboard.loading = false;
-                    leaderboard.requestPlayerData(0, 10);
+                    if ( !emptyLeaderboard )
+                    {
+                        leaderboard.requestPlayerData(0, 25);
+                    }
                 }
             }
         }
     }
+}
+
+void PlayfabUser_t::OnLeaderboardTop100AlternateGet(const PlayFab::ClientModels::GetLeaderboardResult& result, void* customData)
+{
+    if ( result.Request["CustomTags"].isMember("lid") )
+    {
+        std::string lid = result.Request["CustomTags"]["lid"].asString();
+        auto& leaderboard = playfabUser.leaderboardData.leaderboards[lid];
+        leaderboard.name = lid;
+
+        int sequence = reinterpret_cast<intptr_t>(customData);
+        if ( leaderboard.awaitingResponse.find(sequence) != leaderboard.awaitingResponse.end() )
+        {
+            leaderboard.awaitingResponse.erase(sequence);
+
+            if ( intro )
+            {
+                leaderboard.displayedRanks.clear();
+                leaderboard.playerData.clear();
+
+                bool emptyLeaderboard = result.Leaderboard.size() == 0;
+
+                if ( !emptyLeaderboard )
+                {
+                    for ( auto& entry : result.Leaderboard )
+                    {
+                        leaderboard.displayedRanks.push_back(LeaderboardData_t::LeaderBoard_t::Entry_t());
+                        auto& rank = leaderboard.displayedRanks.back();
+                        rank.displayName = entry.DisplayName;
+                        rank.rank = entry.Position;
+                        rank.id = entry.PlayFabId;
+                        rank.score = entry.StatValue;
+                    }
+                }
+
+                if ( leaderboard.awaitingResponse.empty() )
+                {
+                    leaderboard.loading = false;
+                    if ( !emptyLeaderboard )
+                    {
+                        leaderboard.requestPlayerData(0, /*result.Leaderboard.size()*/25);
+                    }
+                }
+            }
+        }
+    }
+}
+
+int PlayfabUser_t::PlayerCheckLeaderboardData_t::sequenceIDs = 0;
+void PlayfabUser_t::checkLocalPlayerHasEntryOnLeaderboard(std::string lid)
+{
+    if ( !bLoggedIn )
+    {
+        return;
+    }
+
+    if ( playerCheckLeaderboardData[lid].loading )
+    {
+        for ( auto& pair : playerCheckLeaderboardData[lid].awaitingResponse )
+        {
+            if ( (processTick - pair.second.first) < 5 * TICKS_PER_SECOND )
+            {
+                return; // waiting on a leaderboard to load in
+            }
+        }
+    }
+
+    if ( leaderboardData.leaderboards[lid].loading )
+    {
+        for ( auto& pair : leaderboardData.leaderboards[lid].awaitingResponse )
+        {
+            if ( (processTick - pair.second.first) < 5 * TICKS_PER_SECOND )
+            {
+                return; // waiting on a leaderboard to load in
+            }
+        }
+    }
+
+    leaderboardData.leaderboards.erase(lid);
+    playerCheckLeaderboardData.erase(lid);
+
+    PlayFab::CloudScriptModels::ExecuteFunctionRequest request;
+    request.FunctionName = "PlayerHasEntryOnLeaderboard";
+    request.GeneratePlayStreamEvent = false;
+    request.CustomTags["default"] = 1;
+    request.CustomTags["lid"] = lid;
+
+    Json::Value v;
+    v["lid"] = lid;
+    request.FunctionParameter = v;
+
+    playerCheckLeaderboardData[lid].awaitingResponse[PlayerCheckLeaderboardData_t::sequenceIDs] =
+        std::make_pair(processTick, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
+
+    PlayFab::PlayFabCloudScriptAPI::ExecuteFunction(request, OnFunctionExecute, OnCloudScriptFailure,
+        (void*)(intptr_t)(PlayerCheckLeaderboardData_t::sequenceIDs));
+    ++PlayerCheckLeaderboardData_t::sequenceIDs;
 }
 
 void PlayfabUser_t::getLeaderboardAroundMe(std::string lid)
@@ -1096,7 +1644,7 @@ void PlayfabUser_t::getLeaderboardAroundMe(std::string lid)
     {
         for ( auto& pair : leaderboardData.leaderboards[lid].awaitingResponse )
         {
-            if ( (ticks - pair.second.first) < 5 * TICKS_PER_SECOND )
+            if ( (processTick - pair.second.first) < 5 * TICKS_PER_SECOND )
             {
                 return; // waiting on a leaderboard to load in
             }
@@ -1116,9 +1664,46 @@ void PlayfabUser_t::getLeaderboardAroundMe(std::string lid)
     request.ProfileConstraints = constraints;
     
     playfabUser.leaderboardData.leaderboards[lid].awaitingResponse[LeaderboardData_t::sequenceIDs] =
-        std::make_pair(ticks, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
+        std::make_pair(processTick, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
 
     PlayFab::PlayFabClientAPI::GetLeaderboardAroundPlayer(request, OnLeaderboardAroundMeGet, OnLeaderboardFail,
+        (void*)(intptr_t)(LeaderboardData_t::sequenceIDs));
+    ++LeaderboardData_t::sequenceIDs;
+}
+
+static ConsoleVariable<int> cvar_leaderboard_search_start("/leaderboard_search_start", 0);
+
+void PlayfabUser_t::getLeaderboardTop100Alternate(std::string lid)
+{
+    if ( !bLoggedIn ) { return; }
+
+    if ( leaderboardData.leaderboards[lid].loading )
+    {
+        for ( auto& pair : leaderboardData.leaderboards[lid].awaitingResponse )
+        {
+            if ( (processTick - pair.second.first) < 5 * TICKS_PER_SECOND )
+            {
+                return; // waiting on a leaderboard to load in
+            }
+        }
+    }
+
+    leaderboardData.leaderboards.erase(lid);
+
+    PlayFab::ClientModels::GetLeaderboardRequest request;
+    request.StatisticName = lid;
+    request.MaxResultsCount = 100;
+    request.StartPosition = leaderboardSearch.searchStartIndex + *cvar_leaderboard_search_start;
+    request.CustomTags["lid"] = lid;
+
+    PlayFab::ClientModels::PlayerProfileViewConstraints constraints;
+    constraints.ShowDisplayName = true;
+    request.ProfileConstraints = constraints;
+
+    playfabUser.leaderboardData.leaderboards[lid].awaitingResponse[LeaderboardData_t::sequenceIDs] =
+        std::make_pair(processTick, PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError);
+
+    PlayFab::PlayFabClientAPI::GetLeaderboard(request, OnLeaderboardTop100AlternateGet, OnLeaderboardFail,
         (void*)(intptr_t)(LeaderboardData_t::sequenceIDs));
     ++LeaderboardData_t::sequenceIDs;
 }
@@ -1138,6 +1723,7 @@ void PlayfabUser_t::update()
     {
         processedOnTick = ticks;
         tickUpdate = true;
+        ++processTick;
     }
 
     if ( tickUpdate )
@@ -1209,6 +1795,22 @@ void PlayfabUser_t::init()
     postScoreHandler.readFromFiles();
 }
 
+void PlayfabUser_t::LeaderboardSearch_t::applySavedChallengeSearchIfExists()
+{
+    if ( savedSearchesFromNotification.find(challengeBoard) == savedSearchesFromNotification.end() )
+    {
+        return;
+    }
+
+    auto lid = savedSearchesFromNotification[challengeBoard];
+    scoresNearMe = true;
+    win = lid.find("_victory_") != std::string::npos;
+    //victory = win ? 3 : 0;
+    scoreType = (lid.find("_time_") != std::string::npos) ? RANK_TIME : RANK_TOTALSCORE;
+
+    savedSearchesFromNotification.erase(challengeBoard);
+}
+
 std::string PlayfabUser_t::LeaderboardSearch_t::getLeaderboardDisplayName()
 {
     std::string period = daily ? "Daily " : "All-Time ";
@@ -1220,7 +1822,20 @@ std::string PlayfabUser_t::LeaderboardSearch_t::getLeaderboardDisplayName()
         score = "Furthest Depth";
     }
 
-    if ( daily )
+    if ( challengeBoard == CHALLENGE_BOARD_ONESHOT )
+    {
+        period = "One-Shot Challenge ";
+    }
+    else if ( challengeBoard == CHALLENGE_BOARD_UNLIMITED )
+    {
+        period = "Weekly Unlimited ";
+    }
+    else if ( challengeBoard == CHALLENGE_BOARD_CHALLENGE )
+    {
+        period = "Event Challenge ";
+    }
+
+    if ( daily || challengeBoard != CHALLENGE_BOARD_NONE )
     {
         return period + results + "\n" + (win ? "Wins" : "Losses") + " - Ranked by: " + score;
     }

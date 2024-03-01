@@ -736,6 +736,16 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				if ( parent && parentStats && yourStats )
 				{
 					reduceCollisionSize = useSmallCollision(*parent, *parentStats, *entity, *yourStats);
+					if ( reduceCollisionSize )
+					{
+						if ( parent->monsterIsTinkeringCreation()
+							&& yourStats->mask && yourStats->mask->type == MASK_TECH_GOGGLES
+							&& (parentStats->leader_uid == entity->getUID()
+								|| parent->monsterAllyGetPlayerLeader() == entity) )
+						{
+							continue;
+						}
+					}
 				}
 				else if ( parent && parent->behavior == &actDeathGhost
 					&& (entity->behavior == &actPlayer
@@ -1042,14 +1052,15 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 			if ( (entity != target && target != nullptr) || entity->flags[PASSABLE] || entity == my
 				|| ((entities == LINETRACE_IGNORE_ENTITIES) && 
 						( (!entity->flags[BLOCKSIGHT] && entity->behavior != &actMonster) 
-							|| (entity->behavior == &actMonster && (entity->flags[INVISIBLE] && entity->sprite != 889) )
+							|| (entity->behavior == &actMonster && (entity->flags[INVISIBLE] 
+								&& entity->sprite != 889 && entity->sprite != 1247) )
 						)
 					) 
 				)
 			{
 				// if entities == LINETRACE_IGNORE_ENTITIES, then ignore entities that block sight.
 				// 16/11/19 - added exception to monsters. if monster, use the INVISIBLE flag to skip checking.
-				// 889 is dummybot "invisible" AI entity. so it's invisible, need to make it shown here.
+				// 889/1247 is dummybot/mimic "invisible" AI entity. so it's invisible, need to make it shown here.
 				continue;
 			}
 			if ( entity->behavior == &actParticleTimer )

@@ -80,7 +80,7 @@ static const int EFF_BLEEDING = 14;
 static const int EFF_SLOW = 15;
 static const int EFF_MAGICRESIST = 16;
 static const int EFF_MAGICREFLECT = 17;
-static const int NUMEFFECTS = 40;
+static const int NUMEFFECTS = 64;
 
 // proficiencies
 static const int PRO_LOCKPICKING = 0;   // base attribute: dex

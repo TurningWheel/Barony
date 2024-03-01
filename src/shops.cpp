@@ -33,7 +33,7 @@ std::unordered_map<int, std::unordered_set<int>> shopkeeperMysteriousItems(
 {
 	{ ARTIFACT_ORB_GREEN, { ARTIFACT_BOW, QUIVER_HUNTING, QUIVER_PIERCE } },
 	{ ARTIFACT_ORB_BLUE, { ARTIFACT_MACE, ENCHANTED_FEATHER } },
-	{ ARTIFACT_ORB_RED, { CRYSTAL_SWORD, CRYSTAL_BATTLEAXE, CRYSTAL_SPEAR, CRYSTAL_MACE } }
+	{ ARTIFACT_ORB_RED, { CRYSTAL_SWORD, CRYSTAL_BATTLEAXE, CRYSTAL_SPEAR, CRYSTAL_MACE, MASK_ARTIFACT_VISOR } }
 });
 
 void closeShop(const int player)
@@ -271,7 +271,7 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 				{
 					if ( buyValue <= 1 )
 					{
-						if ( stats[player]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
+						if ( stats[player]->getProficiency(PRO_TRADING) < SKILL_LEVEL_SKILLED )
 						{
 							players[player]->entity->increaseSkill(PRO_TRADING);
 						}
@@ -397,7 +397,7 @@ bool isItemSellableToShop(const int player, Item* item)
 	}
 
 	bool deal = true;
-	if ( stats[player]->PROFICIENCIES[PRO_TRADING] >= CAPSTONE_UNLOCK_LEVEL[PRO_TRADING] )
+	if ( stats[player]->getModifiedProficiency(PRO_TRADING) >= CAPSTONE_UNLOCK_LEVEL[PRO_TRADING] )
 	{
 		//Skill capstone: Can sell anything to any shop.
 		if ( shopkeepertype[player] == 10 )

@@ -12,6 +12,7 @@
 #pragma once
 
 #include "main.hpp"
+#include "prng.hpp"
 
 class Entity; // forward declare
 class Stat; // forward declare
@@ -307,9 +308,49 @@ typedef enum ItemType
 	BOOMERANG,
 	SCROLL_CONJUREARROW,
 	MONOCLE,
-	TOOL_PLAYER_LOOT_BAG
+	TOOL_PLAYER_LOOT_BAG,
+	MASK_BANDIT,
+	MASK_EYEPATCH,
+	MASK_MASQUERADE,
+	MASK_MOUTH_ROSE,
+	MASK_GOLDEN,
+	MASK_SPOOKY,
+	MASK_TECH_GOGGLES,
+	MASK_HAZARD_GOGGLES,
+	MASK_PHANTOM,
+	MASK_PIPE,
+	MASK_GRASS_SPRIG,
+	MASK_PLAGUE,
+	MASK_MOUTHKNIFE,
+	HAT_SILKEN_BOW,
+	HAT_PLUMED_CAP,
+	HAT_BYCOCKET,
+	HAT_TOPHAT,
+	HAT_BANDANA,
+	HAT_CIRCLET,
+	HAT_CROWN,
+	HAT_LAURELS,
+	HAT_TURBAN,
+	HAT_CROWNED_HELM,
+	HAT_WARM,
+	HAT_WOLF_HOOD,
+	HAT_BEAR_HOOD,
+	HAT_STAG_HOOD,
+	HAT_BUNNY_HOOD,
+	HAT_BOUNTYHUNTER,
+	HAT_MITER,
+	HAT_HEADDRESS,
+	HAT_CHEF,
+	HELM_MINING,
+	MASK_STEEL_VISOR,
+	MASK_CRYSTAL_VISOR,
+	MASK_ARTIFACT_VISOR,
+	HAT_CIRCLET_WISDOM,
+	HAT_HOOD_APPRENTICE,
+	HAT_HOOD_ASSASSIN,
+	HAT_HOOD_WHISPERS
 } ItemType;
-const int NUMITEMS = 289;
+const int NUMITEMS = 329;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -460,7 +501,7 @@ public:
 	int getMaxStackLimit(int player) const;
 
 	bool isShield() const;
-	bool doesItemProvideBeatitudeAC() const;
+	static bool doesItemProvideBeatitudeAC(ItemType type);
 	bool doesItemProvidePassiveShieldBonus() const;
 	bool doesPotionHarmAlliesOnThrown() const;
 
@@ -602,8 +643,8 @@ void item_ToolLootBag(Item*& item, int player);
 //General functions.
 Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory);
 Item* uidToItem(Uint32 uid);
-ItemType itemCurve(Category cat);
-ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel);
+ItemType itemLevelCurveEntity(Entity& my, Category cat, int minLevel, int maxLevel, BaronyRNG& rng);
+ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel, BaronyRNG& rng);
 Item* newItemFromEntity(const Entity* entity, bool discardUid = false); //Make sure to call free(item). discardUid will free the new items uid if this is for temp purposes
 Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 count = 1);
 Item** itemSlot(Stat* myStats, Item* item);
@@ -717,7 +758,7 @@ bool isRangedWeapon(const Item& item);
 bool isMeleeWeapon(const Item& item);
 bool itemIsThrowableTinkerTool(const Item* item);
 
-void createCustomInventory(Stat* stats, int itemLimit);
+void createCustomInventory(Stat* stats, int itemLimit, BaronyRNG& rng);
 void copyItem(Item* itemToSet, const Item* itemToCopy);
 bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode, bool moveStack, bool overrideCursed);
 bool monsterUnequipSlot(Stat* myStats, Item** slot, Item* itemToUnequip);
@@ -726,11 +767,10 @@ node_t* itemNodeInInventory(const Stat* myStats, Sint32 itemToFind, Category cat
 node_t* spellbookNodeInInventory(const Stat* myStats, int spellIDToFind);
 node_t* getRangedWeaponItemNodeInInventory(const Stat* myStats, bool includeMagicstaff);
 node_t* getMeleeWeaponItemNodeInInventory(const Stat* myStats);
-ItemType itemTypeWithinGoldValue(int cat, int minValue, int maxValue);
+ItemType itemTypeWithinGoldValue(int cat, int minValue, int maxValue, BaronyRNG& rng);
 bool itemSpriteIsQuiverThirdPersonModel(int sprite);
 bool itemSpriteIsQuiverBaseThirdPersonModel(int sprite);
 bool itemTypeIsQuiver(ItemType type);
-bool itemSpriteIsBreastpiece(int sprite);
 real_t rangedAttackGetSpeedModifier(const Stat* myStats);
 bool rangedWeaponUseQuiverOnAttack(const Stat* myStats);
 real_t getArtifactWeaponEffectChance(ItemType type, Stat& wielder, real_t* effectAmount);

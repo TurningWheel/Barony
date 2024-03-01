@@ -26,4 +26,4 @@ if (NOT RAPID_JSON_INCLUDE_DIR OR NOT RAPID_JSON_LIBRARIES)
 endif ()
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(RAPID_JSON DEFAULT_MSG RAPID_JSON_INCLUDE_DIR )
+find_package_handle_standard_args(RapidJson DEFAULT_MSG RAPID_JSON_INCLUDE_DIR )

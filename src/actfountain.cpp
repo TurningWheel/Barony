@@ -70,10 +70,10 @@ const std::vector<std::pair<int, int>> potionStandardAppearanceMap =
 	{ POTION_STRENGTH, 0 }
 };
 
-std::pair<int, int> fountainGeneratePotionDrop()
+std::pair<int, int> fountainGeneratePotionDrop(BaronyRNG& rng)
 {
 	auto keyPair = potionStandardAppearanceMap.at(
-	    local_rng.discrete(fountainPotionDropChances.data(),
+		rng.discrete(fountainPotionDropChances.data(),
 	        fountainPotionDropChances.size()));
 	return std::make_pair(keyPair.first, keyPair.second);
 }
@@ -161,6 +161,8 @@ void actFountain(Entity* my)
 		{
 			if (inrange[i])   //Act on it only if the player (or monster, if/when this is changed to support monster interaction?) is in range.
 			{
+				auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+
 				//First check that it's not depleted.
 				if (my->skill[0] == 0)
 				{
@@ -180,7 +182,7 @@ void actFountain(Entity* my)
 					if ( stats[i] && (stats[i]->type == GOATMAN || (stats[i]->playerRace == RACE_GOATMAN && stats[i]->appearance == 0)) )
 					{
 						// drop some random potions.
-						switch ( local_rng.rand() % 10 )
+						switch ( rng.rand() % 10 )
 						{
 							case 0:
 							case 1:
@@ -215,7 +217,7 @@ void actFountain(Entity* my)
 
 						for ( int j = 0; j < potionDropQuantity; ++j )
 						{
-							std::pair<int, int> generatedPotion = fountainGeneratePotionDrop();
+							std::pair<int, int> generatedPotion = fountainGeneratePotionDrop(rng);
 							ItemType type = static_cast<ItemType>(generatedPotion.first);
 							int appearance = generatedPotion.second;
 							Item* item = newItem(type, EXCELLENT, 0, 1, appearance, false, NULL);
@@ -241,7 +243,7 @@ void actFountain(Entity* my)
 							if ( !strncmp(map.name, "Underworld", 10) )
 							{
 								Monster creature = SUCCUBUS;
-								if ( local_rng.rand() % 2 )
+								if ( rng.rand() % 2 )
 								{
 									creature = INCUBUS;
 								}
@@ -268,6 +270,7 @@ void actFountain(Entity* my)
 								}
 								if ( spawnedMonster )
 								{
+									spawnedMonster->seedEntityRNG(rng.getU32());
 									if ( creature == INCUBUS )
 									{
 										messagePlayerColor(i, MESSAGE_INTERACTION, color, Language::get(2519));
@@ -287,15 +290,17 @@ void actFountain(Entity* my)
 							{
 								if ( spawnedMonster = summonMonster(SUCCUBUS, my->x, my->y) )
 								{
+									spawnedMonster->seedEntityRNG(rng.getU32());
 									messagePlayerColor(i, MESSAGE_INTERACTION, color, Language::get(469));
 								}
 							}
 							else if ( currentlevel < 20 )
 							{
-								if ( local_rng.rand() % 2 )
+								if ( rng.rand() % 2 )
 								{
 									if ( spawnedMonster = summonMonster(INCUBUS, my->x, my->y) )
 									{
+										spawnedMonster->seedEntityRNG(rng.getU32());
 										Stat* tmpStats = spawnedMonster->getStats();
 										if ( tmpStats )
 										{
@@ -308,6 +313,7 @@ void actFountain(Entity* my)
 								{
 									if ( spawnedMonster = summonMonster(SUCCUBUS, my->x, my->y) )
 									{
+										spawnedMonster->seedEntityRNG(rng.getU32());
 										messagePlayerColor(i, MESSAGE_INTERACTION, color, Language::get(469));
 									}
 								}
@@ -316,6 +322,7 @@ void actFountain(Entity* my)
 							{
 								if ( spawnedMonster = summonMonster(INCUBUS, my->x, my->y) )
 								{
+									spawnedMonster->seedEntityRNG(rng.getU32());
 									messagePlayerColor(i, MESSAGE_INTERACTION, color, Language::get(2519));
 								}
 							}
@@ -543,7 +550,7 @@ void actFountain(Entity* my)
 							{
 								messagePlayerColor(i, MESSAGE_STATUS, textcolor, Language::get(2592)); //"The fountain blesses a piece of equipment"
 								//Randomly choose a piece of equipment.
-								std::pair<Item*, Uint32> chosen = items[local_rng.rand()%items.size()];
+								std::pair<Item*, Uint32> chosen = items[rng.rand()%items.size()];
 								if ( chosen.first->beatitude == 0 )
 								{
 									if ( stats[i]->type == SUCCUBUS )

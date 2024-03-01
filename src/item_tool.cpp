@@ -60,6 +60,56 @@ void Item::applySkeletonKey(int player, Entity& entity)
 			entity.doorLocked = 1;
 		}
 	}
+	else if ( entity.behavior == &actMonster && entity.getMonsterTypeFromSprite() == MIMIC )
+	{
+		if ( Stat* myStats = entity.getStats() )
+		{
+			if ( entity.isInertMimic() )
+			{
+				playSoundEntity(&entity, 91, 64);
+				if ( myStats->EFFECTS[EFF_MIMIC_LOCKED] )
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(1097));
+					entity.setEffect(EFF_MIMIC_LOCKED, false, 0, false);
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(1098));
+					entity.setEffect(EFF_MIMIC_LOCKED, true, -1, false);
+				}
+			}
+			else
+			{
+				if ( myStats->EFFECTS[EFF_MIMIC_LOCKED] )
+				{
+					playSoundEntity(&entity, 91, 64);
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(1097));
+					entity.setEffect(EFF_MIMIC_LOCKED, false, 0, false);
+				}
+				else
+				{
+					if ( entity.monsterAttack != 0 )
+					{
+						// fail to lock
+						playSoundEntity(&entity, 92, 64);
+						messagePlayer(player, MESSAGE_INTERACTION, Language::get(6084));
+					}
+					else
+					{
+						playSoundEntity(&entity, 91, 64);
+						messagePlayer(player, MESSAGE_INTERACTION, Language::get(1098));
+						entity.setEffect(EFF_MIMIC_LOCKED, true, TICKS_PER_SECOND * 5, false);
+
+						entity.monsterHitTime = HITRATE - 2;
+						if ( players[player] )
+						{
+							myStats->monsterMimicLockedBy = players[player]->entity ? players[player]->entity->getUID() : 0;
+						}
+					}
+				}
+			}
+		}
+	}
 	else
 	{
 		messagePlayer(player, MESSAGE_INTERACTION, Language::get(1101), getName());
@@ -69,7 +119,7 @@ void Item::applySkeletonKey(int player, Entity& entity)
 
 void Item::applyLockpick(int player, Entity& entity)
 {
-	bool capstoneUnlocked = (stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= CAPSTONE_LOCKPICKING_UNLOCK);
+	bool capstoneUnlocked = (stats[player]->getModifiedProficiency(PRO_LOCKPICKING) >= CAPSTONE_LOCKPICKING_UNLOCK);
 	if ( entity.behavior == &actBomb )
 	{
 		Entity* gyrobotUsing = nullptr;
@@ -141,17 +191,19 @@ void Item::applyLockpick(int player, Entity& entity)
 	{
 		if ( entity.chestLocked )
 		{
+			auto& rng = entity.entity_rng ? *entity.entity_rng : local_rng;
+
 			// 3-17 damage on lockpick depending on skill
 			// 0 skill is 3 damage
 			// 20 skill is 4-5 damage
 			// 60 skill is 6-11 damage
 			// 100 skill is 8-17 damage
-			int lockpickDamageToChest = 3 + stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 20
-				+ local_rng.rand() % std::max(1, stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10);
+			int lockpickDamageToChest = 3 + stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 20
+				+ local_rng.rand() % std::max(1, stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 10);
 			entity.chestLockpickHealth = std::max(0, entity.chestLockpickHealth - lockpickDamageToChest);
 			bool unlockedFromLockpickHealth = (entity.chestLockpickHealth == 0);
 
-			if ( capstoneUnlocked || stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > local_rng.rand() % 200
+			if ( capstoneUnlocked || stats[player]->getModifiedProficiency(PRO_LOCKPICKING) > local_rng.rand() % 200
 				|| unlockedFromLockpickHealth )
 			{
 				//Unlock chest.
@@ -159,9 +211,9 @@ void Item::applyLockpick(int player, Entity& entity)
 				messagePlayer(player, MESSAGE_INTERACTION, Language::get(1097));
 				if ( capstoneUnlocked && !entity.chestPreventLockpickCapstoneExploit )
 				{
-					if ( local_rng.rand() % 2 == 0 )
+					if ( rng.rand() % 2 == 0 )
 					{
-						Item* generated = newItem(itemTypeWithinGoldValue(-1, 80, 600), static_cast<Status>(SERVICABLE + local_rng.rand() % 2), 0 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
+						Item* generated = newItem(itemTypeWithinGoldValue(-1, 80, 600, rng), static_cast<Status>(SERVICABLE + rng.rand() % 2), 0 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
 						entity.addItemToChest(generated, true, nullptr);
 						messagePlayer(player, MESSAGE_INTERACTION, Language::get(3897));
 					}
@@ -174,7 +226,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				}
 				if ( !entity.chestPreventLockpickCapstoneExploit )
 				{
-					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_EXPERT )
+					if ( stats[player]->getProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_EXPERT )
 					{
 						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 					}
@@ -187,7 +239,7 @@ void Item::applyLockpick(int player, Entity& entity)
 					}
 
 					// based on tinkering skill, add some bonus scrap materials inside chest. (50-150%)
-					if ( (50 + 10 * (stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10)) > local_rng.rand() % 100 )
+					if ( (50 + 10 * (stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 10)) > local_rng.rand() % 100 )
 					{
 						int metalscrap = 5 + local_rng.rand() % 6;
 						int magicscrap = 5 + local_rng.rand() % 11;
@@ -212,7 +264,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				bool tryDegradeLockpick = true;
 				if ( !entity.chestPreventLockpickCapstoneExploit )
 				{
-					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_EXPERT )
+					if ( stats[player]->getProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_EXPERT )
 					{
 						if ( local_rng.rand() % 10 == 0 )
 						{
@@ -279,8 +331,8 @@ void Item::applyLockpick(int player, Entity& entity)
 			// 20 skill is 4-5 damage
 			// 60 skill is 6-11 damage
 			// 100 skill is 8-17 damage
-			int lockpickDamageToDoor = 3 + stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 20
-				+ local_rng.rand() % std::max(1, stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10);
+			int lockpickDamageToDoor = 3 + stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 20
+				+ local_rng.rand() % std::max(1, stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 10);
 			entity.doorLockpickHealth = std::max(0, entity.doorLockpickHealth - lockpickDamageToDoor);
 			bool unlockedFromLockpickHealth = (entity.doorLockpickHealth == 0);
 
@@ -290,7 +342,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(3101)); // disabled.
 			}
 			else if ( capstoneUnlocked 
-				|| stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > local_rng.rand() % 200
+				|| stats[player]->getModifiedProficiency(PRO_LOCKPICKING) > local_rng.rand() % 200
 				|| unlockedFromLockpickHealth )
 			{
 				//Unlock door.
@@ -299,7 +351,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				entity.doorLocked = 0;
 				if ( !entity.doorPreventLockpickExploit )
 				{
-					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_SKILLED )
+					if ( stats[player]->getProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_SKILLED )
 					{
 						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 					}
@@ -321,7 +373,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				bool tryDegradeLockpick = true;
 				if ( !entity.doorPreventLockpickExploit )
 				{
-					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_SKILLED )
+					if ( stats[player]->getProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_SKILLED )
 					{
 						if ( local_rng.rand() % 10 == 0 )
 						{
@@ -382,19 +434,35 @@ void Item::applyLockpick(int player, Entity& entity)
 	else if ( entity.behavior == &actMonster )
 	{
 		Stat* myStats = entity.getStats();
-		if ( myStats && myStats->type == AUTOMATON 
+		if ( myStats && entity.isInertMimic() )
+		{
+			if ( myStats->EFFECTS[EFF_MIMIC_LOCKED] && local_rng.rand() % 4 > 0 )
+			{
+				//Failed to unlock mimic
+				playSoundEntity(&entity, 92, 64);
+				messagePlayer(player, MESSAGE_INTERACTION, Language::get(1102));
+			}
+			else if ( players[player] && players[player]->entity && entity.disturbMimic(players[player]->entity, false, false) )
+			{
+				playSoundEntity(&entity, 91, 64);
+				messagePlayer(player, MESSAGE_INTERACTION, Language::get(6081));
+			}
+		}
+		else if ( myStats && myStats->type == AUTOMATON 
 			&& entity.monsterSpecialState == 0
 			&& !myStats->EFFECTS[EFF_CONFUSED] )
 		{
 			if ( players[player] && players[player]->entity )
 			{
 				// calculate facing direction from player, < PI is facing away from player
-				real_t yawDiff = entity.yawDifferenceFromPlayer(player);
+				real_t yawDiff = entity.yawDifferenceFromEntity(players[player]->entity);
 				if ( yawDiff < PI )
 				{
+					auto& rng = entity.entity_rng ? *entity.entity_rng : local_rng;
+
 					messagePlayer(player, MESSAGE_INTERACTION, Language::get(2524), getName(), getMonsterLocalizedName(myStats->type).c_str());
-					int chance = stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 20 + 1;
-					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= 60 || (local_rng.rand() % chance > 0) )
+					int chance = stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 20 + 1;
+					if ( stats[player]->getModifiedProficiency(PRO_LOCKPICKING) >= 60 || (local_rng.rand() % chance > 0) )
 					{
 						// 100% >= 60 lockpicking. 40 = 66%, 20 = 50%, 0 = 0%
 						entity.monsterSpecialState = AUTOMATON_MALFUNCTION_START;
@@ -411,24 +479,24 @@ void Item::applyLockpick(int player, Entity& entity)
 							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 						}
 
-						int qtyMetalScrap = 5 + local_rng.rand() % 6;
-						int qtyMagicScrap = 8 + local_rng.rand() % 6;
+						int qtyMetalScrap = 5 + rng.rand() % 6;
+						int qtyMagicScrap = 8 + rng.rand() % 6;
 						if ( stats[player] )
 						{
-							if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_MASTER )
+							if ( stats[player]->getModifiedProficiency(PRO_LOCKPICKING) >= SKILL_LEVEL_MASTER )
 							{
-								qtyMetalScrap += 5 + local_rng.rand() % 6; // 10-20 total
-								qtyMagicScrap += 8 + local_rng.rand() % 11; // 16-31 total
+								qtyMetalScrap += 5 + rng.rand() % 6; // 10-20 total
+								qtyMagicScrap += 8 + rng.rand() % 11; // 16-31 total
 							}
-							else if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_EXPERT )
+							else if ( stats[player]->getModifiedProficiency(PRO_LOCKPICKING) >= SKILL_LEVEL_EXPERT )
 							{
-								qtyMetalScrap += 3 + local_rng.rand() % 4; // 8-16 total
-								qtyMagicScrap += 5 + local_rng.rand() % 8; // 13-25 total
+								qtyMetalScrap += 3 + rng.rand() % 4; // 8-16 total
+								qtyMagicScrap += 5 + rng.rand() % 8; // 13-25 total
 							}
-							else if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_SKILLED )
+							else if ( stats[player]->getModifiedProficiency(PRO_LOCKPICKING) >= SKILL_LEVEL_SKILLED )
 							{
-								qtyMetalScrap += 1 + local_rng.rand() % 4; // 6-14 total
-								qtyMagicScrap += 3 + local_rng.rand() % 4; // 11-19 total
+								qtyMetalScrap += 1 + rng.rand() % 4; // 6-14 total
+								qtyMagicScrap += 3 + rng.rand() % 4; // 11-19 total
 							}
 						}
 						Item* item = newItem(TOOL_METAL_SCRAP, DECREPIT, 0, qtyMetalScrap, 0, true, &myStats->inventory);
@@ -752,10 +820,12 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 		}
 
 
+		auto& rng = entity.entity_rng ? *entity.entity_rng : local_rng;
+
 		if ( entity.behavior == &actFountain )
 		{
 			auto generatedPotion = potionStandardAppearanceMap.at(
-	            local_rng.discrete(potionChances.data(), potionChances.size()));
+				rng.discrete(potionChances.data(), potionChances.size()));
 			item = newItem(static_cast<ItemType>(generatedPotion.first), EXCELLENT, 0, 1, generatedPotion.second, false, NULL);
 		}
 		else
@@ -810,7 +880,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 			{
 				--entity.skill[0];
 				// Randomly choose second usage stats.
-				int effect = local_rng.rand() % 10; //4 possible effects.
+				int effect = rng.rand() % 10; //4 possible effects.
 				switch ( effect )
 				{
 					case 0:
@@ -867,7 +937,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 			{
 				int potionDropQuantity = 0;
 				// drop some random potions.
-				switch ( local_rng.rand() % 10 )
+				switch ( rng.rand() % 10 )
 				{
 					case 0:
 					case 1:
@@ -902,7 +972,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 
 				for ( int j = 0; j < potionDropQuantity; ++j )
 				{
-					std::pair<int, int> generatedPotion = fountainGeneratePotionDrop();
+					std::pair<int, int> generatedPotion = fountainGeneratePotionDrop(rng);
 					ItemType type = static_cast<ItemType>(generatedPotion.first);
 					int appearance = generatedPotion.second;
 					Item* item = newItem(type, EXCELLENT, 0, 1, appearance, false, NULL);
@@ -930,7 +1000,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 				}
 			}
 		}
-		else if ( skillLVL < 2 || (skillLVL >= 2 && local_rng.rand() % (skillLVL) == 0 ) )
+		else if ( skillLVL < 2 || (skillLVL >= 2 && rng.rand() % (skillLVL) == 0 ) )
 		{
 			bool oldInRange = inrange[player];
 			inrange[player] = true;
@@ -1179,9 +1249,10 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 			real_t height = 0;
 			if ( placement == BOMB_CHEST )
 			{
-				if ( onEntity->yaw == 0 || onEntity->yaw == PI ) //EAST/WEST FACING
+				if ( (onEntity->yaw >= 0 && onEntity->yaw < PI / 4) || (onEntity->yaw >= ((3 * PI / 2) + PI / 4))
+					|| (onEntity->yaw >= PI - (PI / 4)) && (onEntity->yaw < PI + (PI / 4)) ) //EAST/WEST FACING
 				{
-					if ( hit.side == HORIZONTAL )
+					if ( hit.side == VERTICAL )
 					{
 						height = 5.25;
 					}
@@ -1190,7 +1261,8 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 						height = 4.25;
 					}
 				}
-				else if ( onEntity->yaw == PI / 2 || onEntity->yaw == 3 * PI / 2 ) //SOUTH/NORTH FACING
+				else if ( (onEntity->yaw >= ((PI / 2) - (PI / 4))) && (onEntity->yaw < (PI / 2) + (PI / 4))
+					|| (onEntity->yaw >= ((3 * PI / 2) - (PI / 4))) && (onEntity->yaw < (3 * PI / 2) + (PI / 4)) ) //SOUTH/NORTH FACING
 				{
 					if ( hit.side == VERTICAL )
 					{
@@ -1236,16 +1308,18 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 				case BOMB_EAST:
 					entity->yaw = 3 * PI / 2;
 					entity->x = onEntity->x;
-					if ( onEntity->yaw == 0 && placement == BOMB_CHEST )
+					if ( (onEntity->yaw >= 0 && onEntity->yaw < PI / 4) || (onEntity->yaw >= ((3 * PI / 2) + PI / 4)) 
+						&& placement == BOMB_CHEST )
 					{
-						height += 0.5;
+						height -= 0.5;
 					}
 					entity->x += height;
 					break;
 				case BOMB_SOUTH:
 					entity->yaw = 0;
 					entity->y = onEntity->y;
-					if ( onEntity->yaw == PI / 2 && placement == BOMB_CHEST )
+					if ( (onEntity->yaw >= ((PI / 2) - (PI / 4))) && (onEntity->yaw < (PI / 2) + (PI / 4)) 
+						&& placement == BOMB_CHEST )
 					{
 						height -= 0.5;
 					}
@@ -1254,7 +1328,8 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 				case BOMB_WEST:
 					entity->yaw = PI / 2;
 					entity->x = onEntity->x;
-					if ( onEntity->yaw == PI && placement == BOMB_CHEST )
+					if ( (onEntity->yaw >= PI - (PI / 4)) && (onEntity->yaw < PI + (PI / 4))
+						&& placement == BOMB_CHEST )
 					{
 						height -= 0.5;
 					}
@@ -1263,9 +1338,10 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 				case BOMB_NORTH:
 					entity->yaw = PI;
 					entity->y = onEntity->y;
-					if ( onEntity->yaw == 3 * PI / 2 && placement == BOMB_CHEST )
+					if ( (onEntity->yaw >= ((3 * PI / 2) - (PI / 4))) && (onEntity->yaw < (3 * PI / 2) + (PI / 4))
+						&& placement == BOMB_CHEST )
 					{
-						height += 0.5;
+						height -= 0.5;
 					}
 					entity->y -= height;
 					break;
@@ -1297,7 +1373,7 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 			{
 				entity->skill[19] = onEntity->doorHealth;
 			}
-			else if ( placement == BOMB_CHEST )
+			else if ( placement == BOMB_CHEST && onEntity->behavior != &actMonster )
 			{
 				entity->skill[19] = onEntity->skill[3]; //chestHealth
 				entity->skill[23] = onEntity->skill[1];

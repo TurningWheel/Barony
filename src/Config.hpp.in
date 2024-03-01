@@ -33,10 +33,23 @@
 		#define BUILD_ENV_CS "@BUILD_ENV_CS@"
 		#define BUILD_ENV_GSE "@BUILD_ENV_GSE@"
 	#endif
+	#if @PLAYFAB_ENABLED@
+	    #define USE_PLAYFAB
+	    #define BUILD_ENV_PFTID "@BUILD_ENV_PFTID@"
+	    #define BUILD_ENV_PFHID "@BUILD_ENV_PFHID@"
+	#endif
 #endif
 
 #if @IMGUI@
 	#define USE_IMGUI
+#endif
+
+#if @CURL_ENABLED@
+    #define USE_LIBCURL
+#endif
+
+#if @THEORAPLAYER_ENABLED@
+    #define USE_THEORA_VIDEO
 #endif
 
 #if @FMOD@

@@ -131,6 +131,7 @@ public:
 		LOBBY_NOT_ALLOWED,              // server won't allow you in for one reason or another
 		LOBBY_YOU_ARE_BANNED,           // can't join lobby because you are banned
         LOBBY_TOO_MANY_JOINS,           // overloaded lobby with join requests
+		LOBBY_SAVEGAME_REQUIRES_DLC		// our client does not have DLC detected for their savefile
 	};
 };
 extern LobbyHandler_t LobbyHandler;

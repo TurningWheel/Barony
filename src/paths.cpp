@@ -531,13 +531,19 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		if ( entity->flags[PASSABLE] )
 		{
 			if ( entity->behavior == &actSpearTrap 
-				&& (my->getRace() == HUMAN || my->monsterAllyGetPlayerLeader() ) )
+				&& (my->getRace() == HUMAN || my->monsterAllyGetPlayerLeader()) )
 			{
 				// humans/followers know better than that!
 
 				// unless they're standing on a trap...
 				if ( standingOnTrap == 0 )
 				{
+					if ( my->getFollowerBonusTrapResist() == 100 )
+					{
+						standingOnTrap = 1; // 1 - standing on the trap.
+						continue;
+					}
+
 					std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 0);
 					for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !standingOnTrap; ++it )
 					{
@@ -582,7 +588,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		{
 			continue;
 		}
-		if ( entity->behavior == &actMonster && !my->checkEnemy(entity) )
+		if ( entity->behavior == &actMonster && (!my->checkEnemy(entity) && !entity->isInertMimic()) )
 		{
 			continue;
 		}

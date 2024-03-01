@@ -36,7 +36,7 @@
 #define THROWN_VELX my->vel_x
 #define THROWN_VELY my->vel_y
 #define THROWN_VELZ my->vel_z
-#define THROWN_TYPE (Item)my->skill[10]
+#define THROWN_TYPE (ItemType)my->skill[10]
 #define THROWN_STATUS (Status)my->skill[11]
 #define THROWN_BEATITUDE my->skill[12]
 #define THROWN_COUNT my->skill[13]
@@ -424,7 +424,7 @@ void actThrown(Entity* my)
 						}
 						else if ( item->isTinkeringItemWithThrownLimit() && !tinkeringItemCanBePlaced )
 						{
-							if ( stats[parent->skill[2]]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_LEGENDARY )
+							if ( stats[parent->skill[2]]->getModifiedProficiency(PRO_LOCKPICKING) >= SKILL_LEVEL_LEGENDARY )
 							{
 								messagePlayer(parent->skill[2], MESSAGE_MISC, Language::get(3884));
 							}
@@ -700,7 +700,7 @@ void actThrown(Entity* my)
 			}
 			if ( item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB )
 			{
-				if ( hit.entity->behavior == &actChest )
+				if ( hit.entity->behavior == &actChest || hit.entity->isInertMimic() )
 				{
 					item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_CHEST, Item::ItemBombFacingDirection::BOMB_UP, my, hit.entity);
 					free(item);
@@ -723,7 +723,8 @@ void actThrown(Entity* my)
 					return;
 				}
 			}
-			else if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+			else if ( (hit.entity->behavior == &actMonster && !hit.entity->isInertMimic())
+				|| hit.entity->behavior == &actPlayer )
 			{
 				int oldHP = 0;
 				oldHP = hit.entity->getHP();
@@ -732,7 +733,7 @@ void actThrown(Entity* my)
 				{
 					if ( itemCategory(item) == POTION )
 					{
-						int skillLVL = parentStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+						int skillLVL = parentStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 						//int dex = parent->getDEX() / 4;
 						//damage += dex;
 						damage = damage * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
@@ -820,6 +821,7 @@ void actThrown(Entity* my)
 				    hitstats->killer_item = item->type;
 				}
 				bool skipMessage = false;
+				bool goggleProtection = false;
 				Entity* polymorphedTarget = nullptr;
 				bool disableAlertBlindStatus = false;
 				bool ignorePotion = false;
@@ -881,6 +883,18 @@ void actThrown(Entity* my)
 							if ( damage != 0 && friendlyHit )
 							{
 								ignorePotion = true;
+							}
+						}
+
+						if ( hitstats->mask && hitstats->mask->type == MASK_HAZARD_GOGGLES )
+						{
+							if ( !(hit.entity->behavior == &actPlayer && hit.entity->effectShapeshift != NOTHING) )
+							{
+								if ( itemCategory(item) == POTION && item->doesPotionHarmAlliesOnThrown() )
+								{
+									ignorePotion = true;
+									goggleProtection = true;
+								}
 							}
 						}
 					}
@@ -1070,16 +1084,27 @@ void actThrown(Entity* my)
 										{
 											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3878), Language::get(3879), MSG_COMBAT);
 										}
+										disableAlertBlindStatus = true; // don't aggro target.
 									}
-									disableAlertBlindStatus = true; // don't aggro target.
 								}
 								else if ( hit.entity->behavior == &actPlayer )
 								{
-									hit.entity->setEffect(EFF_MESSY, true, 250, false);
-									serverUpdateEffects(hit.entity->skill[2]);
 									Uint32 color = makeColorRGB(255, 0, 0);
 									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(3877));
-									messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, Language::get(910));
+									if ( hit.entity->setEffect(EFF_MESSY, true, 250, false) )
+									{
+										messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, Language::get(910));
+									}
+									else
+									{
+										if ( hitstats->mask && hitstats->mask->type == MASK_HAZARD_GOGGLES )
+										{
+											if ( !(hit.entity->behavior == &actPlayer && hit.entity->effectShapeshift != NOTHING) )
+											{
+												messagePlayerColor(hit.entity->skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6088));
+											}
+										}
+									}
 								}
 								for ( int i = 0; i < 5; ++i )
 								{
@@ -1257,7 +1282,7 @@ void actThrown(Entity* my)
 					if ( doSkillIncrease && (local_rng.rand() % chance == 0) && parent && parent->getStats() )
 					{
 						if ( hitstats->type != DUMMYBOT 
-							|| (hitstats->type == DUMMYBOT && parent->getStats()->PROFICIENCIES[PRO_RANGED] < SKILL_LEVEL_BASIC) )
+							|| (hitstats->type == DUMMYBOT && parent->getStats()->getProficiency(PRO_RANGED) < SKILL_LEVEL_BASIC) )
 						{
 							parent->increaseSkill(PRO_RANGED);
 						}
@@ -1292,7 +1317,7 @@ void actThrown(Entity* my)
 				if ( hitstats->HP <= 0 && parent )
 				{
 					parent->awardXP(hit.entity, true, true);
-					spawnBloodVialOnMonsterDeath(hit.entity, hitstats);
+					spawnBloodVialOnMonsterDeath(hit.entity, hitstats, parent);
 				}
 
 				bool doAlert = true;
@@ -1422,6 +1447,10 @@ void actThrown(Entity* my)
 					{
 						messagePlayer(hit.entity->skill[2], MESSAGE_COMBAT, Language::get(452));
 					}
+					if ( goggleProtection )
+					{
+						messagePlayerColor(hit.entity->skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6088));
+					}
 				}
 			}
 			else
@@ -1450,6 +1479,38 @@ void actThrown(Entity* my)
 						spawnMagicTower(parent, my->x, my->y, SPELL_LIGHTNING, hit.entity);
 						break;
 					default:
+						if ( hit.entity->behavior == &actChest || hit.entity->isInertMimic() )
+						{
+							if ( cat == THROWN )
+							{
+								playSoundEntity(hit.entity, 66, 64); //*tink*
+							}
+
+							if ( parent )
+							{
+								if ( parent->behavior == &actPlayer )
+								{
+									messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, Language::get(667));
+									if ( cat == THROWN )
+									{
+										messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, Language::get(447));
+									}
+								}
+								if ( hit.entity->behavior == &actMonster )
+								{
+									if ( hitstats )
+									{
+										updateEnemyBar(parent, hit.entity, Language::get(675), hitstats->HP, hitstats->MAXHP,
+											false, DamageGib::DMG_WEAKEST);
+									}
+								}
+								else
+								{
+									updateEnemyBar(parent, hit.entity, Language::get(675), hit.entity->chestHealth, hit.entity->chestMaxHealth,
+										false, DamageGib::DMG_WEAKEST);
+								}
+							}
+						}
 						break;
 				}
 			}

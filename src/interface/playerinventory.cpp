@@ -4186,7 +4186,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
         isItemFromInventory = true;
     }
     
-    if ( ItemTooltips.itemDebug )
+    if ( ItemTooltips.itemDebug && (svFlags & SV_FLAG_CHEATS) )
     {
         if ( keystatus[SDLK_KP_PLUS] )
         {
@@ -4610,7 +4610,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
             imgTopBackgroundRight->path = "images/ui/Inventory/tooltips/Hover_TR00.png";
         }
         
-        if ( ItemTooltips.itemDebug )
+        if ( ItemTooltips.itemDebug && (svFlags & SV_FLAG_CHEATS) )
         {
             auto headerBg = frameMain->findImage("inventory mouse tooltip header bg");
             headerBg->pos = SDL_Rect{
@@ -4651,7 +4651,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
             textx = std::min(itemTooltip.maxWidths[maxWidthKey], textx);
         }
         
-        if ( ItemTooltips.itemDebug )
+        if ( ItemTooltips.itemDebug && (svFlags & SV_FLAG_CHEATS) )
         {
             auto headerBg = frameMain->findImage("inventory mouse tooltip header bg new");
             headerBg->pos = SDL_Rect{
@@ -4836,7 +4836,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                              && icon.conditionalAttribute.find("SPELLBOOK_") != std::string::npos )
                     {
                         spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
-                        int skillLVL = std::min(100, stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity));
+                        int skillLVL = std::min(100, stats[player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[player], players[player]->entity));
                         bool isGoblin = (stats[player]
                                          && (stats[player]->type == GOBLIN
                                              || (stats[player]->playerRace == RACE_GOBLIN && stats[player]->appearance == 0)));
@@ -5141,7 +5141,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                     if ( tag.compare("weapon_durability") == 0 )
                     {
                         int proficiency = itemCategory(item) == ARMOR ? PRO_UNARMED : getWeaponSkill(item);
-                        if ( stats[player]->PROFICIENCIES[proficiency] == SKILL_LEVEL_LEGENDARY )
+                        if ( stats[player]->getModifiedProficiency(proficiency) == SKILL_LEVEL_LEGENDARY )
                         {
                             continue;
                         }
@@ -5149,7 +5149,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                     else if ( tag.compare("weapon_legendary_durability") == 0 )
                     {
                         int proficiency = itemCategory(item) == ARMOR ? PRO_UNARMED: getWeaponSkill(item);
-                        if ( stats[player]->PROFICIENCIES[proficiency] != SKILL_LEVEL_LEGENDARY )
+                        if ( stats[player]->getModifiedProficiency(proficiency) != SKILL_LEVEL_LEGENDARY )
                         {
                             continue;
                         }
@@ -5258,6 +5258,15 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                             continue;
                         }
                     }
+					else if ( tag.compare("armor_ac_text") == 0
+						|| tag.compare("armor_base_ac") == 0
+						|| tag.compare("on_bless_or_curse") == 0 )
+					{
+						if ( !Item::doesItemProvideBeatitudeAC(item->type) )
+						{
+							continue;
+						}
+					}
                     else if ( tag.compare("artifact_armor_on_degraded") == 0 )
                     {
                         if ( !items[item->type].hasAttribute("ARTIFACT_STATUS_AC") )
@@ -5388,7 +5397,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                         {
                             continue;
                         }
-                        if ( stats[player]->PROFICIENCIES[PRO_SHIELD] == SKILL_LEVEL_LEGENDARY )
+                        if ( stats[player]->getModifiedProficiency(PRO_SHIELD) == SKILL_LEVEL_LEGENDARY )
                         {
                             continue;
                         }
@@ -5399,7 +5408,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                         {
                             continue;
                         }
-                        if ( stats[player]->PROFICIENCIES[PRO_SHIELD] != SKILL_LEVEL_LEGENDARY )
+                        if ( stats[player]->getModifiedProficiency(PRO_SHIELD) != SKILL_LEVEL_LEGENDARY )
                         {
                             continue;
                         }
@@ -5422,6 +5431,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                 }
                 detailsTextString += tagText;
             }
+			if ( detailsTextString.size() > 2 && detailsTextString[detailsTextString.size() - 1] == '\n' )
+			{
+				// if ending on a newline, remove it
+				detailsTextString[detailsTextString.size() - 1] = ' ';
+			}
             txtDescription->setText(detailsTextString.c_str());
         }
         
@@ -5470,9 +5484,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                 iconMultipleLinePadding = numPrimaryLines * Font::get(txtPrimaryValue->getFont())->height() - imgPrimaryIcon->pos.h;
             }
             
+			const int txtPosPadY = -2;
             SDL_Rect txtPos {
                 imgPrimaryIcon->pos.x + imgPrimaryIcon->pos.w + padx + iconTextPadx,
-                imgPrimaryIcon->pos.y + imgToTextOffset - iconMultipleLinePadding / 2 - (std::max(0, numPrimaryLines - 1) * txtPrimaryValue->getPaddingPerLine() / 2),
+                imgPrimaryIcon->pos.y + imgToTextOffset - iconMultipleLinePadding / 2 + txtPosPadY
+				- (std::max(0, numPrimaryLines - 1) * txtPrimaryValue->getPaddingPerLine() / 2),
                 txtHeader->getSize().w,
                 imgPrimaryIcon->pos.h + iconMultipleLinePadding
             };
@@ -5519,9 +5535,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                 iconMultipleLinePadding = numSecondaryLines * Font::get(txtSecondaryValue->getFont())->height() - imgSecondaryIcon->pos.h;
             }
             
+			const int txtPosPadY = -2;
             SDL_Rect txtPos {
                 imgSecondaryIcon->pos.x + imgSecondaryIcon->pos.w + padx + iconTextPadx,
-                imgSecondaryIcon->pos.y + imgToTextOffset - iconMultipleLinePadding / 2 - (std::max(0, numSecondaryLines - 1) * txtSecondaryValue->getPaddingPerLine() / 2),
+                imgSecondaryIcon->pos.y + imgToTextOffset - iconMultipleLinePadding / 2 + txtPosPadY
+				- (std::max(0, numSecondaryLines - 1) * txtSecondaryValue->getPaddingPerLine() / 2),
                 txtHeader->getSize().w,
                 imgSecondaryIcon->pos.h + iconMultipleLinePadding
             };
@@ -5560,9 +5578,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                 iconMultipleLinePadding = numThirdLines * Font::get(txtThirdValue->getFont())->height() - imgThirdIcon->pos.h;
             }
             
+			const int txtPosPadY = -2;
             SDL_Rect txtPos {
                 imgThirdIcon->pos.x + imgThirdIcon->pos.w + padx + iconTextPadx,
-                imgThirdIcon->pos.y + imgToTextOffset - iconMultipleLinePadding / 2 - (std::max(0, numThirdLines - 1) * txtThirdValue->getPaddingPerLine() / 2),
+                imgThirdIcon->pos.y + imgToTextOffset - iconMultipleLinePadding / 2 + txtPosPadY
+				- (std::max(0, numThirdLines - 1) * txtThirdValue->getPaddingPerLine() / 2),
                 txtHeader->getSize().w,
                 imgThirdIcon->pos.h + iconMultipleLinePadding
             };
@@ -5613,10 +5633,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
             frameAttrPos.h += std::max(std::max(iconHeight1, iconHeight2), iconHeight3);
             frameAttrPos.h += pady;
             
-            if ( txtAttributes->isDisabled() )
-            {
-                //frameAttrPos.h += pady; // no description, add some padding
-            }
+            //if ( txtAttributes->isDisabled() )
+            //{
+            //    frameAttrPos.h += pady; // no description, add some padding
+            //}
         }
         
         if ( !txtAttributes->isDisabled() )

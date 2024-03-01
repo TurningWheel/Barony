@@ -16,6 +16,9 @@
 #ifdef WINDOWS
 #include <shellapi.h>
 #endif
+#ifdef USE_PLAYFAB
+#include "../playfab.hpp"
+#endif
 
 #include "../ui/Button.hpp"
 #include "../ui/Field.hpp"
@@ -344,8 +347,15 @@ void UIToastNotification::drawMainCard()
 				setStatisticCurrentValue(pendingStatisticUpdateCurrent);
 				if (statisticUpdateCurrent >= statisticUpdateMax)
 				{
-					this->setHeaderText("Achievement Unlocked!");
-					notificationImage = std::string("*#images/achievements/") + this->achievementID + std::string(".png");
+					if ( actionFlags & UI_NOTIFICATION_CHALLENGE_UPDATE )
+					{
+						this->setHeaderText(Language::get(6156));
+					}
+					else
+					{
+						this->setHeaderText("Achievement Unlocked!");
+						notificationImage = std::string("*#images/achievements/") + this->achievementID + std::string(".png");
+					}
 				}
 				pendingStatisticUpdateCurrent = -1;
 			}
@@ -446,7 +456,21 @@ void UIToastNotificationManager_t::drawNotifications(bool isMoviePlaying, bool b
 	}
 
 	if (achievementsCheck && !intro) {
-		if (conductGameChallenges[CONDUCT_CHEATS_ENABLED]
+		if ( gameModeManager.currentSession.challengeRun.isActive()
+			&& gameModeManager.currentSession.challengeRun.lid.find("challenge") != std::string::npos )
+		{
+			achievementsCheck = false;
+			if ( *cvar_achievements_warning )
+			{
+				createAchievementsDisabledNotification();
+				if ( auto n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_ACHIEVEMENTS_DISABLED) )
+				{
+					n->setIdleSeconds(3);
+					n->setHeaderText(Language::get(6139));
+				}
+			}
+		}
+		else if (conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 			|| conductGameChallenges[CONDUCT_LIFESAVING]
 			|| Mods::disableSteamAchievements) {
 			achievementsCheck = false;
@@ -708,7 +732,7 @@ void UIToastNotificationManager_t::createAchievementsDisabledNotification()
 		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
 		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE);
 		n->cardType = UIToastNotification::CardType::UI_CARD_ACHIEVEMENTS_DISABLED;
-		n->setIdleSeconds(8);
+		n->setIdleSeconds(5);
 	}
 }
 
@@ -722,6 +746,114 @@ void UIToastNotificationManager_t::createGenericNotification(const char* header,
 	n->setHeaderText(header);
 	n->setMainText(text);
 	n->setIdleSeconds(10);
+}
+
+void UIToastNotificationManager_t::createLeaderboardNotification(std::string info)
+{
+#ifdef USE_PLAYFAB
+	bool challenge = info.find("_seed_") != std::string::npos;
+	if ( !challenge ) { return; }
+
+	char buf[128];
+	if ( info.find("oneshot") != std::string::npos )
+	{
+		std::string prefix = Language::get(6110);
+		for ( auto& c : prefix )
+		{
+			if ( c == '\n' )
+			{
+				c = ' ';
+			}
+		}
+		snprintf(buf, sizeof(buf), Language::get(6134), prefix.c_str());
+
+		if ( info.find("lid_victory_seed_oneshot") != std::string::npos )
+		{
+			playfabUser.leaderboardSearch.savedSearchesFromNotification[PlayfabUser_t::LeaderboardSearch_t::CHALLENGE_BOARD_ONESHOT] =
+				"lid_time_victory_seed_oneshot";
+		}
+		else if ( info.find("lid_time_victory_seed_oneshot") != std::string::npos )
+		{
+			playfabUser.leaderboardSearch.savedSearchesFromNotification[PlayfabUser_t::LeaderboardSearch_t::CHALLENGE_BOARD_ONESHOT] =
+				"lid_time_victory_seed_oneshot";
+		}
+		else if ( info.find("lid_time_novictory_seed_oneshot") != std::string::npos )
+		{
+			playfabUser.leaderboardSearch.savedSearchesFromNotification[PlayfabUser_t::LeaderboardSearch_t::CHALLENGE_BOARD_ONESHOT] =
+				"lid_time_novictory_seed_oneshot";
+		}
+	}
+	else if ( info.find("unlimited") != std::string::npos )
+	{
+		std::string prefix = Language::get(6111);
+		for ( auto& c : prefix )
+		{
+			if ( c == '\n' )
+			{
+				c = ' ';
+			}
+		}
+		snprintf(buf, sizeof(buf), Language::get(6134), prefix.c_str());
+
+		if ( info.find("lid_victory_seed_unlimited") != std::string::npos )
+		{
+			playfabUser.leaderboardSearch.savedSearchesFromNotification[PlayfabUser_t::LeaderboardSearch_t::CHALLENGE_BOARD_UNLIMITED] =
+				"lid_victory_seed_unlimited";
+		}
+		else if ( info.find("lid_time_victory_seed_unlimited") != std::string::npos )
+		{
+			playfabUser.leaderboardSearch.savedSearchesFromNotification[PlayfabUser_t::LeaderboardSearch_t::CHALLENGE_BOARD_UNLIMITED] =
+				"lid_time_victory_seed_unlimited";
+		}
+		else if ( info.find("lid_time_novictory_seed_unlimited") != std::string::npos )
+		{
+			playfabUser.leaderboardSearch.savedSearchesFromNotification[PlayfabUser_t::LeaderboardSearch_t::CHALLENGE_BOARD_UNLIMITED] =
+				"lid_time_novictory_seed_unlimited";
+		}
+	}
+	else if ( info.find("challenge") != std::string::npos )
+	{
+		std::string prefix = Language::get(6112);
+		for ( auto& c : prefix )
+		{
+			if ( c == '\n' )
+			{
+				c = ' ';
+			}
+		}
+		snprintf(buf, sizeof(buf), Language::get(6134), prefix.c_str());
+
+		if ( info.find("lid_victory_seed_challenge") != std::string::npos )
+		{
+			playfabUser.leaderboardSearch.savedSearchesFromNotification[PlayfabUser_t::LeaderboardSearch_t::CHALLENGE_BOARD_CHALLENGE] =
+				"lid_victory_seed_challenge";
+		}
+		else if ( info.find("lid_time_victory_seed_challenge") != std::string::npos )
+		{
+			playfabUser.leaderboardSearch.savedSearchesFromNotification[PlayfabUser_t::LeaderboardSearch_t::CHALLENGE_BOARD_CHALLENGE] =
+				"lid_time_victory_seed_challenge";
+		}
+		else if ( info.find("lid_time_novictory_seed_challenge") != std::string::npos )
+		{
+			playfabUser.leaderboardSearch.savedSearchesFromNotification[PlayfabUser_t::LeaderboardSearch_t::CHALLENGE_BOARD_CHALLENGE] =
+				"lid_time_novictory_seed_challenge";
+		}
+	}
+	else
+	{
+		return;
+	}
+
+	UIToastNotification* n = UIToastNotificationManager.addNotification("*#images/ui/Main Menus/Challenges/seed_attempted64px.png");
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE);
+	n->cardType = UIToastNotification::CardType::UI_CARD_DEFAULT;
+	n->showHeight = 112;
+	n->setHeaderText(Language::get(6128));
+	n->setMainText(buf);
+	n->setIdleSeconds(5);
+#endif
 }
 
 void truncateMainText(std::string& str)
@@ -788,6 +920,18 @@ void UIToastNotificationManager_t::createAchievementNotification(const char* nam
 	n->setIdleSeconds(5);
 }
 
+void UIToastNotificationManager_t::createNewSeedNotification()
+{
+	UIToastNotification* n = UIToastNotificationManager.addNotification("*#images/ui/Main Menus/Challenges/seed_attempted64px.png");
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE);
+	n->cardType = UIToastNotification::CardType::UI_CARD_DEFAULT;
+	n->setHeaderText(Language::get(6169));
+	n->setMainText(Language::get(6170));
+	n->setIdleSeconds(10);
+}
+
 void UIToastNotificationManager_t::createStatisticUpdateNotification(const char* name, int currentValue, int maxValue)
 {
 	UIToastNotification* n = nullptr;
@@ -800,19 +944,34 @@ void UIToastNotificationManager_t::createStatisticUpdateNotification(const char*
 
 	const bool unlocked = (currentValue >= maxValue);
 	const char* achievementName = "Unknown Achievement";
+	bool challenge = false;
+	if ( !strcmp(name, "CHALLENGE_MONSTER_KILLS") )
+	{
+		challenge = true;
+		achievementName = Language::get(6155);
+		n = UIToastNotificationManager.addNotification("*#images/ui/Main Menus/Challenges/seed_attempted64px.png");
+		n->setHeaderText(unlocked ? Language::get(6156) : Language::get(6154));
+	}
+	else if ( !strcmp(name, "CHALLENGE_FURNITURE_KILLS") )
+	{
+		challenge = true;
+		achievementName = Language::get(6157);
+		n = UIToastNotificationManager.addNotification("*#images/ui/Main Menus/Challenges/seed_attempted64px.png");
+		n->setHeaderText(unlocked ? Language::get(6156) : Language::get(6154));
+	}
+	else
 	{
 		auto it = achievementNames.find(name);
 		if ( it != achievementNames.end() )
 		{
 			achievementName = it->second.c_str();
 		}
+		const std::string imgName = unlocked ?
+			std::string("*#images/achievements/") + name + std::string(".png"):
+			std::string("*#images/achievements/") + name + std::string("_l.png");
+		n = UIToastNotificationManager.addNotification(imgName.c_str());
+		n->setHeaderText(unlocked ? "Achievement Unlocked!" : "Achievement Updated!");
 	}
-
-	const std::string imgName = unlocked ?
-		std::string("*#images/achievements/") + name + std::string(".png"):
-		std::string("*#images/achievements/") + name + std::string("_l.png");
-	n = UIToastNotificationManager.addNotification(imgName.c_str());
-	n->setHeaderText(unlocked ? "Achievement Unlocked!" : "Achievement Updated!");
 
 	std::string achStr = std::string(achievementName);
 	truncateMainText(achStr);
@@ -822,6 +981,10 @@ void UIToastNotificationManager_t::createStatisticUpdateNotification(const char*
 	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE);
 	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
 	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
+	if ( challenge )
+	{
+		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CHALLENGE_UPDATE);
+	}
 	n->cardType = UIToastNotification::CardType::UI_CARD_ACHIEVEMENT;
 	n->setStatisticCurrentValue(currentValue);
 	n->setStatisticMaxValue(maxValue);
@@ -902,6 +1065,17 @@ static ConsoleCommand ccmd_toastTestAchievement("/toast_test_achievement", "",
 		}
 	});
 
+static ConsoleCommand ccmd_toastTestLeaderboard("/toast_test_leaderboard", "",
+	[](int argc, const char** argv) {
+		if ( argc > 1 ) {
+			UIToastNotificationManager.createLeaderboardNotification(argv[1]);
+		}
+		else
+		{
+			UIToastNotificationManager.createLeaderboardNotification("");
+		}
+	});
+
 static ConsoleCommand ccmd_toastTestStatistic("/toast_test_statistic", "",
 	[](int argc, const char** argv) {
 		if (argc > 1) {
@@ -914,6 +1088,11 @@ static ConsoleCommand ccmd_toastTestStatistic("/toast_test_statistic", "",
 				"Give the name of a valid achievement\n"
 				"ex: %s <BARONY_ACH_xxx> [current] [maximum]", argv[0]);
 		}
+	});
+
+static ConsoleCommand ccmd_toastTestSeeds("/toast_test_seeds", "",
+	[](int argc, const char** argv) {
+		UIToastNotificationManager.createNewSeedNotification();
 	});
 
 static ConsoleCommand ccmd_toastTestAchievementsDisabled("/toast_test_achievements_disabled", "",
