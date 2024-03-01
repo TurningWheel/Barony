@@ -898,7 +898,7 @@ extern bool initialized; //So that messagePlayer doesn't explode before the game
 
 void GO_SwapBuffers(SDL_Window* screen);
 
-static const int NUM_STEAM_STATISTICS = 49;
+static const int NUM_STEAM_STATISTICS = 55;
 extern SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS];
 static const int NUM_GLOBAL_STEAM_STATISTICS = 66;
 extern SteamStat_t g_SteamGlobalStats[NUM_GLOBAL_STEAM_STATISTICS];

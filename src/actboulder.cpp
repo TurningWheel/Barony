@@ -260,6 +260,11 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 							bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats);
 							if ( stats->helmet->beatitude >= 0 || cursedItemIsBuff )
 							{
+								if ( stats->HP <= damage )
+								{
+									// saved us
+									steamAchievementEntity(entity, "BARONY_ACH_CRUMPLE_ZONES");
+								}
 								damage = 0;
 							}
 							stats->helmet->status = BROKEN;
@@ -279,6 +284,14 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 								mult += 0.25 * abs(stats->helmet->beatitude);
 							}
 
+							if ( stats->HP <= damage )
+							{
+								// saved us
+								if ( stats->HP > (damage * mult) )
+								{
+									steamAchievementEntity(entity, "BARONY_ACH_CRUMPLE_ZONES");
+								}
+							}
 							damage *= mult;
 							if ( stats->helmet->status > BROKEN )
 							{

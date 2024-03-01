@@ -1863,6 +1863,20 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 			steamAchievementClient(monsterclicked, "BARONY_ACH_YOUNG_BLOOD");
 		}
 	}
+	if ( stats[monsterclicked]->sex != myStats->sex )
+	{
+		if ( stats[monsterclicked]->mask
+			&& (stats[monsterclicked]->mask->type == MASK_SPOOKY
+				|| stats[monsterclicked]->mask->type == MASK_GOLDEN
+				|| stats[monsterclicked]->mask->type == MASK_ARTIFACT_VISOR
+				|| stats[monsterclicked]->mask->type == MASK_STEEL_VISOR
+				|| stats[monsterclicked]->mask->type == MASK_CRYSTAL_VISOR
+				|| stats[monsterclicked]->mask->type == MASK_PLAGUE
+				))
+		{
+			steamAchievementClient(monsterclicked, "BARONY_ACH_SSSMOKIN");
+		}
+	}
 	if ( myStats->type == HUMAN && stats[monsterclicked]->type == HUMAN && stats[monsterclicked]->appearance == 0
 		&& stats[monsterclicked]->playerRace == RACE_AUTOMATON )
 	{
@@ -1953,6 +1967,11 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 		else
 		{
 			free(armor);
+		}
+
+		if ( players[monsterclicked] )
+		{
+			steamAchievementEntity(players[monsterclicked]->entity, "BARONY_ACH_MON_PETIT");
 		}
 	}
 
@@ -12448,7 +12467,7 @@ void mimicResetIdle(Entity* my)
 			int tx = pair.first;
 			int ty = pair.second;
 
-			if ( checkObstacle((tx << 4) + 8, (ty << 4) + 8, my, nullptr, false) )
+			if ( checkObstacle((tx << 4) + 8, (ty << 4) + 8, my, nullptr) )
 			{
 				if ( tx == x + 1 || tx == x - 1 )
 				{
