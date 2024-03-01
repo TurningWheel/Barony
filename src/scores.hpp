@@ -106,7 +106,13 @@ enum SteamStatIndexes : int
 	STEAM_STAT_EXTRA_CREDIT_LVLS,
 	STEAM_STAT_DIPLOMA,
 	STEAM_STAT_DIPLOMA_LVLS,
-	STEAM_STAT_TUTORIAL_ENTERED
+	STEAM_STAT_TUTORIAL_ENTERED,
+	STEAM_STAT_I_NEEDED_THAT,
+	STEAM_STAT_DAPPER_1,
+	STEAM_STAT_DAPPER_2,
+	STEAM_STAT_DAPPER_3,
+	STEAM_STAT_DAPPER,
+	STEAM_STAT_DUNGEONSEED
 };
 
 enum SteamGlobalStatIndexes : int
@@ -182,7 +188,7 @@ enum SteamGlobalStatIndexes : int
 
 SteamGlobalStatIndexes getIndexForDeathType(int type);
 
-static const std::pair<std::string, int> steamStatAchStringsAndMaxVals[] = 
+static const std::pair<std::string, int> steamStatAchStringsAndMaxVals[] =
 {
 	std::make_pair("BARONY_ACH_NONE", 999999),				// STEAM_STAT_BOULDER_DEATHS,
 	std::make_pair("BARONY_ACH_RHINESTONE_COWBOY", 50),		// STEAM_STAT_RHINESTONE_COWBOY,
@@ -232,7 +238,13 @@ static const std::pair<std::string, int> steamStatAchStringsAndMaxVals[] =
 	std::make_pair("BARONY_ACH_NONE", 1023),				// STEAM_STAT_EXTRA_CREDIT_LVLS,
 	std::make_pair("BARONY_ACH_DIPLOMA", 10),				// STEAM_STAT_DIPLOMA
 	std::make_pair("BARONY_ACH_NONE", 1023),				// STEAM_STAT_DIPLOMA_LVLS,
-	std::make_pair("BARONY_ACH_NONE", 1)					// STEAM_STAT_TUTORIAL_ENTERED,
+	std::make_pair("BARONY_ACH_NONE", 1),					// STEAM_STAT_TUTORIAL_ENTERED,
+	std::make_pair("BARONY_ACH_I_NEEDED_THAT", 10),			// STEAM_STAT_I_NEEDED_THAT
+	std::make_pair("BARONY_ACH_NONE", 0xFFFFFFFF),			// STEAM_STAT_DAPPER_1
+	std::make_pair("BARONY_ACH_NONE", 0xFFFFFFFF),			// STEAM_STAT_DAPPER_2
+	std::make_pair("BARONY_ACH_NONE", 0xFFFFFFFF),			// STEAM_STAT_DAPPER_3
+	std::make_pair("BARONY_ACH_DAPPER", 30),				// STEAM_STAT_DAPPER
+	std::make_pair("BARONY_ACH_DUNGEONSEED", 12)			// STEAM_STAT_DUNGEONSEED
 };
 
 typedef struct score_t
@@ -699,7 +711,9 @@ public:
 		BARONY_ACH_DIPLOMA,
 		BARONY_ACH_BACK_TO_BASICS,
 		BARONY_ACH_FAST_LEARNER,
-		BARONY_ACH_MASTER
+		BARONY_ACH_MASTER,
+		BARONY_ACH_DAPPER,
+		BARONY_ACH_SPROUTS
 	};
 	enum AchievementEvent : int
 	{
@@ -712,7 +726,8 @@ public:
 		EXTRA_CREDIT_SECRET,
 		DIPLOMA_LEVEL_COMPLETE,
 		BACK_TO_BASICS_LEVEL_COMPLETE,
-		FAST_LEARNER_TIME_UPDATE
+		FAST_LEARNER_TIME_UPDATE,
+		DAPPER_EQUIPMENT_CHECK
 	};
 	void updatePlayerAchievement(int player, Achievement achievement, AchievementEvent achEvent);
 	bool bIsAchievementAllowedDuringTutorial(std::string achievementStr)
@@ -798,6 +813,7 @@ public:
 		std::unordered_set<Uint32> bountyTargets;
 		bool updatedBountyTargets = false;
 		bool wearingBountyHat = false;
+		static std::set<ItemType> startingClassItems;
 		
 		PlayerAchievements()
 		{
@@ -807,6 +823,7 @@ public:
 		};
 		bool checkPathBetweenObjects(Entity* player, Entity* target, int achievement);
 		bool checkTraditionKill(Entity* player, Entity* target);
+		int getItemIndexForDapperAchievement(Item* item);
 	} playerAchievements[MAXPLAYERS];
 
 	void updateClientBounties(bool firstSend);

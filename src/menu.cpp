@@ -9685,6 +9685,11 @@ void doEndgame(bool saveHighscore) {
 			}
 		}
 
+		if ( gameModeManager.currentSession.challengeRun.isActive() )
+		{
+			steamAchievement("BARONY_ACH_REAP_SOW");
+		}
+
 		if ( victory == 1 )
 		{
 			if ( currentlevel >= 20 )

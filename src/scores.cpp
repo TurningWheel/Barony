@@ -5018,6 +5018,60 @@ void AchievementObserver::checkMapScriptsOnVariableSet()
 	}
 }
 
+std::map<ItemType, Uint32> dapperItems;
+std::set<ItemType> AchievementObserver::PlayerAchievements::startingClassItems =
+{
+	LEATHER_HELM,
+	HAT_PHRYGIAN,
+	HAT_HOOD_WHISPERS,
+	HAT_WIZARD,
+	HAT_HOOD_APPRENTICE,
+	HAT_JESTER,
+	HAT_FEZ,
+	HAT_HOOD_ASSASSIN,
+	MONOCLE,
+	MASK_BANDIT,
+	PUNISHER_HOOD,
+	MASK_SHAMAN,
+	TOOL_BLINDFOLD_TELEPATHY,
+	TOOL_BLINDFOLD
+};
+
+int AchievementObserver::PlayerAchievements::getItemIndexForDapperAchievement(Item* item)
+{
+	if ( dapperItems.empty() )
+	{
+		int index = 0;
+		for ( int i = 0; i < NUMITEMS; ++i )
+		{
+			if ( startingClassItems.find((ItemType)i) != startingClassItems.end() )
+			{
+				continue;
+			}
+			if ( items[i].item_slot == EQUIPPABLE_IN_SLOT_HELM )
+			{
+				dapperItems[(ItemType)i] = index;
+				++index;
+			}
+			else if ( items[i].item_slot == EQUIPPABLE_IN_SLOT_MASK )
+			{
+				dapperItems[(ItemType)i] = index;
+				++index;
+			}
+		}
+	}
+
+	if ( item )
+	{
+		auto find = dapperItems.find(item->type);
+		if ( find != dapperItems.end() )
+		{
+			return find->second;
+		}
+	}
+	return -1;
+}
+
 void AchievementObserver::updatePlayerAchievement(int player, Achievement achievement, AchievementEvent achEvent)
 {
 	switch ( achievement )
@@ -5119,6 +5173,61 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 				}
 			}
 			break;
+		case BARONY_ACH_DAPPER:
+		{
+
+			int loops = 2;
+			SteamStatIndexes statLevelTotal = STEAM_STAT_DAPPER;
+			while ( loops > 0 )
+			{
+				--loops;
+				int index = playerAchievements[player].getItemIndexForDapperAchievement(loops == 1 ? stats[player]->helmet : stats[player]->mask);
+				if ( index >= 0 )
+				{
+					SteamStatIndexes statBitCounter = STEAM_STAT_DAPPER_1;
+					if ( index >= 32 )
+					{
+						statBitCounter = STEAM_STAT_DAPPER_2;
+					}
+					else if ( index >= 64 )
+					{
+						statBitCounter = STEAM_STAT_DAPPER_3;
+					}
+				
+					Uint32 bit = (1 << (index % 32));
+					if ( !(g_SteamStats[statBitCounter].m_iValue & (bit)) ) // bit not set
+					{
+						// update with the difference in values.
+						steamStatisticUpdate(statBitCounter, STEAM_STAT_INT, (bit));
+					}
+				}
+			}
+
+			if ( ticks % (TICKS_PER_SECOND * 5) == 0 )
+			{
+				int hatmasksWorn = 0;
+				for ( int i = 0; i < 32; ++i )
+				{
+					if ( g_SteamStats[STEAM_STAT_DAPPER_1].m_iValue & (1 << i) ) // count the bits
+					{
+						++hatmasksWorn;
+					}
+					if ( g_SteamStats[STEAM_STAT_DAPPER_2].m_iValue & (1 << i) ) // count the bits
+					{
+						++hatmasksWorn;
+					}
+					if ( g_SteamStats[STEAM_STAT_DAPPER_3].m_iValue & (1 << i) ) // count the bits
+					{
+						++hatmasksWorn;
+					}
+				}
+				if ( hatmasksWorn >= g_SteamStats[statLevelTotal].m_iValue )
+				{
+					steamStatisticUpdate(statLevelTotal, STEAM_STAT_INT, hatmasksWorn - g_SteamStats[statLevelTotal].m_iValue);
+				}
+			}
+			break;
+		}
 		case BARONY_ACH_REAL_BOY:
 			if ( achEvent == REAL_BOY_HUMAN_RECRUIT )
 			{
@@ -5159,6 +5268,8 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 		{
 			std::unordered_set<int> races;
 			std::unordered_set<int> classes;
+			std::vector<int> awardAchievementsToAllPlayers;
+			int num = 0;
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
 				if ( !client_disconnected[i] )
@@ -5171,9 +5282,13 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 					{
 						classes.insert(client_classes[i]);
 					}
+					++num;
 				}
 			}
-			std::vector<int> awardAchievementsToAllPlayers;
+			if ( gameModeManager.currentSession.challengeRun.isActive() && num >= 2 )
+			{
+				awardAchievementsToAllPlayers.push_back(BARONY_ACH_SPROUTS);
+			}
 			if ( !races.empty() )
 			{
 				if ( races.find(RACE_INCUBUS) != races.end() && races.find(RACE_SUCCUBUS) != races.end() )
@@ -5341,6 +5456,9 @@ void AchievementObserver::awardAchievement(int player, int achievement)
 			break;
 		case BARONY_ACH_IRONIC_PUNISHMENT:
 			steamAchievementClient(player, "BARONY_ACH_IRONIC_PUNISHMENT");
+			break;
+		case BARONY_ACH_SPROUTS:
+			steamAchievementClient(player, "BARONY_ACH_SPROUTS");
 			break;
 		default:
 			messagePlayer(player, MESSAGE_DEBUG, "[WARNING]: Unhandled achievement: %d", achievement);

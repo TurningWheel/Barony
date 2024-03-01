@@ -411,6 +411,7 @@ std::string SteamServerClientWrapper::requestAuthTicket()
 
 		authTicket = "";
 		char hexBuf[32];
+		memset(hexBuf, 0, sizeof(hexBuf));
 		for ( int i = 0; i < cubTicket; ++i )
 		{
 			snprintf(hexBuf, sizeof(hexBuf), "%02hhx", buf[i]);
@@ -1009,6 +1010,8 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 				case STEAM_STAT_GUERILLA_RADIO:
 				case STEAM_STAT_ITS_A_LIVING:
 				case STEAM_STAT_FASCIST:
+				case STEAM_STAT_I_NEEDED_THAT:
+				case STEAM_STAT_DUNGEONSEED:
 					g_SteamStats[statisticNum].m_iValue =
 						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
 					break;
@@ -1126,6 +1129,29 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 					g_SteamStats[statisticNum].m_iValue =
 						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
 					indicateProgress = false;
+					break;
+				case STEAM_STAT_DAPPER_1:
+				case STEAM_STAT_DAPPER_2:
+				case STEAM_STAT_DAPPER_3:
+					g_SteamStats[statisticNum].m_iValue =
+						std::min((Uint32)g_SteamStats[statisticNum].m_iValue, (Uint32)steamStatAchStringsAndMaxVals[statisticNum].second);
+					indicateProgress = false;
+					break;
+				case STEAM_STAT_DAPPER:
+					g_SteamStats[statisticNum].m_iValue =
+						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
+					if ( g_SteamStats[statisticNum].m_iValue == steamStatAchStringsAndMaxVals[statisticNum].second )
+					{
+						indicateProgress = true;
+					}
+					else if ( oldValue == g_SteamStats[statisticNum].m_iValue )
+					{
+						indicateProgress = false;
+					}
+					else
+					{
+						indicateProgress = true;
+					}
 					break;
 				case STEAM_STAT_DIPLOMA:
 				case STEAM_STAT_EXTRA_CREDIT:
@@ -1372,6 +1398,7 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 			// below are 10 max value
 			case STEAM_STAT_TAKE_THIS_OUTSIDE:
 			case STEAM_STAT_SPICY:
+			case STEAM_STAT_I_NEEDED_THAT:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
 					if ( iVal == 1 || (iVal > 0 && iVal % 2 == 0) )
@@ -1383,10 +1410,21 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 				break;
 			case STEAM_STAT_DIPLOMA:
 			case STEAM_STAT_EXTRA_CREDIT:
+			case STEAM_STAT_DUNGEONSEED:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
 					indicateAchievementProgressAndUnlock(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
 						iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+				}
+				break;
+			case STEAM_STAT_DAPPER:
+				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
+				{
+					if ( iVal >= 5 && iVal % 5 == 0 )
+					{
+						indicateAchievementProgressAndUnlock(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
+							iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+					}
 				}
 				break;
 			default:

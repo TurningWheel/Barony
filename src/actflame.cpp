@@ -26,6 +26,7 @@
 -------------------------------------------------------------------------------*/
 
 #define FLAME_LIFE my->skill[0]
+#define FLAME_PLAYER my->skill[1]
 #define FLAME_VELX my->vel_x
 #define FLAME_VELY my->vel_y
 #define FLAME_VELZ my->vel_z

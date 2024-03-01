@@ -550,10 +550,77 @@ void PlayfabUser_t::OnFunctionExecute(const PlayFab::CloudScriptModels::ExecuteF
                 {
                     if ( code == PlayFab::PlayFabErrorCode::PlayFabErrorSuccess )
                     {
+                        std::set<string> lidsImproved;
+                        std::set<string> lidsNew;
+                        std::set<string> lidsTotal;
+                        int dungeonlvl = -1;
+                        for ( auto itr = data.begin(); itr != data.end(); ++itr )
+                        {
+                            std::string key = itr.name();
+                            {
+                                if ( key == "dungeonlvl" )
+                                {
+                                    if ( data[key].isInt() )
+                                    {
+                                        dungeonlvl = data[key].asInt();
+                                    }
+                                }
+                                else if ( key == "improved_lids" )
+                                {
+                                    for ( int i = 0; i < data[key].size(); ++i )
+                                    {
+                                        if ( data[key][i].isString() )
+                                        {
+                                            lidsImproved.insert(data[key][i].asString());
+                                        }
+                                    }
+                                }
+                                else if ( key == "new_lids" )
+                                {
+                                    for ( int i = 0; i < data[key].size(); ++i )
+                                    {
+                                        if ( data[key][i].isString() )
+                                        {
+                                            lidsNew.insert(data[key][i].asString());
+                                        }
+                                    }
+                                }
+                                else if ( key == "lids" )
+                                {
+                                    for ( int i = 0; i < data[key].size(); ++i )
+                                    {
+                                        if ( data[key][i].isString() )
+                                        {
+                                            lidsTotal.insert(data[key][i].asString());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         if ( message.find("Score successfully published") != std::string::npos )
                         {
                             // notification
                             UIToastNotificationManager.createLeaderboardNotification(message);
+                            if ( dungeonlvl >= 5 )
+                            {
+                                for ( auto& lid : lidsNew )
+                                {
+                                    if ( lid.find("_seed_") != std::string::npos )
+                                    {
+                                        steamStatisticUpdate(STEAM_STAT_DUNGEONSEED, STEAM_STAT_INT, 1);
+                                        break;
+                                    }
+                                }
+                                for ( auto& lid : lidsImproved )
+                                {
+                                    if ( lid.find("_seed_") != std::string::npos )
+                                    {
+                                        steamAchievement("BARONY_ACH_GROWTH_MINDSET");
+                                        break;
+                                    }
+                                }
+                            }
                         }
                     }
                     playfabUser.postScoreHandler.queue.erase(it);
