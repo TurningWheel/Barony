@@ -21512,6 +21512,10 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 				Entity* entity = (Entity*)node->element;
 				if ( (Sint32)entity->getUID() == -4 ) // torch sprites
 				{
+					if ( (entity->skill[1] - 1) != player )
+					{
+						continue;
+					}
                     bool b = entity->flags[BRIGHT];
                     if (!dark) { entity->flags[BRIGHT] = true; }
 					glDrawSprite(&view, entity, REALCOLORS);
@@ -21530,6 +21534,10 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 					{
 						if ( (Sint32)entity->getUID() == -4 ) // torch sprites
 						{
+							if ( (entity->skill[1] - 1) != player )
+							{
+								continue;
+							}
 							bool b = entity->flags[BRIGHT];
 							if (!dark) { entity->flags[BRIGHT] = true; }
 							glDrawSprite(&view, entity, REALCOLORS);

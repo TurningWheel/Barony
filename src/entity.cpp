@@ -3591,6 +3591,8 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			if ( ticks % (HEAL_TIME) == 0 )
 			{
+				steamAchievementEntity(this, "BARONY_ACH_SMOKIN");
+
 				int damage = 1 + local_rng.rand() % 3;
 				this->modHP(-damage);
 				if ( myStats->HP <= 0 )
@@ -6681,6 +6683,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( myStats->HP <= 0 && oldHP > 0 )
 						{
 							killer->awardXP(this, true, true);
+							steamAchievementEntity(killer, "BARONY_ACH_LOCKJAW");
 						}
 
 						updateEnemyBar(killer, this, getMonsterLocalizedName(myStats->type).c_str(), myStats->HP, myStats->MAXHP, true,
@@ -9316,7 +9319,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						Item* armor = nullptr;
 						int armornum = 0;
-						if ( behavior == &actPlayer )
+						if ( behavior == &actPlayer 
+							|| (hit.entity->behavior == &actMonster
+								&& ((hit.entity->monsterAllySummonRank != 0 && hitstats->type == SKELETON)
+									|| hit.entity->monsterIsTinkeringCreation())) )
 						{
 							armor = nullptr;
 						}
@@ -9348,6 +9354,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							else
 							{
 								armor->count--;
+							}
+							if ( hit.entity->behavior == &actPlayer && playerhit >= 0 )
+							{
+								steamStatisticUpdateClient(playerhit, STEAM_STAT_I_NEEDED_THAT, STEAM_STAT_INT, 1);
 							}
 							messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(6085), armor->getName());
 							Item* stolenArmor = newItem(armor->type, armor->status, armor->beatitude, qty, armor->appearance, armor->identified, &myStats->inventory);
@@ -9438,7 +9448,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							Item* armor = nullptr;
 							int armornum = 0;
-							if ( behavior == &actPlayer )
+							if ( behavior == &actPlayer 
+								|| (hit.entity->behavior == &actMonster
+									&& ( (hit.entity->monsterAllySummonRank != 0 && hitstats->type == SKELETON)
+									|| hit.entity->monsterIsTinkeringCreation())) )
 							{
 								armor = nullptr;
 							}
@@ -11896,6 +11909,11 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 									if ( inspiration )
 									{
 										gain *= inspirationMult;
+										if ( ((followerStats->EXP + gain) >= 100) && ((followerStats->EXP + (xpGain * numshares)) < 100) )
+										{
+											// inspiration caused us to level
+											steamAchievementEntity(this, "BARONY_ACH_BY_EXAMPLE");
+										}
 									}
 									followerStats->EXP += gain; 
 								}
@@ -11905,6 +11923,11 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 									if ( inspiration )
 									{
 										gain *= inspirationMult;
+										if ( ((followerStats->EXP + gain) >= 100) && ((followerStats->EXP + xpGain) < 100) )
+										{
+											// inspiration caused us to level
+											steamAchievementEntity(this, "BARONY_ACH_BY_EXAMPLE");
+										}
 									}
 									followerStats->EXP += gain;
 								}
@@ -11927,6 +11950,17 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		if ( inspiration )
 		{
 			gain *= inspirationMult;
+			if ( ((destStats->EXP + gain) >= 100) && ((destStats->EXP + xpGain) < 100) )
+			{
+				// inspiration caused us to level
+				if ( behavior == &actMonster )
+				{
+					if ( auto leader = monsterAllyGetPlayerLeader() )
+					{
+						steamAchievementEntity(leader, "BARONY_ACH_BY_EXAMPLE");
+					}
+				}
+			}
 		}
 		destStats->EXP += gain;
 	}
@@ -11953,6 +11987,10 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		if ( src->behavior == &actPlayer && this->behavior == &actMonster )
 		{
 			achievementObserver.updateGlobalStat(getIndexForDeathType(destStats->type));
+			if ( destStats->type == MIMIC )
+			{
+				steamAchievementClient(src->skill[2], "BARONY_ACH_ETERNAL_REWARD");
+			}
 		}
 		else if ( src->behavior == &actMonster && this->behavior == &actPlayer )
 		{
@@ -11979,6 +12017,22 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			else if ( srcStats->type == SHOPKEEPER )
 			{
 				achievementObserver.updateGlobalStat(STEAM_GSTAT_SHOPKEEPERS_SLAIN);
+			}
+
+			if ( srcStats->type == LICH || srcStats->type == LICH_FIRE || srcStats->type == LICH_ICE
+				|| srcStats->type == DEVIL )
+			{
+				if ( gameModeManager.currentSession.challengeRun.isActive() )
+				{
+					if ( gameModeManager.currentSession.challengeRun.classnum >= 0
+						|| gameModeManager.currentSession.challengeRun.race >= 0 )
+					{
+						for ( int c = 0; c < MAXPLAYERS; c++ )
+						{
+							steamAchievementClient(c, "BARONY_ACH_BLOOM_PLANTED");
+						}
+					}
+				}
 			}
 		}
 	}
@@ -15881,7 +15935,7 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 			case EFF_CONFUSED:
 				if ( myStats->type == LICH || myStats->type == DEVIL
 					|| myStats->type == LICH_FIRE || myStats->type == LICH_ICE
-					|| myStats->type == MINOTAUR )
+					|| myStats->type == MINOTAUR || myStats->type == MIMIC )
 				{
 					return false;
 				}
@@ -20557,6 +20611,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 		{
 			flameEntity->flags[GENIUS] = true;
 			flameEntity->setUID(-4);
+			flameEntity->skill[1] = player + 1;
 		}
 		else
 		{

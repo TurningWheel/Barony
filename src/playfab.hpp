@@ -93,6 +93,7 @@ public:
 		{
 			std::string hash = "";
 			std::string score = "";
+			std::string name = "";
 			PlayFab::PlayFabErrorCode code = PlayFab::PlayFabErrorCode::PlayFabErrorUnknownError;
 			bool inprogress = false;
 			int sequence = 0;
@@ -102,10 +103,11 @@ public:
 			bool expired = false;
 			std::string writtenToFile = "";
 
-			ScoreUpdate_t(std::string _score, std::string _hash)
+			ScoreUpdate_t(std::string _score, std::string _hash, std::string _name)
 			{
 				hash = _hash;
 				score = _score;
+				name = _name;
 				sequence = sequenceIDs;
 				creationTick = ticks;
 				++sequenceIDs;

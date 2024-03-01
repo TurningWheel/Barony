@@ -20,8 +20,10 @@
 #endif
 
 PlayfabUser_t playfabUser;
+int loginFailures = 1;
 void PlayfabUser_t::OnLoginSuccess(const PlayFab::ClientModels::LoginResult& result, void* customData)
 {
+    loginFailures = 1;
     logInfo("Logged in successfully");
     playfabUser.loggingIn = false;
     playfabUser.bLoggedIn = true;
@@ -77,6 +79,8 @@ void PlayfabUser_t::OnLoginSuccess(const PlayFab::ClientModels::LoginResult& res
 void PlayfabUser_t::OnLoginFail(const PlayFab::PlayFabError& error, void* customData)
 {
     logError("Failed to login: %s | %s", error.ErrorName.c_str(), error.ErrorMessage.c_str());
+    logError(error.GenerateErrorReport().c_str());
+
     playfabUser.loggingIn = false;
     playfabUser.bLoggedIn = false;
     playfabUser.errorLogin = true;
@@ -103,8 +107,9 @@ void PlayfabUser_t::loginEpic()
     request.IdToken = EOS.getAuthToken();
     if ( EOS.getAuthToken() == "" )
     {
-        playfabUser.authenticationRefresh = TICKS_PER_SECOND * 5;
+        playfabUser.authenticationRefresh = TICKS_PER_SECOND * 5 * loginFailures;
         playfabUser.errorLogin = true;
+        loginFailures = std::min(20, loginFailures + 3);
         return;
     }
     playfabUser.loggingIn = true;
@@ -118,6 +123,13 @@ void PlayfabUser_t::loginSteam()
     PlayFab::ClientModels::LoginWithSteamRequest request;
     request.CreateAccount = true;
     request.SteamTicket = SteamClientRequestAuthTicket();
+    if ( request.SteamTicket == "" )
+    {
+        playfabUser.authenticationRefresh = TICKS_PER_SECOND * 5 * loginFailures;
+        playfabUser.errorLogin = true;
+        loginFailures = std::min(20, loginFailures + 3);
+        return;
+    }
     playfabUser.loggingIn = true;
     PlayFab::PlayFabClientAPI::LoginWithSteam(request, OnLoginSuccess, OnLoginFail);
 #endif
@@ -130,6 +142,17 @@ void PlayfabUser_t::OnCloudScriptExecute(const PlayFab::ClientModels::ExecuteClo
 
 void PlayfabUser_t::OnCloudScriptFailure(const PlayFab::PlayFabError& error, void* customData)
 {
+    /*if ( error.ErrorCode == PlayFab::PlayFabErrorCode::PlayFabErrorEntityTokenExpired )
+    {
+    // i think this response is from the server, so dont need to re-log
+        if ( playfabUser.bLoggedIn )
+        {
+            if ( playfabUser.authenticationRefresh > TICKS_PER_SECOND * 5 )
+            {
+                playfabUser.authenticationRefresh = TICKS_PER_SECOND * 5;
+            }
+        }
+    }*/
     logError("Update failure: %s", error.ErrorMessage.c_str());
 }
 
@@ -527,10 +550,77 @@ void PlayfabUser_t::OnFunctionExecute(const PlayFab::CloudScriptModels::ExecuteF
                 {
                     if ( code == PlayFab::PlayFabErrorCode::PlayFabErrorSuccess )
                     {
+                        std::set<string> lidsImproved;
+                        std::set<string> lidsNew;
+                        std::set<string> lidsTotal;
+                        int dungeonlvl = -1;
+                        for ( auto itr = data.begin(); itr != data.end(); ++itr )
+                        {
+                            std::string key = itr.name();
+                            {
+                                if ( key == "dungeonlvl" )
+                                {
+                                    if ( data[key].isInt() )
+                                    {
+                                        dungeonlvl = data[key].asInt();
+                                    }
+                                }
+                                else if ( key == "improved_lids" )
+                                {
+                                    for ( int i = 0; i < data[key].size(); ++i )
+                                    {
+                                        if ( data[key][i].isString() )
+                                        {
+                                            lidsImproved.insert(data[key][i].asString());
+                                        }
+                                    }
+                                }
+                                else if ( key == "new_lids" )
+                                {
+                                    for ( int i = 0; i < data[key].size(); ++i )
+                                    {
+                                        if ( data[key][i].isString() )
+                                        {
+                                            lidsNew.insert(data[key][i].asString());
+                                        }
+                                    }
+                                }
+                                else if ( key == "lids" )
+                                {
+                                    for ( int i = 0; i < data[key].size(); ++i )
+                                    {
+                                        if ( data[key][i].isString() )
+                                        {
+                                            lidsTotal.insert(data[key][i].asString());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         if ( message.find("Score successfully published") != std::string::npos )
                         {
                             // notification
                             UIToastNotificationManager.createLeaderboardNotification(message);
+                            if ( dungeonlvl >= 5 )
+                            {
+                                for ( auto& lid : lidsNew )
+                                {
+                                    if ( lid.find("_seed_") != std::string::npos )
+                                    {
+                                        steamStatisticUpdate(STEAM_STAT_DUNGEONSEED, STEAM_STAT_INT, 1);
+                                        break;
+                                    }
+                                }
+                                for ( auto& lid : lidsImproved )
+                                {
+                                    if ( lid.find("_seed_") != std::string::npos )
+                                    {
+                                        steamAchievement("BARONY_ACH_GROWTH_MINDSET");
+                                        break;
+                                    }
+                                }
+                            }
                         }
                     }
                     playfabUser.postScoreHandler.queue.erase(it);
@@ -1020,6 +1110,7 @@ void PlayfabUser_t::PostScoreHandler_t::ScoreUpdate_t::post()
     request.GeneratePlayStreamEvent = false;
     request.CustomTags["default"] = "1";
     request.CustomTags["hash"] = hash;
+    request.CustomTags["name"] = name;
     request.FunctionParameter = json;
     PlayFab::PlayFabCloudScriptAPI::ExecuteFunction(request, OnFunctionExecute, OnCloudScriptFailure,
         (void*)(intptr_t)(sequence));
@@ -1135,6 +1226,10 @@ unsigned long djb2Hash2(char* str)
 
 void PlayfabUser_t::postScore(const int player)
 {
+    if ( player < 0 || player >= MAPLAYERS )
+    {
+        return;
+    }
 #ifdef NDEBUG
 {
     if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
@@ -1163,7 +1258,7 @@ void PlayfabUser_t::postScore(const int player)
     }
 
     std::string scorestring = info.serializeToOnlineHiscore(player, victory);
-    auto hash = djb2Hash2(const_cast<char*>(scorestring.c_str()));
+    Uint32 hash = djb2Hash2(const_cast<char*>(scorestring.c_str()));
 
     if ( postScoreHandler.sessionsPosted.find(info.hash) != postScoreHandler.sessionsPosted.end() )
     {
@@ -1174,7 +1269,8 @@ void PlayfabUser_t::postScore(const int player)
     }
     postScoreHandler.sessionsPosted.insert(info.hash);
 
-    postScoreHandler.queue.push_back(PostScoreHandler_t::ScoreUpdate_t(scorestring, std::to_string(hash)));
+    postScoreHandler.queue.push_back(PostScoreHandler_t::ScoreUpdate_t(scorestring, std::to_string(hash), 
+        info.players[player].stats.name));
     auto& entry = postScoreHandler.queue.back();
     entry.inprogress = false;
     entry.saveToFile();
@@ -1214,6 +1310,7 @@ bool PlayfabUser_t::PostScoreHandler_t::ScoreUpdate_t::saveToFile()
 
     d.AddMember("version", rapidjson::Value(1), d.GetAllocator());
     d.AddMember("hash", rapidjson::Value(hash.c_str(), d.GetAllocator()), d.GetAllocator());
+    d.AddMember("name", rapidjson::Value(hash.c_str(), d.GetAllocator()), d.GetAllocator());
     d.AddMember("score", rapidjson::Value(score.c_str(), d.GetAllocator()), d.GetAllocator());
 
     File* fp = FileIO::open(outputPath.c_str(), "wb");
@@ -1280,9 +1377,14 @@ void PlayfabUser_t::PostScoreHandler_t::readFromFiles()
         int version = d["version"].GetInt();
         std::string score = d["score"].GetString();
         std::string hashStr = d["hash"].GetString();
+        std::string name = "";
+        if ( d.HasMember("name") )
+        {
+            name = d["name"].GetString();
+        }
         Uint32 hash = std::stoul(hashStr);
 
-        queue.push_back(ScoreUpdate_t(score, hashStr));
+        queue.push_back(ScoreUpdate_t(score, hashStr, name));
         queue.back().writtenToFile = inputPath;
 
         if ( (Uint32)djb2Hash2(const_cast<char*>(score.c_str())) != hash )

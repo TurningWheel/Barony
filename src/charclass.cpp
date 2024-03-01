@@ -2932,6 +2932,12 @@ void initClass(const int player)
 			Item* item = static_cast<Item*>(node->element);
 			if ( item )
 			{
+				if ( items[item->type].item_slot == EQUIPPABLE_IN_SLOT_HELM
+					|| items[item->type].item_slot == EQUIPPABLE_IN_SLOT_MASK )
+				{
+					assert(achievementObserver.playerAchievements->startingClassItems.find(item->type)
+						!= achievementObserver.playerAchievements->startingClassItems.end());
+				}
 				if ( players[player]->paperDoll.enabled && itemIsEquipped(item, player) && item->type != SPELL_ITEM )
 				{
 					continue;
