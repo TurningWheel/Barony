@@ -1503,8 +1503,10 @@ void gameLogic(void)
 					if ( stats[c]->type == SKELETON 
 						&& stats[c]->weapon && stats[c]->weapon->type == ARTIFACT_AXE
 						&& stats[c]->cloak && stats[c]->cloak->type == CLOAK_PROTECTION
-						&& !stats[c]->gloves && !stats[c]->helmet && !stats[c]->shoes
-						&& !stats[c]->breastplate && !stats[c]->mask && !stats[c]->ring
+						&& ((stats[c]->mask && stats[c]->mask->type == MASK_EYEPATCH) || !stats[c]->mask)
+						&& !stats[c]->helmet
+						&& !stats[c]->gloves && !stats[c]->shoes
+						&& !stats[c]->breastplate && !stats[c]->ring
 						&& !stats[c]->amulet && !stats[c]->shield )
 					{
 						// nothing but an axe and a cloak.
