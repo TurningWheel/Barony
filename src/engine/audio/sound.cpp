@@ -29,18 +29,21 @@
 #endif
 #endif
 
+
+void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment, real_t notification)
+{
 #ifdef USE_FMOD
 #elif defined USE_OPENAL
 #else
-void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment, real_t notification)
-{
-	return;
+#endif
 }
 void setAudioDevice(const std::string& device) 
 {
-	return;
-}
+#ifdef USE_FMOD
+#elif defined USE_OPENAL
+#else
 #endif
+}
 
 #ifdef USE_FMOD
 
@@ -328,36 +331,6 @@ void sound_update(int player, int index, int numplayers)
 
 #elif defined USE_OPENAL
 
-struct OPENAL_BUFFER {
-	ALuint id;
-	bool stream;
-	char oggfile[64];
-};
-struct OPENAL_SOUND {
-	ALuint id;
-	OPENAL_CHANNELGROUP *group;
-	float volume;
-	OPENAL_BUFFER *buffer;
-	bool active;
-	char* oggdata;
-	int oggdata_length;
-	int ogg_seekoffset;
-	OggVorbis_File oggStream;
-	vorbis_info* vorbisInfo;
-	vorbis_comment* vorbisComment;
-	ALuint streambuff[4];
-	bool loop;
-	bool stream_active;
-	int indice;
-};
-
-struct OPENAL_CHANNELGROUP {
-	float volume;
-	int num;
-	int cap;
-	OPENAL_SOUND **sounds;
-};
-
 SDL_mutex *openal_mutex;
 
 static size_t openal_oggread(void* ptr, size_t size, size_t nmemb, void* datasource) {
@@ -513,14 +486,12 @@ ALCdevice  *openal_device = nullptr;
 //#define openal_maxchannels 100
 
 OPENAL_BUFFER** sounds = nullptr;
-Uint32 numsounds = 0;
 OPENAL_BUFFER** minesmusic = NULL;
 OPENAL_BUFFER** swampmusic = NULL;
 OPENAL_BUFFER** labyrinthmusic = NULL;
 OPENAL_BUFFER** ruinsmusic = NULL;
 OPENAL_BUFFER** underworldmusic = NULL;
 OPENAL_BUFFER** hellmusic = NULL;
-OPENAL_BUFFER** intromusic = NULL;
 OPENAL_BUFFER* intermissionmusic = NULL;
 OPENAL_BUFFER* minetownmusic = NULL;
 OPENAL_BUFFER* splashmusic = NULL;
@@ -1266,7 +1237,7 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 	{
 		return;
 	}
-#ifdef SOUND
+#ifdef SOUNDsdfdsf
 
 	std::vector<std::string> themeMusic;
 	themeMusic.push_back("music/introduction.ogg");
@@ -1714,13 +1685,13 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 #endif // SOUND
 }
 
+/**
+ * Free custom music slots, not used by official music assets.
+ */
 void gamemodsUnloadCustomThemeMusic()
 {
 #ifdef SOUND
-#ifdef USE_OPENAL
-#define FMOD_Sound_Release OPENAL_Sound_Release
-#endif
-	// free custom music slots, not used by official music assets.
+#ifdef FMOD_ENABLED
 	if ( gnomishminesmusic )
 	{
 		gnomishminesmusic->release();
@@ -1751,8 +1722,9 @@ void gamemodsUnloadCustomThemeMusic()
 		hamletmusic->release();
 		hamletmusic = nullptr;
 	}
+#endif
 #ifdef USE_OPENAL
-#undef FMOD_Sound_Release
+
 #endif
 #endif // !SOUND
 }

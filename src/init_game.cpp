@@ -551,6 +551,7 @@ void deinitGame()
 #endif
 	if ( !no_sound )
 	{
+#ifdef USE_FMOD
 		music_channel->stop();
 		music_channel2->stop();
 		introductionmusic->release();
@@ -655,7 +656,11 @@ void deinitGame()
 		{
 			free(intromusic);
 		}
+#elif defined OPENAL_ENABLED
+	// TODO: unload OpenAL resources
+#endif
 	}
+
 #ifdef USE_OPENAL
 #undef FMOD_Channel_Stop
 #undef FMOD_Sound_Release

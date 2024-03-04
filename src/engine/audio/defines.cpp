@@ -78,4 +78,6 @@ bool sfxUseDynamicAmbientVolume = true;
 bool sfxUseDynamicEnvironmentVolume = true;
 
 void* fmod_extraDriverData = nullptr;
-#endif //USE_FMOD
+#elif defined OPENAL_ENABLED
+OPENAL_BUFFER** intromusic = nullptr;
+#endif

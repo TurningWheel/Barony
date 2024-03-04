@@ -75,6 +75,9 @@ bool loadMusic()
         intromusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMINTROMUSIC);
         memset(intromusic, 0, sizeof(FMOD::Sound*) * NUMINTROMUSIC);
     }
+#elif defined USE_OPENAL
+	// TODO: load intro music
+
 #endif
 
     bool introMusicChanged;

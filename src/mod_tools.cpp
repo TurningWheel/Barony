@@ -9277,7 +9277,7 @@ void Mods::unloadMods(bool force)
 		physfsReloadMusic(reloadIntroMusic, true);
 		if (reloadIntroMusic)
 		{
-#ifdef SOUND
+#ifdef MUSIC
 			playMusic(intromusic[local_rng.rand() % (NUMINTROMUSIC - 1)], false, true, true);
 #endif			
 		}
@@ -9403,7 +9403,7 @@ void Mods::loadMods()
 		physfsReloadMusic(reloadIntroMusic, false);
 		if ( reloadIntroMusic )
 		{
-#ifdef SOUND
+#ifdef MUSIC
 			playMusic(intromusic[local_rng.rand() % (NUMINTROMUSIC - 1)], false, true, true);
 #endif			
 		}
@@ -9416,7 +9416,7 @@ void Mods::loadMods()
 		physfsReloadMusic(reloadIntroMusic, true);
 		if ( reloadIntroMusic )
 		{
-#ifdef SOUND
+#ifdef MUSIC
 			playMusic(intromusic[local_rng.rand() % (NUMINTROMUSIC - 1)], false, true, true);
 #endif			
 		}
@@ -9426,7 +9426,7 @@ void Mods::loadMods()
 	updateLoadingScreen(70);
 	doLoadingScreen();
 
-	std::string langDirectory = PHYSFS_getRealDir("lang/en.txt");
+	std::string langDirectory = PHYSFS_getRealDir("lang/fr.txt");
 	if ( langDirectory.compare("./") != 0 )
 	{
 		if ( Language::reloadLanguage() != 0 )

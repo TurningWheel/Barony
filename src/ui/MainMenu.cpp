@@ -2856,12 +2856,14 @@ namespace MainMenu {
             fpsLimit = std::min(std::max(MIN_FPS, *cvar_desiredFps), MAX_FPS);
         }
 		current_audio_device = audio_device;
+#if FMOD_ENABLED
         if (fmod_speakermode != speaker_mode) {
             fmod_speakermode = (FMOD_SPEAKERMODE)speaker_mode;
             if (initialized) {
                 restartPromptRequired = true;
             }
         }
+#endif
 		MainMenu::master_volume = std::min(std::max(0.f, master_volume / 100.f), 1.f);
 		sfxvolume = std::min(std::max(0.f, gameplay_volume / 100.f), 1.f);
 		sfxAmbientVolume = std::min(std::max(0.f, ambient_volume / 100.f), 1.f);
@@ -2960,7 +2962,9 @@ namespace MainMenu {
 		settings.fov = ::fov;
 		settings.fps = *cvar_desiredFps;
 		settings.audio_device = current_audio_device;
+#ifdef FMOD_ENABLED
         settings.speaker_mode = (int)fmod_speakermode;
+#endif
 		settings.master_volume = MainMenu::master_volume * 100.f;
 		settings.gameplay_volume = (float)sfxvolume * 100.f;
 		settings.ambient_volume = (float)sfxAmbientVolume * 100.f;
@@ -6313,9 +6317,9 @@ bind_failed:
 		}
 		int y = 0;
 
+		int num_drivers = 0;
 #if !defined(NINTENDO) && defined(USE_FMOD)
 		int selected_device = 0;
-		int num_drivers = 0;
 		(void)fmod_system->getNumDrivers(&num_drivers);
 		audio_drivers.clear();
 		audio_drivers.reserve(num_drivers);
@@ -24690,9 +24694,10 @@ failed:
 
 				// return to title screen
 		        destroyMainMenu();
-#ifdef SOUND
+#ifdef MUSIC
 				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
-	            playMusic(intromusic[music], true, false, false);
+				printlog("before play.\n");
+	            //playMusic(intromusic[music], true, false, false);
 #endif
 				createTitleScreen();
 
@@ -24723,7 +24728,7 @@ failed:
 
 				// return to menu
 				destroyMainMenu();
-#ifdef SOUND
+#ifdef MUSIC
 				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
 	            playMusic(intromusic[music], true, false, false);
 #endif
@@ -24758,7 +24763,7 @@ failed:
                     // create a highscore as token of remembrance.
                     doEndgame(true);
                 }
-#ifdef SOUND
+#ifdef MUSIC
                 const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
                 playMusic(intromusic[music], true, false, false);
 #endif
@@ -24790,7 +24795,7 @@ failed:
 				destroyMainMenu();
 				createDummyMainMenu();
 				createCreditsScreen(true);
-#ifdef SOUND
+#ifdef MUSIC
 	            playMusic(intromusic[0], true, false, false);
 #endif
 
@@ -24981,9 +24986,11 @@ failed:
 	}
 
 	void doMainMenu(bool ingame) {
+		printlog("mmenu 1\n");
         if (video_refresh) {
 			Frame::guiResize(0, 0); // resize gui for new aspect ratio
             createMainMenu(!intro);
+			printlog("mmenu 2\n");
             
 #if defined(VIDEO_RESTART_NEEDED)
             // return to settings button
@@ -25073,7 +25080,7 @@ failed:
             // at the end so that old_video is not overwritten
             video_refresh = VideoRefresh::None;
         }
-
+		printlog("mmenu 3\n");
 		if (!main_menu_frame) {
 		    if (ingame) {
 		        if (movie || fadeout) {
@@ -25086,7 +25093,7 @@ failed:
 			}
 			assert(main_menu_frame);
 		}
-
+		printlog("mmenu 4\n");
         // update a few things every tick
 #ifdef NINTENDO
 		enabledDLCPack1 = nxCheckDLC(0);
@@ -25144,22 +25151,23 @@ failed:
 			}
 #endif
         }
-
+		printlog("mmenu 4\n");
         // if no controller is connected, you can always connect one just for the main menu.
         if (!ingame && currentLobbyType == LobbyType::None) {
             if (!inputs.hasController(getMenuOwner())) {
                 Input::waitingToBindControllerForPlayer = getMenuOwner();
             }
         }
-
+		printlog("mmenu 5\n");
 		// hide mouse if we're driving around with a controller
         auto cmouse = inputs.getVirtualMouse(inputs.getPlayerIDAllowedKeyboard());
         cmouse->draw_cursor = isMouseVisible();
-
+		printlog("mmenu 6\n");
 		static ConsoleVariable<bool> cvar_disableFadeFinished("/test_disable_fade_finished", false);
 		if (fadeout && fadealpha >= 255 && !*cvar_disableFadeFinished) {
             handleFadeFinished(ingame);
         }
+		printlog("mmenu 7\n");
 	}
 
 	static std::string getVersionString() {

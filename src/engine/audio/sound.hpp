@@ -27,6 +27,18 @@
 #endif
 #endif
 
+#ifdef USE_FMOD
+#include "fmod_errors.h"
+#elif defined USE_OPENAL
+#ifdef USE_TREMOR
+#include <tremor/ivorbisfile.h>
+#else
+#include <ogg/ogg.h>
+#include <vorbis/vorbisfile.h>
+#include <vorbis/codec.h>
+#endif
+#endif
+
 extern Uint32 numsounds;
 bool initSoundEngine(); //If it fails to initialize the sound engine, it'll just disable audio.
 void exitSoundEngine();
@@ -127,7 +139,38 @@ extern bool sfxUseDynamicAmbientVolume, sfxUseDynamicEnvironmentVolume;
 #elif defined USE_OPENAL
 
 #define SOUND
-#define MUSIC
+//#definMUSIC
+
+struct OPENAL_BUFFER {
+	ALuint id;
+	bool stream;
+	char oggfile[64];
+};
+struct OPENAL_CHANNELGROUP;
+struct OPENAL_SOUND {
+	ALuint id;
+	OPENAL_CHANNELGROUP *group;
+	float volume;
+	OPENAL_BUFFER *buffer;
+	bool active;
+	char* oggdata;
+	int oggdata_length;
+	int ogg_seekoffset;
+	OggVorbis_File oggStream;
+	vorbis_info* vorbisInfo;
+	vorbis_comment* vorbisComment;
+	ALuint streambuff[4];
+	bool loop;
+	bool stream_active;
+	int indice;
+};
+
+struct OPENAL_CHANNELGROUP {
+	float volume;
+	int num;
+	int cap;
+	OPENAL_SOUND **sounds;
+};
 
 extern ALCcontext *openal_context;
 extern ALCdevice  *openal_device;
@@ -194,14 +237,17 @@ int closeOPENAL();
 void sound_update(int player, int index, int numplayers);
 
 OPENAL_SOUND* playSoundPlayer(int player, Uint16 snd, Uint8 vol);
+OPENAL_SOUND* playSoundNotificationPlayer(int player, Uint16 snd, Uint8 vol); //TODO: Write.
 OPENAL_SOUND* playSoundPos(real_t x, real_t y, Uint16 snd, Uint8 vol);
 OPENAL_SOUND* playSoundPosLocal(real_t x, real_t y, Uint16 snd, Uint8 vol);
 OPENAL_SOUND* playSoundEntity(Entity* entity, Uint16 snd, Uint8 vol);
 OPENAL_SOUND* playSoundEntityLocal(Entity* entity, Uint16 snd, Uint8 vol);
 OPENAL_SOUND* playSound(Uint16 snd, Uint8 vol);
+OPENAL_SOUND* playSoundNotification(Uint16 snd, Uint8 vol); //TODO: Write.
 OPENAL_SOUND* playSoundVelocity(); //TODO: Write.
 
-void playmusic(OPENAL_BUFFER* sound, bool loop, bool crossfade, bool resume); //Automatically crossfades. NOTE: Resets fadein and fadeout increments to the defaults every time it is called. You'll have to change the fadein and fadeout increments AFTER calling this function.
+void stopMusic();
+void playMusic(OPENAL_BUFFER* sound, bool loop, bool crossfade, bool resume); //Automatically crossfades. NOTE: Resets fadein and fadeout increments to the defaults every time it is called. You'll have to change the fadein and fadeout increments AFTER calling this function.
 
 void handleLevelMusic(); //Manages and updates the level music.
 

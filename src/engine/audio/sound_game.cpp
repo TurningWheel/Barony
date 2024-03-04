@@ -397,6 +397,17 @@ OPENAL_SOUND* playSoundPlayer(int player, Uint16 snd, Uint8 vol)
 	return NULL;
 }
 
+OPENAL_SOUND* playSoundNotificationPlayer(int player, Uint16 snd, Uint8 vol)
+{
+	if (no_sound)
+	{
+		return NULL;
+	}
+
+	//TODO: Implement playSoundNotificationPlayer for OpenAL.
+	return NULL;
+}
+
 /*-------------------------------------------------------------------------------
 
 	playSoundPos
@@ -575,6 +586,16 @@ OPENAL_SOUND* playSound(Uint16 snd, Uint8 vol)
 	return channel;
 }
 
+OPENAL_SOUND* playSoundNotification(Uint16 snd, Uint8 vol)
+{
+	if (no_sound)
+	{
+		return NULL;
+	}
+	// TODO: Implement playSoundNotification for OpenAL
+	return NULL;
+}
+
 void playMusic(OPENAL_BUFFER* sound, bool loop, bool crossfade, bool resume)
 {
 	if (no_sound)
@@ -636,15 +657,15 @@ void playMusic(OPENAL_BUFFER* sound, bool loop, bool crossfade, bool resume)
 	OPENAL_Channel_Play(music_channel);
 }
 
-bool shopmusicplaying = false;
-bool combatmusicplaying = false;
-bool minotaurmusicplaying = false;
-bool herxmusicplaying = false;
-bool devilmusicplaying = false;
-bool olddarkmap = false;
-bool sanctummusicplaying = false;
+extern bool shopmusicplaying;
+extern bool combatmusicplaying;
+extern bool minotaurmusicplaying;
+extern bool herxmusicplaying;
+extern bool devilmusicplaying;
+extern bool olddarkmap;
+extern bool sanctummusicplaying;
 
-int currenttrack = -1;
+extern int currenttrack;
 
 void handleLevelMusic()
 {
