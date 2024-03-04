@@ -30,21 +30,6 @@
 #endif
 
 
-void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment, real_t notification)
-{
-#ifdef USE_FMOD
-#elif defined USE_OPENAL
-#else
-#endif
-}
-void setAudioDevice(const std::string& device) 
-{
-#ifdef USE_FMOD
-#elif defined USE_OPENAL
-#else
-#endif
-}
-
 #ifdef USE_FMOD
 
 bool FMODErrorCheck()
@@ -699,7 +684,8 @@ static int get_firstfreechannel()
 	return i;
 }
 
-void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment) {
+void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment, real_t notification)
+{
     master = std::min(std::max(0.0, master), 1.0);
     music = std::min(std::max(0.0, music / 4.0), 1.0); // music volume cut in half because the music is loud...
     gameplay = std::min(std::max(0.0, gameplay), 1.0);
@@ -710,7 +696,11 @@ void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambien
 	OPENAL_ChannelGroup_SetVolume(sound_group, master * gameplay);
 	OPENAL_ChannelGroup_SetVolume(soundAmbient_group, master * ambient);
 	OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, master * environment);
-	OPENAL_ChannelGroup_SetVolume(music_notification_group, master * gameplay);
+	OPENAL_ChannelGroup_SetVolume(music_notification_group, master * notification);
+}
+
+void setAudioDevice(const std::string& device){
+	// TODO: implement device selection for OpenAL
 }
 
 void sound_update(int player, int index, int numplayers)
@@ -1081,6 +1071,16 @@ void OPENAL_Sound_Release(OPENAL_BUFFER* buffer) {
 	if(!buffer->stream)
 		alDeleteBuffers( 1, &buffer->id );
 	free(buffer);
+}
+
+#else // No FMOD or OpenAL
+
+void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment, real_t notification)
+{
+}
+
+void setAudioDevice(const std::string& device) 
+{
 }
 
 #endif
