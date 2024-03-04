@@ -14,6 +14,8 @@
 
 Uint32 numsounds = 0;
 
+bool levelmusicplaying = false;  // seems to be common to all sound libraries 
+
 #ifdef USE_FMOD
 FMOD::System* fmod_system = nullptr;
 
@@ -55,7 +57,6 @@ FMOD::Sound* hamletmusic = nullptr;
 FMOD::Sound* tutorialmusic = nullptr;
 FMOD::Sound* gameovermusic = nullptr;
 FMOD::Sound* introstorymusic = nullptr;
-bool levelmusicplaying = false;
 
 FMOD::Channel* music_channel = nullptr;
 FMOD::Channel* music_channel2 = nullptr;
@@ -78,6 +79,14 @@ bool sfxUseDynamicAmbientVolume = true;
 bool sfxUseDynamicEnvironmentVolume = true;
 
 void* fmod_extraDriverData = nullptr;
-#elif defined OPENAL_ENABLED
+#elif defined USE_OPENAL
+
 OPENAL_BUFFER** intromusic = nullptr;
+OPENAL_BUFFER** minesmusic = NULL;
+OPENAL_BUFFER** swampmusic = NULL;
+OPENAL_BUFFER** labyrinthmusic = NULL;
+OPENAL_BUFFER** ruinsmusic = NULL;
+OPENAL_BUFFER** underworldmusic = NULL;
+OPENAL_BUFFER** hellmusic = NULL;
+
 #endif

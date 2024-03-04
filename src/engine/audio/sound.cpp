@@ -486,12 +486,7 @@ ALCdevice  *openal_device = nullptr;
 //#define openal_maxchannels 100
 
 OPENAL_BUFFER** sounds = nullptr;
-OPENAL_BUFFER** minesmusic = NULL;
-OPENAL_BUFFER** swampmusic = NULL;
-OPENAL_BUFFER** labyrinthmusic = NULL;
-OPENAL_BUFFER** ruinsmusic = NULL;
-OPENAL_BUFFER** underworldmusic = NULL;
-OPENAL_BUFFER** hellmusic = NULL;
+
 OPENAL_BUFFER* intermissionmusic = NULL;
 OPENAL_BUFFER* minetownmusic = NULL;
 OPENAL_BUFFER* splashmusic = NULL;
@@ -517,7 +512,6 @@ OPENAL_BUFFER* hamletmusic = NULL;
 OPENAL_BUFFER* tutorialmusic = nullptr;
 OPENAL_BUFFER* gameovermusic = nullptr;
 OPENAL_BUFFER* introstorymusic = nullptr;
-bool levelmusicplaying = false;
 
 OPENAL_SOUND* music_channel = nullptr;
 OPENAL_SOUND* music_channel2 = nullptr;
@@ -1237,7 +1231,7 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 	{
 		return;
 	}
-#ifdef SOUNDsdfdsf
+#ifdef MUSIC
 
 	std::vector<std::string> themeMusic;
 	themeMusic.push_back("music/introduction.ogg");
