@@ -13,6 +13,7 @@
 #include <playfab/PlayFabCloudScriptApi.h>
 #include <playfab/PlayFabCloudScriptDataModels.h>
 #include <playfab/PlayFabCloudScriptInstanceApi.h>
+#include <playfab/PlayFabEventsApi.h>
 
 class PlayfabUser_t
 {
@@ -33,6 +34,7 @@ public:
 	bool loggingIn = false;
 	bool errorLogin = false;
 	Uint32 authenticationRefresh = 0;
+	int loginFailures = 1;
 	Uint32 processedOnTick = 0;
 	bool newSeedsAvailable = false;
 	static Uint32 processTick;
@@ -312,6 +314,7 @@ public:
 		}
 	} leaderboardSearch;
 
+	static void OnEventsWrite(const PlayFab::EventsModels::WriteEventsResponse& result, void* customData);
 	static void OnLoginFail(const PlayFab::PlayFabError& error, void* customData);
 	static void OnLoginSuccess(const PlayFab::ClientModels::LoginResult& result, void* customData);
 	static void OnDisplayNameUpdateSuccess(const PlayFab::ClientModels::UpdateUserTitleDisplayNameResult& result, void* customData);
