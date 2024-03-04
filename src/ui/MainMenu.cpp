@@ -24986,11 +24986,9 @@ failed:
 	}
 
 	void doMainMenu(bool ingame) {
-		printlog("mmenu 1\n");
         if (video_refresh) {
 			Frame::guiResize(0, 0); // resize gui for new aspect ratio
             createMainMenu(!intro);
-			printlog("mmenu 2\n");
             
 #if defined(VIDEO_RESTART_NEEDED)
             // return to settings button
@@ -25080,7 +25078,6 @@ failed:
             // at the end so that old_video is not overwritten
             video_refresh = VideoRefresh::None;
         }
-		printlog("mmenu 3\n");
 		if (!main_menu_frame) {
 		    if (ingame) {
 		        if (movie || fadeout) {
@@ -25093,7 +25090,6 @@ failed:
 			}
 			assert(main_menu_frame);
 		}
-		printlog("mmenu 4\n");
         // update a few things every tick
 #ifdef NINTENDO
 		enabledDLCPack1 = nxCheckDLC(0);
@@ -25151,23 +25147,19 @@ failed:
 			}
 #endif
         }
-		printlog("mmenu 4\n");
         // if no controller is connected, you can always connect one just for the main menu.
         if (!ingame && currentLobbyType == LobbyType::None) {
             if (!inputs.hasController(getMenuOwner())) {
                 Input::waitingToBindControllerForPlayer = getMenuOwner();
             }
         }
-		printlog("mmenu 5\n");
 		// hide mouse if we're driving around with a controller
         auto cmouse = inputs.getVirtualMouse(inputs.getPlayerIDAllowedKeyboard());
         cmouse->draw_cursor = isMouseVisible();
-		printlog("mmenu 6\n");
 		static ConsoleVariable<bool> cvar_disableFadeFinished("/test_disable_fade_finished", false);
 		if (fadeout && fadealpha >= 255 && !*cvar_disableFadeFinished) {
             handleFadeFinished(ingame);
         }
-		printlog("mmenu 7\n");
 	}
 
 	static std::string getVersionString() {
