@@ -6394,5 +6394,8 @@ submit it as your One-Shot score.#
 6170 
 Visit the Seed Events menu
 to participate.#
+6171 Unlock the Achievement:
+"%s"
+to play this character combination.#
 
 6200 END#
