@@ -2026,6 +2026,7 @@ int main(int argc, char** argv)
 
 	ItemTooltips.readItemsFromFile();
 	ItemTooltips.readItemLocalizationsFromFile();
+	ItemTooltips.readBookLocalizationsFromFile();
 	for ( c = 0; c < NUMITEMS; c++ )
 	{
 		items[c].surfaces.first = nullptr;

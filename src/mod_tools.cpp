@@ -813,7 +813,7 @@ void ItemTooltips_t::readItemsFromFile()
 		return;
 	}
 
-	const int bufSize = 240000;
+	const int bufSize = 360000;
 	char buf[bufSize];
 	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
@@ -1169,7 +1169,6 @@ void ItemTooltips_t::readItemsFromFile()
 	}*/
 }
 
-
 void ItemTooltips_t::readItemLocalizationsFromFile(bool forceLoadBaseDirectory)
 {
 	if ( !PHYSFS_getRealDir("/lang/item_names.json") )
@@ -1318,6 +1317,87 @@ void ItemTooltips_t::readItemLocalizationsFromFile(bool forceLoadBaseDirectory)
 				items[i.second].value, items[i.second].getIdentifiedName());
 		}
 	}*/
+}
+
+void ItemTooltips_t::readBookLocalizationsFromFile(bool forceLoadBaseDirectory)
+{
+	if ( !PHYSFS_getRealDir("/lang/book_names.json") )
+	{
+		printlog("[JSON]: Error: Could not find file: lang/book_names.json");
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir("/lang/book_names.json");
+	if ( forceLoadBaseDirectory )
+	{
+		inputPath = BASE_DATA_DIR;
+	}
+	else
+	{
+		if ( inputPath != BASE_DATA_DIR )
+		{
+			readBookLocalizationsFromFile(true); // force load the base directory first, then modded paths later.
+		}
+		else
+		{
+			forceLoadBaseDirectory = true;
+		}
+	}
+
+	inputPath.append("/lang/book_names.json");
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not open json file %s", inputPath.c_str());
+		return;
+	}
+
+	constexpr uint32_t buffer_size = (1 << 13);
+	if ( fp->size() >= buffer_size )
+	{
+		printlog("[JSON]: Error: file size is too large to fit in buffer! %s", inputPath.c_str());
+		FileIO::close(fp);
+		return;
+	}
+
+	static char buf[buffer_size];
+	const int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	//rapidjson::FileReadStream is(fp, buf, sizeof(buf)); - use this for large chunks.
+	rapidjson::StringStream is(buf);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	FileIO::close(fp);
+
+	if ( !d.IsObject() )
+	{
+		printlog("[JSON]: Error: json file does not define a complete object. Is there a syntax error? %s", inputPath.c_str());
+		return;
+	}
+
+	if ( !d.HasMember("version") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+	int version = d["version"].GetInt();
+
+	if ( d.HasMember("book_names") )
+	{
+		if ( forceLoadBaseDirectory )
+		{
+			bookNameLocalizations.clear();
+		}
+		for ( rapidjson::Value::ConstMemberIterator books_itr = d["book_names"].MemberBegin();
+			books_itr != d["book_names"].MemberEnd(); ++books_itr )
+		{
+			bookNameLocalizations[books_itr->name.GetString()] = books_itr->value.GetString();
+		}
+	}
+
+	printlog("[JSON]: Successfully read %d book names from '%s'", bookNameLocalizations.size(), inputPath.c_str());
 }
 
 #ifndef EDITOR
@@ -9249,12 +9329,6 @@ void Mods::unloadMods(bool force)
 		Mods::modelsListModifiedIndexes.clear();
 		updateLoadingScreen(60);
 
-		// reload books
-		if (Mods::booksRequireReloadUnmodded)
-		{
-			physfsReloadBooks();
-			Mods::booksRequireReloadUnmodded = false;
-		}
 		updateLoadingScreen(70);
 
 		// reload lang file
@@ -9300,6 +9374,13 @@ void Mods::unloadMods(bool force)
 		}
 	}
 	generateVBOs(0, nummodels);
+
+	// reload books
+	if ( Mods::booksRequireReloadUnmodded )
+	{
+		physfsReloadBooks();
+		Mods::booksRequireReloadUnmodded = false;
+	}
 	consoleCommand("/dumpcache");
 
 	// reload music
@@ -9414,17 +9495,6 @@ void Mods::loadMods()
 	updateLoadingScreen(50);
 	doLoadingScreen();
 
-	if ( physfsSearchBooksToUpdate() )
-	{
-		physfsReloadBooks();
-		Mods::booksRequireReloadUnmodded = true;
-	}
-	else if ( Mods::booksRequireReloadUnmodded ) // clean revert if we had loaded mods but can't find any modded ones
-	{
-		physfsReloadBooks();
-		Mods::booksRequireReloadUnmodded = false;
-	}
-
 	updateLoadingScreen(60);
 	doLoadingScreen();
 
@@ -9524,6 +9594,17 @@ void Mods::loadMods()
 	{
 		doLoadingScreen();
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+
+	if ( physfsSearchBooksToUpdate() )
+	{
+		physfsReloadBooks();
+		Mods::booksRequireReloadUnmodded = true;
+	}
+	else if ( Mods::booksRequireReloadUnmodded ) // clean revert if we had loaded mods but can't find any modded ones
+	{
+		physfsReloadBooks();
+		Mods::booksRequireReloadUnmodded = false;
 	}
 
 	loadLights();

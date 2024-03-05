@@ -617,7 +617,7 @@ char* Item::description() const
 			{
 				if ( itemCategory(this) == BOOK )
 				{
-					snprintf(&tempstr[c], 1024 - c, Language::get(1007), getBookNameFromIndex(appearance % numbooks).c_str());
+					snprintf(&tempstr[c], 1024 - c, Language::get(1007), getBookLocalizedNameFromIndex(appearance % numbooks).c_str());
 				}
 				else
 				{
@@ -687,7 +687,7 @@ char* Item::description() const
 			{
 				if ( itemCategory(this) == BOOK )
 				{
-					snprintf(&tempstr[c], 1024 - c, Language::get(1033), count, getBookNameFromIndex(appearance % numbooks).c_str());
+					snprintf(&tempstr[c], 1024 - c, Language::get(1033), count, getBookLocalizedNameFromIndex(appearance % numbooks).c_str());
 				}
 				else
 				{
@@ -766,7 +766,7 @@ char* Item::description() const
 				{
 					if ( itemCategory(this) == BOOK )
 					{
-						snprintf(&tempstr[c], 1024 - c, Language::get(1007), getBookNameFromIndex(appearance % numbooks).c_str());
+						snprintf(&tempstr[c], 1024 - c, Language::get(1007), getBookLocalizedNameFromIndex(appearance % numbooks).c_str());
 					}
 					else
 					{
@@ -843,7 +843,7 @@ char* Item::description() const
 				{
 					if ( itemCategory(this) == BOOK )
 					{
-						snprintf(&tempstr[c], 1024 - c, Language::get(1086), count, getBookNameFromIndex(appearance % numbooks).c_str());
+						snprintf(&tempstr[c], 1024 - c, Language::get(1086), count, getBookLocalizedNameFromIndex(appearance % numbooks).c_str());
 					}
 					else
 					{
@@ -893,7 +893,7 @@ char* Item::getName() const
 		{
 			if ( itemCategory(this) == BOOK )
 			{
-				snprintf(tempstr, sizeof(tempstr), Language::get(1007), getBookNameFromIndex(appearance % numbooks).c_str());
+				snprintf(tempstr, sizeof(tempstr), Language::get(1007), getBookLocalizedNameFromIndex(appearance % numbooks).c_str());
 			}
 			else
 			{
@@ -908,7 +908,7 @@ char* Item::getName() const
 			}
 			else if ( itemCategory(this) == BOOK )
 			{
-				snprintf(tempstr, sizeof(tempstr), Language::get(1007), getBookNameFromIndex(appearance % numbooks).c_str());
+				snprintf(tempstr, sizeof(tempstr), Language::get(1007), getBookLocalizedNameFromIndex(appearance % numbooks).c_str());
 			}
 			else
 			{
