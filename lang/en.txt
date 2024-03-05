@@ -1193,7 +1193,7 @@ Thank you!#
 786 This is a letter:
  "Double the amount of copper excavated from the
   mines. The gnomes will pay extra for anything above
-  above the standard amount."#
+  the standard amount."#
 
 790 This is a letter:
 
