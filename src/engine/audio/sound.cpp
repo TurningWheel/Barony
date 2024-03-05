@@ -664,6 +664,26 @@ int closeOPENAL()
 	return 1;
 }
 
+/**
+ * taken from offical doc but not very "CPP" way
+ */
+int openalGetNumberOfDevices(const ALCchar *devices)
+{
+	const ALCchar *device = devices, *next = devices + 1;
+	size_t len = 0;
+    int num = 0;
+
+	while (device && *device != '\0' && next && *next != '\0') {
+		//printlog("device detected: %s", device);
+        num += 1;
+		//fprintf(stdout, "%s\n", device);
+		len = strlen(device);
+		device += (len + 1);
+		next += (len + 2);
+	}
+
+    return num;
+}
 
 static int get_firstfreechannel()
 {

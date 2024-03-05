@@ -139,7 +139,8 @@ extern bool sfxUseDynamicAmbientVolume, sfxUseDynamicEnvironmentVolume;
 #elif defined USE_OPENAL
 
 #define SOUND
-//#definMUSIC
+// for now we disable music
+//#define MUSIC
 
 struct OPENAL_BUFFER {
 	ALuint id;
@@ -233,6 +234,7 @@ extern OPENAL_CHANNELGROUP *soundAmbient_group, *soundEnvironment_group, *music_
 
 int initOPENAL();
 int closeOPENAL();
+int openalGetNumberOfDevices(const ALCchar *devices);
 
 void sound_update(int player, int index, int numplayers);
 
