@@ -2434,7 +2434,7 @@ public:
 	bool isFastDeathGrave();
 	bool allowsBoulderBreak();
 	bool allowsHiscores();
-	bool allowsStatisticsOrAchievements();
+	bool allowsStatisticsOrAchievements(const char* achName, int statIndex);
 	bool allowsGlobalHiscores();
 
 	class CurrentSession_t

@@ -451,11 +451,44 @@ void GameModeManager_t::setMode(const GameModes mode)
 	currentMode = mode;
 }
 
-bool GameModeManager_t::allowsStatisticsOrAchievements()
+bool GameModeManager_t::allowsStatisticsOrAchievements(const char* achName, int statIndex)
 {
 	if ( currentMode == GAME_MODE_CUSTOM_RUN && currentSession.challengeRun.isActive()
 		&& currentSession.challengeRun.lid.find("challenge") != std::string::npos )
 	{
+		if ( achName )
+		{
+			if ( !strcmp(achName, "BARONY_ACH_BLOOM_PLANTED") )
+			{
+				return true;
+			}
+			if ( !strcmp(achName, "BARONY_ACH_DUNGEONSEED") )
+			{
+				return true;
+			}
+			if ( !strcmp(achName, "BARONY_ACH_GROWTH_MINDSET") )
+			{
+				return true;
+			}
+			if ( !strcmp(achName, "BARONY_ACH_REAP_SOW") )
+			{
+				return true;
+			}
+			if ( !strcmp(achName, "BARONY_ACH_SPROUTS") )
+			{
+				return true;
+			}
+		}
+		else if ( statIndex >= 0 )
+		{
+			switch ( statIndex )
+			{
+				case SteamStatIndexes::STEAM_STAT_DUNGEONSEED:
+					return true;
+				default:
+					break;
+			}
+		}
 		return false;
 	}
 	if ( currentMode == GAME_MODE_DEFAULT || currentMode == GAME_MODE_TUTORIAL
