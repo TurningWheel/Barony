@@ -1705,7 +1705,7 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 void gamemodsUnloadCustomThemeMusic()
 {
 #ifdef SOUND
-#ifdef FMOD_ENABLED
+#ifdef USE_FMOD
 	if ( gnomishminesmusic )
 	{
 		gnomishminesmusic->release();
