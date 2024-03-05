@@ -656,7 +656,7 @@ void deinitGame()
 		{
 			free(intromusic);
 		}
-#elif defined OPENAL_ENABLED
+#elif defined USE_OPENAL
 	// TODO: unload OpenAL resources
 #endif
 	}
