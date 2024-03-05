@@ -9426,7 +9426,7 @@ void Mods::loadMods()
 	updateLoadingScreen(70);
 	doLoadingScreen();
 
-	std::string langDirectory = PHYSFS_getRealDir("lang/fr.txt");
+	std::string langDirectory = PHYSFS_getRealDir("lang/en.txt");
 	if ( langDirectory.compare("./") != 0 )
 	{
 		if ( Language::reloadLanguage() != 0 )
