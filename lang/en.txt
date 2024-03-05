@@ -6396,6 +6396,6 @@ Visit the Seed Events menu
 to participate.#
 6171 Unlock the Achievement:
 "%s"
-to play this character combination.#
+to play this class combination.#
 
 6200 END#
