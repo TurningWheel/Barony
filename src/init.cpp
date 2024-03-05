@@ -1050,6 +1050,9 @@ static GLuint tileTextures[numTileAtlases] = { 0 };
 static ConsoleVariable<int> cvar_tileTextureSize("/tile_texture_size", 32, "the size of a tile texture");
 void readTilesJson()
 {
+#ifdef NINTENDO
+	return;
+#endif
 	if ( !PHYSFS_getRealDir("/data/tiles.json") )
 	{
 		printlog("[JSON]: Error: Could not find file: data/tiles.json");

@@ -3179,7 +3179,21 @@ namespace MainMenu {
 
 	static void createStoryScreen(const char* file, void (*end_func)()) {
 	    char filename[PATH_MAX];
+
+#ifndef NINTENDO
+		if ( !PHYSFS_getRealDir(file) )
+		{
+			printlog("[JSON]: Error: Could not find file: %s", file);
+			return;
+		}
+		std::string inputPath = PHYSFS_getRealDir(file);
+		inputPath.append(PHYSFS_getDirSeparator());
+		inputPath.append(file);
+
+		stringCopy(filename, inputPath.c_str(), sizeof(filename), inputPath.size());
+#else
 	    (void)completePath(filename, file);
+#endif
 
         struct Story {
             int version = 1;
