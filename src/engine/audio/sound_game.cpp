@@ -404,8 +404,31 @@ OPENAL_SOUND* playSoundNotificationPlayer(int player, Uint16 snd, Uint8 vol)
 		return NULL;
 	}
 
-	//TODO: Implement playSoundNotificationPlayer for OpenAL.
-	return NULL;
+	if ( player < 0 || player >= MAXPLAYERS )   //Perhaps this can be reprogrammed to remove MAXPLAYERS, and use a pointer to the player instead of an int?
+	{
+		return nullptr;
+	}
+	if ( players[player]->isLocalPlayer() )
+	{
+		return playSoundNotification(snd, vol);
+	}
+	else if ( multiplayer == SERVER )
+	{
+		if ( client_disconnected[player] || player <= 0 )
+		{
+			return nullptr;
+		}
+		memcpy(net_packet->data, "SNDN", 4);
+		SDLNet_Write16(snd, &net_packet->data[4]);
+		net_packet->data[6] = vol;
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 7;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		return nullptr;
+	}
+
+	return nullptr;
 }
 
 /*-------------------------------------------------------------------------------
