@@ -572,10 +572,13 @@ int initOPENAL()
 	if(initialized)
 		return 1;
 
+	printlog("[OpenAL]: initializing...\n");
+	printlog("[OpenAL]: opening device...\n");
 	openal_device = alcOpenDevice(NULL); // preferred device
 	if(!openal_device)
 		return 0;
 
+	printlog("[OpenAL]: opening context...\n");
 	openal_context = alcCreateContext(openal_device,NULL);
 	if(!openal_context)
 		return 0;
@@ -628,13 +631,15 @@ int initOPENAL()
 
 int closeOPENAL()
 {
-	if(OpenALSoundON) return 0;
-
+	if(OpenALSoundON)
+		return 0;
 	OpenALSoundON = false;
+
+	printlog("[OpenAL]: closing...\n");
 	int i = 0;
 	SDL_WaitThread(openal_soundthread, &i);
 	if(i!=1) {
-		printlog("Warning, unable to stop Openal thread\n");
+		printlog("[OpenAL]: unable to stop openal_soundthread thread\n");
 	}
 
 	if(openal_mutex) {
