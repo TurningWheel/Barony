@@ -498,16 +498,6 @@ OPENAL_BUFFER* tutorialmusic = nullptr;
 OPENAL_BUFFER* gameovermusic = nullptr;
 OPENAL_BUFFER* introstorymusic = nullptr;
 
-OPENAL_SOUND* music_channel = nullptr;
-OPENAL_SOUND* music_channel2 = nullptr;
-OPENAL_SOUND* music_resume = nullptr;
-
-OPENAL_CHANNELGROUP *sound_group = NULL;
-OPENAL_CHANNELGROUP *soundAmbient_group = NULL;
-OPENAL_CHANNELGROUP *soundEnvironment_group = NULL;
-OPENAL_CHANNELGROUP *music_group = NULL;
-OPENAL_CHANNELGROUP *music_notification_group = NULL;
-
 float fadein_increment = 0.002f;
 float default_fadein_increment = 0.002f;
 float fadeout_increment = 0.005f;
@@ -571,6 +561,11 @@ int OPENAL_ThreadFunction(void* data) {
 	return 1;
 }
 
+/**
+ * Initialize OpenAL library
+ * 
+ * - Channel groups are initialized here
+ */
 int initOPENAL()
 {
 	static int initialized = 0;

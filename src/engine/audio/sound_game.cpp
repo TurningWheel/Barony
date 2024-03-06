@@ -615,8 +615,25 @@ OPENAL_SOUND* playSoundNotification(Uint16 snd, Uint8 vol)
 	{
 		return NULL;
 	}
-	// TODO: Implement playSoundNotification for OpenAL
+#ifndef SOUND
 	return NULL;
+#endif
+	if (!openal_context || snd < 0 || snd >= numsounds || !music_notification_group )
+	{
+		return NULL;
+	}
+	if (sounds[snd] == NULL || vol == 0)
+	{
+		return NULL;
+	}
+	OPENAL_SOUND* channel = OPENAL_CreateChannel(sounds[snd]);
+	OPENAL_Channel_SetVolume(channel, vol / 255.f);
+
+	OPENAL_Channel_SetChannelGroup(channel, music_notification_group);
+
+	OPENAL_Channel_Play(channel);
+
+	return channel;
 }
 
 void playMusic(OPENAL_BUFFER* sound, bool loop, bool crossfade, bool resume)

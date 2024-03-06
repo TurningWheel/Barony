@@ -89,4 +89,14 @@ OPENAL_BUFFER** ruinsmusic = NULL;
 OPENAL_BUFFER** underworldmusic = NULL;
 OPENAL_BUFFER** hellmusic = NULL;
 
+OPENAL_SOUND* music_channel = nullptr;
+OPENAL_SOUND* music_channel2 = nullptr;
+OPENAL_SOUND* music_resume = nullptr;
+
+OPENAL_CHANNELGROUP *sound_group = NULL;
+OPENAL_CHANNELGROUP *soundAmbient_group = NULL;
+OPENAL_CHANNELGROUP *soundEnvironment_group = NULL;
+OPENAL_CHANNELGROUP *music_group = NULL;
+OPENAL_CHANNELGROUP *music_notification_group = NULL;
+
 #endif
