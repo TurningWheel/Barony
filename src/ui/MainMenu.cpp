@@ -6395,15 +6395,6 @@ bind_failed:
 #else
 		audio_drivers.clear();
 
-
-		if ((error = alGetError()) != AL_NO_ERROR)
-		{
-			DisplayALError("alGenBuffers :", error);
-			return;
-		}
-
-
-
 		if (alcIsExtensionPresent(NULL, "ALC_ENUMERATION_EXT") == AL_TRUE) { // Enumeration Extension Found
 			printlog("OpenAL support ALC_ENUMERATION_EXT extention.\n");
 			const ALCchar *devices_raw = alcGetString(NULL, ALC_DEVICE_SPECIFIER);
