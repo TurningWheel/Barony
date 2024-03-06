@@ -1297,14 +1297,29 @@ namespace ConsoleCommands {
 		});
 
 	static ConsoleCommand ccmd_nummonsters2("/nummonsters2", "display number of NPCs in the level", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
 		messagePlayer(clientnum, MESSAGE_MISC, Language::get(2353), list_Size(map.creatures));
 		});
 
 	static ConsoleCommand ccmd_nummonsters("/nummonsters", "display number of monsters in the level", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
 		messagePlayer(clientnum, MESSAGE_MISC, Language::get(2353), nummonsters);
 		});
 
 	static ConsoleCommand ccmd_verifycreaturelist("/verifycreaturelist", "", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
 		//Make sure that the number of creatures in the creature list are the real count in the game world.
 		unsigned entcount = 0;
 
