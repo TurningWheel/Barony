@@ -34,7 +34,7 @@ static const char VERSION[] = "v4.2.0";
 class Entity;
 
 #define DEBUG 1
-#define ENTITY_PACKET_LENGTH 46
+#define ENTITY_PACKET_LENGTH 47
 #define NET_PACKET_SIZE 512
 
 // impulses (bound keystrokes, mousestrokes, and joystick/game controller strokes) //TODO: Player-by-player basis.

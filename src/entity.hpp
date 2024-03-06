@@ -32,6 +32,7 @@
 #define PASSABLE 12
 #define USERFLAG1 14
 #define USERFLAG2 15
+#define INVISIBLE_DITHER 16
 
 // number of entity skills and fskills
 static const int NUMENTITYSKILLS = 60;
@@ -117,7 +118,7 @@ public:
 	// entity attributes
 	real_t fskill[NUMENTITYFSKILLS]; // floating point general purpose variables
 	Sint32 skill[NUMENTITYSKILLS];  // general purpose variables
-	bool flags[16];    // engine flags
+	bool flags[24];    // engine flags
 	char* string;      // general purpose string
 	light_t* light;    // every entity has a specialized light pointer
 	list_t children;   // every entity has a list of child objects

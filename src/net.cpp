@@ -521,6 +521,13 @@ void sendEntityUDP(Entity* entity, int c, bool guarantee)
 	SDLNet_Write16((Sint16)(entity->vel_x * 32), &net_packet->data[40]);
 	SDLNet_Write16((Sint16)(entity->vel_y * 32), &net_packet->data[42]);
 	SDLNet_Write16((Sint16)(entity->vel_z * 32), &net_packet->data[44]);
+	for ( j = 0; j < 8; j++ )
+	{
+		if ( entity->flags[j + 16] )
+		{
+			net_packet->data[46 + j / 8] |= power(2, j - (j / 8) * 8);
+		}
+	}
 	net_packet->address.host = net_clients[c - 1].host;
 	net_packet->address.port = net_clients[c - 1].port;
 	net_packet->len = ENTITY_PACKET_LENGTH;
@@ -649,7 +656,8 @@ void serverUpdateEntityBodypart(Entity* entity, int bodypart)
 		}
 		Entity* tempEntity = (Entity*)node->element;
 		SDLNet_Write32(tempEntity->sprite, &net_packet->data[9]);
-		net_packet->data[13] = tempEntity->flags[INVISIBLE];
+		net_packet->data[13] = (tempEntity->flags[INVISIBLE] ? 1 : 0);
+		net_packet->data[13] |= (tempEntity->flags[INVISIBLE_DITHER] ? (1 << 1) : 0);
 		net_packet->address.host = net_clients[c - 1].host;
 		net_packet->address.port = net_clients[c - 1].port;
 		net_packet->len = 14;
@@ -1757,6 +1765,13 @@ Entity* receiveEntity(Entity* entity)
 			entity->flags[c] = true;
 		}
 	}
+	for ( c = 0; c < 8; ++c ) // new flags 16-23
+	{
+		if ( net_packet->data[46 + c / 8] & power(2, c - (c / 8) * 8) )
+		{
+			entity->flags[c + 16] = true;
+		}
+	}
 	entity->vel_x = ((Sint16)SDLNet_Read16(&net_packet->data[40])) / 32.0;
 	entity->vel_y = ((Sint16)SDLNet_Read16(&net_packet->data[42])) / 32.0;
 	entity->vel_z = ((Sint16)SDLNet_Read16(&net_packet->data[44])) / 32.0;
@@ -2471,7 +2486,8 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				Entity* tempEntity = (Entity*)childNode->element;
 				tempEntity->sprite = SDLNet_Read32(&net_packet->data[9]);
 				tempEntity->skill[7] = tempEntity->sprite;
-				tempEntity->flags[INVISIBLE] = net_packet->data[13];
+				tempEntity->flags[INVISIBLE] = (net_packet->data[13] & (1 << 0)) > 0 ? true : false;
+				tempEntity->flags[INVISIBLE_DITHER] = (net_packet->data[13] & (1 << 1)) > 0 ? true : false;
 			}
 		}
 	}},

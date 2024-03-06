@@ -411,7 +411,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 		fskill[c] = 0;
 	}
 	skill[2] = -1;
-	for (c = 0; c < 16; ++c)
+	for (c = 0; c < 24; ++c)
 	{
 		flags[c] = false;
 	}

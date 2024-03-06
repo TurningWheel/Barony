@@ -2026,7 +2026,7 @@ void drawEntities3D(view_t* camera, int mode)
             }
         }
         
-        if ( entity->flags[INVISIBLE] )
+        if ( entity->flags[INVISIBLE] && !entity->flags[INVISIBLE_DITHER] )
         {
             continue;
         }
@@ -2123,8 +2123,17 @@ void drawEntities3D(view_t* camera, int mode)
                 if (ditheringDisabled) {
                     dither.value = decrease ? 0 : Entity::Dither::MAX;
                 } else {
-                    dither.value = decrease ? std::max(0, dither.value - 2) :
-                        std::min(Entity::Dither::MAX, dither.value + 2);
+					if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
+					{
+						static ConsoleVariable<int> cvar_dither_invisibility("/dither_invisibility", 5);
+						dither.value = decrease ? std::max(0, dither.value - 2) :
+							std::min(*cvar_dither_invisibility, dither.value + 1);
+					}
+					else
+					{
+						dither.value = decrease ? std::max(0, dither.value - 2) :
+						    std::min(Entity::Dither::MAX, dither.value + 2);
+					}
                 }
             }
         }

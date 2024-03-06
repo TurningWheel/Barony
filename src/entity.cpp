@@ -462,7 +462,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 		fskill[c] = 0;
 	}
 	skill[2] = -1;
-	for ( c = 0; c < 16; c++ )
+	for ( c = 0; c < 24; c++ )
 	{
 		flags[c] = false;
 	}
@@ -15078,7 +15078,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		myAttack = this->skill[9];
 	}
 
-	if ( weaponLimb->flags[INVISIBLE] == false ) //TODO: isInvisible()?
+	if ( weaponLimb->flags[INVISIBLE] == false || weaponLimb->flags[INVISIBLE_DITHER] ) //TODO: isInvisible()?
 	{
 		if ( weaponLimb->sprite == items[SHORTBOW].index )
 		{
@@ -20710,7 +20710,10 @@ void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
 		return;
 	}
 
-	if ( !mask->flags[INVISIBLE] && !helm->flags[INVISIBLE] )
+	bool maskVisible = (!mask->flags[INVISIBLE]) || (mask->flags[INVISIBLE] && mask->flags[INVISIBLE_DITHER]);
+	bool helmVisible = (!helm->flags[INVISIBLE]) || (helm->flags[INVISIBLE] && helm->flags[INVISIBLE_DITHER]);
+
+	if ( maskVisible && helmVisible )
 	{
 		helm->scalex = 1.01;
 		helm->scaley = 1.01;

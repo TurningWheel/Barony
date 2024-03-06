@@ -328,7 +328,6 @@ enum CrossbowHudweaponChop : int
 void actHudWeapon(Entity* my)
 {
 	double result = 0;
-	bool wearingring = false;
 
 	Player::HUD_t& playerHud = players[HUDWEAPON_PLAYERNUM]->hud;
 
@@ -491,21 +490,6 @@ void actHudWeapon(Entity* my)
 		}
 	}
 
-	// select model
-	if ( stats[HUDWEAPON_PLAYERNUM]->ring != nullptr )
-	{
-		if ( stats[HUDWEAPON_PLAYERNUM]->ring->type == RING_INVISIBILITY )
-		{
-			wearingring = true;
-		}
-	}
-	if ( stats[HUDWEAPON_PLAYERNUM]->cloak != nullptr )
-	{
-		if ( stats[HUDWEAPON_PLAYERNUM]->cloak->type == CLOAK_INVISIBILITY )
-		{
-			wearingring = true;
-		}
-	}
 	if ( players[HUDWEAPON_PLAYERNUM]->entity->skill[3] == 1 || players[HUDWEAPON_PLAYERNUM]->entity->isInvisible() )   // debug cam or player invisible
 	{
 		my->flags[INVISIBLE] = true;
@@ -3275,23 +3259,6 @@ void actHudShield(Entity* my)
 	{
 		list_RemoveNode(my->mynode);
 		return;
-	}
-
-	// select model
-	bool wearingring = false;
-	if ( stats[HUDSHIELD_PLAYERNUM]->ring != nullptr )
-	{
-		if ( stats[HUDSHIELD_PLAYERNUM]->ring->type == RING_INVISIBILITY )
-		{
-			wearingring = true;
-		}
-	}
-	if ( stats[HUDSHIELD_PLAYERNUM]->cloak != nullptr )
-	{
-		if ( stats[HUDSHIELD_PLAYERNUM]->cloak->type == CLOAK_INVISIBILITY )
-		{
-			wearingring = true;
-		}
 	}
 
 	Monster playerRace = players[HUDSHIELD_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HUDSHIELD_PLAYERNUM]->playerRace);
