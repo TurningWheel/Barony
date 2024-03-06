@@ -25178,6 +25178,7 @@ failed:
 			}
 			assert(main_menu_frame);
 		}
+
         // update a few things every tick
 #ifdef NINTENDO
 		enabledDLCPack1 = nxCheckDLC(0);
@@ -25242,6 +25243,7 @@ failed:
                 Input::waitingToBindControllerForPlayer = getMenuOwner();
             }
         }
+
 		// hide mouse if we're driving around with a controller
         auto cmouse = inputs.getVirtualMouse(inputs.getPlayerIDAllowedKeyboard());
         cmouse->draw_cursor = isMouseVisible();
