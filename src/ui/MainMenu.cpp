@@ -24784,8 +24784,7 @@ failed:
 		        destroyMainMenu();
 #ifdef MUSIC
 				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
-				printlog("before play.\n");
-	            //playMusic(intromusic[music], true, false, false);
+	            playMusic(intromusic[music], true, false, false);
 #endif
 				createTitleScreen();
 
@@ -25166,6 +25165,7 @@ failed:
             // at the end so that old_video is not overwritten
             video_refresh = VideoRefresh::None;
         }
+
 		if (!main_menu_frame) {
 		    if (ingame) {
 		        if (movie || fadeout) {
@@ -25235,6 +25235,7 @@ failed:
 			}
 #endif
         }
+
         // if no controller is connected, you can always connect one just for the main menu.
         if (!ingame && currentLobbyType == LobbyType::None) {
             if (!inputs.hasController(getMenuOwner())) {
@@ -25244,6 +25245,7 @@ failed:
 		// hide mouse if we're driving around with a controller
         auto cmouse = inputs.getVirtualMouse(inputs.getPlayerIDAllowedKeyboard());
         cmouse->draw_cursor = isMouseVisible();
+
 		static ConsoleVariable<bool> cvar_disableFadeFinished("/test_disable_fade_finished", false);
 		if (fadeout && fadealpha >= 255 && !*cvar_disableFadeFinished) {
             handleFadeFinished(ingame);
