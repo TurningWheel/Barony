@@ -226,12 +226,15 @@ ShopkeeperPlayerHostility_t::ShopkeeperPlayerHostility_t()
 void ShopkeeperPlayerHostility_t::resetPlayerHostility(const int player, bool clearAll)
 {
 	if ( player < 0 || player >= MAXPLAYERS ) { return; }
-	Monster type = stats[player]->type;
+
 	if ( auto h = getPlayerHostility(player) )
 	{
 		if ( h->wantedLevel != NO_WANTED_LEVEL && h->wantedLevel != FAILURE_TO_IDENTIFY )
 		{
-			messagePlayerColor(player, MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(4304));
+			if ( h->equipment == 0 ) // if we had a facemask, the wanted would still be in effect
+			{
+				messagePlayerColor(player, MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(4304));
+			}
 		}
 		if ( h->wantedLevel != FAILURE_TO_IDENTIFY )
 		{
@@ -241,6 +244,31 @@ void ShopkeeperPlayerHostility_t::resetPlayerHostility(const int player, bool cl
 	}
 	if ( clearAll )
 	{
+		Uint32 type = stats[player]->type;
+		Uint8 equipment = 0;
+		if ( type == SUCCUBUS || type == INCUBUS
+			|| type == TROLL || type == RAT || type == SPIDER || type == CREATURE_IMP )
+		{
+			// no sex modifier
+		}
+		else
+		{
+			type |= (stats[player]->sex == sex_t::MALE ? 0 : 1) << 8;
+		}
+
+		if ( (type & 0xFF) == TROLL || (type & 0xFF) == RAT || (type & 0xFF) == SPIDER || (type & 0xFF) == CREATURE_IMP )
+		{
+			// no equipment modifier
+		}
+		else
+		{
+			if ( stats[player]->mask && stats[player]->mask->type == MASK_BANDIT && !(players[player]->entity && players[player]->entity->isInvisible()) )
+			{
+				equipment = 1 + (stats[player]->mask->appearance % items[MASK_BANDIT].variations);
+			}
+			type |= (0x7F & (equipment)) << 9;
+		}
+
 		for ( auto h2 = playerHostility[player].begin(); h2 != playerHostility[player].end(); ++h2 )
 		{
 			if ( h2->first == type )
@@ -305,7 +333,7 @@ ShopkeeperPlayerHostility_t::PlayerRaceHostility_t* ShopkeeperPlayerHostility_t:
 		type |= (stats[player]->sex == sex_t::MALE ? 0 : 1) << 8;
 	}
 
-	if ( type == TROLL || type == RAT || type == SPIDER || type == CREATURE_IMP )
+	if ( (type & 0xFF) == TROLL || (type & 0xFF) == RAT || (type & 0xFF) == SPIDER || (type & 0xFF) == CREATURE_IMP )
 	{
 		// no equipment modifier
 	}
@@ -331,6 +359,16 @@ ShopkeeperPlayerHostility_t::PlayerRaceHostility_t* ShopkeeperPlayerHostility_t:
 			wantedLevel = FAILURE_TO_IDENTIFY;
 		}
 		playerHostility[player].emplace(std::make_pair(type, PlayerRaceHostility_t(type, wantedLevel, player)));
+	}
+	else
+	{
+		if ( playerHostility[player][type].wantedLevel == NO_WANTED_LEVEL )
+		{
+			if ( equipment >= 1 && equipment <= 3 )
+			{
+				playerHostility[player][type].wantedLevel = FAILURE_TO_IDENTIFY;
+			}
+		}
 	}
 	return &playerHostility[player][type];
 }

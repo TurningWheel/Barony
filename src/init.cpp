@@ -1046,13 +1046,54 @@ int Language::reloadLanguage()
 static constexpr int numTileAtlases = sizeof(AnimatedTile::indices) / sizeof(AnimatedTile::indices[0]);
 static GLuint tileTextures[numTileAtlases] = { 0 };
 
+#ifndef EDITOR
+static ConsoleVariable<int> cvar_tileTextureSize("/tile_texture_size", 32, "the size of a tile texture");
+void readTilesJson()
+{
+#ifdef NINTENDO
+	return;
+#endif
+	if ( !PHYSFS_getRealDir("/data/tiles.json") )
+	{
+		printlog("[JSON]: Error: Could not find file: data/tiles.json");
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir("/data/tiles.json");
+	inputPath.append("/data/tiles.json");
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not open json file %s", inputPath.c_str());
+		return;
+	}
+
+
+	char buf[1024];
+	int count = (int)fp->read(buf, sizeof(buf[0]), sizeof(buf));
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+
+	if ( d.HasMember("tile_texture_size") )
+	{
+		*cvar_tileTextureSize = d["tile_texture_size"].GetInt();
+	}
+	printlog("[JSON]: Tile texture size is: %d", *cvar_tileTextureSize);
+}
+#endif
+
 void generateTileTextures() {
     destroyTileTextures();
     
 #ifdef EDITOR
     constexpr int size = 32;
 #else
-    static ConsoleVariable<int> cvar_tileTextureSize("/tile_texture_size", 32, "the size of a tile texture");
+	readTilesJson();
     const int size = *cvar_tileTextureSize;
 #endif
     

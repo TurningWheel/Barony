@@ -2434,7 +2434,7 @@ public:
 	bool isFastDeathGrave();
 	bool allowsBoulderBreak();
 	bool allowsHiscores();
-	bool allowsStatisticsOrAchievements();
+	bool allowsStatisticsOrAchievements(const char* achName, int statIndex);
 	bool allowsGlobalHiscores();
 
 	class CurrentSession_t
@@ -2808,6 +2808,7 @@ public:
 	static Uint32 itemsJsonHashRead;
 	void readItemLocalizationsFromFile(bool forceLoadBaseDirectory = false);
 	void readTooltipsFromFile(bool forceLoadBaseDirectory = false);
+	void readBookLocalizationsFromFile(bool forceLoadBaseDirectory = false);
 	std::vector<tmpItem_t> tmpItems;
 	std::map<Sint32, spellItem_t> spellItems;
 	std::map<std::string, ItemTooltip_t> tooltips;
@@ -2821,6 +2822,7 @@ public:
 		std::string name_unidentified = "";
 	};
 	std::map<std::string, ItemLocalization_t> itemNameLocalizations;
+	std::map<std::string, std::string> bookNameLocalizations;
 	std::map<std::string, std::string> spellNameLocalizations;
 	std::map<std::string, int> itemNameStringToItemID;
 	std::string defaultString = "";

@@ -818,7 +818,7 @@ void steamAchievement(const char* achName)
 	}
 	else
 	{
-		if ( !gameModeManager.allowsStatisticsOrAchievements() )
+		if ( !gameModeManager.allowsStatisticsOrAchievements(achName, -1) )
 		{
 #ifndef DEBUG_ACHIEVEMENTS
 			return;
@@ -945,7 +945,7 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 	}
 	else
 	{
-		if ( !gameModeManager.allowsStatisticsOrAchievements() )
+		if ( !gameModeManager.allowsStatisticsOrAchievements(nullptr, statisticNum) )
 		{
 #ifndef DEBUG_ACHIEVEMENTS
 			return;
@@ -1222,7 +1222,7 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 	}
 	else
 	{
-		if ( !gameModeManager.allowsStatisticsOrAchievements() )
+		if ( !gameModeManager.allowsStatisticsOrAchievements(nullptr, statisticNum) )
 		{
 #ifndef DEBUG_ACHIEVEMENTS
 			return;

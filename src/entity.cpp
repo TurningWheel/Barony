@@ -12018,22 +12018,6 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			{
 				achievementObserver.updateGlobalStat(STEAM_GSTAT_SHOPKEEPERS_SLAIN);
 			}
-
-			if ( srcStats->type == LICH || srcStats->type == LICH_FIRE || srcStats->type == LICH_ICE
-				|| srcStats->type == DEVIL )
-			{
-				if ( gameModeManager.currentSession.challengeRun.isActive() )
-				{
-					if ( gameModeManager.currentSession.challengeRun.classnum >= 0
-						|| gameModeManager.currentSession.challengeRun.race >= 0 )
-					{
-						for ( int c = 0; c < MAXPLAYERS; c++ )
-						{
-							steamAchievementClient(c, "BARONY_ACH_BLOOM_PLANTED");
-						}
-					}
-				}
-			}
 		}
 	}
 
@@ -12051,6 +12035,21 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			for ( int c = 0; c < MAXPLAYERS; c++ )
 			{
 				steamAchievementClient(c, "BARONY_ACH_REUNITED");
+			}
+		}
+		if ( srcStats->type == LICH || srcStats->type == LICH_FIRE || srcStats->type == LICH_ICE
+			|| srcStats->type == DEVIL )
+		{
+			if ( gameModeManager.currentSession.challengeRun.isActive() )
+			{
+				if ( gameModeManager.currentSession.challengeRun.classnum >= 0
+					|| gameModeManager.currentSession.challengeRun.race >= 0 )
+				{
+					for ( int c = 0; c < MAXPLAYERS; c++ )
+					{
+						steamAchievementClient(c, "BARONY_ACH_BLOOM_PLANTED");
+					}
+				}
 			}
 		}
 		if ( srcStats->type == SHADOW && root )
@@ -17753,17 +17752,20 @@ void Entity::playerStatIncrease(int playerClass, int chosenStats[3])
 	}
 
 	bool forceInt = false;
-	if ( stats[skill[2]] && stats[skill[2]]->helmet && stats[skill[2]]->helmet->type == HAT_CIRCLET_WISDOM )
+	if ( Stat* stat = getStats() )
 	{
-		if ( stats[skill[2]]->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[skill[2]]) )
+		if ( stat->helmet && stat->helmet->type == HAT_CIRCLET_WISDOM )
 		{
-			// int bonus last stat
-			forceInt = true;
-		}
-		else
-		{
-			// int never picked
-			statWeights[STAT_INT] = 0;
+			if ( stat->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(stat) )
+			{
+				// int bonus last stat
+				forceInt = true;
+			}
+			else
+			{
+				// int never picked
+				statWeights[STAT_INT] = 0;
+			}
 		}
 	}
 	chosenStats[0] = local_rng.rand() % 6; // get first stat randomly.

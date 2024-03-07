@@ -36026,7 +36026,7 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 			{
 				snprintf(buf, sizeof(buf), "%s %s", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
 					Language::get(4214)); // brand new copy of
-				snprintf(buf2, sizeof(buf), "%s (?)", getBookNameFromIndex(item->appearance % numbooks).c_str());
+				snprintf(buf2, sizeof(buf), "%s (?)", getBookLocalizedNameFromIndex(item->appearance % numbooks).c_str());
 			}
 			else if ( itemCategory(item) == SCROLL )
 			{
@@ -36064,7 +36064,7 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 			{
 				snprintf(buf, sizeof(buf), "%s %s", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
 					Language::get(4214)); // brand new copy of
-				snprintf(buf2, sizeof(buf), "%s (%+d)", getBookNameFromIndex(item->appearance % numbooks).c_str(), item->beatitude);
+				snprintf(buf2, sizeof(buf), "%s (%+d)", getBookLocalizedNameFromIndex(item->appearance % numbooks).c_str(), item->beatitude);
 			}
 			else
 			{
