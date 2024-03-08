@@ -9,7 +9,7 @@
 
 -------------------------------------------------------------------------------*/
 
-#include <SDL2/SDL.h>
+#include "../../main.hpp"
 #include "sound.hpp"
 
 Uint32 numsounds = 0;
