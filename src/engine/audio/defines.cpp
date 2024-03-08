@@ -9,7 +9,7 @@
 
 -------------------------------------------------------------------------------*/
 
-#include "../../main.hpp"
+#include <SDL2/SDL.h>
 #include "sound.hpp"
 
 Uint32 numsounds = 0;
@@ -81,22 +81,26 @@ bool sfxUseDynamicEnvironmentVolume = true;
 void* fmod_extraDriverData = nullptr;
 #elif defined USE_OPENAL
 
+
+OPENAL_BUFFER* introductionmusic = nullptr;
+
 OPENAL_BUFFER** intromusic = nullptr;
-OPENAL_BUFFER** minesmusic = NULL;
-OPENAL_BUFFER** swampmusic = NULL;
-OPENAL_BUFFER** labyrinthmusic = NULL;
-OPENAL_BUFFER** ruinsmusic = NULL;
-OPENAL_BUFFER** underworldmusic = NULL;
-OPENAL_BUFFER** hellmusic = NULL;
+OPENAL_BUFFER** minesmusic = nullptr;
+OPENAL_BUFFER** swampmusic = nullptr;
+OPENAL_BUFFER** labyrinthmusic = nullptr;
+OPENAL_BUFFER** ruinsmusic = nullptr;
+OPENAL_BUFFER** underworldmusic = nullptr;
+OPENAL_BUFFER** hellmusic = nullptr;
 
 OPENAL_SOUND* music_channel = nullptr;
 OPENAL_SOUND* music_channel2 = nullptr;
 OPENAL_SOUND* music_resume = nullptr;
 
-OPENAL_CHANNELGROUP *sound_group = NULL;
-OPENAL_CHANNELGROUP *soundAmbient_group = NULL;
-OPENAL_CHANNELGROUP *soundEnvironment_group = NULL;
-OPENAL_CHANNELGROUP *music_group = NULL;
-OPENAL_CHANNELGROUP *music_notification_group = NULL;
+OPENAL_CHANNELGROUP *sound_group = nullptr;
+OPENAL_CHANNELGROUP *soundAmbient_group = nullptr;
+OPENAL_CHANNELGROUP *soundEnvironment_group = nullptr;
+OPENAL_CHANNELGROUP *soundNotification_group = nullptr;
+OPENAL_CHANNELGROUP *music_group = nullptr;
+OPENAL_CHANNELGROUP *music_notification_group = nullptr;
 
 #endif

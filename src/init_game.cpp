@@ -658,6 +658,20 @@ void deinitGame()
 		}
 #elif defined USE_OPENAL
 	// TODO: unload OpenAL resources
+	OPENAL_Channel_Stop(sound_group);
+	OPENAL_Channel_Stop(soundAmbient_group);
+	OPENAL_Channel_Stop(soundEnvironment_group);
+	OPENAL_Channel_Stop(soundNotification_group);
+	OPENAL_Channel_Stop(music_group);
+	OPENAL_Channel_Stop(music_notification_group);
+	for ( int c = 0; c < NUMINTROMUSIC; c++ )
+	{
+		OPENAL_Sound_Release(intromusic[c]);
+	}
+	if ( intromusic )
+	{
+		free(intromusic);
+	}
 #endif
 	}
 

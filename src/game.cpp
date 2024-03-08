@@ -1906,6 +1906,10 @@ void gameLogic(void)
 					{
 						OPENAL_ChannelGroup_Stop(soundEnvironment_group);
 					}
+					if ( soundNotification_group )
+					{
+						OPENAL_ChannelGroup_Stop(soundNotification_group);
+					}
 #endif
 					// stop combat music
 					// close chests

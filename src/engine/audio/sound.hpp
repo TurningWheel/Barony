@@ -139,8 +139,7 @@ extern bool sfxUseDynamicAmbientVolume, sfxUseDynamicEnvironmentVolume;
 #elif defined USE_OPENAL
 
 #define SOUND
-// for now we disable music
-//#define MUSIC
+#define MUSIC
 
 struct OPENAL_BUFFER {
 	ALuint id;
@@ -230,7 +229,10 @@ extern OPENAL_BUFFER* hamletmusic;
 
 extern OPENAL_SOUND* music_channel, *music_channel2, *music_resume; //TODO: List of music, play first one, fade out all the others? Eh, maybe some other day. //music_resume is the music to resume after, say, combat or shops. //TODO: Clear music_resume every biome change. Or otherwise validate it for that level set.
 extern OPENAL_CHANNELGROUP *sound_group, *music_group;
-extern OPENAL_CHANNELGROUP *soundAmbient_group, *soundEnvironment_group, *music_notification_group;
+extern OPENAL_CHANNELGROUP *soundAmbient_group;
+extern OPENAL_CHANNELGROUP *soundEnvironment_group;
+extern OPENAL_CHANNELGROUP *soundNotification_group;
+extern OPENAL_CHANNELGROUP *music_notification_group;
 
 int initOPENAL();
 int closeOPENAL();
