@@ -1360,8 +1360,9 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 						OPENAL_CreateStreamSound(musicDir.c_str(), &introductionmusic);
 #endif
 						break;
-/*
+
 					case 1:
+#ifdef USE_FMOD
 						if ( intermissionmusic )
 						{
 							intermissionmusic->release();
@@ -1374,8 +1375,15 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
                         {
                             fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &intermissionmusic);
                         }
+#elif defined USE_OPENAL
+						if ( intermissionmusic ) {
+							OPENAL_Sound_Release(intermissionmusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &intermissionmusic);
+#endif
 						break;
 					case 2:
+#ifdef USE_FMOD
 						if ( minetownmusic )
 						{
 							minetownmusic->release();
@@ -1388,7 +1396,13 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
                         {
                             fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &minetownmusic);
                         }
-						break;*/
+#elif defined USE_OPENAL
+						if ( minetownmusic ) {
+							OPENAL_Sound_Release(minetownmusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &minetownmusic);
+#endif
+						break;
 					case 3:
 #ifdef USE_FMOD
 						if ( splashmusic )
