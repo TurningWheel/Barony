@@ -6392,7 +6392,7 @@ bind_failed:
 			y += settingsAddDropdown(*settings_subwindow, y, "speaker_mode", Language::get(6140), Language::get(6150),
 				true, modes_ptrs, modes_ptrs[allSettings.speaker_mode], settingsAudioSpeakerMode);
 		}
-#else
+#elif defined USE_OPENAL
 		audio_drivers.clear();
 
 		if (alcIsExtensionPresent(NULL, "ALC_ENUMERATION_EXT") == AL_TRUE) { // Enumeration Extension Found
@@ -6412,7 +6412,7 @@ bind_failed:
 				printlog("device detected: %s", device);
 
 				AudioDriver d;
-				memcpy(d.name, device, len);
+				memcpy(d.name, device, len+1);
 				audio_drivers.push_back(d);
 
                 //fprintf(stdout, "%s\n", device);
@@ -6427,7 +6427,9 @@ bind_failed:
 			}
 
 			// debug
-			drivers_formatted_ptrs.push_back("Test");
+			drivers_formatted_ptrs.push_back(alGetString(AL_VENDOR));
+			drivers_formatted_ptrs.push_back(alGetString(AL_RENDERER));
+			drivers_formatted_ptrs.push_back(alGetString(AL_VERSION));
 
 			// add section "output"
 			y += settingsAddSubHeader(*settings_subwindow, y, "output", Language::get(5182));
