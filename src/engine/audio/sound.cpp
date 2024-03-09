@@ -1102,7 +1102,7 @@ void OPENAL_Sound_Release(OPENAL_BUFFER* buffer) {
 			printlog("[OpenAL] error in alDeleteBuffers %d\n", error);
 		}
 	}
-	free(buffer);
+	//free(buffer);
 }
 
 #else // No FMOD or OpenAL
