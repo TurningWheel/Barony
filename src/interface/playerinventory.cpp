@@ -4363,7 +4363,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                 if ( itemCategory(item) == BOOK )
                 {
                     snprintf(buf, sizeof(buf), "%s %s\n%s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
-                             Language::get(4214), getBookNameFromIndex(item->appearance % numbooks).c_str());
+                             Language::get(4214), getBookLocalizedNameFromIndex(item->appearance % numbooks).c_str());
                     manuallyInsertedNewline = true;
                 }
                 else if ( itemCategory(item) == SCROLL )
@@ -4401,7 +4401,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                 else if ( itemCategory(item) == BOOK )
                 {
                     snprintf(buf, sizeof(buf), "%s %s\n%s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
-                             Language::get(4214), getBookNameFromIndex(item->appearance % numbooks).c_str(), item->beatitude); // brand new copy of
+                             Language::get(4214), getBookLocalizedNameFromIndex(item->appearance % numbooks).c_str(), item->beatitude); // brand new copy of
                     manuallyInsertedNewline = true;
                 }
                 else

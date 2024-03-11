@@ -3183,7 +3183,21 @@ namespace MainMenu {
 
 	static void createStoryScreen(const char* file, void (*end_func)()) {
 	    char filename[PATH_MAX];
+
+#ifndef NINTENDO
+		if ( !PHYSFS_getRealDir(file) )
+		{
+			printlog("[JSON]: Error: Could not find file: %s", file);
+			return;
+		}
+		std::string inputPath = PHYSFS_getRealDir(file);
+		inputPath.append(PHYSFS_getDirSeparator());
+		inputPath.append(file);
+
+		stringCopy(filename, inputPath.c_str(), sizeof(filename), inputPath.size());
+#else
 	    (void)completePath(filename, file);
+#endif
 
         struct Story {
             int version = 1;
@@ -13439,6 +13453,97 @@ failed:
 	    }
     }
 
+	static void race_achievement_required_error(int classnum)
+	{
+		char buf[256];
+		std::string achName = "";
+		switch ( classnum )
+		{
+		case CLASS_CONJURER:
+			achName = achievementNames["BARONY_ACH_BONY_BARON"];
+			break;
+		case CLASS_ACCURSED:
+			achName = achievementNames["BARONY_ACH_BUCKTOOTH_BARON"];
+			break;
+		case CLASS_MESMER:
+			achName = achievementNames["BARONY_ACH_BOMBSHELL_BARON"];
+			break;
+		case CLASS_BREWER:
+			achName = achievementNames["BARONY_ACH_BLEATING_BARON"];
+			break;
+		case CLASS_MACHINIST:
+			achName = achievementNames["BARONY_ACH_BOILERPLATE_BARON"];
+			break;
+		case CLASS_PUNISHER:
+			achName = achievementNames["BARONY_ACH_BAD_BOY_BARON"];
+			break;
+		case CLASS_SHAMAN:
+			achName = achievementNames["BARONY_ACH_BAYOU_BARON"];
+			break;
+		case CLASS_HUNTER:
+			achName = achievementNames["BARONY_ACH_BUGGAR_BARON"];
+			break;
+		default:
+			break;
+		}
+
+		snprintf(buf, sizeof(buf), Language::get(6171), achName.c_str());
+		auto prompt = errorPrompt(buf, Language::get(5884),
+			[](Button& button) {
+				soundCancel();
+		closeMono();
+			});
+		if ( auto txt = prompt->findField("text") )
+		{
+			SDL_Rect pos = txt->getSize();
+			pos.y -= 8;
+			pos.h += 8;
+			txt->setSize(pos);
+		}
+	}
+
+	static bool race_button_challenge_check_fn(int race, int challengeClass)
+	{
+		bool allowPick = true;
+		if ( race == RACE_HUMAN )
+		{
+			return true;
+		}
+		if ( race != RACE_SKELETON && challengeClass == CLASS_CONJURER )
+		{
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_SKELETON);
+		}
+		else if ( race != RACE_VAMPIRE && challengeClass == CLASS_ACCURSED )
+		{
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_VAMPIRE);
+		}
+		else if ( race != RACE_SUCCUBUS && challengeClass == CLASS_MESMER )
+		{
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_SUCCUBUS);
+		}
+		else if ( race != RACE_GOATMAN && challengeClass == CLASS_BREWER )
+		{
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_GOATMAN);
+		}
+		else if ( race != RACE_AUTOMATON && challengeClass == CLASS_MACHINIST )
+		{
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_AUTOMATON);
+		}
+		else if ( race != RACE_INCUBUS && challengeClass == CLASS_PUNISHER )
+		{
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_INCUBUS);
+		}
+		else if ( race != RACE_GOBLIN && challengeClass == CLASS_SHAMAN )
+		{
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_GOBLIN);
+		}
+		else if ( race != RACE_INSECTOID && challengeClass == CLASS_HUNTER )
+		{
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_INSECTOID);
+		}
+		return allowPick;
+	}
+
 	static void race_button_fn(Button& button, bool override_dlc) {
         const int index = button.getOwner();
         const bool wasHuman = stats[index]->playerRace == RACE_HUMAN;
@@ -13446,6 +13551,8 @@ failed:
         bool success = false;
 		bool fixedRace = gameModeManager.currentSession.challengeRun.isActive()
 			&& gameModeManager.currentSession.challengeRun.race >= 0 && gameModeManager.currentSession.challengeRun.race <= RACE_INSECTOID;
+		bool fixedClass = gameModeManager.currentSession.challengeRun.isActive()
+			&& gameModeManager.currentSession.challengeRun.classnum >= 0 && gameModeManager.currentSession.challengeRun.classnum <= NUMCLASSES;
 
 		for (int c = 0; c < num_races; ++c) {
 			auto race = Language::get(5369 + c);
@@ -13461,14 +13568,23 @@ failed:
 						});
 					return;
 				}
-				else if (!override_dlc && !fixedRace &&
-                    ((!enabledDLCPack1 && c >= 1 && c <= 4) ||
-					(!enabledDLCPack2 && c >= 5 && c <= 8))) {
+				else if ( !override_dlc && !fixedRace &&
+					((!enabledDLCPack1 && c >= 1 && c <= 4) ||
+						(!enabledDLCPack2 && c >= 5 && c <= 8)) ) {
 					// this class is not available to the player
 					button.setPressed(false);
 					openDLCPrompt(c >= 5 ? 1 : 0);
 					return;
-				} else {
+				}
+				else if ( fixedClass && !override_dlc && c >= 1
+					&& !race_button_challenge_check_fn(c, gameModeManager.currentSession.challengeRun.classnum) )
+				{
+					button.setPressed(false);
+					race_achievement_required_error(gameModeManager.currentSession.challengeRun.classnum);
+					return;
+				} 
+				else 
+				{
                     success = true;
                     if (stats[index]->playerRace != c) {
                         stats[index]->playerRace = c;
@@ -15396,6 +15512,8 @@ failed:
 
 			bool fixedRace = gameModeManager.currentSession.challengeRun.isActive()
 				&& gameModeManager.currentSession.challengeRun.race >= 0 && gameModeManager.currentSession.challengeRun.race <= RACE_INSECTOID;
+			bool fixedClass = gameModeManager.currentSession.challengeRun.isActive()
+				&& gameModeManager.currentSession.challengeRun.classnum >= 0 && gameModeManager.currentSession.challengeRun.classnum < NUMCLASSES;
 
 			if ( fixedRace && gameModeManager.currentSession.challengeRun.race != c )
 			{
@@ -15415,10 +15533,17 @@ failed:
 		    else if (!enabledDLCPack2 && c >= 5 && c <= 8) {
 		        race->setBackground("*#images/ui/Main Menus/sublist_item-locked.png");
 		    }
-		    else {
-		        race->setBackground("*#images/ui/Main Menus/sublist_item-unpicked.png");
-		        race->setBackgroundHighlighted("*#images/ui/Main Menus/sublist_item-unpickedHigh.png");
-		        race->setBackgroundActivated("*#images/ui/Main Menus/sublist_item-unpickedPress.png");
+			else if ( fixedClass && c >= 1 && !race_button_challenge_check_fn(c, gameModeManager.currentSession.challengeRun.classnum) )
+			{
+				race->setBackground("*#images/ui/Main Menus/sublist_item-locked.png");
+				race->setBackgroundHighlighted("");
+				race->setBackgroundActivated("");
+			}
+		    else 
+			{
+				race->setBackground("*#images/ui/Main Menus/sublist_item-unpicked.png");
+				race->setBackgroundHighlighted("*#images/ui/Main Menus/sublist_item-unpickedHigh.png");
+				race->setBackgroundActivated("*#images/ui/Main Menus/sublist_item-unpickedPress.png");
 		    }
 		    race->setIcon("*#images/ui/Main Menus/sublist_item-picked.png");
 		    race->setStyle(Button::style_t::STYLE_RADIO);
@@ -16513,8 +16638,10 @@ failed:
 							switch (check) {
 							default:
 							case INVALID_CHARACTER:
-							case INVALID_REQUIRE_ACHIEVEMENT:
 								soundError();
+								break;
+							case INVALID_REQUIRE_ACHIEVEMENT:
+								race_achievement_required_error(c);
 								break;
 							case INVALID_REQUIREDLC1:
 								openDLCPrompt(0);
@@ -16690,6 +16817,36 @@ failed:
             stats[index]->sex = static_cast<sex_t>(RNG.getU8() % 2);
             stats[index]->appearance = RNG.uniform(0, NUMAPPEARANCES - 1);
             client_classes[index] = 0;
+
+			bool challengeRunModified = false;
+			if ( gameModeManager.currentSession.challengeRun.isActive() )
+			{
+				if ( gameModeManager.currentSession.challengeRun.classnum >= 0
+					&& gameModeManager.currentSession.challengeRun.classnum < NUMCLASSES )
+				{
+					client_classes[index] = gameModeManager.currentSession.challengeRun.classnum;
+					challengeRunModified = true;
+				}
+				if ( gameModeManager.currentSession.challengeRun.race >= 0
+					&& gameModeManager.currentSession.challengeRun.race <= RACE_INSECTOID )
+				{
+					stats[index]->playerRace = gameModeManager.currentSession.challengeRun.race;
+					if ( stats[index]->playerRace != RACE_HUMAN )
+					{
+						stats[index]->appearance = 0;
+					}
+					if ( stats[index]->playerRace == RACE_INCUBUS )
+					{
+						stats[index]->sex = sex_t::MALE;
+					}
+					else if ( stats[index]->playerRace == RACE_SUCCUBUS )
+					{
+						stats[index]->sex = sex_t::FEMALE;
+					}
+					challengeRunModified = true;
+				}
+			}
+
             stats[index]->clearStats();
             initClass(index);
         }

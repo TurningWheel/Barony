@@ -22980,12 +22980,12 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 						{
 							if ( setType == SET_CALLOUT_BANNER_TEXT )
 							{
-								snprintf(buf, sizeof(buf), "\"%s\" (?)", getBookNameFromIndex(item->appearance% numbooks).c_str());
+								snprintf(buf, sizeof(buf), "\"%s\" (?)", getBookLocalizedNameFromIndex(item->appearance% numbooks).c_str());
 							}
 							else
 							{
 								snprintf(buf, sizeof(buf), "%s %s\n\"%s\" (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
-									Language::get(4214), getBookNameFromIndex(item->appearance % numbooks).c_str());
+									Language::get(4214), getBookLocalizedNameFromIndex(item->appearance % numbooks).c_str());
 								manuallyInsertedNewline = true;
 							}
 						}
@@ -23066,13 +23066,13 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 						{
 							if ( setType == SET_CALLOUT_BANNER_TEXT )
 							{
-								snprintf(buf, sizeof(buf), "\"%s\" (%+d)", getBookNameFromIndex(item->appearance % numbooks).c_str(),
+								snprintf(buf, sizeof(buf), "\"%s\" (%+d)", getBookLocalizedNameFromIndex(item->appearance % numbooks).c_str(),
 									item->beatitude);
 							}
 							else
 							{
 								snprintf(buf, sizeof(buf), "%s %s\n\"%s\" (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
-									Language::get(4214), getBookNameFromIndex(item->appearance % numbooks).c_str(), item->beatitude); // brand new copy of
+									Language::get(4214), getBookLocalizedNameFromIndex(item->appearance % numbooks).c_str(), item->beatitude); // brand new copy of
 								manuallyInsertedNewline = true;
 							}
 						}

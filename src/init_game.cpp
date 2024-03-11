@@ -63,6 +63,13 @@ void initGameDatafiles(bool moddedReload)
 	ItemTooltips.readItemsFromFile();
 	ItemTooltips.readTooltipsFromFile();
 	ItemTooltips.readItemLocalizationsFromFile();
+	ItemTooltips.readBookLocalizationsFromFile();
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		// set these to something silly clear the tooltip cache match
+		players[i]->worldUI.worldTooltipItem.type = WOODEN_SHIELD;
+		players[i]->worldUI.worldTooltipItem.count = 99;
+	}
 
 	loadHUDSettingsJSON();
 	Player::SkillSheet_t::loadSkillSheetJSON();

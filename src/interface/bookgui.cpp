@@ -161,7 +161,7 @@ void Player::BookGUI_t::updateBookGUI()
 	int bookIndex = getBook(openBookName);
 	if ( !allBooks.empty() && allBooks.size() >= bookIndex )
 	{
-		if ( getBookNameFromIndex(bookIndex) != openBookName )
+		if ( getBookDefaultNameFromIndex(bookIndex) != openBookName )
 		{
 			errorOpening = true;
 		}
@@ -513,14 +513,14 @@ void Player::BookGUI_t::closeBookGUI()
 
 void Player::BookGUI_t::openBook(int index, Item* item)
 {
-	if ( getBookNameFromIndex(index) == "" )
+	if ( getBookDefaultNameFromIndex(index) == "" )
 	{
 		return;
 	}
 
 	for (int c = 0; c < num_banned_books; ++c) {
 		const char* banned_book = banned_books[c];
-		if ( !spawn_blood && getBookNameFromIndex(index, false) == banned_book )
+		if ( !spawn_blood && getBookDefaultNameFromIndex(index, false) == banned_book )
 		{
 			openBook((index + 1) % numbooks, item);
 			return;
@@ -532,7 +532,7 @@ void Player::BookGUI_t::openBook(int index, Item* item)
 	players[player.playernum]->openStatusScreen(GUI_MODE_INVENTORY, 
 		INVENTORY_MODE_ITEM, player.GUI.MODULE_BOOK_VIEW); // Reset the GUI to the inventory.
 	bBookOpen = true;
-	openBookName = getBookNameFromIndex(index);
+	openBookName = getBookDefaultNameFromIndex(index);
 	openBookItem = item;
 	currentBookPage = 0;
 

@@ -20,10 +20,14 @@
 #endif
 
 PlayfabUser_t playfabUser;
-int loginFailures = 1;
+
+void PlayfabUser_t::OnEventsWrite(const PlayFab::EventsModels::WriteEventsResponse& result, void* customData)
+{
+    logInfo("Successfully stored events");
+}
+
 void PlayfabUser_t::OnLoginSuccess(const PlayFab::ClientModels::LoginResult& result, void* customData)
 {
-    loginFailures = 1;
     logInfo("Logged in successfully");
     playfabUser.loggingIn = false;
     playfabUser.bLoggedIn = true;
@@ -36,6 +40,7 @@ void PlayfabUser_t::OnLoginSuccess(const PlayFab::ClientModels::LoginResult& res
     switch ( playfabUser.type )
     {
     case PlayerType_Steam:
+    {
 #ifdef STEAMWORKS
         if ( SteamUser()->BLoggedOn() )
         {
@@ -44,8 +49,17 @@ void PlayfabUser_t::OnLoginSuccess(const PlayFab::ClientModels::LoginResult& res
         }
         SteamClientConsumeAuthTicket();
 #endif
+        PlayFab::EventsModels::WriteEventsRequest eventRequest;
+        PlayFab::EventsModels::EventContents eventContent;
+        eventContent.EventNamespace = "custom.loginwithsteam";
+        eventContent.Name = "onlogin";
+        eventContent.Payload["retries"] = playfabUser.loginFailures;
+        eventRequest.Events.push_back(eventContent);
+        PlayFab::PlayFabEventsAPI::WriteTelemetryEvents(eventRequest, OnEventsWrite, OnCloudScriptFailure);
         break;
+    }
     case PlayerType_Epic:
+    {
 #ifdef USE_EOS
         if ( EOS.CurrentUserInfo.bUserLoggedIn )
         {
@@ -56,7 +70,15 @@ void PlayfabUser_t::OnLoginSuccess(const PlayFab::ClientModels::LoginResult& res
             }
         }
 #endif
+        PlayFab::EventsModels::WriteEventsRequest eventRequest;
+        PlayFab::EventsModels::EventContents eventContent;
+        eventContent.EventNamespace = "custom.loginwithopenid";
+        eventContent.Name = "onlogin";
+        eventContent.Payload["retries"] = playfabUser.loginFailures;
+        eventRequest.Events.push_back(eventContent);
+        PlayFab::PlayFabEventsAPI::WriteTelemetryEvents(eventRequest, OnEventsWrite, OnCloudScriptFailure);
         break;
+    }
     default:
         break;
     }
@@ -74,6 +96,8 @@ void PlayfabUser_t::OnLoginSuccess(const PlayFab::ClientModels::LoginResult& res
         PlayFab::PlayFabCloudScriptAPI::ExecuteFunction(request, OnFunctionExecute, OnCloudScriptFailure,
             (void*)(intptr_t)(PlayerCheckLeaderboardData_t::sequenceIDs));
     }
+
+    playfabUser.loginFailures = 0;
 }
 
 void PlayfabUser_t::OnLoginFail(const PlayFab::PlayFabError& error, void* customData)
@@ -85,6 +109,7 @@ void PlayfabUser_t::OnLoginFail(const PlayFab::PlayFabError& error, void* custom
     playfabUser.bLoggedIn = false;
     playfabUser.errorLogin = true;
     playfabUser.authenticationRefresh = TICKS_PER_SECOND * 60;
+    ++playfabUser.loginFailures;
 }
 
 void PlayfabUser_t::OnDisplayNameUpdateSuccess(const PlayFab::ClientModels::UpdateUserTitleDisplayNameResult& result, void* customData)
@@ -107,9 +132,9 @@ void PlayfabUser_t::loginEpic()
     request.IdToken = EOS.getAuthToken();
     if ( EOS.getAuthToken() == "" )
     {
-        playfabUser.authenticationRefresh = TICKS_PER_SECOND * 5 * loginFailures;
+        playfabUser.authenticationRefresh = TICKS_PER_SECOND * (5 + std::min(60, loginFailures * 15));
         playfabUser.errorLogin = true;
-        loginFailures = std::min(20, loginFailures + 3);
+        ++loginFailures;
         return;
     }
     playfabUser.loggingIn = true;
@@ -125,9 +150,9 @@ void PlayfabUser_t::loginSteam()
     request.SteamTicket = SteamClientRequestAuthTicket();
     if ( request.SteamTicket == "" )
     {
-        playfabUser.authenticationRefresh = TICKS_PER_SECOND * 5 * loginFailures;
+        playfabUser.authenticationRefresh = TICKS_PER_SECOND * (5 + std::min(60, loginFailures * 15));
         playfabUser.errorLogin = true;
-        loginFailures = std::min(20, loginFailures + 3);
+        ++loginFailures;
         return;
     }
     playfabUser.loggingIn = true;

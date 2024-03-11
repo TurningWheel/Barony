@@ -18,7 +18,7 @@ class Book_t
 public:
 	Book_t() {};
 	std::string text = "";
-	std::string name = "";
+	std::string default_name = "";
 	std::vector<std::string> formattedPages;
 };
 extern std::vector<Book_t> allBooks;
@@ -41,7 +41,8 @@ public:
 extern BookParser_t bookParser_t;
 
 int getBook(std::string bookTitle);
-std::string getBookNameFromIndex(int index, bool censored = true);
+std::string getBookDefaultNameFromIndex(int index, bool censored = true);
+std::string getBookLocalizedNameFromIndex(int index, bool censored = true);
 extern int numbooks;
 
 static const char* banned_books[] = {
