@@ -2899,8 +2899,15 @@ void actMonster(Entity* my)
 						{
 							// chance to dodge away from target if distance is low enough.
 							playSoundEntity(my, 180, 128);
-							tangent = atan2(target->y - my->y, target->x - my->x);
-							dir = tangent + PI;
+							if ( target )
+							{
+								tangent = atan2(target->y - my->y, target->x - my->x);
+								dir = tangent + PI;
+							}
+							else
+							{
+								dir = my->yaw - (PI / 2) + PI * (local_rng.rand() % 2);
+							}
 							while ( dir < 0 )
 							{
 								dir += 2 * PI;
