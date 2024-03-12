@@ -1099,7 +1099,8 @@ void OPENAL_Sound_Release(OPENAL_BUFFER* buffer) {
 		alDeleteBuffers( 1, &buffer->id );
 		ALenum error = alGetError();
 		if (error != AL_NO_ERROR) {
-			printlog("[OpenAL] error in alDeleteBuffers %d\n", error);
+			printlog("[OpenAL] error %d in alDeleteBuffers for buffer '%d' '%s'\n", error, buffer->id, buffer->oggfile);
+			return;
 		}
 	}
 	free(buffer);
