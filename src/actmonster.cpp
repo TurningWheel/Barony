@@ -5618,6 +5618,7 @@ timeToGoAgain:
 					if ( numPlayers > 0 )
 					{
 						difficulty /= numPlayers; // 40/20/13/10 - basically how long you get to wail on Baphy. Shorter is harder.
+						difficulty = std::max(10, difficulty);
 					}
 
 					if ( my->monsterSpecialTimer > 60 || (devilstate == 72 && my->monsterSpecialTimer > difficulty))
@@ -7534,10 +7535,10 @@ timeToGoAgain:
 			++my->monsterSpecialTimer;
 			if ( my->monsterSpecialTimer == 20 ) // start the spawn animations
 			{
-				int numToSpawn = 3;
-				int numPlayers = 1;
+				int numToSpawn = 2;
+				int numPlayers = 0;
 				std::vector<int> alivePlayers;
-				for ( int c = 1; c < MAXPLAYERS; ++c )
+				for ( int c = 0; c < MAXPLAYERS; ++c )
 				{
 					if ( !client_disconnected[c] )
 					{
