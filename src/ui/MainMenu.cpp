@@ -6366,9 +6366,9 @@ bind_failed:
 			y += settingsAddDropdown(*settings_subwindow, y, "device", Language::get(5183), Language::get(5184),
 			    true, drivers_formatted_ptrs, drivers_formatted_ptrs[selected_device],
 			    settingsAudioDevice);
-			y += settingsAddDropdown(*settings_subwindow, y, "speaker_mode", Language::get(6140), Language::get(6150),
-				true, modes_ptrs, modes_ptrs[allSettings.speaker_mode], settingsAudioSpeakerMode);
 		}
+		y += settingsAddDropdown(*settings_subwindow, y, "speaker_mode", Language::get(6140), Language::get(6150),
+			true, modes_ptrs, modes_ptrs[allSettings.speaker_mode], settingsAudioSpeakerMode);
 #endif
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "volume", Language::get(5185));
