@@ -1288,7 +1288,7 @@ void physfsReloadMusic_helper_reloadMusicArray(uint32_t numMusic, const char* fi
 			}*/
 			
 		} else {
-			printlog("[PhysFS]: fail to load music file %s...", tempstr);
+			printlog("[OpenAL]: fail to load music file %s...", tempstr);
 		}
 	}
 }
@@ -1850,11 +1850,13 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 					physfsReloadMusic_helper_reloadMusicArray(NUMINTROMUSIC, "music/intro%02d.ogg", music, reloadAll);
                 }
                 introChanged = true;
-                /*if (fmod_result != FMOD_OK)
+#ifdef USE_FMOD
+                if (fmod_result != FMOD_OK)
                 {
                     printlog("[PhysFS]: ERROR: Failed reloading music file \"%s\".");
                     break; //TODO: Handle the error?
-                }*/
+                }
+#endif
 			}
 		}
 	}

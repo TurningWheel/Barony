@@ -4469,18 +4469,16 @@ namespace MainMenu {
 
 	struct AudioDriver {
 		char name[64];
-#if defined(USE_FMOD)
+#ifdef USE_FMOD
 		FMOD_GUID guid;
 		int system_rate;
 		FMOD_SPEAKERMODE speaker_mode;
 		int speaker_mode_channels;
 #endif
-#if defined(USE_OPENAL)
-#endif
 	};
 	static std::vector<AudioDriver> audio_drivers;
 
-#if defined(USE_FMOD)
+#ifdef USE_FMOD
 	static void settingsAudioDevice(Button& button) {
 		settingsOpenDropdown(button, "device", DropdownType::Wide, [](Frame::entry_t& entry){
 			soundActivate();
@@ -4523,35 +4521,6 @@ namespace MainMenu {
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 			auto button = settings_subwindow->findButton("setting_speaker_mode_dropdown_button"); assert(button);
 			auto dropdown = settings_subwindow->findFrame("setting_speaker_mode_dropdown"); assert(dropdown);
-			button->setText(entry.name.c_str());
-			dropdown->removeSelf();
-			button->select();
-			});
-	}
-#endif
-#ifdef USE_OPENAL
-	static void settingsAudioDevice(Button& button) {
-		settingsOpenDropdown(button, "device", DropdownType::Wide, [](Frame::entry_t& entry){
-			soundActivate();
-
-			// store driver
-			/*
-			unsigned int index; memcpy(&index, &entry.data, sizeof(index));
-			if (index < audio_drivers.size()) {
-				const auto& driver = audio_drivers[index];
-				uint32_t _1; memcpy(&_1, &driver.guid.Data1, sizeof(_1));
-				uint64_t _2; memcpy(&_2, &driver.guid.Data4, sizeof(_2));
-				char guid_string[25];
-                snprintf(guid_string, sizeof(guid_string), FMOD_AUDIO_GUID_FMT, _1, _2);
-				allSettings.audio_device = guid_string;
-				fmod_system->setDriver(index);
-			}
-			*/
-
-			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
-			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
-			auto button = settings_subwindow->findButton("setting_device_dropdown_button"); assert(button);
-			auto dropdown = settings_subwindow->findFrame("setting_device_dropdown"); assert(dropdown);
 			button->setText(entry.name.c_str());
 			dropdown->removeSelf();
 			button->select();
@@ -6405,54 +6374,6 @@ bind_failed:
 			    settingsAudioDevice);
 			y += settingsAddDropdown(*settings_subwindow, y, "speaker_mode", Language::get(6140), Language::get(6150),
 				true, modes_ptrs, modes_ptrs[allSettings.speaker_mode], settingsAudioSpeakerMode);
-		}
-#elif defined USE_OPENAL
-		audio_drivers.clear();
-
-		if (alcIsExtensionPresent(NULL, "ALC_ENUMERATION_EXT") == AL_TRUE) { // Enumeration Extension Found
-			printlog("OpenAL support ALC_ENUMERATION_EXT extention.\n");
-			const ALCchar *devices_raw = alcGetString(NULL, ALC_DEVICE_SPECIFIER);
-			num_drivers = openalGetNumberOfDevices(devices_raw);
-			printlog("number of device detected: %d", num_drivers);
-
-			audio_drivers.reserve(num_drivers);
-
-			// this is good, taken from offical doc but not very "CPP" way
-			const ALCchar *device = devices_raw, *next = devices_raw + 1;
-        	size_t len = 0;
-
-			while (device && *device != '\0' && next && *next != '\0') {
-                len = strlen(device);
-				printlog("device detected: %s", device);
-
-				AudioDriver d;
-				memcpy(d.name, device, len+1);
-				audio_drivers.push_back(d);
-
-                //fprintf(stdout, "%s\n", device);
-                device += (len + 1);
-                next += (len + 2);
-        	}
-
-			std::vector<const char*> drivers_formatted_ptrs;
-			drivers_formatted_ptrs.reserve(num_drivers);
-			for (auto& d : audio_drivers) {
-				drivers_formatted_ptrs.push_back(d.name);
-			}
-
-			// debug
-			drivers_formatted_ptrs.push_back(alGetString(AL_VENDOR));
-			drivers_formatted_ptrs.push_back(alGetString(AL_RENDERER));
-			drivers_formatted_ptrs.push_back(alGetString(AL_VERSION));
-
-			// add section "output"
-			y += settingsAddSubHeader(*settings_subwindow, y, "output", Language::get(5182));
-			if ( num_drivers > 0 )
-			{
-				y += settingsAddDropdown(*settings_subwindow, y, "device", Language::get(5183), Language::get(5184),
-					true, drivers_formatted_ptrs, drivers_formatted_ptrs[0], //selected_device],
-					settingsAudioDevice);
-			}
 		}
 #endif
 
