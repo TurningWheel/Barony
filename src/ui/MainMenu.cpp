@@ -10081,6 +10081,8 @@ bind_failed:
 		genericSubwindowFinalizeBasic(*subwindow, y);
 	}
 
+	static void openCompendium();
+
 /******************************************************************************/
 
 	static void archivesLeaderboards(Button& button) {
@@ -10089,6 +10091,7 @@ bind_failed:
 
 	static void archivesDungeonCompendium(Button& button) {
 		soundActivate();
+		openCompendium();
 	}
 
 	static void archivesAchievements(Button& button) {
@@ -23933,7 +23936,7 @@ failed:
 			void (*callback)(Button&);
 		};
 		Option options[] = {
-			//{"Dungeon Compendium", Language::get(5612), archivesDungeonCompendium}, // TODO
+			{"Dungeon Compendium", Language::get(5612), archivesDungeonCompendium},
 #ifndef STEAMWORKS
 #if defined(USE_EOS) || defined(LOCAL_ACHIEVEMENTS)
 			{"Achievements", Language::get(5611), archivesAchievements},
@@ -32536,56 +32539,53 @@ failed:
 			createPlayWindow();
 			}/*, SDL_Rect{ -4, -4, 0, 0 }*/);
 
-		/*auto continue_button = window->addButton("continue");
-		continue_button->setSize(SDL_Rect{ 39 * 2, 36 * 2, 66 * 2, 50 * 2 });
-		continue_button->setBackground("*images/ui/Main Menus/Play/UI_PlayMenu_Button_ContinueB00.png");
-		continue_button->setTextColor(makeColor(180, 180, 180, 255));
-		continue_button->setTextHighlightColor(makeColor(180, 133, 13, 255));
-		continue_button->setText(Language::get(5561));
-		continue_button->setFont(smallfont_outline);
-		if ( continueAvailable ) {
-			continue_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/UI_PlayMenu_Button_ContinueA00.png");
-			continue_button->setCallback([](Button& button) {soundActivate(); playContinue(button); });
-		}
-		else {
-			continue_button->setCallback([](Button&) {soundError(); });
-		}
-		continue_button->setWidgetSearchParent(window->getName());
-		continue_button->setWidgetRight("new");
-		continue_button->setWidgetDown("hall_of_trials");
-		continue_button->setWidgetBack("back_button");
-		continue_button->setGlyphPosition(Widget::glyph_position_t::CENTERED);
-		continue_button->setButtonsOffset(SDL_Rect{ 0, 29, 0, 0, });
-		continue_button->setSelectorOffset(SDL_Rect{ -1, -1, 1, 1 });
-
-		auto new_button = window->addButton("new");
-		new_button->setSize(SDL_Rect{ 114 * 2, 36 * 2, 68 * 2, 56 * 2 });
-		new_button->setBackground("*images/ui/Main Menus/Play/UI_PlayMenu_NewB00.png");
-		new_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/UI_PlayMenu_NewA00.png");
-		new_button->setTextColor(makeColor(180, 180, 180, 255));
-		new_button->setTextHighlightColor(makeColor(180, 133, 13, 255));
-		new_button->setText(Language::get(5562));
-		new_button->setFont(smallfont_outline);
-		new_button->setCallback(playNew);
-		new_button->setWidgetSearchParent(window->getName());
-		new_button->setWidgetLeft("continue");
-		new_button->setWidgetDown("hall_of_trials");
-		new_button->setWidgetBack("back_button");
-		new_button->setGlyphPosition(Widget::glyph_position_t::CENTERED);
-		new_button->setButtonsOffset(SDL_Rect{ 0, 29, 0, 0, });
-		new_button->setSelectorOffset(SDL_Rect{ -1, -1, -3, -11 });*/
-
-		/*if ( !gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt ) {
-			if ( continueAvailable ) {
-				continue_button->select();
-			}
-			else {
-				new_button->select();
-			}
-		}
-		else {
-			hall_of_trials_button->select();
-		}*/
 	}
 #endif
+
+	static void openCompendium() {
+		auto dimmer = main_menu_frame->addFrame("dimmer");
+		dimmer->setSize(SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY });
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(makeColor(0, 0, 0, 63));
+		dimmer->setBorder(0);
+
+		auto window = dimmer->addFrame("compendium");
+		window->setSize(SDL_Rect{
+			(Frame::virtualScreenX - 1222) / 2,
+			(Frame::virtualScreenY - 598) / 2,
+			1222,
+			598 });
+		window->setColor(0);
+		window->setBorder(0);
+
+		auto background = window->addImage(
+			SDL_Rect{ 0, 0, window->getSize().w, window->getSize().h },
+			0xffffffff,
+			"*images/ui/Main Menus/AdventureArchives/A_Window_BG_00.png",
+			"background"
+		);
+
+		auto model_viewer = window->addFrame("model_viewer");
+		model_viewer->setSize(SDL_Rect{284, 32, 406, 406});
+		model_viewer->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+			drawMonsterPreview(pos, 50, 0.0);
+		});
+
+		if ( auto monster = summonMonsterNoSmoke(SKELETON, 8, 8, true) )
+		{
+			if ( auto myStats = monster->getStats() )
+			{
+				myStats->setAttribute("monster_portrait", "true");
+			}
+		}
+
+		(void)createBackWidget(window, [](Button& button) {
+			soundCancel();
+			auto frame = static_cast<Frame*>(button.getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame->removeSelf();
+			assert(main_menu_frame);
+			}/*, SDL_Rect{ -4, -4, 0, 0 }*/);
+	}
 }

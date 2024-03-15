@@ -21441,6 +21441,103 @@ void createInventoryTooltipFrame(const int player)
 }
 
 view_t playerPortraitView[MAXPLAYERS];
+view_t monsterPortaitView;
+void drawMonsterPreview(SDL_Rect pos, int fov, real_t offsetyaw, bool dark)
+{
+	view_t& view = monsterPortaitView;
+	auto ofov = ::fov;
+	::fov = fov;
+
+	Entity* monster = nullptr;
+	for ( node_t* node = map.creatures->first; node; node = node->next )
+	{
+		Entity* m = (Entity*)node->element;
+		if ( m )
+		{
+			if ( auto myStats = m->getStats() )
+			{
+				if ( myStats->getAttribute("monster_portrait") != "" )
+				{
+					monster = m;
+
+					monsterAnimate(monster, myStats, 0.5);
+					break;
+				}
+			}
+		}
+	}
+
+	if ( !monster ) { return; }
+
+	static ConsoleVariable<bool> cvar_char_portrait_static_angle("/char_portrait_static_angle", true);
+	view.x = monster->x / 16.0 + (.92 * cos(offsetyaw
+		+ (*cvar_char_portrait_static_angle ? monster->yaw : 0)));
+	view.y = monster->y / 16.0 + (.92 * sin(offsetyaw
+		+ (*cvar_char_portrait_static_angle ? monster->yaw : 0)));
+	view.z = monster->z * 2;
+	view.ang = (offsetyaw - PI
+		+ (*cvar_char_portrait_static_angle ? monster->yaw : 0)); //5 * PI / 4;
+	view.vang = PI / 20;
+
+	view.winx = pos.x;
+	// winy modification required due to new frame scaling method d49b1a5f34667432f2a2bd754c0abca3a09227c8
+	view.winy = pos.y + (yres - Frame::virtualScreenY);
+
+	view.winw = pos.w;
+	view.winh = pos.h;
+	glBeginCamera(&view, false);
+	bool b = monster->flags[BRIGHT];
+	if ( !dark ) { monster->flags[BRIGHT] = true; }
+	if ( !monster->flags[INVISIBLE] )
+	{
+		glDrawVoxel(&view, monster, REALCOLORS);
+	}
+
+	monster->flags[BRIGHT] = b;
+	int c = 0;
+
+	{
+		for ( node_t* node = monster->children.first; node != nullptr; node = node->next )
+		{
+			if ( c == 0 )
+			{
+				c++;
+				continue;
+			}
+			Entity* entity = (Entity*)node->element;
+			if ( !entity->flags[INVISIBLE] )
+			{
+				bool b = entity->flags[BRIGHT];
+				if ( !dark ) { entity->flags[BRIGHT] = true; }
+				glDrawVoxel(&view, entity, REALCOLORS);
+				entity->flags[BRIGHT] = b;
+			}
+			c++;
+		}
+		//for ( node_t* node = map.entities->first; node != NULL; node = node->next )
+		//{
+		//	Entity* entity = (Entity*)node->element;
+		//	if ( (Sint32)entity->getUID() == -4 ) // torch sprites
+		//	{
+		//		if ( (entity->skill[1] - 1) != player )
+		//		{
+		//			continue;
+		//		}
+		//		bool b = entity->flags[BRIGHT];
+		//		if ( !dark ) { entity->flags[BRIGHT] = true; }
+		//		glDrawSprite(&view, entity, REALCOLORS);
+		//		entity->flags[BRIGHT] = b;
+		//	}
+		//}
+	}
+
+	if ( drawingGui ) {
+		// blending gets disabled after objects are drawn, so re-enable it.
+		GL_CHECK_ERR(glEnable(GL_BLEND));
+	}
+	glEndCamera(&view, false);
+	::fov = ofov;
+}
 
 void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offsetyaw, bool dark)
 {
