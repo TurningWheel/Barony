@@ -763,6 +763,7 @@ void gyroBotDie(Entity* my);
 void dummyBotDie(Entity* my);
 void mimicDie(Entity* my);
 
+void monsterAnimate(Entity* my, Stat* myStats, double dist);
 //--*MoveBodyparts functions--
 void humanMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void ratAnimate(Entity* my, double dist);
