@@ -2658,6 +2658,7 @@ public:
 			rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
 			d.Accept(writer);
 			fp->write(os.GetString(), sizeof(char), os.GetSize());
+			fp->write("", sizeof(char), 1);
 
 			FileIO::close(fp);
 		}
