@@ -62,8 +62,7 @@ source "${DEPENDENCIES_DIR}/eos-steam.env"
 export NFD_DIR="${DEPENDENCIES_DIR}/nfd/"
 export RAPID_JSON_DIR="${DEPENDENCIES_DIR}/"
 export PHYSFSDIR="${DEPENDENCIES_DIR}/physfs/"
-export PLAYFAB_ENABLED=1
-export PLAYFAB_DIR="${DEPENDENCIES_DIR}/playfab/"
+export CURL_ENABLED=1
 export EOS_ENABLED=1
 export EOS_DIR="${DEPENDENCIES_DIR}/eos-sdk/"
 export EDITOR_ENABLED=0
