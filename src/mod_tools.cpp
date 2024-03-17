@@ -9417,6 +9417,7 @@ void Mods::unloadMods(bool force)
 	// reload books
 	if ( Mods::booksRequireReloadUnmodded )
 	{
+		consoleCommand("/dumpcache");
 		physfsReloadBooks();
 		Mods::booksRequireReloadUnmodded = false;
 	}
@@ -9637,11 +9638,13 @@ void Mods::loadMods()
 
 	if ( physfsSearchBooksToUpdate() )
 	{
+		consoleCommand("/dumpcache");
 		physfsReloadBooks();
 		Mods::booksRequireReloadUnmodded = true;
 	}
 	else if ( Mods::booksRequireReloadUnmodded ) // clean revert if we had loaded mods but can't find any modded ones
 	{
+		consoleCommand("/dumpcache");
 		physfsReloadBooks();
 		Mods::booksRequireReloadUnmodded = false;
 	}
