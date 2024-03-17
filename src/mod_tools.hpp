@@ -2642,12 +2642,16 @@ public:
 
 		void readFromFile();
 		void writeToDocument();
+
+#if defined(LINUX)
+		const std::string tutorialScoresFilename = "/savegames/tutorial_scores_2.json";
+#else
+		const std::string tutorialScoresFilename = "/savegames/tutorial_scores.json";
+#endif
 		void writeToFile(rapidjson::Document& d)
 		{
 			std::string outputPath = outputdir;
-			outputPath.append(PHYSFS_getDirSeparator());
-			std::string fileName = "savegames/tutorial_scores.json";
-			outputPath.append(fileName.c_str());
+			outputPath.append(tutorialScoresFilename.c_str());
 
 			File* fp = FileIO::open(outputPath.c_str(), "wb");
 			if ( !fp )
@@ -2658,6 +2662,7 @@ public:
 			rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
 			d.Accept(writer);
 			fp->write(os.GetString(), sizeof(char), os.GetSize());
+			fp->write("", sizeof(char), 1);
 
 			FileIO::close(fp);
 		}
