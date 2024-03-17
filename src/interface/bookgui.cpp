@@ -598,6 +598,12 @@ void Player::SignGUI_t::openSign(std::string name, Uint32 uid)
 		signWorldCoordX = entity->x;
 		signWorldCoordY = entity->y;
 	}
+
+	// fix for binding left click to open sign
+	{
+		Input::inputs[player.playernum].consumeBinaryToggle("MenuLeftClick");
+		Input::inputs[player.playernum].consumeBindingsSharedWithBinding("MenuLeftClick");
+	}
 }
 
 void Player::SignGUI_t::closeSignGUI()
