@@ -7195,6 +7195,11 @@ void assignActions(map_t* map)
 
 	for ( auto chest : mimics )
 	{
+		if ( chest == vampireQuestChest )
+		{
+			continue;
+		}
+
 		// mimic
 		numMimics++;
 		Entity* entity = newEntity(10, 1, map->entities, map->creatures);
