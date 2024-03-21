@@ -552,40 +552,45 @@ void deinitGame()
 		safePacketsReceivedMap[c].clear();
 	}
 #ifdef SOUND
-#ifdef USE_OPENAL //TODO: OpenAL is now all of the broken...
-#define FMOD_Channel_Stop OPENAL_Channel_Stop
-#define FMOD_Sound_Release OPENAL_Sound_Release
+
+#ifdef USE_FMOD
+#define RELEASE_CHANNEL( x )    (x->stop())
+#define RELEASE_SOUND( x )    (x->release())
+#elif defined USE_OPENAL
+#define RELEASE_CHANNEL( x )    OPENAL_Channel_Stop(x)
+#define RELEASE_SOUND( x )    OPENAL_Sound_Release(x)
 #endif
+
 	if ( !no_sound )
 	{
-#ifdef USE_FMOD
-		music_channel->stop();
-		music_channel2->stop();
-		introductionmusic->release();
-		intermissionmusic->release();
-		minetownmusic->release();
-		splashmusic->release();
-		librarymusic->release();
-		shopmusic->release();
-		herxmusic->release();
-		templemusic->release();
-		endgamemusic->release();
-		escapemusic->release();
-		devilmusic->release();
-		sanctummusic->release();
-		gnomishminesmusic->release();
-		greatcastlemusic->release();
-		sokobanmusic->release();
-		caveslairmusic->release();
-		bramscastlemusic->release();
-		hamletmusic->release();
-		tutorialmusic->release();
-		gameovermusic->release();
-		introstorymusic->release();
+		RELEASE_CHANNEL( music_channel );
+		RELEASE_CHANNEL( music_channel2 );
+
+		RELEASE_SOUND( introductionmusic );
+		RELEASE_SOUND( intermissionmusic );
+		RELEASE_SOUND( minetownmusic );
+		RELEASE_SOUND( splashmusic );
+		RELEASE_SOUND( librarymusic );
+		RELEASE_SOUND( shopmusic );
+		RELEASE_SOUND( herxmusic );
+		RELEASE_SOUND( templemusic );
+		RELEASE_SOUND( endgamemusic );
+		RELEASE_SOUND( escapemusic );
+		RELEASE_SOUND( devilmusic );
+		RELEASE_SOUND( sanctummusic );
+		RELEASE_SOUND( gnomishminesmusic );
+		RELEASE_SOUND( greatcastlemusic );
+		RELEASE_SOUND( sokobanmusic );
+		RELEASE_SOUND( caveslairmusic );
+		RELEASE_SOUND( bramscastlemusic );
+		RELEASE_SOUND( hamletmusic );
+		RELEASE_SOUND( tutorialmusic );
+		RELEASE_SOUND( gameovermusic );
+		RELEASE_SOUND( introstorymusic );
 
 		for ( int c = 0; c < NUMMINESMUSIC; c++ )
 		{
-			minesmusic[c]->release();
+			RELEASE_SOUND( minesmusic[c] );
 		}
 		if ( minesmusic )
 		{
@@ -593,7 +598,7 @@ void deinitGame()
 		}
 		for ( int c = 0; c < NUMSWAMPMUSIC; c++ )
 		{
-			swampmusic[c]->release();
+			RELEASE_SOUND( swampmusic[c] );
 		}
 		if ( swampmusic )
 		{
@@ -601,7 +606,7 @@ void deinitGame()
 		}
 		for ( int c = 0; c < NUMLABYRINTHMUSIC; c++ )
 		{
-			labyrinthmusic[c]->release();
+			RELEASE_SOUND( labyrinthmusic[c] );
 		}
 		if ( labyrinthmusic )
 		{
@@ -609,7 +614,7 @@ void deinitGame()
 		}
 		for ( int c = 0; c < NUMRUINSMUSIC; c++ )
 		{
-			ruinsmusic[c]->release();
+			RELEASE_SOUND( ruinsmusic[c] );
 		}
 		if ( ruinsmusic )
 		{
@@ -617,7 +622,7 @@ void deinitGame()
 		}
 		for ( int c = 0; c < NUMUNDERWORLDMUSIC; c++ )
 		{
-			underworldmusic[c]->release();
+			RELEASE_SOUND( underworldmusic[c] );
 		}
 		if ( underworldmusic )
 		{
@@ -625,7 +630,7 @@ void deinitGame()
 		}
 		for ( int c = 0; c < NUMHELLMUSIC; c++ )
 		{
-			hellmusic[c]->release();
+			RELEASE_SOUND( hellmusic[c] );
 		}
 		if ( hellmusic )
 		{
@@ -633,7 +638,7 @@ void deinitGame()
 		}
 		for ( int c = 0; c < NUMMINOTAURMUSIC; c++ )
 		{
-			minotaurmusic[c]->release();
+			RELEASE_SOUND( minotaurmusic[c] );
 		}
 		if ( minotaurmusic )
 		{
@@ -641,7 +646,7 @@ void deinitGame()
 		}
 		for ( int c = 0; c < NUMCAVESMUSIC; c++ )
 		{
-			cavesmusic[c]->release();
+			RELEASE_SOUND( cavesmusic[c] );
 		}
 		if ( cavesmusic )
 		{
@@ -649,7 +654,7 @@ void deinitGame()
 		}
 		for ( int c = 0; c < NUMCITADELMUSIC; c++ )
 		{
-			citadelmusic[c]->release();
+			RELEASE_SOUND( citadelmusic[c] );
 		}
 		if ( citadelmusic )
 		{
@@ -657,41 +662,14 @@ void deinitGame()
 		}
 		for ( int c = 0; c < NUMINTROMUSIC; c++ )
 		{
-			intromusic[c]->release();
+			RELEASE_SOUND( intromusic[c] );
 		}
 		if ( intromusic )
 		{
 			free(intromusic);
 		}
-#elif defined USE_OPENAL
-	// TODO: unload OpenAL resources
-	OPENAL_Channel_Stop(music_channel);
-	OPENAL_Channel_Stop(music_channel2);
-	OPENAL_Sound_Release(introductionmusic);
-	OPENAL_Sound_Release(intermissionmusic);
-	for ( int c = 0; c < NUMCITADELMUSIC; c++ )
-	{
-		OPENAL_Sound_Release(citadelmusic[c]);
-	}
-	if ( citadelmusic )
-	{
-		free(citadelmusic);
-	}
-	for ( int c = 0; c < NUMINTROMUSIC; c++ )
-	{
-		OPENAL_Sound_Release(intromusic[c]);
-	}
-	if ( intromusic )
-	{
-		free(intromusic);
-	}
-#endif
 	}
 
-#ifdef USE_OPENAL
-#undef FMOD_Channel_Stop
-#undef FMOD_Sound_Release
-#endif
 #endif
 
 	// free items
