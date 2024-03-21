@@ -14,6 +14,8 @@
 
 Uint32 numsounds = 0;
 
+bool levelmusicplaying = false;  // seems to be common to all sound libraries 
+
 #ifdef USE_FMOD
 FMOD::System* fmod_system = nullptr;
 
@@ -55,7 +57,6 @@ FMOD::Sound* hamletmusic = nullptr;
 FMOD::Sound* tutorialmusic = nullptr;
 FMOD::Sound* gameovermusic = nullptr;
 FMOD::Sound* introstorymusic = nullptr;
-bool levelmusicplaying = false;
 
 FMOD::Channel* music_channel = nullptr;
 FMOD::Channel* music_channel2 = nullptr;
@@ -78,4 +79,29 @@ bool sfxUseDynamicAmbientVolume = true;
 bool sfxUseDynamicEnvironmentVolume = true;
 
 void* fmod_extraDriverData = nullptr;
-#endif //USE_FMOD
+
+#elif defined USE_OPENAL
+
+
+OPENAL_BUFFER* introductionmusic = nullptr;
+
+OPENAL_BUFFER** intromusic = nullptr;
+OPENAL_BUFFER** minesmusic = nullptr;
+OPENAL_BUFFER** swampmusic = nullptr;
+OPENAL_BUFFER** labyrinthmusic = nullptr;
+OPENAL_BUFFER** ruinsmusic = nullptr;
+OPENAL_BUFFER** underworldmusic = nullptr;
+OPENAL_BUFFER** hellmusic = nullptr;
+
+OPENAL_SOUND* music_channel = nullptr;
+OPENAL_SOUND* music_channel2 = nullptr;
+OPENAL_SOUND* music_resume = nullptr;
+
+OPENAL_CHANNELGROUP *sound_group = nullptr;
+OPENAL_CHANNELGROUP *soundAmbient_group = nullptr;
+OPENAL_CHANNELGROUP *soundEnvironment_group = nullptr;
+OPENAL_CHANNELGROUP *soundNotification_group = nullptr;
+OPENAL_CHANNELGROUP *music_group = nullptr;
+OPENAL_CHANNELGROUP *music_notification_group = nullptr;
+
+#endif
