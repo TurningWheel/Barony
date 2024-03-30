@@ -395,9 +395,13 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	{
 		mynode = list_AddNodeLast(entlist);
 	}
-	mynode->element = this;
-	mynode->deconstructor = &entityDeconstructor;
-	mynode->size = sizeof(Entity);
+
+	if ( mynode )
+	{
+		mynode->element = this;
+		mynode->deconstructor = &entityDeconstructor;
+		mynode->size = sizeof(Entity);
+	}
 
 	myCreatureListNode = nullptr;
 	if ( creaturelist )
@@ -3427,51 +3431,54 @@ void Entity::handleEffects(Stat* myStats)
 			}
 		}
 	}
-	else if ( ticks % hungerTickRate == 0 )
+	else
 	{
-		//messagePlayer(0, "hungertick %d, curr %d, players: %d", hungerTickRate, myStats->HUNGER, playerCount);
 		if ( myStats->HUNGER > 0 && !playerAutomaton )
 		{
-			myStats->HUNGER--;
-			Sint32 noLongerFull = getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_OVERSATIATED);
-			Sint32 youFeelHungry = getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_HUNGRY);
-			Sint32 youFeelWeak = getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_WEAK);
-			Sint32 youFeelFaint = getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_STARVING);
+			if ( ticks % hungerTickRate == 0 )
+			{
+				//messagePlayer(0, "hungertick %d, curr %d, players: %d", hungerTickRate, myStats->HUNGER, playerCount);
+				myStats->HUNGER--;
+				Sint32 noLongerFull = getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_OVERSATIATED);
+				Sint32 youFeelHungry = getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_HUNGRY);
+				Sint32 youFeelWeak = getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_WEAK);
+				Sint32 youFeelFaint = getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_STARVING);
 
-			if ( myStats->HUNGER == noLongerFull )
-			{
-				if ( !myStats->EFFECTS[EFF_VOMITING] )
+				if ( myStats->HUNGER == noLongerFull )
 				{
-					messagePlayer(player, MESSAGE_STATUS, Language::get(629));
+					if ( !myStats->EFFECTS[EFF_VOMITING] )
+					{
+						messagePlayer(player, MESSAGE_STATUS, Language::get(629));
+					}
+					serverUpdateHunger(player);
 				}
-				serverUpdateHunger(player);
-			}
-			else if ( myStats->HUNGER == youFeelHungry )
-			{
-				if ( !myStats->EFFECTS[EFF_VOMITING] )
+				else if ( myStats->HUNGER == youFeelHungry )
 				{
-					messagePlayer(player, MESSAGE_STATUS, Language::get(630));
-					playSoundPlayer(player, 32, 128);
+					if ( !myStats->EFFECTS[EFF_VOMITING] )
+					{
+						messagePlayer(player, MESSAGE_STATUS, Language::get(630));
+						playSoundPlayer(player, 32, 128);
+					}
+					serverUpdateHunger(player);
 				}
-				serverUpdateHunger(player);
-			}
-			else if ( myStats->HUNGER == youFeelWeak )
-			{
-				if ( !myStats->EFFECTS[EFF_VOMITING] )
+				else if ( myStats->HUNGER == youFeelWeak )
 				{
-					messagePlayer(player, MESSAGE_STATUS, Language::get(631));
-					playSoundPlayer(player, 32, 128);
+					if ( !myStats->EFFECTS[EFF_VOMITING] )
+					{
+						messagePlayer(player, MESSAGE_STATUS, Language::get(631));
+						playSoundPlayer(player, 32, 128);
+					}
+					serverUpdateHunger(player);
 				}
-				serverUpdateHunger(player);
-			}
-			else if ( myStats->HUNGER == youFeelFaint )
-			{
-				if ( !myStats->EFFECTS[EFF_VOMITING] )
+				else if ( myStats->HUNGER == youFeelFaint )
 				{
-					messagePlayer(player, MESSAGE_STATUS, Language::get(632));
-					playSoundPlayer(player, 32, 128);
+					if ( !myStats->EFFECTS[EFF_VOMITING] )
+					{
+						messagePlayer(player, MESSAGE_STATUS, Language::get(632));
+						playSoundPlayer(player, 32, 128);
+					}
+					serverUpdateHunger(player);
 				}
-				serverUpdateHunger(player);
 			}
 		}
 		else
