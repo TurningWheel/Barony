@@ -1,0 +1,69 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Windows-CI_fmod_steam
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: windows-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+
+    # Install the dependencies
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v1.0.2
+
+    # Fetch the dependencies
+    - name: Fetch encrypted dependencies zip
+      env:
+        DEPENDENCIES_ZIP_KEY: ${{ secrets.DEPENDENCIES_ZIP_KEY }}
+        DEPENDENCIES_ZIP_IV: ${{ secrets.DEPENDENCIES_ZIP_IV }}
+      run: |
+        echo "Downloading dependencies!"
+        curl -L https://github.com/TurningWheel/Barony/releases/download/ci_deps_1.2/dependencies_windows_x64.zip.enc --output dependencies_windows_x64.zip.enc
+        openssl aes-256-ctr -d -in dependencies_windows_x64.zip.enc -out dependencies_windows_x64.zip -K $DEPENDENCIES_ZIP_KEY -iv $DEPENDENCIES_ZIP_IV
+        unzip dependencies_windows_x64.zip -d dependencies
+      shell: bash
+
+    # Actually does the build...
+    - name: Generate Visual Studio project via CMake
+      run: |
+        echo "Generating Visual Studio project"
+        mkdir build
+        cd build
+        cmake .. -DSTEAMWORKS_ENABLED=1 -DEOS_ENABLED=0 -DFMOD_ENABLED=ON -DBARONY_WIN32_LIBRARIES="$(pwd)/../dependencies/gamelibs/"
+      shell: bash
+  
+    - name: Compile
+      # Add additional options to the MSBuild command line here (like platform or verbosity level).
+      # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
+      run: msbuild /m build/Barony.sln /property:Configuration=Release
+        
+    - name: Upload Game Build Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        # Artifact name
+        name: barony.exe # optional
+        # A file, directory or wildcard pattern that describes what to upload
+        path: build/Release/barony.exe
+        
+    - name: Upload Editor Build Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        # Artifact name
+        name: editor.exe # optional
+        # A file, directory or wildcard pattern that describes what to upload
+        path: build/Release/editor.exe
