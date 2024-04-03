@@ -347,7 +347,6 @@
 		847E18F729239843003BD4E9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; name = Info.plist; path = Barony/Info.plist; sourceTree = "<group>"; };
 		84B4ACC12B8E8C9200027417 /* playfab.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = playfab.cpp; path = ../../src/playfab.cpp; sourceTree = "<group>"; };
 		84B4ACC32B8E8CA700027417 /* playfab.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = playfab.hpp; path = ../../src/playfab.hpp; sourceTree = "<group>"; };
-		84B4ACC52B8E985700027417 /* libXPlatCpp_iOS.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libXPlatCpp_iOS.a; path = ../../../PlayFab/include/libXPlatCpp_iOS.a; sourceTree = "<group>"; };
 		84B4ACC72B8E98EF00027417 /* libXPlatCpp_MacOS.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libXPlatCpp_MacOS.a; path = ../../../PlayFab/include/libXPlatCpp_MacOS.a; sourceTree = "<group>"; };
 		84B4ACC92B8E991B00027417 /* monster_mimic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = monster_mimic.cpp; path = ../../src/monster_mimic.cpp; sourceTree = "<group>"; };
 		84B4ACCB2B8E998C00027417 /* lib_json.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = lib_json.a; path = ../../../PlayFab/include/lib_json.a; sourceTree = "<group>"; };
@@ -922,7 +921,6 @@
 			children = (
 				84B4ACCB2B8E998C00027417 /* lib_json.a */,
 				84B4ACC72B8E98EF00027417 /* libXPlatCpp_MacOS.a */,
-				84B4ACC52B8E985700027417 /* libXPlatCpp_iOS.a */,
 				847B3BEF296BF890002D8852 /* libpng16.16.dylib */,
 				847B3BF1296BF89F002D8852 /* libphysfs.1.dylib */,
 				843354F12A771D960014D3CC /* Cocoa.framework */,
