@@ -21442,42 +21442,62 @@ void createInventoryTooltipFrame(const int player)
 
 view_t playerPortraitView[MAXPLAYERS];
 view_t monsterPortaitView;
-void drawMonsterPreview(SDL_Rect pos, int fov, real_t offsetyaw, bool dark)
+void drawMonsterPreview(Entity* monster, SDL_Rect pos, real_t offsetyaw, bool dark)
 {
+	if ( !monster ) { return; }
+
+	static int fov = 50;
+	static real_t ang = 0.0;
+	static real_t vang = 0.0;
+	static real_t zoom = 0.0;
+	static real_t z = 0.0;
+	if ( keystatus[SDLK_KP_1] )
+	{
+		vang -= 0.01;
+	}
+	if ( keystatus[SDLK_KP_3] )
+	{
+		vang += 0.01;
+	}
+	if ( keystatus[SDLK_KP_4] )
+	{
+		ang -= 0.01;
+	}
+	if ( keystatus[SDLK_KP_6] )
+	{
+		ang += 0.01;
+	}
+	if ( keystatus[SDLK_KP_8] )
+	{
+		z += 0.5;
+	}
+	if ( keystatus[SDLK_KP_2] )
+	{
+		z -= 0.5;
+	}
+	if ( keystatus[SDLK_KP_7] )
+	{
+		zoom -= 0.01;
+	}
+	if ( keystatus[SDLK_KP_9] )
+	{
+		zoom += 0.01;
+	}
+
+
 	view_t& view = monsterPortaitView;
 	auto ofov = ::fov;
 	::fov = fov;
 
-	Entity* monster = nullptr;
-	for ( node_t* node = map.creatures->first; node; node = node->next )
-	{
-		Entity* m = (Entity*)node->element;
-		if ( m )
-		{
-			if ( auto myStats = m->getStats() )
-			{
-				if ( myStats->getAttribute("monster_portrait") != "" )
-				{
-					monster = m;
-
-					monsterAnimate(monster, myStats, 0.5);
-					break;
-				}
-			}
-		}
-	}
-
-	if ( !monster ) { return; }
-
-	static ConsoleVariable<bool> cvar_char_portrait_static_angle("/char_portrait_static_angle", true);
-	view.x = monster->x / 16.0 + (.92 * cos(offsetyaw
-		+ (*cvar_char_portrait_static_angle ? monster->yaw : 0)));
-	view.y = monster->y / 16.0 + (.92 * sin(offsetyaw
-		+ (*cvar_char_portrait_static_angle ? monster->yaw : 0)));
-	view.z = monster->z * 2;
+	static ConsoleVariable<bool> cvar_char_portrait_static_angle("/compendium_portrait_static_angle", true);
+	view.x = monster->x / 16.0 + ((.92 + zoom) * cos(offsetyaw
+		+ ang + (*cvar_char_portrait_static_angle ? monster->yaw : 0)));
+	view.y = monster->y / 16.0 + ((.92 + zoom) * sin(offsetyaw
+		+ ang + (*cvar_char_portrait_static_angle ? monster->yaw : 0)));
+	view.z = monster->z * 2 + z;
 	view.ang = (offsetyaw - PI
-		+ (*cvar_char_portrait_static_angle ? monster->yaw : 0)); //5 * PI / 4;
-	view.vang = PI / 20;
+		+ (*cvar_char_portrait_static_angle ? monster->yaw : 0) + ang); //5 * PI / 4;
+	view.vang = PI / 20 + vang;
 
 	view.winx = pos.x;
 	// winy modification required due to new frame scaling method d49b1a5f34667432f2a2bd754c0abca3a09227c8

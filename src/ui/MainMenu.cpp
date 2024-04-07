@@ -32542,6 +32542,894 @@ failed:
 	}
 #endif
 
+	static Entity* compendiumMonster = nullptr;
+	static Entity* createCompendiumMonster(Monster creature, real_t x, real_t y)
+	{
+		if ( compendiumMonster )
+		{
+			list_RemoveNode(compendiumMonster->mynode);
+			compendiumMonster = nullptr;
+		}
+
+		Entity* entity = newEntity(-1, 1, map.entities, map.creatures); //Monster entity.
+		compendiumMonster = entity;
+		//Set the monster's variables.
+		entity->sizex = 4;
+		entity->sizey = 4;
+		entity->x = x;
+		entity->y = y;
+		entity->z = 6;
+		entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+		entity->behavior = &actMonster;
+		entity->flags[UPDATENEEDED] = false;
+		entity->flags[INVISIBLE] = true;
+		entity->ranbehavior = true;
+
+		Stat* myStats = nullptr;
+		if ( multiplayer != CLIENT )
+		{
+			// Need to give the entity its list stuff.
+			// create an empty first node for traversal purposes
+			node_t* node = nullptr;
+			node = list_AddNodeFirst(&entity->children);
+			node->element = nullptr;
+			node->deconstructor = &emptyDeconstructor;
+
+			myStats = new Stat(creature + 1000);
+			node = list_AddNodeLast(&entity->children); //ASSUMING THIS ALREADY EXISTS WHEN THIS FUNCTION IS CALLED.
+			node->element = myStats;
+			node->size = sizeof(myStats);
+			node->deconstructor = &statDeconstructor;
+			if ( entity->parent )
+			{
+				myStats->leader_uid = entity->parent;
+				entity->parent = 0;
+			}
+			myStats->type = creature;
+		}
+		else
+		{
+			//Give dummy stats.
+			entity->clientStats = new Stat(creature + 1000);
+		}
+
+		return compendiumMonster;
+	}
+
+	static ConsoleVariable<int> compendiumMonsterSectionPadY("/compendiumMonsterSectionPadY", 32);
+
+	static void refreshCompendiumEntryWorld(std::string name, Frame* parent)
+	{
+		if ( CompendiumEntries.worldObjects.find(name) == CompendiumEntries.worldObjects.end() )
+		{
+			return;
+		}
+		auto& entry = CompendiumEntries.worldObjects[name];
+
+		if ( Frame* page_left = parent->findFrame("page_left") )
+		{
+			if ( auto blurb = page_left->findField("blurb") )
+			{
+				std::string txt = "";
+				for ( auto& str : entry.blurb )
+				{
+					if ( txt != "" ) { txt += '\n'; }
+					txt += str;
+				}
+				blurb->setText(txt.c_str());
+			}
+		}
+
+		if ( Frame* page_right = parent->findFrame("page_right") )
+		{
+			if ( page_right = page_right->findFrame("page_right_inner") )
+			{
+				if ( auto details = page_right->findField("details") )
+				{
+					std::string txt = "";
+					for ( auto& str : entry.details )
+					{
+						if ( txt != "" ) { txt += '\n'; }
+						txt += str;
+					}
+					details->setText(txt.c_str());
+				}
+			}
+		}
+	}
+
+	static void refreshCompendiumEntryCodex(std::string name, Frame* parent)
+	{
+		if ( CompendiumEntries.codex.find(name) == CompendiumEntries.codex.end() )
+		{
+			return;
+		}
+		auto& entry = CompendiumEntries.codex[name];
+
+		if ( Frame* page_left = parent->findFrame("page_left") )
+		{
+			if ( auto blurb = page_left->findField("blurb") )
+			{
+				std::string txt = "";
+				for ( auto& str : entry.blurb )
+				{
+					if ( txt != "" ) { txt += '\n'; }
+					txt += str;
+				}
+				blurb->setText(txt.c_str());
+			}
+		}
+
+		if ( Frame* page_right = parent->findFrame("page_right") )
+		{
+			if ( page_right = page_right->findFrame("page_right_inner") )
+			{
+				if ( auto details = page_right->findField("details") )
+				{
+					std::string txt = "";
+					for ( auto& str : entry.details )
+					{
+						if ( txt != "" ) { txt += '\n'; }
+						txt += str;
+					}
+					details->setText(txt.c_str());
+				}
+			}
+		}
+	}
+
+	static void refreshCompendiumEntryMonster(std::string name, Frame* parent)
+	{
+		if ( CompendiumEntries.monsters.find(name) == CompendiumEntries.monsters.end() )
+		{
+			return;
+		}
+		auto& entry = CompendiumEntries.monsters[name];
+		if ( compendiumMonster )
+		{
+			if ( auto myStats = compendiumMonster->getStats() )
+			{
+				if ( Frame* page_left = parent->findFrame("page_left") )
+				{
+					if ( auto blurb = page_left->findField("blurb") )
+					{
+						std::string txt = "";
+						for ( auto& str : entry.blurb )
+						{
+							if ( txt != "" ) { txt += '\n'; }
+							txt += str;
+						}
+						blurb->setText(txt.c_str());
+					}
+				}
+				if ( Frame* page_right = parent->findFrame("page_right") )
+				{
+					if ( page_right = page_right->findFrame("page_right_inner") )
+					{
+						if ( auto txt = page_right->findField("hp") )
+						{
+							char buf[32] = "-";
+							auto& stat = entry.hp;
+							if ( stat.size() > 1 )
+							{
+								snprintf(buf, sizeof(buf), "HP   %d - %d", stat[0], stat[1]);
+							}
+							else if ( stat.size() == 1 )
+							{
+								snprintf(buf, sizeof(buf), "HP   %d", stat[0]);
+							}
+							txt->setText(buf);
+						}
+						if ( auto txt = page_right->findField("ac") )
+						{
+							char buf[32] = "-";
+							auto& stat = entry.ac;
+							if ( stat.size() > 1 )
+							{
+								snprintf(buf, sizeof(buf), "AC   %d - %d", stat[0], stat[1]);
+							}
+							else if ( stat.size() == 1 )
+							{
+								snprintf(buf, sizeof(buf), "AC   %d", stat[0]);
+							}
+							txt->setText(buf);
+						}
+						if ( auto txt = page_right->findField("spd") )
+						{
+							char buf[32] = "-";
+							auto& stat = entry.spd;
+							if ( stat.size() > 1 )
+							{
+								snprintf(buf, sizeof(buf), "SPD   %d - %d", stat[0], stat[1]);
+							}
+							else if ( stat.size() == 1 )
+							{
+								snprintf(buf, sizeof(buf), "SPD   %d", stat[0]);
+							}
+							txt->setText(buf);
+						}
+						if ( auto txt = page_right->findField("atk") )
+						{
+							char buf[32] = "-";
+							auto& stat = entry.atk;
+							if ( stat.size() > 1 )
+							{
+								snprintf(buf, sizeof(buf), "ATK   %d - %d", stat[0], stat[1]);
+							}
+							else if ( stat.size() == 1 )
+							{
+								snprintf(buf, sizeof(buf), "ATK   %d", stat[0]);
+							}
+							txt->setText(buf);
+						}
+						if ( auto txt = page_right->findField("rangeatk") )
+						{
+							char buf[32] = "-";
+							auto& stat = entry.rangeatk;
+							if ( stat.size() > 1 )
+							{
+								snprintf(buf, sizeof(buf), "ATK   %d - %d", stat[0], stat[1]);
+							}
+							else if ( stat.size() == 1 )
+							{
+								snprintf(buf, sizeof(buf), "ATK   %d", stat[0]);
+							}
+							txt->setText(buf);
+						}
+						if ( auto txt = page_right->findField("pwr") )
+						{
+							char buf[32] = "-";
+							auto& stat = entry.pwr;
+							if ( stat.size() > 1 )
+							{
+								snprintf(buf, sizeof(buf), "PWR   %d - %d", stat[0], stat[1]);
+							}
+							else if ( stat.size() == 1 )
+							{
+								snprintf(buf, sizeof(buf), "PWR   %d", stat[0]);
+							}
+							txt->setText(buf);
+						}
+
+						const char* res_neutral = "*images/ui/Main Menus/AdventureArchives/res_neutral.png";
+						const char* res_hi1 = "*images/ui/Main Menus/AdventureArchives/res_hi1.png";
+						const char* res_hi2 = "*images/ui/Main Menus/AdventureArchives/res_hi2.png";
+						const char* res_lo1 = "*images/ui/Main Menus/AdventureArchives/res_lo1.png";
+						const char* res_lo2 = "*images/ui/Main Menus/AdventureArchives/res_lo2.png";
+
+						std::vector<std::pair<std::pair<const char*, const char*>, int>> res_strs = {
+							{{"res_txt_unarmed", "res_unarmed"}, DAMAGE_TABLE_UNARMED},
+							{{"res_txt_sword", "res_sword"}, DAMAGE_TABLE_SWORD},
+							{{"res_txt_axe", "res_axe"}, DAMAGE_TABLE_AXE},
+							{{"res_txt_polearm", "res_polearm"}, DAMAGE_TABLE_POLEARM},
+							{{"res_txt_mace", "res_mace"}, DAMAGE_TABLE_MACE},
+							{{"res_txt_ranged", "res_ranged"}, DAMAGE_TABLE_RANGED},
+							{{"res_txt_magic", "res_magic"}, DAMAGE_TABLE_MAGIC}
+						};
+
+						for ( auto& pair : res_strs )
+						{
+							if ( auto field = page_right->findField(pair.first.first) )
+							{
+								char buf[32] = "";
+								if ( false )
+								{
+									real_t val = (100.0 * Entity::getDamageTableMultiplier(nullptr, *myStats, (DamageTableType)pair.second));
+									if ( val > 100.01 )
+									{
+										field->setColor(hudColors.characterSheetGreen);
+										snprintf(buf, sizeof(buf), "%.f%%", val);
+										field->setText(buf);
+									}
+									else if ( val < 99.99 )
+									{
+										field->setColor(hudColors.characterSheetRed);
+										snprintf(buf, sizeof(buf), "%.f%%", val);
+										field->setText(buf);
+									}
+									else
+									{
+										field->setColor(hudColors.characterSheetNeutral);
+										field->setText("100%");
+									}
+								}
+								else
+								{
+									real_t val = (100.0 * Entity::getDamageTableMultiplier(nullptr, *myStats, (DamageTableType)pair.second));
+									if ( val > 100.01 )
+									{
+										field->setColor(hudColors.characterSheetGreen);
+										snprintf(buf, sizeof(buf), "%+.f%%", val - 100.0);
+										field->setText(buf);
+									}
+									else if ( val < 99.99 )
+									{
+										field->setColor(hudColors.characterSheetRed);
+										snprintf(buf, sizeof(buf), "%+.f%%", val - 100.0);
+										field->setText(buf);
+									}
+									else
+									{
+										field->setColor(hudColors.characterSheetNeutral);
+										field->setText("-");
+									}
+								}
+							}
+							if ( auto img = page_right->findImage(pair.first.second) )
+							{
+								switch ( entry.resistances[pair.second] )
+								{
+								case -1:
+									img->path = res_hi1;
+									break;
+								case -2:
+									img->path = res_hi2;
+									break;
+								case 1:
+									img->path = res_lo1;
+									break;
+								case 2:
+									img->path = res_lo2;
+									break;
+								default:
+									img->path = res_neutral;
+									break;
+								}
+							}
+						}
+
+						if ( auto abilities = page_right->findField("abilities") )
+						{
+							std::string txt = "";
+							for ( auto& str : entry.abilities )
+							{
+								if ( txt != "" ) { txt += '\n'; }
+								txt += str;
+							}
+							if ( txt == "" )
+							{
+								txt = "-";
+							}
+							else
+							{
+								size_t index = 0;
+								for ( char& c : txt )
+								{
+									if ( c == '-' )
+									{
+										if ( index == 0 || txt[index - 1] == '\n' )
+										{
+											c = '\x1E';
+										}
+									}
+									++index;
+								}
+							}
+							abilities->setText(txt.c_str());
+							const int numAbilitiesLines = abilities->getNumTextLines();
+							SDL_Rect abilityPos = abilities->getSize();
+
+							auto actualFont = Font::get(abilities->getFont());
+							if ( actualFont )
+							{
+								abilityPos.h = std::max(24, 24 + (numAbilitiesLines - 1) * actualFont->height(true));
+								abilities->setSize(abilityPos);
+							}
+
+							if ( auto inventory = page_right->findField("inventory txt") )
+							{
+								SDL_Rect pos = inventory->getSize();
+								pos.y = abilityPos.y + abilityPos.h + *compendiumMonsterSectionPadY - 24;
+								inventory->setSize(pos);
+
+								if ( auto inv = page_right->findField("inventory") )
+								{
+									std::string txt = "";
+									for ( auto& str : entry.inventory )
+									{
+										if ( txt != "" ) { txt += '\n'; }
+										txt += str;
+									}
+									if ( txt == "" )
+									{
+										txt = "-";
+									}
+									else
+									{
+										size_t index = 0;
+										for ( char& c : txt )
+										{
+											if ( c == '-' )
+											{
+												if ( index == 0 || txt[index - 1] == '\n' )
+												{
+													c = '\x1E';
+												}
+											}
+											++index;
+										}
+									}
+									inv->setText(txt.c_str());
+									const int numInvLines = inv->getNumTextLines();
+									SDL_Rect invPos = inv->getSize();
+									invPos.y = pos.y + 26;
+									if ( actualFont )
+									{
+										invPos.h = std::max(24, 24 + (numInvLines - 1) * actualFont->height(true));
+									}
+									inv->setSize(invPos);
+
+									SDL_Rect actualPos = page_right->getActualSize();
+									actualPos.h = std::max(412, invPos.y + invPos.h);
+									page_right->setActualSize(actualPos);
+								}
+							}
+						}
+
+					}
+				}
+			}
+		}
+	}
+
+	static std::vector<std::string> compendiumCategories = {
+		"monsters",
+		"items",
+		"magic",
+		"world",
+		"codex"
+	};
+	static std::string compendium_current = "monsters";
+	static std::string compendium_contents_current = "";
+	constexpr auto compendiumContentsDefaultColor = makeColor(159, 145, 127, 255);
+	constexpr auto compendiumContentsSelectedColor = makeColor(221, 210, 84, 255);
+
+	static auto contents_activate_fn = [](Frame::entry_t& entry)
+	{
+		assert(main_menu_frame);
+		if ( !main_menu_frame ) { return; }
+		auto compendiumFrame = main_menu_frame->findFrame("compendium");
+		if ( !compendiumFrame ) { return; }
+
+		if ( auto contentsFrame = compendiumFrame->findFrame("contents") )
+		{
+			for ( auto& e : contentsFrame->getEntries() )
+			{
+				e->color = compendiumContentsDefaultColor;
+			}
+		}
+
+		entry.color = compendiumContentsSelectedColor;
+
+		if ( auto page_right = compendiumFrame->findFrame("page_right") )
+		{
+			if ( auto slider = page_right->findSlider("right_slider") )
+			{
+				slider->setValue(0);
+				slider->getCallback()(*slider);
+			}
+		}
+
+		auto* entries = compendium_current == "monsters" ? &Compendium_t::CompendiumMonsters_t::contents
+			: (compendium_current == "world" ? &Compendium_t::CompendiumWorld_t::contents 
+				: (compendium_current == "codex" ? &Compendium_t::CompendiumCodex_t::contents : nullptr));
+
+		std::string content = "";
+		if ( entries )
+		{
+			auto id = (intptr_t)entry.data;
+			if ( id >= entries->size() )
+			{
+				return;
+			}
+			auto& entry = (*entries)[id];
+			compendium_contents_current = entry.first;
+			if ( auto page_left_title = compendiumFrame->findField("page_left_title") )
+			{
+				page_left_title->setText(entry.first.c_str());
+			}
+			content = entry.second;
+		}
+
+		if ( compendium_current == "codex" )
+		{
+			refreshCompendiumEntryCodex(content, compendiumFrame);
+		}
+		else if ( compendium_current == "world" )
+		{
+			refreshCompendiumEntryWorld(content, compendiumFrame);
+		}
+		else if ( compendium_current == "monsters" )
+		{
+			if ( auto monster = createCompendiumMonster((Monster)CompendiumEntries.monsters[content].monsterType, 8, 8) )
+			{
+				if ( auto myStats = monster->getStats() )
+				{
+					myStats->setAttribute("monster_portrait", "true");
+				}
+				refreshCompendiumEntryMonster(content, compendiumFrame);
+			}
+		}
+	};
+
+	static void compendiumPopulateContents(Frame* frame)
+	{
+		if ( auto contents = frame->findFrame("contents") )
+		{
+			auto* entries = compendium_current == "monsters" ? &Compendium_t::CompendiumMonsters_t::contents
+				: (compendium_current == "world" ? &Compendium_t::CompendiumWorld_t::contents
+					: (compendium_current == "codex" ? &Compendium_t::CompendiumCodex_t::contents : nullptr));
+
+			auto toRemove = contents->getEntries();
+			for ( auto r : toRemove )
+			{
+				contents->removeEntry(r->name.c_str(), false);
+			}
+
+			if ( entries )
+			{
+				for ( int i = 0; i < entries->size(); ++i )
+				{
+					auto& data = (*entries)[i];
+					auto entry = contents->addEntry(data.second.c_str(), true);
+					entry->click = contents_activate_fn;
+					entry->ctrlClick = contents_activate_fn;
+					//entry->highlight = selection_fn;
+					//entry->selected = selection_fn;
+					entry->color = compendiumContentsDefaultColor;
+					entry->text = data.first;
+					entry->clickable = true;
+					memcpy(&entry->data, &i, sizeof(i));
+				}
+				contents->setSelection(0);
+				contents->scrollToSelection(true);
+				contents->activateSelection();
+			}
+		}
+	}
+
+	static void compendiumPopulatePageRight(Frame* page_right)
+	{
+		if ( !page_right ) { return; }
+
+		Frame* page_right_inner = page_right->findFrame("page_right_inner");
+		if ( !page_right_inner )
+		{
+			page_right_inner = page_right->addFrame("page_right_inner");
+			page_right_inner->setSize(SDL_Rect{ 10, 28, 362, 412 });
+			page_right_inner->setActualSize(SDL_Rect{ 0, 0, 362, 412 });
+		}
+
+		int padx = 10;
+		int pady = 0;
+
+		constexpr Uint32 statValColor = makeColorRGB(159, 145, 127);
+		constexpr Uint32 detailsValColor = makeColorRGB(135, 94, 45);
+
+		if ( compendium_current == "codex" )
+		{
+			auto charTxt = page_right_inner->addField("tips txt", 64);
+			charTxt->setFont(menu_option_font);
+			charTxt->setText("USAGE TIPS");
+			charTxt->setHJustify(Field::justify_t::LEFT);
+			charTxt->setVJustify(Field::justify_t::TOP);
+			charTxt->setSize(SDL_Rect{ padx, pady, page_right_inner->getSize().w - padx - 26, 24 });
+			charTxt->setColor(makeColor(198, 190, 179, 255));
+
+			int statx = padx + 4;
+			int staty = pady + 18 + 9;
+			auto statsTxt = page_right_inner->addField("details", 1024);
+			statsTxt->setFont(smallfont_outline);
+			statsTxt->setText("");
+			statsTxt->setHJustify(Field::justify_t::LEFT);
+			statsTxt->setVJustify(Field::justify_t::TOP);
+			statsTxt->setSize(SDL_Rect{ statx, staty, page_right_inner->getSize().w - statx - 26, 400 });
+			statsTxt->setColor(detailsValColor);
+		}
+		else if ( compendium_current == "world" )
+		{
+			auto charTxt = page_right_inner->addField("tips txt", 1024);
+			charTxt->setFont(menu_option_font);
+			charTxt->setText("DETAILS");
+			charTxt->setHJustify(Field::justify_t::LEFT);
+			charTxt->setVJustify(Field::justify_t::TOP);
+			charTxt->setSize(SDL_Rect{ padx, pady, page_right_inner->getSize().w - padx - 26, 24 });
+			charTxt->setColor(makeColor(198, 190, 179, 255));
+
+			int statx = padx + 4;
+			int staty = pady + 18 + 9;
+			auto statsTxt = page_right_inner->addField("details", 64);
+			statsTxt->setFont(smallfont_outline);
+			statsTxt->setText("");
+			statsTxt->setHJustify(Field::justify_t::LEFT);
+			statsTxt->setVJustify(Field::justify_t::TOP);
+			statsTxt->setSize(SDL_Rect{ statx, staty, page_right_inner->getSize().w - statx - 26, 400 });
+			statsTxt->setColor(detailsValColor);
+		}
+		else if ( compendium_current == "monsters" )
+		{
+			{
+				auto charTxt = page_right_inner->addField("characteristics txt", 64);
+				charTxt->setFont(menu_option_font);
+				charTxt->setText("CHARACTERISTICS");
+				charTxt->setHJustify(Field::justify_t::LEFT);
+				charTxt->setVJustify(Field::justify_t::TOP);
+				charTxt->setSize(SDL_Rect{ padx, pady, 300, 24 });
+				charTxt->setColor(makeColor(198, 190, 179, 255));
+
+				padx += 4;
+				pady += 23;
+
+				Field* statsTxt = page_right_inner->addField("stats txt", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("STATS");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ padx, pady, 300, 24 });
+				statsTxt->setColor(makeColor(135, 94, 45, 255));
+
+				int statx = padx + 30;
+				int staty = pady + 26;
+				statsTxt = page_right_inner->addField("hp", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ statx - 18 - 8, staty + 11 - 8, 16, 16 },
+					0xFFFFFFFF, "*images/ui/Inventory/potions/healing.png");
+
+				staty += 28;
+				statsTxt = page_right_inner->addField("ac", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ statx - 18 - 12, staty + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/Charsheet/HUD_CharSheet_AC_00.png");
+
+				staty += 28;
+				statsTxt = page_right_inner->addField("spd", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ statx - 18 - 12, staty + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/Charsheet/HUD_CharSheet_DEX_00.png");
+
+				statx = padx + 30 + 166;
+				staty = pady + 26;
+				statsTxt = page_right_inner->addField("atk", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ statx - 18 - 12, staty + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/Charsheet/HUD_CharSheet_ATT_00.png");
+
+				staty += 28;
+				statsTxt = page_right_inner->addField("rangeatk", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ statx - 18 - 12, staty + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Ranged01.png");
+
+				staty += 28;
+				statsTxt = page_right_inner->addField("pwr", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ statx - 18 - 12, staty + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/Charsheet/HUD_CharSheet_SPWR_00.png");
+
+				pady = staty + *compendiumMonsterSectionPadY;
+			}
+
+
+			{
+				Field* resTxt = page_right_inner->addField("res txt", 64);
+				resTxt->setFont(smallfont_outline);
+				resTxt->setText("WEAKNESSES");
+				resTxt->setHJustify(Field::justify_t::LEFT);
+				resTxt->setVJustify(Field::justify_t::TOP);
+				resTxt->setSize(SDL_Rect{ padx, pady, 300, 24 });
+				resTxt->setColor(makeColor(135, 94, 45, 255));
+
+				int resx = padx + 30;
+				int resy = pady + 26;
+
+				const int padIconx = -6;
+				const int padIcony = -2;
+				const int padTextx = 0;
+				const int padTexty = 0;
+				const bool useIcons = false;
+				Frame::image_t* icon = page_right_inner->addImage(SDL_Rect{ resx + padIconx, resy + padIcony, 24, 24 },
+					0xFFFFFFFF, "*images/ui/Main Menus/AdventureArchives/res_neutral.png", "res_unarmed");
+				icon->disabled = !useIcons;
+
+				resTxt = page_right_inner->addField("res_txt_unarmed", 64);
+				resTxt->setFont(smallfont_outline);
+				resTxt->setText("");
+				resTxt->setHJustify(Field::justify_t::LEFT);
+				resTxt->setVJustify(Field::justify_t::TOP);
+				resTxt->setSize(SDL_Rect{ resx + padTextx, resy + padTexty, 132, 24 });
+				resTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ resx - 18 - 12, resy + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Unarmed01.png", "res_unarmed_img");
+
+				resy += 40;
+				icon = page_right_inner->addImage(SDL_Rect{ resx + padIconx, resy + padIcony, 24, 24 },
+					0xFFFFFFFF, "*images/ui/Main Menus/AdventureArchives/res_neutral.png", "res_ranged");
+				icon->disabled = !useIcons;
+
+				resTxt = page_right_inner->addField("res_txt_ranged", 64);
+				resTxt->setFont(smallfont_outline);
+				resTxt->setText("");
+				resTxt->setHJustify(Field::justify_t::LEFT);
+				resTxt->setVJustify(Field::justify_t::TOP);
+				resTxt->setSize(SDL_Rect{ resx + padTextx, resy + padTexty, 132, 24 });
+				resTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ resx - 18 - 12, resy + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Ranged01.png", "res_ranged_img");
+
+				resy = pady + 26;
+				resx += 84;
+
+				icon = page_right_inner->addImage(SDL_Rect{ resx + padIconx, resy + padIcony, 24, 24 },
+					0xFFFFFFFF, "*images/ui/Main Menus/AdventureArchives/res_neutral.png", "res_sword");
+				icon->disabled = !useIcons;
+
+				resTxt = page_right_inner->addField("res_txt_sword", 64);
+				resTxt->setFont(smallfont_outline);
+				resTxt->setText("");
+				resTxt->setHJustify(Field::justify_t::LEFT);
+				resTxt->setVJustify(Field::justify_t::TOP);
+				resTxt->setSize(SDL_Rect{ resx + padTextx, resy + padTexty, 132, 24 });
+				resTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ resx - 18 - 12, resy + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Swords01.png", "res_sword_img");
+
+				resy += 40;
+				icon = page_right_inner->addImage(SDL_Rect{ resx + padIconx, resy + padIcony, 24, 24 },
+					0xFFFFFFFF, "*images/ui/Main Menus/AdventureArchives/res_neutral.png", "res_mace");
+				icon->disabled = !useIcons;
+
+				resTxt = page_right_inner->addField("res_txt_mace", 64);
+				resTxt->setFont(smallfont_outline);
+				resTxt->setText("");
+				resTxt->setHJustify(Field::justify_t::LEFT);
+				resTxt->setVJustify(Field::justify_t::TOP);
+				resTxt->setSize(SDL_Rect{ resx + padTextx, resy + padTexty, 132, 24 });
+				resTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ resx - 18 - 12, resy + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Maces01.png", "res_mace_img");
+
+				resy = pady + 26;
+				resx += 82;
+
+				icon = page_right_inner->addImage(SDL_Rect{ resx + padIconx, resy + padIcony, 24, 24 },
+					0xFFFFFFFF, "*images/ui/Main Menus/AdventureArchives/res_neutral.png", "res_polearm");
+				icon->disabled = !useIcons;
+
+				resTxt = page_right_inner->addField("res_txt_polearm", 64);
+				resTxt->setFont(smallfont_outline);
+				resTxt->setText("");
+				resTxt->setHJustify(Field::justify_t::LEFT);
+				resTxt->setVJustify(Field::justify_t::TOP);
+				resTxt->setSize(SDL_Rect{ resx + padTextx, resy + padTexty, 132, 24 });
+				resTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ resx - 18 - 12, resy + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Polearms01.png", "res_polearm_img");
+
+				resy += 40;
+				icon = page_right_inner->addImage(SDL_Rect{ resx + padIconx, resy + padIcony, 24, 24 },
+					0xFFFFFFFF, "*images/ui/Main Menus/AdventureArchives/res_neutral.png", "res_axe");
+				icon->disabled = !useIcons;
+
+				resTxt = page_right_inner->addField("res_txt_axe", 64);
+				resTxt->setFont(smallfont_outline);
+				resTxt->setText("");
+				resTxt->setHJustify(Field::justify_t::LEFT);
+				resTxt->setVJustify(Field::justify_t::TOP);
+				resTxt->setSize(SDL_Rect{ resx + padTextx, resy + padTexty, 132, 24 });
+				resTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ resx - 18 - 12, resy + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Axes01.png", "res_axe_img");
+
+				resy = pady + 26;
+				resx += 84;
+
+				icon = page_right_inner->addImage(SDL_Rect{ resx + padIconx, resy + padIcony, 24, 24 },
+					0xFFFFFFFF, "*images/ui/Main Menus/AdventureArchives/res_neutral.png", "res_magic");
+				icon->disabled = !useIcons;
+
+				resTxt = page_right_inner->addField("res_txt_magic", 64);
+				resTxt->setFont(smallfont_outline);
+				resTxt->setText("");
+				resTxt->setHJustify(Field::justify_t::LEFT);
+				resTxt->setVJustify(Field::justify_t::TOP);
+				resTxt->setSize(SDL_Rect{ resx + padTextx, resy + padTexty, 132, 24 });
+				resTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ resx - 18 - 12, resy + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Magic01.png", "res_magic_img");
+
+				resy += 40;
+				pady = resy + *compendiumMonsterSectionPadY;
+			}
+
+			{
+				Field* abilitiesTxt = page_right_inner->addField("abilities txt", 64);
+				abilitiesTxt->setFont(smallfont_outline);
+				abilitiesTxt->setText("ABILITIES");
+				abilitiesTxt->setHJustify(Field::justify_t::LEFT);
+				abilitiesTxt->setVJustify(Field::justify_t::TOP);
+				abilitiesTxt->setSize(SDL_Rect{ padx, pady, 300, 24 });
+				abilitiesTxt->setColor(makeColor(135, 94, 45, 255));
+
+				int abilityx = padx + 8;
+				int abilityy = pady + 26;
+
+				abilitiesTxt = page_right_inner->addField("abilities", 1024);
+				abilitiesTxt->setFont(smallfont_outline);
+				abilitiesTxt->setText("");
+				abilitiesTxt->setHJustify(Field::justify_t::LEFT);
+				abilitiesTxt->setVJustify(Field::justify_t::TOP);
+				abilitiesTxt->setSize(SDL_Rect{ abilityx, abilityy, 300, 128 });
+				abilitiesTxt->setColor(statValColor);
+
+				pady = abilityy + *compendiumMonsterSectionPadY;
+			}
+
+			{
+				Field* invTxt = page_right_inner->addField("inventory txt", 64);
+				invTxt->setFont(smallfont_outline);
+				invTxt->setText("INVENTORY");
+				invTxt->setHJustify(Field::justify_t::LEFT);
+				invTxt->setVJustify(Field::justify_t::TOP);
+				invTxt->setSize(SDL_Rect{ padx, pady, 300, 24 });
+				invTxt->setColor(makeColor(135, 94, 45, 255));
+
+				int invx = padx + 8;
+				int invy = pady + 26;
+
+				invTxt = page_right_inner->addField("inventory", 1024);
+				invTxt->setFont(smallfont_outline);
+				invTxt->setText("");
+				invTxt->setHJustify(Field::justify_t::LEFT);
+				invTxt->setVJustify(Field::justify_t::TOP);
+				invTxt->setSize(SDL_Rect{ invx, invy, 300, 128 });
+				invTxt->setColor(statValColor);
+			}
+		}
+	}
+
 	static void openCompendium() {
 		auto dimmer = main_menu_frame->addFrame("dimmer");
 		dimmer->setSize(SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY });
@@ -32549,35 +33437,349 @@ failed:
 		dimmer->setColor(makeColor(0, 0, 0, 63));
 		dimmer->setBorder(0);
 
+		static ConsoleVariable<int> cvar_compendium_book_x("/compendium_book_x", 119);
+
 		auto window = dimmer->addFrame("compendium");
-		window->setSize(SDL_Rect{
-			(Frame::virtualScreenX - 1222) / 2,
-			(Frame::virtualScreenY - 598) / 2,
-			1222,
-			598 });
+		window->setSize(dimmer->getSize());
 		window->setColor(0);
 		window->setBorder(0);
 
 		auto background = window->addImage(
-			SDL_Rect{ 0, 0, window->getSize().w, window->getSize().h },
+			SDL_Rect{ 
+			*cvar_compendium_book_x + (Frame::virtualScreenX - 958) / 2,
+			(Frame::virtualScreenY - 598) / 2,
+			958,
+			598 },
 			0xffffffff,
-			"*images/ui/Main Menus/AdventureArchives/A_Window_BG_00.png",
+			"*images/ui/Main Menus/AdventureArchives/C_Window_BG_01.png",
 			"background"
 		);
 
-		auto model_viewer = window->addFrame("model_viewer");
-		model_viewer->setSize(SDL_Rect{284, 32, 406, 406});
-		model_viewer->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
-			drawMonsterPreview(pos, 50, 0.0);
+		{
+			Button* tab = window->addButton(compendiumCategories[0].c_str());
+			tab->setSize(SDL_Rect{ background->pos.x + 86, background->pos.y + background->pos.h - 30, 96, 66 });
+			tab->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_Denizens_00.png");
+			tab->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_DenizensHi_00.png");
+			tab->setCallback([](Button& button) {
+				compendium_current = "monsters";
+
+				if ( auto frame = static_cast<Frame*>(button.getParent()) )
+				{
+					if ( auto page_right = frame->findFrame("page_right") )
+					{
+						if ( auto page_right_inner = page_right->findFrame("page_right_inner") )
+						{
+							page_right_inner->removeSelf();
+						}
+						compendiumPopulatePageRight(page_right);
+					}
+					compendiumPopulateContents(frame);
+				}
+				});
+
+			tab = window->addButton(compendiumCategories[1].c_str());
+			tab->setSize(SDL_Rect{ background->pos.x + 190, background->pos.y + background->pos.h - 30, 88, 76 });
+			tab->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_Items_00.png");
+			tab->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_ItemsHi_00.png");
+			tab->setCallback([](Button& button) {
+				compendium_current = "items";
+				});
+
+			tab = window->addButton(compendiumCategories[2].c_str());
+			tab->setSize(SDL_Rect{ background->pos.x + 286, background->pos.y + background->pos.h - 30, 96, 64 });
+			tab->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_Magic_00.png");
+			tab->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_MagicHi_00.png");
+			tab->setCallback([](Button& button) {
+				compendium_current = "magic";
+				});
+
+			tab = window->addButton(compendiumCategories[3].c_str());
+			tab->setSize(SDL_Rect{ background->pos.x + 580, background->pos.y + background->pos.h - 30, 78, 80 });
+			tab->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_World_00.png");
+			tab->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_WorldHi_00.png");
+			tab->setCallback([](Button& button) {
+				compendium_current = "world";
+				if ( auto frame = static_cast<Frame*>(button.getParent()) )
+				{
+					if ( auto page_right = frame->findFrame("page_right") )
+					{
+						if ( auto page_right_inner = page_right->findFrame("page_right_inner") )
+						{
+							page_right_inner->removeSelf();
+						}
+						compendiumPopulatePageRight(page_right);
+					}
+					compendiumPopulateContents(frame);
+				}
+				});
+
+			tab = window->addButton(compendiumCategories[4].c_str());
+			tab->setSize(SDL_Rect{ background->pos.x + 672, background->pos.y + background->pos.h - 30, 84, 80 });
+			tab->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_Codex_00.png");
+			tab->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_CodexHi_00.png");
+			tab->setCallback([](Button& button) {
+				compendium_current = "codex";
+				if ( auto frame = static_cast<Frame*>(button.getParent()) )
+				{
+					if ( auto page_right = frame->findFrame("page_right") )
+					{
+						if ( auto page_right_inner = page_right->findFrame("page_right_inner") )
+						{
+							page_right_inner->removeSelf();
+						}
+						compendiumPopulatePageRight(page_right);
+					}
+					compendiumPopulateContents(frame);
+				}
+				});
+		}
+
+		auto navigation = window->addFrame("nav");
+		navigation->setSize(SDL_Rect{ background->pos.x - 244 - 2, background->pos.y + 50, 244, 528 });
+		auto nav_bg = navigation->addImage(
+			SDL_Rect{ 0, 0, 244, 528 },
+			0xFFFFFFFF,
+			"*images/ui/Main Menus/AdventureArchives/C_Contents_Panel_00.png",
+			"nav_bg"
+		);
+
+		auto nav_title = navigation->addField("nav_title", 128);
+		nav_title->setFont("fonts/kongtext.ttf#16#0");
+		nav_title->setText("CONTENTS");
+		nav_title->setHJustify(Field::justify_t::CENTER);
+		nav_title->setVJustify(Field::justify_t::TOP);
+		nav_title->setSize(SDL_Rect{ 0, 12, navigation->getSize().w, 28 });
+		nav_title->setColor(makeColor(42, 22, 18, 255));
+
+		auto nav_contents_bg = navigation->addImage(
+			SDL_Rect{8, 32, 228, 464},
+			0xFFFFFFFF,
+			"*images/ui/Main Menus/AdventureArchives/C_Contents_Frame_00.png",
+			"nav_contents_bg"
+		);
+
+		auto contents = navigation->addFrame("contents");
+		contents->setSize(SDL_Rect{ nav_contents_bg->pos.x + 10, nav_contents_bg->pos.y + 14, 184, 436 });
+		contents->setActualSize(SDL_Rect{ 0, 0, contents->getSize().w, contents->getSize().h });
+		contents->setEntrySize(18);
+		contents->setFont(smallfont_no_outline);
+		contents->setSelectedEntryColor(makeColor(71, 41, 27, 255));
+		contents->setListOffset(SDL_Rect{ 32, 1, 0, 0 });
+		contents->setScrollWithLeftControls(false);
+		contents->setClickable(true);
+		contents->setSelectorOffset(SDL_Rect{ -10, -14, 28, 28 });
+		contents->setTickCallback([](Widget& widget) {
+			auto frame = static_cast<Frame*>(&widget);
+			if ( frame->isSelected() )
+			{
+				frame->setAllowScrollBinds(true);
+			}
+			else
+			{
+				frame->setAllowScrollBinds(false);
+			}
 		});
 
-		if ( auto monster = summonMonsterNoSmoke(SKELETON, 8, 8, true) )
-		{
-			if ( auto myStats = monster->getStats() )
+		auto page_left = window->addFrame("page_left");
+		page_left->setSize(SDL_Rect{ background->pos.x + 460 - 22 - 382, background->pos.y + 46, 382, 472 });
+		auto left_top_img = page_left->addImage(SDL_Rect{ 0, 0, 382, 330 }, 0xFFFFFFFF,
+			"*images/ui/Main Menus/AdventureArchives/C_Subject_Frame_00.png", "page left top img");
+		auto blurbImg = page_left->addImage(SDL_Rect{ left_top_img->pos.x, left_top_img->pos.y + left_top_img->pos.h + 12, 382, 122 }, 0xFFFFFFFF,
+			"*images/ui/Main Menus/AdventureArchives/C_Lore_Frame_00.png", "page left bottom img");
+
+		auto page_left_title = window->addField("page_left_title", 128);
+		page_left_title->setFont("fonts/kongtext.ttf#16#0");
+		page_left_title->setText("");
+		page_left_title->setHJustify(Field::justify_t::CENTER);
+		page_left_title->setVJustify(Field::justify_t::TOP);
+		page_left_title->setSize(SDL_Rect{ page_left->getSize().x, page_left->getSize().y - 26, page_left->getSize().w, 28});
+		page_left_title->setColor(makeColor(42, 22, 18, 255));
+
+		auto blurb = page_left->addField("blurb", 1024);
+		blurb->setFont(smallfont_no_outline);
+		blurb->setHJustify(Field::justify_t::CENTER);
+		blurb->setVJustify(Field::justify_t::CENTER);
+		blurb->setSize(SDL_Rect{ blurbImg->pos.x + 8, blurbImg->pos.y + 8, blurbImg->pos.w - 16, blurbImg->pos.h - 16});
+		blurb->setColor(makeColor(42, 22, 18, 255));
+		blurb->setText("");
+
+		auto model_viewer = page_left->addFrame("model_viewer");
+		SDL_Rect modelPos = left_top_img->pos;
+		modelPos.x += 8;
+		modelPos.y += 8;
+		modelPos.w -= 16;
+		modelPos.h -= 16;
+		model_viewer->setSize(modelPos);
+		model_viewer->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+			if ( compendium_current == "monsters" )
 			{
-				myStats->setAttribute("monster_portrait", "true");
+				drawMonsterPreview(compendiumMonster, pos, 0.0);
 			}
-		}
+		});
+		model_viewer->setTickCallback([](Widget& widget) {
+			/*if ( ticks % TICKS_PER_SECOND == 0 )
+			{
+				compendiumMonster->attack(compendiumMonster->getAttackPose(), 0, nullptr);
+			}*/
+			if ( ticks % TICKS_PER_SECOND/2 == 0 )
+			{
+				if ( compendium_current == "monsters" )
+				{
+					CompendiumEntries.readMonstersFromFile();
+					refreshCompendiumEntryMonster(Compendium_t::CompendiumMonsters_t::contentsMap[compendium_contents_current], main_menu_frame->findFrame("compendium"));
+				}
+				else if ( compendium_current == "world" )
+				{
+					CompendiumEntries.readWorldFromFile();
+					refreshCompendiumEntryWorld(Compendium_t::CompendiumWorld_t::contentsMap[compendium_contents_current], main_menu_frame->findFrame("compendium"));
+				}
+				else if ( compendium_current == "codex" )
+				{
+					CompendiumEntries.readCodexFromFile();
+					refreshCompendiumEntryCodex(Compendium_t::CompendiumCodex_t::contentsMap[compendium_contents_current], main_menu_frame->findFrame("compendium"));
+				}
+			}
+			/*if ( keystatus[SDLK_g] )
+			{
+				keystatus[SDLK_g] = 0;
+				if ( compendiumMonster )
+				{
+					if ( auto myStats = compendiumMonster->getStats() )
+					{
+						int type = myStats->type;
+						if ( keystatus[SDLK_LCTRL] )
+						{
+							type -= 1;
+							if ( type >= NUMMONSTERS )
+							{
+								type = NUMMONSTERS - 1;
+							}
+							while ( type == NOTHING || type == OCTOPUS || type == CRAB )
+							{
+								type--;
+							}
+							if ( type < 0 )
+							{
+								type = NUMMONSTERS - 1;
+							}
+						}
+						else if ( !keystatus[SDLK_LSHIFT] )
+						{
+							type += 1;
+							if ( type >= NUMMONSTERS )
+							{
+								type = HUMAN;
+							}
+							while ( type == NOTHING || type == OCTOPUS || type == CRAB )
+							{
+								type++;
+							}
+						}
+						if ( auto monster = createCompendiumMonster((Monster)type, 8, 8) )
+						{
+							if ( auto myStats = monster->getStats() )
+							{
+								myStats->setAttribute("monster_portrait", "true");
+							}
+							refreshCompendiumEntryMonster(main_menu_frame->findFrame("compendium"));
+						}
+					}
+				}
+			}*/
+
+		});
+
+		auto page_right = window->addFrame("page_right");
+		page_right->setSize(SDL_Rect{ background->pos.x + 480 + 40, background->pos.y + 38, 386, 472});
+		page_right->addImage(SDL_Rect{ 0, 0, 386, 472 }, 0xFFFFFFFF,
+			"*images/ui/Main Menus/AdventureArchives/C_Details_Frame_00.png", "page right img");
+
+		auto page_right_inner = page_right->addFrame("page_right_inner");
+		page_right_inner->setSize(SDL_Rect{ 10, 28, 362, 412 });
+		page_right_inner->setActualSize(SDL_Rect{ 0, 0, 362, 412 });
+
+		auto page_right_title = window->addField("page_right_title", 128);
+		page_right_title->setFont("fonts/kongtext.ttf#16#0");
+		page_right_title->setText("DETAILS");
+		page_right_title->setHJustify(Field::justify_t::CENTER);
+		page_right_title->setVJustify(Field::justify_t::TOP);
+		page_right_title->setSize(SDL_Rect{ page_right->getSize().x, page_right->getSize().y - 18, page_right->getSize().w, 28 });
+		page_right_title->setColor(makeColor(42, 22, 18, 255));
+
+		auto right_slider_bg = page_right->addImage(SDL_Rect{ 
+			page_right_inner->getSize().x + page_right_inner->getSize().w - 18, 
+			page_right_inner->getSize().y + 16,
+			16, 412 },
+			0xFFFFFFFF,
+			"*images/ui/Main Menus/AdventureArchives/C_Details_ScrollBar_01.png",
+			"right_slider_bg");
+
+		auto right_slider = page_right->addSlider("right_slider");
+		right_slider->setRailSize(SDL_Rect{ 
+			page_right_inner->getSize().x + page_right_inner->getSize().w - 20, 
+			page_right_inner->getSize().y + 16 + 4, 20, 404 });
+		//right_slider->setRailImage("*images/ui/Main Menus/AdventureArchives/C_Details_ScrollBar_00.png");
+		right_slider->setHandleSize(SDL_Rect{ 0, 0, 20, 28 });
+		right_slider->setBorder(16);
+		right_slider->setOntop(true);
+		//right_slider->setHandleImage("*images/ui/Main Menus/AdventureArchives/C_Details_ScrollButton_00.png");
+		right_slider->setHandleImage("*#images/ui/Sliders/HUD_Magic_Slider_Emerald_01.png");
+		right_slider->setValue(0);
+		right_slider->setMinValue(0);
+		right_slider->setMaxValue(100);
+		right_slider->setOrientation(Slider::SLIDER_VERTICAL);
+		right_slider->setHideGlyphs(true);
+		right_slider->setHideKeyboardGlyphs(true);
+		right_slider->setHideSelectors(true);
+		right_slider->setMenuConfirmControlType(0);
+		right_slider->setCallback([](Slider& slider) {
+			if ( auto frame = static_cast<Frame*>(slider.getParent()) )
+			{
+				if ( frame = frame->findFrame("page_right_inner") )
+				{
+					if ( frame->getActualSize().h > frame->getSize().h )
+					{
+						SDL_Rect pos = frame->getActualSize();
+						const int diff = frame->getActualSize().h - frame->getSize().h;
+						pos.y = static_cast<int>(diff * slider.getValue() / 100.0);
+						frame->setActualSize(pos);
+					}
+					else
+					{
+						slider.setValue(0);
+					}
+				}
+			}
+			});
+		right_slider->setTickCallback([](Widget& widget) {
+			if ( auto frame = static_cast<Frame*>(widget.getParent()) )
+			{
+				if ( frame = frame->findFrame("page_right_inner") )
+				{
+					if ( frame->getActualSize().h > frame->getSize().h )
+					{
+						widget.setInvisible(false);
+
+						const int diff = frame->getActualSize().h - frame->getSize().h;
+						auto slider = static_cast<Slider*>(&widget);
+						slider->setValue(100.0 * frame->getActualSize().y / diff);
+					}
+					else
+					{
+						widget.setInvisible(true);
+						auto slider = static_cast<Slider*>(&widget);
+						slider->setValue(0);
+						if ( widget.isSelected() )
+						{
+							widget.deselect();
+						}
+					}
+				}
+			}
+			});
+
+		compendiumPopulatePageRight(page_right);
+		compendiumPopulateContents(window);
 
 		(void)createBackWidget(window, [](Button& button) {
 			soundCancel();

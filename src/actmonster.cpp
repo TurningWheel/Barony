@@ -8504,7 +8504,14 @@ timeToGoAgain:
 	if ( myStats != NULL )
 	{
 	    const auto dist = sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY);
-		monsterAnimate(my, myStats, dist);
+		if ( myStats->getAttribute("monster_portrait") != "" )
+		{
+			monsterAnimate(my, myStats, 0.2);
+		}
+		else
+		{
+			monsterAnimate(my, myStats, dist);
+		}
 	}
 }
 

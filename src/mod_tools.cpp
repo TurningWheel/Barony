@@ -10603,3 +10603,238 @@ bool GameModeManager_t::CurrentSession_t::ChallengeRun_t::loadScenario()
 	return true;
 }
 #endif
+
+void jsonVecToVec(rapidjson::Value& val, std::vector<std::string>& vec )
+{
+	for ( auto itr = val.Begin(); itr != val.End(); ++itr )
+	{
+		if ( itr->IsString() )
+		{
+			vec.push_back(itr->GetString());
+		}
+	}
+}
+
+void jsonVecToVec(rapidjson::Value& val, std::vector<Sint32>& vec)
+{
+	for ( auto itr = val.Begin(); itr != val.End(); ++itr )
+	{
+		if ( itr->IsInt() )
+		{
+			vec.push_back(itr->GetInt());
+		}
+	}
+}
+
+Compendium_t CompendiumEntries;
+std::vector<std::pair<std::string, std::string>> Compendium_t::CompendiumMonsters_t::contents;
+std::map<std::string, std::string> Compendium_t::CompendiumMonsters_t::contentsMap;
+std::vector<std::pair<std::string, std::string>> Compendium_t::CompendiumWorld_t::contents;
+std::map<std::string, std::string> Compendium_t::CompendiumWorld_t::contentsMap;
+std::vector<std::pair<std::string, std::string>> Compendium_t::CompendiumCodex_t::contents;
+std::map<std::string, std::string> Compendium_t::CompendiumCodex_t::contentsMap;
+
+void Compendium_t::readCodexFromFile()
+{
+	const std::string filename = "data/compendium/codex.json";
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		return;
+	}
+
+	char buf[65536];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.IsObject() || !d.HasMember("version") || !d.HasMember("codex") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	codex.clear();
+	CompendiumCodex_t::contents.clear();
+	CompendiumCodex_t::contentsMap.clear();
+	for ( auto itr = d["contents"].Begin(); itr != d["contents"].End(); ++itr )
+	{
+		for ( auto itr2 = itr->MemberBegin(); itr2 != itr->MemberEnd(); ++itr2 )
+		{
+			CompendiumCodex_t::contents.push_back(std::make_pair(itr2->name.GetString(), itr2->value.GetString()));
+			CompendiumCodex_t::contentsMap[itr2->name.GetString()] = itr2->value.GetString();
+		}
+	}
+
+	auto& entries = d["codex"];
+	for ( auto itr = entries.MemberBegin(); itr != entries.MemberEnd(); ++itr )
+	{
+		std::string name = itr->name.GetString();
+		auto& w = itr->value;
+		auto& obj = codex[name];
+
+		jsonVecToVec(w["blurb"], obj.blurb);
+		jsonVecToVec(w["details"], obj.details);
+		obj.imagePath = w["img"].GetString();
+	}
+}
+
+void Compendium_t::readWorldFromFile()
+{
+	const std::string filename = "data/compendium/world.json";
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		return;
+	}
+
+	char buf[65536];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.IsObject() || !d.HasMember("version") || !d.HasMember("world") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	worldObjects.clear();
+	CompendiumWorld_t::contents.clear();
+	CompendiumWorld_t::contentsMap.clear();
+	for ( auto itr = d["contents"].Begin(); itr != d["contents"].End(); ++itr )
+	{
+		for ( auto itr2 = itr->MemberBegin(); itr2 != itr->MemberEnd(); ++itr2 )
+		{
+			CompendiumWorld_t::contents.push_back(std::make_pair(itr2->name.GetString(), itr2->value.GetString()));
+			CompendiumWorld_t::contentsMap[itr2->name.GetString()] = itr2->value.GetString();
+		}
+	}
+
+	auto& entries = d["world"];
+	for ( auto itr = entries.MemberBegin(); itr != entries.MemberEnd(); ++itr )
+	{
+		std::string name = itr->name.GetString();
+		auto& w = itr->value;
+		auto& obj = worldObjects[name];
+
+		jsonVecToVec(w["blurb"], obj.blurb);
+		jsonVecToVec(w["details"], obj.details);
+		obj.imagePath = w["img"].GetString();
+	}
+}
+
+void Compendium_t::readMonstersFromFile()
+{
+	const std::string filename = "data/compendium/monsters.json";
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		return;
+	}
+
+	char buf[65536];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.IsObject() || !d.HasMember("version") || !d.HasMember("monsters") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	monsters.clear();
+	CompendiumMonsters_t::contents.clear();
+	CompendiumMonsters_t::contentsMap.clear();
+	for ( auto itr = d["contents"].Begin(); itr != d["contents"].End(); ++itr )
+	{
+		for ( auto itr2 = itr->MemberBegin(); itr2 != itr->MemberEnd(); ++itr2 )
+		{
+			CompendiumMonsters_t::contents.push_back(std::make_pair(itr2->name.GetString(), itr2->value.GetString()));
+			CompendiumMonsters_t::contentsMap[itr2->name.GetString()] = itr2->value.GetString();
+		}
+	}
+
+	auto& entries = d["monsters"];
+	for ( auto itr = entries.MemberBegin(); itr != entries.MemberEnd(); ++itr )
+	{
+		std::string name = itr->name.GetString();
+		int monsterType = NOTHING;
+		for ( int i = 0; i < NUMMONSTERS; ++i )
+		{
+			if ( name == monstertypename[i] )
+			{
+				monsterType = i;
+				break;
+			}
+		}
+
+		if ( monsterType == NOTHING ) { continue; }
+
+		auto& m = itr->value;
+		auto& monster = monsters[name];
+		monster.monsterType = monsterType;
+		jsonVecToVec(m["blurb"], monster.blurb);
+		auto& stats = m["stats"];
+		jsonVecToVec(stats["hp"], monster.hp);
+		jsonVecToVec(stats["ac"], monster.ac);
+		jsonVecToVec(stats["spd"], monster.spd);
+		jsonVecToVec(stats["atk"], monster.atk);
+		jsonVecToVec(stats["rangeatk"], monster.rangeatk);
+		jsonVecToVec(stats["pwr"], monster.pwr);
+
+		jsonVecToVec(m["abilities"], monster.abilities);
+		{
+			int i = 0;
+			for ( auto itr = m["resistances"].Begin(); itr != m["resistances"].End(); ++itr )
+			{
+				monster.resistances[i] = itr->GetInt();
+				++i;
+			}
+		}
+		jsonVecToVec(m["inventory"], monster.inventory);
+	}
+}

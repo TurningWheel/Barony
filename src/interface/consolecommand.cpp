@@ -4188,6 +4188,24 @@ namespace ConsoleCommands {
 		MonsterData_t::loadMonsterDataJSON();
 		});
 
+	static ConsoleCommand ccmd_itemlevelcurve("/itemlevelcurve", "generate item level curve drop", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		if ( argc < 2 )
+		{
+			return;
+		}
+
+		int cat = atoi(argv[1]);
+		cat = std::min(std::max(0, cat), NUMCATEGORIES - 1);
+		ItemType type = itemLevelCurve((Category)cat, 0, currentlevel, local_rng);
+		dropItem(newItem(type, EXCELLENT, 0, 1, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
+	});
+
 	static ConsoleCommand ccmd_spawnitem2("/spawnitem2", "spawn an item with beatitude and status (/spawnitem -2 5 wooden shield) (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
@@ -4844,6 +4862,18 @@ namespace ConsoleCommands {
 			EquipmentModelOffsets.readFromFile(monstertypename[c], c);
 		}
 	});
+
+	static ConsoleCommand ccmd_reloadcompendiummonsters("/reloadcompendiummonsters", "reloads compendium entries", []CCMD{
+		CompendiumEntries.readMonstersFromFile();
+		});
+
+	static ConsoleCommand ccmd_reloadcompendiumworld("/reloadcompendiumworld", "reloads compendium entries", []CCMD{
+		CompendiumEntries.readWorldFromFile();
+		});
+
+	static ConsoleCommand ccmd_reloadcompendiumcodex("/reloadcompendiumcodex", "reloads compendium entries", []CCMD{
+		CompendiumEntries.readCodexFromFile();
+		});
 
 	static ConsoleCommand ccmd_mapdebugfixedmonsters("/mapdebugfixedmonsters", "prints fixed monster spawns", []CCMD{
 	#ifndef NINTENDO

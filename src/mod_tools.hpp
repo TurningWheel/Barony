@@ -3448,3 +3448,61 @@ struct EquipmentModelOffsets_t
 	ModelOffset_t& getModelOffset(int monster, int sprite);
 };
 extern EquipmentModelOffsets_t EquipmentModelOffsets;
+
+struct Compendium_t
+{
+	struct CompendiumMonsters_t
+	{
+		struct Monster_t
+		{
+			int monsterType = NOTHING;
+			std::vector<std::string> blurb;
+			std::vector<Sint32> hp;
+			std::vector<Sint32> spd;
+			std::vector<Sint32> ac;
+			std::vector<Sint32> atk;
+			std::vector<Sint32> rangeatk;
+			std::vector<Sint32> pwr;
+			std::array<int, 7> resistances;
+			std::vector<std::string> abilities;
+			std::vector<std::string> inventory;
+			std::string imagePath = "";
+		};
+		static std::vector<std::pair<std::string, std::string>> contents;
+		static std::map<std::string, std::string> contentsMap;
+	};
+	std::map<std::string, CompendiumMonsters_t::Monster_t> monsters;
+	void readMonstersFromFile();
+
+	struct CompendiumWorld_t
+	{
+		struct World_t
+		{
+			int modelIndex = -1;
+			std::string imagePath = "";
+			std::vector<std::string> blurb;
+			std::vector<std::string> details;
+		};
+		static std::vector<std::pair<std::string, std::string>> contents;
+		static std::map<std::string, std::string> contentsMap;
+	};
+	std::map<std::string, CompendiumWorld_t::World_t> worldObjects;
+	void readWorldFromFile();
+
+	struct CompendiumCodex_t
+	{
+		struct Codex_t
+		{
+			int modelIndex = -1;
+			std::string imagePath = "";
+			std::vector<std::string> blurb;
+			std::vector<std::string> details;
+		};
+		static std::vector<std::pair<std::string, std::string>> contents;
+		static std::map<std::string, std::string> contentsMap;
+	};
+	std::map<std::string, CompendiumCodex_t::Codex_t> codex;
+	void readCodexFromFile();
+};
+
+extern Compendium_t CompendiumEntries;

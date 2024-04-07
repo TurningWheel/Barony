@@ -91,6 +91,9 @@ void initGameDatafiles(bool moddedReload)
 	{
 		EquipmentModelOffsets.readFromFile(monstertypename[c], c);
 	}
+	CompendiumEntries.readMonstersFromFile();
+	CompendiumEntries.readWorldFromFile();
+	CompendiumEntries.readCodexFromFile();
 }
 
 void initGameDatafilesAsync(bool moddedReload)
