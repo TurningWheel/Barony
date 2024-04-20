@@ -4875,6 +4875,14 @@ namespace ConsoleCommands {
 		CompendiumEntries.readCodexFromFile();
 		});
 
+	static ConsoleCommand ccmd_reloadcompendiumitems("/reloadcompendiumitems", "reloads compendium entries", []CCMD{
+		CompendiumEntries.readItemsFromFile();
+		});
+
+	static ConsoleCommand ccmd_reloadcompendiumevents("/reloadcompendiumevents", "reloads compendium entries", []CCMD{
+		Compendium_t::Events_t::readEventsFromFile();
+		});
+
 	static ConsoleCommand ccmd_mapdebugfixedmonsters("/mapdebugfixedmonsters", "prints fixed monster spawns", []CCMD{
 	#ifndef NINTENDO
 		if ( !(svFlags & SV_FLAG_CHEATS) )

@@ -10633,6 +10633,105 @@ std::vector<std::pair<std::string, std::string>> Compendium_t::CompendiumWorld_t
 std::map<std::string, std::string> Compendium_t::CompendiumWorld_t::contentsMap;
 std::vector<std::pair<std::string, std::string>> Compendium_t::CompendiumCodex_t::contents;
 std::map<std::string, std::string> Compendium_t::CompendiumCodex_t::contentsMap;
+std::vector<std::pair<std::string, std::string>> Compendium_t::CompendiumItems_t::contents;
+std::map<std::string, std::string> Compendium_t::CompendiumItems_t::contentsMap;
+
+void Compendium_t::readItemsFromFile()
+{
+	const std::string filename = "data/compendium/items.json";
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		return;
+	}
+
+	char buf[65536];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.IsObject() || !d.HasMember("version") || !d.HasMember("items") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	items.clear();
+	CompendiumItems_t::contents.clear();
+	CompendiumItems_t::contentsMap.clear();
+	Compendium_t::Events_t::itemEventLookup.clear();
+	Compendium_t::Events_t::eventItemLookup.clear();
+	for ( auto itr = d["contents"].Begin(); itr != d["contents"].End(); ++itr )
+	{
+		for ( auto itr2 = itr->MemberBegin(); itr2 != itr->MemberEnd(); ++itr2 )
+		{
+			CompendiumItems_t::contents.push_back(std::make_pair(itr2->name.GetString(), itr2->value.GetString()));
+			CompendiumItems_t::contentsMap[itr2->name.GetString()] = itr2->value.GetString();
+		}
+	}
+
+	auto& entries = d["items"];
+	for ( auto itr = entries.MemberBegin(); itr != entries.MemberEnd(); ++itr )
+	{
+		std::string name = itr->name.GetString();
+		auto& w = itr->value;
+		auto& obj = items[name];
+
+		jsonVecToVec(w["blurb"], obj.blurb);
+		for ( auto itr = w["items"].Begin(); itr != w["items"].End(); ++itr )
+		{
+			for ( auto itr2 = itr->MemberBegin(); itr2 != itr->MemberEnd(); ++itr2 )
+			{
+				CompendiumItems_t::Codex_t::CodexItem_t item;
+				item.name = itr2->name.GetString();
+				item.rotation = 0;
+				if ( itr2->value.HasMember("rotation") )
+				{
+					item.rotation = itr2->value["rotation"].GetInt();
+				}
+				obj.items_in_category.push_back(item);
+			}
+		}
+		if ( w.HasMember("events") )
+		{
+			for ( auto itr = w["events"].Begin(); itr != w["events"].End(); ++itr )
+			{
+				std::string eventName = itr->GetString();
+				auto find = Compendium_t::Events_t::eventIdLookup.find(eventName);
+				if ( find != Compendium_t::Events_t::eventIdLookup.end() )
+				{
+					auto find2 = Compendium_t::Events_t::events.find(find->second);
+					if ( find2 != Compendium_t::Events_t::events.end() )
+					{
+						for ( auto& item : obj.items_in_category )
+						{
+							const int itemType = ItemTooltips.itemNameStringToItemID[item.name];
+							if ( itemType >= WOODEN_SHIELD && itemType < NUMITEMS )
+							{
+								Compendium_t::Events_t::itemEventLookup[(ItemType)itemType].insert((Compendium_t::EventTags)find2->second.id);
+								Compendium_t::Events_t::eventItemLookup[(Compendium_t::EventTags)find2->second.id].insert((ItemType)itemType);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
 
 void Compendium_t::readCodexFromFile()
 {
@@ -10836,5 +10935,254 @@ void Compendium_t::readMonstersFromFile()
 			}
 		}
 		jsonVecToVec(m["inventory"], monster.inventory);
+	}
+}
+
+std::map<Compendium_t::EventTags, Compendium_t::Events_t::Event_t> Compendium_t::Events_t::events;
+std::map<std::string, Compendium_t::EventTags> Compendium_t::Events_t::eventIdLookup;
+std::map<ItemType, std::set<Compendium_t::EventTags>> Compendium_t::Events_t::itemEventLookup;
+std::map<Compendium_t::EventTags, std::set<ItemType>> Compendium_t::Events_t::eventItemLookup;
+std::map<Compendium_t::EventTags, std::map<ItemType, Compendium_t::Events_t::EventVal_t>> Compendium_t::Events_t::playerEvents[MAXPLAYERS];
+
+void Compendium_t::Events_t::readEventsFromFile()
+{
+	const std::string filename = "data/compendium/events.json";
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		return;
+	}
+
+	char buf[65536];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.IsObject() || !d.HasMember("tags") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	events.clear();
+	eventIdLookup.clear();
+	int index = -1;
+	for ( auto itr = d["tags"].Begin(); itr != d["tags"].End(); ++itr )
+	{
+		++index;
+		for ( auto itr2 = itr->MemberBegin(); itr2 != itr->MemberEnd(); ++itr2 )
+		{
+			const EventTags id = (EventTags)std::min(index, (int)CPDM_EVENT_TAGS_MAX);
+			auto& entry = events[id];
+			entry.id = id;
+			entry.name = itr2->name.GetString();
+			eventIdLookup[entry.name] = id;
+
+
+			if ( itr2->value.HasMember("type") )
+			{
+				std::string type = itr2->value["type"].GetString();
+				if ( type == "sum" )
+				{
+					entry.type = SUM;
+				}
+				else if ( type == "max" )
+				{
+					entry.type = MAX;
+				}
+			}
+			entry.id = index;
+			if ( itr2->value.HasMember("client") )
+			{
+				entry.client = itr2->value["client"].GetBool();
+			}
+		}
+	}
+}
+
+void Compendium_t::Events_t::loadItemsSaveData()
+{
+	const std::string filename = "savegames/compendium_items.json";
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		printlog("[JSON]: Warning: Could not locate json file %s", filename.c_str());
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		return;
+	}
+
+	char buf[65536];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.IsObject() || !d.HasMember("items") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		playerEvents[i].clear();
+	}
+	for ( auto itr = d["items"].MemberBegin(); itr != d["items"].MemberEnd(); ++itr )
+	{
+		auto find = eventIdLookup.find(itr->name.GetString());
+		if ( find == eventIdLookup.end() )
+		{
+			continue;
+		}
+		const EventTags id = (EventTags)std::min((int)find->second, (int)CPDM_EVENT_TAGS_MAX);
+		for ( auto itr2 = itr->value.MemberBegin(); itr2 != itr->value.MemberEnd(); ++itr2 )
+		{
+			int itemType = std::stoi(itr2->name.GetString());
+			if ( itemType < 0 || itemType >= NUMITEMS )
+			{
+				continue;
+			}
+			Sint32 value = itr2->value.GetInt();
+			eventUpdate(0, id, (ItemType)itemType, value, true);
+		}
+	}
+}
+
+void Compendium_t::Events_t::writeItemsSaveData()
+{
+	char path[PATH_MAX] = "";
+	completePath(path, "savegames/compendium_items.json", outputdir);
+
+	rapidjson::Document exportDocument;
+	exportDocument.SetObject();
+
+	const int VERSION = 1;
+
+	CustomHelpers::addMemberToRoot(exportDocument, "version", rapidjson::Value(VERSION));
+	rapidjson::Value itemsObj(rapidjson::kObjectType);
+	for ( auto& pair : playerEvents[0] )
+	{
+		const std::string& key = events[pair.first].name;
+		rapidjson::Value namekey(key.c_str(), exportDocument.GetAllocator());
+		itemsObj.AddMember(namekey, rapidjson::Value(rapidjson::kObjectType), exportDocument.GetAllocator());
+		auto& obj = itemsObj[key.c_str()];
+		for ( auto& itemsData : pair.second )
+		{
+			rapidjson::Value itemKey(std::to_string(itemsData.first).c_str(), exportDocument.GetAllocator());
+			obj.AddMember(itemKey, itemsData.second.value, exportDocument.GetAllocator());
+		}
+	}
+	CustomHelpers::addMemberToRoot(exportDocument, "items", itemsObj);
+
+	File* fp = FileIO::open(path, "wb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error opening json file %s for write!", path);
+		return;
+	}
+	rapidjson::StringBuffer os;
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
+	exportDocument.Accept(writer);
+	fp->write(os.GetString(), sizeof(char), os.GetSize());
+	FileIO::close(fp);
+
+	printlog("[JSON]: Successfully wrote json file %s", path);
+	return;
+}
+
+void Compendium_t::Events_t::EventVal_t::applyValue(const Sint32 val)
+{
+	if ( type == SUM )
+	{
+		value += val;
+		if ( (Uint32)value >= 0x7FFFFFFF )
+		{
+			value = 0x7FFFFFFF;
+		}
+	}
+	else if ( type == MAX )
+	{
+		value = std::max(val, value);
+	}
+}
+
+void Compendium_t::Events_t::eventUpdate(const int playernum, const EventTags tag, const ItemType type, 
+	const Sint32 value, const bool forceValue)
+{
+	if ( playernum < 0 || playernum >= MAXPLAYERS ) { return; }
+
+	if ( multiplayer == SINGLE && playernum != 0 ) { return; }
+
+	auto find = events.find(tag);
+	if ( find == events.end() )
+	{
+		return;
+	}
+	auto& def = find->second;
+
+	if ( def.client )
+	{
+		if ( multiplayer != SINGLE )
+		{
+			if ( playernum != clientnum )
+			{
+				return;
+			}
+		}
+	}
+	else
+	{
+		if ( multiplayer == CLIENT )
+		{
+			return;
+		}
+	}
+
+	auto find2 = eventItemLookup[tag].find(type);
+	if ( find2 == eventItemLookup[tag].end() )
+	{
+		return;
+	}
+
+	auto& e = playerEvents[(multiplayer == CLIENT) ? 0 : playernum][tag];
+	if ( e.find(type) == e.end() )
+	{
+		e[type] = EventVal_t(tag);
+	}
+	
+	auto& val = e[type];
+	if ( forceValue )
+	{
+		val.value = value;
+	}
+	else
+	{
+		val.applyValue(value);
+		writeItemsSaveData();
 	}
 }

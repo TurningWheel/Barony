@@ -32638,6 +32638,302 @@ failed:
 		}
 	}
 
+	constexpr auto compendiumContentsDefaultColor = makeColor(159, 145, 127, 255);
+	constexpr auto compendiumContentsSelectedColor = makeColor(221, 210, 84, 255);
+
+	static auto compendium_items_activate_fn = [](Frame::entry_t& entry)
+	{
+		assert(main_menu_frame);
+		if ( !main_menu_frame ) { return; }
+		auto compendiumFrame = main_menu_frame->findFrame("compendium");
+		if ( !compendiumFrame ) { return; }
+
+		if ( auto page_right = compendiumFrame->findFrame("page_right") )
+		{
+			if ( auto page_right_inner = page_right->findFrame("page_right_inner") )
+			{
+				for ( auto& e : page_right_inner->getEntries() )
+				{
+					e->color = compendiumContentsDefaultColor;
+				}
+			}
+		}
+
+		entry.color = compendiumContentsSelectedColor;
+		//if ( auto page_right = compendiumFrame->findFrame("page_right") )
+		//{
+		//	if ( auto slider = page_right->findSlider("right_slider") )
+		//	{
+		//		slider->setValue(0);
+		//		slider->getCallback()(*slider);
+		//	}
+		//}
+	};
+
+	struct CompendiumTooltipFrames_t
+	{
+		Frame* tooltipContainerFrame = nullptr;
+		Frame* titleOnlyTooltipFrame = nullptr;
+		Frame* tooltipFrame = nullptr;
+		Frame* interactFrame = nullptr;
+		Frame* tooltipPromptFrame = nullptr;
+		void clear()
+		{
+			tooltipContainerFrame = nullptr;
+			titleOnlyTooltipFrame = nullptr;
+			tooltipFrame = nullptr;
+			interactFrame = nullptr;
+			tooltipPromptFrame = nullptr;
+		}
+	};
+	static CompendiumTooltipFrames_t compendiumItemTooltip;
+
+	static void refreshCompendiumEntryItemsBlurb(std::string name, Frame* parent)
+	{
+		if ( CompendiumEntries.items.find(name) == CompendiumEntries.items.end() )
+		{
+			return;
+		}
+		auto& entry = CompendiumEntries.items[name];
+
+		if ( Frame* page_left = parent->findFrame("page_left") )
+		{
+			if ( auto blurb = page_left->findField("blurb") )
+			{
+				std::string txt = "";
+				for ( auto& str : entry.blurb )
+				{
+					if ( txt != "" ) { txt += '\n'; }
+					txt += str;
+				}
+				blurb->setText(txt.c_str());
+			}
+		}
+	}
+
+	static Entity compendiumItemModel(-1, 0, nullptr, nullptr);
+	static Item compendiumItem;
+	static std::string compendium_contents_current = "";
+	static void selectCompendiumItemInList(Frame& toSelect, Frame& page_right_inner)
+	{
+		compendiumItemModel.sprite = -1;
+		compendiumItemModel.focalz = 0.5;
+		compendiumItemModel.roll = 0.0;
+		for ( auto f : page_right_inner.getFrames() )
+		{
+			if ( auto txt = f->findField("item name") )
+			{
+				if ( f == &toSelect )
+				{
+					txt->setColor(compendiumContentsSelectedColor);
+					const int itemType = ItemTooltips.itemNameStringToItemID[toSelect.getName()];
+					if ( itemType >= WOODEN_SHIELD && itemType < NUMITEMS )
+					{
+						int appearance = 0;
+						if ( toSelect.getUserData() )
+						{
+							appearance = (reinterpret_cast<intptr_t>(toSelect.getUserData()) & 0x7F);
+						}
+						for ( auto& i : CompendiumEntries.items[Compendium_t::CompendiumItems_t::contentsMap[compendium_contents_current]].items_in_category )
+						{
+							if ( i.name == toSelect.getName() )
+							{
+								compendiumItemModel.roll = (i.rotation * PI / 180.0);
+							}
+						}
+						compendiumItemModel.sprite = items[itemType].index + appearance;
+						compendiumItemModel.skill[10] = itemType;
+					}
+				}
+				else
+				{
+					txt->setColor(compendiumContentsDefaultColor);
+				}
+			}
+		}
+	}
+
+	static void refreshCompendiumEntryItemsList(std::string name, Frame* parent)
+	{
+		if ( CompendiumEntries.items.find(name) == CompendiumEntries.items.end() )
+		{
+			return;
+		}
+		auto& entry = CompendiumEntries.items[name];
+		if ( Frame* page_right = parent->findFrame("page_right") )
+		{
+			if ( page_right = page_right->findFrame("page_right_inner") )
+			{
+				for ( auto f : page_right->getFrames() )
+				{
+					f->removeSelf();
+				}
+
+				const int entrySize = 64;
+				compendiumItem.status = EXCELLENT;
+				compendiumItem.count = 1;
+				compendiumItem.identified = true;
+
+				if ( !compendiumItemTooltip.tooltipContainerFrame )
+				{
+					createInventoryTooltipFrame(0,
+						parent,
+						compendiumItemTooltip.tooltipContainerFrame,
+						compendiumItemTooltip.titleOnlyTooltipFrame,
+						compendiumItemTooltip.tooltipFrame,
+						compendiumItemTooltip.interactFrame,
+						compendiumItemTooltip.tooltipPromptFrame);
+					compendiumItemTooltip.tooltipFrame->setDisabled(false);
+				}
+				compendiumItemTooltip.clear();
+
+				page_right->setTickCallback([](Widget& widget) {
+					auto frame = static_cast<Frame*>(&widget);
+					if ( auto parent = frame->getParent() )
+					{
+						if ( parent = parent->getParent() )
+						{
+							players[0]->inventoryUI.updateInventoryItemTooltip(parent);
+						}
+					}
+					});
+
+				for ( int i = 0; i < entry.items_in_category.size(); ++i )
+				{
+					auto& data = entry.items_in_category[i];
+					auto entry = page_right->addFrame(data.name.c_str());
+					entry->setHollow(true);
+					entry->setClickable(false);
+					entry->setSize(SDL_Rect{ 8, 8 + i * entrySize, page_right->getSize().w - 32, entrySize });
+					/*Button* btn = entry->addButton("item btn");
+					btn->setSize(entry->getSize());
+					btn->setText("click");*/
+
+					if ( i == 0 )
+					{
+						auto selector_bg = page_right->addImage(SDL_Rect{ entry->getSize().x, 0, entry->getSize().w, entry->getSize().h},
+							makeColorRGB(71, 41, 27), "images/system/white.png", "selector_bg");
+						selector_bg->disabled = true;
+					}
+
+					entry->setTickCallback([](Widget& widget) {
+						auto frame = static_cast<Frame*>(&widget);
+						if ( Frame* page_right_inner = frame->getParent() )
+						{
+							auto selector_bg = page_right_inner->findImage("selector_bg");
+							if ( frame->getUserData() )
+							{
+								bool first = (reinterpret_cast<intptr_t>(frame->getUserData()) >> 7) & 1;
+								if ( first )
+								{
+									if ( selector_bg )
+									{
+										selector_bg->disabled = true;
+									}
+								}
+							}
+							auto txt = frame->findField("item name");
+							/*if ( parent = parent->getParent() )*/
+							{
+								if ( Frame* parent = page_right_inner->getParent() )
+								{
+									if ( parent = parent->getParent() )
+									{
+
+										SDL_Rect absolutePos = frame->getAbsoluteSize();
+										if ( frame->capturesMouseInRealtimeCoords() )
+										{
+											if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuLeftClick") )
+											{
+												selectCompendiumItemInList(*frame, *page_right_inner);
+											}
+
+											SDL_Rect pos = frame->getSize();
+											bool hovered = false;
+											if ( selector_bg )
+											{
+												selector_bg->disabled = false;
+												selector_bg->pos.y = frame->getSize().y;
+											}
+											auto itemBg = frame->findImage("item bg");
+											if ( itemBg )
+											{
+												SDL_Rect tmp = frame->getSize();
+												tmp.x += itemBg->pos.x;
+												tmp.y += itemBg->pos.y;
+												tmp.w = itemBg->pos.w;
+												tmp.h = itemBg->pos.h;
+												frame->setSize(tmp);
+												hovered = frame->capturesMouseInRealtimeCoords();
+											}
+											frame->setSize(pos);
+
+											if ( hovered )
+											{
+												//frame->select();
+
+												const int itemType = ItemTooltips.itemNameStringToItemID[widget.getName()];
+												if ( itemType >= WOODEN_SHIELD && itemType < NUMITEMS )
+												{
+													compendiumItem.type = (ItemType)itemType;
+													if ( frame->getUserData() )
+													{
+														compendiumItem.appearance = (reinterpret_cast<intptr_t>(frame->getUserData()) & 0x7F);
+													}
+													players[0]->hud.updateFrameTooltip(&compendiumItem, absolutePos.x - 16, absolutePos.y, Player::PANEL_JUSTIFY_RIGHT, parent);
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						});
+					const int id = ItemTooltips.itemNameStringToItemID[data.name];
+					auto itemBg = entry->addImage(SDL_Rect{ 8, 8, 48, 48 },
+						0xFFFFFFFF,
+						"*images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_02.png", "item bg");
+					auto itemImg = entry->addImage(SDL_Rect{ itemBg->pos.x + 5, itemBg->pos.y + 5, 36, 36 },
+						0xFFFFFFFF, "", "item img");
+
+					auto itemName = entry->addField("item name", 128);
+					itemName->setFont(smallfont_outline);
+					itemName->setSize(SDL_Rect{ itemBg->pos.x + itemBg->pos.w + 4, 8, entry->getSize().w - 8, 24 });
+					std::string name = items[id].getIdentifiedName();
+					camelCaseString(name);
+					itemName->setText(name.c_str());
+
+					compendiumItem.type = (ItemType)id;
+					compendiumItem.appearance = local_rng.rand() % items[id].variations;
+					if ( id == TOOL_PLAYER_LOOT_BAG )
+					{
+						compendiumItem.appearance = local_rng.rand() % 4;
+					}
+					itemImg->path = getItemSpritePath(0, compendiumItem);
+					Uint8 userData = std::min((Uint8)127, (Uint8)(0x7F & compendiumItem.appearance));
+					if ( i == 0 )
+					{
+						userData |= 1 << 7;
+						entry->setUserData((void*)(intptr_t)userData);
+						selectCompendiumItemInList(*entry, *page_right);
+					}
+					else
+					{
+						entry->setUserData((void*)(intptr_t)userData);
+						itemName->setColor(compendiumContentsDefaultColor);
+					}
+
+					SDL_Rect actualPos = page_right->getActualSize();
+					actualPos.h = std::max(412, entry->getSize().y + entry->getSize().h);
+					page_right->setActualSize(actualPos);
+				}
+				//page_right->setSelection(0);
+				//page_right->scrollToSelection(true);
+				//page_right->activateSelection();
+			}
+		}
+	}
+
 	static void refreshCompendiumEntryCodex(std::string name, Frame* parent)
 	{
 		if ( CompendiumEntries.codex.find(name) == CompendiumEntries.codex.end() )
@@ -32980,9 +33276,6 @@ failed:
 		"codex"
 	};
 	static std::string compendium_current = "monsters";
-	static std::string compendium_contents_current = "";
-	constexpr auto compendiumContentsDefaultColor = makeColor(159, 145, 127, 255);
-	constexpr auto compendiumContentsSelectedColor = makeColor(221, 210, 84, 255);
 
 	static auto contents_activate_fn = [](Frame::entry_t& entry)
 	{
@@ -33012,7 +33305,8 @@ failed:
 
 		auto* entries = compendium_current == "monsters" ? &Compendium_t::CompendiumMonsters_t::contents
 			: (compendium_current == "world" ? &Compendium_t::CompendiumWorld_t::contents 
-				: (compendium_current == "codex" ? &Compendium_t::CompendiumCodex_t::contents : nullptr));
+				: (compendium_current == "codex" ? &Compendium_t::CompendiumCodex_t::contents 
+					: (compendium_current == "items" ? &Compendium_t::CompendiumItems_t::contents : nullptr)));
 
 		std::string content = "";
 		if ( entries )
@@ -33034,6 +33328,11 @@ failed:
 		if ( compendium_current == "codex" )
 		{
 			refreshCompendiumEntryCodex(content, compendiumFrame);
+		}
+		else if ( compendium_current == "items" )
+		{
+			refreshCompendiumEntryItemsBlurb(content, compendiumFrame);
+			refreshCompendiumEntryItemsList(content, compendiumFrame);
 		}
 		else if ( compendium_current == "world" )
 		{
@@ -33058,7 +33357,8 @@ failed:
 		{
 			auto* entries = compendium_current == "monsters" ? &Compendium_t::CompendiumMonsters_t::contents
 				: (compendium_current == "world" ? &Compendium_t::CompendiumWorld_t::contents
-					: (compendium_current == "codex" ? &Compendium_t::CompendiumCodex_t::contents : nullptr));
+					: (compendium_current == "codex" ? &Compendium_t::CompendiumCodex_t::contents
+						: (compendium_current == "items" ? &Compendium_t::CompendiumItems_t::contents : nullptr)));
 
 			auto toRemove = contents->getEntries();
 			for ( auto r : toRemove )
@@ -33106,7 +33406,27 @@ failed:
 		constexpr Uint32 statValColor = makeColorRGB(159, 145, 127);
 		constexpr Uint32 detailsValColor = makeColorRGB(135, 94, 45);
 
-		if ( compendium_current == "codex" )
+		if ( compendium_current == "items" )
+		{
+			/*auto charTxt = page_right_inner->addField("items txt", 64);
+			charTxt->setFont(menu_option_font);
+			charTxt->setText("Items");
+			charTxt->setHJustify(Field::justify_t::LEFT);
+			charTxt->setVJustify(Field::justify_t::TOP);
+			charTxt->setSize(SDL_Rect{ padx, pady, page_right_inner->getSize().w - padx - 26, 24 });
+			charTxt->setColor(makeColor(198, 190, 179, 255));*/
+
+			/*int statx = padx + 4;
+			int staty = pady + 18 + 9;
+			auto statsTxt = page_right_inner->addField("details", 1024);
+			statsTxt->setFont(smallfont_outline);
+			statsTxt->setText("");
+			statsTxt->setHJustify(Field::justify_t::LEFT);
+			statsTxt->setVJustify(Field::justify_t::TOP);
+			statsTxt->setSize(SDL_Rect{ statx, staty, page_right_inner->getSize().w - statx - 26, 400 });
+			statsTxt->setColor(detailsValColor);*/
+		}
+		else if ( compendium_current == "codex" )
 		{
 			auto charTxt = page_right_inner->addField("tips txt", 64);
 			charTxt->setFont(menu_option_font);
@@ -33483,6 +33803,18 @@ failed:
 			tab->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_ItemsHi_00.png");
 			tab->setCallback([](Button& button) {
 				compendium_current = "items";
+				if ( auto frame = static_cast<Frame*>(button.getParent()) )
+				{
+					if ( auto page_right = frame->findFrame("page_right") )
+					{
+						if ( auto page_right_inner = page_right->findFrame("page_right_inner") )
+						{
+							page_right_inner->removeSelf();
+						}
+						compendiumPopulatePageRight(page_right);
+					}
+					compendiumPopulateContents(frame);
+				}
 				});
 
 			tab = window->addButton(compendiumCategories[2].c_str());
@@ -33615,6 +33947,10 @@ failed:
 			{
 				drawMonsterPreview(compendiumMonster, pos, 0.0);
 			}
+			else if ( compendium_current == "items" )
+			{
+				drawItemPreview(&compendiumItemModel, pos, 0.0);
+			}
 		});
 		model_viewer->setTickCallback([](Widget& widget) {
 			/*if ( ticks % TICKS_PER_SECOND == 0 )
@@ -33637,6 +33973,11 @@ failed:
 				{
 					CompendiumEntries.readCodexFromFile();
 					refreshCompendiumEntryCodex(Compendium_t::CompendiumCodex_t::contentsMap[compendium_contents_current], main_menu_frame->findFrame("compendium"));
+				}
+				else if ( compendium_current == "items" )
+				{
+					CompendiumEntries.readItemsFromFile();
+					refreshCompendiumEntryItemsBlurb(Compendium_t::CompendiumItems_t::contentsMap[compendium_contents_current], main_menu_frame->findFrame("compendium"));
 				}
 			}
 			/*if ( keystatus[SDLK_g] )

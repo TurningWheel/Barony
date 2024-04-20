@@ -94,6 +94,9 @@ void initGameDatafiles(bool moddedReload)
 	CompendiumEntries.readMonstersFromFile();
 	CompendiumEntries.readWorldFromFile();
 	CompendiumEntries.readCodexFromFile();
+	Compendium_t::Events_t::readEventsFromFile();
+	CompendiumEntries.readItemsFromFile();
+	Compendium_t::Events_t::loadItemsSaveData();
 }
 
 void initGameDatafilesAsync(bool moddedReload)

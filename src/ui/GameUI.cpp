@@ -20784,7 +20784,13 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 	}
 }
 
-void createInventoryTooltipFrame(const int player)
+void createInventoryTooltipFrame(const int player,
+	Frame* parentFrame,
+	Frame*& tooltipContainerFrame, 
+	Frame*& titleOnlyTooltipFrame,
+	Frame*& tooltipFrame,
+	Frame*& interactFrame,
+	Frame*& promptFrame)
 {
 	if ( !gui )
 	{
@@ -20796,26 +20802,34 @@ void createInventoryTooltipFrame(const int player)
 	const std::string headerFont = "fonts/pixel_maz_multiline.ttf#16#2";
 	const std::string bodyFont = "fonts/pixel_maz_multiline.ttf#16#2";
 
-	if ( !players[player]->inventoryUI.tooltipContainerFrame )
+	if ( !tooltipContainerFrame )
 	{
 		char name[32];
 		snprintf(name, sizeof(name), "player tooltip container %d", player);
-		players[player]->inventoryUI.tooltipContainerFrame = gameUIFrame[player]->addFrame(name);
-		players[player]->inventoryUI.tooltipContainerFrame->setSize(
+		if ( parentFrame )
+		{
+			tooltipContainerFrame = parentFrame->addFrame(name);
+		}
+		else
+		{
+			tooltipContainerFrame = gameUIFrame[player]->addFrame(name);
+		}
+		tooltipContainerFrame->setSize(
 			SDL_Rect{ players[player]->camera_virtualx1(),
 			players[player]->camera_virtualy1(), 
 			players[player]->camera_virtualWidth(),
 			players[player]->camera_virtualHeight() });
-		players[player]->inventoryUI.tooltipContainerFrame->setHollow(true);
-		players[player]->inventoryUI.tooltipContainerFrame->setDisabled(false);
-		players[player]->inventoryUI.tooltipContainerFrame->setInheritParentFrameOpacity(false);
+		tooltipContainerFrame->setHollow(true);
+		tooltipContainerFrame->setDisabled(false);
+		tooltipContainerFrame->setInheritParentFrameOpacity(false);
 	}
-	if ( !players[player]->inventoryUI.titleOnlyTooltipFrame )
+
+	if ( !titleOnlyTooltipFrame )
 	{
 		char name[32];
 		snprintf(name, sizeof(name), "player title only tooltip %d", player);
-		players[player]->inventoryUI.titleOnlyTooltipFrame = players[player]->inventoryUI.tooltipContainerFrame->addFrame(name);
-		auto tooltipFrame = players[player]->inventoryUI.titleOnlyTooltipFrame;
+		titleOnlyTooltipFrame = tooltipContainerFrame->addFrame(name);
+		auto tooltipFrame = titleOnlyTooltipFrame;
 		tooltipFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
 		tooltipFrame->setHollow(true);
 		tooltipFrame->setDisabled(true);
@@ -20838,12 +20852,11 @@ void createInventoryTooltipFrame(const int player)
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 28 },
 			color, "*#images/ui/Inventory/tooltips/Hover_TR00_TitleOnly.png", "tooltip top right");
 	}
-	if ( !players[player]->inventoryUI.tooltipFrame )
+	if ( !tooltipFrame )
 	{
 		char name[32];
 		snprintf(name, sizeof(name), "player tooltip %d", player);
-		players[player]->inventoryUI.tooltipFrame = players[player]->inventoryUI.tooltipContainerFrame->addFrame(name);
-		auto tooltipFrame = players[player]->inventoryUI.tooltipFrame;
+		tooltipFrame = tooltipContainerFrame->addFrame(name);
 		tooltipFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
 		tooltipFrame->setHollow(true);
 		tooltipFrame->setDisabled(true);
@@ -20853,8 +20866,6 @@ void createInventoryTooltipFrame(const int player)
 	{
 		return;
 	}
-
-	auto tooltipFrame = players[player]->inventoryUI.tooltipFrame;
 
 	Uint32 color = makeColor( 255, 255, 255, 255);
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 28 },
@@ -21154,9 +21165,8 @@ void createInventoryTooltipFrame(const int player)
 
 	char name[32];
 	snprintf(name, sizeof(name), "player interact %d", player);
-	if ( auto interactFrame = gameUIFrame[player]->addFrame(name) )
+	if ( interactFrame = (parentFrame ? parentFrame->addFrame(name) : gameUIFrame[player]->addFrame(name)) )
 	{
-		players[player]->inventoryUI.interactFrame = interactFrame;
 		const int interactWidth = 106;
 		interactFrame->setSize(SDL_Rect{ 0, 0, interactWidth + 6 * 2, 100 });
 		interactFrame->setDisabled(true);
@@ -21308,9 +21318,8 @@ void createInventoryTooltipFrame(const int player)
 	}
 
 	snprintf(name, sizeof(name), "player item prompt %d", player);
-	if ( auto promptFrame = players[player]->inventoryUI.tooltipContainerFrame->addFrame(name) )
+	if ( promptFrame = tooltipContainerFrame->addFrame(name) )
 	{
-		players[player]->inventoryUI.tooltipPromptFrame = promptFrame;
 		const int interactWidth = 0;
 		SDL_Rect promptSize{ 0, 0, interactWidth + 6 * 2, 100 };
 		promptFrame->setDisabled(true);
@@ -21441,7 +21450,161 @@ void createInventoryTooltipFrame(const int player)
 }
 
 view_t playerPortraitView[MAXPLAYERS];
-view_t monsterPortaitView;
+view_t monsterPortraitView;
+view_t itemPortraitView;
+static ConsoleVariable<bool> cvar_compendium_portrait_static_angle("/compendium_portrait_static_angle", true);
+void drawItemPreview(Entity* item, SDL_Rect pos, real_t offsetyaw, bool dark)
+{
+	if ( !item ) { return; }
+	if ( item->sprite < 0 ) { return; }
+
+	static int fov = 50;
+	static real_t ang = 0.0;
+	static real_t vang = 0.0;
+	static real_t zoom = 0.0;
+	static real_t z = 0.0;
+	static int idleAngRotationDir = 0;
+	static real_t idleAngRotation = 0.0;
+	if ( keystatus[SDLK_KP_1] )
+	{
+		vang -= 0.01;
+	}
+	if ( keystatus[SDLK_KP_3] )
+	{
+		vang += 0.01;
+	}
+	if ( keystatus[SDLK_KP_4] )
+	{
+		ang -= 0.01;
+	}
+	if ( keystatus[SDLK_KP_6] )
+	{
+		ang += 0.01;
+	}
+	if ( keystatus[SDLK_KP_8] )
+	{
+		z += 0.5;
+	}
+	if ( keystatus[SDLK_KP_2] )
+	{
+		z -= 0.5;
+	}
+	if ( keystatus[SDLK_KP_7] )
+	{
+		zoom -= 0.01;
+	}
+	if ( keystatus[SDLK_KP_9] )
+	{
+		zoom += 0.01;
+	}
+	if ( keystatus[SDLK_KP_0] )
+	{
+		keystatus[SDLK_KP_0] = 0;
+		item->roll += PI / 4;
+	}
+	if ( keystatus[SDLK_1] )
+	{
+		keystatus[SDLK_1] = 0;
+		if ( keystatus[SDLK_LSHIFT] )
+		{
+			item->focalx -= 0.125;
+		}
+		else if ( keystatus[SDLK_LCTRL] )
+		{
+			item->focalx = 0.0;
+		}
+		else
+		{
+			item->focalx += 0.125;
+		}
+	}
+	if ( keystatus[SDLK_2] )
+	{
+		keystatus[SDLK_2] = 0;
+		if ( keystatus[SDLK_LSHIFT] )
+		{
+			item->focaly -= 0.125;
+		}
+		else if ( keystatus[SDLK_LCTRL] )
+		{
+			item->focaly = 0.0;
+		}
+		else
+		{
+			item->focaly += 0.125;
+		}
+	}
+	if ( keystatus[SDLK_3] )
+	{
+		keystatus[SDLK_3] = 0;
+		if ( keystatus[SDLK_LSHIFT] )
+		{
+			item->focalz -= 0.125;
+		}
+		else if ( keystatus[SDLK_LCTRL] )
+		{
+			item->focalz = 0.0;
+		}
+		else
+		{
+			item->focalz += 0.125;
+		}
+	}
+
+	if ( idleAngRotationDir == 0 )
+	{
+		idleAngRotation += 0.005;
+		/*if ( idleAngRotation >= PI / 8 )
+		{
+			idleAngRotationDir = 1;
+		}*/
+	}
+	else
+	{
+		idleAngRotation -= 0.01;
+		if ( idleAngRotation <= -PI / 8 )
+		{
+			idleAngRotationDir = 0;
+		}
+	}
+
+	view_t& view = monsterPortraitView;
+	auto ofov = ::fov;
+	::fov = fov;
+
+	view.x = item->x / 16.0 + ((.92 + zoom) * cos(offsetyaw
+		+ ang + idleAngRotation + (*cvar_compendium_portrait_static_angle ? item->yaw : 0)));
+	view.y = item->y / 16.0 + ((.92 + zoom) * sin(offsetyaw
+		+ ang + idleAngRotation + (*cvar_compendium_portrait_static_angle ? item->yaw : 0)));
+	view.z = item->z * 2 + z;
+	view.ang = (offsetyaw - PI
+		+ (*cvar_compendium_portrait_static_angle ? item->yaw : 0) + ang + idleAngRotation); //5 * PI / 4;
+	view.vang = PI / 20 + vang;
+
+	view.winx = pos.x;
+	// winy modification required due to new frame scaling method d49b1a5f34667432f2a2bd754c0abca3a09227c8
+	view.winy = pos.y + (yres - Frame::virtualScreenY);
+
+	view.winw = pos.w;
+	view.winh = pos.h;
+	glBeginCamera(&view, false);
+	bool b = item->flags[BRIGHT];
+	if ( !dark ) { item->flags[BRIGHT] = true; }
+	if ( !item->flags[INVISIBLE] )
+	{
+		glDrawVoxel(&view, item, REALCOLORS);
+	}
+
+	item->flags[BRIGHT] = b;
+
+	if ( drawingGui ) {
+		// blending gets disabled after objects are drawn, so re-enable it.
+		GL_CHECK_ERR(glEnable(GL_BLEND));
+	}
+	glEndCamera(&view, false);
+	::fov = ofov;
+}
+
 void drawMonsterPreview(Entity* monster, SDL_Rect pos, real_t offsetyaw, bool dark)
 {
 	if ( !monster ) { return; }
@@ -21485,18 +21648,17 @@ void drawMonsterPreview(Entity* monster, SDL_Rect pos, real_t offsetyaw, bool da
 	}
 
 
-	view_t& view = monsterPortaitView;
+	view_t& view = monsterPortraitView;
 	auto ofov = ::fov;
 	::fov = fov;
 
-	static ConsoleVariable<bool> cvar_char_portrait_static_angle("/compendium_portrait_static_angle", true);
 	view.x = monster->x / 16.0 + ((.92 + zoom) * cos(offsetyaw
-		+ ang + (*cvar_char_portrait_static_angle ? monster->yaw : 0)));
+		+ ang + (*cvar_compendium_portrait_static_angle ? monster->yaw : 0)));
 	view.y = monster->y / 16.0 + ((.92 + zoom) * sin(offsetyaw
-		+ ang + (*cvar_char_portrait_static_angle ? monster->yaw : 0)));
+		+ ang + (*cvar_compendium_portrait_static_angle ? monster->yaw : 0)));
 	view.z = monster->z * 2 + z;
 	view.ang = (offsetyaw - PI
-		+ (*cvar_char_portrait_static_angle ? monster->yaw : 0) + ang); //5 * PI / 4;
+		+ (*cvar_compendium_portrait_static_angle ? monster->yaw : 0) + ang); //5 * PI / 4;
 	view.vang = PI / 20 + vang;
 
 	view.winx = pos.x;
@@ -25890,16 +26052,48 @@ void Player::Inventory_t::updateSelectedItemAnimation()
 	}
 }
 
-void Player::Inventory_t::updateInventoryItemTooltip()
+void Player::Inventory_t::updateInventoryItemTooltip(Frame* parentFrame)
 {
-	if ( !tooltipFrame || !frame || !titleOnlyTooltipFrame )
+	Frame* tooltipContainerFrame = nullptr;
+	Frame* frameMain = nullptr;
+	Frame* frameInventory = nullptr;
+	Frame* titleOnlyFrame = nullptr;
+	Frame* frameTooltipPrompt = nullptr;
+	if ( parentFrame )
+	{
+		// hacks for compendium tooltips
+		char name[32];
+		snprintf(name, sizeof(name), "player tooltip container %d", 0);
+		if ( Frame* tooltipContainerFrame = parentFrame->findFrame(name) )
+		{
+			snprintf(name, sizeof(name), "player title only tooltip %d", 0);
+			titleOnlyFrame = tooltipContainerFrame->findFrame(name);
+			snprintf(name, sizeof(name), "player tooltip %d", 0);
+			frameMain = tooltipContainerFrame->findFrame(name);
+			snprintf(name, sizeof(name), "player item prompt %d", 0);
+			frameTooltipPrompt = tooltipContainerFrame->findFrame(name);
+		}
+	}
+	else
+	{
+		frameMain = this->player.inventoryUI.tooltipFrame;
+		frameInventory = this->player.inventoryUI.frame;
+		frameTooltipPrompt = this->player.inventoryUI.tooltipPromptFrame;
+		titleOnlyFrame = this->player.inventoryUI.titleOnlyTooltipFrame;
+		if ( !frameInventory )
+		{
+			return;
+		}
+	}
+
+	if ( !frameMain || !titleOnlyFrame )
 	{
 		return;
 	}
 
 	auto& tooltipDisplay = this->itemTooltipDisplay;
 
-	if ( static_cast<int>(tooltipFrame->getOpacity()) != tooltipDisplay.opacitySetpoint )
+	if ( static_cast<int>(frameMain->getOpacity()) != tooltipDisplay.opacitySetpoint )
 	{
 		const real_t fpsScale = getFPSScale(144.0);
 		if ( tooltipDisplay.opacitySetpoint == 0 )
@@ -25914,14 +26108,14 @@ void Player::Inventory_t::updateInventoryItemTooltip()
 			tooltipDisplay.opacityAnimate += setpointDiff;
 			tooltipDisplay.opacityAnimate = std::min(1.0, tooltipDisplay.opacityAnimate);
 		}
-		tooltipFrame->setOpacity(tooltipDisplay.opacityAnimate * 100);
+		frameMain->setOpacity(tooltipDisplay.opacityAnimate * 100);
 	}
 	else
 	{
-		tooltipFrame->setOpacity(tooltipDisplay.opacitySetpoint);
+		frameMain->setOpacity(tooltipDisplay.opacitySetpoint);
 	}
 
-	if ( static_cast<int>(titleOnlyTooltipFrame->getOpacity()) != tooltipDisplay.titleOnlyOpacitySetpoint )
+	if ( static_cast<int>(titleOnlyFrame->getOpacity()) != tooltipDisplay.titleOnlyOpacitySetpoint )
 	{
 		const real_t fpsScale = getFPSScale(144.0);
 		if ( tooltipDisplay.titleOnlyOpacitySetpoint == 0 )
@@ -25936,16 +26130,16 @@ void Player::Inventory_t::updateInventoryItemTooltip()
 			tooltipDisplay.titleOnlyOpacityAnimate += setpointDiff;
 			tooltipDisplay.titleOnlyOpacityAnimate = std::min(1.0, tooltipDisplay.titleOnlyOpacityAnimate);
 		}
-		titleOnlyTooltipFrame->setOpacity(tooltipDisplay.titleOnlyOpacityAnimate * 100);
+		titleOnlyFrame->setOpacity(tooltipDisplay.titleOnlyOpacityAnimate * 100);
 	}
 	else
 	{
-		titleOnlyTooltipFrame->setOpacity(tooltipDisplay.titleOnlyOpacitySetpoint);
+		titleOnlyFrame->setOpacity(tooltipDisplay.titleOnlyOpacitySetpoint);
 	}
 
-	if ( tooltipPromptFrame )
+	if ( frameTooltipPrompt )
 	{
-		tooltipPromptFrame->setOpacity(tooltipFrame->getOpacity());
+		frameTooltipPrompt->setOpacity(frameMain->getOpacity());
 	}
 
 	tooltipDisplay.expandSetpoint = tooltipDisplay.expanded ? 100 : 0;
@@ -26715,7 +26909,13 @@ void Player::Inventory_t::processInventory()
 	}
 	if ( !tooltipFrame )
 	{
-		createInventoryTooltipFrame(player.playernum);
+		createInventoryTooltipFrame(player.playernum,
+			nullptr,
+			tooltipContainerFrame,
+			titleOnlyTooltipFrame,
+			tooltipFrame,
+			interactFrame,
+			tooltipPromptFrame);
 	}
 
 	frame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),

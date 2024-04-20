@@ -3503,6 +3503,105 @@ struct Compendium_t
 	};
 	std::map<std::string, CompendiumCodex_t::Codex_t> codex;
 	void readCodexFromFile();
+
+	struct CompendiumItems_t
+	{
+		struct Codex_t
+		{
+			struct CodexItem_t
+			{
+				std::string name = "";
+				int rotation = 0;
+			};
+			int modelIndex = -1;
+			std::string imagePath = "";
+			std::vector<std::string> blurb;
+			std::vector<CodexItem_t> items_in_category;
+		};
+		static std::vector<std::pair<std::string, std::string>> contents;
+		static std::map<std::string, std::string> contentsMap;
+	};
+	std::map<std::string, CompendiumItems_t::Codex_t> items;
+	void readItemsFromFile();
+
+	enum EventTags
+	{
+		CPDM_HOLD_TIME = 0,
+		CPDM_SCRAPPED,
+		CPDM_SHIELD_REFLECT,
+		CPDM_BLOCKED_ATTACKS,
+		CPDM_BLESSED_TOTAL,
+		CPDM_INSPIRATION_XP,
+		CPDM_BLINDFOLDED_TIME,
+		CPDM_MASKED_ROBBERIES,
+		CPDM_CARRY_WGT_MAX,
+		CPDM_BROKEN,
+		CPDM_VICTORIES_WITH,
+		CPDM_BROKEN_BY_BLOCKING,
+		CPDM_PWR_MAX,
+		CPDM_ROSES_OFFERED,
+		CPDM_GOLD_MAX_NULLIFIED,
+		CPDM_BLESSED_MAX_DOUBLET,
+		CPDM_PREFERRED_CLASS,
+		CPDM_BLESSED_MAX,
+		CPDM_TORCH_WALLS,
+		CPDM_SHIELD_REFLECT_KILLS,
+		CPDM_BLESSED_MAX_CLOAK,
+		CPDM_INVENTORY_SLOTS_AVG,
+		CPDM_COLLECTED_RUN,
+		CPDM_TORCH_BURNT_OUT,
+		CPDM_STEALTH_ATTACKS_WITH,
+		CPDM_MIRROR_TELEPORTS,
+		CPDM_BLOCKED_HIGHEST_DMG,
+		CPDM_BOULDER_DMG_BLOCKED,
+		CPDM_HUNGER_PACIFIED,
+		CPDM_DISORIENT_EFFECT_APPLIED,
+		CPDM_CLOAK_BURNED,
+		CPDM_INVENTORY_QTY_MAX,
+		CPDM_DEATHS_WEARING,
+		CPDM_EVENT_TAGS_MAX
+	};
+
+	struct Events_t
+	{
+		enum Type
+		{
+			SUM,
+			MAX,
+			AVERAGE_RANGE
+		};
+		struct Event_t
+		{
+			Type type = SUM;
+			bool client = true;
+			std::string name = "";
+			int id = CPDM_EVENT_TAGS_MAX;
+		};
+		struct EventVal_t
+		{
+			Type type = SUM;
+			int id = CPDM_EVENT_TAGS_MAX;
+			Sint32 value = 0;
+			void applyValue(const Sint32 val);
+			EventVal_t() = default;
+			EventVal_t(EventTags tag)
+			{
+				auto& def = events[tag];
+				type = def.type;
+				id = def.id;
+				value = 0;
+			}
+		};
+		static std::map<EventTags, Event_t> events;
+		static std::map<std::string, EventTags> eventIdLookup;
+		static std::map<ItemType, std::set<EventTags>> itemEventLookup;
+		static std::map<EventTags, std::set<ItemType>> eventItemLookup;
+		static void readEventsFromFile();
+		static void writeItemsSaveData();
+		static void loadItemsSaveData();
+		static void eventUpdate(const int playernum, const EventTags tag, const ItemType type, const Sint32 val, const bool forceValue = false);
+		static std::map<EventTags, std::map<ItemType, EventVal_t>> playerEvents[MAXPLAYERS];
+	};
 };
 
 extern Compendium_t CompendiumEntries;

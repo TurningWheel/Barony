@@ -460,7 +460,7 @@ public:
 
 	// weight, category and other generic info reported by function calls
 
-	node_t* node;
+	node_t* node = nullptr;
 
 	/*
 	 * Gems use this to store information about what sort of creature they contain.

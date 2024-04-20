@@ -13,12 +13,19 @@ void doSharedMinimap();
 extern Frame* gameUIFrame[MAXPLAYERS];
 void addMessageToLogWindow(int player, string_t* string);
 void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable = false);
-void createInventoryTooltipFrame(const int player);
+void createInventoryTooltipFrame(const int player, 
+	Frame* parentFrame,
+	Frame*& tooltipContainerFrame,
+	Frame*& titleOnlyTooltipFrame,
+	Frame*& tooltipFrame,
+	Frame*& interactFrame,
+	Frame*& promptFrame);
 bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spells);
 void resetInventorySlotFrames(const int player);
 void createPlayerInventorySlotFrameElements(Frame* slotFrame);
 void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offsetyaw, bool dark = false);
 void drawMonsterPreview(Entity* monster, SDL_Rect pos, real_t offsetyaw, bool dark = false);
+void drawItemPreview(Entity* item, SDL_Rect pos, real_t offsetyaw, bool dark = false);
 extern view_t playerPortraitView[MAXPLAYERS];
 void toggleShopBuybackView(const int player);
 void loadHUDSettingsJSON();

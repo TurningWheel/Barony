@@ -1042,7 +1042,7 @@ public:
 		void updateInventory();
 		void updateCursor();
 		void updateItemContextMenuClickFrame();
-		void updateInventoryItemTooltip();
+		void updateInventoryItemTooltip(Frame* parentFrame = nullptr);
 		void updateSelectedItemAnimation();
 		void updateItemContextMenu();
 		void cycleInventoryTab();
@@ -1655,8 +1655,8 @@ public:
 		void updateEnemyBar(Frame* whichFrame);
 		void updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails);
 		void resetBars();
-		void updateFrameTooltip(Item* item, const int x, const int y, int justify);
-        void finalizeFrameTooltip(Item* item, const int x, const int y, int justify);
+		void updateFrameTooltip(Item* item, const int x, const int y, int justify, Frame* parentFrame = nullptr);
+        void finalizeFrameTooltip(Item* item, const int x, const int y, int justify, Frame* parentFrame = nullptr);
 		void updateStatusEffectTooltip();
 		void updateCursor();
 		void updateActionPrompts();

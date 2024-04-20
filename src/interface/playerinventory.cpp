@@ -4067,22 +4067,61 @@ int getContextMenuOptionOrder(const int player, ItemContextMenuPrompts prompt)
 	return 5;
 }
 
-void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int justify)
+void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int justify, Frame* parentFrame)
 {
-    if ( player.inventoryUI.tooltipContainerFrame )
-    {
-        player.inventoryUI.tooltipContainerFrame->setSize(
-            SDL_Rect{player.camera_virtualx1(),
-                player.camera_virtualy1(),
-                player.camera_virtualWidth(),
-                player.camera_virtualHeight()});
-    }
-    
     const int player = this->player.playernum;
     if ( !item )
     {
         return;
     }
+
+	Frame* tooltipContainerFrame = nullptr;
+	Frame* frameMain = nullptr;
+	Frame* frameInventory = nullptr;
+	Frame* frameInteract = nullptr;
+	Frame* frameTooltipPrompt = nullptr;
+	Frame* titleOnlyFrame = nullptr;
+	if ( parentFrame != nullptr )
+	{
+		// hacks for compendium tooltips
+		char name[32];
+		snprintf(name, sizeof(name), "player tooltip container %d", 0);
+		if ( tooltipContainerFrame = parentFrame->findFrame(name) )
+		{
+			snprintf(name, sizeof(name), "player title only tooltip %d", 0);
+			titleOnlyFrame = tooltipContainerFrame->findFrame(name);
+			snprintf(name, sizeof(name), "player tooltip %d", 0);
+			frameMain = tooltipContainerFrame->findFrame(name);
+			snprintf(name, sizeof(name), "player interact %d", 0);
+			frameInteract = parentFrame->findFrame(name);
+			snprintf(name, sizeof(name), "player item prompt %d", 0);
+			frameTooltipPrompt = tooltipContainerFrame->findFrame(name);
+		}
+	}
+	else
+	{
+		tooltipContainerFrame = this->player.inventoryUI.tooltipContainerFrame;
+		frameMain = this->player.inventoryUI.tooltipFrame;
+		frameInventory = this->player.inventoryUI.frame;
+		frameInteract = this->player.inventoryUI.interactFrame;
+		frameTooltipPrompt = this->player.inventoryUI.tooltipPromptFrame;
+		titleOnlyFrame = this->player.inventoryUI.titleOnlyTooltipFrame;
+		if ( !frameInventory )
+		{
+			return;
+		}
+	}
+
+
+    if ( tooltipContainerFrame )
+    {
+		tooltipContainerFrame->setSize(
+            SDL_Rect{ this->player.camera_virtualx1(),
+				this->player.camera_virtualy1(),
+				this->player.camera_virtualWidth(),
+				this->player.camera_virtualHeight()});
+    }
+    
 
 	players[player]->inventoryUI.miscTooltipOpacitySetpoint = 0;
 	players[player]->inventoryUI.miscTooltipOpacityAnimate = 0.0;
@@ -4092,31 +4131,20 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
     bool bUpdateDisplayedTooltip =
     (!tooltipDisplayedSettings.isItemSameAsCurrent(player, item) || ItemTooltips.itemDebug);
     
-    auto frameMain = this->player.inventoryUI.tooltipFrame;
     if ( !frameMain )
     {
         return;
     }
     
-    auto frameInventory = this->player.inventoryUI.frame;
-    if ( !frameInventory )
-    {
-        return;
-    }
-    
-    auto frameInteract = this->player.inventoryUI.interactFrame;
     if ( !frameInteract )
     {
         return;
     }
     
-    auto frameTooltipPrompt = this->player.inventoryUI.tooltipPromptFrame;
     if ( !frameTooltipPrompt )
     {
         return;
     }
-    
-    auto titleOnlyFrame = this->player.inventoryUI.titleOnlyTooltipFrame;
     
     static const char* bigfont = "fonts/pixelmix.ttf#18";
     
@@ -6382,41 +6410,50 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
         gradientTop->pos.w = imgMiddleBackground->pos.w + 20;
     }
     
-    finalizeFrameTooltip(item, x, y, justify);
+    finalizeFrameTooltip(item, x, y, justify, parentFrame);
 }
 
-void Player::HUD_t::finalizeFrameTooltip(Item* item, const int x, const int y, int justify)
+void Player::HUD_t::finalizeFrameTooltip(Item* item, const int x, const int y, int justify, Frame* parentFrame)
 {
     const int player = this->player.playernum;
     const bool doTitleOnlyTooltip = players[player]->shootmode && !(enableDebugKeys && keystatus[SDLK_g]);
     auto& tooltipDisplayedSettings = this->player.inventoryUI.itemTooltipDisplay;
     
-    auto frameMain = this->player.inventoryUI.tooltipFrame;
-    if ( !frameMain )
-    {
-        return;
-    }
-    
-    auto frameInventory = this->player.inventoryUI.frame;
-    if ( !frameInventory )
-    {
-        return;
-    }
-    
-    auto frameInteract = this->player.inventoryUI.interactFrame;
-    if ( !frameInteract )
-    {
-        return;
-    }
-    
-    auto frameTooltipPrompt = this->player.inventoryUI.tooltipPromptFrame;
-    if ( !frameTooltipPrompt )
-    {
-        return;
-    }
-    
-    auto titleOnlyFrame = this->player.inventoryUI.titleOnlyTooltipFrame;
-    
+	Frame* tooltipContainerFrame = nullptr;
+	Frame* frameMain = nullptr;
+	Frame* frameInventory = nullptr;
+	Frame* frameInteract = nullptr;
+	Frame* frameTooltipPrompt = nullptr;
+	Frame* titleOnlyFrame = nullptr;
+	if ( parentFrame != nullptr )
+	{
+		// hacks for compendium tooltips
+		char name[32];
+		snprintf(name, sizeof(name), "player tooltip container %d", 0);
+		tooltipContainerFrame = parentFrame->findFrame(name);
+		snprintf(name, sizeof(name), "player title only tooltip %d", 0);
+		titleOnlyFrame = tooltipContainerFrame->findFrame(name);
+		snprintf(name, sizeof(name), "player tooltip %d", 0);
+		frameMain = tooltipContainerFrame->findFrame(name);
+		snprintf(name, sizeof(name), "player interact %d", 0);
+		frameInteract = parentFrame->findFrame(name);
+		snprintf(name, sizeof(name), "player item prompt %d", 0);
+		frameTooltipPrompt = tooltipContainerFrame->findFrame(name);
+	}
+	else
+	{
+		tooltipContainerFrame = this->player.inventoryUI.tooltipContainerFrame;
+		frameMain = this->player.inventoryUI.tooltipFrame;
+		frameInventory = this->player.inventoryUI.frame;
+		frameInteract = this->player.inventoryUI.interactFrame;
+		frameTooltipPrompt = this->player.inventoryUI.tooltipPromptFrame;
+		titleOnlyFrame = this->player.inventoryUI.titleOnlyTooltipFrame;
+		if ( !frameInventory )
+		{
+			return;
+		}
+	}
+
 	if ( !doTitleOnlyTooltip )
 	{
 		tooltipDisplayedSettings.opacitySetpoint = 0;
