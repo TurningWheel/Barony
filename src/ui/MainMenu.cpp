@@ -31645,7 +31645,7 @@ failed:
 						txt->setText(Language::get(6161));
 						txt->setColor(makeColor(255, 255, 255, 255));
 					}
-					else if ( e.scenarioInfo.race >= RACE_HUMAN && e.scenarioInfo.race < RACE_INSECTOID )
+					else if ( e.scenarioInfo.race >= RACE_HUMAN && e.scenarioInfo.race <= RACE_INSECTOID )
 					{
 						std::string s = getMonsterLocalizedName(getMonsterFromPlayerRace(e.scenarioInfo.race));
 						camelCaseString(s);
