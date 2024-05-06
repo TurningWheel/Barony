@@ -755,6 +755,7 @@ int itemCompare(const Item* item1, const Item* item2, bool checkAppearance, bool
  */
 bool isPotionBad(const Item& potion);
 bool isRangedWeapon(const Item& item);
+bool isRangedWeapon(const ItemType type);
 bool isMeleeWeapon(const Item& item);
 bool itemIsThrowableTinkerTool(const Item* item);
 

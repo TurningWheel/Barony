@@ -2484,6 +2484,11 @@ void gameLogic(void)
 						list_FreeAll(&tempFollowers[c]);
 					}
 
+					for ( c = 0; c < MAXPLAYERS; c++ )
+					{
+						Compendium_t::Events_t::onLevelChangeEvent(c);
+					}
+
                     // save at end of level change
 					if ( gameModeManager.allowsSaves() )
 					{
@@ -2737,6 +2742,14 @@ void gameLogic(void)
 							break;
 						default:
 							break;
+					}
+
+					if ( ticks % TICKS_PER_SECOND == 25 )
+					{
+						if ( item->identified )
+						{
+							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_RUNS_COLLECTED, item->type, 1);
+						}
 					}
 
 					if ( item->type == FOOD_BLOOD && stats[player]->playerRace == RACE_VAMPIRE && stats[player]->appearance == 0 )
@@ -3375,6 +3388,14 @@ void gameLogic(void)
 						break;
 					default:
 						break;
+				}
+
+				if ( ticks % TICKS_PER_SECOND == 25 )
+				{
+					if ( item->identified )
+					{
+						Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_RUNS_COLLECTED, item->type, 1);
+					}
 				}
 
 				if ( itemCategory(item) == WEAPON )

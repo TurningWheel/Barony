@@ -23,6 +23,7 @@
 #include "colors.hpp"
 #include "scores.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 //Fountain functions.
 const std::vector<unsigned int> fountainPotionDropChances =
@@ -399,6 +400,7 @@ void actFountain(Entity* my)
 									stuckOnYouSuccess = true;
 								}
 								stats[i]->helmet->beatitude++;
+								Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_BLESSED_TOTAL, stats[i]->helmet->type, 1);
 							}
 							if ( stats[i]->breastplate )
 							{
@@ -407,6 +409,7 @@ void actFountain(Entity* my)
 									stuckOnYouSuccess = true;
 								}
 								stats[i]->breastplate->beatitude++;
+								Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_BLESSED_TOTAL, stats[i]->breastplate->type, 1);
 							}
 							if ( stats[i]->gloves )
 							{
@@ -415,6 +418,7 @@ void actFountain(Entity* my)
 									stuckOnYouSuccess = true;
 								}
 								stats[i]->gloves->beatitude++;
+								Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_BLESSED_TOTAL, stats[i]->gloves->type, 1);
 							}
 							if ( stats[i]->shoes )
 							{
@@ -423,6 +427,7 @@ void actFountain(Entity* my)
 									stuckOnYouSuccess = true;
 								}
 								stats[i]->shoes->beatitude++;
+								Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_BLESSED_TOTAL, stats[i]->shoes->type, 1);
 							}
 							if ( stats[i]->shield )
 							{
@@ -431,6 +436,7 @@ void actFountain(Entity* my)
 									stuckOnYouSuccess = true;
 								}
 								stats[i]->shield->beatitude++;
+								Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_BLESSED_TOTAL, stats[i]->shield->type, 1);
 							}
 							if ( stats[i]->weapon )
 							{
@@ -441,6 +447,7 @@ void actFountain(Entity* my)
 										stuckOnYouSuccess = true;
 									}
 									stats[i]->weapon->beatitude++;
+									Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_BLESSED_TOTAL, stats[i]->weapon->type, 1);
 								}
 							}
 							if ( stats[i]->cloak )
@@ -450,6 +457,7 @@ void actFountain(Entity* my)
 									stuckOnYouSuccess = true;
 								}
 								stats[i]->cloak->beatitude++;
+								Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_BLESSED_TOTAL, stats[i]->cloak->type, 1);
 							}
 							if ( stats[i]->amulet )
 							{
@@ -458,6 +466,7 @@ void actFountain(Entity* my)
 									stuckOnYouSuccess = true;
 								}
 								stats[i]->amulet->beatitude++;
+								Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_BLESSED_TOTAL, stats[i]->amulet->type, 1);
 							}
 							if ( stats[i]->ring )
 							{
@@ -466,6 +475,7 @@ void actFountain(Entity* my)
 									stuckOnYouSuccess = true;
 								}
 								stats[i]->ring->beatitude++;
+								Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_BLESSED_TOTAL, stats[i]->ring->type, 1);
 							}
 							if ( stats[i]->mask )
 							{
@@ -474,6 +484,7 @@ void actFountain(Entity* my)
 									stuckOnYouSuccess = true;
 								}
 								stats[i]->mask->beatitude++;
+								Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_BLESSED_TOTAL, stats[i]->mask->type, 1);
 							}
 							if ( multiplayer == SERVER && i > 0 && !players[i]->isLocalPlayer() )
 							{
@@ -559,6 +570,7 @@ void actFountain(Entity* my)
 									}
 								}
 								chosen.first->beatitude++;
+								Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_BLESSED_TOTAL, chosen.first->type, 1);
 
 								if ( multiplayer == SERVER && i > 0 && !players[i]->isLocalPlayer() )
 								{

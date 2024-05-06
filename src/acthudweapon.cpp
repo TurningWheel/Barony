@@ -22,6 +22,7 @@
 #include "scores.hpp"
 #include "ui/MainMenu.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -1074,6 +1075,10 @@ void actHudWeapon(Entity* my)
 											{
 												Item* quiver = stats[HUDWEAPON_PLAYERNUM]->shield;
 												quiver->count--;
+
+												Compendium_t::Events_t::eventUpdate(HUDWEAPON_PLAYERNUM, Compendium_t::CPDM_AMMO_FIRED,
+													quiver->type, 1);
+
 												if ( quiver->count <= 0 )
 												{
 													if ( quiver->node )
@@ -1225,6 +1230,10 @@ void actHudWeapon(Entity* my)
 										{
 											Item* quiver = stats[HUDWEAPON_PLAYERNUM]->shield;
 											quiver->count--;
+
+											Compendium_t::Events_t::eventUpdate(HUDWEAPON_PLAYERNUM, Compendium_t::CPDM_AMMO_FIRED,
+												quiver->type, 1);
+
 											if ( quiver->count <= 0 )
 											{
 												if ( quiver->node )

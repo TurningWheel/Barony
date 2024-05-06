@@ -23,6 +23,7 @@
 #include "scores.hpp"
 #include "player.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -660,6 +661,24 @@ void actArrow(Entity* my)
 						else
 						{
 							parent->killedByMonsterObituary(hit.entity);
+						}
+
+						if ( parent->behavior == &actPlayer )
+						{
+							if ( itemTypeIsQuiver((ItemType)my->arrowQuiverType) )
+							{
+								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_DMG_MAX, (ItemType)my->arrowQuiverType, damage);
+								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_AMMO_HIT, (ItemType)my->arrowQuiverType, 1);
+							}
+							if ( isRangedWeapon((ItemType)my->arrowShotByWeapon) )
+							{
+								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_DMG_MAX, (ItemType)my->arrowShotByWeapon, damage);
+								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SHOTS_HIT, (ItemType)my->arrowShotByWeapon, 1);
+							}
+							if ( my->arrowShotByWeapon == SLING && damage == 0 )
+							{
+								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_DMG_0, (ItemType)my->arrowShotByWeapon, 1);
+							}
 						}
 
 						if ( hit.entity->behavior == &actMonster && parent->behavior == &actPlayer )

@@ -3526,39 +3526,50 @@ struct Compendium_t
 
 	enum EventTags
 	{
-		CPDM_HOLD_TIME = 0,
-		CPDM_SCRAPPED,
-		CPDM_SHIELD_REFLECT,
 		CPDM_BLOCKED_ATTACKS,
-		CPDM_BLESSED_TOTAL,
-		CPDM_INSPIRATION_XP,
-		CPDM_BLINDFOLDED_TIME,
-		CPDM_MASKED_ROBBERIES,
-		CPDM_CARRY_WGT_MAX,
-		CPDM_BROKEN,
-		CPDM_VICTORIES_WITH,
 		CPDM_BROKEN_BY_BLOCKING,
-		CPDM_PWR_MAX,
-		CPDM_ROSES_OFFERED,
-		CPDM_GOLD_MAX_NULLIFIED,
-		CPDM_BLESSED_MAX_DOUBLET,
-		CPDM_PREFERRED_CLASS,
+		CPDM_BROKEN,
 		CPDM_BLESSED_MAX,
+		CPDM_ATTACKS,
+		CPDM_THROWN,
+		CPDM_SHOTS_FIRED,
+		CPDM_AMMO_FIRED,
+		CPDM_CONSUMED,
+		CPDM_TOWEL_USES,
+		CPDM_PICKAXE_WALLS_DUG,
+		CPDM_SINKS_TAPPED,
+		CPDM_ALEMBIC_BREWED,
+		CPDM_TINKERKIT_CRAFTS,
 		CPDM_TORCH_WALLS,
-		CPDM_SHIELD_REFLECT_KILLS,
-		CPDM_BLESSED_MAX_CLOAK,
-		CPDM_INVENTORY_SLOTS_AVG,
-		CPDM_COLLECTED_RUN,
-		CPDM_TORCH_BURNT_OUT,
-		CPDM_STEALTH_ATTACKS_WITH,
+		CPDM_SHIELD_REFLECT,
+		CPDM_BLESSED_TOTAL,
+		CPDM_DMG_MAX,
+		CPDM_TRADING_GOLD_EARNED,
+		CPDM_FOUNTAINS_TAPPED,
+		CPDM_ALEMBIC_DECANTED,
+		CPDM_TINKERKIT_REPAIRS,
 		CPDM_MIRROR_TELEPORTS,
 		CPDM_BLOCKED_HIGHEST_DMG,
-		CPDM_BOULDER_DMG_BLOCKED,
-		CPDM_HUNGER_PACIFIED,
-		CPDM_DISORIENT_EFFECT_APPLIED,
+		CPDM_TRADING_SOLD,
+		CPDM_DMG_0,
+		CPDM_BOTTLE_FROM_BREWING,
+		CPDM_ALEMBIC_DUPLICATED,
+		CPDM_TINKERKIT_METAL_SCRAPPED,
+		CPDM_INSPIRATION_XP,
 		CPDM_CLOAK_BURNED,
-		CPDM_INVENTORY_QTY_MAX,
-		CPDM_DEATHS_WEARING,
+		CPDM_BOTTLES_FROM_CONSUME,
+		CPDM_ALEMBIC_BROKEN,
+		CPDM_TINKERKIT_MAGIC_SCRAPPED,
+		CPDM_TINKERKIT_SALVAGED,
+		CPDM_APPRAISED,
+		CPDM_TOWEL_BLEEDING,
+		CPDM_TOWEL_MESSY,
+		CPDM_TOWEL_GREASY,
+		CPDM_RUNS_COLLECTED,
+		CPDM_ATTACKS_MISSES,
+		CPDM_THROWN_HITS,
+		CPDM_SHOTS_HIT,
+		CPDM_AMMO_HIT,
 		CPDM_EVENT_TAGS_MAX
 	};
 
@@ -3570,10 +3581,18 @@ struct Compendium_t
 			MAX,
 			AVERAGE_RANGE
 		};
+		enum ClientUpdateType
+		{
+			SERVER_ONLY,
+			CLIENT_ONLY,
+			CLIENT_AND_SERVER,
+			CLIENT_UPDATETYPE_MAX
+		};
 		struct Event_t
 		{
 			Type type = SUM;
-			bool client = true;
+			bool oncePerRun = false;
+			ClientUpdateType clienttype = CLIENT_ONLY;
 			std::string name = "";
 			int id = CPDM_EVENT_TAGS_MAX;
 		};
@@ -3582,7 +3601,7 @@ struct Compendium_t
 			Type type = SUM;
 			int id = CPDM_EVENT_TAGS_MAX;
 			Sint32 value = 0;
-			void applyValue(const Sint32 val);
+			bool applyValue(const Sint32 val);
 			EventVal_t() = default;
 			EventVal_t(EventTags tag)
 			{
@@ -3599,8 +3618,15 @@ struct Compendium_t
 		static void readEventsFromFile();
 		static void writeItemsSaveData();
 		static void loadItemsSaveData();
-		static void eventUpdate(const int playernum, const EventTags tag, const ItemType type, const Sint32 val, const bool forceValue = false);
-		static std::map<EventTags, std::map<ItemType, EventVal_t>> playerEvents[MAXPLAYERS];
+		static void eventUpdate(int playernum, const EventTags tag, const ItemType type, const Sint32 val, const bool loadingValue = false);
+		static std::map<EventTags, std::map<ItemType, EventVal_t>> playerEvents;
+		static std::map<EventTags, std::map<ItemType, EventVal_t>> serverPlayerEvents[MAXPLAYERS];
+		static void onLevelChangeEvent(const int playernum);
+		static void onVictoryEvent(const int playernum);
+		static void sendClientDataOverNet(const int playernum);
+		static std::map<int, std::string> clientDataStrings[MAXPLAYERS];
+		static std::map<int, std::map<int, std::string>> clientReceiveData; // todo clean up on end
+		static Uint8 clientSequence;
 	};
 };
 

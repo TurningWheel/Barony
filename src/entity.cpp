@@ -596,15 +596,18 @@ Entity::~Entity()
 	// set appropriate player pointer to NULL
 	for ( i = 0; i < MAXPLAYERS; ++i )
 	{
-		if ( this == players[i]->entity )
+		if ( players[i] )
 		{
-			players[i]->entity = nullptr;    //TODO: PLAYERSWAP VERIFY. Should this do anything to the player itself?
-			players[i]->cleanUpOnEntityRemoval();
-		}
-		if ( this == players[i]->ghost.my )
-		{
-			players[i]->ghost.my = nullptr;
-			players[i]->ghost.reset();
+			if ( this == players[i]->entity )
+			{
+				players[i]->entity = nullptr;    //TODO: PLAYERSWAP VERIFY. Should this do anything to the player itself?
+				players[i]->cleanUpOnEntityRemoval();
+			}
+			if ( this == players[i]->ghost.my )
+			{
+				players[i]->ghost.my = nullptr;
+				players[i]->ghost.reset();
+			}
 		}
 	}
 	// destroy my children
@@ -4608,6 +4611,7 @@ void Entity::handleEffects(Stat* myStats)
 						else
 						{
 							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(646), myStats->cloak->getName()); // "Your %s burns to ash!"
+							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_CLOAK_BURNED, myStats->cloak->type, 1);
 						}
 						if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 						{
@@ -7121,6 +7125,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 			// ranged weapons (bows)
 			else if ( isRangedWeapon(*myStats->weapon) )
 			{
+				if ( behavior == &actPlayer )
+				{
+					Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_SHOTS_FIRED,
+						stats[skill[2]]->weapon->type, 1);
+				}
+
 				// damage weapon if applicable
 				int bowDegradeChance = 50;
 				if ( behavior == &actPlayer )
@@ -7234,6 +7244,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 					//TODO: Refactor this so that we don't have to copy paste this check a million times whenever some-one uses up an item.
 					if ( behavior == &actPlayer && pose != MONSTER_POSE_RANGED_SHOOT2 )
 					{
+						if ( players[skill[2]]->isLocalPlayer() )
+						{
+							Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_AMMO_FIRED,
+								myStats->shield->type, 1);
+						}
+
 						myStats->shield->count--;
 						if ( myStats->shield->count <= 0 )
 						{
@@ -7458,6 +7474,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 				}
 
+				if ( behavior == &actPlayer )
+				{
+					Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_THROWN,
+						stats[skill[2]]->weapon->type, 1);
+				}
+
 				//TODO: Refactor this so that we don't have to copy paste this check a million times whenever some-one uses up an item.
 				myStats->weapon->count--;
 				if ( myStats->weapon->count <= 0 )
@@ -7638,6 +7660,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								messagePlayer(player, MESSAGE_COMBAT, Language::get(664));
 								playSoundEntity(this, 76, 64);
+
+								if ( behavior == &actPlayer )
+								{
+									if ( myStats->weapon && myStats->weapon->type == TOOL_PICKAXE )
+									{
+										Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_BROKEN, myStats->weapon->type, 1);
+									}
+								}
 							}
 							else
 							{
@@ -7795,6 +7825,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						messagePlayer(player, MESSAGE_COMBAT, Language::get(664));
 						playSoundEntity(this, 76, 64);
+
+						if ( behavior == &actPlayer )
+						{
+							if ( myStats->weapon && myStats->weapon->type == TOOL_PICKAXE )
+							{
+								Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_BROKEN, myStats->weapon->type, 1);
+							}
+						}
 					}
 					else
 					{
@@ -8284,7 +8322,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						damagePreMultiplier = 2;
 					}
 
-					int myAttack = std::max(0, (Entity::getAttack(this, myStats, behavior == &actPlayer) * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats));
+					const int myAttack = std::max(0, (Entity::getAttack(this, myStats, behavior == &actPlayer) * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats));
 					int enemyAC = AC(hitstats);
 					if ( weaponskill == PRO_POLEARM && myStats->weapon && myStats->weapon->type == ARTIFACT_SPEAR && !shapeshifted )
 					{
@@ -8473,6 +8511,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
+					if ( hitstats->defending && damage == 0 && hitstats->shield )
+					{
+						if ( playerhit >= 0 )
+						{
+							Compendium_t::Events_t::eventUpdate(playerhit, Compendium_t::CPDM_BLOCKED_ATTACKS, hitstats->shield->type, 1);
+							Compendium_t::Events_t::eventUpdate(playerhit, Compendium_t::CPDM_BLOCKED_HIGHEST_DMG, hitstats->shield->type, myAttack);
+						}
+					}
+
 					hit.entity->modHP(-damage); // do the damage
 					bool skillIncreased = false;
 					// skill increase
@@ -8632,6 +8679,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( weaponToBreak != nullptr && !shapeshifted )
 					{
 						weaponType = (*weaponToBreak)->type;
+
+						if ( behavior == &actPlayer )
+						{
+							Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_ATTACKS,
+								weaponType, 1);
+							Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_DMG_MAX, weaponType, damage);
+						}
+
 						if ( weaponType == ARTIFACT_AXE || weaponType == ARTIFACT_MACE || weaponType == ARTIFACT_SPEAR || weaponType == ARTIFACT_SWORD )
 						{
 							artifactWeapon = true;
@@ -10939,6 +10994,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 									steamAchievementClient(player, "BARONY_ACH_BAD_REVIEW");
 								}
 
+								if ( behavior == &actPlayer )
+								{
+									if ( myStats->weapon && myStats->weapon->type == TOOL_PICKAXE )
+									{
+										Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_PICKAXE_WALLS_DUG, myStats->weapon->type, 1);
+									}
+								}
+
 								map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height] = 0;
 								// send wall destroy info to clients
 								if ( multiplayer == SERVER )
@@ -10962,13 +11025,24 @@ void Entity::attack(int pose, int charge, Entity* target)
 								generatePathMaps();
 							}
 							int chance = 2 + (myStats->type == GOBLIN ? 2 : 0);
-							if ( local_rng.rand() % chance && degradePickaxe )
+							if ( local_rng.rand() % chance && degradePickaxe && myStats->weapon )
 							{
-								myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
+								if ( myStats->weapon->status > BROKEN )
+								{
+									myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
+								}
 								if ( myStats->weapon->status == BROKEN )
 								{
 									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(704));
 									playSoundEntity(this, 76, 64);
+
+									if ( behavior == &actPlayer )
+									{
+										if ( myStats->weapon && myStats->weapon->type == TOOL_PICKAXE )
+										{
+											Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_BROKEN, myStats->weapon->type, 1);
+										}
+									}
 								}
 								else
 								{
@@ -10996,6 +11070,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						// bang
 						spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
+
+						if ( behavior == &actPlayer )
+						{
+							Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_ATTACKS_MISSES,
+								myStats->weapon->type, 1);
+						}
 					}
 				}
 				else
@@ -11003,6 +11083,59 @@ void Entity::attack(int pose, int charge, Entity* target)
 					// bang
 					//spawnBang(hit.x - cos(my->yaw)*2,hit.y - sin(my->yaw)*2,0);
 					playSoundPos(hit.x, hit.y, 183, 64);
+
+					if ( !myStats->weapon && !shapeshifted )
+					{
+						if ( myStats->gloves )
+						{
+							switch ( myStats->gloves->type )
+							{
+							case BRASS_KNUCKLES:
+							case IRON_KNUCKLES:
+							case SPIKED_GAUNTLETS:
+								if ( behavior == &actPlayer )
+								{
+									Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_ATTACKS_MISSES,
+										myStats->gloves->type, 1);
+								}
+								break;
+							default:
+								break;
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				// hit nothing
+				if ( myStats->weapon != NULL && !shapeshifted )
+				{
+					if ( behavior == &actPlayer )
+					{
+						Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_ATTACKS_MISSES,
+							myStats->weapon->type, 1);
+					}
+				}
+				else if ( !myStats->weapon && !shapeshifted )
+				{
+					if ( myStats->gloves )
+					{
+						switch ( myStats->gloves->type )
+						{
+						case BRASS_KNUCKLES:
+						case IRON_KNUCKLES:
+						case SPIKED_GAUNTLETS:
+							if ( behavior == &actPlayer )
+							{
+								Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_ATTACKS_MISSES,
+									myStats->gloves->type, 1);
+							}
+							break;
+						default:
+							break;
+						}
+					}
 				}
 			}
 
@@ -11915,11 +12048,17 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 									int gain = (xpGain * numshares); // summoned monsters aren't penalised XP.
 									if ( inspiration )
 									{
+										int oldGain = gain;
 										gain *= inspirationMult;
 										if ( ((followerStats->EXP + gain) >= 100) && ((followerStats->EXP + (xpGain * numshares)) < 100) )
 										{
 											// inspiration caused us to level
 											steamAchievementEntity(this, "BARONY_ACH_BY_EXAMPLE");
+										}
+
+										if ( gain > oldGain )
+										{
+											Compendium_t::Events_t::eventUpdate(this->skill[2], Compendium_t::CPDM_INSPIRATION_XP, HAT_CROWN, gain - oldGain);
 										}
 									}
 									followerStats->EXP += gain; 
@@ -11929,11 +12068,17 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 									int gain = xpGain;
 									if ( inspiration )
 									{
+										int oldGain = gain;
 										gain *= inspirationMult;
 										if ( ((followerStats->EXP + gain) >= 100) && ((followerStats->EXP + xpGain) < 100) )
 										{
 											// inspiration caused us to level
 											steamAchievementEntity(this, "BARONY_ACH_BY_EXAMPLE");
+										}
+
+										if ( gain > oldGain )
+										{
+											Compendium_t::Events_t::eventUpdate(this->skill[2], Compendium_t::CPDM_INSPIRATION_XP, HAT_CROWN, gain - oldGain);
 										}
 									}
 									followerStats->EXP += gain;
@@ -11956,6 +12101,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		int gain = xpGain;
 		if ( inspiration )
 		{
+			int oldGain = gain;
 			gain *= inspirationMult;
 			if ( ((destStats->EXP + gain) >= 100) && ((destStats->EXP + xpGain) < 100) )
 			{
@@ -11965,6 +12111,17 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 					if ( auto leader = monsterAllyGetPlayerLeader() )
 					{
 						steamAchievementEntity(leader, "BARONY_ACH_BY_EXAMPLE");
+					}
+				}
+			}
+
+			if ( gain > oldGain )
+			{
+				if ( behavior == &actMonster )
+				{
+					if ( auto leader = monsterAllyGetPlayerLeader() )
+					{
+						Compendium_t::Events_t::eventUpdate(leader->skill[2], Compendium_t::CPDM_INSPIRATION_XP, HAT_CROWN, gain - oldGain);
 					}
 				}
 			}
@@ -17422,7 +17579,11 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 			net_packet->len = 8;
 			sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
 		}
-
+		if ( hitstats.defending )
+		{
+			Compendium_t::Events_t::eventUpdate(playerhit, Compendium_t::CPDM_BROKEN_BY_BLOCKING, armor.type, 1);
+		}
+		Compendium_t::Events_t::eventUpdate(playerhit, Compendium_t::CPDM_BROKEN, armor.type, 1);
 		return;
 	}
 
@@ -17462,6 +17623,14 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 		{
 			playSoundEntity(this, 76, 64);
 			messagePlayer(playerhit, MESSAGE_EQUIPMENT, Language::get(682), armor.getName());
+		}
+		if ( playerhit >= 0 )
+		{
+			if ( hitstats.defending )
+			{
+				Compendium_t::Events_t::eventUpdate(playerhit, Compendium_t::CPDM_BROKEN_BY_BLOCKING, armor.type, 1);
+			}
+			Compendium_t::Events_t::eventUpdate(playerhit, Compendium_t::CPDM_BROKEN, armor.type, 1);
 		}
 	}
 	if ( playerhit > 0 && multiplayer == SERVER && !players[playerhit]->isLocalPlayer() )

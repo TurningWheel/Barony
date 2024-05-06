@@ -18,6 +18,7 @@
 #include "../player.hpp"
 #include "interface.hpp"
 #include "../scores.hpp"
+#include "../mod_tools.hpp"
 
 //Identify GUI definitions.
 SDL_Surface* identifyGUI_img;
@@ -432,6 +433,10 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 	//If appraisal skill >= LEGENDARY, then auto-complete appraisal. Else, do the normal routine.
 	if ( stats[player.playernum]->getProficiency(PRO_APPRAISAL) >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
 	{
+		if ( !item->identified )
+		{
+			Compendium_t::Events_t::eventUpdate(player.playernum, Compendium_t::CPDM_APPRAISED, item->type, 1);
+		}
 		item->identified = true;
 		item->notifyIcon = true;
 		messagePlayer(player.playernum, MESSAGE_INVENTORY, Language::get(320), item->description());

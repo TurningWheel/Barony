@@ -3077,7 +3077,8 @@ Player::Player(int in_playernum, bool in_local_host) :
 	signGUI(*this),
 	paperDoll(*this),
 	minimap(*this),
-	shopGUI(*this)
+	shopGUI(*this),
+	compendiumProgress(*this)
 {
 	local_host = false;
 	playernum = in_playernum;

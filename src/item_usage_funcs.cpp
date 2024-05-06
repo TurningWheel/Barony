@@ -25,6 +25,7 @@
 #include "collision.hpp"
 #include "scores.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 {
@@ -2712,6 +2713,7 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 				}
 			}
 			(*toEnchant)->beatitude += 1 + item->beatitude;
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BLESSED_TOTAL, (*toEnchant)->type, item->beatitude);
 		}
 
 		if ( multiplayer == CLIENT )
@@ -2878,6 +2880,7 @@ void item_ScrollEnchantArmor(Item* item, int player)
 				messagePlayer(player, MESSAGE_HINT, Language::get(860), armor->getName());
 			}
 			armor->beatitude += 1 + item->beatitude;
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BLESSED_TOTAL, armor->type, item->beatitude);
 		}
 
 		if ( multiplayer == CLIENT )
@@ -3631,6 +3634,13 @@ void item_ScrollDestroyArmor(Item* item, int player)
 		{
 			messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(875), armor->getName());
 
+			if ( armor->status > BROKEN )
+			{
+				if ( player >= 0 )
+				{
+					Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BROKEN, armor->type, 1);
+				}
+			}
 			armor->status = static_cast<Status>(0);
 
 			if ( multiplayer == CLIENT )
@@ -3923,6 +3933,10 @@ void item_ScrollSummon(Item* item, int player)
 
 void item_ToolTowel(Item*& item, int player)
 {
+	if ( !item )
+	{
+		return;
+	}
 	if ( players[player]->isLocalPlayer() )
 	{
 		messagePlayer(player, MESSAGE_STATUS, Language::get(883));
@@ -3934,6 +3948,19 @@ void item_ToolTowel(Item*& item, int player)
 			|| stats[player]->EFFECTS[EFF_BLEEDING] )
 		{
 			steamAchievementClient(player, "BARONY_ACH_BRING_A_TOWEL");
+			if ( stats[player]->EFFECTS[EFF_GREASY] )
+			{
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TOWEL_GREASY, item->type, 1);
+			}
+			else if ( stats[player]->EFFECTS[EFF_MESSY] )
+			{
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TOWEL_MESSY, item->type, 1);
+			}
+			else if ( stats[player]->EFFECTS[EFF_BLEEDING] )
+			{
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TOWEL_BLEEDING, item->type, 1);
+			}
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TOWEL_USES, item->type, 1);
 		}
 		stats[player]->EFFECTS[EFF_GREASY] = false;
 		stats[player]->EFFECTS[EFF_MESSY] = false;
@@ -3976,6 +4003,10 @@ void item_ToolTinOpener(Item* item, int player)
 
 void item_ToolMirror(Item*& item, int player)
 {
+	if ( !item )
+	{
+		return;
+	}
 	Sint16 beatitude = item->beatitude;
 	if ( !players[player]->isLocalPlayer() )
 	{
@@ -4015,7 +4046,10 @@ void item_ToolMirror(Item*& item, int player)
 		}
 		else if ( beatitude > 0 )
 		{
-			players[player]->entity->teleportRandom();
+			if ( players[player]->entity->teleportRandom() )
+			{
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_MIRROR_TELEPORTS, TOOL_MIRROR, 1);
+			}
 			messagePlayer(player, MESSAGE_HINT, Language::get(890));
 		}
 		else if ( beatitude < 0 )
@@ -4144,6 +4178,7 @@ void item_ToolMirror(Item*& item, int player)
 		{
 			consumeItem(item, player);
 			item = nullptr;
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BROKEN, TOOL_MIRROR, 1);
 		}
 	}
 }
@@ -4296,6 +4331,10 @@ void item_ToolBeartrap(Item*& item, Entity* usedBy)
 
 void item_Food(Item*& item, int player)
 {
+	if ( !item )
+	{
+		return;
+	}
 	int oldcount;
 	int pukeChance;
 
@@ -4365,6 +4404,7 @@ void item_Food(Item*& item, int player)
 		{
 			steamAchievement("BARONY_ACH_MUSCLE_MEMORY");
 		}
+		Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_CONSUMED, item->type, 1);
 	}
 
 	if ( multiplayer == CLIENT )
@@ -4608,6 +4648,10 @@ void item_Food(Item*& item, int player)
 
 void item_FoodTin(Item*& item, int player)
 {
+	if ( !item )
+	{
+		return;
+	}
 	int oldcount;
 	int pukeChance;
 	bool slippery = false;
@@ -4674,6 +4718,7 @@ void item_FoodTin(Item*& item, int player)
 		{
 			steamStatisticUpdate(STEAM_STAT_IRON_GUT, STEAM_STAT_INT, 1);
 		}
+		Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_CONSUMED, item->type, 1);
 	}
 
 	if ( multiplayer == CLIENT )

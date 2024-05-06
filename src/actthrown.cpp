@@ -23,6 +23,7 @@
 #include "magic/magic.hpp"
 #include "paths.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -812,7 +813,20 @@ void actThrown(Entity* my)
 				if ( !friendlyHit )
 				{
 					hit.entity->modHP(-damage);
+
+					if ( parent && parent->behavior == &actPlayer )
+					{
+						Compendium_t::Events_t::eventUpdate(parent->skill[2], 
+							Compendium_t::CPDM_DMG_MAX, item->type, damage);
+					}
 				}
+
+				if ( parent && parent->behavior == &actPlayer )
+				{
+					Compendium_t::Events_t::eventUpdate(parent->skill[2],
+						Compendium_t::CPDM_THROWN_HITS, item->type, 1);
+				}
+
 				// set the obituary
 				snprintf(whatever, 255, Language::get(1508), itemname);
 				hit.entity->setObituary(whatever);

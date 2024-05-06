@@ -6055,6 +6055,16 @@ int SaveGameInfo::populateFromSession(const int playernum)
 				h2.second.numAccessories = h.second.numAccessories;
 			}
 
+			for ( auto& pair : ::players[c]->compendiumProgress.itemEvents )
+			{
+				player.compendium_item_events.push_back(std::make_pair(pair.first, std::vector<std::pair<int, int>>()));
+				auto& vec_entry = player.compendium_item_events.back();
+				for ( auto& itemValue : pair.second )
+				{
+					vec_entry.second.push_back(itemValue);
+				}
+			}
+
 			for ( auto& loot : stats[c]->player_lootbags )
 			{
 				player.stats.player_lootbags.push_back(std::make_pair(loot.first,
@@ -6239,6 +6249,7 @@ int SaveGameInfo::populateFromSession(const int playernum)
 	{
 		info->additional_data.push_back(std::make_pair("game_scenario", gameModeManager.currentSession.challengeRun.scenarioStr));
 	}
+
 
 	if ( info->game_version >= 410 )
 	{
@@ -6890,6 +6901,18 @@ int loadGame(int player, const SaveGameInfo& info) {
 			h[(Uint32)hostility.first].numAggressions = hostility.second.numAggressions;
 			h[(Uint32)hostility.first].numKills = hostility.second.numKills;
 			h[(Uint32)hostility.first].numAccessories = hostility.second.numAccessories;
+		}
+	}
+
+	// compendium progress
+	{
+		auto& compendiumProgress = players[statsPlayer]->compendiumProgress;
+		for ( auto& compendium_item_events : info.players[player].compendium_item_events )
+		{
+			for ( auto& itemValues : compendium_item_events.second )
+			{
+				compendiumProgress.itemEvents[compendium_item_events.first][(ItemType)itemValues.first] = (Sint32)itemValues.second;
+			}
 		}
 	}
 

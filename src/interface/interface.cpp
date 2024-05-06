@@ -6161,6 +6161,13 @@ void GenericGUIMenu::identifyItem(Item* item)
 		return;
 	}
 
+	if ( gui_player >= 0 && gui_player < MAXPLAYERS && players[gui_player]->isLocalPlayer() )
+	{
+		if ( !item->identified )
+		{
+			Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_APPRAISED, item->type, 1);
+		}
+	}
 	item->identified = true;
 	messagePlayer(gui_player, MESSAGE_MISC, Language::get(320), item->description());
 	closeGUI();

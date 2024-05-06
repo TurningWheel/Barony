@@ -20,6 +20,7 @@
 #include "player.hpp"
 #include "scores.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 list_t* shopInv[MAXPLAYERS] = { nullptr };
 Uint32 shopkeeper[MAXPLAYERS] = { 0 };
@@ -604,6 +605,12 @@ bool sellItemToShop(const int player, Item* item)
 
 	shopChangeGoldEvent(player, item->sellValue(player));
 	stats[player]->GOLD += item->sellValue(player);
+
+	if ( players[player]->isLocalPlayer() )
+	{
+		Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TRADING_GOLD_EARNED, item->type, item->sellValue(player));
+		Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TRADING_SOLD, item->type, 1);
+	}
 
 	if ( multiplayer != CLIENT )
 	{

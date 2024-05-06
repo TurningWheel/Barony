@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "player.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 /*
  * Chest theme ideas:
@@ -1173,6 +1174,13 @@ Item* Entity::addItemToChestFromInventory(int player, Item* item, int amount, bo
 				messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1087));
 			}
 			playSoundPlayer(player, 90, 64);
+			if ( !item->identified )
+			{
+				if ( players[player]->isLocalPlayer() )
+				{
+					Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_APPRAISED, item->type, 1);
+				}
+			}
 			item->identified = true;
 			return nullptr;
 		}

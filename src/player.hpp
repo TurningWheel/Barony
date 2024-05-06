@@ -2264,6 +2264,16 @@ public:
 		static real_t compact2pVerticalBigScale;
 	} minimap;
 
+	class CompendiumProgress_t
+	{
+		Player& player;
+	public:
+		std::map<std::string, std::map<ItemType, Sint32>> itemEvents;
+		CompendiumProgress_t(Player& p) : player(p)
+		{};
+		~CompendiumProgress_t() {};
+	} compendiumProgress;
+
 	static void soundMovement();
 	static void soundActivate();
 	static void soundCancel();

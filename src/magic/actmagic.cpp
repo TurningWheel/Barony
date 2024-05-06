@@ -834,6 +834,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									my->actmagicMirrorReflected = 1;
 									my->actmagicMirrorReflectedCaster = parent->getUID();
 								}
+								Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SHIELD_REFLECT, hitstats->shield->type, 1);
 							}
 						}
 					}
@@ -1014,66 +1015,96 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								if ( reflection == 1 )
 								{
-									if ( hitstats->cloak->count > 1 )
+									if ( hitstats->cloak )
 									{
-										newItem(hitstats->cloak->type, hitstats->cloak->status, hitstats->cloak->beatitude, hitstats->cloak->count - 1, hitstats->cloak->appearance, hitstats->cloak->identified, &hitstats->inventory);
+										if ( hitstats->cloak->count > 1 )
+										{
+											newItem(hitstats->cloak->type, hitstats->cloak->status, hitstats->cloak->beatitude, hitstats->cloak->count - 1, hitstats->cloak->appearance, hitstats->cloak->identified, &hitstats->inventory);
+										}
 									}
 								}
 								else if ( reflection == 2 )
 								{
-									if ( hitstats->amulet->count > 1 )
+									if ( hitstats->amulet )
 									{
-										newItem(hitstats->amulet->type, hitstats->amulet->status, hitstats->amulet->beatitude, hitstats->amulet->count - 1, hitstats->amulet->appearance, hitstats->amulet->identified, &hitstats->inventory);
+										if ( hitstats->amulet->count > 1 )
+										{
+											newItem(hitstats->amulet->type, hitstats->amulet->status, hitstats->amulet->beatitude, hitstats->amulet->count - 1, hitstats->amulet->appearance, hitstats->amulet->identified, &hitstats->inventory);
+										}
 									}
 								}
 								else if ( reflection == -1 )
 								{
-									if ( hitstats->shield->count > 1 )
+									if ( hitstats->shield )
 									{
-										newItem(hitstats->shield->type, hitstats->shield->status, hitstats->shield->beatitude, hitstats->shield->count - 1, hitstats->shield->appearance, hitstats->shield->identified, &hitstats->inventory);
+										if ( hitstats->shield->count > 1 )
+										{
+											newItem(hitstats->shield->type, hitstats->shield->status, hitstats->shield->beatitude, hitstats->shield->count - 1, hitstats->shield->appearance, hitstats->shield->identified, &hitstats->inventory);
+										}
 									}
 								}
 							}
 							if ( reflection == 1 )
 							{
-								hitstats->cloak->count = 1;
-								hitstats->cloak->status = static_cast<Status>(std::max(static_cast<int>(BROKEN), hitstats->cloak->status - 1));
-								if ( hitstats->cloak->status != BROKEN )
+								if ( hitstats->cloak )
 								{
-									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(380));
-								}
-								else
-								{
-									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(381));
-									playSoundEntity(hit.entity, 76, 64);
+									hitstats->cloak->count = 1;
+									hitstats->cloak->status = static_cast<Status>(std::max(static_cast<int>(BROKEN), hitstats->cloak->status - 1));
+									if ( hitstats->cloak->status != BROKEN )
+									{
+										messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(380));
+									}
+									else
+									{
+										messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(381));
+										playSoundEntity(hit.entity, 76, 64);
+										if ( player >= 0 )
+										{
+											Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BROKEN, hitstats->cloak->type, 1);
+										}
+									}
 								}
 							}
 							else if ( reflection == 2 )
 							{
-								hitstats->amulet->count = 1;
-								hitstats->amulet->status = static_cast<Status>(std::max(static_cast<int>(BROKEN), hitstats->amulet->status - 1));
-								if ( hitstats->amulet->status != BROKEN )
+								if ( hitstats->amulet )
 								{
-									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(382));
-								}
-								else
-								{
-									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(383));
-									playSoundEntity(hit.entity, 76, 64);
+									hitstats->amulet->count = 1;
+									hitstats->amulet->status = static_cast<Status>(std::max(static_cast<int>(BROKEN), hitstats->amulet->status - 1));
+									if ( hitstats->amulet->status != BROKEN )
+									{
+										messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(382));
+									}
+									else
+									{
+										messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(383));
+										playSoundEntity(hit.entity, 76, 64);
+										if ( player >= 0 )
+										{
+											Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BROKEN, hitstats->amulet->type, 1);
+										}
+									}
 								}
 							}
 							else if ( reflection == -1 )
 							{
-								hitstats->shield->count = 1;
-								hitstats->shield->status = static_cast<Status>(std::max(static_cast<int>(BROKEN), hitstats->shield->status - 1));
-								if ( hitstats->shield->status != BROKEN )
+								if ( hitstats->shield )
 								{
-									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(384));
-								}
-								else
-								{
-									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(385));
-									playSoundEntity(hit.entity, 76, 64);
+									hitstats->shield->count = 1;
+									hitstats->shield->status = static_cast<Status>(std::max(static_cast<int>(BROKEN), hitstats->shield->status - 1));
+									if ( hitstats->shield->status != BROKEN )
+									{
+										messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(384));
+									}
+									else
+									{
+										messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(385));
+										playSoundEntity(hit.entity, 76, 64);
+										if ( player >= 0 )
+										{
+											Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BROKEN, hitstats->shield->type, 1);
+										}
+									}
 								}
 							}
 							if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )

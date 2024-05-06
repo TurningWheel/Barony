@@ -8672,6 +8672,10 @@ void doNewGame(bool makeHighscore) {
 	}
 
 	Player::Minimap_t::mapDetails.clear();
+	for ( int c = 0; c < MAXPLAYERS; ++c )
+	{
+		players[c]->compendiumProgress.itemEvents.clear();
+	}
 
 	// disable cheats
 	noclip = false;
@@ -9433,6 +9437,7 @@ void doEndgame(bool saveHighscore) {
 	bool localScores = gameModeManager.allowsHiscores();
 	bool onlineScores = gameModeManager.allowsGlobalHiscores();
 	bool allowedSavegames = gameModeManager.allowsSaves();
+	bool allowedCompendiumProgression = gameModeManager.getMode() != GameModeManager_t::GAME_MODE_CUSTOM_RUN;
 	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
 		victory = 0;
@@ -9480,6 +9485,17 @@ void doEndgame(bool saveHighscore) {
 				conductGameChallenges[CONDUCT_BOOTS_SPEED] = 1;
 			}
 			achievementObserver.updateGlobalStat(STEAM_GSTAT_GAMES_WON);
+
+			if ( allowedCompendiumProgression )
+			{
+				for ( int c = 0; c < MAXPLAYERS; c++ )
+				{
+					if ( !client_disconnected[c] )
+					{
+						Compendium_t::Events_t::onVictoryEvent(c);
+					}
+				}
+			}
 		}
 	}
 

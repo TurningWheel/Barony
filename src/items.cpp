@@ -1754,6 +1754,10 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1089), (*slot)->getName());
 						}
 						playSoundPlayer(player, 90, 64);
+						if ( !((*slot)->identified) )
+						{
+							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_APPRAISED, (*slot)->type, 1);
+						}
 					}
 					(*slot)->identified = true;
 					return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
@@ -1862,6 +1866,10 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1089), (*slot)->getName());
 						}
 						playSoundPlayer(player, 90, 64);
+						if ( !((*slot)->identified) )
+						{
+							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_APPRAISED, (*slot)->type, 1);
+						}
 					}
 					(*slot)->identified = true;
 					return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
@@ -2786,6 +2794,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			&& (players[player] && players[player]->entity)
 			&& players[player]->entity == usedBy )
 		{
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_CONSUMED, potionType, 1);
 			if ( tryLearnPotionRecipe )
 			{
 				GenericGUI[player].alchemyLearnRecipe(potionType, true);
@@ -2821,6 +2830,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			if ( tryEmptyBottle && local_rng.rand() % 100 < std::min(80, (60 + skillLVL * 10)) ) // 60 - 80% chance
 			{
 				Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BOTTLES_FROM_CONSUME, POTION_EMPTY, 1);
 				itemPickup(player, emptyBottle);
 				messagePlayer(player, MESSAGE_INTERACTION, Language::get(3351), items[POTION_EMPTY].getIdentifiedName());
 				free(emptyBottle);
@@ -2994,6 +3004,7 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 		{
 			if ( !item->identified )
 			{
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_APPRAISED, item->type, 1);
 				item->identified = true;
 				item->notifyIcon = true;
 				if ( item->type == GEM_GLASS )
@@ -4676,6 +4687,16 @@ bool Item::canUnequip(const Stat* const wielder)
 		return true;
 	}*/
 
+	int player = -1;
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( stats[i] == wielder )
+		{
+			player = i;
+			break;
+		}
+	}
+
 	if ( wielder )
 	{
 		if ( wielder->type == AUTOMATON )
@@ -4686,6 +4707,13 @@ bool Item::canUnequip(const Stat* const wielder)
 		{
 			if ( beatitude > 0 )
 			{
+				if ( !identified )
+				{
+					if ( player >= 0 && players[player]->isLocalPlayer() )
+					{
+						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_APPRAISED, type, 1);
+					}
+				}
 				identified = true;
 				return false;
 			}
@@ -4698,6 +4726,13 @@ bool Item::canUnequip(const Stat* const wielder)
 
 	if (beatitude < 0)
 	{
+		if ( !identified )
+		{
+			if ( player >= 0 && players[player]->isLocalPlayer() )
+			{
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_APPRAISED, type, 1);
+			}
+		}
 		identified = true;
 		return false;
 	}
@@ -5266,18 +5301,23 @@ node_t* getMeleeWeaponItemNodeInInventory(const Stat* const myStats)
 
 bool isRangedWeapon(const Item& item)
 {
-	switch ( item.type )
+	return isRangedWeapon(item.type);
+}
+
+bool isRangedWeapon(const ItemType type)
+{
+	switch ( type )
 	{
-		case SLING:
-		case SHORTBOW:
-		case CROSSBOW:
-		case ARTIFACT_BOW:
-		case LONGBOW:
-		case COMPOUND_BOW:
-		case HEAVY_CROSSBOW:
-			return true;
-		default:
-			return false;
+	case SLING:
+	case SHORTBOW:
+	case CROSSBOW:
+	case ARTIFACT_BOW:
+	case LONGBOW:
+	case COMPOUND_BOW:
+	case HEAVY_CROSSBOW:
+		return true;
+	default:
+		return false;
 	}
 }
 

@@ -2304,6 +2304,8 @@ static void changeLevel() {
 		Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_hunger", ""));
 	}
 
+	Compendium_t::Events_t::onLevelChangeEvent(clientnum);
+
 	if ( gameModeManager.allowsSaves() )
 	{
 		saveGame();
@@ -3780,6 +3782,10 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			{
 				nextnode = node->next;
 				Item* item = (Item*)node->element;
+				if ( itemCategory(item) == SPELL_CAT )
+				{
+					continue;
+				}
 				if ( item->type == ARTIFACT_ORB_PURPLE )
 				{
 					strcpy((char*)net_packet->data, "DIEI");
@@ -4330,42 +4336,52 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		if ( stats[clientnum]->helmet )
 		{
 			stats[clientnum]->helmet->beatitude++;
+			Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->helmet->type, 1);
 		}
 		if ( stats[clientnum]->breastplate )
 		{
 			stats[clientnum]->breastplate->beatitude++;
+			Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->breastplate->type, 1);
 		}
 		if ( stats[clientnum]->gloves )
 		{
 			stats[clientnum]->gloves->beatitude++;
+			Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->gloves->type, 1);
 		}
 		if ( stats[clientnum]->shoes )
 		{
 			stats[clientnum]->shoes->beatitude++;
+			Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->shoes->type, 1);
 		}
 		if ( stats[clientnum]->shield )
 		{
 			stats[clientnum]->shield->beatitude++;
+			Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->shield->type, 1);
 		}
 		if ( stats[clientnum]->weapon )
 		{
 			stats[clientnum]->weapon->beatitude++;
+			Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->weapon->type, 1);
 		}
 		if ( stats[clientnum]->cloak )
 		{
 			stats[clientnum]->cloak->beatitude++;
+			Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->cloak->type, 1);
 		}
 		if ( stats[clientnum]->amulet )
 		{
 			stats[clientnum]->amulet->beatitude++;
+			Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->amulet->type, 1);
 		}
 		if ( stats[clientnum]->ring )
 		{
 			stats[clientnum]->ring->beatitude++;
+			Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->ring->type, 1);
 		}
 		if ( stats[clientnum]->mask )
 		{
 			stats[clientnum]->mask->beatitude++;
+			Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->mask->type, 1);
 		}
 	}},
 
@@ -4378,60 +4394,70 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				if ( stats[clientnum]->helmet )
 				{
 					stats[clientnum]->helmet->beatitude++;
+					Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->helmet->type, 1);
 				}
 				break;
 			case 1:
 				if ( stats[clientnum]->breastplate )
 				{
 					stats[clientnum]->breastplate->beatitude++;
+					Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->breastplate->type, 1);
 				}
 				break;
 			case 2:
 				if ( stats[clientnum]->gloves )
 				{
 					stats[clientnum]->gloves->beatitude++;
+					Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->gloves->type, 1);
 				}
 				break;
 			case 3:
 				if ( stats[clientnum]->shoes )
 				{
 					stats[clientnum]->shoes->beatitude++;
+					Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->shoes->type, 1);
 				}
 				break;
 			case 4:
 				if ( stats[clientnum]->shield )
 				{
 					stats[clientnum]->shield->beatitude++;
+					Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->shield->type, 1);
 				}
 				break;
 			case 5:
 				if ( stats[clientnum]->weapon )
 				{
 					stats[clientnum]->weapon->beatitude++;
+					Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->weapon->type, 1);
 				}
 				break;
 			case 6:
 				if ( stats[clientnum]->cloak )
 				{
 					stats[clientnum]->cloak->beatitude++;
+					Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->cloak->type, 1);
 				}
 				break;
 			case 7:
 				if ( stats[clientnum]->amulet )
 				{
 					stats[clientnum]->amulet->beatitude++;
+					Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->amulet->type, 1);
 				}
 				break;
 			case 8:
 				if ( stats[clientnum]->ring )
 				{
 					stats[clientnum]->ring->beatitude++;
+					Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->ring->type, 1);
 				}
 				break;
 			case 9:
 				if ( stats[clientnum]->mask )
 				{
 					stats[clientnum]->mask->beatitude++;
+					Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->mask->type, 1);
 				}
 				break;
 			default:
@@ -5033,6 +5059,67 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		if ( player >= 0 && player < MAXPLAYERS )
 		{
 			achievementObserver.playerAchievements[player].wearingBountyHat = net_packet->data[5] > 0 ? true : false;
+		}
+	} },
+
+	// compendium data update
+	{ 'CMPD', []() {
+		Uint8 clientSequence = net_packet->data[4];
+		int sequence = net_packet->data[5];
+		int numchunks = net_packet->data[6];
+		if ( numchunks == 0 )
+		{
+			return;
+		}
+		char buf[512];
+		stringCopy(buf, (char*)(&net_packet->data[7]), sizeof(buf), std::max(0, (int)net_packet->len - 7));
+		Compendium_t::Events_t::clientReceiveData[clientSequence][sequence] = buf;
+		if ( (int)Compendium_t::Events_t::clientReceiveData[clientSequence].size() == numchunks )
+		{
+			std::string str = "";
+			for ( int i = 1; i <= numchunks; ++i )
+			{
+				str += Compendium_t::Events_t::clientReceiveData[clientSequence][i];
+			}
+
+			rapidjson::Document d;
+			d.Parse(str.c_str());
+			if ( !d.HasParseError() )
+			{
+				if ( d.HasMember("seq") && d.HasMember("item") )
+				{
+					if ( d["seq"].GetInt() == clientSequence )
+					{
+						for ( auto itr = d["item"].MemberBegin(); itr != d["item"].MemberEnd(); ++itr )
+						{
+							int id = std::stoi(itr->name.GetString());
+							if ( id >= 0 && id < Compendium_t::EventTags::CPDM_EVENT_TAGS_MAX )
+							{
+								for ( auto itr2 = itr->value.MemberBegin(); itr2 != itr->value.MemberEnd(); ++itr2 )
+								{
+									int itemType = std::stoi(itr2->name.GetString());
+									if ( itemType < 0 || itemType >= NUMITEMS )
+									{
+										continue;
+									}
+									Sint32 value = itr2->value.GetInt();
+									Compendium_t::Events_t::eventUpdate(0, (Compendium_t::EventTags)id, (ItemType)itemType, value);
+								}
+							}
+						}
+					}
+				}
+			}
+			Compendium_t::Events_t::clientReceiveData.erase(clientSequence);
+
+			// reply got packet
+			strcpy((char*)net_packet->data, "CMPD");
+			net_packet->data[4] = clientnum;
+			net_packet->data[5] = clientSequence;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 7;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
 	}}
 };
@@ -6871,7 +6958,19 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			}
 			playSoundEntity(players[player]->entity, 162, 64);
 		}
-	}},
+	} },
+
+	{ 'CMPD', []() {
+		// client ack received the packet
+		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		const Uint8 clientSequence = net_packet->data[5];
+
+		auto find = Compendium_t::Events_t::clientDataStrings[player].find(clientSequence);
+		if ( find != Compendium_t::Events_t::clientDataStrings[player].end() )
+		{
+			Compendium_t::Events_t::clientDataStrings[player].erase(clientSequence);
+		}
+	}}
 };
 
 void serverHandlePacket()

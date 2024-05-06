@@ -10638,7 +10638,7 @@ std::map<std::string, std::string> Compendium_t::CompendiumItems_t::contentsMap;
 
 void Compendium_t::readItemsFromFile()
 {
-	const std::string filename = "data/compendium/items.json";
+	const std::string filename = "data/compendium/compendium_items.json";
 	if ( !PHYSFS_getRealDir(filename.c_str()) )
 	{
 		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
@@ -10708,6 +10708,31 @@ void Compendium_t::readItemsFromFile()
 		}
 		if ( w.HasMember("events") )
 		{
+			std::vector<std::string> alwaysTrackedEvents = {
+				"APPRAISED",
+				"RUNS_COLLECTED"
+			};
+
+			for ( auto& s : alwaysTrackedEvents )
+			{
+				auto find = Compendium_t::Events_t::eventIdLookup.find(s);
+				if ( find != Compendium_t::Events_t::eventIdLookup.end() )
+				{
+					auto find2 = Compendium_t::Events_t::events.find(find->second);
+					if ( find2 != Compendium_t::Events_t::events.end() )
+					{
+						for ( auto& item : obj.items_in_category )
+						{
+							const int itemType = ItemTooltips.itemNameStringToItemID[item.name];
+							if ( itemType >= WOODEN_SHIELD && itemType < NUMITEMS )
+							{
+								Compendium_t::Events_t::itemEventLookup[(ItemType)itemType].insert((Compendium_t::EventTags)find2->second.id);
+								Compendium_t::Events_t::eventItemLookup[(Compendium_t::EventTags)find2->second.id].insert((ItemType)itemType);
+							}
+						}
+					}
+				}
+			}
 			for ( auto itr = w["events"].Begin(); itr != w["events"].End(); ++itr )
 			{
 				std::string eventName = itr->GetString();
@@ -10942,7 +10967,8 @@ std::map<Compendium_t::EventTags, Compendium_t::Events_t::Event_t> Compendium_t:
 std::map<std::string, Compendium_t::EventTags> Compendium_t::Events_t::eventIdLookup;
 std::map<ItemType, std::set<Compendium_t::EventTags>> Compendium_t::Events_t::itemEventLookup;
 std::map<Compendium_t::EventTags, std::set<ItemType>> Compendium_t::Events_t::eventItemLookup;
-std::map<Compendium_t::EventTags, std::map<ItemType, Compendium_t::Events_t::EventVal_t>> Compendium_t::Events_t::playerEvents[MAXPLAYERS];
+std::map<Compendium_t::EventTags, std::map<ItemType, Compendium_t::Events_t::EventVal_t>> Compendium_t::Events_t::playerEvents;
+std::map<Compendium_t::EventTags, std::map<ItemType, Compendium_t::Events_t::EventVal_t>> Compendium_t::Events_t::serverPlayerEvents[MAXPLAYERS];
 
 void Compendium_t::Events_t::readEventsFromFile()
 {
@@ -11008,7 +11034,14 @@ void Compendium_t::Events_t::readEventsFromFile()
 			entry.id = index;
 			if ( itr2->value.HasMember("client") )
 			{
-				entry.client = itr2->value["client"].GetBool();
+				int tmp = itr2->value["client"].GetInt();
+				tmp = std::max(0, tmp);
+				tmp = std::min((int)Compendium_t::Events_t::CLIENT_UPDATETYPE_MAX - 1, tmp);
+				entry.clienttype = (Compendium_t::Events_t::ClientUpdateType)tmp;
+			}
+			if ( itr2->value.HasMember("once_per_run") )
+			{
+				entry.oncePerRun = itr2->value["once_per_run"].GetBool();
 			}
 		}
 	}
@@ -11048,10 +11081,7 @@ void Compendium_t::Events_t::loadItemsSaveData()
 		return;
 	}
 
-	for ( int i = 0; i < MAXPLAYERS; ++i )
-	{
-		playerEvents[i].clear();
-	}
+	playerEvents.clear();
 	for ( auto itr = d["items"].MemberBegin(); itr != d["items"].MemberEnd(); ++itr )
 	{
 		auto find = eventIdLookup.find(itr->name.GetString());
@@ -11085,7 +11115,7 @@ void Compendium_t::Events_t::writeItemsSaveData()
 
 	CustomHelpers::addMemberToRoot(exportDocument, "version", rapidjson::Value(VERSION));
 	rapidjson::Value itemsObj(rapidjson::kObjectType);
-	for ( auto& pair : playerEvents[0] )
+	for ( auto& pair : playerEvents )
 	{
 		const std::string& key = events[pair.first].name;
 		rapidjson::Value namekey(key.c_str(), exportDocument.GetAllocator());
@@ -11115,7 +11145,7 @@ void Compendium_t::Events_t::writeItemsSaveData()
 	return;
 }
 
-void Compendium_t::Events_t::EventVal_t::applyValue(const Sint32 val)
+bool Compendium_t::Events_t::EventVal_t::applyValue(const Sint32 val)
 {
 	if ( type == SUM )
 	{
@@ -11124,16 +11154,68 @@ void Compendium_t::Events_t::EventVal_t::applyValue(const Sint32 val)
 		{
 			value = 0x7FFFFFFF;
 		}
+		return true;
 	}
 	else if ( type == MAX )
 	{
+		if ( value == val )
+		{
+			return false;
+		}
 		value = std::max(val, value);
+		return true;
 	}
 }
 
-void Compendium_t::Events_t::eventUpdate(const int playernum, const EventTags tag, const ItemType type, 
-	const Sint32 value, const bool forceValue)
+void Compendium_t::Events_t::onVictoryEvent(const int playernum)
 {
+
+}
+
+void Compendium_t::Events_t::onLevelChangeEvent(const int playernum)
+{
+	if ( intro ) { return; }
+	if ( !players[playernum]->isLocalPlayer() ) { return; }
+
+	if ( multiplayer == SERVER && playernum == 0 )
+	{
+		for ( int i = 1; i < MAXPLAYERS; ++i )
+		{
+			sendClientDataOverNet(i);
+		}
+	}
+
+	////std::set<Uint32> slots;
+	//int numItems = 0;
+	//for ( node_t* node = stats[playernum]->inventory.first; node != NULL; node = node->next )	
+	//{
+	//	Item* item = (Item*)node->element;
+	//	if ( !item )
+	//	{
+	//		continue;
+	//	}
+	//	if ( itemCategory(item) == SPELL_CAT )
+	//	{
+	//		continue;
+	//	}
+	//	numItems += item->count;
+	//	//if ( item->x >= 0 && item->x < players[playernum]->inventoryUI.getSizeX() )
+	//	//{
+	//	//	if ( item->y >= 0 && item->y < players[playernum]->inventoryUI.getSizeY() )
+	//	//	{
+	//	//		//Uint32 key = item->x + 10000 * item->y;
+	//	//		//slots.insert(key);
+	//	//	}
+	//	//}
+	//}
+	//size_t maxSlots = players[playernum]->inventoryUI.getSizeX() * players[playernum]->inventoryUI.getSizeY();
+	//Compendium_t::Events_t::eventUpdate(playernum, Compendium_t::CPDM_INVENTORY_QTY_MAX, CLOAK_BACKPACK, numItems);
+}
+
+void Compendium_t::Events_t::eventUpdate(int playernum, const EventTags tag, const ItemType type, 
+	const Sint32 value, const bool loadingValue)
+{
+	if ( intro && !loadingValue ) { return; }
 	if ( playernum < 0 || playernum >= MAXPLAYERS ) { return; }
 
 	if ( multiplayer == SINGLE && playernum != 0 ) { return; }
@@ -11145,21 +11227,31 @@ void Compendium_t::Events_t::eventUpdate(const int playernum, const EventTags ta
 	}
 	auto& def = find->second;
 
-	if ( def.client )
+	if ( !loadingValue )
 	{
-		if ( multiplayer != SINGLE )
+		if ( def.clienttype == CLIENT_ONLY )
 		{
-			if ( playernum != clientnum )
+			if ( multiplayer != SINGLE )
 			{
-				return;
+				if ( playernum != clientnum )
+				{
+					return;
+				}
 			}
 		}
-	}
-	else
-	{
-		if ( multiplayer == CLIENT )
+		else if ( def.clienttype == SERVER_ONLY )
 		{
-			return;
+			if ( multiplayer == CLIENT )
+			{
+				if ( playernum == 0 )
+				{
+					playernum = clientnum; // when a client receives an update from the server
+				}
+				else
+				{
+					return;
+				}
+			}
 		}
 	}
 
@@ -11169,20 +11261,141 @@ void Compendium_t::Events_t::eventUpdate(const int playernum, const EventTags ta
 		return;
 	}
 
-	auto& e = playerEvents[(multiplayer == CLIENT) ? 0 : playernum][tag];
+	auto& e = (multiplayer == SERVER && playernum != 0 && !loadingValue) ? serverPlayerEvents[playernum][tag] : playerEvents[tag];
 	if ( e.find(type) == e.end() )
 	{
 		e[type] = EventVal_t(tag);
 	}
+
+	if ( def.oncePerRun && !loadingValue )
+	{
+		auto find = players[playernum]->compendiumProgress.itemEvents[def.name].find(type);
+		if ( find != players[playernum]->compendiumProgress.itemEvents[def.name].end() )
+		{
+			// already present, skip adding
+			return;
+		}
+		players[playernum]->compendiumProgress.itemEvents[def.name][type] += value;
+	}
 	
 	auto& val = e[type];
-	if ( forceValue )
+	if ( loadingValue )
 	{
-		val.value = value;
+		val.value = value; // reading from savefile
 	}
 	else
 	{
-		val.applyValue(value);
-		writeItemsSaveData();
+		if ( val.applyValue(value) )
+		{
+			if ( playernum == clientnum )
+			{
+				writeItemsSaveData();
+			}
+		}
+	}
+}
+
+Uint8 Compendium_t::Events_t::clientSequence = 0;
+std::map<int, std::string> Compendium_t::Events_t::clientDataStrings[MAXPLAYERS];
+std::map<int, std::map<int, std::string>> Compendium_t::Events_t::clientReceiveData;
+void Compendium_t::Events_t::sendClientDataOverNet(const int playernum)
+{
+	if ( multiplayer == SERVER ) {
+		if ( playernum == 0 || client_disconnected[playernum] ) {
+			return;
+		}
+
+		if ( serverPlayerEvents[playernum].empty() )
+		{
+			return;
+		}
+
+		rapidjson::Document d;
+		d.SetObject();
+		CustomHelpers::addMemberToRoot(d, "seq", rapidjson::Value(clientSequence));
+		rapidjson::Value data(rapidjson::kObjectType);
+		for ( auto& p1 : serverPlayerEvents[playernum] )
+		{
+			std::string key = std::to_string(p1.first);
+			rapidjson::Value namekey(key.c_str(), d.GetAllocator());
+			data.AddMember(namekey, rapidjson::Value(rapidjson::kObjectType), d.GetAllocator());
+			auto& obj = data[key.c_str()];
+			for ( auto& itemsData : p1.second )
+			{
+				rapidjson::Value itemKey(std::to_string(itemsData.first).c_str(), d.GetAllocator());
+				obj.AddMember(itemKey, itemsData.second.value, d.GetAllocator());
+			}
+		}
+		CustomHelpers::addMemberToRoot(d, "item", data);
+
+		rapidjson::StringBuffer os;
+		rapidjson::Writer<rapidjson::StringBuffer> writer(os);
+		d.Accept(writer);
+		clientDataStrings[playernum][clientSequence] = os.GetString();
+		auto& dataStr = clientDataStrings[playernum][clientSequence];
+
+		const size_t len = dataStr.size();
+		if ( len == 0 )
+		{
+			return;
+		}
+
+		serverPlayerEvents[playernum].clear();
+
+		// packet header
+		memset(net_packet->data, 0, NET_PACKET_SIZE);
+		memcpy(net_packet->data, "CMPD", 4);
+		Uint8 sequence = 0;
+		// encode name
+		int chunksize = 256;
+		const int numchunks = 1 + (len / chunksize);
+		for ( int c = 0; c < len; c += chunksize )
+		{
+			sequence += 1;
+
+			if ( c + chunksize > len )
+			{
+				chunksize = len - c;
+			}
+			net_packet->data[4] = clientSequence;
+			net_packet->data[5] = sequence; // chunk index
+			net_packet->data[6] = numchunks; // num chunks
+
+			std::string substr = dataStr.substr(c, chunksize);
+			stringCopy((char*)net_packet->data + 7, substr.c_str(),
+				256 + 1, substr.size());
+
+			net_packet->len = 7 + substr.size();
+
+			net_packet->address.host = net_clients[playernum - 1].host;
+			net_packet->address.port = net_clients[playernum - 1].port;
+			sendPacketSafe(net_sock, -1, net_packet, playernum - 1);
+		}
+
+		++clientSequence;
+		if ( clientSequence >= 255 )
+		{
+			clientSequence = 0;
+		}
+
+		//else
+		//{
+		//	// packet header
+		//	memcpy(net_packet->data, "CSCN", 4);
+		//	net_packet->data[4] = 0;
+		//	net_packet->len = 5;
+		//	for ( int i = 1; i < MAXPLAYERS; i++ ) {
+		//		if ( client_disconnected[i] ) {
+		//			continue;
+		//		}
+		//		if ( playernum != i )
+		//		{
+		//			continue;
+		//		}
+		//		net_packet->address.host = net_clients[i - 1].host;
+		//		net_packet->address.port = net_clients[i - 1].port;
+		//		sendPacketSafe(net_sock, -1, net_packet, i - 1);
+		//	}
+		//}
 	}
 }

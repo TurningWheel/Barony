@@ -3210,8 +3210,8 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 	}
 
 	// calculate weight
-	int weight = getCharacterModifiedWeight();
-	real_t weightratio = getWeightRatio(weight, statGetSTR(stats[PLAYER_NUM], players[PLAYER_NUM]->entity));
+	const int weight = getCharacterModifiedWeight();
+	const real_t weightratio = getWeightRatio(weight, statGetSTR(stats[PLAYER_NUM], players[PLAYER_NUM]->entity));
 
 	// calculate movement forces
 
@@ -5428,6 +5428,10 @@ void actPlayer(Entity* my)
 			else if ( tempItem->type == GEM_ROCK )
 			{
 				//Auto-succeed on rocks.
+				if ( !tempItem->identified )
+				{
+					Compendium_t::Events_t::eventUpdate(PLAYER_NUM, Compendium_t::CPDM_APPRAISED, tempItem->type, 1);
+				}
 				tempItem->identified = true;
 				tempItem->notifyIcon = true;
 				messagePlayer(PLAYER_NUM, MESSAGE_INVENTORY, Language::get(570), tempItem->description());
@@ -5566,6 +5570,10 @@ void actPlayer(Entity* my)
 					}
 					if ( success )
 					{
+						if ( !tempItem->identified )
+						{
+							Compendium_t::Events_t::eventUpdate(PLAYER_NUM, Compendium_t::CPDM_APPRAISED, tempItem->type, 1);
+						}
 						tempItem->identified = true;
 						tempItem->notifyIcon = true;
 						messagePlayer(PLAYER_NUM, MESSAGE_INVENTORY, Language::get(570), tempItem->description());
@@ -7722,6 +7730,10 @@ void actPlayer(Entity* my)
 								{
 									nextnode = node->next;
 									Item* item = (Item*)node->element;
+									if ( itemCategory(item) == SPELL_CAT )
+									{
+										continue;
+									}
 									if ( item->type == ARTIFACT_ORB_PURPLE )
 									{
 										int c = item->count;

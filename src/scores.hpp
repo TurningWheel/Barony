@@ -422,6 +422,7 @@ struct SaveGameInfo {
 			}
 		};
 		std::vector<std::pair<int, PlayerRaceHostility_t>> shopkeeperHostility;
+		std::vector<std::pair<std::string, std::vector<std::pair<int, int>>>> compendium_item_events;
 
 		struct stat_t {
 			struct item_t {
@@ -604,6 +605,7 @@ struct SaveGameInfo {
 			fp->property("followers", followers);
 			fp->property("game_statistics", gameStatistics);
 			fp->property("shopkeeper_hostility", shopkeeperHostility);
+			fp->property("compendium_item_events", compendium_item_events);
 			return true;
 		}
 
