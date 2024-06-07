@@ -1228,6 +1228,22 @@ void processCommandLine(int argc, char** argv)
 					strncpy(datadir, argv[c] + 9, datadirsz);
 					datadir[datadirsz] = '\0';
 				}
+				else if ( !strncmp(argv[c], "-xres=", 6) )
+				{
+					char buf[32];
+					size_t len = std::min(sizeof(buf), strlen(argv[c] + 6));
+					strncpy(buf, argv[c] + 6, len);
+					buf[len] = '\0';
+					xres = atoi(buf);
+				}
+				else if ( !strncmp(argv[c], "-yres=", 6) )
+				{
+					char buf[32];
+					size_t len = std::min(sizeof(buf), strlen(argv[c] + 6));
+					strncpy(buf, argv[c] + 6, len);
+					buf[len] = '\0';
+					yres = atoi(buf);
+				}
 			}
 		}
 	}
