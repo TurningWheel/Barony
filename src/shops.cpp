@@ -229,6 +229,8 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 
 		shopChangeGoldEvent(player, -item->buyValue(player));
 		stats[player]->GOLD -= item->buyValue(player);
+		Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_SHOP_BOUGHT, "shop", 1);
+		Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_SHOP_SPENT, "shop", item->buyValue(player));
 
 		if ( stats[player]->playerRace > 0 && players[player] && players[player]->entity->effectPolymorph > NUMMONSTERS )
 		{
@@ -610,6 +612,8 @@ bool sellItemToShop(const int player, Item* item)
 	{
 		Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TRADING_GOLD_EARNED, item->type, item->sellValue(player));
 		Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TRADING_SOLD, item->type, 1);
+		Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_SHOP_SOLD, "shop", 1);
+		Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_SHOP_GOLD_EARNED, "shop", item->sellValue(player));
 	}
 
 	if ( multiplayer != CLIENT )

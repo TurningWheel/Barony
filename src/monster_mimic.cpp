@@ -23,6 +23,7 @@
 #include "magic/magic.hpp"
 #include "interface/interface.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 void initMimic(Entity* my, Stat* myStats)
 {
@@ -913,6 +914,14 @@ bool Entity::disturbMimic(Entity* touched, bool takenDamage, bool doMessage)
 			setEffect(EFF_STUNNED, true, 20, false);
 		}
 		monsterHitTime = HITRATE / 2;
+		if ( touched && touched->behavior == &actPlayer )
+		{
+			if ( monsterSpecialState == MIMIC_INERT )
+			{
+				Compendium_t::Events_t::eventUpdateWorld(touched->skill[2], Compendium_t::CPDM_CHESTS_MIMICS_AWAKENED1ST, "chest", 1);
+			}
+			Compendium_t::Events_t::eventUpdateWorld(touched->skill[2], Compendium_t::CPDM_CHESTS_MIMICS_AWAKENED, "chest", 1);
+		}
 	}
 
 	monsterSpecialState = MIMIC_ACTIVE;

@@ -91,12 +91,16 @@ void initGameDatafiles(bool moddedReload)
 	{
 		EquipmentModelOffsets.readFromFile(monstertypename[c], c);
 	}
+	setupSpells();
 	CompendiumEntries.readMonstersFromFile();
-	CompendiumEntries.readWorldFromFile();
-	CompendiumEntries.readCodexFromFile();
 	Compendium_t::Events_t::readEventsFromFile();
+	CompendiumEntries.readCodexFromFile();
+	CompendiumEntries.readWorldFromFile();
 	CompendiumEntries.readItemsFromFile();
+	CompendiumEntries.readMagicFromFile();
+	Compendium_t::Events_t::readEventsTranslations();
 	Compendium_t::Events_t::loadItemsSaveData();
+	CompendiumEntries.readMonsterLimbsFromFile();
 }
 
 void initGameDatafilesAsync(bool moddedReload)
@@ -182,7 +186,6 @@ int initGame()
 
 	// load item types
 	initGameDatafiles(false);
-	setupSpells();
 
 	std::atomic_bool loading_done {false};
 	auto loading_task = std::async(std::launch::async, [&loading_done](){
@@ -484,6 +487,7 @@ void deinitGame()
 	}
 
 	UIToastNotificationManager.term(true);
+	Compendium_t::Events_t::writeItemsSaveData();
 #ifdef LOCAL_ACHIEVEMENTS
 	LocalAchievements_t::writeToFile();
 #endif

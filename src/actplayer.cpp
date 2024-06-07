@@ -1236,6 +1236,7 @@ Entity* Player::Ghost_t::spawnGhost()
 		}
 		players[player.playernum]->ghost.my = entity;
 		players[player.playernum]->ghost.uid = entity->getUID();
+		Compendium_t::Events_t::eventUpdateMonster(player.playernum, Compendium_t::CPDM_GHOST_SPAWNED, entity, 1);
 		return entity;
 	}
 
@@ -6120,6 +6121,15 @@ void actPlayer(Entity* my)
 		{
 			my->z -= 1; // floating
 			insectoidLevitating = (playerRace == INSECTOID && stats[PLAYER_NUM]->EFFECTS[EFF_FLUTTER]);
+			if ( players[PLAYER_NUM]->isLocalPlayer() )
+			{
+				int x = std::min(std::max<unsigned int>(1, my->x / 16), map.width - 2);
+				int y = std::min(std::max<unsigned int>(1, my->y / 16), map.height - 2);
+				if ( !map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_PITS_LEVITATED, "pits", 1);
+				}
+			}
 		}
 
 		if ( !levitating && prevlevitating )
@@ -6220,6 +6230,10 @@ void actPlayer(Entity* my)
 					{
 						my->setObituary(Language::get(3010)); // fell to their death.
 						stats[PLAYER_NUM]->killer = KilledBy::BOTTOMLESS_PIT;
+						if ( multiplayer != CLIENT && stats[PLAYER_NUM]->HP > 0 )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_PITS_DEATHS, "pits", 1);
+						}
 						stats[PLAYER_NUM]->HP = 0; // kill me instantly
 						if (stats[PLAYER_NUM]->type == AUTOMATON)
 						{
@@ -6231,6 +6245,10 @@ void actPlayer(Entity* my)
 				{
 					my->setObituary(Language::get(3010)); // fell to their death.
 					stats[PLAYER_NUM]->killer = KilledBy::BOTTOMLESS_PIT;
+					if ( multiplayer != CLIENT && stats[PLAYER_NUM]->HP > 0 )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_PITS_DEATHS, "pits", 1);
+					}
 					stats[PLAYER_NUM]->HP = 0; // kill me instantly
 					if (stats[PLAYER_NUM]->type == AUTOMATON)
 					{
@@ -6319,6 +6337,19 @@ void actPlayer(Entity* my)
 					playSound(136, 128);
 				}
 			}
+
+			if ( players[PLAYER_NUM]->isLocalPlayer() )
+			{
+				if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_SWIM_TIME, "murky water", 1);
+				}
+				else
+				{
+					Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_SWIM_TIME, "lava", 1);
+				}
+			}
+
 			if ( multiplayer != CLIENT )
 			{
 				// Check if the Player is in Water or Lava
@@ -6329,6 +6360,8 @@ void actPlayer(Entity* my)
 						my->flags[BURNING] = false;
 						messagePlayer(PLAYER_NUM, MESSAGE_STATUS, Language::get(574)); // "The water extinguishes the flames!"
 						serverUpdateEntityFlag(my, BURNING);
+
+						Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_SWIM_BURN_CURED, "murky water", 1);
 					}
 					if ( stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
 					{
@@ -6385,6 +6418,7 @@ void actPlayer(Entity* my)
 				{
 					int damage = (2 + local_rng.rand() % 2);
 					damage = std::max(damage, stats[PLAYER_NUM]->MAXHP / 20);
+					Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_LAVA_DAMAGE, "lava", damage);
 					my->modHP(-damage);
 					if ( stats[PLAYER_NUM]->type == AUTOMATON )
 					{
@@ -7802,6 +7836,24 @@ void actPlayer(Entity* my)
 							}
 
 							deleteMultiplayerSaveGames(); //Will only delete save games if was last player alive.
+						}
+
+						if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER )
+						{
+							bool swimming = players[PLAYER_NUM]->movement.isPlayerSwimming();
+							if ( swimming )
+							{
+								int x = std::min(std::max<unsigned int>(0, floor(my->x / 16)), map.width - 1);
+								int y = std::min(std::max<unsigned int>(0, floor(my->y / 16)), map.height - 1);
+								if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+								{
+									Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_SWIM_KILLED_WHILE, "murky water", 1);
+								}
+								else
+								{
+									Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_SWIM_KILLED_WHILE, "lava", 1);
+								}
+							}
 						}
 
 						assailant[PLAYER_NUM] = false;

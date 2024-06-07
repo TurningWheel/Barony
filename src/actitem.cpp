@@ -21,6 +21,7 @@
 #include "scores.hpp"
 #include "paths.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -267,6 +268,7 @@ void actItem(Entity* my)
 			{
 				if ( inrange[i] && players[i] && players[i]->ghost.isActive() )
 				{
+					Compendium_t::Events_t::eventUpdateMonster(i, Compendium_t::CPDM_GHOST_PUSHES, players[i]->ghost.my, 1);
 					my->vel_x += 1.0 * cos(players[i]->ghost.my->yaw);
 					my->vel_y += 1.0 * sin(players[i]->ghost.my->yaw);
 					my->z = std::max(my->z - 0.1, 0.0);
@@ -684,6 +686,28 @@ void actItem(Entity* my)
 	// falling out of the map (or burning in a pit of lava)
 	if ( (my->flags[BURNING] && my->z > 12) || my->z > 128 )
 	{
+		if ( multiplayer != CLIENT )
+		{
+			int playerOwner = achievementObserver.checkUidIsFromPlayer(my->itemOriginalOwner);
+			if ( (my->flags[BURNING] && my->z > 12) )
+			{
+				if ( playerOwner >= 0 )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(playerOwner, Compendium_t::CPDM_LAVA_ITEMS_BURNT, "lava", 1);
+				}
+			}
+			else if ( my->z > 128 )
+			{
+				if ( playerOwner >= 0 )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(playerOwner, Compendium_t::CPDM_PITS_ITEMS_LOST, "pits", 1);
+					if ( ITEM_TYPE >= 0 && ITEM_TYPE < NUMITEMS )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(playerOwner, Compendium_t::CPDM_PITS_ITEMS_VALUE_LOST, "pits", items[ITEM_TYPE].value);
+					}
+				}
+			}
+		}
 		if ( ITEM_TYPE == ARTIFACT_MACE && my->parent != 0 )
 		{
 			steamAchievementEntity(uidToEntity(my->parent), "BARONY_ACH_STFU");

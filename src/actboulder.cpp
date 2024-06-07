@@ -327,24 +327,39 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 					}
 				}
 
+				Sint32 oldHP = stats->HP;
 				if ( my->sprite == BOULDER_LAVA_SPRITE )
 				{
 					entity->modHP(-damage);
+					if ( entity->behavior == &actPlayer && stats->HP < oldHP )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_DAMAGE, "brimstone boulder", oldHP - stats->HP);
+					}
 					entity->setObituary(Language::get(3898));
 					stats->killer = KilledBy::BOULDER;
 				}
 				else if ( my->sprite == BOULDER_ARCANE_SPRITE )
 				{
 					entity->modHP(-damage);
+					if ( entity->behavior == &actPlayer && stats->HP < oldHP )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_DAMAGE, "boulder trap", oldHP - stats->HP);
+					}
 					entity->setObituary(Language::get(3899));
 					stats->killer = KilledBy::BOULDER;
 				}
 				else
 				{
 					entity->modHP(-damage);
+					if ( entity->behavior == &actPlayer && stats->HP < oldHP )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_DAMAGE, "boulder trap", oldHP - stats->HP);
+					}
 					entity->setObituary(Language::get(1505));
 					stats->killer = KilledBy::BOULDER;
 				}
+
+				bool lifeSaving = (stats->HP <= 0 && stats->amulet && stats->amulet->type == AMULET_LIFESAVING);
 				if ( entity->behavior == &actPlayer )
 				{
 					if ( stats->HP <= 0 )
@@ -358,11 +373,19 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 						{
 							steamAchievementClient(BOULDER_PLAYERPUSHED, "BARONY_ACH_MOVED_ITSELF");
 						}
+
+						if ( my->sprite == BOULDER_LAVA_SPRITE )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_KILLED_BY, "brimstone boulder", 1);
+						}
+						else
+						{
+							Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_KILLED_BY, "boulder trap", 1);
+						}
 						achievementObserver.updateGlobalStat(STEAM_GSTAT_BOULDER_DEATHS);
 					}
 				}
 
-				bool lifeSaving = (stats->HP <= 0 && stats->amulet && stats->amulet->type == AMULET_LIFESAVING);
 				if ( !lifeSaving )
 				{
 					if ( stats->HP <= 0 && entity->behavior == &actPlayer 
@@ -497,10 +520,17 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 				}
 				else
 				{
-					if ( stats->type == GYROBOT )
+					if ( Entity* leader = entity->monsterAllyGetPlayerLeader() )
 					{
-						Entity* leader = entity->monsterAllyGetPlayerLeader();
-						if ( leader )
+						if ( my->sprite == BOULDER_LAVA_SPRITE )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(entity->monsterAllyIndex, Compendium_t::CPDM_TRAP_FOLLOWERS_KILLED, "brimstone boulder", 1);
+						}
+						else
+						{
+							Compendium_t::Events_t::eventUpdateWorld(entity->monsterAllyIndex, Compendium_t::CPDM_TRAP_FOLLOWERS_KILLED, "boulder trap", 1);
+						}
+						if ( stats->type == GYROBOT )
 						{
 							real_t tangent = atan2(leader->y - entity->y, leader->x - entity->x);
 							Entity* ohitentity = hit.entity;
@@ -1291,6 +1321,8 @@ void actBoulder(Entity* my)
 							inputs.addRumbleRemotePlayer(i, Inputs::HAPTIC_SFX_BOULDER_ROLL_LOW_VOL, my->getUID());
 						}
 					}
+
+					Compendium_t::Events_t::eventUpdateWorld(BOULDER_SOUND_ON_PUSH - 1, Compendium_t::CPDM_BOULDERS_PUSHED, "boulder trap", 1);
 					BOULDER_SOUND_ON_PUSH = 0;
 				}
 			}
@@ -1995,13 +2027,31 @@ void boulderSokobanOnDestroy(bool pushedOffLedge)
 			}
 		}
 		//messagePlayer(0, "Solved it!");
+		Uint32 playerAliveTicks = 0;
 		for ( int c = 0; c < MAXPLAYERS; c++ )
 		{
+			if ( players[c] && players[c]->entity )
+			{
+				playerAliveTicks = std::min((Uint32)0x7FFFFFFF, players[c]->entity->ticks);
+				break;
+			}
+		}
+		for ( int c = 0; c < MAXPLAYERS; c++ )
+		{
+			if ( playerAliveTicks > 0 )
+			{
+				Compendium_t::Events_t::eventUpdateWorld(c, Compendium_t::CPDM_SOKOBAN_SOLVES, "sokoban", 1);
+				Compendium_t::Events_t::eventUpdateWorld(c, Compendium_t::CPDM_SOKOBAN_FASTEST_SOLVE, "sokoban", playerAliveTicks);
+			}
 			Uint32 color = makeColorRGB(255, 128, 0);
 			if ( goldCount >= 39 )
 			{
 				playSoundPlayer(c, 393, 128);
 				messagePlayerColor(c, MESSAGE_HINT, color, Language::get(2969));
+				if ( playerAliveTicks > 0 )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(c, Compendium_t::CPDM_SOKOBAN_PERFECT_SOLVES, "sokoban", 1);
+				}
 			}
 			else
 			{

@@ -21,6 +21,7 @@
 #include "scores.hpp"
 #include "shops.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 void Item::applySkeletonKey(int player, Entity& entity)
 {
@@ -31,6 +32,7 @@ void Item::applySkeletonKey(int player, Entity& entity)
 		{
 			messagePlayer(player, MESSAGE_INTERACTION, Language::get(1097));
 			entity.unlockChest();
+			Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_CHESTS_UNLOCKED, "chest", 1);
 		}
 		else
 		{
@@ -52,6 +54,7 @@ void Item::applySkeletonKey(int player, Entity& entity)
 			{
 				messagePlayer(player, MESSAGE_INTERACTION, Language::get(1099));
 				entity.doorLocked = 0;
+				Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_DOOR_UNLOCKED, "door", 1);
 			}
 		}
 		else
@@ -255,6 +258,7 @@ void Item::applyLockpick(int player, Entity& entity)
 					}
 				}
 				entity.unlockChest();
+				Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_CHESTS_UNLOCKED, "chest", 1);
 			}
 			else
 			{
@@ -348,6 +352,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				//Unlock door.
 				playSoundEntity(&entity, 91, 64);
 				messagePlayer(player, MESSAGE_INTERACTION, Language::get(1099));
+				Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_DOOR_UNLOCKED, "door", 1);
 				entity.doorLocked = 0;
 				if ( !entity.doorPreventLockpickExploit )
 				{

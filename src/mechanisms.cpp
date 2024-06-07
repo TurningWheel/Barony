@@ -17,6 +17,7 @@
 #include "net.hpp"
 #include "player.hpp"
 #include "scores.hpp"
+#include "mod_tools.hpp"
 
 //Circuits do not overlap. They connect to all their neighbors, allowing for circuits to interfere with eachother.
 static ConsoleVariable<bool> cvar_wire_debug("/wire_debug", false);
@@ -188,8 +189,7 @@ void actSwitch(Entity* my)
 
 	if ( multiplayer != CLIENT )
 	{
-		int i = 0;
-		for (i = 0; i < MAXPLAYERS; ++i)
+		for (int i = 0; i < MAXPLAYERS; ++i)
 		{
 			if ( selectedEntity[i] == my || client_selected[i] == my )
 			{
@@ -198,6 +198,7 @@ void actSwitch(Entity* my)
 					messagePlayer(i, MESSAGE_INTERACTION, Language::get(1110));
 					playSoundEntity(my, 56, 64);
 					my->toggleSwitch();
+					Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_LEVER_PULLED, "lever", 1);
 				}
 			}
 		}
@@ -210,6 +211,7 @@ void actSwitch(Entity* my)
 				if ( leader )
 				{
 					achievementObserver.playerAchievements[monsterInteracting->monsterAllyIndex].checkPathBetweenObjects(leader, my, AchievementObserver::BARONY_ACH_LEVITANT_LACKEY);
+					Compendium_t::Events_t::eventUpdateWorld(monsterInteracting->monsterAllyIndex, Compendium_t::CPDM_LEVER_FOLLOWER_PULLED, "lever", 1);
 				}
 			}
 			my->toggleSwitch();

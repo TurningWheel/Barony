@@ -232,11 +232,13 @@ void actFountain(Entity* my)
 							}
 						}
 					}
+					Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_FOUNTAIN_USED, "fountain", 1);
 					switch (my->skill[1])
 					{
 						case 0:
 						{
 							playSoundEntity(players[i]->entity, 52, 64);
+
 							//Spawn succubus.
 							Uint32 color = makeColorRGB(255, 128, 0);
 							Entity* spawnedMonster = nullptr;
@@ -285,6 +287,7 @@ void actFountain(Entity* my)
 									{
 										messagePlayerColor(i, MESSAGE_INTERACTION, color, Language::get(469));
 									}
+									Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_FOUNTAIN_FOOCUBI, "fountain", 1);
 								}
 							}
 							else if ( currentlevel < 10 )
@@ -308,6 +311,7 @@ void actFountain(Entity* my)
 											strcpy(tmpStats->name, "lesser incubus");
 										}
 										messagePlayerColor(i, MESSAGE_INTERACTION, color, Language::get(2519));
+										Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_FOUNTAIN_FOOCUBI, "fountain", 1);
 									}
 								}
 								else
@@ -316,6 +320,7 @@ void actFountain(Entity* my)
 									{
 										spawnedMonster->seedEntityRNG(rng.getU32());
 										messagePlayerColor(i, MESSAGE_INTERACTION, color, Language::get(469));
+										Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_FOUNTAIN_FOOCUBI, "fountain", 1);
 									}
 								}
 							}
@@ -325,11 +330,13 @@ void actFountain(Entity* my)
 								{
 									spawnedMonster->seedEntityRNG(rng.getU32());
 									messagePlayerColor(i, MESSAGE_INTERACTION, color, Language::get(2519));
+									Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_FOUNTAIN_FOOCUBI, "fountain", 1);
 								}
 							}
 							break;
 						}
 						case 1:
+							Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_FOUNTAIN_DRUNK, "fountain", 1);
 							if ( stats[i] && stats[i]->type != VAMPIRE )
 							{
 								messagePlayer(i, MESSAGE_INTERACTION, Language::get(470));
@@ -372,6 +379,7 @@ void actFountain(Entity* my)
 						case 2:
 						{
 							//Potion effect. Potion effect is stored in my->skill[3], randomly chosen when the fountain is created.
+							Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_FOUNTAIN_DRUNK, "fountain", 1);
 							messagePlayer(i, MESSAGE_INTERACTION, Language::get(470));
 							Item* item = newItem(static_cast<ItemType>(POTION_WATER + my->skill[3]), static_cast<Status>(4), 0, 1, 0, false, NULL);
 							useItem(item, i, my);
@@ -387,6 +395,7 @@ void actFountain(Entity* my)
 							messagePlayerColor(i, MESSAGE_STATUS, textcolor, Language::get(471));
 							messagePlayerColor(i, MESSAGE_STATUS, textcolor, Language::get(473));
 							bool stuckOnYouSuccess = false;
+							Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_FOUNTAIN_BLESS_ALL, "fountain", 1);
 
 							if ( !stats[i] )
 							{
@@ -560,6 +569,7 @@ void actFountain(Entity* my)
 							if ( items.size() )
 							{
 								messagePlayerColor(i, MESSAGE_STATUS, textcolor, Language::get(2592)); //"The fountain blesses a piece of equipment"
+								Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_FOUNTAIN_BLESS, "fountain", 1);
 								//Randomly choose a piece of equipment.
 								std::pair<Item*, Uint32> chosen = items[rng.rand()%items.size()];
 								if ( chosen.first->beatitude == 0 )

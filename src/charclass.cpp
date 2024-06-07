@@ -2947,7 +2947,7 @@ void initClass(const int player)
 				if ( item->type == SPELL_ITEM )
 				{
 					bool skipSpellRearrange = false;
-					spell_t* spell = getSpellFromItem(player, item);
+					spell_t* spell = getSpellFromItem(player, item, false);
 					if ( spell && client_classes[player] == CLASS_SHAMAN )
 					{
 						// don't add shapeshift spells to hotbar.
@@ -3059,7 +3059,7 @@ void initShapeshiftHotbar(int player)
 		Item* item = static_cast<Item*>(node->element);
 		if ( item && item->type == SPELL_ITEM )
 		{
-			spell_t* spell = getSpellFromItem(player, item);
+			spell_t* spell = getSpellFromItem(player, item, true);
 			if ( spell )
 			{
 				if ( newSpell && newSpell == spell )
@@ -3252,7 +3252,7 @@ void deinitShapeshiftHotbar(int player)
 		{
 			if ( item->type == SPELL_ITEM && item->appearance >= 1000 )
 			{
-				spell_t* spell = getSpellFromItem(player, item);
+				spell_t* spell = getSpellFromItem(player, item, true);
 				if ( spell && client_classes[player] == CLASS_SHAMAN )
 				{
 					// move shapeshift spells out of inventory. 
@@ -3304,7 +3304,7 @@ bool playerUnlockedShamanSpell(const int player, Item* const item)
 		return false;
 	}
 
-	spell_t* spell = getSpellFromItem(player, item);
+	spell_t* spell = getSpellFromItem(player, item, false);
 	int levelRequirement = 0;
 	if ( spell && client_classes[player] == CLASS_SHAMAN )
 	{

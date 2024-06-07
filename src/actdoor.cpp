@@ -20,6 +20,7 @@
 #include "interface/interface.hpp"
 #include "items.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -150,6 +151,7 @@ void actDoor(Entity* my)
 								my->doorStatus = 1 + (playerEntity->x > my->x);
 								playSoundEntity(my, 21, 96);
 								messagePlayer(i, MESSAGE_INTERACTION, Language::get(464));
+								Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_DOOR_OPENED, "door", 1);
 							}
 							else if ( my->doorDir && !my->doorStatus )
 							{
@@ -157,6 +159,7 @@ void actDoor(Entity* my)
 								my->doorStatus = 1 + (playerEntity->y < my->y);
 								playSoundEntity(my, 21, 96);
 								messagePlayer(i, MESSAGE_INTERACTION, Language::get(464));
+								Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_DOOR_OPENED, "door", 1);
 							}
 							else
 							{
@@ -164,6 +167,7 @@ void actDoor(Entity* my)
 								my->doorStatus = 0;
 								playSoundEntity(my, 22, 96);
 								messagePlayer(i, MESSAGE_INTERACTION, Language::get(465));
+								Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_DOOR_CLOSED, "door", 1);
 							}
 						}
 						else
@@ -342,6 +346,7 @@ void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *
 				{
 					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(387));
 				}
+				Compendium_t::Events_t::eventUpdateWorld(caster->skill[2], Compendium_t::CPDM_DOOR_BROKEN, "door", 1);
 			}
 			else
 			{

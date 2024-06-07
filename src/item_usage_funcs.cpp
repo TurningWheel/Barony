@@ -2342,8 +2342,13 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 void onScrollUseAppraisalIncrease(Item* item, int player)
 {
 	if ( !item ) { return; }
-	if ( !item->identified && players[player] && players[player]->isLocalPlayer() )
+	if ( item->identified && players[player] && players[player]->isLocalPlayer() )
 	{
+		Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_CONSUMED, item->type, 1);
+	}
+	else if ( !item->identified && players[player] && players[player]->isLocalPlayer() )
+	{
+		Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_CONSUMED_UNIDENTIFIED, item->type, 1);
 		if ( stats[player]->getProficiency(PRO_APPRAISAL) < SKILL_LEVEL_BASIC )
 		{
 			if ( stats[player] && players[player]->entity )
@@ -5323,6 +5328,7 @@ void item_Spellbook(Item*& item, int player)
 
 		if ( learned )
 		{
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_LEARNT, item->type, 1);
 			if ( item->type >= SPELLBOOK_RAT_FORM && item->type <= SPELLBOOK_IMP_FORM )
 			{
 				ItemType originalSpellbook = item->type;

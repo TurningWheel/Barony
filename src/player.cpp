@@ -5377,7 +5377,7 @@ void Player::Magic_t::setQuickCastSpellFromInventory(Item* item)
 	{
 		return;
 	}
-	quick_cast_spell = getSpellFromItem(player.playernum, item);
+	quick_cast_spell = getSpellFromItem(player.playernum, item, true);
 }
 
 const bool Player::bUseCompactGUIWidth() const

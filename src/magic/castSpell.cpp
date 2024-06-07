@@ -24,6 +24,7 @@
 #include "../ui/MainMenu.hpp"
 #include "magic.hpp"
 #include "../prng.hpp"
+#include "../mod_tools.hpp"
 
 bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellID);
 
@@ -550,6 +551,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						consumeItem(toBreak, player);
 					}
 				}
+				if ( player >= 0 )
+				{
+					Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELL_FAILURES, SPELL_ITEM, 1, false, spell->ID);
+				}
 				return NULL;
 			}
 		}
@@ -864,6 +869,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		{
 			if ( caster->behavior == &actDeathGhost )
 			{
+				Compendium_t::Events_t::eventUpdateMonster(caster->skill[2], Compendium_t::CPDM_GHOST_TELEPORTS, caster, 1);
 				auto& ghost = players[caster->skill[2]]->ghost;
 				int tx = ghost.spawnX;
 				int ty = ghost.spawnY;
@@ -2444,6 +2450,20 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	//Random chance to level up spellcasting skill.
 	if ( !trap )
 	{
+		if ( player >= 0 )
+		{
+			if ( usingSpellbook && !using_magicstaff )
+			{
+				if ( stat && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
+				{
+					Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_CASTS, stat->shield->type, 1);
+				}
+			}
+			else if ( !usingSpellbook && !using_magicstaff )
+			{
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELL_CASTS, SPELL_ITEM, 1, false, spell->ID);
+			}
+		}
 		if ( using_magicstaff )
 		{
 			if ( stat )

@@ -422,7 +422,7 @@ struct SaveGameInfo {
 			}
 		};
 		std::vector<std::pair<int, PlayerRaceHostility_t>> shopkeeperHostility;
-		std::vector<std::pair<std::string, std::vector<std::pair<int, int>>>> compendium_item_events;
+		std::vector<std::pair<std::string, std::vector<int>>> compendium_item_events;
 
 		struct stat_t {
 			struct item_t {

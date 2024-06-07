@@ -168,7 +168,28 @@ void actSpearTrap(Entity* my)
 								{
 									playSoundEntity(entity, 28, 64);
 									spawnGib(entity);
+
+									Sint32 oldHP = stats->HP;
 									entity->modHP(-damage);
+
+									if ( oldHP > stats->HP )
+									{
+										if ( entity->behavior == &actPlayer )
+										{
+											Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_DAMAGE, "spike trap", oldHP - stats->HP);
+											if ( stats->HP <= 0 )
+											{
+												Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_KILLED_BY, "spike trap", 1);
+											}
+										}
+										else if ( entity->behavior == &actMonster )
+										{
+											if ( auto leader = entity->monsterAllyGetPlayerLeader() )
+											{
+												Compendium_t::Events_t::eventUpdateWorld(entity->monsterAllyIndex, Compendium_t::CPDM_TRAP_FOLLOWERS_KILLED, "spike trap", 1);
+											}
+										}
+									}
 
 									if ( stats->HP <= 0 )
 									{

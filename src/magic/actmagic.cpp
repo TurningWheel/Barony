@@ -584,6 +584,41 @@ void spawnBloodVialOnMonsterDeath(Entity* entity, Stat* hitstats, Entity* killer
 
 static ConsoleVariable<bool> cvar_magic_fx_use_vismap("/magic_fx_use_vismap", true);
 
+void magicTrapOnHit(Entity* parent, Entity* hitentity, Stat* hitstats, Sint32 oldHP, int spellID)
+{
+	if ( !parent || !hitentity || !hitstats ) { return; }
+	if ( spellID == SPELL_NONE ) { return; }
+	if ( parent->behavior == &actMagicTrap || parent->behavior == &actMagicTrapCeiling )
+	{
+		const char* category = parent->behavior == &actMagicTrap ? "magic trap" : "ceiling trap";
+		if ( oldHP == 0 )
+		{
+			if ( hitentity->behavior == &actPlayer )
+			{
+				Compendium_t::Events_t::eventUpdateWorld(hitentity->skill[2], Compendium_t::CPDM_TRAP_MAGIC_STATUSED, category, 1);
+			}
+		}
+		else if ( oldHP > hitstats->HP )
+		{
+			if ( hitentity->behavior == &actPlayer )
+			{
+				Compendium_t::Events_t::eventUpdateWorld(hitentity->skill[2], Compendium_t::CPDM_TRAP_DAMAGE, category, oldHP - hitstats->HP);
+				if ( hitstats->HP <= 0 )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(hitentity->skill[2], Compendium_t::CPDM_TRAP_KILLED_BY, category, 1);
+				}
+			}
+			else if ( hitentity->behavior == &actMonster )
+			{
+				if ( auto leader = hitentity->monsterAllyGetPlayerLeader() )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(hitentity->monsterAllyIndex, Compendium_t::CPDM_TRAP_FOLLOWERS_KILLED, category, 1);
+				}
+			}
+		}
+	}
+}
+
 void actMagicMissile(Entity* my)   //TODO: Verify this function.
 {
 	if (!my || !my->children.first || !my->children.first->element)
@@ -1416,7 +1451,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damageMultiplier;
 							damage /= (1 + (int)resistance);
+							Sint32 oldHP = hitstats->HP;
 							hit.entity->modHP(-damage);
+							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 							for (i = 0; i < damage; i += 2)   //Spawn a gib for every two points of damage.
 							{
 								Entity* gib = spawnGib(hit.entity);
@@ -1591,7 +1628,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 							damage *= damageMultiplier;
 							damage /= (1 + (int)resistance);
+							Sint32 oldHP;
 							hit.entity->modHP(-damage);
+							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 							for (i = 0; i < damage; i += 2)   //Spawn a gib for every two points of damage.
 							{
 								Entity* gib = spawnGib(hit.entity);
@@ -1876,6 +1915,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage *= fireMultiplier;
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
+							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 							//for (i = 0; i < damage; i += 2) { //Spawn a gib for every two points of damage.
 							Entity* gib = spawnGib(hit.entity);
 							serverSpawnGibForClient(gib);
@@ -2125,6 +2165,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 							if ( duration > 0 && hit.entity->setEffect(EFF_CONFUSED, true, duration, false) )
 							{
+								magicTrapOnHit(parent, hit.entity, hitstats, 0, spell ? spell->ID : SPELL_NONE);
 								playSoundEntity(hit.entity, 174, 64);
 								if ( hit.entity->behavior == &actMonster )
 								{
@@ -2246,6 +2287,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								hit.entity->modHP(-damage);
 								Entity* gib = spawnGib(hit.entity);
 								serverSpawnGibForClient(gib);
+								magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 							}
 
 							// write the obituary
@@ -2323,6 +2365,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
 
+							magicTrapOnHit(parent, hit.entity, hitstats, 0, spell ? spell->ID : SPELL_NONE);
+
 							// If the Entity hit is a Player, update their status to be Slowed
 							if ( hit.entity->behavior == &actPlayer )
 							{
@@ -2397,6 +2441,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								if ( hit.entity->setEffect(EFF_ASLEEP, true, effectDuration, false) )
 								{
+									magicTrapOnHit(parent, hit.entity, hitstats, 0, spell ? spell->ID : SPELL_NONE);
 									playSoundEntity(hit.entity, 174, 64);
 									hitstats->OLDHP = hitstats->HP;
 									if ( hit.entity->behavior == &actPlayer )
@@ -2498,6 +2543,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage *= damageMultiplier;
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
+
+							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 
 							// write the obituary
 							if (parent)
@@ -2875,6 +2922,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								// Open the Door
 								playSoundEntity(hit.entity, 91, 64); // "UnlockDoor.ogg"
+								if ( hit.entity->doorLocked )
+								{
+									if ( parent && parent->behavior == &actPlayer )
+									{
+										Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_DOOR_UNLOCKED, "door", 1);
+									}
+								}
 								hit.entity->doorLocked = 0; // Unlocks the Door
 								hit.entity->doorPreventLockpickExploit = 1;
 
@@ -2927,6 +2981,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										if ( parent->behavior == &actPlayer )
 										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(403)); // "The spell opens the gate!"
+											Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_GATE_OPENED_SPELL, "portcullis", 1);
 										}
 									}
 								}
@@ -2955,6 +3010,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										if ( parent->behavior == &actPlayer)
 										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(404)); // "The spell unlocks the chest!"
+											Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_CHESTS_UNLOCKED, "chest", 1);
 										}
 									}
 								}
@@ -3168,7 +3224,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							damage /= (1 + (int)resistance);
 							
+							Sint32 oldHP = hitstats->HP;
 							hit.entity->modHP(-damage);
+
+							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 
 							// write the obituary
 							if ( parent )
@@ -6847,6 +6906,7 @@ bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 			{
 				messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(4337),
 					Language::get(hit.entity->getColliderLangName())); // you destroy the %s!
+				Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_BARRIER_DESTROYED, "breakable barriers", 1);
 			}
 		}
 

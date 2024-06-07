@@ -21,6 +21,7 @@
 #include "player.hpp"
 #include "magic/magic.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -365,6 +366,12 @@ void Entity::actTeleportShrine()
 				{
 					playSoundEntity(this, 252, 128);
 					//messagePlayer(i, MESSAGE_INTERACTION, Language::get(4301));
+
+					if ( auto leader = monsterInteracting->monsterAllyGetPlayerLeader() )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(leader->skill[2], Compendium_t::CPDM_OBELISK_FOLLOWER_USES, "obelisk", 1);
+					}
+
 					Entity* spellTimer = createParticleTimer(this, 200, 625);
 					spellTimer->particleTimerPreDelay = 0; // wait x ticks before animation.
 					spellTimer->particleTimerEndAction = PARTICLE_EFFECT_SHRINE_TELEPORT; // teleport behavior of timer.
@@ -432,6 +439,9 @@ void Entity::actTeleportShrine()
 				{
 					playSoundEntity(this, 252, 128);
 					messagePlayer(i, MESSAGE_INTERACTION, Language::get(4301));
+
+					Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_OBELISK_USES, "obelisk", 1);
+
 					Entity* spellTimer = createParticleTimer(this, 200, 625);
 					spellTimer->particleTimerPreDelay = 0; // wait x ticks before animation.
 					spellTimer->particleTimerEndAction = PARTICLE_EFFECT_SHRINE_TELEPORT; // teleport behavior of timer.

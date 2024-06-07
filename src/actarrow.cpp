@@ -649,6 +649,7 @@ void actArrow(Entity* my)
 
 					/*messagePlayer(0, "My damage: %d, AC: %d, Pierce: %d", my->arrowPower, AC(hitstats), my->arrowArmorPierce);
 					messagePlayer(0, "Resolved to %d damage.", damage);*/
+					Sint32 oldHP = hitstats->HP;
 					hit.entity->modHP(-damage);
 					// write obituary
 					if ( parent )
@@ -657,6 +658,25 @@ void actArrow(Entity* my)
 						{
 							hit.entity->setObituary(Language::get(1503));
 							hitstats->killer = KilledBy::TRAP_ARROW;
+
+							if ( oldHP > hitstats->HP )
+							{
+								if ( hit.entity->behavior == &actPlayer )
+								{
+										Compendium_t::Events_t::eventUpdateWorld(hit.entity->skill[2], Compendium_t::CPDM_TRAP_DAMAGE, "arrow trap", oldHP - hitstats->HP);
+										if ( hitstats->HP <= 0 )
+										{
+											Compendium_t::Events_t::eventUpdateWorld(hit.entity->skill[2], Compendium_t::CPDM_TRAP_KILLED_BY, "arrow trap", 1);
+										}
+								}
+								else if ( hit.entity->behavior == &actMonster )
+								{
+									if ( auto leader = hit.entity->monsterAllyGetPlayerLeader() )
+									{
+										Compendium_t::Events_t::eventUpdateWorld(hit.entity->monsterAllyIndex, Compendium_t::CPDM_TRAP_FOLLOWERS_KILLED, "arrow trap", 1);
+									}
+								}
+							}
 						}
 						else
 						{

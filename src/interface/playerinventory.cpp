@@ -1952,7 +1952,7 @@ std::string getItemSpritePath(const int player, Item& item)
 {
 	if ( item.type == SPELL_ITEM )
 	{
-		return ItemTooltips.getSpellIconPath(player, item);
+		return ItemTooltips.getSpellIconPath(player, item, -1);
 	}
 	else
 	{
@@ -4332,7 +4332,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
         
         if ( item->type == SPELL_ITEM )
         {
-            spell_t* spell = getSpellFromItem(player, item);
+            spell_t* spell = getSpellFromItem(player, item, false);
             if ( !spell )
             {
                 snprintf(buf, sizeof(buf), "%s", "Unknown Spell");
@@ -4548,7 +4548,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
         std::string minWidthKey = "default";
         std::string maxWidthKey = "default";
         std::string headerMaxWidthKey = "default";
-        if ( spell_t* spell = getSpellFromItem(player, item) )
+        if ( spell_t* spell = getSpellFromItem(player, item, false) )
         {
             if ( itemTooltip.minWidths.find(ItemTooltips.spellItems[spell->ID].internalName) != itemTooltip.minWidths.end() )
             {
@@ -4740,7 +4740,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
         {
             imgSpellIcon->disabled = false;
             imgSpellIconBg->disabled = false;
-            imgSpellIcon->path = ItemTooltips.getSpellIconPath(player, *item);
+            imgSpellIcon->path = ItemTooltips.getSpellIconPath(player, *item, -1);
             
             static ConsoleVariable<int> cvar_spelltooltipIconX("/spell_tooltip_icon_x", 0);
             static ConsoleVariable<int> cvar_spelltooltipIconY("/spell_tooltip_icon_y", -4);
@@ -4786,6 +4786,12 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
             txtThirdValuePositive->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
             txtThirdValueNegative->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
         }
+
+		bool compendiumTooltip = false;
+		if ( parentFrame && !strcmp(parentFrame->getName(), "compendium") )
+		{
+			compendiumTooltip = true;
+		}
         
         if ( itemTooltip.icons.size() > 0 )
         {
@@ -4802,7 +4808,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                             {
                                 continue;
                             }
-                            icon.iconPath = ItemTooltips.getSpellIconPath(player, *item);
+                            icon.iconPath = ItemTooltips.getSpellIconPath(player, *item, -1);
                         }
                     }
                     else if ( itemCategory(item) == SCROLL )
@@ -4838,7 +4844,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                         }
                         else if ( icon.conditionalAttribute == "TINKERBOT_MAGICATK" )
                         {
-                            icon.iconPath = ItemTooltips.getSpellIconPath(player, *item);
+                            icon.iconPath = ItemTooltips.getSpellIconPath(player, *item, -1);
                         }
                     }
                     else if ( item->type == SPELL_ITEM )
@@ -4849,7 +4855,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                         }
                         else if ( icon.conditionalAttribute.find("spell_") != std::string::npos )
                         {
-                            spell_t* spell = getSpellFromItem(player, item);
+                            spell_t* spell = getSpellFromItem(player, item, false);
                             if ( spell && ItemTooltips.spellItems[spell->ID].internalName == icon.conditionalAttribute )
                             {
                                 // current spell uses this attribute
@@ -4881,6 +4887,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                         }
                         else if ( icon.conditionalAttribute == "SPELLBOOK_UNLEARNED" )
                         {
+							if ( compendiumTooltip ) { continue; }
                             if ( isGoblin || playerLearnedSpellbook(player, item) || (spell && skillLVL >= spell->difficulty) )
                             {
                                 continue;
@@ -4889,6 +4896,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                         else if ( icon.conditionalAttribute == "SPELLBOOK_UNLEARNABLE" )
                         {
                             if ( !isGoblin ) { continue; }
+							if ( compendiumTooltip ) { continue; }
                             if ( playerLearnedSpellbook(player, item) )
                             {
                                 continue;
@@ -4897,6 +4905,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                         else if ( icon.conditionalAttribute == "SPELLBOOK_LEARNABLE" )
                         {
                             if ( isGoblin ) { continue; }
+							if ( compendiumTooltip ) { continue; }
                             if ( playerLearnedSpellbook(player, item) || (spell && skillLVL < spell->difficulty) )
                             {
                                 continue;
@@ -4907,19 +4916,20 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                         {
                             if ( icon.conditionalAttribute == "SPELLBOOK_SPELLINFO_LEARNED" )
                             {
-                                if ( !playerLearnedSpellbook(player, item) )
+                                if ( !compendiumTooltip && !playerLearnedSpellbook(player, item) )
                                 {
                                     continue;
                                 }
                             }
                             else if ( icon.conditionalAttribute == "SPELLBOOK_SPELLINFO_UNLEARNED" )
                             {
+								if ( compendiumTooltip ) { continue; }
                                 if ( playerLearnedSpellbook(player, item) )
                                 {
                                     continue;
                                 }
                             }
-                            icon.iconPath = ItemTooltips.getSpellIconPath(player, *item);
+                            icon.iconPath = ItemTooltips.getSpellIconPath(player, *item, -1);
                         }
                         else if ( !items[item->type].hasAttribute(icon.conditionalAttribute) )
                         {
@@ -4952,7 +4962,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                     imgPrimaryIcon->path = icon.iconPath;
                     
                     std::string iconText = icon.text;
-                    ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText, index, icon.conditionalAttribute);
+                    ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText, index, icon.conditionalAttribute, parentFrame);
                     
                     if ( tooltipType.find("tooltip_spell_") != std::string::npos && iconText == "" )
                     {
@@ -4986,7 +4996,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                     imgSecondaryIcon->path = icon.iconPath;
                     
                     std::string iconText = icon.text;
-                    ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText, index, icon.conditionalAttribute);
+                    ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText, index, icon.conditionalAttribute, parentFrame);
                     
                     std::string bracketText = "";
                     ItemTooltips.stripOutHighlightBracketText(iconText, bracketText);
@@ -5013,7 +5023,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                     imgThirdIcon->path = icon.iconPath;
                     
                     std::string iconText = icon.text;
-                    ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText, index, icon.conditionalAttribute);
+                    ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText, index, icon.conditionalAttribute, parentFrame);
                     
                     std::string bracketText = "";
                     ItemTooltips.stripOutHighlightBracketText(iconText, bracketText);
@@ -5069,7 +5079,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
         }
         
         frameDesc->setDisabled(true);
-        
+
         std::string detailsTextString = "";
         if ( !doShortTooltip && itemTooltip.detailsText.size() > 0 )
         {
@@ -5322,6 +5332,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                     else if ( tag.compare("spellbook_cast_success") == 0
                              || tag.compare("spellbook_extramana_chance") == 0 )
                     {
+						if ( compendiumTooltip )
+						{
+							continue;
+						}
                         bool newbie = isSpellcasterBeginnerFromSpellbook(player, players[player]->entity, stats[player],
                                                                          getSpellFromID(getSpellIDFromSpellbook(item->type)), item);
                         if ( !newbie )
@@ -5333,6 +5347,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                              || tag.compare("spellbook_magic_current") == 0
                              || tag.compare("spellbook_unlearned_blank_space") == 0 )
                     {
+						if ( compendiumTooltip )
+						{
+							continue;
+						}
                         if ( playerLearnedSpellbook(player, item) )
                         {
                             continue;
@@ -5341,7 +5359,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                 }
                 else if ( itemCategory(item) == SPELL_CAT )
                 {
-                    spell_t* spell = getSpellFromItem(player, item);
+                    spell_t* spell = getSpellFromItem(player, item, false);
                     if ( tag.compare("spell_damage_bonus") == 0 )
                     {
                         if ( !ItemTooltips.bIsSpellDamageOrHealingType(spell) )
@@ -5352,6 +5370,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                     else if ( tag.compare("spell_cast_success") == 0
                              || tag.compare("spell_extramana_chance") == 0 )
                     {
+						if ( compendiumTooltip )
+						{
+							continue;
+						}
                         bool newbie = isSpellcasterBeginner(player, players[player]->entity);
                         if ( !newbie )
                         {
@@ -5360,6 +5382,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                     }
                     else if ( tag.compare("spell_newbie_newline") == 0 )
                     {
+						if ( compendiumTooltip )
+						{
+							continue;
+						}
                         bool newbie = isSpellcasterBeginner(player, players[player]->entity);
                         if ( !newbie )
                         {
@@ -5372,7 +5398,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                     }
                     else if ( tag.find("attribute_spell_") != std::string::npos )
                     {
-                        spell_t* spell = getSpellFromItem(player, item);
+                        spell_t* spell = getSpellFromItem(player, item, false);
                         if ( !spell ) { continue; }
                         std::string subs = tag.substr(10, std::string::npos);
                         if ( !spell || ItemTooltips.spellItems[spell->ID].internalName != subs )
@@ -11298,7 +11324,7 @@ bool playerLearnedSpellbook(int player, Item* current_item)
 			// special shaman racial spells, don't count this as being learnt
 			continue;
 		}
-		spell_t *spell = getSpellFromItem(player, item); //Do not free or delete this.
+		spell_t *spell = getSpellFromItem(player, item, false); //Do not free or delete this.
 		if ( !spell )
 		{
 			continue;

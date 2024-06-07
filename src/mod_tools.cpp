@@ -1179,6 +1179,8 @@ void ItemTooltips_t::readItemsFromFile()
 				t.magicstaffId = i;
 			}
 		}
+
+		spellNameStringToSpellID[t.internalName] = t.id;
 		assert(spellItems.find(t.id) == spellItems.end()); // check we haven't got duplicate key
 		spellItems.insert(std::make_pair(t.id, t));
 		++spellsRead;
@@ -2136,7 +2138,7 @@ std::string ItemTooltips_t::getSpellDescriptionText(const int player, Item& item
 #ifdef EDITOR
 	return defaultString;
 #else
-	spell_t* spell = getSpellFromItem(player, &item);
+	spell_t* spell = getSpellFromItem(player, &item, false);
 	if ( !spell || spellItems.find(spell->ID) == spellItems.end() )
 	{
 		return defaultString;
@@ -2192,7 +2194,7 @@ std::string ItemTooltips_t::getSpellIconText(const int player, Item& item)
 	}
 	else
 	{
-		spell = getSpellFromItem(player, &item);
+		spell = getSpellFromItem(player, &item, false);
 	}
 	if ( !spell || spellItems.find(spell->ID) == spellItems.end() )
 	{
@@ -2279,7 +2281,7 @@ std::string& ItemTooltips_t::getSpellTypeString(const int player, Item& item)
 #ifdef EDITOR
 	return defaultString;
 #else
-	spell_t* spell = getSpellFromItem(player, &item);
+	spell_t* spell = getSpellFromItem(player, &item, false);
 	if ( !spell )
 	{
 		return defaultString;
@@ -2314,7 +2316,7 @@ std::string ItemTooltips_t::getCostOfSpellString(const int player, Item& item)
 #ifdef EDITOR
 	return defaultString;
 #else
-	spell_t* spell = getSpellFromItem(player, &item);
+	spell_t* spell = getSpellFromItem(player, &item, false);
 	if ( !spell )
 	{
 		return defaultString;
@@ -2429,7 +2431,7 @@ node_t* ItemTooltips_t::getSpellNodeFromSpellID(int spellID)
 	return spellImageNode;
 }
 
-std::string ItemTooltips_t::getSpellIconPath(const int player, Item& item)
+std::string ItemTooltips_t::getSpellIconPath(const int player, Item& item, int spellID)
 {
 #ifdef EDITOR
 	return "items/images/null.png";
@@ -2465,14 +2467,21 @@ std::string ItemTooltips_t::getSpellIconPath(const int player, Item& item)
 	}
 	else if ( item.type == SPELL_ITEM )
 	{
-		spell_t* spell = getSpellFromItem(player, &item);
-		if ( spell )
+		if ( spellID > SPELL_NONE )
 		{
-			spellImageNode = getSpellNodeFromSpellID(spell->ID);
+			spellImageNode = getSpellNodeFromSpellID(spellID);
 		}
 		else
 		{
-			spellImageNode = getSpellNodeFromSpellID(SPELL_NONE);
+			spell_t* spell = getSpellFromItem(player, &item, false);
+			if ( spell )
+			{
+				spellImageNode = getSpellNodeFromSpellID(spell->ID);
+			}
+			else
+			{
+				spellImageNode = getSpellNodeFromSpellID(SPELL_NONE);
+			}
 		}
 	}
 	if ( spellImageNode )
@@ -2697,7 +2706,7 @@ Sint32 getStatAttributeBonusFromItem(const int player, Item& item, std::string& 
 #endif
 }
 
-void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex, std::string& conditionalAttribute)
+void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex, std::string& conditionalAttribute, Frame* parentFrame)
 {
 #ifndef EDITOR
 	auto itemTooltip = tooltips[tooltipType];
@@ -3664,7 +3673,14 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 	{
 		if ( conditionalAttribute == "SCROLL_LABEL" )
 		{
-			snprintf(buf, sizeof(buf), str.c_str(), item.getScrollLabel());
+			if ( parentFrame && !strcmp(parentFrame->getName(), "compendium") )
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), "???"); // hide labels in compendium
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), item.getScrollLabel());
+			}
 		}
 		else
 		{
@@ -4466,7 +4482,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 	{
 		if ( detailTag.compare("spell_damage_bonus") == 0 )
 		{
-			spell_t* spell = getSpellFromItem(player, &item);
+			spell_t* spell = getSpellFromItem(player, &item, false);
 			if ( !spell ) { return; }
 
 			//int totalDamage = getSpellDamageOrHealAmount(player, spell, nullptr);
@@ -7721,7 +7737,7 @@ void ClassHotbarConfig_t::writeToFile(HotbarConfigType fileWriteType, HotbarConf
 							std::string itemstr = itemNameStrings[item->type + 2];
 							if ( itemstr == "spell_item" )
 							{
-								if ( spell_t* spell = getSpellFromItem(clientnum, item) )
+								if ( spell_t* spell = getSpellFromItem(clientnum, item, false) )
 								{
 									itemstr = ItemTooltips.spellItems[spell->ID].internalName;
 								}
@@ -7787,7 +7803,7 @@ void ClassHotbarConfig_t::writeToFile(HotbarConfigType fileWriteType, HotbarConf
 								std::string itemstr = itemNameStrings[item->type + 2];
 								if ( itemstr == "spell_item" )
 								{
-									if ( spell_t* spell = getSpellFromItem(clientnum, item) )
+									if ( spell_t* spell = getSpellFromItem(clientnum, item, false) )
 									{
 										itemstr = ItemTooltips.spellItems[spell->ID].internalName;
 									}
@@ -8085,7 +8101,7 @@ void ClassHotbarConfig_t::assignHotbarSlots(const int player)
 				{
 					continue; // shaman form spells
 				}
-				if ( spell_t* spell = getSpellFromItem(player, item) )
+				if ( spell_t* spell = getSpellFromItem(player, item, false) )
 				{
 					itemType = spell->ID + 10000;
 				}
@@ -10626,7 +10642,13 @@ void jsonVecToVec(rapidjson::Value& val, std::vector<Sint32>& vec)
 	}
 }
 
+#ifndef EDITOR
 Compendium_t CompendiumEntries;
+Item Compendium_t::compendiumItem;
+Entity Compendium_t::compendiumItemModel(-1, 0, nullptr, nullptr);
+bool Compendium_t::tooltipNeedUpdate = false;
+SDL_Rect Compendium_t::tooltipPos;
+
 std::vector<std::pair<std::string, std::string>> Compendium_t::CompendiumMonsters_t::contents;
 std::map<std::string, std::string> Compendium_t::CompendiumMonsters_t::contentsMap;
 std::vector<std::pair<std::string, std::string>> Compendium_t::CompendiumWorld_t::contents;
@@ -10635,10 +10657,31 @@ std::vector<std::pair<std::string, std::string>> Compendium_t::CompendiumCodex_t
 std::map<std::string, std::string> Compendium_t::CompendiumCodex_t::contentsMap;
 std::vector<std::pair<std::string, std::string>> Compendium_t::CompendiumItems_t::contents;
 std::map<std::string, std::string> Compendium_t::CompendiumItems_t::contentsMap;
+std::vector<std::pair<std::string, std::string>> Compendium_t::CompendiumMagic_t::contents;
+std::map<std::string, std::string> Compendium_t::CompendiumMagic_t::contentsMap;
+
+void Compendium_t::updateTooltip()
+{
+	bool update = tooltipNeedUpdate;
+	tooltipNeedUpdate = false;
+
+	if ( MainMenu::main_menu_frame )
+	{
+		auto compendiumFrame = MainMenu::main_menu_frame->findFrame("compendium");
+		if ( !compendiumFrame ) { return; }
+		
+		players[0]->inventoryUI.updateInventoryItemTooltip(compendiumFrame);
+		
+		if ( update )
+		{
+			players[0]->hud.updateFrameTooltip(&compendiumItem, tooltipPos.x, tooltipPos.y, Player::PANEL_JUSTIFY_RIGHT, compendiumFrame);
+		}
+	}
+}
 
 void Compendium_t::readItemsFromFile()
 {
-	const std::string filename = "data/compendium/compendium_items.json";
+	const std::string filename = "data/compendium/comp_items.json";
 	if ( !PHYSFS_getRealDir(filename.c_str()) )
 	{
 		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
@@ -10675,6 +10718,7 @@ void Compendium_t::readItemsFromFile()
 	CompendiumItems_t::contentsMap.clear();
 	Compendium_t::Events_t::itemEventLookup.clear();
 	Compendium_t::Events_t::eventItemLookup.clear();
+	Compendium_t::Events_t::itemDisplayedEventsList.clear();
 	for ( auto itr = d["contents"].Begin(); itr != d["contents"].End(); ++itr )
 	{
 		for ( auto itr2 = itr->MemberBegin(); itr2 != itr->MemberEnd(); ++itr2 )
@@ -10749,6 +10793,307 @@ void Compendium_t::readItemsFromFile()
 							{
 								Compendium_t::Events_t::itemEventLookup[(ItemType)itemType].insert((Compendium_t::EventTags)find2->second.id);
 								Compendium_t::Events_t::eventItemLookup[(Compendium_t::EventTags)find2->second.id].insert((ItemType)itemType);
+							}
+						}
+					}
+				}
+			}
+		}
+		if ( w.HasMember("events_display") )
+		{
+			for ( auto itr = w["events_display"].Begin(); itr != w["events_display"].End(); ++itr )
+			{
+				std::string eventName = itr->GetString();
+				auto find = Compendium_t::Events_t::eventIdLookup.find(eventName);
+				if ( find != Compendium_t::Events_t::eventIdLookup.end() )
+				{
+					auto find2 = Compendium_t::Events_t::events.find(find->second);
+					if ( find2 != Compendium_t::Events_t::events.end() )
+					{
+						for ( auto& item : obj.items_in_category )
+						{
+							const int itemType = ItemTooltips.itemNameStringToItemID[item.name];
+							if ( itemType >= WOODEN_SHIELD && itemType < NUMITEMS )
+							{
+								Compendium_t::Events_t::itemDisplayedEventsList[itemType].push_back((Compendium_t::EventTags)find2->second.id);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void Compendium_t::readMagicFromFile()
+{
+	const std::string filename = "data/compendium/comp_magic.json";
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		return;
+	}
+
+	char buf[65536];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.IsObject() || !d.HasMember("version") || !d.HasMember("items") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	magic.clear();
+	CompendiumMagic_t::contents.clear();
+	CompendiumMagic_t::contentsMap.clear();
+	//Compendium_t::Events_t::itemEventLookup.clear();
+	//Compendium_t::Events_t::eventItemLookup.clear();
+	for ( auto itr = d["contents"].Begin(); itr != d["contents"].End(); ++itr )
+	{
+		for ( auto itr2 = itr->MemberBegin(); itr2 != itr->MemberEnd(); ++itr2 )
+		{
+			CompendiumMagic_t::contents.push_back(std::make_pair(itr2->name.GetString(), itr2->value.GetString()));
+			CompendiumMagic_t::contentsMap[itr2->name.GetString()] = itr2->value.GetString();
+		}
+	}
+
+	auto& entries = d["items"];
+	std::unordered_set<std::string> ignoredSpells;
+	std::unordered_set<std::string> ignoredSpellbooks;
+
+	for ( auto itr = d["exclude_spells"].Begin(); itr != d["exclude_spells"].End(); ++itr )
+	{
+		ignoredSpells.insert(itr->GetString());
+	}
+	for ( auto itr = d["exclude_spellbooks"].Begin(); itr != d["exclude_spellbooks"].End(); ++itr )
+	{
+		ignoredSpellbooks.insert(itr->GetString());
+	}
+
+	for ( auto itr = entries.MemberBegin(); itr != entries.MemberEnd(); ++itr )
+	{
+		std::string name = itr->name.GetString();
+		auto& w = itr->value;
+		auto& obj = magic[name];
+
+		jsonVecToVec(w["blurb"], obj.blurb);
+		for ( auto itr = w["items"].Begin(); itr != w["items"].End(); ++itr )
+		{
+			for ( auto itr2 = itr->MemberBegin(); itr2 != itr->MemberEnd(); ++itr2 )
+			{
+				CompendiumItems_t::Codex_t::CodexItem_t item;
+				item.name = itr2->name.GetString();
+				item.rotation = 0;
+				if ( itr2->value.HasMember("rotation") )
+				{
+					item.rotation = itr2->value["rotation"].GetInt();
+				}
+				obj.items_in_category.push_back(item);
+			}
+		}
+
+		std::list<spell_t*> spellsToSort;
+		bool spells = name.find("spells") != std::string::npos;
+		bool spellbooks = name.find("spellbooks") != std::string::npos;
+		if ( spells || spellbooks )
+		{
+			for ( auto spell : allGameSpells )
+			{
+				if ( spells && ignoredSpells.find(spell->spell_internal_name) != ignoredSpells.end() )
+				{
+					continue;
+				}
+				if ( spellbooks )
+				{
+					int book = getSpellbookFromSpellID(spell->ID);
+					if ( book >= WOODEN_SHIELD && book < NUMITEMS && ::items[book].category == SPELLBOOK )
+					{
+						if ( ignoredSpellbooks.find(itemNameStrings[book + 2]) != ignoredSpellbooks.end() )
+						{
+							continue;
+						}
+					}
+					else
+					{
+						continue;
+					}
+				}
+
+				if ( name.find("damage") != std::string::npos )
+				{
+					if ( ItemTooltips.spellItems[spell->ID].spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_DAMAGE)
+						== ItemTooltips.spellItems[spell->ID].spellTags.end() )
+					{
+						continue;
+					}
+				}
+				else if ( name.find("status") != std::string::npos )
+				{
+					if ( ItemTooltips.spellItems[spell->ID].spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_STATUS_EFFECT)
+						== ItemTooltips.spellItems[spell->ID].spellTags.end() )
+					{
+						continue;
+					}
+				}
+				else if ( name.find("utility") != std::string::npos )
+				{
+					if ( ItemTooltips.spellItems[spell->ID].spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_DAMAGE)
+						!= ItemTooltips.spellItems[spell->ID].spellTags.end()
+						|| ItemTooltips.spellItems[spell->ID].spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_STATUS_EFFECT)
+						!= ItemTooltips.spellItems[spell->ID].spellTags.end() )
+					{
+						continue;
+					}
+				}
+				else
+				{
+					continue;
+				}
+				spellsToSort.push_back(spell);
+			}
+
+			if ( spellbooks )
+			{
+				spellsToSort.sort([](const spell_t* lhs, const spell_t* rhs) {
+					const int bookLeft = getSpellbookFromSpellID(lhs->ID);
+					const int bookRight = getSpellbookFromSpellID(rhs->ID);
+
+					const int bookLevelLeft = ::items[bookLeft].level >= 0 ? ::items[bookLeft].level : 10000; // -1 level sorted to the end
+					const int bookLevelRight = ::items[bookRight].level >= 0 ? ::items[bookRight].level : 10000;
+
+					if ( bookLevelLeft < bookLevelRight ) { return true; }
+					if ( bookLevelLeft > bookLevelRight ) { return false; }
+					if ( rhs->difficulty > lhs->difficulty ) { return true; }
+					if ( rhs->difficulty < lhs->difficulty ) { return false; }
+
+					return rhs->ID < lhs->ID;
+					});
+			}
+			else
+			{
+				spellsToSort.sort([](const spell_t* lhs, const spell_t* rhs) {
+					if ( rhs->difficulty > lhs->difficulty ) { return true; }
+					if ( rhs->difficulty < lhs->difficulty ) { return false; }
+					
+					return rhs->ID < lhs->ID;
+					});
+			}
+
+			for ( auto spell : spellsToSort )
+			{
+				CompendiumItems_t::Codex_t::CodexItem_t item;
+				item.rotation = 0;
+				if ( spellbooks )
+				{
+					int book = getSpellbookFromSpellID(spell->ID);
+					item.name = itemNameStrings[book + 2];
+					item.rotation = 180;
+				}
+				else
+				{
+					item.name = spell->spell_internal_name;
+				}
+				item.spellID = spell->ID;
+				obj.items_in_category.push_back(item);
+			}
+		}
+
+		if ( w.HasMember("events") )
+		{
+			std::vector<std::string> alwaysTrackedEvents = {
+				"APPRAISED",
+				"RUNS_COLLECTED"
+			};
+
+			for ( auto& s : alwaysTrackedEvents )
+			{
+				auto find = Compendium_t::Events_t::eventIdLookup.find(s);
+				if ( find != Compendium_t::Events_t::eventIdLookup.end() )
+				{
+					auto find2 = Compendium_t::Events_t::events.find(find->second);
+					if ( find2 != Compendium_t::Events_t::events.end() )
+					{
+						for ( auto& item : obj.items_in_category )
+						{
+							const int itemType = spells ? SPELL_ITEM : ItemTooltips.itemNameStringToItemID[item.name];
+							if ( itemType == SPELL_ITEM )
+							{
+								Compendium_t::Events_t::itemEventLookup[Compendium_t::Events_t::kEventSpellOffset + item.spellID].insert((Compendium_t::EventTags)find2->second.id);
+								Compendium_t::Events_t::eventItemLookup[(Compendium_t::EventTags)find2->second.id].insert(Compendium_t::Events_t::kEventSpellOffset + item.spellID);
+							}
+							else if ( itemType >= WOODEN_SHIELD && itemType < NUMITEMS )
+							{
+								Compendium_t::Events_t::itemEventLookup[(ItemType)itemType].insert((Compendium_t::EventTags)find2->second.id);
+								Compendium_t::Events_t::eventItemLookup[(Compendium_t::EventTags)find2->second.id].insert((ItemType)itemType);
+							}
+						}
+					}
+				}
+			}
+			for ( auto itr = w["events"].Begin(); itr != w["events"].End(); ++itr )
+			{
+				std::string eventName = itr->GetString();
+				auto find = Compendium_t::Events_t::eventIdLookup.find(eventName);
+				if ( find != Compendium_t::Events_t::eventIdLookup.end() )
+				{
+					auto find2 = Compendium_t::Events_t::events.find(find->second);
+					if ( find2 != Compendium_t::Events_t::events.end() )
+					{
+						for ( auto& item : obj.items_in_category )
+						{
+							const int itemType = spells ? SPELL_ITEM : ItemTooltips.itemNameStringToItemID[item.name];
+							if ( itemType == SPELL_ITEM )
+							{
+								Compendium_t::Events_t::itemEventLookup[Compendium_t::Events_t::kEventSpellOffset + item.spellID].insert((Compendium_t::EventTags)find2->second.id);
+								Compendium_t::Events_t::eventItemLookup[(Compendium_t::EventTags)find2->second.id].insert(Compendium_t::Events_t::kEventSpellOffset + item.spellID);
+							}
+							else if ( itemType >= WOODEN_SHIELD && itemType < NUMITEMS )
+							{
+								Compendium_t::Events_t::itemEventLookup[(ItemType)itemType].insert((Compendium_t::EventTags)find2->second.id);
+								Compendium_t::Events_t::eventItemLookup[(Compendium_t::EventTags)find2->second.id].insert((ItemType)itemType);
+							}
+						}
+					}
+				}
+			}
+		}
+		if ( w.HasMember("events_display") )
+		{
+			for ( auto itr = w["events_display"].Begin(); itr != w["events_display"].End(); ++itr )
+			{
+				std::string eventName = itr->GetString();
+				auto find = Compendium_t::Events_t::eventIdLookup.find(eventName);
+				if ( find != Compendium_t::Events_t::eventIdLookup.end() )
+				{
+					auto find2 = Compendium_t::Events_t::events.find(find->second);
+					if ( find2 != Compendium_t::Events_t::events.end() )
+					{
+						for ( auto& item : obj.items_in_category )
+						{
+							const int itemType = spells ? SPELL_ITEM : ItemTooltips.itemNameStringToItemID[item.name];
+							if ( itemType == SPELL_ITEM )
+							{
+								Compendium_t::Events_t::itemDisplayedEventsList[Compendium_t::Events_t::kEventSpellOffset + item.spellID].push_back((Compendium_t::EventTags)find2->second.id);
+							}
+							else if ( itemType >= WOODEN_SHIELD && itemType < NUMITEMS )
+							{
+								Compendium_t::Events_t::itemDisplayedEventsList[itemType].push_back((Compendium_t::EventTags)find2->second.id);
 							}
 						}
 					}
@@ -10854,6 +11199,8 @@ void Compendium_t::readWorldFromFile()
 	worldObjects.clear();
 	CompendiumWorld_t::contents.clear();
 	CompendiumWorld_t::contentsMap.clear();
+	Compendium_t::Events_t::eventWorldIDLookup.clear();
+	Compendium_t::Events_t::eventWorldLookup.clear();
 	for ( auto itr = d["contents"].Begin(); itr != d["contents"].End(); ++itr )
 	{
 		for ( auto itr2 = itr->MemberBegin(); itr2 != itr->MemberEnd(); ++itr2 )
@@ -10870,11 +11217,49 @@ void Compendium_t::readWorldFromFile()
 		auto& w = itr->value;
 		auto& obj = worldObjects[name];
 
+		obj.id = w["event_lookup"].GetInt();
 		jsonVecToVec(w["blurb"], obj.blurb);
 		jsonVecToVec(w["details"], obj.details);
 		obj.imagePath = w["img"].GetString();
+
+		Compendium_t::Events_t::eventWorldIDLookup[name] = obj.id;
+		if ( w.HasMember("events") )
+		{
+			for ( auto itr = w["events"].Begin(); itr != w["events"].End(); ++itr )
+			{
+				std::string eventName = itr->GetString();
+				auto find = Compendium_t::Events_t::eventIdLookup.find(eventName);
+				if ( find != Compendium_t::Events_t::eventIdLookup.end() )
+				{
+					auto find2 = Compendium_t::Events_t::events.find(find->second);
+					if ( find2 != Compendium_t::Events_t::events.end() )
+					{
+						Compendium_t::Events_t::eventWorldLookup[(Compendium_t::EventTags)find2->second.id].insert(name);
+					}
+				}
+			}
+		}
+		/*if ( w.HasMember("events_display") )
+		{
+			for ( auto itr = w["events_display"].Begin(); itr != w["events_display"].End(); ++itr )
+			{
+				std::string eventName = itr->GetString();
+				auto find = Compendium_t::Events_t::eventIdLookup.find(eventName);
+				if ( find != Compendium_t::Events_t::eventIdLookup.end() )
+				{
+					auto find2 = Compendium_t::Events_t::events.find(find->second);
+					if ( find2 != Compendium_t::Events_t::events.end() )
+					{
+						Compendium_t::Events_t::itemDisplayedEventsList[itemType].push_back((Compendium_t::EventTags)find2->second.id);
+					}
+				}
+			}
+		}*/
 	}
 }
+
+std::map<std::string, int> Compendium_t::Events_t::monsterUniqueIDLookup;
+std::map<Compendium_t::EventTags, std::set<int>> Compendium_t::Events_t::eventMonsterLookup;
 
 void Compendium_t::readMonstersFromFile()
 {
@@ -10913,6 +11298,8 @@ void Compendium_t::readMonstersFromFile()
 	monsters.clear();
 	CompendiumMonsters_t::contents.clear();
 	CompendiumMonsters_t::contentsMap.clear();
+	Compendium_t::Events_t::monsterUniqueIDLookup.clear();
+	Compendium_t::Events_t::eventMonsterLookup.clear();
 	for ( auto itr = d["contents"].Begin(); itr != d["contents"].End(); ++itr )
 	{
 		for ( auto itr2 = itr->MemberBegin(); itr2 != itr->MemberEnd(); ++itr2 )
@@ -10922,10 +11309,49 @@ void Compendium_t::readMonstersFromFile()
 		}
 	}
 
+	if ( d.HasMember("unique_tags") )
+	{
+		for ( auto itr = d["unique_tags"].MemberBegin(); itr != d["unique_tags"].MemberEnd(); ++itr )
+		{
+			Compendium_t::Events_t::monsterUniqueIDLookup[itr->name.GetString()] = itr->value.GetInt();
+		}
+	}
+
+	for ( int i = 0; i < NUMMONSTERS; ++i )
+	{
+		int type = i + Compendium_t::Events_t::kEventMonsterOffset;
+		Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILLED_SOLO].insert(type);
+		Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILLED_PARTY].insert(type);
+		Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILLED_BY].insert(type);
+		Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILLED_MULTIPLAYER].insert(type);
+	}
+	for ( auto pair : Compendium_t::Events_t::monsterUniqueIDLookup )
+	{
+		int type = pair.second + Compendium_t::Events_t::kEventMonsterOffset;
+		if ( pair.first == "ghost" )
+		{
+			Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_GHOST_SPAWNED].insert(type);
+			Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_GHOST_TELEPORTS].insert(type);
+			Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_GHOST_PINGS].insert(type);
+			Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_GHOST_PUSHES].insert(type);
+		}
+		else
+		{
+			Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILLED_SOLO].insert(type);
+			Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILLED_PARTY].insert(type);
+			Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILLED_BY].insert(type);
+			Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILLED_MULTIPLAYER].insert(type);
+		}
+	}
+
 	auto& entries = d["monsters"];
 	for ( auto itr = entries.MemberBegin(); itr != entries.MemberEnd(); ++itr )
 	{
 		std::string name = itr->name.GetString();
+		if ( itr->value.HasMember("type") )
+		{
+			name = itr->value["type"].GetString();
+		}
 		int monsterType = NOTHING;
 		for ( int i = 0; i < NUMMONSTERS; ++i )
 		{
@@ -10939,7 +11365,7 @@ void Compendium_t::readMonstersFromFile()
 		if ( monsterType == NOTHING ) { continue; }
 
 		auto& m = itr->value;
-		auto& monster = monsters[name];
+		auto& monster = monsters[itr->name.GetString()];
 		monster.monsterType = monsterType;
 		jsonVecToVec(m["blurb"], monster.blurb);
 		auto& stats = m["stats"];
@@ -10960,15 +11386,84 @@ void Compendium_t::readMonstersFromFile()
 			}
 		}
 		jsonVecToVec(m["inventory"], monster.inventory);
+		if ( m.HasMember("models") )
+		{
+			jsonVecToVec(m["models"], monster.models);
+		}
 	}
 }
 
+Uint32 Compendium_t::lastTickUpdate = 0;
 std::map<Compendium_t::EventTags, Compendium_t::Events_t::Event_t> Compendium_t::Events_t::events;
 std::map<std::string, Compendium_t::EventTags> Compendium_t::Events_t::eventIdLookup;
-std::map<ItemType, std::set<Compendium_t::EventTags>> Compendium_t::Events_t::itemEventLookup;
-std::map<Compendium_t::EventTags, std::set<ItemType>> Compendium_t::Events_t::eventItemLookup;
-std::map<Compendium_t::EventTags, std::map<ItemType, Compendium_t::Events_t::EventVal_t>> Compendium_t::Events_t::playerEvents;
-std::map<Compendium_t::EventTags, std::map<ItemType, Compendium_t::Events_t::EventVal_t>> Compendium_t::Events_t::serverPlayerEvents[MAXPLAYERS];
+std::map<int, std::set<Compendium_t::EventTags>> Compendium_t::Events_t::itemEventLookup;
+std::map<Compendium_t::EventTags, std::set<int>> Compendium_t::Events_t::eventItemLookup;
+std::map<Compendium_t::EventTags, std::set<std::string>> Compendium_t::Events_t::eventWorldLookup;
+std::map<std::string, int> Compendium_t::Events_t::eventWorldIDLookup;
+std::map<int, std::vector<Compendium_t::EventTags>> Compendium_t::Events_t::itemDisplayedEventsList;
+std::map<Compendium_t::EventTags, std::map<int, Compendium_t::Events_t::EventVal_t>> Compendium_t::Events_t::playerEvents;
+std::map<Compendium_t::EventTags, std::map<int, Compendium_t::Events_t::EventVal_t>> Compendium_t::Events_t::serverPlayerEvents[MAXPLAYERS];
+std::map<Compendium_t::EventTags, std::map<std::string, std::string>> Compendium_t::Events_t::eventLangEntries;
+
+void Compendium_t::Events_t::readEventsTranslations()
+{
+	const std::string filename = "data/compendium/events_text.json";
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		return;
+	}
+
+	char buf[65536];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.IsObject() || !d.HasMember("tags") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	eventLangEntries.clear();
+	for ( auto itr = d["tags"].Begin(); itr != d["tags"].End(); ++itr )
+	{
+		for ( auto itr2 = itr->MemberBegin(); itr2 != itr->MemberEnd(); ++itr2 )
+		{
+			auto find = eventIdLookup.find(itr2->name.GetString());
+			if ( find != eventIdLookup.end())
+			{
+				EventTags tag = eventIdLookup[find->first];
+				auto& entry = eventLangEntries[tag];
+				if ( itr2->value.HasMember("default") )
+				{
+					entry["default"] = itr2->value["default"].GetString();
+				}
+				if ( itr2->value.HasMember("overrides") )
+				{
+					for ( auto itr3 = itr2->value["overrides"].MemberBegin(); itr3 != itr2->value["overrides"].MemberEnd(); ++itr3 )
+					{
+						entry[itr3->name.GetString()] = itr3->value.GetString();
+					}
+				}
+			}
+		}
+	}
+}
 
 void Compendium_t::Events_t::readEventsFromFile()
 {
@@ -11030,6 +11525,14 @@ void Compendium_t::Events_t::readEventsFromFile()
 				{
 					entry.type = MAX;
 				}
+				else if ( type == "bit" )
+				{
+					entry.type = BITFIELD;
+				}
+				else if ( type == "min" )
+				{
+					entry.type = MIN;
+				}
 			}
 			entry.id = index;
 			if ( itr2->value.HasMember("client") )
@@ -11067,7 +11570,8 @@ void Compendium_t::Events_t::loadItemsSaveData()
 		return;
 	}
 
-	char buf[65536];
+	const int bufSize = 360000;
+	char buf[bufSize];
 	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
 	rapidjson::StringStream is(buf);
@@ -11093,12 +11597,73 @@ void Compendium_t::Events_t::loadItemsSaveData()
 		for ( auto itr2 = itr->value.MemberBegin(); itr2 != itr->value.MemberEnd(); ++itr2 )
 		{
 			int itemType = std::stoi(itr2->name.GetString());
-			if ( itemType < 0 || itemType >= NUMITEMS )
+			Sint32 value = itr2->value.GetInt();
+			if ( itemType >= kEventMonsterOffset && itemType < kEventMonsterOffset + 1000 )
+			{
+				eventUpdateMonster(0, id, nullptr, value, true, itemType);
+				continue;
+			}
+			if ( itemType >= kEventWorldOffset && itemType < kEventWorldOffset + 1000 )
+			{
+				eventUpdateWorld(0, id, nullptr, value, true, itemType - kEventWorldOffset);
+				continue;
+			}
+			if ( itemType < 0 || (itemType >= NUMITEMS && itemType < kEventSpellOffset) )
 			{
 				continue;
 			}
-			Sint32 value = itr2->value.GetInt();
-			eventUpdate(0, id, (ItemType)itemType, value, true);
+			if ( itemType >= kEventSpellOffset )
+			{
+				eventUpdate(0, id, SPELL_ITEM, value, true, itemType - kEventSpellOffset);
+			}
+			else
+			{
+				eventUpdate(0, id, (ItemType)itemType, value, true);
+			}
+		}
+	}
+}
+
+static ConsoleVariable<bool> cvar_compendiumClientSave("/compendium_client_save", false);
+static ConsoleCommand ccmd_compendium_dummy_data(
+	"/compendium_dummy_data", "Create test compendium data",
+	[](int argc, const char** argv) {
+		if ( argc < 2 )
+		{
+			return;
+		}
+		int playernum = atoi(argv[1]);
+		Compendium_t::Events_t::createDummyClientData(playernum);
+	});
+void Compendium_t::Events_t::createDummyClientData(const int playernum)
+{
+	if ( playernum < 0 || playernum >= MAXPLAYERS ) { return; }
+	for ( int i = 0; i < NUMITEMS; ++i )
+	{
+		for ( auto& tag : itemEventLookup[i] )
+		{
+			eventUpdate(playernum, tag, (ItemType)i, 1);
+		}
+	}
+	for ( int i = 0; i < NUM_SPELLS; ++i )
+	{
+		for ( auto& tag : itemEventLookup[i + kEventSpellOffset] )
+		{
+			eventUpdate(playernum, tag, SPELL_ITEM, 1, false, i);
+		}
+	}
+	for ( auto& pair : eventMonsterLookup  )
+	{
+		for ( auto monster : pair.second )
+		{
+			eventUpdateMonster(playernum, pair.first, nullptr, 1, false, monster);
+		}
+	}
+	for ( auto& pair : eventWorldLookup )
+	{
+		for ( auto world : pair.second )
+		{
+			eventUpdateWorld(playernum, pair.first, world.c_str(), 1);
 		}
 	}
 }
@@ -11106,7 +11671,14 @@ void Compendium_t::Events_t::loadItemsSaveData()
 void Compendium_t::Events_t::writeItemsSaveData()
 {
 	char path[PATH_MAX] = "";
-	completePath(path, "savegames/compendium_items.json", outputdir);
+	if ( *cvar_compendiumClientSave && multiplayer == CLIENT )
+	{
+		completePath(path, "savegames/compendium_items_mp.json", outputdir);
+	}
+	else
+	{
+		completePath(path, "savegames/compendium_items.json", outputdir);
+	}
 
 	rapidjson::Document exportDocument;
 	exportDocument.SetObject();
@@ -11165,16 +11737,323 @@ bool Compendium_t::Events_t::EventVal_t::applyValue(const Sint32 val)
 		value = std::max(val, value);
 		return true;
 	}
+	else if ( type == MIN )
+	{
+		if ( value == val )
+		{
+			return false;
+		}
+		if ( value == 0 )
+		{
+			value = val;
+			return true;
+		}
+		value = std::min(val, value);
+		return true;
+	}
+	else if ( type == BITFIELD )
+	{
+		value |= val;
+		return true;
+	}
 }
 
-void Compendium_t::Events_t::onVictoryEvent(const int playernum)
+void onCompendiumLevelExit(const int playernum, const char* level, const bool enteringLvl)
 {
-
+	if ( enteringLvl )
+	{
+		Compendium_t::Events_t::eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_ENTERED, level, 1);
+	}
+	else
+	{
+		Compendium_t::Events_t::eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_EXITED, level, 1);
+		Compendium_t::Events_t::eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_MAX_GOLD, level, stats[playernum]->GOLD);
+		Compendium_t::Events_t::eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_MAX_LVL, level, stats[playernum]->LVL);
+	}
 }
 
-void Compendium_t::Events_t::onLevelChangeEvent(const int playernum)
+void Compendium_t::Events_t::onVictoryEvent(const int playernum, const bool tutorialend)
+{
+	if ( players[playernum]->isLocalPlayer() )
+	{
+		if ( tutorialend )
+		{
+			if ( stats[playernum]->HP <= 0 )
+			{
+				Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_TRIALS_DEATHS, "hall of trials", 1);
+			}
+		}
+		else
+		{
+			if ( victory )
+			{
+				if ( currentlevel == 35 )
+				{
+					onCompendiumLevelExit(playernum, "citadel sanctum", false);
+				}
+				else if ( currentlevel == 24 )
+				{
+					onCompendiumLevelExit(playernum, "hell", false);
+					eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "hell", 1);
+				}
+				else if ( currentlevel == 20 )
+				{
+					onCompendiumLevelExit(playernum, "herx lair", false);
+				}
+			}
+		}
+	}
+}
+
+void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int prevlevel, const bool prevsecretfloor, const std::string prevmapname)
 {
 	if ( intro ) { return; }
+	if ( playernum < 0 || playernum >= MAXPLAYERS )
+	{
+		return;
+	}
+
+	if ( players[playernum]->isLocalPlayer() )
+	{
+		if ( gameModeManager.currentMode == GameModeManager_t::GAME_MODE_TUTORIAL
+			|| gameModeManager.currentMode == GameModeManager_t::GAME_MODE_TUTORIAL_INIT )
+		{
+			const std::string mapname = map.name;
+			if ( mapname.find("Tutorial Hub") == std::string::npos
+				&& mapname.find("Tutorial ") != std::string::npos )
+			{
+				Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_TRIALS_ATTEMPTS, "hall of trials", 1);
+			}
+			if ( prevmapname.find("Tutorial Hub") == std::string::npos
+				&& prevmapname.find("Tutorial ") != std::string::npos )
+			{
+				if ( mapname.find("Tutorial Hub") != std::string::npos )
+				{
+					// returning to hub from a trial, success
+					Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_TRIALS_PASSED, "hall of trials", 1);
+				}
+			}
+		}
+		else
+		{
+			if ( !secretlevel )
+			{
+				if ( currentlevel == 5 || currentlevel == 10 || currentlevel == 15
+					|| currentlevel == 30 )
+				{
+					onCompendiumLevelExit(playernum, "transition floor", true);
+				}
+				else if ( currentlevel >= 1 && currentlevel <= 4 )
+				{
+					onCompendiumLevelExit(playernum, "mines", true);
+				}
+				else if ( currentlevel >= 6 && currentlevel <= 9 )
+				{
+					onCompendiumLevelExit(playernum, "swamps", true);
+				}
+				else if ( currentlevel >= 11 && currentlevel <= 14 )
+				{
+					onCompendiumLevelExit(playernum, "labyrinth", true);
+				}
+				else if ( currentlevel >= 16 && currentlevel <= 19 )
+				{
+					onCompendiumLevelExit(playernum, "ruins", true);
+				}
+				else if ( currentlevel == 20 )
+				{
+					onCompendiumLevelExit(playernum, "herx lair", true);
+				}
+				else if ( currentlevel >= 21 && currentlevel <= 24 )
+				{
+					onCompendiumLevelExit(playernum, "hell", true);
+				}
+				else if ( currentlevel == 25 )
+				{
+					onCompendiumLevelExit(playernum, "hamlet", true);
+				}
+				else if ( currentlevel >= 26 && currentlevel <= 29 )
+				{
+					onCompendiumLevelExit(playernum, "crystal caves", true);
+				}
+				else if ( currentlevel >= 31 && currentlevel <= 34 )
+				{
+					onCompendiumLevelExit(playernum, "arcane citadel", true);
+				}
+				else if ( currentlevel == 35 )
+				{
+					onCompendiumLevelExit(playernum, "citadel sanctum", true);
+				}
+			}
+			else
+			{
+				if ( currentlevel == 3 )
+				{
+					onCompendiumLevelExit(playernum, "gnomish mines", true);
+				}
+				else if ( currentlevel == 4 )
+				{
+					onCompendiumLevelExit(playernum, "minetown", true);
+				}
+				else if ( currentlevel == 8 )
+				{
+					onCompendiumLevelExit(playernum, "temple", true);
+				}
+				else if ( currentlevel == 9 )
+				{
+					onCompendiumLevelExit(playernum, "haunted castle", true);
+				}
+				else if ( currentlevel == 12 )
+				{
+					onCompendiumLevelExit(playernum, "sokoban", true);
+				}
+				else if ( currentlevel == 14 )
+				{
+					onCompendiumLevelExit(playernum, "minotaur maze", true);
+				}
+				else if ( currentlevel == 17 )
+				{
+					onCompendiumLevelExit(playernum, "mystic library", true);
+				}
+				else if ( currentlevel == 19 || currentlevel == 20 )
+				{
+					onCompendiumLevelExit(playernum, "underworld", true);
+				}
+				else if ( currentlevel == 6 || currentlevel == 7 )
+				{
+					onCompendiumLevelExit(playernum, "underworld", true);
+				}
+				else if ( currentlevel == 29 )
+				{
+					onCompendiumLevelExit(playernum, "cockatrice lair", true);
+				}
+				else if ( currentlevel == 34 )
+				{
+					onCompendiumLevelExit(playernum, "brams castle", true);
+				}
+			}
+
+			if ( !prevsecretfloor )
+			{
+				if ( prevlevel == 5 || prevlevel == 10 || prevlevel == 15
+					|| prevlevel == 30 )
+				{
+					onCompendiumLevelExit(playernum, "transition floor", false);
+				}
+				else if ( prevlevel >= 1 && prevlevel <= 4 )
+				{
+					onCompendiumLevelExit(playernum, "mines", false);
+					if ( prevlevel == 4 )
+					{
+						eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "mines", 1);
+					}
+				}
+				else if ( prevlevel >= 6 && prevlevel <= 9 )
+				{
+					onCompendiumLevelExit(playernum, "swamps", false);
+					if ( prevlevel == 9 )
+					{
+						eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "swamps", 1);
+					}
+				}
+				else if ( prevlevel >= 11 && prevlevel <= 14 )
+				{
+					onCompendiumLevelExit(playernum, "labyrinth", false);
+					if ( prevlevel == 14 )
+					{
+						eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "labyrinth", 1);
+					}
+				}
+				else if ( prevlevel >= 16 && prevlevel <= 19 )
+				{
+					onCompendiumLevelExit(playernum, "ruins", false);
+					if ( prevlevel == 19 )
+					{
+						eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "ruins", 1);
+					}
+				}
+				else if ( prevlevel == 20 )
+				{
+					onCompendiumLevelExit(playernum, "herx lair", false);
+				}
+				else if ( prevlevel >= 21 && prevlevel <= 24 )
+				{
+					onCompendiumLevelExit(playernum, "hell", false);
+					if ( prevlevel == 24 )
+					{
+						eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "hell", 1);
+					}
+				}
+				else if ( prevlevel == 25 )
+				{
+					onCompendiumLevelExit(playernum, "hamlet", false);
+				}
+				else if ( prevlevel >= 26 && prevlevel <= 29 )
+				{
+					onCompendiumLevelExit(playernum, "crystal caves", false);
+					if ( prevlevel == 29 )
+					{
+						eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "crystal caves", 1);
+					}
+				}
+				else if ( prevlevel >= 31 && prevlevel <= 34 )
+				{
+					onCompendiumLevelExit(playernum, "arcane citadel", false);
+					if ( prevlevel == 34 )
+					{
+						eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "arcane citadel", 1);
+					}
+				}
+			}
+			else
+			{
+				if ( prevlevel == 3 )
+				{
+					onCompendiumLevelExit(playernum, "gnomish mines", false);
+				}
+				else if ( prevlevel == 4 )
+				{
+					onCompendiumLevelExit(playernum, "minetown", false);
+				}
+				else if ( prevlevel == 8 )
+				{
+					onCompendiumLevelExit(playernum, "temple", false);
+				}
+				else if ( prevlevel == 9 )
+				{
+					onCompendiumLevelExit(playernum, "haunted castle", false);
+				}
+				else if ( prevlevel == 12 )
+				{
+					onCompendiumLevelExit(playernum, "sokoban", false);
+				}
+				else if ( prevlevel == 14 )
+				{
+					onCompendiumLevelExit(playernum, "minotaur maze", false);
+				}
+				else if ( prevlevel == 17 )
+				{
+					onCompendiumLevelExit(playernum, "mystic library", false);
+				}
+				else if ( prevlevel == 19 || prevlevel == 20 )
+				{
+					onCompendiumLevelExit(playernum, "underworld", false);
+				}
+				else if ( prevlevel == 6 || prevlevel == 7 )
+				{
+					onCompendiumLevelExit(playernum, "underworld", false);
+				}
+				else if ( prevlevel == 29 )
+				{
+					onCompendiumLevelExit(playernum, "cockatrice lair", false);
+				}
+				else if ( prevlevel == 34 )
+				{
+					onCompendiumLevelExit(playernum, "brams castle", false);
+				}
+			}
+		}
+	}
+
 	if ( !players[playernum]->isLocalPlayer() ) { return; }
 
 	if ( multiplayer == SERVER && playernum == 0 )
@@ -11212,9 +12091,125 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum)
 	//Compendium_t::Events_t::eventUpdate(playernum, Compendium_t::CPDM_INVENTORY_QTY_MAX, CLOAK_BACKPACK, numItems);
 }
 
-void Compendium_t::Events_t::eventUpdate(int playernum, const EventTags tag, const ItemType type, 
-	const Sint32 value, const bool loadingValue)
+bool allowedCompendiumProgress()
 {
+	if ( gameModeManager.currentMode == GameModeManager_t::GAME_MODE_CUSTOM_RUN && gameModeManager.currentSession.challengeRun.isActive()
+		&& gameModeManager.currentSession.challengeRun.lid.find("challenge") != std::string::npos )
+	{
+		return false; // challenge event run
+	}
+	return true;
+}
+
+static ConsoleVariable<bool> cvar_compendiumDebugSave("/compendium_debug_save", false);
+
+void Compendium_t::Events_t::eventUpdate(int playernum, const EventTags tag, const ItemType type, 
+	const Sint32 value, const bool loadingValue, const int spellID)
+{
+	if ( !allowedCompendiumProgress() ) { return; }
+	if ( intro && !loadingValue ) { return; }
+	if ( playernum < 0 || playernum >= MAXPLAYERS ) { return; }
+
+	if ( multiplayer == SINGLE && playernum != 0 ) { return; }
+
+	auto find = events.find(tag);
+	if ( find == events.end() )
+	{
+		return;
+	}
+	auto& def = find->second;
+
+	if ( !loadingValue )
+	{
+		if ( def.clienttype == CLIENT_ONLY )
+		{
+			if ( multiplayer != SINGLE )
+			{
+				if ( playernum != clientnum )
+				{
+					return;
+				}
+			}
+		}
+		else if ( def.clienttype == SERVER_ONLY )
+		{
+			if ( multiplayer == CLIENT )
+			{
+				if ( playernum == 0 )
+				{
+					playernum = clientnum; // when a client receives an update from the server
+				}
+				else
+				{
+					return;
+				}
+			}
+		}
+		else if ( def.clienttype == CLIENT_AND_SERVER )
+		{
+			if ( multiplayer == CLIENT )
+			{
+				if ( playernum == 0 )
+				{
+					playernum = clientnum; // when a client receives an update from the server
+				}
+			}
+		}
+	}
+
+	int itemType = type;
+	if ( type == SPELL_ITEM && spellID >= 0 )
+	{
+		itemType = kEventSpellOffset + spellID;
+	}
+
+	auto find2 = eventItemLookup[tag].find(itemType);
+	if ( find2 == eventItemLookup[tag].end() )
+	{
+		return;
+	}
+
+	auto& e = (multiplayer == SERVER && playernum != 0 && !loadingValue) ? serverPlayerEvents[playernum][tag] : playerEvents[tag];
+	if ( e.find(itemType) == e.end() )
+	{
+		e[itemType] = EventVal_t(tag);
+	}
+
+	if ( def.oncePerRun && !loadingValue )
+	{
+		auto find = players[playernum]->compendiumProgress.itemEvents[def.name].find(itemType);
+		if ( find != players[playernum]->compendiumProgress.itemEvents[def.name].end() )
+		{
+			// already present, skip adding
+			return;
+		}
+		players[playernum]->compendiumProgress.itemEvents[def.name][itemType] += value;
+	}
+	
+	auto& val = e[itemType];
+	if ( loadingValue )
+	{
+		val.value = value; // reading from savefile
+	}
+	else
+	{
+		if ( val.applyValue(value) )
+		{
+			if ( *cvar_compendiumDebugSave )
+			{
+				if ( playernum == clientnum )
+				{
+					writeItemsSaveData();
+				}
+			}
+		}
+	}
+}
+
+void Compendium_t::Events_t::eventUpdateMonster(int playernum, const EventTags tag, const Entity* entity,
+	const Sint32 value, const bool loadingValue, const int entryID)
+{
+	if ( !allowedCompendiumProgress() ) { return; }
 	if ( intro && !loadingValue ) { return; }
 	if ( playernum < 0 || playernum >= MAXPLAYERS ) { return; }
 
@@ -11255,30 +12250,77 @@ void Compendium_t::Events_t::eventUpdate(int playernum, const EventTags tag, con
 		}
 	}
 
-	auto find2 = eventItemLookup[tag].find(type);
-	if ( find2 == eventItemLookup[tag].end() )
+	int monsterType = -1;
+	std::string monsterStrLookup = "";
+	if ( entryID >= 0 )
+	{
+		monsterType = entryID;
+	}
+	else if ( entity && entity->behavior == &actDeathGhost )
+	{
+		if ( monsterUniqueIDLookup.find("ghost") != monsterUniqueIDLookup.end() )
+		{
+			monsterType = monsterUniqueIDLookup["ghost"];
+		}
+	}
+	else if ( entity && entity->behavior == &actMonster )
+	{
+		if ( auto stats = entity->getStats() )
+		{
+			if ( stats->type == SHOPKEEPER && stats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0 )
+			{
+				monsterStrLookup = "mysterious shop";
+			}
+			else
+			{
+				monsterStrLookup = stats->getAttribute("special_npc");
+			}
+
+			if ( monsterStrLookup != "" && monsterUniqueIDLookup.find(monsterStrLookup) != monsterUniqueIDLookup.end() )
+			{
+				monsterType = monsterUniqueIDLookup[monsterStrLookup];
+			}
+			else if ( monsterStrLookup == "" )
+			{
+				monsterType = stats->type;
+			}
+		}
+	}
+
+	if ( monsterType == -1 )
+	{
+		return;
+	}
+
+	if ( monsterType < kEventMonsterOffset )
+	{
+		monsterType += kEventMonsterOffset; // convert to offset
+	}
+
+	auto find2 = eventMonsterLookup[tag].find(monsterType);
+	if ( find2 == eventMonsterLookup[tag].end() )
 	{
 		return;
 	}
 
 	auto& e = (multiplayer == SERVER && playernum != 0 && !loadingValue) ? serverPlayerEvents[playernum][tag] : playerEvents[tag];
-	if ( e.find(type) == e.end() )
+	if ( e.find(monsterType) == e.end() )
 	{
-		e[type] = EventVal_t(tag);
+		e[monsterType] = EventVal_t(tag);
 	}
 
 	if ( def.oncePerRun && !loadingValue )
 	{
-		auto find = players[playernum]->compendiumProgress.itemEvents[def.name].find(type);
+		auto find = players[playernum]->compendiumProgress.itemEvents[def.name].find(monsterType);
 		if ( find != players[playernum]->compendiumProgress.itemEvents[def.name].end() )
 		{
 			// already present, skip adding
 			return;
 		}
-		players[playernum]->compendiumProgress.itemEvents[def.name][type] += value;
+		players[playernum]->compendiumProgress.itemEvents[def.name][monsterType] += value;
 	}
-	
-	auto& val = e[type];
+
+	auto& val = e[monsterType];
 	if ( loadingValue )
 	{
 		val.value = value; // reading from savefile
@@ -11287,9 +12329,144 @@ void Compendium_t::Events_t::eventUpdate(int playernum, const EventTags tag, con
 	{
 		if ( val.applyValue(value) )
 		{
-			if ( playernum == clientnum )
+			if ( *cvar_compendiumDebugSave )
 			{
-				writeItemsSaveData();
+				if ( playernum == clientnum )
+				{
+					writeItemsSaveData();
+				}
+			}
+		}
+	}
+}
+
+void Compendium_t::Events_t::eventUpdateWorld(int playernum, const EventTags tag, const char* category, const Sint32 value, 
+	const bool loadingValue, const int entryID)
+{
+	if ( !allowedCompendiumProgress() ) { return; }
+	if ( intro && !loadingValue ) { return; }
+	if ( playernum < 0 || playernum >= MAXPLAYERS ) { return; }
+
+	if ( multiplayer == SINGLE && playernum != 0 ) { return; }
+	if ( multiplayer == SERVER && client_disconnected[playernum] )
+	{
+		return;
+	}
+
+	auto find = events.find(tag);
+	if ( find == events.end() )
+	{
+		return;
+	}
+	auto& def = find->second;
+
+	if ( !loadingValue )
+	{
+		if ( def.clienttype == CLIENT_ONLY )
+		{
+			if ( multiplayer != SINGLE )
+			{
+				if ( playernum != clientnum )
+				{
+					return;
+				}
+			}
+		}
+		else if ( def.clienttype == SERVER_ONLY )
+		{
+			if ( multiplayer == CLIENT )
+			{
+				if ( playernum == 0 )
+				{
+					playernum = clientnum; // when a client receives an update from the server
+				}
+				else
+				{
+					return;
+				}
+			}
+		}
+	}
+
+	int worldID = -1;
+	if ( entryID >= 0 )
+	{
+		worldID = entryID;
+		bool foundCategory = false;
+		for ( auto cat : eventWorldLookup[tag] )
+		{
+			auto find = eventWorldIDLookup.find(cat);
+			if ( find != eventWorldIDLookup.end() )
+			{
+				if ( eventWorldIDLookup[cat] == worldID )
+				{
+					foundCategory = true;
+					break;
+				}
+			}
+		}
+		if ( !foundCategory )
+		{
+			return;
+		}
+	}
+	else
+	{
+		auto find2 = eventWorldLookup[tag].find(category);
+		if ( find2 == eventWorldLookup[tag].end() )
+		{
+			return;
+		}
+		auto find = eventWorldIDLookup.find(category);
+		if ( find != eventWorldIDLookup.end() )
+		{
+			worldID = find->second;
+		}
+	}
+
+	if ( worldID == -1 )
+	{
+		return;
+	}
+
+	if ( worldID < kEventWorldOffset )
+	{
+		worldID += kEventWorldOffset; // convert to offset
+	}
+
+
+	auto& e = (multiplayer == SERVER && playernum != 0 && !loadingValue) ? serverPlayerEvents[playernum][tag] : playerEvents[tag];
+	if ( e.find(worldID) == e.end() )
+	{
+		e[worldID] = EventVal_t(tag);
+	}
+
+	if ( def.oncePerRun && !loadingValue )
+	{
+		auto find = players[playernum]->compendiumProgress.itemEvents[def.name].find(worldID);
+		if ( find != players[playernum]->compendiumProgress.itemEvents[def.name].end() )
+		{
+			// already present, skip adding
+			return;
+		}
+		players[playernum]->compendiumProgress.itemEvents[def.name][worldID] += value;
+	}
+
+	auto& val = e[worldID];
+	if ( loadingValue )
+	{
+		val.value = value; // reading from savefile
+	}
+	else
+	{
+		if ( val.applyValue(value) )
+		{
+			if ( *cvar_compendiumDebugSave )
+			{
+				if ( playernum == clientnum )
+				{
+					writeItemsSaveData();
+				}
 			}
 		}
 	}
@@ -11399,3 +12576,166 @@ void Compendium_t::Events_t::sendClientDataOverNet(const int playernum)
 		//}
 	}
 }
+
+void Compendium_t::readMonsterLimbsFromFile()
+{
+	std::string fullpath = "data/compendium/monster_models/";
+	for ( auto f : directoryContents(fullpath.c_str(), false, true) )
+	{
+		std::string inputPath = "/data/compendium/monster_models/" + f;
+		std::string path = PHYSFS_getRealDir(inputPath.c_str()) ? PHYSFS_getRealDir(inputPath.c_str()) : "";
+		if ( path != "" )
+		{
+			inputPath = path + inputPath;
+			File* fp = FileIO::open(inputPath.c_str(), "rb");
+			if ( !fp )
+			{
+				printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+				return;
+			}
+			char buf[65536];
+			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+			buf[count] = '\0';
+			rapidjson::StringStream is(buf);
+			FileIO::close(fp);
+
+			rapidjson::Document d;
+			d.ParseStream(is);
+			if ( !d.HasMember("version") || !d.HasMember("limbs") || !d.HasMember("statue_id") )
+			{
+				printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+				return;
+			}
+			int version = d["version"].GetInt();
+			Uint32 statueId = d["statue_id"].GetUint();
+
+			std::string filename = f.substr(0, f.find(".json"));
+			auto& allLimbs = compendiumMonsterLimbs[filename];
+			allLimbs.clear();
+
+			int index = 0;
+			for ( auto itr = d["limbs"].Begin(); itr != d["limbs"].End(); ++itr )
+			{
+				/*if ( d.HasMember("height_offset") )
+				{
+					statue.heightOffset = d["height_offset"].GetDouble();
+				}*/
+
+				allLimbs.push_back(Entity(-1, 0, nullptr, nullptr));
+				auto& limb = allLimbs[allLimbs.size() - 1];
+				if ( index > 0 )
+				{
+					limb.x = allLimbs[0].x - (*itr)["x"].GetDouble();
+					limb.y = allLimbs[0].y - (*itr)["y"].GetDouble();
+				}
+				else
+				{
+					limb.x = (*itr)["x"].GetDouble();
+					limb.y = (*itr)["y"].GetDouble();
+				}
+				limb.z = (*itr)["z"].GetDouble();
+				limb.focalx = (*itr)["focalx"].GetDouble();
+				limb.focaly = (*itr)["focaly"].GetDouble();
+				limb.focalz = (*itr)["focalz"].GetDouble();
+				limb.pitch = (*itr)["pitch"].GetDouble();
+				limb.roll = (*itr)["roll"].GetDouble();
+				limb.yaw = (*itr)["yaw"].GetDouble();
+				limb.sprite = (*itr)["sprite"].GetInt();
+
+				++index;
+			}
+
+			printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
+		}
+	}
+}
+
+void Compendium_t::exportCurrentMonster(Entity* monster)
+{
+	if ( !monster )
+	{
+		return;
+	}
+
+	int filenum = 0;
+	std::string monsterName = monster->getStats() ? monstertypename[monster->getStats()->type] : "nothing";
+	std::string testPath = "/data/compendium/monster_models/" + monsterName + std::to_string(filenum) + ".json";
+	while ( PHYSFS_getRealDir(testPath.c_str()) != nullptr && filenum < 1000 )
+	{
+		++filenum;
+		testPath = "/data/compendium/monster_models/" + monsterName + std::to_string(filenum) + ".json";
+	}
+
+	std::string exportFileName = monsterName + std::to_string(filenum) + ".json";
+
+	rapidjson::Document exportDocument;
+	exportDocument.SetObject();
+	CustomHelpers::addMemberToRoot(exportDocument, "version", rapidjson::Value(1));
+	CustomHelpers::addMemberToRoot(exportDocument, "statue_id", rapidjson::Value(local_rng.rand()));
+	CustomHelpers::addMemberToRoot(exportDocument, "height_offset", rapidjson::Value(0));
+	rapidjson::Value limbsObject(rapidjson::kObjectType);
+
+	rapidjson::Value limbsArray(rapidjson::kArrayType);
+
+	std::vector<Entity*> allLimbs;
+	allLimbs.push_back(monster);
+
+	for ( auto& bodypart : monster->bodyparts )
+	{
+		allLimbs.push_back(bodypart);
+	}
+
+	int index = 0;
+	for ( auto& limb : allLimbs )
+	{
+		if ( limb->flags[INVISIBLE] )
+		{
+			continue;
+		}
+		rapidjson::Value limbsObj(rapidjson::kObjectType);
+
+		if ( index != 0 )
+		{
+			limbsObj.AddMember("x", rapidjson::Value(monster->x - limb->x), exportDocument.GetAllocator());
+			limbsObj.AddMember("y", rapidjson::Value(monster->y - limb->y), exportDocument.GetAllocator());
+			limbsObj.AddMember("z", rapidjson::Value(limb->z), exportDocument.GetAllocator());
+		}
+		else
+		{
+			limbsObj.AddMember("x", rapidjson::Value(0), exportDocument.GetAllocator());
+			limbsObj.AddMember("y", rapidjson::Value(0), exportDocument.GetAllocator());
+			limbsObj.AddMember("z", rapidjson::Value(limb->z), exportDocument.GetAllocator());
+		}
+		limbsObj.AddMember("pitch", rapidjson::Value(limb->pitch), exportDocument.GetAllocator());
+		limbsObj.AddMember("roll", rapidjson::Value(limb->roll), exportDocument.GetAllocator());
+		limbsObj.AddMember("yaw", rapidjson::Value(limb->yaw), exportDocument.GetAllocator());
+		limbsObj.AddMember("focalx", rapidjson::Value(limb->focalx), exportDocument.GetAllocator());
+		limbsObj.AddMember("focaly", rapidjson::Value(limb->focaly), exportDocument.GetAllocator());
+		limbsObj.AddMember("focalz", rapidjson::Value(limb->focalz), exportDocument.GetAllocator());
+		limbsObj.AddMember("sprite", rapidjson::Value(limb->sprite), exportDocument.GetAllocator());
+		limbsArray.PushBack(limbsObj, exportDocument.GetAllocator());
+
+		++index;
+	}
+
+	CustomHelpers::addMemberToRoot(exportDocument, "limbs", limbsArray);
+	
+	std::string outputPath = PHYSFS_getRealDir("/data/compendium/monster_models");
+	outputPath.append(PHYSFS_getDirSeparator());
+	std::string fileName = "data/compendium/monster_models/" + exportFileName;
+	outputPath.append(fileName.c_str());
+
+	File* fp = FileIO::open(outputPath.c_str(), "wb");
+	if ( !fp )
+	{
+		return;
+	}
+	rapidjson::StringBuffer os;
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
+	exportDocument.Accept(writer);
+	fp->write(os.GetString(), sizeof(char), os.GetSize());
+	FileIO::close(fp);
+
+	return;
+}
+#endif

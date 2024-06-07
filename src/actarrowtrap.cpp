@@ -60,6 +60,7 @@ void actArrowTrap(Entity* my)
 		{
 			ItemType quiver = static_cast<ItemType>(ARROWTRAP_TYPE);
 			int qty = 2 + (5 - ARROWTRAP_FIRED / 2); // 2 to 7
+			Compendium_t::Events_t::eventUpdateWorld(ARROWTRAP_DISABLED - 1, Compendium_t::CPDM_ARROWS_PILFERED, "arrow trap", qty);
 			Entity* dropped = dropItemMonster(newItem(quiver, SERVICABLE, 0, qty, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr), my, nullptr, qty);
 			std::vector<std::pair<int, int>> freeTiles;
 			int x = my->x / 16;

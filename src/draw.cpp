@@ -2125,9 +2125,14 @@ void drawEntities3D(view_t* camera, int mode)
                 } else {
 					if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
 					{
+#ifndef EDITOR
 						static ConsoleVariable<int> cvar_dither_invisibility("/dither_invisibility", 5);
 						dither.value = decrease ? std::max(0, dither.value - 2) :
 							std::min(*cvar_dither_invisibility, dither.value + 1);
+#else
+						dither.value = decrease ? std::max(0, dither.value - 2) :
+							dither.value + 1;
+#endif
 					}
 					else
 					{

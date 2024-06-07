@@ -8525,6 +8525,8 @@ void doNewGame(bool makeHighscore) {
 	lastEntityUIDs = entity_uids;
 	loading = true;
 	darkmap = false;
+	std::string prevmapname = map.name;
+	bool died = players[clientnum]->entity == nullptr;
 
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
@@ -9354,6 +9356,8 @@ void doNewGame(bool makeHighscore) {
 		}
 	}
 
+	const auto wasLoadingSaveGame = loadingsavegame;
+
 	if ( loadingsavegame && multiplayer != CLIENT )
 	{
 		loadingsavegame = 0;
@@ -9399,6 +9403,7 @@ void doNewGame(bool makeHighscore) {
 		}
 	}
 
+	Compendium_t::Events_t::writeItemsSaveData();
 #ifdef LOCAL_ACHIEVEMENTS
 	LocalAchievements_t::writeToFile();
 #endif
@@ -9407,6 +9412,32 @@ void doNewGame(bool makeHighscore) {
 	pauseGame(1, 0);
 	loading = false;
 	intro = false;
+
+	if ( !wasLoadingSaveGame )
+	{
+		if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+		{
+			const std::string mapname = map.name;
+			if ( mapname.find("Tutorial Hub") == std::string::npos
+				&& mapname.find("Tutorial ") != std::string::npos )
+			{
+				Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_TRIALS_ATTEMPTS, "hall of trials", 1);
+			}
+
+			// restarting from a trial, this is a failure
+			if ( died )
+			{
+				Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_TRIALS_DEATHS, "hall of trials", 1);
+			}
+		}
+		else
+		{
+			if ( currentlevel == 0 && !secretlevel )
+			{
+				Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_MINEHEAD_ENTER, "minehead", 1);
+			}
+		}
+	}
 }
 
 void doCredits() {
@@ -9437,7 +9468,6 @@ void doEndgame(bool saveHighscore) {
 	bool localScores = gameModeManager.allowsHiscores();
 	bool onlineScores = gameModeManager.allowsGlobalHiscores();
 	bool allowedSavegames = gameModeManager.allowsSaves();
-	bool allowedCompendiumProgression = gameModeManager.getMode() != GameModeManager_t::GAME_MODE_CUSTOM_RUN;
 	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
 		victory = 0;
@@ -9486,18 +9516,10 @@ void doEndgame(bool saveHighscore) {
 			}
 			achievementObserver.updateGlobalStat(STEAM_GSTAT_GAMES_WON);
 
-			if ( allowedCompendiumProgression )
-			{
-				for ( int c = 0; c < MAXPLAYERS; c++ )
-				{
-					if ( !client_disconnected[c] )
-					{
-						Compendium_t::Events_t::onVictoryEvent(c);
-					}
-				}
-			}
 		}
 	}
+
+	Compendium_t::Events_t::onVictoryEvent(clientnum, endTutorial);
 
 	// figure out the victory crawl texts...
 	int movieCrawlType = -1;

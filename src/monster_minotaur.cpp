@@ -22,6 +22,7 @@
 #include "player.hpp"
 #include "colors.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 void initMinotaur(Entity* my, Stat* myStats)
 {
@@ -1014,6 +1015,13 @@ void actMinotaurCeilingBuster(Entity* my)
 								{
 									playSoundEntity(entity, 76, 64);
 									list_RemoveNode(entity->mynode);
+									for ( int i = 0; i < MAXPLAYERS; ++i )
+									{
+										if ( !client_disconnected[i] )
+										{
+											Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_GATE_MINOTAUR, "portcullis", 1);
+										}
+									}
 								}
 							}
 							else if (	entity->behavior == &actStalagCeiling	||

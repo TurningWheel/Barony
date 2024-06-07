@@ -4877,10 +4877,12 @@ namespace ConsoleCommands {
 
 	static ConsoleCommand ccmd_reloadcompendiumitems("/reloadcompendiumitems", "reloads compendium entries", []CCMD{
 		CompendiumEntries.readItemsFromFile();
+		CompendiumEntries.readMagicFromFile();
 		});
 
 	static ConsoleCommand ccmd_reloadcompendiumevents("/reloadcompendiumevents", "reloads compendium entries", []CCMD{
 		Compendium_t::Events_t::readEventsFromFile();
+		Compendium_t::Events_t::readEventsTranslations();
 		});
 
 	static ConsoleCommand ccmd_mapdebugfixedmonsters("/mapdebugfixedmonsters", "prints fixed monster spawns", []CCMD{

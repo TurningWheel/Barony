@@ -6191,6 +6191,7 @@ void GenericGUIMenu::repairItem(Item* item)
 	{
 		if ( itemCategory(item) == MAGICSTAFF )
 		{
+			Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_MAGICSTAFF_RECHARGED, item->type, 1);
 			if ( item->status == BROKEN )
 			{
 				if ( itemEffectItemBeatitude > 0 )
@@ -6454,7 +6455,7 @@ void GenericGUIMenu::openGUI(int type, Item* effectItem, int effectBeatitude, in
 			{
 				continue;
 			}
-			spell_t* spell = getSpellFromItem(gui_player, item);
+			spell_t* spell = getSpellFromItem(gui_player, item, false);
 			if ( spell && spell->ID == usingSpellID )
 			{
 				effectItem = item;
@@ -10434,6 +10435,7 @@ int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
 
 	if ( durability - usageCost < 0 )
 	{
+		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_FEATHER_CHARGE_USED, ENCHANTED_FEATHER, durability);
 		toDegrade->status = BROKEN;
 		toDegrade->appearance = 0;
 	}
@@ -10441,6 +10443,7 @@ int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
 	{
 		scribingLastUsageDisplayTimer = 200;
 		scribingLastUsageAmount = usageCost;
+		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_FEATHER_CHARGE_USED, ENCHANTED_FEATHER, scribingLastUsageAmount);
 		toDegrade->appearance -= usageCost;
 		if ( toDegrade->appearance % ENCHANTED_FEATHER_MAX_DURABILITY == 0 )
 		{
@@ -10668,6 +10671,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			{
 				steamStatisticUpdate(STEAM_STAT_ROLL_THE_BONES, STEAM_STAT_INT, 1);
 			}
+			Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_FEATHER_ENSCRIBED, ENCHANTED_FEATHER, 1);
 			for ( int i = 0; i < NUMLABELS; ++i )
 			{
 				if ( label == scroll_label[i] )
@@ -10735,6 +10739,9 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 				}
 			}
 		}
+
+		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_FEATHER_SPELLBOOKS, ENCHANTED_FEATHER, 1);
+
 		int repairedStatus = std::min(static_cast<Status>(item->status + 1), EXCELLENT);
 		bool isEquipped = itemIsEquipped(item, gui_player);
 		item->status = static_cast<Status>(repairedStatus);
@@ -21121,7 +21128,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 			if ( item && item->type == SPELL_ITEM )
 			{
 				isSpell = true;
-				spell = getSpellFromItem(parentGUI.getPlayer(), item);
+				spell = getSpellFromItem(parentGUI.getPlayer(), item, false);
 				if ( spell )
 				{
 					spellID = spell->ID;
@@ -21238,7 +21245,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 			{
 				if ( parentGUI.itemEffectScrollItem && parentGUI.itemEffectScrollItem->type == SPELL_ITEM )
 				{
-					if ( spell_t* spell = getSpellFromItem(parentGUI.gui_player, parentGUI.itemEffectScrollItem) )
+					if ( spell_t* spell = getSpellFromItem(parentGUI.gui_player, parentGUI.itemEffectScrollItem, false) )
 					{
 						if ( node_t* spellImageNode = ItemTooltips.getSpellNodeFromSpellID(spell->ID) )
 						{
@@ -24657,6 +24664,10 @@ bool CalloutRadialMenu::createParticleCallout(Entity* entity, CalloutRadialMenu:
 	if ( players[getPlayer()]->ghost.isActive() )
 	{
 		players[getPlayer()]->ghost.createBounceAnimate();
+		if ( players[getPlayer()]->isLocalPlayer() )
+		{
+			Compendium_t::Events_t::eventUpdateMonster(getPlayer(), Compendium_t::CPDM_GHOST_PINGS, players[getPlayer()]->ghost.my, 1);
+		}
 	}
 
 	return callout.doMessage;
@@ -24775,6 +24786,10 @@ bool CalloutRadialMenu::createParticleCallout(real_t x, real_t y, real_t z, Uint
 	if ( players[getPlayer()]->ghost.isActive() )
 	{
 		players[getPlayer()]->ghost.createBounceAnimate();
+		if ( players[getPlayer()]->isLocalPlayer() )
+		{
+			Compendium_t::Events_t::eventUpdateMonster(getPlayer(), Compendium_t::CPDM_GHOST_PINGS, players[getPlayer()]->ghost.my, 1);
+		}
 	}
 
 	return callout.doMessage;

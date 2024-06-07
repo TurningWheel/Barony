@@ -6057,11 +6057,12 @@ int SaveGameInfo::populateFromSession(const int playernum)
 
 			for ( auto& pair : ::players[c]->compendiumProgress.itemEvents )
 			{
-				player.compendium_item_events.push_back(std::make_pair(pair.first, std::vector<std::pair<int, int>>()));
+				player.compendium_item_events.push_back(std::make_pair(pair.first, std::vector<int>()));
 				auto& vec_entry = player.compendium_item_events.back();
 				for ( auto& itemValue : pair.second )
 				{
-					vec_entry.second.push_back(itemValue);
+					vec_entry.second.push_back(itemValue.first);
+					vec_entry.second.push_back(itemValue.second);
 				}
 			}
 
@@ -6909,9 +6910,16 @@ int loadGame(int player, const SaveGameInfo& info) {
 		auto& compendiumProgress = players[statsPlayer]->compendiumProgress;
 		for ( auto& compendium_item_events : info.players[player].compendium_item_events )
 		{
-			for ( auto& itemValues : compendium_item_events.second )
+			for ( auto itr = compendium_item_events.second.begin(); itr != compendium_item_events.second.end(); )
 			{
-				compendiumProgress.itemEvents[compendium_item_events.first][(ItemType)itemValues.first] = (Sint32)itemValues.second;
+				int first = *itr;
+				++itr;
+				if ( itr != compendium_item_events.second.end() )
+				{
+					Sint32 second = *itr;
+					compendiumProgress.itemEvents[compendium_item_events.first][first] = second;
+				}
+				++itr;
 			}
 		}
 	}

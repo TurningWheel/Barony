@@ -2268,7 +2268,7 @@ public:
 	{
 		Player& player;
 	public:
-		std::map<std::string, std::map<ItemType, Sint32>> itemEvents;
+		std::map<std::string, std::map<int, Sint32>> itemEvents;
 		CompendiumProgress_t(Player& p) : player(p)
 		{};
 		~CompendiumProgress_t() {};

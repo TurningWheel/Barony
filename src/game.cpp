@@ -1987,6 +1987,10 @@ void gameLogic(void)
 						}
 					}
 
+					int prevcurrentlevel = currentlevel;
+					bool prevsecretfloor = secretlevel;
+					std::string prevmapname = map.name;
+
 					bool loadingTheSameFloorAsCurrent = false;
 					if ( skipLevelsOnLoad > 0 )
 					{
@@ -2486,7 +2490,7 @@ void gameLogic(void)
 
 					for ( c = 0; c < MAXPLAYERS; c++ )
 					{
-						Compendium_t::Events_t::onLevelChangeEvent(c);
+						Compendium_t::Events_t::onLevelChangeEvent(c, prevcurrentlevel, prevsecretfloor, prevmapname);
 					}
 
                     // save at end of level change
@@ -2494,6 +2498,7 @@ void gameLogic(void)
 					{
 						saveGame();
 					}
+					Compendium_t::Events_t::writeItemsSaveData();
 #ifdef LOCAL_ACHIEVEMENTS
 					LocalAchievements_t::writeToFile();
 #endif
@@ -2748,7 +2753,17 @@ void gameLogic(void)
 					{
 						if ( item->identified )
 						{
-							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_RUNS_COLLECTED, item->type, 1);
+							if ( item->type == SPELL_ITEM )
+							{
+								if ( auto spell = getSpellFromItem(player, item, true) )
+								{
+									Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_RUNS_COLLECTED, item->type, 1, false, spell->ID);
+								}
+							}
+							else
+							{
+								Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_RUNS_COLLECTED, item->type, 1);
+							}
 						}
 					}
 
@@ -3394,7 +3409,17 @@ void gameLogic(void)
 				{
 					if ( item->identified )
 					{
-						Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_RUNS_COLLECTED, item->type, 1);
+						if ( item->type == SPELL_ITEM )
+						{
+							if ( auto spell = getSpellFromItem(clientnum, item, true) )
+							{
+								Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_RUNS_COLLECTED, item->type, 1, false, spell->ID);
+							}
+						}
+						else
+						{
+							Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_RUNS_COLLECTED, item->type, 1);
+						}
 					}
 				}
 
@@ -7065,6 +7090,8 @@ int main(int argc, char** argv)
 						ImGui_t::render();
 #endif
 #ifndef NINTENDO
+						Compendium_t::updateTooltip();
+
 						// draw mouse
 						// only draw 1 cursor in the main menu
 						if ( inputs.getVirtualMouse(inputs.getPlayerIDAllowedKeyboard())->draw_cursor )
@@ -7318,6 +7345,7 @@ int main(int argc, char** argv)
 				framesProcResult = doFrames();
 				DebugStats.t6Messages = std::chrono::high_resolution_clock::now();
 				ingameHud();
+				Compendium_t::updateTooltip();
 
                 static ConsoleVariable<bool> showConsumeMouseInputs("/debug_consume_mouse", false);
                 if (!framesProcResult.usable) {

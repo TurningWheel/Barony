@@ -1006,7 +1006,7 @@ SDL_Surface* itemSprite(Item* const item)
 		spell_t* spell = nullptr;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
-			spell = getSpellFromItem(i, item);
+			spell = getSpellFromItem(i, item, false);
 			if ( spell )
 			{
 				break;
@@ -2708,7 +2708,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			break;
 		case SPELL_ITEM:
 		{
-			spell_t* spell = getSpellFromItem(player, item);
+			spell_t* spell = getSpellFromItem(player, item, true);
 			if (spell)
 			{
 				equipSpell(spell, player, item);

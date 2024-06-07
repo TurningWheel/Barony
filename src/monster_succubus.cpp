@@ -61,7 +61,13 @@ void initSuccubus(Entity* my, Stat* myStats)
 		        rng.rand() % 50 == 0 &&
 		        !my->flags[USERFLAG2] &&
 		        !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
-		    if ( (boss || (*cvar_summonBosses && conductGameChallenges[CONDUCT_CHEATS_ENABLED])) && myStats->leader_uid == 0 )
+
+			if ( !strcmp(myStats->name, "Marishka") || !strcmp(myStats->name, "Aleera")
+				|| !strcmp(myStats->name, "Verona") )
+			{
+				myStats->setAttribute("special_npc", "bram succubi");
+			}
+		    else if ( (boss || (*cvar_summonBosses && conductGameChallenges[CONDUCT_CHEATS_ENABLED])) && myStats->leader_uid == 0 )
 			{
 				myStats->setAttribute("special_npc", "lilith");
 				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());

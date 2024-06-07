@@ -2830,6 +2830,7 @@ public:
 	std::map<std::string, std::string> bookNameLocalizations;
 	std::map<std::string, std::string> spellNameLocalizations;
 	std::map<std::string, int> itemNameStringToItemID;
+	std::map<std::string, int> spellNameStringToSpellID;
 	std::string defaultString = "";
 	char buf[2048];
 	bool autoReload = false;
@@ -2848,7 +2849,7 @@ public:
 	std::string& getIconLabel(Item& item);
 	std::string getSpellIconText(const int player, Item& item);
 	std::string getSpellDescriptionText(const int player, Item& item);
-	std::string getSpellIconPath(const int player, Item& item);
+	std::string getSpellIconPath(const int player, Item& item, int spellID);
 	std::string getCostOfSpellString(const int player, Item& item);
 	std::string& getSpellTypeString(const int player, Item& item);
 	node_t* getSpellNodeFromSpellID(int spellID);
@@ -2857,7 +2858,7 @@ public:
 	bool bIsSpellDamageOrHealingType(spell_t* spell);
 	bool bSpellHasBasicHitMessage(const int spellID);
 
-	void formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex, std::string& conditionalAttribute);
+	void formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex, std::string& conditionalAttribute, Frame* parentFrame = nullptr);
 	void formatItemDescription(const int player, std::string tooltipType, Item& item, std::string& str);
 	void formatItemDetails(const int player, std::string tooltipType, Item& item, std::string& str, std::string detailTag);
 	void stripOutPositiveNegativeItemDetails(std::string& str, std::string& positiveValues, std::string& negativeValues);
@@ -3467,12 +3468,16 @@ struct Compendium_t
 			std::vector<std::string> abilities;
 			std::vector<std::string> inventory;
 			std::string imagePath = "";
+			std::vector<std::string> models;
 		};
 		static std::vector<std::pair<std::string, std::string>> contents;
 		static std::map<std::string, std::string> contentsMap;
 	};
 	std::map<std::string, CompendiumMonsters_t::Monster_t> monsters;
 	void readMonstersFromFile();
+	void exportCurrentMonster(Entity* monster);
+	void readMonsterLimbsFromFile();
+	std::map<std::string, std::vector<Entity>> compendiumMonsterLimbs;
 
 	struct CompendiumWorld_t
 	{
@@ -3482,6 +3487,7 @@ struct Compendium_t
 			std::string imagePath = "";
 			std::vector<std::string> blurb;
 			std::vector<std::string> details;
+			int id = -1;
 		};
 		static std::vector<std::pair<std::string, std::string>> contents;
 		static std::map<std::string, std::string> contentsMap;
@@ -3512,6 +3518,8 @@ struct Compendium_t
 			{
 				std::string name = "";
 				int rotation = 0;
+				int spellID = -1;
+				int effectID = -1;
 			};
 			int modelIndex = -1;
 			std::string imagePath = "";
@@ -3523,6 +3531,20 @@ struct Compendium_t
 	};
 	std::map<std::string, CompendiumItems_t::Codex_t> items;
 	void readItemsFromFile();
+
+	struct CompendiumMagic_t
+	{
+		static std::vector<std::pair<std::string, std::string>> contents;
+		static std::map<std::string, std::string> contentsMap;
+	};
+	std::map<std::string, CompendiumItems_t::Codex_t> magic;
+	void readMagicFromFile();
+	static Item compendiumItem;
+	static bool tooltipNeedUpdate;
+	static void updateTooltip();
+	static SDL_Rect tooltipPos;
+	static Entity compendiumItemModel;
+	static Uint32 lastTickUpdate;
 
 	enum EventTags
 	{
@@ -3570,6 +3592,85 @@ struct Compendium_t
 		CPDM_THROWN_HITS,
 		CPDM_SHOTS_HIT,
 		CPDM_AMMO_HIT,
+		CPDM_MAGICSTAFF_RECHARGED,
+		CPDM_MAGICSTAFF_CASTS,
+		CPDM_FEATHER_ENSCRIBED,
+		CPDM_FEATHER_CHARGE_USED,
+		CPDM_FEATHER_SPELLBOOKS,
+		CPDM_CONSUMED_UNIDENTIFIED,
+		CPDM_SPELL_CASTS,
+		CPDM_SPELL_FAILURES,
+		CPDM_SPELLBOOK_CASTS,
+		CPDM_SPELLBOOK_LEARNT,
+		CPDM_KILLED_SOLO,
+		CPDM_KILLED_PARTY,
+		CPDM_KILLED_BY,
+		CPDM_GHOST_SPAWNED,
+		CPDM_GHOST_TELEPORTS,
+		CPDM_GHOST_PINGS,
+		CPDM_GHOST_PUSHES,
+		CPDM_MINEHEAD_ENTER,
+		CPDM_MINEHEAD_RETURN,
+		CPDM_GATE_OPENED_SPELL,
+		CPDM_GATE_MINOTAUR,
+		CPDM_LEVER_PULLED,
+		CPDM_LEVER_FOLLOWER_PULLED,
+		CPDM_DOOR_BROKEN,
+		CPDM_DOOR_OPENED,
+		CPDM_DOOR_UNLOCKED,
+		CPDM_LEVELS_ENTERED,
+		CPDM_LEVELS_EXITED,
+		CPDM_LEVELS_MAX_LVL,
+		CPDM_LEVELS_MAX_GOLD,
+		CPDM_SINKS_USED,
+		CPDM_SINKS_RINGS,
+		CPDM_SINKS_SLIMES,
+		CPDM_FOUNTAIN_FOOCUBI,
+		CPDM_FOUNTAIN_DRUNK,
+		CPDM_FOUNTAIN_BLESS,
+		CPDM_FOUNTAIN_BLESS_ALL,
+		CPDM_CHESTS_OPENED,
+		CPDM_CHESTS_MIMICS_AWAKENED,
+		CPDM_CHESTS_UNLOCKED,
+		CPDM_CHESTS_DESTROYED,
+		CPDM_BARRIER_DESTROYED,
+		CPDM_GRAVE_GHOULS,
+		CPDM_GRAVE_EPITAPHS_READ,
+		CPDM_GRAVE_EPITAPHS_PERCENT,
+		CPDM_GRAVE_GHOULS_ENSLAVED,
+		CPDM_SHOP_BOUGHT,
+		CPDM_SHOP_SOLD,
+		CPDM_SHOP_GOLD_EARNED,
+		CPDM_TRAP_KILLED_BY,
+		CPDM_TRAP_DAMAGE,
+		CPDM_TRAP_FOLLOWERS_KILLED,
+		CPDM_BOULDERS_PUSHED,
+		CPDM_ARROWS_PILFERED,
+		CPDM_SWIM_TIME,
+		CPDM_SWIM_KILLED_WHILE,
+		CPDM_SWIM_BURN_CURED,
+		CPDM_LAVA_DAMAGE,
+		CPDM_LAVA_ITEMS_BURNT,
+		CPDM_SOKOBAN_SOLVES,
+		CPDM_SOKOBAN_FASTEST_SOLVE,
+		CPDM_TRAP_MAGIC_STATUSED,
+		CPDM_OBELISK_USES,
+		CPDM_OBELISK_FOLLOWER_USES,
+		CPDM_TRIALS_ATTEMPTS,
+		CPDM_TRIALS_PASSED,
+		CPDM_TRIALS_DEATHS,
+		CPDM_LEVELS_BIOME_CLEAR,
+		CPDM_DOOR_CLOSED,
+		CPDM_SINKS_HEALTH_RESTORED,
+		CPDM_FOUNTAIN_USED,
+		CPDM_CHESTS_MIMICS_AWAKENED1ST,
+		CPDM_SHOP_SPENT,
+		CPDM_SOKOBAN_PERFECT_SOLVES,
+		CPDM_PITS_ITEMS_LOST,
+		CPDM_PITS_LEVITATED,
+		CPDM_PITS_DEATHS,
+		CPDM_PITS_ITEMS_VALUE_LOST,
+		CPDM_KILLED_MULTIPLAYER,
 		CPDM_EVENT_TAGS_MAX
 	};
 
@@ -3579,7 +3680,9 @@ struct Compendium_t
 		{
 			SUM,
 			MAX,
-			AVERAGE_RANGE
+			AVERAGE_RANGE,
+			BITFIELD,
+			MIN
 		};
 		enum ClientUpdateType
 		{
@@ -3613,20 +3716,33 @@ struct Compendium_t
 		};
 		static std::map<EventTags, Event_t> events;
 		static std::map<std::string, EventTags> eventIdLookup;
-		static std::map<ItemType, std::set<EventTags>> itemEventLookup;
-		static std::map<EventTags, std::set<ItemType>> eventItemLookup;
+		static std::map<int, std::set<EventTags>> itemEventLookup;
+		static std::map<std::string, int> monsterUniqueIDLookup;
+		static std::map<int, std::vector<EventTags>> itemDisplayedEventsList;
+		static std::map<EventTags, std::set<int>> eventItemLookup;
+		static std::map<EventTags, std::set<int>> eventMonsterLookup;
+		static std::map<EventTags, std::set<std::string>> eventWorldLookup;
+		static std::map<std::string, int> eventWorldIDLookup;
+		static std::map<EventTags, std::map<std::string, std::string>> eventLangEntries;
 		static void readEventsFromFile();
 		static void writeItemsSaveData();
 		static void loadItemsSaveData();
-		static void eventUpdate(int playernum, const EventTags tag, const ItemType type, const Sint32 val, const bool loadingValue = false);
-		static std::map<EventTags, std::map<ItemType, EventVal_t>> playerEvents;
-		static std::map<EventTags, std::map<ItemType, EventVal_t>> serverPlayerEvents[MAXPLAYERS];
-		static void onLevelChangeEvent(const int playernum);
-		static void onVictoryEvent(const int playernum);
+		static void readEventsTranslations();
+		static void createDummyClientData(const int playernum);
+		static void eventUpdate(int playernum, const EventTags tag, const ItemType type, const Sint32 value, const bool loadingValue = false, const int spellID = -1);
+		static void eventUpdateMonster(int playernum, const EventTags tag, const Entity* entity, const Sint32 value, const bool loadingValue = false, const int entryID = -1);
+		static void eventUpdateWorld(int playernum, const EventTags tag, const char* category, const Sint32 value, const bool loadingValue = false, const int entryID = -1);
+		static std::map<EventTags, std::map<int, EventVal_t>> playerEvents;
+		static std::map<EventTags, std::map<int, EventVal_t>> serverPlayerEvents[MAXPLAYERS];
+		static void onLevelChangeEvent(const int playernum, const int prevlevel, const bool prevsecretfloor, const std::string prevmapname);
+		static void onVictoryEvent(const int playernum, const bool tutorialend);
 		static void sendClientDataOverNet(const int playernum);
 		static std::map<int, std::string> clientDataStrings[MAXPLAYERS];
 		static std::map<int, std::map<int, std::string>> clientReceiveData; // todo clean up on end
 		static Uint8 clientSequence;
+		static const int kEventSpellOffset = 10000;
+		static const int kEventMonsterOffset = 1000;
+		static const int kEventWorldOffset = 2000;
 	};
 };
 

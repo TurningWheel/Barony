@@ -615,7 +615,7 @@ void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t
 
 class Item;
 
-spell_t* getSpellFromItem(const int player, Item* item);
+spell_t* getSpellFromItem(const int player, Item* item, bool usePlayerInventory);
 int getSpellIDFromSpellbook(int spellbookType);
 int canUseShapeshiftSpellInCurrentForm(const int player, Item& item);
 

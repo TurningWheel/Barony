@@ -1303,7 +1303,7 @@ void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP)
 	}
 }
 
-spell_t* getSpellFromItem(const int player, Item* item)
+spell_t* getSpellFromItem(const int player, Item* item, bool usePlayerInventory)
 {
 	spell_t* spell = nullptr;
 	node_t* node = nullptr;
@@ -1311,23 +1311,40 @@ spell_t* getSpellFromItem(const int player, Item* item)
 	{
 		return nullptr;
 	}
-	for ( node = players[player]->magic.spellList.first; node; node = node->next )
+
+	Uint32 appearance = item->appearance;
+	if ( item->type == SPELL_ITEM && item->appearance >= 1000 )
 	{
-		if ( node->element )
+		appearance -= 1000; // hack for normally uncontrollable spells.
+	}
+	if ( usePlayerInventory )
+	{
+		if ( player < 0 || player >= MAXPLAYERS )
 		{
-			spell = (spell_t*) node->element;
-			Uint32 appearance = item->appearance;
-			if ( item->type == SPELL_ITEM && item->appearance >= 1000 )
+			return nullptr;
+		}
+		for ( node = players[player]->magic.spellList.first; node; node = node->next )
+		{
+			if ( node->element )
 			{
-				appearance -= 1000; // hack for normally uncontrollable spells.
+				spell = (spell_t*) node->element;
+				if ( spell->ID == appearance )
+				{
+					return spell;    //Found the spell.
+				}
 			}
+		}
+	}
+	else
+	{
+		for ( auto spell : allGameSpells )
+		{
 			if ( spell->ID == appearance )
 			{
 				return spell;    //Found the spell.
 			}
 		}
 	}
-
 	return nullptr;
 }
 
@@ -1345,7 +1362,7 @@ int canUseShapeshiftSpellInCurrentForm(const int player, Item& item)
 	{
 		return -1;
 	}
-	spell_t* spell = getSpellFromItem(player, &item);
+	spell_t* spell = getSpellFromItem(player, &item, false);
 	if ( !spell )
 	{
 		return -1;

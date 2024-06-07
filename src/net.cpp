@@ -2087,6 +2087,10 @@ static void changeLevel() {
 		closeChestClientside(clientnum);
 	}
 
+	int prevcurrentlevel = currentlevel;
+	int prevsecretfloor = secretlevel;
+	std::string prevmapname = map.name;
+
 	// unlock some steam achievements
 	if ( !secretlevel )
 	{
@@ -2304,12 +2308,14 @@ static void changeLevel() {
 		Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_hunger", ""));
 	}
 
-	Compendium_t::Events_t::onLevelChangeEvent(clientnum);
+	Compendium_t::Events_t::onLevelChangeEvent(clientnum, prevcurrentlevel, prevsecretfloor, prevmapname);
 
 	if ( gameModeManager.allowsSaves() )
 	{
 		saveGame();
 	}
+
+	Compendium_t::Events_t::writeItemsSaveData();
 #ifdef LOCAL_ACHIEVEMENTS
 	LocalAchievements_t::writeToFile();
 #endif
@@ -3214,7 +3220,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 								Item* item = (Item*)spellnode->element;
 								if ( item && itemCategory(item) == SPELL_CAT )
 								{
-									spell_t* spell = getSpellFromItem(clientnum, item);
+									spell_t* spell = getSpellFromItem(clientnum, item, false);
 									if ( spell && spell->ID == SPELL_CHARM_MONSTER )
 									{
 										foundCharmSpell = true;
@@ -5098,12 +5104,31 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 								for ( auto itr2 = itr->value.MemberBegin(); itr2 != itr->value.MemberEnd(); ++itr2 )
 								{
 									int itemType = std::stoi(itr2->name.GetString());
-									if ( itemType < 0 || itemType >= NUMITEMS )
+									Sint32 value = itr2->value.GetInt();
+									if ( itemType >= Compendium_t::Events_t::kEventMonsterOffset && itemType < Compendium_t::Events_t::kEventMonsterOffset + 1000 )
+									{
+										Compendium_t::Events_t::eventUpdateMonster(0, (Compendium_t::EventTags)id, nullptr, value, false, itemType);
+										continue;
+									}
+									if ( itemType >= Compendium_t::Events_t::kEventWorldOffset && itemType < Compendium_t::Events_t::kEventWorldOffset + 1000 )
+									{
+										Compendium_t::Events_t::eventUpdateWorld(0, (Compendium_t::EventTags)id, nullptr, value, false, 
+											itemType - Compendium_t::Events_t::kEventWorldOffset);
+										continue;
+									}
+									if ( itemType < 0 || (itemType >= NUMITEMS && itemType < Compendium_t::Events_t::kEventSpellOffset) )
 									{
 										continue;
 									}
-									Sint32 value = itr2->value.GetInt();
-									Compendium_t::Events_t::eventUpdate(0, (Compendium_t::EventTags)id, (ItemType)itemType, value);
+									if ( itemType >= Compendium_t::Events_t::kEventSpellOffset )
+									{
+										Compendium_t::Events_t::eventUpdate(0, (Compendium_t::EventTags)id, SPELL_ITEM, value, false, 
+											itemType - Compendium_t::Events_t::kEventSpellOffset);
+									}
+									else
+									{
+										Compendium_t::Events_t::eventUpdate(0, (Compendium_t::EventTags)id, (ItemType)itemType, value);
+									}
 								}
 							}
 						}
@@ -5111,6 +5136,8 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				}
 			}
 			Compendium_t::Events_t::clientReceiveData.erase(clientSequence);
+
+			Compendium_t::Events_t::writeItemsSaveData();
 
 			// reply got packet
 			strcpy((char*)net_packet->data, "CMPD");
@@ -5678,6 +5705,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		entity->sizex = 2;
 		entity->sizey = 2;
 		entity->flags[UPDATENEEDED] = true;
+		Compendium_t::Events_t::eventUpdateMonster(player, Compendium_t::CPDM_GHOST_SPAWNED, entity, 1);
 	}},
 
 	// tried to update

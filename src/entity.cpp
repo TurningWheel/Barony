@@ -470,7 +470,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	{
 		flags[c] = false;
 	}
-	if ( entlist == map.entities )
+	if ( entlist != nullptr && entlist == map.entities )
 	{
 		if ( multiplayer != CLIENT || loading )
 		{
@@ -6907,6 +6907,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 							break;
 					}
 
+					if ( behavior == &actPlayer )
+					{
+						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_MAGICSTAFF_CASTS, myStats->weapon->type, 1);
+					}
+
 					// magicstaffs deplete themselves for each use
 					bool degradeWeapon = true;
 					if ( myStats->type == SHADOW || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
@@ -6947,6 +6952,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								steamAchievementClient(player, "BARONY_ACH_ONE_MANS_TRASH");
 							}
+							if ( behavior == &actPlayer )
+							{
+								Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BROKEN, myStats->weapon->type, 1);
+							}
 							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(660));
 							if ( player >= 0 && players[player]->isLocalPlayer() && client_classes[player] == CLASS_MESMER )
 							{
@@ -6958,7 +6967,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										Item* item = (Item*)spellnode->element;
 										if ( item && itemCategory(item) == SPELL_CAT )
 										{
-											spell_t* spell = getSpellFromItem(player, item);
+											spell_t* spell = getSpellFromItem(player, item, false);
 											if ( spell && spell->ID == SPELL_CHARM_MONSTER )
 											{
 												foundCharmSpell = true;
@@ -8025,10 +8034,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							hit.entity->skill[6] = (y < hit.entity->y);
 						}
+						Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_DOOR_BROKEN, "door", 1);
 					}
 					else if ( hit.entity->behavior == &::actChest )
 					{
 						messagePlayer(player, MESSAGE_COMBAT, Language::get(671));
+						Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_CHESTS_DESTROYED, "chest", 1);
 					}
 					else if ( mimic )
 					{
@@ -8038,6 +8049,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						messagePlayer(player, MESSAGE_COMBAT, Language::get(hit.entity->getColliderOnBreakLangEntry()),
 							Language::get(hit.entity->getColliderLangName()));
+						Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_BARRIER_DESTROYED, "breakable barriers", 1);
 					}
 					else if ( hit.entity->behavior == &::actFurniture )
 					{
@@ -11913,6 +11925,11 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		return;
 	}
 
+	if ( src->behavior == &actPlayer && behavior == &actMonster && root )
+	{
+		Compendium_t::Events_t::eventUpdateMonster(src->skill[2], Compendium_t::CPDM_KILLED_BY, this, 1);
+	}
+
 	if ( src->behavior == &actMonster 
 		&& (src->monsterAllySummonRank != 0
 			|| src->monsterIsTinkeringCreation()) )
@@ -12347,6 +12364,29 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 
 		if ( root )
 		{
+			if ( multiplayer == SINGLE )
+			{
+				if ( splitscreen )
+				{
+					Compendium_t::Events_t::eventUpdateMonster(0, Compendium_t::CPDM_KILLED_PARTY, src, 1);
+				}
+				else
+				{
+					Compendium_t::Events_t::eventUpdateMonster(0, Compendium_t::CPDM_KILLED_SOLO, src, 1);
+				}
+			}
+			else
+			{
+				Compendium_t::Events_t::eventUpdateMonster(player, Compendium_t::CPDM_KILLED_MULTIPLAYER, src, 1);
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( !client_disconnected[i] )
+					{
+						Compendium_t::Events_t::eventUpdateMonster(i, Compendium_t::CPDM_KILLED_PARTY, src, 1);
+					}
+				}
+			}
+
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
 				if ( stats[i]->helmet && stats[i]->helmet->type == HAT_BOUNTYHUNTER )
@@ -12429,6 +12469,29 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 					}
 				}
 				killIncrementEvent = true;
+
+				if ( multiplayer == SINGLE )
+				{
+					if ( splitscreen )
+					{
+						Compendium_t::Events_t::eventUpdateMonster(0, Compendium_t::CPDM_KILLED_PARTY, src, 1);
+					}
+					else
+					{
+						Compendium_t::Events_t::eventUpdateMonster(0, Compendium_t::CPDM_KILLED_SOLO, src, 1);
+					}
+				}
+				else
+				{
+					Compendium_t::Events_t::eventUpdateMonster(leader->skill[2], Compendium_t::CPDM_KILLED_MULTIPLAYER, src, 1);
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( !client_disconnected[i] )
+						{
+							Compendium_t::Events_t::eventUpdateMonster(i, Compendium_t::CPDM_KILLED_PARTY, src, 1);
+						}
+					}
+				}
 			}
 		}
 
@@ -20844,6 +20907,7 @@ void Entity::handleKnockbackDamage(Stat& myStats, Entity* knockedInto)
 			if ( whoKnockedMe && whoKnockedMe->behavior == &actPlayer )
 			{
 				steamStatisticUpdateClient(whoKnockedMe->skill[2], STEAM_STAT_TAKE_THIS_OUTSIDE, STEAM_STAT_INT, 1);
+				Compendium_t::Events_t::eventUpdateWorld(whoKnockedMe->skill[2], Compendium_t::CPDM_DOOR_BROKEN, "door", 1);
 			}
 			knockedInto->doorHealth = 0;    // smash doors instantly
 			playSoundEntity(knockedInto, 28, 64);

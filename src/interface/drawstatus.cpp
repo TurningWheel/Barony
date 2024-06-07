@@ -1186,7 +1186,7 @@ void drawStatus(int player)
 				}
 				else
 				{
-					spell_t* spell = getSpellFromItem(player, item);
+					spell_t* spell = getSpellFromItem(player, item, false);
 					if ( players[player]->magic.selectedSpell() == spell
 						&& (players[player]->magic.selected_spell_last_appearance == item->appearance || players[player]->magic.selected_spell_last_appearance == -1 ) )
 					{
@@ -1329,7 +1329,7 @@ void drawStatus(int player)
 
 					if ( itemCategory(item) == SPELL_CAT )
 					{
-						spell_t* spell = getSpellFromItem(player, item);
+						spell_t* spell = getSpellFromItem(player, item, false);
 						if ( drawHotBarTooltipOnCycle )
 						{
 							//drawSpellTooltip(player, spell, item, &src);
@@ -1856,7 +1856,7 @@ void drawStatus(int player)
 				if ( pressed != Player::Hotbar_t::GROUP_NONE 
 					&& players[player]->hotbar.faceMenuQuickCastEnabled && item && itemCategory(item) == SPELL_CAT )
 				{
-					spell_t* spell = getSpellFromItem(player, item);
+					spell_t* spell = getSpellFromItem(player, item, false);
 					if ( spell && players[player]->magic.selectedSpell() == spell )
 					{
 						players[player]->hotbar.faceMenuQuickCast = true;
@@ -3089,7 +3089,7 @@ void drawStatusNew(const int player)
 					// quickcasting spells
 					if (item && itemCategory(item) == SPELL_CAT )
 					{
-						spell_t* spell = getSpellFromItem(player, item);
+						spell_t* spell = getSpellFromItem(player, item, false);
 						if ( spell && players[player]->magic.selectedSpell() == spell )
 						{
 							players[player]->hotbar.faceMenuQuickCast = true;

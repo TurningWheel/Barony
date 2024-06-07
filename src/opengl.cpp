@@ -22,6 +22,7 @@
 #include "player.hpp"
 #include "ui/MainMenu.hpp"
 #include "init.hpp"
+#include "ui/Image.hpp"
 
 static real_t getLightAtModifier = 1.0;
 static real_t getLightAtAdder = 0.0;
@@ -1804,7 +1805,7 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 static ConsoleVariable<GLfloat> cvar_dmgSpriteDepthRange("/dmg_sprite_depth_range", 0.49);
 #endif // !EDITOR
 
-void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode)
+void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode, bool useTextAsImgPath, bool rotate)
 {
 	if (!camera || !entity || text.empty()) {
 		return;
@@ -1830,15 +1831,35 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 	else if (entity->behavior == &actSpriteNametag) {
 		color = entity->skill[1];
 	}
-	auto rendered_text = Text::get(
-        text.c_str(), "fonts/pixel_maz.ttf#32#2",
-		color, makeColor(0, 0, 0, 255));
-	auto textureId = rendered_text->getTexID();
 
-    // bind texture
-    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, textureId));
-    const GLfloat w = static_cast<GLfloat>(rendered_text->getWidth());
-    const GLfloat h = static_cast<GLfloat>(rendered_text->getHeight());
+    GLfloat w = 0.0;
+    GLfloat h = 0.0;
+    if ( useTextAsImgPath )
+    {
+        if ( text.find('*') == std::string::npos )
+        {
+            text.insert(text.begin(), '*');
+        }
+        if ( auto imgGet = Image::get(text.c_str()) )
+        {
+            // bind texture
+            GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, imgGet->getTexID()));
+            w = imgGet->getWidth();
+            h = imgGet->getHeight();
+        }
+    }
+    else
+    {
+	    auto rendered_text = Text::get(
+            text.c_str(), "fonts/pixel_maz.ttf#32#2",
+		    color, makeColor(0, 0, 0, 255));
+	    auto textureId = rendered_text->getTexID();
+
+        // bind texture
+        GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, textureId));
+        w = static_cast<GLfloat>(rendered_text->getWidth());
+        h = static_cast<GLfloat>(rendered_text->getHeight());
+    }
     if (mode == REALCOLORS) {
         GL_CHECK_ERR(glEnable(GL_BLEND));
     }
@@ -1878,10 +1899,24 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
         (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
         (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
     }
+
     v = vec4(entity->x * 2.f, -entity->z * 2.f - 1, entity->y * 2.f, 0.f);
     (void)translate_mat(&m, &t, &v); t = m;
-    (void)rotate_mat(&m, &t, entity->flags[OVERDRAW] ? -90.f :
-        -90.f - camera->ang * (180.f / PI), &i.y); t = m;
+    if ( rotate )
+    {
+        float rotx, roty, rotz;
+        rotx = entity->roll * 180.0 / PI; // roll
+        roty = 360.0 - entity->yaw * 180.0 / PI; // yaw
+        rotz = 360.0 - entity->pitch * 180.0 / PI; // pitch
+        (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
+        (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
+        (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
+    }
+    else
+    {
+        (void)rotate_mat(&m, &t, entity->flags[OVERDRAW] ? -90.f :
+            -90.f - camera->ang * (180.f / PI), &i.y); t = m;
+    }
     v = vec4(entity->focalx * 2.f, -entity->focalz * 2.f, entity->focaly * 2.f, 0.f);
     (void)translate_mat(&m, &t, &v); t = m;
     v = vec4(entity->scalex * w, entity->scaley * h, entity->scalez, 0.f);

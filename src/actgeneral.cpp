@@ -795,6 +795,7 @@ void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Enti
 				{
 					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(getColliderLangName()));
 				}
+				Compendium_t::Events_t::eventUpdateWorld(caster->skill[2], Compendium_t::CPDM_BARRIER_DESTROYED, "breakable barriers", 1);
 			}
 			else
 			{

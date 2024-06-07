@@ -20668,7 +20668,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 	}
 	else
 	{
-		spell_t* spell = getSpellFromItem(player, item);
+		spell_t* spell = getSpellFromItem(player, item, true);
 		if ( players[player]->magic.selectedSpell() == spell
 			&& (players[player]->magic.selected_spell_last_appearance == item->appearance || players[player]->magic.selected_spell_last_appearance == -1) )
 		{
@@ -21551,20 +21551,50 @@ void drawItemPreview(Entity* item, SDL_Rect pos, real_t offsetyaw, bool dark)
 		}
 	}
 
-	if ( idleAngRotationDir == 0 )
+	if ( !item->flags[SPRITE] )
 	{
-		idleAngRotation += 0.005;
-		/*if ( idleAngRotation >= PI / 8 )
-		{
-			idleAngRotationDir = 1;
-		}*/
+		idleAngRotationDir = 0;
+		item->scalex = 1.0;
+		item->scaley = 1.0;
+		item->scalez = 1.0;
 	}
 	else
 	{
-		idleAngRotation -= 0.01;
-		if ( idleAngRotation <= -PI / 8 )
+		item->scalex = 0.25;
+		item->scaley = 0.25;
+		item->scalez = 0.25;
+	}
+
+	if ( idleAngRotationDir == 0 )
+	{
+		if ( item->flags[SPRITE] )
 		{
-			idleAngRotationDir = 0;
+			idleAngRotation += 0.0015;
+			if ( idleAngRotation >= 0.6 * PI )
+			{
+				idleAngRotation = 0.6 * PI;
+				idleAngRotationDir = 1;
+			}
+		}
+		else
+		{
+			idleAngRotation += 0.005;
+		}
+	}
+	else
+	{
+		if ( item->flags[SPRITE] )
+		{
+			idleAngRotation -= 0.0015;
+			if ( idleAngRotation <= 0.4 * PI )
+			{
+				idleAngRotation = 0.4 * PI;
+				idleAngRotationDir = 0;
+			}
+		}
+		else
+		{
+			idleAngRotation -= 0.0015;
 		}
 	}
 
@@ -21592,7 +21622,15 @@ void drawItemPreview(Entity* item, SDL_Rect pos, real_t offsetyaw, bool dark)
 	if ( !dark ) { item->flags[BRIGHT] = true; }
 	if ( !item->flags[INVISIBLE] )
 	{
-		glDrawVoxel(&view, item, REALCOLORS);
+		if ( item->flags[SPRITE] && item->skill[10] == SPELL_ITEM )
+		{
+			glDrawSpriteFromImage(&view, item, ItemTooltips.getSpellIconPath(clientnum, Compendium_t::compendiumItem, item->skill[14]),
+				REALCOLORS, true, true);
+		}
+		else
+		{
+			glDrawVoxel(&view, item, REALCOLORS);
+		}
 	}
 
 	item->flags[BRIGHT] = b;
@@ -21605,10 +21643,8 @@ void drawItemPreview(Entity* item, SDL_Rect pos, real_t offsetyaw, bool dark)
 	::fov = ofov;
 }
 
-void drawMonsterPreview(Entity* monster, SDL_Rect pos, real_t offsetyaw, bool dark)
+void drawMonsterPreview(std::string name, std::string modelsPath, Entity* monster, SDL_Rect pos, real_t offsetyaw, bool dark)
 {
-	if ( !monster ) { return; }
-
 	static int fov = 50;
 	static real_t ang = 0.0;
 	static real_t vang = 0.0;
@@ -21652,6 +21688,18 @@ void drawMonsterPreview(Entity* monster, SDL_Rect pos, real_t offsetyaw, bool da
 	auto ofov = ::fov;
 	::fov = fov;
 
+	std::vector<Entity>* limbsArray = nullptr;
+	if ( CompendiumEntries.compendiumMonsterLimbs.find(modelsPath) != CompendiumEntries.compendiumMonsterLimbs.end() )
+	{
+		limbsArray = &CompendiumEntries.compendiumMonsterLimbs[modelsPath];
+		monster = &(limbsArray->at(0));
+	}
+
+	if ( !monster )
+	{
+		return;
+	}
+
 	view.x = monster->x / 16.0 + ((.92 + zoom) * cos(offsetyaw
 		+ ang + (*cvar_compendium_portrait_static_angle ? monster->yaw : 0)));
 	view.y = monster->y / 16.0 + ((.92 + zoom) * sin(offsetyaw
@@ -21678,6 +21726,27 @@ void drawMonsterPreview(Entity* monster, SDL_Rect pos, real_t offsetyaw, bool da
 	monster->flags[BRIGHT] = b;
 	int c = 0;
 
+	if ( limbsArray )
+	{
+		for ( auto itr = limbsArray->begin(); itr != limbsArray->end(); ++itr )
+		{
+			if ( c == 0 )
+			{
+				c++;
+				continue;
+			}
+			Entity* entity = &(*itr);
+			if ( !entity->flags[INVISIBLE] )
+			{
+				bool b = entity->flags[BRIGHT];
+				if ( !dark ) { entity->flags[BRIGHT] = true; }
+				glDrawVoxel(&view, entity, REALCOLORS);
+				entity->flags[BRIGHT] = b;
+			}
+			c++;
+		}
+	}
+	else
 	{
 		for ( node_t* node = monster->children.first; node != nullptr; node = node->next )
 		{
@@ -27728,7 +27797,7 @@ void Player::HUD_t::updateXPBar()
 			{
 				xpProgressEndCap->path = playerXPCapPaths[xpPathNum][4];
 			}
-			else if ( xpProgressEndCap->path == playerXPCapPaths[player.playernum][4] )
+			else if ( xpProgressEndCap->path == playerXPCapPaths[xpPathNum][4] )
 			{
 				xpProgressEndCap->path = playerXPCapPaths[xpPathNum][0];
 			}

@@ -1549,7 +1549,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 				continue;
 			}
 
-			spell_t *spell = getSpellFromItem(target->skill[2], item); //Do not free or delete this.
+			spell_t *spell = getSpellFromItem(target->skill[2], item, false); //Do not free or delete this.
 			if ( !spell )
 			{
 				continue;

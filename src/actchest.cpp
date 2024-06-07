@@ -817,6 +817,8 @@ void Entity::actChest()
 				messagePlayer(chestclicked, MESSAGE_INTERACTION, Language::get(459));
 				openedChest[chestclicked] = this;
 
+				Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_CHESTS_OPENED, "chest", 1);
+
 				chestOpener = chestclicked;
 				if ( !players[chestclicked]->isLocalPlayer() && multiplayer == SERVER)
 				{
@@ -1638,6 +1640,7 @@ void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity 
 					{
 						messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2520));
 					}
+					Compendium_t::Events_t::eventUpdateWorld(caster->skill[2], Compendium_t::CPDM_CHESTS_DESTROYED, "chest", 1);
 				}
 				else
 				{
