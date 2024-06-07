@@ -6397,5 +6397,12 @@ to participate.#
 6171 Unlock the Achievement:
 "%s"
 to play this class combination.#
+6172 Magic Required: %d (%s)#
+6173 Dungeon Floor:#
+6174 Denizens#
+6175 Items#
+6176 Magic#
+6177 World#
+6178 Codex#
 
 6200 END#
