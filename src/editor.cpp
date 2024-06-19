@@ -2471,11 +2471,11 @@ int main(int argc, char** argv)
 				}
 				occlusionCulling(map, camera);
                 beginGraphics();
-				glBeginCamera(&camera, false);
+				glBeginCamera(&camera, false, map);
 				glDrawWorld(&camera, REALCOLORS);
 				//drawFloors(&camera);
 				drawEntities3D(&camera, REALCOLORS);
-				glEndCamera(&camera, false);
+				glEndCamera(&camera, false, map);
 				printTextFormatted(font8x8_bmp, 8, yres - 64, "x = %3.3f\ny = %3.3f\nz = %3.3f\nang = %3.3f\nfps = %3.1f", camera.x, camera.y, camera.z, camera.ang, fps);
 				list_RemoveNode(light->node);
 				for ( node = map.entities->first; node != NULL; node = node->next )
@@ -2503,8 +2503,8 @@ int main(int argc, char** argv)
 				// draw selected tile / hovering tile
 				pos.x = xres - 48;
 				pos.y = 320;
-				pos.w = 0;
-				pos.h = 0;
+				pos.w = 32;
+				pos.h = 32;
 				if ( selectedTile >= 0 && selectedTile < numtiles )
 				{
 					if ( tiles[selectedTile] != NULL )
@@ -2522,8 +2522,8 @@ int main(int argc, char** argv)
 				}
 				pos.x = xres - 48;
 				pos.y = 360;
-				pos.w = 0;
-				pos.h = 0;
+				pos.w = 32;
+				pos.h = 32;
 				if ( drawx >= 0 && drawx < map.width && drawy >= 0 && drawy < map.height )
 				{
 					c = map.tiles[drawlayer + drawy * MAPLAYERS + drawx * MAPLAYERS * map.height];
@@ -2547,8 +2547,10 @@ int main(int argc, char** argv)
 				{
 					drawImage(sprites[0], NULL, &pos);
 				}
-				printText(font8x8_bmp, xres - 124, 332, "Selected:");
-				printText(font8x8_bmp, xres - 124, 372, "   Above:");
+				printTextFormatted(font8x8_bmp, xres - 124, 324, "Selected:\n\n%9d",
+					(selectedTile >= 0 && selectedTile < numtiles) ? selectedTile : 0);
+				printTextFormatted(font8x8_bmp, xres - 124, 364, " Hovered:\n\n%9d",
+					(drawx >= 0 && drawx < map.width&& drawy >= 0 && drawy < map.height) ? c : 0);
 
 				// Print the name of the selected tool below the Tool Buttons
 				switch ( selectedTool )
