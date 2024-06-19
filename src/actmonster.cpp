@@ -1890,6 +1890,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 		FollowerMenu[monsterclicked].recentEntity = my;
 	}
 
+	Compendium_t::Events_t::eventUpdateMonster(monsterclicked, Compendium_t::CPDM_RECRUITED, my, 1);
 	if ( (stats[monsterclicked]->type != HUMAN && stats[monsterclicked]->type != AUTOMATON) && myStats->type == HUMAN )
 	{
 		steamAchievementClient(monsterclicked, "BARONY_ACH_PITY_FRIEND");

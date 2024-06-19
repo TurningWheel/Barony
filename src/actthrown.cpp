@@ -944,6 +944,10 @@ void actThrown(Entity* my)
 												parent->increaseSkill(PRO_LEADERSHIP);
 												messagePlayerMonsterEvent(parent->skill[2], makeColorRGB(0, 255, 0), 
 													*hitstats, Language::get(3252), Language::get(3251), MSG_COMBAT);
+												if ( hit.entity->monsterAllyIndex != parent->skill[2] )
+												{
+													Compendium_t::Events_t::eventUpdateMonster(parent->skill[2], Compendium_t::CPDM_RECRUITED, hit.entity, 1);
+												}
 												hit.entity->monsterAllyIndex = parent->skill[2];
 												if ( multiplayer == SERVER )
 												{

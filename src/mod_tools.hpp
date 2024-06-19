@@ -3457,6 +3457,7 @@ struct Compendium_t
 		struct Monster_t
 		{
 			int monsterType = NOTHING;
+			std::string unique_npc = "";
 			std::vector<std::string> blurb;
 			std::vector<Sint32> hp;
 			std::vector<Sint32> spd;
@@ -3476,15 +3477,23 @@ struct Compendium_t
 	std::map<std::string, CompendiumMonsters_t::Monster_t> monsters;
 	void readMonstersFromFile();
 	void exportCurrentMonster(Entity* monster);
-	void readMonsterLimbsFromFile();
-	std::map<std::string, std::vector<Entity>> compendiumMonsterLimbs;
-
+	void readModelLimbsFromFile(std::string section);
+	std::map<std::string, std::vector<Entity>> compendiumObjectLimbs;
+	struct CompendiumMap_t
+	{
+		Uint32 width = 0;
+		Uint32 height = 0;
+		Uint32 ceiling = -1;
+	};
+	std::map<std::string, std::pair<CompendiumMap_t, std::vector<int>>> compendiumObjectMapTiles;
+	map_t compendiumMap;
 	struct CompendiumWorld_t
 	{
 		struct World_t
 		{
 			int modelIndex = -1;
 			std::string imagePath = "";
+			std::vector<std::string> models;
 			std::vector<std::string> blurb;
 			std::vector<std::string> details;
 			int id = -1;
@@ -3671,6 +3680,7 @@ struct Compendium_t
 		CPDM_PITS_DEATHS,
 		CPDM_PITS_ITEMS_VALUE_LOST,
 		CPDM_KILLED_MULTIPLAYER,
+		CPDM_RECRUITED,
 		CPDM_EVENT_TAGS_MAX
 	};
 

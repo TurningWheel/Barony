@@ -3875,6 +3875,7 @@ void item_ScrollSummon(Item* item, int player)
 					}
 
 					// change the color of the hit entity.
+					Compendium_t::Events_t::eventUpdateMonster(player, Compendium_t::CPDM_RECRUITED, monster, 1);
 					monster->flags[USERFLAG2] = true;
 					serverUpdateEntityFlag(monster, USERFLAG2);
 					if ( monsterChangesColorWhenAlly(monsterStats) )

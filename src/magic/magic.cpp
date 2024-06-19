@@ -180,6 +180,10 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		if ( parent->behavior == &actPlayer )
 		{
 			messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2428), Language::get(2427), MSG_COMBAT);
+			if ( hit.entity->monsterAllyIndex != parent->skill[2] )
+			{
+				Compendium_t::Events_t::eventUpdateMonster(parent->skill[2], Compendium_t::CPDM_RECRUITED, hit.entity, 1);
+			}
 		}
 
 		hit.entity->monsterAllyIndex = parent->skill[2];
@@ -1542,6 +1546,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 					{
 						whoToFollow->increaseSkill(PRO_LEADERSHIP);
 						messagePlayerMonsterEvent(whoToFollow->skill[2], color, *hitstats, Language::get(3137), Language::get(3138), MSG_COMBAT);
+						Compendium_t::Events_t::eventUpdateMonster(whoToFollow->skill[2], Compendium_t::CPDM_RECRUITED, hit.entity, 1);
 						hit.entity->monsterAllyIndex = whoToFollow->skill[2];
 						if ( multiplayer == SERVER )
 						{
