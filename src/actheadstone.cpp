@@ -116,7 +116,7 @@ void actHeadstone(Entity* my)
 						Language::get(485 + HEADSTONE_MESSAGE % 17));
 
 					Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_GRAVE_EPITAPHS_READ, "gravestone", 1);
-					Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_GRAVE_EPITAPHS_PERCENT, "gravestone", (1 << HEADSTONE_MESSAGE));
+					Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_GRAVE_EPITAPHS_PERCENT, "gravestone", (1 << (HEADSTONE_MESSAGE % 17)));
 
 					triggeredPlayer = i;
 
@@ -151,6 +151,7 @@ void actHeadstone(Entity* my)
 					if ( tmpStats )
 					{
 						strcpy(tmpStats->name, "enslaved ghoul");
+						tmpStats->setAttribute("special_npc", "enslaved ghoul");
 					}
 					if ( triggeredPlayer >= 0 )
 					{

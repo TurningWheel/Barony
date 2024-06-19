@@ -572,7 +572,14 @@ vec4_t unproject(
 
 -------------------------------------------------------------------------------*/
 
-static void fillSmoothLightmap(int which) {
+static void fillSmoothLightmap(int which, map_t& map) {
+#ifndef EDITOR
+    if ( &map == &CompendiumEntries.compendiumMap )
+    {
+        return;
+    }
+#endif
+
     auto lightmap = lightmaps[which].data();
     auto lightmapSmoothed = lightmapsSmoothed[which].data();
     
@@ -618,7 +625,7 @@ static inline bool testTileOccludes(const map_t& map, int index) {
     return (t0 & 0xffffffff00000000) && (t0 & 0x00000000ffffffff) && t1;
 }
 
-static void loadLightmapTexture(int which) {
+static void loadLightmapTexture(int which, map_t& map) {
     auto lightmapSmoothed = lightmapsSmoothed[which].data();
     
     // allocate lightmap pixel data
@@ -629,13 +636,12 @@ static void loadLightmapTexture(int which) {
 #ifdef EDITOR
     const bool fullbright = false;
 #else
-    const bool fullbright = conductGameChallenges[CONDUCT_CHEATS_ENABLED] ? *cvar_fullBright : false;
+    const bool fullbright = (&map == &CompendiumEntries.compendiumMap) ? true :// compendium virtual map is always fullbright
+        (conductGameChallenges[CONDUCT_CHEATS_ENABLED] ? *cvar_fullBright : false);
 #endif
     
     // build lightmap texture data
     const float div = 1.f / 255.f;
-    const int xoff = MAPLAYERS * map.height;
-    const int yoff = MAPLAYERS;
     if (fullbright) {
         for (int y = 0; y < map.height; ++y) {
             for (int x = 0; x < map.width; ++x) {
@@ -643,6 +649,8 @@ static void loadLightmapTexture(int which) {
             }
         }
     } else {
+        const int xoff = MAPLAYERS * map.height;
+        const int yoff = MAPLAYERS;
         for (int y = 0; y < map.height; ++y) {
             for (int x = 0, index = y * yoff; x < map.width; ++x, index += xoff) {
                 if (!testTileOccludes(map, index)) {
@@ -939,7 +947,7 @@ bool hdrEnabled = true;
 
 static int oldViewport[4];
 
-void glBeginCamera(view_t* camera, bool useHDR)
+void glBeginCamera(view_t* camera, bool useHDR, map_t& map)
 {
     if (!camera) {
         return;
@@ -1014,8 +1022,8 @@ void glBeginCamera(view_t* camera, bool useHDR)
             break;
         }
     }
-    fillSmoothLightmap(lightmapIndex);
-    loadLightmapTexture(lightmapIndex);
+    fillSmoothLightmap(lightmapIndex, map);
+    loadLightmapTexture(lightmapIndex, map);
     
 	// upload uniforms
     uploadUniforms(voxelShader, (float*)&proj, (float*)&view, (float*)&mapDims);
@@ -1034,7 +1042,7 @@ void glBeginCamera(view_t* camera, bool useHDR)
 #include <thread>
 #include <future>
 
-void glEndCamera(view_t* camera, bool useHDR)
+void glEndCamera(view_t* camera, bool useHDR, map_t& map)
 {
     if (!camera) {
         return;
@@ -2232,10 +2240,10 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
 	if (dirty) {
         GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 0.f));
         GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-		glBeginCamera(&camera, false);
+		glBeginCamera(&camera, false, map);
 		glDrawWorld(&camera, ENTITYUIDS);
 		drawEntities3D(&camera, ENTITYUIDS);
-		glEndCamera(&camera, false);
+		glEndCamera(&camera, false, map);
 	}
 
 	GLubyte pixel[4];

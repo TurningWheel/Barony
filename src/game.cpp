@@ -6094,7 +6094,7 @@ void drawAllPlayerCameras() {
 			// do occlusion culling from the perspective of this camera
 			DebugStats.drawWorldT2 = std::chrono::high_resolution_clock::now();
 			occlusionCulling(map, camera);
-			glBeginCamera(&camera, true);
+			glBeginCamera(&camera, true, map);
 
 			// shared minimap progress
 			if ( !splitscreen/*gameplayCustomManager.inUse() && gameplayCustomManager.minimapShareProgress && !splitscreen*/ )
@@ -6237,7 +6237,7 @@ void drawAllPlayerCameras() {
 
 			DebugStats.drawWorldT5 = std::chrono::high_resolution_clock::now();
 			drawEntities3D(&camera, REALCOLORS);
-			glEndCamera(&camera, true);
+			glEndCamera(&camera, true, map);
             
             // undo ghost fog
             if (players[c]->ghost.isActive()) {
@@ -7075,10 +7075,10 @@ int main(int argc, char** argv)
 							light = addLight(menucam.x, menucam.y, "mainmenu");
 							occlusionCulling(map, menucam);
                             beginGraphics();
-							glBeginCamera(&menucam, true);
+							glBeginCamera(&menucam, true, map);
 							glDrawWorld(&menucam, REALCOLORS);
 							drawEntities3D(&menucam, REALCOLORS);
-							glEndCamera(&menucam, true);
+							glEndCamera(&menucam, true, map);
 							list_RemoveNode(light->node);
 						}
 

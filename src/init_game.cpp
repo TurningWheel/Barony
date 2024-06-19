@@ -93,6 +93,7 @@ void initGameDatafiles(bool moddedReload)
 	}
 	setupSpells();
 	CompendiumEntries.readMonstersFromFile();
+	Compendium_t::Events_t::itemDisplayedEventsList.clear();
 	Compendium_t::Events_t::readEventsFromFile();
 	CompendiumEntries.readCodexFromFile();
 	CompendiumEntries.readWorldFromFile();
@@ -100,7 +101,8 @@ void initGameDatafiles(bool moddedReload)
 	CompendiumEntries.readMagicFromFile();
 	Compendium_t::Events_t::readEventsTranslations();
 	Compendium_t::Events_t::loadItemsSaveData();
-	CompendiumEntries.readMonsterLimbsFromFile();
+	CompendiumEntries.readModelLimbsFromFile("monster");
+	CompendiumEntries.readModelLimbsFromFile("world");
 }
 
 void initGameDatafilesAsync(bool moddedReload)
@@ -769,7 +771,10 @@ void deinitGame()
 	{
 		free(shoparea);
 	}
-
+	if ( CompendiumEntries.compendiumMap.tiles )
+	{
+		free(CompendiumEntries.compendiumMap.tiles);
+	}
 	for (int i = 0; i < MAXPLAYERS; ++i)
 	{
 		delete players[i];

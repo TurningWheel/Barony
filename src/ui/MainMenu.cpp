@@ -32543,8 +32543,9 @@ failed:
 #endif
 
 	static Entity* compendiumMonster = nullptr;
-	static std::pair<std::string, std::string> compendiumMonsterCurrent = { "", ""}; // contents name, then model filename
+	static std::pair<std::string, std::string> compendiumEntityCurrent = { "", ""}; // contents name, then model filename
 	static std::vector<Entity*> compendiumMonsterLimbs;
+	static void populateRecordsSectionItems(Frame* page_right, int entryType, const char* entryName = "");
 	static Entity* createCompendiumMonster(Monster creature, real_t x, real_t y)
 	{
 		if ( compendiumMonster )
@@ -32608,6 +32609,9 @@ failed:
 		}
 		auto& entry = CompendiumEntries.worldObjects[name];
 
+		compendiumEntityCurrent.first = name;
+		compendiumEntityCurrent.second = entry.models.empty() ? "" : entry.models[local_rng.rand() % entry.models.size()];
+
 		if ( Frame* page_left = parent->findFrame("page_left") )
 		{
 			if ( auto blurb = page_left->findField("blurb") )
@@ -32624,6 +32628,9 @@ failed:
 
 		if ( Frame* page_right = parent->findFrame("page_right") )
 		{
+			// find records for this item
+			populateRecordsSectionItems(page_right, entry.id + Compendium_t::Events_t::kEventWorldOffset, name.c_str());
+
 			if ( page_right = page_right->findFrame("page_right_inner") )
 			{
 				if ( auto details = page_right->findField("details") )
@@ -32732,14 +32739,9 @@ failed:
 		}
 	}
 
-	static void populateRecordsSectionItems(Frame* page_right, int itemType)
+	static void populateRecordsSectionItems(Frame* page_right, int entryType, const char* entryName)
 	{
 		if ( !page_right ) { return; }
-
-		if ( itemType < 0 || (itemType >= NUMITEMS && itemType < Compendium_t::Events_t::kEventSpellOffset) )
-		{
-			return;
-		}
 
 		if ( auto page_right_overlay = page_right->findFrame("page_right_overlay") )
 		{
@@ -32761,11 +32763,44 @@ failed:
 			auto rec4Val = page_right_overlay->findField("record 4 val");
 			rec4Val->setDisabled(true);
 
-			auto find = Compendium_t::Events_t::itemDisplayedEventsList.find(itemType);
-			if ( find != Compendium_t::Events_t::itemDisplayedEventsList.end() )
+			bool foundEvents = false;
+			std::vector<Compendium_t::EventTags> displayedEvents;
+			if ( entryType >= Compendium_t::Events_t::kEventMonsterOffset
+				&& entryType < Compendium_t::Events_t::kEventMonsterOffset + 1000 )
+			{
+				if ( (entryType - Compendium_t::Events_t::kEventMonsterOffset) 
+					== Compendium_t::Events_t::monsterUniqueIDLookup["ghost"] )
+				{
+					displayedEvents = {
+						Compendium_t::EventTags::CPDM_GHOST_SPAWNED,
+						Compendium_t::EventTags::CPDM_GHOST_PUSHES,
+						Compendium_t::EventTags::CPDM_GHOST_TELEPORTS,
+						Compendium_t::EventTags::CPDM_GHOST_PINGS
+					};
+				}
+				else
+				{
+					displayedEvents = {
+						Compendium_t::EventTags::CPDM_KILLED_SOLO,
+						Compendium_t::EventTags::CPDM_KILLED_MULTIPLAYER,
+						Compendium_t::EventTags::CPDM_KILLED_PARTY,
+						Compendium_t::EventTags::CPDM_KILLED_BY
+					};
+				}
+			}
+			else
+			{
+				auto find = Compendium_t::Events_t::itemDisplayedEventsList.find(entryType);
+				if ( find != Compendium_t::Events_t::itemDisplayedEventsList.end() )
+				{
+					displayedEvents = Compendium_t::Events_t::itemDisplayedEventsList[entryType];
+				}
+			}
+
+			if ( displayedEvents.size() > 0 )
 			{
 				int index = -1;
-				for ( auto tag : find->second )
+				for ( auto tag : displayedEvents )
 				{
 					++index;
 					Field* txt = nullptr;
@@ -32795,15 +32830,70 @@ failed:
 					if ( txt )
 					{
 						txt->setDisabled(false);
-						txt->setText(Compendium_t::Events_t::eventLangEntries[tag]["default"].c_str());
+						std::string itemname = "default";
+						if ( entryType >= 0 && entryType < NUMITEMS )
+						{
+							if ( Compendium_t::Events_t::eventLangEntries[tag].find(itemNameStrings[entryType + 2])
+								!= Compendium_t::Events_t::eventLangEntries[tag].end() )
+							{
+								itemname = itemNameStrings[entryType + 2];
+							}
+						}
+						else if ( entryType >= Compendium_t::Events_t::kEventMonsterOffset 
+							&& entryType < Compendium_t::Events_t::kEventMonsterOffset + 1000 )
+						{
+							if ( Compendium_t::Events_t::eventLangEntries[tag].find(entryName)
+								!= Compendium_t::Events_t::eventLangEntries[tag].end() )
+							{
+								itemname = entryName;
+							}
+						}
+						else if ( entryType >= Compendium_t::Events_t::kEventWorldOffset 
+							&& entryType < Compendium_t::Events_t::kEventWorldOffset + 1000 )
+						{
+							if ( Compendium_t::Events_t::eventLangEntries[tag].find(entryName)
+								!= Compendium_t::Events_t::eventLangEntries[tag].end() )
+							{
+								itemname = entryName;
+							}
+						}
+						else if ( entryType >= Compendium_t::Events_t::kEventSpellOffset
+							&& entryType < Compendium_t::Events_t::kEventSpellOffset + 1000 )
+						{
+							int spellID = entryType - Compendium_t::Events_t::kEventSpellOffset;
+							if ( spellID >= 0 && spellID < NUM_SPELLS )
+							{
+								if ( Compendium_t::Events_t::eventLangEntries[tag].find(ItemTooltips.spellItems[spellID].internalName)
+									!= Compendium_t::Events_t::eventLangEntries[tag].end() )
+								{
+									itemname = ItemTooltips.spellItems[spellID].internalName;
+								}
+							}
+						}
+						txt->setText(Compendium_t::Events_t::eventLangEntries[tag][itemname].c_str());
 					}
 					if ( val )
 					{
 						val->setDisabled(false);
-						auto find = Compendium_t::Events_t::playerEvents[tag].find(itemType);
+						auto find = Compendium_t::Events_t::playerEvents[tag].find(entryType);
 						if ( find != Compendium_t::Events_t::playerEvents[tag].end() )
 						{
-							val->setText(std::to_string(find->second.value).c_str());
+							if ( find->second.type == Compendium_t::Events_t::BITFIELD )
+							{
+								int total = 0;
+								for ( int i = 0; i < 32; ++i )
+								{
+									if ( find->second.value & (1 << i) )
+									{
+										++total;
+									}
+								}
+								val->setText(std::to_string(total).c_str());
+							}
+							else
+							{
+								val->setText(std::to_string(find->second.value).c_str());
+							}
 						}
 						else
 						{
@@ -33173,8 +33263,8 @@ failed:
 			return;
 		}
 		auto& entry = CompendiumEntries.monsters[name];
-		compendiumMonsterCurrent.first = name;
-		compendiumMonsterCurrent.second = entry.models.empty() ? "" : entry.models[local_rng.rand() % entry.models.size()];
+		compendiumEntityCurrent.first = name;
+		compendiumEntityCurrent.second = entry.models.empty() ? "" : entry.models[local_rng.rand() % entry.models.size()];
 		if ( true /*compendiumMonster */ )
 		{
 			if ( true /*auto myStats = compendiumMonster->getStats()*/ )
@@ -33194,6 +33284,21 @@ failed:
 				}
 				if ( Frame* page_right = parent->findFrame("page_right") )
 				{
+					// find records for this item
+					if ( Compendium_t::Events_t::monsterUniqueIDLookup.find(entry.unique_npc)
+						!= Compendium_t::Events_t::monsterUniqueIDLookup.end() )
+					{
+						populateRecordsSectionItems(page_right, 
+							Compendium_t::Events_t::monsterUniqueIDLookup[entry.unique_npc] + Compendium_t::Events_t::kEventMonsterOffset, 
+							entry.unique_npc.c_str());
+					}
+					else
+					{
+						populateRecordsSectionItems(page_right, 
+							entry.monsterType + Compendium_t::Events_t::kEventMonsterOffset, 
+							monstertypename[entry.monsterType]);
+					}
+
 					if ( page_right = page_right->findFrame("page_right_inner") )
 					{
 						if ( auto txt = page_right->findField("hp") )
@@ -33455,7 +33560,6 @@ failed:
 								}
 							}
 						}
-
 					}
 				}
 			}
@@ -34439,7 +34543,11 @@ failed:
 		model_viewer->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
 			if ( compendium_current == "monsters" )
 			{
-				drawMonsterPreview(compendiumMonsterCurrent.first, compendiumMonsterCurrent.second, compendiumMonster, pos, 0.0);
+				drawObjectPreview(compendiumEntityCurrent.first, compendiumEntityCurrent.second, compendiumMonster, pos, 0.0);
+			}
+			else if ( compendium_current == "world" )
+			{
+				drawObjectPreview(compendiumEntityCurrent.first, compendiumEntityCurrent.second, nullptr, pos, 0.0);
 			}
 			else if ( compendium_current == "items" )
 			{
@@ -34455,9 +34563,10 @@ failed:
 			{
 				compendiumMonster->attack(compendiumMonster->getAttackPose(), 0, nullptr);
 			}*/
-
-			if ( ticks % TICKS_PER_SECOND/2 == 0 )
+			static ConsoleVariable<bool> cvar_compendiumautoreload("/compendiumautoreload", true);
+			if ( *cvar_compendiumautoreload && (ticks % TICKS_PER_SECOND/2 == 0) )
 			{
+				consoleCommand("/reloadcompendiumlimbs");
 				if ( compendium_current == "monsters" )
 				{
 					CompendiumEntries.readMonstersFromFile();

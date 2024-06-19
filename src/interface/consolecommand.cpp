@@ -4863,6 +4863,12 @@ namespace ConsoleCommands {
 		}
 	});
 
+	static ConsoleCommand ccmd_reloadcompendiumlimbs("/reloadcompendiumlimbs", "reloads compendium entries", []CCMD{
+			CompendiumEntries.compendiumObjectLimbs.clear();
+			CompendiumEntries.readModelLimbsFromFile("monster");
+			CompendiumEntries.readModelLimbsFromFile("world");
+		});
+
 	static ConsoleCommand ccmd_reloadcompendiummonsters("/reloadcompendiummonsters", "reloads compendium entries", []CCMD{
 		CompendiumEntries.readMonstersFromFile();
 		});

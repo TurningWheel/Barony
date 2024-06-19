@@ -454,11 +454,11 @@ typedef struct map_t
 	char author[32]; // author of the map
 	unsigned int width, height, skybox;  // size of the map + skybox
 	Sint32 flags[16];
-	Sint32* tiles;
+	Sint32* tiles = nullptr;
 	std::unordered_map<Sint32, node_t*> entities_map;
-	list_t* entities;
-	list_t* creatures; //A list of Entity* pointers.
-	list_t* worldUI; //A list of Entity* pointers.
+	list_t* entities = nullptr;
+	list_t* creatures = nullptr; //A list of Entity* pointers.
+	list_t* worldUI = nullptr; //A list of Entity* pointers.
 	bool* trapexcludelocations = nullptr;
 	bool* monsterexcludelocations = nullptr;
 	bool* lootexcludelocations = nullptr;

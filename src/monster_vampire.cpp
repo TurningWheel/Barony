@@ -97,6 +97,7 @@ void initVampire(Entity* my, Stat* myStats)
 							if ( followerStats )
 							{
 								strcpy(followerStats->name, "enslaved ghoul");
+								followerStats->setAttribute("special_npc", "enslaved ghoul");
 								followerStats->leader_uid = entity->parent;
 							}
 							entity->seedEntityRNG(rng.getU32());

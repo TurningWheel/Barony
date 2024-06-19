@@ -10718,7 +10718,6 @@ void Compendium_t::readItemsFromFile()
 	CompendiumItems_t::contentsMap.clear();
 	Compendium_t::Events_t::itemEventLookup.clear();
 	Compendium_t::Events_t::eventItemLookup.clear();
-	Compendium_t::Events_t::itemDisplayedEventsList.clear();
 	for ( auto itr = d["contents"].Begin(); itr != d["contents"].End(); ++itr )
 	{
 		for ( auto itr2 = itr->MemberBegin(); itr2 != itr->MemberEnd(); ++itr2 )
@@ -10815,7 +10814,12 @@ void Compendium_t::readItemsFromFile()
 							const int itemType = ItemTooltips.itemNameStringToItemID[item.name];
 							if ( itemType >= WOODEN_SHIELD && itemType < NUMITEMS )
 							{
-								Compendium_t::Events_t::itemDisplayedEventsList[itemType].push_back((Compendium_t::EventTags)find2->second.id);
+								auto& vec = Compendium_t::Events_t::itemDisplayedEventsList[itemType];
+								if ( std::find(vec.begin(), vec.end(), (Compendium_t::EventTags)find2->second.id)
+									== vec.end() )
+								{
+									vec.push_back((Compendium_t::EventTags)find2->second.id);
+								}
 							}
 						}
 					}
@@ -11089,11 +11093,21 @@ void Compendium_t::readMagicFromFile()
 							const int itemType = spells ? SPELL_ITEM : ItemTooltips.itemNameStringToItemID[item.name];
 							if ( itemType == SPELL_ITEM )
 							{
-								Compendium_t::Events_t::itemDisplayedEventsList[Compendium_t::Events_t::kEventSpellOffset + item.spellID].push_back((Compendium_t::EventTags)find2->second.id);
+								auto& vec = Compendium_t::Events_t::itemDisplayedEventsList[Compendium_t::Events_t::kEventSpellOffset + item.spellID];
+								if ( std::find(vec.begin(), vec.end(), (Compendium_t::EventTags)find2->second.id)
+									== vec.end() )
+								{
+									vec.push_back((Compendium_t::EventTags)find2->second.id);
+								}
 							}
 							else if ( itemType >= WOODEN_SHIELD && itemType < NUMITEMS )
 							{
-								Compendium_t::Events_t::itemDisplayedEventsList[itemType].push_back((Compendium_t::EventTags)find2->second.id);
+								auto& vec = Compendium_t::Events_t::itemDisplayedEventsList[itemType];
+								if ( std::find(vec.begin(), vec.end(), (Compendium_t::EventTags)find2->second.id)
+									== vec.end() )
+								{
+									vec.push_back((Compendium_t::EventTags)find2->second.id);
+								}
 							}
 						}
 					}
@@ -11221,6 +11235,10 @@ void Compendium_t::readWorldFromFile()
 		jsonVecToVec(w["blurb"], obj.blurb);
 		jsonVecToVec(w["details"], obj.details);
 		obj.imagePath = w["img"].GetString();
+		if ( w.HasMember("models") )
+		{
+			jsonVecToVec(w["models"], obj.models);
+		}
 
 		Compendium_t::Events_t::eventWorldIDLookup[name] = obj.id;
 		if ( w.HasMember("events") )
@@ -11239,7 +11257,7 @@ void Compendium_t::readWorldFromFile()
 				}
 			}
 		}
-		/*if ( w.HasMember("events_display") )
+		if ( w.HasMember("events_display") )
 		{
 			for ( auto itr = w["events_display"].Begin(); itr != w["events_display"].End(); ++itr )
 			{
@@ -11250,11 +11268,16 @@ void Compendium_t::readWorldFromFile()
 					auto find2 = Compendium_t::Events_t::events.find(find->second);
 					if ( find2 != Compendium_t::Events_t::events.end() )
 					{
-						Compendium_t::Events_t::itemDisplayedEventsList[itemType].push_back((Compendium_t::EventTags)find2->second.id);
+						auto& vec = Compendium_t::Events_t::itemDisplayedEventsList[Compendium_t::Events_t::kEventWorldOffset + obj.id];
+						if ( std::find(vec.begin(), vec.end(), (Compendium_t::EventTags)find2->second.id)
+							== vec.end() )
+						{
+							vec.push_back((Compendium_t::EventTags)find2->second.id);
+						}
 					}
 				}
 			}
-		}*/
+		}
 	}
 }
 
@@ -11367,6 +11390,7 @@ void Compendium_t::readMonstersFromFile()
 		auto& m = itr->value;
 		auto& monster = monsters[itr->name.GetString()];
 		monster.monsterType = monsterType;
+		monster.unique_npc = m.HasMember("unique_npc") ? m["unique_npc"].GetString() : "";
 		jsonVecToVec(m["blurb"], monster.blurb);
 		auto& stats = m["stats"];
 		jsonVecToVec(stats["hp"], monster.hp);
@@ -11449,16 +11473,9 @@ void Compendium_t::Events_t::readEventsTranslations()
 			{
 				EventTags tag = eventIdLookup[find->first];
 				auto& entry = eventLangEntries[tag];
-				if ( itr2->value.HasMember("default") )
+				for ( auto itr3 = itr2->value.MemberBegin(); itr3 != itr2->value.MemberEnd(); ++itr3 )
 				{
-					entry["default"] = itr2->value["default"].GetString();
-				}
-				if ( itr2->value.HasMember("overrides") )
-				{
-					for ( auto itr3 = itr2->value["overrides"].MemberBegin(); itr3 != itr2->value["overrides"].MemberEnd(); ++itr3 )
-					{
-						entry[itr3->name.GetString()] = itr3->value.GetString();
-					}
+					entry[itr3->name.GetString()] = itr3->value.GetString();
 				}
 			}
 		}
@@ -12577,12 +12594,12 @@ void Compendium_t::Events_t::sendClientDataOverNet(const int playernum)
 	}
 }
 
-void Compendium_t::readMonsterLimbsFromFile()
+void Compendium_t::readModelLimbsFromFile(std::string section)
 {
-	std::string fullpath = "data/compendium/monster_models/";
+	std::string fullpath = "data/compendium/" + section + "_models/";
 	for ( auto f : directoryContents(fullpath.c_str(), false, true) )
 	{
-		std::string inputPath = "/data/compendium/monster_models/" + f;
+		std::string inputPath = fullpath + f;
 		std::string path = PHYSFS_getRealDir(inputPath.c_str()) ? PHYSFS_getRealDir(inputPath.c_str()) : "";
 		if ( path != "" )
 		{
@@ -12601,19 +12618,91 @@ void Compendium_t::readMonsterLimbsFromFile()
 
 			rapidjson::Document d;
 			d.ParseStream(is);
-			if ( !d.HasMember("version") || !d.HasMember("limbs") || !d.HasMember("statue_id") )
+			if ( !d.IsObject() || !d.HasMember("version") || !d.HasMember("limbs") )
 			{
 				printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
 				return;
 			}
 			int version = d["version"].GetInt();
-			Uint32 statueId = d["statue_id"].GetUint();
 
 			std::string filename = f.substr(0, f.find(".json"));
-			auto& allLimbs = compendiumMonsterLimbs[filename];
+			auto& allLimbs = compendiumObjectLimbs[filename];
 			allLimbs.clear();
 
+			compendiumObjectMapTiles.erase(filename);
+			int w = 0;
+			int h = 0;
 			int index = 0;
+			if ( d.HasMember("map_tiles") )
+			{
+				auto& m = compendiumObjectMapTiles[filename];
+				if ( d["map_tiles"].HasMember("floor") 
+					&& d["map_tiles"].HasMember("mid") 
+					&& d["map_tiles"].HasMember("top")
+					&& d["map_tiles"].HasMember("width") 
+					&& d["map_tiles"].HasMember("height") )
+				{
+					if ( d["map_tiles"]["floor"].IsArray()
+						&& d["map_tiles"]["mid"].IsArray()
+						&& d["map_tiles"]["top"].IsArray() )
+					{
+						auto& floor = d["map_tiles"]["floor"].GetArray();
+						auto& mid = d["map_tiles"]["mid"].GetArray();
+						auto& top = d["map_tiles"]["top"].GetArray();
+						w = d["map_tiles"]["width"].GetInt();
+						h = d["map_tiles"]["height"].GetInt();
+						if ( floor.Size() == mid.Size() &&
+							floor.Size() == top.Size() && floor.Size() == (w * h) )
+						{
+							m.first.width = w;
+							m.first.height = h;
+							if ( d["map_tiles"].HasMember("ceiling") )
+							{
+								m.first.ceiling = d["map_tiles"]["ceiling"].GetInt();
+							}
+							auto& tiles = m.second;
+							tiles.resize(w * h * MAPLAYERS);
+							for ( int z = 0; z < MAPLAYERS; ++z )
+							{
+								int x = 0;
+								int y = 0;
+
+								auto& arr = (z == 0) ? floor : ((z == 1) ? mid : top);
+								for ( auto tile = arr.Begin(); tile != arr.End(); ++tile )
+								{
+									int index = z + (y * MAPLAYERS) + (x * MAPLAYERS * h);
+									tiles[index] = tile->GetInt();
+
+									// fix animated tiles so they always start on the correct index
+									constexpr int numTileAtlases = sizeof(AnimatedTile::indices) / sizeof(AnimatedTile::indices[0]);
+									if ( animatedtiles[tiles[index]] ) {
+										auto find = tileAnimations.find(tiles[index]);
+										if ( find == tileAnimations.end() ) {
+											// this is not the correct index!
+											for ( const auto& pair : tileAnimations ) {
+												const auto& animation = pair.second;
+												for ( int i = 0; i < numTileAtlases; ++i ) {
+													if ( animation.indices[i] == tiles[index] ) {
+														tiles[index] = animation.indices[0];
+													}
+												}
+											}
+										}
+									}
+
+									++x;
+									if ( x >= w )
+									{
+										x = 0;
+										++y;
+									}
+								}
+
+							}
+						}
+					}
+				}
+			}
 			for ( auto itr = d["limbs"].Begin(); itr != d["limbs"].End(); ++itr )
 			{
 				/*if ( d.HasMember("height_offset") )
@@ -12632,6 +12721,31 @@ void Compendium_t::readMonsterLimbsFromFile()
 				{
 					limb.x = (*itr)["x"].GetDouble();
 					limb.y = (*itr)["y"].GetDouble();
+					limb.x += 8.0;
+					limb.y += 8.0;
+
+					if ( w > 0 && h > 0 )
+					{
+						// position in center of map
+						if ( w % 2 == 1 )
+						{
+							limb.x += 16.0 * (w / 2);
+						}
+						else
+						{
+							limb.x += 16.0 * ((w - 1) / 2);
+							limb.x += 8.0;
+						}
+						if ( h % 2 == 1 )
+						{
+							limb.y += 16.0 * (h / 2);
+						}
+						else
+						{
+							limb.y += 16.0 * ((h - 1) / 2);
+							limb.y += 8.0;
+						}
+					}
 				}
 				limb.z = (*itr)["z"].GetDouble();
 				limb.focalx = (*itr)["focalx"].GetDouble();
@@ -12640,6 +12754,10 @@ void Compendium_t::readMonsterLimbsFromFile()
 				limb.pitch = (*itr)["pitch"].GetDouble();
 				limb.roll = (*itr)["roll"].GetDouble();
 				limb.yaw = (*itr)["yaw"].GetDouble();
+				if ( (*itr).HasMember("yaw_degrees") )
+				{
+					limb.yaw += PI * (*itr)["yaw_degrees"].GetInt() / 180.0;
+				}
 				limb.sprite = (*itr)["sprite"].GetInt();
 
 				++index;

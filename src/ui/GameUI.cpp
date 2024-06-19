@@ -21617,7 +21617,7 @@ void drawItemPreview(Entity* item, SDL_Rect pos, real_t offsetyaw, bool dark)
 
 	view.winw = pos.w;
 	view.winh = pos.h;
-	glBeginCamera(&view, false);
+	glBeginCamera(&view, false, map);
 	bool b = item->flags[BRIGHT];
 	if ( !dark ) { item->flags[BRIGHT] = true; }
 	if ( !item->flags[INVISIBLE] )
@@ -21639,11 +21639,306 @@ void drawItemPreview(Entity* item, SDL_Rect pos, real_t offsetyaw, bool dark)
 		// blending gets disabled after objects are drawn, so re-enable it.
 		GL_CHECK_ERR(glEnable(GL_BLEND));
 	}
-	glEndCamera(&view, false);
+	glEndCamera(&view, false, map);
 	::fov = ofov;
 }
 
-void drawMonsterPreview(std::string name, std::string modelsPath, Entity* monster, SDL_Rect pos, real_t offsetyaw, bool dark)
+
+void glDrawWorldTile(view_t* camera, int mode, map_t& map)
+{
+	if ( !camera )
+	{
+		return;
+	}
+
+	float getLightAtModifier = 1.f;
+
+	// bind core shader
+	auto& shader = worldShader;
+	shader.bind();
+
+
+	// upload uniforms for core shader
+	if ( &shader != &worldDarkShader ) {
+		const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
+		GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
+		const float cameraPos[4] = { (float)camera->x * 32.f, -(float)camera->z, (float)camera->y * 32.f, 1.f };
+		GL_CHECK_ERR(glUniform4fv(shader.uniform("uCameraPos"), 1, cameraPos));
+	}
+
+	std::vector<Chunk> chunks;
+	chunks.emplace_back();
+	auto& chunk = chunks.back();
+	chunk.build(map, map.flags[MAP_FLAG_CEILINGTILE] > 0, 0, 0, map.width, map.height);
+	for ( auto& chunk : chunks )
+	{
+		worldShader.bind();
+		chunk.draw();
+	}
+}
+
+void actObjectPreviewFlame(Entity* my)
+{
+	if ( my->skill[0] > 0 )
+	{
+		my->skill[0]--;
+		if ( my->skill[0] <= 0 )
+		{
+			list_RemoveNode(my->mynode);
+			return;
+		}
+	}
+	my->x += my->vel_x;
+	my->y += my->vel_y;
+	my->z += my->vel_z;
+}
+
+Entity* createDrawObjectCustomParticle(Entity* parentent, int sprite, real_t scale, real_t spreadReduce)
+{
+	if ( !parentent )
+	{
+		return nullptr;
+	}
+	Entity* entity = newEntity(sprite, 1, &parentent->children, nullptr); //Particle entity.
+
+	int size = 50 / spreadReduce;
+	entity->x = parentent->x + (local_rng.rand() % size - size / 2) / 20.f;
+	entity->y = parentent->y + (local_rng.rand() % size - size / 2) / 20.f;
+	entity->z = parentent->z + (local_rng.rand() % size - size / 2) / 20.f;
+	entity->scalex = scale;
+	entity->scaley = scale;
+	entity->scalez = scale;
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->yaw = parentent->yaw;
+	entity->pitch = parentent->pitch;
+	entity->roll = parentent->roll;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[PASSABLE] = true;
+	entity->flags[UNCLICKABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UPDATENEEDED] = false;
+	entity->behavior = &actMagicParticle;
+	return entity;
+}
+
+#define SPEARTRAP_INIT my->skill[0]
+#define SPEARTRAP_STATUS my->skill[3]
+#define SPEARTRAP_OUTTIME my->skill[4]
+#define SPEARTRAP_STARTHEIGHT my->fskill[0]
+#define SPEARTRAP_VELZ my->vel_z
+void actObjectPreviewSpikeTrap(Entity* my)
+{
+	if ( !SPEARTRAP_INIT )
+	{
+		SPEARTRAP_INIT = 1;
+		SPEARTRAP_STARTHEIGHT = my->z;
+	}
+
+	my->skill[5]++;
+	if ( my->skill[5] >= TICKS_PER_SECOND * 1 )
+	{
+		my->skill[5] = 0;
+		SPEARTRAP_STATUS = SPEARTRAP_STATUS ? 0 : 1;
+		SPEARTRAP_OUTTIME = 0;
+	}
+
+	if ( !SPEARTRAP_STATUS || SPEARTRAP_OUTTIME > 60 )
+	{
+		// retract spears
+		if ( my->z < SPEARTRAP_STARTHEIGHT )
+		{
+			SPEARTRAP_VELZ += .25;
+			my->z = std::min(SPEARTRAP_STARTHEIGHT, my->z + SPEARTRAP_VELZ);
+		}
+		else
+		{
+			SPEARTRAP_VELZ = 0;
+		}
+	}
+	else
+	{
+		// shoot out spears
+		my->z = fmax(SPEARTRAP_STARTHEIGHT - 20, my->z - 4);
+	}
+}
+
+void actObjectPreviewMagic(Entity* my)
+{
+	if ( my->skill[0] > 0 )
+	{
+		my->skill[0]--;
+		if ( my->skill[0] <= 0 )
+		{
+			list_RemoveNode(my->mynode);
+			return;
+		}
+	}
+	my->x += my->vel_x;
+	my->y += my->vel_y;
+	my->z += my->vel_z;
+
+	createDrawObjectCustomParticle(my, my->sprite, 0.7, 4);
+}
+
+void actObjectPreviewArrow(Entity* my)
+{
+	if ( my->skill[0] > 0 )
+	{
+		my->skill[0]--;
+		if ( my->skill[0] <= 0 )
+		{
+			list_RemoveNode(my->mynode);
+			return;
+		}
+	}
+	my->x += my->vel_x;
+	my->y += my->vel_y;
+	my->z += my->vel_z;
+
+	int sprite = 160;
+	switch ( my->sprite )
+	{
+	case 924:
+		sprite = 160;
+		break;
+	case 925:
+		sprite = 158;
+		break;
+	case 926:
+		sprite = 156;
+		break;
+	case 927:
+		sprite = SPRITE_FLAME;
+		break;
+	case 928:
+		sprite = 159;
+		break;
+	case 929:
+		sprite = 155;
+		break;
+	case 930:
+		sprite = 157;
+		break;
+	default:
+		break;
+	}
+
+	if ( Entity* particle = createDrawObjectCustomParticle(my, sprite, 0.5, 4) )
+	{
+		particle->flags[SPRITE] = true;
+	}
+}
+
+#define BOULDER_STOPPED my->skill[0]
+#define BOULDER_NOGROUND my->skill[3]
+void actObjectPreviewBoulder(Entity* my)
+{
+	bool noground = false;
+	int x = std::min<int>(std::max(0, (int)(my->x / 16)), CompendiumEntries.compendiumMap.width);
+	int y = std::min<int>(std::max(0, (int)(my->y / 16)), CompendiumEntries.compendiumMap.height);
+	if ( x >= CompendiumEntries.compendiumMap.width || y >= CompendiumEntries.compendiumMap.height )
+	{
+		noground = true;
+	}
+
+	// gravity
+	bool nobounce = true;
+	if ( !BOULDER_NOGROUND )
+	{
+		if ( noground )
+		{
+			BOULDER_NOGROUND = true;
+		}
+	}
+	if ( my->z < 0 || BOULDER_NOGROUND )
+	{
+		my->vel_z = std::min<real_t>(my->vel_z + .1, 3.0);
+		my->vel_x *= 0.85f;
+		my->vel_y *= 0.85f;
+		nobounce = true;
+		if ( my->z >= 128 )
+		{
+			list_RemoveNode(my->mynode);
+			return;
+		}
+	}
+	else
+	{
+		if ( fabs(my->vel_z) > 1 )
+		{
+			my->vel_z = -(my->vel_z / 2) * (1 / 1.0);
+			nobounce = true;
+		}
+		else
+		{
+			my->vel_z = 0;
+			nobounce = false;
+		}
+		my->z = 0;
+	}
+	my->z += my->vel_z;
+	if ( nobounce )
+	{
+		if ( !BOULDER_STOPPED )
+		{
+			my->x += my->vel_x;
+			my->y += my->vel_y;
+			double dist = sqrt(pow(my->vel_x, 2) + pow(my->vel_y, 2));
+			my->pitch += dist * .06;
+			my->roll = PI / 2;
+		}
+	}
+	else if ( !BOULDER_STOPPED )
+	{
+		// horizontal velocity
+		my->vel_x += cos(my->yaw) * .1;
+		my->vel_y += sin(my->yaw) * .1;
+		real_t maxSpeed = 1.5;
+		/*if ( my->sprite == BOULDER_LAVA_SPRITE || my->sprite == BOULDER_ARCANE_SPRITE )
+		{
+			maxSpeed = 2.5;
+		}*/
+		maxSpeed *= 1.0;
+		if ( my->vel_x > maxSpeed )
+		{
+			my->vel_x = maxSpeed;
+		}
+		if ( my->vel_x < -maxSpeed )
+		{
+			my->vel_x = -maxSpeed;
+		}
+		if ( my->vel_y > maxSpeed )
+		{
+			my->vel_y = maxSpeed;
+		}
+		if ( my->vel_y < -maxSpeed )
+		{
+			my->vel_y = -maxSpeed;
+		}
+
+		real_t ox = my->x;
+		real_t oy = my->y;
+		my->x += my->vel_x;
+		my->y += my->vel_y;
+		my->x = std::min(my->x, (real_t)CompendiumEntries.compendiumMap.width * 16.0 + 8.0);
+		my->y = std::min(my->y, (real_t)CompendiumEntries.compendiumMap.height * 16.0 + 8.0);
+
+		double dist = sqrt(pow(my->vel_x, 2) + pow(my->vel_y, 2));
+		if ( my->x != (ox + my->vel_x) || my->y != (oy + my->vel_y) )
+		{
+			BOULDER_STOPPED = 1;
+		}
+		else
+		{
+			my->pitch += dist * .06;
+			my->roll = PI / 2;
+		}
+	}
+}
+
+Uint32 drawObjectLastTick = 0;
+void drawObjectPreview(std::string name, std::string modelsPath, Entity* object, SDL_Rect pos, real_t offsetyaw, bool dark)
 {
 	static int fov = 50;
 	static real_t ang = 0.0;
@@ -21689,24 +21984,35 @@ void drawMonsterPreview(std::string name, std::string modelsPath, Entity* monste
 	::fov = fov;
 
 	std::vector<Entity>* limbsArray = nullptr;
-	if ( CompendiumEntries.compendiumMonsterLimbs.find(modelsPath) != CompendiumEntries.compendiumMonsterLimbs.end() )
+	if ( CompendiumEntries.compendiumObjectLimbs.find(modelsPath) != CompendiumEntries.compendiumObjectLimbs.end() )
 	{
-		limbsArray = &CompendiumEntries.compendiumMonsterLimbs[modelsPath];
-		monster = &(limbsArray->at(0));
+		limbsArray = &CompendiumEntries.compendiumObjectLimbs[modelsPath];
+		if ( limbsArray->size() == 0 )
+		{
+			return;
+		}
+		object = &(limbsArray->at(0));
 	}
 
-	if ( !monster )
+	if ( !object )
 	{
 		return;
 	}
 
-	view.x = monster->x / 16.0 + ((.92 + zoom) * cos(offsetyaw
-		+ ang + (*cvar_compendium_portrait_static_angle ? monster->yaw : 0)));
-	view.y = monster->y / 16.0 + ((.92 + zoom) * sin(offsetyaw
-		+ ang + (*cvar_compendium_portrait_static_angle ? monster->yaw : 0)));
-	view.z = monster->z * 2 + z;
+	bool doTick = false;
+	if ( drawObjectLastTick != ticks )
+	{
+		drawObjectLastTick = ticks;
+		doTick = true;
+	}
+
+	view.x = object->x / 16.0 + ((.92 + zoom) * cos(offsetyaw
+		+ ang + (*cvar_compendium_portrait_static_angle ? object->yaw : 0)));
+	view.y = object->y / 16.0 + ((.92 + zoom) * sin(offsetyaw
+		+ ang + (*cvar_compendium_portrait_static_angle ? object->yaw : 0)));
+	view.z = object->z * 2 + z;
 	view.ang = (offsetyaw - PI
-		+ (*cvar_compendium_portrait_static_angle ? monster->yaw : 0) + ang); //5 * PI / 4;
+		+ (*cvar_compendium_portrait_static_angle ? object->yaw : 0) + ang); //5 * PI / 4;
 	view.vang = PI / 20 + vang;
 
 	view.winx = pos.x;
@@ -21715,19 +22021,213 @@ void drawMonsterPreview(std::string name, std::string modelsPath, Entity* monste
 
 	view.winw = pos.w;
 	view.winh = pos.h;
-	glBeginCamera(&view, false);
-	bool b = monster->flags[BRIGHT];
-	if ( !dark ) { monster->flags[BRIGHT] = true; }
-	if ( !monster->flags[INVISIBLE] )
+
+	auto& tmpMap = CompendiumEntries.compendiumMap;
+	glBeginCamera(&view, false, tmpMap);
+
+	auto findMap = CompendiumEntries.compendiumObjectMapTiles.find(modelsPath);
+	if ( findMap != CompendiumEntries.compendiumObjectMapTiles.end() )
 	{
-		glDrawVoxel(&view, monster, REALCOLORS);
+		strcpy(tmpMap.name, "compendium");
+		auto& props = findMap->second.first;
+		tmpMap.width = props.width;
+		tmpMap.height = props.height;
+		tmpMap.flags[MAP_FLAG_CEILINGTILE] = props.ceiling;
+		if ( tmpMap.tiles )
+		{
+			free(tmpMap.tiles);
+			tmpMap.tiles = nullptr;
+		}
+		tmpMap.tiles = (Sint32*)malloc(sizeof(Sint32) * tmpMap.width * tmpMap.height * MAPLAYERS);
+		if ( tmpMap.tiles )
+		{
+			constexpr int numTileAtlases = sizeof(AnimatedTile::indices) / sizeof(AnimatedTile::indices[0]);
+			for ( int x = 0; x < tmpMap.width; ++x )
+			{
+				for ( int y = 0; y < tmpMap.height; ++y )
+				{
+					for ( int z = 0; z < 3; ++z )
+					{
+						int index = z + (y * MAPLAYERS) + (x * MAPLAYERS * tmpMap.height);
+						tmpMap.tiles[index] = 0;
+
+						if ( index < findMap->second.second.size() )
+						{
+							tmpMap.tiles[index] = findMap->second.second[index];
+						}
+
+						int tile = tmpMap.tiles[index];
+						auto find = tileAnimations.find(tile);
+						if ( find != tileAnimations.end() )
+						{
+							const int atlasIndex = (ticks % (numTileAtlases * 10)) / 10;
+							tmpMap.tiles[index] = find->second.indices[atlasIndex];
+						}
+					}
+				}
+			}
+		}
+		glDrawWorldTile(&view, REALCOLORS, tmpMap);
 	}
 
-	monster->flags[BRIGHT] = b;
+	bool b = object->flags[BRIGHT];
+	if ( !dark ) { object->flags[BRIGHT] = true; }
+	if ( !object->flags[INVISIBLE] )
+	{
+		glDrawVoxel(&view, object, REALCOLORS);
+	}
+
+	object->flags[BRIGHT] = b;
 	int c = 0;
 
 	if ( limbsArray )
 	{
+		if ( doTick )
+		{
+			for ( auto& limb : *limbsArray )
+			{
+				if ( limb.sprite == 3 ) // torch
+				{
+					Entity* flame = newEntity(SPRITE_FLAME, 0, &limb.children, nullptr);
+					flame->x = limb.x;
+					flame->y = limb.y;
+					flame->z = limb.z;
+					flame->fskill[1] = limb.x;
+					flame->fskill[2] = limb.y;
+					flame->fskill[3] = limb.z;
+					flame->sizex = 6;
+					flame->sizey = 6;
+					flame->yaw = (local_rng.rand() % 360) * PI / 180.0;
+					flame->pitch = (local_rng.rand() % 360) * PI / 180.0;
+					flame->roll = (local_rng.rand() % 360) * PI / 180.0;
+					real_t vel = (local_rng.rand() % 10) / 10.0;
+					flame->skill[0] = 5; // life-span
+					flame->vel_x = vel * cos(flame->yaw) * .1;
+					flame->vel_y = vel * sin(flame->yaw) * .1;
+					flame->vel_z = -.25;
+					flame->flags[SPRITE] = true;
+					flame->behavior = &actObjectPreviewFlame;
+					
+					flame->x += 0.25 * cos(limb.yaw);
+					flame->y += 0.25 * sin(limb.yaw);
+					flame->z -= 2.5 - 7;
+				}
+				else if ( limb.sprite == 252 )
+				{
+					if ( list_Size(&limb.children) == 0 )
+					{
+						Entity* entity = newEntity(245, 0, &limb.children, nullptr);
+						entity->x = limb.x;
+						entity->y = limb.y;
+						entity->z = -64;
+						entity->behavior = &actObjectPreviewBoulder;
+					}
+				}
+				else if ( limb.sprite == 166 )
+				{
+					if ( list_Size(&limb.children) == 0 )
+					{
+						std::vector<int> arrows = {
+							924,
+							925,
+							926,
+							927,
+							928,
+							929,
+							930
+						};
+						Entity* entity = newEntity(arrows[local_rng.rand() % arrows.size()], 0, &limb.children, nullptr);
+						entity->x = limb.x;
+						entity->y = limb.y;
+						entity->z = limb.z;
+						entity->behavior = &actObjectPreviewArrow;
+						entity->vel_x = 4 * cos(limb.yaw);
+						entity->vel_y = 4 * sin(limb.yaw);
+						entity->skill[0] = TICKS_PER_SECOND * 1.5;
+						entity->yaw = limb.yaw;
+					}
+				}
+				else if ( limb.sprite == 168 )
+				{
+					if ( list_Size(&limb.children) == 0 )
+					{
+						std::vector<int> magic = {
+							168,
+							170,
+							171,
+							172,
+							173
+						};
+						Entity* entity = newEntity(magic[local_rng.rand() % magic.size()], 0, &limb.children, nullptr);
+						entity->x = limb.x;
+						entity->y = limb.y;
+						entity->z = limb.z;
+						entity->behavior = &actObjectPreviewMagic;
+						entity->yaw = limb.yaw + (limb.skill[1] * PI / 2);
+						limb.skill[1]++;
+						if ( limb.skill[1] >= 4 )
+						{
+							limb.skill[1] = 0;
+						}
+						entity->vel_x = 4 * cos(entity->yaw);
+						entity->vel_y = 4 * sin(entity->yaw);
+						entity->skill[0] = TICKS_PER_SECOND;
+					}
+				}
+				else if ( limb.sprite == 644 )
+				{
+					if ( list_Size(&limb.children) == 0 )
+					{
+						std::vector<int> magic = {
+							168,
+							170,
+							171,
+							172,
+							173
+						};
+						Entity* entity = newEntity(magic[local_rng.rand() % magic.size()], 0, &limb.children, nullptr);
+						entity->x = limb.x;
+						entity->y = limb.y;
+						entity->z = limb.z;
+						entity->behavior = &actObjectPreviewMagic;
+						entity->pitch = PI / 2;
+						entity->vel_z = 2;
+						entity->skill[0] = TICKS_PER_SECOND;
+					}
+				}
+				else if ( limb.sprite == 283 )
+				{
+					if ( list_Size(&limb.children) == 0 )
+					{
+						Entity* entity = newEntity(282, 0, &limb.children, nullptr);
+						entity->x = limb.x;
+						entity->y = limb.y;
+						entity->z = 16;
+						entity->focalz = 7;
+						entity->behavior = &actObjectPreviewSpikeTrap;
+					}
+				}
+
+				for ( auto node = limb.children.first; node; )
+				{
+					Entity* entity = (Entity*)node->element;
+					node = node->next;
+					for ( auto node2 = entity->children.first; node2; )
+					{
+						Entity* entity2 = (Entity*)node2->element;
+						node2 = node2->next;
+						if ( entity2->behavior )
+						{
+							(entity2->behavior)(entity2);
+						}
+					}
+					if ( entity->behavior )
+					{
+						(entity->behavior)(entity);
+					}
+				}
+			}
+		}
 		for ( auto itr = limbsArray->begin(); itr != limbsArray->end(); ++itr )
 		{
 			if ( c == 0 )
@@ -21742,13 +22242,45 @@ void drawMonsterPreview(std::string name, std::string modelsPath, Entity* monste
 				if ( !dark ) { entity->flags[BRIGHT] = true; }
 				glDrawVoxel(&view, entity, REALCOLORS);
 				entity->flags[BRIGHT] = b;
+
+				for ( auto node = entity->children.first; node; node = node->next )
+				{
+					Entity* entity = (Entity*)node->element;
+					bool b = entity->flags[BRIGHT];
+					if ( !dark ) { entity->flags[BRIGHT] = true; }
+					if ( entity->flags[SPRITE] )
+					{
+						glDrawSprite(&view, entity, REALCOLORS);
+					}
+					else
+					{
+						glDrawVoxel(&view, entity, REALCOLORS);
+					}
+					entity->flags[BRIGHT] = b;
+
+					for ( auto node2 = entity->children.first; node2; node2 = node2->next )
+					{
+						Entity* entity = (Entity*)node2->element;
+						bool b = entity->flags[BRIGHT];
+						if ( !dark ) { entity->flags[BRIGHT] = true; }
+						if ( entity->flags[SPRITE] )
+						{
+							glDrawSprite(&view, entity, REALCOLORS);
+						}
+						else
+						{
+							glDrawVoxel(&view, entity, REALCOLORS);
+						}
+						entity->flags[BRIGHT] = b;
+					}
+				}
 			}
 			c++;
 		}
 	}
 	else
 	{
-		for ( node_t* node = monster->children.first; node != nullptr; node = node->next )
+		for ( node_t* node = object->children.first; node != nullptr; node = node->next )
 		{
 			if ( c == 0 )
 			{
@@ -21786,7 +22318,7 @@ void drawMonsterPreview(std::string name, std::string modelsPath, Entity* monste
 		// blending gets disabled after objects are drawn, so re-enable it.
 		GL_CHECK_ERR(glEnable(GL_BLEND));
 	}
-	glEndCamera(&view, false);
+	glEndCamera(&view, false, tmpMap);
 	::fov = ofov;
 }
 
@@ -21824,7 +22356,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 
 		view.winw = pos.w;
 		view.winh = pos.h;
-		glBeginCamera(&view, false);
+		glBeginCamera(&view, false, map);
 		bool b = playerEntity->flags[BRIGHT];
         if (!dark) { playerEntity->flags[BRIGHT] = true; }
 		if ( !playerEntity->flags[INVISIBLE] )
@@ -21916,7 +22448,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
             // blending gets disabled after objects are drawn, so re-enable it.
             GL_CHECK_ERR(glEnable(GL_BLEND));
         }
-        glEndCamera(&view, false);
+        glEndCamera(&view, false, map);
 	}
 	::fov = ofov;
 }

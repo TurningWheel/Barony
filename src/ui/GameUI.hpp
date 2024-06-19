@@ -24,7 +24,7 @@ bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spe
 void resetInventorySlotFrames(const int player);
 void createPlayerInventorySlotFrameElements(Frame* slotFrame);
 void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offsetyaw, bool dark = false);
-void drawMonsterPreview(std::string name, std::string modelsPath, Entity* monster, SDL_Rect pos, real_t offsetyaw, bool dark = false);
+void drawObjectPreview(std::string name, std::string modelsPath, Entity* object, SDL_Rect pos, real_t offsetyaw, bool dark = false);
 void drawItemPreview(Entity* item, SDL_Rect pos, real_t offsetyaw, bool dark = false);
 extern view_t playerPortraitView[MAXPLAYERS];
 void toggleShopBuybackView(const int player);
