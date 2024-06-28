@@ -1656,33 +1656,36 @@ public:
 
 	void generateFollowersForLeaders()
 	{
-		for ( auto& entry : followersToGenerateForLeaders )
+		if ( multiplayer != CLIENT )
 		{
-			MonsterStatCustomManager::StatEntry* followerEntry = monsterStatCustomManager.readFromFile(entry.followerName.c_str());
-			if ( followerEntry )
+			for ( auto& entry : followersToGenerateForLeaders )
 			{
-				Entity* summonedFollower = summonMonsterNoSmoke(static_cast<Monster>(followerEntry->type), entry.x, entry.y);
-				if ( summonedFollower )
+				MonsterStatCustomManager::StatEntry* followerEntry = monsterStatCustomManager.readFromFile(entry.followerName.c_str());
+				if ( followerEntry )
 				{
-					if ( summonedFollower->getStats() )
+					Entity* summonedFollower = summonMonsterNoSmoke(static_cast<Monster>(followerEntry->type), entry.x, entry.y);
+					if ( summonedFollower )
 					{
-						followerEntry->setStatsAndEquipmentToMonster(summonedFollower->getStats());
-						summonedFollower->getStats()->leader_uid = entry.uid;
+						if ( summonedFollower->getStats() )
+						{
+							followerEntry->setStatsAndEquipmentToMonster(summonedFollower->getStats());
+							summonedFollower->getStats()->leader_uid = entry.uid;
+						}
+						summonedFollower->seedEntityRNG(monster_curve_rng.getU32());
 					}
-					summonedFollower->seedEntityRNG(monster_curve_rng.getU32());
+					delete followerEntry;
 				}
-				delete followerEntry;
-			}
-			else
-			{
-				Entity* summonedFollower = summonMonsterNoSmoke(static_cast<Monster>(entry.leaderType), entry.x, entry.y);
-				if ( summonedFollower )
+				else
 				{
-					if ( summonedFollower->getStats() )
+					Entity* summonedFollower = summonMonsterNoSmoke(static_cast<Monster>(entry.leaderType), entry.x, entry.y);
+					if ( summonedFollower )
 					{
-						summonedFollower->getStats()->leader_uid = entry.uid;
+						if ( summonedFollower->getStats() )
+						{
+							summonedFollower->getStats()->leader_uid = entry.uid;
+						}
+						summonedFollower->seedEntityRNG(monster_curve_rng.getU32());
 					}
-					summonedFollower->seedEntityRNG(monster_curve_rng.getU32());
 				}
 			}
 		}
