@@ -1375,6 +1375,16 @@ public:
 	};
 
 	std::vector<LevelCurve> allLevelCurves;
+
+	struct FollowerGenerateDetails_t
+	{
+		real_t x = 0.0;
+		real_t y = 0.0;
+		int leaderType = NOTHING;
+		Uint32 uid = 0;
+		std::string followerName = "";
+	};
+	std::vector<FollowerGenerateDetails_t> followersToGenerateForLeaders;
 	inline bool inUse() { return usingCustomManager; };
 
 	void readFromFile(Uint32 seed)
@@ -1630,38 +1640,53 @@ public:
 				std::string followerName = statEntry->getFollowerVariant();
 				if ( followerName.compare("") && followerName.compare("none") )
 				{
-					MonsterStatCustomManager::StatEntry* followerEntry = monsterStatCustomManager.readFromFile(followerName.c_str());
-					if ( followerEntry )
-					{
-						Entity* summonedFollower = summonMonster(static_cast<Monster>(followerEntry->type), entity->x, entity->y);
-						if ( summonedFollower )
-						{
-							if ( summonedFollower->getStats() )
-							{
-								followerEntry->setStatsAndEquipmentToMonster(summonedFollower->getStats());
-								summonedFollower->getStats()->leader_uid = entity->getUID();
-							}
-							summonedFollower->seedEntityRNG(monster_curve_rng.getU32());
-						}
-						delete followerEntry;
-					}
-					else
-					{
-						Entity* summonedFollower = summonMonster(myStats->type, entity->x, entity->y);
-						if ( summonedFollower )
-						{
-							if ( summonedFollower->getStats() )
-							{
-								summonedFollower->getStats()->leader_uid = entity->getUID();
-							}
-							summonedFollower->seedEntityRNG(monster_curve_rng.getU32());
-						}
-					}
+					followersToGenerateForLeaders.push_back(FollowerGenerateDetails_t());
+					auto& entry = followersToGenerateForLeaders.back();
+					entry.followerName = followerName;
+					entry.x = entity->x;
+					entry.y = entity->y;
+					entry.uid = entity->getUID();
+					entry.leaderType = myStats->type;
 				}
 				--statEntry->numFollowers;
 			}
 			delete statEntry;
 		}
+	}
+
+	void generateFollowersForLeaders()
+	{
+		for ( auto& entry : followersToGenerateForLeaders )
+		{
+			MonsterStatCustomManager::StatEntry* followerEntry = monsterStatCustomManager.readFromFile(entry.followerName.c_str());
+			if ( followerEntry )
+			{
+				Entity* summonedFollower = summonMonsterNoSmoke(static_cast<Monster>(followerEntry->type), entry.x, entry.y);
+				if ( summonedFollower )
+				{
+					if ( summonedFollower->getStats() )
+					{
+						followerEntry->setStatsAndEquipmentToMonster(summonedFollower->getStats());
+						summonedFollower->getStats()->leader_uid = entry.uid;
+					}
+					summonedFollower->seedEntityRNG(monster_curve_rng.getU32());
+				}
+				delete followerEntry;
+			}
+			else
+			{
+				Entity* summonedFollower = summonMonsterNoSmoke(static_cast<Monster>(entry.leaderType), entry.x, entry.y);
+				if ( summonedFollower )
+				{
+					if ( summonedFollower->getStats() )
+					{
+						summonedFollower->getStats()->leader_uid = entry.uid;
+					}
+					summonedFollower->seedEntityRNG(monster_curve_rng.getU32());
+				}
+			}
+		}
+		followersToGenerateForLeaders.clear();
 	}
 
 	void writeSampleToDocument()

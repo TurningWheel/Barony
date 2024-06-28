@@ -4096,6 +4096,7 @@ void assignActions(map_t* map)
 	}
 
 	bool customMonsterCurveExists = false;
+	monsterCurveCustomManager.followersToGenerateForLeaders.clear();
 	if ( !monsterCurveCustomManager.inUse() )
 	{
 		monsterCurveCustomManager.readFromFile(mapseed);
@@ -7255,6 +7256,11 @@ void assignActions(map_t* map)
 			list_RemoveNode(parentEntity->mynode);    // remove lid
 		}
 		list_RemoveNode(chest->mynode);
+	}
+
+	if ( monsterCurveCustomManager.inUse() )
+	{
+		monsterCurveCustomManager.generateFollowersForLeaders();
 	}
 
     keepInventoryGlobal = svFlags & SV_FLAG_KEEPINVENTORY;
