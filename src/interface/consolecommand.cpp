@@ -4867,6 +4867,7 @@ namespace ConsoleCommands {
 			CompendiumEntries.compendiumObjectLimbs.clear();
 			CompendiumEntries.readModelLimbsFromFile("monster");
 			CompendiumEntries.readModelLimbsFromFile("world");
+			CompendiumEntries.readModelLimbsFromFile("codex");
 		});
 
 	static ConsoleCommand ccmd_reloadcompendiummonsters("/reloadcompendiummonsters", "reloads compendium entries", []CCMD{

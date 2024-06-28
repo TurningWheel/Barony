@@ -8508,7 +8508,6 @@ timeToGoAgain:
 		if ( myStats->getAttribute("monster_portrait") != "" )
 		{
 			my->yaw = 0.0;
-			monsterAnimate(my, myStats, 0.2);
 		}
 		else
 		{

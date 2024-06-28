@@ -32543,9 +32543,23 @@ failed:
 #endif
 
 	static Entity* compendiumMonster = nullptr;
+	static bool compendiumMonsterOverride = false;
+	static Uint32 compendiumRNG = 0;
 	static std::pair<std::string, std::string> compendiumEntityCurrent = { "", ""}; // contents name, then model filename
 	static std::vector<Entity*> compendiumMonsterLimbs;
 	static void populateRecordsSectionItems(Frame* page_right, int entryType, const char* entryName = "");
+	static void refreshCompendiumCamera(std::string& modelsPath)
+	{
+		auto find = CompendiumEntries.compendiumObjectLimbs.find(modelsPath);
+		if ( find != CompendiumEntries.compendiumObjectLimbs.end() )
+		{
+			if ( find->second.baseCamera.inUse )
+			{
+				find->second.currentCamera = find->second.baseCamera;
+			}
+		}
+		CompendiumEntries.defaultCamera = Compendium_t::CompendiumView_t();
+	}
 	static Entity* createCompendiumMonster(Monster creature, real_t x, real_t y)
 	{
 		if ( compendiumMonster )
@@ -32562,7 +32576,7 @@ failed:
 		entity->x = x;
 		entity->y = y;
 		entity->z = 6;
-		entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+		entity->yaw = 0.0;
 		entity->behavior = &actMonster;
 		entity->flags[UPDATENEEDED] = false;
 		entity->flags[INVISIBLE] = true;
@@ -32610,10 +32624,38 @@ failed:
 		auto& entry = CompendiumEntries.worldObjects[name];
 
 		compendiumEntityCurrent.first = name;
-		compendiumEntityCurrent.second = entry.models.empty() ? "" : entry.models[local_rng.rand() % entry.models.size()];
+		compendiumEntityCurrent.second = entry.models.empty() ? "" : entry.models[compendiumRNG % entry.models.size()];
+
+		refreshCompendiumCamera(compendiumEntityCurrent.second);
 
 		if ( Frame* page_left = parent->findFrame("page_left") )
 		{
+			if ( auto image_viewer = page_left->findFrame("image_viewer") )
+			{
+				image_viewer->setDisabled(entry.imagePath == "");
+				if ( auto img = image_viewer->findImage("img") )
+				{
+					img->path = entry.imagePath;
+					img->disabled = true;
+					if ( img->path != "" )
+					{
+						img->disabled = false;
+						if ( auto imgGet = Image::get(img->path.c_str()) )
+						{
+							img->pos.w = imgGet->getWidth();
+							img->pos.h = imgGet->getHeight();
+
+							img->pos.x = image_viewer->getSize().w / 2 - img->pos.w / 2;
+							img->pos.y = image_viewer->getSize().h / 2 - img->pos.h / 2;
+						}
+					}
+				}
+			}
+			if ( auto model_viewer = page_left->findFrame("model_viewer") )
+			{
+				model_viewer->setDisabled(entry.imagePath != "");
+			}
+
 			if ( auto blurb = page_left->findField("blurb") )
 			{
 				std::string txt = "";
@@ -32708,6 +32750,18 @@ failed:
 
 	static void refreshCompendiumEntryItemsBlurb(std::string name, Frame* parent)
 	{
+		if ( Frame* page_left = parent->findFrame("page_left") )
+		{
+			if ( auto image_viewer = page_left->findFrame("image_viewer") )
+			{
+				image_viewer->setDisabled(true);
+			}
+			if ( auto model_viewer = page_left->findFrame("model_viewer") )
+			{
+				model_viewer->setDisabled(false);
+			}
+		}
+
 		if ( compendium_current == "items" )
 		{
 			if ( CompendiumEntries.items.find(name) == CompendiumEntries.items.end() )
@@ -32722,6 +32776,7 @@ failed:
 				return;
 			}
 		}
+
 		auto& entry = compendium_current == "items" ? CompendiumEntries.items[name] : CompendiumEntries.magic[name];
 
 		if ( Frame* page_left = parent->findFrame("page_left") )
@@ -32920,10 +32975,12 @@ failed:
 					txt->setColor(compendiumContentsSelectedColor);
 					auto find = ItemTooltips.itemNameStringToItemID.find(toSelect.getName());
 					int itemType = find != ItemTooltips.itemNameStringToItemID.end() ? find->second : -1;
+					std::string modelsPath = "items_single";
 					if ( strstr(toSelect.getName(), "spell_") )
 					{
 						itemType = SPELL_ITEM;
 						Compendium_t::compendiumItemModel.flags[SPRITE] = true;
+						modelsPath = "spells_single";
 					}
 					if ( itemType >= WOODEN_SHIELD && itemType < NUMITEMS )
 					{
@@ -32954,6 +33011,8 @@ failed:
 						Compendium_t::compendiumItemModel.sprite = items[itemType].index + appearance;
 						Compendium_t::compendiumItemModel.skill[10] = itemType;
 						Compendium_t::compendiumItemModel.skill[14] = appearance;
+
+						refreshCompendiumCamera(modelsPath);
 
 						// find records for this item
 						populateRecordsSectionItems(page_right_inner.getParent(), itemLookupIndex);
@@ -33224,8 +33283,39 @@ failed:
 		}
 		auto& entry = CompendiumEntries.codex[name];
 
+		compendiumEntityCurrent.first = name;
+		compendiumEntityCurrent.second = entry.models.empty() ? "" : entry.models[compendiumRNG % entry.models.size()];
+
+		refreshCompendiumCamera(compendiumEntityCurrent.second);
+
 		if ( Frame* page_left = parent->findFrame("page_left") )
 		{
+			if ( auto image_viewer = page_left->findFrame("image_viewer") )
+			{
+				image_viewer->setDisabled(entry.imagePath == "");
+				if ( auto img = image_viewer->findImage("img") )
+				{
+					img->path = entry.imagePath;
+					img->disabled = true;
+					if ( img->path != "" )
+					{
+						img->disabled = false;
+						if ( auto imgGet = Image::get(img->path.c_str()) )
+						{
+							img->pos.w = imgGet->getWidth();
+							img->pos.h = imgGet->getHeight();
+
+							img->pos.x = image_viewer->getSize().w / 2 - img->pos.w / 2;
+							img->pos.y = image_viewer->getSize().h / 2 - img->pos.h / 2;
+						}
+					}
+				}
+			}
+			if ( auto model_viewer = page_left->findFrame("model_viewer") )
+			{
+				model_viewer->setDisabled(entry.imagePath != "");
+			}
+
 			if ( auto blurb = page_left->findField("blurb") )
 			{
 				std::string txt = "";
@@ -33264,13 +33354,49 @@ failed:
 		}
 		auto& entry = CompendiumEntries.monsters[name];
 		compendiumEntityCurrent.first = name;
-		compendiumEntityCurrent.second = entry.models.empty() ? "" : entry.models[local_rng.rand() % entry.models.size()];
+		if ( compendiumMonsterOverride )
+		{
+			compendiumEntityCurrent.second = "";
+		}
+		else
+		{
+			compendiumEntityCurrent.second = entry.models.empty() ? "" : entry.models[compendiumRNG % entry.models.size()];
+		}
+
+		refreshCompendiumCamera(compendiumEntityCurrent.second);
+
 		if ( true /*compendiumMonster */ )
 		{
 			if ( true /*auto myStats = compendiumMonster->getStats()*/ )
 			{
 				if ( Frame* page_left = parent->findFrame("page_left") )
 				{
+					if ( auto image_viewer = page_left->findFrame("image_viewer") )
+					{
+						image_viewer->setDisabled(entry.imagePath == "");
+						if ( auto img = image_viewer->findImage("img") )
+						{
+							img->path = entry.imagePath;
+							img->disabled = true;
+							if ( img->path != "" )
+							{
+								img->disabled = false;
+								if ( auto imgGet = Image::get(img->path.c_str()) )
+								{
+									img->pos.w = imgGet->getWidth();
+									img->pos.h = imgGet->getHeight();
+
+									img->pos.x = image_viewer->getSize().w / 2 - img->pos.w / 2;
+									img->pos.y = image_viewer->getSize().h / 2 - img->pos.h / 2;
+								}
+							}
+						}
+					}
+					if ( auto model_viewer = page_left->findFrame("model_viewer") )
+					{
+						model_viewer->setDisabled(entry.imagePath != "");
+					}
+
 					if ( auto blurb = page_left->findField("blurb") )
 					{
 						std::string txt = "";
@@ -33617,6 +33743,8 @@ failed:
 				page_left_title->setText(entry.first.c_str());
 			}
 			content = entry.second;
+
+			compendiumRNG = local_rng.rand();
 		}
 
 		if ( compendium_current == "codex" )
@@ -33644,6 +33772,11 @@ failed:
 				if ( auto myStats = monster->getStats() )
 				{
 					myStats->setAttribute("monster_portrait", "true");
+					(void)actMonster(monster);
+					monster->yaw = 0.0;
+					myStats->EFFECTS[EFF_ASLEEP] = false;
+					monsterAnimate(compendiumMonster, myStats, 0.0);
+					monsterAnimate(compendiumMonster, myStats, 0.0);
 				}
 			}
 			refreshCompendiumEntryMonster(content, compendiumFrame);
@@ -34145,6 +34278,51 @@ failed:
 		[](int argc, const char** argv) {
 			CompendiumEntries.exportCurrentMonster(compendiumMonster);
 		});
+	static ConsoleVariable<bool> cvar_compendiumautoreload("/compendiumautoreload", true);
+
+	static void compendiumDebugRefresh()
+	{
+		consoleCommand("/reloadcompendiumlimbs");
+		if ( compendium_current == "monsters" )
+		{
+			CompendiumEntries.readMonstersFromFile();
+			refreshCompendiumEntryMonster(Compendium_t::CompendiumMonsters_t::contentsMap[compendium_contents_current], main_menu_frame->findFrame("compendium"));
+		}
+		else if ( compendium_current == "world" )
+		{
+			CompendiumEntries.readWorldFromFile();
+			refreshCompendiumEntryWorld(Compendium_t::CompendiumWorld_t::contentsMap[compendium_contents_current], main_menu_frame->findFrame("compendium"));
+		}
+		else if ( compendium_current == "codex" )
+		{
+			CompendiumEntries.readCodexFromFile();
+			refreshCompendiumEntryCodex(Compendium_t::CompendiumCodex_t::contentsMap[compendium_contents_current], main_menu_frame->findFrame("compendium"));
+		}
+		else if ( compendium_current == "items" )
+		{
+			CompendiumEntries.readItemsFromFile();
+			CompendiumEntries.readMagicFromFile();
+			refreshCompendiumEntryItemsBlurb(Compendium_t::CompendiumItems_t::contentsMap[compendium_contents_current], main_menu_frame->findFrame("compendium"));
+			std::string modelsPath = "items_single";
+			if ( Compendium_t::compendiumItemModel.skill[10] == SPELL_ITEM && Compendium_t::compendiumItemModel.flags[SPRITE] )
+			{
+				modelsPath = "spells_single";
+			}
+			refreshCompendiumCamera(modelsPath);
+		}
+		else if ( compendium_current == "magic" )
+		{
+			CompendiumEntries.readItemsFromFile();
+			CompendiumEntries.readMagicFromFile();
+			refreshCompendiumEntryItemsBlurb(Compendium_t::CompendiumMagic_t::contentsMap[compendium_contents_current], main_menu_frame->findFrame("compendium"));
+			std::string modelsPath = "items_single";
+			if ( Compendium_t::compendiumItemModel.skill[10] == SPELL_ITEM && Compendium_t::compendiumItemModel.flags[SPRITE] )
+			{
+				modelsPath = "spells_single";
+			}
+			refreshCompendiumCamera(modelsPath);
+		}
+	}
 
 	static void openCompendium() {
 		auto dimmer = main_menu_frame->addFrame("dimmer");
@@ -34516,6 +34694,16 @@ failed:
 			"*images/ui/Main Menus/AdventureArchives/C_Subject_Frame_00.png", "page left top img");
 		auto blurbImg = page_left->addImage(SDL_Rect{ left_top_img->pos.x, left_top_img->pos.y + left_top_img->pos.h + 12, 382, 122 }, 0xFFFFFFFF,
 			"*images/ui/Main Menus/AdventureArchives/C_Lore_Frame_00.png", "page left bottom img");
+		page_left->setTickCallback([](Widget& widget) {
+			if ( auto debugBtnFrame = static_cast<Frame*>(&widget)->findFrame("debug frame") )
+			{
+				debugBtnFrame->setDisabled(false);
+				if ( keystatus[SDLK_g] )
+				{
+					debugBtnFrame->setDisabled(true);
+				}
+			}
+		});
 
 		auto page_left_title = window->addField("page_left_title", 128);
 		page_left_title->setFont("fonts/kongtext.ttf#16#0");
@@ -34543,11 +34731,15 @@ failed:
 		model_viewer->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
 			if ( compendium_current == "monsters" )
 			{
-				drawObjectPreview(compendiumEntityCurrent.first, compendiumEntityCurrent.second, compendiumMonster, pos, 0.0);
+				drawObjectPreview(compendiumEntityCurrent.second, compendiumMonster, pos, 0.0);
 			}
 			else if ( compendium_current == "world" )
 			{
-				drawObjectPreview(compendiumEntityCurrent.first, compendiumEntityCurrent.second, nullptr, pos, 0.0);
+				drawObjectPreview(compendiumEntityCurrent.second, nullptr, pos, 0.0);
+			}
+			else if ( compendium_current == "codex" )
+			{
+				drawSpritesPreview(compendiumEntityCurrent.first, compendiumEntityCurrent.second, pos, 0.0);
 			}
 			else if ( compendium_current == "items" )
 			{
@@ -34559,91 +34751,211 @@ failed:
 			}
 		});
 		model_viewer->setTickCallback([](Widget& widget) {
-			/*if ( ticks % TICKS_PER_SECOND == 0 )
-			{
-				compendiumMonster->attack(compendiumMonster->getAttackPose(), 0, nullptr);
-			}*/
-			static ConsoleVariable<bool> cvar_compendiumautoreload("/compendiumautoreload", true);
 			if ( *cvar_compendiumautoreload && (ticks % TICKS_PER_SECOND/2 == 0) )
 			{
-				consoleCommand("/reloadcompendiumlimbs");
-				if ( compendium_current == "monsters" )
-				{
-					CompendiumEntries.readMonstersFromFile();
-					refreshCompendiumEntryMonster(Compendium_t::CompendiumMonsters_t::contentsMap[compendium_contents_current], main_menu_frame->findFrame("compendium"));
-				}
-				else if ( compendium_current == "world" )
-				{
-					CompendiumEntries.readWorldFromFile();
-					refreshCompendiumEntryWorld(Compendium_t::CompendiumWorld_t::contentsMap[compendium_contents_current], main_menu_frame->findFrame("compendium"));
-				}
-				else if ( compendium_current == "codex" )
-				{
-					CompendiumEntries.readCodexFromFile();
-					refreshCompendiumEntryCodex(Compendium_t::CompendiumCodex_t::contentsMap[compendium_contents_current], main_menu_frame->findFrame("compendium"));
-				}
-				else if ( compendium_current == "items" )
-				{
-					CompendiumEntries.readItemsFromFile();
-					CompendiumEntries.readMagicFromFile();
-					refreshCompendiumEntryItemsBlurb(Compendium_t::CompendiumItems_t::contentsMap[compendium_contents_current], main_menu_frame->findFrame("compendium"));
-				}
-				else if ( compendium_current == "magic" )
-				{
-					CompendiumEntries.readItemsFromFile();
-					CompendiumEntries.readMagicFromFile();
-					refreshCompendiumEntryItemsBlurb(Compendium_t::CompendiumMagic_t::contentsMap[compendium_contents_current], main_menu_frame->findFrame("compendium"));
-				}
+				compendiumDebugRefresh();
 			}
-			/*if ( keystatus[SDLK_g] )
+		});
+
+		auto image_viewer = page_left->addFrame("image_viewer");
+		image_viewer->setSize(model_viewer->getSize());
+		{
+			auto img = image_viewer->addImage(SDL_Rect{0, 0, 0, 0}, 0xFFFFFFFF, "", "img");
+			img->disabled = true;
+		}
+		image_viewer->setDisabled(true);
+		image_viewer->setTickCallback([](Widget& widget) {
+			if ( *cvar_compendiumautoreload && (ticks % TICKS_PER_SECOND / 2 == 0) )
 			{
-				keystatus[SDLK_g] = 0;
-				if ( compendiumMonster )
+				if ( auto parent = static_cast<Frame*>(widget.getParent()) )
 				{
-					if ( auto myStats = compendiumMonster->getStats() )
+					if ( auto model_viewer = parent->findFrame("model_viewer") )
 					{
-						int type = myStats->type;
-						if ( keystatus[SDLK_LCTRL] )
+						if ( model_viewer->isDisabled() )
 						{
-							type -= 1;
-							if ( type >= NUMMONSTERS )
-							{
-								type = NUMMONSTERS - 1;
-							}
-							while ( type == NOTHING || type == OCTOPUS || type == CRAB )
-							{
-								type--;
-							}
-							if ( type < 0 )
-							{
-								type = NUMMONSTERS - 1;
-							}
-						}
-						else if ( !keystatus[SDLK_LSHIFT] )
-						{
-							type += 1;
-							if ( type >= NUMMONSTERS )
-							{
-								type = HUMAN;
-							}
-							while ( type == NOTHING || type == OCTOPUS || type == CRAB )
-							{
-								type++;
-							}
-						}
-						if ( auto monster = createCompendiumMonster((Monster)type, 8, 8) )
-						{
-							if ( auto myStats = monster->getStats() )
-							{
-								myStats->setAttribute("monster_portrait", "true");
-							}
-							refreshCompendiumEntryMonster(main_menu_frame->findFrame("compendium"));
+							compendiumDebugRefresh();
 						}
 					}
 				}
-			}*/
-
+			}
 		});
+
+		// debug btns
+		{
+			auto debugBtnFrame = page_left->addFrame("debug frame");
+			debugBtnFrame->setSize(model_viewer->getSize());
+
+			Button* btn = debugBtnFrame->addButton("anim 1");
+			btn->setSize(SDL_Rect{ debugBtnFrame->getSize().w - 26, debugBtnFrame->getSize().h - 26, 26, 26 });
+			btn->setBackground("*images/ui/Inventory/chests/Button_X_00.png");
+			btn->setBackgroundHighlighted("*images/ui/Inventory/chests/Button_XHigh_00.png");
+			btn->setBackgroundActivated("*images/ui/Inventory/chests/Button_XPress_00.png");
+			btn->setFont(smallfont_outline);
+			btn->setText("ANM");
+			btn->setTickCallback([](Widget& widget) {
+				auto btn = static_cast<Button*>(&widget);
+				static Uint32 t = 0;
+				if ( btn->isCurrentlyPressed() && t != ticks && ticks % 5 == 0 )
+				{
+					t = ticks;
+					if ( compendiumMonster )
+					{
+						monsterAnimate(compendiumMonster, compendiumMonster->getStats(), 0.2);
+					}
+				}
+				});
+
+			btn = debugBtnFrame->addButton("tmp");
+			btn->setSize(SDL_Rect{ 0, debugBtnFrame->getSize().h - 26, 26, 26 });
+			btn->setBackground("*images/ui/Inventory/chests/Button_X_00.png");
+			btn->setBackgroundHighlighted("*images/ui/Inventory/chests/Button_XHigh_00.png");
+			btn->setBackgroundActivated("*images/ui/Inventory/chests/Button_XPress_00.png");
+			btn->setFont(smallfont_outline);
+			btn->setText("MOD");
+			btn->setOntop(true);
+			btn->setCallback([](Button& button) {
+				compendiumMonsterOverride = !compendiumMonsterOverride;
+			});
+			btn->setTickCallback([](Widget& widget) {
+				auto btn = static_cast<Button*>(&widget);
+				if ( compendiumMonsterOverride )
+				{
+					btn->setTextColor(makeColorRGB(0, 255, 0));
+					btn->setTextHighlightColor(makeColorRGB(0, 255, 0));
+					auto parent = static_cast<Frame*>(btn->getParent());
+					if ( auto btn = parent->findButton("anim 1") )
+					{
+						btn->setDisabled(false);
+						btn->setInvisible(btn->isDisabled());
+					}
+					if ( auto btn = parent->findButton("anim 2") )
+					{
+						btn->setDisabled(false);
+						btn->setInvisible(btn->isDisabled());
+					}
+					if ( auto btn = parent->findButton("anim 3") )
+					{
+						btn->setDisabled(false);
+						btn->setInvisible(btn->isDisabled());
+					}
+					if ( auto btn = parent->findButton("exp") )
+					{
+						btn->setDisabled(false);
+						btn->setInvisible(btn->isDisabled());
+					}
+				}
+				else
+				{
+					btn->setTextColor(makeColorRGB(128, 128, 128));
+					btn->setTextHighlightColor(makeColorRGB(128, 128, 128));
+					auto parent = static_cast<Frame*>(btn->getParent());
+					if ( auto btn = parent->findButton("anim 1") )
+					{
+						btn->setDisabled(true);
+						btn->setInvisible(btn->isDisabled());
+					}
+					if ( auto btn = parent->findButton("anim 2") )
+					{
+						btn->setDisabled(true);
+						btn->setInvisible(btn->isDisabled());
+					}
+					if ( auto btn = parent->findButton("anim 3") )
+					{
+						btn->setDisabled(true);
+						btn->setInvisible(btn->isDisabled());
+					}
+					if ( auto btn = parent->findButton("exp") )
+					{
+						btn->setDisabled(true);
+						btn->setInvisible(btn->isDisabled());
+					}
+				}
+				});
+
+			btn = debugBtnFrame->addButton("anim 2");
+			btn->setSize(SDL_Rect{ debugBtnFrame->getSize().w - 26, debugBtnFrame->getSize().h - 26 * 2 - 4, 26, 26 });
+			btn->setBackground("*images/ui/Inventory/chests/Button_X_00.png");
+			btn->setBackgroundHighlighted("*images/ui/Inventory/chests/Button_XHigh_00.png");
+			btn->setBackgroundActivated("*images/ui/Inventory/chests/Button_XPress_00.png");
+			btn->setFont(smallfont_outline);
+			btn->setText("RST");
+			btn->setOntop(true);
+			btn->setTickCallback([](Widget& widget) {
+				auto btn = static_cast<Button*>(&widget);
+				static Uint32 t = 0;
+				if ( btn->isCurrentlyPressed() && t != ticks && ticks % 5 == 0 )
+				{
+					t = ticks;
+					if ( compendiumMonster )
+					{
+						monsterAnimate(compendiumMonster, compendiumMonster->getStats(), 0.0);
+					}
+				}
+				});
+
+			btn = debugBtnFrame->addButton("exp");
+			btn->setSize(SDL_Rect{ 0, debugBtnFrame->getSize().h - 26 * 2 - 4, 26, 26 });
+			btn->setBackground("*images/ui/Inventory/chests/Button_X_00.png");
+			btn->setBackgroundHighlighted("*images/ui/Inventory/chests/Button_XHigh_00.png");
+			btn->setBackgroundActivated("*images/ui/Inventory/chests/Button_XPress_00.png");
+			btn->setFont(smallfont_outline);
+			btn->setText("EXP");
+			btn->setOntop(true);
+			btn->setCallback([](Button& button) {
+				consoleCommand("/compendium_export_monster");
+				soundActivate();
+			});
+
+			btn = debugBtnFrame->addButton("anim 3");
+			btn->setSize(SDL_Rect{ debugBtnFrame->getSize().w - 26, debugBtnFrame->getSize().h - 26 * 3 - 8, 26, 26 });
+			btn->setBackground("*images/ui/Inventory/chests/Button_X_00.png");
+			btn->setBackgroundHighlighted("*images/ui/Inventory/chests/Button_XHigh_00.png");
+			btn->setBackgroundActivated("*images/ui/Inventory/chests/Button_XPress_00.png");
+			btn->setFont(smallfont_outline);
+			btn->setText("ATK");
+			btn->setOntop(true);
+			btn->setCallback([](Button& button) {
+				compendiumMonster->attack(compendiumMonster->getAttackPose(), 0, nullptr);
+				});
+
+			btn = debugBtnFrame->addButton("tmp");
+			btn->setSize(SDL_Rect{ 0, debugBtnFrame->getSize().h - 26 * 3 - 8, 26, 26 });
+			btn->setBackground("*images/ui/Inventory/chests/Button_X_00.png");
+			btn->setBackgroundHighlighted("*images/ui/Inventory/chests/Button_XHigh_00.png");
+			btn->setBackgroundActivated("*images/ui/Inventory/chests/Button_XPress_00.png");
+			btn->setFont(smallfont_outline);
+			btn->setText("REF");
+			btn->setOntop(true);
+			btn->setCallback([](Button& button) {
+				compendiumDebugRefresh();
+				});
+
+			btn = debugBtnFrame->addButton("tmp");
+			btn->setSize(SDL_Rect{ 0, debugBtnFrame->getSize().h - 26 * 4 - 12, 26, 26 });
+			btn->setBackground("*images/ui/Inventory/chests/Button_X_00.png");
+			btn->setBackgroundHighlighted("*images/ui/Inventory/chests/Button_XHigh_00.png");
+			btn->setBackgroundActivated("*images/ui/Inventory/chests/Button_XPress_00.png");
+			btn->setFont(smallfont_outline);
+			btn->setTextColor(makeColorRGB(255, 255, 255));
+			btn->setText("ATO");
+			btn->setOntop(true);
+			btn->setCallback([](Button& button) {
+				*cvar_compendiumautoreload = !*cvar_compendiumautoreload;
+				});
+			btn->setTickCallback([](Widget& widget) {
+				auto btn = static_cast<Button*>(&widget);
+				if ( *cvar_compendiumautoreload )
+				{
+					btn->setTextColor(makeColorRGB(0, 255, 0));
+					btn->setTextHighlightColor(makeColorRGB(0, 255, 0));
+				}
+				else
+				{
+					btn->setTextColor(makeColorRGB(128, 128, 128));
+					btn->setTextHighlightColor(makeColorRGB(128, 128, 128));
+				}
+				});
+		}
 
 		auto page_right = window->addFrame("page_right");
 		page_right->setSize(SDL_Rect{ background->pos.x + 480 + 40, background->pos.y + 38, 386, 472});

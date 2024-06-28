@@ -3452,6 +3452,21 @@ extern EquipmentModelOffsets_t EquipmentModelOffsets;
 
 struct Compendium_t
 {
+	struct CompendiumView_t
+	{
+		real_t ang = 0.0;
+		real_t vang = 0.0;
+		real_t pan = 0.0;
+		real_t zoom = 0.0;
+		real_t height = 0.0;
+		real_t rotate = 0.0;
+		int rotateState = 0;
+		real_t rotateLimitMin = 0.0;
+		real_t rotateLimitMax = 0.0;
+		real_t rotateSpeed = 1.0;
+		bool rotateLimit = true;
+		bool inUse = false;
+	};
 	struct CompendiumMonsters_t
 	{
 		struct Monster_t
@@ -3478,7 +3493,15 @@ struct Compendium_t
 	void readMonstersFromFile();
 	void exportCurrentMonster(Entity* monster);
 	void readModelLimbsFromFile(std::string section);
-	std::map<std::string, std::vector<Entity>> compendiumObjectLimbs;
+	CompendiumView_t defaultCamera;
+	struct ObjectLimbs_t
+	{
+		CompendiumView_t baseCamera;
+		CompendiumView_t currentCamera;
+		std::vector<Entity> entities;
+	};
+	std::map<std::string, ObjectLimbs_t> compendiumObjectLimbs;
+	CompendiumView_t currentView;
 	struct CompendiumMap_t
 	{
 		Uint32 width = 0;
@@ -3510,8 +3533,11 @@ struct Compendium_t
 		{
 			int modelIndex = -1;
 			std::string imagePath = "";
+			std::vector<std::string> renderedImagePaths;
 			std::vector<std::string> blurb;
 			std::vector<std::string> details;
+			std::vector<std::string> models;
+			CompendiumView_t view;
 		};
 		static std::vector<std::pair<std::string, std::string>> contents;
 		static std::map<std::string, std::string> contentsMap;
@@ -3731,6 +3757,7 @@ struct Compendium_t
 		static std::map<int, std::vector<EventTags>> itemDisplayedEventsList;
 		static std::map<EventTags, std::set<int>> eventItemLookup;
 		static std::map<EventTags, std::set<int>> eventMonsterLookup;
+		static std::map<EventTags, std::set<int>> eventClassLookup;
 		static std::map<EventTags, std::set<std::string>> eventWorldLookup;
 		static std::map<std::string, int> eventWorldIDLookup;
 		static std::map<EventTags, std::map<std::string, std::string>> eventLangEntries;

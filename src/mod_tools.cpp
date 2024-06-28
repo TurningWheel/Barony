@@ -11173,6 +11173,14 @@ void Compendium_t::readCodexFromFile()
 		jsonVecToVec(w["blurb"], obj.blurb);
 		jsonVecToVec(w["details"], obj.details);
 		obj.imagePath = w["img"].GetString();
+		if ( w.HasMember("rendered_imgs") )
+		{
+			jsonVecToVec(w["rendered_imgs"], obj.renderedImagePaths);
+		}
+		if ( w.HasMember("models") )
+		{
+			jsonVecToVec(w["models"], obj.models);
+		}
 	}
 }
 
@@ -11346,6 +11354,7 @@ void Compendium_t::readMonstersFromFile()
 		Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILLED_SOLO].insert(type);
 		Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILLED_PARTY].insert(type);
 		Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILLED_BY].insert(type);
+		Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_RECRUITED].insert(type);
 		Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILLED_MULTIPLAYER].insert(type);
 	}
 	for ( auto pair : Compendium_t::Events_t::monsterUniqueIDLookup )
@@ -11363,6 +11372,7 @@ void Compendium_t::readMonstersFromFile()
 			Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILLED_SOLO].insert(type);
 			Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILLED_PARTY].insert(type);
 			Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILLED_BY].insert(type);
+			Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_RECRUITED].insert(type);
 			Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILLED_MULTIPLAYER].insert(type);
 		}
 	}
@@ -11392,6 +11402,10 @@ void Compendium_t::readMonstersFromFile()
 		monster.monsterType = monsterType;
 		monster.unique_npc = m.HasMember("unique_npc") ? m["unique_npc"].GetString() : "";
 		jsonVecToVec(m["blurb"], monster.blurb);
+		if ( m.HasMember("img") )
+		{
+			monster.imagePath = m["img"].GetString();
+		}
 		auto& stats = m["stats"];
 		jsonVecToVec(stats["hp"], monster.hp);
 		jsonVecToVec(stats["ac"], monster.ac);
@@ -12626,8 +12640,9 @@ void Compendium_t::readModelLimbsFromFile(std::string section)
 			int version = d["version"].GetInt();
 
 			std::string filename = f.substr(0, f.find(".json"));
-			auto& allLimbs = compendiumObjectLimbs[filename];
-			allLimbs.clear();
+			auto& entry = compendiumObjectLimbs[filename];
+			entry.entities.clear();
+			entry.baseCamera = CompendiumView_t();
 
 			compendiumObjectMapTiles.erase(filename);
 			int w = 0;
@@ -12703,6 +12718,54 @@ void Compendium_t::readModelLimbsFromFile(std::string section)
 					}
 				}
 			}
+			if ( d.HasMember("camera") )
+			{
+				entry.baseCamera.inUse = true;
+				auto& c = d["camera"];
+				if ( c.HasMember("ang_degrees") )
+				{
+					entry.baseCamera.ang = PI * c["ang_degrees"].GetInt() / 180.0;
+				}
+				if ( c.HasMember("vang_degrees") )
+				{
+					entry.baseCamera.vang = PI * c["vang_degrees"].GetInt() / 180.0;
+				}
+				entry.baseCamera.rotateLimit = false;
+				if ( c.HasMember("rotate_limit_degrees_min") )
+				{
+					entry.baseCamera.rotateLimitMin = PI * c["rotate_limit_degrees_min"].GetInt() / 180.0;
+					entry.baseCamera.rotateLimit = true;
+				}
+				if ( c.HasMember("rotate_limit_degrees_max") )
+				{
+					entry.baseCamera.rotateLimitMax = PI * c["rotate_limit_degrees_max"].GetInt() / 180.0;
+					entry.baseCamera.rotateLimit = true;
+				}
+				if ( c.HasMember("rotate_degrees") )
+				{
+					entry.baseCamera.rotate = PI * c["rotate_degrees"].GetInt() / 180.0;
+				}
+				else
+				{
+					entry.baseCamera.rotate = entry.baseCamera.rotateLimitMax - (entry.baseCamera.rotateLimitMax - entry.baseCamera.rotateLimitMin) / 2;
+				}
+				if ( c.HasMember("rotate_speed") )
+				{
+					entry.baseCamera.rotateSpeed = c["rotate_speed"].GetDouble();
+				}
+				if ( c.HasMember("zoom") )
+				{
+					entry.baseCamera.zoom = c["zoom"].GetDouble();
+				}
+				if ( c.HasMember("height") )
+				{
+					entry.baseCamera.height = c["height"].GetDouble();
+				}
+				if ( c.HasMember("pan") )
+				{
+					entry.baseCamera.pan = c["pan"].GetDouble();
+				}
+			}
 			for ( auto itr = d["limbs"].Begin(); itr != d["limbs"].End(); ++itr )
 			{
 				/*if ( d.HasMember("height_offset") )
@@ -12710,12 +12773,12 @@ void Compendium_t::readModelLimbsFromFile(std::string section)
 					statue.heightOffset = d["height_offset"].GetDouble();
 				}*/
 
-				allLimbs.push_back(Entity(-1, 0, nullptr, nullptr));
-				auto& limb = allLimbs[allLimbs.size() - 1];
+				entry.entities.push_back(Entity(-1, 0, nullptr, nullptr));
+				auto& limb = entry.entities[entry.entities.size() - 1];
 				if ( index > 0 )
 				{
-					limb.x = allLimbs[0].x - (*itr)["x"].GetDouble();
-					limb.y = allLimbs[0].y - (*itr)["y"].GetDouble();
+					limb.x = entry.entities[0].x - (*itr)["x"].GetDouble();
+					limb.y = entry.entities[0].y - (*itr)["y"].GetDouble();
 				}
 				else
 				{
@@ -12758,6 +12821,18 @@ void Compendium_t::readModelLimbsFromFile(std::string section)
 				{
 					limb.yaw += PI * (*itr)["yaw_degrees"].GetInt() / 180.0;
 				}
+				if ( (*itr).HasMember("scalex") )
+				{
+					limb.scalex = (*itr)["scalex"].GetDouble();
+				}
+				if ( (*itr).HasMember("scaley") )
+				{
+					limb.scaley = (*itr)["scaley"].GetDouble();
+				}
+				if ( (*itr).HasMember("scalez") )
+				{
+					limb.scalez = (*itr)["scalez"].GetDouble();
+				}
 				limb.sprite = (*itr)["sprite"].GetInt();
 
 				++index;
@@ -12789,8 +12864,17 @@ void Compendium_t::exportCurrentMonster(Entity* monster)
 	rapidjson::Document exportDocument;
 	exportDocument.SetObject();
 	CustomHelpers::addMemberToRoot(exportDocument, "version", rapidjson::Value(1));
-	CustomHelpers::addMemberToRoot(exportDocument, "statue_id", rapidjson::Value(local_rng.rand()));
-	CustomHelpers::addMemberToRoot(exportDocument, "height_offset", rapidjson::Value(0));
+
+	rapidjson::Value cameraObject(rapidjson::kObjectType);
+	cameraObject.AddMember("ang_degrees", 0, exportDocument.GetAllocator());
+	cameraObject.AddMember("vang_degrees", 0, exportDocument.GetAllocator());
+	cameraObject.AddMember("zoom", 0.0, exportDocument.GetAllocator());
+	cameraObject.AddMember("height", 0.0, exportDocument.GetAllocator());
+	cameraObject.AddMember("rotate_limit_degrees_min", 0, exportDocument.GetAllocator());
+	cameraObject.AddMember("rotate_limit_degrees_max", 0, exportDocument.GetAllocator());
+	cameraObject.AddMember("rotate_speed", 0.0, exportDocument.GetAllocator());
+	CustomHelpers::addMemberToRoot(exportDocument, "camera", cameraObject);
+
 	rapidjson::Value limbsObject(rapidjson::kObjectType);
 
 	rapidjson::Value limbsArray(rapidjson::kArrayType);
@@ -12831,6 +12915,9 @@ void Compendium_t::exportCurrentMonster(Entity* monster)
 		limbsObj.AddMember("focaly", rapidjson::Value(limb->focaly), exportDocument.GetAllocator());
 		limbsObj.AddMember("focalz", rapidjson::Value(limb->focalz), exportDocument.GetAllocator());
 		limbsObj.AddMember("sprite", rapidjson::Value(limb->sprite), exportDocument.GetAllocator());
+		limbsObj.AddMember("scalex", rapidjson::Value(limb->scalex), exportDocument.GetAllocator());
+		limbsObj.AddMember("scaley", rapidjson::Value(limb->scaley), exportDocument.GetAllocator());
+		limbsObj.AddMember("scalez", rapidjson::Value(limb->scalez), exportDocument.GetAllocator());
 		limbsArray.PushBack(limbsObj, exportDocument.GetAllocator());
 
 		++index;

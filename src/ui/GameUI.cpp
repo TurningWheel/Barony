@@ -21459,45 +21459,74 @@ void drawItemPreview(Entity* item, SDL_Rect pos, real_t offsetyaw, bool dark)
 	if ( item->sprite < 0 ) { return; }
 
 	static int fov = 50;
-	static real_t ang = 0.0;
-	static real_t vang = 0.0;
-	static real_t zoom = 0.0;
-	static real_t z = 0.0;
-	static int idleAngRotationDir = 0;
-	static real_t idleAngRotation = 0.0;
+	bool sprite = item->flags[SPRITE];
+
+	std::vector<Entity>* limbsArray = nullptr;
+	Compendium_t::CompendiumView_t* camera = &CompendiumEntries.defaultCamera;
+	std::string lookup = "items_single";
+	if ( item->flags[SPRITE] && item->skill[10] == SPELL_ITEM )
+	{
+		lookup = "spells_single";
+	}
+
+	if ( CompendiumEntries.compendiumObjectLimbs.find(lookup) != CompendiumEntries.compendiumObjectLimbs.end() )
+	{
+		auto& entry = CompendiumEntries.compendiumObjectLimbs[lookup];
+		limbsArray = &entry.entities;
+		if ( limbsArray->size() == 0 )
+		{
+			return;
+		}
+		camera = &entry.currentCamera;
+	}
+	else
+	{
+		return;
+	}
+
 	if ( keystatus[SDLK_KP_1] )
 	{
-		vang -= 0.01;
+		camera->vang -= 0.01;
 	}
 	if ( keystatus[SDLK_KP_3] )
 	{
-		vang += 0.01;
+		camera->vang += 0.01;
 	}
 	if ( keystatus[SDLK_KP_4] )
 	{
-		ang -= 0.01;
+		camera->ang -= 0.01;
 	}
 	if ( keystatus[SDLK_KP_6] )
 	{
-		ang += 0.01;
+		camera->ang += 0.01;
 	}
 	if ( keystatus[SDLK_KP_8] )
 	{
-		z += 0.5;
+		camera->height += 0.5;
 	}
 	if ( keystatus[SDLK_KP_2] )
 	{
-		z -= 0.5;
+		camera->height -= 0.5;
 	}
 	if ( keystatus[SDLK_KP_7] )
 	{
-		zoom -= 0.01;
+		camera->zoom -= 0.01;
 	}
 	if ( keystatus[SDLK_KP_9] )
 	{
-		zoom += 0.01;
+		camera->zoom += 0.01;
 	}
-	if ( keystatus[SDLK_KP_0] )
+
+	if ( !sprite )
+	{
+		camera->rotateState = 0;
+	}
+
+	item->scalex = limbsArray->at(0).scalex;
+	item->scaley = limbsArray->at(0).scaley;
+	item->scalez = limbsArray->at(0).scalez;
+
+	/*if ( keystatus[SDLK_KP_0] )
 	{
 		keystatus[SDLK_KP_0] = 0;
 		item->roll += PI / 4;
@@ -21549,52 +21578,48 @@ void drawItemPreview(Entity* item, SDL_Rect pos, real_t offsetyaw, bool dark)
 		{
 			item->focalz += 0.125;
 		}
-	}
+	}*/
 
-	if ( !item->flags[SPRITE] )
+	if ( camera->rotateState == 0 )
 	{
-		idleAngRotationDir = 0;
-		item->scalex = 1.0;
-		item->scaley = 1.0;
-		item->scalez = 1.0;
-	}
-	else
-	{
-		item->scalex = 0.25;
-		item->scaley = 0.25;
-		item->scalez = 0.25;
-	}
-
-	if ( idleAngRotationDir == 0 )
-	{
-		if ( item->flags[SPRITE] )
+		if ( sprite )
 		{
-			idleAngRotation += 0.0015;
-			if ( idleAngRotation >= 0.6 * PI )
+			camera->rotate += 0.0015 * camera->rotateSpeed;
+			if ( camera->rotateLimit )
 			{
-				idleAngRotation = 0.6 * PI;
-				idleAngRotationDir = 1;
+				if ( camera->rotate >= camera->rotateLimitMax )
+				{
+					camera->rotate = camera->rotateLimitMax;
+					camera->rotateState = 1;
+				}
 			}
 		}
 		else
 		{
-			idleAngRotation += 0.005;
+			camera->rotate += 0.0015 * camera->rotateSpeed;
 		}
 	}
 	else
 	{
-		if ( item->flags[SPRITE] )
+		if ( sprite )
 		{
-			idleAngRotation -= 0.0015;
-			if ( idleAngRotation <= 0.4 * PI )
+			camera->rotate -= 0.0015 * camera->rotateSpeed;
+			if ( camera->rotateLimit )
 			{
-				idleAngRotation = 0.4 * PI;
-				idleAngRotationDir = 0;
+				if ( camera->rotate <= camera->rotateLimitMin )
+				{
+					camera->rotate = camera->rotateLimitMin;
+					camera->rotateState = 0;
+				}
+			}
+			else
+			{
+				camera->rotateState = 0;
 			}
 		}
 		else
 		{
-			idleAngRotation -= 0.0015;
+			camera->rotate -= 0.0015 * camera->rotateSpeed;
 		}
 	}
 
@@ -21602,14 +21627,16 @@ void drawItemPreview(Entity* item, SDL_Rect pos, real_t offsetyaw, bool dark)
 	auto ofov = ::fov;
 	::fov = fov;
 
-	view.x = item->x / 16.0 + ((.92 + zoom) * cos(offsetyaw
-		+ ang + idleAngRotation + (*cvar_compendium_portrait_static_angle ? item->yaw : 0)));
-	view.y = item->y / 16.0 + ((.92 + zoom) * sin(offsetyaw
-		+ ang + idleAngRotation + (*cvar_compendium_portrait_static_angle ? item->yaw : 0)));
-	view.z = item->z * 2 + z;
+	const real_t rotation = camera->rotate + (sprite ? (PI / 2) : 0.0);
+
+	view.x = item->x / 16.0 + ((.92 + camera->zoom) * cos(offsetyaw
+		+ camera->ang + rotation + (*cvar_compendium_portrait_static_angle ? item->yaw : 0)));
+	view.y = item->y / 16.0 + ((.92 + camera->zoom) * sin(offsetyaw
+		+ camera->ang + rotation + (*cvar_compendium_portrait_static_angle ? item->yaw : 0)));
+	view.z = item->z * 2 + camera->height;
 	view.ang = (offsetyaw - PI
-		+ (*cvar_compendium_portrait_static_angle ? item->yaw : 0) + ang + idleAngRotation); //5 * PI / 4;
-	view.vang = PI / 20 + vang;
+		+ (*cvar_compendium_portrait_static_angle ? item->yaw : 0) + camera->ang + rotation); //5 * PI / 4;
+	view.vang = PI / 20 + camera->vang;
 
 	view.winx = pos.x;
 	// winy modification required due to new frame scaling method d49b1a5f34667432f2a2bd754c0abca3a09227c8
@@ -21617,6 +21644,7 @@ void drawItemPreview(Entity* item, SDL_Rect pos, real_t offsetyaw, bool dark)
 
 	view.winw = pos.w;
 	view.winh = pos.h;
+	GL_CHECK_ERR(glClear(GL_DEPTH_BUFFER_BIT));
 	glBeginCamera(&view, false, map);
 	bool b = item->flags[BRIGHT];
 	if ( !dark ) { item->flags[BRIGHT] = true; }
@@ -21643,6 +21671,181 @@ void drawItemPreview(Entity* item, SDL_Rect pos, real_t offsetyaw, bool dark)
 	::fov = ofov;
 }
 
+void drawSpritesPreview(std::string name, std::string modelsPath, SDL_Rect pos, real_t offsetyaw, bool dark)
+{
+	static int fov = 50;
+
+	bool sprite = false;
+	Compendium_t::CompendiumCodex_t::Codex_t* codexEntry = nullptr;
+	auto find = CompendiumEntries.codex.find(name);
+	if ( find != CompendiumEntries.codex.end() )
+	{
+		codexEntry = &find->second;
+		sprite = codexEntry->renderedImagePaths.size() > 0;
+	}
+
+	if ( !codexEntry )
+	{
+		return;
+	}
+
+	std::vector<Entity>* limbsArray = nullptr;
+	Entity* object = nullptr;
+	Compendium_t::CompendiumView_t* camera = &CompendiumEntries.defaultCamera;
+
+	if ( CompendiumEntries.compendiumObjectLimbs.find(modelsPath) != CompendiumEntries.compendiumObjectLimbs.end() )
+	{
+		auto& entry = CompendiumEntries.compendiumObjectLimbs[modelsPath];
+		limbsArray = &entry.entities;
+		if ( limbsArray->size() == 0 )
+		{
+			return;
+		}
+		object = &(limbsArray->at(0));
+		camera = &entry.currentCamera;
+	}
+
+	if ( !object )
+	{
+		return;
+	}
+
+	if ( keystatus[SDLK_KP_1] )
+	{
+		camera->vang -= 0.01;
+	}
+	if ( keystatus[SDLK_KP_3] )
+	{
+		camera->vang += 0.01;
+	}
+	if ( keystatus[SDLK_KP_4] )
+	{
+		camera->ang -= 0.01;
+	}
+	if ( keystatus[SDLK_KP_6] )
+	{
+		camera->ang += 0.01;
+	}
+	if ( keystatus[SDLK_KP_8] )
+	{
+		camera->height += 0.5;
+	}
+	if ( keystatus[SDLK_KP_2] )
+	{
+		camera->height -= 0.5;
+	}
+	if ( keystatus[SDLK_KP_7] )
+	{
+		camera->zoom -= 0.01;
+	}
+	if ( keystatus[SDLK_KP_9] )
+	{
+		camera->zoom += 0.01;
+	}
+
+	if ( !sprite )
+	{
+		camera->rotateState = 0;
+	}
+
+	if ( camera->rotateState == 0 )
+	{
+		if ( sprite )
+		{
+			camera->rotate += 0.0015 * camera->rotateSpeed;
+			if ( camera->rotateLimit )
+			{
+				if ( camera->rotate >= camera->rotateLimitMax )
+				{
+					camera->rotate = camera->rotateLimitMax;
+					camera->rotateState = 1;
+				}
+			}
+		}
+		else
+		{
+			camera->rotate += 0.0015 * camera->rotateSpeed;
+		}
+	}
+	else
+	{
+		if ( sprite )
+		{
+			camera->rotate -= 0.0015 * camera->rotateSpeed;
+			if ( camera->rotateLimit )
+			{
+				if ( camera->rotate <= camera->rotateLimitMin )
+				{
+					camera->rotate = camera->rotateLimitMin;
+					camera->rotateState = 0;
+				}
+			}
+			else
+			{
+				camera->rotateState = 0;
+			}
+		}
+		else
+		{
+			camera->rotate -= 0.0015 * camera->rotateSpeed;
+		}
+	}
+
+	view_t& view = monsterPortraitView;
+	auto ofov = ::fov;
+	::fov = fov;
+
+	const real_t rotation = camera->rotate + (sprite ? (PI / 2) : 0.0);
+
+	view.x = object->x / 16.0 + ((.92 + camera->zoom) * cos(offsetyaw
+		+ camera->ang + rotation + (*cvar_compendium_portrait_static_angle ? object->yaw : 0)));
+	view.y = object->y / 16.0 + ((.92 + camera->zoom) * sin(offsetyaw
+		+ camera->ang + rotation + (*cvar_compendium_portrait_static_angle ? object->yaw : 0)));
+	view.z = object->z * 2 + camera->height;
+	view.ang = (offsetyaw - PI
+		+ (*cvar_compendium_portrait_static_angle ? object->yaw : 0) + camera->ang + rotation); //5 * PI / 4;
+	view.vang = PI / 20 + camera->vang;
+
+	view.winx = pos.x;
+	// winy modification required due to new frame scaling method d49b1a5f34667432f2a2bd754c0abca3a09227c8
+	view.winy = pos.y + (yres - Frame::virtualScreenY);
+
+	view.winw = pos.w;
+	view.winh = pos.h;
+	GL_CHECK_ERR(glClear(GL_DEPTH_BUFFER_BIT));
+	glBeginCamera(&view, false, map);
+
+	size_t index = 0;
+	for ( auto& e : *limbsArray )
+	{
+		bool b = e.flags[BRIGHT];
+		if ( !dark ) { e.flags[BRIGHT] = true; }
+		if ( !e.flags[INVISIBLE] )
+		{
+			if ( sprite )
+			{
+				if ( index < codexEntry->renderedImagePaths.size() )
+				{
+					if ( codexEntry->renderedImagePaths[index] != "" )
+					{
+						glDrawSpriteFromImage(&view, &e, codexEntry->renderedImagePaths[index],
+							REALCOLORS, true, true);
+					}
+				}
+			}
+		}
+
+		e.flags[BRIGHT] = b;
+		++index;
+	}
+
+	if ( drawingGui ) {
+		// blending gets disabled after objects are drawn, so re-enable it.
+		GL_CHECK_ERR(glEnable(GL_BLEND));
+	}
+	glEndCamera(&view, false, map);
+	::fov = ofov;
+}
 
 void glDrawWorldTile(view_t* camera, int mode, map_t& map)
 {
@@ -21938,66 +22141,32 @@ void actObjectPreviewBoulder(Entity* my)
 }
 
 Uint32 drawObjectLastTick = 0;
-void drawObjectPreview(std::string name, std::string modelsPath, Entity* object, SDL_Rect pos, real_t offsetyaw, bool dark)
+void drawObjectPreview(std::string modelsPath, Entity* object, SDL_Rect pos, real_t offsetyaw, bool dark)
 {
 	static int fov = 50;
-	static real_t ang = 0.0;
-	static real_t vang = 0.0;
-	static real_t zoom = 0.0;
-	static real_t z = 0.0;
-	if ( keystatus[SDLK_KP_1] )
-	{
-		vang -= 0.01;
-	}
-	if ( keystatus[SDLK_KP_3] )
-	{
-		vang += 0.01;
-	}
-	if ( keystatus[SDLK_KP_4] )
-	{
-		ang -= 0.01;
-	}
-	if ( keystatus[SDLK_KP_6] )
-	{
-		ang += 0.01;
-	}
-	if ( keystatus[SDLK_KP_8] )
-	{
-		z += 0.5;
-	}
-	if ( keystatus[SDLK_KP_2] )
-	{
-		z -= 0.5;
-	}
-	if ( keystatus[SDLK_KP_7] )
-	{
-		zoom -= 0.01;
-	}
-	if ( keystatus[SDLK_KP_9] )
-	{
-		zoom += 0.01;
-	}
-
-
-	view_t& view = monsterPortraitView;
-	auto ofov = ::fov;
-	::fov = fov;
-
 	std::vector<Entity>* limbsArray = nullptr;
+	Compendium_t::CompendiumView_t* camera = &CompendiumEntries.defaultCamera;
 	if ( CompendiumEntries.compendiumObjectLimbs.find(modelsPath) != CompendiumEntries.compendiumObjectLimbs.end() )
 	{
-		limbsArray = &CompendiumEntries.compendiumObjectLimbs[modelsPath];
+		auto& entry = CompendiumEntries.compendiumObjectLimbs[modelsPath];
+		limbsArray = &entry.entities;
 		if ( limbsArray->size() == 0 )
 		{
 			return;
 		}
 		object = &(limbsArray->at(0));
+		camera = &entry.currentCamera;
 	}
+
 
 	if ( !object )
 	{
 		return;
 	}
+
+	view_t& view = monsterPortraitView;
+	auto ofov = ::fov;
+	::fov = fov;
 
 	bool doTick = false;
 	if ( drawObjectLastTick != ticks )
@@ -22006,14 +22175,78 @@ void drawObjectPreview(std::string name, std::string modelsPath, Entity* object,
 		doTick = true;
 	}
 
-	view.x = object->x / 16.0 + ((.92 + zoom) * cos(offsetyaw
-		+ ang + (*cvar_compendium_portrait_static_angle ? object->yaw : 0)));
-	view.y = object->y / 16.0 + ((.92 + zoom) * sin(offsetyaw
-		+ ang + (*cvar_compendium_portrait_static_angle ? object->yaw : 0)));
-	view.z = object->z * 2 + z;
+	if ( keystatus[SDLK_KP_1] )
+	{
+		camera->vang -= 0.01;
+	}
+	if ( keystatus[SDLK_KP_3] )
+	{
+		camera->vang += 0.01;
+	}
+	if ( keystatus[SDLK_KP_4] )
+	{
+		camera->ang -= 0.01;
+	}
+	if ( keystatus[SDLK_KP_6] )
+	{
+		camera->ang += 0.01;
+	}
+	if ( keystatus[SDLK_KP_8] )
+	{
+		camera->height += 0.5;
+	}
+	if ( keystatus[SDLK_KP_2] )
+	{
+		camera->height -= 0.5;
+	}
+	if ( keystatus[SDLK_KP_7] )
+	{
+		camera->zoom -= 0.01;
+	}
+	if ( keystatus[SDLK_KP_9] )
+	{
+		camera->zoom += 0.01;
+	}
+
+	if ( camera->rotateState == 0 )
+	{
+		camera->rotate += 0.0015 * camera->rotateSpeed;
+		if ( camera->rotateLimit )
+		{
+			if ( camera->rotate >= camera->rotateLimitMax )
+			{
+				camera->rotate = camera->rotateLimitMax;
+				camera->rotateState = 1;
+			}
+		}
+	}
+	else
+	{
+		camera->rotate -= 0.0015 * camera->rotateSpeed;
+		if ( camera->rotateLimit )
+		{
+			if ( camera->rotate <= camera->rotateLimitMin )
+			{
+				camera->rotate = camera->rotateLimitMin;
+				camera->rotateState = 0;
+			}
+		}
+		else
+		{
+			camera->rotateState = 0;
+		}
+	}
+
+	const real_t rotation = camera->rotate;
+
+	view.x = object->x / 16.0 + ((.92 + camera->zoom) * cos(offsetyaw
+		+ camera->ang + rotation + (*cvar_compendium_portrait_static_angle ? object->yaw : 0)));
+	view.y = object->y / 16.0 + ((.92 + camera->zoom) * sin(offsetyaw
+		+ camera->ang + rotation + (*cvar_compendium_portrait_static_angle ? object->yaw : 0)));
+	view.z = object->z * 2 + camera->height;
 	view.ang = (offsetyaw - PI
-		+ (*cvar_compendium_portrait_static_angle ? object->yaw : 0) + ang); //5 * PI / 4;
-	view.vang = PI / 20 + vang;
+		+ (*cvar_compendium_portrait_static_angle ? object->yaw : 0) + camera->ang + rotation); //5 * PI / 4;
+	view.vang = PI / 20 + camera->vang;
 
 	view.winx = pos.x;
 	// winy modification required due to new frame scaling method d49b1a5f34667432f2a2bd754c0abca3a09227c8
@@ -22023,6 +22256,7 @@ void drawObjectPreview(std::string name, std::string modelsPath, Entity* object,
 	view.winh = pos.h;
 
 	auto& tmpMap = CompendiumEntries.compendiumMap;
+	GL_CHECK_ERR(glClear(GL_DEPTH_BUFFER_BIT));
 	glBeginCamera(&view, false, tmpMap);
 
 	auto findMap = CompendiumEntries.compendiumObjectMapTiles.find(modelsPath);
