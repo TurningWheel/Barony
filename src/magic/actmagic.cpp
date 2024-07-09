@@ -2419,7 +2419,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								if ( hitstats && hitstats->EFFECTS[EFF_ASLEEP] )
 								{
 									// check to see if we're reapplying the sleep effect.
-									int preventSleepRoll = local_rng.rand() % 4 - resistance;
+									int preventSleepRoll = (local_rng.rand() % 4) - resistance;
 									if ( hit.entity->behavior == &actPlayer || (preventSleepRoll <= 0) )
 									{
 										magicTrapReapplySleep = false;
