@@ -3565,6 +3565,7 @@ struct Compendium_t
 			std::vector<std::string> blurb;
 			std::vector<std::string> details;
 			std::vector<std::string> models;
+			int id = -1;
 			CompendiumView_t view;
 		};
 		static std::vector<std::pair<std::string, std::string>> contents;
@@ -3735,8 +3736,138 @@ struct Compendium_t
 		CPDM_PITS_ITEMS_VALUE_LOST,
 		CPDM_KILLED_MULTIPLAYER,
 		CPDM_RECRUITED,
+		CPDM_RACE_GAMES_STARTED,
+		CPDM_RACE_RECRUITS,
+		CPDM_RACE_GAMES_WON,
+		CPDM_DISTANCE_TRAVELLED,
+		CPDM_DISTANCE_MAX_RUN,
+		CPDM_XP_KILLS,
+		CPDM_XP_SKILLS,
+		CPDM_XP_MAX_IN_FLOOR,
+		CPDM_XP_MAX_INSTANCE,
+		CPDM_CLASS_LVL_MAX,
+		CPDM_CLASS_LVL_GAINED,
+		CPDM_CLASS_GAMES_STARTED,
+		CPDM_CLASS_GAMES_WON,
+		CPDM_CLASS_GAMES_SOLO,
+		CPDM_CLASS_GAMES_MULTI,
+		CPDM_STAT_MAX,
+		CPDM_CLASS_STAT_STR_MAX,
+		CPDM_STAT_INCREASES,
+		CPDM_STAT_DOUBLED,
+		CPDM_HP_MAX,
+		CPDM_CLASS_HP_MAX,
+		CPDM_MP_MAX,
+		CPDM_CLASS_MP_MAX,
+		CPDM_CLASS_SKILL_UPS,
+		CPDM_CLASS_SKILL_MAX,
+		CPDM_CLASS_SKILL_UPS_RUN_MAX,
+		CPDM_CLASS_STAT_DEX_MAX,
+		CPDM_CLASS_STAT_CON_MAX,
+		CPDM_CLASS_STAT_INT_MAX,
+		CPDM_CLASS_STAT_PER_MAX,
+		CPDM_CLASS_STAT_CHR_MAX,
+		CPDM_RES_MAX,
+		CPDM_CLASS_RES_MAX,
+		CPDM_RES_DMG_RESISTED,
+		CPDM_RES_DMG_RESISTED_RUN,
+		CPDM_AC_MAX,
+		CPDM_CLASS_AC_MAX,
+		CPDM_AC_MAX_FROM_BLESS,
+		CPDM_HP_LOST_RUN,
+		CPDM_MP_SPENT_RUN,
+		CPDM_MP_SPENT_TOTAL,
+		CPDM_CLASS_LVL_WON_MAX,
+		CPDM_CLASS_LVL_WON_MIN,
+		CPDM_CLASS_GAMES_WON_CLASSIC,
+		CPDM_CLASS_GAMES_WON_HELL,
+		CPDM_CLASS_LVL_WON_CLASSIC_MAX,
+		CPDM_CLASS_LVL_WON_HELL_MIN,
+		CPDM_RACE_GAMES_WON_CLASSIC,
+		CPDM_RACE_GAMES_WON_HELL,
+		CPDM_CLASS_LVL_WON_CLASSIC_MIN,
+		CPDM_CLASS_LVL_WON_HELL_MAX,
+		CPDM_DISTANCE_MAX_FLOOR,
+		CPDM_PWR_MAX,
+		CPDM_CLASS_PWR_MAX,
+		CPDM_RGN_HP_SUM,
+		CPDM_RGN_HP_RUN,
+		CPDM_RGN_MP_SUM,
+		CPDM_RGN_MP_RUN,
+		CPDM_RGN_HP_RATE_MAX,
+		CPDM_RGN_MP_RATE_MAX,
+		CPDM_CLASS_WGT_MAX,
+		CPDM_CLASS_WGT_MAX_MOVE_100,
+		CPDM_MELEE_HITS,
+		CPDM_MELEE_DMG_TOTAL,
+		CPDM_CLASS_MELEE_HITS_RUN,
+		CPDM_MELEE_KILLS,
+		CPDM_CRIT_HITS,
+		CPDM_CRITS_DMG_TOTAL,
+		CPDM_CLASS_CRITS_HITS_RUN,
+		CPDM_CRIT_KILLS,
+		CPDM_CLASS_WGT_SLOWEST,
+		CPDM_CLASS_SKILL_LEGENDS,
+		CPDM_SKILL_LEGENDARY_PROCS,
+		CPDM_DEGRADED,
+		CPDM_REPAIRS,
+		CPDM_RANGED_HITS,
+		CPDM_RANGED_DMG_TOTAL,
+		CPDM_CLASS_RANGED_HITS_RUN,
+		CPDM_RANGED_KILLS,
+		CPDM_THROWN_TOTAL_HITS,
+		CPDM_THROWN_DMG_TOTAL,
+		CPDM_CLASS_THROWN_HITS_RUN,
+		CPDM_THROWN_KILLS,
+		CPDM_FLANK_HITS,
+		CPDM_FLANK_DMG,
+		CPDM_CLASS_FLANK_HITS_RUN,
+		CPDM_CLASS_FLANK_DMG_RUN,
+		CPDM_BACKSTAB_HITS,
+		CPDM_CLASS_BACKSTAB_KILLS_RUN,
+		CPDM_CLASS_BACKSTAB_HITS_RUN,
+		CPDM_BACKSTAB_KILLS,
+		CPDM_CLASS_BACKSTAB_DMG_RUN,
+		CPDM_CLASS_BLOCK_DEFENDED,
+		CPDM_CLASS_BLOCK_UNDEFENDED,
+		CPDM_CLASS_BLOCK_DEFENDED_RUN,
+		CPDM_CLASS_BLOCK_UNDEFENDED_RUN,
+		CPDM_CLASS_SPELL_CASTS_RUN,
+		CPDM_CLASS_SPELL_FIZZLES_RUN,
+		CPDM_CLASS_SNEAK_TIME,
+		CPDM_CLASS_SNEAK_SKILLUP_FLOOR,
+		CPDM_WANTED_RUNS,
+		CPDM_WANTED_TIMES_RUN,
+		CPDM_WANTED_INFLUENCE,
+		CPDM_WANTED_CRIMES_RUN,
 		CPDM_EVENT_TAGS_MAX
 	};
+
+	static const char* Compendium_t::getSkillStringForCompendium(const int skill)
+	{
+		switch ( skill )
+		{
+		case PRO_LOCKPICKING: return "tinkering skill";
+		case PRO_STEALTH: return "stealth skill";
+		case PRO_TRADING: return "trading skill";
+		case PRO_APPRAISAL: return "appraisal skill";
+		case PRO_SWIMMING: return "swimming skill";
+		case PRO_LEADERSHIP: return "leadership skill";
+		case PRO_SPELLCASTING: return "casting skill";
+		case PRO_MAGIC: return "magic skill";
+		case PRO_RANGED: return "ranged skill";
+		case PRO_SWORD: return "sword skill";
+		case PRO_MACE: return "mace skill";
+		case PRO_AXE: return "axe skill";
+		case PRO_POLEARM: return "polearm skill";
+		case PRO_SHIELD: return "blocking skill";
+		case PRO_UNARMED: return "unarmed skill";
+		case PRO_ALCHEMY: return "alchemy skill";
+		default:
+			break;
+		}
+		return "";
+	}
 
 	struct Events_t
 	{
@@ -3755,13 +3886,21 @@ struct Compendium_t
 			CLIENT_AND_SERVER,
 			CLIENT_UPDATETYPE_MAX
 		};
+		enum EventTrackingType
+		{
+			ALWAYS_UPDATE,
+			ONCE_PER_RUN,
+			UNIQUE_PER_RUN,
+			UNIQUE_PER_FLOOR
+		};
 		struct Event_t
 		{
 			Type type = SUM;
-			bool oncePerRun = false;
+			EventTrackingType eventTrackingType = ALWAYS_UPDATE;
 			ClientUpdateType clienttype = CLIENT_ONLY;
 			std::string name = "";
 			int id = CPDM_EVENT_TAGS_MAX;
+			std::set<std::string> attributes;
 		};
 		struct EventVal_t
 		{
@@ -3785,29 +3924,37 @@ struct Compendium_t
 		static std::map<int, std::vector<EventTags>> itemDisplayedEventsList;
 		static std::map<EventTags, std::set<int>> eventItemLookup;
 		static std::map<EventTags, std::set<int>> eventMonsterLookup;
-		static std::map<EventTags, std::set<int>> eventClassLookup;
 		static std::map<EventTags, std::set<std::string>> eventWorldLookup;
+		static std::map<EventTags, std::set<std::string>> eventCodexLookup;
 		static std::map<std::string, int> eventWorldIDLookup;
+		static std::map<std::string, int> eventCodexIDLookup;
+		static std::map<EventTags, std::map<int, int>> eventClassIds;
+		static const int kEventClassesMax = 40;
 		static std::map<EventTags, std::map<std::string, std::string>> eventLangEntries;
 		static void readEventsFromFile();
 		static void writeItemsSaveData();
 		static void loadItemsSaveData();
 		static void readEventsTranslations();
 		static void createDummyClientData(const int playernum);
-		static void eventUpdate(int playernum, const EventTags tag, const ItemType type, const Sint32 value, const bool loadingValue = false, const int spellID = -1);
-		static void eventUpdateMonster(int playernum, const EventTags tag, const Entity* entity, const Sint32 value, const bool loadingValue = false, const int entryID = -1);
-		static void eventUpdateWorld(int playernum, const EventTags tag, const char* category, const Sint32 value, const bool loadingValue = false, const int entryID = -1);
+		static void eventUpdate(int playernum, const EventTags tag, const ItemType type, Sint32 value, const bool loadingValue = false, const int spellID = -1);
+		static void eventUpdateMonster(int playernum, const EventTags tag, const Entity* entity, Sint32 value, const bool loadingValue = false, const int entryID = -1);
+		static void eventUpdateWorld(int playernum, const EventTags tag, const char* category, Sint32 value, const bool loadingValue = false, const int entryID = -1);
+		static void eventUpdateCodex(int playernum, const EventTags tag, const char* category, Sint32 value, const bool loadingValue = false, const int entryID = -1, const bool floorEvent = false);
 		static std::map<EventTags, std::map<int, EventVal_t>> playerEvents;
 		static std::map<EventTags, std::map<int, EventVal_t>> serverPlayerEvents[MAXPLAYERS];
 		static void onLevelChangeEvent(const int playernum, const int prevlevel, const bool prevsecretfloor, const std::string prevmapname);
-		static void onVictoryEvent(const int playernum, const bool tutorialend);
+		static void onEndgameEvent(const int playernum, const bool tutorialend, const bool saveHighscore);
 		static void sendClientDataOverNet(const int playernum);
+		static void updateEventsInMainLoop(const int playernum);
 		static std::map<int, std::string> clientDataStrings[MAXPLAYERS];
-		static std::map<int, std::map<int, std::string>> clientReceiveData; // todo clean up on end
+		static std::map<int, std::map<int, std::string>> clientReceiveData;
 		static Uint8 clientSequence;
 		static const int kEventSpellOffset = 10000;
 		static const int kEventMonsterOffset = 1000;
 		static const int kEventWorldOffset = 2000;
+		static const int kEventCodexOffset = 3000;
+		static const int kEventCodexClassOffset = 3500;
+		static const int kEventCodexOffsetMax = 9999;
 	};
 };
 

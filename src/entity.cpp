@@ -1854,6 +1854,30 @@ bool Entity::increaseSkill(int skill, bool notify)
 			}
 		}
 		myStats->EXP += 2;
+
+		if ( player >= 0 )
+		{
+			Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_XP_MAX_IN_FLOOR, "xp", 2, false, -1, true);
+			Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_XP_MAX_INSTANCE, "xp", 2);
+			Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_XP_SKILLS, "xp", 2);
+
+			const char* skillstr = Compendium_t::getSkillStringForCompendium(skill);
+			if ( strcmp(skillstr, "") )
+			{
+				if ( myStats->getProficiency(skill) == 100 )
+				{
+					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_SKILL_LEGENDS, skillstr, 1);
+				}
+				Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_SKILL_UPS, skillstr, 1);
+				Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_SKILL_UPS_RUN_MAX, skillstr, 1);
+				Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_SKILL_MAX, skillstr, myStats->getProficiency(skill));
+			}
+			if ( skill == PRO_STEALTH )
+			{
+				Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_SNEAK_SKILLUP_FLOOR, "sneaking", 1, false, -1, true);
+			}
+		}
+
 		increased = true;
 	}
 
@@ -2343,6 +2367,10 @@ void Entity::setHP(int amount)
 	if ( this->behavior == &actPlayer && entitystats->OLDHP >= entitystats->HP )
 	{
 		inputs.addRumbleForPlayerHPLoss(skill[2], amount);
+		if ( healthDiff > 0 )
+		{
+			Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_HP_LOST_RUN, "hp", healthDiff);
+		}
 	}
 
 	if ( multiplayer == SERVER )
@@ -2534,6 +2562,7 @@ void Entity::drainMP(int amount, bool notifyOverexpend)
 	}
 
 	int overdrawn = 0;
+	Sint32 oldMP = entitystats->MP;
 	entitystats->MP -= amount;
 	int player = -1;
 	for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -2601,6 +2630,12 @@ void Entity::drainMP(int amount, bool notifyOverexpend)
 			net_packet->len = 13;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
+	}
+
+	if ( player >= 0 )
+	{
+		Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_MP_SPENT_RUN, "mp", oldMP - entitystats->MP);
+		Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_MP_SPENT_TOTAL, "mp", oldMP - entitystats->MP);
 	}
 
 	if ( overdrawn < 0 )
@@ -2679,6 +2714,11 @@ bool Entity::safeConsumeMP(int amount)
 					}
 				}
 			}
+		}
+		if ( behavior == &actPlayer )
+		{
+			Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_MP_SPENT_RUN, "mp", amount);
+			Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_MP_SPENT_TOTAL, "mp", amount);
 		}
 		this->modMP(-amount);
 		return true;
@@ -2966,6 +3006,8 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			// players only.
 			this->playerStatIncrease(client_classes[player], increasestat);
+			Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_LVL_GAINED, "leveling up", 1);
+			Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_LVL_MAX, "leveling up", myStats->LVL);
 		}
 		else if ( behavior == &actMonster && monsterAllySummonRank != 0 )
 		{
@@ -3154,11 +3196,15 @@ void Entity::handleEffects(Stat* myStats)
 							{
 								StatUps.at(StatUps.size() - 1).increaseStat += 1;
 								myStats->STR++;
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_DOUBLED, "str", 1);
 								rolledBonusStat = true;
 								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
 								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
 							}
 						}
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "str", 1);
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_MAX, "str", myStats->STR);
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_STR_MAX, "str", myStats->STR);
 						break;
 					case STAT_DEX: // DEX
 						StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->DEX, 1));
@@ -3170,11 +3216,15 @@ void Entity::handleEffects(Stat* myStats)
 							{
 								StatUps.at(StatUps.size() - 1).increaseStat += 1;
 								myStats->DEX++;
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_DOUBLED, "dex", 1);
 								rolledBonusStat = true;
 								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
 								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
 							}
 						}
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "dex", 1);
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_MAX, "dex", myStats->DEX);
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_DEX_MAX, "dex", myStats->DEX);
 						break;
 					case STAT_CON: // CON
 						StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->CON, 1));
@@ -3186,11 +3236,15 @@ void Entity::handleEffects(Stat* myStats)
 							{
 								StatUps.at(StatUps.size() - 1).increaseStat += 1;
 								myStats->CON++;
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_DOUBLED, "con", 1);
 								rolledBonusStat = true;
 								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
 								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
 							}
 						}
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "con", 1);
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_MAX, "con", myStats->CON);
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_CON_MAX, "con", myStats->CON);
 						break;
 					case STAT_INT: // INT
 						StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->INT, 1));
@@ -3202,11 +3256,15 @@ void Entity::handleEffects(Stat* myStats)
 							{
 								StatUps.at(StatUps.size() - 1).increaseStat += 1;
 								myStats->INT++;
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_DOUBLED, "int", 1);
 								rolledBonusStat = true;
 								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
 								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
 							}
 						}
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "int", 1);
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_MAX, "int", myStats->INT);
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_INT_MAX, "int", myStats->INT);
 						break;
 					case STAT_PER: // PER
 						StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->PER, 1));
@@ -3223,6 +3281,9 @@ void Entity::handleEffects(Stat* myStats)
 								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
 							}
 						}
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "per", 1);
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_MAX, "per", myStats->PER);
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_PER_MAX, "per", myStats->PER);
 						break;
 					case STAT_CHR: // CHR
 						StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->CHR, 1));
@@ -3234,11 +3295,15 @@ void Entity::handleEffects(Stat* myStats)
 							{
 								StatUps.at(StatUps.size() - 1).increaseStat += 1;
 								myStats->CHR++;
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_DOUBLED, "chr", 1);
 								rolledBonusStat = true;
 								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
 								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
 							}
 						}
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "chr", 1);
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_MAX, "chr", myStats->CHR);
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_CHR_MAX, "chr", myStats->CHR);
 						break;
 				}
 			}
@@ -3826,8 +3891,18 @@ void Entity::handleEffects(Stat* myStats)
 					this->char_heal = 0;
 					if ( hpMod > 0 )
 					{
+						Sint32 oldHP = myStats->HP;
 						this->modHP(hpMod);
 						naturalHeal = true;
+						if ( behavior == &actPlayer )
+						{
+							if ( oldHP < myStats->HP )
+							{
+								Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_HP_RUN, "rgn", myStats->HP - oldHP);
+								Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_HP_SUM, "rgn", myStats->HP - oldHP);
+							}
+							Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_HP_RATE_MAX, "rgn", healthRegenInterval);
+						}
 					}
 				}
 			}
@@ -3909,7 +3984,16 @@ void Entity::handleEffects(Stat* myStats)
 			this->char_energize = 0;
 			if ( mpMod > 0 )
 			{
+				Sint32 oldMP = myStats->MP;
 				this->modMP(mpMod);
+				if ( oldMP < myStats->MP )
+				{
+					if ( behavior == &actPlayer )
+					{
+						Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_MP_RUN, "rgn", myStats->MP - oldMP);
+						Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_MP_SUM, "rgn", myStats->MP - oldMP);
+					}
+				}
 			}
 		}
 	}
@@ -4002,7 +4086,17 @@ void Entity::handleEffects(Stat* myStats)
 				this->char_energize = 0;
 				if ( mpMod > 0 )
 				{
+					Sint32 oldMP = myStats->MP;
 					this->modMP(mpMod);
+					if ( behavior == &actPlayer )
+					{
+						if ( oldMP < myStats->MP )
+						{
+							Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_MP_RUN, "rgn", myStats->MP - oldMP);
+							Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_MP_SUM, "rgn", myStats->MP - oldMP);
+						}
+						Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_MP_RATE_MAX, "rgn", manaRegenInterval);
+					}
 				}
 			}
 		}
@@ -6945,6 +7039,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( myStats->weapon->status != BROKEN )
 						{
 							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(659));
+							if ( behavior == &actPlayer )
+							{
+								Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_DEGRADED, myStats->weapon->type, 1);
+							}
 						}
 						else
 						{
@@ -7681,6 +7779,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							else
 							{
 								messagePlayer(player, MESSAGE_COMBAT, Language::get(665));
+								if ( behavior == &actPlayer && myStats->weapon )
+								{
+									Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_DEGRADED, myStats->weapon->type, 1);
+								}
 							}
 							if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 							{
@@ -7846,6 +7948,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 					else
 					{
 						messagePlayer(player, MESSAGE_COMBAT, Language::get(665));
+						if ( behavior == &actPlayer && myStats->weapon )
+						{
+							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_DEGRADED, myStats->weapon->type, 1);
+						}
 					}
 					if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 					{
@@ -8487,7 +8593,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 
 					int olddamage = damage;
-					damage *= std::max(charge, MAXCHARGE / 2) / ((double)(MAXCHARGE / 2));
+					const int chargeMult = std::max(charge, MAXCHARGE / 2) / ((double)(MAXCHARGE / 2));
+					damage *= chargeMult;
 					bool parashuProc = false;
 					if ( myStats->weapon && !shapeshifted )
 					{
@@ -8532,7 +8639,38 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
+					Sint32 oldHP = hitstats->HP;
 					hit.entity->modHP(-damage); // do the damage
+
+					if ( hitstats->HP < oldHP )
+					{
+						if ( player >= 0 )
+						{
+							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_MELEE_DMG_TOTAL, "melee", oldHP - hitstats->HP);
+							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_MELEE_HITS, "melee", 1);
+							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_MELEE_HITS_RUN, "melee", 1);
+							if ( chargeMult > 1 )
+							{
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CRITS_DMG_TOTAL, "crits", oldHP - hitstats->HP);
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CRIT_HITS, "crits", 1);
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_CRITS_HITS_RUN, "crits", 1);
+							}
+							if ( flanking )
+							{
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_FLANK_DMG, "flanking", oldHP - hitstats->HP);
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_FLANK_HITS, "flanking", 1);
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_FLANK_HITS_RUN, "flanking", 1);
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_FLANK_DMG_RUN, "flanking", oldHP - hitstats->HP);
+							}
+							else if ( backstab )
+							{
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_BACKSTAB_HITS, "backstabs", 1);
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_BACKSTAB_HITS_RUN, "backstabs", 1);
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_BACKSTAB_DMG_RUN, "backstabs", oldHP - hitstats->HP);
+							}
+						}
+					}
+
 					bool skillIncreased = false;
 					// skill increase
 					// can raise skills up to skill level 20 on dummybots...
@@ -8795,11 +8933,19 @@ void Entity::attack(int pose, int charge, Entity* target)
 								if ( (*weaponToBreak)->status != BROKEN )
 								{
 									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(679));
+									if ( behavior == &actPlayer )
+									{
+										Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_DEGRADED, (*weaponToBreak)->type, 1);
+									}
 								}
 								else
 								{
 									playSoundEntity(this, 76, 64);
 									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(680));
+									if ( behavior == &actPlayer )
+									{
+										Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BROKEN, (*weaponToBreak)->type, 1);
+									}
 								}
 								if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 								{
@@ -9169,6 +9315,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								if ( behavior == &actPlayer ) // redundant; but if this code ever changes...
 								{
 									steamAchievementClient(skill[2], "BARONY_ACH_ONE_PUNCH_MAN");
+									Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_SKILL_LEGENDARY_PROCS, "unarmed skill", 1);
 								}
 							}
 							hit.entity->modHP(-5); // do extra damage.
@@ -9298,6 +9445,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 										}
 									}
 									knockbackInflicted = true;
+									if ( behavior == &actPlayer )
+									{
+										Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_SKILL_LEGENDARY_PROCS, "polearm skill", 1);
+									}
 								}
 								hit.entity->modHP(-capstoneDamage); // do the damage
 							}
@@ -9315,6 +9466,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 										paralyzeStatusInflicted = true;
 										playSoundEntity(hit.entity, 172, 64); //TODO: Paralyze spell sound.
 										spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 170);
+										if ( behavior == &actPlayer )
+										{
+											Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_SKILL_LEGENDARY_PROCS, "mace skill", 1);
+										}
 									}
 								}
 								hit.entity->modHP(-capstoneDamage); // do the damage
@@ -9331,6 +9486,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 									slowStatusInflicted = true;
 									playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
 									spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 171);
+									if ( behavior == &actPlayer )
+									{
+										Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_SKILL_LEGENDARY_PROCS, "axe skill", 1);
+									}
 								}
 								hit.entity->modHP(-capstoneDamage); // do the damage
 								// don't re-notify if already inflicted slow from Parashu.
@@ -9352,6 +9511,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 										serverSpawnGibForClient(gib);
 									}
 									hit.entity->modHP(-capstoneDamage); // do the damage
+									if ( behavior == &actPlayer )
+									{
+										Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_SKILL_LEGENDARY_PROCS, "sword skill", 1);
+									}
 								}
 								else
 								{
@@ -9818,6 +9981,21 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 							}
 							awardXP(hit.entity, true, true);
+
+							if ( player >= 0 )
+							{
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_MELEE_KILLS, "melee", 1);
+								if ( chargeMult > 1 )
+								{
+									Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CRIT_KILLS, "crits", 1);
+								}
+								if ( backstab )
+								{
+									Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_BACKSTAB_KILLS, "backstabs", 1);
+									Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_BACKSTAB_KILLS_RUN, "backstabs", 1);
+								}
+							}
+
 							if ( player >= 0 && myStats->weapon && this->checkEnemy(hit.entity) )
 							{
 								if ( myStats->weapon->ownerUid == hit.entity->getUID() )
@@ -9996,6 +10174,16 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 							}
 							awardXP(hit.entity, true, true);
+
+							if ( player >= 0 )
+							{
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_MELEE_KILLS, "melee", 1);
+								if ( chargeMult > 1 )
+								{
+									Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CRIT_KILLS, "crits", 1);
+								}
+							}
+
 							if ( player >= 0 && myStats->weapon && this->checkEnemy(hit.entity) )
 							{
 								if ( myStats->weapon->ownerUid == hit.entity->getUID() )
@@ -11059,6 +11247,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								else
 								{
 									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(705));
+									if ( behavior == &actPlayer && myStats->weapon )
+									{
+										Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_DEGRADED, myStats->weapon->type, 1);
+									}
 								}
 								if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 								{
@@ -12142,6 +12334,13 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 					}
 				}
 			}
+		}
+
+		if ( behavior == &actPlayer )
+		{
+			Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_XP_MAX_IN_FLOOR, "xp", gain, false, -1, true);
+			Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_XP_MAX_INSTANCE, "xp", gain);
+			Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_XP_KILLS, "xp", gain);
 		}
 		destStats->EXP += gain;
 	}
@@ -17668,6 +17867,10 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 		else
 		{
 			messagePlayer(playerhit, MESSAGE_EQUIPMENT, Language::get(681), armor.getName());
+		}
+		if ( playerhit >= 0 )
+		{
+			Compendium_t::Events_t::eventUpdate(playerhit, Compendium_t::CPDM_DEGRADED, armor.type, 1);
 		}
 	}
 	else

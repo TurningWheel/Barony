@@ -6241,6 +6241,7 @@ void GenericGUIMenu::repairItem(Item* item)
 				item->status = static_cast<Status>(std::min(item->status + 2 + itemEffectItemBeatitude, static_cast<int>(EXCELLENT)));
 			}
 		}
+		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_REPAIRS, item->type, 1);
 		messagePlayer(gui_player, MESSAGE_MISC, Language::get(872), item->getName());
 	}
 	closeGUI();
@@ -10124,6 +10125,8 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 
 			if ( tinkeringConsumeMaterialsForRepair(item, false) )
 			{
+				Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_REPAIRS, item->type, 1);
+
 				int repairedStatus = std::min(static_cast<Status>(item->status + 1), EXCELLENT);
 				item->status = static_cast<Status>(repairedStatus);
 				messagePlayer(gui_player, MESSAGE_MISC, Language::get(872), item->getName());

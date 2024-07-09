@@ -2269,9 +2269,13 @@ public:
 		Player& player;
 	public:
 		std::map<std::string, std::map<int, Sint32>> itemEvents;
+		std::map<int, std::map<std::string, std::map<int, Sint32>>> floorEvents;
+		real_t playerDistAccum = 0.0;
+		Uint32 playerSneakTime = 0;
 		CompendiumProgress_t(Player& p) : player(p)
 		{};
 		~CompendiumProgress_t() {};
+		void updateFloorEvents();
 	} compendiumProgress;
 
 	static void soundMovement();

@@ -8674,10 +8674,6 @@ void doNewGame(bool makeHighscore) {
 	}
 
 	Player::Minimap_t::mapDetails.clear();
-	for ( int c = 0; c < MAXPLAYERS; ++c )
-	{
-		players[c]->compendiumProgress.itemEvents.clear();
-	}
 
 	// disable cheats
 	noclip = false;
@@ -8721,6 +8717,24 @@ void doNewGame(bool makeHighscore) {
 	// generate mimics
 	{
 		mimic_generator.init();
+	}
+
+	Compendium_t::Events_t::clientReceiveData.clear();
+	for ( int c = 0; c < MAXPLAYERS; ++c )
+	{
+		Compendium_t::Events_t::clientDataStrings[c].clear();
+		bool bOldIntro = intro;
+		intro = false;
+		if ( !bWasOnMainMenu && !loadingsavegame )
+		{
+			players[c]->compendiumProgress.updateFloorEvents();
+		}
+		intro = bOldIntro;
+		if ( !loadingsavegame )
+		{
+			players[c]->compendiumProgress.itemEvents.clear();
+			players[c]->compendiumProgress.floorEvents.clear();
+		}
 	}
 
 	// load dungeon
@@ -9403,7 +9417,6 @@ void doNewGame(bool makeHighscore) {
 		}
 	}
 
-	Compendium_t::Events_t::writeItemsSaveData();
 #ifdef LOCAL_ACHIEVEMENTS
 	LocalAchievements_t::writeToFile();
 #endif
@@ -9435,9 +9448,20 @@ void doNewGame(bool makeHighscore) {
 			if ( currentlevel == 0 && !secretlevel )
 			{
 				Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_MINEHEAD_ENTER, "minehead", 1);
+				Compendium_t::Events_t::eventUpdateCodex(clientnum, Compendium_t::CPDM_CLASS_GAMES_STARTED, "class", 1);
+				Compendium_t::Events_t::eventUpdateCodex(clientnum, Compendium_t::CPDM_RACE_GAMES_STARTED, "races", 1);
+				if ( multiplayer == SERVER || multiplayer == CLIENT || (multiplayer == SINGLE && splitscreen) )
+				{
+					Compendium_t::Events_t::eventUpdateCodex(clientnum, Compendium_t::CPDM_CLASS_GAMES_MULTI, "class", 1);
+				}
+				else
+				{
+					Compendium_t::Events_t::eventUpdateCodex(clientnum, Compendium_t::CPDM_CLASS_GAMES_SOLO, "class", 1);
+				}
 			}
 		}
 	}
+	Compendium_t::Events_t::writeItemsSaveData();
 }
 
 void doCredits() {
@@ -9519,7 +9543,7 @@ void doEndgame(bool saveHighscore) {
 		}
 	}
 
-	Compendium_t::Events_t::onVictoryEvent(clientnum, endTutorial);
+	Compendium_t::Events_t::onEndgameEvent(clientnum, endTutorial, saveHighscore);
 
 	// figure out the victory crawl texts...
 	int movieCrawlType = -1;
@@ -9856,6 +9880,8 @@ void doEndgame(bool saveHighscore) {
 		deleteSaveGame(multiplayer);
 	}
 
+	Compendium_t::Events_t::writeItemsSaveData();
+
 	gameModeManager.currentSession.seededRun.reset();
 	gameModeManager.currentSession.challengeRun.reset();
 
@@ -10048,6 +10074,13 @@ void doEndgame(bool saveHighscore) {
 	}
 #endif
 
+	Compendium_t::Events_t::clientReceiveData.clear();
+	for ( int c = 0; c < MAXPLAYERS; ++c )
+	{
+		Compendium_t::Events_t::clientDataStrings[c].clear();
+		players[c]->compendiumProgress.itemEvents.clear();
+		players[c]->compendiumProgress.floorEvents.clear();
+	}
 #ifdef LOCAL_ACHIEVEMENTS
 	LocalAchievements.writeToFile();
 #endif

@@ -3324,6 +3324,17 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		}
 
 		real_t speedFactor = getSpeedFactor(weightratio, statGetDEX(stats[PLAYER_NUM], players[PLAYER_NUM]->entity));
+
+		if ( ticks % TICKS_PER_SECOND == 0 )
+		{
+			Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_CLASS_WGT_MAX, "wgt", getCharacterWeight());
+			if ( speedFactor >= getMaximumSpeed() )
+			{
+				Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_CLASS_WGT_MAX_MOVE_100, "wgt", getCharacterWeight());
+			}
+			Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_CLASS_WGT_SLOWEST, "wgt", (int)(speedFactor * 100.0));
+		}
+
 		static ConsoleVariable<bool> cvar_debugspeedfactor("/player_showspeedfactor", false);
 		if ( *cvar_debugspeedfactor && ticks % 50 == 0 )
 		{
@@ -4527,6 +4538,9 @@ void actPlayer(Entity* my)
 	{
 		PLAYER_INIT = 1;
 		my->flags[BURNABLE] = true;
+
+		players[PLAYER_NUM]->compendiumProgress.playerDistAccum = 0.0;
+		players[PLAYER_NUM]->compendiumProgress.playerSneakTime = 0;
 
 		Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
 		nametag->x = my->x;
@@ -8072,6 +8086,28 @@ void actPlayer(Entity* my)
 			my->x += PLAYER_VELX;
 			my->y += PLAYER_VELY;
 			dist = sqrt(PLAYER_VELX * PLAYER_VELX + PLAYER_VELY * PLAYER_VELY);
+		}
+
+		if ( dist >= 0.01 )
+		{
+			players[PLAYER_NUM]->compendiumProgress.playerDistAccum += dist;
+		}
+		if ( stats[PLAYER_NUM]->sneaking )
+		{
+			players[PLAYER_NUM]->compendiumProgress.playerSneakTime++;
+		}
+		if ( ticks % (TICKS_PER_SECOND * 5) == 0 )
+		{
+			if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_TUTORIAL )
+			{
+				Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_DISTANCE_MAX_RUN, "strafing", (int)players[PLAYER_NUM]->compendiumProgress.playerDistAccum);
+				Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_DISTANCE_MAX_FLOOR, "strafing", (int)players[PLAYER_NUM]->compendiumProgress.playerDistAccum, false, -1, true);
+			}
+			Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_DISTANCE_TRAVELLED, "strafing", (int)players[PLAYER_NUM]->compendiumProgress.playerDistAccum);
+			players[PLAYER_NUM]->compendiumProgress.playerDistAccum = 0.0;
+
+			Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_CLASS_SNEAK_TIME, "sneaking", players[PLAYER_NUM]->compendiumProgress.playerSneakTime);
+			players[PLAYER_NUM]->compendiumProgress.playerSneakTime = 0;
 		}
 	}
 

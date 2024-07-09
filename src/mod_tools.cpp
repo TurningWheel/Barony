@@ -10751,10 +10751,24 @@ void Compendium_t::readItemsFromFile()
 		}
 		if ( w.HasMember("events") )
 		{
-			std::vector<std::string> alwaysTrackedEvents = {
+			std::set<std::string> alwaysTrackedEvents = {
 				"APPRAISED",
 				"RUNS_COLLECTED"
 			};
+
+			for ( auto& item : obj.items_in_category )
+			{
+				const int itemType = ItemTooltips.itemNameStringToItemID[item.name];
+				if ( itemType >= WOODEN_SHIELD && itemType < NUMITEMS )
+				{
+					if ( ::items[itemType].item_slot != NO_EQUIP )
+					{
+						alwaysTrackedEvents.insert("BROKEN");
+						alwaysTrackedEvents.insert("DEGRADED");
+						alwaysTrackedEvents.insert("REPAIRS");
+					}
+				}
+			}
 
 			for ( auto& s : alwaysTrackedEvents )
 			{
@@ -11020,10 +11034,24 @@ void Compendium_t::readMagicFromFile()
 
 		if ( w.HasMember("events") )
 		{
-			std::vector<std::string> alwaysTrackedEvents = {
+			std::set<std::string> alwaysTrackedEvents = {
 				"APPRAISED",
 				"RUNS_COLLECTED"
 			};
+
+			for ( auto& item : obj.items_in_category )
+			{
+				const int itemType = spells ? SPELL_ITEM : ItemTooltips.itemNameStringToItemID[item.name];
+				if ( itemType >= WOODEN_SHIELD && itemType < NUMITEMS )
+				{
+					if ( itemType != SPELL_ITEM && ::items[itemType].item_slot != NO_EQUIP )
+					{
+						alwaysTrackedEvents.insert("BROKEN");
+						alwaysTrackedEvents.insert("DEGRADED");
+						alwaysTrackedEvents.insert("REPAIRS");
+					}
+				}
+			}
 
 			for ( auto& s : alwaysTrackedEvents )
 			{
@@ -11154,6 +11182,8 @@ void Compendium_t::readCodexFromFile()
 	codex.clear();
 	CompendiumCodex_t::contents.clear();
 	CompendiumCodex_t::contentsMap.clear();
+	Compendium_t::Events_t::eventCodexIDLookup.clear();
+	Compendium_t::Events_t::eventCodexLookup.clear();
 	for ( auto itr = d["contents"].Begin(); itr != d["contents"].End(); ++itr )
 	{
 		for ( auto itr2 = itr->MemberBegin(); itr2 != itr->MemberEnd(); ++itr2 )
@@ -11170,6 +11200,7 @@ void Compendium_t::readCodexFromFile()
 		auto& w = itr->value;
 		auto& obj = codex[name];
 
+		obj.id = w["event_lookup"].GetInt();
 		jsonVecToVec(w["blurb"], obj.blurb);
 		jsonVecToVec(w["details"], obj.details);
 		obj.imagePath = w["img"].GetString();
@@ -11180,6 +11211,45 @@ void Compendium_t::readCodexFromFile()
 		if ( w.HasMember("models") )
 		{
 			jsonVecToVec(w["models"], obj.models);
+		}
+
+		Compendium_t::Events_t::eventCodexIDLookup[name] = obj.id;
+		if ( w.HasMember("events") )
+		{
+			for ( auto itr = w["events"].Begin(); itr != w["events"].End(); ++itr )
+			{
+				std::string eventName = itr->GetString();
+				auto find = Compendium_t::Events_t::eventIdLookup.find(eventName);
+				if ( find != Compendium_t::Events_t::eventIdLookup.end() )
+				{
+					auto find2 = Compendium_t::Events_t::events.find(find->second);
+					if ( find2 != Compendium_t::Events_t::events.end() )
+					{
+						Compendium_t::Events_t::eventCodexLookup[(Compendium_t::EventTags)find2->second.id].insert(name);
+					}
+				}
+			}
+		}
+		if ( w.HasMember("events_display") )
+		{
+			for ( auto itr = w["events_display"].Begin(); itr != w["events_display"].End(); ++itr )
+			{
+				std::string eventName = itr->GetString();
+				auto find = Compendium_t::Events_t::eventIdLookup.find(eventName);
+				if ( find != Compendium_t::Events_t::eventIdLookup.end() )
+				{
+					auto find2 = Compendium_t::Events_t::events.find(find->second);
+					if ( find2 != Compendium_t::Events_t::events.end() )
+					{
+						auto& vec = Compendium_t::Events_t::itemDisplayedEventsList[Compendium_t::Events_t::kEventCodexOffset + obj.id];
+						if ( std::find(vec.begin(), vec.end(), (Compendium_t::EventTags)find2->second.id)
+							== vec.end() )
+						{
+							vec.push_back((Compendium_t::EventTags)find2->second.id);
+						}
+					}
+				}
+			}
 		}
 	}
 }
@@ -11437,7 +11507,10 @@ std::map<std::string, Compendium_t::EventTags> Compendium_t::Events_t::eventIdLo
 std::map<int, std::set<Compendium_t::EventTags>> Compendium_t::Events_t::itemEventLookup;
 std::map<Compendium_t::EventTags, std::set<int>> Compendium_t::Events_t::eventItemLookup;
 std::map<Compendium_t::EventTags, std::set<std::string>> Compendium_t::Events_t::eventWorldLookup;
+std::map<Compendium_t::EventTags, std::set<std::string>> Compendium_t::Events_t::eventCodexLookup;
 std::map<std::string, int> Compendium_t::Events_t::eventWorldIDLookup;
+std::map<std::string, int> Compendium_t::Events_t::eventCodexIDLookup;
+std::map<Compendium_t::EventTags, std::map<int, int>> Compendium_t::Events_t::eventClassIds;
 std::map<int, std::vector<Compendium_t::EventTags>> Compendium_t::Events_t::itemDisplayedEventsList;
 std::map<Compendium_t::EventTags, std::map<int, Compendium_t::Events_t::EventVal_t>> Compendium_t::Events_t::playerEvents;
 std::map<Compendium_t::EventTags, std::map<int, Compendium_t::Events_t::EventVal_t>> Compendium_t::Events_t::serverPlayerEvents[MAXPLAYERS];
@@ -11532,6 +11605,7 @@ void Compendium_t::Events_t::readEventsFromFile()
 
 	events.clear();
 	eventIdLookup.clear();
+	eventClassIds.clear();
 	int index = -1;
 	for ( auto itr = d["tags"].Begin(); itr != d["tags"].End(); ++itr )
 	{
@@ -11575,7 +11649,40 @@ void Compendium_t::Events_t::readEventsFromFile()
 			}
 			if ( itr2->value.HasMember("once_per_run") )
 			{
-				entry.oncePerRun = itr2->value["once_per_run"].GetBool();
+				entry.eventTrackingType = itr2->value["once_per_run"].GetBool() ? EventTrackingType::ONCE_PER_RUN : EventTrackingType::ALWAYS_UPDATE;
+			}
+			if ( itr2->value.HasMember("unique_per_run") )
+			{
+				entry.eventTrackingType = itr2->value["unique_per_run"].GetBool() ? EventTrackingType::UNIQUE_PER_RUN : EventTrackingType::ALWAYS_UPDATE;
+			}
+			if ( itr2->value.HasMember("unique_per_floor") )
+			{
+				entry.eventTrackingType = itr2->value["unique_per_floor"].GetBool() ? EventTrackingType::UNIQUE_PER_FLOOR : EventTrackingType::ALWAYS_UPDATE;
+			}
+			if ( itr2->value.HasMember("attributes") )
+			{
+				if ( itr2->value["attributes"].IsArray() )
+				{
+					for ( auto arr_itr = itr2->value["attributes"].Begin(); arr_itr != itr2->value["attributes"].End(); ++arr_itr )
+					{
+						if ( arr_itr->IsString() )
+						{
+							entry.attributes.insert(arr_itr->GetString());
+						}
+					}
+				}
+				else if ( itr2->value["attributes"].IsString() )
+				{
+					entry.attributes.insert(itr2->value["attributes"].GetString());
+				}
+			}
+			if ( entry.attributes.find("class") != entry.attributes.end() || entry.attributes.find("race") != entry.attributes.end() )
+			{
+				size_t idStart = kEventCodexClassOffset + eventClassIds.size() * kEventClassesMax;
+				for ( int i = 0; i <= CLASS_HUNTER; ++i )
+				{
+					eventClassIds[id][i] = (idStart + i);
+				}
 			}
 		}
 	}
@@ -11637,6 +11744,11 @@ void Compendium_t::Events_t::loadItemsSaveData()
 			if ( itemType >= kEventWorldOffset && itemType < kEventWorldOffset + 1000 )
 			{
 				eventUpdateWorld(0, id, nullptr, value, true, itemType - kEventWorldOffset);
+				continue;
+			}
+			if ( itemType >= kEventCodexOffset && itemType <= kEventCodexOffsetMax )
+			{
+				eventUpdateCodex(0, id, nullptr, value, true, itemType - kEventCodexOffset);
 				continue;
 			}
 			if ( itemType < 0 || (itemType >= NUMITEMS && itemType < kEventSpellOffset) )
@@ -11753,9 +11865,12 @@ bool Compendium_t::Events_t::EventVal_t::applyValue(const Sint32 val)
 	if ( type == SUM )
 	{
 		value += val;
-		if ( (Uint32)value >= 0x7FFFFFFF )
+		if ( id != CPDM_SINKS_HEALTH_RESTORED )
 		{
-			value = 0x7FFFFFFF;
+			if ( (Uint32)value >= 0x7FFFFFFF )
+			{
+				value = 0x7FFFFFFF;
+			}
 		}
 		return true;
 	}
@@ -11803,7 +11918,45 @@ void onCompendiumLevelExit(const int playernum, const char* level, const bool en
 	}
 }
 
-void Compendium_t::Events_t::onVictoryEvent(const int playernum, const bool tutorialend)
+void Compendium_t::Events_t::updateEventsInMainLoop(const int playernum)
+{
+	if ( !(players[playernum] && players[playernum]->entity && stats[playernum]) )
+	{
+		return;
+	}
+
+	auto entity = players[playernum]->entity;
+	auto myStats = stats[playernum];
+	{
+		real_t resistance = 100.0 * Entity::getDamageTableMultiplier(entity, *myStats, DAMAGE_TABLE_MAGIC);
+		resistance /= (Entity::getMagicResistance(myStats) + 1);
+		resistance = -(resistance - 100.0);
+		eventUpdateCodex(playernum, CPDM_RES_MAX, "res", (int)resistance);
+		eventUpdateCodex(playernum, CPDM_CLASS_RES_MAX, "res", (int)resistance);
+	}
+
+	{
+		Sint32 ac = AC(myStats);
+		eventUpdateCodex(playernum, CPDM_AC_MAX, "ac", ac);
+		eventUpdateCodex(playernum, CPDM_CLASS_AC_MAX, "ac", ac);
+
+		Sint32 con = myStats->CON;
+		myStats->CON = 0;
+		ac = AC(myStats);
+		eventUpdateCodex(playernum, CPDM_AC_MAX_FROM_BLESS, "ac", ac);
+		myStats->CON = con;
+	}
+
+	{
+		eventUpdateCodex(playernum, CPDM_HP_MAX, "hp", myStats->MAXHP);
+		eventUpdateCodex(playernum, CPDM_CLASS_HP_MAX, "hp", myStats->MAXHP);
+
+		eventUpdateCodex(playernum, CPDM_MP_MAX, "mp", myStats->MAXMP);
+		eventUpdateCodex(playernum, CPDM_CLASS_MP_MAX, "mp", myStats->MAXMP);
+	}
+}
+
+void Compendium_t::Events_t::onEndgameEvent(const int playernum, const bool tutorialend, const bool saveHighscore)
 {
 	if ( players[playernum]->isLocalPlayer() )
 	{
@@ -11811,29 +11964,68 @@ void Compendium_t::Events_t::onVictoryEvent(const int playernum, const bool tuto
 		{
 			if ( stats[playernum]->HP <= 0 )
 			{
-				Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_TRIALS_DEATHS, "hall of trials", 1);
+				Compendium_t::Events_t::eventUpdateWorld(playernum, Compendium_t::CPDM_TRIALS_DEATHS, "hall of trials", 1);
 			}
 		}
 		else
 		{
+			players[playernum]->compendiumProgress.updateFloorEvents();
 			if ( victory )
 			{
 				if ( currentlevel == 35 )
 				{
 					onCompendiumLevelExit(playernum, "citadel sanctum", false);
+					eventUpdateCodex(playernum, Compendium_t::CPDM_CLASS_GAMES_WON, "class", 1);
+					eventUpdateCodex(playernum, Compendium_t::CPDM_CLASS_LVL_WON_MAX, "leveling up", stats[playernum]->LVL);
+					eventUpdateCodex(playernum, Compendium_t::CPDM_CLASS_LVL_WON_MIN, "leveling up", stats[playernum]->LVL);
+					eventUpdateCodex(playernum, Compendium_t::CPDM_RACE_GAMES_WON, "races", 1);
 				}
 				else if ( currentlevel == 24 )
 				{
 					onCompendiumLevelExit(playernum, "hell", false);
 					eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "hell", 1);
+					eventUpdateCodex(playernum, Compendium_t::CPDM_CLASS_GAMES_WON_HELL, "class", 1);
+					eventUpdateCodex(playernum, Compendium_t::CPDM_CLASS_LVL_WON_HELL_MAX, "leveling up", stats[playernum]->LVL);
+					eventUpdateCodex(playernum, Compendium_t::CPDM_CLASS_LVL_WON_HELL_MIN, "leveling up", stats[playernum]->LVL);
+					eventUpdateCodex(playernum, Compendium_t::CPDM_RACE_GAMES_WON_HELL, "races", 1);
 				}
 				else if ( currentlevel == 20 )
 				{
 					onCompendiumLevelExit(playernum, "herx lair", false);
+					eventUpdateCodex(playernum, Compendium_t::CPDM_CLASS_GAMES_WON_CLASSIC, "class", 1);
+					eventUpdateCodex(playernum, Compendium_t::CPDM_CLASS_LVL_WON_CLASSIC_MAX, "leveling up", stats[playernum]->LVL);
+					eventUpdateCodex(playernum, Compendium_t::CPDM_CLASS_LVL_WON_CLASSIC_MIN, "leveling up", stats[playernum]->LVL);
+					eventUpdateCodex(playernum, Compendium_t::CPDM_RACE_GAMES_WON_CLASSIC, "races", 1);
 				}
 			}
 		}
 	}
+}
+
+void Player::CompendiumProgress_t::updateFloorEvents()
+{
+	for ( auto& p1 : floorEvents )
+	{
+		if ( p1.first >= 0 && p1.first < Compendium_t::EventTags::CPDM_EVENT_TAGS_MAX )
+		{
+			Compendium_t::EventTags tag = (Compendium_t::EventTags)p1.first;
+			for ( auto& p2 : p1.second )
+			{
+				const char* category = p2.first.c_str();
+				for ( auto& p3 : p2.second )
+				{
+					int eventID = p3.first;
+					Sint32 value = p3.second;
+					if ( eventID >= Compendium_t::Events_t::kEventCodexOffset && eventID <= Compendium_t::Events_t::kEventCodexOffsetMax )
+					{
+						Compendium_t::Events_t::eventUpdateCodex(player.playernum, tag, category, value, false);
+					}
+				}
+			}
+		}
+	}
+
+	floorEvents.clear();
 }
 
 void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int prevlevel, const bool prevsecretfloor, const std::string prevmapname)
@@ -11846,6 +12038,7 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 
 	if ( players[playernum]->isLocalPlayer() )
 	{
+		players[playernum]->compendiumProgress.updateFloorEvents();
 		if ( gameModeManager.currentMode == GameModeManager_t::GAME_MODE_TUTORIAL
 			|| gameModeManager.currentMode == GameModeManager_t::GAME_MODE_TUTORIAL_INIT )
 		{
@@ -12135,7 +12328,7 @@ bool allowedCompendiumProgress()
 static ConsoleVariable<bool> cvar_compendiumDebugSave("/compendium_debug_save", false);
 
 void Compendium_t::Events_t::eventUpdate(int playernum, const EventTags tag, const ItemType type, 
-	const Sint32 value, const bool loadingValue, const int spellID)
+	Sint32 value, const bool loadingValue, const int spellID)
 {
 	if ( !allowedCompendiumProgress() ) { return; }
 	if ( intro && !loadingValue ) { return; }
@@ -12149,6 +12342,8 @@ void Compendium_t::Events_t::eventUpdate(int playernum, const EventTags tag, con
 		return;
 	}
 	auto& def = find->second;
+
+	bool clientReceiveUpdateFromServer = false;
 
 	if ( !loadingValue )
 	{
@@ -12169,6 +12364,7 @@ void Compendium_t::Events_t::eventUpdate(int playernum, const EventTags tag, con
 				if ( playernum == 0 )
 				{
 					playernum = clientnum; // when a client receives an update from the server
+					clientReceiveUpdateFromServer = true;
 				}
 				else
 				{
@@ -12206,7 +12402,7 @@ void Compendium_t::Events_t::eventUpdate(int playernum, const EventTags tag, con
 		e[itemType] = EventVal_t(tag);
 	}
 
-	if ( def.oncePerRun && !loadingValue )
+	if ( def.eventTrackingType == EventTrackingType::ONCE_PER_RUN && !loadingValue )
 	{
 		auto find = players[playernum]->compendiumProgress.itemEvents[def.name].find(itemType);
 		if ( find != players[playernum]->compendiumProgress.itemEvents[def.name].end() )
@@ -12224,6 +12420,20 @@ void Compendium_t::Events_t::eventUpdate(int playernum, const EventTags tag, con
 	}
 	else
 	{
+		if ( def.eventTrackingType == EventTrackingType::UNIQUE_PER_RUN )
+		{
+			if ( clientReceiveUpdateFromServer )
+			{
+				// server is tracking the total for us, so don't add
+				players[playernum]->compendiumProgress.itemEvents[def.name][itemType] = value;
+			}
+			else
+			{
+				players[playernum]->compendiumProgress.itemEvents[def.name][itemType] += value;
+			}
+			value = players[playernum]->compendiumProgress.itemEvents[def.name][itemType];
+		}
+
 		if ( val.applyValue(value) )
 		{
 			if ( *cvar_compendiumDebugSave )
@@ -12238,7 +12448,7 @@ void Compendium_t::Events_t::eventUpdate(int playernum, const EventTags tag, con
 }
 
 void Compendium_t::Events_t::eventUpdateMonster(int playernum, const EventTags tag, const Entity* entity,
-	const Sint32 value, const bool loadingValue, const int entryID)
+	Sint32 value, const bool loadingValue, const int entryID)
 {
 	if ( !allowedCompendiumProgress() ) { return; }
 	if ( intro && !loadingValue ) { return; }
@@ -12252,6 +12462,8 @@ void Compendium_t::Events_t::eventUpdateMonster(int playernum, const EventTags t
 		return;
 	}
 	auto& def = find->second;
+
+	bool clientReceiveUpdateFromServer = false;
 
 	if ( !loadingValue )
 	{
@@ -12272,6 +12484,7 @@ void Compendium_t::Events_t::eventUpdateMonster(int playernum, const EventTags t
 				if ( playernum == 0 )
 				{
 					playernum = clientnum; // when a client receives an update from the server
+					clientReceiveUpdateFromServer = true;
 				}
 				else
 				{
@@ -12340,7 +12553,7 @@ void Compendium_t::Events_t::eventUpdateMonster(int playernum, const EventTags t
 		e[monsterType] = EventVal_t(tag);
 	}
 
-	if ( def.oncePerRun && !loadingValue )
+	if ( def.eventTrackingType == EventTrackingType::ONCE_PER_RUN && !loadingValue )
 	{
 		auto find = players[playernum]->compendiumProgress.itemEvents[def.name].find(monsterType);
 		if ( find != players[playernum]->compendiumProgress.itemEvents[def.name].end() )
@@ -12358,6 +12571,20 @@ void Compendium_t::Events_t::eventUpdateMonster(int playernum, const EventTags t
 	}
 	else
 	{
+		if ( def.eventTrackingType == EventTrackingType::UNIQUE_PER_RUN )
+		{
+			if ( clientReceiveUpdateFromServer )
+			{
+				// server is tracking the total for us, so don't add
+				players[playernum]->compendiumProgress.itemEvents[def.name][monsterType] = value;
+			}
+			else
+			{
+				players[playernum]->compendiumProgress.itemEvents[def.name][monsterType] += value;
+			}
+			value = players[playernum]->compendiumProgress.itemEvents[def.name][monsterType];
+		}
+
 		if ( val.applyValue(value) )
 		{
 			if ( *cvar_compendiumDebugSave )
@@ -12371,7 +12598,7 @@ void Compendium_t::Events_t::eventUpdateMonster(int playernum, const EventTags t
 	}
 }
 
-void Compendium_t::Events_t::eventUpdateWorld(int playernum, const EventTags tag, const char* category, const Sint32 value, 
+void Compendium_t::Events_t::eventUpdateWorld(int playernum, const EventTags tag, const char* category, Sint32 value, 
 	const bool loadingValue, const int entryID)
 {
 	if ( !allowedCompendiumProgress() ) { return; }
@@ -12390,6 +12617,8 @@ void Compendium_t::Events_t::eventUpdateWorld(int playernum, const EventTags tag
 		return;
 	}
 	auto& def = find->second;
+
+	bool clientReceiveUpdateFromServer = false;
 
 	if ( !loadingValue )
 	{
@@ -12410,6 +12639,7 @@ void Compendium_t::Events_t::eventUpdateWorld(int playernum, const EventTags tag
 				if ( playernum == 0 )
 				{
 					playernum = clientnum; // when a client receives an update from the server
+					clientReceiveUpdateFromServer = true;
 				}
 				else
 				{
@@ -12424,7 +12654,7 @@ void Compendium_t::Events_t::eventUpdateWorld(int playernum, const EventTags tag
 	{
 		worldID = entryID;
 		bool foundCategory = false;
-		for ( auto cat : eventWorldLookup[tag] )
+		for ( auto& cat : eventWorldLookup[tag] )
 		{
 			auto find = eventWorldIDLookup.find(cat);
 			if ( find != eventWorldIDLookup.end() )
@@ -12472,7 +12702,7 @@ void Compendium_t::Events_t::eventUpdateWorld(int playernum, const EventTags tag
 		e[worldID] = EventVal_t(tag);
 	}
 
-	if ( def.oncePerRun && !loadingValue )
+	if ( def.eventTrackingType == EventTrackingType::ONCE_PER_RUN && !loadingValue )
 	{
 		auto find = players[playernum]->compendiumProgress.itemEvents[def.name].find(worldID);
 		if ( find != players[playernum]->compendiumProgress.itemEvents[def.name].end() )
@@ -12490,6 +12720,231 @@ void Compendium_t::Events_t::eventUpdateWorld(int playernum, const EventTags tag
 	}
 	else
 	{
+		if ( def.eventTrackingType == EventTrackingType::UNIQUE_PER_RUN )
+		{
+			if ( clientReceiveUpdateFromServer )
+			{
+				// server is tracking the total for us, so don't add
+				players[playernum]->compendiumProgress.itemEvents[def.name][worldID] = value;
+			}
+			else
+			{
+				players[playernum]->compendiumProgress.itemEvents[def.name][worldID] += value;
+			}
+			value = players[playernum]->compendiumProgress.itemEvents[def.name][worldID];
+		}
+
+		if ( val.applyValue(value) )
+		{
+			if ( *cvar_compendiumDebugSave )
+			{
+				if ( playernum == clientnum )
+				{
+					writeItemsSaveData();
+				}
+			}
+		}
+	}
+}
+
+void Compendium_t::Events_t::eventUpdateCodex(int playernum, const EventTags tag, const char* category, 
+	Sint32 value, const bool loadingValue, const int entryID, const bool floorEvent)
+{
+	if ( !allowedCompendiumProgress() ) { return; }
+	if ( intro && !loadingValue ) { return; }
+	if ( playernum < 0 || playernum >= MAXPLAYERS ) { return; }
+
+	if ( multiplayer == SINGLE && playernum != 0 ) { return; }
+	if ( multiplayer == SERVER && client_disconnected[playernum] )
+	{
+		return;
+	}
+
+	auto find = events.find(tag);
+	if ( find == events.end() )
+	{
+		return;
+	}
+	auto& def = find->second;
+
+	bool clientReceiveUpdateFromServer = false;
+
+	if ( !loadingValue )
+	{
+		if ( def.clienttype == CLIENT_ONLY )
+		{
+			if ( multiplayer != SINGLE )
+			{
+				if ( playernum != clientnum )
+				{
+					return;
+				}
+			}
+		}
+		else if ( def.clienttype == SERVER_ONLY )
+		{
+			if ( multiplayer == CLIENT )
+			{
+				if ( playernum == 0 )
+				{
+					playernum = clientnum; // when a client receives an update from the server
+					clientReceiveUpdateFromServer = true;
+				}
+				else
+				{
+					return;
+				}
+			}
+		}
+	}
+
+	int codexID = -1;
+	if ( entryID >= 0 )
+	{
+		codexID = entryID;
+		bool foundCategory = false;
+		if ( def.attributes.find("class") != def.attributes.end()
+			|| def.attributes.find("race") != def.attributes.end() )
+		{
+			auto findClassTag = eventClassIds.find(tag);
+			if ( findClassTag != eventClassIds.end() )
+			{
+				for ( auto& pair : findClassTag->second )
+				{
+					if ( pair.second == (codexID < kEventCodexOffset) ? (codexID + kEventCodexOffset) : codexID )
+					{
+						foundCategory = true;
+						break;
+					}
+				}
+			}
+		}
+		else
+		{
+			for ( auto& cat : eventCodexLookup[tag] )
+			{
+				auto find = eventCodexIDLookup.find(cat);
+				if ( find != eventCodexIDLookup.end() )
+				{
+					if ( eventCodexIDLookup[cat] == codexID )
+					{
+						foundCategory = true;
+						break;
+					}
+				}
+			}
+		}
+		if ( !foundCategory )
+		{
+			return;
+		}
+	}
+	else
+	{
+		auto find2 = eventCodexLookup[tag].find(category);
+		if ( find2 == eventCodexLookup[tag].end() )
+		{
+			return;
+		}
+		auto find = eventCodexIDLookup.find(category);
+		if ( find != eventCodexIDLookup.end() )
+		{
+			codexID = find->second;
+
+			if ( def.attributes.find("class") != def.attributes.end() )
+			{
+				auto findClassTag = eventClassIds.find(tag);
+				if ( findClassTag != eventClassIds.end() )
+				{
+					auto findClassId = findClassTag->second.find(client_classes[playernum]);
+					if ( findClassId != findClassTag->second.end() )
+					{
+						codexID = findClassId->second;
+					}
+					else
+					{
+						codexID = -1;
+					}
+				}
+			}
+			else if ( def.attributes.find("race") != def.attributes.end() )
+			{
+				auto findRaceTag = eventClassIds.find(tag);
+				if ( findRaceTag != eventClassIds.end() )
+				{
+					int race = RACE_HUMAN;
+					if ( stats[playernum]->playerRace > 0 && stats[playernum]->appearance == 0 )
+					{
+						race = stats[playernum]->playerRace;
+					}
+					auto findRaceId = findRaceTag->second.find(race);
+					if ( findRaceId != findRaceTag->second.end() )
+					{
+						codexID = findRaceId->second;
+					}
+					else
+					{
+						codexID = -1;
+					}
+				}
+			}
+		}
+	}
+
+	if ( codexID == -1 )
+	{
+		return;
+	}
+
+	if ( codexID < kEventCodexOffset )
+	{
+		codexID += kEventCodexOffset; // convert to offset
+	}
+
+
+	auto& e = (multiplayer == SERVER && playernum != 0 && !loadingValue) ? serverPlayerEvents[playernum][tag] : playerEvents[tag];
+	if ( e.find(codexID) == e.end() )
+	{
+		e[codexID] = EventVal_t(tag);
+	}
+
+	if ( def.eventTrackingType == EventTrackingType::ONCE_PER_RUN && !loadingValue )
+	{
+		auto find = players[playernum]->compendiumProgress.itemEvents[def.name].find(codexID);
+		if ( find != players[playernum]->compendiumProgress.itemEvents[def.name].end() )
+		{
+			// already present, skip adding
+			return;
+		}
+		players[playernum]->compendiumProgress.itemEvents[def.name][codexID] += value;
+	}
+
+	auto& val = e[codexID];
+	if ( loadingValue )
+	{
+		val.value = value; // reading from savefile
+	}
+	else
+	{
+		if ( def.eventTrackingType == EventTrackingType::UNIQUE_PER_RUN )
+		{
+			if ( clientReceiveUpdateFromServer )
+			{
+				// server is tracking the total for us, so don't add
+				players[playernum]->compendiumProgress.itemEvents[def.name][codexID] = value;
+			}
+			else
+			{
+				players[playernum]->compendiumProgress.itemEvents[def.name][codexID] += value;
+			}
+			value = players[playernum]->compendiumProgress.itemEvents[def.name][codexID];
+		}
+		else if ( def.eventTrackingType == EventTrackingType::UNIQUE_PER_FLOOR && floorEvent )
+		{
+			players[playernum]->compendiumProgress.floorEvents[tag][category][codexID] = value;
+			return;
+		}
+
 		if ( val.applyValue(value) )
 		{
 			if ( *cvar_compendiumDebugSave )

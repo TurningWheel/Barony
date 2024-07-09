@@ -685,6 +685,13 @@ void actArrow(Entity* my)
 
 						if ( parent->behavior == &actPlayer )
 						{
+							if ( oldHP > hitstats->HP )
+							{
+								Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_RANGED_DMG_TOTAL, "missiles", oldHP - hitstats->HP);
+								Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_RANGED_HITS, "missiles", 1);
+								Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_CLASS_RANGED_HITS_RUN, "missiles", 1);
+							}
+
 							if ( itemTypeIsQuiver((ItemType)my->arrowQuiverType) )
 							{
 								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_DMG_MAX, (ItemType)my->arrowQuiverType, damage);
@@ -798,6 +805,11 @@ void actArrow(Entity* my)
 					{
 						parent->awardXP( hit.entity, true, true );
 						spawnBloodVialOnMonsterDeath(hit.entity, hitstats, parent);
+
+						if ( parent->behavior == &actPlayer )
+						{
+							Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_RANGED_KILLS, "missiles", 1);
+						}
 					}
 
 					// alert the monster

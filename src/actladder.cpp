@@ -553,6 +553,9 @@ void actWinningPortal(Entity* my)
 						{
 							continue;
 						}
+
+						Compendium_t::Events_t::sendClientDataOverNet(c);
+
 						strcpy((char*)net_packet->data, "WING");
 						net_packet->data[4] = victory;
 						net_packet->data[5] = cutscene;
@@ -780,6 +783,9 @@ void Entity::actExpansionEndGamePortal()
 						{
 							continue;
 						}
+
+						Compendium_t::Events_t::sendClientDataOverNet(c);
+
 						strcpy((char*)net_packet->data, "WING");
 						net_packet->data[4] = victory;
 						net_packet->data[5] = 0;

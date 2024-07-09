@@ -812,12 +812,22 @@ void actThrown(Entity* my)
 				char whatever[256] = "";
 				if ( !friendlyHit )
 				{
+					Sint32 oldHP = hitstats->HP;
 					hit.entity->modHP(-damage);
 
 					if ( parent && parent->behavior == &actPlayer )
 					{
 						Compendium_t::Events_t::eventUpdate(parent->skill[2], 
 							Compendium_t::CPDM_DMG_MAX, item->type, damage);
+						if ( cat == THROWN )
+						{
+							if ( oldHP > hitstats->HP )
+							{
+								Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_THROWN_DMG_TOTAL, "thrown", oldHP - hitstats->HP);
+								Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_THROWN_TOTAL_HITS, "thrown", 1);
+								Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_CLASS_THROWN_HITS_RUN, "thrown", 1);
+							}
+						}
 					}
 				}
 
@@ -947,6 +957,7 @@ void actThrown(Entity* my)
 												if ( hit.entity->monsterAllyIndex != parent->skill[2] )
 												{
 													Compendium_t::Events_t::eventUpdateMonster(parent->skill[2], Compendium_t::CPDM_RECRUITED, hit.entity, 1);
+													Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_RACE_RECRUITS, "races", 1);
 												}
 												hit.entity->monsterAllyIndex = parent->skill[2];
 												if ( multiplayer == SERVER )
@@ -1336,6 +1347,14 @@ void actThrown(Entity* my)
 				{
 					parent->awardXP(hit.entity, true, true);
 					spawnBloodVialOnMonsterDeath(hit.entity, hitstats, parent);
+
+					if ( parent->behavior == &actPlayer )
+					{
+						if ( cat == THROWN )
+						{
+							Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_THROWN_KILLS, "thrown", 1);
+						}
+					}
 				}
 
 				bool doAlert = true;

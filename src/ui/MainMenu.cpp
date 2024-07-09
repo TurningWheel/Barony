@@ -24664,6 +24664,9 @@ failed:
 	                    if (client_disconnected[c]) {
 		                    continue;
 	                    }
+
+						Compendium_t::Events_t::sendClientDataOverNet(c);
+
 	                    memcpy((char*)net_packet->data, "RSTR", 4);
 	                    SDLNet_Write32(svFlags, &net_packet->data[4]);
 	                    SDLNet_Write32(uniqueGameKey, &net_packet->data[8]);
@@ -26587,6 +26590,9 @@ failed:
 						if ( client_disconnected[c] ) {
 							continue;
 						}
+
+						Compendium_t::Events_t::sendClientDataOverNet(c);
+
 						memcpy((char*)net_packet->data, "RSTR", 4);
 						SDLNet_Write32(svFlags, &net_packet->data[4]);
 						SDLNet_Write32(uniqueGameKey, &net_packet->data[8]);
@@ -32912,6 +32918,15 @@ failed:
 								itemname = entryName;
 							}
 						}
+						else if ( entryType >= Compendium_t::Events_t::kEventCodexOffset
+							&& entryType <= Compendium_t::Events_t::kEventCodexOffsetMax )
+						{
+							if ( Compendium_t::Events_t::eventLangEntries[tag].find(entryName)
+								!= Compendium_t::Events_t::eventLangEntries[tag].end() )
+							{
+								itemname = entryName;
+							}
+						}
 						else if ( entryType >= Compendium_t::Events_t::kEventSpellOffset
 							&& entryType < Compendium_t::Events_t::kEventSpellOffset + 1000 )
 						{
@@ -32930,29 +32945,99 @@ failed:
 					if ( val )
 					{
 						val->setDisabled(false);
-						auto find = Compendium_t::Events_t::playerEvents[tag].find(entryType);
-						if ( find != Compendium_t::Events_t::playerEvents[tag].end() )
+						int value = 0;
+						if ( entryType >= Compendium_t::Events_t::kEventCodexOffset
+							&& entryType <= Compendium_t::Events_t::kEventCodexOffsetMax
+							&& Compendium_t::Events_t::eventClassIds.find(tag) != Compendium_t::Events_t::eventClassIds.end() )
 						{
-							if ( find->second.type == Compendium_t::Events_t::BITFIELD )
+							val->setText("-");
+							auto findEvent = Compendium_t::Events_t::events.find(tag);
+							if ( findEvent != Compendium_t::Events_t::events.end() )
 							{
-								int total = 0;
-								for ( int i = 0; i < 32; ++i )
+								auto findTag = Compendium_t::Events_t::playerEvents.find(tag);
+								if ( findTag != Compendium_t::Events_t::playerEvents.end() )
 								{
-									if ( find->second.value & (1 << i) )
+									bool firstValue = true;
+									int entryNum = -1;
+									for ( auto& pair : Compendium_t::Events_t::eventClassIds[tag] )
 									{
-										++total;
+										auto find = findTag->second.find(pair.second);
+										if ( find != findTag->second.end() )
+										{
+											if ( find->second.type == Compendium_t::Events_t::MAX 
+												|| find->second.type == Compendium_t::Events_t::SUM )
+											{
+												if ( find->second.value > value )
+												{
+													entryNum = pair.first;
+													value = find->second.value;
+												}
+											}
+											else if ( find->second.type == Compendium_t::Events_t::MIN )
+											{
+												if ( firstValue || find->second.value < value )
+												{
+													entryNum = pair.first;
+													value = find->second.value;
+												}
+											}
+											firstValue = false;
+										}
+									}
+									if ( !firstValue )
+									{
+										std::string output = std::to_string(value);
+										if ( findEvent->second.attributes.find("class") != findEvent->second.attributes.end() )
+										{
+											if ( entryNum >= 0 && entryNum < NUMCLASSES )
+											{
+												output += ' ';
+												output += playerClassLangEntry(entryNum, 0);
+												val->setText(output.c_str());
+											}
+										}
+										else if ( findEvent->second.attributes.find("race") != findEvent->second.attributes.end() )
+										{
+											int type = getMonsterFromPlayerRace(entryNum);
+											output += ' ';
+											output += getMonsterLocalizedName((Monster)type);
+											val->setText(output.c_str());
+										}
 									}
 								}
-								val->setText(std::to_string(total).c_str());
-							}
-							else
-							{
-								val->setText(std::to_string(find->second.value).c_str());
 							}
 						}
 						else
 						{
-							val->setText("-");
+							auto findTag = Compendium_t::Events_t::playerEvents.find(tag);
+							if ( findTag != Compendium_t::Events_t::playerEvents.end() )
+							{
+								auto find = findTag->second.find(entryType);
+								if ( find != findTag->second.end() )
+								{
+									if ( find->second.type == Compendium_t::Events_t::BITFIELD )
+									{
+										int total = 0;
+										for ( int i = 0; i < 32; ++i )
+										{
+											if ( find->second.value & (1 << i) )
+											{
+												++total;
+											}
+										}
+										value = total;
+									}
+									else
+									{
+										value = find->second.value;
+									}
+								}
+								val->setText(std::to_string(value).c_str());
+							}
+							else
+							{
+								val->setText("-");
+							}
 						}
 					}
 				}
@@ -33330,6 +33415,9 @@ failed:
 
 		if ( Frame* page_right = parent->findFrame("page_right") )
 		{
+			// find records for this item
+			populateRecordsSectionItems(page_right, entry.id + Compendium_t::Events_t::kEventCodexOffset, name.c_str());
+
 			if ( page_right = page_right->findFrame("page_right_inner") )
 			{
 				if ( auto details = page_right->findField("details") )
@@ -33982,7 +34070,7 @@ failed:
 
 			int statx = padx + 4;
 			int staty = pady + 18 + 9;
-			auto statsTxt = page_right_inner->addField("details", 64);
+			auto statsTxt = page_right_inner->addField("details", 1024);
 			statsTxt->setFont(smallfont_outline);
 			statsTxt->setText("");
 			statsTxt->setHJustify(Field::justify_t::LEFT);

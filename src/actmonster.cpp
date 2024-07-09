@@ -408,6 +408,9 @@ void ShopkeeperPlayerHostility_t::setWantedLevel(ShopkeeperPlayerHostility_t::Pl
 		{
 			messagePlayerColor(h.player, MESSAGE_STATUS, makeColorRGB(255, 0, 0), Language::get(4305));
 		}
+
+		Compendium_t::Events_t::eventUpdateCodex(h.player, Compendium_t::CPDM_WANTED_RUNS, "wanted", 1);
+		Compendium_t::Events_t::eventUpdateCodex(h.player, Compendium_t::CPDM_WANTED_TIMES_RUN, "wanted", 1);
 	}
 	if ( h.wantedLevel != wantedLevel )
 	{
@@ -458,6 +461,8 @@ void ShopkeeperPlayerHostility_t::setWantedLevel(ShopkeeperPlayerHostility_t::Pl
 						{
 							setWantedLevel(*h2, WantedLevel::WANTED_FOR_ACCESSORY, shopkeeper, false);
 							++h2->numAccessories;
+							Compendium_t::Events_t::eventUpdateCodex(h.player, Compendium_t::CPDM_WANTED_INFLUENCE, "wanted", 1);
+							Compendium_t::Events_t::eventUpdateCodex(h2->player, Compendium_t::CPDM_WANTED_CRIMES_RUN, "wanted", 1);
 							continue;
 						}
 					}
@@ -487,6 +492,8 @@ void ShopkeeperPlayerHostility_t::setWantedLevel(ShopkeeperPlayerHostility_t::Pl
 					{
 						setWantedLevel(*h2, WantedLevel::WANTED_FOR_ACCESSORY, shopkeeper, false);
 						++h2->numAccessories;
+						Compendium_t::Events_t::eventUpdateCodex(h.player, Compendium_t::CPDM_WANTED_INFLUENCE, "wanted", 1);
+						Compendium_t::Events_t::eventUpdateCodex(h2->player, Compendium_t::CPDM_WANTED_CRIMES_RUN, "wanted", 1);
 					}
 				}
 			}
@@ -505,6 +512,7 @@ void ShopkeeperPlayerHostility_t::onShopkeeperDeath(Entity* my, Stat* myStats, E
 			{
 				setWantedLevel(*h, WantedLevel::WANTED_FOR_KILL, my, true);
 				++h->numKills;
+				Compendium_t::Events_t::eventUpdateCodex(h->player, Compendium_t::CPDM_WANTED_CRIMES_RUN, "wanted", 1);
 			}
 		}
 		else if ( attacker->behavior == &actMonster )
@@ -527,6 +535,7 @@ void ShopkeeperPlayerHostility_t::onShopkeeperHit(Entity* my, Stat* myStats, Ent
 			{
 				setWantedLevel(*h, WantedLevel::WANTED_FOR_AGGRESSION, my, true);
 				++h->numAggressions;
+				Compendium_t::Events_t::eventUpdateCodex(h->player, Compendium_t::CPDM_WANTED_CRIMES_RUN, "wanted", 1);
 			}
 		}
 	}
@@ -1891,6 +1900,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 	}
 
 	Compendium_t::Events_t::eventUpdateMonster(monsterclicked, Compendium_t::CPDM_RECRUITED, my, 1);
+	Compendium_t::Events_t::eventUpdateCodex(monsterclicked, Compendium_t::CPDM_RACE_RECRUITS, "races", 1);
 	if ( (stats[monsterclicked]->type != HUMAN && stats[monsterclicked]->type != AUTOMATON) && myStats->type == HUMAN )
 	{
 		steamAchievementClient(monsterclicked, "BARONY_ACH_PITY_FRIEND");

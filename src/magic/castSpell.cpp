@@ -554,6 +554,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( player >= 0 )
 				{
 					Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELL_FAILURES, SPELL_ITEM, 1, false, spell->ID);
+					if ( !usingSpellbook && !using_magicstaff && !trap )
+					{
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_SPELL_FIZZLES_RUN, "memorized", 1);
+					}
 				}
 				return NULL;
 			}
@@ -2462,6 +2466,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			else if ( !usingSpellbook && !using_magicstaff )
 			{
 				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELL_CASTS, SPELL_ITEM, 1, false, spell->ID);
+				Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_SPELL_CASTS_RUN, "memorized", 1);
 			}
 		}
 		if ( using_magicstaff )

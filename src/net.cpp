@@ -5116,6 +5116,12 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 											itemType - Compendium_t::Events_t::kEventWorldOffset);
 										continue;
 									}
+									if ( itemType >= Compendium_t::Events_t::kEventCodexOffset && itemType <= Compendium_t::Events_t::kEventCodexOffsetMax )
+									{
+										Compendium_t::Events_t::eventUpdateCodex(0, (Compendium_t::EventTags)id, nullptr, value, false, 
+											itemType - Compendium_t::Events_t::kEventCodexOffset);
+										continue;
+									}
 									if ( itemType < 0 || (itemType >= NUMITEMS && itemType < Compendium_t::Events_t::kEventSpellOffset) )
 									{
 										continue;
