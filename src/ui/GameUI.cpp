@@ -19775,16 +19775,7 @@ void Player::CharacterSheet_t::updateAttributes()
 
 	if ( auto field = attributesInnerFrame->findField("weight text stat") )
 	{
-		Sint32 weight = 0;
-		for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
-		{
-			Item* item = (Item*)node->element;
-			if ( item )
-			{
-				weight += item->getWeight();
-			}
-		}
-		weight += stats[player.playernum]->getGoldWeight();
+		Sint32 weight = player.movement.getCharacterWeight();
 		snprintf(buf, sizeof(buf), "%d", weight);
 		if ( strcmp(buf, field->getText()) )
 		{
