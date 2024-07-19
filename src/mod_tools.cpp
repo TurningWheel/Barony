@@ -21,6 +21,7 @@ See LICENSE for details.
 #include "ui/MainMenu.hpp"
 #include "shops.hpp"
 #include "interface/ui.hpp"
+#include "ui/GameUI.hpp"
 #endif
 #include "init.hpp"
 #include "ui/LoadingScreen.hpp"
@@ -10645,6 +10646,7 @@ void jsonVecToVec(rapidjson::Value& val, std::vector<Sint32>& vec)
 #ifndef EDITOR
 Compendium_t CompendiumEntries;
 Item Compendium_t::compendiumItem;
+Compendium_t::CompendiumEntityCurrent Compendium_t::compendiumEntityCurrent;
 Entity Compendium_t::compendiumItemModel(-1, 0, nullptr, nullptr);
 bool Compendium_t::tooltipNeedUpdate = false;
 SDL_Rect Compendium_t::tooltipPos;
@@ -10895,13 +10897,19 @@ void Compendium_t::readMagicFromFile()
 	std::unordered_set<std::string> ignoredSpells;
 	std::unordered_set<std::string> ignoredSpellbooks;
 
-	for ( auto itr = d["exclude_spells"].Begin(); itr != d["exclude_spells"].End(); ++itr )
+	if ( d.HasMember("exclude_spells") )
 	{
-		ignoredSpells.insert(itr->GetString());
+		for ( auto itr = d["exclude_spells"].Begin(); itr != d["exclude_spells"].End(); ++itr )
+		{
+			ignoredSpells.insert(itr->GetString());
+		}
 	}
-	for ( auto itr = d["exclude_spellbooks"].Begin(); itr != d["exclude_spellbooks"].End(); ++itr )
+	if ( d.HasMember("exclude_spellbooks") )
 	{
-		ignoredSpellbooks.insert(itr->GetString());
+		for ( auto itr = d["exclude_spellbooks"].Begin(); itr != d["exclude_spellbooks"].End(); ++itr )
+		{
+			ignoredSpellbooks.insert(itr->GetString());
+		}
 	}
 
 	for ( auto itr = entries.MemberBegin(); itr != entries.MemberEnd(); ++itr )
@@ -10911,6 +10919,8 @@ void Compendium_t::readMagicFromFile()
 		auto& obj = magic[name];
 
 		jsonVecToVec(w["blurb"], obj.blurb);
+
+		std::set<std::string> objSpellsLookup;
 		for ( auto itr = w["items"].Begin(); itr != w["items"].End(); ++itr )
 		{
 			for ( auto itr2 = itr->MemberBegin(); itr2 != itr->MemberEnd(); ++itr2 )
@@ -10922,115 +10932,142 @@ void Compendium_t::readMagicFromFile()
 				{
 					item.rotation = itr2->value["rotation"].GetInt();
 				}
-				obj.items_in_category.push_back(item);
-			}
-		}
-
-		std::list<spell_t*> spellsToSort;
-		bool spells = name.find("spells") != std::string::npos;
-		bool spellbooks = name.find("spellbooks") != std::string::npos;
-		if ( spells || spellbooks )
-		{
-			for ( auto spell : allGameSpells )
-			{
-				if ( spells && ignoredSpells.find(spell->spell_internal_name) != ignoredSpells.end() )
+				if ( item.name.find("spell_") != std::string::npos )
 				{
-					continue;
-				}
-				if ( spellbooks )
-				{
-					int book = getSpellbookFromSpellID(spell->ID);
-					if ( book >= WOODEN_SHIELD && book < NUMITEMS && ::items[book].category == SPELLBOOK )
+					for ( auto spell : allGameSpells )
 					{
-						if ( ignoredSpellbooks.find(itemNameStrings[book + 2]) != ignoredSpellbooks.end() )
+						if ( item.name == spell->spell_internal_name )
 						{
-							continue;
+							item.spellID = spell->ID;
+							objSpellsLookup.insert(item.name);
+							break;
 						}
 					}
-					else
+				}
+				else if ( item.name.find("spellbook_") != std::string::npos )
+				{
+					for ( auto spell : allGameSpells )
 					{
-						continue;
+						int book = getSpellbookFromSpellID(spell->ID);
+						if ( book >= WOODEN_SHIELD && book < NUMITEMS && ::items[book].category == SPELLBOOK )
+						{
+							if ( item.name == itemNameStrings[book + 2] )
+							{
+								item.spellID = spell->ID;
+								break;
+							}
+						}
 					}
 				}
-
-				if ( name.find("damage") != std::string::npos )
-				{
-					if ( ItemTooltips.spellItems[spell->ID].spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_DAMAGE)
-						== ItemTooltips.spellItems[spell->ID].spellTags.end() )
-					{
-						continue;
-					}
-				}
-				else if ( name.find("status") != std::string::npos )
-				{
-					if ( ItemTooltips.spellItems[spell->ID].spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_STATUS_EFFECT)
-						== ItemTooltips.spellItems[spell->ID].spellTags.end() )
-					{
-						continue;
-					}
-				}
-				else if ( name.find("utility") != std::string::npos )
-				{
-					if ( ItemTooltips.spellItems[spell->ID].spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_DAMAGE)
-						!= ItemTooltips.spellItems[spell->ID].spellTags.end()
-						|| ItemTooltips.spellItems[spell->ID].spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_STATUS_EFFECT)
-						!= ItemTooltips.spellItems[spell->ID].spellTags.end() )
-					{
-						continue;
-					}
-				}
-				else
-				{
-					continue;
-				}
-				spellsToSort.push_back(spell);
-			}
-
-			if ( spellbooks )
-			{
-				spellsToSort.sort([](const spell_t* lhs, const spell_t* rhs) {
-					const int bookLeft = getSpellbookFromSpellID(lhs->ID);
-					const int bookRight = getSpellbookFromSpellID(rhs->ID);
-
-					const int bookLevelLeft = ::items[bookLeft].level >= 0 ? ::items[bookLeft].level : 10000; // -1 level sorted to the end
-					const int bookLevelRight = ::items[bookRight].level >= 0 ? ::items[bookRight].level : 10000;
-
-					if ( bookLevelLeft < bookLevelRight ) { return true; }
-					if ( bookLevelLeft > bookLevelRight ) { return false; }
-					if ( rhs->difficulty > lhs->difficulty ) { return true; }
-					if ( rhs->difficulty < lhs->difficulty ) { return false; }
-
-					return rhs->ID < lhs->ID;
-					});
-			}
-			else
-			{
-				spellsToSort.sort([](const spell_t* lhs, const spell_t* rhs) {
-					if ( rhs->difficulty > lhs->difficulty ) { return true; }
-					if ( rhs->difficulty < lhs->difficulty ) { return false; }
-					
-					return rhs->ID < lhs->ID;
-					});
-			}
-
-			for ( auto spell : spellsToSort )
-			{
-				CompendiumItems_t::Codex_t::CodexItem_t item;
-				item.rotation = 0;
-				if ( spellbooks )
-				{
-					int book = getSpellbookFromSpellID(spell->ID);
-					item.name = itemNameStrings[book + 2];
-					item.rotation = 180;
-				}
-				else
-				{
-					item.name = spell->spell_internal_name;
-				}
-				item.spellID = spell->ID;
 				obj.items_in_category.push_back(item);
 			}
 		}
+
+		//std::list<spell_t*> spellsToSort;
+		//bool spells = name.find("spells") != std::string::npos;
+		//bool spellbooks = name.find("spellbooks") != std::string::npos;
+		//if ( spells || spellbooks )
+		//{
+		//	for ( auto spell : allGameSpells )
+		//	{
+		//		if ( spells && ignoredSpells.find(spell->spell_internal_name) != ignoredSpells.end() )
+		//		{
+		//			continue;
+		//		}
+		//		if ( spellbooks )
+		//		{
+		//			int book = getSpellbookFromSpellID(spell->ID);
+		//			if ( book >= WOODEN_SHIELD && book < NUMITEMS && ::items[book].category == SPELLBOOK )
+		//			{
+		//				if ( ignoredSpellbooks.find(itemNameStrings[book + 2]) != ignoredSpellbooks.end() )
+		//				{
+		//					continue;
+		//				}
+		//			}
+		//			else
+		//			{
+		//				continue;
+		//			}
+		//		}
+
+		//		if ( name.find("damage") != std::string::npos )
+		//		{
+		//			if ( ItemTooltips.spellItems[spell->ID].spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_DAMAGE)
+		//				== ItemTooltips.spellItems[spell->ID].spellTags.end() )
+		//			{
+		//				continue;
+		//			}
+		//		}
+		//		else if ( name.find("status") != std::string::npos )
+		//		{
+		//			if ( ItemTooltips.spellItems[spell->ID].spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_STATUS_EFFECT)
+		//				== ItemTooltips.spellItems[spell->ID].spellTags.end() )
+		//			{
+		//				continue;
+		//			}
+		//		}
+		//		else if ( name.find("utility") != std::string::npos )
+		//		{
+		//			if ( ItemTooltips.spellItems[spell->ID].spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_DAMAGE)
+		//				!= ItemTooltips.spellItems[spell->ID].spellTags.end()
+		//				|| ItemTooltips.spellItems[spell->ID].spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_STATUS_EFFECT)
+		//				!= ItemTooltips.spellItems[spell->ID].spellTags.end() )
+		//			{
+		//				continue;
+		//			}
+		//		}
+		//		else
+		//		{
+		//			continue;
+		//		}
+		//		spellsToSort.push_back(spell);
+		//	}
+
+		//	if ( spellbooks )
+		//	{
+		//		spellsToSort.sort([](const spell_t* lhs, const spell_t* rhs) {
+		//			const int bookLeft = getSpellbookFromSpellID(lhs->ID);
+		//			const int bookRight = getSpellbookFromSpellID(rhs->ID);
+
+		//			const int bookLevelLeft = ::items[bookLeft].level >= 0 ? ::items[bookLeft].level : 10000; // -1 level sorted to the end
+		//			const int bookLevelRight = ::items[bookRight].level >= 0 ? ::items[bookRight].level : 10000;
+
+		//			if ( bookLevelLeft < bookLevelRight ) { return true; }
+		//			if ( bookLevelLeft > bookLevelRight ) { return false; }
+		//			if ( rhs->difficulty > lhs->difficulty ) { return true; }
+		//			if ( rhs->difficulty < lhs->difficulty ) { return false; }
+
+		//			return rhs->ID < lhs->ID;
+		//			});
+		//	}
+		//	else
+		//	{
+		//		spellsToSort.sort([](const spell_t* lhs, const spell_t* rhs) {
+		//			if ( rhs->difficulty > lhs->difficulty ) { return true; }
+		//			if ( rhs->difficulty < lhs->difficulty ) { return false; }
+		//			
+		//			return rhs->ID < lhs->ID;
+		//			});
+		//	}
+
+		//	for ( auto spell : spellsToSort )
+		//	{
+		//		CompendiumItems_t::Codex_t::CodexItem_t item;
+		//		item.rotation = 0;
+		//		if ( spellbooks )
+		//		{
+		//			int book = getSpellbookFromSpellID(spell->ID);
+		//			item.name = itemNameStrings[book + 2];
+		//			item.rotation = 180;
+		//		}
+		//		else
+		//		{
+		//			item.name = spell->spell_internal_name;
+		//		}
+		//		item.spellID = spell->ID;
+		//		obj.items_in_category.push_back(item);
+		//	}
+		//}
 
 		if ( w.HasMember("events") )
 		{
@@ -11041,7 +11078,8 @@ void Compendium_t::readMagicFromFile()
 
 			for ( auto& item : obj.items_in_category )
 			{
-				const int itemType = spells ? SPELL_ITEM : ItemTooltips.itemNameStringToItemID[item.name];
+				bool isSpell = (objSpellsLookup.find(item.name) != objSpellsLookup.end());
+				const int itemType = isSpell ? SPELL_ITEM : ItemTooltips.itemNameStringToItemID[item.name];
 				if ( itemType >= WOODEN_SHIELD && itemType < NUMITEMS )
 				{
 					if ( itemType != SPELL_ITEM && ::items[itemType].item_slot != NO_EQUIP )
@@ -11063,7 +11101,8 @@ void Compendium_t::readMagicFromFile()
 					{
 						for ( auto& item : obj.items_in_category )
 						{
-							const int itemType = spells ? SPELL_ITEM : ItemTooltips.itemNameStringToItemID[item.name];
+							bool isSpell = (objSpellsLookup.find(item.name) != objSpellsLookup.end());
+							const int itemType = isSpell ? SPELL_ITEM : ItemTooltips.itemNameStringToItemID[item.name];
 							if ( itemType == SPELL_ITEM )
 							{
 								Compendium_t::Events_t::itemEventLookup[Compendium_t::Events_t::kEventSpellOffset + item.spellID].insert((Compendium_t::EventTags)find2->second.id);
@@ -11089,7 +11128,8 @@ void Compendium_t::readMagicFromFile()
 					{
 						for ( auto& item : obj.items_in_category )
 						{
-							const int itemType = spells ? SPELL_ITEM : ItemTooltips.itemNameStringToItemID[item.name];
+							bool isSpell = (objSpellsLookup.find(item.name) != objSpellsLookup.end());
+							const int itemType = isSpell ? SPELL_ITEM : ItemTooltips.itemNameStringToItemID[item.name];
 							if ( itemType == SPELL_ITEM )
 							{
 								Compendium_t::Events_t::itemEventLookup[Compendium_t::Events_t::kEventSpellOffset + item.spellID].insert((Compendium_t::EventTags)find2->second.id);
@@ -11118,7 +11158,8 @@ void Compendium_t::readMagicFromFile()
 					{
 						for ( auto& item : obj.items_in_category )
 						{
-							const int itemType = spells ? SPELL_ITEM : ItemTooltips.itemNameStringToItemID[item.name];
+							bool isSpell = (objSpellsLookup.find(item.name) != objSpellsLookup.end());
+							const int itemType = isSpell ? SPELL_ITEM : ItemTooltips.itemNameStringToItemID[item.name];
 							if ( itemType == SPELL_ITEM )
 							{
 								auto& vec = Compendium_t::Events_t::itemDisplayedEventsList[Compendium_t::Events_t::kEventSpellOffset + item.spellID];
@@ -11165,7 +11206,7 @@ void Compendium_t::readCodexFromFile()
 		return;
 	}
 
-	char buf[65536];
+	char buf[120000];
 	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
 	rapidjson::StringStream is(buf);
@@ -11230,6 +11271,9 @@ void Compendium_t::readCodexFromFile()
 				}
 			}
 		}
+
+		Compendium_t::Events_t::itemDisplayedEventsList.erase(Compendium_t::Events_t::kEventCodexOffset + obj.id);
+		Compendium_t::Events_t::itemDisplayedCustomEventsList.erase(Compendium_t::Events_t::kEventCodexOffset + obj.id);
 		if ( w.HasMember("events_display") )
 		{
 			for ( auto itr = w["events_display"].Begin(); itr != w["events_display"].End(); ++itr )
@@ -11243,11 +11287,42 @@ void Compendium_t::readCodexFromFile()
 					{
 						auto& vec = Compendium_t::Events_t::itemDisplayedEventsList[Compendium_t::Events_t::kEventCodexOffset + obj.id];
 						if ( std::find(vec.begin(), vec.end(), (Compendium_t::EventTags)find2->second.id)
-							== vec.end() )
+							== vec.end() || find2->second.id == EventTags::CPDM_CUSTOM_TAG )
 						{
 							vec.push_back((Compendium_t::EventTags)find2->second.id);
 						}
 					}
+				}
+			}
+		}
+		if ( w.HasMember("custom_events_display") )
+		{
+			std::vector<std::string> customEvents;
+			for ( auto itr = w["custom_events_display"].Begin(); itr != w["custom_events_display"].End(); ++itr )
+			{
+				customEvents.push_back(itr->GetString());
+			}
+
+			auto& vec = Compendium_t::Events_t::itemDisplayedEventsList[Compendium_t::Events_t::kEventCodexOffset + obj.id];
+			int index = -1;
+			for ( auto& v : vec )
+			{
+				++index;
+				auto& vec2 = Compendium_t::Events_t::itemDisplayedCustomEventsList[Compendium_t::Events_t::kEventCodexOffset + obj.id];
+				if ( v == EventTags::CPDM_CUSTOM_TAG )
+				{
+					if ( index < customEvents.size() )
+					{
+						vec2.push_back(customEvents[index]);
+					}
+					else
+					{
+						vec2.push_back("");
+					}
+				}
+				else
+				{
+					vec2.push_back("");
 				}
 			}
 		}
@@ -11465,7 +11540,7 @@ void Compendium_t::readMonstersFromFile()
 			}
 		}
 
-		if ( monsterType == NOTHING ) { continue; }
+		if ( monsterType == NOTHING && name != "ghost" ) { continue; }
 
 		auto& m = itr->value;
 		auto& monster = monsters[itr->name.GetString()];
@@ -11512,9 +11587,12 @@ std::map<std::string, int> Compendium_t::Events_t::eventWorldIDLookup;
 std::map<std::string, int> Compendium_t::Events_t::eventCodexIDLookup;
 std::map<Compendium_t::EventTags, std::map<int, int>> Compendium_t::Events_t::eventClassIds;
 std::map<int, std::vector<Compendium_t::EventTags>> Compendium_t::Events_t::itemDisplayedEventsList;
+std::map<int, std::vector<std::string>> Compendium_t::Events_t::itemDisplayedCustomEventsList;
+std::map<std::string, std::string> Compendium_t::Events_t::customEventsValues;
 std::map<Compendium_t::EventTags, std::map<int, Compendium_t::Events_t::EventVal_t>> Compendium_t::Events_t::playerEvents;
 std::map<Compendium_t::EventTags, std::map<int, Compendium_t::Events_t::EventVal_t>> Compendium_t::Events_t::serverPlayerEvents[MAXPLAYERS];
 std::map<Compendium_t::EventTags, std::map<std::string, std::string>> Compendium_t::Events_t::eventLangEntries;
+std::map<std::string, std::map<std::string, std::string>> Compendium_t::Events_t::eventCustomLangEntries;
 
 void Compendium_t::Events_t::readEventsTranslations()
 {
@@ -11536,7 +11614,7 @@ void Compendium_t::Events_t::readEventsTranslations()
 		return;
 	}
 
-	char buf[65536];
+	char buf[120000];
 	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
 	rapidjson::StringStream is(buf);
@@ -11551,6 +11629,7 @@ void Compendium_t::Events_t::readEventsTranslations()
 	}
 
 	eventLangEntries.clear();
+	eventCustomLangEntries.clear();
 	for ( auto itr = d["tags"].Begin(); itr != d["tags"].End(); ++itr )
 	{
 		for ( auto itr2 = itr->MemberBegin(); itr2 != itr->MemberEnd(); ++itr2 )
@@ -11567,6 +11646,597 @@ void Compendium_t::Events_t::readEventsTranslations()
 			}
 		}
 	}
+	if ( d.HasMember("custom_tags") )
+	{
+		for ( auto itr = d["custom_tags"].MemberBegin(); itr != d["custom_tags"].MemberEnd(); ++itr )
+		{
+			for ( auto itr2 = itr->value.MemberBegin(); itr2 != itr->value.MemberEnd(); ++itr2 )
+			{
+				eventCustomLangEntries[itr->name.GetString()][itr2->name.GetString()] = itr2->value.GetString();
+			}
+		}
+	}
+}
+
+std::string Compendium_t::Events_t::formatEventRecordText(Sint32 value, const char* formatType, int formatVal, std::map<std::string, std::string>& langMap)
+{
+	std::string resultsFormatting = "%d";
+	if ( langMap.find("format") != langMap.end() )
+	{
+		resultsFormatting = langMap["format"];
+	}
+	else
+	{
+		return std::to_string(value);
+	}
+
+	std::string output = "";
+	for ( size_t c = 0; c < resultsFormatting.size(); ++c )
+	{
+		if ( resultsFormatting[c] == '%' && ((c + 1) < resultsFormatting.size()) )
+		{
+			if ( resultsFormatting[c + 1] == 'm' )
+			{
+				// dist to meters
+				float meters = value / (8.f);
+				char buf[32];
+				snprintf(buf, sizeof(buf), "%.1f", meters);
+				output += buf;
+			}
+			else if ( resultsFormatting[c + 1] == 't' )
+			{
+				// ticks to seconds
+				float seconds = value / (50.f);
+				char buf[32];
+				snprintf(buf, sizeof(buf), "%.1f", seconds);
+				output += buf;
+			}
+			else if ( resultsFormatting[c + 1] == 'd' )
+			{
+				output += std::to_string(value);
+			}
+			else if ( resultsFormatting[c + 1] == 'h' )
+			{
+				real_t regen = value;
+				if ( regen > 0.01 )
+				{
+					real_t nominalRegen = HEAL_TIME;
+					regen = nominalRegen / regen;
+					char buf[32];
+					snprintf(buf, sizeof(buf), "%.f", regen * 100.0);
+					output += buf;
+				}
+			}
+			else if ( resultsFormatting[c + 1] == 'e' )
+			{
+				real_t regen = value;
+				if ( regen > 0.01 )
+				{
+					real_t nominalRegen = MAGIC_REGEN_TIME;
+					regen = nominalRegen / regen;
+					char buf[32];
+					snprintf(buf, sizeof(buf), "%.f", regen * 100.0);
+					output += buf;
+				}
+			}
+			else if ( resultsFormatting[c + 1] == '%' )
+			{
+				output += '%';
+			}
+			else if ( resultsFormatting[c + 1] == 's' )
+			{
+				if ( formatType )
+				{
+					if ( !strcmp(formatType, "stats") )
+					{
+						switch ( formatVal )
+						{
+						case STAT_STR:
+							output += ItemTooltips.getItemStatShortName("STR");
+							break;
+						case STAT_DEX:
+							output += ItemTooltips.getItemStatShortName("DEX");
+							break;
+						case STAT_CON:
+							output += ItemTooltips.getItemStatShortName("CON");
+							break;
+						case STAT_INT:
+							output += ItemTooltips.getItemStatShortName("INT");
+							break;
+						case STAT_PER:
+							output += ItemTooltips.getItemStatShortName("PER");
+							break;
+						case STAT_CHR:
+							output += ItemTooltips.getItemStatShortName("CHR");
+							break;
+						}
+					}
+					else if ( !strcmp(formatType, "class") )
+					{
+						std::string tmp = playerClassLangEntry(formatVal, 0);
+						camelCaseString(tmp);
+						output += tmp;
+					}
+					else if ( !strcmp(formatType, "race") )
+					{
+						std::string tmp = getMonsterLocalizedName(getMonsterFromPlayerRace(formatVal));
+						camelCaseString(tmp);
+						output += tmp;
+					}
+					else if ( !strcmp(formatType, "skills") )
+					{
+						std::string tmp = getSkillLangEntry(formatVal);
+						camelCaseString(tmp);
+						output += tmp;
+					}
+				}
+			}
+			++c;
+		}
+		else
+		{
+			output += resultsFormatting[c];
+		}
+	}
+	return output;
+}
+
+std::vector<std::pair<std::string, Sint32>> Compendium_t::Events_t::getCustomEventValue(std::string key, int specificClass)
+{
+	std::vector<std::pair<std::string, Sint32>> results;
+	if ( customEventsValues.find(key) == customEventsValues.end() )
+	{
+		return results;
+	}
+
+	rapidjson::Document d;
+	d.Parse(customEventsValues[key].c_str());
+	if ( !d.IsObject() )
+	{
+		return results;
+	}
+
+	if ( d.HasMember("value") )
+	{
+		Events_t::Type type = MAX;
+		int minValue = 0;
+		int maxValue = 0;
+		bool firstResult = true;
+		std::string valueType = "";
+		if ( d["value"].HasMember("type") )
+		{
+			valueType = d["value"]["type"].GetString();
+			if ( valueType == "max" )
+			{
+				type = MAX;
+			}
+			else if ( valueType == "min" )
+			{
+				type = MIN;
+			}
+			else if ( valueType == "sum" )
+			{
+				type = SUM;
+			}
+			else if ( valueType == "class_sum" )
+			{
+				type = SUM;
+			}
+		}
+
+		if ( valueType != "class_sum" )
+		{
+			specificClass = -1;
+		}
+
+		std::map<int, int> mapValueTotals;
+		std::string formatType = "";
+		if ( d["value"].HasMember("format") )
+		{
+			formatType = d["value"]["format"].GetString();
+		}
+		if ( d["value"].HasMember("tags") )
+		{
+			for ( auto itr = d["value"]["tags"].Begin(); itr != d["value"]["tags"].End(); ++itr )
+			{
+				std::string name = (*itr)["name"].GetString();
+				std::string cat = (*itr)["category"].GetString();
+
+				if ( valueType == "sum_items" )
+				{
+					auto findTag = eventIdLookup.find(name);
+					if ( findTag != eventIdLookup.end() )
+					{
+						auto& playerTags = playerEvents[findTag->second];
+						for ( auto itemId : eventItemLookup[findTag->second] )
+						{
+							if ( cat == "spells" )
+							{
+								if ( itemId >= kEventSpellOffset )
+								{
+									int spellID = itemId - kEventSpellOffset;
+									auto findVal = playerTags.find(itemId);
+									if ( findVal != playerTags.end() )
+									{
+										mapValueTotals[itemId] += findVal->second.value;
+									}
+								}
+							}
+							else if ( cat == "spellbooks" )
+							{
+								if ( itemId >= WOODEN_SHIELD && itemId < NUMITEMS && ::items[itemId].category == SPELLBOOK )
+								{
+									auto findVal = playerTags.find(itemId);
+									if ( findVal != playerTags.end() )
+									{
+										mapValueTotals[itemId] += findVal->second.value;
+									}
+								}
+							}
+							else if ( cat == "equipment" )
+							{
+								if ( itemId >= WOODEN_SHIELD && itemId < NUMITEMS && ::items[itemId].item_slot != NO_EQUIP )
+								{
+									auto findVal = playerTags.find(itemId);
+									if ( findVal != playerTags.end() )
+									{
+										mapValueTotals[itemId] += findVal->second.value;
+									}
+								}
+							}
+							else if ( cat == "armor" )
+							{
+								if ( itemId >= WOODEN_SHIELD && itemId < NUMITEMS && 
+									::items[itemId].item_slot != NO_EQUIP
+									&& ::items[itemId].item_slot != EQUIPPABLE_IN_SLOT_WEAPON )
+								{
+									auto findVal = playerTags.find(itemId);
+									if ( findVal != playerTags.end() )
+									{
+										mapValueTotals[itemId] += findVal->second.value;
+									}
+								}
+							}
+							else if ( cat == "weapons" )
+							{
+								if ( itemId >= WOODEN_SHIELD && itemId < NUMITEMS
+									&& ::items[itemId].item_slot == EQUIPPABLE_IN_SLOT_WEAPON )
+								{
+									auto findVal = playerTags.find(itemId);
+									if ( findVal != playerTags.end() )
+									{
+										mapValueTotals[itemId] += findVal->second.value;
+									}
+								}
+							}
+						}
+					}
+					continue;
+				}
+
+				auto findCat = eventCodexIDLookup.find(cat);
+				if ( findCat != eventCodexIDLookup.end() )
+				{
+					auto findTag = eventIdLookup.find(name);
+					if ( findTag != eventIdLookup.end() )
+					{
+						auto tag = findTag->second;
+						if ( playerEvents.find(tag) == playerEvents.end() )
+						{
+							if ( valueType == "list" )
+							{
+								results.push_back(std::make_pair("-", 0));
+							}
+							continue;
+						}
+						auto& playerTags = playerEvents[tag];
+						std::vector<std::pair<int, int>> codexIDs;
+						codexIDs.push_back(std::make_pair(-1, findCat->second));
+
+						if ( eventCodexLookup[tag].find(cat) != eventCodexLookup[tag].end() )
+						{
+							auto& def = events[tag];
+							if ( def.attributes.find("stats") != def.attributes.end() && valueType != "max_class" )
+							{
+								if ( cat == "str" ) { codexIDs.back().first = STAT_STR; }
+								if ( cat == "dex" ) { codexIDs.back().first = STAT_DEX; }
+								if ( cat == "con" ) { codexIDs.back().first = STAT_CON; }
+								if ( cat == "int" ) { codexIDs.back().first = STAT_INT; }
+								if ( cat == "per" ) { codexIDs.back().first = STAT_PER; }
+								if ( cat == "chr" ) { codexIDs.back().first = STAT_CHR; }
+							}
+							else if ( def.attributes.find("class") != def.attributes.end() )
+							{
+								codexIDs.clear();
+								auto findClassTag = eventClassIds.find(tag);
+								if ( findClassTag != eventClassIds.end() )
+								{
+									// iterate through classes
+									int startOffsetId = -1;
+									if ( def.attributes.find("skills") != def.attributes.end() )
+									{
+										for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+										{
+											if ( cat == getSkillStringForCompendium(i) )
+											{
+												startOffsetId = findClassTag->second[0] + i * kEventClassesMax;
+												break;
+											}
+										}
+									}
+
+									for ( auto classId : findClassTag->second )
+									{
+										if ( startOffsetId >= 0 )
+										{
+											if ( classId.second >= startOffsetId && classId.second < startOffsetId + kEventClassesMax )
+											{
+												if ( specificClass >= 0 )
+												{
+													if ( classId.first != specificClass )
+													{
+														continue;
+													}
+												}
+												codexIDs.push_back(classId);
+												codexIDs.back().first = codexIDs.back().first % kEventClassesMax;
+											}
+										}
+										else
+										{
+											if ( specificClass >= 0 )
+											{
+												if ( classId.first != specificClass )
+												{
+													continue;
+												}
+											}
+
+											codexIDs.push_back(classId);
+											if ( def.attributes.find("stats") != def.attributes.end() && valueType == "max_class" )
+											{
+												// we want to store the stat names rather than the class
+												if ( cat == "str" ) { codexIDs.back().first = STAT_STR; }
+												if ( cat == "dex" ) { codexIDs.back().first = STAT_DEX; }
+												if ( cat == "con" ) { codexIDs.back().first = STAT_CON; }
+												if ( cat == "int" ) { codexIDs.back().first = STAT_INT; }
+												if ( cat == "per" ) { codexIDs.back().first = STAT_PER; }
+												if ( cat == "chr" ) { codexIDs.back().first = STAT_CHR; }
+											}
+										}
+									}
+								}
+							}
+							else if ( def.attributes.find("race") != def.attributes.end() )
+							{
+								codexIDs.clear();
+								auto findClassTag = eventClassIds.find(tag);
+								if ( findClassTag != eventClassIds.end() )
+								{
+									// iterate through classes
+									for ( auto classId : findClassTag->second )
+									{
+										codexIDs.push_back(classId);
+									}
+								}
+							}
+
+							for ( auto& pair : codexIDs )
+							{
+								int codexID = pair.second;
+								int classnum = pair.first;
+
+								if ( formatType == "skills" )
+								{
+									for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+									{
+										if ( cat == getSkillStringForCompendium(i) )
+										{
+											classnum = i;
+											break;
+										}
+									}
+								}
+
+								if ( codexID < kEventCodexOffset )
+								{
+									codexID += kEventCodexOffset; // convert to offset
+								}
+
+								auto findVal = playerTags.find(codexID);
+								int val = 0;
+								if ( findVal != playerTags.end() )
+								{
+									val = findVal->second.value;
+								}
+
+								std::string output = "";
+								int numFormats = 0;
+								if ( valueType == "sum_category_max" || valueType == "sum_category_min" )
+								{
+									int categoryValue = findCat->second;
+									if ( formatType == "skills" )
+									{
+										for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+										{
+											if ( cat == getSkillStringForCompendium(i) )
+											{
+												categoryValue = i;
+												break;
+											}
+										}
+									}
+									mapValueTotals[categoryValue] += val;
+								}
+								else if ( valueType == "class_max_total" )
+								{
+									mapValueTotals[classnum] += val;
+									continue;
+								}
+								else if ( formatType == "skills" )
+								{
+									output = formatEventRecordText(val, d["value"]["format"].GetString(), classnum, eventCustomLangEntries[key]);
+								}
+								else if ( def.attributes.find("stats") != def.attributes.end() )
+								{
+									output = formatEventRecordText(val, "stats", classnum, eventCustomLangEntries[key]);
+								}
+								else if ( def.attributes.find("class") != def.attributes.end() )
+								{
+									output = formatEventRecordText(val, "class", classnum, eventCustomLangEntries[key]);
+								}
+								else if ( def.attributes.find("race") != def.attributes.end() )
+								{
+									output = formatEventRecordText(val, "race", classnum, eventCustomLangEntries[key]);
+								}
+
+								results.push_back(std::make_pair(output, val));
+								maxValue = std::max(maxValue, val);
+								if ( firstResult )
+								{
+									minValue = val;
+								}
+								else
+								{
+									minValue = std::min(minValue, val);
+								}
+								firstResult = false;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		Sint32 sum = 0;
+		if ( valueType == "sum_items" )
+		{
+			results.clear();
+			for ( auto& pair : mapValueTotals )
+			{
+				sum += pair.second;
+			}
+			std::string output = formatEventRecordText(sum, formatType.c_str(), 0, eventCustomLangEntries[key]);
+			results.push_back(std::make_pair(output, maxValue));
+			return results;
+		}
+		else if ( valueType == "sum_category_max" )
+		{
+			results.clear();
+			for ( auto& pair : mapValueTotals )
+			{
+				maxValue = std::max(maxValue, pair.second);
+			}
+			for ( auto& pair : mapValueTotals )
+			{
+				if ( pair.second == maxValue )
+				{
+					std::string output = formatEventRecordText(maxValue, formatType.c_str(), pair.first, eventCustomLangEntries[key]);
+					results.push_back(std::make_pair(output, maxValue));
+				}
+			}
+			return results;
+		}
+		else if ( valueType == "sum_category_min" )
+		{
+			results.clear();
+			firstResult = true;
+			minValue = 0;
+			for ( auto& pair : mapValueTotals )
+			{
+				if ( firstResult )
+				{
+					minValue = pair.second;
+				}
+				else
+				{
+					minValue = std::min(minValue, pair.second);
+				}
+				firstResult = false;
+			}
+			for ( auto& pair : mapValueTotals )
+			{
+				if ( pair.second == minValue )
+				{
+					std::string output = formatEventRecordText(minValue, formatType.c_str(), pair.first, eventCustomLangEntries[key]);
+					results.push_back(std::make_pair(output, minValue));
+				}
+			}
+			return results;
+		}
+		else if ( valueType == "class_max_total" )
+		{
+			maxValue = 0;
+			results.clear();
+			for ( auto& pair : mapValueTotals )
+			{
+				maxValue = std::max(maxValue, pair.second);
+			}
+			for ( auto& pair : mapValueTotals )
+			{
+				if ( pair.second == maxValue )
+				{
+					std::string output = formatEventRecordText(maxValue, formatType.c_str(), pair.first, eventCustomLangEntries[key]);
+					results.push_back(std::make_pair(output, maxValue));
+				}
+			}
+			return results;
+		}
+		else if ( valueType == "list" )
+		{
+			if ( eventCustomLangEntries[key].find("format") != eventCustomLangEntries[key].end() )
+			{
+				if ( results.size() >= 1 )
+				{
+					char buf[128] = "";
+					snprintf(buf, sizeof(buf), eventCustomLangEntries[key]["format"].c_str(),
+						results[0].first != "-" ? std::to_string(results[0].second).c_str() : "-",
+						results[1].first != "-" ? std::to_string(results[1].second).c_str() : "-");
+					results.clear();
+					results.push_back(std::make_pair(buf, 0));
+				}
+				else
+				{
+					char buf[128] = "";
+					snprintf(buf, sizeof(buf), eventCustomLangEntries[key]["format"].c_str(),
+						"-",
+						"-");
+					results.clear();
+					results.push_back(std::make_pair(buf, 0));
+				}
+				return results;
+			}
+		}
+		else
+		{
+			for ( auto itr = results.begin(); itr != results.end(); )
+			{
+				if ( type == MAX && itr->second != maxValue )
+				{
+					itr = results.erase(itr);
+				}
+				else if ( type == MIN && itr->second != minValue )
+				{
+					itr = results.erase(itr);
+				}
+				else
+				{
+					if ( type == SUM )
+					{
+						sum += itr->second;
+					}
+					++itr;
+				}
+			}
+		}
+		if ( type == SUM && results.size() > 0 )
+		{
+			results.clear();
+			results.push_back(std::make_pair(formatEventRecordText(sum, nullptr, 0, eventCustomLangEntries[key]), sum));
+		}
+	}
+
+	return results;
 }
 
 void Compendium_t::Events_t::readEventsFromFile()
@@ -11589,7 +12259,7 @@ void Compendium_t::Events_t::readEventsFromFile()
 		return;
 	}
 
-	char buf[65536];
+	char buf[120000];
 	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
 	rapidjson::StringStream is(buf);
@@ -11606,6 +12276,7 @@ void Compendium_t::Events_t::readEventsFromFile()
 	events.clear();
 	eventIdLookup.clear();
 	eventClassIds.clear();
+	int classIdIndex = kEventCodexClassOffset;
 	int index = -1;
 	for ( auto itr = d["tags"].Begin(); itr != d["tags"].End(); ++itr )
 	{
@@ -11678,12 +12349,42 @@ void Compendium_t::Events_t::readEventsFromFile()
 			}
 			if ( entry.attributes.find("class") != entry.attributes.end() || entry.attributes.find("race") != entry.attributes.end() )
 			{
-				size_t idStart = kEventCodexClassOffset + eventClassIds.size() * kEventClassesMax;
-				for ( int i = 0; i <= CLASS_HUNTER; ++i )
+				if ( entry.attributes.find("skills") != entry.attributes.end() )
 				{
-					eventClassIds[id][i] = (idStart + i);
+					for ( int skillnum = 0; skillnum < 16; ++skillnum )
+					{
+						for ( int i = 0; i <= CLASS_HUNTER; ++i )
+						{
+							int index = i + skillnum * kEventClassesMax;
+							eventClassIds[id][index] = (classIdIndex + index);
+						}
+					}
+					classIdIndex += kEventClassesMax * 16;
+				}
+				else
+				{
+					for ( int i = 0; i <= CLASS_HUNTER; ++i )
+					{
+						eventClassIds[id][i] = (classIdIndex + i);
+					}
+					classIdIndex += kEventClassesMax;
 				}
 			}
+		}
+	}
+
+	if ( d.HasMember("custom_tags") )
+	{
+		for ( auto itr = d["custom_tags"].MemberBegin(); itr != d["custom_tags"].MemberEnd(); ++itr )
+		{
+			eventIdLookup[itr->name.GetString()] = EventTags::CPDM_CUSTOM_TAG;
+
+			rapidjson::StringBuffer os;
+			os.Clear();
+			rapidjson::Writer<rapidjson::StringBuffer> writer(os);
+			itr->value.Accept(writer);
+
+			customEventsValues[itr->name.GetString()] = os.GetString();
 		}
 	}
 }
@@ -11809,6 +12510,29 @@ void Compendium_t::Events_t::createDummyClientData(const int playernum)
 			eventUpdateWorld(playernum, pair.first, world.c_str(), 1);
 		}
 	}
+	for ( auto& pair : eventCodexLookup )
+	{
+		if ( eventClassIds.find(pair.first) != eventClassIds.end() )
+		{
+			int oldclass = client_classes[playernum];
+			for ( int c = 0; c < NUMCLASSES; ++c )
+			{
+				client_classes[playernum] = c;
+				for ( auto world : pair.second )
+				{
+					eventUpdateCodex(playernum, pair.first, world.c_str(), 1);
+				}
+			}
+			client_classes[playernum] = oldclass;
+		}
+		else
+		{
+			for ( auto world : pair.second )
+			{
+				eventUpdateCodex(playernum, pair.first, world.c_str(), 1);
+			}
+		}
+	}
 }
 
 void Compendium_t::Events_t::writeItemsSaveData()
@@ -11902,6 +12626,10 @@ bool Compendium_t::Events_t::EventVal_t::applyValue(const Sint32 val)
 		value |= val;
 		return true;
 	}
+	else
+	{
+		return false;
+	}
 }
 
 void onCompendiumLevelExit(const int playernum, const char* level, const bool enteringLvl)
@@ -11925,34 +12653,142 @@ void Compendium_t::Events_t::updateEventsInMainLoop(const int playernum)
 		return;
 	}
 
-	auto entity = players[playernum]->entity;
-	auto myStats = stats[playernum];
+	if ( ticks % TICKS_PER_SECOND == 25 )
 	{
-		real_t resistance = 100.0 * Entity::getDamageTableMultiplier(entity, *myStats, DAMAGE_TABLE_MAGIC);
-		resistance /= (Entity::getMagicResistance(myStats) + 1);
-		resistance = -(resistance - 100.0);
-		eventUpdateCodex(playernum, CPDM_RES_MAX, "res", (int)resistance);
-		eventUpdateCodex(playernum, CPDM_CLASS_RES_MAX, "res", (int)resistance);
+		auto entity = players[playernum]->entity;
+		auto myStats = stats[playernum];
+		{
+			real_t resistance = 100.0 * Entity::getDamageTableMultiplier(entity, *myStats, DAMAGE_TABLE_MAGIC);
+			resistance /= (Entity::getMagicResistance(myStats) + 1);
+			resistance = -(resistance - 100.0);
+			eventUpdateCodex(playernum, CPDM_RES_MAX, "res", (int)resistance);
+			eventUpdateCodex(playernum, CPDM_CLASS_RES_MAX, "res", (int)resistance);
+		}
+
+		{
+			{
+				Sint32 value = statGetSTR(myStats, entity);
+				value -= myStats->STR;
+				if ( value > 0 )
+				{
+					Compendium_t::Events_t::eventUpdateCodex(playernum, Compendium_t::CPDM_STAT_MAX, "str", value);
+				}
+			}
+			{
+				Sint32 value = statGetDEX(myStats, entity);
+				value -= myStats->DEX;
+				if ( value > 0 )
+				{
+					Compendium_t::Events_t::eventUpdateCodex(playernum, Compendium_t::CPDM_STAT_MAX, "dex", value);
+				}
+			}
+			{
+				Sint32 value = statGetCON(myStats, entity);
+				value -= myStats->CON;
+				if ( value > 0 )
+				{
+					Compendium_t::Events_t::eventUpdateCodex(playernum, Compendium_t::CPDM_STAT_MAX, "con", value);
+				}
+			}
+			{
+				Sint32 value = statGetINT(myStats, entity);
+				value -= myStats->INT;
+				if ( value > 0 )
+				{
+					Compendium_t::Events_t::eventUpdateCodex(playernum, Compendium_t::CPDM_STAT_MAX, "int", value);
+				}
+			}
+			{
+				Sint32 value = statGetPER(myStats, entity);
+				value -= myStats->PER;
+				if ( value > 0 )
+				{
+					Compendium_t::Events_t::eventUpdateCodex(playernum, Compendium_t::CPDM_STAT_MAX, "per", value);
+				}
+			}
+			{
+				Sint32 value = statGetCHR(myStats, entity);
+				value -= myStats->CHR;
+				if ( value > 0 )
+				{
+					Compendium_t::Events_t::eventUpdateCodex(playernum, Compendium_t::CPDM_STAT_MAX, "chr", value);
+				}
+			}
+		}
+
+		{
+			bool oldDefending = myStats->defending;
+			myStats->defending = false;
+
+			Sint32 ac = AC(myStats);
+
+			Sint32 con = myStats->CON;
+			myStats->CON = 0;
+			int numBlessings = 0;
+			Sint32 acFromArmor = AC(myStats);
+
+			real_t targetACEffectiveness = Entity::getACEffectiveness(entity, myStats, true, nullptr, nullptr, numBlessings);
+			int effectiveness = targetACEffectiveness * 100.0;
+
+			myStats->CON = con;
+			myStats->defending = oldDefending;
+
+			eventUpdateCodex(playernum, CPDM_CLASS_AC_MAX, "ac", ac);
+			eventUpdateCodex(playernum, CPDM_AC_MAX_FROM_BLESS, "ac", numBlessings);
+			eventUpdateCodex(playernum, CPDM_AC_EFFECTIVENESS_MAX, "ac", effectiveness);
+			eventUpdateCodex(playernum, CPDM_AC_EQUIPMENT_MAX, "ac", acFromArmor);
+		}
+
+		{
+			eventUpdateCodex(playernum, CPDM_HP_MAX, "hp", myStats->MAXHP);
+			eventUpdateCodex(playernum, CPDM_CLASS_HP_MAX, "hp", myStats->MAXHP);
+
+			eventUpdateCodex(playernum, CPDM_MP_MAX, "mp", myStats->MAXMP);
+			eventUpdateCodex(playernum, CPDM_CLASS_MP_MAX, "mp", myStats->MAXMP);
+		}
+
+		{
+			{
+				// base PWR INT Bonus
+				real_t bonus = getSpellBonusFromCasterINT(entity, myStats) * 100.0;
+				real_t val = bonus;
+				eventUpdateCodex(playernum, CPDM_CLASS_PWR_MAX, "pwr", (int)val);
+			}
+
+			// equip/effect bonus (minus INT)
+			{
+				real_t val = (getBonusFromCasterOfSpellElement(entity, myStats, nullptr, SPELL_NONE) * 100.0);
+				// look for damage/healing spell bonus for mitre/magus hat
+				val = std::max(val, getBonusFromCasterOfSpellElement(entity, myStats, nullptr, SPELL_FIREBALL) * 100.0);
+				val = std::max(val, getBonusFromCasterOfSpellElement(entity, myStats, nullptr, SPELL_HEALING) * 100.0);
+				real_t bonus = getSpellBonusFromCasterINT(entity, myStats);
+				val -= bonus * 100.0;
+				eventUpdateCodex(playernum, CPDM_PWR_MAX_EQUIP, "pwr", (int)val);
+			}
+		}
 	}
 
+	if ( ticks % (5 * TICKS_PER_SECOND) == 25 )
 	{
-		Sint32 ac = AC(myStats);
-		eventUpdateCodex(playernum, CPDM_AC_MAX, "ac", ac);
-		eventUpdateCodex(playernum, CPDM_CLASS_AC_MAX, "ac", ac);
-
-		Sint32 con = myStats->CON;
-		myStats->CON = 0;
-		ac = AC(myStats);
-		eventUpdateCodex(playernum, CPDM_AC_MAX_FROM_BLESS, "ac", ac);
-		myStats->CON = con;
-	}
-
-	{
-		eventUpdateCodex(playernum, CPDM_HP_MAX, "hp", myStats->MAXHP);
-		eventUpdateCodex(playernum, CPDM_CLASS_HP_MAX, "hp", myStats->MAXHP);
-
-		eventUpdateCodex(playernum, CPDM_MP_MAX, "mp", myStats->MAXMP);
-		eventUpdateCodex(playernum, CPDM_CLASS_MP_MAX, "mp", myStats->MAXMP);
+		int weight = 0;
+		for ( node_t* node = stats[playernum]->inventory.first; node != NULL; node = node->next )
+		{
+			Item* item = (Item*)node->element;
+			if ( !item )
+			{
+				continue;
+			}
+			if ( itemCategory(item) == SPELL_CAT )
+			{
+				continue;
+			}
+			if ( ::items[item->type].item_slot != NO_EQUIP
+				&& itemIsEquipped(item, playernum) )
+			{
+				weight += item->getWeight();
+			}
+		}
+		Compendium_t::Events_t::eventUpdateCodex(playernum, Compendium_t::CPDM_CLASS_WGT_EQUIPPED_MAX, "wgt", weight);
 	}
 }
 
@@ -11997,6 +12833,13 @@ void Compendium_t::Events_t::onEndgameEvent(const int playernum, const bool tuto
 					eventUpdateCodex(playernum, Compendium_t::CPDM_CLASS_LVL_WON_CLASSIC_MIN, "leveling up", stats[playernum]->LVL);
 					eventUpdateCodex(playernum, Compendium_t::CPDM_RACE_GAMES_WON_CLASSIC, "races", 1);
 				}
+			}
+			else
+			{
+				//if ( stats[playernum]->HP <= 0 )
+				//{
+				//	//Compendium_t::Events_t::eventUpdateWorld(playernum, Compendium_t::CPDM_TRIALS_DEATHS, "hall of trials", 1);
+				//}
 			}
 		}
 	}
@@ -12287,32 +13130,6 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 			sendClientDataOverNet(i);
 		}
 	}
-
-	////std::set<Uint32> slots;
-	//int numItems = 0;
-	//for ( node_t* node = stats[playernum]->inventory.first; node != NULL; node = node->next )	
-	//{
-	//	Item* item = (Item*)node->element;
-	//	if ( !item )
-	//	{
-	//		continue;
-	//	}
-	//	if ( itemCategory(item) == SPELL_CAT )
-	//	{
-	//		continue;
-	//	}
-	//	numItems += item->count;
-	//	//if ( item->x >= 0 && item->x < players[playernum]->inventoryUI.getSizeX() )
-	//	//{
-	//	//	if ( item->y >= 0 && item->y < players[playernum]->inventoryUI.getSizeY() )
-	//	//	{
-	//	//		//Uint32 key = item->x + 10000 * item->y;
-	//	//		//slots.insert(key);
-	//	//	}
-	//	//}
-	//}
-	//size_t maxSlots = players[playernum]->inventoryUI.getSizeX() * players[playernum]->inventoryUI.getSizeY();
-	//Compendium_t::Events_t::eventUpdate(playernum, Compendium_t::CPDM_INVENTORY_QTY_MAX, CLOAK_BACKPACK, numItems);
 }
 
 bool allowedCompendiumProgress()
@@ -12856,7 +13673,21 @@ void Compendium_t::Events_t::eventUpdateCodex(int playernum, const EventTags tag
 				auto findClassTag = eventClassIds.find(tag);
 				if ( findClassTag != eventClassIds.end() )
 				{
-					auto findClassId = findClassTag->second.find(client_classes[playernum]);
+					// iterate through classes
+					int classId = client_classes[playernum];
+					if ( def.attributes.find("skills") != def.attributes.end() )
+					{
+						for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+						{
+							if ( !strcmp(category, getSkillStringForCompendium(i)) )
+							{
+								classId = client_classes[playernum] + i * kEventClassesMax;
+								break;
+							}
+						}
+					}
+
+					auto findClassId = findClassTag->second.find(classId);
 					if ( findClassId != findClassTag->second.end() )
 					{
 						codexID = findClassId->second;
@@ -12896,7 +13727,7 @@ void Compendium_t::Events_t::eventUpdateCodex(int playernum, const EventTags tag
 		return;
 	}
 
-	if ( codexID < kEventCodexOffset )
+	if ( codexID < kEventCodexOffset || loadingValue )
 	{
 		codexID += kEventCodexOffset; // convert to offset
 	}
@@ -12941,7 +13772,7 @@ void Compendium_t::Events_t::eventUpdateCodex(int playernum, const EventTags tag
 		}
 		else if ( def.eventTrackingType == EventTrackingType::UNIQUE_PER_FLOOR && floorEvent )
 		{
-			players[playernum]->compendiumProgress.floorEvents[tag][category][codexID] = value;
+			players[playernum]->compendiumProgress.floorEvents[tag][category][codexID] += value;
 			return;
 		}
 
