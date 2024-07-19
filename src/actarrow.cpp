@@ -520,7 +520,8 @@ void actArrow(Entity* my)
 						// normal damage.
 					}
 
-					real_t targetACEffectiveness = Entity::getACEffectiveness(hit.entity, hitstats, hit.entity->behavior == &actPlayer, parent, parent ? parent->getStats() : nullptr);
+					int numBlessings = 0;
+					real_t targetACEffectiveness = Entity::getACEffectiveness(hit.entity, hitstats, hit.entity->behavior == &actPlayer, parent, parent ? parent->getStats() : nullptr, numBlessings);
 					int attackAfterReductions = static_cast<int>(std::max(0.0, ((my->arrowPower * targetACEffectiveness - enemyAC))) + (1.0 - targetACEffectiveness) * my->arrowPower);
 					int damage = attackAfterReductions;
 
@@ -683,6 +684,10 @@ void actArrow(Entity* my)
 							parent->killedByMonsterObituary(hit.entity);
 						}
 
+						if ( hit.entity->behavior == &actPlayer )
+						{
+							Compendium_t::Events_t::eventUpdateCodex(hit.entity->skill[2], Compendium_t::CPDM_HP_MOST_DMG_LOST_ONE_HIT, "hp", oldHP - hitstats->HP);
+						}
 						if ( parent->behavior == &actPlayer )
 						{
 							if ( oldHP > hitstats->HP )

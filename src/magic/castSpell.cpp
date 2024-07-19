@@ -397,12 +397,14 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	bool playerCastingFromKnownSpellbook = false;
 	int spellBookBonusPercent = 0;
 	int spellBookBeatitude = 0;
+	ItemType spellbookType = WOODEN_SHIELD;
 	if ( !using_magicstaff && !trap && stat )
 	{
 		newbie = isSpellcasterBeginner(player, caster);
 
 		if ( usingSpellbook && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
 		{
+			spellbookType = stat->shield->type;
 			spellBookBeatitude = stat->shield->beatitude;
 			spellBookBonusPercent += getSpellbookBonusPercent(caster, stat, stat->shield);
 			if ( spellcasting >= spell->difficulty || playerLearnedSpellbook(player, stat->shield) )
@@ -544,7 +546,15 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( usingSpellbook && stat->shield && itemCategory(stat->shield) == SPELLBOOK 
 					&& (stat->shield->beatitude < 0 && !shouldInvertEquipmentBeatitude(stat)) )
 				{
+					Status oldStatus = stat->shield->status;
 					caster->degradeArmor(*stat, *(stat->shield), 4);
+					if ( stat->shield->status < oldStatus )
+					{
+						if ( player >= 0 )
+						{
+							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_CAST_DEGRADES, stat->shield->type, 1);
+						}
+					}
 					if ( stat->shield->status == BROKEN )
 					{
 						Item* toBreak = stat->shield;
@@ -553,10 +563,21 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 				if ( player >= 0 )
 				{
-					Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELL_FAILURES, SPELL_ITEM, 1, false, spell->ID);
-					if ( !usingSpellbook && !using_magicstaff && !trap )
+					if ( !using_magicstaff && !trap )
 					{
-						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_SPELL_FIZZLES_RUN, "memorized", 1);
+						if ( !usingSpellbook )
+						{
+							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELL_FAILURES, SPELL_ITEM, 1, false, spell->ID);
+							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_SPELL_FIZZLES_RUN, "memorized", 1);
+						}
+						else if ( usingSpellbook )
+						{
+							if ( items[spellbookType].category == SPELLBOOK )
+							{
+								Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELL_FAILURES, spellbookType, 1);
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_SPELLBOOK_FIZZLES_RUN, "spellbook casting", 1);
+							}
+						}
 					}
 				}
 				return NULL;
@@ -1476,7 +1497,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						}
 					}
 					// spellbook 100-150%, 50 INT = 200%.
-					amount += amount * ((spellBookBonusPercent * 1 / 100.f) + getBonusFromCasterOfSpellElement(caster, nullptr, element, spell ? spell->ID : SPELL_NONE));
+					real_t bonus = ((spellBookBonusPercent * 1 / 100.f) + getBonusFromCasterOfSpellElement(caster, nullptr, element, spell ? spell->ID : SPELL_NONE));
+					amount += amount * bonus;
+					if ( caster && caster->behavior == &actPlayer )
+					{
+						Compendium_t::Events_t::eventUpdateCodex(caster->skill[2], Compendium_t::CPDM_CLASS_PWR_MAX_CASTED, "pwr",
+							(Sint32)(bonus * 100.0));
+					}
 
 					int totalHeal = 0;
 					int oldHP = players[i]->entity->getHP();
@@ -2456,17 +2483,26 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	{
 		if ( player >= 0 )
 		{
-			if ( usingSpellbook && !using_magicstaff )
+			if ( !using_magicstaff )
 			{
-				if ( stat && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
+				if ( !usingSpellbook )
 				{
-					Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_CASTS, stat->shield->type, 1);
+					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_SPELL_CASTS_RUN, "memorized", 1);
+					Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELL_CASTS, SPELL_ITEM, 1, false, spell->ID);
 				}
-			}
-			else if ( !usingSpellbook && !using_magicstaff )
-			{
-				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELL_CASTS, SPELL_ITEM, 1, false, spell->ID);
-				Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_SPELL_CASTS_RUN, "memorized", 1);
+				else if ( usingSpellbook )
+				{
+					if ( items[spellbookType].category == SPELLBOOK )
+					{
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_SPELLBOOK_CASTS_RUN, "spellbook casting", 1);
+						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_CASTS, spellbookType, 1);
+
+						if ( items[spellbookType].hasAttribute("SPELLBOOK_CAST_BONUS") )
+						{
+							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_PWR_MAX_SPELLBOOK, "pwr", spellBookBonusPercent);
+						}
+					}
+				}
 			}
 		}
 		if ( using_magicstaff )
@@ -2632,7 +2668,16 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		if ( local_rng.rand() % chance == 0 && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
 		{
+			Status oldStatus = stat->shield->status;
 			caster->degradeArmor(*stat, *(stat->shield), 4);
+			if ( stat->shield->status < oldStatus )
+			{
+				if ( player >= 0 )
+				{
+					Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_CAST_DEGRADES, stat->shield->type, 1);
+				}
+			}
+
 			if ( stat->shield->status == BROKEN && player >= 0 )
 			{
 				if ( caster && caster->behavior == &actPlayer && stat->playerRace == RACE_GOBLIN && stat->appearance == 0 )

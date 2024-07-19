@@ -3332,7 +3332,6 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 			{
 				Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_CLASS_WGT_MAX_MOVE_100, "wgt", getCharacterWeight());
 			}
-			Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_CLASS_WGT_SLOWEST, "wgt", (int)(speedFactor * 100.0));
 		}
 
 		static ConsoleVariable<bool> cvar_debugspeedfactor("/player_showspeedfactor", false);
@@ -4541,6 +4540,8 @@ void actPlayer(Entity* my)
 
 		players[PLAYER_NUM]->compendiumProgress.playerDistAccum = 0.0;
 		players[PLAYER_NUM]->compendiumProgress.playerSneakTime = 0;
+		players[PLAYER_NUM]->compendiumProgress.playerAliveTimeMoving = 0;
+		players[PLAYER_NUM]->compendiumProgress.playerAliveTimeStopped = 0;
 
 		Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
 		nametag->x = my->x;
@@ -7471,6 +7472,8 @@ void actPlayer(Entity* my)
 					}
 					if ( stats[PLAYER_NUM]->HP <= 0 )
 					{
+						Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_CLASS_WGT_SLOWEST, "wgt", players[PLAYER_NUM]->movement.getCharacterWeight());
+
 						// die //TODO: Refactor.
 						playSoundEntity(my, 28, 128);
 						Entity* gib = spawnGib(my);
@@ -8091,6 +8094,11 @@ void actPlayer(Entity* my)
 		if ( dist >= 0.01 )
 		{
 			players[PLAYER_NUM]->compendiumProgress.playerDistAccum += dist;
+			players[PLAYER_NUM]->compendiumProgress.playerAliveTimeMoving++;
+		}
+		else
+		{
+			players[PLAYER_NUM]->compendiumProgress.playerAliveTimeStopped++;
 		}
 		if ( stats[PLAYER_NUM]->sneaking )
 		{
@@ -8105,6 +8113,12 @@ void actPlayer(Entity* my)
 			}
 			Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_DISTANCE_TRAVELLED, "strafing", (int)players[PLAYER_NUM]->compendiumProgress.playerDistAccum);
 			players[PLAYER_NUM]->compendiumProgress.playerDistAccum = 0.0;
+
+			Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_CLASS_MOVING_TIME, "strafing", (int)players[PLAYER_NUM]->compendiumProgress.playerAliveTimeMoving);
+			players[PLAYER_NUM]->compendiumProgress.playerAliveTimeMoving = 0;
+
+			Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_CLASS_IDLING_TIME, "strafing", (int)players[PLAYER_NUM]->compendiumProgress.playerAliveTimeStopped);
+			players[PLAYER_NUM]->compendiumProgress.playerAliveTimeStopped = 0;
 
 			Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_CLASS_SNEAK_TIME, "sneaking", players[PLAYER_NUM]->compendiumProgress.playerSneakTime);
 			players[PLAYER_NUM]->compendiumProgress.playerSneakTime = 0;

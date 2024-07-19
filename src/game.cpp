@@ -1636,10 +1636,7 @@ void gameLogic(void)
 				gameplayPreferences[i].process();
 			}
 			updatePlayerConductsInMainLoop();
-			if ( ticks % TICKS_PER_SECOND == 25 )
-			{
-				Compendium_t::Events_t::updateEventsInMainLoop(clientnum);
-			}
+			Compendium_t::Events_t::updateEventsInMainLoop(clientnum);
 			achievementObserver.updatePlayerAchievement(clientnum, AchievementObserver::BARONY_ACH_DAPPER, AchievementObserver::DAPPER_EQUIPMENT_CHECK);
 
 			//if( TICKS_PER_SECOND )
@@ -3041,10 +3038,7 @@ void gameLogic(void)
 				gameplayPreferences[i].process();
 			}
 			updatePlayerConductsInMainLoop();
-			if ( ticks % TICKS_PER_SECOND == 25 )
-			{
-				Compendium_t::Events_t::updateEventsInMainLoop(clientnum);
-			}
+			Compendium_t::Events_t::updateEventsInMainLoop(clientnum);
 			achievementObserver.updatePlayerAchievement(clientnum, AchievementObserver::BARONY_ACH_DAPPER, AchievementObserver::DAPPER_EQUIPMENT_CHECK);
 
 			// ask for entity delete update

@@ -583,6 +583,33 @@ void spawnBloodVialOnMonsterDeath(Entity* entity, Stat* hitstats, Entity* killer
 }
 
 static ConsoleVariable<bool> cvar_magic_fx_use_vismap("/magic_fx_use_vismap", true);
+void magicOnPlayerHit(Entity* parent, Entity* hitentity, Stat* hitstats, Sint32 preResistanceDamage, Sint32 damage, Sint32 oldHP, int spellID)
+{
+	if ( !hitentity || !hitstats ) { return; }
+
+	if ( hitentity->behavior != &actPlayer )
+	{
+		return;
+	}
+
+	Compendium_t::Events_t::eventUpdateCodex(hitentity->skill[2], Compendium_t::CPDM_RES_SPELLS_HIT, "res", 1);
+
+	Sint32 damageTaken = oldHP - hitstats->HP;
+	if ( damageTaken > 0 )
+	{
+		Compendium_t::Events_t::eventUpdateCodex(hitentity->skill[2], Compendium_t::CPDM_RES_DMG_TAKEN, "res", damageTaken);
+		Compendium_t::Events_t::eventUpdateCodex(hitentity->skill[2], Compendium_t::CPDM_HP_MOST_DMG_LOST_ONE_HIT, "hp", damageTaken);
+		if ( preResistanceDamage > damage )
+		{
+			Sint32 noResistDmgTaken = oldHP - std::max(0, oldHP - preResistanceDamage);
+			if ( noResistDmgTaken > damageTaken )
+			{
+				Compendium_t::Events_t::eventUpdateCodex(hitentity->skill[2], Compendium_t::CPDM_RES_DMG_RESISTED, "res", noResistDmgTaken - damageTaken);
+				Compendium_t::Events_t::eventUpdateCodex(hitentity->skill[2], Compendium_t::CPDM_RES_DMG_RESISTED_RUN, "res", noResistDmgTaken - damageTaken);
+			}
+		}
+	}
+}
 
 void magicTrapOnHit(Entity* parent, Entity* hitentity, Stat* hitstats, Sint32 oldHP, int spellID)
 {
@@ -1418,6 +1445,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					if ( my->actmagicCastByMagicstaff == 0 && my->actmagicCastByTinkerTrap == 0 )
 					{
 						spellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, nullptr, element, spell ? spell->ID : SPELL_NONE);
+						if ( parent && parent->behavior == &actPlayer )
+						{
+							Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_CLASS_PWR_MAX_CASTED, "pwr",
+								100 + (Sint32)(spellbookDamageBonus * 100.0));
+						}
 					}
 					if ( parent && (parent->behavior == &actMagicTrap || parent->behavior == &actMagicTrapCeiling) )
 					{
@@ -1449,10 +1481,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+							Sint32 preResistanceDamage = damage;
 							damage *= damageMultiplier;
 							damage /= (1 + (int)resistance);
 							Sint32 oldHP = hitstats->HP;
 							hit.entity->modHP(-damage);
+							magicOnPlayerHit(parent, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 							for (i = 0; i < damage; i += 2)   //Spawn a gib for every two points of damage.
 							{
@@ -1625,12 +1659,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								damage = damage - local_rng.rand() % ((damage / 8) + 1);
 							}
 
-
+							Sint32 preResistanceDamage = damage;
 							damage *= damageMultiplier;
 							damage /= (1 + (int)resistance);
-							Sint32 oldHP;
+							Sint32 oldHP = hitstats->HP;
 							hit.entity->modHP(-damage);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
+							magicOnPlayerHit(parent, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							for (i = 0; i < damage; i += 2)   //Spawn a gib for every two points of damage.
 							{
 								Entity* gib = spawnGib(hit.entity);
@@ -1902,6 +1937,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 								damage = damage - local_rng.rand() % ((damage / 8) + 1);
 							}
+							Sint32 preResistanceDamage = damage;
 							damage *= damageMultiplier;
 							if ( parent )
 							{
@@ -1915,6 +1951,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage *= fireMultiplier;
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
+							magicOnPlayerHit(parent, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 							//for (i = 0; i < damage; i += 2) { //Spawn a gib for every two points of damage.
 							Entity* gib = spawnGib(hit.entity);
@@ -2043,7 +2080,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
-							damage /= (1+(int)resistance);
+							damage /= (1 + (int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
@@ -2278,6 +2315,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							int oldHP = hitstats->HP;
+							Sint32 preResistanceDamage = damage;
 							damage *= damageMultiplier;
 							damage *= coldMultiplier;
 							damage /= (1 + (int)resistance);
@@ -2285,6 +2323,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( damage > 0 )
 							{
 								hit.entity->modHP(-damage);
+								magicOnPlayerHit(parent, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 								Entity* gib = spawnGib(hit.entity);
 								serverSpawnGibForClient(gib);
 								magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
@@ -2540,10 +2579,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							int oldHP = hitstats->HP;
+							Sint32 preResistanceDamage = damage;
 							damage *= damageMultiplier;
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
-
+							magicOnPlayerHit(parent, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 
 							// write the obituary
@@ -3212,6 +3252,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+							Sint32 preResistanceDamage = damage;
 							damage *= damageMultiplier;
 							Stat* casterStats = nullptr;
 							if ( parent )
@@ -3226,7 +3267,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							
 							Sint32 oldHP = hitstats->HP;
 							hit.entity->modHP(-damage);
-
+							magicOnPlayerHit(parent, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 
 							// write the obituary

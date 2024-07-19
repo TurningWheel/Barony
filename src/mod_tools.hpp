@@ -3840,6 +3840,23 @@ struct Compendium_t
 		CPDM_WANTED_TIMES_RUN,
 		CPDM_WANTED_INFLUENCE,
 		CPDM_WANTED_CRIMES_RUN,
+		CPDM_CUSTOM_TAG,
+		CPDM_SPELLBOOK_CAST_DEGRADES,
+		CPDM_CLASS_SPELLBOOK_CASTS_RUN,
+		CPDM_CLASS_SPELLBOOK_FIZZLES_RUN,
+		CPDM_CLASS_MOVING_TIME,
+		CPDM_CLASS_IDLING_TIME,
+		CPDM_CLASS_SKILL_UPS_ALL_RUN,
+		CPDM_CLASS_WGT_EQUIPPED_MAX,
+		CPDM_CLASS_PWR_MAX_CASTED,
+		CPDM_PWR_MAX_EQUIP,
+		CPDM_PWR_MAX_SPELLBOOK,
+		CPDM_RES_DMG_TAKEN,
+		CPDM_RES_SPELLS_HIT,
+		CPDM_HP_MOST_DMG_LOST_ONE_HIT,
+		CPDM_HP_LOST_TOTAL,
+		CPDM_AC_EFFECTIVENESS_MAX,
+		CPDM_AC_EQUIPMENT_MAX,
 		CPDM_EVENT_TAGS_MAX
 	};
 
@@ -3868,6 +3885,22 @@ struct Compendium_t
 		}
 		return "";
 	}
+
+	struct CompendiumEntityCurrent
+	{
+		std::string contentsName = "";
+		std::string modelName = "";
+		int modelIndex = -1;
+		Uint32 modelRNG = 0;
+		void set(std::string _contentsName, std::string _modelName, int _modelIndex = -1)
+		{
+			contentsName = _contentsName;
+			modelName = _modelName;
+			modelIndex = _modelIndex;
+			++modelRNG;
+		}
+	};
+	static CompendiumEntityCurrent compendiumEntityCurrent;
 
 	struct Events_t
 	{
@@ -3922,6 +3955,8 @@ struct Compendium_t
 		static std::map<int, std::set<EventTags>> itemEventLookup;
 		static std::map<std::string, int> monsterUniqueIDLookup;
 		static std::map<int, std::vector<EventTags>> itemDisplayedEventsList;
+		static std::map<int, std::vector<std::string>> itemDisplayedCustomEventsList;
+		static std::map<std::string, std::string> customEventsValues;
 		static std::map<EventTags, std::set<int>> eventItemLookup;
 		static std::map<EventTags, std::set<int>> eventMonsterLookup;
 		static std::map<EventTags, std::set<std::string>> eventWorldLookup;
@@ -3931,6 +3966,9 @@ struct Compendium_t
 		static std::map<EventTags, std::map<int, int>> eventClassIds;
 		static const int kEventClassesMax = 40;
 		static std::map<EventTags, std::map<std::string, std::string>> eventLangEntries;
+		static std::map<std::string, std::map<std::string, std::string>> eventCustomLangEntries;
+		static std::vector<std::pair<std::string, Sint32>> getCustomEventValue(std::string key, int specificClass = -1);
+		static std::string formatEventRecordText(Sint32 value, const char* formatType, int formatVal, std::map<std::string, std::string>& langMap);
 		static void readEventsFromFile();
 		static void writeItemsSaveData();
 		static void loadItemsSaveData();

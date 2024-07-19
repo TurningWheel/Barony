@@ -997,6 +997,7 @@ public:
 			ItemTooltipDisplay_t();
 		};
 		ItemTooltipDisplay_t itemTooltipDisplay;
+		ItemTooltipDisplay_t compendiumItemTooltipDisplay;
 
 		int DEFAULT_INVENTORY_SIZEX = 12;
 		int DEFAULT_INVENTORY_SIZEY = 3;
@@ -2272,6 +2273,8 @@ public:
 		std::map<int, std::map<std::string, std::map<int, Sint32>>> floorEvents;
 		real_t playerDistAccum = 0.0;
 		Uint32 playerSneakTime = 0;
+		Uint32 playerAliveTimeMoving = 0;
+		Uint32 playerAliveTimeStopped = 0;
 		CompendiumProgress_t(Player& p) : player(p)
 		{};
 		~CompendiumProgress_t() {};

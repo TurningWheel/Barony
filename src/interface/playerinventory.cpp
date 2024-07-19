@@ -4126,7 +4126,14 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 	players[player]->inventoryUI.miscTooltipOpacitySetpoint = 0;
 	players[player]->inventoryUI.miscTooltipOpacityAnimate = 0.0;
     
-    auto& tooltipDisplayedSettings = this->player.inventoryUI.itemTooltipDisplay;
+	bool compendiumTooltip = false;
+	if ( parentFrame && !strcmp(parentFrame->getName(), "compendium") )
+	{
+		compendiumTooltip = true;
+	}
+
+    auto& tooltipDisplayedSettings = compendiumTooltip ? this->player.inventoryUI.compendiumItemTooltipDisplay 
+		: this->player.inventoryUI.itemTooltipDisplay;
     
     bool bUpdateDisplayedTooltip =
     (!tooltipDisplayedSettings.isItemSameAsCurrent(player, item) || ItemTooltips.itemDebug);
@@ -4173,9 +4180,9 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
     const int imgTopBackgroundDefaultHeight = 28;
     const int imgTopBackground2XHeight = 42;
     
-    const bool doTitleOnlyTooltip = players[player]->shootmode && !(enableDebugKeys && keystatus[SDLK_g]);
+    const bool doTitleOnlyTooltip = players[player]->shootmode && !compendiumTooltip && !(enableDebugKeys && keystatus[SDLK_g]);
     bool doShortTooltip = false;
-    if ( players[player]->shootmode )
+    if ( players[player]->shootmode && !compendiumTooltip )
     {
         doShortTooltip = true;
         if ( doTitleOnlyTooltip )
@@ -4278,11 +4285,15 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
     bool expandBindingPressed = false;
     if ( !players[player]->usingCommand()
         && players[player]->bControlEnabled
-        && !gamePaused
+        && (!gamePaused || compendiumTooltip)
         && Input::inputs[player].consumeBinaryToggle("Expand Inventory Tooltip") )
     {
         expandBindingPressed = true;
-        if ( !players[player]->shootmode && item->identified && !doTitleOnlyTooltip
+		if ( compendiumTooltip )
+		{
+			tooltipDisplayedSettings.expanded = !tooltipDisplayedSettings.expanded;
+		}
+        else if ( !players[player]->shootmode && item->identified && !doTitleOnlyTooltip
             && !doShortTooltip )
         {
             tooltipDisplayedSettings.expanded = !tooltipDisplayedSettings.expanded;
@@ -4787,12 +4798,6 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
             txtThirdValueNegative->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
         }
 
-		bool compendiumTooltip = false;
-		if ( parentFrame && !strcmp(parentFrame->getName(), "compendium") )
-		{
-			compendiumTooltip = true;
-		}
-        
         if ( itemTooltip.icons.size() > 0 )
         {
             int index = 0;
@@ -4887,7 +4892,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                         }
                         else if ( icon.conditionalAttribute == "SPELLBOOK_UNLEARNED" )
                         {
-							if ( compendiumTooltip ) { continue; }
+							if ( compendiumTooltip && intro ) { continue; }
                             if ( isGoblin || playerLearnedSpellbook(player, item) || (spell && skillLVL >= spell->difficulty) )
                             {
                                 continue;
@@ -4896,7 +4901,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                         else if ( icon.conditionalAttribute == "SPELLBOOK_UNLEARNABLE" )
                         {
                             if ( !isGoblin ) { continue; }
-							if ( compendiumTooltip ) { continue; }
+							if ( compendiumTooltip && intro ) { continue; }
                             if ( playerLearnedSpellbook(player, item) )
                             {
                                 continue;
@@ -4905,7 +4910,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                         else if ( icon.conditionalAttribute == "SPELLBOOK_LEARNABLE" )
                         {
                             if ( isGoblin ) { continue; }
-							if ( compendiumTooltip ) { continue; }
+							if ( compendiumTooltip && intro ) { continue; }
                             if ( playerLearnedSpellbook(player, item) || (spell && skillLVL < spell->difficulty) )
                             {
                                 continue;
@@ -4916,14 +4921,14 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                         {
                             if ( icon.conditionalAttribute == "SPELLBOOK_SPELLINFO_LEARNED" )
                             {
-                                if ( !compendiumTooltip && !playerLearnedSpellbook(player, item) )
+                                if ( !(compendiumTooltip && intro) && !playerLearnedSpellbook(player, item) )
                                 {
                                     continue;
                                 }
                             }
                             else if ( icon.conditionalAttribute == "SPELLBOOK_SPELLINFO_UNLEARNED" )
                             {
-								if ( compendiumTooltip ) { continue; }
+								if ( compendiumTooltip && intro ) { continue; }
                                 if ( playerLearnedSpellbook(player, item) )
                                 {
                                     continue;
@@ -5332,7 +5337,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                     else if ( tag.compare("spellbook_cast_success") == 0
                              || tag.compare("spellbook_extramana_chance") == 0 )
                     {
-						if ( compendiumTooltip )
+						if ( compendiumTooltip && intro )
 						{
 							continue;
 						}
@@ -5347,7 +5352,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                              || tag.compare("spellbook_magic_current") == 0
                              || tag.compare("spellbook_unlearned_blank_space") == 0 )
                     {
-						if ( compendiumTooltip )
+						if ( compendiumTooltip && intro )
 						{
 							continue;
 						}
@@ -5370,7 +5375,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                     else if ( tag.compare("spell_cast_success") == 0
                              || tag.compare("spell_extramana_chance") == 0 )
                     {
-						if ( compendiumTooltip )
+						if ( compendiumTooltip && intro )
 						{
 							continue;
 						}
@@ -5382,7 +5387,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                     }
                     else if ( tag.compare("spell_newbie_newline") == 0 )
                     {
-						if ( compendiumTooltip )
+						if ( compendiumTooltip && intro )
 						{
 							continue;
 						}
@@ -6165,8 +6170,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
         framePromptPos.y = frameValuesPos.y + frameValuesPos.h;
         framePrompt->setSize(framePromptPos);
         
-        bool doAppraisalPrompt = !item->identified && isItemFromInventory && appraisal.current_item != item->uid;
-        bool doAppraisalProgressPrompt = !item->identified && isItemFromInventory && appraisal.current_item == item->uid;
+        bool doAppraisalPrompt = !item->identified && isItemFromInventory && appraisal.current_item != item->uid && !compendiumTooltip;
+        bool doAppraisalProgressPrompt = !item->identified && isItemFromInventory && appraisal.current_item == item->uid && !compendiumTooltip;
         if ( doAppraisalProgressPrompt )
         {
             real_t percent = (((double)(appraisal.timermax - appraisal.timer)) / ((double)appraisal.timermax)) * 100;
@@ -6214,7 +6219,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
         // prompt for expanding tooltip position
         auto promptImg = frameMain->findImage("inventory mouse tooltip prompt img");
         promptImg->disabled = true;
-        if ( !players[player]->shootmode
+        if ( (!players[player]->shootmode || compendiumTooltip)
             && !txtPrompt->isDisabled()
             && !doAppraisalProgressPrompt
             && (!doAppraisalPrompt || (doAppraisalPrompt && stats[player]->HP > 0)) )
@@ -6442,8 +6447,6 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 void Player::HUD_t::finalizeFrameTooltip(Item* item, const int x, const int y, int justify, Frame* parentFrame)
 {
     const int player = this->player.playernum;
-    const bool doTitleOnlyTooltip = players[player]->shootmode && !(enableDebugKeys && keystatus[SDLK_g]);
-    auto& tooltipDisplayedSettings = this->player.inventoryUI.itemTooltipDisplay;
     
 	Frame* tooltipContainerFrame = nullptr;
 	Frame* frameMain = nullptr;
@@ -6451,6 +6454,7 @@ void Player::HUD_t::finalizeFrameTooltip(Item* item, const int x, const int y, i
 	Frame* frameInteract = nullptr;
 	Frame* frameTooltipPrompt = nullptr;
 	Frame* titleOnlyFrame = nullptr;
+	bool compendiumTooltip = false;
 	if ( parentFrame != nullptr )
 	{
 		// hacks for compendium tooltips
@@ -6465,6 +6469,11 @@ void Player::HUD_t::finalizeFrameTooltip(Item* item, const int x, const int y, i
 		frameInteract = parentFrame->findFrame(name);
 		snprintf(name, sizeof(name), "player item prompt %d", 0);
 		frameTooltipPrompt = tooltipContainerFrame->findFrame(name);
+
+		if ( !strcmp(parentFrame->getName(), "compendium") )
+		{
+			compendiumTooltip = true;
+		}
 	}
 	else
 	{
@@ -6480,6 +6489,10 @@ void Player::HUD_t::finalizeFrameTooltip(Item* item, const int x, const int y, i
 		}
 	}
 
+	auto& tooltipDisplayedSettings = compendiumTooltip ? this->player.inventoryUI.compendiumItemTooltipDisplay
+		: this->player.inventoryUI.itemTooltipDisplay;
+
+    const bool doTitleOnlyTooltip = players[player]->shootmode && !compendiumTooltip && !(enableDebugKeys && keystatus[SDLK_g]);
 	if ( !doTitleOnlyTooltip )
 	{
 		tooltipDisplayedSettings.opacitySetpoint = 0;
@@ -6504,7 +6517,8 @@ void Player::HUD_t::finalizeFrameTooltip(Item* item, const int x, const int y, i
 		&& !doTitleOnlyTooltip
 		&& !players[player]->GUI.isDropdownActive()
 		&& !selectedItem
-		&& !inputs.getVirtualMouse(player)->draw_cursor 
+		&& !inputs.getVirtualMouse(player)->draw_cursor
+		&& !compendiumTooltip
 		&& !players[player]->shootmode
 		&& !(itemCategory(item) == SPELL_CAT && (players[player]->shopGUI.bOpen || players[player]->inventoryUI.chestGUI.bOpen)) )
 	{

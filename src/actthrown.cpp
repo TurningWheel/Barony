@@ -757,7 +757,8 @@ void actThrown(Entity* my)
 								enemyAC *= .5;
 							}
 
-							real_t targetACEffectiveness = Entity::getACEffectiveness(hit.entity, hitstats, hit.entity->behavior == &actPlayer, parent, parentStats);
+							int numBlessings = 0;
+							real_t targetACEffectiveness = Entity::getACEffectiveness(hit.entity, hitstats, hit.entity->behavior == &actPlayer, parent, parentStats, numBlessings);
 							int attackAfterReductions = static_cast<int>(std::max(0.0, ((damage * targetACEffectiveness - enemyAC))) + (1.0 - targetACEffectiveness) * damage);
 							damage = attackAfterReductions;
 						}
@@ -815,6 +816,10 @@ void actThrown(Entity* my)
 					Sint32 oldHP = hitstats->HP;
 					hit.entity->modHP(-damage);
 
+					if ( hit.entity->behavior == &actPlayer )
+					{
+						Compendium_t::Events_t::eventUpdateCodex(hit.entity->skill[2], Compendium_t::CPDM_HP_MOST_DMG_LOST_ONE_HIT, "hp", oldHP - hitstats->HP);
+					}
 					if ( parent && parent->behavior == &actPlayer )
 					{
 						Compendium_t::Events_t::eventUpdate(parent->skill[2], 

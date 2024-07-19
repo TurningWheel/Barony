@@ -16049,12 +16049,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_INT:
 				{
 					//real_t val = getBonusFromCasterOfSpellElement(players[player.playernum]->entity, stats[player.playernum], nullptr, SPELL_NONE) * 100.0;
-					int INT = statGetINT(stats[player.playernum], players[player.playernum]->entity);
-					real_t bonus = 0.0;
-					if ( INT > 0 )
-					{
-						bonus += INT / 100.0;
-					}
+					real_t bonus = getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum]);
 					real_t val = bonus * 100.0;
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_pwr_value_format").c_str(), val);
 				}
@@ -21643,8 +21638,11 @@ void drawItemPreview(Entity* item, SDL_Rect pos, real_t offsetyaw, bool dark)
 	{
 		if ( item->flags[SPRITE] && item->skill[10] == SPELL_ITEM )
 		{
+			ItemType tmpItem = Compendium_t::compendiumItem.type;
+			Compendium_t::compendiumItem.type = SPELL_ITEM;
 			glDrawSpriteFromImage(&view, item, ItemTooltips.getSpellIconPath(clientnum, Compendium_t::compendiumItem, item->skill[14]),
 				REALCOLORS, true, true);
+			Compendium_t::compendiumItem.type = tmpItem;
 		}
 		else
 		{
@@ -21819,6 +21817,15 @@ void drawSpritesPreview(std::string name, std::string modelsPath, SDL_Rect pos, 
 				{
 					if ( codexEntry->renderedImagePaths[index] != "" )
 					{
+						if ( Compendium_t::compendiumEntityCurrent.modelIndex != -1 )
+						{
+							if ( index != Compendium_t::compendiumEntityCurrent.modelIndex )
+							{
+								e.flags[BRIGHT] = b;
+								++index;
+								continue;
+							}
+						}
 						glDrawSpriteFromImage(&view, &e, codexEntry->renderedImagePaths[index],
 							REALCOLORS, true, true);
 					}
@@ -22311,7 +22318,12 @@ void drawObjectPreview(std::string modelsPath, Entity* object, SDL_Rect pos, rea
 		{
 			for ( auto& limb : *limbsArray )
 			{
-				if ( limb.sprite == 3 ) // torch
+				if ( limb.sprite >= 1238 && limb.sprite <= 1242 )
+				{
+					// ghost limbs
+					limb.yaw += 0.05;
+				}
+				else if ( limb.sprite == 3 ) // torch
 				{
 					Entity* flame = newEntity(SPRITE_FLAME, 0, &limb.children, nullptr);
 					flame->x = limb.x;
@@ -22341,7 +22353,15 @@ void drawObjectPreview(std::string modelsPath, Entity* object, SDL_Rect pos, rea
 				{
 					if ( list_Size(&limb.children) == 0 )
 					{
-						Entity* entity = newEntity(245, 0, &limb.children, nullptr);
+						Entity* entity = nullptr;
+						if ( modelsPath == "brimstone" )
+						{
+							entity = newEntity(989, 0, &limb.children, nullptr);
+						}
+						else
+						{
+							entity = newEntity(245, 0, &limb.children, nullptr);
+						}
 						entity->x = limb.x;
 						entity->y = limb.y;
 						entity->z = -64;
@@ -26917,7 +26937,13 @@ void Player::Inventory_t::updateInventoryItemTooltip(Frame* parentFrame)
 		return;
 	}
 
-	auto& tooltipDisplay = this->itemTooltipDisplay;
+	bool compendiumTooltip = false;
+	if ( parentFrame && !strcmp(parentFrame->getName(), "compendium") )
+	{
+		compendiumTooltip = true;
+	}
+	auto& tooltipDisplay = compendiumTooltip ? this->compendiumItemTooltipDisplay 
+		: this->itemTooltipDisplay;
 
 	if ( static_cast<int>(frameMain->getOpacity()) != tooltipDisplay.opacitySetpoint )
 	{
@@ -33255,24 +33281,14 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "MAGIC_SPELLPOWER_INT" )
 		{
 			//val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE) * 100.0);
-			int INT = statGetINT(stats[playernum], players[playernum]->entity);
-			real_t bonus = 0.0;
-			if ( INT > 0 )
-			{
-				bonus += INT / 100.0;
-			}
+			real_t bonus = getSpellBonusFromCasterINT(players[playernum]->entity, stats[playernum]);
 			val = bonus * 100.0;
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "MAGIC_SPELLPOWER_EQUIPMENT" )
 		{
 			val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE) * 100.0);
-			int INT = statGetINT(stats[playernum], players[playernum]->entity);
-			real_t bonus = 0.0;
-			if ( INT > 0 )
-			{
-				bonus += INT / 100.0;
-			}
+			real_t bonus = getSpellBonusFromCasterINT(players[playernum]->entity, stats[playernum]);
 			val -= bonus * 100.0;
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}

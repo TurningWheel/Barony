@@ -630,6 +630,29 @@ bool spell_isChanneled(spell_t* spell)
 	return false;
 }
 
+real_t getSpellBonusFromCasterINT(Entity* caster, Stat* casterStats)
+{
+	if ( caster && caster->behavior != &actPlayer )
+	{
+		return 0.0;
+	}
+
+	real_t bonus = 0.0;
+	if ( !casterStats && caster )
+	{
+		casterStats = caster->getStats();
+	}
+	if ( casterStats )
+	{
+		int INT = statGetINT(casterStats, caster);
+		if ( INT > 0 )
+		{
+			bonus += INT / 100.0;
+		}
+	}
+	return bonus;
+}
+
 real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spellElement_t* spellElement, int spellID)
 {
 	if ( caster && caster->behavior != &actPlayer )
@@ -643,11 +666,7 @@ real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spell
 	}
 
 	real_t bonus = 0.0;
-	int INT = statGetINT(casterStats, caster);
-	if ( INT > 0 )
-	{
-		bonus += INT / 100.0;
-	}
+	bonus += getSpellBonusFromCasterINT(caster, casterStats);
 
 	if ( casterStats )
 	{

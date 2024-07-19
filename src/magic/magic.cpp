@@ -300,11 +300,17 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			}
 
 			int oldHP = hitstats->HP;
-			damage /= (1 + (int)resistance);
+			Sint32 preResistanceDamage = damage;
 			damage *= damageMultiplier;
+			damage /= (1 + (int)resistance);
 			if ( !hasgoggles )
 			{
 				hit.entity->modHP(-damage);
+				magicOnPlayerHit(parent, hit.entity, hitstats, preResistanceDamage, damage, oldHP, SPELL_ACID_SPRAY);
+			}
+			else
+			{
+				magicOnPlayerHit(parent, hit.entity, hitstats, preResistanceDamage, 0, oldHP, SPELL_ACID_SPRAY);
 			}
 
 			// write the obituary
@@ -487,9 +493,13 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 				dmgGib = DMG_WEAKEST;
 			}
 
-			damage /= (1 + (int)resistance);
+			Sint32 preResistanceDamage = damage;
 			damage *= damageMultiplier;
+			damage /= (1 + (int)resistance);
+			Sint32 oldHP = hitstats->HP;
 			hit.entity->modHP(-damage);
+
+			magicOnPlayerHit(parent, hit.entity, hitstats, preResistanceDamage, damage, oldHP, SPELL_POISON);
 
 			// write the obituary
 			if ( parent )
@@ -974,8 +984,10 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			int damage = element.damage;
 			damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, nullptr, &element, SPELL_DRAIN_SOUL));
 			//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-			damage /= (1 + (int)resistance);
+
+			Sint32 preResistanceDamage = damage;
 			damage *= damageMultiplier;
+			damage /= (1 + (int)resistance);
 
 			if ( parent )
 			{
@@ -988,7 +1000,11 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 
 			int damageHP = hitstats->HP;
 			int damageMP = hitstats->MP;
+			Sint32 oldHP = hitstats->HP;
 			hit.entity->modHP(-damage);
+
+			magicOnPlayerHit(parent, hit.entity, hitstats, preResistanceDamage, damage, oldHP, SPELL_DRAIN_SOUL);
+
 			if ( damage > hitstats->MP )
 			{
 				damage = hitstats->MP;
