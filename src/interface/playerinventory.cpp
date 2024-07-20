@@ -7118,6 +7118,13 @@ void Player::Inventory_t::openInventory()
 		bFirstTimeSnapCursor = false;
 		slideOutPercent = 1.0;
 		isInteractable = false;
+
+		// consume tooltip prompt buttons e.g so holding 'A' doesn't activate when opening inventory
+		auto& input = Input::inputs[player.playernum];
+		input.consumeBinaryToggle("MenuConfirm");
+		input.consumeBinaryToggle("MenuCancel");
+		input.consumeBinaryToggle("MenuAlt1");
+		input.consumeBinaryToggle("MenuAlt2");
 	}
 	player.hotbar.hotbarTooltipLastGameTick = 0;
 }
@@ -8844,6 +8851,13 @@ void Player::Inventory_t::updateInventory()
 							{
 								bindingPressed = true;
 
+								if ( Input::inputs[player].getPlayerControlType() == Input::PLAYER_CONTROLLED_BY_KEYBOARD )
+								{
+									// rare bug causes rogue activations on keyboard controls holding space + opening inventory
+									// skip this section and consume presses
+									break;
+								}
+
 								if ( option == ItemContextMenuPrompts::PROMPT_DROP && players[player]->paperDoll.isItemOnDoll(*item) )
 								{
 									// need to unequip
@@ -9275,6 +9289,13 @@ void Player::Inventory_t::updateInventory()
 						if ( Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(player, option).c_str()) )
 						{
 							bindingPressed = true;
+
+							if ( Input::inputs[player].getPlayerControlType() == Input::PLAYER_CONTROLLED_BY_KEYBOARD )
+							{
+								// rare bug causes rogue activations on keyboard controls holding space + opening inventory
+								// skip this section and consume presses
+								break;
+							}
 
 							if ( option == ItemContextMenuPrompts::PROMPT_DROP && players[player]->paperDoll.isItemOnDoll(*item) )
 							{

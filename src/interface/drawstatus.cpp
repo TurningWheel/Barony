@@ -3273,6 +3273,13 @@ void drawStatusNew(const int player)
 						{
 							bindingPressed = true;
 
+							if ( Input::inputs[player].getPlayerControlType() == Input::PLAYER_CONTROLLED_BY_KEYBOARD )
+							{
+								// rare bug causes rogue activations on keyboard controls holding space + opening inventory
+								// skip this section and consume presses
+								break;
+							}
+
 							if ( option == ItemContextMenuPrompts::PROMPT_DROP && players[player]->paperDoll.isItemOnDoll(*item) )
 							{
 								// need to unequip
