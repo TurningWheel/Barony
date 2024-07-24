@@ -22316,12 +22316,56 @@ void drawObjectPreview(std::string modelsPath, Entity* object, SDL_Rect pos, rea
 	{
 		if ( doTick )
 		{
+			int limbIndex = -1;
 			for ( auto& limb : *limbsArray )
 			{
-				if ( limb.sprite >= 1238 && limb.sprite <= 1242 )
+				++limbIndex;
+				if ( limb.sprite >= 1237 && limb.sprite <= 1242 )
 				{
 					// ghost limbs
-					limb.yaw += 0.05;
+					if ( limb.sprite >= 1238 && limb.sprite <= 1242 )
+					{
+						limb.yaw += 0.05; // spin body
+					}
+
+					auto& squishTime = limb.skill[5];
+					auto& squishGhost = limb.fskill[8];
+					auto& squishAngle = limb.fskill[9];
+
+					Uint32 activeTick = 10;
+					if ( limb.sprite == 1240 || (limbIndex > 0 && limb.sprite == 1237 && (*limbsArray)[limbIndex - 1].sprite == 1240) )
+					{
+						activeTick = 2 * TICKS_PER_SECOND - 25;
+					}
+					else if ( limb.sprite == 1239 || (limbIndex > 0 && limb.sprite == 1237 && (*limbsArray)[limbIndex - 1].sprite == 1239) )
+					{
+						activeTick = 4 * TICKS_PER_SECOND + 25;
+					}
+					else if ( limb.sprite == 1241 || (limbIndex > 0 && limb.sprite == 1237 && (*limbsArray)[limbIndex - 1].sprite == 1241) )
+					{
+						activeTick = 6 * TICKS_PER_SECOND - 25;
+					}
+					if ( limb.ticks % (8 * TICKS_PER_SECOND) == activeTick )
+					{
+						squishAngle = Player::Ghost_t::GHOST_SQUISH_START_ANGLE / 100.f;
+					}
+					++limb.ticks;
+
+					const real_t squishRate = 6.0;
+					real_t squishFactor = 0.3;
+					if ( squishAngle < 0.0 )
+					{
+						squishFactor *= std::max(0.0, (1.0 + squishAngle));
+					}
+					const real_t inc = squishRate * (PI / TICKS_PER_SECOND);
+					squishGhost = squishAngle * 2 * PI;
+					const real_t squish = sin(squishGhost) * squishFactor;
+					squishAngle -= squishRate * (0.5 / TICKS_PER_SECOND);
+					squishAngle = std::max(squishAngle, -1.0);
+
+					limb.scalex = 1.0 - squish;
+					limb.scaley = 1.0 - squish;
+					limb.scalez = 1.0 + squish;
 				}
 				else if ( limb.sprite == 3 ) // torch
 				{
