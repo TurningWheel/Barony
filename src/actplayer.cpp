@@ -4542,6 +4542,8 @@ void actPlayer(Entity* my)
 		players[PLAYER_NUM]->compendiumProgress.playerSneakTime = 0;
 		players[PLAYER_NUM]->compendiumProgress.playerAliveTimeMoving = 0;
 		players[PLAYER_NUM]->compendiumProgress.playerAliveTimeStopped = 0;
+		players[PLAYER_NUM]->compendiumProgress.playerAliveTimeTotal = 0;
+		players[PLAYER_NUM]->compendiumProgress.playerGameTimeTotal = 0;
 
 		Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
 		nametag->x = my->x;

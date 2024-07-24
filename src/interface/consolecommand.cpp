@@ -633,6 +633,8 @@ namespace ConsoleCommands {
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, Language::get(285));
 			loadnextlevel = true;
+			Compendium_t::Events_t::previousCurrentLevel = currentlevel;
+			Compendium_t::Events_t::previousSecretlevel = secretlevel;
 		}
 		});
 
@@ -2616,6 +2618,7 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
+		Compendium_t::Events_t::previousSecretlevel = secretlevel;
 		secretlevel = (secretlevel == false);
 		});
 

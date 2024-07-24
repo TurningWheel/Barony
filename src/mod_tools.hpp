@@ -3495,120 +3495,17 @@ struct Compendium_t
 		bool rotateLimit = true;
 		bool inUse = false;
 	};
-	struct CompendiumMonsters_t
-	{
-		struct Monster_t
-		{
-			int monsterType = NOTHING;
-			std::string unique_npc = "";
-			std::vector<std::string> blurb;
-			std::vector<Sint32> hp;
-			std::vector<Sint32> spd;
-			std::vector<Sint32> ac;
-			std::vector<Sint32> atk;
-			std::vector<Sint32> rangeatk;
-			std::vector<Sint32> pwr;
-			std::array<int, 7> resistances;
-			std::vector<std::string> abilities;
-			std::vector<std::string> inventory;
-			std::string imagePath = "";
-			std::vector<std::string> models;
-		};
-		static std::vector<std::pair<std::string, std::string>> contents;
-		static std::map<std::string, std::string> contentsMap;
-	};
-	std::map<std::string, CompendiumMonsters_t::Monster_t> monsters;
-	void readMonstersFromFile();
-	void exportCurrentMonster(Entity* monster);
-	void readModelLimbsFromFile(std::string section);
-	CompendiumView_t defaultCamera;
-	struct ObjectLimbs_t
-	{
-		CompendiumView_t baseCamera;
-		CompendiumView_t currentCamera;
-		std::vector<Entity> entities;
-	};
-	std::map<std::string, ObjectLimbs_t> compendiumObjectLimbs;
-	CompendiumView_t currentView;
-	struct CompendiumMap_t
-	{
-		Uint32 width = 0;
-		Uint32 height = 0;
-		Uint32 ceiling = -1;
-	};
-	std::map<std::string, std::pair<CompendiumMap_t, std::vector<int>>> compendiumObjectMapTiles;
-	map_t compendiumMap;
-	struct CompendiumWorld_t
-	{
-		struct World_t
-		{
-			int modelIndex = -1;
-			std::string imagePath = "";
-			std::vector<std::string> models;
-			std::vector<std::string> blurb;
-			std::vector<std::string> details;
-			int id = -1;
-		};
-		static std::vector<std::pair<std::string, std::string>> contents;
-		static std::map<std::string, std::string> contentsMap;
-	};
-	std::map<std::string, CompendiumWorld_t::World_t> worldObjects;
-	void readWorldFromFile();
 
-	struct CompendiumCodex_t
-	{
-		struct Codex_t
-		{
-			int modelIndex = -1;
-			std::string imagePath = "";
-			std::vector<std::string> renderedImagePaths;
-			std::vector<std::string> blurb;
-			std::vector<std::string> details;
-			std::vector<std::string> models;
-			int id = -1;
-			CompendiumView_t view;
-		};
-		static std::vector<std::pair<std::string, std::string>> contents;
-		static std::map<std::string, std::string> contentsMap;
+	static void readContentsLang(std::string name, std::map<std::string, std::vector<std::pair<std::string, std::string>>>& contents,
+		std::map<std::string, std::string>& contentsMap);
+	enum CompendiumUnlockStatus : int {
+		LOCKED_UNKNOWN,
+		LOCKED_REVEALED_UNVISITED,
+		LOCKED_REVEALED_VISITED,
+		UNLOCKED_UNVISITED,
+		UNLOCKED_VISITED,
+		COMPENDIUMUNLOCKSTATUS_MAX
 	};
-	std::map<std::string, CompendiumCodex_t::Codex_t> codex;
-	void readCodexFromFile();
-
-	struct CompendiumItems_t
-	{
-		struct Codex_t
-		{
-			struct CodexItem_t
-			{
-				std::string name = "";
-				int rotation = 0;
-				int spellID = -1;
-				int effectID = -1;
-			};
-			int modelIndex = -1;
-			std::string imagePath = "";
-			std::vector<std::string> blurb;
-			std::vector<CodexItem_t> items_in_category;
-		};
-		static std::vector<std::pair<std::string, std::string>> contents;
-		static std::map<std::string, std::string> contentsMap;
-	};
-	std::map<std::string, CompendiumItems_t::Codex_t> items;
-	void readItemsFromFile();
-
-	struct CompendiumMagic_t
-	{
-		static std::vector<std::pair<std::string, std::string>> contents;
-		static std::map<std::string, std::string> contentsMap;
-	};
-	std::map<std::string, CompendiumItems_t::Codex_t> magic;
-	void readMagicFromFile();
-	static Item compendiumItem;
-	static bool tooltipNeedUpdate;
-	static void updateTooltip();
-	static SDL_Rect tooltipPos;
-	static Entity compendiumItemModel;
-	static Uint32 lastTickUpdate;
 
 	enum EventTags
 	{
@@ -3857,8 +3754,155 @@ struct Compendium_t
 		CPDM_HP_LOST_TOTAL,
 		CPDM_AC_EFFECTIVENESS_MAX,
 		CPDM_AC_EQUIPMENT_MAX,
+		CPDM_LEVELS_MIN_COMPLETION,
+		CPDM_LEVELS_MAX_COMPLETION,
+		CPDM_LEVELS_DEATHS,
+		CPDM_LEVELS_DEATHS_FASTEST,
+		CPDM_LEVELS_DEATHS_SLOWEST,
+		CPDM_LEVELS_MIN_LVL,
+		CPDM_BIOMES_MIN_COMPLETION,
+		CPDM_BIOMES_MAX_COMPLETION,
+		CPDM_LEVELS_TIME_SPENT,
+		CPDM_MINEHEAD_ENTER_SOLO,
+		CPDM_MINEHEAD_ENTER_ONLINE_MP,
+		CPDM_MINEHEAD_ENTER_LAN_MP,
+		CPDM_MINEHEAD_TOTAL_PLAYTIME,
+		CPDM_MINEHEAD_ENTER_SPLIT_MP,
+		CPDM_TOTAL_TIME_SPENT,
 		CPDM_EVENT_TAGS_MAX
 	};
+
+	struct CompendiumMonsters_t
+	{
+		struct Monster_t
+		{
+			int monsterType = NOTHING;
+			std::string unique_npc = "";
+			std::vector<std::string> blurb;
+			std::vector<Sint32> hp;
+			std::vector<Sint32> spd;
+			std::vector<Sint32> ac;
+			std::vector<Sint32> atk;
+			std::vector<Sint32> rangeatk;
+			std::vector<Sint32> pwr;
+			std::array<int, 7> resistances;
+			std::vector<std::string> abilities;
+			std::vector<std::string> inventory;
+			std::string imagePath = "";
+			std::vector<std::string> models;
+			std::set<std::string> unlockAchievements;
+		};
+		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents;
+		static std::map<std::string, std::string> contentsMap;
+		static void readContentsLang();
+		static std::map<std::string, CompendiumUnlockStatus> unlocks;
+	};
+	std::map<std::string, CompendiumMonsters_t::Monster_t> monsters;
+	void readMonstersFromFile();
+	void exportCurrentMonster(Entity* monster);
+	void readModelLimbsFromFile(std::string section);
+	CompendiumView_t defaultCamera;
+	struct ObjectLimbs_t
+	{
+		CompendiumView_t baseCamera;
+		CompendiumView_t currentCamera;
+		std::vector<Entity> entities;
+	};
+	std::map<std::string, ObjectLimbs_t> compendiumObjectLimbs;
+	CompendiumView_t currentView;
+	struct CompendiumMap_t
+	{
+		Uint32 width = 0;
+		Uint32 height = 0;
+		Uint32 ceiling = -1;
+	};
+	std::map<std::string, std::pair<CompendiumMap_t, std::vector<int>>> compendiumObjectMapTiles;
+	map_t compendiumMap;
+	struct CompendiumWorld_t
+	{
+		struct World_t
+		{
+			int modelIndex = -1;
+			std::string imagePath = "";
+			std::vector<std::string> models;
+			std::vector<std::string> blurb;
+			std::vector<std::string> details;
+			std::set<std::string> unlockAchievements;
+			std::set<EventTags> unlockTags;
+			int id = -1;
+		};
+		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents;
+		static std::map<std::string, std::string> contentsMap;
+		static void readContentsLang();
+		static std::map<std::string, CompendiumUnlockStatus> unlocks;
+	};
+	std::map<std::string, CompendiumWorld_t::World_t> worldObjects;
+	void readWorldFromFile();
+
+	struct CompendiumCodex_t
+	{
+		struct Codex_t
+		{
+			int modelIndex = -1;
+			std::string imagePath = "";
+			std::vector<std::string> renderedImagePaths;
+			std::vector<std::string> blurb;
+			std::vector<std::string> details;
+			std::vector<std::string> models;
+			int id = -1;
+			CompendiumView_t view;
+		};
+		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents;
+		static std::map<std::string, std::string> contentsMap;
+		static void readContentsLang();
+		static std::map<std::string, CompendiumUnlockStatus> unlocks;
+	};
+	std::map<std::string, CompendiumCodex_t::Codex_t> codex;
+	void readCodexFromFile();
+	static const char* compendiumCurrentLevelToWorldString(const int currentlevel, const bool secretlevel);
+
+	struct CompendiumItems_t
+	{
+		struct Codex_t
+		{
+			struct CodexItem_t
+			{
+				std::string name = "";
+				int rotation = 0;
+				int spellID = -1;
+				int effectID = -1;
+				int itemID = -1;
+			};
+			int modelIndex = -1;
+			std::string imagePath = "";
+			std::vector<std::string> blurb;
+			std::vector<CodexItem_t> items_in_category;
+		};
+		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents;
+		static std::map<std::string, std::string> contentsMap;
+		static void readContentsLang();
+		static std::map<std::string, CompendiumUnlockStatus> unlocks;
+		static std::map<int, CompendiumUnlockStatus> itemUnlocks;
+	};
+	std::map<std::string, CompendiumItems_t::Codex_t> items;
+	void readItemsFromFile();
+
+	struct CompendiumMagic_t
+	{
+		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents;
+		static std::map<std::string, std::string> contentsMap;
+		static void readContentsLang();
+	};
+	std::map<std::string, CompendiumItems_t::Codex_t> magic;
+	void readMagicFromFile();
+	static Item compendiumItem;
+	static bool tooltipNeedUpdate;
+	static void updateTooltip();
+	static SDL_Rect tooltipPos;
+	static Entity compendiumItemModel;
+	static Uint32 lastTickUpdate;
+	static void writeUnlocksSaveData();
+	static void readUnlocksSaveData();
 
 	static const char* Compendium_t::getSkillStringForCompendium(const int skill)
 	{
@@ -3954,6 +3998,10 @@ struct Compendium_t
 		static std::map<std::string, EventTags> eventIdLookup;
 		static std::map<int, std::set<EventTags>> itemEventLookup;
 		static std::map<std::string, int> monsterUniqueIDLookup;
+		static std::map<int, std::string> itemIDToString;
+		static std::map<int, std::string> monsterIDToString;
+		static std::map<int, std::string> codexIDToString;
+		static std::map<int, std::string> worldIDToString;
 		static std::map<int, std::vector<EventTags>> itemDisplayedEventsList;
 		static std::map<int, std::vector<std::string>> itemDisplayedCustomEventsList;
 		static std::map<std::string, std::string> customEventsValues;
@@ -3967,7 +4015,7 @@ struct Compendium_t
 		static const int kEventClassesMax = 40;
 		static std::map<EventTags, std::map<std::string, std::string>> eventLangEntries;
 		static std::map<std::string, std::map<std::string, std::string>> eventCustomLangEntries;
-		static std::vector<std::pair<std::string, Sint32>> getCustomEventValue(std::string key, int specificClass = -1);
+		static std::vector<std::pair<std::string, Sint32>> getCustomEventValue(std::string key, std::string compendiumSection, std::string compendiumContentsSelected, int specificClass = -1);
 		static std::string formatEventRecordText(Sint32 value, const char* formatType, int formatVal, std::map<std::string, std::string>& langMap);
 		static void readEventsFromFile();
 		static void writeItemsSaveData();
@@ -3976,7 +4024,7 @@ struct Compendium_t
 		static void createDummyClientData(const int playernum);
 		static void eventUpdate(int playernum, const EventTags tag, const ItemType type, Sint32 value, const bool loadingValue = false, const int spellID = -1);
 		static void eventUpdateMonster(int playernum, const EventTags tag, const Entity* entity, Sint32 value, const bool loadingValue = false, const int entryID = -1);
-		static void eventUpdateWorld(int playernum, const EventTags tag, const char* category, Sint32 value, const bool loadingValue = false, const int entryID = -1);
+		static void eventUpdateWorld(int playernum, const EventTags tag, const char* category, Sint32 value, const bool loadingValue = false, const int entryID = -1, const bool commitUniqueValue = true);
 		static void eventUpdateCodex(int playernum, const EventTags tag, const char* category, Sint32 value, const bool loadingValue = false, const int entryID = -1, const bool floorEvent = false);
 		static std::map<EventTags, std::map<int, EventVal_t>> playerEvents;
 		static std::map<EventTags, std::map<int, EventVal_t>> serverPlayerEvents[MAXPLAYERS];
@@ -3993,6 +4041,8 @@ struct Compendium_t
 		static const int kEventCodexOffset = 3000;
 		static const int kEventCodexClassOffset = 3500;
 		static const int kEventCodexOffsetMax = 9999;
+		static int previousCurrentLevel;
+		static bool previousSecretlevel;
 	};
 };
 

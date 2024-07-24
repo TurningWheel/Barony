@@ -1538,6 +1538,8 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 			if ( result != k_ScriptError )
 			{
 				loadnextlevel = true;
+				Compendium_t::Events_t::previousCurrentLevel = currentlevel;
+				Compendium_t::Events_t::previousSecretlevel = secretlevel;
 				skipLevelsOnLoad = result;
 			}
 		}

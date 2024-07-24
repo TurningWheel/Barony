@@ -1988,8 +1988,6 @@ void gameLogic(void)
 						}
 					}
 
-					int prevcurrentlevel = currentlevel;
-					bool prevsecretfloor = secretlevel;
 					std::string prevmapname = map.name;
 
 					bool loadingTheSameFloorAsCurrent = false;
@@ -2491,7 +2489,9 @@ void gameLogic(void)
 
 					for ( c = 0; c < MAXPLAYERS; c++ )
 					{
-						Compendium_t::Events_t::onLevelChangeEvent(c, prevcurrentlevel, prevsecretfloor, prevmapname);
+						Compendium_t::Events_t::onLevelChangeEvent(c, Compendium_t::Events_t::previousCurrentLevel, Compendium_t::Events_t::previousSecretlevel, prevmapname);
+						players[c]->compendiumProgress.playerAliveTimeTotal = 0;
+						players[c]->compendiumProgress.playerGameTimeTotal = 0;
 					}
 
                     // save at end of level change
@@ -2500,6 +2500,7 @@ void gameLogic(void)
 						saveGame();
 					}
 					Compendium_t::Events_t::writeItemsSaveData();
+					Compendium_t::writeUnlocksSaveData();
 #ifdef LOCAL_ACHIEVEMENTS
 					LocalAchievements_t::writeToFile();
 #endif
@@ -3522,6 +3523,17 @@ void gameLogic(void)
 	if (!gamePaused && !intro && playeralive)
 	{
 		++completionTime;
+		for ( int c = 0; c < MAXPLAYERS; ++c ) 
+		{
+			players[c]->compendiumProgress.playerAliveTimeTotal++;
+		}
+	}
+	if ( !gamePaused && !intro )
+	{
+		for ( int c = 0; c < MAXPLAYERS; ++c )
+		{
+			players[c]->compendiumProgress.playerGameTimeTotal++;
+		}
 	}
 }
 

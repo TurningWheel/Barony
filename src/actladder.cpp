@@ -105,6 +105,8 @@ void actLadder(Entity* my)
 						messagePlayer(i, MESSAGE_INTERACTION, Language::get(507));
 					}
 					loadnextlevel = true;
+					Compendium_t::Events_t::previousCurrentLevel = currentlevel;
+					Compendium_t::Events_t::previousSecretlevel = secretlevel;
 					if (secretlevel)
 					{
 						switch (currentlevel)
@@ -330,6 +332,8 @@ void actPortal(Entity* my)
 					messagePlayer(i, MESSAGE_INTERACTION, Language::get(511));
 				}
 				loadnextlevel = true;
+				Compendium_t::Events_t::previousCurrentLevel = currentlevel;
+				Compendium_t::Events_t::previousSecretlevel = secretlevel;
 				if ( secretlevel )
 				{
 					switch ( currentlevel )
@@ -1388,6 +1392,8 @@ void actCustomPortal(Entity* my)
 					messagePlayer(i, MESSAGE_INTERACTION, Language::get(507));
 				}
 				loadnextlevel = true;
+				Compendium_t::Events_t::previousCurrentLevel = currentlevel;
+				Compendium_t::Events_t::previousSecretlevel = secretlevel;
 				skipLevelsOnLoad = 0;
 
 				if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )

@@ -2275,6 +2275,8 @@ public:
 		Uint32 playerSneakTime = 0;
 		Uint32 playerAliveTimeMoving = 0;
 		Uint32 playerAliveTimeStopped = 0;
+		Uint32 playerAliveTimeTotal = 0;
+		Uint32 playerGameTimeTotal = 0;
 		CompendiumProgress_t(Player& p) : player(p)
 		{};
 		~CompendiumProgress_t() {};

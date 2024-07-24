@@ -2309,6 +2309,11 @@ static void changeLevel() {
 	}
 
 	Compendium_t::Events_t::onLevelChangeEvent(clientnum, prevcurrentlevel, prevsecretfloor, prevmapname);
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		players[i]->compendiumProgress.playerAliveTimeTotal = 0;
+		players[i]->compendiumProgress.playerGameTimeTotal = 0;
+	}
 
 	if ( gameModeManager.allowsSaves() )
 	{
@@ -2316,6 +2321,7 @@ static void changeLevel() {
 	}
 
 	Compendium_t::Events_t::writeItemsSaveData();
+	Compendium_t::writeUnlocksSaveData();
 #ifdef LOCAL_ACHIEVEMENTS
 	LocalAchievements_t::writeToFile();
 #endif

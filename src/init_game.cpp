@@ -100,6 +100,7 @@ void initGameDatafiles(bool moddedReload)
 	CompendiumEntries.readItemsFromFile();
 	CompendiumEntries.readMagicFromFile();
 	Compendium_t::Events_t::readEventsTranslations();
+	Compendium_t::readUnlocksSaveData();
 	Compendium_t::Events_t::loadItemsSaveData();
 	CompendiumEntries.readModelLimbsFromFile("monster");
 	CompendiumEntries.readModelLimbsFromFile("world");
@@ -490,6 +491,7 @@ void deinitGame()
 
 	UIToastNotificationManager.term(true);
 	Compendium_t::Events_t::writeItemsSaveData();
+	Compendium_t::writeUnlocksSaveData();
 #ifdef LOCAL_ACHIEVEMENTS
 	LocalAchievements_t::writeToFile();
 #endif

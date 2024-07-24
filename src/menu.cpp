@@ -8548,6 +8548,12 @@ void doNewGame(bool makeHighscore) {
 	EnemyHPDamageBarHandler::dumpCache();
 	monsterAllyFormations.reset();
 	PingNetworkStatus_t::reset();
+
+	bool bOldSecretLevel = secretlevel;
+	int oldCurrentLevel = currentlevel;
+	Compendium_t::Events_t::previousCurrentLevel = 0;
+	Compendium_t::Events_t::previousSecretlevel = false;
+
 	currentlevel = startfloor;
 	secretlevel = false;
 	victory = 0;
@@ -9438,10 +9444,14 @@ void doNewGame(bool makeHighscore) {
 			}
 
 			// restarting from a trial, this is a failure
-			if ( died )
+			if ( died && !bWasOnMainMenu )
 			{
-				Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_TRIALS_DEATHS, "hall of trials", 1);
+				Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_LEVELS_DEATHS, "hall of trials", 1);
+				Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_LEVELS_DEATHS_FASTEST, "hall of trials", players[clientnum]->compendiumProgress.playerAliveTimeTotal);
+				Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_LEVELS_DEATHS_SLOWEST, "hall of trials", players[clientnum]->compendiumProgress.playerAliveTimeTotal);
 			}
+
+			Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_LEVELS_TIME_SPENT, "hall of trials", players[clientnum]->compendiumProgress.playerAliveTimeTotal);
 		}
 		else
 		{
@@ -9453,15 +9463,57 @@ void doNewGame(bool makeHighscore) {
 				if ( multiplayer == SERVER || multiplayer == CLIENT || (multiplayer == SINGLE && splitscreen) )
 				{
 					Compendium_t::Events_t::eventUpdateCodex(clientnum, Compendium_t::CPDM_CLASS_GAMES_MULTI, "class", 1);
+					if ( multiplayer != SINGLE )
+					{
+						if ( directConnect )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_MINEHEAD_ENTER_LAN_MP, "minehead", 1);
+						}
+						else
+						{
+							Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_MINEHEAD_ENTER_ONLINE_MP, "minehead", 1);
+						}
+					}
+					else if ( multiplayer == SINGLE )
+					{
+						if ( splitscreen )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_MINEHEAD_ENTER_SPLIT_MP, "minehead", 1);
+						}
+					}
 				}
 				else
 				{
 					Compendium_t::Events_t::eventUpdateCodex(clientnum, Compendium_t::CPDM_CLASS_GAMES_SOLO, "class", 1);
+					Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_MINEHEAD_ENTER_SOLO, "minehead", 1);
+				}
+
+				if ( !bWasOnMainMenu )
+				{
+					const char* currentWorldString = Compendium_t::compendiumCurrentLevelToWorldString(oldCurrentLevel, bOldSecretLevel);
+					if ( strcmp(currentWorldString, "") )
+					{
+						if ( died )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_LEVELS_DEATHS, currentWorldString, 1);
+							Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_LEVELS_DEATHS_FASTEST, currentWorldString, players[clientnum]->compendiumProgress.playerAliveTimeTotal);
+							Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_LEVELS_DEATHS_SLOWEST, currentWorldString, players[clientnum]->compendiumProgress.playerAliveTimeTotal);
+						}
+						Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_LEVELS_TIME_SPENT, currentWorldString, players[clientnum]->compendiumProgress.playerAliveTimeTotal);
+						Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_TOTAL_TIME_SPENT, "minehead",
+							players[clientnum]->compendiumProgress.playerGameTimeTotal);
+					}
 				}
 			}
 		}
 	}
 	Compendium_t::Events_t::writeItemsSaveData();
+	Compendium_t::writeUnlocksSaveData();
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		players[i]->compendiumProgress.playerAliveTimeTotal = 0;
+		players[i]->compendiumProgress.playerGameTimeTotal = 0;
+	}
 }
 
 void doCredits() {
@@ -9881,6 +9933,7 @@ void doEndgame(bool saveHighscore) {
 	}
 
 	Compendium_t::Events_t::writeItemsSaveData();
+	Compendium_t::writeUnlocksSaveData();
 
 	gameModeManager.currentSession.seededRun.reset();
 	gameModeManager.currentSession.challengeRun.reset();
@@ -10080,9 +10133,11 @@ void doEndgame(bool saveHighscore) {
 		Compendium_t::Events_t::clientDataStrings[c].clear();
 		players[c]->compendiumProgress.itemEvents.clear();
 		players[c]->compendiumProgress.floorEvents.clear();
+		players[c]->compendiumProgress.playerAliveTimeTotal = 0;
+		players[c]->compendiumProgress.playerGameTimeTotal = 0;
 	}
 #ifdef LOCAL_ACHIEVEMENTS
-	LocalAchievements.writeToFile();
+	LocalAchievements_t::writeToFile();
 #endif
 }
 
