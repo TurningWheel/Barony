@@ -24992,8 +24992,26 @@ failed:
 				};
 				auto classicEnding = [](){(void)beginFade(FadeDestination::Victory);};
 				auto fullEnding = [](){(void)beginFade(FadeDestination::Victory); steamAchievement("BARONY_ACH_ALWAYS_WAITING");};
-				auto loadNextLevel = [](){if (multiplayer != CLIENT) {loadnextlevel = true; skipLevelsOnLoad = 0; pauseGame(1, false);}};
-				auto skipHellLevels = [](){if (multiplayer != CLIENT) {loadnextlevel = true; skipLevelsOnLoad = 5; pauseGame(1, false);}};
+				auto loadNextLevel = [](){
+					if (multiplayer != CLIENT) 
+					{
+						loadnextlevel = true; 
+						Compendium_t::Events_t::previousCurrentLevel = currentlevel;
+						Compendium_t::Events_t::previousSecretlevel = secretlevel;
+						skipLevelsOnLoad = 0; 
+						pauseGame(1, false);
+					}
+				};
+				auto skipHellLevels = [](){
+					if (multiplayer != CLIENT) 
+					{
+						loadnextlevel = true; 
+						Compendium_t::Events_t::previousCurrentLevel = currentlevel;
+						Compendium_t::Events_t::previousSecretlevel = secretlevel;
+						skipLevelsOnLoad = 5; 
+						pauseGame(1, false);
+					}
+				};
 				Scene scenes[] = {
 				    {"data/story/HerxMidpointHuman.json", skipHellLevels},
 				    {"data/story/HerxMidpointAutomaton.json", skipHellLevels},
@@ -32620,6 +32638,9 @@ failed:
 	}
 
 	static ConsoleVariable<int> compendiumMonsterSectionPadY("/compendiumMonsterSectionPadY", 32);
+	static const int compendiumPageRightInnerY = 32;
+	static const int compendiumPageRightInnerHeight = 412 - 114 + 22;
+	static const int compendiumPageRightInnerHeightExpanded = 412;
 
 	static void refreshCompendiumEntryWorld(std::string name, Frame* parent)
 	{
@@ -32692,6 +32713,22 @@ failed:
 						txt += str;
 					}
 					details->setText(txt.c_str());
+
+					const int numLines = details->getNumTextLines();
+					auto actualFont = Font::get(details->getFont());
+					int height = 0;
+					if ( actualFont )
+					{
+						height = std::max(24, 24 + (numLines - 1) * actualFont->height(true));
+					}
+
+					SDL_Rect pos = details->getSize();
+					pos.h = height;
+					details->setSize(pos);
+
+					SDL_Rect actualPos = page_right->getActualSize();
+					actualPos.h = std::max(compendiumPageRightInnerHeight, pos.y + pos.h);
+					page_right->setActualSize(actualPos);
 				}
 			}
 		}
@@ -32699,35 +32736,7 @@ failed:
 
 	constexpr auto compendiumContentsDefaultColor = makeColor(159, 145, 127, 255);
 	constexpr auto compendiumContentsSelectedColor = makeColor(221, 210, 84, 255);
-
-	static auto compendium_items_activate_fn = [](Frame::entry_t& entry)
-	{
-		assert(main_menu_frame);
-		if ( !main_menu_frame ) { return; }
-		auto compendiumFrame = main_menu_frame->findFrame("compendium");
-		if ( !compendiumFrame ) { return; }
-
-		if ( auto page_right = compendiumFrame->findFrame("page_right") )
-		{
-			if ( auto page_right_inner = page_right->findFrame("page_right_inner") )
-			{
-				for ( auto& e : page_right_inner->getEntries() )
-				{
-					e->color = compendiumContentsDefaultColor;
-				}
-			}
-		}
-
-		entry.color = compendiumContentsSelectedColor;
-		//if ( auto page_right = compendiumFrame->findFrame("page_right") )
-		//{
-		//	if ( auto slider = page_right->findSlider("right_slider") )
-		//	{
-		//		slider->setValue(0);
-		//		slider->getCallback()(*slider);
-		//	}
-		//}
-	};
+	constexpr auto compendiumContentsDivColor = makeColorRGB(42, 22, 18);
 
 	struct CompendiumTooltipFrames_t
 	{
@@ -32746,7 +32755,8 @@ failed:
 		}
 	};
 	static CompendiumTooltipFrames_t compendiumItemTooltip;
-	static std::string compendium_contents_current = "";
+	static std::map<std::string, std::string> compendium_contents_current;
+	static std::map<std::string, std::map<std::string, int>> compendium_contents_list_current;
 	static std::vector<std::string> compendiumCategories = {
 		"monsters",
 		"items",
@@ -32805,6 +32815,153 @@ failed:
 	static std::map<int, std::vector<std::string>> compendiumRecordsSectionLoadedValues;
 	static Uint32 compendiumRecordsSectionRandSequence = 0;
 	static Uint32 compendiumRecordsProcessedOnTick = 0;
+	static std::vector<std::pair<Sint32, std::string>> getRecordEventValue(const char* entryName, Compendium_t::EventTags tag)
+	{
+		std::vector<std::pair<Sint32, std::string>> results;
+		auto findEvent = Compendium_t::Events_t::events.find(tag);
+		if ( findEvent != Compendium_t::Events_t::events.end() )
+		{
+			auto findTag = Compendium_t::Events_t::playerEvents.find(tag);
+			if ( findTag != Compendium_t::Events_t::playerEvents.end() )
+			{
+				bool firstValue = true;
+				int entryNum = -1;
+
+				int startOffsetId = -1;
+				if ( findEvent->second.attributes.find("skills") != findEvent->second.attributes.end() )
+				{
+					for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+					{
+						if ( !strcmp(entryName, Compendium_t::getSkillStringForCompendium(i)) )
+						{
+							startOffsetId = Compendium_t::Events_t::eventClassIds[tag][0] + i * Compendium_t::Events_t::kEventClassesMax;
+							break;
+						}
+					}
+				}
+
+				int minValue = 0;
+				int maxValue = 0;
+				int sum = 0;
+				bool useSum = findEvent->second.attributes.find("display_sum_classes") != findEvent->second.attributes.end();
+				auto type = Compendium_t::Events_t::Type::MAX;
+				for ( auto& pair : Compendium_t::Events_t::eventClassIds[tag] )
+				{
+					if ( startOffsetId >= 0 )
+					{
+						if ( pair.second < startOffsetId || pair.second >= startOffsetId + Compendium_t::Events_t::kEventClassesMax )
+						{
+							continue;
+						}
+					}
+
+					auto find = findTag->second.find(pair.second);
+					if ( find != findTag->second.end() )
+					{
+						int value = 0;
+						if ( useSum )
+						{
+							sum += find->second.value;
+							type = Compendium_t::Events_t::Type::SUM;
+							continue;
+						}
+						else
+						{
+							type = find->second.type;
+							entryNum = pair.first;
+							value = find->second.value;
+						}
+
+						if ( firstValue )
+						{
+							minValue = find->second.value;
+						}
+						else
+						{
+							minValue = std::min(minValue, find->second.value);
+						}
+						maxValue = std::max(maxValue, find->second.value);
+
+						firstValue = false;
+
+						std::string output = "";
+						if ( findEvent->second.attributes.find("stats") != findEvent->second.attributes.end()
+							&& tag != Compendium_t::EventTags::CPDM_CLASS_STAT_STR_MAX
+							&& tag != Compendium_t::EventTags::CPDM_CLASS_STAT_DEX_MAX
+							&& tag != Compendium_t::EventTags::CPDM_CLASS_STAT_CON_MAX
+							&& tag != Compendium_t::EventTags::CPDM_CLASS_STAT_INT_MAX
+							&& tag != Compendium_t::EventTags::CPDM_CLASS_STAT_PER_MAX
+							&& tag != Compendium_t::EventTags::CPDM_CLASS_STAT_CHR_MAX )
+						{
+							if ( !strcmp(entryName, "str") )
+							{
+								output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_STR, Compendium_t::Events_t::eventLangEntries[tag]);
+							}
+							else if ( !strcmp(entryName, "dex") )
+							{
+								output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_DEX, Compendium_t::Events_t::eventLangEntries[tag]);
+							}
+							else if ( !strcmp(entryName, "con") )
+							{
+								output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_CON, Compendium_t::Events_t::eventLangEntries[tag]);
+							}
+							else if ( !strcmp(entryName, "int") )
+							{
+								output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_INT, Compendium_t::Events_t::eventLangEntries[tag]);
+							}
+							else if ( !strcmp(entryName, "per") )
+							{
+								output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_PER, Compendium_t::Events_t::eventLangEntries[tag]);
+							}
+							else if ( !strcmp(entryName, "chr") )
+							{
+								output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_CHR, Compendium_t::Events_t::eventLangEntries[tag]);
+							}
+						}
+						else if ( findEvent->second.attributes.find("class") != findEvent->second.attributes.end() )
+						{
+							output = Compendium_t::Events_t::formatEventRecordText(value, "class", entryNum % Compendium_t::Events_t::kEventClassesMax, Compendium_t::Events_t::eventLangEntries[tag]);
+						}
+						else if ( findEvent->second.attributes.find("race") != findEvent->second.attributes.end() )
+						{
+							output = Compendium_t::Events_t::formatEventRecordText(value, "race", entryNum, Compendium_t::Events_t::eventLangEntries[tag]);
+						}
+						else
+						{
+							output = Compendium_t::Events_t::formatEventRecordText(value, nullptr, 0, Compendium_t::Events_t::eventLangEntries[tag]);
+						}
+						results.push_back(std::make_pair(value, output));
+					}
+				}
+				if ( useSum )
+				{
+					std::string output = Compendium_t::Events_t::formatEventRecordText(sum, nullptr, 0, Compendium_t::Events_t::eventLangEntries[tag]);
+					results.push_back(std::make_pair(sum, output));
+				}
+				else
+				{
+					for ( auto itr = results.begin(); itr != results.end(); )
+					{
+						if ( (type == Compendium_t::Events_t::MAX || type == Compendium_t::Events_t::SUM)
+							&& itr->first != maxValue )
+						{
+							itr = results.erase(itr);
+						}
+						else if ( type == Compendium_t::Events_t::MIN && itr->first != minValue )
+						{
+							itr = results.erase(itr);
+						}
+						else
+						{
+							++itr;
+						}
+					}
+				}
+			}
+		}
+		return results;
+	}
+
 	static void populateRecordsSectionItems(Frame* page_right, int entryType, const char* entryName, int specificClass)
 	{
 		if ( !page_right ) { return; }
@@ -32851,8 +33008,8 @@ failed:
 					displayedEvents = {
 						Compendium_t::EventTags::CPDM_KILLED_SOLO,
 						Compendium_t::EventTags::CPDM_KILLED_MULTIPLAYER,
-						Compendium_t::EventTags::CPDM_KILLED_PARTY,
-						Compendium_t::EventTags::CPDM_KILLED_BY
+						Compendium_t::EventTags::CPDM_KILLED_BY,
+						Compendium_t::EventTags::CPDM_RECRUITED
 					};
 				}
 			}
@@ -32992,11 +33149,61 @@ failed:
 					if ( val )
 					{
 						val->setDisabled(false);
-						int value = 0;
-
 						if ( customTagKey != "" )
 						{
-							auto results = Compendium_t::Events_t::getCustomEventValue(customTagKey, specificClass);
+							auto results = Compendium_t::Events_t::getCustomEventValue(customTagKey, compendium_current, 
+								compendium_contents_current[compendium_current], specificClass);
+							if ( customTagKey == "CUSTOM_CLASS_GAMES_WON" )
+							{
+								{
+									auto res2 = Compendium_t::Events_t::getCustomEventValue("CUSTOM_CLASS_GAMES_WON_CLASSIC", compendium_current,
+										compendium_contents_current[compendium_current], specificClass);
+									for ( auto& r : res2 )
+									{
+										if ( r.first != "-" )
+										{
+											results.push_back(r);
+										}
+									}
+								}
+								{
+									auto res2 = Compendium_t::Events_t::getCustomEventValue("CUSTOM_CLASS_GAMES_WON_HELL", compendium_current,
+										compendium_contents_current[compendium_current], specificClass);
+									for ( auto& r : res2 )
+									{
+										if ( r.first != "-" )
+										{
+											results.push_back(r);
+										}
+									}
+								}
+							}
+							else if ( customTagKey == "CUSTOM_CLASS_LEAST_GAMES_WON" )
+							{
+								{
+									auto res2 = Compendium_t::Events_t::getCustomEventValue("CUSTOM_CLASS_LEAST_GAMES_WON_CLASSIC", compendium_current,
+										compendium_contents_current[compendium_current], specificClass);
+									for ( auto& r : res2 )
+									{
+										if ( r.first != "-" )
+										{
+											results.push_back(r);
+										}
+									}
+								}
+								{
+									auto res2 = Compendium_t::Events_t::getCustomEventValue("CUSTOM_CLASS_LEAST_GAMES_WON_HELL", compendium_current,
+										compendium_contents_current[compendium_current], specificClass);
+									for ( auto& r : res2 )
+									{
+										if ( r.first != "-" )
+										{
+											results.push_back(r);
+										}
+									}
+								}
+							}
+
 							if ( results.size() == 0 )
 							{
 								val->setText("-");
@@ -33017,157 +33224,39 @@ failed:
 							&& Compendium_t::Events_t::eventClassIds.find(tag) != Compendium_t::Events_t::eventClassIds.end() )
 						{
 							val->setText("-");
-							auto findEvent = Compendium_t::Events_t::events.find(tag);
-							if ( findEvent != Compendium_t::Events_t::events.end() )
+							std::vector<std::pair<Sint32, std::string>> results = getRecordEventValue(entryName, tag);
+							if ( tag == Compendium_t::CPDM_CLASS_GAMES_WON )
 							{
-								auto findTag = Compendium_t::Events_t::playerEvents.find(tag);
-								if ( findTag != Compendium_t::Events_t::playerEvents.end() )
 								{
-									bool firstValue = true;
-									int entryNum = -1;
-
-									int startOffsetId = -1;
-									if ( findEvent->second.attributes.find("skills") != findEvent->second.attributes.end() )
+									auto res2 = getRecordEventValue(entryName, Compendium_t::CPDM_CLASS_GAMES_WON_CLASSIC);
+									for ( auto& r : res2 )
 									{
-										for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+										if ( r.second != "-" )
 										{
-											if ( !strcmp(entryName, Compendium_t::getSkillStringForCompendium(i)) )
-											{
-												startOffsetId = Compendium_t::Events_t::eventClassIds[tag][0] + i * Compendium_t::Events_t::kEventClassesMax;
-												break;
-											}
+											results.push_back(r);
 										}
-									}
-
-									std::vector<std::pair<Sint32, std::string>> results;
-									int minValue = 0;
-									int maxValue = 0;
-									int sum = 0;
-									bool useSum = findEvent->second.attributes.find("display_sum_classes") != findEvent->second.attributes.end();
-									auto type = Compendium_t::Events_t::Type::MAX;
-									for ( auto& pair : Compendium_t::Events_t::eventClassIds[tag] )
-									{
-										if ( startOffsetId >= 0 )
-										{
-											if ( pair.second < startOffsetId || pair.second >= startOffsetId + Compendium_t::Events_t::kEventClassesMax )
-											{
-												continue;
-											}
-										}
-
-										auto find = findTag->second.find(pair.second);
-										if ( find != findTag->second.end() )
-										{
-											if ( useSum )
-											{
-												sum += find->second.value;
-												type = Compendium_t::Events_t::Type::SUM;
-												continue;
-											}
-											else
-											{
-												type = find->second.type;
-												entryNum = pair.first;
-												value = find->second.value;
-											}
-
-											if ( firstValue )
-											{
-												minValue = find->second.value;
-											}
-											else
-											{
-												minValue = std::min(minValue, find->second.value);
-											}
-											maxValue = std::max(maxValue, find->second.value);
-
-											firstValue = false;
-
-											std::string output = "";
-											if ( findEvent->second.attributes.find("stats") != findEvent->second.attributes.end()
-												&& tag != Compendium_t::EventTags::CPDM_CLASS_STAT_STR_MAX
-												&& tag != Compendium_t::EventTags::CPDM_CLASS_STAT_DEX_MAX
-												&& tag != Compendium_t::EventTags::CPDM_CLASS_STAT_CON_MAX
-												&& tag != Compendium_t::EventTags::CPDM_CLASS_STAT_INT_MAX
-												&& tag != Compendium_t::EventTags::CPDM_CLASS_STAT_PER_MAX
-												&& tag != Compendium_t::EventTags::CPDM_CLASS_STAT_CHR_MAX )
-											{
-												if ( !strcmp(entryName, "str") )
-												{
-													output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_STR, Compendium_t::Events_t::eventLangEntries[tag]);
-												}
-												else if ( !strcmp(entryName, "dex") )
-												{
-													output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_DEX, Compendium_t::Events_t::eventLangEntries[tag]);
-												}
-												else if ( !strcmp(entryName, "con") )
-												{
-													output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_CON, Compendium_t::Events_t::eventLangEntries[tag]);
-												}
-												else if ( !strcmp(entryName, "int") )
-												{
-													output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_INT, Compendium_t::Events_t::eventLangEntries[tag]);
-												}
-												else if ( !strcmp(entryName, "per") )
-												{
-													output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_PER, Compendium_t::Events_t::eventLangEntries[tag]);
-												}
-												else if ( !strcmp(entryName, "chr") )
-												{
-													output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_CHR, Compendium_t::Events_t::eventLangEntries[tag]);
-												}
-											}
-											else if ( findEvent->second.attributes.find("class") != findEvent->second.attributes.end() )
-											{
-												output = Compendium_t::Events_t::formatEventRecordText(value, "class", entryNum % Compendium_t::Events_t::kEventClassesMax, Compendium_t::Events_t::eventLangEntries[tag]);
-											}
-											else if ( findEvent->second.attributes.find("race") != findEvent->second.attributes.end() )
-											{
-												output = Compendium_t::Events_t::formatEventRecordText(value, "race", entryNum, Compendium_t::Events_t::eventLangEntries[tag]);
-											}
-											else
-											{
-												output = Compendium_t::Events_t::formatEventRecordText(value, nullptr, 0, Compendium_t::Events_t::eventLangEntries[tag]);
-											}
-											results.push_back(std::make_pair(value, output));
-										}
-									}
-									if ( useSum )
-									{
-										std::string output = Compendium_t::Events_t::formatEventRecordText(sum, nullptr, 0, Compendium_t::Events_t::eventLangEntries[tag]);
-										results.push_back(std::make_pair(sum, output));
-									}
-									else
-									{
-										for ( auto itr = results.begin(); itr != results.end(); )
-										{
-											if ( (type == Compendium_t::Events_t::MAX || type == Compendium_t::Events_t::SUM)
-												&& itr->first != maxValue )
-											{
-												itr = results.erase(itr);
-											}
-											else if ( type == Compendium_t::Events_t::MIN && itr->first != minValue )
-											{
-												itr = results.erase(itr);
-											}
-											else
-											{
-												++itr;
-											}
-										}
-									}
-
-									if ( results.size() > 0 )
-									{
-										compendiumRecordsSectionLoadedValues[index].clear();
-										for ( auto& pair : results )
-										{
-											compendiumRecordsSectionLoadedValues[index].push_back(pair.second);
-										}
-										val->setText(compendiumRecordsSectionLoadedValues[index][compendiumRecordsSectionRandSequence
-											% compendiumRecordsSectionLoadedValues[index].size()].c_str());
 									}
 								}
+								{
+									auto res2 = getRecordEventValue(entryName, Compendium_t::CPDM_CLASS_GAMES_WON_HELL);
+									for ( auto& r : res2 )
+									{
+										if ( r.second != "-" )
+										{
+											results.push_back(r);
+										}
+									}
+								}
+							}
+							if ( results.size() > 0 )
+							{
+								compendiumRecordsSectionLoadedValues[index].clear();
+								for ( auto& pair : results )
+								{
+									compendiumRecordsSectionLoadedValues[index].push_back(pair.second);
+								}
+								val->setText(compendiumRecordsSectionLoadedValues[index][compendiumRecordsSectionRandSequence
+									% compendiumRecordsSectionLoadedValues[index].size()].c_str());
 							}
 						}
 						else
@@ -33176,6 +33265,7 @@ failed:
 							if ( findTag != Compendium_t::Events_t::playerEvents.end() )
 							{
 								auto find = findTag->second.find(entryType);
+								int value = 0;
 								if ( find != findTag->second.end() )
 								{
 									if ( find->second.type == Compendium_t::Events_t::BITFIELD )
@@ -33248,18 +33338,60 @@ failed:
 		}
 	}
 
-	static void selectCompendiumItemInList(Frame& toSelect, Frame& page_right_inner)
+	static void scrollToCompendiumListItem(Frame& toSelect, Frame& page_right_inner)
 	{
+		Frame* parent = page_right_inner.getParent();
+		if ( Slider* slider = parent->findSlider("right_slider") )
+		{
+			SDL_Rect actualSize = page_right_inner.getActualSize();
+			SDL_Rect entryPos = toSelect.getSize();
+			SDL_Rect size = page_right_inner.getSize();
+			const int diff = actualSize.h - page_right_inner.getSize().h;
+			if ( diff > 0 )
+			{
+				int entrySize = entryPos.y + entryPos.h;
+				if ( actualSize.y > entryPos.y )
+				{
+					slider->setValue(100.0 * std::min(std::max(0, entryPos.y - entryPos.h / 4), diff) / diff);
+				}
+				else if ( entryPos.y + entryPos.h > actualSize.y + size.h )
+				{
+					slider->setValue(100.0 * std::min(std::max(0, entryPos.y + entryPos.h + entryPos.h / 4 - size.h), diff) / diff);
+				}
+			}
+			else
+			{
+				slider->setValue(0.f);
+			}
+			slider->getCallback()(*slider);
+		}
+	}
+
+	static void selectCompendiumItemInList(Frame& toSelect, Frame& page_right_inner, bool scrollTo)
+	{
+		if ( scrollTo )
+		{
+			scrollToCompendiumListItem(toSelect, page_right_inner);
+		}
 		if ( compendium_current == "codex" )
 		{
+			int index = -1;
 			for ( auto f : page_right_inner.getFrames() )
 			{
+				if ( f->isToBeDeleted() )
+				{
+					continue;
+				}
 				if ( auto txt = f->findField("item name") )
 				{
+					++index;
 					auto txtRight = f->findField("item txt right");
 					if ( f == &toSelect )
 					{
 						txt->setColor(compendiumContentsSelectedColor);
+
+						compendium_contents_list_current[compendium_current][compendium_contents_current[compendium_current]] = index;
+
 						if ( txtRight )
 						{
 							txtRight->setColor(compendiumContentsSelectedColor);
@@ -33296,13 +33428,33 @@ failed:
 		Compendium_t::compendiumItemModel.focalz = 0.5;
 		Compendium_t::compendiumItemModel.roll = 0.0;
 		Compendium_t::compendiumItemModel.flags[SPRITE] = false;
+		int index = -1;
 		for ( auto f : page_right_inner.getFrames() )
 		{
+			if ( f->isToBeDeleted() )
+			{
+				continue;
+			}
 			if ( auto txt = f->findField("item name") )
 			{
+				++index;
 				if ( f == &toSelect )
 				{
 					txt->setColor(compendiumContentsSelectedColor);
+
+					compendium_contents_list_current[compendium_current][compendium_contents_current[compendium_current]] = index;
+
+					if ( auto notifTxt = f->findField("item notif") )
+					{
+						notifTxt->removeSelf();
+					}
+					if ( auto details = f->findField("item detail") )
+					{
+						details->setDisabled(false);
+						details->setColor(txt->getColor());
+					}
+					txt->dirty = true;
+
 					auto find = ItemTooltips.itemNameStringToItemID.find(toSelect.getName());
 					int itemType = find != ItemTooltips.itemNameStringToItemID.end() ? find->second : -1;
 					std::string modelsPath = "items_single";
@@ -33320,8 +33472,8 @@ failed:
 							appearance = (reinterpret_cast<intptr_t>(toSelect.getUserData()) & 0x7F);
 						}
 
-						auto& contents = compendium_current == "items" ? CompendiumEntries.items[Compendium_t::CompendiumItems_t::contentsMap[compendium_contents_current]].items_in_category
-							: CompendiumEntries.magic[Compendium_t::CompendiumMagic_t::contentsMap[compendium_contents_current]].items_in_category;
+						auto& contents = compendium_current == "items" ? CompendiumEntries.items[compendium_contents_current[compendium_current]].items_in_category
+							: CompendiumEntries.magic[compendium_contents_current[compendium_current]].items_in_category;
 						int itemLookupIndex = itemType;
 						for ( auto& i : contents )
 						{
@@ -33351,14 +33503,59 @@ failed:
 				else
 				{
 					txt->setColor(compendiumContentsDefaultColor);
+					if ( auto details = f->findField("item detail") )
+					{
+						details->setColor(txt->getColor());
+					}
 				}
 			}
 		}
 	}
 
-	static const int compendiumPageRightInnerY = 24;
-	static const int compendiumPageRightInnerHeight = 412 - 114 + 22;
-	static const int compendiumPageRightInnerHeightExpanded = 412;
+	static void itemListNotificationAnimate(Frame& frame)
+	{
+		static Uint32 animTick = 0;
+		static Uint32 animState = 0;
+		bool animate = false;
+		if ( ticks != animTick )
+		{
+			animTick = ticks;
+			animate = true;
+			if ( ticks % (TICKS_PER_SECOND / 2) == 0 )
+			{
+				++animState;
+				if ( animState >= 2 ) { animState = 0; }
+			}
+		}
+		for ( auto f : frame.getFrames() )
+		{
+			auto notifTxt = f->findField("item notif");
+			if ( !notifTxt ) { continue; }
+			auto itemName = f->findField("item name");
+			if ( !itemName ) { continue; }
+
+			Uint32 color = 0;
+			if ( animState == 0 )
+			{
+				color = makeColorRGB(30, 203, 177);
+			}
+			else if ( animState == 1 )
+			{
+				color = makeColorRGB(43, 254, 207);
+			}
+
+			for ( int i = 0; i < 10; ++i )
+			{
+				notifTxt->addWordToHighlight(i + Field::TEXT_HIGHLIGHT_WORDS_PER_LINE, color);
+			}
+		}
+	};
+
+#if !defined(NDEBUG)
+	static ConsoleVariable<bool>cvar_compendium_reveal("/compendium_reveal", false);
+#endif
+	static bool compendiumEntryControlEnabled = false;
+
 	static void refreshCompendiumEntryItemsList(std::string name, Frame* parent)
 	{
 		if ( compendium_current == "items" )
@@ -33377,6 +33574,7 @@ failed:
 		}
 		auto& entry = (compendium_current == "items") ? CompendiumEntries.items[name] : CompendiumEntries.magic[name];
 
+		Compendium_t::compendiumEntityCurrent.modelRNG++;
 
 		if ( Frame* page_right = parent->findFrame("page_right") )
 		{
@@ -33386,6 +33584,18 @@ failed:
 				{
 					f->removeSelf();
 				}
+				page_right->remove("selector_bg");
+
+				auto notif_frame = page_right->addFrame("notif");
+				notif_frame->setHollow(true);
+				notif_frame->setClickable(false);
+				notif_frame->setInvisible(true);
+				notif_frame->setTickCallback([](Widget& widget) {
+					if ( auto parent = static_cast<Frame*>(widget.getParent()) )
+					{
+						itemListNotificationAnimate(*parent);
+					}
+				});
 
 				const int entrySize = 64;
 				Compendium_t::compendiumItem.status = EXCELLENT;
@@ -33416,16 +33626,21 @@ failed:
 					}
 					});*/
 
+				int lastSelection = compendium_contents_list_current[compendium_current][compendium_contents_current[compendium_current]];
+				if ( lastSelection >= entry.items_in_category.size() )
+				{
+					lastSelection = 0;
+				}
+				Frame* toSelect = nullptr;
+				int modelRNGCycle = -1;
 				for ( int i = 0; i < entry.items_in_category.size(); ++i )
 				{
+					++modelRNGCycle;
 					auto& data = entry.items_in_category[i];
 					auto entry = page_right->addFrame(data.name.c_str());
 					entry->setHollow(true);
 					entry->setClickable(false);
 					entry->setSize(SDL_Rect{ 8, 0 + i * entrySize, page_right->getSize().w - 32, entrySize });
-					/*Button* btn = entry->addButton("item btn");
-					btn->setSize(entry->getSize());
-					btn->setText("click");*/
 
 					if ( i == 0 )
 					{
@@ -33451,7 +33666,7 @@ failed:
 								}
 							}
 							auto txt = frame->findField("item name");
-							/*if ( parent = parent->getParent() )*/
+							if ( compendiumEntryControlEnabled )
 							{
 								if ( Frame* parent = page_right_inner->getParent() )
 								{
@@ -33460,9 +33675,14 @@ failed:
 										SDL_Rect absolutePos = frame->getAbsoluteSize();
 										if ( frame->capturesMouseInRealtimeCoords() && inputs.getVirtualMouse(getMenuOwner())->draw_cursor )
 										{
+											auto itemName = frame->findField("item name");
+											bool selectable = !(itemName && !strcmp(itemName->getText(), "???"));
 											if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuLeftClick") )
 											{
-												selectCompendiumItemInList(*frame, *page_right_inner);
+												if ( selectable )
+												{
+													selectCompendiumItemInList(*frame, *page_right_inner, false);
+												}
 											}
 
 											SDL_Rect pos = frame->getSize();
@@ -33485,7 +33705,7 @@ failed:
 											}
 											frame->setSize(pos);
 
-											if ( hovered )
+											if ( hovered && selectable )
 											{
 												//frame->select();
 												const int itemType = strstr(widget.getName(), "spell_") ? SPELL_ITEM 
@@ -33523,7 +33743,22 @@ failed:
 					auto itemName = entry->addField("item name", 128);
 					itemName->setFont(smallfont_outline);
 					itemName->setSize(SDL_Rect{ itemBg->pos.x + itemBg->pos.w + 4, 8, entry->getSize().w - 8, 48 });
-					if ( id == SPELL_ITEM )
+					auto itemDetail = entry->addField("item detail", 128);
+					itemDetail->setFont(smallfont_outline);
+					itemDetail->setSize(itemName->getSize());
+					auto& unlockStatus = Compendium_t::CompendiumItems_t::itemUnlocks[id == SPELL_ITEM 
+						? data.spellID + Compendium_t::Events_t::kEventSpellOffset : 
+							data.itemID];
+
+					if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN 
+#if !defined(NDEBUG)
+						&& !*cvar_compendium_reveal
+#endif
+						)
+					{
+						itemName->setText("???");
+					}
+					else if ( id == SPELL_ITEM )
 					{
 						if ( auto spell = getSpellFromID(data.spellID) )
 						{
@@ -33531,16 +33766,15 @@ failed:
 							camelCaseString(name);
 							if ( auto s = getSpellFromID(data.spellID) )
 							{
-								name += '\n';
-								char buf[64];
+								char buf[128];
 								snprintf(buf, sizeof(buf), Language::get(6172), 
 									s->difficulty, ItemTooltips.getProficiencyLevelName(spell->difficulty).c_str());
-								name += buf;
+								itemDetail->setText(buf);
 							}
 							itemName->setText(name.c_str());
 							for ( int i = 0; i < 10; ++i ) // highlight 10 words on second line
 							{
-								itemName->addWordToHighlight(i + Field::TEXT_HIGHLIGHT_WORDS_PER_LINE, makeColorRGB(192, 192, 192));
+								itemDetail->addWordToHighlight(i + Field::TEXT_HIGHLIGHT_WORDS_PER_LINE, makeColorRGB(192, 192, 192));
 							}
 						}
 					}
@@ -33548,31 +33782,55 @@ failed:
 					{
 						std::string name = items[id].getIdentifiedName();
 						camelCaseString(name);
-						name += '\n';
-						char buf[64];
+						char buf[128];
 						if ( items[id].level >= 0 )
 						{
-							snprintf(buf, sizeof(buf), "%s %d", Language::get(6173), items[id].level);
+							snprintf(buf, sizeof(buf), "\n%s %d", Language::get(6173), items[id].level);
 						}
 						else
 						{
-							snprintf(buf, sizeof(buf), "%s ???", Language::get(6173));
+							snprintf(buf, sizeof(buf), "\n%s ???", Language::get(6173));
 						}
-						name += buf;
+						itemDetail->setText(buf);
 						itemName->setText(name.c_str());
 						for ( int i = 0; i < 10; ++i ) // highlight 10 words on second line
 						{
-							itemName->addWordToHighlight(i + Field::TEXT_HIGHLIGHT_WORDS_PER_LINE, makeColorRGB(192, 192, 192));
+							itemDetail->addWordToHighlight(i + Field::TEXT_HIGHLIGHT_WORDS_PER_LINE, makeColorRGB(192, 192, 192));
+						}
+
+
+						if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED
+							|| unlockStatus == Compendium_t::CompendiumUnlockStatus::UNLOCKED_UNVISITED )
+						{
+							itemDetail->setDisabled(true);
+							if ( auto notifTxt = entry->addField("item notif", 128) )
+							{
+								notifTxt->setSize(itemName->getSize());
+								notifTxt->setFont(itemName->getFont());
+								std::string str = "\n";
+								str += Language::get(6183);
+								notifTxt->setText(str.c_str());
+								notifTxt->setColor(makeColorRGB(255, 255, 255));
+								for ( int i = 0; i < 10; ++i )
+								{
+									notifTxt->addWordToHighlight(i + Field::TEXT_HIGHLIGHT_WORDS_PER_LINE, makeColorRGB(30, 203, 177));
+								}
+							}
 						}
 					}
 
 					Compendium_t::compendiumItem.type = (ItemType)id;
-					Compendium_t::compendiumItem.appearance = local_rng.rand() % items[id].variations;
+					Compendium_t::compendiumItem.appearance = (modelRNGCycle + Compendium_t::compendiumEntityCurrent.modelRNG) % items[id].variations;
 					if ( id == TOOL_PLAYER_LOOT_BAG )
 					{
-						Compendium_t::compendiumItem.appearance = local_rng.rand() % 4;
+						Compendium_t::compendiumItem.appearance = (modelRNGCycle + Compendium_t::compendiumEntityCurrent.modelRNG) % 4;
 					}
-					if ( id == SPELL_ITEM )
+
+					if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+					{
+						itemImg->path = "*images/ui/Main Menus/AdventureArchives/unknownitem.png";
+					}
+					else if ( id == SPELL_ITEM )
 					{
 						itemImg->path = ItemTooltips.getSpellIconPath(clientnum, Compendium_t::compendiumItem, data.spellID);
 						Compendium_t::compendiumItem.appearance = data.spellID;
@@ -33582,25 +33840,32 @@ failed:
 						itemImg->path = getItemSpritePath(0, Compendium_t::compendiumItem);
 					}
 					Uint8 userData = std::min((Uint8)127, (Uint8)(0x7F & Compendium_t::compendiumItem.appearance));
-					if ( i == 0 )
-					{
-						userData |= 1 << 7;
-						entry->setUserData((void*)(intptr_t)userData);
-						selectCompendiumItemInList(*entry, *page_right);
-					}
-					else
-					{
-						entry->setUserData((void*)(intptr_t)userData);
-						itemName->setColor(compendiumContentsDefaultColor);
-					}
 
 					SDL_Rect actualPos = page_right->getActualSize();
 					actualPos.h = std::max(compendiumPageRightInnerHeight, entry->getSize().y + entry->getSize().h);
 					page_right->setActualSize(actualPos);
+
+					if ( i == 0 )
+					{
+						userData |= 1 << 7; // designate this as first in list
+					}
+					entry->setUserData((void*)(intptr_t)userData);
+
+					if ( unlockStatus != Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN && (!toSelect || i == lastSelection) )
+					{
+						toSelect = entry;
+					}
+					else
+					{
+						itemName->setColor(compendiumContentsDefaultColor);
+						itemDetail->setColor(compendiumContentsDefaultColor);
+					}
 				}
-				//page_right->setSelection(0);
-				//page_right->scrollToSelection(true);
-				//page_right->activateSelection();
+
+				if ( toSelect )
+				{
+					selectCompendiumItemInList(*toSelect, *page_right, true);
+				}
 			}
 		}
 	}
@@ -33612,16 +33877,6 @@ failed:
 			return;
 		}
 		auto& entry = CompendiumEntries.codex[name];
-		std::vector<std::string> entries;
-		if ( name == "classes list" )
-		{
-			for ( int i = 0; i < NUMCLASSES; ++i )
-			{
-				std::string classname = playerClassLangEntry(i, 0);
-				camelCaseString(classname);
-				entries.push_back(classname);
-			}
-		}
 		if ( Frame* page_right = parent->findFrame("page_right") )
 		{
 			if ( page_right = page_right->findFrame("page_right_inner") )
@@ -33630,39 +33885,90 @@ failed:
 				{
 					f->removeSelf();
 				}
+				page_right->remove("selector_bg");
 
 				const int entrySize = 64;
 
 				std::vector<std::pair<int, int>> rankedScores;
+				std::map<int, int> classRank;
 				for ( int j = 0; j < NUMCLASSES; ++j )
 				{
-					auto r = Compendium_t::Events_t::getCustomEventValue("CUSTOM_CLASS_PLAYTIME", j);
+					auto r = Compendium_t::Events_t::getCustomEventValue("CUSTOM_CLASS_PLAYTIME", "codex", "", j);
 					if ( r.size() > 0 )
 					{
-						if ( r[0].second > 0 )
-						{
-							rankedScores.push_back(std::make_pair(r[0].second, j));
-						}
+						rankedScores.push_back(std::make_pair(r[0].second, j));
+					}
+					else
+					{
+						rankedScores.push_back(std::make_pair(0, j));
 					}
 				}
 				std::sort(rankedScores.begin(), rankedScores.end(), [](const std::pair<int, int>& lhs, const std::pair<int, int>& rhs) {
-					return lhs > rhs;
+					return lhs.first > rhs.first
+					|| (lhs.first == rhs.first && lhs.second < rhs.second);
 					});
-				int lastRank = rankedScores[0].first;
+				int lastValue = rankedScores[0].first;
 				int rankNum = 1;
 				for ( auto& pair : rankedScores )
 				{
-					if ( lastRank != pair.first )
+					if ( lastValue != pair.first )
 					{
 						++rankNum;
 					}
+					lastValue = pair.first;
 					pair.first = rankNum;
 				}
 
+				std::vector<std::string> entries;
+				static ConsoleVariable cvar_compendium_class_sort_playtime("/compendium_class_sort_playtime", true);
+				if ( name == "classes list" )
+				{
+					if ( *cvar_compendium_class_sort_playtime )
+					{
+						for ( auto& pair : rankedScores )
+						{
+							for ( int i = 0; i < NUMCLASSES; ++i )
+							{
+								if ( pair.second == i )
+								{
+									std::string classname = playerClassLangEntry(i, 0);
+									camelCaseString(classname);
+									entries.push_back(classname);
+								}
+							}
+						}
+					}
+					else
+					{
+						for ( int i = 0; i < NUMCLASSES; ++i )
+						{
+							std::string classname = playerClassLangEntry(i, 0);
+							camelCaseString(classname);
+							entries.push_back(classname);
+							for ( auto& pair : rankedScores )
+							{
+								if ( pair.second == i )
+								{
+									classRank[i] = pair.first;
+								}
+							}
+						}
+					}
+				}
+
+				int lastSelection = compendium_contents_list_current[compendium_current][compendium_contents_current[compendium_current]];
+				if ( lastSelection >= entries.size() )
+				{
+					lastSelection = 0;
+				}
+				Frame* toSelect = nullptr;
 				for ( int i = 0; i < entries.size(); ++i )
 				{
 					auto& data = entries[i];
 					auto entry = page_right->addFrame(data.c_str());
+
+					int classnum = *cvar_compendium_class_sort_playtime ? rankedScores[i].second : i;
+
 					entry->setHollow(true);
 					entry->setClickable(false);
 					entry->setSize(SDL_Rect{ 8, 0 + i * entrySize, page_right->getSize().w - 32, entrySize });
@@ -33679,80 +33985,64 @@ failed:
 
 					entry->setTickCallback([](Widget& widget) {
 						auto frame = static_cast<Frame*>(&widget);
-					if ( Frame* page_right_inner = frame->getParent() )
-					{
-						auto selector_bg = page_right_inner->findImage("selector_bg");
-						if ( frame->getUserData() )
+						if ( Frame* page_right_inner = frame->getParent() )
 						{
-							bool first = (reinterpret_cast<intptr_t>(frame->getUserData()) >> 7) & 1;
-							if ( first )
+							auto selector_bg = page_right_inner->findImage("selector_bg");
+							if ( frame->getUserData() )
 							{
-								if ( selector_bg )
+								bool first = (reinterpret_cast<intptr_t>(frame->getUserData()) >> 7) & 1;
+								if ( first )
 								{
-									selector_bg->disabled = true;
+									if ( selector_bg )
+									{
+										selector_bg->disabled = true;
+									}
 								}
 							}
-						}
-						auto txt = frame->findField("item name");
-						/*if ( parent = parent->getParent() )*/
-						{
-							if ( Frame* parent = page_right_inner->getParent() )
+							auto txt = frame->findField("item name");
+							if ( compendiumEntryControlEnabled )
 							{
-								if ( parent = parent->getParent() )
+								if ( Frame* parent = page_right_inner->getParent() )
 								{
-									SDL_Rect absolutePos = frame->getAbsoluteSize();
-									if ( frame->capturesMouseInRealtimeCoords() && inputs.getVirtualMouse(getMenuOwner())->draw_cursor )
+									if ( parent = parent->getParent() )
 									{
-										if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuLeftClick") )
+										SDL_Rect absolutePos = frame->getAbsoluteSize();
+										if ( frame->capturesMouseInRealtimeCoords() && inputs.getVirtualMouse(getMenuOwner())->draw_cursor )
 										{
-											selectCompendiumItemInList(*frame, *page_right_inner);
-										}
-
-										SDL_Rect pos = frame->getSize();
-										bool hovered = false;
-										if ( selector_bg )
-										{
-											selector_bg->disabled = false;
-											selector_bg->pos.y = frame->getSize().y;
-										}
-										auto itemBg = frame->findImage("item bg");
-										if ( itemBg )
-										{
-											SDL_Rect tmp = frame->getSize();
-											tmp.x += itemBg->pos.x;
-											tmp.y += itemBg->pos.y;
-											tmp.w = itemBg->pos.w;
-											tmp.h = itemBg->pos.h;
-											frame->setSize(tmp);
-											hovered = frame->capturesMouseInRealtimeCoords();
-										}
-										frame->setSize(pos);
-
-										if ( hovered )
-										{
-											//frame->select();
-											/*const int itemType = strstr(widget.getName(), "spell_") ? SPELL_ITEM
-												: ItemTooltips.itemNameStringToItemID[widget.getName()];
-											if ( itemType >= WOODEN_SHIELD && itemType < NUMITEMS )
+											if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuLeftClick") )
 											{
-												Compendium_t::compendiumItem.type = (ItemType)itemType;
-												if ( frame->getUserData() )
-												{
-													Compendium_t::compendiumItem.appearance = (reinterpret_cast<intptr_t>(frame->getUserData()) & 0x7F);
-												}
+												selectCompendiumItemInList(*frame, *page_right_inner, false);
+											}
 
-												Compendium_t::tooltipPos.x = absolutePos.x - 16;
-												Compendium_t::tooltipPos.y = absolutePos.y;
-												Compendium_t::tooltipNeedUpdate = true;
+											SDL_Rect pos = frame->getSize();
+											bool hovered = false;
+											if ( selector_bg )
+											{
+												selector_bg->disabled = false;
+												selector_bg->pos.y = frame->getSize().y;
+											}
+											auto itemBg = frame->findImage("item bg");
+											if ( itemBg )
+											{
+												SDL_Rect tmp = frame->getSize();
+												tmp.x += itemBg->pos.x;
+												tmp.y += itemBg->pos.y;
+												tmp.w = itemBg->pos.w;
+												tmp.h = itemBg->pos.h;
+												frame->setSize(tmp);
+												hovered = frame->capturesMouseInRealtimeCoords();
+											}
+											frame->setSize(pos);
 
-											}*/
-											page_right_inner->setAllowScrollBinds(false);
+											if ( hovered )
+											{
+												page_right_inner->setAllowScrollBinds(false);
+											}
 										}
 									}
 								}
 							}
 						}
-					}
 					});
 
 					/*auto itemBg = entry->addImage(SDL_Rect{ 8, 8, 48, 48 },
@@ -33790,7 +34080,7 @@ failed:
 							name += findLang->second["default"];
 							name += ' ';
 						}
-						auto results = Compendium_t::Events_t::getCustomEventValue("CUSTOM_CLASS_PLAYTIME", i);
+						auto results = Compendium_t::Events_t::getCustomEventValue("CUSTOM_CLASS_PLAYTIME", "codex", "", classnum);
 						if ( results.size() > 0 )
 						{
 							Uint32 playtimeTicks = results[0].second;
@@ -33804,23 +34094,17 @@ failed:
 								Uint32 min = ((playtimeTicks / TICKS_PER_SECOND) / 60) % 60;
 								Uint32 hour = (((playtimeTicks / TICKS_PER_SECOND) / 60) / 60) % 24;
 								Uint32 day = ((playtimeTicks / TICKS_PER_SECOND) / 60) / 60 / 24;
+								day = std::min(day, (Uint32)99);
 								snprintf(buf, sizeof(buf), "%02d:%02d:%02d:%02d", day, hour, min, sec);
 								name += buf;
 
-								for ( auto& pair : rankedScores )
+								std::string txt = "\n";
+								if ( findLang != Compendium_t::Events_t::eventCustomLangEntries.end() )
 								{
-									if ( pair.second == i )
-									{
-										std::string txt = "\n";
-										if ( findLang != Compendium_t::Events_t::eventCustomLangEntries.end() )
-										{
-											txt += findLang->second["format"];
-										}
-										txt += std::to_string(pair.first);
-										itemNameRight->setText(txt.c_str());
-										break;
-									}
+									txt += findLang->second["format"];
 								}
+								txt += std::to_string(*cvar_compendium_class_sort_playtime ? rankedScores[i].first : classRank[i]);
+								itemNameRight->setText(txt.c_str());
 							}
 						}
 						else
@@ -33833,7 +34117,7 @@ failed:
 							itemName->addWordToHighlight(i + Field::TEXT_HIGHLIGHT_WORDS_PER_LINE, makeColorRGB(192, 192, 192));
 						}
 
-						const auto class_name = classes_in_order[i];
+						const auto class_name = classes_in_order[classnum];
 						const auto class_find = classes.find(class_name);
 						if ( class_find != classes.end() )
 						{
@@ -33842,22 +34126,30 @@ failed:
 						}
 					}
 
-					Uint8 userData = i;
-					if ( i == 0 )
-					{
-						userData |= 1 << 7;
-						entry->setUserData((void*)(intptr_t)userData);
-						selectCompendiumItemInList(*entry, *page_right);
-					}
-					else
-					{
-						entry->setUserData((void*)(intptr_t)userData);
-						itemName->setColor(compendiumContentsDefaultColor);
-					}
-
 					SDL_Rect actualPos = page_right->getActualSize();
 					actualPos.h = std::max(compendiumPageRightInnerHeight, entry->getSize().y + entry->getSize().h);
 					page_right->setActualSize(actualPos);
+
+					Uint8 userData = classnum;
+					if ( i == 0 )
+					{
+						userData |= 1 << 7;
+					}
+
+					entry->setUserData((void*)(intptr_t)userData);
+					if ( i == lastSelection || i == 0 )
+					{
+						toSelect = entry;
+					}
+					else
+					{
+						itemName->setColor(compendiumContentsDefaultColor);
+					}
+				}
+
+				if ( toSelect )
+				{
+					selectCompendiumItemInList(*toSelect, *page_right, true);
 				}
 			}
 		}
@@ -34336,24 +34628,140 @@ failed:
 		}
 	}
 
-	static auto contents_activate_fn = [](Frame::entry_t& entry)
+	static Uint32 compendiumRevealAnimState = 0;
+	static void compendiumPageRightHideUnlocked(Frame* page_right, const bool unlocked, const bool hideAll, std::string to_unlock = "")
 	{
+		if ( !page_right ) { return; }
+		if ( hideAll )
+		{
+			page_right->setInvisible(true);
+			page_right->setOpacity(0.0);
+			if ( Frame* parent = page_right->getParent() )
+			{
+				if ( auto img = parent->findImage("page right img") )
+				{
+					img->disabled = true;
+				}
+				if ( auto reveal_frame = parent->findFrame("page_right_unlock") )
+				{
+					if ( auto reveal_txt = reveal_frame->findField("to_unlock") )
+					{
+						reveal_txt->setText("");
+					}
+					if ( auto reveal_btn = parent->findButton("page_right_unlock_btn") )
+					{
+						reveal_btn->setDisabled(true);
+						reveal_btn->setInvisible(true);
+					}
+				}
+				if ( auto reveal_top = parent->findFrame("page_right_reveal_top") )
+				{
+					if ( auto page_right_reveal = reveal_top->findFrame("page_right_reveal_top") )
+					{
+						page_right_reveal->setDisabled(true);
+						page_right_reveal->removeSelf();
+					}
+				}
+			}
+			return;
+		}
+		else if ( unlocked )
+		{
+			page_right->setInvisible(false);
+			page_right->setOpacity(100.0);
+			if ( Frame* parent = page_right->getParent() )
+			{
+				if ( auto img = parent->findImage("page right img") )
+				{
+					img->disabled = false;
+				}
+				if ( auto reveal_frame = parent->findFrame("page_right_unlock") )
+				{
+					if ( auto reveal_txt = reveal_frame->findField("to_unlock") )
+					{
+						reveal_txt->setText("");
+					}
+					if ( auto reveal_btn = reveal_frame->findButton("page_right_unlock_btn") )
+					{
+						reveal_btn->setDisabled(true);
+						reveal_btn->setInvisible(true);
+					}
+				}
+				if ( auto reveal_top = parent->findFrame("page_right_reveal_top") )
+				{
+					if ( auto page_right_reveal = reveal_top->findFrame("page_right_reveal_top") )
+					{
+						page_right_reveal->setDisabled(true);
+						page_right_reveal->removeSelf();
+					}
+				}
+			}
+		}
+		else if ( !unlocked )
+		{
+			page_right->setInvisible(true);
+			page_right->setOpacity(0.0);
+
+			if ( Frame* parent = page_right->getParent() )
+			{
+				if ( auto img = parent->findImage("page right img") )
+				{
+					img->disabled = true;
+				}
+				if ( auto reveal_frame = parent->findFrame("page_right_unlock") )
+				{
+					if ( auto reveal_txt = reveal_frame->findField("to_unlock") )
+					{
+						reveal_txt->setText(to_unlock.c_str());
+					}
+					if ( auto reveal_btn = reveal_frame->findButton("page_right_unlock_btn") )
+					{
+						reveal_btn->setDisabled(false);
+						reveal_btn->setInvisible(false);
+					}
+				}
+				if ( auto reveal_top = parent->findFrame("page_right_reveal_top") )
+				{
+					if ( auto page_right_reveal = reveal_top->findFrame("page_right_reveal_top") )
+					{
+						page_right_reveal->setDisabled(true);
+						page_right_reveal->removeSelf();
+					}
+				}
+			}
+		}
+	}
+
+	static std::string compendium_sorting = "default";
+	static auto contents_activate_fn = [](Frame::entry_t& frameEntry)
+	{
+		static ConsoleCommand ccmd_compendium_sorting(
+			"/compendium_sorting", "",
+			[](int argc, const char** argv) {
+				compendium_sorting = compendium_sorting == "default" ? "alphabetical" : "default";
+		});
+
 		assert(main_menu_frame);
 		if ( !main_menu_frame ) { return; }
 		auto compendiumFrame = main_menu_frame->findFrame("compendium");
 		if ( !compendiumFrame ) { return; }
 
-		if ( auto contentsFrame = compendiumFrame->findFrame("contents") )
+		auto contentsFrame = compendiumFrame->findFrame("contents");
+		if ( contentsFrame )
 		{
 			for ( auto& e : contentsFrame->getEntries() )
 			{
-				e->color = compendiumContentsDefaultColor;
+				if ( e->color != compendiumContentsDivColor )
+				{
+					e->color = compendiumContentsDefaultColor;
+				}
 			}
 		}
 
-		entry.color = compendiumContentsSelectedColor;
+		frameEntry.color = compendiumContentsSelectedColor;
 
-		if ( auto page_right = compendiumFrame->findFrame("page_right") )
+		auto page_right = compendiumFrame->findFrame("page_right");
+		if ( page_right )
 		{
 			if ( auto slider = page_right->findSlider("right_slider") )
 			{
@@ -34366,55 +34774,265 @@ failed:
 			}
 		}
 
-		auto* entries = compendium_current == "monsters" ? &Compendium_t::CompendiumMonsters_t::contents
-			: (compendium_current == "world" ? &Compendium_t::CompendiumWorld_t::contents 
-				: (compendium_current == "codex" ? &Compendium_t::CompendiumCodex_t::contents 
-					: (compendium_current == "items" ? &Compendium_t::CompendiumItems_t::contents
-						: (compendium_current == "magic" ? &Compendium_t::CompendiumMagic_t::contents : nullptr))));
+		auto* entries = compendium_current == "monsters" ? &Compendium_t::CompendiumMonsters_t::contents[compendium_sorting]
+			: (compendium_current == "world" ? &Compendium_t::CompendiumWorld_t::contents[compendium_sorting]
+				: (compendium_current == "codex" ? &Compendium_t::CompendiumCodex_t::contents[compendium_sorting]
+					: (compendium_current == "items" ? &Compendium_t::CompendiumItems_t::contents[compendium_sorting]
+						: (compendium_current == "magic" ? &Compendium_t::CompendiumMagic_t::contents[compendium_sorting] : nullptr))));
+
+		auto* unlockStatus = compendium_current == "monsters" ? &Compendium_t::CompendiumMonsters_t::unlocks
+			: (compendium_current == "world" ? &Compendium_t::CompendiumWorld_t::unlocks
+				: (compendium_current == "codex" ? &Compendium_t::CompendiumCodex_t::unlocks
+					: (compendium_current == "items" ? &Compendium_t::CompendiumItems_t::unlocks
+						: (compendium_current == "magic" ? &Compendium_t::CompendiumItems_t::unlocks : nullptr))));
 
 		std::string content = "";
+		std::string previousEntry = compendium_contents_current[compendium_current];
+
+		compendiumEntryControlEnabled = false;
+
 		if ( entries )
 		{
-			auto id = (intptr_t)entry.data;
+			auto id = (intptr_t)frameEntry.data;
 			if ( id >= entries->size() )
 			{
 				return;
 			}
 			auto& entry = (*entries)[id];
-			compendium_contents_current = entry.first;
+			compendium_contents_current[compendium_current] = entry.first;
 			if ( auto page_left_title = compendiumFrame->findField("page_left_title") )
 			{
-				page_left_title->setText(entry.first.c_str());
+				page_left_title->setText(entry.second.c_str());
 			}
-			content = entry.second;
+
+			bool unlocked = false;
+			if ( unlockStatus )
+			{
+				auto findUnlock = unlockStatus->find(entry.first);
+				if ( findUnlock != unlockStatus->end() )
+				{
+					if ( findUnlock->second == Compendium_t::UNLOCKED_UNVISITED )
+					{
+						findUnlock->second = Compendium_t::UNLOCKED_VISITED;
+					}
+					else if ( findUnlock->second == Compendium_t::LOCKED_REVEALED_UNVISITED )
+					{
+						findUnlock->second = Compendium_t::LOCKED_REVEALED_VISITED;
+					}
+
+					if ( findUnlock->second == Compendium_t::UNLOCKED_VISITED
+						|| findUnlock->second == Compendium_t::LOCKED_UNKNOWN
+						|| findUnlock->second == Compendium_t::UNLOCKED_UNVISITED )
+					{
+						unlocked = true;
+					}
+				}
+				else
+				{
+					unlocked = false;
+				}
+
+				compendiumPageRightHideUnlocked(page_right, unlocked, false, unlocked ? "" : entry.first);
+
+				if ( contentsFrame )
+				{
+					if ( auto notifs = contentsFrame->findFrame("notifs") )
+					{
+						std::vector<std::string> toRemove;
+						for ( auto img : notifs->getImages() )
+						{
+							std::string name = "";
+							auto find = img->name.find("notif_");
+							if ( find != std::string::npos )
+							{
+								name = img->name.substr(strlen("notif_"));
+								//if ( name == entry.first )
+								//{
+								//	continue; // don't unhighlight the current selection
+								//}
+								auto findUnlock = unlockStatus->find(name);
+								if ( findUnlock != unlockStatus->end() )
+								{
+									if ( findUnlock->second == Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_VISITED
+										|| findUnlock->second == Compendium_t::CompendiumUnlockStatus::UNLOCKED_VISITED )
+									{
+										toRemove.push_back(img->name);
+									}
+								}
+							}
+						}
+						for ( auto& r : toRemove )
+						{
+							notifs->remove(r.c_str());
+						}
+					}
+				}
+			}
+
+			compendiumEntryControlEnabled = unlocked;
 
 			if ( Compendium_t::compendiumEntityCurrent.modelRNG == 0 )
 			{
 				Compendium_t::compendiumEntityCurrent.modelRNG = local_rng.rand();
 			}
+
+			{
+				auto pageNumberLeft = compendiumFrame->findField("page_left_number");
+				auto pageNumberRight = compendiumFrame->findField("page_right_number");
+				auto pagePrev = compendiumFrame->findField("page_left_prev");
+				auto pageNext = compendiumFrame->findField("page_right_next");
+
+				{
+					std::string txt = Language::get(6179);
+					int prevId = -1;
+					if ( id > 0 && id < entries->size() )
+					{
+						prevId = id - 1;
+					}
+					else if ( entries->size() > 0 )
+					{
+						prevId = entries->size() - 1;
+					}
+
+					bool firstLoop = true;
+					while ( prevId >= 0 )
+					{
+						if ( prevId == id )
+						{
+							// looped around once, quit
+							txt = "";
+							break;
+						}
+						if ( (*entries)[prevId].first != "-" ) // not a divider slot
+						{
+							auto findUnlock = unlockStatus->find((*entries)[prevId].first);
+							if ( findUnlock != unlockStatus->end() && findUnlock->second != Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+							{
+								txt += (*entries)[prevId].second;
+								break;
+							}
+						}
+						--prevId;
+						if ( prevId < 0 )
+						{
+							if ( !firstLoop )
+							{
+								break;
+							}
+							else
+							{
+								firstLoop = false;
+								prevId = entries->size() - 1;
+							}
+						}
+					}
+					if ( pagePrev )
+					{
+						pagePrev->setText(txt.c_str());
+					}
+				}
+				
+				{
+					std::string txt = Language::get(6180);
+					int nextId = -1;
+					if ( (id + 1) < entries->size() )
+					{
+						nextId = id + 1;
+					}
+					else if ( id == entries->size() - 1 )
+					{
+						nextId = 0;
+					}
+
+					bool firstLoop = true;
+					while ( nextId >= 0 )
+					{
+						if ( nextId == id )
+						{
+							// looped around once, quit
+							txt = "";
+							break;
+						}
+						if ( (*entries)[nextId].first != "-" ) // not a divider slot
+						{
+							auto findUnlock = unlockStatus->find((*entries)[nextId].first);
+							if ( findUnlock != unlockStatus->end() && findUnlock->second != Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+							{
+								txt += (*entries)[nextId].second;
+								break;
+							}
+						}
+						++nextId;
+						if ( nextId >= entries->size() )
+						{
+							if ( !firstLoop )
+							{
+								break;
+							}
+							else
+							{
+								firstLoop = false;
+								nextId = 0;
+							}
+						}
+					}
+					if ( pageNext )
+					{
+						pageNext->setText(txt.c_str());
+					}
+				}
+
+				{
+					char buf[32] = "";
+					int numEntries = 0;
+					int pageNum = 0;
+					int index = -1;
+					for ( auto& e : *entries )
+					{
+						++index;
+						if ( e.first != "-" )
+						{
+							if ( index == id )
+							{
+								pageNum = numEntries;
+							}
+							++numEntries;
+						}
+					}
+					snprintf(buf, sizeof(buf), Language::get(6181), pageNum + 1, (int)numEntries);
+					if ( pageNumberLeft )
+					{
+						pageNumberLeft->setText(buf);
+					}
+					if ( pageNumberRight )
+					{
+						pageNumberRight->setText(buf);
+					}
+				}
+			}
 		}
 
 		if ( compendium_current == "codex" )
 		{
-			refreshCompendiumEntryCodex(content, compendiumFrame);
+			refreshCompendiumEntryCodex(compendium_contents_current[compendium_current], compendiumFrame);
 		}
 		else if ( compendium_current == "items" )
 		{
-			refreshCompendiumEntryItemsBlurb(content, compendiumFrame);
-			refreshCompendiumEntryItemsList(content, compendiumFrame);
+			refreshCompendiumEntryItemsBlurb(compendium_contents_current[compendium_current], compendiumFrame);
+			refreshCompendiumEntryItemsList(compendium_contents_current[compendium_current], compendiumFrame);
 		}
 		else if ( compendium_current == "magic" )
 		{
-			refreshCompendiumEntryItemsBlurb(content, compendiumFrame);
-			refreshCompendiumEntryItemsList(content, compendiumFrame);
+			refreshCompendiumEntryItemsBlurb(compendium_contents_current[compendium_current], compendiumFrame);
+			refreshCompendiumEntryItemsList(compendium_contents_current[compendium_current], compendiumFrame);
 		}
 		else if ( compendium_current == "world" )
 		{
-			refreshCompendiumEntryWorld(content, compendiumFrame);
+			refreshCompendiumEntryWorld(compendium_contents_current[compendium_current], compendiumFrame);
 		}
 		else if ( compendium_current == "monsters" )
 		{
-			if ( auto monster = createCompendiumMonster((Monster)CompendiumEntries.monsters[content].monsterType, 8, 8) )
+			if ( auto monster = createCompendiumMonster((Monster)CompendiumEntries.monsters[compendium_contents_current[compendium_current]].monsterType, 8, 8) )
 			{
 				if ( auto myStats = monster->getStats() )
 				{
@@ -34426,7 +35044,7 @@ failed:
 					monsterAnimate(compendiumMonster, myStats, 0.0);
 				}
 			}
-			refreshCompendiumEntryMonster(content, compendiumFrame);
+			refreshCompendiumEntryMonster(compendium_contents_current[compendium_current], compendiumFrame);
 		}
 	};
 
@@ -34434,11 +35052,17 @@ failed:
 	{
 		if ( auto contents = frame->findFrame("contents") )
 		{
-			auto* entries = compendium_current == "monsters" ? &Compendium_t::CompendiumMonsters_t::contents
-				: (compendium_current == "world" ? &Compendium_t::CompendiumWorld_t::contents
-					: (compendium_current == "codex" ? &Compendium_t::CompendiumCodex_t::contents
-						: (compendium_current == "items" ? &Compendium_t::CompendiumItems_t::contents 
-							: (compendium_current == "magic" ? &Compendium_t::CompendiumMagic_t::contents : nullptr))));
+			auto* entries = compendium_current == "monsters" ? &Compendium_t::CompendiumMonsters_t::contents[compendium_sorting]
+				: (compendium_current == "world" ? &Compendium_t::CompendiumWorld_t::contents[compendium_sorting]
+					: (compendium_current == "codex" ? &Compendium_t::CompendiumCodex_t::contents[compendium_sorting]
+						: (compendium_current == "items" ? &Compendium_t::CompendiumItems_t::contents[compendium_sorting]
+							: (compendium_current == "magic" ? &Compendium_t::CompendiumMagic_t::contents[compendium_sorting] : nullptr))));
+
+			auto* unlockStatus = compendium_current == "monsters" ? &Compendium_t::CompendiumMonsters_t::unlocks
+				: (compendium_current == "world" ? &Compendium_t::CompendiumWorld_t::unlocks
+					: (compendium_current == "codex" ? &Compendium_t::CompendiumCodex_t::unlocks
+						: (compendium_current == "items" ? &Compendium_t::CompendiumItems_t::unlocks
+							: (compendium_current == "magic" ? &Compendium_t::CompendiumItems_t::unlocks : nullptr))));
 
 			auto toRemove = contents->getEntries();
 			for ( auto r : toRemove )
@@ -34446,32 +35070,187 @@ failed:
 				contents->removeEntry(r->name.c_str(), false);
 			}
 
+			contents->remove("notifs");
+			auto contents_notif = contents->addFrame("notifs");
+			contents_notif->enableScroll(false);
+			contents_notif->setAllowScrollBinds(false);
+			contents_notif->setHollow(true);
+			contents_notif->setClickable(false);
+			contents_notif->setTickCallback([](Widget& widget) {
+				auto frame = static_cast<Frame*>(&widget);
+				static Uint32 notifCycleTicks = 0;
+				static int notifAnim = 0;
+				if ( ticks != notifCycleTicks )
+				{
+					notifCycleTicks = ticks;
+					if ( ticks % (TICKS_PER_SECOND / 5) == 0 )
+					{
+						notifAnim++;
+						if ( notifAnim > 2 )
+						{
+							notifAnim = 0;
+						}
+
+						std::string imgPath = "*#images/ui/Inventory/tooltips/ExclamationAnim00.png";
+						switch ( notifAnim )
+						{
+						case 1:
+							imgPath = "*#images/ui/Inventory/tooltips/ExclamationAnim01.png";
+							break;
+						case 2:
+							imgPath = "*#images/ui/Inventory/tooltips/ExclamationAnim02.png";
+							break;
+						default:
+							break;
+						}
+
+						for ( auto img : frame->getImages() )
+						{
+							img->path = imgPath;
+						}
+					}
+				}
+				});
+
+			auto imgs = contents->getImages();
+			for ( auto i : imgs )
+			{
+				if ( i->name == "entry div" )
+				{
+					contents->remove(i->name.c_str());
+				}
+				if ( i->name == "notif" )
+				{
+					contents->remove(i->name.c_str());
+				}
+			}
+
 			if ( entries )
 			{
-				int indexToSelect = 0;
+				int indexToSelect = -1;
 				for ( int i = 0; i < entries->size(); ++i )
 				{
 					auto& data = (*entries)[i];
-					auto entry = contents->addEntry(data.second.c_str(), true);
+					auto entry = contents->addEntry(data.first.c_str(), true);
+
+					bool unlocked = false;
+					bool drawNotification = false;
+
 					entry->click = contents_activate_fn;
 					entry->ctrlClick = contents_activate_fn;
 					//entry->highlight = selection_fn;
 					//entry->selected = selection_fn;
-					entry->color = compendiumContentsDefaultColor;
-					entry->text = data.first;
 					entry->clickable = true;
-					memcpy(&entry->data, &i, sizeof(i));
 
-					if ( compendium_contents_current != "" )
+					if ( data.first == "-" )
 					{
-						if ( compendium_contents_current == data.first )
+						entry->click = nullptr;
+						entry->ctrlClick = nullptr;
+						entry->clickable = false;
+						entry->text = data.second;
+						entry->color = makeColorRGB(42, 22, 18);
+
+						contents->addImage(SDL_Rect{ 0, (int)(contents->getEntries().size() - 1) * contents->getEntrySize(), contents->getSize().w, 20 },
+							0xFFFFFFFF, 
+							"*images/ui/Main Menus/AdventureArchives/Divider_00.png", 
+							"entry div");
+					}
+					else
+					{
+						if ( unlockStatus )
 						{
-							indexToSelect = i;
+							auto findUnlock = unlockStatus->find(data.first);
+							if ( findUnlock != unlockStatus->end() )
+							{
+								unlocked = findUnlock->second > Compendium_t::LOCKED_UNKNOWN;
+								drawNotification = unlocked
+									&& (findUnlock->second == Compendium_t::UNLOCKED_UNVISITED
+										|| findUnlock->second == Compendium_t::LOCKED_REVEALED_UNVISITED);
+							}
+							else
+							{
+								(*unlockStatus)[data.first] = Compendium_t::LOCKED_UNKNOWN;
+							}
+#if !defined(NDEBUG)
+							if ( *cvar_compendium_reveal )
+							{
+								unlocked = true;
+							}
+#endif
+						}
+
+						if ( !unlocked )
+						{
+							entry->color = compendiumContentsDefaultColor;
+							entry->text = "???";
+							entry->click = nullptr;
+							entry->ctrlClick = nullptr;
+						}
+						else
+						{
+							entry->color = compendiumContentsDefaultColor;
+							entry->text = data.second;
+
+							int textWidth = 0;
+							while ( entry->text.size() > 5 )
+							{
+								if ( auto textGet = Text::get(entry->text.c_str(), contents->getFont(),
+									makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
+								{
+									textWidth = textGet->getWidth();
+									if ( contents->getListOffset().x + textWidth > contents->getSize().w - 4 )
+									{
+										auto find = entry->text.find("...");
+										if ( find == std::string::npos )
+										{
+											entry->text += "...";
+										}
+										else
+										{
+											entry->text = entry->text.erase(find - 1, 1);
+										}
+									}
+									else
+									{
+										break;
+									}
+								}
+							}
 						}
 					}
+					memcpy(&entry->data, &i, sizeof(i));
+
+					if ( data.first != "-" )
+					{
+						if ( indexToSelect == -1 )
+						{
+							indexToSelect = i; // grab the first available slot
+						}
+						if ( compendium_contents_current[compendium_current] != "" )
+						{
+							if ( compendium_contents_current[compendium_current] == data.first )
+							{
+								indexToSelect = i;
+							}
+						}
+					}
+
+					if ( drawNotification )
+					{
+						contents_notif->setSize(SDL_Rect{ 0, 0, contents->getSize().w, contents->getActualSize().h });
+						std::string imgName = "notif_" + data.first;
+						contents_notif->addImage(SDL_Rect{ 4, 4 + (int)(contents->getEntries().size() - 1) * contents->getEntrySize(), 6, 14 },
+							0xFFFFFFFF,
+							"*#images/ui/Inventory/tooltips/ExclamationAnim00.png",
+							imgName.c_str());
+					}
 				}
+
 				contents->setSelection(indexToSelect);
-				contents->scrollToSelection(true);
+				SDL_Rect actualPos = contents->getActualSize();
+				actualPos.y = 0;
+				contents->setActualSize(actualPos);
+				contents->scrollToSelection(false);
 				contents->activateSelection();
 			}
 		}
@@ -34481,11 +35260,13 @@ failed:
 	{
 		if ( !page_right ) { return; }
 
+		compendiumPageRightHideUnlocked(page_right, false, true);
+
 		Frame* page_right_inner = page_right->findFrame("page_right_inner");
 		if ( !page_right_inner )
 		{
 			page_right_inner = page_right->addFrame("page_right_inner");
-			page_right_inner->setSize(SDL_Rect{ 10, compendiumPageRightInnerY, 362, compendiumPageRightInnerHeight });
+			page_right_inner->setSize(SDL_Rect{ 14, compendiumPageRightInnerY, 362, compendiumPageRightInnerHeight });
 			page_right_inner->setActualSize(SDL_Rect{ 0, 0, 362, compendiumPageRightInnerHeight });
 			page_right_inner->setTickCallback([](Widget& widget) {
 				static_cast<Frame*>(&widget)->setAllowScrollBinds(true);
@@ -34497,7 +35278,7 @@ failed:
 		{
 			if ( page_right_overlay = page_right->addFrame("page_right_overlay") )
 			{
-				page_right_overlay->setSize(SDL_Rect{ 6, page_right->getSize().h - 114 - 14, page_right->getSize().w - 16, 120 });
+				page_right_overlay->setSize(SDL_Rect{ 10, page_right->getSize().h - 114 - 18, page_right->getSize().w - 20 - 8, 120 });
 				page_right_overlay->addImage(SDL_Rect{ 0, 0, page_right_overlay->getSize().w, page_right_overlay->getSize().h },
 					0xFFFFFFFF,
 					"*images/ui/Main Menus/AdventureArchives/C_Records_Frame_00.png", "page right overlay img");
@@ -34510,7 +35291,7 @@ failed:
 				heading->setSize(SDL_Rect{ 14, 12, page_right_overlay->getSize().w, 28 });
 				heading->setColor(makeColor(198, 190, 179, 255));
 				heading->setTickCallback([](Widget& widget) {
-					if ( ticks % TICKS_PER_SECOND == 0 && compendiumRecordsProcessedOnTick != ticks )
+					if ( ticks % (2 * TICKS_PER_SECOND) == 0 && compendiumRecordsProcessedOnTick != ticks )
 					{
 						compendiumRecordsSectionRandSequence++;
 						compendiumRecordsProcessedOnTick = ticks;
@@ -34977,7 +35758,13 @@ failed:
 		[](int argc, const char** argv) {
 			CompendiumEntries.exportCurrentMonster(compendiumMonster);
 		});
-	static ConsoleVariable<bool> cvar_compendiumautoreload("/compendiumautoreload", true);
+	static ConsoleVariable<bool> cvar_compendiumautoreload("/compendiumautoreload", 
+#if !defined(NDEBUG)
+		true
+#else
+		false
+#endif
+	);
 
 	static void compendiumDebugRefresh()
 	{
@@ -34985,23 +35772,23 @@ failed:
 		if ( compendium_current == "monsters" )
 		{
 			CompendiumEntries.readMonstersFromFile();
-			refreshCompendiumEntryMonster(Compendium_t::CompendiumMonsters_t::contentsMap[compendium_contents_current], main_menu_frame->findFrame("compendium"));
+			refreshCompendiumEntryMonster(compendium_contents_current[compendium_current], main_menu_frame->findFrame("compendium"));
 		}
 		else if ( compendium_current == "world" )
 		{
 			CompendiumEntries.readWorldFromFile();
-			refreshCompendiumEntryWorld(Compendium_t::CompendiumWorld_t::contentsMap[compendium_contents_current], main_menu_frame->findFrame("compendium"));
+			refreshCompendiumEntryWorld(compendium_contents_current[compendium_current], main_menu_frame->findFrame("compendium"));
 		}
 		else if ( compendium_current == "codex" )
 		{
 			CompendiumEntries.readCodexFromFile();
-			refreshCompendiumEntryCodex(Compendium_t::CompendiumCodex_t::contentsMap[compendium_contents_current], main_menu_frame->findFrame("compendium"));
+			refreshCompendiumEntryCodex(compendium_contents_current[compendium_current], main_menu_frame->findFrame("compendium"));
 		}
 		else if ( compendium_current == "items" )
 		{
 			CompendiumEntries.readItemsFromFile();
 			CompendiumEntries.readMagicFromFile();
-			refreshCompendiumEntryItemsBlurb(Compendium_t::CompendiumItems_t::contentsMap[compendium_contents_current], main_menu_frame->findFrame("compendium"));
+			refreshCompendiumEntryItemsBlurb(compendium_contents_current[compendium_current], main_menu_frame->findFrame("compendium"));
 			std::string modelsPath = "items_single";
 			if ( Compendium_t::compendiumItemModel.skill[10] == SPELL_ITEM && Compendium_t::compendiumItemModel.flags[SPRITE] )
 			{
@@ -35013,7 +35800,7 @@ failed:
 		{
 			CompendiumEntries.readItemsFromFile();
 			CompendiumEntries.readMagicFromFile();
-			refreshCompendiumEntryItemsBlurb(Compendium_t::CompendiumMagic_t::contentsMap[compendium_contents_current], main_menu_frame->findFrame("compendium"));
+			refreshCompendiumEntryItemsBlurb(compendium_contents_current[compendium_current], main_menu_frame->findFrame("compendium"));
 			std::string modelsPath = "items_single";
 			if ( Compendium_t::compendiumItemModel.skill[10] == SPELL_ITEM && Compendium_t::compendiumItemModel.flags[SPRITE] )
 			{
@@ -35023,7 +35810,147 @@ failed:
 		}
 	}
 
+	static void compendiumRevealSection(Button* button)
+	{
+		if ( !button ) { return; }
+		Frame* parent = static_cast<Frame*>(button->getParent());
+		if ( !parent ) { return; }
+		parent = parent->getParent();
+		if ( !parent ) { return; }
+
+		if ( auto page_right = parent->findFrame("page_right") )
+		{
+			page_right->setOpacity(0.0);
+			page_right->setInvisible(true);
+		}
+		if ( auto bg = parent->findImage("page right img") )
+		{
+			bg->disabled = true;
+		}
+
+		if ( auto page_right_unlock = parent->findFrame("page_right_unlock") )
+		{
+			if ( auto to_unlock = page_right_unlock->findField("to_unlock") )
+			{
+				if ( compendium_contents_current[compendium_current] == to_unlock->getText() )
+				{
+					to_unlock->setText("");
+					auto* unlockStatus = compendium_current == "monsters" ? &Compendium_t::CompendiumMonsters_t::unlocks
+						: (compendium_current == "world" ? &Compendium_t::CompendiumWorld_t::unlocks
+							: (compendium_current == "codex" ? &Compendium_t::CompendiumCodex_t::unlocks
+								: (compendium_current == "items" ? &Compendium_t::CompendiumItems_t::unlocks
+									: (compendium_current == "magic" ? &Compendium_t::CompendiumItems_t::unlocks : nullptr))));
+
+					if ( unlockStatus )
+					{
+						auto findUnlock = unlockStatus->find(compendium_contents_current[compendium_current]);
+						if ( findUnlock != unlockStatus->end() )
+						{
+							if ( findUnlock->second == Compendium_t::LOCKED_REVEALED_UNVISITED )
+							{
+								findUnlock->second = Compendium_t::UNLOCKED_UNVISITED;
+							}
+							else if ( findUnlock->second == Compendium_t::LOCKED_REVEALED_VISITED )
+							{
+								findUnlock->second = Compendium_t::UNLOCKED_VISITED;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if ( auto reveal_top = parent->findFrame("page_right_reveal_top") )
+		{
+			auto page_right_reveal = reveal_top->addFrame("page_right_reveal_top");
+			page_right_reveal->setSize(SDL_Rect{ 0, 0, 398, 484 });
+			page_right_reveal->addImage(SDL_Rect{ 0, 0, 398, 484 }, 0xFFFFFFFF,
+				"", "img");
+			page_right_reveal->setHollow(true);
+			page_right_reveal->setClickable(false);
+
+			page_right_reveal->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+				auto frame = const_cast<Frame*>((Frame*)(&widget));
+				static Uint32 animTicks = 0;
+
+				if ( frame->getTicks() == 0 || frame->getTicks() == 1 )
+				{
+					animTicks = 0;
+					compendiumRevealAnimState = 1;
+				}
+
+				if ( ticks != animTicks )
+				{
+					animTicks = ticks;
+					if ( ticks % 2 == 0 )
+					{
+						if ( compendiumRevealAnimState > 0 )
+						{
+							++compendiumRevealAnimState;
+						}
+					}
+				}
+				if ( frame->getImages().size() > 0 )
+				{
+					auto img = frame->getImages().front();
+					img->disabled = true;
+					if ( compendiumRevealAnimState >= 1 && compendiumRevealAnimState <= 39 )
+					{
+						img->disabled = false;
+						img->path = "*images/ui/Main Menus/AdventureArchives/Anim/reveal-anim";
+						char buf[16];
+						snprintf(buf, sizeof(buf), "%02d.png", compendiumRevealAnimState);
+						img->path += buf;
+
+						Frame* parent = frame->getParent();
+						if ( parent )
+						{
+							parent = parent->getParent();
+						}
+						if ( parent )
+						{
+							if ( /*Frame* parent = parent->getParent()*/true )
+							{
+								if ( auto page_right = parent->findFrame("page_right") )
+								{
+									if ( compendiumRevealAnimState >= 19 )
+									{
+										if ( auto bg = parent->findImage("page right img") )
+										{
+											bg->disabled = false;
+										}
+									}
+									if ( compendiumRevealAnimState >= 10 )
+									{
+										page_right->setInvisible(false);
+										real_t opacity = page_right->getOpacity() / 100.0;
+										real_t setpointDiff = getFPSScale(144.0) * std::max(.01, (1.0 - opacity)) / (20.0);
+										opacity += setpointDiff;
+										opacity = std::min(1.0, opacity);
+										page_right->setOpacity(opacity * 100.0);
+									}
+									else
+									{
+										page_right->setOpacity(0.0);
+									}
+								}
+							}
+						}
+					}
+					else
+					{
+						animTicks = 0;
+						compendiumRevealAnimState = 1;
+						frame->removeSelf();
+					}
+				}
+			});
+		}
+	}
+
 	static void openCompendium() {
+		players[0]->inventoryUI.compendiumItemTooltipDisplay.type = NUMITEMS;
+
 		auto dimmer = main_menu_frame->addFrame("dimmer");
 		dimmer->setSize(SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY });
 		dimmer->setActualSize(dimmer->getSize());
@@ -35365,7 +36292,7 @@ failed:
 
 		auto nav_title = navigation->addField("nav_title", 128);
 		nav_title->setFont("fonts/kongtext.ttf#16#0");
-		nav_title->setText("CONTENTS");
+		nav_title->setText(Language::get(6182));
 		nav_title->setHJustify(Field::justify_t::CENTER);
 		nav_title->setVJustify(Field::justify_t::TOP);
 		nav_title->setSize(SDL_Rect{ 0, 12, navigation->getSize().w, 28 });
@@ -35379,12 +36306,12 @@ failed:
 		);
 
 		auto contents = navigation->addFrame("contents");
-		contents->setSize(SDL_Rect{ nav_contents_bg->pos.x + 10, nav_contents_bg->pos.y + 14, 184, 436 });
+		contents->setSize(SDL_Rect{ nav_contents_bg->pos.x + 6, nav_contents_bg->pos.y + 14, 184 + 12, 436 });
 		contents->setActualSize(SDL_Rect{ 0, 0, contents->getSize().w, contents->getSize().h });
 		contents->setEntrySize(18);
 		contents->setFont(smallfont_no_outline);
 		contents->setSelectedEntryColor(makeColor(71, 41, 27, 255));
-		contents->setListOffset(SDL_Rect{ 32, 1, 0, 0 });
+		contents->setListOffset(SDL_Rect{ 12, 1, 0, 0 });
 		contents->setScrollWithLeftControls(false);
 		contents->setClickable(true);
 		contents->setSelectorOffset(SDL_Rect{ -10, -14, 28, 28 });
@@ -35399,6 +36326,70 @@ failed:
 				frame->setAllowScrollBinds(false);
 			}
 		});
+
+		{
+			auto nav_slider = navigation->addSlider("nav_slider");
+			nav_slider->setRailSize(SDL_Rect{
+				navigation->getSize().w - 20 - 16,
+				24 + 22, 20, navigation->getSize().h - 32 - 22 - 38 });
+			nav_slider->setHandleSize(SDL_Rect{ 0, 0, 20, 28 });
+			nav_slider->setBorder(16);
+			nav_slider->setOntop(true);
+			nav_slider->setHandleImage("*#images/ui/Sliders/HUD_Magic_Slider_Emerald_01.png");
+			nav_slider->setValue(0);
+			nav_slider->setMinValue(0);
+			nav_slider->setMaxValue(100);
+			nav_slider->setOrientation(Slider::SLIDER_VERTICAL);
+			nav_slider->setHideGlyphs(true);
+			nav_slider->setHideKeyboardGlyphs(true);
+			nav_slider->setHideSelectors(true);
+			nav_slider->setMenuConfirmControlType(0);
+			nav_slider->setCallback([](Slider& slider) {
+				if ( auto frame = static_cast<Frame*>(slider.getParent()) )
+				{
+					if ( frame = frame->findFrame("contents") )
+					{
+						if ( frame->getActualSize().h > frame->getSize().h )
+						{
+							SDL_Rect pos = frame->getActualSize();
+							const int diff = frame->getActualSize().h - frame->getSize().h;
+							pos.y = static_cast<int>(diff * slider.getValue() / 100.0);
+							frame->setActualSize(pos);
+						}
+						else
+						{
+							slider.setValue(0);
+						}
+					}
+				}
+			});
+			nav_slider->setTickCallback([](Widget& widget) {
+				auto slider = static_cast<Slider*>(&widget);
+				if ( auto frame = static_cast<Frame*>(widget.getParent()) )
+				{
+					if ( frame = frame->findFrame("contents") )
+					{
+						if ( frame->getActualSize().h > frame->getSize().h )
+						{
+							widget.setInvisible(false);
+
+							const int diff = frame->getActualSize().h - frame->getSize().h;
+							slider->setValue(100.0 * frame->getActualSize().y / diff);
+						}
+						else
+						{
+							widget.setInvisible(true);
+
+							slider->setValue(0);
+							if ( widget.isSelected() )
+							{
+								widget.deselect();
+							}
+						}
+					}
+				}
+			});
+		}
 
 		auto page_left = window->addFrame("page_left");
 		page_left->setSize(SDL_Rect{ background->pos.x + 460 - 22 - 382, background->pos.y + 46, 382, 472 });
@@ -35493,6 +36484,11 @@ failed:
 		});
 
 		// debug btns
+#if !defined(NDEBUG)
+		if ( true )
+#else
+		if ( false )
+#endif
 		{
 			auto debugBtnFrame = page_left->addFrame("debug frame");
 			debugBtnFrame->setSize(model_viewer->getSize());
@@ -35669,13 +36665,44 @@ failed:
 				});
 		}
 
+		auto page_right_reveal_top = window->addFrame("page_right_reveal_top");
+
 		auto page_right = window->addFrame("page_right");
-		page_right->setSize(SDL_Rect{ background->pos.x + 480 + 40, background->pos.y + 38, 386, 472});
-		page_right->addImage(SDL_Rect{ 0, 0, 386, 472 }, 0xFFFFFFFF,
+		page_right->setSize(SDL_Rect{ background->pos.x + 480 + 36, background->pos.y + 30, 398, 484});
+		page_right->setInvisible(true);
+		page_right->setInheritParentFrameOpacity(false);
+
+		auto page_right_unlock = window->addFrame("page_right_unlock");
+		page_right_unlock->setSize(SDL_Rect{ page_right->getSize().x + 6, page_right->getSize().y + 18, 376, 116 });
+		page_right_unlock->setHollow(true);
+		page_right_unlock->setClickable(false);
+
+		auto page_right_to_unlock = page_right_unlock->addField("to_unlock", 128);
+		page_right_to_unlock->setDisabled(true); // hidden, just to save data somewhere
+		page_right_to_unlock->setText("");
+
+		auto page_right_unlock_btn = page_right_unlock->addButton("page_right_unlock_btn");
+		page_right_unlock_btn->setSize(SDL_Rect{ 0, 0, 376, 116 });
+		page_right_unlock_btn->setBackground("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button_00.png");
+		page_right_unlock_btn->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button-high_00.png");
+		page_right_unlock_btn->setBackgroundActivated("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button-press_00.png");
+		page_right_unlock_btn->setOntop(true);
+		page_right_unlock_btn->setCallback([](Button& button) {
+			compendiumRevealSection(&button);
+			button.setInvisible(true);
+			button.setDisabled(true);
+		});
+
+		auto right_bg = window->addImage(SDL_Rect{ page_right->getSize().x + 4, page_right->getSize().y + 8, 386, 472 }, 0xFFFFFFFF,
 			"*images/ui/Main Menus/AdventureArchives/C_Details_Frame_00.png", "page right img");
+		right_bg->disabled = true;
+
+		page_right_reveal_top->setHollow(true);
+		page_right_reveal_top->setClickable(false);
+		page_right_reveal_top->setSize(SDL_Rect{ page_right->getSize().x, page_right->getSize().y, 398, 484 });
 
 		auto page_right_inner = page_right->addFrame("page_right_inner");
-		page_right_inner->setSize(SDL_Rect{ 10, compendiumPageRightInnerY, 362, compendiumPageRightInnerHeight });
+		page_right_inner->setSize(SDL_Rect{ 14, compendiumPageRightInnerY, 362, compendiumPageRightInnerHeight });
 		page_right_inner->setActualSize(SDL_Rect{ 0, 0, 362, compendiumPageRightInnerHeight });
 		page_right_inner->setTickCallback([](Widget& widget) {
 			static_cast<Frame*>(&widget)->setAllowScrollBinds(true);
@@ -35686,7 +36713,7 @@ failed:
 		page_right_title->setText("DETAILS");
 		page_right_title->setHJustify(Field::justify_t::CENTER);
 		page_right_title->setVJustify(Field::justify_t::TOP);
-		page_right_title->setSize(SDL_Rect{ page_right->getSize().x, page_right->getSize().y - 18, page_right->getSize().w, 28 });
+		page_right_title->setSize(SDL_Rect{ page_right->getSize().x + 8, page_right->getSize().y - 10, page_right->getSize().w - 24, 28 });
 		page_right_title->setColor(makeColor(42, 22, 18, 255));
 
 		auto right_slider_bg = page_right->addImage(SDL_Rect{ 
@@ -35700,7 +36727,7 @@ failed:
 		auto right_slider = page_right->addSlider("right_slider");
 		right_slider->setRailSize(SDL_Rect{ 
 			page_right_inner->getSize().x + page_right_inner->getSize().w - 20, 
-			page_right_inner->getSize().y + 20 + 4, 20, compendiumPageRightInnerHeight - 8 });
+			page_right_inner->getSize().y + 20 + 4, 20, compendiumPageRightInnerHeight - 8 - 24 });
 		//right_slider->setRailImage("*images/ui/Main Menus/AdventureArchives/C_Details_ScrollBar_00.png");
 		right_slider->setHandleSize(SDL_Rect{ 0, 0, 20, 28 });
 		right_slider->setBorder(16);
@@ -35760,6 +36787,38 @@ failed:
 				}
 			}
 			});
+
+		/*auto page_right_number = window->addField("page_right_number", 32);
+		page_right_number->setFont(smallfont_no_outline);
+		page_right_number->setText("");
+		page_right_number->setHJustify(Field::justify_t::CENTER);
+		page_right_number->setVJustify(Field::justify_t::TOP);
+		page_right_number->setSize(SDL_Rect{ page_right->getSize().x + 156, page_right->getSize().y + 497 + 8, 72, 28 });
+		page_right_number->setColor(makeColorRGB(77, 37, 16));*/
+
+		auto page_left_number = window->addField("page_left_number", 32);
+		page_left_number->setFont(smallfont_no_outline);
+		page_left_number->setText("");
+		page_left_number->setHJustify(Field::justify_t::CENTER);
+		page_left_number->setVJustify(Field::justify_t::TOP);
+		page_left_number->setSize(SDL_Rect{ page_left->getSize().x + 156, page_right->getSize().y + 497 + 8, 72, 28 });
+		page_left_number->setColor(makeColorRGB(77, 37, 16));
+
+		auto page_right_next = window->addField("page_right_next", 128);
+		page_right_next->setFont(smallfont_no_outline);
+		page_right_next->setText("");
+		page_right_next->setHJustify(Field::justify_t::RIGHT);
+		page_right_next->setVJustify(Field::justify_t::TOP);
+		page_right_next->setSize(SDL_Rect{ page_right->getSize().x + 4, page_right->getSize().y + 475 + 8, 378, 28 });
+		page_right_next->setColor(makeColorRGB(135, 94, 45));
+
+		auto page_left_prev = window->addField("page_left_prev", 128);
+		page_left_prev->setFont(smallfont_no_outline);
+		page_left_prev->setText("");
+		page_left_prev->setHJustify(Field::justify_t::LEFT);
+		page_left_prev->setVJustify(Field::justify_t::TOP);
+		page_left_prev->setSize(SDL_Rect{ page_left->getSize().x + 6, page_right->getSize().y + 475 + 8, 378, 28 });
+		page_left_prev->setColor(makeColorRGB(135, 94, 45));
 
 		compendiumPopulatePageRight(page_right);
 		compendiumPopulateContents(window);
