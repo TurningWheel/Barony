@@ -9333,7 +9333,7 @@ void doNewGame(bool makeHighscore) {
 	}
 	// new achievement
 	usedAllClasses = true;
-	for ( int c = 0; c <= CLASS_HUNTER; ++c )
+	for ( int c = CLASS_CONJURER; c <= CLASS_HUNTER; ++c )
 	{
 		if ( !usedClass[c] )
 		{
