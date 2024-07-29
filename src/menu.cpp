@@ -9341,7 +9341,7 @@ void doNewGame(bool makeHighscore) {
 		}
 	}
 	bool usedAllRaces = true;
-	for ( int c = RACE_HUMAN; c <= RACE_INSECTOID; ++c )
+	for ( int c = RACE_SKELETON; c <= RACE_INSECTOID; ++c )
 	{
 		if ( !usedRace[c] )
 		{
