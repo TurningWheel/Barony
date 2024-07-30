@@ -511,16 +511,7 @@ SDL_Surface* font12x12_bmp = nullptr;
 SDL_Surface* font16x16_bmp = nullptr;
 SDL_Surface** sprites = nullptr;
 SDL_Surface** tiles = nullptr;
-std::unordered_map<std::string, SDL_Surface*> achievementImages;
-std::unordered_map<std::string, std::string> achievementNames;
-std::unordered_map<std::string, std::string> achievementDesc;
-std::unordered_set<std::string> achievementHidden;
-std::set<std::pair<std::string, std::string>, Comparator> achievementNamesSorted;
-std::unordered_map<std::string, int> achievementProgress; // ->second is the associated achievement stat index
-std::unordered_map<std::string, int64_t> achievementUnlockTime;
 
-std::unordered_set<std::string> achievementUnlockedLookup;
-bool achievementsNeedResort = true;
 Uint32 imgref = 1, vboref = 1;
 const Uint32 ttfTextCacheLimit = 9000;
 GLuint* texid = nullptr;

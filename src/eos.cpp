@@ -2945,28 +2945,28 @@ void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQuer
 
 		if (AchievementDef->bIsHidden)
 		{
-			achievementHidden.emplace(std::string(AchievementDef->AchievementId));
+			//achievementHidden.emplace(std::string(AchievementDef->AchievementId));
 		}
 
 		if (AchievementDef->UnlockedDisplayName)
 		{
-			achievementNames.emplace(std::make_pair(
+			/*achievementNames.emplace(std::make_pair(
 				std::string(AchievementDef->AchievementId),
-				std::string(AchievementDef->UnlockedDisplayName)));
+				std::string(AchievementDef->UnlockedDisplayName)));*/
 		}
 
 		if (AchievementDef->UnlockedDescription)
 		{
-			auto result = achievementDesc.emplace(std::make_pair(
-				std::string(AchievementDef->AchievementId),
-				std::string(AchievementDef->UnlockedDescription)));
-			if (result.second == true) // insertion success
-			{
-				if (result.first->second.back() != '.') // add punctuation if missing.
-				{
-					result.first->second += '.';
-				}
-			}
+			//auto result = achievementDesc.emplace(std::make_pair(
+			//	std::string(AchievementDef->AchievementId),
+			//	std::string(AchievementDef->UnlockedDescription)));
+			//if (result.second == true) // insertion success
+			//{
+			//	if (result.first->second.back() != '.') // add punctuation if missing.
+			//	{
+			//		result.first->second += '.';
+			//	}
+			//}
 		}
 
 		// Release Achievement Definition
@@ -3011,42 +3011,29 @@ void EOSFuncs::OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPl
 		{
 			if (PlayerAchievement->UnlockTime != EOS_ACHIEVEMENTS_ACHIEVEMENT_UNLOCKTIME_UNDEFINED)
 			{
-				achievementUnlockedLookup.insert(std::string(PlayerAchievement->AchievementId));
-
-				auto find = achievementUnlockTime.find(PlayerAchievement->AchievementId);
-				if (find == achievementUnlockTime.end())
-				{
-					achievementUnlockTime.emplace(std::make_pair(std::string(PlayerAchievement->AchievementId), PlayerAchievement->UnlockTime));
-				}
-				else
-				{
-					find->second = PlayerAchievement->UnlockTime;
-				}
+				Compendium_t::AchievementData_t::achievementUnlockedLookup.insert(PlayerAchievement->AchievementId);
+				Compendium_t::achievements[PlayerAchievement->AchievementId].unlockTime = PlayerAchievement->UnlockTime;
+				auto& achData = Compendium_t::achievements[PlayerAchievement->AchievementId];
+				achData.unlocked = true;
+				achData.unlockTime = PlayerAchievement->UnlockTime;
 			}
 
 			if (PlayerAchievement->StatInfoCount > 0)
 			{
-				for (int statNum = 0; statNum < NUM_STEAM_STATISTICS; ++statNum)
+				/*for (int statNum = 0; statNum < NUM_STEAM_STATISTICS; ++statNum)
 				{
 					if (steamStatAchStringsAndMaxVals[statNum].first.compare(PlayerAchievement->AchievementId) == 0)
 					{
-						auto find = achievementProgress.find(PlayerAchievement->AchievementId);
-						if (find == achievementProgress.end())
-						{
-							achievementProgress.emplace(std::make_pair(std::string(PlayerAchievement->AchievementId), statNum));
-						}
-						else
-						{
-							find->second = statNum;
-						}
+						Compendium_t::achievements[PlayerAchievement->AchievementId].achievementProgress = statNum;
 						break;
 					}
-				}
+				}*/
 			}
 		}
 		EOS_Achievements_PlayerAchievement_Release(PlayerAchievement);
 	}
 
+	Compendium_t::AchievementData_t::achievementsNeedFirstData = false;
 	EOS.Achievements.playerDataLoaded = true;
 	sortAchievementsForDisplay();
 
@@ -3119,9 +3106,9 @@ void EOSFuncs::loadAchievementData()
 	if (!Achievements.definitionsLoaded)
 	{
 		Achievements.definitionsAwaitingCallback = true;
-		achievementNames.clear();
-		achievementDesc.clear();
-		achievementHidden.clear();
+		//achievementNames.clear();
+		//achievementDesc.clear();
+		//achievementHidden.clear();
 		EOS_Achievements_QueryDefinitionsOptions Options{};
 		Options.ApiVersion = EOS_ACHIEVEMENTS_QUERYDEFINITIONS_API_LATEST;
 		//Options.EpicUserId = EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str());

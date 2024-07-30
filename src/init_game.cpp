@@ -99,6 +99,7 @@ void initGameDatafiles(bool moddedReload)
 	CompendiumEntries.readWorldFromFile();
 	CompendiumEntries.readItemsFromFile();
 	CompendiumEntries.readMagicFromFile();
+	Compendium_t::AchievementData_t::readContentsLang();
 	Compendium_t::Events_t::readEventsTranslations();
 	Compendium_t::readUnlocksSaveData();
 	Compendium_t::Events_t::loadItemsSaveData();
@@ -173,19 +174,6 @@ int initGame()
 	// another loading screen!
 	updateLoadingScreen(90);
 	doLoadingScreen();
-
-	// load achievement images
-#ifdef NINTENDO
-	Directory achievementsDir(BASE_DATA_DIR"/images/achievements");
-#else
-	Directory achievementsDir("images/achievements");
-#endif
-	for (auto& item : achievementsDir.list)
-	{
-		std::string fullPath = achievementsDir.path + std::string("/") + item;
-		char* name = const_cast<char*>(fullPath.c_str()); // <- evil
-		achievementImages.emplace(std::make_pair(item, loadImage(name)));
-	}
 
 	// load item types
 	initGameDatafiles(false);
@@ -810,7 +798,7 @@ void loadAchievementData(const char* path) {
 		return;
 	}
 
-	char buf[65536];
+	char buf[120000];
 	int count = (int)fp->read(buf, sizeof(buf[0]), sizeof(buf));
 	buf[count] = '\0';
 	rapidjson::StringStream is(buf);
@@ -833,6 +821,12 @@ void loadAchievementData(const char* path) {
 		auto achName = it.name.GetString();
 #ifdef NINTENDO
 		if ( !strcmp(achName, "BARONY_ACH_LOCAL_CUSTOMS") )
+		{
+			continue;
+		}
+#endif
+#ifndef STEAMWORKS
+		if ( !strcmp(achName, "BARONY_ACH_CARTOGRAPHER") )
 		{
 			continue;
 		}
@@ -860,35 +854,126 @@ void loadAchievementData(const char* path) {
 		}
 #endif
 		const auto& ach = it.value.GetObject();
+		auto& achData = Compendium_t::achievements[achName];
 		if (ach.HasMember("name") && ach["name"].IsString()) {
-			achievementNames[achName] = ach["name"].GetString();
+			achData.name = ach["name"].GetString();
 		}
 		if (ach.HasMember("description") && ach["description"].IsString()) {
-			achievementDesc[achName] = ach["description"].GetString();
+			achData.desc = ach["description"].GetString();
 		}
 		if (ach.HasMember("hidden") && ach["hidden"].IsBool()) {
-			if (ach["hidden"].GetBool()) {
-				achievementHidden.emplace(achName);
+			achData.hidden = ach["hidden"].GetBool();
+		}
+		if ( ach.HasMember("category") )
+		{
+			achData.category = ach["category"].GetString();
+		}
+		if ( ach.HasMember("lore_points") )
+		{
+			achData.lorePoints = ach["lore_points"].GetInt();
+		}
+
+		achData.dlcType = Compendium_t::AchievementData_t::ACH_TYPE_NORMAL;
+		if ( ach.HasMember("dlc") )
+		{
+			if ( ach["dlc"].IsString() )
+			{
+				if ( !strcmp(ach["dlc"].GetString(), "myths_outcasts") )
+				{
+					achData.dlcType = Compendium_t::AchievementData_t::ACH_TYPE_DLC1;
+				}
+				else if ( !strcmp(ach["dlc"].GetString(), "legends_pariahs") )
+				{
+					achData.dlcType = Compendium_t::AchievementData_t::ACH_TYPE_DLC2;
+				}
 			}
+			else if ( ach["dlc"].IsArray() )
+			{
+				for ( auto it = ach["dlc"].Begin(); it != ach["dlc"].End(); ++it )
+				{
+					if ( it->IsString() )
+					{
+						if ( !strcmp(it->GetString(), "myths_outcasts") )
+						{
+							if ( achData.dlcType == Compendium_t::AchievementData_t::ACH_TYPE_DLC2 )
+							{
+								achData.dlcType = Compendium_t::AchievementData_t::ACH_TYPE_DLC1_DLC2;
+							}
+							else
+							{
+								achData.dlcType = Compendium_t::AchievementData_t::ACH_TYPE_DLC1;
+							}
+						}
+						else if ( !strcmp(it->GetString(), "legends_pariahs") )
+						{
+							if ( achData.dlcType == Compendium_t::AchievementData_t::ACH_TYPE_DLC1 )
+							{
+								achData.dlcType = Compendium_t::AchievementData_t::ACH_TYPE_DLC1_DLC2;
+							}
+							else
+							{
+								achData.dlcType = Compendium_t::AchievementData_t::ACH_TYPE_DLC2;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	for ( int statNum = 0; statNum < NUM_STEAM_STATISTICS; ++statNum )
+	{
+		if ( steamStatAchStringsAndMaxVals[statNum].first != "BARONY_ACH_NONE" )
+		{
+			Compendium_t::achievements[steamStatAchStringsAndMaxVals[statNum].first].achievementProgress = statNum;
 		}
 	}
 
 	sortAchievementsForDisplay();
 }
 
+
 void sortAchievementsForDisplay()
 {
-	achievementsNeedResort = false;
+#ifdef STEAMWORKS
+	if ( Compendium_t::AchievementData_t::achievementsNeedFirstData )
+	{
+		if ( SteamUser()->BLoggedOn() )
+		{
+			Compendium_t::AchievementData_t::achievementsNeedFirstData = false;
+
+			for ( auto& achData : Compendium_t::achievements )
+			{
+				Uint32 time = 0;
+				bool unlocked = false;
+				SteamUserStats()->GetAchievementAndUnlockTime(achData.first.c_str(), &achData.second.unlocked, &time);
+				if ( achData.second.unlocked )
+				{
+					achData.second.unlockTime = time;
+				}
+			}
+		}
+	}
+#endif
+
+	Compendium_t::AchievementData_t::achievementsNeedResort = false;
 
 	// sort achievements list
-	achievementNamesSorted.clear();
-	Comparator compFunctor =
+	Compendium_t::AchievementData_t::achievementNamesSorted.clear();
+	std::vector<std::pair<std::string, std::string>> names;
+	for ( auto& achData : Compendium_t::achievements )
+	{
+		names.push_back(std::make_pair(achData.first, achData.second.name));
+	}
+	Compendium_t::AchievementData_t::Comparator compFunctor =
 		[](std::pair<std::string, std::string> lhs, std::pair<std::string, std::string> rhs)
 	{
-		bool ach1 = achievementUnlocked(lhs.first.c_str());
-		bool ach2 = achievementUnlocked(rhs.first.c_str());
-		bool lhsAchIsHidden = (achievementHidden.find(lhs.first) != achievementHidden.end());
-		bool rhsAchIsHidden = (achievementHidden.find(rhs.first) != achievementHidden.end());
+		auto& achData1 = Compendium_t::achievements[lhs.first];
+		auto& achData2 = Compendium_t::achievements[rhs.first];
+		bool ach1 = achData1.unlocked;
+		bool ach2 = achData2.unlocked;
+		bool lhsAchIsHidden = achData1.hidden;
+		bool rhsAchIsHidden = achData2.hidden;
 		if ( ach1 && !ach2 )
 		{
 			return true;
@@ -918,6 +1003,53 @@ void sortAchievementsForDisplay()
 			return lhs.second < rhs.second;
 		}
 	};
-	std::set<std::pair<std::string, std::string>, Comparator> sorted(achievementNames.begin(), achievementNames.end(), compFunctor);
-	achievementNamesSorted.swap(sorted);
+
+	std::set<std::pair<std::string, std::string>, Compendium_t::AchievementData_t::Comparator> sorted(
+		names.begin(),
+		names.end(),
+		compFunctor);
+	Compendium_t::AchievementData_t::achievementNamesSorted.swap(sorted);
+	Compendium_t::AchievementData_t::achievementCategories.clear();
+	for ( auto& entry : Compendium_t::AchievementData_t::achievementNamesSorted )
+	{
+		auto& achData = Compendium_t::achievements[entry.first];
+		Compendium_t::AchievementData_t::achievementCategories[achData.category].push_back(entry);
+	}
+
+	Compendium_t::AchievementData_t::achievementsBookDisplay.clear();
+	for ( auto& entry : Compendium_t::AchievementData_t::achievementCategories )
+	{
+		auto& achDisplay = Compendium_t::AchievementData_t::achievementsBookDisplay[entry.first];
+		if ( entry.second.size() > 0 )
+		{
+			achDisplay.pages.push_back(std::vector<std::string>());
+		}
+		int numEntries = 0;
+		bool foundHidden = false;
+		for ( auto& name : entry.second )
+		{
+			auto& achData = Compendium_t::achievements[name.first];
+			if ( foundHidden )
+			{
+				if ( achData.hidden && !achData.unlocked )
+				{
+					achDisplay.numHidden++;
+				}
+				// hidden, so allow only 1 entry to represent all the hidden ones
+				continue;
+			}
+			++numEntries;
+			if ( numEntries > 1 && ((numEntries - 1) % 8 == 0) )
+			{
+				achDisplay.pages.push_back(std::vector<std::string>());
+			}
+			auto& list = achDisplay.pages.back();
+			list.push_back(name.first);
+			if ( achData.hidden && !achData.unlocked )
+			{
+				foundHidden = true;
+				achDisplay.numHidden++;
+			}
+		}
+	}
 }

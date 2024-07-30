@@ -773,8 +773,6 @@ void SteamServerClientWrapper::OnGetNumberOfCurrentPlayers(NumberOfCurrentPlayer
 /* ***** END UTTER BODGE ***** */
 
 
-
-
 /*-------------------------------------------------------------------------------
 
 	achievementUnlocked
@@ -787,7 +785,12 @@ void SteamServerClientWrapper::OnGetNumberOfCurrentPlayers(NumberOfCurrentPlayer
 bool achievementUnlocked(const char* achName)
 {
 	// check internal achievement record
-	return (achievementUnlockedLookup.find(achName) != achievementUnlockedLookup.end());
+	auto find = Compendium_t::achievements.find(achName);
+	if ( find == Compendium_t::achievements.end() )
+	{
+		return false;
+	}
+	return find->second.unlocked;
 }
 
 /*-------------------------------------------------------------------------------
@@ -858,9 +861,23 @@ void steamAchievement(const char* achName)
 #endif
 
 #endif
-		achievementUnlockedLookup.insert(std::string(achName));
-		achievementUnlockTime[achName] = getTime();
-		achievementsNeedResort = true;
+		Compendium_t::achievements[achName].unlocked = true;
+		Compendium_t::achievements[achName].unlockTime = getTime();
+		auto& unlockStatus = Compendium_t::AchievementData_t::unlocks[Compendium_t::achievements[achName].category];
+		if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+		{
+			unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+		}
+		else if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_VISITED )
+		{
+			unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+		}
+		else if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::UNLOCKED_VISITED )
+		{
+			unlockStatus = Compendium_t::CompendiumUnlockStatus::UNLOCKED_UNVISITED;
+		}
+		Compendium_t::AchievementData_t::achievementUnlockedLookup.insert(achName);
+		Compendium_t::AchievementData_t::achievementsNeedResort = true;
 	}
 }
 

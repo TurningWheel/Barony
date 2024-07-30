@@ -8171,10 +8171,12 @@ void LocalAchievements_t::readFromFile()
 		ach.name = achievement->name.GetString();
 		ach.unlocked = achievement->value["unlocked"].GetBool();
 		ach.unlockTime = achievement->value["unlock_time"].GetInt64();
-		achievementUnlockTime[ach.name] = ach.unlockTime;
+
+		auto& achData = Compendium_t::achievements[achievement->name.GetString()];
+		achData.unlockTime = ach.unlockTime;
 		if ( ach.unlocked )
 		{
-			achievementUnlockedLookup.insert(ach.name);
+			Compendium_t::AchievementData_t::achievementUnlockedLookup.insert(ach.name);
 		}
 	}
 
@@ -8188,18 +8190,6 @@ void LocalAchievements_t::readFromFile()
 
 	for ( int statNum = 0; statNum < NUM_STEAM_STATISTICS; ++statNum )
 	{
-		if ( steamStatAchStringsAndMaxVals[statNum].first != "BARONY_ACH_NONE" )
-		{
-			auto find = achievementProgress.find(steamStatAchStringsAndMaxVals[statNum].first);
-			if ( find == achievementProgress.end() )
-			{
-				achievementProgress.emplace(std::make_pair(std::string(steamStatAchStringsAndMaxVals[statNum].first), statNum));
-			}
-			else
-			{
-				find->second = statNum;
-			}
-		}
 		g_SteamStats[statNum].m_iValue = LocalAchievements.statistics[statNum].value;
 	}
 }
@@ -8216,7 +8206,7 @@ void LocalAchievements_t::writeToFile()
 
 	CustomHelpers::addMemberToRoot(exportDocument, "version", rapidjson::Value(VERSION));
 	rapidjson::Value allAchObj(rapidjson::kObjectType);
-	for ( auto& ach : achievementNames )
+	for ( auto& ach : Compendium_t::achievements )
 	{
 		if ( LocalAchievements.achievements.find(ach.first) == LocalAchievements.achievements.end() )
 		{
@@ -8268,7 +8258,7 @@ void LocalAchievements_t::writeToFile()
 void LocalAchievements_t::init()
 {
 	LocalAchievements.achievements.clear();
-	for ( auto& ach : achievementNames )
+	for ( auto& ach : Compendium_t::achievements )
 	{
 		LocalAchievements.achievements[ach.first].unlocked = false;
 		LocalAchievements.achievements[ach.first].unlockTime = 0;
@@ -10666,6 +10656,9 @@ std::map<std::string, Compendium_t::CompendiumUnlockStatus> Compendium_t::Compen
 std::map<int, Compendium_t::CompendiumUnlockStatus> Compendium_t::CompendiumItems_t::itemUnlocks;
 std::map<std::string, std::vector<std::pair<std::string, std::string>>> Compendium_t::CompendiumMagic_t::contents;
 std::map<std::string, std::string> Compendium_t::CompendiumMagic_t::contentsMap;
+std::map<std::string, std::vector<std::pair<std::string, std::string>>> Compendium_t::AchievementData_t::contents;
+std::map<std::string, Compendium_t::CompendiumUnlockStatus> Compendium_t::AchievementData_t::unlocks;
+std::map<std::string, std::string> Compendium_t::AchievementData_t::contentsMap;
 
 std::map<int, std::string> Compendium_t::Events_t::monsterIDToString;
 std::map<int, std::string> Compendium_t::Events_t::codexIDToString;
@@ -10757,6 +10750,11 @@ void Compendium_t::CompendiumItems_t::readContentsLang()
 void Compendium_t::CompendiumMagic_t::readContentsLang()
 {
 	Compendium_t::readContentsLang("contents_magic", contents, contentsMap);
+}
+
+void Compendium_t::AchievementData_t::readContentsLang()
+{
+	Compendium_t::readContentsLang("contents_achievements", contents, contentsMap);
 }
 
 void Compendium_t::updateTooltip()
@@ -12788,6 +12786,13 @@ void Compendium_t::readUnlocksSaveData()
 	CompendiumWorld_t::unlocks.clear();
 	CompendiumCodex_t::unlocks.clear();
 	CompendiumMonsters_t::unlocks.clear();
+	AchievementData_t::unlocks.clear();
+
+	AchievementData_t::unlocks["experience"] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+	AchievementData_t::unlocks["joker"] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+	AchievementData_t::unlocks["teamwork"] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+	AchievementData_t::unlocks["technique"] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+	AchievementData_t::unlocks["adventure"] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
 
 	CompendiumWorld_t::unlocks["minehead"] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
 	CompendiumWorld_t::unlocks["hall of trials"] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
@@ -12864,7 +12869,7 @@ void Compendium_t::readUnlocksSaveData()
 		return;
 	}
 
-	const int bufSize = 120000;
+	const int bufSize = 200000;
 	char buf[bufSize];
 	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
@@ -12890,6 +12895,36 @@ void Compendium_t::readUnlocksSaveData()
 				val = 0;
 			}
 			CompendiumItems_t::unlocks[itr->name.GetString()] = static_cast<CompendiumUnlockStatus>(val);
+		}
+	}
+
+	if ( d.HasMember("items_status") )
+	{
+		for ( auto itr = d["items_status"].MemberBegin(); itr != d["items_status"].MemberEnd(); ++itr )
+		{
+			int val = itr->value.GetInt();
+			if ( !(val >= CompendiumUnlockStatus::LOCKED_UNKNOWN
+				&& val < CompendiumUnlockStatus::COMPENDIUMUNLOCKSTATUS_MAX) )
+			{
+				val = 0;
+			}
+			std::string name = itr->name.GetString();
+			int id = std::stoi(name);
+			CompendiumItems_t::itemUnlocks[id] = static_cast<CompendiumUnlockStatus>(val);
+		}
+	}
+
+	if ( d.HasMember("achievements") )
+	{
+		for ( auto itr = d["achievements"].MemberBegin(); itr != d["achievements"].MemberEnd(); ++itr )
+		{
+			int val = itr->value.GetInt();
+			if ( !(val >= CompendiumUnlockStatus::LOCKED_UNKNOWN
+				&& val < CompendiumUnlockStatus::COMPENDIUMUNLOCKSTATUS_MAX) )
+			{
+				val = 0;
+			}
+			AchievementData_t::unlocks[itr->name.GetString()] = static_cast<CompendiumUnlockStatus>(val);
 		}
 	}
 
@@ -12956,6 +12991,22 @@ void Compendium_t::writeUnlocksSaveData()
 			rapidjson::Value((int)pair.second), exportDocument.GetAllocator());
 	}
 	CustomHelpers::addMemberToRoot(exportDocument, "items", obj);
+
+	obj.RemoveAllMembers();
+	for ( auto& pair : CompendiumItems_t::itemUnlocks )
+	{
+		obj.AddMember(rapidjson::Value(std::to_string(pair.first).c_str(), exportDocument.GetAllocator()),
+			rapidjson::Value((int)pair.second), exportDocument.GetAllocator());
+	}
+	CustomHelpers::addMemberToRoot(exportDocument, "items_status", obj);
+
+	obj.RemoveAllMembers();
+	for ( auto& pair : AchievementData_t::unlocks )
+	{
+		obj.AddMember(rapidjson::Value(pair.first.c_str(), exportDocument.GetAllocator()),
+			rapidjson::Value((int)pair.second), exportDocument.GetAllocator());
+	}
+	CustomHelpers::addMemberToRoot(exportDocument, "achievements", obj);
 
 	obj.RemoveAllMembers();
 	for ( auto& pair : CompendiumWorld_t::unlocks )
@@ -13970,19 +14021,13 @@ void Compendium_t::Events_t::eventUpdateMonster(int playernum, const EventTags t
 
 	if ( playernum == clientnum )
 	{
-		if ( tag == EventTags::CPDM_KILLED_BY
-			|| tag == EventTags::CPDM_KILLED_SOLO
-			|| tag == EventTags::CPDM_KILLED_MULTIPLAYER
-			|| tag == EventTags::CPDM_RECRUITED )
+		auto find = monsterIDToString.find(monsterType);
+		if ( find != monsterIDToString.end() )
 		{
-			auto find = monsterIDToString.find(monsterType);
-			if ( find != monsterIDToString.end() )
+			auto& unlockStatus = Compendium_t::CompendiumMonsters_t::unlocks[find->second];
+			if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
 			{
-				auto& unlockStatus = Compendium_t::CompendiumMonsters_t::unlocks[find->second];
-				if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
-				{
-					unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
-				}
+				unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
 			}
 		}
 	}
@@ -14833,3 +14878,11 @@ void Compendium_t::exportCurrentMonster(Entity* monster)
 	return;
 }
 #endif
+
+std::unordered_map<std::string, Compendium_t::AchievementData_t> Compendium_t::achievements;
+bool Compendium_t::AchievementData_t::achievementsNeedResort = true;
+bool Compendium_t::AchievementData_t::achievementsNeedFirstData = true;
+std::set<std::pair<std::string, std::string>, Compendium_t::AchievementData_t::Comparator> Compendium_t::AchievementData_t::achievementNamesSorted;
+std::map<std::string, std::vector<std::pair<std::string, std::string>>> Compendium_t::AchievementData_t::achievementCategories;
+std::map<std::string, Compendium_t::AchievementData_t::CompendiumAchievementsDisplay> Compendium_t::AchievementData_t::achievementsBookDisplay;
+std::unordered_set<std::string> Compendium_t::AchievementData_t::achievementUnlockedLookup;

@@ -3507,6 +3507,50 @@ struct Compendium_t
 		COMPENDIUMUNLOCKSTATUS_MAX
 	};
 
+	class AchievementData_t
+	{
+	public:
+		static int compendiumAchievementPoints;
+		enum AchievementDLCType
+		{
+			ACH_TYPE_NORMAL,
+			ACH_TYPE_DLC1,
+			ACH_TYPE_DLC2,
+			ACH_TYPE_DLC1_DLC2
+		};
+		std::string name;
+		std::string desc;
+		std::string desc_formatted;
+		bool hidden = false;
+		AchievementDLCType dlcType = ACH_TYPE_NORMAL;
+		std::string category = "";
+		int lorePoints = 0;
+		int64_t unlockTime = 0;
+		bool unlocked = false;
+		int achievementProgress = -1; // ->second is the associated achievement stat index
+
+		static bool achievementsNeedResort;
+		static bool achievementsNeedFirstData;
+		typedef std::function<bool(std::pair<std::string, std::string>, std::pair<std::string, std::string>)> Comparator;
+		static std::set<std::pair<std::string, std::string>, Comparator> achievementNamesSorted;
+		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> achievementCategories;
+		static std::unordered_set<std::string> achievementUnlockedLookup;
+		static void onAchievementUnlock(const char* ach);
+		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents;
+		static std::map<std::string, std::string> contentsMap;
+		static std::map<std::string, CompendiumUnlockStatus> unlocks;
+		static void readContentsLang();
+
+		struct CompendiumAchievementsDisplay
+		{
+			std::vector<std::vector<std::string>> pages;
+			int currentPage = 0;
+			int numHidden = 0;
+		};
+		static std::map<std::string, CompendiumAchievementsDisplay> achievementsBookDisplay;
+	};
+	static std::unordered_map<std::string, AchievementData_t> achievements;
+
 	enum EventTags
 	{
 		CPDM_BLOCKED_ATTACKS,

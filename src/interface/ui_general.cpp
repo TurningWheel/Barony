@@ -897,10 +897,10 @@ void UIToastNotificationManager_t::createAchievementNotification(const char* nam
 
 	const char* achievementName = "Unknown Achievement";
 	{
-		auto it = achievementNames.find(name);
-		if (it != achievementNames.end())
+		auto it = Compendium_t::achievements.find(name);
+		if (it != Compendium_t::achievements.end())
 		{
-			achievementName = it->second.c_str();
+			achievementName = it->second.name.c_str();
 		}
 	}
 
@@ -961,10 +961,10 @@ void UIToastNotificationManager_t::createStatisticUpdateNotification(const char*
 	}
 	else
 	{
-		auto it = achievementNames.find(name);
-		if ( it != achievementNames.end() )
+		auto it = Compendium_t::achievements.find(name);
+		if ( it != Compendium_t::achievements.end() )
 		{
-			achievementName = it->second.c_str();
+			achievementName = it->second.name.c_str();
 		}
 		const std::string imgName = unlocked ?
 			std::string("*#images/achievements/") + name + std::string(".png"):

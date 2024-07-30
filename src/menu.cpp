@@ -10628,7 +10628,7 @@ void buttonAchievementsUp(button_t* my)
 
 void buttonAchievementsDown(button_t* my)
 {
-	int num_achievements = achievementNames.size();
+	int num_achievements = Compendium_t::achievements.size();
 	if ( num_achievements == 0 )
 	{
 		return;
