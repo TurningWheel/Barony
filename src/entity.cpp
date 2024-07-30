@@ -7159,8 +7159,21 @@ void Entity::attack(int pose, int charge, Entity* target)
 							castSpell(uid, &spell_lightning, true, false);
 							break;
 						case SPELLBOOK_SLEEP:
-							castSpell(uid, &spell_sleep, true, false);
+						{
+							spell_t* spell = &spell_sleep;
+							if ( Entity* target = uidToEntity(this->monsterTarget) )
+							{
+								if ( Stat* stats = target->getStats() )
+								{
+									if ( target->behavior == &actPlayer && stats->EFFECTS[EFF_ASLEEP] )
+									{
+										spell = &spell_magicmissile;
+									}
+								}
+							}
+							castSpell(uid, spell, true, false);
 							break;
+						}
 						case SPELLBOOK_CONFUSE:
 							castSpell(uid, &spell_confuse, true, false);
 							break;
