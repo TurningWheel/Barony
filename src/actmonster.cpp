@@ -2675,7 +2675,17 @@ void actMonster(Entity* my)
 					my->monsterLichAllyUID = 0;
 					for ( int c = 0; c < MAXPLAYERS; c++ )
 					{
-						playSoundPlayer(c, 392, 128);
+						if ( multiplayer == SINGLE )
+						{
+							if ( c == clientnum )
+							{
+								playSoundPlayer(c, 392, 128);
+							}
+						}
+						else
+						{
+							playSoundPlayer(c, 392, 128);
+						}
 						messagePlayerColor(c, MESSAGE_WORLD, uint32ColorBaronyBlue, Language::get(2647));
 					}
 				}
@@ -2694,7 +2704,17 @@ void actMonster(Entity* my)
 					my->monsterLichAllyUID = 0;
 					for ( int c = 0; c < MAXPLAYERS; c++ )
 					{
-						playSoundPlayer(c, 391, 128);
+						if ( multiplayer == SINGLE )
+						{
+							if ( c == clientnum )
+							{
+								playSoundPlayer(c, 391, 128);
+							}
+						}
+						else
+						{
+							playSoundPlayer(c, 391, 128);
+						}
 						messagePlayerColor(c, MESSAGE_WORLD, uint32ColorOrange, Language::get(2649));
 					}
 				}
