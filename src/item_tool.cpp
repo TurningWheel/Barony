@@ -696,6 +696,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 				else
 				{
 					messagePlayer(player, MESSAGE_INTERACTION, Language::get(580));
+					playSoundEntity(&entity, 140 + local_rng.rand() % 2, 64);
 				}
 			}
 			return;

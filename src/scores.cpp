@@ -4812,6 +4812,16 @@ void AchievementObserver::updateData()
 		Entity* mapCreature = (Entity*)node->element;
 		if ( mapCreature && mapCreature->behavior == &actMonster )
 		{
+			if ( auto stats = mapCreature->getStats() )
+			{
+				if ( stats->type == SPELLBOT
+					|| stats->type == SENTRYBOT
+					|| stats->type == DUMMYBOT
+					|| stats->type == GYROBOT )
+				{
+					continue;
+				}
+			}
 			monstersGeneratedOnLevel.push_back(mapCreature);
 		}
 	}
