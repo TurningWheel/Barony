@@ -608,8 +608,42 @@ namespace ConsoleCommands {
 			name.append(" ");
 			name.append(argv[arg]);
 		}
-		dropItem(newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook(name.c_str()), true, &stats[clientnum]->inventory), 0);
-		});
+
+		int i = 0;
+		for ( i = 0; i < numbooks; ++i )
+		{
+			if ( strcmp(getBookDefaultNameFromIndex(i).c_str(), name.c_str()) == 0 )
+			{
+				dropItem(newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook(getBookDefaultNameFromIndex(i)), true, &stats[clientnum]->inventory), 0);
+				break;
+			}
+		}
+
+		if ( i == numbooks )
+		{
+			for ( i = 0; i < numbooks; ++i )
+			{
+				if ( strstr(getBookDefaultNameFromIndex(i).c_str(), name.c_str()) )
+				{
+					dropItem(newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook(getBookDefaultNameFromIndex(i)), true, &stats[clientnum]->inventory), 0);
+					break;
+				}
+			}
+		}
+	});
+
+	static ConsoleCommand ccmd_spawnallbooks("/spawnallbooks", "spawn all readable books (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		for ( int i = 0; i < numbooks; ++i )
+		{
+			dropItem(newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook(getBookDefaultNameFromIndex(i)), true, &stats[clientnum]->inventory), 0);
+		}
+	});
 
 	static ConsoleCommand ccmd_savemap("/savemap", "save the current level to disk", []CCMD{
 		if (argc > 1)

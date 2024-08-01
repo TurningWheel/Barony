@@ -10838,6 +10838,10 @@ void Compendium_t::readItemsFromFile()
 				obj.items_in_category.push_back(item);
 			}
 		}
+		if ( w.HasMember("lore_points") )
+		{
+			obj.lorePoints = w["lore_points"].GetInt();
+		}
 
 		std::set<std::string> alwaysTrackedEvents = {
 			"APPRAISED",
@@ -11043,6 +11047,11 @@ void Compendium_t::readMagicFromFile()
 				}
 				obj.items_in_category.push_back(item);
 			}
+		}
+
+		if ( w.HasMember("lore_points") )
+		{
+			obj.lorePoints = w["lore_points"].GetInt();
 		}
 
 		//std::list<spell_t*> spellsToSort;
@@ -11338,6 +11347,10 @@ void Compendium_t::readCodexFromFile()
 		{
 			jsonVecToVec(w["models"], obj.models);
 		}
+		if ( w.HasMember("lore_points") )
+		{
+			obj.lorePoints = w["lore_points"].GetInt();
+		}
 
 		Compendium_t::Events_t::eventCodexIDLookup[name] = obj.id;
 		Compendium_t::Events_t::codexIDToString[obj.id + Compendium_t::Events_t::kEventCodexOffset] = name;
@@ -11469,6 +11482,10 @@ void Compendium_t::readWorldFromFile()
 		if ( w.HasMember("models") )
 		{
 			jsonVecToVec(w["models"], obj.models);
+		}
+		if ( w.HasMember("lore_points") )
+		{
+			obj.lorePoints = w["lore_points"].GetInt();
 		}
 
 		Compendium_t::Events_t::eventWorldIDLookup[name] = obj.id;
@@ -11628,6 +11645,13 @@ void Compendium_t::readMonstersFromFile()
 			Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILLED_MULTIPLAYER].insert(type);
 			Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILLED_BY].insert(type);
 			Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_RECRUITED].insert(type);
+
+			if ( pair.first == "mysterious shop" )
+			{
+				Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_MERCHANT_ORBS].insert(type);
+				Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_SHOP_BOUGHT].insert(type);
+				Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_SHOP_SPENT].insert(type);
+			}
 		}
 	}
 
@@ -11659,6 +11683,10 @@ void Compendium_t::readMonstersFromFile()
 		if ( m.HasMember("img") )
 		{
 			monster.imagePath = m["img"].GetString();
+		}
+		if ( m.HasMember("lore_points") )
+		{
+			monster.lorePoints = m["lore_points"].GetInt();
 		}
 		auto& stats = m["stats"];
 		jsonVecToVec(stats["hp"], monster.hp);
@@ -12804,6 +12832,15 @@ void Compendium_t::readUnlocksSaveData()
 	{
 		CompendiumCodex_t::unlocks[data.first] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
 	}
+	/*CompendiumCodex_t::unlocks["class"] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+	CompendiumCodex_t::unlocks["classes list"] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+	CompendiumCodex_t::unlocks["races"] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+	CompendiumCodex_t::unlocks["stats metastats"] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+	CompendiumCodex_t::unlocks["melee"] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+	CompendiumCodex_t::unlocks["crits"] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+	CompendiumCodex_t::unlocks["flanking"] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+	CompendiumCodex_t::unlocks["backstabs"] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;*/
+
 	for ( auto& data : CompendiumEntries.items )
 	{
 		for ( auto& entry : data.second.items_in_category )
@@ -14197,14 +14234,10 @@ void Compendium_t::Events_t::eventUpdateWorld(int playernum, const EventTags tag
 		auto find = worldIDToString.find(worldID);
 		if ( find != worldIDToString.end() )
 		{
-			auto& worldDefs = CompendiumEntries.worldObjects[find->second];
-			if ( worldDefs.unlockTags.find(tag) != worldDefs.unlockTags.end() )
+			auto& unlockStatus = Compendium_t::CompendiumWorld_t::unlocks[find->second];
+			if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
 			{
-				auto& unlockStatus = Compendium_t::CompendiumWorld_t::unlocks[find->second];
-				if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
-				{
-					unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
-				}
+				unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
 			}
 		}
 	}
@@ -14262,6 +14295,7 @@ void Compendium_t::Events_t::eventUpdateCodex(int playernum, const EventTags tag
 	}
 
 	int codexID = -1;
+	int baseCodexID = -1;
 	if ( entryID >= 0 )
 	{
 		codexID = entryID;
@@ -14274,7 +14308,7 @@ void Compendium_t::Events_t::eventUpdateCodex(int playernum, const EventTags tag
 			{
 				for ( auto& pair : findClassTag->second )
 				{
-					if ( pair.second == (codexID < kEventCodexOffset) ? (codexID + kEventCodexOffset) : codexID )
+					if ( pair.second == ((codexID < kEventCodexOffset) ? (codexID + kEventCodexOffset) : codexID) )
 					{
 						foundCategory = true;
 						break;
@@ -14313,7 +14347,7 @@ void Compendium_t::Events_t::eventUpdateCodex(int playernum, const EventTags tag
 		if ( find != eventCodexIDLookup.end() )
 		{
 			codexID = find->second;
-
+			baseCodexID = codexID;
 			if ( def.attributes.find("class") != def.attributes.end() )
 			{
 				auto findClassTag = eventClassIds.find(tag);
@@ -14377,6 +14411,13 @@ void Compendium_t::Events_t::eventUpdateCodex(int playernum, const EventTags tag
 	{
 		codexID += kEventCodexOffset; // convert to offset
 	}
+	if ( baseCodexID >= 0 )
+	{
+		if ( baseCodexID < kEventCodexOffset || loadingValue )
+		{
+			baseCodexID += kEventCodexOffset; // convert to offset
+		}
+	}
 
 
 	auto& e = (multiplayer == SERVER && playernum != 0 && !loadingValue) ? serverPlayerEvents[playernum][tag] : playerEvents[tag];
@@ -14429,6 +14470,22 @@ void Compendium_t::Events_t::eventUpdateCodex(int playernum, const EventTags tag
 				if ( playernum == clientnum )
 				{
 					writeItemsSaveData();
+				}
+			}
+		}
+	}
+
+	if ( playernum == clientnum )
+	{
+		if ( baseCodexID >= 0 )
+		{
+			auto find = codexIDToString.find(baseCodexID);
+			if ( find != codexIDToString.end() )
+			{
+				auto& unlockStatus = Compendium_t::CompendiumCodex_t::unlocks[find->second];
+				if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+				{
+					unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
 				}
 			}
 		}

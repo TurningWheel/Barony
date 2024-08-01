@@ -3813,6 +3813,12 @@ struct Compendium_t
 		CPDM_MINEHEAD_TOTAL_PLAYTIME,
 		CPDM_MINEHEAD_ENTER_SPLIT_MP,
 		CPDM_TOTAL_TIME_SPENT,
+		CPDM_TRAP_SUMMONED_MONSTERS,
+		CPDM_LORE_READ,
+		CPDM_LORE_BURNT,
+		CPDM_LORE_PERCENT_READ,
+		CPDM_LORE_PERCENT_READ_2,
+		CPDM_MERCHANT_ORBS,
 		CPDM_EVENT_TAGS_MAX
 	};
 
@@ -3835,6 +3841,7 @@ struct Compendium_t
 			std::string imagePath = "";
 			std::vector<std::string> models;
 			std::set<std::string> unlockAchievements;
+			int lorePoints = 0;
 		};
 		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents;
 		static std::map<std::string, std::string> contentsMap;
@@ -3874,6 +3881,7 @@ struct Compendium_t
 			std::set<std::string> unlockAchievements;
 			std::set<EventTags> unlockTags;
 			int id = -1;
+			int lorePoints = 0;
 		};
 		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents;
 		static std::map<std::string, std::string> contentsMap;
@@ -3895,6 +3903,7 @@ struct Compendium_t
 			std::vector<std::string> models;
 			int id = -1;
 			CompendiumView_t view;
+			int lorePoints = 0;
 		};
 		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents;
 		static std::map<std::string, std::string> contentsMap;
@@ -3921,6 +3930,7 @@ struct Compendium_t
 			std::string imagePath = "";
 			std::vector<std::string> blurb;
 			std::vector<CodexItem_t> items_in_category;
+			int lorePoints = 0;
 		};
 		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents;
 		static std::map<std::string, std::string> contentsMap;

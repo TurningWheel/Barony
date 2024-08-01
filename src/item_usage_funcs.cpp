@@ -26,6 +26,7 @@
 #include "scores.hpp"
 #include "prng.hpp"
 #include "mod_tools.hpp"
+#include "scrolls.hpp"
 
 bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 {
@@ -2400,6 +2401,8 @@ void item_ScrollMail(Item* item, int player)
 		conductIlliterate = false;
 	}
 	item->identified = true;
+
+	int result = item->appearance % 25;
 	switch ( item->appearance % 25 )
 	{
 		case 0:
@@ -2473,8 +2476,13 @@ void item_ScrollMail(Item* item, int player)
 			break;
 		default:
 			messagePlayer(player, MESSAGE_WORLD | MESSAGE_INTERACTION, Language::get(846));
+			result = 22;
 			break;
 	}
+
+	result = result % NUM_SCROLL_MAIL_OPTIONS;
+	Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LORE_READ, SCROLL_MAIL, 1);
+	Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LORE_PERCENT_READ, SCROLL_MAIL, (1 << (result)));
 }
 
 void item_ScrollIdentify(Item* item, int player)
@@ -5566,6 +5574,11 @@ void item_FoodAutomaton(Item*& item, int player)
 		default:
 			messagePlayer(player, MESSAGE_DEBUG, "Unknown food?");
 			break;
+	}
+
+	if ( item->type == SCROLL_MAIL || item->type == READABLE_BOOK )
+	{
+		Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LORE_BURNT, item->type, 1);
 	}
 
 	if ( itemCategory(item) == SCROLL )

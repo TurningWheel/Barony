@@ -229,8 +229,18 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 
 		shopChangeGoldEvent(player, -item->buyValue(player));
 		stats[player]->GOLD -= item->buyValue(player);
-		Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_SHOP_BOUGHT, "shop", 1);
-		Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_SHOP_SPENT, "shop", item->buyValue(player));
+
+		Entity* entity = uidToEntity(shopkeeper[player]);
+		if ( shopIsMysteriousShopkeeper(entity) )
+		{
+			Compendium_t::Events_t::eventUpdateMonster(player, Compendium_t::CPDM_SHOP_BOUGHT, entity, 1);
+			Compendium_t::Events_t::eventUpdateMonster(player, Compendium_t::CPDM_SHOP_SPENT, entity, item->buyValue(player));
+		}
+		else
+		{
+			Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_SHOP_BOUGHT, "shop", 1);
+			Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_SHOP_SPENT, "shop", item->buyValue(player));
+		}
 
 		if ( stats[player]->playerRace > 0 && players[player] && players[player]->entity->effectPolymorph > NUMMONSTERS )
 		{
@@ -247,7 +257,6 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 		item->count = ocount;
 		if ( multiplayer != CLIENT )
 		{
-			Entity* entity = uidToEntity(shopkeeper[player]);
 			if (entity)
 			{
 				Stat* shopstats = entity->getStats();
@@ -346,9 +355,9 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 			net_packet->len = 30;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
-		if ( shopIsMysteriousShopkeeper(uidToEntity(shopkeeper[player])) )
+		if ( shopIsMysteriousShopkeeper(entity) )
 		{
-			buyItemFromMysteriousShopkeepConsumeOrb(player, *(uidToEntity(shopkeeper[player])), *item);
+			buyItemFromMysteriousShopkeepConsumeOrb(player, *entity, *item);
 		}
 		if ( itemTypeIsQuiver(item->type) )
 		{

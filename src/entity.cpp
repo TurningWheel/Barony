@@ -17070,16 +17070,28 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 									//messagePlayer(owner->skill[2], MESSAGE_WORLD, Language::get(3888), myStats->name);
 									players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
 										Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_BROADCAST, Language::get(3888));
+									if ( c == owner->skill[2] )
+									{
+										Compendium_t::Events_t::eventUpdateMonster(owner->skill[2], Compendium_t::CPDM_MERCHANT_ORBS, this, 1);
+									}
 									break;
 								case ARTIFACT_ORB_BLUE:
 									//messagePlayer(owner->skill[2], MESSAGE_WORLD, Language::get(3889), myStats->name);
 									players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
 										Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_BROADCAST, Language::get(3889));
+									if ( c == owner->skill[2] )
+									{
+										Compendium_t::Events_t::eventUpdateMonster(owner->skill[2], Compendium_t::CPDM_MERCHANT_ORBS, this, 1);
+									}
 									break;
 								case ARTIFACT_ORB_RED:
 									//messagePlayer(owner->skill[2], MESSAGE_WORLD, Language::get(3890), myStats->name);
 									players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
 										Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_BROADCAST, Language::get(3890));
+									if ( c == owner->skill[2] )
+									{
+										Compendium_t::Events_t::eventUpdateMonster(owner->skill[2], Compendium_t::CPDM_MERCHANT_ORBS, this, 1);
+									}
 									break;
 								default:
 									break;

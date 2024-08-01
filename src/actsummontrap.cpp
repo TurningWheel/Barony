@@ -113,6 +113,14 @@ void actSummonTrap(Entity* my)
 					if ( monster && monster->getStats() )
 					{
 						monster->seedEntityRNG(rng.getU32());
+						if ( !(gameModeManager.getMode() == gameModeManager.GAME_MODE_TUTORIAL
+							|| gameModeManager.getMode() == gameModeManager.GAME_MODE_TUTORIAL_INIT) )
+						{
+							for ( int c = 0; c < MAXPLAYERS; ++c )
+							{
+								Compendium_t::Events_t::eventUpdateWorld(c, Compendium_t::CPDM_TRAP_SUMMONED_MONSTERS, "summoning trap", 1);
+							}
+						}
 						if ( useCustomMonsters )
 						{
 							std::string variantName = "default";

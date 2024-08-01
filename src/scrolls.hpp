@@ -12,6 +12,7 @@
 #pragma once
 
 #define NUMLABELS 25
+#define NUM_SCROLL_MAIL_OPTIONS 23
 static char scroll_label[NUMLABELS][512] =
 {
 	"ZELGO MER",

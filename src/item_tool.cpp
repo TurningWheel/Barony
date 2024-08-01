@@ -643,16 +643,19 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 					//messagePlayer(player, MESSAGE_WORLD, Language::get(3888), entity.getStats()->name);
 					players[player]->worldUI.worldTooltipDialogue.createDialogueTooltip(entity.getUID(),
 						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, Language::get(3888));
+					Compendium_t::Events_t::eventUpdateMonster(player, Compendium_t::CPDM_MERCHANT_ORBS, &entity, 1);
 					break;
 				case ARTIFACT_ORB_BLUE:
 					//messagePlayer(player, MESSAGE_WORLD, Language::get(3889), entity.getStats()->name);
 					players[player]->worldUI.worldTooltipDialogue.createDialogueTooltip(entity.getUID(),
 						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, Language::get(3889));
+					Compendium_t::Events_t::eventUpdateMonster(player, Compendium_t::CPDM_MERCHANT_ORBS, &entity, 1);
 					break;
 				case ARTIFACT_ORB_RED:
 					//messagePlayer(player, MESSAGE_WORLD, Language::get(3890), entity.getStats()->name);
 					players[player]->worldUI.worldTooltipDialogue.createDialogueTooltip(entity.getUID(),
 						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, Language::get(3890));
+					Compendium_t::Events_t::eventUpdateMonster(player, Compendium_t::CPDM_MERCHANT_ORBS, &entity, 1);
 					break;
 				default:
 					break;
