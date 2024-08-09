@@ -6411,5 +6411,6 @@ Magic Required: %d (%s)#
 6182 CONTENTS#
 6183 New Entry!#
 6184 Achievements#
+6185 RECORDS#
 
 6200 END#
