@@ -33,11 +33,13 @@ void Item::applySkeletonKey(int player, Entity& entity)
 			messagePlayer(player, MESSAGE_INTERACTION, Language::get(1097));
 			entity.unlockChest();
 			Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_CHESTS_UNLOCKED, "chest", 1);
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_CHESTS_UNLOCK, TOOL_SKELETONKEY, 1);
 		}
 		else
 		{
 			messagePlayer(player, MESSAGE_INTERACTION, Language::get(1098));
 			entity.lockChest();
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_CHESTS_LOCK, TOOL_SKELETONKEY, 1);
 		}
 	}
 	else if ( entity.behavior == &actDoor )
@@ -55,12 +57,14 @@ void Item::applySkeletonKey(int player, Entity& entity)
 				messagePlayer(player, MESSAGE_INTERACTION, Language::get(1099));
 				entity.doorLocked = 0;
 				Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_DOOR_UNLOCKED, "door", 1);
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_DOOR_UNLOCK, TOOL_SKELETONKEY, 1);
 			}
 		}
 		else
 		{
 			messagePlayer(player, MESSAGE_INTERACTION, Language::get(1100));
 			entity.doorLocked = 1;
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_DOOR_LOCK, TOOL_SKELETONKEY, 1);
 		}
 	}
 	else if ( entity.behavior == &actMonster && entity.getMonsterTypeFromSprite() == MIMIC )
@@ -102,7 +106,7 @@ void Item::applySkeletonKey(int player, Entity& entity)
 						playSoundEntity(&entity, 91, 64);
 						messagePlayer(player, MESSAGE_INTERACTION, Language::get(1098));
 						entity.setEffect(EFF_MIMIC_LOCKED, true, TICKS_PER_SECOND * 5, false);
-
+						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_MIMICS_LOCKED, TOOL_SKELETONKEY, 1);
 						entity.monsterHitTime = HITRATE - 2;
 						if ( players[player] )
 						{
@@ -146,6 +150,10 @@ void Item::applyLockpick(int player, Entity& entity)
 		else
 		{
 			entity.skill[22] = (entity.skill[22] == BOMB_TRIGGER_ENEMIES) ? BOMB_TRIGGER_ALL : BOMB_TRIGGER_ENEMIES;
+		}
+		if ( !gyrobotUsing )
+		{
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_TINKERTRAPS, TOOL_LOCKPICK, 1);
 		}
 		if ( entity.skill[22] == BOMB_TRIGGER_ENEMIES )
 		{
@@ -259,6 +267,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				}
 				entity.unlockChest();
 				Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_CHESTS_UNLOCKED, "chest", 1);
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_CHESTS_UNLOCK, TOOL_LOCKPICK, 1);
 			}
 			else
 			{
@@ -353,6 +362,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				playSoundEntity(&entity, 91, 64);
 				messagePlayer(player, MESSAGE_INTERACTION, Language::get(1099));
 				Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_DOOR_UNLOCKED, "door", 1);
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_DOOR_UNLOCK, TOOL_LOCKPICK, 1);
 				entity.doorLocked = 0;
 				if ( !entity.doorPreventLockpickExploit )
 				{
@@ -858,6 +868,14 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 			}
 			free(item);
 			steamStatisticUpdateClient(player, STEAM_STAT_FREE_REFILLS, STEAM_STAT_INT, 1);
+			if ( entity.behavior == &actSink )
+			{
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SINKS_TAPPED, POTION_EMPTY, 1);
+			}
+			else if ( entity.behavior == &actFountain )
+			{
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_FOUNTAINS_TAPPED, POTION_EMPTY, 1);
+			}
 		}
 
 		if ( entity.behavior == &actSink )
@@ -1079,6 +1097,11 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 			entity->skill[16] = placement;
 			entity->skill[20] = dir;
 			entity->skill[21] = type;
+
+			if ( parent && parent->behavior == &actPlayer )
+			{
+				Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_GADGET_DEPLOYED, type, 1);
+			}
 		}
 	}
 	else if ( placement == BOMB_WALL )
@@ -1202,6 +1225,11 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 			entity->skill[16] = placement;
 			entity->skill[20] = dir;
 			entity->skill[21] = type;
+
+			if ( parent && parent->behavior == &actPlayer )
+			{
+				Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_GADGET_DEPLOYED, type, 1);
+			}
 		}
 	}
 	else if ( placement == BOMB_CHEST || placement == BOMB_DOOR || placement == BOMB_COLLIDER )
@@ -1393,6 +1421,11 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 			}
 			entity->skill[20] = dir;
 			entity->skill[21] = type;
+
+			if ( parent && parent->behavior == &actPlayer )
+			{
+				Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_GADGET_DEPLOYED, type, 1);
+			}
 		}
 	}
 }
@@ -1426,6 +1459,11 @@ void Item::applyTinkeringCreation(Entity* parent, Entity* thrown)
 		entity->skill[13] = 1;
 		entity->skill[14] = this->appearance;
 		entity->skill[15] = 1;
+
+		if ( parent && parent->behavior == &actPlayer )
+		{
+			Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_GADGET_DEPLOYED, this->type, 1);
+		}
 	}
 	else if ( type == TOOL_DUMMYBOT || type == TOOL_GYROBOT || type == TOOL_SENTRYBOT || type == TOOL_SPELLBOT )
 	{
@@ -1455,6 +1493,10 @@ void Item::applyTinkeringCreation(Entity* parent, Entity* thrown)
 			Stat* summonedStats = summon->getStats();
 			if ( parent && parent->behavior == &actPlayer && summonedStats )
 			{
+				if ( parent && parent->behavior == &actPlayer )
+				{
+					Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_GADGET_DEPLOYED, this->type, 1);
+				}
 				if ( summonedStats->type == GYROBOT )
 				{
 					summon->yaw = thrown->yaw;

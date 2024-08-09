@@ -4340,6 +4340,11 @@ void item_ToolBeartrap(Item*& item, Entity* usedBy)
 	entity->skill[17] = players[player]->entity->skill[2];
 	messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(906));
 	consumeItem(item, player);
+
+	if ( player >= 0 )
+	{
+		Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BEARTRAP_DEPLOYED, TOOL_BEARTRAP, 1);
+	}
 	return;
 }
 
@@ -4870,10 +4875,18 @@ void item_FoodTin(Item*& item, int player)
 	if (svFlags & SV_FLAG_HUNGER)
 	{
 		stats[player]->HUNGER += 600 * foodMult;
-		stats[player]->EFFECTS[EFF_HP_REGEN] = hpBuff;
-		stats[player]->EFFECTS[EFF_MP_REGEN] = mpBuff;
-		stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] = buffDuration;
-		stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN] = buffDuration;
+		if ( hpBuff )
+		{
+			stats[player]->EFFECTS[EFF_HP_REGEN] = hpBuff;
+			stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] = buffDuration;
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TIN_REGEN_HP, FOOD_TIN, 1);
+		}
+		if ( mpBuff )
+		{
+			stats[player]->EFFECTS[EFF_MP_REGEN] = mpBuff;
+			stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN] = buffDuration;
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TIN_REGEN_MP, FOOD_TIN, 1);
+		}
 	}
 	else
 	{
@@ -4899,6 +4912,7 @@ void item_FoodTin(Item*& item, int player)
 			if ( players[player]->entity->setEffect(EFF_GREASY, true, TICKS_PER_SECOND * (60 + local_rng.rand() % 60), true) )
 			{
 				messagePlayer(player, MESSAGE_STATUS | MESSAGE_HINT, Language::get(966));
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TIN_GREASY, FOOD_TIN, 1);
 			}
 			else
 			{
@@ -4953,6 +4967,12 @@ void item_AmuletSexChange(Item* item, int player)
 		}
 	}
 
+	if ( multiplayer != CLIENT )
+	{
+		playSoundEntity(players[player]->entity, 33 + local_rng.rand() % 2, 64);
+		playSoundEntity(players[player]->entity, 76, 64);
+	}
+
 	if ( players[player] && players[player]->isLocalPlayer() )
 	{
 		messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1094));
@@ -4963,12 +4983,12 @@ void item_AmuletSexChange(Item* item, int player)
 
 	serverUpdateSexChange(player);
 
-
 	if ( !players[player]->isLocalPlayer() )
 	{
 		return;
 	}
 
+	Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BROKEN, item->type, 1);
 	consumeItem(item, player);
 
 	// find out what creature we are...
@@ -5338,6 +5358,7 @@ void item_Spellbook(Item*& item, int player)
 		if ( learned )
 		{
 			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_LEARNT, item->type, 1);
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_CAST_DEGRADES, item->type, 1);
 			if ( item->type >= SPELLBOOK_RAT_FORM && item->type <= SPELLBOOK_IMP_FORM )
 			{
 				ItemType originalSpellbook = item->type;

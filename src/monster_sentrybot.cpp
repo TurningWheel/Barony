@@ -23,6 +23,7 @@
 #include "magic/magic.hpp"
 #include "interface/interface.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 std::unordered_map<Uint32, int> gyroBotDetectedUids;
 
@@ -1255,6 +1256,11 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 			{
 				my->attack(MONSTER_POSE_RANGED_WINDUP1, 0, nullptr);
 				my->monsterSpecialTimer = TICKS_PER_SECOND * 8;
+
+				if ( auto leader = my->monsterAllyGetPlayerLeader() )
+				{
+					Compendium_t::Events_t::eventUpdateMonster(leader->skill[2], Compendium_t::CPDM_GYROBOT_FLIPS, my, 1);
+				}
 			}
 		}
 
@@ -1878,12 +1884,22 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 			head = entity;
 			if ( multiplayer != CLIENT && entity->skill[0] == 2 )
 			{
-				if ( entity->skill[3] > 0 && myStats->HP < entity->skill[3] )
+				if ( myStats )
 				{
-					// on hit, bounce a bit.
-					my->attack(MONSTER_POSE_RANGED_WINDUP1, 0, nullptr);
+					if ( entity->skill[3] > 0 && myStats->HP < entity->skill[3] )
+					{
+						// on hit, bounce a bit.
+						my->attack(MONSTER_POSE_RANGED_WINDUP1, 0, nullptr);
+						if ( Entity* leader = my->monsterAllyGetPlayerLeader() )
+						{
+							Compendium_t::Events_t::eventUpdate(leader->skill[2],
+								Compendium_t::CPDM_DUMMY_HITS_TAKEN, TOOL_DUMMYBOT, 1);
+							Compendium_t::Events_t::eventUpdate(leader->skill[2],
+								Compendium_t::CPDM_DUMMY_DMG_TAKEN, TOOL_DUMMYBOT, std::max(0, entity->skill[3] - myStats->HP));
+						}
+					}
+					entity->skill[3] = myStats->HP;
 				}
-				entity->skill[3] = myStats->HP;
 			}
 
 			if ( my->monsterSpecialState == DUMMYBOT_RETURN_FORM )

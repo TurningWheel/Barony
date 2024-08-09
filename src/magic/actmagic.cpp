@@ -583,29 +583,181 @@ void spawnBloodVialOnMonsterDeath(Entity* entity, Stat* hitstats, Entity* killer
 }
 
 static ConsoleVariable<bool> cvar_magic_fx_use_vismap("/magic_fx_use_vismap", true);
-void magicOnPlayerHit(Entity* parent, Entity* hitentity, Stat* hitstats, Sint32 preResistanceDamage, Sint32 damage, Sint32 oldHP, int spellID)
+void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat* hitstats, Sint32 preResistanceDamage, Sint32 damage, Sint32 oldHP, int spellID)
 {
-	if ( !hitentity || !hitstats ) { return; }
+	if ( !hitentity  ) { return; }
 
-	if ( hitentity->behavior != &actPlayer )
+ 	if ( hitentity->behavior == &actPlayer )
 	{
-		return;
-	}
+		Compendium_t::Events_t::eventUpdateCodex(hitentity->skill[2], Compendium_t::CPDM_RES_SPELLS_HIT, "res", 1);
 
-	Compendium_t::Events_t::eventUpdateCodex(hitentity->skill[2], Compendium_t::CPDM_RES_SPELLS_HIT, "res", 1);
-
-	Sint32 damageTaken = oldHP - hitstats->HP;
-	if ( damageTaken > 0 )
-	{
-		Compendium_t::Events_t::eventUpdateCodex(hitentity->skill[2], Compendium_t::CPDM_RES_DMG_TAKEN, "res", damageTaken);
-		Compendium_t::Events_t::eventUpdateCodex(hitentity->skill[2], Compendium_t::CPDM_HP_MOST_DMG_LOST_ONE_HIT, "hp", damageTaken);
-		if ( preResistanceDamage > damage )
+		if ( hitstats )
 		{
-			Sint32 noResistDmgTaken = oldHP - std::max(0, oldHP - preResistanceDamage);
-			if ( noResistDmgTaken > damageTaken )
+			Sint32 damageTaken = oldHP - hitstats->HP;
+			if ( damageTaken > 0 )
 			{
-				Compendium_t::Events_t::eventUpdateCodex(hitentity->skill[2], Compendium_t::CPDM_RES_DMG_RESISTED, "res", noResistDmgTaken - damageTaken);
-				Compendium_t::Events_t::eventUpdateCodex(hitentity->skill[2], Compendium_t::CPDM_RES_DMG_RESISTED_RUN, "res", noResistDmgTaken - damageTaken);
+				Compendium_t::Events_t::eventUpdateCodex(hitentity->skill[2], Compendium_t::CPDM_RES_DMG_TAKEN, "res", damageTaken);
+				Compendium_t::Events_t::eventUpdateCodex(hitentity->skill[2], Compendium_t::CPDM_HP_MOST_DMG_LOST_ONE_HIT, "hp", damageTaken);
+				if ( preResistanceDamage > damage )
+				{
+					Sint32 noResistDmgTaken = oldHP - std::max(0, oldHP - preResistanceDamage);
+					if ( noResistDmgTaken > damageTaken )
+					{
+						Compendium_t::Events_t::eventUpdateCodex(hitentity->skill[2], Compendium_t::CPDM_RES_DMG_RESISTED, "res", noResistDmgTaken - damageTaken);
+						Compendium_t::Events_t::eventUpdateCodex(hitentity->skill[2], Compendium_t::CPDM_RES_DMG_RESISTED_RUN, "res", noResistDmgTaken - damageTaken);
+					}
+				}
+			}
+		}
+	}
+	if ( parent && parent->behavior == &actMonster && spellID > SPELL_NONE )
+	{
+		if ( hitstats )
+		{
+			Sint32 damageTaken = oldHP - hitstats->HP;
+			if ( damageTaken > 0 )
+			{
+				if ( Stat* stats = parent->getStats() )
+				{
+					if ( stats->type == SPELLBOT )
+					{
+						if ( Entity* leader = parent->monsterAllyGetPlayerLeader() )
+						{
+							Compendium_t::Events_t::eventUpdate(leader->skill[2],
+								Compendium_t::CPDM_SENTRY_DEPLOY_DMG, TOOL_SPELLBOT, damageTaken);
+						}
+					}
+				}
+			}
+		}
+	}
+	else if ( parent && parent->behavior == &actPlayer && spellID > SPELL_NONE )
+	{
+		Sint32 damageTaken = 0;
+		if ( hitstats )
+		{
+			damageTaken = oldHP - hitstats->HP;
+		}
+		if ( !particle || (particle && particle->behavior != &actMagicMissile)) { return; }
+		if ( particle->actmagicCastByMagicstaff != 0 )
+		{
+			auto find = ItemTooltips.spellItems.find(spellID);
+			if ( find != ItemTooltips.spellItems.end() )
+			{
+				if ( damageTaken > 0 )
+				{
+					if ( find->second.magicstaffId >= 0 && find->second.magicstaffId < NUMITEMS && items[find->second.magicstaffId].category == MAGICSTAFF )
+					{
+						Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_DMG, (ItemType)find->second.magicstaffId, damageTaken);
+					}
+				}
+				else if ( damage == 0 && oldHP == 0 )
+				{
+					if ( find->second.spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_TRACK_HITS) != find->second.spellTags.end() )
+					{
+						Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_TARGETS, 
+							(ItemType)find->second.magicstaffId, 1);
+					}
+				}
+			}
+		}
+		else if ( particle->actmagicFromSpellbook != 0 )
+		{
+			auto find = ItemTooltips.spellItems.find(spellID);
+			if ( find != ItemTooltips.spellItems.end() )
+			{
+				if ( find->second.spellbookId >= 0 && find->second.spellbookId < NUMITEMS && items[find->second.spellbookId].category == SPELLBOOK )
+				{
+					if ( damageTaken > 0 )
+					{
+						if ( find->second.spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_HEALING) != find->second.spellTags.end() )
+						{
+							Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_HEAL, (ItemType)find->second.spellbookId, damageTaken);
+						}
+						else
+						{
+							Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_DMG, (ItemType)find->second.spellbookId, damageTaken);
+						}
+					}
+					else if ( damage == 0 && oldHP == 0 )
+					{
+						if ( find->second.spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_TRACK_HITS) != find->second.spellTags.end() )
+						{
+							Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_TARGETS,
+								(ItemType)find->second.spellbookId, 1);
+						}
+					}
+				}
+			}
+		}
+		else if ( particle->actmagicCastByTinkerTrap == 0 )
+		{
+			if ( particle->actmagicIsOrbiting == 2 && particle->actmagicOrbitCastFromSpell == 0 )
+			{
+				// cast by firestorm potion etc
+				if ( damageTaken > 0 )
+				{
+					auto find = ItemTooltips.spellItems.find(spellID);
+					if ( find != ItemTooltips.spellItems.end() )
+					{
+						if ( find->second.id > SPELL_NONE && find->second.id < NUM_SPELLS )
+						{
+							ItemType type = WOODEN_SHIELD;
+							if ( find->second.id == SPELL_FIREBALL )
+							{
+								type = POTION_FIRESTORM;
+							}
+							else if ( find->second.id == SPELL_COLD )
+							{
+								type = POTION_ICESTORM;
+							}
+							else if ( find->second.id == SPELL_LIGHTNING )
+							{
+								type = POTION_THUNDERSTORM;
+							}
+							if ( type != WOODEN_SHIELD )
+							{
+								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_THROWN_DMG_TOTAL, type, damageTaken);
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				// normal spellcasts
+				auto find = ItemTooltips.spellItems.find(spellID);
+				if ( find != ItemTooltips.spellItems.end() )
+				{
+					if ( find->second.id > SPELL_NONE && find->second.id < NUM_SPELLS )
+					{
+						if ( damageTaken > 0 )
+						{
+							Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_DMG, SPELL_ITEM, damageTaken, false, find->second.id);
+						}
+						else if ( damage == 0 && oldHP == 0 )
+						{
+							if ( find->second.spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_TRACK_HITS) != find->second.spellTags.end() )
+							{
+								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_TARGETS, SPELL_ITEM, 1, false, find->second.id);
+							}
+						}
+					}
+				}
+			}
+		}
+		else if ( particle->actmagicCastByTinkerTrap == 1 )
+		{
+			if ( damageTaken > 0 )
+			{
+				if ( spellID == SPELL_FIREBALL )
+				{
+					Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_BOMB_DMG, TOOL_BOMB, damageTaken);
+				}
+				else if ( spellID == SPELL_COLD )
+				{
+					Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_BOMB_DMG, TOOL_FREEZE_BOMB, damageTaken);
+				}
 			}
 		}
 	}
@@ -1486,7 +1638,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage /= (1 + (int)resistance);
 							Sint32 oldHP = hitstats->HP;
 							hit.entity->modHP(-damage);
-							magicOnPlayerHit(parent, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
+							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 							for (i = 0; i < damage; i += 2)   //Spawn a gib for every two points of damage.
 							{
@@ -1665,7 +1817,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							Sint32 oldHP = hitstats->HP;
 							hit.entity->modHP(-damage);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
-							magicOnPlayerHit(parent, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
+							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							for (i = 0; i < damage; i += 2)   //Spawn a gib for every two points of damage.
 							{
 								Entity* gib = spawnGib(hit.entity);
@@ -1951,7 +2103,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage *= fireMultiplier;
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
-							magicOnPlayerHit(parent, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
+							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 							//for (i = 0; i < damage; i += 2) { //Spawn a gib for every two points of damage.
 							Entity* gib = spawnGib(hit.entity);
@@ -2202,6 +2354,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 							if ( duration > 0 && hit.entity->setEffect(EFF_CONFUSED, true, duration, false) )
 							{
+								magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 								magicTrapOnHit(parent, hit.entity, hitstats, 0, spell ? spell->ID : SPELL_NONE);
 								playSoundEntity(hit.entity, 174, 64);
 								if ( hit.entity->behavior == &actMonster )
@@ -2323,7 +2476,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( damage > 0 )
 							{
 								hit.entity->modHP(-damage);
-								magicOnPlayerHit(parent, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
+								magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 								Entity* gib = spawnGib(hit.entity);
 								serverSpawnGibForClient(gib);
 								magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
@@ -2404,6 +2557,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
 
+							magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, 0, spell ? spell->ID : SPELL_NONE);
 
 							// If the Entity hit is a Player, update their status to be Slowed
@@ -2480,6 +2634,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								if ( hit.entity->setEffect(EFF_ASLEEP, true, effectDuration, false) )
 								{
+									magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 									magicTrapOnHit(parent, hit.entity, hitstats, 0, spell ? spell->ID : SPELL_NONE);
 									playSoundEntity(hit.entity, 174, 64);
 									hitstats->OLDHP = hitstats->HP;
@@ -2583,7 +2738,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage *= damageMultiplier;
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
-							magicOnPlayerHit(parent, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
+							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 
 							// write the obituary
@@ -2857,6 +3012,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									if ( parent->behavior == &actPlayer )
 									{
 										messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(399));
+										magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 									}
 								}
 							}
@@ -2881,6 +3037,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										if ( parent->behavior == &actPlayer )
 										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(400));
+											magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 										}
 									}
 								}
@@ -2914,6 +3071,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(6083));
 										}
+										magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 									}
 									if ( !hitstats->EFFECTS[EFF_MIMIC_LOCKED] )
 									{
@@ -2969,6 +3127,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_DOOR_UNLOCKED, "door", 1);
 									}
 								}
+								magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 								hit.entity->doorLocked = 0; // Unlocks the Door
 								hit.entity->doorPreventLockpickExploit = 1;
 
@@ -3022,6 +3181,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(403)); // "The spell opens the gate!"
 											Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_GATE_OPENED_SPELL, "portcullis", 1);
+											magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 										}
 									}
 								}
@@ -3051,6 +3211,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(404)); // "The spell unlocks the chest!"
 											Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_CHESTS_UNLOCKED, "chest", 1);
+											magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 										}
 									}
 								}
@@ -3076,6 +3237,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 											if ( parent->behavior == &actPlayer )
 											{
 												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2358));
+												magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 											}
 										}
 									}
@@ -3100,6 +3262,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										}
 									}
 								}
+								magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 							}
 							else
 							{
@@ -3123,6 +3286,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 												hit.entity->monsterHitTime = std::max(hit.entity->monsterHitTime, HITRATE / 2);
 											}
 										}
+										magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 									}
 								}
 							}
@@ -3199,6 +3363,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int oldDuration = !hitstats->EFFECTS[EFF_PARALYZED] ? 0 : hitstats->EFFECTS_TIMERS[EFF_PARALYZED];
 							if ( hit.entity->setEffect(EFF_PARALYZED, true, effectDuration, false) )
 							{
+								magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 								if ( hit.entity->behavior == &actPlayer )
 								{
 									serverUpdateEffects(hit.entity->skill[2]);
@@ -3267,7 +3432,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							
 							Sint32 oldHP = hitstats->HP;
 							hit.entity->modHP(-damage);
-							magicOnPlayerHit(parent, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
+							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 
 							// write the obituary
@@ -3506,6 +3671,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( spellEffectDominate(*my, *element, *caster, parent) )
 						{
 							//Success
+							magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 						}
 					}
 				}
@@ -3562,7 +3728,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
 					{
-						spellEffectTeleportPull(my, *element, parent, hit.entity, resistance);
+						if ( spellEffectTeleportPull(my, *element, parent, hit.entity, resistance) )
+						{
+							magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
+						}
 					}
 				}
 				else if ( !strcmp(element->element_internal_name, spellElement_shadowTag.element_internal_name) )
@@ -3578,7 +3747,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
 					{
-						spellEffectDemonIllusion(*my, *element, parent, hit.entity, resistance);
+						if ( spellEffectDemonIllusion(*my, *element, parent, hit.entity, resistance) )
+						{
+							magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
+						}
 					}
 				}
 

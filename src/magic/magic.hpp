@@ -508,7 +508,7 @@ bool isSpellcasterBeginnerFromSpellbook(int player, Entity* caster, Stat* stat, 
 int getSpellbookBonusPercent(Entity* caster, Stat* stat, Item* spellbookItem);
 real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spellElement_t* spellElement, int spellID);
 real_t getSpellBonusFromCasterINT(Entity* caster, Stat* casterStats);
-void magicOnPlayerHit(Entity* parent, Entity* hitentity, Stat* hitstats, Sint32 preResistanceDamage, Sint32 damage, Sint32 oldHP, int spellID);
+void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat* hitstats, Sint32 preResistanceDamage, Sint32 damage, Sint32 oldHP, int spellID);
 #endif
 bool isSpellcasterBeginner(int player, Entity* caster);
 void actMagicTrap(Entity* my);

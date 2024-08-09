@@ -1330,6 +1330,10 @@ spell_t* getSpellFromItem(const int player, Item* item, bool usePlayerInventory)
 	{
 		return nullptr;
 	}
+	if ( item->type != SPELL_ITEM )
+	{
+		return nullptr;
+	}
 
 	Uint32 appearance = item->appearance;
 	if ( item->type == SPELL_ITEM && item->appearance >= 1000 )

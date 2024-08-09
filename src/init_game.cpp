@@ -105,6 +105,7 @@ void initGameDatafiles(bool moddedReload)
 	Compendium_t::Events_t::loadItemsSaveData();
 	CompendiumEntries.readModelLimbsFromFile("monster");
 	CompendiumEntries.readModelLimbsFromFile("world");
+	CompendiumEntries.readModelLimbsFromFile("codex");
 }
 
 void initGameDatafilesAsync(bool moddedReload)
@@ -925,7 +926,11 @@ void loadAchievementData(const char* path) {
 	{
 		if ( steamStatAchStringsAndMaxVals[statNum].first != "BARONY_ACH_NONE" )
 		{
-			Compendium_t::achievements[steamStatAchStringsAndMaxVals[statNum].first].achievementProgress = statNum;
+			auto find = Compendium_t::achievements.find(steamStatAchStringsAndMaxVals[statNum].first);
+			if ( find != Compendium_t::achievements.end() )
+			{
+				find->second.achievementProgress = statNum;
+			}
 		}
 	}
 
@@ -970,37 +975,78 @@ void sortAchievementsForDisplay()
 	{
 		auto& achData1 = Compendium_t::achievements[lhs.first];
 		auto& achData2 = Compendium_t::achievements[rhs.first];
+
 		bool ach1 = achData1.unlocked;
 		bool ach2 = achData2.unlocked;
 		bool lhsAchIsHidden = achData1.hidden;
 		bool rhsAchIsHidden = achData2.hidden;
-		if ( ach1 && !ach2 )
+		if ( !Compendium_t::AchievementData_t::sortAlphabetical )
 		{
-			return true;
-		}
-		else if ( !ach1 && ach2 )
-		{
-			return false;
-		}
-		else if ( !ach1 && !ach2 && (lhsAchIsHidden || rhsAchIsHidden) )
-		{
-			if ( lhsAchIsHidden && rhsAchIsHidden )
-			{
-				return lhs.second < rhs.second;
-			}
-			if ( !lhsAchIsHidden )
+			if ( ach1 && !ach2 )
 			{
 				return true;
 			}
-			if ( !rhsAchIsHidden )
+			else if ( !ach1 && ach2 )
 			{
 				return false;
 			}
-			return lhs.second < rhs.second;
+			else if ( !ach1 && !ach2 && (lhsAchIsHidden || rhsAchIsHidden) )
+			{
+				if ( lhsAchIsHidden && rhsAchIsHidden )
+				{
+					return lhs.second < rhs.second;
+				}
+				if ( !lhsAchIsHidden )
+				{
+					return true;
+				}
+				if ( !rhsAchIsHidden )
+				{
+					return false;
+				}
+				return lhs.second < rhs.second;
+			}
+			else
+			{
+				if ( !ach1 && !ach2 )
+				{
+					return lhs.second < rhs.second;
+				}
+				else
+				{
+					if ( achData1.unlockTime == achData2.unlockTime )
+					{
+						return lhs.second < rhs.second;
+					}
+					else
+					{
+						return achData1.unlockTime > achData2.unlockTime;
+					}
+				}
+			}
 		}
 		else
 		{
-			return lhs.second < rhs.second;
+			if ( !ach1 && !ach2 && (lhsAchIsHidden || rhsAchIsHidden) )
+			{
+				if ( lhsAchIsHidden && rhsAchIsHidden )
+				{
+					return lhs.second < rhs.second;
+				}
+				if ( !lhsAchIsHidden )
+				{
+					return true;
+				}
+				if ( !rhsAchIsHidden )
+				{
+					return false;
+				}
+				return lhs.second < rhs.second;
+			}
+			else
+			{
+				return lhs.second < rhs.second;
+			}
 		}
 	};
 

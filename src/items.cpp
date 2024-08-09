@@ -2830,9 +2830,9 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			if ( tryEmptyBottle && local_rng.rand() % 100 < std::min(80, (60 + skillLVL * 10)) ) // 60 - 80% chance
 			{
 				Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
-				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BOTTLES_FROM_CONSUME, POTION_EMPTY, 1);
 				itemPickup(player, emptyBottle);
 				messagePlayer(player, MESSAGE_INTERACTION, Language::get(3351), items[POTION_EMPTY].getIdentifiedName());
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BOTTLES_FROM_CONSUME, POTION_EMPTY, 1);
 				free(emptyBottle);
 			}
 		}
@@ -4983,6 +4983,7 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 						playSoundEntity(entity, 176, 128);
 						entity->skill[4] = player + 1; // disabled flag and spit out items.
 						serverUpdateEntitySkill(entity, 4); // update clients.
+						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_ARROWTRAPS, stats[player]->weapon->type, 1);
 					}
 
 					// degrade lockpick.

@@ -692,6 +692,14 @@ void actArrow(Entity* my)
 						{
 							if ( oldHP > hitstats->HP )
 							{
+								if ( itemTypeIsQuiver((ItemType)my->arrowQuiverType) )
+								{
+									Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_RANGED_DMG_TOTAL, (ItemType)my->arrowQuiverType, oldHP - hitstats->HP);
+								}
+								if ( isRangedWeapon((ItemType)my->arrowShotByWeapon) )
+								{
+									Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_RANGED_DMG_TOTAL, (ItemType)my->arrowShotByWeapon, oldHP - hitstats->HP);
+								}
 								Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_RANGED_DMG_TOTAL, "missiles", oldHP - hitstats->HP);
 								Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_RANGED_HITS, "missiles", 1);
 								Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_CLASS_RANGED_HITS_RUN, "missiles", 1);
@@ -710,6 +718,23 @@ void actArrow(Entity* my)
 							if ( my->arrowShotByWeapon == SLING && damage == 0 )
 							{
 								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_DMG_0, (ItemType)my->arrowShotByWeapon, 1);
+							}
+						}
+						else if ( parent->behavior == &actMonster )
+						{
+							if ( oldHP > hitstats->HP )
+							{
+								if ( Stat* parentStats = parent->getStats() )
+								{
+									if ( parentStats->type == SENTRYBOT )
+									{
+										if ( auto leader = parent->monsterAllyGetPlayerLeader() )
+										{
+											Compendium_t::Events_t::eventUpdate(leader->skill[2],
+												Compendium_t::CPDM_SENTRY_DEPLOY_DMG, TOOL_SENTRYBOT, oldHP - hitstats->HP);
+										}
+									}
+								}
 							}
 						}
 

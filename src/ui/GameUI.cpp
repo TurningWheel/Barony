@@ -20795,16 +20795,18 @@ void createInventoryTooltipFrame(const int player,
 		if ( parentFrame )
 		{
 			tooltipContainerFrame = parentFrame->addFrame(name);
+			tooltipContainerFrame->setSize(
+				SDL_Rect{ 0, 0, parentFrame->getSize().w, parentFrame->getSize().h });
 		}
 		else
 		{
 			tooltipContainerFrame = gameUIFrame[player]->addFrame(name);
+			tooltipContainerFrame->setSize(
+				SDL_Rect{ players[player]->camera_virtualx1(),
+				players[player]->camera_virtualy1(), 
+				players[player]->camera_virtualWidth(),
+				players[player]->camera_virtualHeight() });
 		}
-		tooltipContainerFrame->setSize(
-			SDL_Rect{ players[player]->camera_virtualx1(),
-			players[player]->camera_virtualy1(), 
-			players[player]->camera_virtualWidth(),
-			players[player]->camera_virtualHeight() });
 		tooltipContainerFrame->setHollow(true);
 		tooltipContainerFrame->setDisabled(false);
 		tooltipContainerFrame->setInheritParentFrameOpacity(false);

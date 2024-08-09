@@ -2765,6 +2765,10 @@ void gameLogic(void)
 							else
 							{
 								Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_RUNS_COLLECTED, item->type, 1);
+								if ( items[item->type].item_slot != ItemEquippableSlot::NO_EQUIP )
+								{
+									Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BLESSED_MAX, item->type, item->beatitude);
+								}
 							}
 						}
 					}
@@ -3422,6 +3426,10 @@ void gameLogic(void)
 						else
 						{
 							Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_RUNS_COLLECTED, item->type, 1);
+							if ( items[item->type].item_slot != ItemEquippableSlot::NO_EQUIP )
+							{
+								Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_MAX, item->type, item->beatitude);
+							}
 						}
 					}
 				}

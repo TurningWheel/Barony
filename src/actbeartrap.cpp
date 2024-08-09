@@ -24,6 +24,7 @@
 #include "monster.hpp"
 #include "prng.hpp"
 #include "paths.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -160,6 +161,16 @@ void actBeartrap(Entity* my)
 					//		entity->monsterAcquireAttackTarget(*attackTarget, MONSTER_STATE_PATH);
 					//	}
 					//}
+					
+					if ( parent && parent->behavior == &actPlayer )
+					{
+						Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_BEARTRAP_TRAPPED, TOOL_BEARTRAP, 1);
+						if ( stat->HP < oldHP )
+						{
+							Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_BEARTRAP_DMG, TOOL_BEARTRAP, oldHP - stat->HP);
+						}
+					}
+					
 					// set obituary
 					entity->updateEntityOnHit(parent, true);
 					entity->setObituary(Language::get(1504));
@@ -378,6 +389,20 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 		}
 	}
 
+	if ( parent && parent->behavior == &actPlayer )
+	{
+		if ( triggered && (triggered == parent || parent->checkFriend(triggered)) )
+		{
+			Compendium_t::Events_t::eventUpdate(parent->skill[2],
+				Compendium_t::CPDM_BOMB_DETONATED_ALLY, (ItemType)BOMB_ITEMTYPE, 1);
+		}
+		else
+		{
+			Compendium_t::Events_t::eventUpdate(parent->skill[2],
+				Compendium_t::CPDM_BOMB_DETONATED, (ItemType)BOMB_ITEMTYPE, 1);
+		}
+	}
+
 	if ( doSpell == SPELL_TELEPORTATION )
 	{
 		if ( triggered->isBossMonster() )
@@ -528,6 +553,15 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 	triggered->setObituary(Language::get(3496));
 	triggered->updateEntityOnHit(parent, true);
 	stat->killer = KilledBy::TRAP_BOMB;
+
+	if ( stat->HP < oldHP )
+	{
+		if ( parent && parent->behavior == &actPlayer )
+		{
+			Compendium_t::Events_t::eventUpdate(parent->skill[2],
+				Compendium_t::CPDM_BOMB_DMG, (ItemType)BOMB_ITEMTYPE, oldHP - stat->HP);
+		}
+	}
 
 	if ( stat->HP <= 0 && oldHP > 0 )
 	{
@@ -1180,6 +1214,7 @@ void actDecoyBox(Entity* my)
 		entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, decoyBoxRange);
 		bool message = false;
 		bool detected = false;
+		int lured = 0;
 		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 		{
 			list_t* currentList = *it;
@@ -1247,6 +1282,7 @@ void actDecoyBox(Entity* my)
 										}
 										spawnFloatingSpriteMisc(134, entity->x + (-4 + local_rng.rand() % 9) + cos(entity->yaw) * 2,
 											entity->y + (-4 + local_rng.rand() % 9) + sin(entity->yaw) * 2, entity->z + local_rng.rand() % 4);
+										++lured;
 									}
 								}
 								break;
@@ -1265,6 +1301,7 @@ void actDecoyBox(Entity* my)
 								entity->monsterState = MONSTER_STATE_HUNT; // hunt state
 								serverUpdateEntitySkill(entity, 0);
 								detected = true;
+								++lured;
 
 								if ( entityDist(entity, my) < TOUCHRANGE 
 									&& !myStats->EFFECTS[EFF_DISORIENTED]
@@ -1324,6 +1361,14 @@ void actDecoyBox(Entity* my)
 						}
 					}
 				}
+			}
+		}
+		if ( detected && lured > 0 )
+		{
+			if ( parent && parent->behavior == &actPlayer )
+			{
+				Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_NOISEMAKER_LURED, TOOL_DECOY, lured);
+				Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_NOISEMAKER_MOST_LURED, TOOL_DECOY, lured);
 			}
 		}
 		if ( !message && detected )

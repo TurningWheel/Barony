@@ -511,6 +511,7 @@ public:
 	Sint32& actmagicCastByTinkerTrap; // skill[22]
 	Sint32& actmagicTinkerTrapFriendlyFire; // skill[23]
 	Sint32& actmagicReflectionCount; // skill[25]
+	Sint32& actmagicFromSpellbook; // skill[26]
 	
 	//--PUBLIC GOLD SKILLS--
 	Sint32& goldAmount; //skill[0]

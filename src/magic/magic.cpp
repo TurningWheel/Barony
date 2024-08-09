@@ -306,11 +306,11 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			if ( !hasgoggles )
 			{
 				hit.entity->modHP(-damage);
-				magicOnPlayerHit(parent, hit.entity, hitstats, preResistanceDamage, damage, oldHP, SPELL_ACID_SPRAY);
+				magicOnEntityHit(parent, &my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, SPELL_ACID_SPRAY);
 			}
 			else
 			{
-				magicOnPlayerHit(parent, hit.entity, hitstats, preResistanceDamage, 0, oldHP, SPELL_ACID_SPRAY);
+				magicOnEntityHit(parent, &my, hit.entity, hitstats, preResistanceDamage, 0, oldHP, SPELL_ACID_SPRAY);
 			}
 
 			// write the obituary
@@ -499,7 +499,7 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 			Sint32 oldHP = hitstats->HP;
 			hit.entity->modHP(-damage);
 
-			magicOnPlayerHit(parent, hit.entity, hitstats, preResistanceDamage, damage, oldHP, SPELL_POISON);
+			magicOnEntityHit(parent, &my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, SPELL_POISON);
 
 			// write the obituary
 			if ( parent )
@@ -709,6 +709,7 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 			duration /= (1 + resistance);
 			if ( hit.entity->setEffect(EFF_WEBBED, true, 400, true) ) // 8 seconds.
 			{
+				magicOnEntityHit(parent, &my, hit.entity, hitstats, 0, 0, 0, SPELL_SPRAY_WEB);
 				if ( abs(duration - previousDuration) > 10 )
 				{
 					playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64); // play sound only if not recently webbed. (triple shot makes many noise)
@@ -850,6 +851,9 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 					spellEntity->skill[14] = hitstats->weapon->appearance;
 					spellEntity->skill[15] = hitstats->weapon->identified;
 					spellEntity->itemOriginalOwner = hit.entity->getUID();
+
+					magicOnEntityHit(parent, &my, hit.entity, hitstats, 0, 0, 0, SPELL_STEAL_WEAPON);
+
 					// hit messages
 					if ( player >= 0 )
 					{
@@ -1003,7 +1007,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			Sint32 oldHP = hitstats->HP;
 			hit.entity->modHP(-damage);
 
-			magicOnPlayerHit(parent, hit.entity, hitstats, preResistanceDamage, damage, oldHP, SPELL_DRAIN_SOUL);
+			magicOnEntityHit(parent, &my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, SPELL_DRAIN_SOUL);
 
 			if ( damage > hitstats->MP )
 			{
@@ -1575,6 +1579,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 					}
 
 					hit.entity->setEffect(EFF_CONFUSED, false, 0, false);
+					magicOnEntityHit(parent, &my, hit.entity, hitstats, 0, 0, 0, SPELL_CHARM_MONSTER);
 
 					// change the color of the hit entity.
 					hit.entity->flags[USERFLAG2] = true;
@@ -1633,6 +1638,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				}
 				if ( hit.entity->setEffect(EFF_PACIFY, true, duration, true) )
 				{
+					magicOnEntityHit(parent, &my, hit.entity, hitstats, 0, 0, 0, SPELL_CHARM_MONSTER);
 					playSoundEntity(hit.entity, 168, 128); // Healing.ogg
 					if ( player >= 0 )
 					{
@@ -2636,6 +2642,7 @@ void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, i
 				{
 					hit.entity->setEffect(EFF_SHADOW_TAGGED, true, 10 * TICKS_PER_SECOND, true);
 				}
+				magicOnEntityHit(parent, &my, hit.entity, hitstats, 0, 0, 0, SPELL_SHADOW_TAG);
 				parent->creatureShadowTaggedThisUid = hit.entity->getUID();
 				serverUpdateEntitySkill(parent, 54);
 				if ( !sameAsPrevious )

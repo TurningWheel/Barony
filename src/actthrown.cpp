@@ -824,6 +824,11 @@ void actThrown(Entity* my)
 					{
 						Compendium_t::Events_t::eventUpdate(parent->skill[2], 
 							Compendium_t::CPDM_DMG_MAX, item->type, damage);
+						if ( oldHP > hitstats->HP )
+						{
+							Compendium_t::Events_t::eventUpdate(parent->skill[2],
+								Compendium_t::CPDM_THROWN_DMG_TOTAL, item->type, oldHP - hitstats->HP);
+						}
 						if ( cat == THROWN )
 						{
 							if ( oldHP > hitstats->HP )

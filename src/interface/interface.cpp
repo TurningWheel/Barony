@@ -6743,7 +6743,10 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 			{
 				if ( tinkeringIsItemRepairable(item, gui_player) )
 				{
-					tinkeringRepairItem(item);
+					if ( tinkeringRepairItem(item) )
+					{
+						Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_TINKERKIT_REPAIRS, TOOL_TINKERING_KIT, 1);
+					}
 				}
 			}
 			else if ( tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
@@ -7860,6 +7863,8 @@ void GenericGUIMenu::alchemyCombinePotions()
 
 	if ( explodeSelf && players[gui_player] && players[gui_player]->entity )
 	{
+		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_ALEMBIC_EXPLOSIONS, TOOL_ALEMBIC, 1);
+
 		// hurt.
 		alchemyAddRecipe(gui_player, basePotionType, secondaryPotionType, TOOL_BOMB, true);
 		if ( multiplayer == CLIENT )
@@ -7943,6 +7948,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 				if ( result == POTION_WATER && !duplicateSucceed )
 				{
 					messagePlayer(gui_player, MESSAGE_MISC, Language::get(3356));
+					Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_ALEMBIC_DUPLICATION_FAIL, TOOL_ALEMBIC, 1);
 				}
 				else if ( newPotion )
 				{
@@ -7954,12 +7960,24 @@ void GenericGUIMenu::alchemyCombinePotions()
 						newPotion->status = duplicatedPotion->status;
 					}
 					messagePlayer(gui_player, MESSAGE_MISC, Language::get(3352), newPotion->description());
+					if ( duplicateSucceed )
+					{
+						Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_ALEMBIC_DUPLICATED, TOOL_ALEMBIC, 1);
+					}
 				}
 			}
 			else
 			{
 				messagePlayer(gui_player, MESSAGE_MISC, Language::get(3352), newPotion->description());
 				steamStatisticUpdate(STEAM_STAT_IN_THE_MIX, STEAM_STAT_INT, 1);
+				if ( samePotion )
+				{
+					Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_ALEMBIC_DECANTED, TOOL_ALEMBIC, 1);
+				}
+				else
+				{
+					Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_ALEMBIC_BREWED, TOOL_ALEMBIC, 1);
+				}
 			}
 
 			if ( newPotion )
@@ -8028,6 +8046,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 				Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
 				itemPickup(gui_player, emptyBottle);
 				messagePlayer(gui_player, MESSAGE_MISC, Language::get(3351), items[POTION_EMPTY].getIdentifiedName());
+				Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_BOTTLE_FROM_BREWING, POTION_EMPTY, 1);
 				free(emptyBottle);
 			}
 			if ( raiseSkill && local_rng.rand() % 2 == 0 )
@@ -8407,6 +8426,8 @@ bool GenericGUIMenu::tinkeringCraftItem(Item* item)
 	{
 		Item* pickedUp = itemPickup(gui_player, crafted);
 		messagePlayer(gui_player, MESSAGE_MISC, Language::get(3668), crafted->description());
+		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_TINKERKIT_CRAFTS, TOOL_TINKERING_KIT, 1);
+		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_GADGET_CRAFTED, crafted->type, 1);
 		free(crafted);
 		return true;
 	}
@@ -8520,10 +8541,26 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 				{
 					Uint32 color = makeColorRGB(0, 255, 0);
 					messagePlayerColor(player, MESSAGE_INVENTORY, color, Language::get(3665), metal + tinkeringBulkSalvageMetalScrap, items[pickedUp->type].getIdentifiedName());
+					if ( players[player]->isLocalPlayer() )
+					{
+						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TINKERKIT_METAL_SCRAPPED, TOOL_TINKERING_KIT, metal + tinkeringBulkSalvageMetalScrap);
+						if ( item && item->type == TOOL_DETONATOR_CHARGE )
+						{
+							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_DETONATOR_SCRAPPED_METAL, TOOL_DETONATOR_CHARGE, metal + tinkeringBulkSalvageMetalScrap);
+						}
+					}
 				}
 				else
 				{
 					messagePlayer(player, MESSAGE_MISC, Language::get(3665), metal + tinkeringBulkSalvageMetalScrap, items[pickedUp->type].getIdentifiedName());
+					if ( players[player]->isLocalPlayer() )
+					{
+						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TINKERKIT_METAL_SCRAPPED, TOOL_TINKERING_KIT, metal + tinkeringBulkSalvageMetalScrap);
+						if ( item && item->type == TOOL_DETONATOR_CHARGE )
+						{
+							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_DETONATOR_SCRAPPED_METAL, TOOL_DETONATOR_CHARGE, metal + tinkeringBulkSalvageMetalScrap);
+						}
+					}
 				}
 			}
 			else
@@ -8546,10 +8583,26 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 				{
 					Uint32 color = makeColorRGB(0, 255, 0);
 					messagePlayerColor(player, MESSAGE_INVENTORY, color, Language::get(3665), magic + tinkeringBulkSalvageMagicScrap, items[pickedUp->type].getIdentifiedName());
+					if ( players[player]->isLocalPlayer() )
+					{
+						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TINKERKIT_MAGIC_SCRAPPED, TOOL_TINKERING_KIT, magic + tinkeringBulkSalvageMagicScrap);
+						if ( item && item->type == TOOL_DETONATOR_CHARGE )
+						{
+							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_DETONATOR_SCRAPPED_MAGIC, TOOL_DETONATOR_CHARGE, magic + tinkeringBulkSalvageMagicScrap);
+						}
+					}
 				}
 				else
 				{
 					messagePlayer(player, MESSAGE_MISC, Language::get(3665), magic + tinkeringBulkSalvageMagicScrap, items[pickedUp->type].getIdentifiedName());
+					if ( players[player]->isLocalPlayer() )
+					{
+						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TINKERKIT_MAGIC_SCRAPPED, TOOL_TINKERING_KIT, magic + tinkeringBulkSalvageMagicScrap);
+						if ( item && item->type == TOOL_DETONATOR_CHARGE )
+						{
+							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_DETONATOR_SCRAPPED_MAGIC, TOOL_DETONATOR_CHARGE, magic + tinkeringBulkSalvageMagicScrap);
+						}
+					}
 				}
 			}
 			else
@@ -8662,6 +8715,14 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 		}
 	}
 
+	if ( players[player]->isLocalPlayer() && didCraft )
+	{
+		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_TINKERKIT_SALVAGED, TOOL_TINKERING_KIT, 1);
+		if ( item && item->type == TOOL_DETONATOR_CHARGE )
+		{
+			Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_DETONATOR_SCRAPPED, TOOL_DETONATOR_CHARGE, 1);
+		}
+	}
 	if ( !outsideInventory && didCraft )
 	{
 		consumeItem(item, player);
@@ -14333,7 +14394,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	}
 	alchFrame->setSize(alchFramePos);
 
-	if ( keystatus[SDLK_j] && enableDebugKeys )
+	/*if ( keystatus[SDLK_j] && enableDebugKeys )
 	{
 		if ( keystatus[SDLK_LSHIFT] )
 		{
@@ -14377,7 +14438,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 			}
 		}
 		keystatus[SDLK_j] = 0;
-	}
+	}*/
 	/*if ( keystatus[SDLK_H] && enableDebugKeys )
 	{
 		keystatus[SDLK_H] = 0;

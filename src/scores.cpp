@@ -5357,7 +5357,7 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 			break;
 	}
 #ifdef DEBUG_ACHIEVEMENTS
-	messagePlayer(player, MESSAGE_DEBUG, "[DEBUG]: Processed achievement %d, event: %d", achievement, achEvent);
+	//messagePlayer(player, MESSAGE_DEBUG, "[DEBUG]: Processed achievement %d, event: %d", achievement, achEvent);
 #endif
 }
 

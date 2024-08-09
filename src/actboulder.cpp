@@ -532,6 +532,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 						}
 						if ( stats->type == GYROBOT )
 						{
+							Compendium_t::Events_t::eventUpdate(entity->monsterAllyIndex, Compendium_t::CPDM_GYROBOT_BOULDERS, TOOL_GYROBOT, 1);
 							real_t tangent = atan2(leader->y - entity->y, leader->x - entity->x);
 							Entity* ohitentity = hit.entity;
 							lineTraceTarget(entity, entity->x, entity->y, tangent, 1024, 0, false, leader);

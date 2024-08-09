@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "player.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 Stat* stats[MAXPLAYERS];
 
@@ -1580,6 +1581,15 @@ bool Stat::emptyLootingBag(const int player, Uint32 key)
 						playSoundEntity(players[player]->entity, 35 + local_rng.rand() % 3, 64);
 					}
 					stats[i]->player_lootbags[key].looted = true;
+				}
+				int owner = (key & 0xF);
+				if ( owner == player )
+				{
+					Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_DEATHBOX_OPEN_OWN, TOOL_PLAYER_LOOT_BAG, 1);
+				}
+				else if ( owner != player )
+				{
+					Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_DEATHBOX_OPEN_OTHERS, TOOL_PLAYER_LOOT_BAG, 1);
 				}
 			}
 			stats[i]->player_lootbags.erase(key);

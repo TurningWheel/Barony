@@ -334,6 +334,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicCastByTinkerTrap(skill[22]),
 	actmagicTinkerTrapFriendlyFire(skill[23]),
 	actmagicReflectionCount(skill[25]),
+	actmagicFromSpellbook(skill[26]),
 	goldAmount(skill[0]),
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),
@@ -558,7 +559,7 @@ Entity::~Entity()
 	// alert clients of the entity's deletion
 	if ( multiplayer == SERVER && !loading )
 	{
-		if ( mynode->list == map.entities && uid != 0 && flags[NOUPDATE] == false )
+		if ( mynode && mynode->list == map.entities && uid != 0 && flags[NOUPDATE] == false )
 		{
 			for ( i = 1; i < MAXPLAYERS; ++i )
 			{
@@ -4725,7 +4726,8 @@ void Entity::handleEffects(Stat* myStats)
 						else
 						{
 							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(646), myStats->cloak->getName()); // "Your %s burns to ash!"
-							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_CLOAK_BURNED, myStats->cloak->type, 1);
+							//Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_CLOAK_BURNED, myStats->cloak->type, 1);
+							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BROKEN, myStats->cloak->type, 1);
 						}
 						if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 						{
@@ -4971,6 +4973,7 @@ void Entity::handleEffects(Stat* myStats)
 					}
 					myStats->amulet->count = 1;
 					myStats->amulet->status = BROKEN;
+					Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BROKEN, myStats->amulet->type, 1);
 					playSoundEntity(this, 76, 64);
 					if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 					{
@@ -5079,6 +5082,7 @@ void Entity::handleEffects(Stat* myStats)
 					messagePlayer(player, MESSAGE_STATUS | MESSAGE_OBITUARY, Language::get(657));
 				}
 				myStats->amulet->status = BROKEN;
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BROKEN, myStats->amulet->type, 1);
 				playSoundEntity(this, 76, 64);
 				if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 				{
@@ -7789,6 +7793,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 						playSoundEntity(hit.entity, 67, 128);
 						list_RemoveNode(hit.entity->mynode);
 						messagePlayer(player, MESSAGE_COMBAT, Language::get(663));
+
+						if ( myStats->weapon && myStats->weapon->type == TOOL_PICKAXE && !shapeshifted && pose != PLAYER_POSE_GOLEM_SMASH )
+						{
+							Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_PICKAXE_BOULDERS_DUG, myStats->weapon->type, 1);
+						}
+
 						if ( myStats->weapon && local_rng.rand() % 2 && pose != PLAYER_POSE_GOLEM_SMASH )
 						{
 							myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
@@ -8684,41 +8694,37 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
-					Sint32 oldHP = hitstats->HP;
-					hit.entity->modHP(-damage); // do the damage
-
-					if ( playerhit >= 0 )
+					Item** weaponToBreak = nullptr;
+					ItemType weaponType = static_cast<ItemType>(WOODEN_SHIELD);
+					bool hasMeleeGloves = false;
+					if ( myStats->gloves && !shapeshifted )
 					{
-						Compendium_t::Events_t::eventUpdateCodex(playerhit, Compendium_t::CPDM_HP_MOST_DMG_LOST_ONE_HIT, "hp", oldHP - hitstats->HP);
-					}
-					if ( player >= 0 )
-					{
-						if ( hitstats->HP < oldHP )
+						switch ( myStats->gloves->type )
 						{
-							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_MELEE_DMG_TOTAL, "melee", oldHP - hitstats->HP);
-							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_MELEE_HITS, "melee", 1);
-							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_MELEE_HITS_RUN, "melee", 1);
-							if ( chargeMult > 1 )
-							{
-								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CRITS_DMG_TOTAL, "crits", oldHP - hitstats->HP);
-								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CRIT_HITS, "crits", 1);
-								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_CRITS_HITS_RUN, "crits", 1);
-							}
-							if ( flanking )
-							{
-								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_FLANK_DMG, "flanking", oldHP - hitstats->HP);
-								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_FLANK_HITS, "flanking", 1);
-								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_FLANK_HITS_RUN, "flanking", 1);
-								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_FLANK_DMG_RUN, "flanking", oldHP - hitstats->HP);
-							}
-							else if ( backstab )
-							{
-								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_BACKSTAB_HITS, "backstabs", 1);
-								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_BACKSTAB_HITS_RUN, "backstabs", 1);
-								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_BACKSTAB_DMG_RUN, "backstabs", oldHP - hitstats->HP);
-							}
+						case BRASS_KNUCKLES:
+						case IRON_KNUCKLES:
+						case SPIKED_GAUNTLETS:
+							hasMeleeGloves = true;
+							break;
+						default:
+							break;
 						}
 					}
+					if ( myStats->weapon && !shapeshifted )
+					{
+						weaponToBreak = &myStats->weapon;
+					}
+					else if ( hasMeleeGloves )
+					{
+						weaponToBreak = &myStats->gloves;
+					}
+					if ( weaponToBreak != nullptr && !shapeshifted )
+					{
+						weaponType = (*weaponToBreak)->type;
+					}
+
+					Sint32 oldHP = hitstats->HP;
+					hit.entity->modHP(-damage); // do the damage
 
 					bool skillIncreased = false;
 					// skill increase
@@ -8848,42 +8854,21 @@ void Entity::attack(int pose, int charge, Entity* target)
 					bool isWeakWeapon = false;
 					bool artifactWeapon = false;
 					bool degradeWeapon = false;
-					ItemType weaponType = static_cast<ItemType>(WOODEN_SHIELD);
-					bool hasMeleeGloves = false;
-					if ( myStats->gloves && !shapeshifted )
-					{
-						switch ( myStats->gloves->type )
-						{
-							case BRASS_KNUCKLES:
-							case IRON_KNUCKLES:
-							case SPIKED_GAUNTLETS:
-								hasMeleeGloves = true;
-								break;
-							default:
-								break;
-						}
-					}
 
-					Item** weaponToBreak = nullptr;
-					
-					if ( myStats->weapon )
+					if ( weaponToBreak != nullptr && weaponType != WOODEN_SHIELD )
 					{
-						weaponToBreak = &myStats->weapon;
-					}
-					else if ( hasMeleeGloves )
-					{
-						weaponToBreak = &myStats->gloves;
-					}
-
-					if ( weaponToBreak != nullptr && !shapeshifted )
-					{
-						weaponType = (*weaponToBreak)->type;
-
 						if ( behavior == &actPlayer )
 						{
 							Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_ATTACKS,
 								weaponType, 1);
-							Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_DMG_MAX, weaponType, damage);
+							if ( pose == PLAYER_POSE_GOLEM_SMASH )
+							{
+								Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_SPELL_DMG, SPELL_ITEM, damage, false, SPELL_STRIKE);
+							}
+							else
+							{
+								Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_DMG_MAX, weaponType, damage);
+							}
 						}
 
 						if ( weaponType == ARTIFACT_AXE || weaponType == ARTIFACT_MACE || weaponType == ARTIFACT_SPEAR || weaponType == ARTIFACT_SWORD )
@@ -10525,6 +10510,43 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								achievementRhythmOfTheKnightVec[playerhit].clear();
 								//messagePlayer(0, "used AC!");
+							}
+						}
+					}
+
+					if ( playerhit >= 0 )
+					{
+						Compendium_t::Events_t::eventUpdateCodex(playerhit, Compendium_t::CPDM_HP_MOST_DMG_LOST_ONE_HIT, "hp", oldHP - hitstats->HP);
+					}
+					if ( player >= 0 )
+					{
+						if ( hitstats->HP < oldHP )
+						{
+							if ( weaponType != WOODEN_SHIELD )
+							{
+								Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_MELEE_DMG_TOTAL, weaponType, oldHP - hitstats->HP);
+							}
+							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_MELEE_DMG_TOTAL, "melee", oldHP - hitstats->HP);
+							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_MELEE_HITS, "melee", 1);
+							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_MELEE_HITS_RUN, "melee", 1);
+							if ( chargeMult > 1 )
+							{
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CRITS_DMG_TOTAL, "crits", oldHP - hitstats->HP);
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CRIT_HITS, "crits", 1);
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_CRITS_HITS_RUN, "crits", 1);
+							}
+							if ( flanking )
+							{
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_FLANK_DMG, "flanking", oldHP - hitstats->HP);
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_FLANK_HITS, "flanking", 1);
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_FLANK_HITS_RUN, "flanking", 1);
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_FLANK_DMG_RUN, "flanking", oldHP - hitstats->HP);
+							}
+							else if ( backstab )
+							{
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_BACKSTAB_HITS, "backstabs", 1);
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_BACKSTAB_HITS_RUN, "backstabs", 1);
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_BACKSTAB_DMG_RUN, "backstabs", oldHP - hitstats->HP);
 							}
 						}
 					}
@@ -12175,6 +12197,31 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		&& (src->monsterAllySummonRank != 0
 			|| src->monsterIsTinkeringCreation()) )
 	{
+		if ( root && behavior == &actPlayer )
+		{
+			if ( multiplayer == SINGLE )
+			{
+				if ( splitscreen )
+				{
+					Compendium_t::Events_t::eventUpdateMonster(skill[2], Compendium_t::CPDM_KILLED_MULTIPLAYER, src, 1);
+				}
+				else
+				{
+					Compendium_t::Events_t::eventUpdateMonster(skill[2], Compendium_t::CPDM_KILLED_SOLO, src, 1);
+				}
+			}
+			else
+			{
+				Compendium_t::Events_t::eventUpdateMonster(skill[2], Compendium_t::CPDM_KILLED_MULTIPLAYER, src, 1);
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( !client_disconnected[i] )
+					{
+						Compendium_t::Events_t::eventUpdateMonster(i, Compendium_t::CPDM_KILLED_PARTY, src, 1);
+					}
+				}
+			}
+		}
 		return; // summoned monster, no XP!
 	}
 	if ( srcStats->type == INCUBUS && !strncmp(srcStats->name, "inner demon", strlen("inner demon")) )
@@ -12390,6 +12437,8 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_XP_MAX_IN_FLOOR, "xp", gain, false, -1, true);
 			Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_XP_MAX_INSTANCE, "xp", gain);
 			Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_XP_KILLS, "xp", gain);
+
+			Compendium_t::Events_t::eventUpdateMonster(skill[2], Compendium_t::CPDM_KILL_XP, src, gain);
 		}
 		destStats->EXP += gain;
 	}
@@ -12694,6 +12743,18 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 				if ( root && leader->behavior == &actPlayer && srcStats->type == MINOTAUR )
 				{
 					steamAchievementClient(leader->skill[2], "BARONY_ACH_TIME_TO_PLAN");
+				}
+
+				if ( root )
+				{
+					if ( destStats && (destStats->type == SENTRYBOT || destStats->type == SPELLBOT) )
+					{
+						if ( leader->behavior == &actPlayer )
+						{
+							Compendium_t::Events_t::eventUpdate(leader->skill[2],
+								Compendium_t::CPDM_SENTRY_DEPLOY_KILLS, destStats->type == SENTRYBOT ? TOOL_SENTRYBOT : TOOL_SPELLBOT, 1);
+						}
+					}
 				}
 			}
 			else

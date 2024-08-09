@@ -1029,6 +1029,20 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3438));
 					}
 				}
+				else
+				{
+					if ( !using_magicstaff && !trap )
+					{
+						if ( usingSpellbook )
+						{
+							Compendium_t::Events_t::eventUpdate(caster->skill[2], Compendium_t::CPDM_SPELL_TARGETS, SPELLBOOK_FEAR, foundTarget);
+						}
+						else
+						{
+							Compendium_t::Events_t::eventUpdate(caster->skill[2], Compendium_t::CPDM_SPELL_TARGETS, SPELL_ITEM, foundTarget, false, SPELL_FEAR);
+						}
+					}
+				}
 			}
 			else if ( caster->behavior == &actMonster )
 			{
@@ -1551,6 +1565,27 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					if ( totalHeal > 0 )
 					{
 						serverUpdatePlayerGameplayStats(i, STATISTICS_HEAL_BOT, totalHeal);
+						if ( spell && spell->ID > SPELL_NONE )
+						{
+							if ( !using_magicstaff && !trap )
+							{
+								if ( usingSpellbook )
+								{
+									auto find = ItemTooltips.spellItems.find(spell->ID);
+									if ( find != ItemTooltips.spellItems.end() )
+									{
+										if ( find->second.spellbookId >= 0 && find->second.spellbookId < NUMITEMS && items[find->second.spellbookId].category == SPELLBOOK )
+										{
+											Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_SPELL_HEAL, (ItemType)find->second.spellbookId, totalHeal);
+										}
+									}
+								}
+								else
+								{
+									Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_SPELL_HEAL, SPELL_ITEM, totalHeal, false, spell->ID);
+								}
+							}
+						}
 					}
 					break;
 				}
@@ -2037,9 +2072,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				missileEntity->actmagicCastByMagicstaff = 1;
 			}
-			else if ( usingSpellbook && spellBookBonusPercent > 0 )
+			else if ( usingSpellbook )
 			{
-				missileEntity->actmagicSpellbookBonus = spellBookBonusPercent;
+				missileEntity->actmagicFromSpellbook = 1;
+				if ( spellBookBonusPercent > 0 )
+				{
+					missileEntity->actmagicSpellbookBonus = spellBookBonusPercent;
+				}
 			}
 			Stat* casterStats = caster->getStats();
 			if ( !trap && !using_magicstaff && casterStats && casterStats->EFFECTS[EFF_MAGICAMPLIFY] )
@@ -2165,9 +2204,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				missileEntity->actmagicCastByMagicstaff = 1;
 			}
-			else if ( usingSpellbook && spellBookBonusPercent > 0 )
+			else if ( usingSpellbook )
 			{
-				missileEntity->actmagicSpellbookBonus = spellBookBonusPercent;
+				missileEntity->actmagicFromSpellbook = 1;
+				if ( spellBookBonusPercent > 0 )
+				{
+					missileEntity->actmagicSpellbookBonus = spellBookBonusPercent;
+				}
 			}
 			node = list_AddNodeFirst(&missileEntity->children);
 			node->element = copySpell(spell);
@@ -2202,9 +2245,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				entity1->actmagicCastByMagicstaff = 1;
 			}
-			else if ( usingSpellbook && spellBookBonusPercent > 0 )
+			else if ( usingSpellbook )
 			{
-				entity1->actmagicSpellbookBonus = spellBookBonusPercent;
+				entity1->actmagicFromSpellbook = 1;
+				if ( spellBookBonusPercent > 0 )
+				{
+					entity1->actmagicSpellbookBonus = spellBookBonusPercent;
+				}
 			}
 			node = list_AddNodeFirst(&entity1->children);
 			node->element = copySpell(spell);
@@ -2235,9 +2282,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				entity2->actmagicCastByMagicstaff = 1;
 			}
-			else if ( usingSpellbook && spellBookBonusPercent > 0 )
+			else if ( usingSpellbook )
 			{
-				entity2->actmagicSpellbookBonus = spellBookBonusPercent;
+				entity2->actmagicFromSpellbook = 1;
+				if ( spellBookBonusPercent > 0 )
+				{
+					entity2->actmagicSpellbookBonus = spellBookBonusPercent;
+				}
 			}
 			node = list_AddNodeFirst(&entity2->children);
 			node->element = copySpell(spell);

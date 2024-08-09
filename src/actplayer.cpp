@@ -4544,6 +4544,8 @@ void actPlayer(Entity* my)
 		players[PLAYER_NUM]->compendiumProgress.playerAliveTimeStopped = 0;
 		players[PLAYER_NUM]->compendiumProgress.playerAliveTimeTotal = 0;
 		players[PLAYER_NUM]->compendiumProgress.playerGameTimeTotal = 0;
+		players[PLAYER_NUM]->compendiumProgress.playerEquipSlotTime.clear();
+		players[PLAYER_NUM]->compendiumProgress.allyTimeSpent.clear();
 
 		Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
 		nametag->x = my->x;
@@ -8106,6 +8108,38 @@ void actPlayer(Entity* my)
 		{
 			players[PLAYER_NUM]->compendiumProgress.playerSneakTime++;
 		}
+		Item* itemslots[10] = {
+			stats[PLAYER_NUM]->helmet,
+			stats[PLAYER_NUM]->breastplate,
+			stats[PLAYER_NUM]->gloves,
+			stats[PLAYER_NUM]->shoes,
+			stats[PLAYER_NUM]->shield,
+			stats[PLAYER_NUM]->weapon,
+			stats[PLAYER_NUM]->cloak,
+			stats[PLAYER_NUM]->amulet,
+			stats[PLAYER_NUM]->ring,
+			stats[PLAYER_NUM]->mask
+		};
+		for ( auto slot = 0; slot < 10; ++slot )
+		{
+			if ( itemslots[slot] )
+			{
+				players[PLAYER_NUM]->compendiumProgress.playerEquipSlotTime[(int)(itemslots[slot]->type)]++;
+			}
+		}
+		for ( node_t* node = stats[PLAYER_NUM]->FOLLOWERS.first; node != nullptr; node = node->next, ++i )
+		{
+			Entity* follower = nullptr;
+			if ( (Uint32*)node->element )
+			{
+				follower = uidToEntity(*((Uint32*)node->element));
+				if ( follower )
+				{
+					int type = follower->getMonsterTypeFromSprite();
+					players[PLAYER_NUM]->compendiumProgress.allyTimeSpent[type]++;
+				}
+			}
+		}
 		if ( ticks % (TICKS_PER_SECOND * 5) == 0 )
 		{
 			if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_TUTORIAL )
@@ -8124,6 +8158,29 @@ void actPlayer(Entity* my)
 
 			Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_CLASS_SNEAK_TIME, "sneaking", players[PLAYER_NUM]->compendiumProgress.playerSneakTime);
 			players[PLAYER_NUM]->compendiumProgress.playerSneakTime = 0;
+
+			for ( auto& pair : players[PLAYER_NUM]->compendiumProgress.playerEquipSlotTime )
+			{
+				if ( pair.second > 0 )
+				{
+					if ( items[pair.first].item_slot == EQUIPPABLE_IN_SLOT_RING )
+					{
+						Compendium_t::Events_t::eventUpdate(PLAYER_NUM, Compendium_t::CPDM_TIME_WORN, (ItemType)(pair.first), pair.second);
+					}
+				}
+				pair.second = 0;
+			}
+			for ( auto& pair : players[PLAYER_NUM]->compendiumProgress.allyTimeSpent )
+			{
+				if ( pair.second > 0 )
+				{
+					if ( pair.first == GYROBOT )
+					{
+						Compendium_t::Events_t::eventUpdate(PLAYER_NUM, Compendium_t::CPDM_GYROBOT_TIME_SPENT, TOOL_GYROBOT, pair.second);
+					}
+				}
+				pair.second = 0;
+			}
 		}
 	}
 

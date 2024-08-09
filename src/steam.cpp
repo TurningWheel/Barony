@@ -861,9 +861,12 @@ void steamAchievement(const char* achName)
 #endif
 
 #endif
-		Compendium_t::achievements[achName].unlocked = true;
-		Compendium_t::achievements[achName].unlockTime = getTime();
-		auto& unlockStatus = Compendium_t::AchievementData_t::unlocks[Compendium_t::achievements[achName].category];
+		auto find = Compendium_t::achievements.find(achName);
+		if ( find != Compendium_t::achievements.end() )
+		{
+			find->second.unlocked = true;
+			find->second.unlockTime = getTime();
+			auto& unlockStatus = Compendium_t::AchievementData_t::unlocks[find->second.category];
 		if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
 		{
 			unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
@@ -879,6 +882,7 @@ void steamAchievement(const char* achName)
 		Compendium_t::AchievementData_t::achievementUnlockedLookup.insert(achName);
 		Compendium_t::AchievementData_t::achievementsNeedResort = true;
 	}
+}
 }
 
 void steamUnsetAchievement(const char* achName)
