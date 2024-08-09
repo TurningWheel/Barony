@@ -4112,25 +4112,32 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		}
 	}
 
+	bool compendiumTooltip = false;
+	if ( parentFrame && !strcmp(parentFrame->getName(), "compendium") )
+	{
+		compendiumTooltip = true;
+	}
 
     if ( tooltipContainerFrame )
     {
-		tooltipContainerFrame->setSize(
-            SDL_Rect{ this->player.camera_virtualx1(),
-				this->player.camera_virtualy1(),
-				this->player.camera_virtualWidth(),
-				this->player.camera_virtualHeight()});
+		if ( compendiumTooltip )
+		{
+			tooltipContainerFrame->setSize(SDL_Rect{ 0, 0, parentFrame->getSize().w, parentFrame->getSize().h });
+		}
+		else
+		{
+			tooltipContainerFrame->setSize(
+			    SDL_Rect{ this->player.camera_virtualx1(),
+					this->player.camera_virtualy1(),
+					this->player.camera_virtualWidth(),
+					this->player.camera_virtualHeight()});
+		}
     }
     
 
 	players[player]->inventoryUI.miscTooltipOpacitySetpoint = 0;
 	players[player]->inventoryUI.miscTooltipOpacityAnimate = 0.0;
     
-	bool compendiumTooltip = false;
-	if ( parentFrame && !strcmp(parentFrame->getName(), "compendium") )
-	{
-		compendiumTooltip = true;
-	}
 
     auto& tooltipDisplayedSettings = compendiumTooltip ? this->player.inventoryUI.compendiumItemTooltipDisplay 
 		: this->player.inventoryUI.itemTooltipDisplay;
@@ -6011,8 +6018,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
         static ConsoleVariable<int> cvar_item_tooltip_max_height("/item_tooltip_max_height", 348);
         static ConsoleVariable<int> cvar_item_tooltip_max_height_compact("/item_tooltip_max_height_compact", 264);
         int maxHeight = !players[player]->bUseCompactGUIHeight() ? *cvar_item_tooltip_max_height : *cvar_item_tooltip_max_height_compact;
-        
-        if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR && players[player]->bUseCompactGUIHeight() )
+		if ( compendiumTooltip )
+		{
+			maxHeight = *cvar_item_tooltip_max_height;
+		}
+        else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR && players[player]->bUseCompactGUIHeight() )
         {
             maxHeight -= 68;
         }
@@ -6790,8 +6800,16 @@ void Player::HUD_t::finalizeFrameTooltip(Item* item, const int x, const int y, i
 		{
 			totalHeight += frameTooltipPrompt->getSize().h - 2;
 		}
-		const int lowestY = players[player]->camera_virtualHeight() - 
-			(players[player]->bUseCompactGUIHeight() ? *cvar_item_tooltip_lowest_y_compact : *cvar_item_tooltip_lowest_y);
+		int lowestY = 0;
+		if ( compendiumTooltip )
+		{
+			lowestY = tooltipContainerFrame->getSize().h - *cvar_item_tooltip_lowest_y;
+		}
+		else
+		{
+			lowestY = players[player]->camera_virtualHeight() -
+				(players[player]->bUseCompactGUIHeight() ? *cvar_item_tooltip_lowest_y_compact : *cvar_item_tooltip_lowest_y);
+		}
 		if ( totalHeight > lowestY )
 		{
 			mainPos.y -= (totalHeight - lowestY);
