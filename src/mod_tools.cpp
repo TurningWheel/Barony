@@ -11452,6 +11452,46 @@ void Compendium_t::readCodexFromFile()
 		{
 			obj.lorePoints = w["lore_points"].GetInt();
 		}
+		obj.linesToHighlight.clear();
+		for ( auto& line : obj.details )
+		{
+			if ( line.size() > 0 && line[0] == '-' )
+			{
+				line[0] = '\x1E';
+			}
+		}
+		if ( w.HasMember("feature_img") )
+		{
+			obj.featureImg = w["feature_img"].GetString();
+		}
+		if ( w.HasMember("details_line_highlights") )
+		{
+			for ( auto itr = w["details_line_highlights"].Begin(); itr != w["details_line_highlights"].End(); ++itr )
+			{
+				if ( itr->HasMember("color") )
+				{
+					Uint8 r, g, b;
+					if ( (*itr)["color"].HasMember("r") )
+					{
+						r = (*itr)["color"]["r"].GetInt();
+					}
+					if ( (*itr)["color"].HasMember("g") )
+					{
+						g = (*itr)["color"]["g"].GetInt();
+					}
+					if ( (*itr)["color"].HasMember("b") )
+					{
+						b = (*itr)["color"]["b"].GetInt();
+					}
+
+					obj.linesToHighlight.push_back(makeColorRGB(r, g, b));
+				}
+				else
+				{
+					obj.linesToHighlight.push_back(0);
+				}
+			}
+		}
 
 		Compendium_t::Events_t::eventCodexIDLookup[name] = obj.id;
 		Compendium_t::Events_t::codexIDToString[obj.id + Compendium_t::Events_t::kEventCodexOffset] = name;
@@ -11549,7 +11589,7 @@ void Compendium_t::readWorldFromFile()
 		return;
 	}
 
-	char buf[65536];
+	char buf[120000];
 	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
 	rapidjson::StringStream is(buf);
@@ -11587,6 +11627,42 @@ void Compendium_t::readWorldFromFile()
 		if ( w.HasMember("lore_points") )
 		{
 			obj.lorePoints = w["lore_points"].GetInt();
+		}
+		obj.linesToHighlight.clear();
+		for ( auto& line : obj.details )
+		{
+			if ( line.size() > 0 && line[0] == '-' )
+			{
+				line[0] = '\x1E';
+			}
+		}
+		if ( w.HasMember("details_line_highlights") )
+		{
+			for ( auto itr = w["details_line_highlights"].Begin(); itr != w["details_line_highlights"].End(); ++itr )
+			{
+				if ( itr->HasMember("color") )
+				{
+					Uint8 r, g, b;
+					if ( (*itr)["color"].HasMember("r") )
+					{
+						r = (*itr)["color"]["r"].GetInt();
+					}
+					if ( (*itr)["color"].HasMember("g") )
+					{
+						g = (*itr)["color"]["g"].GetInt();
+					}
+					if ( (*itr)["color"].HasMember("b") )
+					{
+						b = (*itr)["color"]["b"].GetInt();
+					}
+
+					obj.linesToHighlight.push_back(makeColorRGB(r, g, b));
+				}
+				else
+				{
+					obj.linesToHighlight.push_back(0);
+				}
+			}
 		}
 
 		Compendium_t::Events_t::eventWorldIDLookup[name] = obj.id;

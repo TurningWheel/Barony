@@ -3925,6 +3925,7 @@ struct Compendium_t
 			std::string imagePath = "";
 			std::vector<std::string> models;
 			std::vector<std::string> blurb;
+			std::vector<Uint32> linesToHighlight;
 			std::vector<std::string> details;
 			std::set<std::string> unlockAchievements;
 			std::set<EventTags> unlockTags;
@@ -3948,8 +3949,10 @@ struct Compendium_t
 			std::string imagePath = "";
 			std::vector<std::string> renderedImagePaths;
 			std::vector<std::string> blurb;
+			std::vector<Uint32> linesToHighlight;
 			std::vector<std::string> details;
 			std::vector<std::string> models;
+			std::string featureImg = "";
 			int id = -1;
 			CompendiumView_t view;
 			int lorePoints = 0;

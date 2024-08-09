@@ -32742,7 +32742,7 @@ failed:
 
 			if ( page_right = page_right->findFrame("page_right_inner") )
 			{
-				if ( auto details = page_right->findField("details") )
+				if ( auto details = page_right->findField("world_details") )
 				{
 					std::string txt = "";
 					for ( auto& str : entry.details )
@@ -32751,6 +32751,14 @@ failed:
 						txt += str;
 					}
 					details->setText(txt.c_str());
+					details->clearLinesToColor();
+					for ( size_t i = 0; i < entry.linesToHighlight.size(); ++i )
+					{
+						if ( entry.linesToHighlight[i] > 0 )
+						{
+							details->addColorToLine(i, entry.linesToHighlight[i]);
+						}
+					}
 
 					const int numLines = details->getNumTextLines();
 					auto actualFont = Font::get(details->getFont());
@@ -35134,13 +35142,37 @@ failed:
 				{
 					f->removeSelf();
 				}
-				if ( auto details = page_right->findField("details") )
+
+				if ( auto details = page_right->findField("codex_details") )
 				{
+					auto featureImg = page_right->findImage("feature_img");
+					if ( featureImg )
+					{
+						featureImg->disabled = true;
+					}
+					auto featureTxt = page_right->findField("feature txt");
+					if ( featureTxt )
+					{
+						featureTxt->setDisabled(true);
+					}
+
 					Field* tipsTxt = page_right->findField("tips txt");
 					if ( tipsTxt )
 					{
 						tipsTxt->setDisabled(true);
+
+						SDL_Rect tipsPos = tipsTxt->getSize();
+						if ( featureTxt )
+						{
+							tipsPos.y = featureTxt->getSize().y;
+						}
+						tipsTxt->setSize(tipsPos);
+
+						SDL_Rect pos = details->getSize();
+						pos.y = tipsPos.y + 27;
+						details->setSize(pos);
 					}
+					details->clearLinesToColor();
 					if ( name == "classes list" )
 					{
 						details->setText("");
@@ -35149,6 +35181,36 @@ failed:
 					}
 					else
 					{
+						if ( entry.featureImg != "" )
+						{
+							if ( auto imgGet = Image::get(entry.featureImg.c_str()) )
+							{
+								featureImg->pos.w = imgGet->getWidth();
+								featureImg->pos.h = imgGet->getHeight();
+								featureImg->disabled = false;
+								featureImg->path = entry.featureImg;
+							}
+						}
+						if ( !featureImg->disabled )
+						{
+							if ( featureTxt )
+							{
+								featureTxt->setDisabled(false);
+							}
+							SDL_Rect pos = details->getSize();
+							int offset = featureImg->pos.y + featureImg->pos.h + 16;
+							if ( tipsTxt )
+							{
+								SDL_Rect tipsPos = tipsTxt->getSize();
+								tipsPos.y += offset;
+								tipsTxt->setSize(tipsPos);
+
+								SDL_Rect pos = details->getSize();
+								pos.y = tipsPos.y + 27;
+								details->setSize(pos);
+							}
+						}
+
 						if ( tipsTxt )
 						{
 							tipsTxt->setDisabled(false);
@@ -35160,6 +35222,13 @@ failed:
 							txt += str;
 						}
 						details->setText(txt.c_str());
+						for ( size_t i = 0; i < entry.linesToHighlight.size(); ++i )
+						{
+							if ( entry.linesToHighlight[i] > 0 )
+							{
+								details->addColorToLine(i, entry.linesToHighlight[i]);
+							}
+						}
 					}
 
 					const int numLines = details->getNumTextLines();
@@ -37391,15 +37460,27 @@ failed:
 		{
 			auto charTxt = page_right_inner->addField("tips txt", 64);
 			charTxt->setFont(menu_option_font);
-			charTxt->setText("USAGE TIPS");
+			charTxt->setText(Language::get(6187));
 			charTxt->setHJustify(Field::justify_t::LEFT);
 			charTxt->setVJustify(Field::justify_t::TOP);
 			charTxt->setSize(SDL_Rect{ padx, pady, page_right_inner->getSize().w - padx - 26, 24 });
 			charTxt->setColor(makeColor(198, 190, 179, 255));
 
+			auto featureTxt = page_right_inner->addField("feature txt", 64);
+			featureTxt->setFont(menu_option_font);
+			featureTxt->setText(Language::get(6186));
+			featureTxt->setHJustify(Field::justify_t::LEFT);
+			featureTxt->setVJustify(Field::justify_t::TOP);
+			featureTxt->setSize(charTxt->getSize());
+			featureTxt->setColor(makeColor(198, 190, 179, 255));
+			featureTxt->setDisabled(true);
+			auto featureImg = page_right_inner->addImage(SDL_Rect{ 8, featureTxt->getSize().y + 28, 0, 0},
+				0xFFFFFFFF, "", "feature_img");
+			featureImg->disabled = true;
+
 			int statx = padx + 4;
 			int staty = pady + 18 + 9;
-			auto statsTxt = page_right_inner->addField("details", 1024);
+			auto statsTxt = page_right_inner->addField("codex_details", 1024);
 			statsTxt->setFont(smallfont_outline);
 			statsTxt->setText("");
 			statsTxt->setHJustify(Field::justify_t::LEFT);
@@ -37411,7 +37492,7 @@ failed:
 		{
 			auto charTxt = page_right_inner->addField("tips txt", 1024);
 			charTxt->setFont(menu_option_font);
-			charTxt->setText("DETAILS");
+			charTxt->setText(Language::get(6188));
 			charTxt->setHJustify(Field::justify_t::LEFT);
 			charTxt->setVJustify(Field::justify_t::TOP);
 			charTxt->setSize(SDL_Rect{ padx, pady, page_right_inner->getSize().w - padx - 26, 24 });
@@ -37419,7 +37500,7 @@ failed:
 
 			int statx = padx + 4;
 			int staty = pady + 18 + 9;
-			auto statsTxt = page_right_inner->addField("details", 1024);
+			auto statsTxt = page_right_inner->addField("world_details", 1024);
 			statsTxt->setFont(smallfont_outline);
 			statsTxt->setText("");
 			statsTxt->setHJustify(Field::justify_t::LEFT);
@@ -39186,6 +39267,11 @@ failed:
 			nav_slider->addWidgetAction("MenuPageRight", "tab_right");
 			nav_slider->addWidgetMovement("MenuAlt2", "nav_filter_sort");
 			nav_slider->addWidgetAction("MenuAlt1", "page_right_unlock_btn");
+			nav_slider->setWidgetLeft("contents");
+			nav_slider->setWidgetRight("contents");
+			nav_slider->setWidgetUp("contents");
+			nav_slider->setWidgetDown("contents");
+			nav_slider->addWidgetAction("MenuConfirm", "contents");
 
 			nav_slider->setCallback([](Slider& slider) {
 				if ( auto frame = static_cast<Frame*>(slider.getParent()) )
@@ -39746,7 +39832,6 @@ failed:
 		right_slider->addWidgetAction("MenuCancel", "right_back_button");
 		right_slider->addWidgetAction("MenuPageLeft", "tab_left");
 		right_slider->addWidgetAction("MenuPageRight", "tab_right");
-		//right_slider->addWidgetMovement("MenuAlt2", "nav_filter_sort");
 		right_slider->addWidgetAction("MenuAlt1", "page_right_unlock_btn");
 
 		right_slider->setCallback([](Slider& slider) {
