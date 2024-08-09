@@ -2277,6 +2277,8 @@ public:
 		Uint32 playerAliveTimeStopped = 0;
 		Uint32 playerAliveTimeTotal = 0;
 		Uint32 playerGameTimeTotal = 0;
+		std::map<int, Uint32> playerEquipSlotTime;
+		std::map<int, Uint32> allyTimeSpent;
 		CompendiumProgress_t(Player& p) : player(p)
 		{};
 		~CompendiumProgress_t() {};

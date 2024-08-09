@@ -1160,6 +1160,10 @@ void ItemTooltips_t::readItemsFromFile()
 			{
 				t.spellTags.insert(SPELL_TAG_BASIC_HIT_MESSAGE);
 			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "TRACK_SPELL_HITS" )
+			{
+				t.spellTags.insert(SPELL_TAG_TRACK_HITS);
+			}
 		}
 
 		t.spellbookInternalName = spell_itr->value["spellbook_internal_name"].GetString();
@@ -8140,6 +8144,7 @@ LocalAchievements_t LocalAchievements;
 void LocalAchievements_t::readFromFile()
 {
 	LocalAchievements.init();
+	Compendium_t::AchievementData_t::achievementsNeedFirstData = false;
 
 	char path[PATH_MAX] = "";
 	completePath(path, "savegames/achievements.json", outputdir);
@@ -8172,11 +8177,16 @@ void LocalAchievements_t::readFromFile()
 		ach.unlocked = achievement->value["unlocked"].GetBool();
 		ach.unlockTime = achievement->value["unlock_time"].GetInt64();
 
-		auto& achData = Compendium_t::achievements[achievement->name.GetString()];
-		achData.unlockTime = ach.unlockTime;
-		if ( ach.unlocked )
+		auto find = Compendium_t::achievements.find(achievement->name.GetString());
+		if ( find != Compendium_t::achievements.end() )
 		{
-			Compendium_t::AchievementData_t::achievementUnlockedLookup.insert(ach.name);
+			auto& achData = find->second;
+			achData.unlocked = ach.unlocked;
+			achData.unlockTime = ach.unlockTime;
+			if ( ach.unlocked )
+			{
+				Compendium_t::AchievementData_t::achievementUnlockedLookup.insert(ach.name);
+			}
 		}
 	}
 
@@ -8192,6 +8202,7 @@ void LocalAchievements_t::readFromFile()
 	{
 		g_SteamStats[statNum].m_iValue = LocalAchievements.statistics[statNum].value;
 	}
+	sortAchievementsForDisplay();
 }
 
 void LocalAchievements_t::writeToFile()
@@ -10659,6 +10670,12 @@ std::map<std::string, std::string> Compendium_t::CompendiumMagic_t::contentsMap;
 std::map<std::string, std::vector<std::pair<std::string, std::string>>> Compendium_t::AchievementData_t::contents;
 std::map<std::string, Compendium_t::CompendiumUnlockStatus> Compendium_t::AchievementData_t::unlocks;
 std::map<std::string, std::string> Compendium_t::AchievementData_t::contentsMap;
+int Compendium_t::CompendiumMonsters_t::completionPercent = 0;
+int Compendium_t::CompendiumCodex_t::completionPercent = 0;
+int Compendium_t::CompendiumItems_t::completionPercent = 0;
+int Compendium_t::CompendiumMagic_t::completionPercent = 0;
+int Compendium_t::CompendiumWorld_t::completionPercent = 0;
+int Compendium_t::AchievementData_t::completionPercent = 0;
 
 std::map<int, std::string> Compendium_t::Events_t::monsterIDToString;
 std::map<int, std::string> Compendium_t::Events_t::codexIDToString;
@@ -10767,11 +10784,11 @@ void Compendium_t::updateTooltip()
 		auto compendiumFrame = MainMenu::main_menu_frame->findFrame("compendium");
 		if ( !compendiumFrame ) { return; }
 		
-		players[0]->inventoryUI.updateInventoryItemTooltip(compendiumFrame);
+		players[MainMenu::getMenuOwner()]->inventoryUI.updateInventoryItemTooltip(compendiumFrame);
 		
 		if ( update )
 		{
-			players[0]->hud.updateFrameTooltip(&compendiumItem, tooltipPos.x, tooltipPos.y, Player::PANEL_JUSTIFY_RIGHT, compendiumFrame);
+			players[MainMenu::getMenuOwner()]->hud.updateFrameTooltip(&compendiumItem, tooltipPos.x, tooltipPos.y, Player::PANEL_JUSTIFY_RIGHT, compendiumFrame);
 		}
 	}
 }
@@ -10861,6 +10878,9 @@ void Compendium_t::readItemsFromFile()
 					alwaysTrackedEvents.insert("DEGRADED");
 					alwaysTrackedEvents.insert("REPAIRS");
 				}
+
+				Compendium_t::Events_t::itemDisplayedEventsList.erase(itemType);
+				Compendium_t::Events_t::itemDisplayedCustomEventsList.erase(itemType);
 			}
 		}
 
@@ -10909,6 +10929,8 @@ void Compendium_t::readItemsFromFile()
 				}
 			}
 		}
+
+		std::set<int> itemsInList;
 		if ( w.HasMember("events_display") )
 		{
 			for ( auto itr = w["events_display"].Begin(); itr != w["events_display"].End(); ++itr )
@@ -10927,12 +10949,48 @@ void Compendium_t::readItemsFromFile()
 							{
 								auto& vec = Compendium_t::Events_t::itemDisplayedEventsList[itemType];
 								if ( std::find(vec.begin(), vec.end(), (Compendium_t::EventTags)find2->second.id)
-									== vec.end() )
+									== vec.end() || find2->second.id == EventTags::CPDM_CUSTOM_TAG )
 								{
 									vec.push_back((Compendium_t::EventTags)find2->second.id);
 								}
+								itemsInList.insert(itemType);
 							}
 						}
+					}
+				}
+			}
+		}
+
+		if ( w.HasMember("custom_events_display") )
+		{
+			std::vector<std::string> customEvents;
+			for ( auto itr = w["custom_events_display"].Begin(); itr != w["custom_events_display"].End(); ++itr )
+			{
+				customEvents.push_back(itr->GetString());
+			}
+
+			for ( auto item : itemsInList )
+			{
+				auto& vec = Compendium_t::Events_t::itemDisplayedEventsList[item];
+				int index = -1;
+				for ( auto& v : vec )
+				{
+					++index;
+					auto& vec2 = Compendium_t::Events_t::itemDisplayedCustomEventsList[item];
+					if ( v == EventTags::CPDM_CUSTOM_TAG )
+					{
+						if ( index < customEvents.size() )
+						{
+							vec2.push_back(customEvents[index]);
+						}
+						else
+						{
+							vec2.push_back("");
+						}
+					}
+					else
+					{
+						vec2.push_back("");
 					}
 				}
 			}
@@ -11175,10 +11233,14 @@ void Compendium_t::readMagicFromFile()
 				if ( !isSpell )
 				{
 					Compendium_t::Events_t::itemIDToString[itemType] = name;
+					Compendium_t::Events_t::itemDisplayedEventsList.erase(itemType);
+					Compendium_t::Events_t::itemDisplayedCustomEventsList.erase(itemType);
 				}
 				else
 				{
 					Compendium_t::Events_t::itemIDToString[Compendium_t::Events_t::kEventSpellOffset + item.spellID] = name;
+					Compendium_t::Events_t::itemDisplayedEventsList.erase(Compendium_t::Events_t::kEventSpellOffset + item.spellID);
+					Compendium_t::Events_t::itemDisplayedCustomEventsList.erase(Compendium_t::Events_t::kEventSpellOffset + item.spellID);
 				}
 				if ( itemType != SPELL_ITEM && ::items[itemType].item_slot != NO_EQUIP )
 				{
@@ -11246,6 +11308,8 @@ void Compendium_t::readMagicFromFile()
 				}
 			}
 		}
+
+		std::set<int> itemsInList;
 		if ( w.HasMember("events_display") )
 		{
 			for ( auto itr = w["events_display"].Begin(); itr != w["events_display"].End(); ++itr )
@@ -11265,21 +11329,58 @@ void Compendium_t::readMagicFromFile()
 							{
 								auto& vec = Compendium_t::Events_t::itemDisplayedEventsList[Compendium_t::Events_t::kEventSpellOffset + item.spellID];
 								if ( std::find(vec.begin(), vec.end(), (Compendium_t::EventTags)find2->second.id)
-									== vec.end() )
+									== vec.end() || find2->second.id == EventTags::CPDM_CUSTOM_TAG )
 								{
 									vec.push_back((Compendium_t::EventTags)find2->second.id);
 								}
+								itemsInList.insert(Compendium_t::Events_t::kEventSpellOffset + item.spellID);
 							}
 							else if ( itemType >= WOODEN_SHIELD && itemType < NUMITEMS )
 							{
 								auto& vec = Compendium_t::Events_t::itemDisplayedEventsList[itemType];
 								if ( std::find(vec.begin(), vec.end(), (Compendium_t::EventTags)find2->second.id)
-									== vec.end() )
+									== vec.end() || find2->second.id == EventTags::CPDM_CUSTOM_TAG )
 								{
 									vec.push_back((Compendium_t::EventTags)find2->second.id);
 								}
+								itemsInList.insert(itemType);
 							}
 						}
+					}
+				}
+			}
+		}
+
+		if ( w.HasMember("custom_events_display") )
+		{
+			std::vector<std::string> customEvents;
+			for ( auto itr = w["custom_events_display"].Begin(); itr != w["custom_events_display"].End(); ++itr )
+			{
+				customEvents.push_back(itr->GetString());
+			}
+
+			for ( auto item : itemsInList )
+			{
+				auto& vec = Compendium_t::Events_t::itemDisplayedEventsList[item];
+				int index = -1;
+				for ( auto& v : vec )
+				{
+					++index;
+					auto& vec2 = Compendium_t::Events_t::itemDisplayedCustomEventsList[item];
+					if ( v == EventTags::CPDM_CUSTOM_TAG )
+					{
+						if ( index < customEvents.size() )
+						{
+							vec2.push_back(customEvents[index]);
+						}
+						else
+						{
+							vec2.push_back("");
+						}
+					}
+					else
+					{
+						vec2.push_back("");
 					}
 				}
 			}
@@ -11624,6 +11725,11 @@ void Compendium_t::readMonstersFromFile()
 		Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILLED_MULTIPLAYER].insert(type);
 		Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILLED_BY].insert(type);
 		Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_RECRUITED].insert(type);
+		Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILL_XP].insert(type);
+		if ( i == GYROBOT )
+		{
+			Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_GYROBOT_FLIPS].insert(type);
+		}
 
 		Compendium_t::Events_t::monsterIDToString[type] = monstertypename[i];
 	}
@@ -11645,6 +11751,7 @@ void Compendium_t::readMonstersFromFile()
 			Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILLED_MULTIPLAYER].insert(type);
 			Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILLED_BY].insert(type);
 			Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_RECRUITED].insert(type);
+			Compendium_t::Events_t::eventMonsterLookup[EventTags::CPDM_KILL_XP].insert(type);
 
 			if ( pair.first == "mysterious shop" )
 			{
@@ -11808,6 +11915,24 @@ std::string Compendium_t::Events_t::formatEventRecordText(Sint32 value, const ch
 			resultsFormatting = langMap[fmt];
 		}
 	}
+	else if ( formatType && itemIDToString.find(formatVal) != itemIDToString.end()
+		&& itemIDToString.at(formatVal) == formatType )
+	{
+		std::string fmt = "format_";
+		fmt += formatType;
+		if ( langMap.find(fmt) != langMap.end() )
+		{
+			resultsFormatting = langMap[fmt];
+		}
+		else if ( langMap.find("format") != langMap.end() )
+		{
+			resultsFormatting = langMap["format"];
+		}
+		else
+		{
+			return std::to_string(value);
+		}
+	}
 	else if ( langMap.find("format") != langMap.end() )
 	{
 		resultsFormatting = langMap["format"];
@@ -11892,6 +12017,14 @@ std::string Compendium_t::Events_t::formatEventRecordText(Sint32 value, const ch
 			}
 			else if ( resultsFormatting[c + 1] == 'd' )
 			{
+				output += std::to_string(value);
+			}
+			else if ( resultsFormatting[c + 1] == 'p' )
+			{
+				if ( value >= 0 )
+				{
+					output += '+';
+				}
 				output += std::to_string(value);
 			}
 			else if ( resultsFormatting[c + 1] == 'h' )
@@ -12024,9 +12157,18 @@ std::vector<std::pair<std::string, Sint32>> Compendium_t::Events_t::getCustomEve
 			}
 		}
 
-		if ( valueType != "class_sum" )
+		int specificItemId = -1;
+		if ( compendiumSection == "items" || compendiumSection == "magic" )
 		{
+			specificItemId = specificClass;
 			specificClass = -1;
+		}
+		else
+		{
+			if ( valueType != "class_sum" )
+			{
+				specificClass = -1;
+			}
 		}
 
 		std::map<int, int> mapValueTotals;
@@ -12043,9 +12185,17 @@ std::vector<std::pair<std::string, Sint32>> Compendium_t::Events_t::getCustomEve
 			{
 				std::string name = (*itr)["name"].GetString();
 				std::string cat = (*itr)["category"].GetString();
-				if ( cat == "" )
+
+				if ( compendiumSection == "items" || compendiumSection == "magic" )
 				{
-					cat = compendiumContentsSelected;
+					// items dont use the category header by default, either specific item or current viewed item
+				}
+				else
+				{
+					if ( cat == "" )
+					{
+						cat = compendiumContentsSelected;
+					}
 				}
 
 				if ( valueType == "sum_items" )
@@ -12120,9 +12270,35 @@ std::vector<std::pair<std::string, Sint32>> Compendium_t::Events_t::getCustomEve
 					continue;
 				}
 
-				auto& eventSectionIDLookup = compendiumSection == "codex" ? eventCodexIDLookup : eventWorldIDLookup;
-				auto findCat = eventSectionIDLookup.find(cat);
-				if ( findCat != eventSectionIDLookup.end() )
+				int foundId = -1;
+				if ( compendiumSection == "items" || compendiumSection == "magic" )
+				{
+					if ( cat == "" )
+					{
+						if ( itemIDToString.find(specificItemId) != itemIDToString.end() )
+						{
+							foundId = specificItemId;
+						}
+					}
+					else
+					{
+						auto find = ItemTooltips.itemNameStringToItemID.find(cat);
+						if ( find != ItemTooltips.itemNameStringToItemID.end() )
+						{
+							foundId = find->second;
+						}
+					}
+				}
+				else
+				{
+					auto& eventSectionIDLookup = compendiumSection == "codex" ? eventCodexIDLookup : eventWorldIDLookup;
+					auto findCat = eventSectionIDLookup.find(cat);
+					if ( findCat != eventSectionIDLookup.end() )
+					{
+						foundId = findCat->second;
+					}
+				}
+				if ( foundId >= 0 )
 				{
 					auto findTag = eventIdLookup.find(name);
 					if ( findTag != eventIdLookup.end() )
@@ -12139,11 +12315,26 @@ std::vector<std::pair<std::string, Sint32>> Compendium_t::Events_t::getCustomEve
 						}
 						auto& playerTags = playerEvents[tag];
 						std::vector<std::pair<int, int>> codexIDs;
-						codexIDs.push_back(std::make_pair(-1, findCat->second));
+						codexIDs.push_back(std::make_pair(-1, foundId));
 
-						auto& eventSectionLookup = compendiumSection == "codex" ? eventCodexLookup : eventWorldLookup;
+						bool foundLookup = false;
+						if ( compendiumSection == "items" || compendiumSection == "magic" )
+						{
+							if ( eventItemLookup[tag].find(foundId) != eventItemLookup[tag].end() )
+							{
+								foundLookup = true;
+							}
+						}
+						else
+						{
+							auto& eventSectionLookup = compendiumSection == "codex" ? eventCodexLookup : eventWorldLookup;
+							if ( eventSectionLookup[tag].find(cat) != eventSectionLookup[tag].end() )
+							{
+								foundLookup = true;
+							}
+						}
 
-						if ( eventSectionLookup[tag].find(cat) != eventSectionLookup[tag].end() )
+						if ( foundLookup )
 						{
 							auto& def = events[tag];
 							if ( def.attributes.find("stats") != def.attributes.end() && valueType != "max_class" )
@@ -12255,7 +12446,7 @@ std::vector<std::pair<std::string, Sint32>> Compendium_t::Events_t::getCustomEve
 										codexID += kEventCodexOffset; // convert to offset
 									}
 								}
-								else
+								else if ( compendiumSection == "world" )
 								{
 									if ( codexID < kEventWorldOffset )
 									{
@@ -12275,7 +12466,7 @@ std::vector<std::pair<std::string, Sint32>> Compendium_t::Events_t::getCustomEve
 								int numFormats = 0;
 								if ( valueType == "sum_category_max" || valueType == "sum_category_min" )
 								{
-									int categoryValue = findCat->second;
+									int categoryValue = foundId;
 									if ( formatType == "skills" )
 									{
 										for ( int i = 0; i < NUMPROFICIENCIES; ++i )
@@ -12721,7 +12912,7 @@ void Compendium_t::Events_t::loadItemsSaveData()
 			}
 			if ( itemType >= kEventCodexOffset && itemType <= kEventCodexOffsetMax )
 			{
-				eventUpdateCodex(0, id, nullptr, value, true, itemType - kEventCodexOffset);
+				eventUpdateCodex(0, id, nullptr, value, true, itemType);
 				continue;
 			}
 			if ( itemType < 0 || (itemType >= NUMITEMS && itemType < kEventSpellOffset) )
@@ -12840,11 +13031,26 @@ void Compendium_t::readUnlocksSaveData()
 	CompendiumCodex_t::unlocks["crits"] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
 	CompendiumCodex_t::unlocks["flanking"] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
 	CompendiumCodex_t::unlocks["backstabs"] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;*/
+	// debug stuff
+	/*for ( auto& data : CompendiumEntries.worldObjects )
+	{
+		CompendiumWorld_t::unlocks[data.first] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+	}
+
+	for ( auto& data : CompendiumEntries.monsters )
+	{
+		CompendiumMonsters_t::unlocks[data.first] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+	}*/
 
 	for ( auto& data : CompendiumEntries.items )
 	{
 		for ( auto& entry : data.second.items_in_category )
 		{
+			// debug stuff
+			/*CompendiumItems_t::unlocks[data.first] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+			CompendiumItems_t::itemUnlocks[entry.itemID == SPELL_ITEM
+				? entry.spellID + Compendium_t::Events_t::kEventSpellOffset :
+				entry.itemID] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;*/
 			if ( entry.itemID == TOOL_TORCH
 				|| entry.itemID == BRONZE_SWORD
 				|| entry.itemID == WOODEN_SHIELD
@@ -12868,6 +13074,11 @@ void Compendium_t::readUnlocksSaveData()
 	{
 		for ( auto& entry : data.second.items_in_category )
 		{
+			// debug stuff
+			/*CompendiumItems_t::unlocks[data.first] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+			CompendiumItems_t::itemUnlocks[entry.itemID == SPELL_ITEM
+				? entry.spellID + Compendium_t::Events_t::kEventSpellOffset :
+				entry.itemID] = CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;*/
 			if ( entry.itemID == TOOL_TORCH
 				|| entry.itemID == BRONZE_SWORD
 				|| entry.itemID == WOODEN_SHIELD
@@ -13010,7 +13221,6 @@ void Compendium_t::readUnlocksSaveData()
 
 void Compendium_t::writeUnlocksSaveData()
 {
-	return;
 	char path[PATH_MAX] = "";
 	completePath(path, "savegames/compendium_progress.json", outputdir);
 
@@ -13125,7 +13335,7 @@ void Compendium_t::Events_t::writeItemsSaveData()
 		return;
 	}
 	rapidjson::StringBuffer os;
-	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
+	rapidjson::Writer<rapidjson::StringBuffer> writer(os);
 	exportDocument.Accept(writer);
 	fp->write(os.GetString(), sizeof(char), os.GetSize());
 	FileIO::close(fp);
@@ -13136,6 +13346,8 @@ void Compendium_t::Events_t::writeItemsSaveData()
 
 bool Compendium_t::Events_t::EventVal_t::applyValue(const Sint32 val)
 {
+	bool first = firstValue;
+	firstValue = false;
 	if ( type == SUM )
 	{
 		value += val;
@@ -13150,6 +13362,11 @@ bool Compendium_t::Events_t::EventVal_t::applyValue(const Sint32 val)
 	}
 	else if ( type == MAX )
 	{
+		if ( first )
+		{
+			value = val;
+			return true;
+		}
 		if ( value == val )
 		{
 			return false;
@@ -13159,6 +13376,11 @@ bool Compendium_t::Events_t::EventVal_t::applyValue(const Sint32 val)
 	}
 	else if ( type == MIN )
 	{
+		if ( first )
+		{
+			value = val;
+			return true;
+		}
 		if ( value == val )
 		{
 			return false;
@@ -13336,6 +13558,7 @@ void Compendium_t::Events_t::updateEventsInMainLoop(const int playernum)
 	if ( ticks % (5 * TICKS_PER_SECOND) == 25 )
 	{
 		int weight = 0;
+		int numDeathBoxes = 0;
 		for ( node_t* node = stats[playernum]->inventory.first; node != NULL; node = node->next )
 		{
 			Item* item = (Item*)node->element;
@@ -13347,6 +13570,10 @@ void Compendium_t::Events_t::updateEventsInMainLoop(const int playernum)
 			{
 				continue;
 			}
+			if ( item->type == TOOL_PLAYER_LOOT_BAG )
+			{
+				++numDeathBoxes;
+			}
 			if ( ::items[item->type].item_slot != NO_EQUIP
 				&& itemIsEquipped(item, playernum) )
 			{
@@ -13354,6 +13581,10 @@ void Compendium_t::Events_t::updateEventsInMainLoop(const int playernum)
 			}
 		}
 		Compendium_t::Events_t::eventUpdateCodex(playernum, Compendium_t::CPDM_CLASS_WGT_EQUIPPED_MAX, "wgt", weight);
+		if ( numDeathBoxes > 0 )
+		{
+			eventUpdate(playernum, CPDM_DEATHBOX_MOST_CARRIED, TOOL_PLAYER_LOOT_BAG, numDeathBoxes);
+		}
 	}
 }
 
@@ -13594,6 +13825,27 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 				onCompendiumLevelExit(playernum, currentWorldString, true);
 			}
 
+			if ( stats[playernum] )
+			{
+				int numDeathBoxes = 0;
+				for ( node_t* node = stats[playernum]->inventory.first; node; node = node->next )
+				{
+					Item* item = (Item*)node->element;
+					if ( !item )
+					{
+						continue;
+					}
+					if ( item->type == TOOL_PLAYER_LOOT_BAG )
+					{
+						++numDeathBoxes;
+					}
+				}
+				if ( numDeathBoxes > 0 )
+				{
+					eventUpdate(playernum, CPDM_DEATHBOX_TO_EXIT, TOOL_PLAYER_LOOT_BAG, numDeathBoxes);
+				}
+			}
+
 			const char* prevWorldString = compendiumCurrentLevelToWorldString(prevlevel, prevsecretfloor);
 			if ( !prevsecretfloor )
 			{
@@ -13799,6 +14051,7 @@ void Compendium_t::Events_t::eventUpdate(int playernum, const EventTags tag, con
 				if ( playernum == 0 )
 				{
 					playernum = clientnum; // when a client receives an update from the server
+					clientReceiveUpdateFromServer = true;
 				}
 			}
 		}
@@ -13837,30 +14090,39 @@ void Compendium_t::Events_t::eventUpdate(int playernum, const EventTags tag, con
 	if ( loadingValue )
 	{
 		val.value = value; // reading from savefile
+		val.firstValue = false;
 	}
 	else
 	{
-		if ( def.eventTrackingType == EventTrackingType::UNIQUE_PER_RUN )
+		if ( gameModeManager.currentMode == GameModeManager_t::GAME_MODE_TUTORIAL
+			|| gameModeManager.currentMode == GameModeManager_t::GAME_MODE_TUTORIAL_INIT )
 		{
-			if ( clientReceiveUpdateFromServer )
-			{
-				// server is tracking the total for us, so don't add
-				players[playernum]->compendiumProgress.itemEvents[def.name][itemType] = value;
-			}
-			else
-			{
-				players[playernum]->compendiumProgress.itemEvents[def.name][itemType] += value;
-			}
-			value = players[playernum]->compendiumProgress.itemEvents[def.name][itemType];
+			// don't update in tutorial
 		}
-
-		if ( val.applyValue(value) )
+		else
 		{
-			if ( *cvar_compendiumDebugSave )
+			if ( def.eventTrackingType == EventTrackingType::UNIQUE_PER_RUN )
 			{
-				if ( playernum == clientnum )
+				if ( clientReceiveUpdateFromServer )
 				{
-					writeItemsSaveData();
+					// server is tracking the total for us, so don't add
+					players[playernum]->compendiumProgress.itemEvents[def.name][itemType] = value;
+				}
+				else
+				{
+					players[playernum]->compendiumProgress.itemEvents[def.name][itemType] += value;
+				}
+				value = players[playernum]->compendiumProgress.itemEvents[def.name][itemType];
+			}
+
+			if ( val.applyValue(value) )
+			{
+				if ( *cvar_compendiumDebugSave )
+				{
+					if ( playernum == clientnum )
+					{
+						writeItemsSaveData();
+					}
 				}
 			}
 		}
@@ -13870,6 +14132,39 @@ void Compendium_t::Events_t::eventUpdate(int playernum, const EventTags tag, con
 	{
 		if ( tag == CPDM_RUNS_COLLECTED )
 		{
+			{
+				Monster monsterUnlock = NOTHING;
+				if ( type == TOOL_SENTRYBOT )
+				{
+					monsterUnlock = SENTRYBOT;
+				}
+				else if ( type == TOOL_SPELLBOT )
+				{
+					monsterUnlock = SPELLBOT;
+				}
+				else if ( type == TOOL_GYROBOT )
+				{
+					monsterUnlock = GYROBOT;
+				}
+				else if ( type == TOOL_DUMMYBOT )
+				{
+					monsterUnlock = DUMMYBOT;
+				}
+				if ( monsterUnlock != NOTHING )
+				{
+					int monsterId = Compendium_t::Events_t::kEventMonsterOffset + monsterUnlock;
+					auto find = Compendium_t::Events_t::monsterIDToString.find(monsterId);
+					if ( find != Compendium_t::Events_t::monsterIDToString.end() )
+					{
+						auto& unlockStatus = Compendium_t::CompendiumMonsters_t::unlocks[find->second];
+						if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+						{
+							unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+						}
+					}
+				}
+			}
+
 			bool itemUnlocked = false;
 			{
 				auto& unlockStatus = Compendium_t::CompendiumItems_t::itemUnlocks[itemType];
@@ -13887,13 +14182,13 @@ void Compendium_t::Events_t::eventUpdate(int playernum, const EventTags tag, con
 				{
 					unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
 				}
-				else if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_VISITED )
+				/*else if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_VISITED )
 				{
 					if ( itemUnlocked )
 					{
 						unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
 					}
-				}
+				}*/
 				else if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::UNLOCKED_VISITED )
 				{
 					if ( itemUnlocked )
@@ -14027,6 +14322,7 @@ void Compendium_t::Events_t::eventUpdateMonster(int playernum, const EventTags t
 	if ( loadingValue )
 	{
 		val.value = value; // reading from savefile
+		val.firstValue = false;
 	}
 	else
 	{
@@ -14189,6 +14485,7 @@ void Compendium_t::Events_t::eventUpdateWorld(int playernum, const EventTags tag
 		}
 		auto& val = e[worldID];
 		val.value = value; // reading from savefile
+		val.firstValue = false;
 	}
 	else
 	{
@@ -14238,6 +14535,20 @@ void Compendium_t::Events_t::eventUpdateWorld(int playernum, const EventTags tag
 			if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
 			{
 				unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+			}
+			if ( category && !strcmp(category, "shop") )
+			{
+				// buying items triggers shopkeep stuff
+				auto find = monsterIDToString.find(Compendium_t::Events_t::kEventMonsterOffset + SHOPKEEPER);
+				if ( find != monsterIDToString.end() )
+				{
+					auto& unlockStatus = Compendium_t::CompendiumMonsters_t::unlocks[find->second];
+					if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+					{
+						unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+					}
+				}
+
 			}
 		}
 	}
@@ -14407,13 +14718,13 @@ void Compendium_t::Events_t::eventUpdateCodex(int playernum, const EventTags tag
 		return;
 	}
 
-	if ( codexID < kEventCodexOffset || loadingValue )
+	if ( codexID < kEventCodexOffset )
 	{
 		codexID += kEventCodexOffset; // convert to offset
 	}
 	if ( baseCodexID >= 0 )
 	{
-		if ( baseCodexID < kEventCodexOffset || loadingValue )
+		if ( baseCodexID < kEventCodexOffset )
 		{
 			baseCodexID += kEventCodexOffset; // convert to offset
 		}
@@ -14441,6 +14752,7 @@ void Compendium_t::Events_t::eventUpdateCodex(int playernum, const EventTags tag
 	if ( loadingValue )
 	{
 		val.value = value; // reading from savefile
+		val.firstValue = false;
 	}
 	else
 	{
@@ -14934,12 +15246,221 @@ void Compendium_t::exportCurrentMonster(Entity* monster)
 
 	return;
 }
+
+void Compendium_t::updateLorePointCounts()
+{
+	lorePointsFromAchievements = 0;
+	lorePointsSpent = 0;
+	lorePointsAchievementsTotal = 0;
+	int completed = 0;
+	int total = achievements.size();
+	for ( auto& achData : achievements )
+	{
+		if ( achData.second.unlocked )
+		{
+			lorePointsFromAchievements += achData.second.lorePoints;
+			++completed;
+		}
+		lorePointsAchievementsTotal += achData.second.lorePoints;
+	}
+
+	AchievementData_t::completionPercent = 100.0 * (completed / (real_t)total);
+
+	completed = 0;
+	total = 0;
+	for ( auto& pair : CompendiumItems_t::contents["default"] )
+	{
+		if ( pair.first != "-" )
+		{
+			total += 2;
+		}
+		auto unlockStatus = CompendiumItems_t::unlocks.find(pair.first);
+		if ( unlockStatus != CompendiumItems_t::unlocks.end() )
+		{
+			if ( unlockStatus->second != LOCKED_UNKNOWN )
+			{
+				if ( unlockStatus->second == UNLOCKED_UNVISITED || unlockStatus->second == UNLOCKED_VISITED )
+				{
+					auto find = CompendiumEntries.items.find(pair.first);
+					if ( find != CompendiumEntries.items.end() )
+					{
+						lorePointsSpent += find->second.lorePoints;
+						++completed; // 2x completion
+					}
+				}
+				++completed;
+			}
+		}
+	}
+
+	for ( auto& item : CompendiumEntries.items )
+	{
+		total += item.second.items_in_category.size();
+		for ( auto& entry : item.second.items_in_category )
+		{
+			int type = entry.itemID == SPELL_ITEM
+				? entry.spellID + Compendium_t::Events_t::kEventSpellOffset :
+				entry.itemID;
+			auto find = Compendium_t::CompendiumItems_t::itemUnlocks.find(type);
+			if ( find != Compendium_t::CompendiumItems_t::itemUnlocks.end() )
+			{
+				if ( find->second != LOCKED_UNKNOWN )
+				{
+					completed++;
+				}
+			}
+		}
+	}
+
+	CompendiumItems_t::completionPercent = 100.0 * (completed / (real_t)total);
+
+	completed = 0;
+	total = 0;
+	for ( auto& pair : CompendiumMagic_t::contents["default"] )
+	{
+		if ( pair.first != "-" )
+		{
+			total += 2;
+		}
+		auto unlockStatus = CompendiumItems_t::unlocks.find(pair.first);
+		if ( unlockStatus != CompendiumItems_t::unlocks.end() )
+		{
+			if ( unlockStatus->second != LOCKED_UNKNOWN )
+			{
+				if ( unlockStatus->second == UNLOCKED_UNVISITED || unlockStatus->second == UNLOCKED_VISITED )
+				{
+					auto find = CompendiumEntries.magic.find(pair.first);
+					if ( find != CompendiumEntries.magic.end() )
+					{
+						lorePointsSpent += find->second.lorePoints;
+						++completed; // 2x completion
+					}
+				}
+				++completed;
+			}
+		}
+	}
+
+	for ( auto& item : CompendiumEntries.magic )
+	{
+		total += item.second.items_in_category.size();
+		for ( auto& entry : item.second.items_in_category )
+		{
+			int type = entry.itemID == SPELL_ITEM
+				? entry.spellID + Compendium_t::Events_t::kEventSpellOffset :
+				entry.itemID;
+			auto find = Compendium_t::CompendiumItems_t::itemUnlocks.find(type);
+			if ( find != Compendium_t::CompendiumItems_t::itemUnlocks.end() )
+			{
+				if ( find->second != LOCKED_UNKNOWN )
+				{
+					completed++;
+				}
+			}
+		}
+	}
+
+	CompendiumMagic_t::completionPercent = 100.0 * (completed / (real_t)total);
+
+	completed = 0;
+	total = 0;
+	for ( auto& pair : CompendiumWorld_t::contents["default"] )
+	{
+		if ( pair.first != "-" )
+		{
+			total += 2;
+		}
+		auto unlockStatus = CompendiumWorld_t::unlocks.find(pair.first);
+		if ( unlockStatus != CompendiumWorld_t::unlocks.end() )
+		{
+			if ( unlockStatus->second != LOCKED_UNKNOWN )
+			{
+				if ( unlockStatus->second == UNLOCKED_UNVISITED || unlockStatus->second == UNLOCKED_VISITED )
+				{
+					auto find = CompendiumEntries.worldObjects.find(pair.first);
+					if ( find != CompendiumEntries.worldObjects.end() )
+					{
+						lorePointsSpent += find->second.lorePoints;
+						++completed; // 2x completion
+					}
+				}
+				++completed;
+			}
+		}
+	}
+
+	CompendiumWorld_t::completionPercent = 100.0 * (completed / (real_t)total);
+
+	completed = 0;
+	total = 0;
+	for ( auto& pair : CompendiumCodex_t::contents["default"] )
+	{
+		if ( pair.first != "-" )
+		{
+			total += 2;
+		}
+		auto unlockStatus = CompendiumCodex_t::unlocks.find(pair.first);
+		if ( unlockStatus != CompendiumCodex_t::unlocks.end() )
+		{
+			if ( unlockStatus->second != LOCKED_UNKNOWN )
+			{
+				if ( unlockStatus->second == UNLOCKED_UNVISITED || unlockStatus->second == UNLOCKED_VISITED )
+				{
+					auto find = CompendiumEntries.codex.find(pair.first);
+					if ( find != CompendiumEntries.codex.end() )
+					{
+						lorePointsSpent += find->second.lorePoints;
+						++completed; // 2x completion
+					}
+				}
+				++completed;
+			}
+		}
+	}
+
+	CompendiumCodex_t::completionPercent = std::min(100.0, 100.0 * (completed / (real_t)total));
+
+	completed = 0;
+	total = 0;
+	for ( auto& pair : CompendiumMonsters_t::contents["default"] )
+	{
+		if ( pair.first != "-" )
+		{
+			total += 2;
+		}
+		auto unlockStatus = CompendiumMonsters_t::unlocks.find(pair.first);
+		if ( unlockStatus != CompendiumMonsters_t::unlocks.end() )
+		{
+			if ( unlockStatus->second != LOCKED_UNKNOWN )
+			{
+				if ( unlockStatus->second == UNLOCKED_UNVISITED || unlockStatus->second == UNLOCKED_VISITED )
+				{
+					auto find = CompendiumEntries.monsters.find(pair.first);
+					if ( find != CompendiumEntries.monsters.end() )
+					{
+						lorePointsSpent += find->second.lorePoints;
+						++completed; // 2x completion
+					}
+				}
+				++completed;
+			}
+		}
+	}
+
+	CompendiumMonsters_t::completionPercent = 100.0 * (completed / (real_t)total);
+}
 #endif
 
 std::unordered_map<std::string, Compendium_t::AchievementData_t> Compendium_t::achievements;
 bool Compendium_t::AchievementData_t::achievementsNeedResort = true;
 bool Compendium_t::AchievementData_t::achievementsNeedFirstData = true;
+int Compendium_t::lorePointsFromAchievements = 0;
+int Compendium_t::lorePointsAchievementsTotal = 0;
+int Compendium_t::lorePointsSpent = 0;
 std::set<std::pair<std::string, std::string>, Compendium_t::AchievementData_t::Comparator> Compendium_t::AchievementData_t::achievementNamesSorted;
 std::map<std::string, std::vector<std::pair<std::string, std::string>>> Compendium_t::AchievementData_t::achievementCategories;
 std::map<std::string, Compendium_t::AchievementData_t::CompendiumAchievementsDisplay> Compendium_t::AchievementData_t::achievementsBookDisplay;
 std::unordered_set<std::string> Compendium_t::AchievementData_t::achievementUnlockedLookup;
+bool Compendium_t::AchievementData_t::sortAlphabetical = false;
+std::string Compendium_t::compendium_sorting = "default";
+bool Compendium_t::compendium_sorting_hide_undiscovered = false;

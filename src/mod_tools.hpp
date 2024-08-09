@@ -2769,7 +2769,8 @@ public:
 		SPELL_TAG_STATUS_EFFECT,
 		SPELL_TAG_HEALING,
 		SPELL_TAG_CURE,
-		SPELL_TAG_BASIC_HIT_MESSAGE
+		SPELL_TAG_BASIC_HIT_MESSAGE,
+		SPELL_TAG_TRACK_HITS
 	};
 private:
 	struct spellItem_t
@@ -3539,6 +3540,7 @@ struct Compendium_t
 		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents;
 		static std::map<std::string, std::string> contentsMap;
 		static std::map<std::string, CompendiumUnlockStatus> unlocks;
+		static int completionPercent;
 		static void readContentsLang();
 
 		struct CompendiumAchievementsDisplay
@@ -3548,8 +3550,11 @@ struct Compendium_t
 			int numHidden = 0;
 		};
 		static std::map<std::string, CompendiumAchievementsDisplay> achievementsBookDisplay;
+		static bool sortAlphabetical;
 	};
 	static std::unordered_map<std::string, AchievementData_t> achievements;
+	static std::string compendium_sorting;
+	static bool compendium_sorting_hide_undiscovered;
 
 	enum EventTags
 	{
@@ -3819,6 +3824,48 @@ struct Compendium_t
 		CPDM_LORE_PERCENT_READ,
 		CPDM_LORE_PERCENT_READ_2,
 		CPDM_MERCHANT_ORBS,
+		CPDM_SPELL_DMG,
+		CPDM_SPELL_HEAL,
+		CPDM_TIME_WORN,
+		CPDM_LOCKPICK_DOOR_UNLOCK,
+		CPDM_LOCKPICK_DOOR_LOCK,
+		CPDM_LOCKPICK_ARROWTRAPS,
+		CPDM_LOCKPICK_TINKERTRAPS,
+		CPDM_LOCKPICK_CHESTS_UNLOCK,
+		CPDM_LOCKPICK_MIMICS_LOCKED,
+		CPDM_LOCKPICK_CHESTS_LOCK,
+		CPDM_ALEMBIC_DUPLICATION_FAIL,
+		CPDM_ALEMBIC_EXPLOSIONS,
+		CPDM_BEARTRAP_DEPLOYED,
+		CPDM_BEARTRAP_TRAPPED,
+		CPDM_BEARTRAP_DMG,
+		CPDM_GADGET_CRAFTED,
+		CPDM_GADGET_DEPLOYED,
+		CPDM_NOISEMAKER_LURED,
+		CPDM_NOISEMAKER_MOST_LURED,
+		CPDM_DUMMY_HITS_TAKEN,
+		CPDM_DUMMY_DMG_TAKEN,
+		CPDM_SENTRY_DEPLOY_KILLS,
+		CPDM_SENTRY_DEPLOY_DMG,
+		CPDM_GYROBOT_BOULDERS,
+		CPDM_GYROBOT_TIME_SPENT,
+		CPDM_BOMB_DMG,
+		CPDM_BOMB_DETONATED,
+		CPDM_BOMB_DETONATED_ALLY,
+		CPDM_DETONATOR_SCRAPPED,
+		CPDM_DETONATOR_SCRAPPED_METAL,
+		CPDM_DETONATOR_SCRAPPED_MAGIC,
+		CPDM_DEATHBOX_OPEN_OWN,
+		CPDM_DEATHBOX_OPEN_OTHERS,
+		CPDM_DEATHBOX_TO_EXIT,
+		CPDM_DEATHBOX_MOST_CARRIED,
+		CPDM_PICKAXE_BOULDERS_DUG,
+		CPDM_TIN_GREASY,
+		CPDM_TIN_REGEN_HP,
+		CPDM_TIN_REGEN_MP,
+		CPDM_SPELL_TARGETS,
+		CPDM_GYROBOT_FLIPS,
+		CPDM_KILL_XP,
 		CPDM_EVENT_TAGS_MAX
 	};
 
@@ -3847,6 +3894,7 @@ struct Compendium_t
 		static std::map<std::string, std::string> contentsMap;
 		static void readContentsLang();
 		static std::map<std::string, CompendiumUnlockStatus> unlocks;
+		static int completionPercent;
 	};
 	std::map<std::string, CompendiumMonsters_t::Monster_t> monsters;
 	void readMonstersFromFile();
@@ -3887,6 +3935,7 @@ struct Compendium_t
 		static std::map<std::string, std::string> contentsMap;
 		static void readContentsLang();
 		static std::map<std::string, CompendiumUnlockStatus> unlocks;
+		static int completionPercent;
 	};
 	std::map<std::string, CompendiumWorld_t::World_t> worldObjects;
 	void readWorldFromFile();
@@ -3909,6 +3958,7 @@ struct Compendium_t
 		static std::map<std::string, std::string> contentsMap;
 		static void readContentsLang();
 		static std::map<std::string, CompendiumUnlockStatus> unlocks;
+		static int completionPercent;
 	};
 	std::map<std::string, CompendiumCodex_t::Codex_t> codex;
 	void readCodexFromFile();
@@ -3937,6 +3987,7 @@ struct Compendium_t
 		static void readContentsLang();
 		static std::map<std::string, CompendiumUnlockStatus> unlocks;
 		static std::map<int, CompendiumUnlockStatus> itemUnlocks;
+		static int completionPercent;
 	};
 	std::map<std::string, CompendiumItems_t::Codex_t> items;
 	void readItemsFromFile();
@@ -3946,6 +3997,7 @@ struct Compendium_t
 		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents;
 		static std::map<std::string, std::string> contentsMap;
 		static void readContentsLang();
+		static int completionPercent;
 	};
 	std::map<std::string, CompendiumItems_t::Codex_t> magic;
 	void readMagicFromFile();
@@ -3955,6 +4007,10 @@ struct Compendium_t
 	static SDL_Rect tooltipPos;
 	static Entity compendiumItemModel;
 	static Uint32 lastTickUpdate;
+	static int lorePointsFromAchievements;
+	static int lorePointsAchievementsTotal;
+	static int lorePointsSpent;
+	static void updateLorePointCounts();
 	static void writeUnlocksSaveData();
 	static void readUnlocksSaveData();
 
@@ -4038,6 +4094,7 @@ struct Compendium_t
 			Type type = SUM;
 			int id = CPDM_EVENT_TAGS_MAX;
 			Sint32 value = 0;
+			bool firstValue = true;
 			bool applyValue(const Sint32 val);
 			EventVal_t() = default;
 			EventVal_t(EventTags tag)
@@ -4046,6 +4103,7 @@ struct Compendium_t
 				type = def.type;
 				id = def.id;
 				value = 0;
+				firstValue = true;
 			}
 		};
 		static std::map<EventTags, Event_t> events;
