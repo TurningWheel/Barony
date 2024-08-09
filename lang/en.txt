@@ -6412,5 +6412,8 @@ Magic Required: %d (%s)#
 6183 New Entry!#
 6184 Achievements#
 6185 RECORDS#
+6186 RECIPE CHART#
+6187 USAGE TIPS#
+6188 DETAILS#
 
 6200 END#
