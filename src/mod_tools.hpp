@@ -3871,6 +3871,17 @@ struct Compendium_t
 
 	struct CompendiumMonsters_t
 	{
+		enum MonsterSpecies
+		{
+			SPECIES_NONE,
+			SPECIES_HUMANOID,
+			SPECIES_BEAST,
+			SPECIES_BEASTFOLK,
+			SPECIES_UNDEAD,
+			SPECIES_DEMONOID,
+			SPECIES_CONSTRUCT,
+			SPECIES_ELEMENTAL
+		};
 		struct Monster_t
 		{
 			int monsterType = NOTHING;
@@ -3882,6 +3893,8 @@ struct Compendium_t
 			std::vector<Sint32> atk;
 			std::vector<Sint32> rangeatk;
 			std::vector<Sint32> pwr;
+			MonsterSpecies species;
+			std::vector<Sint32> lvl;
 			std::array<int, 7> resistances;
 			std::vector<std::string> abilities;
 			std::vector<std::string> inventory;
@@ -3956,6 +3969,7 @@ struct Compendium_t
 			int id = -1;
 			CompendiumView_t view;
 			int lorePoints = 0;
+			bool enableTutorial = false;
 		};
 		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents;
 		static std::map<std::string, std::string> contentsMap;

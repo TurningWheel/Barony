@@ -11440,6 +11440,10 @@ void Compendium_t::readCodexFromFile()
 		jsonVecToVec(w["blurb"], obj.blurb);
 		jsonVecToVec(w["details"], obj.details);
 		obj.imagePath = w["img"].GetString();
+		if ( w.HasMember("enable_tutorial") )
+		{
+			obj.enableTutorial = w["enable_tutorial"].GetBool();
+		}
 		if ( w.HasMember("rendered_imgs") )
 		{
 			jsonVecToVec(w["rendered_imgs"], obj.renderedImagePaths);
@@ -11878,6 +11882,44 @@ void Compendium_t::readMonstersFromFile()
 		jsonVecToVec(stats["atk"], monster.atk);
 		jsonVecToVec(stats["rangeatk"], monster.rangeatk);
 		jsonVecToVec(stats["pwr"], monster.pwr);
+		if ( stats.HasMember("lvl") )
+		{
+			jsonVecToVec(stats["lvl"], monster.lvl);
+		}
+		if ( stats.HasMember("species") )
+		{
+			auto species = CompendiumMonsters_t::SPECIES_NONE;
+			std::string str = stats["species"].GetString();
+			if ( str == "humanoid" )
+			{
+				species = CompendiumMonsters_t::SPECIES_HUMANOID;
+			}
+			else if ( str == "beast" )
+			{
+				species = CompendiumMonsters_t::SPECIES_BEAST;
+			}
+			else if ( str == "beastfolk" )
+			{
+				species = CompendiumMonsters_t::SPECIES_BEASTFOLK;
+			}
+			else if ( str == "undead" )
+			{
+				species = CompendiumMonsters_t::SPECIES_UNDEAD;
+			}
+			else if ( str == "demonoid" )
+			{
+				species = CompendiumMonsters_t::SPECIES_DEMONOID;
+			}
+			else if ( str == "construct" )
+			{
+				species = CompendiumMonsters_t::SPECIES_CONSTRUCT;
+			}
+			else if ( str == "elemental" )
+			{
+				species = CompendiumMonsters_t::SPECIES_ELEMENTAL;
+			}
+			monster.species = species;
+		}
 
 		jsonVecToVec(m["abilities"], monster.abilities);
 		{
@@ -14146,10 +14188,6 @@ void Compendium_t::Events_t::eventUpdate(int playernum, const EventTags tag, con
 	}
 
 	auto& e = (multiplayer == SERVER && playernum != 0 && !loadingValue) ? serverPlayerEvents[playernum][tag] : playerEvents[tag];
-	if ( e.find(itemType) == e.end() )
-	{
-		e[itemType] = EventVal_t(tag);
-	}
 
 	if ( def.eventTrackingType == EventTrackingType::ONCE_PER_RUN && !loadingValue )
 	{
@@ -14162,9 +14200,13 @@ void Compendium_t::Events_t::eventUpdate(int playernum, const EventTags tag, con
 		players[playernum]->compendiumProgress.itemEvents[def.name][itemType] += value;
 	}
 	
-	auto& val = e[itemType];
 	if ( loadingValue )
 	{
+		if ( e.find(itemType) == e.end() )
+		{
+			e[itemType] = EventVal_t(tag);
+		}
+		auto& val = e[itemType];
 		val.value = value; // reading from savefile
 		val.firstValue = false;
 	}
@@ -14190,7 +14232,11 @@ void Compendium_t::Events_t::eventUpdate(int playernum, const EventTags tag, con
 				}
 				value = players[playernum]->compendiumProgress.itemEvents[def.name][itemType];
 			}
-
+			if ( e.find(itemType) == e.end() )
+			{
+				e[itemType] = EventVal_t(tag);
+			}
+			auto& val = e[itemType];
 			if ( val.applyValue(value) )
 			{
 				if ( *cvar_compendiumDebugSave )
@@ -14654,6 +14700,33 @@ void Compendium_t::Events_t::eventUpdateCodex(int playernum, const EventTags tag
 
 	if ( !loadingValue )
 	{
+		if ( gameModeManager.currentMode == GameModeManager_t::GAME_MODE_TUTORIAL
+			|| gameModeManager.currentMode == GameModeManager_t::GAME_MODE_TUTORIAL_INIT )
+		{
+			// don't update in tutorial
+			if ( def.eventTrackingType == EventTrackingType::UNIQUE_PER_RUN
+				|| def.eventTrackingType == EventTrackingType::UNIQUE_PER_FLOOR )
+			{
+				return; 
+			}
+			else if ( tag == Compendium_t::CPDM_CLASS_MOVING_TIME
+				|| tag == Compendium_t::CPDM_CLASS_SNEAK_TIME )
+			{
+				return;
+			}
+			if ( category )
+			{
+				auto find = CompendiumEntries.codex.find(category);
+				if ( find != CompendiumEntries.codex.end() )
+				{
+					if ( !find->second.enableTutorial )
+					{
+						return;
+					}
+				}
+			}
+		}
+
 		if ( def.clienttype == CLIENT_ONLY )
 		{
 			if ( multiplayer != SINGLE )
@@ -14710,7 +14783,7 @@ void Compendium_t::Events_t::eventUpdateCodex(int playernum, const EventTags tag
 				auto find = eventCodexIDLookup.find(cat);
 				if ( find != eventCodexIDLookup.end() )
 				{
-					if ( eventCodexIDLookup[cat] == codexID )
+					if ( (eventCodexIDLookup[cat] + kEventCodexOffset)  == codexID )
 					{
 						foundCategory = true;
 						break;
