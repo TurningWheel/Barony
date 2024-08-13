@@ -4375,7 +4375,6 @@ void actPlayer(Entity* my)
 	Entity* additionalLimb = nullptr;
 	Entity* torso = nullptr;
 	node_t* node;
-	Item* item;
 	int i, bodypart;
 	double dist = 0;
 	bool wearingring = false;
@@ -5644,12 +5643,40 @@ void actPlayer(Entity* my)
 							//messagePlayer(0, "Appraisal level up chance: 1 in %d", appraisalEaseOfDifficulty);
 							if ( local_rng.rand() % appraisalEaseOfDifficulty == 0 )
 							{
-								my->increaseSkill(PRO_APPRAISAL);
+								if ( multiplayer == CLIENT )
+								{
+									// request level up
+									strcpy((char*)net_packet->data, "CSKL");
+									net_packet->data[4] = PLAYER_NUM;
+									net_packet->data[5] = PRO_APPRAISAL;
+									net_packet->address.host = net_server.host;
+									net_packet->address.port = net_server.port;
+									net_packet->len = 6;
+									sendPacketSafe(net_sock, -1, net_packet, 0);
+								}
+								else
+								{
+									my->increaseSkill(PRO_APPRAISAL);
+								}
 							}
 						}
 						else if ( local_rng.rand() % 7 == 0 )
 						{
-							my->increaseSkill(PRO_APPRAISAL);
+							if ( multiplayer == CLIENT )
+							{
+								// request level up
+								strcpy((char*)net_packet->data, "CSKL");
+								net_packet->data[4] = PLAYER_NUM;
+								net_packet->data[5] = PRO_APPRAISAL;
+								net_packet->address.host = net_server.host;
+								net_packet->address.port = net_server.port;
+								net_packet->len = 6;
+								sendPacketSafe(net_sock, -1, net_packet, 0);
+							}
+							else
+							{
+								my->increaseSkill(PRO_APPRAISAL);
+							}
 						}
 					}
 

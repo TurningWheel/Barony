@@ -2654,7 +2654,6 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 								}
 							}
 						}
-						statOnlyUpdateNeeded = true;
 					}
 				}
 			}
