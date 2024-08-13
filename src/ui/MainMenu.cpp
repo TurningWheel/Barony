@@ -34836,6 +34836,7 @@ failed:
 																frames[i]->select();
 																frames[i]->scrollParent();
 																soundMove();
+																foundSelection = true;
 																selectCompendiumItemInList(*frames[i], *page_right_inner, false, true);
 																break;
 															}
@@ -35376,87 +35377,171 @@ failed:
 
 					if ( page_right = page_right->findFrame("page_right_inner") )
 					{
+						if ( auto txt = page_right->findField("level type") )
+						{
+							std::string str = Language::get(6190);
+							if ( entry.lvl.size() > 0 )
+							{
+								char buf[32] = "-";
+								auto& stat = entry.lvl;
+								if ( stat.size() > 1 )
+								{
+									snprintf(buf, sizeof(buf), "%d - %d", stat[0], stat[1]);
+								}
+								else if ( stat.size() == 1 )
+								{
+									snprintf(buf, sizeof(buf), "%d", stat[0]);
+								}
+								str += buf;
+							}
+							else
+							{
+								str += "???";
+							}
+							if ( entry.species != Compendium_t::CompendiumMonsters_t::SPECIES_NONE )
+							{
+								const char* lang = nullptr;
+								switch ( entry.species )
+								{
+								case Compendium_t::CompendiumMonsters_t::SPECIES_HUMANOID:
+									lang = Language::get(6202);
+									break;
+								case Compendium_t::CompendiumMonsters_t::SPECIES_BEAST:
+									lang = Language::get(6204);
+									break;
+								case Compendium_t::CompendiumMonsters_t::SPECIES_BEASTFOLK:
+									lang = Language::get(6203);
+									break;
+								case Compendium_t::CompendiumMonsters_t::SPECIES_UNDEAD:
+									lang = Language::get(6205);
+									break;
+								case Compendium_t::CompendiumMonsters_t::SPECIES_DEMONOID:
+									lang = Language::get(6206);
+									break;
+								case Compendium_t::CompendiumMonsters_t::SPECIES_CONSTRUCT:
+									lang = Language::get(6207);
+									break;
+								case Compendium_t::CompendiumMonsters_t::SPECIES_ELEMENTAL:
+									lang = Language::get(6208);
+									break;
+								default:
+									break;
+								}
+								if ( lang )
+								{
+									str += " ";
+									//str += "(";
+									str += lang;
+									//str += ")";
+								}
+							}
+							txt->setText(str.c_str());
+						}
 						if ( auto txt = page_right->findField("hp") )
+						{
+							txt->setText(Language::get(6199));
+						}
+						if ( auto txt = page_right->findField("hp val") )
 						{
 							char buf[32] = "-";
 							auto& stat = entry.hp;
 							if ( stat.size() > 1 )
 							{
-								snprintf(buf, sizeof(buf), "HP   %d - %d", stat[0], stat[1]);
+								snprintf(buf, sizeof(buf), "%d - %d", stat[0], stat[1]);
 							}
 							else if ( stat.size() == 1 )
 							{
-								snprintf(buf, sizeof(buf), "HP   %d", stat[0]);
+								snprintf(buf, sizeof(buf), "%d", stat[0]);
 							}
 							txt->setText(buf);
 						}
 						if ( auto txt = page_right->findField("ac") )
 						{
+							txt->setText(Language::get(6200));
+						}
+						if ( auto txt = page_right->findField("ac val") )
+						{
 							char buf[32] = "-";
 							auto& stat = entry.ac;
 							if ( stat.size() > 1 )
 							{
-								snprintf(buf, sizeof(buf), "AC   %d - %d", stat[0], stat[1]);
+								snprintf(buf, sizeof(buf), "%d - %d", stat[0], stat[1]);
 							}
 							else if ( stat.size() == 1 )
 							{
-								snprintf(buf, sizeof(buf), "AC   %d", stat[0]);
+								snprintf(buf, sizeof(buf), "%d", stat[0]);
 							}
 							txt->setText(buf);
 						}
 						if ( auto txt = page_right->findField("spd") )
 						{
+							txt->setText(Language::get(6201));
+						}
+						if ( auto txt = page_right->findField("spd val") )
+						{
 							char buf[32] = "-";
 							auto& stat = entry.spd;
 							if ( stat.size() > 1 )
 							{
-								snprintf(buf, sizeof(buf), "SPD   %d - %d", stat[0], stat[1]);
+								snprintf(buf, sizeof(buf), "%d - %d", stat[0], stat[1]);
 							}
 							else if ( stat.size() == 1 )
 							{
-								snprintf(buf, sizeof(buf), "SPD   %d", stat[0]);
+								snprintf(buf, sizeof(buf), "%d", stat[0]);
 							}
 							txt->setText(buf);
 						}
 						if ( auto txt = page_right->findField("atk") )
 						{
+							txt->setText(Language::get(6197));
+						}
+						if ( auto txt = page_right->findField("atk val") )
+						{
 							char buf[32] = "-";
 							auto& stat = entry.atk;
 							if ( stat.size() > 1 )
 							{
-								snprintf(buf, sizeof(buf), "ATK   %d - %d", stat[0], stat[1]);
+								snprintf(buf, sizeof(buf), "%d - %d", stat[0], stat[1]);
 							}
 							else if ( stat.size() == 1 )
 							{
-								snprintf(buf, sizeof(buf), "ATK   %d", stat[0]);
+								snprintf(buf, sizeof(buf), "%d", stat[0]);
 							}
 							txt->setText(buf);
 						}
 						if ( auto txt = page_right->findField("rangeatk") )
 						{
+							txt->setText(Language::get(6197));
+						}
+						if ( auto txt = page_right->findField("rangeatk val") )
+						{
 							char buf[32] = "-";
 							auto& stat = entry.rangeatk;
 							if ( stat.size() > 1 )
 							{
-								snprintf(buf, sizeof(buf), "ATK   %d - %d", stat[0], stat[1]);
+								snprintf(buf, sizeof(buf), "%d - %d", stat[0], stat[1]);
 							}
 							else if ( stat.size() == 1 )
 							{
-								snprintf(buf, sizeof(buf), "ATK   %d", stat[0]);
+								snprintf(buf, sizeof(buf), "%d", stat[0]);
 							}
 							txt->setText(buf);
 						}
 						if ( auto txt = page_right->findField("pwr") )
 						{
+							txt->setText(Language::get(6198));
+						}
+						if ( auto txt = page_right->findField("pwr val") )
+						{
 							char buf[32] = "-";
 							auto& stat = entry.pwr;
 							if ( stat.size() > 1 )
 							{
-								snprintf(buf, sizeof(buf), "PWR   %d - %d", stat[0], stat[1]);
+								snprintf(buf, sizeof(buf), "%d - %d", stat[0], stat[1]);
 							}
 							else if ( stat.size() == 1 )
 							{
-								snprintf(buf, sizeof(buf), "PWR   %d", stat[0]);
+								snprintf(buf, sizeof(buf), "%d", stat[0]);
 							}
 							txt->setText(buf);
 						}
@@ -35499,7 +35584,7 @@ failed:
 									}
 									else
 									{
-										field->setColor(hudColors.characterSheetNeutral);
+										field->setColor(compendiumContentsDefaultColor);
 										field->setText("100%");
 									}
 								}
@@ -35520,8 +35605,8 @@ failed:
 									}
 									else
 									{
-										field->setColor(hudColors.characterSheetNeutral);
-										field->setText("-");
+										field->setColor(compendiumContentsDefaultColor);
+										field->setText(" -");
 									}
 								}
 							}
@@ -35622,7 +35707,7 @@ failed:
 									inv->setText(txt.c_str());
 									const int numInvLines = inv->getNumTextLines();
 									SDL_Rect invPos = inv->getSize();
-									invPos.y = pos.y + 26;
+									invPos.y = pos.y + 22;
 									if ( actualFont )
 									{
 										invPos.h = std::max(24, 24 + (numInvLines - 1) * actualFont->height(true));
@@ -37513,7 +37598,7 @@ failed:
 			{
 				auto charTxt = page_right_inner->addField("characteristics txt", 64);
 				charTxt->setFont(menu_option_font);
-				charTxt->setText("CHARACTERISTICS");
+				charTxt->setText(Language::get(6189));
 				charTxt->setHJustify(Field::justify_t::LEFT);
 				charTxt->setVJustify(Field::justify_t::TOP);
 				charTxt->setSize(SDL_Rect{ padx, pady, 300, 24 });
@@ -37522,16 +37607,16 @@ failed:
 				padx += 4;
 				pady += 23;
 
-				Field* statsTxt = page_right_inner->addField("stats txt", 64);
+				Field* statsTxt = page_right_inner->addField("level type", 64);
 				statsTxt->setFont(smallfont_outline);
-				statsTxt->setText("STATS");
+				statsTxt->setText(Language::get(6190));
 				statsTxt->setHJustify(Field::justify_t::LEFT);
 				statsTxt->setVJustify(Field::justify_t::TOP);
 				statsTxt->setSize(SDL_Rect{ padx, pady, 300, 24 });
 				statsTxt->setColor(makeColor(135, 94, 45, 255));
 
 				int statx = padx + 30;
-				int staty = pady + 26;
+				int staty = pady + 22;
 				statsTxt = page_right_inner->addField("hp", 64);
 				statsTxt->setFont(smallfont_outline);
 				statsTxt->setText("");
@@ -37539,11 +37624,18 @@ failed:
 				statsTxt->setVJustify(Field::justify_t::TOP);
 				statsTxt->setSize(SDL_Rect{ statx, staty, 132, 24 });
 				statsTxt->setColor(statValColor);
+				statsTxt = page_right_inner->addField("hp val", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx + 42, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
 
 				page_right_inner->addImage(SDL_Rect{ statx - 18 - 8, staty + 11 - 8, 16, 16 },
 					0xFFFFFFFF, "*images/ui/Inventory/potions/healing.png");
 
-				staty += 28;
+				staty += 26;
 				statsTxt = page_right_inner->addField("ac", 64);
 				statsTxt->setFont(smallfont_outline);
 				statsTxt->setText("");
@@ -37551,11 +37643,18 @@ failed:
 				statsTxt->setVJustify(Field::justify_t::TOP);
 				statsTxt->setSize(SDL_Rect{ statx, staty, 132, 24 });
 				statsTxt->setColor(statValColor);
+				statsTxt = page_right_inner->addField("ac val", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx + 42, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
 
 				page_right_inner->addImage(SDL_Rect{ statx - 18 - 12, staty + 11 - 12, 24, 24 },
 					0xFFFFFFFF, "*images/ui/Charsheet/HUD_CharSheet_AC_00.png");
 
-				staty += 28;
+				staty += 26;
 				statsTxt = page_right_inner->addField("spd", 64);
 				statsTxt->setFont(smallfont_outline);
 				statsTxt->setText("");
@@ -37563,12 +37662,19 @@ failed:
 				statsTxt->setVJustify(Field::justify_t::TOP);
 				statsTxt->setSize(SDL_Rect{ statx, staty, 132, 24 });
 				statsTxt->setColor(statValColor);
+				statsTxt = page_right_inner->addField("spd val", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx + 42, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
 
 				page_right_inner->addImage(SDL_Rect{ statx - 18 - 12, staty + 11 - 12, 24, 24 },
 					0xFFFFFFFF, "*images/ui/Charsheet/HUD_CharSheet_DEX_00.png");
 
-				statx = padx + 30 + 166;
-				staty = pady + 26;
+				statx = padx + 30 + 178;
+				staty = pady + 22;
 				statsTxt = page_right_inner->addField("atk", 64);
 				statsTxt->setFont(smallfont_outline);
 				statsTxt->setText("");
@@ -37576,11 +37682,18 @@ failed:
 				statsTxt->setVJustify(Field::justify_t::TOP);
 				statsTxt->setSize(SDL_Rect{ statx, staty, 132, 24 });
 				statsTxt->setColor(statValColor);
+				statsTxt = page_right_inner->addField("atk val", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx + 42, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
 
 				page_right_inner->addImage(SDL_Rect{ statx - 18 - 12, staty + 11 - 12, 24, 24 },
 					0xFFFFFFFF, "*images/ui/Charsheet/HUD_CharSheet_ATT_00.png");
 
-				staty += 28;
+				staty += 26;
 				statsTxt = page_right_inner->addField("rangeatk", 64);
 				statsTxt->setFont(smallfont_outline);
 				statsTxt->setText("");
@@ -37588,11 +37701,18 @@ failed:
 				statsTxt->setVJustify(Field::justify_t::TOP);
 				statsTxt->setSize(SDL_Rect{ statx, staty, 132, 24 });
 				statsTxt->setColor(statValColor);
+				statsTxt = page_right_inner->addField("rangeatk val", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx + 42, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
 
 				page_right_inner->addImage(SDL_Rect{ statx - 18 - 12, staty + 11 - 12, 24, 24 },
 					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Ranged01.png");
 
-				staty += 28;
+				staty += 26;
 				statsTxt = page_right_inner->addField("pwr", 64);
 				statsTxt->setFont(smallfont_outline);
 				statsTxt->setText("");
@@ -37600,6 +37720,14 @@ failed:
 				statsTxt->setVJustify(Field::justify_t::TOP);
 				statsTxt->setSize(SDL_Rect{ statx, staty, 132, 24 });
 				statsTxt->setColor(statValColor);
+				statsTxt = page_right_inner->addField("pwr val", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx + 42, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
+
 
 				page_right_inner->addImage(SDL_Rect{ statx - 18 - 12, staty + 11 - 12, 24, 24 },
 					0xFFFFFFFF, "*images/ui/Charsheet/HUD_CharSheet_SPWR_00.png");
@@ -37611,7 +37739,7 @@ failed:
 			{
 				Field* resTxt = page_right_inner->addField("res txt", 64);
 				resTxt->setFont(smallfont_outline);
-				resTxt->setText("WEAKNESSES");
+				resTxt->setText(Language::get(6191));
 				resTxt->setHJustify(Field::justify_t::LEFT);
 				resTxt->setVJustify(Field::justify_t::TOP);
 				resTxt->setSize(SDL_Rect{ padx, pady, 300, 24 });
@@ -37622,7 +37750,7 @@ failed:
 
 				const int padIconx = -6;
 				const int padIcony = -2;
-				const int padTextx = 0;
+				const int padTextx = -4;
 				const int padTexty = 0;
 				const bool useIcons = false;
 				Frame::image_t* icon = page_right_inner->addImage(SDL_Rect{ resx + padIconx, resy + padIcony, 24, 24 },
@@ -37640,7 +37768,7 @@ failed:
 				page_right_inner->addImage(SDL_Rect{ resx - 18 - 12, resy + 11 - 12, 24, 24 },
 					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Unarmed01.png", "res_unarmed_img");
 
-				resy += 40;
+				resy += 32;
 				icon = page_right_inner->addImage(SDL_Rect{ resx + padIconx, resy + padIcony, 24, 24 },
 					0xFFFFFFFF, "*images/ui/Main Menus/AdventureArchives/res_neutral.png", "res_ranged");
 				icon->disabled = !useIcons;
@@ -37657,7 +37785,7 @@ failed:
 					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Ranged01.png", "res_ranged_img");
 
 				resy = pady + 26;
-				resx += 84;
+				resx += 82;
 
 				icon = page_right_inner->addImage(SDL_Rect{ resx + padIconx, resy + padIcony, 24, 24 },
 					0xFFFFFFFF, "*images/ui/Main Menus/AdventureArchives/res_neutral.png", "res_sword");
@@ -37674,7 +37802,7 @@ failed:
 				page_right_inner->addImage(SDL_Rect{ resx - 18 - 12, resy + 11 - 12, 24, 24 },
 					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Swords01.png", "res_sword_img");
 
-				resy += 40;
+				resy += 32;
 				icon = page_right_inner->addImage(SDL_Rect{ resx + padIconx, resy + padIcony, 24, 24 },
 					0xFFFFFFFF, "*images/ui/Main Menus/AdventureArchives/res_neutral.png", "res_mace");
 				icon->disabled = !useIcons;
@@ -37708,7 +37836,7 @@ failed:
 				page_right_inner->addImage(SDL_Rect{ resx - 18 - 12, resy + 11 - 12, 24, 24 },
 					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Polearms01.png", "res_polearm_img");
 
-				resy += 40;
+				resy += 32;
 				icon = page_right_inner->addImage(SDL_Rect{ resx + padIconx, resy + padIcony, 24, 24 },
 					0xFFFFFFFF, "*images/ui/Main Menus/AdventureArchives/res_neutral.png", "res_axe");
 				icon->disabled = !useIcons;
@@ -37725,7 +37853,7 @@ failed:
 					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Axes01.png", "res_axe_img");
 
 				resy = pady + 26;
-				resx += 84;
+				resx += 82;
 
 				icon = page_right_inner->addImage(SDL_Rect{ resx + padIconx, resy + padIcony, 24, 24 },
 					0xFFFFFFFF, "*images/ui/Main Menus/AdventureArchives/res_neutral.png", "res_magic");
@@ -37742,21 +37870,21 @@ failed:
 				page_right_inner->addImage(SDL_Rect{ resx - 18 - 12, resy + 11 - 12, 24, 24 },
 					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Magic01.png", "res_magic_img");
 
-				resy += 40;
+				resy += 32;
 				pady = resy + *compendiumMonsterSectionPadY;
 			}
 
 			{
 				Field* abilitiesTxt = page_right_inner->addField("abilities txt", 64);
 				abilitiesTxt->setFont(smallfont_outline);
-				abilitiesTxt->setText("ABILITIES");
+				abilitiesTxt->setText(Language::get(6192));
 				abilitiesTxt->setHJustify(Field::justify_t::LEFT);
 				abilitiesTxt->setVJustify(Field::justify_t::TOP);
 				abilitiesTxt->setSize(SDL_Rect{ padx, pady, 300, 24 });
 				abilitiesTxt->setColor(makeColor(135, 94, 45, 255));
 
 				int abilityx = padx + 8;
-				int abilityy = pady + 26;
+				int abilityy = pady + 22;
 
 				abilitiesTxt = page_right_inner->addField("abilities", 1024);
 				abilitiesTxt->setFont(smallfont_outline);
@@ -37772,14 +37900,14 @@ failed:
 			{
 				Field* invTxt = page_right_inner->addField("inventory txt", 64);
 				invTxt->setFont(smallfont_outline);
-				invTxt->setText("INVENTORY");
+				invTxt->setText(Language::get(6193));
 				invTxt->setHJustify(Field::justify_t::LEFT);
 				invTxt->setVJustify(Field::justify_t::TOP);
 				invTxt->setSize(SDL_Rect{ padx, pady, 300, 24 });
 				invTxt->setColor(makeColor(135, 94, 45, 255));
 
 				int invx = padx + 8;
-				int invy = pady + 26;
+				int invy = pady + 22;
 
 				invTxt = page_right_inner->addField("inventory", 1024);
 				invTxt->setFont(smallfont_outline);
@@ -38158,7 +38286,7 @@ failed:
 			});
 
 			txt = lore_points->addField("lore_points_label", 64);
-			txt->setText("POINTS AVAILABLE");
+			txt->setText(Language::get(6194));
 			txt->setFont(smallfont_outline);
 			txt->setColor(makeColorRGB(192, 192, 192));
 			txt->setSize(SDL_Rect{ 0, 1, lore_points->getSize().w - 4, 24 });
@@ -39129,7 +39257,7 @@ failed:
 			auto nav_filter_sort_txt = nav_filters->addField("nav_filter_sort_txt", 64);
 			nav_filter_sort_txt->setSize(SDL_Rect{ 44, 15, nav_filters->getSize().w - 44, 28 });
 			nav_filter_sort_txt->setFont(smallfont_outline);
-			nav_filter_sort_txt->setText("SORT ALPHABETICAL");
+			nav_filter_sort_txt->setText(Language::get(6195));
 			nav_filter_sort_txt->setHJustify(Field::justify_t::LEFT);
 			nav_filter_sort_txt->setVJustify(Field::justify_t::TOP);
 			nav_filter_sort_txt->setColor(makeColorRGB(220, 178, 113));
@@ -39137,7 +39265,7 @@ failed:
 			auto nav_filter_sort_txt2 = nav_filters->addField("nav_filter_sort_txt2", 64);
 			nav_filter_sort_txt2->setSize(SDL_Rect{ 44, 19 + 24 + 8, nav_filters->getSize().w - 44, 28 });
 			nav_filter_sort_txt2->setFont(smallfont_outline);
-			nav_filter_sort_txt2->setText("HIDE UNDISCOVERED");
+			nav_filter_sort_txt2->setText(Language::get(6196));
 			nav_filter_sort_txt2->setHJustify(Field::justify_t::LEFT);
 			nav_filter_sort_txt2->setVJustify(Field::justify_t::TOP);
 			nav_filter_sort_txt2->setColor(makeColorRGB(220, 178, 113));
@@ -39607,6 +39735,52 @@ failed:
 		page_right->addWidgetAction("MenuPageLeft", "tab_left");
 		page_right->addWidgetAction("MenuPageRight", "tab_right");
 		page_right->addWidgetMovement("MenuAlt2", "nav_filter_sort");
+		page_right->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+			auto frame = const_cast<Frame*>((Frame*)(&widget));
+			const real_t fpsScale = getFPSScale(144.0);
+			auto slider = frame->findSlider("right_slider");
+			if ( !slider ) { return; }
+			auto page_right_inner = frame->findFrame("page_right_inner");
+			if ( !page_right_inner ) { return; }
+
+			const int maxScrollY = page_right_inner->getActualSize().h - page_right_inner->getSize().h;
+			const int currentScrollY = page_right_inner->getActualSize().y;
+			const real_t startFadeTop = 20.0;
+			const real_t startFadeBottom = maxScrollY - startFadeTop;
+			real_t fadeAlphaTop = std::max(0.0, std::min(1.0, (startFadeTop - currentScrollY) / startFadeTop));
+			real_t fadeAlphaBottom = std::min(1.0, std::max(0.0, (currentScrollY - startFadeBottom) / startFadeTop));
+
+			if ( auto fader_bottom = frame->findImage("page_right_gradient_bottom") )
+			{
+				fader_bottom->disabled = slider->isInvisible();
+
+				Uint8 r, g, b, a;
+				getColor(fader_bottom->color, &r, &g, &b, &a);
+				int newAlpha = (1.0 - fadeAlphaBottom) * 255;
+				newAlpha = std::min(newAlpha, 255);
+				a = newAlpha;
+				fader_bottom->color = makeColor(r, g, b, a);
+				if ( a == 0 )
+				{
+					fader_bottom->disabled = true;
+				}
+			}
+			if ( auto fader_top = frame->findImage("page_right_gradient_top") )
+			{
+				fader_top->disabled = slider->isInvisible();
+
+				Uint8 r, g, b, a;
+				getColor(fader_top->color, &r, &g, &b, &a);
+				int newAlpha = (1.0 - fadeAlphaTop) * 255;
+				newAlpha = std::min(newAlpha, 255);
+				a = newAlpha;
+				fader_top->color = makeColor(r, g, b, a);
+				if ( a == 0 )
+				{
+					fader_top->disabled = true;
+				}
+			}
+		});
 		page_right->setTickCallback([](Widget& widget) {
 			Frame* page_right = static_cast<Frame*>(&widget);
 			if ( !page_right ) {
@@ -39732,6 +39906,15 @@ failed:
 				}
 			}
 		});
+
+		auto page_right_gradient_top = page_right->addImage(SDL_Rect{ 12, 26, 338 + 8, 56 },
+			0xFFFFFFFF,
+			"*images/ui/Main Menus/AdventureArchives/C_Contents_ScrollFaderTop_00.png", "page_right_gradient_top");
+		page_right_gradient_top->ontop = true;
+		auto page_right_gradient_bottom = page_right->addImage(SDL_Rect{ 12, page_right->getSize().h - 148 - 40, 338 + 8, 56},
+			0xFFFFFFFF,
+			"*images/ui/Main Menus/AdventureArchives/C_Contents_ScrollFader_00.png", "page_right_gradient_bottom");
+		page_right_gradient_bottom->ontop = true;
 
 		auto page_right_unlock = window->addFrame("page_right_unlock");
 		page_right_unlock->setSize(SDL_Rect{ page_right->getSize().x + 6, page_right->getSize().y + 18, 376, 116 });
