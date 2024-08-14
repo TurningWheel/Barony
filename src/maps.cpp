@@ -7121,7 +7121,7 @@ void assignActions(map_t* map)
 	}
 
 	std::vector<Entity*> chests;
-
+	//std::set<Uint32> takenSlots;
 	for ( auto node = map->entities->first; node != nullptr; )
 	{
 		Entity* postProcessEntity = (Entity*)node->element;
@@ -7136,8 +7136,52 @@ void assignActions(map_t* map)
 			{
 				chests.push_back(postProcessEntity);
 			}
+
+			//int x = (int)postProcessEntity->x >> 4;
+			//int y = (int)postProcessEntity->y >> 4;
+			//takenSlots.insert(x + y * 10000);
 		}
 	}
+
+	/*int num5x5s = 0;
+	// open area debugging tool
+	for ( int x = 0; x < map->width; ++x )
+	{
+		for ( int y = 0; y < map->height; ++y )
+		{
+			if ( takenSlots.find(x + y * 10000) == takenSlots.end() )
+			{
+				if ( !map->tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map->height]
+					&& !map->tiles[2 + y * MAPLAYERS + x * MAPLAYERS * map->height] )
+				{
+					int numTiles = 0;
+					for ( int x1 = x; x1 < map->width && x1 < x + 5; ++x1 )
+					{
+						for ( int y1 = y; y1 < map->height && y1 < y + 5; ++y1 )
+						{
+							if ( takenSlots.find(x1 + y1 * 10000) == takenSlots.end() )
+							{
+								if ( !map->tiles[OBSTACLELAYER + y1 * MAPLAYERS + x1 * MAPLAYERS * map->height]
+									&& !map->tiles[2 + y1 * MAPLAYERS + x1 * MAPLAYERS * map->height] )
+								{
+									++numTiles;
+								}
+							}
+						}
+					}
+					if ( numTiles == 25 )
+					{
+						++num5x5s;
+						Entity* ent = newEntity(245, 0, map->entities, nullptr);
+						ent->behavior == &actBoulder;
+						ent->x = x * 16.0 + 8;
+						ent->y = y * 16.0 + 8;
+					}
+				}
+			}
+		}
+	}
+	messagePlayer(0, MESSAGE_DEBUG, "%d 5x5s", num5x5s);*/
 
 	if ( true /*currentlevel == 0*/ )
 	{
@@ -7285,6 +7329,35 @@ void mapLevel(int player)
 				if ( !minimap[y][x] )
 				{
 					minimap[y][x] = 3;
+				}
+			}
+			else
+			{
+				minimap[y][x] = 0;
+			}
+		}
+	}
+}
+
+void mapLevel2(int player)
+{
+	int x, y;
+	for ( y = 0; y < map.height; ++y )
+	{
+		for ( x = 0; x < map.width; ++x )
+		{
+			if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				if ( !minimap[y][x] )
+				{
+					minimap[y][x] = 2;
+				}
+			}
+			else if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				if ( !minimap[y][x] )
+				{
+					minimap[y][x] = 1;
 				}
 			}
 			else

@@ -2353,6 +2353,23 @@ namespace ConsoleCommands {
 		mapLevel(clientnum);
 		});
 
+	static ConsoleCommand ccmd_maplevel2("/maplevel2", "magic mapping for the level (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
+			return;
+		}
+
+		messagePlayer(clientnum, MESSAGE_MISC, Language::get(412));
+
+		mapLevel2(clientnum);
+		});
+
 	static ConsoleCommand ccmd_drunky("/drunky", "make me drunk (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
