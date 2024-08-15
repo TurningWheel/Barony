@@ -23938,9 +23938,9 @@ failed:
 		Option options[] = {
 			{"Dungeon Compendium", Language::get(5612), archivesDungeonCompendium},
 #ifndef STEAMWORKS
-#if defined(USE_EOS) || defined(LOCAL_ACHIEVEMENTS)
-			{"Achievements", Language::get(5611), archivesAchievements},
-#endif
+//#if defined(USE_EOS) || defined(LOCAL_ACHIEVEMENTS)
+//			{"Achievements", Language::get(5611), archivesAchievements},
+//#endif
 #endif
 #ifdef NINTENDO
 			{"Leaderboards", Language::get(5613), archivesLeaderboards},
@@ -23993,10 +23993,29 @@ failed:
 				y += button->getSize().h;
 				//y += 4;
 			}
+			if ( !strcmp(options[c].name, "Dungeon Compendium") )
+			{
+				button->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+					Compendium_t::PointsAnim_t::countUnreadNotifs();
+					if ( Compendium_t::PointsAnim_t::mainMenuAlert )
+					{
+						if ( auto imgGet = Image::get("*images/ui/Main Menus/AdventureArchives/C_New_Icon_00.png") )
+						{
+							int baseY = pos.y + 2;
+							if ( (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) )
+							{
+								baseY += 2;
+							}
+							imgGet->drawColor(nullptr, SDL_Rect{ pos.x + pos.w - 24, baseY, 8, 28 },
+								SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY }, 0xFFFFFFFF);
+						}
+					}
+				});
+			}
 		}
 		y += 16;
 
-		auto archives = buttons->findButton("Leaderboards");
+		auto archives = buttons->findButton("Dungeon Compendium");
 		if (archives) {
 			archives->select();
 		}
@@ -25681,9 +25700,9 @@ failed:
 		        {"Assign Controllers", Language::get(5762), mainAssignControllers},
 		        {"Dungeon Compendium", Language::get(5763), archivesDungeonCompendium},
 #ifndef STEAMWORKS
-#if defined(USE_EOS) || defined(LOCAL_ACHIEVEMENTS)
-		        {"Achievements", Language::get(5764), archivesAchievements},
-#endif
+//#if defined(USE_EOS) || defined(LOCAL_ACHIEVEMENTS)
+//		        {"Achievements", Language::get(5764), archivesAchievements},
+//#endif
 #endif
 		        {"Settings", Language::get(5765), mainSettings},
 		        });
@@ -25848,6 +25867,26 @@ failed:
 			}
 			y += button->getSize().h;
 			//y += 4;
+
+			if ( !strcmp(options[c].name, "Dungeon Compendium") )
+			{
+				button->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+					Compendium_t::PointsAnim_t::countUnreadNotifs();
+					if ( Compendium_t::PointsAnim_t::mainMenuAlert )
+					{
+						if ( auto imgGet = Image::get("*images/ui/Main Menus/AdventureArchives/C_New_Icon_00.png") )
+						{
+							int baseY = pos.y + 2;
+							if ( (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) )
+							{
+								baseY += 2;
+							}
+							imgGet->drawColor(nullptr, SDL_Rect{ pos.x + pos.w - 24, baseY, 8, 28 },
+								SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY }, 0xFFFFFFFF);
+						}
+					}
+				});
+			}
 		}
 		y += 16;
 
@@ -32702,18 +32741,18 @@ failed:
 
 		if ( Frame* page_right_unlock = parent->findFrame("page_right_unlock") )
 		{
-			if ( auto unlock_lore_cost = page_right_unlock->findField("unlock_lore_cost") )
+			if ( auto unlock_lore_cost = page_right_unlock->findButton("unlock_lore_cost") )
 			{
 				if ( entry.lorePoints > 0 )
 				{
 					unlock_lore_cost->setText(std::to_string(entry.lorePoints).c_str());
 					if ( Compendium_t::lorePointsFromAchievements - Compendium_t::lorePointsSpent >= entry.lorePoints )
 					{
-						unlock_lore_cost->setColor(compendiumContentsSelectedColor);
+						unlock_lore_cost->setTextColor(makeColorRGB(255, 255, 255));
 					}
 					else
 					{
-						unlock_lore_cost->setColor(makeColorRGB(128, 128, 128));
+						unlock_lore_cost->setTextColor(makeColorRGB(128, 128, 128));
 					}
 				}
 				else
@@ -32788,6 +32827,7 @@ failed:
 		Frame* interactFrame = nullptr;
 		Frame* tooltipPromptFrame = nullptr;
 		bool tooltipGamepadOpen = false;
+		bool tooltipPromptActive = false;
 		void clear()
 		{
 			tooltipContainerFrame = nullptr;
@@ -32796,6 +32836,7 @@ failed:
 			interactFrame = nullptr;
 			tooltipPromptFrame = nullptr;
 			tooltipGamepadOpen = false;
+			tooltipPromptActive = false;
 		}
 	};
 	static CompendiumTooltipFrames_t compendiumItemTooltip;
@@ -33995,6 +34036,51 @@ failed:
 									|| itemUnlock == Compendium_t::CompendiumUnlockStatus::UNLOCKED_UNVISITED )
 								{
 									itemUnlock = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_VISITED;
+
+									bool allRevealed = true;
+									for ( auto& i : contents )
+									{
+										int itemID = i.itemID == SPELL_ITEM ? Compendium_t::Events_t::kEventSpellOffset + i.spellID : i.itemID;
+										auto find = Compendium_t::CompendiumItems_t::itemUnlocks.find(itemID);
+										if ( find != Compendium_t::CompendiumItems_t::itemUnlocks.end() )
+										{
+											if ( find->second == Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED
+												|| find->second == Compendium_t::CompendiumUnlockStatus::UNLOCKED_UNVISITED )
+											{
+												allRevealed = false;
+												break;
+											}
+										}
+									}
+									if ( allRevealed )
+									{
+										if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::UNLOCKED_UNVISITED )
+										{
+											unlockStatus = Compendium_t::CompendiumUnlockStatus::UNLOCKED_VISITED;
+											if ( main_menu_frame )
+											{
+												if ( auto compendium = main_menu_frame->findFrame("compendium") )
+												{
+													if ( auto nav = compendium->findFrame("nav") )
+													{
+														if ( auto contents = nav->findFrame("contents") )
+														{
+															if ( auto contents_notif = contents->findFrame("notifs") )
+															{
+																std::string findImg = "notif_" + compendium_contents_current[compendium_current];
+																if ( auto img = contents_notif->findImage(findImg.c_str()) )
+																{
+																	img->disabled = true;
+																}
+															}
+														}
+													}
+												}
+											}
+										}
+									}
+									Compendium_t::PointsAnim_t::countUnreadLastTicks = 0;
+									Compendium_t::PointsAnim_t::countUnreadNotifs();
 								}
 							}
 						}
@@ -34094,18 +34180,18 @@ failed:
 
 		if ( Frame* page_right_unlock = parent->findFrame("page_right_unlock") )
 		{
-			if ( auto unlock_lore_cost = page_right_unlock->findField("unlock_lore_cost") )
+			if ( auto unlock_lore_cost = page_right_unlock->findButton("unlock_lore_cost") )
 			{
 				if ( compendiumEntry.lorePoints > 0 )
 				{
 					unlock_lore_cost->setText(std::to_string(compendiumEntry.lorePoints).c_str());
 					if ( Compendium_t::lorePointsFromAchievements - Compendium_t::lorePointsSpent >= compendiumEntry.lorePoints )
 					{
-						unlock_lore_cost->setColor(compendiumContentsSelectedColor);
+						unlock_lore_cost->setTextColor(makeColorRGB(255, 255, 255));
 					}
 					else
 					{
-						unlock_lore_cost->setColor(makeColorRGB(128, 128, 128));
+						unlock_lore_cost->setTextColor(makeColorRGB(128, 128, 128));
 					}
 				}
 				else
@@ -34150,6 +34236,7 @@ failed:
 
 				const int entrySize = 64;
 				Compendium_t::compendiumItem.status = EXCELLENT;
+				Compendium_t::compendiumItem.beatitude = 0;
 				Compendium_t::compendiumItem.count = 1;
 				Compendium_t::compendiumItem.identified = true;
 
@@ -34163,6 +34250,259 @@ failed:
 						compendiumItemTooltip.interactFrame,
 						compendiumItemTooltip.tooltipPromptFrame);
 					compendiumItemTooltip.tooltipFrame->setDisabled(false);
+					if ( compendiumItemTooltip.tooltipContainerFrame )
+					{
+						if ( false )
+						{
+							auto item_widget = compendiumItemTooltip.tooltipContainerFrame->addFrame("item_widget");
+							item_widget->setSize(SDL_Rect{ 360, 360, 144, 166 });
+							item_widget->addImage(SDL_Rect{ 0, 0, 144, 166 }, 0xFFFFFFFF,
+								"*images/ui/Main Menus/AdventureArchives/C_ItemConditions_Panel_00.png",
+								"item_widget_bg");
+							item_widget->setClickable(false);
+							item_widget->setInheritParentFrameOpacity(false);
+							item_widget->setOpacity(0.0);
+							item_widget->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+								auto frame = const_cast<Frame*>((Frame*)(&widget));
+							if ( auto parent = frame->getParent() )
+							{
+								if ( auto tooltip = parent->findFrame("player tooltip 0") )
+								{
+									if ( tooltip->getSize().w == 0 )
+									{
+										frame->setOpacity(0.0);
+									}
+									else
+									{
+										frame->setOpacity(tooltip->getOpacity());
+									}
+									if ( frame->getOpacity() > 0.001 )
+									{
+										SDL_Rect framePos = frame->getSize();
+										framePos.x = tooltip->getSize().x - framePos.w;
+										framePos.y = tooltip->getSize().y;
+										frame->setSize(framePos);
+
+										// draw glyphs
+										bool pressed = false;// ticks% TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
+										Input& input = Input::inputs[getMenuOwner()];
+										const SDL_Rect viewport{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
+										auto color = makeColor(255, 255, 255, 255 * frame->getOpacity() / 100.0);
+										if ( auto txt = frame->findField("txt_1") )
+										{
+											auto path = input.getGlyphPathForBinding("MenuUp", pressed);
+											auto image = Image::get((std::string("*") + path).c_str());
+											int w = image->getWidth();
+											int h = image->getHeight();
+											int x = frame->getAbsoluteSize().x + txt->getSize().x - 8 - w;
+											int y = frame->getAbsoluteSize().y + txt->getSize().y + 8 + 2 - h / 2;
+											image->drawColor(nullptr, SDL_Rect{ x, y, w, h }, viewport, color);
+										}
+										if ( auto txt = frame->findField("txt_2") )
+										{
+											auto path = input.getGlyphPathForBinding("MenuDown", pressed);
+											auto image = Image::get((std::string("*") + path).c_str());
+											int w = image->getWidth();
+											int h = image->getHeight();
+											int x = frame->getAbsoluteSize().x + txt->getSize().x - 8 - w;
+											int y = frame->getAbsoluteSize().y + txt->getSize().y + 8 + 2 - h / 2;
+											image->drawColor(nullptr, SDL_Rect{ x, y, w, h }, viewport, color);
+										}
+										if ( auto txt = frame->findField("txt_3") )
+										{
+											auto path = input.getGlyphPathForBinding("MenuRight", pressed);
+											auto image = Image::get((std::string("*") + path).c_str());
+											int w = image->getWidth();
+											int h = image->getHeight();
+											int x = frame->getAbsoluteSize().x + txt->getSize().x - 8 - w;
+											int y = frame->getAbsoluteSize().y + txt->getSize().y + 8 + 2 - h / 2;
+											image->drawColor(nullptr, SDL_Rect{ x, y, w, h }, viewport, color);
+										}
+										if ( auto txt = frame->findField("txt_4") )
+										{
+											auto path = input.getGlyphPathForBinding("MenuLeft", pressed);
+											auto image = Image::get((std::string("*") + path).c_str());
+											int w = image->getWidth();
+											int h = image->getHeight();
+											int x = frame->getAbsoluteSize().x + txt->getSize().x - 8 - w;
+											int y = frame->getAbsoluteSize().y + txt->getSize().y + 8 + 2 - h / 2;
+											image->drawColor(nullptr, SDL_Rect{ x, y, w, h }, viewport, color);
+										}
+									}
+								}
+							}
+								});
+
+							auto txt = item_widget->addField("txt_1", 64);
+
+							SDL_Rect pos{ 54, 21, 86, 24 };
+							txt->setFont(smallfont_outline);
+							txt->setSize(pos);
+							txt->setHJustify(Field::justify_t::LEFT);
+							txt->setVJustify(Field::justify_t::TOP);
+							txt->setText("BLESS +");
+							txt->setColor(makeColorRGB(67, 195, 157));
+
+							pos.y += 36;
+							txt = item_widget->addField("txt_2", 64);
+							txt->setFont(smallfont_outline);
+							txt->setSize(pos);
+							txt->setHJustify(Field::justify_t::LEFT);
+							txt->setVJustify(Field::justify_t::TOP);
+							txt->setText("CURSE -");
+							txt->setColor(hudColors.characterSheetRed);
+
+							pos.y += 36;
+							txt = item_widget->addField("txt_3", 64);
+							txt->setFont(smallfont_outline);
+							txt->setSize(pos);
+							txt->setHJustify(Field::justify_t::LEFT);
+							txt->setVJustify(Field::justify_t::TOP);
+							txt->setText("REPAIR");
+							txt->setColor(makeColorRGB(188, 154, 114));
+
+							pos.y += 36;
+							txt = item_widget->addField("txt_4", 64);
+							txt->setFont(smallfont_outline);
+							txt->setSize(pos);
+							txt->setHJustify(Field::justify_t::LEFT);
+							txt->setVJustify(Field::justify_t::TOP);
+							txt->setText("DAMAGE");
+							txt->setColor(makeColorRGB(188, 154, 114));
+						}
+						else
+						{
+							auto item_widget = compendiumItemTooltip.tooltipContainerFrame->addFrame("item_widget");
+							item_widget->setSize(SDL_Rect{ 360, 360, 274, 50 });
+							item_widget->addImage(SDL_Rect{ 0, 0, 274, 50 }, makeColor(255, 255, 255, 192),
+								"*images/ui/Main Menus/AdventureArchives/C_ItemConditions_Panel_01.png",
+								"item_widget_bg");
+							item_widget->setClickable(false);
+							item_widget->setInheritParentFrameOpacity(false);
+							item_widget->setOpacity(0.0);
+							item_widget->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+								auto frame = const_cast<Frame*>((Frame*)(&widget));
+							if ( auto parent = frame->getParent() )
+							{
+								if ( auto tooltip = parent->findFrame("player tooltip 0") )
+								{
+									if ( frame->getOpacity() > 0.001 )
+									{
+										// draw glyphs
+										bool pressed = false; // ticks% TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
+										Input& input = Input::inputs[getMenuOwner()];
+										const SDL_Rect viewport{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
+										auto color = makeColor(255, 255, 255, 255 * frame->getOpacity() / 100.0);
+										const int yoffset = -2;
+										if ( auto txt = frame->findField("txt_1") )
+										{
+											bool toggle = ticks % TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
+											char* binding = "MenuPageRight";
+											if ( input.input("MenuUp").isBindingUsingKeyboard() )
+											{
+												binding = "MenuUp";
+											}
+											pressed = input.binary(binding);
+											auto path = input.getGlyphPathForBinding(binding, pressed);
+											Image* image = Image::get((std::string("*") + path).c_str());
+											int w = image->getWidth();
+											int h = image->getHeight();
+											int x1 = frame->getAbsoluteSize().x + txt->getSize().x - 8 - w;
+											int y1 = frame->getAbsoluteSize().y + txt->getSize().y + 8 + 2 - h / 2 + yoffset;
+											image->drawColor(nullptr, SDL_Rect{ x1, y1, w, h }, viewport, color);
+
+											binding = "MenuPageLeft";
+											if ( input.input("MenuDown").isBindingUsingKeyboard() )
+											{
+												binding = "MenuDown";
+											}
+											pressed = input.binary(binding);
+											path = input.getGlyphPathForBinding(binding, pressed);
+											image = Image::get((std::string("*") + path).c_str());
+											w = image->getWidth();
+											h = image->getHeight();
+											int x2 = x1 - 4 - w;
+											int y2 = frame->getAbsoluteSize().y + txt->getSize().y + 8 + 2 - h / 2 + yoffset;
+											image->drawColor(nullptr, SDL_Rect{ x2, y2, w, h }, viewport, color);
+										}
+										if ( auto txt = frame->findField("txt_2") )
+										{
+											char* binding = "MenuPageRightAlt";
+											if ( input.input("MenuRight").isBindingUsingKeyboard() )
+											{
+												binding = "MenuRight";
+											}
+											pressed = input.binary(binding);
+											auto path = input.getGlyphPathForBinding(binding, pressed);
+											auto image = Image::get((std::string("*") + path).c_str());
+											int w = image->getWidth();
+											int h = image->getHeight();
+											int x1 = frame->getAbsoluteSize().x + txt->getSize().x - 8 - w;
+											int y1 = frame->getAbsoluteSize().y + txt->getSize().y + 8 + 2 - h / 2 + yoffset;
+											image->drawColor(nullptr, SDL_Rect{ x1, y1, w, h }, viewport, color);
+
+											binding = "MenuPageLeftAlt";
+											if ( input.input("MenuLeft").isBindingUsingKeyboard() )
+											{
+												binding = "MenuLeft";
+											}
+											pressed = input.binary(binding);
+											path = input.getGlyphPathForBinding(binding, pressed);
+											image = Image::get((std::string("*") + path).c_str());
+											w = image->getWidth();
+											h = image->getHeight();
+											int x2 = x1 - 4 - w;
+											int y2 = frame->getAbsoluteSize().y + txt->getSize().y + 8 + 2 - h / 2 + yoffset;
+											image->drawColor(nullptr, SDL_Rect{ x2, y2, w, h }, viewport, color);
+										}
+									}
+								}
+							}
+								});
+
+							auto txt = item_widget->addField("txt_1", 64);
+
+							SDL_Rect pos{ 8 + 32 + 4 + 32 + 8, 21 - 16 + 10, 86, 24 };
+							txt->setFont(smallfont_outline);
+							txt->setSize(pos);
+							txt->setHJustify(Field::justify_t::LEFT);
+							txt->setVJustify(Field::justify_t::TOP);
+							txt->setText("BLESS");
+							txt->setColor(makeColorRGB(67, 195, 157));
+
+							txt = item_widget->addField("txt_2", 64);
+							txt->setFont(smallfont_outline);
+							txt->setHJustify(Field::justify_t::LEFT);
+							txt->setVJustify(Field::justify_t::TOP);
+							txt->setText("REPAIR");
+							txt->setColor(makeColorRGB(188, 154, 114));
+							if ( auto textGet = txt->getTextObject() )
+							{
+								pos.x = item_widget->getSize().w;
+								pos.x -= textGet->getWidth();
+								pos.x -= 12;
+								txt->setSize(pos);
+							}
+
+							/*pos.y += 36;
+							txt = item_widget->addField("txt_3", 64);
+							txt->setFont(smallfont_outline);
+							txt->setSize(pos);
+							txt->setHJustify(Field::justify_t::LEFT);
+							txt->setVJustify(Field::justify_t::TOP);
+							txt->setText("REPAIR");
+							txt->setColor(makeColorRGB(188, 154, 114));
+
+							pos.y += 36;
+							txt = item_widget->addField("txt_4", 64);
+							txt->setFont(smallfont_outline);
+							txt->setSize(pos);
+							txt->setHJustify(Field::justify_t::LEFT);
+							txt->setVJustify(Field::justify_t::TOP);
+							txt->setText("DAMAGE");
+							txt->setColor(makeColorRGB(188, 154, 114));*/
+						}
+					}
 				}
 				compendiumItemTooltip.clear();
 
@@ -34218,7 +34558,18 @@ failed:
 						}
 						else
 						{
-							frame->setWidgetBack("right_back_button");
+							if ( compendiumItemTooltip.tooltipGamepadOpen )
+							{
+								frame->removeWidgetAction("MenuCancel");
+								frame->removeWidgetAction("MenuPageLeft");
+								frame->removeWidgetAction("MenuPageRight");
+							}
+							else
+							{
+								frame->setWidgetBack("right_back_button");
+								frame->addWidgetAction("MenuPageLeft", "tab_left");
+								frame->addWidgetAction("MenuPageRight", "tab_right");
+							}
 						}
 						if ( Frame* page_right_inner = frame->getParent() )
 						{
@@ -34369,11 +34720,19 @@ failed:
 											{
 												if ( selectable )
 												{
-													soundActivate();
 													selectCompendiumItemInList(*frame, *page_right_inner, false, true);
 													if ( !isMouseVisible() )
 													{
-														compendiumItemTooltip.tooltipGamepadOpen = !compendiumItemTooltip.tooltipGamepadOpen;
+														if ( compendiumItemTooltip.tooltipGamepadOpen )
+														{
+															soundCancel();
+															compendiumItemTooltip.tooltipGamepadOpen = false;
+														}
+														else
+														{
+															soundActivate();
+															compendiumItemTooltip.tooltipGamepadOpen = true;
+														}
 													}
 												}
 												else
@@ -34386,6 +34745,11 @@ failed:
 											bool hovered = false;
 											if ( isMouseVisible() )
 											{
+												compendiumItemTooltip.tooltipGamepadOpen = false;
+											}
+											else if ( compendiumItemTooltip.tooltipGamepadOpen && Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuCancel") )
+											{
+												soundCancel();
 												compendiumItemTooltip.tooltipGamepadOpen = false;
 											}
 											if ( selector_bg )
@@ -34426,6 +34790,139 @@ failed:
 													if ( frame->getUserData() )
 													{
 														Compendium_t::compendiumItem.appearance = (reinterpret_cast<intptr_t>(frame->getUserData()) & 0x7F);
+													}
+
+													if ( Compendium_t::compendiumItem.type == SPELL_ITEM )
+													{
+														compendiumItemTooltip.tooltipPromptActive = false;
+													}
+													else
+													{
+														compendiumItemTooltip.tooltipPromptActive = true;
+													}
+
+													if ( compendiumItemTooltip.tooltipPromptActive )
+													{
+														if ( Input::inputs[getMenuOwner()].input("MenuUp").isBindingUsingKeyboard() )
+														{
+															if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuUp") )
+															{
+																if ( Compendium_t::compendiumItem.beatitude >= 9 )
+																{
+																	soundError();
+																}
+																else
+																{
+																	soundMove();
+																	Compendium_t::compendiumItem.beatitude++;
+																}
+															}
+														}
+														if ( Input::inputs[getMenuOwner()].input("MenuDown").isBindingUsingKeyboard() )
+														{
+															if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuDown") )
+															{
+																if ( Compendium_t::compendiumItem.beatitude <= -9 )
+																{
+																	soundError();
+																}
+																else
+																{
+																	soundMove();
+																	Compendium_t::compendiumItem.beatitude--;
+																}
+															}
+														}
+														if ( Input::inputs[getMenuOwner()].input("MenuPageLeft").isBindingUsingGamepad() )
+														{
+															if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuPageLeft") )
+															{
+																if ( Compendium_t::compendiumItem.beatitude <= -9 )
+																{
+																	soundError();
+																}
+																else
+																{
+																	soundMove();
+																	Compendium_t::compendiumItem.beatitude--;
+																}
+															}
+														}
+														if ( Input::inputs[getMenuOwner()].input("MenuPageRight").isBindingUsingGamepad() )
+														{
+															if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuPageRight") )
+															{
+																if ( Compendium_t::compendiumItem.beatitude >= 9 )
+																{
+																	soundError();
+																}
+																else
+																{
+																	soundMove();
+																	Compendium_t::compendiumItem.beatitude++;
+																}
+															}
+														}
+														if ( Input::inputs[getMenuOwner()].input("MenuLeft").isBindingUsingKeyboard() )
+														{
+															if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuLeft") )
+															{
+																if ( Compendium_t::compendiumItem.status > DECREPIT )
+																{
+																	soundMove();
+																	Compendium_t::compendiumItem.status = (Status)(Compendium_t::compendiumItem.status - 1);
+																}
+																else
+																{
+																	soundError();
+																}
+															}
+														}
+														if ( Input::inputs[getMenuOwner()].input("MenuRight").isBindingUsingKeyboard() )
+														{
+															if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuRight") )
+															{
+																if ( Compendium_t::compendiumItem.status < EXCELLENT )
+																{
+																	soundMove();
+																	Compendium_t::compendiumItem.status = (Status)(Compendium_t::compendiumItem.status + 1);
+																}
+																else
+																{
+																	soundError();
+																}
+															}
+														}
+														if ( Input::inputs[getMenuOwner()].input("MenuPageLeftAlt").isBindingUsingGamepad() )
+														{
+															if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuPageLeftAlt") )
+															{
+																if ( Compendium_t::compendiumItem.status > DECREPIT )
+																{
+																	soundMove();
+																	Compendium_t::compendiumItem.status = (Status)(Compendium_t::compendiumItem.status - 1);
+																}
+																else
+																{
+																	soundError();
+																}
+															}
+														}
+														if ( Input::inputs[getMenuOwner()].input("MenuPageRightAlt").isBindingUsingGamepad() )
+														{
+															if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuPageRightAlt") )
+															{
+																if ( Compendium_t::compendiumItem.status < EXCELLENT )
+																{
+																	soundMove();
+																	Compendium_t::compendiumItem.status = (Status)(Compendium_t::compendiumItem.status + 1);
+																}
+																else
+																{
+																	soundError();
+																}
+															}
+														}
 													}
 
 													Compendium_t::tooltipPos.x = absolutePos.x - 16;
@@ -35092,18 +35589,18 @@ failed:
 
 		if ( Frame* page_right_unlock = parent->findFrame("page_right_unlock") )
 		{
-			if ( auto unlock_lore_cost = page_right_unlock->findField("unlock_lore_cost") )
+			if ( auto unlock_lore_cost = page_right_unlock->findButton("unlock_lore_cost") )
 			{
 				if ( entry.lorePoints > 0 )
 				{
 					unlock_lore_cost->setText(std::to_string(entry.lorePoints).c_str());
 					if ( Compendium_t::lorePointsFromAchievements - Compendium_t::lorePointsSpent >= entry.lorePoints )
 					{
-						unlock_lore_cost->setColor(compendiumContentsSelectedColor);
+						unlock_lore_cost->setTextColor(makeColorRGB(255, 255, 255));
 					}
 					else
 					{
-						unlock_lore_cost->setColor(makeColorRGB(128, 128, 128));
+						unlock_lore_cost->setTextColor(makeColorRGB(128, 128, 128));
 					}
 				}
 				else
@@ -35325,18 +35822,18 @@ failed:
 
 				if ( Frame* page_right_unlock = parent->findFrame("page_right_unlock") )
 				{
-					if ( auto unlock_lore_cost = page_right_unlock->findField("unlock_lore_cost") )
+					if ( auto unlock_lore_cost = page_right_unlock->findButton("unlock_lore_cost") )
 					{
 						if ( entry.lorePoints > 0 )
 						{
 							unlock_lore_cost->setText(std::to_string(entry.lorePoints).c_str());
 							if ( Compendium_t::lorePointsFromAchievements - Compendium_t::lorePointsSpent >= entry.lorePoints )
 							{
-								unlock_lore_cost->setColor(compendiumContentsSelectedColor);
+								unlock_lore_cost->setTextColor(makeColorRGB(255, 255, 255));
 							}
 							else
 							{
-								unlock_lore_cost->setColor(makeColorRGB(128, 128, 128));
+								unlock_lore_cost->setTextColor(makeColorRGB(128, 128, 128));
 							}
 						}
 						else
@@ -35742,9 +36239,10 @@ failed:
 				}
 				if ( auto reveal_frame = parent->findFrame("page_right_unlock") )
 				{
-					if ( auto unlock_lore_cost = reveal_frame->findField("unlock_lore_cost") )
+					if ( auto unlock_lore_cost = reveal_frame->findButton("unlock_lore_cost") )
 					{
 						unlock_lore_cost->setDisabled(true);
+						unlock_lore_cost->setInvisible(true);
 					}
 					if ( auto reveal_txt = reveal_frame->findField("to_unlock") )
 					{
@@ -35779,9 +36277,10 @@ failed:
 				}
 				if ( auto reveal_frame = parent->findFrame("page_right_unlock") )
 				{
-					if ( auto unlock_lore_cost = reveal_frame->findField("unlock_lore_cost") )
+					if ( auto unlock_lore_cost = reveal_frame->findButton("unlock_lore_cost") )
 					{
 						unlock_lore_cost->setDisabled(true);
+						unlock_lore_cost->setInvisible(true);
 					}
 					if ( auto reveal_txt = reveal_frame->findField("to_unlock") )
 					{
@@ -35816,9 +36315,10 @@ failed:
 				}
 				if ( auto reveal_frame = parent->findFrame("page_right_unlock") )
 				{
-					if ( auto unlock_lore_cost = reveal_frame->findField("unlock_lore_cost") )
+					if ( auto unlock_lore_cost = reveal_frame->findButton("unlock_lore_cost") )
 					{
-						unlock_lore_cost->setDisabled(false);
+						unlock_lore_cost->setDisabled(true);
+						unlock_lore_cost->setInvisible(false);
 						unlock_lore_cost->setText("");
 					}
 					if ( auto reveal_txt = reveal_frame->findField("to_unlock") )
@@ -35952,11 +36452,37 @@ failed:
 				{
 					if ( findUnlock->second == Compendium_t::UNLOCKED_UNVISITED )
 					{
-						findUnlock->second = Compendium_t::UNLOCKED_VISITED;
+						bool allRevealed = true;
+						if ( compendium_current == "items" || compendium_current == "magic" )
+						{
+							auto& compendiumEntry = (compendium_current == "items") ? CompendiumEntries.items[entry.first] : CompendiumEntries.magic[entry.first];
+							for ( auto& i : compendiumEntry.items_in_category )
+							{
+								int itemID = i.itemID == SPELL_ITEM ? Compendium_t::Events_t::kEventSpellOffset + i.spellID : i.itemID;
+								auto find = Compendium_t::CompendiumItems_t::itemUnlocks.find(itemID);
+								if ( find != Compendium_t::CompendiumItems_t::itemUnlocks.end() )
+								{
+									if ( find->second == Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED
+										|| find->second == Compendium_t::CompendiumUnlockStatus::UNLOCKED_UNVISITED )
+									{
+										allRevealed = false;
+										break;
+									}
+								}
+							}
+						}
+						if ( allRevealed )
+						{
+							findUnlock->second = Compendium_t::UNLOCKED_VISITED;
+							Compendium_t::PointsAnim_t::countUnreadLastTicks = 0;
+							Compendium_t::PointsAnim_t::countUnreadNotifs();
+						}
 					}
 					else if ( findUnlock->second == Compendium_t::LOCKED_REVEALED_UNVISITED )
 					{
 						findUnlock->second = Compendium_t::LOCKED_REVEALED_VISITED;
+						Compendium_t::PointsAnim_t::countUnreadLastTicks = 0;
+						Compendium_t::PointsAnim_t::countUnreadNotifs();
 					}
 
 					if ( findUnlock->second == Compendium_t::UNLOCKED_VISITED
@@ -35984,7 +36510,6 @@ failed:
 				{
 					if ( auto notifs = contentsFrame->findFrame("notifs") )
 					{
-						std::vector<std::string> toRemove;
 						for ( auto img : notifs->getImages() )
 						{
 							std::string name = "";
@@ -36002,14 +36527,10 @@ failed:
 									if ( findUnlock->second == Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_VISITED
 										|| findUnlock->second == Compendium_t::CompendiumUnlockStatus::UNLOCKED_VISITED )
 									{
-										toRemove.push_back(img->name);
+										img->disabled = true;
 									}
 								}
 							}
-						}
-						for ( auto& r : toRemove )
-						{
-							notifs->remove(r.c_str());
 						}
 					}
 				}
@@ -36476,14 +36997,15 @@ failed:
 						}
 					}
 
-					if ( drawNotification )
+					contents_notif->setSize(SDL_Rect{ 0, 0, contents->getSize().w, contents->getActualSize().h });
+					if ( data.first != "-" )
 					{
-						contents_notif->setSize(SDL_Rect{ 0, 0, contents->getSize().w, contents->getActualSize().h });
 						std::string imgName = "notif_" + data.first;
-						contents_notif->addImage(SDL_Rect{ 4, 4 + (int)(contents->getEntries().size() - 1) * contents->getEntrySize(), 6, 14 },
+						auto img = contents_notif->addImage(SDL_Rect{ 4, 4 + (int)(contents->getEntries().size() - 1) * contents->getEntrySize(), 6, 14 },
 							0xFFFFFFFF,
 							"*#images/ui/Inventory/tooltips/ExclamationAnim00.png",
 							imgName.c_str());
+						img->disabled = !drawNotification;
 					}
 				}
 
@@ -38066,14 +38588,64 @@ failed:
 								}
 								else if ( findUnlock->second == Compendium_t::LOCKED_REVEALED_VISITED )
 								{
-									findUnlock->second = Compendium_t::UNLOCKED_VISITED;
+									bool allRevealed = true;
+									if ( compendium_current == "items" || compendium_current == "magic" )
+									{
+										auto& compendiumEntry = (compendium_current == "items") ? CompendiumEntries.items[compendium_contents_current[compendium_current]] : CompendiumEntries.magic[compendium_contents_current[compendium_current]];
+										for ( auto i : compendiumEntry.items_in_category )
+										{
+											int itemID = i.itemID == SPELL_ITEM ? Compendium_t::Events_t::kEventSpellOffset + i.spellID : i.itemID;
+											auto find = Compendium_t::CompendiumItems_t::itemUnlocks.find(itemID);
+											if ( find != Compendium_t::CompendiumItems_t::itemUnlocks.end() )
+											{
+												if ( find->second == Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED
+													|| find->second == Compendium_t::CompendiumUnlockStatus::UNLOCKED_UNVISITED )
+												{
+													allRevealed = false;
+													break;
+												}
+											}
+										}
+									}
+									if ( allRevealed )
+									{
+										findUnlock->second = Compendium_t::UNLOCKED_VISITED;
+									}
+									else
+									{
+										findUnlock->second = Compendium_t::UNLOCKED_UNVISITED;
+
+										if ( main_menu_frame )
+										{
+											if ( auto compendium = main_menu_frame->findFrame("compendium") )
+											{
+												if ( auto nav = compendium->findFrame("nav") )
+												{
+													if ( auto contents = nav->findFrame("contents") )
+													{
+														if ( auto contents_notif = contents->findFrame("notifs") )
+														{
+															std::string findImg = "notif_" + compendium_contents_current[compendium_current];
+															if ( auto img = contents_notif->findImage(findImg.c_str()) )
+															{
+																img->disabled = false;
+															}
+														}
+													}
+												}
+											}
+										}
+									}
 								}
+								Compendium_t::PointsAnim_t::countUnreadLastTicks = 0;
+								Compendium_t::PointsAnim_t::countUnreadNotifs();
 								if ( compendium_current == "items" || compendium_current == "magic" )
 								{
 									refreshCompendiumEntryItemsList(compendium_contents_current[compendium_current], parent, true);
 								}
 							}
 						}
+						Compendium_t::PointsAnim_t::pointsChangeEvent(-lorePointCost);
 						Compendium_t::updateLorePointCounts();
 					}
 				}
@@ -38081,13 +38653,14 @@ failed:
 
 			if ( !success )
 			{
-				soundError();
+				Compendium_t::PointsAnim_t::noFundsEvent();
 				return;
 			}
 
-			if ( auto unlock_lore_cost = page_right_unlock->findField("unlock_lore_cost") )
+			if ( auto unlock_lore_cost = page_right_unlock->findButton("unlock_lore_cost") )
 			{
 				unlock_lore_cost->setDisabled(true);
+				unlock_lore_cost->setInvisible(true);
 			}
 		}
 
@@ -38227,7 +38800,28 @@ failed:
 		players[getMenuOwner()]->inventoryUI.compendiumItemTooltipDisplay.type = NUMITEMS;
 		compendiumItemTooltip.clear();
 
-		Compendium_t::updateLorePointCounts();
+		if ( !Compendium_t::PointsAnim_t::firstLoad )
+		{
+			auto balanceOld = Compendium_t::lorePointsFromAchievements - Compendium_t::lorePointsSpent;
+			Compendium_t::updateLorePointCounts();
+			auto balanceCurrent = Compendium_t::lorePointsFromAchievements - Compendium_t::lorePointsSpent;
+			if ( balanceOld < balanceCurrent )
+			{
+				int diff = balanceCurrent - balanceOld;
+				Compendium_t::lorePointsFromAchievements -= diff; // tmp hack to make the anim count up
+				Compendium_t::PointsAnim_t::pointsChangeEvent(diff);
+				Compendium_t::lorePointsFromAchievements += diff;
+			}
+		}
+		else
+		{
+			Compendium_t::updateLorePointCounts();
+			Compendium_t::PointsAnim_t::pointsChangeEvent(0);
+		}
+		if ( !Compendium_t::AchievementData_t::achievementsNeedFirstData )
+		{
+			Compendium_t::PointsAnim_t::firstLoad = false;
+		}
 
 		auto dimmer = main_menu_frame->addFrame("dimmer");
 		dimmer->setSize(SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY });
@@ -38260,28 +38854,74 @@ failed:
 			auto lore_points = window->addFrame("lore_points_balance");
 			lore_points->setHollow(true);
 			lore_points->setClickable(false);
-			lore_points->setSize(SDL_Rect{ window->getSize().w - 604, 0, 194, 50 + offset_y });
+			lore_points->setSize(SDL_Rect{ window->getSize().w - 402, 0, 194, 50 + offset_y });
 			lore_points->addImage(SDL_Rect{ 0, offset_y, 194, 50 }, 0xFFFFFFFF,
-				"*images/ui/Main Menus/AdventureArchives/C_Completion_BG_00.png", "lore_points_bg");
+				"*images/ui/Main Menus/AdventureArchives/C_LP_Available_00.png", "lore_points_bg");
 			lore_points->addImage(SDL_Rect{ 10, 10 + offset_y, 28, 28 }, 0xFFFFFFFF,
 				"*images/ui/Main Menus/AdventureArchives/C_Lorepoint_Icon_00.png", "lore_points_icon");
 			Field* txt = lore_points->addField("lore_points_current", 32);
 			txt->setText("");
 			txt->setFont("fonts/kongtext.ttf#16#2");
 			txt->setColor(makeColorRGB(158, 146, 132));
-			txt->setSize(SDL_Rect{ 0, 16 + offset_y, 100, 24 });
+			txt->setSize(SDL_Rect{ 0, 16 + offset_y, 172 - 64, 24 });
 			txt->setVJustify(Field::justify_t::TOP);
 			txt->setHJustify(Field::justify_t::RIGHT);
+			txt->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+				Compendium_t::PointsAnim_t::tickAnimate();
+				auto txt = const_cast<Field*>((Field*)(&widget));
+				SDL_Rect size = txt->getSize();
+				size.x = 0;
+				if ( Compendium_t::PointsAnim_t::noFundsAnimate )
+				{
+					size.x += -2 + 2 * (cos(Compendium_t::PointsAnim_t::animNoFunds * 4 * PI));
+				}
+				txt->setSize(size);
+			});
 			txt->setTickCallback([](Widget& widget) {
 				Field* txt = static_cast<Field*>(&widget);
+				/*if ( keystatus[SDLK_g] )
+				{
+					keystatus[SDLK_g] = 0;
+					Compendium_t::PointsAnim_t::noFundsEvent();
+				}*/
+				/*if ( keystatus[SDLK_g] )
+				{
+					keystatus[SDLK_g] = 0;
+					if ( keystatus[SDLK_LSHIFT] )
+					{
+						Compendium_t::PointsAnim_t::pointsChangeEvent(-6);
+					}
+					else
+					{
+						Compendium_t::PointsAnim_t::pointsChangeEvent(10);
+					}
+				}*/
+
 				if ( Compendium_t::AchievementData_t::achievementsNeedFirstData )
 				{
 					txt->setText("...");
 				}
 				else
 				{
-					int lorePointsCurrent = std::max(0, Compendium_t::lorePointsFromAchievements - Compendium_t::lorePointsSpent);
-					txt->setText(std::to_string(lorePointsCurrent).c_str());
+					if ( !strcmp(txt->getText(), "...") )
+					{
+						Compendium_t::updateLorePointCounts();
+						Compendium_t::PointsAnim_t::pointsChangeEvent(0);
+					}
+					//int lorePointsCurrent = std::max(0, Compendium_t::lorePointsFromAchievements - Compendium_t::lorePointsSpent);
+					static ConsoleVariable<Vector4> cvar_lore_point_highlight("/compendium_lore_point_highlight", Vector4{ 63, 64, -48, 0 });
+					if ( Compendium_t::PointsAnim_t::noFundsAnimate )
+					{
+						txt->setColor(makeColor(215, 38, 61, 255)); // red
+					}
+					else
+					{
+						txt->setColor(makeColorRGB(158 + cvar_lore_point_highlight->x * Compendium_t::PointsAnim_t::anim,
+							146 + cvar_lore_point_highlight->y * Compendium_t::PointsAnim_t::anim,
+							132 + cvar_lore_point_highlight->z * Compendium_t::PointsAnim_t::anim));
+					}
+					std::string str = std::to_string(Compendium_t::PointsAnim_t::txtCurrentPoints).c_str();
+					txt->setText(str.c_str());
 				}
 			});
 
@@ -38292,76 +38932,161 @@ failed:
 			txt->setSize(SDL_Rect{ 0, 1, lore_points->getSize().w - 4, 24 });
 			txt->setVJustify(Field::justify_t::TOP);
 			txt->setHJustify(Field::justify_t::RIGHT);
-		}
 
-		{
-			const int offset_y = 14;
-			auto lore_points = window->addFrame("lore_points_total");
-			lore_points->setHollow(true);
-			lore_points->setClickable(false);
-			lore_points->setSize(SDL_Rect{ window->getSize().w - 402, 0, 194, 50 + offset_y });
-			lore_points->addImage(SDL_Rect{ 0, offset_y, 194, 50 }, 0xFFFFFFFF,
-				"*images/ui/Main Menus/AdventureArchives/C_Completion_BG_00.png", "lore_points_bg");
-			lore_points->addImage(SDL_Rect{ 10, 10 + offset_y, 28, 28 }, 0xFFFFFFFF,
-				"*images/ui/Main Menus/AdventureArchives/C_Lorepoint_Icon_00.png", "lore_points_icon");
-			Field* txt = lore_points->addField("lore_points_current", 32);
+			txt = window->addField("lore_points_anim", 32);
 			txt->setText("");
 			txt->setFont("fonts/kongtext.ttf#16#2");
 			txt->setColor(makeColorRGB(158, 146, 132));
-			txt->setSize(SDL_Rect{ 0, 16 + offset_y, 100, 24 });
+			txt->setSize(SDL_Rect{ lore_points->getSize().x - 32 + 112, lore_points->getSize().y + 16 + offset_y, 92, 24});
 			txt->setVJustify(Field::justify_t::TOP);
 			txt->setHJustify(Field::justify_t::RIGHT);
+			txt->setText("");
+			txt->setOntop(true);
 			txt->setTickCallback([](Widget& widget) {
 				Field* txt = static_cast<Field*>(&widget);
-				if ( Compendium_t::AchievementData_t::achievementsNeedFirstData )
+				if ( auto parent = static_cast<Frame*>(txt->getParent()) )
 				{
-					txt->setText("...");
+					if ( auto lore_points_balance = parent->findFrame("lore_points_balance") )
+					{
+						if ( auto lore_points_current = lore_points_balance->findField("lore_points_current") )
+						{
+							txt->setColor(lore_points_current->getColor());
+							SDL_Rect pos1 = lore_points_current->getSize();
+							SDL_Rect pos2 = txt->getSize();
+							pos2.x = 958 + pos1.x;
+							txt->setSize(pos2);
+						}
+					}
+				}
+				if ( Compendium_t::PointsAnim_t::showChanged )
+				{
+					if ( Compendium_t::PointsAnim_t::txtChangePoints >= 0 )
+					{
+						txt->setColor(makeColorRGB(67, 195, 157));
+						std::string str = "+" + std::to_string(Compendium_t::PointsAnim_t::txtChangePoints);
+						txt->setText(str.c_str());
+					}
+					else
+					{
+						//txt->setColor(hudColors.characterSheetRed);
+						//txt->setText(std::to_string(Compendium_t::PointsAnim_t::txtChangePoints).c_str());
+						//txt->setColor(makeColorRGB(158, 146, 132));
+						txt->setText(Language::get(6209));
+					}
 				}
 				else
 				{
-					int lorePointsCurrent = std::max(0, Compendium_t::lorePointsFromAchievements);
-					txt->setText(std::to_string(lorePointsCurrent).c_str());
+					//txt->setColor(makeColorRGB(158, 146, 132));
+					txt->setText(Language::get(6209));
 				}
 			});
-
-			txt = lore_points->addField("lore_points_total", 32);
-			txt->setText("/");
-			txt->setFont("fonts/kongtext.ttf#16#2");
-			txt->setColor(makeColorRGB(255, 255, 255));
-			txt->setSize(SDL_Rect{ 100, 16 + offset_y, 94, 24 });
-			txt->setVJustify(Field::justify_t::TOP);
-			txt->setHJustify(Field::justify_t::LEFT);
-			txt->setTickCallback([](Widget& widget) {
-				Field* txt = static_cast<Field*>(&widget);
-				if ( Compendium_t::AchievementData_t::achievementsNeedFirstData )
-				{
-					txt->setText("...");
-				}
-				else
-				{
-					std::string amt = "/" + std::to_string(Compendium_t::lorePointsAchievementsTotal);
-					txt->setText(amt.c_str());
-				}
-			});
-
-			txt = lore_points->addField("lore_points_label", 64);
-			txt->setText("LORE POINTS EARNED");
-			txt->setFont(smallfont_outline);
-			txt->setColor(makeColorRGB(192, 192, 192));
-			txt->setSize(SDL_Rect{ 0, 1, lore_points->getSize().w - 4, 24});
-			txt->setVJustify(Field::justify_t::TOP);
-			txt->setHJustify(Field::justify_t::RIGHT);
 		}
 
+		//if ( false ) // not in use
+		//{
+		//	const int offset_y = 14;
+		//	auto lore_points = window->addFrame("lore_points_total");
+		//	lore_points->setHollow(true);
+		//	lore_points->setClickable(false);
+		//	lore_points->setSize(SDL_Rect{ window->getSize().w - 402, 0, 194, 50 + offset_y });
+		//	lore_points->addImage(SDL_Rect{ 0, offset_y, 194, 50 }, 0xFFFFFFFF,
+		//		"*images/ui/Main Menus/AdventureArchives/C_Completion_BG_00.png", "lore_points_bg");
+		//	lore_points->addImage(SDL_Rect{ 10, 10 + offset_y, 28, 28 }, 0xFFFFFFFF,
+		//		"*images/ui/Main Menus/AdventureArchives/C_Lorepoint_Icon_00.png", "lore_points_icon");
+		//	Field* txt = lore_points->addField("lore_points_current", 32);
+		//	txt->setText("");
+		//	txt->setFont("fonts/kongtext.ttf#16#2");
+		//	txt->setColor(makeColorRGB(158, 146, 132));
+		//	txt->setSize(SDL_Rect{ 0, 16 + offset_y, 100, 24 });
+		//	txt->setVJustify(Field::justify_t::TOP);
+		//	txt->setHJustify(Field::justify_t::RIGHT);
+		//	txt->setTickCallback([](Widget& widget) {
+		//		Field* txt = static_cast<Field*>(&widget);
+		//		if ( Compendium_t::AchievementData_t::achievementsNeedFirstData )
+		//		{
+		//			txt->setText("...");
+		//		}
+		//		else
+		//		{
+		//			int lorePointsCurrent = std::max(0, Compendium_t::lorePointsFromAchievements);
+		//			txt->setText(std::to_string(lorePointsCurrent).c_str());
+		//		}
+		//	});
+
+		//	txt = lore_points->addField("lore_points_total", 32);
+		//	txt->setText("/");
+		//	txt->setFont("fonts/kongtext.ttf#16#2");
+		//	txt->setColor(makeColorRGB(255, 255, 255));
+		//	txt->setSize(SDL_Rect{ 100, 16 + offset_y, 94, 24 });
+		//	txt->setVJustify(Field::justify_t::TOP);
+		//	txt->setHJustify(Field::justify_t::LEFT);
+		//	txt->setTickCallback([](Widget& widget) {
+		//		Field* txt = static_cast<Field*>(&widget);
+		//		if ( Compendium_t::AchievementData_t::achievementsNeedFirstData )
+		//		{
+		//			txt->setText("...");
+		//		}
+		//		else
+		//		{
+		//			std::string amt = "/" + std::to_string(Compendium_t::lorePointsAchievementsTotal);
+		//			txt->setText(amt.c_str());
+		//		}
+		//	});
+
+		//	txt = lore_points->addField("lore_points_label", 64);
+		//	txt->setText("LORE POINTS EARNED");
+		//	txt->setFont(smallfont_outline);
+		//	txt->setColor(makeColorRGB(192, 192, 192));
+		//	txt->setSize(SDL_Rect{ 0, 1, lore_points->getSize().w - 4, 24});
+		//	txt->setVJustify(Field::justify_t::TOP);
+		//	txt->setHJustify(Field::justify_t::RIGHT);
+		//}
+
 		{
+			const int offset_y = 14;
 			auto completion = window->addFrame("completion");
 			completion->setHollow(true);
 			completion->setClickable(false);
-			completion->setSize(SDL_Rect{ window->getSize().w - 200, 8, 194, 50 });
-			completion->addImage(SDL_Rect{ 0, 0, 194, 50 }, 0xFFFFFFFF,
+			completion->setSize(SDL_Rect{ window->getSize().w - 200, 0, 152, 50 + offset_y });
+			completion->addImage(SDL_Rect{ 0, offset_y, 152, 50 }, 0xFFFFFFFF,
 				"*images/ui/Main Menus/AdventureArchives/C_Completion_BG_00.png", "completion_bg");
-			completion->addImage(SDL_Rect{ 10, 10, 38, 28 }, 0xFFFFFFFF,
+			completion->addImage(SDL_Rect{ 10, 10 + offset_y, 38, 28 }, 0xFFFFFFFF,
 				"*images/ui/Main Menus/AdventureArchives/C_Completion_Icon_00.png", "completion_icon");
+			Field* txt = completion->addField("completion_percent", 32);
+			txt->setText("");
+			txt->setFont("fonts/kongtext.ttf#16#2");
+			txt->setColor(makeColorRGB(158, 146, 132));
+			txt->setSize(SDL_Rect{ 0, 16 + offset_y, 130, 24 });
+			txt->setVJustify(Field::justify_t::TOP);
+			txt->setHJustify(Field::justify_t::RIGHT);
+			txt->setTickCallback([](Widget& widget) {
+				Field* txt = static_cast<Field*>(&widget);
+				int totalCompletion = Compendium_t::AchievementData_t::completionPercent;
+				totalCompletion += Compendium_t::CompendiumCodex_t::completionPercent;
+				totalCompletion += Compendium_t::CompendiumWorld_t::completionPercent;
+				totalCompletion += Compendium_t::CompendiumMonsters_t::completionPercent;
+				totalCompletion += Compendium_t::CompendiumItems_t::completionPercent;
+				totalCompletion += Compendium_t::CompendiumMagic_t::completionPercent;
+				totalCompletion /= 6;
+				totalCompletion = std::min(100, std::max(0, totalCompletion));
+				std::string str = std::to_string(totalCompletion).c_str();
+				str += '%';
+				txt->setText(str.c_str());
+
+				real_t percent = totalCompletion / 100.0;
+				static ConsoleVariable<Vector4> cvar_completion_point_highlight("/cvar_completion_point_highlight", Vector4{ 63, 64, -48, 0 });
+				txt->setColor(makeColorRGB(158 + cvar_completion_point_highlight->x * percent,
+					146 + cvar_completion_point_highlight->y * percent,
+					132 + cvar_completion_point_highlight->z * percent));
+			});
+
+			txt = completion->addField("completion_label", 64);
+			txt->setText(Language::get(6210));
+			txt->setFont(smallfont_outline);
+			txt->setColor(makeColorRGB(192, 192, 192));
+			txt->setSize(SDL_Rect{ 0, 1, completion->getSize().w - 4, 24 });
+			txt->setVJustify(Field::justify_t::TOP);
+			txt->setHJustify(Field::justify_t::RIGHT);
 		}
 
 
@@ -38480,11 +39205,12 @@ failed:
 			tab_title->setFont(smallfont_outline);
 			tab_title->setOntop(true);
 			tab_title->setColor(makeColorRGB(220, 178, 113));
-			tab_title->setSize(SDL_Rect{ tab->getSize().x, tab->getSize().y + tab_title_y, tab->getSize().w, tab->getSize().h });
+			tab_title->setSize(SDL_Rect{ tab->getSize().x, tab->getSize().y + tab_title_y, tab->getSize().w, 96 });
 			tab_title->setVJustify(Field::justify_t::TOP);
 			tab_title->setHJustify(Field::justify_t::CENTER);
 			tab_title->setTickCallback([](Widget& widget) {
 				auto field = static_cast<Field*>(&widget);
+				Compendium_t::PointsAnim_t::countUnreadNotifs();
 				if ( compendium_current == field->getName() )
 				{
 					field->setColor(tabTextColorActive);
@@ -38497,6 +39223,21 @@ failed:
 				str += '\n';
 				str += std::to_string(Compendium_t::CompendiumMonsters_t::completionPercent);
 				str += '%';
+
+				if ( Compendium_t::CompendiumMonsters_t::numUnread > 0 )
+				{
+					str += '\n';
+					str += '\n';
+					str += '\x1E';
+					if ( (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) )
+					{
+						field->addColorToLine(3, makeColorRGB(43, 254, 207));
+					}
+					else
+					{
+						field->addColorToLine(3, makeColorRGB(30, 203, 177));
+					}
+				}
 				field->setText(str.c_str());
 				});
 
@@ -38588,7 +39329,7 @@ failed:
 			tab_title->setFont(smallfont_outline);
 			tab_title->setOntop(true);
 			tab_title->setColor(makeColorRGB(220, 178, 113));
-			tab_title->setSize(SDL_Rect{ tab->getSize().x, tab->getSize().y + tab_title_y, tab->getSize().w, tab->getSize().h });
+			tab_title->setSize(SDL_Rect{ tab->getSize().x, tab->getSize().y + tab_title_y, tab->getSize().w, 96 });
 			tab_title->setVJustify(Field::justify_t::TOP);
 			tab_title->setHJustify(Field::justify_t::CENTER);
 			tab_title->setTickCallback([](Widget& widget) {
@@ -38605,6 +39346,22 @@ failed:
 				str += '\n';
 				str += std::to_string(Compendium_t::CompendiumItems_t::completionPercent);
 				str += '%';
+
+				if ( Compendium_t::CompendiumItems_t::numUnread > 0 )
+				{
+					str += '\n';
+					str += '\n';
+					str += '\x1E';
+					if ( (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) )
+					{
+						field->addColorToLine(3, makeColorRGB(43, 254, 207));
+					}
+					else
+					{
+						field->addColorToLine(3, makeColorRGB(30, 203, 177));
+					}
+				}
+
 				field->setText(str.c_str());
 				});
 
@@ -38667,7 +39424,7 @@ failed:
 			tab_title->setFont(smallfont_outline);
 			tab_title->setOntop(true);
 			tab_title->setColor(makeColorRGB(220, 178, 113));
-			tab_title->setSize(SDL_Rect{ tab->getSize().x, tab->getSize().y + tab_title_y, tab->getSize().w, tab->getSize().h });
+			tab_title->setSize(SDL_Rect{ tab->getSize().x, tab->getSize().y + tab_title_y, tab->getSize().w, 96 });
 			tab_title->setVJustify(Field::justify_t::TOP);
 			tab_title->setHJustify(Field::justify_t::CENTER);
 			tab_title->setTickCallback([](Widget& widget) {
@@ -38684,6 +39441,22 @@ failed:
 				str += '\n';
 				str += std::to_string(Compendium_t::CompendiumMagic_t::completionPercent);
 				str += '%';
+
+				if ( Compendium_t::CompendiumMagic_t::numUnread > 0 )
+				{
+					str += '\n';
+					str += '\n';
+					str += '\x1E';
+					if ( (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) )
+					{
+						field->addColorToLine(3, makeColorRGB(43, 254, 207));
+					}
+					else
+					{
+						field->addColorToLine(3, makeColorRGB(30, 203, 177));
+					}
+				}
+
 				field->setText(str.c_str());
 				});
 
@@ -38746,7 +39519,7 @@ failed:
 			tab_title->setFont(smallfont_outline);
 			tab_title->setOntop(true);
 			tab_title->setColor(makeColorRGB(220, 178, 113));
-			tab_title->setSize(SDL_Rect{ tab->getSize().x, tab->getSize().y + tab_title_y, tab->getSize().w, tab->getSize().h });
+			tab_title->setSize(SDL_Rect{ tab->getSize().x, tab->getSize().y + tab_title_y, tab->getSize().w, 96 });
 			tab_title->setVJustify(Field::justify_t::TOP);
 			tab_title->setHJustify(Field::justify_t::CENTER);
 			tab_title->setTickCallback([](Widget& widget) {
@@ -38763,6 +39536,22 @@ failed:
 				str += '\n';
 				str += std::to_string(Compendium_t::CompendiumWorld_t::completionPercent);
 				str += '%';
+
+				if ( Compendium_t::CompendiumWorld_t::numUnread > 0 )
+				{
+					str += '\n';
+					str += '\n';
+					str += '\x1E';
+					if ( (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) )
+					{
+						field->addColorToLine(3, makeColorRGB(43, 254, 207));
+					}
+					else
+					{
+						field->addColorToLine(3, makeColorRGB(30, 203, 177));
+					}
+				}
+
 				field->setText(str.c_str());
 				});
 
@@ -38826,7 +39615,7 @@ failed:
 			tab_title->setFont(smallfont_outline);
 			tab_title->setOntop(true);
 			tab_title->setColor(makeColorRGB(220, 178, 113));
-			tab_title->setSize(SDL_Rect{ tab->getSize().x, tab->getSize().y + tab_title_y, tab->getSize().w, tab->getSize().h });
+			tab_title->setSize(SDL_Rect{ tab->getSize().x, tab->getSize().y + tab_title_y, tab->getSize().w, 96 });
 			tab_title->setVJustify(Field::justify_t::TOP);
 			tab_title->setHJustify(Field::justify_t::CENTER);
 			tab_title->setTickCallback([](Widget& widget) {
@@ -38843,6 +39632,22 @@ failed:
 				str += '\n';
 				str += std::to_string(Compendium_t::CompendiumCodex_t::completionPercent);
 				str += '%';
+
+				if ( Compendium_t::CompendiumCodex_t::numUnread > 0 )
+				{
+					str += '\n';
+					str += '\n';
+					str += '\x1E';
+					if ( (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) )
+					{
+						field->addColorToLine(3, makeColorRGB(43, 254, 207));
+					}
+					else
+					{
+						field->addColorToLine(3, makeColorRGB(30, 203, 177));
+					}
+				}
+
 				field->setText(str.c_str());
 				});
 
@@ -38955,7 +39760,7 @@ failed:
 			tab_title->setFont(smallfont_outline);
 			tab_title->setOntop(true);
 			tab_title->setColor(makeColorRGB(220, 178, 113));
-			tab_title->setSize(SDL_Rect{ tab->getSize().x, tab->getSize().y + tab_title_y, tab->getSize().w, tab->getSize().h });
+			tab_title->setSize(SDL_Rect{ tab->getSize().x, tab->getSize().y + tab_title_y, tab->getSize().w, 96 });
 			tab_title->setVJustify(Field::justify_t::TOP);
 			tab_title->setHJustify(Field::justify_t::CENTER);
 			tab_title->setTickCallback([](Widget& widget) {
@@ -38972,6 +39777,22 @@ failed:
 				str += '\n';
 				str += std::to_string(Compendium_t::AchievementData_t::completionPercent);
 				str += '%';
+
+				if ( Compendium_t::AchievementData_t::numUnread > 0 )
+				{
+					str += '\n';
+					str += '\n';
+					str += '\x1E';
+					if ( (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) )
+					{
+						field->addColorToLine(3, makeColorRGB(43, 254, 207));
+					}
+					else
+					{
+						field->addColorToLine(3, makeColorRGB(30, 203, 177));
+					}
+				}
+
 				field->setText(str.c_str());
 			});
 
@@ -39113,6 +39934,8 @@ failed:
 			nav_filter_sort->setWidgetDown("nav_filter_sort2");
 			nav_filter_sort->addWidgetAction("MenuPageLeft", "tab_left");
 			nav_filter_sort->addWidgetAction("MenuPageRight", "tab_right");
+			nav_filter_sort->setGlyphPosition(Widget::CENTERED_LEFT);
+			nav_filter_sort->setButtonsOffset(SDL_Rect{ -16, 0, 0, 0 });
 			nav_filter_sort->setTickCallback([](Widget& widget) {
 				auto button = static_cast<Button*>(&widget);
 				if ( button->isSelected() )
@@ -39199,6 +40022,8 @@ failed:
 			nav_filter_sort2->setWidgetUp("nav_filter_sort");
 			nav_filter_sort2->addWidgetAction("MenuPageLeft", "tab_left");
 			nav_filter_sort2->addWidgetAction("MenuPageRight", "tab_right");
+			nav_filter_sort2->setGlyphPosition(Widget::CENTERED_LEFT);
+			nav_filter_sort2->setButtonsOffset(SDL_Rect{ -16, 0, 0, 0 });
 			nav_filter_sort2->setTickCallback([](Widget& widget) {
 				auto button = static_cast<Button*>(&widget);
 				if ( button->isSelected() )
@@ -39306,15 +40131,8 @@ failed:
 			}
 			else
 			{
-				auto w = frame->getWidgetActions();
-				if ( w.find("MenuLeft") != w.end() )
-				{
-					w.erase("MenuLeft");
-				}
-				if ( w.find("MenuRight") != w.end() )
-				{
-					w.erase("MenuRight");
-				}
+				frame->removeWidgetAction("MenuLeft");
+				frame->removeWidgetAction("MenuRight");
 			}
 
 			if ( !isMouseVisible() )
@@ -39927,12 +40745,21 @@ failed:
 
 		auto page_right_unlock_btn = page_right_unlock->addButton("page_right_unlock_btn");
 		page_right_unlock_btn->setSize(SDL_Rect{ 0, 0, 376, 116 });
+		page_right_unlock_btn->setHighlightColor(0xFFFFFFFF);
+		page_right_unlock_btn->setColor(0xFFFFFFFF);
 		page_right_unlock_btn->setBackground("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button_00.png");
 		page_right_unlock_btn->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button-high_00.png");
 		page_right_unlock_btn->setBackgroundActivated("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button-press_00.png");
 		page_right_unlock_btn->setOntop(true);
 		page_right_unlock_btn->setWidgetSearchParent("compendium");
 		page_right_unlock_btn->setWidgetBack("back_button");
+		page_right_unlock_btn->setWidgetLeft("contents");
+		page_right_unlock_btn->setWidgetRight("contents");
+		page_right_unlock_btn->setWidgetUp("contents");
+		page_right_unlock_btn->setWidgetDown("contents");
+		page_right_unlock_btn->addWidgetAction("MenuConfirm", "FraggleMaggleStiggleWortz"); // some garbage so that this glyph isn't auto-bound
+		page_right_unlock_btn->setMenuConfirmControlType(0);
+		page_right_unlock_btn->setButtonsOffset(SDL_Rect{ 0, -20, 0, 0 });
 		page_right_unlock_btn->addWidgetAction("MenuPageLeft", "tab_left");
 		page_right_unlock_btn->addWidgetAction("MenuPageRight", "tab_right");
 		page_right_unlock_btn->addWidgetMovement("MenuAlt2", "nav_filter_sort");
@@ -39941,14 +40768,46 @@ failed:
 			compendiumRevealSection(&button);
 		});
 
-		auto reveal_unlock_cost = page_right_unlock->addField("unlock_lore_cost", 32);
-		reveal_unlock_cost->setSize(SDL_Rect{ page_right_unlock_btn->getSize().w - 64, page_right_unlock_btn->getSize().h / 2 - 24 / 2, 24, 24 });
+		/*auto reveal_unlock_badge = page_right_unlock->addImage(SDL_Rect{ 376 - 74, 28, 56, 62 },
+			0xFFFFFFFF,
+			"*images/ui/Main Menus/AdventureArchives/A_Icon_BaronyShield_Large_00.png",
+			"unlock_badge");
+		reveal_unlock_badge->ontop = true;*/
+		auto unlock_research_txt = page_right_unlock->addField("unlock_research_txt", 32);
+		unlock_research_txt->setHJustify(Field::justify_t::LEFT);
+		unlock_research_txt->setVJustify(Field::justify_t::TOP);
+		unlock_research_txt->setText("RESEARCH");
+		unlock_research_txt->setDisabled(false);
+		unlock_research_txt->setSize(SDL_Rect{ 30 - 4, 44 - 4, 272, 62 });
+		unlock_research_txt->setFont("fonts/kongtext.ttf#32#0");
+		unlock_research_txt->setOntop(true);
+		unlock_research_txt->setColor(makeColor(166, 166, 166, 255));
+		unlock_research_txt->setInvisible(true);
+		unlock_research_txt->setTickCallback([](Widget& widget) {
+			auto parent = static_cast<Frame*>(widget.getParent());
+			if ( parent )
+			{
+				if ( auto btn = parent->findButton("unlock_lore_cost") )
+				{
+					widget.setInvisible(btn->isInvisible());
+				}
+			}
+		});
+
+		auto reveal_unlock_cost = page_right_unlock->addButton("unlock_lore_cost");
 		reveal_unlock_cost->setHJustify(Field::justify_t::CENTER);
-		reveal_unlock_cost->setVJustify(Field::justify_t::TOP);
+		reveal_unlock_cost->setVJustify(Field::justify_t::CENTER);
 		reveal_unlock_cost->setText("-");
-		reveal_unlock_cost->setColor(makeColorRGB(128, 128, 128));
-		reveal_unlock_cost->setFont(bigfont_outline);
+		reveal_unlock_cost->setDisabled(true);
+		reveal_unlock_cost->setSize(SDL_Rect{ 376 - 74, 28, 56, 62 });
+		reveal_unlock_cost->setTextOffset(SDL_Rect{ -2, -2, 0, 0 });
+		reveal_unlock_cost->setFont("fonts/kongtext.ttf#32#2");
 		reveal_unlock_cost->setOntop(true);
+		reveal_unlock_cost->setHighlightColor(0xFFFFFFFF);
+		reveal_unlock_cost->setColor(0xFFFFFFFF);
+		reveal_unlock_cost->setBackground("*images/ui/Main Menus/AdventureArchives/A_Icon_BaronyShield_Large_00.png");
+		reveal_unlock_cost->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_Icon_BaronyShield_Large_00.png");
+		reveal_unlock_cost->setBackgroundActivated("*images/ui/Main Menus/AdventureArchives/A_Icon_BaronyShield_Large_00.png");
 
 
 		auto right_bg = window->addImage(SDL_Rect{ page_right->getSize().x + 4, page_right->getSize().y + 8, 386, 472 }, 0xFFFFFFFF,
