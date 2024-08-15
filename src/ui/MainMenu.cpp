@@ -32683,6 +32683,8 @@ failed:
 	constexpr auto compendiumContentsDefaultColor = makeColor(159, 145, 127, 255);
 	constexpr auto compendiumContentsSelectedColor = makeColor(221, 210, 84, 255);
 	constexpr auto compendiumContentsDivColor = makeColorRGB(42, 22, 18);
+	constexpr auto compendiumLoreCostAvailable = makeColorRGB(255, 255, 255);
+	constexpr auto compendiumLoreCostInactive = makeColorRGB(156, 156, 156);
 
 	static void refreshCompendiumEntryWorld(std::string name, Frame* parent, const bool gamepadClick)
 	{
@@ -32748,11 +32750,11 @@ failed:
 					unlock_lore_cost->setText(std::to_string(entry.lorePoints).c_str());
 					if ( Compendium_t::lorePointsFromAchievements - Compendium_t::lorePointsSpent >= entry.lorePoints )
 					{
-						unlock_lore_cost->setTextColor(makeColorRGB(255, 255, 255));
+						unlock_lore_cost->setTextColor(compendiumLoreCostAvailable);
 					}
 					else
 					{
-						unlock_lore_cost->setTextColor(makeColorRGB(128, 128, 128));
+						unlock_lore_cost->setTextColor(compendiumLoreCostInactive);
 					}
 				}
 				else
@@ -34187,11 +34189,11 @@ failed:
 					unlock_lore_cost->setText(std::to_string(compendiumEntry.lorePoints).c_str());
 					if ( Compendium_t::lorePointsFromAchievements - Compendium_t::lorePointsSpent >= compendiumEntry.lorePoints )
 					{
-						unlock_lore_cost->setTextColor(makeColorRGB(255, 255, 255));
+						unlock_lore_cost->setTextColor(compendiumLoreCostAvailable);
 					}
 					else
 					{
-						unlock_lore_cost->setTextColor(makeColorRGB(128, 128, 128));
+						unlock_lore_cost->setTextColor(compendiumLoreCostInactive);
 					}
 				}
 				else
@@ -35596,11 +35598,11 @@ failed:
 					unlock_lore_cost->setText(std::to_string(entry.lorePoints).c_str());
 					if ( Compendium_t::lorePointsFromAchievements - Compendium_t::lorePointsSpent >= entry.lorePoints )
 					{
-						unlock_lore_cost->setTextColor(makeColorRGB(255, 255, 255));
+						unlock_lore_cost->setTextColor(compendiumLoreCostAvailable);
 					}
 					else
 					{
-						unlock_lore_cost->setTextColor(makeColorRGB(128, 128, 128));
+						unlock_lore_cost->setTextColor(compendiumLoreCostInactive);
 					}
 				}
 				else
@@ -35829,11 +35831,11 @@ failed:
 							unlock_lore_cost->setText(std::to_string(entry.lorePoints).c_str());
 							if ( Compendium_t::lorePointsFromAchievements - Compendium_t::lorePointsSpent >= entry.lorePoints )
 							{
-								unlock_lore_cost->setTextColor(makeColorRGB(255, 255, 255));
+								unlock_lore_cost->setTextColor(compendiumLoreCostAvailable);
 							}
 							else
 							{
-								unlock_lore_cost->setTextColor(makeColorRGB(128, 128, 128));
+								unlock_lore_cost->setTextColor(compendiumLoreCostInactive);
 							}
 						}
 						else
@@ -40735,7 +40737,7 @@ failed:
 		page_right_gradient_bottom->ontop = true;
 
 		auto page_right_unlock = window->addFrame("page_right_unlock");
-		page_right_unlock->setSize(SDL_Rect{ page_right->getSize().x + 6, page_right->getSize().y + 18, 376, 116 });
+		page_right_unlock->setSize(SDL_Rect{ page_right->getSize().x + 6, page_right->getSize().y + 8, 376, 128 });
 		page_right_unlock->setHollow(true);
 		page_right_unlock->setClickable(false);
 
@@ -40744,7 +40746,7 @@ failed:
 		page_right_to_unlock->setText("");
 
 		auto page_right_unlock_btn = page_right_unlock->addButton("page_right_unlock_btn");
-		page_right_unlock_btn->setSize(SDL_Rect{ 0, 0, 376, 116 });
+		page_right_unlock_btn->setSize(SDL_Rect{ 0, 0, 376, 128 });
 		page_right_unlock_btn->setHighlightColor(0xFFFFFFFF);
 		page_right_unlock_btn->setColor(0xFFFFFFFF);
 		page_right_unlock_btn->setBackground("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button_00.png");
@@ -40760,12 +40762,41 @@ failed:
 		page_right_unlock_btn->addWidgetAction("MenuConfirm", "FraggleMaggleStiggleWortz"); // some garbage so that this glyph isn't auto-bound
 		page_right_unlock_btn->setMenuConfirmControlType(0);
 		page_right_unlock_btn->setButtonsOffset(SDL_Rect{ 0, -20, 0, 0 });
+		page_right_unlock_btn->setSelectorOffset(SDL_Rect{ 3, 9, -3, -11 });
 		page_right_unlock_btn->addWidgetAction("MenuPageLeft", "tab_left");
 		page_right_unlock_btn->addWidgetAction("MenuPageRight", "tab_right");
 		page_right_unlock_btn->addWidgetMovement("MenuAlt2", "nav_filter_sort");
 		page_right_unlock_btn->addWidgetAction("MenuAlt1", "page_right_unlock_btn");
 		page_right_unlock_btn->setCallback([](Button& button) {
 			compendiumRevealSection(&button);
+		});
+		page_right_unlock_btn->setTickCallback([](Widget& widget) {
+			auto btn = static_cast<Button*>(&widget);
+			if ( isMouseVisible() )
+			{
+				btn->setBackground("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button_00.png");
+				btn->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button-high_00.png");
+				btn->setBackgroundActivated("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button-press_00.png");
+			}
+			else
+			{
+				btn->setBackground("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button_00.png");
+				btn->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button_00.png");
+				btn->setBackgroundActivated("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button_00.png");
+				if ( auto parent = static_cast<Frame*>(btn->getParent()) )
+				{
+					if ( auto btn_cost = parent->findButton("unlock_lore_cost") )
+					{
+						if ( btn_cost->getTextColor() == compendiumLoreCostAvailable )
+						{
+							// available to buy
+							btn->setBackground("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button-high_00.png");
+							btn->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button-high_00.png");
+							btn->setBackgroundActivated("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button-high_00.png");
+						}
+					}
+				}
+			}
 		});
 
 		/*auto reveal_unlock_badge = page_right_unlock->addImage(SDL_Rect{ 376 - 74, 28, 56, 62 },
@@ -40776,12 +40807,12 @@ failed:
 		auto unlock_research_txt = page_right_unlock->addField("unlock_research_txt", 32);
 		unlock_research_txt->setHJustify(Field::justify_t::LEFT);
 		unlock_research_txt->setVJustify(Field::justify_t::TOP);
-		unlock_research_txt->setText("RESEARCH");
+		unlock_research_txt->setText(Language::get(6211));
 		unlock_research_txt->setDisabled(false);
-		unlock_research_txt->setSize(SDL_Rect{ 30 - 4, 44 - 4, 272, 62 });
-		unlock_research_txt->setFont("fonts/kongtext.ttf#32#0");
+		unlock_research_txt->setSize(SDL_Rect{ 30 - 4, 44, 272, 62 });
+		unlock_research_txt->setFont("fonts/kongtext.ttf#32#2");
 		unlock_research_txt->setOntop(true);
-		unlock_research_txt->setColor(makeColor(166, 166, 166, 255));
+		unlock_research_txt->setColor(makeColor(224, 224, 224, 255));
 		unlock_research_txt->setInvisible(true);
 		unlock_research_txt->setTickCallback([](Widget& widget) {
 			auto parent = static_cast<Frame*>(widget.getParent());
@@ -40790,6 +40821,25 @@ failed:
 				if ( auto btn = parent->findButton("unlock_lore_cost") )
 				{
 					widget.setInvisible(btn->isInvisible());
+					if ( auto txt = static_cast<Field*>(&widget) )
+					{
+						if ( btn->getTextColor() == compendiumLoreCostAvailable )
+						{
+							auto unlock_btn = parent->findButton("page_right_unlock_btn");
+							if ( !isMouseVisible() || (unlock_btn && unlock_btn->isHighlighted()) )
+							{
+								txt->setColor(btn->getTextColor());
+							}
+							else
+							{
+								txt->setColor(makeColorRGB(192, 192, 192));
+							}
+						}
+						else
+						{
+							txt->setColor(btn->getTextColor());
+						}
+					}
 				}
 			}
 		});
