@@ -804,7 +804,7 @@ bool achievementUnlocked(const char* achName)
 void steamAchievement(const char* achName)
 {
 #ifdef DEBUG_ACHIEVEMENTS
-	messagePlayer(clientnum, MESSAGE_DEBUG, "%s", achName);
+	//messagePlayer(clientnum, MESSAGE_DEBUG, "%s", achName);
 #endif
 
 	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
@@ -867,22 +867,22 @@ void steamAchievement(const char* achName)
 			find->second.unlocked = true;
 			find->second.unlockTime = getTime();
 			auto& unlockStatus = Compendium_t::AchievementData_t::unlocks[find->second.category];
-		if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
-		{
-			unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+			if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+			{
+				unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+			}
+			else if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_VISITED )
+			{
+				unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+			}
+			else if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::UNLOCKED_VISITED )
+			{
+				unlockStatus = Compendium_t::CompendiumUnlockStatus::UNLOCKED_UNVISITED;
+			}
+			Compendium_t::AchievementData_t::achievementUnlockedLookup.insert(achName);
+			Compendium_t::AchievementData_t::achievementsNeedResort = true;
 		}
-		else if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_VISITED )
-		{
-			unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
-		}
-		else if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::UNLOCKED_VISITED )
-		{
-			unlockStatus = Compendium_t::CompendiumUnlockStatus::UNLOCKED_UNVISITED;
-		}
-		Compendium_t::AchievementData_t::achievementUnlockedLookup.insert(achName);
-		Compendium_t::AchievementData_t::achievementsNeedResort = true;
 	}
-}
 }
 
 void steamUnsetAchievement(const char* achName)
@@ -961,7 +961,9 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 			|| conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS] )
 		{
+#ifndef DEBUG_ACHIEVEMENTS
 			return;
+#endif
 		}
 	}
 	else
@@ -1238,7 +1240,9 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 			|| conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS] )
 		{
+#ifndef DEBUG_ACHIEVEMENTS
 			return;
+#endif
 		}
 	}
 	else
@@ -1452,8 +1456,8 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 				break;
 		}
 #ifdef DEBUG_ACHIEVEMENTS
-		messagePlayer(clientnum, MESSAGE_DEBUG, "%s: %d, %d", steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
-			iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+		/*messagePlayer(clientnum, MESSAGE_DEBUG, "%s: %d, %d", steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
+			iVal, steamStatAchStringsAndMaxVals[statisticNum].second);*/
 #endif
 	}
 #endif // !STEAMWORKS
