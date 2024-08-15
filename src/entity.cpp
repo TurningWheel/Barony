@@ -11542,12 +11542,12 @@ int AC(Stat* stat)
 
 	if ( stat->shield )
 	{
-		int shieldskill = stat->getPassiveShieldBonus(true);
+		int shieldskill = stat->getPassiveShieldBonus(true, false);
 		armor += shieldskill;
 		if ( stat->defending )
 		{
 			//messagePlayer(0, "shield up! +%d", 5 + stat->PROFICIENCIES[PRO_SHIELD] / 5);
-			armor += stat->getActiveShieldBonus(true);
+			armor += stat->getActiveShieldBonus(true, false);
 		}
 	}
 

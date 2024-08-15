@@ -1400,11 +1400,11 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 	intro = oldIntro;
 }
 
-int Stat::getActiveShieldBonus(bool checkShield) const
+int Stat::getActiveShieldBonus(bool checkShield, bool excludeSkill) const
 {
 	if ( !checkShield )
 	{
-		return (5 + (getModifiedProficiency(PRO_SHIELD) / 5));
+		return (5 + (excludeSkill ? 0 : (getModifiedProficiency(PRO_SHIELD) / 5)));
 	}
 
 	if ( shield )
@@ -1413,7 +1413,7 @@ int Stat::getActiveShieldBonus(bool checkShield) const
 		{
 			return 0;
 		}
-		return (5 + (getModifiedProficiency(PRO_SHIELD) / 5));
+		return (5 + (excludeSkill ? 0 : (getModifiedProficiency(PRO_SHIELD) / 5)));
 	}
 	else
 	{
@@ -1421,10 +1421,14 @@ int Stat::getActiveShieldBonus(bool checkShield) const
 	}
 }
 
-int Stat::getPassiveShieldBonus(bool checkShield) const
+int Stat::getPassiveShieldBonus(bool checkShield, bool excludeSkill) const
 {
 	if ( !checkShield )
 	{
+		if ( excludeSkill )
+		{
+			return 0;
+		}
 		return (getModifiedProficiency(PRO_SHIELD) / 25);
 	}
 
@@ -1432,6 +1436,10 @@ int Stat::getPassiveShieldBonus(bool checkShield) const
 	{
 		if ( itemCategory(shield) == SPELLBOOK || itemTypeIsQuiver(shield->type) 
 			|| itemCategory(shield) == TOOL )
+		{
+			return 0;
+		}
+		if ( excludeSkill )
 		{
 			return 0;
 		}

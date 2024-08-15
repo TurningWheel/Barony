@@ -4656,6 +4656,12 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
             imgTopBackgroundRight->path = "images/ui/Inventory/tooltips/Hover_TR00.png";
         }
         
+		auto minWidth = itemTooltip.minWidths[minWidthKey];
+		if ( compendiumTooltip )
+		{
+			minWidth = std::max(minWidth, 242);
+		}
+
         if ( ItemTooltips.itemDebug && (svFlags & SV_FLAG_CHEATS) )
         {
             auto headerBg = frameMain->findImage("inventory mouse tooltip header bg");
@@ -4669,7 +4675,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
             tooltipMin->pos = SDL_Rect{
                 imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx,
                 2,
-                itemTooltip.minWidths[minWidthKey],
+				minWidth,
                 1 };
             tooltipMin->disabled = false;
             auto tooltipMax = frameMain->findImage("inventory mouse tooltip max");
@@ -4688,9 +4694,9 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
             headerMax->disabled = false;
         }
         
-        if ( itemTooltip.minWidths[minWidthKey] > 0 )
+        if ( minWidth > 0 )
         {
-            textx = std::max(itemTooltip.minWidths[minWidthKey], textx);
+            textx = std::max(minWidth, textx);
         }
         if ( itemTooltip.maxWidths[maxWidthKey] > 0 )
         {
@@ -5191,7 +5197,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                     if ( tag.compare("weapon_durability") == 0 )
                     {
                         int proficiency = itemCategory(item) == ARMOR ? PRO_UNARMED : getWeaponSkill(item);
-                        if ( stats[player]->getModifiedProficiency(proficiency) == SKILL_LEVEL_LEGENDARY )
+                        if ( !(compendiumTooltip && intro) && stats[player]->getModifiedProficiency(proficiency) == SKILL_LEVEL_LEGENDARY )
                         {
                             continue;
                         }
@@ -5199,7 +5205,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                     else if ( tag.compare("weapon_legendary_durability") == 0 )
                     {
                         int proficiency = itemCategory(item) == ARMOR ? PRO_UNARMED: getWeaponSkill(item);
-                        if ( stats[player]->getModifiedProficiency(proficiency) != SKILL_LEVEL_LEGENDARY )
+                        if ( (compendiumTooltip && intro) || stats[player]->getModifiedProficiency(proficiency) != SKILL_LEVEL_LEGENDARY )
                         {
                             continue;
                         }
@@ -5463,7 +5469,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                         {
                             continue;
                         }
-                        if ( stats[player]->getModifiedProficiency(PRO_SHIELD) == SKILL_LEVEL_LEGENDARY )
+                        if ( !(compendiumTooltip && intro) && stats[player]->getModifiedProficiency(PRO_SHIELD) == SKILL_LEVEL_LEGENDARY )
                         {
                             continue;
                         }
@@ -5474,7 +5480,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                         {
                             continue;
                         }
-                        if ( stats[player]->getModifiedProficiency(PRO_SHIELD) != SKILL_LEVEL_LEGENDARY )
+                        if ( (compendiumTooltip && intro) || stats[player]->getModifiedProficiency(PRO_SHIELD) != SKILL_LEVEL_LEGENDARY )
                         {
                             continue;
                         }
@@ -5490,7 +5496,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                         tagText += '\n';
                     }
                 }
-                ItemTooltips.formatItemDetails(player, tooltipType, *item, tagText, tag);
+                ItemTooltips.formatItemDetails(player, tooltipType, *item, tagText, tag, parentFrame);
                 if ( detailsTextString.compare("") != 0 )
                 {
                     detailsTextString += '\n';

@@ -5699,6 +5699,7 @@ bool Item::shouldItemStackInShop(bool ignoreStackLimit)
 
 bool shouldInvertEquipmentBeatitude(const Stat* const wielder)
 {
+	if ( !wielder ) { return false; }
 	if ( wielder->type == SUCCUBUS || wielder->type == INCUBUS )
 	{
 		return true;

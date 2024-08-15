@@ -32401,12 +32401,12 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 	{
 		if ( tag == "BLOCK_AC_INCREASE" )
 		{
-			val = stats[playernum]->getActiveShieldBonus(false);
+			val = stats[playernum]->getActiveShieldBonus(false, false);
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "PASSIVE_AC_INCREASE" )
 		{
-			val = stats[playernum]->getPassiveShieldBonus(false);
+			val = stats[playernum]->getPassiveShieldBonus(false, false);
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "BLOCK_DEGRADE_NORMAL_CHANCE" )
