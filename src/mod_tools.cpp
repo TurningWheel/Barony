@@ -2080,7 +2080,7 @@ bool ItemTooltips_t::bSpellHasBasicHitMessage(const int spellID)
 	return false;
 }
 
-int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell, Item* spellbook)
+int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell, Item* spellbook, const bool excludePlayerStats)
 {
 #ifdef EDITOR
 	return 0;
@@ -2123,10 +2123,19 @@ int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell,
 			{
 				if ( spellbook && itemCategory(spellbook) == SPELLBOOK )
 				{
-					bonus = getSpellbookBonusPercent(players[player]->entity, stats[player], spellbook);
+					bonus = getSpellbookBonusPercent(
+						excludePlayerStats ? nullptr : players[player]->entity, 
+						excludePlayerStats ? nullptr : stats[player], 
+						spellbook);
 				}
-				damage += (damage * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], primaryElement, spell ? spell->ID : SPELL_NONE)));
-				heal += (heal * (bonus * 0.01 + getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], primaryElement, spell ? spell->ID : SPELL_NONE)));
+				damage += (damage * (bonus * 0.01 
+					+ getBonusFromCasterOfSpellElement(
+						excludePlayerStats ? nullptr : players[player]->entity,
+						excludePlayerStats ? nullptr : stats[player], primaryElement, spell ? spell->ID : SPELL_NONE)));
+				heal += (heal * (bonus * 0.01 
+					+ getBonusFromCasterOfSpellElement(
+						excludePlayerStats ? nullptr : players[player]->entity,
+						excludePlayerStats ? nullptr : stats[player], primaryElement, spell ? spell->ID : SPELL_NONE)));
 			}
 		}
 		if ( spell->ID == SPELL_HEALING || spell->ID == SPELL_EXTRAHEALING )
@@ -2177,7 +2186,7 @@ std::string& ItemTooltips_t::getIconLabel(Item& item)
 #endif
 }
 
-std::string ItemTooltips_t::getSpellIconText(const int player, Item& item)
+std::string ItemTooltips_t::getSpellIconText(const int player, Item& item, const bool compendiumTooltipIntro)
 {
 #ifndef EDITOR
 	spell_t* spell = nullptr;
@@ -2227,10 +2236,13 @@ std::string ItemTooltips_t::getSpellIconText(const int player, Item& item)
 	if ( spellItems[spell->ID].internalName == "spell_summon" )
 	{
 		int numSummons = 1;
-		if ( (statGetINT(stats[player], players[player]->entity)
-			+ stats[player]->getModifiedProficiency(PRO_MAGIC)) >= SKILL_LEVEL_EXPERT )
+		if ( !compendiumTooltipIntro )
 		{
-			numSummons = 2;
+			if ( (statGetINT(stats[player], players[player]->entity)
+				+ stats[player]->getModifiedProficiency(PRO_MAGIC)) >= SKILL_LEVEL_EXPERT )
+			{
+				numSummons = 2;
+			}
 		}
 		char buf[128];
 		memset(buf, 0, sizeof(buf));
@@ -2242,7 +2254,7 @@ std::string ItemTooltips_t::getSpellIconText(const int player, Item& item)
 	{
 		char buf[128];
 		memset(buf, 0, sizeof(buf));
-		snprintf(buf, sizeof(buf), str.c_str(), getSpellDamageOrHealAmount(player, spell, &item));
+		snprintf(buf, sizeof(buf), str.c_str(), getSpellDamageOrHealAmount(player, spell, &item, compendiumTooltipIntro));
 		str = buf;
 	}
 
@@ -2719,11 +2731,22 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 	static char buf[1024];
 	memset(buf, 0, sizeof(buf));
 
+	bool compendiumTooltip = false;
+	bool compendiumTooltipIntro = false;
+	if ( parentFrame && !strcmp(parentFrame->getName(), "compendium") )
+	{
+		compendiumTooltip = true;
+		if ( intro )
+		{
+			compendiumTooltipIntro = true;
+		}
+	}
+
 	if ( conditionalAttribute.find("magicstaff_") != std::string::npos )
 	{
 		if ( str == "" )
 		{
-			str = getSpellIconText(player, item);
+			str = getSpellIconText(player, item, compendiumTooltipIntro);
 		}
 		return;
 	}
@@ -2735,7 +2758,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		}
 		else if ( conditionalAttribute == "SPELL_ICON_EFFECT" )
 		{
-			str = getSpellIconText(player, item);
+			str = getSpellIconText(player, item, compendiumTooltipIntro);
 		}
 		return;
 	}
@@ -2743,7 +2766,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 	{
 		if ( conditionalAttribute == "SPELLBOOK_SPELLINFO_LEARNED" )
 		{
-			str = getSpellIconText(player, item);
+			str = getSpellIconText(player, item, compendiumTooltipIntro);
 			return;
 		}
 		else if ( conditionalAttribute == "SPELLBOOK_SPELLINFO_UNLEARNED" )
@@ -2758,7 +2781,9 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 			&& items[item.type].hasAttribute(conditionalAttribute) )
 		{
 			int spellBookBonusPercent = 0;
-			spellBookBonusPercent += getSpellbookBonusPercent(players[player]->entity, stats[player], &item);
+			spellBookBonusPercent += getSpellbookBonusPercent(
+				compendiumTooltipIntro ? nullptr : players[player]->entity, 
+				compendiumTooltipIntro ? nullptr : stats[player], &item);
 			spellBookBonusPercent *= ((items[item.type].attributes["SPELLBOOK_CAST_BONUS"]) / 100.0);
 
 			int spellID = getSpellIDFromSpellbook(item.type);
@@ -2842,13 +2867,17 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 			int baseSpellDamage = 0;
 			if ( item.type == TOOL_FREEZE_BOMB )
 			{
-				baseSpellDamage = getSpellDamageOrHealAmount(-1, getSpellFromID(SPELL_COLD), nullptr);
+				baseSpellDamage = getSpellDamageOrHealAmount(-1, getSpellFromID(SPELL_COLD), nullptr, compendiumTooltipIntro);
 			}
 			else if ( item.type == TOOL_BOMB )
 			{
-				baseSpellDamage = getSpellDamageOrHealAmount(-1, getSpellFromID(SPELL_FIREBALL), nullptr);
+				baseSpellDamage = getSpellDamageOrHealAmount(-1, getSpellFromID(SPELL_FIREBALL), nullptr, compendiumTooltipIntro);
 			}
 			int bonusFromPER = std::max(0, statGetPER(stats[player], players[player]->entity)) * items[item.type].attributes["BOMB_DMG_PER_MULT"];
+			if ( compendiumTooltipIntro )
+			{
+				bonusFromPER = 0;
+			}
 			bonusFromPER /= 100;
 			snprintf(buf, sizeof(buf), str.c_str(), baseDamage + bonusFromPER + baseSpellDamage);
 			str = buf;
@@ -2879,7 +2908,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		else if ( conditionalAttribute.find("TINKERBOT_MAGICATK") != std::string::npos )
 		{
 			int spellID = item.status == EXCELLENT ? SPELL_MAGICMISSILE : SPELL_FORCEBOLT;
-			int spellDamage = getSpellDamageOrHealAmount(-1, getSpellFromID(spellID), nullptr);
+			int spellDamage = getSpellDamageOrHealAmount(-1, getSpellFromID(spellID), nullptr, compendiumTooltipIntro);
 			snprintf(buf, sizeof(buf), str.c_str(), spellDamage);
 			str = buf;
 		}
@@ -3137,7 +3166,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 					}
 				}*/
 
-				int val = (stats[player]->getModifiedProficiency(PRO_STEALTH) / 20 + 2) * 2; // backstab dmg
+				int val = ((compendiumTooltipIntro ? 0 : (stats[player]->getModifiedProficiency(PRO_STEALTH) / 20)) + 2) * 2; // backstab dmg
 				if ( skillCapstoneUnlocked(player, PRO_STEALTH) )
 				{
 					val *= 2;
@@ -3612,17 +3641,17 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 
 				if ( item.type == POTION_HEALING )
 				{
-					const int statBonus = 2 * std::max(0, statGetCON(stats[player], players[player]->entity));
+					const int statBonus = compendiumTooltipIntro ? 0 : (2 * std::max(0, statGetCON(stats[player], players[player]->entity)));
 					healthVal += statBonus;
 				}
 				else if ( item.type == POTION_EXTRAHEALING )
 				{
-					const int statBonus = 4 * std::max(0, statGetCON(stats[player], players[player]->entity));
+					const int statBonus = compendiumTooltipIntro ? 0 : (4 * std::max(0, statGetCON(stats[player], players[player]->entity)));
 					healthVal += statBonus;
 				}
 				else if ( item.type == POTION_RESTOREMAGIC )
 				{
-					const int statBonus = std::min(30, 2 * std::max(0, statGetINT(stats[player], players[player]->entity)));
+					const int statBonus = std::min(30, 2 * (compendiumTooltipIntro ? 0 : (std::max(0, statGetINT(stats[player], players[player]->entity)))));
 					healthVal += statBonus;
 				}
 
@@ -3678,7 +3707,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 	{
 		if ( conditionalAttribute == "SCROLL_LABEL" )
 		{
-			if ( parentFrame && !strcmp(parentFrame->getName(), "compendium") )
+			if ( compendiumTooltip )
 			{
 				snprintf(buf, sizeof(buf), str.c_str(), "???"); // hide labels in compendium
 			}
@@ -3726,7 +3755,7 @@ void ItemTooltips_t::formatItemDescription(const int player, std::string tooltip
 	return;
 }
 
-void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType, Item& item, std::string& str, std::string detailTag)
+void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType, Item& item, std::string& str, std::string detailTag, Frame* parentFrame)
 {
 #ifndef EDITOR
 	if ( !stats[player] )
@@ -3738,6 +3767,17 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 	{
 		str = "";
 		return;
+	}
+
+	bool compendiumTooltip = false;
+	bool compendiumTooltipIntro = false;
+	if ( parentFrame && !strcmp(parentFrame->getName(), "compendium") )
+	{
+		compendiumTooltip = true;
+		if ( intro )
+		{
+			compendiumTooltipIntro = true;
+		}
 	}
 
 	auto itemTooltip = ItemTooltips.tooltips[tooltipType];
@@ -3756,18 +3796,19 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("armor_shield_bonus") == 0 )
 		{
+			bool excludeSkill = compendiumTooltipIntro;
 			if ( tooltipType.find("tooltip_offhand") != std::string::npos )
 			{
 				snprintf(buf, sizeof(buf), str.c_str(),
-					stats[player]->getActiveShieldBonus(false),
+					stats[player]->getActiveShieldBonus(false, excludeSkill),
 					getItemProficiencyName(PRO_SHIELD).c_str());
 			}
 			else
 			{
 				snprintf(buf, sizeof(buf), str.c_str(), 
-					stats[player]->getPassiveShieldBonus(false),
+					stats[player]->getPassiveShieldBonus(false, excludeSkill),
 					getItemProficiencyName(PRO_SHIELD).c_str(),
-					stats[player]->getActiveShieldBonus(false),
+					stats[player]->getActiveShieldBonus(false, excludeSkill),
 					getItemProficiencyName(PRO_SHIELD).c_str());
 			}
 		}
@@ -3779,7 +3820,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("shield_durability") == 0 )
 		{
-			int skillLVL = stats[player]->getModifiedProficiency(PRO_SHIELD) / 10;
+			int skillLVL = compendiumTooltipIntro ? 0 : (stats[player]->getModifiedProficiency(PRO_SHIELD) / 10);
 			int durabilityBonus = skillLVL * 10;
 			if ( itemCategory(&item) == ARMOR )
 			{
@@ -3793,7 +3834,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("knuckle_skill_modifier") == 0 )
 		{
-			int atk = (stats[player]->getModifiedProficiency(PRO_UNARMED) / 20); // 0 - 5
+			int atk = compendiumTooltipIntro ? 0 : ((stats[player]->getModifiedProficiency(PRO_UNARMED) / 20)); // 0 - 5
 			snprintf(buf, sizeof(buf), str.c_str(), atk, getItemProficiencyName(PRO_UNARMED).c_str());
 		}
 		else if ( detailTag.compare("knuckle_knockback_modifier") == 0 )
@@ -3803,7 +3844,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("weapon_atk_from_player_stat") == 0 )
 		{
-			snprintf(buf, sizeof(buf), str.c_str(), stats[player] ? statGetSTR(stats[player], players[player]->entity) : 0);
+			snprintf(buf, sizeof(buf), str.c_str(), (!compendiumTooltipIntro && stats[player]) ? statGetSTR(stats[player], players[player]->entity) : 0);
 		}
 		else if ( detailTag.compare("ring_unarmed_atk") == 0 )
 		{
@@ -3812,7 +3853,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("weapon_durability") == 0 )
 		{
-			int skillLVL = stats[player]->getModifiedProficiency(PRO_UNARMED) / 20;
+			int skillLVL = compendiumTooltipIntro ? 0 : (stats[player]->getModifiedProficiency(PRO_UNARMED) / 20);
 			int durabilityBonus = skillLVL * 20;
 			snprintf(buf, sizeof(buf), str.c_str(), durabilityBonus, getItemProficiencyName(PRO_UNARMED).c_str());
 		}
@@ -3910,8 +3951,11 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
 					{
 						baseBonus = 3 + 1 * std::min(5, abs(item.beatitude));
-						chanceBonus += std::min(10, (stats[player]->getModifiedProficiency(PRO_LEADERSHIP)
-							+ std::max(0, 3 * statGetCHR(stats[player], players[player]->entity))) / 10);
+						if ( !compendiumTooltipIntro )
+						{
+							chanceBonus += std::min(10, (stats[player]->getModifiedProficiency(PRO_LEADERSHIP)
+								+ std::max(0, 3 * statGetCHR(stats[player], players[player]->entity))) / 10);
+						}
 
 						if ( baseBonus + chanceBonus > 15 )
 						{
@@ -3973,11 +4017,11 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("thrown_atk_from_player_stat") == 0 )
 		{
-			snprintf(buf, sizeof(buf), str.c_str(), stats[player] ? (statGetDEX(stats[player], players[player]->entity) / 4) : 0);
+			snprintf(buf, sizeof(buf), str.c_str(), (!compendiumTooltipIntro && stats[player]) ? (statGetDEX(stats[player], players[player]->entity) / 4) : 0);
 		}
 		else if ( detailTag.compare("thrown_skill_modifier") == 0 )
 		{
-			int skillLVL = stats[player]->getModifiedProficiency(proficiency) / 10;
+			int skillLVL = compendiumTooltipIntro ? 0 : (stats[player]->getModifiedProficiency(proficiency) / 10);
 			snprintf(buf, sizeof(buf), str.c_str(), skillLVL,
 				getItemProficiencyName(proficiency).c_str());
 		}
@@ -4055,11 +4099,11 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("thrown_atk_from_player_stat") == 0 )
 		{
-			snprintf(buf, sizeof(buf), str.c_str(), stats[player] ? (statGetDEX(stats[player], players[player]->entity) / 4) : 0);
+			snprintf(buf, sizeof(buf), str.c_str(), (!compendiumTooltipIntro && stats[player]) ? (statGetDEX(stats[player], players[player]->entity) / 4) : 0);
 		}
 		else if ( detailTag.compare("thrown_skill_modifier") == 0 )
 		{
-			int skillLVL = stats[player]->getModifiedProficiency(proficiency) / 20;
+			int skillLVL = compendiumTooltipIntro ? 0 : (stats[player]->getModifiedProficiency(proficiency) / 20);
 			snprintf(buf, sizeof(buf), str.c_str(), static_cast<int>(100 * thrownDamageSkillMultipliers[std::min(skillLVL, 5)] - 100),
 				getItemProficiencyName(proficiency).c_str());
 		}
@@ -4134,12 +4178,12 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			if ( proficiency == PRO_POLEARM )
 			{
 				//int weaponEffectiveness = -8 + (stats[player]->PROFICIENCIES[proficiency] / 3); // -8% to +25%
-				int weaponEffectiveness = -25 + (stats[player]->getModifiedProficiency(proficiency) / 2); // -25% to +25%
+				int weaponEffectiveness = -25 + compendiumTooltipIntro ? 0 : ((stats[player]->getModifiedProficiency(proficiency) / 2)); // -25% to +25%
 				snprintf(buf, sizeof(buf), str.c_str(), weaponEffectiveness, getItemProficiencyName(proficiency).c_str());
 			}
 			else
 			{
-				int weaponEffectiveness = -25 + (stats[player]->getModifiedProficiency(proficiency) / 2); // -25% to +25%
+				int weaponEffectiveness = -25 + compendiumTooltipIntro ? 0 : ((stats[player]->getModifiedProficiency(proficiency) / 2)); // -25% to +25%
 				snprintf(buf, sizeof(buf), str.c_str(), weaponEffectiveness, getItemProficiencyName(proficiency).c_str());
 			}
 		}
@@ -4150,20 +4194,24 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				int atk = (stats[player] ? statGetDEX(stats[player], players[player]->entity) : 0);
 				atk += (stats[player] ? statGetSTR(stats[player], players[player]->entity) : 0);
 				atk = std::min(atk / 2, atk);
+				if ( compendiumTooltipIntro )
+				{
+					atk = 0;
+				}
 				snprintf(buf, sizeof(buf), str.c_str(), atk);
 			}
 			else if ( proficiency == PRO_RANGED )
 			{
-				snprintf(buf, sizeof(buf), str.c_str(), stats[player] ? statGetDEX(stats[player], players[player]->entity) : 0);
+				snprintf(buf, sizeof(buf), str.c_str(), (!compendiumTooltipIntro && stats[player]) ? statGetDEX(stats[player], players[player]->entity) : 0);
 			}
 			else
 			{
-				snprintf(buf, sizeof(buf), str.c_str(), stats[player] ? statGetSTR(stats[player], players[player]->entity) : 0);
+				snprintf(buf, sizeof(buf), str.c_str(), (!compendiumTooltipIntro && stats[player]) ? statGetSTR(stats[player], players[player]->entity) : 0);
 			}
 		}
 		else if ( detailTag.compare("weapon_durability") == 0 )
 		{
-			int skillLVL = stats[player]->getModifiedProficiency(proficiency) / 20;
+			int skillLVL = compendiumTooltipIntro ? 0 : (stats[player]->getModifiedProficiency(proficiency) / 20);
 			int durabilityBonus = skillLVL * 20;
 			snprintf(buf, sizeof(buf), str.c_str(), durabilityBonus, getItemProficiencyName(proficiency).c_str());
 		}
@@ -4185,6 +4233,10 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		else if ( detailTag.compare("weapon_ranged_armor_pierce") == 0 )
 		{
 			int statChance = std::min(std::max((stats[player] ? statGetPER(stats[player], players[player]->entity) : 0) / 2, 0), 50); // 0 to 50 value.
+			if ( compendiumTooltipIntro )
+			{
+				statChance = 0;
+			}
 			statChance += (items[item.type].hasAttribute("ARMOR_PIERCE") ? items[item.type].attributes["ARMOR_PIERCE"] : 0);
 			snprintf(buf, sizeof(buf), str.c_str(), statChance);
 		}
@@ -4220,7 +4272,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("potion_restoremagic_bonus") == 0 )
 		{
-			if ( stats[player] && statGetINT(stats[player], players[player]->entity) > 0 )
+			if ( stats[player] && statGetINT(stats[player], players[player]->entity) > 0 && !compendiumTooltipIntro )
 			{
 				snprintf(buf, sizeof(buf), str.c_str(), std::min(30, 2 * std::max(0, statGetINT(stats[player], players[player]->entity))));
 			}
@@ -4231,7 +4283,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("potion_healing_bonus") == 0 )
 		{
-			if ( stats[player] && statGetCON(stats[player], players[player]->entity) > 0 )
+			if ( stats[player] && statGetCON(stats[player], players[player]->entity) > 0 && !compendiumTooltipIntro )
 			{
 				snprintf(buf, sizeof(buf), str.c_str(), 2 * std::max(0, statGetCON(stats[player], players[player]->entity)));
 			}
@@ -4242,7 +4294,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("potion_extrahealing_bonus") == 0 )
 		{
-			if ( stats[player] && statGetCON(stats[player], players[player]->entity) > 0 )
+			if ( stats[player] && statGetCON(stats[player], players[player]->entity) > 0 && !compendiumTooltipIntro )
 			{
 				snprintf(buf, sizeof(buf), str.c_str(), 4 * std::max(0, statGetCON(stats[player], players[player]->entity)));
 			}
@@ -4285,14 +4337,13 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("potion_multiplier") == 0 )
 		{
-			int skillLVL = stats[player]->getModifiedProficiency(PRO_ALCHEMY) / 20;
+			int skillLVL = compendiumTooltipIntro ? 0 : (stats[player]->getModifiedProficiency(PRO_ALCHEMY) / 20);
 			snprintf(buf, sizeof(buf), str.c_str(), static_cast<int>(100 * potionDamageSkillMultipliers[std::min(skillLVL, 5)] - 100), 
 				getItemPotionHarmAllyAdjective(item).c_str());
 		}
 	}
 	else if ( tooltipType.compare("tooltip_tool_lockpick") == 0 )
 	{
-		Sint32 PER = statGetPER(stats[player], players[player]->entity);
 		if ( detailTag.compare("lockpick_chestsdoors_unlock_chance") == 0 )
 		{
 			int chance = stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 2; // lockpick chests/doors
@@ -4300,17 +4351,29 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			{
 				chance = 100;
 			}
+			if ( compendiumTooltipIntro )
+			{
+				chance = 0;
+			}
 			snprintf(buf, sizeof(buf), str.c_str(), chance);
 		}
 		else if ( detailTag.compare("lockpick_chests_scrap_chance") == 0 )
 		{
 			int chance = std::min(100, stats[player]->getModifiedProficiency(PRO_LOCKPICKING) + 50);
+			if ( compendiumTooltipIntro )
+			{
+				chance = 0;
+			}
 			snprintf(buf, sizeof(buf), str.c_str(), chance);
 		}
 		else if ( detailTag.compare("lockpick_arrow_disarm") == 0 )
 		{
 			int chance = (100 - 100 / (std::max(1, static_cast<int>(stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 10)))); // disarm arrow traps
 			if ( stats[player]->getModifiedProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_BASIC )
+			{
+				chance = 0;
+			}
+			if ( compendiumTooltipIntro )
 			{
 				chance = 0;
 			}
@@ -4327,6 +4390,10 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			{
 				chance = (100 - 100 / (static_cast<int>(stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 20 + 1))); // lockpick automatons
 			}
+			if ( compendiumTooltipIntro )
+			{
+				chance = 0;
+			}
 			snprintf(buf, sizeof(buf), str.c_str(), chance);
 		}
 		else
@@ -4336,11 +4403,17 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 	}
 	else if ( tooltipType.compare("tooltip_tool_skeletonkey") == 0 )
 	{
-		Sint32 PER = statGetPER(stats[player], players[player]->entity);
+		Sint32 PER = statGetPER(
+			compendiumTooltipIntro ? nullptr : stats[player], 
+			compendiumTooltipIntro ? nullptr : players[player]->entity);
 		if ( detailTag.compare("lockpick_arrow_disarm") == 0 )
 		{
 			int chance = (100 - 100 / (std::max(1, static_cast<int>(stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 10)))); // disarm arrow traps
 			if ( stats[player]->getModifiedProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_BASIC )
+			{
+				chance = 0;
+			}
+			if ( compendiumTooltipIntro )
 			{
 				chance = 0;
 			}
@@ -4399,10 +4472,14 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
 			if ( !spell ) { return; }
 
-			int intBonus = (statGetINT(stats[player], players[player]->entity) * 0.5);
+			int intBonus = (statGetINT(
+				compendiumTooltipIntro ? nullptr : stats[player], 
+				compendiumTooltipIntro ? nullptr : players[player]->entity) * 0.5);
 			real_t mult = ((items[item.type].attributes["SPELLBOOK_CAST_BONUS"]) / 100.0);
 			intBonus *= mult;
-			int beatitudeBonus = (mult * getSpellbookBonusPercent(players[player]->entity, stats[player], &item)) - intBonus;
+			int beatitudeBonus = (mult * getSpellbookBonusPercent(
+				compendiumTooltipIntro ? nullptr : players[player]->entity, 
+				compendiumTooltipIntro ? nullptr : stats[player], &item)) - intBonus;
 
 			std::string damageOrHealing = adjectives["spell_strings"]["damage"];
 			if ( spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_HEALING)
@@ -4494,7 +4571,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			Sint32 oldINT = stats[player]->INT;
 			stats[player]->INT = 0;
 
-			int baseDamage = getSpellDamageOrHealAmount(-1, spell, nullptr);
+			int baseDamage = getSpellDamageOrHealAmount(-1, spell, nullptr, compendiumTooltipIntro);
 
 			real_t bonusEquipPercent = 100.0 * getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], nullptr, spell ? spell->ID : SPELL_NONE);
 
@@ -4531,6 +4608,11 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			int leaderChance = ((statGetCHR(stats[player], players[player]->entity) + 
 				stats[player]->getModifiedProficiency(PRO_LEADERSHIP)) / 20) * 5;
 			int intChance = (statGetINT(stats[player], players[player]->entity) * 2);
+			if ( compendiumTooltipIntro )
+			{
+				leaderChance = 0;
+				intChance = 0;
+			}
 			snprintf(buf, sizeof(buf), str.c_str(), intChance, leaderChance);
 		}
 		else
@@ -4558,6 +4640,10 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		{
 			int leaderChance = ((statGetCHR(stats[player], players[player]->entity) +
 				stats[player]->getModifiedProficiency(PRO_LEADERSHIP)) / 20) * 10;
+			if ( compendiumTooltipIntro )
+			{
+				leaderChance = 0;
+			}
 			snprintf(buf, sizeof(buf), str.c_str(), leaderChance);
 		}
 		else
@@ -4584,18 +4670,20 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			int baseSpellDamage = 0;
 			if ( item.type == TOOL_FREEZE_BOMB )
 			{
-				baseSpellDamage = getSpellDamageOrHealAmount(-1, getSpellFromID(SPELL_COLD), nullptr);
+				baseSpellDamage = getSpellDamageOrHealAmount(-1, getSpellFromID(SPELL_COLD), nullptr, compendiumTooltipIntro);
 			}
 			else if ( item.type == TOOL_BOMB )
 			{
-				baseSpellDamage = getSpellDamageOrHealAmount(-1, getSpellFromID(SPELL_FIREBALL), nullptr);
+				baseSpellDamage = getSpellDamageOrHealAmount(-1, getSpellFromID(SPELL_FIREBALL), nullptr, compendiumTooltipIntro);
 			}
 			snprintf(buf, sizeof(buf), str.c_str(), baseDmg + baseSpellDamage);
 		}
 		else if ( detailTag.compare("tool_bomb_per_atk") == 0 )
 		{
 			int perMult = (items[item.type].hasAttribute("BOMB_DMG_PER_MULT") ? items[item.type].attributes["BOMB_DMG_PER_MULT"] : 0);
-			int perDmg = std::max(0, statGetPER(stats[player], players[player]->entity)) * perMult / 100.0;
+			int perDmg = std::max(0, statGetPER(
+				compendiumTooltipIntro ? nullptr : stats[player], 
+				compendiumTooltipIntro ? nullptr : players[player]->entity)) * perMult / 100.0;
 			snprintf(buf, sizeof(buf), str.c_str(), perDmg, perMult);
 		}
 		else
@@ -10676,6 +10764,12 @@ int Compendium_t::CompendiumItems_t::completionPercent = 0;
 int Compendium_t::CompendiumMagic_t::completionPercent = 0;
 int Compendium_t::CompendiumWorld_t::completionPercent = 0;
 int Compendium_t::AchievementData_t::completionPercent = 0;
+int Compendium_t::CompendiumMonsters_t::numUnread = 0;
+int Compendium_t::CompendiumCodex_t::numUnread = 0;
+int Compendium_t::CompendiumItems_t::numUnread = 0;
+int Compendium_t::CompendiumMagic_t::numUnread = 0;
+int Compendium_t::CompendiumWorld_t::numUnread = 0;
+int Compendium_t::AchievementData_t::numUnread = 0;
 
 std::map<int, std::string> Compendium_t::Events_t::monsterIDToString;
 std::map<int, std::string> Compendium_t::Events_t::codexIDToString;
@@ -10790,6 +10884,35 @@ void Compendium_t::updateTooltip()
 		{
 			players[MainMenu::getMenuOwner()]->hud.updateFrameTooltip(&compendiumItem, tooltipPos.x, tooltipPos.y, Player::PANEL_JUSTIFY_RIGHT, compendiumFrame);
 		}
+
+		if ( Frame* tooltipContainerFrame = compendiumFrame->findFrame("player tooltip container 0") )
+		{
+			if ( auto prompt = tooltipContainerFrame->findFrame("item_widget") )
+			{
+				if ( auto tooltip = tooltipContainerFrame->findFrame("player tooltip 0") )
+				{
+					if ( tooltip->getSize().w == 0 )
+					{
+						prompt->setOpacity(0.0);
+					}
+					else
+					{
+						prompt->setOpacity(tooltip->getOpacity());
+					}
+					if ( Compendium_t::compendiumItem.type == SPELL_ITEM )
+					{
+						prompt->setOpacity(0.0);
+					}
+					SDL_Rect framePos = prompt->getSize();
+					framePos.x = tooltip->getSize().x + tooltip->getSize().w - 6 - framePos.w;
+					framePos.y = tooltip->getSize().y + tooltip->getSize().h - 10;
+					//framePos.x = 802 + 378 / 2 - framePos.w / 2;
+					//framePos.y = 110 - framePos.h + 14;
+					prompt->setSize(framePos);
+				}
+			}
+		}
+
 	}
 }
 
@@ -15396,8 +15519,10 @@ void Compendium_t::exportCurrentMonster(Entity* monster)
 	return;
 }
 
+bool Compendium_t::lorePointsFirstLoad = true;
 void Compendium_t::updateLorePointCounts()
 {
+	lorePointsFirstLoad = false;
 	lorePointsFromAchievements = 0;
 	lorePointsSpent = 0;
 	lorePointsAchievementsTotal = 0;
@@ -15597,6 +15722,253 @@ void Compendium_t::updateLorePointCounts()
 	}
 
 	CompendiumMonsters_t::completionPercent = 100.0 * (completed / (real_t)total);
+
+	Compendium_t::PointsAnim_t::countUnreadLastTicks = 0;
+	Compendium_t::PointsAnim_t::countUnreadNotifs();
+}
+
+real_t Compendium_t::PointsAnim_t::anim = 0.0;
+real_t Compendium_t::PointsAnim_t::animNoFunds = 0.0;
+Uint32 Compendium_t::PointsAnim_t::noFundsTick = 0;
+Uint32 Compendium_t::PointsAnim_t::startTicks = 0;
+Sint32 Compendium_t::PointsAnim_t::pointsCurrent = 0;
+Sint32 Compendium_t::PointsAnim_t::pointsChange = 0;
+Sint32 Compendium_t::PointsAnim_t::txtCurrentPoints = 0;
+Sint32 Compendium_t::PointsAnim_t::txtChangePoints = 0;
+bool Compendium_t::PointsAnim_t::showChanged = false;
+bool Compendium_t::PointsAnim_t::noFundsAnimate = false;
+bool Compendium_t::PointsAnim_t::firstLoad = true;
+bool Compendium_t::PointsAnim_t::mainMenuAlert = false;
+Uint32 Compendium_t::PointsAnim_t::countUnreadLastTicks = 0;
+
+void Compendium_t::PointsAnim_t::countUnreadNotifs()
+{
+	if ( countUnreadLastTicks == 0 || (ticks - countUnreadLastTicks) > TICKS_PER_SECOND )
+	{
+		Compendium_t::CompendiumMonsters_t::numUnread = 0;
+		Compendium_t::CompendiumCodex_t::numUnread = 0;
+		Compendium_t::CompendiumItems_t::numUnread = 0;
+		Compendium_t::CompendiumMagic_t::numUnread = 0;
+		Compendium_t::CompendiumWorld_t::numUnread = 0;
+		Compendium_t::AchievementData_t::numUnread = 0;
+
+		countUnreadLastTicks = ticks;
+
+		int numUnread = 0;
+		for ( auto& unlockStatus : CompendiumCodex_t::unlocks )
+		{
+			if ( unlockStatus.second == Compendium_t::UNLOCKED_UNVISITED
+				|| unlockStatus.second == Compendium_t::LOCKED_REVEALED_UNVISITED )
+			{
+				if ( CompendiumCodex_t::contentsMap.find(unlockStatus.first) != CompendiumCodex_t::contentsMap.end() )
+				{
+					++numUnread;
+					++Compendium_t::CompendiumCodex_t::numUnread;
+				}
+			}
+		}
+		for ( auto& unlockStatus : CompendiumWorld_t::unlocks )
+		{
+			if ( unlockStatus.second == Compendium_t::UNLOCKED_UNVISITED
+				|| unlockStatus.second == Compendium_t::LOCKED_REVEALED_UNVISITED )
+			{
+				if ( CompendiumWorld_t::contentsMap.find(unlockStatus.first) != CompendiumWorld_t::contentsMap.end() )
+				{
+					++numUnread;
+					++Compendium_t::CompendiumWorld_t::numUnread;
+				}
+			}
+		}
+		for ( auto& unlockStatus : CompendiumItems_t::unlocks )
+		{
+			if ( unlockStatus.second == Compendium_t::UNLOCKED_UNVISITED
+				|| unlockStatus.second == Compendium_t::LOCKED_REVEALED_UNVISITED )
+			{
+				if ( CompendiumItems_t::contentsMap.find(unlockStatus.first) != CompendiumItems_t::contentsMap.end() )
+				{
+					++numUnread;
+					++Compendium_t::CompendiumItems_t::numUnread;
+				}
+				if ( CompendiumMagic_t::contentsMap.find(unlockStatus.first) != CompendiumMagic_t::contentsMap.end() )
+				{
+					++numUnread;
+					++Compendium_t::CompendiumMagic_t::numUnread;
+				}
+			}
+		}
+		for ( auto& unlockStatus : CompendiumMonsters_t::unlocks )
+		{
+			if ( unlockStatus.second == Compendium_t::UNLOCKED_UNVISITED
+				|| unlockStatus.second == Compendium_t::LOCKED_REVEALED_UNVISITED )
+			{
+				if ( CompendiumMonsters_t::contentsMap.find(unlockStatus.first) != CompendiumMonsters_t::contentsMap.end() )
+				{
+					++numUnread;
+					++Compendium_t::CompendiumMonsters_t::numUnread;
+				}
+			}
+		}
+		for ( auto& unlockStatus : Compendium_t::AchievementData_t::unlocks )
+		{
+			if ( unlockStatus.second == Compendium_t::UNLOCKED_UNVISITED
+				|| unlockStatus.second == Compendium_t::LOCKED_REVEALED_UNVISITED )
+			{
+				if ( Compendium_t::AchievementData_t::contentsMap.find(unlockStatus.first) != Compendium_t::AchievementData_t::contentsMap.end() )
+				{
+					++numUnread;
+					++Compendium_t::AchievementData_t::numUnread;
+				}
+			}
+		}
+
+		mainMenuAlert = numUnread > 0;
+	}
+}
+
+void Compendium_t::PointsAnim_t::tickAnimate()
+{
+	const auto balance = Compendium_t::lorePointsFromAchievements - Compendium_t::lorePointsSpent;
+
+	noFundsAnimate = false;
+	{
+		// constant decay for animation
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * 1.0 / 25.0;
+		animNoFunds -= setpointDiffX;
+		animNoFunds = std::max(0.0, animNoFunds);
+
+		if ( animNoFunds > 0.001 || (ticks - noFundsTick) < TICKS_PER_SECOND * .8 )
+		{
+			noFundsAnimate = true;
+		}
+	}
+
+	bool pauseChangeAnim = false;
+	if ( pointsChange != 0 )
+	{
+		Uint32 duration = pointsChange > 0 ? (3 * TICKS_PER_SECOND) : (TICKS_PER_SECOND / 2);
+		if ( ((ticks - startTicks) > duration) )
+		{
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.1, (anim)) / 10.0;
+			anim -= setpointDiffX;
+			anim = std::max(0.0, anim);
+
+			if ( anim <= 0.0001 )
+			{
+				pointsChange = 0;
+			}
+		}
+		else
+		{
+			pauseChangeAnim = true;
+
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - anim)) / 10.0;
+			anim += setpointDiffX;
+			anim = std::min(1.0, anim);
+			anim = 1.0;
+		}
+	}
+
+	showChanged = false;
+	if ( pointsChange != 0 )
+	{
+		Sint32 displayedChange = anim * pointsChange;
+		if ( pauseChangeAnim )
+		{
+			displayedChange = pointsChange;
+		}
+		if ( abs(displayedChange) > 0 )
+		{
+			showChanged = true;
+			//changeGoldText->setDisabled(false);
+			std::string s = "+";
+			if ( pointsChange < 0 )
+			{
+				s = "";
+			}
+			s += std::to_string(displayedChange);
+			txtChangePoints = displayedChange;
+			//changeGoldText->setText(s.c_str());
+			Sint32 displayedCurrent = pointsCurrent
+				+ (pointsChange - displayedChange);
+			//currentGoldText->setText(std::to_string(displayedCurrentGold).c_str());
+			txtCurrentPoints = displayedCurrent;
+		}
+	}
+
+	if ( !showChanged )
+	{
+		txtChangePoints = 0;
+		txtCurrentPoints = balance;
+		//changeGoldText->setDisabled(true);
+		//changeGoldText->setText(std::to_string(displayedChangeGold).c_str());
+		//currentGoldText->setText(std::to_string(balance).c_str());
+	}
+}
+
+void Compendium_t::PointsAnim_t::noFundsEvent()
+{
+	playSound(90, 64);
+	noFundsTick = ticks;
+	animNoFunds = 1.0;
+}
+
+void Compendium_t::PointsAnim_t::pointsChangeEvent(Sint32 amount)
+{
+	bool addedToCurrentTotal = false;
+	Uint32 duration = pointsChange > 0 ? (3 * TICKS_PER_SECOND) : (TICKS_PER_SECOND / 2);
+	const bool isAnimatingValue = ((ticks - startTicks) > duration);
+	const auto balance = Compendium_t::lorePointsFromAchievements - Compendium_t::lorePointsSpent;
+	if ( amount < 0 )
+	{
+		if ( pointsChange < 0
+			&& !isAnimatingValue
+			&& abs(amount) > 0 )
+		{
+			addedToCurrentTotal = true;
+			if ( balance + amount < 0 )
+			{
+				pointsChange -= balance;
+			}
+			else
+			{
+				pointsChange += amount;
+			}
+		}
+		else
+		{
+			if ( balance + amount < 0 )
+			{
+				pointsChange = -balance;
+			}
+			else
+			{
+				pointsChange = amount;
+			}
+		}
+	}
+	else
+	{
+		if ( pointsChange > 0
+			&& !isAnimatingValue
+			&& abs(amount) > 0 )
+		{
+			addedToCurrentTotal = true;
+			pointsChange += amount;
+		}
+		else
+		{
+			pointsChange = amount;
+		}
+	}
+	startTicks = ticks;
+	anim = 0.0;
+	if ( !addedToCurrentTotal )
+	{
+		pointsCurrent = balance;
+	}
 }
 #endif
 

@@ -2876,20 +2876,20 @@ public:
 	std::string& getItemEquipmentEffectsForAttributesText(std::string& attribute);
 	std::string& getProficiencyLevelName(Sint32 proficiencyLevel);
 	std::string& getIconLabel(Item& item);
-	std::string getSpellIconText(const int player, Item& item);
+	std::string getSpellIconText(const int player, Item& item, const bool excludePlayerStats);
 	std::string getSpellDescriptionText(const int player, Item& item);
 	std::string getSpellIconPath(const int player, Item& item, int spellID);
 	std::string getCostOfSpellString(const int player, Item& item);
 	std::string& getSpellTypeString(const int player, Item& item);
 	node_t* getSpellNodeFromSpellID(int spellID);
 	real_t getSpellSustainCostPerSecond(int spellID);
-	int getSpellDamageOrHealAmount(const int player, spell_t* spell, Item* spellbook);
+	int getSpellDamageOrHealAmount(const int player, spell_t* spell, Item* spellbook, const bool excludePlayerStats);
 	bool bIsSpellDamageOrHealingType(spell_t* spell);
 	bool bSpellHasBasicHitMessage(const int spellID);
 
 	void formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex, std::string& conditionalAttribute, Frame* parentFrame = nullptr);
 	void formatItemDescription(const int player, std::string tooltipType, Item& item, std::string& str);
-	void formatItemDetails(const int player, std::string tooltipType, Item& item, std::string& str, std::string detailTag);
+	void formatItemDetails(const int player, std::string tooltipType, Item& item, std::string& str, std::string detailTag, Frame* parentFrame = nullptr);
 	void stripOutPositiveNegativeItemDetails(std::string& str, std::string& positiveValues, std::string& negativeValues);
 	void stripOutHighlightBracketText(std::string& str, std::string& bracketText);
 	void getWordIndexesItemDetails(void* field, std::string& str, std::string& highlightValues, std::string& positiveValues, std::string& negativeValues,
@@ -3497,6 +3497,28 @@ struct Compendium_t
 		bool inUse = false;
 	};
 
+	struct PointsAnim_t
+	{
+		static real_t anim;
+		static Uint32 startTicks;
+		static Sint32 pointsCurrent;
+		static Sint32 pointsChange;
+		static Sint32 txtCurrentPoints;
+		static Sint32 txtChangePoints;
+		static real_t animNoFunds;
+		static Uint32 noFundsTick;
+		static bool firstLoad;
+		static bool noFundsAnimate;
+		static bool showChanged;
+		static void reset();
+		static void tickAnimate();
+		static void noFundsEvent();
+		static bool mainMenuAlert;
+		static Uint32 countUnreadLastTicks;
+		static void countUnreadNotifs();
+		static void pointsChangeEvent(Sint32 amount);
+	};
+
 	static void readContentsLang(std::string name, std::map<std::string, std::vector<std::pair<std::string, std::string>>>& contents,
 		std::map<std::string, std::string>& contentsMap);
 	enum CompendiumUnlockStatus : int {
@@ -3541,6 +3563,7 @@ struct Compendium_t
 		static std::map<std::string, std::string> contentsMap;
 		static std::map<std::string, CompendiumUnlockStatus> unlocks;
 		static int completionPercent;
+		static int numUnread;
 		static void readContentsLang();
 
 		struct CompendiumAchievementsDisplay
@@ -3908,6 +3931,7 @@ struct Compendium_t
 		static void readContentsLang();
 		static std::map<std::string, CompendiumUnlockStatus> unlocks;
 		static int completionPercent;
+		static int numUnread;
 	};
 	std::map<std::string, CompendiumMonsters_t::Monster_t> monsters;
 	void readMonstersFromFile();
@@ -3950,6 +3974,7 @@ struct Compendium_t
 		static void readContentsLang();
 		static std::map<std::string, CompendiumUnlockStatus> unlocks;
 		static int completionPercent;
+		static int numUnread;
 	};
 	std::map<std::string, CompendiumWorld_t::World_t> worldObjects;
 	void readWorldFromFile();
@@ -3976,6 +4001,7 @@ struct Compendium_t
 		static void readContentsLang();
 		static std::map<std::string, CompendiumUnlockStatus> unlocks;
 		static int completionPercent;
+		static int numUnread;
 	};
 	std::map<std::string, CompendiumCodex_t::Codex_t> codex;
 	void readCodexFromFile();
@@ -4005,6 +4031,7 @@ struct Compendium_t
 		static std::map<std::string, CompendiumUnlockStatus> unlocks;
 		static std::map<int, CompendiumUnlockStatus> itemUnlocks;
 		static int completionPercent;
+		static int numUnread;
 	};
 	std::map<std::string, CompendiumItems_t::Codex_t> items;
 	void readItemsFromFile();
@@ -4015,6 +4042,7 @@ struct Compendium_t
 		static std::map<std::string, std::string> contentsMap;
 		static void readContentsLang();
 		static int completionPercent;
+		static int numUnread;
 	};
 	std::map<std::string, CompendiumItems_t::Codex_t> magic;
 	void readMagicFromFile();
@@ -4027,6 +4055,7 @@ struct Compendium_t
 	static int lorePointsFromAchievements;
 	static int lorePointsAchievementsTotal;
 	static int lorePointsSpent;
+	static bool lorePointsFirstLoad;
 	static void updateLorePointCounts();
 	static void writeUnlocksSaveData();
 	static void readUnlocksSaveData();
