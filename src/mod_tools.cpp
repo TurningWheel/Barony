@@ -14235,6 +14235,12 @@ bool allowedCompendiumProgress()
 	{
 		return false; // challenge event run
 	}
+	if ( Mods::disableSteamAchievements || (svFlags & SV_FLAG_CHEATS) )
+	{
+#ifndef DEBUG_ACHIEVEMENTS
+		return false;
+#endif
+	}
 	return true;
 }
 
