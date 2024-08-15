@@ -398,6 +398,11 @@ void UIToastNotification::drawMainCard()
 	mainField->setHJustify(Field::justify_t::LEFT);
 	mainField->setVJustify(Field::justify_t::CENTER);
 	mainField->setText(displayedText.c_str());
+	if ( mainField->getNumTextLines() > 1 )
+	{
+		mainField->setVJustify(Field::justify_t::TOP);
+		mainField->setSize(SDL_Rect{ bodyx + imgSize + offset, 29, r.w - bodyx - imgSize, r.h - 29 });
+	}
 
 	frameImage->path = notificationImage;
 	frameImage->disabled = false;

@@ -91,6 +91,12 @@ public:
 	void setDisplayedText(const char* text) {
 		displayedText = text;
 	}
+
+	const std::string& getDisplayedText()
+	{
+		return displayedText;
+	}
+
 	void setIdleSeconds(Uint32 seconds) {
 		idleTicksToHide = seconds * TICKS_PER_SECOND;
 	}

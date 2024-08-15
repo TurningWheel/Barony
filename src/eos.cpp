@@ -3545,6 +3545,20 @@ void EOSFuncs::Accounts_t::handleLogin()
 			}
 			AccountAuthenticationCompleted = EOS_EResult::EOS_Success;
 		}
+		else
+		{
+			if ( popupType == POPUP_TOAST )
+			{
+				UIToastNotification* n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT);
+				if ( n )
+				{
+					if ( n->getDisplayedText() != "Logged in successfully!" )
+					{
+						n->updateCardEvent(false, true);
+					}
+				}
+			}
+		}
 		return;
 	}
 	AccountAuthenticationCompleted = EOS_EResult::EOS_NotConfigured;
