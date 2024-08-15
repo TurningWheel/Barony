@@ -4187,6 +4187,19 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				snprintf(buf, sizeof(buf), str.c_str(), weaponEffectiveness, getItemProficiencyName(proficiency).c_str());
 			}
 		}
+		else if ( detailTag.compare("weapon_skill_modifier_range") == 0 )
+		{
+			real_t variance = 20;
+			real_t baseSkillModifier = 50.0; // 40-60 base
+			ItemType itemType = item.type;
+			Entity::setMeleeDamageSkillModifiers(compendiumTooltipIntro ? nullptr : players[player]->entity, 
+				nullptr, proficiency, baseSkillModifier, variance, &itemType);
+			real_t lowest = baseSkillModifier - (variance / 2) + (compendiumTooltipIntro ? 0 : stats[player]->getModifiedProficiency(proficiency) / 2.0);
+			lowest = std::min(100.0, std::max(0.0, lowest));
+			real_t highest = std::min(100.0, lowest + variance);
+
+			snprintf(buf, sizeof(buf), str.c_str(), (int)lowest, (int)highest, getItemProficiencyName(proficiency).c_str());
+		}
 		else if ( detailTag.compare("weapon_atk_from_player_stat") == 0 )
 		{
 			if ( item.type == TOOL_WHIP )

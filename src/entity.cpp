@@ -8661,7 +8661,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}*/
 						real_t variance = 20;
 						real_t baseSkillModifier = 50.0; // 40-60 base
-						Entity::setMeleeDamageSkillModifiers(this, myStats, weaponskill, baseSkillModifier, variance);
+						Entity::setMeleeDamageSkillModifiers(this, myStats, weaponskill, baseSkillModifier, variance, nullptr);
 						real_t skillModifier = baseSkillModifier - (variance / 2) + (myStats->getModifiedProficiency(weaponskill) / 2.0);
 						skillModifier += (local_rng.rand() % (1 + static_cast<int>(variance)));
 						skillModifier /= 100.0;
@@ -14542,7 +14542,7 @@ int getStatForProficiency(int skill)
 	return statForProficiency;
 }
 
-void Entity::setMeleeDamageSkillModifiers(Entity* my, Stat* myStats, int skill, real_t& baseSkillModifier, real_t& variance)
+void Entity::setMeleeDamageSkillModifiers(Entity* my, Stat* myStats, int skill, real_t& baseSkillModifier, real_t& variance, ItemType* itemType)
 {
 	bool shapeshifted = (my && my->behavior == &actPlayer && my->effectShapeshift != NOTHING);
 	bool gungnir = false;
@@ -14556,6 +14556,10 @@ void Entity::setMeleeDamageSkillModifiers(Entity* my, Stat* myStats, int skill, 
 		{
 			gungnir = true;
 		}
+	}
+	if ( itemType && (*itemType) == ARTIFACT_SPEAR )
+	{
+		gungnir = true;
 	}
 
 	if ( skill == PRO_UNARMED )

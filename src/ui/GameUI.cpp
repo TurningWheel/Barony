@@ -32350,6 +32350,17 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
+		else if ( tag == "WEAPON_DMG_EFFECTIVENESS" )
+		{
+			real_t variance = 20;
+			real_t baseSkillModifier = 50.0; // 40-60 base
+			Entity::setMeleeDamageSkillModifiers(nullptr, nullptr, proficiency, baseSkillModifier, variance, nullptr);
+
+			real_t lowest = baseSkillModifier - (variance / 2) + (stats[playernum]->getModifiedProficiency(proficiency) / 2.0);
+			lowest = std::min(100.0, std::max(0.0, lowest));
+			real_t highest = std::min(100.0, lowest + variance);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)lowest, (int)highest);
+		}
 		else if ( tag == "RANGED_DMG_EFFECTIVENESS" )
 		{
 			if ( proficiency == PRO_POLEARM )
@@ -32457,6 +32468,17 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
+		else if ( tag == "WEAPON_DMG_EFFECTIVENESS" )
+		{
+			real_t variance = 20;
+			real_t baseSkillModifier = 50.0; // 40-60 base
+			Entity::setMeleeDamageSkillModifiers(nullptr, nullptr, proficiency, baseSkillModifier, variance, nullptr);
+
+			real_t lowest = baseSkillModifier - (variance / 2) + (stats[playernum]->getModifiedProficiency(proficiency) / 2.0);
+			lowest = std::min(100.0, std::max(0.0, lowest));
+			real_t highest = std::min(100.0, lowest + variance);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)lowest, (int)highest);
+		}
 		else if ( tag == "UNARMED_DMG_EFFECTIVENESS" )
 		{
 			if ( proficiency == PRO_POLEARM )
@@ -32531,6 +32553,17 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
+		else if ( tag == "WEAPON_DMG_EFFECTIVENESS" )
+		{
+			real_t variance = 20;
+			real_t baseSkillModifier = 50.0; // 40-60 base
+			Entity::setMeleeDamageSkillModifiers(nullptr, nullptr, proficiency, baseSkillModifier, variance, nullptr);
+
+			real_t lowest = baseSkillModifier - (variance / 2) + (stats[playernum]->getModifiedProficiency(proficiency) / 2.0);
+			lowest = std::min(100.0, std::max(0.0, lowest));
+			real_t highest = std::min(100.0, lowest + variance);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)lowest, (int)highest);
+		}
 		else if ( tag == "SWORD_DMG_EFFECTIVENESS" )
 		{
 			if ( proficiency == PRO_POLEARM )
@@ -32594,6 +32627,17 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 				val = 100 - (100 - stats[playernum]->getModifiedProficiency(proficiency)) / 2.f; // lowest damage roll
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "WEAPON_DMG_EFFECTIVENESS" )
+		{
+			real_t variance = 20;
+			real_t baseSkillModifier = 50.0; // 40-60 base
+			Entity::setMeleeDamageSkillModifiers(nullptr, nullptr, proficiency, baseSkillModifier, variance, nullptr);
+
+			real_t lowest = baseSkillModifier - (variance / 2) + (stats[playernum]->getModifiedProficiency(proficiency) / 2.0);
+			lowest = std::min(100.0, std::max(0.0, lowest));
+			real_t highest = std::min(100.0, lowest + variance);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)lowest, (int)highest);
 		}
 		else if ( tag == "POLEARM_DMG_EFFECTIVENESS" )
 		{
@@ -32659,6 +32703,17 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
+		else if ( tag == "WEAPON_DMG_EFFECTIVENESS" )
+		{
+			real_t variance = 20;
+			real_t baseSkillModifier = 50.0; // 40-60 base
+			Entity::setMeleeDamageSkillModifiers(nullptr, nullptr, proficiency, baseSkillModifier, variance, nullptr);
+
+			real_t lowest = baseSkillModifier - (variance / 2) + (stats[playernum]->getModifiedProficiency(proficiency) / 2.0);
+			lowest = std::min(100.0, std::max(0.0, lowest));
+			real_t highest = std::min(100.0, lowest + variance);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)lowest, (int)highest);
+		}
 		else if ( tag == "AXE_DMG_EFFECTIVENESS" )
 		{
 			if ( proficiency == PRO_POLEARM )
@@ -32722,6 +32777,17 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 				val = 100 - (100 - stats[playernum]->getModifiedProficiency(proficiency)) / 2.f; // lowest damage roll
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "WEAPON_DMG_EFFECTIVENESS" )
+		{
+			real_t variance = 20;
+			real_t baseSkillModifier = 50.0; // 40-60 base
+			Entity::setMeleeDamageSkillModifiers(nullptr, nullptr, proficiency, baseSkillModifier, variance, nullptr);
+
+			real_t lowest = baseSkillModifier - (variance / 2) + (stats[playernum]->getModifiedProficiency(proficiency) / 2.0);
+			lowest = std::min(100.0, std::max(0.0, lowest));
+			real_t highest = std::min(100.0, lowest + variance);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)lowest, (int)highest);
 		}
 		else if ( tag == "MACE_DMG_EFFECTIVENESS" )
 		{

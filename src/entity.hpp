@@ -628,7 +628,7 @@ public:
 
 	static Sint32 getAttack(Entity* my, Stat* myStats, bool isPlayer = false);
 	static real_t getACEffectiveness(Entity* my, Stat* myStats, bool isPlayer, Entity* attacker, Stat* attackerStats, int& outNumBlessings);
-	static void setMeleeDamageSkillModifiers(Entity* my, Stat* myStats, int skill, real_t& baseSkillModifier, real_t& variance);
+	static void setMeleeDamageSkillModifiers(Entity* my, Stat* myStats, int skill, real_t& baseSkillModifier, real_t& variance, ItemType* itemType);
 	Sint32 getBonusAttackOnTarget(Stat& hitstats);
 	Sint32 getRangedAttack();
 	Sint32 getThrownAttack();
