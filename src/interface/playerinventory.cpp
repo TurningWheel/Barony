@@ -6809,7 +6809,7 @@ void Player::HUD_t::finalizeFrameTooltip(Item* item, const int x, const int y, i
 		int lowestY = 0;
 		if ( compendiumTooltip )
 		{
-			lowestY = tooltipContainerFrame->getSize().h - *cvar_item_tooltip_lowest_y;
+			lowestY = tooltipContainerFrame->getSize().h - *cvar_item_tooltip_lowest_y - 38;
 		}
 		else
 		{
