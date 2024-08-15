@@ -11595,9 +11595,27 @@ void Compendium_t::readCodexFromFile()
 		obj.linesToHighlight.clear();
 		for ( auto& line : obj.details )
 		{
-			if ( line.size() > 0 && line[0] == '-' )
+			if ( line.size() > 0 )
 			{
-				line[0] = '\x1E';
+				if ( line[0] == '-' )
+				{
+					line[0] = '\x1E';
+				}
+				else
+				{
+					for ( size_t c = 0; c < line.size(); ++c )
+					{
+						if ( line[c] == '-' )
+						{
+							line[c] = '\x1E';
+							break;
+						}
+						else if ( line[c] != ' ' )
+						{
+							break;
+						}
+					}
+				}
 			}
 		}
 		if ( w.HasMember("feature_img") )
@@ -11771,9 +11789,27 @@ void Compendium_t::readWorldFromFile()
 		obj.linesToHighlight.clear();
 		for ( auto& line : obj.details )
 		{
-			if ( line.size() > 0 && line[0] == '-' )
+			if ( line.size() > 0 )
 			{
-				line[0] = '\x1E';
+				if ( line[0] == '-' )
+				{
+					line[0] = '\x1E';
+				}
+				else
+				{
+					for ( size_t c = 0; c < line.size(); ++c )
+					{
+						if ( line[c] == '-' )
+						{
+							line[c] = '\x1E';
+							break;
+						}
+						else if ( line[c] != ' ' )
+						{
+							break;
+						}
+					}
+				}
 			}
 		}
 		if ( w.HasMember("details_line_highlights") )
