@@ -1919,8 +1919,8 @@ bool Entity::increaseSkill(int skill, bool notify)
 		net_packet->data[8] = (Sint8)myStats->INT;
 		net_packet->data[9] = (Sint8)myStats->PER;
 		net_packet->data[10] = (Sint8)myStats->CHR;
-		net_packet->data[11] = (Sint8)myStats->EXP;
-		net_packet->data[12] = (Sint8)myStats->LVL;
+		net_packet->data[11] = (Uint8)myStats->EXP;
+		net_packet->data[12] = (Uint8)myStats->LVL;
 		SDLNet_Write16((Sint16)myStats->HP, &net_packet->data[13]);
 		SDLNet_Write16((Sint16)myStats->MAXHP, &net_packet->data[15]);
 		SDLNet_Write16((Sint16)myStats->MP, &net_packet->data[17]);
@@ -2972,7 +2972,17 @@ void Entity::handleEffects(Stat* myStats)
 	if ( myStats->EXP >= 100 )
 	{
 		myStats->EXP -= 100;
-		myStats->LVL++;
+		if ( player >= 0 )
+		{
+			if ( myStats->LVL < 255 )
+			{
+				myStats->LVL++;
+			}
+		}
+		else
+		{
+			myStats->LVL++;
+		}
 
 		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
@@ -3195,133 +3205,169 @@ void Entity::handleEffects(Stat* myStats)
 				{
 					case STAT_STR: // STR
 					{
-						StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->STR, 1));
-						int increment = 1;
-						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
-						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
+						if ( myStats->STR < MAX_PLAYER_STAT_VALUE )
 						{
-							if ( local_rng.rand() % 5 == 0 )
+							StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->STR, 1));
+							int increment = 1;
+							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+							if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 							{
-								StatUps.at(StatUps.size() - 1).increaseStat += 1;
-								increment++;
-								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_DOUBLED, "str", 1);
-								rolledBonusStat = true;
-								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+								if ( local_rng.rand() % 5 == 0 )
+								{
+									if ( (myStats->STR + 1) < MAX_PLAYER_STAT_VALUE )
+									{
+										StatUps.at(StatUps.size() - 1).increaseStat += 1;
+										increment++;
+										Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_DOUBLED, "str", 1);
+										rolledBonusStat = true;
+										myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+										//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+									}
+								}
 							}
+							myStats->STR += increment;
+							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "str", 1);
+							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_STR_MAX, "str", myStats->STR);
 						}
-						myStats->STR += increment;
-						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "str", 1);
-						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_STR_MAX, "str", myStats->STR);
 						break;
 					}
 					case STAT_DEX: // DEX
 					{
-						StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->DEX, 1));
-						int increment = 1;
-						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
-						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
+						if ( myStats->DEX < MAX_PLAYER_STAT_VALUE )
 						{
-							if ( local_rng.rand() % 5 == 0 )
+							StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->DEX, 1));
+							int increment = 1;
+							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+							if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 							{
-								StatUps.at(StatUps.size() - 1).increaseStat += 1;
-								increment++;
-								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_DOUBLED, "dex", 1);
-								rolledBonusStat = true;
-								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+								if ( local_rng.rand() % 5 == 0 )
+								{
+									if ( (myStats->DEX + 1) < MAX_PLAYER_STAT_VALUE )
+									{
+										StatUps.at(StatUps.size() - 1).increaseStat += 1;
+										increment++;
+										Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_DOUBLED, "dex", 1);
+										rolledBonusStat = true;
+										myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+										//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+									}
+								}
 							}
+							myStats->DEX += increment;
+							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "dex", increment);
+							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_DEX_MAX, "dex", myStats->DEX);
 						}
-						myStats->DEX += increment;
-						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "dex", increment);
-						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_DEX_MAX, "dex", myStats->DEX);
 						break;
 					}
 					case STAT_CON: // CON
 					{
-						StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->CON, 1));
-						int increment = 1;
-						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
-						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
+						if ( myStats->CON < MAX_PLAYER_STAT_VALUE )
 						{
-							if ( local_rng.rand() % 5 == 0 )
+							StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->CON, 1));
+							int increment = 1;
+							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+							if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 							{
-								StatUps.at(StatUps.size() - 1).increaseStat += 1;
-								increment++;
-								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_DOUBLED, "con", 1);
-								rolledBonusStat = true;
-								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+								if ( local_rng.rand() % 5 == 0 )
+								{
+									if ( (myStats->CON + 1) < MAX_PLAYER_STAT_VALUE )
+									{
+										StatUps.at(StatUps.size() - 1).increaseStat += 1;
+										increment++;
+										Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_DOUBLED, "con", 1);
+										rolledBonusStat = true;
+										myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+										//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+									}
+								}
 							}
+							myStats->CON += increment;
+							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "con", increment);
+							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_CON_MAX, "con", myStats->CON);
 						}
-						myStats->CON += increment;
-						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "con", increment);
-						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_CON_MAX, "con", myStats->CON);
 						break;
 					}
 					case STAT_INT: // INT
 					{
-						StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->INT, 1));
-						int increment = 1;
-						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
-						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
+						if ( myStats->INT < MAX_PLAYER_STAT_VALUE )
 						{
-							if ( local_rng.rand() % 5 == 0 )
+							StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->INT, 1));
+							int increment = 1;
+							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+							if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 							{
-								StatUps.at(StatUps.size() - 1).increaseStat += 1;
-								increment++;
-								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_DOUBLED, "int", 1);
-								rolledBonusStat = true;
-								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+								if ( local_rng.rand() % 5 == 0 )
+								{
+									if ( (myStats->INT + 1) < MAX_PLAYER_STAT_VALUE )
+									{
+										StatUps.at(StatUps.size() - 1).increaseStat += 1;
+										increment++;
+										Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_DOUBLED, "int", 1);
+										rolledBonusStat = true;
+										myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+										//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+									}
+								}
 							}
+							myStats->INT += increment;
+							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "int", increment);
+							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_INT_MAX, "int", myStats->INT);
 						}
-						myStats->INT += increment;
-						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "int", increment);
-						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_INT_MAX, "int", myStats->INT);
 						break;
 					}
 					case STAT_PER: // PER
 					{
-						StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->PER, 1));
-						int increment = 1;
-						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
-						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
+						if ( myStats->PER < MAX_PLAYER_STAT_VALUE )
 						{
-							if ( local_rng.rand() % 5 == 0 )
+							StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->PER, 1));
+							int increment = 1;
+							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+							if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 							{
-								StatUps.at(StatUps.size() - 1).increaseStat += 1;
-								increment++;
-								rolledBonusStat = true;
-								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+								if ( local_rng.rand() % 5 == 0 )
+								{
+									if ( (myStats->PER + 1) < MAX_PLAYER_STAT_VALUE )
+									{
+										StatUps.at(StatUps.size() - 1).increaseStat += 1;
+										increment++;
+										rolledBonusStat = true;
+										myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+										//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+									}
+								}
 							}
+							myStats->PER += increment;
+							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "per", increment);
+							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_PER_MAX, "per", myStats->PER);
 						}
-						myStats->PER += increment;
-						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "per", increment);
-						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_PER_MAX, "per", myStats->PER);
 						break;
 					}
 					case STAT_CHR: // CHR
 					{
-						StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->CHR, 1));
-						int increment = 1;
-						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
-						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
+						if ( myStats->CHR < MAX_PLAYER_STAT_VALUE )
 						{
-							if ( local_rng.rand() % 5 == 0 )
+							StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->CHR, 1));
+							int increment = 1;
+							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+							if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 							{
-								StatUps.at(StatUps.size() - 1).increaseStat += 1;
-								increment++;
-								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_DOUBLED, "chr", 1);
-								rolledBonusStat = true;
-								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+								if ( local_rng.rand() % 5 == 0 )
+								{
+									if ( (myStats->CHR + 1) < MAX_PLAYER_STAT_VALUE )
+									{
+										StatUps.at(StatUps.size() - 1).increaseStat += 1;
+										increment++;
+										Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_DOUBLED, "chr", 1);
+										rolledBonusStat = true;
+										myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+										//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+									}
+								}
 							}
+							myStats->CHR += increment;
+							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "chr", increment);
+							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_CHR_MAX, "chr", myStats->CHR);
 						}
-						myStats->CHR += increment;
-						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "chr", increment);
-						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_CHR_MAX, "chr", myStats->CHR);
 						break;
 					}
 					default:
@@ -3361,8 +3407,8 @@ void Entity::handleEffects(Stat* myStats)
 				net_packet->data[8] = (Sint8)myStats->INT;
 				net_packet->data[9] = (Sint8)myStats->PER;
 				net_packet->data[10] = (Sint8)myStats->CHR;
-				net_packet->data[11] = (Sint8)myStats->EXP;
-				net_packet->data[12] = (Sint8)myStats->LVL;
+				net_packet->data[11] = (Uint8)myStats->EXP;
+				net_packet->data[12] = (Uint8)myStats->LVL;
 				SDLNet_Write16((Sint16)myStats->HP, &net_packet->data[13]);
 				SDLNet_Write16((Sint16)myStats->MAXHP, &net_packet->data[15]);
 				SDLNet_Write16((Sint16)myStats->MP, &net_packet->data[17]);
@@ -4845,8 +4891,8 @@ void Entity::handleEffects(Stat* myStats)
 						net_packet->data[8] = (Sint8)myStats->INT;
 						net_packet->data[9] = (Sint8)myStats->PER;
 						net_packet->data[10] = (Sint8)myStats->CHR;
-						net_packet->data[11] = (Sint8)myStats->EXP;
-						net_packet->data[12] = (Sint8)myStats->LVL;
+						net_packet->data[11] = (Uint8)myStats->EXP;
+						net_packet->data[12] = (Uint8)myStats->LVL;
 						SDLNet_Write16((Sint16)myStats->HP, &net_packet->data[13]);
 						SDLNet_Write16((Sint16)myStats->MAXHP, &net_packet->data[15]);
 						SDLNet_Write16((Sint16)myStats->MP, &net_packet->data[17]);
@@ -5029,8 +5075,8 @@ void Entity::handleEffects(Stat* myStats)
 							net_packet->data[8] = (Sint8)myStats->INT;
 							net_packet->data[9] = (Sint8)myStats->PER;
 							net_packet->data[10] = (Sint8)myStats->CHR;
-							net_packet->data[11] = (Sint8)myStats->EXP;
-							net_packet->data[12] = (Sint8)myStats->LVL;
+							net_packet->data[11] = (Uint8)myStats->EXP;
+							net_packet->data[12] = (Uint8)myStats->LVL;
 							SDLNet_Write16((Sint16)myStats->HP, &net_packet->data[13]);
 							SDLNet_Write16((Sint16)myStats->MAXHP, &net_packet->data[15]);
 							SDLNet_Write16((Sint16)myStats->MP, &net_packet->data[17]);
@@ -12647,8 +12693,8 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			net_packet->data[8] = (Sint8)destStats->INT;
 			net_packet->data[9] = (Sint8)destStats->PER;
 			net_packet->data[10] = (Sint8)destStats->CHR;
-			net_packet->data[11] = (Sint8)destStats->EXP;
-			net_packet->data[12] = (Sint8)destStats->LVL;
+			net_packet->data[11] = (Uint8)destStats->EXP;
+			net_packet->data[12] = (Uint8)destStats->LVL;
 			SDLNet_Write16((Sint16)destStats->HP, &net_packet->data[13]);
 			SDLNet_Write16((Sint16)destStats->MAXHP, &net_packet->data[15]);
 			SDLNet_Write16((Sint16)destStats->MP, &net_packet->data[17]);

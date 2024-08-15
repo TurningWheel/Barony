@@ -372,7 +372,7 @@ inline bool skillCapstoneUnlocked(int player, int proficiency)
 {
 	return (stats[player]->getModifiedProficiency(proficiency) >= CAPSTONE_UNLOCK_LEVEL[proficiency]);
 }
-
+static const int MAX_PLAYER_STAT_VALUE = 248;
 void setDefaultMonsterStats(Stat* stats, int sprite);
 bool isMonsterStatsDefault(Stat& myStats);
 const char* getSkillLangEntry(int skill);

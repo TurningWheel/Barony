@@ -3087,8 +3087,8 @@ void TextSourceScript::updateClientInformation(int player, bool clearInventory, 
 		net_packet->data[8] = (Sint8)stats[player]->INT;
 		net_packet->data[9] = (Sint8)stats[player]->PER;
 		net_packet->data[10] = (Sint8)stats[player]->CHR;
-		net_packet->data[11] = (Sint8)stats[player]->EXP;
-		net_packet->data[12] = (Sint8)stats[player]->LVL;
+		net_packet->data[11] = (Uint8)stats[player]->EXP;
+		net_packet->data[12] = (Uint8)stats[player]->LVL;
 		SDLNet_Write16((Sint16)stats[player]->HP, &net_packet->data[13]);
 		SDLNet_Write16((Sint16)stats[player]->MAXHP, &net_packet->data[15]);
 		SDLNet_Write16((Sint16)stats[player]->MP, &net_packet->data[17]);

@@ -13645,7 +13645,7 @@ bool Compendium_t::Events_t::EventVal_t::applyValue(const Sint32 val)
 	}
 }
 
-void onCompendiumLevelExit(const int playernum, const char* level, const bool enteringLvl)
+void onCompendiumLevelExit(const int playernum, const char* level, const bool enteringLvl, const bool died)
 {
 	if ( !level ) { return; }
 	if ( !strcmp(level, "") ) { return; }
@@ -13662,7 +13662,7 @@ void onCompendiumLevelExit(const int playernum, const char* level, const bool en
 		Compendium_t::Events_t::eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_MIN_COMPLETION, level, players[playernum]->compendiumProgress.playerAliveTimeTotal);
 		Compendium_t::Events_t::eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_MAX_COMPLETION, level, players[playernum]->compendiumProgress.playerAliveTimeTotal);
 
-		if ( stats[playernum]->HP <= 0 )
+		if ( stats[playernum]->HP <= 0 || died )
 		{
 			Compendium_t::Events_t::eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_DEATHS, level, 1);
 			Compendium_t::Events_t::eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_DEATHS_FASTEST, level, players[playernum]->compendiumProgress.playerAliveTimeTotal);
@@ -13937,7 +13937,7 @@ const char* Compendium_t::compendiumCurrentLevelToWorldString(const int currentl
 	return "";
 }
 
-void Compendium_t::Events_t::onEndgameEvent(const int playernum, const bool tutorialend, const bool saveHighscore)
+void Compendium_t::Events_t::onEndgameEvent(const int playernum, const bool tutorialend, const bool saveHighscore, const bool died)
 {
 	if ( players[playernum]->isLocalPlayer() )
 	{
@@ -13958,7 +13958,7 @@ void Compendium_t::Events_t::onEndgameEvent(const int playernum, const bool tuto
 			{
 				if ( currentlevel == 35 )
 				{
-					onCompendiumLevelExit(playernum, "citadel sanctum", false);
+					onCompendiumLevelExit(playernum, "citadel sanctum", false, died);
 					eventUpdateCodex(playernum, Compendium_t::CPDM_CLASS_GAMES_WON, "class", 1);
 					eventUpdateCodex(playernum, Compendium_t::CPDM_CLASS_LVL_WON_MAX, "leveling up", stats[playernum]->LVL);
 					eventUpdateCodex(playernum, Compendium_t::CPDM_CLASS_LVL_WON_MIN, "leveling up", stats[playernum]->LVL);
@@ -13966,7 +13966,7 @@ void Compendium_t::Events_t::onEndgameEvent(const int playernum, const bool tuto
 				}
 				else if ( currentlevel == 24 )
 				{
-					onCompendiumLevelExit(playernum, "molten throne", false);
+					onCompendiumLevelExit(playernum, "molten throne", false, died);
 					eventUpdateCodex(playernum, Compendium_t::CPDM_CLASS_GAMES_WON_HELL, "class", 1);
 					eventUpdateCodex(playernum, Compendium_t::CPDM_CLASS_LVL_WON_HELL_MAX, "leveling up", stats[playernum]->LVL);
 					eventUpdateCodex(playernum, Compendium_t::CPDM_CLASS_LVL_WON_HELL_MIN, "leveling up", stats[playernum]->LVL);
@@ -13974,7 +13974,7 @@ void Compendium_t::Events_t::onEndgameEvent(const int playernum, const bool tuto
 				}
 				else if ( currentlevel == 20 )
 				{
-					onCompendiumLevelExit(playernum, "herx lair", false);
+					onCompendiumLevelExit(playernum, "herx lair", false, died);
 					eventUpdateCodex(playernum, Compendium_t::CPDM_CLASS_GAMES_WON_CLASSIC, "class", 1);
 					eventUpdateCodex(playernum, Compendium_t::CPDM_CLASS_LVL_WON_CLASSIC_MAX, "leveling up", stats[playernum]->LVL);
 					eventUpdateCodex(playernum, Compendium_t::CPDM_CLASS_LVL_WON_CLASSIC_MIN, "leveling up", stats[playernum]->LVL);
@@ -13986,7 +13986,7 @@ void Compendium_t::Events_t::onEndgameEvent(const int playernum, const bool tuto
 				const char* currentWorldString = compendiumCurrentLevelToWorldString(currentlevel, secretlevel);
 				if ( strcmp(currentWorldString, "") )
 				{
-					if ( stats[playernum]->HP <= 0 )
+					if ( stats[playernum]->HP <= 0 || died )
 					{
 						Compendium_t::Events_t::eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_DEATHS, currentWorldString, 1);
 						Compendium_t::Events_t::eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_DEATHS_FASTEST, currentWorldString, players[playernum]->compendiumProgress.playerAliveTimeTotal);
@@ -13995,6 +13995,14 @@ void Compendium_t::Events_t::onEndgameEvent(const int playernum, const bool tuto
 					Compendium_t::Events_t::eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_TIME_SPENT, currentWorldString, players[playernum]->compendiumProgress.playerAliveTimeTotal);
 					Compendium_t::Events_t::eventUpdateWorld(playernum, Compendium_t::CPDM_TOTAL_TIME_SPENT, "minehead",
 						players[playernum]->compendiumProgress.playerGameTimeTotal);
+				}
+			}
+
+			if ( multiplayer == SERVER && playernum == 0 )
+			{
+				for ( int i = 1; i < MAXPLAYERS; ++i )
+				{
+					sendClientDataOverNet(i);
 				}
 			}
 		}
@@ -14027,7 +14035,7 @@ void Player::CompendiumProgress_t::updateFloorEvents()
 	floorEvents.clear();
 }
 
-void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int prevlevel, const bool prevsecretfloor, const std::string prevmapname)
+void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int prevlevel, const bool prevsecretfloor, const std::string prevmapname, const bool died)
 {
 	if ( intro ) { return; }
 	if ( playernum < 0 || playernum >= MAXPLAYERS )
@@ -14063,7 +14071,7 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 			const char* currentWorldString = compendiumCurrentLevelToWorldString(currentlevel, secretlevel);
 			if ( strcmp(currentWorldString, "") )
 			{
-				onCompendiumLevelExit(playernum, currentWorldString, true);
+				onCompendiumLevelExit(playernum, currentWorldString, true, died);
 			}
 
 			if ( stats[playernum] )
@@ -14092,16 +14100,16 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 			{
 				if ( prevlevel == 0 )
 				{
-					onCompendiumLevelExit(playernum, prevWorldString, false);
+					onCompendiumLevelExit(playernum, prevWorldString, false, died);
 				}
 				else if ( prevlevel == 5 || prevlevel == 10 || prevlevel == 15
 					|| prevlevel == 30 )
 				{
-					onCompendiumLevelExit(playernum, prevWorldString, false);
+					onCompendiumLevelExit(playernum, prevWorldString, false, died);
 				}
 				else if ( prevlevel >= 1 && prevlevel <= 4 )
 				{
-					onCompendiumLevelExit(playernum, "mines", false);
+					onCompendiumLevelExit(playernum, "mines", false, died);
 					bool commitUniqueValue = false;
 					if ( prevlevel == 4 )
 					{
@@ -14115,7 +14123,7 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 				}
 				else if ( prevlevel >= 6 && prevlevel <= 9 )
 				{
-					onCompendiumLevelExit(playernum, "swamps", false);
+					onCompendiumLevelExit(playernum, "swamps", false, died);
 					bool commitUniqueValue = false;
 					if ( prevlevel == 9 )
 					{
@@ -14129,7 +14137,7 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 				}
 				else if ( prevlevel >= 11 && prevlevel <= 14 )
 				{
-					onCompendiumLevelExit(playernum, "labyrinth", false);
+					onCompendiumLevelExit(playernum, "labyrinth", false, died);
 					bool commitUniqueValue = false;
 					if ( prevlevel == 14 )
 					{
@@ -14143,7 +14151,7 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 				}
 				else if ( prevlevel >= 16 && prevlevel <= 19 )
 				{
-					onCompendiumLevelExit(playernum, "ruins", false);
+					onCompendiumLevelExit(playernum, "ruins", false, died);
 					bool commitUniqueValue = false;
 					if ( prevlevel == 19 )
 					{
@@ -14157,11 +14165,11 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 				}
 				else if ( prevlevel == 20 )
 				{
-					onCompendiumLevelExit(playernum, prevWorldString, false);
+					onCompendiumLevelExit(playernum, prevWorldString, false, died);
 				}
 				else if ( prevlevel >= 21 && prevlevel <= 23 )
 				{
-					onCompendiumLevelExit(playernum, "hell", false);
+					onCompendiumLevelExit(playernum, "hell", false, died);
 					bool commitUniqueValue = false;
 					if ( prevlevel == 23 )
 					{
@@ -14175,15 +14183,15 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 				}
 				else if ( prevlevel == 24 )
 				{
-					onCompendiumLevelExit(playernum, prevWorldString, false);
+					onCompendiumLevelExit(playernum, prevWorldString, false, died);
 				}
 				else if ( prevlevel == 25 )
 				{
-					onCompendiumLevelExit(playernum, prevWorldString, false);
+					onCompendiumLevelExit(playernum, prevWorldString, false, died);
 				}
 				else if ( prevlevel >= 26 && prevlevel <= 29 )
 				{
-					onCompendiumLevelExit(playernum, "crystal caves", false);
+					onCompendiumLevelExit(playernum, "crystal caves", false, died);
 					bool commitUniqueValue = false;
 					if ( prevlevel == 29 )
 					{
@@ -14197,7 +14205,7 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 				}
 				else if ( prevlevel >= 31 && prevlevel <= 34 )
 				{
-					onCompendiumLevelExit(playernum, "arcane citadel", false);
+					onCompendiumLevelExit(playernum, "arcane citadel", false, died);
 					bool commitUniqueValue = false;
 					if ( prevlevel == 34 )
 					{
@@ -14212,7 +14220,7 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 			}
 			else
 			{
-				onCompendiumLevelExit(playernum, prevWorldString, false);
+				onCompendiumLevelExit(playernum, prevWorldString, false, died);
 			}
 		}
 	}

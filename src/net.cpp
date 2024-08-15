@@ -2174,6 +2174,8 @@ static void changeLevel() {
 	FollowerMenu[clientnum].closeFollowerMenuGUI(true);
 	CalloutMenu[clientnum].closeCalloutMenuGUI();
 
+	bool died = stats[clientnum] && stats[clientnum]->HP <= 0;
+
     // load map file
 	loading = true;
     createLevelLoadScreen(5);
@@ -2308,7 +2310,7 @@ static void changeLevel() {
 		Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_hunger", ""));
 	}
 
-	Compendium_t::Events_t::onLevelChangeEvent(clientnum, prevcurrentlevel, prevsecretfloor, prevmapname);
+	Compendium_t::Events_t::onLevelChangeEvent(clientnum, prevcurrentlevel, prevsecretfloor, prevmapname, died);
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		players[i]->compendiumProgress.playerAliveTimeTotal = 0;
@@ -3962,14 +3964,14 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// update attributes
 	{'ATTR', [](){
-		stats[clientnum]->STR = (Sint8)net_packet->data[5];
-		stats[clientnum]->DEX = (Sint8)net_packet->data[6];
-		stats[clientnum]->CON = (Sint8)net_packet->data[7];
-		stats[clientnum]->INT = (Sint8)net_packet->data[8];
-		stats[clientnum]->PER = (Sint8)net_packet->data[9];
-		stats[clientnum]->CHR = (Sint8)net_packet->data[10];
-		stats[clientnum]->EXP = (Sint8)net_packet->data[11];
-		stats[clientnum]->LVL = (Sint8)net_packet->data[12];
+		stats[clientnum]->STR = ((Sint8)net_packet->data[5] <= -8) ? (Uint8)net_packet->data[5] : (Sint8)net_packet->data[5];
+		stats[clientnum]->DEX = ((Sint8)net_packet->data[6] <= -8) ? (Uint8)net_packet->data[6] : (Sint8)net_packet->data[6];
+		stats[clientnum]->CON = ((Sint8)net_packet->data[7] <= -8) ? (Uint8)net_packet->data[7] : (Sint8)net_packet->data[7];
+		stats[clientnum]->INT = ((Sint8)net_packet->data[8] <= -8) ? (Uint8)net_packet->data[8] : (Sint8)net_packet->data[8];
+		stats[clientnum]->PER = ((Sint8)net_packet->data[9] <= -8) ? (Uint8)net_packet->data[9] : (Sint8)net_packet->data[9];
+		stats[clientnum]->CHR = ((Sint8)net_packet->data[10] <= -8) ? (Uint8)net_packet->data[10] : (Sint8)net_packet->data[10];
+		stats[clientnum]->EXP = (Uint8)net_packet->data[11];
+		stats[clientnum]->LVL = (Uint8)net_packet->data[12];
 		stats[clientnum]->HP = (Sint16)SDLNet_Read16(&net_packet->data[13]);
 		stats[clientnum]->MAXHP = (Sint16)SDLNet_Read16(&net_packet->data[15]);
 		stats[clientnum]->MP = (Sint16)SDLNet_Read16(&net_packet->data[17]);
@@ -4935,14 +4937,14 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			}
 			textSourceScript.playerClearInventory(clearStats);
 		}
-		stats[clientnum]->STR = (Sint8)net_packet->data[5];
-		stats[clientnum]->DEX = (Sint8)net_packet->data[6];
-		stats[clientnum]->CON = (Sint8)net_packet->data[7];
-		stats[clientnum]->INT = (Sint8)net_packet->data[8];
-		stats[clientnum]->PER = (Sint8)net_packet->data[9];
-		stats[clientnum]->CHR = (Sint8)net_packet->data[10];
-		stats[clientnum]->EXP = (Sint8)net_packet->data[11];
-		stats[clientnum]->LVL = (Sint8)net_packet->data[12];
+		stats[clientnum]->STR = ((Sint8)net_packet->data[5] <= -8) ? (Uint8)net_packet->data[5] : (Sint8)net_packet->data[5];
+		stats[clientnum]->DEX = ((Sint8)net_packet->data[6] <= -8) ? (Uint8)net_packet->data[6] : (Sint8)net_packet->data[6];
+		stats[clientnum]->CON = ((Sint8)net_packet->data[7] <= -8) ? (Uint8)net_packet->data[7] : (Sint8)net_packet->data[7];
+		stats[clientnum]->INT = ((Sint8)net_packet->data[8] <= -8) ? (Uint8)net_packet->data[8] : (Sint8)net_packet->data[8];
+		stats[clientnum]->PER = ((Sint8)net_packet->data[9] <= -8) ? (Uint8)net_packet->data[9] : (Sint8)net_packet->data[9];
+		stats[clientnum]->CHR = ((Sint8)net_packet->data[10] <= -8) ? (Uint8)net_packet->data[10] : (Sint8)net_packet->data[10];
+		stats[clientnum]->EXP = (Uint8)net_packet->data[11];
+		stats[clientnum]->LVL = (Uint8)net_packet->data[12];
 		stats[clientnum]->HP = (Sint16)SDLNet_Read16(&net_packet->data[13]);
 		stats[clientnum]->MAXHP = (Sint16)SDLNet_Read16(&net_packet->data[15]);
 		stats[clientnum]->MP = (Sint16)SDLNet_Read16(&net_packet->data[17]);

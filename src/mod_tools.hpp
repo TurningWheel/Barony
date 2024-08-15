@@ -4186,8 +4186,8 @@ struct Compendium_t
 		static void eventUpdateCodex(int playernum, const EventTags tag, const char* category, Sint32 value, const bool loadingValue = false, const int entryID = -1, const bool floorEvent = false);
 		static std::map<EventTags, std::map<int, EventVal_t>> playerEvents;
 		static std::map<EventTags, std::map<int, EventVal_t>> serverPlayerEvents[MAXPLAYERS];
-		static void onLevelChangeEvent(const int playernum, const int prevlevel, const bool prevsecretfloor, const std::string prevmapname);
-		static void onEndgameEvent(const int playernum, const bool tutorialend, const bool saveHighscore);
+		static void onLevelChangeEvent(const int playernum, const int prevlevel, const bool prevsecretfloor, const std::string prevmapname, const bool died);
+		static void onEndgameEvent(const int playernum, const bool tutorialend, const bool saveHighscore, const bool died);
 		static void sendClientDataOverNet(const int playernum);
 		static void updateEventsInMainLoop(const int playernum);
 		static std::map<int, std::string> clientDataStrings[MAXPLAYERS];

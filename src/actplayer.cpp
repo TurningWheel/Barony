@@ -7577,6 +7577,8 @@ void actPlayer(Entity* my)
 				                net_packet->address.host = net_clients[PLAYER_NUM - 1].host;
 				                net_packet->address.port = net_clients[PLAYER_NUM - 1].port;
 				                sendPacketSafe(net_sock, -1, net_packet, PLAYER_NUM - 1);
+
+								Compendium_t::Events_t::sendClientDataOverNet(PLAYER_NUM);
 				            }
 			            }
 

@@ -9595,7 +9595,8 @@ void doEndgame(bool saveHighscore) {
 		}
 	}
 
-	Compendium_t::Events_t::onEndgameEvent(clientnum, endTutorial, saveHighscore);
+	bool died = stats[clientnum] && stats[clientnum]->HP <= 0;
+	Compendium_t::Events_t::onEndgameEvent(clientnum, endTutorial, saveHighscore, died);
 
 	// figure out the victory crawl texts...
 	int movieCrawlType = -1;
@@ -10135,6 +10136,7 @@ void doEndgame(bool saveHighscore) {
 		players[c]->compendiumProgress.floorEvents.clear();
 		players[c]->compendiumProgress.playerAliveTimeTotal = 0;
 		players[c]->compendiumProgress.playerGameTimeTotal = 0;
+		Compendium_t::Events_t::serverPlayerEvents[c].clear();
 	}
 #ifdef LOCAL_ACHIEVEMENTS
 	LocalAchievements_t::writeToFile();
