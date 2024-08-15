@@ -2102,6 +2102,15 @@ void gameLogic(void)
 					loadingSameLevelAsCurrent = false;
 					darkmap = false;
 
+					bool playerDied[MAXPLAYERS] = { false };
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( stats[i] && stats[i]->HP <= 0 )
+						{
+							playerDied[i] = true;
+						}
+					}
+
                     // load map file
 					loading = true;
 	                createLevelLoadScreen(5);
@@ -2489,7 +2498,7 @@ void gameLogic(void)
 
 					for ( c = 0; c < MAXPLAYERS; c++ )
 					{
-						Compendium_t::Events_t::onLevelChangeEvent(c, Compendium_t::Events_t::previousCurrentLevel, Compendium_t::Events_t::previousSecretlevel, prevmapname);
+						Compendium_t::Events_t::onLevelChangeEvent(c, Compendium_t::Events_t::previousCurrentLevel, Compendium_t::Events_t::previousSecretlevel, prevmapname, playerDied[c]);
 						players[c]->compendiumProgress.playerAliveTimeTotal = 0;
 						players[c]->compendiumProgress.playerGameTimeTotal = 0;
 					}
