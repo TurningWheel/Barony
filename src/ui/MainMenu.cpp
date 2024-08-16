@@ -37633,13 +37633,13 @@ failed:
 				{
 					if ( !isMouseVisible() )
 					{
-						soundMove();
-						playSound(83 + local_rng.rand() % 6, 64);
+						//soundMove();
+						playSound(639, 128);
 					}
 					else
 					{
-						soundMove();
-						playSound(83 + local_rng.rand() % 6, 64);
+						//soundMove();
+						playSound(639, 128);
 					}
 					if ( achDisplay.currentPage - 1 >= 0 )
 					{
@@ -37706,13 +37706,13 @@ failed:
 				{
 					if ( !isMouseVisible() )
 					{
-						soundMove();
-						playSound(83 + local_rng.rand() % 6, 64);
+						//soundMove();
+						playSound(639, 128);
 					}
 					else
 					{
-						soundMove();
-						playSound(83 + local_rng.rand() % 6, 64);
+						//soundMove();
+						playSound(639, 128);
 					}
 					if ( achDisplay.currentPage + 1 < achDisplay.pages.size() )
 					{
@@ -39247,7 +39247,8 @@ failed:
 			tab->setCallback([](Button& button) {
 				if ( !contents_activate_from_filter )
 				{
-					soundActivate();
+					//soundActivate();
+					playSound(649 + local_rng.rand() % 8, 156);
 				}
 				contents_activate_from_filter = false;
 				compendium_current = "monsters";
@@ -39371,7 +39372,8 @@ failed:
 			tab->setCallback([](Button& button) {
 				if ( !contents_activate_from_filter )
 				{
-					soundActivate();
+					//soundActivate();
+					playSound(649 + local_rng.rand() % 8, 156);
 				}
 				contents_activate_from_filter = false;
 				compendium_current = "items";
@@ -39466,7 +39468,8 @@ failed:
 			tab->setCallback([](Button& button) {
 				if ( !contents_activate_from_filter )
 				{
-					soundActivate();
+					//soundActivate();
+					playSound(649 + local_rng.rand() % 8, 156);
 				}
 				contents_activate_from_filter = false;
 				compendium_current = "magic";
@@ -39561,7 +39564,8 @@ failed:
 			tab->setCallback([](Button& button) {
 				if ( !contents_activate_from_filter )
 				{
-					soundActivate();
+					//soundActivate();
+					playSound(649 + local_rng.rand() % 8, 156);
 				}
 				contents_activate_from_filter = false;
 				compendium_current = "world";
@@ -39657,7 +39661,8 @@ failed:
 			tab->setCallback([](Button& button) {
 				if ( !contents_activate_from_filter )
 				{
-					soundActivate();
+					//soundActivate();
+					playSound(649 + local_rng.rand() % 8, 156);
 				}
 				contents_activate_from_filter = false;
 				compendium_current = "codex";
@@ -39802,7 +39807,8 @@ failed:
 			tab->setCallback([](Button& button) {
 				if ( !contents_activate_from_filter )
 				{
-					soundActivate();
+					//soundActivate();
+					playSound(649 + local_rng.rand() % 8, 156);
 				}
 				contents_activate_from_filter = false;
 				compendium_current = "achievements";
@@ -39971,7 +39977,14 @@ failed:
 			});
 			nav_filter_sort->setCallback([](Button& button)
 			{
-				soundCheckmark();
+				if ( button.isPressed() )
+				{
+					playSound(646, 128);
+				}
+				else
+				{
+					playSound(637, 128);
+				}
 				if ( compendium_current == "achievements" )
 				{
 					Compendium_t::AchievementData_t::achievementsNeedResort = true;
@@ -40059,7 +40072,14 @@ failed:
 			});
 			nav_filter_sort2->setCallback([](Button& button)
 			{
-				soundCheckmark();
+				if ( button.isPressed() )
+				{
+					playSound(646, 128);
+				}
+				else
+				{
+					playSound(637, 128);
+				}
 				Compendium_t::compendium_sorting_hide_undiscovered = button.isPressed();
 				if ( auto parent = static_cast<Frame*>(button.getParent()) )
 				{
