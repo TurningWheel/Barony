@@ -3966,6 +3966,7 @@ struct Compendium_t
 			std::vector<std::string> details;
 			std::set<std::string> unlockAchievements;
 			std::set<EventTags> unlockTags;
+			std::string featureImg = "";
 			int id = -1;
 			int lorePoints = 0;
 		};

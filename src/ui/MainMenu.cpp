@@ -32785,6 +32785,66 @@ failed:
 			{
 				if ( auto details = page_right->findField("world_details") )
 				{
+					auto featureImg = page_right->findImage("feature_img");
+					if ( featureImg )
+					{
+						featureImg->disabled = true;
+					}
+					auto featureTxt = page_right->findField("feature txt");
+					if ( featureTxt )
+					{
+						featureTxt->setDisabled(true);
+					}
+
+					Field* tipsTxt = page_right->findField("tips txt");
+					if ( tipsTxt )
+					{
+						SDL_Rect tipsPos = tipsTxt->getSize();
+						if ( featureTxt )
+						{
+							tipsPos.y = featureTxt->getSize().y;
+						}
+						tipsTxt->setSize(tipsPos);
+
+						SDL_Rect pos = details->getSize();
+						pos.y = tipsPos.y + 27;
+						details->setSize(pos);
+					}
+
+					if (entry.featureImg != "")
+					{
+						if ( auto imgGet = Image::get(entry.featureImg.c_str()) )
+						{
+							featureImg->pos.w = imgGet->getWidth();
+							featureImg->pos.h = imgGet->getHeight();
+							featureImg->disabled = false;
+							featureImg->path = entry.featureImg;
+						}
+					}
+					if ( !featureImg->disabled )
+					{
+						if ( featureTxt )
+						{
+							featureTxt->setDisabled(false);
+						}
+						SDL_Rect pos = details->getSize();
+						int offset = featureImg->pos.y + featureImg->pos.h + 16;
+						if ( tipsTxt )
+						{
+							SDL_Rect tipsPos = tipsTxt->getSize();
+							tipsPos.y += offset;
+							tipsTxt->setSize(tipsPos);
+
+							SDL_Rect pos = details->getSize();
+							pos.y = tipsPos.y + 27;
+							details->setSize(pos);
+						}
+					}
+
+					if ( tipsTxt )
+					{
+						tipsTxt->setDisabled(false);
+					}
 					std::string txt = "";
 					for ( auto& str : entry.details )
 					{
@@ -38106,6 +38166,18 @@ failed:
 			charTxt->setVJustify(Field::justify_t::TOP);
 			charTxt->setSize(SDL_Rect{ padx, pady, page_right_inner->getSize().w - padx - 26, 24 });
 			charTxt->setColor(makeColor(198, 190, 179, 255));
+
+			auto featureTxt = page_right_inner->addField("feature txt", 64);
+			featureTxt->setFont(menu_option_font);
+			featureTxt->setText(Language::get(6212));
+			featureTxt->setHJustify(Field::justify_t::LEFT);
+			featureTxt->setVJustify(Field::justify_t::TOP);
+			featureTxt->setSize(charTxt->getSize());
+			featureTxt->setColor(makeColor(198, 190, 179, 255));
+			featureTxt->setDisabled(true);
+			auto featureImg = page_right_inner->addImage(SDL_Rect{ 8, featureTxt->getSize().y + 28, 0, 0 },
+				0xFFFFFFFF, "", "feature_img");
+			featureImg->disabled = true;
 
 			int statx = padx + 4;
 			int staty = pady + 18 + 9;

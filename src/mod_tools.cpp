@@ -11786,6 +11786,10 @@ void Compendium_t::readWorldFromFile()
 		{
 			obj.lorePoints = w["lore_points"].GetInt();
 		}
+		if ( w.HasMember("feature_img") )
+		{
+			obj.featureImg = w["feature_img"].GetString();
+		}
 		obj.linesToHighlight.clear();
 		for ( auto& line : obj.details )
 		{
