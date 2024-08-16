@@ -39248,7 +39248,7 @@ failed:
 				if ( !contents_activate_from_filter )
 				{
 					//soundActivate();
-					playSound(649 + local_rng.rand() % 8, 156);
+					playSound(649 + local_rng.rand() % 8, 128);
 				}
 				contents_activate_from_filter = false;
 				compendium_current = "monsters";
@@ -39373,7 +39373,7 @@ failed:
 				if ( !contents_activate_from_filter )
 				{
 					//soundActivate();
-					playSound(649 + local_rng.rand() % 8, 156);
+					playSound(649 + local_rng.rand() % 8, 128);
 				}
 				contents_activate_from_filter = false;
 				compendium_current = "items";
@@ -39469,7 +39469,7 @@ failed:
 				if ( !contents_activate_from_filter )
 				{
 					//soundActivate();
-					playSound(649 + local_rng.rand() % 8, 156);
+					playSound(649 + local_rng.rand() % 8, 128);
 				}
 				contents_activate_from_filter = false;
 				compendium_current = "magic";
@@ -39565,7 +39565,7 @@ failed:
 				if ( !contents_activate_from_filter )
 				{
 					//soundActivate();
-					playSound(649 + local_rng.rand() % 8, 156);
+					playSound(649 + local_rng.rand() % 8, 128);
 				}
 				contents_activate_from_filter = false;
 				compendium_current = "world";
@@ -39662,7 +39662,7 @@ failed:
 				if ( !contents_activate_from_filter )
 				{
 					//soundActivate();
-					playSound(649 + local_rng.rand() % 8, 156);
+					playSound(649 + local_rng.rand() % 8, 128);
 				}
 				contents_activate_from_filter = false;
 				compendium_current = "codex";
@@ -39808,7 +39808,7 @@ failed:
 				if ( !contents_activate_from_filter )
 				{
 					//soundActivate();
-					playSound(649 + local_rng.rand() % 8, 156);
+					playSound(649 + local_rng.rand() % 8, 128);
 				}
 				contents_activate_from_filter = false;
 				compendium_current = "achievements";

@@ -14306,7 +14306,7 @@ static ConsoleVariable<bool> cvar_compendiumDebugSave("/compendium_debug_save", 
 void Compendium_t::Events_t::eventUpdate(int playernum, const EventTags tag, const ItemType type, 
 	Sint32 value, const bool loadingValue, const int spellID)
 {
-	if ( !allowedCompendiumProgress() ) { return; }
+	if ( !allowedCompendiumProgress() && !loadingValue ) { return; }
 	if ( intro && !loadingValue ) { return; }
 	if ( playernum < 0 || playernum >= MAXPLAYERS ) { return; }
 
@@ -14512,7 +14512,7 @@ void Compendium_t::Events_t::eventUpdate(int playernum, const EventTags tag, con
 void Compendium_t::Events_t::eventUpdateMonster(int playernum, const EventTags tag, const Entity* entity,
 	Sint32 value, const bool loadingValue, const int entryID)
 {
-	if ( !allowedCompendiumProgress() ) { return; }
+	if ( !allowedCompendiumProgress() && !loadingValue ) { return; }
 	if ( intro && !loadingValue ) { return; }
 	if ( playernum < 0 || playernum >= MAXPLAYERS ) { return; }
 
@@ -14677,7 +14677,7 @@ void Compendium_t::Events_t::eventUpdateMonster(int playernum, const EventTags t
 void Compendium_t::Events_t::eventUpdateWorld(int playernum, const EventTags tag, const char* category, Sint32 value, 
 	const bool loadingValue, const int entryID, const bool commitUniqueValue)
 {
-	if ( !allowedCompendiumProgress() ) { return; }
+	if ( !allowedCompendiumProgress() && !loadingValue ) { return; }
 	if ( intro && !loadingValue ) { return; }
 	if ( playernum < 0 || playernum >= MAXPLAYERS ) { return; }
 
@@ -14865,7 +14865,7 @@ void Compendium_t::Events_t::eventUpdateWorld(int playernum, const EventTags tag
 void Compendium_t::Events_t::eventUpdateCodex(int playernum, const EventTags tag, const char* category, 
 	Sint32 value, const bool loadingValue, const int entryID, const bool floorEvent)
 {
-	if ( !allowedCompendiumProgress() ) { return; }
+	if ( !allowedCompendiumProgress() && !loadingValue ) { return; }
 	if ( intro && !loadingValue ) { return; }
 	if ( playernum < 0 || playernum >= MAXPLAYERS ) { return; }
 
