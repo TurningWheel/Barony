@@ -6391,8 +6391,7 @@ your One-Shot score attempt.#
 6168 Quitting now will end this run and
 submit it as your One-Shot score.#
 6169 New Seed Events Available!#
-6170 
-Visit the Seed Events menu
+6170 Visit the Seed Events menu
 to participate.#
 6171 Unlock the Achievement:
 "%s"
@@ -6438,5 +6437,29 @@ Magic Required: %d (%s)#
 6209 PTS#
 6210 TOTAL COMPLETION#
 6211 RESEARCH#
+6212 SHOP SIGNS#
+# breakables
+6213 jar#
+6214 basket#
+6215 casket#
+6216 cage#
+6217 urn#
+6218 sack#
+6219 sarcophagus#
+6220 pot#
+6221 cart#
+6222 pallet#
+6223 crate#
+6224 tent#
+6225 reliquary#
+6226 bulb#
+6227 iron maiden#
+6228 wheelbarrow#
+6229 crystal#
+6230 cabinet#
+6231 capsule#
+6232 barrel#
+6233 stump#
+6234 A %s jumps out from the %s!#
 
 6250 END#
