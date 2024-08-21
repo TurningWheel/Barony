@@ -416,6 +416,9 @@ public:
 	Sint32& colliderCurrentHP; //skill[12]
 	Sint32& colliderOldHP; //skill[13]
 	Sint32& colliderInit; //skill[14]
+	Sint32& colliderContainedEntity; //skill[15]
+	Sint32& colliderHideMonster; //skill[16]
+	Sint32& colliderKillerUid; //skill[17]
 
 	//--PUBLIC SPELL TRAP SKILLS--
 	Sint32& spellTrapType; //skill[0]
@@ -484,6 +487,7 @@ public:
 	Sint32& itemReceivedDetailsFromServer; //skill[25]
 	Sint32& itemAutoSalvageByPlayer; //skill[26]
 	Sint32& itemSplooshed; //skill[27]
+	Sint32& itemContainer; //skill[29]
 	real_t& itemWaterBob; //fskill[2]
 
 	//--PUBLIC ACTMAGIC SKILLS (Standard projectiles)--
@@ -517,6 +521,8 @@ public:
 	Sint32& goldAmount; //skill[0]
 	Sint32& goldAmbience; //skill[1]
 	Sint32& goldSokoban; //skill[2]
+	Sint32& goldBouncing; //skill[3]
+	Sint32& goldInContainer; //skill[4]
 
 	//--PUBLIC SOUND SOURCE SKILLS--
 	Sint32& soundSourceFired; //skill[0]
@@ -1018,10 +1024,13 @@ public:
 	bool isDamageableCollider() const;
 	bool isColliderDamageableByMelee() const;
 	bool isColliderWeakToSkill(const int proficiency) const;
+	bool isColliderResistToSkill(const int proficiency) const;
 	bool isColliderWeakToBoulders() const;
 	bool isColliderShownAsWallOnMinimap() const;
 	bool isColliderDamageableByMagic() const;
 	bool isColliderAttachableToBombs() const;
+	bool isColliderWall() const;
+	void colliderOnDestroy();
 	int getColliderOnHitLangEntry() const;
 	int getColliderOnBreakLangEntry() const;
 	int getColliderSfxOnHit() const;

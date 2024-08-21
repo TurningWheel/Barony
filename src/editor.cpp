@@ -32,6 +32,7 @@
 
 //#include "player.hpp"
 
+std::map<int, std::string> modelFileNames;
 Entity* selectedEntity[MAXPLAYERS] = { nullptr };
 Entity* lastSelectedEntity[MAXPLAYERS] = { nullptr };
 Sint32 mousex = 0, mousey = 0;
@@ -5544,6 +5545,18 @@ int main(int argc, char** argv)
 									{
 										propertyPageError(i, 0); // reset to default 0.
 									}
+									else
+									{
+										if ( modelFileNames.find(propertyInt) != modelFileNames.end() )
+										{
+											std::string tmpStr = modelFileNames[propertyInt];
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr.c_str());
+										}
+										else
+										{
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, makeColorRGB(255, 0, 0), "Unknown Model!");
+										}
+									}
 								}
 								else if ( i == 1 )
 								{
@@ -5972,6 +5985,18 @@ int main(int argc, char** argv)
 									if ( propertyInt > 9999 || propertyInt < 0 )
 									{
 										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										if ( modelFileNames.find(propertyInt) != modelFileNames.end() )
+										{
+											std::string tmpStr = modelFileNames[propertyInt];
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr.c_str());
+										}
+										else
+										{
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, makeColorRGB(255, 0, 0), "Unknown Model!");
+										}
 									}
 								}
 								else if ( i == 1 )
@@ -6936,6 +6961,18 @@ int main(int argc, char** argv)
 									if ( propertyInt > 9999 || propertyInt < 0 )
 									{
 										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										if ( modelFileNames.find(propertyInt) != modelFileNames.end() )
+										{
+											std::string tmpStr = modelFileNames[propertyInt];
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr.c_str());
+										}
+										else
+										{
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, makeColorRGB(255, 0, 0), "Unknown Model!");
+										}
 									}
 								}
 								else if ( i == 1 )
@@ -8008,6 +8045,18 @@ int main(int argc, char** argv)
 									if ( propertyInt > 9999 || propertyInt < 0 )
 									{
 										propertyPageError(i, 0); // reset to default 0.
+									}
+									else if ( i == 0 )
+									{
+										if ( modelFileNames.find(propertyInt) != modelFileNames.end() )
+										{
+											std::string tmpStr = modelFileNames[propertyInt];
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr.c_str());
+										}
+										else
+										{
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, makeColorRGB(255, 0, 0), "Unknown Model!");
+										}
 									}
 								}
 								else if ( i == 1 )

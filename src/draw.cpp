@@ -18,6 +18,7 @@
 #include "ui/Frame.hpp"
 #ifdef EDITOR
 #include "editor.hpp"
+#include "mod_tools.hpp"
 #endif
 #include "items.hpp"
 #include "ui/Image.hpp"
@@ -2324,6 +2325,9 @@ void drawEntities3D(view_t* camera, int mode)
 
 void drawEntities2D(long camx, long camy)
 {
+	// editor only
+#ifndef EDITOR
+#else
 	node_t* node;
 	Entity* entity;
 	SDL_Rect pos, box;
@@ -2448,10 +2452,8 @@ void drawEntities2D(long camx, long camy)
 	// draw hover text for entities over the top of sprites.
 	for ( node = map.entities->first;
 		  node != nullptr
-#ifdef EDITOR
 			&& (openwindow == 0
 			&& savewindow == 0)
-#endif
 		  ;
 		  node = node->next
 		)
@@ -2557,7 +2559,37 @@ void drawEntities2D(long camx, long camy)
 							}
 							ttfPrintText(ttf8, padx, pady + 20, tmpStr);
 							break;
+						case 27: // collider
+						{
+							pady += 5;
+							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity[0]->sprite]);
+							ttfPrintText(ttf8, padx, pady - 10, tmpStr);
+							int model = selectedEntity[0]->colliderDecorationModel;
+							if ( EditorEntityData_t::colliderData.find(selectedEntity[0]->colliderDamageTypes)
+								!= EditorEntityData_t::colliderData.end() )
+							{
+								if ( EditorEntityData_t::colliderData[selectedEntity[0]->colliderDamageTypes].hasOverride("model") )
+								{
+									model = EditorEntityData_t::colliderData[selectedEntity[0]->colliderDamageTypes].getOverride("model");
+								}
+							}
+							snprintf(tmpStr, sizeof(tmpStr), "Model: %s", modelFileNames[model].c_str());
+							ttfPrintTextColor(ttf8, padx, pady, makeColorRGB(0, 255, 0), true, tmpStr);
 
+							if ( EditorEntityData_t::colliderData.find(selectedEntity[0]->colliderDamageTypes)
+								!= EditorEntityData_t::colliderData.end() )
+							{
+
+								auto& colliderData = EditorEntityData_t::colliderData[selectedEntity[0]->colliderDamageTypes];
+								snprintf(tmpStr, sizeof(tmpStr), "Collider Type: %s", colliderData.name.c_str());
+							}
+							else
+							{
+								snprintf(tmpStr, sizeof(tmpStr), "Collider Type: ???");
+							}
+							ttfPrintTextColor(ttf8, padx, pady + 10, makeColorRGB(255, 255, 0), true, tmpStr);
+							break;
+						}
 						case 3: //Items
 							pady += 5;
 							strcpy(tmpStr, itemNameStrings[selectedEntity[0]->skill[10]]);
@@ -2848,6 +2880,39 @@ void drawEntities2D(long camx, long camy)
 							tooltip.w = TTF8_WIDTH * (int)longestLine + 8;
 							tooltip.y = pady + offsety - 4;
 							tooltip.h = (int)lines.size() * TTF8_HEIGHT + 8;
+
+							if ( lines.size() <= 1 )
+							{
+								offsety += 20;
+							}
+
+							if ( spriteType == 13 )
+							{
+								if ( modelFileNames.find(selectedEntity[0]->floorDecorationModel) != modelFileNames.end() )
+								{
+									snprintf(tmpStr, sizeof(tmpStr), "Model: %s", modelFileNames[selectedEntity[0]->floorDecorationModel].c_str());
+									if ( lines.size() > 1 )
+									{
+										ttfPrintTextColor(ttf8, padx + offsetx, tooltip.y - 16, makeColorRGB(0, 255, 0), true, tmpStr);
+									}
+									else
+									{
+										ttfPrintTextColor(ttf8, padx + offsetx, pady + offsety - 10, makeColorRGB(0, 255, 0), true, tmpStr);
+									}
+								}
+								else
+								{
+									if ( lines.size() > 1 )
+									{
+										ttfPrintText(ttf8, padx + offsetx, tooltip.y - 16, "Model: Invalid Index");
+									}
+									else
+									{
+										ttfPrintText(ttf8, padx + offsetx, pady + offsety - 10, "Model: Invalid Index");
+									}
+								}
+							}
+
 							if ( lines.size() > 1 )
 							{
 								drawTooltip(&tooltip);
@@ -2869,9 +2934,7 @@ void drawEntities2D(long camx, long camy)
 				else if ( (omousex / TEXTURESIZE) * 32 == pos.x
 						&& (omousey / TEXTURESIZE) * 32 == pos.y
 						&& selectedEntity[0] == NULL
-#ifdef EDITOR
 						&& hovertext
-#endif
 						)
 				{
 					// handle mouseover sprite name tooltip in main editor screen
@@ -2908,6 +2971,7 @@ void drawEntities2D(long camx, long camy)
 			}
 		}
 	}
+#endif
 }
 
 /*-------------------------------------------------------------------------------
