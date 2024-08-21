@@ -1215,7 +1215,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							nextItemNode = itemNode->next;
 							Entity* itemEntity = (Entity*)itemNode->element;
-							if ( itemEntity && itemEntity->behavior == &actItem && entityDist(itemEntity, caster) < TOUCHRANGE )
+							if ( itemEntity && !itemEntity->flags[INVISIBLE] && itemEntity->behavior == &actItem && entityDist(itemEntity, caster) < TOUCHRANGE )
 							{
 								Item* toSalvage = newItemFromEntity(itemEntity);
 								if ( toSalvage && GenericGUI[i].isItemSalvageable(toSalvage, i) )
