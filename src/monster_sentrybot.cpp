@@ -1072,7 +1072,8 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 			{
 				if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_MONSTERS )
 				{
-					if ( ent->behavior == &actMonster && ent->monsterAllyIndex < 0 )
+					if ( (ent->behavior == &actMonster && ent->monsterAllyIndex < 0)
+						|| (ent->isDamageableCollider() && ent->colliderHideMonster != 0) )
 					{
 						if ( entityDist(my, ent) < TOUCHRANGE * 5 )
 						{

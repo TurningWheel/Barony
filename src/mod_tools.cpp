@@ -8822,6 +8822,7 @@ void GameplayPreferences_t::serverProcessGameConfig()
 EditorEntityData_t editorEntityData;
 std::map<int, EditorEntityData_t::EntityColliderData_t> EditorEntityData_t::colliderData;
 std::map<std::string, EditorEntityData_t::ColliderDmgProperties_t> EditorEntityData_t::colliderDmgTypes;
+std::map<std::string, std::map<int, int>> EditorEntityData_t::colliderRandomGenPool;
 void EditorEntityData_t::readFromFile()
 {
 	const std::string filename = "data/entity_data.json";
@@ -8858,6 +8859,7 @@ void EditorEntityData_t::readFromFile()
 
 	colliderData.clear();
 	colliderDmgTypes.clear();
+	colliderRandomGenPool.clear();
 	auto& entityTypes = d["entities"];
 	if ( entityTypes.HasMember("collider_dmg_calcs") )
 	{
@@ -8907,6 +8909,41 @@ void EditorEntityData_t::readFromFile()
 					}
 				}
 			}
+			if ( itr->value.HasMember("resist_damage_skills") && itr->value["resist_damage_skills"].IsArray() )
+			{
+				for ( auto itr2 = itr->value["resist_damage_skills"].Begin(); itr2 != itr->value["resist_damage_skills"].End(); ++itr2 )
+				{
+					std::string s = itr2->GetString();
+					if ( s == "PRO_AXE" )
+					{
+						colliderDmg.proficiencyResistDamage.insert(PRO_AXE);
+					}
+					else if ( s == "PRO_SWORD" )
+					{
+						colliderDmg.proficiencyResistDamage.insert(PRO_SWORD);
+					}
+					else if ( s == "PRO_MACE" )
+					{
+						colliderDmg.proficiencyResistDamage.insert(PRO_MACE);
+					}
+					else if ( s == "PRO_POLEARM" )
+					{
+						colliderDmg.proficiencyResistDamage.insert(PRO_POLEARM);
+					}
+					else if ( s == "PRO_UNARMED" )
+					{
+						colliderDmg.proficiencyResistDamage.insert(PRO_UNARMED);
+					}
+					else if ( s == "PRO_MAGIC" )
+					{
+						colliderDmg.proficiencyResistDamage.insert(PRO_MAGIC);
+					}
+					else if ( s == "PRO_RANGED" )
+					{
+						colliderDmg.proficiencyResistDamage.insert(PRO_RANGED);
+					}
+				}
+			}
 		}
 	}
 	if ( entityTypes.HasMember("collider_dmg_types") )
@@ -8919,6 +8956,25 @@ void EditorEntityData_t::readFromFile()
 			auto& collider = colliderData[index];
 			collider.name = itr->value["name"].GetString();
 			collider.gib = itr->value["gib_model"].GetInt();
+			collider.gib_hit.clear();
+			if ( itr->value.HasMember("gib_hit_model") )
+			{
+				if ( itr->value["gib_hit_model"].IsInt() )
+				{
+					collider.gib_hit.push_back(itr->value["gib_hit_model"].GetInt());
+				}
+				else if ( itr->value["gib_hit_model"].IsArray() )
+				{
+					for ( auto itr2 = itr->value["gib_hit_model"].Begin();
+						itr2 != itr->value["gib_hit_model"].End(); ++itr2 )
+					{
+						if ( itr2->IsInt() )
+						{
+							collider.gib_hit.push_back(itr2->GetInt());
+						}
+					}
+				}
+			}
 			collider.sfxBreak = itr->value["sfx_break"].GetInt();
 			collider.sfxHit = itr->value["sfx_hit"].GetInt();
 			collider.damageCalculationType = itr->value["damage_calc"].GetString();
@@ -8926,6 +8982,71 @@ void EditorEntityData_t::readFromFile()
 			collider.hitMessageLangEntry = itr->value["hit_message"].GetInt();
 			collider.breakMessageLangEntry = itr->value["break_message"].GetInt();
 			collider.hpbarLookupName = itr->value["hp_bar_lookup_name"].GetString();
+			collider.hideMonsters.clear();
+			if ( itr->value.HasMember("random_gen_pool") )
+			{
+				if ( itr->value["random_gen_pool"].IsObject() )
+				{
+					for ( auto itr2 = itr->value["random_gen_pool"].MemberBegin();
+						itr2 != itr->value["random_gen_pool"].MemberEnd(); ++itr2 )
+					{
+						if ( itr2->name.IsString() )
+						{
+							EditorEntityData_t::colliderRandomGenPool[itr2->name.GetString()][index] =
+								itr2->value.GetInt();
+						}
+					}
+				}
+			}
+			if ( itr->value.HasMember("events") )
+			{
+				for ( auto itr2 = itr->value["events"].MemberBegin();
+					itr2 != itr->value["events"].MemberEnd(); ++itr2 )
+				{
+					std::string mapname = itr2->name.GetString();
+					for ( auto itr3 = itr2->value.MemberBegin();
+						itr3 != itr2->value.MemberEnd(); ++itr3 )
+					{
+						if ( !strcmp(itr3->name.GetString(), "summon") )
+						{
+							auto& data = collider.hideMonsters[mapname];
+							if ( itr3->value.IsArray() )
+							{
+								for ( auto val = itr3->value.Begin(); val != itr3->value.End(); ++val )
+								{
+									if ( val->IsString() )
+									{
+										for ( int i = 0; i < NUMMONSTERS; ++i )
+										{
+											if ( !strcmp(val->GetString(), monstertypename[i]) )
+											{
+												data.push_back(i);
+												break;
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			collider.overrideProperties.clear();
+			if ( itr->value.HasMember("override_editor_props") )
+			{
+				if ( itr->value["override_editor_props"].IsObject() )
+				{
+					for ( auto itr2 = itr->value["override_editor_props"].MemberBegin();
+						itr2 != itr->value["override_editor_props"].MemberEnd(); ++itr2 )
+					{
+						if ( itr2->value.IsInt() )
+						{
+							collider.overrideProperties[itr2->name.GetString()] = itr2->value.GetInt();
+						}
+					}
+				}
+			}
 		}
 	}
 }

@@ -1007,6 +1007,7 @@ void actMinotaurCeilingBuster(Entity* my)
 								if ( multiplayer != CLIENT )
 								{
 									entity->colliderCurrentHP = 0;
+									entity->colliderKillerUid = 0;
 								}
 							}
 							else if ( entity->behavior == &actGate )

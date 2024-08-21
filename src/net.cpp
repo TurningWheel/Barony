@@ -521,6 +521,7 @@ void sendEntityUDP(Entity* entity, int c, bool guarantee)
 	SDLNet_Write16((Sint16)(entity->vel_x * 32), &net_packet->data[40]);
 	SDLNet_Write16((Sint16)(entity->vel_y * 32), &net_packet->data[42]);
 	SDLNet_Write16((Sint16)(entity->vel_z * 32), &net_packet->data[44]);
+	net_packet->data[46] = 0;
 	for ( j = 0; j < 8; j++ )
 	{
 		if ( entity->flags[j + 16] )
@@ -1897,6 +1898,7 @@ void clientActions(Entity* entity)
 			entity->flags[NOUPDATE] = true;
 			break;
 		case 130:
+		case 1379:
 			entity->behavior = &actGoldBag;
 			break;
 		case Player::Ghost_t::GHOST_MODEL_P1:
@@ -2621,6 +2623,43 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			entity->skill[13] = static_cast<Uint8>((statusBeatitudeQuantityAppearance >> 8) & 0xFF); // quantity
 			entity->skill[14] = static_cast<Uint8>((statusBeatitudeQuantityAppearance) & 0xFF); // appearance
 			entity->itemReceivedDetailsFromServer = 1;
+		}
+	}},
+
+	// breakable dropped item
+	{ 'BREK', []() {
+		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		Entity* entity = uidToEntity(uid);
+		if ( entity )
+		{
+			if ( entity->behavior == &actItem )
+			{
+				//entity->flags[UPDATENEEDED] = true;
+				if ( entity->flags[INVISIBLE] )
+				{
+					entity->flags[INVISIBLE] = false;
+					entity->vel_x = (0.25 + .025 * (local_rng.rand() % 11)) * cos(entity->yaw);
+					entity->vel_y = (0.25 + .025 * (local_rng.rand() % 11)) * sin(entity->yaw);
+					entity->vel_z = (-40 - local_rng.rand() % 5) * .01;
+					entity->itemContainer = 0;
+					entity->z = 0.0;
+					entity->itemNotMoving = 0;
+					entity->itemNotMovingClient = 0;
+					entity->flags[USERFLAG1] = false; // enable collision
+				}
+			}
+			else if ( entity->behavior == &actGoldBag )
+			{
+				if ( entity->flags[INVISIBLE] )
+				{
+					entity->vel_x = (0.25 + .025 * (local_rng.rand() % 11)) * cos(entity->yaw);
+					entity->vel_y = (0.25 + .025 * (local_rng.rand() % 11)) * sin(entity->yaw);
+					entity->vel_z = (-40 - local_rng.rand() % 5) * .01;
+					entity->goldBouncing = 0;
+					entity->z = 0.0;
+					entity->flags[INVISIBLE] = false;
+				}
+			}
 		}
 	}},
 
@@ -6842,17 +6881,19 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		{
 			//Drop gold.
 			playSoundEntity(players[player]->entity, 242 + local_rng.rand() % 4, 64);
-			auto entity = newEntity(130, 0, map.entities, nullptr); // 130 = goldbag model
+			auto entity = newEntity(amount < 5 ? 1379 : 130, 0, map.entities, nullptr); // 130 = goldbag model
 			entity->sizex = 4;
 			entity->sizey = 4;
 			entity->x = players[player]->entity->x;
 			entity->y = players[player]->entity->y;
-			entity->z = 6;
+			entity->goldAmount = amount; // amount
+			entity->z = 0;
+			entity->vel_z = (-40 - local_rng.rand() % 5) * .01;
+			entity->goldBouncing = 0;
 			entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 			entity->flags[PASSABLE] = true;
 			entity->flags[UPDATENEEDED] = true;
 			entity->behavior = &actGoldBag;
-			entity->goldAmount = amount; // amount
 		}
 	}},
 

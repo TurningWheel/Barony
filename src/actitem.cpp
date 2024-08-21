@@ -155,7 +155,7 @@ void actItem(Entity* my)
 	{
 		// select appropriate model
 		my->skill[2] = -5;
-		if ( my->itemSokobanReward != 1 )
+		if ( my->itemSokobanReward != 1 && my->itemContainer == 0 )
 		{
 			my->flags[INVISIBLE] = false;
 		}

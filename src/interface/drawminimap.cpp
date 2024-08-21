@@ -186,6 +186,10 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 					}
 				}
 			}
+			else if ( entity->isDamageableCollider() && entity->colliderHideMonster != 0 )
+			{
+				entityPointsOfInterest.push_back(entity);
+			}
 			else if ( entity->isBoulderSprite() )
 			{
 				entityPointsOfInterest.push_back(entity);
@@ -485,7 +489,8 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 					}
 				}
 			}
-			if ( entity->behavior == &actMonster && entity->monsterAllyIndex < 0 )
+			if ( (entity->behavior == &actMonster && entity->monsterAllyIndex < 0)
+				|| (entity->isDamageableCollider() && entity->colliderHideMonster != 0) )
 			{
 				bool warningEffect = false;
 				{
@@ -611,7 +616,8 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 
 								if ( stats[i]->shoes != NULL )
 								{
-									if ( stats[i]->shoes->type == ARTIFACT_BOOTS )
+									if ( stats[i]->shoes->type == ARTIFACT_BOOTS
+										&& entity->behavior == &actMonster )
 									{
 										if ( (abs(entity->vel_x) > 0.1 || abs(entity->vel_y) > 0.1)
 											&& players[i] && players[i]->entity
@@ -633,7 +639,8 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 							const int i = player;
 							if ( stats[i]->shoes != NULL )
 							{
-								if ( stats[i]->shoes->type == ARTIFACT_BOOTS )
+								if ( stats[i]->shoes->type == ARTIFACT_BOOTS 
+									&& entity->behavior == &actMonster )
 								{
 									if ( (abs(entity->vel_x) > 0.1 || abs(entity->vel_y) > 0.1)
 										&& players[i] && players[i]->entity

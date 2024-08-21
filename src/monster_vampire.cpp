@@ -85,22 +85,25 @@ void initVampire(Entity* my, Stat* myStats)
 				myStats->LVL = 18;
 				myStats->GOLD = 50 + rng.rand() % 50;
 				myStats->RANDOM_GOLD = 0;
-				for ( c = 0; c < 4; ++c )
+				if ( !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
 				{
-					if ( rng.rand() % 2 == 0 )
+					for ( c = 0; c < 4; ++c )
 					{
-						Entity* entity = summonMonster(GHOUL, my->x, my->y);
-						if ( entity )
+						if ( rng.rand() % 2 == 0 )
 						{
-							entity->parent = my->getUID();
-							Stat* followerStats = entity->getStats();
-							if ( followerStats )
+							Entity* entity = summonMonster(GHOUL, my->x, my->y);
+							if ( entity )
 							{
-								strcpy(followerStats->name, "enslaved ghoul");
-								followerStats->setAttribute("special_npc", "enslaved ghoul");
-								followerStats->leader_uid = entity->parent;
+								entity->parent = my->getUID();
+								Stat* followerStats = entity->getStats();
+								if ( followerStats )
+								{
+									strcpy(followerStats->name, "enslaved ghoul");
+									followerStats->setAttribute("special_npc", "enslaved ghoul");
+									followerStats->leader_uid = entity->parent;
+								}
+								entity->seedEntityRNG(rng.getU32());
 							}
-							entity->seedEntityRNG(rng.getU32());
 						}
 					}
 				}

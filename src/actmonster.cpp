@@ -3347,24 +3347,19 @@ void actMonster(Entity* my)
 		}
 		if ( myStats->GOLD > 0 && myStats->monsterNoDropItems == 0 )
 		{
-			int x = std::min<int>(std::max(0, (int)(my->x / 16)), map.width - 1);
-			int y = std::min<int>(std::max(0, (int)(my->y / 16)), map.height - 1);
-
-			// check for floor to drop gold...
-			if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
-			{
-				entity = newEntity(130, 0, map.entities, nullptr); // 130 = goldbag model
-				entity->sizex = 4;
-				entity->sizey = 4;
-				entity->x = my->x;
-				entity->y = my->y;
-				entity->z = 6;
-				entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
-				entity->flags[PASSABLE] = true;
-				entity->flags[UPDATENEEDED] = true;
-				entity->behavior = &actGoldBag;
-				entity->skill[0] = myStats->GOLD; // amount
-			}
+			entity = newEntity(myStats->GOLD < 5 ? 1379 : 130, 0, map.entities, nullptr); // 130 = goldbag model
+			entity->sizex = 4;
+			entity->sizey = 4;
+			entity->x = my->x;
+			entity->y = my->y;
+			entity->goldAmount = myStats->GOLD; // amount
+			entity->z = 0;
+			entity->vel_z = (-40 - local_rng.rand() % 5) * .01;
+			entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+			entity->goldBouncing = 0;
+			entity->flags[PASSABLE] = true;
+			entity->flags[UPDATENEEDED] = true;
+			entity->behavior = &actGoldBag;
 		}
 
 		// die
@@ -5467,6 +5462,7 @@ timeToGoAgain:
 									else if ( hit.entity->isDamageableCollider() && myStats->type == MINOTAUR )
 									{
 										hit.entity->colliderCurrentHP = 0;
+										hit.entity->colliderKillerUid = 0;
 										playSoundEntity(hit.entity, 28, 64);
 									}
 									else if ( hit.entity->behavior == &actFurniture )
@@ -5485,6 +5481,29 @@ timeToGoAgain:
 												hit.entity->furnitureHealth = std::max(hit.entity->furnitureHealth, 0);
 											}
 											playSoundEntity(hit.entity, 28, 64);
+										}
+									}
+									else if ( hit.entity->isDamageableCollider() )
+									{
+										// break it down!
+										my->monsterHitTime++;
+										if ( my->monsterHitTime >= HITRATE )
+										{
+											my->monsterAttack = my->getAttackPose(); // random attack motion
+											my->monsterHitTime = HITRATE / 4;
+											my->monsterAttackTime = 0;
+											int damage = 2 + local_rng.rand() % 3;
+											damage += std::max(0, myStats->STR / 8);
+
+											hit.entity->colliderCurrentHP -= damage;
+											hit.entity->colliderKillerUid = 0;
+
+											int sound = 28;
+											if ( hit.entity->getColliderSfxOnHit() > 0 )
+											{
+												sound = hit.entity->getColliderSfxOnHit();
+											}
+											playSoundEntity(hit.entity, sound, 64);
 										}
 									}
 									else if ( hit.entity->behavior == &actBoulder && !hit.entity->flags[PASSABLE] && myStats->type == MINOTAUR )
@@ -6556,6 +6575,29 @@ timeToGoAgain:
 										playSoundEntity(hit.entity, 28, 64);
 									}
 								}
+								else if ( hit.entity->isDamageableCollider() )
+								{
+									// break it down!
+									my->monsterHitTime++;
+									if ( my->monsterHitTime >= HITRATE )
+									{
+										my->monsterAttack = my->getAttackPose(); // random attack motion
+										my->monsterHitTime = HITRATE / 4;
+										my->monsterAttackTime = 0;
+										int damage = 2 + local_rng.rand() % 3;
+										damage += std::max(0, myStats->STR / 8);
+
+										hit.entity->colliderCurrentHP -= damage;
+										hit.entity->colliderKillerUid = 0;
+
+										int sound = 28;
+										if ( hit.entity->getColliderSfxOnHit() > 0 )
+										{
+											sound = hit.entity->getColliderSfxOnHit();
+										}
+										playSoundEntity(hit.entity, sound, 64);
+									}
+								}
 								else if ( hit.entity->behavior == &actChest && myStats->type == MINOTAUR )
 								{
 									hit.entity->skill[3] = 0; // chestHealth
@@ -6598,6 +6640,7 @@ timeToGoAgain:
 								else if ( hit.entity->isDamageableCollider() && myStats->type == MINOTAUR )
 								{
 									hit.entity->colliderCurrentHP = 0;
+									hit.entity->colliderKillerUid = 0;
 								}
 								else if ( hit.entity->behavior == &actBoulder && !hit.entity->flags[PASSABLE] && myStats->type == MINOTAUR )
 								{

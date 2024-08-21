@@ -371,6 +371,10 @@ Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType)
 		vel = 0.25;
 		entity->vel_z = -.4;
 	}
+	if ( parentent->isDamageableCollider() )
+	{
+		entity->z -= 4;
+	}
 	entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 	entity->vel_x = vel * cos(entity->yaw);
 	entity->vel_y = vel * sin(entity->yaw);

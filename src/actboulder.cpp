@@ -621,6 +621,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 		{
 			playSoundEntity(entity, 28, 64);
 			entity->colliderCurrentHP = 0;
+			entity->colliderKillerUid = 0;
 			playSoundEntity(my, 181, 128);
 		}
 	}

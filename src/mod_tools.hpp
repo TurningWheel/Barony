@@ -3326,6 +3326,7 @@ struct EditorEntityData_t
 	struct EntityColliderData_t
 	{
 		int gib = 0;
+		std::vector<int> gib_hit;
 		int sfxBreak = 0;
 		int sfxHit = 0;
 		std::string damageCalculationType = "default";
@@ -3334,6 +3335,29 @@ struct EditorEntityData_t
 		int entityLangEntry = 4335;
 		int hitMessageLangEntry = 2509;
 		int breakMessageLangEntry = 2510;
+		std::map<std::string, std::vector<int>> hideMonsters;
+		std::map<std::string, int> overrideProperties;
+		bool hasOverride(std::string key)
+		{
+			auto find = overrideProperties.find(key);
+			if ( find != overrideProperties.end() )
+			{
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		int getOverride(std::string key)
+		{
+			auto find = overrideProperties.find(key);
+			if ( find != overrideProperties.end() )
+			{
+				return find->second;
+			}
+			return 0;
+		}
 	};
 	struct ColliderDmgProperties_t
 	{
@@ -3345,9 +3369,11 @@ struct EditorEntityData_t
 		bool boulderDestroys = false;
 		bool showAsWallOnMinimap = false;
 		std::unordered_set<int> proficiencyBonusDamage;
+		std::unordered_set<int> proficiencyResistDamage;
 	};
 	static std::map<std::string, ColliderDmgProperties_t> colliderDmgTypes;
 	static std::map<int, EntityColliderData_t> colliderData;
+	static std::map<std::string, std::map<int, int>> colliderRandomGenPool;
 	static void readFromFile();
 };
 extern EditorEntityData_t editorEntityData;

@@ -4460,6 +4460,10 @@ void createParticleRock(Entity* parent, int sprite)
 	for ( int c = 0; c < 5; c++ )
 	{
 		Entity* entity = newEntity(sprite != -1 ? sprite : 78, 1, map.entities, nullptr); //Particle entity.
+		if ( entity->sprite == 1336 )
+		{
+			entity->sprite = 1336 + local_rng.rand() % 3;
+		}
 		entity->sizex = 1;
 		entity->sizey = 1;
 		entity->x = parent->x + (-4 + local_rng.rand() % 9);
@@ -7113,13 +7117,17 @@ bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 			}
 		}
 
+		hit.entity->colliderOnDestroy();
 		if ( parent )
 		{
 			if ( parent->behavior == &actPlayer && hit.entity->isDamageableCollider() )
 			{
 				messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(4337),
 					Language::get(hit.entity->getColliderLangName())); // you destroy the %s!
-				Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_BARRIER_DESTROYED, "breakable barriers", 1);
+				if ( hit.entity->isColliderWall() )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_BARRIER_DESTROYED, "breakable barriers", 1);
+				}
 			}
 		}
 

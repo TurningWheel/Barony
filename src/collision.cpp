@@ -1067,7 +1067,9 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 			{
 				continue;
 			}
-			if ( entity->behavior == &actFurniture && ignoreFurniture )
+			if ( ignoreFurniture && 
+				(entity->behavior == &actFurniture 
+				|| entity->isDamageableCollider()) )
 			{
 				continue; // see through furniture cause we'll bust it down
 			}
@@ -1691,7 +1693,7 @@ real_t lineTraceTarget( Entity* my, real_t x1, real_t y1, real_t angle, real_t r
 
 -------------------------------------------------------------------------------*/
 
-int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntityList)
+int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntityList, bool checkWalls)
 {
 	node_t* node;
 	Entity* entity;
@@ -1721,7 +1723,7 @@ int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntity
 		if ( y >= 0 && y < map.height << 4 )
 		{
 			int index = (y >> 4) * MAPLAYERS + (x >> 4) * MAPLAYERS * map.height;
-			if (map.tiles[OBSTACLELAYER + index])   // wall
+			if (checkWalls && map.tiles[OBSTACLELAYER + index])   // wall
 			{
 				return 1;
 			}

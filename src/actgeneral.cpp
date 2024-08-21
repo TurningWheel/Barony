@@ -604,12 +604,20 @@ bool Entity::isColliderWeakToBoulders() const
 	return colliderDmgType.boulderDestroys;
 }
 
-bool Entity::isColliderWeakToSkill(int proficiency) const
+bool Entity::isColliderWeakToSkill(const int proficiency) const
 {
 	if ( !isDamageableCollider() ) { return false; }
 	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
 	auto& colliderDmgType = EditorEntityData_t::colliderDmgTypes[colliderData.damageCalculationType];
 	return colliderDmgType.proficiencyBonusDamage.find(proficiency) != colliderDmgType.proficiencyBonusDamage.end();
+}
+
+bool Entity::isColliderResistToSkill(const int proficiency) const
+{
+	if ( !isDamageableCollider() ) { return false; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	auto& colliderDmgType = EditorEntityData_t::colliderDmgTypes[colliderData.damageCalculationType];
+	return colliderDmgType.proficiencyResistDamage.find(proficiency) != colliderDmgType.proficiencyResistDamage.end();
 }
 
 bool Entity::isColliderDamageableByMelee() const
@@ -639,6 +647,164 @@ bool Entity::isColliderAttachableToBombs() const
 bool Entity::isDamageableCollider() const 
 { 
 	return behavior == &actColliderDecoration && colliderMaxHP > 0;
+}
+
+bool Entity::isColliderWall() const
+{
+	if ( !isDamageableCollider() ) { return false; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	if ( colliderData.hpbarLookupName.find("_wall") != std::string::npos )
+	{
+		return true;
+	}
+	return false;
+}
+
+void Entity::colliderOnDestroy()
+{
+	if ( multiplayer == CLIENT ) { return; }
+	flags[PASSABLE] = true;
+	if ( colliderHideMonster != 0 )
+	{
+		int type = colliderHideMonster % 1000;
+		auto monster = summonMonster((Monster)type, ((int)(x / 16)) * 16 + 8, ((int)(y / 16)) * 16 + 8);
+		if ( monster )
+		{
+			monster->yaw = yaw;
+			monster->lookAtEntity(*monster);
+			monster->monsterLookDir = yaw;
+			if ( Stat* stats = monster->getStats() )
+			{
+				stats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1;
+				if ( stats->type == GHOUL && currentlevel >= 15 )
+				{
+					strcpy(stats->name, "enslaved ghoul");
+					stats->setAttribute("special_npc", "enslaved ghoul");
+				}
+				if ( stats->type == AUTOMATON )
+				{
+					monster->monsterStoreType = 1; // damaged
+				}
+				if ( colliderKillerUid != 0 )
+				{
+					if ( Entity* killer = uidToEntity(colliderKillerUid) )
+					{
+						if ( killer->behavior == &actPlayer )
+						{
+							messagePlayer(killer->skill[2], MESSAGE_INTERACTION, Language::get(6234),
+								getMonsterLocalizedName(stats->type).c_str(), Language::get(getColliderLangName()));
+						}
+					}
+				}
+			}
+			//monster->attack(monster->getAttackPose(), 0, nullptr);
+		}
+	}
+	if ( colliderContainedEntity != 0 )
+	{
+		if ( auto entity = uidToEntity(colliderContainedEntity) )
+		{
+			if ( entity->behavior == &actItem || entity->behavior == &actGoldBag )
+			{
+				if ( entity->flags[INVISIBLE] )
+				{
+					if ( entity->behavior == &actGoldBag )
+					{
+						entity->vel_x = (0.25 + .025 * (local_rng.rand() % 11)) * cos(entity->yaw);
+						entity->vel_y = (0.25 + .025 * (local_rng.rand() % 11)) * sin(entity->yaw);
+						entity->vel_z = (-40 - local_rng.rand() % 5) * .01;
+						entity->goldBouncing = 0;
+						entity->z = 0.0;
+						entity->flags[INVISIBLE] = false;
+
+						if ( multiplayer == SERVER )
+						{
+							for ( int i = 1; i < MAXPLAYERS; ++i )
+							{
+								if ( !client_disconnected[i] )
+								{
+									strcpy((char*)net_packet->data, "BREK");
+									SDLNet_Write32(static_cast<Uint32>(entity->getUID()), &net_packet->data[4]);
+									net_packet->address.host = net_clients[i - 1].host;
+									net_packet->address.port = net_clients[i - 1].port;
+									net_packet->len = 8;
+									sendPacketSafe(net_sock, -1, net_packet, i - 1);
+								}
+							}
+						}
+
+						// find other matching gold piles
+						auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(entity, 2);
+						for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+						{
+							list_t* currentList = *it;
+							node_t* node;
+							for ( node = currentList->first; node != nullptr; node = node->next )
+							{
+								Entity* ent = (Entity*)node->element;
+								if ( ent && ent->behavior == &actGoldBag && ent != entity && ent->goldInContainer != 0
+									&& ent->goldInContainer == entity->goldInContainer )
+								{
+									ent->vel_x = (0.25 + .025 * (local_rng.rand() % 11)) * cos(ent->yaw);
+									ent->vel_y = (0.25 + .025 * (local_rng.rand() % 11)) * sin(ent->yaw);
+									ent->vel_z = (-40 - local_rng.rand() % 5) * .01;
+									ent->goldBouncing = 0;
+									ent->goldInContainer = 0;
+									ent->z = 0.0;
+									ent->flags[INVISIBLE] = false;
+
+									if ( multiplayer == SERVER )
+									{
+										for ( int i = 1; i < MAXPLAYERS; ++i )
+										{
+											if ( !client_disconnected[i] )
+											{
+												strcpy((char*)net_packet->data, "BREK");
+												SDLNet_Write32(static_cast<Uint32>(ent->getUID()), &net_packet->data[4]);
+												net_packet->address.host = net_clients[i - 1].host;
+												net_packet->address.port = net_clients[i - 1].port;
+												net_packet->len = 8;
+												sendPacketSafe(net_sock, -1, net_packet, i - 1);
+											}
+										}
+									}
+								}
+							}
+						}
+						entity->goldInContainer = 0;
+					}
+					else if ( entity->behavior == &actItem )
+					{
+						//entity->flags[UPDATENEEDED] = true;
+						entity->vel_x = (0.25 + .025 * (local_rng.rand() % 11)) * cos(entity->yaw);
+						entity->vel_y = (0.25 + .025 * (local_rng.rand() % 11)) * sin(entity->yaw);
+						entity->vel_z = (-40 - local_rng.rand() % 5) * .01;
+						entity->itemContainer = 0;
+						entity->z = 0.0;
+						entity->itemNotMoving = 0;
+						entity->itemNotMovingClient = 0;
+						entity->flags[USERFLAG1] = false; // enable collision
+
+						if ( multiplayer == SERVER )
+						{
+							for ( int i = 1; i < MAXPLAYERS; ++i )
+							{
+								if ( !client_disconnected[i] )
+								{
+									strcpy((char*)net_packet->data, "BREK");
+									SDLNet_Write32(static_cast<Uint32>(entity->getUID()), &net_packet->data[4]);
+									net_packet->address.host = net_clients[i - 1].host;
+									net_packet->address.port = net_clients[i - 1].port;
+									net_packet->len = 8;
+									sendPacketSafe(net_sock, -1, net_packet, i - 1);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 int Entity::getColliderLangName() const
@@ -739,6 +905,8 @@ void actColliderDecoration(Entity* my)
 		}
 	}
 
+
+
 	if ( my->isDamageableCollider() )
 	{
 		if ( my->ticks == 1 )
@@ -746,56 +914,145 @@ void actColliderDecoration(Entity* my)
 			my->createWorldUITooltip();
 		}
 
-		auto& colliderData = EditorEntityData_t::colliderData[my->colliderDamageTypes];
-		if ( my->flags[BURNING] && my->flags[BURNABLE] )
+		if ( multiplayer != CLIENT )
 		{
-			if ( ticks % 30 == 0 )
+			auto& colliderData = EditorEntityData_t::colliderData[my->colliderDamageTypes];
+			if ( my->flags[BURNING] && my->flags[BURNABLE] )
 			{
-				my->colliderCurrentHP--;
-			}
-		}
-
-		my->colliderOldHP = my->colliderCurrentHP;
-
-		if ( my->colliderCurrentHP <= 0 )
-		{
-			int sprite = colliderData.gib;
-			if ( sprite > 0 )
-			{
-				createParticleRock(my, sprite);
-				if ( multiplayer == SERVER )
+				if ( ticks % 30 == 0 )
 				{
-					serverSpawnMiscParticles(my, PARTICLE_EFFECT_ABILITY_ROCK, sprite);
+					my->colliderCurrentHP--;
+					if ( my->colliderCurrentHP <= 0 )
+					{
+						my->colliderKillerUid = 0;
+					}
 				}
 			}
-			if ( colliderData.sfxBreak > 0 )
+
+			my->colliderOldHP = my->colliderCurrentHP;
+
+			if ( my->colliderCurrentHP > 0 )
 			{
-				playSoundEntity(my, colliderData.sfxBreak, 128);
+				if ( my->colliderHideMonster >= 1000 ) // summon a monster when player is near
+				{
+					Entity* found = nullptr;
+					if ( ticks % TICKS_PER_SECOND == 0 )
+					{
+						auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+						for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !found; ++it )
+						{
+							list_t* currentList = *it;
+							node_t* node;
+							for ( node = currentList->first; node != nullptr; node = node->next )
+							{
+								Entity* entity = (Entity*)node->element;
+								if ( entity && (entity->behavior == &actPlayer || (entity->behavior == &actMonster && entity->monsterAllyGetPlayerLeader())) )
+								{
+									real_t tangent = atan2(entity->y - my->y, entity->x - my->x);
+									lineTraceTarget(my, my->x, my->y, tangent, 32.0, 0, false, entity);
+									if ( hit.entity == entity )
+									{
+										found = entity;
+										break;
+									}
+								}
+							}
+						}
+					}
+
+					if ( found )
+					{
+						int type = my->colliderHideMonster % 1000;
+						my->colliderHideMonster = 0;
+						bool bOldFlag = my->flags[PASSABLE];
+						my->flags[PASSABLE] = true;
+						auto monster = summonMonster((Monster)type, ((int)(my->x / 16)) * 16 + 8, ((int)(my->y / 16)) * 16 + 8);
+						if ( monster )
+						{
+							monster->yaw = my->yaw;
+							monster->lookAtEntity(*found);
+							if ( monster->checkEnemy(found) )
+							{
+								monster->monsterAcquireAttackTarget(*found, MONSTER_STATE_PATH);
+							}
+							my->colliderCurrentHP = 0;
+							my->colliderKillerUid = 0;
+
+							if ( Stat* stats = monster->getStats() )
+							{
+								stats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1;
+								if ( stats->type == GHOUL && currentlevel >= 15 )
+								{
+									strcpy(stats->name, "enslaved ghoul");
+									stats->setAttribute("special_npc", "enslaved ghoul");
+								}
+								if ( stats->type == AUTOMATON )
+								{
+									monster->monsterStoreType = 1; // damaged
+								}
+								if ( found->behavior == &actPlayer )
+								{
+									messagePlayer(found->skill[2], MESSAGE_INTERACTION, Language::get(6234),
+										getMonsterLocalizedName(stats->type).c_str(), Language::get(my->getColliderLangName()));
+								}
+							}
+						}
+						my->flags[PASSABLE] = bOldFlag;
+					}
+				}
 			}
-			list_RemoveNode(my->mynode);
-			return;
+			if ( my->colliderCurrentHP <= 0 )
+			{
+				int sprite = colliderData.gib;
+				if ( sprite > 0 )
+				{
+					createParticleRock(my, sprite);
+					if ( multiplayer == SERVER )
+					{
+						serverSpawnMiscParticles(my, PARTICLE_EFFECT_ABILITY_ROCK, sprite);
+					}
+				}
+				if ( colliderData.sfxBreak > 0 )
+				{
+					playSoundEntity(my, colliderData.sfxBreak, 128);
+				}
+				my->colliderOnDestroy();
+				list_RemoveNode(my->mynode);
+				return;
+			}
 		}
 	}
 }
 
 void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster)
 {
+	auto oldHP = colliderCurrentHP;
 	colliderCurrentHP -= damage; //Decrease object health.
 	if ( caster )
 	{
+		if ( colliderCurrentHP <= 0 )
+		{
+			colliderKillerUid = caster->getUID();
+		}
 		if ( caster->behavior == &actPlayer )
 		{
 			if ( colliderCurrentHP <= 0 )
 			{
-				if ( magicProjectile.behavior == &actBomb )
+				if ( oldHP > 0 )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3617), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(getColliderLangName()));
+					if ( magicProjectile.behavior == &actBomb )
+					{
+						messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3617), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(getColliderLangName()));
+					}
+					else
+					{
+						messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(getColliderLangName()));
+					}
+					if ( isColliderWall() )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(caster->skill[2], Compendium_t::CPDM_BARRIER_DESTROYED, "breakable barriers", 1);
+					}
 				}
-				else
-				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(getColliderLangName()));
-				}
-				Compendium_t::Events_t::eventUpdateWorld(caster->skill[2], Compendium_t::CPDM_BARRIER_DESTROYED, "breakable barriers", 1);
 			}
 			else
 			{

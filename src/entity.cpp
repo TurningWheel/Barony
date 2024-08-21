@@ -160,6 +160,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	itemReceivedDetailsFromServer(skill[25]),
 	itemAutoSalvageByPlayer(skill[26]),
 	itemSplooshed(skill[27]),
+	itemContainer(skill[29]),
 	itemWaterBob(fskill[2]),
 	gateInit(skill[1]),
 	gateStatus(skill[3]),
@@ -289,6 +290,9 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	colliderCurrentHP(skill[12]),
 	colliderOldHP(skill[13]),
 	colliderInit(skill[14]),
+	colliderContainedEntity(skill[15]),
+	colliderHideMonster(skill[16]),
+	colliderKillerUid(skill[17]),
 	furnitureType(skill[0]),
 	furnitureInit(skill[1]),
 	furnitureDir(skill[3]),
@@ -338,6 +342,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	goldAmount(skill[0]),
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),
+	goldBouncing(skill[3]),
+	goldInContainer(skill[4]),
 	interactedByMonster(skill[47]),
 	highlightForUI(fskill[29]),
 	highlightForUIGlow(fskill[28]),
@@ -8071,13 +8077,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 					weaponskill = getWeaponSkill(myStats->weapon);
 					if ( hit.entity->behavior == &actColliderDecoration )
 					{
+						if ( weaponskill >= 0 && hit.entity->isColliderResistToSkill(weaponskill) )
+						{
+							damage = 1;
+						}
+						else
+						{
+							damage = 2 + local_rng.rand() % 3;
+						}
 						if ( weaponskill >= 0 && hit.entity->isColliderWeakToSkill(weaponskill) )
 						{
-							axe = (myStats->getModifiedProficiency(weaponskill) / 20);
-							if ( myStats->getModifiedProficiency(weaponskill) >= SKILL_LEVEL_LEGENDARY )
-							{
-								axe = 9;
-							}
+							axe = 2 * (myStats->getModifiedProficiency(weaponskill) / 20);
+							axe = std::min(axe, 9);
 						}
 					}
 					else if ( weaponskill == PRO_AXE )
@@ -8087,6 +8098,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							axe = 9;
 						}
+						axe = std::min(axe, 9);
 					}
 				}
 				else
@@ -8094,13 +8106,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 					weaponskill = PRO_UNARMED;
 					if ( hit.entity->behavior == &actColliderDecoration )
 					{
+						if ( hit.entity->isColliderResistToSkill(weaponskill) )
+						{
+							damage = 1;
+						}
+						else
+						{
+							damage = 2 + local_rng.rand() % 3;
+						}
 						if ( hit.entity->isColliderWeakToSkill(weaponskill) )
 						{
-							axe = (myStats->getModifiedProficiency(weaponskill) / 20);
-							if ( myStats->getModifiedProficiency(weaponskill) >= SKILL_LEVEL_LEGENDARY )
-							{
-								axe = 9;
-							}
+							axe = 2 * (myStats->getModifiedProficiency(weaponskill) / 20);
+							axe = std::min(axe, 9);
 						}
 					}
 					else if ( hit.entity->behavior != &::actChest && !mimic )
@@ -8110,6 +8127,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							axe = 9;
 						}
+						axe = std::min(axe, 9);
 					}
 				}
 				if ( pose == PLAYER_POSE_GOLEM_SMASH )
@@ -8242,9 +8260,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else if ( hit.entity->isDamageableCollider() )
 					{
+						hit.entity->colliderKillerUid = getUID();
 						messagePlayer(player, MESSAGE_COMBAT, Language::get(hit.entity->getColliderOnBreakLangEntry()),
 							Language::get(hit.entity->getColliderLangName()));
-						Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_BARRIER_DESTROYED, "breakable barriers", 1);
+						if ( hit.entity->isColliderWall() )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_BARRIER_DESTROYED, "breakable barriers", 1);
+						}
 					}
 					else if ( hit.entity->behavior == &::actFurniture )
 					{
@@ -8346,11 +8368,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					hit.entity->skill[0]--; //Deplete one usage.
 
-											//50% chance spawn a slime.
+					//50% chance spawn a slime.
 					if ( local_rng.rand() % 2 == 0 )
 					{
 						// spawn slime
-						Entity* monster = summonMonster(SLIME, x, y);
+						int ox = hit.entity->x / 16;
+						int oy = hit.entity->y / 16;
+						Entity* monster = summonMonster(SLIME, ox * 16 + 8, oy * 16 + 8);
 						if ( monster )
 						{
 							auto& rng = hit.entity->entity_rng ? *hit.entity->entity_rng : local_rng;
@@ -8359,6 +8383,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							messagePlayer(player, MESSAGE_HINT, Language::get(582));
 							Stat* monsterStats = monster->getStats();
 							monsterStats->LVL = 4;
+							if ( behavior == &actPlayer )
+							{
+								Compendium_t::Events_t::eventUpdateWorld(skill[2], Compendium_t::CPDM_SINKS_SLIMES, "sink", 1);
+							}
 						}
 					}
 
@@ -12243,27 +12271,38 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		&& (src->monsterAllySummonRank != 0
 			|| src->monsterIsTinkeringCreation()) )
 	{
-		if ( root && behavior == &actPlayer )
+		if ( root )
 		{
-			if ( multiplayer == SINGLE )
+			if ( src->monsterIsTinkeringCreation() )
 			{
-				if ( splitscreen )
+				int compendiumPlayer = behavior == &actPlayer ? skill[2] : -1;
+				if ( behavior == &actMonster )
 				{
-					Compendium_t::Events_t::eventUpdateMonster(skill[2], Compendium_t::CPDM_KILLED_MULTIPLAYER, src, 1);
+					if ( auto leader = monsterAllyGetPlayerLeader() )
+					{
+						compendiumPlayer = leader->skill[2];
+					}
+				}
+				if ( multiplayer == SINGLE )
+				{
+					if ( splitscreen )
+					{
+						Compendium_t::Events_t::eventUpdateMonster(compendiumPlayer, Compendium_t::CPDM_KILLED_MULTIPLAYER, src, 1);
+					}
+					else
+					{
+						Compendium_t::Events_t::eventUpdateMonster(compendiumPlayer, Compendium_t::CPDM_KILLED_SOLO, src, 1);
+					}
 				}
 				else
 				{
-					Compendium_t::Events_t::eventUpdateMonster(skill[2], Compendium_t::CPDM_KILLED_SOLO, src, 1);
-				}
-			}
-			else
-			{
-				Compendium_t::Events_t::eventUpdateMonster(skill[2], Compendium_t::CPDM_KILLED_MULTIPLAYER, src, 1);
-				for ( int i = 0; i < MAXPLAYERS; ++i )
-				{
-					if ( !client_disconnected[i] )
+					Compendium_t::Events_t::eventUpdateMonster(compendiumPlayer, Compendium_t::CPDM_KILLED_MULTIPLAYER, src, 1);
+					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
-						Compendium_t::Events_t::eventUpdateMonster(i, Compendium_t::CPDM_KILLED_PARTY, src, 1);
+						if ( !client_disconnected[i] )
+						{
+							Compendium_t::Events_t::eventUpdateMonster(i, Compendium_t::CPDM_KILLED_PARTY, src, 1);
+						}
 					}
 				}
 			}
@@ -12809,7 +12848,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			}
 			leader->awardXP(src, true, false);
 
-			if ( leader->behavior == &actPlayer )
+			if ( leader->behavior == &actPlayer && root )
 			{
 				if ( destStats->monsterIsCharmed == 1 )
 				{
@@ -12833,7 +12872,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 					}
 					else
 					{
-						Compendium_t::Events_t::eventUpdateMonster(0, Compendium_t::CPDM_KILLED_SOLO, src, 1);
+						Compendium_t::Events_t::eventUpdateMonster(leader->skill[2], Compendium_t::CPDM_KILLED_SOLO, src, 1);
 					}
 				}
 				else

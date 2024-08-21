@@ -39018,6 +39018,9 @@ failed:
 			txt->setOntop(true);
 			txt->setTickCallback([](Widget& widget) {
 				Field* txt = static_cast<Field*>(&widget);
+				SDL_Rect pos = txt->getSize();
+				pos.x = 958;
+				txt->setSize(pos);
 				if ( auto parent = static_cast<Frame*>(txt->getParent()) )
 				{
 					if ( auto lore_points_balance = parent->findFrame("lore_points_balance") )

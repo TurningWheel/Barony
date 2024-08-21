@@ -2239,17 +2239,19 @@ namespace ConsoleCommands {
 			else
 			{
 				playSoundEntity(players[player]->entity, 242 + local_rng.rand() % 4, 64);
-				auto entity = newEntity(130, 0, map.entities, nullptr); // 130 = goldbag model
+				auto entity = newEntity(amount < 5 ? 1379 : 130, 0, map.entities, nullptr); // 130 = goldbag model
+				entity->goldAmount = amount; // amount
 				entity->sizex = 4;
 				entity->sizey = 4;
 				entity->x = players[player]->entity->x;
 				entity->y = players[player]->entity->y;
-				entity->z = 6;
+				entity->z = 0;
+				entity->vel_z = (-40 - local_rng.rand() % 5) * .01;
+				entity->goldBouncing = 0;
 				entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 				entity->flags[PASSABLE] = true;
 				entity->flags[UPDATENEEDED] = true;
 				entity->behavior = &actGoldBag;
-				entity->goldAmount = amount; // amount
 			}
 			messagePlayer(player, MESSAGE_INVENTORY, Language::get(2594), amount);
 		}
