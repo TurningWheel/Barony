@@ -26295,7 +26295,7 @@ failed:
 	void disconnectedFromServer(const char* text) {
 	    // when a player is disconnected from the server
 	    if (multiplayer != SINGLE) {
-			if ( saveGameExists(multiplayer == SINGLE) ) {
+			if ( saveGameExists(multiplayer == SINGLE) && gameModeManager.allowsSaves() ) {
 				doEndgame(false, true);
 			}
 			else 
