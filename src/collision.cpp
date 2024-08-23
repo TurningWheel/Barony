@@ -23,6 +23,7 @@
 #include "collision.hpp"
 #include "prng.hpp"
 #include "player.hpp"
+#include "mod_tools.hpp"
 #ifdef __ARM_NEON__
 #include <arm_neon.h>
 #endif
@@ -460,7 +461,8 @@ bool entityInsideSomething(Entity* entity)
 			}
 			if ( entity->behavior == &actDeathGhost )
 			{
-				if ( testEntity->behavior == &actMonster || testEntity->behavior == &actPlayer )
+				if ( testEntity->behavior == &actMonster || testEntity->behavior == &actPlayer 
+					|| (testEntity->isDamageableCollider() && (testEntity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_NPC)) )
 				{
 					continue;
 				}
@@ -654,8 +656,13 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				continue;
 			}
-			if ( entity->isDamageableCollider() && entity->colliderHasCollision == 2
+			if ( entity->isDamageableCollider() && (entity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_MINO)
 				&& my->behavior == &actMonster && my->getMonsterTypeFromSprite() == MINOTAUR )
+			{
+				continue;
+			}
+			if ( entity->isDamageableCollider() && (entity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_NPC)
+				&& ((my->behavior == &actMonster && my->getMonsterTypeFromSprite() == GYROBOT) || my->behavior == &actDeathGhost) )
 			{
 				continue;
 			}
@@ -1793,7 +1800,12 @@ int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntity
 							continue;
 						}
 						if ( isMonster && my->getMonsterTypeFromSprite() == MINOTAUR && entity->isDamageableCollider()
-							&& entity->colliderHasCollision == 2 )
+							&& (entity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_MINO) )
+						{
+							continue;
+						}
+						else if ( isMonster && my->getMonsterTypeFromSprite() == GYROBOT && entity->isDamageableCollider()
+							&& (entity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_NPC) )
 						{
 							continue;
 						}

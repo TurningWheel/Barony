@@ -3327,7 +3327,7 @@ struct EditorEntityData_t
 	{
 		int gib = 0;
 		std::vector<int> gib_hit;
-		int sfxBreak = 0;
+		std::vector<int> sfxBreak;
 		int sfxHit = 0;
 		std::string damageCalculationType = "default";
 		std::string name = "";
@@ -3368,9 +3368,12 @@ struct EditorEntityData_t
 		bool bombsAttach = false;
 		bool boulderDestroys = false;
 		bool showAsWallOnMinimap = false;
+		bool allowNPCPathing = false;
 		std::unordered_set<int> proficiencyBonusDamage;
 		std::unordered_set<int> proficiencyResistDamage;
 	};
+	static const int COLLIDER_COLLISION_FLAG_MINO = 2;
+	static const int COLLIDER_COLLISION_FLAG_NPC = 4;
 	static std::map<std::string, ColliderDmgProperties_t> colliderDmgTypes;
 	static std::map<int, EntityColliderData_t> colliderData;
 	static std::map<std::string, std::map<int, int>> colliderRandomGenPool;

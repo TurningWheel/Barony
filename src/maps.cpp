@@ -4318,43 +4318,27 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				}
 				else if ( map_rng.rand() % 2 == 1 )   // 50% chance
 				{
-					int totalGold = 12 + map_rng.rand() % 9; // 12 - 20 gold
-
+					std::vector<Entity*> genGold;
+					int numGold = 3 + map_rng.rand() % 3;
+					while ( numGold > 0 )
 					{
+						--numGold;
 						Entity* entity = newEntity(9, 1, map.entities, nullptr);  // gold
+						genGold.push_back(entity);
 						entity->x = breakable->x;
 						entity->y = breakable->y;
-						int amount = (totalGold / 4) + map_rng.rand() % std::max(1, totalGold / 4);
-						totalGold -= amount;
-						entity->goldAmount = amount;
+						entity->goldAmount = 2 + map_rng.rand() % 3;
 						entity->flags[INVISIBLE] = true;
 						entity->yaw = breakable->yaw;
 						entity->goldInContainer = breakable->getUID();
 						breakable->colliderContainedEntity = entity->getUID();
 						numGenGold++;
 					}
+					int index = -1;
+					for ( auto gold : genGold )
 					{
-						Entity* entity = newEntity(9, 1, map.entities, nullptr);  // gold
-						entity->x = breakable->x;
-						entity->y = breakable->y;
-						int amount = (totalGold / 4) + map_rng.rand() % std::max(1, totalGold / 4);
-						totalGold -= amount;
-						entity->goldAmount = amount;
-						totalGold -= entity->goldAmount;
-						entity->flags[INVISIBLE] = true;
-						entity->yaw = breakable->yaw + PI / 3;
-						entity->goldInContainer = breakable->getUID();
-						numGenGold++;
-					}
-					{
-						Entity* entity = newEntity(9, 1, map.entities, nullptr);  // gold
-						entity->x = breakable->x;
-						entity->y = breakable->y;
-						entity->goldAmount = std::max(1, totalGold);
-						entity->flags[INVISIBLE] = true;
-						entity->yaw = breakable->yaw + 2 * PI / 3;
-						entity->goldInContainer = breakable->getUID();
-						numGenGold++;
+						++index;
+						gold->yaw += (index * PI) / genGold.size();
 					}
 				}
 				else

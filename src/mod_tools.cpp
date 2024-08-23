@@ -8874,6 +8874,10 @@ void EditorEntityData_t::readFromFile()
 			colliderDmg.bombsAttach = itr->value["bombs_attach"].GetBool();
 			colliderDmg.boulderDestroys = itr->value["boulder_destroy"].GetBool();
 			colliderDmg.showAsWallOnMinimap = itr->value["minimap_appear_as_wall"].GetBool();
+			if ( itr->value.HasMember("allow_npc_pathing") )
+			{
+				colliderDmg.allowNPCPathing = itr->value["allow_npc_pathing"].GetBool();
+			}
 			if ( itr->value.HasMember("bonus_damage_skills") && itr->value["bonus_damage_skills"].IsArray() )
 			{
 				for ( auto itr2 = itr->value["bonus_damage_skills"].Begin(); itr2 != itr->value["bonus_damage_skills"].End(); ++itr2 )
@@ -8975,7 +8979,21 @@ void EditorEntityData_t::readFromFile()
 					}
 				}
 			}
-			collider.sfxBreak = itr->value["sfx_break"].GetInt();
+			if ( itr->value["sfx_break"].IsInt() )
+			{
+				collider.sfxBreak.push_back(itr->value["sfx_break"].GetInt());
+			}
+			else if ( itr->value["sfx_break"].IsArray() )
+			{
+				for ( auto itr2 = itr->value["sfx_break"].Begin();
+					itr2 != itr->value["sfx_break"].End(); ++itr2 )
+				{
+					if ( itr2->IsInt() )
+					{
+						collider.sfxBreak.push_back(itr2->GetInt());
+					}
+				}
+			}
 			collider.sfxHit = itr->value["sfx_hit"].GetInt();
 			collider.damageCalculationType = itr->value["damage_calc"].GetString();
 			collider.entityLangEntry = itr->value["entity_lang_entry"].GetInt();

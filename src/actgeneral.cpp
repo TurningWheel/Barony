@@ -712,9 +712,9 @@ void Entity::colliderOnDestroy()
 					{
 						entity->vel_x = (0.25 + .025 * (local_rng.rand() % 11)) * cos(entity->yaw);
 						entity->vel_y = (0.25 + .025 * (local_rng.rand() % 11)) * sin(entity->yaw);
-						entity->vel_z = (-40 - local_rng.rand() % 5) * .01;
+						entity->vel_z = (-40 - local_rng.rand() % 10) * .01;
 						entity->goldBouncing = 0;
-						entity->z = 0.0;
+						entity->z = 0.0 - (local_rng.rand() % 3);
 						entity->flags[INVISIBLE] = false;
 
 						if ( multiplayer == SERVER )
@@ -747,10 +747,10 @@ void Entity::colliderOnDestroy()
 								{
 									ent->vel_x = (0.25 + .025 * (local_rng.rand() % 11)) * cos(ent->yaw);
 									ent->vel_y = (0.25 + .025 * (local_rng.rand() % 11)) * sin(ent->yaw);
-									ent->vel_z = (-40 - local_rng.rand() % 5) * .01;
+									ent->vel_z = (-40 - local_rng.rand() % 10) * .01;
 									ent->goldBouncing = 0;
 									ent->goldInContainer = 0;
-									ent->z = 0.0;
+									ent->z = 0.0 - (local_rng.rand() % 3);
 									ent->flags[INVISIBLE] = false;
 
 									if ( multiplayer == SERVER )
@@ -839,7 +839,8 @@ int Entity::getColliderSfxOnBreak() const
 {
 	if ( !isDamageableCollider() ) { return 0; }
 	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
-	return colliderData.sfxBreak;
+	if ( colliderData.sfxBreak.size() == 0 ) { return 0; }
+	return colliderData.sfxBreak[local_rng.rand() % colliderData.sfxBreak.size()];
 }
 
 void actColliderDecoration(Entity* my)
@@ -866,7 +867,11 @@ void actColliderDecoration(Entity* my)
 			}
 			if ( colliderDmgType.minotaurPathThroughAndBreak )
 			{
-				my->colliderHasCollision = 2;
+				my->colliderHasCollision |= EditorEntityData_t::COLLIDER_COLLISION_FLAG_MINO;
+			}
+			if ( colliderDmgType.allowNPCPathing )
+			{
+				my->colliderHasCollision |= EditorEntityData_t::COLLIDER_COLLISION_FLAG_NPC;
 			}
 		}
 	}
@@ -1012,10 +1017,7 @@ void actColliderDecoration(Entity* my)
 						serverSpawnMiscParticles(my, PARTICLE_EFFECT_ABILITY_ROCK, sprite);
 					}
 				}
-				if ( colliderData.sfxBreak > 0 )
-				{
-					playSoundEntity(my, colliderData.sfxBreak, 128);
-				}
+				playSoundEntity(my, my->getColliderSfxOnBreak(), 128);
 				my->colliderOnDestroy();
 				list_RemoveNode(my->mynode);
 				return;

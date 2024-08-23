@@ -428,6 +428,69 @@ void actArrow(Entity* my)
 						}
 					}
 				}
+				else if ( hit.entity->isDamageableCollider() )
+				{
+					int damage = 1;
+					int axe = 0;
+					if ( hit.entity->isColliderResistToSkill(PRO_RANGED) || hit.entity->isColliderWall() )
+					{
+						damage = 1;
+					}
+					else
+					{
+						damage = 2 + local_rng.rand() % 3;
+					}
+					if ( hit.entity->isColliderWeakToSkill(PRO_RANGED) )
+					{
+						if ( parent && parent->getStats() )
+						{
+							axe = 2 * (parent->getStats()->getModifiedProficiency(PRO_RANGED) / 20);
+						}
+						axe = std::min(axe, 9);
+					}
+					damage += axe;
+
+					int& entityHP = hit.entity->colliderCurrentHP;
+					int oldHP = entityHP;
+					entityHP -= damage;
+
+					int sound = 28; //damage.ogg
+					if ( hit.entity->getColliderSfxOnHit() > 0 )
+					{
+						sound = hit.entity->getColliderSfxOnHit();
+					}
+					playSoundEntity(hit.entity, sound, 64);
+
+					if ( entityHP > 0 )
+					{
+						if ( parent && parent->behavior == &actPlayer )
+						{
+							messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, Language::get(hit.entity->getColliderOnHitLangEntry()),
+								Language::get(hit.entity->getColliderLangName()));
+						}
+					}
+					else
+					{
+						entityHP = 0;
+
+						hit.entity->colliderKillerUid = parent ? parent->getUID() : 0;
+						if ( parent && parent->behavior == &actPlayer )
+						{
+							messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(hit.entity->getColliderOnBreakLangEntry()),
+								Language::get(hit.entity->getColliderLangName()));
+							if ( hit.entity->isColliderWall() )
+							{
+								Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_BARRIER_DESTROYED, "breakable barriers", 1);
+							}
+						}
+					}
+
+					if ( parent )
+					{
+						updateEnemyBar(parent, hit.entity, Language::get(hit.entity->getColliderLangName()), entityHP, hit.entity->colliderMaxHP, false,
+							DamageGib::DMG_DEFAULT);
+					}
+				}
 				else if ( hitstats != NULL && hit.entity != parent )
 				{
 					if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )

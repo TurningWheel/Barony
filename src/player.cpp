@@ -3386,6 +3386,11 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 				return 0.0;
 			}
 
+			if ( parent->behavior == &actColliderDecoration && !callout )
+			{
+				return 0.0;
+			}
+
 			if ( !selectInteract && stats[player.playernum] && stats[player.playernum]->defending && player.entity )
 			{
 				if ( stats[player.playernum]->shield && stats[player.playernum]->shield->type == TOOL_TINKERING_KIT )

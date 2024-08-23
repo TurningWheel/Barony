@@ -5483,13 +5483,16 @@ timeToGoAgain:
 											playSoundEntity(hit.entity, 28, 64);
 										}
 									}
-									else if ( hit.entity->isDamageableCollider() )
+									else if ( hit.entity->isDamageableCollider() && myStats->type != GYROBOT )
 									{
 										// break it down!
 										my->monsterHitTime++;
 										if ( my->monsterHitTime >= HITRATE )
 										{
-											my->monsterAttack = my->getAttackPose(); // random attack motion
+											if ( !hasrangedweapon )
+											{
+												my->monsterAttack = my->getAttackPose(); // random attack motion
+											}
 											my->monsterHitTime = HITRATE / 4;
 											my->monsterAttackTime = 0;
 											int damage = 2 + local_rng.rand() % 3;
@@ -6575,13 +6578,16 @@ timeToGoAgain:
 										playSoundEntity(hit.entity, 28, 64);
 									}
 								}
-								else if ( hit.entity->isDamageableCollider() )
+								else if ( hit.entity->isDamageableCollider() && myStats->type != GYROBOT )
 								{
 									// break it down!
 									my->monsterHitTime++;
 									if ( my->monsterHitTime >= HITRATE )
 									{
-										my->monsterAttack = my->getAttackPose(); // random attack motion
+										if ( !hasrangedweapon )
+										{
+											my->monsterAttack = my->getAttackPose(); // random attack motion
+										}
 										my->monsterHitTime = HITRATE / 4;
 										my->monsterAttackTime = 0;
 										int damage = 2 + local_rng.rand() % 3;
