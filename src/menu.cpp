@@ -275,8 +275,6 @@ int fourthendmoviestage = 0;
 int fourthendmovietime = 0;
 int fourthEndNumLines = 13;
 bool losingConnection[MAXPLAYERS] = { false };
-bool subtitleVisible = false;
-int subtitleCurrent = 0;
 
 // new text crawls...
 int DLCendmoviealpha[8][30] = { 0 };
@@ -293,9 +291,6 @@ int DLCendmovieNumLines[8] =
 	13,	// MOVIE_WIN_DEMONS_UNDEAD,
 	13	// MOVIE_WIN_BEASTS
 };
-char epilogueHostName[128] = "";
-int epilogueHostRace = 0;
-int epilogueMultiplayerType = SINGLE;
 
 //Confirm resolution window stuff.
 bool resolutionChanged = false;
@@ -9538,7 +9533,50 @@ void doCredits() {
 	}
 }
 
-void doEndgame(bool saveHighscore) {
+
+void doEndgameOnDisconnect()
+{
+	client_disconnected[0] = false;
+
+	introstage = 1;
+	intro = true;
+
+	// load menu level
+	int menuMapType = 0;
+	if ( victory == 3 || victory == 4 || victory == 5 )
+	{
+		menuMapType = loadMainMenuMap(true, true);
+	}
+	else
+	{
+		switch ( local_rng.rand() % 2 )
+		{
+		case 0:
+			menuMapType = loadMainMenuMap(true, false);
+			break;
+		case 1:
+			menuMapType = loadMainMenuMap(false, false);
+			break;
+		default:
+			break;
+		}
+	}
+	for ( int c = 0; c < MAXPLAYERS; ++c ) {
+		cameras[c].vang = 0;
+	}
+	numplayers = 0;
+	assignActions(&map);
+	generatePathMaps();
+
+	gamePaused = false;
+	if ( !victory )
+	{
+		fadefinished = false;
+		fadeout = false;
+	}
+}
+
+void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 	int c, x;
 	bool endTutorial = false;
 	bool localScores = gameModeManager.allowsHiscores();
@@ -9598,56 +9636,6 @@ void doEndgame(bool saveHighscore) {
 	bool died = stats[clientnum] && stats[clientnum]->HP <= 0;
 	Compendium_t::Events_t::onEndgameEvent(clientnum, endTutorial, saveHighscore, died);
 
-	// figure out the victory crawl texts...
-	int movieCrawlType = -1;
-	if ( victory )
-	{
-		if ( stats[0] )
-		{
-			strcpy(epilogueHostName, stats[0]->name);
-			epilogueHostRace = RACE_HUMAN;
-			if ( stats[0]->playerRace > 0 && stats[0]->appearance == 0 )
-			{
-				epilogueHostRace = stats[0]->playerRace;
-			}
-			epilogueMultiplayerType = multiplayer;
-			if ( victory == 1 && epilogueHostRace > 0 && epilogueHostRace != RACE_AUTOMATON )
-			{
-				// herx defeat by monsters.
-				movieCrawlType = MOVIE_CLASSIC_WIN_MONSTERS;
-			}
-			else if ( victory == 2 && epilogueHostRace > 0 && epilogueHostRace != RACE_AUTOMATON )
-			{
-				// baphomet defeat by monsters.
-				movieCrawlType = MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS;
-			}
-			else if ( victory == 3 || victory == 4 || victory == 5 )
-			{
-				switch ( epilogueHostRace )
-				{
-				case RACE_AUTOMATON:
-					movieCrawlType = MOVIE_WIN_AUTOMATON;
-					break;
-				case RACE_SKELETON:
-				case RACE_VAMPIRE:
-				case RACE_SUCCUBUS:
-				case RACE_INCUBUS:
-					movieCrawlType = MOVIE_WIN_DEMONS_UNDEAD;
-					break;
-				case RACE_GOATMAN:
-				case RACE_GOBLIN:
-				case RACE_INSECTOID:
-					movieCrawlType = MOVIE_WIN_BEASTS;
-					break;
-				case RACE_HUMAN:
-					break;
-				default:
-					break;
-				}
-			}
-		}
-	}
-
 	// make a highscore!
 	if ( !endTutorial && saveHighscore )
 	{
@@ -9684,10 +9672,6 @@ void doEndgame(bool saveHighscore) {
         saveAllScores(SCORESFILE);
         saveAllScores(SCORESFILE_MULTIPLAYER);
 	}
-
-	// pick a new subtitle :)
-	subtitleCurrent = local_rng.rand() % NUMSUBTITLES;
-	subtitleVisible = true;
 
 	for ( c = 0; c < NUMMONSTERS; c++ )
 	{
@@ -9727,32 +9711,35 @@ void doEndgame(bool saveHighscore) {
 	}
 #endif
 
-	// send disconnect messages
-	if (multiplayer == CLIENT)
+	if ( net_packet )
 	{
-		strcpy((char*)net_packet->data, "DISC");
-		net_packet->data[4] = clientnum;
-		net_packet->address.host = net_server.host;
-		net_packet->address.port = net_server.port;
-		net_packet->len = 5;
-		sendPacketSafe(net_sock, -1, net_packet, 0);
-		printlog("disconnected from server.\n");
-	}
-	else if (multiplayer == SERVER)
-	{
-		for (x = 1; x < MAXPLAYERS; x++)
+		// send disconnect messages
+		if (multiplayer == CLIENT)
 		{
-			if ( client_disconnected[x] == true )
-			{
-				continue;
-			}
 			strcpy((char*)net_packet->data, "DISC");
 			net_packet->data[4] = clientnum;
-			net_packet->address.host = net_clients[x - 1].host;
-			net_packet->address.port = net_clients[x - 1].port;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
 			net_packet->len = 5;
-			sendPacketSafe(net_sock, -1, net_packet, x - 1);
-			client_disconnected[x] = true;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+			printlog("disconnected from server.\n");
+		}
+		else if (multiplayer == SERVER)
+		{
+			for (x = 1; x < MAXPLAYERS; x++)
+			{
+				if ( client_disconnected[x] == true )
+				{
+					continue;
+				}
+				strcpy((char*)net_packet->data, "DISC");
+				net_packet->data[4] = clientnum;
+				net_packet->address.host = net_clients[x - 1].host;
+				net_packet->address.port = net_clients[x - 1].port;
+				net_packet->len = 5;
+				sendPacketSafe(net_sock, -1, net_packet, x - 1);
+				client_disconnected[x] = true;
+			}
 		}
 	}
 
@@ -9954,8 +9941,11 @@ void doEndgame(bool saveHighscore) {
 	currentlevel = 0;
 	secretlevel = false;
 	clientnum = 0;
-	introstage = 1;
-	intro = true;
+	if ( !onServerDisconnect )
+	{
+		introstage = 1;
+		intro = true;
+	}
 	splitscreen = false;
 
 #ifdef NINTENDO
@@ -10032,7 +10022,10 @@ void doEndgame(bool saveHighscore) {
 		}
 		else
 		{
-			client_disconnected[c] = false;
+			if ( !onServerDisconnect )
+			{
+				client_disconnected[c] = false;
+			}
 		}
 		players[c]->entity = nullptr; //TODO: PLAYERSWAP VERIFY. Need to do anything else?
 		players[c]->cleanUpOnEntityRemoval();
@@ -10065,56 +10058,40 @@ void doEndgame(bool saveHighscore) {
 		CalloutMenu[i].callouts.clear();
 	}
 
-	// load menu level
-	int menuMapType = 0;
-	if ( victory == 3 || victory == 4 || victory == 5 )
+	if ( !onServerDisconnect )
 	{
-		menuMapType = loadMainMenuMap(true, true);
-	}
-	else
-	{
-		switch ( local_rng.rand() % 2 )
+		// load menu level
+		int menuMapType = 0;
+		if ( victory == 3 || victory == 4 || victory == 5 )
 		{
-		case 0:
-			menuMapType = loadMainMenuMap(true, false);
-			break;
-		case 1:
-			menuMapType = loadMainMenuMap(false, false);
-			break;
-		default:
-			break;
+			menuMapType = loadMainMenuMap(true, true);
 		}
-	}
-	for (int c = 0; c < MAXPLAYERS; ++c) {
-		cameras[c].vang = 0;
-	}
-	numplayers = 0;
-	assignActions(&map);
-	generatePathMaps();
-	gamePaused = false;
-	if ( !victory )
-	{
-		fadefinished = false;
-		fadeout = false;
-	}
-	else
-	{
-		if ( victory == 1 )
+		else
 		{
-			introstage = 7;
+			switch ( local_rng.rand() % 2 )
+			{
+			case 0:
+				menuMapType = loadMainMenuMap(true, false);
+				break;
+			case 1:
+				menuMapType = loadMainMenuMap(false, false);
+				break;
+			default:
+				break;
+			}
 		}
-		else if ( victory == 2 )
-		{
-			introstage = 8;
+		for (int c = 0; c < MAXPLAYERS; ++c) {
+			cameras[c].vang = 0;
 		}
-		else if ( victory == 3 || victory == 4 || victory == 5 )
-		{
-			introstage = 10;
-		}
+		numplayers = 0;
+		assignActions(&map);
+		generatePathMaps();
 
-		if ( movieCrawlType >= 0 ) // overrides the introstage 7,8,10 sequences for DLC monsters.
+		gamePaused = false;
+		if ( !victory )
 		{
-			introstage = 11 + movieCrawlType;
+			fadefinished = false;
+			fadeout = false;
 		}
 	}
 

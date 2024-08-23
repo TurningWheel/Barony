@@ -38,6 +38,7 @@ namespace MainMenu {
 		None,           // don't fade anywhere (???)
 		TitleScreen,    // fade to the title screen
 		RootMainMenu,   // return to main menu, save no score if ingame
+		RootMainMenuNoEndGame,   // return to main menu, doEndGame already done
         Endgame,        // save a highscore and return to main menu
 		Victory,        // save a highscore and roll credits
 

@@ -1905,16 +1905,16 @@ namespace MainMenu {
 #endif
 	}
 
-    static void disconnectPrompt(const char* text) {
-        errorPrompt(
-            text,
-            "Okay",
-            [](Button& button){
-                soundCancel();
-                beginFade(FadeDestination::RootMainMenu);
-                closeMono();
-            }
-        );
+    static void disconnectPromptFromServer(const char* text, FadeDestination dest) {
+		errorPrompt(
+			text,
+			"Okay",
+			[](Button& button){
+				soundCancel();
+				beginFade(MainMenu::FadeDestination::RootMainMenuNoEndGame);
+				closeMono();
+			}
+		);
     }
 
     static void openDLCPrompt(int which) {
@@ -24867,7 +24867,7 @@ failed:
 					// this is because we are coming here from some unknown place.
 					// presumably the current game has been saved, so we're not ending it.
 					// just return to the main menu but don't save a score
-					doEndgame(false);
+					doEndgame(false, false);
 				}
 
 				// return to title screen
@@ -24888,7 +24888,44 @@ failed:
 				}
 #endif
 		    }
-			else if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
+			else if ( main_menu_fade_destination == FadeDestination::RootMainMenuNoEndGame )
+			{
+				if ( ingame ) {
+					// end current game
+#ifdef NINTENDO
+					if ( !nxIsHandheldMode() ) {
+						nxAssignControllers(1, 1, true, false, true, false, nullptr);
+					}
+#endif
+					// skip doEndGame, do some stuff we skipped
+					doEndgameOnDisconnect();
+				}
+
+				// return to menu
+				destroyMainMenu();
+#ifdef SOUND
+				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
+				playMusic(intromusic[music], true, false, false);
+#endif
+				createMainMenu(false);
+
+				// join lobby we've been invited to
+				if ( saved_invite_lobby ) {
+					connectToServer(nullptr, saved_invite_lobby, LobbyType::LobbyOnline);
+					saved_invite_lobby = nullptr;
+				}
+
+#ifndef NINTENDO
+				// unbind controllers
+				for ( int c = 1; c < MAX_SPLITSCREEN; ++c ) {
+					if ( inputs.hasController(c) ) {
+						inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
+						Input::inputs[c].refresh();
+					}
+				}
+#endif
+			}
+			else if (main_menu_fade_destination == FadeDestination::RootMainMenu ) {
 				if (ingame) {
 					// end current game
 #ifdef NINTENDO
@@ -24900,7 +24937,7 @@ failed:
                     // this is because we are coming here from some unknown place.
                     // presumably the current game has been saved, so we're not ending it.
                     // just return to the main menu but don't save a score
-                    doEndgame(false);
+					doEndgame(false, false);
 				}
 
 				// return to menu
@@ -24938,7 +24975,7 @@ failed:
                     // end the game AND create a highscore!
                     // this is because the game is well and truly done. There is no save file.
                     // create a highscore as token of remembrance.
-                    doEndgame(true);
+                    doEndgame(true, false);
                 }
 #ifdef SOUND
                 const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
@@ -24968,7 +25005,7 @@ failed:
                 // end the game AND create a highscore!
                 // this is because the game is well and truly done. There is no save file.
                 // create a highscore as token of remembrance.
-				doEndgame(true);
+				doEndgame(true, false);
 				destroyMainMenu();
 				createDummyMainMenu();
 				createCreditsScreen(true);
@@ -26258,6 +26295,14 @@ failed:
 	void disconnectedFromServer(const char* text) {
 	    // when a player is disconnected from the server
 	    if (multiplayer != SINGLE) {
+			if ( saveGameExists(multiplayer == SINGLE) ) {
+				doEndgame(false, true);
+			}
+			else 
+			{
+				doEndgame(true, true);
+			}
+			
 	        multiplayer = SINGLE;
 		    disconnectFromLobby();
 	        destroyMainMenu();
@@ -26265,7 +26310,7 @@ failed:
 #ifndef NINTENDO
 	        inputs.setPlayerIDAllowedKeyboard(clientnum);
 #endif
-            disconnectPrompt(text);
+			disconnectPromptFromServer(text, FadeDestination::RootMainMenuNoEndGame);
             if (!intro) {
 	            pauseGame(2, 0);
 	        }
