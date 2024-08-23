@@ -14987,7 +14987,7 @@ void Compendium_t::Events_t::eventUpdateWorld(int playernum, const EventTags tag
 			{
 				unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
 			}
-			if ( category && !strcmp(category, "shop") )
+			if ( find->second == "shop" )
 			{
 				// buying items triggers shopkeep stuff
 				auto find = monsterIDToString.find(Compendium_t::Events_t::kEventMonsterOffset + SHOPKEEPER);
@@ -14999,7 +14999,57 @@ void Compendium_t::Events_t::eventUpdateWorld(int playernum, const EventTags tag
 						unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
 					}
 				}
+			}
+			else if ( find->second == "herx lair" )
+			{
+				auto find = monsterIDToString.find(Compendium_t::Events_t::kEventMonsterOffset + LICH);
+				if ( find != monsterIDToString.end() )
+				{
+					auto& unlockStatus = Compendium_t::CompendiumMonsters_t::unlocks[find->second];
+					if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+					{
+						unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+					}
+				}
+			}
+			else if ( find->second == "molten throne" )
+			{
+				auto find = monsterIDToString.find(Compendium_t::Events_t::kEventMonsterOffset + DEVIL);
+				if ( find != monsterIDToString.end() )
+				{
+					auto& unlockStatus = Compendium_t::CompendiumMonsters_t::unlocks[find->second];
+					if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+					{
+						unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+					}
+				}
 
+				auto& unlockStatus = Compendium_t::CompendiumWorld_t::unlocks["brimstone boulder"];
+				if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+				{
+					unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+				}
+			}
+			else if ( find->second == "citadel sanctum" )
+			{
+				auto find = monsterIDToString.find(Compendium_t::Events_t::kEventMonsterOffset + LICH_FIRE);
+				if ( find != monsterIDToString.end() )
+				{
+					auto& unlockStatus = Compendium_t::CompendiumMonsters_t::unlocks[find->second];
+					if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+					{
+						unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+					}
+				}
+				find = monsterIDToString.find(Compendium_t::Events_t::kEventMonsterOffset + LICH_ICE);
+				if ( find != monsterIDToString.end() )
+				{
+					auto& unlockStatus = Compendium_t::CompendiumMonsters_t::unlocks[find->second];
+					if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+					{
+						unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+					}
+				}
 			}
 		}
 	}

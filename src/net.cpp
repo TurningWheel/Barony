@@ -2654,9 +2654,9 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				{
 					entity->vel_x = (0.25 + .025 * (local_rng.rand() % 11)) * cos(entity->yaw);
 					entity->vel_y = (0.25 + .025 * (local_rng.rand() % 11)) * sin(entity->yaw);
-					entity->vel_z = (-40 - local_rng.rand() % 5) * .01;
+					entity->vel_z = (-40 - local_rng.rand() % 10) * .01;
 					entity->goldBouncing = 0;
-					entity->z = 0.0;
+					entity->z = 0.0 - (local_rng.rand() % 3);
 					entity->flags[INVISIBLE] = false;
 				}
 			}
@@ -5112,6 +5112,23 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		if ( player >= 0 && player < MAXPLAYERS )
 		{
 			achievementObserver.playerAchievements[player].wearingBountyHat = net_packet->data[5] > 0 ? true : false;
+		}
+	} },
+
+	// compendium reveal an entry
+	{ 'CMPU', []() {
+		int eventID = SDLNet_Read32(&net_packet->data[4]);
+		if ( eventID >= Compendium_t::Events_t::kEventMonsterOffset && eventID < Compendium_t::Events_t::kEventMonsterOffset + 1000 )
+		{
+			auto find = Compendium_t::Events_t::monsterIDToString.find(eventID);
+			if ( find != Compendium_t::Events_t::monsterIDToString.end() )
+			{
+				auto& unlockStatus = Compendium_t::CompendiumMonsters_t::unlocks[find->second];
+				if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+				{
+					unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+				}
+			}
 		}
 	} },
 

@@ -4023,6 +4023,33 @@ void actMonster(Entity* my)
 					}
 					else if ( myStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0 ) // mysterious merchant
 					{
+						// interacting triggers compendium reveal
+						auto find = Compendium_t::Events_t::monsterUniqueIDLookup.find("mysterious shop");
+						if ( find != Compendium_t::Events_t::monsterUniqueIDLookup.end() )
+						{
+							auto find2 = Compendium_t::Events_t::monsterIDToString.find(Compendium_t::Events_t::kEventMonsterOffset + find->second);
+							if ( find2 != Compendium_t::Events_t::monsterIDToString.end() )
+							{
+								if ( players[monsterclicked]->isLocalPlayer() )
+								{
+									auto& unlockStatus = Compendium_t::CompendiumMonsters_t::unlocks[find2->second];
+									if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+									{
+										unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+									}
+								}
+								else if ( monsterclicked > 0 && multiplayer == SERVER )
+								{
+									strcpy((char*)net_packet->data, "CMPU");
+									SDLNet_Write32(Compendium_t::Events_t::kEventMonsterOffset + find->second, &net_packet->data[4]);
+									net_packet->address.host = net_clients[monsterclicked - 1].host;
+									net_packet->address.port = net_clients[monsterclicked - 1].port;
+									net_packet->len = 8;
+									sendPacketSafe(net_sock, -1, net_packet, monsterclicked - 1);
+								}
+							}
+						}
+
 						bool hasOrb = false;
 						for ( node_t* node = myStats->inventory.first; node; node = node->next )
 						{
