@@ -695,7 +695,7 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 			if ( particle->actmagicIsOrbiting == 2 && particle->actmagicOrbitCastFromSpell == 0 )
 			{
 				// cast by firestorm potion etc
-				if ( damageTaken > 0 )
+				if ( damageTaken > 0 && parent != hitentity )
 				{
 					auto find = ItemTooltips.spellItems.find(spellID);
 					if ( find != ItemTooltips.spellItems.end() )

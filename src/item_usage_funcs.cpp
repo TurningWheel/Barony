@@ -819,6 +819,7 @@ bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 		damage -= (local_rng.rand() % (1 + chance));
 	}
 	messagePlayer(player, MESSAGE_HINT, Language::get(761));
+	int oldHP = stats->HP;
 	entity->modHP(-damage);
 	stats->EFFECTS[EFF_POISONED] = true;
 	if ( usedBy && usedBy != entity )
@@ -827,6 +828,11 @@ bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 		if ( usedByStats )
 		{
 			stats->poisonKiller = usedBy->getUID();
+		}
+
+		if ( usedBy->behavior == &actPlayer && stats->HP < oldHP)
+		{
+			Compendium_t::Events_t::eventUpdate(usedBy->skill[2], Compendium_t::CPDM_THROWN_DMG_TOTAL, item->type, oldHP - stats->HP);
 		}
 	}
 	if ( stats->type == LICH || stats->type == SHOPKEEPER || stats->type == DEVIL
@@ -1589,8 +1595,17 @@ bool item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 		damage -= (local_rng.rand() % (1 + chance));
 	}
 	messagePlayer(player, MESSAGE_HINT, Language::get(770));
+	int oldHP = stats->HP;
 	entity->modHP(-damage);
 	playSoundEntity(entity, 28, 64);
+
+	if ( usedBy && usedBy != entity )
+	{
+		if ( usedBy->behavior == &actPlayer && stats->HP < oldHP )
+		{
+			Compendium_t::Events_t::eventUpdate(usedBy->skill[2], Compendium_t::CPDM_THROWN_DMG_TOTAL, item->type, oldHP - stats->HP);
+		}
+	}
 
 	// set obituary
 	entity->setObituary(Language::get(1535));
@@ -1699,8 +1714,17 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 	else
 	{
 		messagePlayer(player, MESSAGE_HINT, Language::get(770));
+		int oldHP = stats->HP;
 		entity->modHP(-damage);
 		playSoundEntity(entity, 28, 64);
+
+		if ( usedBy && usedBy != entity )
+		{
+			if ( usedBy->behavior == &actPlayer && stats->HP < oldHP )
+			{
+				Compendium_t::Events_t::eventUpdate(usedBy->skill[2], Compendium_t::CPDM_THROWN_DMG_TOTAL, item->type, oldHP - stats->HP);
+			}
+		}
 	}
 
 	// set obituary
