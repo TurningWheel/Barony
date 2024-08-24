@@ -1780,7 +1780,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
-								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -1858,7 +1858,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
-								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -1881,7 +1881,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
-								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -1903,7 +1903,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
-								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -1983,7 +1983,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
-								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -2018,7 +2018,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
-								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -2192,7 +2192,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
-								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -2215,7 +2215,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
-								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -2237,7 +2237,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
-								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -2317,7 +2317,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
-								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -2683,7 +2683,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
-								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -2786,7 +2786,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
-								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -2806,7 +2806,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
-								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -2824,7 +2824,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
-								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -2900,7 +2900,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
-								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
 						}
 					}
@@ -3562,7 +3562,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									if ( my->actmagicProjectileArc > 0 )
 									{
 										Entity* caster = uidToEntity(spell->caster);
-										spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+										spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 									}
 									if ( !(my->actmagicIsOrbiting == 2) )
 									{
@@ -3580,7 +3580,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									if ( my->actmagicProjectileArc > 0 )
 									{
 										Entity* caster = uidToEntity(spell->caster);
-										spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+										spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 									}
 									if ( !(my->actmagicIsOrbiting == 2) )
 									{
@@ -3656,7 +3656,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									if ( my->actmagicProjectileArc > 0 )
 									{
 										Entity* caster = uidToEntity(spell->caster);
-										spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+										spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 									}
 								}
 							}
@@ -3818,7 +3818,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				if ( my->actmagicProjectileArc > 0 )
 				{
 					Entity* caster = uidToEntity(spell->caster);
-					spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+					spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 				}
 
 				if ( !(my->actmagicIsOrbiting == 2) )
