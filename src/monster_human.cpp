@@ -456,10 +456,14 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->weapon = newItem(SHORTBOW, WORN, 0, 1, rng.rand(), false, nullptr);
 							break;
 						case 2:
-						case 3:
 							myStats->weapon = newItem(BRONZE_AXE, WORN, 0, 1, rng.rand(), false, nullptr);
 							break;
+						case 3:
+							myStats->weapon = newItem(BRONZE_MACE, WORN, 0, 1, rng.rand(), false, nullptr);
+							break;
 						case 4:
+							myStats->weapon = newItem(IRON_MACE, WORN, 0, 1, rng.rand(), false, nullptr);
+							break;
 						case 5:
 							myStats->weapon = newItem(BRONZE_SWORD, WORN, 0, 1, rng.rand(), false, nullptr);
 							break;
