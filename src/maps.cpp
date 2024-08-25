@@ -3216,13 +3216,15 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		startRoomInfo.checkBorderAccessibility();
 	}
 
+	std::vector<int> underworldEmptyTiles;
+
 	// monsters, decorations, and items
 	numpossiblelocations = map.width * map.height;
 	for ( y = 0; y < map.height; y++ )
 	{
 		for ( x = 0; x < map.width; x++ )
 		{
-			if ( checkObstacle( x * 16 + 8, y * 16 + 8, NULL, NULL ) || firstroomtile[y + x * map.height] )
+			if ( firstroomtile[y + x * map.height] )
 			{
 				possiblelocations[y + x * map.height] = false;
 				numpossiblelocations--;
@@ -3244,6 +3246,21 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				{
 					possiblelocations[y + x * map.height] = false;
 					--numpossiblelocations;
+				}
+				else if ( checkObstacle(x * 16 + 8, y * 16 + 8, NULL, NULL, false, true, false) )
+				{
+					possiblelocations[y + x * map.height] = false;
+					--numpossiblelocations;
+				}
+				else if ( !map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+				{
+					possiblelocations[y + x * map.height] = false;
+					numpossiblelocations--;
+
+					if ( !strncmp(map.name, "Underworld", 10) )
+					{
+						underworldEmptyTiles.push_back(x + y * 1000);
+					}
 				}
 				else
 				{
@@ -4008,17 +4025,19 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	int numBreakables = std::min(15, numpossiblelocations / 10);
 	struct BreakableNode_t
 	{
-		BreakableNode_t(int _walls, int _x, int _y, int _dir)
+		BreakableNode_t(int _walls, int _x, int _y, int _dir, int _id = -1)
 		{
 			walls = _walls;
 			x = _x;
 			y = _y;
 			dir = _dir;
+			id = _id;
 		};
 		int walls;
 		int x;
 		int y;
 		int dir;
+		int id = -1;
 	};
 	auto compFuncBreakable = [](BreakableNode_t& lhs, BreakableNode_t& rhs)
 	{
@@ -4029,7 +4048,73 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	{
 		numBreakables = 0;
 	}
+	int numOpenAreaBreakables = 0;
 	std::priority_queue<BreakableNode_t, std::vector<BreakableNode_t>, decltype(compFuncBreakable)> breakableLocations(compFuncBreakable);
+	if ( findBreakables->first == "Underworld" )
+	{
+		numOpenAreaBreakables = 10;
+
+		std::vector<int> picked;
+		while ( numOpenAreaBreakables > 0 && underworldEmptyTiles.size() > 0 )
+		{
+			int pick = map_rng.rand() % underworldEmptyTiles.size();
+			picked.push_back(underworldEmptyTiles[pick]);
+
+			underworldEmptyTiles.erase(underworldEmptyTiles.begin() + pick);
+		}
+
+		for ( auto& coord : picked )
+		{
+			int x = (coord) % 1000;
+			int y = (coord) / 1000;
+
+			if ( numOpenAreaBreakables > 0 )
+			{
+				int obstacles = 0;
+				// add some hanging cages
+				for ( int x2 = -1; x2 <= 1; x2++ )
+				{
+					for ( int y2 = -1; y2 <= 1; y2++ )
+					{
+						if ( x2 == 0 && y2 == 0 ) { continue; }
+						int checkx = x + x2;
+						int checky = y + y2;
+						if ( checkx >= 0 && checkx < map.width )
+						{
+							if ( checky >= 0 && checky < map.height )
+							{
+								int index = (checky)*MAPLAYERS + (checkx)*MAPLAYERS * map.height;
+								if ( map.tiles[index] )
+								{
+									++obstacles;
+									break;
+								}
+								if ( checkObstacle((checkx) * 16, (checky) * 16, NULL, NULL, false, true, false) )
+								{
+									++obstacles;
+									break;
+								}
+							}
+						}
+					}
+				}
+
+				if ( obstacles == 0 )
+				{
+					breakableLocations.push(BreakableNode_t(0, x, y, map_rng.rand() % 4, 
+						map_rng.rand() % 2 ? 14 : 40)); // random dir, low prio, hanging cage ids
+					--numOpenAreaBreakables;
+
+					if ( possiblelocations[y + x * map.height] )
+					{
+						possiblelocations[y + x * map.height] = false;
+						--numpossiblelocations;
+					}
+				}
+			}
+		}
+	}
+
 	for ( c = 0; c < std::min(numBreakables, numpossiblelocations); ++c )
 	{
 		// choose a random location from those available
@@ -4097,6 +4182,35 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 
 		possiblelocations[y + x * map.height] = false;
 		numpossiblelocations--;
+
+		//if ( walls.size() == 0 && findBreakables->first == "Underworld" && numOpenAreaBreakables > 0 )
+		//{
+		//	int obstacles = 0;
+		//	// add some hanging cages
+		//	for ( int x2 = -1; x2 <= 1; x2++ )
+		//	{
+		//		for ( int y2 = -1; y2 <= 1; y2++ )
+		//		{
+		//			if ( x2 == 0 && y2 == 0 ) { continue; }
+		//			int checkx = x + x2;
+		//			int checky = y + y2;
+		//			if ( checkObstacle((checkx) * 16, (checky) * 16, NULL, NULL, false, true, false) )
+		//			{
+		//				++obstacles;
+		//				break;
+		//			}
+		//		}
+		//	}
+
+		//	if ( obstacles == 0 )
+		//	{
+		//		breakableLocations.push(BreakableNode_t(1, x, y, map_rng.rand() % 4, 
+		//			map_rng.rand() % 2 ? 14 : 40)); // random dir, low prio, hanging cage ids
+		//		--numOpenAreaBreakables;
+		//	}
+		//	--c;
+		//	continue;
+		//}
 
 		if ( walls.size() == 0 || walls.size() >= 4 )
 		{
@@ -4280,8 +4394,15 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			breakable->y = y * 16.0;
 			breakable->colliderDecorationRotation = top.dir;
 
+			if ( top.id >= 0 )
+			{
+				breakable->colliderDamageTypes = top.id;
+			}
+			else
+			{
 			int picked = map_rng.discrete(chances.data(), chances.size());
 			breakable->colliderDamageTypes = ids[picked];
+			}
 
 			Monster monsterEvent = NOTHING;
 			auto findData = EditorEntityData_t::colliderData.find(breakable->colliderDamageTypes);
@@ -4304,6 +4425,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			if ( breakableGoodies > 0 )
 			{
 				--breakableGoodies;
+
+				int index = (y) * MAPLAYERS + (x) * MAPLAYERS * map.height;
+
 				if ( (breakableMonsters < 2 && monsterEvent != NOTHING && map_rng.rand() % 10 == 0) ) // 10% monster inside
 				{
 					if ( map_rng.rand() % 2 == 0 )
@@ -4316,7 +4440,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					}
 					++breakableMonsters;
 				}
-				else if ( map_rng.rand() % 2 == 1 )   // 50% chance
+				else if ( !map.tiles[index] || map_rng.rand() % 2 == 1 )   // 50% chance (or floating over a pit is just gold)
 				{
 					std::vector<Entity*> genGold;
 					int numGold = 3 + map_rng.rand() % 3;
@@ -4377,7 +4501,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 
 			if ( false )
 			{
-				messagePlayer(0, MESSAGE_DEBUG, "pick: %d | x: %d y: %d", picked, x, y);
+				//messagePlayer(0, MESSAGE_DEBUG, "pick: %d | x: %d y: %d", picked, x, y);
 				Entity* ent = newEntity(245, 0, map.entities, nullptr);
 				//ent->behavior = &actBoulder;
 				ent->x = x * 16.0 + 8;

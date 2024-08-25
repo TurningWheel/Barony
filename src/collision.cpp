@@ -1700,7 +1700,7 @@ real_t lineTraceTarget( Entity* my, real_t x1, real_t y1, real_t angle, real_t r
 
 -------------------------------------------------------------------------------*/
 
-int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntityList, bool checkWalls)
+int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntityList, bool checkWalls, bool checkFloor)
 {
 	node_t* node;
 	Entity* entity;
@@ -1743,7 +1743,7 @@ int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntity
 				}
 			}
 			if ( !levitating
-					&& (!map.tiles[index]
+					&& ((!map.tiles[index] && checkFloor)
 								   || ( (swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])
 										 && isMonster) ) )   // no floor
 			{
