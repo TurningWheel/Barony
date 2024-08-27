@@ -421,6 +421,10 @@ void actTrap(Entity* my)
 		for ( node = currentList->first; node != nullptr; node = node->next )
 		{
 			entity = (Entity*)node->element;
+			if ( entity->behavior == &actItem && entity->flags[INVISIBLE] )
+			{
+				continue;
+			}
 			if ( entity->behavior == &actPlayer || entity->behavior == &actItem 
 				|| (entity->behavior == &actMonster && !entity->isInertMimic()) || entity->behavior == &actBoulder
 				|| entity->behavior == &actBomb || entity->behavior == &actDecoyBox )
@@ -539,6 +543,10 @@ void actTrapPermanent(Entity* my)
 			for ( node = currentList->first; node != nullptr; node = node->next )
 			{
 				entity = (Entity*)node->element;
+				if ( entity->behavior == &actItem && entity->flags[INVISIBLE] )
+				{
+					continue;
+				}
 				if ( entity->behavior == &actPlayer || entity->behavior == &actItem 
 					|| (entity->behavior == &actMonster && !entity->isInertMimic()) || entity->behavior == &actBoulder
 					|| entity->behavior == &actBomb || entity->behavior == &actDecoyBox )

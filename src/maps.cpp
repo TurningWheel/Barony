@@ -4101,8 +4101,8 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 
 				if ( obstacles == 0 )
 				{
-					breakableLocations.push(BreakableNode_t(0, x, y, map_rng.rand() % 4, 
-						map_rng.rand() % 2 ? 14 : 40)); // random dir, low prio, hanging cage ids
+					breakableLocations.push(BreakableNode_t(1, x, y, map_rng.rand() % 4, 
+						map_rng.rand() % 2 ? 14 : 40)); // random dir, hanging cage ids
 					--numOpenAreaBreakables;
 
 					if ( possiblelocations[y + x * map.height] )
@@ -4400,8 +4400,8 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			}
 			else
 			{
-			int picked = map_rng.discrete(chances.data(), chances.size());
-			breakable->colliderDamageTypes = ids[picked];
+				int picked = map_rng.discrete(chances.data(), chances.size());
+				breakable->colliderDamageTypes = ids[picked];
 			}
 
 			Monster monsterEvent = NOTHING;
@@ -4428,15 +4428,23 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 
 				int index = (y) * MAPLAYERS + (x) * MAPLAYERS * map.height;
 
-				if ( (breakableMonsters < 2 && monsterEvent != NOTHING && map_rng.rand() % 10 == 0) ) // 10% monster inside
+				if ( !map.tiles[index] && map_rng.rand() % 2 == 1 )
 				{
-					if ( map_rng.rand() % 2 == 0 )
+					// nothing over pits 50%
+				}
+				else if ( (breakableMonsters < 2 && monsterEvent != NOTHING && map_rng.rand() % 10 == 0)
+					&& map.monsterexcludelocations[x + y * map.width] == false ) // 10% monster inside
+				{
+					if ( (svFlags & SV_FLAG_TRAPS) )
 					{
-						breakable->colliderHideMonster = monsterEvent;
-					}
-					else
-					{
-						breakable->colliderHideMonster = 1000 + monsterEvent;
+						if ( map_rng.rand() % 2 == 0 )
+						{
+							breakable->colliderHideMonster = monsterEvent;
+						}
+						else
+						{
+							breakable->colliderHideMonster = 1000 + monsterEvent;
+						}
 					}
 					++breakableMonsters;
 				}
