@@ -45,6 +45,7 @@ Construct an Entity
 
 -------------------------------------------------------------------------------*/
 
+ConsoleVariable<int> cvar_entity_bodypart_sync_tick("/entity_bodypart_sync_tick", TICKS_PER_SECOND / 4);
 Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creaturelist) :
 	lightBonus(0.f),
 	chanceToPutOutFire(skill[37]),

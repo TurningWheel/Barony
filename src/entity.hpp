@@ -16,6 +16,7 @@
 #include "stat.hpp"
 #include "light.hpp"
 #include "monster.hpp"
+#include "interface/consolecommand.hpp"
 
 // entity flags
 #define BRIGHT 1
@@ -37,7 +38,7 @@
 // number of entity skills and fskills
 static const int NUMENTITYSKILLS = 60;
 static const int NUMENTITYFSKILLS = 30;
-
+extern ConsoleVariable<int> cvar_entity_bodypart_sync_tick;
 struct spell_t;
 
 // entity class
