@@ -128,7 +128,26 @@ void actItem(Entity* my)
 		else if ( my->skill[10] == 0 && my->itemReceivedDetailsFromServer == 0 && players[clientnum] )
 		{
 			// request itemtype and beatitude
-			if ( ticks % (TICKS_PER_SECOND * 6) == my->getUID() % (TICKS_PER_SECOND * 6) )
+			bool requestUpdate = false;
+			Uint32 syncTick = my->getUID() % (TICKS_PER_SECOND * 6);
+			Uint32 currentTick = ticks % (TICKS_PER_SECOND * 6);
+			if ( ITEM_LIFE == 0 )
+			{
+				if ( currentTick < syncTick)
+				{
+					if ( syncTick - currentTick >= TICKS_PER_SECOND * 2 )
+					{
+						// if the cycle would request details more than 2 seconds away, request now
+						requestUpdate = true;
+					}
+				}
+				else if ( currentTick > syncTick )
+				{
+					requestUpdate = true; // more than 2 seconds away
+				}
+			}
+
+			if ( (currentTick == syncTick) || requestUpdate )
 			{
 				strcpy((char*)net_packet->data, "ITMU");
 				net_packet->data[4] = clientnum;
@@ -137,17 +156,6 @@ void actItem(Entity* my)
 				net_packet->address.port = net_server.port;
 				net_packet->len = 9;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
-				/*for ( node_t* tmpNode = map.creatures->first; tmpNode != nullptr; tmpNode = tmpNode->next )
-				{
-					Entity* follower = (Entity*)tmpNode->element;
-					if ( follower && players[clientnum]->entity == follower->monsterAllyGetPlayerLeader() )
-					{
-						if ( follower->getMonsterTypeFromSprite() == GYROBOT )
-						{
-							break;
-						}
-					}
-				}*/
 			}
 		}
 	}
