@@ -3957,6 +3957,7 @@ struct Compendium_t
 		};
 		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents;
 		static std::map<std::string, std::string> contentsMap;
+		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents_unfiltered;
 		static void readContentsLang();
 		static std::map<std::string, CompendiumUnlockStatus> unlocks;
 		static int completionPercent;

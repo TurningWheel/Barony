@@ -10894,6 +10894,7 @@ SDL_Rect Compendium_t::tooltipPos;
 
 std::map<std::string, std::vector<std::pair<std::string, std::string>>> Compendium_t::CompendiumMonsters_t::contents;
 std::map<std::string, std::string> Compendium_t::CompendiumMonsters_t::contentsMap;
+std::map<std::string, std::vector<std::pair<std::string, std::string>>> Compendium_t::CompendiumMonsters_t::contents_unfiltered;
 std::map<std::string, Compendium_t::CompendiumUnlockStatus> Compendium_t::CompendiumMonsters_t::unlocks;
 std::map<std::string, std::vector<std::pair<std::string, std::string>>> Compendium_t::CompendiumWorld_t::contents;
 std::map<std::string, std::string> Compendium_t::CompendiumWorld_t::contentsMap;
@@ -10973,7 +10974,15 @@ void Compendium_t::readContentsLang(std::string name, std::map<std::string, std:
 		for ( auto itr2 = itr->MemberBegin(); itr2 != itr->MemberEnd(); ++itr2 )
 		{
 			contents["default"].push_back(std::make_pair(itr2->value.GetString(), itr2->name.GetString()));
-			contentsMap[itr2->value.GetString()] = itr2->name.GetString();
+			if ( name == "contents_monsters"
+				&& (!strcmp(itr2->value.GetString(), "crab") || !strcmp(itr2->value.GetString(), "bubbles")) )
+			{
+				// dont read into map
+			}
+			else
+			{
+				contentsMap[itr2->value.GetString()] = itr2->name.GetString();
+			}
 		}
 	}
 
@@ -10984,7 +10993,15 @@ void Compendium_t::readContentsLang(std::string name, std::map<std::string, std:
 			for ( auto itr2 = itr->MemberBegin(); itr2 != itr->MemberEnd(); ++itr2 )
 			{
 				contents["alphabetical"].push_back(std::make_pair(itr2->value.GetString(), itr2->name.GetString()));
-				contentsMap[itr2->value.GetString()] = itr2->name.GetString();
+				if ( name == "contents_monsters"
+					&& (!strcmp(itr2->value.GetString(), "crab") || !strcmp(itr2->value.GetString(), "bubbles")) )
+				{
+					// dont read into map
+				}
+				else
+				{
+					contentsMap[itr2->value.GetString()] = itr2->name.GetString();
+				}
 			}
 		}
 	}
@@ -10992,7 +11009,7 @@ void Compendium_t::readContentsLang(std::string name, std::map<std::string, std:
 
 void Compendium_t::CompendiumMonsters_t::readContentsLang()
 {
-	Compendium_t::readContentsLang("contents_monsters", contents, contentsMap);
+	Compendium_t::readContentsLang("contents_monsters", contents_unfiltered, contentsMap);
 }
 
 void Compendium_t::CompendiumWorld_t::readContentsLang()
@@ -15793,7 +15810,7 @@ void Compendium_t::updateLorePointCounts()
 		}
 		lorePointsAchievementsTotal += achData.second.lorePoints;
 	}
-
+	total = std::max(1, total);
 	AchievementData_t::completionPercent = 100.0 * (completed / (real_t)total);
 
 	completed = 0;
@@ -15841,7 +15858,7 @@ void Compendium_t::updateLorePointCounts()
 			}
 		}
 	}
-
+	total = std::max(1, total);
 	CompendiumItems_t::completionPercent = 100.0 * (completed / (real_t)total);
 
 	completed = 0;
@@ -15870,6 +15887,7 @@ void Compendium_t::updateLorePointCounts()
 			}
 		}
 	}
+	total = std::max(1, total);
 
 	for ( auto& item : CompendiumEntries.magic )
 	{
@@ -15889,7 +15907,7 @@ void Compendium_t::updateLorePointCounts()
 			}
 		}
 	}
-
+	total = std::max(1, total);
 	CompendiumMagic_t::completionPercent = 100.0 * (completed / (real_t)total);
 
 	completed = 0;
@@ -15918,7 +15936,7 @@ void Compendium_t::updateLorePointCounts()
 			}
 		}
 	}
-
+	total = std::max(1, total);
 	CompendiumWorld_t::completionPercent = 100.0 * (completed / (real_t)total);
 
 	completed = 0;
@@ -15947,13 +15965,17 @@ void Compendium_t::updateLorePointCounts()
 			}
 		}
 	}
-
+	total = std::max(1, total);
 	CompendiumCodex_t::completionPercent = std::min(100.0, 100.0 * (completed / (real_t)total));
 
 	completed = 0;
 	total = 0;
-	for ( auto& pair : CompendiumMonsters_t::contents["default"] )
+	for ( auto& pair : CompendiumMonsters_t::contents_unfiltered["default"] )
 	{
+		if ( pair.first == "crab" || pair.first == "bubbles" )
+		{
+			continue;
+		}
 		if ( pair.first != "-" )
 		{
 			total += 2;
@@ -15976,7 +15998,7 @@ void Compendium_t::updateLorePointCounts()
 			}
 		}
 	}
-
+	total = std::max(1, total);
 	CompendiumMonsters_t::completionPercent = 100.0 * (completed / (real_t)total);
 
 	Compendium_t::PointsAnim_t::countUnreadLastTicks = 0;
