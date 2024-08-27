@@ -1417,6 +1417,34 @@ namespace ConsoleCommands {
 		}
 		});
 
+	static ConsoleCommand ccmd_cleanfloor("/cleanfloor", "remove floor items (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		if ( multiplayer == CLIENT )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(284));
+		}
+		else
+		{
+			int c = 0;
+			node_t* node,* nextnode;
+			for ( node = map.entities->first; node != NULL; node = nextnode )
+			{
+				nextnode = node->next;
+				Entity* entity = (Entity*)node->element;
+				if ( entity->behavior == &actItem )
+				{
+					list_RemoveNode(entity->mynode);
+					c++;
+				}
+			}
+			messagePlayer(clientnum, MESSAGE_MISC, "Cleared %d items", c);
+		}
+	});
+
 	static void suicide(int player) {
 		if (player < 0 || player >= MAXPLAYERS) {
 			return;
