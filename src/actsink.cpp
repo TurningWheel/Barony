@@ -182,10 +182,9 @@ void actSink(Entity* my)
 							if ( monster )
 							{
 								monster->seedEntityRNG(rng.getU32());
+								slimeSetType(monster, monster->getStats(), true, &rng);
 								Uint32 color = makeColorRGB(255, 128, 0);
 								messagePlayerColor(i, MESSAGE_HINT, color, Language::get(582));
-								Stat* monsterStats = monster->getStats();
-								monsterStats->LVL = 4;
 								Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_SINKS_SLIMES, "sink", 1);
 							}
 							break;

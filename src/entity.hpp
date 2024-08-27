@@ -263,6 +263,9 @@ public:
 	Sint32& monsterShadowInitialMimic; //skill[34]. 0 = false, 1 = true.
 	Sint32& monsterShadowDontChangeName; //skill[35]. 0 = false, 1 = true. Doesn't change name in its mimic if = 1.
 
+	//--PUBLIC MONSTER SLIME SKILLS--
+	Sint32& monsterSlimeLastAttack; // skill[34]
+
 	//--PUBLIC MONSTER LICH SKILLS--
 	Sint32& monsterLichFireMeleeSeq; //skill[34]
 	Sint32& monsterLichFireMeleePrev; //skill[35]
@@ -506,6 +509,7 @@ public:
 	real_t& actmagicOrbitStationaryX; // fskill[4]
 	real_t& actmagicOrbitStationaryY; // fskill[5]
 	real_t& actmagicOrbitStationaryCurrentDist; // fskill[6]
+	real_t& actmagicSprayGravity; // fskill[7]
 	Sint32& actmagicOrbitStationaryHitTarget; // skill[14]
 	Sint32& actmagicOrbitHitTargetUID1; // skill[15]
 	Sint32& actmagicOrbitHitTargetUID2; // skill[16]
@@ -517,6 +521,8 @@ public:
 	Sint32& actmagicTinkerTrapFriendlyFire; // skill[23]
 	Sint32& actmagicReflectionCount; // skill[25]
 	Sint32& actmagicFromSpellbook; // skill[26]
+	Sint32& actmagicSpray; // skill[27]
+	Sint32& actmagicEmitter; // skill[29]
 	
 	//--PUBLIC GOLD SKILLS--
 	Sint32& goldAmount; //skill[0]
@@ -640,6 +646,8 @@ public:
 	Sint32 getRangedAttack();
 	Sint32 getThrownAttack();
 	bool isBlind();
+	bool isWaterWalking() const;
+	bool isLavaWalking() const;
 	
 	bool isInvisible() const;
 

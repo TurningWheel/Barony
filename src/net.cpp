@@ -1679,8 +1679,8 @@ Entity* receiveEntity(Entity* entity)
 	const bool excludeForAnimation =
 	    !newentity &&
 	    entity->behavior == &actMonster &&
-	    (monsterType == RAT || monsterType == SLIME || monsterType == SCARAB) &&
-	    entity->skill[8]; // MONSTER_ATTACK
+		(monsterType == SLIME || ((monsterType == RAT || monsterType == SCARAB) &&
+	    entity->skill[8])); // MONSTER_ATTACK
 
 	//if ( Entity::getMonsterTypeFromSprite(entity->sprite) == SPIDER )
 	//{
@@ -1721,7 +1721,14 @@ Entity* receiveEntity(Entity* entity)
 	//}
 
 	if (excludeForAnimation) {
-	    entity->sprite = oldSprite;
+		if ( monsterType == SLIME && Entity::getMonsterTypeFromSprite(oldSprite) != SLIME )
+		{
+			// take this sprite as we had editor data (e.g sprite 10 or 79)
+		}
+		else
+		{
+			entity->sprite = oldSprite;
+		}
 	}
 
 	entity->lastupdate = ticks;
@@ -1819,6 +1826,9 @@ void clientActions(Entity* entity)
 		case 214:
 		case 682:
 		case 681:
+		case 1398:
+		case 1399:
+		case 1400:
 			entity->flags[NOUPDATE] = true;
 			break;
 		case 162:
@@ -2171,6 +2181,7 @@ static void changeLevel() {
 	}
 	EnemyHPDamageBarHandler::dumpCache();
 	monsterAllyFormations.reset();
+	particleTimerEmitterHitEntities.clear();
 
 	// clear follower menu entities.
 	FollowerMenu[clientnum].closeFollowerMenuGUI(true);
@@ -2507,6 +2518,17 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				tempEntity->flags[INVISIBLE] = (net_packet->data[13] & (1 << 0)) > 0 ? true : false;
 				tempEntity->flags[INVISIBLE_DITHER] = (net_packet->data[13] & (1 << 1)) > 0 ? true : false;
 			}
+			/*else
+			{
+				if ( entity->behavior == &actPlayer )
+				{
+					messagePlayer(clientnum, MESSAGE_DEBUG, "actPlayer !childNode: %d", net_packet->data[8]);
+				}
+				else
+				{
+					messagePlayer(clientnum, MESSAGE_DEBUG, "!childNode: %d", net_packet->data[8]);
+				}
+			}*/
 		}
 	}},
 

@@ -466,9 +466,11 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 
 	int* pathMap = (int*) calloc(map.width * map.height, sizeof(int));
 	int pathMapType = GateGraph::GATE_GRAPH_GROUNDED;
+	bool waterWalking = my && my->isWaterWalking();
+	bool lavaWalking = my && my->isLavaWalking();
 	if ( !loading )
 	{
-		if ( levitating || playerCheckPathToExit )
+		if ( levitating || playerCheckPathToExit || waterWalking || lavaWalking )
 		{
 			memcpy(pathMap, pathMapFlying, map.width * map.height * sizeof(int));
 			pathMapType = GateGraph::GATE_GRAPH_FLYING;
@@ -537,6 +539,28 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 			for ( int x = 0; x < map.width; ++x )
 			{
 				if ( !map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+				{
+					pathMap[y + x * map.height] = 0;
+				}
+			}
+		}
+	}
+	else if ( !levitating && (waterWalking || lavaWalking) )
+	{
+		for ( int y = 0; y < map.height; ++y )
+		{
+			for ( int x = 0; x < map.width; ++x )
+			{
+				int index = y * MAPLAYERS + x * MAPLAYERS * map.height;
+				if ( !map.tiles[index] )
+				{
+					pathMap[y + x * map.height] = 0;
+				}
+				else if ( lavatiles[map.tiles[index]] && !lavaWalking )
+				{
+					pathMap[y + x * map.height] = 0;
+				}
+				else if ( swimmingtiles[map.tiles[index]] && !waterWalking )
 				{
 					pathMap[y + x * map.height] = 0;
 				}

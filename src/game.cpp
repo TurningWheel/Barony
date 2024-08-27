@@ -2169,6 +2169,7 @@ void gameLogic(void)
 					}
 					EnemyHPDamageBarHandler::dumpCache();
 					monsterAllyFormations.reset();
+					particleTimerEmitterHitEntities.clear();
 
 					achievementObserver.updateData();
 
@@ -6329,7 +6330,7 @@ static void doConsoleCommands() {
 	bool confirm = false;
 	if (controlEnabled) {
 		if (input.getPlayerControlType() != Input::playerControlType_t::PLAYER_CONTROLLED_BY_KEYBOARD) {
-            if (command || !intro) {
+            if (command || !intro ) {
                 if (keystatus[SDLK_RETURN]) {
                     keystatus[SDLK_RETURN] = 0;
                     confirm = true;
@@ -6342,16 +6343,28 @@ static void doConsoleCommands() {
 		}
 		if (input.consumeBinaryToggle("Chat")) {
 			input.consumeBindingsSharedWithBinding("Chat");
-            if (command || !intro) {
+            if (command || !intro ) {
                 confirm = true;
             }
 		}
+		if ( confirm && !command )
+		{
+			if ( MainMenu::main_menu_frame )
+			{
+				if ( auto compendium = MainMenu::main_menu_frame->findFrame("compendium") )
+				{
+					confirm = false; // stop menuStart triggering console commands
+				}
+			}
+		}
+
 		if (input.consumeBinaryToggle("Console Command")) {
 			input.consumeBindingsSharedWithBinding("Console Command");
 			if (!command) {
 				confirm = true;
 			}
 		}
+
 	}
 
 	if (confirm && !command) // begin a command

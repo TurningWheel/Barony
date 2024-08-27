@@ -379,8 +379,10 @@ bool entityInsideTile(Entity* entity, int x, int y, int z, bool checkSafeTiles)
 							return true;
 						}
                         if (entity && entity->behavior == &actMonster) {
-                            if (swimmingtiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] ||
-                                lavatiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]])
+							bool waterWalking = entity->isWaterWalking();
+							bool lavaWalking = entity->isLavaWalking();
+                            if ((swimmingtiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] && !waterWalking) ||
+                                (lavatiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] && !lavaWalking))
                             {
                                 return true;
                             }
@@ -543,6 +545,9 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 		}
 	}
 
+	bool waterWalking = my && my->isWaterWalking();
+	bool lavaWalking = my && my->isLavaWalking();
+
 	bool reduceCollisionSize = false;
 	bool tryReduceCollisionSize = false;
 	Entity* parent = nullptr;
@@ -608,7 +613,8 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				}
 	
 				if ( !levitating && (!map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] 
-					|| ((swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] || lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]])
+					|| (((swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && !waterWalking) 
+						|| (lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && !lavaWalking))
 						&& isMonster)) )
 				{
 					// no floor
@@ -740,6 +746,22 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			}
 			else if ( multiplayer != CLIENT && tryReduceCollisionSize )
 			{
+				if ( my->behavior == &actMagicMissile && my->actmagicSpray == 1 )
+				{
+					if ( my->actmagicEmitter > 0 )
+					{
+						auto& emitterHit = particleTimerEmitterHitEntities[my->actmagicEmitter];
+						auto find = emitterHit.find(entity->getUID());
+						if ( find != emitterHit.end() )
+						{
+							if ( find->second.hits >= 3 || (ticks - find->second.tick) < 5 )
+							{
+								continue;
+							}
+						}
+					}
+				}
+
 				if ( parent && parentStats && yourStats )
 				{
 					reduceCollisionSize = useSmallCollision(*parent, *parentStats, *entity, *yourStats);
@@ -1348,18 +1370,25 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 	d = 0;
 
 	Stat* stats = nullptr;
+	bool waterWalking = my && my->isWaterWalking();
+	bool lavaWalking = my && my->isLavaWalking();
+	bool isMonster = false;
 	if ( my )
 	{
-		stats = my->getStats();
-		if ( stats )
+		if ( my->behavior == &actMonster )
 		{
-			if ( stats->type == DEVIL )
+			isMonster = true;
+			stats = my->getStats();
+			if ( stats )
 			{
-				ground = false;
-			}
-			else if ( stats->type == SENTRYBOT || stats->type == SPELLBOT )
-			{
-				ground = false;
+				if ( stats->type == DEVIL )
+				{
+					ground = false;
+				}
+				else if ( stats->type == SENTRYBOT || stats->type == SPELLBOT )
+				{
+					ground = false;
+				}
 			}
 		}
 	}
@@ -1429,14 +1458,9 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 		}
 		if ( ground )
 		{
-			bool isMonster = false;
-			if ( my )
-				if ( my->behavior == &actMonster )
-				{
-					isMonster = true;
-				}
 			if ( !map.tiles[index] 
-				|| ((swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) && isMonster) )
+				|| (((swimmingtiles[map.tiles[index]] && !waterWalking) 
+					|| (lavatiles[map.tiles[index]] && !lavaWalking)) && isMonster) )
 			{
 				hit.x = ix;
 				hit.y = iy;
@@ -1511,7 +1535,7 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 	return range;
 }
 
-real_t lineTraceTarget( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, int entities, bool ground, Entity* target )
+real_t lineTraceTarget(Entity* my, real_t x1, real_t y1, real_t angle, real_t range, int entities, bool ground, Entity* target)
 {
 	int posx, posy;
 	real_t fracx, fracy;
@@ -1534,12 +1558,12 @@ real_t lineTraceTarget( Entity* my, real_t x1, real_t y1, real_t angle, real_t r
 	inx = posx;
 	iny = posy;
 	arx = 0;
-	if (rx)
+	if ( rx )
 	{
 		arx = 1.0 / fabs(rx);
 	}
 	ary = 0;
-	if (ry)
+	if ( ry )
 	{
 		ary = 1.0 / fabs(ry);
 	}
@@ -1547,22 +1571,22 @@ real_t lineTraceTarget( Entity* my, real_t x1, real_t y1, real_t angle, real_t r
 	dval0 = 1e32;
 	dincy = 0;
 	dval1 = 1e32;
-	if (rx < 0)
+	if ( rx < 0 )
 	{
 		dincx = -1;
 		dval0 = fracx * arx;
 	}
-	else if (rx > 0)
+	else if ( rx > 0 )
 	{
 		dincx = 1;
 		dval0 = (1.0 - fracx) * arx;
 	}
-	if (ry < 0)
+	if ( ry < 0 )
 	{
 		dincy = -1;
 		dval1 = fracy * ary;
 	}
-	else if (ry > 0)
+	else if ( ry > 0 )
 	{
 		dincy = 1;
 		dval1 = (1.0 - fracy) * ary;
@@ -1571,6 +1595,16 @@ real_t lineTraceTarget( Entity* my, real_t x1, real_t y1, real_t angle, real_t r
 
 	Entity* entity = findEntityInLine(my, x1, y1, angle, entities, target);
 
+	bool isMonster = false;
+	bool waterWalking = my && my->isWaterWalking();
+	bool lavaWalking = my && my->isLavaWalking();
+	if ( my )
+	{
+		if ( my->behavior == &actMonster )
+		{
+			isMonster = true;
+		}
+	}
 	// trace the line
 	while ( d < range )
 	{
@@ -1609,14 +1643,8 @@ real_t lineTraceTarget( Entity* my, real_t x1, real_t y1, real_t angle, real_t r
 		}
 		if ( ground )
 		{
-			bool isMonster = false;
-			if ( my )
-				if ( my->behavior == &actMonster )
-				{
-					isMonster = true;
-				}
 			if ( !map.tiles[index] 
-				|| ((swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) && isMonster) )
+				|| (((swimmingtiles[map.tiles[index]] && waterWalking) || (lavatiles[map.tiles[index]] && lavaWalking)) && isMonster) )
 			{
 				hit.x = ix;
 				hit.y = iy;
@@ -1702,9 +1730,9 @@ real_t lineTraceTarget( Entity* my, real_t x1, real_t y1, real_t angle, real_t r
 
 int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntityList, bool checkWalls, bool checkFloor)
 {
-	node_t* node;
-	Entity* entity;
-	Stat* stats;
+	node_t* node = nullptr;
+	Entity* entity = nullptr;
+	Stat* stats = nullptr;
 	bool levitating = false;
 
 	// get levitation status
@@ -1742,9 +1770,11 @@ int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntity
 					isMonster = true;
 				}
 			}
+			bool waterWalking = my && my->isWaterWalking();
+			bool lavaWalking = my && my->isLavaWalking();
 			if ( !levitating
 					&& ((!map.tiles[index] && checkFloor)
-								   || ( (swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])
+								   || ( ((swimmingtiles[map.tiles[index]] && !waterWalking) || (lavatiles[map.tiles[index]] && !lavaWalking))
 										 && isMonster) ) )   // no floor
 			{
 				return 1; // if there's no floor, or either water/lava then a non-levitating monster sees obstacle.

@@ -11131,7 +11131,13 @@ void EnemyHPDamageBarHandler::EnemyHPDetails::updateWorldCoordinates()
 				worldX -= 5;
 			}
 		}
-		if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == MIMIC )
+		if ( entity->behavior == &actMonster 
+			&& entity->monsterAttack == MONSTER_POSE_MAGIC_WINDUP2
+			&& entity->getMonsterTypeFromSprite() == SLIME )
+		{
+			worldZ += entity->focalz / 2;
+		}
+		else if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == MIMIC )
 		{
 			if ( entity->isInertMimic() )
 			{

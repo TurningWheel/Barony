@@ -277,17 +277,35 @@ Entity* spawnGib(Entity* parentent, int customGibSprite)
 					gibsprite = 211;
 					break;
 				case 3:
-					if ( parentent->sprite == 210 || parentent->sprite >= 1113 )
+				{
+					std::string color = MonsterData_t::getKeyFromSprite(parentent->sprite, SLIME);
+					if ( color == "slime green" )
 					{
-					    // green blood
+						// green blood
 						gibsprite = 211;
 					}
-					else
+					else if ( color == "slime blue" )
 					{
-					    // blue blood
+						// blue blood
 						gibsprite = 215;
 					}
+					else if ( color == "slime red" )
+					{
+						// todo blood
+						gibsprite = 1401;
+					}
+					else if ( color == "slime tar" )
+					{
+						// todo blood
+						gibsprite = 1402;
+					}
+					else if ( color == "slime metal" )
+					{
+						// todo blood
+						gibsprite = 1403;
+					}
 					break;
+				}
 				case 4:
 					gibsprite = 683;
 					break;

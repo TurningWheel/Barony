@@ -1115,22 +1115,22 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->appearance = local_rng.rand();
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
-			if ( stats->LVL >= 7 )   // blue slime
-			{
-				stats->HP = 70;
-				stats->MAXHP = 70;
-				stats->MP = 70;
-				stats->MAXMP = 70;
-				stats->STR = 10;
-			}
-			else     // green slime
-			{
-				stats->STR = 3;
-				stats->HP = 60;
-				stats->MAXHP = 60;
-				stats->MP = 60;
-				stats->MAXMP = 60;
-			}
+			//if ( stats->LVL >= 7 )   // blue slime
+			//{
+			//	stats->HP = 70;
+			//	stats->MAXHP = 70;
+			//	stats->MP = 70;
+			//	stats->MAXMP = 70;
+			//	stats->STR = 10;
+			//}
+			//else     // green slime
+			//{
+			//}
+			stats->STR = 3;
+			stats->HP = 60;
+			stats->MAXHP = 60;
+			stats->MP = 60;
+			stats->MAXMP = 60;
 			stats->OLDHP = stats->HP;
 			stats->DEX = -4;
 			stats->CON = 3;

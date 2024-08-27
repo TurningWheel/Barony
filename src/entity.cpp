@@ -109,6 +109,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterWeaponYaw(fskill[5]),
 	monsterShadowInitialMimic(skill[34]),
 	monsterShadowDontChangeName(skill[35]),
+	monsterSlimeLastAttack(skill[34]),
 	monsterLichFireMeleeSeq(skill[34]),
 	monsterLichFireMeleePrev(skill[35]),
 	monsterLichIceCastSeq(skill[34]),
@@ -328,6 +329,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicOrbitStationaryX(fskill[4]),
 	actmagicOrbitStationaryY(fskill[5]),
 	actmagicOrbitStationaryCurrentDist(fskill[6]),
+	actmagicSprayGravity(fskill[7]),
 	actmagicOrbitStationaryHitTarget(skill[14]),
 	actmagicOrbitHitTargetUID1(skill[15]),
 	actmagicOrbitHitTargetUID2(skill[16]),
@@ -340,6 +342,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicTinkerTrapFriendlyFire(skill[23]),
 	actmagicReflectionCount(skill[25]),
 	actmagicFromSpellbook(skill[26]),
+	actmagicSpray(skill[27]),
+	actmagicEmitter(skill[29]),
 	goldAmount(skill[0]),
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),
@@ -6442,6 +6446,57 @@ bool Entity::isBlind()
 	return false;
 }
 
+bool Entity::isWaterWalking() const
+{
+	if ( behavior == &actMonster )
+	{
+		if ( Stat* stats = getStats() )
+		{
+			if ( stats->shoes && stats->shoes->type == IRON_BOOTS_WATERWALKING )
+			{
+				return true;
+			}
+			if ( stats->type == SLIME )
+			{
+				std::string res = stats->getAttribute("slime_type");
+				if ( res == "slime green"
+					|| res == "slime blue"
+					|| res == "slime red"
+					|| res == "slime tar"
+					|| res == "slime metal" )
+				{
+					return true;
+				}
+			}
+		}
+	}
+}
+bool Entity::isLavaWalking() const
+{
+	if ( behavior == &actMonster )
+	{
+		if ( Stat* stats = getStats() )
+		{
+			if ( stats->shoes && stats->shoes->type == IRON_BOOTS_WATERWALKING )
+			{
+				return true;
+			}
+			if ( stats->type == SLIME )
+			{
+				std::string res = stats->getAttribute("slime_type");
+				if ( res == "slime green"
+					|| res == "slime blue"
+					|| res == "slime red"
+					|| res == "slime tar"
+					|| res == "slime metal" )
+				{
+					return true;
+				}
+			}
+		}
+	}
+}
+
 /*-------------------------------------------------------------------------------
 
 Entity::isInvisible
@@ -8380,10 +8435,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							auto& rng = hit.entity->entity_rng ? *hit.entity->entity_rng : local_rng;
 							monster->seedEntityRNG(rng.getU32());
-
+							slimeSetType(monster, monster->getStats(), true, &rng);
 							messagePlayer(player, MESSAGE_HINT, Language::get(582));
-							Stat* monsterStats = monster->getStats();
-							monsterStats->LVL = 4;
 							if ( behavior == &actPlayer )
 							{
 								Compendium_t::Events_t::eventUpdateWorld(skill[2], Compendium_t::CPDM_SINKS_SLIMES, "sink", 1);
@@ -14948,7 +15001,11 @@ int Entity::getAttackPose() const
 	else
 	{
 	    const auto type = myStats->type;
-		if (type == KOBOLD || type == AUTOMATON ||
+		if ( myStats->type == SLIME && this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_SLIME_SPRAY )
+		{
+			pose = MONSTER_POSE_MAGIC_WINDUP2;
+		}
+		else if (type == KOBOLD || type == AUTOMATON ||
 			type == GOATMAN || type == INSECTOID ||
 			type == INCUBUS || type == VAMPIRE ||
 			type == HUMAN || type == GOBLIN ||

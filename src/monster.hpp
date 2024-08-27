@@ -100,6 +100,9 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
     {
         189, 1108, 1109, 1110, 1111, 1112, // blue
         210, 1113, 1114, 1115, 1116, 1117, // green
+		1380, 1383, 1384, 1385, 1386, 1387, // red
+		1381, 1388, 1389, 1390, 1391, 1392, // tar
+		1382, 1393, 1394, 1395, 1396, 1397, // metal
     },
 
     // TROLL
@@ -768,7 +771,9 @@ void monsterAnimate(Entity* my, Stat* myStats, double dist);
 void humanMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void ratAnimate(Entity* my, double dist);
 void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist);
-void slimeAnimate(Entity* my, double dist);
+void slimeSetType(Entity* my, Stat* myStats, bool sink, BaronyRNG* rng);
+void slimeSprayAttack(Entity* my);
+void slimeAnimate(Entity* my, Stat* myStats, double dist);
 void scorpionAnimate(Entity* my, double dist);
 void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void trollMoveBodyparts(Entity* my, Stat* myStats, double dist);
@@ -903,6 +908,7 @@ static const int MONSTER_SPECIAL_COOLDOWN_VAMPIRE_AURA = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_VAMPIRE_DRAIN = 300;
 static const int MONSTER_SPECIAL_COOLDOWN_SUCCUBUS_CHARM = 400;
 static const int MONSTER_SPECIAL_COOLDOWN_MIMIC_EAT = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_SLIME_SPRAY = 250;
 
 //--monster target search types
 static const int MONSTER_TARGET_ENEMY = 0;
@@ -1012,6 +1018,9 @@ static const int SUCCUBUS_CHARM = 1;
 
 //--Spider--
 static const int SPIDER_CAST = 1;
+
+//--Slime--
+static const int SLIME_CAST = 1;
 
 //--Shadow--
 static const int SHADOW_SPELLCAST = 1;
