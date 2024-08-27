@@ -165,7 +165,7 @@ std::string getMonsterLocalizedName(Monster creature)
 {
 	if ( creature < KOBOLD )
 	{
-	    if (creature == SPIDER && arachnophobia_filter) {
+	    if (creature == SPIDER && ((!intro && arachnophobia_filter) || (intro && MainMenu::arachnophobia_filter)) ) {
 		    return Language::get(102);
 	    } else {
 		    return Language::get(90 + creature);
@@ -182,7 +182,7 @@ std::string getMonsterLocalizedPlural(Monster creature)
 {
 	if ( creature < KOBOLD )
 	{
-	    if (creature == SPIDER && arachnophobia_filter) {
+	    if (creature == SPIDER && ((!intro && arachnophobia_filter) || (intro && MainMenu::arachnophobia_filter))) {
 		    return Language::get(123);
 	    } else {
 		    return Language::get(111 + creature);
@@ -198,7 +198,7 @@ std::string getMonsterLocalizedInjury(Monster creature)
 {
 	if ( creature < KOBOLD )
 	{
-	    if (creature == SPIDER && arachnophobia_filter) {
+	    if (creature == SPIDER && ((!intro && arachnophobia_filter) || (intro && MainMenu::arachnophobia_filter)) ) {
 		    return Language::get(144);
 	    } else {
 		    return Language::get(132 + creature);
@@ -1194,13 +1194,6 @@ Entity* summonMonsterNoSmoke(Monster creature, long x, long y, bool forceLocatio
 
 end:
 
-	if ( creature == SLIME )
-	{
-		if ( multiplayer != CLIENT )
-		{
-			myStats->LVL = 7;
-		}
-	}
 
 	nummonsters++;
 
@@ -2249,7 +2242,7 @@ void monsterAnimate(Entity* my, Stat* myStats, double dist)
 	case HUMAN: humanMoveBodyparts(my, myStats, dist); break;
 	case RAT: ratAnimate(my, dist); break;
 	case GOBLIN: goblinMoveBodyparts(my, myStats, dist); break;
-	case SLIME: slimeAnimate(my, dist); break;
+	case SLIME: slimeAnimate(my, myStats, dist); break;
 	case TROLL: trollMoveBodyparts(my, myStats, dist); break;
 	case SPIDER: spiderMoveBodyparts(my, myStats, dist); break;
 	case GHOUL: ghoulMoveBodyparts(my, myStats, dist); break;
@@ -5717,7 +5710,21 @@ timeToGoAgain:
 							{
 								dir += PI * 2;
 							}
+							if ( myStats->type == SLIME )
+							{
+								if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP2 )
+								{
+									my->yaw -= dir / 8;
+								}
+								else
+								{
 							my->yaw -= dir / 2;
+								}
+							}
+							else
+							{
+								my->yaw -= dir / 2;
+							}
 							while ( my->yaw < 0 )
 							{
 								my->yaw += 2 * PI;
@@ -8803,7 +8810,11 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 
 			// check again for the target in attack range. return the result into hit.entity.
 			double newTangent = atan2(target->y - this->y, target->x - this->x);
-			if ( lichRangeCheckOverride )
+			if ( myStats->type == SLIME && monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_SLIME_SPRAY )
+			{
+				hit.entity = uidToEntity(monsterTarget);
+			}
+			else if ( lichRangeCheckOverride )
 			{
 				hit.entity = uidToEntity(monsterTarget);
 			}
@@ -9887,6 +9898,15 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						shouldAttack = false;
 						monsterSpecialState = 0;
 						serverUpdateEntitySkill(this, 33); // for clients to handle animation
+						deinitSuccess = true;
+					}
+					break;
+				case SLIME:
+					if ( monsterSpecialState == SLIME_CAST || forceDeinit )
+					{
+						monsterSpecialState = 0;
+						serverUpdateEntitySkill(this, 33); // for clients to handle animation
+						shouldAttack = false;
 						deinitSuccess = true;
 					}
 					break;

@@ -858,7 +858,49 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 			Sint32 entityHealth = 0;
 			double dist = 0.f;
 			bool hitFromAbove = false;
-			if ( (parent && parent->behavior == &actMagicTrapCeiling) || my->actmagicIsVertical == MAGIC_ISVERTICAL_Z )
+			if ( my->actmagicSpray == 1 )
+			{
+				my->vel_z += my->actmagicSprayGravity;
+				my->z += my->vel_z;
+				my->roll += 0.1;
+				dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my); //normal flat projectiles
+
+				if ( my->z < 8.0 )
+				{
+					// if we didn't hit the floor, process normal horizontal movement collision if we aren't too high
+					if ( dist != sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y) )
+					{
+						hitFromAbove = true;
+
+						if ( my->actmagicEmitter > 0 )
+						{
+							if ( hit.entity && (Sint32)(hit.entity->getUID()) >= 0 )
+							{
+								auto& emitterHit = particleTimerEmitterHitEntities[my->actmagicEmitter];
+								auto find = emitterHit.find(hit.entity->getUID());
+								if ( find != emitterHit.end() )
+								{
+									find->second.hits++;
+									find->second.tick = ticks;
+								}
+								else
+								{
+									auto& entry = emitterHit[hit.entity->getUID()];
+									entry.hits = 1;
+									entry.tick = ticks;
+								}
+							}
+						}
+					}
+				}
+				else
+				{
+					my->removeLightField();
+					list_RemoveNode(my->mynode);
+					return;
+				}
+			}
+			else if ( (parent && parent->behavior == &actMagicTrapCeiling) || my->actmagicIsVertical == MAGIC_ISVERTICAL_Z )
 			{
 				// moving vertically.
 				my->z += my->vel_z;
@@ -987,7 +1029,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				}
 			}
 
-			if ( hitFromAbove || (my->actmagicIsVertical != MAGIC_ISVERTICAL_XYZ && dist != sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y)) )
+			if ( hitFromAbove 
+				|| (my->actmagicIsVertical != MAGIC_ISVERTICAL_XYZ && my->actmagicSpray != 1 && dist != sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y)) )
 			{
 				node = element->elements.first;
 				//element = (spellElement_t *) element->elements->first->element;
@@ -2000,7 +2043,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				}
 				else if (!strcmp(element->element_internal_name, spellElement_fire.element_internal_name))
 				{
-					if ( !(my->actmagicIsOrbiting == 2) )
+					if ( !(my->actmagicIsOrbiting == 2) && my->actmagicSpray != 1 )
 					{
 						spawnExplosion(my->x, my->y, my->z);
 					}
@@ -2020,7 +2063,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Entity* caster = uidToEntity(spell->caster);
 								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
-							if ( !(my->actmagicIsOrbiting == 2) )
+							if ( !(my->actmagicIsOrbiting == 2) || my->actmagicSpray == 1 )
 							{
 								my->removeLightField();
 								list_RemoveNode(my->mynode);
@@ -2194,7 +2237,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Entity* caster = uidToEntity(spell->caster);
 								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
-							if ( !(my->actmagicIsOrbiting == 2) )
+							if ( !(my->actmagicIsOrbiting == 2) || my->actmagicSpray == 1 )
 							{
 								my->removeLightField();
 								list_RemoveNode(my->mynode);
@@ -2217,7 +2260,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Entity* caster = uidToEntity(spell->caster);
 								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
-							if ( !(my->actmagicIsOrbiting == 2) )
+							if ( !(my->actmagicIsOrbiting == 2) || my->actmagicSpray == 1 )
 							{
 								my->removeLightField();
 								list_RemoveNode(my->mynode);
@@ -2239,7 +2282,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Entity* caster = uidToEntity(spell->caster);
 								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
-							if ( !(my->actmagicIsOrbiting == 2) )
+							if ( !(my->actmagicIsOrbiting == 2) || my->actmagicSpray == 1 )
 							{
 								my->removeLightField();
 								list_RemoveNode(my->mynode);
@@ -2319,7 +2362,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Entity* caster = uidToEntity(spell->caster);
 								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
-							if ( !(my->actmagicIsOrbiting == 2) )
+							if ( !(my->actmagicIsOrbiting == 2) || my->actmagicSpray == 1 )
 							{
 								my->removeLightField();
 								list_RemoveNode(my->mynode);
@@ -3831,6 +3874,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				}
 				return;
 			}
+
+			if ( my->actmagicSpray == 1 )
+			{
+				my->vel_x = my->vel_x * .95;
+				my->vel_y = my->vel_y * .95;
+			}
 		}
 
 		//Go down two levels to the next element. This will need to get re-written shortly.
@@ -3877,7 +3926,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 		}
 
 		// spawn particles
-		if ( *cvar_magic_fx_use_vismap && !intro )
+		if ( my->actmagicSpray == 1 )
+		{
+		}
+		else if ( *cvar_magic_fx_use_vismap && !intro )
 		{
 			int x = my->x / 16.0;
 			int y = my->y / 16.0;
@@ -4954,11 +5006,11 @@ Entity* createParticleTimer(Entity* parent, int duration, int sprite)
 	entity->flags[INVISIBLE] = true;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	if ( multiplayer != CLIENT )
+	/*if ( multiplayer != CLIENT )
 	{
 		entity_uids--;
 	}
-	entity->setUID(-3);
+	entity->setUID(-3);*/
 
 	return entity;
 }
@@ -5523,6 +5575,89 @@ void actParticleTimer(Entity* my)
 			{
 				createParticleDropRising(my, my->particleTimerCountdownSprite, 1.0);
 				my->particleTimerCountdownAction = 0;
+			}
+			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_MAGIC_SPRAY )
+			{
+				Entity* parent = uidToEntity(my->parent);
+				if ( !parent )
+				{
+					PARTICLE_LIFE = 0;
+				}
+				else
+				{
+					my->x = parent->x;
+					my->y = parent->y;
+					my->yaw = parent->yaw;
+
+					Entity* entity = nullptr;
+					if ( multiplayer != CLIENT && my->ticks % 2 == 0 )
+					{
+						// damage frames
+						entity = newEntity(my->particleTimerCountdownSprite, 1, map.entities, nullptr);
+						entity->behavior = &actMagicMissile;
+					}
+					else
+					{
+						entity = multiplayer == CLIENT ? spawnGibClient(0, 0, 0, -1) : spawnGib(my);
+					}
+					if ( entity )
+					{
+						entity->sprite = my->particleTimerCountdownSprite;
+						entity->x = parent->x;
+						entity->y = parent->y;
+						if ( parent->behavior == &actMonster && parent->getMonsterTypeFromSprite() == SLIME )
+						{
+							entity->z = -2 + parent->z + parent->focalz;
+						}
+						else
+						{
+							entity->z = parent->z;
+						}
+						entity->parent = parent->getUID();
+
+						entity->ditheringDisabled = true;
+						entity->flags[SPRITE] = true;
+						entity->flags[INVISIBLE] = false;
+						entity->flags[PASSABLE] = true;
+						entity->flags[NOUPDATE] = true;
+						entity->flags[UNCLICKABLE] = true;
+
+						entity->sizex = 2;
+						entity->sizey = 2;
+						entity->yaw = my->yaw - 0.2 + (local_rng.rand() % 20) * 0.02;
+						entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+						entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+						double vel = (20 + (local_rng.rand() % 5)) / 10.f;
+						entity->vel_x = vel * cos(entity->yaw) + parent->vel_x;
+						entity->vel_y = vel * sin(entity->yaw) + parent->vel_y;
+						entity->vel_z = -.5;
+						if ( entity->behavior == &actMagicMissile )
+						{
+							spell_t* spell = getSpellFromID(SPELL_LIGHTNING);
+							entity->skill[4] = 0; // life start
+							entity->skill[5] = TICKS_PER_SECOND; //lifetime
+							entity->actmagicSpray = 1;
+							entity->actmagicSprayGravity = 0.04;
+							entity->actmagicEmitter = my->getUID();
+							node_t* node = list_AddNodeFirst(&entity->children);
+							node->element = copySpell(spell);
+							((spell_t*)node->element)->caster = parent->getUID();
+							node_t* elementNode = ((spell_t*)node->element)->elements.first;
+							spellElement_t* element = (spellElement_t*)elementNode->element;
+							{
+								elementNode = element->elements.first;
+								element = (spellElement_t*)elementNode->element;
+								element->damage = 2;
+							}
+
+							node->deconstructor = &spellDeconstructor;
+							node->size = sizeof(spell_t);
+
+							--entity_uids;
+							entity->setUID(-3);
+						}
+					}
+				}
 			}
 		}
 		else

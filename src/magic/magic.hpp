@@ -147,6 +147,7 @@ static const int PARTICLE_EFFECT_DEVIL_SUMMON_MONSTER = 24;
 static const int PARTICLE_EFFECT_SHATTERED_GEM = 25;
 static const int PARTICLE_EFFECT_SHRINE_TELEPORT = 26;
 static const int PARTICLE_EFFECT_GHOST_TELEPORT = 27;
+static const int PARTICLE_EFFECT_MAGIC_SPRAY = 28;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -159,6 +160,14 @@ static const int PARTICLE_TIMER_ACTION_SPAWN_PORTAL = 2;
 static const int PARTICLE_TIMER_ACTION_SUMMON_MONSTER = 3;
 static const int PARTICLE_TIMER_ACTION_SPELL_SUMMON = 4;
 static const int PARTICLE_TIMER_ACTION_DEVIL_SUMMON_MONSTER = 5;
+static const int PARTICLE_TIMER_ACTION_MAGIC_SPRAY = 6;
+
+struct ParticleEmitterHit_t
+{
+	Uint32 tick = 0;
+	int hits = 0;
+};
+extern std::map<Uint32, std::map<Uint32, ParticleEmitterHit_t>> particleTimerEmitterHitEntities;
 
 bool addSpell(int spell, int player, bool ignoreSkill = false); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
 

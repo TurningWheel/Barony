@@ -25,6 +25,8 @@
 #include "../prng.hpp"
 #include "../mod_tools.hpp"
 
+std::map<Uint32, std::map<Uint32, ParticleEmitterHit_t>> particleTimerEmitterHitEntities;
+
 void freeSpells()
 {
 	list_FreeAll(&spell_forcebolt.elements);
