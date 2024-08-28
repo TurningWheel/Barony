@@ -1040,6 +1040,7 @@ bool Player::GUI_t::bActiveModuleUsesInventory()
 		case MODULE_SHOP:
 		case MODULE_CHEST:
 		case MODULE_REMOVECURSE:
+		case MODULE_ENCHANTMAIL:
 		case MODULE_IDENTIFY:
 		case MODULE_TINKERING:
 		case MODULE_FEATHER:
@@ -4857,6 +4858,24 @@ bool GenericGUIMenu::isItemRemoveCursable(const Item* item)
 	return false;
 }
 
+bool GenericGUIMenu::isItemMail(const Item* item)
+{
+	if (!item)
+	{
+		return false;
+	}
+	if (!item->identified)
+	{
+		return false;
+	}
+	if (item->identified && item->type == SCROLL_MAIL)
+	{
+		return true;
+	}
+	return false;
+}
+
+
 bool GenericGUIMenu::isItemIdentifiable(const Item* item)
 {
 	if ( !item )
@@ -6021,6 +6040,10 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 		{
 			return isItemRemoveCursable(item);
 		}
+		else if (itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_ENCHANTMAIL)
+		{
+			return isItemMail(item);
+		}
 		return false;
 	}
 	else if ( guiType == GUI_TYPE_ALCHEMY )
@@ -6163,6 +6186,17 @@ void GenericGUIMenu::identifyItem(Item* item)
 
 	item->identified = true;
 	messagePlayer(gui_player, MESSAGE_MISC, Language::get(320), item->description());
+	closeGUI();
+}
+
+void GenericGUIMenu::enchantItem(Item* item)
+{
+	if (!item)
+	{
+		return;
+	}
+	item->beatitude += itemEffectItemBeatitude + 1;
+	messagePlayer(gui_player, MESSAGE_MISC, Language::get(7002), item->description());
 	closeGUI();
 }
 
@@ -6518,6 +6552,10 @@ void GenericGUIMenu::openGUI(int type, Item* effectItem, int effectBeatitude, in
 		{
 			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SCROLL_REPAIR;
 		}
+		else if (itemEffectItemType == SCROLL_ENCHANTMAIL)
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SCROLL_ENCHANTMAIL;
+		}
 		if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_NONE )
 		{
 			this->closeGUI();
@@ -6659,6 +6697,16 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 				consumeItem(itemEffectScrollItem, gui_player);
 			}
 			uncurseItem(item);
+			return true;
+		}
+		else if (itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_ENCHANTMAIL)
+		{
+			if (itemEffectScrollItem && itemCategory(itemEffectScrollItem) == SCROLL)
+			{
+				messagePlayer(gui_player, MESSAGE_INVENTORY, Language::get(848)); // as you read the scroll it disappears...
+				consumeItem(itemEffectScrollItem, gui_player);
+			}
+			enchantItem(item);
 			return true;
 		}
 		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_IDENTIFY
@@ -9229,6 +9277,9 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case SCROLL_REPAIR:
 		case SCROLL_DESTROYARMOR:
 		case SCROLL_TELEPORTATION:
+		case SCROLL_ENCHANTMAIL:
+		case SCROLL_CONJUREMOLDYCHEESE:
+		case SCROLL_SUMMONJOE:
 			*metal = 0;
 			*magic = 2;
 			break;
@@ -10513,11 +10564,14 @@ void GenericGUIMenu::scribingGetChargeCost(Item* itemUsedWith, int& outChargeCos
 		switch ( itemUsedWith->type )
 		{
 			case SCROLL_MAIL:
+			case SCROLL_ENCHANTMAIL:
 				outChargeCostMin = 2;
 				break;
 			case SCROLL_DESTROYARMOR:
 			case SCROLL_FIRE:
 			case SCROLL_LIGHT:
+			case SCROLL_CONJUREMOLDYCHEESE:
+			case SCROLL_SUMMONJOE:
 				outChargeCostMin = 4;
 				break;
 				break;
@@ -20540,6 +20594,25 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 				result = ITEMFX_ACTION_OK;
 			}
 		}
+		else if (currentMode == ITEMFX_MODE_SCROLL_ENCHANTMAIL)
+		{
+			if (itemCategory(item) == SPELL_CAT)
+			{
+				result = ITEMFX_ACTION_INVALID_ITEM;
+			}
+			if (item->type == SCROLL_MAIL) 
+			{
+				result = ITEMFX_ACTION_OK;
+			}
+			else if (!item->identified)
+			{
+				result = ITEMFX_ACTION_NOT_IDENTIFIED_YET;
+			}
+			else
+			{
+				result = ITEMFX_ACTION_INVALID_ITEM;
+			}
+		}
 		else if ( currentMode == ITEMFX_MODE_SCROLL_CHARGING )
 		{
 			if ( itemCategory(item) == SPELL_CAT )
@@ -21495,6 +21568,9 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 					case ITEMFX_MODE_SCROLL_REMOVECURSE:
 						actionPromptTxt->setText(Language::get(4204));
 						break;
+					case ITEMFX_MODE_SCROLL_ENCHANTMAIL:
+						actionPromptTxt->setText(Language::get(7000));
+						break;
 					case ITEMFX_MODE_SPELL_REMOVECURSE:
 						actionPromptTxt->setText(Language::get(4204));
 						break;
@@ -21637,6 +21713,9 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 				break;
 			case ITEMFX_MODE_SCROLL_REMOVECURSE:
 				actionPromptUnselectedTxt->setText(Language::get(4205));
+				break;
+			case ITEMFX_MODE_SCROLL_ENCHANTMAIL:
+				actionPromptUnselectedTxt->setText(Language::get(7001));
 				break;
 			case ITEMFX_MODE_SPELL_IDENTIFY:
 				actionPromptUnselectedTxt->setText(Language::get(4209));

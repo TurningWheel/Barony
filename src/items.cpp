@@ -2442,6 +2442,27 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 				consumeItem(item, player);
 			}
 			break;
+		case SCROLL_SUMMONJOE:
+			item_ScrollSummonJoe(item, player);
+			if (!players[player]->entity->isBlind())
+			{
+				consumeItem(item, player);
+			}
+			break;
+		case SCROLL_CONJUREMOLDYCHEESE:
+			item_ScrollConjureMoldyCheese(item, player);
+			if (!players[player]->entity->isBlind())
+			{
+				consumeItem(item, player);
+			}
+			break;
+		case SCROLL_ENCHANTMAIL:
+			item_ScrollEnchantMail(item, player);
+			if (!players[player]->entity->isBlind())
+			{
+				//consumeItem(item, player);
+			}
+			break;
 		case MAGICSTAFF_LIGHT:
 		case MAGICSTAFF_DIGGING:
 		case MAGICSTAFF_LOCKING:

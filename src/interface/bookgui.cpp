@@ -513,14 +513,14 @@ void Player::BookGUI_t::closeBookGUI()
 
 void Player::BookGUI_t::openBook(int index, Item* item)
 {
-	if ( getBookDefaultNameFromIndex(index) == "" )
+	if (getBookDefaultNameFromIndex(index) == "")
 	{
 		return;
 	}
 
 	for (int c = 0; c < num_banned_books; ++c) {
 		const char* banned_book = banned_books[c];
-		if ( !spawn_blood && getBookDefaultNameFromIndex(index, false) == banned_book )
+		if (!spawn_blood && getBookDefaultNameFromIndex(index, false) == banned_book)
 		{
 			openBook((index + 1) % numbooks, item);
 			return;
@@ -529,12 +529,56 @@ void Player::BookGUI_t::openBook(int index, Item* item)
 
 	player.GUI.previousModule = player.GUI.activeModule;
 
-	players[player.playernum]->openStatusScreen(GUI_MODE_INVENTORY, 
+	players[player.playernum]->openStatusScreen(GUI_MODE_INVENTORY,
 		INVENTORY_MODE_ITEM, player.GUI.MODULE_BOOK_VIEW); // Reset the GUI to the inventory.
 	bBookOpen = true;
 	openBookName = getBookDefaultNameFromIndex(index);
 	openBookItem = item;
 	currentBookPage = 0;
+
+	int bookType = rand() % 16;
+	if (openBookName == "Worker's Journal, Entry 2" || openBookName == "Worker's Journal, Entry 1" || openBookName == "Poem of the Mines" || openBookName == "Cave Beasts" || openBookName == "Mining My Soul") {
+		bookType = 10; // axe
+	}
+	if (openBookName == "Controlling Goblins" || openBookName == "Lost Journal" || openBookName == "My Journal" || openBookName == "Worker's Journal, Entry 3" || openBookName == "The Campaign") {
+		bookType = 5; // leadership
+	}
+	if (openBookName == "Character Attributes" || openBookName == "Winny's Report") {
+		bookType = 3; // appraisal
+	}
+	if (openBookName == "A Brief Survey of Goblins") {
+		bookType = 12; // polearm
+	}
+	if (openBookName == "Assessing the ZAP Brigade" || openBookName == "Sightings of the Lich" || openBookName == "The Flying Minecraft") {
+		bookType = 6; // spellcasting
+	}
+	if (openBookName == "Bottle Book" || openBookName == "Citadel Servant FAQ") {
+		bookType = 15; // alchemy
+	}
+	if (openBookName == "Concerning the Undead") {
+		bookType = 8; // ranged
+	}
+	if (openBookName == "Dethroning Herx" || openBookName == "On Giantism, Vol 1" || openBookName == "The History of Baron Herx") {
+		bookType = 7; // magic
+	}
+	if (openBookName == "How to be Strong" || openBookName == "Worker's Journal, Entry 4" || openBookName == "The Lusty Goblin Maid") {
+		bookType = 14; // unarmed
+	}
+	if (openBookName == "Miner's Christmas" || openBookName == "Newspaper Clipping" || openBookName == "To Emily") {
+		bookType = 2; // trading
+	}
+	if (openBookName == "Surviving the Mines" || openBookName == "The Art of Mine Warfare" || openBookName == "To Emily") {
+		bookType = 1; // stealth
+	}
+	if (openBookName == "On Giantism, Vol 2") {
+		bookType = 9; // sword
+	}
+	if (openBookName == "The Adventurer Who Went to Hell") {
+		bookType = 13; // blocking
+	}
+	if (openBookName == "The Pirate King") {
+		bookType = 4; // swimming
+	}
 
 	playSound(83 + local_rng.rand() % 6, 156);
 
@@ -565,6 +609,21 @@ void Player::BookGUI_t::openBook(int index, Item* item)
 	{
 		steamAchievement("BARONY_ACH_WELL_READ");
 	}
+	if (item->beatitude < 0) {
+		int tempstat = stats[player.playernum]->getProficiency(bookType);
+		tempstat = tempstat - (5*item->beatitude);
+		stats[player.playernum]->setProficiency(bookType, tempstat);
+		consumeItem(item, player.playernum);
+		return;
+	}
+	if (item->beatitude >= 0) {
+		int tempstat = stats[player.playernum]->getProficiency(bookType);
+		int randomvar = rand() % 5 + 1;
+		tempstat = tempstat + randomvar + (5 + 5*item->beatitude);
+		stats[player.playernum]->setProficiency(bookType, tempstat);
+		consumeItem(item, player.playernum);
+	}
+
 }
 
 void Player::SignGUI_t::openSign(std::string name, Uint32 uid)

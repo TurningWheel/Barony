@@ -32,6 +32,8 @@
 #define PASSABLE 12
 #define USERFLAG1 14
 #define USERFLAG2 15
+#define JOE 16
+#define NEGAJOE 17
 
 // number of entity skills and fskills
 static const int NUMENTITYSKILLS = 60;
@@ -117,7 +119,7 @@ public:
 	// entity attributes
 	real_t fskill[NUMENTITYFSKILLS]; // floating point general purpose variables
 	Sint32 skill[NUMENTITYSKILLS];  // general purpose variables
-	bool flags[16];    // engine flags
+	bool flags[18];    // engine flags
 	char* string;      // general purpose string
 	light_t* light;    // every entity has a specialized light pointer
 	list_t children;   // every entity has a list of child objects
@@ -1147,7 +1149,7 @@ void actTextSource(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-static const int NUM_ITEM_STRINGS = 333;
+static const int NUM_ITEM_STRINGS = 336;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 129;
 static const int NUM_EDITOR_SPRITES = 180;
 static const int NUM_EDITOR_TILES = 350;

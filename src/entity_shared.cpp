@@ -494,6 +494,9 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"hat_hood_apprentice",
 	"hat_hood_assassin",
 	"hat_hood_whispers",
+	"scroll_summonjoe",
+	"scroll_conjuremoldycheese",
+	"scroll_enchantmail",
 	""
 };
 

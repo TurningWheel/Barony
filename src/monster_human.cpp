@@ -63,13 +63,70 @@ void initHuman(Entity* my, Stat* myStats)
 			// special human variant (named or Zap Brigadier), do not generate any other items
 			int specialMonsterVariant = 0;
 
+			if (my->flags[JOE] == true) {
+				myStats->setAttribute("special_npc", "joe");
+				strcpy(myStats->name, "Joe");
+				my->sprite = 1321;
+				myStats->appearance = 1000;
+				myStats->sex = MALE;
+				myStats->LVL = 1;
+				myStats->HP = 5;
+				myStats->MAXHP = myStats->HP;
+				myStats->MP = 0;
+				myStats->MAXMP = myStats->MP;
+				myStats->STR = -2;
+				myStats->DEX = -2;
+				myStats->CON = -2;
+				myStats->INT = -2;
+				myStats->PER = -2;
+				myStats->CHR = 1;
+				myStats->shield = newItem(TOOL_LANTERN, DECREPIT, 1, 1, rng.rand(), false, nullptr);
+				myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 0;
+				myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 0;
+				myStats->EDITOR_ITEMS[ITEM_SLOT_RING] = 0;
+				myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] = 0;
+				myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] = 0;
+				myStats->EDITOR_ITEMS[ITEM_SLOT_GLOVES] = 0;
+				myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] = 0;
+				myStats->EDITOR_ITEMS[ITEM_SLOT_MASK] = 0;
+
+			}
+			if (my->flags[NEGAJOE] == true) {
+				myStats->setAttribute("special_npc", "nega joe");
+				strcpy(myStats->name, "Nega Joe");
+				my->sprite = 1322;
+				myStats->appearance = 1001;
+				myStats->sex = MALE;
+				myStats->LVL = 5;
+				myStats->HP = 50;
+				myStats->MAXHP = myStats->HP;
+				myStats->MP = 100;
+				myStats->MAXMP = myStats->MP;
+				myStats->STR = 5;
+				myStats->DEX = 1;
+				myStats->CON = 1;
+				myStats->INT = 15;
+				myStats->PER = 5;
+				myStats->CHR = -2;
+				myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, 1, 1, rng.rand(), false, nullptr);
+				myStats->weapon = newItem(IRON_SPEAR, EXCELLENT, 2, 1, rng.rand(), false, nullptr);
+				myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 0;
+				myStats->EDITOR_ITEMS[ITEM_SLOT_RING] = 0;
+				myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] = 0;
+				myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] = 0;
+				myStats->EDITOR_ITEMS[ITEM_SLOT_GLOVES] = 0;
+				myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] = 0;
+				myStats->EDITOR_ITEMS[ITEM_SLOT_MASK] = 0;
+
+			}
+
 			// boss variants
 			// generate special loadout
 			if ( my->monsterSpecialTimer == 0 )
 			{
 				if ( ((*cvar_summonBosses && conductGameChallenges[CONDUCT_CHEATS_ENABLED]) || rng.rand() % 25 == 0) && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
 					&& strcmp(myStats->name, "scriptNPC") && myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0
-					&& myStats->leader_uid == 0 )
+					&& myStats->leader_uid == 0 && !my->flags[JOE] && !my->flags[NEGAJOE])
 				{
 					specialMonsterVariant = 1;
 					int specialMonsterType = rng.rand() % 10;
@@ -935,6 +992,12 @@ void initHuman(Entity* my, Stat* myStats)
 	else
 	{
 		my->sprite = 113; // default
+	}
+	if (myStats->appearance == 1000) {
+		my->sprite = 1321;
+	}
+	if (myStats->appearance == 1001) {
+		my->sprite = 1322;
 	}
 }
 
@@ -1902,7 +1965,8 @@ void Entity::humanSetLimbsClient(int bodypart)
 
 	if ( (sprite >= 113 && sprite < 118) 
 		|| (sprite >= 125 && sprite < 130) 
-		|| (sprite >= 332 && sprite < 334) )
+		|| (sprite >= 332 && sprite < 334)
+		|| sprite >= 1321)
 	{
 		skinColor = 0; // light.
 		if ( (sprite >= 125 && sprite < 130)

@@ -348,9 +348,13 @@ typedef enum ItemType
 	HAT_CIRCLET_WISDOM,
 	HAT_HOOD_APPRENTICE,
 	HAT_HOOD_ASSASSIN,
-	HAT_HOOD_WHISPERS
+	HAT_HOOD_WHISPERS,
+	SCROLL_ENCHANTMAIL,
+	SCROLL_CONJUREMOLDYCHEESE,
+	SCROLL_SUMMONJOE
+
 } ItemType;
-const int NUMITEMS = 329;
+const int NUMITEMS = 332;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -619,15 +623,18 @@ void item_ScrollLight(Item* item, int player);
 void item_ScrollBlank(Item* item, int player);
 void item_ScrollEnchantWeapon(Item* item, int player);
 void item_ScrollEnchantArmor(Item* item, int player);
+void item_ScrollEnchantMail(Item* item, int player);
 void item_ScrollRemoveCurse(Item* item, int player);
 bool item_ScrollFire(Item* item, int player); // return true if exploded into fire.
 void item_ScrollFood(Item* item, int player);
 void item_ScrollConjureArrow(Item* item, int player);
+void item_ScrollConjureMoldyCheese(Item* item, int player);
 void item_ScrollMagicMapping(Item* item, int player);
 void item_ScrollRepair(Item* item, int player);
 void item_ScrollDestroyArmor(Item* item, int player);
 void item_ScrollTeleportation(Item* item, int player);
 void item_ScrollSummon(Item* item, int player);
+void item_ScrollSummonJoe(Item* item, int player);
 void item_AmuletSexChange(Item* item, int player);
 void item_ToolTowel(Item*& item, int player);
 void item_ToolTinOpener(Item* item, int player);
@@ -737,7 +744,10 @@ static const std::vector<int> enchantedFeatherScrollsFixedList =
 	SCROLL_REPAIR,
 	SCROLL_MAGICMAPPING,
 	SCROLL_ENCHANTWEAPON,
-	SCROLL_ENCHANTARMOR
+	SCROLL_ENCHANTARMOR,
+	SCROLL_CONJUREMOLDYCHEESE,
+	SCROLL_SUMMONJOE,
+	SCROLL_ENCHANTMAIL
 };
 static const int ENCHANTED_FEATHER_MAX_DURABILITY = 101;
 static const int QUIVER_MAX_AMMO_QTY = 51;

@@ -410,6 +410,10 @@ public:
 	bool isItemRemoveCursable(const Item* item);
 	void uncurseItem(Item* item);
 
+	//enchant mail
+	bool isItemMail(const Item* item);
+	void enchantItem(Item* item);
+
 	//identify
 	bool isItemIdentifiable(const Item* item);
 	void identifyItem(Item* item);
@@ -632,7 +636,8 @@ public:
 			ITEMFX_MODE_SCROLL_IDENTIFY,
 			ITEMFX_MODE_SCROLL_REMOVECURSE,
 			ITEMFX_MODE_SPELL_IDENTIFY,
-			ITEMFX_MODE_SPELL_REMOVECURSE
+			ITEMFX_MODE_SPELL_REMOVECURSE,
+			ITEMFX_MODE_SCROLL_ENCHANTMAIL
 		};
 		void openItemEffectMenu(ItemEffectModes mode);
 		ItemEffectModes currentMode = ITEMFX_MODE_NONE;

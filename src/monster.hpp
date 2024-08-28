@@ -78,6 +78,7 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
         354, 355, 356, 357, 358, 359,
         367, 368, 369, 370, 371, 372,
         380, 381, 382, 383, 384, 385,
+		1321,1322,
     },
 
     // RAT
@@ -89,6 +90,8 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
         1063, 1064, 1065, 1066, 1067,   // normal rat attack frames
         1068, 1069,                     // algernon walk cycle
         1070, 1071, 1072, 1073, 1074,   // algernon attack frames
+		1314, 1315,                    // bed dog walk cycle
+		1316, 1317, 1318, 1319, 1320, // bed dog attack frames
     },
 
     // GOBLIN

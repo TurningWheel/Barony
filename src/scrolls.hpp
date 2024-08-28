@@ -11,7 +11,7 @@
 
 #pragma once
 
-#define NUMLABELS 25
+#define NUMLABELS 28
 static char scroll_label[NUMLABELS][512] =
 {
 	"ZELGO MER",
@@ -39,4 +39,7 @@ static char scroll_label[NUMLABELS][512] =
 	"TEMOV",
 	"GARVEN DEH",
 	"READ ME"
+	"GIB BAB UGH"
+	"DARBIG RIMBY"
+	"TUPIE BOP"
 };

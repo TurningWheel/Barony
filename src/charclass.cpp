@@ -1125,6 +1125,33 @@ void initClass(const int player)
 			item2 = itemPickup(player, item);
 			free(item);
 
+			//test stuff
+			item = newItem(SCROLL_SUMMON, SERVICABLE, 0, 6, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(SCROLL_SUMMONJOE, SERVICABLE, 3, 6, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+			
+			item = newItem(SCROLL_SUMMONJOE, SERVICABLE, -1, 6, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(SCROLL_REMOVECURSE, SERVICABLE, 1, 6, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(SCROLL_ENCHANTMAIL, SERVICABLE, 0, 6, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(SCROLL_MAIL, SERVICABLE, 1, 6, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			// where test stuff ends
+			// 
 			// book
 			item = newItem(SPELLBOOK_DETECT_FOOD, WORN, 0, 1, 0, true, nullptr);
 			item2 = itemPickup(player, item);

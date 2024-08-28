@@ -2899,6 +2899,40 @@ void item_ScrollEnchantArmor(Item* item, int player)
 	consumeItem(item, player);
 }
 
+void item_ScrollEnchantMail(Item* item, int player)
+{
+	Item* mail = nullptr;
+	if (players[player] == nullptr || players[player]->entity == nullptr)
+	{
+		return;
+	}
+
+	if (!item)
+	{
+		return;
+	}
+
+	if (!players[player]->isLocalPlayer())
+	{
+		consumeItem(item, player);
+		return;
+	}
+
+	if (players[player]->entity->isBlind())
+	{
+		messagePlayer(player, MESSAGE_HINT, Language::get(775));
+		playSoundPlayer(player, 90, 64);
+		return;
+	}
+
+	conductIlliterate = false;
+	
+	onScrollUseAppraisalIncrease(item, player);
+	item->identified = true;
+	GenericGUI[player].openGUI(GUI_TYPE_ITEMFX, item, item->beatitude, item->type, SPELL_NONE);
+
+}
+
 void item_ScrollRemoveCurse(Item* item, int player)
 {
 	if (players[player] == nullptr || players[player]->entity == nullptr)
@@ -3257,6 +3291,37 @@ void item_ScrollConjureArrow(Item* item, int player)
 
 	onScrollUseAppraisalIncrease(item, player);
 	item->identified = true;
+}
+
+void item_ScrollConjureMoldyCheese(Item* item, int player)
+{
+	if (players[player] == nullptr || players[player]->entity == nullptr)
+	{
+		return;
+	}
+
+	// this is a CLIENT function
+	if (!players[player]->isLocalPlayer())
+	{
+		return;
+	}
+
+	if (players[player]->entity->isBlind())
+	{
+		messagePlayer(player, MESSAGE_HINT, Language::get(775));
+		playSoundPlayer(player, 90, 64);
+		return;
+	}
+
+	if (players[player]->isLocalPlayer())
+	{
+		conductIlliterate = false;
+	}
+	int amount = rand() % 3 + item->beatitude;
+	if (amount < 1) {
+		amount = 1;
+	}
+	dropItem(newItem(FOOD_CHEESE, DECREPIT, item->beatitude, amount, 0, true, &stats[player]->inventory), player, false);
 }
 
 void item_ScrollMagicMapping(Item* item, int player)
@@ -3821,7 +3886,7 @@ void item_ScrollSummon(Item* item, int player)
 	else if (item->beatitude >= 2)
 	{
 		//Spawn many/neat allies
-		switch (local_rng.rand() % 2)
+		switch (local_rng.rand() % 3)
 		{
 			case 0:
 				// summon zap brigadiers
@@ -3833,6 +3898,10 @@ void item_ScrollSummon(Item* item, int player)
 				numCreatures = local_rng.rand() % 2 + 4;
 				creature = DEMON;
 				break;
+			case 2:
+				// summon shopkeeper
+				numCreatures = 1;
+				creature = SHOPKEEPER;
 		}
 	}
 
@@ -3910,6 +3979,130 @@ void item_ScrollSummon(Item* item, int player)
 			{
 				messagePlayer(player, MESSAGE_HINT, Language::get(881), getMonsterLocalizedPlural((Monster)creature).c_str());
 				if ( item->beatitude >= 2 )
+				{
+					messagePlayer(player, MESSAGE_WORLD, Language::get(882));
+				}
+			}
+		}
+	}
+
+	onScrollUseAppraisalIncrease(item, player);
+	item->identified = true;
+}
+
+void item_ScrollSummonJoe(Item* item, int player)
+{
+	// server only function
+	if (players[player] == nullptr || players[player]->entity == nullptr)
+	{
+		return;
+	}
+	if (multiplayer == CLIENT)
+	{
+		return;
+	}
+
+	if (players[player]->entity->isBlind())
+	{
+		if (players[player]->isLocalPlayer())
+		{
+			messagePlayer(player, MESSAGE_HINT, Language::get(775));
+			playSoundPlayer(player, 90, 64);
+		}
+		return;
+	}
+
+	if (players[player]->isLocalPlayer())
+	{
+		conductIlliterate = false;
+	}
+
+	messagePlayer(player, MESSAGE_INVENTORY, Language::get(848));
+
+	playSoundEntity(players[player]->entity, 153, 64);
+	Uint32 numCreatures = item->beatitude + 1;
+	Monster creature = HUMAN;
+	
+	if (item->beatitude < 0) {
+		numCreatures = 1;
+	}
+	
+	int i;
+	bool spawnedMonster = false;
+	for (i = 0; i < numCreatures; ++i)
+	{
+		Entity* monster = summonMonster(creature, floor(players[player]->entity->x / 16) * 16 + 8, floor(players[player]->entity->y / 16) * 16 + 8);
+		monster->flags[JOE] = true;
+		if (item->beatitude < 0) {
+			monster->flags[JOE] = false;
+			monster->flags[NEGAJOE] = true;
+		}
+		if (monster)
+		{
+			spawnedMonster = true;
+			Stat* monsterStats = monster->getStats();
+			if (item->beatitude >= 0 && monsterStats)
+			{
+				if (forceFollower(*players[player]->entity, *monster))
+				{
+					monster->monsterAllyIndex = player;
+					
+					if (multiplayer == SERVER)
+					{
+						serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
+					}
+
+					// change the color of the hit entity.
+					monster->flags[USERFLAG2] = true;
+					serverUpdateEntityFlag(monster, USERFLAG2);
+					if (monsterChangesColorWhenAlly(monsterStats))
+					{
+						int bodypart = 0;
+						for (node_t* node = monster->children.first; node != nullptr; node = node->next)
+						{
+							if (bodypart >= LIMB_HUMANOID_TORSO)
+							{
+								Entity* tmp = (Entity*)node->element;
+								if (tmp)
+								{
+									tmp->flags[USERFLAG2] = true;
+									//serverUpdateEntityFlag(tmp, USERFLAG2);
+								}
+							}
+							++bodypart;
+						}
+					}
+				}
+			}
+		}
+	}
+	if (spawnedMonster)
+	{
+		if (item->beatitude < 0)
+		{
+			if (numCreatures <= 1)
+			{
+				messagePlayer(player, MESSAGE_HINT, Language::get(877), getMonsterLocalizedName((Monster)creature).c_str());
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_HINT, Language::get(878), getMonsterLocalizedPlural((Monster)creature).c_str());
+			}
+		}
+		else
+		{
+			if (numCreatures <= 1)
+			{
+				messagePlayer(player, MESSAGE_HINT, Language::get(879), getMonsterLocalizedName((Monster)creature).c_str());
+				if (item->beatitude >= 2)
+				{
+					messagePlayer(player, MESSAGE_WORLD, Language::get(880));
+				}
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_HINT, Language::get(881), getMonsterLocalizedPlural((Monster)creature).c_str());
+				if (item->beatitude >= 2)
 				{
 					messagePlayer(player, MESSAGE_WORLD, Language::get(882));
 				}
@@ -5449,6 +5642,7 @@ void item_FoodAutomaton(Item*& item, int player)
 			break;
 		case SCROLL_ENCHANTWEAPON:
 		case SCROLL_ENCHANTARMOR:
+		case SCROLL_ENCHANTMAIL:
 			players[player]->entity->modMP(40);
 			stats[player]->HUNGER += 600;
 			break;
@@ -5614,6 +5808,7 @@ bool itemIsConsumableByAutomaton(const Item& item)
 		case SCROLL_LIGHT:
 		case SCROLL_ENCHANTWEAPON:
 		case SCROLL_ENCHANTARMOR:
+		case SCROLL_ENCHANTMAIL:
 		case SCROLL_REMOVECURSE:
 		case SCROLL_FOOD:
 		case SCROLL_MAGICMAPPING:

@@ -55,39 +55,59 @@ void initRat(Entity* my, Stat* myStats)
 
 			// boss variants
 			const bool boss =
-			    rng.rand() % 50 == 0 &&
+			    rng.rand() % 15 == 0 && //changed: og 50
 			    !my->flags[USERFLAG2] &&
 			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 			if ( (boss || (*cvar_summonBosses && conductGameChallenges[CONDUCT_CHEATS_ENABLED])) && myStats->leader_uid == 0 )
 			{
-				myStats->setAttribute("special_npc", "algernon");
-				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
-	            my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
-				myStats->HP = 60;
-				myStats->MAXHP = 60;
-				myStats->OLDHP = myStats->HP;
-				myStats->STR = -1;
-				myStats->DEX = 20;
-				myStats->CON = 2;
-				myStats->INT = 20;
-				myStats->PER = -2;
-				myStats->CHR = 5;
-				myStats->LVL = 10;
-				newItem(GEM_EMERALD, static_cast<Status>(1 + rng.rand() % 4), 0, 1, rng.rand(), true, &myStats->inventory);
-				customItemsToGenerate = customItemsToGenerate - 1;
-				int c;
-				for ( c = 0; c < 6; c++ )
-				{
-					Entity* entity = summonMonster(RAT, my->x, my->y);
-					if ( entity )
+				int quickvar = rand() % 2;
+				if (quickvar == 0) {
+					myStats->setAttribute("special_npc", "algernon");
+					strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+					my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
+					myStats->HP = 60;
+					myStats->MAXHP = 60;
+					myStats->OLDHP = myStats->HP;
+					myStats->STR = -1;
+					myStats->DEX = 20;
+					myStats->CON = 2;
+					myStats->INT = 20;
+					myStats->PER = -2;
+					myStats->CHR = 5;
+					myStats->LVL = 10;
+					newItem(GEM_EMERALD, static_cast<Status>(1 + rng.rand() % 4), 0, 1, rng.rand(), true, &myStats->inventory);
+					customItemsToGenerate = customItemsToGenerate - 1;
+					int c;
+					for (c = 0; c < 6; c++)
 					{
-						entity->parent = my->getUID();
-						if ( Stat* followerStats = entity->getStats() )
+						Entity* entity = summonMonster(RAT, my->x, my->y);
+						if (entity)
 						{
-							followerStats->leader_uid = entity->parent;
+							entity->parent = my->getUID();
+							if (Stat* followerStats = entity->getStats())
+							{
+								followerStats->leader_uid = entity->parent;
+							}
+							entity->seedEntityRNG(rng.getU32());
 						}
-						entity->seedEntityRNG(rng.getU32());
 					}
+				}
+				
+				if (quickvar == 1) {
+					myStats->setAttribute("special_npc", "beddog");
+					strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+					my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
+					myStats->HP = 100;
+					myStats->MAXHP = 100;
+					myStats->OLDHP = myStats->HP;
+					myStats->STR = 20;
+					myStats->DEX = 5;
+					myStats->CON = 10;
+					myStats->INT = -1;
+					myStats->PER = 5;
+					myStats->CHR = 20;
+					myStats->LVL = 15;
+					newItem(BRONZE_SWORD, EXCELLENT, 3, 1, 0, true, &myStats->inventory);
 				}
 			}
 			// random effects
@@ -167,6 +187,13 @@ void ratAnimate(Entity* my, double dist)
 		    } else if (my->sprite == 1069) {
 			    my->sprite = 1068;
 		    }
+			// bed dog walk cycle
+			if (my->sprite == 1314) {
+				my->sprite = 1315;
+			}
+			else if (my->sprite == 1315) {
+				my->sprite = 1314;
+			}
 	    }
 	}
 
@@ -175,9 +202,13 @@ void ratAnimate(Entity* my, double dist)
     // attack cycle
 	if (MONSTER_ATTACK) {
 	    const int frame = TICKS_PER_SECOND / 10;
-	    const bool algernon = my->sprite >= 1068;
+	    
+		const bool beddog = my->sprite >= 1300;
+		const bool algernon = my->sprite >= 1068 && !beddog;
 	    if (MONSTER_ATTACKTIME == frame * 0) { // frame 1
 	        my->sprite = algernon ? 1070 : 1063;
+			my->sprite = beddog ? 1316 : 1063;
+
 	        if (*cvar_useFocalZ) {
 	            my->focalz = -1.5;
 	        } else {
@@ -186,6 +217,7 @@ void ratAnimate(Entity* my, double dist)
 	    }
 	    if (MONSTER_ATTACKTIME == frame * 1) { // frame 2
 	        my->sprite = algernon ? 1071 : 1064;
+			my->sprite = beddog ? 1317 : 1064;
 	        if (*cvar_useFocalZ) {
 	            my->focalz = -2.5;
 	        } else {
@@ -194,6 +226,7 @@ void ratAnimate(Entity* my, double dist)
 	    }
 	    if (MONSTER_ATTACKTIME == frame * 2) { // frame 3
 	        my->sprite = algernon ? 1072 : 1065;
+			my->sprite = beddog ? 1318 : 1065;
 	        if (*cvar_useFocalZ) {
 	            my->focalz = -3.5;
 	        } else {
@@ -202,6 +235,7 @@ void ratAnimate(Entity* my, double dist)
 	    }
 	    if (MONSTER_ATTACKTIME == frame * 4) { // frame 4
 	        my->sprite = algernon ? 1073 : 1066;
+			my->sprite = beddog ? 1319 : 1066;
 	        if (*cvar_useFocalZ) {
 	            my->focalz = -4;
 	        } else {
@@ -213,6 +247,7 @@ void ratAnimate(Entity* my, double dist)
 	    }
 	    if (MONSTER_ATTACKTIME == frame * 6) { // frame 5
 	        my->sprite = algernon ? 1074 : 1067;
+			my->sprite = beddog ? 1320 : 1067;
 	        if (*cvar_useFocalZ) {
 	            my->focalz = -3;
 	        } else {
@@ -223,10 +258,14 @@ void ratAnimate(Entity* my, double dist)
 	        if (algernon) {
 	            my->sprite = 1068;
 	            my->z = 5.5;
-	        } else {
-	            my->sprite = 131;
+	        } else if (beddog) {
+	            my->sprite = 1314;
 	            my->z = 6;
-	        }
+			}
+			else {
+				my->sprite = 131;
+				my->z = 6;
+			}
             my->focalz = 0;
 	        MONSTER_ATTACK = 0;
 	        MONSTER_ATTACKTIME = 0;
