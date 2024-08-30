@@ -63,7 +63,7 @@ FMOD::Channel* playSoundPlayer(int player, Uint16 snd, Uint8 vol)
 	{
 		return playSound(snd, vol);
 	}
-	else if ( multiplayer == SERVER )
+	else if ( multiplayer == SERVER && vol > 0 )
 	{
 		if ( client_disconnected[player] || player <= 0 )
 		{
@@ -98,7 +98,7 @@ FMOD::Channel* playSoundNotificationPlayer(int player, Uint16 snd, Uint8 vol)
 	{
 		return playSoundNotification(snd, vol);
 	}
-	else if ( multiplayer == SERVER )
+	else if ( multiplayer == SERVER && vol > 0 )
 	{
 		if ( client_disconnected[player] || player <= 0 )
 		{
@@ -130,7 +130,7 @@ FMOD::Channel* playSoundPos(real_t x, real_t y, Uint16 snd, Uint8 vol)
 {
 	auto result = playSoundPosLocal(x, y, snd, vol);
 
-	if (multiplayer == SERVER)
+	if (multiplayer == SERVER && vol > 0)
 	{
 		for (int c = 1; c < MAXPLAYERS; c++)
 		{
@@ -378,7 +378,7 @@ OPENAL_SOUND* playSoundPlayer(int player, Uint16 snd, Uint8 vol)
 	{
 		return playSound(snd, vol);
 	}
-	else if ( multiplayer == SERVER )
+	else if ( multiplayer == SERVER && vol > 0 )
 	{
 		if ( client_disconnected[player] || player <= 0 )
 		{
@@ -433,7 +433,7 @@ OPENAL_SOUND* playSoundPos(real_t x, real_t y, Uint16 snd, Uint8 vol)
 		return NULL;
 	}
 
-	if (multiplayer == SERVER)
+	if (multiplayer == SERVER && vol > 0 )
 	{
 		for (c = 1; c < MAXPLAYERS; c++)
 		{
