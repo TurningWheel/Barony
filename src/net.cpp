@@ -950,8 +950,15 @@ void serverUpdateEffects(int player)
 	net_packet->data[9] = 0;
 	net_packet->data[10] = 0;
 	net_packet->data[11] = 0;
+
 	net_packet->data[12] = 0;
 	net_packet->data[13] = 0;
+	net_packet->data[14] = 0;
+	net_packet->data[15] = 0;
+	net_packet->data[16] = 0;
+	net_packet->data[17] = 0;
+	net_packet->data[18] = 0;
+	net_packet->data[19] = 0;
 	for (j = 0; j < NUMEFFECTS; j++)
 	{
 		if ( stats[player]->EFFECTS[j] == true )
@@ -961,12 +968,12 @@ void serverUpdateEffects(int player)
 		if ( stats[player]->EFFECTS_TIMERS[j] < TICKS_PER_SECOND * 5 && stats[player]->EFFECTS_TIMERS[j] > 0 )
 		{
 			// use these bits to denote if duration is low.
-			net_packet->data[9 + j / 8] |= power(2, j - (j / 8) * 8);
+			net_packet->data[12 + j / 8] |= power(2, j - (j / 8) * 8);
 		}
 	}
 	net_packet->address.host = net_clients[player - 1].host;
 	net_packet->address.port = net_clients[player - 1].port;
-	net_packet->len = 14;
+	net_packet->len = 20;
 	sendPacketSafe(net_sock, -1, net_packet, player - 1);
 }
 
@@ -3995,7 +4002,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			if ( net_packet->data[4 + c / 8]&power(2, c - (c / 8) * 8) )
 			{
 				stats[clientnum]->EFFECTS[c] = true;
-				if ( net_packet->data[9 + c / 8] & power(2, c - (c / 8) * 8) ) // use these bits to denote if duration is low.
+				if ( net_packet->data[12 + c / 8] & power(2, c - (c / 8) * 8) ) // use these bits to denote if duration is low.
 				{
 					stats[clientnum]->EFFECTS_TIMERS[c] = 1;
 				}
