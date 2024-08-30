@@ -2882,6 +2882,13 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 					spellTimer->particleTimerCountdownSprite = sprite;
 				}
 				break;
+				case PARTICLE_EFFECT_SLIME_SPRAY:
+				{
+					Entity* spellTimer = createParticleTimer(entity, 30, -1);
+					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_MAGIC_SPRAY;
+					spellTimer->particleTimerCountdownSprite = sprite;
+				}
+				break;
 				case PARTICLE_EFFECT_PLAYER_AUTOMATON_DEATH:
 					createParticleExplosionCharge(entity, 174, 100, 0.25);
 					if ( entity && entity->behavior == &actPlayer )
@@ -6038,6 +6045,52 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		    &stats[player]->inventory);
 		dropItem(item, player);
 	}},
+
+	// item drop (greasy)
+	{ 'GRES', []() {
+		const int player = std::min(net_packet->data[25], (Uint8)(MAXPLAYERS - 1));
+		client_keepalive[player] = ticks;
+		auto item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])),
+			static_cast<Status>(SDLNet_Read32(&net_packet->data[8])),
+			SDLNet_Read32(&net_packet->data[12]),
+			SDLNet_Read32(&net_packet->data[16]),
+			SDLNet_Read32(&net_packet->data[20]),
+			net_packet->data[24],
+			&stats[player]->inventory);
+		playerGreasyDropItem(player, item);
+		if ( net_packet->data[27] == 1 )
+		{
+			// shield
+			if ( stats[player]->shield )
+			{
+				if ( stats[player]->shield->node )
+				{
+					list_RemoveNode(stats[player]->shield->node);
+				}
+				else
+				{
+					free(stats[player]->shield);
+				}
+				stats[player]->shield = nullptr;
+			}
+		}
+		else if ( net_packet->data[27] == 0 )
+		{
+			// weapon
+			if ( stats[player]->weapon )
+			{
+				if ( stats[player]->weapon->node )
+				{
+					list_RemoveNode(stats[player]->weapon->node);
+				}
+				else
+				{
+					free(stats[player]->weapon);
+				}
+				stats[player]->weapon = nullptr;
+			}
+		}
+	} },
 
 	// item drop (on death)
 	{'DIEI', [](){

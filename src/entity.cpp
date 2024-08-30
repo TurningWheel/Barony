@@ -4195,31 +4195,13 @@ void Entity::handleEffects(Stat* myStats)
 		// intended to fix multiplayer duplication.
 		if ( ticks % 70 == 0 || ticks % 130 == 0 ) 
 		{
-			if ( myStats->weapon != NULL 
-				&& (myStats->weapon->beatitude == 0 
-					|| !shouldInvertEquipmentBeatitude(myStats) && myStats->weapon->beatitude > 0
-					|| shouldInvertEquipmentBeatitude(myStats) && myStats->weapon->beatitude < 0)
-				)
+			if ( behavior == &actMonster && myStats->HP > 0 )
 			{
-				messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(636));
-				if ( player >= 0 )
+				if ( myStats->weapon != NULL && itemCategory(myStats->weapon) != SPELLBOOK )
 				{
-					dropItem(myStats->weapon, player);
-					if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
-					{
-						strcpy((char*)net_packet->data, "DROP");
-						net_packet->data[4] = 5;
-						net_packet->address.host = net_clients[player - 1].host;
-						net_packet->address.port = net_clients[player - 1].port;
-						net_packet->len = 5;
-						sendPacketSafe(net_sock, -1, net_packet, player - 1);
-					}
-				}
-				else
-				{
+					//messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(636));
 					dropItemMonster(myStats->weapon, this, myStats);
 				}
-				myStats->weapon = NULL;
 			}
 		}
 	}
@@ -6458,12 +6440,12 @@ bool Entity::isWaterWalking() const
 			}
 			if ( stats->type == SLIME )
 			{
-				std::string res = stats->getAttribute("slime_type");
-				if ( res == "slime green"
-					|| res == "slime blue"
-					|| res == "slime red"
-					|| res == "slime tar"
-					|| res == "slime metal" )
+				auto color = MonsterData_t::getKeyFromSprite(sprite, SLIME);
+				if ( color == "slime green"
+					|| color == "slime blue"
+					|| color == "slime red"
+					|| color == "slime tar"
+					|| color == "slime metal" )
 				{
 					return true;
 				}
@@ -6483,12 +6465,12 @@ bool Entity::isLavaWalking() const
 			}
 			if ( stats->type == SLIME )
 			{
-				std::string res = stats->getAttribute("slime_type");
-				if ( res == "slime green"
-					|| res == "slime blue"
-					|| res == "slime red"
-					|| res == "slime tar"
-					|| res == "slime metal" )
+				auto color = MonsterData_t::getKeyFromSprite(sprite, SLIME);
+				if ( color == "slime green"
+					|| color == "slime blue"
+					|| color == "slime red"
+					|| color == "slime tar"
+					|| color == "slime metal" )
 				{
 					return true;
 				}

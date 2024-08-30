@@ -2032,6 +2032,42 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			//Also refactor the duration determining code.
 		}
+		else if ( !strcmp(element->element_internal_name, spellElement_slime_spray.element_internal_name) )
+		{
+			int particle = -1;
+			switch ( spell->ID )
+			{
+			case SPELL_SLIME_ACID:
+				particle = 180;
+				break;
+			case SPELL_SLIME_WATER:
+				particle = 181;
+				break;
+			case SPELL_SLIME_FIRE:
+				particle = 182;
+				break;
+			case SPELL_SLIME_TAR:
+				particle = 183;
+				break;
+			case SPELL_SLIME_METAL:
+				particle = 184;
+				break;
+			default:
+				break;
+			}
+			if ( particle >= 0 )
+			{
+				Entity* spellTimer = createParticleTimer(caster, 30, -1);
+				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_MAGIC_SPRAY;
+				spellTimer->particleTimerCountdownSprite = particle;
+				result = spellTimer;
+				if ( !(caster && caster->behavior == &actMonster && caster->getStats() && caster->getStats()->type == SLIME) )
+				{
+					// spawn these if not a slime doing its special attack, client spawns own particles
+					serverSpawnMiscParticles(caster, PARTICLE_EFFECT_SLIME_SPRAY, particle);
+				}
+			}
+		}
 		
 		// intentional separate from else/if chain.
 		// disables propulsion if found a marked target.
@@ -2817,6 +2853,10 @@ int spellGetCastSound(spell_t* spell)
 	else if ( !strcmp(spell->spell_internal_name, spell_sprayWeb.spell_internal_name) )
 	{
 		return 169;
+	}
+	else if ( spell->ID >= SPELL_SLIME_ACID && spell->ID <= SPELL_SLIME_METAL )
+	{
+		return 0;
 	}
 	else
 	{

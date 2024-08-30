@@ -75,6 +75,12 @@ spellElement_t spellElement_flutter;
 spellElement_t spellElement_dash;
 spellElement_t spellElement_selfPolymorph;
 spellElement_t spellElement_ghostBolt;
+spellElement_t spellElement_slimeAcid;
+spellElement_t spellElement_slimeWater;
+spellElement_t spellElement_slimeFire;
+spellElement_t spellElement_slimeTar;
+spellElement_t spellElement_slimeMetal;
+spellElement_t spellElement_slime_spray;
 
 spell_t spell_forcebolt;
 spell_t spell_magicmissile;
@@ -130,6 +136,11 @@ spell_t spell_flutter;
 spell_t spell_dash;
 spell_t spell_polymorph;
 spell_t spell_ghost_bolt;
+spell_t spell_slime_acid;
+spell_t spell_slime_water;
+spell_t spell_slime_fire;
+spell_t spell_slime_tar;
+spell_t spell_slime_metal;
 
 bool addSpell(int spell, int player, bool ignoreSkill)
 {
@@ -309,6 +320,21 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 			break;
 		case SPELL_GHOST_BOLT:
 			new_spell = copySpell(&spell_ghost_bolt);
+			break;
+		case SPELL_SLIME_ACID:
+			new_spell = copySpell(&spell_slime_acid);
+			break;
+		case SPELL_SLIME_WATER:
+			new_spell = copySpell(&spell_slime_water);
+			break;
+		case SPELL_SLIME_FIRE:
+			new_spell = copySpell(&spell_slime_fire);
+			break;
+		case SPELL_SLIME_TAR:
+			new_spell = copySpell(&spell_slime_tar);
+			break;
+		case SPELL_SLIME_METAL:
+			new_spell = copySpell(&spell_slime_metal);
 			break;
 		default:
 			return false;
@@ -940,6 +966,21 @@ spell_t* getSpellFromID(int ID)
 			break;
 		case SPELL_GHOST_BOLT:
 			spell = &spell_ghost_bolt;
+			break;
+		case SPELL_SLIME_ACID:
+			spell = &spell_slime_acid;
+			break;
+		case SPELL_SLIME_WATER:
+			spell = &spell_slime_water;
+			break;
+		case SPELL_SLIME_FIRE:
+			spell = &spell_slime_fire;
+			break;
+		case SPELL_SLIME_TAR:
+			spell = &spell_slime_tar;
+			break;
+		case SPELL_SLIME_METAL:
+			spell = &spell_slime_metal;
 			break;
 		default:
 			break;

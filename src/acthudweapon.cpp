@@ -992,6 +992,16 @@ void actHudWeapon(Entity* my)
 			}
 			else
 			{
+				if ( playerGreasyDropItem(HUDWEAPON_PLAYERNUM, stats[HUDWEAPON_PLAYERNUM]->weapon) )
+				{
+					my->flags[INVISIBLE] = true;
+					if ( parent != nullptr )
+					{
+						parent->flags[INVISIBLE] = false;
+					}
+					return;
+				}
+
 				if ( conductGameChallenges[CONDUCT_BRAWLER] || achievementBrawlerMode )
 				{
 					if ( itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == WEAPON 
@@ -3465,6 +3475,14 @@ void actHudShield(Entity* my)
 		wouldBeDefending = false;
 	}
 
+	bool dropShield = false;
+	if ( wouldBeDefending && defending && playerGreasyDropItem(HUDSHIELD_PLAYERNUM, stats[HUDSHIELD_PLAYERNUM]->shield) )
+	{
+		wouldBeDefending = false;
+		defending = false;
+		dropShield = true;
+	}
+
 	if (defending)
 	{
 		stats[HUDSHIELD_PLAYERNUM]->defending = true;
@@ -3506,6 +3524,12 @@ void actHudShield(Entity* my)
 	}
 	HUDSHIELD_DEFEND = defending;
 	HUDSHIELD_SNEAKING = sneaking;
+
+	if ( dropShield )
+	{
+		my->flags[INVISIBLE] = true;
+		return;
+	}
 
 	bool crossbow = (stats[HUDSHIELD_PLAYERNUM]->weapon && (stats[HUDSHIELD_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDSHIELD_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW) );
 	bool doCrossbowReloadAnimation = false;

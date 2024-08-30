@@ -26,62 +26,34 @@
 #include "../mod_tools.hpp"
 
 std::map<Uint32, std::map<Uint32, ParticleEmitterHit_t>> particleTimerEmitterHitEntities;
+ParticleEmitterHit_t* getParticleEmitterHitProps(Uint32 emitterUid, Entity* hitentity)
+{
+	if ( emitterUid == 0 || !hitentity ) { return nullptr; }
+
+	if ( (Sint32)(hitentity->getUID()) >= 0 )
+	{
+		auto& emitterHit = particleTimerEmitterHitEntities[emitterUid];
+		auto find = emitterHit.find(hitentity->getUID());
+		if ( find != emitterHit.end() )
+		{
+			return &find->second;
+		}
+		else
+		{
+			auto& entry = emitterHit[hitentity->getUID()];
+			return &entry;
+		}
+	}
+	return nullptr;
+}
 
 void freeSpells()
 {
-	list_FreeAll(&spell_forcebolt.elements);
-	list_FreeAll(&spell_magicmissile.elements);
-	list_FreeAll(&spell_cold.elements);
-	list_FreeAll(&spell_fireball.elements);
-	list_FreeAll(&spell_lightning.elements);
-	list_FreeAll(&spell_removecurse.elements);
-	list_FreeAll(&spell_light.elements);
-	list_FreeAll(&spell_identify.elements);
-	list_FreeAll(&spell_magicmapping.elements);
-	list_FreeAll(&spell_sleep.elements);
-	list_FreeAll(&spell_confuse.elements);
-	list_FreeAll(&spell_slow.elements);
-	list_FreeAll(&spell_opening.elements);
-	list_FreeAll(&spell_locking.elements);
-	list_FreeAll(&spell_levitation.elements);
-	list_FreeAll(&spell_invisibility.elements);
-	list_FreeAll(&spell_teleportation.elements);
-	list_FreeAll(&spell_healing.elements);
-	list_FreeAll(&spell_extrahealing.elements);
-	list_FreeAll(&spell_cureailment.elements);
-	list_FreeAll(&spell_dig.elements);
-	list_FreeAll(&spell_summon.elements);
-	list_FreeAll(&spell_stoneblood.elements);
-	list_FreeAll(&spell_bleed.elements);
-	list_FreeAll(&spell_dominate.elements);
-	list_FreeAll(&spell_reflectMagic.elements);
-	list_FreeAll(&spell_acidSpray.elements);
-	list_FreeAll(&spell_stealWeapon.elements);
-	list_FreeAll(&spell_drainSoul.elements);
-	list_FreeAll(&spell_vampiricAura.elements);
-	list_FreeAll(&spell_charmMonster.elements);
-	list_FreeAll(&spell_revertForm.elements);
-	list_FreeAll(&spell_ratForm.elements);
-	list_FreeAll(&spell_spiderForm.elements);
-	list_FreeAll(&spell_trollForm.elements);
-	list_FreeAll(&spell_impForm.elements);
-	list_FreeAll(&spell_sprayWeb.elements);
-	list_FreeAll(&spell_poison.elements);
-	list_FreeAll(&spell_speed.elements);
-	list_FreeAll(&spell_fear.elements);
-	list_FreeAll(&spell_strike.elements);
-	list_FreeAll(&spell_detectFood.elements);
-	list_FreeAll(&spell_weakness.elements);
-	list_FreeAll(&spell_amplifyMagic.elements);
-	list_FreeAll(&spell_shadowTag.elements);
-	list_FreeAll(&spell_telePull.elements);
-	list_FreeAll(&spell_demonIllusion.elements);
-	list_FreeAll(&spell_trollsBlood.elements);
-	list_FreeAll(&spell_salvageItem.elements);
-	list_FreeAll(&spell_flutter.elements);
-	list_FreeAll(&spell_dash.elements);
-	list_FreeAll(&spell_polymorph.elements);
-	list_FreeAll(&spell_ghost_bolt.elements);
+	for ( auto it = allGameSpells.begin(); it != allGameSpells.end(); ++it )
+	{
+		spell_t& spell = **it;
+		list_FreeAll(&spell.elements);
+	}
 }
 
 void spell_magicMap(int player)
