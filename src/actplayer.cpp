@@ -9303,7 +9303,7 @@ void actPlayer(Entity* my)
 							if ( stats[PLAYER_NUM]->weapon == NULL )
 							{
 								entity->flags[INVISIBLE] = true;
-								//entity->sprite = 0;
+								entity->sprite = 0;
 							}
 							else
 							{
