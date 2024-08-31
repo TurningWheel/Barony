@@ -70,6 +70,7 @@ Shader framebuffer::hdrShader;
 Shader voxelShader;
 Shader voxelBrightShader;
 Shader voxelDitheredShader;
+Shader voxelBrightDitheredShader;
 Shader worldShader;
 Shader worldDitheredShader;
 Shader worldDarkShader;
@@ -363,6 +364,54 @@ void createCommonDrawResources() {
 	buildVoxelShader(voxelDitheredShader, "voxelDitheredShader", true,
 		vox_vertex_glsl, sizeof(vox_vertex_glsl),
 		vox_dithered_fragment_glsl, sizeof(vox_dithered_fragment_glsl));
+
+	static const char vox_bright_dithered_fragment_glsl[] =
+		"in vec3 Color;"
+		"in vec3 Normal;"
+		"in vec4 WorldPos;"
+		"uniform float uDitherAmount;"
+		"uniform mat4 uColorRemap;"
+		"uniform vec4 uLightFactor;"
+		"uniform vec4 uLightColor;"
+		"uniform vec4 uColorAdd;"
+		"uniform vec4 uCameraPos;"
+		"uniform sampler2D uLightmap;"
+		"uniform vec2 uMapDims;"
+		"uniform float uFogDistance;"
+		"uniform vec4 uFogColor;"
+		"out vec4 FragColor;"
+
+		"void dither(ivec2 pos, float amount) {"
+		"if (amount > 1.0) {"
+		"int d = int(amount) - 1;"
+		"if ((pos.x & d) == 0 && (pos.y & d) == 0) { discard; }"
+		"} else if (amount == 1.0) {"
+		"if (((pos.x + pos.y) & 1) == 0) { discard; }"
+		"} else if (amount < 1.0) {"
+		"int d = int(1.0 / amount) - 1;"
+		"if ((pos.x & d) != 0 || (pos.y & d) != 0) { discard; }"
+		"}"
+		"}"
+
+		"void main() {"
+		"dither(ivec2(gl_FragCoord), uDitherAmount);"
+		"vec3 Remapped ="
+		"    (uColorRemap[0].rgb * Color.r)+"
+		"    (uColorRemap[1].rgb * Color.g)+"
+		"    (uColorRemap[2].rgb * Color.b);"
+		"FragColor = vec4(Remapped, 1.0) * uLightFactor * uLightColor + uColorAdd;"
+
+		"if (uFogDistance > 0.0) {"
+		"float dist = length(uCameraPos.xyz - WorldPos.xyz);"
+		"float lerp = (min(dist, uFogDistance) / uFogDistance) * uFogColor.a;"
+		"vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, lerp);"
+		"FragColor = vec4(mixed, FragColor.a);"
+		"}"
+		"}";
+
+	buildVoxelShader(voxelBrightDitheredShader, "voxelBrightDitheredShader", true,
+		vox_vertex_glsl, sizeof(vox_vertex_glsl),
+		vox_bright_dithered_fragment_glsl, sizeof(vox_bright_dithered_fragment_glsl));
     
     // world shader:
     
@@ -658,6 +707,7 @@ void destroyCommonDrawResources() {
     voxelShader.destroy();
     voxelBrightShader.destroy();
 	voxelDitheredShader.destroy();
+	voxelBrightDitheredShader.destroy();
     worldShader.destroy();
     worldDitheredShader.destroy();
     worldDarkShader.destroy();

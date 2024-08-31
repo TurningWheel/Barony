@@ -309,6 +309,7 @@ extern framebuffer main_framebuffer;
 extern Shader voxelShader;
 extern Shader voxelBrightShader;
 extern Shader voxelDitheredShader;
+extern Shader voxelBrightDitheredShader;
 extern Shader worldShader;
 extern Shader worldDitheredShader;
 extern Shader worldDarkShader;

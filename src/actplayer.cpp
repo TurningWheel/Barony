@@ -8352,7 +8352,7 @@ void actPlayer(Entity* my)
 				{
 					Entity* shield = (Entity*)shieldNode->element;
 					bool bendArm = true;
-					if ( shield->flags[INVISIBLE] )
+					if ( shield->flags[INVISIBLE] && !shield->flags[INVISIBLE_DITHER] )
 					{
 						bendArm = false;
 					}
@@ -9095,7 +9095,7 @@ void actPlayer(Entity* my)
 					if ( tempNode )
 					{
 						Entity* weapon = (Entity*)tempNode->element;
-						if ( weapon->flags[INVISIBLE] || PLAYER_ARMBENDED || playerRace == CREATURE_IMP )
+						if ( (weapon->flags[INVISIBLE] && !weapon->flags[INVISIBLE_DITHER]) || PLAYER_ARMBENDED || playerRace == CREATURE_IMP )
 						{
 							if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
 							{
@@ -9215,7 +9215,7 @@ void actPlayer(Entity* my)
 					{
 						Entity* shield = (Entity*)tempNode->element;
 						bool bendArm = true;
-						if ( shield->flags[INVISIBLE] )
+						if ( shield->flags[INVISIBLE] && !shield->flags[INVISIBLE_DITHER] )
 						{
 							bendArm = false;
 							if ( insectoidLevitating )
@@ -9357,6 +9357,7 @@ void actPlayer(Entity* my)
 						if ( entity->sprite <= 0 )
 						{
 							entity->flags[INVISIBLE] = true;
+							entity->flags[INVISIBLE_DITHER] = false;
 						}
 					}
 					my->handleHumanoidWeaponLimb(entity, weaponarm);
@@ -9428,6 +9429,7 @@ void actPlayer(Entity* my)
 						if ( entity->sprite <= 0 )
 						{
 							entity->flags[INVISIBLE] = true;
+							entity->flags[INVISIBLE_DITHER] = false;
 						}
 					}
 					my->handleHumanoidShieldLimb(entity, shieldarm);
@@ -9490,6 +9492,7 @@ void actPlayer(Entity* my)
 						if ( entity->sprite <= 0 )
 						{
 							entity->flags[INVISIBLE] = true;
+							entity->flags[INVISIBLE_DITHER] = false;
 						}
 					}
 
@@ -9589,6 +9592,7 @@ void actPlayer(Entity* my)
 						if ( entity->sprite <= 0 )
 						{
 							entity->flags[INVISIBLE] = true;
+							entity->flags[INVISIBLE_DITHER] = false;
 						}
 					}
 					my->setHelmetLimbOffset(entity);
@@ -9665,6 +9669,7 @@ void actPlayer(Entity* my)
 						if ( entity->sprite <= 0 )
 						{
 							entity->flags[INVISIBLE] = true;
+							entity->flags[INVISIBLE_DITHER] = false;
 						}
 					}
 					entity->scalex = 0.99;
@@ -11062,7 +11067,7 @@ void playerAnimateSpider(Entity* my)
 		}
 
 		entity->flags[INVISIBLE] = my->flags[INVISIBLE];
-		entity->flags[INVISIBLE_DITHER] = true;
+		entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
 
 		switch ( bodypart )
 		{

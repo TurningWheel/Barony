@@ -22648,13 +22648,22 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 		view.winw = pos.w;
 		view.winh = pos.h;
 		glBeginCamera(&view, false, map);
-		bool b = playerEntity->flags[BRIGHT];
-        if (!dark) { playerEntity->flags[BRIGHT] = true; }
-		if ( !playerEntity->flags[INVISIBLE] )
+		const int ditherVal = 5;
+		if ( !playerEntity->flags[INVISIBLE] || (playerEntity->flags[INVISIBLE] && playerEntity->flags[INVISIBLE_DITHER]) )
 		{
+			bool b = playerEntity->flags[BRIGHT];
+			if (!dark) { playerEntity->flags[BRIGHT] = true; }
+
+			int oldDither = playerEntity->dithering[&view].value;
+			if ( (playerEntity->flags[INVISIBLE] && playerEntity->flags[INVISIBLE_DITHER]) )
+			{
+				playerEntity->dithering[&view].value = ditherVal;
+				//playerEntity->flags[BRIGHT] = false;
+			}
 			glDrawVoxel(&view, playerEntity, REALCOLORS);
+			playerEntity->flags[BRIGHT] = b;
+			playerEntity->dithering[&view].value = oldDither;
 		}
-		playerEntity->flags[BRIGHT] = b;
 		int c = 0;
 		if ( multiplayer != CLIENT )
 		{
@@ -22669,12 +22678,20 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 					}
 				}
 				Entity* entity = (Entity*)node->element;
-				if ( !entity->flags[INVISIBLE] )
+				if ( !entity->flags[INVISIBLE] || (entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER]) )
 				{
 					bool b = entity->flags[BRIGHT];
                     if (!dark) { entity->flags[BRIGHT] = true; }
+
+					int oldDither = entity->dithering[&view].value;
+					if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
+					{
+						entity->dithering[&view].value = ditherVal;
+						//entity->flags[BRIGHT] = false;
+					}
 					glDrawVoxel(&view, entity, REALCOLORS);
 					entity->flags[BRIGHT] = b;
+					entity->dithering[&view].value = oldDither;
 				}
 				c++;
 			}
@@ -22689,8 +22706,16 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 					}
                     bool b = entity->flags[BRIGHT];
                     if (!dark) { entity->flags[BRIGHT] = true; }
+
+					int oldDither = entity->dithering[&view].value;
+					if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
+					{
+						entity->dithering[&view].value = ditherVal;
+						//entity->flags[BRIGHT] = false;
+					}
 					glDrawSprite(&view, entity, REALCOLORS);
                     entity->flags[BRIGHT] = b;
+					entity->dithering[&view].value = oldDither;
 				}
 			}
 		}
@@ -22701,7 +22726,8 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 				Entity* entity = (Entity*)node->element;
 				if ( playerEntity->behavior == &actPlayer )
 				{
-					if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == player && !entity->flags[INVISIBLE]) || (Sint32)entity->getUID() == -4 )
+					if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == player 
+						&& (!entity->flags[INVISIBLE] || (entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER]))) || (Sint32)entity->getUID() == -4 )
 					{
 						if ( (Sint32)entity->getUID() == -4 ) // torch sprites
 						{
@@ -22711,26 +22737,55 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 							}
 							bool b = entity->flags[BRIGHT];
 							if (!dark) { entity->flags[BRIGHT] = true; }
+
+							int oldDither = entity->dithering[&view].value;
+							if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
+							{
+								entity->dithering[&view].value = ditherVal;
+								//entity->flags[BRIGHT] = false;
+							}
+
 							glDrawSprite(&view, entity, REALCOLORS);
 							entity->flags[BRIGHT] = b;
+							entity->dithering[&view].value = oldDither;
 						}
 						else
 						{
 							bool b = entity->flags[BRIGHT];
 							if (!dark) { entity->flags[BRIGHT] = true; }
+
+							int oldDither = entity->dithering[&view].value;
+							if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
+							{
+								entity->dithering[&view].value = ditherVal;
+								//entity->flags[BRIGHT] = false;
+							}
+
 							glDrawVoxel(&view, entity, REALCOLORS);
 							entity->flags[BRIGHT] = b;
+							entity->dithering[&view].value = oldDither;
 						}
+
 					}
 				}
 				else if ( playerEntity->behavior == &actDeathGhost )
 				{
-					if ( entity->behavior == &actDeathGhostLimb && entity->skill[2] == player && !entity->flags[INVISIBLE] )
+					if ( entity->behavior == &actDeathGhostLimb && entity->skill[2] == player 
+						&& (!entity->flags[INVISIBLE] || (entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER])) )
 					{
 						bool b = entity->flags[BRIGHT];
 						if ( !dark ) { entity->flags[BRIGHT] = true; }
+
+						int oldDither = entity->dithering[&view].value;
+						if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
+						{
+							entity->dithering[&view].value = ditherVal;
+							//entity->flags[BRIGHT] = false;
+						}
+
 						glDrawVoxel(&view, entity, REALCOLORS);
 						entity->flags[BRIGHT] = b;
+						entity->dithering[&view].value = oldDither;
 					}
 				}
 			}

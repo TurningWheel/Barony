@@ -1029,6 +1029,7 @@ void glBeginCamera(view_t* camera, bool useHDR, map_t& map)
     uploadUniforms(voxelShader, (float*)&proj, (float*)&view, (float*)&mapDims);
     uploadUniforms(voxelBrightShader, (float*)&proj, (float*)&view, nullptr);
     uploadUniforms(voxelDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(voxelBrightDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
     uploadUniforms(worldShader, (float*)&proj, (float*)&view, (float*)&mapDims);
     uploadUniforms(worldDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
     uploadUniforms(worldDarkShader, (float*)&proj, (float*)&view, nullptr);
@@ -1235,12 +1236,12 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     // bind shader
     auto& dither = entity->dithering[camera];
     auto& shader = !entity->flags[BRIGHT] && !telepath ?
-        (dither.value < Entity::Dither::MAX ? voxelDitheredShader : voxelShader):
-        voxelBrightShader;
+        (dither.value < Entity::Dither::MAX ? voxelDitheredShader : voxelShader) :
+        ((entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] && dither.value < Entity::Dither::MAX) ? voxelBrightDitheredShader : voxelBrightShader);
     shader.bind();
     
     // upload dither amount, if necessary
-    if (&shader == &voxelDitheredShader) {
+    if (&shader == &voxelDitheredShader || &shader == &voxelBrightDitheredShader) {
         GL_CHECK_ERR(glUniform1f(shader.uniform("uDitherAmount"),
             (float)((uint32_t)1 << (dither.value - 1)) / (1 << (Entity::Dither::MAX / 2 - 1))));
     }
