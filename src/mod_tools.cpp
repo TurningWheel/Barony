@@ -16263,3 +16263,4 @@ std::unordered_set<std::string> Compendium_t::AchievementData_t::achievementUnlo
 bool Compendium_t::AchievementData_t::sortAlphabetical = false;
 std::string Compendium_t::compendium_sorting = "default";
 bool Compendium_t::compendium_sorting_hide_undiscovered = false;
+bool Compendium_t::compendium_sorting_hide_ach_unlocked = false;

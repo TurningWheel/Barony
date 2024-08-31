@@ -3607,6 +3607,7 @@ struct Compendium_t
 	static std::unordered_map<std::string, AchievementData_t> achievements;
 	static std::string compendium_sorting;
 	static bool compendium_sorting_hide_undiscovered;
+	static bool compendium_sorting_hide_ach_unlocked;
 
 	enum EventTags
 	{

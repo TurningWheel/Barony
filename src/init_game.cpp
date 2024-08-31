@@ -984,10 +984,18 @@ void sortAchievementsForDisplay()
 		{
 			if ( ach1 && !ach2 )
 			{
+				if ( Compendium_t::compendium_sorting_hide_ach_unlocked )
+				{
+					return false;
+				}
 				return true;
 			}
 			else if ( !ach1 && ach2 )
 			{
+				if ( Compendium_t::compendium_sorting_hide_ach_unlocked )
+				{
+					return true;
+				}
 				return false;
 			}
 			else if ( !ach1 && !ach2 && (lhsAchIsHidden || rhsAchIsHidden) )
@@ -1045,6 +1053,22 @@ void sortAchievementsForDisplay()
 			}
 			else
 			{
+				if ( ach1 && !ach2 )
+				{
+					if ( Compendium_t::compendium_sorting_hide_ach_unlocked )
+					{
+						return false;
+					}
+					return true;
+				}
+				else if ( !ach1 && ach2 )
+				{
+					if ( Compendium_t::compendium_sorting_hide_ach_unlocked )
+					{
+						return true;
+					}
+					return false;
+				}
 				return lhs.second < rhs.second;
 			}
 		}
@@ -1077,12 +1101,23 @@ void sortAchievementsForDisplay()
 			auto& achData = Compendium_t::achievements[name.first];
 			if ( foundHidden )
 			{
-				if ( achData.hidden && !achData.unlocked )
+				if ( Compendium_t::compendium_sorting_hide_ach_unlocked )
 				{
-					achDisplay.numHidden++;
+					if ( achData.hidden && !achData.unlocked )
+					{
+						achDisplay.numHidden++;
+						continue;
+					}
 				}
-				// hidden, so allow only 1 entry to represent all the hidden ones
-				continue;
+				else
+				{
+					if ( achData.hidden && !achData.unlocked )
+					{
+						achDisplay.numHidden++;
+					}
+					// hidden, so allow only 1 entry to represent all the hidden ones
+					continue;
+				}
 			}
 			++numEntries;
 			if ( numEntries > 1 && ((numEntries - 1) % 8 == 0) )

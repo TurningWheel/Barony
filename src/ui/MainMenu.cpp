@@ -37432,7 +37432,6 @@ failed:
 			(int)cvar_compendium_achievement_unlock->z);
 
 
-		auto& achCategories = Compendium_t::AchievementData_t::achievementCategories[name];
 		auto& achDisplay = Compendium_t::AchievementData_t::achievementsBookDisplay[name];
 
 		achDisplay.currentPage = std::min(achDisplay.currentPage, (int)achDisplay.pages.size() * 2);
@@ -39503,6 +39502,13 @@ failed:
 				compendium_current = "monsters";
 				if ( auto frame = static_cast<Frame*>(button.getParent()) )
 				{
+					if ( auto nav_filters = frame->findFrame("nav_filters") )
+					{
+						if ( auto nav_filter_btn2 = nav_filters->findButton("nav_filter_sort2") )
+						{
+							nav_filter_btn2->setPressed(Compendium_t::compendium_sorting_hide_undiscovered);
+						}
+					}
 					if ( auto page_right = frame->findFrame("page_right") )
 					{
 						if ( auto page_right_inner = page_right->findFrame("page_right_inner") )
@@ -39639,6 +39645,13 @@ failed:
 				compendium_current = "items";
 				if ( auto frame = static_cast<Frame*>(button.getParent()) )
 				{
+					if ( auto nav_filters = frame->findFrame("nav_filters") )
+					{
+						if ( auto nav_filter_btn2 = nav_filters->findButton("nav_filter_sort2") )
+						{
+							nav_filter_btn2->setPressed(Compendium_t::compendium_sorting_hide_undiscovered);
+						}
+					}
 					if ( auto page_right = frame->findFrame("page_right") )
 					{
 						if ( auto page_right_inner = page_right->findFrame("page_right_inner") )
@@ -39746,6 +39759,13 @@ failed:
 				compendium_current = "magic";
 				if ( auto frame = static_cast<Frame*>(button.getParent()) )
 				{
+					if ( auto nav_filters = frame->findFrame("nav_filters") )
+					{
+						if ( auto nav_filter_btn2 = nav_filters->findButton("nav_filter_sort2") )
+						{
+							nav_filter_btn2->setPressed(Compendium_t::compendium_sorting_hide_undiscovered);
+						}
+					}
 					if ( auto page_right = frame->findFrame("page_right") )
 					{
 						if ( auto page_right_inner = page_right->findFrame("page_right_inner") )
@@ -39853,6 +39873,13 @@ failed:
 				compendium_current = "world";
 				if ( auto frame = static_cast<Frame*>(button.getParent()) )
 				{
+					if ( auto nav_filters = frame->findFrame("nav_filters") )
+					{
+						if ( auto nav_filter_btn2 = nav_filters->findButton("nav_filter_sort2") )
+						{
+							nav_filter_btn2->setPressed(Compendium_t::compendium_sorting_hide_undiscovered);
+						}
+					}
 					if ( auto page_right = frame->findFrame("page_right") )
 					{
 						if ( auto page_right_inner = page_right->findFrame("page_right_inner") )
@@ -39961,6 +39988,13 @@ failed:
 				compendium_current = "codex";
 				if ( auto frame = static_cast<Frame*>(button.getParent()) )
 				{
+					if ( auto nav_filters = frame->findFrame("nav_filters") )
+					{
+						if ( auto nav_filter_btn2 = nav_filters->findButton("nav_filter_sort2") )
+						{
+							nav_filter_btn2->setPressed(Compendium_t::compendium_sorting_hide_undiscovered);
+						}
+					}
 					if ( auto page_right = frame->findFrame("page_right") )
 					{
 						if ( auto page_right_inner = page_right->findFrame("page_right_inner") )
@@ -40118,6 +40152,13 @@ failed:
 				compendium_current = "achievements";
 				if ( auto frame = static_cast<Frame*>(button.getParent()) )
 				{
+					if ( auto nav_filters = frame->findFrame("nav_filters") )
+					{
+						if ( auto nav_filter_btn2 = nav_filters->findButton("nav_filter_sort2") )
+						{
+							nav_filter_btn2->setPressed(Compendium_t::compendium_sorting_hide_ach_unlocked);
+						}
+					}
 					if ( auto page_right = frame->findFrame("page_right") )
 					{
 						if ( auto page_right_inner = page_right->findFrame("page_right_inner") )
@@ -40336,7 +40377,14 @@ failed:
 			nav_filter_sort2->setColor(0);
 			nav_filter_sort2->setSelectorOffset(SDL_Rect{ 0, 2, -6, 0 });
 			nav_filter_sort2->setBackground("");
-			nav_filter_sort2->setPressed(Compendium_t::compendium_sorting_hide_undiscovered);
+			if ( compendium_current == "achievements" )
+			{
+				nav_filter_sort2->setPressed(Compendium_t::compendium_sorting_hide_ach_unlocked);
+			}
+			else
+			{
+				nav_filter_sort2->setPressed(Compendium_t::compendium_sorting_hide_undiscovered);
+			}
 			nav_filter_sort2->setWidgetSearchParent("compendium");
 			nav_filter_sort2->setWidgetUp("nav_filter_sort");
 			nav_filter_sort2->addWidgetAction("MenuPageLeft", "tab_left");
@@ -40384,7 +40432,15 @@ failed:
 				{
 					playSound(637, 128);
 				}
-				Compendium_t::compendium_sorting_hide_undiscovered = button.isPressed();
+				if ( compendium_current == "achievements" )
+				{
+					Compendium_t::compendium_sorting_hide_ach_unlocked = button.isPressed();
+					Compendium_t::AchievementData_t::achievementsNeedResort = true;
+				}
+				else
+				{
+					Compendium_t::compendium_sorting_hide_undiscovered = button.isPressed();
+				}
 				if ( auto parent = static_cast<Frame*>(button.getParent()) )
 				{
 					if ( parent = parent->getParent() )
@@ -40420,6 +40476,17 @@ failed:
 			nav_filter_sort_txt2->setHJustify(Field::justify_t::LEFT);
 			nav_filter_sort_txt2->setVJustify(Field::justify_t::TOP);
 			nav_filter_sort_txt2->setColor(makeColorRGB(220, 178, 113));
+			nav_filter_sort_txt2->setTickCallback([](Widget& widget) {
+				Field* txt = static_cast<Field*>(&widget);
+				if ( compendium_current == "achievements" )
+				{
+					txt->setText(Language::get(6247));
+				}
+				else
+				{
+					txt->setText(Language::get(6196));
+				}
+			});
 		}
 
 		auto contents = navigation->addFrame("contents");
