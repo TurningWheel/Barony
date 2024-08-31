@@ -4251,37 +4251,94 @@ void actMonster(Entity* my)
 					else if ( entity->behavior == &actDoorFrame && 
 						entity->flags[INVISIBLE] )
 					{
+						int mapx = (int)floor(entity->x / 16);
 						if ( entity->yaw >= -0.1 && entity->yaw <= 0.1 )
 						{
 							// east/west doorway
 							if ( my->y < floor(entity->y / 16) * 16 + 8 )
 							{
+								bool slide = true;
+								if ( mapy - 1 > 0 )
+								{
+									int index = (mapy - 1) * MAPLAYERS + (mapx) * MAPLAYERS * map.height;
+									if ( !map.tiles[OBSTACLELAYER + index] )
+									{
+										// no effect, wall is missing
+										slide = false;
+									}
+								}
+
+								if ( slide )
+								{
 								// slide south
 								MONSTER_VELX = 0;
 								MONSTER_VELY = .25;
 							}
+							}
 							else
 							{
+								bool slide = true;
+								if ( mapy + 1 < map.height )
+								{
+									int index = (mapy + 1) * MAPLAYERS + (mapx) * MAPLAYERS * map.height;
+									if ( !map.tiles[OBSTACLELAYER + index] )
+									{
+										// no effect, wall is missing
+										slide = false;
+									}
+								}
+
+								if ( slide )
+								{
 								// slide north
 								MONSTER_VELX = 0;
 								MONSTER_VELY = -.25;
 							}
+						}
 						}
 						else
 						{
 							// north/south doorway
 							if ( my->x < floor(entity->x / 16) * 16 + 8 )
 							{
+								bool slide = true;
+								if ( mapx - 1 > 0 )
+								{
+									int index = (mapy) * MAPLAYERS + (mapx - 1) * MAPLAYERS * map.height;
+									if ( !map.tiles[OBSTACLELAYER + index] )
+									{
+										// no effect, wall is missing
+										slide = false;
+									}
+								}
+
+								if ( slide )
+								{
 								// slide east
 								MONSTER_VELX = .25;
 								MONSTER_VELY = 0;
 							}
+							}
 							else
 							{
+								bool slide = true;
+								if ( mapx + 1 < map.width )
+								{
+									int index = (mapy) * MAPLAYERS + (mapx + 1) * MAPLAYERS * map.height;
+									if ( !map.tiles[OBSTACLELAYER + index] )
+									{
+										// no effect, wall is missing
+										slide = false;
+									}
+								}
+
+								if ( slide )
+								{
 								// slide west
 								MONSTER_VELX = -.25;
 								MONSTER_VELY = 0;
 							}
+						}
 						}
 						wasInsideEntity = true;
 						//messagePlayer(0, MESSAGE_DEBUG, "path: %d", my->monsterPathCount);
