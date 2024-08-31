@@ -7562,7 +7562,22 @@ void assignActions(map_t* map)
 				}
 				strcpy(buf, output.c_str());
 
-				entity->skill[14] = getBook(buf);
+				int index = -1;
+				bool foundBook = false;
+				for ( auto& book : allBooks )
+				{
+					++index;
+					if ( book.default_name == buf )
+					{
+						foundBook = true;
+						entity->skill[14] = getBook(buf);
+						break;
+					}
+				}
+				if ( !foundBook && allBooks.size() > 0 )
+				{
+					entity->skill[14] = map_rng.rand() % allBooks.size();
+				}
 					
 				if ( entity->skill[15] == 1 ) // editor set as identified
 				{
