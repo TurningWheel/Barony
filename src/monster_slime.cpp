@@ -219,17 +219,77 @@ void initSlime(Entity* my, Stat* myStats)
 	}
 }
 
-const int slimeSprayDelay = TICKS_PER_SECOND + ((2 * TICKS_PER_SECOND) / 5);
+const int slimeSprayDelayOffset = TICKS_PER_SECOND / 2;
+const int slimeSprayDelay = TICKS_PER_SECOND + ((2 * TICKS_PER_SECOND) / 5) - slimeSprayDelayOffset;
 void slimeSprayAttack(Entity* my)
 {
 	if ( !my ) { return; }
 
 	auto color = MonsterData_t::getKeyFromSprite(my->sprite, SLIME);
+	Entity* spellTimer = nullptr;
+	if ( multiplayer == CLIENT )
+	{
+		int particle = 180;
+		if ( color == "slime green" )
+		{
+			particle = 180;
+		}
+		else if ( color == "slime blue" )
+		{
+			particle = 181;
+		}
+		else if ( color == "slime red" )
+		{
+			particle = 182;
+		}
+		else if ( color == "slime tar" )
+		{
+			particle = 183;
+		}
+		else if ( color == "slime metal" )
+		{
+			particle = 184;
+		}
+		spellTimer = createParticleTimer(my, 30, -1);
+		spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_MAGIC_SPRAY;
+		spellTimer->particleTimerCountdownSprite = particle;
+	}
+	else
+	{
+		if ( color == "slime green" )
+		{
+			spellTimer = castSpell(my->getUID(), &spell_slime_acid, true, false);
+		}
+		else if ( color == "slime blue" )
+		{
+			spellTimer = castSpell(my->getUID(), &spell_slime_water, true, false);
+		}
+		else if ( color == "slime red" )
+		{
+			spellTimer = castSpell(my->getUID(), &spell_slime_fire, true, false);
+		}
+		else if ( color == "slime tar" )
+		{
+			spellTimer = castSpell(my->getUID(), &spell_slime_tar, true, false);
+		}
+		else if ( color == "slime metal" )
+		{
+			spellTimer = castSpell(my->getUID(), &spell_slime_metal, true, false);
+		}
+	}
 
-	Entity* spellTimer = createParticleTimer(my, 100, -1);
+	if ( spellTimer )
+	{
 	spellTimer->particleTimerPreDelay = slimeSprayDelay;
-	spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_MAGIC_SPRAY;
-	spellTimer->particleTimerCountdownSprite = 180 + local_rng.rand() % 5;
+		spellTimer->particleTimerDuration += slimeSprayDelay;
+
+		createParticleDot(my);
+
+		// play casting sound
+		playSoundEntityLocal(my, 170, 64);
+		// monster scream
+		playSoundEntityLocal(my, MONSTER_SPOTSND, 128);
+	}
 }
 
 void slimeAnimate(Entity* my, Stat* myStats, double dist)
@@ -325,7 +385,7 @@ void slimeAnimate(Entity* my, Stat* myStats, double dist)
 					if ( Stat* myStats = my->getStats() )
 					{
 						myStats->EFFECTS[EFF_STUNNED] = true;
-						myStats->EFFECTS_TIMERS[EFF_STUNNED] = slimeSprayDelay;
+						myStats->EFFECTS_TIMERS[EFF_STUNNED] = slimeSprayDelay / 2;
 					}
 				}
 				slimeSprayAttack(my);
@@ -334,10 +394,10 @@ void slimeAnimate(Entity* my, Stat* myStats, double dist)
 			const real_t squishRate = 3.0;
 			real_t squishFactor = 0.3;
 
-			const int interval1 = (TICKS_PER_SECOND);
-			const int interval2 = (TICKS_PER_SECOND) + 8;
-			const int interval3 = 2 * TICKS_PER_SECOND - 10;
-			const int interval4 = 2 * TICKS_PER_SECOND + 25;
+			const int interval1 = (TICKS_PER_SECOND) - slimeSprayDelayOffset;
+			const int interval2 = (TICKS_PER_SECOND) + 8 - slimeSprayDelayOffset;
+			const int interval3 = 2 * TICKS_PER_SECOND - 10 - slimeSprayDelayOffset;
+			const int interval4 = 2 * TICKS_PER_SECOND + 25 - slimeSprayDelayOffset;
 
 			if ( MONSTER_ATTACKTIME < interval1 )
 			{
@@ -570,4 +630,55 @@ void slimeDie(Entity* my)
 
 	list_RemoveNode(my->mynode);
 	return;
+}
+
+void Entity::slimeChooseWeapon(const Entity* target, double dist)
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	if ( monsterSpecialState != 0 && monsterSpecialTimer != 0 )
+	{
+		return;
+	}
+
+	if ( monsterSpecialTimer == 0 
+		&& (ticks % 10 == 0) 
+		&& (monsterAttack == 0 || ((monsterAttack == 1) && monsterAttackTime >= 25))
+		&& dist < 48 )
+	{
+		Stat* targetStats = target->getStats();
+		if ( !targetStats )
+		{
+			return;
+		}
+
+		// try to charm enemy.
+		int specialRoll = -1;
+		int bonusFromHP = 0;
+		specialRoll = local_rng.rand() % 40;
+		if ( myStats->HP <= myStats->MAXHP * 0.8 )
+		{
+			bonusFromHP += 2; // +% chance if on low health
+		}
+		if ( myStats->HP <= myStats->MAXHP * 0.4 )
+		{
+			bonusFromHP += 3; // +extra % chance if on lower health
+		}
+
+		int requiredRoll = (2 + bonusFromHP);
+
+		if ( dist < STRIKERANGE )
+		{
+			requiredRoll += 5;
+		}
+
+		if ( specialRoll < requiredRoll )
+		{
+			monsterSpecialState = SLIME_CAST;
+		}
+	}
 }

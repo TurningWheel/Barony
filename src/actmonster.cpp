@@ -4252,6 +4252,7 @@ void actMonster(Entity* my)
 						entity->flags[INVISIBLE] )
 					{
 						int mapx = (int)floor(entity->x / 16);
+						int mapy = (int)floor(entity->y / 16);
 						if ( entity->yaw >= -0.1 && entity->yaw <= 0.1 )
 						{
 							// east/west doorway
@@ -4270,10 +4271,10 @@ void actMonster(Entity* my)
 
 								if ( slide )
 								{
-								// slide south
-								MONSTER_VELX = 0;
-								MONSTER_VELY = .25;
-							}
+									// slide south
+									MONSTER_VELX = 0;
+									MONSTER_VELY = .25;
+								}
 							}
 							else
 							{
@@ -4290,11 +4291,11 @@ void actMonster(Entity* my)
 
 								if ( slide )
 								{
-								// slide north
-								MONSTER_VELX = 0;
-								MONSTER_VELY = -.25;
+									// slide north
+									MONSTER_VELX = 0;
+									MONSTER_VELY = -.25;
+								}
 							}
-						}
 						}
 						else
 						{
@@ -4314,10 +4315,10 @@ void actMonster(Entity* my)
 
 								if ( slide )
 								{
-								// slide east
-								MONSTER_VELX = .25;
-								MONSTER_VELY = 0;
-							}
+									// slide east
+									MONSTER_VELX = .25;
+									MONSTER_VELY = 0;
+								}
 							}
 							else
 							{
@@ -4334,11 +4335,11 @@ void actMonster(Entity* my)
 
 								if ( slide )
 								{
-								// slide west
-								MONSTER_VELX = -.25;
-								MONSTER_VELY = 0;
+									// slide west
+									MONSTER_VELX = -.25;
+									MONSTER_VELY = 0;
+								}
 							}
-						}
 						}
 						wasInsideEntity = true;
 						//messagePlayer(0, MESSAGE_DEBUG, "path: %d", my->monsterPathCount);
@@ -5775,7 +5776,7 @@ timeToGoAgain:
 								}
 								else
 								{
-							my->yaw -= dir / 2;
+									my->yaw -= dir / 2;
 								}
 							}
 							else
@@ -8704,6 +8705,13 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 	chooseWeapon(target, dist);
 	bool hasrangedweapon = this->hasRangedWeapon();
 	bool lichRangeCheckOverride = false;
+	if ( myStats->type == SLIME )
+	{
+		if ( monsterSpecialState == SLIME_CAST )
+		{
+			lichRangeCheckOverride = true;
+		}
+	}
 	if ( myStats->type == LICH_FIRE)
 	{
 		if ( monsterLichFireMeleeSeq == LICH_ATK_BASICSPELL_SINGLE )
@@ -8867,11 +8875,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 
 			// check again for the target in attack range. return the result into hit.entity.
 			double newTangent = atan2(target->y - this->y, target->x - this->x);
-			if ( myStats->type == SLIME && monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_SLIME_SPRAY )
-			{
-				hit.entity = uidToEntity(monsterTarget);
-			}
-			else if ( lichRangeCheckOverride )
+			if ( lichRangeCheckOverride )
 			{
 				hit.entity = uidToEntity(monsterTarget);
 			}
@@ -9725,6 +9729,15 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						{
 							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
 						}
+					}
+					break;
+				case SLIME:
+					// spray magic
+					if ( monsterSpecialState == SLIME_CAST )
+					{
+						// special handled in slimeChooseWeapon()
+						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SLIME_SPRAY;
+						break;
 					}
 					break;
 				case SPIDER:

@@ -924,6 +924,9 @@ public:
 			case SUCCUBUS:
 				succubusChooseWeapon(target, dist);
 				break;
+			case SLIME:
+				slimeChooseWeapon(target, dist);
+				break;
 			case SHOPKEEPER:
 				if ( target )
 				{
@@ -947,6 +950,7 @@ public:
 	void vampireChooseWeapon(const Entity* target, double dist);
 	void shadowChooseWeapon(const Entity* target, double dist);
 	void succubusChooseWeapon(const Entity* target, double dist);
+	void slimeChooseWeapon(const Entity* target, double dist);
 	void skeletonSummonSetEquipment(Stat* myStats, int rank);
 	static void tinkerBotSetStats(Stat* myStats, int rank);
 	static void mimicSetStats(Stat* myStats);
