@@ -2622,9 +2622,9 @@ void actMonster(Entity* my)
 				int x2 = 38;
 				int y2 = 18;
 
-				for ( int x = x1; x <= x2; ++x )
+				for ( int x = x1; x <= x2 && my->monsterLichAllyStatus == 0; ++x )
 				{
-					for ( int y = y1; y <= y2; ++y )
+					for ( int y = y1; y <= y2 && my->monsterLichAllyStatus == 0; ++y )
 					{
 						if ( x > x1 && x < x2 && y > y1 && y < y2 )
 						{
