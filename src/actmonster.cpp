@@ -2611,6 +2611,65 @@ void actMonster(Entity* my)
 			MONSTER_VELY = sin(dir) * 5;
 			my->monsterSpecialTimer = 0;
 		}
+
+		// check walls
+		if ( my->monsterLichAllyStatus == 0 )
+		{
+			if ( !strcmp(map.name, "Boss") )
+			{
+				int x1 = 34;
+				int y1 = 14;
+				int x2 = 38;
+				int y2 = 18;
+
+				for ( int x = x1; x <= x2; ++x )
+				{
+					for ( int y = y1; y <= y2; ++y )
+					{
+						if ( x > x1 && x < x2 && y > y1 && y < y2 )
+						{
+							// inner empty section
+							continue;
+						}
+
+						int mapIndex = (y) * MAPLAYERS + (x) * MAPLAYERS * map.height;
+						if ( !map.tiles[OBSTACLELAYER + mapIndex] )
+						{
+							// wall has been broken, fights on
+							my->monsterLichAllyStatus = 1;
+
+							//int arena_x1 = 25;
+							//int arena_y1 = 5;
+							//int arena_x2 = 47;
+							//int arena_y2 = 27;
+							//for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+							//{
+							//	if ( Entity* entity = (Entity*)node->element )
+							//	{
+							//		int x = entity->x / 16;
+							//		int y = entity->y / 16;
+							//		if ( !(x >= arena_x1 && x <= arena_x2 && y >= arena_y1 && y <= arena_y2) )
+							//		{
+							//			// outside arena, teleport in
+							//			if ( !entity->monsterIsTinkeringCreation() )
+							//			{
+							//				if ( Entity* leader = entity->monsterAllyGetPlayerLeader() )
+							//				{
+							//					int tele_x = 26 + local_rng.rand() % 3;
+							//					int tele_y = 15 + local_rng.rand() % 3;
+							//					entity->x = tele_x * 16.0 + 8.0;
+							//					entity->y = tele_y * 16.0 + 8.0;
+							//				}
+							//			}
+							//		}
+							//	}
+							//}
+							break;
+						}
+					}
+				}
+			}
+		}
 	}
 
 	if ( ((myStats->type == LICH_FIRE && my->monsterState != MONSTER_STATE_LICHFIRE_DIE)
