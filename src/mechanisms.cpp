@@ -21,6 +21,7 @@
 
 //Circuits do not overlap. They connect to all their neighbors, allowing for circuits to interfere with eachother.
 static ConsoleVariable<bool> cvar_wire_debug("/wire_debug", false);
+void signalGateANDOnReceive(Entity& gate, const bool powered, const int receivex, const int receivey);
 
 void actCircuit(Entity* my)
 {
@@ -116,6 +117,13 @@ void Entity::updateCircuitNeighbors()
 								break;
 						}
 					}
+					else if ( powerable->behavior == &::actSignalGateAND )
+					{
+						int x1 = static_cast<int>(this->x / 16);
+						int y1 = static_cast<int>(this->y / 16);
+						//messagePlayer(0, "%d, %d, %d, %d", x1, x2, y1, y2);
+						signalGateANDOnReceive(*powerable, circuit_status > 1, x1, y1);
+					}
 					else
 					{
 						(circuit_status > 1) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
@@ -157,14 +165,6 @@ void Entity::mechanismPowerOff()
 		circuit_status = CIRCUIT_OFF;    //Power off.
 	}
 }
-
-
-
-
-
-
-
-
 
 
 /*
@@ -431,6 +431,58 @@ void actTrap(Entity* my)
 			{
 				if ( floor(entity->x / 16) == floor(my->x / 16) && floor(entity->y / 16) == floor(my->y / 16) )
 				{
+					switch ( my->pressurePlateTriggerType )
+					{
+					default:
+					case Entity::PRESSURE_PLATE_DEFAULT_ALL:
+						break;
+					case Entity::PRESSURE_PLATE_PLAYERS:
+						if ( entity->behavior != &actPlayer )
+						{
+							continue;
+						}
+						break;
+					case Entity::PRESSURE_PLATE_MONSTERS:
+						if ( entity->behavior != &actMonster )
+						{
+							continue;
+						}
+						break;
+					case Entity::PRESSURE_PLATE_ITEMS:
+						if ( entity->behavior != &actItem )
+						{
+							continue;
+						}
+						break;
+					case Entity::PRESSURE_PLATE_BOULDERS:
+						if ( entity->behavior != &actBoulder )
+						{
+							continue;
+						}
+						break;
+					case Entity::PRESSURE_PLATE_PLAYERS_OR_MONSTERS:
+						if ( !(entity->behavior == &actPlayer || entity->behavior == &actMonster) )
+						{
+							continue;
+						}
+						break;
+					case Entity::PRESSURE_PLATE_PLAYERS_OR_ALLIES:
+						if ( !(entity->behavior == &actPlayer || (entity->behavior == &actMonster && entity->monsterAllyGetPlayerLeader())) )
+						{
+							continue;
+						}
+						break;
+					case Entity::PRESSURE_PLATE_MONSTERS_NON_ALLY:
+						if ( entity->behavior != &actMonster )
+						{
+							continue;
+						}
+						if ( entity->monsterAllyGetPlayerLeader() )
+						{
+							continue; // non allies only 
+						}
+						break;
+					}
 					somebodyonme = true;
 					if ( !TRAP_ON )
 					{
@@ -553,6 +605,59 @@ void actTrapPermanent(Entity* my)
 				{
 					if ( floor(entity->x / 16) == floor(my->x / 16) && floor(entity->y / 16) == floor(my->y / 16) )
 					{
+						switch ( my->pressurePlateTriggerType )
+						{
+						default:
+						case Entity::PRESSURE_PLATE_DEFAULT_ALL:
+							break;
+						case Entity::PRESSURE_PLATE_PLAYERS:
+							if ( entity->behavior != &actPlayer )
+							{
+								continue;
+							}
+							break;
+						case Entity::PRESSURE_PLATE_MONSTERS:
+							if ( entity->behavior != &actMonster )
+							{
+								continue;
+							}
+							break;
+						case Entity::PRESSURE_PLATE_ITEMS:
+							if ( entity->behavior != &actItem )
+							{
+								continue;
+							}
+							break;
+						case Entity::PRESSURE_PLATE_BOULDERS:
+							if ( entity->behavior != &actBoulder )
+							{
+								continue;
+							}
+							break;
+						case Entity::PRESSURE_PLATE_PLAYERS_OR_MONSTERS:
+							if ( !(entity->behavior == &actPlayer || entity->behavior == &actMonster) )
+							{
+								continue;
+							}
+							break;
+						case Entity::PRESSURE_PLATE_PLAYERS_OR_ALLIES:
+							if ( !(entity->behavior == &actPlayer || (entity->behavior == &actMonster && entity->monsterAllyGetPlayerLeader())) )
+							{
+								continue;
+							}
+							break;
+						case Entity::PRESSURE_PLATE_MONSTERS_NON_ALLY:
+							if ( entity->behavior != &actMonster )
+							{
+								continue;
+							}
+							if ( entity->monsterAllyGetPlayerLeader() )
+							{
+								continue; // non allies only 
+							}
+							break;
+						}
+
 						my->toggleSwitch();
 						TRAPPERMANENT_ON = 1;
 					}
@@ -630,6 +735,13 @@ void Entity::toggleSwitch(int skillIndexForPower)
 								break;
 						}
 					}
+					else if ( powerable->behavior == &::actSignalGateAND )
+					{
+						int x1 = static_cast<int>(this->x / 16);
+						int y1 = static_cast<int>(this->y / 16);
+						//messagePlayer(0, "%d, %d, %d, %d", x1, x2, y1, y2);
+						signalGateANDOnReceive(*powerable, switchPower, x1, y1);
+					}
 					else
 					{
 						(switchPower) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
@@ -700,6 +812,13 @@ void Entity::switchUpdateNeighbors()
 								default:
 									break;
 							}
+						}
+						else if ( powerable->behavior == &::actSignalGateAND )
+						{
+							int x1 = static_cast<int>(this->x / 16);
+							int y1 = static_cast<int>(this->y / 16);
+							//messagePlayer(0, "%d, %d, %d, %d", x1, x2, y1, y2);
+							signalGateANDOnReceive(*powerable, true, x1, y1);
 						}
 						else
 						{
@@ -858,6 +977,7 @@ void Entity::actSoundSource()
 #define SIGNALTIMER_DELAYCOUNT skill[6]
 #define SIGNALTIMER_TIMERCOUNT skill[7]
 #define SIGNALTIMER_REPEATCOUNT skill[8]
+#define SIGNAL_INIT skill[11]
 
 void actSignalTimer(Entity* my)
 {
@@ -880,6 +1000,14 @@ void Entity::actSignalTimer()
 	int ty = y / 16;
 	list_t *neighbors = nullptr;
 	bool updateNeighbors = false;
+	if ( !SIGNAL_INIT )
+	{
+		SIGNAL_INIT = 1;
+		if ( signalInvertOutput != 0 )
+		{
+			updateNeighbors = true; // once off power the neighbours since needs an external kick
+		}
+	}
 
 	if ( circuit_status == CIRCUIT_ON || signalTimerLatchInput == 2 )
 	{
@@ -982,6 +1110,7 @@ void Entity::actSignalTimer()
 		}
 		if ( neighbors != nullptr )
 		{
+			bool power_to_neighbors = ((signalInvertOutput == 0) ? (switch_power == SWITCH_POWERED) : (!(switch_power == SWITCH_POWERED)));
 			node_t* node = nullptr;
 			for ( node = neighbors->first; node != nullptr; node = node->next )
 			{
@@ -993,7 +1122,7 @@ void Entity::actSignalTimer()
 					{
 						if ( powerable->behavior == actCircuit )
 						{
-							(switch_power == SWITCH_POWERED) ? powerable->circuitPowerOn() : powerable->circuitPowerOff();
+							(power_to_neighbors) ? powerable->circuitPowerOn() : powerable->circuitPowerOff();
 						}
 						else
 						{
@@ -1004,34 +1133,338 @@ void Entity::actSignalTimer()
 									case 0: // west
 										if ( static_cast<int>(this->x / 16) == static_cast<int>((powerable->x / 16) - 1) )
 										{
-											(switch_power == SWITCH_POWERED) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+											(power_to_neighbors) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
 										}
 										break;
 									case 1: // south
 										if ( static_cast<int>(this->y / 16) == static_cast<int>((powerable->y / 16) - 1) )
 										{
-											(switch_power == SWITCH_POWERED) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+											(power_to_neighbors) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
 										}
 										break;
 									case 2: // east
 										if ( static_cast<int>(this->x / 16) == static_cast<int>((powerable->x / 16) + 1) )
 										{
-											(switch_power == SWITCH_POWERED) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+											(power_to_neighbors) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
 										}
 										break;
 									case 3: // north
 										if ( static_cast<int>(this->y / 16) == static_cast<int>((powerable->y / 16) + 1) )
 										{
-											(switch_power == SWITCH_POWERED) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+											(power_to_neighbors) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
 										}
 										break;
 									default:
 										break;
 								}
 							}
+							else if ( powerable->behavior == &::actSignalGateAND )
+							{
+								int x1 = static_cast<int>(this->x / 16);
+								int y1 = static_cast<int>(this->y / 16);
+								//messagePlayer(0, "%d, %d, %d, %d", x1, x2, y1, y2);
+								signalGateANDOnReceive(*powerable, power_to_neighbors, x1, y1);
+							}
 							else
 							{
-								(switch_power == SWITCH_POWERED) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+								(power_to_neighbors) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+							}
+						}
+					}
+				}
+			}
+			list_FreeAll(neighbors); //Free the list.
+			free(neighbors);
+		}
+	}
+}
+
+void actSignalGateAND(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+
+	my->actSignalGateAND();
+}
+
+struct SignalGate_t
+{
+	enum SignalGateDir
+	{
+		DIR_EAST,
+		DIR_SOUTH,
+		DIR_WEST,
+		DIR_NORTH
+	};
+	std::map<int, std::vector<SignalGateDir>> recvDirs =
+	{
+		{ DIR_EAST + 0, {DIR_SOUTH, DIR_NORTH}},
+		{ DIR_EAST + 4, {DIR_SOUTH, DIR_WEST}},
+		{ DIR_EAST + 8, {DIR_WEST, DIR_NORTH}},
+		{ DIR_SOUTH + 0, {DIR_EAST, DIR_WEST}},
+		{ DIR_SOUTH + 4, {DIR_NORTH, DIR_WEST}},
+		{ DIR_SOUTH + 8, {DIR_EAST, DIR_NORTH}},
+		{ DIR_WEST + 0, {DIR_SOUTH, DIR_NORTH}},
+		{ DIR_WEST + 4, {DIR_EAST, DIR_NORTH}},
+		{ DIR_WEST + 8, {DIR_SOUTH, DIR_EAST}},
+		{ DIR_NORTH + 0, {DIR_EAST, DIR_WEST}},
+		{ DIR_NORTH + 4, {DIR_EAST, DIR_SOUTH}},
+		{ DIR_NORTH + 8, {DIR_SOUTH, DIR_WEST}}
+	};
+};
+
+SignalGate_t SignalGateProps;
+
+void signalGateANDOnReceive(Entity& gate, const bool powered, const int receivex, const int receivey)
+{
+	int x = static_cast<int>(gate.x / 16);
+	int y = static_cast<int>(gate.y / 16);
+
+	auto& dirsAllowed = SignalGateProps.recvDirs[gate.signalInputDirection];
+	Uint32 bits = 0;
+	bool foundResult = false;
+	for ( auto dir : dirsAllowed )
+	{
+		bits |= (1 << dir);
+		bool res = false;
+		if ( dir == SignalGate_t::DIR_EAST )
+		{
+			if ( receivey == y && ((receivex - 1) == x) )
+			{
+				res = true;
+			}
+		}
+		else if ( dir == SignalGate_t::DIR_SOUTH )
+		{
+			if ( receivex == x && ((receivey - 1) == y) )
+			{
+				res = true;
+			}
+		}
+		else if ( dir == SignalGate_t::DIR_WEST )
+		{
+			if ( receivey == y && ((receivex + 1) == x) )
+			{
+				res = true;
+			}
+		}
+		else if ( dir == SignalGate_t::DIR_NORTH )
+		{
+			if ( receivex == x && ((receivey + 1) == y) )
+			{
+				res = true;
+			}
+		}
+
+		if ( res )
+		{
+			if ( powered )
+			{
+				gate.signalGateANDPowerCount |= (1 << dir);
+			}
+			else
+			{
+				gate.signalGateANDPowerCount &= ~(1 << dir);
+			}
+			foundResult = true;
+		}
+	}
+
+	if ( foundResult )
+	{
+		if ( gate.signalGateANDPowerCount == bits )
+		{
+			gate.skill[28] = 2;
+		}
+		else
+		{
+			gate.skill[28] = 1;
+		}
+	}
+}
+
+void Entity::actSignalGateAND()
+{
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+
+	int tx = x / 16;
+	int ty = y / 16;
+	list_t* neighbors = nullptr;
+	bool updateNeighbors = false;
+	if ( !SIGNAL_INIT )
+	{
+		SIGNAL_INIT = 1;
+		if ( signalInvertOutput != 0 )
+		{
+			updateNeighbors = true; // once off power the neighbours since needs an external kick
+		}
+	}
+
+	if ( circuit_status == CIRCUIT_ON || signalTimerLatchInput == 2 )
+	{
+		if ( signalTimerLatchInput == 1 )
+		{
+			signalTimerLatchInput = 2;
+		}
+		if ( signalActivateDelay > 0 && SIGNALTIMER_DELAYCOUNT == 0 && switch_power == SWITCH_UNPOWERED )
+		{
+			SIGNALTIMER_DELAYCOUNT = signalActivateDelay;
+		}
+		if ( SIGNALTIMER_DELAYCOUNT > 0 )
+		{
+			--SIGNALTIMER_DELAYCOUNT;
+			if ( SIGNALTIMER_DELAYCOUNT != 0 )
+			{
+				return;
+			}
+		}
+		if ( switch_power == SWITCH_UNPOWERED )
+		{
+			switch_power = SWITCH_POWERED;
+			updateNeighbors = true;
+			if ( signalTimerRepeatCount > 0 && SIGNALTIMER_REPEATCOUNT <= 0 )
+			{
+				SIGNALTIMER_REPEATCOUNT = signalTimerRepeatCount;
+			}
+		}
+		else if ( signalTimerInterval > 0 )
+		{
+			if ( SIGNALTIMER_TIMERCOUNT == 0 )
+			{
+				SIGNALTIMER_TIMERCOUNT = signalTimerInterval;
+			}
+			if ( SIGNALTIMER_TIMERCOUNT > 0 )
+			{
+				--SIGNALTIMER_TIMERCOUNT;
+				if ( SIGNALTIMER_TIMERCOUNT != 0 )
+				{
+					return;
+				}
+			}
+			if ( switch_power == SWITCH_POWERED )
+			{
+				switch_power = 2;
+				updateNeighbors = true;
+			}
+			else
+			{
+				if ( signalTimerRepeatCount > 0 )
+				{
+					if ( SIGNALTIMER_REPEATCOUNT > 1 )
+					{
+						switch_power = SWITCH_POWERED;
+						updateNeighbors = true;
+						--SIGNALTIMER_REPEATCOUNT;
+					}
+				}
+				else
+				{
+					switch_power = SWITCH_POWERED;
+					updateNeighbors = true;
+				}
+			}
+		}
+	}
+	else if ( circuit_status == CIRCUIT_OFF && signalTimerLatchInput == 0 )
+	{
+		if ( switch_power != SWITCH_UNPOWERED )
+		{
+			switch_power = SWITCH_UNPOWERED;
+			updateNeighbors = true;
+		}
+		if ( signalTimerInterval > 0 )
+		{
+			SIGNALTIMER_TIMERCOUNT = signalTimerInterval;
+		}
+		if ( signalTimerRepeatCount > 0 )
+		{
+			SIGNALTIMER_REPEATCOUNT = signalTimerRepeatCount;
+		}
+	}
+
+	if ( updateNeighbors )
+	{
+		switch ( signalInputDirection % 4 )
+		{
+		case 0: // east
+			getPowerablesOnTile(tx + 1, ty, &neighbors);
+			break;
+		case 1: // south
+			getPowerablesOnTile(tx, ty + 1, &neighbors);
+			break;
+		case 2: // east
+			getPowerablesOnTile(tx - 1, ty, &neighbors);
+			break;
+		case 3: // north
+			getPowerablesOnTile(tx, ty - 1, &neighbors);
+			break;
+		}
+		if ( neighbors != nullptr )
+		{
+			bool power_to_neighbors = ((signalInvertOutput == 0) ? (switch_power == SWITCH_POWERED) : (!(switch_power == SWITCH_POWERED)));
+
+			node_t* node = nullptr;
+			for ( node = neighbors->first; node != nullptr; node = node->next )
+			{
+				if ( node->element )
+				{
+					Entity* powerable = (Entity*)(node->element);
+
+					if ( powerable )
+					{
+						if ( powerable->behavior == actCircuit )
+						{
+							(power_to_neighbors) ? powerable->circuitPowerOn() : powerable->circuitPowerOff();
+						}
+						else
+						{
+							if ( powerable->behavior == &::actSignalTimer )
+							{
+								switch ( powerable->signalInputDirection )
+								{
+								case 0: // west
+									if ( static_cast<int>(this->x / 16) == static_cast<int>((powerable->x / 16) - 1) )
+									{
+										(power_to_neighbors) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+									}
+									break;
+								case 1: // south
+									if ( static_cast<int>(this->y / 16) == static_cast<int>((powerable->y / 16) - 1) )
+									{
+										(power_to_neighbors) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+									}
+									break;
+								case 2: // east
+									if ( static_cast<int>(this->x / 16) == static_cast<int>((powerable->x / 16) + 1) )
+									{
+										(power_to_neighbors) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+									}
+									break;
+								case 3: // north
+									if ( static_cast<int>(this->y / 16) == static_cast<int>((powerable->y / 16) + 1) )
+									{
+										(power_to_neighbors) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+									}
+									break;
+								default:
+									break;
+								}
+							}
+							else if ( powerable->behavior == &::actSignalGateAND )
+							{
+								int x1 = static_cast<int>(this->x / 16);
+								int y1 = static_cast<int>(this->y / 16);
+								//messagePlayer(0, "%d, %d, %d, %d", x1, x2, y1, y2);
+								signalGateANDOnReceive(*powerable, power_to_neighbors, x1, y1);
+							}
+							else
+							{
+								(power_to_neighbors) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
 							}
 						}
 					}

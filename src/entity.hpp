@@ -178,6 +178,7 @@ public:
 	Sint32& chestHasVampireBook; // skill[11]
 	Sint32& chestLockpickHealth; // skill[12]
 	Sint32& chestOldHealth; //skill[15]
+	Sint32& chestMimicChance; //skill[16]
 
 	Sint32& char_gonnavomit; // skill[26]
 	Sint32& char_heal; // skill[22]
@@ -563,6 +564,8 @@ public:
 	Sint32& signalTimerRepeatCount; //skill[3]
 	Sint32& signalTimerLatchInput; //skill[4]
 	Sint32& signalInputDirection; //skill[5]
+	Sint32& signalGateANDPowerCount; //skill[9]
+	Sint32& signalInvertOutput; //skill[10]
 
 	//--THROWN PROJECTILE--
 	Sint32& thrownProjectilePower; //skill[19]
@@ -570,6 +573,21 @@ public:
 
 	//--PLAYER SPAWN POINT--
 	Sint32& playerStartDir; //skill[1]
+
+	//--ACTTRAP/PERMANENT
+	Sint32 pressurePlateTriggerType; //skill[3]
+	enum PressurePlateTriggerTypes : int
+	{
+		PRESSURE_PLATE_DEFAULT_ALL,
+		PRESSURE_PLATE_PLAYERS,
+		PRESSURE_PLATE_MONSTERS,
+		PRESSURE_PLATE_ITEMS,
+		PRESSURE_PLATE_BOULDERS,
+		PRESSURE_PLATE_PLAYERS_OR_MONSTERS,
+		PRESSURE_PLATE_PLAYERS_OR_ALLIES,
+		PRESSURE_PLATE_MONSTERS_NON_ALLY,
+		PRESSURE_PLATE_ENUM_END
+	};
 
 	//--WORLDTOOLTIP--
 	real_t& worldTooltipAlpha; //fskill[0]
@@ -757,6 +775,7 @@ public:
 	void actLightSource();
 	void actTextSource();
 	void actSignalTimer();
+	void actSignalGateAND();
 
 	Monster getRace() const
 	{
@@ -1173,7 +1192,7 @@ void actTextSource(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 333;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 129;
-static const int NUM_EDITOR_SPRITES = 180;
+static const int NUM_EDITOR_SPRITES = 188;
 static const int NUM_EDITOR_TILES = 350;
 
 // furniture types.

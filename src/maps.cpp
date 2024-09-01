@@ -7775,6 +7775,26 @@ void assignActions(map_t* map)
 				entity->setUID(-3);*/
 				break;
 			}
+			//AND gate
+			case 185:
+			case 186:
+			case 187:
+			{
+				entity->sizex = 2;
+				entity->sizey = 2;
+				entity->x += 8;
+				entity->y += 8;
+				entity->behavior = &actSignalGateAND;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->skill[28] = 1; // is a mechanism
+				if ( entity->sprite == 186 ) { entity->signalInputDirection += 4; }
+				if ( entity->sprite == 187 ) { entity->signalInputDirection += 8; }
+				entity->sprite = -1;
+				break;
+			}
             default:
                 break;
 		}
@@ -7914,7 +7934,7 @@ void assignActions(map_t* map)
 		numMimics = 0;
 	}
 
-	static ConsoleVariable<int> cvar_mimic_chance("/mimic_chance", 2);
+	static ConsoleVariable<int> cvar_mimic_chance("/mimic_chance", 10);
 	static ConsoleVariable<bool> cvar_mimic_debug("/mimic_debug", false);
 
 	std::vector<Entity*> mimics;
@@ -7925,8 +7945,11 @@ void assignActions(map_t* map)
 			auto chosen = map_rng.rand() % chests.size();
 			if ( allowedGenerateMimicOnChest(chests[chosen]->x / 16, chests[chosen]->y / 16, *map) )
 			{
-				mimics.push_back(chests[chosen]);
-				chests.erase(chests.begin() + chosen);
+				if ( chests[chosen]->chestMimicChance != 0 )
+				{
+					mimics.push_back(chests[chosen]);
+					chests.erase(chests.begin() + chosen);
+				}
 			}
 		}
 
@@ -7941,7 +7964,14 @@ void assignActions(map_t* map)
 				{
 					chance = std::min(100, std::max(0, *cvar_mimic_chance));
 				}
-				doMimic = chest->entity_rng->rand() % 100 < chance;
+				if ( chest->chestMimicChance >= 0 )
+				{
+					doMimic = chest->entity_rng->rand() % 100 < chest->chestMimicChance;
+				}
+				else
+				{
+					doMimic = chest->entity_rng->rand() % 100 < chance;
+				}
 			}
 
 			if ( doMimic )

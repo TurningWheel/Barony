@@ -1854,9 +1854,14 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 
 	// read map version number
 	fp->read(valid_data, sizeof(char), strlen("BARONY LMPV2.0"));
-	if ( strncmp(valid_data, "BARONY LMPV2.8", strlen("BARONY LMPV2.0")) == 0 )
+	if ( strncmp(valid_data, "BARONY LMPV2.9", strlen("BARONY LMPV2.0")) == 0 )
 	{
-		// V2.7 version of editor - teleport shrine dest x update
+		// V2.9 version of editor - chest mimic chance, and gates, pressure plate triggers
+		editorVersion = 29;
+	}
+	else if ( strncmp(valid_data, "BARONY LMPV2.8", strlen("BARONY LMPV2.0")) == 0 )
+	{
+		// V2.8 version of editor - teleport shrine dest x update
 		editorVersion = 28;
 	}
 	else if ( strncmp(valid_data, "BARONY LMPV2.7", strlen("BARONY LMPV2.0")) == 0 )
@@ -2089,6 +2094,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			case 26:
 			case 27:
 			case 28:
+			case 29:
 				// V2.0+ of editor version
 				switch ( checkSpriteType(sprite) )
 				{
@@ -2198,9 +2204,20 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						}
 						break;
 					case 2:
-						fp->read(&entity->yaw, sizeof(real_t), 1);
-						fp->read(&entity->skill[9], sizeof(Sint32), 1);
-						fp->read(&entity->chestLocked, sizeof(Sint32), 1);
+						if ( editorVersion >= 29 )
+						{
+							fp->read(&entity->yaw, sizeof(real_t), 1);
+							fp->read(&entity->skill[9], sizeof(Sint32), 1);
+							fp->read(&entity->chestLocked, sizeof(Sint32), 1);
+							fp->read(&entity->chestMimicChance, sizeof(Sint32), 1);
+						}
+						else
+						{
+							setSpriteAttributes(entity, nullptr, nullptr);
+							fp->read(&entity->yaw, sizeof(real_t), 1);
+							fp->read(&entity->skill[9], sizeof(Sint32), 1);
+							fp->read(&entity->chestLocked, sizeof(Sint32), 1);
+						}
 						break;
 					case 3:
 						fp->read(&entity->skill[10], sizeof(Sint32), 1);
@@ -2341,6 +2358,10 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						fp->read(&entity->signalTimerInterval, sizeof(Sint32), 1);
 						fp->read(&entity->signalTimerRepeatCount, sizeof(Sint32), 1);
 						fp->read(&entity->signalTimerLatchInput, sizeof(Sint32), 1);
+						if ( editorVersion >= 29 )
+						{
+							fp->read(&entity->signalInvertOutput, sizeof(Sint32), 1);
+						}
 						break;
 					case 18:
 						fp->read(&entity->portalCustomSprite, sizeof(Sint32), 1);
@@ -2425,6 +2446,25 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						fp->read(&entity->colliderMaxHP, sizeof(Sint32), 1);
 						fp->read(&entity->colliderDiggable, sizeof(Sint32), 1);
 						fp->read(&entity->colliderDamageTypes, sizeof(Sint32), 1);
+						break;
+					case 28:
+						fp->read(&entity->signalInputDirection, sizeof(Sint32), 1);
+						fp->read(&entity->signalActivateDelay, sizeof(Sint32), 1);
+						fp->read(&entity->signalTimerInterval, sizeof(Sint32), 1);
+						fp->read(&entity->signalTimerRepeatCount, sizeof(Sint32), 1);
+						fp->read(&entity->signalTimerLatchInput, sizeof(Sint32), 1);
+						fp->read(&entity->signalInvertOutput, sizeof(Sint32), 1);
+						break;
+					case 29:
+						if ( editorVersion >= 29 )
+						{
+							fp->read(&entity->pressurePlateTriggerType, sizeof(Sint32), 1);
+						}
+						else
+						{
+							// don't read data, set default.
+							setSpriteAttributes(entity, nullptr, nullptr);
+						}
 						break;
 					default:
 						break;
@@ -2625,7 +2665,7 @@ int saveMap(const char* filename2)
 			return 1;
 		}
 
-		fp->write("BARONY LMPV2.8", sizeof(char), strlen("BARONY LMPV2.0")); // magic code
+		fp->write("BARONY LMPV2.9", sizeof(char), strlen("BARONY LMPV2.0")); // magic code
 		fp->write(map.name, sizeof(char), 32); // map filename
 		fp->write(map.author, sizeof(char), 32); // map author
 		fp->write(&map.width, sizeof(Uint32), 1); // map width
@@ -2685,6 +2725,7 @@ int saveMap(const char* filename2)
 					fp->write(&entity->yaw, sizeof(real_t), 1);
 					fp->write(&entity->skill[9], sizeof(Sint32), 1);
 					fp->write(&entity->chestLocked, sizeof(Sint32), 1);
+					fp->write(&entity->chestMimicChance, sizeof(Sint32), 1);
 					break;
 				case 3:
 					// items
@@ -2790,6 +2831,7 @@ int saveMap(const char* filename2)
 					fp->write(&entity->signalTimerInterval, sizeof(Sint32), 1);
 					fp->write(&entity->signalTimerRepeatCount, sizeof(Sint32), 1);
 					fp->write(&entity->signalTimerLatchInput, sizeof(Sint32), 1);
+					fp->write(&entity->signalInvertOutput, sizeof(Sint32), 1);
 					break;
 				case 18:
 					fp->write(&entity->portalCustomSprite, sizeof(Sint32), 1);
@@ -2854,6 +2896,17 @@ int saveMap(const char* filename2)
 					fp->write(&entity->colliderMaxHP, sizeof(Sint32), 1);
 					fp->write(&entity->colliderDiggable, sizeof(Sint32), 1);
 					fp->write(&entity->colliderDamageTypes, sizeof(Sint32), 1);
+					break;
+				case 28:
+					fp->write(&entity->signalInputDirection, sizeof(Sint32), 1);
+					fp->write(&entity->signalActivateDelay, sizeof(Sint32), 1);
+					fp->write(&entity->signalTimerInterval, sizeof(Sint32), 1);
+					fp->write(&entity->signalTimerRepeatCount, sizeof(Sint32), 1);
+					fp->write(&entity->signalTimerLatchInput, sizeof(Sint32), 1);
+					fp->write(&entity->signalInvertOutput, sizeof(Sint32), 1);
+					break;
+				case 29:
+					fp->write(&entity->pressurePlateTriggerType, sizeof(Sint32), 1);
 					break;
 				default:
 					break;

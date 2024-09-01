@@ -153,6 +153,15 @@ int checkSpriteType(Sint32 sprite)
 		return 26;
 	case 179:
 		return 27;
+	case 185:
+	case 186:
+	case 187:
+		// AND gate
+		return 28;
+	case 33:
+	case 34:
+		// act trap
+		return 29;
 	default:
 		return 0;
 		break;
@@ -994,7 +1003,15 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"NOT USED",
 	"TELEPORT SHRINE",
 	"SPELL SHRINE",
-	"COLLIDER DECORATION"
+	"COLLIDER DECORATION",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"AND GATE",
+	"AND GATE",
+	"AND GATE"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][16] =
@@ -1455,6 +1472,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->yaw = entityToCopy->yaw;
 			entityNew->skill[9] = entityToCopy->skill[9];
 			entityNew->chestLocked = entityToCopy->chestLocked;
+			entityNew->chestMimicChance = entityToCopy->chestMimicChance;
 		}
 		else
 		{
@@ -1462,6 +1480,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->yaw = 1;
 			entityNew->skill[9] = 0;
 			entityNew->chestLocked = -1;
+			entityNew->chestMimicChance = -1;
 		}
 	}
 	// items.
@@ -1781,6 +1800,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->signalTimerInterval = entityToCopy->signalTimerInterval;
 			entityNew->signalTimerRepeatCount = entityToCopy->signalTimerRepeatCount;
 			entityNew->signalTimerLatchInput = entityToCopy->signalTimerLatchInput;
+			entityNew->signalInvertOutput = entityToCopy->signalInvertOutput;
 		}
 		else
 		{
@@ -1790,6 +1810,30 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->signalTimerInterval = 0;
 			entityNew->signalTimerRepeatCount = 0;
 			entityNew->signalTimerLatchInput = 0;
+			entityNew->signalInvertOutput = 0;
+		}
+	}
+	else if ( spriteType == 28 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->signalInputDirection = entityToCopy->signalInputDirection;
+			entityNew->signalActivateDelay = entityToCopy->signalActivateDelay;
+			entityNew->signalTimerInterval = entityToCopy->signalTimerInterval;
+			entityNew->signalTimerRepeatCount = entityToCopy->signalTimerRepeatCount;
+			entityNew->signalTimerLatchInput = entityToCopy->signalTimerLatchInput;
+			entityNew->signalInvertOutput = entityToCopy->signalInvertOutput;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->signalInputDirection = 0;
+			entityNew->signalActivateDelay = 0;
+			entityNew->signalTimerInterval = 0;
+			entityNew->signalTimerRepeatCount = 0;
+			entityNew->signalTimerLatchInput = 0;
+			entityNew->signalInvertOutput = 0;
 		}
 	}
 	else if ( spriteType == 18 )
@@ -1992,6 +2036,19 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->colliderMaxHP = 0;
 			entityNew->colliderDiggable = 0;
 			entityNew->colliderDamageTypes = 0;
+		}
+	}
+	else if ( spriteType == 29 ) // pressure plates
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->pressurePlateTriggerType = entityToCopy->pressurePlateTriggerType;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->pressurePlateTriggerType = 0;
 		}
 	}
 
