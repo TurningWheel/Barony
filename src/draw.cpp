@@ -25,6 +25,7 @@
 #include "interface/consolecommand.hpp"
 #include "colors.hpp"
 #include "ui/Text.hpp"
+#include "ui/GameUI.hpp"
 
 #include <cassert>
 
@@ -2308,7 +2309,23 @@ void drawEntities3D(view_t* camera, int mode)
 							}
 							else
 							{
-								glDrawSpriteFromImage(camera, entity, stats->name, mode);
+								if ( parent->getMonsterTypeFromSprite() == SLIME )
+								{
+									if ( !strcmp(stats->name, getMonsterLocalizedName(SLIME).c_str()) )
+									{
+										std::string name = stats->name;
+										camelCaseString(name);
+										glDrawSpriteFromImage(camera, entity, name.c_str(), mode);
+									}
+									else
+									{
+										glDrawSpriteFromImage(camera, entity, stats->name, mode);
+									}
+								}
+								else
+								{
+									glDrawSpriteFromImage(camera, entity, stats->name, mode);
+								}
 							}
                         }
                     } else {
@@ -2318,7 +2335,23 @@ void drawEntities3D(view_t* camera, int mode)
                                 playerEntityMatchesUid(stats->leader_uid):
                                 playerEntityMatchesUid(entity->parent);
                             if (player >= 0 && (!stats->leader_uid || camera == &players[player]->camera())) {
-                                glDrawSpriteFromImage(camera, entity, stats->name, mode);
+								if ( stats->type == SLIME )
+								{
+									if ( !strcmp(stats->name, getMonsterLocalizedName(SLIME).c_str()) )
+									{
+										std::string name = stats->name;
+										camelCaseString(name);
+										glDrawSpriteFromImage(camera, entity, name.c_str(), mode);
+									}
+									else
+									{
+										glDrawSpriteFromImage(camera, entity, stats->name, mode);
+									}
+								}
+								else
+								{
+									glDrawSpriteFromImage(camera, entity, stats->name, mode);
+								}
                             }
                         }
                     }
