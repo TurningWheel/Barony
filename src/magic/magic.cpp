@@ -1978,6 +1978,11 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 													FollowerMenu[c].recentEntity = nullptr;
 												}
 											}
+											target->monsterAllyIndex = -1;
+											if ( multiplayer == SERVER )
+											{
+												serverUpdateEntitySkill(target, 42); // update monsterAllyIndex for clients.
+											}
 											break;
 										}
 									}
@@ -1990,6 +1995,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 
 				if ( forceFollower(*leader, *summonedEntity) )
 				{
+					summonedEntity->monsterAllyIndex = -1;
 					if ( leader->behavior == &actPlayer )
 					{
 						summonedEntity->monsterAllyIndex = leader->skill[2];
@@ -1997,7 +2003,6 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 						{
 							serverUpdateEntitySkill(summonedEntity, 42); // update monsterAllyIndex for clients.
 						}
-
 					}
 					// change the color of the hit entity.
 					summonedEntity->flags[USERFLAG2] = true;

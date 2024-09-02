@@ -6444,18 +6444,20 @@ bool Entity::isWaterWalking() const
 			}
 			if ( stats->type == SLIME )
 			{
+				if ( stats->getAttribute("slime_type") == "terrain_spawn_override" )
+				{
+					return true;
+				}
 				auto color = MonsterData_t::getKeyFromSprite(sprite, SLIME);
-				if ( color == "slime green"
-					|| color == "slime blue"
-					|| color == "slime red"
-					|| color == "slime tar"
-					|| color == "slime metal" )
+				if ( color == "slime blue"
+					|| color == "slime tar" )
 				{
 					return true;
 				}
 			}
 		}
 	}
+	return false;
 }
 bool Entity::isLavaWalking() const
 {
@@ -6469,18 +6471,19 @@ bool Entity::isLavaWalking() const
 			}
 			if ( stats->type == SLIME )
 			{
+				if ( stats->getAttribute("slime_type") == "terrain_spawn_override" )
+				{
+					return true;
+				}
 				auto color = MonsterData_t::getKeyFromSprite(sprite, SLIME);
-				if ( color == "slime green"
-					|| color == "slime blue"
-					|| color == "slime red"
-					|| color == "slime tar"
-					|| color == "slime metal" )
+				if ( color == "slime red" )
 				{
 					return true;
 				}
 			}
 		}
 	}
+	return false;
 }
 
 /*-------------------------------------------------------------------------------
@@ -18026,7 +18029,7 @@ Item* Entity::getBestShieldIHave() const
 
 void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 {
-	if ( hitstats.type == SHADOW )
+	if ( hitstats.type == SHADOW || hitstats.type == LICH || hitstats.type == LICH_FIRE || hitstats.type == LICH_ICE )
 	{
 		return; //Shadows' armor and shields don't break.
 	}
@@ -20326,7 +20329,8 @@ bool monsterNameIsGeneric(Stat& monsterStats)
 		|| strstr(monsterStats.name, "training")
 		|| strstr(monsterStats.name, "Training")
 		|| strstr(monsterStats.name, "Mysterious")
-		|| strstr(monsterStats.name, "shaman") )
+		|| strstr(monsterStats.name, "shaman")
+		|| strstr(monsterStats.name, getMonsterLocalizedName(SLIME).c_str()) )
 	{
 		// If true, pretend the monster doesn't have a name and use the generic message "You hit the lesser skeleton!"
 		return true;
@@ -21636,7 +21640,7 @@ bool monsterChangesColorWhenAlly(Stat* myStats, Entity* entity)
 		race = myStats->type;
 	}
 	
-	if ( race == HUMAN || race == SENTRYBOT || race == NOTHING
+	if ( race == HUMAN || race == SENTRYBOT || race == NOTHING || race == SLIME
 		|| race == SPELLBOT || race == AUTOMATON || race == GYROBOT || race == DUMMYBOT )
 	{
 		return false;

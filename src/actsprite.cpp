@@ -81,6 +81,14 @@ void actSpriteNametag(Entity* my)
             my->x = parent->x;
             my->y = parent->y;
             my->z = parent->z - 6;
+			if ( parent->getMonsterTypeFromSprite() == SLIME )
+			{
+				my->z -= 3.0;
+				if ( parent->monsterAttack == MONSTER_POSE_MAGIC_WINDUP2 )
+				{
+					my->z += parent->focalz / 2;
+				}
+			}
 		}
 	}
 	else

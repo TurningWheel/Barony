@@ -7604,6 +7604,12 @@ void actPlayer(Entity* my)
 								}
 								else if ( myFollower->flags[USERFLAG2] )
 								{
+									myFollower->monsterAllyIndex = -1;
+									if ( multiplayer == SERVER )
+									{
+										serverUpdateEntitySkill(myFollower, 42); // update monsterAllyIndex for clients.
+									}
+
 									// our leader died, let's undo the color change since we're now rabid.
 									myFollower->flags[USERFLAG2] = false;
 									serverUpdateEntityFlag(myFollower, USERFLAG2);
@@ -7797,6 +7803,7 @@ void actPlayer(Entity* my)
 											entity->skill[13] = qtyToDrop;
 											entity->skill[14] = item->appearance;
 											entity->skill[15] = item->identified;
+											entity->parent = achievementObserver.playerUids[PLAYER_NUM];
 										}
 									}
 									else

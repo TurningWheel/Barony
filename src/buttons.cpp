@@ -1863,13 +1863,14 @@ void buttonSpriteProperties(button_t* my)
 				snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity[0]->skill[3])); //Amount of Spawns 
 				snprintf(spriteProperties[4], 4, "%d", static_cast<int>(selectedEntity[0]->skill[4])); //Requires Power
 				snprintf(spriteProperties[5], 4, "%d", static_cast<int>(selectedEntity[0]->skill[5])); //Chance to Stop Working
+				snprintf(spriteProperties[6], 4, "%d", static_cast<int>(selectedEntity[0]->skill[9])); //Autospawn
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
 				subwindow = 1;
 				newwindow = 6;
-				subx1 = xres / 2 - 210;
-				subx2 = xres / 2 + 210;
+				subx1 = xres / 2 - 220;
+				subx2 = xres / 2 + 220;
 				suby1 = yres / 2 - 140;
 				suby2 = yres / 2 + 140;
 				strcpy(subtext, "Summoning Trap Properties:");
@@ -3197,6 +3198,7 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				}
 				selectedEntity[0]->skill[4] = (Sint32)atoi(spriteProperties[4]); //Requires Power
 				selectedEntity[0]->skill[5] = (Sint32)atoi(spriteProperties[5]); //Chance to Stop Working
+				selectedEntity[0]->skill[9] = (Sint32)atoi(spriteProperties[6]); //Autospawn
 				break;
 			case 5: //power crystal
 				selectedEntity[0]->yaw = (real_t)atoi(spriteProperties[0]);

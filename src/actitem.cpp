@@ -606,7 +606,18 @@ void actItem(Entity* my)
 				else if (overWater) {
 					if (!ITEM_SPLOOSHED) {
 						ITEM_SPLOOSHED = true;
-						playSoundEntity(my, 136, 64);
+						bool splash = true;
+						if ( multiplayer == SINGLE && !splitscreen && my->parent == achievementObserver.playerUids[clientnum] )
+						{
+							if ( !players[clientnum] || (players[clientnum] && !players[clientnum]->entity) )
+							{
+								splash = false; // otherwise dropping items into water on death makes a ruckus
+							}
+						}
+						if ( splash )
+						{
+							playSoundEntity(my, 136, 64);
+						}
 					}
 				}
 				else {

@@ -788,6 +788,10 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
                     remap.x.y = 1.f;
                     remap.y.z = 1.f;
                     remap.z.x = 1.f;
+
+                    //remap.x.x = 0.8f; - desaturate option
+                    //remap.y.y = 0.8f;
+                    //remap.z.z = 0.8f;
                 }
             }
 #ifndef EDITOR

@@ -4329,7 +4329,8 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				{
 					strcpy(monster->clientStats->name, (char*)&net_packet->data[12]);
 				}
-                if ( monster->clientStats->name[0] && !monsterNameIsGeneric(*monster->clientStats) ) {
+                if ( monster->clientStats->name[0] && (!monsterNameIsGeneric(*monster->clientStats) || monster->clientStats->type == SLIME)) 
+				{
                     Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
                     nametag->x = monster->x;
                     nametag->y = monster->y;

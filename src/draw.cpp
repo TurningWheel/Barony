@@ -2302,7 +2302,14 @@ void drawEntities3D(view_t* camera, int mode)
                         auto stats = parent->behavior == &actPlayer ?
                             parent->getStats() : (parent->clientsHaveItsStats ? parent->clientStats : nullptr);
                         if (stats && stats->name[0]) {
-                            glDrawSpriteFromImage(camera, entity, stats->name, mode);
+							if ( parent->behavior == &actMonster && entity->skill[0] == clientnum && (!players[clientnum]->entity || parent->monsterAllyIndex != clientnum) )
+							{
+								// previous ally but we are dead (lost the ally) or someone stole our mon
+							}
+							else
+							{
+								glDrawSpriteFromImage(camera, entity, stats->name, mode);
+							}
                         }
                     } else {
                         auto stats = parent->getStats();

@@ -2237,6 +2237,10 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						fp->read(&entity->skill[3], sizeof(Sint32), 1);
 						fp->read(&entity->skill[4], sizeof(Sint32), 1);
 						fp->read(&entity->skill[5], sizeof(Sint32), 1);
+						if ( editorVersion >= 29 )
+						{
+							fp->read(&entity->skill[9], sizeof(Sint32), 1);
+						}
 						break;
 					case 5:
 						fp->read(&entity->yaw, sizeof(real_t), 1);
@@ -2737,12 +2741,14 @@ int saveMap(const char* filename2)
 					fp->write(&entity->skill[16], sizeof(Sint32), 1);
 					break;
 				case 4:
+					// summon trap
 					fp->write(&entity->skill[0], sizeof(Sint32), 1);
 					fp->write(&entity->skill[1], sizeof(Sint32), 1);
 					fp->write(&entity->skill[2], sizeof(Sint32), 1);
 					fp->write(&entity->skill[3], sizeof(Sint32), 1);
 					fp->write(&entity->skill[4], sizeof(Sint32), 1);
 					fp->write(&entity->skill[5], sizeof(Sint32), 1);
+					fp->write(&entity->skill[9], sizeof(Sint32), 1);
 					break;
 				case 5:
 					fp->write(&entity->yaw, sizeof(real_t), 1);

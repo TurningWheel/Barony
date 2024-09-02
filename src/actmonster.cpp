@@ -1132,6 +1132,14 @@ Entity* summonMonsterNoSmoke(Monster creature, long x, long y, bool forceLocatio
 		entity->clientStats = new Stat(creature + 1000);
 	}
 
+	if ( multiplayer != CLIENT )
+	{
+		if ( myStats->type == SLIME )
+		{
+			myStats->setAttribute("slime_type", "terrain_spawn_override");
+		}
+	}
+
 	// Find a free tile next to the source and then spawn it there.
 	if ( multiplayer != CLIENT && !forceLocation )
 	{
@@ -1194,6 +1202,13 @@ Entity* summonMonsterNoSmoke(Monster creature, long x, long y, bool forceLocatio
 
 end:
 
+	if ( multiplayer != CLIENT )
+	{
+		if ( myStats->type == SLIME )
+		{
+			myStats->attributes.erase("slime_type");
+		}
+	}
 
 	nummonsters++;
 
@@ -1770,7 +1785,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 	newNode->element = myuid;
 	*myuid = my->getUID();
     
-    if (monsterclicked >= 0 && monsterclicked < MAXPLAYERS && (myStats->type == HUMAN || myStats->name[0]))
+    if (monsterclicked >= 0 && monsterclicked < MAXPLAYERS && ((myStats->type == HUMAN || myStats->type == SLIME) || myStats->name[0]))
     {
         // give us a random name (if necessary)
 		if ( myStats->type == HUMAN 
@@ -1783,9 +1798,15 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 			size_t len = names[choice].size();
 			stringCopy(myStats->name, name, sizeof(Stat::name), len);
 		}
+		else if ( myStats->type == SLIME
+			&& !myStats->name[0] )
+		{
+			std::string name = getMonsterLocalizedName(SLIME);
+			stringCopy(myStats->name, name.c_str(), sizeof(Stat::name), name.size());
+		}
         
         // ... and a nametag
-		if (!monsterNameIsGeneric(*myStats)) {
+		if (!monsterNameIsGeneric(*myStats) || myStats->type == SLIME) {
 			if (monsterclicked == clientnum || splitscreen) {
 				Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
 				nametag->x = my->x;
@@ -9459,6 +9480,7 @@ bool forceFollower(Entity& leader, Entity& follower)
 
 	follower.monsterState = 0;
 	follower.monsterTarget = 0;
+	follower.monsterAllyIndex = -1;
 	followerStats->leader_uid = leader.getUID();
 
 	for ( node_t* node = leaderStats->FOLLOWERS.first; node != nullptr; node = node->next )
@@ -9477,7 +9499,7 @@ bool forceFollower(Entity& leader, Entity& follower)
 
 	int player = leader.isEntityPlayer();
     
-    if (player >= 0 && player < MAXPLAYERS && (followerStats->type == HUMAN || followerStats->name[0]))
+    if (player >= 0 && player < MAXPLAYERS && ((followerStats->type == HUMAN || followerStats->type == SLIME) || followerStats->name[0]))
     {
 		// give us a random name (if necessary)
 		if ( followerStats->type == HUMAN && 
@@ -9490,9 +9512,15 @@ bool forceFollower(Entity& leader, Entity& follower)
 			size_t len = names[choice].size();
 			stringCopy(followerStats->name, name, sizeof(Stat::name), len);
 		}
+		else if ( followerStats->type == SLIME
+			&& !followerStats->name[0] )
+		{
+			std::string name = getMonsterLocalizedName(SLIME);
+			stringCopy(followerStats->name, name.c_str(), sizeof(Stat::name), name.size());
+		}
         
         // ... and a nametag
-		if (!monsterNameIsGeneric(*followerStats)) {
+		if (!monsterNameIsGeneric(*followerStats) || followerStats->type == SLIME) {
 			if (player == clientnum || splitscreen) {
 				Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
 				nametag->x = follower.x;

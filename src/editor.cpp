@@ -113,14 +113,15 @@ char chestPropertyNames[4][40] =
 	"Mimic Chance: (0-100%)"
 };
 
-char summonTrapPropertyNames[6][44] =
+char summonTrapPropertyNames[7][44] =
 {
 	"Monster To Spawn: (-1 to 32)",
 	"Quantity Per Spawn: (1-9)",
 	"Time Between Spawns: (1-999s)",
 	"Amount of Spawn Instances: (1-99)",
 	"Requires Power to Disable: (0-1)",
-	"Chance to Stop Working Each Spawn: (0-100%)"
+	"Chance to Stop Working Each Spawn: (0-100%)",
+	"Autospawn Next To Player (0-16)"
 };
 
 char itemPropertyNames[6][36] =
@@ -4766,6 +4767,23 @@ int main(int argc, char** argv)
 										printTextFormatted(font8x8_bmp, pad_x3, pad_y2, tmpStr);
 									}
 								}
+								else if ( i == 6 )
+								{
+									if ( propertyInt > 16 || propertyInt < 0 )
+									{
+										errorMessage = 60;
+										errorArr[i] = 1;
+										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 0); //reset
+									}
+									else if ( propertyInt == 0 )
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color2, "");
+									}
+									else if ( propertyInt > 0 )
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, "Auto activate near player (x tiles)");
+									}
+								}
 							}
 
 							if ( errorMessage )
@@ -4818,7 +4836,7 @@ int main(int argc, char** argv)
 							{
 								inputlen = 2;
 							}
-							else if ( editproperty == 2 || editproperty == 5 )
+							else if ( editproperty == 2 || editproperty == 5 || editproperty == 6 )
 							{
 								inputlen = 3;
 							}

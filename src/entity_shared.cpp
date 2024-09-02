@@ -1519,6 +1519,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->skill[3] = entityToCopy->skill[3];
 			entityNew->skill[4] = entityToCopy->skill[4];
 			entityNew->skill[5] = entityToCopy->skill[5];
+			entityNew->skill[9] = entityToCopy->skill[9];
 		}
 		else
 		{
@@ -1529,6 +1530,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->skill[3] = 1;
 			entityNew->skill[4] = 0;
 			entityNew->skill[5] = 0;
+			entityNew->skill[9] = 0;
 		}
 	}
 	// power crystal
