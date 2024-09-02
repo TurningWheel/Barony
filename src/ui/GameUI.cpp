@@ -10250,7 +10250,7 @@ static void checkControllerState(int player) {
 
 void HUDDrawGameEndHint(const int player, SDL_Rect rect)
 {
-	if ( multiplayer == CLIENT || multiplayer == SERVER )
+	if ( (multiplayer == CLIENT || multiplayer == SERVER) || (multiplayer == SINGLE && splitscreen) )
 	{
 		bool everyonedead = true;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -10265,12 +10265,37 @@ void HUDDrawGameEndHint(const int player, SDL_Rect rect)
 				{
 					everyonedead = false;
 				}
+				else if ( multiplayer == SINGLE && players[i]->entity )
+				{
+					everyonedead = false;
+				}
 			}
 		}
 
 		if ( players[player]->bControlEnabled )
 		{
 			players[player]->hud.animDeadPromptDisplay = true;
+			if ( players[player]->bUseCompactGUIWidth() && players[player]->bUseCompactGUIHeight() )
+			{
+				if ( !players[player]->messageZone.notification_messages.empty() || !players[player]->shootmode )
+				{
+					players[player]->hud.animDeadPromptDisplay = false;
+				}
+			}
+			else if ( players[player]->bUseCompactGUIWidth() && !players[player]->bUseCompactGUIHeight() )
+			{
+				if ( !players[player]->shootmode && !CalloutMenu[player].calloutMenuIsOpen() )
+				{
+					players[player]->hud.animDeadPromptDisplay = false;
+				}
+			}
+			else if ( players[player]->bUseCompactGUIHeight() && !players[player]->bUseCompactGUIWidth() )
+			{
+				if ( CalloutMenu[player].calloutMenuIsOpen() && !players[player]->shootmode )
+				{
+					players[player]->hud.animDeadPromptDisplay = false;
+				}
+			}
 		}
 
 		if ( everyonedead && players[player]->hud.animDeadPromptDisplay )
