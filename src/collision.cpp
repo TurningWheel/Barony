@@ -774,6 +774,10 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 						{
 							continue;
 						}
+						if ( my->behavior == &actMagicMissile && my->actmagicSpray == 1 )
+						{
+							continue;
+						}
 					}
 				}
 				else if ( parent && parent->behavior == &actDeathGhost

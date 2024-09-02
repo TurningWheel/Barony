@@ -26,7 +26,11 @@
 #include "magic.hpp"
 #include "../mod_tools.hpp"
 
-static const char* colorForSprite(int sprite, bool darker) {
+static const char* colorForSprite(Entity* my, int sprite, bool darker) {
+	if ( my && my->flags[SPRITE] )
+	{
+		return nullptr;
+	}
     if (darker) {
         switch (sprite) {
         case 672:
@@ -3095,7 +3099,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 											if ( parent && parent->behavior == &actPlayer )
 											{
 												Uint32 color = makeColorRGB(0, 255, 0);
-												messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3879), Language::get(3878), MSG_COMBAT);
+												messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3878), Language::get(3879), MSG_COMBAT);
 											}
 										}
 									}
@@ -4422,7 +4426,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
         if (1)
 		{
 			//Make the ball light up stuff as it travels.
-			my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, false));
+			my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, false));
 
 			if ( flickerLights )
 			{
@@ -4438,12 +4442,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				if (lightball_lighting == 1)
 				{
 					my->removeLightField();
-					my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, false));
+					my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, false));
 				}
 				else
 				{
 					my->removeLightField();
-					my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, true));
+					my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, true));
 				}
 				lightball_flicker = 0;
 			}
@@ -4497,7 +4501,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 void actMagicClient(Entity* my)
 {
 	my->removeLightField();
-	my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, false));
+	my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, false));
 
 	if ( flickerLights )
 	{
@@ -4513,12 +4517,12 @@ void actMagicClient(Entity* my)
 		if (lightball_lighting == 1)
 		{
 			my->removeLightField();
-			my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, false));
+			my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, false));
 		}
 		else
 		{
 			my->removeLightField();
-			my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, true));
+			my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, true));
 		}
 		lightball_flicker = 0;
 	}
@@ -6064,7 +6068,7 @@ void actParticleTimer(Entity* my)
 			{
 				if ( my->particleTimerCountdownAction < 100 )
 				{
-					my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, true));
+					my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, true));
 					playSoundEntityLocal(my, 167, 128);
 					createParticleDropRising(my, 680, 1.0);
 					createParticleCircling(my, 70, my->particleTimerCountdownSprite);
@@ -6076,7 +6080,7 @@ void actParticleTimer(Entity* my)
 			{
 				if ( my->particleTimerCountdownAction < 100 )
 				{
-					my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, true));
+					my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, true));
 					playSoundEntityLocal(my, 167, 128);
 					createParticleDropRising(my, 593, 1.0);
 					createParticleCircling(my, 70, my->particleTimerCountdownSprite);
@@ -6185,6 +6189,7 @@ void actParticleTimer(Entity* my)
 						entity->flags[PASSABLE] = true;
 						entity->flags[NOUPDATE] = true;
 						entity->flags[UNCLICKABLE] = true;
+						entity->flags[BRIGHT] = true;
 
 						entity->sizex = 2;
 						entity->sizey = 2;
@@ -6195,7 +6200,15 @@ void actParticleTimer(Entity* my)
 						entity->vel_x = vel * cos(entity->yaw) + parent->vel_x;
 						entity->vel_y = vel * sin(entity->yaw) + parent->vel_y;
 						entity->vel_z = -.5;
-						if ( entity->behavior == &actMagicMissile )
+						if ( entity->behavior == &actGib )
+						{
+							if ( my->ticks % 5 == 0 )
+							{
+								// add lighting
+								entity->skill[6] = 1;
+							}
+						}
+						else if ( entity->behavior == &actMagicMissile )
 						{
 							spell_t* spell = getSpellFromID(spellID);
 							entity->skill[4] = 0; // life start
@@ -7379,7 +7392,7 @@ void actParticleShadowTag(Entity* my)
 	{
 		--PARTICLE_LIFE;
 		my->removeLightField();
-		my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, true));
+		my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, true));
 
 		Entity* parent = uidToEntity(my->parent);
 		if ( parent )

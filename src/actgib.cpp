@@ -36,6 +36,7 @@
 #define GIB_LIFESPAN my->skill[4]
 #define GIB_PLAYER my->skill[11]
 #define GIB_POOF my->skill[5]
+#define GIB_LIGHTING my->skill[6]
 
 void poof(Entity* my) {
     if (GIB_POOF) {
@@ -57,6 +58,7 @@ void actGib(Entity* my)
 	if ( my->z == 8 && fabs(GIB_VELX) < .01 && fabs(GIB_VELY) < .01 )
 	{
 	    poof(my);
+		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -65,6 +67,7 @@ void actGib(Entity* my)
 	if ( my->ticks > GIB_LIFESPAN && GIB_LIFESPAN )
 	{
 	    poof(my);
+		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -83,12 +86,43 @@ void actGib(Entity* my)
 	GIB_VELX = GIB_VELX * .95;
 	GIB_VELY = GIB_VELY * .95;
 
+	if ( GIB_LIGHTING )
+	{
+		my->removeLightField();
+	}
+
 	// gravity
 	if ( my->z < 8 )
 	{
 		GIB_VELZ += GIB_GRAVITY;
 		my->z += GIB_VELZ;
 		my->roll += 0.1;
+
+		if ( GIB_LIGHTING && my->flags[SPRITE] && my->sprite >= 180 && my->sprite <= 184 )
+		{
+			const char* lightname = nullptr;
+			switch ( my->sprite )
+			{
+			case 180:
+				lightname = "magic_spray_green_flicker";
+				break;
+			case 181:
+				lightname = "magic_spray_blue_flicker";
+				break;
+			case 182:
+				lightname = "magic_spray_orange_flicker";
+				break;
+			case 183:
+				lightname = "magic_spray_purple_flicker";
+				break;
+			case 184:
+				lightname = "magic_spray_white_flicker";
+				break;
+			default:
+				break;
+			}
+			my->light = addLight(my->x / 16, my->y / 16, lightname);
+		}
 	}
 	else
 	{
@@ -119,6 +153,7 @@ void actGib(Entity* my)
 	if ( my->z > 128 )
 	{
 	    poof(my);
+		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
 	}
