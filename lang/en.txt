@@ -6461,5 +6461,19 @@ Magic Required: %d (%s)#
 6232 barrel#
 6233 stump#
 6234 A %s jumps out from the %s!#
+6235 You are knocked back by a torrent!#
+6236 You are sprayed with grease!#
+6237 You are sprayed with magma!#
+6238 %s is sprayed with burning magma!#
+6239 The %s is sprayed with burning magma!#
+6240 %s is sprayed with corrosive sludge!#
+6241 The %s is sprayed with corrosive sludge!#
+6242 You are sprayed with corrosive sludge!#
+6243 %s is sprayed with grease!#
+6244 The %s is sprayed with grease!#
+6245 Your hands become slippery!#
+6246 Your shield slips through your fingers!#
+6247 SORT BY LOCKED FIRST#
+6248 A %s jumps out!#
 
 6250 END#
