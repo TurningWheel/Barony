@@ -13411,12 +13411,15 @@ failed:
 				soundCancel();
 		closeMono();
 			});
-		if ( auto txt = prompt->findField("text") )
+		if ( prompt )
 		{
-			SDL_Rect pos = txt->getSize();
-			pos.y -= 8;
-			pos.h += 8;
-			txt->setSize(pos);
+			if ( auto txt = prompt->findField("text") )
+			{
+				SDL_Rect pos = txt->getSize();
+				pos.y -= 8;
+				pos.h += 8;
+				txt->setSize(pos);
+			}
 		}
 	}
 
