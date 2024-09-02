@@ -21,6 +21,7 @@
 #include "prng.hpp"
 #include "interface/consolecommand.hpp"
 #include "magic/magic.hpp"
+#include "mod_tools.hpp"
 
 int getSlimeFrame(std::string color, int frame)
 {
@@ -47,12 +48,21 @@ void slimeSetType(Entity* my, Stat* myStats, bool sink, BaronyRNG* rng)
 {
 	if ( !my || !myStats ) { return; }
 
+	if ( gameModeManager.currentMode == GameModeManager_t::GAME_MODE_TUTORIAL
+		|| gameModeManager.currentMode == GameModeManager_t::GAME_MODE_TUTORIAL_INIT )
+	{
+		myStats->setAttribute("slime_type", "slime green");
+		return;
+	}
 	std::vector<std::pair<std::string, int>> possibleTypes = { {"slime green", 1} };
 	if ( sink )
 	{
 		if ( currentlevel >= 5 )
 		{
-			possibleTypes.push_back({ "slime blue", 2 });
+			if ( strcmp(map.name, "Hell") )
+			{
+				possibleTypes.push_back({ "slime blue", 2 });
+			}
 		}
 		if ( currentlevel >= 10 )
 		{
@@ -71,7 +81,10 @@ void slimeSetType(Entity* my, Stat* myStats, bool sink, BaronyRNG* rng)
 	{
 		if ( currentlevel >= 5 )
 		{
-			possibleTypes.push_back({"slime blue", 2});
+			if ( strcmp(map.name, "Hell") )
+			{
+				possibleTypes.push_back({"slime blue", 2});
+			}
 		}
 		if ( currentlevel >= 10 )
 		{
@@ -86,7 +99,53 @@ void slimeSetType(Entity* my, Stat* myStats, bool sink, BaronyRNG* rng)
 			possibleTypes.push_back({"slime metal", 5});
 		}
 	}
+
+	int x = my->x / 16;
+	int y = my->y / 16;
+	int mapIndex = (y)*MAPLAYERS + (x)*MAPLAYERS * map.height;
+	if ( x > 0 && x < map.width && y > 0 && y < map.height )
+	{
+		if ( map.tiles[mapIndex] )
+		{
+			if ( lavatiles[map.tiles[mapIndex]] )
+			{
+				possibleTypes.clear();
+				possibleTypes.push_back({ "slime red", 3 });
+			}
+			else if ( swimmingtiles[map.tiles[mapIndex]] )
+			{
+				possibleTypes.clear();
+				possibleTypes.push_back({ "slime blue", 2 });
+				if ( currentlevel >= 15 )
+				{
+					possibleTypes.push_back({ "slime tar", 4 });
+				}
+			}
+		}
+	}
 	
+	if ( currentlevel >= 20 )
+	{
+		for ( auto it = possibleTypes.begin(); it != possibleTypes.end(); )
+		{
+			if ( it->first == "slime green" || it->first == "slime blue" )
+			{
+				if ( possibleTypes.size() > 1 )
+				{
+					it = possibleTypes.erase(it);
+				}
+				else
+				{
+					++it;
+				}
+			}
+			else
+			{
+				++it;
+			}
+		}
+	}
+
 	int roll = rng ? rng->rand() % possibleTypes.size() : local_rng.rand() % possibleTypes.size();
 	myStats->setAttribute("slime_type", possibleTypes[roll].first);
 }
@@ -176,6 +235,11 @@ void initSlime(Entity* my, Stat* myStats)
 			if ( isMonsterStatsDefault(*myStats) )
 			{
 				slimeSetStats(*my, *myStats);
+			}
+
+			if ( !strcmp(myStats->name, "") )
+			{
+				strcpy(myStats->name, getMonsterLocalizedName(SLIME).c_str());
 			}
 
 			// apply random stat increases if set in stat_shared.cpp or editor
@@ -280,7 +344,7 @@ void slimeSprayAttack(Entity* my)
 
 	if ( spellTimer )
 	{
-	spellTimer->particleTimerPreDelay = slimeSprayDelay;
+		spellTimer->particleTimerPreDelay = slimeSprayDelay;
 		spellTimer->particleTimerDuration += slimeSprayDelay;
 
 		createParticleDot(my);
@@ -379,7 +443,6 @@ void slimeAnimate(Entity* my, Stat* myStats, double dist)
 				my->scaley = 1.0;
 				my->scalez = 1.0;
 				slimeBob = 0.0;
-				createParticleDot(my);
 				if ( multiplayer != CLIENT )
 				{
 					if ( Stat* myStats = my->getStats() )
