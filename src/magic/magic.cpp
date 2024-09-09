@@ -131,6 +131,7 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		|| hitstats->type == LICH_FIRE 
 		|| hitstats->type == SHADOW
 		|| hitstats->type == MIMIC
+		|| hitstats->type == OCTOPUS
 		|| (hitstats->type == VAMPIRE && MonsterData_t::nameMatchesSpecialNPCName(*hitstats, "bram kindly"))
 		|| (hitstats->type == COCKATRICE && !strncmp(map.name, "Cockatrice Lair", 15))
 		)
@@ -1307,6 +1308,7 @@ int getCharmMonsterDifficulty(Entity& my, Stat& myStats)
 	case LICH_FIRE:
 	case MINOTAUR:
 	case MIMIC:
+	case OCTOPUS:
 		difficulty = 666;
 		break;
 	}
@@ -1706,7 +1708,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 	if ( targetStats->type == LICH || targetStats->type == SHOPKEEPER || targetStats->type == DEVIL
 		|| targetStats->type == MINOTAUR || targetStats->type == LICH_FIRE || targetStats->type == LICH_ICE
 		|| (target->behavior == &actMonster && target->monsterAllySummonRank != 0)
-		|| targetStats->type == MIMIC
+		|| targetStats->type == MIMIC || targetStats->type == OCTOPUS
 		|| (targetStats->type == INCUBUS && !strncmp(targetStats->name, "inner demon", strlen("inner demon")))
 		|| targetStats->type == SENTRYBOT || targetStats->type == SPELLBOT || targetStats->type == GYROBOT
 		|| targetStats->type == DUMMYBOT
