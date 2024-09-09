@@ -369,7 +369,7 @@ bool entityInsideTile(Entity* entity, int x, int y, int z, bool checkSafeTiles)
 					{
 						if ( !checkSafeTiles && !map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 						{
-							if ( entity->behavior != &actDeathGhost )
+							if ( entity->behavior != &actDeathGhost && !(entity->behavior == &actMonster && entity->getStats() && entity->getStats()->type == OCTOPUS) )
 							{
 								return true;
 							}
@@ -405,6 +405,7 @@ bool entityInsideTile(Entity* entity, int x, int y, int z, bool checkSafeTiles)
 
 bool entityInsideEntity(Entity* entity1, Entity* entity2)
 {
+	if ( !entity1 || !entity2 ) { return false; }
 	if ( entity1->x + entity1->sizex > entity2->x - entity2->sizex )
 	{
 		if ( entity1->x - entity1->sizex < entity2->x + entity2->sizex )
@@ -461,7 +462,7 @@ bool entityInsideSomething(Entity* entity)
 			{
 				continue;
 			}
-			if ( entity->behavior == &actDeathGhost )
+			if ( entity->behavior == &actDeathGhost || entity->getMonsterTypeFromSprite() == OCTOPUS )
 			{
 				if ( testEntity->behavior == &actMonster || testEntity->behavior == &actPlayer 
 					|| (testEntity->isDamageableCollider() && (testEntity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_NPC)) )
@@ -493,6 +494,85 @@ bool useSmallCollision(Entity& my, Stat& myStats, Entity& your, Stat& yourStats)
 			|| (your.behavior == &actPlayer && my.monsterAllyGetPlayerLeader()) )
 		{
 			return true;
+		}
+	}
+	return false;
+}
+
+bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
+{
+	if ( multiplayer == CLIENT ) { return false; }
+	if ( !projectile ) { return false; }
+	if ( (Sint32)getUID() < 0 )
+	{
+		return false;
+	}
+	if ( projectile->collisionIgnoreTargets.find(getUID()) != projectile->collisionIgnoreTargets.end() )
+	{
+		return true;
+	}
+	if ( behavior == &actMonster )
+	{
+		if ( Stat* myStats = getStats() )
+		{
+			if ( myStats->type == OCTOPUS )
+			{
+				bool miss = false;
+				if ( isUntargetableBat() )
+				{
+					projectile->collisionIgnoreTargets.insert(getUID());
+					return true;
+				}
+				if ( monsterSpecialState == BAT_REST )
+				{
+					miss = false;
+				}
+				bool backstab = false;
+				bool flanking = false;
+				real_t hitAngle = this->yawDifferenceFromEntity(projectile);
+				if ( (hitAngle >= 0 && hitAngle <= 2 * PI / 3) ) // 120 degree arc
+				{
+					if ( monsterState == MONSTER_STATE_WAIT
+						|| monsterState == MONSTER_STATE_PATH
+						|| (monsterState == MONSTER_STATE_HUNT && uidToEntity(monsterTarget) == nullptr) )
+					{
+						// unaware monster, get backstab damage.
+						backstab = true;
+					}
+					else if ( local_rng.rand() % 2 == 0 )
+					{
+						// monster currently engaged in some form of combat maneuver
+						// 1 in 2 chance to flank defenses.
+						flanking = true;
+					}
+				}
+
+				if ( backstab )
+				{
+					miss = false;
+				}
+				else if ( flanking )
+				{
+					miss = local_rng.rand() % 3 != 0;
+				}
+				else
+				{
+					miss = local_rng.rand() % 5 != 0;
+				}
+
+				if ( miss )
+				{
+					if ( projectile->collisionIgnoreTargets.find(getUID()) == projectile->collisionIgnoreTargets.end() )
+					{
+						projectile->collisionIgnoreTargets.insert(getUID());
+						if ( (parent && parent->behavior == &actPlayer) || (parent->behavior == &actMonster && parent->monsterAllyGetPlayerLeader()) )
+						{
+							spawnDamageGib(this, 0, DamageGib::DMG_MISS, true, true);
+						}
+					}
+				}
+				return miss;
+			}
 		}
 	}
 	return false;
@@ -550,6 +630,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 
 	bool reduceCollisionSize = false;
 	bool tryReduceCollisionSize = false;
+	bool projectileAttack = false;
 	Entity* parent = nullptr;
 	Stat* parentStats = nullptr;
 	if ( my )
@@ -562,6 +643,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 		{
 			if ( my->behavior == &actArrow || my->behavior == &actMagicMissile || my->behavior == &actThrown )
 			{
+				projectileAttack = true;
 				if ( parent = uidToEntity(my->parent) )
 				{
 					if ( my->behavior == &actThrown )
@@ -637,6 +719,12 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 	{
 		entLists = TileEntityList.getEntitiesWithinRadius(static_cast<int>(tx) >> 4, static_cast<int>(ty) >> 4, 2);
 	}
+
+	Monster type = NOTHING;
+	if ( my && isMonster )
+	{
+		type = my->getMonsterTypeFromSprite();
+	}
 	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 	{
 		list_t* currentList = *it;
@@ -649,7 +737,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			}
 			if ( entity->flags[PASSABLE] )
 			{
-				if ( my->behavior == &actBoulder && entity->sprite == 886 )
+				if ( my->behavior == &actBoulder && (entity->sprite == 886) )
 				{
 					// 886 is gyrobot, as they are passable, force collision here.
 				}
@@ -658,19 +746,47 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 					continue;
 				}
 			}
+			bool entityDodgeChance = false;
 			if ( entity->behavior == &actParticleTimer && static_cast<Uint32>(entity->particleTimerTarget) == my->getUID() )
 			{
 				continue;
 			}
 			if ( entity->isDamageableCollider() && (entity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_MINO)
-				&& my->behavior == &actMonster && my->getMonsterTypeFromSprite() == MINOTAUR )
+				&& my->behavior == &actMonster && type == MINOTAUR )
 			{
 				continue;
 			}
 			if ( entity->isDamageableCollider() && (entity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_NPC)
-				&& ((my->behavior == &actMonster && my->getMonsterTypeFromSprite() == GYROBOT) || my->behavior == &actDeathGhost) )
+				&& ((my->behavior == &actMonster && (type == GYROBOT || type == OCTOPUS)) || my->behavior == &actDeathGhost) )
 			{
 				continue;
+			}
+			if ( entity->behavior == &actFurniture && type == OCTOPUS )
+			{
+				continue;
+			}
+			if ( entity->getMonsterTypeFromSprite() == OCTOPUS )
+			{
+				if ( my->behavior == &actBoulder )
+				{
+					if ( entity->isUntargetableBat() && my->z > -2.0 )
+					{
+						continue;
+					}
+					else
+					{
+						// force collision here.
+					}
+				}
+				else if ( projectileAttack )
+				{
+					// calculate later if hit
+					entityDodgeChance = true;
+				}
+				else
+				{
+					continue;
+				}
 			}
 			if ( (my->behavior == &actMonster || my->behavior == &actBoulder) && entity->behavior == &actDoorFrame )
 			{
@@ -744,47 +860,59 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 					continue;
 				}
 			}
-			else if ( multiplayer != CLIENT && tryReduceCollisionSize )
+			else if ( multiplayer != CLIENT )
 			{
-				if ( my->behavior == &actMagicMissile && my->actmagicSpray == 1 )
+				if ( entityDodgeChance )
 				{
-					if ( my->actmagicEmitter > 0 )
+					if ( my->collisionIgnoreTargets.find(entity->getUID()) != my->collisionIgnoreTargets.end() )
 					{
-						auto& emitterHit = particleTimerEmitterHitEntities[my->actmagicEmitter];
-						auto find = emitterHit.find(entity->getUID());
-						if ( find != emitterHit.end() )
+						continue;
+					}
+				}
+				if ( tryReduceCollisionSize )
+				{
+					if ( my->behavior == &actMagicMissile && my->actmagicSpray == 1 )
+					{
+						if ( my->actmagicEmitter > 0 )
 						{
-							if ( find->second.hits >= 3 || (ticks - find->second.tick) < 5 )
+							auto& emitterHit = particleTimerEmitterHitEntities[my->actmagicEmitter];
+							auto find = emitterHit.find(entity->getUID());
+							if ( find != emitterHit.end() )
+							{
+								if ( find->second.hits >= 3 || (ticks - find->second.tick) < 5 )
+								{
+									continue;
+								}
+							}
+						}
+					}
+
+					if ( parent && parentStats && yourStats )
+					{
+						reduceCollisionSize = useSmallCollision(*parent, *parentStats, *entity, *yourStats);
+						if ( reduceCollisionSize )
+						{
+							if ( parent->monsterIsTinkeringCreation()
+								&& yourStats->mask && yourStats->mask->type == MASK_TECH_GOGGLES
+								&& (parentStats->leader_uid == entity->getUID()
+									|| parent->monsterAllyGetPlayerLeader() == entity) )
+							{
+								continue;
+							}
+							if ( my->behavior == &actMagicMissile && my->actmagicSpray == 1 )
 							{
 								continue;
 							}
 						}
-					}
-				}
 
-				if ( parent && parentStats && yourStats )
-				{
-					reduceCollisionSize = useSmallCollision(*parent, *parentStats, *entity, *yourStats);
-					if ( reduceCollisionSize )
-					{
-						if ( parent->monsterIsTinkeringCreation()
-							&& yourStats->mask && yourStats->mask->type == MASK_TECH_GOGGLES
-							&& (parentStats->leader_uid == entity->getUID()
-								|| parent->monsterAllyGetPlayerLeader() == entity) )
-						{
-							continue;
-						}
-						if ( my->behavior == &actMagicMissile && my->actmagicSpray == 1 )
-						{
-							continue;
-						}
+
 					}
-				}
-				else if ( parent && parent->behavior == &actDeathGhost
-					&& (entity->behavior == &actPlayer
-						|| (entity->behavior == &actMonster && entity->monsterAllyGetPlayerLeader())) )
-				{
-					reduceCollisionSize = true;
+					else if ( parent && parent->behavior == &actDeathGhost
+						&& (entity->behavior == &actPlayer
+							|| (entity->behavior == &actMonster && entity->monsterAllyGetPlayerLeader())) )
+					{
+						reduceCollisionSize = true;
+					}
 				}
 			}
 
@@ -814,6 +942,17 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				if ( (entity->sizey > 0) && ((tymin >= eymin && tymin < eymax) || (tymax >= eymin && tymax < eymax) || (tymin <= eymin && tymax > eymax)) )
 				{
+					if ( multiplayer != CLIENT )
+					{
+						if ( projectileAttack && entityDodgeChance )
+						{
+							if ( entity->collisionProjectileMiss(parent, my) )
+							{
+								continue;
+							}
+						}
+					}
+
 					tx2 = std::max(txmin, exmin);
 					ty2 = std::max(tymin, eymin);
 					hit.x = tx2;
@@ -1074,7 +1213,8 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 	//std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 	bool ignoreFurniture = my && my->behavior == &actMonster && myStats
 		&& (myStats->type == SHOPKEEPER
-			|| myStats->type == MINOTAUR);
+			|| myStats->type == MINOTAUR
+			|| myStats->type == OCTOPUS);
 
 	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 	{
@@ -1086,15 +1226,29 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 				|| ((entities == LINETRACE_IGNORE_ENTITIES) && 
 						( (!entity->flags[BLOCKSIGHT] && entity->behavior != &actMonster) 
 							|| (entity->behavior == &actMonster && (entity->flags[INVISIBLE] 
-								&& entity->sprite != 889 && entity->sprite != 1247) )
+								&& entity->sprite != 889 && entity->sprite != 1247 && entity->sprite != 1408) )
 						)
 					) 
 				)
 			{
 				// if entities == LINETRACE_IGNORE_ENTITIES, then ignore entities that block sight.
 				// 16/11/19 - added exception to monsters. if monster, use the INVISIBLE flag to skip checking.
-				// 889/1247 is dummybot/mimic "invisible" AI entity. so it's invisible, need to make it shown here.
-				continue;
+				// 889/1247/1408 is dummybot/mimic/bat "invisible" AI entity. so it's invisible, need to make it shown here.
+				if ( entity->behavior == &actMonster && entity->sprite == 1408 )
+				{
+					if ( (entity != target && target != nullptr) || entity == my || entity->flags[PASSABLE] )
+					{
+						continue;
+					}
+					else if ( entity->isUntargetableBat() )
+					{
+						continue;
+					}
+				}
+				else
+				{
+					continue;
+				}
 			}
 			if ( entity->behavior == &actParticleTimer )
 			{
@@ -1105,6 +1259,10 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 				|| entity->isDamageableCollider()) )
 			{
 				continue; // see through furniture cause we'll bust it down
+			}
+			if ( entity->isUntargetableBat() )
+			{
+				continue;
 			}
 
 			int entitymapx = static_cast<int>(entity->x) >> 4;
@@ -1389,7 +1547,7 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 				{
 					ground = false;
 				}
-				else if ( stats->type == SENTRYBOT || stats->type == SPELLBOT )
+				else if ( stats->type == SENTRYBOT || stats->type == SPELLBOT || stats->type == OCTOPUS )
 				{
 					ground = false;
 				}
@@ -1844,6 +2002,10 @@ int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntity
 							continue;
 						}
 						if ( my && my->behavior == &actDeathGhost && (entity->behavior == &actPlayer || entity->behavior == &actMonster) )
+						{
+							continue;
+						}
+						if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == OCTOPUS )
 						{
 							continue;
 						}

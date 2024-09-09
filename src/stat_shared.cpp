@@ -1302,6 +1302,26 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->GOLD = 0;
 			stats->RANDOM_GOLD = 0;
 			break;
+		case 188:
+		case (1000 + OCTOPUS):
+			stats->type = OCTOPUS;
+			stats->appearance = local_rng.rand();
+			stats->inventory.first = NULL;
+			stats->inventory.last = NULL;
+			stats->MAXHP = 10;
+			stats->HP = stats->MAXHP;
+			stats->OLDHP = stats->HP;
+			stats->STR = 0;
+			stats->DEX = 0;
+			stats->CON = 0;
+			stats->INT = -5;
+			stats->PER = 10;
+			stats->CHR = 0;
+			stats->EXP = 0;
+			stats->LVL = 1;
+			stats->GOLD = 0;
+			stats->RANDOM_GOLD = 0;
+			break;
 		case 10:
 		default:
 			break;

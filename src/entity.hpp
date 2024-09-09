@@ -1016,6 +1016,9 @@ public:
 	void addToCreatureList(list_t* list);
 	void addToWorldUIList(list_t *list);
 	std::vector<Entity*> bodyparts;
+	std::set<Uint32> collisionIgnoreTargets;
+
+	bool collisionProjectileMiss(Entity* parent, Entity* projectile);
 
 	// special magic functions/trickery
 	void castFallingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection, int heightDelay);
@@ -1076,7 +1079,9 @@ public:
 	int getColliderLangName() const;
 	static void monsterRollLevelUpStats(int increasestat[3]);
 	bool disturbMimic(Entity* touched, bool takenDamage, bool doMessage);
+	bool disturbBat(Entity* touched, bool takenDamage, bool doMessage);
 	bool isInertMimic() const;
+	bool isUntargetableBat(real_t* outDist = nullptr) const;
 	bool entityCanVomit() const;
 	bool doSilkenBowOnAttack(Entity* attacker);
 };

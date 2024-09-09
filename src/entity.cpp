@@ -6622,6 +6622,11 @@ bool Entity::isMobile()
 		return false;
 	}
 
+	if ( entitystats->type == OCTOPUS && monsterSpecialState == BAT_REST )
+	{
+		return false;
+	}
+
 	if ( (entitystats->type == LICH_FIRE || entitystats->type == LICH_ICE)
 		&& monsterLichBattleState < LICH_BATTLE_READY )
 	{
@@ -7008,7 +7013,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			else
 			{
 				serverUpdateEntitySkill(this, 8);
-				if (myStats->type != SLIME && myStats->type != RAT && myStats->type != SCARAB) {
+				if (myStats->type != SLIME && myStats->type != RAT && myStats->type != SCARAB && myStats->type != OCTOPUS) {
 				    serverUpdateEntitySkill(this, 9);
 				}
 			}
@@ -7747,6 +7752,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 		}
 		bool whip = myStats->weapon && myStats->weapon->type == TOOL_WHIP;
+		bool miss = false;
 		// normal attacks
 		if ( target == nullptr )
 		{
@@ -7759,6 +7765,110 @@ void Entity::attack(int pose, int charge, Entity* target)
 			{
 				playSoundEntity(this, 23 + local_rng.rand() % 5, 128); // whoosh noise
 				dist = lineTrace(this, x, y, yaw, STRIKERANGE, LINETRACE_ATK_CHECK_FRIENDLYFIRE, false);
+			}
+
+			if ( hit.entity && hit.entity->behavior == &actMonster )
+			{
+				if ( hit.entity->getMonsterTypeFromSprite() == OCTOPUS )
+				{
+					if ( hit.entity->isUntargetableBat() )
+					{
+						miss = true;
+					}
+					else if ( hit.entity->monsterSpecialState == BAT_REST )
+					{
+						miss = false;
+					}
+					else
+					{
+						Sint32 previousMonsterState = hit.entity->monsterState;
+						bool backstab = false;
+						bool flanking = false;
+						real_t hitAngle = hit.entity->yawDifferenceFromEntity(this);
+						if ( (hitAngle >= 0 && hitAngle <= 2 * PI / 3) ) // 120 degree arc
+						{
+							if ( previousMonsterState == MONSTER_STATE_WAIT
+								|| previousMonsterState == MONSTER_STATE_PATH
+								|| (previousMonsterState == MONSTER_STATE_HUNT && uidToEntity(monsterTarget) == nullptr) )
+							{
+								// unaware monster, get backstab damage.
+								backstab = true;
+							}
+							else if ( local_rng.rand() % 2 == 0 )
+							{
+								// monster currently engaged in some form of combat maneuver
+								// 1 in 2 chance to flank defenses.
+								flanking = true;
+							}
+						}
+
+						if ( backstab )
+						{
+							miss = false;
+						}
+						else if ( flanking )
+						{
+							miss = local_rng.rand() % 3 != 0;
+						}
+						else
+						{
+							miss = local_rng.rand() % 5 != 0;
+						}
+					}
+
+					if ( miss )
+					{
+						if ( !hit.entity->isUntargetableBat() )
+						{
+							if ( player >= 0 || (behavior == &actMonster && monsterAllyGetPlayerLeader()) )
+							{
+								spawnDamageGib(hit.entity, 0, DamageGib::DMG_MISS, true, true);
+							}
+
+							bool doHitAlert = true;
+							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+							{
+								// test for friendly fire
+								if ( checkFriend(hit.entity) )
+								{
+									doHitAlert = false;
+								}
+							}
+
+							if ( doHitAlert )
+							{
+								Stat* hitstats = hit.entity->getStats();
+								if ( hitstats )
+								{
+									bool alertTarget = true;
+									if ( behavior == &actMonster && monsterAllyIndex != -1 && hit.entity->monsterAllyIndex != -1 )
+									{
+										// if we're both allies of players, don't alert the hit target.
+										alertTarget = false;
+									}
+
+									// alert the monster!
+									if ( hit.entity->monsterState != MONSTER_STATE_ATTACK )
+									{
+										if ( alertTarget && hit.entity->monsterSpecialState == 0 )
+										{
+											hit.entity->monsterAcquireAttackTarget(*this, MONSTER_STATE_PATH, true);
+										}
+									}
+
+									// alert other monsters too
+									if ( alertTarget )
+									{
+										hit.entity->alertAlliesOnBeingHit(this);
+									}
+									hit.entity->updateEntityOnHit(this, alertTarget);
+								}
+							}
+						}
+
+						hit.entity = nullptr;
+					}
+				}
 			}
 		}
 		else
@@ -9711,6 +9821,17 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 						}
 					}
+					else if ( myStats->type == OCTOPUS )
+					{
+						if ( !hitstats->EFFECTS[EFF_BLEEDING] )
+						{
+							if ( hit.entity->setEffect(EFF_BLEEDING, true, 6 * TICKS_PER_SECOND, false) )
+							{
+								statusInflicted = true;
+								messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(701));
+							}
+						}
+					}
 					else if ( myStats->type == MIMIC && local_rng.rand() % 4 == 0 )
 					{
 						Item* armor = nullptr;
@@ -9990,7 +10111,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					bool artifactWeaponProc = parashuProc || dyrnwynSmite || dyrnwynBurn || gugnirProc;
 
 					// send messages
-					if ( !strcmp(hitstats->name, "") )
+					if ( !strcmp(hitstats->name, "") || monsterNameIsGeneric(*hitstats) )
 					{
 						Uint32 color = makeColorRGB(0, 255, 0);
 						Uint32 colorSpecial = color;// makeColorRGB(255, 0, 255);
@@ -10873,7 +10994,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									}
 									hitstats->EFFECTS[EFF_BLEEDING] = true;
 									strcpy(playerHitMessage, Language::get(701));
-									if ( !strcmp(hitstats->name, "") )
+									if ( !strcmp(hitstats->name, "") || monsterNameIsGeneric(*hitstats) )
 									{
 										strcpy(monsterHitMessage, Language::get(702));
 									}
@@ -10889,7 +11010,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = std::max(500 + (int)local_rng.rand() % 500 - hit.entity->getCON() * 10, 250); // 5-20 seconds
 										hitstats->EFFECTS[EFF_BLEEDING] = true;
 										strcpy(playerHitMessage, Language::get(2451));
-										if ( !strcmp(hitstats->name, "") )
+										if ( !strcmp(hitstats->name, "") || monsterNameIsGeneric(*hitstats) )
 										{
 											strcpy(monsterHitMessage, Language::get(2452));
 										}
@@ -10903,7 +11024,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										hitstats->EFFECTS_TIMERS[EFF_BLEEDING] += std::max((int)local_rng.rand() % 350 - hit.entity->getCON() * 5, 100); // 2-7 seconds in addition
 										hitstats->EFFECTS[EFF_BLEEDING] = true;
 										strcpy(playerHitMessage, Language::get(2454));
-										if ( !strcmp(hitstats->name, "") )
+										if ( !strcmp(hitstats->name, "") || monsterNameIsGeneric(*hitstats) )
 										{
 											strcpy(monsterHitMessage, Language::get(2455));
 										}
@@ -11172,14 +11293,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							else
 							{
 								Uint32 color = makeColorRGB(0, 255, 0);
-								if ( !strcmp(hitstats->name, "") )
-								{
-									messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(2440), getMonsterLocalizedName(hitstats->type).c_str());
-								}
-								else
-								{
-									messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(2439), hitstats->name);
-								}
+								messagePlayerMonsterEvent(player, color, *hitstats, Language::get(2440), Language::get(2439), MSG_COMBAT);
 							}
 						}
 					}
@@ -11276,7 +11390,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 		}
 		else
 		{
-			if ( (dist != STRIKERANGE && !whip) || (dist != STRIKERANGE * 1.5 && whip) )
+			if ( !miss && ((dist != STRIKERANGE && !whip) || (dist != STRIKERANGE * 1.5 && whip)) )
 			{
 				// hit a wall
 				if ( pose == PLAYER_POSE_GOLEM_SMASH )
@@ -12377,6 +12491,10 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 
 	// calculate XP gain
 	int baseXp = 10;
+	if ( srcStats->type == OCTOPUS )
+	{
+		baseXp = 1 + local_rng.rand() % 2;
+	}
 	int xpGain = baseXp + local_rng.rand() % std::max(1, baseXp) + std::max(0, srcStats->LVL - destStats->LVL) * baseXp;
 	if ( srcStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] > 0 )
 	{
@@ -13229,6 +13347,14 @@ bool Entity::checkEnemy(Entity* your)
 			else if ( yourStats->type == SHOPKEEPER && behavior == &actPlayer )
 			{
 				result = ShopkeeperPlayerHostility.isPlayerEnemy(this->skill[2]);
+			}
+			else if ( myStats->type == OCTOPUS && your->behavior == &actPlayer )
+			{
+				result = true;
+			}
+			else if ( yourStats->type == OCTOPUS && behavior == &actPlayer )
+			{
+				result = true;
 			}
 			else if ( behavior == &actPlayer && myStats->type != HUMAN )
 			{
@@ -15011,7 +15137,7 @@ int Entity::getAttackPose() const
 			type == CREATURE_IMP || type == SUCCUBUS ||
 			type == SHOPKEEPER || type == MINOTAUR ||
 			type == SHADOW || type == RAT || type == SPIDER || type == CRAB ||
-			type == MIMIC ||
+			type == MIMIC || type == OCTOPUS ||
 			type == SLIME || (type == SCARAB && sprite != 1078 && sprite != 1079))
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
@@ -16723,7 +16849,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 	bool hadOldTarget = (uidToEntity(monsterTarget) != nullptr);
 	Sint32 oldMonsterState = monsterState;
 
-	if ( target.getRace() == GYROBOT || target.isInertMimic() )
+	if ( target.getRace() == GYROBOT || target.isInertMimic() || target.isUntargetableBat() )
 	{
 		return;
 	}
@@ -16742,6 +16868,10 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 		}
 	}
 	else if ( myStats->type == MIMIC && isInertMimic() )
+	{
+		return;
+	}
+	else if ( myStats->type == OCTOPUS && monsterSpecialState == BAT_REST )
 	{
 		return;
 	}
@@ -22055,10 +22185,29 @@ void Entity::alertAlliesOnBeingHit(Entity* attacker, std::unordered_set<Entity*>
 								continue;
 							}
 						}
+
 						real_t tangent = atan2(entity->y - this->y, entity->x - this->x);
-						lineTrace(this, this->x, this->y, tangent, 1024, 0, false);
+						if ( buddystats->type == OCTOPUS && entity->isUntargetableBat() && entity->bodyparts.size() > 0 && entity->monsterSpecialState == BAT_REST )
+						{
+							real_t oldZ = entity->bodyparts[0]->z;
+							entity->bodyparts[0]->z = 0.0; // hack to make it linetraceable
+							lineTrace(this, this->x, this->y, tangent, 64.0, 0, false);
+							entity->bodyparts[0]->z = oldZ;
+						}
+						else
+						{
+							lineTrace(this, this->x, this->y, tangent, 1024, 0, false);
+						}
 						if ( hit.entity == entity )
 						{
+							if ( buddystats->type == OCTOPUS )
+							{
+								if ( entity->monsterSpecialState == BAT_REST )
+								{
+									entity->disturbBat(attacker, true, false);
+									continue;
+								}
+							}
 							entity->monsterAcquireAttackTarget(*attacker, MONSTER_STATE_PATH);
 						}
 					}

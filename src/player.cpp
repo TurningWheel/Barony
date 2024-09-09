@@ -3415,6 +3415,10 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 					return 0.0;
 				}
 			}
+			if ( parent->getMonsterTypeFromSprite() == OCTOPUS && !selectInteract )
+			{
+				return 0.0;
+			}
 			if ( parent->behavior == &actPlayer 
 				|| (parent->behavior == &actMonster && !(parent->isInertMimic())) )
 			{
@@ -3567,7 +3571,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 					particle->y = previousy;
 					particle->z = 7.5;*/
 				}
-				else if ( parent && parent->behavior == &actBoulderTrapHole )
+				else if ( parent && (parent->behavior == &actBoulderTrapHole || parent->isUntargetableBat()) )
 				{
 					// more accurate line of sight, look up
 					real_t startx = cameras[player.playernum].x * 16.0;
@@ -3586,6 +3590,10 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 					const real_t yaw = cameras[player.playernum].ang;
 
 					bool onCeilingLayer = parent->z > -11.0 && parent->z < -10;
+					if ( parent->isUntargetableBat() )
+					{
+						onCeilingLayer = false;
+					}
 					real_t endz = onCeilingLayer ? -8.0 : -8.0 - 16.0;
 					for ( ; startz > endz; startz -= abs((0.1) * tan(pitch)) )
 					{
@@ -4456,7 +4464,7 @@ void Player::WorldUI_t::handleTooltips()
 				parent = uidToEntity(tooltip->parent);
 				if ( parent && parent->flags[INVISIBLE] 
 					&& !(parent->behavior == &actMonster && 
-						(parent->getMonsterTypeFromSprite() == DUMMYBOT || parent->getMonsterTypeFromSprite() == MIMIC)) )
+						(parent->getMonsterTypeFromSprite() == DUMMYBOT || parent->getMonsterTypeFromSprite() == MIMIC || parent->getMonsterTypeFromSprite() == OCTOPUS)) )
 				{
 					continue;
 				}

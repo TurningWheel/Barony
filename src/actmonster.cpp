@@ -36,35 +36,35 @@ float limbs[NUMMONSTERS][20][3];
 bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
 {
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // NOTHING
-	{ 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0 }, // HUMAN
-	{ 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1 }, // RAT
-	{ 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1 }, // GOBLIN
+	{ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0 }, // HUMAN
+	{ 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1 }, // RAT
+	{ 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1 }, // GOBLIN
 	{ 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1 }, // SLIME
 	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1 }, // TROLL
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 }, // OCTOPUS
+	{ 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1 }, // OCTOPUS
 	{ 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1 }, // SPIDER
 	{ 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1 }, // GHOUL
 	{ 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1 }, // SKELETON
 	{ 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1 }, // SCORPION
-	{ 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1 }, // IMP
+	{ 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1 }, // IMP
 	{ 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1 }, // CRAB
-	{ 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1 }, // GNOME
-	{ 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1 }, // DEMON
+	{ 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1 }, // GNOME
+	{ 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1 }, // DEMON
 	{ 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1 }, // SUCCUBUS
 	{ 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1 }, // MIMIC
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1 }, // LICH
 	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1 }, // MINOTAUR
 	{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 }, // DEVIL
-	{ 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SHOPKEEPER
+	{ 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SHOPKEEPER
 	{ 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1 }, // KOBOLD
-	{ 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1 }, // SCARAB
+	{ 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1 }, // SCARAB
 	{ 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1 }, // CRYSTALGOLEM
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 }, // INCUBUS
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 }, // VAMPIRE
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 }, // SHADOW
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1 }, // COCKATRICE
+	{ 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1 }, // COCKATRICE
 	{ 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1 }, // INSECTOID
-	{ 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1 }, // GOATMAN
+	{ 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1 }, // GOATMAN
 	{ 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0 }, // AUTOMATON
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 }, // LICH_ICE
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 }, // LICH_FIRE
@@ -125,7 +125,7 @@ double sightranges[NUMMONSTERS] =
 	256,  // GOBLIN
 	80,   // SLIME
 	32,   // TROLL
-	0,    // OCTOPUS
+	128,    // OCTOPUS
 	96,   // SPIDER
 	128,  // GHOUL
 	192,  // SKELETON
@@ -629,6 +629,10 @@ void Entity::updateEntityOnHit(Entity* attacker, bool alertTarget)
 		else if ( myStats->type == MIMIC )
 		{
 			disturbMimic(attacker, true, true);
+		}
+		else if ( myStats->type == OCTOPUS )
+		{
+			disturbBat(attacker, true, true);
 		}
 	}
 }
@@ -2256,6 +2260,7 @@ void sentrybotPickSpotNoise(Entity* my, Stat* myStats)
 }
 
 void mimicResetIdle(Entity* my);
+void batResetIdle(Entity* my);
 
 void monsterAnimate(Entity* my, Stat* myStats, double dist)
 {
@@ -2294,6 +2299,7 @@ void monsterAnimate(Entity* my, Stat* myStats, double dist)
 	case GYROBOT: gyroBotAnimate(my, myStats, dist); break;
 	case DUMMYBOT: dummyBotAnimate(my, myStats, dist); break;
 	case MIMIC: mimicAnimate(my, myStats, dist); break;
+	case OCTOPUS: batAnimate(my, myStats, dist); break;
 	default:
 		break;
 	}
@@ -2385,6 +2391,7 @@ void actMonster(Entity* my)
 			case GYROBOT: initGyroBot(my, nullptr); break;
 			case DUMMYBOT: initDummyBot(my, nullptr); break;
 			case MIMIC: initMimic(my, nullptr); break;
+			case OCTOPUS: initBat(my, nullptr); break;
 			default: printlog("Unknown monster, can't init!"); break;
 			}
 		}
@@ -2478,6 +2485,7 @@ void actMonster(Entity* my)
 				case GYROBOT: initGyroBot(my, myStats); break;
 				case DUMMYBOT: initDummyBot(my, myStats); break;
 				case MIMIC: initMimic(my, myStats); break;
+				case OCTOPUS: initBat(my, myStats); break;
 				default: break; //This should never be reached.
 			}
 		}
@@ -3598,6 +3606,8 @@ void actMonster(Entity* my)
 			case MIMIC:
 				mimicDie(my);
 				break;
+			case OCTOPUS:
+				batDie(my);
 			default:
 				break; //This should never be reached.
 		}
@@ -3912,6 +3922,10 @@ void actMonster(Entity* my)
 				{
 					messagePlayer(monsterclicked, MESSAGE_INTERACTION, Language::get(6081));
 				}
+			}
+			else if ( myStats->type == OCTOPUS && my->monsterSpecialState == BAT_REST )
+			{
+				my->disturbBat(players[monsterclicked]->entity, false, false);
 			}
 			else
 			{
@@ -4308,7 +4322,20 @@ void actMonster(Entity* my)
 				{
 					continue;
 				}
-				if ( entityInsideEntity(my, entity) && entity->getRace() != GYROBOT )
+				bool entityInside = entityInsideEntity(my, entity);
+				/*if ( my->getRace() == OCTOPUS && entity->getRace() == OCTOPUS )
+				{
+					int x1 = my->sizex;
+					int y1 = my->sizey;
+					my->sizex = 2;
+					my->sizey = 2;
+
+					int x2 = entity->sizex;
+					int y2 = entity->sizey;
+					entity->sizex = 2;
+					entity->sizey = 2;
+				}*/
+				if ( entityInside && entity->getRace() != GYROBOT )
 				{
 					if ( entity->behavior != &actDoorFrame )
 					{
@@ -5106,7 +5133,7 @@ void actMonster(Entity* my)
 			{
 				std::vector<std::pair<int, int>> possibleCoordinates;
 				my->monsterMoveTime = local_rng.rand() % 30;
-				if ( myStats->type == MIMIC )
+				if ( myStats->type == MIMIC || myStats->type == OCTOPUS )
 				{
 					my->monsterMoveTime = 2 + local_rng.rand() % 4;
 				}
@@ -5120,6 +5147,11 @@ void actMonster(Entity* my)
 				{
 					searchLimitX = 5;
 					searchLimitY = 5;
+				}
+				else if ( myStats->type == OCTOPUS )
+				{
+					searchLimitX = 7;
+					searchLimitY = 7;
 				}
 				int lowerX = std::max<int>(0, centerX - searchLimitX); // assigned upper/lower x coords from entity start position.
 				int upperX = std::min<int>(centerX + searchLimitX, map.width);
@@ -5629,7 +5661,7 @@ timeToGoAgain:
 											playSoundEntity(hit.entity, 28, 64);
 										}
 									}
-									else if ( hit.entity->isDamageableCollider() && myStats->type != GYROBOT )
+									else if ( hit.entity->isDamageableCollider() && myStats->type != GYROBOT && myStats->type != OCTOPUS )
 									{
 										// break it down!
 										my->monsterHitTime++;
@@ -6738,7 +6770,7 @@ timeToGoAgain:
 										playSoundEntity(hit.entity, 28, 64);
 									}
 								}
-								else if ( hit.entity->isDamageableCollider() && myStats->type != GYROBOT )
+								else if ( hit.entity->isDamageableCollider() && myStats->type != GYROBOT && myStats->type != OCTOPUS )
 								{
 									// break it down!
 									my->monsterHitTime++;
@@ -7027,6 +7059,10 @@ timeToGoAgain:
 						if ( !target && myStats->type == MIMIC )
 						{
 							mimicResetIdle(my);
+						}
+						else if ( !target && myStats->type == OCTOPUS )
+						{
+							batResetIdle(my);
 						}
 						else if ( my->monsterAllyState == ALLY_STATE_MOVETO )
 						{
@@ -8575,7 +8611,112 @@ timeToGoAgain:
 	}
 	else
 	{
-		if ( myStats && myStats->type == MIMIC && myStats->EFFECTS[EFF_MIMIC_LOCKED] && !my->isInertMimic() )
+		if ( myStats && myStats->type == OCTOPUS && my->monsterSpecialState == BAT_REST )
+		{
+			my->monsterReleaseAttackTarget();
+
+			if ( myReflex ) // randomly dont check
+			{
+				for ( node_t* node2 = map.creatures->first; node2 != nullptr; node2 = node2->next )
+				{
+					Entity* entity = (Entity*)node2->element;
+					if ( entity == my || entity->flags[PASSABLE] )
+					{
+						continue;
+					}
+					Stat* hitstats = entity->getStats();
+					if ( hitstats != nullptr )
+					{
+						if ( (my->checkEnemy(entity) || my->monsterTarget == entity->getUID() || ringconflict) )
+						{
+							tangent = atan2(entity->y - my->y, entity->x - my->x);
+							dir = my->yaw - tangent;
+							while ( dir >= PI )
+							{
+								dir -= PI * 2;
+							}
+							while ( dir < -PI )
+							{
+								dir += PI * 2;
+							}
+
+							bool visiontest = false;
+							real_t monsterVisionRange = 40.0; //sightranges[myStats->type];
+							int sizex = my->sizex;
+							int sizey = my->sizey;
+							my->sizex = std::max(my->sizex, 4); // override size temporarily
+							my->sizey = std::max(my->sizey, 4);
+							if ( entityInsideEntity(my, entity) )
+							{
+								visiontest = true;
+							}
+							my->sizex = sizex;
+							my->sizey = sizey;
+							if ( !visiontest )
+							{
+								if ( local_rng.rand() % 4 != 0 )
+								{
+									continue; // random chance to ignore
+								}
+
+								// skip if light level is too low and distance is too high
+								int light = entity->entityLightAfterReductions(*hitstats, my);
+								double targetdist = sqrt(pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2));
+
+								if ( targetdist > monsterVisionRange )
+								{
+									continue;
+								}
+								if ( targetdist > TOUCHRANGE && targetdist > light )
+								{
+									continue;
+								}
+								if ( dir >= -13 * PI / 16 && dir <= 13 * PI / 16 )
+								{
+									visiontest = true;
+								}
+							}
+
+							if ( visiontest )   // vision cone
+							{
+								lineTrace(my, my->x, my->y, tangent, monsterVisionRange, LINETRACE_IGNORE_ENTITIES, false);
+								if ( !hit.entity )
+								{
+									lineTrace(my, my->x, my->y, tangent, TOUCHRANGE, 0, false);
+								}
+								if ( hit.entity == entity )
+								{
+									// charge state
+									Entity* attackTarget = hit.entity;
+									if ( my->disturbBat(attackTarget, false, true) )
+									{
+										my->monsterAcquireAttackTarget(*attackTarget, MONSTER_STATE_ATTACK);
+
+										if ( MONSTER_SOUND == nullptr )
+										{
+											MONSTER_SOUND = playSoundEntity(my, MONSTER_SPOTSND + local_rng.rand() % MONSTER_SPOTVAR, 128);
+										}
+
+										my->alertAlliesOnBeingHit(attackTarget);
+
+										if ( entity != nullptr )
+										{
+											if ( entity->behavior == &actPlayer )
+											{
+												assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
+												assailantTimer[entity->skill[2]] = COMBAT_MUSIC_COOLDOWN;
+											}
+										}
+									}
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		else if ( myStats && myStats->type == MIMIC && myStats->EFFECTS[EFF_MIMIC_LOCKED] && !my->isInertMimic() )
 		{
 			my->monsterHitTime++;
 			if ( my->monsterHitTime >= HITRATE )
@@ -8616,15 +8757,15 @@ timeToGoAgain:
 					{
 						continue;
 					}
+					if ( entity->behavior != &actPlayer )
+					{
+						continue;
+					}
 					Stat* hitstats = entity->getStats();
 					if ( hitstats != nullptr )
 					{
 						if ( (my->checkEnemy(entity) || my->monsterTarget == entity->getUID() || ringconflict) )
 						{
-							if ( entity->behavior != &actPlayer )
-							{
-								continue;
-							}
 							tangent = atan2(entity->y - my->y, entity->x - my->x);
 							dir = my->yaw - tangent;
 							while ( dir >= PI )
@@ -8870,7 +9011,11 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 				}
 			}
 		}
-		if ( monsterIsImmobileTurret(this, myStats) )
+		if ( myStats->type == OCTOPUS )
+		{
+			bow = 1.5;
+		}
+		else if ( monsterIsImmobileTurret(this, myStats) )
 		{
 			bow = 2;
 			if ( myStats->type == SPELLBOT )
@@ -12707,6 +12852,37 @@ bool Entity::isInertMimic() const
 		}
 	}
 	return false;
+}
+
+bool Entity::isUntargetableBat(real_t* outDist) const
+{
+	if ( behavior == &actMonster && getMonsterTypeFromSprite() == OCTOPUS )
+	{
+		if ( bodyparts.size() >= 1 )
+		{
+			auto& body = bodyparts[0];
+			if ( body->z < -7.5 )
+			{
+				if ( outDist )
+				{
+					*outDist = body->z;
+				}
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+void batResetIdle(Entity* my)
+{
+	if ( !my ) { return; }
+	// reset to inert after wandering with no target
+
+	my->monsterSpecialState = BAT_REST;
+	serverUpdateEntitySkill(my, 33);
+
+	my->monsterLookDir = (PI / 2) * (local_rng.rand() % 4);
 }
 
 void mimicResetIdle(Entity* my)

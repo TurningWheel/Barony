@@ -114,6 +114,7 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 
     // OCTOPUS
     {
+		1408
     },
 
     // SPIDER
@@ -296,7 +297,7 @@ static char monstertypename[][15] =
 	"goblin",
 	"slime",
 	"troll",
-	"octopus",
+	"bat",
 	"spider",
 	"ghoul",
 	"skeleton",
@@ -337,7 +338,7 @@ static char monstertypenamecapitalized[][15] =
 	"Goblin",
 	"Slime",
 	"Troll",
-	"Octopus",
+	"Bat",
 	"Spider",
 	"Ghoul",
 	"Skeleton",
@@ -429,7 +430,7 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f, 0.8 }, // goblin
 	{ 1.4, 0.5, 1.3, 0.7, 0.5, 1.3, 0.5 }, // slime
 	{ 1.1, 0.8, 1.1, 0.8, 0.9, 1.f, 0.8 }, // troll
-	{ 1.2, 1.f, 1.1, 0.9, 1.1, 1.f, 1.f }, // octopus
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // octopus
 	{ 1.f, 1.1, 1.f, 1.2, 1.1, 1.f, 1.1 }, // spider
 	{ 1.f, 1.2, 0.8, 1.1, 0.6, 0.8, 1.1 }, // ghoul
 	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8, 1.1 }, // skeleton
@@ -697,6 +698,7 @@ void initSentryBot(Entity* my, Stat* myStats);
 void initGyroBot(Entity* my, Stat* myStats);
 void initDummyBot(Entity* my, Stat* myStats);
 void initMimic(Entity* my, Stat* myStats);
+void initBat(Entity* my, Stat* myStats);
 
 //--act*Limb functions--
 void actHumanLimb(Entity* my);
@@ -730,6 +732,7 @@ void actSentryBotLimb(Entity* my);
 void actGyroBotLimb(Entity* my);
 void actDummyBotLimb(Entity* my);
 void actMimicLimb(Entity* my);
+void actBatLimb(Entity* my);
 
 //--*Die functions--
 void humanDie(Entity* my);
@@ -765,6 +768,7 @@ void sentryBotDie(Entity* my);
 void gyroBotDie(Entity* my);
 void dummyBotDie(Entity* my);
 void mimicDie(Entity* my);
+void batDie(Entity* my);
 
 void monsterAnimate(Entity* my, Stat* myStats, double dist);
 //--*MoveBodyparts functions--
@@ -803,6 +807,7 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist);
 void gyroBotAnimate(Entity* my, Stat* myStats, double dist);
 void dummyBotAnimate(Entity* my, Stat* myStats, double dist);
 void mimicAnimate(Entity* my, Stat* myStats, double dist);
+void batAnimate(Entity* my, Stat* myStats, double dist);
 
 //--misc functions--
 void actMinotaurTrap(Entity* my);
@@ -1068,6 +1073,10 @@ static const int MIMIC_INERT = 1;
 static const int MIMIC_MAGIC = 2;
 static const int MIMIC_INERT_SECOND = 3;
 static const int MIMIC_STATUS_IMMOBILE = 4;
+
+//-Bat--
+static const int BAT_REST = 1;
+static const int BAT_REST_DISTURBED = 2;
 
 struct MonsterData_t
 {

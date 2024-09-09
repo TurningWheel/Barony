@@ -202,6 +202,10 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 
 	if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
 	{
+		if ( entity->behavior == &actMonster && entity->isUntargetableBat() && my->z > -2.0 ) // boulder doesnt kill when not in air
+		{
+			return 0;
+		}
 		if ( ignoreInsideEntity || entityInsideEntity( my, entity ) )
 		{
 			Stat* stats = entity->getStats();

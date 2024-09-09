@@ -53,6 +53,7 @@ int checkSpriteType(Sint32 sprite)
 	case 164:
 	case 165:
 	case 166:
+	case 188:
 		//monsters
 		return 1;
 		break;

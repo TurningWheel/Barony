@@ -81,8 +81,22 @@ Sint32 doorFrameSprite() {
 
 -------------------------------------------------------------------------------*/
 
+static ConsoleVariable<std::string> cvar_monster_curve("/monster_curve", "nothing");
 int monsterCurve(int level)
 {
+	if ( svFlags & SV_FLAG_CHEATS )
+	{
+		for ( int i = 0; i < NUMMONSTERS; ++i )
+		{
+			if ( *cvar_monster_curve == monstertypename[i] )
+			{
+				if ( i != NOTHING )
+				{
+					return i;
+				}
+			}
+		}
+	}
 	if ( !strncmp(map.name, "The Mines", 9) )   // the mines
 	{
 		switch ( map_rng.rand() % 10 )
@@ -5513,6 +5527,7 @@ void assignActions(map_t* map)
 			case 164:
 			case 165:
 			case 166:
+			case 188:
 			{
 				entity->sizex = 4;
 				entity->sizey = 4;
@@ -5569,6 +5584,7 @@ void assignActions(map_t* map)
                 case 164: monsterType = SPELLBOT; break;
                 case 165: monsterType = DUMMYBOT; break;
                 case 166: monsterType = GYROBOT; break;
+				case 188: monsterType = OCTOPUS; break;
                 default:
 					monsterIsFixedSprite = false;
 					monsterType = static_cast<Monster>(monsterCurve(currentlevel));
@@ -5591,6 +5607,10 @@ void assignActions(map_t* map)
 				{
 					entity->yaw = 90 * (map_rng.rand() % 4) * PI / 180.0;
 					entity->monsterLookDir = entity->yaw;
+				}
+				else if ( monsterType == OCTOPUS )
+				{
+					entity->monsterSpecialState = BAT_REST;
 				}
 
 				entity->seedEntityRNG(map_server_rng.getU32());
