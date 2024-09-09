@@ -3023,6 +3023,16 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 	}},
 
+	// custom damage gib (miss/healing)
+	{'DMGG', [](){
+		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		Sint16 dmg = (Sint16)SDLNet_Read16(&net_packet->data[8]);
+		DamageGib gib = DMG_DEFAULT;
+		gib = (DamageGib)(net_packet->data[10]);
+		bool miss = net_packet->data[11] != 0 ? 1 : 0;
+		spawnDamageGib(uidToEntity(uid), dmg, gib, miss);
+	}},
+
 	// ping
 	{'PING', [](){
 		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1117), (SDL_GetTicks() - pingtime));

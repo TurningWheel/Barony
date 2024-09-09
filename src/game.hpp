@@ -245,7 +245,7 @@ void actGoldBag(Entity* my);
 void actGib(Entity* my);
 void actDamageGib(Entity* my);
 Entity* spawnGib(Entity* parentent, int customGibSprite = -1);
-Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType);
+Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType, bool miss = false, bool updateClients = false);
 Entity* spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite);
 void serverSpawnGibForClient(Entity* gib);
 void actLadder(Entity* my);

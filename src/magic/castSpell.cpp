@@ -1532,7 +1532,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					totalHeal += std::max(players[i]->entity->getHP() - oldHP, 0);
 					if ( totalHeal > 0 )
 					{
-						spawnDamageGib(players[i]->entity, -totalHeal, DamageGib::DMG_HEAL);
+						spawnDamageGib(players[i]->entity, -totalHeal, DamageGib::DMG_HEAL, false, true);
 					}
 					playSoundEntity(caster, 168, 128);
 
@@ -1556,7 +1556,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							totalHeal += heal;
 							if ( heal > 0 )
 							{
-								spawnDamageGib(entity, -heal, DamageGib::DMG_HEAL);
+								spawnDamageGib(entity, -heal, DamageGib::DMG_HEAL, false, true);
 							}
 							playSoundEntity(entity, 168, 128);
 							spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);

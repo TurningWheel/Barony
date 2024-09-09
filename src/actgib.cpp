@@ -37,6 +37,7 @@
 #define GIB_PLAYER my->skill[11]
 #define GIB_POOF my->skill[5]
 #define GIB_LIGHTING my->skill[6]
+#define GIB_DMG_MISS my->skill[7]
 
 void poof(Entity* my) {
     if (GIB_POOF) {
@@ -184,7 +185,7 @@ void actDamageGib(Entity* my)
 	GIB_VELX = GIB_VELX * .95;
 	GIB_VELY = GIB_VELY * .95;
 
-	if ( my->skill[3] == DMG_WEAKER || my->skill[3] == DMG_WEAKEST )
+	if ( my->skill[3] == DMG_WEAKER || my->skill[3] == DMG_WEAKEST || my->skill[3] == DMG_MISS )
 	{
 		real_t scale = 0.2;
 		if ( my->ticks > 10 )
@@ -196,7 +197,8 @@ void actDamageGib(Entity* my)
 		my->scalez = scale;
 	}
 	else if ( my->skill[3] == DMG_STRONGER
-		|| my->skill[3] == DMG_STRONGEST )
+		|| my->skill[3] == DMG_STRONGEST
+		|| my->skill[3] == DMG_MISS )
 	{
 		real_t scale = 0.2;
 		auto& anim = EnemyHPDamageBarHandler::damageGibAnimCurves[DMG_DEFAULT];
@@ -207,6 +209,10 @@ void actDamageGib(Entity* my)
 		else
 		{
 			scale *= anim[my->ticks] / 100.0;
+		}
+		if ( my->skill[3] == DMG_MISS )
+		{
+			scale = 0.2;
 		}
 		my->scalex = scale;
 		my->scaley = scale;
@@ -399,7 +405,7 @@ Entity* spawnGib(Entity* parentent, int customGibSprite)
 	return entity;
 }
 
-Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType)
+Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType, bool miss, bool updateClients)
 {
 	if ( !parentent )
 	{
@@ -419,7 +425,7 @@ Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType)
 	entity->sizey = 1;
 	real_t vel = (local_rng.rand() % 10) / 20.f;
 	entity->vel_z = -.5;
-	if ( gibDmgType == DMG_STRONGER || gibDmgType == DMG_STRONGEST )
+	if ( gibDmgType == DMG_STRONGER || gibDmgType == DMG_STRONGEST || gibDmgType == DMG_MISS )
 	{
 		vel = 0.25;
 		entity->vel_z = -.4;
@@ -437,6 +443,7 @@ Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType)
 	entity->skill[0] = dmgAmount;
 	entity->skill[3] = gibDmgType;
 	entity->fskill[3] = 0.04;
+	entity->skill[7] = miss ? 1 : 0;
 	entity->behavior = &actDamageGib;
     entity->ditheringDisabled = true;
 	entity->flags[SPRITE] = true;
@@ -474,6 +481,8 @@ Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType)
 			break;
 		case DMG_POISON:
 			break;
+		case DMG_MISS:
+			break;
 		case DMG_HEAL:
 			color = hudColors.characterSheetGreen;
 			break;
@@ -483,6 +492,30 @@ Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType)
 			break;
 	}
 	entity->skill[6] = color;
+
+	if ( updateClients )
+	{
+		if ( multiplayer == SERVER )
+		{
+			for ( int c = 1; c < MAXPLAYERS; c++ )
+			{
+				if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+				{
+					continue;
+				}
+				strcpy((char*)net_packet->data, "DMGG");
+				SDLNet_Write32(parentent->getUID(), &net_packet->data[4]);
+				SDLNet_Write16((Sint16)dmgAmount, &net_packet->data[8]);
+				net_packet->data[10] = gibDmgType;
+				net_packet->data[11] = miss ? 1 : 0;
+				net_packet->address.host = net_clients[c - 1].host;
+				net_packet->address.port = net_clients[c - 1].port;
+				net_packet->len = 12;
+				sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			}
+		}
+	}
+
 	return entity;
 }
 
