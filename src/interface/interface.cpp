@@ -11113,12 +11113,26 @@ void EnemyHPDamageBarHandler::EnemyHPDetails::updateWorldCoordinates()
 			worldX = entity->lerpRenderState.x.position * 16.0;
 			worldY = entity->lerpRenderState.y.position * 16.0;
 			worldZ = entity->lerpRenderState.z.position + enemyBarSettings.getHeightOffset(entity);
+			if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == OCTOPUS )
+			{
+				if ( entity->bodyparts.size() > 0 )
+				{
+					worldZ += entity->bodyparts[0]->lerpRenderState.z.position;
+				}
+			}
 		}
 		else
 		{
 			worldX = entity->x;
 			worldY = entity->y;
 			worldZ = entity->z + enemyBarSettings.getHeightOffset(entity);
+			if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == OCTOPUS )
+			{
+				if ( entity->bodyparts.size() > 0 )
+				{
+					worldZ += entity->bodyparts[0]->z;
+				}
+			}
 		}
 		if ( entity->behavior == &actDoor && entity->flags[PASSABLE] )
 		{
@@ -24572,6 +24586,13 @@ void CalloutRadialMenu::update()
 				callout.y = entity->lerpRenderState.y.position * 16.0;
 				callout.z = entity->lerpRenderState.z.position + enemyBarSettings.getHeightOffset(entity);
 				callout.z -= 4;
+				if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == OCTOPUS )
+				{
+					if ( entity->bodyparts.size() > 0 )
+					{
+						callout.z += entity->bodyparts[0]->lerpRenderState.z.position;
+					}
+				}
 			}
 			else
 			{
@@ -24579,6 +24600,13 @@ void CalloutRadialMenu::update()
 				callout.y = entity->y;
 				callout.z = entity->z + enemyBarSettings.getHeightOffset(entity);
 				callout.z -= 4;
+				if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == OCTOPUS )
+				{
+					if ( entity->bodyparts.size() > 0 )
+					{
+						callout.z += entity->bodyparts[0]->z;
+					}
+				}
 			}
 		}
 		else if ( callout.entityUid != 0 )

@@ -71,6 +71,7 @@ enum DamageGib {
 	DMG_BLEED,
 	DMG_POISON,
 	DMG_HEAL,
+	DMG_MISS,
 	DMG_TODO
 };
 class EnemyHPDamageBarHandler
