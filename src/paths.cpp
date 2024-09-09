@@ -896,8 +896,8 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		auto now = std::chrono::high_resolution_clock::now();
 		ms = std::chrono::duration_cast<std::chrono::microseconds>(now - pathtime);
 		DebugStats.gui2 = DebugStats.gui2 + ms;
-		messagePlayer(0, MESSAGE_DEBUG, "FAIL (%d) uid: %d : path tries: %d (%d, %d) to (%d, %d)",
-            (int)pathingType, my->getUID(), tries, x1, y1, x2, y2);
+		messagePlayer(0, MESSAGE_DEBUG, "FAIL (%d) sprite: %d uid: %d : path tries: %d (%d, %d) to (%d, %d)",
+            (int)pathingType, my->sprite, my->getUID(), tries, x1, y1, x2, y2);
 	}
 	lastGeneratePathTries = tries;
 	if (my->behavior == &actMonster) {
