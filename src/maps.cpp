@@ -4456,6 +4456,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 
 	int breakableGoodies = breakableLocations.size() * 80 / 100;
 	int breakableMonsters = 0;
+	const int breakableMonsterLimit = 2 + (currentlevel / LENGTH_OF_LEVEL_REGION) * (1 + map_rng.rand() % 2);
 	if ( findBreakables != EditorEntityData_t::colliderRandomGenPool.end() && findBreakables->second.size() > 0 && breakableGoodies > 0 )
 	{
 		int breakableItemsFromGround = 0;
@@ -4466,6 +4467,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			ids.push_back(pair.first);
 			chances.push_back(pair.second);
 		}
+		Monster lastMonsterEvent = NOTHING;
 		while ( !breakableLocations.empty() )
 		{
 			auto& top = breakableLocations.top();
@@ -4487,7 +4489,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				breakable->colliderDamageTypes = ids[picked];
 			}
 
-			Monster monsterEvent = NOTHING;
+			bool monsterEventExists = false;
 			auto findData = EditorEntityData_t::colliderData.find(breakable->colliderDamageTypes);
 			if ( findData != EditorEntityData_t::colliderData.end() )
 			{
@@ -4496,13 +4498,15 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				{
 					if ( findMap->second.size() > 0 )
 					{
-						int picked = findMap->second[map_rng.rand() % findMap->second.size()];
-						if ( picked > NOTHING && picked < NUMMONSTERS )
+						for ( auto m : findMap->second )
 						{
-							monsterEvent = (Monster)picked;
+							if ( m > NOTHING && m < NUMMONSTERS )
+							{
+								monsterEventExists = true;
 						}
 					}
 				}
+			}
 			}
 
 			if ( breakableGoodies > 0 )
@@ -4515,9 +4519,45 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				{
 					// nothing over pits 50%
 				}
-				else if ( (breakableMonsters < 2 && monsterEvent != NOTHING && map_rng.rand() % 10 == 0)
+				else if ( (breakableMonsters < breakableMonsterLimit && monsterEventExists && map_rng.rand() % 10 == 0)
 					&& map.monsterexcludelocations[x + y * map.width] == false ) // 10% monster inside
 				{
+					Monster monsterEvent = NOTHING;
+					auto findMap = findData->second.hideMonsters.find(map.name);
+					if ( findMap != findData->second.hideMonsters.end() )
+					{
+						if ( findMap->second.size() > 0 )
+						{
+							std::vector<unsigned int> chances;
+							bool avoidLastMonster = false;
+							for ( auto m : findMap->second )
+							{
+								chances.push_back(1);
+								if ( lastMonsterEvent != NOTHING && m != lastMonsterEvent )
+								{
+									avoidLastMonster = true;
+								}
+							}
+							if ( avoidLastMonster )
+							{
+								for ( size_t i = 0; i < chances.size(); ++i )
+								{
+									if ( findMap->second[i] == lastMonsterEvent )
+									{
+										chances[i] = 0;
+									}
+								}
+							}
+							int pickIndex = map_rng.discrete(chances.data(), chances.size());
+							int picked = findMap->second[pickIndex];
+							if ( picked > NOTHING && picked < NUMMONSTERS )
+							{
+								monsterEvent = (Monster)picked;
+								lastMonsterEvent = monsterEvent;
+							}
+						}
+					}
+
 					if ( (svFlags & SV_FLAG_TRAPS) )
 					{
 						if ( map_rng.rand() % 2 == 0 )
