@@ -48,12 +48,29 @@ void actCampfire(Entity* my)
 	// crackling sounds
 	if ( CAMPFIRE_HEALTH > 0 )
 	{
+#ifdef USE_FMOD
+		if ( CAMPFIRE_SOUNDTIME == 0 )
+		{
+			CAMPFIRE_SOUNDTIME--;
+			my->entity_sound = playSoundEntityLocal(my, 133, 32);
+		}
+		if ( my->entity_sound )
+		{
+			bool playing = false;
+			my->entity_sound->isPlaying(&playing);
+			if ( !playing )
+			{
+				my->entity_sound = nullptr;
+			}
+		}
+#else
 		CAMPFIRE_SOUNDTIME--;
 		if ( CAMPFIRE_SOUNDTIME <= 0 )
 		{
 			CAMPFIRE_SOUNDTIME = 480;
 			playSoundEntityLocal( my, 133, 128 );
 		}
+#endif
 
 		// spew flame particles
 		if ( flickerLights )
@@ -115,6 +132,19 @@ void actCampfire(Entity* my)
 	{
 		my->removeLightField();
 		my->light = NULL;
+
+#ifdef USE_FMOD
+		if ( my->entity_sound )
+		{
+			bool playing = false;
+			my->entity_sound->isPlaying(&playing);
+			if ( playing )
+			{
+				my->entity_sound->stop();
+				my->entity_sound = nullptr;
+			}
+		}
+#endif
 	}
 
 	if ( multiplayer != CLIENT )

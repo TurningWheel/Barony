@@ -99,6 +99,12 @@ public:
     std::unordered_map<view_t*, Dither> dithering;
 	vec4_t lightBonus;
 
+#ifdef USE_FMOD
+	FMOD::Channel* entity_sound = nullptr;
+#else
+	void* entity_sound = nullptr;
+#endif
+
 	Uint32 getUID() const {return uid;}
 	void setUID(Uint32 new_uid);
 	Uint32 ticks;                  // duration of the entity's existence

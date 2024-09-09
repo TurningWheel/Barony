@@ -571,6 +571,14 @@ Entity::~Entity()
 		myTileListNode = nullptr;
 	}
 
+#ifdef USE_FMOD
+	if ( entity_sound )
+	{
+		entity_sound->stop();
+		entity_sound = nullptr;
+	}
+#endif
+
 	// alert clients of the entity's deletion
 	if ( multiplayer == SERVER && !loading )
 	{

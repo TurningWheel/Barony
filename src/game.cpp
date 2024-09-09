@@ -1641,12 +1641,13 @@ void gameLogic(void)
 
 			//if( TICKS_PER_SECOND )
 			//generatePathMaps();
-			bool debugMonsterTimer = false && !gamePaused;
+			bool debugMonsterTimer = false && !gamePaused && keystatus[SDLK_g];
 			if ( debugMonsterTimer )
 			{
 				printlog("loop start");
 			}
 			real_t accum = 0.0;
+			std::map<int, real_t> entityAccum;
 			DebugStats.eventsT3 = std::chrono::high_resolution_clock::now();
 
 			// run world UI entities
@@ -1789,12 +1790,13 @@ void gameLogic(void)
 
 							entity->ranbehavior = true;
 							nextnode = node->next;
-							if ( debugMonsterTimer && entity->behavior == &actMonster )
+							if ( debugMonsterTimer )
 							{
 								auto t2 = std::chrono::high_resolution_clock::now();
-								printlog("%d: %d %f", entity->sprite, entity->monsterState,
-									1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t).count());
+								//printlog("%d: %d %f", entity->sprite, entity->monsterState,
+								//	1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t).count());
 								accum += 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t).count();
+								entityAccum[entity->sprite] += 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t).count();
 							}
 
 						}
@@ -2519,7 +2521,14 @@ void gameLogic(void)
 			}
 			if ( debugMonsterTimer )
 			{
-				printlog("accum: %f", accum);
+				//printlog("accum: %f", accum);
+				if ( accum > 5.0 )
+				{
+					for ( auto& pair : entityAccum )
+					{
+						printlog("entity: %d, accum: %.2f", pair.first, pair.second);
+					}
+				}
 				}
 			for ( node = map.entities->first; node != nullptr; node = node->next )
 			{

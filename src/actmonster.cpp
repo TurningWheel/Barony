@@ -3617,25 +3617,17 @@ void actMonster(Entity* my)
 	// check to see if monster can scream again
 	if ( MONSTER_SOUND != NULL )
 	{
+#ifdef DEBUG_EVENT_TIMERS
+		auto time1 = std::chrono::high_resolution_clock::now();
+		auto time2 = std::chrono::high_resolution_clock::now();
+		auto accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+#endif
 #ifdef USE_FMOD
 		bool playing;
 		MONSTER_SOUND->isPlaying(&playing);
 		if (!playing)
 		{
 			MONSTER_SOUND = nullptr;
-		}
-		else
-		{
-			for ( c = 0; c < numsounds; c++ )
-			{
-				bool playing = true;
-				MONSTER_SOUND->isPlaying(&playing);
-				if (!playing)
-				{
-					MONSTER_SOUND = nullptr;
-					break;
-				}
-			}
 		}
 #elif defined USE_OPENAL
 		ALboolean playing;
@@ -3644,18 +3636,14 @@ void actMonster(Entity* my)
 		{
 			MONSTER_SOUND = NULL;
 		}
-		else
+#endif
+
+#ifdef DEBUG_EVENT_TIMERS
+		time2 = std::chrono::high_resolution_clock::now();
+		accum = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1).count();
+		if ( accum > 2 )
 		{
-			for ( c = 0; c < numsounds; c++ )
-			{
-				ALboolean playing = true;
-				OPENAL_Channel_IsPlaying(MONSTER_SOUND, &playing);
-				if (!playing)
-				{
-					MONSTER_SOUND = NULL;
-					break;
-				}
-			}
+			printlog("Large tick time: [actMonster 1] %f", accum);
 		}
 #endif
 	}

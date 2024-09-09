@@ -36,7 +36,7 @@ FMOD::ChannelGroup* getChannelGroupForSoundIndex(Uint32 snd)
 	{
 		return soundEnvironment_group;
 	}
-	if ( snd == 149 )
+	if ( snd == 149 || snd == 133 )
 	{
 		return soundAmbient_group;
 	}
@@ -207,7 +207,7 @@ FMOD::Channel* playSoundPosLocal(real_t x, real_t y, Uint16 snd, Uint8 vol)
 				//printlog("Channel index: %d, audibility: %f, vol: %f, pos x: %.2f | y: %.2f", i, audibility, volume, playingPosition.z, playingPosition.x);
 				if ( abs(volume - (vol / 255.f)) < 0.05 )
 				{
-					if ( sqrt(pow(playingPosition.x - position.x, 2) + pow(playingPosition.z - position.z, 2)) <= 1.5 )
+					if ( (pow(playingPosition.x - position.x, 2) + pow(playingPosition.z - position.z, 2)) <= 2.25 )
 					{
 						//printlog("Culling sound due to proximity, pos x: %.2f | y: %.2f", position.z, position.x);
 						return nullptr;
@@ -217,6 +217,40 @@ FMOD::Channel* playSoundPosLocal(real_t x, real_t y, Uint16 snd, Uint8 vol)
 		}
 	}
 
+	if ( soundEnvironment_group && getChannelGroupForSoundIndex(snd) == soundEnvironment_group )
+	{
+		int numChannels = 0;
+		soundEnvironment_group->getNumChannels(&numChannels);
+		for ( int i = 0; i < numChannels; ++i )
+		{
+			FMOD::Channel* c;
+			if ( soundEnvironment_group->getChannel(i, &c) == FMOD_RESULT::FMOD_OK )
+			{
+				float audibility = 0.f;
+				c->getAudibility(&audibility);
+				float volume = 0.f;
+				c->getVolume(&volume);
+				FMOD_VECTOR playingPosition;
+				c->get3DAttributes(&playingPosition, nullptr);
+				//printlog("Channel index: %d, audibility: %f, vol: %f, pos x: %.2f | y: %.2f", i, audibility, volume, playingPosition.z, playingPosition.x);
+				if ( abs(volume - (vol / 255.f)) < 0.05 )
+				{
+					if ( (pow(playingPosition.x - position.x, 2) + pow(playingPosition.z - position.z, 2)) <= 2.25 )
+					{
+						//printlog("Culling sound due to proximity, pos x: %.2f | y: %.2f", position.z, position.x);
+						return nullptr;
+					}
+				}
+			}
+		}
+	}
+
+	/*FMOD_OPENSTATE openState;
+	unsigned int percentBuffered = 0;
+	bool starving = false;
+	bool diskbusy = false;
+	sounds[snd]->getOpenState(&openState, &percentBuffered, &starving, &diskbusy);
+	printlog("Sound: %d state: %d pc: %d starving: %d diskbusy: %d", snd, openState, percentBuffered, starving, diskbusy);*/
 	fmod_result = fmod_system->playSound(sounds[snd], getChannelGroupForSoundIndex(snd), true, &channel);
 	if (FMODErrorCheck())
 	{

@@ -4774,7 +4774,12 @@ void physfsReloadSounds(bool reloadAll)
 					sounds[c]->release();
 					sounds[c] = nullptr;
 				}
-				fmod_result = fmod_system->createSound(soundFile.c_str(), FMOD_DEFAULT | FMOD_3D, nullptr, &sounds[c]); //TODO: FMOD_SOFTWARE -> FMOD_DEFAULT?
+				FMOD_MODE flags = FMOD_DEFAULT | FMOD_3D | FMOD_LOWMEM;
+				if ( c == 133 )
+				{
+					flags |= FMOD_LOOP_NORMAL;
+				}
+				fmod_result = fmod_system->createSound(soundFile.c_str(), flags, nullptr, &sounds[c]); //TODO: FMOD_SOFTWARE -> FMOD_DEFAULT?
 				if ( FMODErrorCheck() )
 				{
 					printlog("warning: failed to load '%s' listed at line %d in sounds.txt\n", name, c + 1);
