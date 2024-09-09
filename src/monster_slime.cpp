@@ -163,21 +163,30 @@ void slimeSetStats(Entity& my, Stat& myStats)
 	int level = std::max(currentlevel, 0) / LENGTH_OF_LEVEL_REGION;
 	myStats.LVL += 3 * level;
 	myStats.STR += 3 * level;
-
+	myStats.HP += 20 * level;
+	if ( currentlevel >= 20 )
+	{
+		myStats.HP += 10 * level;
+	}
 	if ( color == "slime metal" )
 	{
 		myStats.CON = 20 + 5 * level;
 		myStats.STR += 2 * level;
+		myStats.DEX += 2 * level;
+		myStats.DEX = std::min(myStats.DEX, 0);
 	}
 	else
 	{
 		myStats.CON += 3 * level;
+		myStats.DEX += 2 * level;
+		myStats.DEX = std::min(myStats.DEX, 4);
 	}
-	myStats.DEX += 2 * level;
 	myStats.PER += 1 * level;
 
 	myStats.MAXHP = myStats.HP;
 	myStats.OLDHP = myStats.HP;
+
+	myStats.setProficiency(PRO_MAGIC, level * 10);
 }
 
 void initSlime(Entity* my, Stat* myStats)
@@ -571,7 +580,10 @@ void slimeAnimate(Entity* my, Stat* myStats, double dist)
 				my->sprite = getSlimeFrame(color, 4);
 				my->focalz = -2.5;
 				const Sint32 temp = MONSTER_ATTACKTIME;
-				my->attack(1, 0, nullptr); // slop
+				if ( multiplayer != CLIENT )
+				{
+					my->attack(1, 0, nullptr); // slop
+				}
 				MONSTER_ATTACKTIME = temp;
 			}
 			else if (MONSTER_ATTACKTIME == frame * 7) { // frame 5

@@ -3000,6 +3000,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
+							damage = std::max(2, damage);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
@@ -6224,7 +6225,11 @@ void actParticleTimer(Entity* my)
 							{
 								elementNode = element->elements.first;
 								element = (spellElement_t*)elementNode->element;
-								element->damage = 3;
+								element->damage = 2;
+								if ( Stat* stats = parent->getStats() )
+								{
+									element->damage += stats->getProficiency(PRO_MAGIC) / 10;
+								}
 								element->mana = 5;
 							}
 
