@@ -361,6 +361,21 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 		doVertical = true;
 	}
 
+	int oldHP = stat->HP;
+	if ( stat )
+	{
+		damage *= Entity::getDamageTableMultiplier(triggered, *stat, DAMAGE_TABLE_MAGIC); // reduce/increase by magic table.
+	}
+	bool wasAsleep = false;
+	if ( stat )
+	{
+		wasAsleep = stat->EFFECTS[EFF_ASLEEP];
+	}
+	if ( damage > 0 )
+	{
+		triggered->modHP(-damage);
+	}
+
 	// stumbled into the trap!
 	Uint32 color = makeColorRGB(0, 255, 0);
 	if ( parent && parent->behavior == &actPlayer && triggered != parent )
@@ -495,61 +510,53 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 	}
 	else if ( doSpell != SPELL_NONE )
 	{
-		Entity* spell = castSpell(my->getUID(), getSpellFromID(doSpell), false, true);
-		spell->parent = my->parent;
-		spell->x = triggered->x;
-		spell->y = triggered->y;
-		if ( !doVertical )
+		if ( !stat || (stat && stat->HP > 0) )
 		{
-			real_t speed = 1.f;
-			real_t ticksToHit = (entityDistance / speed);
-			/*real_t predictx = triggered->x + (triggered->vel_x * ticksToHit);
-			real_t predicty = triggered->y + (triggered->vel_y * ticksToHit);
-			double tangent = atan2(predicty - my->y, predictx - my->x);*/
-			double tangent = atan2(triggered->y - my->y, triggered->x - my->x);
-			spell->yaw = tangent;
-			spell->vel_x = speed * cos(spell->yaw);
-			spell->vel_y = speed * sin(spell->yaw);
-		}
-		else
-		{
-			spell->x = my->x;
-			spell->y = my->y;
-			real_t speed = 3.f;
-			real_t ticksToHit = (entityDistance / speed);
-			real_t predictx = triggered->x + (triggered->vel_x * ticksToHit);
-			real_t predicty = triggered->y + (triggered->vel_y * ticksToHit);
-			double tangent = atan2(predicty - my->y, predictx - my->x);
-			spell->yaw = tangent;
-			spell->vel_z = -2.f;
-			spell->vel_x = speed * cos(spell->yaw);
-			spell->vel_y = speed * sin(spell->yaw);
-			spell->pitch = atan2(spell->vel_z, speed);
-			spell->actmagicIsVertical = MAGIC_ISVERTICAL_XYZ;
-		}
-		spell->actmagicCastByTinkerTrap = 1;
-		if ( BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TRIGGER_ALL )
-		{
-			spell->actmagicTinkerTrapFriendlyFire = 1;
-			if ( triggered == parent )
+			Entity* spell = castSpell(my->getUID(), getSpellFromID(doSpell), false, true);
+			spell->parent = my->parent;
+			spell->x = triggered->x;
+			spell->y = triggered->y;
+			if ( !doVertical )
 			{
-				spell->parent = 0;
+				real_t speed = 1.f;
+				real_t ticksToHit = (entityDistance / speed);
+				/*real_t predictx = triggered->x + (triggered->vel_x * ticksToHit);
+				real_t predicty = triggered->y + (triggered->vel_y * ticksToHit);
+				double tangent = atan2(predicty - my->y, predictx - my->x);*/
+				double tangent = atan2(triggered->y - my->y, triggered->x - my->x);
+				spell->yaw = tangent;
+				spell->vel_x = speed * cos(spell->yaw);
+				spell->vel_y = speed * sin(spell->yaw);
 			}
+			else
+			{
+				spell->x = my->x;
+				spell->y = my->y;
+				real_t speed = 3.f;
+				real_t ticksToHit = (entityDistance / speed);
+				real_t predictx = triggered->x + (triggered->vel_x * ticksToHit);
+				real_t predicty = triggered->y + (triggered->vel_y * ticksToHit);
+				double tangent = atan2(predicty - my->y, predictx - my->x);
+				spell->yaw = tangent;
+				spell->vel_z = -2.f;
+				spell->vel_x = speed * cos(spell->yaw);
+				spell->vel_y = speed * sin(spell->yaw);
+				spell->pitch = atan2(spell->vel_z, speed);
+				spell->actmagicIsVertical = MAGIC_ISVERTICAL_XYZ;
+			}
+			spell->actmagicCastByTinkerTrap = 1;
+			if ( BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TRIGGER_ALL )
+			{
+				spell->actmagicTinkerTrapFriendlyFire = 1;
+				if ( triggered == parent )
+				{
+					spell->parent = 0;
+				}
+			}
+			spell->skill[5] = 10; // travel time
 		}
-		spell->skill[5] = 10; // travel time
 	}
 	// set obituary
-	int oldHP = stat->HP;
-	if ( stat )
-	{
-		damage *= Entity::getDamageTableMultiplier(triggered, *stat, DAMAGE_TABLE_MAGIC); // reduce/increase by magic table.
-	}
-	bool wasAsleep = false;
-	if ( stat )
-	{
-		wasAsleep = stat->EFFECTS[EFF_ASLEEP];
-	}
-	triggered->modHP(-damage);
 	triggered->setObituary(Language::get(3496));
 	triggered->updateEntityOnHit(parent, true);
 	stat->killer = KilledBy::TRAP_BOMB;
