@@ -7236,6 +7236,7 @@ int main(int argc, char** argv)
 
 				// toggling the game menu
 				bool doPause = false;
+				bool doCompendium = false;
 				if ( !fadeout )
 				{
 				    bool noOneUsingKeyboard = true;
@@ -7272,6 +7273,18 @@ int main(int argc, char** argv)
 							}
 							break;
 						}
+						const bool compendiumOpenToggle =
+							!intro
+							&& inputs.bPlayerUsingKeyboardControl(i)
+							&& !Input::inputs[i].isDisabled()
+							&& !command;
+						if ( compendiumOpenToggle )
+						{
+							if ( Input::inputs[i].consumeBinaryToggle("Compendium") )
+							{
+								doCompendium = true;
+							}
+						}
 					}
 					if (noOneUsingKeyboard && keystatus[SDLK_ESCAPE]) {
 					    doPause = true;
@@ -7307,6 +7320,40 @@ int main(int argc, char** argv)
 						else
 						{
 							pauseGame(0, MAXPLAYERS);
+						}
+					}
+				}
+				else if ( doCompendium )
+				{
+					bool isOpen = false;
+					if ( MainMenu::main_menu_frame )
+					{
+						if ( auto compendium = MainMenu::main_menu_frame->findFrame("compendium") )
+						{
+							isOpen = true;
+						}
+					}
+					if ( !isOpen )
+					{
+						if ( !gamePaused )
+						{
+							pauseGame(0, MAXPLAYERS);
+						}
+						if ( !gamePaused )
+						{
+							doCompendium = false;
+						}
+					}
+					else if ( isOpen )
+					{
+						if ( gamePaused )
+						{
+							pauseGame(0, MAXPLAYERS);
+							doCompendium = false;
+							if ( !gamePaused )
+							{
+								MainMenu::openCompendium(); // will close
+							}
 						}
 					}
 				}
@@ -7438,6 +7485,14 @@ int main(int argc, char** argv)
 
 					// process button actions
 					handleButtons();
+				}
+
+				if ( doCompendium )
+				{
+					if ( gamePaused )
+					{
+						MainMenu::openCompendium();
+					}
 				}
 
 				if ( gamePaused ) // draw after main menu windows etc.

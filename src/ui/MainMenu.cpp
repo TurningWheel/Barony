@@ -123,6 +123,7 @@ namespace MainMenu {
                 {"Cycle NPCs", "E", "DpadY-", emptyBinding},
                 {"Open Map", "M", hiddenBinding, emptyBinding},
                 {"Open Log", "L", hiddenBinding, emptyBinding},
+				{"Compendium", "P", hiddenBinding, emptyBinding},
                 {"Toggle Minimap", "`", "ButtonRightStick", emptyBinding},
 #ifdef NINTENDO
                 {"Hotbar Left", "MouseWheelUp", "ButtonY", emptyBinding},
@@ -187,6 +188,7 @@ namespace MainMenu {
                 {"Cycle NPCs", "E", "DpadY-", emptyBinding},
                 {"Open Map", "M", hiddenBinding, emptyBinding},
                 {"Open Log", "L", hiddenBinding, emptyBinding},
+				{"Compendium", "P", hiddenBinding, emptyBinding},
                 {"Toggle Minimap", "`", "ButtonRightStick", emptyBinding},
 #ifdef NINTENDO
                 {"Hotbar Left", "MouseWheelUp", "ButtonY", emptyBinding},
@@ -253,6 +255,7 @@ namespace MainMenu {
 #endif
                 {"Open Map", "M", hiddenBinding, emptyBinding},
                 {"Open Log", "L", hiddenBinding, emptyBinding},
+				{"Compendium", "P", hiddenBinding, emptyBinding},
                 {"Toggle Minimap", "`", "ButtonRightStick", emptyBinding},
                 {"Hotbar Left", "MouseWheelUp", "DpadX-", emptyBinding},
                 {"Hotbar Right", "MouseWheelDown", "DpadX+", emptyBinding},
@@ -307,6 +310,7 @@ namespace MainMenu {
                 {"Cycle NPCs", "E", emptyBinding, emptyBinding},
                 {"Open Map", "M", hiddenBinding, emptyBinding},
                 {"Open Log", "L", hiddenBinding, emptyBinding},
+				{"Compendium", "P", hiddenBinding, emptyBinding},
                 {"Toggle Minimap", "`", emptyBinding, emptyBinding},
 #ifdef NINTENDO
                 {"Hotbar Left", "MouseWheelUp", "ButtonLeftBumper", emptyBinding},
@@ -4650,12 +4654,20 @@ namespace MainMenu {
 		{
 			return Language::get(6044);
 		}
+		else if ( !strcmp(binding, "Compendium") )
+		{
+			return Language::get(6251);
+		}
 
         for (auto& b : defaultBindings[0].bindings) {
             if (b.action == binding) {
                 break;
             }
 			if ( b.action == "Call Out" )
+			{
+				continue; // don't increment c, not in the linear language entries
+			}
+			else if ( b.action == "Compendium" )
 			{
 				continue; // don't increment c, not in the linear language entries
 			}
@@ -8714,6 +8726,7 @@ bind_failed:
 						else 
 						{
 							cause_of_death = score->stats->killer_name;
+							cause_of_death[0] = (char)toupper((int)cause_of_death[0]);
 						}
 						break;
 					}
@@ -10080,8 +10093,6 @@ bind_failed:
 		
 		genericSubwindowFinalizeBasic(*subwindow, y);
 	}
-
-	static void openCompendium();
 
 /******************************************************************************/
 
@@ -26477,6 +26488,7 @@ failed:
                 cause_of_death[0] = (char)toupper((int)cause_of_death[0]);
             } else {
                 cause_of_death = stats[player]->killer_name;
+				cause_of_death[0] = (char)toupper((int)cause_of_death[0]);
             }
             break;
         }
@@ -33199,6 +33211,7 @@ failed:
 					|| monsterType == LICH_FIRE
 					|| monsterType == SHADOW
 					|| monsterType == MIMIC
+					|| monsterType == OCTOPUS
 					|| monsterType == SPELLBOT 
 					|| monsterType == SENTRYBOT 
 					|| monsterType == GYROBOT 
@@ -35996,13 +36009,23 @@ failed:
 
 					if ( page_right = page_right->findFrame("page_right_inner") )
 					{
+						// debug
+						//if ( svFlags & SV_FLAG_HARDCORE )
+						//{
+						//	svFlags &= ~(SV_FLAG_HARDCORE);
+						//}
+						//else
+						//{
+						//	svFlags |= SV_FLAG_HARDCORE;
+						//}
+
 						if ( auto txt = page_right->findField("level type") )
 						{
 							std::string str = Language::get(6190);
 							if ( entry.lvl.size() > 0 )
 							{
 								char buf[32] = "-";
-								auto& stat = entry.lvl;
+								auto stat = entry.getDisplayStat("lvl");
 								if ( stat.size() > 1 )
 								{
 									snprintf(buf, sizeof(buf), "%d - %d", stat[0], stat[1]);
@@ -36056,6 +36079,7 @@ failed:
 							}
 							txt->setText(str.c_str());
 						}
+
 						if ( auto txt = page_right->findField("hp") )
 						{
 							txt->setText(Language::get(6199));
@@ -36063,7 +36087,7 @@ failed:
 						if ( auto txt = page_right->findField("hp val") )
 						{
 							char buf[32] = "-";
-							auto& stat = entry.hp;
+							auto stat = entry.getDisplayStat("hp");
 							if ( stat.size() > 1 )
 							{
 								snprintf(buf, sizeof(buf), "%d - %d", stat[0], stat[1]);
@@ -36081,7 +36105,7 @@ failed:
 						if ( auto txt = page_right->findField("ac val") )
 						{
 							char buf[32] = "-";
-							auto& stat = entry.ac;
+							auto stat = entry.getDisplayStat("ac");
 							if ( stat.size() > 1 )
 							{
 								snprintf(buf, sizeof(buf), "%d - %d", stat[0], stat[1]);
@@ -36099,7 +36123,7 @@ failed:
 						if ( auto txt = page_right->findField("spd val") )
 						{
 							char buf[32] = "-";
-							auto& stat = entry.spd;
+							auto stat = entry.getDisplayStat("spd");
 							if ( stat.size() > 1 )
 							{
 								snprintf(buf, sizeof(buf), "%d - %d", stat[0], stat[1]);
@@ -36117,7 +36141,7 @@ failed:
 						if ( auto txt = page_right->findField("atk val") )
 						{
 							char buf[32] = "-";
-							auto& stat = entry.atk;
+							auto stat = entry.getDisplayStat("atk");
 							if ( stat.size() > 1 )
 							{
 								snprintf(buf, sizeof(buf), "%d - %d", stat[0], stat[1]);
@@ -36135,7 +36159,7 @@ failed:
 						if ( auto txt = page_right->findField("rangeatk val") )
 						{
 							char buf[32] = "-";
-							auto& stat = entry.rangeatk;
+							auto stat = entry.getDisplayStat("rangeatk");
 							if ( stat.size() > 1 )
 							{
 								snprintf(buf, sizeof(buf), "%d - %d", stat[0], stat[1]);
@@ -38355,6 +38379,17 @@ failed:
 				charTxt->setVJustify(Field::justify_t::TOP);
 				charTxt->setSize(SDL_Rect{ padx, pady, 300, 24 });
 				charTxt->setColor(makeColor(198, 190, 179, 255));
+				charTxt->setTickCallback([](Widget& widget) {
+					Field* txt = static_cast<Field*>(&widget);
+					if ( !intro && (svFlags & SV_FLAG_HARDCORE) )
+					{
+						txt->setText(Language::get(6250));
+					}
+					else
+					{
+						txt->setText(Language::get(6189));
+					}
+				});
 
 				padx += 4;
 				pady += 23;
@@ -39025,7 +39060,27 @@ failed:
 		button->setDisabled(true);
 	}
 
-	static void openCompendium() {
+	void openCompendium() {
+		if ( main_menu_frame )
+		{
+			if ( auto compendium = main_menu_frame->findFrame("compendium") )
+			{
+				if ( auto frame = static_cast<Frame*>(compendium->getParent()) )
+				{
+					frame->removeSelf();
+				}
+				soundCancel();
+				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+				auto compendium_button = buttons->findButton("Dungeon Compendium"); assert(compendium_button);
+				compendium_button->select();
+				return;
+			}
+		}
+		else
+		{
+			return;
+		}
+
 		contents_activate_from_tab = true;
 		players[getMenuOwner()]->inventoryUI.compendiumItemTooltipDisplay.type = NUMITEMS;
 		compendiumItemTooltip.clear();
@@ -39096,7 +39151,7 @@ failed:
 			frame = static_cast<Frame*>(frame->getParent());
 			frame = static_cast<Frame*>(frame->getParent());
 			frame->removeSelf();
-			assert(main_menu_frame);
+			//assert(main_menu_frame);
 			if ( main_menu_frame ) {
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 				auto compendium_button = buttons->findButton("Dungeon Compendium"); assert(compendium_button);
