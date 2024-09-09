@@ -12214,6 +12214,18 @@ void Compendium_t::readMonstersFromFile()
 		jsonVecToVec(stats["atk"], monster.atk);
 		jsonVecToVec(stats["rangeatk"], monster.rangeatk);
 		jsonVecToVec(stats["pwr"], monster.pwr);
+		if ( stats.HasMember("str") )
+		{
+			jsonVecToVec(stats["str"], monster.str);
+		}
+		if ( stats.HasMember("con") )
+		{
+			jsonVecToVec(stats["con"], monster.con);
+		}
+		if ( stats.HasMember("dex") )
+		{
+			jsonVecToVec(stats["dex"], monster.dex);
+		}
 		if ( stats.HasMember("lvl") )
 		{
 			jsonVecToVec(stats["lvl"], monster.lvl);
@@ -16247,6 +16259,255 @@ void Compendium_t::PointsAnim_t::pointsChangeEvent(Sint32 amount)
 	{
 		pointsCurrent = balance;
 	}
+}
+
+std::vector<Sint32> Compendium_t::CompendiumMonsters_t::Monster_t::getDisplayStat(const char* name)
+{
+	std::vector<Sint32> retVal;
+	if ( !name )
+	{
+		return retVal;
+	}
+
+	bool ignoreHardcore =
+		(monsterType == DUMMYBOT
+			|| monsterType == GYROBOT
+			|| monsterType == SENTRYBOT
+			|| monsterType == SPELLBOT
+			|| monsterType == NOTHING
+			|| monsterType == HUMAN
+			);
+	bool hardcore = !intro && (svFlags & SV_FLAG_HARDCORE);
+
+	Stat stats(1000 + monsterType);
+	if ( !strcmp(name, "hp") )
+	{
+		if ( !hardcore || ignoreHardcore )
+		{
+			return hp;
+		}
+		if ( hp.size() > 0 )
+		{
+			Sint32 statMin = hp[0];
+			Sint32 statMax = statMin;
+			if ( hp.size() > 1 )
+			{
+				statMax = hp[1];
+			}
+
+			int statIncrease = ((abs(statMin) / 20) * 20);
+			statMin += statIncrease - (statIncrease / 5);
+			statIncrease = ((abs(statMax) / 20) * 20);
+			statMax += statIncrease;
+			retVal.push_back(statMin);
+			if ( statMax != statMin )
+			{
+				retVal.push_back(statMax);
+			}
+		}
+	}
+	else if ( !strcmp(name, "spd") )
+	{
+		if ( !hardcore || ignoreHardcore )
+		{
+			return spd;
+		}
+		if ( spd.size() > 0 )
+		{
+			Sint32 statMin = spd[0];
+			Sint32 statMax = statMin;
+			if ( spd.size() > 1 )
+			{
+				statMax = spd[1];
+			}
+
+			int statIncrease = std::min((abs(statMin) / 4) * 1, 8);
+			statMin += statIncrease - (statIncrease / 2);
+			statIncrease = std::min((abs(statMax) / 4) * 1, 8);
+			statMax += statIncrease;
+			retVal.push_back(statMin);
+			if ( statMax != statMin )
+			{
+				retVal.push_back(statMax);
+			}
+		}
+	}
+	else if ( !strcmp(name, "ac") )
+	{
+		if ( !hardcore || ignoreHardcore )
+		{
+			return ac;
+		}
+
+		Sint32 statMin = stats.CON;
+		Sint32 statMax = stats.CON + stats.RANDOM_CON;
+		if ( con.size() > 0 )
+		{
+			statMin = con[0];
+			if ( con.size() > 1 )
+			{
+				statMax = con[1];
+			}
+			else
+			{
+				statMax = con[0] + stats.RANDOM_CON;
+			}
+		}
+
+		int statIncrease = (abs(statMin) / 5) * 1;
+		int minIncrease = statIncrease - (statIncrease / 2);
+		statIncrease = (abs(statMax) / 5) * 1;
+		int maxIncrease = statIncrease;
+
+		if ( ac.size() > 0 )
+		{
+			retVal.push_back(ac[0] + minIncrease);
+			if ( ac.size() > 1 )
+			{
+				if ( ac[1] + maxIncrease != retVal[0] )
+				{
+					retVal.push_back(ac[1] + maxIncrease);
+				}
+			}
+			else
+			{
+				if ( ac[0] + maxIncrease != retVal[0] )
+				{
+					retVal.push_back(ac[0] + maxIncrease);
+				}
+			}
+		}
+	}
+	else if ( !strcmp(name, "atk") )
+	{
+		if ( !hardcore || ignoreHardcore )
+		{
+			return atk;
+		}
+
+		Sint32 statMin = stats.STR;
+		Sint32 statMax = stats.STR + stats.RANDOM_STR;
+		if ( str.size() > 0 )
+		{
+			statMin = str[0];
+			if ( str.size() > 1 )
+			{
+				statMax = str[1];
+			}
+			else
+			{
+				statMax = str[0] + stats.RANDOM_STR;
+			}
+		}
+
+		int statIncrease = (abs(statMin) / 5) * 5;
+		int minIncrease = statIncrease - (statIncrease / 4);
+		statIncrease = (abs(statMax) / 5) * 5;
+		int maxIncrease = statIncrease;
+
+		if ( atk.size() > 0 )
+		{
+			retVal.push_back(atk[0] + minIncrease);
+			if ( atk.size() > 1 )
+			{
+				if ( atk[1] + maxIncrease != retVal[0] )
+				{
+					retVal.push_back(atk[1] + maxIncrease);
+				}
+			}
+			else
+			{
+				if ( atk[0] + maxIncrease != retVal[0] )
+				{
+					retVal.push_back(atk[0] + maxIncrease);
+				}
+			}
+		}
+	}
+	else if ( !strcmp(name, "rangeatk") )
+	{
+		if ( !hardcore || ignoreHardcore )
+		{
+			return rangeatk;
+		}
+
+		Sint32 statMinIncrease = 0;
+		Sint32 statMaxIncrease = 0;
+
+		{
+			Sint32 statMinDEX = stats.DEX;
+			Sint32 statMaxDEX = stats.DEX + stats.RANDOM_DEX;
+			int statIncrease = std::min((abs(statMinDEX) / 4) * 1, 8);
+			int minIncrease = (statIncrease / 2);
+			statIncrease = std::min((abs(statMaxDEX) / 4) * 1, 8);
+			int maxIncrease = statIncrease;
+
+			statMinIncrease += minIncrease;
+			statMaxIncrease += maxIncrease;
+		}
+		{
+			Sint32 statMinPER = stats.PER;
+			Sint32 statMaxPER = stats.PER + stats.RANDOM_PER;
+			int statIncrease = (abs(statMinPER) / 5) * 5;
+			int minIncrease = statIncrease - (statIncrease / 4);
+			statIncrease = (abs(statMaxPER) / 5) * 5;
+			int maxIncrease = statIncrease;
+
+			statMinIncrease += minIncrease;
+			statMaxIncrease += maxIncrease;
+		}
+
+		if ( rangeatk.size() > 0 )
+		{
+			retVal.push_back(rangeatk[0] + statMinIncrease);
+			if ( rangeatk.size() > 1 )
+			{
+				if ( rangeatk[1] + statMaxIncrease != retVal[0] )
+				{
+					retVal.push_back(rangeatk[1] + statMaxIncrease);
+				}
+			}
+			else
+			{
+				if ( rangeatk[0] + statMaxIncrease != retVal[0] )
+				{
+					retVal.push_back(rangeatk[0] + statMaxIncrease);
+				}
+			}
+		}
+	}
+	else if ( !strcmp(name, "pwr") )
+	{
+		return pwr;
+	}
+	else if ( !strcmp(name, "lvl") )
+	{
+		if ( !hardcore || ignoreHardcore )
+		{
+			return lvl;
+		}
+
+		if ( lvl.size() > 0 )
+		{
+			Sint32 statMin = lvl[0];
+			Sint32 statMax = statMin;
+			if ( lvl.size() > 1 )
+			{
+				statMax = lvl[1] + 1;
+			}
+			else
+			{
+				statMax = statMin + 1;
+			}
+			retVal.push_back(statMin);
+			if ( statMax != statMin )
+			{
+				retVal.push_back(statMax);
+			}
+		}
+	}
+
+	return retVal;
 }
 #endif
 

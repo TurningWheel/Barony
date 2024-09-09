@@ -3946,6 +3946,9 @@ struct Compendium_t
 			std::vector<Sint32> atk;
 			std::vector<Sint32> rangeatk;
 			std::vector<Sint32> pwr;
+			std::vector<Sint32> str;
+			std::vector<Sint32> con;
+			std::vector<Sint32> dex;
 			MonsterSpecies species;
 			std::vector<Sint32> lvl;
 			std::array<int, 7> resistances;
@@ -3955,6 +3958,7 @@ struct Compendium_t
 			std::vector<std::string> models;
 			std::set<std::string> unlockAchievements;
 			int lorePoints = 0;
+			std::vector<Sint32> getDisplayStat(const char* name);
 		};
 		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents;
 		static std::map<std::string, std::string> contentsMap;
