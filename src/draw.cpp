@@ -2376,9 +2376,16 @@ void drawEntities3D(view_t* camera, int mode)
 				}
 				else
 				{
+					if ( entity->skill[7] == 1 )
+					{
+						glDrawSpriteFromImage(camera, entity, Language::get(6249), mode);
+					}
+					else
+					{
 					snprintf(buf, sizeof(buf), "%d", entity->skill[0]);
 					glDrawSpriteFromImage(camera, entity, buf, mode);
 				}
+			}
 			}
 			else
 			{
