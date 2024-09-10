@@ -4065,7 +4065,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		{
 			numSlimebushes += 4 + map_rng.rand() % 3;
 		}
-		if ( waterEmptyTiles.size() > 0 || lavaEmptyTiles.size() > 0 )
+
+		std::set<int> visited;
+		while ( numSlimebushes > 0 && (waterEmptyTiles.size() > 0 || lavaEmptyTiles.size() > 0) )
 		{
 			while ( numSlimebushes > 0 )
 			{
@@ -4078,12 +4080,37 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				{
 					x = (waterEmptyTiles[pick]) % 1000;
 					y = (waterEmptyTiles[pick]) / 1000;
+				waterEmptyTiles.erase(waterEmptyTiles.begin() + pick);
 				}
 				else if ( pick >= waterEmptyTiles.size() && ((pick - waterEmptyTiles.size()) < lavaEmptyTiles.size()) )
 				{
 					x = (lavaEmptyTiles[pick - waterEmptyTiles.size()]) % 1000;
 					y = (lavaEmptyTiles[pick - waterEmptyTiles.size()]) / 1000;
+				lavaEmptyTiles.erase(lavaEmptyTiles.begin() + (pick - waterEmptyTiles.size()));
 				}
+
+			bool skip = false;
+			for ( auto coord : visited )
+			{
+				int tx = coord % 1000;
+				int ty = coord / 1000;
+
+				real_t dx, dy;
+				dx = tx - x;
+				dy = ty - y;
+				if ( sqrt(dx * dx + dy * dy) < 4.0 ) // too close to other regions, within X tiles
+				{
+					skip = true;
+					break;
+				}
+			}
+
+			visited.insert(x + y * 1000);
+
+			if ( skip )
+			{
+				continue;
+			}
 
 				if ( x != 0 && y != 0 )
 				{
@@ -4093,6 +4120,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					setSpriteAttributes(summonTrap, nullptr, nullptr);
 					summonTrap->skill[9] = 3; // x tile auto activate
 					summonTrap->skill[0] = SLIME;
+
+				//Entity* ent = newEntity(245, 0, map.entities, nullptr);
+				////ent->behavior = &actBoulder;
+				//ent->x = x * 16.0 + 8;
+				//ent->y = y * 16.0 + 8;
+				//ent->z = 24.0;
+				//ent->flags[PASSABLE] = true;
 				}
 
 				--numSlimebushes;
