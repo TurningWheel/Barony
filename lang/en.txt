@@ -131,7 +131,7 @@
 93 goblin#
 94 slime#
 95 troll#
-96 octopus#
+96 bat#
 97 spider#
 98 ghoul#
 99 skeleton#
@@ -156,7 +156,7 @@
 114 goblins#
 115 slimes#
 116 trolls#
-117 octopuses#
+117 bats#
 118 spiders#
 119 ghouls#
 120 skeletons#
@@ -181,7 +181,7 @@
 135 hits#
 136 slimes you#
 137 thumps you#
-138 wrestles you#
+138 bites#
 139 bites#
 140 hits#
 141 hits#
@@ -6475,5 +6475,9 @@ Magic Required: %d (%s)#
 6246 Your shield slips through your fingers!#
 6247 SORT BY LOCKED FIRST#
 6248 A %s jumps out!#
+6249 Miss!#
+6250 STATS (HARDCORE)#
+6251 Open Compendium#
+6252 A nearby bat awakens!#
 
-6250 END#
+6300 END#
