@@ -4069,25 +4069,23 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		std::set<int> visited;
 		while ( numSlimebushes > 0 && (waterEmptyTiles.size() > 0 || lavaEmptyTiles.size() > 0) )
 		{
-			while ( numSlimebushes > 0 )
-			{
-				size_t totalSize = waterEmptyTiles.size() + lavaEmptyTiles.size();
-				int pick = map_rng.rand() % totalSize;
+			size_t totalSize = waterEmptyTiles.size() + lavaEmptyTiles.size();
+			int pick = map_rng.rand() % totalSize;
 
-				int x = 0;
-				int y = 0;
-				if ( pick < waterEmptyTiles.size() )
-				{
-					x = (waterEmptyTiles[pick]) % 1000;
-					y = (waterEmptyTiles[pick]) / 1000;
+			int x = 0;
+			int y = 0;
+			if ( pick < waterEmptyTiles.size() )
+			{
+				x = (waterEmptyTiles[pick]) % 1000;
+				y = (waterEmptyTiles[pick]) / 1000;
 				waterEmptyTiles.erase(waterEmptyTiles.begin() + pick);
-				}
-				else if ( pick >= waterEmptyTiles.size() && ((pick - waterEmptyTiles.size()) < lavaEmptyTiles.size()) )
-				{
-					x = (lavaEmptyTiles[pick - waterEmptyTiles.size()]) % 1000;
-					y = (lavaEmptyTiles[pick - waterEmptyTiles.size()]) / 1000;
+			}
+			else if ( pick >= waterEmptyTiles.size() && ((pick - waterEmptyTiles.size()) < lavaEmptyTiles.size()) )
+			{
+				x = (lavaEmptyTiles[pick - waterEmptyTiles.size()]) % 1000;
+				y = (lavaEmptyTiles[pick - waterEmptyTiles.size()]) / 1000;
 				lavaEmptyTiles.erase(lavaEmptyTiles.begin() + (pick - waterEmptyTiles.size()));
-				}
+			}
 
 			bool skip = false;
 			for ( auto coord : visited )
@@ -4112,14 +4110,14 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				continue;
 			}
 
-				if ( x != 0 && y != 0 )
-				{
-					Entity* summonTrap = newEntity(97, 1, map.entities, nullptr);
-					summonTrap->x = x * 16.0;
-					summonTrap->y = y * 16.0;
-					setSpriteAttributes(summonTrap, nullptr, nullptr);
-					summonTrap->skill[9] = 3; // x tile auto activate
-					summonTrap->skill[0] = SLIME;
+			if ( x != 0 && y != 0 )
+			{
+				Entity* summonTrap = newEntity(97, 1, map.entities, nullptr);
+				summonTrap->x = x * 16.0;
+				summonTrap->y = y * 16.0;
+				setSpriteAttributes(summonTrap, nullptr, nullptr);
+				summonTrap->skill[9] = 3; // x tile auto activate
+				summonTrap->skill[0] = SLIME;
 
 				//Entity* ent = newEntity(245, 0, map.entities, nullptr);
 				////ent->behavior = &actBoulder;
@@ -4127,15 +4125,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				//ent->y = y * 16.0 + 8;
 				//ent->z = 24.0;
 				//ent->flags[PASSABLE] = true;
-				}
-
-				--numSlimebushes;
-				--totalSize;
-				if ( totalSize < 10 )
-				{
-					break;
-				}
 			}
+
+			--numSlimebushes;
 		}
 	}
 
@@ -4537,10 +4529,10 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							if ( m > NOTHING && m < NUMMONSTERS )
 							{
 								monsterEventExists = true;
+							}
 						}
 					}
 				}
-			}
 			}
 
 			if ( breakableGoodies > 0 )
@@ -4675,6 +4667,183 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				ent->flags[PASSABLE] = true;
 			}
 			breakableLocations.pop();
+		}
+	}
+
+	if ( darkmap && map.skybox == 0 )
+	{
+		std::vector<std::map<int, std::vector<int>>> batAreasGood;
+		std::vector<std::map<int, std::vector<int>>> batAreasOk;
+		for ( int x = 1; x < map.width - 1; ++x )
+		{
+			for ( int y = 1; y < map.height - 1; ++y )
+			{
+				if ( possiblelocations[y + x * map.height] )
+				{
+					std::vector<int> testAreas = {
+						(x - 1) + 1000 * (y + 0),
+						(x + 1) + 1000 * (y + 0),
+						(x + 0) + 1000 * (y + 1),
+						(x + 0) + 1000 * (y - 1),
+						(x + 0) + 1000 * (y + 0),
+						(x + 1) + 1000 * (y + 1),
+						(x - 1) + 1000 * (y + 1),
+						(x + 1) + 1000 * (y - 1),
+						(x - 1) + 1000 * (y - 1)
+					};
+					std::map<int, std::vector<int>> goodSpots;
+					int openCeilings = 0;
+					for ( auto coord : testAreas )
+					{
+						int tx = coord % 1000;
+						int ty = coord / 1000;
+						if ( tx >= 1 && tx < map.width - 1 && ty >= 1 && ty < map.height - 1 )
+						{
+							if ( possiblelocations[ty + tx * map.height] )
+							{
+								int mapIndex = (ty)*MAPLAYERS + (tx)*MAPLAYERS * map.height;
+								if ( !map.tiles[OBSTACLELAYER + mapIndex] )
+								{
+									if ( !map.tiles[(MAPLAYERS - 1) + mapIndex] )
+									{
+										++openCeilings;
+										goodSpots[0].push_back(coord);
+									}
+									else
+									{
+										goodSpots[1].push_back(coord);
+									}
+								}
+							}
+						}
+					}
+					if ( openCeilings >= 5 )
+					{
+						batAreasGood.push_back(goodSpots);
+					}
+					else if ( (goodSpots[0].size() + goodSpots[1].size()) >= 5 )
+					{
+						batAreasOk.push_back(goodSpots);
+					}
+				}
+			}
+		}
+
+		std::unordered_set<int> visited;
+		std::vector<int> previousAreas;
+		int numBatAreas = std::max(2, std::min(5, 1 + (currentlevel / LENGTH_OF_LEVEL_REGION)));
+		while ( numBatAreas > 0 )
+		{
+			if ( batAreasGood.size() == 0 && batAreasOk.size() == 0 )
+			{
+				break;
+			}
+
+			auto& areas = batAreasGood.size() > 0 ? batAreasGood : batAreasOk;
+			if ( areas.size() > 0 )
+			{
+				size_t picked = map_rng.rand() % areas.size();
+				auto& coords = areas[picked];
+
+				bool skip = false;
+				for ( auto coord : coords[0] )
+				{
+					if ( visited.find(coord) != visited.end() )
+					{
+						// no good
+						skip = true;
+					}
+					else
+					{
+						visited.insert(coord);
+					}
+				}
+				for ( auto coord : coords[1] )
+				{
+					if ( visited.find(coord) != visited.end() )
+					{
+						// no good
+						skip = true;
+					}
+					else
+					{
+						visited.insert(coord);
+					}
+				}
+
+				int currentCoord = 0;
+				if ( coords[0].size() > 0 )
+				{
+					currentCoord = coords[0][0];
+				}
+				else if ( coords[1].size() > 0 )
+				{
+					currentCoord = coords[1][0];
+				}
+
+				int checkx = currentCoord % 1000;
+				int checky = currentCoord / 1000;
+				for ( auto previousCoord : previousAreas )
+				{
+					int ox = previousCoord % 1000;
+					int oy = previousCoord / 1000;
+
+					real_t dx, dy;
+					dx = checkx - ox;
+					dy = checky - oy;
+					if ( sqrt(dx * dx + dy * dy) < 8.0 ) // too close to other regions, within 8 tiles
+					{
+						skip = true;
+						break;
+					}
+				}
+
+				if ( skip )
+				{
+					areas.erase(areas.begin() + picked);
+					continue;
+				}
+
+				if ( coords[0].size() > 0 )
+				{
+					previousAreas.push_back(coords[0][0]);
+				}
+				else if ( coords[1].size() > 0 )
+				{
+					previousAreas.push_back(coords[1][0]);
+				}
+
+				int numSpawns = std::min(4, 1 + (currentlevel / LENGTH_OF_LEVEL_REGION));
+				for ( size_t i = 0; i < (coords[0].size() + coords[1].size()) && numSpawns > 0; ++i )
+				{
+					auto coord = (i < coords[0].size()) ? coords[0][i] : coords[1][i - coords[0].size()];
+					int tx = coord % 1000;
+					int ty = coord / 1000;
+
+					{
+						Entity* ent = newEntity(188, 0, map.entities, nullptr);
+						ent->x = tx * 16.0;
+						ent->y = ty * 16.0;
+					}
+
+					//Entity* ent = newEntity(245, 0, map.entities, nullptr);
+					////ent->behavior = &actBoulder;
+					//ent->x = tx * 16.0 + 8;
+					//ent->y = ty * 16.0 + 8;
+					//ent->z = 24.0;
+					//ent->flags[PASSABLE] = true;
+					visited.insert(coord);
+					--numSpawns;
+
+					possiblelocations[ty + tx * map.height] = false;
+					--numpossiblelocations;
+				}
+
+				--numBatAreas;
+
+				areas.erase(areas.begin() + picked);
+				continue;
+			}
 		}
 	}
 
