@@ -12879,10 +12879,40 @@ void batResetIdle(Entity* my)
 	if ( !my ) { return; }
 	// reset to inert after wandering with no target
 
+	bool canRest = true;
+	int x = my->x / 16;
+	int y = my->y / 16;
+	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && canRest; ++it )
+	{
+		list_t* currentList = *it;
+		for ( node_t* node = currentList->first; node != nullptr; node = node->next ) //Can't convert to map.creatures because of doorframes.
+		{
+			Entity* entity = (Entity*)node->element;
+			if ( entity == my )
+			{
+				continue;
+			}
+			if ( entity->behavior == &actCeilingTile || entity->behavior == &actColliderDecoration || entity->behavior == &actFurniture )
+			{
+				int x2 = entity->x / 16;
+				int y2 = entity->y / 16;
+				if ( x == x2 && y == y2 )
+				{
+					canRest = false;
+					break;
+				}
+			}
+		}
+	}
+
+	if ( canRest )
+	{
 	my->monsterSpecialState = BAT_REST;
 	serverUpdateEntitySkill(my, 33);
 
 	my->monsterLookDir = (PI / 2) * (local_rng.rand() % 4);
+}
 }
 
 void mimicResetIdle(Entity* my)
