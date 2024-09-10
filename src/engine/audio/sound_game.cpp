@@ -235,7 +235,7 @@ FMOD::Channel* playSoundPosLocal(real_t x, real_t y, Uint16 snd, Uint8 vol)
 				//printlog("Channel index: %d, audibility: %f, vol: %f, pos x: %.2f | y: %.2f", i, audibility, volume, playingPosition.z, playingPosition.x);
 				if ( abs(volume - (vol / 255.f)) < 0.05 )
 				{
-					if ( (pow(playingPosition.x - position.x, 2) + pow(playingPosition.z - position.z, 2)) <= 2.25 )
+					if ( (pow(playingPosition.x - position.x, 2) + pow(playingPosition.z - position.z, 2)) <= 4.5 )
 					{
 						//printlog("Culling sound due to proximity, pos x: %.2f | y: %.2f", position.z, position.x);
 						return nullptr;
@@ -389,7 +389,7 @@ OPENAL_CHANNELGROUP* getChannelGroupForSoundIndex(Uint32 snd)
 	{
 		return soundEnvironment_group;
 	}
-	if ( snd == 149 )
+	if ( snd == 149 || snd == 133 )
 	{
 		return soundAmbient_group;
 	}

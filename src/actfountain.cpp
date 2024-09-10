@@ -119,12 +119,29 @@ void actFountain(Entity* my)
 	if ( my->skill[0] > 0 )
 	{
 #define FOUNTAIN_AMBIENCE my->skill[7]
+#ifdef USE_FMOD
+		if ( FOUNTAIN_AMBIENCE == 0 )
+		{
+			FOUNTAIN_AMBIENCE--;
+			my->entity_sound = playSoundEntityLocal(my, 672, 32);
+		}
+		if ( my->entity_sound )
+		{
+			bool playing = false;
+			my->entity_sound->isPlaying(&playing);
+			if ( !playing )
+			{
+				my->entity_sound = nullptr;
+			}
+		}
+#else
 		FOUNTAIN_AMBIENCE--;
 		if ( FOUNTAIN_AMBIENCE <= 0 )
 		{
 			FOUNTAIN_AMBIENCE = TICKS_PER_SECOND * 6;
-			playSoundEntityLocal(my, 135, 32 );
+			playSoundEntityLocal(my, 672, 32 );
 		}
+#endif
 		entity = spawnGib(my);
 		entity->flags[INVISIBLE] = false;
 		entity->y -= 2;
@@ -141,6 +158,21 @@ void actFountain(Entity* my)
 		entity->vel_y = 0;
 		entity->vel_z = .25;
 		entity->fskill[3] = 0.03;
+	}
+	else
+	{
+#ifdef USE_FMOD
+		if ( my->entity_sound )
+		{
+			bool playing = false;
+			my->entity_sound->isPlaying(&playing);
+			if ( playing )
+			{
+				my->entity_sound->stop();
+				my->entity_sound = nullptr;
+			}
+		}
+#endif
 	}
 
 	if ( my->ticks == 1 )

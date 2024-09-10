@@ -1953,6 +1953,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 		{
 			list_FreeAll(map.worldUI);
 		}
+		destmap->liquidSfxPlayedTiles.clear();
 	}
 	if ( destmap->tiles != nullptr )
 	{
@@ -4775,7 +4776,7 @@ void physfsReloadSounds(bool reloadAll)
 					sounds[c] = nullptr;
 				}
 				FMOD_MODE flags = FMOD_DEFAULT | FMOD_3D | FMOD_LOWMEM;
-				if ( c == 133 )
+				if ( c == 133 || c == 672 || c == 135 || c == 155 || c == 149 )
 				{
 					flags |= FMOD_LOOP_NORMAL;
 				}

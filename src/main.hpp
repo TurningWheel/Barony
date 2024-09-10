@@ -462,6 +462,7 @@ typedef struct map_t
 	bool* trapexcludelocations = nullptr;
 	bool* monsterexcludelocations = nullptr;
 	bool* lootexcludelocations = nullptr;
+	std::set<int> liquidSfxPlayedTiles;
 	char filename[256];
 	~map_t()
 	{
