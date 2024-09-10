@@ -8646,7 +8646,7 @@ timeToGoAgain:
 							int sizey = my->sizey;
 							my->sizex = std::max(my->sizex, 4); // override size temporarily
 							my->sizey = std::max(my->sizey, 4);
-							if ( entityInsideEntity(my, entity) )
+							if ( entityInsideEntity(my, entity) && !hitstats->sneaking )
 							{
 								visiontest = true;
 							}
@@ -12908,11 +12908,11 @@ void batResetIdle(Entity* my)
 
 	if ( canRest )
 	{
-	my->monsterSpecialState = BAT_REST;
-	serverUpdateEntitySkill(my, 33);
+		my->monsterSpecialState = BAT_REST;
+		serverUpdateEntitySkill(my, 33);
 
-	my->monsterLookDir = (PI / 2) * (local_rng.rand() % 4);
-}
+		my->monsterLookDir = (PI / 2) * (local_rng.rand() % 4);
+	}
 }
 
 void mimicResetIdle(Entity* my)
