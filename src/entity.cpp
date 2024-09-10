@@ -9825,10 +9825,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( !hitstats->EFFECTS[EFF_BLEEDING] )
 						{
-							if ( hit.entity->setEffect(EFF_BLEEDING, true, 6 * TICKS_PER_SECOND, false) )
+							if ( !hitstats->defending || (hitstats->defending && local_rng.rand() % 4 == 0) )
 							{
-								statusInflicted = true;
-								messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(701));
+								if ( hit.entity->setEffect(EFF_BLEEDING, true, 6 * TICKS_PER_SECOND, false) )
+								{
+									statusInflicted = true;
+									messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(701));
+								}
 							}
 						}
 					}
