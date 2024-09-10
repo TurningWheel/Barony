@@ -5098,7 +5098,7 @@ void actMonster(Entity* my)
 					{
 						if ( myStats->type != MINOTAUR )
 						{
-							if ( !my->monsterAllyGetPlayerLeader() || (my->monsterAllyGetPlayerLeader() && local_rng.rand() % 8 == 0) || myStats->type == DUMMYBOT )
+							if ( (local_rng.rand() % 3 == 0 && !my->monsterAllyGetPlayerLeader()) || (my->monsterAllyGetPlayerLeader() && local_rng.rand() % 8 == 0) || myStats->type == DUMMYBOT )
 							{
 								// idle sounds. if player follower, reduce noise frequency by 66%.
 								MONSTER_SOUND = playSoundEntity(my, MONSTER_IDLESND + (local_rng.rand() % MONSTER_IDLEVAR), 128);
