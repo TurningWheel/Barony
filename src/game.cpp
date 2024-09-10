@@ -1383,15 +1383,20 @@ void gameLogic(void)
 									// water and lava noises
 									if ( ticks % (TICKS_PER_SECOND * 4) == (y + x * map.height) % (TICKS_PER_SECOND * 4) && local_rng.rand() % 3 == 0 )
 									{
-										if ( lavatiles[map.tiles[index]] )
+										int coord = x + y * 1000;
+										if ( map.liquidSfxPlayedTiles.find(coord) == map.liquidSfxPlayedTiles.end() )
 										{
-											// bubbling lava
-											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 155, 100 );
-										}
-										else if ( swimmingtiles[map.tiles[index]] )
-										{
-											// running water
-											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 135, 32 );
+											if ( lavatiles[map.tiles[index]] )
+											{
+												// bubbling lava
+												playSoundPosLocal( x * 16 + 8, y * 16 + 8, 155, 100 );
+											}
+											else if ( swimmingtiles[map.tiles[index]] )
+											{
+												// running water
+												playSoundPosLocal( x * 16 + 8, y * 16 + 8, 135, 32 );
+											}
+											map.liquidSfxPlayedTiles.insert(coord);
 										}
 									}
 
@@ -2970,17 +2975,22 @@ void gameLogic(void)
 								if ( z == 0 )
 								{
 									// water and lava noises
-									if ( ticks % TICKS_PER_SECOND == (y + x * map.height) % TICKS_PER_SECOND && local_rng.rand() % 3 == 0 )
+									if ( ticks % (TICKS_PER_SECOND * 4) == (y + x * map.height) % (TICKS_PER_SECOND * 4) && local_rng.rand() % 3 == 0 )
 									{
-										if ( lavatiles[map.tiles[index]] )
+										int coord = x + y * 1000;
+										if ( map.liquidSfxPlayedTiles.find(coord) == map.liquidSfxPlayedTiles.end() )
 										{
-											// bubbling lava
-											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 155, 100 );
-										}
-										else if ( swimmingtiles[map.tiles[index]] )
-										{
-											// running water
-											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 135, 32 );
+											if ( lavatiles[map.tiles[index]] )
+											{
+												// bubbling lava
+												playSoundPosLocal(x * 16 + 8, y * 16 + 8, 155, 100);
+											}
+											else if ( swimmingtiles[map.tiles[index]] )
+											{
+												// running water
+												playSoundPosLocal(x * 16 + 8, y * 16 + 8, 135, 32);
+											}
+											map.liquidSfxPlayedTiles.insert(coord);
 										}
 									}
 
