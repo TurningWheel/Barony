@@ -698,7 +698,7 @@ std::unordered_map<std::string, int> mapHashes = {
     { "mine15a.lmp", 14464 },
     { "mine15b.lmp", 16268 },
     { "mine15c.lmp", 15070 },
-    { "mine15d.lmp", 10819 },
+    { "mine15d.lmp", 11959 },
     { "mine15e.lmp", 6270 },
     { "mine16.lmp", 47683 },
     { "mine16a.lmp", 5567 },
