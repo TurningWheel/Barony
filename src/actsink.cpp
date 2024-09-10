@@ -37,12 +37,30 @@
 
 void actSink(Entity* my)
 {
+#ifdef USE_FMOD
+	if ( SINK_AMBIENCE == 0 )
+	{
+		SINK_AMBIENCE--;
+		my->stopEntitySound();
+		my->entity_sound = playSoundEntityLocal(my, 149, 32);
+	}
+	if ( my->entity_sound )
+	{
+		bool playing = false;
+		my->entity_sound->isPlaying(&playing);
+		if ( !playing )
+		{
+			my->entity_sound = nullptr;
+		}
+	}
+#else
 	SINK_AMBIENCE--;
 	if ( SINK_AMBIENCE <= 0 )
 	{
 		SINK_AMBIENCE = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal( my, 149, 32 );
 	}
+#endif
 
 	if ( my->ticks == 1 )
 	{

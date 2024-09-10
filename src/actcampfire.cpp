@@ -52,6 +52,7 @@ void actCampfire(Entity* my)
 		if ( CAMPFIRE_SOUNDTIME == 0 )
 		{
 			CAMPFIRE_SOUNDTIME--;
+			my->stopEntitySound();
 			my->entity_sound = playSoundEntityLocal(my, 133, 32);
 		}
 		if ( my->entity_sound )
@@ -133,18 +134,7 @@ void actCampfire(Entity* my)
 		my->removeLightField();
 		my->light = NULL;
 
-#ifdef USE_FMOD
-		if ( my->entity_sound )
-		{
-			bool playing = false;
-			my->entity_sound->isPlaying(&playing);
-			if ( playing )
-			{
-				my->entity_sound->stop();
-				my->entity_sound = nullptr;
-			}
-		}
-#endif
+		my->stopEntitySound();
 	}
 
 	if ( multiplayer != CLIENT )

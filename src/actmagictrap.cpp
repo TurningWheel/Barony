@@ -44,12 +44,30 @@ void actMagicTrapCeiling(Entity* my)
 
 void Entity::actMagicTrapCeiling()
 {
+#ifdef USE_FMOD
+	if ( spellTrapAmbience == 0 )
+	{
+		spellTrapAmbience--;
+		stopEntitySound();
+		entity_sound = playSoundEntityLocal(this, 149, 16);
+	}
+	if ( entity_sound )
+	{
+		bool playing = false;
+		entity_sound->isPlaying(&playing);
+		if ( !playing )
+		{
+			entity_sound = nullptr;
+		}
+	}
+#else
 	spellTrapAmbience--;
 	if ( spellTrapAmbience <= 0 )
 	{
 		spellTrapAmbience = TICKS_PER_SECOND * 30;
-		playSoundEntity(this, 149, 16);
+		playSoundEntityLocal(this, 149, 16);
 	}
+#endif
 
 	if ( multiplayer == CLIENT )
 	{
@@ -298,17 +316,36 @@ void Entity::actTeleportShrine()
 		spawnAmbientParticles(80, 576, 10 + local_rng.rand() % 40, 1.0, false);
 	}
 
+#ifdef USE_FMOD
+	if ( shrineAmbience == 0 )
+	{
+		shrineAmbience--;
+		stopEntitySound();
+		entity_sound = playSoundEntityLocal(this, 149, 16);
+	}
+	if ( entity_sound )
+	{
+		bool playing = false;
+		entity_sound->isPlaying(&playing);
+		if ( !playing )
+		{
+			entity_sound = nullptr;
+		}
+	}
+#else
+	shrineAmbience--;
+	if ( shrineAmbience <= 0 )
+	{
+		shrineAmbience = TICKS_PER_SECOND * 30;
+		playSoundEntityLocal(this, 149, 16);
+	}
+#endif
+
 	if ( multiplayer == CLIENT )
 	{
 		return;
 	}
 
-	shrineAmbience--;
-	if ( shrineAmbience <= 0 )
-	{
-		shrineAmbience = TICKS_PER_SECOND * 30;
-		playSoundEntity(this, 149, 16);
-	}
 
 	if ( !shrineInit )
 	{

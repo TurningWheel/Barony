@@ -105,6 +105,22 @@ public:
 	void* entity_sound = nullptr;
 #endif
 
+	void stopEntitySound()
+	{
+#ifdef USE_FMOD
+		if ( entity_sound )
+		{
+			bool playing = false;
+			entity_sound->isPlaying(&playing);
+			if ( playing )
+			{
+				entity_sound->stop();
+				entity_sound = nullptr;
+			}
+		}
+#endif
+	}
+
 	Uint32 getUID() const {return uid;}
 	void setUID(Uint32 new_uid);
 	Uint32 ticks;                  // duration of the entity's existence

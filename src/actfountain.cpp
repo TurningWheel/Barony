@@ -123,6 +123,7 @@ void actFountain(Entity* my)
 		if ( FOUNTAIN_AMBIENCE == 0 )
 		{
 			FOUNTAIN_AMBIENCE--;
+			my->stopEntitySound();
 			my->entity_sound = playSoundEntityLocal(my, 672, 32);
 		}
 		if ( my->entity_sound )
@@ -161,18 +162,7 @@ void actFountain(Entity* my)
 	}
 	else
 	{
-#ifdef USE_FMOD
-		if ( my->entity_sound )
-		{
-			bool playing = false;
-			my->entity_sound->isPlaying(&playing);
-			if ( playing )
-			{
-				my->entity_sound->stop();
-				my->entity_sound = nullptr;
-			}
-		}
-#endif
+		my->stopEntitySound();
 	}
 
 	if ( my->ticks == 1 )

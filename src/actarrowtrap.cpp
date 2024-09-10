@@ -114,12 +114,29 @@ void actArrowTrap(Entity* my)
 		return;
 	}
 
+#ifdef USE_FMOD
+	if ( ARROWTRAP_AMBIENCE == 0 )
+	{
+		ARROWTRAP_AMBIENCE--;
+		my->entity_sound = playSoundEntityLocal(my, 149, 64);
+	}
+	if ( my->entity_sound )
+	{
+		bool playing = false;
+		my->entity_sound->isPlaying(&playing);
+		if ( !playing )
+		{
+			my->entity_sound = nullptr;
+		}
+	}
+#else
 	ARROWTRAP_AMBIENCE--;
 	if ( ARROWTRAP_AMBIENCE <= 0 )
 	{
 		ARROWTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
-		playSoundEntity( my, 149, 64 );
+		playSoundEntityLocal( my, 149, 64 );
 	}
+#endif
 
 	if ( !my->skill[28] )
 	{

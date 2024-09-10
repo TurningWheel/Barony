@@ -622,12 +622,30 @@ void createChestInventory(Entity* my, int chestType)
 
 void Entity::actChest()
 {
+#ifdef USE_FMOD
+	if ( chestAmbience == 0 )
+	{
+		chestAmbience--;
+		stopEntitySound();
+		entity_sound = playSoundEntityLocal(this, 149, 32);
+	}
+	if ( entity_sound )
+	{
+		bool playing = false;
+		entity_sound->isPlaying(&playing);
+		if ( !playing )
+		{
+			entity_sound = nullptr;
+		}
+	}
+#else
 	chestAmbience--;
 	if ( chestAmbience <= 0 )
 	{
 		chestAmbience = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal(this, 149, 32);
 	}
+#endif
 
 	if ( ticks == 1 )
 	{

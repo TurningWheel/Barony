@@ -47,12 +47,30 @@ void Entity::actTeleporter()
 		createWorldUITooltip();
 	}
 
+#ifdef USE_FMOD
+	if ( teleporterAmbience == 0 )
+	{
+		teleporterAmbience--;
+		stopEntitySound();
+		entity_sound = playSoundEntityLocal(this, 149, 64);
+	}
+	if ( entity_sound )
+	{
+		bool playing = false;
+		entity_sound->isPlaying(&playing);
+		if ( !playing )
+		{
+			entity_sound = nullptr;
+		}
+	}
+#else
 	teleporterAmbience--;
 	if ( teleporterAmbience <= 0 )
 	{
 		teleporterAmbience = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal(this, 149, 64);
 	}
+#endif
 
 	// use teleporter
 	if ( multiplayer != CLIENT )

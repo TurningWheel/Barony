@@ -37,12 +37,30 @@
 
 void actSpearTrap(Entity* my)
 {
+#ifdef USE_FMOD
+	if ( SPEARTRAP_AMBIENCE == 0 )
+	{
+		SPEARTRAP_AMBIENCE--;
+		my->stopEntitySound();
+		my->entity_sound = playSoundEntityLocal(my, 149, 64);
+	}
+	if ( my->entity_sound )
+	{
+		bool playing = false;
+		my->entity_sound->isPlaying(&playing);
+		if ( !playing )
+		{
+			my->entity_sound = nullptr;
+		}
+	}
+#else
 	SPEARTRAP_AMBIENCE--;
 	if ( SPEARTRAP_AMBIENCE <= 0 )
 	{
 		SPEARTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal( my, 149, 64 );
 	}
+#endif
 
 	if ( multiplayer != CLIENT )
 	{

@@ -1477,15 +1477,30 @@ void actBoulderTrap(Entity* my)
 	int x, y;
 	int c;
 
-	if ( !BOULDERTRAP_FIRED )
-	{
+#ifdef USE_FMOD
+		if ( BOULDERTRAP_AMBIENCE == 0 )
+		{
+			BOULDERTRAP_AMBIENCE--;
+			my->stopEntitySound();
+			my->entity_sound = playSoundEntityLocal(my, 149, 64);
+		}
+		if ( my->entity_sound )
+		{
+			bool playing = false;
+			my->entity_sound->isPlaying(&playing);
+			if ( !playing )
+			{
+				my->entity_sound = nullptr;
+			}
+		}
+#else
 		BOULDERTRAP_AMBIENCE--;
 		if ( BOULDERTRAP_AMBIENCE <= 0 )
 		{
 			BOULDERTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
-			playSoundEntity(my, 149, 64);
+			playSoundEntityLocal(my, 149, 64);
 		}
-	}
+#endif
 
 	if ( !my->skill[28] )
 	{
@@ -1594,15 +1609,30 @@ void actBoulderTrapEast(Entity* my)
 	int x, y;
 	int c;
 
-	if ( !my->boulderTrapFired )
-	{
+#ifdef USE_FMOD
+		if ( my->boulderTrapAmbience == 0 )
+		{
+			my->boulderTrapAmbience--;
+			my->stopEntitySound();
+			my->entity_sound = playSoundEntityLocal(my, 149, 64);
+		}
+		if ( my->entity_sound )
+		{
+			bool playing = false;
+			my->entity_sound->isPlaying(&playing);
+			if ( !playing )
+			{
+				my->entity_sound = nullptr;
+			}
+		}
+#else
 		my->boulderTrapAmbience--;
 		if ( my->boulderTrapAmbience <= 0 )
 		{
 			my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
-			playSoundEntity(my, 149, 64);
+			playSoundEntityLocal(my, 149, 64);
 		}
-	}
+#endif
 
 	if ( my->boulderTrapRefireCounter > 0 )
 	{
@@ -1689,15 +1719,30 @@ void actBoulderTrapSouth(Entity* my)
 	int x, y;
 	int c;
 
-	if ( !my->boulderTrapFired )
-	{
+#ifdef USE_FMOD
+		if ( my->boulderTrapAmbience == 0 )
+		{
+			my->boulderTrapAmbience--;
+			my->stopEntitySound();
+			my->entity_sound = playSoundEntityLocal(my, 149, 64);
+		}
+		if ( my->entity_sound )
+		{
+			bool playing = false;
+			my->entity_sound->isPlaying(&playing);
+			if ( !playing )
+			{
+				my->entity_sound = nullptr;
+			}
+		}
+#else
 		my->boulderTrapAmbience--;
 		if ( my->boulderTrapAmbience <= 0 )
 		{
 			my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
-			playSoundEntity(my, 149, 64);
+			playSoundEntityLocal(my, 149, 64);
 		}
-	}
+#endif
 
 	if ( my->boulderTrapRefireCounter > 0 )
 	{
@@ -1784,15 +1829,30 @@ void actBoulderTrapWest(Entity* my)
 	int x, y;
 	int c;
 
-	if ( !my->boulderTrapFired )
-	{
+#ifdef USE_FMOD
+		if ( my->boulderTrapAmbience == 0 )
+		{
+			my->boulderTrapAmbience--;
+			my->stopEntitySound();
+			my->entity_sound = playSoundEntityLocal(my, 149, 64);
+		}
+		if ( my->entity_sound )
+		{
+			bool playing = false;
+			my->entity_sound->isPlaying(&playing);
+			if ( !playing )
+			{
+				my->entity_sound = nullptr;
+			}
+		}
+#else
 		my->boulderTrapAmbience--;
 		if ( my->boulderTrapAmbience <= 0 )
 		{
 			my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
-			playSoundEntity(my, 149, 64);
+			playSoundEntityLocal(my, 149, 64);
 		}
-	}
+#endif
 
 	if ( my->boulderTrapRefireCounter > 0 )
 	{
@@ -1879,15 +1939,30 @@ void actBoulderTrapNorth(Entity* my)
 	int x, y;
 	int c;
 
-	if ( !my->boulderTrapFired )
-	{
+#ifdef USE_FMOD
+		if ( my->boulderTrapAmbience == 0 )
+		{
+			my->boulderTrapAmbience--;
+			my->stopEntitySound();
+			my->entity_sound = playSoundEntityLocal(my, 149, 64);
+		}
+		if ( my->entity_sound )
+		{
+			bool playing = false;
+			my->entity_sound->isPlaying(&playing);
+			if ( !playing )
+			{
+				my->entity_sound = nullptr;
+			}
+		}
+#else
 		my->boulderTrapAmbience--;
 		if ( my->boulderTrapAmbience <= 0 )
 		{
 			my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
-			playSoundEntity(my, 149, 64);
+			playSoundEntityLocal(my, 149, 64);
 		}
-	}
+#endif
 
 	if ( my->boulderTrapRefireCounter > 0 )
 	{

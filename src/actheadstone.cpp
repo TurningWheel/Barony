@@ -72,12 +72,30 @@ void actHeadstone(Entity* my)
 		}
 	}
 
+#ifdef USE_FMOD
+	if ( HEADSTONE_AMBIENCE == 0 )
+	{
+		HEADSTONE_AMBIENCE--;
+		my->stopEntitySound();
+		my->entity_sound = playSoundEntityLocal(my, 149, 32);
+	}
+	if ( my->entity_sound )
+	{
+		bool playing = false;
+		my->entity_sound->isPlaying(&playing);
+		if ( !playing )
+		{
+			my->entity_sound = nullptr;
+		}
+	}
+#else
 	HEADSTONE_AMBIENCE--;
 	if ( HEADSTONE_AMBIENCE <= 0 )
 	{
 		HEADSTONE_AMBIENCE = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal( my, 149, 32 );
 	}
+#endif
 
 	if ( multiplayer == CLIENT )
 	{

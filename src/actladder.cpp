@@ -52,12 +52,30 @@ void actLadder(Entity* my)
 		memset(mpPokeCooldown, 0, sizeof(mpPokeCooldown));
 	}
 
+#ifdef USE_FMOD
+	if ( LADDER_AMBIENCE == 0 )
+	{
+		LADDER_AMBIENCE--;
+		my->stopEntitySound();
+		my->entity_sound = playSoundEntityLocal(my, 149, 64);
+	}
+	if ( my->entity_sound )
+	{
+		bool playing = false;
+		my->entity_sound->isPlaying(&playing);
+		if ( !playing )
+		{
+			my->entity_sound = nullptr;
+		}
+	}
+#else
 	LADDER_AMBIENCE--;
 	if (LADDER_AMBIENCE <= 0)
 	{
 		LADDER_AMBIENCE = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal(my, 149, 64);
 	}
+#endif
 
 	// use ladder (climb)
 	if (multiplayer != CLIENT)
@@ -1318,20 +1336,43 @@ void actCustomPortal(Entity* my)
 		}
 	}
 
-	my->portalAmbience--;
-	if ( my->portalAmbience <= 0 )
+	if ( my->portalCustomSpriteAnimationFrames > 0 )
 	{
-		if ( my->portalCustomSpriteAnimationFrames > 0 )
+		my->portalAmbience--;
+		if ( my->portalAmbience <= 0 )
 		{
 			my->portalAmbience = TICKS_PER_SECOND * 2; // portal whirr
 			playSoundEntityLocal(my, 154, 128);
 		}
-		else
+	}
+	else
+	{
+#ifdef USE_FMOD
+		if ( my->portalAmbience == 0 )
+		{
+			my->portalAmbience--;
+			my->stopEntitySound();
+			my->entity_sound = playSoundEntityLocal(my, 149, 64);
+		}
+		if ( my->entity_sound )
+		{
+			bool playing = false;
+			my->entity_sound->isPlaying(&playing);
+			if ( !playing )
+			{
+				my->entity_sound = nullptr;
+			}
+		}
+#else
+		my->portalAmbience--;
+		if ( my->portalAmbience <= 0 )
 		{
 			my->portalAmbience = TICKS_PER_SECOND * 30; // trap hum
 			playSoundEntityLocal(my, 149, 64);
 		}
+#endif
 	}
+
 
 	if ( my->portalCustomSpriteAnimationFrames > 0 )
 	{

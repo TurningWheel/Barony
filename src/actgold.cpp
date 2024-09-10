@@ -68,12 +68,30 @@ void actGoldBag(Entity* my)
 		}
 	}
 
+#ifdef USE_FMOD
+	if ( my->goldAmbience == 0 )
+	{
+		my->goldAmbience--;
+		my->stopEntitySound();
+		my->entity_sound = playSoundEntityLocal(my, 149, 16);
+	}
+	if ( my->entity_sound )
+	{
+		bool playing = false;
+		my->entity_sound->isPlaying(&playing);
+		if ( !playing )
+		{
+			my->entity_sound = nullptr;
+		}
+	}
+#else
 	my->goldAmbience--;
 	if ( my->goldAmbience <= 0 )
 	{
 		my->goldAmbience = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal( my, 149, 16 );
 	}
+#endif
 
 	// pick up gold
 	if ( multiplayer != CLIENT )
