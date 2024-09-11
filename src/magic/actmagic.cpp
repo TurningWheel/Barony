@@ -1277,7 +1277,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						bool chance = false;
 						if ( my->actmagicSpray == 1 )
 						{
-							chance = local_rng.rand() % 4 == 0;
+							chance = local_rng.rand() % 10 == 0;
 						}
 						else
 						{
