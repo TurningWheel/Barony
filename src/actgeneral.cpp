@@ -667,37 +667,52 @@ void Entity::colliderOnDestroy()
 	if ( colliderHideMonster != 0 )
 	{
 		int type = colliderHideMonster % 1000;
-		auto monster = summonMonster((Monster)type, ((int)(x / 16)) * 16 + 8, ((int)(y / 16)) * 16 + 8);
-		if ( monster )
+		int numSpawns = type == OCTOPUS ? 2 : 1;
+		int successes = 0;
+		for ( int i = 0; i < numSpawns; ++i )
 		{
-			monster->yaw = yaw;
-			monster->lookAtEntity(*monster);
-			monster->monsterLookDir = yaw;
-			if ( Stat* stats = monster->getStats() )
+			auto monster = summonMonster((Monster)type, ((int)(x / 16)) * 16 + 8, ((int)(y / 16)) * 16 + 8);
+			if ( monster )
 			{
-				stats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1;
-				if ( stats->type == GHOUL && currentlevel >= 15 )
+				monster->yaw = yaw;
+				monster->lookAtEntity(*monster);
+				monster->monsterLookDir = yaw;
+				if ( Stat* stats = monster->getStats() )
 				{
-					strcpy(stats->name, "enslaved ghoul");
-					stats->setAttribute("special_npc", "enslaved ghoul");
-				}
-				if ( stats->type == AUTOMATON )
-				{
-					monster->monsterStoreType = 1; // damaged
-				}
-				if ( colliderKillerUid != 0 )
-				{
-					if ( Entity* killer = uidToEntity(colliderKillerUid) )
+					stats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1;
+					if ( stats->type == GHOUL && currentlevel >= 15 )
 					{
-						if ( killer->behavior == &actPlayer )
-						{
-							messagePlayer(killer->skill[2], MESSAGE_INTERACTION, Language::get(6234),
-								getMonsterLocalizedName(stats->type).c_str(), Language::get(getColliderLangName()));
-						}
+						strcpy(stats->name, "enslaved ghoul");
+						stats->setAttribute("special_npc", "enslaved ghoul");
+					}
+					if ( stats->type == AUTOMATON )
+					{
+						monster->monsterStoreType = 1; // damaged
+					}
+					++successes;
+				}
+				//monster->attack(monster->getAttackPose(), 0, nullptr);
+			}
+		}
+
+		if ( colliderKillerUid != 0 )
+		{
+			if ( Entity* killer = uidToEntity(colliderKillerUid) )
+			{
+				if ( killer->behavior == &actPlayer )
+				{
+					if ( successes == 1 )
+					{
+						messagePlayer(killer->skill[2], MESSAGE_INTERACTION, Language::get(6234),
+							getMonsterLocalizedName((Monster)type).c_str(), Language::get(getColliderLangName()));
+					}
+					else if ( successes > 1 )
+					{
+						messagePlayer(killer->skill[2], MESSAGE_INTERACTION, Language::get(6253),
+							getMonsterLocalizedPlural((Monster)type).c_str(), Language::get(getColliderLangName()));
 					}
 				}
 			}
-			//monster->attack(monster->getAttackPose(), 0, nullptr);
 		}
 	}
 	if ( colliderContainedEntity != 0 )
@@ -971,37 +986,54 @@ void actColliderDecoration(Entity* my)
 						my->colliderHideMonster = 0;
 						bool bOldFlag = my->flags[PASSABLE];
 						my->flags[PASSABLE] = true;
-						auto monster = summonMonster((Monster)type, ((int)(my->x / 16)) * 16 + 8, ((int)(my->y / 16)) * 16 + 8);
-						if ( monster )
-						{
-							monster->yaw = my->yaw;
-							monster->lookAtEntity(*found);
-							if ( monster->checkEnemy(found) )
-							{
-								monster->monsterAcquireAttackTarget(*found, MONSTER_STATE_PATH);
-							}
-							my->colliderCurrentHP = 0;
-							my->colliderKillerUid = 0;
 
-							if ( Stat* stats = monster->getStats() )
+						int numSpawns = type == OCTOPUS ? 2 : 1;
+						int successes = 0;
+						for ( int i = 0; i < numSpawns; ++i )
+						{
+							auto monster = summonMonster((Monster)type, ((int)(my->x / 16)) * 16 + 8, ((int)(my->y / 16)) * 16 + 8);
+							if ( monster )
 							{
-								stats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1;
-								if ( stats->type == GHOUL && currentlevel >= 15 )
+								monster->yaw = my->yaw;
+								monster->lookAtEntity(*found);
+								if ( monster->checkEnemy(found) )
 								{
-									strcpy(stats->name, "enslaved ghoul");
-									stats->setAttribute("special_npc", "enslaved ghoul");
+									monster->monsterAcquireAttackTarget(*found, MONSTER_STATE_PATH);
 								}
-								if ( stats->type == AUTOMATON )
+								my->colliderCurrentHP = 0;
+								my->colliderKillerUid = 0;
+
+								if ( Stat* stats = monster->getStats() )
 								{
-									monster->monsterStoreType = 1; // damaged
-								}
-								if ( found->behavior == &actPlayer )
-								{
-									messagePlayer(found->skill[2], MESSAGE_INTERACTION, Language::get(6234),
-										getMonsterLocalizedName(stats->type).c_str(), Language::get(my->getColliderLangName()));
+									stats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1;
+									if ( stats->type == GHOUL && currentlevel >= 15 )
+									{
+										strcpy(stats->name, "enslaved ghoul");
+										stats->setAttribute("special_npc", "enslaved ghoul");
+									}
+									if ( stats->type == AUTOMATON )
+									{
+										monster->monsterStoreType = 1; // damaged
+									}
+									++successes;
 								}
 							}
 						}
+
+						if ( found->behavior == &actPlayer )
+						{
+							if ( successes == 1 )
+							{
+								messagePlayer(found->skill[2], MESSAGE_INTERACTION, Language::get(6234),
+									getMonsterLocalizedName((Monster)type).c_str(), Language::get(my->getColliderLangName()));
+							}
+							else if ( successes > 1 )
+							{
+								messagePlayer(found->skill[2], MESSAGE_INTERACTION, Language::get(6253),
+									getMonsterLocalizedPlural((Monster)type).c_str(), Language::get(my->getColliderLangName()));
+							}
+						}
+
 						my->flags[PASSABLE] = bOldFlag;
 					}
 				}
