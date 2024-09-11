@@ -4813,7 +4813,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					previousAreas.push_back(coords[1][0]);
 				}
 
-				int numSpawns = std::min(4, 1 + (currentlevel / LENGTH_OF_LEVEL_REGION));
+				int numSpawns = std::max(2, std::min(4, 1 + (currentlevel / LENGTH_OF_LEVEL_REGION)));
 				for ( size_t i = 0; i < (coords[0].size() + coords[1].size()) && numSpawns > 0; ++i )
 				{
 					auto coord = (i < coords[0].size()) ? coords[0][i] : coords[1][i - coords[0].size()];

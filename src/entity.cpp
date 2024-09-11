@@ -7808,11 +7808,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						else if ( flanking )
 						{
-							miss = local_rng.rand() % 3 != 0;
+							miss = local_rng.rand() % 10 < 6;
 						}
 						else
 						{
-							miss = local_rng.rand() % 5 != 0;
+							miss = local_rng.rand() % 10 < 4;
 						}
 					}
 
@@ -9825,7 +9825,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( !hitstats->EFFECTS[EFF_BLEEDING] )
 						{
-							if ( !hitstats->defending || (hitstats->defending && local_rng.rand() % 4 == 0) )
+							if ( !hitstats->defending )
 							{
 								if ( hit.entity->setEffect(EFF_BLEEDING, true, 6 * TICKS_PER_SECOND, false) )
 								{

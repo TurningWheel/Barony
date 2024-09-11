@@ -547,17 +547,18 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 					}
 				}
 
+				bool accuracyBonus = projectile->behavior == &actMagicMissile;
 				if ( backstab )
 				{
 					miss = false;
 				}
 				else if ( flanking )
 				{
-					miss = local_rng.rand() % 3 != 0;
+					miss = local_rng.rand() % 10 < 6 + (accuracyBonus ? 3 : 0);
 				}
 				else
 				{
-					miss = local_rng.rand() % 5 != 0;
+					miss = local_rng.rand() % 10 < 4 + (accuracyBonus ? 3 : 0);
 				}
 
 				if ( miss )
@@ -565,7 +566,7 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 					if ( projectile->collisionIgnoreTargets.find(getUID()) == projectile->collisionIgnoreTargets.end() )
 					{
 						projectile->collisionIgnoreTargets.insert(getUID());
-						if ( (parent && parent->behavior == &actPlayer) || (parent->behavior == &actMonster && parent->monsterAllyGetPlayerLeader()) )
+						if ( (parent && parent->behavior == &actPlayer) || (parent && parent->behavior == &actMonster && parent->monsterAllyGetPlayerLeader()) )
 						{
 							spawnDamageGib(this, 0, DamageGib::DMG_MISS, true, true);
 						}
