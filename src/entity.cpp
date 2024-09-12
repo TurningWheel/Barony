@@ -7896,6 +7896,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 
 			Sint32 previousMonsterState = -1;
+			Sint32 previousMonsterSpecialState = -1;
 
 			if ( hit.entity->behavior == &actBoulder )
 			{
@@ -8092,6 +8093,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			else if ( hit.entity->behavior == &actMonster && !mimic )
 			{
 				previousMonsterState = hit.entity->monsterState;
+				previousMonsterSpecialState = hit.entity->monsterSpecialState;
 				hitstats = hit.entity->getStats();
 				if ( hitstats )
 				{
@@ -8800,9 +8802,22 @@ void Entity::attack(int pose, int charge, Entity* target)
 									}
 								}
 								damage += bonus;
-								if ( local_rng.rand() % 4 > 0 && hit.entity->behavior != &actPlayer )
+								if ( hit.entity->behavior != &actPlayer )
 								{
-									this->increaseSkill(PRO_STEALTH);
+									if ( hitstats->type == OCTOPUS && previousMonsterSpecialState == BAT_REST )
+									{
+										if ( local_rng.rand() % 10 == 0 )
+										{
+											this->increaseSkill(PRO_STEALTH);
+										}
+									}
+									else
+									{
+										if ( local_rng.rand() % 4 > 0 )
+										{
+											this->increaseSkill(PRO_STEALTH);
+										}
+									}
 								}
 							}
 							else if ( local_rng.rand() % 2 == 0 )
