@@ -909,7 +909,7 @@ copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)EOS 4\barony_test.exe" </Com
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng16.lib;zlib.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win64-Shipping.lib;steam_api64.lib;libtheoraplayer.lib;glew32.lib;nfd.lib;libcurl.lib;ws2_32.lib;Normaliz.lib;Crypt32.lib;Wldap32.lib;XPlatCppWindows_debug.lib;lib_json_debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmodL_vc.lib;libpng16.lib;zlib.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win64-Shipping.lib;steam_api64.lib;libtheoraplayer.lib;glew32.lib;nfd.lib;libcurl.lib;ws2_32.lib;Normaliz.lib;Crypt32.lib;Wldap32.lib;XPlatCppWindows_debug.lib;lib_json_debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <Profile>true</Profile>
     </Link>
@@ -1183,6 +1183,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClCompile Include="..\..\src\menu.cpp" />
     <ClCompile Include="..\..\src\messages.cpp" />
     <ClCompile Include="..\..\src\monster_automaton.cpp" />
+    <ClCompile Include="..\..\src\monster_bat.cpp" />
     <ClCompile Include="..\..\src\monster_cockatrice.cpp" />
     <ClCompile Include="..\..\src\monster_crystalgolem.cpp" />
     <ClCompile Include="..\..\src\monster_demon.cpp" />
