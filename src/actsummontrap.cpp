@@ -112,7 +112,7 @@ void actSummonTrap(Entity* my)
 					// pick a completely random monster (barring some exceptions)
 					const std::set<Monster> typesToSkip
 					{
-	                    LICH, SHOPKEEPER, DEVIL, MIMIC, CRAB, OCTOPUS,
+	                    LICH, SHOPKEEPER, DEVIL, MIMIC, CRAB, BAT_SMALL,
 	                    MINOTAUR, LICH_FIRE, LICH_ICE, NOTHING,
 	                    SENTRYBOT, SPELLBOT, GYROBOT, DUMMYBOT
 	                };

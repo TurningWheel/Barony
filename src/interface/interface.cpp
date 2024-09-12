@@ -11113,7 +11113,7 @@ void EnemyHPDamageBarHandler::EnemyHPDetails::updateWorldCoordinates()
 			worldX = entity->lerpRenderState.x.position * 16.0;
 			worldY = entity->lerpRenderState.y.position * 16.0;
 			worldZ = entity->lerpRenderState.z.position + enemyBarSettings.getHeightOffset(entity);
-			if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == OCTOPUS )
+			if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == BAT_SMALL )
 			{
 				if ( entity->bodyparts.size() > 0 )
 				{
@@ -11126,7 +11126,7 @@ void EnemyHPDamageBarHandler::EnemyHPDetails::updateWorldCoordinates()
 			worldX = entity->x;
 			worldY = entity->y;
 			worldZ = entity->z + enemyBarSettings.getHeightOffset(entity);
-			if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == OCTOPUS )
+			if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == BAT_SMALL )
 			{
 				if ( entity->bodyparts.size() > 0 )
 				{
@@ -24586,7 +24586,7 @@ void CalloutRadialMenu::update()
 				callout.y = entity->lerpRenderState.y.position * 16.0;
 				callout.z = entity->lerpRenderState.z.position + enemyBarSettings.getHeightOffset(entity);
 				callout.z -= 4;
-				if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == OCTOPUS )
+				if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == BAT_SMALL )
 				{
 					if ( entity->bodyparts.size() > 0 )
 					{
@@ -24600,7 +24600,7 @@ void CalloutRadialMenu::update()
 				callout.y = entity->y;
 				callout.z = entity->z + enemyBarSettings.getHeightOffset(entity);
 				callout.z -= 4;
-				if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == OCTOPUS )
+				if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == BAT_SMALL )
 				{
 					if ( entity->bodyparts.size() > 0 )
 					{

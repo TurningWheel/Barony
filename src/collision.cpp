@@ -369,7 +369,7 @@ bool entityInsideTile(Entity* entity, int x, int y, int z, bool checkSafeTiles)
 					{
 						if ( !checkSafeTiles && !map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 						{
-							if ( entity->behavior != &actDeathGhost && !(entity->behavior == &actMonster && entity->getStats() && entity->getStats()->type == OCTOPUS) )
+							if ( entity->behavior != &actDeathGhost && !(entity->behavior == &actMonster && entity->getStats() && entity->getStats()->type == BAT_SMALL) )
 							{
 								return true;
 							}
@@ -462,7 +462,7 @@ bool entityInsideSomething(Entity* entity)
 			{
 				continue;
 			}
-			if ( entity->behavior == &actDeathGhost || entity->getMonsterTypeFromSprite() == OCTOPUS )
+			if ( entity->behavior == &actDeathGhost || entity->getMonsterTypeFromSprite() == BAT_SMALL )
 			{
 				if ( testEntity->behavior == &actMonster || testEntity->behavior == &actPlayer 
 					|| (testEntity->isDamageableCollider() && (testEntity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_NPC)) )
@@ -515,7 +515,7 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 	{
 		if ( Stat* myStats = getStats() )
 		{
-			if ( myStats->type == OCTOPUS )
+			if ( myStats->type == BAT_SMALL )
 			{
 				bool miss = false;
 				if ( isUntargetableBat() )
@@ -758,15 +758,15 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				continue;
 			}
 			if ( entity->isDamageableCollider() && (entity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_NPC)
-				&& ((my->behavior == &actMonster && (type == GYROBOT || type == OCTOPUS)) || my->behavior == &actDeathGhost) )
+				&& ((my->behavior == &actMonster && (type == GYROBOT || type == BAT_SMALL)) || my->behavior == &actDeathGhost) )
 			{
 				continue;
 			}
-			if ( entity->behavior == &actFurniture && type == OCTOPUS )
+			if ( entity->behavior == &actFurniture && type == BAT_SMALL )
 			{
 				continue;
 			}
-			if ( entity->getMonsterTypeFromSprite() == OCTOPUS )
+			if ( entity->getMonsterTypeFromSprite() == BAT_SMALL )
 			{
 				if ( my->behavior == &actBoulder )
 				{
@@ -1215,7 +1215,7 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 	bool ignoreFurniture = my && my->behavior == &actMonster && myStats
 		&& (myStats->type == SHOPKEEPER
 			|| myStats->type == MINOTAUR
-			|| myStats->type == OCTOPUS);
+			|| myStats->type == BAT_SMALL);
 
 	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 	{
@@ -1548,7 +1548,7 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 				{
 					ground = false;
 				}
-				else if ( stats->type == SENTRYBOT || stats->type == SPELLBOT || stats->type == OCTOPUS )
+				else if ( stats->type == SENTRYBOT || stats->type == SPELLBOT || stats->type == BAT_SMALL )
 				{
 					ground = false;
 				}
@@ -2006,7 +2006,7 @@ int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntity
 						{
 							continue;
 						}
-						if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == OCTOPUS )
+						if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == BAT_SMALL )
 						{
 							continue;
 						}

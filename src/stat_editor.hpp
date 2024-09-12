@@ -30,7 +30,7 @@ typedef enum
 	GOBLIN,
 	SLIME,
 	TROLL,
-	OCTOPUS,
+	BAT_SMALL,
 	SPIDER,
 	GHOUL,
 	SKELETON,

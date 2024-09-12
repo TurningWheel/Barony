@@ -6622,7 +6622,7 @@ bool Entity::isMobile()
 		return false;
 	}
 
-	if ( entitystats->type == OCTOPUS && monsterSpecialState == BAT_REST )
+	if ( entitystats->type == BAT_SMALL && monsterSpecialState == BAT_REST )
 	{
 		return false;
 	}
@@ -7013,7 +7013,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			else
 			{
 				serverUpdateEntitySkill(this, 8);
-				if (myStats->type != SLIME && myStats->type != RAT && myStats->type != SCARAB && myStats->type != OCTOPUS) {
+				if (myStats->type != SLIME && myStats->type != RAT && myStats->type != SCARAB && myStats->type != BAT_SMALL) {
 				    serverUpdateEntitySkill(this, 9);
 				}
 			}
@@ -7769,7 +7769,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 			if ( hit.entity && hit.entity->behavior == &actMonster )
 			{
-				if ( hit.entity->getMonsterTypeFromSprite() == OCTOPUS )
+				if ( hit.entity->getMonsterTypeFromSprite() == BAT_SMALL )
 				{
 					if ( hit.entity->isUntargetableBat() )
 					{
@@ -8812,7 +8812,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								damage += bonus;
 								if ( hit.entity->behavior != &actPlayer )
 								{
-									if ( hitstats->type == OCTOPUS && previousMonsterSpecialState == BAT_REST )
+									if ( hitstats->type == BAT_SMALL && previousMonsterSpecialState == BAT_REST )
 									{
 										if ( local_rng.rand() % 10 == 0 )
 										{
@@ -9835,7 +9835,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 						}
 					}
-					else if ( myStats->type == OCTOPUS )
+					else if ( myStats->type == BAT_SMALL )
 					{
 						if ( !hitstats->EFFECTS[EFF_BLEEDING] )
 						{
@@ -12508,7 +12508,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 
 	// calculate XP gain
 	int baseXp = 10;
-	if ( srcStats->type == OCTOPUS )
+	if ( srcStats->type == BAT_SMALL )
 	{
 		baseXp = 1 + local_rng.rand() % 2;
 	}
@@ -13365,11 +13365,11 @@ bool Entity::checkEnemy(Entity* your)
 			{
 				result = ShopkeeperPlayerHostility.isPlayerEnemy(this->skill[2]);
 			}
-			else if ( myStats->type == OCTOPUS && your->behavior == &actPlayer )
+			else if ( myStats->type == BAT_SMALL && your->behavior == &actPlayer )
 			{
 				result = true;
 			}
-			else if ( yourStats->type == OCTOPUS && behavior == &actPlayer )
+			else if ( yourStats->type == BAT_SMALL && behavior == &actPlayer )
 			{
 				result = true;
 			}
@@ -15154,7 +15154,7 @@ int Entity::getAttackPose() const
 			type == CREATURE_IMP || type == SUCCUBUS ||
 			type == SHOPKEEPER || type == MINOTAUR ||
 			type == SHADOW || type == RAT || type == SPIDER || type == CRAB ||
-			type == MIMIC || type == OCTOPUS ||
+			type == MIMIC || type == BAT_SMALL ||
 			type == SLIME || (type == SCARAB && sprite != 1078 && sprite != 1079))
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
@@ -16888,7 +16888,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 	{
 		return;
 	}
-	else if ( myStats->type == OCTOPUS && monsterSpecialState == BAT_REST )
+	else if ( myStats->type == BAT_SMALL && monsterSpecialState == BAT_REST )
 	{
 		return;
 	}
@@ -22204,7 +22204,7 @@ void Entity::alertAlliesOnBeingHit(Entity* attacker, std::unordered_set<Entity*>
 						}
 
 						real_t tangent = atan2(entity->y - this->y, entity->x - this->x);
-						if ( buddystats->type == OCTOPUS && entity->isUntargetableBat() && entity->bodyparts.size() > 0 && entity->monsterSpecialState == BAT_REST )
+						if ( buddystats->type == BAT_SMALL && entity->isUntargetableBat() && entity->bodyparts.size() > 0 && entity->monsterSpecialState == BAT_REST )
 						{
 							real_t oldZ = entity->bodyparts[0]->z;
 							entity->bodyparts[0]->z = 0.0; // hack to make it linetraceable
@@ -22217,7 +22217,7 @@ void Entity::alertAlliesOnBeingHit(Entity* attacker, std::unordered_set<Entity*>
 						}
 						if ( hit.entity == entity )
 						{
-							if ( buddystats->type == OCTOPUS )
+							if ( buddystats->type == BAT_SMALL )
 							{
 								if ( entity->monsterSpecialState == BAT_REST )
 								{

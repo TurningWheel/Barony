@@ -3415,7 +3415,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 					return 0.0;
 				}
 			}
-			if ( parent->getMonsterTypeFromSprite() == OCTOPUS && !selectInteract )
+			if ( parent->getMonsterTypeFromSprite() == BAT_SMALL && !selectInteract )
 			{
 				return 0.0;
 			}
@@ -4464,7 +4464,7 @@ void Player::WorldUI_t::handleTooltips()
 				parent = uidToEntity(tooltip->parent);
 				if ( parent && parent->flags[INVISIBLE] 
 					&& !(parent->behavior == &actMonster && 
-						(parent->getMonsterTypeFromSprite() == DUMMYBOT || parent->getMonsterTypeFromSprite() == MIMIC || parent->getMonsterTypeFromSprite() == OCTOPUS)) )
+						(parent->getMonsterTypeFromSprite() == DUMMYBOT || parent->getMonsterTypeFromSprite() == MIMIC || parent->getMonsterTypeFromSprite() == BAT_SMALL)) )
 				{
 					continue;
 				}

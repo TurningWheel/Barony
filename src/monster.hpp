@@ -27,7 +27,7 @@ enum Monster : int
 	GOBLIN,
 	SLIME,
 	TROLL,
-	OCTOPUS,
+	BAT_SMALL,
 	SPIDER,
 	GHOUL,
 	SKELETON,
@@ -112,7 +112,7 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
         1132,   // thumpus
     },
 
-    // OCTOPUS
+    // BAT_SMALL
     {
 		1408
     },
@@ -386,7 +386,7 @@ static char gibtype[NUMMONSTERS] =
 	1,	//GOBLIN,
 	3,	//SLIME,
 	1,	//TROLL,
-	1,	//OCTOPUS,
+	1,	//BAT_SMALL,
 	2,	//SPIDER,
 	2,	//GHOUL,
 	5,	//SKELETON,
@@ -430,7 +430,7 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f, 0.8 }, // goblin
 	{ 1.4, 0.5, 1.3, 0.7, 0.5, 1.3, 0.5 }, // slime
 	{ 1.1, 0.8, 1.1, 0.8, 0.9, 1.f, 0.8 }, // troll
-	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // octopus
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // bat
 	{ 1.f, 1.1, 1.f, 1.2, 1.1, 1.f, 1.1 }, // spider
 	{ 1.f, 1.2, 0.8, 1.1, 0.6, 0.8, 1.1 }, // ghoul
 	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8, 1.1 }, // skeleton

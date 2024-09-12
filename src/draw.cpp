@@ -2382,10 +2382,10 @@ void drawEntities3D(view_t* camera, int mode)
 					}
 					else
 					{
-					snprintf(buf, sizeof(buf), "%d", entity->skill[0]);
-					glDrawSpriteFromImage(camera, entity, buf, mode);
+						snprintf(buf, sizeof(buf), "%d", entity->skill[0]);
+						glDrawSpriteFromImage(camera, entity, buf, mode);
+					}
 				}
-			}
 			}
 			else
 			{

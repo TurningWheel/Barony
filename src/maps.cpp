@@ -5827,7 +5827,7 @@ void assignActions(map_t* map)
                 case 164: monsterType = SPELLBOT; break;
                 case 165: monsterType = DUMMYBOT; break;
                 case 166: monsterType = GYROBOT; break;
-				case 188: monsterType = OCTOPUS; break;
+				case 188: monsterType = BAT_SMALL; break;
                 default:
 					monsterIsFixedSprite = false;
 					monsterType = static_cast<Monster>(monsterCurve(currentlevel));
@@ -5851,7 +5851,7 @@ void assignActions(map_t* map)
 					entity->yaw = 90 * (map_rng.rand() % 4) * PI / 180.0;
 					entity->monsterLookDir = entity->yaw;
 				}
-				else if ( monsterType == OCTOPUS )
+				else if ( monsterType == BAT_SMALL )
 				{
 					entity->monsterSpecialState = BAT_REST;
 				}

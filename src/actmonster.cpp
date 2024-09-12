@@ -41,7 +41,7 @@ bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1 }, // GOBLIN
 	{ 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1 }, // SLIME
 	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1 }, // TROLL
-	{ 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1 }, // OCTOPUS
+	{ 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1 }, // BAT_SMALL
 	{ 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1 }, // SPIDER
 	{ 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1 }, // GHOUL
 	{ 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1 }, // SKELETON
@@ -83,7 +83,7 @@ bool monsterally[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 }, // GOBLIN
 	{ 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 }, // SLIME
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // TROLL
-	{ 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // OCTOPUS
+	{ 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // BAT_SMALL
 	{ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 }, // SPIDER
 	{ 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0 }, // GHOUL
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0 }, // SKELETON
@@ -125,7 +125,7 @@ double sightranges[NUMMONSTERS] =
 	256,  // GOBLIN
 	80,   // SLIME
 	32,   // TROLL
-	128,    // OCTOPUS
+	128,    // BAT_SMALL
 	96,   // SPIDER
 	128,  // GHOUL
 	192,  // SKELETON
@@ -630,7 +630,7 @@ void Entity::updateEntityOnHit(Entity* attacker, bool alertTarget)
 		{
 			disturbMimic(attacker, true, true);
 		}
-		else if ( myStats->type == OCTOPUS )
+		else if ( myStats->type == BAT_SMALL )
 		{
 			disturbBat(attacker, true, true);
 		}
@@ -2299,7 +2299,7 @@ void monsterAnimate(Entity* my, Stat* myStats, double dist)
 	case GYROBOT: gyroBotAnimate(my, myStats, dist); break;
 	case DUMMYBOT: dummyBotAnimate(my, myStats, dist); break;
 	case MIMIC: mimicAnimate(my, myStats, dist); break;
-	case OCTOPUS: batAnimate(my, myStats, dist); break;
+	case BAT_SMALL: batAnimate(my, myStats, dist); break;
 	default:
 		break;
 	}
@@ -2391,7 +2391,7 @@ void actMonster(Entity* my)
 			case GYROBOT: initGyroBot(my, nullptr); break;
 			case DUMMYBOT: initDummyBot(my, nullptr); break;
 			case MIMIC: initMimic(my, nullptr); break;
-			case OCTOPUS: initBat(my, nullptr); break;
+			case BAT_SMALL: initBat(my, nullptr); break;
 			default: printlog("Unknown monster, can't init!"); break;
 			}
 		}
@@ -2485,7 +2485,7 @@ void actMonster(Entity* my)
 				case GYROBOT: initGyroBot(my, myStats); break;
 				case DUMMYBOT: initDummyBot(my, myStats); break;
 				case MIMIC: initMimic(my, myStats); break;
-				case OCTOPUS: initBat(my, myStats); break;
+				case BAT_SMALL: initBat(my, myStats); break;
 				default: break; //This should never be reached.
 			}
 		}
@@ -3606,7 +3606,7 @@ void actMonster(Entity* my)
 			case MIMIC:
 				mimicDie(my);
 				break;
-			case OCTOPUS:
+			case BAT_SMALL:
 				batDie(my);
 			default:
 				break; //This should never be reached.
@@ -3923,7 +3923,7 @@ void actMonster(Entity* my)
 					messagePlayer(monsterclicked, MESSAGE_INTERACTION, Language::get(6081));
 				}
 			}
-			else if ( myStats->type == OCTOPUS && my->monsterSpecialState == BAT_REST )
+			else if ( myStats->type == BAT_SMALL && my->monsterSpecialState == BAT_REST )
 			{
 				my->disturbBat(players[monsterclicked]->entity, false, false);
 			}
@@ -4323,7 +4323,7 @@ void actMonster(Entity* my)
 					continue;
 				}
 				bool entityInside = entityInsideEntity(my, entity);
-				/*if ( my->getRace() == OCTOPUS && entity->getRace() == OCTOPUS )
+				/*if ( my->getRace() == BAT_SMALL && entity->getRace() == BAT_SMALL )
 				{
 					int x1 = my->sizex;
 					int y1 = my->sizey;
@@ -5133,7 +5133,7 @@ void actMonster(Entity* my)
 			{
 				std::vector<std::pair<int, int>> possibleCoordinates;
 				my->monsterMoveTime = local_rng.rand() % 30;
-				if ( myStats->type == MIMIC || myStats->type == OCTOPUS )
+				if ( myStats->type == MIMIC || myStats->type == BAT_SMALL )
 				{
 					my->monsterMoveTime = 2 + local_rng.rand() % 4;
 				}
@@ -5148,7 +5148,7 @@ void actMonster(Entity* my)
 					searchLimitX = 5;
 					searchLimitY = 5;
 				}
-				else if ( myStats->type == OCTOPUS )
+				else if ( myStats->type == BAT_SMALL )
 				{
 					searchLimitX = 7;
 					searchLimitY = 7;
@@ -5661,7 +5661,7 @@ timeToGoAgain:
 											playSoundEntity(hit.entity, 28, 64);
 										}
 									}
-									else if ( hit.entity->isDamageableCollider() && myStats->type != GYROBOT && myStats->type != OCTOPUS )
+									else if ( hit.entity->isDamageableCollider() && myStats->type != GYROBOT && myStats->type != BAT_SMALL )
 									{
 										// break it down!
 										my->monsterHitTime++;
@@ -6770,7 +6770,7 @@ timeToGoAgain:
 										playSoundEntity(hit.entity, 28, 64);
 									}
 								}
-								else if ( hit.entity->isDamageableCollider() && myStats->type != GYROBOT && myStats->type != OCTOPUS )
+								else if ( hit.entity->isDamageableCollider() && myStats->type != GYROBOT && myStats->type != BAT_SMALL )
 								{
 									// break it down!
 									my->monsterHitTime++;
@@ -7060,7 +7060,7 @@ timeToGoAgain:
 						{
 							mimicResetIdle(my);
 						}
-						else if ( !target && myStats->type == OCTOPUS )
+						else if ( !target && myStats->type == BAT_SMALL )
 						{
 							batResetIdle(my);
 						}
@@ -8611,7 +8611,7 @@ timeToGoAgain:
 	}
 	else
 	{
-		if ( myStats && myStats->type == OCTOPUS && my->monsterSpecialState == BAT_REST )
+		if ( myStats && myStats->type == BAT_SMALL && my->monsterSpecialState == BAT_REST )
 		{
 			my->monsterReleaseAttackTarget();
 
@@ -9011,7 +9011,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 				}
 			}
 		}
-		if ( myStats->type == OCTOPUS )
+		if ( myStats->type == BAT_SMALL )
 		{
 			bow = 1.5;
 		}
@@ -12856,7 +12856,7 @@ bool Entity::isInertMimic() const
 
 bool Entity::isUntargetableBat(real_t* outDist) const
 {
-	if ( behavior == &actMonster && getMonsterTypeFromSprite() == OCTOPUS )
+	if ( behavior == &actMonster && getMonsterTypeFromSprite() == BAT_SMALL )
 	{
 		if ( bodyparts.size() >= 1 )
 		{

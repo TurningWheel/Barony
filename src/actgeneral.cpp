@@ -667,7 +667,7 @@ void Entity::colliderOnDestroy()
 	if ( colliderHideMonster != 0 )
 	{
 		int type = colliderHideMonster % 1000;
-		int numSpawns = type == OCTOPUS ? 2 : 1;
+		int numSpawns = type == BAT_SMALL ? 2 : 1;
 		int successes = 0;
 		for ( int i = 0; i < numSpawns; ++i )
 		{
@@ -987,7 +987,7 @@ void actColliderDecoration(Entity* my)
 						bool bOldFlag = my->flags[PASSABLE];
 						my->flags[PASSABLE] = true;
 
-						int numSpawns = type == OCTOPUS ? 2 : 1;
+						int numSpawns = type == BAT_SMALL ? 2 : 1;
 						int successes = 0;
 						for ( int i = 0; i < numSpawns; ++i )
 						{

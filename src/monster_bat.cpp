@@ -83,9 +83,9 @@ void initBat(Entity* my, Stat* myStats)
 	entity->yaw = my->yaw;
 	entity->z = 6;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[OCTOPUS][1][0];
-	entity->focaly = limbs[OCTOPUS][1][1];
-	entity->focalz = limbs[OCTOPUS][1][2];
+	entity->focalx = limbs[BAT_SMALL][1][0];
+	entity->focaly = limbs[BAT_SMALL][1][1];
+	entity->focalz = limbs[BAT_SMALL][1][2];
 	entity->behavior = &actBatLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -103,9 +103,9 @@ void initBat(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->yaw = my->yaw;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[OCTOPUS][2][0];
-	entity->focaly = limbs[OCTOPUS][2][1];
-	entity->focalz = limbs[OCTOPUS][2][2];
+	entity->focalx = limbs[BAT_SMALL][2][0];
+	entity->focaly = limbs[BAT_SMALL][2][1];
+	entity->focalz = limbs[BAT_SMALL][2][2];
 	entity->behavior = &actBatLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -123,9 +123,9 @@ void initBat(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->yaw = my->yaw;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[OCTOPUS][3][0];
-	entity->focaly = limbs[OCTOPUS][3][1];
-	entity->focalz = limbs[OCTOPUS][3][2];
+	entity->focalx = limbs[BAT_SMALL][3][0];
+	entity->focaly = limbs[BAT_SMALL][3][1];
+	entity->focalz = limbs[BAT_SMALL][3][2];
 	entity->behavior = &actBatLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -143,9 +143,9 @@ void initBat(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->yaw = my->yaw;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[OCTOPUS][4][0];
-	entity->focaly = limbs[OCTOPUS][4][1];
-	entity->focalz = limbs[OCTOPUS][4][2];
+	entity->focalx = limbs[BAT_SMALL][4][0];
+	entity->focaly = limbs[BAT_SMALL][4][1];
+	entity->focalz = limbs[BAT_SMALL][4][2];
 	entity->behavior = &actBatLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -280,12 +280,12 @@ void batAnimate(Entity* my, Stat* myStats, double dist)
 	my->sizex = 2;
 	my->sizey = 2;
 
-	my->focalx = limbs[OCTOPUS][0][0];
-	my->focaly = limbs[OCTOPUS][0][1];
-	my->focalz = limbs[OCTOPUS][0][2];
+	my->focalx = limbs[BAT_SMALL][0][0];
+	my->focaly = limbs[BAT_SMALL][0][1];
+	my->focalz = limbs[BAT_SMALL][0][2];
 	if ( multiplayer != CLIENT )
 	{
-		my->z = limbs[OCTOPUS][5][2];
+		my->z = limbs[BAT_SMALL][5][2];
 		if ( !myStats->EFFECTS[EFF_LEVITATING] )
 		{
 			myStats->EFFECTS[EFF_LEVITATING] = true;
@@ -446,9 +446,9 @@ void batAnimate(Entity* my, Stat* myStats, double dist)
 				}
 				else
 				{
-					if ( MONSTER_ATTACKTIME >= (int)limbs[OCTOPUS][15][0] )
+					if ( MONSTER_ATTACKTIME >= (int)limbs[BAT_SMALL][15][0] )
 					{
-						if ( MONSTER_ATTACKTIME == (int)limbs[OCTOPUS][15][0] )
+						if ( MONSTER_ATTACKTIME == (int)limbs[BAT_SMALL][15][0] )
 						{
 							if ( multiplayer != CLIENT )
 							{
@@ -460,7 +460,7 @@ void batAnimate(Entity* my, Stat* myStats, double dist)
 
 						if ( entity->skill[1] == 0 )
 						{
-							real_t speed = limbs[OCTOPUS][13][2];
+							real_t speed = limbs[BAT_SMALL][13][2];
 							if ( limbAngleWithinRange(entity->fskill[0], -speed, -((PI / 2) + PI / 4)) )
 							{
 								entity->fskill[0] = -((PI / 2) + PI / 4);
@@ -474,36 +474,36 @@ void batAnimate(Entity* my, Stat* myStats, double dist)
 						}
 						else
 						{
-							real_t speed = limbs[OCTOPUS][13][1];
+							real_t speed = limbs[BAT_SMALL][13][1];
 							entity->fskill[0] += speed;
 							entity->fskill[0] = std::min(entity->fskill[0], 0.0);
 						}
 					}
 					else
 					{
-						real_t speed = limbs[OCTOPUS][13][0];
+						real_t speed = limbs[BAT_SMALL][13][0];
 						entity->fskill[0] -= speed;
 						entity->fskill[0] = std::max(entity->fskill[0], -((PI / 2) + PI / 32));
 					}
 
-					if ( MONSTER_ATTACKTIME >= (int)limbs[OCTOPUS][18][0] )
+					if ( MONSTER_ATTACKTIME >= (int)limbs[BAT_SMALL][18][0] )
 					{
-						BAT_FLOAT_ATK -= limbs[OCTOPUS][18][1];
-						BAT_FLOAT_ATK = std::max(BAT_FLOAT_ATK, (real_t)limbs[OCTOPUS][18][2]);
+						BAT_FLOAT_ATK -= limbs[BAT_SMALL][18][1];
+						BAT_FLOAT_ATK = std::max(BAT_FLOAT_ATK, (real_t)limbs[BAT_SMALL][18][2]);
 					}
-					else if ( MONSTER_ATTACKTIME >= (int)limbs[OCTOPUS][17][0] )
+					else if ( MONSTER_ATTACKTIME >= (int)limbs[BAT_SMALL][17][0] )
 					{
-						BAT_FLOAT_ATK += limbs[OCTOPUS][17][1];
-						BAT_FLOAT_ATK = std::min(BAT_FLOAT_ATK, (real_t)limbs[OCTOPUS][17][2]);
+						BAT_FLOAT_ATK += limbs[BAT_SMALL][17][1];
+						BAT_FLOAT_ATK = std::min(BAT_FLOAT_ATK, (real_t)limbs[BAT_SMALL][17][2]);
 					}
-					else if ( MONSTER_ATTACKTIME >= (int)limbs[OCTOPUS][16][0] )
+					else if ( MONSTER_ATTACKTIME >= (int)limbs[BAT_SMALL][16][0] )
 					{
-						BAT_FLOAT_ATK -= limbs[OCTOPUS][16][1];
-						BAT_FLOAT_ATK = std::max(BAT_FLOAT_ATK, (real_t)limbs[OCTOPUS][16][2]);
+						BAT_FLOAT_ATK -= limbs[BAT_SMALL][16][1];
+						BAT_FLOAT_ATK = std::max(BAT_FLOAT_ATK, (real_t)limbs[BAT_SMALL][16][2]);
 					}
 				}
 
-				if ( MONSTER_ATTACKTIME >= (int)limbs[OCTOPUS][15][1] )
+				if ( MONSTER_ATTACKTIME >= (int)limbs[BAT_SMALL][15][1] )
 				{
 					MONSTER_ATTACK = 0;
 				}
@@ -591,7 +591,7 @@ void batAnimate(Entity* my, Stat* myStats, double dist)
 
 				if ( entity->skill[1] == 0 )
 				{
-					real_t speed = limbs[OCTOPUS][14][0];
+					real_t speed = limbs[BAT_SMALL][14][0];
 					if ( limbAngleWithinRange(entity->fskill[1], speed, 0.0) )
 					{
 						entity->fskill[1] = 0.0;
@@ -612,7 +612,7 @@ void batAnimate(Entity* my, Stat* myStats, double dist)
 				}
 				else if ( entity->skill[1] == 1 )
 				{
-					real_t speed = limbs[OCTOPUS][14][0];
+					real_t speed = limbs[BAT_SMALL][14][0];
 					if ( limbAngleWithinRange(entity->fskill[1], speed, PI / 4) )
 					{
 						entity->fskill[1] = PI / 4;
@@ -626,7 +626,7 @@ void batAnimate(Entity* my, Stat* myStats, double dist)
 				}
 				else if ( entity->skill[1] == 2 )
 				{
-					real_t speed = limbs[OCTOPUS][14][1];
+					real_t speed = limbs[BAT_SMALL][14][1];
 					real_t setpoint = -PI / 2 - PI / 8;
 					if ( limbAngleWithinRange(entity->fskill[1], -speed, setpoint) )
 					{
@@ -641,7 +641,7 @@ void batAnimate(Entity* my, Stat* myStats, double dist)
 				}
 				else if ( entity->skill[1] == 3 )
 				{
-					real_t speed = limbs[OCTOPUS][14][2];
+					real_t speed = limbs[BAT_SMALL][14][2];
 					if ( limbAngleWithinRange(entity->fskill[1], speed, 0.0) )
 					{
 						entity->fskill[1] = 0.0;
@@ -683,12 +683,12 @@ void batAnimate(Entity* my, Stat* myStats, double dist)
 				}
 				entity->yaw += PI * sin(BAT_REST_ROTATE * PI / 2);
 
-				entity->x += limbs[OCTOPUS][6][0] * cos(entity->yaw);
-				entity->y += limbs[OCTOPUS][6][1] * sin(entity->yaw);
-				entity->z += limbs[OCTOPUS][6][2];
-				entity->focalx = limbs[OCTOPUS][1][0];
-				entity->focaly = limbs[OCTOPUS][1][1];
-				entity->focalz = limbs[OCTOPUS][1][2];
+				entity->x += limbs[BAT_SMALL][6][0] * cos(entity->yaw);
+				entity->y += limbs[BAT_SMALL][6][1] * sin(entity->yaw);
+				entity->z += limbs[BAT_SMALL][6][2];
+				entity->focalx = limbs[BAT_SMALL][1][0];
+				entity->focaly = limbs[BAT_SMALL][1][1];
+				entity->focalz = limbs[BAT_SMALL][1][2];
 
 				if ( enableDebugKeys && (svFlags & SV_FLAG_CHEATS) )
 				{
@@ -778,9 +778,9 @@ void batAnimate(Entity* my, Stat* myStats, double dist)
 						BAT_REST_FLY_Z += diff;
 					}
 
-					BAT_FLOAT_X = limbs[OCTOPUS][10][0] * sin(body->fskill[1] * limbs[OCTOPUS][11][0]) * cos(entity->yaw + PI / 2);
-					BAT_FLOAT_Y = limbs[OCTOPUS][10][1] * sin(body->fskill[1] * limbs[OCTOPUS][11][1]) * sin(entity->yaw + PI / 2);
-					BAT_FLOAT_Z = limbs[OCTOPUS][10][2] * sin(body->fskill[1] * limbs[OCTOPUS][11][2]);
+					BAT_FLOAT_X = limbs[BAT_SMALL][10][0] * sin(body->fskill[1] * limbs[BAT_SMALL][11][0]) * cos(entity->yaw + PI / 2);
+					BAT_FLOAT_Y = limbs[BAT_SMALL][10][1] * sin(body->fskill[1] * limbs[BAT_SMALL][11][1]) * sin(entity->yaw + PI / 2);
+					BAT_FLOAT_Z = limbs[BAT_SMALL][10][2] * sin(body->fskill[1] * limbs[BAT_SMALL][11][2]);
 					real_t floatAtkZ = BAT_FLOAT_ATK < 0 ? 2 * sin(BAT_FLOAT_ATK * PI / 8) : 0.5 * sin(BAT_FLOAT_ATK * PI / 8);
 					BAT_FLOAT_Z += floatAtkZ;
 				}
@@ -796,12 +796,12 @@ void batAnimate(Entity* my, Stat* myStats, double dist)
 				break;
 			}
 			case BAT_HEAD:
-				entity->x += limbs[OCTOPUS][7][0] * cos(entity->yaw);
-				entity->y += limbs[OCTOPUS][7][1] * sin(entity->yaw);
-				entity->z += limbs[OCTOPUS][7][2];
-				entity->focalx = limbs[OCTOPUS][2][0];
-				entity->focaly = limbs[OCTOPUS][2][1];
-				entity->focalz = limbs[OCTOPUS][2][2];
+				entity->x += limbs[BAT_SMALL][7][0] * cos(entity->yaw);
+				entity->y += limbs[BAT_SMALL][7][1] * sin(entity->yaw);
+				entity->z += limbs[BAT_SMALL][7][2];
+				entity->focalx = limbs[BAT_SMALL][2][0];
+				entity->focaly = limbs[BAT_SMALL][2][1];
+				entity->focalz = limbs[BAT_SMALL][2][2];
 				if ( enableDebugKeys && (svFlags & SV_FLAG_CHEATS) )
 				{
 					if ( keystatus[SDLK_KP_7] )
@@ -824,12 +824,12 @@ void batAnimate(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			case BAT_LEFTWING:
-				entity->x += limbs[OCTOPUS][8][0] * cos(entity->yaw + PI / 2);
-				entity->y += limbs[OCTOPUS][8][1] * sin(entity->yaw + PI / 2);
-				entity->z += limbs[OCTOPUS][8][2];
-				entity->focalx = limbs[OCTOPUS][3][0];
-				entity->focaly = limbs[OCTOPUS][3][1];
-				entity->focalz = limbs[OCTOPUS][3][2];
+				entity->x += limbs[BAT_SMALL][8][0] * cos(entity->yaw + PI / 2);
+				entity->y += limbs[BAT_SMALL][8][1] * sin(entity->yaw + PI / 2);
+				entity->z += limbs[BAT_SMALL][8][2];
+				entity->focalx = limbs[BAT_SMALL][3][0];
+				entity->focaly = limbs[BAT_SMALL][3][1];
+				entity->focalz = limbs[BAT_SMALL][3][2];
 
 				if ( enableDebugKeys && (svFlags & SV_FLAG_CHEATS) )
 				{
@@ -887,18 +887,18 @@ void batAnimate(Entity* my, Stat* myStats, double dist)
 					entity->z += BAT_FLOAT_Z;
 					entity->z += BAT_REST_FLY_Z;
 
-					entity->x += limbs[OCTOPUS][12][0] * sin(body->pitch) * cos(entity->yaw);
-					entity->y += limbs[OCTOPUS][12][1] * sin(body->pitch) * sin(entity->yaw);
-					entity->z += limbs[OCTOPUS][12][2] * sin(body->pitch);
+					entity->x += limbs[BAT_SMALL][12][0] * sin(body->pitch) * cos(entity->yaw);
+					entity->y += limbs[BAT_SMALL][12][1] * sin(body->pitch) * sin(entity->yaw);
+					entity->z += limbs[BAT_SMALL][12][2] * sin(body->pitch);
 				}
 				break;
 			case BAT_RIGHTWING:
-				entity->x += limbs[OCTOPUS][9][0] * cos(entity->yaw + PI / 2);
-				entity->y += limbs[OCTOPUS][9][1] * sin(entity->yaw + PI / 2);
-				entity->z += limbs[OCTOPUS][9][2];
-				entity->focalx = limbs[OCTOPUS][4][0];
-				entity->focaly = limbs[OCTOPUS][4][1];
-				entity->focalz = limbs[OCTOPUS][4][2];
+				entity->x += limbs[BAT_SMALL][9][0] * cos(entity->yaw + PI / 2);
+				entity->y += limbs[BAT_SMALL][9][1] * sin(entity->yaw + PI / 2);
+				entity->z += limbs[BAT_SMALL][9][2];
+				entity->focalx = limbs[BAT_SMALL][4][0];
+				entity->focaly = limbs[BAT_SMALL][4][1];
+				entity->focalz = limbs[BAT_SMALL][4][2];
 				if ( leftWing )
 				{
 					entity->fskill[0] = leftWing->fskill[0];
@@ -914,9 +914,9 @@ void batAnimate(Entity* my, Stat* myStats, double dist)
 					entity->z += BAT_FLOAT_Z;
 					entity->z += BAT_REST_FLY_Z;
 
-					entity->x += limbs[OCTOPUS][12][0] * sin(body->pitch) * cos(entity->yaw);
-					entity->y += limbs[OCTOPUS][12][1] * sin(body->pitch) * sin(entity->yaw);
-					entity->z += limbs[OCTOPUS][12][2] * sin(body->pitch);
+					entity->x += limbs[BAT_SMALL][12][0] * sin(body->pitch) * cos(entity->yaw);
+					entity->y += limbs[BAT_SMALL][12][1] * sin(body->pitch) * sin(entity->yaw);
+					entity->z += limbs[BAT_SMALL][12][2] * sin(body->pitch);
 
 				}
 				break;

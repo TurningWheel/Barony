@@ -130,7 +130,7 @@ void Entity::initMonster(int mySprite)
 			monsterFootstepType = MONSTER_FOOTSTEP_STOMP;
 			monsterSpellAnimation = MONSTER_SPELLCAST_NONE;
 			break;
-		case OCTOPUS:
+		case BAT_SMALL:
 			// unused
 			break;
 		case SPIDER:

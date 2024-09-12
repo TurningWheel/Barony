@@ -33211,7 +33211,7 @@ failed:
 					|| monsterType == LICH_FIRE
 					|| monsterType == SHADOW
 					|| monsterType == MIMIC
-					|| monsterType == OCTOPUS
+					|| monsterType == BAT_SMALL
 					|| monsterType == SPELLBOT 
 					|| monsterType == SENTRYBOT 
 					|| monsterType == GYROBOT 
