@@ -6479,5 +6479,6 @@ Magic Required: %d (%s)#
 6250 STATS (HARDCORE)#
 6251 Open Compendium#
 6252 A nearby bat awakens!#
+6253 Some %s jump out from the %s!#
 
 6300 END#
