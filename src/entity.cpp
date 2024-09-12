@@ -7814,6 +7814,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							miss = local_rng.rand() % 10 < 4;
 						}
+
+						if ( myStats->weapon )
+						{
+							if ( myStats->weapon->type == ARTIFACT_SPEAR && !shapeshifted )
+							{
+								miss = false;
+							}
+						}
 					}
 
 					if ( miss )
@@ -8831,15 +8839,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 									this->increaseSkill(PRO_STEALTH);
 								}
 							}
-						}
-					}
-
-					bool gungnir = false;
-					if ( myStats->weapon )
-					{
-						if ( myStats->weapon->type == ARTIFACT_SPEAR )
-						{
-							gungnir = true;
 						}
 					}
 
