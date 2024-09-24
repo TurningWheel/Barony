@@ -11458,6 +11458,30 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 						}
 					}
+
+					if ( hitstats )
+					{
+						if ( hitstats->type == BUGBEAR
+							&& hitstats->defending )
+						{
+#ifdef USE_FMOD
+
+							bool playing = false;
+							if ( hitstats->monster_sound )
+							{
+								hitstats->monster_sound->isPlaying(&playing);
+							}
+							if ( !playing )
+							{
+								if ( (hitstats->OLDHP == hitstats->HP && local_rng.rand() % 5 == 0)
+									|| (local_rng.rand() % 10 == 0) )
+								{
+									hitstats->monster_sound = playSoundEntity(hit.entity, 681 + local_rng.rand() % 2, 128);
+								}
+							}
+#endif
+						}
+					}
 				}
 			}
 		}

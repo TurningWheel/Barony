@@ -55,6 +55,9 @@ void initBat(Entity* my, Stat* myStats)
 			{
 				myStats->STR += std::min(5, currentlevel / 5);
 				myStats->DEX += std::min(3, currentlevel / 5);
+				myStats->HP += std::min(30, 5 * (currentlevel / 5));
+				myStats->MAXHP = myStats->HP;
+				myStats->OLDHP = myStats->HP;
 			}
 
 			// apply random stat increases if set in stat_shared.cpp or editor
