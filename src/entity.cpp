@@ -863,6 +863,12 @@ void Entity::killedByMonsterObituary(Entity* victim)
 			case MIMIC:
 				victim->setObituary(Language::get(2166));
 				break;
+			case BAT_SMALL:
+				victim->setObituary(Language::get(6254));
+				break;
+			case BUGBEAR:
+				victim->setObituary(Language::get(6255));
+				break;
 			default:
 				victim->setObituary(Language::get(1500));
 				break;
@@ -6932,6 +6938,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 				return; // don't execute the attack, let the monster animation call the attack() function again.
 			}
+			else if ( myStats->type == BUGBEAR && pose == MONSTER_POSE_BUGBEAR_SHIELD )
+			{
+				monsterAttack = pose;
+			}
 			else if ( myStats->type == VAMPIRE && pose == MONSTER_POSE_VAMPIRE_AURA_CAST )
 			{
 				monsterAttack = 0;
@@ -7067,7 +7077,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			isIllusion = true;
 		}
 
-		if ( myStats->weapon != nullptr
+		if ( myStats->weapon != nullptr && !(myStats->type == BUGBEAR && pose == MONSTER_POSE_BUGBEAR_SHIELD)
 			&& (!shapeshifted || (shapeshifted && myStats->type == CREATURE_IMP && itemCategory(myStats->weapon) == MAGICSTAFF)) )
 		{
 			// if non-shapeshifted, or you're an imp with a staff then process throwing/magic weapons
@@ -8636,6 +8646,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					weaponskill = PRO_UNARMED;
 				}
+				if ( pose == MONSTER_POSE_BUGBEAR_SHIELD )
+				{
+					weaponskill = PRO_UNARMED;
+				}
 
 				real_t weaponMultipliers = 0.0;
 				if ( weaponskill == PRO_UNARMED )
@@ -8728,7 +8742,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 						damagePreMultiplier = 2;
 					}
 
-					const int myAttack = std::max(0, (Entity::getAttack(this, myStats, behavior == &actPlayer) * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats));
+					int myAttack = std::max(0, (Entity::getAttack(this, myStats, behavior == &actPlayer) * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats));
+					if ( myStats->type == BUGBEAR && pose == MONSTER_POSE_BUGBEAR_SHIELD )
+					{
+						myAttack += 2 + local_rng.rand() % 3;
+					}
 					int enemyAC = AC(hitstats);
 					if ( weaponskill == PRO_POLEARM && myStats->weapon && myStats->weapon->type == ARTIFACT_SPEAR && !shapeshifted )
 					{
@@ -8765,6 +8783,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( weaponskill == PRO_AXE )
 					{
 						damage++;
+						if ( myStats->type == BUGBEAR )
+						{
+							damage += 1;
+						}
 					}
 					if ( myStats->type == LICH_FIRE && !hitstats->defending )
 					{
@@ -9832,6 +9854,40 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								// only play sound once on primary target.
 								playSoundEntity(hit.entity, 181, 64);
+							}
+						}
+					}
+					else if ( myStats->type == BUGBEAR && pose == MONSTER_POSE_BUGBEAR_SHIELD )
+					{
+						if ( hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
+						{
+							real_t pushbackMultiplier = 0.9;
+							knockbackInflicted = true;
+
+							real_t tangent = atan2(hit.entity->y - this->y, hit.entity->x - this->x);
+							if ( hit.entity->behavior == &actMonster )
+							{
+								hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
+								hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
+								hit.entity->monsterKnockbackVelocity = 0.01;
+								hit.entity->monsterKnockbackUID = this->getUID();
+								hit.entity->monsterKnockbackTangentDir = tangent;
+								//hit.entity->lookAtEntity(*parent);
+							}
+							else if ( hit.entity->behavior == &actPlayer )
+							{
+								if ( !players[hit.entity->skill[2]]->isLocalPlayer() )
+								{
+									hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
+									hit.entity->monsterKnockbackTangentDir = tangent;
+									serverUpdateEntityFSkill(hit.entity, 11);
+									serverUpdateEntityFSkill(hit.entity, 9);
+								}
+								else
+								{
+									hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
+									hit.entity->monsterKnockbackTangentDir = tangent;
+								}
 							}
 						}
 					}
@@ -11806,7 +11862,6 @@ int AC(Stat* stat)
 			armor += stat->getActiveShieldBonus(true, false);
 		}
 	}
-
 	if ( stat->type == MIMIC && stat->EFFECTS[EFF_MIMIC_LOCKED] )
 	{
 		armor *= 2;
@@ -13030,7 +13085,10 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			}
 			else
 			{
-				leader->increaseSkill(PRO_LEADERSHIP);
+				if ( srcStats->type != BAT_SMALL )
+				{
+					leader->increaseSkill(PRO_LEADERSHIP);
+				}
 			}
 			leader->awardXP(src, true, false);
 
@@ -15076,6 +15134,7 @@ int Entity::getAttackPose() const
 				|| myStats->type == HUMAN || myStats->type == GOBLIN 
 				|| myStats->type == SKELETON || myStats->type == GNOME
 				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER
+				|| myStats->type == BUGBEAR
 				|| myStats->type == SHADOW )
 			{
 				if ( myStats->weapon->type == CROSSBOW || myStats->weapon->type == HEAVY_CROSSBOW )
@@ -15118,6 +15177,7 @@ int Entity::getAttackPose() const
 				|| myStats->type == HUMAN || myStats->type == GOBLIN
 				|| myStats->type == SKELETON || myStats->type == GNOME
 				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER
+				|| myStats->type == BUGBEAR
 				|| myStats->type == SHADOW )
 			{
 				if ( getWeaponSkill(myStats->weapon) == PRO_AXE || getWeaponSkill(myStats->weapon) == PRO_MACE
@@ -15186,6 +15246,10 @@ int Entity::getAttackPose() const
 			}
 		}
 		else if ( myStats->type == TROLL )
+		{
+			pose = MONSTER_POSE_MELEE_WINDUP1;
+		}
+		else if ( myStats->type == BUGBEAR )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}
@@ -15697,7 +15761,7 @@ void Entity::humanoidAnimateWalk(Entity* limb, node_t* bodypartNode, int bodypar
 		if ( shieldNode )
 		{
 			Entity* shield = (Entity*)shieldNode->element;
-			if ( dist > 0.1 && (bodypart != LIMB_HUMANOID_LEFTARM || shield->sprite == 0) )
+			if ( dist > 0.1 && (bodypart != LIMB_HUMANOID_LEFTARM || shield->sprite <= 0) )
 			{
 				// walking to destination
 				if ( !rightbody->skill[0] )
@@ -15964,13 +16028,27 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				if ( weaponArmLimb->skill[1] < 2 && weaponArmLimb->pitch < PI / 2 )
 				{
 					// cos(weaponArmLimb->pitch)) * cos(weaponArmLimb->yaw) allows forward/back motion dependent on the arm rotation.
-					weaponLimb->x = weaponArmLimb->x + (3 * cos(weaponArmLimb->pitch)) * cos(weaponArmLimb->yaw);
-					weaponLimb->y = weaponArmLimb->y + (3 * cos(weaponArmLimb->pitch)) * sin(weaponArmLimb->yaw);
+					real_t forward = 3.0;
+					if ( monsterType == BUGBEAR )
+					{
+						forward = limbs[BUGBEAR][18][0];
+					}
+
+					weaponLimb->x = weaponArmLimb->x + (forward * cos(weaponArmLimb->pitch)) * cos(weaponArmLimb->yaw);
+					weaponLimb->y = weaponArmLimb->y + (forward * cos(weaponArmLimb->pitch)) * sin(weaponArmLimb->yaw);
 
 					if ( weaponArmLimb->pitch < PI / 3 )
 					{
 						// adjust the z point halfway through swing.
-						weaponLimb->z = weaponArmLimb->z + 1.5 - 2 * cos(weaponArmLimb->pitch / 2);
+						if ( monsterType == BUGBEAR )
+						{
+							weaponLimb->z = weaponArmLimb->z;
+							weaponLimb->z += limbs[BUGBEAR][18][1] * sin(weaponArmLimb->pitch * 2);
+						}
+						else
+						{
+							weaponLimb->z = weaponArmLimb->z + 1.5 - 2 * cos(weaponArmLimb->pitch / 2);
+						}
 						if ( monsterType == INCUBUS || monsterType == SUCCUBUS )
 						{
 							weaponLimb->z += 2;
@@ -15978,7 +16056,15 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 					}
 					else
 					{
-						weaponLimb->z = weaponArmLimb->z - .5 * (myAttack == 0);
+						if ( monsterType == BUGBEAR )
+						{
+							weaponLimb->z = weaponArmLimb->z;
+							weaponLimb->z += limbs[BUGBEAR][18][2] * sin(weaponArmLimb->pitch * 2);
+						}
+						else
+						{
+							weaponLimb->z = weaponArmLimb->z - .5 * (myAttack == 0);
+						}
 						if ( weaponLimb->pitch > PI / 2 )
 						{
 							limbAnimateToLimit(weaponLimb, ANIMATE_PITCH, -0.5, PI * 0.5, false, 0);
@@ -15999,6 +16085,10 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 					weaponLimb->x = weaponArmLimb->x + .5 * cos(weaponArmLimb->yaw) * (myAttack == 0);
 					weaponLimb->y = weaponArmLimb->y + .5 * sin(weaponArmLimb->yaw) * (myAttack == 0);
 					weaponLimb->z = weaponArmLimb->z - .5;
+					if ( monsterType == BUGBEAR )
+					{
+						weaponLimb->z = weaponArmLimb->z;
+					}
 					weaponLimb->pitch = weaponArmLimb->pitch + .25 * (myAttack == 0);
 					if ( monsterType == INCUBUS || monsterType == SUCCUBUS )
 					{
@@ -16012,6 +16102,16 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				weaponLimb->y = weaponArmLimb->y + .5 * sin(weaponArmLimb->yaw) * (myAttack == 0);
 				weaponLimb->z = weaponArmLimb->z - .5 * (myAttack == 0);
 				weaponLimb->pitch = weaponArmLimb->pitch + .25 * (myAttack == 0);
+				if ( monsterType == BUGBEAR )
+				{
+					if ( !isPlayer && this->monsterArmbended )
+					{
+						weaponLimb->x = weaponArmLimb->x;
+						weaponLimb->y = weaponArmLimb->y;
+						weaponLimb->z = weaponArmLimb->z;
+						weaponLimb->pitch = weaponArmLimb->pitch;
+					}
+				}
 			}
 		}
 	}
@@ -16866,7 +16966,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 	bool hadOldTarget = (uidToEntity(monsterTarget) != nullptr);
 	Sint32 oldMonsterState = monsterState;
 
-	if ( target.getRace() == GYROBOT || target.isInertMimic() || target.isUntargetableBat() )
+	if ( target.getRace() == GYROBOT || target.isInertMimic() || target.isUntargetableBat() || !(target.behavior == &actMonster || target.behavior == &actPlayer) )
 	{
 		return;
 	}
@@ -16945,6 +17045,17 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 		if ( monsterState == MONSTER_STATE_WAIT )
 		{
 			return;
+		}
+	}
+	else if ( myStats->type == BUGBEAR )
+	{
+		Stat* targetStats = target.getStats();
+		if ( targetStats && targetStats->type == BUGBEAR )
+		{
+			if ( (targetStats && targetStats->leader_uid == getUID()) || target.parent == getUID() )
+			{
+				return;
+			}
 		}
 	}
 
@@ -19673,11 +19784,7 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, con
 			{
 				messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, monsterStats.name);
 			}
-			else if ( monsterType < KOBOLD ) //Original monster count
-			{
-				messagePlayerColor(player, MESSAGE_COMBAT, color, msgNamed, monsterStats.name);
-			}
-			else if ( monsterType >= KOBOLD ) //New monsters
+			else
 			{
 				messagePlayerColor(player, MESSAGE_COMBAT, color, msgNamed, monsterStats.name);
 			}
@@ -19687,11 +19794,7 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, con
 			{
 				messagePlayerColor(player, MESSAGE_COMBAT_BASIC, color, msgGeneric, monsterStats.name);
 			}
-			else if ( monsterType < KOBOLD ) //Original monster count
-			{
-				messagePlayerColor(player, MESSAGE_COMBAT_BASIC, color, msgNamed, monsterStats.name);
-			}
-			else if ( monsterType >= KOBOLD ) //New monsters
+			else
 			{
 				messagePlayerColor(player, MESSAGE_COMBAT_BASIC, color, msgNamed, monsterStats.name);
 			}
@@ -19751,11 +19854,7 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, con
 				{
 					messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, monsterStats.name, monsterStats.weapon->getName());
 				}
-				else if ( monsterType < KOBOLD ) //Original monster count
-				{
-					messagePlayerColor(player, MESSAGE_COMBAT, color, msgNamed, monsterStats.name, monsterStats.weapon->getName());
-				}
-				else if ( monsterType >= KOBOLD ) //New monsters
+				else
 				{
 					messagePlayerColor(player, MESSAGE_COMBAT, color, msgNamed, monsterStats.name, monsterStats.weapon->getName());
 				}
@@ -21024,6 +21123,14 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 
 	switch ( race )
 	{
+		case BUGBEAR:
+			shieldLimb->x -= limbs[race][19][0] * cos(this->yaw + PI / 2) + limbs[race][19][1] * cos(this->yaw);
+			shieldLimb->y -= limbs[race][19][0] * sin(this->yaw + PI / 2) + limbs[race][19][1] * sin(this->yaw);
+			shieldLimb->z += limbs[race][19][2];
+			shieldLimb->yaw = shieldArmLimb->yaw;
+			shieldLimb->roll = 0;
+			shieldLimb->pitch = shieldArmLimb->pitch;
+		break;
 		case CREATURE_IMP:
 			shieldLimb->focalx = limbs[race][8][0];
 			shieldLimb->focaly = limbs[race][8][1];
@@ -21930,6 +22037,11 @@ real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableTy
 	if ( myStats.type == GOATMAN && myStats.EFFECTS[EFF_DRUNK] )
 	{
 		bonus = -.2;
+	}
+	if ( damageType == DamageTableType::DAMAGE_TABLE_MAGIC
+		&& myStats.type == BUGBEAR && myStats.defending && myStats.shield )
+	{
+		damageMultiplier = 0.2;
 	}
 	int followerResist = my ? my->getFollowerBonusDamageResist() : 0;
 	if ( followerResist != 0 )

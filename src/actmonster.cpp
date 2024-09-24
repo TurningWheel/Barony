@@ -35,85 +35,87 @@ float limbs[NUMMONSTERS][20][3];
 // determines which monsters fight which
 bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
 {
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // NOTHING
-	{ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0 }, // HUMAN
-	{ 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1 }, // RAT
-	{ 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1 }, // GOBLIN
-	{ 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1 }, // SLIME
-	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1 }, // TROLL
-	{ 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1 }, // BAT_SMALL
-	{ 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1 }, // SPIDER
-	{ 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1 }, // GHOUL
-	{ 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1 }, // SKELETON
-	{ 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1 }, // SCORPION
-	{ 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1 }, // IMP
-	{ 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1 }, // CRAB
-	{ 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1 }, // GNOME
-	{ 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1 }, // DEMON
-	{ 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1 }, // SUCCUBUS
-	{ 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1 }, // MIMIC
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1 }, // LICH
-	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1 }, // MINOTAUR
-	{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 }, // DEVIL
-	{ 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SHOPKEEPER
-	{ 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1 }, // KOBOLD
-	{ 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1 }, // SCARAB
-	{ 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1 }, // CRYSTALGOLEM
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 }, // INCUBUS
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 }, // VAMPIRE
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 }, // SHADOW
-	{ 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1 }, // COCKATRICE
-	{ 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1 }, // INSECTOID
-	{ 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1 }, // GOATMAN
-	{ 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0 }, // AUTOMATON
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 }, // LICH_ICE
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 }, // LICH_FIRE
-	{ 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0 }, // SENTRYBOT
-	{ 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0 }, // SPELLBOT
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GYROBOT
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }  // DUMMYBOT
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // NOTHING
+	{ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1 }, // HUMAN
+	{ 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0 }, // RAT
+	{ 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0 }, // GOBLIN
+	{ 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0 }, // SLIME
+	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0 }, // TROLL
+	{ 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0 }, // BAT_SMALL
+	{ 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0 }, // SPIDER
+	{ 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0 }, // GHOUL
+	{ 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0 }, // SKELETON
+	{ 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0 }, // SCORPION
+	{ 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0 }, // IMP
+	{ 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0 }, // CRAB
+	{ 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0 }, // GNOME
+	{ 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0 }, // DEMON
+	{ 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0 }, // SUCCUBUS
+	{ 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0 }, // MIMIC
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0 }, // LICH
+	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0 }, // MINOTAUR
+	{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0 }, // DEVIL
+	{ 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SHOPKEEPER
+	{ 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0 }, // KOBOLD
+	{ 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0 }, // SCARAB
+	{ 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0 }, // CRYSTALGOLEM
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0 }, // INCUBUS
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0 }, // VAMPIRE
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0 }, // SHADOW
+	{ 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0 }, // COCKATRICE
+	{ 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0 }, // INSECTOID
+	{ 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0 }, // GOATMAN
+	{ 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0 }, // AUTOMATON
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0 }, // LICH_ICE
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0 }, // LICH_FIRE
+	{ 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0 }, // SENTRYBOT
+	{ 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0 }, // SPELLBOT
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GYROBOT
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // DUMMYBOT
+	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0 }  // BUGBEAR
 };
 
 // determines which monsters come to the aid of other monsters
 bool monsterally[NUMMONSTERS][NUMMONSTERS] =
 {
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // NOTHING
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1 }, // HUMAN
-	{ 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // RAT
-	{ 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 }, // GOBLIN
-	{ 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 }, // SLIME
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // TROLL
-	{ 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // BAT_SMALL
-	{ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 }, // SPIDER
-	{ 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0 }, // GHOUL
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0 }, // SKELETON
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 }, // SCORPION
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0 }, // IMP
-	{ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 }, // CRAB
-	{ 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GNOME
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0 }, // DEMON
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0 }, // SUCCUBUS
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MIMIC
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0 }, // LICH
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MINOTAUR
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0 }, // DEVIL
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SHOPKEEPER
-	{ 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // KOBOLD
-	{ 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 }, // SCARAB
-	{ 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // CRYSTALGOLEM
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0 }, // INCUBUS
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0 }, // VAMPIRE
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0 }, // SHADOW
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // COCKATRICE
-	{ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 }, // INSECTOID
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0 }, // GOATMAN
-	{ 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 }, // AUTOMATON
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0 }, // LICH_ICE
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0 }, // LICH_FIRE
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1 }, // SENTRYBOT
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1 }, // SPELLBOT
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1 }, // GYROBOT
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1 }  // DUMMYBOT
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // NOTHING
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0 }, // HUMAN
+	{ 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // RAT
+	{ 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // GOBLIN
+	{ 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // SLIME
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // TROLL
+	{ 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // BAT_SMALL
+	{ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SPIDER
+	{ 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0 }, // GHOUL
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0 }, // SKELETON
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SCORPION
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0 }, // IMP
+	{ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // CRAB
+	{ 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GNOME
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0 }, // DEMON
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0 }, // SUCCUBUS
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MIMIC
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0 }, // LICH
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MINOTAUR
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0 }, // DEVIL
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SHOPKEEPER
+	{ 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // KOBOLD
+	{ 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SCARAB
+	{ 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // CRYSTALGOLEM
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0 }, // INCUBUS
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0 }, // VAMPIRE
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0 }, // SHADOW
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // COCKATRICE
+	{ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // INSECTOID
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0 }, // GOATMAN
+	{ 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // AUTOMATON
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0 }, // LICH_ICE
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0 }, // LICH_FIRE
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0 }, // SENTRYBOT
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0 }, // SPELLBOT
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0 }, // GYROBOT
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0 }, // DUMMYBOT
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }  // BUGBEAR
 };
 
 // monster sight ranges
@@ -155,7 +157,8 @@ double sightranges[NUMMONSTERS] =
 	256,  // SENTRYBOT
 	192,  // SPELLBOT
 	256,  // GYROBOT
-	32    // DUMMYBOT
+	32,   // DUMMYBOT
+	128	  // BUGBEAR
 };
 
 int monsterGlobalAnimationMultiplier = 10;
@@ -163,7 +166,11 @@ int monsterGlobalAttackTimeMultiplier = 1;
 
 std::string getMonsterLocalizedName(Monster creature)
 {
-	if ( creature < KOBOLD )
+	if ( creature == BUGBEAR )
+	{
+		return Language::get(6256);
+	}
+	else if ( creature < KOBOLD )
 	{
 	    if (creature == SPIDER && ((!intro && arachnophobia_filter) || (intro && MainMenu::arachnophobia_filter)) ) {
 		    return Language::get(102);
@@ -180,6 +187,10 @@ std::string getMonsterLocalizedName(Monster creature)
 
 std::string getMonsterLocalizedPlural(Monster creature)
 {
+	if ( creature == BUGBEAR )
+	{
+		return Language::get(6257);
+	}
 	if ( creature < KOBOLD )
 	{
 	    if (creature == SPIDER && ((!intro && arachnophobia_filter) || (intro && MainMenu::arachnophobia_filter))) {
@@ -196,6 +207,10 @@ std::string getMonsterLocalizedPlural(Monster creature)
 }
 std::string getMonsterLocalizedInjury(Monster creature)
 {
+	if ( creature == BUGBEAR )
+	{
+		return Language::get(6258);
+	}
 	if ( creature < KOBOLD )
 	{
 	    if (creature == SPIDER && ((!intro && arachnophobia_filter) || (intro && MainMenu::arachnophobia_filter)) ) {
@@ -1339,6 +1354,22 @@ bool monsterMoveAside(Entity* my, Entity* entity, bool ignoreMonsterState)
 	return false;
 }
 
+int getMonsterInteractGreeting(Stat& myStats)
+{
+	if ( myStats.type == BUGBEAR )
+	{
+		return 6259;
+	}
+	else if ( myStats.type < BUGBEAR )
+	{
+		return 4262 + myStats.type;
+	}
+	else
+	{
+		return 4288; // ...
+	}
+}
+
 /*-------------------------------------------------------------------------------
 
 	act*
@@ -2300,6 +2331,7 @@ void monsterAnimate(Entity* my, Stat* myStats, double dist)
 	case DUMMYBOT: dummyBotAnimate(my, myStats, dist); break;
 	case MIMIC: mimicAnimate(my, myStats, dist); break;
 	case BAT_SMALL: batAnimate(my, myStats, dist); break;
+	case BUGBEAR: bugbearMoveBodyparts(my, myStats, dist); break;
 	default:
 		break;
 	}
@@ -2392,6 +2424,7 @@ void actMonster(Entity* my)
 			case DUMMYBOT: initDummyBot(my, nullptr); break;
 			case MIMIC: initMimic(my, nullptr); break;
 			case BAT_SMALL: initBat(my, nullptr); break;
+			case BUGBEAR: initBugbear(my, nullptr); break;
 			default: printlog("Unknown monster, can't init!"); break;
 			}
 		}
@@ -2486,6 +2519,7 @@ void actMonster(Entity* my)
 				case DUMMYBOT: initDummyBot(my, myStats); break;
 				case MIMIC: initMimic(my, myStats); break;
 				case BAT_SMALL: initBat(my, myStats); break;
+				case BUGBEAR: initBugbear(my, myStats); break;
 				default: break; //This should never be reached.
 			}
 		}
@@ -3608,6 +3642,10 @@ void actMonster(Entity* my)
 				break;
 			case BAT_SMALL:
 				batDie(my);
+				break;
+			case BUGBEAR:
+				bugbearDie(my);
+				break;
 			default:
 				break; //This should never be reached.
 		}
@@ -3843,6 +3881,7 @@ void actMonster(Entity* my)
 		case GYROBOT:
 		case DUMMYBOT:
 		case MIMIC:
+		case BUGBEAR:
 			handleinvisible = false;
 			break;
 		default:
@@ -4322,19 +4361,17 @@ void actMonster(Entity* my)
 				{
 					continue;
 				}
-				bool entityInside = entityInsideEntity(my, entity);
-				/*if ( my->getRace() == BAT_SMALL && entity->getRace() == BAT_SMALL )
-				{
-					int x1 = my->sizex;
-					int y1 = my->sizey;
-					my->sizex = 2;
-					my->sizey = 2;
 
-					int x2 = entity->sizex;
-					int y2 = entity->sizey;
-					entity->sizex = 2;
-					entity->sizey = 2;
-				}*/
+				int sizex = my->sizex;
+				int sizey = my->sizey;
+				if ( entity->getRace() == BUGBEAR && myStats->type == BUGBEAR )
+				{
+					my->sizex = 8;
+					my->sizey = 8;
+				}
+				bool entityInside = entityInsideEntity(my, entity);
+				my->sizex = sizex;
+				my->sizey = sizey;
 				if ( entityInside && entity->getRace() != GYROBOT )
 				{
 					if ( entity->behavior != &actDoorFrame )
@@ -4544,35 +4581,35 @@ void actMonster(Entity* my)
 			messagePlayer(0, "defending!");
 		}*/
 
-		//if ( myStats->type == DEVIL )
+		//if ( myStats->type == BUGBEAR )
 		//{
-			//std::string state_string;
-			//
-			//switch(my->monsterState)
-			//{
-			//case MONSTER_STATE_WAIT:
-			//	state_string = "WAIT";
-			//	break;
-			//case MONSTER_STATE_ATTACK:
-			//	state_string = "CHARGE";
-			//	break;
-			//case MONSTER_STATE_PATH:
-			//	state_string = "PATH";
-			//	break;
-			//case MONSTER_STATE_HUNT:
-			//	state_string = "HUNT";
-			//	break;
-			//case MONSTER_STATE_TALK:
-			//	state_string = "TALK";
-			//	break;
-			//default:
-			//	state_string = std::to_string(my->monsterState);
-			//	//state_string = "Unknown state";
-			//	break;
-			//}
-			//
-			//messagePlayer(0, MESSAGE_DEBUG, "%s, ATK: %d hittime:%d, atktime:%d, (%d|%d), timer:%d", 
-			//	state_string.c_str(), my->monsterAttack, my->monsterHitTime, MONSTER_ATTACKTIME, devilstate, devilacted, my->monsterSpecialTimer); //Debug message.
+		//	std::string state_string;
+		//	
+		//	switch(my->monsterState)
+		//	{
+		//	case MONSTER_STATE_WAIT:
+		//		state_string = "WAIT";
+		//		break;
+		//	case MONSTER_STATE_ATTACK:
+		//		state_string = "CHARGE";
+		//		break;
+		//	case MONSTER_STATE_PATH:
+		//		state_string = "PATH";
+		//		break;
+		//	case MONSTER_STATE_HUNT:
+		//		state_string = "HUNT";
+		//		break;
+		//	case MONSTER_STATE_TALK:
+		//		state_string = "TALK";
+		//		break;
+		//	default:
+		//		state_string = std::to_string(my->monsterState);
+		//		//state_string = "Unknown state";
+		//		break;
+		//	}
+		//	
+		//	messagePlayer(0, MESSAGE_DEBUG, "%s, ATK: %d hittime:%d, atktime:%d, (%d|%d), timer:%d", 
+		//		state_string.c_str(), my->monsterAttack, my->monsterHitTime, MONSTER_ATTACKTIME, devilstate, devilacted, my->monsterSpecialTimer); //Debug message.
 		//}
 
 		//Begin state machine
@@ -5507,7 +5544,7 @@ timeToGoAgain:
 								}
 
 								Entity* tempHitEntity = hit.entity;
-								if ( lineTrace(my, my->x, my->x, tangent2, TOUCHRANGE, 1, false) < TOUCHRANGE )
+								if ( lineTrace(my, my->x, my->y, tangent2, TOUCHRANGE, 1, false) < TOUCHRANGE )
 								{
 									MONSTER_FLIPPEDANGLE = (MONSTER_FLIPPEDANGLE < 5) * 10;
 									goAgain++;
@@ -5552,6 +5589,12 @@ timeToGoAgain:
 								}
 							}
 
+							int chaseRange = 16;
+							if ( myStats->type == BUGBEAR )
+							{
+								chaseRange = 20;
+							}
+
 							if ( monsterIsImmobileTurret(my, myStats) || myStats->EFFECTS[EFF_ROOTED] )
 							{
 								// this is just so that the monster rotates. it doesn't actually move
@@ -5559,7 +5602,7 @@ timeToGoAgain:
 								MONSTER_VELY = maxVelY * 0.01;
 							}
 							else if ( !myStats->EFFECTS[EFF_KNOCKBACK] && 
-								((dist > 16 && !hasrangedweapon && !my->shouldRetreat(*myStats)) 
+								((dist > chaseRange && !hasrangedweapon && !my->shouldRetreat(*myStats))
 									|| (hasrangedweapon && dist > rangedWeaponDistance)) )
 							{
 								if ( my->shouldRetreat(*myStats) )
@@ -5570,6 +5613,30 @@ timeToGoAgain:
 								}
 								else
 								{
+									if ( myStats->type == BUGBEAR && my->monsterStrafeDirection != 0 )
+									{
+										double strafeTangent = tangent2;
+										if ( dist < 24 )
+										{
+											// move diagonally
+											strafeTangent -= ((PI / 4) * my->monsterStrafeDirection);
+										}
+										else
+										{
+											// move sideways (dist between 64 and 100 from backupWithRangedWeapon)
+											strafeTangent -= ((PI / 2) * my->monsterStrafeDirection);
+										}
+										if ( ticks % TICKS_PER_SECOND == 0 && my->monsterStrafeDirection != 0 && local_rng.rand() % 10 == 0 )
+										{
+											my->setBugbearStrafeDir(true);
+											//my->monsterStrafeDirection *= -1;
+										}
+										real_t maxVelX = cos(strafeTangent) * .045 * (myDex + 10) * weightratio * -.5;
+										real_t maxVelY = sin(strafeTangent) * .045 * (myDex + 10) * weightratio * -.5;
+										MONSTER_VELX = maxVelX;
+										MONSTER_VELY = maxVelY;
+									}
+
 									dist2 = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
 								}
 								if ( hit.entity != NULL )
@@ -5774,6 +5841,30 @@ timeToGoAgain:
 											MONSTER_VELX = maxVelX;
 											MONSTER_VELY = maxVelY;
 
+											if ( myStats->type == BUGBEAR && my->monsterStrafeDirection != 0 )
+											{
+												double strafeTangent = tangent2;
+												if ( dist < 24 )
+												{
+													// move diagonally
+													strafeTangent -= ((PI / 4) * my->monsterStrafeDirection);
+												}
+												else
+												{
+													// move sideways (dist between 64 and 100 from backupWithRangedWeapon)
+													strafeTangent -= ((PI / 2) * my->monsterStrafeDirection);
+												}
+												if ( ticks % TICKS_PER_SECOND == 0 && my->monsterStrafeDirection != 0 && local_rng.rand() % 10 == 0 )
+												{
+													my->setBugbearStrafeDir(true);
+													//my->monsterStrafeDirection *= -1;
+												}
+												real_t maxVelX = cos(strafeTangent) * .045 * (myDex + 10) * weightratio * -.5;
+												real_t maxVelY = sin(strafeTangent) * .045 * (myDex + 10) * weightratio * -.5;
+												MONSTER_VELX = maxVelX;
+												MONSTER_VELY = maxVelY;
+											}
+
 											if ( my->backupWithRangedWeapon(*myStats, dist, hasrangedweapon)
 												&& wasInsideEntity )
 											{
@@ -5787,12 +5878,44 @@ timeToGoAgain:
 								}
 								else
 								{
-									// this is just so that the monster rotates. it doesn't actually move
-									int myDex = my->monsterGetDexterityForMovement();
-									MONSTER_VELX = cos(tangent) * .02 * .045 * (myDex + 10) * weightratio;
-									MONSTER_VELY = sin(tangent) * .02 * .045 * (myDex + 10) * weightratio;
+									if ( myStats->type == BUGBEAR && my->monsterStrafeDirection != 0 )
+									{
+										double strafeTangent = tangent2;
+										if ( dist < 24 )
+										{
+											// move diagonally
+											strafeTangent -= ((PI / 4) * my->monsterStrafeDirection);
+										}
+										else
+										{
+											// move sideways (dist between 64 and 100 from backupWithRangedWeapon)
+											strafeTangent -= ((PI / 2) * my->monsterStrafeDirection);
+										}
+										if ( ticks % TICKS_PER_SECOND == 0 && my->monsterStrafeDirection != 0 && local_rng.rand() % 10 == 0 )
+										{
+											my->setBugbearStrafeDir(true);
+											//my->monsterStrafeDirection *= -1;
+										}
+										real_t maxVelX = cos(strafeTangent) * .045 * (myDex + 10) * weightratio * -.5;
+										real_t maxVelY = sin(strafeTangent) * .045 * (myDex + 10) * weightratio * -.5;
+										MONSTER_VELX = maxVelX;
+										MONSTER_VELY = maxVelY;
+
+										dist2 = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
+									}
+									else
+									{
+										// this is just so that the monster rotates. it doesn't actually move
+										int myDex = my->monsterGetDexterityForMovement();
+										MONSTER_VELX = cos(tangent) * .02 * .045 * (myDex + 10) * weightratio;
+										MONSTER_VELY = sin(tangent) * .02 * .045 * (myDex + 10) * weightratio;
+									}
 								}
 							}
+
+							int previousStrafeDirection = my->monsterStrafeDirection;
+							bool previousBackupWithRangedWeapon = my->backupWithRangedWeapon(*myStats, dist, hasrangedweapon);
+							bool previousShouldRetreat = my->shouldRetreat(*myStats);
 
 							my->handleMonsterAttack(myStats, entity, dist);
 
@@ -5807,7 +5930,14 @@ timeToGoAgain:
 							hasrangedweapon = my->hasRangedWeapon(); // re-update this status check if weapon was consumed/stowed away
 
 							// rotate monster
-							if ( my->backupWithRangedWeapon(*myStats, dist, hasrangedweapon) || my->shouldRetreat(*myStats) )
+							if ( myStats->type == BUGBEAR && previousStrafeDirection != 0 )
+							{
+								real_t tempVelX = cos(tangent2) * .045 * (myDex + 10) * weightratio;
+								real_t tempVelY = sin(tangent2) * .045 * (myDex + 10) * weightratio;
+								// override if we're strafing, keep facing the target
+								dir = my->yaw - atan2(tempVelY, tempVelX);
+							}
+							else if ( previousBackupWithRangedWeapon || previousShouldRetreat )
 							{
 								int myDex = my->getDEX();
 								if ( my->monsterAllyGetPlayerLeader() )
@@ -5882,6 +6012,7 @@ timeToGoAgain:
 							else
 							{
 								my->yaw -= dir / 2;
+								//messagePlayer(0, MESSAGE_DEBUG, "yaw: %.2f dir: %.2f, velx: %.2f vely: %.2f", my->yaw, dir / 2, my->vel_x, my->vel_y);
 							}
 							while ( my->yaw < 0 )
 							{
@@ -8256,6 +8387,109 @@ timeToGoAgain:
 				}
 			}
 		}
+		else if ( my->monsterState == MONSTER_STATE_GENERIC_DODGE )
+		{
+			dist = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
+
+			Entity* target = uidToEntity(my->monsterTarget);
+			if ( dist != sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY) )
+			{
+				my->monsterSpecialTimer = 0; // hit obstacle
+			}
+
+			MONSTER_VELX *= 0.95;
+			MONSTER_VELY *= 0.95;
+
+			if ( my->monsterSpecialTimer == 0 )
+			{
+				my->monsterState = MONSTER_STATE_WAIT;
+				MONSTER_VELX = 0;
+				MONSTER_VELY = 0;
+				if ( target )
+				{
+					my->monsterAcquireAttackTarget(*target, MONSTER_STATE_PATH);
+					my->monsterHitTime = HITRATE * 2;
+					if ( sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2)) < STRIKERANGE )
+					{
+						if ( local_rng.rand() % 2 == 0 )
+						{
+							my->handleMonsterAttack(myStats, target, 0.f);
+						}
+						else
+						{
+							my->monsterHitTime = 25;
+						}
+					}
+				}
+			}
+		}
+		else if ( my->monsterState == MONSTER_STATE_GENERIC_CHARGE )
+		{
+			Entity* target = uidToEntity(my->monsterTarget);
+
+			real_t tangent = my->yaw;
+			if ( target )
+			{
+				real_t tangent2 = atan2(target->y - my->y, target->x - my->x);
+				real_t dist = lineTraceTarget(my, my->x, my->y, tangent2, sightranges[myStats->type], 0, false, target);
+				if ( hit.entity == target )
+				{
+					tangent = tangent2;
+				}
+			}
+
+			dir = my->yaw - atan2(sin(tangent), cos(tangent));
+			while ( dir >= PI )
+			{
+				dir -= PI * 2;
+			}
+			while ( dir < -PI )
+			{
+				dir += PI * 2;
+			}
+			my->yaw -= dir / 64;
+			while ( my->yaw < 0 )
+			{
+				my->yaw += 2 * PI;
+			}
+			while ( my->yaw >= 2 * PI )
+			{
+				my->yaw -= 2 * PI;
+			}
+
+			int myDex = my->monsterGetDexterityForMovement() + 30;
+			real_t maxVelX = cos(my->yaw) * .045 * (myDex + 10) * weightratio;
+			real_t maxVelY = sin(my->yaw) * .045 * (myDex + 10) * weightratio;
+			MONSTER_VELX = maxVelX;
+			MONSTER_VELY = maxVelY;
+
+			dist = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
+
+			bool stopPath = false;
+			if ( dist != sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY) )
+			{
+				my->monsterSpecialTimer = 0; // hit obstacle
+			}
+
+			if ( my->monsterSpecialTimer == 0 )
+			{
+				my->monsterState = MONSTER_STATE_WAIT;
+				MONSTER_VELX = 0;
+				MONSTER_VELY = 0;
+				if ( target )
+				{
+					my->monsterHitTime = HITRATE * 2;
+					if ( sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2)) < TOUCHRANGE )
+					{
+						my->monsterAcquireAttackTarget(*target, MONSTER_STATE_ATTACK);
+					}
+					else
+					{
+						my->monsterAcquireAttackTarget(*target, MONSTER_STATE_PATH);
+					}
+				}
+			}
+		}
 		else if ( my->monsterState == MONSTER_STATE_LICHFIRE_DODGE
 			|| my->monsterState == MONSTER_STATE_LICHICE_DODGE )
 		{
@@ -8973,8 +9207,14 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 		}
 	}
 
+	int meleeDist = STRIKERANGE;
+	if ( myStats->type == BUGBEAR && monsterSpecialState == BUGBEAR_DEFENSE )
+	{
+		meleeDist = TOUCHRANGE - 1;
+	}
+
 	// check the range to the target, depending on ranged weapon or melee.
-	if ( (dist < STRIKERANGE && !hasrangedweapon) || (hasrangedweapon && dist < getMonsterEffectiveDistanceOfRangedWeapon(myStats->weapon)) || lichRangeCheckOverride )
+	if ( (dist < meleeDist && !hasrangedweapon) || (hasrangedweapon && dist < getMonsterEffectiveDistanceOfRangedWeapon(myStats->weapon)) || lichRangeCheckOverride )
 	{
 		// increment the hit time, don't attack until this reaches the hitrate of the weapon
 		this->monsterHitTime++;
@@ -9009,6 +9249,10 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 						bow = 0.8;
 					}
 				}
+			}
+			else if ( myStats->weapon->type == HEAVY_CROSSBOW )
+			{
+				bow = 1.5;
 			}
 		}
 		if ( myStats->type == BAT_SMALL )
@@ -9096,14 +9340,14 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 			{
 				lineTrace(this, this->x, this->y, newTangent, tracedist, 0, false);
 			}
-			if ( hit.entity != nullptr )
+			if ( hit.entity != nullptr && hit.entity == target )
 			{
 				// found the target in range
 				hitstats = hit.entity->getStats();
 				if ( hit.entity->behavior == &actMonster && !hasrangedweapon )
 				{
 					// alert the monster!
-					if ( hit.entity->skill[0] != MONSTER_STATE_ATTACK )
+					if ( hit.entity->monsterState != MONSTER_STATE_ATTACK )
 					{
 						hit.entity->monsterAcquireAttackTarget(*this, MONSTER_STATE_PATH);
 					}
@@ -9149,8 +9393,24 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 							}
 						}
 					}
-
-					if ( monsterDefend == MONSTER_DEFEND_HOLD )
+					
+					if ( myStats->type == BUGBEAR && monsterSpecialState == BUGBEAR_DEFENSE )
+					{
+						if ( myStats->shield && myStats->shield->type == STEEL_SHIELD && local_rng.rand() % 3 == 0 && dist <= meleeDist )
+						{
+							// shield bash
+							this->attack(MONSTER_POSE_SPECIAL_WINDUP1, charge, nullptr); // attacku! D:<
+						}
+						else if ( monsterDefend == MONSTER_DEFEND_HOLD )
+						{
+							monsterHitTime = HITRATE / 2;
+						}
+						else
+						{
+							this->attack(pose, charge, nullptr); // attacku! D:<
+						}
+					}
+					else if ( monsterDefend == MONSTER_DEFEND_HOLD )
 					{
 						// skip attack, continue defending. offset the hit time to allow for timing variation.
 						monsterHitTime = HITRATE / 4;
@@ -9166,9 +9426,25 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 	}
 	else
 	{
+		if ( myStats->type == BUGBEAR && monsterSpecialState == BUGBEAR_DEFENSE )
+		{
+			if ( monsterHitTime < HITRATE - 5 )
+			{
+				++monsterHitTime;
+			}
+		}
 		if ( ticks % (90 + getUID() % 10) == 0 ) 
 		{
-			if ( !hasrangedweapon && dist > TOUCHRANGE && target && target->hasRangedWeapon() )
+			if ( myStats->type == BUGBEAR && monsterSpecialState == BUGBEAR_DEFENSE )
+			{
+				int oldDefend = monsterDefend;
+				monsterDefend = shouldMonsterDefend(*myStats, *target, *target->getStats(), dist, hasrangedweapon);
+				if ( oldDefend != monsterDefend )
+				{
+					serverUpdateEntitySkill(this, 47);
+				}
+			}
+			else if ( !hasrangedweapon && dist > TOUCHRANGE && target && target->hasRangedWeapon() )
 			{
 				int oldDefend = monsterDefend;
 				monsterDefend = shouldMonsterDefend(*myStats, *target, *target->getStats(), dist, hasrangedweapon);
@@ -9775,34 +10051,8 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 
 			switch ( myStats->type )
 			{
-				//case MIMIC:
-				//	if ( monsterSpecialState == MIMIC_ACTIVE && !myStats->EFFECTS[EFF_MIMIC_LOCKED] )
-				//	{
-				//		if ( local_rng.rand() % 5 == 0 )
-				//		{
-				//			int tx = this->x / 16;
-				//			int ty = this->y / 16;
-				//			list_t* itemsList = nullptr;
-				//			for ( int i = -1; i <= 1; ++i )
-				//			{
-				//				for ( int j = -1; j <= 1; ++j )
-				//				{
-				//					getItemsOnTile(tx + i, ty + j, &itemsList); //Check the tile the monster is on for items.
-				//				}
-				//			}
-
-				//			if ( itemsList )
-				//			{
-				//				createParticleDropRising(this, 593, 1.f);
-				//				serverSpawnMiscParticles(this, PARTICLE_EFFECT_RISING_DROP, 593);
-				//				this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_MIMIC_EAT;
-				//				this->monsterSpecialState = MIMIC_MAGIC;
-				//				serverUpdateEntitySkill(this, 33);
-				//			}
-				//			break;
-				//		}
-				//	}
-				//	break;
+				case BUGBEAR:
+					break;
 				case KOBOLD:
 					if ( (hasrangedweapon && !(myStats->weapon && itemCategory(myStats->weapon) == SPELLBOOK)) || myStats->weapon == nullptr )
 					{
@@ -12002,7 +12252,7 @@ int Entity::shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat&
 		return MONSTER_DEFEND_NONE;
 	}
 
-	if ( monsterSpecialState > 0 )
+	if ( monsterSpecialState > 0 && !(myStats.type == BUGBEAR && monsterSpecialState == BUGBEAR_DEFENSE) )
 	{
 		return MONSTER_DEFEND_NONE;
 	}
@@ -12019,7 +12269,7 @@ int Entity::shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat&
 
 	bool isPlayerAlly = (monsterAllyIndex >= 0 && monsterAllyIndex < MAXPLAYERS);
 	
-	if ( !(isPlayerAlly || myStats.type == HUMAN) )
+	if ( !(isPlayerAlly || myStats.type == HUMAN || myStats.type == BUGBEAR) )
 	{
 		return MONSTER_DEFEND_NONE;
 	}
@@ -12073,6 +12323,22 @@ int Entity::shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat&
 			{
 				// no point defending!
 				blockChance = 0;
+			}
+		}
+	}
+
+	if ( myStats.type == BUGBEAR && monsterSpecialState == BUGBEAR_DEFENSE )
+	{
+		if ( targetDist > TOUCHRANGE && !hasrangedweapon )
+		{
+			blockChance = 20;
+		}
+		else
+		{
+			blockChance = 12;
+			if ( monsterDefend == MONSTER_DEFEND_NONE )
+			{
+				blockChance = 18;
 			}
 		}
 	}
