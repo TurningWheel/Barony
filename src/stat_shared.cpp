@@ -1322,6 +1322,39 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->GOLD = 0;
 			stats->RANDOM_GOLD = 0;
 			break;
+		case 189:
+		case (1000 + BUGBEAR):
+			stats->type = BUGBEAR;
+			stats->sex = static_cast<sex_t>(local_rng.rand() % 2);
+			stats->appearance = local_rng.rand();
+			stats->inventory.first = NULL;
+			stats->inventory.last = NULL;
+			stats->HP = 130;
+			stats->RANDOM_HP = 20;
+			stats->MAXHP = stats->HP;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->MP = 30;
+			stats->MAXMP = 30;
+			stats->OLDHP = stats->HP;
+			stats->STR = 12;
+			stats->DEX = 3;
+			stats->CON = 5;
+			stats->INT = -4;
+			stats->PER = 6;
+			stats->CHR = -4;
+			stats->EXP = 0;
+			stats->LVL = 14;
+			stats->GOLD = 0;
+			stats->HUNGER = 900;
+
+			stats->setProficiency(PRO_SWORD, 60);
+			stats->setProficiency(PRO_AXE, 60);
+			stats->setProficiency(PRO_RANGED, 0);
+			stats->setProficiency(PRO_SHIELD, 80);
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
+			break;
 		case 10:
 		default:
 			break;

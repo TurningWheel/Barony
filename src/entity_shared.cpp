@@ -54,6 +54,7 @@ int checkSpriteType(Sint32 sprite)
 	case 165:
 	case 166:
 	case 188:
+	case 189:
 		//monsters
 		return 1;
 		break;
@@ -1012,7 +1013,9 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"NOT USED",
 	"AND GATE",
 	"AND GATE",
-	"AND GATE"
+	"AND GATE",
+	"BAT",
+	"BUGBEAR"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][16] =
@@ -1023,7 +1026,7 @@ char monsterEditorNameStrings[NUMMONSTERS][16] =
 	"goblin",
 	"slime",
 	"troll",
-	"invalid",
+	"bat",
 	"spider",
 	"ghoul",
 	"skeleton",
@@ -1053,7 +1056,8 @@ char monsterEditorNameStrings[NUMMONSTERS][16] =
 	"sentrybot",
 	"spellbot",
 	"gyrobot",
-	"dummybot"
+	"dummybot",
+	"bugbear"
 };
 
 char tileEditorNameStrings[NUM_EDITOR_TILES][44] =
@@ -1356,6 +1360,7 @@ int canWearEquip(Entity* entity, int category)
 					break;
 
 				//monsters with cloak/weapon/shield/boots/mask/gloves (no helm)
+				case BUGBEAR:
 				case GNOME:
 				case INCUBUS:
 				case SUCCUBUS:

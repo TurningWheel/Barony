@@ -235,6 +235,10 @@ void Entity::initMonster(int mySprite)
 			monsterFootstepType = MONSTER_FOOTSTEP_NONE;
 			monsterSpellAnimation = MONSTER_SPELLCAST_NONE;
 			break;
+		case BUGBEAR:
+			monsterFootstepType = MONSTER_FOOTSTEP_STOMP;
+			monsterSpellAnimation = MONSTER_SPELLCAST_NONE;
+			break;
 		default:
 			monsterFootstepType = MONSTER_FOOTSTEP_NONE;
 			monsterSpellAnimation = MONSTER_SPELLCAST_NONE;

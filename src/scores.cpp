@@ -1072,6 +1072,21 @@ void loadAllScores(const std::string& scoresfilename)
 				}
 			}
 		}
+		else if ( versionNumber < 422 )
+		{
+			// legacy nummonsters
+			for ( int c = 0; c < NUMMONSTERS; c++ )
+			{
+				if ( c < 37 )
+				{
+					fp->read(&score->kills[c], sizeof(Sint32), 1);
+				}
+				else
+				{
+					score->kills[c] = 0;
+				}
+			}
+		}
 		else
 		{
 			for ( int c = 0; c < NUMMONSTERS; c++ )
@@ -6641,6 +6656,10 @@ int loadGame(int player, const SaveGameInfo& info) {
 	// load player data
 	client_classes[statsPlayer] = info.players[player].char_class;
 	stats[statsPlayer]->playerRace = info.players[player].race;
+	for ( int c = 0; c < NUMMONSTERS; ++c )
+	{
+		kills[c] = 0;
+	}
 	for (int c = 0; c < NUMMONSTERS && c < info.players[player].kills.size(); ++c) {
 		kills[c] = info.players[player].kills[c];
 	}

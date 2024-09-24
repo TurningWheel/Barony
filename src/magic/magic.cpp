@@ -1294,6 +1294,7 @@ int getCharmMonsterDifficulty(Entity& my, Stat& myStats)
 	case INCUBUS:
 	case INSECTOID:
 	case GOATMAN:
+	case BUGBEAR:
 		difficulty = 2;
 		break;
 	case CRYSTALGOLEM:
@@ -1774,6 +1775,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 			case CRYSTALGOLEM:
 			case SHADOW:
 			case COCKATRICE:
+			case BUGBEAR:
 				summonCanEquipItems = false;
 				break;
 			default:
@@ -1795,6 +1797,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 			case CRYSTALGOLEM:
 			case SHADOW:
 			case COCKATRICE:
+			case BUGBEAR:
 				hitMonsterCanTransferEquipment = false;
 				break;
 			default:

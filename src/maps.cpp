@@ -192,16 +192,16 @@ int monsterCurve(int level)
 			case 1:
 			case 2:
 			case 3:
-				return GNOME;
 			case 4:
+				return GNOME;
 			case 5:
 			case 6:
 			case 7:
-				return TROLL;
+				return BUGBEAR;
 			case 8:
 				if ( map_rng.rand() % 10 > 0 )
 				{
-					return TROLL;
+					return BUGBEAR;
 				}
 				else
 				{
@@ -5771,6 +5771,7 @@ void assignActions(map_t* map)
 			case 165:
 			case 166:
 			case 188:
+			case 189:
 			{
 				entity->sizex = 4;
 				entity->sizey = 4;
@@ -5828,6 +5829,7 @@ void assignActions(map_t* map)
                 case 165: monsterType = DUMMYBOT; break;
                 case 166: monsterType = GYROBOT; break;
 				case 188: monsterType = BAT_SMALL; break;
+				case 189: monsterType = BUGBEAR; break;
                 default:
 					monsterIsFixedSprite = false;
 					monsterType = static_cast<Monster>(monsterCurve(currentlevel));

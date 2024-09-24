@@ -968,6 +968,9 @@ public:
 			case SLIME:
 				slimeChooseWeapon(target, dist);
 				break;
+			case BUGBEAR:
+				bugbearChooseWeapon(target, dist);
+				break;
 			case SHOPKEEPER:
 				if ( target )
 				{
@@ -992,6 +995,7 @@ public:
 	void shadowChooseWeapon(const Entity* target, double dist);
 	void succubusChooseWeapon(const Entity* target, double dist);
 	void slimeChooseWeapon(const Entity* target, double dist);
+	void bugbearChooseWeapon(const Entity* target, double dist);
 	void skeletonSummonSetEquipment(Stat* myStats, int rank);
 	static void tinkerBotSetStats(Stat* myStats, int rank);
 	static void mimicSetStats(Stat* myStats);
@@ -1100,6 +1104,7 @@ public:
 	bool isUntargetableBat(real_t* outDist = nullptr) const;
 	bool entityCanVomit() const;
 	bool doSilkenBowOnAttack(Entity* attacker);
+	void setBugbearStrafeDir(bool forceDirection);
 };
 
 Monster getMonsterFromPlayerRace(int playerRace); // convert playerRace into the relevant monster type
@@ -1219,7 +1224,7 @@ void actTextSource(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 333;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 129;
-static const int NUM_EDITOR_SPRITES = 188;
+static const int NUM_EDITOR_SPRITES = 190;
 static const int NUM_EDITOR_TILES = 350;
 
 // furniture types.
@@ -1355,7 +1360,8 @@ public:
 		TO_SENTRYBOT,
 		TO_SPELLBOT,
 		TO_GYROBOT,
-		TO_DUMMYBOT
+		TO_DUMMYBOT,
+		TO_BUGBEAR
 	};
 	enum ScriptType : int
 	{

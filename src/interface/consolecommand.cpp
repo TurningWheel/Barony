@@ -4235,7 +4235,8 @@ namespace ConsoleCommands {
 				COCKATRICE,
 				INSECTOID,
 				GOATMAN,
-				AUTOMATON
+				AUTOMATON,
+				BUGBEAR
 			};
 			std::vector<Monster>* set = nullptr;
 			if (setToChoose == 1)
@@ -5039,6 +5040,8 @@ namespace ConsoleCommands {
 						case 164: monsterType = SPELLBOT; break;
 						case 165: monsterType = DUMMYBOT; break;
 						case 166: monsterType = GYROBOT; break;
+						case 188: monsterType = BAT_SMALL; break;
+						case 189: monsterType = BUGBEAR; break;
 						default:
 							break;
 						}
