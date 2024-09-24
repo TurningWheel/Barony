@@ -554,11 +554,11 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 				}
 				else if ( flanking )
 				{
-					miss = local_rng.rand() % 10 < 6 + (accuracyBonus ? 3 : 0);
+					miss = local_rng.rand() % 10 < (4 + (accuracyBonus ? -2 : 0));
 				}
 				else
 				{
-					miss = local_rng.rand() % 10 < 4 + (accuracyBonus ? 3 : 0);
+					miss = local_rng.rand() % 10 < (6 + (accuracyBonus ? -2 : 0));
 				}
 
 				if ( miss )

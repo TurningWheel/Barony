@@ -7808,11 +7808,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						else if ( flanking )
 						{
-							miss = local_rng.rand() % 10 < 6;
+							miss = local_rng.rand() % 10 < 4;
 						}
 						else
 						{
-							miss = local_rng.rand() % 10 < 4;
+							miss = local_rng.rand() % 10 < 6;
 						}
 
 						if ( myStats->weapon )

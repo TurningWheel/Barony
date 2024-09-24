@@ -51,6 +51,12 @@ void initBat(Entity* my, Stat* myStats)
 				myStats->leader_uid = 0;
 			}
 
+			if ( isMonsterStatsDefault(*myStats) )
+			{
+				myStats->STR += std::min(5, currentlevel / 5);
+				myStats->DEX += std::min(3, currentlevel / 5);
+			}
+
 			// apply random stat increases if set in stat_shared.cpp or editor
 			setRandomMonsterStats(myStats, rng);
 
