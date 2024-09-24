@@ -193,6 +193,7 @@
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
+    <EnableASAN>false</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Steam Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -1184,6 +1185,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClCompile Include="..\..\src\messages.cpp" />
     <ClCompile Include="..\..\src\monster_automaton.cpp" />
     <ClCompile Include="..\..\src\monster_bat.cpp" />
+    <ClCompile Include="..\..\src\monster_bugbear.cpp" />
     <ClCompile Include="..\..\src\monster_cockatrice.cpp" />
     <ClCompile Include="..\..\src\monster_crystalgolem.cpp" />
     <ClCompile Include="..\..\src\monster_demon.cpp" />
