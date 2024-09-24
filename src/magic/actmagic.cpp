@@ -1174,6 +1174,27 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 				}
 
+				// Only degrade the equipment if Friendly Fire is ON or if it is (OFF && target is an enemy)
+				bool bShouldEquipmentDegrade = false;
+				if ( parent && parent->behavior == &actDeathGhost )
+				{
+					bShouldEquipmentDegrade = false;
+				}
+				else if ( (svFlags & SV_FLAG_FRIENDLYFIRE) )
+				{
+					// Friendly Fire is ON, equipment should always degrade, as hit will register
+					bShouldEquipmentDegrade = true;
+				}
+				else
+				{
+					// Friendly Fire is OFF, is the target an enemy?
+					if ( parent != nullptr && (parent->checkFriend(hit.entity)) == false )
+					{
+						// Target is an enemy, equipment should degrade
+						bShouldEquipmentDegrade = true;
+					}
+				}
+
 				// Handling reflecting the missile
 				if ( reflection )
 				{
@@ -1248,27 +1269,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						my->parent = hit.entity->getUID();
 						++my->actmagicReflectionCount;
-					}
-
-					// Only degrade the equipment if Friendly Fire is ON or if it is (OFF && target is an enemy)
-					bool bShouldEquipmentDegrade = false;
-					if ( parent && parent->behavior == &actDeathGhost )
-					{
-						bShouldEquipmentDegrade = false;
-					}
-					else if ( (svFlags & SV_FLAG_FRIENDLYFIRE) )
-					{
-						// Friendly Fire is ON, equipment should always degrade, as hit will register
-						bShouldEquipmentDegrade = true;
-					}
-					else
-					{
-						// Friendly Fire is OFF, is the target an enemy?
-						if ( parent != nullptr && (parent->checkFriend(hit.entity)) == false )
-						{
-							// Target is an enemy, equipment should degrade
-							bShouldEquipmentDegrade = true;
-						}
 					}
 
 					if ( bShouldEquipmentDegrade )
@@ -3025,6 +3025,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							playSoundEntity(hit.entity, 28, volume);
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
+							if ( spell->ID == SPELL_SLIME_WATER && hitstats->type == VAMPIRE )
+							{
+								damage *= 2;
+							}
 
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							int oldHP = hitstats->HP;
@@ -3299,6 +3303,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										Uint32 color = makeColorRGB(255, 0, 0);
 										messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(6235));
+
+										if ( hitstats->type == VAMPIRE )
+										{
+											messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(6235));
+										}
 									}
 								}
 							}
