@@ -1389,7 +1389,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 			{
 				//messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, Language::get(534), namesays);
 				players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
-					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, Language::get(4262 + (int)myStats->type), stats[monsterclicked]->name);
+					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, Language::get(getMonsterInteractGreeting(*myStats)), stats[monsterclicked]->name);
 			}
 		}
 		else
@@ -1405,7 +1405,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 			{
 				//messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, Language::get(534), namesays);
 				players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
-					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, Language::get(4262 + (int)myStats->type), stats[monsterclicked]->name);
+					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, Language::get(getMonsterInteractGreeting(*myStats)), stats[monsterclicked]->name);
 			}
 
 			if ( my->checkFriend(players[monsterclicked]->entity) )
@@ -1772,7 +1772,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 		{
 			//messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, Language::get(534), namesays);
 			players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
-				Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, Language::get(4262 + (int)myStats->type), stats[monsterclicked]->name);
+				Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, Language::get(getMonsterInteractGreeting(*myStats)), stats[monsterclicked]->name);
 		}
 
 		return false;
@@ -11797,7 +11797,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				if ( local_rng.getU8() % 8 == 0 ) 
 				{
 					players[monsterAllyIndex]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_FOLLOWER_CMD, Language::get(4262 + (int)myStats.type), stats[monsterAllyIndex]->name);
+						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_FOLLOWER_CMD, Language::get(getMonsterInteractGreeting(myStats)), stats[monsterAllyIndex]->name);
 					//messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
 					//	myStats, Language::get(3129), Language::get(3130), MSG_COMBAT);
 				}

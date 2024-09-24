@@ -22401,7 +22401,9 @@ std::string CalloutRadialMenu::getCalloutMessage(const IconEntry::IconEntryText_
 			{
 				char shortname[32];
 				stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
-				snprintf(buf, sizeof(buf), text_map.worldMsgEmote.c_str(), shortname, object);
+				std::string nameStr = shortname;
+				nameStr = messageSanitizePercentSign(nameStr, nullptr);
+				snprintf(buf, sizeof(buf), text_map.worldMsgEmote.c_str(), nameStr.c_str(), object);
 			}
 		}
 		else
@@ -22415,7 +22417,9 @@ std::string CalloutRadialMenu::getCalloutMessage(const IconEntry::IconEntryText_
 			{
 				char shortname[32];
 				stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
-				snprintf(buf, sizeof(buf), text_map.worldMsgEmote.c_str(), shortname);
+				std::string nameStr = shortname;
+				nameStr = messageSanitizePercentSign(nameStr, nullptr);
+				snprintf(buf, sizeof(buf), text_map.worldMsgEmote.c_str(), nameStr.c_str());
 			}
 		}
 		return buf;
@@ -22435,6 +22439,7 @@ std::string CalloutRadialMenu::getCalloutMessage(const IconEntry::IconEntryText_
 				char shortname[32];
 				stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
 				std::string playerSays = shortname;
+				playerSays = messageSanitizePercentSign(playerSays, nullptr);
 				playerSays += ": ";
 				snprintf(buf, sizeof(buf), text_map.worldMsgSays.c_str(), playerSays.c_str(), object);
 			}
@@ -22451,6 +22456,7 @@ std::string CalloutRadialMenu::getCalloutMessage(const IconEntry::IconEntryText_
 				char shortname[32];
 				stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
 				std::string playerSays = shortname;
+				playerSays = messageSanitizePercentSign(playerSays, nullptr);
 				playerSays += ": ";
 				snprintf(buf, sizeof(buf), text_map.worldMsgSays.c_str(), playerSays.c_str());
 			}
@@ -22566,6 +22572,7 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 			char shortname[32];
 			stringCopy(shortname, stats[toPlayer]->name, sizeof(shortname), 22);
 			targetPlayerName = shortname;
+			targetPlayerName = messageSanitizePercentSign(targetPlayerName, nullptr);
 		}
 
 		auto& textMap = findIcon->second.text_map[key];
@@ -22600,8 +22607,10 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 			{
 				char shortname[32];
 				stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
+				std::string nameStr = shortname;
+				nameStr = messageSanitizePercentSign(nameStr, nullptr);
 				char buf[128];
-				snprintf(buf, sizeof(buf), textMap.worldMsgEmoteToYou.c_str(), shortname);
+				snprintf(buf, sizeof(buf), textMap.worldMsgEmoteToYou.c_str(), nameStr.c_str());
 				return buf;
 			}
 			else
@@ -22845,6 +22854,7 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 				char shortname[32];
 				stringCopy(shortname, stats[entity->skill[2]]->name, sizeof(shortname), 22);
 				targetPlayerName = shortname;
+				targetPlayerName = messageSanitizePercentSign(targetPlayerName, nullptr);
 			}
 
 			key = "player_wave";
@@ -22881,8 +22891,10 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 				{
 					char shortname[32];
 					stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
+					std::string nameStr = shortname;
+					nameStr = messageSanitizePercentSign(nameStr, nullptr);
 					char buf[128];
-					snprintf(buf, sizeof(buf), textMap.worldMsgEmoteToYou.c_str(), shortname);
+					snprintf(buf, sizeof(buf), textMap.worldMsgEmoteToYou.c_str(), nameStr.c_str());
 					return buf;
 				}
 				else
@@ -22901,6 +22913,7 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 				char shortname[32];
 				stringCopy(shortname, stats[entity->skill[2]]->name, sizeof(shortname), 22);
 				targetPlayerName = shortname;
+				targetPlayerName = messageSanitizePercentSign(targetPlayerName, nullptr);
 			}
 
 			if ( cmd == CALLOUT_CMD_THANKS )
@@ -22944,8 +22957,10 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 				{
 					char shortname[32];
 					stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
+					std::string nameStr = shortname;
+					nameStr = messageSanitizePercentSign(nameStr, nullptr);
 					char buf[128];
-					snprintf(buf, sizeof(buf), textMap.worldMsgEmoteToYou.c_str(), shortname);
+					snprintf(buf, sizeof(buf), textMap.worldMsgEmoteToYou.c_str(), nameStr.c_str());
 					return buf;
 				}
 				else
@@ -26312,7 +26327,9 @@ bool CalloutRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updat
 			{
 				char shortname[32];
 				stringCopy(shortname, stats[playernum]->name, sizeof(shortname), 22);
-				strcat(interactText, shortname);
+				std::string nameStr = shortname;
+				nameStr = messageSanitizePercentSign(nameStr, nullptr);
+				strcat(interactText, nameStr.c_str());
 			}
 		}
 	}

@@ -11033,6 +11033,12 @@ bind_failed:
 	        return;
 	    }
 
+		std::string msgStr = msg;
+		int numCharsAdded = 0;
+		msgStr = messageSanitizePercentSign(msgStr, &numCharsAdded);
+		msg = msgStr.c_str();
+		len += numCharsAdded;
+
 		memcpy((char*)net_packet->data, "CMSG", 4);
 		SDLNet_Write32(color, &net_packet->data[4]);
 		stringCopy((char*)net_packet->data + 8, msg, 256, len);
@@ -16854,20 +16860,30 @@ failed:
 		name_field->setWidgetBack("back_button");
 		name_field->setWidgetRight("randomize_name");
 		name_field->setWidgetDown("game_settings");
-		static auto name_field_fn = [](const char* text, int index) {
+		static auto name_field_fn = [](Field* field, const char* text, const int index) {
+			if ( field && !text )
+			{
+				text = field->getText();
+			}
+			//std::string nameStr = text;
+			//nameStr = messageSanitizePercentSign(nameStr, nullptr);
+			//text = nameStr.c_str();
+
 			size_t old_len = std::min(sizeof(Stat::name), strlen(stats[index]->name) + 1);
 			size_t new_len = strlen(text) + 1;
 			size_t shortest_len = std::min(old_len, new_len);
+
 			if (new_len != old_len || memcmp(stats[index]->name, text, shortest_len)) {
+				memset(stats[index]->name, 0, sizeof(Stat::name));
 			    memcpy(stats[index]->name, text, new_len);
 			    sendPlayerOverNet();
 				saveLastCharacter(index, multiplayer);
 			}
 		};
-		name_field->setCallback([](Field& field){name_field_fn(field.getText(), field.getOwner());});
+		name_field->setCallback([](Field& field) {name_field_fn(&field, nullptr, field.getOwner()); });
 		name_field->setTickCallback([](Widget& widget){
 			Field* field = static_cast<Field*>(&widget);
-			name_field_fn(field->getText(), field->getOwner());
+			name_field_fn(field, nullptr, field->getOwner());
 
 			// rescue this player's focus
 			if (!main_menu_frame) {
@@ -16906,7 +16922,7 @@ failed:
 			}
 			choice = choice % names.size();
 			auto name = names[choice].c_str();
-			name_field_fn(name, index);
+			name_field_fn(nullptr, name, index);
 			auto card = static_cast<Frame*>(button.getParent());
 			auto field = card->findField("name"); assert(field);
 			field->setText(name);
@@ -16915,7 +16931,7 @@ failed:
 				randomPlayerNamesMale : randomPlayerNamesFemale;
 			auto choice = RNG.uniform(0, (int)names.size() - 1);
 			auto name = names[choice].c_str();
-			name_field_fn(name, index);
+			name_field_fn(nullptr, name, index);
 			auto card = static_cast<Frame*>(button.getParent());
 			auto field = card->findField("name"); assert(field);
 			field->setText(name);

@@ -360,6 +360,7 @@ struct MinotaurWarning_t
 	bool minotaurSpawned = false;
 	bool minotaurDied = false;
 	int levelProcessed = 0;
+	bool secretlevelProcessed = false;
 	void setAnimatePosition(const int destx, const int desty, const int destw, const int desth);
 	void setAnimatePosition(int destx, int desty);
 	void init();

@@ -36739,12 +36739,13 @@ void Player::HUD_t::updateMinotaurWarning()
 		++m.animTicks;
 	}
 
-	bool newLevel = m.levelProcessed != currentlevel;
+	bool newLevel = m.levelProcessed != currentlevel || m.secretlevelProcessed != secretlevel;
 	if ( !minotaurlevel || (newLevel && m.started) )
 	{
 		m.deinit();
 	}
 	m.levelProcessed = currentlevel;
+	m.secretlevelProcessed = secretlevel;
 
 	if ( !m.started )
 	{
@@ -37946,6 +37947,9 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::createDialogueTooltip(Uint32 uid
 			vsnprintf(buf, sizeof(buf), message, argptr);
 			va_end(argptr);
 
+			strncpy(buf, messageSanitizePercentSign(buf, nullptr).c_str(), sizeof(buf) - 1);
+			buf[1023] = '\0';
+
 			strcpy((char*)net_packet->data, "BUBL");
 			SDLNet_Write32(uid, &net_packet->data[4]);
 			net_packet->data[8] = Uint8(type);
@@ -37989,6 +37993,9 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::createDialogueTooltip(Uint32 uid
 	va_start(argptr, message);
 	vsnprintf(buf, sizeof(buf), message, argptr);
 	va_end(argptr);
+
+	strncpy(buf, messageSanitizePercentSign(buf, nullptr).c_str(), sizeof(buf) - 1);
+	buf[1023] = '\0';
 
 	if (player.playernum == clientnum)
 	{
