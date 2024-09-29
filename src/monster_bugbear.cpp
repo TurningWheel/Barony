@@ -157,7 +157,7 @@ void initBugbear(Entity* my, Stat* myStats)
 				}
 				else
 				{
-					if ( (hasAlly && rng.rand() % 4 == 0) || (!hasAlly && rng.rand() % 2 == 0) )
+					if ( (hasAlly && rng.rand() % 4 == 0) || (!hasAlly && rng.rand() % 3 > 0) )
 					{
 						myStats->shield = newItem(STEEL_SHIELD, static_cast<Status>(rng.rand() % 2 + SERVICABLE), -1 + rng.rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
 					}
