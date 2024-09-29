@@ -35,20 +35,23 @@ float limbs[NUMMONSTERS][20][3];
 // determines which monsters fight which
 bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
 {
+//    N  H  R  G  S  T  B  S  G  S  S  I  C  G  D  S  M  L  M  D  S  K  S  G  I  V  S  C  I  G  A  L  L  S  S  G  D  B   
+//    O  U  A  O  L  R  A  P  H  K  C  M  R  N  E  U  I  I  I  E  H  O  C  O  N  A  H  O  N  O  U  I  I  N  P  Y  U  U   
+//    T  M  T  B  I  O  T  I  O  E  O  P  A  O  M  C  M  C  N  V  P  B  A  L  C  M  A  C  S  A  T  F  I  T  L  R  M  G     
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // NOTHING
 	{ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1 }, // HUMAN
 	{ 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0 }, // RAT
 	{ 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0 }, // GOBLIN
 	{ 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0 }, // SLIME
 	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0 }, // TROLL
-	{ 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0 }, // BAT_SMALL
+	{ 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1 }, // BAT_SMALL
 	{ 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0 }, // SPIDER
 	{ 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0 }, // GHOUL
 	{ 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0 }, // SKELETON
 	{ 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0 }, // SCORPION
 	{ 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0 }, // IMP
 	{ 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0 }, // CRAB
-	{ 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0 }, // GNOME
+	{ 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0 }, // GNOME
 	{ 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0 }, // DEMON
 	{ 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0 }, // SUCCUBUS
 	{ 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0 }, // MIMIC
@@ -60,7 +63,7 @@ bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0 }, // SCARAB
 	{ 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0 }, // CRYSTALGOLEM
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0 }, // INCUBUS
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0 }, // VAMPIRE
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0 }, // VAMPIRE
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0 }, // SHADOW
 	{ 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0 }, // COCKATRICE
 	{ 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0 }, // INSECTOID
@@ -73,18 +76,24 @@ bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GYROBOT
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // DUMMYBOT
 	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0 }  // BUGBEAR
+//    N  H  R  G  S  T  B  S  G  S  S  I  C  G  D  S  M  L  M  D  S  K  S  G  I  V  S  C  I  G  A  L  L  S  S  G  D  B   
+//    O  U  A  O  L  R  A  P  H  K  C  M  R  N  E  U  I  I  I  E  H  O  C  O  N  A  H  O  N  O  U  I  I  N  P  Y  U  U   
+//    T  M  T  B  I  O  T  I  O  E  O  P  A  O  M  C  M  C  N  V  P  B  A  L  C  M  A  C  S  A  T  F  I  T  L  R  M  G 
 };
 
 // determines which monsters come to the aid of other monsters
 bool monsterally[NUMMONSTERS][NUMMONSTERS] =
 {
+//    N  H  R  G  S  T  B  S  G  S  S  I  C  G  D  S  M  L  M  D  S  K  S  G  I  V  S  C  I  G  A  L  L  S  S  G  D  B   
+//    O  U  A  O  L  R  A  P  H  K  C  M  R  N  E  U  I  I  I  E  H  O  C  O  N  A  H  O  N  O  U  I  I  N  P  Y  U  U   
+//    T  M  T  B  I  O  T  I  O  E  O  P  A  O  M  C  M  C  N  V  P  B  A  L  C  M  A  C  S  A  T  F  I  T  L  R  M  G    
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // NOTHING
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0 }, // HUMAN
 	{ 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // RAT
 	{ 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // GOBLIN
 	{ 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // SLIME
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // TROLL
-	{ 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // BAT_SMALL
+	{ 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // BAT_SMALL
 	{ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SPIDER
 	{ 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0 }, // GHOUL
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0 }, // SKELETON
@@ -116,6 +125,9 @@ bool monsterally[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0 }, // GYROBOT
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0 }, // DUMMYBOT
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }  // BUGBEAR
+//    N  H  R  G  S  T  B  S  G  S  S  I  C  G  D  S  M  L  M  D  S  K  S  G  I  V  S  C  I  G  A  L  L  S  S  G  D  B   
+//    O  U  A  O  L  R  A  P  H  K  C  M  R  N  E  U  I  I  I  E  H  O  C  O  N  A  H  O  N  O  U  I  I  N  P  Y  U  U   
+//    T  M  T  B  I  O  T  I  O  E  O  P  A  O  M  C  M  C  N  V  P  B  A  L  C  M  A  C  S  A  T  F  I  T  L  R  M  G 
 };
 
 // monster sight ranges
@@ -9435,10 +9447,17 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 		}
 		if ( ticks % (90 + getUID() % 10) == 0 ) 
 		{
-			if ( myStats->type == BUGBEAR && monsterSpecialState == BUGBEAR_DEFENSE )
+			if ( myStats->type == BUGBEAR )
 			{
 				int oldDefend = monsterDefend;
-				monsterDefend = shouldMonsterDefend(*myStats, *target, *target->getStats(), dist, hasrangedweapon);
+				if ( monsterSpecialState == BUGBEAR_DEFENSE )
+				{
+					monsterDefend = shouldMonsterDefend(*myStats, *target, *target->getStats(), dist, hasrangedweapon);
+				}
+				else if ( !hasrangedweapon && dist > TOUCHRANGE && target )
+				{
+					monsterDefend = shouldMonsterDefend(*myStats, *target, *target->getStats(), dist, hasrangedweapon);
+				}
 				if ( oldDefend != monsterDefend )
 				{
 					serverUpdateEntitySkill(this, 47);
@@ -12327,19 +12346,26 @@ int Entity::shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat&
 		}
 	}
 
-	if ( myStats.type == BUGBEAR && monsterSpecialState == BUGBEAR_DEFENSE )
+	if ( myStats.type == BUGBEAR )
 	{
-		if ( targetDist > TOUCHRANGE && !hasrangedweapon )
+		if ( monsterSpecialState == BUGBEAR_DEFENSE )
 		{
-			blockChance = 20;
-		}
-		else
-		{
-			blockChance = 12;
-			if ( monsterDefend == MONSTER_DEFEND_NONE )
+			if ( targetDist > TOUCHRANGE && !hasrangedweapon )
 			{
-				blockChance = 18;
+				blockChance = 20;
 			}
+			else
+			{
+				blockChance = 12;
+				if ( monsterDefend == MONSTER_DEFEND_NONE )
+				{
+					blockChance = 18;
+				}
+			}
+		}
+		else if ( targetDist > TOUCHRANGE && !hasrangedweapon )
+		{
+			blockChance = 16;
 		}
 	}
 
@@ -12856,6 +12882,29 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 	}
 	switch ( myStats->type )
 	{
+		case GNOME:
+			switch ( rng.rand() % 5 )
+			{
+			case 0:
+			case 1:
+			case 2:
+				myStats->shield = newItem(QUIVER_LIGHTWEIGHT, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+				break;
+			case 3:
+			case 4:
+				if ( myStats->weapon && myStats->weapon->type == SHORTBOW )
+				{
+					myStats->shield = newItem(QUIVER_KNOCKBACK, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					// nothing
+				}
+				break;
+			default:
+				break;
+			}
+			break;
 		case HUMAN:
 			switch ( rng.rand() % 5 )
 			{
