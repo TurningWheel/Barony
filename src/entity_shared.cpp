@@ -1361,7 +1361,6 @@ int canWearEquip(Entity* entity, int category)
 
 				//monsters with cloak/weapon/shield/boots/mask/gloves (no helm)
 				case BUGBEAR:
-				case GNOME:
 				case INCUBUS:
 				case SUCCUBUS:
 				case LICH_FIRE:
@@ -1370,6 +1369,7 @@ int canWearEquip(Entity* entity, int category)
 					break;
 
 				//monsters with cloak/weapon/shield/boots/helm/armor/mask/gloves
+				case GNOME:
 				case GOBLIN:
 				case HUMAN:
 				case VAMPIRE:

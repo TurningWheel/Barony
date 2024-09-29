@@ -20730,6 +20730,108 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 	}
 	switch ( race )
 	{
+		case GNOME:
+			if ( limbType == LIMB_HUMANOID_TORSO )
+			{
+				limb->x -= .25 * cos(this->yaw);
+				limb->y -= .25 * sin(this->yaw);
+				limb->z += 1.25;
+
+				if ( limb->sprite == 1431 )
+				{
+					limb->focalx += 0.25;
+				}
+				else if ( limb->sprite == 296 )
+				{
+					limb->focalx += 0.5;
+				}
+
+				if ( limb->sprite != 1427 && limb->sprite != 1431 && limb->sprite != 296 )
+				{
+					limb->focalz -= 0.25;
+				}
+
+				limb->scalex = limbs[GNOME][11][0];
+				limb->scaley = limbs[GNOME][11][1];
+				limb->scalez = limbs[GNOME][11][2];
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTLEG )
+			{
+				limb->x += 1.25 * cos(this->yaw + PI / 2);
+				limb->y += 1.25 * sin(this->yaw + PI / 2);
+				limb->z += 2.75;
+				if ( this->z >= 3.9 && this->z <= 4.1 )
+				{
+					limb->yaw += PI / 8;
+					limb->pitch = -PI / 2;
+				}
+
+				if ( limb->sprite == 1428 || limb->sprite == 1429
+					|| limb->sprite == 1432 || limb->sprite == 1433 )
+				{
+					limb->focalz -= 0.25;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTLEG )
+			{
+				limb->x -= 1.25 * cos(this->yaw + PI / 2);
+				limb->y -= 1.25 * sin(this->yaw + PI / 2);
+				limb->z += 2.75;
+				if ( this->z >= 3.9 && this->z <= 4.1 )
+				{
+					limb->yaw -= PI / 8;
+					limb->pitch = -PI / 2;
+				}
+
+				if ( limb->sprite == 1428 || limb->sprite == 1429
+					|| limb->sprite == 1432 || limb->sprite == 1433 )
+				{
+					limb->focalz -= 0.25;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTARM )
+			{
+				limb->x += 2.5 * cos(this->yaw + PI / 2) - .75 * cos(this->yaw);
+				limb->y += 2.5 * sin(this->yaw + PI / 2) - .75 * sin(this->yaw);
+				limb->z -= .25;
+				if ( this->z >= 3.9 && this->z <= 4.1 )
+				{
+					limb->pitch = 0;
+				}
+
+				if ( limb->sprite != 1434
+					&& limb->sprite != 299 )
+				{
+					limb->x -= 0.25 * cos(this->yaw + PI / 2);
+					limb->y -= 0.25 * sin(this->yaw + PI / 2);
+				}
+				if ( limb->sprite == 1434 )
+				{
+					limb->focalz -= 0.25;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTARM )
+			{
+				limb->x -= 2.5 * cos(this->yaw + PI / 2) + .75 * cos(this->yaw);
+				limb->y -= 2.5 * sin(this->yaw + PI / 2) + .75 * sin(this->yaw);
+				limb->z -= .25;
+				if ( this->z >= 3.9 && this->z <= 4.1 )
+				{
+					limb->pitch = 0;
+				}
+
+				if ( limb->sprite != 1436
+					&& limb->sprite != 301 )
+				{
+					limb->x += 0.25 * cos(this->yaw + PI / 2);
+					limb->y += 0.25 * sin(this->yaw + PI / 2);
+				}
+				if ( limb->sprite == 1436 )
+				{
+					limb->focalz -= 0.25;
+				}
+			}
+			break;
 		case CREATURE_IMP:
 			if ( limbType == LIMB_HUMANOID_TORSO )
 			{
@@ -21180,6 +21282,90 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				shieldLimb->scalex = 0.8;
 				shieldLimb->scaley = 0.8;
 				shieldLimb->scalez = 0.8;
+			}
+			break;
+		case GNOME:
+			shieldLimb->x -= 2.5 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
+			shieldLimb->y -= 2.5 * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
+			shieldLimb->z += 1;
+			shieldLimb->yaw = shieldArmLimb->yaw;
+			shieldLimb->roll = 0;
+			shieldLimb->pitch = 0;
+
+			if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
+			{
+				shieldLimb->z += 2;
+			}
+			if ( flickerLights || ticks % TICKS_PER_SECOND == 1 )
+			{
+				if ( shieldLimb->sprite == items[TOOL_TORCH].index )
+				{
+					if ( flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME) )
+					{
+						flameEntity->x += 2 * cos(shieldArmLimb->yaw);
+						flameEntity->y += 2 * sin(shieldArmLimb->yaw);
+						flameEntity->z -= 2;
+					}
+				}
+				else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
+				{
+					/*flameEntity = spawnFlame(shieldLimb, SPRITE_CRYSTALFLAME);
+					flameEntity->x += 2 * cos(shieldArmLimb->yaw);
+					flameEntity->y += 2 * sin(shieldArmLimb->yaw);
+					flameEntity->z -= 2;*/
+				}
+				else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
+				{
+					if ( flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME) )
+					{
+						flameEntity->x += 2 * cos(shieldArmLimb->yaw);
+						flameEntity->y += 2 * sin(shieldArmLimb->yaw);
+						flameEntity->z += 1;
+					}
+				}
+			}
+			if ( itemSpriteIsQuiverThirdPersonModel(shieldLimb->sprite) )
+			{
+				shieldLimb->focalz += 3;
+				shieldLimb->scalex = 1.05;
+				shieldLimb->x -= -0.25 * cos(this->yaw + PI / 2) + 1.25 * cos(this->yaw);
+				shieldLimb->y -= -0.25 * sin(this->yaw + PI / 2) + 1.25 * sin(this->yaw);
+				shieldLimb->z += -1.28;
+			}
+			else if ( shieldLimb->sprite >= items[SPELLBOOK_LIGHT].index
+				&& shieldLimb->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
+			{
+				shieldLimb->pitch = shieldArmLimb->pitch - .25 + 3 * PI / 2;
+				shieldLimb->yaw += PI / 6;
+				shieldLimb->focalx -= 4;
+				shieldLimb->focalz += .5;
+				shieldLimb->x += 0.5 * cos(this->yaw + PI / 2) + .5 * cos(this->yaw);
+				shieldLimb->y += 0.5 * sin(this->yaw + PI / 2) + .5 * sin(this->yaw);
+				shieldLimb->z -= 1;
+				shieldLimb->scalex = 0.8;
+				shieldLimb->scaley = 0.8;
+				shieldLimb->scalez = 0.8;
+			}
+			if ( this->fskill[8] > PI / 32 ) //MONSTER_SHIELDYAW and PLAYER_SHIELDYAW defending animation
+			{
+				if ( shieldLimb->sprite != items[TOOL_TORCH].index
+					&& shieldLimb->sprite != items[TOOL_LANTERN].index
+					&& shieldLimb->sprite != items[TOOL_CRYSTALSHARD].index )
+				{
+					// shield, so rotate a little.
+					shieldLimb->roll += PI / 64;
+				}
+				else
+				{
+					shieldLimb->x += 0.25 * cos(this->yaw);
+					shieldLimb->y += 0.25 * sin(this->yaw);
+					shieldLimb->pitch += PI / 16;
+					if ( flameEntity )
+					{
+						flameEntity->x += 0.75 * cos(shieldArmLimb->yaw);
+						flameEntity->y += 0.75 * sin(shieldArmLimb->yaw);
+					}
+				}
 			}
 			break;
 		case HUMAN:
@@ -22013,6 +22199,10 @@ void Entity::handleQuiverThirdPersonModel(Stat& myStats)
 			case SKELETON:
 			case AUTOMATON:
 				sprite += 2; // short strap
+				break;
+			case KOBOLD:
+			case GNOME:
+				// no strap.
 				break;
 			default:
 				sprite += 3; // shoulderpad-less.

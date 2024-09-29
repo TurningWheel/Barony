@@ -2741,6 +2741,7 @@ class ItemTooltips_t
 		Sint32 itemId = -1;
 		Sint32 fpIndex = -1;
 		Sint32 tpIndex = -1;
+		Sint32 tpShortIndex = -1;
 		Sint32 gold = 0;
 		Sint32 weight = 0;
 		Sint32 itemLevel = -1;

@@ -931,12 +931,15 @@ char* Item::getName() const
 
 -------------------------------------------------------------------------------*/
 
-Sint32 itemModel(const Item* const item)
+Sint32 itemModel(const Item* const item, bool shortModel)
 {
 	if ( !item || item->type < 0 || item->type >= NUMITEMS )
 	{
 		return 0;
 	}
+
+	int index = shortModel ? items[item->type].indexShort : items[item->type].index;
+
 	if ( item->type == TOOL_PLAYER_LOOT_BAG )
 	{
 		if ( colorblind_lobby )
@@ -960,14 +963,14 @@ Sint32 itemModel(const Item* const item)
 			default:
 				break;
 			}
-			return items[item->type].index + index;
+			return index + index;
 		}
 		else
 		{
-			return items[item->type].index + item->getLootBagPlayer();
+			return index + item->getLootBagPlayer();
 		}
 	}
-	return items[item->type].index + item->appearance % items[item->type].variations;
+	return index + item->appearance % items[item->type].variations;
 }
 
 /*-------------------------------------------------------------------------------

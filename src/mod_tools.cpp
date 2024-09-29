@@ -882,6 +882,10 @@ void ItemTooltips_t::readItemsFromFile()
 		t.itemId = item_itr->value["item_id"].GetInt();
 		t.fpIndex = item_itr->value["first_person_model_index"].GetInt();
 		t.tpIndex = item_itr->value["third_person_model_index"].GetInt();
+		if ( item_itr->value.HasMember("third_person_model_index_short") )
+		{
+			t.tpShortIndex = item_itr->value["third_person_model_index_short"].GetInt();
+		}
 		t.gold = item_itr->value["gold_value"].GetInt();
 		t.weight = item_itr->value["weight_value"].GetInt();
 		t.itemLevel = item_itr->value["item_level"].GetInt();
@@ -935,6 +939,7 @@ void ItemTooltips_t::readItemsFromFile()
 		items[i].weight = tmpItems[i].weight;
 		items[i].fpindex = tmpItems[i].fpIndex;
 		items[i].index = tmpItems[i].tpIndex;
+		items[i].indexShort = tmpItems[i].tpShortIndex;
 		items[i].tooltip = tmpItems[i].tooltip;
 		items[i].attributes.clear();
 		items[i].attributes = tmpItems[i].attributes;

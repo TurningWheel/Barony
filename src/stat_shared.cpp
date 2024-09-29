@@ -193,6 +193,11 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_HELM] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_GLOVES] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_MASK] = 1;
 
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 33; //Fish
@@ -1354,6 +1359,9 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 
 			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 33; //Random Items
 			break;
 		case 10:
 		default:
