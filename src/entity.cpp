@@ -16990,7 +16990,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 	bool hadOldTarget = (uidToEntity(monsterTarget) != nullptr);
 	Sint32 oldMonsterState = monsterState;
 
-	if ( target.getRace() == GYROBOT || target.isInertMimic() || target.isUntargetableBat() || !(target.behavior == &actMonster || target.behavior == &actPlayer) )
+	if ( target.getRace() == GYROBOT || target.isInertMimic() || target.isUntargetableBat() )
 	{
 		return;
 	}
