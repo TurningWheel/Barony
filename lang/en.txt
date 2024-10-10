@@ -6486,5 +6486,14 @@ Magic Required: %d (%s)#
 6257 bugbears#
 6258 strikes#
 6259 *grunt*#
+6260 You see a shrine of Daedalus.#
+6261 Daedalus shrine#
+6262 Touch Daedalus shrine#
+6263 You are hurt attacking the %s!#
+6264 You are hurt attacking %s!#
+6265 The gnomes' allies cower in fear!#
+6266 Not enough Lore Points available.
+Unlock Achievements to earn more!#
+6267 The exit is revealed!#
 
 6300 END#
