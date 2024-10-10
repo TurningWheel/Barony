@@ -183,6 +183,10 @@ void clickDescription(int player, Entity* entity)
 				{
 					messagePlayer(player, MESSAGE_INSPECTION, Language::get(4307));
 				}
+				else if ( entity->behavior == &::actDaedalusShrine )
+				{
+					messagePlayer(player, MESSAGE_INSPECTION, Language::get(6260));
+				}
 				else if ( entity->behavior == &actStatue )
 				{
 					messagePlayer(player, MESSAGE_INSPECTION, Language::get(4308));

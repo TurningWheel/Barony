@@ -590,7 +590,7 @@ bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, E
 		duration /= (1 + resistance);
 		if ( target->setEffect(EFF_FEAR, true, duration, true) )
 		{
-			playSoundEntity(target, 168, 128); // Healing.ogg
+			playSoundEntity(target, 687, 128); // fear.ogg
 			Uint32 color = 0;
 			if ( parent )
 			{

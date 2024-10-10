@@ -49,6 +49,7 @@ Stat::Stat(Sint32 sprite) :
 	this->bleedInflictedBy = 0;
 	this->killer = KilledBy::UNKNOWN;
 	this->killer_monster = NOTHING;
+	this->killer_uid = 0;
 	this->killer_item = WOODEN_SHIELD;
 	this->killer_name = "";
 	this->sex = static_cast<sex_t>(local_rng.rand() % 2);

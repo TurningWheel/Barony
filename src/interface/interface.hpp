@@ -225,6 +225,11 @@ void freeInterfaceResources();
 void clickDescription(const int player, Entity* entity);
 void consoleCommand(char const * const command);
 void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap);
+struct MinimapHighlight_t
+{
+	Uint32 ticks = 0;
+};
+extern std::map<int, MinimapHighlight_t> minimapHighlights;
 void handleDamageIndicatorTicks();
 void drawStatus(const int player);
 void drawStatusNew(const int player);

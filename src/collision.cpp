@@ -678,39 +678,69 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 	long xmin = floor((tx - my->sizex)/16), xmax = floor((tx + my->sizex)/16);
 	const real_t tymin = ty - my->sizey, tymax = ty + my->sizey;
 	const real_t txmin = tx - my->sizex, txmax = tx + my->sizex;
-	for ( y = ymin; y <= ymax; y++ )
+	if ( my && my->flags[NOCLIP_WALLS] )
 	{
-		for ( x = xmin;  x <= xmax; x++ )
+		for ( y = ymin; y <= ymax; y++ )
 		{
-			if ( x >= 0 && y >= 0 && x < map.width && y < map.height )
+			for ( x = xmin; x <= xmax; x++ )
 			{
-				if (map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height])
+				if ( x >= 0 && y >= 0 && x < map.width && y < map.height )
 				{
-					// hit a wall
-					hit.x = x * 16 + 8;
-					hit.y = y * 16 + 8;
-					hit.mapx = x;
-					hit.mapy = y;
-					hit.entity = NULL;
-					return 0;
+					if ( x == 1 || (x == map.width - 1) || y == 1 || (y == map.height - 1) )
+					{
+						// collides with map edges only
+						hit.x = x * 16 + 8;
+						hit.y = y * 16 + 8;
+						hit.mapx = x;
+						hit.mapy = y;
+						hit.entity = NULL;
+						return 0;
+					}
 				}
-	
-				if ( !levitating && (!map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] 
-					|| (((swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && !waterWalking) 
-						|| (lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && !lavaWalking))
-						&& isMonster)) )
+			}
+		}
+		if ( my && my->behavior == &actMagiclightMoving )
+		{
+			return 1; // no other collision
+		}
+	}
+	else
+	{
+		for ( y = ymin; y <= ymax; y++ )
+		{
+			for ( x = xmin;  x <= xmax; x++ )
+			{
+				if ( x >= 0 && y >= 0 && x < map.width && y < map.height )
 				{
-					// no floor
-					hit.x = x * 16 + 8;
-					hit.y = y * 16 + 8;
-					hit.mapx = x;
-					hit.mapy = y;
-					hit.entity = NULL;
-					return 0;
+					if (map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height])
+					{
+						// hit a wall
+						hit.x = x * 16 + 8;
+						hit.y = y * 16 + 8;
+						hit.mapx = x;
+						hit.mapy = y;
+						hit.entity = NULL;
+						return 0;
+					}
+	
+					if ( !levitating && (!map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] 
+						|| (((swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && !waterWalking) 
+							|| (lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && !lavaWalking))
+							&& isMonster)) )
+					{
+						// no floor
+						hit.x = x * 16 + 8;
+						hit.y = y * 16 + 8;
+						hit.mapx = x;
+						hit.mapy = y;
+						hit.entity = NULL;
+						return 0;
+					}
 				}
 			}
 		}
 	}
+
 	std::vector<list_t*> entLists;
 	if ( multiplayer == CLIENT )
 	{
@@ -738,7 +768,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			}
 			if ( entity->flags[PASSABLE] )
 			{
-				if ( my->behavior == &actBoulder && (entity->sprite == 886) )
+				if ( my->behavior == &actBoulder && (entity->behavior == &actMonster && entity->sprite == 886) )
 				{
 					// 886 is gyrobot, as they are passable, force collision here.
 				}
@@ -752,7 +782,8 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				continue;
 			}
-			if ( entity->isDamageableCollider() && (entity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_MINO)
+			if ( ((entity->isDamageableCollider() && (entity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_MINO))
+				|| entity->behavior == &::actDaedalusShrine)
 				&& my->behavior == &actMonster && type == MINOTAUR )
 			{
 				continue;
@@ -1257,7 +1288,8 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 			}
 			if ( ignoreFurniture && 
 				(entity->behavior == &actFurniture 
-				|| entity->isDamageableCollider()) )
+				|| entity->isDamageableCollider()
+				|| (entity->behavior == &::actDaedalusShrine && myStats->type == MINOTAUR)) )
 			{
 				continue; // see through furniture cause we'll bust it down
 			}
@@ -1992,8 +2024,10 @@ int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntity
 						{
 							continue;
 						}
-						if ( isMonster && my->getMonsterTypeFromSprite() == MINOTAUR && entity->isDamageableCollider()
-							&& (entity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_MINO) )
+						if ( isMonster && my->getMonsterTypeFromSprite() == MINOTAUR 
+							&& ((entity->isDamageableCollider()
+									&& (entity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_MINO))
+								|| entity->behavior == &::actDaedalusShrine) )
 						{
 							continue;
 						}

@@ -2177,6 +2177,8 @@ void gameLogic(void)
 					EnemyHPDamageBarHandler::dumpCache();
 					monsterAllyFormations.reset();
 					particleTimerEmitterHitEntities.clear();
+					monsterTrapIgnoreEntities.clear();
+					minimapHighlights.clear();
 
 					achievementObserver.updateData();
 

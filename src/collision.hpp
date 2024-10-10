@@ -34,3 +34,10 @@ Entity* findEntityInLine(Entity* my, real_t x1, real_t y1, real_t angle, int ent
 real_t lineTrace(Entity* my, real_t x1, real_t y1, real_t angle, real_t range, int entities, bool ground);
 real_t lineTraceTarget(Entity* my, real_t x1, real_t y1, real_t angle, real_t range, int entities, bool ground, Entity* target); //If the linetrace function encounters the linetrace entity, it returns even if it's invisible or passable.
 int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntityList = true, bool checkWalls = true, bool checkFloor = true);
+
+struct MonsterTrapIgnoreEntities_t
+{
+	std::set<Uint32> ignoreEntities;
+	Uint32 parent = 0;
+};
+extern std::map<Uint32, MonsterTrapIgnoreEntities_t> monsterTrapIgnoreEntities;

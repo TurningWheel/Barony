@@ -181,6 +181,10 @@ bool doesEntityStopBoulder(Entity* entity)
 	{
 		return true;
 	}
+	else if ( entity->behavior == &::actDaedalusShrine )
+	{
+		return true;
+	}
 	return false;
 }
 

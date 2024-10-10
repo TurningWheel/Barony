@@ -224,6 +224,7 @@ public:
 	// Obituary stuff
 	char obituary[128];
 	KilledBy killer = KilledBy::UNKNOWN;
+	Uint32 killer_uid = 0;
 	Monster killer_monster;
 	ItemType killer_item;
 	std::string killer_name = "";

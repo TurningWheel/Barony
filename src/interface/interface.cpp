@@ -23960,6 +23960,10 @@ CalloutRadialMenu::CalloutType CalloutRadialMenu::getCalloutTypeForEntity(const 
 	{
 		type = CALLOUT_TYPE_SHRINE;
 	}
+	else if ( parent->behavior == &::actDaedalusShrine )
+	{
+		type = CALLOUT_TYPE_SHRINE;
+	}
 	else if ( parent->behavior == &actBomb || parent->behavior == &actBeartrap )
 	{
 		type = CALLOUT_TYPE_BOMB_TRAP;
@@ -26100,6 +26104,13 @@ bool CalloutRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updat
 		if ( updateInteractText )
 		{
 			strcat(interactText, Language::get(4309)); // "shrine"
+		}
+	}
+	else if ( (selectedEntity.behavior == &::actDaedalusShrine) )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(6261)); // "shrine"
 		}
 	}
 	else if ( (selectedEntity.behavior == &actTeleporter) && interactWorld )

@@ -8544,6 +8544,8 @@ void doNewGame(bool makeHighscore) {
 	monsterAllyFormations.reset();
 	PingNetworkStatus_t::reset();
 	particleTimerEmitterHitEntities.clear();
+	monsterTrapIgnoreEntities.clear();
+	minimapHighlights.clear();
 
 	bool bOldSecretLevel = secretlevel;
 	int oldCurrentLevel = currentlevel;
@@ -9985,6 +9987,8 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 	EnemyHPDamageBarHandler::dumpCache();
 	monsterAllyFormations.reset();
 	particleTimerEmitterHitEntities.clear();
+	monsterTrapIgnoreEntities.clear();
+	minimapHighlights.clear();
 	PingNetworkStatus_t::reset();
 	gameModeManager.currentSession.restoreSavedServerFlags();
 	client_classes[0] = 0;

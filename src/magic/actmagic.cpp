@@ -7863,13 +7863,23 @@ bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 		list_RemoveNode(hit.entity->mynode);
 		return true;
 	}
+	else if ( hit.entity->behavior == &::actDaedalusShrine )
+	{
+		createParticleRock(hit.entity);
+		if ( multiplayer == SERVER )
+		{
+			serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_ABILITY_ROCK, 78);
+		}
+
+		playSoundEntity(hit.entity, 67, 128);
+		list_RemoveNode(hit.entity->mynode);
+	}
 	else if ( hit.entity->behavior == &actBoulder )
 	{
 		int i = numRocks + local_rng.rand() % 4;
 
 		// spawn several rock items //TODO: This should really be its own function.
-		int c;
-		for ( c = 0; c < i; c++ )
+		for ( int c = 0; c < i; c++ )
 		{
 			Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Rock entity.
 			entity->flags[INVISIBLE] = true;

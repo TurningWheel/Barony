@@ -2400,6 +2400,25 @@ namespace ConsoleCommands {
 		mapLevel2(clientnum);
 		});
 
+	static ConsoleCommand ccmd_maplevel3("/maplevel3", "magic mapping for the level (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
+			return;
+		}
+
+		if ( Player::getPlayerInteractEntity(clientnum) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(412));
+			shrineDaedalusRevealMap(*Player::getPlayerInteractEntity(clientnum));
+		}
+		});
+
 	static ConsoleCommand ccmd_drunky("/drunky", "make me drunk (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
@@ -5005,6 +5024,14 @@ namespace ConsoleCommands {
 				{
 					if ( Entity* entity = (Entity*)node->element )
 					{
+						/*if ( entity->sprite == 119 || entity->sprite == 179 || entity->sprite == 127 )
+						{
+							if ( map.tiles && map.tiles[1 + ((int)entity->y / 16) * MAPLAYERS + ((int)entity->x / 16) * MAPLAYERS * map.height] )
+							{
+								printlog("Map [%s] ceiling collider: %d sprite", f.c_str(), entity->sprite);
+							}
+						}*/
+
 						Monster monsterType = NOTHING;
 						switch ( entity->sprite ) {
 						case 27: monsterType = HUMAN; break;

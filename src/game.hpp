@@ -294,6 +294,7 @@ void actCustomPortal(Entity* my);
 void actTeleporter(Entity* my);
 void actMagicTrapCeiling(Entity* my);
 void actTeleportShrine(Entity* my);
+void actDaedalusShrine(Entity* my);
 void actSpellShrine(Entity* my);
 void actExpansionEndGamePortal(Entity* my);
 void actSoundSource(Entity* my);

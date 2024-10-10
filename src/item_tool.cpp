@@ -22,6 +22,7 @@
 #include "shops.hpp"
 #include "prng.hpp"
 #include "mod_tools.hpp"
+#include "collision.hpp"
 
 void Item::applySkeletonKey(int player, Entity& entity)
 {
@@ -1098,6 +1099,29 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 			entity->skill[20] = dir;
 			entity->skill[21] = type;
 
+			if ( parent && parent->behavior == &actMonster )
+			{
+				auto& trapProps = monsterTrapIgnoreEntities[entity->getUID()];
+				trapProps.parent = entity->parent;
+				for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+				{
+					Entity* creature = (Entity*)node->element;
+					if ( creature && parent->checkFriend(creature) )
+					{
+						trapProps.ignoreEntities.insert(creature->getUID());
+					}
+				}
+			}
+			else
+			{
+				if ( this->beatitude < 0 )
+				{
+					entity->skill[22] = ItemBombTriggerType::BOMB_TRIGGER_ALL;
+				}
+			}
+
+			playSoundEntity(entity, 686, 64);
+
 			if ( parent && parent->behavior == &actPlayer )
 			{
 				Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_GADGET_DEPLOYED, type, 1);
@@ -1225,6 +1249,11 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 			entity->skill[16] = placement;
 			entity->skill[20] = dir;
 			entity->skill[21] = type;
+			if ( this->beatitude < 0 )
+			{
+				entity->skill[22] = ItemBombTriggerType::BOMB_TRIGGER_ALL;
+			}
+			playSoundEntity(entity, 686, 64);
 
 			if ( parent && parent->behavior == &actPlayer )
 			{
@@ -1421,6 +1450,11 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 			}
 			entity->skill[20] = dir;
 			entity->skill[21] = type;
+			if ( this->beatitude < 0 )
+			{
+				entity->skill[22] = ItemBombTriggerType::BOMB_TRIGGER_ALL;
+			}
+			playSoundEntity(entity, 686, 64);
 
 			if ( parent && parent->behavior == &actPlayer )
 			{

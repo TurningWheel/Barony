@@ -1015,7 +1015,8 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"AND GATE",
 	"AND GATE",
 	"BAT",
-	"BUGBEAR"
+	"BUGBEAR",
+	"DAEDALUS SHRINE"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][16] =

@@ -372,6 +372,7 @@ int pathCheckObstacle(int x, int y, Entity* my, Entity* target)
 			|| entity->sprite == 169	// statue
 			|| entity->sprite == 177	// shrine
 			|| entity->sprite == 178	// spell shrine
+			|| entity->sprite == 1369	// daedalus shrine
 			)
 		{
 			if ( (int)floor(entity->x / 16) == u && (int)floor(entity->y / 16) == v )
@@ -654,7 +655,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		{
 			continue;
 		}
-		if (stats && stats->type == MINOTAUR && (entity->behavior == &actBoulder || (entity->isDamageableCollider() 
+		if (stats && stats->type == MINOTAUR && (entity->behavior == &actBoulder || entity->behavior == &::actDaedalusShrine || (entity->isDamageableCollider()
 			&& (entity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_MINO))))
 		{
 			// minotaurs bust through boulders, not an obstacle
@@ -1244,6 +1245,10 @@ bool isPathObstacle(Entity* entity)
 		return true;
 	}
 	else if ( entity->behavior == &actTeleportShrine /*|| entity->behavior == &actSpellShrine*/ )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &::actDaedalusShrine )
 	{
 		return true;
 	}

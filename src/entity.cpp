@@ -262,6 +262,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	shrineZ(skill[8]),
 	shrineDestXOffset(skill[9]),
 	shrineDestYOffset(skill[10]),
+	shrineDaedalusState(skill[11]),
 	ceilingTileModel(skill[0]),
 	ceilingTileDir(skill[1]),
 	ceilingTileAllowTrap(skill[3]),
@@ -689,6 +690,8 @@ void Entity::killedByMonsterObituary(Entity* victim)
 	{
 	    return;
 	}
+
+	hitstats->killer_uid = this->getUID();
 
 	if ( behavior == &actMagicTrap )
 	{
@@ -7486,6 +7489,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					entity->z -= 1;
 				}
+				if ( myStats->type == GNOME )
+				{
+					entity->z -= 2;
+				}
 				entity->yaw = yaw;
 				entity->sizex = 1;
 				entity->sizey = 1;
@@ -10908,7 +10915,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( thornsEffect != 0 && damage > 0 )
 					{
 						this->modHP(-abs(thornsEffect));
-						if ( myStats->HP <= 0 )
+						if ( myStats->HP <= 0 && myStats->OLDHP > myStats->HP )
 						{
 							hit.entity->awardXP(this, true, true);
 						}
@@ -10928,19 +10935,35 @@ void Entity::attack(int pose, int charge, Entity* target)
 							cameravars[player].shakey += 10;
 						}
 
-						if ( hit.entity->behavior == &actPlayer )
+						if ( player >= 0 )
 						{
-							// update enemy bar for attacker
-							if ( !strcmp(myStats->name, "") )
+							Uint32 color = makeColorRGB(255, 0, 0);
+							const char* thornsMsg = Language::get(6264); // named
+							if ( !strcmp(hitstats->name, "") || monsterNameIsGeneric(*hitstats) )
 							{
-								updateEnemyBar(hit.entity, this, getMonsterLocalizedName(myStats->type).c_str(), myStats->HP, myStats->MAXHP, false,
-									DamageGib::DMG_DEFAULT);
+								thornsMsg = Language::get(6263);
+							}
+
+							if ( !strcmp(hitstats->name, "") )
+							{
+								messagePlayerColor(player, MESSAGE_COMBAT, color, thornsMsg, getMonsterLocalizedName(hitstats->type).c_str());
 							}
 							else
 							{
-								updateEnemyBar(hit.entity, this, myStats->name, myStats->HP, myStats->MAXHP, false,
-									DamageGib::DMG_DEFAULT);
+								messagePlayerColor(player, MESSAGE_COMBAT, color, thornsMsg, hitstats->name);
 							}
+						}
+
+						// update enemy bar for attacker
+						if ( !strcmp(myStats->name, "") )
+						{
+							updateEnemyBar(hit.entity, this, getMonsterLocalizedName(myStats->type).c_str(), myStats->HP, myStats->MAXHP, false,
+								DamageGib::DMG_DEFAULT);
+						}
+						else
+						{
+							updateEnemyBar(hit.entity, this, myStats->name, myStats->HP, myStats->MAXHP, false,
+								DamageGib::DMG_DEFAULT);
 						}
 					}
 					if ( hitstats->type == INCUBUS 
@@ -11017,7 +11040,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								|| (whip && ( (flanking && local_rng.rand() % 5 == 0) || (backstab && local_rng.rand() % 2 == 0) || disarmed) )
 								|| (local_rng.rand() % 4 == 0 && pose == MONSTER_POSE_GOLEM_SMASH)
 								|| (local_rng.rand() % 4 == 0 && pose == PLAYER_POSE_GOLEM_SMASH)
-								|| (thornsEffect < 0)
+								|| (thornsEffect < 0 && behavior == &actPlayer)
 								|| (local_rng.rand() % 10 == 0 && myStats->type == VAMPIRE && myStats->weapon == nullptr)
 								|| (local_rng.rand() % 8 == 0 && myStats->EFFECTS[EFF_VAMPIRICAURA] && (myStats->weapon == nullptr || myStats->type == LICH_FIRE))
 							)
@@ -14631,7 +14654,6 @@ bool Entity::setBootSprite(Entity* leg, int spriteOffset)
 		case KOBOLD:
 		case GOBLIN:
 		case SKELETON:
-		case GNOME:
 		case SHADOW:
 		case INCUBUS:
 		case VAMPIRE:
@@ -14660,6 +14682,36 @@ bool Entity::setBootSprite(Entity* leg, int spriteOffset)
 			else if ( myStats->shoes->type == SUEDE_BOOTS )
 			{
 				leg->sprite = 808 + (spriteOffset > 0 ? 1 : 0);
+			}
+			else
+			{
+				return false;
+			}
+			break;
+		case GNOME:
+			if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED )
+			{
+				leg->sprite = 1463 + (spriteOffset > 0 ? 1 : 0);
+			}
+			else if ( myStats->shoes->type == IRON_BOOTS || myStats->shoes->type == IRON_BOOTS_WATERWALKING )
+			{
+				leg->sprite = 1467 + (spriteOffset > 0 ? 1 : 0);
+			}
+			else if ( myStats->shoes->type >= STEEL_BOOTS && myStats->shoes->type <= STEEL_BOOTS_FEATHER )
+			{
+				leg->sprite = 1471 + (spriteOffset > 0 ? 1 : 0);
+			}
+			else if ( myStats->shoes->type == CRYSTAL_BOOTS )
+			{
+				leg->sprite = 1465 + (spriteOffset > 0 ? 1 : 0);
+			}
+			else if ( myStats->shoes->type == ARTIFACT_BOOTS )
+			{
+				leg->sprite = 1461 + (spriteOffset > 0 ? 1 : 0);
+			}
+			else if ( myStats->shoes->type == SUEDE_BOOTS )
+			{
+				leg->sprite = 1473 + (spriteOffset > 0 ? 1 : 0);
 			}
 			else
 			{
@@ -18512,6 +18564,16 @@ bool Entity::shouldRetreat(Stat& myStats)
 	{
 		return false;
 	}
+	else if ( myStats.type == GNOME )
+	{
+		if ( myStats.getAttribute("gnome_type").find("_melee") != std::string::npos )
+		{
+			if ( myStats.leader_uid != 0 )
+			{
+				return false;
+			}
+		}
+	}
 	else if ( myStats.type == LICH_FIRE )
 	{
 		if ( monsterLichFireMeleeSeq == LICH_ATK_BASICSPELL_SINGLE )
@@ -20750,6 +20812,11 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				{
 					limb->focalz -= 0.25;
 				}
+				if (limb->sprite == items[MACHINIST_APRON].indexShort)
+				{
+					limb->focalx -= 0.25;
+					limb->focalz += 0.5;
+				}
 
 				limb->scalex = limbs[GNOME][11][0];
 				limb->scaley = limbs[GNOME][11][1];
@@ -20759,34 +20826,30 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 			{
 				limb->x += 1.25 * cos(this->yaw + PI / 2);
 				limb->y += 1.25 * sin(this->yaw + PI / 2);
-				limb->z += 2.75;
+				limb->z += 2.25;
+				if ( limb->sprite == 1469 || limb->sprite == 1470 )
+				{
+					limb->focalx += 0.5;
+				}
 				if ( this->z >= 3.9 && this->z <= 4.1 )
 				{
 					limb->yaw += PI / 8;
 					limb->pitch = -PI / 2;
-				}
-
-				if ( limb->sprite == 1428 || limb->sprite == 1429
-					|| limb->sprite == 1432 || limb->sprite == 1433 )
-				{
-					limb->focalz -= 0.25;
 				}
 			}
 			else if ( limbType == LIMB_HUMANOID_LEFTLEG )
 			{
 				limb->x -= 1.25 * cos(this->yaw + PI / 2);
 				limb->y -= 1.25 * sin(this->yaw + PI / 2);
-				limb->z += 2.75;
+				limb->z += 2.25;
+				if ( limb->sprite == 1469 || limb->sprite == 1470 )
+				{
+					limb->focalx += 0.5;
+				}
 				if ( this->z >= 3.9 && this->z <= 4.1 )
 				{
 					limb->yaw -= PI / 8;
 					limb->pitch = -PI / 2;
-				}
-
-				if ( limb->sprite == 1428 || limb->sprite == 1429
-					|| limb->sprite == 1432 || limb->sprite == 1433 )
-				{
-					limb->focalz -= 0.25;
 				}
 			}
 			else if ( limbType == LIMB_HUMANOID_RIGHTARM )
@@ -22255,7 +22318,7 @@ real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableTy
 	if ( damageType == DamageTableType::DAMAGE_TABLE_MAGIC
 		&& myStats.type == BUGBEAR && myStats.defending && myStats.shield )
 	{
-		damageMultiplier = 0.2;
+		damageMultiplier = 0.1;
 	}
 	int followerResist = my ? my->getFollowerBonusDamageResist() : 0;
 	if ( followerResist != 0 )

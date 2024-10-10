@@ -327,6 +327,7 @@ bool Player::Ghost_t::allowedInteractEntity(Entity& entity)
 		|| entity.behavior == &actPowerCrystal
 		|| entity.behavior == &actPowerCrystalBase
 		|| entity.behavior == &actTeleportShrine
+		|| entity.behavior == &::actDaedalusShrine
 		|| entity.behavior == &actTeleporter )
 	{
 		return true;

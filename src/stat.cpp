@@ -330,6 +330,7 @@ void Stat::clearStats()
 
 	strcpy(this->obituary, Language::get(1500));
 	this->killer = KilledBy::UNKNOWN;
+	this->killer_uid = 0;
 	this->killer_monster = NOTHING;
 	this->killer_item = WOODEN_SHIELD;
 	this->killer_name = "";

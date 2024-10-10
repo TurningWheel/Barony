@@ -4076,6 +4076,10 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		{
 			interactText += Language::get(4299); // "Touch shrine";
 		}
+		else if ( parent->behavior == &::actDaedalusShrine )
+		{
+			interactText += Language::get(6262); // "Touch shrine";
+		}
 		else if ( parent->behavior == &actBomb && parent->skill[21] != 0 ) //skill[21] item type
 		{
 			interactText = Language::get(4039); // "Disarm ";
@@ -4223,6 +4227,10 @@ bool entityBlocksTooltipInteraction(const int player, Entity& entity)
 		return false;
 	}
 	else if ( entity.behavior == &actTeleportShrine /*|| entity.behavior == &::actSpellShrine*/ )
+	{
+		return false;
+	}
+	else if ( entity.behavior == &::actDaedalusShrine )
 	{
 		return false;
 	}

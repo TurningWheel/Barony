@@ -231,6 +231,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	shrineZ(skill[8]),
 	shrineDestXOffset(skill[9]),
 	shrineDestYOffset(skill[10]),
+	shrineDaedalusState(skill[11]),
 	ceilingTileModel(skill[0]),
 	ceilingTileDir(skill[1]),
 	ceilingTileAllowTrap(skill[3]),

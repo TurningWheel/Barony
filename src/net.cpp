@@ -1919,6 +1919,9 @@ void clientActions(Entity* entity)
 		case 1379:
 			entity->behavior = &actGoldBag;
 			break;
+		case 1369:
+			entity->behavior = &actDaedalusShrine;
+			break;
 		case Player::Ghost_t::GHOST_MODEL_P1:
 		case Player::Ghost_t::GHOST_MODEL_P2:
 		case Player::Ghost_t::GHOST_MODEL_P3:
@@ -2190,6 +2193,8 @@ static void changeLevel() {
 	EnemyHPDamageBarHandler::dumpCache();
 	monsterAllyFormations.reset();
 	particleTimerEmitterHitEntities.clear();
+	monsterTrapIgnoreEntities.clear();
+	minimapHighlights.clear();
 
 	// clear follower menu entities.
 	FollowerMenu[clientnum].closeFollowerMenuGUI(true);

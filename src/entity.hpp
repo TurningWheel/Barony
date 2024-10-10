@@ -34,6 +34,7 @@
 #define USERFLAG1 14
 #define USERFLAG2 15
 #define INVISIBLE_DITHER 16
+#define NOCLIP_WALLS 17
 
 // number of entity skills and fskills
 static const int NUMENTITYSKILLS = 60;
@@ -469,6 +470,7 @@ public:
 	Sint32& shrineZ; //skill[8]
 	Sint32& shrineDestXOffset; //skill[9]
 	Sint32& shrineDestYOffset; //skill[10]
+	Sint32& shrineDaedalusState; // skill[11]
 	
 	//--PUBLIC FURNITURE SKILLS--
 	Sint32& furnitureType; //skill[0]
@@ -784,6 +786,7 @@ public:
 	void actTeleporter();
 	void actMagicTrapCeiling();
 	void actTeleportShrine();
+	void actDaedalusShrine();
 	void actSpellShrine();
 	bool magicFallingCollision();
 	bool magicOrbitingCollision();
@@ -1214,6 +1217,7 @@ void actColliderDecoration(Entity* my);
 
 //---Magic entity functions---
 void actMagiclightBall(Entity* my);
+void actMagiclightMoving(Entity* my);
 
 //---Misc act functions---
 void actAmbientParticleEffectIdle(Entity* my);
@@ -1224,7 +1228,7 @@ void actTextSource(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 333;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 129;
-static const int NUM_EDITOR_SPRITES = 190;
+static const int NUM_EDITOR_SPRITES = 191;
 static const int NUM_EDITOR_TILES = 350;
 
 // furniture types.
@@ -1290,6 +1294,8 @@ bool monsterNameIsGeneric(Stat& monsterStats); // returns true if a monster's na
 
 bool playerRequiresBloodToSustain(int player); // vampire type or accursed class
 void spawnBloodVialOnMonsterDeath(Entity* entity, Stat* hitstats, Entity* killer);
+
+void shrineDaedalusRevealMap(Entity& my);
 
 enum EntityHungerIntervals : int
 {

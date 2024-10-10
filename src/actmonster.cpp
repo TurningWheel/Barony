@@ -42,7 +42,7 @@ bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1 }, // HUMAN
 	{ 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0 }, // RAT
 	{ 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0 }, // GOBLIN
-	{ 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0 }, // SLIME
+	{ 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1 }, // SLIME
 	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0 }, // TROLL
 	{ 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1 }, // BAT_SMALL
 	{ 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0 }, // SPIDER
@@ -52,7 +52,7 @@ bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0 }, // IMP
 	{ 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0 }, // CRAB
 	{ 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0 }, // GNOME
-	{ 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0 }, // DEMON
+	{ 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1 }, // DEMON
 	{ 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0 }, // SUCCUBUS
 	{ 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0 }, // MIMIC
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0 }, // LICH
@@ -75,7 +75,7 @@ bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0 }, // SPELLBOT
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GYROBOT
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // DUMMYBOT
-	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0 }  // BUGBEAR
+	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0 }  // BUGBEAR
 //    N  H  R  G  S  T  B  S  G  S  S  I  C  G  D  S  M  L  M  D  S  K  S  G  I  V  S  C  I  G  A  L  L  S  S  G  D  B   
 //    O  U  A  O  L  R  A  P  H  K  C  M  R  N  E  U  I  I  I  E  H  O  C  O  N  A  H  O  N  O  U  I  I  N  P  Y  U  U   
 //    T  M  T  B  I  O  T  I  O  E  O  P  A  O  M  C  M  C  N  V  P  B  A  L  C  M  A  C  S  A  T  F  I  T  L  R  M  G 
@@ -3378,6 +3378,12 @@ void actMonster(Entity* my)
 		myStats->mask = NULL;
 		node_t* nextnode = NULL;
 
+		int mapIndex = 0;
+		if ( my->x >= 0 && my->y >= 0 && my->x < map.width << 4 && my->y < map.height << 4 )
+		{
+			mapIndex = (int)(my->y / 16)* MAPLAYERS + (int)(my->x / 16) * MAPLAYERS * map.height;
+		}
+
 		for ( node = myStats->inventory.first; node != NULL; node = nextnode )
 		{
 			nextnode = node->next;
@@ -3391,6 +3397,37 @@ void actMonster(Entity* my)
 					if ( rng.rand() % 2 )
 					{
 						item->isDroppable = false; // sometimes don't drop inventory
+					}
+				}
+				if ( myStats->type == GNOME )
+				{
+					if ( item->type == TOOL_BEARTRAP || (item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB) )
+					{
+						if ( myStats->getAttribute("gnome_type").find("gnome2") != std::string::npos )
+						{
+							if ( !(swimmingtiles[map.tiles[mapIndex]] || lavatiles[map.tiles[mapIndex]]) )
+							{
+								item->isDroppable = false;
+								if ( item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB )
+								{
+									item->applyBomb(my, item->type, Item::ItemBombPlacement::BOMB_FLOOR, Item::ItemBombFacingDirection::BOMB_UP, my, nullptr);
+								}
+								else if ( item->type == TOOL_BEARTRAP )
+								{
+									Entity* trap = item_ToolBeartrap(item, my);
+									if ( trap )
+									{
+										trap->x = my->x;
+										trap->y = my->y;
+									}
+									if ( !item )
+									{
+										// consumed
+										continue;
+									}
+								}
+							}
+						}
 					}
 				}
 				bool wasQuiver = itemTypeIsQuiver(item->type);
@@ -5766,7 +5803,7 @@ timeToGoAgain:
 											playSoundEntity(hit.entity, sound, 64);
 										}
 									}
-									else if ( hit.entity->behavior == &actBoulder && !hit.entity->flags[PASSABLE] && myStats->type == MINOTAUR )
+									else if ( (hit.entity->behavior == &actBoulder || hit.entity->behavior == &::actDaedalusShrine) && !hit.entity->flags[PASSABLE] && myStats->type == MINOTAUR )
 									{
 										// asplode the rock
 										magicDig(nullptr, nullptr, 0, 1);
@@ -6983,7 +7020,7 @@ timeToGoAgain:
 									hit.entity->colliderCurrentHP = 0;
 									hit.entity->colliderKillerUid = 0;
 								}
-								else if ( hit.entity->behavior == &actBoulder && !hit.entity->flags[PASSABLE] && myStats->type == MINOTAUR )
+								else if ( (hit.entity->behavior == &actBoulder || hit.entity->behavior == &::actDaedalusShrine) && !hit.entity->flags[PASSABLE] && myStats->type == MINOTAUR )
 								{
 									// asplode the rock
 									magicDig(nullptr, nullptr, 0, 1);
@@ -10442,6 +10479,8 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					}
 					deinitSuccess = true;
 					break;
+				case GNOME:
+					break;
 				case SUCCUBUS:
 					if ( monsterSpecialState == SUCCUBUS_CHARM || forceDeinit )
 					{
@@ -13201,14 +13240,17 @@ void batResetIdle(Entity* my)
 	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && canRest; ++it )
 	{
 		list_t* currentList = *it;
-		for ( node_t* node = currentList->first; node != nullptr; node = node->next ) //Can't convert to map.creatures because of doorframes.
+		for ( node_t* node = currentList->first; node != nullptr; node = node->next )
 		{
 			Entity* entity = (Entity*)node->element;
 			if ( entity == my )
 			{
 				continue;
 			}
-			if ( entity->behavior == &actCeilingTile || entity->behavior == &actColliderDecoration || entity->behavior == &actFurniture )
+			if ( entity->behavior == &actCeilingTile 
+				|| entity->behavior == &actColliderDecoration 
+				|| entity->behavior == &actFurniture
+				|| entity->behavior == &actStalagCeiling )
 			{
 				int x2 = entity->x / 16;
 				int y2 = entity->y / 16;

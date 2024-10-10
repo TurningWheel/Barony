@@ -1025,6 +1025,13 @@ void actMinotaurCeilingBuster(Entity* my)
 									}
 								}
 							}
+							else if ( entity->behavior == &::actDaedalusShrine )
+							{
+								Entity* ohitentity = hit.entity;
+								hit.entity = entity;
+								magicDig(my, nullptr, 0, 1);
+								hit.entity = ohitentity;
+							}
 							else if (	entity->behavior == &actStalagCeiling	||
 										entity->behavior == &actStalagFloor		||
 										entity->behavior == &actStalagColumn

@@ -4221,11 +4221,11 @@ void item_ToolMirror(Item*& item, int player)
 	}
 }
 
-void item_ToolBeartrap(Item*& item, Entity* usedBy)
+Entity* item_ToolBeartrap(Item*& item, Entity* usedBy)
 {
 	if ( !usedBy )
 	{
-		return;
+		return nullptr;
 	}
 
 	int player = -1;
@@ -4240,7 +4240,7 @@ void item_ToolBeartrap(Item*& item, Entity* usedBy)
 			{
 				if ( entityInsideTile(usedBy, u, v, 0) )   // no floor
 				{
-					return;
+					return nullptr;
 				}
 			}
 		}
@@ -4263,7 +4263,18 @@ void item_ToolBeartrap(Item*& item, Entity* usedBy)
 		entity->skill[15] = item->identified;
 		entity->skill[17] = -1;
 		consumeItem(item, player);
-		return;
+
+		auto& trapProps = monsterTrapIgnoreEntities[entity->getUID()];
+		trapProps.parent = entity->parent;
+		for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+		{
+			Entity* creature = (Entity*)node->element;
+			if ( creature && usedBy->checkFriend(creature) )
+			{
+				trapProps.ignoreEntities.insert(creature->getUID());
+			}
+		}
+		return entity;
 	}
 	else if ( usedBy->behavior == &actPlayer )
 	{
@@ -4272,13 +4283,13 @@ void item_ToolBeartrap(Item*& item, Entity* usedBy)
 
 	if ( player < 0 || player >= MAXPLAYERS )
 	{
-		return;
+		return nullptr;
 	}
 
 	if ( multiplayer == CLIENT )
 	{
 		consumeItem(item, player);
-		return;
+		return nullptr;
 	}
 	bool failed = false;
 	switch ( item->status )
@@ -4315,7 +4326,7 @@ void item_ToolBeartrap(Item*& item, Entity* usedBy)
 			playSoundEntity(players[player]->entity, 76, 64);
 		}
 		consumeItem(item, player);
-		return;
+		return nullptr;
 	}
 	if ( multiplayer != CLIENT && players[player] )
 	{
@@ -4325,7 +4336,7 @@ void item_ToolBeartrap(Item*& item, Entity* usedBy)
 	if ( players[player] == nullptr || players[player]->entity == nullptr )
 	{
 		consumeItem(item, player);
-		return;
+		return nullptr;
 	}
 
 	Entity* entity = newEntity(668, 1, map.entities, nullptr); //Beartrap entity.
@@ -4369,7 +4380,7 @@ void item_ToolBeartrap(Item*& item, Entity* usedBy)
 	{
 		Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BEARTRAP_DEPLOYED, TOOL_BEARTRAP, 1);
 	}
-	return;
+	return entity;
 }
 
 void item_Food(Item*& item, int player)

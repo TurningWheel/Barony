@@ -42,6 +42,8 @@
 #define BEARTRAP_IDENTIFIED my->skill[15]
 #define BEARTRAP_OWNER my->skill[17]
 
+std::map<Uint32, MonsterTrapIgnoreEntities_t> monsterTrapIgnoreEntities;
+
 void actBeartrap(Entity* my)
 {
 	int i;
@@ -101,8 +103,15 @@ void actBeartrap(Entity* my)
 		return;
 	}
 
+	MonsterTrapIgnoreEntities_t* trapProps = nullptr;
+	if ( my->parent != 0 && monsterTrapIgnoreEntities.find(my->getUID()) != monsterTrapIgnoreEntities.end() )
+	{
+		trapProps = &monsterTrapIgnoreEntities[my->getUID()];
+	}
+
 	// launch beartrap
 	node_t* node;
+	Entity* parent = uidToEntity(my->parent);
 	for ( node = map.creatures->first; node != nullptr; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
@@ -115,8 +124,12 @@ void actBeartrap(Entity* my)
 			Stat* stat = entity->getStats();
 			if ( stat )
 			{
-				Entity* parent = uidToEntity(my->parent);
 				if ( (parent && parent->checkFriend(entity)) )
+				{
+					continue;
+				}
+				if ( trapProps && trapProps->parent == my->parent 
+					&& trapProps->ignoreEntities.find(entity->getUID()) != trapProps->ignoreEntities.end() )
 				{
 					continue;
 				}
@@ -938,6 +951,12 @@ void actBomb(Entity* my)
 		}
 	}
 
+	MonsterTrapIgnoreEntities_t* trapProps = nullptr;
+	if ( my->parent != 0 && monsterTrapIgnoreEntities.find(my->getUID()) != monsterTrapIgnoreEntities.end() )
+	{
+		trapProps = &monsterTrapIgnoreEntities[my->getUID()];
+	}
+
 	for ( auto it = entitiesWithinRadius.begin(); it != entitiesWithinRadius.end() && !triggered; ++it )
 	{
 		Entity* entity = *it;
@@ -956,6 +975,11 @@ void actBomb(Entity* my)
 			{
 				Entity* parent = uidToEntity(my->parent);
 				if ( parent && parent->checkFriend(entity) && !(BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TRIGGER_ALL) )
+				{
+					continue;
+				}
+				if ( trapProps && trapProps->parent == my->parent && trapProps->ignoreEntities.find(entity->getUID()) != trapProps->ignoreEntities.end()
+					 && !(BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TRIGGER_ALL) )
 				{
 					continue;
 				}
