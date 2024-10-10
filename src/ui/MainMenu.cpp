@@ -32757,6 +32757,7 @@ failed:
 	static const int compendiumPageRightInnerHeight = 412 - 114 + 22;
 	static const int compendiumPageRightInnerHeightExpanded = 412;
 	constexpr auto compendiumContentsDefaultColor = makeColor(159, 145, 127, 255);
+	constexpr auto compendiumContentsDefaultColorNoResearch = makeColor(122, 111, 97, 255);
 	constexpr auto compendiumContentsSelectedColor = makeColor(221, 210, 84, 255);
 	constexpr auto compendiumContentsDivColor = makeColorRGB(42, 22, 18);
 	constexpr auto compendiumLoreCostAvailable = makeColorRGB(255, 255, 255);
@@ -36543,14 +36544,41 @@ failed:
 			page_right_number_flourish->disabled = true;
 		}
 
+		auto* unlockStatus = compendium_current == "monsters" ? &Compendium_t::CompendiumMonsters_t::unlocks
+			: (compendium_current == "world" ? &Compendium_t::CompendiumWorld_t::unlocks
+				: (compendium_current == "codex" ? &Compendium_t::CompendiumCodex_t::unlocks
+					: (compendium_current == "items" ? &Compendium_t::CompendiumItems_t::unlocks
+						: (compendium_current == "magic" ? &Compendium_t::CompendiumItems_t::unlocks
+							: (compendium_current == "achievements" ? &Compendium_t::AchievementData_t::unlocks
+								: nullptr)))));
+
 		auto contentsFrame = compendiumFrame->findFrame("contents");
 		if ( contentsFrame )
 		{
 			for ( auto& e : contentsFrame->getEntries() )
 			{
-				if ( e->color != compendiumContentsDivColor )
+				if ( e->color == compendiumContentsSelectedColor )
 				{
-					e->color = compendiumContentsDefaultColor;
+					if ( compendium_current == "achievements" )
+					{
+						e->color = compendiumContentsDefaultColor;
+					}
+					else
+					{
+						e->color = compendiumContentsDefaultColorNoResearch;
+						if ( unlockStatus )
+						{
+							auto findUnlock = unlockStatus->find(e->name);
+							if ( findUnlock != unlockStatus->end() )
+							{
+								if ( findUnlock->second == Compendium_t::UNLOCKED_UNVISITED
+									|| findUnlock->second == Compendium_t::UNLOCKED_VISITED )
+								{
+									e->color = compendiumContentsDefaultColor;
+								}
+							}
+						}
+					}
 				}
 			}
 		}
@@ -36625,14 +36653,6 @@ failed:
 					: (compendium_current == "items" ? &Compendium_t::CompendiumItems_t::contents[sorting]
 						: (compendium_current == "magic" ? &Compendium_t::CompendiumMagic_t::contents[sorting]
 							: (compendium_current == "achievements" ? &Compendium_t::AchievementData_t::contents[sorting]
-							: nullptr)))));
-
-		auto* unlockStatus = compendium_current == "monsters" ? &Compendium_t::CompendiumMonsters_t::unlocks
-			: (compendium_current == "world" ? &Compendium_t::CompendiumWorld_t::unlocks
-				: (compendium_current == "codex" ? &Compendium_t::CompendiumCodex_t::unlocks
-					: (compendium_current == "items" ? &Compendium_t::CompendiumItems_t::unlocks
-						: (compendium_current == "magic" ? &Compendium_t::CompendiumItems_t::unlocks 
-							: (compendium_current == "achievements" ? &Compendium_t::AchievementData_t::unlocks
 							: nullptr)))));
 
 		std::string content = "";
@@ -37167,7 +37187,7 @@ failed:
 						entry->clickable = false;
 						entry->navigable = false;
 						entry->text = data.second;
-						entry->color = makeColorRGB(42, 22, 18);
+						entry->color = compendiumContentsDivColor;
 
 						contents->addImage(SDL_Rect{ 0, (int)(contents->getEntries().size() - 1) * contents->getEntrySize(), contents->getSize().w, 20 },
 							0xFFFFFFFF, 
@@ -37176,11 +37196,13 @@ failed:
 					}
 					else
 					{
+						Compendium_t::CompendiumUnlockStatus unlockCurrentStatus = Compendium_t::LOCKED_UNKNOWN;
 						if ( unlockStatus )
 						{
 							auto findUnlock = unlockStatus->find(data.first);
 							if ( findUnlock != unlockStatus->end() )
 							{
+								unlockCurrentStatus = findUnlock->second;
 								unlocked = findUnlock->second > Compendium_t::LOCKED_UNKNOWN;
 								drawNotification = unlocked
 									&& (findUnlock->second == Compendium_t::UNLOCKED_UNVISITED
@@ -37200,7 +37222,7 @@ failed:
 
 						if ( !unlocked )
 						{
-							entry->color = compendiumContentsDefaultColor;
+							entry->color = compendiumContentsDefaultColorNoResearch;
 							entry->text = "???";
 							entry->click = contents_activate_unknown_fn;
 							entry->ctrlClick = contents_activate_unknown_fn;
@@ -37209,7 +37231,16 @@ failed:
 						}
 						else
 						{
-							entry->color = compendiumContentsDefaultColor;
+							if ( unlockCurrentStatus == Compendium_t::UNLOCKED_UNVISITED
+								|| unlockCurrentStatus == Compendium_t::UNLOCKED_VISITED
+								|| achievementsTab )
+							{
+								entry->color = compendiumContentsDefaultColor;
+							}
+							else
+							{
+								entry->color = compendiumContentsDefaultColorNoResearch;
+							}
 							entry->text = data.second;
 
 							int textWidth = 0;
@@ -41226,7 +41257,7 @@ failed:
 		page_right_gradient_bottom->ontop = true;
 
 		auto page_right_unlock = window->addFrame("page_right_unlock");
-		page_right_unlock->setSize(SDL_Rect{ page_right->getSize().x + 6, page_right->getSize().y + 8, 376, 128 });
+		page_right_unlock->setSize(SDL_Rect{ page_right->getSize().x + 6, page_right->getSize().y + 8, 376, 256 });
 		page_right_unlock->setHollow(true);
 		page_right_unlock->setClickable(false);
 
@@ -41302,6 +41333,31 @@ failed:
 				widget.addWidgetAction("MenuAlt1", "page_right_unlock_btn");
 			}
 		});
+
+		/*auto page_right_point_hint = page_right_unlock->addField("page_right_point_hint", 128);
+		page_right_point_hint->setHJustify(Field::justify_t::CENTER);
+		page_right_point_hint->setVJustify(Field::justify_t::TOP);
+		page_right_point_hint->setText(Language::get(6266));
+		page_right_point_hint->setDisabled(false);
+		page_right_point_hint->setSize(SDL_Rect{ 0, 128 + 32, page_right_unlock->getSize().w, page_right_unlock->getSize().h - 128 + 32 });
+		page_right_point_hint->setFont(smallfont_outline);
+		page_right_point_hint->setOntop(true);
+		page_right_point_hint->setColor(makeColor(224, 224, 224, 255));
+		page_right_point_hint->setInvisible(true);
+		page_right_point_hint->setTickCallback([](Widget& widget) {
+			widget.setInvisible(true);
+			auto parent = static_cast<Frame*>(widget.getParent());
+			if ( parent )
+			{
+				if ( auto btn = parent->findButton("unlock_lore_cost") )
+				{
+					if ( btn->getTextColor() != compendiumLoreCostAvailable )
+					{
+						widget.setInvisible(btn->isInvisible());
+					}
+				}
+			}
+		});*/
 
 		/*auto reveal_unlock_badge = page_right_unlock->addImage(SDL_Rect{ 376 - 74, 28, 56, 62 },
 			0xFFFFFFFF,
