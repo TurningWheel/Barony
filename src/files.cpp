@@ -943,7 +943,7 @@ std::unordered_map<std::string, int> mapHashes = {
 	{ "ruins20e.lmp", 369845 },
 	{ "ruins21.lmp", 71662 },
 	{ "ruins21a.lmp", 4165 },
-	{ "ruins21b.lmp", 9311 },
+	{ "ruins21b.lmp", 8883 },
 	{ "ruins21c.lmp", 4264 },
 	{ "ruins21d.lmp", 27792 },
 	{ "ruins21e.lmp", 18263 },
