@@ -58,7 +58,14 @@ void initGnome(Entity* my, Stat* myStats)
 	{
 		MONSTER_SPOTSND = 220;
 		MONSTER_SPOTVAR = 5;
-		MONSTER_IDLESND = 217;
+		if ( gnome_type.find("gnome2") != std::string::npos )
+		{
+			MONSTER_IDLESND = 683;
+		}
+		else
+		{
+			MONSTER_IDLESND = 217;
+		}
 		MONSTER_IDLEVAR = 3;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
@@ -72,7 +79,7 @@ void initGnome(Entity* my, Stat* myStats)
 				myStats->leader_uid = 0;
 			}
 
-			if ( currentlevel >= 16 && rng.rand() % 2 == 0 )
+			if ( currentlevel >= 16 && rng.rand() % 5 >= 1 )
 			{
 				// gnome thieves
 				if ( myStats->getAttribute("gnome_type") == "" )
@@ -132,20 +139,18 @@ void initGnome(Entity* my, Stat* myStats)
 						my->sprite = 1426;
 					}
 					myStats->setAttribute("gnome_type", gnome_type);
-
-					myStats->HP += 30;
-					myStats->MAXHP = myStats->HP;
-					myStats->OLDHP = myStats->HP;
 				}
 			}
 
 			if ( myStats->getAttribute("gnome_type").find("gnome2F") != std::string::npos )
 			{
 				myStats->sex = sex_t::FEMALE;
+				MONSTER_IDLESND = 683;
 			}
 			else if ( myStats->getAttribute("gnome_type").find("gnome2") != std::string::npos )
 			{
 				myStats->sex = sex_t::MALE;
+				MONSTER_IDLESND = 683;
 			}
 
 			GnomeVariant gnomeVariant = GNOME_DEFAULT;
@@ -156,6 +161,28 @@ void initGnome(Entity* my, Stat* myStats)
 			else if ( myStats->getAttribute("gnome_type").find("_melee") != std::string::npos )
 			{
 				gnomeVariant = GNOME_THIEF_MELEE;
+			}
+
+			if ( gnomeVariant != GNOME_DEFAULT )
+			{
+				myStats->HP = 80;
+				myStats->MAXHP = myStats->HP;
+				myStats->OLDHP = myStats->HP;
+
+				myStats->CON = 8;
+				myStats->PER = 5;
+				myStats->STR = 7;
+				myStats->DEX = 5;
+				if ( rng.rand() % 2 )
+				{
+					myStats->GOLD = 15;
+					myStats->RANDOM_GOLD = 15;
+				}
+				else
+				{
+					myStats->GOLD = 0;
+					myStats->RANDOM_GOLD = 0;
+				}
 			}
 
 			// apply random stat increases if set in stat_shared.cpp or editor
@@ -188,21 +215,84 @@ void initGnome(Entity* my, Stat* myStats)
 			my->setHardcoreStats(*myStats);
 
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
-			switch ( defaultItems )
+			if ( gnomeVariant == GNOME_DEFAULT )
 			{
+				switch ( defaultItems )
+				{
+					case 6:
+					case 5:
+					case 4:
+					case 3:
+						if ( rng.rand() % 50 == 0 )
+						{
+							if ( rng.rand() % 2 == 0 )
+							{
+								newItem(ENCHANTED_FEATHER, WORN, 0, 1, (2 * (ENCHANTED_FEATHER_MAX_DURABILITY - 1)) / 4, false, &myStats->inventory);
+							}
+							else
+							{
+								newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook("Winny's Report"), false, &myStats->inventory);
+							}
+						}
+					case 2:
+						if ( rng.rand() % 10 == 0 )
+						{
+							if ( rng.rand() % 2 == 0 )
+							{
+								newItem(MASK_PIPE, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+							}
+							else
+							{
+								int i = 1 + rng.rand() % 4;
+								for ( c = 0; c < i; c++ )
+								{
+									newItem(static_cast<ItemType>(GEM_GARNET + rng.rand() % 15), static_cast<Status>(1 + rng.rand() % 4), 0, 1, rng.rand(), false, &myStats->inventory);
+								}
+							}
+						}
+					case 1:
+						if ( rng.rand() % 3 == 0 )
+						{
+							newItem(FOOD_FISH, EXCELLENT, 0, 1, rng.rand(), false, &myStats->inventory);
+						}
+						break;
+					default:
+						break;
+				}
+			}
+			else
+			{
+				switch ( defaultItems )
+				{
 				case 6:
 				case 5:
 				case 4:
 				case 3:
-					if ( rng.rand() % 50 == 0 )
+					if ( rng.rand() % 100 == 0 )
 					{
-						if ( rng.rand() % 2 == 0 )
+						newItem(ENCHANTED_FEATHER, WORN, 0, 1, (2 * (ENCHANTED_FEATHER_MAX_DURABILITY - 1)) / 4, false, &myStats->inventory);
+					}
+					else
+					{
+						if ( (rng.rand() % 4 > 0 && gnomeVariant == GNOME_THIEF_RANGED)
+							|| (rng.rand() % 2 == 0 && gnomeVariant == GNOME_THIEF_MELEE) )
 						{
-							newItem(ENCHANTED_FEATHER, WORN, 0, 1, (2 * (ENCHANTED_FEATHER_MAX_DURABILITY - 1)) / 4, false, &myStats->inventory);
-						}
-						else
-						{
-							newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook("Winny's Report"), false, &myStats->inventory);
+							if ( rng.rand() % 2 == 0 )
+							{
+								auto item = newItem(TOOL_BEARTRAP, DECREPIT, -1, 1, rng.rand(), false, &myStats->inventory);
+								if ( item )
+								{
+									item->isDroppable = false;
+								}
+							}
+							else
+							{
+								auto item = newItem(static_cast<ItemType>(TOOL_BOMB + rng.rand() % 3), EXCELLENT, -1, 1, rng.rand(), false, &myStats->inventory);
+								if ( item )
+								{
+									item->isDroppable = false;
+								}
+							}
 						}
 					}
 				case 2:
@@ -210,25 +300,29 @@ void initGnome(Entity* my, Stat* myStats)
 					{
 						if ( rng.rand() % 2 == 0 )
 						{
-							newItem(MASK_PIPE, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+							newItem(static_cast<ItemType>(GEM_GLASS), static_cast<Status>(1 + rng.rand() % 4), 0, 1, rng.rand(), false, &myStats->inventory);
 						}
 						else
 						{
-							int i = 1 + rng.rand() % 4;
-							for ( c = 0; c < i; c++ )
-							{
-								newItem(static_cast<ItemType>(GEM_GARNET + rng.rand() % 15), static_cast<Status>(1 + rng.rand() % 4), 0, 1, rng.rand(), false, &myStats->inventory);
-							}
+							newItem(static_cast<ItemType>(GEM_GARNET + rng.rand() % 15), static_cast<Status>(1 + rng.rand() % 4), 0, 1, rng.rand(), false, &myStats->inventory);
 						}
 					}
 				case 1:
 					if ( rng.rand() % 3 == 0 )
 					{
-						newItem(FOOD_FISH, EXCELLENT, 0, 1, rng.rand(), false, &myStats->inventory);
+						if ( rng.rand() % 4 == 0 )
+						{
+							newItem(FOOD_CREAMPIE, static_cast<Status>(3 + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+						}
+						else
+						{
+							newItem(TOOL_LOCKPICK, EXCELLENT, 0, 1, rng.rand(), false, &myStats->inventory);
+						}
 					}
 					break;
 				default:
 					break;
+				}
 			}
 
 			//give weapon
@@ -359,6 +453,7 @@ void initGnome(Entity* my, Stat* myStats)
 				if ( gnomeVariant == GNOME_THIEF_MELEE )
 				{
 					myStats->shoes = newItem(SUEDE_BOOTS, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+					myStats->shoes->isDroppable = (rng.rand() % 4 == 0) ? true : false;
 				}
 			}
 
@@ -367,6 +462,7 @@ void initGnome(Entity* my, Stat* myStats)
 				if ( gnomeVariant == GNOME_THIEF_RANGED )
 				{
 					myStats->gloves = newItem(SUEDE_GLOVES, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+					myStats->gloves->isDroppable = (rng.rand() % 4 == 0) ? true : false;
 				}
 			}
 
@@ -374,12 +470,13 @@ void initGnome(Entity* my, Stat* myStats)
 			{
 				if ( gnomeVariant == GNOME_THIEF_RANGED )
 				{
-					if ( rng.rand() % 2 == 0 )
+					if ( myStats->leader_uid != 0 )
 					{
 						myStats->helmet = newItem(HAT_HOOD_WHISPERS, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, 0, false, nullptr);
 					}
 					else
 					{
+						// leader has the bycocket
 						myStats->helmet = newItem(HAT_BYCOCKET, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, 0, false, nullptr);
 					}
 				}
@@ -394,6 +491,7 @@ void initGnome(Entity* my, Stat* myStats)
 						if ( rng.rand() % 2 == 0 )
 						{
 							myStats->helmet = newItem(HAT_HOOD, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, 2, false, nullptr);
+							myStats->helmet->isDroppable = (rng.rand() % 4 == 0) ? true : false;
 						}
 						else
 						{
@@ -426,6 +524,7 @@ void initGnome(Entity* my, Stat* myStats)
 						case 8:
 						case 9:
 							myStats->mask = newItem(MASK_BANDIT, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+							myStats->mask->isDroppable = (rng.rand() % 4 == 0) ? true : false;
 							break;
 						default:
 							break;
@@ -441,7 +540,7 @@ void initGnome(Entity* my, Stat* myStats)
 					case 1:
 					case 2:
 					case 3:
-						myStats->mask = newItem(MASK_BANDIT, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+						myStats->mask = newItem(MASK_MOUTHKNIFE, SERVICABLE, 0, 1, rng.rand(), false, nullptr);
 						break;
 					case 4:
 					case 5:
@@ -449,7 +548,8 @@ void initGnome(Entity* my, Stat* myStats)
 					case 7:
 					case 8:
 					case 9:
-						myStats->mask = newItem(MASK_MOUTHKNIFE, SERVICABLE, 0, 1, rng.rand(), false, nullptr);
+						myStats->mask = newItem(MASK_BANDIT, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+						myStats->mask->isDroppable = (rng.rand() % 4 == 0) ? true : false;
 						break;
 					default:
 						break;
@@ -479,7 +579,7 @@ void initGnome(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(297, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(1469, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -498,7 +598,7 @@ void initGnome(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(298, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(1470, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -677,6 +777,7 @@ void actGnomeLimb(Entity* my)
 
 void gnomeDie(Entity* my)
 {
+	if ( !my ) { return; }
 	for ( int c = 0; c < 10; c++ )
 	{
 		Entity* entity = spawnGib(my);
@@ -687,6 +788,65 @@ void gnomeDie(Entity* my)
 		        entity->skill[5] = 1; // poof
 		    }
 			serverSpawnGibForClient(entity);
+		}
+	}
+
+	if ( my->getStats() && my->getStats()->getAttribute("gnome_type").find("gnome2") != std::string::npos )
+	{
+		// underlings flee on leader death
+		if ( my->getStats() && my->getStats()->killer_uid != 0 )
+		{
+			Entity* killer = uidToEntity(my->getStats()->killer_uid);
+			if ( killer && (killer->behavior == &actPlayer || killer->behavior == &actMonster) )
+			{
+				bool affected = false;
+				for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+				{
+					Entity* entity = (Entity*)node->element;
+					if ( entity && entity->getStats() && entity->getStats()->leader_uid == my->getUID() )
+					{
+						if ( entity->isMobile() )
+						{
+							Entity* ohit = hit.entity;
+							real_t tangent = atan2(entity->y - my->y, entity->x - my->x);
+							lineTraceTarget(my, my->x, my->y, tangent, 128.0, 0, false, entity); // trace to leader
+							if ( hit.entity != entity )
+							{
+								tangent = atan2(entity->y - killer->y, entity->x - killer->x);
+								lineTraceTarget(killer, killer->x, killer->y, tangent, 128.0, 0, false, entity); // trace to killer
+							}
+							if ( hit.entity == entity )
+							{
+								if ( entity->setEffect(EFF_FEAR, true, TICKS_PER_SECOND * 5, true) )
+								{
+									entity->monsterAcquireAttackTarget(*killer, MONSTER_STATE_PATH);
+									entity->monsterFearfulOfUid = killer->getUID();
+									playSoundEntity(entity, 687, 128); // fear.ogg
+									affected = true;
+								}
+							}
+							entity->getStats()->leader_uid = 0;
+							hit.entity = ohit;
+						}
+					}
+				}
+				if ( affected )
+				{
+					int player = -1;
+					if ( killer->behavior == &actPlayer )
+					{
+						player = killer->skill[2];
+					}
+					else if ( Entity* leader = killer->monsterAllyGetPlayerLeader() )
+					{
+						player = leader->skill[2];
+					}
+					if ( player >= 0 )
+					{
+						messagePlayerColor(player, MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6265));
+					}
+				}
+			}
 		}
 	}
 
@@ -722,259 +882,264 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			gnomeVariant = GNOME_THIEF_MELEE;
 		}
-
-		//static bool forceWalk = false;
-		//if ( keystatus[SDLK_KP_5] )
-		//{
-		//	keystatus[SDLK_KP_5] = 0;
-		//	forceWalk = !forceWalk;
-		//}
-		//if ( keystatus[SDLK_KP_6] )
-		//{
-		//	myStats->EFFECTS[EFF_STUNNED] = !myStats->EFFECTS[EFF_STUNNED];
-		//}
-		//if ( forceWalk )
-		//{
-		//	dist = 0.15;
-		//}
-
-		//if ( keystatus[SDLK_9] )
-		//{
-		//	keystatus[SDLK_9] = 0;
-		//	if ( myStats->helmet )
-		//	{
-		//		myStats->helmet->appearance++;
-		//	}
-		//}
-		//if ( keystatus[SDLK_0] )
-		//{
-		//	keystatus[SDLK_0] = 0;
-		//	if ( myStats->mask )
-		//	{
-		//		myStats->mask->appearance++;
-		//	}
-		//}
-		//if ( keystatus[SDLK_6] )
-		//{
-		//	keystatus[SDLK_6] = 0;
-		//	if ( my->sprite == 295 )
-		//	{
-		//		my->sprite = 1426;
-		//	}
-		//	else if ( my->sprite == 1426 )
-		//	{
-		//		my->sprite = 1430;
-		//	}
-		//	else
-		//	{
-		//		my->sprite = 295;
-		//	}
-		//}
-		//if ( keystatus[SDLK_7] )
-		//{
-		//	keystatus[SDLK_7] = 0;
-		//	if ( myStats->shoes )
-		//	{
-		//		while ( true )
-		//		{
-		//			int type = myStats->shoes->type;
-		//			type++;
-		//			if ( type >= NUMITEMS )
-		//			{
-		//				if ( myStats->shoes->node )
-		//				{
-		//					list_RemoveNode(myStats->shoes->node);
-		//				}
-		//				else
-		//				{
-		//					free(myStats->shoes);
-		//				}
-		//				myStats->shoes = nullptr;
-		//				break;
-		//			}
-		//			myStats->shoes->type = (ItemType)type;
-		//			if ( items[myStats->shoes->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BOOTS )
-		//			{
-		//				break;
-		//			}
-		//		}
-		//	}
-		//	else
-		//	{
-		//		myStats->shoes = newItem(LEATHER_BOOTS, EXCELLENT, 0, 1, 0, true, nullptr);
-		//	}
-		//}
-		//if ( keystatus[SDLK_8] )
-		//{
-		//	keystatus[SDLK_8] = 0;
-		//	if ( myStats->gloves )
-		//	{
-		//		while ( true )
-		//		{
-		//			int type = myStats->gloves->type;
-		//			type++;
-		//			if ( type >= NUMITEMS )
-		//			{
-		//				if ( myStats->gloves->node )
-		//				{
-		//					list_RemoveNode(myStats->gloves->node);
-		//				}
-		//				else
-		//				{
-		//					free(myStats->gloves);
-		//				}
-		//				myStats->gloves = nullptr;
-		//				break;
-		//			}
-		//			myStats->gloves->type = (ItemType)type;
-		//			if ( items[myStats->gloves->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_GLOVES )
-		//			{
-		//				break;
-		//			}
-		//		}
-		//	}
-		//	else
-		//	{
-		//		myStats->gloves = newItem(GLOVES, EXCELLENT, 0, 1, 0, true, nullptr);
-		//	}
-		//}
-		//if ( keystatus[SDLK_g] )
-		//{
-		//	keystatus[SDLK_g] = 0;
-		//	if ( myStats->helmet )
-		//	{
-		//		if ( keystatus[SDLK_LSHIFT] )
-		//		{
-		//			while ( true )
-		//			{
-		//				int type = myStats->helmet->type;
-		//				type--;
-		//				if ( type < 0 )
-		//				{
-		//					type = NUMITEMS - 1;
-		//				}
-		//				myStats->helmet->type = (ItemType)type;
-		//				if ( items[myStats->helmet->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_HELM )
-		//				{
-		//					break;
-		//				}
-		//			}
-		//		}
-		//		else
-		//		{
-		//			while ( true )
-		//			{
-		//				int type = myStats->helmet->type;
-		//				type++;
-		//				if ( type >= NUMITEMS )
-		//				{
-		//					type = 0;
-		//				}
-		//				myStats->helmet->type = (ItemType)type;
-		//				if ( items[myStats->helmet->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_HELM )
-		//				{
-		//					break;
-		//				}
-		//			}
-		//		}
-		//	}
-		//}
-		//if ( keystatus[SDLK_j] )
-		//{
-		//	keystatus[SDLK_j] = 0;
-		//	if ( myStats->breastplate )
-		//	{
-		//		if ( keystatus[SDLK_LSHIFT] )
-		//		{
-		//			while ( true )
-		//			{
-		//				int type = myStats->breastplate->type;
-		//				type--;
-		//				if ( type < 0 )
-		//				{
-		//					type = NUMITEMS - 1;
-		//				}
-		//				myStats->breastplate->type = (ItemType)type;
-		//				if ( items[myStats->breastplate->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BREASTPLATE )
-		//				{
-		//					break;
-		//				}
-		//			}
-		//		}
-		//		else
-		//		{
-		//			while ( true )
-		//			{
-		//				int type = myStats->breastplate->type;
-		//				type++;
-		//				if ( type >= NUMITEMS )
-		//				{
-		//					if ( myStats->breastplate->node )
-		//					{
-		//						list_RemoveNode(myStats->breastplate->node);
-		//					}
-		//					else
-		//					{
-		//						free(myStats->breastplate);
-		//					}
-		//					myStats->breastplate = nullptr;
-		//					break;
-		//				}
-		//				myStats->breastplate->type = (ItemType)type;
-		//				if ( items[myStats->breastplate->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BREASTPLATE )
-		//				{
-		//					break;
-		//				}
-		//			}
-		//		}
-		//	}
-		//	else
-		//	{
-		//		myStats->breastplate = newItem(LEATHER_BREASTPIECE, EXCELLENT, 0, 1, 0, true, nullptr);
-		//	}
-		//}
-		//if ( keystatus[SDLK_h] )
-		//{
-		//	keystatus[SDLK_h] = 0;
-		//	if ( myStats->mask )
-		//	{
-		//		if ( keystatus[SDLK_LSHIFT] )
-		//		{
-		//			while ( true )
-		//			{
-		//				int type = myStats->mask->type;
-		//				type--;
-		//				if ( type < 0 )
-		//				{
-		//					type = NUMITEMS - 1;
-		//				}
-		//				myStats->mask->type = (ItemType)type;
-		//				if ( items[myStats->mask->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_MASK )
-		//				{
-		//					break;
-		//				}
-		//			}
-		//		}
-		//		else
-		//		{
-		//			while ( true )
-		//			{
-		//				int type = myStats->mask->type;
-		//				type++;
-		//				if ( type >= NUMITEMS )
-		//				{
-		//					type = 0;
-		//				}
-		//				myStats->mask->type = (ItemType)type;
-		//				if ( items[myStats->mask->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_MASK )
-		//				{
-		//					break;
-		//				}
-		//			}
-		//		}
-		//	}
-		//}
-	}
+//#ifndef NDEBUG
+//		static bool forceWalk = false;
+//		if ( keystatus[SDLK_KP_5] )
+//		{
+//			keystatus[SDLK_KP_5] = 0;
+//			forceWalk = !forceWalk;
+//		}
+//		if ( keystatus[SDLK_KP_6] )
+//		{
+//			myStats->EFFECTS[EFF_STUNNED] = !myStats->EFFECTS[EFF_STUNNED];
+//		}
+//		if ( forceWalk )
+//		{
+//			dist = 0.15;
+//		}
+//
+//		if ( keystatus[SDLK_9] )
+//		{
+//			keystatus[SDLK_9] = 0;
+//			if ( myStats->helmet )
+//			{
+//				myStats->helmet->appearance++;
+//			}
+//		}
+//		if ( keystatus[SDLK_0] )
+//		{
+//			keystatus[SDLK_0] = 0;
+//			if ( myStats->mask )
+//			{
+//				myStats->mask->appearance++;
+//			}
+//		}
+//		if ( keystatus[SDLK_6] )
+//		{
+//			keystatus[SDLK_6] = 0;
+//			if ( my->sprite == 295 )
+//			{
+//				my->sprite = 1426;
+//			}
+//			else if ( my->sprite == 1426 )
+//			{
+//				my->sprite = 1430;
+//			}
+//			else
+//			{
+//				my->sprite = 295;
+//			}
+//		}
+//		if ( keystatus[SDLK_7] )
+//		{
+//			keystatus[SDLK_7] = 0;
+//			if ( myStats->shoes )
+//			{
+//				while ( true )
+//				{
+//					int type = myStats->shoes->type;
+//					type++;
+//					if ( type >= NUMITEMS )
+//					{
+//						if ( myStats->shoes->node )
+//						{
+//							list_RemoveNode(myStats->shoes->node);
+//						}
+//						else
+//						{
+//							free(myStats->shoes);
+//						}
+//						myStats->shoes = nullptr;
+//						break;
+//					}
+//					myStats->shoes->type = (ItemType)type;
+//					if ( items[myStats->shoes->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BOOTS )
+//					{
+//						break;
+//					}
+//				}
+//			}
+//			else
+//			{
+//				myStats->shoes = newItem(LEATHER_BOOTS, EXCELLENT, 0, 1, 0, true, nullptr);
+//			}
+//		}
+//		if ( keystatus[SDLK_8] )
+//		{
+//			keystatus[SDLK_8] = 0;
+//			if ( myStats->gloves )
+//			{
+//				while ( true )
+//				{
+//					int type = myStats->gloves->type;
+//					type++;
+//					if ( type >= NUMITEMS )
+//					{
+//						if ( myStats->gloves->node )
+//						{
+//							list_RemoveNode(myStats->gloves->node);
+//						}
+//						else
+//						{
+//							free(myStats->gloves);
+//						}
+//						myStats->gloves = nullptr;
+//						break;
+//					}
+//					myStats->gloves->type = (ItemType)type;
+//					if ( items[myStats->gloves->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_GLOVES )
+//					{
+//						break;
+//					}
+//				}
+//			}
+//			else
+//			{
+//				myStats->gloves = newItem(GLOVES, EXCELLENT, 0, 1, 0, true, nullptr);
+//			}
+//		}
+//		if ( keystatus[SDLK_g] )
+//		{
+//			keystatus[SDLK_g] = 0;
+//			if ( myStats->helmet )
+//			{
+//				if ( keystatus[SDLK_LSHIFT] )
+//				{
+//					while ( true )
+//					{
+//						int type = myStats->helmet->type;
+//						type--;
+//						if ( type < 0 )
+//						{
+//							type = NUMITEMS - 1;
+//						}
+//						myStats->helmet->type = (ItemType)type;
+//						if ( items[myStats->helmet->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_HELM )
+//						{
+//							break;
+//						}
+//					}
+//				}
+//				else
+//				{
+//					while ( true )
+//					{
+//						int type = myStats->helmet->type;
+//						type++;
+//						if ( type >= NUMITEMS )
+//						{
+//							type = 0;
+//						}
+//						myStats->helmet->type = (ItemType)type;
+//						if ( items[myStats->helmet->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_HELM )
+//						{
+//							break;
+//						}
+//					}
+//				}
+//			}
+//			else
+//			{
+//				myStats->helmet = newItem(LEATHER_HELM, EXCELLENT, 0, 1, 0, true, nullptr);
+//			}
+//		}
+//		if ( keystatus[SDLK_j] )
+//		{
+//			keystatus[SDLK_j] = 0;
+//			if ( myStats->breastplate )
+//			{
+//				if ( keystatus[SDLK_LSHIFT] )
+//				{
+//					while ( true )
+//					{
+//						int type = myStats->breastplate->type;
+//						type--;
+//						if ( type < 0 )
+//						{
+//							type = NUMITEMS - 1;
+//						}
+//						myStats->breastplate->type = (ItemType)type;
+//						if ( items[myStats->breastplate->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BREASTPLATE )
+//						{
+//							break;
+//						}
+//					}
+//				}
+//				else
+//				{
+//					while ( true )
+//					{
+//						int type = myStats->breastplate->type;
+//						type++;
+//						if ( type >= NUMITEMS )
+//						{
+//							if ( myStats->breastplate->node )
+//							{
+//								list_RemoveNode(myStats->breastplate->node);
+//							}
+//							else
+//							{
+//								free(myStats->breastplate);
+//							}
+//							myStats->breastplate = nullptr;
+//							break;
+//						}
+//						myStats->breastplate->type = (ItemType)type;
+//						if ( items[myStats->breastplate->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BREASTPLATE )
+//						{
+//							break;
+//						}
+//					}
+//				}
+//			}
+//			else
+//			{
+//				myStats->breastplate = newItem(LEATHER_BREASTPIECE, EXCELLENT, 0, 1, 0, true, nullptr);
+//			}
+//		}
+//		if ( keystatus[SDLK_h] )
+//		{
+//			keystatus[SDLK_h] = 0;
+//			if ( myStats->mask )
+//			{
+//				if ( keystatus[SDLK_LSHIFT] )
+//				{
+//					while ( true )
+//					{
+//						int type = myStats->mask->type;
+//						type--;
+//						if ( type < 0 )
+//						{
+//							type = NUMITEMS - 1;
+//						}
+//						myStats->mask->type = (ItemType)type;
+//						if ( items[myStats->mask->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_MASK )
+//						{
+//							break;
+//						}
+//					}
+//				}
+//				else
+//				{
+//					while ( true )
+//					{
+//						int type = myStats->mask->type;
+//						type++;
+//						if ( type >= NUMITEMS )
+//						{
+//							type = 0;
+//						}
+//						myStats->mask->type = (ItemType)type;
+//						if ( items[myStats->mask->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_MASK )
+//						{
+//							break;
+//						}
+//					}
+//				}
+//			}
+//		}
+//#endif	
+}
 
 	my->focalx = limbs[GNOME][0][0];
 	my->focaly = limbs[GNOME][0][1];
@@ -1062,7 +1227,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 		else
 		{
-			my->z = 2.25;
+			my->z = 2.75;
 			my->pitch = 0;
 		}
 	}
@@ -1183,11 +1348,11 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					{
 						if ( gnomeVariant == GNOME_THIEF_RANGED )
 						{
-							entity->sprite = 1439;
+							entity->sprite = 1469;
 						}
 						else
 						{
-							entity->sprite = gnome_type == "gnome2" ? 1428 : gnome_type == "gnome2F" ? 1432 : 297;
+							entity->sprite = gnome_type == "gnome2" ? 1428 : gnome_type == "gnome2F" ? 1432 : 1469;
 						}
 					}
 					else
@@ -1229,11 +1394,11 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					{
 						if ( gnomeVariant == GNOME_THIEF_RANGED )
 						{
-							entity->sprite = 1438;
+							entity->sprite = 1470;
 						}
 						else
 						{
-							entity->sprite = gnome_type == "gnome2" ? 1429 : gnome_type == "gnome2F" ? 1433 : 298;
+							entity->sprite = gnome_type == "gnome2" ? 1429 : gnome_type == "gnome2F" ? 1433 : 1470;
 						}
 					}
 					else
