@@ -6495,5 +6495,34 @@ Magic Required: %d (%s)#
 6266 Not enough Lore Points available.
 Unlock Achievements to earn more!#
 6267 The exit is revealed!#
+6268 You pull the rope...#
+6269 bell#
+6270 bell#
+6271 Ring bell#
+6272 Something was lodged inside the bell!#
+6273 This bell is broken!#
+6274 But nothing happens.#
+6275 The bell comes crashing down!#
+6276 You are struck by a falling bell!#
+6277 gets their bell rung.#
+6278 Bell#
+6279 The clapper breaks off!#
+6280 The chime invigorates your %s!#
+6281 might#
+6282 stamina#
+6283 agility#
+6284 mentality#
+6285 The minotaur is nigh, hurry!#
+6286 You dodged an attack!#
+6287 You dodged a %s!#
+6288 Your stamina returns back to normal.#
+6289 Your agility returns back to normal.#
+6290 Your mentality returns back to normal.#
+6291 flying arrow#
+6292 flying bolt#
+6293 flying rock#
+6294 You dodged a flying %s!#
+6295 spell#
+6296 projectile#
 
 6300 END#
