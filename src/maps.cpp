@@ -3383,6 +3383,8 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	std::vector<Uint32> itemsGeneratedList;
 	static ConsoleVariable<bool> cvar_underworldshrinetest("/underworldshrinetest", false);
 
+	int exit_x = -1;
+	int exit_y = -1;
 	//printlog("j: %d\n",j);
 	//printlog("numpossiblelocations: %d\n",numpossiblelocations);
 	for ( c = 0; c < std::min(j, numpossiblelocations); ++c )
@@ -3422,77 +3424,306 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		if ( (c == 0 || (minotaurlevel && c < 2)) && (!secretlevel || currentlevel != 7) && (!secretlevel || currentlevel != 20)
 			&& std::get<LEVELPARAM_DISABLE_NORMAL_EXIT>(mapParameters) == 0 )
 		{
-			if ( strcmp(map.name, "Hell") )
+			// daedalus shrine
+			if ( c == 1 && minotaurlevel && !(secretlevel && (currentlevel == 7 || currentlevel == 20)) )
 			{
-				entity = newEntity(11, 1, map.entities, nullptr); // ladder
-				entity->behavior = &actLadder;
+				int numShrines = 1;
+				/*if ( !strncmp(map.name, "The Labyrinth", 13) )
+				{
+					numShrines = 3;
+				}*/
+				std::map<int, std::vector<int>> goodspots;
+
+				// generate in different quadrant than exit
+				int exitquadrant = 0;
+				if ( exit_x >= map.width / 2 )
+				{
+					if ( exit_y >= map.height / 2 )
+					{
+						exitquadrant = 3; // northwest is opposite
+					}
+					else
+					{
+						exitquadrant = 2; // southwest is opposite
+					}
+				}
+				else
+				{
+					if ( exit_y >= map.height / 2 )
+					{
+						exitquadrant = 0; // northeast is opposite
+					}
+					else
+					{
+						exitquadrant = 1; // southeast is opposite
+					}
+				}
+
+				std::vector<int> quadrantOrder;
+				switch ( exitquadrant )
+				{
+				case 0:
+					quadrantOrder = { 0, 1, 3, 2 };
+					break;
+				case 1:
+					quadrantOrder = { 1, 2, 0, 3 };
+					break;
+				case 2:
+					quadrantOrder = { 2, 3, 1, 0 };
+					break;
+				case 3:
+					quadrantOrder = { 3, 0, 2, 1 };
+					break;
+				default:
+					break;
+				}
+
+				for ( int y = 0; y < map.height; ++y )
+				{
+					for ( int x = 0; x < map.width; ++x )
+					{
+						if ( possiblelocations[y + x * map.height] == true )
+						{
+							int quadrant = 0;
+							if ( x >= map.width / 2 )
+							{
+								if ( y >= map.height / 2 )
+								{
+									quadrant = 1; // southeast
+								}
+								else
+								{
+									quadrant = 0; // northeast
+								}
+							}
+							else
+							{
+								if ( y >= map.height / 2 )
+								{
+									quadrant = 2; // southwest
+								}
+								else
+								{
+									quadrant = 3; // northwest
+								}
+							}
+							goodspots[quadrant].push_back(x + y * 1000);
+						}
+					}
+				}
+
+				std::set<int> obstacleSpots;
+				bool foundspot = false;
+				while ( quadrantOrder.size() > 0 )
+				{
+					int quadrant = quadrantOrder[0];
+					quadrantOrder.erase(quadrantOrder.begin());
+
+					while ( goodspots[quadrant].size() > 0 )
+					{
+						int index = map_rng.rand() % goodspots[quadrant].size();
+						int picked = goodspots[quadrant][index];
+
+						goodspots[quadrant].erase(goodspots[quadrant].begin() + index);
+
+						int x = picked % 1000;
+						int y = picked / 1000;
+						int obstacles = 0;
+						for ( int x2 = -1; x2 <= 1; x2++ )
+						{
+							for ( int y2 = -1; y2 <= 1; y2++ )
+							{
+								if ( obstacleSpots.find((x + x2) + 1000 * (y + y2)) != obstacleSpots.end()
+									|| checkObstacle((x + x2) * 16, (y + y2) * 16, NULL, NULL, false) )
+								{
+									obstacles++;
+									obstacleSpots.insert((x + x2) + 1000 * (y + y2));
+									if ( obstacles > 1 )
+									{
+										break;
+									}
+								}
+							}
+							if ( obstacles > 1 )
+							{
+								break;
+							}
+						}
+						if ( obstacles > 1 )
+						{
+							continue;
+						}
+
+						// good spot
+						Entity* entity = newEntity(11, 1, map.entities, nullptr);
+						entity->behavior = &actLadder;
+
+						// determine if the ladder generated in a viable location
+						if ( strncmp(map.name, "Underworld", 10) )
+						{
+							bool nopath = false;
+							bool hellLadderFix = !strncmp(map.name, "Hell", 4);
+							std::vector<Entity*> tempPassableEntities;
+							if ( hellLadderFix )
+							{
+								for ( node = map.entities->first; node != NULL; node = node->next )
+								{
+									if ( (entity2 = (Entity*)node->element) )
+									{
+										if ( entity2->sprite == 19 || entity2->sprite == 20
+											|| entity2->sprite == 113 || entity2->sprite == 114 )
+										{
+											int entx = entity2->x / 16;
+											int enty = entity2->y / 16;
+											if ( !entity2->flags[PASSABLE] )
+											{
+												if ( entx >= startRoomInfo.x1 && entx <= startRoomInfo.x2
+													&& enty >= startRoomInfo.y1 && enty <= startRoomInfo.y2 )
+												{
+													tempPassableEntities.push_back(entity2);
+													entity2->flags[PASSABLE] = true;
+												}
+											}
+										}
+									}
+								}
+							}
+							for ( node = map.entities->first; node != NULL; node = node->next )
+							{
+								entity2 = (Entity*)node->element;
+								if ( entity2->sprite == 1 ) // note entity->behavior == nullptr at this point
+								{
+									list_t* path = generatePath(x, y, entity2->x / 16, entity2->y / 16,
+										entity, entity2, GeneratePathTypes::GENERATE_PATH_CHECK_EXIT, hellLadderFix);
+									if ( path == NULL )
+									{
+										nopath = true;
+									}
+									else
+									{
+										list_FreeAll(path);
+										free(path);
+									}
+									break;
+								}
+							}
+							for ( auto ent : tempPassableEntities )
+							{
+								ent->flags[PASSABLE] = false;
+							}
+							if ( nopath )
+							{
+								// try again
+								list_RemoveNode(entity->mynode);
+								entity = NULL;
+								break;
+							}
+						}
+
+						entity->sprite = 190;
+						entity->behavior = &actDaedalusShrine;
+						entity->x = 16.0 * x;
+						entity->y = 16.0 * y;
+
+						--numpossiblelocations;
+						possiblelocations[y + x * map.height] = false;
+
+						skipPossibleLocationsDecrement = true;
+						foundspot = true;
+						break;
+					}
+
+					if ( foundspot )
+					{
+						foundspot = false;
+						--numShrines;
+						if ( numShrines <= 0 )
+						{
+							break;
+						}
+					}
+				}
 			}
 			else
 			{
-				entity = newEntity(45, 1, map.entities, nullptr); // hell uses portals instead
-				entity->behavior = &actPortal;
-				entity->skill[3] = 1; // not secret portals though
-			}
-
-			// determine if the ladder generated in a viable location
-			if ( strncmp(map.name, "Underworld", 10) )
-			{
-				bool nopath = false;
-				bool hellLadderFix = !strncmp(map.name, "Hell", 4);
-				std::vector<Entity*> tempPassableEntities;
-				if ( hellLadderFix )
+				// normal exits
+				if ( strcmp(map.name, "Hell") )
 				{
-					for ( node = map.entities->first; node != NULL; node = node->next )
+					entity = newEntity(11, 1, map.entities, nullptr); // ladder
+					entity->behavior = &actLadder;
+				}
+				else
+				{
+					entity = newEntity(45, 1, map.entities, nullptr); // hell uses portals instead
+					entity->behavior = &actPortal;
+					entity->skill[3] = 1; // not secret portals though
+				}
+
+				// determine if the ladder generated in a viable location
+				if ( strncmp(map.name, "Underworld", 10) )
+				{
+					bool nopath = false;
+					bool hellLadderFix = !strncmp(map.name, "Hell", 4);
+					std::vector<Entity*> tempPassableEntities;
+					if ( hellLadderFix )
 					{
-						if ( (entity2 = (Entity*)node->element) )
+						for ( node = map.entities->first; node != NULL; node = node->next )
 						{
-							if ( entity2->sprite == 19 || entity2->sprite == 20
-								|| entity2->sprite == 113 || entity2->sprite == 114 )
+							if ( (entity2 = (Entity*)node->element) )
 							{
-								int entx = entity2->x / 16;
-								int enty = entity2->y / 16;
-								if ( !entity2->flags[PASSABLE] )
+								if ( entity2->sprite == 19 || entity2->sprite == 20
+									|| entity2->sprite == 113 || entity2->sprite == 114 )
 								{
-									if ( entx >= startRoomInfo.x1 && entx <= startRoomInfo.x2
-										&& enty >= startRoomInfo.y1 && enty <= startRoomInfo.y2 )
+									int entx = entity2->x / 16;
+									int enty = entity2->y / 16;
+									if ( !entity2->flags[PASSABLE] )
 									{
-										tempPassableEntities.push_back(entity2);
-										entity2->flags[PASSABLE] = true;
+										if ( entx >= startRoomInfo.x1 && entx <= startRoomInfo.x2
+											&& enty >= startRoomInfo.y1 && enty <= startRoomInfo.y2 )
+										{
+											tempPassableEntities.push_back(entity2);
+											entity2->flags[PASSABLE] = true;
+										}
 									}
 								}
 							}
 						}
 					}
-				}
-				for ( node = map.entities->first; node != NULL; node = node->next )
-				{
-					entity2 = (Entity*)node->element;
-					if ( entity2->sprite == 1 ) // note entity->behavior == nullptr at this point
+					for ( node = map.entities->first; node != NULL; node = node->next )
 					{
-						list_t* path = generatePath(x, y, entity2->x / 16, entity2->y / 16, 
-							entity, entity2, GeneratePathTypes::GENERATE_PATH_CHECK_EXIT, hellLadderFix);
-						if ( path == NULL )
+						entity2 = (Entity*)node->element;
+						if ( entity2->sprite == 1 ) // note entity->behavior == nullptr at this point
 						{
-							nopath = true;
+							list_t* path = generatePath(x, y, entity2->x / 16, entity2->y / 16,
+								entity, entity2, GeneratePathTypes::GENERATE_PATH_CHECK_EXIT, hellLadderFix);
+							if ( path == NULL )
+							{
+								nopath = true;
+							}
+							else
+							{
+								list_FreeAll(path);
+								free(path);
+							}
+							break;
 						}
-						else
-						{
-							list_FreeAll(path);
-							free(path);
-						}
-						break;
 					}
-				}
-				for ( auto ent : tempPassableEntities )
-				{
-					ent->flags[PASSABLE] = false;
-				}
-				if ( nopath )
-				{
-					// try again
-					c--;
-					list_RemoveNode(entity->mynode);
-					entity = NULL;
+					for ( auto ent : tempPassableEntities )
+					{
+						ent->flags[PASSABLE] = false;
+					}
+					if ( nopath )
+					{
+						// try again
+						c--;
+						list_RemoveNode(entity->mynode);
+						entity = NULL;
+					}
+					else
+					{
+						exit_x = x;
+						exit_y = y;
+					}
 				}
 			}
 		}
@@ -4131,6 +4362,85 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		}
 	}
 
+	{
+		if ( !strcmp(map.name, "The Ruins") )
+		{
+			int numBells = 0;
+			if ( currentlevel % 2 == 0 )
+			{
+				numBells = 1 + map_rng.rand() % 2;
+			}
+			else
+			{
+				numBells = 2 + map_rng.rand() % 2;
+			}
+			std::vector<int> goodSpots;
+			for ( int x = 0; x < map.width; ++x )
+			{
+				for ( int y = 0; y < map.height; ++y )
+				{
+					if ( possiblelocations[y + x * map.height] == true )
+					{
+						goodSpots.push_back(x + 10000 * y);
+					}
+				}
+			}
+
+			for ( int c = 0; c < std::min(numBells, (int)goodSpots.size()); ++c )
+			{
+				// choose a random location from those available
+				int pick = map_rng.rand() % goodSpots.size();
+				int x = goodSpots[pick] % 10000;
+				int y = goodSpots[pick] / 10000;
+
+				goodSpots.erase(goodSpots.begin() + pick);
+
+				bool bellSpot = true;
+				for ( int x2 = -1; x2 <= 1; x2++ )
+				{
+					for ( int y2 = -1; y2 <= 1; y2++ )
+					{
+						int checkx = x + x2;
+						int checky = y + y2;
+						if ( checkx >= 0 && checkx < map.width )
+						{
+							if ( checky >= 0 && checky < map.height )
+							{
+								if ( !possiblelocations[checky + checkx * map.height] )
+								{
+									bellSpot = false;
+								}
+								else if ( map.tiles[(MAPLAYERS - 1) + checky * MAPLAYERS + checkx * MAPLAYERS * map.height]
+									|| map.tiles[OBSTACLELAYER + checky * MAPLAYERS + checkx * MAPLAYERS * map.height] )
+								{
+									bellSpot = false;
+								}
+								else if ( checkObstacle((checkx) * 16, (checky) * 16, NULL, NULL, false, false) )
+								{
+									bellSpot = false;
+								}
+							}
+						}
+					}
+				}
+				if ( bellSpot )
+				{
+					Entity* bell = newEntity(191, 1, map.entities, nullptr); //Bell entity.
+					bell->x = x * 16.0;
+					bell->y = y * 16.0;
+
+					possiblelocations[y + x * map.height] = false;
+					numpossiblelocations--;
+				}
+				else
+				{
+					--c;
+					continue;
+				}
+			}
+		}
+	}
+
 	int numBreakables = std::min(15, numpossiblelocations / 10);
 	struct BreakableNode_t
 	{
@@ -4482,7 +4792,12 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 
 	int breakableGoodies = breakableLocations.size() * 80 / 100;
 	int breakableMonsters = 0;
-	const int breakableMonsterLimit = 2 + (currentlevel / LENGTH_OF_LEVEL_REGION) * (1 + map_rng.rand() % 2);
+	int breakableMonsterLimit = 2 + (currentlevel / LENGTH_OF_LEVEL_REGION) * (1 + map_rng.rand() % 2);
+	static ConsoleVariable<int> cvar_breakableMonsterLimit("/breakable_monster_limit", 0);
+	if ( svFlags & SV_FLAG_CHEATS )
+	{
+		breakableMonsterLimit = std::max(*cvar_breakableMonsterLimit, breakableMonsterLimit);
+	}
 	if ( findBreakables != EditorEntityData_t::colliderRandomGenPool.end() && findBreakables->second.size() > 0 && breakableGoodies > 0 )
 	{
 		int breakableItemsFromGround = 0;
@@ -4541,11 +4856,14 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 
 				int index = (y) * MAPLAYERS + (x) * MAPLAYERS * map.height;
 
+				static ConsoleVariable<int> cvar_breakableMonsterChance("/breakable_monster_chance", 10);
+
 				if ( !map.tiles[index] && map_rng.rand() % 2 == 1 )
 				{
 					// nothing over pits 50%
 				}
-				else if ( (breakableMonsters < breakableMonsterLimit && monsterEventExists && map_rng.rand() % 10 == 0)
+				else if ( (breakableMonsters < breakableMonsterLimit && monsterEventExists 
+					&& map_rng.rand() % ((svFlags & SV_FLAG_CHEATS) ? std::min(10, *cvar_breakableMonsterChance) : 10) == 0)
 					&& map.monsterexcludelocations[x + y * map.width] == false ) // 10% monster inside
 				{
 					Monster monsterEvent = NOTHING;
@@ -8165,6 +8483,92 @@ void assignActions(map_t* map)
 				entity->sprite = -1;
 				break;
 			}
+			case 190:
+				entity->x += 8;
+				entity->y += 8;
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->behavior = &actDaedalusShrine;
+				entity->flags[PASSABLE] = false;
+				entity->z = -0.25;
+				entity->sprite = 1481;
+				//entity->focalx = 0.75;
+				entity->yaw = (map_rng.rand() % 360) * PI / 180.0;
+				entity->seedEntityRNG(map_rng.getU32());
+				{
+					Entity* childEntity = newEntity(1480, 1, map->entities, nullptr); // base
+					childEntity->parent = entity->getUID();
+					childEntity->x = entity->x;
+					childEntity->y = entity->y;
+					childEntity->z = entity->z + 6.5;
+					childEntity->yaw = 0.0;
+					childEntity->sizex = 4;
+					childEntity->sizey = 4;
+					childEntity->flags[PASSABLE] = true;
+					childEntity->flags[UNCLICKABLE] = false;
+					TileEntityList.addEntity(*childEntity);
+				}
+				break;
+			case 191:
+			{
+				entity->x += 8;
+				entity->y += 8;
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->z = 0.0;
+				entity->behavior = &actBell;
+				entity->flags[PASSABLE] = true;
+				entity->flags[BLOCKSIGHT] = false;
+				entity->sprite = 1478; // rope
+				entity->seedEntityRNG(map_rng.getU32());
+				entity->skill[11] = map_rng.rand(); // buff type
+				{
+					Entity* childEntity = newEntity(1475, 1, map->entities, nullptr); // bell
+					childEntity->parent = entity->getUID();
+					childEntity->x = entity->x - 2 * cos(entity->yaw);
+					childEntity->y = entity->y - 2 * sin(entity->yaw);
+					childEntity->z = -22.25;
+					childEntity->yaw = entity->yaw;
+					childEntity->sizex = 6;
+					childEntity->sizey = 6;
+					childEntity->flags[PASSABLE] = true;
+					childEntity->flags[UNCLICKABLE] = false;
+					childEntity->flags[UPDATENEEDED] = true;
+					childEntity->z = entity->z;
+					TileEntityList.addEntity(*childEntity);
+					node_t* tempNode = list_AddNodeLast(&entity->children);
+					tempNode->element = childEntity; // add the node to the children list.
+					tempNode->deconstructor = &emptyDeconstructor;
+					tempNode->size = sizeof(Entity*);
+				}
+
+				auto& bellRng = entity->entity_rng ? *entity->entity_rng : map_rng;
+				int roll = bellRng.rand() % 4;
+				if ( roll == 0 )
+				{
+					Entity* itemEntity = newEntity(8, 1, map->entities, nullptr);  // item
+					setSpriteAttributes(itemEntity, nullptr, nullptr);
+					itemEntity->x = entity->x - 8.0;
+					itemEntity->y = entity->y - 8.0;
+					itemEntity->z = -16;
+					itemEntity->flags[INVISIBLE] = true;
+					itemEntity->itemContainer = entity->getUID();
+					itemEntity->yaw = entity->yaw;
+					itemEntity->skill[16] = SPELLBOOK + 1;
+					entity->skill[1] = itemEntity->getUID();
+				}
+				else if ( roll == 1 )
+				{
+					Entity* goldEntity = newEntity(9, 1, map->entities, nullptr);  // gold
+					goldEntity->x = entity->x - 8.0;
+					goldEntity->y = entity->y - 8.0;
+					goldEntity->z = -16;
+					goldEntity->goldAmount = 50 + bellRng.rand() % 50;
+					goldEntity->flags[INVISIBLE] = true;
+					entity->skill[1] = goldEntity->getUID();
+				}
+			}
+				break;
             default:
                 break;
 		}
