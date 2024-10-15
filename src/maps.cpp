@@ -8467,10 +8467,9 @@ void mapLevel(int player)
 
 void mapLevel2(int player)
 {
-	int x, y;
-	for ( y = 0; y < map.height; ++y )
+	for ( int y = 0; y < map.height; ++y )
 	{
-		for ( x = 0; x < map.width; ++x )
+		for ( int x = 0; x < map.width; ++x )
 		{
 			if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 			{
