@@ -8538,6 +8538,7 @@ void assignActions(map_t* map)
 					childEntity->flags[PASSABLE] = true;
 					childEntity->flags[UNCLICKABLE] = false;
 					childEntity->flags[UPDATENEEDED] = true;
+					childEntity->flags[NOCLIP_CREATURES] = true;
 					childEntity->z = entity->z;
 					TileEntityList.addEntity(*childEntity);
 					node_t* tempNode = list_AddNodeLast(&entity->children);
