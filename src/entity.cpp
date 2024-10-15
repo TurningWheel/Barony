@@ -7803,20 +7803,20 @@ void Entity::attack(int pose, int charge, Entity* target)
 				bool bat = hitstats && hitstats->type == BAT_SMALL;
 				if ( bat && hit.entity->isUntargetableBat() )
 				{
-						miss = true;
-					}
+					miss = true;
+				}
 				else if ( bat && hit.entity->monsterSpecialState == BAT_REST )
-					{
-						miss = false;
-					}
+				{
+					miss = false;
+				}
 				else if ( bat || (hitstats && hitstats->EFFECTS[EFF_AGILITY]) )
+				{
+					Sint32 previousMonsterState = hit.entity->monsterState;
+					bool backstab = false;
+					bool flanking = false;
+					real_t hitAngle = hit.entity->yawDifferenceFromEntity(this);
+					if ( (hitAngle >= 0 && hitAngle <= 2 * PI / 3) ) // 120 degree arc
 					{
-						Sint32 previousMonsterState = hit.entity->monsterState;
-						bool backstab = false;
-						bool flanking = false;
-						real_t hitAngle = hit.entity->yawDifferenceFromEntity(this);
-						if ( (hitAngle >= 0 && hitAngle <= 2 * PI / 3) ) // 120 degree arc
-						{
 						if ( hit.entity->behavior == &actPlayer )
 						{
 							if ( local_rng.rand() % 2 == 0 )
@@ -7842,12 +7842,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
-						if ( backstab )
-						{
-							miss = false;
-						}
-						else
-						{
+					if ( backstab )
+					{
+						miss = false;
+					}
+					else
+					{
 						int baseChance = bat ? 6 : 2;
 						if ( flanking )
 						{
@@ -7856,24 +7856,24 @@ void Entity::attack(int pose, int charge, Entity* target)
 						miss = local_rng.rand() % 10 < baseChance;
 					}
 
-						if ( myStats->weapon )
+					if ( myStats->weapon )
+					{
+						if ( myStats->weapon->type == ARTIFACT_SPEAR && !shapeshifted )
 						{
-							if ( myStats->weapon->type == ARTIFACT_SPEAR && !shapeshifted )
-							{
-								miss = false;
-							}
+							miss = false;
 						}
 					}
+				}
 
-					if ( miss )
+				if ( miss )
+				{
+					if ( !hit.entity->isUntargetableBat() )
 					{
-						if ( !hit.entity->isUntargetableBat() )
-						{
 						if ( player >= 0 || (behavior == &actMonster && monsterAllyGetPlayerLeader())
 							|| hit.entity->behavior == &actPlayer || hit.entity->monsterAllyGetPlayerLeader() )
-							{
+						{
 							spawnDamageGib(hit.entity, 0, DamageGib::DMG_MISS, DamageGibDisplayType::DMG_GIB_MISS, true);
-							}
+						}
 
 						if ( hit.entity->behavior == &actPlayer )
 						{
@@ -7923,10 +7923,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
-						hit.entity = nullptr;
-					}
+					hit.entity = nullptr;
 				}
 			}
+		}
 		else
 		{
 			hit.entity = target;
@@ -16026,30 +16026,32 @@ Uint32 Entity::getMonsterFootstepSound(int footstepType, int bootSprite)
 			sound = 115;
 			break;
 		case MONSTER_FOOTSTEP_LEATHER:
-			sound = local_rng.rand() % 7;
+		{
+			static std::vector<int> leatherSteps{ 0, 3, 4, 5, 6 };
+			sound = leatherSteps[local_rng.rand() % leatherSteps.size()];
 			break;
+		}
 		case MONSTER_FOOTSTEP_USE_BOOTS:
+		{
 			if ( bootSprite >= 152 && bootSprite <= 155 ) // iron boots
 			{
-				sound = 7 + local_rng.rand() % 7;
+				static std::vector<int> ironSteps{ 7, 10, 11, 12, 13 };
+				sound = ironSteps[local_rng.rand() % ironSteps.size()];
 			}
-			else if ( bootSprite >= 156 && bootSprite <= 159 ) // steel boots
+			else if ( (bootSprite >= 156 && bootSprite <= 159) // steel boots
+				|| (bootSprite >= 499 && bootSprite <= 502) // crystal boots
+				|| (bootSprite >= 521 && bootSprite <= 524) ) // artifact boots
 			{
-				sound = 14 + local_rng.rand() % 7;
-			}
-			else if ( bootSprite >= 499 && bootSprite <= 502 ) // crystal boots
-			{
-				sound = 14 + local_rng.rand() % 7;
-			}
-			else if ( bootSprite >= 521 && bootSprite <= 524 ) // artifact boots
-			{
-				sound = 14 + local_rng.rand() % 7;
+				static std::vector<int> steelSteps{ 14, 15, 16, 17, 18, 19, 20 };
+				sound = steelSteps[local_rng.rand() % steelSteps.size()];
 			}
 			else
 			{
-				sound = local_rng.rand() % 7;
+				static std::vector<int> defaultSteps{ 0, 3, 4, 5, 6 };
+				sound = defaultSteps[local_rng.rand() % defaultSteps.size()];
 			}
 			break;
+		}
 		case MONSTER_FOOTSTEP_NONE:
 		default:
 			break;
