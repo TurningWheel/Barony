@@ -7550,7 +7550,8 @@ void actPlayer(Entity* my)
 								continue;
 							}
 							char whatever[256];
-							snprintf(whatever, sizeof(whatever), "%s %s", stats[PLAYER_NUM]->name, stats[PLAYER_NUM]->obituary);
+							std::string nameStr = messageSanitizePercentSign(stats[PLAYER_NUM]->name, nullptr);
+							snprintf(whatever, sizeof(whatever), "%s %s", nameStr.c_str(), stats[PLAYER_NUM]->obituary);
 							whatever[255] = '\0';
 							messagePlayer(c, MESSAGE_OBITUARY, whatever);
 						}
