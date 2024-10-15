@@ -84,7 +84,7 @@ bool isCurrentHoliday(bool force) {
 std::unordered_map<std::string, int> mapHashes = {
     { "boss.lmp", 2376307 },
     { "bramscastle.lmp", 2944609 },
-    { "caves.lmp", 1065461 },
+    { "caves.lmp", 777612 },
     { "caves00.lmp", 70935 },
     { "caves01.lmp", 13350 },
     { "caves01a.lmp", 5 },
