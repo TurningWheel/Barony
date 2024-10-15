@@ -78,6 +78,68 @@ static const char* colorForSprite(Entity* my, int sprite, bool darker) {
     }
 }
 
+void actMagiclightMoving(Entity* my)
+{
+	Entity* caster = NULL;
+	if ( !my )
+	{
+		return;
+	}
+
+	my->removeLightField();
+	if ( my->skill[0] <= 0 )
+	{
+		my->removeLightField();
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	--my->skill[0];
+
+	if ( my->skill[1] == 1 )
+	{
+		my->light = addLight(my->x / 16, my->y / 16, "magic_daedalus_reveal");
+	}
+
+	if ( my->sprite >= 0 )
+	{
+		if ( Entity* particle = spawnMagicParticle(my) )
+		{
+			particle->x = my->x;
+			particle->y = my->y;
+			//particle->z = my->z;
+			particle->flags[INVISIBLE] = my->flags[INVISIBLE];
+			particle->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
+		}
+	}
+
+	real_t dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
+	if ( dist != sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y) )
+	{
+		my->removeLightField();
+		list_RemoveNode(my->mynode);
+		return;
+	}
+
+	if ( Entity* parent = uidToEntity(my->parent) )
+	{
+		if ( parent->behavior == &actDaedalusShrine && parent->skill[13] != 0 ) // shrine source
+		{
+			if ( Entity* exitEntity = uidToEntity(parent->skill[13]) )
+			{
+				if ( (int)(my->x / 16) == (int)(exitEntity->x / 16) )
+				{
+					if ( (int)(my->y / 16) == (int)(exitEntity->y / 16) )
+					{
+						my->removeLightField();
+						list_RemoveNode(my->mynode);
+						return;
+					}
+				}
+			}
+		}
+	}
+}
+
 void actMagiclightBall(Entity* my)
 {
 	Entity* caster = NULL;
@@ -4596,9 +4658,31 @@ void actMagicParticle(Entity* my)
 		my->scaley -= 0.05;
 		my->scalez -= 0.05;
 	}
-	my->scalex -= 0.05;
-	my->scaley -= 0.05;
-	my->scalez -= 0.05;
+
+	if ( my->sprite == 1479 )
+	{
+		my->scalex -= 0.025;
+		my->scaley -= 0.025;
+		my->scalez -= 0.025;
+		my->pitch += 0.25;
+		my->yaw += 0.25;
+		//if ( my->parent == 0 && local_rng.rand() % 10 == 0 )
+		//{
+		//	if ( Entity* particle = spawnMagicParticle(my) )
+		//	{
+		//		particle->parent = my->getUID();
+		//		particle->x = my->x;
+		//		particle->y = my->y;
+		//		//particle->z = my->z;
+		//	}
+		//}
+	}
+	else
+	{
+		my->scalex -= 0.05;
+		my->scaley -= 0.05;
+		my->scalez -= 0.05;
+	}
 	if ( my->scalex <= 0 )
 	{
 		my->scalex = 0;
@@ -4698,6 +4782,7 @@ Entity* spawnMagicParticle(Entity* parentent)
 	entity->x = parentent->x + (local_rng.rand() % 50 - 25) / 20.f;
 	entity->y = parentent->y + (local_rng.rand() % 50 - 25) / 20.f;
 	entity->z = parentent->z + (local_rng.rand() % 50 - 25) / 20.f;
+	entity->parent = 0;
 	entity->scalex = 0.7;
 	entity->scaley = 0.7;
 	entity->scalez = 0.7;

@@ -63,6 +63,10 @@ static const int EFF_DISTRACTED_COOLDOWN = 38;
 static const int EFF_MIMIC_LOCKED = 39;
 static const int EFF_ROOTED = 40;
 static const int EFF_NAUSEA_PROTECTION = 41;
+static const int EFF_CON_BONUS = 42;
+static const int EFF_PWR = 43;
+static const int EFF_AGILITY = 44;
+static const int EFF_RALLY = 45;
 static const int NUMEFFECTS = 64;
 
 // stats
@@ -206,7 +210,8 @@ enum KilledBy {
     FOUNTAIN,
     SINK,
     FAILED_ALCHEMY,
-	FAILED_CHALLENGE
+	FAILED_CHALLENGE,
+	BELL
 };
 
 class Stat

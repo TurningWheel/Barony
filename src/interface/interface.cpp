@@ -23405,6 +23405,12 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 	case CALLOUT_TYPE_SHRINE:
 		key = "shrine";
 		break;
+	case CALLOUT_TYPE_BELL:
+		key = "bell";
+		break;
+	case CALLOUT_TYPE_DAEDALUS:
+		key = "daedalus";
+		break;
 	case CALLOUT_TYPE_EXIT:
 		key = "exit";
 		break;
@@ -23962,7 +23968,11 @@ CalloutRadialMenu::CalloutType CalloutRadialMenu::getCalloutTypeForEntity(const 
 	}
 	else if ( parent->behavior == &::actDaedalusShrine )
 	{
-		type = CALLOUT_TYPE_SHRINE;
+		type = CALLOUT_TYPE_DAEDALUS;
+	}
+	else if ( parent->behavior == &actBell )
+	{
+		type = CALLOUT_TYPE_BELL;
 	}
 	else if ( parent->behavior == &actBomb || parent->behavior == &actBeartrap )
 	{
@@ -26106,7 +26116,7 @@ bool CalloutRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updat
 			strcat(interactText, Language::get(4309)); // "shrine"
 		}
 	}
-	else if ( (selectedEntity.behavior == &::actDaedalusShrine) )
+	else if ( (selectedEntity.behavior == &::actDaedalusShrine) && interactWorld )
 	{
 		if ( updateInteractText )
 		{
@@ -26129,6 +26139,13 @@ bool CalloutRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updat
 			default:
 				break;
 			}
+		}
+	}
+	else if ( (selectedEntity.behavior == &actBell) && interactWorld )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(6270)); // "bell"
 		}
 	}
 	else if ( selectedEntity.behavior == &actLadder )

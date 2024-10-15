@@ -2745,7 +2745,12 @@ namespace ConsoleCommands {
 		}
 		else
 		{
-			players[clientnum]->entity->setEffect(effect, true, 500, true);
+			int duration = 500;
+			if ( argc >= 3 )
+			{
+				duration = atoi(argv[2]);
+			}
+			players[clientnum]->entity->setEffect(effect, true, duration, true);
 		}
 		});
 

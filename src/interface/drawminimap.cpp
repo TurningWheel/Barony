@@ -96,6 +96,8 @@ inline real_t getMinimapZoom()
 	return minimapObjectZoom + 50;
 }
 
+std::map<int, MinimapHighlight_t> minimapHighlights;
+
 void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 {
 	if ( loading )
@@ -226,6 +228,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 			Uint8 backgroundAlpha = 255 * ((100 - minimapTransparencyBackground) / 100.f);
 			Uint8 foregroundAlpha = 255 * ((100 - minimapTransparencyForeground) / 100.f);
 			auto foundCustomWall = customWalls.find(x + y * 10000);
+			int mapkey = x + y * 10000;
 			if ( x < 0 || y < 0 || x >= map.width || y >= map.height )
 			{
 				// out-of-bounds
@@ -233,6 +236,27 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 			}
 			else
 			{
+				auto find = minimapHighlights.find(mapkey);
+				if ( find != minimapHighlights.end() )
+				{
+					if ( find->second.ticks <= ticks )
+					{
+						if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+						{
+							if ( !minimap[y][x] )
+							{
+								minimap[y][x] = 4;
+							}
+						}
+						else if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+						{
+							if ( !minimap[y][x] )
+							{
+								minimap[y][x] = 3;
+							}
+						}
+					}
+				}
 				Sint8 mapIndex = minimap[y][x];
 				if ( foundCustomWall != customWalls.end() )
 				{
@@ -264,6 +288,36 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 				{
 					// mapped but undiscovered wall
 					color = makeColor(128, 128, 128, foregroundAlpha);
+				}
+
+
+				if ( find != minimapHighlights.end() )
+				{
+					real_t percent = 100.0;
+					if ( find->second.ticks > ticks )
+					{
+						percent = 0.0;
+					}
+					else if ( (ticks - find->second.ticks) > TICKS_PER_SECOND )
+					{
+						percent = std::max(0.0, percent - 4 * ((ticks - find->second.ticks) - TICKS_PER_SECOND));
+						if ( percent < 0.01 )
+						{
+							minimapHighlights.erase(mapkey);
+						}
+					}
+					percent /= 100.0;
+					if ( percent > 0.0 )
+					{
+						Uint8 r, g, b, a;
+						int r2, g2, b2, a2;
+						getColor(color, &r, &g, &b, &a);
+						r2 = std::min(255, std::max(0, (int)(r + 255.0 * percent)));
+						g2 = std::min(255, std::max(0, (int)(g - 128.0 * percent)));
+						b2 = std::min(255, std::max(0, (int)(b + 255.0 * percent)));
+						a2 = std::min(255, std::max(64, (int)(a - 64 * percent)));
+						color = makeColor(r2, g2, b2, a2);
+					}
 				}
 			}
 			putPixel(minimapSurface, x - xmin, y - ymin, color);
@@ -1188,4 +1242,107 @@ void minimapPingAdd(const int srcPlayer, const int destPlayer, MinimapPing newPi
 		}
 	}
 	minimapPings[destPlayer].insert(minimapPings[destPlayer].begin(), newPing);
+}
+
+static ConsoleVariable<float> cvar_shrine_reveal_steps("/shrine_reveal_steps", 8.0);
+void shrineDaedalusRevealMap(Entity& my)
+{
+	Entity* exitEntity = nullptr;
+	for ( node_t* node = map.entities->first; node; node = node->next )
+	{
+		Entity* entity = (Entity*)node->element;
+		if ( !entity ) { continue; }
+
+		if ( (entity->behavior == &actLadder && strcmp(map.name, "Hell"))
+			|| (entity->behavior == &actPortal && !strcmp(map.name, "Hell")) )
+		{
+			if ( entity->behavior == &actLadder && entity->skill[3] != 1 )
+			{
+				exitEntity = entity;
+				break;
+			}
+			if ( entity->behavior == &actPortal && entity->portalNotSecret == 1 )
+			{
+				exitEntity = entity;
+				break;
+			}
+		}
+	}
+
+	if ( !exitEntity )
+	{
+		return;
+	}
+
+	minimapHighlights.clear();
+
+	real_t tangent = atan2(exitEntity->y - my.y, exitEntity->x - my.x);
+
+	if ( Entity* lightball = newEntity(1482, 1, map.entities, nullptr) )
+	{
+		lightball->x = my.x;
+		lightball->y = my.y;
+		lightball->z = -2;
+		lightball->vel_x = 0.33 * *cvar_shrine_reveal_steps * cos(tangent);
+		lightball->vel_y = 0.33 * *cvar_shrine_reveal_steps * sin(tangent);
+		lightball->yaw = tangent;
+		lightball->parent = my.getUID();
+		lightball->behavior = &actMagiclightMoving;
+		lightball->skill[0] = TICKS_PER_SECOND * 10;
+		lightball->skill[1] = 1;
+		lightball->flags[NOUPDATE] = true;
+		lightball->flags[PASSABLE] = true;
+		lightball->flags[UNCLICKABLE] = true;
+		lightball->flags[NOCLIP_WALLS] = true;
+		lightball->flags[INVISIBLE] = true;
+		lightball->flags[INVISIBLE_DITHER] = true;
+		if ( multiplayer != CLIENT )
+		{
+			entity_uids--;
+		}
+		lightball->setUID(-3);
+	}
+
+	real_t dist = entityDist(&my, exitEntity);
+	std::set<int> visited;
+	real_t d = 0.0;
+	std::vector<int> checkCoords;
+	Uint32 tickOffset = ticks;
+	while ( d < dist )
+	{
+		checkCoords.clear();
+
+		{
+			real_t tx = (my.x + d * cos(tangent)) / 16.0;
+			real_t ty = (my.y + d * sin(tangent)) / 16.0;
+			checkCoords.push_back(static_cast<int>(tx) + 10000 * static_cast<int>(ty));
+
+			tx = (my.x + d * cos(tangent) + (16.0 * cos(tangent + PI / 2))) / 16.0;
+			ty = (my.y + d * sin(tangent) + (16.0 * sin(tangent + PI / 2))) / 16.0;
+			checkCoords.push_back(static_cast<int>(tx) + 10000 * static_cast<int>(ty));
+
+			tx = (my.x + d * cos(tangent) + (16.0 * cos(tangent - PI / 2))) / 16.0;
+			ty = (my.y + d * sin(tangent) + (16.0 * sin(tangent - PI / 2))) / 16.0;
+			checkCoords.push_back(static_cast<int>(tx) + 10000 * static_cast<int>(ty));
+		}
+
+		for ( auto coord : checkCoords )
+		{
+			int x = coord % 10000;
+			int y = coord / 10000;
+			if ( x < map.width && y < map.height )
+			{
+				if ( visited.find(x + 10000 * y) == visited.end() )
+				{
+					visited.insert(x + 10000 * y);
+					minimapHighlights[x + 10000 * y].ticks = tickOffset;
+				}
+			}
+		}
+
+		d += *cvar_shrine_reveal_steps;
+		tickOffset += TICKS_PER_SECOND / 25;
+	}
+
+	playSoundPlayer(clientnum, 167, 128);
 }

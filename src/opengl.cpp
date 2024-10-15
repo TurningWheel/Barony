@@ -1719,6 +1719,10 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 #endif
 }
 
+#ifndef EDITOR
+static ConsoleVariable<GLfloat> cvar_dmgSpriteDepthRange("/dmg_sprite_depth_range", 0.49);
+#endif // !EDITOR
+
 void glDrawSprite(view_t* camera, Entity* entity, int mode)
 {
     // bind texture
@@ -1740,6 +1744,14 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     }
     if (entity->flags[OVERDRAW]) {
         GL_CHECK_ERR(glDepthRange(0, 0.1));
+    }
+    else
+    {
+        if ( entity->behavior == &actDamageGib ) {
+#ifndef EDITOR
+            GL_CHECK_ERR(glDepthRange(0.f, *cvar_dmgSpriteDepthRange));
+#endif // !EDITOR
+        }
     }
     
     // bind shader
@@ -1809,14 +1821,10 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     if (mode == REALCOLORS) {
         GL_CHECK_ERR(glDisable(GL_BLEND));
     }
-    if (entity->flags[OVERDRAW]) {
+    if (entity->flags[OVERDRAW] || entity->behavior == &actDamageGib) {
         GL_CHECK_ERR(glDepthRange(0.f, 1.f));
     }
 }
-
-#ifndef EDITOR
-static ConsoleVariable<GLfloat> cvar_dmgSpriteDepthRange("/dmg_sprite_depth_range", 0.49);
-#endif // !EDITOR
 
 void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode, bool useTextAsImgPath, bool rotate)
 {
