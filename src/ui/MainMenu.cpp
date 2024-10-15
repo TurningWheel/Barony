@@ -8740,6 +8740,9 @@ bind_failed:
 					case KilledBy::FAILED_CHALLENGE:
 						cause_of_death = Language::get(6153);
 						break;
+					case KilledBy::BELL:
+						cause_of_death = Language::get(6278);
+						break;
 					default: 
 					{
 						cause_of_death = Language::get(5794 + (int)score->stats->killer);
@@ -26514,6 +26517,9 @@ failed:
         }
 		case KilledBy::FAILED_CHALLENGE:
 			cause_of_death = Language::get(6153);
+			break;
+		case KilledBy::BELL:
+			cause_of_death = Language::get(6278);
 			break;
         default: {
             cause_of_death = Language::get(5794 + (int)stats[player]->killer);

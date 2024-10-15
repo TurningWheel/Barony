@@ -1919,7 +1919,7 @@ void clientActions(Entity* entity)
 		case 1379:
 			entity->behavior = &actGoldBag;
 			break;
-		case 1369:
+		case 1481:
 			entity->behavior = &actDaedalusShrine;
 			break;
 		case Player::Ghost_t::GHOST_MODEL_P1:
@@ -2698,6 +2698,56 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 	}},
 
+	{ 'DAED', []() {
+		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		if ( Entity* shrine = uidToEntity(uid) )
+		{
+			if ( shrine->behavior == &::actDaedalusShrine )
+			{
+				daedalusShrineInteract(shrine, nullptr);
+			}
+		}
+	}},
+
+	// bell dropped item
+	{ 'BELI', []() {
+		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		Entity* entity = uidToEntity(uid);
+		if ( entity )
+		{
+			if ( entity->behavior == &actItem )
+			{
+				//entity->flags[UPDATENEEDED] = true;
+				if ( entity->flags[INVISIBLE] )
+				{
+					playSoundEntityLocal(entity, 47 + local_rng.rand() % 3, 64);
+					entity->flags[INVISIBLE] = false;
+					entity->vel_x = 0.0; //(0.25 + .025 * (local_rng.rand() % 11)) * cos(entity->yaw);
+					entity->vel_y = 0.0; //(0.25 + .025 * (local_rng.rand() % 11)) * sin(entity->yaw);
+					entity->vel_z = (-2 - local_rng.rand() % 5) * .01;
+					entity->itemContainer = 0;
+					entity->z = -16;
+					entity->itemNotMoving = 0;
+					entity->itemNotMovingClient = 0;
+					entity->flags[USERFLAG1] = false; // enable collision
+				}
+			}
+			else if ( entity->behavior == &actGoldBag )
+			{
+				if ( entity->flags[INVISIBLE] )
+				{
+					playSoundEntityLocal(entity, 242 + local_rng.rand() % 4, 64);
+					entity->vel_x = 0.0;
+					entity->vel_y = 0.0;
+					entity->vel_z = (-2 - local_rng.rand() % 5) * .01;
+					entity->goldBouncing = 0;
+					entity->z = -16;
+					entity->flags[INVISIBLE] = false;
+				}
+			}
+		}
+	} },
+
 	// ghost interact item
 	{ 'GHOI', []() {
 		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
@@ -2791,6 +2841,16 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		Uint32 sprite = (Uint32)SDLNet_Read32(&net_packet->data[10]);
 		spawnMagicEffectParticles(x, y, z, sprite);
 	}},
+
+	// spawn magical bell effect particles
+	{ 'MAGB', []() {
+		Uint32 uid = (Uint32)SDLNet_Read32(&net_packet->data[4]);
+		if ( Entity* entity = uidToEntity(uid) )
+		{
+			Uint32 sprite = (Uint32)SDLNet_Read32(&net_packet->data[8]);
+			spawnMagicEffectParticlesBell(entity, sprite);
+		}
+	} },
 
 	// spawn misc particle effect 
 	{'SPPE', [](){
@@ -3035,8 +3095,16 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		Sint16 dmg = (Sint16)SDLNet_Read16(&net_packet->data[8]);
 		DamageGib gib = DMG_DEFAULT;
 		gib = (DamageGib)(net_packet->data[10]);
-		bool miss = net_packet->data[11] != 0 ? 1 : 0;
-		spawnDamageGib(uidToEntity(uid), dmg, gib, miss);
+		DamageGibDisplayType displayType = DamageGibDisplayType::DMG_GIB_NUMBER;
+		if ( net_packet->data[11] == 1 )
+		{
+			displayType = DamageGibDisplayType::DMG_GIB_MISS;
+		}
+		else if ( net_packet->data[11] == 2 )
+		{
+			displayType = DamageGibDisplayType::DMG_GIB_SPRITE;
+		}
+		spawnDamageGib(uidToEntity(uid), dmg, gib, displayType);
 	}},
 
 	// ping

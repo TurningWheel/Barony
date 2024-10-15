@@ -13250,6 +13250,7 @@ void batResetIdle(Entity* my)
 			if ( entity->behavior == &actCeilingTile 
 				|| entity->behavior == &actColliderDecoration 
 				|| entity->behavior == &actFurniture
+				|| entity->behavior == &actBell
 				|| entity->behavior == &actStalagCeiling )
 			{
 				int x2 = entity->x / 16;

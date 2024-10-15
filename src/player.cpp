@@ -3377,6 +3377,18 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			{
 				return 0.0;
 			}
+			else if ( parent->behavior == &actBell && parent->skill[7] > 0 )
+			{
+				return 0.0;
+			}
+			else if ( parent->behavior == &actTeleportShrine && parent->shrineActivateDelay > 0 )
+			{
+				return 0.0;
+			}
+			else if ( parent->behavior == &actDaedalusShrine && parent->shrineActivateDelay > 0 )
+			{
+				return 0.0;
+			}
 			else if ( parent->behavior == &actPlayer )
 			{
 				return 0.0;
@@ -3453,6 +3465,10 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			else if ( parent->behavior == &actItem && parent->sprite == items[GEM_ROCK].index )
 			{
 				dist += 8.0; // distance penalty for rocks from digging etc
+			}
+			else if ( parent->behavior == &actBell )
+			{
+				dist += 1.0; // distance penalty
 			}
 			else if ( parent->behavior == &actGoldBag )
 			{
@@ -3978,6 +3994,11 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		else if ( parent->behavior == &actLadderUp )
 		{
 			interactText = Language::get(4027); // "Inspect trapdoor" 
+		}
+		else if ( parent->behavior == &actBell )
+		{
+			interactText = Language::get(6271);
+
 		}
 		else if ( parent->behavior == &actLadder )
 		{

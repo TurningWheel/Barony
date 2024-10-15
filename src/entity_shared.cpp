@@ -55,6 +55,11 @@ int checkSpriteType(Sint32 sprite)
 	case 166:
 	case 188:
 	case 189:
+	case 193:
+	case 194:
+	case 195:
+	case 196:
+	case 197:
 		//monsters
 		return 1;
 		break;
@@ -1016,7 +1021,17 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"AND GATE",
 	"BAT",
 	"BUGBEAR",
-	"DAEDALUS SHRINE"
+	"DAEDALUS SHRINE",
+	"BELL",
+	"NOT USED",
+	"SLIME (GREEN)",
+	"SLIME (BLUE)",
+	"SLIME (RED)",
+	"SLIME (TAR)",
+	"SLIME (METAL)",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][16] =

@@ -405,14 +405,14 @@ Entity* spawnGib(Entity* parentent, int customGibSprite)
 	return entity;
 }
 
-Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType, bool miss, bool updateClients)
+Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType, int displayType, bool updateClients)
 {
 	if ( !parentent )
 	{
 		return nullptr;
 	}
 
-	Entity* entity = newEntity(-1, 1, map.entities, nullptr);
+	Entity* entity = newEntity(displayType == DamageGibDisplayType::DMG_GIB_SPRITE ? dmgAmount : -1, 1, map.entities, nullptr);
 	if ( !entity )
 	{
 		return nullptr;
@@ -441,9 +441,17 @@ Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType, bool
 	entity->scaley = 0.2;
 	entity->scalez = 0.2;
 	entity->skill[0] = dmgAmount;
+	if ( displayType == DamageGibDisplayType::DMG_GIB_SPRITE )
+	{
+		entity->scalex = 0.05;
+		entity->scaley = 0.05;
+		entity->scalez = 0.05;
+		entity->skill[0] = 0;
+		entity->flags[BRIGHT] = true;
+	}
 	entity->skill[3] = gibDmgType;
 	entity->fskill[3] = 0.04;
-	entity->skill[7] = miss ? 1 : 0;
+	entity->skill[7] = displayType;
 	entity->behavior = &actDamageGib;
     entity->ditheringDisabled = true;
 	entity->flags[SPRITE] = true;
@@ -507,7 +515,7 @@ Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType, bool
 				SDLNet_Write32(parentent->getUID(), &net_packet->data[4]);
 				SDLNet_Write16((Sint16)dmgAmount, &net_packet->data[8]);
 				net_packet->data[10] = gibDmgType;
-				net_packet->data[11] = miss ? 1 : 0;
+				net_packet->data[11] = displayType;
 				net_packet->address.host = net_clients[c - 1].host;
 				net_packet->address.port = net_clients[c - 1].port;
 				net_packet->len = 12;

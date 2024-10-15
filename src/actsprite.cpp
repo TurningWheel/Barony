@@ -122,6 +122,11 @@ void actSpriteWorldTooltip(Entity* my)
 				}
 			}
 		}
+		else if ( parent->behavior == &actBell )
+		{
+			my->x += parent->focalx * cos(parent->yaw) + parent->focaly * cos(parent->yaw + PI / 2);
+			my->y += parent->focalx * sin(parent->yaw) + parent->focaly * sin(parent->yaw + PI / 2);
+		}
 
 		bool inrange = (my->worldTooltipActive == 1);
 		bool skipUpdating = true;

@@ -35,6 +35,7 @@
 #define USERFLAG2 15
 #define INVISIBLE_DITHER 16
 #define NOCLIP_WALLS 17
+#define NOCLIP_CREATURES 18
 
 // number of entity skills and fskills
 static const int NUMENTITYSKILLS = 60;
@@ -1228,7 +1229,7 @@ void actTextSource(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 333;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 129;
-static const int NUM_EDITOR_SPRITES = 191;
+static const int NUM_EDITOR_SPRITES = 201;
 static const int NUM_EDITOR_TILES = 350;
 
 // furniture types.
@@ -1296,6 +1297,7 @@ bool playerRequiresBloodToSustain(int player); // vampire type or accursed class
 void spawnBloodVialOnMonsterDeath(Entity* entity, Stat* hitstats, Entity* killer);
 
 void shrineDaedalusRevealMap(Entity& my);
+void daedalusShrineInteract(Entity* my, Entity* touched);
 
 enum EntityHungerIntervals : int
 {
