@@ -696,6 +696,14 @@ real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spell
 
 	if ( casterStats )
 	{
+		if ( casterStats->EFFECTS[EFF_PWR] )
+		{
+			bonus += 0.25;
+			int percentMP = static_cast<int>(100.0 * (real_t)casterStats->MP / std::max(1, casterStats->MAXMP));
+			percentMP = std::min(100, std::max(0, percentMP));
+			percentMP = (100 - percentMP) / 10;
+			bonus += 0.5 * percentMP / 10.0;
+		}
 		if ( casterStats->helmet )
 		{
 			if ( casterStats->helmet->type == HAT_MITER )

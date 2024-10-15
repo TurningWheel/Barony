@@ -825,6 +825,7 @@ void bugbearMoveBodyparts(Entity* my, Stat* myStats, double dist);
 
 //--misc functions--
 void actMinotaurTrap(Entity* my);
+int getMinotaurTimeToArrive();
 void actMinotaurTimer(Entity* my);
 void actMinotaurCeilingBuster(Entity* my);
 void actDemonCeilingBuster(Entity* my);

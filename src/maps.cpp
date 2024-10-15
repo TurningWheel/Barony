@@ -8507,6 +8507,10 @@ void assignActions(map_t* map)
 					childEntity->flags[PASSABLE] = true;
 					childEntity->flags[UNCLICKABLE] = false;
 					TileEntityList.addEntity(*childEntity);
+					//node_t* tempNode = list_AddNodeLast(&entity->children);
+					//tempNode->element = childEntity; // add the node to the children list.
+					//tempNode->deconstructor = &emptyDeconstructor;
+					//tempNode->size = sizeof(Entity*);
 				}
 				break;
 			case 191:

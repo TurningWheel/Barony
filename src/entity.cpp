@@ -5790,6 +5790,11 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 		//DEX -= 5;
 	}
 
+	if ( entitystats->EFFECTS[EFF_AGILITY] )
+	{
+		DEX += 3;
+	}
+
 	if ( my && my->monsterAllyGetPlayerLeader() )
 	{
 		if ( stats[my->monsterAllyIndex] )
@@ -6024,6 +6029,14 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 	if ( my && entitystats->EFFECTS[EFF_DRUNK] && entitystats->type == GOATMAN )
 	{
 		CON += std::max(4, static_cast<int>(CON * 0.25));
+	}
+	if ( entitystats->EFFECTS[EFF_CON_BONUS] )
+	{
+		CON += 3;
+		int percentHP = static_cast<int>(100.0 * (real_t)entitystats->HP / std::max(1, entitystats->MAXHP));
+		percentHP = std::min(100, std::max(0, percentHP));
+		percentHP = 100 - percentHP;
+		CON += percentHP / 10;
 	}
 	return CON;
 }
@@ -7784,25 +7797,34 @@ void Entity::attack(int pose, int charge, Entity* target)
 				dist = lineTrace(this, x, y, yaw, STRIKERANGE, LINETRACE_ATK_CHECK_FRIENDLYFIRE, false);
 			}
 
-			if ( hit.entity && hit.entity->behavior == &actMonster )
+			if ( hit.entity && (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) )
 			{
-				if ( hit.entity->getMonsterTypeFromSprite() == BAT_SMALL )
+				Stat* hitstats = hit.entity->getStats();
+				bool bat = hitstats && hitstats->type == BAT_SMALL;
+				if ( bat && hit.entity->isUntargetableBat() )
 				{
-					if ( hit.entity->isUntargetableBat() )
-					{
 						miss = true;
 					}
-					else if ( hit.entity->monsterSpecialState == BAT_REST )
+				else if ( bat && hit.entity->monsterSpecialState == BAT_REST )
 					{
 						miss = false;
 					}
-					else
+				else if ( bat || (hitstats && hitstats->EFFECTS[EFF_AGILITY]) )
 					{
 						Sint32 previousMonsterState = hit.entity->monsterState;
 						bool backstab = false;
 						bool flanking = false;
 						real_t hitAngle = hit.entity->yawDifferenceFromEntity(this);
 						if ( (hitAngle >= 0 && hitAngle <= 2 * PI / 3) ) // 120 degree arc
+						{
+						if ( hit.entity->behavior == &actPlayer )
+						{
+							if ( local_rng.rand() % 2 == 0 )
+							{
+								flanking = true;
+							}
+						}
+						else
 						{
 							if ( previousMonsterState == MONSTER_STATE_WAIT
 								|| previousMonsterState == MONSTER_STATE_PATH
@@ -7818,19 +7840,21 @@ void Entity::attack(int pose, int charge, Entity* target)
 								flanking = true;
 							}
 						}
+					}
 
 						if ( backstab )
 						{
 							miss = false;
 						}
-						else if ( flanking )
-						{
-							miss = local_rng.rand() % 10 < 4;
-						}
 						else
 						{
-							miss = local_rng.rand() % 10 < 6;
+						int baseChance = bat ? 6 : 2;
+						if ( flanking )
+						{
+							baseChance = std::max(1, baseChance - 2);
 						}
+						miss = local_rng.rand() % 10 < baseChance;
+					}
 
 						if ( myStats->weapon )
 						{
@@ -7845,11 +7869,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( !hit.entity->isUntargetableBat() )
 						{
-							if ( player >= 0 || (behavior == &actMonster && monsterAllyGetPlayerLeader()) )
+						if ( player >= 0 || (behavior == &actMonster && monsterAllyGetPlayerLeader())
+							|| hit.entity->behavior == &actPlayer || hit.entity->monsterAllyGetPlayerLeader() )
 							{
-								spawnDamageGib(hit.entity, 0, DamageGib::DMG_MISS, true, true);
+							spawnDamageGib(hit.entity, 0, DamageGib::DMG_MISS, DamageGibDisplayType::DMG_GIB_MISS, true);
 							}
 
+						if ( hit.entity->behavior == &actPlayer )
+						{
+							messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6286));
+						}
+						else if ( hit.entity->behavior == &actMonster )
+						{
 							bool doHitAlert = true;
 							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 							{
@@ -7890,12 +7921,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 							}
 						}
+					}
 
 						hit.entity = nullptr;
 					}
 				}
 			}
-		}
 		else
 		{
 			hit.entity = target;

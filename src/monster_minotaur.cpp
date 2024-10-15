@@ -672,6 +672,15 @@ void actMinotaurTrap(Entity* my)
 
 #define MINOTAURTIMER_LIFE my->skill[0]
 #define MINOTAURTIMER_ACTIVE my->skill[1]
+int getMinotaurTimeToArrive()
+{
+	int minotaurDuration = TICKS_PER_SECOND * 150;
+	if ( currentlevel >= 25 || currentlevel < 5 || (currentlevel >= 10 && currentlevel < 15) )
+	{
+		minotaurDuration = TICKS_PER_SECOND * 210;
+	}
+	return minotaurDuration;
+}
 
 void actMinotaurTimer(Entity* my)
 {
@@ -679,10 +688,8 @@ void actMinotaurTimer(Entity* my)
 	auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
 
 	MINOTAURTIMER_LIFE++;
-	if (( (currentlevel < 25 && MINOTAURTIMER_LIFE == TICKS_PER_SECOND * 120)
-			|| (currentlevel >= 25 && MINOTAURTIMER_LIFE == TICKS_PER_SECOND * 180)
-		)
-		&& rng.rand() % 5 == 0 )   // two minutes if currentlevel < 25, else 3 minutes.
+	if ( MINOTAURTIMER_LIFE == (getMinotaurTimeToArrive() - (TICKS_PER_SECOND * 30))
+		&& rng.rand() % 5 == 0 )
 	{
 		int c;
 		bool spawnedsomebody = false;
@@ -724,10 +731,7 @@ void actMinotaurTimer(Entity* my)
 			}
 		}
 	}
-	else if (( (currentlevel < 25 && MINOTAURTIMER_LIFE >= TICKS_PER_SECOND * 150)
-					|| (currentlevel >= 25 && MINOTAURTIMER_LIFE >= TICKS_PER_SECOND * 210)
-				)
-		&& !MINOTAURTIMER_ACTIVE )     // two and a half minutes if currentlevel < 25, else 3.5 minutes
+	else if ( (MINOTAURTIMER_LIFE >= getMinotaurTimeToArrive()) && !MINOTAURTIMER_ACTIVE )
 	{
 		Entity* monster = summonMonster(MINOTAUR, my->x, my->y);
 		if ( monster )
@@ -1010,6 +1014,13 @@ void actMinotaurCeilingBuster(Entity* my)
 									entity->colliderKillerUid = 0;
 								}
 							}
+							else if ( entity->behavior == &actBell )
+							{
+								if ( multiplayer != CLIENT )
+								{
+									bellBreakBulb(entity, true);
+								}
+							}
 							else if ( entity->behavior == &actGate )
 							{
 								if ( multiplayer != CLIENT )
@@ -1031,6 +1042,10 @@ void actMinotaurCeilingBuster(Entity* my)
 								hit.entity = entity;
 								magicDig(my, nullptr, 0, 1);
 								hit.entity = ohitentity;
+							}
+							else if ( entity->sprite == 1480 ) // daedalus base
+							{
+								list_RemoveNode(entity->mynode);
 							}
 							else if (	entity->behavior == &actStalagCeiling	||
 										entity->behavior == &actStalagFloor		||
