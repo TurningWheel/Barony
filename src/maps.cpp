@@ -5750,6 +5750,11 @@ void assignActions(map_t* map)
 			case 77:
 			case 78:
 			case 79:
+			case 193:
+			case 194:
+			case 195:
+			case 196:
+			case 197:
 			case 80:
 			case 81:
 			case 82:
@@ -5808,6 +5813,11 @@ void assignActions(map_t* map)
                 case 77: monsterType = MINOTAUR; break;
                 case 78: monsterType = SCORPION; break;
                 case 79: monsterType = SLIME; break;
+				case 193: monsterType = SLIME; break;
+				case 194: monsterType = SLIME; break;
+				case 195: monsterType = SLIME; break;
+				case 196: monsterType = SLIME; break;
+				case 197: monsterType = SLIME; break;
                 case 80: monsterType = SUCCUBUS; break;
                 case 81: monsterType = RAT; break;
                 case 82: monsterType = GHOUL; break;
@@ -5930,6 +5940,29 @@ void assignActions(map_t* map)
 				if ( multiplayer != CLIENT )
 				{
 					myStats->type = monsterType;
+					if ( myStats->type == SLIME )
+					{
+						switch ( entity->sprite )
+						{
+						case 193:
+							myStats->setAttribute("slime_type", "slime green");
+							break;
+						case 194:
+							myStats->setAttribute("slime_type", "slime blue");
+							break;
+						case 195:
+							myStats->setAttribute("slime_type", "slime red");
+							break;
+						case 196:
+							myStats->setAttribute("slime_type", "slime tar");
+							break;
+						case 197:
+							myStats->setAttribute("slime_type", "slime metal");
+							break;
+						default:
+							break;
+						}
+					}
 					if ( myStats->type == DEVIL )
 					{
 						auto childEntity = newEntity(72, 1, map->entities, nullptr);

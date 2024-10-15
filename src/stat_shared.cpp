@@ -1115,6 +1115,11 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->HUNGER = 900;
 			break;
 		case 79:
+		case 193:
+		case 194:
+		case 195:
+		case 196:
+		case 197:
 		case (1000 + SLIME):
 			stats->type = SLIME;
 			stats->sex = static_cast<sex_t>(local_rng.rand() % 2);
