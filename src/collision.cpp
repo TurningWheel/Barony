@@ -503,6 +503,7 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 {
 	if ( multiplayer == CLIENT ) { return false; }
 	if ( !projectile ) { return false; }
+	if ( hit.entity ) { return false; } // we hit something in clipMove already
 	if ( (Sint32)getUID() < 0 )
 	{
 		return false;
