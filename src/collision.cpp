@@ -512,39 +512,49 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 	{
 		return true;
 	}
-	if ( behavior == &actMonster )
+	if ( behavior == &actMonster || behavior == &actPlayer )
 	{
 		if ( Stat* myStats = getStats() )
 		{
-			if ( myStats->type == BAT_SMALL )
+			if ( myStats->type == BAT_SMALL || myStats->EFFECTS[EFF_AGILITY] )
 			{
 				bool miss = false;
-				if ( isUntargetableBat() )
+				if ( myStats->type == BAT_SMALL && isUntargetableBat() )
 				{
 					projectile->collisionIgnoreTargets.insert(getUID());
 					return true;
 				}
-				if ( monsterSpecialState == BAT_REST )
+				if ( myStats->type == BAT_SMALL && monsterSpecialState == BAT_REST )
 				{
-					miss = false;
+					return false;
 				}
 				bool backstab = false;
 				bool flanking = false;
 				real_t hitAngle = this->yawDifferenceFromEntity(projectile);
 				if ( (hitAngle >= 0 && hitAngle <= 2 * PI / 3) ) // 120 degree arc
 				{
-					if ( monsterState == MONSTER_STATE_WAIT
-						|| monsterState == MONSTER_STATE_PATH
-						|| (monsterState == MONSTER_STATE_HUNT && uidToEntity(monsterTarget) == nullptr) )
+					if ( behavior == &actPlayer )
 					{
-						// unaware monster, get backstab damage.
-						backstab = true;
+						if ( local_rng.rand() % 2 == 0 )
+						{
+							flanking = true;
+						}
 					}
-					else if ( local_rng.rand() % 2 == 0 )
+					else
 					{
-						// monster currently engaged in some form of combat maneuver
-						// 1 in 2 chance to flank defenses.
-						flanking = true;
+						if ( monsterState == MONSTER_STATE_WAIT
+							|| monsterState == MONSTER_STATE_PATH
+							|| (monsterState == MONSTER_STATE_HUNT && uidToEntity(monsterTarget) == nullptr) )
+						{
+							// unaware monster, get backstab damage.
+							backstab = true;
+						}
+						else if ( local_rng.rand() % 2 == 0 )
+						{
+							// monster currently engaged in some form of combat maneuver
+							// 1 in 2 chance to flank defenses.
+							flanking = true;
+						}
 					}
 				}
 
@@ -553,13 +563,19 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 				{
 					miss = false;
 				}
-				else if ( flanking )
-				{
-					miss = local_rng.rand() % 10 < (4 + (accuracyBonus ? -2 : 0));
-				}
 				else
 				{
-					miss = local_rng.rand() % 10 < (6 + (accuracyBonus ? -2 : 0));
+					int baseChance = myStats->type == BAT_SMALL ? 6 : 2;
+					if ( accuracyBonus )
+					{
+						baseChance -= 2;
+					}
+					if ( flanking )
+					{
+						baseChance -= 2;
+					}
+					baseChance = std::max(1, baseChance);
+					miss = local_rng.rand() % 10 < baseChance;
 				}
 
 				if ( miss )
@@ -567,9 +583,54 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 					if ( projectile->collisionIgnoreTargets.find(getUID()) == projectile->collisionIgnoreTargets.end() )
 					{
 						projectile->collisionIgnoreTargets.insert(getUID());
-						if ( (parent && parent->behavior == &actPlayer) || (parent && parent->behavior == &actMonster && parent->monsterAllyGetPlayerLeader()) )
+						if ( (parent && parent->behavior == &actPlayer) 
+							|| (parent && parent->behavior == &actMonster && parent->monsterAllyGetPlayerLeader())
+							|| (behavior == &actPlayer)
+							|| (behavior == &actMonster && monsterAllyGetPlayerLeader()) )
 						{
-							spawnDamageGib(this, 0, DamageGib::DMG_MISS, true, true);
+							spawnDamageGib(this, 0, DamageGib::DMG_MISS, DamageGibDisplayType::DMG_GIB_MISS, true);
+						}
+
+						if ( behavior == &actPlayer )
+						{
+							if ( projectile->behavior == &actMagicMissile )
+							{
+								messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6287), Language::get(6295));
+							}
+							else if ( projectile->behavior == &actArrow )
+							{
+								if ( projectile->sprite == 167 )
+								{
+									// bolt
+									messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6287), Language::get(6292));
+								}
+								else if ( projectile->sprite == 78 )
+								{
+									// rock
+									messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6287), Language::get(6293));
+								}
+								else
+								{
+									// arrow
+									messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6287), Language::get(6291));
+								}
+							}
+							else if ( projectile->behavior == &actThrown )
+							{
+								if ( projectile->skill[10] >= 0 && projectile->skill[10] < NUMITEMS )
+								{
+									messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6294), items[projectile->skill[10]].getUnidentifiedName());
+								}
+								else
+								{
+									// generic "projectile"
+									messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6294), Language::get(6296));
+								}
+							}
+							else
+							{
+								messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6286));
+							}
 						}
 					}
 				}
@@ -831,11 +892,20 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				continue;
 			}
+			if ( my->flags[NOCLIP_CREATURES]
+				&& (entity->behavior == &actMonster || entity->behavior == &actPlayer) )
+			{
+				continue;
+			}
 			Stat* myStats = stats; //my->getStats();	//SEB <<<
 			Stat* yourStats = entity->getStats();
 			if ( my->behavior == &actPlayer && entity->behavior == &actPlayer )
 			{
 				continue;
+			}
+			if ( projectileAttack && yourStats && yourStats->EFFECTS[EFF_AGILITY] )
+			{
+				entityDodgeChance = true;
 			}
 			if ( myStats && yourStats )
 			{
