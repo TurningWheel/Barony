@@ -9441,29 +9441,41 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( itemCategory(hitstats->shield) == ARMOR
 								|| (hitstats->defending) )
 							{
-								if ( (local_rng.rand() % 15 == 0 && damage > 0) || (damage == 0 && local_rng.rand() % 8 == 0) )
+								int roll = 16;
+								if ( damage == 0 )
 								{
-									bool increaseSkill = true;
-									if ( hit.entity->behavior == &actPlayer && behavior == &actPlayer )
+									roll /= 2;
+								}
+								if ( myStats->type == BAT_SMALL )
+								{
+									roll = 64;
+								}
+								if ( roll > 0 )
+								{
+									if ( (local_rng.rand() % roll == 0 && damage > 0) || (damage == 0 && local_rng.rand() % roll == 0) )
 									{
-										increaseSkill = false;
-									}
-									else if ( hit.entity->behavior == &actPlayer && this->monsterAllyGetPlayerLeader() )
-									{
-										increaseSkill = false;
-									}
-									else if ( hitstats->EFFECTS[EFF_SHAPESHIFT] )
-									{
-										increaseSkill = false;
-									}
-									else if ( itemCategory(hitstats->shield) != ARMOR
-										&& hitstats->getProficiency(PRO_SHIELD) >= SKILL_LEVEL_SKILLED )
-									{
-										increaseSkill = false; // non-shield offhands dont increase skill past 40.
-									}
-									if ( increaseSkill )
-									{
-										hit.entity->increaseSkill(PRO_SHIELD); // increase shield skill
+										bool increaseSkill = true;
+										if ( hit.entity->behavior == &actPlayer && behavior == &actPlayer )
+										{
+											increaseSkill = false;
+										}
+										else if ( hit.entity->behavior == &actPlayer && this->monsterAllyGetPlayerLeader() )
+										{
+											increaseSkill = false;
+										}
+										else if ( hitstats->EFFECTS[EFF_SHAPESHIFT] )
+										{
+											increaseSkill = false;
+										}
+										else if ( itemCategory(hitstats->shield) != ARMOR
+											&& hitstats->getProficiency(PRO_SHIELD) >= SKILL_LEVEL_SKILLED )
+										{
+											increaseSkill = false; // non-shield offhands dont increase skill past 40.
+										}
+										if ( increaseSkill )
+										{
+											hit.entity->increaseSkill(PRO_SHIELD); // increase shield skill
+										}
 									}
 								}
 							}
