@@ -3886,6 +3886,14 @@ void actBell(Entity* my)
 		return;
 	}
 
+	enum BellSpriteNotes : int
+	{
+		NOTE_DOUBLE_EIGHTH = 192,
+		NOTE_EIGHTH = 198,
+		NOTE_REST = 199,
+		NOTE_CRASH = 200
+	};
+
 	enum BellEvents : int
 	{
 		BELL_RING_BUFF = 1,
@@ -4018,6 +4026,7 @@ void actBell(Entity* my)
 		messagePlayer(0, MESSAGE_DEBUG, "Bell event: %d", BELL_CURRENT_EVENT);
 	}
 #endif
+	static ConsoleVariable<bool> cvar_bell_crash("/bell_crash", false);
 
 	if ( multiplayer == CLIENT )
 	{
@@ -4106,7 +4115,13 @@ void actBell(Entity* my)
 				{
 					BELL_CURRENT_EVENT = BELL_RING_BUFF;
 					--BELL_USES;
-					if ( BELL_USES <= 0 )
+
+					if ( *cvar_bell_crash && (svFlags & SV_FLAG_CHEATS) )
+					{
+						BELL_USES = 0;
+						BELL_CURRENT_EVENT = BELL_CRASH;
+					}
+					else if ( BELL_USES <= 0 )
 					{
 						if ( rng.rand() % 5 == 0 )
 						{
@@ -4331,6 +4346,8 @@ void actBell(Entity* my)
 										playSoundPlayer(i, *cvar_bell_crash_sfx, 32);
 									}
 								}
+
+								spawnDamageGib(child, NOTE_CRASH, DamageGib::DMG_STRONGEST, DamageGibDisplayType::DMG_GIB_SPRITE, true);
 							}
 							child->flags[INVISIBLE] = true;
 							if ( multiplayer == SERVER )
@@ -4429,10 +4446,7 @@ void actBell(Entity* my)
 							{
 								if ( (ticks - child->skill[3] == *cvar_bell_dong1) )
 								{
-									if ( Entity* gib = spawnDamageGib(child, 192, DamageGib::DMG_STRONGEST, DamageGibDisplayType::DMG_GIB_SPRITE) )
-									{
-										gib->z += 8.0;
-									}
+									spawnDamageGib(child, NOTE_REST, DamageGib::DMG_STRONGEST, DamageGibDisplayType::DMG_GIB_SPRITE);
 								}
 							}
 						}
@@ -4453,10 +4467,7 @@ void actBell(Entity* my)
 								}
 								playSoundEntity(my, 690, vol);
 								playSoundPlayer(clientnum, 690, vol / 4);
-								if ( Entity* gib = spawnDamageGib(child, 192, DamageGib::DMG_STRONGEST, DamageGibDisplayType::DMG_GIB_SPRITE) )
-								{
-									gib->z += 8.0;
-								}
+								spawnDamageGib(child, NOTE_EIGHTH, DamageGib::DMG_STRONGEST, DamageGibDisplayType::DMG_GIB_SPRITE);
 							}
 						}
 					}
@@ -4683,7 +4694,7 @@ void actBell(Entity* my)
 									if ( entity->setEffect(statusEffect, true, std::max(stats->EFFECTS_TIMERS[statusEffect], duration), false) )
 									{
 										playSoundEntity(entity, 166, 128);
-										spawnDamageGib(entity, 200, DamageGib::DMG_STRONGEST, DamageGibDisplayType::DMG_GIB_SPRITE, true);
+										spawnDamageGib(entity, NOTE_DOUBLE_EIGHTH, DamageGib::DMG_STRONGEST, DamageGibDisplayType::DMG_GIB_SPRITE, true);
 										if ( entity->behavior == &actPlayer )
 										{
 											messagePlayerColor(entity->skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6280), lang);
