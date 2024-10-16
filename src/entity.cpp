@@ -5792,7 +5792,7 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 
 	if ( entitystats->EFFECTS[EFF_AGILITY] )
 	{
-		DEX += 3;
+		DEX += (std::max(5, DEX / 4));
 	}
 
 	if ( my && my->monsterAllyGetPlayerLeader() )
@@ -7848,7 +7848,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else
 					{
-						int baseChance = bat ? 6 : 2;
+						int baseChance = bat ? 6 : 3;
 						if ( flanking )
 						{
 							baseChance = std::max(1, baseChance - 2);

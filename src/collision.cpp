@@ -558,14 +558,14 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 					}
 				}
 
-				bool accuracyBonus = projectile->behavior == &actMagicMissile;
+				bool accuracyBonus = projectile->behavior == &actMagicMissile && myStats->type == BAT_SMALL;
 				if ( backstab )
 				{
 					miss = false;
 				}
 				else
 				{
-					int baseChance = myStats->type == BAT_SMALL ? 6 : 2;
+					int baseChance = myStats->type == BAT_SMALL ? 6 : 3;
 					if ( accuracyBonus )
 					{
 						baseChance -= 2;
