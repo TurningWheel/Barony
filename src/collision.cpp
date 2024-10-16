@@ -508,9 +508,12 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 	{
 		return false;
 	}
-	if ( projectile->collisionIgnoreTargets.find(getUID()) != projectile->collisionIgnoreTargets.end() )
+	if ( !(projectile->behavior == &actMonster || projectile->behavior == &actPlayer) )
 	{
-		return true;
+		if ( projectile->collisionIgnoreTargets.find(getUID()) != projectile->collisionIgnoreTargets.end() )
+		{
+			return true;
+		}
 	}
 
 	if ( behavior == &actBell )
@@ -550,12 +553,28 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 					}
 				}
 			}
+			else if ( projectile->flags[BURNING] && (projectile->behavior == &actMonster || projectile->behavior == &actPlayer) )
+			{
+				SetEntityOnFire(projectile);
+				if ( flags[BURNING] )
+				{
+					skill[13] = projectile->getUID(); // burning inflicted by for bell
+					if ( projectile->behavior == &actPlayer )
+					{
+						messagePlayer(projectile->skill[2], MESSAGE_INTERACTION, Language::get(6297));
+					}
+				}
+			}
 		}
 		return true;
 	}
 
 	if ( behavior == &actMonster || behavior == &actPlayer )
 	{
+		if ( projectile->behavior == &actMonster || projectile->behavior == &actPlayer )
+		{
+			return false;
+		}
 		if ( Stat* myStats = getStats() )
 		{
 			if ( myStats->type == BAT_SMALL || myStats->EFFECTS[EFF_AGILITY] )
@@ -878,7 +897,9 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				{
 					// 886 is gyrobot, as they are passable, force collision here.
 				}
-				else if ( projectileAttack && entity->sprite == 1478 && multiplayer != CLIENT )
+				else if ( entity->sprite == 1478 
+					&& (projectileAttack 
+						|| (my && my->flags[BURNING] && (my->behavior == &actMonster || my->behavior == &actPlayer))) && multiplayer != CLIENT )
 				{
 					// bell rope, check for burning
 					entityDodgeChance = true;
@@ -1104,7 +1125,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				{
 					if ( multiplayer != CLIENT )
 					{
-						if ( projectileAttack && entityDodgeChance )
+						if ( entityDodgeChance )
 						{
 							if ( entity->collisionProjectileMiss(parent, my) )
 							{
