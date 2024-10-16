@@ -18624,6 +18624,57 @@ failed:
 			{
 				float_warning_add(lobbyWarnings, "3", "Hardcore Enabled");
 			}
+			if ( multiplayer == SERVER )
+			{
+				if ( LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY ) {
+#ifdef USE_EOS
+					if ( EOS.currentPermissionLevel == EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED )
+					{
+						if ( EOS.bFriendsOnly )
+						{
+#ifdef NINTENDO
+							float_warning_add(lobbyWarnings, "3", Language::get(6301)); // friends shows as invite only just in case
+#else
+							float_warning_add(lobbyWarnings, "3", Language::get(6300));
+#endif
+						}
+						else
+						{
+							float_warning_add(lobbyWarnings, "3", Language::get(6299));
+						}
+					}
+					else
+					{
+						// private
+						float_warning_add(lobbyWarnings, "3", Language::get(6301));
+					}
+#endif // USE_EOS
+				}
+				else if ( LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM ) {
+#ifdef STEAMWORKS
+					if ( ::currentLobbyType == k_ELobbyTypeInvisible )
+					{
+						float_warning_add(lobbyWarnings, "3", Language::get(6301));
+					}
+					else if ( ::currentLobbyType == k_ELobbyTypePublic )
+					{
+						auto lobby = static_cast<CSteamID*>(::currentLobby);
+						if ( lobby )
+						{
+							const char* val = SteamMatchmaking()->GetLobbyData(*lobby, "friends_only");
+							if ( val && !strcmp(val, "true") )
+							{
+								float_warning_add(lobbyWarnings, "3", Language::get(6300));
+							}
+							else
+							{
+								float_warning_add(lobbyWarnings, "3", Language::get(6299));
+							}
+						}
+					}
+#endif // STEAMWORKS
+				}
+			}
 
 			int totalWidth = 0;
 			for ( auto f : lobbyWarnings->getFrames() )
