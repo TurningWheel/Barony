@@ -6508,7 +6508,7 @@ Unlock Achievements to earn more!#
 6278 Bell#
 6279 The clapper breaks off!#
 6280 The chime invigorates your %s!#
-6281 might#
+6281 strength#
 6282 stamina#
 6283 agility#
 6284 mentality#

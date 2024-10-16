@@ -1358,6 +1358,15 @@ void Entity::effectTimes()
 					case EFF_POTION_STR:
 						messagePlayer(player, MESSAGE_STATUS, Language::get(3355));
 						break;
+					case EFF_AGILITY:
+						messagePlayer(player, MESSAGE_STATUS, Language::get(6289));
+						break;
+					case EFF_CON_BONUS:
+						messagePlayer(player, MESSAGE_STATUS, Language::get(6288));
+						break;
+					case EFF_PWR:
+						messagePlayer(player, MESSAGE_STATUS, Language::get(6290));
+						break;
 					case EFF_LEVITATING:
 						; //To make the compiler shut up: "error: a label can only be part of a statement and a declaration is not a statement"
 						dissipate = true; //Remove the effect by default.
