@@ -3651,6 +3651,8 @@ void bellAttractMonsters(Entity* my)
 #define BELL_CLAPPER_BROKEN my->skill[9]
 #define BELL_BULB_BROKEN my->skill[10]
 #define BELL_BUFF_TYPE my->skill[11]
+#define BELL_BURNING_TIMER my->skill[12]
+#define BELL_PULLED_TO_BREAK my->skill[13]
 
 int getBellDmgOnEntity(Entity* entity)
 {
@@ -3911,6 +3913,7 @@ void actBell(Entity* my)
 		BUFF_CON,
 		BUFF_PWR,
 		BUFF_DEX,
+		BUFF_HEAL,
 		BUFF_ENUM_END,
 	};
 
@@ -4040,7 +4043,7 @@ void actBell(Entity* my)
 	}
 
 	Entity* touched = nullptr;
-	if ( multiplayer != CLIENT ) // interaction
+	if ( multiplayer != CLIENT && !my->flags[BURNING] && !my->flags[INVISIBLE] ) // interaction
 	{
 		if ( my->isInteractWithMonster() )
 		{
@@ -4132,6 +4135,11 @@ void actBell(Entity* my)
 							BELL_CURRENT_EVENT = BELL_CLAPPER_BREAK;
 						}
 					}
+
+					if ( BELL_CURRENT_EVENT == BELL_CRASH )
+					{
+						BELL_PULLED_TO_BREAK = touched->getUID();
+					}
 				}
 			}
 
@@ -4158,7 +4166,32 @@ void actBell(Entity* my)
 			}
 			serverUpdateEntitySkill(my, 7); // use delay
 		}
+	}
+	else if ( multiplayer != CLIENT && my->flags[BURNING] )
+	{
+		if ( BELL_BURNING_TIMER == 0 )
+		{
+			BELL_BURNING_TIMER = (1 + local_rng.rand() % 3) * TICKS_PER_SECOND;
+			playSoundEntity(my, 512, 64);
+		}
+		else if ( BELL_BURNING_TIMER > 0 )
+		{
+			BELL_BURNING_TIMER--;
+			if ( BELL_BURNING_TIMER <= 0 )
+			{
+				BELL_BURNING_TIMER = -1;
+				bellBreakBulb(my, true);
+				my->flags[BURNING] = false;
+				my->flags[INVISIBLE] = true;
+				serverUpdateEntitySkill(my, INVISIBLE);
+				serverUpdateEntitySkill(my, BURNING);
+			}
+		}
+	}
 
+	if ( multiplayer == CLIENT && my->flags[INVISIBLE] && my->flags[BURNING] )
+	{
+		my->flags[BURNING] = false;
 	}
 
 	if ( BELL_USE_DELAY > 0 )
@@ -4242,6 +4275,7 @@ void actBell(Entity* my)
 						Entity* collided = nullptr;
 						if ( multiplayer != CLIENT )
 						{
+							Entity* puller = uidToEntity(BELL_PULLED_TO_BREAK);
 							auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(child, 2);
 							for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !collided; ++it )
 							{
@@ -4263,14 +4297,11 @@ void actBell(Entity* my)
 												continue;
 											}
 
-											if ( ParticleEmitterHit_t* particleEmitterHitProps = getParticleEmitterHitProps(my->getUID(), entity) )
+											if ( child->collisionIgnoreTargets.find(entity->getUID()) != child->collisionIgnoreTargets.end() )
 											{
-												if ( particleEmitterHitProps->hits > 0 )
-												{
-													continue;
-												}
-												particleEmitterHitProps->hits++;
+												continue;
 											}
+											child->collisionIgnoreTargets.insert(entity->getUID());
 
 											if ( entity->behavior == &actPlayer )
 											{
@@ -4295,23 +4326,67 @@ void actBell(Entity* my)
 													}
 												}
 											}
+
 											playSoundEntity(entity, 28, 64);
 											Entity* gib = spawnGib(entity);
 											int dmg = getBellDmgOnEntity(entity);
 											Sint32 oldHP = stats->HP;
 											entity->modHP(-dmg);
-											if ( entity->behavior == &actPlayer && stats->HP < oldHP )
+											if ( entity->behavior == &actPlayer )
 											{
-												Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_DAMAGE, "bell", oldHP - stats->HP);
+												if ( stats->HP < oldHP )
+												{
+													Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_DAMAGE, "bell", oldHP - stats->HP);
+												}
+
+												if ( !puller )
+												{
+													int playertarget = entity->skill[2];
+													if ( playertarget >= 0 && players[playertarget]->isLocalPlayer() )
+													{
+														DamageIndicatorHandler.insert(playertarget, child->x, child->y, stats->HP < oldHP);
+													}
+													else if ( playertarget > 0 && multiplayer == SERVER && !players[playertarget]->isLocalPlayer() )
+													{
+														strcpy((char*)net_packet->data, "DAMI");
+														SDLNet_Write32(child->x, &net_packet->data[4]);
+														SDLNet_Write32(child->y, &net_packet->data[8]);
+														net_packet->data[12] = (stats->HP < oldHP) ? 1 : 0;
+														net_packet->address.host = net_clients[playertarget - 1].host;
+														net_packet->address.port = net_clients[playertarget - 1].port;
+														net_packet->len = 13;
+														sendPacketSafe(net_sock, -1, net_packet, playertarget - 1);
+													}
+												}
 											}
 											entity->setObituary(Language::get(6277));
 											stats->killer = KilledBy::BELL;
 
-											if ( entity->behavior == &actPlayer )
+											
+											if ( !strcmp(stats->name, "") )
 											{
-												if ( stats->HP <= 0 )
+												updateEnemyBar(puller, entity, getMonsterLocalizedName(stats->type).c_str(), stats->HP, stats->MAXHP,
+													false, DamageGib::DMG_STRONGEST);
+											}
+											else
+											{
+												updateEnemyBar(puller, entity, stats->name, stats->HP, stats->MAXHP,
+													false, DamageGib::DMG_STRONGEST);
+											}
+
+											if ( stats->HP <= 0 && oldHP > 0 )
+											{
+												if ( entity->behavior == &actPlayer )
 												{
 													Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_KILLED_BY, "bell", 1);
+												}
+												if ( puller && puller != entity )
+												{
+													puller->awardXP(entity, true, true);
+													if ( puller->behavior == &actPlayer )
+													{
+														messagePlayerMonsterEvent(puller->skill[2], makeColorRGB(0, 255, 0), *stats, Language::get(692), Language::get(697), MSG_COMBAT);
+													}
 												}
 											}
 
@@ -4683,6 +4758,9 @@ void actBell(Entity* my)
 								lang = Language::get(6284);
 								statusEffect = EFF_PWR;
 								break;
+							case BUFF_HEAL:
+								statusEffect = SPELL_HEALING;
+								break;
 							default:
 								break;
 							}
@@ -4691,7 +4769,30 @@ void actBell(Entity* my)
 							{
 								if ( Stat* stats = entity->getStats() )
 								{
-									if ( entity->setEffect(statusEffect, true, std::max(stats->EFFECTS_TIMERS[statusEffect], duration), false) )
+									if ( statusEffect == SPELL_HEALING )
+									{
+										int amount = 15;
+										entity->modHP(amount);
+										entity->modMP(amount);
+										if ( svFlags & SV_FLAG_HUNGER )
+										{
+											if ( entity->behavior == &actPlayer && stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+											{
+												Sint32 hungerPointPerMana = entity->playerInsectoidHungerValueOfManaPoint(*stats);
+												stats->HUNGER += amount * hungerPointPerMana;
+												stats->HUNGER = std::min(999, stats->HUNGER);
+												serverUpdateHunger(entity->skill[2]);
+											}
+										}
+										playSoundEntity(entity, 168, 128);
+										spawnDamageGib(entity, NOTE_DOUBLE_EIGHTH, DamageGib::DMG_STRONGEST, DamageGibDisplayType::DMG_GIB_SPRITE, true);
+										spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
+										if ( entity->behavior == &actPlayer )
+										{
+											messagePlayerColor(entity->skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6298));
+										}
+									}
+									else if ( entity->setEffect(statusEffect, true, std::max(stats->EFFECTS_TIMERS[statusEffect], duration), false) )
 									{
 										playSoundEntity(entity, 166, 128);
 										spawnDamageGib(entity, NOTE_DOUBLE_EIGHTH, DamageGib::DMG_STRONGEST, DamageGibDisplayType::DMG_GIB_SPRITE, true);

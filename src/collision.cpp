@@ -512,6 +512,48 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 	{
 		return true;
 	}
+
+	if ( behavior == &actBell )
+	{
+		if ( !flags[BURNING] )
+		{
+			if ( projectile->behavior == &actMagicMissile )
+			{
+				if ( projectile->children.first && projectile->children.first->element )
+				{
+					if ( spell_t* spell = (spell_t*)projectile->children.first->element )
+					{
+						if ( spell->ID == SPELL_FIREBALL || spell->ID == SPELL_SLIME_FIRE )
+						{
+							SetEntityOnFire();
+							if ( parent && flags[BURNING] )
+							{
+								skill[13] = parent->getUID(); // burning inflicted by for bell
+								if ( parent->behavior == &actPlayer )
+								{
+									messagePlayer(parent->skill[2], MESSAGE_INTERACTION, Language::get(6297));
+								}
+							}
+						}
+					}
+				}
+			}
+			else if ( projectile->behavior == &actArrow && projectile->arrowQuiverType == QUIVER_FIRE )
+			{
+				SetEntityOnFire(parent);
+				if ( parent && flags[BURNING] )
+				{
+					skill[13] = parent->getUID(); // burning inflicted by for bell
+					if ( parent->behavior == &actPlayer )
+					{
+						messagePlayer(parent->skill[2], MESSAGE_INTERACTION, Language::get(6297));
+					}
+				}
+			}
+		}
+		return true;
+	}
+
 	if ( behavior == &actMonster || behavior == &actPlayer )
 	{
 		if ( Stat* myStats = getStats() )
@@ -818,6 +860,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 	{
 		type = my->getMonsterTypeFromSprite();
 	}
+	bool entityDodgeChance = false;
 	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 	{
 		list_t* currentList = *it;
@@ -828,18 +871,23 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				continue;
 			}
+			entityDodgeChance = false;
 			if ( entity->flags[PASSABLE] )
 			{
 				if ( my->behavior == &actBoulder && (entity->behavior == &actMonster && entity->sprite == 886) )
 				{
 					// 886 is gyrobot, as they are passable, force collision here.
 				}
+				else if ( projectileAttack && entity->sprite == 1478 && multiplayer != CLIENT )
+				{
+					// bell rope, check for burning
+					entityDodgeChance = true;
+				}
 				else
 				{
 					continue;
 				}
 			}
-			bool entityDodgeChance = false;
 			if ( entity->behavior == &actParticleTimer && static_cast<Uint32>(entity->particleTimerTarget) == my->getUID() )
 			{
 				continue;
@@ -1039,8 +1087,17 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				sizex /= *cvar_linetrace_smallcollision;
 				sizey /= *cvar_linetrace_smallcollision;
 			}
-			const real_t eymin = entity->y - sizey, eymax = entity->y + sizey;
-			const real_t exmin = entity->x - sizex, exmax = entity->x + sizex;
+			real_t eymin = entity->y - sizey, eymax = entity->y + sizey;
+			real_t exmin = entity->x - sizex, exmax = entity->x + sizex;
+			if ( entity->sprite == 1478 )
+			{
+				real_t xoffset = entity->focalx * cos(entity->yaw) + entity->focaly * cos(entity->yaw + PI / 2);
+				real_t yoffset = entity->focalx * sin(entity->yaw) + entity->focaly * sin(entity->yaw + PI / 2);
+				eymin += yoffset;
+				eymax += yoffset;
+				exmin += xoffset;
+				exmax += xoffset;
+			}
 			if ( (entity->sizex > 0) && ((txmin >= exmin && txmin < exmax) || (txmax >= exmin && txmax < exmax) || (txmin <= exmin && txmax > exmax)) )
 			{
 				if ( (entity->sizey > 0) && ((tymin >= eymin && tymin < eymax) || (tymax >= eymin && tymax < eymax) || (tymin <= eymin && tymax > eymax)) )

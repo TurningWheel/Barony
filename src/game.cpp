@@ -1209,6 +1209,11 @@ void gameLogic(void)
 							flame->x += local_rng.rand() % (entity->sizex * 2 + 1) - entity->sizex;
 							flame->y += local_rng.rand() % (entity->sizey * 2 + 1) - entity->sizey;
 							flame->z += local_rng.rand() % 5 - 2;
+							if ( entity->behavior == &actBell )
+							{
+								flame->x += entity->focalx * cos(entity->yaw) + entity->focaly * cos(entity->yaw + PI / 2);
+								flame->y += entity->focalx * sin(entity->yaw) + entity->focaly * sin(entity->yaw + PI / 2);
+							}
 						}
 				    }
 				}
