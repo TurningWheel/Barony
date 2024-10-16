@@ -4363,7 +4363,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	}
 
 	{
-		if ( !strcmp(map.name, "The Ruins") )
+		if ( !strcmp(map.name, "The Ruins") || !strcmp(map.name, "Citadel") )
 		{
 			int numBells = 0;
 			if ( currentlevel % 2 == 0 )
@@ -8517,12 +8517,13 @@ void assignActions(map_t* map)
 			{
 				entity->x += 8;
 				entity->y += 8;
-				entity->sizex = 4;
-				entity->sizey = 4;
+				entity->sizex = 2;
+				entity->sizey = 2;
 				entity->z = 0.0;
 				entity->behavior = &actBell;
 				entity->flags[PASSABLE] = true;
 				entity->flags[BLOCKSIGHT] = false;
+				entity->flags[BURNABLE] = true;
 				entity->sprite = 1478; // rope
 				entity->seedEntityRNG(map_rng.getU32());
 				entity->skill[11] = map_rng.rand(); // buff type
