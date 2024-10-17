@@ -124,6 +124,10 @@ void initGnome(Entity* my, Stat* myStats)
 							}
 							++i;
 						}
+						if ( !strcmp(myStats->name, "") )
+						{
+							strcpy(myStats->name, Language::get(6303));
+						}
 					}
 					else
 					{
@@ -139,6 +143,14 @@ void initGnome(Entity* my, Stat* myStats)
 						my->sprite = 1426;
 					}
 					myStats->setAttribute("gnome_type", gnome_type);
+				}
+			}
+
+			if ( myStats->getAttribute("gnome_type").find("gnome2") != std::string::npos )
+			{
+				if ( !strcmp(myStats->name, "") )
+				{
+					strcpy(myStats->name, Language::get(6302));
 				}
 			}
 
@@ -172,6 +184,7 @@ void initGnome(Entity* my, Stat* myStats)
 				myStats->CON = 8;
 				myStats->PER = 5;
 				myStats->STR = 7;
+				myStats->LVL = 10;
 				myStats->DEX = 5;
 				if ( rng.rand() % 2 )
 				{

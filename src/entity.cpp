@@ -20724,6 +20724,8 @@ bool monsterNameIsGeneric(Stat& monsterStats)
 		|| strstr(monsterStats.name, "Training")
 		|| strstr(monsterStats.name, "Mysterious")
 		|| strstr(monsterStats.name, "shaman")
+		|| !strcmp(monsterStats.name, Language::get(6302)) // gnome thief
+		|| !strcmp(monsterStats.name, Language::get(6303)) // gnome thief leader
 		|| strstr(monsterStats.name, getMonsterLocalizedName(SLIME).c_str()) )
 	{
 		// If true, pretend the monster doesn't have a name and use the generic message "You hit the lesser skeleton!"

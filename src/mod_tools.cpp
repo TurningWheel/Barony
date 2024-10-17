@@ -14750,7 +14750,11 @@ void Compendium_t::Events_t::eventUpdateMonster(int playernum, const EventTags t
 	{
 		if ( auto stats = entity->getStats() )
 		{
-			if ( stats->type == SHOPKEEPER && stats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0 )
+			if ( stats->type == GNOME && stats->getAttribute("gnome_type").find("gnome2") != std::string::npos )
+			{
+				monsterStrLookup = "gnome thief";
+			}
+			else if ( stats->type == SHOPKEEPER && stats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0 )
 			{
 				monsterStrLookup = "mysterious shop";
 			}
