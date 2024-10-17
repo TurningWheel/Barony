@@ -32502,7 +32502,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "BLOCK_DEGRADE_NORMAL_CHANCE" )
 		{
-			val = 25 + (stats[playernum]->type == GOBLIN ? 10 : 0); // degrade > 0 dmg taken
+			val = 25 + (stats[playernum]->type == GOBLIN ? 10 : 0) + 10; // degrade > 0 dmg taken
 			val += 2 * (static_cast<int>(stats[playernum]->getModifiedProficiency(proficiency) / 10));
 			if ( skillCapstoneUnlocked(playernum, proficiency) )
 			{

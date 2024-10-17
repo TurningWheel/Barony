@@ -2285,6 +2285,23 @@ public:
 		void updateFloorEvents();
 	} compendiumProgress;
 
+	class PlayerMechanics_t
+	{
+		Player& player;
+	public:
+		std::map<int, int> itemDegradeRng;
+		bool itemDegradeRoll(Item* item, int* checkInterval = nullptr);
+		void onItemDegrade(Item* item);
+		int sustainedSpellMPUsed = 0;
+		bool sustainedSpellLevelChance();
+		void sustainedSpellIncrementMP(int mpChange);
+		std::map<Uint32, int> enemyRaisedBlockingAgainst;
+		bool allowedRaiseBlockingAgainstEntity(Entity& attacker);
+		PlayerMechanics_t(Player& p) : player(p)
+		{};
+		~PlayerMechanics_t() {};
+	} mechanics;
+
 	static void soundMovement();
 	static void soundActivate();
 	static void soundCancel();

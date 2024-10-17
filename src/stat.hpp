@@ -353,7 +353,7 @@ public:
 		MONSTER_FORCE_PLAYER_RECRUITABLE
 	};
 	int getPassiveShieldBonus(bool checkShield, bool excludeSkill) const;
-	int getActiveShieldBonus(bool checkShield, bool excludeSkill) const;
+	int getActiveShieldBonus(bool checkShield, bool excludeSkill, Item* shieldItem = nullptr) const;
 	std::string getAttribute(std::string key) const
 	{ 
 		if ( attributes.find(key) != attributes.end() )

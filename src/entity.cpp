@@ -1298,12 +1298,18 @@ void Entity::effectTimes()
 							if ( caster )
 							{
 								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
+								int oldMP = caster->getMP();
 								bool deducted = caster->safeConsumeMP(1); //Consume 1 mana ever duration / mana seconds
 								if ( deducted )
 								{
 									sustained = true;
 									myStats->EFFECTS[c] = true;
 									myStats->EFFECTS_TIMERS[c] = invisibility_hijacked->channel_duration;
+
+									if ( caster->behavior == &actPlayer )
+									{
+										players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - caster->getMP());
+									}
 								}
 								else
 								{
@@ -1377,12 +1383,18 @@ void Entity::effectTimes()
 							if ( caster )
 							{
 								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
+								int oldMP = caster->getMP();
 								bool deducted = caster->safeConsumeMP(1); //Consume 1 mana ever duration / mana seconds
 								if ( deducted )
 								{
 									sustained = true;
 									myStats->EFFECTS[c] = true;
 									myStats->EFFECTS_TIMERS[c] = levitation_hijacked->channel_duration;
+
+									if ( caster->behavior == &actPlayer )
+									{
+										players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - caster->getMP());
+									}
 								}
 								else
 								{
@@ -1511,12 +1523,18 @@ void Entity::effectTimes()
 							if ( caster )
 							{
 								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
+								int oldMP = caster->getMP();
 								bool deducted = caster->safeConsumeMP(1); //Consume 1 mana ever duration / mana seconds
 								if ( deducted )
 								{
 									sustained = true;
 									myStats->EFFECTS[c] = true;
 									myStats->EFFECTS_TIMERS[c] = reflectMagic_hijacked->channel_duration;
+
+									if ( caster->behavior == &actPlayer )
+									{
+										players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - caster->getMP());
+									}
 								}
 								else
 								{
@@ -1553,12 +1571,18 @@ void Entity::effectTimes()
 							if ( caster )
 							{
 								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
+								int oldMP = caster->getMP();
 								bool deducted = caster->safeConsumeMP(1); //Consume 1 mana ever duration / mana seconds
 								if ( deducted )
 								{
 									sustained = true;
 									myStats->EFFECTS[c] = true;
 									myStats->EFFECTS_TIMERS[c] = amplifyMagic_hijacked->channel_duration;
+
+									if ( caster->behavior == &actPlayer )
+									{
+										players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - caster->getMP());
+									}
 								}
 								else
 								{
@@ -1594,12 +1618,18 @@ void Entity::effectTimes()
 							if ( caster )
 							{
 								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
+								int oldMP = caster->getMP();
 								bool deducted = caster->safeConsumeMP(1); //Consume 3 mana ever duration / mana seconds
 								if ( deducted )
 								{
 									sustained = true;
 									myStats->EFFECTS[c] = true;
 									myStats->EFFECTS_TIMERS[c] = vampiricAura_hijacked->channel_duration;
+
+									if ( caster->behavior == &actPlayer )
+									{
+										players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - caster->getMP());
+									}
 
 									// monsters have a chance to un-sustain the spell each MP consume.
 									if ( caster->behavior == &actMonster && local_rng.rand() % 20 == 0 )
@@ -9328,7 +9358,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					Item* armor = NULL;
 					int armornum = 0;
 					bool isWeakArmor = false;
-
+					bool shieldIncreased = false;
 					if ( damage > 0 || (damage == 0 && !(hitstats->shield && hitstats->defending)) )
 					{
 						// choose random piece of equipment to target
@@ -9374,14 +9404,25 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 						if ( hit.entity->behavior == &actPlayer && armornum == 4 )
 						{
-							armorDegradeChance += (hitstats->getModifiedProficiency(PRO_SHIELD) / 10);
-							if ( itemCategory(hitstats->shield) == ARMOR )
-							{
-								armorDegradeChance += (hitstats->getModifiedProficiency(PRO_SHIELD) / 10); // 2x shield bonus offhand
-							}
 							if ( skillCapstoneUnlocked(hit.entity->skill[2], PRO_SHIELD) )
 							{
 								armorDegradeChance = 100; // don't break.
+							}
+							else
+							{
+								if ( itemCategory(hitstats->shield) == ARMOR )
+								{
+									armorDegradeChance += 2 * (hitstats->getModifiedProficiency(PRO_SHIELD) / 10);
+									armorDegradeChance += 10;
+									if ( !players[hit.entity->skill[2]]->mechanics.itemDegradeRoll(hitstats->shield) )
+									{
+										armorDegradeChance = 100; // don't break.
+									}
+								}
+								else
+								{
+									armorDegradeChance += (hitstats->getModifiedProficiency(PRO_SHIELD) / 10);
+								}
 							}
 						}
 
@@ -9442,13 +9483,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 								|| (hitstats->defending) )
 							{
 								int roll = 16;
+								if ( hitstats->getProficiency(PRO_SHIELD) >= SKILL_LEVEL_SKILLED )
+								{
+									roll = 32;
+								}
 								if ( damage == 0 )
 								{
 									roll /= 2;
-								}
-								if ( myStats->type == BAT_SMALL )
-								{
-									roll = 64;
 								}
 								if ( roll > 0 )
 								{
@@ -9460,6 +9501,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 											increaseSkill = false;
 										}
 										else if ( hit.entity->behavior == &actPlayer && this->monsterAllyGetPlayerLeader() )
+										{
+											increaseSkill = false;
+										}
+										else if ( hit.entity->behavior == &actPlayer
+											&& !players[hit.entity->skill[2]]->mechanics.allowedRaiseBlockingAgainstEntity(*this) )
 										{
 											increaseSkill = false;
 										}
@@ -9475,6 +9521,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 										if ( increaseSkill )
 										{
 											hit.entity->increaseSkill(PRO_SHIELD); // increase shield skill
+											shieldIncreased = true;
+											if ( hit.entity->behavior == &actPlayer )
+											{
+												players[hit.entity->skill[2]]->mechanics.enemyRaisedBlockingAgainst[this->getUID()]++;
+											}
 										}
 									}
 								}
@@ -9494,10 +9545,17 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 							if ( hit.entity->behavior == &actPlayer )
 							{
-								shieldDegradeChance += (hitstats->getModifiedProficiency(PRO_SHIELD) / 10);
 								if ( itemCategory(hitstats->shield) == ARMOR )
 								{
-									shieldDegradeChance += (hitstats->getModifiedProficiency(PRO_SHIELD) / 10); // 2x shield bonus offhand
+									shieldDegradeChance += 2 * (hitstats->getModifiedProficiency(PRO_SHIELD) / 10); // 2x shield bonus offhand
+									if ( !players[hit.entity->skill[2]]->mechanics.itemDegradeRoll(hitstats->shield) )
+									{
+										shieldDegradeChance = 100; // don't break.
+									}
+								}
+								else
+								{
+									shieldDegradeChance += (hitstats->getModifiedProficiency(PRO_SHIELD) / 10);
 								}
 								if ( skillCapstoneUnlocked(hit.entity->skill[2], PRO_SHIELD) )
 								{
@@ -10229,7 +10287,30 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( damage > 0 )
 						{
+							bool oldRhythmStatus = achievementStatusRhythmOfTheKnight[player];
 							updateAchievementRhythmOfTheKnight(player, hit.entity, false);
+							if ( !oldRhythmStatus && achievementStatusRhythmOfTheKnight[player] )
+							{
+								//messagePlayer(0, MESSAGE_DEBUG, "rhythm roll on atk");
+								if ( local_rng.rand() % 10 < 6 )
+								{
+									bool increaseSkill = true;
+									if ( this->behavior == &actPlayer )
+									{
+										if ( !players[this->skill[2]]->mechanics.allowedRaiseBlockingAgainstEntity(*hit.entity) )
+										{
+											increaseSkill = false;
+										}
+										players[this->skill[2]]->mechanics.enemyRaisedBlockingAgainst[hit.entity->getUID()]++;
+									}
+									if ( increaseSkill )
+									{
+										this->increaseSkill(PRO_SHIELD);
+									}
+								}
+								achievementStatusRhythmOfTheKnight[player] = false;
+								achievementRhythmOfTheKnightVec[player].clear(); // reset for the next one
+							}
 						}
 						else
 						{
@@ -10881,7 +10962,34 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							if ( hitstats->defending )
 							{
+								bool oldRhythmStatus = achievementStatusRhythmOfTheKnight[playerhit];
 								updateAchievementRhythmOfTheKnight(playerhit, this, true);
+								if ( !oldRhythmStatus && achievementStatusRhythmOfTheKnight[playerhit] )
+								{
+									if ( !shieldIncreased )
+									{
+										//messagePlayer(0, MESSAGE_DEBUG, "rhythm roll on hit");
+										if ( local_rng.rand() % 10 < 6 )
+										{
+											bool skillIncrease = true;
+											if ( hit.entity->behavior == &actPlayer )
+											{
+												if ( !players[hit.entity->skill[2]]->mechanics.allowedRaiseBlockingAgainstEntity(*this) )
+												{
+													skillIncrease = false;
+												}
+												players[hit.entity->skill[2]]->mechanics.enemyRaisedBlockingAgainst[this->getUID()]++;
+											}
+											if ( skillIncrease )
+											{
+												hit.entity->increaseSkill(PRO_SHIELD);
+												shieldIncreased = true;
+											}
+										}
+									}
+									achievementStatusRhythmOfTheKnight[playerhit] = false;
+									achievementRhythmOfTheKnightVec[playerhit].clear(); // reset for the next one
+								}
 								updateAchievementThankTheTank(playerhit, this, false);
 							}
 							else if ( !achievementStatusRhythmOfTheKnight[playerhit] )

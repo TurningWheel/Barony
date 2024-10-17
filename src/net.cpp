@@ -3322,6 +3322,52 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 	}},
 
+	// update equip beatitude
+	{'BEAT', []() {
+		Item* equipment = nullptr;
+		//messagePlayer(0, "client: %d, armornum: %d, status %d", player, net_packet->data[5], net_packet->data[6]);
+		switch ( net_packet->data[5] )
+		{
+			case 0:
+				equipment = stats[clientnum]->weapon;
+				break;
+			case 1:
+				equipment = stats[clientnum]->helmet;
+				break;
+			case 2:
+				equipment = stats[clientnum]->breastplate;
+				break;
+			case 3:
+				equipment = stats[clientnum]->gloves;
+				break;
+			case 4:
+				equipment = stats[clientnum]->shoes;
+				break;
+			case 5:
+				equipment = stats[clientnum]->shield;
+				break;
+			case 6:
+				equipment = stats[clientnum]->cloak;
+				break;
+			case 7:
+				equipment = stats[clientnum]->mask;
+				break;
+			default:
+				equipment = nullptr;
+				break;
+		}
+
+		if ( !equipment )
+		{
+			return;
+		}
+		int itemType = SDLNet_Read16(&net_packet->data[7]);
+		if ( (int)equipment->type == itemType ) // sanity check the item type is what was changed
+		{
+			equipment->beatitude = net_packet->data[6] - 100; // we sent the data beatitude + 100
+		}
+	}},
+
 	// update armor quality
 	{'ARMR', [](){
 	    Item* item;

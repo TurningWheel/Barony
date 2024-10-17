@@ -2753,6 +2753,7 @@ class ItemTooltips_t
 		std::string iconLabelPath = "";
 	};
 
+public:
 	enum SpellItemTypes : int
 	{
 		SPELL_TYPE_DEFAULT,
@@ -2762,7 +2763,6 @@ class ItemTooltips_t
 		SPELL_TYPE_AREA,
 		SPELL_TYPE_SELF_SUSTAIN
 	};
-public:
 	enum SpellTagTypes : int
 	{
 		SPELL_TAG_DAMAGE,

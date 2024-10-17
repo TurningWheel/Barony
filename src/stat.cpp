@@ -1401,18 +1401,27 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 	intro = oldIntro;
 }
 
-int Stat::getActiveShieldBonus(bool checkShield, bool excludeSkill) const
+int Stat::getActiveShieldBonus(bool checkShield, bool excludeSkill, Item* shieldItem) const
 {
-	if ( !checkShield )
+	Item* item = shieldItem;
+	if ( !item )
 	{
-		return (5 + (excludeSkill ? 0 : (getModifiedProficiency(PRO_SHIELD) / 5)));
+		if ( !checkShield )
+		{
+			return (5 + (excludeSkill ? 0 : (getModifiedProficiency(PRO_SHIELD) / 5)));
+		}
+		item = shield;
 	}
-
-	if ( shield )
+	if ( item )
 	{
-		if ( itemCategory(shield) == SPELLBOOK || itemTypeIsQuiver(shield->type) )
+		if ( itemCategory(item) == SPELLBOOK || itemTypeIsQuiver(item->type) )
 		{
 			return 0;
+		}
+		if ( itemCategory(item) != ARMOR )
+		{
+			// non-armor caps out at 40 blocking
+			return (5 + (excludeSkill ? 0 : std::min(SKILL_LEVEL_SKILLED, getModifiedProficiency(PRO_SHIELD)) / 5));
 		}
 		return (5 + (excludeSkill ? 0 : (getModifiedProficiency(PRO_SHIELD) / 5)));
 	}

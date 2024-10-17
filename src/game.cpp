@@ -1530,10 +1530,10 @@ void gameLogic(void)
 						steamAchievementClient(c, "BARONY_ACH_WELL_PREPARED");
 					}
 
-					if ( achievementStatusRhythmOfTheKnight[c] )
+					/*if ( achievementStatusRhythmOfTheKnight[c] )
 					{
 						steamAchievementClient(c, "BARONY_ACH_RHYTHM_OF_THE_KNIGHT");
-					}
+					}*/
 					if ( achievementStatusThankTheTank[c] )
 					{
 						steamAchievementClient(c, "BARONY_ACH_THANK_THE_TANK");

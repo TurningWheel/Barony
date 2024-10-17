@@ -22,6 +22,7 @@
 #include "../scores.hpp"
 #include "../ui/MainMenu.hpp"
 #include "../prng.hpp"
+#include "../mod_tools.hpp"
 
 //The spellcasting animation stages:
 #define CIRCLE 0 //One circle
@@ -467,7 +468,23 @@ void actLeftHandMagic(Entity* my)
 					if ( multiplayer == SINGLE && cast_animation[HANDMAGIC_PLAYERNUM].consumeMana )
 					{
 						int HP = stats[HANDMAGIC_PLAYERNUM]->HP;
+						int MP = stats[HANDMAGIC_PLAYERNUM]->MP;
 						players[HANDMAGIC_PLAYERNUM]->entity->drainMP(1, false); // don't notify otherwise we'll get spammed each 1 mp
+
+						if ( cast_animation[HANDMAGIC_PLAYERNUM].spell )
+						{
+							bool sustainedSpell = false;
+							auto findSpellDef = ItemTooltips.spellItems.find(cast_animation[HANDMAGIC_PLAYERNUM].spell->ID);
+							if ( findSpellDef != ItemTooltips.spellItems.end() )
+							{
+								sustainedSpell = (findSpellDef->second.spellType == ItemTooltips_t::SpellItemTypes::SPELL_TYPE_SELF_SUSTAIN);
+							}
+							if ( sustainedSpell )
+							{
+								players[HANDMAGIC_PLAYERNUM]->mechanics.sustainedSpellIncrementMP(MP - stats[HANDMAGIC_PLAYERNUM]->MP);
+							}
+						}
+
 						if ( (HP > stats[HANDMAGIC_PLAYERNUM]->HP) && !overDrawDamageNotify )
 						{
 							overDrawDamageNotify = true;

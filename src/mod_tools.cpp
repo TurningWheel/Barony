@@ -3805,7 +3805,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			if ( tooltipType.find("tooltip_offhand") != std::string::npos )
 			{
 				snprintf(buf, sizeof(buf), str.c_str(),
-					stats[player]->getActiveShieldBonus(false, excludeSkill),
+					stats[player]->getActiveShieldBonus(false, excludeSkill, &item),
 					getItemProficiencyName(PRO_SHIELD).c_str());
 			}
 			else
@@ -3813,7 +3813,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				snprintf(buf, sizeof(buf), str.c_str(), 
 					stats[player]->getPassiveShieldBonus(false, excludeSkill),
 					getItemProficiencyName(PRO_SHIELD).c_str(),
-					stats[player]->getActiveShieldBonus(false, excludeSkill),
+					stats[player]->getActiveShieldBonus(false, excludeSkill, &item),
 					getItemProficiencyName(PRO_SHIELD).c_str());
 			}
 		}

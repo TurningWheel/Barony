@@ -398,6 +398,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	int spellBookBonusPercent = 0;
 	int spellBookBeatitude = 0;
 	ItemType spellbookType = WOODEN_SHIELD;
+	bool sustainedSpell = false;
+	auto findSpellDef = ItemTooltips.spellItems.find(spell->ID);
+	if ( findSpellDef != ItemTooltips.spellItems.end() )
+	{
+		sustainedSpell = (findSpellDef->second.spellType == ItemTooltips_t::SpellItemTypes::SPELL_TYPE_SELF_SUSTAIN);
+	}
+	int oldMP = caster->getMP();
 	if ( !using_magicstaff && !trap && stat )
 	{
 		newbie = isSpellcasterBeginner(player, caster);
@@ -438,6 +445,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				magiccost = cast_animation[player].mana_left;
 			}
+
 			caster->drainMP(magiccost, false);
 		}
 		else // Calculate the cost of the Spell for Multiplayer
@@ -515,6 +523,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			caster->drainMP(extramagic);
 		}
 
+		if ( caster->behavior == &actPlayer && sustainedSpell )
+		{
+			players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - stat->MP);
+		}
+
 		bool fizzleSpell = false;
 		chance = local_rng.rand() % 10;
 		if ( chance >= spellcastingAbility / 10 )
@@ -583,6 +596,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				return NULL;
 			}
 		}
+	}
+
+	if ( caster->behavior == &actPlayer && sustainedSpell )
+	{
+		players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - stat->MP);
 	}
 
 	//Check if the bugger is levitating.
@@ -2704,17 +2722,42 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 				}
 
-
+				bool sustainedChance = players[caster->skill[2]]->mechanics.sustainedSpellLevelChance();
 				if ( spellCastChance > 0 && (local_rng.rand() % spellCastChance == 0) )
 				{
-					caster->increaseSkill(PRO_SPELLCASTING);
+					if ( sustainedSpell && caster->behavior == &actPlayer )
+					{
+						if ( sustainedChance )
+						{
+							players[caster->skill[2]]->mechanics.sustainedSpellMPUsed = 0;
+
+							caster->increaseSkill(PRO_SPELLCASTING);
+						}
+					}
+					else
+					{
+						caster->increaseSkill(PRO_SPELLCASTING);
+					}
 				}
 
 				bool magicIncreased = false;
 				if ( magicChance > 0 && (local_rng.rand() % magicChance == 0) )
 				{
-					caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
-					magicIncreased = true;
+					if ( sustainedSpell && caster->behavior == &actPlayer )
+					{
+						if ( sustainedChance )
+						{
+							players[caster->skill[2]]->mechanics.sustainedSpellMPUsed = 0;
+
+							caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
+							magicIncreased = true;
+						}
+					}
+					else
+					{
+						caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
+						magicIncreased = true;
+					}
 				}
 				if ( magicIncreased && usingSpellbook && caster->behavior == &actPlayer )
 				{
@@ -2753,26 +2796,67 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		{
 			chance = 1; // cursed books always degrade, or blessed books in succubus/incubus
 		}
-		if ( local_rng.rand() % chance == 0 && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
+		else
 		{
-			Status oldStatus = stat->shield->status;
-			caster->degradeArmor(*stat, *(stat->shield), 4);
-			if ( stat->shield->status < oldStatus )
+			if ( caster && caster->behavior == &actPlayer )
 			{
-				if ( player >= 0 )
+				if ( stat->shield && itemCategory(stat->shield) == SPELLBOOK )
 				{
-					Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_CAST_DEGRADES, stat->shield->type, 1);
+					if ( !players[caster->skill[2]]->mechanics.itemDegradeRoll(stat->shield) )
+					{
+						chance = 0;
+					}
 				}
 			}
-
-			if ( stat->shield->status == BROKEN && player >= 0 )
+		}
+		if ( chance > 0 && local_rng.rand() % chance == 0 && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
+		{
+			Status oldStatus = stat->shield->status;
+			if ( caster && caster->behavior == &actPlayer )
 			{
-				if ( caster && caster->behavior == &actPlayer && stat->playerRace == RACE_GOBLIN && stat->appearance == 0 )
+				players[caster->skill[2]]->mechanics.onItemDegrade(stat->shield);
+			}
+			if ( oldStatus == DECREPIT && stat->shield->beatitude > 0 && caster && caster->behavior == &actPlayer )
+			{
+				--stat->shield->beatitude;
+				if ( caster->skill[2] >= 0 )
 				{
-					steamStatisticUpdateClient(player, STEAM_STAT_DYSLEXIA, STEAM_STAT_INT, 1);
+					messagePlayer(caster->skill[2], MESSAGE_EQUIPMENT, Language::get(6308), stat->shield->getName());
 				}
-				Item* toBreak = stat->shield;
-				consumeItem(toBreak, player);
+
+				if ( multiplayer == SERVER && caster->skill[2] > 0 )
+				{
+					strcpy((char*)net_packet->data, "BEAT");
+					net_packet->data[4] = caster->skill[2];
+					net_packet->data[5] = 5; // shield index
+					net_packet->data[6] = stat->shield->beatitude + 100;
+					SDLNet_Write16((Sint16)stat->shield->type, &net_packet->data[7]);
+					net_packet->address.host = net_clients[caster->skill[2] - 1].host;
+					net_packet->address.port = net_clients[caster->skill[2] - 1].port;
+					net_packet->len = 9;
+					sendPacketSafe(net_sock, -1, net_packet, caster->skill[2] - 1);
+				}
+			}
+			else
+			{
+				caster->degradeArmor(*stat, *(stat->shield), 4);
+				if ( stat->shield->status < oldStatus )
+				{
+					if ( player >= 0 )
+					{
+						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_CAST_DEGRADES, stat->shield->type, 1);
+					}
+				}
+
+				if ( stat->shield->status == BROKEN && player >= 0 )
+				{
+					if ( caster && caster->behavior == &actPlayer && stat->playerRace == RACE_GOBLIN && stat->appearance == 0 )
+					{
+						steamStatisticUpdateClient(player, STEAM_STAT_DYSLEXIA, STEAM_STAT_INT, 1);
+					}
+					Item* toBreak = stat->shield;
+					consumeItem(toBreak, player);
+				}
 			}
 		}
 	}

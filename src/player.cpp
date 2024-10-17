@@ -3061,7 +3061,7 @@ void GameController::stopRumble()
 	haptics.hapticEffectId = -1;
 }
 
-Player::Player(int in_playernum, bool in_local_host) : 
+Player::Player(int in_playernum, bool in_local_host) :
 	GUI(*this),
 	inventoryUI(*this),
 	hud(*this),
@@ -3078,7 +3078,8 @@ Player::Player(int in_playernum, bool in_local_host) :
 	paperDoll(*this),
 	minimap(*this),
 	shopGUI(*this),
-	compendiumProgress(*this)
+	compendiumProgress(*this),
+	mechanics(*this)
 {
 	local_host = false;
 	playernum = in_playernum;
@@ -3104,6 +3105,8 @@ void Player::init() // for use on new/restart game, UI related
 	minotaurWarning[playernum].deinit();
 	levelUpAnimation[playernum].lvlUps.clear();
 	skillUpAnimation[playernum].skillUps.clear();
+	mechanics.itemDegradeRng.clear();
+	mechanics.sustainedSpellMPUsed = 0;
 }
 
 void Player::cleanUpOnEntityRemoval()
@@ -3114,6 +3117,7 @@ void Player::cleanUpOnEntityRemoval()
 		movement.reset();
 		worldUI.reset();
 	}
+	mechanics.enemyRaisedBlockingAgainst.clear();
 	selectedEntity[playernum] = nullptr;
 	client_selected[playernum] = nullptr;
 }
@@ -6827,4 +6831,140 @@ const char* Player::getAccountName() const {
 		}
 	}
     return unknown;
+}
+
+void Player::PlayerMechanics_t::onItemDegrade(Item* item)
+{
+	if ( !item )
+	{
+		return;
+	}
+	if ( item->type < 0 || item->type >= NUMITEMS )
+	{
+		return;
+	}
+	if ( itemCategory(item) == SPELLBOOK )
+	{
+		itemDegradeRng[item->type] = 0;
+	}
+}
+
+bool Player::PlayerMechanics_t::itemDegradeRoll(Item* item, int* checkInterval)
+{
+	if ( !item )
+	{
+		return true;
+	}
+	// assuming just shields/spellbooks for now
+	if ( item->type < 0 || item->type >= NUMITEMS )
+	{
+		return true;
+	}
+
+	auto& counter = itemDegradeRng[item->type];
+	int interval = 0;
+	if ( itemCategory(item) == SPELLBOOK )
+	{
+		// 10 max base interval
+		interval = (1 + item->status) + stats[player.playernum]->getModifiedProficiency(PRO_SPELLCASTING) / 20;
+		if ( item->beatitude < 0
+			&& !intro && !shouldInvertEquipmentBeatitude(stats[player.playernum]) )
+		{
+			interval = 0;
+		}
+		else if ( item->beatitude > 0
+			|| (item->beatitude < 0 
+				&& !intro && shouldInvertEquipmentBeatitude(stats[player.playernum])) )
+		{
+			interval += std::min(abs(item->beatitude), 2);
+		}
+	}
+	else
+	{
+		switch ( item->type )
+		{
+		case WOODEN_SHIELD:
+			interval = 5;
+			break;
+		case IRON_SHIELD:
+			interval = 10;
+			break;
+		case STEEL_SHIELD:
+			interval = 15;
+			break;
+		case STEEL_SHIELD_RESISTANCE:
+			interval = 15;
+			break;
+		case CRYSTAL_SHIELD:
+			interval = 10;
+			break;
+		default:
+			break;
+		}
+		if ( item->beatitude < 0
+			&& !intro && !shouldInvertEquipmentBeatitude(stats[player.playernum]) )
+		{
+			interval = 0;
+		}
+		else if ( item->beatitude > 0
+			|| (item->beatitude < 0
+				&& !intro && shouldInvertEquipmentBeatitude(stats[player.playernum])) )
+		{
+			interval += std::min(abs(item->beatitude), 5);
+		}
+	}
+
+	if ( checkInterval )
+	{
+		*checkInterval = interval;
+		return false;
+	}
+
+	//messagePlayer(0, MESSAGE_DEBUG, "counter: %d | interval: %d", counter, interval);
+
+	if ( counter >= interval )
+	{
+		if ( itemCategory(item) == SPELLBOOK )
+		{
+			// dont decrement until degraded
+		}
+		else
+		{
+			counter = 0;
+		}
+		return true;
+	}
+	++counter;
+	return false;
+}
+
+void Player::PlayerMechanics_t::sustainedSpellIncrementMP(int mpChange)
+{
+	sustainedSpellMPUsed += std::max(0, mpChange);
+}
+
+bool Player::PlayerMechanics_t::sustainedSpellLevelChance()
+{
+	int threshold = 10;
+	if ( stats[player.playernum]->getProficiency(PRO_SPELLCASTING) < SKILL_LEVEL_BASIC )
+	{
+		threshold = 5;
+	}
+	if ( sustainedSpellMPUsed >= threshold )
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool Player::PlayerMechanics_t::allowedRaiseBlockingAgainstEntity(Entity& attacker)
+{
+	if ( attacker.behavior != &actMonster )
+	{
+		return false;
+	}
+	return enemyRaisedBlockingAgainst[attacker.getUID()] < 1;
 }

@@ -3988,7 +3988,7 @@ bool anySaveFileExists()
 
 void updateAchievementRhythmOfTheKnight(int player, Entity* target, bool playerIsHit)
 {
-	if ( achievementStatusRhythmOfTheKnight[player] || multiplayer == CLIENT
+	if ( multiplayer == CLIENT
 		|| player < 0 || player >= MAXPLAYERS )
 	{
 		return;
@@ -6079,6 +6079,11 @@ int SaveGameInfo::populateFromSession(const int playernum)
 				h2.second.numAggressions = h.second.numAggressions;
 				h2.second.numAccessories = h.second.numAccessories;
 			}
+			for ( auto& pair : ::players[c]->mechanics.itemDegradeRng )
+			{
+				player.itemDegradeRNG.push_back(pair);
+			}
+			player.sustainedSpellMPUsed = ::players[c]->mechanics.sustainedSpellMPUsed;
 
 			for ( auto& pair : ::players[c]->compendiumProgress.itemEvents )
 			{
@@ -6951,6 +6956,18 @@ int loadGame(int player, const SaveGameInfo& info) {
 				++itr;
 			}
 		}
+	}
+
+	// player rng stuff
+	{
+		auto& mechanics = players[statsPlayer]->mechanics;
+		mechanics.itemDegradeRng.clear();
+		for ( auto& pair : info.players[player].itemDegradeRNG )
+		{
+			mechanics.itemDegradeRng[pair.first] = pair.second;
+		}
+		mechanics.sustainedSpellMPUsed = 0;
+		mechanics.sustainedSpellMPUsed = info.players[player].sustainedSpellMPUsed;
 	}
 
 	Player::Minimap_t::mapDetails = info.map_messages;
