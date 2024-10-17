@@ -6531,5 +6531,11 @@ Unlock Achievements to earn more!#
 6301 Lobby: Invite Only#
 6302 gnome thief#
 6303 thief leader#
+6304 Enchant Weapon#
+6305 Enchant Armor#
+6306 Select an item to enchant:#
+6307 This %s
+ is unable to be enchanted.#
+6308 Your %s loses some of its blessing.#
 
 6350 END#
