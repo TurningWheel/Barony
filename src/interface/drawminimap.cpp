@@ -222,6 +222,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 	const int xmax = map.width - xmin;
 	const int ymin = ((int)map.height - mapGCD) / 2;
 	const int ymax = map.height - ymin;
+	bool checkedDaedalusEvent = false;
 	for ( int x = xmin; x < xmax; ++x ) {
 		for ( int y = ymin; y < ymax; ++y ) {
 			Uint32 color = 0;
@@ -253,6 +254,21 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 							if ( !minimap[y][x] )
 							{
 								minimap[y][x] = 3;
+								if ( !checkedDaedalusEvent )
+								{
+									for ( auto ent : entityPointsOfInterest )
+									{
+										if ( ent->behavior == &actLadder || ent->behavior == &actPortal )
+										{
+											if ( static_cast<int>(ent->x / 16) == x && static_cast<int>(ent->y / 16) == y )
+											{
+												Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_DAED_EXIT_REVEALS, "daedalus", 1);
+												checkedDaedalusEvent = true;
+												break;
+											}
+										}
+									}
+								}
 							}
 						}
 					}
@@ -1330,7 +1346,7 @@ void shrineDaedalusRevealMap(Entity& my)
 		{
 			int x = coord % 10000;
 			int y = coord / 10000;
-			if ( x < map.width && y < map.height )
+			if ( x >= 0 && y >= 0 && x < map.width && y < map.height )
 			{
 				if ( visited.find(x + 10000 * y) == visited.end() )
 				{

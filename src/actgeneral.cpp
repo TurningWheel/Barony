@@ -665,6 +665,21 @@ void Entity::colliderOnDestroy()
 {
 	if ( multiplayer == CLIENT ) { return; }
 	flags[PASSABLE] = true;
+
+	Entity* killer = nullptr;
+	if ( colliderKillerUid != 0 )
+	{
+		killer = uidToEntity(colliderKillerUid);
+		if ( killer )
+		{
+			auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+			if ( colliderData.damageCalculationType.find("breakable") != std::string::npos )
+			{
+				Compendium_t::Events_t::eventUpdateWorld(killer->skill[2], Compendium_t::CPDM_CONTAINER_BROKEN, "containers", 1);
+			}
+		}
+	}
+
 	if ( colliderHideMonster != 0 )
 	{
 		int type = colliderHideMonster % 1000;
@@ -696,22 +711,23 @@ void Entity::colliderOnDestroy()
 			}
 		}
 
-		if ( colliderKillerUid != 0 )
+		if ( killer )
 		{
-			if ( Entity* killer = uidToEntity(colliderKillerUid) )
+			if ( killer->behavior == &actPlayer )
 			{
-				if ( killer->behavior == &actPlayer )
+				if ( successes >= 1 )
 				{
-					if ( successes == 1 )
-					{
-						messagePlayer(killer->skill[2], MESSAGE_INTERACTION, Language::get(6234),
-							getMonsterLocalizedName((Monster)type).c_str(), Language::get(getColliderLangName()));
-					}
-					else if ( successes > 1 )
-					{
-						messagePlayer(killer->skill[2], MESSAGE_INTERACTION, Language::get(6253),
-							getMonsterLocalizedPlural((Monster)type).c_str(), Language::get(getColliderLangName()));
-					}
+					Compendium_t::Events_t::eventUpdateWorld(killer->skill[2], Compendium_t::CPDM_CONTAINER_MONSTERS, "containers", successes);
+				}
+				if ( successes == 1 )
+				{
+					messagePlayer(killer->skill[2], MESSAGE_INTERACTION, Language::get(6234),
+						getMonsterLocalizedName((Monster)type).c_str(), Language::get(getColliderLangName()));
+				}
+				else if ( successes > 1 )
+				{
+					messagePlayer(killer->skill[2], MESSAGE_INTERACTION, Language::get(6253),
+						getMonsterLocalizedPlural((Monster)type).c_str(), Language::get(getColliderLangName()));
 				}
 			}
 		}
@@ -749,6 +765,8 @@ void Entity::colliderOnDestroy()
 							}
 						}
 
+						int totalGold = entity->goldAmount;
+
 						// find other matching gold piles
 						auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(entity, 2);
 						for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
@@ -784,7 +802,16 @@ void Entity::colliderOnDestroy()
 											}
 										}
 									}
+
+									totalGold += ent->goldAmount;
 								}
+							}
+						}
+						if ( totalGold > 0 && killer )
+						{
+							if ( killer->behavior == &actPlayer )
+							{
+								Compendium_t::Events_t::eventUpdateWorld(killer->skill[2], Compendium_t::CPDM_CONTAINER_GOLD, "containers", totalGold);
 							}
 						}
 						entity->goldInContainer = 0;
@@ -814,6 +841,14 @@ void Entity::colliderOnDestroy()
 									net_packet->len = 8;
 									sendPacketSafe(net_sock, -1, net_packet, i - 1);
 								}
+							}
+						}
+
+						if ( killer )
+						{
+							if ( killer->behavior == &actPlayer )
+							{
+								Compendium_t::Events_t::eventUpdateWorld(killer->skill[2], Compendium_t::CPDM_CONTAINER_ITEMS, "containers", 1);
 							}
 						}
 					}
@@ -1023,6 +1058,10 @@ void actColliderDecoration(Entity* my)
 
 						if ( found->behavior == &actPlayer )
 						{
+							if ( successes >= 1 )
+							{
+								Compendium_t::Events_t::eventUpdateWorld(found->skill[2], Compendium_t::CPDM_CONTAINER_MONSTERS, "containers", successes);
+							}
 							if ( successes == 1 )
 							{
 								messagePlayer(found->skill[2], MESSAGE_INTERACTION, Language::get(6234),
@@ -3973,6 +4012,7 @@ void actBell(Entity* my)
 	}
 
 	my->z = 0;
+	static ConsoleVariable<bool> cvar_bell_crash("/bell_crash", false);
 #ifndef NDEBUG
 	if ( keystatus[SDLK_KP_5] && enableDebugKeys )
 	{
@@ -4018,7 +4058,7 @@ void actBell(Entity* my)
 		BELL_ACTIVE_TIMER = pullTimerStart; // active pull timer
 	}
 
-	if ( keystatus[SDLK_g] && enableDebugKeys )
+	if ( keystatus[SDLK_g] && enableDebugKeys && *cvar_bell_crash )
 	{
 		keystatus[SDLK_g] = 0;
 		BELL_CURRENT_EVENT = (BellEvents)(BELL_CURRENT_EVENT + 1);
@@ -4029,7 +4069,6 @@ void actBell(Entity* my)
 		messagePlayer(0, MESSAGE_DEBUG, "Bell event: %d", BELL_CURRENT_EVENT);
 	}
 #endif
-	static ConsoleVariable<bool> cvar_bell_crash("/bell_crash", false);
 
 	if ( multiplayer == CLIENT )
 	{
@@ -4077,6 +4116,7 @@ void actBell(Entity* my)
 					{
 						touched = Player::getPlayerInteractEntity(i);
 						BELL_LAST_TOUCHED_PLAYER = i;
+						Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_BELL_RUNG_TIMES, "bell", 1);
 						break;
 					}
 				}
@@ -4185,6 +4225,17 @@ void actBell(Entity* my)
 				my->flags[INVISIBLE] = true;
 				serverUpdateEntitySkill(my, INVISIBLE);
 				serverUpdateEntitySkill(my, BURNING);
+
+				if ( BELL_PULLED_TO_BREAK != 0 )
+				{
+					if ( Entity* puller = uidToEntity(BELL_PULLED_TO_BREAK) )
+					{
+						if ( puller->behavior == &actPlayer )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(puller->skill[2], Compendium_t::CPDM_BELL_BROKEN, "bell", 1);
+						}
+					}
+				}
 			}
 		}
 	}
@@ -4740,26 +4791,32 @@ void actBell(Entity* my)
 						{
 							const char* lang = nullptr;
 							int statusEffect = 0;
+							Compendium_t::EventTags tag = Compendium_t::EventTags::CPDM_EVENT_TAGS_MAX;
 							switch ( BELL_BUFF_TYPE % BellBuffs::BUFF_ENUM_END )
 							{
 							case BUFF_STR:
 								lang = Language::get(6281);
 								statusEffect = EFF_POTION_STR;
+								tag = Compendium_t::EventTags::CPDM_BELL_BUFFS_STRENGTH;
 								break;
 							case BUFF_CON:
 								lang = Language::get(6282);
 								statusEffect = EFF_CON_BONUS;
+								tag = Compendium_t::EventTags::CPDM_BELL_BUFFS_STAMINA;
 								break;
 							case BUFF_DEX:
 								lang = Language::get(6283);
 								statusEffect = EFF_AGILITY;
+								tag = Compendium_t::EventTags::CPDM_BELL_BUFFS_AGILITY;
 								break;
 							case BUFF_PWR:
 								lang = Language::get(6284);
 								statusEffect = EFF_PWR;
+								tag = Compendium_t::EventTags::CPDM_BELL_BUFFS_MENTALITY;
 								break;
 							case BUFF_HEAL:
 								statusEffect = SPELL_HEALING;
+								tag = Compendium_t::EventTags::CPDM_BELL_BUFFS_HEALS;
 								break;
 							default:
 								break;
@@ -4790,6 +4847,7 @@ void actBell(Entity* my)
 										if ( entity->behavior == &actPlayer )
 										{
 											messagePlayerColor(entity->skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6298));
+											Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], tag, "bell", 1);
 										}
 									}
 									else if ( entity->setEffect(statusEffect, true, std::max(stats->EFFECTS_TIMERS[statusEffect], duration), false) )
@@ -4799,6 +4857,7 @@ void actBell(Entity* my)
 										if ( entity->behavior == &actPlayer )
 										{
 											messagePlayerColor(entity->skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6280), lang);
+											Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], tag, "bell", 1);
 										}
 									}
 								}
@@ -4814,6 +4873,7 @@ void actBell(Entity* my)
 			if ( bell && BELL_BULB_BROKEN == 0 )
 			{
 				messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6275));
+				Compendium_t::Events_t::eventUpdateWorld(BELL_LAST_TOUCHED_PLAYER, Compendium_t::CPDM_BELL_BROKEN, "bell", 1);
 				bellBreakBulb(my, false);
 			}
 		}
@@ -4826,6 +4886,7 @@ void actBell(Entity* my)
 				playSoundEntity(my, 76, 64);
 				messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6279));
 				bellAttractMonsters(my);
+				Compendium_t::Events_t::eventUpdateWorld(BELL_LAST_TOUCHED_PLAYER, Compendium_t::CPDM_BELL_CLAPPER_BROKEN, "bell", 1);
 			}
 		}
 		else if ( BELL_CURRENT_EVENT == BELL_MONSTER )
@@ -4850,6 +4911,10 @@ void actBell(Entity* my)
 
 			if ( BELL_LAST_TOUCHED_PLAYER >= 0 )
 			{
+				if ( successes > 0 )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(BELL_LAST_TOUCHED_PLAYER, Compendium_t::CPDM_BELL_LOOT_BATS, "bell", successes);
+				}
 				if ( successes == 1 )
 				{
 					messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6234),
@@ -4868,6 +4933,7 @@ void actBell(Entity* my)
 				if ( BELL_LAST_TOUCHED_PLAYER >= 0 )
 				{
 					messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6275));
+					Compendium_t::Events_t::eventUpdateWorld(BELL_LAST_TOUCHED_PLAYER, Compendium_t::CPDM_BELL_BROKEN, "bell", 1);
 				}
 				bellBreakBulb(my, false);
 			}
@@ -4910,6 +4976,7 @@ void actBell(Entity* my)
 						if ( BELL_LAST_TOUCHED_PLAYER >= 0 )
 						{
 							messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6272));
+							Compendium_t::Events_t::eventUpdateWorld(BELL_LAST_TOUCHED_PLAYER, Compendium_t::CPDM_BELL_LOOT_ITEMS, "bell", 1);
 						}
 					}
 					else if ( entity->behavior == &actGoldBag )
@@ -4941,6 +5008,7 @@ void actBell(Entity* my)
 						if ( BELL_LAST_TOUCHED_PLAYER >= 0 )
 						{
 							messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6272));
+							Compendium_t::Events_t::eventUpdateWorld(BELL_LAST_TOUCHED_PLAYER, Compendium_t::CPDM_BELL_LOOT_GOLD, "bell", entity->goldAmount);
 						}
 					}
 
@@ -4950,6 +5018,7 @@ void actBell(Entity* my)
 						if ( BELL_LAST_TOUCHED_PLAYER >= 0 )
 						{
 							messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6275));
+							Compendium_t::Events_t::eventUpdateWorld(BELL_LAST_TOUCHED_PLAYER, Compendium_t::CPDM_BELL_BROKEN, "bell", 1);
 						}
 						bellBreakBulb(my, false);
 					}

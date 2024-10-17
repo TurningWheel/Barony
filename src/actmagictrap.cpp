@@ -751,6 +751,7 @@ void Entity::actDaedalusShrine()
 							if ( touched->behavior == &actPlayer )
 							{
 								messagePlayerColor(touched->skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(768));
+								Compendium_t::Events_t::eventUpdateWorld(touched->skill[2], Compendium_t::CPDM_DAED_SPEED_BUFFS, "daedalus", 1);
 							}
 						}
 					}
@@ -857,6 +858,7 @@ void Entity::actDaedalusShrine()
 				}
 
 				daedalusShrineInteract(this, Player::getPlayerInteractEntity(i));
+				Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_DAED_USES, "daedalus", 1);
 				shrineActivateDelay = TICKS_PER_SECOND * 5;
 				serverUpdateEntitySkill(this, 7);
 				break;

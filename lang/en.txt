@@ -6524,5 +6524,12 @@ Unlock Achievements to earn more!#
 6294 You dodged a flying %s!#
 6295 spell#
 6296 projectile#
+6297 The rope catches fire!#
+6298 The chime refreshes you!#
+6299 Lobby: Open#
+6300 Lobby: Friends Only#
+6301 Lobby: Invite Only#
+6302 gnome thief#
+6303 thief leader#
 
-6300 END#
+6350 END#
