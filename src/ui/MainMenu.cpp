@@ -32828,10 +32828,65 @@ failed:
 		}
 		auto& entry = CompendiumEntries.worldObjects[name];
 
-		Compendium_t::compendiumEntityCurrent.set(
-			name,
-			entry.models.empty() ? "" : entry.models[Compendium_t::compendiumEntityCurrent.modelRNG % entry.models.size()]
-		);
+		if ( name == "containers" && entry.models.size() > 0 )
+		{
+			// hack - only show breakables on levels weve unlocked
+			std::vector<std::string> revealed_models = entry.models;
+			std::vector<std::pair<std::string, std::string>> areaUnlockNames = {
+				{"mines", "mines"},
+				{"swamps", "swamps"},
+				{"labyrinth", "labyrinth"},
+				{"ruins", "ruins"},
+				{"underworld", "underworld"},
+				{"hell", "hell"},
+				{"crystal caves", "caves"},
+				{"arcane citadel", "citadel"}
+			};
+			for ( auto it = revealed_models.begin(); it != revealed_models.end(); )
+			{
+				bool found = false;
+				for ( auto pair : areaUnlockNames )
+				{
+					if ( it->find(pair.second) != std::string::npos )
+					{
+						if ( pair.second == "mines" )
+						{
+							found = true;
+							break;
+						}
+						auto find = Compendium_t::CompendiumWorld_t::unlocks.find(pair.first);
+						if ( find != Compendium_t::CompendiumWorld_t::unlocks.end() )
+						{
+							if ( find->second != Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+							{
+								found = true;
+							}
+						}
+						break;
+					}
+				}
+				if ( !found )
+				{
+					it = revealed_models.erase(it);
+				}
+				else
+				{
+					++it;
+				}
+			}
+
+			Compendium_t::compendiumEntityCurrent.set(
+				name,
+				revealed_models.empty() ? "" : revealed_models[Compendium_t::compendiumEntityCurrent.modelRNG % revealed_models.size()]
+			);
+		}
+		else
+		{
+			Compendium_t::compendiumEntityCurrent.set(
+				name,
+				entry.models.empty() ? "" : entry.models[Compendium_t::compendiumEntityCurrent.modelRNG % entry.models.size()]
+			);
+		}
 
 		refreshCompendiumCamera(Compendium_t::compendiumEntityCurrent.modelName);
 
