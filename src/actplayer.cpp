@@ -74,6 +74,18 @@ static ConsoleVariable<float> cvar_calloutStartZLimit("/callout_start_z_limit", 
 #define GHOSTCAM_WEAVE my->fskill[10]
 #define GHOSTCAM_HOVER my->fskill[11]
 
+static ConsoleVariable<bool> cvar_player_can_move_in_gui("/player_can_move_in_gui", true);
+bool playerAllowedMovement(const int playernum)
+{
+	if ( !*cvar_player_can_move_in_gui )
+	{
+		if ( !players[playernum]->shootmode )
+		{
+			return false;
+		}
+	}
+	return true;
+}
 void Player::Ghost_t::handleGhostCameraBobbing(bool useRefreshRateDelta)
 {
 	if ( !my )
@@ -98,7 +110,7 @@ void Player::Ghost_t::handleGhostCameraBobbing(bool useRefreshRateDelta)
 	{
 		bool reset = false;
 
-		if ( !gamePaused
+		if ( !gamePaused && playerAllowedMovement(playernum)
 			&& ((!inputs.hasController(playernum)
 				&& ((input.binary("Move Forward") || input.binary("Move Backward"))
 					|| (input.binary("Move Left") - input.binary("Move Right"))))
@@ -165,7 +177,7 @@ void Player::Ghost_t::handleGhostMovement(const bool useRefreshRateDelta)
 	}
 
 	// calculate movement forces
-	bool allowMovement = isControllable();
+	bool allowMovement = isControllable() && playerAllowedMovement(player.playernum);
 	static ConsoleVariable<float> cvar_ghostSpeed("/ghost_speed", 1.5);
 	static ConsoleVariable<float> cvar_ghostDrag("/ghost_drag", 0.95);
 
@@ -2870,7 +2882,7 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 				PLAYER_BOBMOVE -= .03 * refreshRateDelta;
 			}
 		}
-		else if ( !gamePaused
+		else if ( !gamePaused && playerAllowedMovement(player.playernum)
 			&& ((!inputs.hasController(PLAYER_NUM) 
 				&& ((input.binary("Move Forward") || input.binary("Move Backward"))
 					|| (input.binary("Move Left") - input.binary("Move Right"))))
@@ -3217,7 +3229,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 
 	// calculate movement forces
 
-	bool allowMovement = my->isMobile();
+	bool allowMovement = my->isMobile() && playerAllowedMovement(player.playernum);
 	bool pacified = stats[PLAYER_NUM]->EFFECTS[EFF_PACIFY];
 	bool rooted = stats[PLAYER_NUM]->EFFECTS[EFF_ROOTED];
 	if ( rooted )
