@@ -836,6 +836,8 @@ bool mapTileDiggable(const int x, const int y)
 	return true;
 }
 
+static ConsoleVariable<bool> cvar_hell_baphoexit("/hell_baphoexit", false);
+
 /*-------------------------------------------------------------------------------
 
 	generateDungeon
@@ -1049,6 +1051,14 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		else if ( currentlevel == 33 )
 		{
 			secretlevelexit = 6;
+		}
+		else if ( currentlevel == 23 )
+		{
+			if ( *cvar_hell_baphoexit )
+			{
+				secretlevelexit = 8;
+				minotaurlevel = false;
+			}
 		}
 	}
 
@@ -1696,6 +1706,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						strcpy(secretmapname, levelset);
 						strcat(secretmapname, "secret");
 						break;
+					case 8:
+						strcpy(secretmapname, "baphoexit");
+						break;
 					default:
 						break;
 				}
@@ -1884,15 +1897,22 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				{
 					if ( c == 0 )
 					{
-						// 7x7, pick random location across all map.
-						x = getMapPossibleLocationX1() + (1 + map_rng.rand() % 4) * 7;
-						y = getMapPossibleLocationY1() + (1 + map_rng.rand() % 4) * 7;
+						if ( secretlevelexit )
+						{
+							x = getMapPossibleLocationX1() + 7;
+							y = getMapPossibleLocationY1() + 7;
+						}
+						else
+						{
+							// 7x7, pick random location across all map.
+							x = getMapPossibleLocationX1() + (1 + map_rng.rand() % 4) * 7;
+							y = getMapPossibleLocationY1() + (1 + map_rng.rand() % 4) * 7;
+						}
 					}
 					else if ( secretlevelexit && c == 1 )
 					{
-						// 14x14, pick random location minus 1 from both edges.
-						x = 2 + (map_rng.rand() % 5) * 7;
-						y = 2 + (map_rng.rand() % 5) * 7;
+						x = getMapPossibleLocationX1() + (3) * 7;
+						y = getMapPossibleLocationY1() + (3) * 7;
 					}
 					else if ( c == 2 && shoplevel )
 					{
@@ -3424,6 +3444,11 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		if ( (c == 0 || (minotaurlevel && c < 2)) && (!secretlevel || currentlevel != 7) && (!secretlevel || currentlevel != 20)
 			&& std::get<LEVELPARAM_DISABLE_NORMAL_EXIT>(mapParameters) == 0 )
 		{
+			if ( !strcmp(map.name, "Hell") && secretlevelexit && *cvar_hell_baphoexit )
+			{
+				continue; // no generate exit
+			}
+
 			// daedalus shrine
 			if ( c == 1 && minotaurlevel && !(secretlevel && (currentlevel == 7 || currentlevel == 20)) )
 			{
@@ -6883,6 +6908,10 @@ void assignActions(map_t* map)
 				if ( !strcmp(map->name, "Mages Guild") )
 				{
 					entity->skill[3] = 1; // not secret portal, just aesthetic.
+				}
+				else if ( !strcmp(map->name, "Hell") && currentlevel == 23 && *cvar_hell_baphoexit )
+				{
+					entity->portalNotSecret = 1; // not secret portal, just aesthetic.
 				}
 				entity->flags[PASSABLE] = true;
 				break;
