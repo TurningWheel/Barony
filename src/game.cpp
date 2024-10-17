@@ -1807,6 +1807,13 @@ void gameLogic(void)
 								//	1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t).count());
 								accum += 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t).count();
 								entityAccum[entity->sprite] += 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t).count();
+								/*if ( entity->sprite == 1426 || entity->sprite == 1430 )
+								{
+									if ( 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t).count() > 1.0 )
+									{
+										printlog("gnome time: uid %d | time %.2f", entity->getUID(), 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t).count());
+									}
+								}*/
 							}
 
 						}
@@ -2533,9 +2540,9 @@ void gameLogic(void)
 			}
 			if ( debugMonsterTimer )
 			{
-				//printlog("accum: %f", accum);
 				if ( accum > 5.0 )
 				{
+					printlog("accum: %f, tick: %d", accum, ticks);
 					for ( auto& pair : entityAccum )
 					{
 						printlog("entity: %d, accum: %.2f", pair.first, pair.second);

@@ -4630,7 +4630,7 @@ void actMonster(Entity* my)
 			messagePlayer(0, "defending!");
 		}*/
 
-		//if ( myStats->type == BUGBEAR )
+		//if ( myStats->type == GNOME )
 		//{
 		//	std::string state_string;
 		//	
@@ -4657,8 +4657,8 @@ void actMonster(Entity* my)
 		//		break;
 		//	}
 		//	
-		//	messagePlayer(0, MESSAGE_DEBUG, "%s, ATK: %d hittime:%d, atktime:%d, (%d|%d), timer:%d", 
-		//		state_string.c_str(), my->monsterAttack, my->monsterHitTime, MONSTER_ATTACKTIME, devilstate, devilacted, my->monsterSpecialTimer); //Debug message.
+		//	messagePlayer(0, MESSAGE_DEBUG, "uid: %d | ticks: %d | %s, ATK: %d hittime:%d, atktime:%d, (%d|%d), timer:%d", 
+		//		my->getUID(), ticks, state_string.c_str(), my->monsterAttack, my->monsterHitTime, MONSTER_ATTACKTIME, devilstate, devilacted, my->monsterSpecialTimer); //Debug message.
 		//}
 
 		//Begin state machine
@@ -4959,7 +4959,7 @@ void actMonster(Entity* my)
 			}
 
 			// follow the leader :)
-			if ( myStats->leader_uid != 0 
+			if ( myStats->leader_uid != 0
 				&& my->monsterAllyState == ALLY_STATE_DEFAULT 
 				&& !myStats->EFFECTS[EFF_FEAR]
 				&& !myStats->EFFECTS[EFF_DISORIENTED]
@@ -6664,7 +6664,7 @@ timeToGoAgain:
 			}
 
 			// follow the leader :)
-			if ( uidToEntity(my->monsterTarget) == nullptr 
+			if ( uidToEntity(my->monsterTarget) == nullptr
 				&& myStats->leader_uid != 0 
 				&& my->monsterAllyState == ALLY_STATE_DEFAULT 
 				&& !monsterIsImmobileTurret(my, myStats)
