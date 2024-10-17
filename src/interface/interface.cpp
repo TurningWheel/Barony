@@ -4871,6 +4871,58 @@ bool GenericGUIMenu::isItemIdentifiable(const Item* item)
 	return true;
 }
 
+bool GenericGUIMenu::isItemEnchantArmorable(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	if ( !item->identified )
+	{
+		return false;
+	}
+
+	if ( items[item->type].item_slot != NO_EQUIP )
+	{
+		if ( items[item->type].item_slot != EQUIPPABLE_IN_SLOT_AMULET
+			&& items[item->type].item_slot != EQUIPPABLE_IN_SLOT_RING
+			&& items[item->type].item_slot != EQUIPPABLE_IN_SLOT_WEAPON )
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool GenericGUIMenu::isItemEnchantWeaponable(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	if ( !item->identified )
+	{
+		return false;
+	}
+
+	if ( items[item->type].item_slot == EQUIPPABLE_IN_SLOT_WEAPON )
+	{
+		return true;
+		/*if ( itemCategory(item) == WEAPON || itemCategory(item) == THROWN )
+		{
+		}*/
+	}
+	else if ( item->type == BRASS_KNUCKLES
+		|| item->type == IRON_KNUCKLES
+		|| item->type == SPIKED_GAUNTLETS )
+	{
+		return true;
+	}
+
+	return false;
+}
+
 bool GenericGUIMenu::isItemRepairable(const Item* item, int repairScroll)
 {
 	if ( !item )
@@ -6012,6 +6064,14 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 		{
 			return isItemIdentifiable(item);
 		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_ENCHANT_ARMOR )
+		{
+			return isItemEnchantArmorable(item);
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_ENCHANT_WEAPON )
+		{
+			return isItemEnchantWeaponable(item);
+		}
 		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_REPAIR
 			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_CHARGING )
 		{
@@ -6171,6 +6231,95 @@ void GenericGUIMenu::identifyItem(Item* item)
 	}
 	item->identified = true;
 	messagePlayer(gui_player, MESSAGE_MISC, Language::get(320), item->description());
+	closeGUI();
+}
+
+void GenericGUIMenu::enchantItem(Item* item)
+{
+	if ( !item )
+	{
+		return;
+	}
+	if ( !shouldDisplayItemInGUI(item) )
+	{
+		messagePlayer(gui_player, MESSAGE_MISC, Language::get(6307), item->getName());
+		return;
+	}
+
+	if ( itemEffectItemBeatitude >= 0 )
+	{
+		if ( gui_player >= 0 && gui_player < MAXPLAYERS && players[gui_player]->isLocalPlayer() )
+		{
+			Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_BLESSED_TOTAL, item->type, 1);
+		}
+		item->beatitude += 1 + itemEffectItemBeatitude;
+		if ( itemEffectItemBeatitude == 0 )
+		{
+			messagePlayer(gui_player, MESSAGE_HINT, Language::get(859), item->getName()); // glows blue
+		}
+		else if ( itemEffectItemBeatitude >= 0 )
+		{
+			messagePlayer(gui_player, MESSAGE_HINT, Language::get(860), item->getName()); // glows violently blue
+		}
+
+		if ( multiplayer == CLIENT )
+		{
+			Item** slot = itemSlot(stats[gui_player], item);
+			int armornum = -1;
+			if ( slot )
+			{
+				if ( slot == &stats[gui_player]->weapon )
+				{
+					armornum = 0;
+				}
+				else if ( slot == &stats[gui_player]->helmet )
+				{
+					armornum = 1;
+				}
+				else if ( slot == &stats[gui_player]->breastplate )
+				{
+					armornum = 2;
+				}
+				else if ( slot == &stats[gui_player]->gloves )
+				{
+					armornum = 3;
+				}
+				else if ( slot == &stats[gui_player]->shoes )
+				{
+					armornum = 4;
+				}
+				else if ( slot == &stats[gui_player]->shield )
+				{
+					armornum = 5;
+				}
+				else if ( slot == &stats[gui_player]->cloak )
+				{
+					armornum = 6;
+				}
+				else if ( slot == &stats[gui_player]->mask )
+				{
+					armornum = 7;
+				}
+				else if ( slot == &stats[gui_player]->mask )
+				{
+					armornum = 7;
+				}
+			}
+			if ( armornum >= 0 )
+			{
+				strcpy((char*)net_packet->data, "BEAT");
+				net_packet->data[4] = gui_player;
+				net_packet->data[5] = armornum;
+				net_packet->data[6] = item->beatitude + 100;
+				SDLNet_Write16((Sint16)item->type, &net_packet->data[7]);
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 9;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+				//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+			}
+		}
+	}
 	closeGUI();
 }
 
@@ -6508,6 +6657,14 @@ void GenericGUIMenu::openGUI(int type, Item* effectItem, int effectBeatitude, in
 		{
 			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SCROLL_IDENTIFY;
 		}
+		else if ( itemEffectItemType == SCROLL_ENCHANTWEAPON )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SCROLL_ENCHANT_WEAPON;
+		}
+		else if ( itemEffectItemType == SCROLL_ENCHANTARMOR )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SCROLL_ENCHANT_ARMOR;
+		}
 		else if ( usingSpellID == SPELL_IDENTIFY )
 		{
 			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SPELL_IDENTIFY;
@@ -6680,6 +6837,17 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 				consumeItem(itemEffectScrollItem, gui_player);
 			}
 			identifyItem(item);
+			return true;
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_ENCHANT_WEAPON
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_ENCHANT_ARMOR )
+		{
+			if ( itemEffectScrollItem && itemCategory(itemEffectScrollItem) == SCROLL )
+			{
+				messagePlayer(gui_player, MESSAGE_INVENTORY, Language::get(848)); // as you read the scroll it disappears...
+				consumeItem(itemEffectScrollItem, gui_player);
+			}
+			enchantItem(item);
 			return true;
 		}
 		return false;
@@ -20672,6 +20840,50 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 				result = ITEMFX_ACTION_INVALID_ITEM;
 			}
 		}
+		else if ( currentMode == ITEMFX_MODE_SCROLL_ENCHANT_ARMOR )
+		{
+			if ( itemCategory(item) == SPELL_CAT )
+			{
+				result = ITEMFX_ACTION_INVALID_ITEM;
+			}
+			else if ( !item->identified )
+			{
+				result = ITEMFX_ACTION_NOT_IDENTIFIED_YET;
+			}
+			else
+			{
+				if ( parentGUI.isItemEnchantArmorable(item) )
+				{
+					result = ITEMFX_ACTION_OK;
+				}
+				else
+				{
+					result = ITEMFX_ACTION_INVALID_ITEM;
+				}
+			}
+		}
+		else if ( currentMode == ITEMFX_MODE_SCROLL_ENCHANT_WEAPON )
+		{
+			if ( itemCategory(item) == SPELL_CAT )
+			{
+				result = ITEMFX_ACTION_INVALID_ITEM;
+			}
+			else if ( !item->identified )
+			{
+				result = ITEMFX_ACTION_NOT_IDENTIFIED_YET;
+			}
+			else
+			{
+				if ( parentGUI.isItemEnchantWeaponable(item) )
+				{
+					result = ITEMFX_ACTION_OK;
+				}
+				else
+				{
+					result = ITEMFX_ACTION_INVALID_ITEM;
+				}
+			}
+		}
 		else if ( currentMode == ITEMFX_MODE_SCROLL_REPAIR )
 		{
 			if ( itemCategory(item) == SPELL_CAT )
@@ -21588,6 +21800,12 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 					case ITEMFX_MODE_SCROLL_IDENTIFY:
 						actionPromptTxt->setText(Language::get(4208));
 						break;
+					case ITEMFX_MODE_SCROLL_ENCHANT_ARMOR:
+						actionPromptTxt->setText(Language::get(6305));
+						break;
+					case ITEMFX_MODE_SCROLL_ENCHANT_WEAPON:
+						actionPromptTxt->setText(Language::get(6304));
+						break;
 					case ITEMFX_MODE_SPELL_IDENTIFY:
 						actionPromptTxt->setText(Language::get(4208));
 						break;
@@ -21733,6 +21951,12 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 				break;
 			case ITEMFX_MODE_SCROLL_IDENTIFY:
 				actionPromptUnselectedTxt->setText(Language::get(4209));
+				break;
+			case ITEMFX_MODE_SCROLL_ENCHANT_ARMOR:
+				actionPromptUnselectedTxt->setText(Language::get(6306));
+				break;
+			case ITEMFX_MODE_SCROLL_ENCHANT_WEAPON:
+				actionPromptUnselectedTxt->setText(Language::get(6306));
 				break;
 			case ITEMFX_MODE_SCROLL_REMOVECURSE:
 				actionPromptUnselectedTxt->setText(Language::get(4205));

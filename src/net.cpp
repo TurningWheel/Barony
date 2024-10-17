@@ -7001,7 +7001,6 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 	    const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
 		Item* equipment = nullptr;
 		//messagePlayer(0, "client: %d, armornum: %d, status %d", player, net_packet->data[5], net_packet->data[6]);
-
 		switch ( net_packet->data[5] )
 		{
 			case 0:
@@ -7037,8 +7036,11 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		{
 			return;
 		}
-
-		equipment->beatitude = net_packet->data[6] - 100; // we sent the data beatitude + 100
+		int itemType = SDLNet_Read16(&net_packet->data[7]);
+		if ( (int)equipment->type == itemType ) // sanity check the item type is what was changed
+		{
+			equipment->beatitude = net_packet->data[6] - 100; // we sent the data beatitude + 100
+		}
 		//messagePlayer(0, "%d", equipment->beatitude);
 	}},
 

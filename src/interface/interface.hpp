@@ -425,6 +425,11 @@ public:
 	bool isItemIdentifiable(const Item* item);
 	void identifyItem(Item* item);
 
+	//enchant
+	bool isItemEnchantWeaponable(const Item* item);
+	bool isItemEnchantArmorable(const Item* item);
+	void enchantItem(Item* item);
+
 	//alchemy menu funcs
 	bool isItemMixable(const Item* item);
 	void alchemyCombinePotions();
@@ -643,7 +648,9 @@ public:
 			ITEMFX_MODE_SCROLL_IDENTIFY,
 			ITEMFX_MODE_SCROLL_REMOVECURSE,
 			ITEMFX_MODE_SPELL_IDENTIFY,
-			ITEMFX_MODE_SPELL_REMOVECURSE
+			ITEMFX_MODE_SPELL_REMOVECURSE,
+			ITEMFX_MODE_SCROLL_ENCHANT_WEAPON,
+			ITEMFX_MODE_SCROLL_ENCHANT_ARMOR
 		};
 		void openItemEffectMenu(ItemEffectModes mode);
 		ItemEffectModes currentMode = ITEMFX_MODE_NONE;

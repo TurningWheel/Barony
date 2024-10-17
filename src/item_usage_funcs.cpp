@@ -345,9 +345,10 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 				net_packet->data[4] = player;
 				net_packet->data[5] = armornum;
 				net_packet->data[6] = toCurse->beatitude + 100;
+				SDLNet_Write16((Sint16)toCurse->type, &net_packet->data[7]);
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
-				net_packet->len = 7;
+				net_packet->len = 9;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 				//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 			}
@@ -2668,14 +2669,14 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 
 	conductIlliterate = false;
 
-	messagePlayer(player, MESSAGE_INVENTORY, Language::get(848));
-
-	Item** toEnchant = nullptr;
-	bool hasMeleeGloves = false;
-	if ( stats[player]->gloves )
+	if ( item->beatitude < 0 )
 	{
-		switch ( stats[player]->gloves->type )
+		Item** toEnchant = nullptr;
+		bool hasMeleeGloves = false;
+		if ( stats[player]->gloves )
 		{
+			switch ( stats[player]->gloves->type )
+			{
 			case BRASS_KNUCKLES:
 			case IRON_KNUCKLES:
 			case SPIKED_GAUNTLETS:
@@ -2683,25 +2684,23 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 				break;
 			default:
 				break;
+			}
 		}
-	}
 
-	if ( stats[player]->weapon )
-	{
-		toEnchant = &stats[player]->weapon;
-	}
-	else if ( hasMeleeGloves )
-	{
-		toEnchant = &stats[player]->gloves;
-	}
-
-	if ( toEnchant == nullptr)
-	{
-		messagePlayer(player, MESSAGE_HINT, Language::get(853));
-	}
-	else
-	{
-		if (item->beatitude < 0)
+		if ( stats[player]->weapon )
+		{
+			toEnchant = &stats[player]->weapon;
+		}
+		else if ( hasMeleeGloves )
+		{
+			toEnchant = &stats[player]->gloves;
+		}
+		messagePlayer(player, MESSAGE_INVENTORY, Language::get(848));
+		if ( toEnchant == nullptr )
+		{
+			messagePlayer(player, MESSAGE_HINT, Language::get(853));
+		}
+		else 
 		{
 			if ( toEnchant == &stats[player]->gloves )
 			{
@@ -2724,51 +2723,39 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 			{
 				(*toEnchant)->beatitude -= 1;
 			}
-		}
-		else
-		{
-			if (item->beatitude == 0)
-			{
-				if ( toEnchant == &stats[player]->gloves )
-				{
-					messagePlayer(player, MESSAGE_HINT, Language::get(859), (*toEnchant)->getName());
-				}
-				else
-				{
-					messagePlayer(player, MESSAGE_HINT, Language::get(855));
-				}
-			}
-			else
-			{
-				if ( toEnchant == &stats[player]->gloves )
-				{
-					messagePlayer(player, MESSAGE_HINT, Language::get(860), (*toEnchant)->getName());
-				}
-				else
-				{
-					messagePlayer(player, MESSAGE_HINT, Language::get(856));
-				}
-			}
-			(*toEnchant)->beatitude += 1 + item->beatitude;
-			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BLESSED_TOTAL, (*toEnchant)->type, item->beatitude);
-		}
 
-		if ( multiplayer == CLIENT )
-		{
-			strcpy((char*)net_packet->data, "BEAT");
-			net_packet->data[4] = player;
-			net_packet->data[5] = 0; // weapon index
-			net_packet->data[6] = (*toEnchant)->beatitude + 100;
-			net_packet->address.host = net_server.host;
-			net_packet->address.port = net_server.port;
-			net_packet->len = 7;
-			sendPacketSafe(net_sock, -1, net_packet, 0);
-			//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+			if ( multiplayer == CLIENT )
+			{
+				strcpy((char*)net_packet->data, "BEAT");
+				net_packet->data[4] = player;
+				if ( toEnchant == &stats[player]->gloves )
+				{
+					net_packet->data[5] = 3; // glove index
+				}
+				else
+				{
+					net_packet->data[5] = 0; // weapon index
+				}
+				net_packet->data[6] = (*toEnchant)->beatitude + 100;
+				SDLNet_Write16((Sint16)(*toEnchant)->type, &net_packet->data[7]);
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 9;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+				//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+			}
 		}
+		onScrollUseAppraisalIncrease(item, player);
+		item->identified = true;
+		consumeItem(item, player);
 	}
-	onScrollUseAppraisalIncrease(item, player);
-	item->identified = true;
-	consumeItem(item, player);
+	else
+	{
+		// Bless an item
+		onScrollUseAppraisalIncrease(item, player);
+		item->identified = true;
+		GenericGUI[player].openGUI(GUI_TYPE_ITEMFX, item, item->beatitude, item->type, SPELL_NONE);
+	}
 }
 
 void item_ScrollEnchantArmor(Item* item, int player)
@@ -2798,8 +2785,6 @@ void item_ScrollEnchantArmor(Item* item, int player)
 	}
 
 	conductIlliterate = false;
-
-	messagePlayer(player, MESSAGE_INVENTORY, Language::get(848));
 
 	// choose a random piece of worn equipment to curse!
 	int tryIndex = 1 + local_rng.rand() % 7;
@@ -2887,13 +2872,14 @@ void item_ScrollEnchantArmor(Item* item, int player)
 		}
 	}
 
-	if (armor == nullptr)
+	if (item->beatitude < 0)
 	{
-		messagePlayer(player, MESSAGE_HINT, Language::get(857));
-	}
-	else if ( armor != nullptr )
-	{
-		if (item->beatitude < 0)
+		messagePlayer(player, MESSAGE_INVENTORY, Language::get(848));
+		if (armor == nullptr)
+		{
+			messagePlayer(player, MESSAGE_HINT, Language::get(857));
+		}
+		else if ( armor != nullptr )
 		{
 			messagePlayer(player, MESSAGE_HINT, Language::get(858), armor->getName());
 
@@ -2905,38 +2891,33 @@ void item_ScrollEnchantArmor(Item* item, int player)
 			{
 				armor->beatitude -= 1;
 			}
-		}
-		else
-		{
-			if (item->beatitude == 0)
-			{
-				messagePlayer(player, MESSAGE_HINT, Language::get(859), armor->getName());
-			}
-			else
-			{
-				messagePlayer(player, MESSAGE_HINT, Language::get(860), armor->getName());
-			}
-			armor->beatitude += 1 + item->beatitude;
-			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BLESSED_TOTAL, armor->type, item->beatitude);
-		}
 
-		if ( multiplayer == CLIENT )
-		{
-			strcpy((char*)net_packet->data, "BEAT");
-			net_packet->data[4] = player;
-			net_packet->data[5] = armornum;
-			net_packet->data[6] = armor->beatitude + 100;
-			net_packet->address.host = net_server.host;
-			net_packet->address.port = net_server.port;
-			net_packet->len = 7;
-			sendPacketSafe(net_sock, -1, net_packet, 0);
-			//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+			if ( multiplayer == CLIENT )
+			{
+				strcpy((char*)net_packet->data, "BEAT");
+				net_packet->data[4] = player;
+				net_packet->data[5] = armornum;
+				net_packet->data[6] = armor->beatitude + 100;
+				SDLNet_Write16((Sint16)armor->type, &net_packet->data[7]);
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 9;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+				//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+			}
 		}
+		onScrollUseAppraisalIncrease(item, player);
+		item->identified = true;
+		consumeItem(item, player);
+
 	}
-
-	onScrollUseAppraisalIncrease(item, player);
-	item->identified = true;
-	consumeItem(item, player);
+	else
+	{
+		// Bless an item
+		onScrollUseAppraisalIncrease(item, player);
+		item->identified = true;
+		GenericGUI[player].openGUI(GUI_TYPE_ITEMFX, item, item->beatitude, item->type, SPELL_NONE);
+	}
 }
 
 void item_ScrollRemoveCurse(Item* item, int player)
@@ -3090,9 +3071,10 @@ void item_ScrollRemoveCurse(Item* item, int player)
 				net_packet->data[4] = player;
 				net_packet->data[5] = armornum;
 				net_packet->data[6] = toCurse->beatitude + 100;
+				SDLNet_Write16((Sint16)toCurse->type, &net_packet->data[7]);
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
-				net_packet->len = 7;
+				net_packet->len = 9;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 				//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 			}
