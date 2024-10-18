@@ -836,8 +836,6 @@ bool mapTileDiggable(const int x, const int y)
 	return true;
 }
 
-static ConsoleVariable<bool> cvar_hell_baphoexit("/hell_baphoexit", false);
-
 /*-------------------------------------------------------------------------------
 
 	generateDungeon
@@ -1054,11 +1052,8 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		}
 		else if ( currentlevel == 23 )
 		{
-			if ( *cvar_hell_baphoexit )
-			{
-				secretlevelexit = 8;
-				minotaurlevel = false;
-			}
+			secretlevelexit = 8;
+			minotaurlevel = false;
 		}
 	}
 
@@ -1897,7 +1892,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				{
 					if ( c == 0 )
 					{
-						if ( secretlevelexit )
+						if ( secretlevelexit == 8 )
 						{
 							x = getMapPossibleLocationX1() + 7;
 							y = getMapPossibleLocationY1() + 7;
@@ -1909,7 +1904,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							y = getMapPossibleLocationY1() + (1 + map_rng.rand() % 4) * 7;
 						}
 					}
-					else if ( secretlevelexit && c == 1 )
+					else if ( secretlevelexit == 8 && c == 1 )
 					{
 						x = getMapPossibleLocationX1() + (3) * 7;
 						y = getMapPossibleLocationY1() + (3) * 7;
@@ -2172,6 +2167,10 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							{
 								firstroomtile[y0 + x0 * map.height] = true;
 								startRoomInfo.addCoord(x0, y0);
+							}
+							else if ( c == 1 && secretlevelexit == 8 && !strncmp(map.name, "Hell", 4) )
+							{
+								firstroomtile[y0 + x0 * map.height] = true;
 							}
 							else if ( c == 2 && shoplevel )
 							{
@@ -3444,7 +3443,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		if ( (c == 0 || (minotaurlevel && c < 2)) && (!secretlevel || currentlevel != 7) && (!secretlevel || currentlevel != 20)
 			&& std::get<LEVELPARAM_DISABLE_NORMAL_EXIT>(mapParameters) == 0 )
 		{
-			if ( !strcmp(map.name, "Hell") && secretlevelexit && *cvar_hell_baphoexit )
+			if ( !strcmp(map.name, "Hell") && secretlevelexit == 8 )
 			{
 				continue; // no generate exit
 			}
@@ -6909,7 +6908,7 @@ void assignActions(map_t* map)
 				{
 					entity->skill[3] = 1; // not secret portal, just aesthetic.
 				}
-				else if ( !strcmp(map->name, "Hell") && currentlevel == 23 && *cvar_hell_baphoexit )
+				else if ( !strcmp(map->name, "Hell") && currentlevel == 23 )
 				{
 					entity->portalNotSecret = 1; // not secret portal, just aesthetic.
 				}
