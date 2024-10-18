@@ -387,7 +387,7 @@ std::unordered_map<std::string, int> mapHashes = {
     { "hell29e.lmp", 48684 },
     { "hell29f.lmp", 167923 },
     { "hellboss.lmp", 4459727 },
-	{ "baphoexit.lmp", 3442748 },
+	{ "baphoexit.lmp", 4309647 },
     { "labyrinth.lmp", 397402 },
     { "labyrinth00.lmp", 119759 },
     { "labyrinth01.lmp", 32319 },
