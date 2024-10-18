@@ -61,6 +61,7 @@ void initGnome(Entity* my, Stat* myStats)
 		if ( gnome_type.find("gnome2") != std::string::npos )
 		{
 			MONSTER_IDLESND = 683;
+			MONSTER_SPOTSND = 693;
 		}
 		else
 		{
@@ -158,11 +159,13 @@ void initGnome(Entity* my, Stat* myStats)
 			{
 				myStats->sex = sex_t::FEMALE;
 				MONSTER_IDLESND = 683;
+				MONSTER_SPOTSND = 693;
 			}
 			else if ( myStats->getAttribute("gnome_type").find("gnome2") != std::string::npos )
 			{
 				myStats->sex = sex_t::MALE;
 				MONSTER_IDLESND = 683;
+				MONSTER_SPOTSND = 693;
 			}
 
 			GnomeVariant gnomeVariant = GNOME_DEFAULT;
@@ -309,7 +312,7 @@ void initGnome(Entity* my, Stat* myStats)
 						}
 					}
 				case 2:
-					if ( rng.rand() % 10 == 0 )
+					if ( rng.rand() % 20 == 0 )
 					{
 						if ( rng.rand() % 2 == 0 )
 						{
@@ -321,7 +324,7 @@ void initGnome(Entity* my, Stat* myStats)
 						}
 					}
 				case 1:
-					if ( rng.rand() % 3 == 0 )
+					if ( rng.rand() % 10 == 0 )
 					{
 						if ( rng.rand() % 4 == 0 )
 						{
@@ -457,6 +460,10 @@ void initGnome(Entity* my, Stat* myStats)
 					case 8:
 					case 9:
 						myStats->cloak = newItem(CLOAK, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+						if ( gnomeVariant == GNOME_THIEF_MELEE || gnomeVariant == GNOME_THIEF_RANGED )
+						{
+							myStats->cloak->isDroppable = (rng.rand() % 4 == 0) ? true : false;
+						}
 						break;
 				}
 			}
@@ -466,7 +473,7 @@ void initGnome(Entity* my, Stat* myStats)
 				if ( gnomeVariant == GNOME_THIEF_MELEE )
 				{
 					myStats->shoes = newItem(SUEDE_BOOTS, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-					myStats->shoes->isDroppable = (rng.rand() % 4 == 0) ? true : false;
+					myStats->shoes->isDroppable = (rng.rand() % 8 == 0) ? true : false;
 				}
 			}
 
@@ -475,7 +482,7 @@ void initGnome(Entity* my, Stat* myStats)
 				if ( gnomeVariant == GNOME_THIEF_RANGED )
 				{
 					myStats->gloves = newItem(SUEDE_GLOVES, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-					myStats->gloves->isDroppable = (rng.rand() % 4 == 0) ? true : false;
+					myStats->gloves->isDroppable = (rng.rand() % 8 == 0) ? true : false;
 				}
 			}
 
@@ -504,7 +511,7 @@ void initGnome(Entity* my, Stat* myStats)
 						if ( rng.rand() % 2 == 0 )
 						{
 							myStats->helmet = newItem(HAT_HOOD, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, 2, false, nullptr);
-							myStats->helmet->isDroppable = (rng.rand() % 4 == 0) ? true : false;
+							myStats->helmet->isDroppable = (rng.rand() % 8 == 0) ? true : false;
 						}
 						else
 						{
@@ -537,7 +544,7 @@ void initGnome(Entity* my, Stat* myStats)
 						case 8:
 						case 9:
 							myStats->mask = newItem(MASK_BANDIT, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-							myStats->mask->isDroppable = (rng.rand() % 4 == 0) ? true : false;
+							myStats->mask->isDroppable = (rng.rand() % 8 == 0) ? true : false;
 							break;
 						default:
 							break;
@@ -861,13 +868,17 @@ void gnomeDie(Entity* my)
 				}
 			}
 		}
+		playSoundEntity(my, 698 + local_rng.rand() % 4, 128);
+	}
+	else
+	{
+		playSoundEntity(my, 225 + local_rng.rand() % 4, 128);
 	}
 
 	my->spawnBlood();
 
 	my->removeMonsterDeathNodes();
 
-	playSoundEntity(my, 225 + local_rng.rand() % 4, 128);
 	list_RemoveNode(my->mynode);
 	return;
 }
