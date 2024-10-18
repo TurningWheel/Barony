@@ -3056,6 +3056,15 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 						}
 
+						bool hasgoggles = false;
+						if ( hitstats && hitstats->mask && hitstats->mask->type == MASK_HAZARD_GOGGLES )
+						{
+							if ( !(hit.entity->behavior == &actPlayer && hit.entity->effectShapeshift != NOTHING) )
+							{
+								hasgoggles = true;
+							}
+						}
+
 						if ( mimic )
 						{
 							playSoundEntity(hit.entity, hitsfx, hitvolume);
@@ -3112,8 +3121,19 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										Uint32 color = makeColorRGB(255, 0, 0);
 										messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(6237));
 									}
+									if ( hasgoggles )
+									{
+										if ( hit.entity->behavior == &actPlayer )
+										{
+											messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6088));
+										}
+									}
 								}
-								hit.entity->SetEntityOnFire();
+
+								if ( !hasgoggles )
+								{
+									hit.entity->SetEntityOnFire();
+								}
 							}
 							if ( spell->ID == SPELL_SLIME_TAR )
 							{
@@ -3137,15 +3157,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										int duration = 6 * TICKS_PER_SECOND;
 										duration /= (1 + (int)resistance);
-
-										bool hasgoggles = false;
-										if ( hitstats->mask && hitstats->mask->type == MASK_HAZARD_GOGGLES )
-										{
-											if ( !(hit.entity->behavior == &actPlayer && hit.entity->effectShapeshift != NOTHING) )
-											{
-												hasgoggles = true;
-											}
-										}
 
 										int status = hit.entity->behavior == &actPlayer ? EFF_MESSY : EFF_BLIND;
 
@@ -3174,7 +3185,15 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										int duration = 10 * TICKS_PER_SECOND;
 										duration /= (1 + (int)resistance);
-										if ( hit.entity->setEffect(EFF_GREASY, true, duration, false) )
+
+										if ( hasgoggles )
+										{
+											if ( hit.entity->behavior == &actPlayer )
+											{
+												messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6088));
+											}
+										}
+										else if ( hit.entity->setEffect(EFF_GREASY, true, duration, false) )
 										{
 											Uint32 color = makeColorRGB(255, 0, 0);
 											if ( hit.entity->behavior == &actPlayer )
@@ -3202,19 +3221,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( spell->ID == SPELL_SLIME_ACID || spell->ID == SPELL_SLIME_METAL )
 							{
 								bool hasamulet = false;
-								bool hasgoggles = false;
 								if ( (hitstats->amulet && hitstats->amulet->type == AMULET_POISONRESISTANCE) || hitstats->type == INSECTOID )
 								{
 									resistance += 2;
 									hasamulet = true;
 								}
-								if ( hitstats->mask && hitstats->mask->type == MASK_HAZARD_GOGGLES )
+								if ( hasgoggles )
 								{
-									if ( !(hit.entity->behavior == &actPlayer && hit.entity->effectShapeshift != NOTHING) )
-									{
-										hasgoggles = true;
-										resistance += 2;
-									}
+									resistance += 2;
 								}
 
 								int duration = (spell->ID == SPELL_SLIME_METAL ? 10 : 6) * TICKS_PER_SECOND;
@@ -3264,7 +3278,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 								if ( spell->ID == SPELL_SLIME_METAL )
 								{
-									if ( hit.entity->setEffect(EFF_SLOW, true, duration, false) )
+									if ( !hasgoggles && hit.entity->setEffect(EFF_SLOW, true, duration, false) )
 									{
 										if ( particleEmitterHitProps && particleEmitterHitProps->hits == 1 )
 										{
@@ -3303,54 +3317,57 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									}
 								}
 							}
-							else if ( spell->ID == SPELL_SLIME_WATER && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
+							else if ( spell->ID == SPELL_SLIME_WATER  )
 							{
-								real_t pushbackMultiplier = 0.6;
-								if ( hit.entity->behavior == &actMonster )
+								if ( !hasgoggles && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
 								{
-									if ( !hit.entity->isMobile() )
+									real_t pushbackMultiplier = 0.6;
+									if ( hit.entity->behavior == &actMonster )
 									{
-										pushbackMultiplier += 0.3;
-									}
-									if ( parent )
-									{
-										real_t tangent = atan2(hit.entity->y - parent->y, hit.entity->x - parent->x);
-										hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
-										hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
-										hit.entity->monsterKnockbackVelocity = 0.01;
-										hit.entity->monsterKnockbackUID = my->parent;
-										hit.entity->monsterKnockbackTangentDir = tangent;
-									}
-									else
-									{
-										real_t tangent = atan2(hit.entity->y - my->y, hit.entity->x - my->x);
-										hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
-										hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
-										hit.entity->monsterKnockbackVelocity = 0.01;
-										hit.entity->monsterKnockbackTangentDir = tangent;
-									}
-								}
-								else if ( hit.entity->behavior == &actPlayer )
-								{
-									/*if ( parent )
-									{
-										real_t dist = entityDist(parent, hit.entity);
-										if ( dist < TOUCHRANGE )
+										if ( !hit.entity->isMobile() )
 										{
-											pushbackMultiplier += 0.5;
+											pushbackMultiplier += 0.3;
 										}
-									}*/
-									if ( !players[hit.entity->skill[2]]->isLocalPlayer() )
-									{
-										hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
-										hit.entity->monsterKnockbackTangentDir = my->yaw;
-										serverUpdateEntityFSkill(hit.entity, 11);
-										serverUpdateEntityFSkill(hit.entity, 9);
+										if ( parent )
+										{
+											real_t tangent = atan2(hit.entity->y - parent->y, hit.entity->x - parent->x);
+											hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
+											hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
+											hit.entity->monsterKnockbackVelocity = 0.01;
+											hit.entity->monsterKnockbackUID = my->parent;
+											hit.entity->monsterKnockbackTangentDir = tangent;
+										}
+										else
+										{
+											real_t tangent = atan2(hit.entity->y - my->y, hit.entity->x - my->x);
+											hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
+											hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
+											hit.entity->monsterKnockbackVelocity = 0.01;
+											hit.entity->monsterKnockbackTangentDir = tangent;
+										}
 									}
-									else
+									else if ( hit.entity->behavior == &actPlayer )
 									{
-										hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
-										hit.entity->monsterKnockbackTangentDir = my->yaw;
+										/*if ( parent )
+										{
+											real_t dist = entityDist(parent, hit.entity);
+											if ( dist < TOUCHRANGE )
+											{
+												pushbackMultiplier += 0.5;
+											}
+										}*/
+										if ( !players[hit.entity->skill[2]]->isLocalPlayer() )
+										{
+											hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
+											hit.entity->monsterKnockbackTangentDir = my->yaw;
+											serverUpdateEntityFSkill(hit.entity, 11);
+											serverUpdateEntityFSkill(hit.entity, 9);
+										}
+										else
+										{
+											hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
+											hit.entity->monsterKnockbackTangentDir = my->yaw;
+										}
 									}
 								}
 
@@ -3364,11 +3381,22 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									if ( hit.entity->behavior == &actPlayer )
 									{
 										Uint32 color = makeColorRGB(255, 0, 0);
-										messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(6235));
+										if ( !hasgoggles )
+										{
+											messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(6235));
+										}
+										else
+										{
+											messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(6309));
+										}
 
 										if ( hitstats->type == VAMPIRE )
 										{
-											messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(6235));
+											messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(644));
+										}
+										else if ( hasgoggles )
+										{
+											messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6088));
 										}
 									}
 								}
@@ -5840,30 +5868,34 @@ void actParticleTimer(Entity* my)
 				Entity* monster = summonMonster(static_cast<Monster>(my->particleTimerVariable1), my->x, my->y, forceLocation);
 				if ( monster )
 				{
-					Stat* monsterStats = monster->getStats();
-					if ( my->parent != 0 && uidToEntity(my->parent) )
+					if ( Stat* monsterStats = monster->getStats() )
 					{
-						if ( uidToEntity(my->parent)->getRace() == LICH_ICE )
+						if ( my->parent != 0 && uidToEntity(my->parent) )
 						{
-							//monsterStats->leader_uid = my->parent;
-							switch ( monsterStats->type )
+							if ( uidToEntity(my->parent)->getRace() == LICH_ICE )
 							{
-								case AUTOMATON:
-									strcpy(monsterStats->name, "corrupted automaton");
-									monsterStats->EFFECTS[EFF_CONFUSED] = true;
-									monsterStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
-									break;
-								default:
-									break;
+								//monsterStats->leader_uid = my->parent;
+								switch ( monsterStats->type )
+								{
+									case AUTOMATON:
+										strcpy(monsterStats->name, "corrupted automaton");
+										monsterStats->EFFECTS[EFF_CONFUSED] = true;
+										monsterStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
+										break;
+									default:
+										break;
+								}
 							}
-						}
-						else if ( uidToEntity(my->parent)->getRace() == DEVIL )
-						{
-							monsterStats->LVL = 5;
-							if ( my->particleTimerVariable2 >= 0 
-								&& players[my->particleTimerVariable2] && players[my->particleTimerVariable2]->entity )
+							else if ( uidToEntity(my->parent)->getRace() == DEVIL )
 							{
-								monster->monsterAcquireAttackTarget(*(players[my->particleTimerVariable2]->entity), MONSTER_STATE_ATTACK);
+								monsterStats->monsterNoDropItems = 1;
+								monsterStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] = 1;
+								monsterStats->MISC_FLAGS[STAT_FLAG_NO_DROP_ITEMS] = 1;
+								if ( my->particleTimerVariable2 >= 0 
+									&& players[my->particleTimerVariable2] && players[my->particleTimerVariable2]->entity )
+								{
+									monster->monsterAcquireAttackTarget(*(players[my->particleTimerVariable2]->entity), MONSTER_STATE_ATTACK);
+								}
 							}
 						}
 					}
