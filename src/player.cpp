@@ -6886,6 +6886,9 @@ bool Player::PlayerMechanics_t::itemDegradeRoll(Item* item, int* checkInterval)
 		case WOODEN_SHIELD:
 			interval = 5;
 			break;
+		case BRONZE_SHIELD:
+			interval = 10;
+			break;
 		case IRON_SHIELD:
 			interval = 10;
 			break;
