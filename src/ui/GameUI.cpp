@@ -33492,15 +33492,31 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 				skillLVL /= 20;
 			}
 			std::string magics = "";
+			std::set<int> inserted;
 			for ( auto it = allGameSpells.begin(); it != allGameSpells.end(); ++it )
 			{
 				auto spellEntry = *it;
-				if ( spellEntry->ID == SPELL_WEAKNESS || spellEntry->ID == SPELL_GHOST_BOLT )
+				if ( !spellEntry )
+				{
+					continue;
+				}
+				if ( spellEntry->ID == SPELL_WEAKNESS 
+					|| spellEntry->ID == SPELL_GHOST_BOLT
+					|| spellEntry->ID == SPELL_SLIME_ACID 
+					|| spellEntry->ID == SPELL_SLIME_FIRE 
+					|| spellEntry->ID == SPELL_SLIME_WATER 
+					|| spellEntry->ID == SPELL_SLIME_TAR
+					|| spellEntry->ID == SPELL_SLIME_METAL )
 				{
 					continue;
 				}
 				if ( spellEntry && spellEntry->difficulty == (skillLVL * 20) )
 				{
+					if ( inserted.find(spellEntry->ID) != inserted.end() )
+					{
+						continue;
+					}
+					inserted.insert(spellEntry->ID);
 					if ( magics != "" )
 					{
 						magics += '\n';

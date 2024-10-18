@@ -454,13 +454,6 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 	return true;
 }
 
-spell_t* newSpell()
-{
-	spell_t* spell = (spell_t*) malloc(sizeof(spell_t));
-	spellConstructor(spell);
-	return spell;
-}
-
 void spellConstructor(spell_t* spell)
 {
 	spell->ID = -1;

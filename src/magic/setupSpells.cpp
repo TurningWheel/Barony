@@ -18,6 +18,8 @@ std::vector<spell_t*> allGameSpells;
 
 void setupSpells()   ///TODO: Verify this function.
 {
+	allGameSpells.clear();
+
 	node_t* node = NULL;
 	spellElement_t* element = NULL;
 
