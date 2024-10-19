@@ -416,7 +416,7 @@ public:
 			strcpy(name, myStats->name);
 			type = myStats->type;
 			sex = myStats->sex;
-			appearance = myStats->appearance;
+			appearance = myStats->stat_appearance;
 			HP = myStats->HP;
 			MAXHP = myStats->MAXHP;
 			OLDHP = HP;
@@ -460,7 +460,7 @@ public:
 			strcpy(myStats->name, name);
 			myStats->type = static_cast<Monster>(type);
 			myStats->sex = static_cast<sex_t>(sex);
-			myStats->appearance = appearance;
+			myStats->stat_appearance = appearance;
 			myStats->HP = HP;
 			myStats->MAXHP = MAXHP;
 			myStats->OLDHP = myStats->HP;

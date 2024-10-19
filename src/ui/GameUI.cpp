@@ -515,7 +515,7 @@ struct MPBarPaths_t
 			}*/
 			return automatonSTBars;
 		}
-		else if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+		else if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->stat_appearance == 0 )
 		{
 			return insectoidENBars;
 		}
@@ -7273,7 +7273,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 				miscEffects[kEffectWaterWalking] = true;
 			}
 			if ( (stats[player]->amulet && stats[player]->amulet->type == AMULET_LIFESAVING)
-				|| (((stats[player]->playerRace == RACE_SKELETON && stats[player]->appearance == 0) 
+				|| (((stats[player]->playerRace == RACE_SKELETON && stats[player]->stat_appearance == 0) 
 					|| stats[player]->type == SKELETON) && stats[player]->MP >= 75) )
 			{
 				miscEffects[kEffectLifesaving] = true;
@@ -15363,7 +15363,7 @@ real_t getDisplayedMPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf
 				}
 			}
 		}
-		else if ( myStats.playerRace == RACE_INSECTOID && myStats.appearance == 0 )
+		else if ( myStats.playerRace == RACE_INSECTOID && myStats.stat_appearance == 0 )
 		{
 			isInsectoid = true;
 			if ( !(svFlags & SV_FLAG_HUNGER) )
@@ -16486,7 +16486,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 //#endif // !NDEBUG
 
 		bool isAutomatonHTRegen = stats[player.playernum]->type == AUTOMATON;
-		bool isInsectoidENRegen = (stats[player.playernum]->playerRace == RACE_INSECTOID && stats[player.playernum]->appearance == 0);
+		bool isInsectoidENRegen = (stats[player.playernum]->playerRace == RACE_INSECTOID && stats[player.playernum]->stat_appearance == 0);
 
 		auto tooltipTopLeft = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
 		tooltipTopLeft->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png";
@@ -17289,7 +17289,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					{
 						if ( player.entity->effectPolymorph == NOTHING && stats[player.playernum]->playerRace > RACE_HUMAN )
 						{
-							if ( stats[player.playernum]->appearance != 0 )
+							if ( stats[player.playernum]->stat_appearance != 0 )
 							{
 								aestheticOnly = true;
 								appearance = Language::get(4068);
@@ -17314,7 +17314,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					{
 						if ( player.entity->effectPolymorph == NOTHING && stats[player.playernum]->playerRace > RACE_HUMAN )
 						{
-							if ( stats[player.playernum]->appearance != 0 )
+							if ( stats[player.playernum]->stat_appearance != 0 )
 							{
 								aestheticOnly = true;
 								type = player.entity->getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
@@ -17391,7 +17391,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 						{
 							if ( player.entity->effectPolymorph == NOTHING && stats[player.playernum]->playerRace > RACE_HUMAN )
 							{
-								if ( stats[player.playernum]->appearance != 0 )
+								if ( stats[player.playernum]->stat_appearance != 0 )
 								{
 									aestheticOnly = true;
 									type = player.entity->getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
@@ -17567,7 +17567,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					{
 						if ( player.entity->effectPolymorph == NOTHING && stats[player.playernum]->playerRace > RACE_HUMAN )
 						{
-							if ( stats[player.playernum]->appearance != 0 )
+							if ( stats[player.playernum]->stat_appearance != 0 )
 							{
 								aestheticOnly = true;
 								type = player.entity->getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
@@ -17645,7 +17645,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 						{
 							if ( player.entity->effectPolymorph == NOTHING && stats[player.playernum]->playerRace > RACE_HUMAN )
 							{
-								if ( stats[player.playernum]->appearance != 0 )
+								if ( stats[player.playernum]->stat_appearance != 0 )
 								{
 									aestheticOnly = true;
 									type = player.entity->getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
@@ -17864,7 +17864,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 						{
 							if ( player.entity->effectPolymorph == NOTHING && stats[player.playernum]->playerRace > RACE_HUMAN )
 							{
-								if ( stats[player.playernum]->appearance != 0 )
+								if ( stats[player.playernum]->stat_appearance != 0 )
 								{
 									aestheticOnly = true;
 									type = player.entity->getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
@@ -18576,7 +18576,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
 
 		Monster race = HUMAN;
-		if ( stats[player.playernum]->appearance == 0 && stats[player.playernum]->playerRace != RACE_HUMAN )
+		if ( stats[player.playernum]->stat_appearance == 0 && stats[player.playernum]->playerRace != RACE_HUMAN )
 		{
 			race = getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
 		}
@@ -18733,7 +18733,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
 
 		Monster race = HUMAN;
-		if ( stats[player.playernum]->appearance == 0 && stats[player.playernum]->playerRace != RACE_HUMAN )
+		if ( stats[player.playernum]->stat_appearance == 0 && stats[player.playernum]->playerRace != RACE_HUMAN )
 		{
 			race = getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
 		}
@@ -19056,7 +19056,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 		{
 			if ( player.entity->effectPolymorph == NOTHING && stats[player.playernum]->playerRace > RACE_HUMAN )
 			{
-				if ( stats[player.playernum]->appearance != 0 )
+				if ( stats[player.playernum]->stat_appearance != 0 )
 				{
 					aestheticOnly = true;
 					appearance = Language::get(4068);
@@ -19068,7 +19068,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 		capitalizeString(race);
 		if ( type == HUMAN )
 		{
-			appearance = Language::get(20 + stats[player.playernum]->appearance % NUMAPPEARANCES);
+			appearance = Language::get(20 + stats[player.playernum]->stat_appearance % NUMAPPEARANCES);
 			capitalizeString(appearance);
 		}
 		bool centerIconAndText = false;
@@ -33325,7 +33325,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 	{
 		if ( tag == "CASTING_MP_REGEN" )
 		{
-			if ( (stats[playernum])->playerRace == RACE_INSECTOID && (stats[playernum])->appearance == 0 )
+			if ( (stats[playernum])->playerRace == RACE_INSECTOID && (stats[playernum])->stat_appearance == 0 )
 			{
 				return Language::get(4066);
 			}
@@ -33341,7 +33341,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "CASTING_MP_REGEN_SKILL_MULTIPLIER" )
 		{
-			if ( (stats[playernum])->playerRace == RACE_INSECTOID && (stats[playernum])->appearance == 0 )
+			if ( (stats[playernum])->playerRace == RACE_INSECTOID && (stats[playernum])->stat_appearance == 0 )
 			{
 				return Language::get(4066);
 			}

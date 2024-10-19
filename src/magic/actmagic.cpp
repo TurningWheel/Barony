@@ -4470,7 +4470,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									// killed a monster with it's own spell with mirror reflection.
 									steamAchievementEntity(parent, "BARONY_ACH_NARCISSIST");
 								}
-								if ( stats[parent->skill[2]] && stats[parent->skill[2]]->playerRace == RACE_INSECTOID && stats[parent->skill[2]]->appearance == 0 )
+								if ( stats[parent->skill[2]] && stats[parent->skill[2]]->playerRace == RACE_INSECTOID && stats[parent->skill[2]]->stat_appearance == 0 )
 								{
 									if ( !achievementObserver.playerAchievements[parent->skill[2]].gastricBypass )
 									{

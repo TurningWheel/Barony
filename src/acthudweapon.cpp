@@ -74,7 +74,7 @@ void actHudArm(Entity* my)
 	my->z = parent->z - 2.5;
 
 	Monster playerRace = players[HUDARM_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HUDARM_PLAYERNUM]->playerRace);
-	int playerAppearance = stats[HUDARM_PLAYERNUM]->appearance;
+	int playerAppearance = stats[HUDARM_PLAYERNUM]->stat_appearance;
 	if ( players[HUDARM_PLAYERNUM]->entity->effectShapeshift != NOTHING )
 	{
 		playerRace = static_cast<Monster>(players[HUDARM_PLAYERNUM]->entity->effectShapeshift);
@@ -441,7 +441,7 @@ void actHudWeapon(Entity* my)
 	}
 
 	Monster playerRace = players[HUDWEAPON_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HUDWEAPON_PLAYERNUM]->playerRace);
-	int playerAppearance = stats[HUDWEAPON_PLAYERNUM]->appearance;
+	int playerAppearance = stats[HUDWEAPON_PLAYERNUM]->stat_appearance;
 	if ( players[HUDWEAPON_PLAYERNUM]->entity->effectShapeshift != NOTHING )
 	{
 		playerRace = static_cast<Monster>(players[HUDWEAPON_PLAYERNUM]->entity->effectShapeshift);

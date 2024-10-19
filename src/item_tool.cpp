@@ -966,7 +966,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 			}
 
 			if ( stats[player] && (stats[player]->type == GOATMAN
-				|| (stats[player]->playerRace == RACE_GOATMAN && stats[player]->appearance == 0)) )
+				|| (stats[player]->playerRace == RACE_GOATMAN && stats[player]->stat_appearance == 0)) )
 			{
 				int potionDropQuantity = 0;
 				// drop some random potions.
@@ -997,7 +997,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 
 				if ( potionDropQuantity > 0 )
 				{
-					if ( stats[player]->playerRace == RACE_GOATMAN && stats[player]->appearance == 0 )
+					if ( stats[player]->playerRace == RACE_GOATMAN && stats[player]->stat_appearance == 0 )
 					{
 						steamStatisticUpdateClient(player, STEAM_STAT_BOTTLE_NOSED, STEAM_STAT_INT, 1);
 					}

@@ -239,7 +239,7 @@ void actLeftHandMagic(Entity* my)
 
 	//Sprite
 	Monster playerRace = players[HANDMAGIC_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HANDMAGIC_PLAYERNUM]->playerRace);
-	int playerAppearance = stats[HANDMAGIC_PLAYERNUM]->appearance;
+	int playerAppearance = stats[HANDMAGIC_PLAYERNUM]->stat_appearance;
 	if ( players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift != NOTHING )
 	{
 		playerRace = static_cast<Monster>(players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift);
@@ -608,7 +608,7 @@ void actRightHandMagic(Entity* my)
 
 	//Sprite
 	Monster playerRace = players[HANDMAGIC_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HANDMAGIC_PLAYERNUM]->playerRace);
-	int playerAppearance = stats[HANDMAGIC_PLAYERNUM]->appearance;
+	int playerAppearance = stats[HANDMAGIC_PLAYERNUM]->stat_appearance;
 	if ( players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift != NOTHING )
 	{
 		playerRace = static_cast<Monster>(players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift);

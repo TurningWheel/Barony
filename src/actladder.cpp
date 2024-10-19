@@ -606,7 +606,7 @@ void actWinningPortal(Entity* my)
 
 	            if (cutscene == 1) { // classic herx ending
 					int race = RACE_HUMAN;
-					if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
+					if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->stat_appearance == 0 )
 					{
 						race = stats[clientnum]->playerRace;
 					}
@@ -634,7 +634,7 @@ void actWinningPortal(Entity* my)
 	            }
 	            else if (cutscene == 2) { // classic baphomet ending
 					int race = RACE_HUMAN;
-					if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
+					if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->stat_appearance == 0 )
 					{
 						race = stats[clientnum]->playerRace;
 					}
@@ -835,7 +835,7 @@ void Entity::actExpansionEndGamePortal()
 				}
 
 				int race = RACE_HUMAN;
-				if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
+				if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->stat_appearance == 0 )
 				{
 					race = stats[clientnum]->playerRace;
 				}
@@ -1044,7 +1044,7 @@ void Entity::actMidGamePortal()
 				}
 
 				int race = RACE_HUMAN;
-				if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
+				if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->stat_appearance == 0 )
 				{
 					race = stats[clientnum]->playerRace;
 				}

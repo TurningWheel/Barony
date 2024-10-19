@@ -513,7 +513,7 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 	{
 		return VALID_OK_CHARACTER;
 	}
-	else if ( myStats.playerRace > RACE_HUMAN && myStats.appearance == 1 )
+	else if ( myStats.playerRace > RACE_HUMAN && myStats.stat_appearance == 1 )
 	{
 		return VALID_OK_CHARACTER; // aesthetic only option.
 	}
@@ -9901,7 +9901,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 							steamAchievement("BARONY_ACH_LIKE_CLOCKWORK");
 						}
 
-						if ( stats[i] && stats[i]->appearance == 0 )
+						if ( stats[i] && stats[i]->stat_appearance == 0 )
 						{
 							switch ( stats[i]->playerRace )
 							{
@@ -10057,7 +10057,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 		players[c]->entity = nullptr; //TODO: PLAYERSWAP VERIFY. Need to do anything else?
 		players[c]->cleanUpOnEntityRemoval();
 		stats[c]->sex = static_cast<sex_t>(0);
-		stats[c]->appearance = 0;
+		stats[c]->stat_appearance = 0;
 		strcpy(stats[c]->name, "");
 		stats[c]->type = HUMAN;
 		stats[c]->playerRace = RACE_HUMAN;
@@ -11356,7 +11356,7 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 	// reset class loadout
 	clientnum = 0;
 	stats[0]->sex = static_cast<sex_t>(0 + local_rng.rand() % 2);
-	stats[0]->appearance = 0 + local_rng.rand() % NUMAPPEARANCES;
+	stats[0]->stat_appearance = 0 + local_rng.rand() % NUMAPPEARANCES;
 	stats[0]->playerRace = RACE_HUMAN;
 	strcpy(stats[0]->name, "");
 	stats[0]->type = HUMAN;
@@ -11529,7 +11529,7 @@ void buttonRandomCharacter(button_t* my)
 					client_classes[0] = local_rng.rand() % (NUMCLASSES);
 				}
 			}
-			stats[0]->appearance = local_rng.rand() % NUMAPPEARANCES;
+			stats[0]->stat_appearance = local_rng.rand() % NUMAPPEARANCES;
 		}
 		else
 		{
@@ -11538,13 +11538,13 @@ void buttonRandomCharacter(button_t* my)
 			{
 				client_classes[0] = CLASS_MONK + stats[0]->playerRace; // monster specific classes.
 			}
-			stats[0]->appearance = 0;
+			stats[0]->stat_appearance = 0;
 		}
 	}
 	else
 	{
 		stats[0]->playerRace = RACE_HUMAN;
-		stats[0]->appearance = local_rng.rand() % NUMAPPEARANCES;
+		stats[0]->stat_appearance = local_rng.rand() % NUMAPPEARANCES;
 	}
 	initClass(0);
 }
@@ -11591,7 +11591,7 @@ bool replayLastCharacter(const int index, int multiplayer)
 	{
 		stats[index]->sex = static_cast<sex_t>(std::min(lastSex, (int)sex_t::FEMALE));
 		stats[index]->playerRace = std::min(std::max(static_cast<int>(RACE_HUMAN), lastRace), static_cast<int>(NUMPLAYABLERACES));
-		stats[index]->appearance = lastAppearance;
+		stats[index]->stat_appearance = lastAppearance;
 		client_classes[index] = std::min(std::max(0, lastClass), static_cast<int>(CLASS_HUNTER));
 
 		switch ( isCharacterValidFromDLC(*stats[index], lastClass) )

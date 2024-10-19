@@ -1974,7 +1974,7 @@ namespace ConsoleCommands {
 			if (i > 0)
 			{
 				stats[i]->sex = static_cast<sex_t>(local_rng.rand() % 2);
-				stats[i]->appearance = local_rng.rand() % 18;
+				stats[i]->stat_appearance = local_rng.rand() % 18;
 				stats[i]->clearStats();
 				client_classes[i] = local_rng.rand() % (CLASS_MONK + 1);//NUMCLASSES;
 				stats[i]->playerRace = RACE_HUMAN;
@@ -2025,7 +2025,7 @@ namespace ConsoleCommands {
 								client_classes[i] = local_rng.rand() % (NUMCLASSES);
 							}
 						}
-						stats[i]->appearance = local_rng.rand() % 18;
+						stats[i]->stat_appearance = local_rng.rand() % 18;
 					}
 					else
 					{
@@ -2034,13 +2034,13 @@ namespace ConsoleCommands {
 						{
 							client_classes[i] = CLASS_MONK + stats[i]->playerRace; // monster specific classes.
 						}
-						stats[i]->appearance = 0;
+						stats[i]->stat_appearance = 0;
 					}
 				}
 				else
 				{
 					stats[i]->playerRace = RACE_HUMAN;
-					stats[i]->appearance = local_rng.rand() % 18;
+					stats[i]->stat_appearance = local_rng.rand() % 18;
 				}
 				strcpy(stats[i]->name, randomPlayerNamesFemale[local_rng.rand() % randomPlayerNamesFemale.size()].c_str());
 				bool oldIntro = intro;
@@ -3962,10 +3962,10 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
-		++stats[clientnum]->appearance;
-		if (stats[clientnum]->appearance >= NUMAPPEARANCES)
+		++stats[clientnum]->stat_appearance;
+		if (stats[clientnum]->stat_appearance >= NUMAPPEARANCES)
 		{
-			stats[clientnum]->appearance = 0;
+			stats[clientnum]->stat_appearance = 0;
 		}
 		});
 

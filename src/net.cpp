@@ -1530,7 +1530,7 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 		client_classes[c] = (int)SDLNet_Read32(&net_packet->data[36]);
 		stats[c]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[40]));
 		Uint32 raceAndAppearance = (Uint32)SDLNet_Read32(&net_packet->data[44]);
-		stats[c]->appearance = (raceAndAppearance & 0xFF00) >> 8;
+		stats[c]->stat_appearance = (raceAndAppearance & 0xFF00) >> 8;
 		stats[c]->playerRace = (raceAndAppearance & 0xFF);
 		net_clients[c - 1].host = net_packet->address.host;
 		net_clients[c - 1].port = net_packet->address.port;
@@ -1549,7 +1549,7 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 			net_packet->data[4] = c; // clientnum
 			net_packet->data[5] = client_classes[c]; // class
 			net_packet->data[6] = stats[c]->sex; // sex
-			net_packet->data[7] = (Uint8)stats[c]->appearance; // appearance
+			net_packet->data[7] = (Uint8)stats[c]->stat_appearance; // appearance
 			net_packet->data[8] = (Uint8)stats[c]->playerRace; // player race
 			stringCopy((char*)net_packet->data + 9, stats[c]->name, 32, sizeof(Stat::name)); // name
 			net_packet->address.host = net_clients[x - 1].host;
@@ -1573,7 +1573,7 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 				net_packet->data[8 + x * chunk_size + 1] = lockedSlots[x]; // locked state
 				net_packet->data[8 + x * chunk_size + 2] = client_classes[x]; // class
 				net_packet->data[8 + x * chunk_size + 3] = stats[x]->sex; // sex
-				net_packet->data[8 + x * chunk_size + 4] = (Uint8)stats[x]->appearance; // appearance
+				net_packet->data[8 + x * chunk_size + 4] = (Uint8)stats[x]->stat_appearance; // appearance
 				net_packet->data[8 + x * chunk_size + 5] = (Uint8)stats[x]->playerRace; // player race
 
 				char shortname[32];
@@ -1614,7 +1614,7 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 				net_packet->data[8 + x * chunk_size + 1] = lockedSlots[x]; // locked state
 				net_packet->data[8 + x * chunk_size + 2] = client_classes[x]; // class
 				net_packet->data[8 + x * chunk_size + 3] = stats[x]->sex; // sex
-				net_packet->data[8 + x * chunk_size + 4] = (Uint8)stats[x]->appearance; // appearance
+				net_packet->data[8 + x * chunk_size + 4] = (Uint8)stats[x]->stat_appearance; // appearance
 				net_packet->data[8 + x * chunk_size + 5] = (Uint8)stats[x]->playerRace; // player race
 
 				char shortname[32];
@@ -4898,7 +4898,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 		int victoryType;
 		int race = RACE_HUMAN;
-		if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
+		if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->stat_appearance == 0 )
 		{
 			race = stats[clientnum]->playerRace;
 		}
@@ -5013,7 +5013,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	// mid game cutscene
 	{'MIDG', [](){
 		int race = RACE_HUMAN;
-		if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
+		if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->stat_appearance == 0 )
 		{
 			race = stats[clientnum]->playerRace;
 		}

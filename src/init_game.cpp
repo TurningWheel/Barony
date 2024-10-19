@@ -303,7 +303,7 @@ int initGame()
 			}
 			players[c]->entity = nullptr;
 			stats[c]->sex = static_cast<sex_t>(0);
-			stats[c]->appearance = 0;
+			stats[c]->stat_appearance = 0;
 			strcpy(stats[c]->name, "");
 			stats[c]->type = HUMAN;
 			stats[c]->playerRace = RACE_HUMAN;

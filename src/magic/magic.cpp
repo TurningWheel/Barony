@@ -2303,7 +2303,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 			createParticleDropRising(target, 593, 1.f);
 			serverSpawnMiscParticles(target, PARTICLE_EFFECT_RISING_DROP, 593);
 
-			if ( targetStats->playerRace == RACE_HUMAN || (targetStats->playerRace != RACE_HUMAN && targetStats->appearance != 0) )
+			if ( targetStats->playerRace == RACE_HUMAN || (targetStats->playerRace != RACE_HUMAN && targetStats->stat_appearance != 0) )
 			{
 				int roll = (RACE_HUMAN + 1) + local_rng.rand() % 8;
 				if ( target->effectPolymorph == 0 )
@@ -2319,7 +2319,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 					target->effectPolymorph = target->getMonsterFromPlayerRace(roll);
 				}
 			}
-			else if ( (targetStats->playerRace != RACE_HUMAN && targetStats->appearance == 0) )
+			else if ( (targetStats->playerRace != RACE_HUMAN && targetStats->stat_appearance == 0) )
 			{
 				target->effectPolymorph = 100 + local_rng.rand() % NUMAPPEARANCES;
 			}

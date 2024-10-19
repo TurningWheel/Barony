@@ -2535,7 +2535,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 					const Uint32 color = makeColorRGB(255, 128, 0);
 					messagePlayerColor(player, MESSAGE_STATUS, color, Language::get(3699)); // superheats
 					serverUpdateHunger(player);
-					if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
+					if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->stat_appearance == 0 )
 					{
 						steamStatisticUpdateClient(player, STEAM_STAT_SPICY, STEAM_STAT_INT, 1);
 						steamStatisticUpdateClient(player, STEAM_STAT_FASCIST, STEAM_STAT_INT, 1);

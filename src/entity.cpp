@@ -1876,7 +1876,7 @@ bool Entity::increaseSkill(int skill, bool notify)
 			}
 		}
 
-		if ( player >= 0 && stats[player]->playerRace == RACE_GOBLIN && stats[player]->appearance == 0
+		if ( player >= 0 && stats[player]->playerRace == RACE_GOBLIN && stats[player]->stat_appearance == 0
 			&& myStats->getProficiency(skill) == 100 )
 		{
 			switch ( skill )
@@ -2655,7 +2655,7 @@ void Entity::drainMP(int amount, bool notifyOverexpend)
 		}
 	}
 
-	if ( player >= 0 && entitystats->playerRace == RACE_INSECTOID && entitystats->appearance == 0 )
+	if ( player >= 0 && entitystats->playerRace == RACE_INSECTOID && entitystats->stat_appearance == 0 )
 	{
 		if ( svFlags & SV_FLAG_HUNGER )
 		{
@@ -2779,7 +2779,7 @@ bool Entity::safeConsumeMP(int amount)
 	}
 	else
 	{
-		if ( behavior == &actPlayer && stat->playerRace == RACE_INSECTOID && stat->appearance == 0 )
+		if ( behavior == &actPlayer && stat->playerRace == RACE_INSECTOID && stat->stat_appearance == 0 )
 		{
 			if ( svFlags & SV_FLAG_HUNGER )
 			{
@@ -3078,7 +3078,7 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			myStats->MP += MP_MOD;
 			myStats->MAXMP += MP_MOD;
-			if ( behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
+			if ( behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0 )
 			{
 				myStats->MAXMP = std::min(50, myStats->MAXMP);
 				if ( svFlags & SV_FLAG_HUNGER )
@@ -3804,7 +3804,7 @@ void Entity::handleEffects(Stat* myStats)
 		if ( !(behavior == &actPlayer && effectShapeshift != NOTHING)
 			&& ((getHealthRegenInterval(this, *myStats, behavior == &actPlayer) == -1)
 				|| myStats->type == INSECTOID
-				|| (behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0)) )
+				|| (behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0)) )
 		{
 			if ( ticks % (HEAL_TIME) == 0 )
 			{
@@ -3967,7 +3967,7 @@ void Entity::handleEffects(Stat* myStats)
 	if ( myStats->mask && myStats->mask->type == MASK_PIPE )
 	{
 		if ( !(behavior == &actPlayer && effectShapeshift != NOTHING)
-			&& !(behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0) )
+			&& !(behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0) )
 		{
 			if ( myStats->mask->beatitude >= 0 || shouldInvertEquipmentBeatitude(myStats) )
 			{
@@ -4139,7 +4139,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 		}
 	}
-	else if ( this->behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
+	else if ( this->behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0 )
 	{
 		if ( (svFlags & SV_FLAG_HUNGER) && !MFLAG_DISABLEHUNGER )
 		{
@@ -4861,7 +4861,7 @@ void Entity::handleEffects(Stat* myStats)
 		myStats->burningInflictedBy = 0;
 	}
 
-	if ( player >= 0 && (stats[player]->type == SKELETON || (stats[player]->playerRace == RACE_SKELETON && stats[player]->appearance == 0)) )
+	if ( player >= 0 && (stats[player]->type == SKELETON || (stats[player]->playerRace == RACE_SKELETON && stats[player]->stat_appearance == 0)) )
 	{
 		// life saving
 		if ( myStats->HP <= 0 )
@@ -5008,7 +5008,7 @@ void Entity::handleEffects(Stat* myStats)
 								int amount = 2 + local_rng.rand() % 2;
 								int oldMP = myStats->MP;
 								this->modMP(amount);
-								if ( player >= 0 && stats[player]->appearance == 0 )
+								if ( player >= 0 && stats[player]->stat_appearance == 0 )
 								{
 									if ( stats[player]->playerRace == RACE_INCUBUS || stats[player]->playerRace == RACE_SUCCUBUS )
 									{
@@ -5942,7 +5942,7 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 
 	if ( !(svFlags & SV_FLAG_HUNGER) )
 	{
-		if ( my && my->behavior == &actPlayer && entitystats->playerRace == RACE_INSECTOID && entitystats->appearance == 0 )
+		if ( my && my->behavior == &actPlayer && entitystats->playerRace == RACE_INSECTOID && entitystats->stat_appearance == 0 )
 		{
 			int dexDebuff = 0;
 			if ( entitystats->MP < (entitystats->MAXMP) / 5 )
@@ -6327,7 +6327,7 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 
 	if ( !(svFlags & SV_FLAG_HUNGER) )
 	{
-		if ( my && my->behavior == &actPlayer && entitystats->playerRace == RACE_INSECTOID && entitystats->appearance == 0 )
+		if ( my && my->behavior == &actPlayer && entitystats->playerRace == RACE_INSECTOID && entitystats->stat_appearance == 0 )
 		{
 			int perDebuff = 0;
 			if ( entitystats->MP < (entitystats->MAXMP) / 5 )
@@ -13088,7 +13088,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		if ( root )
 		{
 			achievementObserver.awardAchievementIfActive(player, src, AchievementObserver::BARONY_ACH_TELEFRAG);
-			if ( stats[player]->playerRace == RACE_INCUBUS && stats[player]->appearance == 0 )
+			if ( stats[player]->playerRace == RACE_INCUBUS && stats[player]->stat_appearance == 0 )
 			{
 				achievementObserver.playerAchievements[player].checkTraditionKill(this, src);
 			}
@@ -13312,7 +13312,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 				}
 				if ( destStats->type == INSECTOID )
 				{
-					if ( leader->getStats()->playerRace == RACE_INSECTOID && leader->getStats()->appearance == 0 )
+					if ( leader->getStats()->playerRace == RACE_INSECTOID && leader->getStats()->stat_appearance == 0 )
 					{
 						steamStatisticUpdateClient(leader->skill[2], STEAM_STAT_MONARCH, STEAM_STAT_INT, 1);
 					}
@@ -19388,7 +19388,7 @@ int Entity::getManaRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
 			return floatRegenTime;
 		}
 	}
-	else if ( isPlayer && myStats.playerRace == RACE_INSECTOID && myStats.appearance == 0 )
+	else if ( isPlayer && myStats.playerRace == RACE_INSECTOID && myStats.stat_appearance == 0 )
 	{
 		if ( !(svFlags & SV_FLAG_HUNGER) )
 		{
@@ -22606,7 +22606,7 @@ int getEntityHungerInterval(int player, Entity* my, Stat* myStats, EntityHungerI
 		{
 			isAutomatonPlayer = true;
 		}
-		else if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+		else if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->stat_appearance == 0 )
 		{
 			isInsectoidPlayer = true;
 		}
@@ -22617,7 +22617,7 @@ int getEntityHungerInterval(int player, Entity* my, Stat* myStats, EntityHungerI
 		{
 			isAutomatonPlayer = true;
 		}
-		else if ( myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
+		else if ( myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0 )
 		{
 			isInsectoidPlayer = true;
 		}
@@ -22632,7 +22632,7 @@ int getEntityHungerInterval(int player, Entity* my, Stat* myStats, EntityHungerI
 				{
 					isAutomatonPlayer = true;
 				}
-				else if ( myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
+				else if ( myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0 )
 				{
 					isInsectoidPlayer = true;
 				}

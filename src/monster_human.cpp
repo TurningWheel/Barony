@@ -86,7 +86,7 @@ void initHuman(Entity* my, Stat* myStats)
 							// red riding hood
 							myStats->setAttribute("special_npc", "red riding hood");
 							strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
-							myStats->appearance = 2;
+							myStats->stat_appearance = 2;
 							myStats->sex = FEMALE;
 							myStats->LVL = 1;
 							myStats->HP = 10;
@@ -111,7 +111,7 @@ void initHuman(Entity* my, Stat* myStats)
 							// king arthur
 							myStats->setAttribute("special_npc", "king arthur");
 							strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
-							myStats->appearance = 0;
+							myStats->stat_appearance = 0;
 							myStats->sex = MALE;
 							myStats->LVL = 10;
 							myStats->HP = 100;
@@ -138,7 +138,7 @@ void initHuman(Entity* my, Stat* myStats)
 							// merlin
 							myStats->setAttribute("special_npc", "merlin");
 							strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
-							myStats->appearance = 5;
+							myStats->stat_appearance = 5;
 							myStats->sex = MALE;
 							myStats->LVL = 10;
 							myStats->HP = 60;
@@ -162,7 +162,7 @@ void initHuman(Entity* my, Stat* myStats)
 							// robin hood
 							myStats->setAttribute("special_npc", "robin hood");
 							strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
-							myStats->appearance = 1;
+							myStats->stat_appearance = 1;
 							myStats->sex = MALE;
 							myStats->LVL = 5;
 							myStats->HP = 70;
@@ -185,7 +185,7 @@ void initHuman(Entity* my, Stat* myStats)
 							// conan
 							myStats->setAttribute("special_npc", "conan the barbarian");
 							strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
-							myStats->appearance = 7;
+							myStats->stat_appearance = 7;
 							myStats->sex = MALE;
 							myStats->LVL = 10;
 							myStats->HP = 100;
@@ -206,7 +206,7 @@ void initHuman(Entity* my, Stat* myStats)
 							// othello
 							myStats->setAttribute("special_npc", "othello");
 							strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
-							myStats->appearance = 14;
+							myStats->stat_appearance = 14;
 							myStats->sex = MALE;
 							myStats->LVL = 10;
 							myStats->HP = 50;
@@ -230,7 +230,7 @@ void initHuman(Entity* my, Stat* myStats)
 							// anansi
 							myStats->setAttribute("special_npc", "anansi");
 							strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
-							myStats->appearance = 15;
+							myStats->stat_appearance = 15;
 							myStats->sex = MALE;
 							myStats->LVL = 20;
 							myStats->HP = 100;
@@ -268,7 +268,7 @@ void initHuman(Entity* my, Stat* myStats)
 							// oya
 							myStats->setAttribute("special_npc", "oya");
 							strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
-							myStats->appearance = 13;
+							myStats->stat_appearance = 13;
 							myStats->sex = FEMALE;
 							myStats->LVL = 20;
 							myStats->HP = 100;
@@ -289,7 +289,7 @@ void initHuman(Entity* my, Stat* myStats)
 							// vishpala
 							myStats->setAttribute("special_npc", "vishpala");
 							strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
-							myStats->appearance = 17;
+							myStats->stat_appearance = 17;
 							myStats->sex = FEMALE;
 							myStats->LVL = 10;
 							myStats->HP = 70;
@@ -314,7 +314,7 @@ void initHuman(Entity* my, Stat* myStats)
 							// kali
 							myStats->setAttribute("special_npc", "kali");
 							strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
-							myStats->appearance = 15;
+							myStats->stat_appearance = 15;
 							myStats->sex = FEMALE;
 							myStats->LVL = 20;
 							myStats->HP = 200;
@@ -343,7 +343,7 @@ void initHuman(Entity* my, Stat* myStats)
 				// zap brigadier
 				myStats->setAttribute("special_npc", "zap brigadier");
 				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
-				myStats->appearance = 1;
+				myStats->stat_appearance = 1;
 				myStats->sex = static_cast<sex_t>(rng.rand() % 2);
 				myStats->LVL = 10;
 				myStats->HP = 100;
@@ -920,21 +920,21 @@ void initHuman(Entity* my, Stat* myStats)
 	}
 
 	// set head model
-	if ( myStats->appearance < 5 )
+	if ( myStats->stat_appearance < 5 )
 	{
-		my->sprite = 113 + 12 * myStats->sex + myStats->appearance;
+		my->sprite = 113 + 12 * myStats->sex + myStats->stat_appearance;
 	}
-	else if ( myStats->appearance == 5 )
+	else if ( myStats->stat_appearance == 5 )
 	{
 		my->sprite = 332 + myStats->sex;
 	}
-	else if ( myStats->appearance >= 6 && myStats->appearance < 12 )
+	else if ( myStats->stat_appearance >= 6 && myStats->stat_appearance < 12 )
 	{
-		my->sprite = 341 + myStats->sex * 13 + myStats->appearance - 6;
+		my->sprite = 341 + myStats->sex * 13 + myStats->stat_appearance - 6;
 	}
-	else if ( myStats->appearance >= 12 )
+	else if ( myStats->stat_appearance >= 12 )
 	{
-		my->sprite = 367 + myStats->sex * 13 + myStats->appearance - 12;
+		my->sprite = 367 + myStats->sex * 13 + myStats->stat_appearance - 12;
 	}
 	else
 	{
@@ -1134,7 +1134,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->breastplate == nullptr )
 					{
-						switch ( myStats->appearance / 6 )
+						switch ( myStats->stat_appearance / 6 )
 						{
 							case 1:
 								entity->sprite = 334 + 13 * myStats->sex;
@@ -1210,7 +1210,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->shoes == nullptr )
 					{
-						switch ( myStats->appearance / 6 )
+						switch ( myStats->stat_appearance / 6 )
 						{
 							case 1:
 								entity->sprite = 335 + 13 * myStats->sex;
@@ -1291,7 +1291,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->shoes == nullptr )
 					{
-						switch ( myStats->appearance / 6 )
+						switch ( myStats->stat_appearance / 6 )
 						{
 							case 1:
 								entity->sprite = 336 + 13 * myStats->sex;
@@ -1373,7 +1373,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->gloves == nullptr )
 					{
-						switch ( myStats->appearance / 6 )
+						switch ( myStats->stat_appearance / 6 )
 						{
 							case 1:
 								entity->sprite = 337 + 13 * myStats->sex;
@@ -1481,7 +1481,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->gloves == nullptr )
 					{
-						switch ( myStats->appearance / 6 )
+						switch ( myStats->stat_appearance / 6 )
 						{
 							case 1:
 								entity->sprite = 338 + 13 * myStats->sex;

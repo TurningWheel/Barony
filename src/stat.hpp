@@ -220,7 +220,7 @@ class Stat
 public:
 	Monster type;
 	sex_t sex;
-	Uint32 appearance;
+	Uint32 stat_appearance = 0;
 	char name[128];
 
 	// uid of the entity which killed me via burning/poison (for rewarding XP to them)

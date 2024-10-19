@@ -561,7 +561,7 @@ Stat* Stat::copyStats()
 
 	newStat->type = this->type;
 	newStat->sex = this->sex;
-	newStat->appearance = this->appearance;
+	newStat->stat_appearance = this->stat_appearance;
 	strcpy(newStat->name, this->name);
 	strcpy(newStat->obituary, this->obituary);
 
@@ -817,7 +817,7 @@ void Stat::printStats()
 {
 	printlog("type = %d\n", this->type);
 	printlog("sex = %d\n", this->sex);
-	printlog("appearance = %d\n", this->appearance);
+	printlog("appearance = %d\n", this->stat_appearance);
 	printlog("name = \"%s\"\n", this->name);
 	printlog("HP = %d\n", this->HP);
 	printlog("MAXHP = %d\n", this->MAXHP);
@@ -1490,7 +1490,7 @@ bool Stat::statusEffectRemovedByCureAilment(const int effect, Entity* my)
 		case EFF_DRUNK:
 			if ( this->type == GOATMAN
 				|| (my && my->behavior == &actPlayer 
-					&& playerRace == RACE_GOATMAN && appearance == 0) )
+					&& playerRace == RACE_GOATMAN && stat_appearance == 0) )
 			{
 				return false;
 			}

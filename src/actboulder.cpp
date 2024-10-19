@@ -401,7 +401,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 				if ( !lifeSaving )
 				{
 					if ( stats->HP <= 0 && entity->behavior == &actPlayer 
-						&& ((stats->playerRace == RACE_SKELETON && stats->appearance == 0) || stats->type == SKELETON) )
+						&& ((stats->playerRace == RACE_SKELETON && stats->stat_appearance == 0) || stats->type == SKELETON) )
 					{
 						if ( stats->MP >= 75 )
 						{

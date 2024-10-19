@@ -10717,7 +10717,7 @@ bind_failed:
 				{
 					if ( directConnect )
 					{
-						LastCreatedCharacterSettings.characterAppearance[LastCreatedCharacter::LASTCHAR_LAN_PERSONA_INDEX] = stats[clientnum]->appearance;
+						LastCreatedCharacterSettings.characterAppearance[LastCreatedCharacter::LASTCHAR_LAN_PERSONA_INDEX] = stats[clientnum]->stat_appearance;
 						LastCreatedCharacterSettings.characterSex[LastCreatedCharacter::LASTCHAR_LAN_PERSONA_INDEX] = stats[clientnum]->sex;
 						LastCreatedCharacterSettings.characterRace[LastCreatedCharacter::LASTCHAR_LAN_PERSONA_INDEX] = stats[clientnum]->playerRace;
 						LastCreatedCharacterSettings.characterClass[LastCreatedCharacter::LASTCHAR_LAN_PERSONA_INDEX] = client_classes[clientnum];
@@ -10725,7 +10725,7 @@ bind_failed:
 					}
 					else
 					{
-						LastCreatedCharacterSettings.characterAppearance[LastCreatedCharacter::LASTCHAR_ONLINE_PERSONA_INDEX] = stats[clientnum]->appearance;
+						LastCreatedCharacterSettings.characterAppearance[LastCreatedCharacter::LASTCHAR_ONLINE_PERSONA_INDEX] = stats[clientnum]->stat_appearance;
 						LastCreatedCharacterSettings.characterSex[LastCreatedCharacter::LASTCHAR_ONLINE_PERSONA_INDEX] = stats[clientnum]->sex;
 						LastCreatedCharacterSettings.characterRace[LastCreatedCharacter::LASTCHAR_ONLINE_PERSONA_INDEX] = stats[clientnum]->playerRace;
 						LastCreatedCharacterSettings.characterClass[LastCreatedCharacter::LASTCHAR_ONLINE_PERSONA_INDEX] = client_classes[clientnum];
@@ -10735,7 +10735,7 @@ bind_failed:
 			}
 			else
 			{
-				LastCreatedCharacterSettings.characterAppearance[index] = stats[index]->appearance;
+				LastCreatedCharacterSettings.characterAppearance[index] = stats[index]->stat_appearance;
 				LastCreatedCharacterSettings.characterSex[index] = stats[index]->sex;
 				LastCreatedCharacterSettings.characterRace[index] = stats[index]->playerRace;
 				LastCreatedCharacterSettings.characterClass[index] = client_classes[index];
@@ -10763,7 +10763,7 @@ bind_failed:
             SDLNet_Write32((Uint32)client_classes[player], &net_packet->data[37]);
             SDLNet_Write32((Uint32)stats[player]->sex, &net_packet->data[41]);
             Uint32 raceAndAppearance =
-                ((stats[player]->appearance & 0xff) << 8) |
+                ((stats[player]->stat_appearance & 0xff) << 8) |
                 (stats[player]->playerRace & 0xff);
             SDLNet_Write32(raceAndAppearance, &net_packet->data[45]);
 
@@ -11198,7 +11198,7 @@ bind_failed:
 	        client_classes[player] = (int)SDLNet_Read32(&net_packet->data[37]);
 	        stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[41]));
 	        Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[45]);
-	        stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
+	        stats[player]->stat_appearance = (raceAndAppearance & 0xFF00) >> 8;
 	        stats[player]->playerRace = (raceAndAppearance & 0xFF);
 
 			if (!loadingsavegame) {
@@ -11561,7 +11561,7 @@ bind_failed:
 		    client_disconnected[player] = false;
 		    client_classes[player] = net_packet->data[5];
 		    stats[player]->sex = static_cast<sex_t>(net_packet->data[6]);
-		    stats[player]->appearance = net_packet->data[7];
+		    stats[player]->stat_appearance = net_packet->data[7];
 		    stats[player]->playerRace = net_packet->data[8];
 		    stringCopy(stats[player]->name, (char*)(&net_packet->data[9]), sizeof(Stat::name), 32);
 
@@ -11601,7 +11601,7 @@ bind_failed:
                 client_classes[player] = (int)SDLNet_Read32(&net_packet->data[37]);
                 stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[41]));
                 Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[45]);
-                stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
+                stats[player]->stat_appearance = (raceAndAppearance & 0xFF00) >> 8;
                 stats[player]->playerRace = (raceAndAppearance & 0xFF);
 				if (!loadingsavegame) {
 					initClass(player);
@@ -11730,7 +11730,7 @@ bind_failed:
 						stats[clientnum]->playerRace = gameModeManager.currentSession.challengeRun.race;
 						if ( stats[clientnum]->playerRace != RACE_HUMAN )
 						{
-							stats[clientnum]->appearance = 0;
+							stats[clientnum]->stat_appearance = 0;
 						}
 						if ( stats[clientnum]->playerRace == RACE_INCUBUS )
 						{
@@ -11934,7 +11934,7 @@ bind_failed:
 					printlog("connected to server.\n");
 					client_disconnected[clientnum] = false;
 					if (!loadingsavegame) {
-						stats[clientnum]->appearance = stats[0]->appearance;
+						stats[clientnum]->stat_appearance = stats[0]->stat_appearance;
 					}
 
 					// now set up everybody else
@@ -11948,7 +11948,7 @@ bind_failed:
 						playerSlotsLocked[c] = net_packet->data[8 + c * chunk_size + 1]; // locked state
 						client_classes[c] = net_packet->data[8 + c * chunk_size + 2]; // class
 						stats[c]->sex = static_cast<sex_t>(net_packet->data[8 + c * chunk_size + 3]); // sex
-						stats[c]->appearance = net_packet->data[8 + c * chunk_size + 4]; // appearance
+						stats[c]->stat_appearance = net_packet->data[8 + c * chunk_size + 4]; // appearance
 						stats[c]->playerRace = net_packet->data[8 + c * chunk_size + 5]; // player race
 						stringCopy(stats[c]->name, (char*)(net_packet->data + 8 + c * chunk_size + 6), sizeof(Stat::name), 32); // name
 
@@ -12215,7 +12215,7 @@ bind_failed:
 	    stringCopy((char*)net_packet->data + 4, stats[index]->name, 32, sizeof(Stat::name));
 	    SDLNet_Write32((Uint32)client_classes[index], &net_packet->data[36]);
 	    SDLNet_Write32((Uint32)stats[index]->sex, &net_packet->data[40]);
-	    Uint32 appearanceAndRace = ((Uint8)stats[index]->appearance << 8); // store in bits 8 - 15
+	    Uint32 appearanceAndRace = ((Uint8)stats[index]->stat_appearance << 8); // store in bits 8 - 15
 	    appearanceAndRace |= (Uint8)stats[index]->playerRace; // store in bits 0 - 7
 	    SDLNet_Write32(appearanceAndRace, &net_packet->data[44]);
 	    stringCopy((char*)net_packet->data + 48, VERSION, 8, sizeof(VERSION));
@@ -13092,7 +13092,7 @@ failed:
 	void RaceDescriptions::update_details_text(Frame& card, void* stats) {
 		
 		Monster race = HUMAN;
-		if ( static_cast<Stat*>(stats)->appearance == 0 && static_cast<Stat*>(stats)->playerRace != RACE_HUMAN )
+		if ( static_cast<Stat*>(stats)->stat_appearance == 0 && static_cast<Stat*>(stats)->playerRace != RACE_HUMAN )
 		{
 			race = getMonsterFromPlayerRace(static_cast<Stat*>(stats)->playerRace);
 		}
@@ -13535,7 +13535,7 @@ failed:
                     }
 					if (stats[index]->playerRace == RACE_SUCCUBUS) {
                         if (wasHuman) {
-                            stats[index]->appearance = 0;
+                            stats[index]->stat_appearance = 0;
                         }
 						stats[index]->sex = FEMALE;
 						auto card = static_cast<Frame*>(frame->getParent()); assert(card);
@@ -13551,7 +13551,7 @@ failed:
 					}
 					else if (stats[index]->playerRace == RACE_INCUBUS) {
                         if (wasHuman) {
-                            stats[index]->appearance = 0;
+                            stats[index]->stat_appearance = 0;
                         }
 						stats[index]->sex = MALE;
 						auto card = static_cast<Frame*>(frame->getParent()); assert(card);
@@ -13567,15 +13567,15 @@ failed:
 					}
 					else if (stats[index]->playerRace == RACE_HUMAN) {
                         auto appearances = frame->findFrame("appearances"); assert(appearances);
-                        stats[index]->appearance = std::max(0, appearances->getSelection());
+                        stats[index]->stat_appearance = std::max(0, appearances->getSelection());
                         if (appearances) {
-                            appearances->setSelection(stats[index]->appearance);
+                            appearances->setSelection(stats[index]->stat_appearance);
                             appearances->scrollToSelection();
                         }
 					}
 					else {
                         if (wasHuman) {
-                            stats[index]->appearance = 0;
+                            stats[index]->stat_appearance = 0;
                         }
 					}
 					if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
@@ -13662,7 +13662,7 @@ failed:
 			    if (incubus) {
 				    incubus->setPressed(true);
 			    }
-			    if (client_classes[index] == CLASS_MESMER && stats[index]->appearance == 0) {
+			    if (client_classes[index] == CLASS_MESMER && stats[index]->stat_appearance == 0) {
 				    if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
 					    client_classes[index] = CLASS_PUNISHER;
 					    auto class_button = card->findButton("class");
@@ -13718,7 +13718,7 @@ failed:
 				if (succubus) {
 					succubus->setPressed(true);
 				}
-				if (client_classes[index] == CLASS_PUNISHER && stats[index]->appearance == 0) {
+				if (client_classes[index] == CLASS_PUNISHER && stats[index]->stat_appearance == 0) {
 					if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
 						client_classes[index] = CLASS_MESMER;
 						auto class_button = card->findButton("class");
@@ -15337,7 +15337,7 @@ failed:
 		static void (*back_fn)(int) = [](int index){
             if (inputs.hasController(index)) {
                 client_classes[index] = old_classes[index];
-                stats[index]->appearance = old_appearances[index];
+                stats[index]->stat_appearance = old_appearances[index];
                 stats[index]->playerRace = old_races[index];
                 stats[index]->sex = old_sexes[index];
                 stats[index]->clearStats();
@@ -15682,7 +15682,7 @@ failed:
 		appearance_uparrow->setCallback([](Button& button){
 			auto card = static_cast<Frame*>(button.getParent());
 			auto appearances = card->findFrame("appearances"); assert(appearances);
-			int selection = (int)stats[button.getOwner()]->appearance - 1;
+			int selection = (int)stats[button.getOwner()]->stat_appearance - 1;
             if (selection < 0) {
                 selection = num_appearances - 1;
             }
@@ -15724,7 +15724,7 @@ failed:
 		appearance_downarrow->setCallback([](Button& button){
 			auto card = static_cast<Frame*>(button.getParent());
 			auto appearances = card->findFrame("appearances"); assert(appearances);
-            int selection = (int)stats[button.getOwner()]->appearance + 1;
+            int selection = (int)stats[button.getOwner()]->stat_appearance + 1;
             if (selection >= num_appearances) {
                 selection = 0;
             }
@@ -15757,7 +15757,7 @@ failed:
 			if (stats[index]->playerRace != RACE_HUMAN) {
 				return;
 			}
-			stats[index]->appearance = std::stoi(entry.name);
+			stats[index]->stat_appearance = std::stoi(entry.name);
 		};
 
 		for (int c = 0; c < num_appearances; ++c) {
@@ -15774,7 +15774,7 @@ failed:
                 }
             };
 			//entry->selected = entry->click;
-			if (stats[index]->appearance == c && stats[index]->playerRace == RACE_HUMAN) {
+			if (stats[index]->stat_appearance == c && stats[index]->playerRace == RACE_HUMAN) {
 				appearances->setSelection(c);
 				appearances->scrollToSelection();
 			}
@@ -15833,7 +15833,7 @@ failed:
 		disable_abilities->setWidgetDown("show_race_info");
 		disable_abilities->setWidgetUp(Language::get(5369 + num_races - 1));
 		if (stats[index]->playerRace != RACE_HUMAN) {
-			disable_abilities->setPressed(stats[index]->appearance != 0);
+			disable_abilities->setPressed(stats[index]->stat_appearance != 0);
 		}
 		static auto disable_abilities_fn = [](Button& button, int index){
 			if ( gameModeManager.currentSession.challengeRun.isActive()
@@ -15848,7 +15848,7 @@ failed:
 			if (stats[index]->playerRace == RACE_HUMAN) {
 				soundError();
 			} else {
-				stats[index]->appearance = button.isPressed() ? 1 : 0;
+				stats[index]->stat_appearance = button.isPressed() ? 1 : 0;
 				auto check = isCharacterValidFromDLC(*stats[index], client_classes[index]);
 				if (check != VALID_OK_CHARACTER) {
 					// player tried to play a class they haven't unlocked for this race
@@ -16756,7 +16756,7 @@ failed:
         if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
             stats[index]->playerRace = RACE_HUMAN;
             stats[index]->sex = static_cast<sex_t>(RNG.getU8() % 2);
-            stats[index]->appearance = RNG.uniform(0, NUMAPPEARANCES - 1);
+            stats[index]->stat_appearance = RNG.uniform(0, NUMAPPEARANCES - 1);
             client_classes[index] = 0;
 
 			bool challengeRunModified = false;
@@ -16774,7 +16774,7 @@ failed:
 					stats[index]->playerRace = gameModeManager.currentSession.challengeRun.race;
 					if ( stats[index]->playerRace != RACE_HUMAN )
 					{
-						stats[index]->appearance = 0;
+						stats[index]->stat_appearance = 0;
 					}
 					if ( stats[index]->playerRace == RACE_INCUBUS )
 					{
@@ -17093,7 +17093,7 @@ failed:
             soundActivate();
             const int index = button.getOwner();
             old_classes[index] = client_classes[index];
-            old_appearances[index] = stats[index]->appearance;
+            old_appearances[index] = stats[index]->stat_appearance;
             old_races[index] = stats[index]->playerRace;
             old_sexes[index] = stats[index]->sex;
             characterCardRaceMenu(button.getOwner(), false, -1);
@@ -17127,8 +17127,8 @@ failed:
 					std::vector<unsigned int> chances;
 					chances.resize(RACE_INSECTOID + 1);
 					auto oldRace = stats[index]->playerRace;
-					Uint32 oldAppearance = stats[index]->appearance;
-					stats[index]->appearance = 0;
+					Uint32 oldAppearance = stats[index]->stat_appearance;
+					stats[index]->stat_appearance = 0;
 
 					bool chanceFound = false;
 					for ( int race = RACE_HUMAN; race <= RACE_INSECTOID; ++race )
@@ -17141,7 +17141,7 @@ failed:
 							chanceFound = true;
 						}
 					}
-					stats[index]->appearance = oldAppearance;
+					stats[index]->stat_appearance = oldAppearance;
 					if ( !chanceFound )
 					{
 						stats[index]->playerRace = RACE_HUMAN;
@@ -17176,9 +17176,9 @@ failed:
 			// choose a random appearance
 			const int appearance_choice = RNG.uniform(0, NUMAPPEARANCES - 1);
 			if (stats[index]->playerRace == RACE_HUMAN) {
-				stats[index]->appearance = appearance_choice;
+				stats[index]->stat_appearance = appearance_choice;
 			} else {
-				stats[index]->appearance = 0;
+				stats[index]->stat_appearance = 0;
 			}
 
 			// select a random sex (unless you're a succubus or an incubus)
@@ -18316,7 +18316,7 @@ failed:
 					{
 						stats[c]->playerRace = RACE_HUMAN;
 						stats[c]->sex = static_cast<sex_t>(RNG.getU8() % 2);
-						stats[c]->appearance = RNG.uniform(0, NUMAPPEARANCES - 1);
+						stats[c]->stat_appearance = RNG.uniform(0, NUMAPPEARANCES - 1);
 						client_classes[c] = 0;
 					}
 
@@ -18335,7 +18335,7 @@ failed:
 							stats[c]->playerRace = gameModeManager.currentSession.challengeRun.race;
 							if ( stats[c]->playerRace != RACE_HUMAN )
 							{
-								stats[c]->appearance = 0;
+								stats[c]->stat_appearance = 0;
 							}
 							if ( stats[c]->playerRace == RACE_INCUBUS )
 							{
@@ -23179,7 +23179,7 @@ failed:
             monsterData.getAllyIconFromSprite(playerHeadSprite(
                 (Monster)getMonsterFromPlayerRace(info.players[player].race),
                 (sex_t)info.players[player].stats.sex,
-                (int)info.players[player].stats.appearance));
+                (int)info.players[player].stats.statscore_appearance));
         auto portrait = subframe->addImage(
             SDL_Rect{32, 24, 32, 32},
             0xffffffff,

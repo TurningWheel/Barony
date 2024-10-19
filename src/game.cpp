@@ -815,7 +815,7 @@ static void demo_record(const char* filename) {
     // write player stats
     demo_file->write(&stats[clientnum]->playerRace, sizeof(Stat::playerRace), 1);
     demo_file->write(&stats[clientnum]->sex, sizeof(Stat::sex), 1);
-    demo_file->write(&stats[clientnum]->appearance, sizeof(Stat::appearance), 1);
+    demo_file->write(&stats[clientnum]->stat_appearance, sizeof(Stat::stat_appearance), 1);
     demo_file->write(&client_classes[clientnum], sizeof(client_classes[clientnum]), 1);
 
     // write player name
@@ -864,7 +864,7 @@ static void demo_play(const char* filename) {
     // read player stats
     demo_file->read(&stats[clientnum]->playerRace, sizeof(Stat::playerRace), 1);
     demo_file->read(&stats[clientnum]->sex, sizeof(Stat::sex), 1);
-    demo_file->read(&stats[clientnum]->appearance, sizeof(Stat::appearance), 1);
+    demo_file->read(&stats[clientnum]->stat_appearance, sizeof(Stat::stat_appearance), 1);
     demo_file->read(&client_classes[clientnum], sizeof(client_classes[clientnum]), 1);
 
     // read player name
@@ -2870,7 +2870,7 @@ void gameLogic(void)
 						}
 					}
 
-					if ( item->type == FOOD_BLOOD && stats[player]->playerRace == RACE_VAMPIRE && stats[player]->appearance == 0 )
+					if ( item->type == FOOD_BLOOD && stats[player]->playerRace == RACE_VAMPIRE && stats[player]->stat_appearance == 0 )
 					{
 						bloodCount += item->count;
 						if ( bloodCount >= 20 )
@@ -3544,7 +3544,7 @@ void gameLogic(void)
 					}
 				}
 
-				if ( item->type == FOOD_BLOOD && stats[clientnum]->playerRace == RACE_VAMPIRE && stats[clientnum]->appearance == 0 )
+				if ( item->type == FOOD_BLOOD && stats[clientnum]->playerRace == RACE_VAMPIRE && stats[clientnum]->stat_appearance == 0 )
 				{
 					bloodCount += item->count;
 					if ( bloodCount >= 20 )
@@ -7183,12 +7183,12 @@ int main(int argc, char** argv)
 						// set class loadout
 						strcpy(stats[0]->name, "Avatar");
 						stats[0]->sex = static_cast<sex_t>(local_rng.rand() % 2);
-						stats[0]->appearance = local_rng.rand() % NUMAPPEARANCES;
+						stats[0]->stat_appearance = local_rng.rand() % NUMAPPEARANCES;
 						stats[0]->clearStats();
 						initClass(0);
 						if ( stats[0]->playerRace != RACE_HUMAN )
 						{
-							stats[0]->appearance = 0;
+							stats[0]->stat_appearance = 0;
 						}
 
 						// generate unique game key

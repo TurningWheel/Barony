@@ -509,7 +509,7 @@ struct SaveGameInfo {
 			std::string name;
 			Uint32 type = Monster::HUMAN;
 			Uint32 sex = 0;
-			Uint32 appearance = 0;
+			Uint32 statscore_appearance = 0;
 			int HP = 0;
 			int maxHP = 0;
 			int MP = 0;
@@ -538,7 +538,7 @@ struct SaveGameInfo {
 				fp->property("name", name);
 				fp->property("type", type);
 				fp->property("sex", sex);
-				fp->property("appearance", appearance);
+				fp->property("appearance", statscore_appearance);
 				fp->property("HP", HP);
 				fp->property("maxHP", maxHP);
 				fp->property("MP", MP);

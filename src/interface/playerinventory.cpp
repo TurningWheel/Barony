@@ -4891,7 +4891,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                         int skillLVL = std::min(100, stats[player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[player], players[player]->entity));
                         bool isGoblin = (stats[player]
                                          && (stats[player]->type == GOBLIN
-                                             || (stats[player]->playerRace == RACE_GOBLIN && stats[player]->appearance == 0)));
+                                             || (stats[player]->playerRace == RACE_GOBLIN && stats[player]->stat_appearance == 0)));
                         if ( icon.conditionalAttribute == "SPELLBOOK_CAST_BONUS" )
                         {
                             if ( !items[item->type].hasAttribute(icon.conditionalAttribute) )
@@ -10431,7 +10431,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		}
 		else if ( stats[player] 
 			&& (stats[player]->type == GOBLIN
-				|| (stats[player]->playerRace == RACE_GOBLIN && stats[player]->appearance == 0)) )
+				|| (stats[player]->playerRace == RACE_GOBLIN && stats[player]->stat_appearance == 0)) )
 		{
 			// goblinos can't learn spells but always equip books.
 			learnedSpell = true; 

@@ -4013,17 +4013,17 @@ void doStatueEditor(int player)
 				}
 				if ( playerEntity->getMonsterFromPlayerRace(stats->playerRace) != HUMAN )
 				{
-					stats->appearance = 0;
+					stats->stat_appearance = 0;
 				}
 			}
 			if ( keystatus[SDLK_F2] )
 			{
 				keystatus[SDLK_F2] = 0;
 
-				++stats->appearance;
-				if ( stats->appearance >= NUMAPPEARANCES )
+				++stats->stat_appearance;
+				if ( stats->stat_appearance >= NUMAPPEARANCES )
 				{
-					stats->appearance = 0;
+					stats->stat_appearance = 0;
 				}
 			}
 			if ( keystatus[SDLK_F3] )
@@ -4405,7 +4405,7 @@ void actPlayer(Entity* my)
 	int spriteLegLeft = 108 + 12 * stats[PLAYER_NUM]->sex;
 	int spriteArmRight = 109 + 12 * stats[PLAYER_NUM]->sex;
 	int spriteArmLeft = 110 + 12 * stats[PLAYER_NUM]->sex;
-	int playerAppearance = stats[PLAYER_NUM]->appearance;
+	int playerAppearance = stats[PLAYER_NUM]->stat_appearance;
 	
 	if ( my->effectShapeshift != NOTHING )
 	{
@@ -4427,7 +4427,7 @@ void actPlayer(Entity* my)
 				playerRace = static_cast<Monster>(my->effectPolymorph);
 			}
 		}
-		if ( stats[PLAYER_NUM]->appearance == 0 || my->effectPolymorph != NOTHING )
+		if ( stats[PLAYER_NUM]->stat_appearance == 0 || my->effectPolymorph != NOTHING )
 		{
 			stats[PLAYER_NUM]->type = playerRace;
 		}
@@ -5275,7 +5275,7 @@ void actPlayer(Entity* my)
 					serverSpawnMiscParticles(my, PARTICLE_EFFECT_VAMPIRIC_AURA, 600);
 				}
 			}
-			if ( currentlevel == 0 && stats[PLAYER_NUM]->playerRace == RACE_GOATMAN && stats[PLAYER_NUM]->appearance == 0 )
+			if ( currentlevel == 0 && stats[PLAYER_NUM]->playerRace == RACE_GOATMAN && stats[PLAYER_NUM]->stat_appearance == 0 )
 			{
 				if ( PLAYER_ALIVETIME == 1 )
 				{
@@ -10469,7 +10469,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 		return;
 	}
 
-	int playerAppearance = stats[playernum]->appearance;
+	int playerAppearance = stats[playernum]->stat_appearance;
 	if ( players[playernum] && players[playernum]->entity && players[playernum]->entity->effectPolymorph > NUMMONSTERS )
 	{
 		playerAppearance = players[playernum]->entity->effectPolymorph - 100;
@@ -10860,7 +10860,7 @@ bool playerRequiresBloodToSustain(int player)
 	{
 		return true;
 	}
-	if ( stats[player]->playerRace == RACE_VAMPIRE && stats[player]->appearance == 0 )
+	if ( stats[player]->playerRace == RACE_VAMPIRE && stats[player]->stat_appearance == 0 )
 	{
 		return true;
 	}

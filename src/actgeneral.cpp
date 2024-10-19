@@ -4833,7 +4833,7 @@ void actBell(Entity* my)
 										entity->modMP(amount);
 										if ( svFlags & SV_FLAG_HUNGER )
 										{
-											if ( entity->behavior == &actPlayer && stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+											if ( entity->behavior == &actPlayer && stats->playerRace == RACE_INSECTOID && stats->stat_appearance == 0 )
 											{
 												Sint32 hungerPointPerMana = entity->playerInsectoidHungerValueOfManaPoint(*stats);
 												stats->HUNGER += amount * hungerPointPerMana;

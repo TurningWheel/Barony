@@ -1991,7 +1991,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 			steamAchievementClient(monsterclicked, "BARONY_ACH_SSSMOKIN");
 		}
 	}
-	if ( myStats->type == HUMAN && stats[monsterclicked]->type == HUMAN && stats[monsterclicked]->appearance == 0
+	if ( myStats->type == HUMAN && stats[monsterclicked]->type == HUMAN && stats[monsterclicked]->stat_appearance == 0
 		&& stats[monsterclicked]->playerRace == RACE_AUTOMATON )
 	{
 		achievementObserver.updatePlayerAchievement(monsterclicked, AchievementObserver::Achievement::BARONY_ACH_REAL_BOY,
@@ -2001,7 +2001,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 	{
 		serverUpdatePlayerGameplayStats(monsterclicked, STATISTICS_FORUM_TROLL, AchievementObserver::FORUM_TROLL_RECRUIT_TROLL);
 	}
-	if ( stats[monsterclicked]->appearance == 0
+	if ( stats[monsterclicked]->stat_appearance == 0
 		&& (stats[monsterclicked]->playerRace == RACE_INCUBUS || stats[monsterclicked]->playerRace == RACE_SUCCUBUS) )
 	{
 		if ( myStats->type == HUMAN )
@@ -2016,7 +2016,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 			serverUpdatePlayerGameplayStats(monsterclicked, STATISTICS_PIMPING_AINT_EASY, 1);
 		}
 	}
-	if ( stats[monsterclicked]->appearance == 0
+	if ( stats[monsterclicked]->stat_appearance == 0
 		&& (stats[monsterclicked]->playerRace == RACE_GOBLIN) )
 	{
 		if ( myStats->type == GOBLIN )
@@ -4267,7 +4267,7 @@ void actMonster(Entity* my)
 						{
 							// shopkeepers start trading
 							startTradingServer(my, monsterclicked);
-							if ( stats[monsterclicked] && stats[monsterclicked]->type == HUMAN && stats[monsterclicked]->appearance == 0
+							if ( stats[monsterclicked] && stats[monsterclicked]->type == HUMAN && stats[monsterclicked]->stat_appearance == 0
 								&& stats[monsterclicked]->playerRace == RACE_AUTOMATON )
 							{
 								achievementObserver.updatePlayerAchievement(monsterclicked, AchievementObserver::Achievement::BARONY_ACH_REAL_BOY,

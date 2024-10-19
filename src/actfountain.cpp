@@ -202,7 +202,7 @@ void actFountain(Entity* my)
 						steamAchievementClient(i, "BARONY_ACH_HOT_SHOWER");
 					}
 					int potionDropQuantity = 0;
-					if ( stats[i] && (stats[i]->type == GOATMAN || (stats[i]->playerRace == RACE_GOATMAN && stats[i]->appearance == 0)) )
+					if ( stats[i] && (stats[i]->type == GOATMAN || (stats[i]->playerRace == RACE_GOATMAN && stats[i]->stat_appearance == 0)) )
 					{
 						// drop some random potions.
 						switch ( rng.rand() % 10 )
@@ -232,7 +232,7 @@ void actFountain(Entity* my)
 
 						if ( potionDropQuantity > 0 )
 						{
-							if ( stats[i]->playerRace == RACE_GOATMAN && stats[i]->appearance == 0 )
+							if ( stats[i]->playerRace == RACE_GOATMAN && stats[i]->stat_appearance == 0 )
 							{
 								steamStatisticUpdateClient(i, STEAM_STAT_BOTTLE_NOSED, STEAM_STAT_INT, 1);
 							}

@@ -485,7 +485,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 		if ( multiplayer != CLIENT )
 		{
-			if ( caster->behavior == &actPlayer && stat->playerRace == RACE_INSECTOID && stat->appearance == 0 )
+			if ( caster->behavior == &actPlayer && stat->playerRace == RACE_INSECTOID && stat->stat_appearance == 0 )
 			{
 				if ( !achievementObserver.playerAchievements[caster->skill[2]].gastricBypass )
 				{
@@ -2761,7 +2761,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 				if ( magicIncreased && usingSpellbook && caster->behavior == &actPlayer )
 				{
-					if ( stats[caster->skill[2]] && stats[caster->skill[2]]->playerRace == RACE_INSECTOID && stats[caster->skill[2]]->appearance == 0 )
+					if ( stats[caster->skill[2]] && stats[caster->skill[2]]->playerRace == RACE_INSECTOID && stats[caster->skill[2]]->stat_appearance == 0 )
 					{
 						steamStatisticUpdateClient(caster->skill[2], STEAM_STAT_BOOKWORM, STEAM_STAT_INT, 1);
 					}
@@ -2777,7 +2777,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		{
 			chance = 16;
 
-			if ( caster && caster->behavior == &actPlayer && stat->playerRace == RACE_GOBLIN && stat->appearance == 0 )
+			if ( caster && caster->behavior == &actPlayer && stat->playerRace == RACE_GOBLIN && stat->stat_appearance == 0 )
 			{
 				if ( spell->ID >= 30 && spell->ID < 60 )
 				{
@@ -2850,7 +2850,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 				if ( stat->shield->status == BROKEN && player >= 0 )
 				{
-					if ( caster && caster->behavior == &actPlayer && stat->playerRace == RACE_GOBLIN && stat->appearance == 0 )
+					if ( caster && caster->behavior == &actPlayer && stat->playerRace == RACE_GOBLIN && stat->stat_appearance == 0 )
 					{
 						steamStatisticUpdateClient(player, STEAM_STAT_DYSLEXIA, STEAM_STAT_INT, 1);
 					}
@@ -2957,23 +2957,23 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellI
 	}
 
 	// player races:
-	if ( stat.playerRace == RACE_INSECTOID && stat.appearance == 0 && (spellID == SPELL_DASH || spellID == SPELL_FLUTTER || spellID == SPELL_ACID_SPRAY) )
+	if ( stat.playerRace == RACE_INSECTOID && stat.stat_appearance == 0 && (spellID == SPELL_DASH || spellID == SPELL_FLUTTER || spellID == SPELL_ACID_SPRAY) )
 	{
 		return true;
 	}
-	else if ( stat.playerRace == RACE_VAMPIRE && stat.appearance == 0 && (spellID == SPELL_LEVITATION || spellID == SPELL_BLEED) )
+	else if ( stat.playerRace == RACE_VAMPIRE && stat.stat_appearance == 0 && (spellID == SPELL_LEVITATION || spellID == SPELL_BLEED) )
 	{
 		return true;
 	}
-	else if ( stat.playerRace == RACE_SUCCUBUS && stat.appearance == 0 && (spellID == SPELL_TELEPORTATION || spellID == SPELL_SELF_POLYMORPH) )
+	else if ( stat.playerRace == RACE_SUCCUBUS && stat.stat_appearance == 0 && (spellID == SPELL_TELEPORTATION || spellID == SPELL_SELF_POLYMORPH) )
 	{
 		return true;
 	}
-	else if ( stat.playerRace == RACE_INCUBUS && stat.appearance == 0 && (spellID == SPELL_TELEPORTATION || spellID == SPELL_SHADOW_TAG) )
+	else if ( stat.playerRace == RACE_INCUBUS && stat.stat_appearance == 0 && (spellID == SPELL_TELEPORTATION || spellID == SPELL_SHADOW_TAG) )
 	{
 		return true;
 	}
-	else if ( stat.playerRace == RACE_AUTOMATON && stat.appearance == 0 && (spellID == SPELL_SALVAGE) )
+	else if ( stat.playerRace == RACE_AUTOMATON && stat.stat_appearance == 0 && (spellID == SPELL_SALVAGE) )
 	{
 		return true;
 	}

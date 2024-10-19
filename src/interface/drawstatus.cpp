@@ -441,7 +441,7 @@ void drawHPMPBars(int player)
 	}
 	Uint32 mpColorBG = makeColorRGB(0, 0, 48);
 	Uint32 mpColorFG = makeColorRGB(0, 24, 128);
-	if ( stats[player] && stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+	if ( stats[player] && stats[player]->playerRace == RACE_INSECTOID && stats[player]->stat_appearance == 0 )
 	{
 		ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, Language::get(3768));
 		mpColorBG = makeColorRGB(32, 48, 0);
@@ -1068,7 +1068,7 @@ void drawStatus(int player)
 
 							if ( itemCategory(item) == SPELLBOOK && stats[player] 
 								&& (stats[player]->type == GOBLIN
-									|| (stats[player]->playerRace == RACE_GOBLIN && stats[player]->appearance == 0)) )
+									|| (stats[player]->playerRace == RACE_GOBLIN && stats[player]->stat_appearance == 0)) )
 							{
 								learnedSpell = true; // goblinos can't learn spells but always equip books.
 							}
@@ -2017,7 +2017,7 @@ void drawStatus(int player)
 			if ( itemCategory(item) == SPELLBOOK && stats[player] )
 			{
 				if ( stats[player]->type == GOBLIN || stats[player]->type == CREATURE_IMP
-						|| (stats[player]->playerRace == RACE_GOBLIN && stats[player]->appearance == 0) )
+						|| (stats[player]->playerRace == RACE_GOBLIN && stats[player]->stat_appearance == 0) )
 				{
 					learnedSpell = true; // goblinos can't learn spells but always equip books.
 				}
@@ -3408,7 +3408,7 @@ void drawStatusNew(const int player)
 			if ( itemCategory(item) == SPELLBOOK && stats[player] )
 			{
 				if ( stats[player]->type == GOBLIN || stats[player]->type == CREATURE_IMP
-					|| (stats[player]->playerRace == RACE_GOBLIN && stats[player]->appearance == 0) )
+					|| (stats[player]->playerRace == RACE_GOBLIN && stats[player]->stat_appearance == 0) )
 				{
 					learnedSpell = true; // goblinos can't learn spells but always equip books.
 				}

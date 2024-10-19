@@ -88,7 +88,7 @@ void GameModeManager_t::Tutorial_t::startTutorial(std::string mapToSet)
 	strcpy(stats[0]->name, "Player");
 	stats[0]->sex = static_cast<sex_t>(local_rng.rand() % 2);
 	stats[0]->playerRace = RACE_HUMAN;
-	stats[0]->appearance = local_rng.rand() % NUMAPPEARANCES;
+	stats[0]->stat_appearance = local_rng.rand() % NUMAPPEARANCES;
 	client_classes[0] = CLASS_WARRIOR;
 	initClass(0);
 }
@@ -15340,7 +15340,7 @@ void Compendium_t::Events_t::eventUpdateCodex(int playernum, const EventTags tag
 				if ( findRaceTag != eventClassIds.end() )
 				{
 					int race = RACE_HUMAN;
-					if ( stats[playernum]->playerRace > 0 && stats[playernum]->appearance == 0 )
+					if ( stats[playernum]->playerRace > 0 && stats[playernum]->stat_appearance == 0 )
 					{
 						race = stats[playernum]->playerRace;
 					}
