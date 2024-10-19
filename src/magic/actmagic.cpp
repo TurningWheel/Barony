@@ -5891,6 +5891,7 @@ void actParticleTimer(Entity* my)
 								monsterStats->monsterNoDropItems = 1;
 								monsterStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] = 1;
 								monsterStats->MISC_FLAGS[STAT_FLAG_NO_DROP_ITEMS] = 1;
+								monsterStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1;
 								if ( my->particleTimerVariable2 >= 0 
 									&& players[my->particleTimerVariable2] && players[my->particleTimerVariable2]->entity )
 								{
