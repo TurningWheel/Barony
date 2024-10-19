@@ -1961,6 +1961,10 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 	}
 
 	Compendium_t::Events_t::eventUpdateMonster(monsterclicked, Compendium_t::CPDM_RECRUITED, my, 1);
+	if ( myStats->type == HUMAN && myStats->getAttribute("special_npc") == "merlin" )
+	{
+		Compendium_t::Events_t::eventUpdateWorld(monsterclicked, Compendium_t::CPDM_MERLINS, "magicians guild", 1);
+	}
 	Compendium_t::Events_t::eventUpdateCodex(monsterclicked, Compendium_t::CPDM_RACE_RECRUITS, "races", 1);
 	if ( (stats[monsterclicked]->type != HUMAN && stats[monsterclicked]->type != AUTOMATON) && myStats->type == HUMAN )
 	{
@@ -12614,6 +12618,11 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 
 	// eating sound
 	playSoundEntity(this, 50 + local_rng.rand() % 2, 64);
+
+	if ( leader )
+	{
+		Compendium_t::Events_t::eventUpdateWorld(leader->skill[2], Compendium_t::CPDM_ALLIES_FED, "the church", 1);
+	}
 
 	return foodEntityConsumed;
 }

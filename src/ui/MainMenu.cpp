@@ -33728,7 +33728,84 @@ failed:
 					if ( val )
 					{
 						val->setDisabled(false);
-						if ( customTagKey != "" )
+						if ( customTagKey == "CUSTOM_UNDEAD_KILLED"
+							|| customTagKey == "CUSTOM_BEASTS_KILLED"
+							|| customTagKey == "CUSTOM_DEMONS_KILLED" )
+						{
+							val->setText("-");
+							std::vector<std::pair<Sint32, std::string>> results;
+							{
+								auto findTag = Compendium_t::Events_t::playerEvents.find(Compendium_t::EventTags::CPDM_KILLED_SOLO);
+								if ( findTag != Compendium_t::Events_t::playerEvents.end() )
+								{
+									for ( auto& pair : findTag->second )
+									{
+										if ( pair.first >= Compendium_t::Events_t::kEventMonsterOffset
+											&& pair.first < Compendium_t::Events_t::kEventMonsterOffset + 1000 )
+										{
+											auto find = Compendium_t::Events_t::monsterIDToString.find(pair.first);
+											if ( find != Compendium_t::Events_t::monsterIDToString.end() )
+											{
+												results.push_back(std::make_pair(pair.second.value, find->second));
+											}
+										}
+									}
+								}
+							}
+							{
+								auto findTag = Compendium_t::Events_t::playerEvents.find(Compendium_t::CPDM_KILLED_MULTIPLAYER);
+								if ( findTag != Compendium_t::Events_t::playerEvents.end() )
+								{
+									for ( auto& pair : findTag->second )
+									{
+										if ( pair.first >= Compendium_t::Events_t::kEventMonsterOffset
+											&& pair.first < Compendium_t::Events_t::kEventMonsterOffset + 1000 )
+										{
+											auto find = Compendium_t::Events_t::monsterIDToString.find(pair.first);
+											if ( find != Compendium_t::Events_t::monsterIDToString.end() )
+											{
+												results.push_back(std::make_pair(pair.second.value, find->second));
+											}
+										}
+									}
+								}
+							}
+							{
+								int value = 0;
+								int matchingType = -1;
+								if ( customTagKey == "CUSTOM_UNDEAD_KILLED" ) { matchingType = Compendium_t::CompendiumMonsters_t::MonsterSpecies::SPECIES_UNDEAD; }
+								else if ( customTagKey == "CUSTOM_BEASTS_KILLED" ) { matchingType = Compendium_t::CompendiumMonsters_t::MonsterSpecies::SPECIES_BEAST; }
+								else if ( customTagKey == "CUSTOM_DEMONS_KILLED" ) { matchingType = Compendium_t::CompendiumMonsters_t::MonsterSpecies::SPECIES_DEMONOID; }
+								for ( auto& result : results )
+								{
+									auto find = CompendiumEntries.monsters.find(result.second);
+									if ( find != CompendiumEntries.monsters.end() )
+									{
+										if ( find->second.species == matchingType )
+										{
+											value += result.first;
+										}
+									}
+								}
+
+								results.clear();
+								std::string output = Compendium_t::Events_t::formatEventRecordText(value, nullptr, 0,
+									Compendium_t::Events_t::eventCustomLangEntries[customTagKey]
+								);
+								results.push_back(std::make_pair(value, output));
+							}
+							if ( results.size() > 0 )
+							{
+								compendiumRecordsSectionLoadedValues[index].clear();
+								for ( auto& pair : results )
+								{
+									compendiumRecordsSectionLoadedValues[index].push_back(pair.second);
+								}
+								val->setText(compendiumRecordsSectionLoadedValues[index][compendiumRecordsSectionRandSequence
+									% compendiumRecordsSectionLoadedValues[index].size()].c_str());
+							}
+						}
+						else if ( customTagKey != "" )
 						{
 							auto results = Compendium_t::Events_t::getCustomEventValue(customTagKey, compendium_current, 
 								compendium_contents_current[compendium_current], specificClass);

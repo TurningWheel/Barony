@@ -393,6 +393,10 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 						achievementObserver.updateGlobalStat(STEAM_GSTAT_BOULDER_DEATHS);
 					}
 				}
+				if ( BOULDER_PLAYERPUSHED >= 0 && oldHP > 0 && stats->HP <= 0 )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(BOULDER_PLAYERPUSHED, Compendium_t::CPDM_COMBAT_MASONRY_BOULDERS, "masons guild", 1);
+				}
 
 				if ( !lifeSaving )
 				{

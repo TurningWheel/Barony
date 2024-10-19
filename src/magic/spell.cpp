@@ -451,6 +451,10 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 	}
 	free(item);
 
+	if ( !ignoreSkill || (ignoreSkill && !intro) )
+	{
+		Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_SPELLS_LEARNED, "magicians guild", 1);
+	}
 	return true;
 }
 

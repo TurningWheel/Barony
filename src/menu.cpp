@@ -9633,6 +9633,27 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 			}
 			achievementObserver.updateGlobalStat(STEAM_GSTAT_GAMES_WON);
 
+			for ( int c = 0; c < MAXPLAYERS; ++c )
+			{
+				if ( players[c]->isLocalPlayer() )
+				{
+					for ( node_t* node = stats[c]->FOLLOWERS.first; node != nullptr; node = node->next )
+					{
+						Entity* follower = nullptr;
+						if ( (Uint32*)node->element )
+						{
+							follower = uidToEntity(*((Uint32*)node->element));
+						}
+						if ( follower )
+						{
+							if ( follower->getMonsterTypeFromSprite() == HUMAN )
+							{
+								Compendium_t::Events_t::eventUpdateWorld(c, Compendium_t::CPDM_HUMANS_SAVED, "the church", 1);
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 

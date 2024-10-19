@@ -12430,6 +12430,22 @@ std::string Compendium_t::Events_t::formatEventRecordText(Sint32 value, const ch
 				}
 				output += buf;
 			}
+			else if ( resultsFormatting[c + 1] == '$' )
+			{
+				int gold = value;
+				// gold amounts
+				char buf[32];
+				if ( gold >= 1000.f )
+				{
+					float k = gold / 1000.f;
+					snprintf(buf, sizeof(buf), "%.3fk ", k);
+				}
+				else
+				{
+					snprintf(buf, sizeof(buf), "%d", gold);
+				}
+				output += buf;
+			}
 			else if ( resultsFormatting[c + 1] == 't' )
 			{
 				if ( langMap.find("format_time") != langMap.end() )
@@ -12645,6 +12661,10 @@ std::vector<std::pair<std::string, Sint32>> Compendium_t::Events_t::getCustomEve
 		if ( d["value"].HasMember("format") )
 		{
 			formatType = d["value"]["format"].GetString();
+		}
+		if ( d["value"].HasMember("compendium_section") )
+		{
+			compendiumSection = d["value"]["compendium_section"].GetString();
 		}
 		if ( d["value"].HasMember("tags") )
 		{
@@ -12931,7 +12951,7 @@ std::vector<std::pair<std::string, Sint32>> Compendium_t::Events_t::getCustomEve
 
 								std::string output = "";
 								int numFormats = 0;
-								if ( valueType == "sum_category_max" || valueType == "sum_category_min" )
+								if ( valueType == "sum_category_max" || valueType == "sum_category_min" || valueType == "sum_category_cycle" )
 								{
 									int categoryValue = foundId;
 									if ( formatType == "skills" )
@@ -13053,6 +13073,16 @@ std::vector<std::pair<std::string, Sint32>> Compendium_t::Events_t::getCustomEve
 					std::string output = formatEventRecordText(maxValue, formatType.c_str(), pair.first, eventCustomLangEntries[key]);
 					results.push_back(std::make_pair(output, maxValue));
 				}
+			}
+			return results;
+		}
+		else if ( valueType == "sum_category_cycle" )
+		{
+			results.clear();
+			for ( auto& pair : mapValueTotals )
+			{
+				std::string output = formatEventRecordText(pair.second, formatType.c_str(), pair.first, eventCustomLangEntries[key]);
+				results.push_back(std::make_pair(output, pair.second));
 			}
 			return results;
 		}
@@ -15023,7 +15053,18 @@ void Compendium_t::Events_t::eventUpdateWorld(int playernum, const EventTags tag
 			auto& unlockStatus = Compendium_t::CompendiumWorld_t::unlocks[find->second];
 			if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
 			{
-				unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+				if ( find->second == "merchants guild"
+					|| find->second == "magicians guild"
+					|| find->second == "hunters guild"
+					|| find->second == "the church"
+					|| find->second == "masons guild" )
+				{
+					// dont reveal these, revealed @ hamlet
+				}
+				else
+				{
+					unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+				}
 			}
 			if ( find->second == "shop" )
 			{
@@ -15044,6 +15085,44 @@ void Compendium_t::Events_t::eventUpdateWorld(int playernum, const EventTags tag
 				if ( find != monsterIDToString.end() )
 				{
 					auto& unlockStatus = Compendium_t::CompendiumMonsters_t::unlocks[find->second];
+					if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+					{
+						unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+					}
+				}
+			}
+			else if ( find->second == "hamlet" )
+			{
+				{
+					auto& unlockStatus = Compendium_t::CompendiumWorld_t::unlocks["merchants guild"];
+					if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+					{
+						unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+					}
+				}
+				{
+					auto& unlockStatus = Compendium_t::CompendiumWorld_t::unlocks["magicians guild"];
+					if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+					{
+						unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+					}
+				}
+				{
+					auto& unlockStatus = Compendium_t::CompendiumWorld_t::unlocks["hunters guild"];
+					if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+					{
+						unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+					}
+				}
+				{
+					auto& unlockStatus = Compendium_t::CompendiumWorld_t::unlocks["the church"];
+					if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+					{
+						unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+					}
+				}
+				{
+					auto& unlockStatus = Compendium_t::CompendiumWorld_t::unlocks["masons guild"];
 					if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
 					{
 						unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;

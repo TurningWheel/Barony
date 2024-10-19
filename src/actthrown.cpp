@@ -860,7 +860,7 @@ void actThrown(Entity* my)
 				bool disableAlertBlindStatus = false;
 				bool ignorePotion = false;
 				bool wasPotion = itemCategory(item) == POTION;
-				bool wasBoomerang = item->type == BOOMERANG;
+				ItemType itemType = item->type;
 				bool wasConfused = (hitstats && hitstats->EFFECTS[EFF_CONFUSED]);
 				bool healingPotion = false;
 
@@ -938,7 +938,6 @@ void actThrown(Entity* my)
 						{
 							parent->increaseSkill(PRO_ALCHEMY);
 						}
-						ItemType itemType = item->type;
 						switch ( itemType )
 						{
 							case POTION_WATER:
@@ -968,6 +967,10 @@ void actThrown(Entity* my)
 												{
 													Compendium_t::Events_t::eventUpdateMonster(parent->skill[2], Compendium_t::CPDM_RECRUITED, hit.entity, 1);
 													Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_RACE_RECRUITS, "races", 1);
+													if ( hitstats->type == HUMAN && hitstats->getAttribute("special_npc") == "merlin" )
+													{
+														Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_MERLINS, "magicians guild", 1);
+													}
 												}
 												hit.entity->monsterAllyIndex = parent->skill[2];
 												if ( multiplayer == SERVER )
@@ -1216,7 +1219,7 @@ void actThrown(Entity* my)
 							steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_BOMBARDIER, STEAM_STAT_INT, 1);
 						}
 					}
-					if ( wasBoomerang )
+					if ( itemType == BOOMERANG )
 					{
 						if ( parent && parent->behavior == &actPlayer && hit.entity->behavior == &actMonster )
 						{
@@ -1363,6 +1366,17 @@ void actThrown(Entity* my)
 						if ( cat == THROWN )
 						{
 							Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_THROWN_KILLS, "thrown", 1);
+						}
+						if ( cat == GEM )
+						{
+							if ( itemType == GEM_ROCK || itemType == GEM_LUCK )
+							{
+								Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_COMBAT_MASONRY_ROCKS, "masons guild", 1);
+							}
+							else
+							{
+								Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_COMBAT_MASONRY_GEMS, "masons guild", 1);
+							}
 						}
 					}
 				}

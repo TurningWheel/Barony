@@ -158,6 +158,10 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 			if ( hit.entity->monsterAllyIndex != parent->skill[2] )
 			{
 				Compendium_t::Events_t::eventUpdateMonster(parent->skill[2], Compendium_t::CPDM_RECRUITED, hit.entity, 1);
+				if ( hitstats->type == HUMAN && hitstats->getAttribute("special_npc") == "merlin" )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_MERLINS, "magicians guild", 1);
+				}
 			}
 		}
 
@@ -1544,6 +1548,10 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 						whoToFollow->increaseSkill(PRO_LEADERSHIP);
 						messagePlayerMonsterEvent(whoToFollow->skill[2], color, *hitstats, Language::get(3137), Language::get(3138), MSG_COMBAT);
 						Compendium_t::Events_t::eventUpdateMonster(whoToFollow->skill[2], Compendium_t::CPDM_RECRUITED, hit.entity, 1);
+						if ( hitstats->type == HUMAN && hitstats->getAttribute("special_npc") == "merlin" )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(whoToFollow->skill[2], Compendium_t::CPDM_MERLINS, "magicians guild", 1);
+						}
 						hit.entity->monsterAllyIndex = whoToFollow->skill[2];
 						if ( multiplayer == SERVER )
 						{

@@ -628,6 +628,11 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 				playSoundEntity(&entity, 166, 128); // invisible.ogg
 				createParticleDropRising(&entity, entity.pedestalOrbType + 605, 1.0);
 				serverSpawnMiscParticles(&entity, PARTICLE_EFFECT_RISING_DROP, entity.pedestalOrbType + 605);
+
+				if ( entity.pedestalLockOrb == 1 )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_RITUALS_COMPLETED, "magicians guild", 1);
+				}
 			}
 			entity.pedestalHasOrb = type - ARTIFACT_ORB_BLUE + 1;
 			serverUpdateEntitySkill(&entity, 0); // update orb status.

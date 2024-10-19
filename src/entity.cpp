@@ -1940,6 +1940,10 @@ bool Entity::increaseSkill(int skill, bool notify)
 				{
 					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_SKILL_LEGENDS, skillstr, 1);
 				}
+				if ( myStats->getProficiency(skill) == 20 )
+				{
+					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_SKILL_NOVICES, skillstr, 1);
+				}
 				Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_SKILL_UPS, skillstr, 1);
 				Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_SKILL_UPS_RUN_MAX, skillstr, 1);
 				Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_SKILL_MAX, skillstr, myStats->getProficiency(skill));
@@ -13337,6 +13341,8 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 						}
 					}
 				}
+
+				Compendium_t::Events_t::eventUpdateWorld(leader->skill[2], Compendium_t::CPDM_FOLLOWER_KILLS, "masons guild", 1);
 			}
 		}
 

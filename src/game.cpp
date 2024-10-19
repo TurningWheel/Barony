@@ -1825,11 +1825,62 @@ void gameLogic(void)
 				    // when this flag is set, it's time to load the next level.
 					loadnextlevel = false;
 
+					int totalFloorGold = 0;
+					int totalFloorItems = 0;
+					int totalFloorItemValue[MAXPLAYERS];
+					int totalFloorMonsters = 0;
+					int totalFloorEnemies[MAXPLAYERS];
+					Item tmpItem;
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						totalFloorItemValue[i] = 0;
+						totalFloorEnemies[i] = 0;
+					}
+
 					for ( node = map.entities->first; node != nullptr; node = node->next )
 					{
 						entity = (Entity*)node->element;
 						entity->flags[NOUPDATE] = true;
+						if ( entity->behavior == &actGoldBag )
+						{
+							totalFloorGold += entity->goldAmount;
+						}
+						else if ( entity->behavior == &actItem )
+						{
+							totalFloorItems++;
+							tmpItem.type = (entity->skill[10] >= 0 && entity->skill[10] < NUMITEMS) ? (ItemType)entity->skill[10] : ItemType::GEM_ROCK;
+							tmpItem.status = (int)entity->skill[11] < Status::BROKEN ?
+								Status::BROKEN : ((int)entity->skill[11] > EXCELLENT ? EXCELLENT : (Status)entity->skill[11]);
+							tmpItem.beatitude = std::min(std::max((Sint16)-100, (Sint16)entity->skill[12]), (Sint16)100);
+							tmpItem.count = std::max((Sint16)entity->skill[13], (Sint16)1);
+							tmpItem.appearance = entity->skill[14];
+							tmpItem.identified = entity->skill[15];
 
+							for ( int i = 0; i < MAXPLAYERS; ++i )
+							{
+								if ( !client_disconnected[i] )
+								{
+									totalFloorItemValue[i] += tmpItem.sellValue(i);
+								}
+							}
+						}
+						else if ( entity->behavior == &actMonster )
+						{
+							for ( int i = 0; i < MAXPLAYERS; ++i )
+							{
+								if ( !client_disconnected[i] )
+								{
+									if ( players[i]->entity )
+									{
+										if ( !entity->checkFriend(players[i]->entity) )
+										{
+											totalFloorEnemies[i]++;
+										}
+									}
+								}
+							}
+							totalFloorMonsters++;
+						}
 						if ( (entity->behavior == &actThrown || entity->behavior == &actParticleSapCenter) && entity->sprite == 977 )
 						{
 							// boomerang particle, make sure to return on level change.
@@ -2127,6 +2178,13 @@ void gameLogic(void)
 						if ( stats[i] && stats[i]->HP <= 0 )
 						{
 							playerDied[i] = true;
+						}
+						if ( i == 0 || !players[i]->isLocalPlayer() )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_GOLD_LEFT_BEHIND, "merchants guild", totalFloorGold);
+							Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::MONSTERS_LEFT_BEHIND, "the church", totalFloorEnemies[i]);
+							Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::ITEMS_LEFT_BEHIND, "merchants guild", totalFloorItems);
+							Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::ITEM_VALUE_LEFT_BEHIND, "merchants guild", totalFloorItemValue[i]);
 						}
 					}
 
@@ -2426,6 +2484,7 @@ void gameLogic(void)
 									if ( monsterStats->type == HUMAN && currentlevel == 25 && !strncmp(map.name, "Mages Guild", 11) )
 									{
 										steamAchievementClient(c, "BARONY_ACH_ESCORT");
+										Compendium_t::Events_t::eventUpdateWorld(c, Compendium_t::CPDM_HUMANS_SAVED, "the church", 1);
 									}
 
 									if ( c > 0 && multiplayer == SERVER && !players[c]->isLocalPlayer() && net_packet && net_packet->data )
