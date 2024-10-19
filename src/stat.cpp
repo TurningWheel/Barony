@@ -1401,14 +1401,21 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 	intro = oldIntro;
 }
 
-int Stat::getActiveShieldBonus(bool checkShield, bool excludeSkill, Item* shieldItem) const
+int Stat::getActiveShieldBonus(bool checkShield, bool excludeSkill, Item* shieldItem, bool checkNonShieldBonus) const
 {
 	Item* item = shieldItem;
 	if ( !item )
 	{
 		if ( !checkShield )
 		{
-			return (5 + (excludeSkill ? 0 : (getModifiedProficiency(PRO_SHIELD) / 5)));
+			if ( checkNonShieldBonus )
+			{
+				return (5 + (excludeSkill ? 0 : std::min(SKILL_LEVEL_SKILLED, getModifiedProficiency(PRO_SHIELD)) / 5));
+			}
+			else
+			{
+				return (5 + (excludeSkill ? 0 : (getModifiedProficiency(PRO_SHIELD) / 5)));
+			}
 		}
 		item = shield;
 	}

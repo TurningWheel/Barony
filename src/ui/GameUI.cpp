@@ -17036,6 +17036,10 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					}
 					snprintf(buf, sizeof(buf), getHoverTextString("attributes_ac_defending").c_str(), skillName.c_str(), skillLVL);
 					std::string tag = "BLOCK_AC_INCREASE";
+					if ( stats[player.playernum]->shield && itemCategory(stats[player.playernum]->shield) != ARMOR )
+					{
+						tag = "BLOCK_AC_INCREASE_OFFHAND";
+					}
 					std::string blockBonus = formatSkillSheetEffects(player.playernum, PRO_SHIELD, tag, getHoverTextString("attributes_ac_bonus_format"));
 					snprintf(valueBuf, sizeof(valueBuf), "%s", blockBonus.c_str());
 				}
@@ -32493,6 +32497,11 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		if ( tag == "BLOCK_AC_INCREASE" )
 		{
 			val = stats[playernum]->getActiveShieldBonus(false, false);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "BLOCK_AC_INCREASE_OFFHAND" )
+		{
+			val = stats[playernum]->getActiveShieldBonus(false, false, nullptr, true);
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "PASSIVE_AC_INCREASE" )
