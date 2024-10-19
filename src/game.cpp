@@ -6853,7 +6853,6 @@ int main(int argc, char** argv)
 
         // load game config
 		Input::defaultBindings();
-		MainMenu::randomizeUsername();
         MainMenu::settingsReset();
         MainMenu::settingsApply();
 		bool load_successful = MainMenu::settingsLoad();
@@ -6911,6 +6910,8 @@ int main(int argc, char** argv)
 			deinitApp();
 			exit(c);
 		}
+
+		MainMenu::randomizeUsername();
 
 		// init message
 		printlog("Barony version: %s\n", VERSION);
