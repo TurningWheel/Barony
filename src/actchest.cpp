@@ -662,8 +662,6 @@ void Entity::actChest()
 		return;
 	}
 
-	int i;
-
 	if (!chestInit)
 	{
 		auto& rng = entity_rng ? *entity_rng : local_rng;
@@ -811,7 +809,7 @@ void Entity::actChest()
 
 	//Using the chest (TODO: Monsters using it?).
 	int chestclicked = -1;
-	for (i = 0; i < MAXPLAYERS; ++i)
+	for (int i = 0; i < MAXPLAYERS; ++i)
 	{
 		if ( selectedEntity[i] == this || client_selected[i] == this )
 		{
@@ -835,7 +833,7 @@ void Entity::actChest()
 				messagePlayer(chestclicked, MESSAGE_INTERACTION, Language::get(459));
 				openedChest[chestclicked] = this;
 
-				Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_CHESTS_OPENED, "chest", 1);
+				Compendium_t::Events_t::eventUpdateWorld(chestclicked, Compendium_t::CPDM_CHESTS_OPENED, "chest", 1);
 
 				chestOpener = chestclicked;
 				if ( !players[chestclicked]->isLocalPlayer() && multiplayer == SERVER)
