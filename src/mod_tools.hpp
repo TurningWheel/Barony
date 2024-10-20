@@ -4130,7 +4130,7 @@ struct Compendium_t
 	static void writeUnlocksSaveData();
 	static void readUnlocksSaveData();
 
-	static const char* Compendium_t::getSkillStringForCompendium(const int skill)
+	static const char* getSkillStringForCompendium(const int skill)
 	{
 		switch ( skill )
 		{

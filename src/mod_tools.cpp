@@ -15609,9 +15609,9 @@ void Compendium_t::readModelLimbsFromFile(std::string section)
 						&& d["map_tiles"]["mid"].IsArray()
 						&& d["map_tiles"]["top"].IsArray() )
 					{
-						auto& floor = d["map_tiles"]["floor"].GetArray();
-						auto& mid = d["map_tiles"]["mid"].GetArray();
-						auto& top = d["map_tiles"]["top"].GetArray();
+						auto floor = d["map_tiles"]["floor"].GetArray();
+						auto mid = d["map_tiles"]["mid"].GetArray();
+						auto top = d["map_tiles"]["top"].GetArray();
 						w = d["map_tiles"]["width"].GetInt();
 						h = d["map_tiles"]["height"].GetInt();
 						if ( floor.Size() == mid.Size() &&
