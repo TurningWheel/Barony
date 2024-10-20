@@ -25,6 +25,8 @@
 #include "collision.hpp"
 #include "scores.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
+#include "scrolls.hpp"
 
 bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 {
@@ -343,9 +345,10 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 				net_packet->data[4] = player;
 				net_packet->data[5] = armornum;
 				net_packet->data[6] = toCurse->beatitude + 100;
+				SDLNet_Write16((Sint16)toCurse->type, &net_packet->data[7]);
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
-				net_packet->len = 7;
+				net_packet->len = 9;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 				//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 			}
@@ -513,7 +516,7 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 					stats->HUNGER = std::min(1499, stats->HUNGER + 100);
 				}
 			}
-			if ( stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+			if ( stats->playerRace == RACE_INSECTOID && stats->stat_appearance == 0 )
 			{
 				stats->HUNGER += 250;
 			}
@@ -522,7 +525,7 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 	else
 	{
 		// hunger off.
-		if ( entity->behavior == &actPlayer && stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+		if ( entity->behavior == &actPlayer && stats->playerRace == RACE_INSECTOID && stats->stat_appearance == 0 )
 		{
 			entity->modMP(5 * (1 + item->beatitude));
 		}
@@ -669,7 +672,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 						stats->HUNGER = std::min(1499, stats->HUNGER + 50);
 					}
 				}
-				if ( stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+				if ( stats->playerRace == RACE_INSECTOID && stats->stat_appearance == 0 )
 				{
 					stats->HUNGER += 200;
 				}
@@ -678,7 +681,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 		else
 		{
 			// hunger off.
-			if ( entity->behavior == &actPlayer && stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+			if ( entity->behavior == &actPlayer && stats->playerRace == RACE_INSECTOID && stats->stat_appearance == 0 )
 			{
 				entity->modMP(5);
 			}
@@ -702,7 +705,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 						stats->HUNGER = std::min(1499, stats->HUNGER + 50);
 					}
 				}
-				if ( stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+				if ( stats->playerRace == RACE_INSECTOID && stats->stat_appearance == 0 )
 				{
 					stats->HUNGER += 200;
 				}
@@ -711,7 +714,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 		else
 		{
 			// hunger off.
-			if ( entity->behavior == &actPlayer && stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+			if ( entity->behavior == &actPlayer && stats->playerRace == RACE_INSECTOID && stats->stat_appearance == 0 )
 			{
 				entity->modMP(5 * (1 + item->beatitude));
 			}
@@ -817,6 +820,7 @@ bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 		damage -= (local_rng.rand() % (1 + chance));
 	}
 	messagePlayer(player, MESSAGE_HINT, Language::get(761));
+	int oldHP = stats->HP;
 	entity->modHP(-damage);
 	stats->EFFECTS[EFF_POISONED] = true;
 	if ( usedBy && usedBy != entity )
@@ -825,6 +829,11 @@ bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 		if ( usedByStats )
 		{
 			stats->poisonKiller = usedBy->getUID();
+		}
+
+		if ( usedBy->behavior == &actPlayer && stats->HP < oldHP)
+		{
+			Compendium_t::Events_t::eventUpdate(usedBy->skill[2], Compendium_t::CPDM_THROWN_DMG_TOTAL, item->type, oldHP - stats->HP);
 		}
 	}
 	if ( stats->type == LICH || stats->type == SHOPKEEPER || stats->type == DEVIL
@@ -1587,8 +1596,17 @@ bool item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 		damage -= (local_rng.rand() % (1 + chance));
 	}
 	messagePlayer(player, MESSAGE_HINT, Language::get(770));
+	int oldHP = stats->HP;
 	entity->modHP(-damage);
 	playSoundEntity(entity, 28, 64);
+
+	if ( usedBy && usedBy != entity )
+	{
+		if ( usedBy->behavior == &actPlayer && stats->HP < oldHP )
+		{
+			Compendium_t::Events_t::eventUpdate(usedBy->skill[2], Compendium_t::CPDM_THROWN_DMG_TOTAL, item->type, oldHP - stats->HP);
+		}
+	}
 
 	// set obituary
 	entity->setObituary(Language::get(1535));
@@ -1697,8 +1715,17 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 	else
 	{
 		messagePlayer(player, MESSAGE_HINT, Language::get(770));
+		int oldHP = stats->HP;
 		entity->modHP(-damage);
 		playSoundEntity(entity, 28, 64);
+
+		if ( usedBy && usedBy != entity )
+		{
+			if ( usedBy->behavior == &actPlayer && stats->HP < oldHP )
+			{
+				Compendium_t::Events_t::eventUpdate(usedBy->skill[2], Compendium_t::CPDM_THROWN_DMG_TOTAL, item->type, oldHP - stats->HP);
+			}
+		}
 	}
 
 	// set obituary
@@ -2236,7 +2263,7 @@ bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 
 	if ( svFlags & SV_FLAG_HUNGER )
 	{
-		if ( player >= 0 && stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+		if ( player >= 0 && stats->playerRace == RACE_INSECTOID && stats->stat_appearance == 0 )
 		{
 			Sint32 hungerPointPerMana = entity->playerInsectoidHungerValueOfManaPoint(*stats);
 			stats->HUNGER += amount * hungerPointPerMana;
@@ -2341,8 +2368,13 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 void onScrollUseAppraisalIncrease(Item* item, int player)
 {
 	if ( !item ) { return; }
-	if ( !item->identified && players[player] && players[player]->isLocalPlayer() )
+	if ( item->identified && players[player] && players[player]->isLocalPlayer() )
 	{
+		Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_CONSUMED, item->type, 1);
+	}
+	else if ( !item->identified && players[player] && players[player]->isLocalPlayer() )
+	{
+		Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_CONSUMED_UNIDENTIFIED, item->type, 1);
 		if ( stats[player]->getProficiency(PRO_APPRAISAL) < SKILL_LEVEL_BASIC )
 		{
 			if ( stats[player] && players[player]->entity )
@@ -2394,6 +2426,8 @@ void item_ScrollMail(Item* item, int player)
 		conductIlliterate = false;
 	}
 	item->identified = true;
+
+	int result = item->appearance % 25;
 	switch ( item->appearance % 25 )
 	{
 		case 0:
@@ -2467,8 +2501,13 @@ void item_ScrollMail(Item* item, int player)
 			break;
 		default:
 			messagePlayer(player, MESSAGE_WORLD | MESSAGE_INTERACTION, Language::get(846));
+			result = 22;
 			break;
 	}
+
+	result = result % NUM_SCROLL_MAIL_OPTIONS;
+	Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LORE_READ, SCROLL_MAIL, 1);
+	Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LORE_PERCENT_READ, SCROLL_MAIL, (1 << (result)));
 }
 
 void item_ScrollIdentify(Item* item, int player)
@@ -2630,14 +2669,14 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 
 	conductIlliterate = false;
 
-	messagePlayer(player, MESSAGE_INVENTORY, Language::get(848));
-
-	Item** toEnchant = nullptr;
-	bool hasMeleeGloves = false;
-	if ( stats[player]->gloves )
+	if ( item->beatitude < 0 )
 	{
-		switch ( stats[player]->gloves->type )
+		Item** toEnchant = nullptr;
+		bool hasMeleeGloves = false;
+		if ( stats[player]->gloves )
 		{
+			switch ( stats[player]->gloves->type )
+			{
 			case BRASS_KNUCKLES:
 			case IRON_KNUCKLES:
 			case SPIKED_GAUNTLETS:
@@ -2645,25 +2684,23 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 				break;
 			default:
 				break;
+			}
 		}
-	}
 
-	if ( stats[player]->weapon )
-	{
-		toEnchant = &stats[player]->weapon;
-	}
-	else if ( hasMeleeGloves )
-	{
-		toEnchant = &stats[player]->gloves;
-	}
-
-	if ( toEnchant == nullptr)
-	{
-		messagePlayer(player, MESSAGE_HINT, Language::get(853));
-	}
-	else
-	{
-		if (item->beatitude < 0)
+		if ( stats[player]->weapon )
+		{
+			toEnchant = &stats[player]->weapon;
+		}
+		else if ( hasMeleeGloves )
+		{
+			toEnchant = &stats[player]->gloves;
+		}
+		messagePlayer(player, MESSAGE_INVENTORY, Language::get(848));
+		if ( toEnchant == nullptr )
+		{
+			messagePlayer(player, MESSAGE_HINT, Language::get(853));
+		}
+		else 
 		{
 			if ( toEnchant == &stats[player]->gloves )
 			{
@@ -2686,50 +2723,39 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 			{
 				(*toEnchant)->beatitude -= 1;
 			}
-		}
-		else
-		{
-			if (item->beatitude == 0)
-			{
-				if ( toEnchant == &stats[player]->gloves )
-				{
-					messagePlayer(player, MESSAGE_HINT, Language::get(859), (*toEnchant)->getName());
-				}
-				else
-				{
-					messagePlayer(player, MESSAGE_HINT, Language::get(855));
-				}
-			}
-			else
-			{
-				if ( toEnchant == &stats[player]->gloves )
-				{
-					messagePlayer(player, MESSAGE_HINT, Language::get(860), (*toEnchant)->getName());
-				}
-				else
-				{
-					messagePlayer(player, MESSAGE_HINT, Language::get(856));
-				}
-			}
-			(*toEnchant)->beatitude += 1 + item->beatitude;
-		}
 
-		if ( multiplayer == CLIENT )
-		{
-			strcpy((char*)net_packet->data, "BEAT");
-			net_packet->data[4] = player;
-			net_packet->data[5] = 0; // weapon index
-			net_packet->data[6] = (*toEnchant)->beatitude + 100;
-			net_packet->address.host = net_server.host;
-			net_packet->address.port = net_server.port;
-			net_packet->len = 7;
-			sendPacketSafe(net_sock, -1, net_packet, 0);
-			//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+			if ( multiplayer == CLIENT )
+			{
+				strcpy((char*)net_packet->data, "BEAT");
+				net_packet->data[4] = player;
+				if ( toEnchant == &stats[player]->gloves )
+				{
+					net_packet->data[5] = 3; // glove index
+				}
+				else
+				{
+					net_packet->data[5] = 0; // weapon index
+				}
+				net_packet->data[6] = (*toEnchant)->beatitude + 100;
+				SDLNet_Write16((Sint16)(*toEnchant)->type, &net_packet->data[7]);
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 9;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+				//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+			}
 		}
+		onScrollUseAppraisalIncrease(item, player);
+		item->identified = true;
+		consumeItem(item, player);
 	}
-	onScrollUseAppraisalIncrease(item, player);
-	item->identified = true;
-	consumeItem(item, player);
+	else
+	{
+		// Bless an item
+		onScrollUseAppraisalIncrease(item, player);
+		item->identified = true;
+		GenericGUI[player].openGUI(GUI_TYPE_ITEMFX, item, item->beatitude, item->type, SPELL_NONE);
+	}
 }
 
 void item_ScrollEnchantArmor(Item* item, int player)
@@ -2759,8 +2785,6 @@ void item_ScrollEnchantArmor(Item* item, int player)
 	}
 
 	conductIlliterate = false;
-
-	messagePlayer(player, MESSAGE_INVENTORY, Language::get(848));
 
 	// choose a random piece of worn equipment to curse!
 	int tryIndex = 1 + local_rng.rand() % 7;
@@ -2848,13 +2872,14 @@ void item_ScrollEnchantArmor(Item* item, int player)
 		}
 	}
 
-	if (armor == nullptr)
+	if (item->beatitude < 0)
 	{
-		messagePlayer(player, MESSAGE_HINT, Language::get(857));
-	}
-	else if ( armor != nullptr )
-	{
-		if (item->beatitude < 0)
+		messagePlayer(player, MESSAGE_INVENTORY, Language::get(848));
+		if (armor == nullptr)
+		{
+			messagePlayer(player, MESSAGE_HINT, Language::get(857));
+		}
+		else if ( armor != nullptr )
 		{
 			messagePlayer(player, MESSAGE_HINT, Language::get(858), armor->getName());
 
@@ -2866,37 +2891,33 @@ void item_ScrollEnchantArmor(Item* item, int player)
 			{
 				armor->beatitude -= 1;
 			}
-		}
-		else
-		{
-			if (item->beatitude == 0)
-			{
-				messagePlayer(player, MESSAGE_HINT, Language::get(859), armor->getName());
-			}
-			else
-			{
-				messagePlayer(player, MESSAGE_HINT, Language::get(860), armor->getName());
-			}
-			armor->beatitude += 1 + item->beatitude;
-		}
 
-		if ( multiplayer == CLIENT )
-		{
-			strcpy((char*)net_packet->data, "BEAT");
-			net_packet->data[4] = player;
-			net_packet->data[5] = armornum;
-			net_packet->data[6] = armor->beatitude + 100;
-			net_packet->address.host = net_server.host;
-			net_packet->address.port = net_server.port;
-			net_packet->len = 7;
-			sendPacketSafe(net_sock, -1, net_packet, 0);
-			//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+			if ( multiplayer == CLIENT )
+			{
+				strcpy((char*)net_packet->data, "BEAT");
+				net_packet->data[4] = player;
+				net_packet->data[5] = armornum;
+				net_packet->data[6] = armor->beatitude + 100;
+				SDLNet_Write16((Sint16)armor->type, &net_packet->data[7]);
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 9;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+				//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+			}
 		}
+		onScrollUseAppraisalIncrease(item, player);
+		item->identified = true;
+		consumeItem(item, player);
+
 	}
-
-	onScrollUseAppraisalIncrease(item, player);
-	item->identified = true;
-	consumeItem(item, player);
+	else
+	{
+		// Bless an item
+		onScrollUseAppraisalIncrease(item, player);
+		item->identified = true;
+		GenericGUI[player].openGUI(GUI_TYPE_ITEMFX, item, item->beatitude, item->type, SPELL_NONE);
+	}
 }
 
 void item_ScrollRemoveCurse(Item* item, int player)
@@ -3050,9 +3071,10 @@ void item_ScrollRemoveCurse(Item* item, int player)
 				net_packet->data[4] = player;
 				net_packet->data[5] = armornum;
 				net_packet->data[6] = toCurse->beatitude + 100;
+				SDLNet_Write16((Sint16)toCurse->type, &net_packet->data[7]);
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
-				net_packet->len = 7;
+				net_packet->len = 9;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 				//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 			}
@@ -3631,6 +3653,13 @@ void item_ScrollDestroyArmor(Item* item, int player)
 		{
 			messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(875), armor->getName());
 
+			if ( armor->status > BROKEN )
+			{
+				if ( player >= 0 )
+				{
+					Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BROKEN, armor->type, 1);
+				}
+			}
 			armor->status = static_cast<Status>(0);
 
 			if ( multiplayer == CLIENT )
@@ -3860,6 +3889,7 @@ void item_ScrollSummon(Item* item, int player)
 					}
 
 					// change the color of the hit entity.
+					Compendium_t::Events_t::eventUpdateMonster(player, Compendium_t::CPDM_RECRUITED, monster, 1);
 					monster->flags[USERFLAG2] = true;
 					serverUpdateEntityFlag(monster, USERFLAG2);
 					if ( monsterChangesColorWhenAlly(monsterStats) )
@@ -3923,6 +3953,10 @@ void item_ScrollSummon(Item* item, int player)
 
 void item_ToolTowel(Item*& item, int player)
 {
+	if ( !item )
+	{
+		return;
+	}
 	if ( players[player]->isLocalPlayer() )
 	{
 		messagePlayer(player, MESSAGE_STATUS, Language::get(883));
@@ -3934,6 +3968,19 @@ void item_ToolTowel(Item*& item, int player)
 			|| stats[player]->EFFECTS[EFF_BLEEDING] )
 		{
 			steamAchievementClient(player, "BARONY_ACH_BRING_A_TOWEL");
+			if ( stats[player]->EFFECTS[EFF_GREASY] )
+			{
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TOWEL_GREASY, item->type, 1);
+			}
+			else if ( stats[player]->EFFECTS[EFF_MESSY] )
+			{
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TOWEL_MESSY, item->type, 1);
+			}
+			else if ( stats[player]->EFFECTS[EFF_BLEEDING] )
+			{
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TOWEL_BLEEDING, item->type, 1);
+			}
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TOWEL_USES, item->type, 1);
 		}
 		stats[player]->EFFECTS[EFF_GREASY] = false;
 		stats[player]->EFFECTS[EFF_MESSY] = false;
@@ -3976,6 +4023,10 @@ void item_ToolTinOpener(Item* item, int player)
 
 void item_ToolMirror(Item*& item, int player)
 {
+	if ( !item )
+	{
+		return;
+	}
 	Sint16 beatitude = item->beatitude;
 	if ( !players[player]->isLocalPlayer() )
 	{
@@ -4015,7 +4066,10 @@ void item_ToolMirror(Item*& item, int player)
 		}
 		else if ( beatitude > 0 )
 		{
-			players[player]->entity->teleportRandom();
+			if ( players[player]->entity->teleportRandom() )
+			{
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_MIRROR_TELEPORTS, TOOL_MIRROR, 1);
+			}
 			messagePlayer(player, MESSAGE_HINT, Language::get(890));
 		}
 		else if ( beatitude < 0 )
@@ -4144,15 +4198,16 @@ void item_ToolMirror(Item*& item, int player)
 		{
 			consumeItem(item, player);
 			item = nullptr;
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BROKEN, TOOL_MIRROR, 1);
 		}
 	}
 }
 
-void item_ToolBeartrap(Item*& item, Entity* usedBy)
+Entity* item_ToolBeartrap(Item*& item, Entity* usedBy)
 {
 	if ( !usedBy )
 	{
-		return;
+		return nullptr;
 	}
 
 	int player = -1;
@@ -4167,7 +4222,7 @@ void item_ToolBeartrap(Item*& item, Entity* usedBy)
 			{
 				if ( entityInsideTile(usedBy, u, v, 0) )   // no floor
 				{
-					return;
+					return nullptr;
 				}
 			}
 		}
@@ -4190,7 +4245,18 @@ void item_ToolBeartrap(Item*& item, Entity* usedBy)
 		entity->skill[15] = item->identified;
 		entity->skill[17] = -1;
 		consumeItem(item, player);
-		return;
+
+		auto& trapProps = monsterTrapIgnoreEntities[entity->getUID()];
+		trapProps.parent = entity->parent;
+		for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+		{
+			Entity* creature = (Entity*)node->element;
+			if ( creature && usedBy->checkFriend(creature) )
+			{
+				trapProps.ignoreEntities.insert(creature->getUID());
+			}
+		}
+		return entity;
 	}
 	else if ( usedBy->behavior == &actPlayer )
 	{
@@ -4199,13 +4265,13 @@ void item_ToolBeartrap(Item*& item, Entity* usedBy)
 
 	if ( player < 0 || player >= MAXPLAYERS )
 	{
-		return;
+		return nullptr;
 	}
 
 	if ( multiplayer == CLIENT )
 	{
 		consumeItem(item, player);
-		return;
+		return nullptr;
 	}
 	bool failed = false;
 	switch ( item->status )
@@ -4242,7 +4308,7 @@ void item_ToolBeartrap(Item*& item, Entity* usedBy)
 			playSoundEntity(players[player]->entity, 76, 64);
 		}
 		consumeItem(item, player);
-		return;
+		return nullptr;
 	}
 	if ( multiplayer != CLIENT && players[player] )
 	{
@@ -4252,7 +4318,7 @@ void item_ToolBeartrap(Item*& item, Entity* usedBy)
 	if ( players[player] == nullptr || players[player]->entity == nullptr )
 	{
 		consumeItem(item, player);
-		return;
+		return nullptr;
 	}
 
 	Entity* entity = newEntity(668, 1, map.entities, nullptr); //Beartrap entity.
@@ -4291,11 +4357,20 @@ void item_ToolBeartrap(Item*& item, Entity* usedBy)
 	entity->skill[17] = players[player]->entity->skill[2];
 	messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(906));
 	consumeItem(item, player);
-	return;
+
+	if ( player >= 0 )
+	{
+		Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BEARTRAP_DEPLOYED, TOOL_BEARTRAP, 1);
+	}
+	return entity;
 }
 
 void item_Food(Item*& item, int player)
 {
+	if ( !item )
+	{
+		return;
+	}
 	int oldcount;
 	int pukeChance;
 
@@ -4360,11 +4435,12 @@ void item_Food(Item*& item, int player)
 		{
 			conductVegetarian = false;
 		}
-		if ( stats[player]->playerRace == RACE_SKELETON && stats[player]->appearance == 0
+		if ( stats[player]->playerRace == RACE_SKELETON && stats[player]->stat_appearance == 0
 			&& players[player] && players[player]->entity->effectPolymorph > NUMMONSTERS )
 		{
 			steamAchievement("BARONY_ACH_MUSCLE_MEMORY");
 		}
+		Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_CONSUMED, item->type, 1);
 	}
 
 	if ( multiplayer == CLIENT )
@@ -4550,7 +4626,7 @@ void item_Food(Item*& item, int player)
 			messagePlayer(player, MESSAGE_WORLD, Language::get(911));
 
 
-			if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+			if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->stat_appearance == 0 )
 			{
 				real_t manaRegenPercent = 0.f;
 				switch ( item->type )
@@ -4608,6 +4684,10 @@ void item_Food(Item*& item, int player)
 
 void item_FoodTin(Item*& item, int player)
 {
+	if ( !item )
+	{
+		return;
+	}
 	int oldcount;
 	int pukeChance;
 	bool slippery = false;
@@ -4665,7 +4745,7 @@ void item_FoodTin(Item*& item, int player)
 	{
 		conductFoodless = false;
 		conductVegetarian = false;
-		if ( stats[player]->playerRace == RACE_SKELETON && stats[player]->appearance == 0
+		if ( stats[player]->playerRace == RACE_SKELETON && stats[player]->stat_appearance == 0
 			&& players[player] && players[player]->entity->effectPolymorph > NUMMONSTERS )
 		{
 			steamAchievement("BARONY_ACH_MUSCLE_MEMORY");
@@ -4674,6 +4754,7 @@ void item_FoodTin(Item*& item, int player)
 		{
 			steamStatisticUpdate(STEAM_STAT_IRON_GUT, STEAM_STAT_INT, 1);
 		}
+		Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_CONSUMED, item->type, 1);
 	}
 
 	if ( multiplayer == CLIENT )
@@ -4811,10 +4892,18 @@ void item_FoodTin(Item*& item, int player)
 	if (svFlags & SV_FLAG_HUNGER)
 	{
 		stats[player]->HUNGER += 600 * foodMult;
-		stats[player]->EFFECTS[EFF_HP_REGEN] = hpBuff;
-		stats[player]->EFFECTS[EFF_MP_REGEN] = mpBuff;
-		stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] = buffDuration;
-		stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN] = buffDuration;
+		if ( hpBuff )
+		{
+			stats[player]->EFFECTS[EFF_HP_REGEN] = hpBuff;
+			stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] = buffDuration;
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TIN_REGEN_HP, FOOD_TIN, 1);
+		}
+		if ( mpBuff )
+		{
+			stats[player]->EFFECTS[EFF_MP_REGEN] = mpBuff;
+			stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN] = buffDuration;
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TIN_REGEN_MP, FOOD_TIN, 1);
+		}
 	}
 	else
 	{
@@ -4822,7 +4911,7 @@ void item_FoodTin(Item*& item, int player)
 		{
 			players[player]->entity->modHP(std::max(1, (int)(5 * foodMult)));
 			messagePlayer(player, MESSAGE_WORLD, Language::get(911));
-			if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+			if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->stat_appearance == 0 )
 			{
 				real_t manaRegenPercent = 0.6 * foodMult;
 				int manaAmount = stats[player]->MAXMP * manaRegenPercent;
@@ -4840,6 +4929,7 @@ void item_FoodTin(Item*& item, int player)
 			if ( players[player]->entity->setEffect(EFF_GREASY, true, TICKS_PER_SECOND * (60 + local_rng.rand() % 60), true) )
 			{
 				messagePlayer(player, MESSAGE_STATUS | MESSAGE_HINT, Language::get(966));
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TIN_GREASY, FOOD_TIN, 1);
 			}
 			else
 			{
@@ -4894,6 +4984,12 @@ void item_AmuletSexChange(Item* item, int player)
 		}
 	}
 
+	if ( multiplayer != CLIENT )
+	{
+		playSoundEntity(players[player]->entity, 33 + local_rng.rand() % 2, 64);
+		playSoundEntity(players[player]->entity, 76, 64);
+	}
+
 	if ( players[player] && players[player]->isLocalPlayer() )
 	{
 		messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1094));
@@ -4904,24 +5000,24 @@ void item_AmuletSexChange(Item* item, int player)
 
 	serverUpdateSexChange(player);
 
-
 	if ( !players[player]->isLocalPlayer() )
 	{
 		return;
 	}
 
+	Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BROKEN, item->type, 1);
 	consumeItem(item, player);
 
 	// find out what creature we are...
 	if ( stats[player]->sex == FEMALE 
 		&& stats[player]->playerRace == RACE_INCUBUS 
-		&& stats[player]->appearance == 0 )
+		&& stats[player]->stat_appearance == 0 )
 	{
 		messagePlayer(player, MESSAGE_HINT, Language::get(4048)); // don't feel like yourself
 	}
 	else if ( stats[player]->sex == MALE 
 		&& stats[player]->playerRace == RACE_SUCCUBUS 
-		&& stats[player]->appearance == 0 )
+		&& stats[player]->stat_appearance == 0 )
 	{
 		messagePlayer(player, MESSAGE_HINT, Language::get(4048)); // don't feel like yourself
 	}
@@ -4970,7 +5066,7 @@ void item_Spellbook(Item*& item, int player)
 			playSoundPlayer(player, 90, 64);
 			return;
 		}
-		else if ( stats[player] && (stats[player]->type == GOBLIN || (stats[player]->playerRace == RACE_GOBLIN && stats[player]->appearance == 0)) )
+		else if ( stats[player] && (stats[player]->type == GOBLIN || (stats[player]->playerRace == RACE_GOBLIN && stats[player]->stat_appearance == 0)) )
 		{
 			messagePlayer(player, MESSAGE_HINT, Language::get(3444));
 			playSoundPlayer(player, 90, 64);
@@ -5278,6 +5374,8 @@ void item_Spellbook(Item*& item, int player)
 
 		if ( learned )
 		{
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_LEARNT, item->type, 1);
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_CAST_DEGRADES, item->type, 1);
 			if ( item->type >= SPELLBOOK_RAT_FORM && item->type <= SPELLBOOK_IMP_FORM )
 			{
 				ItemType originalSpellbook = item->type;
@@ -5299,7 +5397,7 @@ void item_Spellbook(Item*& item, int player)
 				consumeItem(item, player);
 			}
 
-			if ( stats[player] && stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+			if ( stats[player] && stats[player]->playerRace == RACE_INSECTOID && stats[player]->stat_appearance == 0 )
 			{
 				steamStatisticUpdate(STEAM_STAT_BOOKWORM, STEAM_STAT_INT, 1);
 			}
@@ -5424,7 +5522,7 @@ void item_FoodAutomaton(Item*& item, int player)
 			break;
 		case READABLE_BOOK:
 			stats[player]->HUNGER += 400;
-			if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
+			if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->stat_appearance == 0 )
 			{
 				steamStatisticUpdateClient(player, STEAM_STAT_FASCIST, STEAM_STAT_INT, 1);
 			}
@@ -5457,7 +5555,7 @@ void item_FoodAutomaton(Item*& item, int player)
 			stats[player]->HUNGER += 1500;
 			players[player]->entity->modMP(stats[player]->MAXMP);
 			messagePlayerColor(player, MESSAGE_STATUS, color, Language::get(3699)); // superheats
-			if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
+			if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->stat_appearance == 0 )
 			{
 				steamStatisticUpdateClient(player, STEAM_STAT_SPICY, STEAM_STAT_INT, 1);
 			}
@@ -5478,7 +5576,7 @@ void item_FoodAutomaton(Item*& item, int player)
 			break;
 		}
 		case TOOL_METAL_SCRAP:
-			if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
+			if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->stat_appearance == 0 )
 			{
 				achievementObserver.playerAchievements[player].trashCompactor += 1;
 			}
@@ -5495,7 +5593,7 @@ void item_FoodAutomaton(Item*& item, int player)
 			}
 			break;
 		case TOOL_MAGIC_SCRAP:
-			if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
+			if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->stat_appearance == 0 )
 			{
 				achievementObserver.playerAchievements[player].trashCompactor += 1;
 			}
@@ -5516,9 +5614,14 @@ void item_FoodAutomaton(Item*& item, int player)
 			break;
 	}
 
+	if ( item->type == SCROLL_MAIL || item->type == READABLE_BOOK )
+	{
+		Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LORE_BURNT, item->type, 1);
+	}
+
 	if ( itemCategory(item) == SCROLL )
 	{
-		if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
+		if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->stat_appearance == 0 )
 		{
 			steamStatisticUpdateClient(player, STEAM_STAT_FASCIST, STEAM_STAT_INT, 1);
 		}

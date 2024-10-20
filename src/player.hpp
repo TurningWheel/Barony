@@ -997,6 +997,7 @@ public:
 			ItemTooltipDisplay_t();
 		};
 		ItemTooltipDisplay_t itemTooltipDisplay;
+		ItemTooltipDisplay_t compendiumItemTooltipDisplay;
 
 		int DEFAULT_INVENTORY_SIZEX = 12;
 		int DEFAULT_INVENTORY_SIZEY = 3;
@@ -1042,7 +1043,7 @@ public:
 		void updateInventory();
 		void updateCursor();
 		void updateItemContextMenuClickFrame();
-		void updateInventoryItemTooltip();
+		void updateInventoryItemTooltip(Frame* parentFrame = nullptr);
 		void updateSelectedItemAnimation();
 		void updateItemContextMenu();
 		void cycleInventoryTab();
@@ -1655,8 +1656,8 @@ public:
 		void updateEnemyBar(Frame* whichFrame);
 		void updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails);
 		void resetBars();
-		void updateFrameTooltip(Item* item, const int x, const int y, int justify);
-        void finalizeFrameTooltip(Item* item, const int x, const int y, int justify);
+		void updateFrameTooltip(Item* item, const int x, const int y, int justify, Frame* parentFrame = nullptr);
+        void finalizeFrameTooltip(Item* item, const int x, const int y, int justify, Frame* parentFrame = nullptr);
 		void updateStatusEffectTooltip();
 		void updateCursor();
 		void updateActionPrompts();
@@ -2263,6 +2264,43 @@ public:
 		static real_t compactBigScale;
 		static real_t compact2pVerticalBigScale;
 	} minimap;
+
+	class CompendiumProgress_t
+	{
+		Player& player;
+	public:
+		std::map<std::string, std::map<int, Sint32>> itemEvents;
+		std::map<int, std::map<std::string, std::map<int, Sint32>>> floorEvents;
+		real_t playerDistAccum = 0.0;
+		Uint32 playerSneakTime = 0;
+		Uint32 playerAliveTimeMoving = 0;
+		Uint32 playerAliveTimeStopped = 0;
+		Uint32 playerAliveTimeTotal = 0;
+		Uint32 playerGameTimeTotal = 0;
+		std::map<int, Uint32> playerEquipSlotTime;
+		std::map<int, Uint32> allyTimeSpent;
+		CompendiumProgress_t(Player& p) : player(p)
+		{};
+		~CompendiumProgress_t() {};
+		void updateFloorEvents();
+	} compendiumProgress;
+
+	class PlayerMechanics_t
+	{
+		Player& player;
+	public:
+		std::map<int, int> itemDegradeRng;
+		bool itemDegradeRoll(Item* item, int* checkInterval = nullptr);
+		void onItemDegrade(Item* item);
+		int sustainedSpellMPUsed = 0;
+		bool sustainedSpellLevelChance();
+		void sustainedSpellIncrementMP(int mpChange);
+		std::map<Uint32, int> enemyRaisedBlockingAgainst;
+		bool allowedRaiseBlockingAgainstEntity(Entity& attacker);
+		PlayerMechanics_t(Player& p) : player(p)
+		{};
+		~PlayerMechanics_t() {};
+	} mechanics;
 
 	static void soundMovement();
 	static void soundActivate();

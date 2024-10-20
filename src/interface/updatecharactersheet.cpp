@@ -58,7 +58,7 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 				{
 					real_t variance = 20;
 					real_t baseSkillModifier = 50.0; // 40-60 base
-					Entity::setMeleeDamageSkillModifiers(players[player]->entity, stats[player], PRO_UNARMED, baseSkillModifier, variance);
+					Entity::setMeleeDamageSkillModifiers(players[player]->entity, stats[player], PRO_UNARMED, baseSkillModifier, variance, nullptr);
 					real_t skillModifierMin = baseSkillModifier - (variance / 2) + (stats[player]->getModifiedProficiency(PRO_UNARMED) / 2.0);
 					real_t skillModifierMax = skillModifierMin + variance;
 					skillModifierMin /= 100.0;
@@ -100,7 +100,7 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 						{
 							real_t variance = 20;
 							real_t baseSkillModifier = 50.0; // 40-60 base
-							Entity::setMeleeDamageSkillModifiers(players[player]->entity, stats[player], weaponskill, baseSkillModifier, variance);
+							Entity::setMeleeDamageSkillModifiers(players[player]->entity, stats[player], weaponskill, baseSkillModifier, variance, nullptr);
 							real_t skillModifierMin = baseSkillModifier - (variance / 2) + (stats[player]->getModifiedProficiency(weaponskill) / 2.0);
 							real_t skillModifierMax = skillModifierMin + variance;
 							skillModifierMin /= 100.0;
@@ -133,7 +133,7 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 						{
 							real_t variance = 20;
 							real_t baseSkillModifier = 50.0; // 40-60 base
-							Entity::setMeleeDamageSkillModifiers(players[player]->entity, stats[player], weaponskill, baseSkillModifier, variance);
+							Entity::setMeleeDamageSkillModifiers(players[player]->entity, stats[player], weaponskill, baseSkillModifier, variance, nullptr);
 							real_t skillModifierMin = baseSkillModifier - (variance / 2) + (stats[player]->getModifiedProficiency(weaponskill) / 2.0);
 							real_t skillModifierMax = skillModifierMin + variance;
 							skillModifierMin /= 100.0;
@@ -236,7 +236,7 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 					{
 						real_t variance = 20;
 						real_t baseSkillModifier = 50.0; // 40-60 base
-						Entity::setMeleeDamageSkillModifiers(players[player]->entity, stats[player], weaponskill, baseSkillModifier, variance);
+						Entity::setMeleeDamageSkillModifiers(players[player]->entity, stats[player], weaponskill, baseSkillModifier, variance, nullptr);
 						real_t skillModifierMin = baseSkillModifier - (variance / 2) + (stats[player]->getModifiedProficiency(weaponskill) / 2.0);
 						real_t skillModifierMax = skillModifierMin + variance;
 						skillModifierMin /= 100.0;

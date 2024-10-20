@@ -773,8 +773,6 @@ void SteamServerClientWrapper::OnGetNumberOfCurrentPlayers(NumberOfCurrentPlayer
 /* ***** END UTTER BODGE ***** */
 
 
-
-
 /*-------------------------------------------------------------------------------
 
 	achievementUnlocked
@@ -787,7 +785,12 @@ void SteamServerClientWrapper::OnGetNumberOfCurrentPlayers(NumberOfCurrentPlayer
 bool achievementUnlocked(const char* achName)
 {
 	// check internal achievement record
-	return (achievementUnlockedLookup.find(achName) != achievementUnlockedLookup.end());
+	auto find = Compendium_t::achievements.find(achName);
+	if ( find == Compendium_t::achievements.end() )
+	{
+		return false;
+	}
+	return find->second.unlocked;
 }
 
 /*-------------------------------------------------------------------------------
@@ -801,7 +804,11 @@ bool achievementUnlocked(const char* achName)
 void steamAchievement(const char* achName)
 {
 #ifdef DEBUG_ACHIEVEMENTS
-	messagePlayer(clientnum, MESSAGE_DEBUG, "%s", achName);
+	static ConsoleVariable<bool> cvar_achievements_debug("/achievements_debug", false);
+	if ( *cvar_achievements_debug )
+	{
+		messagePlayer(clientnum, MESSAGE_DEBUG, "%s", achName);
+	}
 #endif
 
 	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
@@ -840,7 +847,6 @@ void steamAchievement(const char* achName)
 	{
 		conductGameChallenges[CONDUCT_BOOTS_SPEED] = 1; // to cover bases when lich or devil dies as we can't remotely update this for clients.
 	}
-	//messagePlayer(clientnum, "%s", achName);
 
 	if ( !achievementUnlocked(achName) )
 	{
@@ -858,9 +864,27 @@ void steamAchievement(const char* achName)
 #endif
 
 #endif
-		achievementUnlockedLookup.insert(std::string(achName));
-		achievementUnlockTime[achName] = getTime();
-		achievementsNeedResort = true;
+		auto find = Compendium_t::achievements.find(achName);
+		if ( find != Compendium_t::achievements.end() )
+		{
+			find->second.unlocked = true;
+			find->second.unlockTime = getTime();
+			auto& unlockStatus = Compendium_t::AchievementData_t::unlocks[find->second.category];
+			if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+			{
+				unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+			}
+			else if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_VISITED )
+			{
+				unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+			}
+			else if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::UNLOCKED_VISITED )
+			{
+				unlockStatus = Compendium_t::CompendiumUnlockStatus::UNLOCKED_UNVISITED;
+			}
+			Compendium_t::AchievementData_t::achievementUnlockedLookup.insert(achName);
+			Compendium_t::AchievementData_t::achievementsNeedResort = true;
+		}
 	}
 }
 
@@ -940,7 +964,9 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 			|| conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS] )
 		{
+#ifndef DEBUG_ACHIEVEMENTS
 			return;
+#endif
 		}
 	}
 	else
@@ -1012,8 +1038,18 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 				case STEAM_STAT_FASCIST:
 				case STEAM_STAT_I_NEEDED_THAT:
 				case STEAM_STAT_DUNGEONSEED:
+				case STEAM_STAT_RUNG_OUT:
 					g_SteamStats[statisticNum].m_iValue =
 						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
+					break;
+				case STEAM_STAT_PITCH_PERFECT:
+					indicateProgress = false;
+					g_SteamStats[statisticNum].m_iValue =
+						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
+					if ( g_SteamStats[statisticNum].m_iValue == steamStatAchStringsAndMaxVals[statisticNum].second )
+					{
+						indicateProgress = true;
+					}
 					break;
 				case STEAM_STAT_ALTER_EGO:
 					indicateProgress = false;
@@ -1058,6 +1094,7 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 					}
 					break;
 				case STEAM_STAT_SUPER_SHREDDER:
+				case STEAM_STAT_SMASH_MELEE:
 					indicateProgress = false;
 					g_SteamStats[statisticNum].m_iValue =
 						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
@@ -1204,6 +1241,14 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 	{
 		steamIndicateStatisticProgress(statisticNum, type);
 	}
+#ifdef DEBUG_ACHIEVEMENTS
+	static ConsoleVariable<bool> cvar_statistics_debug("/statistics_debug", false);
+	if ( *cvar_statistics_debug )
+	{
+		messagePlayer(clientnum, MESSAGE_DEBUG, "%s: %d, %d", steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
+			g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
+	}
+#endif
 }
 
 void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes type, int value)
@@ -1217,7 +1262,9 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 			|| conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS] )
 		{
+#ifndef DEBUG_ACHIEVEMENTS
 			return;
+#endif
 		}
 	}
 	else
@@ -1346,6 +1393,7 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 			case STEAM_STAT_MONARCH:
 			case STEAM_STAT_RAGE_AGAINST:
 			case STEAM_STAT_GUERILLA_RADIO:
+			case STEAM_STAT_RUNG_OUT:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
 					if ( iVal == 1 || (iVal > 0 && iVal % 4 == 0) )
@@ -1368,6 +1416,8 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 			case STEAM_STAT_TRASH_COMPACTOR:
 			case STEAM_STAT_TORCHERER:
 			case STEAM_STAT_FIXER_UPPER:
+			case STEAM_STAT_SMASH_MELEE:
+			case STEAM_STAT_PITCH_PERFECT:
 			// below are 1000 max value
 			case STEAM_STAT_SUPER_SHREDDER:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
@@ -1431,8 +1481,12 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 				break;
 		}
 #ifdef DEBUG_ACHIEVEMENTS
-		messagePlayer(clientnum, MESSAGE_DEBUG, "%s: %d, %d", steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
-			iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+		static ConsoleVariable<bool> cvar_statistics_indicate_debug("/statistics_indicate_debug", false);
+		if ( *cvar_statistics_indicate_debug )
+		{
+			messagePlayer(clientnum, MESSAGE_DEBUG, "%s: %d, %d", steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
+				iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+		}
 #endif
 	}
 #endif // !STEAMWORKS

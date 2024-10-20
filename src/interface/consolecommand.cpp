@@ -608,8 +608,42 @@ namespace ConsoleCommands {
 			name.append(" ");
 			name.append(argv[arg]);
 		}
-		dropItem(newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook(name.c_str()), true, &stats[clientnum]->inventory), 0);
-		});
+
+		int i = 0;
+		for ( i = 0; i < numbooks; ++i )
+		{
+			if ( strcmp(getBookDefaultNameFromIndex(i).c_str(), name.c_str()) == 0 )
+			{
+				dropItem(newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook(getBookDefaultNameFromIndex(i)), true, &stats[clientnum]->inventory), 0);
+				break;
+			}
+		}
+
+		if ( i == numbooks )
+		{
+			for ( i = 0; i < numbooks; ++i )
+			{
+				if ( strstr(getBookDefaultNameFromIndex(i).c_str(), name.c_str()) )
+				{
+					dropItem(newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook(getBookDefaultNameFromIndex(i)), true, &stats[clientnum]->inventory), 0);
+					break;
+				}
+			}
+		}
+	});
+
+	static ConsoleCommand ccmd_spawnallbooks("/spawnallbooks", "spawn all readable books (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		for ( int i = 0; i < numbooks; ++i )
+		{
+			dropItem(newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook(getBookDefaultNameFromIndex(i)), true, &stats[clientnum]->inventory), 0);
+		}
+	});
 
 	static ConsoleCommand ccmd_savemap("/savemap", "save the current level to disk", []CCMD{
 		if (argc > 1)
@@ -633,6 +667,8 @@ namespace ConsoleCommands {
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, Language::get(285));
 			loadnextlevel = true;
+			Compendium_t::Events_t::previousCurrentLevel = currentlevel;
+			Compendium_t::Events_t::previousSecretlevel = secretlevel;
 		}
 		});
 
@@ -1381,6 +1417,34 @@ namespace ConsoleCommands {
 		}
 		});
 
+	static ConsoleCommand ccmd_cleanfloor("/cleanfloor", "remove floor items (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		if ( multiplayer == CLIENT )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(284));
+		}
+		else
+		{
+			int c = 0;
+			node_t* node,* nextnode;
+			for ( node = map.entities->first; node != NULL; node = nextnode )
+			{
+				nextnode = node->next;
+				Entity* entity = (Entity*)node->element;
+				if ( entity->behavior == &actItem )
+				{
+					list_RemoveNode(entity->mynode);
+					c++;
+				}
+			}
+			messagePlayer(clientnum, MESSAGE_MISC, "Cleared %d items", c);
+		}
+	});
+
 	static void suicide(int player) {
 		if (player < 0 || player >= MAXPLAYERS) {
 			return;
@@ -1910,7 +1974,7 @@ namespace ConsoleCommands {
 			if (i > 0)
 			{
 				stats[i]->sex = static_cast<sex_t>(local_rng.rand() % 2);
-				stats[i]->appearance = local_rng.rand() % 18;
+				stats[i]->stat_appearance = local_rng.rand() % 18;
 				stats[i]->clearStats();
 				client_classes[i] = local_rng.rand() % (CLASS_MONK + 1);//NUMCLASSES;
 				stats[i]->playerRace = RACE_HUMAN;
@@ -1961,7 +2025,7 @@ namespace ConsoleCommands {
 								client_classes[i] = local_rng.rand() % (NUMCLASSES);
 							}
 						}
-						stats[i]->appearance = local_rng.rand() % 18;
+						stats[i]->stat_appearance = local_rng.rand() % 18;
 					}
 					else
 					{
@@ -1970,13 +2034,13 @@ namespace ConsoleCommands {
 						{
 							client_classes[i] = CLASS_MONK + stats[i]->playerRace; // monster specific classes.
 						}
-						stats[i]->appearance = 0;
+						stats[i]->stat_appearance = 0;
 					}
 				}
 				else
 				{
 					stats[i]->playerRace = RACE_HUMAN;
-					stats[i]->appearance = local_rng.rand() % 18;
+					stats[i]->stat_appearance = local_rng.rand() % 18;
 				}
 				strcpy(stats[i]->name, randomPlayerNamesFemale[local_rng.rand() % randomPlayerNamesFemale.size()].c_str());
 				bool oldIntro = intro;
@@ -2203,17 +2267,19 @@ namespace ConsoleCommands {
 			else
 			{
 				playSoundEntity(players[player]->entity, 242 + local_rng.rand() % 4, 64);
-				auto entity = newEntity(130, 0, map.entities, nullptr); // 130 = goldbag model
+				auto entity = newEntity(amount < 5 ? 1379 : 130, 0, map.entities, nullptr); // 130 = goldbag model
+				entity->goldAmount = amount; // amount
 				entity->sizex = 4;
 				entity->sizey = 4;
 				entity->x = players[player]->entity->x;
 				entity->y = players[player]->entity->y;
-				entity->z = 6;
+				entity->z = 0;
+				entity->vel_z = (-40 - local_rng.rand() % 5) * .01;
+				entity->goldBouncing = 0;
 				entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 				entity->flags[PASSABLE] = true;
 				entity->flags[UPDATENEEDED] = true;
 				entity->behavior = &actGoldBag;
-				entity->goldAmount = amount; // amount
 			}
 			messagePlayer(player, MESSAGE_INVENTORY, Language::get(2594), amount);
 		}
@@ -2315,6 +2381,42 @@ namespace ConsoleCommands {
 		messagePlayer(clientnum, MESSAGE_MISC, Language::get(412));
 
 		mapLevel(clientnum);
+		});
+
+	static ConsoleCommand ccmd_maplevel2("/maplevel2", "magic mapping for the level (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
+			return;
+		}
+
+		messagePlayer(clientnum, MESSAGE_MISC, Language::get(412));
+
+		mapLevel2(clientnum);
+		});
+
+	static ConsoleCommand ccmd_maplevel3("/maplevel3", "magic mapping for the level (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
+			return;
+		}
+
+		if ( Player::getPlayerInteractEntity(clientnum) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(412));
+			shrineDaedalusRevealMap(*Player::getPlayerInteractEntity(clientnum));
+		}
 		});
 
 	static ConsoleCommand ccmd_drunky("/drunky", "make me drunk (cheat)", []CCMD{
@@ -2616,6 +2718,7 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
+		Compendium_t::Events_t::previousSecretlevel = secretlevel;
 		secretlevel = (secretlevel == false);
 		});
 
@@ -2642,7 +2745,12 @@ namespace ConsoleCommands {
 		}
 		else
 		{
-			players[clientnum]->entity->setEffect(effect, true, 500, true);
+			int duration = 500;
+			if ( argc >= 3 )
+			{
+				duration = atoi(argv[2]);
+			}
+			players[clientnum]->entity->setEffect(effect, true, duration, true);
 		}
 		});
 
@@ -3854,10 +3962,10 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
-		++stats[clientnum]->appearance;
-		if (stats[clientnum]->appearance >= NUMAPPEARANCES)
+		++stats[clientnum]->stat_appearance;
+		if (stats[clientnum]->stat_appearance >= NUMAPPEARANCES)
 		{
-			stats[clientnum]->appearance = 0;
+			stats[clientnum]->stat_appearance = 0;
 		}
 		});
 
@@ -4151,7 +4259,8 @@ namespace ConsoleCommands {
 				COCKATRICE,
 				INSECTOID,
 				GOATMAN,
-				AUTOMATON
+				AUTOMATON,
+				BUGBEAR
 			};
 			std::vector<Monster>* set = nullptr;
 			if (setToChoose == 1)
@@ -4187,6 +4296,24 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_loadmonsterdata("/loadmonsterdata", "", []CCMD{
 		MonsterData_t::loadMonsterDataJSON();
 		});
+
+	static ConsoleCommand ccmd_itemlevelcurve("/itemlevelcurve", "generate item level curve drop", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		if ( argc < 2 )
+		{
+			return;
+		}
+
+		int cat = atoi(argv[1]);
+		cat = std::min(std::max(0, cat), NUMCATEGORIES - 1);
+		ItemType type = itemLevelCurve((Category)cat, 0, currentlevel, local_rng);
+		dropItem(newItem(type, EXCELLENT, 0, 1, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
+	});
 
 	static ConsoleCommand ccmd_spawnitem2("/spawnitem2", "spawn an item with beatitude and status (/spawnitem -2 5 wooden shield) (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
@@ -4845,6 +4972,35 @@ namespace ConsoleCommands {
 		}
 	});
 
+	static ConsoleCommand ccmd_reloadcompendiumlimbs("/reloadcompendiumlimbs", "reloads compendium entries", []CCMD{
+			CompendiumEntries.compendiumObjectLimbs.clear();
+			CompendiumEntries.readModelLimbsFromFile("monster");
+			CompendiumEntries.readModelLimbsFromFile("world");
+			CompendiumEntries.readModelLimbsFromFile("codex");
+		});
+
+	static ConsoleCommand ccmd_reloadcompendiummonsters("/reloadcompendiummonsters", "reloads compendium entries", []CCMD{
+		CompendiumEntries.readMonstersFromFile();
+		});
+
+	static ConsoleCommand ccmd_reloadcompendiumworld("/reloadcompendiumworld", "reloads compendium entries", []CCMD{
+		CompendiumEntries.readWorldFromFile();
+		});
+
+	static ConsoleCommand ccmd_reloadcompendiumcodex("/reloadcompendiumcodex", "reloads compendium entries", []CCMD{
+		CompendiumEntries.readCodexFromFile();
+		});
+
+	static ConsoleCommand ccmd_reloadcompendiumitems("/reloadcompendiumitems", "reloads compendium entries", []CCMD{
+		CompendiumEntries.readItemsFromFile();
+		CompendiumEntries.readMagicFromFile();
+		});
+
+	static ConsoleCommand ccmd_reloadcompendiumevents("/reloadcompendiumevents", "reloads compendium entries", []CCMD{
+		Compendium_t::Events_t::readEventsFromFile();
+		Compendium_t::Events_t::readEventsTranslations();
+		});
+
 	static ConsoleCommand ccmd_mapdebugfixedmonsters("/mapdebugfixedmonsters", "prints fixed monster spawns", []CCMD{
 	#ifndef NINTENDO
 		if ( !(svFlags & SV_FLAG_CHEATS) )
@@ -4873,6 +5029,14 @@ namespace ConsoleCommands {
 				{
 					if ( Entity* entity = (Entity*)node->element )
 					{
+						/*if ( entity->sprite == 119 || entity->sprite == 179 || entity->sprite == 127 )
+						{
+							if ( map.tiles && map.tiles[1 + ((int)entity->y / 16) * MAPLAYERS + ((int)entity->x / 16) * MAPLAYERS * map.height] )
+							{
+								printlog("Map [%s] ceiling collider: %d sprite", f.c_str(), entity->sprite);
+							}
+						}*/
+
 						Monster monsterType = NOTHING;
 						switch ( entity->sprite ) {
 						case 27: monsterType = HUMAN; break;
@@ -4908,6 +5072,8 @@ namespace ConsoleCommands {
 						case 164: monsterType = SPELLBOT; break;
 						case 165: monsterType = DUMMYBOT; break;
 						case 166: monsterType = GYROBOT; break;
+						case 188: monsterType = BAT_SMALL; break;
+						case 189: monsterType = BUGBEAR; break;
 						default:
 							break;
 						}

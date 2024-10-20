@@ -23,6 +23,8 @@
 #include "../interface/ui.hpp"
 #include "../eos.hpp"
 #include "../colors.hpp"
+#include "../book.hpp"
+#include "../scrolls.hpp"
 
 #include <cassert>
 #include <functional>
@@ -121,6 +123,7 @@ namespace MainMenu {
                 {"Cycle NPCs", "E", "DpadY-", emptyBinding},
                 {"Open Map", "M", hiddenBinding, emptyBinding},
                 {"Open Log", "L", hiddenBinding, emptyBinding},
+				{"Compendium", "P", hiddenBinding, emptyBinding},
                 {"Toggle Minimap", "`", "ButtonRightStick", emptyBinding},
 #ifdef NINTENDO
                 {"Hotbar Left", "MouseWheelUp", "ButtonY", emptyBinding},
@@ -185,6 +188,7 @@ namespace MainMenu {
                 {"Cycle NPCs", "E", "DpadY-", emptyBinding},
                 {"Open Map", "M", hiddenBinding, emptyBinding},
                 {"Open Log", "L", hiddenBinding, emptyBinding},
+				{"Compendium", "P", hiddenBinding, emptyBinding},
                 {"Toggle Minimap", "`", "ButtonRightStick", emptyBinding},
 #ifdef NINTENDO
                 {"Hotbar Left", "MouseWheelUp", "ButtonY", emptyBinding},
@@ -251,6 +255,7 @@ namespace MainMenu {
 #endif
                 {"Open Map", "M", hiddenBinding, emptyBinding},
                 {"Open Log", "L", hiddenBinding, emptyBinding},
+				{"Compendium", "P", hiddenBinding, emptyBinding},
                 {"Toggle Minimap", "`", "ButtonRightStick", emptyBinding},
                 {"Hotbar Left", "MouseWheelUp", "DpadX-", emptyBinding},
                 {"Hotbar Right", "MouseWheelDown", "DpadX+", emptyBinding},
@@ -305,6 +310,7 @@ namespace MainMenu {
                 {"Cycle NPCs", "E", emptyBinding, emptyBinding},
                 {"Open Map", "M", hiddenBinding, emptyBinding},
                 {"Open Log", "L", hiddenBinding, emptyBinding},
+				{"Compendium", "P", hiddenBinding, emptyBinding},
                 {"Toggle Minimap", "`", emptyBinding, emptyBinding},
 #ifdef NINTENDO
                 {"Hotbar Left", "MouseWheelUp", "ButtonLeftBumper", emptyBinding},
@@ -1903,16 +1909,16 @@ namespace MainMenu {
 #endif
 	}
 
-    static void disconnectPrompt(const char* text) {
-        errorPrompt(
-            text,
-            "Okay",
-            [](Button& button){
-                soundCancel();
-                beginFade(FadeDestination::RootMainMenu);
-                closeMono();
-            }
-        );
+    static void disconnectPromptFromServer(const char* text, FadeDestination dest) {
+		errorPrompt(
+			text,
+			"Okay",
+			[](Button& button){
+				soundCancel();
+				beginFade(MainMenu::FadeDestination::RootMainMenuNoEndGame);
+				closeMono();
+			}
+		);
     }
 
     static void openDLCPrompt(int which) {
@@ -4648,12 +4654,20 @@ namespace MainMenu {
 		{
 			return Language::get(6044);
 		}
+		else if ( !strcmp(binding, "Compendium") )
+		{
+			return Language::get(6251);
+		}
 
         for (auto& b : defaultBindings[0].bindings) {
             if (b.action == binding) {
                 break;
             }
 			if ( b.action == "Call Out" )
+			{
+				continue; // don't increment c, not in the linear language entries
+			}
+			else if ( b.action == "Compendium" )
 			{
 				continue; // don't increment c, not in the linear language entries
 			}
@@ -8712,6 +8726,7 @@ bind_failed:
 						else 
 						{
 							cause_of_death = score->stats->killer_name;
+							cause_of_death[0] = (char)toupper((int)cause_of_death[0]);
 						}
 						break;
 					}
@@ -8724,6 +8739,9 @@ bind_failed:
 					}
 					case KilledBy::FAILED_CHALLENGE:
 						cause_of_death = Language::get(6153);
+						break;
+					case KilledBy::BELL:
+						cause_of_death = Language::get(6278);
 						break;
 					default: 
 					{
@@ -9813,7 +9831,7 @@ bind_failed:
 	static void createSimpleAchievementsWindow() {
 		soundActivate();
 
-		if ( achievementsNeedResort )
+		if ( Compendium_t::AchievementData_t::achievementsNeedResort )
 		{
 			sortAchievementsForDisplay();
 		}
@@ -9845,16 +9863,16 @@ bind_failed:
 		int y = 0;
 
 		// count all the different types of achievements
-		const int num_achievements = (int)achievementNames.size();
+		const int num_achievements = (int)Compendium_t::achievements.size();
 		int num_unlocked = 0;
 		int num_locked = 0;
 		int num_hidden = 0;
-		for (auto& item : achievementNames) {
+		for (auto& item : Compendium_t::achievements ) {
 			if (achievementUnlocked(item.first.c_str())) {
 				++num_unlocked;
 			} else {
 				++num_locked;
-				if (achievementHidden.find(item.first.c_str()) != achievementHidden.end()) {
+				if (item.second.hidden) {
 					++num_hidden;
 				}
 			}
@@ -9900,14 +9918,11 @@ bind_failed:
 			const char* achName = nullptr;
 			const char* achDesc = nullptr;
 			if (name) {
-				auto achNameFind = achievementNames.find(name);
-				if (achNameFind != achievementNames.end()) {
-					achName = achNameFind->second.c_str();
-				}
-
-				auto achDescFind = achievementDesc.find(name);
-				if (achDescFind != achievementDesc.end()) {
-					achDesc = achDescFind->second.c_str();
+				auto achData = Compendium_t::achievements.find(name);
+				if ( achData != Compendium_t::achievements.end() )
+				{
+					achName = achData->second.name.c_str();
+					achDesc = achData->second.desc.c_str();
 				}
 			}
 
@@ -9987,10 +10002,10 @@ bind_failed:
 			} else {
 				// unlock time
 				assert(name);
-				auto it = achievementUnlockTime.find(name);
-				if (it != achievementUnlockTime.end()) {
+				auto it = Compendium_t::achievements.find(name);
+				if (it != Compendium_t::achievements.end() && it->second.unlocked) {
 					char buffer[64];
-					time_t t = (time_t)it->second;
+					time_t t = (time_t)it->second.unlockTime;
 
 					char tbuf[64];
 					getTimeAndDateFormatted(t, tbuf, sizeof(tbuf));
@@ -10026,7 +10041,7 @@ bind_failed:
 		// list unlocked achievements
 		if (num_unlocked > 0) {
 			y += settingsAddSubHeader(*subwindow, y, "unlocked", Language::get(5326), true);
-			for (auto& item : achievementNamesSorted) {
+			for (auto& item : Compendium_t::AchievementData_t::achievementNamesSorted) {
 				if (!achievementUnlocked(item.first.c_str())) {
 					continue;
 				}
@@ -10047,18 +10062,19 @@ bind_failed:
 		// list locked achievements
 		if (num_locked > 0) {
 			y += settingsAddSubHeader(*subwindow, y, "locked", Language::get(5327), true);
-			for (auto& item : achievementNamesSorted) {
+			for (auto& item : Compendium_t::AchievementData_t::achievementNamesSorted) {
+
+				auto& achData = Compendium_t::achievements[item.first];
 				if (achievementUnlocked(item.first.c_str())) {
 					continue;
 				}
-				if (achievementHidden.find(item.first.c_str()) != achievementHidden.end()) {
+				if ( achData.hidden ) {
 					continue;
 				}
 
 				int statCur = 0;
-				auto progIt = achievementProgress.find(item.first);
-				if (progIt != achievementProgress.end()) {
-					statCur = g_SteamStats[progIt->second].m_iValue;
+				if ( achData.achievementProgress >= 0 ) {
+					statCur = g_SteamStats[achData.achievementProgress].m_iValue;
 				}
 
 				int statMax = 0;
@@ -10089,6 +10105,7 @@ bind_failed:
 
 	static void archivesDungeonCompendium(Button& button) {
 		soundActivate();
+		openCompendium();
 	}
 
 	static void archivesAchievements(Button& button) {
@@ -10700,7 +10717,7 @@ bind_failed:
 				{
 					if ( directConnect )
 					{
-						LastCreatedCharacterSettings.characterAppearance[LastCreatedCharacter::LASTCHAR_LAN_PERSONA_INDEX] = stats[clientnum]->appearance;
+						LastCreatedCharacterSettings.characterAppearance[LastCreatedCharacter::LASTCHAR_LAN_PERSONA_INDEX] = stats[clientnum]->stat_appearance;
 						LastCreatedCharacterSettings.characterSex[LastCreatedCharacter::LASTCHAR_LAN_PERSONA_INDEX] = stats[clientnum]->sex;
 						LastCreatedCharacterSettings.characterRace[LastCreatedCharacter::LASTCHAR_LAN_PERSONA_INDEX] = stats[clientnum]->playerRace;
 						LastCreatedCharacterSettings.characterClass[LastCreatedCharacter::LASTCHAR_LAN_PERSONA_INDEX] = client_classes[clientnum];
@@ -10708,7 +10725,7 @@ bind_failed:
 					}
 					else
 					{
-						LastCreatedCharacterSettings.characterAppearance[LastCreatedCharacter::LASTCHAR_ONLINE_PERSONA_INDEX] = stats[clientnum]->appearance;
+						LastCreatedCharacterSettings.characterAppearance[LastCreatedCharacter::LASTCHAR_ONLINE_PERSONA_INDEX] = stats[clientnum]->stat_appearance;
 						LastCreatedCharacterSettings.characterSex[LastCreatedCharacter::LASTCHAR_ONLINE_PERSONA_INDEX] = stats[clientnum]->sex;
 						LastCreatedCharacterSettings.characterRace[LastCreatedCharacter::LASTCHAR_ONLINE_PERSONA_INDEX] = stats[clientnum]->playerRace;
 						LastCreatedCharacterSettings.characterClass[LastCreatedCharacter::LASTCHAR_ONLINE_PERSONA_INDEX] = client_classes[clientnum];
@@ -10718,7 +10735,7 @@ bind_failed:
 			}
 			else
 			{
-				LastCreatedCharacterSettings.characterAppearance[index] = stats[index]->appearance;
+				LastCreatedCharacterSettings.characterAppearance[index] = stats[index]->stat_appearance;
 				LastCreatedCharacterSettings.characterSex[index] = stats[index]->sex;
 				LastCreatedCharacterSettings.characterRace[index] = stats[index]->playerRace;
 				LastCreatedCharacterSettings.characterClass[index] = client_classes[index];
@@ -10746,7 +10763,7 @@ bind_failed:
             SDLNet_Write32((Uint32)client_classes[player], &net_packet->data[37]);
             SDLNet_Write32((Uint32)stats[player]->sex, &net_packet->data[41]);
             Uint32 raceAndAppearance =
-                ((stats[player]->appearance & 0xff) << 8) |
+                ((stats[player]->stat_appearance & 0xff) << 8) |
                 (stats[player]->playerRace & 0xff);
             SDLNet_Write32(raceAndAppearance, &net_packet->data[45]);
 
@@ -11019,6 +11036,12 @@ bind_failed:
 	        return;
 	    }
 
+		std::string msgStr = msg;
+		int numCharsAdded = 0;
+		msgStr = messageSanitizePercentSign(msgStr, &numCharsAdded);
+		msg = msgStr.c_str();
+		len += numCharsAdded;
+
 		memcpy((char*)net_packet->data, "CMSG", 4);
 		SDLNet_Write32(color, &net_packet->data[4]);
 		stringCopy((char*)net_packet->data + 8, msg, 256, len);
@@ -11175,7 +11198,7 @@ bind_failed:
 	        client_classes[player] = (int)SDLNet_Read32(&net_packet->data[37]);
 	        stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[41]));
 	        Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[45]);
-	        stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
+	        stats[player]->stat_appearance = (raceAndAppearance & 0xFF00) >> 8;
 	        stats[player]->playerRace = (raceAndAppearance & 0xFF);
 
 			if (!loadingsavegame) {
@@ -11538,7 +11561,7 @@ bind_failed:
 		    client_disconnected[player] = false;
 		    client_classes[player] = net_packet->data[5];
 		    stats[player]->sex = static_cast<sex_t>(net_packet->data[6]);
-		    stats[player]->appearance = net_packet->data[7];
+		    stats[player]->stat_appearance = net_packet->data[7];
 		    stats[player]->playerRace = net_packet->data[8];
 		    stringCopy(stats[player]->name, (char*)(&net_packet->data[9]), sizeof(Stat::name), 32);
 
@@ -11578,7 +11601,7 @@ bind_failed:
                 client_classes[player] = (int)SDLNet_Read32(&net_packet->data[37]);
                 stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[41]));
                 Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[45]);
-                stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
+                stats[player]->stat_appearance = (raceAndAppearance & 0xFF00) >> 8;
                 stats[player]->playerRace = (raceAndAppearance & 0xFF);
 				if (!loadingsavegame) {
 					initClass(player);
@@ -11707,7 +11730,7 @@ bind_failed:
 						stats[clientnum]->playerRace = gameModeManager.currentSession.challengeRun.race;
 						if ( stats[clientnum]->playerRace != RACE_HUMAN )
 						{
-							stats[clientnum]->appearance = 0;
+							stats[clientnum]->stat_appearance = 0;
 						}
 						if ( stats[clientnum]->playerRace == RACE_INCUBUS )
 						{
@@ -11911,7 +11934,7 @@ bind_failed:
 					printlog("connected to server.\n");
 					client_disconnected[clientnum] = false;
 					if (!loadingsavegame) {
-						stats[clientnum]->appearance = stats[0]->appearance;
+						stats[clientnum]->stat_appearance = stats[0]->stat_appearance;
 					}
 
 					// now set up everybody else
@@ -11925,7 +11948,7 @@ bind_failed:
 						playerSlotsLocked[c] = net_packet->data[8 + c * chunk_size + 1]; // locked state
 						client_classes[c] = net_packet->data[8 + c * chunk_size + 2]; // class
 						stats[c]->sex = static_cast<sex_t>(net_packet->data[8 + c * chunk_size + 3]); // sex
-						stats[c]->appearance = net_packet->data[8 + c * chunk_size + 4]; // appearance
+						stats[c]->stat_appearance = net_packet->data[8 + c * chunk_size + 4]; // appearance
 						stats[c]->playerRace = net_packet->data[8 + c * chunk_size + 5]; // player race
 						stringCopy(stats[c]->name, (char*)(net_packet->data + 8 + c * chunk_size + 6), sizeof(Stat::name), 32); // name
 
@@ -12192,7 +12215,7 @@ bind_failed:
 	    stringCopy((char*)net_packet->data + 4, stats[index]->name, 32, sizeof(Stat::name));
 	    SDLNet_Write32((Uint32)client_classes[index], &net_packet->data[36]);
 	    SDLNet_Write32((Uint32)stats[index]->sex, &net_packet->data[40]);
-	    Uint32 appearanceAndRace = ((Uint8)stats[index]->appearance << 8); // store in bits 8 - 15
+	    Uint32 appearanceAndRace = ((Uint8)stats[index]->stat_appearance << 8); // store in bits 8 - 15
 	    appearanceAndRace |= (Uint8)stats[index]->playerRace; // store in bits 0 - 7
 	    SDLNet_Write32(appearanceAndRace, &net_packet->data[44]);
 	    stringCopy((char*)net_packet->data + 48, VERSION, 8, sizeof(VERSION));
@@ -13069,12 +13092,12 @@ failed:
 	void RaceDescriptions::update_details_text(Frame& card, void* stats) {
 		
 		Monster race = HUMAN;
-		if ( static_cast<Stat*>(stats)->appearance == 0 && static_cast<Stat*>(stats)->playerRace != RACE_HUMAN )
+		if ( static_cast<Stat*>(stats)->stat_appearance == 0 && static_cast<Stat*>(stats)->playerRace != RACE_HUMAN )
 		{
 			race = getMonsterFromPlayerRace(static_cast<Stat*>(stats)->playerRace);
 		}
 		Monster modifiedRace = static_cast<Stat*>(stats)->type;
-		if ( arachnophobia_filter )
+		if ( ::arachnophobia_filter )
 		{
 			if ( modifiedRace == SPIDER )
 			{
@@ -13375,28 +13398,28 @@ failed:
 		switch ( classnum )
 		{
 		case CLASS_CONJURER:
-			achName = achievementNames["BARONY_ACH_BONY_BARON"];
+			achName = Compendium_t::achievements["BARONY_ACH_BONY_BARON"].name;
 			break;
 		case CLASS_ACCURSED:
-			achName = achievementNames["BARONY_ACH_BUCKTOOTH_BARON"];
+			achName = Compendium_t::achievements["BARONY_ACH_BUCKTOOTH_BARON"].name;
 			break;
 		case CLASS_MESMER:
-			achName = achievementNames["BARONY_ACH_BOMBSHELL_BARON"];
+			achName = Compendium_t::achievements["BARONY_ACH_BOMBSHELL_BARON"].name;
 			break;
 		case CLASS_BREWER:
-			achName = achievementNames["BARONY_ACH_BLEATING_BARON"];
+			achName = Compendium_t::achievements["BARONY_ACH_BLEATING_BARON"].name;
 			break;
 		case CLASS_MACHINIST:
-			achName = achievementNames["BARONY_ACH_BOILERPLATE_BARON"];
+			achName = Compendium_t::achievements["BARONY_ACH_BOILERPLATE_BARON"].name;
 			break;
 		case CLASS_PUNISHER:
-			achName = achievementNames["BARONY_ACH_BAD_BOY_BARON"];
+			achName = Compendium_t::achievements["BARONY_ACH_BAD_BOY_BARON"].name;
 			break;
 		case CLASS_SHAMAN:
-			achName = achievementNames["BARONY_ACH_BAYOU_BARON"];
+			achName = Compendium_t::achievements["BARONY_ACH_BAYOU_BARON"].name;
 			break;
 		case CLASS_HUNTER:
-			achName = achievementNames["BARONY_ACH_BUGGAR_BARON"];
+			achName = Compendium_t::achievements["BARONY_ACH_BUGGAR_BARON"].name;
 			break;
 		default:
 			break;
@@ -13408,12 +13431,15 @@ failed:
 				soundCancel();
 		closeMono();
 			});
-		if ( auto txt = prompt->findField("text") )
+		if ( prompt )
 		{
-			SDL_Rect pos = txt->getSize();
-			pos.y -= 8;
-			pos.h += 8;
-			txt->setSize(pos);
+			if ( auto txt = prompt->findField("text") )
+			{
+				SDL_Rect pos = txt->getSize();
+				pos.y -= 8;
+				pos.h += 8;
+				txt->setSize(pos);
+			}
 		}
 	}
 
@@ -13509,7 +13535,7 @@ failed:
                     }
 					if (stats[index]->playerRace == RACE_SUCCUBUS) {
                         if (wasHuman) {
-                            stats[index]->appearance = 0;
+                            stats[index]->stat_appearance = 0;
                         }
 						stats[index]->sex = FEMALE;
 						auto card = static_cast<Frame*>(frame->getParent()); assert(card);
@@ -13525,7 +13551,7 @@ failed:
 					}
 					else if (stats[index]->playerRace == RACE_INCUBUS) {
                         if (wasHuman) {
-                            stats[index]->appearance = 0;
+                            stats[index]->stat_appearance = 0;
                         }
 						stats[index]->sex = MALE;
 						auto card = static_cast<Frame*>(frame->getParent()); assert(card);
@@ -13541,15 +13567,15 @@ failed:
 					}
 					else if (stats[index]->playerRace == RACE_HUMAN) {
                         auto appearances = frame->findFrame("appearances"); assert(appearances);
-                        stats[index]->appearance = std::max(0, appearances->getSelection());
+                        stats[index]->stat_appearance = std::max(0, appearances->getSelection());
                         if (appearances) {
-                            appearances->setSelection(stats[index]->appearance);
+                            appearances->setSelection(stats[index]->stat_appearance);
                             appearances->scrollToSelection();
                         }
 					}
 					else {
                         if (wasHuman) {
-                            stats[index]->appearance = 0;
+                            stats[index]->stat_appearance = 0;
                         }
 					}
 					if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
@@ -13636,7 +13662,7 @@ failed:
 			    if (incubus) {
 				    incubus->setPressed(true);
 			    }
-			    if (client_classes[index] == CLASS_MESMER && stats[index]->appearance == 0) {
+			    if (client_classes[index] == CLASS_MESMER && stats[index]->stat_appearance == 0) {
 				    if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
 					    client_classes[index] = CLASS_PUNISHER;
 					    auto class_button = card->findButton("class");
@@ -13692,7 +13718,7 @@ failed:
 				if (succubus) {
 					succubus->setPressed(true);
 				}
-				if (client_classes[index] == CLASS_PUNISHER && stats[index]->appearance == 0) {
+				if (client_classes[index] == CLASS_PUNISHER && stats[index]->stat_appearance == 0) {
 					if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
 						client_classes[index] = CLASS_MESMER;
 						auto class_button = card->findButton("class");
@@ -15311,7 +15337,7 @@ failed:
 		static void (*back_fn)(int) = [](int index){
             if (inputs.hasController(index)) {
                 client_classes[index] = old_classes[index];
-                stats[index]->appearance = old_appearances[index];
+                stats[index]->stat_appearance = old_appearances[index];
                 stats[index]->playerRace = old_races[index];
                 stats[index]->sex = old_sexes[index];
                 stats[index]->clearStats();
@@ -15656,7 +15682,7 @@ failed:
 		appearance_uparrow->setCallback([](Button& button){
 			auto card = static_cast<Frame*>(button.getParent());
 			auto appearances = card->findFrame("appearances"); assert(appearances);
-			int selection = (int)stats[button.getOwner()]->appearance - 1;
+			int selection = (int)stats[button.getOwner()]->stat_appearance - 1;
             if (selection < 0) {
                 selection = num_appearances - 1;
             }
@@ -15698,7 +15724,7 @@ failed:
 		appearance_downarrow->setCallback([](Button& button){
 			auto card = static_cast<Frame*>(button.getParent());
 			auto appearances = card->findFrame("appearances"); assert(appearances);
-            int selection = (int)stats[button.getOwner()]->appearance + 1;
+            int selection = (int)stats[button.getOwner()]->stat_appearance + 1;
             if (selection >= num_appearances) {
                 selection = 0;
             }
@@ -15731,7 +15757,7 @@ failed:
 			if (stats[index]->playerRace != RACE_HUMAN) {
 				return;
 			}
-			stats[index]->appearance = std::stoi(entry.name);
+			stats[index]->stat_appearance = std::stoi(entry.name);
 		};
 
 		for (int c = 0; c < num_appearances; ++c) {
@@ -15748,7 +15774,7 @@ failed:
                 }
             };
 			//entry->selected = entry->click;
-			if (stats[index]->appearance == c && stats[index]->playerRace == RACE_HUMAN) {
+			if (stats[index]->stat_appearance == c && stats[index]->playerRace == RACE_HUMAN) {
 				appearances->setSelection(c);
 				appearances->scrollToSelection();
 			}
@@ -15807,7 +15833,7 @@ failed:
 		disable_abilities->setWidgetDown("show_race_info");
 		disable_abilities->setWidgetUp(Language::get(5369 + num_races - 1));
 		if (stats[index]->playerRace != RACE_HUMAN) {
-			disable_abilities->setPressed(stats[index]->appearance != 0);
+			disable_abilities->setPressed(stats[index]->stat_appearance != 0);
 		}
 		static auto disable_abilities_fn = [](Button& button, int index){
 			if ( gameModeManager.currentSession.challengeRun.isActive()
@@ -15822,7 +15848,7 @@ failed:
 			if (stats[index]->playerRace == RACE_HUMAN) {
 				soundError();
 			} else {
-				stats[index]->appearance = button.isPressed() ? 1 : 0;
+				stats[index]->stat_appearance = button.isPressed() ? 1 : 0;
 				auto check = isCharacterValidFromDLC(*stats[index], client_classes[index]);
 				if (check != VALID_OK_CHARACTER) {
 					// player tried to play a class they haven't unlocked for this race
@@ -16730,7 +16756,7 @@ failed:
         if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
             stats[index]->playerRace = RACE_HUMAN;
             stats[index]->sex = static_cast<sex_t>(RNG.getU8() % 2);
-            stats[index]->appearance = RNG.uniform(0, NUMAPPEARANCES - 1);
+            stats[index]->stat_appearance = RNG.uniform(0, NUMAPPEARANCES - 1);
             client_classes[index] = 0;
 
 			bool challengeRunModified = false;
@@ -16748,7 +16774,7 @@ failed:
 					stats[index]->playerRace = gameModeManager.currentSession.challengeRun.race;
 					if ( stats[index]->playerRace != RACE_HUMAN )
 					{
-						stats[index]->appearance = 0;
+						stats[index]->stat_appearance = 0;
 					}
 					if ( stats[index]->playerRace == RACE_INCUBUS )
 					{
@@ -16837,20 +16863,30 @@ failed:
 		name_field->setWidgetBack("back_button");
 		name_field->setWidgetRight("randomize_name");
 		name_field->setWidgetDown("game_settings");
-		static auto name_field_fn = [](const char* text, int index) {
+		static auto name_field_fn = [](Field* field, const char* text, const int index) {
+			if ( field && !text )
+			{
+				text = field->getText();
+			}
+			//std::string nameStr = text;
+			//nameStr = messageSanitizePercentSign(nameStr, nullptr);
+			//text = nameStr.c_str();
+
 			size_t old_len = std::min(sizeof(Stat::name), strlen(stats[index]->name) + 1);
 			size_t new_len = strlen(text) + 1;
 			size_t shortest_len = std::min(old_len, new_len);
+
 			if (new_len != old_len || memcmp(stats[index]->name, text, shortest_len)) {
+				memset(stats[index]->name, 0, sizeof(Stat::name));
 			    memcpy(stats[index]->name, text, new_len);
 			    sendPlayerOverNet();
 				saveLastCharacter(index, multiplayer);
 			}
 		};
-		name_field->setCallback([](Field& field){name_field_fn(field.getText(), field.getOwner());});
+		name_field->setCallback([](Field& field) {name_field_fn(&field, nullptr, field.getOwner()); });
 		name_field->setTickCallback([](Widget& widget){
 			Field* field = static_cast<Field*>(&widget);
-			name_field_fn(field->getText(), field->getOwner());
+			name_field_fn(field, nullptr, field->getOwner());
 
 			// rescue this player's focus
 			if (!main_menu_frame) {
@@ -16889,7 +16925,7 @@ failed:
 			}
 			choice = choice % names.size();
 			auto name = names[choice].c_str();
-			name_field_fn(name, index);
+			name_field_fn(nullptr, name, index);
 			auto card = static_cast<Frame*>(button.getParent());
 			auto field = card->findField("name"); assert(field);
 			field->setText(name);
@@ -16898,7 +16934,7 @@ failed:
 				randomPlayerNamesMale : randomPlayerNamesFemale;
 			auto choice = RNG.uniform(0, (int)names.size() - 1);
 			auto name = names[choice].c_str();
-			name_field_fn(name, index);
+			name_field_fn(nullptr, name, index);
 			auto card = static_cast<Frame*>(button.getParent());
 			auto field = card->findField("name"); assert(field);
 			field->setText(name);
@@ -17057,7 +17093,7 @@ failed:
             soundActivate();
             const int index = button.getOwner();
             old_classes[index] = client_classes[index];
-            old_appearances[index] = stats[index]->appearance;
+            old_appearances[index] = stats[index]->stat_appearance;
             old_races[index] = stats[index]->playerRace;
             old_sexes[index] = stats[index]->sex;
             characterCardRaceMenu(button.getOwner(), false, -1);
@@ -17091,8 +17127,8 @@ failed:
 					std::vector<unsigned int> chances;
 					chances.resize(RACE_INSECTOID + 1);
 					auto oldRace = stats[index]->playerRace;
-					Uint32 oldAppearance = stats[index]->appearance;
-					stats[index]->appearance = 0;
+					Uint32 oldAppearance = stats[index]->stat_appearance;
+					stats[index]->stat_appearance = 0;
 
 					bool chanceFound = false;
 					for ( int race = RACE_HUMAN; race <= RACE_INSECTOID; ++race )
@@ -17105,7 +17141,7 @@ failed:
 							chanceFound = true;
 						}
 					}
-					stats[index]->appearance = oldAppearance;
+					stats[index]->stat_appearance = oldAppearance;
 					if ( !chanceFound )
 					{
 						stats[index]->playerRace = RACE_HUMAN;
@@ -17140,9 +17176,9 @@ failed:
 			// choose a random appearance
 			const int appearance_choice = RNG.uniform(0, NUMAPPEARANCES - 1);
 			if (stats[index]->playerRace == RACE_HUMAN) {
-				stats[index]->appearance = appearance_choice;
+				stats[index]->stat_appearance = appearance_choice;
 			} else {
-				stats[index]->appearance = 0;
+				stats[index]->stat_appearance = 0;
 			}
 
 			// select a random sex (unless you're a succubus or an incubus)
@@ -18280,7 +18316,7 @@ failed:
 					{
 						stats[c]->playerRace = RACE_HUMAN;
 						stats[c]->sex = static_cast<sex_t>(RNG.getU8() % 2);
-						stats[c]->appearance = RNG.uniform(0, NUMAPPEARANCES - 1);
+						stats[c]->stat_appearance = RNG.uniform(0, NUMAPPEARANCES - 1);
 						client_classes[c] = 0;
 					}
 
@@ -18299,7 +18335,7 @@ failed:
 							stats[c]->playerRace = gameModeManager.currentSession.challengeRun.race;
 							if ( stats[c]->playerRace != RACE_HUMAN )
 							{
-								stats[c]->appearance = 0;
+								stats[c]->stat_appearance = 0;
 							}
 							if ( stats[c]->playerRace == RACE_INCUBUS )
 							{
@@ -18587,6 +18623,57 @@ failed:
 			else if ( multiplayer != CLIENT && (svFlags & SV_FLAG_HARDCORE) )
 			{
 				float_warning_add(lobbyWarnings, "3", "Hardcore Enabled");
+			}
+			if ( multiplayer == SERVER )
+			{
+				if ( LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY ) {
+#ifdef USE_EOS
+					if ( EOS.currentPermissionLevel == EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED )
+					{
+						if ( EOS.bFriendsOnly )
+						{
+#ifdef NINTENDO
+							float_warning_add(lobbyWarnings, "3", Language::get(6301)); // friends shows as invite only just in case
+#else
+							float_warning_add(lobbyWarnings, "3", Language::get(6300));
+#endif
+						}
+						else
+						{
+							float_warning_add(lobbyWarnings, "3", Language::get(6299));
+						}
+					}
+					else
+					{
+						// private
+						float_warning_add(lobbyWarnings, "3", Language::get(6301));
+					}
+#endif // USE_EOS
+				}
+				else if ( LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM ) {
+#ifdef STEAMWORKS
+					if ( ::currentLobbyType == k_ELobbyTypeInvisible )
+					{
+						float_warning_add(lobbyWarnings, "3", Language::get(6301));
+					}
+					else if ( ::currentLobbyType == k_ELobbyTypePublic )
+					{
+						auto lobby = static_cast<CSteamID*>(::currentLobby);
+						if ( lobby )
+						{
+							const char* val = SteamMatchmaking()->GetLobbyData(*lobby, "friends_only");
+							if ( val && !strcmp(val, "true") )
+							{
+								float_warning_add(lobbyWarnings, "3", Language::get(6300));
+							}
+							else
+							{
+								float_warning_add(lobbyWarnings, "3", Language::get(6299));
+							}
+						}
+					}
+#endif // STEAMWORKS
+				}
 			}
 
 			int totalWidth = 0;
@@ -23092,7 +23179,7 @@ failed:
             monsterData.getAllyIconFromSprite(playerHeadSprite(
                 (Monster)getMonsterFromPlayerRace(info.players[player].race),
                 (sex_t)info.players[player].stats.sex,
-                (int)info.players[player].stats.appearance));
+                (int)info.players[player].stats.statscore_appearance));
         auto portrait = subframe->addImage(
             SDL_Rect{32, 24, 32, 32},
             0xffffffff,
@@ -23933,11 +24020,11 @@ failed:
 			void (*callback)(Button&);
 		};
 		Option options[] = {
-			//{"Dungeon Compendium", Language::get(5612), archivesDungeonCompendium}, // TODO
+			{"Dungeon Compendium", Language::get(5612), archivesDungeonCompendium},
 #ifndef STEAMWORKS
-#if defined(USE_EOS) || defined(LOCAL_ACHIEVEMENTS)
-			{"Achievements", Language::get(5611), archivesAchievements},
-#endif
+//#if defined(USE_EOS) || defined(LOCAL_ACHIEVEMENTS)
+//			{"Achievements", Language::get(5611), archivesAchievements},
+//#endif
 #endif
 #ifdef NINTENDO
 			{"Leaderboards", Language::get(5613), archivesLeaderboards},
@@ -23990,10 +24077,29 @@ failed:
 				y += button->getSize().h;
 				//y += 4;
 			}
+			if ( !strcmp(options[c].name, "Dungeon Compendium") )
+			{
+				button->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+					Compendium_t::PointsAnim_t::countUnreadNotifs();
+					if ( Compendium_t::PointsAnim_t::mainMenuAlert )
+					{
+						if ( auto imgGet = Image::get("*images/ui/Main Menus/AdventureArchives/C_New_Icon_00.png") )
+						{
+							int baseY = pos.y + 2;
+							if ( (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) )
+							{
+								baseY += 2;
+							}
+							imgGet->drawColor(nullptr, SDL_Rect{ pos.x + pos.w - 24, baseY, 8, 28 },
+								SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY }, 0xFFFFFFFF);
+						}
+					}
+				});
+			}
 		}
 		y += 16;
 
-		auto archives = buttons->findButton("Leaderboards");
+		auto archives = buttons->findButton("Dungeon Compendium");
 		if (archives) {
 			archives->select();
 		}
@@ -24661,6 +24767,9 @@ failed:
 	                    if (client_disconnected[c]) {
 		                    continue;
 	                    }
+
+						Compendium_t::Events_t::sendClientDataOverNet(c);
+
 	                    memcpy((char*)net_packet->data, "RSTR", 4);
 	                    SDLNet_Write32(svFlags, &net_packet->data[4]);
 	                    SDLNet_Write32(uniqueGameKey, &net_packet->data[8]);
@@ -24842,7 +24951,7 @@ failed:
 					// this is because we are coming here from some unknown place.
 					// presumably the current game has been saved, so we're not ending it.
 					// just return to the main menu but don't save a score
-					doEndgame(false);
+					doEndgame(false, false);
 				}
 
 				// return to title screen
@@ -24863,7 +24972,44 @@ failed:
 				}
 #endif
 		    }
-			else if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
+			else if ( main_menu_fade_destination == FadeDestination::RootMainMenuNoEndGame )
+			{
+				if ( ingame ) {
+					// end current game
+#ifdef NINTENDO
+					if ( !nxIsHandheldMode() ) {
+						nxAssignControllers(1, 1, true, false, true, false, nullptr);
+					}
+#endif
+					// skip doEndGame, do some stuff we skipped
+					doEndgameOnDisconnect();
+				}
+
+				// return to menu
+				destroyMainMenu();
+#ifdef SOUND
+				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
+				playMusic(intromusic[music], true, false, false);
+#endif
+				createMainMenu(false);
+
+				// join lobby we've been invited to
+				if ( saved_invite_lobby ) {
+					connectToServer(nullptr, saved_invite_lobby, LobbyType::LobbyOnline);
+					saved_invite_lobby = nullptr;
+				}
+
+#ifndef NINTENDO
+				// unbind controllers
+				for ( int c = 1; c < MAX_SPLITSCREEN; ++c ) {
+					if ( inputs.hasController(c) ) {
+						inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
+						Input::inputs[c].refresh();
+					}
+				}
+#endif
+			}
+			else if (main_menu_fade_destination == FadeDestination::RootMainMenu ) {
 				if (ingame) {
 					// end current game
 #ifdef NINTENDO
@@ -24875,7 +25021,7 @@ failed:
                     // this is because we are coming here from some unknown place.
                     // presumably the current game has been saved, so we're not ending it.
                     // just return to the main menu but don't save a score
-                    doEndgame(false);
+					doEndgame(false, false);
 				}
 
 				// return to menu
@@ -24913,7 +25059,7 @@ failed:
                     // end the game AND create a highscore!
                     // this is because the game is well and truly done. There is no save file.
                     // create a highscore as token of remembrance.
-                    doEndgame(true);
+                    doEndgame(true, false);
                 }
 #ifdef SOUND
                 const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
@@ -24943,7 +25089,7 @@ failed:
                 // end the game AND create a highscore!
                 // this is because the game is well and truly done. There is no save file.
                 // create a highscore as token of remembrance.
-				doEndgame(true);
+				doEndgame(true, false);
 				destroyMainMenu();
 				createDummyMainMenu();
 				createCreditsScreen(true);
@@ -24986,8 +25132,26 @@ failed:
 				};
 				auto classicEnding = [](){(void)beginFade(FadeDestination::Victory);};
 				auto fullEnding = [](){(void)beginFade(FadeDestination::Victory); steamAchievement("BARONY_ACH_ALWAYS_WAITING");};
-				auto loadNextLevel = [](){if (multiplayer != CLIENT) {loadnextlevel = true; skipLevelsOnLoad = 0; pauseGame(1, false);}};
-				auto skipHellLevels = [](){if (multiplayer != CLIENT) {loadnextlevel = true; skipLevelsOnLoad = 5; pauseGame(1, false);}};
+				auto loadNextLevel = [](){
+					if (multiplayer != CLIENT) 
+					{
+						loadnextlevel = true; 
+						Compendium_t::Events_t::previousCurrentLevel = currentlevel;
+						Compendium_t::Events_t::previousSecretlevel = secretlevel;
+						skipLevelsOnLoad = 0; 
+						pauseGame(1, false);
+					}
+				};
+				auto skipHellLevels = [](){
+					if (multiplayer != CLIENT) 
+					{
+						loadnextlevel = true; 
+						Compendium_t::Events_t::previousCurrentLevel = currentlevel;
+						Compendium_t::Events_t::previousSecretlevel = secretlevel;
+						skipLevelsOnLoad = 5; 
+						pauseGame(1, false);
+					}
+				};
 				Scene scenes[] = {
 				    {"data/story/HerxMidpointHuman.json", skipHellLevels},
 				    {"data/story/HerxMidpointAutomaton.json", skipHellLevels},
@@ -25655,11 +25819,11 @@ failed:
 	        options.insert(options.begin(), {
 		        {"Back to Game", Language::get(5761), mainClose},
 		        {"Assign Controllers", Language::get(5762), mainAssignControllers},
-		        //{"Dungeon Compendium", Language::get(5763), archivesDungeonCompendium}, // TODO
+		        {"Dungeon Compendium", Language::get(5763), archivesDungeonCompendium},
 #ifndef STEAMWORKS
-#if defined(USE_EOS) || defined(LOCAL_ACHIEVEMENTS)
-		        {"Achievements", Language::get(5764), archivesAchievements},
-#endif
+//#if defined(USE_EOS) || defined(LOCAL_ACHIEVEMENTS)
+//		        {"Achievements", Language::get(5764), archivesAchievements},
+//#endif
 #endif
 		        {"Settings", Language::get(5765), mainSettings},
 		        });
@@ -25824,6 +25988,26 @@ failed:
 			}
 			y += button->getSize().h;
 			//y += 4;
+
+			if ( !strcmp(options[c].name, "Dungeon Compendium") )
+			{
+				button->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+					Compendium_t::PointsAnim_t::countUnreadNotifs();
+					if ( Compendium_t::PointsAnim_t::mainMenuAlert )
+					{
+						if ( auto imgGet = Image::get("*images/ui/Main Menus/AdventureArchives/C_New_Icon_00.png") )
+						{
+							int baseY = pos.y + 2;
+							if ( (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) )
+							{
+								baseY += 2;
+							}
+							imgGet->drawColor(nullptr, SDL_Rect{ pos.x + pos.w - 24, baseY, 8, 28 },
+								SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY }, 0xFFFFFFFF);
+						}
+					}
+				});
+			}
 		}
 		y += 16;
 
@@ -26195,6 +26379,14 @@ failed:
 	void disconnectedFromServer(const char* text) {
 	    // when a player is disconnected from the server
 	    if (multiplayer != SINGLE) {
+			if ( saveGameExists(multiplayer == SINGLE) && gameModeManager.allowsSaves() ) {
+				doEndgame(false, true);
+			}
+			else 
+			{
+				doEndgame(true, true);
+			}
+			
 	        multiplayer = SINGLE;
 		    disconnectFromLobby();
 	        destroyMainMenu();
@@ -26202,7 +26394,7 @@ failed:
 #ifndef NINTENDO
 	        inputs.setPlayerIDAllowedKeyboard(clientnum);
 #endif
-            disconnectPrompt(text);
+			disconnectPromptFromServer(text, FadeDestination::RootMainMenuNoEndGame);
             if (!intro) {
 	            pauseGame(2, 0);
 	        }
@@ -26366,6 +26558,7 @@ failed:
                 cause_of_death[0] = (char)toupper((int)cause_of_death[0]);
             } else {
                 cause_of_death = stats[player]->killer_name;
+				cause_of_death[0] = (char)toupper((int)cause_of_death[0]);
             }
             break;
         }
@@ -26375,6 +26568,9 @@ failed:
         }
 		case KilledBy::FAILED_CHALLENGE:
 			cause_of_death = Language::get(6153);
+			break;
+		case KilledBy::BELL:
+			cause_of_death = Language::get(6278);
 			break;
         default: {
             cause_of_death = Language::get(5794 + (int)stats[player]->killer);
@@ -26584,6 +26780,9 @@ failed:
 						if ( client_disconnected[c] ) {
 							continue;
 						}
+
+						Compendium_t::Events_t::sendClientDataOverNet(c);
+
 						memcpy((char*)net_packet->data, "RSTR", 4);
 						SDLNet_Write32(svFlags, &net_packet->data[4]);
 						SDLNet_Write32(uniqueGameKey, &net_packet->data[8]);
@@ -31642,7 +31841,7 @@ failed:
 						txt->setText(Language::get(6161));
 						txt->setColor(makeColor(255, 255, 255, 255));
 					}
-					else if ( e.scenarioInfo.race >= RACE_HUMAN && e.scenarioInfo.race < RACE_INSECTOID )
+					else if ( e.scenarioInfo.race >= RACE_HUMAN && e.scenarioInfo.race <= RACE_INSECTOID )
 					{
 						std::string s = getMonsterLocalizedName(getMonsterFromPlayerRace(e.scenarioInfo.race));
 						camelCaseString(s);
@@ -32536,56 +32735,9131 @@ failed:
 			createPlayWindow();
 			}/*, SDL_Rect{ -4, -4, 0, 0 }*/);
 
-		/*auto continue_button = window->addButton("continue");
-		continue_button->setSize(SDL_Rect{ 39 * 2, 36 * 2, 66 * 2, 50 * 2 });
-		continue_button->setBackground("*images/ui/Main Menus/Play/UI_PlayMenu_Button_ContinueB00.png");
-		continue_button->setTextColor(makeColor(180, 180, 180, 255));
-		continue_button->setTextHighlightColor(makeColor(180, 133, 13, 255));
-		continue_button->setText(Language::get(5561));
-		continue_button->setFont(smallfont_outline);
-		if ( continueAvailable ) {
-			continue_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/UI_PlayMenu_Button_ContinueA00.png");
-			continue_button->setCallback([](Button& button) {soundActivate(); playContinue(button); });
-		}
-		else {
-			continue_button->setCallback([](Button&) {soundError(); });
-		}
-		continue_button->setWidgetSearchParent(window->getName());
-		continue_button->setWidgetRight("new");
-		continue_button->setWidgetDown("hall_of_trials");
-		continue_button->setWidgetBack("back_button");
-		continue_button->setGlyphPosition(Widget::glyph_position_t::CENTERED);
-		continue_button->setButtonsOffset(SDL_Rect{ 0, 29, 0, 0, });
-		continue_button->setSelectorOffset(SDL_Rect{ -1, -1, 1, 1 });
-
-		auto new_button = window->addButton("new");
-		new_button->setSize(SDL_Rect{ 114 * 2, 36 * 2, 68 * 2, 56 * 2 });
-		new_button->setBackground("*images/ui/Main Menus/Play/UI_PlayMenu_NewB00.png");
-		new_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/UI_PlayMenu_NewA00.png");
-		new_button->setTextColor(makeColor(180, 180, 180, 255));
-		new_button->setTextHighlightColor(makeColor(180, 133, 13, 255));
-		new_button->setText(Language::get(5562));
-		new_button->setFont(smallfont_outline);
-		new_button->setCallback(playNew);
-		new_button->setWidgetSearchParent(window->getName());
-		new_button->setWidgetLeft("continue");
-		new_button->setWidgetDown("hall_of_trials");
-		new_button->setWidgetBack("back_button");
-		new_button->setGlyphPosition(Widget::glyph_position_t::CENTERED);
-		new_button->setButtonsOffset(SDL_Rect{ 0, 29, 0, 0, });
-		new_button->setSelectorOffset(SDL_Rect{ -1, -1, -3, -11 });*/
-
-		/*if ( !gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt ) {
-			if ( continueAvailable ) {
-				continue_button->select();
-			}
-			else {
-				new_button->select();
-			}
-		}
-		else {
-			hall_of_trials_button->select();
-		}*/
 	}
 #endif
+
+	static Entity* compendiumMonster = nullptr;
+	static bool compendiumMonsterOverride = false;
+	static std::vector<Entity*> compendiumMonsterLimbs;
+	static ConsoleVariable<bool> cvar_compendium_monster_entity("/compendium_monster_entity", false);
+	static void populateRecordsSectionItems(Frame* page_right, int entryType, const char* entryName = "", int specificClass = -1);
+	static void refreshCompendiumCamera(std::string& modelsPath)
+	{
+		auto find = CompendiumEntries.compendiumObjectLimbs.find(modelsPath);
+		if ( find != CompendiumEntries.compendiumObjectLimbs.end() )
+		{
+			if ( find->second.baseCamera.inUse )
+			{
+				find->second.currentCamera = find->second.baseCamera;
+			}
+		}
+		CompendiumEntries.defaultCamera = Compendium_t::CompendiumView_t();
+	}
+	static Entity* createCompendiumMonster(Monster creature, real_t x, real_t y)
+	{
+		if ( compendiumMonster )
+		{
+			list_RemoveNode(compendiumMonster->mynode);
+			compendiumMonster = nullptr;
+		}
+		if ( !(*cvar_compendium_monster_entity) ) { return nullptr; }
+
+		Entity* entity = newEntity(-1, 1, map.entities, map.creatures); //Monster entity.
+		compendiumMonster = entity;
+		//Set the monster's variables.
+		entity->sizex = 4;
+		entity->sizey = 4;
+		entity->x = x;
+		entity->y = y;
+		entity->z = 6;
+		entity->yaw = 0.0;
+		entity->behavior = &actMonster;
+		entity->flags[UPDATENEEDED] = false;
+		entity->flags[INVISIBLE] = true;
+		entity->ranbehavior = true;
+
+		Stat* myStats = nullptr;
+		if ( multiplayer != CLIENT )
+		{
+			// Need to give the entity its list stuff.
+			// create an empty first node for traversal purposes
+			node_t* node = nullptr;
+			node = list_AddNodeFirst(&entity->children);
+			node->element = nullptr;
+			node->deconstructor = &emptyDeconstructor;
+
+			myStats = new Stat(creature + 1000);
+			node = list_AddNodeLast(&entity->children); //ASSUMING THIS ALREADY EXISTS WHEN THIS FUNCTION IS CALLED.
+			node->element = myStats;
+			node->size = sizeof(myStats);
+			node->deconstructor = &statDeconstructor;
+			if ( entity->parent )
+			{
+				myStats->leader_uid = entity->parent;
+				entity->parent = 0;
+			}
+			myStats->type = creature;
+		}
+		else
+		{
+			//Give dummy stats.
+			entity->clientStats = new Stat(creature + 1000);
+		}
+
+		return compendiumMonster;
+	}
+
+	static ConsoleVariable<int> compendiumMonsterSectionPadY("/compendiumMonsterSectionPadY", 32);
+	static const int compendiumPageRightInnerY = 32;
+	static const int compendiumPageRightInnerHeight = 412 - 114 + 22;
+	static const int compendiumPageRightInnerHeightExpanded = 412;
+	constexpr auto compendiumContentsDefaultColor = makeColor(159, 145, 127, 255);
+	constexpr auto compendiumContentsDefaultColorNoResearch = makeColor(122, 111, 97, 255);
+	constexpr auto compendiumContentsSelectedColor = makeColor(221, 210, 84, 255);
+	constexpr auto compendiumContentsDivColor = makeColorRGB(42, 22, 18);
+	constexpr auto compendiumLoreCostAvailable = makeColorRGB(255, 255, 255);
+	constexpr auto compendiumLoreCostInactive = makeColorRGB(156, 156, 156);
+
+	static void refreshCompendiumEntryWorld(std::string name, Frame* parent, const bool gamepadClick)
+	{
+		if ( CompendiumEntries.worldObjects.find(name) == CompendiumEntries.worldObjects.end() )
+		{
+			return;
+		}
+		auto& entry = CompendiumEntries.worldObjects[name];
+
+		if ( name == "containers" && entry.models.size() > 0 )
+		{
+			// hack - only show breakables on levels weve unlocked
+			std::vector<std::string> revealed_models = entry.models;
+			std::vector<std::pair<std::string, std::string>> areaUnlockNames = {
+				{"mines", "mines"},
+				{"swamps", "swamps"},
+				{"labyrinth", "labyrinth"},
+				{"ruins", "ruins"},
+				{"underworld", "underworld"},
+				{"hell", "hell"},
+				{"crystal caves", "caves"},
+				{"arcane citadel", "citadel"}
+			};
+			for ( auto it = revealed_models.begin(); it != revealed_models.end(); )
+			{
+				bool found = false;
+				for ( auto pair : areaUnlockNames )
+				{
+					if ( it->find(pair.second) != std::string::npos )
+					{
+						if ( pair.second == "mines" )
+						{
+							found = true;
+							break;
+						}
+						auto find = Compendium_t::CompendiumWorld_t::unlocks.find(pair.first);
+						if ( find != Compendium_t::CompendiumWorld_t::unlocks.end() )
+						{
+							if ( find->second != Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+							{
+								found = true;
+							}
+						}
+						break;
+					}
+				}
+				if ( !found )
+				{
+					it = revealed_models.erase(it);
+				}
+				else
+				{
+					++it;
+				}
+			}
+
+			Compendium_t::compendiumEntityCurrent.set(
+				name,
+				revealed_models.empty() ? "" : revealed_models[Compendium_t::compendiumEntityCurrent.modelRNG % revealed_models.size()]
+			);
+		}
+		else
+		{
+			Compendium_t::compendiumEntityCurrent.set(
+				name,
+				entry.models.empty() ? "" : entry.models[Compendium_t::compendiumEntityCurrent.modelRNG % entry.models.size()]
+			);
+		}
+
+		refreshCompendiumCamera(Compendium_t::compendiumEntityCurrent.modelName);
+
+		if ( Frame* page_left = parent->findFrame("page_left") )
+		{
+			if ( auto image_viewer = page_left->findFrame("image_viewer") )
+			{
+				image_viewer->setDisabled(entry.imagePath == "");
+				if ( auto img = image_viewer->findImage("img") )
+				{
+					img->path = entry.imagePath;
+					img->disabled = true;
+					if ( img->path != "" )
+					{
+						img->disabled = false;
+						if ( auto imgGet = Image::get(img->path.c_str()) )
+						{
+							img->pos.w = imgGet->getWidth();
+							img->pos.h = imgGet->getHeight();
+
+							img->pos.x = image_viewer->getSize().w / 2 - img->pos.w / 2;
+							img->pos.y = image_viewer->getSize().h / 2 - img->pos.h / 2;
+						}
+					}
+				}
+			}
+			if ( auto model_viewer = page_left->findFrame("model_viewer") )
+			{
+				model_viewer->setDisabled(entry.imagePath != "");
+			}
+
+			if ( auto blurb = page_left->findField("blurb") )
+			{
+				std::string txt = "";
+				for ( auto& str : entry.blurb )
+				{
+					if ( txt != "" ) { txt += '\n'; }
+					txt += str;
+				}
+				blurb->setText(txt.c_str());
+			}
+		}
+
+		if ( Frame* page_right_unlock = parent->findFrame("page_right_unlock") )
+		{
+			if ( auto unlock_lore_cost = page_right_unlock->findButton("unlock_lore_cost") )
+			{
+				if ( entry.lorePoints > 0 )
+				{
+					unlock_lore_cost->setText(std::to_string(entry.lorePoints).c_str());
+					if ( Compendium_t::lorePointsFromAchievements - Compendium_t::lorePointsSpent >= entry.lorePoints )
+					{
+						unlock_lore_cost->setTextColor(compendiumLoreCostAvailable);
+					}
+					else
+					{
+						unlock_lore_cost->setTextColor(compendiumLoreCostInactive);
+					}
+				}
+				else
+				{
+					unlock_lore_cost->setText("-");
+				}
+			}
+		}
+
+		if ( Frame* page_right = parent->findFrame("page_right") )
+		{
+			if ( auto page_right_unlock_cost = page_right->findField("lore_cost") )
+			{
+				if ( entry.lorePoints > 0 )
+				{
+					page_right_unlock_cost->setText(std::to_string(entry.lorePoints).c_str());
+				}
+				else
+				{
+					page_right_unlock_cost->setText("-");
+				}
+			}
+
+			// find records for this item
+			populateRecordsSectionItems(page_right, entry.id + Compendium_t::Events_t::kEventWorldOffset, name.c_str());
+
+			if ( page_right = page_right->findFrame("page_right_inner") )
+			{
+				if ( auto details = page_right->findField("world_details") )
+				{
+					auto featureImg = page_right->findImage("feature_img");
+					if ( featureImg )
+					{
+						featureImg->disabled = true;
+					}
+					auto featureTxt = page_right->findField("feature txt");
+					if ( featureTxt )
+					{
+						featureTxt->setDisabled(true);
+					}
+
+					Field* tipsTxt = page_right->findField("tips txt");
+					if ( tipsTxt )
+					{
+						SDL_Rect tipsPos = tipsTxt->getSize();
+						if ( featureTxt )
+						{
+							tipsPos.y = featureTxt->getSize().y;
+						}
+						tipsTxt->setSize(tipsPos);
+
+						SDL_Rect pos = details->getSize();
+						pos.y = tipsPos.y + 27;
+						details->setSize(pos);
+					}
+
+					if (entry.featureImg != "")
+					{
+						if ( auto imgGet = Image::get(entry.featureImg.c_str()) )
+						{
+							featureImg->pos.w = imgGet->getWidth();
+							featureImg->pos.h = imgGet->getHeight();
+							featureImg->disabled = false;
+							featureImg->path = entry.featureImg;
+						}
+					}
+					if ( !featureImg->disabled )
+					{
+						if ( featureTxt )
+						{
+							featureTxt->setDisabled(false);
+						}
+						SDL_Rect pos = details->getSize();
+						int offset = featureImg->pos.y + featureImg->pos.h + 16;
+						if ( tipsTxt )
+						{
+							SDL_Rect tipsPos = tipsTxt->getSize();
+							tipsPos.y += offset;
+							tipsTxt->setSize(tipsPos);
+
+							SDL_Rect pos = details->getSize();
+							pos.y = tipsPos.y + 27;
+							details->setSize(pos);
+						}
+					}
+
+					if ( tipsTxt )
+					{
+						tipsTxt->setDisabled(false);
+					}
+					std::string txt = "";
+					for ( auto& str : entry.details )
+					{
+						if ( txt != "" ) { txt += '\n'; }
+						txt += str;
+					}
+					details->setText(txt.c_str());
+					details->clearLinesToColor();
+					for ( size_t i = 0; i < entry.linesToHighlight.size(); ++i )
+					{
+						if ( entry.linesToHighlight[i] > 0 )
+						{
+							details->addColorToLine(i, entry.linesToHighlight[i]);
+						}
+					}
+
+					const int numLines = details->getNumTextLines();
+					auto actualFont = Font::get(details->getFont());
+					int height = 0;
+					if ( actualFont )
+					{
+						height = std::max(24, 24 + (numLines - 1) * actualFont->height(true));
+					}
+
+					SDL_Rect pos = details->getSize();
+					pos.h = height;
+					details->setSize(pos);
+
+					SDL_Rect actualPos = page_right->getActualSize();
+					actualPos.h = std::max(compendiumPageRightInnerHeight, pos.y + pos.h);
+					page_right->setActualSize(actualPos);
+				}
+			}
+		}
+	}
+
+	struct CompendiumTooltipFrames_t
+	{
+		Frame* tooltipContainerFrame = nullptr;
+		Frame* titleOnlyTooltipFrame = nullptr;
+		Frame* tooltipFrame = nullptr;
+		Frame* interactFrame = nullptr;
+		Frame* tooltipPromptFrame = nullptr;
+		bool tooltipGamepadOpen = false;
+		bool tooltipPromptActive = false;
+		void clear()
+		{
+			tooltipContainerFrame = nullptr;
+			titleOnlyTooltipFrame = nullptr;
+			tooltipFrame = nullptr;
+			interactFrame = nullptr;
+			tooltipPromptFrame = nullptr;
+			tooltipGamepadOpen = false;
+			tooltipPromptActive = false;
+		}
+	};
+	static CompendiumTooltipFrames_t compendiumItemTooltip;
+	static std::map<std::string, std::string> compendium_contents_current;
+	static std::map<std::string, std::map<std::string, int>> compendium_contents_list_current;
+	static std::vector<std::string> compendiumCategories = {
+		"monsters",
+		"items",
+		"magic",
+		"world",
+		"codex",
+		"achievements"
+	};
+	static std::string compendium_current = "monsters";
+
+	static void refreshCompendiumEntryItemsBlurb(std::string name, Frame* parent)
+	{
+		if ( Frame* page_left = parent->findFrame("page_left") )
+		{
+			if ( auto image_viewer = page_left->findFrame("image_viewer") )
+			{
+				image_viewer->setDisabled(true);
+			}
+			if ( auto model_viewer = page_left->findFrame("model_viewer") )
+			{
+				model_viewer->setDisabled(false);
+			}
+		}
+
+		if ( compendium_current == "items" )
+		{
+			if ( CompendiumEntries.items.find(name) == CompendiumEntries.items.end() )
+			{
+				return;
+			}
+		}
+		else
+		{
+			if ( CompendiumEntries.magic.find(name) == CompendiumEntries.magic.end() )
+			{
+				return;
+			}
+		}
+
+		auto& entry = compendium_current == "items" ? CompendiumEntries.items[name] : CompendiumEntries.magic[name];
+
+		if ( Frame* page_left = parent->findFrame("page_left") )
+		{
+			if ( auto blurb = page_left->findField("blurb") )
+			{
+				std::string txt = "";
+				for ( auto& str : entry.blurb )
+				{
+					if ( txt != "" ) { txt += '\n'; }
+					txt += str;
+				}
+				blurb->setText(txt.c_str());
+			}
+		}
+	}
+
+	static std::map<int, std::vector<std::string>> compendiumRecordsSectionLoadedValues;
+	static Uint32 compendiumRecordsSectionRandSequence = 0;
+	static Uint32 compendiumRecordsProcessedOnTick = 0;
+	static std::vector<std::pair<Sint32, std::string>> getRecordEventValue(const char* entryName, Compendium_t::EventTags tag)
+	{
+		std::vector<std::pair<Sint32, std::string>> results;
+		auto findEvent = Compendium_t::Events_t::events.find(tag);
+		if ( findEvent != Compendium_t::Events_t::events.end() )
+		{
+			auto findTag = Compendium_t::Events_t::playerEvents.find(tag);
+			if ( findTag != Compendium_t::Events_t::playerEvents.end() )
+			{
+				bool firstValue = true;
+				int entryNum = -1;
+
+				int startOffsetId = -1;
+				if ( findEvent->second.attributes.find("skills") != findEvent->second.attributes.end() )
+				{
+					for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+					{
+						if ( !strcmp(entryName, Compendium_t::getSkillStringForCompendium(i)) )
+						{
+							startOffsetId = Compendium_t::Events_t::eventClassIds[tag][0] + i * Compendium_t::Events_t::kEventClassesMax;
+							break;
+						}
+					}
+				}
+
+				int minValue = 0;
+				int maxValue = 0;
+				int sum = 0;
+				bool useSum = findEvent->second.attributes.find("display_sum_classes") != findEvent->second.attributes.end();
+				auto type = Compendium_t::Events_t::Type::MAX;
+				for ( auto& pair : Compendium_t::Events_t::eventClassIds[tag] )
+				{
+					if ( startOffsetId >= 0 )
+					{
+						if ( pair.second < startOffsetId || pair.second >= startOffsetId + Compendium_t::Events_t::kEventClassesMax )
+						{
+							continue;
+						}
+					}
+
+					auto find = findTag->second.find(pair.second);
+					if ( find != findTag->second.end() )
+					{
+						int value = 0;
+						if ( useSum )
+						{
+							sum += find->second.value;
+							type = Compendium_t::Events_t::Type::SUM;
+							continue;
+						}
+						else
+						{
+							type = find->second.type;
+							entryNum = pair.first;
+							value = find->second.value;
+						}
+
+						if ( firstValue )
+						{
+							minValue = find->second.value;
+						}
+						else
+						{
+							minValue = std::min(minValue, find->second.value);
+						}
+						maxValue = std::max(maxValue, find->second.value);
+
+						firstValue = false;
+
+						std::string output = "";
+						if ( findEvent->second.attributes.find("stats") != findEvent->second.attributes.end()
+							&& tag != Compendium_t::EventTags::CPDM_CLASS_STAT_STR_MAX
+							&& tag != Compendium_t::EventTags::CPDM_CLASS_STAT_DEX_MAX
+							&& tag != Compendium_t::EventTags::CPDM_CLASS_STAT_CON_MAX
+							&& tag != Compendium_t::EventTags::CPDM_CLASS_STAT_INT_MAX
+							&& tag != Compendium_t::EventTags::CPDM_CLASS_STAT_PER_MAX
+							&& tag != Compendium_t::EventTags::CPDM_CLASS_STAT_CHR_MAX )
+						{
+							if ( !strcmp(entryName, "str") )
+							{
+								output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_STR, Compendium_t::Events_t::eventLangEntries[tag]);
+							}
+							else if ( !strcmp(entryName, "dex") )
+							{
+								output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_DEX, Compendium_t::Events_t::eventLangEntries[tag]);
+							}
+							else if ( !strcmp(entryName, "con") )
+							{
+								output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_CON, Compendium_t::Events_t::eventLangEntries[tag]);
+							}
+							else if ( !strcmp(entryName, "int") )
+							{
+								output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_INT, Compendium_t::Events_t::eventLangEntries[tag]);
+							}
+							else if ( !strcmp(entryName, "per") )
+							{
+								output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_PER, Compendium_t::Events_t::eventLangEntries[tag]);
+							}
+							else if ( !strcmp(entryName, "chr") )
+							{
+								output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_CHR, Compendium_t::Events_t::eventLangEntries[tag]);
+							}
+						}
+						else if ( findEvent->second.attributes.find("class") != findEvent->second.attributes.end() )
+						{
+							output = Compendium_t::Events_t::formatEventRecordText(value, "class", entryNum % Compendium_t::Events_t::kEventClassesMax, Compendium_t::Events_t::eventLangEntries[tag]);
+						}
+						else if ( findEvent->second.attributes.find("race") != findEvent->second.attributes.end() )
+						{
+							output = Compendium_t::Events_t::formatEventRecordText(value, "race", entryNum, Compendium_t::Events_t::eventLangEntries[tag]);
+						}
+						else
+						{
+							output = Compendium_t::Events_t::formatEventRecordText(value, nullptr, 0, Compendium_t::Events_t::eventLangEntries[tag]);
+						}
+						results.push_back(std::make_pair(value, output));
+					}
+				}
+				if ( useSum )
+				{
+					std::string output = Compendium_t::Events_t::formatEventRecordText(sum, nullptr, 0, Compendium_t::Events_t::eventLangEntries[tag]);
+					results.push_back(std::make_pair(sum, output));
+				}
+				else
+				{
+					for ( auto itr = results.begin(); itr != results.end(); )
+					{
+						if ( (type == Compendium_t::Events_t::MAX || type == Compendium_t::Events_t::SUM)
+							&& itr->first != maxValue )
+						{
+							itr = results.erase(itr);
+						}
+						else if ( type == Compendium_t::Events_t::MIN && itr->first != minValue )
+						{
+							itr = results.erase(itr);
+						}
+						else
+						{
+							++itr;
+						}
+					}
+				}
+			}
+		}
+		return results;
+	}
+
+	static void populateRecordsSectionItems(Frame* page_right, int entryType, const char* entryName, int specificClass)
+	{
+		if ( !page_right ) { return; }
+		compendiumRecordsSectionLoadedValues.clear();
+		compendiumRecordsSectionRandSequence = 0;
+
+		if ( auto page_right_overlay = page_right->findFrame("page_right_overlay") )
+		{
+			page_right_overlay->setDisabled(false);
+			auto rec1 = page_right_overlay->findField("record 1 txt");
+			rec1->setDisabled(true);
+			auto rec1Val = page_right_overlay->findField("record 1 val");
+			rec1Val->setDisabled(true);
+			auto rec2 = page_right_overlay->findField("record 2 txt");
+			rec2->setDisabled(true);
+			auto rec2Val = page_right_overlay->findField("record 2 val");
+			rec2Val->setDisabled(true);
+			auto rec3 = page_right_overlay->findField("record 3 txt");
+			rec3->setDisabled(true);
+			auto rec3Val = page_right_overlay->findField("record 3 val");
+			rec3Val->setDisabled(true);
+			auto rec4 = page_right_overlay->findField("record 4 txt");
+			rec4->setDisabled(true);
+			auto rec4Val = page_right_overlay->findField("record 4 val");
+			rec4Val->setDisabled(true);
+
+			bool foundEvents = false;
+			std::vector<Compendium_t::EventTags> displayedEvents;
+			if ( entryType >= Compendium_t::Events_t::kEventMonsterOffset
+				&& entryType < Compendium_t::Events_t::kEventMonsterOffset + 1000 )
+			{
+				bool recruitable = true;
+				int monsterType = (entryType - Compendium_t::Events_t::kEventMonsterOffset);
+				if ( monsterType == MINOTAUR
+					|| monsterType == LICH
+					|| monsterType == DEVIL
+					|| monsterType == SHOPKEEPER
+					|| monsterType == LICH_ICE
+					|| monsterType == LICH_FIRE
+					|| monsterType == SHADOW
+					|| monsterType == MIMIC
+					|| monsterType == BAT_SMALL
+					|| monsterType == SPELLBOT 
+					|| monsterType == SENTRYBOT 
+					|| monsterType == GYROBOT 
+					|| monsterType == DUMMYBOT )
+				{
+					recruitable = false;
+				}
+				else if ( monsterType == Compendium_t::Events_t::monsterUniqueIDLookup["bram kindly"]
+					|| monsterType == Compendium_t::Events_t::monsterUniqueIDLookup["artemisia"] 
+					|| monsterType == Compendium_t::Events_t::monsterUniqueIDLookup["baratheon"] )
+				{
+					recruitable = false;
+				}
+
+				if ( monsterType == Compendium_t::Events_t::monsterUniqueIDLookup["ghost"] )
+				{
+					displayedEvents = {
+						Compendium_t::EventTags::CPDM_GHOST_SPAWNED,
+						Compendium_t::EventTags::CPDM_GHOST_PUSHES,
+						Compendium_t::EventTags::CPDM_GHOST_TELEPORTS,
+						Compendium_t::EventTags::CPDM_GHOST_PINGS
+					};
+				}
+				else if ( monsterType == Compendium_t::Events_t::monsterUniqueIDLookup["mysterious shop"] )
+				{
+					displayedEvents = {
+						Compendium_t::EventTags::CPDM_MERCHANT_ORBS,
+						Compendium_t::EventTags::CPDM_SHOP_BOUGHT,
+						Compendium_t::EventTags::CPDM_SHOP_SPENT,
+						Compendium_t::EventTags::CPDM_KILLED_BY
+					};
+				}
+				else if ( monsterType == DUMMYBOT )
+				{
+					displayedEvents = {
+						Compendium_t::EventTags::CPDM_KILLED_SOLO
+					};
+				}
+				else if ( monsterType == GYROBOT )
+				{
+					displayedEvents = {
+						Compendium_t::EventTags::CPDM_GYROBOT_FLIPS
+					};
+				}
+				else if ( monsterType == SENTRYBOT || monsterType == SPELLBOT )
+				{
+					displayedEvents = {
+						Compendium_t::EventTags::CPDM_KILLED_SOLO,
+						Compendium_t::EventTags::CPDM_KILLED_BY
+					};
+				}
+				else
+				{
+					displayedEvents = {
+						Compendium_t::EventTags::CPDM_KILLED_SOLO,
+						Compendium_t::EventTags::CPDM_KILL_XP,
+						Compendium_t::EventTags::CPDM_KILLED_BY
+					};
+					if ( recruitable )
+					{
+						displayedEvents.push_back(Compendium_t::EventTags::CPDM_RECRUITED);
+					}
+				}
+			}
+			else
+			{
+				auto find = Compendium_t::Events_t::itemDisplayedEventsList.find(entryType);
+				if ( find != Compendium_t::Events_t::itemDisplayedEventsList.end() )
+				{
+					displayedEvents = Compendium_t::Events_t::itemDisplayedEventsList[entryType];
+				}
+
+				if ( entryType >= 0 && entryType < NUMITEMS )
+				{
+					if ( entryType == TOOL_DETONATOR_CHARGE )
+					{
+						displayedEvents.clear();
+						displayedEvents.push_back(Compendium_t::EventTags::CPDM_DETONATOR_SCRAPPED);
+						displayedEvents.push_back(Compendium_t::EventTags::CPDM_DETONATOR_SCRAPPED_METAL);
+						displayedEvents.push_back(Compendium_t::EventTags::CPDM_DETONATOR_SCRAPPED_MAGIC);
+					}
+					else if ( entryType == TOOL_MIRROR )
+					{
+						for ( auto it = displayedEvents.begin(); it != displayedEvents.end(); )
+						{
+							if ( *it == Compendium_t::EventTags::CPDM_SHIELD_REFLECT )
+							{
+								it = displayedEvents.erase(it);
+							}
+							else
+							{
+								++it;
+							}
+						}
+					}
+					else if ( entryType == TOOL_LANTERN )
+					{
+						for ( auto it = displayedEvents.begin(); it != displayedEvents.end(); )
+						{
+							if ( *it == Compendium_t::EventTags::CPDM_TORCH_WALLS )
+							{
+								it = displayedEvents.erase(it);
+							}
+							else
+							{
+								++it;
+							}
+						}
+					}
+					else if ( entryType == MASK_ARTIFACT_VISOR /*
+						|| (items[entryType].item_slot == EQUIPPABLE_IN_SLOT_MASK && !Item::doesItemProvideBeatitudeAC((ItemType)entryType))*/ )
+					{
+						for ( auto it = displayedEvents.begin(); it != displayedEvents.end(); )
+						{
+							if ( *it == Compendium_t::EventTags::CPDM_BROKEN )
+							{
+								it = displayedEvents.erase(it);
+							}
+							else
+							{
+								++it;
+							}
+						}
+					}
+					else if ( entryType == MIRROR_SHIELD )
+					{
+						for ( auto it = displayedEvents.begin(); it != displayedEvents.end(); )
+						{
+							if ( *it == Compendium_t::EventTags::CPDM_MIRROR_TELEPORTS )
+							{
+								it = displayedEvents.erase(it);
+							}
+							else
+							{
+								++it;
+							}
+						}
+					}
+					else if ( entryType == TOOL_SLEEP_BOMB )
+					{
+						for ( auto it = displayedEvents.begin(); it != displayedEvents.end(); )
+						{
+							if ( *it == Compendium_t::EventTags::CPDM_BOMB_DMG )
+							{
+								it = displayedEvents.erase(it);
+							}
+							else
+							{
+								++it;
+							}
+						}
+					}
+					else if ( entryType == TOOL_TINOPENER )
+					{
+						displayedEvents.clear();
+						displayedEvents.push_back(Compendium_t::EventTags::CPDM_RUNS_COLLECTED);
+					}
+					else if ( entryType == GEM_ROCK )
+					{
+						displayedEvents.clear();
+						displayedEvents.push_back(Compendium_t::EventTags::CPDM_RUNS_COLLECTED);
+						displayedEvents.push_back(Compendium_t::EventTags::CPDM_THROWN_HITS);
+						displayedEvents.push_back(Compendium_t::EventTags::CPDM_THROWN_DMG_TOTAL);
+						displayedEvents.push_back(Compendium_t::EventTags::CPDM_DMG_MAX);
+					}
+					else if ( items[entryType].category == SPELLBOOK )
+					{
+						int spellID = getSpellIDFromSpellbook(entryType);
+						auto find = ItemTooltips.spellItems.find(spellID);
+						if ( find != ItemTooltips.spellItems.end() && spellID > SPELL_NONE )
+						{
+							if ( find->second.spellbookId == entryType )
+							{
+								if ( find->second.spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_HEALING)
+									!= find->second.spellTags.end() )
+								{
+									displayedEvents.push_back(Compendium_t::EventTags::CPDM_SPELL_HEAL);
+								}
+								else if ( find->second.spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_DAMAGE)
+									!= find->second.spellTags.end() )
+								{
+									displayedEvents.push_back(Compendium_t::EventTags::CPDM_SPELL_DMG);
+								}
+								else if ( find->second.spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_TRACK_HITS)
+									!= find->second.spellTags.end() )
+								{
+									displayedEvents.push_back(Compendium_t::EventTags::CPDM_SPELL_TARGETS);
+								}
+							}
+						}
+						displayedEvents.push_back(Compendium_t::EventTags::CPDM_SPELLBOOK_CASTS);
+						displayedEvents.push_back(Compendium_t::EventTags::CPDM_SPELLBOOK_CAST_DEGRADES);
+					}
+					else if ( items[entryType].category == MAGICSTAFF )
+					{
+						for ( auto& s : ItemTooltips.spellItems )
+						{
+							if ( s.second.magicstaffId == entryType )
+							{
+								if ( !(s.second.spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_HEALING)
+									!= s.second.spellTags.end()
+									|| s.second.spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_DAMAGE)
+									!= s.second.spellTags.end()) )
+								{
+									// no damage or healing, skip dmg tag
+									for ( auto it = displayedEvents.begin(); it != displayedEvents.end(); )
+									{
+										if ( *it == Compendium_t::EventTags::CPDM_SPELL_DMG )
+										{
+											it = displayedEvents.erase(it);
+										}
+										else
+										{
+											++it;
+										}
+									}
+								}
+								else
+								{
+									// damage or healing, skip zaps
+									for ( auto it = displayedEvents.begin(); it != displayedEvents.end(); )
+									{
+										if ( *it == Compendium_t::EventTags::CPDM_MAGICSTAFF_CASTS )
+										{
+											it = displayedEvents.erase(it);
+										}
+										else
+										{
+											++it;
+										}
+									}
+								}
+								break;
+							}
+						}
+					}
+				}
+				else if ( entryType >= Compendium_t::Events_t::kEventSpellOffset
+					&& entryType < Compendium_t::Events_t::kEventSpellOffset + 1000 )
+				{
+					int spellID = entryType - Compendium_t::Events_t::kEventSpellOffset;
+					auto find = ItemTooltips.spellItems.find(spellID);
+					if ( find != ItemTooltips.spellItems.end() && spellID > SPELL_NONE )
+					{
+						if ( find->second.spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_HEALING)
+							!= find->second.spellTags.end() )
+						{
+							displayedEvents.push_back(Compendium_t::EventTags::CPDM_SPELL_HEAL);
+						}
+						else if ( find->second.spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_DAMAGE)
+							!= find->second.spellTags.end() )
+						{
+							displayedEvents.push_back(Compendium_t::EventTags::CPDM_SPELL_DMG);
+						}
+						else if ( find->second.spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_TRACK_HITS)
+							!= find->second.spellTags.end() )
+						{
+							displayedEvents.push_back(Compendium_t::EventTags::CPDM_SPELL_TARGETS);
+						}
+					}
+					displayedEvents.push_back(Compendium_t::EventTags::CPDM_SPELL_CASTS);
+					displayedEvents.push_back(Compendium_t::EventTags::CPDM_SPELL_FAILURES);
+				}
+			}
+
+			if ( displayedEvents.size() > 0 )
+			{
+				int index = -1;
+				for ( auto tag : displayedEvents )
+				{
+					++index;
+					Field* txt = nullptr;
+					Field* val = nullptr;
+					switch ( index )
+					{
+					case 0:
+						txt = rec1;
+						val = rec1Val;
+						break;
+					case 1:
+						txt = rec2;
+						val = rec2Val;
+						break;
+					case 2:
+						txt = rec3;
+						val = rec3Val;
+						break;
+					case 3:
+						txt = rec4;
+						val = rec4Val;
+						break;
+					default:
+						break;
+					}
+
+					std::string customTagKey = "";
+
+					if ( txt )
+					{
+						txt->setDisabled(false);
+						std::string itemname = "default";
+						if ( entryType >= 0 && entryType < NUMITEMS )
+						{
+							if ( Compendium_t::Events_t::eventLangEntries[tag].find(itemNameStrings[entryType + 2])
+								!= Compendium_t::Events_t::eventLangEntries[tag].end() )
+							{
+								itemname = itemNameStrings[entryType + 2];
+							}
+							else if ( Compendium_t::Events_t::eventLangEntries[tag].find(compendium_contents_current[compendium_current])
+								!= Compendium_t::Events_t::eventLangEntries[tag].end() )
+							{
+								itemname = compendium_contents_current[compendium_current];
+							}
+						}
+						else if ( entryType >= Compendium_t::Events_t::kEventMonsterOffset 
+							&& entryType < Compendium_t::Events_t::kEventMonsterOffset + 1000 )
+						{
+							if ( Compendium_t::Events_t::eventLangEntries[tag].find(entryName)
+								!= Compendium_t::Events_t::eventLangEntries[tag].end() )
+							{
+								itemname = entryName;
+							}
+						}
+						else if ( entryType >= Compendium_t::Events_t::kEventWorldOffset 
+							&& entryType < Compendium_t::Events_t::kEventWorldOffset + 1000 )
+						{
+							if ( Compendium_t::Events_t::eventLangEntries[tag].find(entryName)
+								!= Compendium_t::Events_t::eventLangEntries[tag].end() )
+							{
+								itemname = entryName;
+							}
+						}
+						else if ( entryType >= Compendium_t::Events_t::kEventCodexOffset
+							&& entryType <= Compendium_t::Events_t::kEventCodexOffsetMax )
+						{
+							if ( Compendium_t::Events_t::eventLangEntries[tag].find(entryName)
+								!= Compendium_t::Events_t::eventLangEntries[tag].end() )
+							{
+								itemname = entryName;
+							}
+						}
+						else if ( entryType >= Compendium_t::Events_t::kEventSpellOffset
+							&& entryType < Compendium_t::Events_t::kEventSpellOffset + 1000 )
+						{
+							int spellID = entryType - Compendium_t::Events_t::kEventSpellOffset;
+							if ( spellID >= 0 && spellID < NUM_SPELLS )
+							{
+								if ( Compendium_t::Events_t::eventLangEntries[tag].find(ItemTooltips.spellItems[spellID].internalName)
+									!= Compendium_t::Events_t::eventLangEntries[tag].end() )
+								{
+									itemname = ItemTooltips.spellItems[spellID].internalName;
+								}
+								else if ( Compendium_t::Events_t::eventLangEntries[tag].find("spells")
+									!= Compendium_t::Events_t::eventLangEntries[tag].end() )
+								{
+									itemname = "spells";
+								}
+							}
+						}
+
+						std::string str = Compendium_t::Events_t::eventLangEntries[tag][itemname];
+						if ( tag == Compendium_t::EventTags::CPDM_CUSTOM_TAG )
+						{
+							auto find = Compendium_t::Events_t::itemDisplayedCustomEventsList.find(entryType);
+							if ( find != Compendium_t::Events_t::itemDisplayedCustomEventsList.end() )
+							{
+								str = "CUSTOM_TAG";
+								if ( index < find->second.size() )
+								{
+									customTagKey = find->second[index];
+									auto find2 = Compendium_t::Events_t::eventCustomLangEntries.find(customTagKey);
+									if ( find2 != Compendium_t::Events_t::eventCustomLangEntries.end() )
+									{
+										if ( find2->second.find(entryName) != find2->second.end() )
+										{
+											itemname = entryName;
+										}
+										str = find2->second[itemname];
+									}
+								}
+							}
+						}
+						txt->setText(str.c_str());
+					}
+					if ( val )
+					{
+						val->setDisabled(false);
+						if ( customTagKey == "CUSTOM_UNDEAD_KILLED"
+							|| customTagKey == "CUSTOM_BEASTS_KILLED"
+							|| customTagKey == "CUSTOM_DEMONS_KILLED" )
+						{
+							val->setText("-");
+							std::vector<std::pair<Sint32, std::string>> results;
+							{
+								auto findTag = Compendium_t::Events_t::playerEvents.find(Compendium_t::EventTags::CPDM_KILLED_SOLO);
+								if ( findTag != Compendium_t::Events_t::playerEvents.end() )
+								{
+									for ( auto& pair : findTag->second )
+									{
+										if ( pair.first >= Compendium_t::Events_t::kEventMonsterOffset
+											&& pair.first < Compendium_t::Events_t::kEventMonsterOffset + 1000 )
+										{
+											auto find = Compendium_t::Events_t::monsterIDToString.find(pair.first);
+											if ( find != Compendium_t::Events_t::monsterIDToString.end() )
+											{
+												results.push_back(std::make_pair(pair.second.value, find->second));
+											}
+										}
+									}
+								}
+							}
+							{
+								auto findTag = Compendium_t::Events_t::playerEvents.find(Compendium_t::CPDM_KILLED_MULTIPLAYER);
+								if ( findTag != Compendium_t::Events_t::playerEvents.end() )
+								{
+									for ( auto& pair : findTag->second )
+									{
+										if ( pair.first >= Compendium_t::Events_t::kEventMonsterOffset
+											&& pair.first < Compendium_t::Events_t::kEventMonsterOffset + 1000 )
+										{
+											auto find = Compendium_t::Events_t::monsterIDToString.find(pair.first);
+											if ( find != Compendium_t::Events_t::monsterIDToString.end() )
+											{
+												results.push_back(std::make_pair(pair.second.value, find->second));
+											}
+										}
+									}
+								}
+							}
+							{
+								int value = 0;
+								int matchingType = -1;
+								if ( customTagKey == "CUSTOM_UNDEAD_KILLED" ) { matchingType = Compendium_t::CompendiumMonsters_t::MonsterSpecies::SPECIES_UNDEAD; }
+								else if ( customTagKey == "CUSTOM_BEASTS_KILLED" ) { matchingType = Compendium_t::CompendiumMonsters_t::MonsterSpecies::SPECIES_BEAST; }
+								else if ( customTagKey == "CUSTOM_DEMONS_KILLED" ) { matchingType = Compendium_t::CompendiumMonsters_t::MonsterSpecies::SPECIES_DEMONOID; }
+								for ( auto& result : results )
+								{
+									auto find = CompendiumEntries.monsters.find(result.second);
+									if ( find != CompendiumEntries.monsters.end() )
+									{
+										if ( find->second.species == matchingType )
+										{
+											value += result.first;
+										}
+									}
+								}
+
+								results.clear();
+								std::string output = Compendium_t::Events_t::formatEventRecordText(value, nullptr, 0,
+									Compendium_t::Events_t::eventCustomLangEntries[customTagKey]
+								);
+								results.push_back(std::make_pair(value, output));
+							}
+							if ( results.size() > 0 )
+							{
+								compendiumRecordsSectionLoadedValues[index].clear();
+								for ( auto& pair : results )
+								{
+									compendiumRecordsSectionLoadedValues[index].push_back(pair.second);
+								}
+								val->setText(compendiumRecordsSectionLoadedValues[index][compendiumRecordsSectionRandSequence
+									% compendiumRecordsSectionLoadedValues[index].size()].c_str());
+							}
+						}
+						else if ( customTagKey != "" )
+						{
+							auto results = Compendium_t::Events_t::getCustomEventValue(customTagKey, compendium_current, 
+								compendium_contents_current[compendium_current], specificClass);
+							if ( customTagKey == "CUSTOM_CLASS_GAMES_WON" )
+							{
+								{
+									auto res2 = Compendium_t::Events_t::getCustomEventValue("CUSTOM_CLASS_GAMES_WON_CLASSIC", compendium_current,
+										compendium_contents_current[compendium_current], specificClass);
+									for ( auto& r : res2 )
+									{
+										if ( r.first != "-" )
+										{
+											results.push_back(r);
+										}
+									}
+								}
+								{
+									auto res2 = Compendium_t::Events_t::getCustomEventValue("CUSTOM_CLASS_GAMES_WON_HELL", compendium_current,
+										compendium_contents_current[compendium_current], specificClass);
+									for ( auto& r : res2 )
+									{
+										if ( r.first != "-" )
+										{
+											results.push_back(r);
+										}
+									}
+								}
+							}
+							else if ( customTagKey == "CUSTOM_CLASS_LEAST_GAMES_WON" )
+							{
+								{
+									auto res2 = Compendium_t::Events_t::getCustomEventValue("CUSTOM_CLASS_LEAST_GAMES_WON_CLASSIC", compendium_current,
+										compendium_contents_current[compendium_current], specificClass);
+									for ( auto& r : res2 )
+									{
+										if ( r.first != "-" )
+										{
+											results.push_back(r);
+										}
+									}
+								}
+								{
+									auto res2 = Compendium_t::Events_t::getCustomEventValue("CUSTOM_CLASS_LEAST_GAMES_WON_HELL", compendium_current,
+										compendium_contents_current[compendium_current], specificClass);
+									for ( auto& r : res2 )
+									{
+										if ( r.first != "-" )
+										{
+											results.push_back(r);
+										}
+									}
+								}
+							}
+							else if ( customTagKey == "CUSTOM_RACE_LEAST_GAMES_WON" )
+							{
+								{
+									auto res2 = Compendium_t::Events_t::getCustomEventValue("CUSTOM_RACE_LEAST_GAMES_WON_CLASSIC", compendium_current,
+										compendium_contents_current[compendium_current], specificClass);
+									for ( auto& r : res2 )
+									{
+										if ( r.first != "-" )
+										{
+											results.push_back(r);
+										}
+									}
+								}
+								{
+									auto res2 = Compendium_t::Events_t::getCustomEventValue("CUSTOM_RACE_LEAST_GAMES_WON_HELL", compendium_current,
+										compendium_contents_current[compendium_current], specificClass);
+									for ( auto& r : res2 )
+									{
+										if ( r.first != "-" )
+										{
+											results.push_back(r);
+										}
+									}
+								}
+							}
+
+							if ( results.size() == 0 )
+							{
+								val->setText("-");
+							}
+							else
+							{
+								compendiumRecordsSectionLoadedValues[index].clear();
+								for ( auto& pair : results )
+								{
+									compendiumRecordsSectionLoadedValues[index].push_back(pair.first);
+								}
+								val->setText(compendiumRecordsSectionLoadedValues[index][compendiumRecordsSectionRandSequence 
+									% compendiumRecordsSectionLoadedValues[index].size()].c_str());
+							}
+						}
+						else if ( entryType >= Compendium_t::Events_t::kEventMonsterOffset
+							&& entryType < Compendium_t::Events_t::kEventMonsterOffset + 1000
+							&& tag == Compendium_t::CPDM_KILLED_SOLO )
+						{
+							val->setText("-");
+							std::vector<std::pair<Sint32, std::string>> results;
+							int value = 0;
+							{
+								auto findTag = Compendium_t::Events_t::playerEvents.find(tag);
+								if ( findTag != Compendium_t::Events_t::playerEvents.end() )
+								{
+									auto find = findTag->second.find(entryType);
+									if ( find != findTag->second.end() )
+									{
+										value += find->second.value;
+									}
+								}
+							}
+							{
+								auto findTag = Compendium_t::Events_t::playerEvents.find(Compendium_t::CPDM_KILLED_MULTIPLAYER);
+								if ( findTag != Compendium_t::Events_t::playerEvents.end() )
+								{
+									auto find = findTag->second.find(entryType);
+									if ( find != findTag->second.end() )
+									{
+										if ( find != findTag->second.end() )
+										{
+											value += find->second.value;
+										}
+									}
+								}
+							}
+							if ( value > 0 )
+							{
+								std::string output = Compendium_t::Events_t::formatEventRecordText(value, nullptr, 0, Compendium_t::Events_t::eventLangEntries[tag]);
+								// get monster plural
+								{
+									auto find = Compendium_t::Events_t::monsterIDToString.find(entryType);
+									if ( find != Compendium_t::Events_t::monsterIDToString.end() )
+									{
+										auto& def = CompendiumEntries.monsters[find->second];
+										output += ' ';
+										auto monsterType = (Monster)def.monsterType;
+										if ( monsterType == LICH_FIRE || monsterType == LICH_ICE )
+										{
+											monsterType = LICH;
+										}
+										std::string s = value > 1 ? getMonsterLocalizedPlural(monsterType) : getMonsterLocalizedName(monsterType);
+										camelCaseString(s);
+										output += s;
+									}
+								}
+								results.push_back(std::make_pair(value, output));
+							}
+							if ( results.size() > 0 )
+							{
+								compendiumRecordsSectionLoadedValues[index].clear();
+								for ( auto& pair : results )
+								{
+									compendiumRecordsSectionLoadedValues[index].push_back(pair.second);
+								}
+								val->setText(compendiumRecordsSectionLoadedValues[index][compendiumRecordsSectionRandSequence
+									% compendiumRecordsSectionLoadedValues[index].size()].c_str());
+							}
+						}
+						else if ( entryType >= Compendium_t::Events_t::kEventCodexOffset
+							&& entryType <= Compendium_t::Events_t::kEventCodexOffsetMax
+							&& Compendium_t::Events_t::eventClassIds.find(tag) != Compendium_t::Events_t::eventClassIds.end() )
+						{
+							val->setText("-");
+							std::vector<std::pair<Sint32, std::string>> results = getRecordEventValue(entryName, tag);
+							if ( tag == Compendium_t::CPDM_CLASS_GAMES_WON )
+							{
+								{
+									auto res2 = getRecordEventValue(entryName, Compendium_t::CPDM_CLASS_GAMES_WON_CLASSIC);
+									for ( auto& r : res2 )
+									{
+										if ( r.second != "-" )
+										{
+											results.push_back(r);
+										}
+									}
+								}
+								{
+									auto res2 = getRecordEventValue(entryName, Compendium_t::CPDM_CLASS_GAMES_WON_HELL);
+									for ( auto& r : res2 )
+									{
+										if ( r.second != "-" )
+										{
+											results.push_back(r);
+										}
+									}
+								}
+							}
+							else if ( tag == Compendium_t::CPDM_RACE_GAMES_WON )
+							{
+								{
+									auto res2 = getRecordEventValue(entryName, Compendium_t::CPDM_RACE_GAMES_WON_CLASSIC);
+									for ( auto& r : res2 )
+									{
+										if ( r.second != "-" )
+										{
+											results.push_back(r);
+										}
+									}
+								}
+								{
+									auto res2 = getRecordEventValue(entryName, Compendium_t::CPDM_RACE_GAMES_WON_HELL);
+									for ( auto& r : res2 )
+									{
+										if ( r.second != "-" )
+										{
+											results.push_back(r);
+										}
+									}
+								}
+							}
+							if ( results.size() > 0 )
+							{
+								compendiumRecordsSectionLoadedValues[index].clear();
+								for ( auto& pair : results )
+								{
+									compendiumRecordsSectionLoadedValues[index].push_back(pair.second);
+								}
+								val->setText(compendiumRecordsSectionLoadedValues[index][compendiumRecordsSectionRandSequence
+									% compendiumRecordsSectionLoadedValues[index].size()].c_str());
+							}
+						}
+						else
+						{
+							auto findTag = Compendium_t::Events_t::playerEvents.find(tag);
+							if ( findTag != Compendium_t::Events_t::playerEvents.end() )
+							{
+								auto find = findTag->second.find(entryType);
+								int value = 0;
+								if ( find != findTag->second.end() )
+								{
+									if ( find->second.type == Compendium_t::Events_t::BITFIELD )
+									{
+										int total = 0;
+										for ( int i = 0; i < 32; ++i )
+										{
+											if ( find->second.value & (1 << i) )
+											{
+												++total;
+											}
+										}
+										if ( tag == Compendium_t::EventTags::CPDM_LORE_PERCENT_READ )
+										{
+											if ( find->first == SCROLL_MAIL )
+											{
+												value = std::max(0, std::min(100, (int)(100.0 * total / (real_t)(NUM_SCROLL_MAIL_OPTIONS))));
+											}
+											else if ( find->first == READABLE_BOOK )
+											{
+												// check the other bitfield to sum up
+												auto findTag = Compendium_t::Events_t::playerEvents.find(Compendium_t::EventTags::CPDM_LORE_PERCENT_READ_2);
+												if ( findTag != Compendium_t::Events_t::playerEvents.end() )
+												{
+													auto find = findTag->second.find(entryType);
+													if ( find != findTag->second.end() )
+													{
+														if ( find->second.type == Compendium_t::Events_t::BITFIELD )
+														{
+															for ( int i = 0; i < 32; ++i )
+															{
+																if ( find->second.value & (1 << i) )
+																{
+																	++total;
+																}
+															}
+														}
+													}
+												}
+
+												if ( numbooks > 0 )
+												{
+													value = std::max(0, std::min(100, (int)(100.0 * total / (real_t)(numbooks))));
+												}
+												else
+												{
+													value = std::min(total * 100, 100);
+												}
+											}
+										}
+										else if ( tag == Compendium_t::EventTags::CPDM_GRAVE_EPITAPHS_PERCENT )
+										{
+											value = std::max(0, std::min(100, (int)(100.0 * total / (real_t)(17))));
+										}
+										else
+										{
+											value = total;
+										}
+									}
+									else if ( (find->first == TOOL_MIRROR || find->first == MIRROR_SHIELD)
+										&& tag == Compendium_t::EventTags::CPDM_BROKEN )
+									{
+										value = find->second.value * 7;
+									}
+									else
+									{
+										value = find->second.value;
+									}
+								}
+								std::string output = "";
+								auto findEvent = Compendium_t::Events_t::events.find(tag);
+								if ( find == findTag->second.end() )
+								{
+									// no matching record
+									val->setText("-");
+								}
+								else if ( findEvent != Compendium_t::Events_t::events.end() 
+									&& findEvent->second.attributes.find("stats") != findEvent->second.attributes.end() )
+								{
+									if ( !strcmp(entryName, "str") )
+									{
+										output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_STR, Compendium_t::Events_t::eventLangEntries[tag]);
+									}
+									else if ( !strcmp(entryName, "dex") )
+									{
+										output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_DEX, Compendium_t::Events_t::eventLangEntries[tag]);
+									}
+									else if ( !strcmp(entryName, "con") )
+									{
+										output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_CON, Compendium_t::Events_t::eventLangEntries[tag]);
+									}
+									else if ( !strcmp(entryName, "int") )
+									{
+										output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_INT, Compendium_t::Events_t::eventLangEntries[tag]);
+									}
+									else if ( !strcmp(entryName, "per") )
+									{
+										output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_PER, Compendium_t::Events_t::eventLangEntries[tag]);
+									}
+									else if ( !strcmp(entryName, "chr") )
+									{
+										output = Compendium_t::Events_t::formatEventRecordText(value, "stats", STAT_CHR, Compendium_t::Events_t::eventLangEntries[tag]);
+									}
+									val->setText(output.c_str());
+								}
+								else
+								{
+									if ( tag == Compendium_t::CPDM_RUNS_COLLECTED )
+									{
+										output = Compendium_t::Events_t::formatEventRecordText(value, nullptr, 0, Compendium_t::Events_t::eventLangEntries[tag]);
+										auto findTag = Compendium_t::Events_t::playerEvents.find(Compendium_t::CPDM_MINEHEAD_ENTER);
+										if ( findTag != Compendium_t::Events_t::playerEvents.end() )
+										{
+											auto findCat = Compendium_t::Events_t::eventWorldIDLookup.find("minehead");
+											if ( findCat != Compendium_t::Events_t::eventWorldIDLookup.end() )
+											{
+												int worldId = findCat->second + Compendium_t::Events_t::kEventWorldOffset;
+												if ( findTag->second.find(worldId) != findTag->second.end()
+													&& findTag->second[worldId].value > 0 )
+												{
+													char buf[32];
+													snprintf(buf, sizeof(buf), " (%.2f%%)", std::min(100.0, 100.0 * value / (real_t)findTag->second[worldId].value));
+													output += buf;
+												}
+											}
+										}
+									}
+									else if ( entryType >= 0 && entryType < NUMITEMS )
+									{
+										output = Compendium_t::Events_t::formatEventRecordText(value, compendium_contents_current[compendium_current].c_str(), entryType, Compendium_t::Events_t::eventLangEntries[tag]);
+									}
+									else
+									{
+										output = Compendium_t::Events_t::formatEventRecordText(value, nullptr, 0, Compendium_t::Events_t::eventLangEntries[tag]);
+									}
+									val->setText(output.c_str());
+								}
+							}
+							else
+							{
+								val->setText("-");
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	static void scrollToCompendiumListItem(Frame& toSelect, Frame& page_right_inner)
+	{
+		Frame* parent = page_right_inner.getParent();
+		if ( Slider* slider = parent->findSlider("right_slider") )
+		{
+			SDL_Rect actualSize = page_right_inner.getActualSize();
+			SDL_Rect entryPos = toSelect.getSize();
+			SDL_Rect size = page_right_inner.getSize();
+			const int diff = actualSize.h - page_right_inner.getSize().h;
+			if ( diff > 0 )
+			{
+				int entrySize = entryPos.y + entryPos.h;
+				if ( actualSize.y > entryPos.y )
+				{
+					slider->setValue(100.0 * std::min(std::max(0, entryPos.y - entryPos.h / 4), diff) / diff);
+				}
+				else if ( entryPos.y + entryPos.h > actualSize.y + size.h )
+				{
+					slider->setValue(100.0 * std::min(std::max(0, entryPos.y + entryPos.h + entryPos.h / 4 - size.h), diff) / diff);
+				}
+			}
+			else
+			{
+				slider->setValue(0.f);
+			}
+			slider->getCallback()(*slider);
+		}
+	}
+
+	static bool contents_activate_from_tab = true;
+	static bool contents_activate_from_filter = false;
+	static void selectCompendiumItemInList(Frame& toSelect, Frame& page_right_inner, bool scrollTo, bool gamepadSelect)
+	{
+		if ( scrollTo )
+		{
+			scrollToCompendiumListItem(toSelect, page_right_inner);
+		}
+		if ( compendium_current == "codex" )
+		{
+			int index = -1;
+			for ( auto f : page_right_inner.getFrames() )
+			{
+				if ( f->isToBeDeleted() )
+				{
+					continue;
+				}
+				if ( auto txt = f->findField("item name") )
+				{
+					++index;
+					auto txtRight = f->findField("item txt right");
+					if ( f == &toSelect )
+					{
+						txt->setColor(compendiumContentsSelectedColor);
+
+						compendium_contents_list_current[compendium_current][compendium_contents_current[compendium_current]] = index;
+
+						if ( txtRight )
+						{
+							txtRight->setColor(compendiumContentsSelectedColor);
+						}
+
+						if ( !isMouseVisible() && gamepadSelect )
+						{
+							toSelect.select();
+						}
+
+						if ( !contents_activate_from_tab )
+						{
+							//soundActivate();
+						}
+
+						refreshCompendiumCamera(Compendium_t::compendiumEntityCurrent.modelName);
+
+						// find records for this item
+						auto findCat = Compendium_t::Events_t::eventCodexIDLookup.find(Compendium_t::compendiumEntityCurrent.contentsName);
+						if ( findCat != Compendium_t::Events_t::eventCodexIDLookup.end() )
+						{
+							int index = -1;
+							if ( f->getUserData() )
+							{
+								index = (reinterpret_cast<intptr_t>(f->getUserData()) & 0x7F);
+							}
+							Compendium_t::compendiumEntityCurrent.modelIndex = index + 1;
+							populateRecordsSectionItems(page_right_inner.getParent(), Compendium_t::Events_t::kEventCodexOffset + findCat->second, findCat->first.c_str(), index);
+						}
+					}
+					else
+					{
+						txt->setColor(compendiumContentsDefaultColor);
+						if ( txtRight )
+						{
+							txtRight->setColor(compendiumContentsDefaultColor);
+						}
+					}
+				}
+			}
+			return;
+		}
+		Compendium_t::compendiumItemModel.sprite = -1;
+		Compendium_t::compendiumItemModel.focalz = 0.5;
+		Compendium_t::compendiumItemModel.roll = 0.0;
+		Compendium_t::compendiumItemModel.flags[SPRITE] = false;
+		int index = -1;
+		for ( auto f : page_right_inner.getFrames() )
+		{
+			if ( f->isToBeDeleted() )
+			{
+				continue;
+			}
+			if ( auto txt = f->findField("item name") )
+			{
+				++index;
+				if ( f == &toSelect )
+				{
+					txt->setColor(compendiumContentsSelectedColor);
+
+					compendium_contents_list_current[compendium_current][compendium_contents_current[compendium_current]] = index;
+
+					if ( auto notifTxt = f->findField("item notif") )
+					{
+						notifTxt->removeSelf();
+					}
+					if ( auto details = f->findField("item detail") )
+					{
+						details->setDisabled(false);
+						details->setColor(txt->getColor());
+					}
+
+					auto find = ItemTooltips.itemNameStringToItemID.find(toSelect.getName());
+					int itemType = find != ItemTooltips.itemNameStringToItemID.end() ? find->second : -1;
+					std::string modelsPath = "items_single";
+					if ( strstr(toSelect.getName(), "spell_") )
+					{
+						itemType = SPELL_ITEM;
+						Compendium_t::compendiumItemModel.flags[SPRITE] = true;
+						modelsPath = "spells_single";
+					}
+					if ( itemType >= WOODEN_SHIELD && itemType < NUMITEMS )
+					{
+						int appearance = 0;
+						if ( toSelect.getUserData() )
+						{
+							appearance = (reinterpret_cast<intptr_t>(toSelect.getUserData()) & 0x7F);
+						}
+
+						auto& contents = compendium_current == "items" ? CompendiumEntries.items[compendium_contents_current[compendium_current]].items_in_category
+							: CompendiumEntries.magic[compendium_contents_current[compendium_current]].items_in_category;
+						int itemLookupIndex = itemType;
+						for ( auto& i : contents )
+						{
+							if ( i.name == toSelect.getName() )
+							{
+								Compendium_t::compendiumItemModel.roll = (i.rotation * PI / 180.0);
+								if ( itemType == SPELL_ITEM )
+								{
+									if ( i.spellID >= 0 )
+									{
+										itemLookupIndex = Compendium_t::Events_t::kEventSpellOffset + i.spellID;
+									}
+								}
+								break;
+							}
+						}
+						Compendium_t::compendiumItemModel.sprite = items[itemType].index + appearance;
+						Compendium_t::compendiumItemModel.skill[10] = itemType;
+						Compendium_t::compendiumItemModel.skill[14] = appearance;
+
+						auto find = Compendium_t::Events_t::itemIDToString.find(itemLookupIndex);
+						if ( find != Compendium_t::Events_t::itemIDToString.end() )
+						{
+							auto& unlockStatus = Compendium_t::CompendiumItems_t::unlocks[find->second];
+							if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::UNLOCKED_VISITED
+								|| unlockStatus == Compendium_t::CompendiumUnlockStatus::UNLOCKED_UNVISITED )
+							{
+								// section unlocked, reveal item in list
+								auto& itemUnlock = Compendium_t::CompendiumItems_t::itemUnlocks[itemLookupIndex];
+								if ( itemUnlock == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN
+									|| itemUnlock == Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED
+									|| itemUnlock == Compendium_t::CompendiumUnlockStatus::UNLOCKED_UNVISITED )
+								{
+									itemUnlock = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_VISITED;
+
+									bool allRevealed = true;
+									for ( auto& i : contents )
+									{
+										int itemID = i.itemID == SPELL_ITEM ? Compendium_t::Events_t::kEventSpellOffset + i.spellID : i.itemID;
+										auto find = Compendium_t::CompendiumItems_t::itemUnlocks.find(itemID);
+										if ( find != Compendium_t::CompendiumItems_t::itemUnlocks.end() )
+										{
+											if ( find->second == Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED
+												|| find->second == Compendium_t::CompendiumUnlockStatus::UNLOCKED_UNVISITED )
+											{
+												allRevealed = false;
+												break;
+											}
+										}
+									}
+									if ( allRevealed )
+									{
+										if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::UNLOCKED_UNVISITED )
+										{
+											unlockStatus = Compendium_t::CompendiumUnlockStatus::UNLOCKED_VISITED;
+											if ( main_menu_frame )
+											{
+												if ( auto compendium = main_menu_frame->findFrame("compendium") )
+												{
+													if ( auto nav = compendium->findFrame("nav") )
+													{
+														if ( auto contents = nav->findFrame("contents") )
+														{
+															if ( auto contents_notif = contents->findFrame("notifs") )
+															{
+																std::string findImg = "notif_" + compendium_contents_current[compendium_current];
+																if ( auto img = contents_notif->findImage(findImg.c_str()) )
+																{
+																	img->disabled = true;
+																}
+															}
+														}
+													}
+												}
+											}
+										}
+									}
+									Compendium_t::PointsAnim_t::countUnreadLastTicks = 0;
+									Compendium_t::PointsAnim_t::countUnreadNotifs();
+								}
+							}
+						}
+
+						if ( !isMouseVisible() && gamepadSelect )
+						{
+							toSelect.select();
+						}
+						if ( !contents_activate_from_tab )
+						{
+							//soundActivate();
+						}
+
+						refreshCompendiumCamera(modelsPath);
+
+						// find records for this item
+						populateRecordsSectionItems(page_right_inner.getParent(), itemLookupIndex, "", itemLookupIndex);
+					}
+				}
+				else
+				{
+					txt->setColor(compendiumContentsDefaultColor);
+					if ( auto details = f->findField("item detail") )
+					{
+						details->setColor(txt->getColor());
+					}
+				}
+			}
+		}
+	}
+
+	static void itemListNotificationAnimate(Frame& frame)
+	{
+		static Uint32 animTick = 0;
+		static Uint32 animState = 0;
+		bool animate = false;
+		if ( ticks != animTick )
+		{
+			animTick = ticks;
+			animate = true;
+			if ( ticks % (TICKS_PER_SECOND / 2) == 0 )
+			{
+				++animState;
+				if ( animState >= 2 ) { animState = 0; }
+			}
+		}
+		for ( auto f : frame.getFrames() )
+		{
+			auto notifTxt = f->findField("item notif");
+			if ( !notifTxt ) { continue; }
+			auto itemName = f->findField("item name");
+			if ( !itemName ) { continue; }
+
+			Uint32 color = 0;
+			if ( animState == 0 )
+			{
+				color = makeColorRGB(30, 203, 177);
+			}
+			else if ( animState == 1 )
+			{
+				color = makeColorRGB(43, 254, 207);
+			}
+
+			for ( int i = 0; i < 10; ++i )
+			{
+				notifTxt->addWordToHighlight(i + Field::TEXT_HIGHLIGHT_WORDS_PER_LINE, color);
+			}
+		}
+	};
+
+#if !defined(NDEBUG)
+	static ConsoleVariable<bool>cvar_compendium_reveal("/compendium_reveal", false);
+#endif
+	static bool compendiumEntryControlEnabled = false;
+	static void refreshCompendiumEntryItemsList(std::string name, Frame* parent, const bool gamepadClick)
+	{
+		if ( compendium_current == "items" )
+		{
+			if ( CompendiumEntries.items.find(name) == CompendiumEntries.items.end() )
+			{
+				return;
+			}
+		}
+		else
+		{
+			if ( CompendiumEntries.magic.find(name) == CompendiumEntries.magic.end() )
+			{
+				return;
+			}
+		}
+		auto& compendiumEntry = (compendium_current == "items") ? CompendiumEntries.items[name] : CompendiumEntries.magic[name];
+
+		if ( !gamepadClick )
+		{
+			Compendium_t::compendiumEntityCurrent.modelRNG++;
+		}
+
+		if ( Frame* page_right_unlock = parent->findFrame("page_right_unlock") )
+		{
+			if ( auto unlock_lore_cost = page_right_unlock->findButton("unlock_lore_cost") )
+			{
+				if ( compendiumEntry.lorePoints > 0 )
+				{
+					unlock_lore_cost->setText(std::to_string(compendiumEntry.lorePoints).c_str());
+					if ( Compendium_t::lorePointsFromAchievements - Compendium_t::lorePointsSpent >= compendiumEntry.lorePoints )
+					{
+						unlock_lore_cost->setTextColor(compendiumLoreCostAvailable);
+					}
+					else
+					{
+						unlock_lore_cost->setTextColor(compendiumLoreCostInactive);
+					}
+				}
+				else
+				{
+					unlock_lore_cost->setText("-");
+				}
+			}
+		}
+
+		if ( Frame* page_right = parent->findFrame("page_right") )
+		{
+			if ( auto page_right_unlock_cost = page_right->findField("lore_cost") )
+			{
+				if ( compendiumEntry.lorePoints > 0 )
+				{
+					page_right_unlock_cost->setText(std::to_string(compendiumEntry.lorePoints).c_str());
+				}
+				else
+				{
+					page_right_unlock_cost->setText("-");
+				}
+			}
+
+			if ( page_right = page_right->findFrame("page_right_inner") )
+			{
+				for ( auto f : page_right->getFrames() )
+				{
+					f->removeSelf();
+				}
+				page_right->remove("selector_bg");
+
+				auto notif_frame = page_right->addFrame("notif");
+				notif_frame->setHollow(true);
+				notif_frame->setClickable(false);
+				notif_frame->setInvisible(true);
+				notif_frame->setTickCallback([](Widget& widget) {
+					if ( auto parent = static_cast<Frame*>(widget.getParent()) )
+					{
+						itemListNotificationAnimate(*parent);
+					}
+				});
+
+				const int entrySize = 64;
+				Compendium_t::compendiumItem.status = EXCELLENT;
+				Compendium_t::compendiumItem.beatitude = 0;
+				Compendium_t::compendiumItem.count = 1;
+				Compendium_t::compendiumItem.identified = true;
+
+				if ( !compendiumItemTooltip.tooltipContainerFrame )
+				{
+					createInventoryTooltipFrame(0,
+						parent,
+						compendiumItemTooltip.tooltipContainerFrame,
+						compendiumItemTooltip.titleOnlyTooltipFrame,
+						compendiumItemTooltip.tooltipFrame,
+						compendiumItemTooltip.interactFrame,
+						compendiumItemTooltip.tooltipPromptFrame);
+					compendiumItemTooltip.tooltipFrame->setDisabled(false);
+					if ( compendiumItemTooltip.tooltipContainerFrame )
+					{
+						if ( false )
+						{
+							auto item_widget = compendiumItemTooltip.tooltipContainerFrame->addFrame("item_widget");
+							item_widget->setSize(SDL_Rect{ 360, 360, 144, 166 });
+							item_widget->addImage(SDL_Rect{ 0, 0, 144, 166 }, 0xFFFFFFFF,
+								"*images/ui/Main Menus/AdventureArchives/C_ItemConditions_Panel_00.png",
+								"item_widget_bg");
+							item_widget->setClickable(false);
+							item_widget->setInheritParentFrameOpacity(false);
+							item_widget->setOpacity(0.0);
+							item_widget->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+								auto frame = const_cast<Frame*>((Frame*)(&widget));
+							if ( auto parent = frame->getParent() )
+							{
+								if ( auto tooltip = parent->findFrame("player tooltip 0") )
+								{
+									if ( tooltip->getSize().w == 0 )
+									{
+										frame->setOpacity(0.0);
+									}
+									else
+									{
+										frame->setOpacity(tooltip->getOpacity());
+									}
+									if ( frame->getOpacity() > 0.001 )
+									{
+										SDL_Rect framePos = frame->getSize();
+										framePos.x = tooltip->getSize().x - framePos.w;
+										framePos.y = tooltip->getSize().y;
+										frame->setSize(framePos);
+
+										// draw glyphs
+										bool pressed = false;// ticks% TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
+										Input& input = Input::inputs[getMenuOwner()];
+										const SDL_Rect viewport{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
+										auto color = makeColor(255, 255, 255, 255 * frame->getOpacity() / 100.0);
+										if ( auto txt = frame->findField("txt_1") )
+										{
+											auto path = input.getGlyphPathForBinding("MenuUp", pressed);
+											auto image = Image::get((std::string("*") + path).c_str());
+											int w = image->getWidth();
+											int h = image->getHeight();
+											int x = frame->getAbsoluteSize().x + txt->getSize().x - 8 - w;
+											int y = frame->getAbsoluteSize().y + txt->getSize().y + 8 + 2 - h / 2;
+											image->drawColor(nullptr, SDL_Rect{ x, y, w, h }, viewport, color);
+										}
+										if ( auto txt = frame->findField("txt_2") )
+										{
+											auto path = input.getGlyphPathForBinding("MenuDown", pressed);
+											auto image = Image::get((std::string("*") + path).c_str());
+											int w = image->getWidth();
+											int h = image->getHeight();
+											int x = frame->getAbsoluteSize().x + txt->getSize().x - 8 - w;
+											int y = frame->getAbsoluteSize().y + txt->getSize().y + 8 + 2 - h / 2;
+											image->drawColor(nullptr, SDL_Rect{ x, y, w, h }, viewport, color);
+										}
+										if ( auto txt = frame->findField("txt_3") )
+										{
+											auto path = input.getGlyphPathForBinding("MenuRight", pressed);
+											auto image = Image::get((std::string("*") + path).c_str());
+											int w = image->getWidth();
+											int h = image->getHeight();
+											int x = frame->getAbsoluteSize().x + txt->getSize().x - 8 - w;
+											int y = frame->getAbsoluteSize().y + txt->getSize().y + 8 + 2 - h / 2;
+											image->drawColor(nullptr, SDL_Rect{ x, y, w, h }, viewport, color);
+										}
+										if ( auto txt = frame->findField("txt_4") )
+										{
+											auto path = input.getGlyphPathForBinding("MenuLeft", pressed);
+											auto image = Image::get((std::string("*") + path).c_str());
+											int w = image->getWidth();
+											int h = image->getHeight();
+											int x = frame->getAbsoluteSize().x + txt->getSize().x - 8 - w;
+											int y = frame->getAbsoluteSize().y + txt->getSize().y + 8 + 2 - h / 2;
+											image->drawColor(nullptr, SDL_Rect{ x, y, w, h }, viewport, color);
+										}
+									}
+								}
+							}
+								});
+
+							auto txt = item_widget->addField("txt_1", 64);
+
+							SDL_Rect pos{ 54, 21, 86, 24 };
+							txt->setFont(smallfont_outline);
+							txt->setSize(pos);
+							txt->setHJustify(Field::justify_t::LEFT);
+							txt->setVJustify(Field::justify_t::TOP);
+							txt->setText("BLESS +");
+							txt->setColor(makeColorRGB(67, 195, 157));
+
+							pos.y += 36;
+							txt = item_widget->addField("txt_2", 64);
+							txt->setFont(smallfont_outline);
+							txt->setSize(pos);
+							txt->setHJustify(Field::justify_t::LEFT);
+							txt->setVJustify(Field::justify_t::TOP);
+							txt->setText("CURSE -");
+							txt->setColor(hudColors.characterSheetRed);
+
+							pos.y += 36;
+							txt = item_widget->addField("txt_3", 64);
+							txt->setFont(smallfont_outline);
+							txt->setSize(pos);
+							txt->setHJustify(Field::justify_t::LEFT);
+							txt->setVJustify(Field::justify_t::TOP);
+							txt->setText("REPAIR");
+							txt->setColor(makeColorRGB(188, 154, 114));
+
+							pos.y += 36;
+							txt = item_widget->addField("txt_4", 64);
+							txt->setFont(smallfont_outline);
+							txt->setSize(pos);
+							txt->setHJustify(Field::justify_t::LEFT);
+							txt->setVJustify(Field::justify_t::TOP);
+							txt->setText("DAMAGE");
+							txt->setColor(makeColorRGB(188, 154, 114));
+						}
+						else
+						{
+							auto item_widget = compendiumItemTooltip.tooltipContainerFrame->addFrame("item_widget");
+							item_widget->setSize(SDL_Rect{ 360, 360, 274, 50 });
+							item_widget->addImage(SDL_Rect{ 0, 0, 274, 50 }, makeColor(255, 255, 255, 192),
+								"*images/ui/Main Menus/AdventureArchives/C_ItemConditions_Panel_01.png",
+								"item_widget_bg");
+							item_widget->setClickable(false);
+							item_widget->setHollow(true);
+							item_widget->setInheritParentFrameOpacity(false);
+							item_widget->setOpacity(0.0);
+							item_widget->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+								auto frame = const_cast<Frame*>((Frame*)(&widget));
+							if ( auto parent = frame->getParent() )
+							{
+								if ( auto tooltip = parent->findFrame("player tooltip 0") )
+								{
+									if ( frame->getOpacity() > 0.001 )
+									{
+										// draw glyphs
+										bool pressed = false; // ticks% TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
+										Input& input = Input::inputs[getMenuOwner()];
+										const SDL_Rect viewport{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
+										auto color = makeColor(255, 255, 255, 255 * frame->getOpacity() / 100.0);
+										const int yoffset = -2;
+										if ( auto txt = frame->findField("txt_1") )
+										{
+											bool toggle = ticks % TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
+											char* binding = "MenuPageRight";
+											if ( input.input("MenuUp").isBindingUsingKeyboard() )
+											{
+												binding = "MenuUp";
+											}
+											pressed = input.binary(binding);
+											auto path = input.getGlyphPathForBinding(binding, pressed);
+											Image* image = Image::get((std::string("*") + path).c_str());
+											int w = image->getWidth();
+											int h = image->getHeight();
+											int x1 = frame->getAbsoluteSize().x + txt->getSize().x - 8 - w;
+											int y1 = frame->getAbsoluteSize().y + txt->getSize().y + 8 + 2 - h / 2 + yoffset;
+											image->drawColor(nullptr, SDL_Rect{ x1, y1, w, h }, viewport, color);
+
+											binding = "MenuPageLeft";
+											if ( input.input("MenuDown").isBindingUsingKeyboard() )
+											{
+												binding = "MenuDown";
+											}
+											pressed = input.binary(binding);
+											path = input.getGlyphPathForBinding(binding, pressed);
+											image = Image::get((std::string("*") + path).c_str());
+											w = image->getWidth();
+											h = image->getHeight();
+											int x2 = x1 - 4 - w;
+											int y2 = frame->getAbsoluteSize().y + txt->getSize().y + 8 + 2 - h / 2 + yoffset;
+											image->drawColor(nullptr, SDL_Rect{ x2, y2, w, h }, viewport, color);
+										}
+										if ( auto txt = frame->findField("txt_2") )
+										{
+											char* binding = "MenuPageRightAlt";
+											if ( input.input("MenuRight").isBindingUsingKeyboard() )
+											{
+												binding = "MenuRight";
+											}
+											pressed = input.binary(binding);
+											auto path = input.getGlyphPathForBinding(binding, pressed);
+											auto image = Image::get((std::string("*") + path).c_str());
+											int w = image->getWidth();
+											int h = image->getHeight();
+											int x1 = frame->getAbsoluteSize().x + txt->getSize().x - 8 - w;
+											int y1 = frame->getAbsoluteSize().y + txt->getSize().y + 8 + 2 - h / 2 + yoffset;
+											image->drawColor(nullptr, SDL_Rect{ x1, y1, w, h }, viewport, color);
+
+											binding = "MenuPageLeftAlt";
+											if ( input.input("MenuLeft").isBindingUsingKeyboard() )
+											{
+												binding = "MenuLeft";
+											}
+											pressed = input.binary(binding);
+											path = input.getGlyphPathForBinding(binding, pressed);
+											image = Image::get((std::string("*") + path).c_str());
+											w = image->getWidth();
+											h = image->getHeight();
+											int x2 = x1 - 4 - w;
+											int y2 = frame->getAbsoluteSize().y + txt->getSize().y + 8 + 2 - h / 2 + yoffset;
+											image->drawColor(nullptr, SDL_Rect{ x2, y2, w, h }, viewport, color);
+										}
+									}
+								}
+							}
+								});
+
+							auto txt = item_widget->addField("txt_1", 64);
+
+							SDL_Rect pos{ 8 + 32 + 4 + 32 + 8, 21 - 16 + 10, 86, 24 };
+							txt->setFont(smallfont_outline);
+							txt->setSize(pos);
+							txt->setHJustify(Field::justify_t::LEFT);
+							txt->setVJustify(Field::justify_t::TOP);
+							txt->setText("BLESS");
+							txt->setColor(makeColorRGB(67, 195, 157));
+
+							txt = item_widget->addField("txt_2", 64);
+							txt->setFont(smallfont_outline);
+							txt->setHJustify(Field::justify_t::LEFT);
+							txt->setVJustify(Field::justify_t::TOP);
+							txt->setText("REPAIR");
+							txt->setColor(makeColorRGB(188, 154, 114));
+							if ( auto textGet = txt->getTextObject() )
+							{
+								pos.x = item_widget->getSize().w;
+								pos.x -= textGet->getWidth();
+								pos.x -= 12;
+								txt->setSize(pos);
+							}
+
+							/*pos.y += 36;
+							txt = item_widget->addField("txt_3", 64);
+							txt->setFont(smallfont_outline);
+							txt->setSize(pos);
+							txt->setHJustify(Field::justify_t::LEFT);
+							txt->setVJustify(Field::justify_t::TOP);
+							txt->setText("REPAIR");
+							txt->setColor(makeColorRGB(188, 154, 114));
+
+							pos.y += 36;
+							txt = item_widget->addField("txt_4", 64);
+							txt->setFont(smallfont_outline);
+							txt->setSize(pos);
+							txt->setHJustify(Field::justify_t::LEFT);
+							txt->setVJustify(Field::justify_t::TOP);
+							txt->setText("DAMAGE");
+							txt->setColor(makeColorRGB(188, 154, 114));*/
+						}
+					}
+				}
+				compendiumItemTooltip.clear();
+
+				int lastSelection = compendium_contents_list_current[compendium_current][compendium_contents_current[compendium_current]];
+				if ( lastSelection >= compendiumEntry.items_in_category.size() )
+				{
+					lastSelection = 0;
+				}
+				Frame* toSelect = nullptr;
+				Frame* prevFrame = nullptr;
+				int modelRNGCycle = -1;
+				for ( int i = 0; i < compendiumEntry.items_in_category.size(); ++i )
+				{
+					++modelRNGCycle;
+					auto& data = compendiumEntry.items_in_category[i];
+					auto entry = page_right->addFrame(data.name.c_str());
+					entry->setHollow(true);
+					entry->setClickable(false);
+					entry->setSize(SDL_Rect{ 8, 0 + i * entrySize, page_right->getSize().w - 32, entrySize });
+
+					if ( i == 0 )
+					{
+						auto selector_bg = page_right->addImage(SDL_Rect{ entry->getSize().x, 0, entry->getSize().w, entry->getSize().h},
+							makeColorRGB(71, 41, 27), "images/system/white.png", "selector_bg");
+						selector_bg->disabled = true;
+					}
+
+					entry->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+						auto frame = const_cast<Frame*>((Frame*)(&widget));
+						if ( frame->isSelected() && !isMouseVisible() )
+						{
+							if ( auto itemBg = frame->findImage("item bg") )
+							{
+								// draw glyphs
+								bool pressed = ticks % TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
+								Input& input = Input::inputs[getMenuOwner()];
+								auto path = input.getGlyphPathForBinding("MenuConfirm", pressed);
+								auto image = Image::get((std::string("*") + path).c_str());
+								int w = image->getWidth();
+								int h = image->getHeight();
+								const SDL_Rect viewport{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
+								int x = frame->getAbsoluteSize().x + itemBg->pos.x + itemBg->pos.w / 2 - 1;
+								int y = frame->getAbsoluteSize().y + itemBg->pos.y + itemBg->pos.h - 16;
+								image->draw(nullptr, SDL_Rect{ x - w / 2, y, w, h }, viewport);
+							}
+						}
+						});
+					entry->setTickCallback([](Widget& widget) {
+						auto frame = static_cast<Frame*>(&widget);
+						if ( isMouseVisible() )
+						{
+							frame->setWidgetBack("back_button");
+						}
+						else
+						{
+							if ( compendiumItemTooltip.tooltipGamepadOpen )
+							{
+								frame->removeWidgetAction("MenuCancel");
+								frame->removeWidgetAction("MenuPageLeft");
+								frame->removeWidgetAction("MenuPageRight");
+							}
+							else
+							{
+								frame->setWidgetBack("right_back_button");
+								frame->addWidgetAction("MenuPageLeft", "tab_left");
+								frame->addWidgetAction("MenuPageRight", "tab_right");
+							}
+						}
+						if ( Frame* page_right_inner = frame->getParent() )
+						{
+							auto selector_bg = page_right_inner->findImage("selector_bg");
+							if ( frame->getUserData() )
+							{
+								bool first = (reinterpret_cast<intptr_t>(frame->getUserData()) >> 7) & 1;
+								if ( first )
+								{
+									if ( selector_bg )
+									{
+										selector_bg->disabled = true;
+									}
+								}
+							}
+							auto txt = frame->findField("item name");
+							if ( compendiumEntryControlEnabled )
+							{
+								if ( Frame* parent = page_right_inner->getParent() )
+								{
+									if ( parent = parent->getParent() )
+									{
+										SDL_Rect absolutePos = frame->getAbsoluteSize();
+										if ( (isMouseVisible() && frame->capturesMouse())
+											|| frame->isSelected() )
+										{
+											if ( isMouseVisible() )
+											{
+												if ( Frame* page_right = page_right_inner->getParent() )
+												{
+													page_right->select();
+												}
+											}
+											else if ( frame->isSelected() )
+											{
+												if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuDown")
+													|| Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuRight") )
+												{
+													bool leftright = Input::inputs[getMenuOwner()].binary("MenuRight");
+													bool foundSelection = false;
+													auto& frames = page_right_inner->getFrames();
+													int index = -1;
+													for ( auto f : frames )
+													{
+														++index;
+														if ( f == frame )
+														{
+															// look ahead for a new selection
+															for ( int i = index + 1; i < frames.size(); ++i )
+															{
+																if ( frames[i]->isToBeDeleted() )
+																{
+																	continue;
+																}
+																auto itemName = frames[i]->findField("item name");
+																bool selectable = !(itemName && !strcmp(itemName->getText(), "???"));
+																if ( !selectable && leftright )
+																{
+																	continue; // skip over 
+																}
+																if ( !itemName )
+																{
+																	continue;
+																}
+
+																frames[i]->select();
+																frames[i]->scrollParent();
+																soundMove();
+																foundSelection = true;
+																if ( selectable )
+																{
+																	selectCompendiumItemInList(*frames[i], *page_right_inner, false, true);
+																}
+																break;
+															}
+															break;
+														}
+													}
+													if ( !foundSelection )
+													{
+														soundError();
+													}
+												}
+												else if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuUp") 
+													|| Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuLeft") )
+												{
+													bool leftright = Input::inputs[getMenuOwner()].binary("MenuLeft");
+													bool foundSelection = false;
+													auto& frames = page_right_inner->getFrames();
+													int index = -1;
+													for ( auto f : frames )
+													{
+														++index;
+														if ( f == frame )
+														{
+															// look behind for a selection
+															for ( int i = index - 1; i >= 0; --i )
+															{
+																if ( frames[i]->isToBeDeleted() )
+																{
+																	continue;
+																}
+																auto itemName = frames[i]->findField("item name");
+																bool selectable = !(itemName && !strcmp(itemName->getText(), "???"));
+																if ( !selectable && leftright )
+																{
+																	continue; // skip over 
+																}
+																if ( !itemName )
+																{
+																	continue;
+																}
+																frames[i]->select();
+																frames[i]->scrollParent();
+																soundMove();
+																foundSelection = true;
+																if ( selectable )
+																{
+																	selectCompendiumItemInList(*frames[i], *page_right_inner, false, true);
+																}
+																break;
+															}
+															break;
+														}
+													}
+													if ( !foundSelection )
+													{
+														soundError();
+													}
+												}
+											}
+
+											auto itemName = frame->findField("item name");
+											bool selectable = !(itemName && !strcmp(itemName->getText(), "???"));
+											if ( isMouseVisible() && Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuLeftClick") )
+											{
+												if ( selectable )
+												{
+													soundActivate();
+													selectCompendiumItemInList(*frame, *page_right_inner, false, false);
+												}
+												else
+												{
+													soundError();
+												}
+											}
+											if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuConfirm") )
+											{
+												if ( selectable )
+												{
+													selectCompendiumItemInList(*frame, *page_right_inner, false, true);
+													if ( !isMouseVisible() )
+													{
+														if ( compendiumItemTooltip.tooltipGamepadOpen )
+														{
+															soundCancel();
+															compendiumItemTooltip.tooltipGamepadOpen = false;
+														}
+														else
+														{
+															soundActivate();
+															compendiumItemTooltip.tooltipGamepadOpen = true;
+														}
+													}
+												}
+												else
+												{
+													soundError();
+												}
+											}
+
+											SDL_Rect pos = frame->getSize();
+											bool hovered = false;
+											if ( isMouseVisible() )
+											{
+												compendiumItemTooltip.tooltipGamepadOpen = false;
+											}
+											else if ( compendiumItemTooltip.tooltipGamepadOpen && Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuCancel") )
+											{
+												soundCancel();
+												compendiumItemTooltip.tooltipGamepadOpen = false;
+											}
+											if ( selector_bg )
+											{
+												selector_bg->disabled = false;
+												selector_bg->pos.y = frame->getSize().y;
+											}
+											auto itemBg = frame->findImage("item bg");
+											if ( itemBg )
+											{
+												SDL_Rect tmp = frame->getSize();
+												tmp.x += itemBg->pos.x;
+												tmp.y += itemBg->pos.y;
+												tmp.w = itemBg->pos.w;
+												tmp.h = itemBg->pos.h;
+												frame->setSize(tmp);
+												hovered = isMouseVisible() && frame->capturesMouse();
+											}
+											frame->setSize(pos);
+
+											if ( !isMouseVisible() )
+											{
+												if ( frame->isSelected() )
+												{
+													page_right_inner->setAllowScrollBinds(true);
+												}
+												hovered = compendiumItemTooltip.tooltipGamepadOpen;
+											}
+
+											if ( hovered && selectable )
+											{
+												//frame->select();
+												const int itemType = strstr(widget.getName(), "spell_") ? SPELL_ITEM 
+													: ItemTooltips.itemNameStringToItemID[widget.getName()];
+												if ( itemType >= WOODEN_SHIELD && itemType < NUMITEMS )
+												{
+													Compendium_t::compendiumItem.type = (ItemType)itemType;
+													if ( frame->getUserData() )
+													{
+														Compendium_t::compendiumItem.appearance = (reinterpret_cast<intptr_t>(frame->getUserData()) & 0x7F);
+													}
+
+													if ( Compendium_t::compendiumItem.type == SPELL_ITEM )
+													{
+														compendiumItemTooltip.tooltipPromptActive = false;
+													}
+													else
+													{
+														compendiumItemTooltip.tooltipPromptActive = true;
+													}
+
+													if ( compendiumItemTooltip.tooltipPromptActive )
+													{
+														if ( Input::inputs[getMenuOwner()].input("MenuUp").isBindingUsingKeyboard() )
+														{
+															if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuUp") )
+															{
+																if ( Compendium_t::compendiumItem.beatitude >= 9 )
+																{
+																	soundError();
+																}
+																else
+																{
+																	soundMove();
+																	Compendium_t::compendiumItem.beatitude++;
+																}
+															}
+														}
+														if ( Input::inputs[getMenuOwner()].input("MenuDown").isBindingUsingKeyboard() )
+														{
+															if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuDown") )
+															{
+																if ( Compendium_t::compendiumItem.beatitude <= -9 )
+																{
+																	soundError();
+																}
+																else
+																{
+																	soundMove();
+																	Compendium_t::compendiumItem.beatitude--;
+																}
+															}
+														}
+														if ( Input::inputs[getMenuOwner()].input("MenuPageLeft").isBindingUsingGamepad() )
+														{
+															if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuPageLeft") )
+															{
+																if ( Compendium_t::compendiumItem.beatitude <= -9 )
+																{
+																	soundError();
+																}
+																else
+																{
+																	soundMove();
+																	Compendium_t::compendiumItem.beatitude--;
+																}
+															}
+														}
+														if ( Input::inputs[getMenuOwner()].input("MenuPageRight").isBindingUsingGamepad() )
+														{
+															if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuPageRight") )
+															{
+																if ( Compendium_t::compendiumItem.beatitude >= 9 )
+																{
+																	soundError();
+																}
+																else
+																{
+																	soundMove();
+																	Compendium_t::compendiumItem.beatitude++;
+																}
+															}
+														}
+														if ( Input::inputs[getMenuOwner()].input("MenuLeft").isBindingUsingKeyboard() )
+														{
+															if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuLeft") )
+															{
+																if ( Compendium_t::compendiumItem.status > DECREPIT )
+																{
+																	soundMove();
+																	Compendium_t::compendiumItem.status = (Status)(Compendium_t::compendiumItem.status - 1);
+																}
+																else
+																{
+																	soundError();
+																}
+															}
+														}
+														if ( Input::inputs[getMenuOwner()].input("MenuRight").isBindingUsingKeyboard() )
+														{
+															if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuRight") )
+															{
+																if ( Compendium_t::compendiumItem.status < EXCELLENT )
+																{
+																	soundMove();
+																	Compendium_t::compendiumItem.status = (Status)(Compendium_t::compendiumItem.status + 1);
+																}
+																else
+																{
+																	soundError();
+																}
+															}
+														}
+														if ( Input::inputs[getMenuOwner()].input("MenuPageLeftAlt").isBindingUsingGamepad() )
+														{
+															if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuPageLeftAlt") )
+															{
+																if ( Compendium_t::compendiumItem.status > DECREPIT )
+																{
+																	soundMove();
+																	Compendium_t::compendiumItem.status = (Status)(Compendium_t::compendiumItem.status - 1);
+																}
+																else
+																{
+																	soundError();
+																}
+															}
+														}
+														if ( Input::inputs[getMenuOwner()].input("MenuPageRightAlt").isBindingUsingGamepad() )
+														{
+															if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuPageRightAlt") )
+															{
+																if ( Compendium_t::compendiumItem.status < EXCELLENT )
+																{
+																	soundMove();
+																	Compendium_t::compendiumItem.status = (Status)(Compendium_t::compendiumItem.status + 1);
+																}
+																else
+																{
+																	soundError();
+																}
+															}
+														}
+													}
+
+													Compendium_t::tooltipPos.x = absolutePos.x - 16;
+													Compendium_t::tooltipPos.y = absolutePos.y;
+													Compendium_t::tooltipNeedUpdate = true;
+
+													page_right_inner->setAllowScrollBinds(false);
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						});
+
+					const int id = strstr(data.name.c_str(), "spell_") ? SPELL_ITEM
+						: ItemTooltips.itemNameStringToItemID[data.name];
+					auto itemBg = entry->addImage(SDL_Rect{ 8, 8, 48, 48 },
+						0xFFFFFFFF,
+						"*images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_02.png", "item bg");
+					auto itemImg = entry->addImage(SDL_Rect{ itemBg->pos.x + 5, itemBg->pos.y + 5, 36, 36 },
+						0xFFFFFFFF, "", "item img");
+
+					auto itemName = entry->addField("item name", 128);
+					itemName->setFont(smallfont_outline);
+					itemName->setSize(SDL_Rect{ itemBg->pos.x + itemBg->pos.w + 4, 8, entry->getSize().w - 8, 48 });
+					auto itemDetail = entry->addField("item detail", 128);
+					itemDetail->setFont(smallfont_outline);
+					itemDetail->setSize(itemName->getSize());
+					auto& unlockStatus = Compendium_t::CompendiumItems_t::itemUnlocks[id == SPELL_ITEM 
+						? data.spellID + Compendium_t::Events_t::kEventSpellOffset : 
+							data.itemID];
+
+					if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN 
+#if !defined(NDEBUG)
+						&& !*cvar_compendium_reveal
+#endif
+						)
+					{
+						itemName->setText("???");
+					}
+					else if ( id == SPELL_ITEM )
+					{
+						if ( auto spell = getSpellFromID(data.spellID) )
+						{
+							std::string name = spell->getSpellName();
+							camelCaseString(name);
+							if ( auto s = getSpellFromID(data.spellID) )
+							{
+								char buf[128];
+								snprintf(buf, sizeof(buf), Language::get(6172), 
+									s->difficulty, ItemTooltips.getProficiencyLevelName(spell->difficulty).c_str());
+								itemDetail->setText(buf);
+							}
+							itemName->setText(name.c_str());
+							for ( int i = 0; i < 10; ++i ) // highlight 10 words on second line
+							{
+								itemDetail->addWordToHighlight(i + Field::TEXT_HIGHLIGHT_WORDS_PER_LINE, makeColorRGB(192, 192, 192));
+							}
+
+							if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED
+								|| unlockStatus == Compendium_t::CompendiumUnlockStatus::UNLOCKED_UNVISITED )
+							{
+								itemDetail->setDisabled(true);
+								if ( auto notifTxt = entry->addField("item notif", 128) )
+								{
+									notifTxt->setSize(itemName->getSize());
+									notifTxt->setFont(itemName->getFont());
+									std::string str = "\n";
+									str += Language::get(6183);
+									notifTxt->setText(str.c_str());
+									notifTxt->setColor(makeColorRGB(255, 255, 255));
+									for ( int i = 0; i < 10; ++i )
+									{
+										notifTxt->addWordToHighlight(i + Field::TEXT_HIGHLIGHT_WORDS_PER_LINE, makeColorRGB(30, 203, 177));
+									}
+								}
+							}
+						}
+					}
+					else
+					{
+						std::string name = items[id].getIdentifiedName();
+						camelCaseString(name);
+						char buf[128];
+						if ( items[id].level >= 0 )
+						{
+							snprintf(buf, sizeof(buf), "\n%s %d", Language::get(6173), items[id].level);
+						}
+						else
+						{
+							snprintf(buf, sizeof(buf), "\n%s ???", Language::get(6173));
+						}
+						itemDetail->setText(buf);
+						itemName->setText(name.c_str());
+						for ( int i = 0; i < 10; ++i ) // highlight 10 words on second line
+						{
+							itemDetail->addWordToHighlight(i + Field::TEXT_HIGHLIGHT_WORDS_PER_LINE, makeColorRGB(192, 192, 192));
+						}
+
+
+						if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED
+							|| unlockStatus == Compendium_t::CompendiumUnlockStatus::UNLOCKED_UNVISITED )
+						{
+							itemDetail->setDisabled(true);
+							if ( auto notifTxt = entry->addField("item notif", 128) )
+							{
+								notifTxt->setSize(itemName->getSize());
+								notifTxt->setFont(itemName->getFont());
+								std::string str = "\n";
+								str += Language::get(6183);
+								notifTxt->setText(str.c_str());
+								notifTxt->setColor(makeColorRGB(255, 255, 255));
+								for ( int i = 0; i < 10; ++i )
+								{
+									notifTxt->addWordToHighlight(i + Field::TEXT_HIGHLIGHT_WORDS_PER_LINE, makeColorRGB(30, 203, 177));
+								}
+							}
+						}
+					}
+
+					Compendium_t::compendiumItem.type = (ItemType)id;
+					Compendium_t::compendiumItem.appearance = (modelRNGCycle + Compendium_t::compendiumEntityCurrent.modelRNG) % items[id].variations;
+					if ( id == TOOL_PLAYER_LOOT_BAG )
+					{
+						Compendium_t::compendiumItem.appearance = (modelRNGCycle + Compendium_t::compendiumEntityCurrent.modelRNG) % 4;
+					}
+					else if ( id == READABLE_BOOK )
+					{
+						Compendium_t::compendiumItem.appearance = getBook("My Journal") % items[id].variations;
+					}
+
+					if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+					{
+						itemImg->path = "*images/ui/Main Menus/AdventureArchives/unknownitem.png";
+					}
+					else if ( id == SPELL_ITEM )
+					{
+						itemImg->path = ItemTooltips.getSpellIconPath(clientnum, Compendium_t::compendiumItem, data.spellID);
+						Compendium_t::compendiumItem.appearance = data.spellID;
+					}
+					else
+					{
+						itemImg->path = getItemSpritePath(0, Compendium_t::compendiumItem);
+					}
+					Uint8 userData = std::min((Uint8)127, (Uint8)(0x7F & Compendium_t::compendiumItem.appearance));
+
+					SDL_Rect actualPos = page_right->getActualSize();
+					actualPos.h = std::max(compendiumPageRightInnerHeight, entry->getSize().y + entry->getSize().h);
+					page_right->setActualSize(actualPos);
+
+					if ( i == 0 )
+					{
+						userData |= 1 << 7; // designate this as first in list
+					}
+					entry->setUserData((void*)(intptr_t)userData);
+
+					if ( unlockStatus != Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN && (!toSelect || i == lastSelection) )
+					{
+						toSelect = entry;
+					}
+					else
+					{
+						itemName->setColor(compendiumContentsDefaultColor);
+						itemDetail->setColor(compendiumContentsDefaultColor);
+					}
+
+					entry->setWidgetSearchParent("compendium");
+					entry->setAllowScrollParent(true);
+					entry->setScrollParentOffset(SDL_Rect{ 0, -16, 0, 16 });
+					entry->setMenuConfirmControlType(0);
+					entry->setHideGlyphs(true);
+					entry->setHideKeyboardGlyphs(true);
+					entry->addWidgetAction("MenuPageLeft", "tab_left");
+					entry->addWidgetAction("MenuPageRight", "tab_right");
+					//entry->addWidgetMovement("MenuAlt2", "nav_filter_sort");
+					entry->setWidgetBack("right_back_button");
+				}
+
+				if ( toSelect )
+				{
+					selectCompendiumItemInList(*toSelect, *page_right, true, false);
+				}
+			}
+		}
+	}
+
+	static void refreshCompendiumEntryCodexList(std::string name, Frame* parent)
+	{
+		if ( CompendiumEntries.codex.find(name) == CompendiumEntries.codex.end() )
+		{
+			return;
+		}
+		auto& entry = CompendiumEntries.codex[name];
+		if ( Frame* page_right = parent->findFrame("page_right") )
+		{
+			if ( page_right = page_right->findFrame("page_right_inner") )
+			{
+				for ( auto f : page_right->getFrames() )
+				{
+					f->removeSelf();
+				}
+				page_right->remove("selector_bg");
+
+				const int entrySize = 64;
+
+				std::vector<std::pair<int, int>> rankedScores;
+				std::map<int, int> classRank;
+				for ( int j = 0; j < NUMCLASSES; ++j )
+				{
+					auto r = Compendium_t::Events_t::getCustomEventValue("CUSTOM_CLASS_PLAYTIME", "codex", "", j);
+					if ( r.size() > 0 )
+					{
+						rankedScores.push_back(std::make_pair(r[0].second, j));
+					}
+					else
+					{
+						rankedScores.push_back(std::make_pair(0, j));
+					}
+				}
+				std::sort(rankedScores.begin(), rankedScores.end(), [](const std::pair<int, int>& lhs, const std::pair<int, int>& rhs) {
+					return lhs.first > rhs.first
+					|| (lhs.first == rhs.first && lhs.second < rhs.second);
+					});
+				int lastValue = rankedScores[0].first;
+				int rankNum = 1;
+				for ( auto& pair : rankedScores )
+				{
+					if ( lastValue != pair.first )
+					{
+						++rankNum;
+					}
+					lastValue = pair.first;
+					pair.first = rankNum;
+				}
+
+				std::vector<std::string> entries;
+				static ConsoleVariable cvar_compendium_class_sort_playtime("/compendium_class_sort_playtime", true);
+				if ( name == "classes list" )
+				{
+					if ( *cvar_compendium_class_sort_playtime )
+					{
+						for ( auto& pair : rankedScores )
+						{
+							for ( int i = 0; i < NUMCLASSES; ++i )
+							{
+								if ( pair.second == i )
+								{
+									std::string classname = playerClassLangEntry(i, 0);
+									camelCaseString(classname);
+									entries.push_back(classname);
+								}
+							}
+						}
+					}
+					else
+					{
+						for ( int i = 0; i < NUMCLASSES; ++i )
+						{
+							std::string classname = playerClassLangEntry(i, 0);
+							camelCaseString(classname);
+							entries.push_back(classname);
+							for ( auto& pair : rankedScores )
+							{
+								if ( pair.second == i )
+								{
+									classRank[i] = pair.first;
+								}
+							}
+						}
+					}
+				}
+
+				int lastSelection = compendium_contents_list_current[compendium_current][compendium_contents_current[compendium_current]];
+				if ( lastSelection >= entries.size() )
+				{
+					lastSelection = 0;
+				}
+				Frame* toSelect = nullptr;
+				for ( int i = 0; i < entries.size(); ++i )
+				{
+					auto& data = entries[i];
+					auto entry = page_right->addFrame(data.c_str());
+
+					int classnum = *cvar_compendium_class_sort_playtime ? rankedScores[i].second : i;
+
+					entry->setHollow(true);
+					entry->setClickable(false);
+					entry->setSize(SDL_Rect{ 8, 0 + i * entrySize, page_right->getSize().w - 32, entrySize });
+					/*Button* btn = entry->addButton("item btn");
+					btn->setSize(entry->getSize());
+					btn->setText("click");*/
+
+					if ( i == 0 )
+					{
+						auto selector_bg = page_right->addImage(SDL_Rect{ entry->getSize().x, 0, entry->getSize().w, entry->getSize().h },
+							makeColorRGB(71, 41, 27), "images/system/white.png", "selector_bg");
+						selector_bg->disabled = true;
+					}
+
+					entry->setTickCallback([](Widget& widget) {
+						auto frame = static_cast<Frame*>(&widget);
+						if ( isMouseVisible() )
+						{
+							frame->setWidgetBack("back_button");
+						}
+						else
+						{
+							frame->setWidgetBack("right_back_button");
+						}
+						if ( Frame* page_right_inner = frame->getParent() )
+						{
+							auto selector_bg = page_right_inner->findImage("selector_bg");
+							if ( frame->getUserData() )
+							{
+								bool first = (reinterpret_cast<intptr_t>(frame->getUserData()) >> 7) & 1;
+								if ( first )
+								{
+									if ( selector_bg )
+									{
+										selector_bg->disabled = true;
+									}
+								}
+							}
+
+							auto txt = frame->findField("item name");
+							if ( compendiumEntryControlEnabled )
+							{
+								if ( Frame* parent = page_right_inner->getParent() )
+								{
+									if ( parent = parent->getParent() )
+									{
+										SDL_Rect absolutePos = frame->getAbsoluteSize();
+										if ( (isMouseVisible() && frame->capturesMouse())
+											|| frame->isSelected() )
+										{
+											if ( isMouseVisible() )
+											{
+												if ( Frame* page_right = page_right_inner->getParent() )
+												{
+													page_right->select();
+												}
+											}
+											else if ( frame->isSelected() )
+											{
+												if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuDown") 
+													|| Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuRight") )
+												{
+													bool foundSelection = false;
+													auto& frames = page_right_inner->getFrames();
+													int index = -1;
+													for ( auto f : frames )
+													{
+														++index;
+														if ( f == frame )
+														{
+															// look ahead for a new selection
+															for ( int i = index + 1; i < frames.size(); ++i )
+															{
+																if ( frames[i]->isToBeDeleted() )
+																{
+																	continue;
+																}
+																if ( !frames[i]->findField("item name") )
+																{
+																	continue;
+																}
+
+																frames[i]->select();
+																frames[i]->scrollParent();
+																soundMove();
+																foundSelection = true;
+																selectCompendiumItemInList(*frames[i], *page_right_inner, false, true);
+																break;
+															}
+															break;
+														}
+													}
+													if ( !foundSelection )
+													{
+														soundError();
+													}
+												}
+												else if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuUp") 
+													|| Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuLeft") )
+												{
+													bool foundSelection = false;
+													auto& frames = page_right_inner->getFrames();
+													int index = -1;
+													for ( auto f : frames )
+													{
+														++index;
+														if ( f == frame )
+														{
+															// look behind for a selection
+															for ( int i = index - 1; i >= 0; --i )
+															{
+																if ( frames[i]->isToBeDeleted() )
+																{
+																	continue;
+																}
+																if ( !frames[i]->findField("item name") )
+																{
+																	continue;
+																}
+
+																frames[i]->select();
+																frames[i]->scrollParent();
+																soundMove();
+																foundSelection = true;
+																selectCompendiumItemInList(*frames[i], *page_right_inner, false, true);
+																break;
+															}
+															break;
+														}
+													}
+													if ( !foundSelection )
+													{
+														soundError();
+													}
+												}
+											}
+
+											if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuLeftClick")
+												&& isMouseVisible() )
+											{
+												soundActivate();
+												selectCompendiumItemInList(*frame, *page_right_inner, false, false);
+											}
+											if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuConfirm") )
+											{
+												//soundActivate();
+												//selectCompendiumItemInList(*frame, *page_right_inner, false, true);
+											}
+
+											if ( !isMouseVisible() )
+											{
+												if ( frame->isSelected() )
+												{
+													page_right_inner->setAllowScrollBinds(true);
+												}
+											}
+
+											SDL_Rect pos = frame->getSize();
+											bool hovered = false;
+											if ( selector_bg )
+											{
+												selector_bg->disabled = false;
+												selector_bg->pos.y = frame->getSize().y;
+											}
+											auto itemBg = frame->findImage("item bg");
+											if ( itemBg )
+											{
+												SDL_Rect tmp = frame->getSize();
+												tmp.x += itemBg->pos.x;
+												tmp.y += itemBg->pos.y;
+												tmp.w = itemBg->pos.w;
+												tmp.h = itemBg->pos.h;
+												frame->setSize(tmp);
+												hovered = isMouseVisible() && frame->capturesMouse();
+											}
+											frame->setSize(pos);
+
+											if ( hovered )
+											{
+												page_right_inner->setAllowScrollBinds(false);
+											}
+										}
+									}
+								}
+							}
+						}
+					});
+
+					/*auto itemBg = entry->addImage(SDL_Rect{ 8, 8, 48, 48 },
+						0xFFFFFFFF,
+						"*images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_02.png", "item bg");*/
+					auto itemImg = entry->addImage(SDL_Rect{ 1, 5, 54, 54 },
+						0xFFFFFFFF, "", "item img");
+
+					auto itemName = entry->addField("item name", 128);
+					itemName->setFont(smallfont_outline);
+					itemName->setSize(SDL_Rect{ 8 + 48 + 4, 8, entry->getSize().w - 8, 48 });
+
+					auto itemNameRight = entry->addField("item txt right", 128);
+					itemNameRight->setFont(itemName->getFont());
+					SDL_Rect pos = itemName->getSize();
+					pos.w = entry->getSize().w - pos.x - 8;
+					itemNameRight->setSize(pos);
+					itemNameRight->setHJustify(Field::justify_t::RIGHT);
+					itemNameRight->setText("");
+					itemNameRight->setColor(compendiumContentsDefaultColor);
+					for ( int i = 0; i < 10; ++i ) // highlight 10 words on second line
+					{
+						itemNameRight->addWordToHighlight(i + Field::TEXT_HIGHLIGHT_WORDS_PER_LINE, makeColorRGB(192, 192, 192));
+					}
+
+					if ( name == "classes list" )
+					{
+						std::string name = data;
+						name += '\n';
+						char buf[64] = "00:00:00:00";
+
+						auto findLang = Compendium_t::Events_t::eventCustomLangEntries.find("CUSTOM_CLASS_PLAYTIME");
+						if ( findLang != Compendium_t::Events_t::eventCustomLangEntries.end() )
+						{
+							name += findLang->second["default"];
+							name += ' ';
+						}
+						auto results = Compendium_t::Events_t::getCustomEventValue("CUSTOM_CLASS_PLAYTIME", "codex", "", classnum);
+						if ( results.size() > 0 )
+						{
+							Uint32 playtimeTicks = results[0].second;
+							if ( playtimeTicks == 0 )
+							{
+								name += '-';
+							}
+							else
+							{
+								Uint32 sec = (playtimeTicks / TICKS_PER_SECOND) % 60;
+								Uint32 min = ((playtimeTicks / TICKS_PER_SECOND) / 60) % 60;
+								Uint32 hour = (((playtimeTicks / TICKS_PER_SECOND) / 60) / 60) % 24;
+								Uint32 day = ((playtimeTicks / TICKS_PER_SECOND) / 60) / 60 / 24;
+								day = std::min(day, (Uint32)99);
+								snprintf(buf, sizeof(buf), "%02d:%02d:%02d:%02d", day, hour, min, sec);
+								name += buf;
+
+								std::string txt = "\n";
+								if ( findLang != Compendium_t::Events_t::eventCustomLangEntries.end() )
+								{
+									txt += findLang->second["format"];
+								}
+								txt += std::to_string(*cvar_compendium_class_sort_playtime ? rankedScores[i].first : classRank[i]);
+								itemNameRight->setText(txt.c_str());
+							}
+						}
+						else
+						{
+							name += '-';
+						}
+						itemName->setText(name.c_str());
+						for ( int i = 0; i < 10; ++i ) // highlight 10 words on second line
+						{
+							itemName->addWordToHighlight(i + Field::TEXT_HIGHLIGHT_WORDS_PER_LINE, makeColorRGB(192, 192, 192));
+						}
+
+						const auto class_name = classes_in_order[classnum];
+						const auto class_find = classes.find(class_name);
+						if ( class_find != classes.end() )
+						{
+							itemImg->path = "*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/";
+							itemImg->path += class_find->second.image_highlighted;
+						}
+					}
+
+					SDL_Rect actualPos = page_right->getActualSize();
+					actualPos.h = std::max(compendiumPageRightInnerHeight, entry->getSize().y + entry->getSize().h);
+					page_right->setActualSize(actualPos);
+
+					Uint8 userData = classnum;
+					if ( i == 0 )
+					{
+						userData |= 1 << 7;
+					}
+
+					entry->setUserData((void*)(intptr_t)userData);
+					if ( i == lastSelection || i == 0 )
+					{
+						toSelect = entry;
+					}
+					else
+					{
+						itemName->setColor(compendiumContentsDefaultColor);
+					}
+
+					entry->setWidgetSearchParent("compendium");
+					entry->setAllowScrollParent(true);
+					entry->setScrollParentOffset(SDL_Rect{ 0, -16, 0, 16 });
+					entry->setMenuConfirmControlType(0);
+					entry->addWidgetAction("MenuPageLeft", "tab_left");
+					entry->addWidgetAction("MenuPageRight", "tab_right");
+					//entry->addWidgetMovement("MenuAlt2", "nav_filter_sort");
+					if ( isMouseVisible() )
+					{
+						entry->setWidgetBack("back_button");
+					}
+					else
+					{
+						entry->setWidgetBack("right_back_button");
+					}
+					if ( isMouseVisible() )
+					{
+						entry->setWidgetBack("back_button");
+					}
+					else
+					{
+						entry->setWidgetBack("right_back_button");
+					}
+				}
+
+				if ( toSelect )
+				{
+					selectCompendiumItemInList(*toSelect, *page_right, true, false);
+				}
+			}
+		}
+	}
+
+	static void refreshCompendiumEntryCodex(std::string name, Frame* parent, const bool gamepadClick)
+	{
+		if ( CompendiumEntries.codex.find(name) == CompendiumEntries.codex.end() )
+		{
+			return;
+		}
+		auto& entry = CompendiumEntries.codex[name];
+
+		Compendium_t::compendiumEntityCurrent.set(
+			name,
+			entry.models.empty() ? "" : entry.models[Compendium_t::compendiumEntityCurrent.modelRNG % entry.models.size()]
+		);
+
+		refreshCompendiumCamera(Compendium_t::compendiumEntityCurrent.modelName);
+
+		if ( Frame* page_left = parent->findFrame("page_left") )
+		{
+			if ( auto image_viewer = page_left->findFrame("image_viewer") )
+			{
+				image_viewer->setDisabled(entry.imagePath == "");
+				if ( auto img = image_viewer->findImage("img") )
+				{
+					img->path = entry.imagePath;
+					img->disabled = true;
+					if ( img->path != "" )
+					{
+						img->disabled = false;
+						if ( auto imgGet = Image::get(img->path.c_str()) )
+						{
+							img->pos.w = imgGet->getWidth();
+							img->pos.h = imgGet->getHeight();
+
+							img->pos.x = image_viewer->getSize().w / 2 - img->pos.w / 2;
+							img->pos.y = image_viewer->getSize().h / 2 - img->pos.h / 2;
+						}
+					}
+				}
+			}
+			if ( auto model_viewer = page_left->findFrame("model_viewer") )
+			{
+				model_viewer->setDisabled(entry.imagePath != "");
+			}
+
+			if ( auto blurb = page_left->findField("blurb") )
+			{
+				std::string txt = "";
+				for ( auto& str : entry.blurb )
+				{
+					if ( txt != "" ) { txt += '\n'; }
+					txt += str;
+				}
+				blurb->setText(txt.c_str());
+			}
+		}
+
+		if ( Frame* page_right_unlock = parent->findFrame("page_right_unlock") )
+		{
+			if ( auto unlock_lore_cost = page_right_unlock->findButton("unlock_lore_cost") )
+			{
+				if ( entry.lorePoints > 0 )
+				{
+					unlock_lore_cost->setText(std::to_string(entry.lorePoints).c_str());
+					if ( Compendium_t::lorePointsFromAchievements - Compendium_t::lorePointsSpent >= entry.lorePoints )
+					{
+						unlock_lore_cost->setTextColor(compendiumLoreCostAvailable);
+					}
+					else
+					{
+						unlock_lore_cost->setTextColor(compendiumLoreCostInactive);
+					}
+				}
+				else
+				{
+					unlock_lore_cost->setText("-");
+				}
+			}
+		}
+
+		if ( Frame* page_right = parent->findFrame("page_right") )
+		{
+			if ( auto page_right_unlock_cost = page_right->findField("lore_cost") )
+			{
+				if ( entry.lorePoints > 0 )
+				{
+					page_right_unlock_cost->setText(std::to_string(entry.lorePoints).c_str());
+				}
+				else
+				{
+					page_right_unlock_cost->setText("-");
+				}
+			}
+
+			// find records for this item
+			if ( name == "classes list" )
+			{
+				// do nothing
+			}
+			else
+			{
+				populateRecordsSectionItems(page_right, entry.id + Compendium_t::Events_t::kEventCodexOffset, name.c_str());
+			}
+
+			if ( page_right = page_right->findFrame("page_right_inner") )
+			{
+				for ( auto f : page_right->getFrames() )
+				{
+					f->removeSelf();
+				}
+
+				if ( auto details = page_right->findField("codex_details") )
+				{
+					auto featureImg = page_right->findImage("feature_img");
+					if ( featureImg )
+					{
+						featureImg->disabled = true;
+					}
+					auto featureTxt = page_right->findField("feature txt");
+					if ( featureTxt )
+					{
+						featureTxt->setDisabled(true);
+					}
+
+					Field* tipsTxt = page_right->findField("tips txt");
+					if ( tipsTxt )
+					{
+						tipsTxt->setDisabled(true);
+
+						SDL_Rect tipsPos = tipsTxt->getSize();
+						if ( featureTxt )
+						{
+							tipsPos.y = featureTxt->getSize().y;
+						}
+						tipsTxt->setSize(tipsPos);
+
+						SDL_Rect pos = details->getSize();
+						pos.y = tipsPos.y + 27;
+						details->setSize(pos);
+					}
+					details->clearLinesToColor();
+					if ( name == "classes list" )
+					{
+						details->setText("");
+						refreshCompendiumEntryCodexList(name, parent);
+						return;
+					}
+					else
+					{
+						if ( entry.featureImg != "" )
+						{
+							if ( auto imgGet = Image::get(entry.featureImg.c_str()) )
+							{
+								featureImg->pos.w = imgGet->getWidth();
+								featureImg->pos.h = imgGet->getHeight();
+								featureImg->disabled = false;
+								featureImg->path = entry.featureImg;
+							}
+						}
+						if ( !featureImg->disabled )
+						{
+							if ( featureTxt )
+							{
+								featureTxt->setDisabled(false);
+							}
+							SDL_Rect pos = details->getSize();
+							int offset = featureImg->pos.y + featureImg->pos.h + 16;
+							if ( tipsTxt )
+							{
+								SDL_Rect tipsPos = tipsTxt->getSize();
+								tipsPos.y += offset;
+								tipsTxt->setSize(tipsPos);
+
+								SDL_Rect pos = details->getSize();
+								pos.y = tipsPos.y + 27;
+								details->setSize(pos);
+							}
+						}
+
+						if ( tipsTxt )
+						{
+							tipsTxt->setDisabled(false);
+						}
+						std::string txt = "";
+						for ( auto& str : entry.details )
+						{
+							if ( txt != "" ) { txt += '\n'; }
+							txt += str;
+						}
+						details->setText(txt.c_str());
+						for ( size_t i = 0; i < entry.linesToHighlight.size(); ++i )
+						{
+							if ( entry.linesToHighlight[i] > 0 )
+							{
+								details->addColorToLine(i, entry.linesToHighlight[i]);
+							}
+						}
+					}
+
+					const int numLines = details->getNumTextLines();
+					auto actualFont = Font::get(details->getFont());
+					int height = 0;
+					if ( actualFont )
+					{
+						height = std::max(24, 24 + (numLines - 1) * actualFont->height(true));
+					}
+
+					SDL_Rect pos = details->getSize();
+					pos.h = height;
+					details->setSize(pos);
+
+					SDL_Rect actualPos = page_right->getActualSize();
+					actualPos.h = std::max(compendiumPageRightInnerHeight, pos.y + pos.h);
+					page_right->setActualSize(actualPos);
+				}
+			}
+
+		}
+	}
+
+	static void refreshCompendiumAchievements(std::string name, Frame* parent);
+
+	static void refreshCompendiumEntryMonster(std::string name, Frame* parent, const bool gamepadClick)
+	{
+		if ( CompendiumEntries.monsters.find(name) == CompendiumEntries.monsters.end() )
+		{
+			return;
+		}
+
+		std::string entryname = name;
+		if ( name == "spider" && ((!intro && ::arachnophobia_filter) || (intro && MainMenu::arachnophobia_filter)) )
+		{
+			entryname = "crab";
+		}
+		else if ( name == "shelob" && ((!intro && ::arachnophobia_filter) || (intro && MainMenu::arachnophobia_filter)) )
+		{
+			entryname = "bubbles";
+		}
+		auto& entry = CompendiumEntries.monsters[entryname];
+
+		if ( compendiumMonsterOverride )
+		{
+			Compendium_t::compendiumEntityCurrent.set(
+				name,
+				""
+			);
+		}
+		else
+		{
+			Compendium_t::compendiumEntityCurrent.set(
+				name,
+				entry.models.empty() ? "" : entry.models[Compendium_t::compendiumEntityCurrent.modelRNG % entry.models.size()]
+			);
+		}
+
+		refreshCompendiumCamera(Compendium_t::compendiumEntityCurrent.modelName);
+
+		if ( true /*compendiumMonster */ )
+		{
+			if ( true /*auto myStats = compendiumMonster->getStats()*/ )
+			{
+				if ( Frame* page_left = parent->findFrame("page_left") )
+				{
+					if ( auto image_viewer = page_left->findFrame("image_viewer") )
+					{
+						image_viewer->setDisabled(entry.imagePath == "");
+						if ( auto img = image_viewer->findImage("img") )
+						{
+							img->path = entry.imagePath;
+							img->disabled = true;
+							if ( img->path != "" )
+							{
+								img->disabled = false;
+								if ( auto imgGet = Image::get(img->path.c_str()) )
+								{
+									img->pos.w = imgGet->getWidth();
+									img->pos.h = imgGet->getHeight();
+
+									img->pos.x = image_viewer->getSize().w / 2 - img->pos.w / 2;
+									img->pos.y = image_viewer->getSize().h / 2 - img->pos.h / 2;
+								}
+							}
+						}
+					}
+					if ( auto model_viewer = page_left->findFrame("model_viewer") )
+					{
+						model_viewer->setDisabled(entry.imagePath != "");
+					}
+
+					if ( auto blurb = page_left->findField("blurb") )
+					{
+						std::string txt = "";
+						for ( auto& str : entry.blurb )
+						{
+							if ( txt != "" ) { txt += '\n'; }
+							txt += str;
+						}
+						blurb->setText(txt.c_str());
+					}
+				}
+
+				if ( Frame* page_right_unlock = parent->findFrame("page_right_unlock") )
+				{
+					if ( auto unlock_lore_cost = page_right_unlock->findButton("unlock_lore_cost") )
+					{
+						if ( entry.lorePoints > 0 )
+						{
+							unlock_lore_cost->setText(std::to_string(entry.lorePoints).c_str());
+							if ( Compendium_t::lorePointsFromAchievements - Compendium_t::lorePointsSpent >= entry.lorePoints )
+							{
+								unlock_lore_cost->setTextColor(compendiumLoreCostAvailable);
+							}
+							else
+							{
+								unlock_lore_cost->setTextColor(compendiumLoreCostInactive);
+							}
+						}
+						else
+						{
+							unlock_lore_cost->setText("-");
+						}
+					}
+				}
+
+				if ( Frame* page_right = parent->findFrame("page_right") )
+				{
+					if ( auto page_right_unlock_cost = page_right->findField("lore_cost") )
+					{
+						if ( entry.lorePoints > 0 )
+						{
+							page_right_unlock_cost->setText(std::to_string(entry.lorePoints).c_str());
+						}
+						else
+						{
+							page_right_unlock_cost->setText("-");
+						}
+					}
+
+					// find records for this item
+					if ( Compendium_t::Events_t::monsterUniqueIDLookup.find(entry.unique_npc)
+						!= Compendium_t::Events_t::monsterUniqueIDLookup.end() )
+					{
+						populateRecordsSectionItems(page_right, 
+							Compendium_t::Events_t::monsterUniqueIDLookup[entry.unique_npc] + Compendium_t::Events_t::kEventMonsterOffset, 
+							entry.unique_npc.c_str());
+					}
+					else
+					{
+						populateRecordsSectionItems(page_right, 
+							entry.monsterType + Compendium_t::Events_t::kEventMonsterOffset, 
+							monstertypename[entry.monsterType]);
+					}
+
+					if ( page_right = page_right->findFrame("page_right_inner") )
+					{
+						// debug
+						//if ( svFlags & SV_FLAG_HARDCORE )
+						//{
+						//	svFlags &= ~(SV_FLAG_HARDCORE);
+						//}
+						//else
+						//{
+						//	svFlags |= SV_FLAG_HARDCORE;
+						//}
+
+						if ( auto txt = page_right->findField("level type") )
+						{
+							std::string str = Language::get(6190);
+							if ( entry.lvl.size() > 0 )
+							{
+								char buf[32] = "-";
+								auto stat = entry.getDisplayStat("lvl");
+								if ( stat.size() > 1 )
+								{
+									snprintf(buf, sizeof(buf), "%d - %d", stat[0], stat[1]);
+								}
+								else if ( stat.size() == 1 )
+								{
+									snprintf(buf, sizeof(buf), "%d", stat[0]);
+								}
+								str += buf;
+							}
+							else
+							{
+								str += "???";
+							}
+							if ( entry.species != Compendium_t::CompendiumMonsters_t::SPECIES_NONE )
+							{
+								const char* lang = nullptr;
+								switch ( entry.species )
+								{
+								case Compendium_t::CompendiumMonsters_t::SPECIES_HUMANOID:
+									lang = Language::get(6202);
+									break;
+								case Compendium_t::CompendiumMonsters_t::SPECIES_BEAST:
+									lang = Language::get(6204);
+									break;
+								case Compendium_t::CompendiumMonsters_t::SPECIES_BEASTFOLK:
+									lang = Language::get(6203);
+									break;
+								case Compendium_t::CompendiumMonsters_t::SPECIES_UNDEAD:
+									lang = Language::get(6205);
+									break;
+								case Compendium_t::CompendiumMonsters_t::SPECIES_DEMONOID:
+									lang = Language::get(6206);
+									break;
+								case Compendium_t::CompendiumMonsters_t::SPECIES_CONSTRUCT:
+									lang = Language::get(6207);
+									break;
+								case Compendium_t::CompendiumMonsters_t::SPECIES_ELEMENTAL:
+									lang = Language::get(6208);
+									break;
+								default:
+									break;
+								}
+								if ( lang )
+								{
+									str += " ";
+									//str += "(";
+									str += lang;
+									//str += ")";
+								}
+							}
+							txt->setText(str.c_str());
+						}
+
+						if ( auto txt = page_right->findField("hp") )
+						{
+							txt->setText(Language::get(6199));
+						}
+						if ( auto txt = page_right->findField("hp val") )
+						{
+							char buf[32] = "-";
+							auto stat = entry.getDisplayStat("hp");
+							if ( stat.size() > 1 )
+							{
+								snprintf(buf, sizeof(buf), "%d - %d", stat[0], stat[1]);
+							}
+							else if ( stat.size() == 1 )
+							{
+								snprintf(buf, sizeof(buf), "%d", stat[0]);
+							}
+							txt->setText(buf);
+						}
+						if ( auto txt = page_right->findField("ac") )
+						{
+							txt->setText(Language::get(6200));
+						}
+						if ( auto txt = page_right->findField("ac val") )
+						{
+							char buf[32] = "-";
+							auto stat = entry.getDisplayStat("ac");
+							if ( stat.size() > 1 )
+							{
+								snprintf(buf, sizeof(buf), "%d - %d", stat[0], stat[1]);
+							}
+							else if ( stat.size() == 1 )
+							{
+								snprintf(buf, sizeof(buf), "%d", stat[0]);
+							}
+							txt->setText(buf);
+						}
+						if ( auto txt = page_right->findField("spd") )
+						{
+							txt->setText(Language::get(6201));
+						}
+						if ( auto txt = page_right->findField("spd val") )
+						{
+							char buf[32] = "-";
+							auto stat = entry.getDisplayStat("spd");
+							if ( stat.size() > 1 )
+							{
+								snprintf(buf, sizeof(buf), "%d - %d", stat[0], stat[1]);
+							}
+							else if ( stat.size() == 1 )
+							{
+								snprintf(buf, sizeof(buf), "%d", stat[0]);
+							}
+							txt->setText(buf);
+						}
+						if ( auto txt = page_right->findField("atk") )
+						{
+							txt->setText(Language::get(6197));
+						}
+						if ( auto txt = page_right->findField("atk val") )
+						{
+							char buf[32] = "-";
+							auto stat = entry.getDisplayStat("atk");
+							if ( stat.size() > 1 )
+							{
+								snprintf(buf, sizeof(buf), "%d - %d", stat[0], stat[1]);
+							}
+							else if ( stat.size() == 1 )
+							{
+								snprintf(buf, sizeof(buf), "%d", stat[0]);
+							}
+							txt->setText(buf);
+						}
+						if ( auto txt = page_right->findField("rangeatk") )
+						{
+							txt->setText(Language::get(6197));
+						}
+						if ( auto txt = page_right->findField("rangeatk val") )
+						{
+							char buf[32] = "-";
+							auto stat = entry.getDisplayStat("rangeatk");
+							if ( stat.size() > 1 )
+							{
+								snprintf(buf, sizeof(buf), "%d - %d", stat[0], stat[1]);
+							}
+							else if ( stat.size() == 1 )
+							{
+								snprintf(buf, sizeof(buf), "%d", stat[0]);
+							}
+							txt->setText(buf);
+						}
+						if ( auto txt = page_right->findField("pwr") )
+						{
+							txt->setText(Language::get(6198));
+						}
+						if ( auto txt = page_right->findField("pwr val") )
+						{
+							char buf[32] = "-";
+							auto& stat = entry.pwr;
+							if ( stat.size() > 1 )
+							{
+								snprintf(buf, sizeof(buf), "%d - %d", stat[0], stat[1]);
+							}
+							else if ( stat.size() == 1 )
+							{
+								snprintf(buf, sizeof(buf), "%d", stat[0]);
+							}
+							txt->setText(buf);
+						}
+
+						const char* res_neutral = "*images/ui/Main Menus/AdventureArchives/res_neutral.png";
+						const char* res_hi1 = "*images/ui/Main Menus/AdventureArchives/res_hi1.png";
+						const char* res_hi2 = "*images/ui/Main Menus/AdventureArchives/res_hi2.png";
+						const char* res_lo1 = "*images/ui/Main Menus/AdventureArchives/res_lo1.png";
+						const char* res_lo2 = "*images/ui/Main Menus/AdventureArchives/res_lo2.png";
+
+						std::vector<std::pair<std::pair<const char*, const char*>, int>> res_strs = {
+							{{"res_txt_unarmed", "res_unarmed"}, DAMAGE_TABLE_UNARMED},
+							{{"res_txt_sword", "res_sword"}, DAMAGE_TABLE_SWORD},
+							{{"res_txt_axe", "res_axe"}, DAMAGE_TABLE_AXE},
+							{{"res_txt_polearm", "res_polearm"}, DAMAGE_TABLE_POLEARM},
+							{{"res_txt_mace", "res_mace"}, DAMAGE_TABLE_MACE},
+							{{"res_txt_ranged", "res_ranged"}, DAMAGE_TABLE_RANGED},
+							{{"res_txt_magic", "res_magic"}, DAMAGE_TABLE_MAGIC}
+						};
+
+						for ( auto& pair : res_strs )
+						{
+							if ( auto field = page_right->findField(pair.first.first) )
+							{
+								char buf[32] = "";
+								if ( false )
+								{
+									real_t val = (100.0 * damagetables[entry.monsterType][(DamageTableType)pair.second]);
+									if ( val > 100.01 )
+									{
+										field->setColor(hudColors.characterSheetGreen);
+										snprintf(buf, sizeof(buf), "%.f%%", val);
+										field->setText(buf);
+									}
+									else if ( val < 99.99 )
+									{
+										field->setColor(hudColors.characterSheetRed);
+										snprintf(buf, sizeof(buf), "%.f%%", val);
+										field->setText(buf);
+									}
+									else
+									{
+										field->setColor(compendiumContentsDefaultColor);
+										field->setText("100%");
+									}
+								}
+								else
+								{
+									real_t val = (100.0 * damagetables[entry.monsterType][(DamageTableType)pair.second]);
+									if ( val > 100.01 )
+									{
+										field->setColor(hudColors.characterSheetGreen);
+										snprintf(buf, sizeof(buf), "%+.f%%", val - 100.0);
+										field->setText(buf);
+									}
+									else if ( val < 99.99 )
+									{
+										field->setColor(hudColors.characterSheetRed);
+										snprintf(buf, sizeof(buf), "%+.f%%", val - 100.0);
+										field->setText(buf);
+									}
+									else
+									{
+										field->setColor(compendiumContentsDefaultColor);
+										field->setText(" -");
+									}
+								}
+							}
+							if ( auto img = page_right->findImage(pair.first.second) )
+							{
+								switch ( entry.resistances[pair.second] )
+								{
+								case -1:
+									img->path = res_hi1;
+									break;
+								case -2:
+									img->path = res_hi2;
+									break;
+								case 1:
+									img->path = res_lo1;
+									break;
+								case 2:
+									img->path = res_lo2;
+									break;
+								default:
+									img->path = res_neutral;
+									break;
+								}
+							}
+						}
+
+						if ( auto abilities = page_right->findField("abilities") )
+						{
+							std::string txt = "";
+							for ( auto& str : entry.abilities )
+							{
+								if ( txt != "" ) { txt += '\n'; }
+								txt += str;
+							}
+							if ( txt == "" )
+							{
+								txt = "-";
+							}
+							else
+							{
+								size_t index = 0;
+								for ( char& c : txt )
+								{
+									if ( c == '-' )
+									{
+										if ( index == 0 || txt[index - 1] == '\n' )
+										{
+											c = '\x1E';
+										}
+									}
+									++index;
+								}
+							}
+							abilities->setText(txt.c_str());
+							const int numAbilitiesLines = abilities->getNumTextLines();
+							SDL_Rect abilityPos = abilities->getSize();
+
+							auto actualFont = Font::get(abilities->getFont());
+							if ( actualFont )
+							{
+								abilityPos.h = std::max(24, 24 + (numAbilitiesLines - 1) * actualFont->height(true));
+								abilities->setSize(abilityPos);
+							}
+
+							if ( auto inventory = page_right->findField("inventory txt") )
+							{
+								SDL_Rect pos = inventory->getSize();
+								pos.y = abilityPos.y + abilityPos.h + *compendiumMonsterSectionPadY - 24;
+								inventory->setSize(pos);
+
+								if ( auto inv = page_right->findField("inventory") )
+								{
+									std::string txt = "";
+									for ( auto& str : entry.inventory )
+									{
+										if ( txt != "" ) { txt += '\n'; }
+										txt += str;
+									}
+									if ( txt == "" )
+									{
+										txt = "-";
+									}
+									else
+									{
+										size_t index = 0;
+										for ( char& c : txt )
+										{
+											if ( c == '-' )
+											{
+												if ( index == 0 || txt[index - 1] == '\n' )
+												{
+													c = '\x1E';
+												}
+											}
+											++index;
+										}
+									}
+									inv->setText(txt.c_str());
+									const int numInvLines = inv->getNumTextLines();
+									SDL_Rect invPos = inv->getSize();
+									invPos.y = pos.y + 22;
+									if ( actualFont )
+									{
+										invPos.h = std::max(24, 24 + (numInvLines - 1) * actualFont->height(true));
+									}
+									inv->setSize(invPos);
+
+									SDL_Rect actualPos = page_right->getActualSize();
+									actualPos.h = std::max(compendiumPageRightInnerHeight, invPos.y + invPos.h);
+									page_right->setActualSize(actualPos);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	static Uint32 compendiumRevealAnimState = 0;
+	static void compendiumPageRightHideUnlocked(Frame* page_right, const bool unlocked, const bool hideAll, std::string to_unlock = "")
+	{
+		if ( !page_right ) { return; }
+		if ( hideAll )
+		{
+			page_right->setInvisible(true);
+			page_right->setOpacity(0.0);
+			if ( Frame* parent = page_right->getParent() )
+			{
+				if ( auto img = parent->findImage("page right img") )
+				{
+					img->disabled = true;
+				}
+				if ( auto reveal_frame = parent->findFrame("page_right_unlock") )
+				{
+					if ( auto unlock_lore_cost = reveal_frame->findButton("unlock_lore_cost") )
+					{
+						unlock_lore_cost->setDisabled(true);
+						unlock_lore_cost->setInvisible(true);
+					}
+					if ( auto reveal_txt = reveal_frame->findField("to_unlock") )
+					{
+						reveal_txt->setText("");
+					}
+					if ( auto reveal_btn = parent->findButton("page_right_unlock_btn") )
+					{
+						reveal_btn->setDisabled(true);
+						reveal_btn->setInvisible(true);
+					}
+				}
+				if ( auto reveal_top = parent->findFrame("page_right_reveal_top") )
+				{
+					if ( auto page_right_reveal = reveal_top->findFrame("page_right_reveal_top") )
+					{
+						page_right_reveal->setDisabled(true);
+						page_right_reveal->removeSelf();
+					}
+				}
+			}
+			return;
+		}
+		else if ( unlocked )
+		{
+			page_right->setInvisible(false);
+			page_right->setOpacity(100.0);
+			if ( Frame* parent = page_right->getParent() )
+			{
+				if ( auto img = parent->findImage("page right img") )
+				{
+					img->disabled = false;
+				}
+				if ( auto reveal_frame = parent->findFrame("page_right_unlock") )
+				{
+					if ( auto unlock_lore_cost = reveal_frame->findButton("unlock_lore_cost") )
+					{
+						unlock_lore_cost->setDisabled(true);
+						unlock_lore_cost->setInvisible(true);
+					}
+					if ( auto reveal_txt = reveal_frame->findField("to_unlock") )
+					{
+						reveal_txt->setText("");
+					}
+					if ( auto reveal_btn = reveal_frame->findButton("page_right_unlock_btn") )
+					{
+						reveal_btn->setDisabled(true);
+						reveal_btn->setInvisible(true);
+					}
+				}
+				if ( auto reveal_top = parent->findFrame("page_right_reveal_top") )
+				{
+					if ( auto page_right_reveal = reveal_top->findFrame("page_right_reveal_top") )
+					{
+						page_right_reveal->setDisabled(true);
+						page_right_reveal->removeSelf();
+					}
+				}
+			}
+		}
+		else if ( !unlocked )
+		{
+			page_right->setInvisible(true);
+			page_right->setOpacity(0.0);
+
+			if ( Frame* parent = page_right->getParent() )
+			{
+				if ( auto img = parent->findImage("page right img") )
+				{
+					img->disabled = true;
+				}
+				if ( auto reveal_frame = parent->findFrame("page_right_unlock") )
+				{
+					if ( auto unlock_lore_cost = reveal_frame->findButton("unlock_lore_cost") )
+					{
+						unlock_lore_cost->setDisabled(true);
+						unlock_lore_cost->setInvisible(false);
+						unlock_lore_cost->setText("");
+					}
+					if ( auto reveal_txt = reveal_frame->findField("to_unlock") )
+					{
+						reveal_txt->setText(to_unlock.c_str());
+					}
+					if ( auto reveal_btn = reveal_frame->findButton("page_right_unlock_btn") )
+					{
+						reveal_btn->setDisabled(false);
+						reveal_btn->setInvisible(false);
+					}
+				}
+				if ( auto reveal_top = parent->findFrame("page_right_reveal_top") )
+				{
+					if ( auto page_right_reveal = reveal_top->findFrame("page_right_reveal_top") )
+					{
+						page_right_reveal->setDisabled(true);
+						page_right_reveal->removeSelf();
+					}
+				}
+			}
+		}
+	}
+
+	static auto contents_select_unknown_fn = [](Frame::entry_t& frameEntry)
+	{
+		if ( !contents_activate_from_tab && !isMouseVisible() )
+		{
+			soundMove();
+		}
+	};
+	static auto contents_activate_unknown_fn = [](Frame::entry_t& frameEntry)
+	{
+		if ( !contents_activate_from_tab )
+		{
+			soundError();
+		}
+	};
+	static auto contents_activate_fn = [](Frame::entry_t& frameEntry, bool gamepadClick)
+	{
+		static ConsoleCommand ccmd_compendium_sorting(
+			"/compendium_sorting", "",
+			[](int argc, const char** argv) {
+				Compendium_t::compendium_sorting = Compendium_t::compendium_sorting == "default" ? "alphabetical" : "default";
+		});
+
+		std::string sorting = Compendium_t::compendium_sorting;
+		if ( Compendium_t::compendium_sorting_hide_undiscovered )
+		{
+			sorting += "_discovered";
+		}
+
+		assert(main_menu_frame);
+		if ( !main_menu_frame ) { return; }
+		auto compendiumFrame = main_menu_frame->findFrame("compendium");
+		if ( !compendiumFrame ) { return; }
+
+		if ( auto page_right_number_flourish = compendiumFrame->findImage("page_right_number_flourish") )
+		{
+			page_right_number_flourish->disabled = true;
+		}
+
+		auto* unlockStatus = compendium_current == "monsters" ? &Compendium_t::CompendiumMonsters_t::unlocks
+			: (compendium_current == "world" ? &Compendium_t::CompendiumWorld_t::unlocks
+				: (compendium_current == "codex" ? &Compendium_t::CompendiumCodex_t::unlocks
+					: (compendium_current == "items" ? &Compendium_t::CompendiumItems_t::unlocks
+						: (compendium_current == "magic" ? &Compendium_t::CompendiumItems_t::unlocks
+							: (compendium_current == "achievements" ? &Compendium_t::AchievementData_t::unlocks
+								: nullptr)))));
+
+		auto contentsFrame = compendiumFrame->findFrame("contents");
+		if ( contentsFrame )
+		{
+			for ( auto& e : contentsFrame->getEntries() )
+			{
+				if ( e->color == compendiumContentsSelectedColor )
+				{
+					if ( compendium_current == "achievements" )
+					{
+						e->color = compendiumContentsDefaultColor;
+					}
+					else
+					{
+						e->color = compendiumContentsDefaultColorNoResearch;
+						if ( unlockStatus )
+						{
+							auto findUnlock = unlockStatus->find(e->name);
+							if ( findUnlock != unlockStatus->end() )
+							{
+								if ( findUnlock->second == Compendium_t::UNLOCKED_UNVISITED
+									|| findUnlock->second == Compendium_t::UNLOCKED_VISITED )
+								{
+									e->color = compendiumContentsDefaultColor;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		frameEntry.color = compendiumContentsSelectedColor;
+
+		auto page_right = compendiumFrame->findFrame("page_right");
+		if ( page_right )
+		{
+			if ( auto slider = page_right->findSlider("right_slider") )
+			{
+				slider->setValue(0);
+				slider->getCallback()(*slider);
+			}
+			if ( Frame* page_right_overlay = page_right->findFrame("page_right_overlay") )
+			{
+				page_right_overlay->setDisabled(true);
+			}
+		}
+
+		if ( compendium_current == "monsters" )
+		{
+			Compendium_t::CompendiumMonsters_t::contents[Compendium_t::compendium_sorting] = Compendium_t::CompendiumMonsters_t::contents_unfiltered[Compendium_t::compendium_sorting];
+			if ( ((!intro && ::arachnophobia_filter) || (intro && MainMenu::arachnophobia_filter)) )
+			{
+				// crabs
+				auto& entries = Compendium_t::CompendiumMonsters_t::contents[Compendium_t::compendium_sorting];
+				for ( auto it = entries.begin(); it != entries.end(); )
+				{
+					if ( it->first == "spider" || it->first == "shelob" )
+					{
+						it = entries.erase(it);
+					}
+					else
+					{
+						++it;
+					}
+				}
+				for ( auto it = entries.begin(); it != entries.end(); ++it )
+				{
+					if ( it->first == "crab" )
+					{
+						it->first = "spider";
+					}
+					if ( it->first == "bubbles" )
+					{
+						it->first = "shelob";
+					}
+				}
+			}
+			else
+			{
+				// spiders
+				auto& entries = Compendium_t::CompendiumMonsters_t::contents[sorting];
+				for ( auto it = entries.begin(); it != entries.end(); )
+				{
+					if ( it->first == "crab" || it->first == "bubbles" )
+					{
+						it = entries.erase(it);
+					}
+					else
+					{
+						++it;
+					}
+				}
+			}
+		}
+
+		auto* entries = compendium_current == "monsters" ? &Compendium_t::CompendiumMonsters_t::contents[sorting]
+			: (compendium_current == "world" ? &Compendium_t::CompendiumWorld_t::contents[sorting]
+				: (compendium_current == "codex" ? &Compendium_t::CompendiumCodex_t::contents[sorting]
+					: (compendium_current == "items" ? &Compendium_t::CompendiumItems_t::contents[sorting]
+						: (compendium_current == "magic" ? &Compendium_t::CompendiumMagic_t::contents[sorting]
+							: (compendium_current == "achievements" ? &Compendium_t::AchievementData_t::contents[sorting]
+							: nullptr)))));
+
+		std::string content = "";
+		std::string previousEntry = compendium_contents_current[compendium_current];
+
+		compendiumEntryControlEnabled = false;
+		bool unlocked = false;
+
+		if ( entries )
+		{
+			auto id = (intptr_t)frameEntry.data;
+			if ( id >= entries->size() )
+			{
+				return;
+			}
+			auto& entry = (*entries)[id];
+			compendium_contents_current[compendium_current] = entry.first;
+			if ( auto page_left_title = compendiumFrame->findField("page_left_title") )
+			{
+				page_left_title->setText(entry.second.c_str());
+			}
+
+			if ( unlockStatus )
+			{
+				auto findUnlock = unlockStatus->find(entry.first);
+				if ( findUnlock != unlockStatus->end() )
+				{
+					if ( findUnlock->second == Compendium_t::UNLOCKED_UNVISITED )
+					{
+						bool allRevealed = true;
+						if ( compendium_current == "items" || compendium_current == "magic" )
+						{
+							auto& compendiumEntry = (compendium_current == "items") ? CompendiumEntries.items[entry.first] : CompendiumEntries.magic[entry.first];
+							for ( auto& i : compendiumEntry.items_in_category )
+							{
+								int itemID = i.itemID == SPELL_ITEM ? Compendium_t::Events_t::kEventSpellOffset + i.spellID : i.itemID;
+								auto find = Compendium_t::CompendiumItems_t::itemUnlocks.find(itemID);
+								if ( find != Compendium_t::CompendiumItems_t::itemUnlocks.end() )
+								{
+									if ( find->second == Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED
+										|| find->second == Compendium_t::CompendiumUnlockStatus::UNLOCKED_UNVISITED )
+									{
+										allRevealed = false;
+										break;
+									}
+								}
+							}
+						}
+						if ( allRevealed )
+						{
+							findUnlock->second = Compendium_t::UNLOCKED_VISITED;
+							Compendium_t::PointsAnim_t::countUnreadLastTicks = 0;
+							Compendium_t::PointsAnim_t::countUnreadNotifs();
+						}
+					}
+					else if ( findUnlock->second == Compendium_t::LOCKED_REVEALED_UNVISITED )
+					{
+						findUnlock->second = Compendium_t::LOCKED_REVEALED_VISITED;
+						Compendium_t::PointsAnim_t::countUnreadLastTicks = 0;
+						Compendium_t::PointsAnim_t::countUnreadNotifs();
+					}
+
+					if ( findUnlock->second == Compendium_t::UNLOCKED_VISITED
+						|| findUnlock->second == Compendium_t::LOCKED_UNKNOWN
+						|| findUnlock->second == Compendium_t::UNLOCKED_UNVISITED )
+					{
+						unlocked = true;
+					}
+				}
+				else
+				{
+					unlocked = false;
+				}
+
+				if ( compendium_current == "achievements" )
+				{
+					compendiumPageRightHideUnlocked(page_right, false, true); // hide all page_right
+				}
+				else
+				{
+					compendiumPageRightHideUnlocked(page_right, unlocked, false, unlocked ? "" : entry.first);
+				}
+
+				if ( contentsFrame )
+				{
+					if ( auto notifs = contentsFrame->findFrame("notifs") )
+					{
+						for ( auto img : notifs->getImages() )
+						{
+							std::string name = "";
+							auto find = img->name.find("notif_");
+							if ( find != std::string::npos )
+							{
+								name = img->name.substr(strlen("notif_"));
+								//if ( name == entry.first )
+								//{
+								//	continue; // don't unhighlight the current selection
+								//}
+								auto findUnlock = unlockStatus->find(name);
+								if ( findUnlock != unlockStatus->end() )
+								{
+									if ( findUnlock->second == Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_VISITED
+										|| findUnlock->second == Compendium_t::CompendiumUnlockStatus::UNLOCKED_VISITED )
+									{
+										img->disabled = true;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			compendiumEntryControlEnabled = unlocked;
+
+			if ( Compendium_t::compendiumEntityCurrent.modelRNG == 0 )
+			{
+				Compendium_t::compendiumEntityCurrent.modelRNG = local_rng.rand();
+			}
+
+			auto pageNumberLeft = compendiumFrame->findField("page_left_number");
+			auto pageNumberRight = compendiumFrame->findField("page_right_number");
+			auto pagePrev = compendiumFrame->findField("page_left_prev");
+			auto pageNext = compendiumFrame->findField("page_right_next");
+			if ( compendium_current == "achievements" )
+			{
+				if ( pageNumberLeft ) { pageNumberLeft->setDisabled(true); }
+				if ( pageNumberRight ) { pageNumberRight->setDisabled(true); }
+				if ( pagePrev ) { pagePrev->setDisabled(true); }
+				if ( pageNext ) { pageNext->setDisabled(true); }
+			}
+			else 
+			{
+				if ( pageNumberLeft ) { pageNumberLeft->setDisabled(false); }
+				if ( pageNumberRight ) { pageNumberRight->setDisabled(true); }
+				if ( pagePrev ) { pagePrev->setDisabled(false); }
+				if ( pageNext ) { pageNext->setDisabled(false); }
+				{
+
+					std::string txt = Language::get(6179);
+					int prevId = -1;
+					if ( id > 0 && id < entries->size() )
+					{
+						prevId = id - 1;
+					}
+					else if ( entries->size() > 0 )
+					{
+						prevId = entries->size() - 1;
+					}
+
+					bool firstLoop = true;
+					while ( prevId >= 0 )
+					{
+						if ( prevId == id )
+						{
+							// looped around once, quit
+							txt = "";
+							break;
+						}
+						if ( (*entries)[prevId].first != "-" ) // not a divider slot
+						{
+							auto findUnlock = unlockStatus->find((*entries)[prevId].first);
+							if ( findUnlock != unlockStatus->end() && findUnlock->second != Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+							{
+								txt += (*entries)[prevId].second;
+								break;
+							}
+						}
+						--prevId;
+						if ( prevId < 0 )
+						{
+							if ( !firstLoop )
+							{
+								break;
+							}
+							else
+							{
+								firstLoop = false;
+								prevId = entries->size() - 1;
+							}
+						}
+					}
+					if ( pagePrev )
+					{
+						pagePrev->setText(txt.c_str());
+					}
+				}
+				
+				{
+					std::string txt = Language::get(6180);
+					int nextId = -1;
+					if ( (id + 1) < entries->size() )
+					{
+						nextId = id + 1;
+					}
+					else if ( id == entries->size() - 1 )
+					{
+						nextId = 0;
+					}
+
+					bool firstLoop = true;
+					while ( nextId >= 0 )
+					{
+						if ( nextId == id )
+						{
+							// looped around once, quit
+							txt = "";
+							break;
+						}
+						if ( (*entries)[nextId].first != "-" ) // not a divider slot
+						{
+							auto findUnlock = unlockStatus->find((*entries)[nextId].first);
+							if ( findUnlock != unlockStatus->end() && findUnlock->second != Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+							{
+								txt += (*entries)[nextId].second;
+								break;
+							}
+						}
+						++nextId;
+						if ( nextId >= entries->size() )
+						{
+							if ( !firstLoop )
+							{
+								break;
+							}
+							else
+							{
+								firstLoop = false;
+								nextId = 0;
+							}
+						}
+					}
+					if ( pageNext )
+					{
+						pageNext->setText(txt.c_str());
+					}
+				}
+
+				{
+					char buf[32] = "";
+					int numEntries = 0;
+					int pageNum = 0;
+					int index = -1;
+					for ( auto& e : *entries )
+					{
+						++index;
+						if ( e.first != "-" )
+						{
+							if ( index == id )
+							{
+								pageNum = numEntries;
+							}
+							++numEntries;
+						}
+					}
+					snprintf(buf, sizeof(buf), Language::get(6181), pageNum + 1, (int)numEntries);
+					if ( pageNumberLeft )
+					{
+						pageNumberLeft->setText(buf);
+					}
+					if ( pageNumberRight )
+					{
+						pageNumberRight->setText(buf);
+					}
+				}
+			}
+		}
+
+		if ( compendium_current == "codex" )
+		{
+			refreshCompendiumEntryCodex(compendium_contents_current[compendium_current], compendiumFrame, gamepadClick);
+		}
+		else if ( compendium_current == "items" )
+		{
+			refreshCompendiumEntryItemsBlurb(compendium_contents_current[compendium_current], compendiumFrame);
+			refreshCompendiumEntryItemsList(compendium_contents_current[compendium_current], compendiumFrame, gamepadClick);
+		}
+		else if ( compendium_current == "magic" )
+		{
+			refreshCompendiumEntryItemsBlurb(compendium_contents_current[compendium_current], compendiumFrame);
+			refreshCompendiumEntryItemsList(compendium_contents_current[compendium_current], compendiumFrame, gamepadClick);
+		}
+		else if ( compendium_current == "world" )
+		{
+			refreshCompendiumEntryWorld(compendium_contents_current[compendium_current], compendiumFrame, gamepadClick);
+		}
+		else if ( compendium_current == "monsters" )
+		{
+			if ( auto monster = createCompendiumMonster((Monster)CompendiumEntries.monsters[compendium_contents_current[compendium_current]].monsterType, 8, 8) )
+			{
+				if ( auto myStats = monster->getStats() )
+				{
+					myStats->setAttribute("monster_portrait", "true");
+					(void)actMonster(monster);
+					monster->yaw = 0.0;
+					myStats->EFFECTS[EFF_ASLEEP] = false;
+					monsterAnimate(compendiumMonster, myStats, 0.0);
+					monsterAnimate(compendiumMonster, myStats, 0.0);
+				}
+			}
+			refreshCompendiumEntryMonster(compendium_contents_current[compendium_current], compendiumFrame, gamepadClick);
+		}
+		else if ( compendium_current == "achievements" )
+		{
+			refreshCompendiumAchievements(compendium_contents_current[compendium_current], compendiumFrame);
+		}
+
+		if ( unlocked )
+		{
+			if ( gamepadClick && previousEntry == compendium_contents_current[compendium_current] )
+			{
+				// gamepad highlighted, then pressed 'a' to advance into selection
+				if ( auto page_right = compendiumFrame->findFrame("page_right") )
+				{
+					page_right->select();
+				}
+				return;
+			}
+		}
+	};
+
+	static auto contents_select_fn = [](Frame::entry_t& frameEntry)
+	{
+		if ( !contents_activate_from_tab && !isMouseVisible() )
+		{
+			soundMove();
+		}
+		if ( !contents_activate_from_tab && !isMouseVisible() )
+		{
+			contents_activate_fn(frameEntry, false);
+		}
+	};
+	static auto contents_click_fn = [](Frame::entry_t& frameEntry)
+	{
+		if ( !contents_activate_from_tab )
+		{
+			soundActivate();
+		}
+
+		bool gamepadClick = !isMouseVisible() && !contents_activate_from_tab;
+		contents_activate_fn(frameEntry, gamepadClick);
+	};
+
+	static void compendiumPopulateContents(Frame* frame)
+	{
+		if ( auto page_right_number_flourish = frame->findImage("page_right_number_flourish") )
+		{
+			page_right_number_flourish->disabled = true;
+		}
+
+		if ( auto contents = frame->findFrame("contents") )
+		{
+			if ( compendium_current == "monsters" )
+			{
+				Compendium_t::CompendiumMonsters_t::contents[Compendium_t::compendium_sorting] 
+					= Compendium_t::CompendiumMonsters_t::contents_unfiltered[Compendium_t::compendium_sorting];
+				if ( ((!intro && ::arachnophobia_filter) || (intro && MainMenu::arachnophobia_filter)) )
+				{
+					// crabs
+					auto& entries = Compendium_t::CompendiumMonsters_t::contents[Compendium_t::compendium_sorting];
+					for ( auto it = entries.begin(); it != entries.end(); )
+					{
+						if ( it->first == "spider" || it->first == "shelob" )
+						{
+							it = entries.erase(it);
+						}
+						else
+						{
+							++it;
+						}
+					}
+					for ( auto it = entries.begin(); it != entries.end(); ++it )
+					{
+						if ( it->first == "crab" )
+						{
+							it->first = "spider";
+						}
+						if ( it->first == "bubbles" )
+						{
+							it->first = "shelob";
+						}
+					}
+				}
+				else
+				{
+					// spiders
+					auto& entries = Compendium_t::CompendiumMonsters_t::contents[Compendium_t::compendium_sorting];
+					for ( auto it = entries.begin(); it != entries.end(); )
+					{
+						if ( it->first == "crab" || it->first == "bubbles" )
+						{
+							it = entries.erase(it);
+						}
+						else
+						{
+							++it;
+						}
+					}
+				}
+			}
+
+			auto* entriesContents = compendium_current == "monsters" ? &Compendium_t::CompendiumMonsters_t::contents
+				: (compendium_current == "world" ? &Compendium_t::CompendiumWorld_t::contents
+					: (compendium_current == "codex" ? &Compendium_t::CompendiumCodex_t::contents
+						: (compendium_current == "items" ? &Compendium_t::CompendiumItems_t::contents
+							: (compendium_current == "magic" ? &Compendium_t::CompendiumMagic_t::contents
+								: (compendium_current == "achievements" ? &Compendium_t::AchievementData_t::contents
+									: nullptr)))));
+
+			auto* unlockStatus = compendium_current == "monsters" ? &Compendium_t::CompendiumMonsters_t::unlocks
+				: (compendium_current == "world" ? &Compendium_t::CompendiumWorld_t::unlocks
+					: (compendium_current == "codex" ? &Compendium_t::CompendiumCodex_t::unlocks
+						: (compendium_current == "items" ? &Compendium_t::CompendiumItems_t::unlocks
+							: (compendium_current == "magic" ? &Compendium_t::CompendiumItems_t::unlocks 
+								: (compendium_current == "achievements" ? &Compendium_t::AchievementData_t::unlocks
+								: nullptr)))));
+
+			std::string sorting = Compendium_t::compendium_sorting;
+			if ( Compendium_t::compendium_sorting_hide_undiscovered && entriesContents && unlockStatus )
+			{
+				sorting += "_discovered";
+				auto& revealedEntries = (*entriesContents)[sorting];
+				revealedEntries.clear();
+				for ( auto& pair : (*entriesContents)[Compendium_t::compendium_sorting] )
+				{
+					if ( pair.first == "-" )
+					{
+						revealedEntries.push_back(pair);
+						continue;
+					}
+					auto find = unlockStatus->find(pair.first);
+					if ( find != unlockStatus->end() )
+					{
+						if ( find->second != Compendium_t::LOCKED_UNKNOWN )
+						{
+							revealedEntries.push_back(pair);
+						}
+					}
+				}
+			}
+
+			auto* entries = entriesContents ? &(*entriesContents)[sorting] : nullptr;
+
+			auto toRemove = contents->getEntries();
+			for ( auto r : toRemove )
+			{
+				contents->removeEntry(r->name.c_str(), false);
+			}
+
+			contents->remove("notifs");
+			auto contents_notif = contents->addFrame("notifs");
+			contents_notif->enableScroll(false);
+			contents_notif->setAllowScrollBinds(false);
+			contents_notif->setHollow(true);
+			contents_notif->setClickable(false);
+			contents_notif->setTickCallback([](Widget& widget) {
+				auto frame = static_cast<Frame*>(&widget);
+				static Uint32 notifCycleTicks = 0;
+				static int notifAnim = 0;
+				if ( ticks != notifCycleTicks )
+				{
+					notifCycleTicks = ticks;
+					if ( ticks % (TICKS_PER_SECOND / 5) == 0 )
+					{
+						notifAnim++;
+						if ( notifAnim > 2 )
+						{
+							notifAnim = 0;
+						}
+
+						std::string imgPath = "*#images/ui/Inventory/tooltips/ExclamationAnim00.png";
+						switch ( notifAnim )
+						{
+						case 1:
+							imgPath = "*#images/ui/Inventory/tooltips/ExclamationAnim01.png";
+							break;
+						case 2:
+							imgPath = "*#images/ui/Inventory/tooltips/ExclamationAnim02.png";
+							break;
+						default:
+							break;
+						}
+
+						for ( auto img : frame->getImages() )
+						{
+							img->path = imgPath;
+						}
+					}
+				}
+				});
+
+			auto imgs = contents->getImages();
+			for ( auto i : imgs )
+			{
+				if ( i->name == "entry div" )
+				{
+					contents->remove(i->name.c_str());
+				}
+				if ( i->name == "notif" )
+				{
+					contents->remove(i->name.c_str());
+				}
+			}
+
+			bool achievementsTab = compendium_current == "achievements";
+
+			if ( entries )
+			{
+				int indexToSelect = -1;
+				for ( int i = 0; i < entries->size(); ++i )
+				{
+					auto& data = (*entries)[i];
+					auto entry = contents->addEntry(data.first.c_str(), true);
+
+					bool unlocked = false;
+					bool drawNotification = false;
+
+					entry->click = contents_click_fn;
+					entry->ctrlClick = contents_click_fn;
+					entry->selected = contents_select_fn;
+					//entry->highlight = selection_fn;
+					entry->clickable = true;
+					entry->updown_allow_nonclickable = true;
+					entry->leftright_allow_nonclickable = false;
+					entry->leftright_control = achievementsTab ? false : true;
+
+					if ( data.first == "-" )
+					{
+						entry->click = nullptr;
+						entry->ctrlClick = nullptr;
+						entry->selected = nullptr;
+						entry->clickable = false;
+						entry->navigable = false;
+						entry->text = data.second;
+						entry->color = compendiumContentsDivColor;
+
+						contents->addImage(SDL_Rect{ 0, (int)(contents->getEntries().size() - 1) * contents->getEntrySize(), contents->getSize().w, 20 },
+							0xFFFFFFFF, 
+							"*images/ui/Main Menus/AdventureArchives/Divider_00.png", 
+							"entry div");
+					}
+					else
+					{
+						Compendium_t::CompendiumUnlockStatus unlockCurrentStatus = Compendium_t::LOCKED_UNKNOWN;
+						if ( unlockStatus )
+						{
+							auto findUnlock = unlockStatus->find(data.first);
+							if ( findUnlock != unlockStatus->end() )
+							{
+								unlockCurrentStatus = findUnlock->second;
+								unlocked = findUnlock->second > Compendium_t::LOCKED_UNKNOWN;
+								drawNotification = unlocked
+									&& (findUnlock->second == Compendium_t::UNLOCKED_UNVISITED
+										|| findUnlock->second == Compendium_t::LOCKED_REVEALED_UNVISITED);
+							}
+							else
+							{
+								(*unlockStatus)[data.first] = Compendium_t::LOCKED_UNKNOWN;
+							}
+#if !defined(NDEBUG)
+							if ( *cvar_compendium_reveal )
+							{
+								unlocked = true;
+							}
+#endif
+						}
+
+						if ( !unlocked )
+						{
+							entry->color = compendiumContentsDefaultColorNoResearch;
+							entry->text = "???";
+							entry->click = contents_activate_unknown_fn;
+							entry->ctrlClick = contents_activate_unknown_fn;
+							entry->selected = contents_select_unknown_fn;
+							entry->movement_nonclickable = true;
+						}
+						else
+						{
+							if ( unlockCurrentStatus == Compendium_t::UNLOCKED_UNVISITED
+								|| unlockCurrentStatus == Compendium_t::UNLOCKED_VISITED
+								|| achievementsTab )
+							{
+								entry->color = compendiumContentsDefaultColor;
+							}
+							else
+							{
+								entry->color = compendiumContentsDefaultColorNoResearch;
+							}
+							entry->text = data.second;
+
+							int textWidth = 0;
+							while ( entry->text.size() > 5 )
+							{
+								if ( auto textGet = Text::get(entry->text.c_str(), contents->getFont(),
+									makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
+								{
+									textWidth = textGet->getWidth();
+									if ( contents->getListOffset().x + textWidth > contents->getSize().w - 4 )
+									{
+										auto find = entry->text.find("...");
+										if ( find == std::string::npos )
+										{
+											entry->text += "...";
+										}
+										else
+										{
+											entry->text = entry->text.erase(find - 1, 1);
+										}
+									}
+									else
+									{
+										break;
+									}
+								}
+							}
+						}
+					}
+					memcpy(&entry->data, &i, sizeof(i));
+
+					if ( data.first != "-" )
+					{
+						if ( indexToSelect == -1 )
+						{
+							indexToSelect = i; // grab the first available slot
+						}
+						if ( compendium_contents_current[compendium_current] != "" )
+						{
+							if ( compendium_contents_current[compendium_current] == data.first )
+							{
+								indexToSelect = i;
+							}
+						}
+					}
+
+					contents_notif->setSize(SDL_Rect{ 0, 0, contents->getSize().w, contents->getActualSize().h });
+					if ( data.first != "-" )
+					{
+						std::string imgName = "notif_" + data.first;
+						auto img = contents_notif->addImage(SDL_Rect{ 4, 4 + (int)(contents->getEntries().size() - 1) * contents->getEntrySize(), 6, 14 },
+							0xFFFFFFFF,
+							"*#images/ui/Inventory/tooltips/ExclamationAnim00.png",
+							imgName.c_str());
+						img->disabled = !drawNotification;
+					}
+				}
+
+				contents->setSelection(indexToSelect);
+				SDL_Rect actualPos = contents->getActualSize();
+				actualPos.y = 0;
+				contents->setActualSize(actualPos);
+				contents->scrollToSelection(false);
+				contents->activate();
+				contents->activateSelection();
+			}
+		}
+	}
+
+	static auto compendium_page_right_inner_fn = [](Widget& widget)
+	{
+		Frame* page_right_inner = static_cast<Frame*>(&widget);
+		if ( isMouseVisible() )
+		{
+			page_right_inner->setAllowScrollBinds(true);
+		}
+		else
+		{
+			page_right_inner->setAllowScrollBinds(false);
+		}
+
+		if ( isMouseVisible() )
+		{
+			return;
+		}
+
+		auto& frames = page_right_inner->getFrames();
+		int index = -1;
+		bool foundSelection = false;
+		for ( auto f : frames )
+		{
+			++index;
+			if ( f->isToBeDeleted() )
+			{
+				continue;
+			}
+
+			if ( f->isSelected() )
+			{
+				SDL_Rect framePos = f->getSize();
+				SDL_Rect actualSize = page_right_inner->getActualSize();
+
+				if ( framePos.y < actualSize.y )
+				{
+					// look ahead for a new selection
+					for ( int i = index + 1; i < frames.size(); ++i )
+					{
+						if ( frames[i]->isToBeDeleted() )
+						{
+							continue;
+						}
+						if ( !frames[i]->findField("item name") )
+						{
+							continue;
+						}
+
+						SDL_Rect pos = frames[i]->getSize();
+						if ( pos.y >= actualSize.y )
+						{
+							frames[i]->select();
+							break;
+						}
+					}
+				}
+				else if ( framePos.y + framePos.h > actualSize.y + page_right_inner->getSize().h )
+				{
+					// look behind for a selection
+					for ( int i = index - 1; i >= 0; --i )
+					{
+						if ( frames[i]->isToBeDeleted() )
+						{
+							continue;
+						}
+						if ( !frames[i]->findField("item name") )
+						{
+							continue;
+						}
+						SDL_Rect pos = frames[i]->getSize();
+						if ( pos.y + pos.h <= actualSize.y + page_right_inner->getSize().h )
+						{
+							frames[i]->select();
+							break;
+						}
+					}
+				}
+				break;
+			}
+		}
+	};
+
+	static void refreshCompendiumAchievements(std::string name, Frame* parent)
+	{
+		if ( !parent ) { return; }
+		Frame* frame = parent->findFrame("achievements");
+		if ( !frame )
+		{
+			return;
+		}
+
+		if ( Compendium_t::AchievementData_t::achievementsNeedResort )
+		{
+			sortAchievementsForDisplay();
+		}
+
+		if ( auto page_right_number_flourish = parent->findImage("page_right_number_flourish") )
+		{
+			page_right_number_flourish->disabled = true;
+		}
+
+		static const std::map<int, std::vector<std::string>> backingImgs =
+		{ 
+			{ 
+				Compendium_t::AchievementData_t::AchievementDLCType::ACH_TYPE_DLC1, 
+				{
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_DLCCompleted_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Myths_Badge_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Badge_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_Icon_Myths_Colored_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_Icon_Myths_Gold_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_Icon_Myths_Grey_00.png"
+				}
+			},
+			{
+				Compendium_t::AchievementData_t::AchievementDLCType::ACH_TYPE_DLC2,
+				{
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_DLCCompleted_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Legends_Badge_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Badge_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_Icon_Legends_Colored_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_Icon_Legends_Gold_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_Icon_Legends_Grey_00.png"
+				}
+			},
+			{
+				Compendium_t::AchievementData_t::AchievementDLCType::ACH_TYPE_NORMAL,
+				{ 
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_00.png", 
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_BaseCompleted_00.png", 
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Badge_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Badge_00.png",
+					"",
+					"",
+					""
+				}
+			},
+			{
+				Compendium_t::AchievementData_t::AchievementDLCType::ACH_TYPE_DLC1_DLC2,
+				{
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_DLCCompleted_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Badge_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Badge_00.png",
+					"",
+					"",
+					""
+				}
+			},
+			{
+				-1,
+				{
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_BaseCompleted_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Badge_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Badge_00.png",
+					"",
+					"",
+					""
+				}
+			}
+		};
+
+		static ConsoleVariable<Vector4> cvar_compendium_achievement_title_locked("/compendium_achievement_title_locked", { 224.f, 224.f, 224.f, 255.f });
+		static Uint32 colorTitleLocked;
+		colorTitleLocked = makeColorRGB(
+			(int)cvar_compendium_achievement_title_locked->x,
+			(int)cvar_compendium_achievement_title_locked->y,
+			(int)cvar_compendium_achievement_title_locked->z);
+		static ConsoleVariable<Vector4> cvar_compendium_achievement_title_unlocked("/compendium_achievement_title_unlocked", { 67.f, 195.f, 157.f, 255.f });
+		static Uint32 colorTitleUnlocked;
+		colorTitleUnlocked = makeColorRGB(
+			(int)cvar_compendium_achievement_title_unlocked->x,
+			(int)cvar_compendium_achievement_title_unlocked->y,
+			(int)cvar_compendium_achievement_title_unlocked->z);
+		static ConsoleVariable<Vector4> cvar_compendium_achievement_desc_locked("/compendium_achievement_desc_locked", { 224.f, 224.f, 224.f, 255.f });
+		static Uint32 colorDescLocked;
+		colorDescLocked = makeColorRGB(
+			(int)cvar_compendium_achievement_desc_locked->x,
+			(int)cvar_compendium_achievement_desc_locked->y,
+			(int)cvar_compendium_achievement_desc_locked->z);
+		static ConsoleVariable<Vector4> cvar_compendium_achievement_desc_unlocked("/compendium_achievement_desc_unlocked", { 188.f, 154.f, 114.f, 255.f });
+		static Uint32 colorDescUnlocked;
+		colorDescUnlocked = makeColorRGB(
+			(int)cvar_compendium_achievement_desc_unlocked->x,
+			(int)cvar_compendium_achievement_desc_unlocked->y,
+			(int)cvar_compendium_achievement_desc_unlocked->z);
+		static ConsoleVariable<Vector4> cvar_compendium_achievement_unlock("/compendium_achievement_unlock", { 221.f, 210.f, 84.f, 255.f });
+		static Uint32 colorUnlocked;
+		colorUnlocked = makeColorRGB(
+			(int)cvar_compendium_achievement_unlock->x,
+			(int)cvar_compendium_achievement_unlock->y,
+			(int)cvar_compendium_achievement_unlock->z);
+
+
+		auto& achDisplay = Compendium_t::AchievementData_t::achievementsBookDisplay[name];
+
+		achDisplay.currentPage = std::min(achDisplay.currentPage, (int)achDisplay.pages.size() * 2);
+
+		auto pageNumberLeft = parent->findField("page_left_number");
+		auto pageNumberRight = parent->findField("page_right_number");
+		int totalPages = (int)achDisplay.pages.size() * 2;
+		if ( achDisplay.pages.back().size() <= 4 )
+		{
+			totalPages -= 1;
+		}
+		if ( pageNumberLeft )
+		{
+			pageNumberLeft->setDisabled(false);
+			char buf[32];
+			snprintf(buf, sizeof(buf), Language::get(6181), (achDisplay.currentPage * 2) + 1, totalPages);
+			pageNumberLeft->setText(buf);
+		}
+		if ( pageNumberRight )
+		{
+			pageNumberRight->setDisabled(true);
+			if ( !((achDisplay.currentPage == achDisplay.pages.size() - 1) && achDisplay.pages.back().size() <= 4) ) // check last right page has entries
+			{
+				pageNumberRight->setDisabled(false);
+				char buf[32];
+				snprintf(buf, sizeof(buf), Language::get(6181), (achDisplay.currentPage * 2) + 2, totalPages);
+				pageNumberRight->setText(buf);
+			}
+			if ( auto page_right_number_flourish = parent->findImage("page_right_number_flourish") )
+			{
+				page_right_number_flourish->disabled = pageNumberRight->isDisabled();
+			}
+		}
+
+		for ( int i = 0; i < 8; ++i )
+		{
+			std::string name = "ach_";
+			name += std::to_string(i + 1);
+			auto ach = frame->findFrame(name.c_str());
+			if ( ach )
+			{
+				ach->setDisabled(true);
+			}
+
+			if ( achDisplay.pages.size() <= 0 )
+			{
+				continue;
+			}
+
+			auto& page = achDisplay.pages[achDisplay.currentPage];
+			if ( i < page.size() )
+			{
+				auto& achName = page[i];
+				auto& achData = Compendium_t::achievements[achName];
+
+				bool hiddenGroup = !achData.unlocked && achData.hidden;
+
+				ach->setDisabled(false);
+
+				if ( auto unlockedTxt = ach->findField("unlocked") )
+				{
+					unlockedTxt->setDisabled(true);
+					if ( !hiddenGroup && achData.unlocked )
+					{
+						unlockedTxt->setDisabled(false);
+						char buffer[64];
+						time_t t = (time_t)achData.unlockTime;
+
+						char tbuf[64];
+						struct tm* tm = localtime(&t);
+						strftime(tbuf, sizeof(tbuf), "%Y/%m/%d %H:%M:%S", tm);
+						snprintf(buffer, sizeof(buffer), Language::get(5325), tbuf);
+
+						unlockedTxt->setText(buffer);
+						unlockedTxt->setColor(colorUnlocked);
+					}
+				}
+				if ( auto title = ach->findField("title") )
+				{
+					if ( !strcmp(title->getFont(), smallfont_outline) )
+					{
+						SDL_Rect pos = title->getSize();
+						pos.y += 1;
+						title->setSize(pos);
+					}
+					title->setFont(bigfont_outline);
+					if ( hiddenGroup )
+					{
+						title->setColor(colorTitleLocked);
+						if ( achDisplay.numHidden > 1 )
+						{
+							title->setText(Language::get(5321));
+						}
+						else
+						{
+							title->setText(Language::get(5322));
+						}
+					}
+					else
+					{
+						title->setText(achData.name.c_str());
+						if ( auto textGet = title->getTextObject() )
+						{
+							if ( textGet->getWidth() >= title->getSize().w )
+							{
+								if ( !strcmp(title->getFont(), bigfont_outline) )
+								{
+									SDL_Rect pos = title->getSize();
+									pos.y -= 1;
+									title->setSize(pos);
+								}
+								title->setFont(smallfont_outline);
+							}
+						}
+						title->setColor(achData.unlocked ? colorTitleUnlocked : colorTitleLocked);
+					}
+				}
+				if ( auto lore_points = ach->findField("lore_points") )
+				{
+					if ( hiddenGroup )
+					{
+						lore_points->setDisabled(true);
+					}
+					else
+					{
+						lore_points->setDisabled(false);
+						lore_points->setText(std::to_string(achData.lorePoints).c_str());
+						lore_points->setColor(achData.unlocked ? 0xFFFFFFFF : colorTitleLocked);
+					}
+				}
+				if ( auto desc = ach->findField("desc") )
+				{
+					if ( hiddenGroup )
+					{
+						desc->setColor(colorDescLocked);
+						char buf[512] = "";
+						if ( achDisplay.numHidden > 1 )
+						{
+							snprintf(buf, sizeof(buf), Language::get(5323), achDisplay.numHidden);
+						}
+						else
+						{
+							snprintf(buf, sizeof(buf), Language::get(5324), achDisplay.numHidden);
+						}
+						desc->setText(buf);
+						desc->reflowTextToFit(0);
+					}
+					else
+					{
+						if ( achData.desc_formatted == "" )
+						{
+							desc->setText(achData.desc.c_str());
+							desc->reflowTextToFit(0);
+							achData.desc_formatted = desc->getText();
+						}
+						else
+						{
+							desc->setText(achData.desc_formatted.c_str());
+						}
+						desc->setColor(achData.unlocked ? colorDescUnlocked : colorDescLocked);
+					}
+				}
+				if ( auto img = ach->findImage("ach_img") )
+				{
+					if ( !achData.unlocked ) {
+						img->path = std::string("*#images/achievements/") + achName + std::string("_l.png");
+						if ( hiddenGroup )
+						{
+							img->path = "*#images/achievements/LOCKED_ACHIEVEMENT.png";
+						}
+					}
+					else {
+						img->path = std::string("*#images/achievements/") + achName + std::string(".png");
+					}
+				}
+				auto dlc_badge_1 = ach->findImage("dlc_badge_1");
+				if ( dlc_badge_1 )
+				{
+					dlc_badge_1->disabled = true;
+				}
+				auto dlc_badge_2 = ach->findImage("dlc_badge_2");
+				if ( dlc_badge_2 )
+				{
+					dlc_badge_2->disabled = true;
+				}
+				auto dlc_badge_icon_1 = ach->findImage("dlc_badge_icon_1");
+				if ( dlc_badge_icon_1 )
+				{
+					dlc_badge_icon_1->disabled = true;
+				}
+				auto dlc_badge_icon_2 = ach->findImage("dlc_badge_icon_2");
+				if ( dlc_badge_icon_2 )
+				{
+					dlc_badge_icon_2->disabled = true;
+				}
+				if ( auto dlc_badge = ach->findImage("dlc_badge") )
+				{
+					dlc_badge->disabled = true;
+					if ( achData.dlcType != Compendium_t::AchievementData_t::ACH_TYPE_NORMAL )
+					{
+						if ( !hiddenGroup )
+						{
+							if ( achData.dlcType == Compendium_t::AchievementData_t::ACH_TYPE_DLC1_DLC2 )
+							{
+								if ( achData.unlocked )
+								{
+									dlc_badge_2->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC1)[2];
+									dlc_badge_1->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC2)[2];
+								}
+								else
+								{
+									dlc_badge_2->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC1)[3];
+									dlc_badge_1->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC2)[3];
+								}
+								if ( dlc_badge_1->path != "" )
+								{
+									dlc_badge_1->disabled = false;
+								}
+								if ( dlc_badge_2->path != "" )
+								{
+									dlc_badge_2->disabled = false;
+								}
+							}
+							else
+							{
+								if ( achData.unlocked )
+								{
+									dlc_badge->path = backingImgs.at(achData.dlcType)[2];
+								}
+								else
+								{
+									dlc_badge->path = backingImgs.at(achData.dlcType)[3];
+								}
+								if ( dlc_badge->path != "" )
+								{
+									dlc_badge->disabled = false;
+								}
+							}
+						}
+					}
+				}
+				if ( auto dlc_badge_icon = ach->findImage("dlc_badge_icon") )
+				{
+					dlc_badge_icon->disabled = true;
+					if ( achData.dlcType != Compendium_t::AchievementData_t::ACH_TYPE_NORMAL )
+					{
+						if ( !hiddenGroup )
+						{
+							if ( achData.dlcType == Compendium_t::AchievementData_t::ACH_TYPE_DLC1_DLC2 )
+							{
+								if ( achData.unlocked )
+								{
+									dlc_badge_icon_2->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC1)[4];
+									dlc_badge_icon_1->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC2)[4];
+								}
+								else
+								{
+									dlc_badge_icon_2->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC1)[6];
+									dlc_badge_icon_1->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC2)[6];
+								}
+								if ( dlc_badge_icon_1->path != "" )
+								{
+									dlc_badge_icon_1->disabled = false;
+								}
+								if ( dlc_badge_icon_2->path != "" )
+								{
+									dlc_badge_icon_2->disabled = false;
+								}
+							}
+							else
+							{
+								if ( achData.unlocked )
+								{
+									dlc_badge_icon->path = backingImgs.at(achData.dlcType)[4];
+								}
+								else
+								{
+									dlc_badge_icon->path = backingImgs.at(achData.dlcType)[6];
+								}
+								if ( dlc_badge_icon->path != "" )
+								{
+									dlc_badge_icon->disabled = false;
+								}
+							}
+						}
+					}
+				}
+				if ( auto bg = ach->findImage("bg") )
+				{
+					if ( !hiddenGroup )
+					{
+						if ( achData.unlocked )
+						{
+							bg->path = backingImgs.at(achData.dlcType)[1];
+						}
+						else
+						{
+							bg->path = backingImgs.at(achData.dlcType)[0];
+						}
+					}
+					else
+					{
+						bg->path = backingImgs.at(0)[0];
+					}
+				}
+				if ( auto progress = ach->findFrame("progress") )
+				{
+					progress->setDisabled(true);
+					if ( !hiddenGroup )
+					{
+						if ( achData.achievementProgress >= 0 )
+						{
+							int max = steamStatAchStringsAndMaxVals[achData.achievementProgress].second;
+							int statCur = g_SteamStats[achData.achievementProgress].m_iValue;
+
+							progress->setDisabled(false);
+							if ( achData.unlocked )
+							{
+								statCur = max;
+							}
+							if ( auto val = progress->findField("progress val") )
+							{
+								char buf[32];
+								snprintf(buf, sizeof(buf), "%d/%d", statCur, max);
+								val->setText(buf);
+							}
+							if ( auto fg = progress->findImage("progress fg") )
+							{
+								if ( statCur > 0 )
+								{
+									fg->disabled = false;
+									fg->pos.w = std::max(2, static_cast<int>(82 * (statCur / (real_t)(max))));
+								}
+								else
+								{
+									fg->disabled = true;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	static void compendiumPopulateAchievements(Frame* window)
+	{
+		if ( !window ) { return; }
+
+		if ( auto frame = window->findFrame("achievements") )
+		{
+			frame->removeSelf();
+		}
+
+		if ( auto btn = window->findButton("achievements_page_prev") )
+		{
+			btn->removeSelf();
+		}
+		if ( auto btn = window->findButton("achievements_page_next") )
+		{
+			btn->removeSelf();
+		}
+
+		if ( auto frame = window->findFrame("page_left") )
+		{
+			frame->setDisabled(true);
+		}
+
+		if ( auto frame = window->findFrame("page_right") )
+		{
+			frame->setDisabled(true);
+		}
+
+		if ( auto frame = window->findFrame("page_right_unlock") )
+		{
+			frame->setDisabled(true);
+		}
+
+		if ( auto page_left_title = window->findField("page_left_title") )
+		{
+			page_left_title->setDisabled(true);
+		}
+		if ( auto page_right_title = window->findField("page_right_title") )
+		{
+			page_right_title->setDisabled(true);
+		}
+
+		auto background = window->findImage("background");
+		if ( !background ) { return; }
+
+		auto frame = window->addFrame("achievements");
+		frame->setSize(SDL_Rect{ background->pos.x + 32, background->pos.y, 884, 536 });
+
+		auto page_prev = window->addButton("achievements_page_prev");
+		page_prev->setSize(SDL_Rect{ background->pos.x + 6, background->pos.y + background->pos.h / 2 - 51, 38, 58});
+		page_prev->setColor(makeColor(255, 255, 255, 255));
+		page_prev->setHighlightColor(makeColor(255, 255, 255, 255));
+		page_prev->setBackground("*images/ui/Main Menus/AdventureArchives/AA_Button_LArrow_00.png");
+		page_prev->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/AA_Button_LArrowHigh_00.png");
+		page_prev->setBackgroundActivated("*images/ui/Main Menus/AdventureArchives/AA_Button_LArrowPress_00.png");
+		page_prev->setOntop(true);
+		page_prev->setCallback([](Button& button) {
+			if ( compendium_current == "achievements" )
+			{
+				auto& achDisplay = Compendium_t::AchievementData_t::achievementsBookDisplay[compendium_contents_current[compendium_current]];
+				achDisplay.currentPage = std::max(0, std::min(achDisplay.currentPage, (int)achDisplay.pages.size() - 1));
+				if ( achDisplay.currentPage == 0 )
+				{
+					soundError();
+				}
+				else
+				{
+					if ( !isMouseVisible() )
+					{
+						//soundMove();
+						playSound(639, 128);
+					}
+					else
+					{
+						//soundMove();
+						playSound(639, 128);
+					}
+					if ( achDisplay.currentPage - 1 >= 0 )
+					{
+						achDisplay.currentPage--;
+						refreshCompendiumAchievements(compendium_contents_current[compendium_current], static_cast<Frame*>(button.getParent()));
+					}
+				}
+			}
+		});
+		page_prev->setWidgetLeft("contents");
+		page_prev->setWidgetRight("contents");
+		page_prev->setWidgetUp("contents");
+		page_prev->setWidgetDown("contents");
+		page_prev->setWidgetBack("back_button");
+		page_prev->setWidgetSearchParent("compendium");
+		page_prev->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+			auto button = const_cast<Button*>((Button*)(&widget));
+			auto frame = static_cast<Frame*>(button->getParent());
+			if ( auto contents = frame->findFrame("contents") )
+			{
+				if ( contents->isSelected() )
+				{
+					auto& actions = contents->getWidgetActions();
+					auto find = actions.find("MenuLeft");
+					if ( find != actions.end() && find->second == widget.getName() )
+					{
+						if ( !isMouseVisible() )
+						{
+							// draw glyphs
+							bool pressed = ticks % TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
+							Input& input = Input::inputs[getMenuOwner()];
+							auto path = input.getGlyphPathForBinding("MenuLeft", pressed);
+							auto image = Image::get((std::string("*") + path).c_str());
+							int w = image->getWidth();
+							int h = image->getHeight();
+							const SDL_Rect viewport{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
+							int x = button->getSize().x + button->getSize().w / 2;
+							int y = button->getSize().y + button->getSize().h;
+							image->draw(nullptr, SDL_Rect{ x - w / 2, y, w, h }, viewport);
+						}
+					}
+				}
+			}
+		});
+
+		auto page_next = window->addButton("achievements_page_next");
+		page_next->setSize(SDL_Rect{ background->pos.x + background->pos.w - 32 - 12, background->pos.y + background->pos.h / 2 - 51, 38, 58 });
+		page_next->setColor(makeColor(255, 255, 255, 255));
+		page_next->setHighlightColor(makeColor(255, 255, 255, 255));
+		page_next->setBackground("*images/ui/Main Menus/AdventureArchives/AA_Button_RArrow_00.png");
+		page_next->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/AA_Button_RArrowHigh_00.png");
+		page_next->setBackgroundActivated("*images/ui/Main Menus/AdventureArchives/AA_Button_RArrowPress_00.png");
+		page_next->setOntop(true);
+		page_next->setCallback([](Button& button) {
+			if ( compendium_current == "achievements" )
+			{
+				auto& achDisplay = Compendium_t::AchievementData_t::achievementsBookDisplay[compendium_contents_current[compendium_current]];
+				achDisplay.currentPage = std::max(0, std::min(achDisplay.currentPage, (int)achDisplay.pages.size() - 1));
+				if ( achDisplay.currentPage == achDisplay.pages.size() - 1 )
+				{
+					soundError();
+				}
+				else
+				{
+					if ( !isMouseVisible() )
+					{
+						//soundMove();
+						playSound(639, 128);
+					}
+					else
+					{
+						//soundMove();
+						playSound(639, 128);
+					}
+					if ( achDisplay.currentPage + 1 < achDisplay.pages.size() )
+					{
+						achDisplay.currentPage++;
+						refreshCompendiumAchievements(compendium_contents_current[compendium_current], static_cast<Frame*>(button.getParent()));
+					}
+				}
+			}
+		});
+		page_next->setWidgetLeft("contents");
+		page_next->setWidgetRight("contents");
+		page_next->setWidgetUp("contents");
+		page_next->setWidgetDown("contents");
+		page_next->setWidgetBack("back_button");
+		page_next->setWidgetSearchParent("compendium");
+		page_next->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+			auto button = const_cast<Button*>((Button*)(&widget));
+			auto frame = static_cast<Frame*>(button->getParent());
+			if ( auto contents = frame->findFrame("contents") )
+			{
+				if ( contents->isSelected() )
+				{
+					auto& actions = contents->getWidgetActions();
+					auto find = actions.find("MenuRight");
+					if ( find != actions.end() && find->second == widget.getName() )
+					{
+						if ( !isMouseVisible() )
+						{
+							// draw glyphs
+							bool pressed = ticks % TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
+							Input& input = Input::inputs[getMenuOwner()];
+							auto path = input.getGlyphPathForBinding("MenuRight", pressed);
+							auto image = Image::get((std::string("*") + path).c_str());
+							int w = image->getWidth();
+							int h = image->getHeight();
+							const SDL_Rect viewport{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
+							int x = button->getSize().x + button->getSize().w / 2;
+							int y = button->getSize().y + button->getSize().h;
+							image->draw(nullptr, SDL_Rect{ x - w / 2, y, w, h }, viewport);
+						}
+					}
+				}
+			}
+		});
+
+		for ( int i = 1; i <= 8; ++i )
+		{
+			std::string name = "ach_";
+			name += std::to_string(i);
+			auto ach = frame->addFrame(name.c_str());
+			ach->setSize(SDL_Rect{ 0 + (i >= 5 ? 458 : 0), ((i - 1) % 4) * 132, 392 + 22, 134 + 6 });
+			ach->setDisabled(true);
+
+
+			const int innerY = 14;
+			const int innerX = 22;
+			auto bg = ach->addImage(SDL_Rect{ 22, innerY, 392, 126 }, 0xFFFFFFFF,
+				"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_00.png", "bg");
+
+			auto unlock = ach->addField("unlocked", 128);
+			unlock->setFont(smallfont_outline);
+			unlock->setSize(SDL_Rect{ bg->pos.x, 11, bg->pos.w, 20 });
+			unlock->setHJustify(Field::justify_t::CENTER);
+			unlock->setVJustify(Field::justify_t::TOP);
+			unlock->setText("");
+			unlock->setColor(makeColorRGB(255, 255, 0));
+
+			auto img = ach->addImage(SDL_Rect{ bg->pos.x + 24, bg->pos.y + 46, 64, 64 }, 0xFFFFFFFF,
+				"*#images/achievements/LOCKED_ACHIEVEMENT.png", "ach_img");
+
+			auto dlc_badge = ach->addImage(SDL_Rect{ bg->pos.x, bg->pos.y, 38, 38 }, 0xFFFFFFFF,
+				"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Badge_00.png", "dlc_badge");
+			dlc_badge->disabled = true;
+
+			auto dlc_badge_icon = ach->addImage(SDL_Rect{ dlc_badge->pos.x + 2, dlc_badge->pos.y + 2, 34, 34 }, 0xFFFFFFFF,
+				"", "dlc_badge_icon");
+			dlc_badge_icon->disabled = true;
+
+			{
+				auto dlc_badge_stack_1 = ach->addImage(SDL_Rect{ bg->pos.x + 4, bg->pos.y - 4, 38, 38 }, 0xFFFFFFFF,
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Badge_00.png", "dlc_badge_1");
+				dlc_badge_stack_1->disabled = true;
+
+				auto dlc_badge_icon_1 = ach->addImage(SDL_Rect{ dlc_badge_stack_1->pos.x + 2, dlc_badge_stack_1->pos.y + 2, 34, 34 }, 0xFFFFFFFF,
+					"", "dlc_badge_icon_1");
+				dlc_badge_icon_1->disabled = true;
+
+				auto dlc_badge_stack_2 = ach->addImage(SDL_Rect{ bg->pos.x - 16, bg->pos.y + 10, 38, 38 }, 0xFFFFFFFF,
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Badge_00.png", "dlc_badge_2");
+				dlc_badge_stack_2->disabled = true;
+
+				auto dlc_badge_icon_2 = ach->addImage(SDL_Rect{ dlc_badge_stack_2->pos.x + 2, dlc_badge_stack_2->pos.y + 2, 34, 34 }, 0xFFFFFFFF,
+					"", "dlc_badge_icon_2");
+				dlc_badge_icon_2->disabled = true;
+			}
+
+			auto lore_points = ach->addField("lore_points", 32);
+			lore_points->setHJustify(Field::justify_t::CENTER);
+			lore_points->setVJustify(Field::justify_t::TOP);
+			lore_points->setFont(bigfont_outline);
+			lore_points->setSize(SDL_Rect{ bg->pos.x + bg->pos.w - 34, bg->pos.y + 10, 34, 28 });
+			lore_points->setText("");
+
+			auto title = ach->addField("title", 128);
+			title->setSize(SDL_Rect{ 44 + innerX, 16 + innerY + 2, 314, 24 });
+			title->setText("");
+			title->setFont(bigfont_outline);
+			title->setColor(makeColor(224, 224, 224, 255));
+
+			auto desc = ach->addField("desc", 512);
+			desc->setSize(SDL_Rect{ 98 + innerX, 41 + innerY, 282, 80 });
+			desc->setHJustify(Field::justify_t::LEFT);
+			desc->setVJustify(Field::justify_t::TOP);
+			desc->setFont(smallfont_outline);
+			desc->setPaddingPerLine(-2);
+			desc->setText("");
+			desc->setColor(makeColor(224, 224, 224, 255));
+
+			auto progress = ach->addFrame("progress");
+			progress->setSize(SDL_Rect{ bg->pos.x + bg->pos.w - 106 - 100, bg->pos.y + 96, 98 + 100, 28 });
+			progress->setDisabled(true);
+
+			auto progressBg = progress->addImage(SDL_Rect{ 100, 6, 98, 22 }, 0xFFFFFFFF,
+				"*#images/ui/Main Menus/AdventureArchives/A_Stat_Progress_BG_00.png", "progress bg");
+
+			auto progressFg = progress->addImage(SDL_Rect{ progressBg->pos.x + 8, progressBg->pos.y + 6, 10, 10 }, 0xFFFFFFFF,
+				"*images/ui/Main Menus/AdventureArchives/A_Stat_Progress_Fill_00.png", "progress fg");
+
+			auto progressVal = progress->addField("progress val", 32);
+			progressVal->setHJustify(Field::justify_t::RIGHT);
+			progressVal->setVJustify(Field::justify_t::TOP);
+			progressVal->setFont(smallfont_outline);
+			progressVal->setText("");
+			progressVal->setSize(SDL_Rect{ 0, 1, progress->getSize().w - 4, progress->getSize().h });
+		}
+	}
+
+	static void compendiumPopulatePageRight(Frame* page_right)
+	{
+		if ( !page_right ) { return; }
+
+		if ( compendium_current == "achievements" )
+		{
+			return;
+		}
+
+		compendiumPageRightHideUnlocked(page_right, false, true);
+
+		if ( Frame* parent = static_cast<Frame*>(page_right->getParent()) )
+		{
+			if ( auto achievements = parent->findFrame("achievements") )
+			{
+				achievements->removeSelf();
+			}
+			if ( auto page_left = parent->findFrame("page_left") )
+			{
+				page_left->setDisabled(false);
+			}
+			if ( auto page_right_unlock = parent->findFrame("page_right_unlock") )
+			{
+				page_right_unlock->setDisabled(false);
+			}
+			if ( auto page_left_title = parent->findField("page_left_title") )
+			{
+				page_left_title->setDisabled(false);
+			}
+			if ( auto page_right_title = parent->findField("page_right_title") )
+			{
+				page_right_title->setDisabled(false);
+			}
+			if ( auto btn = parent->findButton("achievements_page_prev") )
+			{
+				btn->removeSelf();
+			}
+			if ( auto btn = parent->findButton("achievements_page_next") )
+			{
+				btn->removeSelf();
+			}
+		}
+
+		page_right->setDisabled(false);
+
+		Frame* page_right_inner = page_right->findFrame("page_right_inner");
+		if ( !page_right_inner )
+		{
+			page_right_inner = page_right->addFrame("page_right_inner");
+			page_right_inner->setSize(SDL_Rect{ 14, compendiumPageRightInnerY, 362, compendiumPageRightInnerHeight });
+			page_right_inner->setActualSize(SDL_Rect{ 0, 0, 362, compendiumPageRightInnerHeight });
+			page_right_inner->setScrollWithLeftControls(false);
+			page_right_inner->setHideGlyphs(true);
+			page_right_inner->setHideSelectors(true);
+			page_right_inner->setHideKeyboardGlyphs(true);
+			page_right_inner->setTickCallback(compendium_page_right_inner_fn);
+		}
+
+		Frame* page_right_overlay = page_right->findFrame("page_right_overlay");
+		if ( !page_right_overlay )
+		{
+			if ( page_right_overlay = page_right->addFrame("page_right_overlay") )
+			{
+				page_right_overlay->setSize(SDL_Rect{ 10, page_right->getSize().h - 114 - 18, page_right->getSize().w - 20 - 8, 120 });
+				page_right_overlay->addImage(SDL_Rect{ 0, 0, page_right_overlay->getSize().w, page_right_overlay->getSize().h },
+					0xFFFFFFFF,
+					"*images/ui/Main Menus/AdventureArchives/C_Records_Frame_00.png", "page right overlay img");
+
+				auto heading = page_right_overlay->addField("records txt", 32);
+				heading->setFont(menu_option_font);
+				heading->setText(Language::get(6185));
+				heading->setHJustify(Field::justify_t::LEFT);
+				heading->setVJustify(Field::justify_t::TOP);
+				heading->setSize(SDL_Rect{ 14, 12, page_right_overlay->getSize().w, 28 });
+				heading->setColor(makeColor(198, 190, 179, 255));
+				heading->setTickCallback([](Widget& widget) {
+					if ( ticks % (2 * TICKS_PER_SECOND) == 0 && compendiumRecordsProcessedOnTick != ticks )
+					{
+						compendiumRecordsSectionRandSequence++;
+						compendiumRecordsProcessedOnTick = ticks;
+					}
+				});
+
+				const int recordSpacing = 20;
+				const int recordTextOffsetW = 36;
+				auto record1 = page_right_overlay->addField("record 1 txt", 128);
+				record1->setFont(smallfont_outline);
+				record1->setText("");
+				record1->setHJustify(Field::justify_t::LEFT);
+				record1->setVJustify(Field::justify_t::TOP);
+				record1->setSize(SDL_Rect{ 18, 24 + 11, page_right_overlay->getSize().w - recordTextOffsetW, 28 });
+				record1->setColor(makeColor(135, 94, 45, 255));
+
+				auto record1val = page_right_overlay->addField("record 1 val", 64);
+				record1val->setFont(smallfont_outline);
+				record1val->setText("");
+				record1val->setHJustify(Field::justify_t::RIGHT);
+				record1val->setVJustify(Field::justify_t::TOP);
+				record1val->setSize(record1->getSize());
+				record1val->setColor(makeColor(159, 145, 127, 255));
+				record1val->setTickCallback([](Widget& widget) {
+					size_t line = 0;
+					if ( compendiumRecordsSectionLoadedValues.size() > line && compendiumRecordsSectionLoadedValues[line].size() > 0 )
+					{
+						Field* txt = static_cast<Field*>(&widget);
+						size_t index = compendiumRecordsSectionRandSequence % compendiumRecordsSectionLoadedValues[line].size();
+						txt->setText(compendiumRecordsSectionLoadedValues[line][index].c_str());
+					}
+				});
+
+				auto record2 = page_right_overlay->addField("record 2 txt", 128);
+				record2->setFont(smallfont_outline);
+				record2->setText("");
+				record2->setHJustify(Field::justify_t::LEFT);
+				record2->setVJustify(Field::justify_t::TOP);
+				record2->setSize(SDL_Rect{ 18, record1->getSize().y + recordSpacing, page_right_overlay->getSize().w - recordTextOffsetW, 28 });
+				record2->setColor(makeColor(135, 94, 45, 255));
+
+				auto record2val = page_right_overlay->addField("record 2 val", 64);
+				record2val->setFont(smallfont_outline);
+				record2val->setText("");
+				record2val->setHJustify(Field::justify_t::RIGHT);
+				record2val->setVJustify(Field::justify_t::TOP);
+				record2val->setSize(record2->getSize());
+				record2val->setColor(makeColor(159, 145, 127, 255));
+				record2val->setTickCallback([](Widget& widget) {
+					size_t line = 1;
+					if ( compendiumRecordsSectionLoadedValues.size() > line && compendiumRecordsSectionLoadedValues[line].size() > 0 )
+					{
+						Field* txt = static_cast<Field*>(&widget);
+						size_t index = compendiumRecordsSectionRandSequence % compendiumRecordsSectionLoadedValues[line].size();
+						txt->setText(compendiumRecordsSectionLoadedValues[line][index].c_str());
+					}
+				});
+
+				auto record3 = page_right_overlay->addField("record 3 txt", 128);
+				record3->setFont(smallfont_outline);
+				record3->setText("");
+				record3->setHJustify(Field::justify_t::LEFT);
+				record3->setVJustify(Field::justify_t::TOP);
+				record3->setSize(SDL_Rect{ 18, record2->getSize().y + recordSpacing, page_right_overlay->getSize().w - recordTextOffsetW, 28 });
+				record3->setColor(makeColor(135, 94, 45, 255));
+
+				auto record3val = page_right_overlay->addField("record 3 val", 64);
+				record3val->setFont(smallfont_outline);
+				record3val->setText("");
+				record3val->setHJustify(Field::justify_t::RIGHT);
+				record3val->setVJustify(Field::justify_t::TOP);
+				record3val->setSize(record3->getSize());
+				record3val->setColor(makeColor(159, 145, 127, 255));
+				record3val->setTickCallback([](Widget& widget) {
+					size_t line = 2;
+					if ( compendiumRecordsSectionLoadedValues.size() > line && compendiumRecordsSectionLoadedValues[line].size() > 0 )
+					{
+						Field* txt = static_cast<Field*>(&widget);
+						size_t index = compendiumRecordsSectionRandSequence % compendiumRecordsSectionLoadedValues[line].size();
+						txt->setText(compendiumRecordsSectionLoadedValues[line][index].c_str());
+					}
+				});
+
+				auto record4 = page_right_overlay->addField("record 4 txt", 128);
+				record4->setFont(smallfont_outline);
+				record4->setText("");
+				record4->setHJustify(Field::justify_t::LEFT);
+				record4->setVJustify(Field::justify_t::TOP);
+				record4->setSize(SDL_Rect{ 18, record3->getSize().y + recordSpacing, page_right_overlay->getSize().w - recordTextOffsetW, 28 });
+				record4->setColor(makeColor(135, 94, 45, 255));
+
+				auto record4val = page_right_overlay->addField("record 4 val", 64);
+				record4val->setFont(smallfont_outline);
+				record4val->setText("");
+				record4val->setHJustify(Field::justify_t::RIGHT);
+				record4val->setVJustify(Field::justify_t::TOP);
+				record4val->setSize(record4->getSize());
+				record4val->setColor(makeColor(159, 145, 127, 255));
+				record4val->setTickCallback([](Widget& widget) {
+					size_t line = 3;
+					if ( compendiumRecordsSectionLoadedValues.size() > line && compendiumRecordsSectionLoadedValues[line].size() > 0 )
+					{
+						Field* txt = static_cast<Field*>(&widget);
+						size_t index = compendiumRecordsSectionRandSequence % compendiumRecordsSectionLoadedValues[line].size();
+						txt->setText(compendiumRecordsSectionLoadedValues[line][index].c_str());
+					}
+				});
+			}
+		}
+
+		page_right_overlay->setDisabled(true);
+
+		int padx = 10;
+		int pady = 0;
+
+		constexpr Uint32 statValColor = makeColorRGB(159, 145, 127);
+		constexpr Uint32 detailsValColor = makeColorRGB(135, 94, 45);
+
+		if ( compendium_current == "items" )
+		{
+			/*auto charTxt = page_right_inner->addField("items txt", 64);
+			charTxt->setFont(menu_option_font);
+			charTxt->setText("Items");
+			charTxt->setHJustify(Field::justify_t::LEFT);
+			charTxt->setVJustify(Field::justify_t::TOP);
+			charTxt->setSize(SDL_Rect{ padx, pady, page_right_inner->getSize().w - padx - 26, 24 });
+			charTxt->setColor(makeColor(198, 190, 179, 255));*/
+
+			/*int statx = padx + 4;
+			int staty = pady + 18 + 9;
+			auto statsTxt = page_right_inner->addField("details", 1024);
+			statsTxt->setFont(smallfont_outline);
+			statsTxt->setText("");
+			statsTxt->setHJustify(Field::justify_t::LEFT);
+			statsTxt->setVJustify(Field::justify_t::TOP);
+			statsTxt->setSize(SDL_Rect{ statx, staty, page_right_inner->getSize().w - statx - 26, 400 });
+			statsTxt->setColor(detailsValColor);*/
+		}
+		else if ( compendium_current == "codex" )
+		{
+			auto charTxt = page_right_inner->addField("tips txt", 64);
+			charTxt->setFont(menu_option_font);
+			charTxt->setText(Language::get(6187));
+			charTxt->setHJustify(Field::justify_t::LEFT);
+			charTxt->setVJustify(Field::justify_t::TOP);
+			charTxt->setSize(SDL_Rect{ padx, pady, page_right_inner->getSize().w - padx - 26, 24 });
+			charTxt->setColor(makeColor(198, 190, 179, 255));
+
+			auto featureTxt = page_right_inner->addField("feature txt", 64);
+			featureTxt->setFont(menu_option_font);
+			featureTxt->setText(Language::get(6186));
+			featureTxt->setHJustify(Field::justify_t::LEFT);
+			featureTxt->setVJustify(Field::justify_t::TOP);
+			featureTxt->setSize(charTxt->getSize());
+			featureTxt->setColor(makeColor(198, 190, 179, 255));
+			featureTxt->setDisabled(true);
+			auto featureImg = page_right_inner->addImage(SDL_Rect{ 8, featureTxt->getSize().y + 28, 0, 0},
+				0xFFFFFFFF, "", "feature_img");
+			featureImg->disabled = true;
+
+			int statx = padx + 4;
+			int staty = pady + 18 + 9;
+			auto statsTxt = page_right_inner->addField("codex_details", 1024);
+			statsTxt->setFont(smallfont_outline);
+			statsTxt->setText("");
+			statsTxt->setHJustify(Field::justify_t::LEFT);
+			statsTxt->setVJustify(Field::justify_t::TOP);
+			statsTxt->setSize(SDL_Rect{ statx, staty, page_right_inner->getSize().w - statx - 26, 400 });
+			statsTxt->setColor(detailsValColor);
+		}
+		else if ( compendium_current == "world" )
+		{
+			auto charTxt = page_right_inner->addField("tips txt", 1024);
+			charTxt->setFont(menu_option_font);
+			charTxt->setText(Language::get(6188));
+			charTxt->setHJustify(Field::justify_t::LEFT);
+			charTxt->setVJustify(Field::justify_t::TOP);
+			charTxt->setSize(SDL_Rect{ padx, pady, page_right_inner->getSize().w - padx - 26, 24 });
+			charTxt->setColor(makeColor(198, 190, 179, 255));
+
+			auto featureTxt = page_right_inner->addField("feature txt", 64);
+			featureTxt->setFont(menu_option_font);
+			featureTxt->setText(Language::get(6212));
+			featureTxt->setHJustify(Field::justify_t::LEFT);
+			featureTxt->setVJustify(Field::justify_t::TOP);
+			featureTxt->setSize(charTxt->getSize());
+			featureTxt->setColor(makeColor(198, 190, 179, 255));
+			featureTxt->setDisabled(true);
+			auto featureImg = page_right_inner->addImage(SDL_Rect{ 8, featureTxt->getSize().y + 28, 0, 0 },
+				0xFFFFFFFF, "", "feature_img");
+			featureImg->disabled = true;
+
+			int statx = padx + 4;
+			int staty = pady + 18 + 9;
+			auto statsTxt = page_right_inner->addField("world_details", 1024);
+			statsTxt->setFont(smallfont_outline);
+			statsTxt->setText("");
+			statsTxt->setHJustify(Field::justify_t::LEFT);
+			statsTxt->setVJustify(Field::justify_t::TOP);
+			statsTxt->setSize(SDL_Rect{ statx, staty, page_right_inner->getSize().w - statx - 26, 400 });
+			statsTxt->setColor(detailsValColor);
+		}
+		else if ( compendium_current == "monsters" )
+		{
+			{
+				auto charTxt = page_right_inner->addField("characteristics txt", 64);
+				charTxt->setFont(menu_option_font);
+				charTxt->setText(Language::get(6189));
+				charTxt->setHJustify(Field::justify_t::LEFT);
+				charTxt->setVJustify(Field::justify_t::TOP);
+				charTxt->setSize(SDL_Rect{ padx, pady, 300, 24 });
+				charTxt->setColor(makeColor(198, 190, 179, 255));
+				charTxt->setTickCallback([](Widget& widget) {
+					Field* txt = static_cast<Field*>(&widget);
+					if ( !intro && (svFlags & SV_FLAG_HARDCORE) )
+					{
+						txt->setText(Language::get(6250));
+					}
+					else
+					{
+						txt->setText(Language::get(6189));
+					}
+				});
+
+				padx += 4;
+				pady += 23;
+
+				Field* statsTxt = page_right_inner->addField("level type", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText(Language::get(6190));
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ padx, pady, 300, 24 });
+				statsTxt->setColor(makeColor(135, 94, 45, 255));
+
+				int statx = padx + 30;
+				int staty = pady + 22;
+				statsTxt = page_right_inner->addField("hp", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
+				statsTxt = page_right_inner->addField("hp val", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx + 42, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ statx - 18 - 8, staty + 11 - 8, 16, 16 },
+					0xFFFFFFFF, "*images/ui/Inventory/potions/healing.png");
+
+				staty += 26;
+				statsTxt = page_right_inner->addField("ac", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
+				statsTxt = page_right_inner->addField("ac val", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx + 42, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ statx - 18 - 12, staty + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/Charsheet/HUD_CharSheet_AC_00.png");
+
+				staty += 26;
+				statsTxt = page_right_inner->addField("spd", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
+				statsTxt = page_right_inner->addField("spd val", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx + 42, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ statx - 18 - 12, staty + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/Charsheet/HUD_CharSheet_DEX_00.png");
+
+				statx = padx + 30 + 178;
+				staty = pady + 22;
+				statsTxt = page_right_inner->addField("atk", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
+				statsTxt = page_right_inner->addField("atk val", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx + 42, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ statx - 18 - 12, staty + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/Charsheet/HUD_CharSheet_ATT_00.png");
+
+				staty += 26;
+				statsTxt = page_right_inner->addField("rangeatk", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
+				statsTxt = page_right_inner->addField("rangeatk val", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx + 42, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ statx - 18 - 12, staty + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Ranged01.png");
+
+				staty += 26;
+				statsTxt = page_right_inner->addField("pwr", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
+				statsTxt = page_right_inner->addField("pwr val", 64);
+				statsTxt->setFont(smallfont_outline);
+				statsTxt->setText("");
+				statsTxt->setHJustify(Field::justify_t::LEFT);
+				statsTxt->setVJustify(Field::justify_t::TOP);
+				statsTxt->setSize(SDL_Rect{ statx + 42, staty, 132, 24 });
+				statsTxt->setColor(statValColor);
+
+
+				page_right_inner->addImage(SDL_Rect{ statx - 18 - 12, staty + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/Charsheet/HUD_CharSheet_SPWR_00.png");
+
+				pady = staty + *compendiumMonsterSectionPadY;
+			}
+
+
+			{
+				Field* resTxt = page_right_inner->addField("res txt", 64);
+				resTxt->setFont(smallfont_outline);
+				resTxt->setText(Language::get(6191));
+				resTxt->setHJustify(Field::justify_t::LEFT);
+				resTxt->setVJustify(Field::justify_t::TOP);
+				resTxt->setSize(SDL_Rect{ padx, pady, 300, 24 });
+				resTxt->setColor(makeColor(135, 94, 45, 255));
+
+				int resx = padx + 30;
+				int resy = pady + 26;
+
+				const int padIconx = -6;
+				const int padIcony = -2;
+				const int padTextx = -4;
+				const int padTexty = 0;
+				const bool useIcons = false;
+				Frame::image_t* icon = page_right_inner->addImage(SDL_Rect{ resx + padIconx, resy + padIcony, 24, 24 },
+					0xFFFFFFFF, "*images/ui/Main Menus/AdventureArchives/res_neutral.png", "res_unarmed");
+				icon->disabled = !useIcons;
+
+				resTxt = page_right_inner->addField("res_txt_unarmed", 64);
+				resTxt->setFont(smallfont_outline);
+				resTxt->setText("");
+				resTxt->setHJustify(Field::justify_t::LEFT);
+				resTxt->setVJustify(Field::justify_t::TOP);
+				resTxt->setSize(SDL_Rect{ resx + padTextx, resy + padTexty, 132, 24 });
+				resTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ resx - 18 - 12, resy + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Unarmed01.png", "res_unarmed_img");
+
+				resy += 32;
+				icon = page_right_inner->addImage(SDL_Rect{ resx + padIconx, resy + padIcony, 24, 24 },
+					0xFFFFFFFF, "*images/ui/Main Menus/AdventureArchives/res_neutral.png", "res_ranged");
+				icon->disabled = !useIcons;
+
+				resTxt = page_right_inner->addField("res_txt_ranged", 64);
+				resTxt->setFont(smallfont_outline);
+				resTxt->setText("");
+				resTxt->setHJustify(Field::justify_t::LEFT);
+				resTxt->setVJustify(Field::justify_t::TOP);
+				resTxt->setSize(SDL_Rect{ resx + padTextx, resy + padTexty, 132, 24 });
+				resTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ resx - 18 - 12, resy + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Ranged01.png", "res_ranged_img");
+
+				resy = pady + 26;
+				resx += 82;
+
+				icon = page_right_inner->addImage(SDL_Rect{ resx + padIconx, resy + padIcony, 24, 24 },
+					0xFFFFFFFF, "*images/ui/Main Menus/AdventureArchives/res_neutral.png", "res_sword");
+				icon->disabled = !useIcons;
+
+				resTxt = page_right_inner->addField("res_txt_sword", 64);
+				resTxt->setFont(smallfont_outline);
+				resTxt->setText("");
+				resTxt->setHJustify(Field::justify_t::LEFT);
+				resTxt->setVJustify(Field::justify_t::TOP);
+				resTxt->setSize(SDL_Rect{ resx + padTextx, resy + padTexty, 132, 24 });
+				resTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ resx - 18 - 12, resy + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Swords01.png", "res_sword_img");
+
+				resy += 32;
+				icon = page_right_inner->addImage(SDL_Rect{ resx + padIconx, resy + padIcony, 24, 24 },
+					0xFFFFFFFF, "*images/ui/Main Menus/AdventureArchives/res_neutral.png", "res_mace");
+				icon->disabled = !useIcons;
+
+				resTxt = page_right_inner->addField("res_txt_mace", 64);
+				resTxt->setFont(smallfont_outline);
+				resTxt->setText("");
+				resTxt->setHJustify(Field::justify_t::LEFT);
+				resTxt->setVJustify(Field::justify_t::TOP);
+				resTxt->setSize(SDL_Rect{ resx + padTextx, resy + padTexty, 132, 24 });
+				resTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ resx - 18 - 12, resy + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Maces01.png", "res_mace_img");
+
+				resy = pady + 26;
+				resx += 82;
+
+				icon = page_right_inner->addImage(SDL_Rect{ resx + padIconx, resy + padIcony, 24, 24 },
+					0xFFFFFFFF, "*images/ui/Main Menus/AdventureArchives/res_neutral.png", "res_polearm");
+				icon->disabled = !useIcons;
+
+				resTxt = page_right_inner->addField("res_txt_polearm", 64);
+				resTxt->setFont(smallfont_outline);
+				resTxt->setText("");
+				resTxt->setHJustify(Field::justify_t::LEFT);
+				resTxt->setVJustify(Field::justify_t::TOP);
+				resTxt->setSize(SDL_Rect{ resx + padTextx, resy + padTexty, 132, 24 });
+				resTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ resx - 18 - 12, resy + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Polearms01.png", "res_polearm_img");
+
+				resy += 32;
+				icon = page_right_inner->addImage(SDL_Rect{ resx + padIconx, resy + padIcony, 24, 24 },
+					0xFFFFFFFF, "*images/ui/Main Menus/AdventureArchives/res_neutral.png", "res_axe");
+				icon->disabled = !useIcons;
+
+				resTxt = page_right_inner->addField("res_txt_axe", 64);
+				resTxt->setFont(smallfont_outline);
+				resTxt->setText("");
+				resTxt->setHJustify(Field::justify_t::LEFT);
+				resTxt->setVJustify(Field::justify_t::TOP);
+				resTxt->setSize(SDL_Rect{ resx + padTextx, resy + padTexty, 132, 24 });
+				resTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ resx - 18 - 12, resy + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Axes01.png", "res_axe_img");
+
+				resy = pady + 26;
+				resx += 82;
+
+				icon = page_right_inner->addImage(SDL_Rect{ resx + padIconx, resy + padIcony, 24, 24 },
+					0xFFFFFFFF, "*images/ui/Main Menus/AdventureArchives/res_neutral.png", "res_magic");
+				icon->disabled = !useIcons;
+
+				resTxt = page_right_inner->addField("res_txt_magic", 64);
+				resTxt->setFont(smallfont_outline);
+				resTxt->setText("");
+				resTxt->setHJustify(Field::justify_t::LEFT);
+				resTxt->setVJustify(Field::justify_t::TOP);
+				resTxt->setSize(SDL_Rect{ resx + padTextx, resy + padTexty, 132, 24 });
+				resTxt->setColor(statValColor);
+
+				page_right_inner->addImage(SDL_Rect{ resx - 18 - 12, resy + 11 - 12, 24, 24 },
+					0xFFFFFFFF, "*images/ui/SkillSheet/Icons/Magic01.png", "res_magic_img");
+
+				resy += 32;
+				pady = resy + *compendiumMonsterSectionPadY;
+			}
+
+			{
+				Field* abilitiesTxt = page_right_inner->addField("abilities txt", 64);
+				abilitiesTxt->setFont(smallfont_outline);
+				abilitiesTxt->setText(Language::get(6192));
+				abilitiesTxt->setHJustify(Field::justify_t::LEFT);
+				abilitiesTxt->setVJustify(Field::justify_t::TOP);
+				abilitiesTxt->setSize(SDL_Rect{ padx, pady, 300, 24 });
+				abilitiesTxt->setColor(makeColor(135, 94, 45, 255));
+
+				int abilityx = padx + 8;
+				int abilityy = pady + 22;
+
+				abilitiesTxt = page_right_inner->addField("abilities", 1024);
+				abilitiesTxt->setFont(smallfont_outline);
+				abilitiesTxt->setText("");
+				abilitiesTxt->setHJustify(Field::justify_t::LEFT);
+				abilitiesTxt->setVJustify(Field::justify_t::TOP);
+				abilitiesTxt->setSize(SDL_Rect{ abilityx, abilityy, 300, 128 });
+				abilitiesTxt->setColor(statValColor);
+
+				pady = abilityy + *compendiumMonsterSectionPadY;
+			}
+
+			{
+				Field* invTxt = page_right_inner->addField("inventory txt", 64);
+				invTxt->setFont(smallfont_outline);
+				invTxt->setText(Language::get(6193));
+				invTxt->setHJustify(Field::justify_t::LEFT);
+				invTxt->setVJustify(Field::justify_t::TOP);
+				invTxt->setSize(SDL_Rect{ padx, pady, 300, 24 });
+				invTxt->setColor(makeColor(135, 94, 45, 255));
+
+				int invx = padx + 8;
+				int invy = pady + 22;
+
+				invTxt = page_right_inner->addField("inventory", 1024);
+				invTxt->setFont(smallfont_outline);
+				invTxt->setText("");
+				invTxt->setHJustify(Field::justify_t::LEFT);
+				invTxt->setVJustify(Field::justify_t::TOP);
+				invTxt->setSize(SDL_Rect{ invx, invy, 300, 128 });
+				invTxt->setColor(statValColor);
+			}
+		}
+	}
+
+	static ConsoleCommand ccmd_compendiumExportMonster("/compendium_export_monster", "exports current monster in view", 
+		[](int argc, const char** argv) {
+			CompendiumEntries.exportCurrentMonster(compendiumMonster);
+		});
+	static ConsoleVariable<bool> cvar_compendiumautoreload("/compendiumautoreload", 
+#if !defined(NDEBUG)
+		true
+#else
+		false
+#endif
+	);
+
+	static void compendiumDebugRefresh()
+	{
+		contents_activate_from_tab = true;
+		consoleCommand("/reloadcompendiumlimbs");
+		if ( compendium_current == "monsters" )
+		{
+			CompendiumEntries.readMonstersFromFile();
+			refreshCompendiumEntryMonster(compendium_contents_current[compendium_current], main_menu_frame->findFrame("compendium"), false);
+		}
+		else if ( compendium_current == "world" )
+		{
+			CompendiumEntries.readWorldFromFile();
+			refreshCompendiumEntryWorld(compendium_contents_current[compendium_current], main_menu_frame->findFrame("compendium"), false);
+		}
+		else if ( compendium_current == "codex" )
+		{
+			CompendiumEntries.readCodexFromFile();
+			refreshCompendiumEntryCodex(compendium_contents_current[compendium_current], main_menu_frame->findFrame("compendium"), false);
+		}
+		else if ( compendium_current == "items" )
+		{
+			CompendiumEntries.readItemsFromFile();
+			CompendiumEntries.readMagicFromFile();
+			refreshCompendiumEntryItemsBlurb(compendium_contents_current[compendium_current], main_menu_frame->findFrame("compendium"));
+			std::string modelsPath = "items_single";
+			if ( Compendium_t::compendiumItemModel.skill[10] == SPELL_ITEM && Compendium_t::compendiumItemModel.flags[SPRITE] )
+			{
+				modelsPath = "spells_single";
+			}
+			refreshCompendiumCamera(modelsPath);
+		}
+		else if ( compendium_current == "magic" )
+		{
+			CompendiumEntries.readItemsFromFile();
+			CompendiumEntries.readMagicFromFile();
+			refreshCompendiumEntryItemsBlurb(compendium_contents_current[compendium_current], main_menu_frame->findFrame("compendium"));
+			std::string modelsPath = "items_single";
+			if ( Compendium_t::compendiumItemModel.skill[10] == SPELL_ITEM && Compendium_t::compendiumItemModel.flags[SPRITE] )
+			{
+				modelsPath = "spells_single";
+			}
+			refreshCompendiumCamera(modelsPath);
+		}
+		contents_activate_from_tab = false;
+	}
+
+	static void compendiumRevealSection(Button* button)
+	{
+		if ( !button ) { return; }
+		Frame* parent = static_cast<Frame*>(button->getParent());
+		if ( !parent ) { return; }
+		parent = parent->getParent();
+		if ( !parent ) { return; }
+
+		bool unlockFound = false;
+		bool success = false;
+		if ( auto page_right_unlock = parent->findFrame("page_right_unlock") )
+		{
+			if ( auto to_unlock = page_right_unlock->findField("to_unlock") )
+			{
+				if ( compendium_contents_current[compendium_current] == to_unlock->getText() )
+				{
+					int lorePointCost = 0;
+					bool foundLorePointCost = false;
+					if ( compendium_current == "monsters" )
+					{
+						auto find = CompendiumEntries.monsters.find(to_unlock->getText());
+						if ( find != CompendiumEntries.monsters.end() )
+						{
+							lorePointCost = find->second.lorePoints;
+							foundLorePointCost = true;
+						}
+					}
+					else if ( compendium_current == "items" )
+					{
+						auto find = CompendiumEntries.items.find(to_unlock->getText());
+						if ( find != CompendiumEntries.items.end() )
+						{
+							lorePointCost = find->second.lorePoints;
+							foundLorePointCost = true;
+						}
+					}
+					else if ( compendium_current == "magic" )
+					{
+						auto find = CompendiumEntries.magic.find(to_unlock->getText());
+						if ( find != CompendiumEntries.magic.end() )
+						{
+							lorePointCost = find->second.lorePoints;
+							foundLorePointCost = true;
+						}
+					}
+					else if ( compendium_current == "world" )
+					{
+						auto find = CompendiumEntries.worldObjects.find(to_unlock->getText());
+						if ( find != CompendiumEntries.worldObjects.end() )
+						{
+							lorePointCost = find->second.lorePoints;
+							foundLorePointCost = true;
+						}
+					}
+					else if ( compendium_current == "codex" )
+					{
+						auto find = CompendiumEntries.codex.find(to_unlock->getText());
+						if ( find != CompendiumEntries.codex.end() )
+						{
+							lorePointCost = find->second.lorePoints;
+							foundLorePointCost = true;
+						}
+					}
+
+					if ( foundLorePointCost
+					&& ((Compendium_t::lorePointsSpent + lorePointCost) <= Compendium_t::lorePointsFromAchievements) )
+					{
+						success = true;
+						playSound(632 + local_rng.rand() % 2, 92);
+
+						steamAchievement("BARONY_ACH_CURIOSITY");
+
+						to_unlock->setText("");
+						auto* unlockStatus = compendium_current == "monsters" ? &Compendium_t::CompendiumMonsters_t::unlocks
+							: (compendium_current == "world" ? &Compendium_t::CompendiumWorld_t::unlocks
+								: (compendium_current == "codex" ? &Compendium_t::CompendiumCodex_t::unlocks
+									: (compendium_current == "items" ? &Compendium_t::CompendiumItems_t::unlocks
+										: (compendium_current == "magic" ? &Compendium_t::CompendiumItems_t::unlocks : nullptr))));
+
+						if ( unlockStatus )
+						{
+							auto findUnlock = unlockStatus->find(compendium_contents_current[compendium_current]);
+							if ( findUnlock != unlockStatus->end() )
+							{
+								unlockFound = true;
+								if ( findUnlock->second == Compendium_t::LOCKED_REVEALED_UNVISITED )
+								{
+									findUnlock->second = Compendium_t::UNLOCKED_UNVISITED;
+								}
+								else if ( findUnlock->second == Compendium_t::LOCKED_REVEALED_VISITED )
+								{
+									bool allRevealed = true;
+									if ( compendium_current == "items" || compendium_current == "magic" )
+									{
+										auto& compendiumEntry = (compendium_current == "items") ? CompendiumEntries.items[compendium_contents_current[compendium_current]] : CompendiumEntries.magic[compendium_contents_current[compendium_current]];
+										for ( auto i : compendiumEntry.items_in_category )
+										{
+											int itemID = i.itemID == SPELL_ITEM ? Compendium_t::Events_t::kEventSpellOffset + i.spellID : i.itemID;
+											auto find = Compendium_t::CompendiumItems_t::itemUnlocks.find(itemID);
+											if ( find != Compendium_t::CompendiumItems_t::itemUnlocks.end() )
+											{
+												if ( find->second == Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED
+													|| find->second == Compendium_t::CompendiumUnlockStatus::UNLOCKED_UNVISITED )
+												{
+													allRevealed = false;
+													break;
+												}
+											}
+										}
+									}
+									if ( allRevealed )
+									{
+										findUnlock->second = Compendium_t::UNLOCKED_VISITED;
+									}
+									else
+									{
+										findUnlock->second = Compendium_t::UNLOCKED_UNVISITED;
+
+										if ( main_menu_frame )
+										{
+											if ( auto compendium = main_menu_frame->findFrame("compendium") )
+											{
+												if ( auto nav = compendium->findFrame("nav") )
+												{
+													if ( auto contents = nav->findFrame("contents") )
+													{
+														if ( auto contents_notif = contents->findFrame("notifs") )
+														{
+															std::string findImg = "notif_" + compendium_contents_current[compendium_current];
+															if ( auto img = contents_notif->findImage(findImg.c_str()) )
+															{
+																img->disabled = false;
+															}
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+								Compendium_t::PointsAnim_t::countUnreadLastTicks = 0;
+								Compendium_t::PointsAnim_t::countUnreadNotifs();
+								if ( compendium_current == "items" || compendium_current == "magic" )
+								{
+									refreshCompendiumEntryItemsList(compendium_contents_current[compendium_current], parent, true);
+								}
+							}
+						}
+						Compendium_t::PointsAnim_t::pointsChangeEvent(-lorePointCost);
+						Compendium_t::updateLorePointCounts();
+					}
+				}
+			}
+
+			if ( !success )
+			{
+				Compendium_t::PointsAnim_t::noFundsEvent();
+				return;
+			}
+
+			if ( auto unlock_lore_cost = page_right_unlock->findButton("unlock_lore_cost") )
+			{
+				unlock_lore_cost->setDisabled(true);
+				unlock_lore_cost->setInvisible(true);
+			}
+		}
+
+		if ( !success )
+		{
+			soundError();
+			return;
+		}
+
+		Frame* page_right = nullptr;
+		if ( page_right = parent->findFrame("page_right") )
+		{
+			page_right->setOpacity(0.0);
+			page_right->setInvisible(true);
+		}
+		if ( auto bg = parent->findImage("page right img") )
+		{
+			bg->disabled = true;
+		}
+
+		if ( unlockFound && page_right )
+		{
+			//page_right->select();
+		}
+		else
+		{
+			if ( main_menu_frame )
+			{
+				if ( auto compendium = main_menu_frame->findFrame("compendium") )
+				{
+					if ( auto nav = compendium->findFrame("nav") )
+					{
+						if ( auto contents = nav->findFrame("contents") )
+						{
+							contents->activate();
+						}
+					}
+				}
+			}
+		}
+
+		if ( auto reveal_top = parent->findFrame("page_right_reveal_top") )
+		{
+			compendiumEntryControlEnabled = true;
+
+			auto page_right_reveal = reveal_top->addFrame("page_right_reveal_top");
+			page_right_reveal->setSize(SDL_Rect{ 0, 0, 398, 484 });
+			page_right_reveal->addImage(SDL_Rect{ 0, 0, 398, 484 }, 0xFFFFFFFF,
+				"", "img");
+			page_right_reveal->setHollow(true);
+			page_right_reveal->setClickable(false);
+
+			page_right_reveal->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+				auto frame = const_cast<Frame*>((Frame*)(&widget));
+				static Uint32 animTicks = 0;
+
+				if ( frame->getTicks() == 0 || frame->getTicks() == 1 )
+				{
+					animTicks = 0;
+					compendiumRevealAnimState = 1;
+				}
+
+				if ( ticks != animTicks )
+				{
+					animTicks = ticks;
+					if ( ticks % 2 == 0 )
+					{
+						if ( compendiumRevealAnimState > 0 )
+						{
+							++compendiumRevealAnimState;
+						}
+					}
+				}
+				if ( frame->getImages().size() > 0 )
+				{
+					auto img = frame->getImages().front();
+					img->disabled = true;
+					if ( compendiumRevealAnimState >= 1 && compendiumRevealAnimState <= 39 )
+					{
+						img->disabled = false;
+						img->path = "*images/ui/Main Menus/AdventureArchives/Anim/reveal-anim";
+						char buf[16];
+						snprintf(buf, sizeof(buf), "%02d.png", compendiumRevealAnimState);
+						img->path += buf;
+
+						Frame* parent = frame->getParent();
+						if ( parent )
+						{
+							parent = parent->getParent();
+						}
+						if ( parent )
+						{
+							if ( /*Frame* parent = parent->getParent()*/true )
+							{
+								if ( auto page_right = parent->findFrame("page_right") )
+								{
+									if ( compendiumRevealAnimState >= 19 )
+									{
+										if ( auto bg = parent->findImage("page right img") )
+										{
+											bg->disabled = false;
+										}
+									}
+									if ( compendiumRevealAnimState >= 10 )
+									{
+										page_right->setInvisible(false);
+										real_t opacity = page_right->getOpacity() / 100.0;
+										real_t setpointDiff = getFPSScale(144.0) * std::max(.01, (1.0 - opacity)) / (20.0);
+										opacity += setpointDiff;
+										opacity = std::min(1.0, opacity);
+										page_right->setOpacity(opacity * 100.0);
+									}
+									else
+									{
+										page_right->setOpacity(0.0);
+									}
+								}
+							}
+						}
+					}
+					else
+					{
+						animTicks = 0;
+						compendiumRevealAnimState = 1;
+						frame->removeSelf();
+					}
+				}
+			});
+		}
+
+		button->setInvisible(true);
+		button->setDisabled(true);
+	}
+
+	void openCompendium() {
+		if ( main_menu_frame )
+		{
+			if ( auto compendium = main_menu_frame->findFrame("compendium") )
+			{
+				if ( auto frame = static_cast<Frame*>(compendium->getParent()) )
+				{
+					frame->removeSelf();
+				}
+				soundCancel();
+				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+				auto compendium_button = buttons->findButton("Dungeon Compendium"); assert(compendium_button);
+				compendium_button->select();
+				return;
+			}
+		}
+		else
+		{
+			return;
+		}
+
+		contents_activate_from_tab = true;
+		players[getMenuOwner()]->inventoryUI.compendiumItemTooltipDisplay.type = NUMITEMS;
+		compendiumItemTooltip.clear();
+
+		if ( !Compendium_t::PointsAnim_t::firstLoad )
+		{
+			auto balanceOld = Compendium_t::lorePointsFromAchievements - Compendium_t::lorePointsSpent;
+			Compendium_t::updateLorePointCounts();
+			auto balanceCurrent = Compendium_t::lorePointsFromAchievements - Compendium_t::lorePointsSpent;
+			if ( balanceOld < balanceCurrent )
+			{
+				int diff = balanceCurrent - balanceOld;
+				Compendium_t::lorePointsFromAchievements -= diff; // tmp hack to make the anim count up
+				Compendium_t::PointsAnim_t::pointsChangeEvent(diff);
+				Compendium_t::lorePointsFromAchievements += diff;
+			}
+		}
+		else
+		{
+			Compendium_t::updateLorePointCounts();
+			Compendium_t::PointsAnim_t::pointsChangeEvent(0);
+		}
+		if ( !Compendium_t::AchievementData_t::achievementsNeedFirstData )
+		{
+			Compendium_t::PointsAnim_t::firstLoad = false;
+		}
+
+		auto dimmer = main_menu_frame->addFrame("dimmer");
+		dimmer->setSize(SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY });
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(makeColor(0, 0, 0, 191));
+		dimmer->setBorder(0);
+
+		static ConsoleVariable<int> cvar_compendium_book_x("/compendium_book_x", 119);
+
+		auto window = dimmer->addFrame("compendium");
+		window->setSize(dimmer->getSize());
+		window->setColor(0);
+		window->setBorder(0);
+
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			auto& itemTooltipDisplay = players[i]->inventoryUI.compendiumItemTooltipDisplay;
+			itemTooltipDisplay.expanded = false;
+			itemTooltipDisplay.expandSetpoint = 0;
+			itemTooltipDisplay.expandCurrent = 0;
+			itemTooltipDisplay.expandAnimate = 0;
+			itemTooltipDisplay.frameTooltipScrollAnim = 0.0;
+			itemTooltipDisplay.frameTooltipScrollSetpoint = 0.0;
+			itemTooltipDisplay.frameTooltipScrollPrevSetpoint = 0.0;
+			itemTooltipDisplay.scrolledToMax = 0;
+		}
+
+		auto background = window->addImage(
+			SDL_Rect{ 
+			*cvar_compendium_book_x + (Frame::virtualScreenX - 958) / 2,
+			(Frame::virtualScreenY - 598) / 2 + 1,
+			958,
+			598 },
+			0xffffffff,
+			"*images/ui/Main Menus/AdventureArchives/C_Window_BG_01.png",
+			"background"
+		);
+
+		Button* back_button = createBackWidget(window, [](Button& button) {
+			soundCancel();
+			auto frame = static_cast<Frame*>(button.getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame->removeSelf();
+			//assert(main_menu_frame);
+			if ( main_menu_frame ) {
+				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+				auto compendium_button = buttons->findButton("Dungeon Compendium"); assert(compendium_button);
+				compendium_button->select();
+			}
+		}/*, SDL_Rect{ -4, -4, 0, 0 }*/);
+		if ( back_button )
+		{
+			if ( auto back = static_cast<Frame*>(back_button->getParent()) )
+			{
+				SDL_Rect pos = back->getSize();
+				pos.x = background->pos.x - 244;
+				pos.x -= 6;
+				pos.y = background->pos.y - pos.h;
+				pos.y += 6;
+				back->setSize(pos);
+			}
+		}
+
+		{
+			const int offset_y = 14;
+			auto lore_points = window->addFrame("lore_points_balance");
+			lore_points->setHollow(true);
+			lore_points->setClickable(false);
+			lore_points->setSize(SDL_Rect{ background->pos.x + background->pos.w - 360, background->pos.y - 62, 194, 50 + offset_y });
+			lore_points->addImage(SDL_Rect{ 0, offset_y, 194, 50 }, 0xFFFFFFFF,
+				"*images/ui/Main Menus/AdventureArchives/C_LP_Available_00.png", "lore_points_bg");
+			lore_points->addImage(SDL_Rect{ 10, 10 + offset_y, 28, 28 }, 0xFFFFFFFF,
+				"*images/ui/Main Menus/AdventureArchives/C_Lorepoint_Icon_00.png", "lore_points_icon");
+			Field* txt = lore_points->addField("lore_points_current", 32);
+			txt->setText("");
+			txt->setFont("fonts/kongtext.ttf#16#2");
+			txt->setColor(makeColorRGB(158, 146, 132));
+			txt->setSize(SDL_Rect{ 0, 16 + offset_y, 172 - 64, 24 });
+			txt->setVJustify(Field::justify_t::TOP);
+			txt->setHJustify(Field::justify_t::RIGHT);
+			txt->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+				Compendium_t::PointsAnim_t::tickAnimate();
+			auto txt = const_cast<Field*>((Field*)(&widget));
+			SDL_Rect size = txt->getSize();
+			size.x = 0;
+			if ( Compendium_t::PointsAnim_t::noFundsAnimate )
+			{
+				size.x += -2 + 2 * (cos(Compendium_t::PointsAnim_t::animNoFunds * 4 * PI));
+			}
+			txt->setSize(size);
+				});
+			txt->setTickCallback([](Widget& widget) {
+				Field* txt = static_cast<Field*>(&widget);
+			/*if ( keystatus[SDLK_g] )
+			{
+				keystatus[SDLK_g] = 0;
+				Compendium_t::PointsAnim_t::noFundsEvent();
+			}*/
+			/*if ( keystatus[SDLK_g] )
+			{
+				keystatus[SDLK_g] = 0;
+				if ( keystatus[SDLK_LSHIFT] )
+				{
+					Compendium_t::PointsAnim_t::pointsChangeEvent(-6);
+				}
+				else
+				{
+					Compendium_t::PointsAnim_t::pointsChangeEvent(10);
+				}
+			}*/
+
+			if ( Compendium_t::AchievementData_t::achievementsNeedFirstData )
+			{
+				txt->setText("...");
+			}
+			else
+			{
+				if ( !strcmp(txt->getText(), "...") )
+				{
+					Compendium_t::updateLorePointCounts();
+					Compendium_t::PointsAnim_t::pointsChangeEvent(0);
+				}
+				//int lorePointsCurrent = std::max(0, Compendium_t::lorePointsFromAchievements - Compendium_t::lorePointsSpent);
+				static ConsoleVariable<Vector4> cvar_lore_point_highlight("/compendium_lore_point_highlight", Vector4{ 63, 64, -48, 0 });
+				if ( Compendium_t::PointsAnim_t::noFundsAnimate )
+				{
+					txt->setColor(makeColor(215, 38, 61, 255)); // red
+				}
+				else
+				{
+					txt->setColor(makeColorRGB(158 + cvar_lore_point_highlight->x * Compendium_t::PointsAnim_t::anim,
+						146 + cvar_lore_point_highlight->y * Compendium_t::PointsAnim_t::anim,
+						132 + cvar_lore_point_highlight->z * Compendium_t::PointsAnim_t::anim));
+				}
+				std::string str = std::to_string(Compendium_t::PointsAnim_t::txtCurrentPoints).c_str();
+				txt->setText(str.c_str());
+			}
+				});
+
+			txt = lore_points->addField("lore_points_label", 64);
+			txt->setText(Language::get(6194));
+			txt->setFont(smallfont_outline);
+			txt->setColor(makeColorRGB(192, 192, 192));
+			txt->setSize(SDL_Rect{ 0, 1, lore_points->getSize().w - 4, 24 });
+			txt->setVJustify(Field::justify_t::TOP);
+			txt->setHJustify(Field::justify_t::RIGHT);
+
+			txt = window->addField("lore_points_anim", 32);
+			txt->setText("");
+			txt->setFont("fonts/kongtext.ttf#16#2");
+			txt->setColor(makeColorRGB(158, 146, 132));
+			txt->setSize(SDL_Rect{ lore_points->getSize().x - 32 + 112, lore_points->getSize().y + 16 + offset_y, 92, 24 });
+			txt->setVJustify(Field::justify_t::TOP);
+			txt->setHJustify(Field::justify_t::RIGHT);
+			txt->setText("");
+			txt->setOntop(true);
+			txt->setTickCallback([](Widget& widget) {
+				Field* txt = static_cast<Field*>(&widget);
+				if ( auto parent = static_cast<Frame*>(txt->getParent()) )
+				{
+					if ( auto lore_points_balance = parent->findFrame("lore_points_balance") )
+					{
+						SDL_Rect pos = txt->getSize();
+						pos.x = lore_points_balance->getSize().x - 32 + 112;
+						txt->setSize(pos);
+						if ( auto lore_points_current = lore_points_balance->findField("lore_points_current") )
+						{
+							txt->setColor(lore_points_current->getColor());
+							pos.x += lore_points_current->getSize().x;
+							txt->setSize(pos);
+						}
+					}
+				}
+				if ( Compendium_t::PointsAnim_t::showChanged )
+				{
+					if ( Compendium_t::PointsAnim_t::txtChangePoints >= 0 )
+					{
+						txt->setColor(makeColorRGB(67, 195, 157));
+						std::string str = "+" + std::to_string(Compendium_t::PointsAnim_t::txtChangePoints);
+						txt->setText(str.c_str());
+					}
+					else
+					{
+						//txt->setColor(hudColors.characterSheetRed);
+						//txt->setText(std::to_string(Compendium_t::PointsAnim_t::txtChangePoints).c_str());
+						//txt->setColor(makeColorRGB(158, 146, 132));
+						txt->setText(Language::get(6209));
+					}
+				}
+				else
+				{
+					//txt->setColor(makeColorRGB(158, 146, 132));
+					txt->setText(Language::get(6209));
+				}
+			});
+
+			//if ( false ) // not in use
+			//{
+			//	const int offset_y = 14;
+			//	auto lore_points = window->addFrame("lore_points_total");
+			//	lore_points->setHollow(true);
+			//	lore_points->setClickable(false);
+			//	lore_points->setSize(SDL_Rect{ window->getSize().w - 402, 0, 194, 50 + offset_y });
+			//	lore_points->addImage(SDL_Rect{ 0, offset_y, 194, 50 }, 0xFFFFFFFF,
+			//		"*images/ui/Main Menus/AdventureArchives/C_Completion_BG_00.png", "lore_points_bg");
+			//	lore_points->addImage(SDL_Rect{ 10, 10 + offset_y, 28, 28 }, 0xFFFFFFFF,
+			//		"*images/ui/Main Menus/AdventureArchives/C_Lorepoint_Icon_00.png", "lore_points_icon");
+			//	Field* txt = lore_points->addField("lore_points_current", 32);
+			//	txt->setText("");
+			//	txt->setFont("fonts/kongtext.ttf#16#2");
+			//	txt->setColor(makeColorRGB(158, 146, 132));
+			//	txt->setSize(SDL_Rect{ 0, 16 + offset_y, 100, 24 });
+			//	txt->setVJustify(Field::justify_t::TOP);
+			//	txt->setHJustify(Field::justify_t::RIGHT);
+			//	txt->setTickCallback([](Widget& widget) {
+			//		Field* txt = static_cast<Field*>(&widget);
+			//		if ( Compendium_t::AchievementData_t::achievementsNeedFirstData )
+			//		{
+			//			txt->setText("...");
+			//		}
+			//		else
+			//		{
+			//			int lorePointsCurrent = std::max(0, Compendium_t::lorePointsFromAchievements);
+			//			txt->setText(std::to_string(lorePointsCurrent).c_str());
+			//		}
+			//	});
+
+			//	txt = lore_points->addField("lore_points_total", 32);
+			//	txt->setText("/");
+			//	txt->setFont("fonts/kongtext.ttf#16#2");
+			//	txt->setColor(makeColorRGB(255, 255, 255));
+			//	txt->setSize(SDL_Rect{ 100, 16 + offset_y, 94, 24 });
+			//	txt->setVJustify(Field::justify_t::TOP);
+			//	txt->setHJustify(Field::justify_t::LEFT);
+			//	txt->setTickCallback([](Widget& widget) {
+			//		Field* txt = static_cast<Field*>(&widget);
+			//		if ( Compendium_t::AchievementData_t::achievementsNeedFirstData )
+			//		{
+			//			txt->setText("...");
+			//		}
+			//		else
+			//		{
+			//			std::string amt = "/" + std::to_string(Compendium_t::lorePointsAchievementsTotal);
+			//			txt->setText(amt.c_str());
+			//		}
+			//	});
+
+			//	txt = lore_points->addField("lore_points_label", 64);
+			//	txt->setText("LORE POINTS EARNED");
+			//	txt->setFont(smallfont_outline);
+			//	txt->setColor(makeColorRGB(192, 192, 192));
+			//	txt->setSize(SDL_Rect{ 0, 1, lore_points->getSize().w - 4, 24});
+			//	txt->setVJustify(Field::justify_t::TOP);
+			//	txt->setHJustify(Field::justify_t::RIGHT);
+			//}
+
+			{
+				const int offset_y = 14;
+				auto completion = window->addFrame("completion");
+				completion->setHollow(true);
+				completion->setClickable(false);
+				completion->setSize(SDL_Rect{ lore_points->getSize().x + 202, lore_points->getSize().y, 152, 50 + offset_y});
+				completion->addImage(SDL_Rect{ 0, offset_y, 152, 50 }, 0xFFFFFFFF,
+					"*images/ui/Main Menus/AdventureArchives/C_Completion_BG_00.png", "completion_bg");
+				completion->addImage(SDL_Rect{ 10, 10 + offset_y, 38, 28 }, 0xFFFFFFFF,
+					"*images/ui/Main Menus/AdventureArchives/C_Completion_Icon_00.png", "completion_icon");
+				Field* txt = completion->addField("completion_percent", 32);
+				txt->setText("");
+				txt->setFont("fonts/kongtext.ttf#16#2");
+				txt->setColor(makeColorRGB(158, 146, 132));
+				txt->setSize(SDL_Rect{ 0, 16 + offset_y, 130, 24 });
+				txt->setVJustify(Field::justify_t::TOP);
+				txt->setHJustify(Field::justify_t::RIGHT);
+				txt->setTickCallback([](Widget& widget) {
+					Field* txt = static_cast<Field*>(&widget);
+				int totalCompletion = Compendium_t::AchievementData_t::completionPercent;
+				totalCompletion += Compendium_t::CompendiumCodex_t::completionPercent;
+				totalCompletion += Compendium_t::CompendiumWorld_t::completionPercent;
+				totalCompletion += Compendium_t::CompendiumMonsters_t::completionPercent;
+				totalCompletion += Compendium_t::CompendiumItems_t::completionPercent;
+				totalCompletion += Compendium_t::CompendiumMagic_t::completionPercent;
+				totalCompletion /= 6;
+				totalCompletion = std::min(100, std::max(0, totalCompletion));
+				std::string str = std::to_string(totalCompletion).c_str();
+				str += '%';
+				txt->setText(str.c_str());
+
+				real_t percent = totalCompletion / 100.0;
+				static ConsoleVariable<Vector4> cvar_completion_point_highlight("/cvar_completion_point_highlight", Vector4{ 63, 64, -48, 0 });
+				txt->setColor(makeColorRGB(158 + cvar_completion_point_highlight->x * percent,
+					146 + cvar_completion_point_highlight->y * percent,
+					132 + cvar_completion_point_highlight->z * percent));
+					});
+
+				txt = completion->addField("completion_label", 64);
+				txt->setText(Language::get(6210));
+				txt->setFont(smallfont_outline);
+				txt->setColor(makeColorRGB(192, 192, 192));
+				txt->setSize(SDL_Rect{ 0, 1, completion->getSize().w - 4, 24 });
+				txt->setVJustify(Field::justify_t::TOP);
+				txt->setHJustify(Field::justify_t::RIGHT);
+			}
+		}
+
+		{
+			static auto constexpr tabTextColorActive = makeColorRGB(220, 178, 113);
+			static auto constexpr tabTextColorInactive = makeColorRGB(192, 192, 192);
+
+			Button* tab = window->addButton(compendiumCategories[0].c_str());
+			tab->setSize(SDL_Rect{ background->pos.x + 86, background->pos.y + background->pos.h - 30, 96, 66 });
+			tab->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_DenizensHi_00.png");
+			tab->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_DenizensHi_00.png");
+			tab->setColor(makeColorRGB(255, 255, 255));
+			tab->setHighlightColor(makeColorRGB(255, 255, 255));
+			tab->setWidgetBack("back_button");
+			tab->setWidgetLeft("contents");
+			tab->setWidgetRight(compendiumCategories[1].c_str());
+			tab->setWidgetUp("contents");
+			tab->setWidgetDown("contents");
+			tab->setWidgetSearchParent("compendium");
+			tab->addWidgetAction("MenuPageLeft", "tab_left");
+			tab->addWidgetAction("MenuPageRight", "tab_right");
+			tab->addWidgetMovement("MenuAlt2", "nav_filter_sort");
+			tab->addWidgetAction("MenuAlt1", "page_right_unlock_btn");
+			tab->setTickCallback([](Widget& widget) {
+				auto button = static_cast<Button*>(&widget);
+				if ( compendium_current == button->getName() )
+				{
+					button->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_DenizensHi_00.png");
+					button->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_DenizensHi_00.png");
+				}
+				else
+				{
+					button->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_DenizensInactive_00.png");
+					button->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_DenizensInactiveHi_00.png");
+				}
+				Input& input = Input::inputs[getMenuOwner()];
+				if ( input.input("MenuStart").isBindingUsingKeyboard() )
+				{
+					widget.removeWidgetAction("MenuAlt1");
+					widget.addWidgetAction("MenuStart", "page_right_unlock_btn");
+				}
+				else
+				{
+					widget.removeWidgetAction("MenuStart");
+					widget.addWidgetAction("MenuAlt1", "page_right_unlock_btn");
+				}
+				});
+
+			{
+				Button* tab_left = window->addButton("tab_left");
+				SDL_Rect pos = tab->getSize();
+				pos.x -= (8 + 38 + 26);
+				pos.w = 38;
+				pos.h = 58;
+				tab_left->setSize(pos);
+				tab_left->setColor(makeColor(255, 255, 255, 255));
+				tab_left->setHighlightColor(makeColor(255, 255, 255, 255));
+				tab_left->setGlyphPosition(Widget::CENTERED_BOTTOM);
+				tab_left->setBackground("*images/ui/Main Menus/AdventureArchives/AA_Button_LArrow_00.png");
+				tab_left->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/AA_Button_LArrowHigh_00.png");
+				tab_left->setBackgroundActivated("*images/ui/Main Menus/AdventureArchives/AA_Button_LArrowPress_00.png");
+				tab_left->setWidgetBack("back_button");
+				tab_left->setWidgetLeft("contents");
+				tab_left->setWidgetRight(compendiumCategories[0].c_str());
+				tab_left->setWidgetUp("contents");
+				tab_left->setWidgetDown("contents");
+				tab_left->setWidgetSearchParent("compendium");
+				tab_left->addWidgetAction("MenuPageLeft", "tab_left");
+				tab_left->addWidgetAction("MenuPageRight", "tab_right");
+				tab_left->addWidgetMovement("MenuAlt2", "nav_filter_sort");
+				tab_left->setCallback([](Button& button) {
+					for ( int i = 0; i < compendiumCategories.size(); ++i )
+					{
+						if ( compendium_current == compendiumCategories[i] )
+						{
+							if ( Frame* parent = static_cast<Frame*>(button.getParent()) )
+							{
+								if ( i > 0 )
+								{
+									if ( auto tab = parent->findButton(compendiumCategories[i - 1].c_str()) )
+									{
+										tab->getCallback()(*tab);
+									}
+								}
+								else
+								{
+									/*if ( auto tab = parent->findButton(compendiumCategories[i].c_str()) )
+									{
+										tab->getCallback()(*tab);
+									}*/
+								}
+							}
+							break;
+						}
+					}
+				});
+			}
+
+			const int tab_title_y = 3;
+			Field* tab_title = window->addField(tab->getName(), 32);
+			tab_title->setText(Language::get(6174));
+			tab_title->setFont(smallfont_outline);
+			tab_title->setOntop(true);
+			tab_title->setColor(makeColorRGB(220, 178, 113));
+			tab_title->setSize(SDL_Rect{ tab->getSize().x, tab->getSize().y + tab_title_y, tab->getSize().w, 96 });
+			tab_title->setVJustify(Field::justify_t::TOP);
+			tab_title->setHJustify(Field::justify_t::CENTER);
+			tab_title->setTickCallback([](Widget& widget) {
+				auto field = static_cast<Field*>(&widget);
+				Compendium_t::PointsAnim_t::countUnreadNotifs();
+				if ( compendium_current == field->getName() )
+				{
+					field->setColor(tabTextColorActive);
+				}
+				else
+				{
+					field->setColor(tabTextColorInactive);
+				}
+				std::string str = Language::get(6174);
+				str += '\n';
+				str += std::to_string(Compendium_t::CompendiumMonsters_t::completionPercent);
+				str += '%';
+
+				if ( Compendium_t::CompendiumMonsters_t::numUnread > 0 )
+				{
+					str += '\n';
+					str += '\n';
+					str += '\x1E';
+					if ( (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) )
+					{
+						field->addColorToLine(3, makeColorRGB(43, 254, 207));
+					}
+					else
+					{
+						field->addColorToLine(3, makeColorRGB(30, 203, 177));
+					}
+				}
+				field->setText(str.c_str());
+				});
+
+			tab->getTickCallback()(*tab);
+			tab->setCallback([](Button& button) {
+				if ( !contents_activate_from_filter )
+				{
+					//soundActivate();
+					playSound(649 + local_rng.rand() % 8, 128);
+				}
+				contents_activate_from_filter = false;
+				compendium_current = "monsters";
+				if ( auto frame = static_cast<Frame*>(button.getParent()) )
+				{
+					if ( auto nav_filters = frame->findFrame("nav_filters") )
+					{
+						if ( auto nav_filter_btn2 = nav_filters->findButton("nav_filter_sort2") )
+						{
+							nav_filter_btn2->setPressed(Compendium_t::compendium_sorting_hide_undiscovered);
+						}
+					}
+					if ( auto page_right = frame->findFrame("page_right") )
+					{
+						if ( auto page_right_inner = page_right->findFrame("page_right_inner") )
+						{
+							page_right_inner->removeSelf();
+						}
+						compendiumPopulatePageRight(page_right);
+					}
+					contents_activate_from_tab = true;
+					compendiumPopulateContents(frame);
+					contents_activate_from_tab = false;
+				}
+				});
+
+
+			tab = window->addButton(compendiumCategories[1].c_str());
+			tab->setSize(SDL_Rect{ background->pos.x + 190, background->pos.y + background->pos.h - 30, 88, 76 });
+			tab->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_Items_00.png");
+			tab->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_ItemsHi_00.png");
+			tab->setColor(makeColorRGB(255, 255, 255));
+			tab->setHighlightColor(makeColorRGB(255, 255, 255));
+			tab->setWidgetBack("back_button");
+			tab->setWidgetLeft(compendiumCategories[0].c_str());
+			tab->setWidgetRight(compendiumCategories[2].c_str());
+			tab->setWidgetUp("contents");
+			tab->setWidgetDown("contents");
+			tab->setWidgetSearchParent("compendium");
+			tab->addWidgetAction("MenuPageLeft", "tab_left");
+			tab->addWidgetAction("MenuPageRight", "tab_right");
+			tab->addWidgetMovement("MenuAlt2", "nav_filter_sort");
+			tab->addWidgetAction("MenuAlt1", "page_right_unlock_btn");
+			tab->setTickCallback([](Widget& widget) {
+				auto button = static_cast<Button*>(&widget);
+				if ( compendium_current == button->getName() )
+				{
+					button->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_ItemsHi_00.png");
+					button->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_ItemsHi_00.png");
+				}
+				else
+				{
+					button->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_ItemsInactive_00.png");
+					button->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_ItemsInactiveHi_00.png");
+				}
+				Input& input = Input::inputs[getMenuOwner()];
+				if ( input.input("MenuStart").isBindingUsingKeyboard() )
+				{
+					widget.removeWidgetAction("MenuAlt1");
+					widget.addWidgetAction("MenuStart", "page_right_unlock_btn");
+				}
+				else
+				{
+					widget.removeWidgetAction("MenuStart");
+					widget.addWidgetAction("MenuAlt1", "page_right_unlock_btn");
+				}
+				});
+			//tab->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+			//	if ( !main_menu_frame ) {
+			//		return;
+			//	}
+			//	auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
+			//	if ( selectedWidget)
+			//	{
+			//		auto actions = selectedWidget->getWidgetActions();
+			//		if ( actions.find("MenuPageLeft") != actions.end() && actions["MenuPageLeft"] == "tab_left" )
+			//		{
+			//			if ( !isMouseVisible() )
+			//			{
+			//				// draw glyphs
+			//				bool pressed = ticks % TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
+			//				Input& input = Input::inputs[widget.getOwner()];
+			//				auto path = input.getGlyphPathForBinding("MenuPageLeft", pressed);
+			//				auto image = Image::get((std::string("*") + path).c_str());
+			//				int w = image->getWidth();
+			//				int h = image->getHeight();
+			//				const SDL_Rect viewport{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
+			//				auto button = const_cast<Button*>((Button*)(&widget));
+			//				int x = button->getSize().x;
+			//				int y = button->getSize().y;
+			//				image->draw(nullptr, SDL_Rect{ x - w - 8, y, w, h }, viewport);
+			//			}
+			//		}
+			//	}
+			//});
+
+			tab_title = window->addField(tab->getName(), 32);
+			tab_title->setText(Language::get(6175));
+			tab_title->setFont(smallfont_outline);
+			tab_title->setOntop(true);
+			tab_title->setColor(makeColorRGB(220, 178, 113));
+			tab_title->setSize(SDL_Rect{ tab->getSize().x, tab->getSize().y + tab_title_y, tab->getSize().w, 96 });
+			tab_title->setVJustify(Field::justify_t::TOP);
+			tab_title->setHJustify(Field::justify_t::CENTER);
+			tab_title->setTickCallback([](Widget& widget) {
+				auto field = static_cast<Field*>(&widget);
+				if ( compendium_current == field->getName() )
+				{
+					field->setColor(tabTextColorActive);
+				}
+				else
+				{
+					field->setColor(tabTextColorInactive);
+				}
+				std::string str = Language::get(6175);
+				str += '\n';
+				str += std::to_string(Compendium_t::CompendiumItems_t::completionPercent);
+				str += '%';
+
+				if ( Compendium_t::CompendiumItems_t::numUnread > 0 )
+				{
+					str += '\n';
+					str += '\n';
+					str += '\x1E';
+					if ( (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) )
+					{
+						field->addColorToLine(3, makeColorRGB(43, 254, 207));
+					}
+					else
+					{
+						field->addColorToLine(3, makeColorRGB(30, 203, 177));
+					}
+				}
+
+				field->setText(str.c_str());
+				});
+
+			tab->getTickCallback()(*tab);
+			tab->setCallback([](Button& button) {
+				if ( !contents_activate_from_filter )
+				{
+					//soundActivate();
+					playSound(649 + local_rng.rand() % 8, 128);
+				}
+				contents_activate_from_filter = false;
+				compendium_current = "items";
+				if ( auto frame = static_cast<Frame*>(button.getParent()) )
+				{
+					if ( auto nav_filters = frame->findFrame("nav_filters") )
+					{
+						if ( auto nav_filter_btn2 = nav_filters->findButton("nav_filter_sort2") )
+						{
+							nav_filter_btn2->setPressed(Compendium_t::compendium_sorting_hide_undiscovered);
+						}
+					}
+					if ( auto page_right = frame->findFrame("page_right") )
+					{
+						if ( auto page_right_inner = page_right->findFrame("page_right_inner") )
+						{
+							page_right_inner->removeSelf();
+						}
+						compendiumPopulatePageRight(page_right);
+					}
+					contents_activate_from_tab = true;
+					compendiumPopulateContents(frame);
+					contents_activate_from_tab = false;
+				}
+				});
+
+			tab = window->addButton(compendiumCategories[2].c_str());
+			tab->setSize(SDL_Rect{ background->pos.x + 286, background->pos.y + background->pos.h - 30, 96, 64 });
+			tab->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_Magic_00.png");
+			tab->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_MagicHi_00.png");
+			tab->setColor(makeColorRGB(255, 255, 255));
+			tab->setHighlightColor(makeColorRGB(255, 255, 255));
+			tab->setWidgetBack("back_button");
+			tab->setWidgetLeft(compendiumCategories[1].c_str());
+			tab->setWidgetRight(compendiumCategories[3].c_str());
+			tab->setWidgetUp("contents");
+			tab->setWidgetDown("contents");
+			tab->setWidgetSearchParent("compendium");
+			tab->addWidgetAction("MenuPageLeft", "tab_left");
+			tab->addWidgetAction("MenuPageRight", "tab_right");
+			tab->addWidgetMovement("MenuAlt2", "nav_filter_sort");
+			tab->addWidgetAction("MenuAlt1", "page_right_unlock_btn");
+			tab->setTickCallback([](Widget& widget) {
+				auto button = static_cast<Button*>(&widget);
+				if ( compendium_current == button->getName() )
+				{
+					button->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_MagicHi_00.png");
+					button->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_MagicHi_00.png");
+				}
+				else
+				{
+					button->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_MagicInactive_00.png");
+					button->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_MagicInactiveHi_00.png");
+				}
+				Input& input = Input::inputs[getMenuOwner()];
+				if ( input.input("MenuStart").isBindingUsingKeyboard() )
+				{
+					widget.removeWidgetAction("MenuAlt1");
+					widget.addWidgetAction("MenuStart", "page_right_unlock_btn");
+				}
+				else
+				{
+					widget.removeWidgetAction("MenuStart");
+					widget.addWidgetAction("MenuAlt1", "page_right_unlock_btn");
+				}
+				});
+
+			tab_title = window->addField(tab->getName(), 32);
+			tab_title->setText(Language::get(6176));
+			tab_title->setFont(smallfont_outline);
+			tab_title->setOntop(true);
+			tab_title->setColor(makeColorRGB(220, 178, 113));
+			tab_title->setSize(SDL_Rect{ tab->getSize().x, tab->getSize().y + tab_title_y, tab->getSize().w, 96 });
+			tab_title->setVJustify(Field::justify_t::TOP);
+			tab_title->setHJustify(Field::justify_t::CENTER);
+			tab_title->setTickCallback([](Widget& widget) {
+				auto field = static_cast<Field*>(&widget);
+				if ( compendium_current == field->getName() )
+				{
+					field->setColor(tabTextColorActive);
+				}
+				else
+				{
+					field->setColor(tabTextColorInactive);
+				}
+				std::string str = Language::get(6176);
+				str += '\n';
+				str += std::to_string(Compendium_t::CompendiumMagic_t::completionPercent);
+				str += '%';
+
+				if ( Compendium_t::CompendiumMagic_t::numUnread > 0 )
+				{
+					str += '\n';
+					str += '\n';
+					str += '\x1E';
+					if ( (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) )
+					{
+						field->addColorToLine(3, makeColorRGB(43, 254, 207));
+					}
+					else
+					{
+						field->addColorToLine(3, makeColorRGB(30, 203, 177));
+					}
+				}
+
+				field->setText(str.c_str());
+				});
+
+			tab->getTickCallback()(*tab);
+			tab->setCallback([](Button& button) {
+				if ( !contents_activate_from_filter )
+				{
+					//soundActivate();
+					playSound(649 + local_rng.rand() % 8, 128);
+				}
+				contents_activate_from_filter = false;
+				compendium_current = "magic";
+				if ( auto frame = static_cast<Frame*>(button.getParent()) )
+				{
+					if ( auto nav_filters = frame->findFrame("nav_filters") )
+					{
+						if ( auto nav_filter_btn2 = nav_filters->findButton("nav_filter_sort2") )
+						{
+							nav_filter_btn2->setPressed(Compendium_t::compendium_sorting_hide_undiscovered);
+						}
+					}
+					if ( auto page_right = frame->findFrame("page_right") )
+					{
+						if ( auto page_right_inner = page_right->findFrame("page_right_inner") )
+						{
+							page_right_inner->removeSelf();
+						}
+						compendiumPopulatePageRight(page_right);
+					}
+					contents_activate_from_tab = true;
+					compendiumPopulateContents(frame);
+					contents_activate_from_tab = false;
+				}
+				});
+
+			tab = window->addButton(compendiumCategories[3].c_str());
+			tab->setSize(SDL_Rect{ background->pos.x + 580, background->pos.y + background->pos.h - 30, 78, 80 });
+			tab->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_World_00.png");
+			tab->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_WorldHi_00.png");
+			tab->setColor(makeColorRGB(255, 255, 255));
+			tab->setHighlightColor(makeColorRGB(255, 255, 255));
+			tab->setWidgetBack("back_button");
+			tab->setWidgetLeft(compendiumCategories[2].c_str());
+			tab->setWidgetRight(compendiumCategories[4].c_str());
+			tab->setWidgetUp("contents");
+			tab->setWidgetDown("contents");
+			tab->setWidgetSearchParent("compendium");
+			tab->addWidgetAction("MenuPageLeft", "tab_left");
+			tab->addWidgetAction("MenuPageRight", "tab_right");
+			tab->addWidgetMovement("MenuAlt2", "nav_filter_sort");
+			tab->addWidgetAction("MenuAlt1", "page_right_unlock_btn");
+			tab->setTickCallback([](Widget& widget) {
+				auto button = static_cast<Button*>(&widget);
+				if ( compendium_current == button->getName() )
+				{
+					button->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_WorldHi_00.png");
+					button->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_WorldHi_00.png");
+				}
+				else
+				{
+					button->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_WorldInactive_00.png");
+					button->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_WorldInactiveHi_00.png");
+				}
+				Input& input = Input::inputs[getMenuOwner()];
+				if ( input.input("MenuStart").isBindingUsingKeyboard() )
+				{
+					widget.removeWidgetAction("MenuAlt1");
+					widget.addWidgetAction("MenuStart", "page_right_unlock_btn");
+				}
+				else
+				{
+					widget.removeWidgetAction("MenuStart");
+					widget.addWidgetAction("MenuAlt1", "page_right_unlock_btn");
+				}
+				});
+
+			tab_title = window->addField(tab->getName(), 32);
+			tab_title->setText(Language::get(6177));
+			tab_title->setFont(smallfont_outline);
+			tab_title->setOntop(true);
+			tab_title->setColor(makeColorRGB(220, 178, 113));
+			tab_title->setSize(SDL_Rect{ tab->getSize().x, tab->getSize().y + tab_title_y, tab->getSize().w, 96 });
+			tab_title->setVJustify(Field::justify_t::TOP);
+			tab_title->setHJustify(Field::justify_t::CENTER);
+			tab_title->setTickCallback([](Widget& widget) {
+				auto field = static_cast<Field*>(&widget);
+				if ( compendium_current == field->getName() )
+				{
+					field->setColor(tabTextColorActive);
+				}
+				else
+				{
+					field->setColor(tabTextColorInactive);
+				}
+				std::string str = Language::get(6177);
+				str += '\n';
+				str += std::to_string(Compendium_t::CompendiumWorld_t::completionPercent);
+				str += '%';
+
+				if ( Compendium_t::CompendiumWorld_t::numUnread > 0 )
+				{
+					str += '\n';
+					str += '\n';
+					str += '\x1E';
+					if ( (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) )
+					{
+						field->addColorToLine(3, makeColorRGB(43, 254, 207));
+					}
+					else
+					{
+						field->addColorToLine(3, makeColorRGB(30, 203, 177));
+					}
+				}
+
+				field->setText(str.c_str());
+				});
+
+			tab->getTickCallback()(*tab);
+			tab->setCallback([](Button& button) {
+				if ( !contents_activate_from_filter )
+				{
+					//soundActivate();
+					playSound(649 + local_rng.rand() % 8, 128);
+				}
+				contents_activate_from_filter = false;
+				compendium_current = "world";
+				if ( auto frame = static_cast<Frame*>(button.getParent()) )
+				{
+					if ( auto nav_filters = frame->findFrame("nav_filters") )
+					{
+						if ( auto nav_filter_btn2 = nav_filters->findButton("nav_filter_sort2") )
+						{
+							nav_filter_btn2->setPressed(Compendium_t::compendium_sorting_hide_undiscovered);
+						}
+					}
+					if ( auto page_right = frame->findFrame("page_right") )
+					{
+						if ( auto page_right_inner = page_right->findFrame("page_right_inner") )
+						{
+							page_right_inner->removeSelf();
+						}
+						compendiumPopulatePageRight(page_right);
+					}
+					contents_activate_from_tab = true;
+					compendiumPopulateContents(frame);
+					contents_activate_from_tab = false;
+				}
+				});
+
+			tab = window->addButton(compendiumCategories[4].c_str());
+			tab->setSize(SDL_Rect{ background->pos.x + 672, background->pos.y + background->pos.h - 30, 84, 80 });
+			tab->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_Codex_00.png");
+			tab->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_CodexHi_00.png");
+			tab->setColor(makeColorRGB(255, 255, 255));
+			tab->setHighlightColor(makeColorRGB(255, 255, 255));
+			tab->setWidgetBack("back_button");
+			tab->setWidgetLeft(compendiumCategories[3].c_str());
+			tab->setWidgetRight(compendiumCategories[5].c_str());
+			tab->setWidgetUp("contents");
+			tab->setWidgetDown("contents");
+			tab->setWidgetSearchParent("compendium");
+			tab->addWidgetAction("MenuPageLeft", "tab_left");
+			tab->addWidgetAction("MenuPageRight", "tab_right");
+			tab->addWidgetMovement("MenuAlt2", "nav_filter_sort");
+			tab->addWidgetAction("MenuAlt1", "page_right_unlock_btn");
+
+			tab->setTickCallback([](Widget& widget) {
+				auto button = static_cast<Button*>(&widget);
+				if ( compendium_current == button->getName() )
+				{
+					button->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_CodexHi_00.png");
+					button->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_CodexHi_00.png");
+				}
+				else
+				{
+					button->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_CodexInactive_00.png");
+					button->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_CodexInactiveHi_00.png");
+				}
+				Input& input = Input::inputs[getMenuOwner()];
+				if ( input.input("MenuStart").isBindingUsingKeyboard() )
+				{
+					widget.removeWidgetAction("MenuAlt1");
+					widget.addWidgetAction("MenuStart", "page_right_unlock_btn");
+				}
+				else
+				{
+					widget.removeWidgetAction("MenuStart");
+					widget.addWidgetAction("MenuAlt1", "page_right_unlock_btn");
+				}
+
+				if ( compendium_current == "codex" && compendium_contents_current[compendium_current] == "alchemy skill" )
+				{
+					auto& unlockStatus = Compendium_t::CompendiumCodex_t::unlocks["alchemy skill"];
+					if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::UNLOCKED_VISITED
+						|| unlockStatus == Compendium_t::CompendiumUnlockStatus::UNLOCKED_UNVISITED )
+					{
+						achievementObserver.updatePlayerAchievement(clientnum,
+							AchievementObserver::BARONY_ACH_BY_THE_BOOK,
+							AchievementObserver::BY_THE_BOOK_COMPENDIUM_PAGE);
+					}
+				}
+				});
+
+			tab_title = window->addField(tab->getName(), 32);
+			tab_title->setText(Language::get(6178));
+			tab_title->setFont(smallfont_outline);
+			tab_title->setOntop(true);
+			tab_title->setColor(makeColorRGB(220, 178, 113));
+			tab_title->setSize(SDL_Rect{ tab->getSize().x, tab->getSize().y + tab_title_y, tab->getSize().w, 96 });
+			tab_title->setVJustify(Field::justify_t::TOP);
+			tab_title->setHJustify(Field::justify_t::CENTER);
+			tab_title->setTickCallback([](Widget& widget) {
+				auto field = static_cast<Field*>(&widget);
+				if ( compendium_current == field->getName() )
+				{
+					field->setColor(tabTextColorActive);
+				}
+				else
+				{
+					field->setColor(tabTextColorInactive);
+				}
+				std::string str = Language::get(6178);
+				str += '\n';
+				str += std::to_string(Compendium_t::CompendiumCodex_t::completionPercent);
+				str += '%';
+
+				if ( Compendium_t::CompendiumCodex_t::numUnread > 0 )
+				{
+					str += '\n';
+					str += '\n';
+					str += '\x1E';
+					if ( (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) )
+					{
+						field->addColorToLine(3, makeColorRGB(43, 254, 207));
+					}
+					else
+					{
+						field->addColorToLine(3, makeColorRGB(30, 203, 177));
+					}
+				}
+
+				field->setText(str.c_str());
+				});
+
+			tab->getTickCallback()(*tab);
+			tab->setCallback([](Button& button) {
+				if ( !contents_activate_from_filter )
+				{
+					//soundActivate();
+					playSound(649 + local_rng.rand() % 8, 128);
+				}
+				contents_activate_from_filter = false;
+				compendium_current = "codex";
+				if ( auto frame = static_cast<Frame*>(button.getParent()) )
+				{
+					if ( auto nav_filters = frame->findFrame("nav_filters") )
+					{
+						if ( auto nav_filter_btn2 = nav_filters->findButton("nav_filter_sort2") )
+						{
+							nav_filter_btn2->setPressed(Compendium_t::compendium_sorting_hide_undiscovered);
+						}
+					}
+					if ( auto page_right = frame->findFrame("page_right") )
+					{
+						if ( auto page_right_inner = page_right->findFrame("page_right_inner") )
+						{
+							page_right_inner->removeSelf();
+						}
+						compendiumPopulatePageRight(page_right);
+					}
+					contents_activate_from_tab = true;
+					compendiumPopulateContents(frame);
+					contents_activate_from_tab = false;
+				}
+				});
+
+			tab = window->addButton(compendiumCategories[5].c_str());
+			tab->setSize(SDL_Rect{ background->pos.x + 672 + 104, background->pos.y + background->pos.h - 30, 110, 66 });
+			tab->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_Achievements_00.png");
+			tab->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_AchievementsHi_00.png");
+			tab->setColor(makeColorRGB(255, 255, 255));
+			tab->setHighlightColor(makeColorRGB(255, 255, 255));
+			tab->setWidgetBack("back_button");
+			tab->setWidgetLeft(compendiumCategories[4].c_str());
+			tab->setWidgetUp("contents");
+			tab->setWidgetDown("contents");
+			tab->setWidgetSearchParent("compendium");
+			tab->addWidgetAction("MenuPageLeft", "tab_left");
+			tab->addWidgetAction("MenuPageRight", "tab_right");
+			tab->addWidgetMovement("MenuAlt2", "nav_filter_sort");
+			tab->addWidgetAction("MenuAlt1", "page_right_unlock_btn");
+
+			tab->setTickCallback([](Widget& widget) {
+				auto button = static_cast<Button*>(&widget);
+				if ( compendium_current == button->getName() )
+				{
+					button->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_AchievementsHi_00.png");
+					button->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_AchievementsHi_00.png");
+				}
+				else
+				{
+					button->setBackground("*images/ui/Main Menus/AdventureArchives/A_BMark_AchievementsInactive_00.png");
+					button->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_BMark_AchievementsInactiveHi_00.png");
+				}
+				Input& input = Input::inputs[getMenuOwner()];
+				if ( input.input("MenuStart").isBindingUsingKeyboard() )
+				{
+					widget.removeWidgetAction("MenuAlt1");
+					widget.addWidgetAction("MenuStart", "page_right_unlock_btn");
+				}
+				else
+				{
+					widget.removeWidgetAction("MenuStart");
+					widget.addWidgetAction("MenuAlt1", "page_right_unlock_btn");
+				}
+				});
+
+			{
+				Button* tab_right = window->addButton("tab_right");
+				SDL_Rect pos = tab->getSize();
+				pos.x += (pos.w + 8 + 12);
+				pos.w = 38;
+				pos.h = 58;
+				tab_right->setSize(pos);
+				tab_right->setColor(makeColor(255, 255, 255, 255));
+				tab_right->setHighlightColor(makeColor(255, 255, 255, 255));
+				tab_right->setBackground("*images/ui/Main Menus/AdventureArchives/AA_Button_RArrow_00.png");
+				tab_right->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/AA_Button_RArrowHigh_00.png");
+				tab_right->setBackgroundActivated("*images/ui/Main Menus/AdventureArchives/AA_Button_RArrowPress_00.png");
+				tab_right->setGlyphPosition(Widget::CENTERED_BOTTOM);
+				tab_right->setWidgetBack("back_button");
+				tab_right->setWidgetRight("contents");
+				tab_right->setWidgetLeft(compendiumCategories[5].c_str());
+				tab_right->setWidgetUp("contents");
+				tab_right->setWidgetDown("contents");
+				tab_right->setWidgetSearchParent("compendium");
+				tab_right->addWidgetAction("MenuPageLeft", "tab_left");
+				tab_right->addWidgetAction("MenuPageRight", "tab_right");
+				tab_right->addWidgetMovement("MenuAlt2", "nav_filter_sort");
+				tab_right->setCallback([](Button& button) {
+					for ( int i = 0; i < compendiumCategories.size(); ++i )
+					{
+						if ( compendium_current == compendiumCategories[i] )
+						{
+							if ( Frame* parent = static_cast<Frame*>(button.getParent()) )
+							{
+								if ( i + 1 < compendiumCategories.size() )
+								{
+									if ( auto tab = parent->findButton(compendiumCategories[i + 1].c_str()) )
+									{
+										tab->getCallback()(*tab);
+									}
+								}
+								else
+								{
+									/*if ( auto tab = parent->findButton(compendiumCategories[i].c_str()) )
+									{
+										tab->getCallback()(*tab);
+									}*/
+								}
+							}
+							break;
+						}
+					}
+					});
+			}
+
+			tab_title = window->addField(tab->getName(), 32);
+			tab_title->setText(Language::get(6184));
+			tab_title->setFont(smallfont_outline);
+			tab_title->setOntop(true);
+			tab_title->setColor(makeColorRGB(220, 178, 113));
+			tab_title->setSize(SDL_Rect{ tab->getSize().x, tab->getSize().y + tab_title_y, tab->getSize().w, 96 });
+			tab_title->setVJustify(Field::justify_t::TOP);
+			tab_title->setHJustify(Field::justify_t::CENTER);
+			tab_title->setTickCallback([](Widget& widget) {
+				auto field = static_cast<Field*>(&widget);
+				if ( compendium_current == field->getName() )
+				{
+					field->setColor(tabTextColorActive);
+				}
+				else
+				{
+					field->setColor(tabTextColorInactive);
+				}
+				std::string str = Language::get(6184);
+				str += '\n';
+				str += std::to_string(Compendium_t::AchievementData_t::completionPercent);
+				str += '%';
+
+				if ( Compendium_t::AchievementData_t::numUnread > 0 )
+				{
+					str += '\n';
+					str += '\n';
+					str += '\x1E';
+					if ( (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) )
+					{
+						field->addColorToLine(3, makeColorRGB(43, 254, 207));
+					}
+					else
+					{
+						field->addColorToLine(3, makeColorRGB(30, 203, 177));
+					}
+				}
+
+				field->setText(str.c_str());
+			});
+
+			tab->getTickCallback()(*tab);
+			tab->setCallback([](Button& button) {
+				if ( !contents_activate_from_filter )
+				{
+					//soundActivate();
+					playSound(649 + local_rng.rand() % 8, 128);
+				}
+				contents_activate_from_filter = false;
+				compendium_current = "achievements";
+				if ( auto frame = static_cast<Frame*>(button.getParent()) )
+				{
+					if ( auto nav_filters = frame->findFrame("nav_filters") )
+					{
+						if ( auto nav_filter_btn2 = nav_filters->findButton("nav_filter_sort2") )
+						{
+							nav_filter_btn2->setPressed(Compendium_t::compendium_sorting_hide_ach_unlocked);
+						}
+					}
+					if ( auto page_right = frame->findFrame("page_right") )
+					{
+						if ( auto page_right_inner = page_right->findFrame("page_right_inner") )
+						{
+							page_right_inner->removeSelf();
+						}
+						//compendiumPopulatePageRight(page_right);
+					}
+					contents_activate_from_tab = true;
+					compendiumPopulateAchievements(frame);
+					compendiumPopulateContents(frame);
+					contents_activate_from_tab = false;
+				}
+			});
+			//tab->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+			//	if ( !main_menu_frame ) {
+			//		return;
+			//	}
+			//	auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
+			//	if ( selectedWidget )
+			//	{
+			//		auto actions = selectedWidget->getWidgetActions();
+			//		if ( actions.find("MenuPageRight") != actions.end() && actions["MenuPageRight"] == "tab_right" )
+			//		{
+			//			if ( !isMouseVisible() )
+			//			{
+			//				// draw glyphs
+			//				bool pressed = ticks % TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
+			//				Input& input = Input::inputs[widget.getOwner()];
+			//				auto path = input.getGlyphPathForBinding("MenuPageRight", pressed);
+			//				auto image = Image::get((std::string("*") + path).c_str());
+			//				int w = image->getWidth();
+			//				int h = image->getHeight();
+			//				const SDL_Rect viewport{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
+			//				auto button = const_cast<Button*>((Button*)(&widget));
+			//				int x = button->getSize().x + button->getSize().w;
+			//				int y = button->getSize().y;
+			//				image->draw(nullptr, SDL_Rect{ x + 8, y, w, h }, viewport);
+			//			}
+			//		}
+			//	}
+			//});
+		}
+
+		auto navigation = window->addFrame("nav");
+		navigation->setSize(SDL_Rect{ background->pos.x - 244 - 2, background->pos.y + 50 - 44, 244, 594 });
+		auto nav_bg = navigation->addImage(
+			SDL_Rect{ 0, 0, 244, 528 },
+			0xFFFFFFFF,
+			"*images/ui/Main Menus/AdventureArchives/C_Contents_Panel_00.png",
+			"nav_bg"
+		);
+
+		auto nav_title = navigation->addField("nav_title", 128);
+		nav_title->setFont("fonts/kongtext.ttf#16#0");
+		nav_title->setText(Language::get(6182));
+		nav_title->setHJustify(Field::justify_t::CENTER);
+		nav_title->setVJustify(Field::justify_t::TOP);
+		nav_title->setSize(SDL_Rect{ 0, 12, navigation->getSize().w - 16, 28 });
+		nav_title->setColor(makeColor(42, 22, 18, 255));
+
+		/*auto nav_title_percent = navigation->addField("nav_title_percent", 64);
+		nav_title_percent->setFont(smallfont_outline);
+		nav_title_percent->setText("100%");
+		nav_title_percent->setHJustify(Field::justify_t::RIGHT);
+		nav_title_percent->setVJustify(Field::justify_t::TOP);
+		nav_title_percent->setSize(SDL_Rect{ 0, 9, navigation->getSize().w - 16, 28 });*/
+
+		auto nav_contents_bg = navigation->addImage(
+			SDL_Rect{8, 32, 228, 464},
+			0xFFFFFFFF,
+			"*images/ui/Main Menus/AdventureArchives/C_Contents_Frame_00.png",
+			"nav_contents_bg"
+		);
+
+		{
+			auto nav_filters = navigation->addFrame("nav_filters");
+			nav_filters->setSize(SDL_Rect{ 8, navigation->getSize().h - 86, 232, 86 });
+			auto nav_filter_bg = nav_filters->addImage(
+				SDL_Rect{ 0, 0, 232, 86 },
+				0xFFFFFFFF,
+				"*images/ui/Main Menus/AdventureArchives/C_Filter_BG_00.png",
+				"nav_filter_bg"
+			);
+			nav_filters->setDrawCallback([](const Widget& widget, SDL_Rect pos){
+				auto frame = const_cast<Frame*>((Frame*)(&widget));
+				if ( main_menu_frame )
+				{
+					if ( auto selectedWidget = main_menu_frame->findSelectedWidget(getMenuOwner()) )
+					{
+						auto& actions = selectedWidget->getWidgetMovements();
+						auto find = actions.find("MenuAlt2");
+						if ( find != actions.end() && find->second == "nav_filter_sort" )
+						{
+							if ( !isMouseVisible() )
+							{
+								// draw glyphs
+								bool pressed = ticks % TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
+								Input& input = Input::inputs[getMenuOwner()];
+								auto path = input.getGlyphPathForBinding("MenuAlt2", pressed);
+								auto image = Image::get((std::string("*") + path).c_str());
+								int w = image->getWidth();
+								int h = image->getHeight();
+								const SDL_Rect viewport{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
+								int x = frame->getAbsoluteSize().x - 2 + frame->getSize().w / 2;
+								int y = frame->getAbsoluteSize().y + frame->getSize().h - 12;
+								image->draw(nullptr, SDL_Rect{ x - w / 2, y, w, h }, viewport);
+							}
+						}
+					}
+				}
+			});
+
+			auto nav_filter_sort = nav_filters->addButton("nav_filter_sort");
+			nav_filter_sort->setSize(SDL_Rect{ 16, 12, 28, 24 });
+			nav_filter_sort->setIcon("*#images/ui/Main Menus/Play/LobbyBrowser/Lobby_Checkbox_PickSmall00.png");
+			nav_filter_sort->setStyle(Button::style_t::STYLE_CHECKBOX);
+			nav_filter_sort->setHighlightColor(0);
+			nav_filter_sort->setBorderColor(0);
+			nav_filter_sort->setBorder(0);
+			nav_filter_sort->setColor(0);
+			nav_filter_sort->setSelectorOffset(SDL_Rect{ 0, 2, -6, 0 });
+			nav_filter_sort->setBackground("");
+			nav_filter_sort->setPressed(Compendium_t::compendium_sorting != "default");
+			nav_filter_sort->setWidgetSearchParent("compendium");
+			nav_filter_sort->setWidgetDown("nav_filter_sort2");
+			nav_filter_sort->addWidgetAction("MenuPageLeft", "tab_left");
+			nav_filter_sort->addWidgetAction("MenuPageRight", "tab_right");
+			nav_filter_sort->setGlyphPosition(Widget::CENTERED_LEFT);
+			nav_filter_sort->setButtonsOffset(SDL_Rect{ -16, 0, 0, 0 });
+			nav_filter_sort->setTickCallback([](Widget& widget) {
+				auto button = static_cast<Button*>(&widget);
+				if ( button->isSelected() )
+				{
+					if ( !isMouseVisible() )
+					{
+						if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuCancel") )
+						{
+							Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuListCancel");
+							if ( auto parent = static_cast<Frame*>(button->getParent()) )
+							{
+								if ( parent = parent->getParent() )
+								{
+									if ( parent = parent->getParent() )
+									{
+										if ( auto btn = parent->findButton(compendium_current.c_str()) )
+										{
+											soundCancel();
+											contents_activate_from_tab = true;
+											contents_activate_from_filter = true;
+											btn->getCallback()(*btn);
+											contents_activate_from_tab = false;
+											contents_activate_from_filter = false;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			});
+			nav_filter_sort->setCallback([](Button& button)
+			{
+				if ( button.isPressed() )
+				{
+					playSound(646, 128);
+				}
+				else
+				{
+					playSound(637, 128);
+				}
+				if ( compendium_current == "achievements" )
+				{
+					Compendium_t::AchievementData_t::achievementsNeedResort = true;
+				}
+				Compendium_t::AchievementData_t::sortAlphabetical = button.isPressed();
+				Compendium_t::compendium_sorting = button.isPressed() ? "alphabetical" : "default";
+				if ( auto parent = static_cast<Frame*>(button.getParent()) )
+				{
+					if ( parent = parent->getParent() )
+					{
+						if ( parent = parent->getParent() )
+						{
+							if ( auto btn = parent->findButton(compendium_current.c_str()) )
+							{
+								contents_activate_from_tab = true;
+								contents_activate_from_filter = true;
+								btn->getCallback()(*btn);
+								contents_activate_from_tab = false;
+								contents_activate_from_filter = false;
+								button.select();
+							}
+						}
+					}
+				}
+			});
+
+			//auto nav_filter_sort2 = nav_filters->addButton("nav_filter_sort");
+			//nav_filter_sort2->setSize(SDL_Rect{ 28, 16 + 24 + 8, 44, 44 });
+			//nav_filter_sort2->setIcon("*#images/ui/Main Menus/Mods/Upload/Fill_Checked_00.png");
+			//nav_filter_sort2->setStyle(Button::style_t::STYLE_CHECKBOX);
+			//nav_filter_sort2->setHighlightColor(0);
+			//nav_filter_sort2->setBorderColor(0);
+			//nav_filter_sort2->setBorder(0);
+			//nav_filter_sort2->setColor(0);
+			////nav_filter_sort2->setSelectorOffset(SDL_Rect{ 0, 2, -6, 0 });
+			//nav_filter_sort2->setBackground("");
+
+			auto nav_filter_sort2 = nav_filters->addButton("nav_filter_sort2");
+			nav_filter_sort2->setSize(SDL_Rect{ 16, 16 + 24 + 8, 28, 24 });
+			nav_filter_sort2->setIcon("*#images/ui/Main Menus/Play/LobbyBrowser/Lobby_Checkbox_PickSmall00.png");
+			nav_filter_sort2->setStyle(Button::style_t::STYLE_CHECKBOX);
+			nav_filter_sort2->setHighlightColor(0);
+			nav_filter_sort2->setBorderColor(0);
+			nav_filter_sort2->setBorder(0);
+			nav_filter_sort2->setColor(0);
+			nav_filter_sort2->setSelectorOffset(SDL_Rect{ 0, 2, -6, 0 });
+			nav_filter_sort2->setBackground("");
+			if ( compendium_current == "achievements" )
+			{
+				nav_filter_sort2->setPressed(Compendium_t::compendium_sorting_hide_ach_unlocked);
+			}
+			else
+			{
+				nav_filter_sort2->setPressed(Compendium_t::compendium_sorting_hide_undiscovered);
+			}
+			nav_filter_sort2->setWidgetSearchParent("compendium");
+			nav_filter_sort2->setWidgetUp("nav_filter_sort");
+			nav_filter_sort2->addWidgetAction("MenuPageLeft", "tab_left");
+			nav_filter_sort2->addWidgetAction("MenuPageRight", "tab_right");
+			nav_filter_sort2->setGlyphPosition(Widget::CENTERED_LEFT);
+			nav_filter_sort2->setButtonsOffset(SDL_Rect{ -16, 0, 0, 0 });
+			nav_filter_sort2->setTickCallback([](Widget& widget) {
+				auto button = static_cast<Button*>(&widget);
+				if ( button->isSelected() )
+				{
+					if ( !isMouseVisible() )
+					{
+						if ( Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuCancel") )
+						{
+							Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuListCancel");
+							if ( auto parent = static_cast<Frame*>(button->getParent()) )
+							{
+								if ( parent = parent->getParent() )
+								{
+									if ( parent = parent->getParent() )
+									{
+										if ( auto btn = parent->findButton(compendium_current.c_str()) )
+										{
+											soundCancel();
+											contents_activate_from_tab = true;
+											contents_activate_from_filter = true;
+											btn->getCallback()(*btn);
+											contents_activate_from_tab = false;
+											contents_activate_from_filter = false;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			});
+			nav_filter_sort2->setCallback([](Button& button)
+			{
+				if ( button.isPressed() )
+				{
+					playSound(646, 128);
+				}
+				else
+				{
+					playSound(637, 128);
+				}
+				if ( compendium_current == "achievements" )
+				{
+					Compendium_t::compendium_sorting_hide_ach_unlocked = button.isPressed();
+					Compendium_t::AchievementData_t::achievementsNeedResort = true;
+				}
+				else
+				{
+					Compendium_t::compendium_sorting_hide_undiscovered = button.isPressed();
+				}
+				if ( auto parent = static_cast<Frame*>(button.getParent()) )
+				{
+					if ( parent = parent->getParent() )
+					{
+						if ( parent = parent->getParent() )
+						{
+							if ( auto btn = parent->findButton(compendium_current.c_str()) )
+							{
+								contents_activate_from_tab = true;
+								contents_activate_from_filter = true;
+								btn->getCallback()(*btn);
+								contents_activate_from_tab = false;
+								contents_activate_from_filter = false;
+								button.select();
+							}
+						}
+					}
+				}
+			});
+
+			auto nav_filter_sort_txt = nav_filters->addField("nav_filter_sort_txt", 64);
+			nav_filter_sort_txt->setSize(SDL_Rect{ 44, 15, nav_filters->getSize().w - 44, 28 });
+			nav_filter_sort_txt->setFont(smallfont_outline);
+			nav_filter_sort_txt->setText(Language::get(6195));
+			nav_filter_sort_txt->setHJustify(Field::justify_t::LEFT);
+			nav_filter_sort_txt->setVJustify(Field::justify_t::TOP);
+			nav_filter_sort_txt->setColor(makeColorRGB(220, 178, 113));
+
+			auto nav_filter_sort_txt2 = nav_filters->addField("nav_filter_sort_txt2", 64);
+			nav_filter_sort_txt2->setSize(SDL_Rect{ 44, 19 + 24 + 8, nav_filters->getSize().w - 44, 28 });
+			nav_filter_sort_txt2->setFont(smallfont_outline);
+			nav_filter_sort_txt2->setText(Language::get(6196));
+			nav_filter_sort_txt2->setHJustify(Field::justify_t::LEFT);
+			nav_filter_sort_txt2->setVJustify(Field::justify_t::TOP);
+			nav_filter_sort_txt2->setColor(makeColorRGB(220, 178, 113));
+			nav_filter_sort_txt2->setTickCallback([](Widget& widget) {
+				Field* txt = static_cast<Field*>(&widget);
+				if ( compendium_current == "achievements" )
+				{
+					txt->setText(Language::get(6247));
+				}
+				else
+				{
+					txt->setText(Language::get(6196));
+				}
+			});
+		}
+
+		auto contents = navigation->addFrame("contents");
+		contents->setSize(SDL_Rect{ nav_contents_bg->pos.x + 6, nav_contents_bg->pos.y + 14, 184 + 12, 436 });
+		contents->setActualSize(SDL_Rect{ 0, 0, contents->getSize().w, contents->getSize().h });
+		contents->setEntrySize(18);
+		contents->setFont(smallfont_no_outline);
+		contents->setSelectedEntryColor(makeColor(71, 41, 27, 255));
+		contents->setListOffset(SDL_Rect{ 12, 1, 0, 0 });
+		contents->setScrollWithLeftControls(false);
+		contents->setClickable(true);
+		contents->setGlyphPosition(Widget::CENTERED_BOTTOM);
+		contents->setButtonsOffset(SDL_Rect{ 10, 16, 0, 0 });
+		contents->setSelectorOffset(SDL_Rect{ -5, -13, 25, 13 });
+		contents->setTickCallback([](Widget& widget) {
+			auto frame = static_cast<Frame*>(&widget);
+			frame->setHideGlyphs(false);
+			if ( frame->isSelected() )
+			{
+				frame->setAllowScrollBinds(true);
+				if ( frame->isActivated() )
+				{
+					frame->setHideGlyphs(true);
+				}
+			}
+			else
+			{
+				frame->setAllowScrollBinds(false);
+			}
+
+			Input& input = Input::inputs[getMenuOwner()];
+			if ( input.input("MenuStart").isBindingUsingKeyboard() )
+			{
+				widget.removeWidgetAction("MenuAlt1");
+				widget.addWidgetAction("MenuStart", "page_right_unlock_btn");
+			}
+			else
+			{
+				widget.removeWidgetAction("MenuStart");
+				widget.addWidgetAction("MenuAlt1", "page_right_unlock_btn");
+			}
+
+			if ( compendium_current == "achievements" )
+			{
+				frame->addWidgetAction("MenuLeft", "achievements_page_prev");
+				frame->addWidgetAction("MenuRight", "achievements_page_next");
+			}
+			else
+			{
+				frame->removeWidgetAction("MenuLeft");
+				frame->removeWidgetAction("MenuRight");
+			}
+
+			if ( !isMouseVisible() )
+			{
+				auto& list = frame->getEntries();
+				int selection = frame->getSelection();
+				if ( selection >= 0 && selection < list.size() )
+				{
+					int selection_y = selection * frame->getEntrySize();
+					if ( selection_y < frame->getActualSize().y )
+					{
+						// look ahead for a selectable option
+						for ( int i = selection; i < list.size(); ++i )
+						{
+							int y = i * frame->getEntrySize();
+							if ( !list[i]->navigable ) 
+							{
+								continue;
+							}
+							if ( y >= frame->getActualSize().y )
+							{
+								frame->setSelection(i);
+								break;
+							}
+						}
+					}
+					if ( selection_y + frame->getEntrySize() > frame->getActualSize().y + frame->getSize().h )
+					{
+						// look behind for a selectable option
+						for ( int i = selection; i >= 0; --i )
+						{
+							if ( !list[i]->navigable )
+							{
+								continue;
+							}
+							int y = i * frame->getEntrySize();
+							if ( y + frame->getEntrySize() <= frame->getActualSize().y + frame->getSize().h )
+							{
+								frame->setSelection(i);
+								break;
+							}
+						}
+					}
+				}
+			}
+		});
+
+		contents->setListMenuCancelOverride(true);
+		contents->addWidgetAction("MenuListCancel", "back_button");
+		contents->setWidgetSearchParent("compendium");
+		contents->addWidgetAction("MenuCancel", "back_button");
+		contents->addWidgetAction("MenuPageLeft", "tab_left");
+		contents->addWidgetAction("MenuPageRight", "tab_right");
+		contents->addWidgetMovement("MenuAlt2", "nav_filter_sort");
+		contents->addWidgetAction("MenuAlt1", "page_right_unlock_btn");
+
+		{
+			auto nav_slider = navigation->addSlider("nav_slider");
+			nav_slider->setRailSize(SDL_Rect{
+				navigation->getSize().w - 20 - 16,
+				24 + 22, 20, navigation->getSize().h - 32 - 22 - 38 - 66 });
+			nav_slider->setHandleSize(SDL_Rect{ 0, 0, 20, 28 });
+			nav_slider->setBorder(16);
+			nav_slider->setOntop(true);
+			nav_slider->setHandleImage("*#images/ui/Sliders/HUD_Magic_Slider_Emerald_01.png");
+			nav_slider->setValue(0);
+			nav_slider->setMinValue(0);
+			nav_slider->setMaxValue(100);
+			nav_slider->setOrientation(Slider::SLIDER_VERTICAL);
+			nav_slider->setHideGlyphs(true);
+			nav_slider->setHideKeyboardGlyphs(true);
+			nav_slider->setHideSelectors(false);
+			nav_slider->setMenuConfirmControlType(0);
+
+			nav_slider->setWidgetSearchParent("compendium");
+			nav_slider->addWidgetAction("MenuCancel", "back_button");
+			nav_slider->addWidgetAction("MenuPageLeft", "tab_left");
+			nav_slider->addWidgetAction("MenuPageRight", "tab_right");
+			nav_slider->addWidgetMovement("MenuAlt2", "nav_filter_sort");
+			nav_slider->addWidgetAction("MenuAlt1", "page_right_unlock_btn");
+			nav_slider->setWidgetLeft("contents");
+			nav_slider->setWidgetRight("contents");
+			nav_slider->setWidgetUp("contents");
+			nav_slider->setWidgetDown("contents");
+			nav_slider->addWidgetAction("MenuConfirm", "contents");
+
+			nav_slider->setCallback([](Slider& slider) {
+				if ( auto frame = static_cast<Frame*>(slider.getParent()) )
+				{
+					if ( frame = frame->findFrame("contents") )
+					{
+						if ( frame->getActualSize().h > frame->getSize().h )
+						{
+							SDL_Rect pos = frame->getActualSize();
+							const int diff = frame->getActualSize().h - frame->getSize().h;
+							pos.y = static_cast<int>(diff * slider.getValue() / 100.0);
+							frame->setActualSize(pos);
+						}
+						else
+						{
+							slider.setValue(0);
+						}
+					}
+				}
+			});
+			nav_slider->setTickCallback([](Widget& widget) {
+				auto slider = static_cast<Slider*>(&widget);
+				if ( auto frame = static_cast<Frame*>(widget.getParent()) )
+				{
+					if ( frame = frame->findFrame("contents") )
+					{
+						if ( frame->getActualSize().h > frame->getSize().h )
+						{
+							widget.setInvisible(false);
+
+							const int diff = frame->getActualSize().h - frame->getSize().h;
+							slider->setValue(100.0 * frame->getActualSize().y / diff);
+						}
+						else
+						{
+							widget.setInvisible(true);
+
+							slider->setValue(0);
+							if ( widget.isSelected() )
+							{
+								widget.deselect();
+							}
+						}
+					}
+				}
+
+				Input& input = Input::inputs[getMenuOwner()];
+				if ( input.input("MenuStart").isBindingUsingKeyboard() )
+				{
+					widget.removeWidgetAction("MenuAlt1");
+					widget.addWidgetAction("MenuStart", "page_right_unlock_btn");
+				}
+				else
+				{
+					widget.removeWidgetAction("MenuStart");
+					widget.addWidgetAction("MenuAlt1", "page_right_unlock_btn");
+				}
+			});
+		}
+
+		auto page_left = window->addFrame("page_left");
+		page_left->setSize(SDL_Rect{ background->pos.x + 460 - 22 - 382, background->pos.y + 46, 382, 472 });
+		auto left_top_img = page_left->addImage(SDL_Rect{ 0, 0, 382, 330 }, 0xFFFFFFFF,
+			"*images/ui/Main Menus/AdventureArchives/C_Subject_Frame_00.png", "page left top img");
+		auto blurbImg = page_left->addImage(SDL_Rect{ left_top_img->pos.x, left_top_img->pos.y + left_top_img->pos.h + 12, 382, 122 }, 0xFFFFFFFF,
+			"*images/ui/Main Menus/AdventureArchives/C_Lore_Frame_00.png", "page left bottom img");
+		page_left->setTickCallback([](Widget& widget) {
+			if ( auto debugBtnFrame = static_cast<Frame*>(&widget)->findFrame("debug frame") )
+			{
+				debugBtnFrame->setDisabled(false);
+				if ( keystatus[SDLK_g] )
+				{
+					debugBtnFrame->setDisabled(true);
+				}
+			}
+		});
+
+		auto page_left_title = window->addField("page_left_title", 128);
+		page_left_title->setFont("fonts/kongtext.ttf#16#0");
+		page_left_title->setText("");
+		page_left_title->setHJustify(Field::justify_t::CENTER);
+		page_left_title->setVJustify(Field::justify_t::TOP);
+		page_left_title->setSize(SDL_Rect{ page_left->getSize().x, page_left->getSize().y - 26, page_left->getSize().w, 28});
+		page_left_title->setColor(makeColor(42, 22, 18, 255));
+
+		auto blurb = page_left->addField("blurb", 1024);
+		blurb->setFont(smallfont_no_outline);
+		blurb->setHJustify(Field::justify_t::CENTER);
+		blurb->setVJustify(Field::justify_t::CENTER);
+		blurb->setSize(SDL_Rect{ blurbImg->pos.x + 8, blurbImg->pos.y + 8, blurbImg->pos.w - 16, blurbImg->pos.h - 16});
+		blurb->setColor(makeColor(42, 22, 18, 255));
+		blurb->setText("");
+
+		auto model_viewer = page_left->addFrame("model_viewer");
+		SDL_Rect modelPos = left_top_img->pos;
+		modelPos.x += 8;
+		modelPos.y += 8;
+		modelPos.w -= 16;
+		modelPos.h -= 16;
+		model_viewer->setSize(modelPos);
+		model_viewer->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+			if ( compendium_current == "monsters" )
+			{
+				drawObjectPreview(Compendium_t::compendiumEntityCurrent.modelName, compendiumMonster, pos, 0.0);
+			}
+			else if ( compendium_current == "world" )
+			{
+				drawObjectPreview(Compendium_t::compendiumEntityCurrent.modelName, nullptr, pos, 0.0);
+			}
+			else if ( compendium_current == "codex" )
+			{
+				drawSpritesPreview(Compendium_t::compendiumEntityCurrent.contentsName, Compendium_t::compendiumEntityCurrent.modelName, pos, 0.0);
+			}
+			else if ( compendium_current == "items" )
+			{
+				drawItemPreview(&Compendium_t::compendiumItemModel, pos, 0.0);
+			}
+			else if ( compendium_current == "magic" )
+			{
+				drawItemPreview(&Compendium_t::compendiumItemModel, pos, 0.0);
+			}
+		});
+		model_viewer->setTickCallback([](Widget& widget) {
+			if ( *cvar_compendiumautoreload && (ticks % TICKS_PER_SECOND/2 == 0) )
+			{
+				compendiumDebugRefresh();
+			}
+		});
+
+		auto image_viewer = page_left->addFrame("image_viewer");
+		image_viewer->setSize(model_viewer->getSize());
+		{
+			auto img = image_viewer->addImage(SDL_Rect{0, 0, 0, 0}, 0xFFFFFFFF, "", "img");
+			img->disabled = true;
+		}
+		image_viewer->setDisabled(true);
+		image_viewer->setTickCallback([](Widget& widget) {
+			if ( *cvar_compendiumautoreload && (ticks % TICKS_PER_SECOND / 2 == 0) )
+			{
+				if ( auto parent = static_cast<Frame*>(widget.getParent()) )
+				{
+					if ( auto model_viewer = parent->findFrame("model_viewer") )
+					{
+						if ( model_viewer->isDisabled() )
+						{
+							compendiumDebugRefresh();
+						}
+					}
+				}
+			}
+		});
+
+		// debug btns
+#if !defined(NDEBUG)
+		if ( true )
+#else
+		if ( false )
+#endif
+		{
+			auto debugBtnFrame = page_left->addFrame("debug frame");
+			debugBtnFrame->setSize(model_viewer->getSize());
+
+			Button* btn = debugBtnFrame->addButton("anim 1");
+			btn->setSize(SDL_Rect{ debugBtnFrame->getSize().w - 26, debugBtnFrame->getSize().h - 26, 26, 26 });
+			btn->setBackground("*images/ui/Inventory/chests/Button_X_00.png");
+			btn->setBackgroundHighlighted("*images/ui/Inventory/chests/Button_XHigh_00.png");
+			btn->setBackgroundActivated("*images/ui/Inventory/chests/Button_XPress_00.png");
+			btn->setFont(smallfont_outline);
+			btn->setText("ANM");
+			btn->setTickCallback([](Widget& widget) {
+				auto btn = static_cast<Button*>(&widget);
+				static Uint32 t = 0;
+				if ( btn->isCurrentlyPressed() && t != ticks && ticks % 5 == 0 )
+				{
+					t = ticks;
+					if ( compendiumMonster )
+					{
+						monsterAnimate(compendiumMonster, compendiumMonster->getStats(), 0.2);
+					}
+				}
+				});
+
+			btn = debugBtnFrame->addButton("tmp");
+			btn->setSize(SDL_Rect{ 0, debugBtnFrame->getSize().h - 26, 26, 26 });
+			btn->setBackground("*images/ui/Inventory/chests/Button_X_00.png");
+			btn->setBackgroundHighlighted("*images/ui/Inventory/chests/Button_XHigh_00.png");
+			btn->setBackgroundActivated("*images/ui/Inventory/chests/Button_XPress_00.png");
+			btn->setFont(smallfont_outline);
+			btn->setText("MOD");
+			btn->setOntop(true);
+			btn->setCallback([](Button& button) {
+				compendiumMonsterOverride = !compendiumMonsterOverride;
+			});
+			btn->setTickCallback([](Widget& widget) {
+				auto btn = static_cast<Button*>(&widget);
+				if ( compendiumMonsterOverride )
+				{
+					btn->setTextColor(makeColorRGB(0, 255, 0));
+					btn->setTextHighlightColor(makeColorRGB(0, 255, 0));
+					auto parent = static_cast<Frame*>(btn->getParent());
+					if ( auto btn = parent->findButton("anim 1") )
+					{
+						btn->setDisabled(false);
+						btn->setInvisible(btn->isDisabled());
+					}
+					if ( auto btn = parent->findButton("anim 2") )
+					{
+						btn->setDisabled(false);
+						btn->setInvisible(btn->isDisabled());
+					}
+					if ( auto btn = parent->findButton("anim 3") )
+					{
+						btn->setDisabled(false);
+						btn->setInvisible(btn->isDisabled());
+					}
+					if ( auto btn = parent->findButton("exp") )
+					{
+						btn->setDisabled(false);
+						btn->setInvisible(btn->isDisabled());
+					}
+				}
+				else
+				{
+					btn->setTextColor(makeColorRGB(128, 128, 128));
+					btn->setTextHighlightColor(makeColorRGB(128, 128, 128));
+					auto parent = static_cast<Frame*>(btn->getParent());
+					if ( auto btn = parent->findButton("anim 1") )
+					{
+						btn->setDisabled(true);
+						btn->setInvisible(btn->isDisabled());
+					}
+					if ( auto btn = parent->findButton("anim 2") )
+					{
+						btn->setDisabled(true);
+						btn->setInvisible(btn->isDisabled());
+					}
+					if ( auto btn = parent->findButton("anim 3") )
+					{
+						btn->setDisabled(true);
+						btn->setInvisible(btn->isDisabled());
+					}
+					if ( auto btn = parent->findButton("exp") )
+					{
+						btn->setDisabled(true);
+						btn->setInvisible(btn->isDisabled());
+					}
+				}
+				});
+
+			btn = debugBtnFrame->addButton("anim 2");
+			btn->setSize(SDL_Rect{ debugBtnFrame->getSize().w - 26, debugBtnFrame->getSize().h - 26 * 2 - 4, 26, 26 });
+			btn->setBackground("*images/ui/Inventory/chests/Button_X_00.png");
+			btn->setBackgroundHighlighted("*images/ui/Inventory/chests/Button_XHigh_00.png");
+			btn->setBackgroundActivated("*images/ui/Inventory/chests/Button_XPress_00.png");
+			btn->setFont(smallfont_outline);
+			btn->setText("RST");
+			btn->setOntop(true);
+			btn->setTickCallback([](Widget& widget) {
+				auto btn = static_cast<Button*>(&widget);
+				static Uint32 t = 0;
+				if ( btn->isCurrentlyPressed() && t != ticks && ticks % 5 == 0 )
+				{
+					t = ticks;
+					if ( compendiumMonster )
+					{
+						monsterAnimate(compendiumMonster, compendiumMonster->getStats(), 0.0);
+					}
+				}
+				});
+
+			btn = debugBtnFrame->addButton("exp");
+			btn->setSize(SDL_Rect{ 0, debugBtnFrame->getSize().h - 26 * 2 - 4, 26, 26 });
+			btn->setBackground("*images/ui/Inventory/chests/Button_X_00.png");
+			btn->setBackgroundHighlighted("*images/ui/Inventory/chests/Button_XHigh_00.png");
+			btn->setBackgroundActivated("*images/ui/Inventory/chests/Button_XPress_00.png");
+			btn->setFont(smallfont_outline);
+			btn->setText("EXP");
+			btn->setOntop(true);
+			btn->setCallback([](Button& button) {
+				consoleCommand("/compendium_export_monster");
+				soundActivate();
+			});
+
+			btn = debugBtnFrame->addButton("anim 3");
+			btn->setSize(SDL_Rect{ debugBtnFrame->getSize().w - 26, debugBtnFrame->getSize().h - 26 * 3 - 8, 26, 26 });
+			btn->setBackground("*images/ui/Inventory/chests/Button_X_00.png");
+			btn->setBackgroundHighlighted("*images/ui/Inventory/chests/Button_XHigh_00.png");
+			btn->setBackgroundActivated("*images/ui/Inventory/chests/Button_XPress_00.png");
+			btn->setFont(smallfont_outline);
+			btn->setText("ATK");
+			btn->setOntop(true);
+			btn->setCallback([](Button& button) {
+				compendiumMonster->attack(compendiumMonster->getAttackPose(), 0, nullptr);
+				});
+
+			btn = debugBtnFrame->addButton("tmp");
+			btn->setSize(SDL_Rect{ 0, debugBtnFrame->getSize().h - 26 * 3 - 8, 26, 26 });
+			btn->setBackground("*images/ui/Inventory/chests/Button_X_00.png");
+			btn->setBackgroundHighlighted("*images/ui/Inventory/chests/Button_XHigh_00.png");
+			btn->setBackgroundActivated("*images/ui/Inventory/chests/Button_XPress_00.png");
+			btn->setFont(smallfont_outline);
+			btn->setText("REF");
+			btn->setOntop(true);
+			btn->setCallback([](Button& button) {
+				compendiumDebugRefresh();
+				});
+
+			btn = debugBtnFrame->addButton("tmp");
+			btn->setSize(SDL_Rect{ 0, debugBtnFrame->getSize().h - 26 * 4 - 12, 26, 26 });
+			btn->setBackground("*images/ui/Inventory/chests/Button_X_00.png");
+			btn->setBackgroundHighlighted("*images/ui/Inventory/chests/Button_XHigh_00.png");
+			btn->setBackgroundActivated("*images/ui/Inventory/chests/Button_XPress_00.png");
+			btn->setFont(smallfont_outline);
+			btn->setTextColor(makeColorRGB(255, 255, 255));
+			btn->setText("ATO");
+			btn->setOntop(true);
+			btn->setCallback([](Button& button) {
+				*cvar_compendiumautoreload = !*cvar_compendiumautoreload;
+				});
+			btn->setTickCallback([](Widget& widget) {
+				auto btn = static_cast<Button*>(&widget);
+				if ( *cvar_compendiumautoreload )
+				{
+					btn->setTextColor(makeColorRGB(0, 255, 0));
+					btn->setTextHighlightColor(makeColorRGB(0, 255, 0));
+				}
+				else
+				{
+					btn->setTextColor(makeColorRGB(128, 128, 128));
+					btn->setTextHighlightColor(makeColorRGB(128, 128, 128));
+				}
+				});
+		}
+
+		auto page_right_reveal_top = window->addFrame("page_right_reveal_top");
+
+		auto page_right = window->addFrame("page_right");
+		page_right->setSize(SDL_Rect{ background->pos.x + 480 + 36, background->pos.y + 30, 398, 484});
+		page_right->setInvisible(true);
+		page_right->setInheritParentFrameOpacity(false);
+		page_right->setHideGlyphs(true);
+		page_right->setHideSelectors(true);
+		page_right->setHideKeyboardGlyphs(true);
+		page_right->setWidgetSearchParent("compendium");
+		page_right->addWidgetAction("MenuPageLeft", "tab_left");
+		page_right->addWidgetAction("MenuPageRight", "tab_right");
+		page_right->addWidgetMovement("MenuAlt2", "nav_filter_sort");
+		page_right->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+			auto frame = const_cast<Frame*>((Frame*)(&widget));
+			const real_t fpsScale = getFPSScale(144.0);
+			auto slider = frame->findSlider("right_slider");
+			if ( !slider ) { return; }
+			auto page_right_inner = frame->findFrame("page_right_inner");
+			if ( !page_right_inner ) { return; }
+
+			const int maxScrollY = page_right_inner->getActualSize().h - page_right_inner->getSize().h;
+			const int currentScrollY = page_right_inner->getActualSize().y;
+			const real_t startFadeTop = 20.0;
+			const real_t startFadeBottom = maxScrollY - startFadeTop;
+			real_t fadeAlphaTop = std::max(0.0, std::min(1.0, (startFadeTop - currentScrollY) / startFadeTop));
+			real_t fadeAlphaBottom = std::min(1.0, std::max(0.0, (currentScrollY - startFadeBottom) / startFadeTop));
+
+			if ( auto fader_bottom = frame->findImage("page_right_gradient_bottom") )
+			{
+				fader_bottom->disabled = slider->isInvisible();
+
+				Uint8 r, g, b, a;
+				getColor(fader_bottom->color, &r, &g, &b, &a);
+				int newAlpha = (1.0 - fadeAlphaBottom) * 255;
+				newAlpha = std::min(newAlpha, 255);
+				a = newAlpha;
+				fader_bottom->color = makeColor(r, g, b, a);
+				if ( a == 0 )
+				{
+					fader_bottom->disabled = true;
+				}
+			}
+			if ( auto fader_top = frame->findImage("page_right_gradient_top") )
+			{
+				fader_top->disabled = slider->isInvisible();
+
+				Uint8 r, g, b, a;
+				getColor(fader_top->color, &r, &g, &b, &a);
+				int newAlpha = (1.0 - fadeAlphaTop) * 255;
+				newAlpha = std::min(newAlpha, 255);
+				a = newAlpha;
+				fader_top->color = makeColor(r, g, b, a);
+				if ( a == 0 )
+				{
+					fader_top->disabled = true;
+				}
+			}
+		});
+		page_right->setTickCallback([](Widget& widget) {
+			Frame* page_right = static_cast<Frame*>(&widget);
+			if ( !page_right ) {
+				return;
+			}
+			if ( isMouseVisible() )
+			{
+				page_right->setWidgetBack("back_button");
+			}
+			else
+			{
+				page_right->setWidgetBack("right_back_button");
+			}
+			Frame* page_right_inner = page_right->findFrame("page_right_inner");
+			if ( !page_right_inner || isMouseVisible() ) {
+				return;
+			}
+			if ( page_right->isSelected() )
+			{
+				// rescue focus to either contents, or list entries
+				int index = -1;
+				for ( auto f : page_right_inner->getFrames() )
+				{
+					if ( f->isToBeDeleted() )
+					{
+						continue;
+					}
+					if ( auto txt = f->findField("item name") )
+					{
+						++index;
+						if ( compendium_contents_list_current[compendium_current][compendium_contents_current[compendium_current]] == index )
+						{
+							f->select();
+							return;
+							break;
+						}
+					}
+				}
+				if ( auto slider = page_right->findSlider("right_slider") )
+				{
+					if ( !slider->isDisabled() && !slider->isInvisible() )
+					{
+						slider->select();
+						return;
+					}
+				}
+				if ( Frame* compendium = page_right->getParent() )
+				{
+					if ( Frame* nav = compendium->findFrame("nav") )
+					{
+						if ( Frame* contents = nav->findFrame("contents") )
+						{
+							contents_activate_from_tab = true;
+							contents->activate();
+							contents_activate_from_tab = false;
+						}
+					}
+				}
+			}
+
+			if ( main_menu_frame )
+			{
+				auto selectedWidget = main_menu_frame->findSelectedWidget(getMenuOwner());
+				if ( !selectedWidget || !selectedWidget->isChildOf(widget) )
+				{
+					Frame* compendium = page_right->getParent();
+					if ( compendium )
+					{
+						if ( auto back = compendium->findFrame("right_back") )
+						{
+							back->removeSelf();
+						}
+						if ( !selectedWidget )
+						{
+							if ( Frame* nav = compendium->findFrame("nav") )
+							{
+								if ( Frame* contents = nav->findFrame("contents") )
+								{
+									contents_activate_from_tab = true;
+									contents->activate();
+									contents_activate_from_tab = false;
+								}
+							}
+						}
+					}
+				}
+				else if ( selectedWidget->isChildOf(widget) )
+				{
+					Frame* compendium = page_right->getParent();
+					if ( compendium && !compendium->findFrame("right_back") )
+					{
+						Button* right_back_button = createBackWidget(compendium, [](Button& button) {
+							Frame* back = static_cast<Frame*>(button.getParent());
+							if ( !back ) 
+							{
+								return;
+							}
+							Frame* page_right = back->getParent();
+							if ( !page_right )
+							{
+								return;
+							}
+							if ( Frame* compendium = page_right->getParent() )
+							{
+								if ( Frame* nav = compendium->findFrame("nav") )
+								{
+									if ( Frame* contents = nav->findFrame("contents") )
+									{
+										contents_activate_from_tab = true;
+										contents->activate();
+										contents_activate_from_tab = false;
+										soundCancel();
+									}
+								}
+							}
+							Input::inputs[getMenuOwner()].consumeBinaryToggle("MenuListCancel");
+							back->removeSelf();
+							}, SDL_Rect{page_right->getSize().x, page_right->getSize().y - 16, 0, 0});
+						right_back_button->setName("right_back_button");
+						auto right_back = static_cast<Frame*>(right_back_button->getParent());
+						right_back->setName("right_back");
+					}
+				}
+			}
+		});
+
+		auto page_right_gradient_top = page_right->addImage(SDL_Rect{ 12, 26, 338 + 8, 56 },
+			0xFFFFFFFF,
+			"*images/ui/Main Menus/AdventureArchives/C_Contents_ScrollFaderTop_00.png", "page_right_gradient_top");
+		page_right_gradient_top->ontop = true;
+		auto page_right_gradient_bottom = page_right->addImage(SDL_Rect{ 12, page_right->getSize().h - 148 - 40, 338 + 8, 56},
+			0xFFFFFFFF,
+			"*images/ui/Main Menus/AdventureArchives/C_Contents_ScrollFader_00.png", "page_right_gradient_bottom");
+		page_right_gradient_bottom->ontop = true;
+
+		auto page_right_unlock = window->addFrame("page_right_unlock");
+		page_right_unlock->setSize(SDL_Rect{ page_right->getSize().x + 6, page_right->getSize().y + 8, 376, 256 });
+		page_right_unlock->setHollow(true);
+		page_right_unlock->setClickable(false);
+
+		auto page_right_to_unlock = page_right_unlock->addField("to_unlock", 128);
+		page_right_to_unlock->setDisabled(true); // hidden, just to save data somewhere
+		page_right_to_unlock->setText("");
+
+		auto page_right_unlock_btn = page_right_unlock->addButton("page_right_unlock_btn");
+		page_right_unlock_btn->setSize(SDL_Rect{ 0, 0, 376, 128 });
+		page_right_unlock_btn->setHighlightColor(0xFFFFFFFF);
+		page_right_unlock_btn->setColor(0xFFFFFFFF);
+		page_right_unlock_btn->setBackground("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button_00.png");
+		page_right_unlock_btn->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button-high_00.png");
+		page_right_unlock_btn->setBackgroundActivated("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button-press_00.png");
+		page_right_unlock_btn->setOntop(true);
+		page_right_unlock_btn->setWidgetSearchParent("compendium");
+		page_right_unlock_btn->setWidgetBack("back_button");
+		page_right_unlock_btn->setWidgetLeft("contents");
+		page_right_unlock_btn->setWidgetRight("contents");
+		page_right_unlock_btn->setWidgetUp("contents");
+		page_right_unlock_btn->setWidgetDown("contents");
+		page_right_unlock_btn->addWidgetAction("MenuConfirm", "FraggleMaggleStiggleWortz"); // some garbage so that this glyph isn't auto-bound
+		page_right_unlock_btn->setMenuConfirmControlType(0);
+		page_right_unlock_btn->setHideKeyboardGlyphs(false);
+		page_right_unlock_btn->setButtonsOffset(SDL_Rect{ 0, -20, 0, 0 });
+		page_right_unlock_btn->setSelectorOffset(SDL_Rect{ 3, 9, -3, -11 });
+		page_right_unlock_btn->addWidgetAction("MenuPageLeft", "tab_left");
+		page_right_unlock_btn->addWidgetAction("MenuPageRight", "tab_right");
+		page_right_unlock_btn->addWidgetMovement("MenuAlt2", "nav_filter_sort");
+		page_right_unlock_btn->addWidgetAction("MenuAlt1", "page_right_unlock_btn");
+		page_right_unlock_btn->setCallback([](Button& button) {
+			compendiumRevealSection(&button);
+			Input& input = Input::inputs[getMenuOwner()];
+			input.consumeBindingsSharedWithBinding("MenuStart");
+		});
+		page_right_unlock_btn->setTickCallback([](Widget& widget) {
+			auto btn = static_cast<Button*>(&widget);
+			if ( isMouseVisible() )
+			{
+				btn->setBackground("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button_00.png");
+				btn->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button-high_00.png");
+				btn->setBackgroundActivated("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button-press_00.png");
+			}
+			else
+			{
+				btn->setBackground("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button_00.png");
+				btn->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button_00.png");
+				btn->setBackgroundActivated("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button_00.png");
+				if ( auto parent = static_cast<Frame*>(btn->getParent()) )
+				{
+					if ( auto btn_cost = parent->findButton("unlock_lore_cost") )
+					{
+						if ( btn_cost->getTextColor() == compendiumLoreCostAvailable )
+						{
+							// available to buy
+							btn->setBackground("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button-high_00.png");
+							btn->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button-high_00.png");
+							btn->setBackgroundActivated("*images/ui/Main Menus/AdventureArchives/C_DetailsLocked_Button-high_00.png");
+						}
+					}
+				}
+			}
+
+			Input& input = Input::inputs[getMenuOwner()];
+			if ( input.input("MenuStart").isBindingUsingKeyboard() )
+			{
+				widget.removeWidgetAction("MenuAlt1");
+				widget.addWidgetAction("MenuStart", "page_right_unlock_btn");
+			}
+			else
+			{
+				widget.removeWidgetAction("MenuStart");
+				widget.addWidgetAction("MenuAlt1", "page_right_unlock_btn");
+			}
+		});
+
+		/*auto page_right_point_hint = page_right_unlock->addField("page_right_point_hint", 128);
+		page_right_point_hint->setHJustify(Field::justify_t::CENTER);
+		page_right_point_hint->setVJustify(Field::justify_t::TOP);
+		page_right_point_hint->setText(Language::get(6266));
+		page_right_point_hint->setDisabled(false);
+		page_right_point_hint->setSize(SDL_Rect{ 0, 128 + 32, page_right_unlock->getSize().w, page_right_unlock->getSize().h - 128 + 32 });
+		page_right_point_hint->setFont(smallfont_outline);
+		page_right_point_hint->setOntop(true);
+		page_right_point_hint->setColor(makeColor(224, 224, 224, 255));
+		page_right_point_hint->setInvisible(true);
+		page_right_point_hint->setTickCallback([](Widget& widget) {
+			widget.setInvisible(true);
+			auto parent = static_cast<Frame*>(widget.getParent());
+			if ( parent )
+			{
+				if ( auto btn = parent->findButton("unlock_lore_cost") )
+				{
+					if ( btn->getTextColor() != compendiumLoreCostAvailable )
+					{
+						widget.setInvisible(btn->isInvisible());
+					}
+				}
+			}
+		});*/
+
+		/*auto reveal_unlock_badge = page_right_unlock->addImage(SDL_Rect{ 376 - 74, 28, 56, 62 },
+			0xFFFFFFFF,
+			"*images/ui/Main Menus/AdventureArchives/A_Icon_BaronyShield_Large_00.png",
+			"unlock_badge");
+		reveal_unlock_badge->ontop = true;*/
+		auto unlock_research_txt = page_right_unlock->addField("unlock_research_txt", 32);
+		unlock_research_txt->setHJustify(Field::justify_t::LEFT);
+		unlock_research_txt->setVJustify(Field::justify_t::TOP);
+		unlock_research_txt->setText(Language::get(6211));
+		unlock_research_txt->setDisabled(false);
+		unlock_research_txt->setSize(SDL_Rect{ 30 - 4, 44, 272, 62 });
+		unlock_research_txt->setFont("fonts/kongtext.ttf#32#2");
+		unlock_research_txt->setOntop(true);
+		unlock_research_txt->setColor(makeColor(224, 224, 224, 255));
+		unlock_research_txt->setInvisible(true);
+		unlock_research_txt->setTickCallback([](Widget& widget) {
+			auto parent = static_cast<Frame*>(widget.getParent());
+			if ( parent )
+			{
+				if ( auto btn = parent->findButton("unlock_lore_cost") )
+				{
+					widget.setInvisible(btn->isInvisible());
+					if ( auto txt = static_cast<Field*>(&widget) )
+					{
+						if ( btn->getTextColor() == compendiumLoreCostAvailable )
+						{
+							auto unlock_btn = parent->findButton("page_right_unlock_btn");
+							if ( !isMouseVisible() || (unlock_btn && unlock_btn->isHighlighted()) )
+							{
+								txt->setColor(btn->getTextColor());
+							}
+							else
+							{
+								txt->setColor(makeColorRGB(192, 192, 192));
+							}
+						}
+						else
+						{
+							txt->setColor(btn->getTextColor());
+						}
+					}
+				}
+			}
+		});
+
+		auto reveal_unlock_cost = page_right_unlock->addButton("unlock_lore_cost");
+		reveal_unlock_cost->setHJustify(Field::justify_t::CENTER);
+		reveal_unlock_cost->setVJustify(Field::justify_t::CENTER);
+		reveal_unlock_cost->setText("-");
+		reveal_unlock_cost->setDisabled(true);
+		reveal_unlock_cost->setSize(SDL_Rect{ 376 - 74, 28, 56, 62 });
+		reveal_unlock_cost->setTextOffset(SDL_Rect{ -2, -2, 0, 0 });
+		reveal_unlock_cost->setFont("fonts/kongtext.ttf#32#2");
+		reveal_unlock_cost->setOntop(true);
+		reveal_unlock_cost->setHighlightColor(0xFFFFFFFF);
+		reveal_unlock_cost->setColor(0xFFFFFFFF);
+		reveal_unlock_cost->setBackground("*images/ui/Main Menus/AdventureArchives/A_Icon_BaronyShield_Large_00.png");
+		reveal_unlock_cost->setBackgroundHighlighted("*images/ui/Main Menus/AdventureArchives/A_Icon_BaronyShield_Large_00.png");
+		reveal_unlock_cost->setBackgroundActivated("*images/ui/Main Menus/AdventureArchives/A_Icon_BaronyShield_Large_00.png");
+
+
+		auto right_bg = window->addImage(SDL_Rect{ page_right->getSize().x + 4, page_right->getSize().y + 8, 386, 472 }, 0xFFFFFFFF,
+			"*images/ui/Main Menus/AdventureArchives/C_Details_Frame_00.png", "page right img");
+		right_bg->disabled = true;
+
+		auto page_right_unlock_cost = page_right->addField("lore_cost", 32);
+		page_right_unlock_cost->setSize(SDL_Rect{ 4 + right_bg->pos.w - 34, 16, 34, 38 });
+		page_right_unlock_cost->setHJustify(Field::justify_t::CENTER);
+		page_right_unlock_cost->setVJustify(Field::justify_t::TOP);
+		page_right_unlock_cost->setText("");
+		page_right_unlock_cost->setFont(bigfont_outline);
+		page_right_unlock_cost->setColor(makeColorRGB(198, 190, 179));
+
+		page_right_reveal_top->setHollow(true);
+		page_right_reveal_top->setClickable(false);
+		page_right_reveal_top->setSize(SDL_Rect{ page_right->getSize().x, page_right->getSize().y, 398, 484 });
+
+		auto page_right_inner = page_right->addFrame("page_right_inner");
+		page_right_inner->setSize(SDL_Rect{ 14, compendiumPageRightInnerY, 362, compendiumPageRightInnerHeight });
+		page_right_inner->setActualSize(SDL_Rect{ 0, 0, 362, compendiumPageRightInnerHeight });
+		page_right_inner->setScrollWithLeftControls(false);
+		page_right_inner->setHideGlyphs(true);
+		page_right_inner->setHideSelectors(true);
+		page_right_inner->setHideKeyboardGlyphs(true);
+		page_right_inner->setTickCallback(compendium_page_right_inner_fn);
+
+		auto page_right_title = window->addField("page_right_title", 128);
+		page_right_title->setFont("fonts/kongtext.ttf#16#0");
+		page_right_title->setText("");
+		page_right_title->setHJustify(Field::justify_t::CENTER);
+		page_right_title->setVJustify(Field::justify_t::TOP);
+		page_right_title->setSize(SDL_Rect{ page_right->getSize().x + 8, page_right->getSize().y - 10, page_right->getSize().w - 24, 28 });
+		page_right_title->setColor(makeColor(42, 22, 18, 255));
+
+		auto right_slider_bg = page_right->addImage(SDL_Rect{ 
+			page_right_inner->getSize().x + page_right_inner->getSize().w - 18, 
+			page_right_inner->getSize().y + 20,
+			16, compendiumPageRightInnerHeight },
+			0xFFFFFFFF,
+			"*images/ui/Main Menus/AdventureArchives/C_Details_ScrollBar_01.png",
+			"right_slider_bg");
+
+		auto right_slider = page_right->addSlider("right_slider");
+		right_slider->setRailSize(SDL_Rect{ 
+			page_right_inner->getSize().x + page_right_inner->getSize().w - 20, 
+			page_right_inner->getSize().y + 20 + 4, 20, compendiumPageRightInnerHeight - 8 - 24 });
+		//right_slider->setRailImage("*images/ui/Main Menus/AdventureArchives/C_Details_ScrollBar_00.png");
+		right_slider->setHandleSize(SDL_Rect{ 0, 0, 20, 28 });
+		right_slider->setBorder(16);
+		right_slider->setOntop(true);
+		//right_slider->setHandleImage("*images/ui/Main Menus/AdventureArchives/C_Details_ScrollButton_00.png");
+		right_slider->setHandleImage("*#images/ui/Sliders/HUD_Magic_Slider_Emerald_01.png");
+		right_slider->setValue(0);
+		right_slider->setMinValue(0);
+		right_slider->setMaxValue(100);
+		right_slider->setOrientation(Slider::SLIDER_VERTICAL);
+		right_slider->setHideGlyphs(true);
+		right_slider->setHideKeyboardGlyphs(true);
+		right_slider->setHideSelectors(false);
+		right_slider->setMenuConfirmControlType(0);
+
+		right_slider->setWidgetSearchParent("compendium");
+		right_slider->addWidgetAction("MenuCancel", "right_back_button");
+		right_slider->addWidgetAction("MenuPageLeft", "tab_left");
+		right_slider->addWidgetAction("MenuPageRight", "tab_right");
+		right_slider->addWidgetAction("MenuAlt1", "page_right_unlock_btn");
+
+		right_slider->setCallback([](Slider& slider) {
+			if ( auto frame = static_cast<Frame*>(slider.getParent()) )
+			{
+				if ( frame = frame->findFrame("page_right_inner") )
+				{
+					if ( frame->getActualSize().h > frame->getSize().h )
+					{
+						SDL_Rect pos = frame->getActualSize();
+						const int diff = frame->getActualSize().h - frame->getSize().h;
+						pos.y = static_cast<int>(diff * slider.getValue() / 100.0);
+						frame->setActualSize(pos);
+					}
+					else
+					{
+						slider.setValue(0);
+					}
+				}
+			}
+			});
+		right_slider->setTickCallback([](Widget& widget) {
+			if ( isMouseVisible() )
+			{
+				widget.addWidgetAction("MenuCancel", "back_button");
+			}
+			else
+			{
+				widget.addWidgetAction("MenuCancel", "right_back_button");
+			}
+
+			Input& input = Input::inputs[getMenuOwner()];
+			if ( input.input("MenuStart").isBindingUsingKeyboard() )
+			{
+				widget.removeWidgetAction("MenuAlt1");
+				widget.addWidgetAction("MenuStart", "page_right_unlock_btn");
+			}
+			else
+			{
+				widget.removeWidgetAction("MenuStart");
+				widget.addWidgetAction("MenuAlt1", "page_right_unlock_btn");
+			}
+
+			auto slider = static_cast<Slider*>(&widget);
+			if ( auto frame = static_cast<Frame*>(widget.getParent()) )
+			{
+				if ( frame = frame->findFrame("page_right_inner") )
+				{
+					if ( frame->getActualSize().h > frame->getSize().h )
+					{
+						widget.setInvisible(false);
+
+						const int diff = frame->getActualSize().h - frame->getSize().h;
+						slider->setValue(100.0 * frame->getActualSize().y / diff);
+
+						if ( slider->isSelected() )
+						{
+							frame->setAllowScrollBinds(true);
+						}
+					}
+					else
+					{
+						widget.setInvisible(true);
+						
+						slider->setValue(0);
+						if ( widget.isSelected() )
+						{
+							widget.deselect();
+							if ( Frame* page_right = frame->getParent() )
+							{
+								page_right->select();
+							}
+						}
+					}
+				}
+			}
+			});
+
+		auto page_right_number = window->addField("page_right_number", 32);
+		page_right_number->setFont(smallfont_no_outline);
+		page_right_number->setText("");
+		page_right_number->setHJustify(Field::justify_t::CENTER);
+		page_right_number->setVJustify(Field::justify_t::TOP);
+		page_right_number->setSize(SDL_Rect{ page_right->getSize().x + 156 + 4, page_right->getSize().y + 497 + 14, 72, 28 });
+		page_right_number->setColor(makeColorRGB(77, 37, 16));
+		page_right_number->setDisabled(true);
+
+		auto page_right_number_flourish = window->addImage(SDL_Rect{ 768 + 130, 598, 186, 22 }, 0xFFFFFFFF,
+			"*images/ui/Main Menus/AdventureArchives/C_Page_Flourish_00.png", "page_right_number_flourish");
+		page_right_number_flourish->disabled = true;
+
+		auto page_left_number = window->addField("page_left_number", 32);
+		page_left_number->setFont(smallfont_no_outline);
+		page_left_number->setText("");
+		page_left_number->setHJustify(Field::justify_t::CENTER);
+		page_left_number->setVJustify(Field::justify_t::TOP);
+		page_left_number->setSize(SDL_Rect{ page_left->getSize().x + 156, page_right->getSize().y + 497 + 14, 72, 28 });
+		page_left_number->setColor(makeColorRGB(77, 37, 16));
+
+		auto page_right_next = window->addField("page_right_next", 128);
+		page_right_next->setFont(smallfont_no_outline);
+		page_right_next->setText("");
+		page_right_next->setHJustify(Field::justify_t::RIGHT);
+		page_right_next->setVJustify(Field::justify_t::TOP);
+		page_right_next->setSize(SDL_Rect{ page_right->getSize().x + 4, page_right->getSize().y + 475 + 8, 378, 28 });
+		page_right_next->setColor(makeColorRGB(135, 94, 45));
+		page_right_next->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+			auto txt = const_cast<Field*>((Field*)(&widget));
+			auto frame = static_cast<Frame*>(txt->getParent());
+			if ( auto contents = frame->findFrame("contents") )
+			{
+				if ( contents->isSelected() )
+				{
+					if ( !isMouseVisible() )
+					{
+						// draw glyphs
+						bool pressed = ticks % TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
+						Input& input = Input::inputs[getMenuOwner()];
+						auto path = input.getGlyphPathForBinding("MenuRight", pressed);
+						auto image = Image::get((std::string("*") + path).c_str());
+						int w = image->getWidth();
+						int h = image->getHeight();
+						const SDL_Rect viewport{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
+						int x = txt->getSize().x + txt->getSize().w;
+						int y = txt->getSize().y + 16;
+						image->draw(nullptr, SDL_Rect{ x - w, y, w, h }, viewport);
+					}
+				}
+			}
+		});
+
+		auto page_left_prev = window->addField("page_left_prev", 128);
+		page_left_prev->setFont(smallfont_no_outline);
+		page_left_prev->setText("");
+		page_left_prev->setHJustify(Field::justify_t::LEFT);
+		page_left_prev->setVJustify(Field::justify_t::TOP);
+		page_left_prev->setSize(SDL_Rect{ page_left->getSize().x + 6, page_right->getSize().y + 475 + 8, 378, 28 });
+		page_left_prev->setColor(makeColorRGB(135, 94, 45));
+		page_left_prev->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+			auto txt = const_cast<Field*>((Field*)(&widget));
+			auto frame = static_cast<Frame*>(txt->getParent());
+			if ( auto contents = frame->findFrame("contents") )
+			{
+				if ( contents->isSelected() )
+				{
+					if ( !isMouseVisible() )
+					{
+						// draw glyphs
+						bool pressed = ticks % TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
+						Input& input = Input::inputs[getMenuOwner()];
+						auto path = input.getGlyphPathForBinding("MenuLeft", pressed);
+						auto image = Image::get((std::string("*") + path).c_str());
+						int w = image->getWidth();
+						int h = image->getHeight();
+						const SDL_Rect viewport{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
+						int x = txt->getSize().x;
+						int y = txt->getSize().y + 16;
+						image->draw(nullptr, SDL_Rect{ x, y, w, h }, viewport);
+					}
+				}
+			}
+		});
+
+		if ( compendium_current == "achievements" )
+		{
+			compendiumPopulateAchievements(window);
+		}
+		else
+		{
+			compendiumPopulatePageRight(page_right);
+		}
+		compendiumPopulateContents(window);
+		contents_activate_from_tab = false;
+	}
 }

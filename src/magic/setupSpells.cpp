@@ -18,6 +18,8 @@ std::vector<spell_t*> allGameSpells;
 
 void setupSpells()   ///TODO: Verify this function.
 {
+	allGameSpells.clear();
+
 	node_t* node = NULL;
 	spellElement_t* element = NULL;
 
@@ -239,6 +241,14 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_missile_trio.duration = 25; //1 second.
 	strcpy(spellElement_missile_trio.element_internal_name, "spell_element_trio");
 
+	spellElementConstructor(&spellElement_slime_spray);
+	spellElement_slime_spray.mana = 1;
+	spellElement_slime_spray.base_mana = 1;
+	spellElement_slime_spray.overload_multiplier = 1;
+	spellElement_slime_spray.damage = 0;
+	spellElement_slime_spray.duration = 100;
+	strcpy(spellElement_slime_spray.element_internal_name, "spell_element_slime_spray");
+
 	spellElementConstructor(&spellElement_dominate);
 	spellElement_dominate.mana = 20;
 	spellElement_dominate.base_mana = 20;
@@ -430,6 +440,46 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_ghostBolt.damage = 0;
 	spellElement_ghostBolt.duration = 75;
 	strcpy(spellElement_ghostBolt.element_internal_name, "spell_element_ghost_bolt");
+
+	spellElementConstructor(&spellElement_slimeAcid);
+	spellElement_slimeAcid.mana = 5;
+	spellElement_slimeAcid.base_mana = 5;
+	spellElement_slimeAcid.overload_multiplier = 1;
+	spellElement_slimeAcid.damage = 5;
+	spellElement_slimeAcid.duration = 100;
+	strcpy(spellElement_slimeAcid.element_internal_name, "spell_element_slime_acid");
+
+	spellElementConstructor(&spellElement_slimeWater);
+	spellElement_slimeWater.mana = 5;
+	spellElement_slimeWater.base_mana = 5;
+	spellElement_slimeWater.overload_multiplier = 1;
+	spellElement_slimeWater.damage = 5;
+	spellElement_slimeWater.duration = 100;
+	strcpy(spellElement_slimeWater.element_internal_name, "spell_element_slime_water");
+
+	spellElementConstructor(&spellElement_slimeFire);
+	spellElement_slimeFire.mana = 5;
+	spellElement_slimeFire.base_mana = 5;
+	spellElement_slimeFire.overload_multiplier = 1;
+	spellElement_slimeFire.damage = 5;
+	spellElement_slimeFire.duration = 100;
+	strcpy(spellElement_slimeFire.element_internal_name, "spell_element_slime_fire");
+
+	spellElementConstructor(&spellElement_slimeTar);
+	spellElement_slimeTar.mana = 5;
+	spellElement_slimeTar.base_mana = 5;
+	spellElement_slimeTar.overload_multiplier = 1;
+	spellElement_slimeTar.damage = 5;
+	spellElement_slimeTar.duration = 100;
+	strcpy(spellElement_slimeTar.element_internal_name, "spell_element_slime_tar");
+
+	spellElementConstructor(&spellElement_slimeMetal);
+	spellElement_slimeMetal.mana = 5;
+	spellElement_slimeMetal.base_mana = 5;
+	spellElement_slimeMetal.overload_multiplier = 1;
+	spellElement_slimeMetal.damage = 5;
+	spellElement_slimeMetal.duration = 100;
+	strcpy(spellElement_slimeMetal.element_internal_name, "spell_element_slime_metal");
 
 	spellConstructor(&spell_forcebolt);
 	strcpy(spell_forcebolt.spell_internal_name, "spell_forcebolt");
@@ -1318,6 +1368,116 @@ void setupSpells()   ///TODO: Verify this function.
 	element->elements.last = NULL;
 	node = list_AddNodeLast(&element->elements);
 	node->element = copySpellElement(&spellElement_ghostBolt);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+
+	spellConstructor(&spell_slime_acid);
+	strcpy(spell_slime_acid.spell_internal_name, "spell_slime_acid");
+	spell_slime_acid.ID = SPELL_SLIME_ACID;
+	spell_slime_acid.difficulty = 100;
+	spell_slime_acid.elements.first = NULL;
+	spell_slime_acid.elements.last = NULL;
+	node = list_AddNodeLast(&spell_slime_acid.elements);
+	node->element = copySpellElement(&spellElement_slime_spray);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node; //Tell the element what list it resides in.
+	//Now for the second element.
+	element->elements.first = NULL;
+	element->elements.last = NULL;
+	node = list_AddNodeLast(&element->elements);
+	node->element = copySpellElement(&spellElement_slimeAcid);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+
+	spellConstructor(&spell_slime_water);
+	strcpy(spell_slime_water.spell_internal_name, "spell_slime_water");
+	spell_slime_water.ID = SPELL_SLIME_WATER;
+	spell_slime_water.difficulty = 100;
+	spell_slime_water.elements.first = NULL;
+	spell_slime_water.elements.last = NULL;
+	node = list_AddNodeLast(&spell_slime_water.elements);
+	node->element = copySpellElement(&spellElement_slime_spray);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node; //Tell the element what list it resides in.
+	//Now for the second element.
+	element->elements.first = NULL;
+	element->elements.last = NULL;
+	node = list_AddNodeLast(&element->elements);
+	node->element = copySpellElement(&spellElement_slimeWater);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+
+	spellConstructor(&spell_slime_fire);
+	strcpy(spell_slime_fire.spell_internal_name, "spell_slime_fire");
+	spell_slime_fire.ID = SPELL_SLIME_FIRE;
+	spell_slime_fire.difficulty = 100;
+	spell_slime_fire.elements.first = NULL;
+	spell_slime_fire.elements.last = NULL;
+	node = list_AddNodeLast(&spell_slime_fire.elements);
+	node->element = copySpellElement(&spellElement_slime_spray);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node; //Tell the element what list it resides in.
+	//Now for the second element.
+	element->elements.first = NULL;
+	element->elements.last = NULL;
+	node = list_AddNodeLast(&element->elements);
+	node->element = copySpellElement(&spellElement_slimeFire);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+
+	spellConstructor(&spell_slime_tar);
+	strcpy(spell_slime_tar.spell_internal_name, "spell_slime_tar");
+	spell_slime_tar.ID = SPELL_SLIME_TAR;
+	spell_slime_tar.difficulty = 100;
+	spell_slime_tar.elements.first = NULL;
+	spell_slime_tar.elements.last = NULL;
+	node = list_AddNodeLast(&spell_slime_tar.elements);
+	node->element = copySpellElement(&spellElement_slime_spray);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node; //Tell the element what list it resides in.
+	//Now for the second element.
+	element->elements.first = NULL;
+	element->elements.last = NULL;
+	node = list_AddNodeLast(&element->elements);
+	node->element = copySpellElement(&spellElement_slimeTar);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+
+	spellConstructor(&spell_slime_metal);
+	strcpy(spell_slime_metal.spell_internal_name, "spell_slime_metal");
+	spell_slime_metal.ID = SPELL_SLIME_METAL;
+	spell_slime_metal.difficulty = 100;
+	spell_slime_metal.elements.first = NULL;
+	spell_slime_metal.elements.last = NULL;
+	node = list_AddNodeLast(&spell_slime_metal.elements);
+	node->element = copySpellElement(&spellElement_slime_spray);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node; //Tell the element what list it resides in.
+	//Now for the second element.
+	element->elements.first = NULL;
+	element->elements.last = NULL;
+	node = list_AddNodeLast(&element->elements);
+	node->element = copySpellElement(&spellElement_slimeMetal);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;

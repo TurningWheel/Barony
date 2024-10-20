@@ -18,12 +18,14 @@
 #include "ui/Frame.hpp"
 #ifdef EDITOR
 #include "editor.hpp"
+#include "mod_tools.hpp"
 #endif
 #include "items.hpp"
 #include "ui/Image.hpp"
 #include "interface/consolecommand.hpp"
 #include "colors.hpp"
 #include "ui/Text.hpp"
+#include "ui/GameUI.hpp"
 
 #include <cassert>
 
@@ -69,6 +71,7 @@ Shader framebuffer::hdrShader;
 Shader voxelShader;
 Shader voxelBrightShader;
 Shader voxelDitheredShader;
+Shader voxelBrightDitheredShader;
 Shader worldShader;
 Shader worldDitheredShader;
 Shader worldDarkShader;
@@ -362,6 +365,54 @@ void createCommonDrawResources() {
 	buildVoxelShader(voxelDitheredShader, "voxelDitheredShader", true,
 		vox_vertex_glsl, sizeof(vox_vertex_glsl),
 		vox_dithered_fragment_glsl, sizeof(vox_dithered_fragment_glsl));
+
+	static const char vox_bright_dithered_fragment_glsl[] =
+		"in vec3 Color;"
+		"in vec3 Normal;"
+		"in vec4 WorldPos;"
+		"uniform float uDitherAmount;"
+		"uniform mat4 uColorRemap;"
+		"uniform vec4 uLightFactor;"
+		"uniform vec4 uLightColor;"
+		"uniform vec4 uColorAdd;"
+		"uniform vec4 uCameraPos;"
+		"uniform sampler2D uLightmap;"
+		"uniform vec2 uMapDims;"
+		"uniform float uFogDistance;"
+		"uniform vec4 uFogColor;"
+		"out vec4 FragColor;"
+
+		"void dither(ivec2 pos, float amount) {"
+		"if (amount > 1.0) {"
+		"int d = int(amount) - 1;"
+		"if ((pos.x & d) == 0 && (pos.y & d) == 0) { discard; }"
+		"} else if (amount == 1.0) {"
+		"if (((pos.x + pos.y) & 1) == 0) { discard; }"
+		"} else if (amount < 1.0) {"
+		"int d = int(1.0 / amount) - 1;"
+		"if ((pos.x & d) != 0 || (pos.y & d) != 0) { discard; }"
+		"}"
+		"}"
+
+		"void main() {"
+		"dither(ivec2(gl_FragCoord), uDitherAmount);"
+		"vec3 Remapped ="
+		"    (uColorRemap[0].rgb * Color.r)+"
+		"    (uColorRemap[1].rgb * Color.g)+"
+		"    (uColorRemap[2].rgb * Color.b);"
+		"FragColor = vec4(Remapped, 1.0) * uLightFactor * uLightColor + uColorAdd;"
+
+		"if (uFogDistance > 0.0) {"
+		"float dist = length(uCameraPos.xyz - WorldPos.xyz);"
+		"float lerp = (min(dist, uFogDistance) / uFogDistance) * uFogColor.a;"
+		"vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, lerp);"
+		"FragColor = vec4(mixed, FragColor.a);"
+		"}"
+		"}";
+
+	buildVoxelShader(voxelBrightDitheredShader, "voxelBrightDitheredShader", true,
+		vox_vertex_glsl, sizeof(vox_vertex_glsl),
+		vox_bright_dithered_fragment_glsl, sizeof(vox_bright_dithered_fragment_glsl));
     
     // world shader:
     
@@ -657,6 +708,7 @@ void destroyCommonDrawResources() {
     voxelShader.destroy();
     voxelBrightShader.destroy();
 	voxelDitheredShader.destroy();
+	voxelBrightDitheredShader.destroy();
     worldShader.destroy();
     worldDitheredShader.destroy();
     worldDarkShader.destroy();
@@ -2026,7 +2078,7 @@ void drawEntities3D(view_t* camera, int mode)
             }
         }
         
-        if ( entity->flags[INVISIBLE] )
+        if ( entity->flags[INVISIBLE] && !entity->flags[INVISIBLE_DITHER] )
         {
             continue;
         }
@@ -2123,8 +2175,22 @@ void drawEntities3D(view_t* camera, int mode)
                 if (ditheringDisabled) {
                     dither.value = decrease ? 0 : Entity::Dither::MAX;
                 } else {
-                    dither.value = decrease ? std::max(0, dither.value - 2) :
-                        std::min(Entity::Dither::MAX, dither.value + 2);
+					if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
+					{
+#ifndef EDITOR
+						static ConsoleVariable<int> cvar_dither_invisibility("/dither_invisibility", 5);
+						dither.value = decrease ? std::max(0, dither.value - 2) :
+							std::min(*cvar_dither_invisibility, dither.value + 1);
+#else
+						dither.value = decrease ? std::max(0, dither.value - 2) :
+							dither.value + 1;
+#endif
+					}
+					else
+					{
+						dither.value = decrease ? std::max(0, dither.value - 2) :
+						    std::min(Entity::Dither::MAX, dither.value + 2);
+					}
                 }
             }
         }
@@ -2237,7 +2303,30 @@ void drawEntities3D(view_t* camera, int mode)
                         auto stats = parent->behavior == &actPlayer ?
                             parent->getStats() : (parent->clientsHaveItsStats ? parent->clientStats : nullptr);
                         if (stats && stats->name[0]) {
-                            glDrawSpriteFromImage(camera, entity, stats->name, mode);
+							if ( parent->behavior == &actMonster && entity->skill[0] == clientnum && (!players[clientnum]->entity || parent->monsterAllyIndex != clientnum) )
+							{
+								// previous ally but we are dead (lost the ally) or someone stole our mon
+							}
+							else
+							{
+								if ( parent->getMonsterTypeFromSprite() == SLIME )
+								{
+									if ( !strcmp(stats->name, getMonsterLocalizedName(SLIME).c_str()) )
+									{
+										std::string name = stats->name;
+										camelCaseString(name);
+										glDrawSpriteFromImage(camera, entity, name.c_str(), mode);
+									}
+									else
+									{
+										glDrawSpriteFromImage(camera, entity, stats->name, mode);
+									}
+								}
+								else
+								{
+									glDrawSpriteFromImage(camera, entity, stats->name, mode);
+								}
+							}
                         }
                     } else {
                         auto stats = parent->getStats();
@@ -2246,7 +2335,23 @@ void drawEntities3D(view_t* camera, int mode)
                                 playerEntityMatchesUid(stats->leader_uid):
                                 playerEntityMatchesUid(entity->parent);
                             if (player >= 0 && (!stats->leader_uid || camera == &players[player]->camera())) {
-                                glDrawSpriteFromImage(camera, entity, stats->name, mode);
+								if ( stats->type == SLIME )
+								{
+									if ( !strcmp(stats->name, getMonsterLocalizedName(SLIME).c_str()) )
+									{
+										std::string name = stats->name;
+										camelCaseString(name);
+										glDrawSpriteFromImage(camera, entity, name.c_str(), mode);
+									}
+									else
+									{
+										glDrawSpriteFromImage(camera, entity, stats->name, mode);
+									}
+								}
+								else
+								{
+									glDrawSpriteFromImage(camera, entity, stats->name, mode);
+								}
                             }
                         }
                     }
@@ -2271,8 +2376,19 @@ void drawEntities3D(view_t* camera, int mode)
 				}
 				else
 				{
-					snprintf(buf, sizeof(buf), "%d", entity->skill[0]);
-					glDrawSpriteFromImage(camera, entity, buf, mode);
+					if ( entity->skill[7] == 1 )
+					{
+						glDrawSpriteFromImage(camera, entity, Language::get(6249), mode);
+					}
+					else if ( entity->skill[7] == 2 )
+					{
+						glDrawSprite(camera, entity, mode);
+					}
+					else
+					{
+						snprintf(buf, sizeof(buf), "%d", entity->skill[0]);
+						glDrawSpriteFromImage(camera, entity, buf, mode);
+					}
 				}
 			}
 			else
@@ -2310,6 +2426,9 @@ void drawEntities3D(view_t* camera, int mode)
 
 void drawEntities2D(long camx, long camy)
 {
+	// editor only
+#ifndef EDITOR
+#else
 	node_t* node;
 	Entity* entity;
 	SDL_Rect pos, box;
@@ -2386,6 +2505,30 @@ void drawEntities2D(long camx, long camy)
 							break;
 					}
 				}
+				else if ( entity->sprite == 185 || entity->sprite == 186 || entity->sprite == 187 )
+				{
+					pos.y += sprites[entity->sprite]->h / 2;
+					pos.x += sprites[entity->sprite]->w / 2;
+					switch ( entity->signalInputDirection )
+					{
+					case 0:
+						pos.x -= pos.w;
+						drawImageRotatedAlpha(sprites[entity->sprite], nullptr, &pos, 0.f, 255);
+						break;
+					case 1:
+						pos.y -= pos.h;
+						drawImageRotatedAlpha(sprites[entity->sprite], nullptr, &pos, PI / 2, 255);
+						break;
+					case 2:
+						pos.x += pos.w;
+						drawImageRotatedAlpha(sprites[entity->sprite], nullptr, &pos, PI, 255);
+						break;
+					case 3:
+						pos.y += pos.h;
+						drawImageRotatedAlpha(sprites[entity->sprite], nullptr, &pos, 3 * PI / 2, 255);
+						break;
+					}
+				}
 				else
 				{
 					// draw sprite normally from sprites list
@@ -2434,10 +2577,8 @@ void drawEntities2D(long camx, long camy)
 	// draw hover text for entities over the top of sprites.
 	for ( node = map.entities->first;
 		  node != nullptr
-#ifdef EDITOR
 			&& (openwindow == 0
 			&& savewindow == 0)
-#endif
 		  ;
 		  node = node->next
 		)
@@ -2543,7 +2684,37 @@ void drawEntities2D(long camx, long camy)
 							}
 							ttfPrintText(ttf8, padx, pady + 20, tmpStr);
 							break;
+						case 27: // collider
+						{
+							pady += 5;
+							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity[0]->sprite]);
+							ttfPrintText(ttf8, padx, pady - 10, tmpStr);
+							int model = selectedEntity[0]->colliderDecorationModel;
+							if ( EditorEntityData_t::colliderData.find(selectedEntity[0]->colliderDamageTypes)
+								!= EditorEntityData_t::colliderData.end() )
+							{
+								if ( EditorEntityData_t::colliderData[selectedEntity[0]->colliderDamageTypes].hasOverride("model") )
+								{
+									model = EditorEntityData_t::colliderData[selectedEntity[0]->colliderDamageTypes].getOverride("model");
+								}
+							}
+							snprintf(tmpStr, sizeof(tmpStr), "Model: %s", modelFileNames[model].c_str());
+							ttfPrintTextColor(ttf8, padx, pady, makeColorRGB(0, 255, 0), true, tmpStr);
 
+							if ( EditorEntityData_t::colliderData.find(selectedEntity[0]->colliderDamageTypes)
+								!= EditorEntityData_t::colliderData.end() )
+							{
+
+								auto& colliderData = EditorEntityData_t::colliderData[selectedEntity[0]->colliderDamageTypes];
+								snprintf(tmpStr, sizeof(tmpStr), "Collider Type: %s", colliderData.name.c_str());
+							}
+							else
+							{
+								snprintf(tmpStr, sizeof(tmpStr), "Collider Type: ???");
+							}
+							ttfPrintTextColor(ttf8, padx, pady + 10, makeColorRGB(255, 255, 0), true, tmpStr);
+							break;
+						}
 						case 3: //Items
 							pady += 5;
 							strcpy(tmpStr, itemNameStrings[selectedEntity[0]->skill[10]]);
@@ -2834,6 +3005,39 @@ void drawEntities2D(long camx, long camy)
 							tooltip.w = TTF8_WIDTH * (int)longestLine + 8;
 							tooltip.y = pady + offsety - 4;
 							tooltip.h = (int)lines.size() * TTF8_HEIGHT + 8;
+
+							if ( lines.size() <= 1 )
+							{
+								offsety += 20;
+							}
+
+							if ( spriteType == 13 )
+							{
+								if ( modelFileNames.find(selectedEntity[0]->floorDecorationModel) != modelFileNames.end() )
+								{
+									snprintf(tmpStr, sizeof(tmpStr), "Model: %s", modelFileNames[selectedEntity[0]->floorDecorationModel].c_str());
+									if ( lines.size() > 1 )
+									{
+										ttfPrintTextColor(ttf8, padx + offsetx, tooltip.y - 16, makeColorRGB(0, 255, 0), true, tmpStr);
+									}
+									else
+									{
+										ttfPrintTextColor(ttf8, padx + offsetx, pady + offsety - 10, makeColorRGB(0, 255, 0), true, tmpStr);
+									}
+								}
+								else
+								{
+									if ( lines.size() > 1 )
+									{
+										ttfPrintText(ttf8, padx + offsetx, tooltip.y - 16, "Model: Invalid Index");
+									}
+									else
+									{
+										ttfPrintText(ttf8, padx + offsetx, pady + offsety - 10, "Model: Invalid Index");
+									}
+								}
+							}
+
 							if ( lines.size() > 1 )
 							{
 								drawTooltip(&tooltip);
@@ -2855,9 +3059,7 @@ void drawEntities2D(long camx, long camy)
 				else if ( (omousex / TEXTURESIZE) * 32 == pos.x
 						&& (omousey / TEXTURESIZE) * 32 == pos.y
 						&& selectedEntity[0] == NULL
-#ifdef EDITOR
 						&& hovertext
-#endif
 						)
 				{
 					// handle mouseover sprite name tooltip in main editor screen
@@ -2894,6 +3096,7 @@ void drawEntities2D(long camx, long camy)
 			}
 		}
 	}
+#endif
 }
 
 /*-------------------------------------------------------------------------------

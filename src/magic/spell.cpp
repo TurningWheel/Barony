@@ -75,6 +75,12 @@ spellElement_t spellElement_flutter;
 spellElement_t spellElement_dash;
 spellElement_t spellElement_selfPolymorph;
 spellElement_t spellElement_ghostBolt;
+spellElement_t spellElement_slimeAcid;
+spellElement_t spellElement_slimeWater;
+spellElement_t spellElement_slimeFire;
+spellElement_t spellElement_slimeTar;
+spellElement_t spellElement_slimeMetal;
+spellElement_t spellElement_slime_spray;
 
 spell_t spell_forcebolt;
 spell_t spell_magicmissile;
@@ -130,6 +136,11 @@ spell_t spell_flutter;
 spell_t spell_dash;
 spell_t spell_polymorph;
 spell_t spell_ghost_bolt;
+spell_t spell_slime_acid;
+spell_t spell_slime_water;
+spell_t spell_slime_fire;
+spell_t spell_slime_tar;
+spell_t spell_slime_metal;
 
 bool addSpell(int spell, int player, bool ignoreSkill)
 {
@@ -310,6 +321,21 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 		case SPELL_GHOST_BOLT:
 			new_spell = copySpell(&spell_ghost_bolt);
 			break;
+		case SPELL_SLIME_ACID:
+			new_spell = copySpell(&spell_slime_acid);
+			break;
+		case SPELL_SLIME_WATER:
+			new_spell = copySpell(&spell_slime_water);
+			break;
+		case SPELL_SLIME_FIRE:
+			new_spell = copySpell(&spell_slime_fire);
+			break;
+		case SPELL_SLIME_TAR:
+			new_spell = copySpell(&spell_slime_tar);
+			break;
+		case SPELL_SLIME_METAL:
+			new_spell = copySpell(&spell_slime_metal);
+			break;
 		default:
 			return false;
 	}
@@ -425,14 +451,11 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 	}
 	free(item);
 
+	if ( !ignoreSkill || (ignoreSkill && !intro) )
+	{
+		Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_SPELLS_LEARNED, "magicians guild", 1);
+	}
 	return true;
-}
-
-spell_t* newSpell()
-{
-	spell_t* spell = (spell_t*) malloc(sizeof(spell_t));
-	spellConstructor(spell);
-	return spell;
 }
 
 void spellConstructor(spell_t* spell)
@@ -630,6 +653,29 @@ bool spell_isChanneled(spell_t* spell)
 	return false;
 }
 
+real_t getSpellBonusFromCasterINT(Entity* caster, Stat* casterStats)
+{
+	if ( caster && caster->behavior != &actPlayer )
+	{
+		return 0.0;
+	}
+
+	real_t bonus = 0.0;
+	if ( !casterStats && caster )
+	{
+		casterStats = caster->getStats();
+	}
+	if ( casterStats )
+	{
+		int INT = statGetINT(casterStats, caster);
+		if ( INT > 0 )
+		{
+			bonus += INT / 100.0;
+		}
+	}
+	return bonus;
+}
+
 real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spellElement_t* spellElement, int spellID)
 {
 	if ( caster && caster->behavior != &actPlayer )
@@ -643,14 +689,18 @@ real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spell
 	}
 
 	real_t bonus = 0.0;
-	int INT = statGetINT(casterStats, caster);
-	if ( INT > 0 )
-	{
-		bonus += INT / 100.0;
-	}
+	bonus += getSpellBonusFromCasterINT(caster, casterStats);
 
 	if ( casterStats )
 	{
+		if ( casterStats->EFFECTS[EFF_PWR] )
+		{
+			bonus += 0.25;
+			int percentMP = static_cast<int>(100.0 * (real_t)casterStats->MP / std::max(1, casterStats->MAXMP));
+			percentMP = std::min(100, std::max(0, percentMP));
+			percentMP = (100 - percentMP) / 10;
+			bonus += 0.5 * percentMP / 10.0;
+		}
 		if ( casterStats->helmet )
 		{
 			if ( casterStats->helmet->type == HAT_MITER )
@@ -921,6 +971,21 @@ spell_t* getSpellFromID(int ID)
 			break;
 		case SPELL_GHOST_BOLT:
 			spell = &spell_ghost_bolt;
+			break;
+		case SPELL_SLIME_ACID:
+			spell = &spell_slime_acid;
+			break;
+		case SPELL_SLIME_WATER:
+			spell = &spell_slime_water;
+			break;
+		case SPELL_SLIME_FIRE:
+			spell = &spell_slime_fire;
+			break;
+		case SPELL_SLIME_TAR:
+			spell = &spell_slime_tar;
+			break;
+		case SPELL_SLIME_METAL:
+			spell = &spell_slime_metal;
 			break;
 		default:
 			break;
@@ -1303,7 +1368,7 @@ void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP)
 	}
 }
 
-spell_t* getSpellFromItem(const int player, Item* item)
+spell_t* getSpellFromItem(const int player, Item* item, bool usePlayerInventory)
 {
 	spell_t* spell = nullptr;
 	node_t* node = nullptr;
@@ -1311,23 +1376,44 @@ spell_t* getSpellFromItem(const int player, Item* item)
 	{
 		return nullptr;
 	}
-	for ( node = players[player]->magic.spellList.first; node; node = node->next )
+	if ( item->type != SPELL_ITEM )
 	{
-		if ( node->element )
+		return nullptr;
+	}
+
+	Uint32 appearance = item->appearance;
+	if ( item->type == SPELL_ITEM && item->appearance >= 1000 )
+	{
+		appearance -= 1000; // hack for normally uncontrollable spells.
+	}
+	if ( usePlayerInventory )
+	{
+		if ( player < 0 || player >= MAXPLAYERS )
 		{
-			spell = (spell_t*) node->element;
-			Uint32 appearance = item->appearance;
-			if ( item->type == SPELL_ITEM && item->appearance >= 1000 )
+			return nullptr;
+		}
+		for ( node = players[player]->magic.spellList.first; node; node = node->next )
+		{
+			if ( node->element )
 			{
-				appearance -= 1000; // hack for normally uncontrollable spells.
+				spell = (spell_t*) node->element;
+				if ( spell->ID == appearance )
+				{
+					return spell;    //Found the spell.
+				}
 			}
+		}
+	}
+	else
+	{
+		for ( auto spell : allGameSpells )
+		{
 			if ( spell->ID == appearance )
 			{
 				return spell;    //Found the spell.
 			}
 		}
 	}
-
 	return nullptr;
 }
 
@@ -1345,7 +1431,7 @@ int canUseShapeshiftSpellInCurrentForm(const int player, Item& item)
 	{
 		return -1;
 	}
-	spell_t* spell = getSpellFromItem(player, &item);
+	spell_t* spell = getSpellFromItem(player, &item, false);
 	if ( !spell )
 	{
 		return -1;

@@ -74,6 +74,18 @@ static ConsoleVariable<float> cvar_calloutStartZLimit("/callout_start_z_limit", 
 #define GHOSTCAM_WEAVE my->fskill[10]
 #define GHOSTCAM_HOVER my->fskill[11]
 
+static ConsoleVariable<bool> cvar_player_can_move_in_gui("/player_can_move_in_gui", true);
+bool playerAllowedMovement(const int playernum)
+{
+	if ( !*cvar_player_can_move_in_gui )
+	{
+		if ( !players[playernum]->shootmode )
+		{
+			return false;
+		}
+	}
+	return true;
+}
 void Player::Ghost_t::handleGhostCameraBobbing(bool useRefreshRateDelta)
 {
 	if ( !my )
@@ -98,7 +110,7 @@ void Player::Ghost_t::handleGhostCameraBobbing(bool useRefreshRateDelta)
 	{
 		bool reset = false;
 
-		if ( !gamePaused
+		if ( !gamePaused && playerAllowedMovement(playernum)
 			&& ((!inputs.hasController(playernum)
 				&& ((input.binary("Move Forward") || input.binary("Move Backward"))
 					|| (input.binary("Move Left") - input.binary("Move Right"))))
@@ -165,7 +177,7 @@ void Player::Ghost_t::handleGhostMovement(const bool useRefreshRateDelta)
 	}
 
 	// calculate movement forces
-	bool allowMovement = isControllable();
+	bool allowMovement = isControllable() && playerAllowedMovement(player.playernum);
 	static ConsoleVariable<float> cvar_ghostSpeed("/ghost_speed", 1.5);
 	static ConsoleVariable<float> cvar_ghostDrag("/ghost_drag", 0.95);
 
@@ -327,6 +339,7 @@ bool Player::Ghost_t::allowedInteractEntity(Entity& entity)
 		|| entity.behavior == &actPowerCrystal
 		|| entity.behavior == &actPowerCrystalBase
 		|| entity.behavior == &actTeleportShrine
+		|| entity.behavior == &::actDaedalusShrine
 		|| entity.behavior == &actTeleporter )
 	{
 		return true;
@@ -1236,6 +1249,7 @@ Entity* Player::Ghost_t::spawnGhost()
 		}
 		players[player.playernum]->ghost.my = entity;
 		players[player.playernum]->ghost.uid = entity->getUID();
+		Compendium_t::Events_t::eventUpdateMonster(player.playernum, Compendium_t::CPDM_GHOST_SPAWNED, entity, 1);
 		return entity;
 	}
 
@@ -2868,7 +2882,7 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 				PLAYER_BOBMOVE -= .03 * refreshRateDelta;
 			}
 		}
-		else if ( !gamePaused
+		else if ( !gamePaused && playerAllowedMovement(player.playernum)
 			&& ((!inputs.hasController(PLAYER_NUM) 
 				&& ((input.binary("Move Forward") || input.binary("Move Backward"))
 					|| (input.binary("Move Left") - input.binary("Move Right"))))
@@ -3210,12 +3224,12 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 	}
 
 	// calculate weight
-	int weight = getCharacterModifiedWeight();
-	real_t weightratio = getWeightRatio(weight, statGetSTR(stats[PLAYER_NUM], players[PLAYER_NUM]->entity));
+	const int weight = getCharacterModifiedWeight();
+	const real_t weightratio = getWeightRatio(weight, statGetSTR(stats[PLAYER_NUM], players[PLAYER_NUM]->entity));
 
 	// calculate movement forces
 
-	bool allowMovement = my->isMobile();
+	bool allowMovement = my->isMobile() && playerAllowedMovement(player.playernum);
 	bool pacified = stats[PLAYER_NUM]->EFFECTS[EFF_PACIFY];
 	bool rooted = stats[PLAYER_NUM]->EFFECTS[EFF_ROOTED];
 	if ( rooted )
@@ -3323,6 +3337,16 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		}
 
 		real_t speedFactor = getSpeedFactor(weightratio, statGetDEX(stats[PLAYER_NUM], players[PLAYER_NUM]->entity));
+
+		if ( ticks % TICKS_PER_SECOND == 0 )
+		{
+			Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_CLASS_WGT_MAX, "wgt", getCharacterWeight());
+			if ( speedFactor >= getMaximumSpeed() )
+			{
+				Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_CLASS_WGT_MAX_MOVE_100, "wgt", getCharacterWeight());
+			}
+		}
+
 		static ConsoleVariable<bool> cvar_debugspeedfactor("/player_showspeedfactor", false);
 		if ( *cvar_debugspeedfactor && ticks % 50 == 0 )
 		{
@@ -3989,17 +4013,17 @@ void doStatueEditor(int player)
 				}
 				if ( playerEntity->getMonsterFromPlayerRace(stats->playerRace) != HUMAN )
 				{
-					stats->appearance = 0;
+					stats->stat_appearance = 0;
 				}
 			}
 			if ( keystatus[SDLK_F2] )
 			{
 				keystatus[SDLK_F2] = 0;
 
-				++stats->appearance;
-				if ( stats->appearance >= NUMAPPEARANCES )
+				++stats->stat_appearance;
+				if ( stats->stat_appearance >= NUMAPPEARANCES )
 				{
-					stats->appearance = 0;
+					stats->stat_appearance = 0;
 				}
 			}
 			if ( keystatus[SDLK_F3] )
@@ -4364,7 +4388,6 @@ void actPlayer(Entity* my)
 	Entity* additionalLimb = nullptr;
 	Entity* torso = nullptr;
 	node_t* node;
-	Item* item;
 	int i, bodypart;
 	double dist = 0;
 	bool wearingring = false;
@@ -4382,7 +4405,7 @@ void actPlayer(Entity* my)
 	int spriteLegLeft = 108 + 12 * stats[PLAYER_NUM]->sex;
 	int spriteArmRight = 109 + 12 * stats[PLAYER_NUM]->sex;
 	int spriteArmLeft = 110 + 12 * stats[PLAYER_NUM]->sex;
-	int playerAppearance = stats[PLAYER_NUM]->appearance;
+	int playerAppearance = stats[PLAYER_NUM]->stat_appearance;
 	
 	if ( my->effectShapeshift != NOTHING )
 	{
@@ -4404,7 +4427,7 @@ void actPlayer(Entity* my)
 				playerRace = static_cast<Monster>(my->effectPolymorph);
 			}
 		}
-		if ( stats[PLAYER_NUM]->appearance == 0 || my->effectPolymorph != NOTHING )
+		if ( stats[PLAYER_NUM]->stat_appearance == 0 || my->effectPolymorph != NOTHING )
 		{
 			stats[PLAYER_NUM]->type = playerRace;
 		}
@@ -4526,6 +4549,15 @@ void actPlayer(Entity* my)
 	{
 		PLAYER_INIT = 1;
 		my->flags[BURNABLE] = true;
+
+		players[PLAYER_NUM]->compendiumProgress.playerDistAccum = 0.0;
+		players[PLAYER_NUM]->compendiumProgress.playerSneakTime = 0;
+		players[PLAYER_NUM]->compendiumProgress.playerAliveTimeMoving = 0;
+		players[PLAYER_NUM]->compendiumProgress.playerAliveTimeStopped = 0;
+		players[PLAYER_NUM]->compendiumProgress.playerAliveTimeTotal = 0;
+		players[PLAYER_NUM]->compendiumProgress.playerGameTimeTotal = 0;
+		players[PLAYER_NUM]->compendiumProgress.playerEquipSlotTime.clear();
+		players[PLAYER_NUM]->compendiumProgress.allyTimeSpent.clear();
 
 		Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
 		nametag->x = my->x;
@@ -5243,7 +5275,7 @@ void actPlayer(Entity* my)
 					serverSpawnMiscParticles(my, PARTICLE_EFFECT_VAMPIRIC_AURA, 600);
 				}
 			}
-			if ( currentlevel == 0 && stats[PLAYER_NUM]->playerRace == RACE_GOATMAN && stats[PLAYER_NUM]->appearance == 0 )
+			if ( currentlevel == 0 && stats[PLAYER_NUM]->playerRace == RACE_GOATMAN && stats[PLAYER_NUM]->stat_appearance == 0 )
 			{
 				if ( PLAYER_ALIVETIME == 1 )
 				{
@@ -5428,6 +5460,10 @@ void actPlayer(Entity* my)
 			else if ( tempItem->type == GEM_ROCK )
 			{
 				//Auto-succeed on rocks.
+				if ( !tempItem->identified )
+				{
+					Compendium_t::Events_t::eventUpdate(PLAYER_NUM, Compendium_t::CPDM_APPRAISED, tempItem->type, 1);
+				}
 				tempItem->identified = true;
 				tempItem->notifyIcon = true;
 				messagePlayer(PLAYER_NUM, MESSAGE_INVENTORY, Language::get(570), tempItem->description());
@@ -5566,6 +5602,10 @@ void actPlayer(Entity* my)
 					}
 					if ( success )
 					{
+						if ( !tempItem->identified )
+						{
+							Compendium_t::Events_t::eventUpdate(PLAYER_NUM, Compendium_t::CPDM_APPRAISED, tempItem->type, 1);
+						}
 						tempItem->identified = true;
 						tempItem->notifyIcon = true;
 						messagePlayer(PLAYER_NUM, MESSAGE_INVENTORY, Language::get(570), tempItem->description());
@@ -5616,12 +5656,40 @@ void actPlayer(Entity* my)
 							//messagePlayer(0, "Appraisal level up chance: 1 in %d", appraisalEaseOfDifficulty);
 							if ( local_rng.rand() % appraisalEaseOfDifficulty == 0 )
 							{
-								my->increaseSkill(PRO_APPRAISAL);
+								if ( multiplayer == CLIENT )
+								{
+									// request level up
+									strcpy((char*)net_packet->data, "CSKL");
+									net_packet->data[4] = PLAYER_NUM;
+									net_packet->data[5] = PRO_APPRAISAL;
+									net_packet->address.host = net_server.host;
+									net_packet->address.port = net_server.port;
+									net_packet->len = 6;
+									sendPacketSafe(net_sock, -1, net_packet, 0);
+								}
+								else
+								{
+									my->increaseSkill(PRO_APPRAISAL);
+								}
 							}
 						}
 						else if ( local_rng.rand() % 7 == 0 )
 						{
-							my->increaseSkill(PRO_APPRAISAL);
+							if ( multiplayer == CLIENT )
+							{
+								// request level up
+								strcpy((char*)net_packet->data, "CSKL");
+								net_packet->data[4] = PLAYER_NUM;
+								net_packet->data[5] = PRO_APPRAISAL;
+								net_packet->address.host = net_server.host;
+								net_packet->address.port = net_server.port;
+								net_packet->len = 6;
+								sendPacketSafe(net_sock, -1, net_packet, 0);
+							}
+							else
+							{
+								my->increaseSkill(PRO_APPRAISAL);
+							}
 						}
 					}
 
@@ -5931,6 +5999,11 @@ void actPlayer(Entity* my)
 					my->flags[INVISIBLE] = true;
 					serverUpdateEntityFlag(my, INVISIBLE);
 				}
+				if ( !my->flags[INVISIBLE_DITHER] )
+				{
+					my->flags[INVISIBLE_DITHER] = true;
+					serverUpdateEntityFlag(my, INVISIBLE_DITHER);
+				}
 				my->flags[BLOCKSIGHT] = false;
 				if ( multiplayer != CLIENT )
 				{
@@ -5948,6 +6021,7 @@ void actPlayer(Entity* my)
 						if ( !entity->flags[INVISIBLE] )
 						{
 							entity->flags[INVISIBLE] = true;
+							entity->flags[INVISIBLE_DITHER] = true;
 							serverUpdateEntityBodypart(my, i);
 						}
 					}
@@ -5959,6 +6033,11 @@ void actPlayer(Entity* my)
 				{
 					my->flags[INVISIBLE] = false;
 					serverUpdateEntityFlag(my, INVISIBLE);
+				}
+				if ( my->flags[INVISIBLE_DITHER] )
+				{
+					my->flags[INVISIBLE_DITHER] = false;
+					serverUpdateEntityFlag(my, INVISIBLE_DITHER);
 				}
 				my->flags[BLOCKSIGHT] = true;
 				if ( multiplayer != CLIENT )
@@ -5984,6 +6063,7 @@ void actPlayer(Entity* my)
 									if ( entity->flags[INVISIBLE] )
 									{
 										entity->flags[INVISIBLE] = false;
+										entity->flags[INVISIBLE_DITHER] = false;
 										serverUpdateEntityBodypart(my, i);
 									}
 								}
@@ -5991,12 +6071,14 @@ void actPlayer(Entity* my)
 							else if ( stats[PLAYER_NUM]->type == SPIDER )
 							{
 								// do nothing, these limbs are invisible for the spider so don't unhide.
+								entity->flags[INVISIBLE_DITHER] = false;
 							}
 							else
 							{
 								if ( entity->flags[INVISIBLE] )
 								{
 									entity->flags[INVISIBLE] = false;
+									entity->flags[INVISIBLE_DITHER] = false;
 									serverUpdateEntityBodypart(my, i);
 								}
 							}
@@ -6098,6 +6180,15 @@ void actPlayer(Entity* my)
 		{
 			my->z -= 1; // floating
 			insectoidLevitating = (playerRace == INSECTOID && stats[PLAYER_NUM]->EFFECTS[EFF_FLUTTER]);
+			if ( players[PLAYER_NUM]->isLocalPlayer() )
+			{
+				int x = std::min(std::max<unsigned int>(1, my->x / 16), map.width - 2);
+				int y = std::min(std::max<unsigned int>(1, my->y / 16), map.height - 2);
+				if ( !map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_PITS_LEVITATED, "pits", 1);
+				}
+			}
 		}
 
 		if ( !levitating && prevlevitating )
@@ -6198,6 +6289,10 @@ void actPlayer(Entity* my)
 					{
 						my->setObituary(Language::get(3010)); // fell to their death.
 						stats[PLAYER_NUM]->killer = KilledBy::BOTTOMLESS_PIT;
+						if ( multiplayer != CLIENT && stats[PLAYER_NUM]->HP > 0 )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_PITS_DEATHS, "pits", 1);
+						}
 						stats[PLAYER_NUM]->HP = 0; // kill me instantly
 						if (stats[PLAYER_NUM]->type == AUTOMATON)
 						{
@@ -6209,6 +6304,10 @@ void actPlayer(Entity* my)
 				{
 					my->setObituary(Language::get(3010)); // fell to their death.
 					stats[PLAYER_NUM]->killer = KilledBy::BOTTOMLESS_PIT;
+					if ( multiplayer != CLIENT && stats[PLAYER_NUM]->HP > 0 )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_PITS_DEATHS, "pits", 1);
+					}
 					stats[PLAYER_NUM]->HP = 0; // kill me instantly
 					if (stats[PLAYER_NUM]->type == AUTOMATON)
 					{
@@ -6297,6 +6396,19 @@ void actPlayer(Entity* my)
 					playSound(136, 128);
 				}
 			}
+
+			if ( players[PLAYER_NUM]->isLocalPlayer() )
+			{
+				if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_SWIM_TIME, "murky water", 1);
+				}
+				else
+				{
+					Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_SWIM_TIME, "lava", 1);
+				}
+			}
+
 			if ( multiplayer != CLIENT )
 			{
 				// Check if the Player is in Water or Lava
@@ -6307,6 +6419,8 @@ void actPlayer(Entity* my)
 						my->flags[BURNING] = false;
 						messagePlayer(PLAYER_NUM, MESSAGE_STATUS, Language::get(574)); // "The water extinguishes the flames!"
 						serverUpdateEntityFlag(my, BURNING);
+
+						Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_SWIM_BURN_CURED, "murky water", 1);
 					}
 					if ( stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
 					{
@@ -6363,6 +6477,7 @@ void actPlayer(Entity* my)
 				{
 					int damage = (2 + local_rng.rand() % 2);
 					damage = std::max(damage, stats[PLAYER_NUM]->MAXHP / 20);
+					Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_LAVA_DAMAGE, "lava", damage);
 					my->modHP(-damage);
 					if ( stats[PLAYER_NUM]->type == AUTOMATON )
 					{
@@ -7401,6 +7516,8 @@ void actPlayer(Entity* my)
 					}
 					if ( stats[PLAYER_NUM]->HP <= 0 )
 					{
+						Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_CLASS_WGT_SLOWEST, "wgt", players[PLAYER_NUM]->movement.getCharacterWeight());
+
 						// die //TODO: Refactor.
 						playSoundEntity(my, 28, 128);
 						Entity* gib = spawnGib(my);
@@ -7445,7 +7562,8 @@ void actPlayer(Entity* my)
 								continue;
 							}
 							char whatever[256];
-							snprintf(whatever, sizeof(whatever), "%s %s", stats[PLAYER_NUM]->name, stats[PLAYER_NUM]->obituary);
+							std::string nameStr = messageSanitizePercentSign(stats[PLAYER_NUM]->name, nullptr);
+							snprintf(whatever, sizeof(whatever), "%s %s", nameStr.c_str(), stats[PLAYER_NUM]->obituary);
 							whatever[255] = '\0';
 							messagePlayer(c, MESSAGE_OBITUARY, whatever);
 						}
@@ -7500,6 +7618,12 @@ void actPlayer(Entity* my)
 								}
 								else if ( myFollower->flags[USERFLAG2] )
 								{
+									myFollower->monsterAllyIndex = -1;
+									if ( multiplayer == SERVER )
+									{
+										serverUpdateEntitySkill(myFollower, 42); // update monsterAllyIndex for clients.
+									}
+
 									// our leader died, let's undo the color change since we're now rabid.
 									myFollower->flags[USERFLAG2] = false;
 									serverUpdateEntityFlag(myFollower, USERFLAG2);
@@ -7693,6 +7817,7 @@ void actPlayer(Entity* my)
 											entity->skill[13] = qtyToDrop;
 											entity->skill[14] = item->appearance;
 											entity->skill[15] = item->identified;
+											entity->parent = achievementObserver.playerUids[PLAYER_NUM];
 										}
 									}
 									else
@@ -7708,6 +7833,10 @@ void actPlayer(Entity* my)
 								{
 									nextnode = node->next;
 									Item* item = (Item*)node->element;
+									if ( itemCategory(item) == SPELL_CAT )
+									{
+										continue;
+									}
 									if ( item->type == ARTIFACT_ORB_PURPLE )
 									{
 										int c = item->count;
@@ -7776,6 +7905,29 @@ void actPlayer(Entity* my)
 							}
 
 							deleteMultiplayerSaveGames(); //Will only delete save games if was last player alive.
+						}
+
+						if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER )
+						{
+							bool swimming = players[PLAYER_NUM]->movement.isPlayerSwimming();
+							if ( swimming )
+							{
+								int x = std::min(std::max<unsigned int>(0, floor(my->x / 16)), map.width - 1);
+								int y = std::min(std::max<unsigned int>(0, floor(my->y / 16)), map.height - 1);
+								if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+								{
+									Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_SWIM_KILLED_WHILE, "murky water", 1);
+								}
+								else
+								{
+									Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_SWIM_KILLED_WHILE, "lava", 1);
+								}
+							}
+						}
+
+						if ( multiplayer == SERVER && !players[PLAYER_NUM]->isLocalPlayer() )
+						{
+							Compendium_t::Events_t::sendClientDataOverNet(PLAYER_NUM);
 						}
 
 						assailant[PLAYER_NUM] = false;
@@ -7995,6 +8147,94 @@ void actPlayer(Entity* my)
 			my->y += PLAYER_VELY;
 			dist = sqrt(PLAYER_VELX * PLAYER_VELX + PLAYER_VELY * PLAYER_VELY);
 		}
+
+		if ( dist >= 0.01 )
+		{
+			players[PLAYER_NUM]->compendiumProgress.playerDistAccum += dist;
+			players[PLAYER_NUM]->compendiumProgress.playerAliveTimeMoving++;
+		}
+		else
+		{
+			players[PLAYER_NUM]->compendiumProgress.playerAliveTimeStopped++;
+		}
+		if ( stats[PLAYER_NUM]->sneaking )
+		{
+			players[PLAYER_NUM]->compendiumProgress.playerSneakTime++;
+		}
+		Item* itemslots[10] = {
+			stats[PLAYER_NUM]->helmet,
+			stats[PLAYER_NUM]->breastplate,
+			stats[PLAYER_NUM]->gloves,
+			stats[PLAYER_NUM]->shoes,
+			stats[PLAYER_NUM]->shield,
+			stats[PLAYER_NUM]->weapon,
+			stats[PLAYER_NUM]->cloak,
+			stats[PLAYER_NUM]->amulet,
+			stats[PLAYER_NUM]->ring,
+			stats[PLAYER_NUM]->mask
+		};
+		for ( auto slot = 0; slot < 10; ++slot )
+		{
+			if ( itemslots[slot] )
+			{
+				players[PLAYER_NUM]->compendiumProgress.playerEquipSlotTime[(int)(itemslots[slot]->type)]++;
+			}
+		}
+		for ( node_t* node = stats[PLAYER_NUM]->FOLLOWERS.first; node != nullptr; node = node->next, ++i )
+		{
+			Entity* follower = nullptr;
+			if ( (Uint32*)node->element )
+			{
+				follower = uidToEntity(*((Uint32*)node->element));
+				if ( follower )
+				{
+					int type = follower->getMonsterTypeFromSprite();
+					players[PLAYER_NUM]->compendiumProgress.allyTimeSpent[type]++;
+				}
+			}
+		}
+		if ( ticks % (TICKS_PER_SECOND * 5) == 0 )
+		{
+			if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_TUTORIAL )
+			{
+				Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_DISTANCE_MAX_RUN, "strafing", (int)players[PLAYER_NUM]->compendiumProgress.playerDistAccum);
+				Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_DISTANCE_MAX_FLOOR, "strafing", (int)players[PLAYER_NUM]->compendiumProgress.playerDistAccum, false, -1, true);
+			}
+			Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_DISTANCE_TRAVELLED, "strafing", (int)players[PLAYER_NUM]->compendiumProgress.playerDistAccum);
+			players[PLAYER_NUM]->compendiumProgress.playerDistAccum = 0.0;
+
+			Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_CLASS_MOVING_TIME, "strafing", (int)players[PLAYER_NUM]->compendiumProgress.playerAliveTimeMoving);
+			players[PLAYER_NUM]->compendiumProgress.playerAliveTimeMoving = 0;
+
+			Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_CLASS_IDLING_TIME, "strafing", (int)players[PLAYER_NUM]->compendiumProgress.playerAliveTimeStopped);
+			players[PLAYER_NUM]->compendiumProgress.playerAliveTimeStopped = 0;
+
+			Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_CLASS_SNEAK_TIME, "sneaking", players[PLAYER_NUM]->compendiumProgress.playerSneakTime);
+			players[PLAYER_NUM]->compendiumProgress.playerSneakTime = 0;
+
+			for ( auto& pair : players[PLAYER_NUM]->compendiumProgress.playerEquipSlotTime )
+			{
+				if ( pair.second > 0 )
+				{
+					if ( items[pair.first].item_slot == EQUIPPABLE_IN_SLOT_RING )
+					{
+						Compendium_t::Events_t::eventUpdate(PLAYER_NUM, Compendium_t::CPDM_TIME_WORN, (ItemType)(pair.first), pair.second);
+					}
+				}
+				pair.second = 0;
+			}
+			for ( auto& pair : players[PLAYER_NUM]->compendiumProgress.allyTimeSpent )
+			{
+				if ( pair.second > 0 )
+				{
+					if ( pair.first == GYROBOT )
+					{
+						Compendium_t::Events_t::eventUpdate(PLAYER_NUM, Compendium_t::CPDM_GYROBOT_TIME_SPENT, TOOL_GYROBOT, pair.second);
+					}
+				}
+				pair.second = 0;
+			}
+		}
 	}
 
 	if ( !players[PLAYER_NUM]->isLocalPlayer() && multiplayer == SERVER )
@@ -8102,6 +8342,7 @@ void actPlayer(Entity* my)
 			if ( bodypart > 12 )
 			{
 				entity->flags[INVISIBLE] = true;
+				entity->flags[INVISIBLE_DITHER] = false;
 				continue;
 			}
 
@@ -8132,7 +8373,7 @@ void actPlayer(Entity* my)
 				{
 					Entity* shield = (Entity*)shieldNode->element;
 					bool bendArm = true;
-					if ( shield->flags[INVISIBLE] )
+					if ( shield->flags[INVISIBLE] && !shield->flags[INVISIBLE_DITHER] )
 					{
 						bendArm = false;
 					}
@@ -8706,6 +8947,7 @@ void actPlayer(Entity* my)
 					entity->focalx = limbs[playerRace][1][0];
 					entity->focaly = limbs[playerRace][1][1];
 					entity->focalz = limbs[playerRace][1][2];
+					entity->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
 					if ( multiplayer != CLIENT )
 					{
 						if ( stats[PLAYER_NUM]->breastplate == NULL || !showEquipment )
@@ -8719,14 +8961,22 @@ void actPlayer(Entity* my)
 						if ( multiplayer == SERVER )
 						{
 							// update sprites for clients
-							if ( entity->skill[10] != entity->sprite )
+							if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
 							{
-								entity->skill[10] = entity->sprite;
-								serverUpdateEntityBodypart(my, bodypart);
-							}
-							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-							{
-								serverUpdateEntityBodypart(my, bodypart);
+								bool updateBodypart = false;
+								if ( entity->skill[10] != entity->sprite )
+								{
+									entity->skill[10] = entity->sprite;
+									updateBodypart = true;
+								}
+								if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+								{
+									updateBodypart = true;
+								}
+								if ( updateBodypart )
+								{
+									serverUpdateEntityBodypart(my, bodypart);
+								}
 							}
 						}
 					}
@@ -8737,6 +8987,7 @@ void actPlayer(Entity* my)
 					entity->focalx = limbs[playerRace][2][0];
 					entity->focaly = limbs[playerRace][2][1];
 					entity->focalz = limbs[playerRace][2][2];
+					entity->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
 					if ( multiplayer != CLIENT )
 					{
 						if ( stats[PLAYER_NUM]->shoes == NULL || !showEquipment )
@@ -8750,14 +9001,22 @@ void actPlayer(Entity* my)
 						if ( multiplayer == SERVER )
 						{
 							// update sprites for clients
-							if ( entity->skill[10] != entity->sprite )
+							if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
 							{
-								entity->skill[10] = entity->sprite;
-								serverUpdateEntityBodypart(my, bodypart);
-							}
-							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-							{
-								serverUpdateEntityBodypart(my, bodypart);
+								bool updateBodypart = false;
+								if ( entity->skill[10] != entity->sprite )
+								{
+									entity->skill[10] = entity->sprite;
+									updateBodypart = true;
+								}
+								if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+								{
+									updateBodypart = true;
+								}
+								if ( updateBodypart )
+								{
+									serverUpdateEntityBodypart(my, bodypart);
+								}
 							}
 						}
 					}
@@ -8768,6 +9027,7 @@ void actPlayer(Entity* my)
 					entity->focalx = limbs[playerRace][3][0];
 					entity->focaly = limbs[playerRace][3][1];
 					entity->focalz = limbs[playerRace][3][2];
+					entity->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
 					if ( multiplayer != CLIENT )
 					{
 						if ( stats[PLAYER_NUM]->shoes == NULL || !showEquipment )
@@ -8781,14 +9041,22 @@ void actPlayer(Entity* my)
 						if ( multiplayer == SERVER )
 						{
 							// update sprites for clients
-							if ( entity->skill[10] != entity->sprite )
+							if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
 							{
-								entity->skill[10] = entity->sprite;
-								serverUpdateEntityBodypart(my, bodypart);
-							}
-							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-							{
-								serverUpdateEntityBodypart(my, bodypart);
+								bool updateBodypart = false;
+								if ( entity->skill[10] != entity->sprite )
+								{
+									entity->skill[10] = entity->sprite;
+									updateBodypart = true;
+								}
+								if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+								{
+									updateBodypart = true;
+								}
+								if ( updateBodypart )
+								{
+									serverUpdateEntityBodypart(my, bodypart);
+								}
 							}
 						}
 					}
@@ -8797,6 +9065,7 @@ void actPlayer(Entity* my)
 					// right arm
 				case 4:
 				{
+					entity->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
 					if ( multiplayer != CLIENT )
 					{
 						if ( stats[PLAYER_NUM]->gloves == NULL || !showEquipment )
@@ -8823,14 +9092,22 @@ void actPlayer(Entity* my)
 						if ( multiplayer == SERVER )
 						{
 							// update sprites for clients
-							if ( entity->skill[10] != entity->sprite )
+							if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
 							{
-								entity->skill[10] = entity->sprite;
-								serverUpdateEntityBodypart(my, bodypart);
-							}
-							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-							{
-								serverUpdateEntityBodypart(my, bodypart);
+								bool updateBodypart = false;
+								if ( entity->skill[10] != entity->sprite )
+								{
+									entity->skill[10] = entity->sprite;
+									updateBodypart = true;
+								}
+								if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+								{
+									updateBodypart = true;
+								}
+								if ( updateBodypart )
+								{
+									serverUpdateEntityBodypart(my, bodypart);
+								}
 							}
 						}
 					}
@@ -8839,7 +9116,7 @@ void actPlayer(Entity* my)
 					if ( tempNode )
 					{
 						Entity* weapon = (Entity*)tempNode->element;
-						if ( weapon->flags[INVISIBLE] || PLAYER_ARMBENDED || playerRace == CREATURE_IMP )
+						if ( (weapon->flags[INVISIBLE] && !weapon->flags[INVISIBLE_DITHER]) || PLAYER_ARMBENDED || playerRace == CREATURE_IMP )
 						{
 							if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
 							{
@@ -8882,6 +9159,7 @@ void actPlayer(Entity* my)
 				// left arm
 				case 5:
 				{
+					entity->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
 					if ( multiplayer != CLIENT )
 					{
 						if ( stats[PLAYER_NUM]->gloves == NULL || !showEquipment )
@@ -8918,14 +9196,22 @@ void actPlayer(Entity* my)
 						if ( multiplayer == SERVER )
 						{
 							// update sprites for clients
-							if ( entity->skill[10] != entity->sprite )
+							if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
 							{
-								entity->skill[10] = entity->sprite;
-								serverUpdateEntityBodypart(my, bodypart);
-							}
-							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-							{
-								serverUpdateEntityBodypart(my, bodypart);
+								bool updateBodypart = false;
+								if ( entity->skill[10] != entity->sprite )
+								{
+									entity->skill[10] = entity->sprite;
+									updateBodypart = true;
+								}
+								if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+								{
+									updateBodypart = true;
+								}
+								if ( updateBodypart )
+								{
+									serverUpdateEntityBodypart(my, bodypart);
+								}
 							}
 						}
 					}
@@ -8950,7 +9236,7 @@ void actPlayer(Entity* my)
 					{
 						Entity* shield = (Entity*)tempNode->element;
 						bool bendArm = true;
-						if ( shield->flags[INVISIBLE] )
+						if ( shield->flags[INVISIBLE] && !shield->flags[INVISIBLE_DITHER] )
 						{
 							bendArm = false;
 							if ( insectoidLevitating )
@@ -9028,15 +9314,17 @@ void actPlayer(Entity* my)
 				case 6:
 					if ( multiplayer != CLIENT )
 					{
+						entity->flags[INVISIBLE_DITHER] = false;
 						if ( swimming )
 						{
 							entity->flags[INVISIBLE] = true;
 						}
 						else
 						{
-							if ( stats[PLAYER_NUM]->weapon == NULL || my->isInvisible() )
+							if ( stats[PLAYER_NUM]->weapon == NULL )
 							{
 								entity->flags[INVISIBLE] = true;
+								entity->sprite = 0;
 							}
 							else
 							{
@@ -9050,23 +9338,38 @@ void actPlayer(Entity* my)
 									entity->flags[INVISIBLE] = false;
 								}
 							}
+
+							if ( my->isInvisible() && stats[PLAYER_NUM]->weapon )
+							{
+								entity->flags[INVISIBLE] = true;
+								entity->flags[INVISIBLE_DITHER] = true;
+							}
 						}
+
 						if ( multiplayer == SERVER )
 						{
 							// update sprites for clients
-							if ( entity->skill[10] != entity->sprite )
+							if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
 							{
-								entity->skill[10] = entity->sprite;
-								serverUpdateEntityBodypart(my, bodypart);
-							}
-							if ( entity->skill[11] != entity->flags[INVISIBLE] )
-							{
-								entity->skill[11] = entity->flags[INVISIBLE];
-								serverUpdateEntityBodypart(my, bodypart);
-							}
-							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-							{
-								serverUpdateEntityBodypart(my, bodypart);
+								bool updateBodypart = false;
+								if ( entity->skill[10] != entity->sprite )
+								{
+									entity->skill[10] = entity->sprite;
+									updateBodypart = true;
+								}
+								if ( entity->skill[11] != ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0)) )
+								{
+									entity->skill[11] = ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0));
+									updateBodypart = true;
+								}
+								if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+								{
+									updateBodypart = true;
+								}
+								if ( updateBodypart )
+								{
+									serverUpdateEntityBodypart(my, bodypart);
+								}
 							}
 						}
 					}
@@ -9075,6 +9378,7 @@ void actPlayer(Entity* my)
 						if ( entity->sprite <= 0 )
 						{
 							entity->flags[INVISIBLE] = true;
+							entity->flags[INVISIBLE_DITHER] = false;
 						}
 					}
 					my->handleHumanoidWeaponLimb(entity, weaponarm);
@@ -9083,6 +9387,7 @@ void actPlayer(Entity* my)
 				case 7:
 					if ( multiplayer != CLIENT )
 					{
+						entity->flags[INVISIBLE_DITHER] = false;
 						if ( swimming )
 						{
 							entity->flags[INVISIBLE] = true;
@@ -9106,27 +9411,37 @@ void actPlayer(Entity* my)
 									}
 								}
 							}
-							if ( my->isInvisible() )
+
+							if ( my->isInvisible() && stats[PLAYER_NUM]->shield )
 							{
 								entity->flags[INVISIBLE] = true;
+								entity->flags[INVISIBLE_DITHER] = true;
 							}
 						}
 						if ( multiplayer == SERVER )
 						{
 							// update sprites for clients
-							if ( entity->skill[10] != entity->sprite )
+							if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
 							{
-								entity->skill[10] = entity->sprite;
-								serverUpdateEntityBodypart(my, bodypart);
-							}
-							if ( entity->skill[11] != entity->flags[INVISIBLE] )
-							{
-								entity->skill[11] = entity->flags[INVISIBLE];
-								serverUpdateEntityBodypart(my, bodypart);
-							}
-							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-							{
-								serverUpdateEntityBodypart(my, bodypart);
+								bool updateBodypart = false;
+								if ( entity->skill[10] != entity->sprite )
+								{
+									entity->skill[10] = entity->sprite;
+									updateBodypart = true;
+								}
+								if ( entity->skill[11] != ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0)) )
+								{
+									entity->skill[11] = ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0));
+									updateBodypart = true;
+								}
+								if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+								{
+									updateBodypart = true;
+								}
+								if ( updateBodypart )
+								{
+									serverUpdateEntityBodypart(my, bodypart);
+								}
 							}
 						}
 					}
@@ -9135,6 +9450,7 @@ void actPlayer(Entity* my)
 						if ( entity->sprite <= 0 )
 						{
 							entity->flags[INVISIBLE] = true;
+							entity->flags[INVISIBLE_DITHER] = false;
 						}
 					}
 					my->handleHumanoidShieldLimb(entity, shieldarm);
@@ -9148,7 +9464,8 @@ void actPlayer(Entity* my)
 					entity->scaley = 1.01;
 					if ( multiplayer != CLIENT )
 					{
-						if ( stats[PLAYER_NUM]->cloak == NULL || my->isInvisible() )
+						entity->flags[INVISIBLE_DITHER] = false;
+						if ( stats[PLAYER_NUM]->cloak == NULL )
 						{
 							entity->flags[INVISIBLE] = true;
 						}
@@ -9157,22 +9474,37 @@ void actPlayer(Entity* my)
 							entity->flags[INVISIBLE] = false;
 							entity->sprite = itemModel(stats[PLAYER_NUM]->cloak);
 						}
+
+						if ( my->isInvisible() && stats[PLAYER_NUM]->cloak )
+						{
+							entity->flags[INVISIBLE] = true;
+							entity->flags[INVISIBLE_DITHER] = true;
+						}
+
 						if ( multiplayer == SERVER )
 						{
 							// update sprites for clients
-							if ( entity->skill[10] != entity->sprite )
+							if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
 							{
-								entity->skill[10] = entity->sprite;
-								serverUpdateEntityBodypart(my, bodypart);
-							}
-							if ( entity->skill[11] != entity->flags[INVISIBLE] )
-							{
-								entity->skill[11] = entity->flags[INVISIBLE];
-								serverUpdateEntityBodypart(my, bodypart);
-							}
-							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-							{
-								serverUpdateEntityBodypart(my, bodypart);
+								bool updateBodypart = false;
+								if ( entity->skill[10] != entity->sprite )
+								{
+									entity->skill[10] = entity->sprite;
+									updateBodypart = true;
+								}
+								if ( entity->skill[11] != ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0)) )
+								{
+									entity->skill[11] = ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0));
+									updateBodypart = true;
+								}
+								if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+								{
+									updateBodypart = true;
+								}
+								if ( updateBodypart )
+								{
+									serverUpdateEntityBodypart(my, bodypart);
+								}
 							}
 						}
 					}
@@ -9181,6 +9513,7 @@ void actPlayer(Entity* my)
 						if ( entity->sprite <= 0 )
 						{
 							entity->flags[INVISIBLE] = true;
+							entity->flags[INVISIBLE_DITHER] = false;
 						}
 					}
 
@@ -9232,7 +9565,8 @@ void actPlayer(Entity* my)
 					if ( multiplayer != CLIENT )
 					{
 						entity->sprite = itemModel(stats[PLAYER_NUM]->helmet);
-						if ( stats[PLAYER_NUM]->helmet == NULL || my->isInvisible() )
+						entity->flags[INVISIBLE_DITHER] = false;
+						if ( stats[PLAYER_NUM]->helmet == NULL )
 						{
 							entity->flags[INVISIBLE] = true;
 						}
@@ -9240,22 +9574,37 @@ void actPlayer(Entity* my)
 						{
 							entity->flags[INVISIBLE] = false;
 						}
+
+						if ( my->isInvisible() && stats[PLAYER_NUM]->helmet )
+						{
+							entity->flags[INVISIBLE] = true;
+							entity->flags[INVISIBLE_DITHER] = true;
+						}
+
 						if ( multiplayer == SERVER )
 						{
 							// update sprites for clients
-							if ( entity->skill[10] != entity->sprite )
+							if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
 							{
-								entity->skill[10] = entity->sprite;
-								serverUpdateEntityBodypart(my, bodypart);
-							}
-							if ( entity->skill[11] != entity->flags[INVISIBLE] )
-							{
-								entity->skill[11] = entity->flags[INVISIBLE];
-								serverUpdateEntityBodypart(my, bodypart);
-							}
-							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-							{
-								serverUpdateEntityBodypart(my, bodypart);
+								bool updateBodypart = false;
+								if ( entity->skill[10] != entity->sprite )
+								{
+									entity->skill[10] = entity->sprite;
+									updateBodypart = true;
+								}
+								if ( entity->skill[11] != ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0)) )
+								{
+									entity->skill[11] = ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0));
+									updateBodypart = true;
+								}
+								if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+								{
+									updateBodypart = true;
+								}
+								if ( updateBodypart )
+								{
+									serverUpdateEntityBodypart(my, bodypart);
+								}
 							}
 						}
 					}
@@ -9264,6 +9613,7 @@ void actPlayer(Entity* my)
 						if ( entity->sprite <= 0 )
 						{
 							entity->flags[INVISIBLE] = true;
+							entity->flags[INVISIBLE_DITHER] = false;
 						}
 					}
 					my->setHelmetLimbOffset(entity);
@@ -9277,17 +9627,8 @@ void actPlayer(Entity* my)
 					entity->roll = PI / 2;
 					if ( multiplayer != CLIENT )
 					{
-						bool hasSteelHelm = false;
-						/*if ( stats[PLAYER_NUM]->helmet )
-						{
-							if ( stats[PLAYER_NUM]->helmet->type == STEEL_HELM
-								|| stats[PLAYER_NUM]->helmet->type == CRYSTAL_HELM 
-								|| stats[PLAYER_NUM]->helmet->type == ARTIFACT_HELM )
-							{
-								hasSteelHelm = true;
-							}
-						}*/
-						if ( stats[PLAYER_NUM]->mask == NULL || my->isInvisible() || hasSteelHelm )
+						entity->flags[INVISIBLE_DITHER] = false;
+						if ( stats[PLAYER_NUM]->mask == NULL )
 						{
 							entity->flags[INVISIBLE] = true;
 						}
@@ -9295,6 +9636,13 @@ void actPlayer(Entity* my)
 						{
 							entity->flags[INVISIBLE] = false;
 						}
+
+						if ( my->isInvisible() && stats[PLAYER_NUM]->mask )
+						{
+							entity->flags[INVISIBLE] = true;
+							entity->flags[INVISIBLE_DITHER] = true;
+						}
+
 						if ( stats[PLAYER_NUM]->mask != NULL )
 						{
 							if ( stats[PLAYER_NUM]->mask->type == TOOL_GLASSES )
@@ -9313,19 +9661,27 @@ void actPlayer(Entity* my)
 						if ( multiplayer == SERVER )
 						{
 							// update sprites for clients
-							if ( entity->skill[10] != entity->sprite )
+							if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
 							{
-								entity->skill[10] = entity->sprite;
-								serverUpdateEntityBodypart(my, bodypart);
-							}
-							if ( entity->skill[11] != entity->flags[INVISIBLE] )
-							{
-								entity->skill[11] = entity->flags[INVISIBLE];
-								serverUpdateEntityBodypart(my, bodypart);
-							}
-							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-							{
-								serverUpdateEntityBodypart(my, bodypart);
+								bool updateBodypart = false;
+								if ( entity->skill[10] != entity->sprite )
+								{
+									entity->skill[10] = entity->sprite;
+									updateBodypart = true;
+								}
+								if ( entity->skill[11] != ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0)) )
+								{
+									entity->skill[11] = ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0));
+									updateBodypart = true;
+								}
+								if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+								{
+									updateBodypart = true;
+								}
+								if ( updateBodypart )
+								{
+									serverUpdateEntityBodypart(my, bodypart);
+								}
 							}
 						}
 					}
@@ -9334,6 +9690,7 @@ void actPlayer(Entity* my)
 						if ( entity->sprite <= 0 )
 						{
 							entity->flags[INVISIBLE] = true;
+							entity->flags[INVISIBLE_DITHER] = false;
 						}
 					}
 					entity->scalex = 0.99;
@@ -9419,9 +9776,11 @@ void actPlayer(Entity* my)
 					entity->focaly = limbs[playerRace][11][1];
 					entity->focalz = limbs[playerRace][11][2];
 					entity->flags[INVISIBLE] = true;
+					entity->flags[INVISIBLE_DITHER] = false;
 					if ( playerRace == INSECTOID || playerRace == CREATURE_IMP )
 					{
 						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+						entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
 						if ( playerRace == INSECTOID )
 						{
 							if ( stats[PLAYER_NUM]->sex == FEMALE )
@@ -9529,9 +9888,11 @@ void actPlayer(Entity* my)
 					entity->focaly = limbs[playerRace][12][1];
 					entity->focalz = limbs[playerRace][12][2];
 					entity->flags[INVISIBLE] = true;
+					entity->flags[INVISIBLE_DITHER] = false;
 					if ( playerRace == INSECTOID || playerRace == CREATURE_IMP )
 					{
 						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+						entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
 						if ( playerRace == INSECTOID )
 						{
 							if ( stats[PLAYER_NUM]->sex == FEMALE )
@@ -9580,23 +9941,27 @@ void actPlayer(Entity* my)
 				if ( bodypart >= 6 && bodypart <= 10 )
 				{
 					entity->flags[INVISIBLE] = true;
+					entity->flags[INVISIBLE_DITHER] = false;
 					if ( playerRace == CREATURE_IMP && bodypart == 7 )
 					{
 						if ( entity->sprite >= items[SPELLBOOK_LIGHT].index
 							&& entity->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
 						{
-							entity->flags[INVISIBLE] = false; // show spellbooks
+							entity->flags[INVISIBLE] = my->flags[INVISIBLE]; // show spellbooks
+							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
 						}
 					}
 					else if ( playerRace == CREATURE_IMP && bodypart == 6 )
 					{
 						if ( entity->sprite >= 59 && entity->sprite < 64 )
 						{
-							entity->flags[INVISIBLE] = false; // show magicstaffs
+							entity->flags[INVISIBLE] = my->flags[INVISIBLE]; // show magicstaffs
+							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
 						}
 						if ( multiplayer != CLIENT && !stats[PLAYER_NUM]->weapon )
 						{
-							entity->flags[INVISIBLE] = true; // show magicstaffs
+							entity->flags[INVISIBLE] = true;
+							entity->flags[INVISIBLE_DITHER] = false;
 						}
 					}
 				}
@@ -9659,11 +10024,13 @@ void actPlayerLimb(Entity* my)
 				else
 				{
 					my->flags[INVISIBLE] = true;
+					my->flags[INVISIBLE_DITHER] = false;
 				}
 			}
 			else
 			{
 				my->flags[INVISIBLE] = true;
+				my->flags[INVISIBLE_DITHER] = false;
 			}
 			return;
 		}
@@ -10102,7 +10469,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 		return;
 	}
 
-	int playerAppearance = stats[playernum]->appearance;
+	int playerAppearance = stats[playernum]->stat_appearance;
 	if ( players[playernum] && players[playernum]->entity && players[playernum]->entity->effectPolymorph > NUMMONSTERS )
 	{
 		playerAppearance = players[playernum]->entity->effectPolymorph - 100;
@@ -10493,7 +10860,7 @@ bool playerRequiresBloodToSustain(int player)
 	{
 		return true;
 	}
-	if ( stats[player]->playerRace == RACE_VAMPIRE && stats[player]->appearance == 0 )
+	if ( stats[player]->playerRace == RACE_VAMPIRE && stats[player]->stat_appearance == 0 )
 	{
 		return true;
 	}
@@ -10542,27 +10909,38 @@ void playerAnimateRat(Entity* my)
 					}
 				}
 			}
+
+			entity->flags[INVISIBLE_DITHER] = true;
 		}
 		else if ( bodypart > 1 )
 		{
 			entity->flags[INVISIBLE] = true;
+			entity->flags[INVISIBLE_DITHER] = false;
 		}
 		if ( multiplayer == SERVER )
 		{
 			// update sprites for clients
-			if ( entity->skill[10] != entity->sprite )
+			if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
 			{
-				entity->skill[10] = entity->sprite;
-				serverUpdateEntityBodypart(my, bodypart);
-			}
-			if ( entity->skill[11] != entity->flags[INVISIBLE] )
-			{
-				entity->skill[11] = entity->flags[INVISIBLE];
-				serverUpdateEntityBodypart(my, bodypart);
-			}
-			if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-			{
-				serverUpdateEntityBodypart(my, bodypart);
+				bool updateBodypart = false;
+				if ( entity->skill[10] != entity->sprite )
+				{
+					entity->skill[10] = entity->sprite;
+					updateBodypart = true;
+				}
+				if ( entity->skill[11] != ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0)) )
+				{
+					entity->skill[11] = ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0));
+					updateBodypart = true;
+				}
+				if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+				{
+					updateBodypart = true;
+				}
+				if ( updateBodypart )
+				{
+					serverUpdateEntityBodypart(my, bodypart);
+				}
 			}
 		}
 		entity->yaw = my->yaw;
@@ -10589,22 +10967,31 @@ void playerAnimateSpider(Entity* my)
 		if ( bodypart < 11 )
 		{
 			entity->flags[INVISIBLE] = true;
+			entity->flags[INVISIBLE_DITHER] = false;
 			if ( multiplayer == SERVER )
 			{
 				// update sprites for clients
-				if ( entity->skill[10] != entity->sprite )
+				if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
 				{
-					entity->skill[10] = entity->sprite;
-					serverUpdateEntityBodypart(my, bodypart);
-				}
-				if ( entity->skill[11] != entity->flags[INVISIBLE] )
-				{
-					entity->skill[11] = entity->flags[INVISIBLE];
-					serverUpdateEntityBodypart(my, bodypart);
-				}
-				if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-				{
-					serverUpdateEntityBodypart(my, bodypart);
+					bool updateBodypart = false;
+					if ( entity->skill[10] != entity->sprite )
+					{
+						entity->skill[10] = entity->sprite;
+						updateBodypart = true;
+					}
+					if ( entity->skill[11] != ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0)) )
+					{
+						entity->skill[11] = ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0));
+						updateBodypart = true;
+					}
+					if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+					{
+						updateBodypart = true;
+					}
+					if ( updateBodypart )
+					{
+						serverUpdateEntityBodypart(my, bodypart);
+					}
 				}
 			}
 			continue;
@@ -10701,6 +11088,7 @@ void playerAnimateSpider(Entity* my)
 		}
 
 		entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+		entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
 
 		switch ( bodypart )
 		{

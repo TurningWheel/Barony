@@ -36,6 +36,8 @@
 #define GIB_LIFESPAN my->skill[4]
 #define GIB_PLAYER my->skill[11]
 #define GIB_POOF my->skill[5]
+#define GIB_LIGHTING my->skill[6]
+#define GIB_DMG_MISS my->skill[7]
 
 void poof(Entity* my) {
     if (GIB_POOF) {
@@ -57,6 +59,7 @@ void actGib(Entity* my)
 	if ( my->z == 8 && fabs(GIB_VELX) < .01 && fabs(GIB_VELY) < .01 )
 	{
 	    poof(my);
+		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -65,6 +68,7 @@ void actGib(Entity* my)
 	if ( my->ticks > GIB_LIFESPAN && GIB_LIFESPAN )
 	{
 	    poof(my);
+		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -83,12 +87,43 @@ void actGib(Entity* my)
 	GIB_VELX = GIB_VELX * .95;
 	GIB_VELY = GIB_VELY * .95;
 
+	if ( GIB_LIGHTING )
+	{
+		my->removeLightField();
+	}
+
 	// gravity
 	if ( my->z < 8 )
 	{
 		GIB_VELZ += GIB_GRAVITY;
 		my->z += GIB_VELZ;
 		my->roll += 0.1;
+
+		if ( GIB_LIGHTING && my->flags[SPRITE] && my->sprite >= 180 && my->sprite <= 184 )
+		{
+			const char* lightname = nullptr;
+			switch ( my->sprite )
+			{
+			case 180:
+				lightname = "magic_spray_green_flicker";
+				break;
+			case 181:
+				lightname = "magic_spray_blue_flicker";
+				break;
+			case 182:
+				lightname = "magic_spray_orange_flicker";
+				break;
+			case 183:
+				lightname = "magic_spray_purple_flicker";
+				break;
+			case 184:
+				lightname = "magic_spray_white_flicker";
+				break;
+			default:
+				break;
+			}
+			my->light = addLight(my->x / 16, my->y / 16, lightname);
+		}
 	}
 	else
 	{
@@ -119,6 +154,7 @@ void actGib(Entity* my)
 	if ( my->z > 128 )
 	{
 	    poof(my);
+		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -149,7 +185,7 @@ void actDamageGib(Entity* my)
 	GIB_VELX = GIB_VELX * .95;
 	GIB_VELY = GIB_VELY * .95;
 
-	if ( my->skill[3] == DMG_WEAKER || my->skill[3] == DMG_WEAKEST )
+	if ( my->skill[3] == DMG_WEAKER || my->skill[3] == DMG_WEAKEST || my->skill[3] == DMG_MISS )
 	{
 		real_t scale = 0.2;
 		if ( my->ticks > 10 )
@@ -161,7 +197,8 @@ void actDamageGib(Entity* my)
 		my->scalez = scale;
 	}
 	else if ( my->skill[3] == DMG_STRONGER
-		|| my->skill[3] == DMG_STRONGEST )
+		|| my->skill[3] == DMG_STRONGEST
+		|| my->skill[3] == DMG_MISS )
 	{
 		real_t scale = 0.2;
 		auto& anim = EnemyHPDamageBarHandler::damageGibAnimCurves[DMG_DEFAULT];
@@ -172,6 +209,10 @@ void actDamageGib(Entity* my)
 		else
 		{
 			scale *= anim[my->ticks] / 100.0;
+		}
+		if ( my->skill[3] == DMG_MISS )
+		{
+			scale = 0.2;
 		}
 		my->scalex = scale;
 		my->scaley = scale;
@@ -277,17 +318,35 @@ Entity* spawnGib(Entity* parentent, int customGibSprite)
 					gibsprite = 211;
 					break;
 				case 3:
-					if ( parentent->sprite == 210 || parentent->sprite >= 1113 )
+				{
+					std::string color = MonsterData_t::getKeyFromSprite(parentent->sprite, SLIME);
+					if ( color == "slime green" )
 					{
-					    // green blood
+						// green blood
 						gibsprite = 211;
 					}
-					else
+					else if ( color == "slime blue" )
 					{
-					    // blue blood
+						// blue blood
 						gibsprite = 215;
 					}
+					else if ( color == "slime red" )
+					{
+						// todo blood
+						gibsprite = 1401;
+					}
+					else if ( color == "slime tar" )
+					{
+						// todo blood
+						gibsprite = 1402;
+					}
+					else if ( color == "slime metal" )
+					{
+						// todo blood
+						gibsprite = 1403;
+					}
 					break;
+				}
 				case 4:
 					gibsprite = 683;
 					break;
@@ -346,14 +405,14 @@ Entity* spawnGib(Entity* parentent, int customGibSprite)
 	return entity;
 }
 
-Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType)
+Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType, int displayType, bool updateClients)
 {
 	if ( !parentent )
 	{
 		return nullptr;
 	}
 
-	Entity* entity = newEntity(-1, 1, map.entities, nullptr);
+	Entity* entity = newEntity(displayType == DamageGibDisplayType::DMG_GIB_SPRITE ? dmgAmount : -1, 1, map.entities, nullptr);
 	if ( !entity )
 	{
 		return nullptr;
@@ -366,10 +425,18 @@ Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType)
 	entity->sizey = 1;
 	real_t vel = (local_rng.rand() % 10) / 20.f;
 	entity->vel_z = -.5;
-	if ( gibDmgType == DMG_STRONGER || gibDmgType == DMG_STRONGEST )
+	if ( gibDmgType == DMG_STRONGER || gibDmgType == DMG_STRONGEST || gibDmgType == DMG_MISS )
 	{
 		vel = 0.25;
 		entity->vel_z = -.4;
+	}
+	if ( parentent->isDamageableCollider() )
+	{
+		entity->z -= 4;
+	}
+	if ( parentent->sprite == 1475 ) // bell
+	{
+		entity->z += 8.0;
 	}
 	entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 	entity->vel_x = vel * cos(entity->yaw);
@@ -378,8 +445,17 @@ Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType)
 	entity->scaley = 0.2;
 	entity->scalez = 0.2;
 	entity->skill[0] = dmgAmount;
+	if ( displayType == DamageGibDisplayType::DMG_GIB_SPRITE )
+	{
+		entity->scalex = 0.05;
+		entity->scaley = 0.05;
+		entity->scalez = 0.05;
+		entity->skill[0] = 0;
+		entity->flags[BRIGHT] = true;
+	}
 	entity->skill[3] = gibDmgType;
 	entity->fskill[3] = 0.04;
+	entity->skill[7] = displayType;
 	entity->behavior = &actDamageGib;
     entity->ditheringDisabled = true;
 	entity->flags[SPRITE] = true;
@@ -417,6 +493,8 @@ Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType)
 			break;
 		case DMG_POISON:
 			break;
+		case DMG_MISS:
+			break;
 		case DMG_HEAL:
 			color = hudColors.characterSheetGreen;
 			break;
@@ -426,6 +504,30 @@ Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType)
 			break;
 	}
 	entity->skill[6] = color;
+
+	if ( updateClients )
+	{
+		if ( multiplayer == SERVER )
+		{
+			for ( int c = 1; c < MAXPLAYERS; c++ )
+			{
+				if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+				{
+					continue;
+				}
+				strcpy((char*)net_packet->data, "DMGG");
+				SDLNet_Write32(parentent->getUID(), &net_packet->data[4]);
+				SDLNet_Write16((Sint16)dmgAmount, &net_packet->data[8]);
+				net_packet->data[10] = gibDmgType;
+				net_packet->data[11] = displayType;
+				net_packet->address.host = net_clients[c - 1].host;
+				net_packet->address.port = net_clients[c - 1].port;
+				net_packet->len = 12;
+				sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			}
+		}
+	}
+
 	return entity;
 }
 

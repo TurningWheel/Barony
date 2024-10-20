@@ -81,6 +81,14 @@ void actSpriteNametag(Entity* my)
             my->x = parent->x;
             my->y = parent->y;
             my->z = parent->z - 6;
+			if ( parent->getMonsterTypeFromSprite() == SLIME )
+			{
+				my->z -= 3.0;
+				if ( parent->monsterAttack == MONSTER_POSE_MAGIC_WINDUP2 )
+				{
+					my->z += parent->focalz / 2;
+				}
+			}
 		}
 	}
 	else
@@ -113,6 +121,11 @@ void actSpriteWorldTooltip(Entity* my)
 					my->x -= 5;
 				}
 			}
+		}
+		else if ( parent->behavior == &actBell )
+		{
+			my->x += parent->focalx * cos(parent->yaw) + parent->focaly * cos(parent->yaw + PI / 2);
+			my->y += parent->focalx * sin(parent->yaw) + parent->focaly * sin(parent->yaw + PI / 2);
 		}
 
 		bool inrange = (my->worldTooltipActive == 1);

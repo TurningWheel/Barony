@@ -515,7 +515,7 @@ struct MPBarPaths_t
 			}*/
 			return automatonSTBars;
 		}
-		else if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+		else if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->stat_appearance == 0 )
 		{
 			return insectoidENBars;
 		}
@@ -3802,7 +3802,7 @@ void createXPBar(const int player)
 	auto endCapRight = hud_t.xpFrame->addImage(endCapPos, 0xFFFFFFFF, "*#images/ui/HUD/xpbar/HUD_Bars_ExpCap2_00.png", "xp img endcap right");
 	endCapRight->ontop = true;
 
-	const int textWidth = 72;
+	const int textWidth = 120;
 	auto font = "fonts/pixel_maz.ttf#32#2";
 	auto textStatic = hud_t.xpFrame->addField("xp text static", 16);
 	textStatic->setText(Language::get(6106));
@@ -3810,7 +3810,7 @@ void createXPBar(const int player)
 	textStatic->setSize(SDL_Rect{ pos.w / 2 - 4, 0, textWidth, pos.h }); // x - 4 to center the slash
 	textStatic->setFont(font);
 	textStatic->setVJustify(Field::justify_t::CENTER);
-	textStatic->setHJustify(Field::justify_t::LEFT);
+	textStatic->setHJustify(Field::justify_t::RIGHT);
 	textStatic->setColor(makeColor( 255, 255, 255, 255));
 
 	auto text = hud_t.xpFrame->addField("xp text current", 16);
@@ -7273,7 +7273,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 				miscEffects[kEffectWaterWalking] = true;
 			}
 			if ( (stats[player]->amulet && stats[player]->amulet->type == AMULET_LIFESAVING)
-				|| (((stats[player]->playerRace == RACE_SKELETON && stats[player]->appearance == 0) 
+				|| (((stats[player]->playerRace == RACE_SKELETON && stats[player]->stat_appearance == 0) 
 					|| stats[player]->type == SKELETON) && stats[player]->MP >= 75) )
 			{
 				miscEffects[kEffectLifesaving] = true;
@@ -10250,7 +10250,7 @@ static void checkControllerState(int player) {
 
 void HUDDrawGameEndHint(const int player, SDL_Rect rect)
 {
-	if ( multiplayer == CLIENT || multiplayer == SERVER )
+	if ( (multiplayer == CLIENT || multiplayer == SERVER) || (multiplayer == SINGLE && splitscreen) )
 	{
 		bool everyonedead = true;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -10265,12 +10265,37 @@ void HUDDrawGameEndHint(const int player, SDL_Rect rect)
 				{
 					everyonedead = false;
 				}
+				else if ( multiplayer == SINGLE && players[i]->entity )
+				{
+					everyonedead = false;
+				}
 			}
 		}
 
 		if ( players[player]->bControlEnabled )
 		{
 			players[player]->hud.animDeadPromptDisplay = true;
+			if ( players[player]->bUseCompactGUIWidth() && players[player]->bUseCompactGUIHeight() )
+			{
+				if ( !players[player]->messageZone.notification_messages.empty() || !players[player]->shootmode )
+				{
+					players[player]->hud.animDeadPromptDisplay = false;
+				}
+			}
+			else if ( players[player]->bUseCompactGUIWidth() && !players[player]->bUseCompactGUIHeight() )
+			{
+				if ( !players[player]->shootmode && !CalloutMenu[player].calloutMenuIsOpen() )
+				{
+					players[player]->hud.animDeadPromptDisplay = false;
+				}
+			}
+			else if ( players[player]->bUseCompactGUIHeight() && !players[player]->bUseCompactGUIWidth() )
+			{
+				if ( CalloutMenu[player].calloutMenuIsOpen() && !players[player]->shootmode )
+				{
+					players[player]->hud.animDeadPromptDisplay = false;
+				}
+			}
 		}
 
 		if ( everyonedead && players[player]->hud.animDeadPromptDisplay )
@@ -15338,7 +15363,7 @@ real_t getDisplayedMPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf
 				}
 			}
 		}
-		else if ( myStats.playerRace == RACE_INSECTOID && myStats.appearance == 0 )
+		else if ( myStats.playerRace == RACE_INSECTOID && myStats.stat_appearance == 0 )
 		{
 			isInsectoid = true;
 			if ( !(svFlags & SV_FLAG_HUNGER) )
@@ -16049,12 +16074,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_INT:
 				{
 					//real_t val = getBonusFromCasterOfSpellElement(players[player.playernum]->entity, stats[player.playernum], nullptr, SPELL_NONE) * 100.0;
-					int INT = statGetINT(stats[player.playernum], players[player.playernum]->entity);
-					real_t bonus = 0.0;
-					if ( INT > 0 )
-					{
-						bonus += INT / 100.0;
-					}
+					real_t bonus = getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum]);
 					real_t val = bonus * 100.0;
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_pwr_value_format").c_str(), val);
 				}
@@ -16466,7 +16486,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 //#endif // !NDEBUG
 
 		bool isAutomatonHTRegen = stats[player.playernum]->type == AUTOMATON;
-		bool isInsectoidENRegen = (stats[player.playernum]->playerRace == RACE_INSECTOID && stats[player.playernum]->appearance == 0);
+		bool isInsectoidENRegen = (stats[player.playernum]->playerRace == RACE_INSECTOID && stats[player.playernum]->stat_appearance == 0);
 
 		auto tooltipTopLeft = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
 		tooltipTopLeft->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png";
@@ -17016,6 +17036,10 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					}
 					snprintf(buf, sizeof(buf), getHoverTextString("attributes_ac_defending").c_str(), skillName.c_str(), skillLVL);
 					std::string tag = "BLOCK_AC_INCREASE";
+					if ( stats[player.playernum]->shield && itemCategory(stats[player.playernum]->shield) != ARMOR )
+					{
+						tag = "BLOCK_AC_INCREASE_OFFHAND";
+					}
 					std::string blockBonus = formatSkillSheetEffects(player.playernum, PRO_SHIELD, tag, getHoverTextString("attributes_ac_bonus_format"));
 					snprintf(valueBuf, sizeof(valueBuf), "%s", blockBonus.c_str());
 				}
@@ -17265,7 +17289,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					{
 						if ( player.entity->effectPolymorph == NOTHING && stats[player.playernum]->playerRace > RACE_HUMAN )
 						{
-							if ( stats[player.playernum]->appearance != 0 )
+							if ( stats[player.playernum]->stat_appearance != 0 )
 							{
 								aestheticOnly = true;
 								appearance = Language::get(4068);
@@ -17290,7 +17314,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					{
 						if ( player.entity->effectPolymorph == NOTHING && stats[player.playernum]->playerRace > RACE_HUMAN )
 						{
-							if ( stats[player.playernum]->appearance != 0 )
+							if ( stats[player.playernum]->stat_appearance != 0 )
 							{
 								aestheticOnly = true;
 								type = player.entity->getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
@@ -17367,7 +17391,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 						{
 							if ( player.entity->effectPolymorph == NOTHING && stats[player.playernum]->playerRace > RACE_HUMAN )
 							{
-								if ( stats[player.playernum]->appearance != 0 )
+								if ( stats[player.playernum]->stat_appearance != 0 )
 								{
 									aestheticOnly = true;
 									type = player.entity->getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
@@ -17543,7 +17567,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					{
 						if ( player.entity->effectPolymorph == NOTHING && stats[player.playernum]->playerRace > RACE_HUMAN )
 						{
-							if ( stats[player.playernum]->appearance != 0 )
+							if ( stats[player.playernum]->stat_appearance != 0 )
 							{
 								aestheticOnly = true;
 								type = player.entity->getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
@@ -17621,7 +17645,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 						{
 							if ( player.entity->effectPolymorph == NOTHING && stats[player.playernum]->playerRace > RACE_HUMAN )
 							{
-								if ( stats[player.playernum]->appearance != 0 )
+								if ( stats[player.playernum]->stat_appearance != 0 )
 								{
 									aestheticOnly = true;
 									type = player.entity->getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
@@ -17840,7 +17864,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 						{
 							if ( player.entity->effectPolymorph == NOTHING && stats[player.playernum]->playerRace > RACE_HUMAN )
 							{
-								if ( stats[player.playernum]->appearance != 0 )
+								if ( stats[player.playernum]->stat_appearance != 0 )
 								{
 									aestheticOnly = true;
 									type = player.entity->getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
@@ -18552,7 +18576,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
 
 		Monster race = HUMAN;
-		if ( stats[player.playernum]->appearance == 0 && stats[player.playernum]->playerRace != RACE_HUMAN )
+		if ( stats[player.playernum]->stat_appearance == 0 && stats[player.playernum]->playerRace != RACE_HUMAN )
 		{
 			race = getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
 		}
@@ -18709,7 +18733,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
 
 		Monster race = HUMAN;
-		if ( stats[player.playernum]->appearance == 0 && stats[player.playernum]->playerRace != RACE_HUMAN )
+		if ( stats[player.playernum]->stat_appearance == 0 && stats[player.playernum]->playerRace != RACE_HUMAN )
 		{
 			race = getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
 		}
@@ -19032,7 +19056,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 		{
 			if ( player.entity->effectPolymorph == NOTHING && stats[player.playernum]->playerRace > RACE_HUMAN )
 			{
-				if ( stats[player.playernum]->appearance != 0 )
+				if ( stats[player.playernum]->stat_appearance != 0 )
 				{
 					aestheticOnly = true;
 					appearance = Language::get(4068);
@@ -19044,7 +19068,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 		capitalizeString(race);
 		if ( type == HUMAN )
 		{
-			appearance = Language::get(20 + stats[player.playernum]->appearance % NUMAPPEARANCES);
+			appearance = Language::get(20 + stats[player.playernum]->stat_appearance % NUMAPPEARANCES);
 			capitalizeString(appearance);
 		}
 		bool centerIconAndText = false;
@@ -19775,16 +19799,7 @@ void Player::CharacterSheet_t::updateAttributes()
 
 	if ( auto field = attributesInnerFrame->findField("weight text stat") )
 	{
-		Sint32 weight = 0;
-		for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
-		{
-			Item* item = (Item*)node->element;
-			if ( item )
-			{
-				weight += item->getWeight();
-			}
-		}
-		weight += stats[player.playernum]->getGoldWeight();
+		Sint32 weight = player.movement.getCharacterWeight();
 		snprintf(buf, sizeof(buf), "%d", weight);
 		if ( strcmp(buf, field->getText()) )
 		{
@@ -20668,7 +20683,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 	}
 	else
 	{
-		spell_t* spell = getSpellFromItem(player, item);
+		spell_t* spell = getSpellFromItem(player, item, true);
 		if ( players[player]->magic.selectedSpell() == spell
 			&& (players[player]->magic.selected_spell_last_appearance == item->appearance || players[player]->magic.selected_spell_last_appearance == -1) )
 		{
@@ -20784,7 +20799,13 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 	}
 }
 
-void createInventoryTooltipFrame(const int player)
+void createInventoryTooltipFrame(const int player,
+	Frame* parentFrame,
+	Frame*& tooltipContainerFrame, 
+	Frame*& titleOnlyTooltipFrame,
+	Frame*& tooltipFrame,
+	Frame*& interactFrame,
+	Frame*& promptFrame)
 {
 	if ( !gui )
 	{
@@ -20796,26 +20817,36 @@ void createInventoryTooltipFrame(const int player)
 	const std::string headerFont = "fonts/pixel_maz_multiline.ttf#16#2";
 	const std::string bodyFont = "fonts/pixel_maz_multiline.ttf#16#2";
 
-	if ( !players[player]->inventoryUI.tooltipContainerFrame )
+	if ( !tooltipContainerFrame )
 	{
 		char name[32];
 		snprintf(name, sizeof(name), "player tooltip container %d", player);
-		players[player]->inventoryUI.tooltipContainerFrame = gameUIFrame[player]->addFrame(name);
-		players[player]->inventoryUI.tooltipContainerFrame->setSize(
-			SDL_Rect{ players[player]->camera_virtualx1(),
-			players[player]->camera_virtualy1(), 
-			players[player]->camera_virtualWidth(),
-			players[player]->camera_virtualHeight() });
-		players[player]->inventoryUI.tooltipContainerFrame->setHollow(true);
-		players[player]->inventoryUI.tooltipContainerFrame->setDisabled(false);
-		players[player]->inventoryUI.tooltipContainerFrame->setInheritParentFrameOpacity(false);
+		if ( parentFrame )
+		{
+			tooltipContainerFrame = parentFrame->addFrame(name);
+			tooltipContainerFrame->setSize(
+				SDL_Rect{ 0, 0, parentFrame->getSize().w, parentFrame->getSize().h });
+		}
+		else
+		{
+			tooltipContainerFrame = gameUIFrame[player]->addFrame(name);
+			tooltipContainerFrame->setSize(
+				SDL_Rect{ players[player]->camera_virtualx1(),
+				players[player]->camera_virtualy1(), 
+				players[player]->camera_virtualWidth(),
+				players[player]->camera_virtualHeight() });
+		}
+		tooltipContainerFrame->setHollow(true);
+		tooltipContainerFrame->setDisabled(false);
+		tooltipContainerFrame->setInheritParentFrameOpacity(false);
 	}
-	if ( !players[player]->inventoryUI.titleOnlyTooltipFrame )
+
+	if ( !titleOnlyTooltipFrame )
 	{
 		char name[32];
 		snprintf(name, sizeof(name), "player title only tooltip %d", player);
-		players[player]->inventoryUI.titleOnlyTooltipFrame = players[player]->inventoryUI.tooltipContainerFrame->addFrame(name);
-		auto tooltipFrame = players[player]->inventoryUI.titleOnlyTooltipFrame;
+		titleOnlyTooltipFrame = tooltipContainerFrame->addFrame(name);
+		auto tooltipFrame = titleOnlyTooltipFrame;
 		tooltipFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
 		tooltipFrame->setHollow(true);
 		tooltipFrame->setDisabled(true);
@@ -20838,12 +20869,11 @@ void createInventoryTooltipFrame(const int player)
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 28 },
 			color, "*#images/ui/Inventory/tooltips/Hover_TR00_TitleOnly.png", "tooltip top right");
 	}
-	if ( !players[player]->inventoryUI.tooltipFrame )
+	if ( !tooltipFrame )
 	{
 		char name[32];
 		snprintf(name, sizeof(name), "player tooltip %d", player);
-		players[player]->inventoryUI.tooltipFrame = players[player]->inventoryUI.tooltipContainerFrame->addFrame(name);
-		auto tooltipFrame = players[player]->inventoryUI.tooltipFrame;
+		tooltipFrame = tooltipContainerFrame->addFrame(name);
 		tooltipFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
 		tooltipFrame->setHollow(true);
 		tooltipFrame->setDisabled(true);
@@ -20853,8 +20883,6 @@ void createInventoryTooltipFrame(const int player)
 	{
 		return;
 	}
-
-	auto tooltipFrame = players[player]->inventoryUI.tooltipFrame;
 
 	Uint32 color = makeColor( 255, 255, 255, 255);
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 28 },
@@ -21154,9 +21182,8 @@ void createInventoryTooltipFrame(const int player)
 
 	char name[32];
 	snprintf(name, sizeof(name), "player interact %d", player);
-	if ( auto interactFrame = gameUIFrame[player]->addFrame(name) )
+	if ( interactFrame = (parentFrame ? parentFrame->addFrame(name) : gameUIFrame[player]->addFrame(name)) )
 	{
-		players[player]->inventoryUI.interactFrame = interactFrame;
 		const int interactWidth = 106;
 		interactFrame->setSize(SDL_Rect{ 0, 0, interactWidth + 6 * 2, 100 });
 		interactFrame->setDisabled(true);
@@ -21308,9 +21335,8 @@ void createInventoryTooltipFrame(const int player)
 	}
 
 	snprintf(name, sizeof(name), "player item prompt %d", player);
-	if ( auto promptFrame = players[player]->inventoryUI.tooltipContainerFrame->addFrame(name) )
+	if ( promptFrame = tooltipContainerFrame->addFrame(name) )
 	{
-		players[player]->inventoryUI.tooltipPromptFrame = promptFrame;
 		const int interactWidth = 0;
 		SDL_Rect promptSize{ 0, 0, interactWidth + 6 * 2, 100 };
 		promptFrame->setDisabled(true);
@@ -21441,6 +21467,1180 @@ void createInventoryTooltipFrame(const int player)
 }
 
 view_t playerPortraitView[MAXPLAYERS];
+view_t monsterPortraitView;
+view_t itemPortraitView;
+static ConsoleVariable<bool> cvar_compendium_portrait_static_angle("/compendium_portrait_static_angle", true);
+void drawItemPreview(Entity* item, SDL_Rect pos, real_t offsetyaw, bool dark)
+{
+	if ( !item ) { return; }
+	if ( item->sprite < 0 ) { return; }
+
+	static int fov = 50;
+	bool sprite = item->flags[SPRITE];
+
+	std::vector<Entity>* limbsArray = nullptr;
+	Compendium_t::CompendiumView_t* camera = &CompendiumEntries.defaultCamera;
+	std::string lookup = "items_single";
+	if ( item->flags[SPRITE] && item->skill[10] == SPELL_ITEM )
+	{
+		lookup = "spells_single";
+	}
+
+	if ( CompendiumEntries.compendiumObjectLimbs.find(lookup) != CompendiumEntries.compendiumObjectLimbs.end() )
+	{
+		auto& entry = CompendiumEntries.compendiumObjectLimbs[lookup];
+		limbsArray = &entry.entities;
+		if ( limbsArray->size() == 0 )
+		{
+			return;
+		}
+		camera = &entry.currentCamera;
+	}
+	else
+	{
+		return;
+	}
+
+	if ( keystatus[SDLK_KP_1] )
+	{
+		camera->vang -= 0.01;
+	}
+	if ( keystatus[SDLK_KP_3] )
+	{
+		camera->vang += 0.01;
+	}
+	if ( keystatus[SDLK_KP_4] )
+	{
+		camera->ang -= 0.01;
+	}
+	if ( keystatus[SDLK_KP_6] )
+	{
+		camera->ang += 0.01;
+	}
+	if ( keystatus[SDLK_KP_8] )
+	{
+		camera->height += 0.5;
+	}
+	if ( keystatus[SDLK_KP_2] )
+	{
+		camera->height -= 0.5;
+	}
+	if ( keystatus[SDLK_KP_7] )
+	{
+		camera->zoom -= 0.01;
+	}
+	if ( keystatus[SDLK_KP_9] )
+	{
+		camera->zoom += 0.01;
+	}
+
+	if ( !sprite )
+	{
+		camera->rotateState = 0;
+	}
+
+	item->scalex = limbsArray->at(0).scalex;
+	item->scaley = limbsArray->at(0).scaley;
+	item->scalez = limbsArray->at(0).scalez;
+
+	/*if ( keystatus[SDLK_KP_0] )
+	{
+		keystatus[SDLK_KP_0] = 0;
+		item->roll += PI / 4;
+	}
+	if ( keystatus[SDLK_1] )
+	{
+		keystatus[SDLK_1] = 0;
+		if ( keystatus[SDLK_LSHIFT] )
+		{
+			item->focalx -= 0.125;
+		}
+		else if ( keystatus[SDLK_LCTRL] )
+		{
+			item->focalx = 0.0;
+		}
+		else
+		{
+			item->focalx += 0.125;
+		}
+	}
+	if ( keystatus[SDLK_2] )
+	{
+		keystatus[SDLK_2] = 0;
+		if ( keystatus[SDLK_LSHIFT] )
+		{
+			item->focaly -= 0.125;
+		}
+		else if ( keystatus[SDLK_LCTRL] )
+		{
+			item->focaly = 0.0;
+		}
+		else
+		{
+			item->focaly += 0.125;
+		}
+	}
+	if ( keystatus[SDLK_3] )
+	{
+		keystatus[SDLK_3] = 0;
+		if ( keystatus[SDLK_LSHIFT] )
+		{
+			item->focalz -= 0.125;
+		}
+		else if ( keystatus[SDLK_LCTRL] )
+		{
+			item->focalz = 0.0;
+		}
+		else
+		{
+			item->focalz += 0.125;
+		}
+	}*/
+
+	if ( camera->rotateState == 0 )
+	{
+		if ( sprite )
+		{
+			camera->rotate += 0.0015 * camera->rotateSpeed;
+			if ( camera->rotateLimit )
+			{
+				if ( camera->rotate >= camera->rotateLimitMax )
+				{
+					camera->rotate = camera->rotateLimitMax;
+					camera->rotateState = 1;
+				}
+			}
+		}
+		else
+		{
+			camera->rotate += 0.0015 * camera->rotateSpeed;
+		}
+	}
+	else
+	{
+		if ( sprite )
+		{
+			camera->rotate -= 0.0015 * camera->rotateSpeed;
+			if ( camera->rotateLimit )
+			{
+				if ( camera->rotate <= camera->rotateLimitMin )
+				{
+					camera->rotate = camera->rotateLimitMin;
+					camera->rotateState = 0;
+				}
+			}
+			else
+			{
+				camera->rotateState = 0;
+			}
+		}
+		else
+		{
+			camera->rotate -= 0.0015 * camera->rotateSpeed;
+		}
+	}
+
+	view_t& view = monsterPortraitView;
+	auto ofov = ::fov;
+	::fov = fov;
+
+	const real_t rotation = camera->rotate + (sprite ? (PI / 2) : 0.0);
+
+	view.x = item->x / 16.0 + ((.92 + camera->zoom) * cos(offsetyaw
+		+ camera->ang + rotation + (*cvar_compendium_portrait_static_angle ? item->yaw : 0)));
+	view.y = item->y / 16.0 + ((.92 + camera->zoom) * sin(offsetyaw
+		+ camera->ang + rotation + (*cvar_compendium_portrait_static_angle ? item->yaw : 0)));
+	view.z = item->z * 2 + camera->height;
+	view.ang = (offsetyaw - PI
+		+ (*cvar_compendium_portrait_static_angle ? item->yaw : 0) + camera->ang + rotation); //5 * PI / 4;
+	view.vang = PI / 20 + camera->vang;
+
+	view.winx = pos.x;
+	// winy modification required due to new frame scaling method d49b1a5f34667432f2a2bd754c0abca3a09227c8
+	view.winy = pos.y + (yres - Frame::virtualScreenY);
+
+	view.winw = pos.w;
+	view.winh = pos.h;
+	GL_CHECK_ERR(glClear(GL_DEPTH_BUFFER_BIT));
+	glBeginCamera(&view, false, map);
+	bool b = item->flags[BRIGHT];
+	if ( !dark ) { item->flags[BRIGHT] = true; }
+	if ( !item->flags[INVISIBLE] )
+	{
+		if ( item->flags[SPRITE] && item->skill[10] == SPELL_ITEM )
+		{
+			ItemType tmpItem = Compendium_t::compendiumItem.type;
+			Compendium_t::compendiumItem.type = SPELL_ITEM;
+			glDrawSpriteFromImage(&view, item, ItemTooltips.getSpellIconPath(clientnum, Compendium_t::compendiumItem, item->skill[14]),
+				REALCOLORS, true, true);
+			Compendium_t::compendiumItem.type = tmpItem;
+		}
+		else
+		{
+			glDrawVoxel(&view, item, REALCOLORS);
+		}
+	}
+
+	item->flags[BRIGHT] = b;
+
+	if ( drawingGui ) {
+		// blending gets disabled after objects are drawn, so re-enable it.
+		GL_CHECK_ERR(glEnable(GL_BLEND));
+	}
+	glEndCamera(&view, false, map);
+	::fov = ofov;
+}
+
+void drawSpritesPreview(std::string name, std::string modelsPath, SDL_Rect pos, real_t offsetyaw, bool dark)
+{
+	static int fov = 50;
+
+	bool sprite = false;
+	Compendium_t::CompendiumCodex_t::Codex_t* codexEntry = nullptr;
+	auto find = CompendiumEntries.codex.find(name);
+	if ( find != CompendiumEntries.codex.end() )
+	{
+		codexEntry = &find->second;
+		sprite = codexEntry->renderedImagePaths.size() > 0;
+	}
+
+	if ( !codexEntry )
+	{
+		return;
+	}
+
+	std::vector<Entity>* limbsArray = nullptr;
+	Entity* object = nullptr;
+	Compendium_t::CompendiumView_t* camera = &CompendiumEntries.defaultCamera;
+
+	if ( CompendiumEntries.compendiumObjectLimbs.find(modelsPath) != CompendiumEntries.compendiumObjectLimbs.end() )
+	{
+		auto& entry = CompendiumEntries.compendiumObjectLimbs[modelsPath];
+		limbsArray = &entry.entities;
+		if ( limbsArray->size() == 0 )
+		{
+			return;
+		}
+		object = &(limbsArray->at(0));
+		camera = &entry.currentCamera;
+	}
+
+	if ( !object )
+	{
+		return;
+	}
+
+	if ( keystatus[SDLK_KP_1] )
+	{
+		camera->vang -= 0.01;
+	}
+	if ( keystatus[SDLK_KP_3] )
+	{
+		camera->vang += 0.01;
+	}
+	if ( keystatus[SDLK_KP_4] )
+	{
+		camera->ang -= 0.01;
+	}
+	if ( keystatus[SDLK_KP_6] )
+	{
+		camera->ang += 0.01;
+	}
+	if ( keystatus[SDLK_KP_8] )
+	{
+		camera->height += 0.5;
+	}
+	if ( keystatus[SDLK_KP_2] )
+	{
+		camera->height -= 0.5;
+	}
+	if ( keystatus[SDLK_KP_7] )
+	{
+		camera->zoom -= 0.01;
+	}
+	if ( keystatus[SDLK_KP_9] )
+	{
+		camera->zoom += 0.01;
+	}
+
+	if ( !sprite )
+	{
+		camera->rotateState = 0;
+	}
+
+	if ( camera->rotateState == 0 )
+	{
+		if ( sprite )
+		{
+			camera->rotate += 0.0015 * camera->rotateSpeed;
+			if ( camera->rotateLimit )
+			{
+				if ( camera->rotate >= camera->rotateLimitMax )
+				{
+					camera->rotate = camera->rotateLimitMax;
+					camera->rotateState = 1;
+				}
+			}
+		}
+		else
+		{
+			camera->rotate += 0.0015 * camera->rotateSpeed;
+		}
+	}
+	else
+	{
+		if ( sprite )
+		{
+			camera->rotate -= 0.0015 * camera->rotateSpeed;
+			if ( camera->rotateLimit )
+			{
+				if ( camera->rotate <= camera->rotateLimitMin )
+				{
+					camera->rotate = camera->rotateLimitMin;
+					camera->rotateState = 0;
+				}
+			}
+			else
+			{
+				camera->rotateState = 0;
+			}
+		}
+		else
+		{
+			camera->rotate -= 0.0015 * camera->rotateSpeed;
+		}
+	}
+
+	view_t& view = monsterPortraitView;
+	auto ofov = ::fov;
+	::fov = fov;
+
+	const real_t rotation = camera->rotate + (sprite ? (PI / 2) : 0.0);
+
+	view.x = object->x / 16.0 + ((.92 + camera->zoom) * cos(offsetyaw
+		+ camera->ang + rotation + (*cvar_compendium_portrait_static_angle ? object->yaw : 0)));
+	view.y = object->y / 16.0 + ((.92 + camera->zoom) * sin(offsetyaw
+		+ camera->ang + rotation + (*cvar_compendium_portrait_static_angle ? object->yaw : 0)));
+	view.z = object->z * 2 + camera->height;
+	view.ang = (offsetyaw - PI
+		+ (*cvar_compendium_portrait_static_angle ? object->yaw : 0) + camera->ang + rotation); //5 * PI / 4;
+	view.vang = PI / 20 + camera->vang;
+
+	view.winx = pos.x;
+	// winy modification required due to new frame scaling method d49b1a5f34667432f2a2bd754c0abca3a09227c8
+	view.winy = pos.y + (yres - Frame::virtualScreenY);
+
+	view.winw = pos.w;
+	view.winh = pos.h;
+	GL_CHECK_ERR(glClear(GL_DEPTH_BUFFER_BIT));
+	glBeginCamera(&view, false, map);
+
+	size_t index = 0;
+	for ( auto& e : *limbsArray )
+	{
+		bool b = e.flags[BRIGHT];
+		if ( !dark ) { e.flags[BRIGHT] = true; }
+		if ( !e.flags[INVISIBLE] )
+		{
+			if ( sprite )
+			{
+				if ( index < codexEntry->renderedImagePaths.size() )
+				{
+					if ( codexEntry->renderedImagePaths[index] != "" )
+					{
+						if ( Compendium_t::compendiumEntityCurrent.modelIndex != -1 )
+						{
+							if ( index != Compendium_t::compendiumEntityCurrent.modelIndex )
+							{
+								e.flags[BRIGHT] = b;
+								++index;
+								continue;
+							}
+						}
+						glDrawSpriteFromImage(&view, &e, codexEntry->renderedImagePaths[index],
+							REALCOLORS, true, true);
+					}
+				}
+			}
+		}
+
+		e.flags[BRIGHT] = b;
+		++index;
+	}
+
+	if ( drawingGui ) {
+		// blending gets disabled after objects are drawn, so re-enable it.
+		GL_CHECK_ERR(glEnable(GL_BLEND));
+	}
+	glEndCamera(&view, false, map);
+	::fov = ofov;
+}
+
+void glDrawWorldTile(view_t* camera, int mode, map_t& map)
+{
+	if ( !camera )
+	{
+		return;
+	}
+
+	float getLightAtModifier = 1.f;
+
+	// bind core shader
+	auto& shader = worldShader;
+	shader.bind();
+
+
+	// upload uniforms for core shader
+	if ( &shader != &worldDarkShader ) {
+		const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
+		GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
+		const float cameraPos[4] = { (float)camera->x * 32.f, -(float)camera->z, (float)camera->y * 32.f, 1.f };
+		GL_CHECK_ERR(glUniform4fv(shader.uniform("uCameraPos"), 1, cameraPos));
+	}
+
+	std::vector<Chunk> chunks;
+	chunks.emplace_back();
+	auto& chunk = chunks.back();
+	chunk.build(map, map.flags[MAP_FLAG_CEILINGTILE] > 0, 0, 0, map.width, map.height);
+	for ( auto& chunk : chunks )
+	{
+		worldShader.bind();
+		chunk.draw();
+	}
+}
+
+void actObjectPreviewFlame(Entity* my)
+{
+	if ( my->skill[0] > 0 )
+	{
+		my->skill[0]--;
+		if ( my->skill[0] <= 0 )
+		{
+			list_RemoveNode(my->mynode);
+			return;
+		}
+	}
+	my->x += my->vel_x;
+	my->y += my->vel_y;
+	my->z += my->vel_z;
+}
+
+Entity* createDrawObjectCustomParticle(Entity* parentent, int sprite, real_t scale, real_t spreadReduce)
+{
+	if ( !parentent )
+	{
+		return nullptr;
+	}
+	Entity* entity = newEntity(sprite, 1, &parentent->children, nullptr); //Particle entity.
+
+	int size = 50 / spreadReduce;
+	entity->x = parentent->x + (local_rng.rand() % size - size / 2) / 20.f;
+	entity->y = parentent->y + (local_rng.rand() % size - size / 2) / 20.f;
+	entity->z = parentent->z + (local_rng.rand() % size - size / 2) / 20.f;
+	entity->scalex = scale;
+	entity->scaley = scale;
+	entity->scalez = scale;
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->yaw = parentent->yaw;
+	entity->pitch = parentent->pitch;
+	entity->roll = parentent->roll;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[PASSABLE] = true;
+	entity->flags[UNCLICKABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UPDATENEEDED] = false;
+	entity->behavior = &actMagicParticle;
+	return entity;
+}
+
+#define SPEARTRAP_INIT my->skill[0]
+#define SPEARTRAP_STATUS my->skill[3]
+#define SPEARTRAP_OUTTIME my->skill[4]
+#define SPEARTRAP_STARTHEIGHT my->fskill[0]
+#define SPEARTRAP_VELZ my->vel_z
+void actObjectPreviewSpikeTrap(Entity* my)
+{
+	if ( !SPEARTRAP_INIT )
+	{
+		SPEARTRAP_INIT = 1;
+		SPEARTRAP_STARTHEIGHT = my->z;
+	}
+
+	my->skill[5]++;
+	if ( my->skill[5] >= TICKS_PER_SECOND * 1 )
+	{
+		my->skill[5] = 0;
+		SPEARTRAP_STATUS = SPEARTRAP_STATUS ? 0 : 1;
+		SPEARTRAP_OUTTIME = 0;
+	}
+
+	if ( !SPEARTRAP_STATUS || SPEARTRAP_OUTTIME > 60 )
+	{
+		// retract spears
+		if ( my->z < SPEARTRAP_STARTHEIGHT )
+		{
+			SPEARTRAP_VELZ += .25;
+			my->z = std::min(SPEARTRAP_STARTHEIGHT, my->z + SPEARTRAP_VELZ);
+		}
+		else
+		{
+			SPEARTRAP_VELZ = 0;
+		}
+	}
+	else
+	{
+		// shoot out spears
+		my->z = fmax(SPEARTRAP_STARTHEIGHT - 20, my->z - 4);
+	}
+}
+
+void actObjectPreviewMagic(Entity* my)
+{
+	if ( my->skill[0] > 0 )
+	{
+		my->skill[0]--;
+		if ( my->skill[0] <= 0 )
+		{
+			list_RemoveNode(my->mynode);
+			return;
+		}
+	}
+	my->x += my->vel_x;
+	my->y += my->vel_y;
+	my->z += my->vel_z;
+
+	createDrawObjectCustomParticle(my, my->sprite, 0.7, 4);
+}
+
+void actObjectPreviewArrow(Entity* my)
+{
+	if ( my->skill[0] > 0 )
+	{
+		my->skill[0]--;
+		if ( my->skill[0] <= 0 )
+		{
+			list_RemoveNode(my->mynode);
+			return;
+		}
+	}
+	my->x += my->vel_x;
+	my->y += my->vel_y;
+	my->z += my->vel_z;
+
+	int sprite = 160;
+	switch ( my->sprite )
+	{
+	case 924:
+		sprite = 160;
+		break;
+	case 925:
+		sprite = 158;
+		break;
+	case 926:
+		sprite = 156;
+		break;
+	case 927:
+		sprite = SPRITE_FLAME;
+		break;
+	case 928:
+		sprite = 159;
+		break;
+	case 929:
+		sprite = 155;
+		break;
+	case 930:
+		sprite = 157;
+		break;
+	default:
+		break;
+	}
+
+	if ( Entity* particle = createDrawObjectCustomParticle(my, sprite, 0.5, 4) )
+	{
+		particle->flags[SPRITE] = true;
+	}
+}
+
+#define BOULDER_STOPPED my->skill[0]
+#define BOULDER_NOGROUND my->skill[3]
+void actObjectPreviewBoulder(Entity* my)
+{
+	bool noground = false;
+	int x = std::min<int>(std::max(0, (int)(my->x / 16)), CompendiumEntries.compendiumMap.width);
+	int y = std::min<int>(std::max(0, (int)(my->y / 16)), CompendiumEntries.compendiumMap.height);
+	if ( x >= CompendiumEntries.compendiumMap.width || y >= CompendiumEntries.compendiumMap.height )
+	{
+		noground = true;
+	}
+
+	// gravity
+	bool nobounce = true;
+	if ( !BOULDER_NOGROUND )
+	{
+		if ( noground )
+		{
+			BOULDER_NOGROUND = true;
+		}
+	}
+	if ( my->z < 0 || BOULDER_NOGROUND )
+	{
+		my->vel_z = std::min<real_t>(my->vel_z + .1, 3.0);
+		my->vel_x *= 0.85f;
+		my->vel_y *= 0.85f;
+		nobounce = true;
+		if ( my->z >= 128 )
+		{
+			list_RemoveNode(my->mynode);
+			return;
+		}
+	}
+	else
+	{
+		if ( fabs(my->vel_z) > 1 )
+		{
+			my->vel_z = -(my->vel_z / 2) * (1 / 1.0);
+			nobounce = true;
+		}
+		else
+		{
+			my->vel_z = 0;
+			nobounce = false;
+		}
+		my->z = 0;
+	}
+	my->z += my->vel_z;
+	if ( nobounce )
+	{
+		if ( !BOULDER_STOPPED )
+		{
+			my->x += my->vel_x;
+			my->y += my->vel_y;
+			double dist = sqrt(pow(my->vel_x, 2) + pow(my->vel_y, 2));
+			my->pitch += dist * .06;
+			my->roll = PI / 2;
+		}
+	}
+	else if ( !BOULDER_STOPPED )
+	{
+		// horizontal velocity
+		my->vel_x += cos(my->yaw) * .1;
+		my->vel_y += sin(my->yaw) * .1;
+		real_t maxSpeed = 1.5;
+		/*if ( my->sprite == BOULDER_LAVA_SPRITE || my->sprite == BOULDER_ARCANE_SPRITE )
+		{
+			maxSpeed = 2.5;
+		}*/
+		maxSpeed *= 1.0;
+		if ( my->vel_x > maxSpeed )
+		{
+			my->vel_x = maxSpeed;
+		}
+		if ( my->vel_x < -maxSpeed )
+		{
+			my->vel_x = -maxSpeed;
+		}
+		if ( my->vel_y > maxSpeed )
+		{
+			my->vel_y = maxSpeed;
+		}
+		if ( my->vel_y < -maxSpeed )
+		{
+			my->vel_y = -maxSpeed;
+		}
+
+		real_t ox = my->x;
+		real_t oy = my->y;
+		my->x += my->vel_x;
+		my->y += my->vel_y;
+		my->x = std::min(my->x, (real_t)CompendiumEntries.compendiumMap.width * 16.0 + 8.0);
+		my->y = std::min(my->y, (real_t)CompendiumEntries.compendiumMap.height * 16.0 + 8.0);
+
+		double dist = sqrt(pow(my->vel_x, 2) + pow(my->vel_y, 2));
+		if ( my->x != (ox + my->vel_x) || my->y != (oy + my->vel_y) )
+		{
+			BOULDER_STOPPED = 1;
+		}
+		else
+		{
+			my->pitch += dist * .06;
+			my->roll = PI / 2;
+		}
+	}
+}
+
+Uint32 drawObjectLastTick = 0;
+void drawObjectPreview(std::string modelsPath, Entity* object, SDL_Rect pos, real_t offsetyaw, bool dark)
+{
+	static int fov = 50;
+	std::vector<Entity>* limbsArray = nullptr;
+	Compendium_t::CompendiumView_t* camera = &CompendiumEntries.defaultCamera;
+	if ( CompendiumEntries.compendiumObjectLimbs.find(modelsPath) != CompendiumEntries.compendiumObjectLimbs.end() )
+	{
+		auto& entry = CompendiumEntries.compendiumObjectLimbs[modelsPath];
+		limbsArray = &entry.entities;
+		if ( limbsArray->size() == 0 )
+		{
+			return;
+		}
+		object = &(limbsArray->at(0));
+		camera = &entry.currentCamera;
+	}
+
+
+	if ( !object )
+	{
+		return;
+	}
+
+	view_t& view = monsterPortraitView;
+	auto ofov = ::fov;
+	::fov = fov;
+
+	bool doTick = false;
+	if ( drawObjectLastTick != ticks )
+	{
+		drawObjectLastTick = ticks;
+		doTick = true;
+	}
+
+	if ( keystatus[SDLK_KP_1] )
+	{
+		camera->vang -= 0.01;
+	}
+	if ( keystatus[SDLK_KP_3] )
+	{
+		camera->vang += 0.01;
+	}
+	if ( keystatus[SDLK_KP_4] )
+	{
+		camera->ang -= 0.01;
+	}
+	if ( keystatus[SDLK_KP_6] )
+	{
+		camera->ang += 0.01;
+	}
+	if ( keystatus[SDLK_KP_8] )
+	{
+		camera->height += 0.5;
+	}
+	if ( keystatus[SDLK_KP_2] )
+	{
+		camera->height -= 0.5;
+	}
+	if ( keystatus[SDLK_KP_7] )
+	{
+		camera->zoom -= 0.01;
+	}
+	if ( keystatus[SDLK_KP_9] )
+	{
+		camera->zoom += 0.01;
+	}
+
+	if ( camera->rotateState == 0 )
+	{
+		camera->rotate += 0.0015 * camera->rotateSpeed;
+		if ( camera->rotateLimit )
+		{
+			if ( camera->rotate >= camera->rotateLimitMax )
+			{
+				camera->rotate = camera->rotateLimitMax;
+				camera->rotateState = 1;
+			}
+		}
+	}
+	else
+	{
+		camera->rotate -= 0.0015 * camera->rotateSpeed;
+		if ( camera->rotateLimit )
+		{
+			if ( camera->rotate <= camera->rotateLimitMin )
+			{
+				camera->rotate = camera->rotateLimitMin;
+				camera->rotateState = 0;
+			}
+		}
+		else
+		{
+			camera->rotateState = 0;
+		}
+	}
+
+	const real_t rotation = camera->rotate;
+
+	view.x = object->x / 16.0 + ((.92 + camera->zoom) * cos(offsetyaw
+		+ camera->ang + rotation + (*cvar_compendium_portrait_static_angle ? object->yaw : 0)));
+	view.y = object->y / 16.0 + ((.92 + camera->zoom) * sin(offsetyaw
+		+ camera->ang + rotation + (*cvar_compendium_portrait_static_angle ? object->yaw : 0)));
+	view.z = object->z * 2 + camera->height;
+	view.ang = (offsetyaw - PI
+		+ (*cvar_compendium_portrait_static_angle ? object->yaw : 0) + camera->ang + rotation); //5 * PI / 4;
+	view.vang = PI / 20 + camera->vang;
+
+	view.winx = pos.x;
+	// winy modification required due to new frame scaling method d49b1a5f34667432f2a2bd754c0abca3a09227c8
+	view.winy = pos.y + (yres - Frame::virtualScreenY);
+
+	view.winw = pos.w;
+	view.winh = pos.h;
+
+	auto& tmpMap = CompendiumEntries.compendiumMap;
+	GL_CHECK_ERR(glClear(GL_DEPTH_BUFFER_BIT));
+	glBeginCamera(&view, false, tmpMap);
+
+	auto findMap = CompendiumEntries.compendiumObjectMapTiles.find(modelsPath);
+	if ( findMap != CompendiumEntries.compendiumObjectMapTiles.end() )
+	{
+		strcpy(tmpMap.name, "compendium");
+		auto& props = findMap->second.first;
+		tmpMap.width = props.width;
+		tmpMap.height = props.height;
+		tmpMap.flags[MAP_FLAG_CEILINGTILE] = props.ceiling;
+		if ( tmpMap.tiles )
+		{
+			free(tmpMap.tiles);
+			tmpMap.tiles = nullptr;
+		}
+		tmpMap.tiles = (Sint32*)malloc(sizeof(Sint32) * tmpMap.width * tmpMap.height * MAPLAYERS);
+		if ( tmpMap.tiles )
+		{
+			constexpr int numTileAtlases = sizeof(AnimatedTile::indices) / sizeof(AnimatedTile::indices[0]);
+			for ( int x = 0; x < tmpMap.width; ++x )
+			{
+				for ( int y = 0; y < tmpMap.height; ++y )
+				{
+					for ( int z = 0; z < 3; ++z )
+					{
+						int index = z + (y * MAPLAYERS) + (x * MAPLAYERS * tmpMap.height);
+						tmpMap.tiles[index] = 0;
+
+						if ( index < findMap->second.second.size() )
+						{
+							tmpMap.tiles[index] = findMap->second.second[index];
+						}
+
+						int tile = tmpMap.tiles[index];
+						auto find = tileAnimations.find(tile);
+						if ( find != tileAnimations.end() )
+						{
+							const int atlasIndex = (ticks % (numTileAtlases * 10)) / 10;
+							tmpMap.tiles[index] = find->second.indices[atlasIndex];
+						}
+					}
+				}
+			}
+		}
+		glDrawWorldTile(&view, REALCOLORS, tmpMap);
+	}
+
+	bool b = object->flags[BRIGHT];
+	if ( !dark ) { object->flags[BRIGHT] = true; }
+	if ( !object->flags[INVISIBLE] )
+	{
+		glDrawVoxel(&view, object, REALCOLORS);
+	}
+
+	object->flags[BRIGHT] = b;
+	int c = 0;
+
+	if ( limbsArray )
+	{
+		if ( doTick )
+		{
+			int limbIndex = -1;
+			for ( auto& limb : *limbsArray )
+			{
+				++limbIndex;
+				if ( limb.sprite >= 1237 && limb.sprite <= 1242 )
+				{
+					// ghost limbs
+					if ( limb.sprite >= 1238 && limb.sprite <= 1242 )
+					{
+						limb.yaw += 0.05; // spin body
+					}
+
+					auto& squishTime = limb.skill[5];
+					auto& squishGhost = limb.fskill[8];
+					auto& squishAngle = limb.fskill[9];
+
+					Uint32 activeTick = 10;
+					if ( limb.sprite == 1240 || (limbIndex > 0 && limb.sprite == 1237 && (*limbsArray)[limbIndex - 1].sprite == 1240) )
+					{
+						activeTick = 2 * TICKS_PER_SECOND - 25;
+					}
+					else if ( limb.sprite == 1239 || (limbIndex > 0 && limb.sprite == 1237 && (*limbsArray)[limbIndex - 1].sprite == 1239) )
+					{
+						activeTick = 4 * TICKS_PER_SECOND + 25;
+					}
+					else if ( limb.sprite == 1241 || (limbIndex > 0 && limb.sprite == 1237 && (*limbsArray)[limbIndex - 1].sprite == 1241) )
+					{
+						activeTick = 6 * TICKS_PER_SECOND - 25;
+					}
+					if ( limb.ticks % (8 * TICKS_PER_SECOND) == activeTick )
+					{
+						squishAngle = Player::Ghost_t::GHOST_SQUISH_START_ANGLE / 100.f;
+					}
+					++limb.ticks;
+
+					const real_t squishRate = 6.0;
+					real_t squishFactor = 0.3;
+					if ( squishAngle < 0.0 )
+					{
+						squishFactor *= std::max(0.0, (1.0 + squishAngle));
+					}
+					const real_t inc = squishRate * (PI / TICKS_PER_SECOND);
+					squishGhost = squishAngle * 2 * PI;
+					const real_t squish = sin(squishGhost) * squishFactor;
+					squishAngle -= squishRate * (0.5 / TICKS_PER_SECOND);
+					squishAngle = std::max(squishAngle, -1.0);
+
+					limb.scalex = 1.0 - squish;
+					limb.scaley = 1.0 - squish;
+					limb.scalez = 1.0 + squish;
+				}
+				else if ( limb.sprite == 3 ) // torch
+				{
+					Entity* flame = newEntity(SPRITE_FLAME, 0, &limb.children, nullptr);
+					flame->x = limb.x;
+					flame->y = limb.y;
+					flame->z = limb.z;
+					flame->fskill[1] = limb.x;
+					flame->fskill[2] = limb.y;
+					flame->fskill[3] = limb.z;
+					flame->sizex = 6;
+					flame->sizey = 6;
+					flame->yaw = (local_rng.rand() % 360) * PI / 180.0;
+					flame->pitch = (local_rng.rand() % 360) * PI / 180.0;
+					flame->roll = (local_rng.rand() % 360) * PI / 180.0;
+					real_t vel = (local_rng.rand() % 10) / 10.0;
+					flame->skill[0] = 5; // life-span
+					flame->vel_x = vel * cos(flame->yaw) * .1;
+					flame->vel_y = vel * sin(flame->yaw) * .1;
+					flame->vel_z = -.25;
+					flame->flags[SPRITE] = true;
+					flame->behavior = &actObjectPreviewFlame;
+					
+					flame->x += 0.25 * cos(limb.yaw);
+					flame->y += 0.25 * sin(limb.yaw);
+					flame->z -= 2.5 - 7;
+				}
+				else if ( limb.sprite == 252 )
+				{
+					if ( list_Size(&limb.children) == 0 )
+					{
+						Entity* entity = nullptr;
+						if ( modelsPath == "brimstone" )
+						{
+							entity = newEntity(989, 0, &limb.children, nullptr);
+						}
+						else
+						{
+							entity = newEntity(245, 0, &limb.children, nullptr);
+						}
+						entity->x = limb.x;
+						entity->y = limb.y;
+						entity->z = -64;
+						entity->behavior = &actObjectPreviewBoulder;
+					}
+				}
+				else if ( limb.sprite == 166 )
+				{
+					if ( list_Size(&limb.children) == 0 )
+					{
+						std::vector<int> arrows = {
+							924,
+							925,
+							926,
+							927,
+							928,
+							929,
+							930
+						};
+						Entity* entity = newEntity(arrows[local_rng.rand() % arrows.size()], 0, &limb.children, nullptr);
+						entity->x = limb.x;
+						entity->y = limb.y;
+						entity->z = limb.z;
+						entity->behavior = &actObjectPreviewArrow;
+						entity->vel_x = 4 * cos(limb.yaw);
+						entity->vel_y = 4 * sin(limb.yaw);
+						entity->skill[0] = TICKS_PER_SECOND * 1.5;
+						entity->yaw = limb.yaw;
+					}
+				}
+				else if ( limb.sprite == 168 )
+				{
+					if ( list_Size(&limb.children) == 0 )
+					{
+						std::vector<int> magic = {
+							168,
+							170,
+							171,
+							172,
+							173
+						};
+						Entity* entity = newEntity(magic[local_rng.rand() % magic.size()], 0, &limb.children, nullptr);
+						entity->x = limb.x;
+						entity->y = limb.y;
+						entity->z = limb.z;
+						entity->behavior = &actObjectPreviewMagic;
+						entity->yaw = limb.yaw + (limb.skill[1] * PI / 2);
+						limb.skill[1]++;
+						if ( limb.skill[1] >= 4 )
+						{
+							limb.skill[1] = 0;
+						}
+						entity->vel_x = 4 * cos(entity->yaw);
+						entity->vel_y = 4 * sin(entity->yaw);
+						entity->skill[0] = TICKS_PER_SECOND;
+					}
+				}
+				else if ( limb.sprite == 644 )
+				{
+					if ( list_Size(&limb.children) == 0 )
+					{
+						std::vector<int> magic = {
+							168,
+							170,
+							171,
+							172,
+							173
+						};
+						Entity* entity = newEntity(magic[local_rng.rand() % magic.size()], 0, &limb.children, nullptr);
+						entity->x = limb.x;
+						entity->y = limb.y;
+						entity->z = limb.z;
+						entity->behavior = &actObjectPreviewMagic;
+						entity->pitch = PI / 2;
+						entity->vel_z = 2;
+						entity->skill[0] = TICKS_PER_SECOND;
+					}
+				}
+				else if ( limb.sprite == 283 )
+				{
+					if ( list_Size(&limb.children) == 0 )
+					{
+						Entity* entity = newEntity(282, 0, &limb.children, nullptr);
+						entity->x = limb.x;
+						entity->y = limb.y;
+						entity->z = 16;
+						entity->focalz = 7;
+						entity->behavior = &actObjectPreviewSpikeTrap;
+					}
+				}
+
+				for ( auto node = limb.children.first; node; )
+				{
+					Entity* entity = (Entity*)node->element;
+					node = node->next;
+					for ( auto node2 = entity->children.first; node2; )
+					{
+						Entity* entity2 = (Entity*)node2->element;
+						node2 = node2->next;
+						if ( entity2->behavior )
+						{
+							(entity2->behavior)(entity2);
+						}
+					}
+					if ( entity->behavior )
+					{
+						(entity->behavior)(entity);
+					}
+				}
+			}
+		}
+		for ( auto itr = limbsArray->begin(); itr != limbsArray->end(); ++itr )
+		{
+			if ( c == 0 )
+			{
+				c++;
+				continue;
+			}
+			Entity* entity = &(*itr);
+			if ( !entity->flags[INVISIBLE] )
+			{
+				bool b = entity->flags[BRIGHT];
+				if ( !dark ) { entity->flags[BRIGHT] = true; }
+				glDrawVoxel(&view, entity, REALCOLORS);
+				entity->flags[BRIGHT] = b;
+
+				for ( auto node = entity->children.first; node; node = node->next )
+				{
+					Entity* entity = (Entity*)node->element;
+					bool b = entity->flags[BRIGHT];
+					if ( !dark ) { entity->flags[BRIGHT] = true; }
+					if ( entity->flags[SPRITE] )
+					{
+						glDrawSprite(&view, entity, REALCOLORS);
+					}
+					else
+					{
+						glDrawVoxel(&view, entity, REALCOLORS);
+					}
+					entity->flags[BRIGHT] = b;
+
+					for ( auto node2 = entity->children.first; node2; node2 = node2->next )
+					{
+						Entity* entity = (Entity*)node2->element;
+						bool b = entity->flags[BRIGHT];
+						if ( !dark ) { entity->flags[BRIGHT] = true; }
+						if ( entity->flags[SPRITE] )
+						{
+							glDrawSprite(&view, entity, REALCOLORS);
+						}
+						else
+						{
+							glDrawVoxel(&view, entity, REALCOLORS);
+						}
+						entity->flags[BRIGHT] = b;
+					}
+				}
+			}
+			c++;
+		}
+	}
+	else
+	{
+		for ( node_t* node = object->children.first; node != nullptr; node = node->next )
+		{
+			if ( c == 0 )
+			{
+				c++;
+				continue;
+			}
+			Entity* entity = (Entity*)node->element;
+			if ( !entity->flags[INVISIBLE] )
+			{
+				bool b = entity->flags[BRIGHT];
+				if ( !dark ) { entity->flags[BRIGHT] = true; }
+				glDrawVoxel(&view, entity, REALCOLORS);
+				entity->flags[BRIGHT] = b;
+			}
+			c++;
+		}
+		//for ( node_t* node = map.entities->first; node != NULL; node = node->next )
+		//{
+		//	Entity* entity = (Entity*)node->element;
+		//	if ( (Sint32)entity->getUID() == -4 ) // torch sprites
+		//	{
+		//		if ( (entity->skill[1] - 1) != player )
+		//		{
+		//			continue;
+		//		}
+		//		bool b = entity->flags[BRIGHT];
+		//		if ( !dark ) { entity->flags[BRIGHT] = true; }
+		//		glDrawSprite(&view, entity, REALCOLORS);
+		//		entity->flags[BRIGHT] = b;
+		//	}
+		//}
+	}
+
+	if ( drawingGui ) {
+		// blending gets disabled after objects are drawn, so re-enable it.
+		GL_CHECK_ERR(glEnable(GL_BLEND));
+	}
+	glEndCamera(&view, false, tmpMap);
+	::fov = ofov;
+}
 
 void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offsetyaw, bool dark)
 {
@@ -21476,14 +22676,23 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 
 		view.winw = pos.w;
 		view.winh = pos.h;
-		glBeginCamera(&view, false);
-		bool b = playerEntity->flags[BRIGHT];
-        if (!dark) { playerEntity->flags[BRIGHT] = true; }
-		if ( !playerEntity->flags[INVISIBLE] )
+		glBeginCamera(&view, false, map);
+		const int ditherVal = 5;
+		if ( !playerEntity->flags[INVISIBLE] || (playerEntity->flags[INVISIBLE] && playerEntity->flags[INVISIBLE_DITHER]) )
 		{
+			bool b = playerEntity->flags[BRIGHT];
+			if (!dark) { playerEntity->flags[BRIGHT] = true; }
+
+			int oldDither = playerEntity->dithering[&view].value;
+			if ( (playerEntity->flags[INVISIBLE] && playerEntity->flags[INVISIBLE_DITHER]) )
+			{
+				playerEntity->dithering[&view].value = ditherVal;
+				//playerEntity->flags[BRIGHT] = false;
+			}
 			glDrawVoxel(&view, playerEntity, REALCOLORS);
+			playerEntity->flags[BRIGHT] = b;
+			playerEntity->dithering[&view].value = oldDither;
 		}
-		playerEntity->flags[BRIGHT] = b;
 		int c = 0;
 		if ( multiplayer != CLIENT )
 		{
@@ -21498,12 +22707,20 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 					}
 				}
 				Entity* entity = (Entity*)node->element;
-				if ( !entity->flags[INVISIBLE] )
+				if ( !entity->flags[INVISIBLE] || (entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER]) )
 				{
 					bool b = entity->flags[BRIGHT];
                     if (!dark) { entity->flags[BRIGHT] = true; }
+
+					int oldDither = entity->dithering[&view].value;
+					if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
+					{
+						entity->dithering[&view].value = ditherVal;
+						//entity->flags[BRIGHT] = false;
+					}
 					glDrawVoxel(&view, entity, REALCOLORS);
 					entity->flags[BRIGHT] = b;
+					entity->dithering[&view].value = oldDither;
 				}
 				c++;
 			}
@@ -21518,8 +22735,16 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 					}
                     bool b = entity->flags[BRIGHT];
                     if (!dark) { entity->flags[BRIGHT] = true; }
+
+					int oldDither = entity->dithering[&view].value;
+					if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
+					{
+						entity->dithering[&view].value = ditherVal;
+						//entity->flags[BRIGHT] = false;
+					}
 					glDrawSprite(&view, entity, REALCOLORS);
                     entity->flags[BRIGHT] = b;
+					entity->dithering[&view].value = oldDither;
 				}
 			}
 		}
@@ -21530,7 +22755,8 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 				Entity* entity = (Entity*)node->element;
 				if ( playerEntity->behavior == &actPlayer )
 				{
-					if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == player && !entity->flags[INVISIBLE]) || (Sint32)entity->getUID() == -4 )
+					if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == player 
+						&& (!entity->flags[INVISIBLE] || (entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER]))) || (Sint32)entity->getUID() == -4 )
 					{
 						if ( (Sint32)entity->getUID() == -4 ) // torch sprites
 						{
@@ -21540,26 +22766,55 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 							}
 							bool b = entity->flags[BRIGHT];
 							if (!dark) { entity->flags[BRIGHT] = true; }
+
+							int oldDither = entity->dithering[&view].value;
+							if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
+							{
+								entity->dithering[&view].value = ditherVal;
+								//entity->flags[BRIGHT] = false;
+							}
+
 							glDrawSprite(&view, entity, REALCOLORS);
 							entity->flags[BRIGHT] = b;
+							entity->dithering[&view].value = oldDither;
 						}
 						else
 						{
 							bool b = entity->flags[BRIGHT];
 							if (!dark) { entity->flags[BRIGHT] = true; }
+
+							int oldDither = entity->dithering[&view].value;
+							if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
+							{
+								entity->dithering[&view].value = ditherVal;
+								//entity->flags[BRIGHT] = false;
+							}
+
 							glDrawVoxel(&view, entity, REALCOLORS);
 							entity->flags[BRIGHT] = b;
+							entity->dithering[&view].value = oldDither;
 						}
+
 					}
 				}
 				else if ( playerEntity->behavior == &actDeathGhost )
 				{
-					if ( entity->behavior == &actDeathGhostLimb && entity->skill[2] == player && !entity->flags[INVISIBLE] )
+					if ( entity->behavior == &actDeathGhostLimb && entity->skill[2] == player 
+						&& (!entity->flags[INVISIBLE] || (entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER])) )
 					{
 						bool b = entity->flags[BRIGHT];
 						if ( !dark ) { entity->flags[BRIGHT] = true; }
+
+						int oldDither = entity->dithering[&view].value;
+						if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
+						{
+							entity->dithering[&view].value = ditherVal;
+							//entity->flags[BRIGHT] = false;
+						}
+
 						glDrawVoxel(&view, entity, REALCOLORS);
 						entity->flags[BRIGHT] = b;
+						entity->dithering[&view].value = oldDither;
 					}
 				}
 			}
@@ -21568,7 +22823,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
             // blending gets disabled after objects are drawn, so re-enable it.
             GL_CHECK_ERR(glEnable(GL_BLEND));
         }
-        glEndCamera(&view, false);
+        glEndCamera(&view, false, map);
 	}
 	::fov = ofov;
 }
@@ -25773,16 +27028,54 @@ void Player::Inventory_t::updateSelectedItemAnimation()
 	}
 }
 
-void Player::Inventory_t::updateInventoryItemTooltip()
+void Player::Inventory_t::updateInventoryItemTooltip(Frame* parentFrame)
 {
-	if ( !tooltipFrame || !frame || !titleOnlyTooltipFrame )
+	Frame* tooltipContainerFrame = nullptr;
+	Frame* frameMain = nullptr;
+	Frame* frameInventory = nullptr;
+	Frame* titleOnlyFrame = nullptr;
+	Frame* frameTooltipPrompt = nullptr;
+	if ( parentFrame )
+	{
+		// hacks for compendium tooltips
+		char name[32];
+		snprintf(name, sizeof(name), "player tooltip container %d", 0);
+		if ( Frame* tooltipContainerFrame = parentFrame->findFrame(name) )
+		{
+			snprintf(name, sizeof(name), "player title only tooltip %d", 0);
+			titleOnlyFrame = tooltipContainerFrame->findFrame(name);
+			snprintf(name, sizeof(name), "player tooltip %d", 0);
+			frameMain = tooltipContainerFrame->findFrame(name);
+			snprintf(name, sizeof(name), "player item prompt %d", 0);
+			frameTooltipPrompt = tooltipContainerFrame->findFrame(name);
+		}
+	}
+	else
+	{
+		frameMain = this->player.inventoryUI.tooltipFrame;
+		frameInventory = this->player.inventoryUI.frame;
+		frameTooltipPrompt = this->player.inventoryUI.tooltipPromptFrame;
+		titleOnlyFrame = this->player.inventoryUI.titleOnlyTooltipFrame;
+		if ( !frameInventory )
+		{
+			return;
+		}
+	}
+
+	if ( !frameMain || !titleOnlyFrame )
 	{
 		return;
 	}
 
-	auto& tooltipDisplay = this->itemTooltipDisplay;
+	bool compendiumTooltip = false;
+	if ( parentFrame && !strcmp(parentFrame->getName(), "compendium") )
+	{
+		compendiumTooltip = true;
+	}
+	auto& tooltipDisplay = compendiumTooltip ? this->compendiumItemTooltipDisplay 
+		: this->itemTooltipDisplay;
 
-	if ( static_cast<int>(tooltipFrame->getOpacity()) != tooltipDisplay.opacitySetpoint )
+	if ( static_cast<int>(frameMain->getOpacity()) != tooltipDisplay.opacitySetpoint )
 	{
 		const real_t fpsScale = getFPSScale(144.0);
 		if ( tooltipDisplay.opacitySetpoint == 0 )
@@ -25797,14 +27090,14 @@ void Player::Inventory_t::updateInventoryItemTooltip()
 			tooltipDisplay.opacityAnimate += setpointDiff;
 			tooltipDisplay.opacityAnimate = std::min(1.0, tooltipDisplay.opacityAnimate);
 		}
-		tooltipFrame->setOpacity(tooltipDisplay.opacityAnimate * 100);
+		frameMain->setOpacity(tooltipDisplay.opacityAnimate * 100);
 	}
 	else
 	{
-		tooltipFrame->setOpacity(tooltipDisplay.opacitySetpoint);
+		frameMain->setOpacity(tooltipDisplay.opacitySetpoint);
 	}
 
-	if ( static_cast<int>(titleOnlyTooltipFrame->getOpacity()) != tooltipDisplay.titleOnlyOpacitySetpoint )
+	if ( static_cast<int>(titleOnlyFrame->getOpacity()) != tooltipDisplay.titleOnlyOpacitySetpoint )
 	{
 		const real_t fpsScale = getFPSScale(144.0);
 		if ( tooltipDisplay.titleOnlyOpacitySetpoint == 0 )
@@ -25819,16 +27112,16 @@ void Player::Inventory_t::updateInventoryItemTooltip()
 			tooltipDisplay.titleOnlyOpacityAnimate += setpointDiff;
 			tooltipDisplay.titleOnlyOpacityAnimate = std::min(1.0, tooltipDisplay.titleOnlyOpacityAnimate);
 		}
-		titleOnlyTooltipFrame->setOpacity(tooltipDisplay.titleOnlyOpacityAnimate * 100);
+		titleOnlyFrame->setOpacity(tooltipDisplay.titleOnlyOpacityAnimate * 100);
 	}
 	else
 	{
-		titleOnlyTooltipFrame->setOpacity(tooltipDisplay.titleOnlyOpacitySetpoint);
+		titleOnlyFrame->setOpacity(tooltipDisplay.titleOnlyOpacitySetpoint);
 	}
 
-	if ( tooltipPromptFrame )
+	if ( frameTooltipPrompt )
 	{
-		tooltipPromptFrame->setOpacity(tooltipFrame->getOpacity());
+		frameTooltipPrompt->setOpacity(frameMain->getOpacity());
 	}
 
 	tooltipDisplay.expandSetpoint = tooltipDisplay.expanded ? 100 : 0;
@@ -26598,7 +27891,13 @@ void Player::Inventory_t::processInventory()
 	}
 	if ( !tooltipFrame )
 	{
-		createInventoryTooltipFrame(player.playernum);
+		createInventoryTooltipFrame(player.playernum,
+			nullptr,
+			tooltipContainerFrame,
+			titleOnlyTooltipFrame,
+			tooltipFrame,
+			interactFrame,
+			tooltipPromptFrame);
 	}
 
 	frame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
@@ -27225,7 +28524,7 @@ void Player::HUD_t::updateXPBar()
 		auto xpTextStatic = xpFrame->findField("xp text static");
 		SDL_Rect xpTextStaticPos = xpTextStatic->getSize();
 
-		int offsetx = pos.w / 2 - xpTextStaticPos.w - 24;
+		int offsetx = pos.w / 2 - xpTextStaticPos.w - 24 - 4;
 		if ( bCompactWidth )
 		{
 			xpTextStatic->setDisabled(true);
@@ -27248,7 +28547,12 @@ void Player::HUD_t::updateXPBar()
 		}
 		else
 		{
-			xpTextPos.x = pos.w / 2 - (4 * 2) - xpTextPos.w + offsetx;
+			xpTextPos.x = xpTextStaticPos.x + xpTextStaticPos.w - xpTextPos.w;
+			if ( auto textGet = xpTextStatic->getTextObject() )
+			{
+				xpTextPos.x -= (textGet->getWidth());
+				xpTextPos.x -= 4;
+			}
 		}
 		xpText->setSize(xpTextPos);
 
@@ -27411,7 +28715,7 @@ void Player::HUD_t::updateXPBar()
 			{
 				xpProgressEndCap->path = playerXPCapPaths[xpPathNum][4];
 			}
-			else if ( xpProgressEndCap->path == playerXPCapPaths[player.playernum][4] )
+			else if ( xpProgressEndCap->path == playerXPCapPaths[xpPathNum][4] )
 			{
 				xpProgressEndCap->path = playerXPCapPaths[xpPathNum][0];
 			}
@@ -31135,6 +32439,17 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
+		else if ( tag == "WEAPON_DMG_EFFECTIVENESS" )
+		{
+			real_t variance = 20;
+			real_t baseSkillModifier = 50.0; // 40-60 base
+			Entity::setMeleeDamageSkillModifiers(nullptr, nullptr, proficiency, baseSkillModifier, variance, nullptr);
+
+			real_t lowest = baseSkillModifier - (variance / 2) + (stats[playernum]->getModifiedProficiency(proficiency) / 2.0);
+			lowest = std::min(100.0, std::max(0.0, lowest));
+			real_t highest = std::min(100.0, lowest + variance);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)lowest, (int)highest);
+		}
 		else if ( tag == "RANGED_DMG_EFFECTIVENESS" )
 		{
 			if ( proficiency == PRO_POLEARM )
@@ -31186,17 +32501,22 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 	{
 		if ( tag == "BLOCK_AC_INCREASE" )
 		{
-			val = stats[playernum]->getActiveShieldBonus(false);
+			val = stats[playernum]->getActiveShieldBonus(false, false);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "BLOCK_AC_INCREASE_OFFHAND" )
+		{
+			val = stats[playernum]->getActiveShieldBonus(false, false, nullptr, true);
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "PASSIVE_AC_INCREASE" )
 		{
-			val = stats[playernum]->getPassiveShieldBonus(false);
+			val = stats[playernum]->getPassiveShieldBonus(false, false);
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "BLOCK_DEGRADE_NORMAL_CHANCE" )
 		{
-			val = 25 + (stats[playernum]->type == GOBLIN ? 10 : 0); // degrade > 0 dmg taken
+			val = 25 + (stats[playernum]->type == GOBLIN ? 10 : 0) + 10; // degrade > 0 dmg taken
 			val += 2 * (static_cast<int>(stats[playernum]->getModifiedProficiency(proficiency) / 10));
 			if ( skillCapstoneUnlocked(playernum, proficiency) )
 			{
@@ -31241,6 +32561,17 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 				val = 100 - (100 - stats[playernum]->getModifiedProficiency(proficiency)) / 2.f; // lowest damage roll
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "WEAPON_DMG_EFFECTIVENESS" )
+		{
+			real_t variance = 20;
+			real_t baseSkillModifier = 50.0; // 40-60 base
+			Entity::setMeleeDamageSkillModifiers(nullptr, nullptr, proficiency, baseSkillModifier, variance, nullptr);
+
+			real_t lowest = baseSkillModifier - (variance / 2) + (stats[playernum]->getModifiedProficiency(proficiency) / 2.0);
+			lowest = std::min(100.0, std::max(0.0, lowest));
+			real_t highest = std::min(100.0, lowest + variance);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)lowest, (int)highest);
 		}
 		else if ( tag == "UNARMED_DMG_EFFECTIVENESS" )
 		{
@@ -31316,6 +32647,17 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
+		else if ( tag == "WEAPON_DMG_EFFECTIVENESS" )
+		{
+			real_t variance = 20;
+			real_t baseSkillModifier = 50.0; // 40-60 base
+			Entity::setMeleeDamageSkillModifiers(nullptr, nullptr, proficiency, baseSkillModifier, variance, nullptr);
+
+			real_t lowest = baseSkillModifier - (variance / 2) + (stats[playernum]->getModifiedProficiency(proficiency) / 2.0);
+			lowest = std::min(100.0, std::max(0.0, lowest));
+			real_t highest = std::min(100.0, lowest + variance);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)lowest, (int)highest);
+		}
 		else if ( tag == "SWORD_DMG_EFFECTIVENESS" )
 		{
 			if ( proficiency == PRO_POLEARM )
@@ -31379,6 +32721,17 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 				val = 100 - (100 - stats[playernum]->getModifiedProficiency(proficiency)) / 2.f; // lowest damage roll
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "WEAPON_DMG_EFFECTIVENESS" )
+		{
+			real_t variance = 20;
+			real_t baseSkillModifier = 50.0; // 40-60 base
+			Entity::setMeleeDamageSkillModifiers(nullptr, nullptr, proficiency, baseSkillModifier, variance, nullptr);
+
+			real_t lowest = baseSkillModifier - (variance / 2) + (stats[playernum]->getModifiedProficiency(proficiency) / 2.0);
+			lowest = std::min(100.0, std::max(0.0, lowest));
+			real_t highest = std::min(100.0, lowest + variance);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)lowest, (int)highest);
 		}
 		else if ( tag == "POLEARM_DMG_EFFECTIVENESS" )
 		{
@@ -31444,6 +32797,17 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
+		else if ( tag == "WEAPON_DMG_EFFECTIVENESS" )
+		{
+			real_t variance = 20;
+			real_t baseSkillModifier = 50.0; // 40-60 base
+			Entity::setMeleeDamageSkillModifiers(nullptr, nullptr, proficiency, baseSkillModifier, variance, nullptr);
+
+			real_t lowest = baseSkillModifier - (variance / 2) + (stats[playernum]->getModifiedProficiency(proficiency) / 2.0);
+			lowest = std::min(100.0, std::max(0.0, lowest));
+			real_t highest = std::min(100.0, lowest + variance);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)lowest, (int)highest);
+		}
 		else if ( tag == "AXE_DMG_EFFECTIVENESS" )
 		{
 			if ( proficiency == PRO_POLEARM )
@@ -31507,6 +32871,17 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 				val = 100 - (100 - stats[playernum]->getModifiedProficiency(proficiency)) / 2.f; // lowest damage roll
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "WEAPON_DMG_EFFECTIVENESS" )
+		{
+			real_t variance = 20;
+			real_t baseSkillModifier = 50.0; // 40-60 base
+			Entity::setMeleeDamageSkillModifiers(nullptr, nullptr, proficiency, baseSkillModifier, variance, nullptr);
+
+			real_t lowest = baseSkillModifier - (variance / 2) + (stats[playernum]->getModifiedProficiency(proficiency) / 2.0);
+			lowest = std::min(100.0, std::max(0.0, lowest));
+			real_t highest = std::min(100.0, lowest + variance);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)lowest, (int)highest);
 		}
 		else if ( tag == "MACE_DMG_EFFECTIVENESS" )
 		{
@@ -31955,7 +33330,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 	{
 		if ( tag == "CASTING_MP_REGEN" )
 		{
-			if ( (stats[playernum])->playerRace == RACE_INSECTOID && (stats[playernum])->appearance == 0 )
+			if ( (stats[playernum])->playerRace == RACE_INSECTOID && (stats[playernum])->stat_appearance == 0 )
 			{
 				return Language::get(4066);
 			}
@@ -31971,7 +33346,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "CASTING_MP_REGEN_SKILL_MULTIPLIER" )
 		{
-			if ( (stats[playernum])->playerRace == RACE_INSECTOID && (stats[playernum])->appearance == 0 )
+			if ( (stats[playernum])->playerRace == RACE_INSECTOID && (stats[playernum])->stat_appearance == 0 )
 			{
 				return Language::get(4066);
 			}
@@ -32112,24 +33487,14 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "MAGIC_SPELLPOWER_INT" )
 		{
 			//val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE) * 100.0);
-			int INT = statGetINT(stats[playernum], players[playernum]->entity);
-			real_t bonus = 0.0;
-			if ( INT > 0 )
-			{
-				bonus += INT / 100.0;
-			}
+			real_t bonus = getSpellBonusFromCasterINT(players[playernum]->entity, stats[playernum]);
 			val = bonus * 100.0;
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "MAGIC_SPELLPOWER_EQUIPMENT" )
 		{
 			val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE) * 100.0);
-			int INT = statGetINT(stats[playernum], players[playernum]->entity);
-			real_t bonus = 0.0;
-			if ( INT > 0 )
-			{
-				bonus += INT / 100.0;
-			}
+			real_t bonus = getSpellBonusFromCasterINT(players[playernum]->entity, stats[playernum]);
 			val -= bonus * 100.0;
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
@@ -32141,15 +33506,31 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 				skillLVL /= 20;
 			}
 			std::string magics = "";
+			std::set<int> inserted;
 			for ( auto it = allGameSpells.begin(); it != allGameSpells.end(); ++it )
 			{
 				auto spellEntry = *it;
-				if ( spellEntry->ID == SPELL_WEAKNESS || spellEntry->ID == SPELL_GHOST_BOLT )
+				if ( !spellEntry )
+				{
+					continue;
+				}
+				if ( spellEntry->ID == SPELL_WEAKNESS 
+					|| spellEntry->ID == SPELL_GHOST_BOLT
+					|| spellEntry->ID == SPELL_SLIME_ACID 
+					|| spellEntry->ID == SPELL_SLIME_FIRE 
+					|| spellEntry->ID == SPELL_SLIME_WATER 
+					|| spellEntry->ID == SPELL_SLIME_TAR
+					|| spellEntry->ID == SPELL_SLIME_METAL )
 				{
 					continue;
 				}
 				if ( spellEntry && spellEntry->difficulty == (skillLVL * 20) )
 				{
+					if ( inserted.find(spellEntry->ID) != inserted.end() )
+					{
+						continue;
+					}
+					inserted.insert(spellEntry->ID);
 					if ( magics != "" )
 					{
 						magics += '\n';
@@ -35388,12 +36769,13 @@ void Player::HUD_t::updateMinotaurWarning()
 		++m.animTicks;
 	}
 
-	bool newLevel = m.levelProcessed != currentlevel;
+	bool newLevel = m.levelProcessed != currentlevel || m.secretlevelProcessed != secretlevel;
 	if ( !minotaurlevel || (newLevel && m.started) )
 	{
 		m.deinit();
 	}
 	m.levelProcessed = currentlevel;
+	m.secretlevelProcessed = secretlevel;
 
 	if ( !m.started )
 	{
@@ -36595,6 +37977,9 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::createDialogueTooltip(Uint32 uid
 			vsnprintf(buf, sizeof(buf), message, argptr);
 			va_end(argptr);
 
+			strncpy(buf, messageSanitizePercentSign(buf, nullptr).c_str(), sizeof(buf) - 1);
+			buf[1023] = '\0';
+
 			strcpy((char*)net_packet->data, "BUBL");
 			SDLNet_Write32(uid, &net_packet->data[4]);
 			net_packet->data[8] = Uint8(type);
@@ -36638,6 +38023,9 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::createDialogueTooltip(Uint32 uid
 	va_start(argptr, message);
 	vsnprintf(buf, sizeof(buf), message, argptr);
 	va_end(argptr);
+
+	strncpy(buf, messageSanitizePercentSign(buf, nullptr).c_str(), sizeof(buf) - 1);
+	buf[1023] = '\0';
 
 	if (player.playernum == clientnum)
 	{

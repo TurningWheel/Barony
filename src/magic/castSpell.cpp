@@ -24,6 +24,7 @@
 #include "../ui/MainMenu.hpp"
 #include "magic.hpp"
 #include "../prng.hpp"
+#include "../mod_tools.hpp"
 
 bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellID);
 
@@ -396,12 +397,21 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	bool playerCastingFromKnownSpellbook = false;
 	int spellBookBonusPercent = 0;
 	int spellBookBeatitude = 0;
+	ItemType spellbookType = WOODEN_SHIELD;
+	bool sustainedSpell = false;
+	auto findSpellDef = ItemTooltips.spellItems.find(spell->ID);
+	if ( findSpellDef != ItemTooltips.spellItems.end() )
+	{
+		sustainedSpell = (findSpellDef->second.spellType == ItemTooltips_t::SpellItemTypes::SPELL_TYPE_SELF_SUSTAIN);
+	}
+	int oldMP = caster->getMP();
 	if ( !using_magicstaff && !trap && stat )
 	{
 		newbie = isSpellcasterBeginner(player, caster);
 
 		if ( usingSpellbook && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
 		{
+			spellbookType = stat->shield->type;
 			spellBookBeatitude = stat->shield->beatitude;
 			spellBookBonusPercent += getSpellbookBonusPercent(caster, stat, stat->shield);
 			if ( spellcasting >= spell->difficulty || playerLearnedSpellbook(player, stat->shield) )
@@ -435,6 +445,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				magiccost = cast_animation[player].mana_left;
 			}
+
 			caster->drainMP(magiccost, false);
 		}
 		else // Calculate the cost of the Spell for Multiplayer
@@ -474,7 +485,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 		if ( multiplayer != CLIENT )
 		{
-			if ( caster->behavior == &actPlayer && stat->playerRace == RACE_INSECTOID && stat->appearance == 0 )
+			if ( caster->behavior == &actPlayer && stat->playerRace == RACE_INSECTOID && stat->stat_appearance == 0 )
 			{
 				if ( !achievementObserver.playerAchievements[caster->skill[2]].gastricBypass )
 				{
@@ -512,6 +523,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			caster->drainMP(extramagic);
 		}
 
+		if ( caster->behavior == &actPlayer && sustainedSpell )
+		{
+			players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - stat->MP);
+		}
+
 		bool fizzleSpell = false;
 		chance = local_rng.rand() % 10;
 		if ( chance >= spellcastingAbility / 10 )
@@ -543,16 +559,48 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( usingSpellbook && stat->shield && itemCategory(stat->shield) == SPELLBOOK 
 					&& (stat->shield->beatitude < 0 && !shouldInvertEquipmentBeatitude(stat)) )
 				{
+					Status oldStatus = stat->shield->status;
 					caster->degradeArmor(*stat, *(stat->shield), 4);
+					if ( stat->shield->status < oldStatus )
+					{
+						if ( player >= 0 )
+						{
+							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_CAST_DEGRADES, stat->shield->type, 1);
+						}
+					}
 					if ( stat->shield->status == BROKEN )
 					{
 						Item* toBreak = stat->shield;
 						consumeItem(toBreak, player);
 					}
 				}
+				if ( player >= 0 )
+				{
+					if ( !using_magicstaff && !trap )
+					{
+						if ( !usingSpellbook )
+						{
+							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELL_FAILURES, SPELL_ITEM, 1, false, spell->ID);
+							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_SPELL_FIZZLES_RUN, "memorized", 1);
+						}
+						else if ( usingSpellbook )
+						{
+							if ( items[spellbookType].category == SPELLBOOK )
+							{
+								Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELL_FAILURES, spellbookType, 1);
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_SPELLBOOK_FIZZLES_RUN, "spellbook casting", 1);
+							}
+						}
+					}
+				}
 				return NULL;
 			}
 		}
+	}
+
+	if ( caster->behavior == &actPlayer && sustainedSpell )
+	{
+		players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - stat->MP);
 	}
 
 	//Check if the bugger is levitating.
@@ -864,6 +912,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		{
 			if ( caster->behavior == &actDeathGhost )
 			{
+				Compendium_t::Events_t::eventUpdateMonster(caster->skill[2], Compendium_t::CPDM_GHOST_TELEPORTS, caster, 1);
 				auto& ghost = players[caster->skill[2]]->ghost;
 				int tx = ghost.spawnX;
 				int ty = ghost.spawnY;
@@ -996,6 +1045,20 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					if ( caster->behavior == &actPlayer )
 					{
 						messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3438));
+					}
+				}
+				else
+				{
+					if ( !using_magicstaff && !trap )
+					{
+						if ( usingSpellbook )
+						{
+							Compendium_t::Events_t::eventUpdate(caster->skill[2], Compendium_t::CPDM_SPELL_TARGETS, SPELLBOOK_FEAR, foundTarget);
+						}
+						else
+						{
+							Compendium_t::Events_t::eventUpdate(caster->skill[2], Compendium_t::CPDM_SPELL_TARGETS, SPELL_ITEM, foundTarget, false, SPELL_FEAR);
+						}
 					}
 				}
 			}
@@ -1170,7 +1233,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							nextItemNode = itemNode->next;
 							Entity* itemEntity = (Entity*)itemNode->element;
-							if ( itemEntity && itemEntity->behavior == &actItem && entityDist(itemEntity, caster) < TOUCHRANGE )
+							if ( itemEntity && !itemEntity->flags[INVISIBLE] && itemEntity->behavior == &actItem && entityDist(itemEntity, caster) < TOUCHRANGE )
 							{
 								Item* toSalvage = newItemFromEntity(itemEntity);
 								if ( toSalvage && GenericGUI[i].isItemSalvageable(toSalvage, i) )
@@ -1466,7 +1529,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						}
 					}
 					// spellbook 100-150%, 50 INT = 200%.
-					amount += amount * ((spellBookBonusPercent * 1 / 100.f) + getBonusFromCasterOfSpellElement(caster, nullptr, element, spell ? spell->ID : SPELL_NONE));
+					real_t bonus = ((spellBookBonusPercent * 1 / 100.f) + getBonusFromCasterOfSpellElement(caster, nullptr, element, spell ? spell->ID : SPELL_NONE));
+					amount += amount * bonus;
+					if ( caster && caster->behavior == &actPlayer )
+					{
+						Compendium_t::Events_t::eventUpdateCodex(caster->skill[2], Compendium_t::CPDM_CLASS_PWR_MAX_CASTED, "pwr",
+							(Sint32)(bonus * 100.0));
+					}
 
 					int totalHeal = 0;
 					int oldHP = players[i]->entity->getHP();
@@ -1481,7 +1550,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					totalHeal += std::max(players[i]->entity->getHP() - oldHP, 0);
 					if ( totalHeal > 0 )
 					{
-						spawnDamageGib(players[i]->entity, -totalHeal, DamageGib::DMG_HEAL);
+						spawnDamageGib(players[i]->entity, -totalHeal, DamageGib::DMG_HEAL, DamageGibDisplayType::DMG_GIB_NUMBER, true);
 					}
 					playSoundEntity(caster, 168, 128);
 
@@ -1505,7 +1574,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							totalHeal += heal;
 							if ( heal > 0 )
 							{
-								spawnDamageGib(entity, -heal, DamageGib::DMG_HEAL);
+								spawnDamageGib(entity, -heal, DamageGib::DMG_HEAL, DamageGibDisplayType::DMG_GIB_NUMBER, true);
 							}
 							playSoundEntity(entity, 168, 128);
 							spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
@@ -1514,6 +1583,27 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					if ( totalHeal > 0 )
 					{
 						serverUpdatePlayerGameplayStats(i, STATISTICS_HEAL_BOT, totalHeal);
+						if ( spell && spell->ID > SPELL_NONE )
+						{
+							if ( !using_magicstaff && !trap )
+							{
+								if ( usingSpellbook )
+								{
+									auto find = ItemTooltips.spellItems.find(spell->ID);
+									if ( find != ItemTooltips.spellItems.end() )
+									{
+										if ( find->second.spellbookId >= 0 && find->second.spellbookId < NUMITEMS && items[find->second.spellbookId].category == SPELLBOOK )
+										{
+											Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_SPELL_HEAL, (ItemType)find->second.spellbookId, totalHeal);
+										}
+									}
+								}
+								else
+								{
+									Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_SPELL_HEAL, SPELL_ITEM, totalHeal, false, spell->ID);
+								}
+							}
+						}
 					}
 					break;
 				}
@@ -1960,6 +2050,42 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			//Also refactor the duration determining code.
 		}
+		else if ( !strcmp(element->element_internal_name, spellElement_slime_spray.element_internal_name) )
+		{
+			int particle = -1;
+			switch ( spell->ID )
+			{
+			case SPELL_SLIME_ACID:
+				particle = 180;
+				break;
+			case SPELL_SLIME_WATER:
+				particle = 181;
+				break;
+			case SPELL_SLIME_FIRE:
+				particle = 182;
+				break;
+			case SPELL_SLIME_TAR:
+				particle = 183;
+				break;
+			case SPELL_SLIME_METAL:
+				particle = 184;
+				break;
+			default:
+				break;
+			}
+			if ( particle >= 0 )
+			{
+				Entity* spellTimer = createParticleTimer(caster, 30, -1);
+				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_MAGIC_SPRAY;
+				spellTimer->particleTimerCountdownSprite = particle;
+				result = spellTimer;
+				if ( !(caster && caster->behavior == &actMonster && caster->getStats() && caster->getStats()->type == SLIME) )
+				{
+					// spawn these if not a slime doing its special attack, client spawns own particles
+					serverSpawnMiscParticles(caster, PARTICLE_EFFECT_SLIME_SPRAY, particle);
+				}
+			}
+		}
 		
 		// intentional separate from else/if chain.
 		// disables propulsion if found a marked target.
@@ -2000,9 +2126,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				missileEntity->actmagicCastByMagicstaff = 1;
 			}
-			else if ( usingSpellbook && spellBookBonusPercent > 0 )
+			else if ( usingSpellbook )
 			{
-				missileEntity->actmagicSpellbookBonus = spellBookBonusPercent;
+				missileEntity->actmagicFromSpellbook = 1;
+				if ( spellBookBonusPercent > 0 )
+				{
+					missileEntity->actmagicSpellbookBonus = spellBookBonusPercent;
+				}
 			}
 			Stat* casterStats = caster->getStats();
 			if ( !trap && !using_magicstaff && casterStats && casterStats->EFFECTS[EFF_MAGICAMPLIFY] )
@@ -2128,9 +2258,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				missileEntity->actmagicCastByMagicstaff = 1;
 			}
-			else if ( usingSpellbook && spellBookBonusPercent > 0 )
+			else if ( usingSpellbook )
 			{
-				missileEntity->actmagicSpellbookBonus = spellBookBonusPercent;
+				missileEntity->actmagicFromSpellbook = 1;
+				if ( spellBookBonusPercent > 0 )
+				{
+					missileEntity->actmagicSpellbookBonus = spellBookBonusPercent;
+				}
 			}
 			node = list_AddNodeFirst(&missileEntity->children);
 			node->element = copySpell(spell);
@@ -2165,9 +2299,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				entity1->actmagicCastByMagicstaff = 1;
 			}
-			else if ( usingSpellbook && spellBookBonusPercent > 0 )
+			else if ( usingSpellbook )
 			{
-				entity1->actmagicSpellbookBonus = spellBookBonusPercent;
+				entity1->actmagicFromSpellbook = 1;
+				if ( spellBookBonusPercent > 0 )
+				{
+					entity1->actmagicSpellbookBonus = spellBookBonusPercent;
+				}
 			}
 			node = list_AddNodeFirst(&entity1->children);
 			node->element = copySpell(spell);
@@ -2198,9 +2336,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				entity2->actmagicCastByMagicstaff = 1;
 			}
-			else if ( usingSpellbook && spellBookBonusPercent > 0 )
+			else if ( usingSpellbook )
 			{
-				entity2->actmagicSpellbookBonus = spellBookBonusPercent;
+				entity2->actmagicFromSpellbook = 1;
+				if ( spellBookBonusPercent > 0 )
+				{
+					entity2->actmagicSpellbookBonus = spellBookBonusPercent;
+				}
 			}
 			node = list_AddNodeFirst(&entity2->children);
 			node->element = copySpell(spell);
@@ -2444,6 +2586,30 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	//Random chance to level up spellcasting skill.
 	if ( !trap )
 	{
+		if ( player >= 0 )
+		{
+			if ( !using_magicstaff )
+			{
+				if ( !usingSpellbook )
+				{
+					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_SPELL_CASTS_RUN, "memorized", 1);
+					Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELL_CASTS, SPELL_ITEM, 1, false, spell->ID);
+				}
+				else if ( usingSpellbook )
+				{
+					if ( items[spellbookType].category == SPELLBOOK )
+					{
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_SPELLBOOK_CASTS_RUN, "spellbook casting", 1);
+						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_CASTS, spellbookType, 1);
+
+						if ( items[spellbookType].hasAttribute("SPELLBOOK_CAST_BONUS") )
+						{
+							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_PWR_MAX_SPELLBOOK, "pwr", spellBookBonusPercent);
+						}
+					}
+				}
+			}
+		}
 		if ( using_magicstaff )
 		{
 			if ( stat )
@@ -2556,21 +2722,46 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 				}
 
-
+				bool sustainedChance = players[caster->skill[2]]->mechanics.sustainedSpellLevelChance();
 				if ( spellCastChance > 0 && (local_rng.rand() % spellCastChance == 0) )
 				{
-					caster->increaseSkill(PRO_SPELLCASTING);
+					if ( sustainedSpell && caster->behavior == &actPlayer )
+					{
+						if ( sustainedChance )
+						{
+							players[caster->skill[2]]->mechanics.sustainedSpellMPUsed = 0;
+
+							caster->increaseSkill(PRO_SPELLCASTING);
+						}
+					}
+					else
+					{
+						caster->increaseSkill(PRO_SPELLCASTING);
+					}
 				}
 
 				bool magicIncreased = false;
 				if ( magicChance > 0 && (local_rng.rand() % magicChance == 0) )
 				{
-					caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
-					magicIncreased = true;
+					if ( sustainedSpell && caster->behavior == &actPlayer )
+					{
+						if ( sustainedChance )
+						{
+							players[caster->skill[2]]->mechanics.sustainedSpellMPUsed = 0;
+
+							caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
+							magicIncreased = true;
+						}
+					}
+					else
+					{
+						caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
+						magicIncreased = true;
+					}
 				}
 				if ( magicIncreased && usingSpellbook && caster->behavior == &actPlayer )
 				{
-					if ( stats[caster->skill[2]] && stats[caster->skill[2]]->playerRace == RACE_INSECTOID && stats[caster->skill[2]]->appearance == 0 )
+					if ( stats[caster->skill[2]] && stats[caster->skill[2]]->playerRace == RACE_INSECTOID && stats[caster->skill[2]]->stat_appearance == 0 )
 					{
 						steamStatisticUpdateClient(caster->skill[2], STEAM_STAT_BOOKWORM, STEAM_STAT_INT, 1);
 					}
@@ -2586,7 +2777,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		{
 			chance = 16;
 
-			if ( caster && caster->behavior == &actPlayer && stat->playerRace == RACE_GOBLIN && stat->appearance == 0 )
+			if ( caster && caster->behavior == &actPlayer && stat->playerRace == RACE_GOBLIN && stat->stat_appearance == 0 )
 			{
 				if ( spell->ID >= 30 && spell->ID < 60 )
 				{
@@ -2605,17 +2796,67 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		{
 			chance = 1; // cursed books always degrade, or blessed books in succubus/incubus
 		}
-		if ( local_rng.rand() % chance == 0 && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
+		else
 		{
-			caster->degradeArmor(*stat, *(stat->shield), 4);
-			if ( stat->shield->status == BROKEN && player >= 0 )
+			if ( caster && caster->behavior == &actPlayer )
 			{
-				if ( caster && caster->behavior == &actPlayer && stat->playerRace == RACE_GOBLIN && stat->appearance == 0 )
+				if ( stat->shield && itemCategory(stat->shield) == SPELLBOOK )
 				{
-					steamStatisticUpdateClient(player, STEAM_STAT_DYSLEXIA, STEAM_STAT_INT, 1);
+					if ( !players[caster->skill[2]]->mechanics.itemDegradeRoll(stat->shield) )
+					{
+						chance = 0;
+					}
 				}
-				Item* toBreak = stat->shield;
-				consumeItem(toBreak, player);
+			}
+		}
+		if ( chance > 0 && local_rng.rand() % chance == 0 && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
+		{
+			Status oldStatus = stat->shield->status;
+			if ( caster && caster->behavior == &actPlayer )
+			{
+				players[caster->skill[2]]->mechanics.onItemDegrade(stat->shield);
+			}
+			if ( oldStatus == DECREPIT && stat->shield->beatitude > 0 && caster && caster->behavior == &actPlayer )
+			{
+				--stat->shield->beatitude;
+				if ( caster->skill[2] >= 0 )
+				{
+					messagePlayer(caster->skill[2], MESSAGE_EQUIPMENT, Language::get(6308), stat->shield->getName());
+				}
+
+				if ( multiplayer == SERVER && caster->skill[2] > 0 )
+				{
+					strcpy((char*)net_packet->data, "BEAT");
+					net_packet->data[4] = caster->skill[2];
+					net_packet->data[5] = 5; // shield index
+					net_packet->data[6] = stat->shield->beatitude + 100;
+					SDLNet_Write16((Sint16)stat->shield->type, &net_packet->data[7]);
+					net_packet->address.host = net_clients[caster->skill[2] - 1].host;
+					net_packet->address.port = net_clients[caster->skill[2] - 1].port;
+					net_packet->len = 9;
+					sendPacketSafe(net_sock, -1, net_packet, caster->skill[2] - 1);
+				}
+			}
+			else
+			{
+				caster->degradeArmor(*stat, *(stat->shield), 4);
+				if ( stat->shield->status < oldStatus )
+				{
+					if ( player >= 0 )
+					{
+						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_CAST_DEGRADES, stat->shield->type, 1);
+					}
+				}
+
+				if ( stat->shield->status == BROKEN && player >= 0 )
+				{
+					if ( caster && caster->behavior == &actPlayer && stat->playerRace == RACE_GOBLIN && stat->stat_appearance == 0 )
+					{
+						steamStatisticUpdateClient(player, STEAM_STAT_DYSLEXIA, STEAM_STAT_INT, 1);
+					}
+					Item* toBreak = stat->shield;
+					consumeItem(toBreak, player);
+				}
 			}
 		}
 	}
@@ -2697,6 +2938,10 @@ int spellGetCastSound(spell_t* spell)
 	{
 		return 169;
 	}
+	else if ( spell->ID >= SPELL_SLIME_ACID && spell->ID <= SPELL_SLIME_METAL )
+	{
+		return 0;
+	}
 	else
 	{
 		return 169;
@@ -2712,23 +2957,23 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellI
 	}
 
 	// player races:
-	if ( stat.playerRace == RACE_INSECTOID && stat.appearance == 0 && (spellID == SPELL_DASH || spellID == SPELL_FLUTTER || spellID == SPELL_ACID_SPRAY) )
+	if ( stat.playerRace == RACE_INSECTOID && stat.stat_appearance == 0 && (spellID == SPELL_DASH || spellID == SPELL_FLUTTER || spellID == SPELL_ACID_SPRAY) )
 	{
 		return true;
 	}
-	else if ( stat.playerRace == RACE_VAMPIRE && stat.appearance == 0 && (spellID == SPELL_LEVITATION || spellID == SPELL_BLEED) )
+	else if ( stat.playerRace == RACE_VAMPIRE && stat.stat_appearance == 0 && (spellID == SPELL_LEVITATION || spellID == SPELL_BLEED) )
 	{
 		return true;
 	}
-	else if ( stat.playerRace == RACE_SUCCUBUS && stat.appearance == 0 && (spellID == SPELL_TELEPORTATION || spellID == SPELL_SELF_POLYMORPH) )
+	else if ( stat.playerRace == RACE_SUCCUBUS && stat.stat_appearance == 0 && (spellID == SPELL_TELEPORTATION || spellID == SPELL_SELF_POLYMORPH) )
 	{
 		return true;
 	}
-	else if ( stat.playerRace == RACE_INCUBUS && stat.appearance == 0 && (spellID == SPELL_TELEPORTATION || spellID == SPELL_SHADOW_TAG) )
+	else if ( stat.playerRace == RACE_INCUBUS && stat.stat_appearance == 0 && (spellID == SPELL_TELEPORTATION || spellID == SPELL_SHADOW_TAG) )
 	{
 		return true;
 	}
-	else if ( stat.playerRace == RACE_AUTOMATON && stat.appearance == 0 && (spellID == SPELL_SALVAGE) )
+	else if ( stat.playerRace == RACE_AUTOMATON && stat.stat_appearance == 0 && (spellID == SPELL_SALVAGE) )
 	{
 		return true;
 	}

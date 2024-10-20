@@ -52,16 +52,27 @@ bool initSoundEngine()
     FMOD_SPEAKERMODE speakerMode{};
     fmod_system->getSoftwareFormat(&sampleRate, &speakerMode, &numRawSpeakers);
     fmod_system->setSoftwareFormat(sampleRate, fmod_speakermode, numRawSpeakers);
+	FMOD_ADVANCEDSETTINGS settings{};
+	settings.cbSize = sizeof(FMOD_ADVANCEDSETTINGS);
+	settings.vol0virtualvol = 0.001;
+	fmod_system->setAdvancedSettings(&settings);
+
+	// default 64
+	fmod_system->setSoftwareChannels(32);
 
 	if (!no_sound)
 	{
-		fmod_result = fmod_system->init(fmod_maxchannels, FMOD_INIT_NORMAL | FMOD_INIT_3D_RIGHTHANDED, fmod_extraDriverData);
+		fmod_result = fmod_system->init(fmod_maxchannels, FMOD_INIT_NORMAL | FMOD_INIT_3D_RIGHTHANDED | FMOD_INIT_VOL0_BECOMES_VIRTUAL | FMOD_INIT_STREAM_FROM_UPDATE| FMOD_INIT_THREAD_UNSAFE/* | FMOD_INIT_PROFILE_ENABLE */ , fmod_extraDriverData);
 		if (FMODErrorCheck())
 		{
 			printlog("[FMOD]: Failed to initialize FMOD. DISABLING AUDIO.\n");
 			no_sound = true;
 			return false;
 		}
+
+#ifndef NDEBUG
+		//FMOD::Debug_Initialize(FMOD_DEBUG_LEVEL_WARNING | FMOD_DEBUG_TYPE_MEMORY);
+#endif
 
 		int selected_driver = 0;
 		int numDrivers = 0;
@@ -194,7 +205,12 @@ int loadSoundResources(real_t base_load_percent, real_t top_load_percent)
 	{
 		fp->gets2(name, 128);
 		completePath(full_path, name);
-		fmod_result = fmod_system->createSound(full_path, (FMOD_DEFAULT | FMOD_3D), nullptr, &sounds[c]);
+		FMOD_MODE flags = FMOD_DEFAULT | FMOD_3D | FMOD_LOWMEM;
+		if ( c == 133 || c == 672 || c == 135 || c == 155 || c == 149 )
+		{
+			flags |= FMOD_LOOP_NORMAL;
+		}
+		fmod_result = fmod_system->createSound(full_path, flags, nullptr, &sounds[c]);
 		if (FMODErrorCheck())
 		{
 			printlog("warning: failed to load '%s' listed at line %d in sounds.txt\n", full_path, c + 1);

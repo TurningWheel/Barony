@@ -23,6 +23,7 @@
 #include "magic/magic.hpp"
 #include "paths.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -756,7 +757,8 @@ void actThrown(Entity* my)
 								enemyAC *= .5;
 							}
 
-							real_t targetACEffectiveness = Entity::getACEffectiveness(hit.entity, hitstats, hit.entity->behavior == &actPlayer, parent, parentStats);
+							int numBlessings = 0;
+							real_t targetACEffectiveness = Entity::getACEffectiveness(hit.entity, hitstats, hit.entity->behavior == &actPlayer, parent, parentStats, numBlessings);
 							int attackAfterReductions = static_cast<int>(std::max(0.0, ((damage * targetACEffectiveness - enemyAC))) + (1.0 - targetACEffectiveness) * damage);
 							damage = attackAfterReductions;
 						}
@@ -811,8 +813,40 @@ void actThrown(Entity* my)
 				char whatever[256] = "";
 				if ( !friendlyHit )
 				{
+					Sint32 oldHP = hitstats->HP;
 					hit.entity->modHP(-damage);
+
+					if ( hit.entity->behavior == &actPlayer )
+					{
+						Compendium_t::Events_t::eventUpdateCodex(hit.entity->skill[2], Compendium_t::CPDM_HP_MOST_DMG_LOST_ONE_HIT, "hp", oldHP - hitstats->HP);
+					}
+					if ( parent && parent->behavior == &actPlayer )
+					{
+						Compendium_t::Events_t::eventUpdate(parent->skill[2], 
+							Compendium_t::CPDM_DMG_MAX, item->type, damage);
+						if ( oldHP > hitstats->HP )
+						{
+							Compendium_t::Events_t::eventUpdate(parent->skill[2],
+								Compendium_t::CPDM_THROWN_DMG_TOTAL, item->type, oldHP - hitstats->HP);
+						}
+						if ( cat == THROWN )
+						{
+							if ( oldHP > hitstats->HP )
+							{
+								Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_THROWN_DMG_TOTAL, "thrown", oldHP - hitstats->HP);
+								Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_THROWN_TOTAL_HITS, "thrown", 1);
+								Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_CLASS_THROWN_HITS_RUN, "thrown", 1);
+							}
+						}
+					}
 				}
+
+				if ( parent && parent->behavior == &actPlayer )
+				{
+					Compendium_t::Events_t::eventUpdate(parent->skill[2],
+						Compendium_t::CPDM_THROWN_HITS, item->type, 1);
+				}
+
 				// set the obituary
 				snprintf(whatever, 255, Language::get(1508), itemname);
 				hit.entity->setObituary(whatever);
@@ -826,7 +860,7 @@ void actThrown(Entity* my)
 				bool disableAlertBlindStatus = false;
 				bool ignorePotion = false;
 				bool wasPotion = itemCategory(item) == POTION;
-				bool wasBoomerang = item->type == BOOMERANG;
+				ItemType itemType = item->type;
 				bool wasConfused = (hitstats && hitstats->EFFECTS[EFF_CONFUSED]);
 				bool healingPotion = false;
 
@@ -904,7 +938,6 @@ void actThrown(Entity* my)
 						{
 							parent->increaseSkill(PRO_ALCHEMY);
 						}
-						ItemType itemType = item->type;
 						switch ( itemType )
 						{
 							case POTION_WATER:
@@ -930,6 +963,15 @@ void actThrown(Entity* my)
 												parent->increaseSkill(PRO_LEADERSHIP);
 												messagePlayerMonsterEvent(parent->skill[2], makeColorRGB(0, 255, 0), 
 													*hitstats, Language::get(3252), Language::get(3251), MSG_COMBAT);
+												if ( hit.entity->monsterAllyIndex != parent->skill[2] )
+												{
+													Compendium_t::Events_t::eventUpdateMonster(parent->skill[2], Compendium_t::CPDM_RECRUITED, hit.entity, 1);
+													Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_RACE_RECRUITS, "races", 1);
+													if ( hitstats->type == HUMAN && hitstats->getAttribute("special_npc") == "merlin" )
+													{
+														Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_MERLINS, "magicians guild", 1);
+													}
+												}
 												hit.entity->monsterAllyIndex = parent->skill[2];
 												if ( multiplayer == SERVER )
 												{
@@ -1177,7 +1219,7 @@ void actThrown(Entity* my)
 							steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_BOMBARDIER, STEAM_STAT_INT, 1);
 						}
 					}
-					if ( wasBoomerang )
+					if ( itemType == BOOMERANG )
 					{
 						if ( parent && parent->behavior == &actPlayer && hit.entity->behavior == &actMonster )
 						{
@@ -1318,6 +1360,25 @@ void actThrown(Entity* my)
 				{
 					parent->awardXP(hit.entity, true, true);
 					spawnBloodVialOnMonsterDeath(hit.entity, hitstats, parent);
+
+					if ( parent->behavior == &actPlayer )
+					{
+						if ( cat == THROWN )
+						{
+							Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_THROWN_KILLS, "thrown", 1);
+						}
+						if ( cat == GEM )
+						{
+							if ( itemType == GEM_ROCK || itemType == GEM_LUCK )
+							{
+								Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_COMBAT_MASONRY_ROCKS, "masons guild", 1);
+							}
+							else
+							{
+								Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_COMBAT_MASONRY_GEMS, "masons guild", 1);
+							}
+						}
+					}
 				}
 
 				bool doAlert = true;
@@ -1509,6 +1570,73 @@ void actThrown(Entity* my)
 									updateEnemyBar(parent, hit.entity, Language::get(675), hit.entity->chestHealth, hit.entity->chestMaxHealth,
 										false, DamageGib::DMG_WEAKEST);
 								}
+							}
+						}
+						else if ( hit.entity->isDamageableCollider() )
+						{
+							int damage = 1;
+							int axe = 0;
+							if ( hit.entity->isColliderResistToSkill(PRO_RANGED) || hit.entity->isColliderWall() )
+							{
+								damage = 1;
+							}
+							else
+							{
+								damage = 2 + local_rng.rand() % 3;
+							}
+							if ( hit.entity->isColliderWeakToSkill(PRO_RANGED) && cat == THROWN )
+							{
+								if ( parent && parent->getStats() )
+								{
+									axe = 2 * (parent->getStats()->getModifiedProficiency(PRO_RANGED) / 20);
+								}
+								axe = std::min(axe, 9);
+							}
+							damage += axe;
+							if ( my->thrownProjectileCharge >= 1 )
+							{
+								damage += my->thrownProjectileCharge / 5;
+							}
+
+							int& entityHP = hit.entity->colliderCurrentHP;
+							int oldHP = entityHP;
+							entityHP -= damage;
+
+							int sound = 28; //damage.ogg
+							if ( hit.entity->getColliderSfxOnHit() > 0 )
+							{
+								sound = hit.entity->getColliderSfxOnHit();
+							}
+							playSoundEntity(hit.entity, sound, 64);
+
+							if ( entityHP > 0 )
+							{
+								if ( parent && parent->behavior == &actPlayer )
+								{
+									messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, Language::get(hit.entity->getColliderOnHitLangEntry()),
+										Language::get(hit.entity->getColliderLangName()));
+								}
+							}
+							else
+							{
+								entityHP = 0;
+
+								hit.entity->colliderKillerUid = parent ? parent->getUID() : 0;
+								if ( parent && parent->behavior == &actPlayer )
+								{
+									messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(hit.entity->getColliderOnBreakLangEntry()),
+										Language::get(hit.entity->getColliderLangName()));
+									if ( hit.entity->isColliderWall() )
+									{
+										Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_BARRIER_DESTROYED, "breakable barriers", 1);
+									}
+								}
+							}
+
+							if ( parent )
+							{
+								updateEnemyBar(parent, hit.entity, Language::get(hit.entity->getColliderLangName()), entityHP, hit.entity->colliderMaxHP, false,
+									DamageGib::DMG_DEFAULT);
 							}
 						}
 						break;

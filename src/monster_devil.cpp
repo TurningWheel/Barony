@@ -693,6 +693,8 @@ bool Entity::devilSummonMonster(Entity* summonOnEntity, Monster creature, int ra
 		timer->particleTimerVariable1 = creature;
 		timer->particleTimerVariable2 = playerToTarget;
 		serverSpawnMiscParticlesAtLocation(static_cast<Sint16>(chosen.first), static_cast<Sint16>(chosen.second), 0, PARTICLE_EFFECT_DEVIL_SUMMON_MONSTER, 174);
+
+		monsterDevilNumSummons++;
 		return true;
 	}
 	return false;

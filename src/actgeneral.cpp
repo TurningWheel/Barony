@@ -23,6 +23,7 @@
 #include "items.hpp"
 #include "scores.hpp"
 #include "mod_tools.hpp"
+#include "paths.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -604,12 +605,20 @@ bool Entity::isColliderWeakToBoulders() const
 	return colliderDmgType.boulderDestroys;
 }
 
-bool Entity::isColliderWeakToSkill(int proficiency) const
+bool Entity::isColliderWeakToSkill(const int proficiency) const
 {
 	if ( !isDamageableCollider() ) { return false; }
 	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
 	auto& colliderDmgType = EditorEntityData_t::colliderDmgTypes[colliderData.damageCalculationType];
 	return colliderDmgType.proficiencyBonusDamage.find(proficiency) != colliderDmgType.proficiencyBonusDamage.end();
+}
+
+bool Entity::isColliderResistToSkill(const int proficiency) const
+{
+	if ( !isDamageableCollider() ) { return false; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	auto& colliderDmgType = EditorEntityData_t::colliderDmgTypes[colliderData.damageCalculationType];
+	return colliderDmgType.proficiencyResistDamage.find(proficiency) != colliderDmgType.proficiencyResistDamage.end();
 }
 
 bool Entity::isColliderDamageableByMelee() const
@@ -639,6 +648,224 @@ bool Entity::isColliderAttachableToBombs() const
 bool Entity::isDamageableCollider() const 
 { 
 	return behavior == &actColliderDecoration && colliderMaxHP > 0;
+}
+
+bool Entity::isColliderWall() const
+{
+	if ( !isDamageableCollider() ) { return false; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	if ( colliderData.hpbarLookupName.find("_wall") != std::string::npos )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool Entity::isColliderBreakableContainer() const
+{
+	if ( !isDamageableCollider() ) { return false; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	if ( colliderData.damageCalculationType.find("breakable") != std::string::npos )
+	{
+		return true;
+	}
+	return false;
+}
+
+void Entity::colliderOnDestroy()
+{
+	if ( multiplayer == CLIENT ) { return; }
+	flags[PASSABLE] = true;
+
+	Entity* killer = nullptr;
+	if ( colliderKillerUid != 0 )
+	{
+		killer = uidToEntity(colliderKillerUid);
+		if ( killer )
+		{
+			if ( isColliderBreakableContainer() )
+			{
+				Compendium_t::Events_t::eventUpdateWorld(killer->skill[2], Compendium_t::CPDM_CONTAINER_BROKEN, "containers", 1);
+			}
+		}
+	}
+
+	if ( colliderHideMonster != 0 )
+	{
+		int type = colliderHideMonster % 1000;
+		int numSpawns = type == BAT_SMALL ? 2 : 1;
+		int successes = 0;
+		for ( int i = 0; i < numSpawns; ++i )
+		{
+			auto monster = summonMonster((Monster)type, ((int)(x / 16)) * 16 + 8, ((int)(y / 16)) * 16 + 8);
+			if ( monster )
+			{
+				monster->yaw = yaw;
+				monster->lookAtEntity(*monster);
+				monster->monsterLookDir = yaw;
+				if ( Stat* stats = monster->getStats() )
+				{
+					stats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1;
+					if ( stats->type == GHOUL && currentlevel >= 15 )
+					{
+						strcpy(stats->name, "enslaved ghoul");
+						stats->setAttribute("special_npc", "enslaved ghoul");
+					}
+					if ( stats->type == AUTOMATON )
+					{
+						monster->monsterStoreType = 1; // damaged
+					}
+					++successes;
+				}
+				//monster->attack(monster->getAttackPose(), 0, nullptr);
+			}
+		}
+
+		if ( killer )
+		{
+			if ( killer->behavior == &actPlayer )
+			{
+				if ( successes >= 1 )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(killer->skill[2], Compendium_t::CPDM_CONTAINER_MONSTERS, "containers", successes);
+				}
+				if ( successes == 1 )
+				{
+					messagePlayer(killer->skill[2], MESSAGE_INTERACTION, Language::get(6234),
+						getMonsterLocalizedName((Monster)type).c_str(), Language::get(getColliderLangName()));
+				}
+				else if ( successes > 1 )
+				{
+					messagePlayer(killer->skill[2], MESSAGE_INTERACTION, Language::get(6253),
+						getMonsterLocalizedPlural((Monster)type).c_str(), Language::get(getColliderLangName()));
+				}
+			}
+		}
+	}
+	if ( colliderContainedEntity != 0 )
+	{
+		if ( auto entity = uidToEntity(colliderContainedEntity) )
+		{
+			if ( entity->behavior == &actItem || entity->behavior == &actGoldBag )
+			{
+				if ( entity->flags[INVISIBLE] )
+				{
+					if ( entity->behavior == &actGoldBag )
+					{
+						entity->vel_x = (0.25 + .025 * (local_rng.rand() % 11)) * cos(entity->yaw);
+						entity->vel_y = (0.25 + .025 * (local_rng.rand() % 11)) * sin(entity->yaw);
+						entity->vel_z = (-40 - local_rng.rand() % 10) * .01;
+						entity->goldBouncing = 0;
+						entity->z = 0.0 - (local_rng.rand() % 3);
+						entity->flags[INVISIBLE] = false;
+
+						if ( multiplayer == SERVER )
+						{
+							for ( int i = 1; i < MAXPLAYERS; ++i )
+							{
+								if ( !client_disconnected[i] )
+								{
+									strcpy((char*)net_packet->data, "BREK");
+									SDLNet_Write32(static_cast<Uint32>(entity->getUID()), &net_packet->data[4]);
+									net_packet->address.host = net_clients[i - 1].host;
+									net_packet->address.port = net_clients[i - 1].port;
+									net_packet->len = 8;
+									sendPacketSafe(net_sock, -1, net_packet, i - 1);
+								}
+							}
+						}
+
+						int totalGold = entity->goldAmount;
+
+						// find other matching gold piles
+						auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(entity, 2);
+						for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+						{
+							list_t* currentList = *it;
+							node_t* node;
+							for ( node = currentList->first; node != nullptr; node = node->next )
+							{
+								Entity* ent = (Entity*)node->element;
+								if ( ent && ent->behavior == &actGoldBag && ent != entity && ent->goldInContainer != 0
+									&& ent->goldInContainer == entity->goldInContainer )
+								{
+									ent->vel_x = (0.25 + .025 * (local_rng.rand() % 11)) * cos(ent->yaw);
+									ent->vel_y = (0.25 + .025 * (local_rng.rand() % 11)) * sin(ent->yaw);
+									ent->vel_z = (-40 - local_rng.rand() % 10) * .01;
+									ent->goldBouncing = 0;
+									ent->goldInContainer = 0;
+									ent->z = 0.0 - (local_rng.rand() % 3);
+									ent->flags[INVISIBLE] = false;
+
+									if ( multiplayer == SERVER )
+									{
+										for ( int i = 1; i < MAXPLAYERS; ++i )
+										{
+											if ( !client_disconnected[i] )
+											{
+												strcpy((char*)net_packet->data, "BREK");
+												SDLNet_Write32(static_cast<Uint32>(ent->getUID()), &net_packet->data[4]);
+												net_packet->address.host = net_clients[i - 1].host;
+												net_packet->address.port = net_clients[i - 1].port;
+												net_packet->len = 8;
+												sendPacketSafe(net_sock, -1, net_packet, i - 1);
+											}
+										}
+									}
+
+									totalGold += ent->goldAmount;
+								}
+							}
+						}
+						if ( totalGold > 0 && killer )
+						{
+							if ( killer->behavior == &actPlayer )
+							{
+								Compendium_t::Events_t::eventUpdateWorld(killer->skill[2], Compendium_t::CPDM_CONTAINER_GOLD, "containers", totalGold);
+							}
+						}
+						entity->goldInContainer = 0;
+					}
+					else if ( entity->behavior == &actItem )
+					{
+						//entity->flags[UPDATENEEDED] = true;
+						entity->vel_x = (0.25 + .025 * (local_rng.rand() % 11)) * cos(entity->yaw);
+						entity->vel_y = (0.25 + .025 * (local_rng.rand() % 11)) * sin(entity->yaw);
+						entity->vel_z = (-40 - local_rng.rand() % 5) * .01;
+						entity->itemContainer = 0;
+						entity->z = 0.0;
+						entity->itemNotMoving = 0;
+						entity->itemNotMovingClient = 0;
+						entity->flags[USERFLAG1] = false; // enable collision
+
+						if ( multiplayer == SERVER )
+						{
+							for ( int i = 1; i < MAXPLAYERS; ++i )
+							{
+								if ( !client_disconnected[i] )
+								{
+									strcpy((char*)net_packet->data, "BREK");
+									SDLNet_Write32(static_cast<Uint32>(entity->getUID()), &net_packet->data[4]);
+									net_packet->address.host = net_clients[i - 1].host;
+									net_packet->address.port = net_clients[i - 1].port;
+									net_packet->len = 8;
+									sendPacketSafe(net_sock, -1, net_packet, i - 1);
+								}
+							}
+						}
+
+						if ( killer )
+						{
+							if ( killer->behavior == &actPlayer )
+							{
+								Compendium_t::Events_t::eventUpdateWorld(killer->skill[2], Compendium_t::CPDM_CONTAINER_ITEMS, "containers", 1);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 int Entity::getColliderLangName() const
@@ -673,7 +900,8 @@ int Entity::getColliderSfxOnBreak() const
 {
 	if ( !isDamageableCollider() ) { return 0; }
 	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
-	return colliderData.sfxBreak;
+	if ( colliderData.sfxBreak.size() == 0 ) { return 0; }
+	return colliderData.sfxBreak[local_rng.rand() % colliderData.sfxBreak.size()];
 }
 
 void actColliderDecoration(Entity* my)
@@ -700,7 +928,11 @@ void actColliderDecoration(Entity* my)
 			}
 			if ( colliderDmgType.minotaurPathThroughAndBreak )
 			{
-				my->colliderHasCollision = 2;
+				my->colliderHasCollision |= EditorEntityData_t::COLLIDER_COLLISION_FLAG_MINO;
+			}
+			if ( colliderDmgType.allowNPCPathing )
+			{
+				my->colliderHasCollision |= EditorEntityData_t::COLLIDER_COLLISION_FLAG_NPC;
 			}
 		}
 	}
@@ -739,6 +971,8 @@ void actColliderDecoration(Entity* my)
 		}
 	}
 
+
+
 	if ( my->isDamageableCollider() )
 	{
 		if ( my->ticks == 1 )
@@ -746,54 +980,162 @@ void actColliderDecoration(Entity* my)
 			my->createWorldUITooltip();
 		}
 
-		auto& colliderData = EditorEntityData_t::colliderData[my->colliderDamageTypes];
-		if ( my->flags[BURNING] && my->flags[BURNABLE] )
+		if ( multiplayer != CLIENT )
 		{
-			if ( ticks % 30 == 0 )
+			auto& colliderData = EditorEntityData_t::colliderData[my->colliderDamageTypes];
+			if ( my->flags[BURNING] && my->flags[BURNABLE] )
 			{
-				my->colliderCurrentHP--;
-			}
-		}
-
-		my->colliderOldHP = my->colliderCurrentHP;
-
-		if ( my->colliderCurrentHP <= 0 )
-		{
-			int sprite = colliderData.gib;
-			if ( sprite > 0 )
-			{
-				createParticleRock(my, sprite);
-				if ( multiplayer == SERVER )
+				if ( ticks % 30 == 0 )
 				{
-					serverSpawnMiscParticles(my, PARTICLE_EFFECT_ABILITY_ROCK, sprite);
+					my->colliderCurrentHP--;
+					if ( my->colliderCurrentHP <= 0 )
+					{
+						my->colliderKillerUid = 0;
+					}
 				}
 			}
-			if ( colliderData.sfxBreak > 0 )
+
+			my->colliderOldHP = my->colliderCurrentHP;
+
+			if ( my->colliderCurrentHP > 0 )
 			{
-				playSoundEntity(my, colliderData.sfxBreak, 128);
+				if ( my->colliderHideMonster >= 1000 ) // summon a monster when player is near
+				{
+					Entity* found = nullptr;
+					if ( ticks % TICKS_PER_SECOND == 0 )
+					{
+						auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+						for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !found; ++it )
+						{
+							list_t* currentList = *it;
+							node_t* node;
+							for ( node = currentList->first; node != nullptr; node = node->next )
+							{
+								Entity* entity = (Entity*)node->element;
+								if ( entity && (entity->behavior == &actPlayer || (entity->behavior == &actMonster && entity->monsterAllyGetPlayerLeader())) )
+								{
+									real_t tangent = atan2(entity->y - my->y, entity->x - my->x);
+									lineTraceTarget(my, my->x, my->y, tangent, 32.0, 0, false, entity);
+									if ( hit.entity == entity )
+									{
+										found = entity;
+										break;
+									}
+								}
+							}
+						}
+					}
+
+					if ( found )
+					{
+						int type = my->colliderHideMonster % 1000;
+						my->colliderHideMonster = 0;
+						bool bOldFlag = my->flags[PASSABLE];
+						my->flags[PASSABLE] = true;
+
+						int numSpawns = type == BAT_SMALL ? 2 : 1;
+						int successes = 0;
+						for ( int i = 0; i < numSpawns; ++i )
+						{
+							auto monster = summonMonster((Monster)type, ((int)(my->x / 16)) * 16 + 8, ((int)(my->y / 16)) * 16 + 8);
+							if ( monster )
+							{
+								monster->yaw = my->yaw;
+								monster->lookAtEntity(*found);
+								if ( monster->checkEnemy(found) )
+								{
+									monster->monsterAcquireAttackTarget(*found, MONSTER_STATE_PATH);
+								}
+								my->colliderCurrentHP = 0;
+								my->colliderKillerUid = 0;
+
+								if ( Stat* stats = monster->getStats() )
+								{
+									stats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1;
+									if ( stats->type == GHOUL && currentlevel >= 15 )
+									{
+										strcpy(stats->name, "enslaved ghoul");
+										stats->setAttribute("special_npc", "enslaved ghoul");
+									}
+									if ( stats->type == AUTOMATON )
+									{
+										monster->monsterStoreType = 1; // damaged
+									}
+									++successes;
+								}
+							}
+						}
+
+						if ( found->behavior == &actPlayer )
+						{
+							if ( successes >= 1 )
+							{
+								Compendium_t::Events_t::eventUpdateWorld(found->skill[2], Compendium_t::CPDM_CONTAINER_MONSTERS, "containers", successes);
+							}
+							if ( successes == 1 )
+							{
+								messagePlayer(found->skill[2], MESSAGE_INTERACTION, Language::get(6234),
+									getMonsterLocalizedName((Monster)type).c_str(), Language::get(my->getColliderLangName()));
+							}
+							else if ( successes > 1 )
+							{
+								messagePlayer(found->skill[2], MESSAGE_INTERACTION, Language::get(6253),
+									getMonsterLocalizedPlural((Monster)type).c_str(), Language::get(my->getColliderLangName()));
+							}
+						}
+
+						my->flags[PASSABLE] = bOldFlag;
+					}
+				}
 			}
-			list_RemoveNode(my->mynode);
-			return;
+			if ( my->colliderCurrentHP <= 0 )
+			{
+				int sprite = colliderData.gib;
+				if ( sprite > 0 )
+				{
+					createParticleRock(my, sprite);
+					if ( multiplayer == SERVER )
+					{
+						serverSpawnMiscParticles(my, PARTICLE_EFFECT_ABILITY_ROCK, sprite);
+					}
+				}
+				playSoundEntity(my, my->getColliderSfxOnBreak(), 128);
+				my->colliderOnDestroy();
+				list_RemoveNode(my->mynode);
+				return;
+			}
 		}
 	}
 }
 
 void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster)
 {
+	auto oldHP = colliderCurrentHP;
 	colliderCurrentHP -= damage; //Decrease object health.
 	if ( caster )
 	{
+		if ( colliderCurrentHP <= 0 )
+		{
+			colliderKillerUid = caster->getUID();
+		}
 		if ( caster->behavior == &actPlayer )
 		{
 			if ( colliderCurrentHP <= 0 )
 			{
-				if ( magicProjectile.behavior == &actBomb )
+				if ( oldHP > 0 )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3617), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(getColliderLangName()));
-				}
-				else
-				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(getColliderLangName()));
+					if ( magicProjectile.behavior == &actBomb )
+					{
+						messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3617), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(getColliderLangName()));
+					}
+					else
+					{
+						messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(getColliderLangName()));
+					}
+					if ( isColliderWall() )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(caster->skill[2], Compendium_t::CPDM_BARRIER_DESTROYED, "breakable barriers", 1);
+					}
 				}
 			}
 			else
@@ -1537,6 +1879,8 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 			if ( result != k_ScriptError )
 			{
 				loadnextlevel = true;
+				Compendium_t::Events_t::previousCurrentLevel = currentlevel;
+				Compendium_t::Events_t::previousSecretlevel = secretlevel;
 				skipLevelsOnLoad = result;
 			}
 		}
@@ -2651,7 +2995,6 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 								}
 							}
 						}
-						statOnlyUpdateNeeded = true;
 					}
 				}
 			}
@@ -3085,8 +3428,8 @@ void TextSourceScript::updateClientInformation(int player, bool clearInventory, 
 		net_packet->data[8] = (Sint8)stats[player]->INT;
 		net_packet->data[9] = (Sint8)stats[player]->PER;
 		net_packet->data[10] = (Sint8)stats[player]->CHR;
-		net_packet->data[11] = (Sint8)stats[player]->EXP;
-		net_packet->data[12] = (Sint8)stats[player]->LVL;
+		net_packet->data[11] = (Uint8)stats[player]->EXP;
+		net_packet->data[12] = (Uint8)stats[player]->LVL;
 		SDLNet_Write16((Sint16)stats[player]->HP, &net_packet->data[13]);
 		SDLNet_Write16((Sint16)stats[player]->MAXHP, &net_packet->data[15]);
 		SDLNet_Write16((Sint16)stats[player]->MP, &net_packet->data[17]);
@@ -3297,6 +3640,1407 @@ void TextSourceScript::parseScriptInMapGeneration(Entity& src)
 					node->element = entityUid;
 					node->size = sizeof(Uint32);
 					*entityUid = entity->getUID();
+				}
+			}
+		}
+	}
+}
+
+void bellAttractMonsters(Entity* my)
+{
+	if ( !my ) { return; }
+
+	auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, decoyBoxRange);
+
+	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+	{
+		list_t* currentList = *it;
+		node_t* node;
+		for ( node = currentList->first; node != nullptr; node = node->next )
+		{
+			Entity* entity = (Entity*)node->element;
+			if ( entity->behavior == &actMonster && entity->monsterAllyGetPlayerLeader() == nullptr )
+			{
+				if ( (entity->monsterState == MONSTER_STATE_WAIT || entity->monsterTarget == 0) )
+				{
+					Stat* myStats = entity->getStats();
+					if ( !entity->isBossMonster() && !entity->monsterIsTinkeringCreation()
+						&& entity->isMobile()
+						&& myStats
+						&& entityDist(my, entity) > TOUCHRANGE )
+					{
+						if ( !myStats->EFFECTS[EFF_DISTRACTED_COOLDOWN]
+							&& entity->monsterSetPathToLocation(my->x / 16, my->y / 16, 1,
+								GeneratePathTypes::GENERATE_PATH_DEFAULT, true) && entity->children.first )
+						{
+							entity->monsterTarget = my->getUID();
+							entity->monsterState = MONSTER_STATE_HUNT; // hunt state
+							serverUpdateEntitySkill(entity, 0);
+							if ( entity->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 5, false) )
+							{
+								spawnFloatingSpriteMisc(134, entity->x + (-4 + local_rng.rand() % 9) + cos(entity->yaw) * 2,
+									entity->y + (-4 + local_rng.rand() % 9) + sin(entity->yaw) * 2, entity->z + local_rng.rand() % 4);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+#define BELL_ACTIVE_TIMER my->skill[0]
+#define BELL_HAS_ITEM my->skill[1]
+#define BELL_AMBIENCE my->skill[3]
+#define BELL_USES my->skill[4]
+#define BELL_CURRENT_EVENT my->skill[5]
+#define BELL_LAST_TOUCHED_PLAYER my->skill[6]
+#define BELL_USE_DELAY my->skill[7]
+#define BELL_INIT my->skill[8]
+#define BELL_CLAPPER_BROKEN my->skill[9]
+#define BELL_BULB_BROKEN my->skill[10]
+#define BELL_BUFF_TYPE my->skill[11]
+#define BELL_BURNING_TIMER my->skill[12]
+#define BELL_PULLED_TO_BREAK my->skill[13]
+
+int getBellDmgOnEntity(Entity* entity)
+{
+	if ( !entity ) { return 0; }
+
+	Stat* stats = entity->getStats();
+	if ( !stats )
+	{
+		return 0;
+	}
+
+	int damage = 80;
+	int trapResist = entity->getFollowerBonusTrapResist();
+	if ( trapResist != 0 )
+	{
+		real_t mult = std::max(0.0, 1.0 - (trapResist / 100.0));
+		damage *= mult;
+	}
+
+	if ( stats->helmet )
+	{
+		bool shapeshifted = (entity->behavior == &actPlayer && entity->effectShapeshift != NOTHING);
+
+		if ( !shapeshifted
+			&& (stats->helmet->type == HELM_MINING || stats->helmet->type == HAT_TOPHAT) )
+		{
+			if ( stats->helmet->type == HAT_TOPHAT )
+			{
+				bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats);
+				if ( stats->helmet->beatitude >= 0 || cursedItemIsBuff )
+				{
+					if ( stats->HP <= damage )
+					{
+						// saved us
+						//steamAchievementEntity(entity, "BARONY_ACH_CRUMPLE_ZONES");
+					}
+					damage = 0;
+				}
+				stats->helmet->status = BROKEN;
+			}
+			else if ( stats->helmet->type == HELM_MINING )
+			{
+				real_t mult = 0.5;
+				bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats);
+				if ( stats->helmet->beatitude >= 0 || cursedItemIsBuff )
+				{
+					mult -= 0.25 * abs(stats->helmet->beatitude);
+					mult = std::max(0.0, mult);
+				}
+				else
+				{
+					mult = 1.0;
+					mult += 0.25 * abs(stats->helmet->beatitude);
+				}
+
+				if ( stats->HP <= damage )
+				{
+					// saved us
+					if ( stats->HP > (damage * mult) )
+					{
+						//steamAchievementEntity(entity, "BARONY_ACH_CRUMPLE_ZONES");
+					}
+				}
+				damage *= mult;
+				if ( stats->helmet->status > BROKEN )
+				{
+					stats->helmet->status = (Status)((int)stats->helmet->status - 1);
+				}
+			}
+
+			playSoundEntity(entity, 76, 64);
+
+			if ( entity->behavior == &actPlayer )
+			{
+				int player = entity->skill[2];
+				if ( stats->helmet->status > BROKEN )
+				{
+					messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(681), stats->helmet->getName());
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(682), stats->helmet->getName());
+				}
+
+				if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
+				{
+					strcpy((char*)net_packet->data, "ARMR");
+					net_packet->data[4] = 0;
+					net_packet->data[5] = stats->helmet->status;
+					net_packet->address.host = net_clients[player - 1].host;
+					net_packet->address.port = net_clients[player - 1].port;
+					net_packet->len = 6;
+					sendPacketSafe(net_sock, -1, net_packet, player - 1);
+				}
+			}
+		}
+	}
+
+	return damage;
+}
+
+void spawnMagicEffectParticlesBell(Entity* my, Uint32 sprite)
+{
+	if ( !my ) { return; }
+	int baseX = my->x / 16;
+	int baseY = my->y / 16;
+
+	real_t posx = baseX * 16.0 + 8;
+	real_t posy = baseY * 16.0 + 8;
+	real_t z = 8.0;
+	const int numParticles = 64;
+	for ( int c = 0; c < numParticles; c++ )
+	{
+		Entity* entity = newEntity(1479, 1, map.entities, nullptr); //Particle entity.
+		entity->x = posx + 24.0 * cos(2 * PI * (c / (real_t)numParticles));
+		entity->y = posy + 24.0 * sin(2 * PI * (c / (real_t)numParticles));
+		entity->z = z;
+		entity->scalex = 0.7;
+		entity->scaley = 0.7;
+		entity->scalez = 0.7;
+		entity->sizex = 1;
+		entity->sizey = 1;
+		entity->yaw = (local_rng.rand() % 360) * PI / 180.f;
+		entity->pitch = (local_rng.rand() % 360) * PI / 180.f;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		entity->flags[INVISIBLE] = true;
+		entity->flags[INVISIBLE_DITHER] = true;
+		entity->lightBonus = vec4(0.25f, 0.25f,
+			0.25f, 0.f);
+		entity->behavior = &actMagicParticle;
+		entity->vel_z = -0.5;
+		if ( multiplayer != CLIENT )
+		{
+			entity_uids--;
+		}
+		entity->setUID(-3);
+	}
+
+	if ( multiplayer == SERVER )
+	{
+		for ( int c = 1; c < MAXPLAYERS; c++ )
+		{
+			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+			{
+				continue;
+			}
+			strcpy((char*)net_packet->data, "MAGB");
+			SDLNet_Write32(my->getUID(), &net_packet->data[4]);
+			SDLNet_Write32(sprite, &net_packet->data[8]);
+			net_packet->address.host = net_clients[c - 1].host;
+			net_packet->address.port = net_clients[c - 1].port;
+			net_packet->len = 12;
+			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+		}
+	}
+}
+
+void bellBreakBulb(Entity* my, bool minotaurBreak)
+{
+	if ( !my ) { return; }
+	if ( BELL_BULB_BROKEN == 1 )
+	{
+		return;
+	}
+	BELL_BULB_BROKEN = 1;
+	if ( minotaurBreak )
+	{
+		BELL_LAST_TOUCHED_PLAYER = -1;
+	}
+
+	Entity* bell = nullptr;
+	for ( node_t* node = my->children.first; node; node = node->next )
+	{
+		if ( node->element != nullptr )
+		{
+			Entity* child = (Entity*)node->element;
+			if ( child )
+			{
+				if ( child->sprite == 1475 && !child->flags[INVISIBLE] ) // bell
+				{
+					bell = child;
+				}
+			}
+		}
+	}
+
+	if ( bell )
+	{
+		bellAttractMonsters(my);
+		auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+		int dir = rng.rand() % 9;
+		if ( dir == 8 )
+		{
+			bell->vel_x = 0.0;
+			bell->vel_y = 0.0;
+		}
+		else
+		{
+			bell->vel_x = 0.25 * cos(my->yaw + dir * PI / 4);
+			bell->vel_y = 0.25 * sin(my->yaw + dir * PI / 4);
+		}
+	}
+
+	serverUpdateEntitySkill(my, 10);
+	playSoundEntity(my, 76, 64);
+
+	if ( minotaurBreak )
+	{
+		playSoundEntity(my, 689, 128);
+		playSoundPlayer(clientnum, 689, 32);
+		if ( multiplayer == SERVER )
+		{
+			for ( int i = 1; i < MAXPLAYERS; ++i )
+			{
+				playSoundPlayer(i, 689, 32);
+			}
+		}
+	}
+
+	if ( BELL_CLAPPER_BROKEN == 0 )
+	{
+		BELL_CLAPPER_BROKEN = 1;
+		serverUpdateEntitySkill(my, 9);
+	}
+}
+
+void actBell(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+
+	enum BellSpriteNotes : int
+	{
+		NOTE_DOUBLE_EIGHTH = 192,
+		NOTE_EIGHTH = 198,
+		NOTE_REST = 199,
+		NOTE_CRASH = 200
+	};
+
+	enum BellEvents : int
+	{
+		BELL_RING_BUFF = 1,
+		BELL_MONSTER,
+		BELL_ITEM,
+		BELL_CLAPPER_BREAK,
+		BELL_CRASH,
+		BELL_NOTHING,
+		BELL_ENUM_END
+	};
+
+	enum BellBuffs
+	{
+		BUFF_STR,
+		BUFF_CON,
+		BUFF_PWR,
+		BUFF_DEX,
+		BUFF_HEAL,
+		BUFF_ENUM_END,
+	};
+
+	auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+	if ( !BELL_INIT )
+	{
+		BELL_INIT = 1;
+
+		{
+			Entity* childEntity = newEntity(1476, 1, map.entities, nullptr); // clapper
+			childEntity->parent = my->getUID();
+			childEntity->x = my->x;
+			childEntity->y = my->y;
+			childEntity->sizex = 2;
+			childEntity->sizey = 2;
+			childEntity->flags[PASSABLE] = true;
+			childEntity->flags[UNCLICKABLE] = false;
+			childEntity->flags[NOUPDATE] = true;
+			childEntity->z = my->z;
+			if ( multiplayer != CLIENT )
+			{
+				entity_uids--;
+			}
+			childEntity->setUID(-3);
+			node_t* tempNode = list_AddNodeLast(&my->children);
+			tempNode->element = childEntity; // add the node to the children list.
+			tempNode->deconstructor = &emptyDeconstructor;
+			tempNode->size = sizeof(Entity*);
+		}
+		{
+			Entity* childEntity = newEntity(1477, 1, map.entities, nullptr); // headstock
+			childEntity->parent = my->getUID();
+			childEntity->x = my->x;
+			childEntity->y = my->y;
+			childEntity->sizex = 4;
+			childEntity->sizey = 4;
+			childEntity->flags[PASSABLE] = true;
+			childEntity->flags[UNCLICKABLE] = false;
+			childEntity->flags[NOUPDATE] = true;
+			childEntity->z = my->z;
+			if ( multiplayer != CLIENT )
+			{
+				entity_uids--;
+			}
+			childEntity->setUID(-3);
+			node_t* tempNode = list_AddNodeLast(&my->children);
+			tempNode->element = childEntity; // add the node to the children list.
+			tempNode->deconstructor = &emptyDeconstructor;
+			tempNode->size = sizeof(Entity*);
+		}
+	}
+
+	if ( my->ticks == 1 )
+	{
+		my->createWorldUITooltip();
+		BELL_LAST_TOUCHED_PLAYER = -1;
+	}
+
+	my->z = 0;
+	static ConsoleVariable<bool> cvar_bell_crash("/bell_crash", false);
+#ifndef NDEBUG
+	if ( keystatus[SDLK_KP_5] && enableDebugKeys )
+	{
+		keystatus[SDLK_KP_5];
+		bellBreakBulb(my, true);
+		//my->yaw += 0.01;
+	}
+#endif // !NDEBUG
+	my->focalx = 4;
+	my->focaly = -6;
+	my->focalz = -10.75;
+
+#ifdef USE_FMOD
+	if ( BELL_AMBIENCE == 0 )
+	{
+		BELL_AMBIENCE--;
+		my->stopEntitySound();
+		my->entity_sound = playSoundEntityLocal(my, 149, 16);
+	}
+	if ( my->entity_sound )
+	{
+		bool playing = false;
+		my->entity_sound->isPlaying(&playing);
+		if ( !playing )
+		{
+			my->entity_sound = nullptr;
+		}
+	}
+#else
+	BELL_AMBIENCE--;
+	if ( BELL_AMBIENCE <= 0 )
+	{
+		BELL_AMBIENCE = TICKS_PER_SECOND * 30;
+		playSoundEntityLocal(my, 149, 16);
+	}
+#endif
+
+	const int pullTimerStart = 100;
+#ifndef NDEBUG
+	if ( keystatus[SDLK_KP_3] && enableDebugKeys )
+	{
+		keystatus[SDLK_KP_3] = 0;
+		BELL_ACTIVE_TIMER = pullTimerStart; // active pull timer
+	}
+
+	if ( keystatus[SDLK_g] && enableDebugKeys && *cvar_bell_crash )
+	{
+		keystatus[SDLK_g] = 0;
+		BELL_CURRENT_EVENT = (BellEvents)(BELL_CURRENT_EVENT + 1);
+		if ( BELL_CURRENT_EVENT >= BELL_ENUM_END )
+		{
+			BELL_CURRENT_EVENT = BELL_RING_BUFF;
+		}
+		messagePlayer(0, MESSAGE_DEBUG, "Bell event: %d", BELL_CURRENT_EVENT);
+	}
+#endif
+
+	if ( multiplayer == CLIENT )
+	{
+		// server encoded current bell event into the timer, separate it out
+		Sint32 upperbits = (BELL_ACTIVE_TIMER >> 8) & 0xFF;
+		if ( upperbits > 0 )
+		{
+			BELL_CURRENT_EVENT = upperbits;
+		}
+		BELL_ACTIVE_TIMER = (BELL_ACTIVE_TIMER & 0xFF);
+	}
+
+	Entity* touched = nullptr;
+	if ( multiplayer != CLIENT && !my->flags[BURNING] && !my->flags[INVISIBLE] ) // interaction
+	{
+		if ( my->isInteractWithMonster() )
+		{
+			Entity* monsterInteracting = uidToEntity(my->interactedByMonster);
+			if ( monsterInteracting )
+			{
+				my->clearMonsterInteract();
+				if ( BELL_USE_DELAY <= 0 )
+				{
+					touched = monsterInteracting;
+					if ( auto leader = monsterInteracting->monsterAllyGetPlayerLeader() )
+					{
+						BELL_LAST_TOUCHED_PLAYER = leader->skill[2];
+					}
+					else
+					{
+						BELL_LAST_TOUCHED_PLAYER = -1;
+					}
+				}
+			}
+			my->clearMonsterInteract();
+		}
+
+		for ( int i = 0; i < MAXPLAYERS; i++ )
+		{
+			if ( selectedEntity[i] == my || client_selected[i] == my )
+			{
+				if ( inrange[i] && Player::getPlayerInteractEntity(i) )
+				{
+					if ( BELL_USE_DELAY <= 0 )
+					{
+						touched = Player::getPlayerInteractEntity(i);
+						BELL_LAST_TOUCHED_PLAYER = i;
+						Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_BELL_RUNG_TIMES, "bell", 1);
+						break;
+					}
+				}
+			}
+		}
+		if ( touched )
+		{
+			if ( BELL_CURRENT_EVENT == BELL_CRASH 
+				|| BELL_CURRENT_EVENT == BELL_CLAPPER_BREAK
+				|| BELL_CURRENT_EVENT == BELL_NOTHING )
+			{
+				BELL_CURRENT_EVENT = BELL_NOTHING;
+			}
+			else
+			{
+				if ( BELL_CURRENT_EVENT == 0 )
+				{
+					BELL_USES = 3 + rng.rand() % 2;
+					if ( BELL_HAS_ITEM != 0 )
+					{
+						BELL_CURRENT_EVENT = BELL_ITEM;
+						BELL_USES = 2 + rng.rand() % 3;
+					}
+					else
+					{
+						if ( rng.rand() % 4 == 0 )
+						{
+							// bats
+							BELL_CURRENT_EVENT = BELL_MONSTER;
+							BELL_USES = 2 + rng.rand() % 3;
+						}
+						else
+						{
+							BELL_CURRENT_EVENT = BELL_RING_BUFF;
+						}
+					}
+				}
+				else
+				{
+					BELL_CURRENT_EVENT = BELL_RING_BUFF;
+					--BELL_USES;
+
+					if ( *cvar_bell_crash && (svFlags & SV_FLAG_CHEATS) )
+					{
+						BELL_USES = 0;
+						BELL_CURRENT_EVENT = BELL_CRASH;
+					}
+					else if ( BELL_USES <= 0 )
+					{
+						if ( rng.rand() % 5 == 0 )
+						{
+							BELL_CURRENT_EVENT = BELL_CRASH;
+						}
+						else
+						{
+							BELL_CURRENT_EVENT = BELL_CLAPPER_BREAK;
+						}
+					}
+
+					if ( BELL_CURRENT_EVENT == BELL_CRASH )
+					{
+						BELL_PULLED_TO_BREAK = touched->getUID();
+					}
+				}
+			}
+
+			BELL_ACTIVE_TIMER = pullTimerStart;
+			BELL_ACTIVE_TIMER |= (BELL_CURRENT_EVENT << 8);
+			serverUpdateEntitySkill(my, 0);
+			BELL_ACTIVE_TIMER = pullTimerStart;
+			if ( BELL_LAST_TOUCHED_PLAYER >= 0 )
+			{
+				messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6268));
+			}
+
+			if ( BELL_CURRENT_EVENT == BELL_RING_BUFF )
+			{
+				BELL_USE_DELAY = TICKS_PER_SECOND * 9;
+			}
+			else if ( BELL_CURRENT_EVENT == BELL_NOTHING )
+			{
+				BELL_USE_DELAY = TICKS_PER_SECOND * 3;
+			}
+			else
+			{
+				BELL_USE_DELAY = TICKS_PER_SECOND * 5;
+			}
+			serverUpdateEntitySkill(my, 7); // use delay
+		}
+	}
+	else if ( multiplayer != CLIENT && my->flags[BURNING] )
+	{
+		if ( BELL_BURNING_TIMER == 0 )
+		{
+			BELL_BURNING_TIMER = (1 + local_rng.rand() % 3) * TICKS_PER_SECOND;
+			playSoundEntity(my, 512, 64);
+		}
+		else if ( BELL_BURNING_TIMER > 0 )
+		{
+			BELL_BURNING_TIMER--;
+			if ( BELL_BURNING_TIMER <= 0 )
+			{
+				BELL_BURNING_TIMER = -1;
+				bellBreakBulb(my, true);
+				my->flags[BURNING] = false;
+				my->flags[INVISIBLE] = true;
+				serverUpdateEntitySkill(my, INVISIBLE);
+				serverUpdateEntitySkill(my, BURNING);
+
+				if ( BELL_PULLED_TO_BREAK != 0 )
+				{
+					if ( Entity* puller = uidToEntity(BELL_PULLED_TO_BREAK) )
+					{
+						if ( puller->behavior == &actPlayer )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(puller->skill[2], Compendium_t::CPDM_BELL_BROKEN, "bell", 1);
+							steamStatisticUpdateClient(puller->skill[2], STEAM_STAT_RUNG_OUT, STEAM_STAT_INT, 1);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if ( multiplayer == CLIENT && my->flags[INVISIBLE] && my->flags[BURNING] )
+	{
+		my->flags[BURNING] = false;
+	}
+
+	if ( BELL_USE_DELAY > 0 )
+	{
+		--BELL_USE_DELAY;
+	}
+	if ( BELL_ACTIVE_TIMER == pullTimerStart )
+	{
+		playSoundEntityLocal(my, 688, 64);
+	}
+
+	if ( BELL_ACTIVE_TIMER > 0 )
+	{
+		--BELL_ACTIVE_TIMER;
+	}
+	else
+	{
+		BELL_ACTIVE_TIMER = 0;
+	}
+
+	bool bellEventTriggered = false;
+	bool shortRing = (BELL_CURRENT_EVENT != BELL_RING_BUFF);
+	bool startBellAnim = false;
+	static ConsoleVariable<float> cvar_bell_max_spd("/bell_max_spd", 4.0);
+	static ConsoleVariable<int> cvar_bell_clap_rot("/bell_clap_rot", 245);
+	static ConsoleVariable<int> cvar_bell_anim_tick("/bell_anim_tick", 90);
+	static ConsoleVariable<int> cvar_bell_pull_tick("/bell_pull_tick", 30);
+	static ConsoleVariable<int> cvar_bell_dong1("/bell_dong1", 100);
+	static ConsoleVariable<int> cvar_bell_dong2("/bell_dong2", 140);
+	static ConsoleVariable<int> cvar_bell_dong3("/bell_dong3", 190);
+	if ( my->skill[0] == *cvar_bell_anim_tick )
+	{
+		startBellAnim = true;
+	}
+	const int pullTimerFirstAnim = *cvar_bell_pull_tick;
+	if ( my->skill[0] > pullTimerFirstAnim )
+	{
+		//const int interval = pullTimerStart - pullTimerFirstAnim;
+		//my->focalz += -2 + (interval - (my->skill[0] - pullTimerFirstAnim)) * 2.0 / (interval / 2.0);
+
+		const int interval = pullTimerStart - pullTimerFirstAnim;
+		my->focalz += 2.0 * cos(PI * (interval - (my->skill[0] - pullTimerFirstAnim) / (real_t)interval));
+	}
+	else
+	{
+		//my->focalz += 2.0 * cos((-my->skill[0] + pullTimerFirstAnim) * PI / (real_t)pullTimerFirstAnim);
+		
+		const int interval = pullTimerFirstAnim;
+		my->focalz += -2.0 + 4.0 * cos(1.5 * PI * (interval - my->skill[0]) / (real_t)interval);
+	}
+
+	const real_t baseZ = 0.0;
+
+	Entity* bell = nullptr;
+	Entity* clapper = nullptr;
+	node_t* nextnode = nullptr;
+	static ConsoleVariable<int> cvar_bell_crash_sfx("/bell_crash_sfx", 691);
+	for ( node_t* node = my->children.first; node; node = nextnode )
+	{
+		nextnode = node->next;
+		if ( node->element != nullptr )
+		{
+			Entity* child = (Entity*)node->element;
+			if ( child )
+			{
+				if ( child->sprite == 1475 ) // bell
+				{
+					if ( child->flags[INVISIBLE] )
+					{
+						bell = nullptr;
+						continue;
+					}
+					bell = child;
+					if ( BELL_BULB_BROKEN )
+					{
+						child->vel_z += 0.04;
+						child->z += child->vel_z;
+						child->yaw += 0.15;
+						real_t dist = clipMove(&child->x, &child->y, child->vel_x, child->vel_y, child);
+
+						Entity* collided = nullptr;
+						if ( multiplayer != CLIENT )
+						{
+							Entity* puller = uidToEntity(BELL_PULLED_TO_BREAK);
+							auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(child, 2);
+							for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !collided; ++it )
+							{
+								list_t* currentList = *it;
+								node_t* node;
+								for ( node = currentList->first; node != nullptr && !collided; node = node->next )
+								{
+									Entity* entity = (Entity*)node->element;
+									if ( !entity ) { continue; }
+
+									if ( (entity->behavior == &actMonster && !(entity->getRace() == MIMIC)) 
+										|| entity->behavior == &actPlayer )
+									{
+										Stat* stats = entity->getStats();
+										if ( stats && entityInsideEntity(entity, child) )
+										{
+											if ( !(stats->type == MINOTAUR || child->z >= -16.0) )
+											{
+												continue;
+											}
+
+											if ( child->collisionIgnoreTargets.find(entity->getUID()) != child->collisionIgnoreTargets.end() )
+											{
+												continue;
+											}
+											child->collisionIgnoreTargets.insert(entity->getUID());
+
+											if ( entity->behavior == &actPlayer )
+											{
+												const Uint32 color = makeColorRGB(255, 0, 0);
+												messagePlayerColor(entity->skill[2], MESSAGE_STATUS, color, Language::get(6276));
+												if ( players[entity->skill[2]]->isLocalPlayer() )
+												{
+													cameravars[entity->skill[2]].shakex += .1;
+													cameravars[entity->skill[2]].shakey += 10;
+												}
+												else
+												{
+													if ( entity->skill[2] > 0 )
+													{
+														strcpy((char*)net_packet->data, "SHAK");
+														net_packet->data[4] = 10; // turns into .1
+														net_packet->data[5] = 10;
+														net_packet->address.host = net_clients[entity->skill[2] - 1].host;
+														net_packet->address.port = net_clients[entity->skill[2] - 1].port;
+														net_packet->len = 6;
+														sendPacketSafe(net_sock, -1, net_packet, entity->skill[2] - 1);
+													}
+												}
+											}
+
+											playSoundEntity(entity, 28, 64);
+											Entity* gib = spawnGib(entity);
+											int dmg = getBellDmgOnEntity(entity);
+											Sint32 oldHP = stats->HP;
+											entity->modHP(-dmg);
+											if ( entity->behavior == &actPlayer )
+											{
+												if ( stats->HP < oldHP )
+												{
+													Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_DAMAGE, "bell", oldHP - stats->HP);
+												}
+
+												if ( !puller )
+												{
+													int playertarget = entity->skill[2];
+													if ( playertarget >= 0 && players[playertarget]->isLocalPlayer() )
+													{
+														DamageIndicatorHandler.insert(playertarget, child->x, child->y, stats->HP < oldHP);
+													}
+													else if ( playertarget > 0 && multiplayer == SERVER && !players[playertarget]->isLocalPlayer() )
+													{
+														strcpy((char*)net_packet->data, "DAMI");
+														SDLNet_Write32(child->x, &net_packet->data[4]);
+														SDLNet_Write32(child->y, &net_packet->data[8]);
+														net_packet->data[12] = (stats->HP < oldHP) ? 1 : 0;
+														net_packet->address.host = net_clients[playertarget - 1].host;
+														net_packet->address.port = net_clients[playertarget - 1].port;
+														net_packet->len = 13;
+														sendPacketSafe(net_sock, -1, net_packet, playertarget - 1);
+													}
+												}
+											}
+											entity->setObituary(Language::get(6277));
+											stats->killer = KilledBy::BELL;
+
+											
+											if ( !strcmp(stats->name, "") )
+											{
+												updateEnemyBar(puller, entity, getMonsterLocalizedName(stats->type).c_str(), stats->HP, stats->MAXHP,
+													false, DamageGib::DMG_STRONGEST);
+											}
+											else
+											{
+												updateEnemyBar(puller, entity, stats->name, stats->HP, stats->MAXHP,
+													false, DamageGib::DMG_STRONGEST);
+											}
+
+											if ( stats->HP <= 0 && oldHP > 0 )
+											{
+												if ( entity->behavior == &actPlayer )
+												{
+													Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_KILLED_BY, "bell", 1);
+												}
+												if ( puller && puller != entity )
+												{
+													puller->awardXP(entity, true, true);
+													if ( puller->behavior == &actPlayer )
+													{
+														messagePlayerMonsterEvent(puller->skill[2], makeColorRGB(0, 255, 0), *stats, Language::get(692), Language::get(697), MSG_COMBAT);
+														if ( stats->type == GNOME )
+														{
+															steamAchievementClient(puller->skill[2], "BARONY_ACH_JUBBAITED");
+														}
+													}
+												}
+											}
+
+											if ( stats->type == MINOTAUR )
+											{
+												collided = entity; // break this thing over its head
+											}
+											break;
+										}
+									}
+								}
+							}
+						}
+						if ( child->z >= -3.5 || collided )
+						{
+							if ( multiplayer != CLIENT )
+							{
+								for ( int i = 0; i < 6; ++i )
+								{
+									Entity* dropped = dropItemMonster(newItem(TOOL_METAL_SCRAP, DECREPIT, 0, 2 + rng.rand() % 3, 0, true, nullptr), child, nullptr, 1);
+									if ( dropped )
+									{
+										dropped->z = child->z + child->focalz;
+									}
+								}
+								playSoundEntity(my, *cvar_bell_crash_sfx, 128);
+								playSoundPlayer(clientnum, *cvar_bell_crash_sfx, 32);
+								if ( multiplayer == SERVER )
+								{
+									for ( int i = 1; i < MAXPLAYERS; ++i )
+									{
+										playSoundPlayer(i, *cvar_bell_crash_sfx, 32);
+									}
+								}
+
+								spawnDamageGib(child, NOTE_CRASH, DamageGib::DMG_STRONGEST, DamageGibDisplayType::DMG_GIB_SPRITE, true);
+							}
+							child->flags[INVISIBLE] = true;
+							if ( multiplayer == SERVER )
+							{
+								serverUpdateEntityFlag(child, INVISIBLE);
+							}
+							bell = nullptr;
+						}
+						continue;
+					}
+
+					child->yaw = my->yaw;
+					child->z = baseZ - 22.25;
+					child->focalz = 6;
+					child->x = my->x - 2 * cos(child->yaw);
+					child->y = my->y - 2 * sin(child->yaw);
+
+					Sint32& dongs = child->skill[1];
+					real_t& rotation = child->fskill[1];
+					Sint32& endDamp = child->skill[5];
+
+					Entity* clapper = nullptr;
+					if ( nextnode )
+					{
+						clapper = (Entity*)nextnode->element;
+					}
+					if ( startBellAnim )
+					{
+						// target pitch
+						child->fskill[0] = PI / 8;
+						child->pitch = 0.0;
+						dongs = 0;
+						rotation = 0.0;
+						child->skill[3] = ticks;
+						endDamp = 0;
+
+						if ( clapper && BELL_CLAPPER_BROKEN == 0 )
+						{
+							clapper->pitch = 0.0;
+							clapper->skill[1] = 0; // dongs
+							clapper->skill[4] = 0; // rotation
+							clapper->skill[5] = 0; // end damp
+							clapper->fskill[0] = 0.0;
+						}
+						if ( clapper )
+						{
+							clapper->skill[6] = 0; // clapper active
+						}
+					}
+
+					if ( abs(child->fskill[0]) > 0.0001 )
+					{
+						real_t oldPitch = child->pitch;
+						child->fskill[0] = (1 / (real_t)((1 + std::max(0, (dongs - 1))))) * PI / 8;
+						if ( dongs >= 3 || (shortRing && dongs >= 1) )
+						{
+							endDamp = std::min(endDamp + 1, 100);
+							child->fskill[0] *= (float)(100 - endDamp) / 100.f;
+						}
+
+						if ( (int)(*cvar_bell_max_spd * rotation) >= *cvar_bell_clap_rot )
+						{
+							if ( clapper && clapper->skill[6] == 0 )
+							{
+								if ( BELL_CLAPPER_BROKEN == 0 )
+								{
+									if ( shortRing )
+									{
+										playSoundEntityLocal(my, 689, 128);
+										playSoundPlayer(clientnum, 689, 32);
+									}
+								}
+								bellEventTriggered = true;
+								clapper->skill[6] = 1;
+							}
+						}
+
+						real_t speed = *cvar_bell_max_spd * rotation;
+						child->pitch = child->fskill[0] * sin((speed) * PI / 180.f);
+						if ( child->pitch < -0.0 && oldPitch >= 0.0 )
+						{
+							++dongs;
+						}
+						if ( rotation < 15.0 )
+						{
+							rotation += 0.25;
+						}
+						else
+						{
+							rotation += 1.0;
+						}
+
+						if ( shortRing )
+						{
+							if ( clapper && BELL_CLAPPER_BROKEN == 0 )
+							{
+								if ( (ticks - child->skill[3] == *cvar_bell_dong1) )
+								{
+									spawnDamageGib(child, NOTE_REST, DamageGib::DMG_STRONGEST, DamageGibDisplayType::DMG_GIB_SPRITE);
+								}
+							}
+						}
+						else if ( ((ticks - child->skill[3]) == *cvar_bell_dong1) 
+							|| ((ticks - child->skill[3]) == *cvar_bell_dong2)
+							|| ((ticks - child->skill[3]) == *cvar_bell_dong3) )
+						{
+							if ( clapper && BELL_CLAPPER_BROKEN == 0 )
+							{
+								int vol = 128;
+								if ( (ticks - child->skill[3]) == *cvar_bell_dong2 )
+								{
+									vol = 92;
+								}
+								else if ( ((ticks - child->skill[3]) == *cvar_bell_dong3) )
+								{
+									vol = 64;
+								}
+								playSoundEntity(my, 690, vol);
+								playSoundPlayer(clientnum, 690, vol / 4);
+								spawnDamageGib(child, NOTE_EIGHTH, DamageGib::DMG_STRONGEST, DamageGibDisplayType::DMG_GIB_SPRITE);
+							}
+						}
+					}
+					else
+					{
+						child->pitch = 0.0;
+						child->fskill[0] = 0.0;
+						dongs = 0;
+						rotation = 0.0;
+						endDamp = 0;
+					}
+					while ( child->pitch >= PI )
+					{
+						child->pitch -= PI;
+					}
+					while ( child->pitch < -PI )
+					{
+						child->pitch += PI;
+					}
+				}
+				else if ( child->sprite == 1476 ) // clapper
+				{
+					if ( child->flags[INVISIBLE] )
+					{
+						clapper = nullptr;
+						continue;
+					}
+					child->yaw = my->yaw;
+					clapper = child;
+					if ( BELL_CLAPPER_BROKEN == 1 ) // broken
+					{
+						if ( child->focalz > 5 )
+						{
+							child->z = baseZ - 10;
+						}
+						child->focalz = 0;
+						bool onground = false;
+						real_t groundheight = 7.5;
+						const real_t yawSpeed = 0.2;
+						const real_t pitchSpeed = 0.1;
+						if ( child->z < groundheight )
+						{
+							child->vel_z += 0.04;
+							child->z += child->vel_z;
+							child->pitch += pitchSpeed;
+							child->yaw += yawSpeed;
+						}
+						else
+						{
+							if ( child->x >= 0 && child->y >= 0 && child->x < map.width << 4 && child->y < map.height << 4 )
+							{
+								const int tile = map.tiles[(int)(child->y / 16) * MAPLAYERS + (int)(child->x / 16) * MAPLAYERS * map.height];
+								if ( tile )
+								{
+									onground = true;
+
+									child->vel_z *= -.35; // bounce
+									if ( child->vel_z > -.35 )
+									{
+										child->z = groundheight;
+										child->vel_z = 0.0;
+										child->pitch = -PI / 2;
+									}
+									else
+									{
+										// just bounce off the ground.
+										child->z = groundheight - .0001;
+									}
+								}
+								else
+								{
+									// fall (no ground here)
+									child->vel_z += 0.04;
+									child->z += child->vel_z;
+									child->pitch += pitchSpeed;
+									child->yaw += yawSpeed;
+								}
+							}
+							else
+							{
+								// fall (out of bounds)
+								child->vel_z += 0.04;
+								child->z += child->vel_z;
+								child->pitch += pitchSpeed;
+								child->yaw += yawSpeed;
+							}
+						}
+
+						// falling out of the map
+						if ( child->z > 128 )
+						{
+							child->flags[INVISIBLE] = true;
+							clapper = nullptr;
+						}
+						continue;
+					}
+
+					child->z = baseZ - 20;
+					child->x = my->x - 2 * cos(child->yaw);
+					child->y = my->y - 2 * sin(child->yaw);
+					child->focalz = 10;
+					auto& dongs = child->skill[1];
+					Sint32& rotation = child->skill[4];
+					Sint32& endDamp = child->skill[5];
+					if ( child->skill[6] == 1 )
+					{
+						child->skill[6] = 2;
+						child->fskill[0] = PI / 8;
+					}
+
+					if ( abs(child->fskill[0]) > 0.0001 )
+					{
+						real_t oldPitch = child->pitch;
+						child->fskill[0] = -(1 / (real_t)((1 + std::max(0, (dongs - 1))))) * PI / 8;
+						if ( dongs >= 3 || (shortRing && dongs >= 1) )
+						{
+							endDamp = std::min(endDamp + 1, 100);
+							child->fskill[0] *= (float)(100 - endDamp) / 100.f;
+						}
+						child->pitch = child->fskill[0] * sin((*cvar_bell_max_spd * rotation) * PI / 180.f);
+						if ( child->pitch < -0.0 && oldPitch >= 0.0 )
+						{
+							++dongs;
+						}
+						++rotation;
+					}
+					else
+					{
+						child->pitch = 0.0;
+						child->fskill[0] = 0.0;
+						dongs = 0;
+						rotation = 0;
+						endDamp = 0;
+					}
+
+					while ( child->pitch >= PI )
+					{
+						child->pitch -= PI;
+					}
+					while ( child->pitch < -PI )
+					{
+						child->pitch += PI;
+					}
+				}
+				else if ( child->sprite == 1477 ) // headstock
+				{
+					child->yaw = my->yaw;
+					child->z = baseZ - 21.75;
+				}
+			}
+		}
+	}
+
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+
+	if ( BELL_ACTIVE_TIMER == 1 && BELL_BULB_BROKEN )
+	{
+		messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6274));
+		return;
+	}
+
+	if ( bellEventTriggered )
+	{
+		if ( BELL_BULB_BROKEN )
+		{
+			messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6274));
+			return;
+		}
+		else if ( BELL_CLAPPER_BROKEN )
+		{
+			messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6273));
+			return;
+		}
+
+		if ( BELL_CURRENT_EVENT == BELL_RING_BUFF )
+		{
+			bellAttractMonsters(my);
+			spawnMagicEffectParticlesBell(my, 1479);
+
+			auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+			for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+			{
+				list_t* currentList = *it;
+				node_t* node;
+				for ( node = currentList->first; node != nullptr; node = node->next )
+				{
+					Entity* entity = (Entity*)node->element;
+					if ( (entity->behavior == &actMonster && !(entity->getRace() == MIMIC))
+						|| entity->behavior == &actPlayer )
+					{
+						if ( entityDist(my, entity) <= 26.0 )
+						{
+							const char* lang = nullptr;
+							int statusEffect = 0;
+							Compendium_t::EventTags tag = Compendium_t::EventTags::CPDM_EVENT_TAGS_MAX;
+							switch ( BELL_BUFF_TYPE % BellBuffs::BUFF_ENUM_END )
+							{
+							case BUFF_STR:
+								lang = Language::get(6281);
+								statusEffect = EFF_POTION_STR;
+								tag = Compendium_t::EventTags::CPDM_BELL_BUFFS_STRENGTH;
+								break;
+							case BUFF_CON:
+								lang = Language::get(6282);
+								statusEffect = EFF_CON_BONUS;
+								tag = Compendium_t::EventTags::CPDM_BELL_BUFFS_STAMINA;
+								break;
+							case BUFF_DEX:
+								lang = Language::get(6283);
+								statusEffect = EFF_AGILITY;
+								tag = Compendium_t::EventTags::CPDM_BELL_BUFFS_AGILITY;
+								break;
+							case BUFF_PWR:
+								lang = Language::get(6284);
+								statusEffect = EFF_PWR;
+								tag = Compendium_t::EventTags::CPDM_BELL_BUFFS_MENTALITY;
+								break;
+							case BUFF_HEAL:
+								statusEffect = SPELL_HEALING;
+								tag = Compendium_t::EventTags::CPDM_BELL_BUFFS_HEALS;
+								break;
+							default:
+								break;
+							}
+							int duration = TICKS_PER_SECOND * 60;
+							if ( statusEffect > 0 )
+							{
+								if ( Stat* stats = entity->getStats() )
+								{
+									if ( statusEffect == SPELL_HEALING )
+									{
+										int amount = 15;
+										entity->modHP(amount);
+										entity->modMP(amount);
+										if ( svFlags & SV_FLAG_HUNGER )
+										{
+											if ( entity->behavior == &actPlayer && stats->playerRace == RACE_INSECTOID && stats->stat_appearance == 0 )
+											{
+												Sint32 hungerPointPerMana = entity->playerInsectoidHungerValueOfManaPoint(*stats);
+												stats->HUNGER += amount * hungerPointPerMana;
+												stats->HUNGER = std::min(999, stats->HUNGER);
+												serverUpdateHunger(entity->skill[2]);
+											}
+										}
+										playSoundEntity(entity, 168, 128);
+										spawnDamageGib(entity, NOTE_DOUBLE_EIGHTH, DamageGib::DMG_STRONGEST, DamageGibDisplayType::DMG_GIB_SPRITE, true);
+										spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
+										if ( entity->behavior == &actPlayer )
+										{
+											messagePlayerColor(entity->skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6298));
+											Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], tag, "bell", 1);
+										}
+									}
+									else if ( entity->setEffect(statusEffect, true, std::max(stats->EFFECTS_TIMERS[statusEffect], duration), false) )
+									{
+										playSoundEntity(entity, 166, 128);
+										spawnDamageGib(entity, NOTE_DOUBLE_EIGHTH, DamageGib::DMG_STRONGEST, DamageGibDisplayType::DMG_GIB_SPRITE, true);
+										if ( entity->behavior == &actPlayer )
+										{
+											messagePlayerColor(entity->skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6280), lang);
+											Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], tag, "bell", 1);
+										}
+									}
+								}
+							}
+						}
+
+					}
+				}
+			}
+		}
+		else if ( BELL_CURRENT_EVENT == BELL_CRASH )
+		{
+			if ( bell && BELL_BULB_BROKEN == 0 )
+			{
+				messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6275));
+				Compendium_t::Events_t::eventUpdateWorld(BELL_LAST_TOUCHED_PLAYER, Compendium_t::CPDM_BELL_BROKEN, "bell", 1);
+				bellBreakBulb(my, false);
+				steamStatisticUpdateClient(BELL_LAST_TOUCHED_PLAYER, STEAM_STAT_RUNG_OUT, STEAM_STAT_INT, 1);
+			}
+		}
+		else if ( BELL_CURRENT_EVENT == BELL_CLAPPER_BREAK )
+		{
+			if ( clapper && BELL_CLAPPER_BROKEN == 0 )
+			{
+				BELL_CLAPPER_BROKEN = 1;
+				serverUpdateEntitySkill(my, 9);
+				playSoundEntity(my, 76, 64);
+				messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6279));
+				bellAttractMonsters(my);
+				Compendium_t::Events_t::eventUpdateWorld(BELL_LAST_TOUCHED_PLAYER, Compendium_t::CPDM_BELL_CLAPPER_BROKEN, "bell", 1);
+				steamStatisticUpdateClient(BELL_LAST_TOUCHED_PLAYER, STEAM_STAT_RUNG_OUT, STEAM_STAT_INT, 1);
+			}
+		}
+		else if ( BELL_CURRENT_EVENT == BELL_MONSTER )
+		{
+			int successes = 0;
+			Monster type = BAT_SMALL;
+			std::vector<Entity*> enemies;
+			for ( int i = 0; i < 4; ++i )
+			{
+				if ( Entity* monster = summonMonster(type, ((int)(my->x / 16)) * 16 + 8, ((int)(my->y / 16)) * 16 + 8) )
+				{
+					++successes;
+					if ( BELL_LAST_TOUCHED_PLAYER >= 0 )
+					{
+						if ( players[BELL_LAST_TOUCHED_PLAYER]->entity )
+						{
+							monster->monsterAcquireAttackTarget(*players[BELL_LAST_TOUCHED_PLAYER]->entity, MONSTER_STATE_PATH);
+						}
+					}
+				}
+			}
+
+			if ( BELL_LAST_TOUCHED_PLAYER >= 0 )
+			{
+				if ( successes > 0 )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(BELL_LAST_TOUCHED_PLAYER, Compendium_t::CPDM_BELL_LOOT_BATS, "bell", successes);
+				}
+				if ( successes == 1 )
+				{
+					messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6234),
+						getMonsterLocalizedName((Monster)type).c_str(), Language::get(6269));
+				}
+				else if ( successes > 1 )
+				{
+					messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6253),
+						getMonsterLocalizedPlural((Monster)type).c_str(), Language::get(6269));
+				}
+			}
+
+			if ( rng.rand() % 8 == 0 )
+			{
+				// sometimes it just falls straight after
+				if ( BELL_LAST_TOUCHED_PLAYER >= 0 )
+				{
+					messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6275));
+					Compendium_t::Events_t::eventUpdateWorld(BELL_LAST_TOUCHED_PLAYER, Compendium_t::CPDM_BELL_BROKEN, "bell", 1);
+					steamStatisticUpdateClient(BELL_LAST_TOUCHED_PLAYER, STEAM_STAT_RUNG_OUT, STEAM_STAT_INT, 1);
+				}
+				bellBreakBulb(my, false);
+			}
+		}
+		else if ( BELL_CURRENT_EVENT == BELL_ITEM )
+		{
+			if ( BELL_HAS_ITEM != 0 )
+			{
+				if ( Entity* entity = uidToEntity(BELL_HAS_ITEM) )
+				{
+					BELL_HAS_ITEM = 0;
+					if ( entity->behavior == &actItem )
+					{
+						playSoundEntityLocal(entity, 47 + local_rng.rand() % 3, 64);
+						entity->vel_x = 0.0; //(0.25 + .025 * (local_rng.rand() % 11)) * cos(entity->yaw);
+						entity->vel_y = 0.0; //(0.25 + .025 * (local_rng.rand() % 11)) * sin(entity->yaw);
+						entity->vel_z = (-2 - local_rng.rand() % 5) * .01;
+						entity->itemContainer = 0;
+						entity->z = -16;
+						entity->itemNotMoving = 0;
+						entity->itemNotMovingClient = 0;
+						entity->flags[USERFLAG1] = false; // enable collision
+
+						if ( multiplayer == SERVER )
+						{
+							for ( int i = 1; i < MAXPLAYERS; ++i )
+							{
+								if ( !client_disconnected[i] )
+								{
+									strcpy((char*)net_packet->data, "BELI");
+									SDLNet_Write32(static_cast<Uint32>(entity->getUID()), &net_packet->data[4]);
+									net_packet->address.host = net_clients[i - 1].host;
+									net_packet->address.port = net_clients[i - 1].port;
+									net_packet->len = 8;
+									sendPacketSafe(net_sock, -1, net_packet, i - 1);
+								}
+							}
+						}
+
+						if ( BELL_LAST_TOUCHED_PLAYER >= 0 )
+						{
+							messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6272));
+							Compendium_t::Events_t::eventUpdateWorld(BELL_LAST_TOUCHED_PLAYER, Compendium_t::CPDM_BELL_LOOT_ITEMS, "bell", 1);
+						}
+					}
+					else if ( entity->behavior == &actGoldBag )
+					{
+						playSoundEntityLocal(entity, 242 + local_rng.rand() % 4, 64);
+						entity->vel_x = 0.0;
+						entity->vel_y = 0.0;
+						entity->vel_z = (-2 - local_rng.rand() % 5) * .01;
+						entity->goldBouncing = 0;
+						entity->z = -16;
+						entity->flags[INVISIBLE] = false;
+
+						if ( multiplayer == SERVER )
+						{
+							for ( int i = 1; i < MAXPLAYERS; ++i )
+							{
+								if ( !client_disconnected[i] )
+								{
+									strcpy((char*)net_packet->data, "BELI");
+									SDLNet_Write32(static_cast<Uint32>(entity->getUID()), &net_packet->data[4]);
+									net_packet->address.host = net_clients[i - 1].host;
+									net_packet->address.port = net_clients[i - 1].port;
+									net_packet->len = 8;
+									sendPacketSafe(net_sock, -1, net_packet, i - 1);
+								}
+							}
+						}
+
+						if ( BELL_LAST_TOUCHED_PLAYER >= 0 )
+						{
+							messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6272));
+							Compendium_t::Events_t::eventUpdateWorld(BELL_LAST_TOUCHED_PLAYER, Compendium_t::CPDM_BELL_LOOT_GOLD, "bell", entity->goldAmount);
+						}
+					}
+
+					if ( rng.rand() % 16 == 0 )
+					{
+						// sometimes it just falls straight after
+						if ( BELL_LAST_TOUCHED_PLAYER >= 0 )
+						{
+							messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6275));
+							Compendium_t::Events_t::eventUpdateWorld(BELL_LAST_TOUCHED_PLAYER, Compendium_t::CPDM_BELL_BROKEN, "bell", 1);
+							steamStatisticUpdateClient(BELL_LAST_TOUCHED_PLAYER, STEAM_STAT_RUNG_OUT, STEAM_STAT_INT, 1);
+						}
+						bellBreakBulb(my, false);
+					}
 				}
 			}
 		}

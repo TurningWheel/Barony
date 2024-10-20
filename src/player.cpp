@@ -3061,7 +3061,7 @@ void GameController::stopRumble()
 	haptics.hapticEffectId = -1;
 }
 
-Player::Player(int in_playernum, bool in_local_host) : 
+Player::Player(int in_playernum, bool in_local_host) :
 	GUI(*this),
 	inventoryUI(*this),
 	hud(*this),
@@ -3077,7 +3077,9 @@ Player::Player(int in_playernum, bool in_local_host) :
 	signGUI(*this),
 	paperDoll(*this),
 	minimap(*this),
-	shopGUI(*this)
+	shopGUI(*this),
+	compendiumProgress(*this),
+	mechanics(*this)
 {
 	local_host = false;
 	playernum = in_playernum;
@@ -3103,6 +3105,8 @@ void Player::init() // for use on new/restart game, UI related
 	minotaurWarning[playernum].deinit();
 	levelUpAnimation[playernum].lvlUps.clear();
 	skillUpAnimation[playernum].skillUps.clear();
+	mechanics.itemDegradeRng.clear();
+	mechanics.sustainedSpellMPUsed = 0;
 }
 
 void Player::cleanUpOnEntityRemoval()
@@ -3113,6 +3117,7 @@ void Player::cleanUpOnEntityRemoval()
 		movement.reset();
 		worldUI.reset();
 	}
+	mechanics.enemyRaisedBlockingAgainst.clear();
 	selectedEntity[playernum] = nullptr;
 	client_selected[playernum] = nullptr;
 }
@@ -3376,11 +3381,28 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			{
 				return 0.0;
 			}
+			else if ( parent->behavior == &actBell && parent->skill[7] > 0 )
+			{
+				return 0.0;
+			}
+			else if ( parent->behavior == &actTeleportShrine && parent->shrineActivateDelay > 0 )
+			{
+				return 0.0;
+			}
+			else if ( parent->behavior == &actDaedalusShrine && parent->shrineActivateDelay > 0 )
+			{
+				return 0.0;
+			}
 			else if ( parent->behavior == &actPlayer )
 			{
 				return 0.0;
 			}
 			else if ( player.ghost.isActive() && !player.ghost.allowedInteractEntity(*parent) )
+			{
+				return 0.0;
+			}
+
+			if ( parent->behavior == &actColliderDecoration && !callout )
 			{
 				return 0.0;
 			}
@@ -3408,6 +3430,10 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 				{
 					return 0.0;
 				}
+			}
+			if ( parent->getMonsterTypeFromSprite() == BAT_SMALL && !selectInteract )
+			{
+				return 0.0;
 			}
 			if ( parent->behavior == &actPlayer 
 				|| (parent->behavior == &actMonster && !(parent->isInertMimic())) )
@@ -3443,6 +3469,10 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			else if ( parent->behavior == &actItem && parent->sprite == items[GEM_ROCK].index )
 			{
 				dist += 8.0; // distance penalty for rocks from digging etc
+			}
+			else if ( parent->behavior == &actBell )
+			{
+				dist += 1.0; // distance penalty
 			}
 			else if ( parent->behavior == &actGoldBag )
 			{
@@ -3561,7 +3591,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 					particle->y = previousy;
 					particle->z = 7.5;*/
 				}
-				else if ( parent && parent->behavior == &actBoulderTrapHole )
+				else if ( parent && (parent->behavior == &actBoulderTrapHole || parent->isUntargetableBat()) )
 				{
 					// more accurate line of sight, look up
 					real_t startx = cameras[player.playernum].x * 16.0;
@@ -3580,6 +3610,10 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 					const real_t yaw = cameras[player.playernum].ang;
 
 					bool onCeilingLayer = parent->z > -11.0 && parent->z < -10;
+					if ( parent->isUntargetableBat() )
+					{
+						onCeilingLayer = false;
+					}
 					real_t endz = onCeilingLayer ? -8.0 : -8.0 - 16.0;
 					for ( ; startz > endz; startz -= abs((0.1) * tan(pitch)) )
 					{
@@ -3965,6 +3999,11 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		{
 			interactText = Language::get(4027); // "Inspect trapdoor" 
 		}
+		else if ( parent->behavior == &actBell )
+		{
+			interactText = Language::get(6271);
+
+		}
 		else if ( parent->behavior == &actLadder )
 		{
 			if ( secretlevel && parent->skill[3] == 1 ) // secret ladder
@@ -4061,6 +4100,10 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		else if ( parent->behavior == &::actTeleportShrine /*|| parent->behavior == &::actSpellShrine*/ )
 		{
 			interactText += Language::get(4299); // "Touch shrine";
+		}
+		else if ( parent->behavior == &::actDaedalusShrine )
+		{
+			interactText += Language::get(6262); // "Touch shrine";
 		}
 		else if ( parent->behavior == &actBomb && parent->skill[21] != 0 ) //skill[21] item type
 		{
@@ -4209,6 +4252,10 @@ bool entityBlocksTooltipInteraction(const int player, Entity& entity)
 		return false;
 	}
 	else if ( entity.behavior == &actTeleportShrine /*|| entity.behavior == &::actSpellShrine*/ )
+	{
+		return false;
+	}
+	else if ( entity.behavior == &::actDaedalusShrine )
 	{
 		return false;
 	}
@@ -4450,7 +4497,7 @@ void Player::WorldUI_t::handleTooltips()
 				parent = uidToEntity(tooltip->parent);
 				if ( parent && parent->flags[INVISIBLE] 
 					&& !(parent->behavior == &actMonster && 
-						(parent->getMonsterTypeFromSprite() == DUMMYBOT || parent->getMonsterTypeFromSprite() == MIMIC)) )
+						(parent->getMonsterTypeFromSprite() == DUMMYBOT || parent->getMonsterTypeFromSprite() == MIMIC || parent->getMonsterTypeFromSprite() == BAT_SMALL)) )
 				{
 					continue;
 				}
@@ -5376,7 +5423,7 @@ void Player::Magic_t::setQuickCastSpellFromInventory(Item* item)
 	{
 		return;
 	}
-	quick_cast_spell = getSpellFromItem(player.playernum, item);
+	quick_cast_spell = getSpellFromItem(player.playernum, item, true);
 }
 
 const bool Player::bUseCompactGUIWidth() const
@@ -6784,4 +6831,143 @@ const char* Player::getAccountName() const {
 		}
 	}
     return unknown;
+}
+
+void Player::PlayerMechanics_t::onItemDegrade(Item* item)
+{
+	if ( !item )
+	{
+		return;
+	}
+	if ( item->type < 0 || item->type >= NUMITEMS )
+	{
+		return;
+	}
+	if ( itemCategory(item) == SPELLBOOK )
+	{
+		itemDegradeRng[item->type] = 0;
+	}
+}
+
+bool Player::PlayerMechanics_t::itemDegradeRoll(Item* item, int* checkInterval)
+{
+	if ( !item )
+	{
+		return true;
+	}
+	// assuming just shields/spellbooks for now
+	if ( item->type < 0 || item->type >= NUMITEMS )
+	{
+		return true;
+	}
+
+	auto& counter = itemDegradeRng[item->type];
+	int interval = 0;
+	if ( itemCategory(item) == SPELLBOOK )
+	{
+		// 10 max base interval
+		interval = (1 + item->status) + stats[player.playernum]->getModifiedProficiency(PRO_SPELLCASTING) / 20;
+		if ( item->beatitude < 0
+			&& !intro && !shouldInvertEquipmentBeatitude(stats[player.playernum]) )
+		{
+			interval = 0;
+		}
+		else if ( item->beatitude > 0
+			|| (item->beatitude < 0 
+				&& !intro && shouldInvertEquipmentBeatitude(stats[player.playernum])) )
+		{
+			interval += std::min(abs(item->beatitude), 2);
+		}
+	}
+	else
+	{
+		switch ( item->type )
+		{
+		case WOODEN_SHIELD:
+			interval = 5;
+			break;
+		case BRONZE_SHIELD:
+			interval = 10;
+			break;
+		case IRON_SHIELD:
+			interval = 10;
+			break;
+		case STEEL_SHIELD:
+			interval = 15;
+			break;
+		case STEEL_SHIELD_RESISTANCE:
+			interval = 15;
+			break;
+		case CRYSTAL_SHIELD:
+			interval = 10;
+			break;
+		default:
+			break;
+		}
+		if ( item->beatitude < 0
+			&& !intro && !shouldInvertEquipmentBeatitude(stats[player.playernum]) )
+		{
+			interval = 0;
+		}
+		else if ( item->beatitude > 0
+			|| (item->beatitude < 0
+				&& !intro && shouldInvertEquipmentBeatitude(stats[player.playernum])) )
+		{
+			interval += std::min(abs(item->beatitude), 5);
+		}
+	}
+
+	if ( checkInterval )
+	{
+		*checkInterval = interval;
+		return false;
+	}
+
+	//messagePlayer(0, MESSAGE_DEBUG, "counter: %d | interval: %d", counter, interval);
+
+	if ( counter >= interval )
+	{
+		if ( itemCategory(item) == SPELLBOOK )
+		{
+			// dont decrement until degraded
+		}
+		else
+		{
+			counter = 0;
+		}
+		return true;
+	}
+	++counter;
+	return false;
+}
+
+void Player::PlayerMechanics_t::sustainedSpellIncrementMP(int mpChange)
+{
+	sustainedSpellMPUsed += std::max(0, mpChange);
+}
+
+bool Player::PlayerMechanics_t::sustainedSpellLevelChance()
+{
+	int threshold = 10;
+	if ( stats[player.playernum]->getProficiency(PRO_SPELLCASTING) < SKILL_LEVEL_BASIC )
+	{
+		threshold = 5;
+	}
+	if ( sustainedSpellMPUsed >= threshold )
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool Player::PlayerMechanics_t::allowedRaiseBlockingAgainstEntity(Entity& attacker)
+{
+	if ( attacker.behavior != &actMonster )
+	{
+		return false;
+	}
+	return enemyRaisedBlockingAgainst[attacker.getUID()] < 1;
 }

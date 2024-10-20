@@ -23,6 +23,7 @@
 #include "scores.hpp"
 #include "player.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -427,6 +428,69 @@ void actArrow(Entity* my)
 						}
 					}
 				}
+				else if ( hit.entity->isDamageableCollider() )
+				{
+					int damage = 1;
+					int axe = 0;
+					if ( hit.entity->isColliderResistToSkill(PRO_RANGED) || hit.entity->isColliderWall() )
+					{
+						damage = 1;
+					}
+					else
+					{
+						damage = 2 + local_rng.rand() % 3;
+					}
+					if ( hit.entity->isColliderWeakToSkill(PRO_RANGED) )
+					{
+						if ( parent && parent->getStats() )
+						{
+							axe = 2 * (parent->getStats()->getModifiedProficiency(PRO_RANGED) / 20);
+						}
+						axe = std::min(axe, 9);
+					}
+					damage += axe;
+
+					int& entityHP = hit.entity->colliderCurrentHP;
+					int oldHP = entityHP;
+					entityHP -= damage;
+
+					int sound = 28; //damage.ogg
+					if ( hit.entity->getColliderSfxOnHit() > 0 )
+					{
+						sound = hit.entity->getColliderSfxOnHit();
+					}
+					playSoundEntity(hit.entity, sound, 64);
+
+					if ( entityHP > 0 )
+					{
+						if ( parent && parent->behavior == &actPlayer )
+						{
+							messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, Language::get(hit.entity->getColliderOnHitLangEntry()),
+								Language::get(hit.entity->getColliderLangName()));
+						}
+					}
+					else
+					{
+						entityHP = 0;
+
+						hit.entity->colliderKillerUid = parent ? parent->getUID() : 0;
+						if ( parent && parent->behavior == &actPlayer )
+						{
+							messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(hit.entity->getColliderOnBreakLangEntry()),
+								Language::get(hit.entity->getColliderLangName()));
+							if ( hit.entity->isColliderWall() )
+							{
+								Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_BARRIER_DESTROYED, "breakable barriers", 1);
+							}
+						}
+					}
+
+					if ( parent )
+					{
+						updateEnemyBar(parent, hit.entity, Language::get(hit.entity->getColliderLangName()), entityHP, hit.entity->colliderMaxHP, false,
+							DamageGib::DMG_DEFAULT);
+					}
+				}
 				else if ( hitstats != NULL && hit.entity != parent )
 				{
 					if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
@@ -482,6 +546,7 @@ void actArrow(Entity* my)
 							case KOBOLD:
 							case COCKATRICE:
 							case TROLL:
+							case BUGBEAR:
 								// more damage to these creatures
 								huntingDamage = true;
 								for ( int gibs = 0; gibs < 10; ++gibs )
@@ -519,7 +584,8 @@ void actArrow(Entity* my)
 						// normal damage.
 					}
 
-					real_t targetACEffectiveness = Entity::getACEffectiveness(hit.entity, hitstats, hit.entity->behavior == &actPlayer, parent, parent ? parent->getStats() : nullptr);
+					int numBlessings = 0;
+					real_t targetACEffectiveness = Entity::getACEffectiveness(hit.entity, hitstats, hit.entity->behavior == &actPlayer, parent, parent ? parent->getStats() : nullptr, numBlessings);
 					int attackAfterReductions = static_cast<int>(std::max(0.0, ((my->arrowPower * targetACEffectiveness - enemyAC))) + (1.0 - targetACEffectiveness) * my->arrowPower);
 					int damage = attackAfterReductions;
 
@@ -648,6 +714,7 @@ void actArrow(Entity* my)
 
 					/*messagePlayer(0, "My damage: %d, AC: %d, Pierce: %d", my->arrowPower, AC(hitstats), my->arrowArmorPierce);
 					messagePlayer(0, "Resolved to %d damage.", damage);*/
+					Sint32 oldHP = hitstats->HP;
 					hit.entity->modHP(-damage);
 					// write obituary
 					if ( parent )
@@ -656,10 +723,83 @@ void actArrow(Entity* my)
 						{
 							hit.entity->setObituary(Language::get(1503));
 							hitstats->killer = KilledBy::TRAP_ARROW;
+
+							if ( oldHP > hitstats->HP )
+							{
+								if ( hit.entity->behavior == &actPlayer )
+								{
+										Compendium_t::Events_t::eventUpdateWorld(hit.entity->skill[2], Compendium_t::CPDM_TRAP_DAMAGE, "arrow trap", oldHP - hitstats->HP);
+										if ( hitstats->HP <= 0 )
+										{
+											Compendium_t::Events_t::eventUpdateWorld(hit.entity->skill[2], Compendium_t::CPDM_TRAP_KILLED_BY, "arrow trap", 1);
+										}
+								}
+								else if ( hit.entity->behavior == &actMonster )
+								{
+									if ( auto leader = hit.entity->monsterAllyGetPlayerLeader() )
+									{
+										Compendium_t::Events_t::eventUpdateWorld(hit.entity->monsterAllyIndex, Compendium_t::CPDM_TRAP_FOLLOWERS_KILLED, "arrow trap", 1);
+									}
+								}
+							}
 						}
 						else
 						{
 							parent->killedByMonsterObituary(hit.entity);
+						}
+
+						if ( hit.entity->behavior == &actPlayer )
+						{
+							Compendium_t::Events_t::eventUpdateCodex(hit.entity->skill[2], Compendium_t::CPDM_HP_MOST_DMG_LOST_ONE_HIT, "hp", oldHP - hitstats->HP);
+						}
+						if ( parent->behavior == &actPlayer )
+						{
+							if ( oldHP > hitstats->HP )
+							{
+								if ( itemTypeIsQuiver((ItemType)my->arrowQuiverType) )
+								{
+									Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_RANGED_DMG_TOTAL, (ItemType)my->arrowQuiverType, oldHP - hitstats->HP);
+								}
+								if ( isRangedWeapon((ItemType)my->arrowShotByWeapon) )
+								{
+									Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_RANGED_DMG_TOTAL, (ItemType)my->arrowShotByWeapon, oldHP - hitstats->HP);
+								}
+								Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_RANGED_DMG_TOTAL, "missiles", oldHP - hitstats->HP);
+								Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_RANGED_HITS, "missiles", 1);
+								Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_CLASS_RANGED_HITS_RUN, "missiles", 1);
+							}
+
+							if ( itemTypeIsQuiver((ItemType)my->arrowQuiverType) )
+							{
+								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_DMG_MAX, (ItemType)my->arrowQuiverType, damage);
+								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_AMMO_HIT, (ItemType)my->arrowQuiverType, 1);
+							}
+							if ( isRangedWeapon((ItemType)my->arrowShotByWeapon) )
+							{
+								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_DMG_MAX, (ItemType)my->arrowShotByWeapon, damage);
+								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SHOTS_HIT, (ItemType)my->arrowShotByWeapon, 1);
+							}
+							if ( my->arrowShotByWeapon == SLING && damage == 0 )
+							{
+								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_DMG_0, (ItemType)my->arrowShotByWeapon, 1);
+							}
+						}
+						else if ( parent->behavior == &actMonster )
+						{
+							if ( oldHP > hitstats->HP )
+							{
+								if ( Stat* parentStats = parent->getStats() )
+								{
+									if ( parentStats->type == SENTRYBOT )
+									{
+										if ( auto leader = parent->monsterAllyGetPlayerLeader() )
+										{
+											Compendium_t::Events_t::eventUpdate(leader->skill[2],
+												Compendium_t::CPDM_SENTRY_DEPLOY_DMG, TOOL_SENTRYBOT, oldHP - hitstats->HP);
+										}
+									}
+								}
+							}
 						}
 
 						if ( hit.entity->behavior == &actMonster && parent->behavior == &actPlayer )
@@ -759,6 +899,11 @@ void actArrow(Entity* my)
 					{
 						parent->awardXP( hit.entity, true, true );
 						spawnBloodVialOnMonsterDeath(hit.entity, hitstats, parent);
+
+						if ( parent->behavior == &actPlayer )
+						{
+							Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_RANGED_KILLS, "missiles", 1);
+						}
 					}
 
 					// alert the monster

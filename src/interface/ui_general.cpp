@@ -398,6 +398,11 @@ void UIToastNotification::drawMainCard()
 	mainField->setHJustify(Field::justify_t::LEFT);
 	mainField->setVJustify(Field::justify_t::CENTER);
 	mainField->setText(displayedText.c_str());
+	if ( mainField->getNumTextLines() > 1 )
+	{
+		mainField->setVJustify(Field::justify_t::TOP);
+		mainField->setSize(SDL_Rect{ bodyx + imgSize + offset, 29, r.w - bodyx - imgSize, r.h - 29 });
+	}
 
 	frameImage->path = notificationImage;
 	frameImage->disabled = false;
@@ -897,10 +902,10 @@ void UIToastNotificationManager_t::createAchievementNotification(const char* nam
 
 	const char* achievementName = "Unknown Achievement";
 	{
-		auto it = achievementNames.find(name);
-		if (it != achievementNames.end())
+		auto it = Compendium_t::achievements.find(name);
+		if (it != Compendium_t::achievements.end())
 		{
-			achievementName = it->second.c_str();
+			achievementName = it->second.name.c_str();
 		}
 	}
 
@@ -961,10 +966,10 @@ void UIToastNotificationManager_t::createStatisticUpdateNotification(const char*
 	}
 	else
 	{
-		auto it = achievementNames.find(name);
-		if ( it != achievementNames.end() )
+		auto it = Compendium_t::achievements.find(name);
+		if ( it != Compendium_t::achievements.end() )
 		{
-			achievementName = it->second.c_str();
+			achievementName = it->second.name.c_str();
 		}
 		const std::string imgName = unlocked ?
 			std::string("*#images/achievements/") + name + std::string(".png"):

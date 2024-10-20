@@ -25,16 +25,16 @@
 
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
 #ifdef NINTENDO
-static const char VERSION[] = "v4.2.1";
+static const char VERSION[] = "v4.2.2";
 #else
-static const char VERSION[] = "v4.2.1";
+static const char VERSION[] = "v4.2.2";
 #endif
 #define GAME_CODE
 
 class Entity;
 
 #define DEBUG 1
-#define ENTITY_PACKET_LENGTH 46
+#define ENTITY_PACKET_LENGTH 47
 #define NET_PACKET_SIZE 512
 
 // impulses (bound keystrokes, mousestrokes, and joystick/game controller strokes) //TODO: Player-by-player basis.
@@ -245,7 +245,7 @@ void actGoldBag(Entity* my);
 void actGib(Entity* my);
 void actDamageGib(Entity* my);
 Entity* spawnGib(Entity* parentent, int customGibSprite = -1);
-Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType);
+Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType, int displayType = 0, bool updateClients = false);
 Entity* spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite);
 void serverSpawnGibForClient(Entity* gib);
 void actLadder(Entity* my);
@@ -294,11 +294,15 @@ void actCustomPortal(Entity* my);
 void actTeleporter(Entity* my);
 void actMagicTrapCeiling(Entity* my);
 void actTeleportShrine(Entity* my);
+void actDaedalusShrine(Entity* my);
+void actBell(Entity* my);
+void bellBreakBulb(Entity* my, bool minotaurBreak);
 void actSpellShrine(Entity* my);
 void actExpansionEndGamePortal(Entity* my);
 void actSoundSource(Entity* my);
 void actLightSource(Entity* my);
 void actSignalTimer(Entity* my);
+void actSignalGateAND(Entity* my);
 
 void startMessages();
 bool frameRateLimit(Uint32 maxFrameRate, bool resetAccumulator = true, bool sleep = false);
@@ -366,6 +370,7 @@ extern bool enabledDLCPack2;
 extern std::vector<std::string> physFSFilesInDirectory;
 void loadRandomNames();
 void mapLevel(int player);
+void mapLevel2(int player);
 void mapFoodOnLevel(int player);
 bool mapTileDiggable(const int x, const int y);
 

@@ -21,6 +21,7 @@
 #include "player.hpp"
 #include "magic/magic.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -36,12 +37,30 @@
 
 void actSink(Entity* my)
 {
+#ifdef USE_FMOD
+	if ( SINK_AMBIENCE == 0 )
+	{
+		SINK_AMBIENCE--;
+		my->stopEntitySound();
+		my->entity_sound = playSoundEntityLocal(my, 149, 32);
+	}
+	if ( my->entity_sound )
+	{
+		bool playing = false;
+		my->entity_sound->isPlaying(&playing);
+		if ( !playing )
+		{
+			my->entity_sound = nullptr;
+		}
+	}
+#else
 	SINK_AMBIENCE--;
 	if ( SINK_AMBIENCE <= 0 )
 	{
 		SINK_AMBIENCE = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal( my, 149, 32 );
 	}
+#endif
 
 	if ( my->ticks == 1 )
 	{
@@ -131,7 +150,7 @@ void actSink(Entity* my)
 						{
 							//playSoundEntity(players[i]->entity, 52, 64);
 							messagePlayer(i, MESSAGE_INTERACTION, Language::get(581));
-
+							Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_SINKS_USED, "sink", 1);
 							//Randomly choose a ring.
 							//88-99 are rings.
 							//So 12 rings total.
@@ -168,22 +187,23 @@ void actSink(Entity* my)
 								itemPickup(i, item);
 								messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(504), item->description());
 								free(item);
+								Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_SINKS_RINGS, "sink", 1);
 							}
 							break;
 						}
 						case 1:
 						{
 							//playSoundEntity(players[i]->entity, 52, 64);
-
+							Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_SINKS_USED, "sink", 1);
 							// spawn slime
 							Entity* monster = summonMonster(SLIME, my->x, my->y);
 							if ( monster )
 							{
 								monster->seedEntityRNG(rng.getU32());
+								slimeSetType(monster, monster->getStats(), true, &rng);
 								Uint32 color = makeColorRGB(255, 128, 0);
 								messagePlayerColor(i, MESSAGE_HINT, color, Language::get(582));
-								Stat* monsterStats = monster->getStats();
-								monsterStats->LVL = 4;
+								Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_SINKS_SLIMES, "sink", 1);
 							}
 							break;
 						}
@@ -193,6 +213,7 @@ void actSink(Entity* my)
 							{
 								break;
 							}
+							Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_SINKS_USED, "sink", 1);
 							if ( stats[i]->type == AUTOMATON )
 							{
 								Uint32 color = makeColorRGB(255, 128, 0);
@@ -212,10 +233,12 @@ void actSink(Entity* my)
 									serverUpdateHunger(i);
 								}
 								players[i]->entity->modHP(1);
+								Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_SINKS_HEALTH_RESTORED, "sink", 1);
 							}
 							else
 							{
 								players[i]->entity->modHP(-2);
+								Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_SINKS_HEALTH_RESTORED, "sink", -2);
 								playSoundEntity(players[i]->entity, 28, 64);
 								playSoundEntity(players[i]->entity, 249, 128);
 								players[i]->entity->setObituary(Language::get(1533));
@@ -247,6 +270,7 @@ void actSink(Entity* my)
 							{
 								break;
 							}
+							Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_SINKS_USED, "sink", 1);
 							if ( stats[i]->type == AUTOMATON )
 							{
 								Uint32 color = makeColorRGB(255, 128, 0);
@@ -268,6 +292,7 @@ void actSink(Entity* my)
 									players[i]->entity->modHP(-2);
 									playSoundEntity(players[i]->entity, 249, 128);
 								}
+								Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_SINKS_HEALTH_RESTORED, "sink", -2);
 								playSoundEntity(players[i]->entity, 28, 64);
 								players[i]->entity->setObituary(Language::get(1533));
 						        stats[i]->killer = KilledBy::SINK;

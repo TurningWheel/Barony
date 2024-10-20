@@ -32,6 +32,7 @@
 
 //#include "player.hpp"
 
+std::map<int, std::string> modelFileNames;
 Entity* selectedEntity[MAXPLAYERS] = { nullptr };
 Entity* lastSelectedEntity[MAXPLAYERS] = { nullptr };
 Sint32 mousex = 0, mousey = 0;
@@ -104,21 +105,23 @@ char monsterPropertyNames[14][16] =
 	"Is NPC:"
 };
 
-char chestPropertyNames[3][40] =
+char chestPropertyNames[4][40] =
 {
 	"Orientation: (0-3)",
 	"Chest Type: (0-7)",
-	"Locked Chance: (0-100%)"
+	"Locked Chance: (0-100%)",
+	"Mimic Chance: (0-100%)"
 };
 
-char summonTrapPropertyNames[6][44] =
+char summonTrapPropertyNames[7][44] =
 {
 	"Monster To Spawn: (-1 to 32)",
 	"Quantity Per Spawn: (1-9)",
 	"Time Between Spawns: (1-999s)",
 	"Amount of Spawn Instances: (1-99)",
 	"Requires Power to Disable: (0-1)",
-	"Chance to Stop Working Each Spawn: (0-100%)"
+	"Chance to Stop Working Each Spawn: (0-100%)",
+	"Autospawn Next To Player (0-16)"
 };
 
 char itemPropertyNames[6][36] =
@@ -302,13 +305,29 @@ char customPortalPropertyNames[7][54] =
 	"Exit toggle between secret levels file (0-1)"
 };
 
-char signalTimerPropertyNames[5][55] =
+char signalTimerPropertyNames[6][55] =
 {
 	"Input signal direction (0 - 3)",
 	"Output activation delay (0-9999 ticks, 50 ticks / sec)",
 	"Output pulse time (0 - 9999 ticks, 50 ticks / sec)",
 	"Output repeat count (0 - 9999)",
-	"Latch input and keep powered (0 - 1)"
+	"Latch input and keep powered (0 - 1)",
+	"Invert Output (0 - 1)"
+};
+
+char ANDGatePropertyNames[6][55] =
+{
+	"Output signal direction (0 - 3)",
+	"Output activation delay (0-9999 ticks, 50 ticks / sec)",
+	"Output pulse time (0 - 9999 ticks, 50 ticks / sec)",
+	"Output repeat count (0 - 9999)",
+	"Latch input and keep powered (0 - 1)",
+	"Invert Output (0 - 1)"
+};
+
+char pressurePlatePropertyNames[1][34] =
+{
+	"Trigger Type: (0-7)"
 };
 
 char tablePropertyNames[3][34] =
@@ -1227,6 +1246,22 @@ void processCommandLine(int argc, char** argv)
 					datadirsz = std::min(sizeof(datadir) - 1, strlen(argv[c] + 9));
 					strncpy(datadir, argv[c] + 9, datadirsz);
 					datadir[datadirsz] = '\0';
+				}
+				else if ( !strncmp(argv[c], "-xres=", 6) )
+				{
+					char buf[32];
+					size_t len = std::min(sizeof(buf), strlen(argv[c] + 6));
+					strncpy(buf, argv[c] + 6, len);
+					buf[len] = '\0';
+					xres = atoi(buf);
+				}
+				else if ( !strncmp(argv[c], "-yres=", 6) )
+				{
+					char buf[32];
+					size_t len = std::min(sizeof(buf), strlen(argv[c] + 6));
+					strncpy(buf, argv[c] + 6, len);
+					buf[len] = '\0';
+					yres = atoi(buf);
 				}
 			}
 		}
@@ -2455,11 +2490,11 @@ int main(int argc, char** argv)
 				}
 				occlusionCulling(map, camera);
                 beginGraphics();
-				glBeginCamera(&camera, false);
+				glBeginCamera(&camera, false, map);
 				glDrawWorld(&camera, REALCOLORS);
 				//drawFloors(&camera);
 				drawEntities3D(&camera, REALCOLORS);
-				glEndCamera(&camera, false);
+				glEndCamera(&camera, false, map);
 				printTextFormatted(font8x8_bmp, 8, yres - 64, "x = %3.3f\ny = %3.3f\nz = %3.3f\nang = %3.3f\nfps = %3.1f", camera.x, camera.y, camera.z, camera.ang, fps);
 				list_RemoveNode(light->node);
 				for ( node = map.entities->first; node != NULL; node = node->next )
@@ -2487,8 +2522,8 @@ int main(int argc, char** argv)
 				// draw selected tile / hovering tile
 				pos.x = xres - 48;
 				pos.y = 320;
-				pos.w = 0;
-				pos.h = 0;
+				pos.w = 32;
+				pos.h = 32;
 				if ( selectedTile >= 0 && selectedTile < numtiles )
 				{
 					if ( tiles[selectedTile] != NULL )
@@ -2506,8 +2541,8 @@ int main(int argc, char** argv)
 				}
 				pos.x = xres - 48;
 				pos.y = 360;
-				pos.w = 0;
-				pos.h = 0;
+				pos.w = 32;
+				pos.h = 32;
 				if ( drawx >= 0 && drawx < map.width && drawy >= 0 && drawy < map.height )
 				{
 					c = map.tiles[drawlayer + drawy * MAPLAYERS + drawx * MAPLAYERS * map.height];
@@ -2531,8 +2566,10 @@ int main(int argc, char** argv)
 				{
 					drawImage(sprites[0], NULL, &pos);
 				}
-				printText(font8x8_bmp, xres - 124, 332, "Selected:");
-				printText(font8x8_bmp, xres - 124, 372, "   Above:");
+				printTextFormatted(font8x8_bmp, xres - 124, 324, "Selected:\n\n%9d",
+					(selectedTile >= 0 && selectedTile < numtiles) ? selectedTile : 0);
+				printTextFormatted(font8x8_bmp, xres - 124, 364, " Hovered:\n\n%9d",
+					(drawx >= 0 && drawx < map.width&& drawy >= 0 && drawy < map.height) ? c : 0);
 
 				// Print the name of the selected tool below the Tool Buttons
 				switch ( selectedTool )
@@ -3983,11 +4020,32 @@ int main(int argc, char** argv)
 									{
 										errorMessage = 60;
 										errorArr[i] = 1;
-										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 1); //reset
+										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", -1); //reset
 									}
 									else if ( propertyInt == -1 )
 									{
 										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, colorRandom, "Default 10%");
+									}
+									else
+									{
+										color = makeColorRGB(0, 255, 0);
+										char tmpStr[32] = "";
+										strcpy(tmpStr, spriteProperties[i]); //reset
+										strcat(tmpStr, " %%");
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, tmpStr);
+									}
+								}
+								else if ( i == 3 )
+								{
+									if ( propertyInt > 100 || propertyInt < -1 )
+									{
+										errorMessage = 60;
+										errorArr[i] = 1;
+										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", -1); //reset
+									}
+									else if ( propertyInt == -1 )
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, colorRandom, "Default Rand %");
 									}
 									else
 									{
@@ -4016,12 +4074,12 @@ int main(int argc, char** argv)
 						pad_x1 += 18;
 						spacing = 18;
 						//printText(font8x8_bmp, pad_x1 + 16, pad_y1, "Chest Facing");
-						pad_y1 = suby1 + 28 + 7 * spacing;
+						pad_y1 = suby1 + 28 + 9 * spacing;
 						printText(font8x8_bmp, pad_x1 + 32, pad_y1, "NORTH(3)");
-						pad_y1 = suby1 + 28 + 8 * spacing;
+						pad_y1 = suby1 + 28 + 10 * spacing;
 						printText(font8x8_bmp, pad_x1, pad_y1, "WEST(2)");
 						printText(font8x8_bmp, pad_x1 + 96 - 16, pad_y1, "EAST(0)");
-						pad_y1 = suby1 + 28 + 9 * spacing;
+						pad_y1 = suby1 + 28 + 11 * spacing;
 						printText(font8x8_bmp, pad_x1 + 32, pad_y1, "SOUTH(1)");
 
 						spacing = 14;
@@ -4709,6 +4767,23 @@ int main(int argc, char** argv)
 										printTextFormatted(font8x8_bmp, pad_x3, pad_y2, tmpStr);
 									}
 								}
+								else if ( i == 6 )
+								{
+									if ( propertyInt > 16 || propertyInt < 0 )
+									{
+										errorMessage = 60;
+										errorArr[i] = 1;
+										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 0); //reset
+									}
+									else if ( propertyInt == 0 )
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color2, "");
+									}
+									else if ( propertyInt > 0 )
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, "Auto activate near player (x tiles)");
+									}
+								}
 							}
 
 							if ( errorMessage )
@@ -4761,7 +4836,7 @@ int main(int argc, char** argv)
 							{
 								inputlen = 2;
 							}
-							else if ( editproperty == 2 || editproperty == 5 )
+							else if ( editproperty == 2 || editproperty == 5 || editproperty == 6 )
 							{
 								inputlen = 3;
 							}
@@ -5526,6 +5601,18 @@ int main(int argc, char** argv)
 									{
 										propertyPageError(i, 0); // reset to default 0.
 									}
+									else
+									{
+										if ( modelFileNames.find(propertyInt) != modelFileNames.end() )
+										{
+											std::string tmpStr = modelFileNames[propertyInt];
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr.c_str());
+										}
+										else
+										{
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, makeColorRGB(255, 0, 0), "Unknown Model!");
+										}
+									}
 								}
 								else if ( i == 1 )
 								{
@@ -5954,6 +6041,18 @@ int main(int argc, char** argv)
 									if ( propertyInt > 9999 || propertyInt < 0 )
 									{
 										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										if ( modelFileNames.find(propertyInt) != modelFileNames.end() )
+										{
+											std::string tmpStr = modelFileNames[propertyInt];
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr.c_str());
+										}
+										else
+										{
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, makeColorRGB(255, 0, 0), "Unknown Model!");
+										}
 									}
 								}
 								else if ( i == 1 )
@@ -6842,6 +6941,24 @@ int main(int argc, char** argv)
 										}
 									}
 								}
+								else if ( i == 5 )
+								{
+									if ( propertyInt > 1 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										if ( propertyInt == 0 )
+										{
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, "non-inverted");
+										}
+										else if ( propertyInt == 1 )
+										{
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, "output inverted");
+										}
+									}
+								}
 								else
 								{
 									// enter other row entries here
@@ -6918,6 +7035,18 @@ int main(int argc, char** argv)
 									if ( propertyInt > 9999 || propertyInt < 0 )
 									{
 										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										if ( modelFileNames.find(propertyInt) != modelFileNames.end() )
+										{
+											std::string tmpStr = modelFileNames[propertyInt];
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr.c_str());
+										}
+										else
+										{
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, makeColorRGB(255, 0, 0), "Unknown Model!");
+										}
 									}
 								}
 								else if ( i == 1 )
@@ -7991,6 +8120,18 @@ int main(int argc, char** argv)
 									{
 										propertyPageError(i, 0); // reset to default 0.
 									}
+									else if ( i == 0 )
+									{
+										if ( modelFileNames.find(propertyInt) != modelFileNames.end() )
+										{
+											std::string tmpStr = modelFileNames[propertyInt];
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr.c_str());
+										}
+										else
+										{
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, makeColorRGB(255, 0, 0), "Unknown Model!");
+										}
+									}
 								}
 								else if ( i == 1 )
 								{
@@ -8161,6 +8302,273 @@ int main(int argc, char** argv)
 
 							// set the maximum length allowed for user input
 							inputlen = 5;
+							propertyPageCursorFlash(spacing);
+						}
+					}
+				}
+				else if ( newwindow == 32 )
+				{
+					if ( selectedEntity[0] != nullptr )
+					{
+						int numProperties = sizeof(ANDGatePropertyNames) / sizeof(ANDGatePropertyNames[0]); //find number of entries in property list
+						const int lenProperties = sizeof(ANDGatePropertyNames[0]) / sizeof(char); //find length of entry in property list
+						int spacing = 36; // 36 px between each item in the list.
+						int inputFieldHeader_y = suby1 + 28; // 28 px spacing from subwindow start.
+						int inputField_x = subx1 + 8; // 8px spacing from subwindow start.
+						int inputField_y = inputFieldHeader_y + 16;
+						int inputFieldWidth = 64; // width of the text field
+						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
+						char tmpPropertyName[lenProperties] = "";
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
+
+						for ( int i = 0; i < numProperties; i++ )
+						{
+							int propertyInt = atoi(spriteProperties[i]);
+
+							strcpy(tmpPropertyName, ANDGatePropertyNames[i]);
+							inputFieldHeader_y = suby1 + 28 + i * spacing;
+							inputField_y = inputFieldHeader_y + 16;
+							// box outlines then text
+							drawDepressed(inputField_x - 4, inputField_y - 4, inputField_x - 4 + inputFieldWidth, inputField_y + 16 - 4);
+							// print values on top of boxes
+							printText(font8x8_bmp, inputField_x, suby1 + 44 + i * spacing, spriteProperties[i]);
+							printText(font8x8_bmp, inputField_x, inputFieldHeader_y, tmpPropertyName);
+
+							if ( errorArr[i] != 1 )
+							{
+								if ( i == 0 )
+								{
+									if ( propertyInt > 3 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										char tmpStr[8] = "";
+										switch ( propertyInt )
+										{
+										case 0:
+											strcpy(tmpStr, "East");
+											break;
+										case 1:
+											strcpy(tmpStr, "South");
+											break;
+										case 2:
+											strcpy(tmpStr, "West");
+											break;
+										case 3:
+											strcpy(tmpStr, "North");
+											break;
+										default:
+											break;
+										}
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+									}
+								}
+								else if ( i == 1 )
+								{
+									if ( propertyInt > 9999 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+								}
+								else if ( i == 2 )
+								{
+									if ( propertyInt > 9999 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										if ( propertyInt == 0 )
+										{
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, "output without on/off toggling");
+										}
+									}
+								}
+								else if ( i == 3 )
+								{
+									if ( propertyInt > 9999 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										if ( propertyInt == 0 )
+										{
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, "repeat infinite");
+										}
+									}
+								}
+								else if ( i == 4 )
+								{
+									if ( propertyInt > 1 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										if ( propertyInt == 0 )
+										{
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, "turn off without input signal");
+										}
+										else if ( propertyInt == 1 )
+										{
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, "stay on without input signal");
+										}
+									}
+								}
+								else if ( i == 5 )
+								{
+									if ( propertyInt > 1 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										if ( propertyInt == 0 )
+										{
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, "non-inverted");
+										}
+										else if ( propertyInt == 1 )
+										{
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, "output inverted");
+										}
+									}
+								}
+								else
+								{
+									// enter other row entries here
+								}
+							}
+
+							if ( errorMessage )
+							{
+								if ( errorArr[i] == 1 )
+								{
+									printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorError, "Invalid ID!");
+								}
+							}
+						}
+
+						propertyPageTextAndInput(numProperties, inputFieldWidth);
+
+						if ( editproperty < numProperties )   // edit
+						{
+							if ( !SDL_IsTextInputActive() )
+							{
+								SDL_StartTextInput();
+								inputstr = spriteProperties[0];
+							}
+
+							// set the maximum length allowed for user input
+							inputlen = 4;
+							propertyPageCursorFlash(spacing);
+						}
+					}
+				}
+				else if ( newwindow == 33 )
+				{
+					if ( selectedEntity[0] != nullptr )
+					{
+						int numProperties = sizeof(pressurePlatePropertyNames) / sizeof(pressurePlatePropertyNames[0]); //find number of entries in property list
+						const int lenProperties = sizeof(pressurePlatePropertyNames[0]) / sizeof(char); //find length of entry in property list
+						int spacing = 36; // 36 px between each item in the list.
+						int inputFieldHeader_y = suby1 + 28; // 28 px spacing from subwindow start.
+						int inputField_x = subx1 + 8; // 8px spacing from subwindow start.
+						int inputField_y = inputFieldHeader_y + 16;
+						int inputFieldWidth = 64; // width of the text field
+						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
+						char tmpPropertyName[lenProperties] = "";
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
+
+						for ( int i = 0; i < numProperties; i++ )
+						{
+							int propertyInt = atoi(spriteProperties[i]);
+
+							strcpy(tmpPropertyName, pressurePlatePropertyNames[i]);
+							inputFieldHeader_y = suby1 + 28 + i * spacing;
+							inputField_y = inputFieldHeader_y + 16;
+							// box outlines then text
+							drawDepressed(inputField_x - 4, inputField_y - 4, inputField_x - 4 + inputFieldWidth, inputField_y + 16 - 4);
+							// print values on top of boxes
+							printText(font8x8_bmp, inputField_x, suby1 + 44 + i * spacing, spriteProperties[i]);
+							printText(font8x8_bmp, inputField_x, inputFieldHeader_y, tmpPropertyName);
+
+							if ( errorArr[i] != 1 )
+							{
+								if ( i == 0 )
+								{
+									if ( propertyInt >= Entity::PRESSURE_PLATE_ENUM_END || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										switch ( propertyInt )
+										{
+										case Entity::PRESSURE_PLATE_DEFAULT_ALL:
+											strcpy(tmpStr, "Default All");
+											break;
+										case Entity::PRESSURE_PLATE_PLAYERS:
+											strcpy(tmpStr, "Player");
+											break;
+										case Entity::PRESSURE_PLATE_MONSTERS:
+											strcpy(tmpStr, "Any Monster");
+											break;
+										case Entity::PRESSURE_PLATE_ITEMS:
+											strcpy(tmpStr, "Items");
+											break;
+										case Entity::PRESSURE_PLATE_BOULDERS:
+											strcpy(tmpStr, "Boulders");
+											break;
+										case Entity::PRESSURE_PLATE_PLAYERS_OR_MONSTERS:
+											strcpy(tmpStr, "Players/Any Monster");
+											break;
+										case Entity::PRESSURE_PLATE_PLAYERS_OR_ALLIES:
+											strcpy(tmpStr, "Players/Ally Monster");
+											break;
+										case Entity::PRESSURE_PLATE_MONSTERS_NON_ALLY:
+											strcpy(tmpStr, "Non-Ally Monster");
+											break;
+										default:
+											break;
+										}
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+									}
+								}
+								else
+								{
+									// enter other row entries here
+								}
+							}
+
+							if ( errorMessage )
+							{
+								if ( errorArr[i] == 1 )
+								{
+									printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorError, "Invalid ID!");
+								}
+							}
+						}
+
+						propertyPageTextAndInput(numProperties, inputFieldWidth);
+
+						if ( editproperty < numProperties )   // edit
+						{
+							if ( !SDL_IsTextInputActive() )
+							{
+								SDL_StartTextInput();
+								inputstr = spriteProperties[0];
+							}
+
+							// set the maximum length allowed for user input
+							inputlen = 2;
 							propertyPageCursorFlash(spacing);
 						}
 					}

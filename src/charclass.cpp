@@ -577,7 +577,7 @@ void initClass(const int player)
 
 	bool curseItems = false;
 	if ( (stats[player]->playerRace == RACE_SUCCUBUS || stats[player]->playerRace == RACE_INCUBUS)
-		&& stats[player]->appearance == 0 )
+		&& stats[player]->stat_appearance == 0 )
 	{
 		curseItems = true;
 	}
@@ -2762,7 +2762,7 @@ void initClass(const int player)
 
 	stats[player]->OLDHP = stats[player]->HP;
 
-	if ( stats[player]->appearance == 0 && stats[player]->playerRace == RACE_GOATMAN )
+	if ( stats[player]->stat_appearance == 0 && stats[player]->playerRace == RACE_GOATMAN )
 	{
 		stats[player]->EFFECTS[EFF_ASLEEP] = true;
 		stats[player]->EFFECTS_TIMERS[EFF_ASLEEP] = -1;
@@ -2780,12 +2780,12 @@ void initClass(const int player)
 		stats[player]->EFFECTS_TIMERS[EFF_ASLEEP] = 0;
 	}
 
-	if ( stats[player]->appearance == 0 && stats[player]->playerRace == RACE_AUTOMATON )
+	if ( stats[player]->stat_appearance == 0 && stats[player]->playerRace == RACE_AUTOMATON )
 	{
 		//stats[player]->HUNGER = 150;
 	}
 
-	if ( stats[player]->appearance == 0 
+	if ( stats[player]->stat_appearance == 0 
 		&& client_classes[player] <= CLASS_MONK 
 		&& stats[player]->playerRace != RACE_HUMAN )
 	{
@@ -2797,7 +2797,7 @@ void initClass(const int player)
 			free(item);
 		}
 	}
-	if ( stats[player]->appearance == 0 
+	if ( stats[player]->stat_appearance == 0 
 		&& client_classes[player] >= CLASS_CONJURER 
 		&& client_classes[player] <= CLASS_HUNTER 
 		&& stats[player]->playerRace != RACE_HUMAN )
@@ -2841,28 +2841,28 @@ void initClass(const int player)
 	}
 	if ( isLocalPlayer )
 	{
-		if ( stats[player]->playerRace == RACE_VAMPIRE && stats[player]->appearance == 0 )
+		if ( stats[player]->playerRace == RACE_VAMPIRE && stats[player]->stat_appearance == 0 )
 		{
 			addSpell(SPELL_LEVITATION, player, true);
 			addSpell(SPELL_BLEED, player, true);
 		}
-		else if ( stats[player]->playerRace == RACE_SUCCUBUS && stats[player]->appearance == 0 )
+		else if ( stats[player]->playerRace == RACE_SUCCUBUS && stats[player]->stat_appearance == 0 )
 		{
 			addSpell(SPELL_TELEPORTATION, player, true);
 			addSpell(SPELL_SELF_POLYMORPH, player, true);
 		}
-		else if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+		else if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->stat_appearance == 0 )
 		{
 			addSpell(SPELL_FLUTTER, player, true);
 			addSpell(SPELL_DASH, player, true);
 			addSpell(SPELL_ACID_SPRAY, player, true);
 		}
-		else if ( stats[player]->playerRace == RACE_INCUBUS && stats[player]->appearance == 0 )
+		else if ( stats[player]->playerRace == RACE_INCUBUS && stats[player]->stat_appearance == 0 )
 		{
 			addSpell(SPELL_TELEPORTATION, player, true);
 			addSpell(SPELL_SHADOW_TAG, player, true);
 		}
-		else if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
+		else if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->stat_appearance == 0 )
 		{
 			addSpell(SPELL_SALVAGE, player, true);
 		}
@@ -2947,7 +2947,7 @@ void initClass(const int player)
 				if ( item->type == SPELL_ITEM )
 				{
 					bool skipSpellRearrange = false;
-					spell_t* spell = getSpellFromItem(player, item);
+					spell_t* spell = getSpellFromItem(player, item, false);
 					if ( spell && client_classes[player] == CLASS_SHAMAN )
 					{
 						// don't add shapeshift spells to hotbar.
@@ -3059,7 +3059,7 @@ void initShapeshiftHotbar(int player)
 		Item* item = static_cast<Item*>(node->element);
 		if ( item && item->type == SPELL_ITEM )
 		{
-			spell_t* spell = getSpellFromItem(player, item);
+			spell_t* spell = getSpellFromItem(player, item, true);
 			if ( spell )
 			{
 				if ( newSpell && newSpell == spell )
@@ -3252,7 +3252,7 @@ void deinitShapeshiftHotbar(int player)
 		{
 			if ( item->type == SPELL_ITEM && item->appearance >= 1000 )
 			{
-				spell_t* spell = getSpellFromItem(player, item);
+				spell_t* spell = getSpellFromItem(player, item, true);
 				if ( spell && client_classes[player] == CLASS_SHAMAN )
 				{
 					// move shapeshift spells out of inventory. 
@@ -3304,7 +3304,7 @@ bool playerUnlockedShamanSpell(const int player, Item* const item)
 		return false;
 	}
 
-	spell_t* spell = getSpellFromItem(player, item);
+	spell_t* spell = getSpellFromItem(player, item, false);
 	int levelRequirement = 0;
 	if ( spell && client_classes[player] == CLASS_SHAMAN )
 	{

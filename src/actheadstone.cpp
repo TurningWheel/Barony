@@ -19,6 +19,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -71,12 +72,30 @@ void actHeadstone(Entity* my)
 		}
 	}
 
+#ifdef USE_FMOD
+	if ( HEADSTONE_AMBIENCE == 0 )
+	{
+		HEADSTONE_AMBIENCE--;
+		my->stopEntitySound();
+		my->entity_sound = playSoundEntityLocal(my, 149, 32);
+	}
+	if ( my->entity_sound )
+	{
+		bool playing = false;
+		my->entity_sound->isPlaying(&playing);
+		if ( !playing )
+		{
+			my->entity_sound = nullptr;
+		}
+	}
+#else
 	HEADSTONE_AMBIENCE--;
 	if ( HEADSTONE_AMBIENCE <= 0 )
 	{
 		HEADSTONE_AMBIENCE = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal( my, 149, 32 );
 	}
+#endif
 
 	if ( multiplayer == CLIENT )
 	{
@@ -100,10 +119,10 @@ void actHeadstone(Entity* my)
 	bool shouldspawn = false;
 
 	// rightclick message
-	int i;
+	int triggeredPlayer = -1;
 	if ( multiplayer != CLIENT )
 	{
-		for (i = 0; i < MAXPLAYERS; i++)
+		for (int i = 0; i < MAXPLAYERS; i++)
 		{
 			if ( selectedEntity[i] == my || client_selected[i] == my )
 			{
@@ -113,6 +132,11 @@ void actHeadstone(Entity* my)
 					players[i]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
 						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_GRAVE,
 						Language::get(485 + HEADSTONE_MESSAGE % 17));
+
+					Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_GRAVE_EPITAPHS_READ, "gravestone", 1);
+					Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_GRAVE_EPITAPHS_PERCENT, "gravestone", (1 << (HEADSTONE_MESSAGE % 17)));
+
+					triggeredPlayer = i;
 
 					if ( HEADSTONE_GHOUL && !HEADSTONE_FIRED )
 					{
@@ -145,6 +169,18 @@ void actHeadstone(Entity* my)
 					if ( tmpStats )
 					{
 						strcpy(tmpStats->name, "enslaved ghoul");
+						tmpStats->setAttribute("special_npc", "enslaved ghoul");
+					}
+					if ( triggeredPlayer >= 0 )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(triggeredPlayer, Compendium_t::CPDM_GRAVE_GHOULS_ENSLAVED, "gravestone", 1);
+					}
+				}
+				else
+				{
+					if ( triggeredPlayer >= 0 )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(triggeredPlayer, Compendium_t::CPDM_GRAVE_GHOULS, "gravestone", 1);
 					}
 				}
 			}

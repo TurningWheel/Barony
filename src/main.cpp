@@ -295,7 +295,10 @@ SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS] =
 	{ 52, STEAM_STAT_INT, "STAT_DAPPER_2"},
 	{ 53, STEAM_STAT_INT, "STAT_DAPPER_3"},
 	{ 54, STEAM_STAT_INT, "STAT_DAPPER"},
-	{ 55, STEAM_STAT_INT, "STAT_DUNGEONSEED" }
+	{ 55, STEAM_STAT_INT, "STAT_DUNGEONSEED" },
+	{ 56, STEAM_STAT_INT, "STAT_PITCH_PERFECT" },
+	{ 57, STEAM_STAT_INT, "STAT_RUNG_OUT" },
+	{ 58, STEAM_STAT_INT, "STAT_SMASH_MELEE" }
 };
 
 SteamStat_t g_SteamGlobalStats[NUM_GLOBAL_STEAM_STATISTICS] =
@@ -511,16 +514,7 @@ SDL_Surface* font12x12_bmp = nullptr;
 SDL_Surface* font16x16_bmp = nullptr;
 SDL_Surface** sprites = nullptr;
 SDL_Surface** tiles = nullptr;
-std::unordered_map<std::string, SDL_Surface*> achievementImages;
-std::unordered_map<std::string, std::string> achievementNames;
-std::unordered_map<std::string, std::string> achievementDesc;
-std::unordered_set<std::string> achievementHidden;
-std::set<std::pair<std::string, std::string>, Comparator> achievementNamesSorted;
-std::unordered_map<std::string, int> achievementProgress; // ->second is the associated achievement stat index
-std::unordered_map<std::string, int64_t> achievementUnlockTime;
 
-std::unordered_set<std::string> achievementUnlockedLookup;
-bool achievementsNeedResort = true;
 Uint32 imgref = 1, vboref = 1;
 const Uint32 ttfTextCacheLimit = 9000;
 GLuint* texid = nullptr;

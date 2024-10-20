@@ -22,6 +22,7 @@
 #include "player.hpp"
 #include "ui/MainMenu.hpp"
 #include "init.hpp"
+#include "ui/Image.hpp"
 
 static real_t getLightAtModifier = 1.0;
 static real_t getLightAtAdder = 0.0;
@@ -571,7 +572,14 @@ vec4_t unproject(
 
 -------------------------------------------------------------------------------*/
 
-static void fillSmoothLightmap(int which) {
+static void fillSmoothLightmap(int which, map_t& map) {
+#ifndef EDITOR
+    if ( &map == &CompendiumEntries.compendiumMap )
+    {
+        return;
+    }
+#endif
+
     auto lightmap = lightmaps[which].data();
     auto lightmapSmoothed = lightmapsSmoothed[which].data();
     
@@ -617,7 +625,7 @@ static inline bool testTileOccludes(const map_t& map, int index) {
     return (t0 & 0xffffffff00000000) && (t0 & 0x00000000ffffffff) && t1;
 }
 
-static void loadLightmapTexture(int which) {
+static void loadLightmapTexture(int which, map_t& map) {
     auto lightmapSmoothed = lightmapsSmoothed[which].data();
     
     // allocate lightmap pixel data
@@ -628,13 +636,12 @@ static void loadLightmapTexture(int which) {
 #ifdef EDITOR
     const bool fullbright = false;
 #else
-    const bool fullbright = conductGameChallenges[CONDUCT_CHEATS_ENABLED] ? *cvar_fullBright : false;
+    const bool fullbright = (&map == &CompendiumEntries.compendiumMap) ? true :// compendium virtual map is always fullbright
+        (conductGameChallenges[CONDUCT_CHEATS_ENABLED] ? *cvar_fullBright : false);
 #endif
     
     // build lightmap texture data
     const float div = 1.f / 255.f;
-    const int xoff = MAPLAYERS * map.height;
-    const int yoff = MAPLAYERS;
     if (fullbright) {
         for (int y = 0; y < map.height; ++y) {
             for (int x = 0; x < map.width; ++x) {
@@ -642,6 +649,8 @@ static void loadLightmapTexture(int which) {
             }
         }
     } else {
+        const int xoff = MAPLAYERS * map.height;
+        const int yoff = MAPLAYERS;
         for (int y = 0; y < map.height; ++y) {
             for (int x = 0, index = y * yoff; x < map.width; ++x, index += xoff) {
                 if (!testTileOccludes(map, index)) {
@@ -779,6 +788,10 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
                     remap.x.y = 1.f;
                     remap.y.z = 1.f;
                     remap.z.x = 1.f;
+
+                    //remap.x.x = 0.8f; - desaturate option
+                    //remap.y.y = 0.8f;
+                    //remap.z.z = 0.8f;
                 }
             }
 #ifndef EDITOR
@@ -938,7 +951,7 @@ bool hdrEnabled = true;
 
 static int oldViewport[4];
 
-void glBeginCamera(view_t* camera, bool useHDR)
+void glBeginCamera(view_t* camera, bool useHDR, map_t& map)
 {
     if (!camera) {
         return;
@@ -1013,13 +1026,14 @@ void glBeginCamera(view_t* camera, bool useHDR)
             break;
         }
     }
-    fillSmoothLightmap(lightmapIndex);
-    loadLightmapTexture(lightmapIndex);
+    fillSmoothLightmap(lightmapIndex, map);
+    loadLightmapTexture(lightmapIndex, map);
     
 	// upload uniforms
     uploadUniforms(voxelShader, (float*)&proj, (float*)&view, (float*)&mapDims);
     uploadUniforms(voxelBrightShader, (float*)&proj, (float*)&view, nullptr);
     uploadUniforms(voxelDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(voxelBrightDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
     uploadUniforms(worldShader, (float*)&proj, (float*)&view, (float*)&mapDims);
     uploadUniforms(worldDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
     uploadUniforms(worldDarkShader, (float*)&proj, (float*)&view, nullptr);
@@ -1033,7 +1047,7 @@ void glBeginCamera(view_t* camera, bool useHDR)
 #include <thread>
 #include <future>
 
-void glEndCamera(view_t* camera, bool useHDR)
+void glEndCamera(view_t* camera, bool useHDR, map_t& map)
 {
     if (!camera) {
         return;
@@ -1226,12 +1240,12 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     // bind shader
     auto& dither = entity->dithering[camera];
     auto& shader = !entity->flags[BRIGHT] && !telepath ?
-        (dither.value < Entity::Dither::MAX ? voxelDitheredShader : voxelShader):
-        voxelBrightShader;
+        (dither.value < Entity::Dither::MAX ? voxelDitheredShader : voxelShader) :
+        ((entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] && dither.value < Entity::Dither::MAX) ? voxelBrightDitheredShader : voxelBrightShader);
     shader.bind();
     
     // upload dither amount, if necessary
-    if (&shader == &voxelDitheredShader) {
+    if (&shader == &voxelDitheredShader || &shader == &voxelBrightDitheredShader) {
         GL_CHECK_ERR(glUniform1f(shader.uniform("uDitherAmount"),
             (float)((uint32_t)1 << (dither.value - 1)) / (1 << (Entity::Dither::MAX / 2 - 1))));
     }
@@ -1705,6 +1719,10 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 #endif
 }
 
+#ifndef EDITOR
+static ConsoleVariable<GLfloat> cvar_dmgSpriteDepthRange("/dmg_sprite_depth_range", 0.49);
+#endif // !EDITOR
+
 void glDrawSprite(view_t* camera, Entity* entity, int mode)
 {
     // bind texture
@@ -1726,6 +1744,14 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     }
     if (entity->flags[OVERDRAW]) {
         GL_CHECK_ERR(glDepthRange(0, 0.1));
+    }
+    else
+    {
+        if ( entity->behavior == &actDamageGib ) {
+#ifndef EDITOR
+            GL_CHECK_ERR(glDepthRange(0.f, *cvar_dmgSpriteDepthRange));
+#endif // !EDITOR
+        }
     }
     
     // bind shader
@@ -1795,16 +1821,12 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     if (mode == REALCOLORS) {
         GL_CHECK_ERR(glDisable(GL_BLEND));
     }
-    if (entity->flags[OVERDRAW]) {
+    if (entity->flags[OVERDRAW] || entity->behavior == &actDamageGib) {
         GL_CHECK_ERR(glDepthRange(0.f, 1.f));
     }
 }
 
-#ifndef EDITOR
-static ConsoleVariable<GLfloat> cvar_dmgSpriteDepthRange("/dmg_sprite_depth_range", 0.49);
-#endif // !EDITOR
-
-void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode)
+void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode, bool useTextAsImgPath, bool rotate)
 {
 	if (!camera || !entity || text.empty()) {
 		return;
@@ -1830,15 +1852,35 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 	else if (entity->behavior == &actSpriteNametag) {
 		color = entity->skill[1];
 	}
-	auto rendered_text = Text::get(
-        text.c_str(), "fonts/pixel_maz.ttf#32#2",
-		color, makeColor(0, 0, 0, 255));
-	auto textureId = rendered_text->getTexID();
 
-    // bind texture
-    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, textureId));
-    const GLfloat w = static_cast<GLfloat>(rendered_text->getWidth());
-    const GLfloat h = static_cast<GLfloat>(rendered_text->getHeight());
+    GLfloat w = 0.0;
+    GLfloat h = 0.0;
+    if ( useTextAsImgPath )
+    {
+        if ( text.find('*') == std::string::npos )
+        {
+            text.insert(text.begin(), '*');
+        }
+        if ( auto imgGet = Image::get(text.c_str()) )
+        {
+            // bind texture
+            GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, imgGet->getTexID()));
+            w = imgGet->getWidth();
+            h = imgGet->getHeight();
+        }
+    }
+    else
+    {
+	    auto rendered_text = Text::get(
+            text.c_str(), "fonts/pixel_maz.ttf#32#2",
+		    color, makeColor(0, 0, 0, 255));
+	    auto textureId = rendered_text->getTexID();
+
+        // bind texture
+        GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, textureId));
+        w = static_cast<GLfloat>(rendered_text->getWidth());
+        h = static_cast<GLfloat>(rendered_text->getHeight());
+    }
     if (mode == REALCOLORS) {
         GL_CHECK_ERR(glEnable(GL_BLEND));
     }
@@ -1878,10 +1920,24 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
         (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
         (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
     }
+
     v = vec4(entity->x * 2.f, -entity->z * 2.f - 1, entity->y * 2.f, 0.f);
     (void)translate_mat(&m, &t, &v); t = m;
-    (void)rotate_mat(&m, &t, entity->flags[OVERDRAW] ? -90.f :
-        -90.f - camera->ang * (180.f / PI), &i.y); t = m;
+    if ( rotate )
+    {
+        float rotx, roty, rotz;
+        rotx = entity->roll * 180.0 / PI; // roll
+        roty = 360.0 - entity->yaw * 180.0 / PI; // yaw
+        rotz = 360.0 - entity->pitch * 180.0 / PI; // pitch
+        (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
+        (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
+        (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
+    }
+    else
+    {
+        (void)rotate_mat(&m, &t, entity->flags[OVERDRAW] ? -90.f :
+            -90.f - camera->ang * (180.f / PI), &i.y); t = m;
+    }
     v = vec4(entity->focalx * 2.f, -entity->focalz * 2.f, entity->focaly * 2.f, 0.f);
     (void)translate_mat(&m, &t, &v); t = m;
     v = vec4(entity->scalex * w, entity->scaley * h, entity->scalez, 0.f);
@@ -2197,10 +2253,10 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
 	if (dirty) {
         GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 0.f));
         GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-		glBeginCamera(&camera, false);
+		glBeginCamera(&camera, false, map);
 		glDrawWorld(&camera, ENTITYUIDS);
 		drawEntities3D(&camera, ENTITYUIDS);
-		glEndCamera(&camera, false);
+		glEndCamera(&camera, false, map);
 	}
 
 	GLubyte pixel[4];

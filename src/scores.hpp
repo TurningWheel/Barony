@@ -112,7 +112,10 @@ enum SteamStatIndexes : int
 	STEAM_STAT_DAPPER_2,
 	STEAM_STAT_DAPPER_3,
 	STEAM_STAT_DAPPER,
-	STEAM_STAT_DUNGEONSEED
+	STEAM_STAT_DUNGEONSEED,
+	STEAM_STAT_PITCH_PERFECT,
+	STEAM_STAT_RUNG_OUT,
+	STEAM_STAT_SMASH_MELEE
 };
 
 enum SteamGlobalStatIndexes : int
@@ -244,7 +247,10 @@ static const std::pair<std::string, int> steamStatAchStringsAndMaxVals[] =
 	std::make_pair("BARONY_ACH_NONE", 0xFFFFFFFF),			// STEAM_STAT_DAPPER_2
 	std::make_pair("BARONY_ACH_NONE", 0xFFFFFFFF),			// STEAM_STAT_DAPPER_3
 	std::make_pair("BARONY_ACH_DAPPER", 30),				// STEAM_STAT_DAPPER
-	std::make_pair("BARONY_ACH_DUNGEONSEED", 12)			// STEAM_STAT_DUNGEONSEED
+	std::make_pair("BARONY_ACH_DUNGEONSEED", 12),			// STEAM_STAT_DUNGEONSEED
+	std::make_pair("BARONY_ACH_BAT1000", 81),				// STEAM_STAT_PITCH_PERFECT
+	std::make_pair("BARONY_ACH_RUNG_OUT", 20),				// STEAM_STAT_RUNG_OUT
+	std::make_pair("BARONY_ACH_SMASH_MELEE", 500)			// STEAM_STAT_SMASH_MELEE
 };
 
 typedef struct score_t
@@ -422,6 +428,9 @@ struct SaveGameInfo {
 			}
 		};
 		std::vector<std::pair<int, PlayerRaceHostility_t>> shopkeeperHostility;
+		std::vector<std::pair<std::string, std::vector<int>>> compendium_item_events;
+		std::vector<std::pair<int, int>> itemDegradeRNG;
+		int sustainedSpellMPUsed = 0;
 
 		struct stat_t {
 			struct item_t {
@@ -506,7 +515,7 @@ struct SaveGameInfo {
 			std::string name;
 			Uint32 type = Monster::HUMAN;
 			Uint32 sex = 0;
-			Uint32 appearance = 0;
+			Uint32 statscore_appearance = 0;
 			int HP = 0;
 			int maxHP = 0;
 			int MP = 0;
@@ -535,7 +544,7 @@ struct SaveGameInfo {
 				fp->property("name", name);
 				fp->property("type", type);
 				fp->property("sex", sex);
-				fp->property("appearance", appearance);
+				fp->property("appearance", statscore_appearance);
 				fp->property("HP", HP);
 				fp->property("maxHP", maxHP);
 				fp->property("MP", MP);
@@ -604,6 +613,9 @@ struct SaveGameInfo {
 			fp->property("followers", followers);
 			fp->property("game_statistics", gameStatistics);
 			fp->property("shopkeeper_hostility", shopkeeperHostility);
+			fp->property("compendium_item_events", compendium_item_events);
+			fp->property("item_degrade_rng", itemDegradeRNG);
+			fp->property("sustained_mp_used", sustainedSpellMPUsed);
 			return true;
 		}
 
@@ -713,7 +725,8 @@ public:
 		BARONY_ACH_FAST_LEARNER,
 		BARONY_ACH_MASTER,
 		BARONY_ACH_DAPPER,
-		BARONY_ACH_SPROUTS
+		BARONY_ACH_SPROUTS,
+		BARONY_ACH_BY_THE_BOOK
 	};
 	enum AchievementEvent : int
 	{
@@ -727,7 +740,9 @@ public:
 		DIPLOMA_LEVEL_COMPLETE,
 		BACK_TO_BASICS_LEVEL_COMPLETE,
 		FAST_LEARNER_TIME_UPDATE,
-		DAPPER_EQUIPMENT_CHECK
+		DAPPER_EQUIPMENT_CHECK,
+		BY_THE_BOOK_COMPENDIUM_PAGE,
+		BY_THE_BOOK_BREW
 	};
 	void updatePlayerAchievement(int player, Achievement achievement, AchievementEvent achEvent);
 	bool bIsAchievementAllowedDuringTutorial(std::string achievementStr)
@@ -800,6 +815,7 @@ public:
 		int rollTheBones = 0;
 		int trashCompactor = 0;
 		bool totalKillsTickUpdate = false;
+		Uint32 ticksByTheBookViewed = 0;
 		static bool allPlayersDeadEvent;
 
 		std::pair<int, int> realBoy;

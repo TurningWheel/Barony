@@ -38,6 +38,7 @@ namespace MainMenu {
 		None,           // don't fade anywhere (???)
 		TitleScreen,    // fade to the title screen
 		RootMainMenu,   // return to main menu, save no score if ingame
+		RootMainMenuNoEndGame,   // return to main menu, doEndGame already done
         Endgame,        // save a highscore and return to main menu
 		Victory,        // save a highscore and roll credits
 
@@ -113,6 +114,7 @@ namespace MainMenu {
     void controllerDisconnected(int player);                        // controller disconnect prompt, eg if a player unplugs a controller
 	void tutorialFirstTimeCompleted();								// tutorial first level completed event
     void openGameoverWindow(int player, bool tutorial = false);     // opens gameover window, used when player dies
+	void openCompendium();
 	void disconnectedFromServer(const char* text);                  // called when the player is disconnected from the server, prompts them to end the game
 	void receivedInvite(void*);                                     // called when a player receives an invite to a lobby (EOS or Steam)
 	void setupSplitscreen();                                        // used to resize player game views, for example if a player drops or we change the aspect ratio

@@ -815,7 +815,7 @@ static void demo_record(const char* filename) {
     // write player stats
     demo_file->write(&stats[clientnum]->playerRace, sizeof(Stat::playerRace), 1);
     demo_file->write(&stats[clientnum]->sex, sizeof(Stat::sex), 1);
-    demo_file->write(&stats[clientnum]->appearance, sizeof(Stat::appearance), 1);
+    demo_file->write(&stats[clientnum]->stat_appearance, sizeof(Stat::stat_appearance), 1);
     demo_file->write(&client_classes[clientnum], sizeof(client_classes[clientnum]), 1);
 
     // write player name
@@ -864,7 +864,7 @@ static void demo_play(const char* filename) {
     // read player stats
     demo_file->read(&stats[clientnum]->playerRace, sizeof(Stat::playerRace), 1);
     demo_file->read(&stats[clientnum]->sex, sizeof(Stat::sex), 1);
-    demo_file->read(&stats[clientnum]->appearance, sizeof(Stat::appearance), 1);
+    demo_file->read(&stats[clientnum]->stat_appearance, sizeof(Stat::stat_appearance), 1);
     demo_file->read(&client_classes[clientnum], sizeof(client_classes[clientnum]), 1);
 
     // read player name
@@ -1209,6 +1209,11 @@ void gameLogic(void)
 							flame->x += local_rng.rand() % (entity->sizex * 2 + 1) - entity->sizex;
 							flame->y += local_rng.rand() % (entity->sizey * 2 + 1) - entity->sizey;
 							flame->z += local_rng.rand() % 5 - 2;
+							if ( entity->behavior == &actBell )
+							{
+								flame->x += entity->focalx * cos(entity->yaw) + entity->focaly * cos(entity->yaw + PI / 2);
+								flame->y += entity->focalx * sin(entity->yaw) + entity->focaly * sin(entity->yaw + PI / 2);
+							}
 						}
 				    }
 				}
@@ -1383,15 +1388,20 @@ void gameLogic(void)
 									// water and lava noises
 									if ( ticks % (TICKS_PER_SECOND * 4) == (y + x * map.height) % (TICKS_PER_SECOND * 4) && local_rng.rand() % 3 == 0 )
 									{
-										if ( lavatiles[map.tiles[index]] )
+										int coord = x + y * 1000;
+										if ( map.liquidSfxPlayedTiles.find(coord) == map.liquidSfxPlayedTiles.end() )
 										{
-											// bubbling lava
-											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 155, 100 );
-										}
-										else if ( swimmingtiles[map.tiles[index]] )
-										{
-											// running water
-											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 135, 32 );
+											if ( lavatiles[map.tiles[index]] )
+											{
+												// bubbling lava
+												playSoundPosLocal( x * 16 + 8, y * 16 + 8, 155, 100 );
+											}
+											else if ( swimmingtiles[map.tiles[index]] )
+											{
+												// running water
+												playSoundPosLocal( x * 16 + 8, y * 16 + 8, 135, 32 );
+											}
+											map.liquidSfxPlayedTiles.insert(coord);
 										}
 									}
 
@@ -1520,10 +1530,10 @@ void gameLogic(void)
 						steamAchievementClient(c, "BARONY_ACH_WELL_PREPARED");
 					}
 
-					if ( achievementStatusRhythmOfTheKnight[c] )
+					/*if ( achievementStatusRhythmOfTheKnight[c] )
 					{
 						steamAchievementClient(c, "BARONY_ACH_RHYTHM_OF_THE_KNIGHT");
-					}
+					}*/
 					if ( achievementStatusThankTheTank[c] )
 					{
 						steamAchievementClient(c, "BARONY_ACH_THANK_THE_TANK");
@@ -1636,16 +1646,18 @@ void gameLogic(void)
 				gameplayPreferences[i].process();
 			}
 			updatePlayerConductsInMainLoop();
+			Compendium_t::Events_t::updateEventsInMainLoop(clientnum);
 			achievementObserver.updatePlayerAchievement(clientnum, AchievementObserver::BARONY_ACH_DAPPER, AchievementObserver::DAPPER_EQUIPMENT_CHECK);
 
 			//if( TICKS_PER_SECOND )
 			//generatePathMaps();
-			bool debugMonsterTimer = false && !gamePaused;
+			bool debugMonsterTimer = false && !gamePaused && keystatus[SDLK_g];
 			if ( debugMonsterTimer )
 			{
 				printlog("loop start");
 			}
 			real_t accum = 0.0;
+			std::map<int, real_t> entityAccum;
 			DebugStats.eventsT3 = std::chrono::high_resolution_clock::now();
 
 			// run world UI entities
@@ -1788,12 +1800,20 @@ void gameLogic(void)
 
 							entity->ranbehavior = true;
 							nextnode = node->next;
-							if ( debugMonsterTimer && entity->behavior == &actMonster )
+							if ( debugMonsterTimer )
 							{
 								auto t2 = std::chrono::high_resolution_clock::now();
-								printlog("%d: %d %f", entity->sprite, entity->monsterState,
-									1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t).count());
+								//printlog("%d: %d %f", entity->sprite, entity->monsterState,
+								//	1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t).count());
 								accum += 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t).count();
+								entityAccum[entity->sprite] += 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t).count();
+								/*if ( entity->sprite == 1426 || entity->sprite == 1430 )
+								{
+									if ( 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t).count() > 1.0 )
+									{
+										printlog("gnome time: uid %d | time %.2f", entity->getUID(), 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t).count());
+									}
+								}*/
 							}
 
 						}
@@ -1805,11 +1825,62 @@ void gameLogic(void)
 				    // when this flag is set, it's time to load the next level.
 					loadnextlevel = false;
 
+					int totalFloorGold = 0;
+					int totalFloorItems = 0;
+					int totalFloorItemValue[MAXPLAYERS];
+					int totalFloorMonsters = 0;
+					int totalFloorEnemies[MAXPLAYERS];
+					Item tmpItem;
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						totalFloorItemValue[i] = 0;
+						totalFloorEnemies[i] = 0;
+					}
+
 					for ( node = map.entities->first; node != nullptr; node = node->next )
 					{
 						entity = (Entity*)node->element;
 						entity->flags[NOUPDATE] = true;
+						if ( entity->behavior == &actGoldBag )
+						{
+							totalFloorGold += entity->goldAmount;
+						}
+						else if ( entity->behavior == &actItem )
+						{
+							totalFloorItems++;
+							tmpItem.type = (entity->skill[10] >= 0 && entity->skill[10] < NUMITEMS) ? (ItemType)entity->skill[10] : ItemType::GEM_ROCK;
+							tmpItem.status = (int)entity->skill[11] < Status::BROKEN ?
+								Status::BROKEN : ((int)entity->skill[11] > EXCELLENT ? EXCELLENT : (Status)entity->skill[11]);
+							tmpItem.beatitude = std::min(std::max((Sint16)-100, (Sint16)entity->skill[12]), (Sint16)100);
+							tmpItem.count = std::max((Sint16)entity->skill[13], (Sint16)1);
+							tmpItem.appearance = entity->skill[14];
+							tmpItem.identified = entity->skill[15];
 
+							for ( int i = 0; i < MAXPLAYERS; ++i )
+							{
+								if ( !client_disconnected[i] )
+								{
+									totalFloorItemValue[i] += tmpItem.sellValue(i);
+								}
+							}
+						}
+						else if ( entity->behavior == &actMonster )
+						{
+							for ( int i = 0; i < MAXPLAYERS; ++i )
+							{
+								if ( !client_disconnected[i] )
+								{
+									if ( players[i]->entity )
+									{
+										if ( !entity->checkFriend(players[i]->entity) )
+										{
+											totalFloorEnemies[i]++;
+										}
+									}
+								}
+							}
+							totalFloorMonsters++;
+						}
 						if ( (entity->behavior == &actThrown || entity->behavior == &actParticleSapCenter) && entity->sprite == 977 )
 						{
 							// boomerang particle, make sure to return on level change.
@@ -1987,6 +2058,8 @@ void gameLogic(void)
 						}
 					}
 
+					std::string prevmapname = map.name;
+
 					bool loadingTheSameFloorAsCurrent = false;
 					if ( skipLevelsOnLoad > 0 )
 					{
@@ -2099,6 +2172,22 @@ void gameLogic(void)
 					loadingSameLevelAsCurrent = false;
 					darkmap = false;
 
+					bool playerDied[MAXPLAYERS] = { false };
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( stats[i] && stats[i]->HP <= 0 )
+						{
+							playerDied[i] = true;
+						}
+						if ( i == 0 || !players[i]->isLocalPlayer() )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_GOLD_LEFT_BEHIND, "merchants guild", totalFloorGold);
+							Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::MONSTERS_LEFT_BEHIND, "the church", totalFloorEnemies[i]);
+							Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::ITEMS_LEFT_BEHIND, "merchants guild", totalFloorItems);
+							Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::ITEM_VALUE_LEFT_BEHIND, "merchants guild", totalFloorItemValue[i]);
+						}
+					}
+
                     // load map file
 					loading = true;
 	                createLevelLoadScreen(5);
@@ -2157,6 +2246,9 @@ void gameLogic(void)
 					}
 					EnemyHPDamageBarHandler::dumpCache();
 					monsterAllyFormations.reset();
+					particleTimerEmitterHitEntities.clear();
+					monsterTrapIgnoreEntities.clear();
+					minimapHighlights.clear();
 
 					achievementObserver.updateData();
 
@@ -2392,6 +2484,7 @@ void gameLogic(void)
 									if ( monsterStats->type == HUMAN && currentlevel == 25 && !strncmp(map.name, "Mages Guild", 11) )
 									{
 										steamAchievementClient(c, "BARONY_ACH_ESCORT");
+										Compendium_t::Events_t::eventUpdateWorld(c, Compendium_t::CPDM_HUMANS_SAVED, "the church", 1);
 									}
 
 									if ( c > 0 && multiplayer == SERVER && !players[c]->isLocalPlayer() && net_packet && net_packet->data )
@@ -2415,7 +2508,7 @@ void gameLogic(void)
 										serverUpdateAllyStat(c, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);
 									}
                                     
-                                    if (players[c]->isLocalPlayer() && monsterStats->name[0] && !monsterNameIsGeneric(*monsterStats)) {
+                                    if (players[c]->isLocalPlayer() && monsterStats->name[0] && (!monsterNameIsGeneric(*monsterStats) || monsterStats->type == SLIME)) {
                                         Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
                                         nametag->x = monster->x;
                                         nametag->y = monster->y;
@@ -2484,11 +2577,20 @@ void gameLogic(void)
 						list_FreeAll(&tempFollowers[c]);
 					}
 
+					for ( c = 0; c < MAXPLAYERS; c++ )
+					{
+						Compendium_t::Events_t::onLevelChangeEvent(c, Compendium_t::Events_t::previousCurrentLevel, Compendium_t::Events_t::previousSecretlevel, prevmapname, playerDied[c]);
+						players[c]->compendiumProgress.playerAliveTimeTotal = 0;
+						players[c]->compendiumProgress.playerGameTimeTotal = 0;
+					}
+
                     // save at end of level change
 					if ( gameModeManager.allowsSaves() )
 					{
 						saveGame();
 					}
+					Compendium_t::Events_t::writeItemsSaveData();
+					Compendium_t::writeUnlocksSaveData();
 #ifdef LOCAL_ACHIEVEMENTS
 					LocalAchievements_t::writeToFile();
 #endif
@@ -2497,7 +2599,14 @@ void gameLogic(void)
 			}
 			if ( debugMonsterTimer )
 			{
-				printlog("accum: %f", accum);
+				if ( accum > 5.0 )
+				{
+					printlog("accum: %f, tick: %d", accum, ticks);
+					for ( auto& pair : entityAccum )
+					{
+						printlog("entity: %d, accum: %.2f", pair.first, pair.second);
+					}
+				}
 				}
 			for ( node = map.entities->first; node != nullptr; node = node->next )
 			{
@@ -2739,7 +2848,29 @@ void gameLogic(void)
 							break;
 					}
 
-					if ( item->type == FOOD_BLOOD && stats[player]->playerRace == RACE_VAMPIRE && stats[player]->appearance == 0 )
+					if ( ticks % TICKS_PER_SECOND == 25 )
+					{
+						if ( item->identified )
+						{
+							if ( item->type == SPELL_ITEM )
+							{
+								if ( auto spell = getSpellFromItem(player, item, true) )
+								{
+									Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_RUNS_COLLECTED, item->type, 1, false, spell->ID);
+								}
+							}
+							else
+							{
+								Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_RUNS_COLLECTED, item->type, 1);
+								if ( items[item->type].item_slot != ItemEquippableSlot::NO_EQUIP )
+								{
+									Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BLESSED_MAX, item->type, item->beatitude);
+								}
+							}
+						}
+					}
+
+					if ( item->type == FOOD_BLOOD && stats[player]->playerRace == RACE_VAMPIRE && stats[player]->stat_appearance == 0 )
 					{
 						bloodCount += item->count;
 						if ( bloodCount >= 20 )
@@ -2917,17 +3048,22 @@ void gameLogic(void)
 								if ( z == 0 )
 								{
 									// water and lava noises
-									if ( ticks % TICKS_PER_SECOND == (y + x * map.height) % TICKS_PER_SECOND && local_rng.rand() % 3 == 0 )
+									if ( ticks % (TICKS_PER_SECOND * 4) == (y + x * map.height) % (TICKS_PER_SECOND * 4) && local_rng.rand() % 3 == 0 )
 									{
-										if ( lavatiles[map.tiles[index]] )
+										int coord = x + y * 1000;
+										if ( map.liquidSfxPlayedTiles.find(coord) == map.liquidSfxPlayedTiles.end() )
 										{
-											// bubbling lava
-											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 155, 100 );
-										}
-										else if ( swimmingtiles[map.tiles[index]] )
-										{
-											// running water
-											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 135, 32 );
+											if ( lavatiles[map.tiles[index]] )
+											{
+												// bubbling lava
+												playSoundPosLocal(x * 16 + 8, y * 16 + 8, 155, 100);
+											}
+											else if ( swimmingtiles[map.tiles[index]] )
+											{
+												// running water
+												playSoundPosLocal(x * 16 + 8, y * 16 + 8, 135, 32);
+											}
+											map.liquidSfxPlayedTiles.insert(coord);
 										}
 									}
 
@@ -3009,6 +3145,7 @@ void gameLogic(void)
 				gameplayPreferences[i].process();
 			}
 			updatePlayerConductsInMainLoop();
+			Compendium_t::Events_t::updateEventsInMainLoop(clientnum);
 			achievementObserver.updatePlayerAchievement(clientnum, AchievementObserver::BARONY_ACH_DAPPER, AchievementObserver::DAPPER_EQUIPMENT_CHECK);
 
 			// ask for entity delete update
@@ -3377,6 +3514,28 @@ void gameLogic(void)
 						break;
 				}
 
+				if ( ticks % TICKS_PER_SECOND == 25 )
+				{
+					if ( item->identified )
+					{
+						if ( item->type == SPELL_ITEM )
+						{
+							if ( auto spell = getSpellFromItem(clientnum, item, true) )
+							{
+								Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_RUNS_COLLECTED, item->type, 1, false, spell->ID);
+							}
+						}
+						else
+						{
+							Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_RUNS_COLLECTED, item->type, 1);
+							if ( items[item->type].item_slot != ItemEquippableSlot::NO_EQUIP )
+							{
+								Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_MAX, item->type, item->beatitude);
+							}
+						}
+					}
+				}
+
 				if ( itemCategory(item) == WEAPON )
 				{
 					if ( item->beatitude >= 10 )
@@ -3385,7 +3544,7 @@ void gameLogic(void)
 					}
 				}
 
-				if ( item->type == FOOD_BLOOD && stats[clientnum]->playerRace == RACE_VAMPIRE && stats[clientnum]->appearance == 0 )
+				if ( item->type == FOOD_BLOOD && stats[clientnum]->playerRace == RACE_VAMPIRE && stats[clientnum]->stat_appearance == 0 )
 				{
 					bloodCount += item->count;
 					if ( bloodCount >= 20 )
@@ -3474,6 +3633,17 @@ void gameLogic(void)
 	if (!gamePaused && !intro && playeralive)
 	{
 		++completionTime;
+		for ( int c = 0; c < MAXPLAYERS; ++c ) 
+		{
+			players[c]->compendiumProgress.playerAliveTimeTotal++;
+		}
+	}
+	if ( !gamePaused && !intro )
+	{
+		for ( int c = 0; c < MAXPLAYERS; ++c )
+		{
+			players[c]->compendiumProgress.playerGameTimeTotal++;
+		}
 	}
 }
 
@@ -6048,7 +6218,7 @@ void drawAllPlayerCameras() {
 			// do occlusion culling from the perspective of this camera
 			DebugStats.drawWorldT2 = std::chrono::high_resolution_clock::now();
 			occlusionCulling(map, camera);
-			glBeginCamera(&camera, true);
+			glBeginCamera(&camera, true, map);
 
 			// shared minimap progress
 			if ( !splitscreen/*gameplayCustomManager.inUse() && gameplayCustomManager.minimapShareProgress && !splitscreen*/ )
@@ -6191,7 +6361,7 @@ void drawAllPlayerCameras() {
 
 			DebugStats.drawWorldT5 = std::chrono::high_resolution_clock::now();
 			drawEntities3D(&camera, REALCOLORS);
-			glEndCamera(&camera, true);
+			glEndCamera(&camera, true, map);
             
             // undo ghost fog
             if (players[c]->ghost.isActive()) {
@@ -6252,7 +6422,7 @@ static void doConsoleCommands() {
 	bool confirm = false;
 	if (controlEnabled) {
 		if (input.getPlayerControlType() != Input::playerControlType_t::PLAYER_CONTROLLED_BY_KEYBOARD) {
-            if (command || !intro) {
+            if (command || !intro ) {
                 if (keystatus[SDLK_RETURN]) {
                     keystatus[SDLK_RETURN] = 0;
                     confirm = true;
@@ -6265,16 +6435,28 @@ static void doConsoleCommands() {
 		}
 		if (input.consumeBinaryToggle("Chat")) {
 			input.consumeBindingsSharedWithBinding("Chat");
-            if (command || !intro) {
+            if (command || !intro ) {
                 confirm = true;
             }
 		}
+		if ( confirm && !command )
+		{
+			if ( MainMenu::main_menu_frame )
+			{
+				if ( auto compendium = MainMenu::main_menu_frame->findFrame("compendium") )
+				{
+					confirm = false; // stop menuStart triggering console commands
+				}
+			}
+		}
+
 		if (input.consumeBinaryToggle("Console Command")) {
 			input.consumeBindingsSharedWithBinding("Console Command");
 			if (!command) {
 				confirm = true;
 			}
 		}
+
 	}
 
 	if (confirm && !command) // begin a command
@@ -6671,7 +6853,6 @@ int main(int argc, char** argv)
 
         // load game config
 		Input::defaultBindings();
-		MainMenu::randomizeUsername();
         MainMenu::settingsReset();
         MainMenu::settingsApply();
 		bool load_successful = MainMenu::settingsLoad();
@@ -6729,6 +6910,8 @@ int main(int argc, char** argv)
 			deinitApp();
 			exit(c);
 		}
+
+		MainMenu::randomizeUsername();
 
 		// init message
 		printlog("Barony version: %s\n", VERSION);
@@ -7001,12 +7184,12 @@ int main(int argc, char** argv)
 						// set class loadout
 						strcpy(stats[0]->name, "Avatar");
 						stats[0]->sex = static_cast<sex_t>(local_rng.rand() % 2);
-						stats[0]->appearance = local_rng.rand() % NUMAPPEARANCES;
+						stats[0]->stat_appearance = local_rng.rand() % NUMAPPEARANCES;
 						stats[0]->clearStats();
 						initClass(0);
 						if ( stats[0]->playerRace != RACE_HUMAN )
 						{
-							stats[0]->appearance = 0;
+							stats[0]->stat_appearance = 0;
 						}
 
 						// generate unique game key
@@ -7029,10 +7212,10 @@ int main(int argc, char** argv)
 							light = addLight(menucam.x, menucam.y, "mainmenu");
 							occlusionCulling(map, menucam);
                             beginGraphics();
-							glBeginCamera(&menucam, true);
+							glBeginCamera(&menucam, true, map);
 							glDrawWorld(&menucam, REALCOLORS);
 							drawEntities3D(&menucam, REALCOLORS);
-							glEndCamera(&menucam, true);
+							glEndCamera(&menucam, true, map);
 							list_RemoveNode(light->node);
 						}
 
@@ -7044,6 +7227,8 @@ int main(int argc, char** argv)
 						ImGui_t::render();
 #endif
 #ifndef NINTENDO
+						Compendium_t::updateTooltip();
+
 						// draw mouse
 						// only draw 1 cursor in the main menu
 						if ( inputs.getVirtualMouse(inputs.getPlayerIDAllowedKeyboard())->draw_cursor )
@@ -7135,6 +7320,7 @@ int main(int argc, char** argv)
 
 				// toggling the game menu
 				bool doPause = false;
+				bool doCompendium = false;
 				if ( !fadeout )
 				{
 				    bool noOneUsingKeyboard = true;
@@ -7171,6 +7357,18 @@ int main(int argc, char** argv)
 							}
 							break;
 						}
+						const bool compendiumOpenToggle =
+							!intro
+							&& inputs.bPlayerUsingKeyboardControl(i)
+							&& !Input::inputs[i].isDisabled()
+							&& !command;
+						if ( compendiumOpenToggle )
+						{
+							if ( Input::inputs[i].consumeBinaryToggle("Compendium") )
+							{
+								doCompendium = true;
+							}
+						}
 					}
 					if (noOneUsingKeyboard && keystatus[SDLK_ESCAPE]) {
 					    doPause = true;
@@ -7206,6 +7404,40 @@ int main(int argc, char** argv)
 						else
 						{
 							pauseGame(0, MAXPLAYERS);
+						}
+					}
+				}
+				else if ( doCompendium )
+				{
+					bool isOpen = false;
+					if ( MainMenu::main_menu_frame )
+					{
+						if ( auto compendium = MainMenu::main_menu_frame->findFrame("compendium") )
+						{
+							isOpen = true;
+						}
+					}
+					if ( !isOpen )
+					{
+						if ( !gamePaused )
+						{
+							pauseGame(0, MAXPLAYERS);
+						}
+						if ( !gamePaused )
+						{
+							doCompendium = false;
+						}
+					}
+					else if ( isOpen )
+					{
+						if ( gamePaused )
+						{
+							pauseGame(0, MAXPLAYERS);
+							doCompendium = false;
+							if ( !gamePaused )
+							{
+								MainMenu::openCompendium(); // will close
+							}
 						}
 					}
 				}
@@ -7297,6 +7529,7 @@ int main(int argc, char** argv)
 				framesProcResult = doFrames();
 				DebugStats.t6Messages = std::chrono::high_resolution_clock::now();
 				ingameHud();
+				Compendium_t::updateTooltip();
 
                 static ConsoleVariable<bool> showConsumeMouseInputs("/debug_consume_mouse", false);
                 if (!framesProcResult.usable) {
@@ -7336,6 +7569,14 @@ int main(int argc, char** argv)
 
 					// process button actions
 					handleButtons();
+				}
+
+				if ( doCompendium )
+				{
+					if ( gamePaused )
+					{
+						MainMenu::openCompendium();
+					}
 				}
 
 				if ( gamePaused ) // draw after main menu windows etc.

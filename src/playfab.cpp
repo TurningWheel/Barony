@@ -364,7 +364,7 @@ int parseOnlineHiscore(SaveGameInfo& info, Json::Value score)
                 }
                 else if ( s == "appearance" )
                 {
-                    jsonValueToUint(score[m], s, player.stats.appearance);
+                    jsonValueToUint(score[m], s, player.stats.statscore_appearance);
                 }
                 else if ( s == "race" )
                 {
@@ -499,7 +499,7 @@ int parseOnlineHiscore(SaveGameInfo& info, Json::Value score)
             }
         }
     }
-    if ( player.race > 0 && player.stats.appearance != 0 )
+    if ( player.race > 0 && player.stats.statscore_appearance != 0 )
     {
         player.race = RACE_HUMAN; // set to human appearance for aesthetic scores
     }

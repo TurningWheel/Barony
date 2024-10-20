@@ -21,6 +21,7 @@
 #include "scores.hpp"
 #include "paths.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -127,7 +128,26 @@ void actItem(Entity* my)
 		else if ( my->skill[10] == 0 && my->itemReceivedDetailsFromServer == 0 && players[clientnum] )
 		{
 			// request itemtype and beatitude
-			if ( ticks % (TICKS_PER_SECOND * 6) == my->getUID() % (TICKS_PER_SECOND * 6) )
+			bool requestUpdate = false;
+			Uint32 syncTick = my->getUID() % (TICKS_PER_SECOND * 6);
+			Uint32 currentTick = ticks % (TICKS_PER_SECOND * 6);
+			if ( ITEM_LIFE == 0 )
+			{
+				if ( currentTick < syncTick)
+				{
+					if ( syncTick - currentTick >= TICKS_PER_SECOND * 2 )
+					{
+						// if the cycle would request details more than 2 seconds away, request now
+						requestUpdate = true;
+					}
+				}
+				else if ( currentTick > syncTick )
+				{
+					requestUpdate = true; // more than 2 seconds away
+				}
+			}
+
+			if ( (currentTick == syncTick) || requestUpdate )
 			{
 				strcpy((char*)net_packet->data, "ITMU");
 				net_packet->data[4] = clientnum;
@@ -136,17 +156,6 @@ void actItem(Entity* my)
 				net_packet->address.port = net_server.port;
 				net_packet->len = 9;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
-				/*for ( node_t* tmpNode = map.creatures->first; tmpNode != nullptr; tmpNode = tmpNode->next )
-				{
-					Entity* follower = (Entity*)tmpNode->element;
-					if ( follower && players[clientnum]->entity == follower->monsterAllyGetPlayerLeader() )
-					{
-						if ( follower->getMonsterTypeFromSprite() == GYROBOT )
-						{
-							break;
-						}
-					}
-				}*/
 			}
 		}
 	}
@@ -154,7 +163,7 @@ void actItem(Entity* my)
 	{
 		// select appropriate model
 		my->skill[2] = -5;
-		if ( my->itemSokobanReward != 1 )
+		if ( my->itemSokobanReward != 1 && my->itemContainer == 0 )
 		{
 			my->flags[INVISIBLE] = false;
 		}
@@ -267,6 +276,7 @@ void actItem(Entity* my)
 			{
 				if ( inrange[i] && players[i] && players[i]->ghost.isActive() )
 				{
+					Compendium_t::Events_t::eventUpdateMonster(i, Compendium_t::CPDM_GHOST_PUSHES, players[i]->ghost.my, 1);
 					my->vel_x += 1.0 * cos(players[i]->ghost.my->yaw);
 					my->vel_y += 1.0 * sin(players[i]->ghost.my->yaw);
 					my->z = std::max(my->z - 0.1, 0.0);
@@ -596,7 +606,18 @@ void actItem(Entity* my)
 				else if (overWater) {
 					if (!ITEM_SPLOOSHED) {
 						ITEM_SPLOOSHED = true;
-						playSoundEntity(my, 136, 64);
+						bool splash = true;
+						if ( multiplayer == SINGLE && !splitscreen && my->parent == achievementObserver.playerUids[clientnum] )
+						{
+							if ( !players[clientnum] || (players[clientnum] && !players[clientnum]->entity) )
+							{
+								splash = false; // otherwise dropping items into water on death makes a ruckus
+							}
+						}
+						if ( splash )
+						{
+							playSoundEntity(my, 136, 64);
+						}
 					}
 				}
 				else {
@@ -684,6 +705,28 @@ void actItem(Entity* my)
 	// falling out of the map (or burning in a pit of lava)
 	if ( (my->flags[BURNING] && my->z > 12) || my->z > 128 )
 	{
+		if ( multiplayer != CLIENT )
+		{
+			int playerOwner = achievementObserver.checkUidIsFromPlayer(my->itemOriginalOwner);
+			if ( (my->flags[BURNING] && my->z > 12) )
+			{
+				if ( playerOwner >= 0 )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(playerOwner, Compendium_t::CPDM_LAVA_ITEMS_BURNT, "lava", 1);
+				}
+			}
+			else if ( my->z > 128 )
+			{
+				if ( playerOwner >= 0 )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(playerOwner, Compendium_t::CPDM_PITS_ITEMS_LOST, "pits", 1);
+					if ( ITEM_TYPE >= 0 && ITEM_TYPE < NUMITEMS )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(playerOwner, Compendium_t::CPDM_PITS_ITEMS_VALUE_LOST, "pits", items[ITEM_TYPE].value);
+					}
+				}
+			}
+		}
 		if ( ITEM_TYPE == ARTIFACT_MACE && my->parent != 0 )
 		{
 			steamAchievementEntity(uidToEntity(my->parent), "BARONY_ACH_STFU");

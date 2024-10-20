@@ -275,8 +275,6 @@ int fourthendmoviestage = 0;
 int fourthendmovietime = 0;
 int fourthEndNumLines = 13;
 bool losingConnection[MAXPLAYERS] = { false };
-bool subtitleVisible = false;
-int subtitleCurrent = 0;
 
 // new text crawls...
 int DLCendmoviealpha[8][30] = { 0 };
@@ -293,9 +291,6 @@ int DLCendmovieNumLines[8] =
 	13,	// MOVIE_WIN_DEMONS_UNDEAD,
 	13	// MOVIE_WIN_BEASTS
 };
-char epilogueHostName[128] = "";
-int epilogueHostRace = 0;
-int epilogueMultiplayerType = SINGLE;
 
 //Confirm resolution window stuff.
 bool resolutionChanged = false;
@@ -518,7 +513,7 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 	{
 		return VALID_OK_CHARACTER;
 	}
-	else if ( myStats.playerRace > RACE_HUMAN && myStats.appearance == 1 )
+	else if ( myStats.playerRace > RACE_HUMAN && myStats.stat_appearance == 1 )
 	{
 		return VALID_OK_CHARACTER; // aesthetic only option.
 	}
@@ -8525,6 +8520,8 @@ void doNewGame(bool makeHighscore) {
 	lastEntityUIDs = entity_uids;
 	loading = true;
 	darkmap = false;
+	std::string prevmapname = map.name;
+	bool died = players[clientnum]->entity == nullptr;
 
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
@@ -8546,6 +8543,15 @@ void doNewGame(bool makeHighscore) {
 	EnemyHPDamageBarHandler::dumpCache();
 	monsterAllyFormations.reset();
 	PingNetworkStatus_t::reset();
+	particleTimerEmitterHitEntities.clear();
+	monsterTrapIgnoreEntities.clear();
+	minimapHighlights.clear();
+
+	bool bOldSecretLevel = secretlevel;
+	int oldCurrentLevel = currentlevel;
+	Compendium_t::Events_t::previousCurrentLevel = 0;
+	Compendium_t::Events_t::previousSecretlevel = false;
+
 	currentlevel = startfloor;
 	secretlevel = false;
 	victory = 0;
@@ -8715,6 +8721,24 @@ void doNewGame(bool makeHighscore) {
 	// generate mimics
 	{
 		mimic_generator.init();
+	}
+
+	Compendium_t::Events_t::clientReceiveData.clear();
+	for ( int c = 0; c < MAXPLAYERS; ++c )
+	{
+		Compendium_t::Events_t::clientDataStrings[c].clear();
+		bool bOldIntro = intro;
+		intro = false;
+		if ( !bWasOnMainMenu && !loadingsavegame )
+		{
+			players[c]->compendiumProgress.updateFloorEvents();
+		}
+		intro = bOldIntro;
+		if ( !loadingsavegame )
+		{
+			players[c]->compendiumProgress.itemEvents.clear();
+			players[c]->compendiumProgress.floorEvents.clear();
+		}
 	}
 
 	// load dungeon
@@ -9044,7 +9068,7 @@ void doNewGame(bool makeHighscore) {
 									}
                                     else if (multiplayer != CLIENT && players[c]->isLocalPlayer())
                                     {
-                                        if (monsterStats->name[0] && !monsterNameIsGeneric(*monsterStats)) {
+                                        if (monsterStats->name[0] && (!monsterNameIsGeneric(*monsterStats) || monsterStats->type == SLIME)) {
                                             Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
                                             nametag->x = monster->x;
                                             nametag->y = monster->y;
@@ -9307,7 +9331,7 @@ void doNewGame(bool makeHighscore) {
 	}
 	// new achievement
 	usedAllClasses = true;
-	for ( int c = 0; c <= CLASS_HUNTER; ++c )
+	for ( int c = CLASS_CONJURER; c <= CLASS_HUNTER; ++c )
 	{
 		if ( !usedClass[c] )
 		{
@@ -9315,7 +9339,7 @@ void doNewGame(bool makeHighscore) {
 		}
 	}
 	bool usedAllRaces = true;
-	for ( int c = RACE_HUMAN; c <= RACE_INSECTOID; ++c )
+	for ( int c = RACE_SKELETON; c <= RACE_INSECTOID; ++c )
 	{
 		if ( !usedRace[c] )
 		{
@@ -9349,6 +9373,8 @@ void doNewGame(bool makeHighscore) {
 			list_FreeAll(&stats[c]->FOLLOWERS);
 		}
 	}
+
+	const auto wasLoadingSaveGame = loadingsavegame;
 
 	if ( loadingsavegame && multiplayer != CLIENT )
 	{
@@ -9403,6 +9429,89 @@ void doNewGame(bool makeHighscore) {
 	pauseGame(1, 0);
 	loading = false;
 	intro = false;
+
+	if ( !wasLoadingSaveGame )
+	{
+		if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+		{
+			const std::string mapname = map.name;
+			if ( mapname.find("Tutorial Hub") == std::string::npos
+				&& mapname.find("Tutorial ") != std::string::npos )
+			{
+				Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_TRIALS_ATTEMPTS, "hall of trials", 1);
+			}
+
+			// restarting from a trial, this is a failure
+			if ( died && !bWasOnMainMenu )
+			{
+				Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_LEVELS_DEATHS, "hall of trials", 1);
+				Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_LEVELS_DEATHS_FASTEST, "hall of trials", players[clientnum]->compendiumProgress.playerAliveTimeTotal);
+				Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_LEVELS_DEATHS_SLOWEST, "hall of trials", players[clientnum]->compendiumProgress.playerAliveTimeTotal);
+			}
+
+			Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_LEVELS_TIME_SPENT, "hall of trials", players[clientnum]->compendiumProgress.playerAliveTimeTotal);
+		}
+		else
+		{
+			if ( currentlevel == 0 && !secretlevel )
+			{
+				Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_MINEHEAD_ENTER, "minehead", 1);
+				Compendium_t::Events_t::eventUpdateCodex(clientnum, Compendium_t::CPDM_CLASS_GAMES_STARTED, "class", 1);
+				Compendium_t::Events_t::eventUpdateCodex(clientnum, Compendium_t::CPDM_RACE_GAMES_STARTED, "races", 1);
+				if ( multiplayer == SERVER || multiplayer == CLIENT || (multiplayer == SINGLE && splitscreen) )
+				{
+					Compendium_t::Events_t::eventUpdateCodex(clientnum, Compendium_t::CPDM_CLASS_GAMES_MULTI, "class", 1);
+					if ( multiplayer != SINGLE )
+					{
+						if ( directConnect )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_MINEHEAD_ENTER_LAN_MP, "minehead", 1);
+						}
+						else
+						{
+							Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_MINEHEAD_ENTER_ONLINE_MP, "minehead", 1);
+						}
+					}
+					else if ( multiplayer == SINGLE )
+					{
+						if ( splitscreen )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_MINEHEAD_ENTER_SPLIT_MP, "minehead", 1);
+						}
+					}
+				}
+				else
+				{
+					Compendium_t::Events_t::eventUpdateCodex(clientnum, Compendium_t::CPDM_CLASS_GAMES_SOLO, "class", 1);
+					Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_MINEHEAD_ENTER_SOLO, "minehead", 1);
+				}
+
+				if ( !bWasOnMainMenu )
+				{
+					const char* currentWorldString = Compendium_t::compendiumCurrentLevelToWorldString(oldCurrentLevel, bOldSecretLevel);
+					if ( strcmp(currentWorldString, "") )
+					{
+						if ( died )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_LEVELS_DEATHS, currentWorldString, 1);
+							Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_LEVELS_DEATHS_FASTEST, currentWorldString, players[clientnum]->compendiumProgress.playerAliveTimeTotal);
+							Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_LEVELS_DEATHS_SLOWEST, currentWorldString, players[clientnum]->compendiumProgress.playerAliveTimeTotal);
+						}
+						Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_LEVELS_TIME_SPENT, currentWorldString, players[clientnum]->compendiumProgress.playerAliveTimeTotal);
+						Compendium_t::Events_t::eventUpdateWorld(clientnum, Compendium_t::CPDM_TOTAL_TIME_SPENT, "minehead",
+							players[clientnum]->compendiumProgress.playerGameTimeTotal);
+					}
+				}
+			}
+		}
+	}
+	Compendium_t::Events_t::writeItemsSaveData();
+	Compendium_t::writeUnlocksSaveData();
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		players[i]->compendiumProgress.playerAliveTimeTotal = 0;
+		players[i]->compendiumProgress.playerGameTimeTotal = 0;
+	}
 }
 
 void doCredits() {
@@ -9427,7 +9536,50 @@ void doCredits() {
 	}
 }
 
-void doEndgame(bool saveHighscore) {
+
+void doEndgameOnDisconnect()
+{
+	client_disconnected[0] = false;
+
+	introstage = 1;
+	intro = true;
+
+	// load menu level
+	int menuMapType = 0;
+	if ( victory == 3 || victory == 4 || victory == 5 )
+	{
+		menuMapType = loadMainMenuMap(true, true);
+	}
+	else
+	{
+		switch ( local_rng.rand() % 2 )
+		{
+		case 0:
+			menuMapType = loadMainMenuMap(true, false);
+			break;
+		case 1:
+			menuMapType = loadMainMenuMap(false, false);
+			break;
+		default:
+			break;
+		}
+	}
+	for ( int c = 0; c < MAXPLAYERS; ++c ) {
+		cameras[c].vang = 0;
+	}
+	numplayers = 0;
+	assignActions(&map);
+	generatePathMaps();
+
+	gamePaused = false;
+	if ( !victory )
+	{
+		fadefinished = false;
+		fadeout = false;
+	}
+}
+
+void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 	int c, x;
 	bool endTutorial = false;
 	bool localScores = gameModeManager.allowsHiscores();
@@ -9480,58 +9632,33 @@ void doEndgame(bool saveHighscore) {
 				conductGameChallenges[CONDUCT_BOOTS_SPEED] = 1;
 			}
 			achievementObserver.updateGlobalStat(STEAM_GSTAT_GAMES_WON);
-		}
-	}
 
-	// figure out the victory crawl texts...
-	int movieCrawlType = -1;
-	if ( victory )
-	{
-		if ( stats[0] )
-		{
-			strcpy(epilogueHostName, stats[0]->name);
-			epilogueHostRace = RACE_HUMAN;
-			if ( stats[0]->playerRace > 0 && stats[0]->appearance == 0 )
+			for ( int c = 0; c < MAXPLAYERS; ++c )
 			{
-				epilogueHostRace = stats[0]->playerRace;
-			}
-			epilogueMultiplayerType = multiplayer;
-			if ( victory == 1 && epilogueHostRace > 0 && epilogueHostRace != RACE_AUTOMATON )
-			{
-				// herx defeat by monsters.
-				movieCrawlType = MOVIE_CLASSIC_WIN_MONSTERS;
-			}
-			else if ( victory == 2 && epilogueHostRace > 0 && epilogueHostRace != RACE_AUTOMATON )
-			{
-				// baphomet defeat by monsters.
-				movieCrawlType = MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS;
-			}
-			else if ( victory == 3 || victory == 4 || victory == 5 )
-			{
-				switch ( epilogueHostRace )
+				if ( players[c]->isLocalPlayer() )
 				{
-				case RACE_AUTOMATON:
-					movieCrawlType = MOVIE_WIN_AUTOMATON;
-					break;
-				case RACE_SKELETON:
-				case RACE_VAMPIRE:
-				case RACE_SUCCUBUS:
-				case RACE_INCUBUS:
-					movieCrawlType = MOVIE_WIN_DEMONS_UNDEAD;
-					break;
-				case RACE_GOATMAN:
-				case RACE_GOBLIN:
-				case RACE_INSECTOID:
-					movieCrawlType = MOVIE_WIN_BEASTS;
-					break;
-				case RACE_HUMAN:
-					break;
-				default:
-					break;
+					for ( node_t* node = stats[c]->FOLLOWERS.first; node != nullptr; node = node->next )
+					{
+						Entity* follower = nullptr;
+						if ( (Uint32*)node->element )
+						{
+							follower = uidToEntity(*((Uint32*)node->element));
+						}
+						if ( follower )
+						{
+							if ( follower->getMonsterTypeFromSprite() == HUMAN )
+							{
+								Compendium_t::Events_t::eventUpdateWorld(c, Compendium_t::CPDM_HUMANS_SAVED, "the church", 1);
+							}
+						}
+					}
 				}
 			}
 		}
 	}
+
+	bool died = stats[clientnum] && stats[clientnum]->HP <= 0;
+	Compendium_t::Events_t::onEndgameEvent(clientnum, endTutorial, saveHighscore, died);
 
 	// make a highscore!
 	if ( !endTutorial && saveHighscore )
@@ -9569,10 +9696,6 @@ void doEndgame(bool saveHighscore) {
         saveAllScores(SCORESFILE);
         saveAllScores(SCORESFILE_MULTIPLAYER);
 	}
-
-	// pick a new subtitle :)
-	subtitleCurrent = local_rng.rand() % NUMSUBTITLES;
-	subtitleVisible = true;
 
 	for ( c = 0; c < NUMMONSTERS; c++ )
 	{
@@ -9612,32 +9735,35 @@ void doEndgame(bool saveHighscore) {
 	}
 #endif
 
-	// send disconnect messages
-	if (multiplayer == CLIENT)
+	if ( net_packet )
 	{
-		strcpy((char*)net_packet->data, "DISC");
-		net_packet->data[4] = clientnum;
-		net_packet->address.host = net_server.host;
-		net_packet->address.port = net_server.port;
-		net_packet->len = 5;
-		sendPacketSafe(net_sock, -1, net_packet, 0);
-		printlog("disconnected from server.\n");
-	}
-	else if (multiplayer == SERVER)
-	{
-		for (x = 1; x < MAXPLAYERS; x++)
+		// send disconnect messages
+		if (multiplayer == CLIENT)
 		{
-			if ( client_disconnected[x] == true )
-			{
-				continue;
-			}
 			strcpy((char*)net_packet->data, "DISC");
 			net_packet->data[4] = clientnum;
-			net_packet->address.host = net_clients[x - 1].host;
-			net_packet->address.port = net_clients[x - 1].port;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
 			net_packet->len = 5;
-			sendPacketSafe(net_sock, -1, net_packet, x - 1);
-			client_disconnected[x] = true;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+			printlog("disconnected from server.\n");
+		}
+		else if (multiplayer == SERVER)
+		{
+			for (x = 1; x < MAXPLAYERS; x++)
+			{
+				if ( client_disconnected[x] == true )
+				{
+					continue;
+				}
+				strcpy((char*)net_packet->data, "DISC");
+				net_packet->data[4] = clientnum;
+				net_packet->address.host = net_clients[x - 1].host;
+				net_packet->address.port = net_clients[x - 1].port;
+				net_packet->len = 5;
+				sendPacketSafe(net_sock, -1, net_packet, x - 1);
+				client_disconnected[x] = true;
+			}
 		}
 	}
 
@@ -9775,7 +9901,7 @@ void doEndgame(bool saveHighscore) {
 							steamAchievement("BARONY_ACH_LIKE_CLOCKWORK");
 						}
 
-						if ( stats[i] && stats[i]->appearance == 0 )
+						if ( stats[i] && stats[i]->stat_appearance == 0 )
 						{
 							switch ( stats[i]->playerRace )
 							{
@@ -9818,6 +9944,9 @@ void doEndgame(bool saveHighscore) {
 		deleteSaveGame(multiplayer);
 	}
 
+	Compendium_t::Events_t::writeItemsSaveData();
+	Compendium_t::writeUnlocksSaveData();
+
 	gameModeManager.currentSession.seededRun.reset();
 	gameModeManager.currentSession.challengeRun.reset();
 
@@ -9836,8 +9965,11 @@ void doEndgame(bool saveHighscore) {
 	currentlevel = 0;
 	secretlevel = false;
 	clientnum = 0;
-	introstage = 1;
-	intro = true;
+	if ( !onServerDisconnect )
+	{
+		introstage = 1;
+		intro = true;
+	}
 	splitscreen = false;
 
 #ifdef NINTENDO
@@ -9875,6 +10007,9 @@ void doEndgame(bool saveHighscore) {
 	}
 	EnemyHPDamageBarHandler::dumpCache();
 	monsterAllyFormations.reset();
+	particleTimerEmitterHitEntities.clear();
+	monsterTrapIgnoreEntities.clear();
+	minimapHighlights.clear();
 	PingNetworkStatus_t::reset();
 	gameModeManager.currentSession.restoreSavedServerFlags();
 	client_classes[0] = 0;
@@ -9914,12 +10049,15 @@ void doEndgame(bool saveHighscore) {
 		}
 		else
 		{
-			client_disconnected[c] = false;
+			if ( !onServerDisconnect )
+			{
+				client_disconnected[c] = false;
+			}
 		}
 		players[c]->entity = nullptr; //TODO: PLAYERSWAP VERIFY. Need to do anything else?
 		players[c]->cleanUpOnEntityRemoval();
 		stats[c]->sex = static_cast<sex_t>(0);
-		stats[c]->appearance = 0;
+		stats[c]->stat_appearance = 0;
 		strcpy(stats[c]->name, "");
 		stats[c]->type = HUMAN;
 		stats[c]->playerRace = RACE_HUMAN;
@@ -9947,56 +10085,40 @@ void doEndgame(bool saveHighscore) {
 		CalloutMenu[i].callouts.clear();
 	}
 
-	// load menu level
-	int menuMapType = 0;
-	if ( victory == 3 || victory == 4 || victory == 5 )
+	if ( !onServerDisconnect )
 	{
-		menuMapType = loadMainMenuMap(true, true);
-	}
-	else
-	{
-		switch ( local_rng.rand() % 2 )
+		// load menu level
+		int menuMapType = 0;
+		if ( victory == 3 || victory == 4 || victory == 5 )
 		{
-		case 0:
-			menuMapType = loadMainMenuMap(true, false);
-			break;
-		case 1:
-			menuMapType = loadMainMenuMap(false, false);
-			break;
-		default:
-			break;
+			menuMapType = loadMainMenuMap(true, true);
 		}
-	}
-	for (int c = 0; c < MAXPLAYERS; ++c) {
-		cameras[c].vang = 0;
-	}
-	numplayers = 0;
-	assignActions(&map);
-	generatePathMaps();
-	gamePaused = false;
-	if ( !victory )
-	{
-		fadefinished = false;
-		fadeout = false;
-	}
-	else
-	{
-		if ( victory == 1 )
+		else
 		{
-			introstage = 7;
+			switch ( local_rng.rand() % 2 )
+			{
+			case 0:
+				menuMapType = loadMainMenuMap(true, false);
+				break;
+			case 1:
+				menuMapType = loadMainMenuMap(false, false);
+				break;
+			default:
+				break;
+			}
 		}
-		else if ( victory == 2 )
-		{
-			introstage = 8;
+		for (int c = 0; c < MAXPLAYERS; ++c) {
+			cameras[c].vang = 0;
 		}
-		else if ( victory == 3 || victory == 4 || victory == 5 )
-		{
-			introstage = 10;
-		}
+		numplayers = 0;
+		assignActions(&map);
+		generatePathMaps();
 
-		if ( movieCrawlType >= 0 ) // overrides the introstage 7,8,10 sequences for DLC monsters.
+		gamePaused = false;
+		if ( !victory )
 		{
-			introstage = 11 + movieCrawlType;
+			fadefinished = false;
+			fadeout = false;
 		}
 	}
 
@@ -10010,8 +10132,18 @@ void doEndgame(bool saveHighscore) {
 	}
 #endif
 
+	Compendium_t::Events_t::clientReceiveData.clear();
+	for ( int c = 0; c < MAXPLAYERS; ++c )
+	{
+		Compendium_t::Events_t::clientDataStrings[c].clear();
+		players[c]->compendiumProgress.itemEvents.clear();
+		players[c]->compendiumProgress.floorEvents.clear();
+		players[c]->compendiumProgress.playerAliveTimeTotal = 0;
+		players[c]->compendiumProgress.playerGameTimeTotal = 0;
+		Compendium_t::Events_t::serverPlayerEvents[c].clear();
+	}
 #ifdef LOCAL_ACHIEVEMENTS
-	LocalAchievements.writeToFile();
+	LocalAchievements_t::writeToFile();
 #endif
 }
 
@@ -10502,7 +10634,7 @@ void buttonAchievementsUp(button_t* my)
 
 void buttonAchievementsDown(button_t* my)
 {
-	int num_achievements = achievementNames.size();
+	int num_achievements = Compendium_t::achievements.size();
 	if ( num_achievements == 0 )
 	{
 		return;
@@ -11224,7 +11356,7 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 	// reset class loadout
 	clientnum = 0;
 	stats[0]->sex = static_cast<sex_t>(0 + local_rng.rand() % 2);
-	stats[0]->appearance = 0 + local_rng.rand() % NUMAPPEARANCES;
+	stats[0]->stat_appearance = 0 + local_rng.rand() % NUMAPPEARANCES;
 	stats[0]->playerRace = RACE_HUMAN;
 	strcpy(stats[0]->name, "");
 	stats[0]->type = HUMAN;
@@ -11397,7 +11529,7 @@ void buttonRandomCharacter(button_t* my)
 					client_classes[0] = local_rng.rand() % (NUMCLASSES);
 				}
 			}
-			stats[0]->appearance = local_rng.rand() % NUMAPPEARANCES;
+			stats[0]->stat_appearance = local_rng.rand() % NUMAPPEARANCES;
 		}
 		else
 		{
@@ -11406,13 +11538,13 @@ void buttonRandomCharacter(button_t* my)
 			{
 				client_classes[0] = CLASS_MONK + stats[0]->playerRace; // monster specific classes.
 			}
-			stats[0]->appearance = 0;
+			stats[0]->stat_appearance = 0;
 		}
 	}
 	else
 	{
 		stats[0]->playerRace = RACE_HUMAN;
-		stats[0]->appearance = local_rng.rand() % NUMAPPEARANCES;
+		stats[0]->stat_appearance = local_rng.rand() % NUMAPPEARANCES;
 	}
 	initClass(0);
 }
@@ -11459,7 +11591,7 @@ bool replayLastCharacter(const int index, int multiplayer)
 	{
 		stats[index]->sex = static_cast<sex_t>(std::min(lastSex, (int)sex_t::FEMALE));
 		stats[index]->playerRace = std::min(std::max(static_cast<int>(RACE_HUMAN), lastRace), static_cast<int>(NUMPLAYABLERACES));
-		stats[index]->appearance = lastAppearance;
+		stats[index]->stat_appearance = lastAppearance;
 		client_classes[index] = std::min(std::max(0, lastClass), static_cast<int>(CLASS_HUNTER));
 
 		switch ( isCharacterValidFromDLC(*stats[index], lastClass) )

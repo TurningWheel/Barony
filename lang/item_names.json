@@ -982,7 +982,7 @@
             "name_unidentified": "shaman mask"
         },
         "spellbook_amplify_magic": {
-            "name_identified": "spellbook of amplify magic",
+            "name_identified": "spellbook of elemental focus",
             "name_unidentified": "spellbook"
         },
         "spellbook_shadow_tag": {
@@ -1483,6 +1483,21 @@
 		},
 		"spell_ghost_bolt": {
 			"name": "Ghostbolt"
+		},
+		"spell_slime_acid": {
+			"name": "Slime Spray (Acid)"
+		},
+		"spell_slime_water": {
+			"name": "Slime Spray (Water)"
+		},
+		"spell_slime_fire": {
+			"name": "Slime Spray (Magma)"
+		},
+		"spell_slime_tar": {
+			"name": "Slime Spray (Tar)"
+		},
+		"spell_slime_metal": {
+			"name": "Slime Spray (Metal)"
 		}
     }
 }

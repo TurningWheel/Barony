@@ -64,12 +64,30 @@ void Entity::actPedestalBase()
 		pedestalInit = 1;
 	}
 
+#ifdef USE_FMOD
+	if ( pedestalAmbience == 0 )
+	{
+		pedestalAmbience--;
+		stopEntitySound();
+		entity_sound = playSoundEntityLocal(this, 149, 64);
+	}
+	if ( entity_sound )
+	{
+		bool playing = false;
+		entity_sound->isPlaying(&playing);
+		if ( !playing )
+		{
+			entity_sound = nullptr;
+		}
+	}
+#else
 	pedestalAmbience--;
 	if ( pedestalAmbience <= 0 )
 	{
 		pedestalAmbience = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal(this, 149, 64);
 	}
+#endif
 
 	if ( !light )
 	{

@@ -416,7 +416,7 @@ public:
 			strcpy(name, myStats->name);
 			type = myStats->type;
 			sex = myStats->sex;
-			appearance = myStats->appearance;
+			appearance = myStats->stat_appearance;
 			HP = myStats->HP;
 			MAXHP = myStats->MAXHP;
 			OLDHP = HP;
@@ -460,7 +460,7 @@ public:
 			strcpy(myStats->name, name);
 			myStats->type = static_cast<Monster>(type);
 			myStats->sex = static_cast<sex_t>(sex);
-			myStats->appearance = appearance;
+			myStats->stat_appearance = appearance;
 			myStats->HP = HP;
 			myStats->MAXHP = MAXHP;
 			myStats->OLDHP = myStats->HP;
@@ -1375,6 +1375,16 @@ public:
 	};
 
 	std::vector<LevelCurve> allLevelCurves;
+
+	struct FollowerGenerateDetails_t
+	{
+		real_t x = 0.0;
+		real_t y = 0.0;
+		int leaderType = NOTHING;
+		Uint32 uid = 0;
+		std::string followerName = "";
+	};
+	std::vector<FollowerGenerateDetails_t> followersToGenerateForLeaders;
 	inline bool inUse() { return usingCustomManager; };
 
 	void readFromFile(Uint32 seed)
@@ -1630,38 +1640,56 @@ public:
 				std::string followerName = statEntry->getFollowerVariant();
 				if ( followerName.compare("") && followerName.compare("none") )
 				{
-					MonsterStatCustomManager::StatEntry* followerEntry = monsterStatCustomManager.readFromFile(followerName.c_str());
-					if ( followerEntry )
-					{
-						Entity* summonedFollower = summonMonster(static_cast<Monster>(followerEntry->type), entity->x, entity->y);
-						if ( summonedFollower )
-						{
-							if ( summonedFollower->getStats() )
-							{
-								followerEntry->setStatsAndEquipmentToMonster(summonedFollower->getStats());
-								summonedFollower->getStats()->leader_uid = entity->getUID();
-							}
-							summonedFollower->seedEntityRNG(monster_curve_rng.getU32());
-						}
-						delete followerEntry;
-					}
-					else
-					{
-						Entity* summonedFollower = summonMonster(myStats->type, entity->x, entity->y);
-						if ( summonedFollower )
-						{
-							if ( summonedFollower->getStats() )
-							{
-								summonedFollower->getStats()->leader_uid = entity->getUID();
-							}
-							summonedFollower->seedEntityRNG(monster_curve_rng.getU32());
-						}
-					}
+					followersToGenerateForLeaders.push_back(FollowerGenerateDetails_t());
+					auto& entry = followersToGenerateForLeaders.back();
+					entry.followerName = followerName;
+					entry.x = entity->x;
+					entry.y = entity->y;
+					entry.uid = entity->getUID();
+					entry.leaderType = myStats->type;
 				}
 				--statEntry->numFollowers;
 			}
 			delete statEntry;
 		}
+	}
+
+	void generateFollowersForLeaders()
+	{
+		if ( multiplayer != CLIENT )
+		{
+			for ( auto& entry : followersToGenerateForLeaders )
+			{
+				MonsterStatCustomManager::StatEntry* followerEntry = monsterStatCustomManager.readFromFile(entry.followerName.c_str());
+				if ( followerEntry )
+				{
+					Entity* summonedFollower = summonMonsterNoSmoke(static_cast<Monster>(followerEntry->type), entry.x, entry.y);
+					if ( summonedFollower )
+					{
+						if ( summonedFollower->getStats() )
+						{
+							followerEntry->setStatsAndEquipmentToMonster(summonedFollower->getStats());
+							summonedFollower->getStats()->leader_uid = entry.uid;
+						}
+						summonedFollower->seedEntityRNG(monster_curve_rng.getU32());
+					}
+					delete followerEntry;
+				}
+				else
+				{
+					Entity* summonedFollower = summonMonsterNoSmoke(static_cast<Monster>(entry.leaderType), entry.x, entry.y);
+					if ( summonedFollower )
+					{
+						if ( summonedFollower->getStats() )
+						{
+							summonedFollower->getStats()->leader_uid = entry.uid;
+						}
+						summonedFollower->seedEntityRNG(monster_curve_rng.getU32());
+					}
+				}
+			}
+		}
+		followersToGenerateForLeaders.clear();
 	}
 
 	void writeSampleToDocument()
@@ -2713,6 +2741,7 @@ class ItemTooltips_t
 		Sint32 itemId = -1;
 		Sint32 fpIndex = -1;
 		Sint32 tpIndex = -1;
+		Sint32 tpShortIndex = -1;
 		Sint32 gold = 0;
 		Sint32 weight = 0;
 		Sint32 itemLevel = -1;
@@ -2724,6 +2753,7 @@ class ItemTooltips_t
 		std::string iconLabelPath = "";
 	};
 
+public:
 	enum SpellItemTypes : int
 	{
 		SPELL_TYPE_DEFAULT,
@@ -2733,7 +2763,6 @@ class ItemTooltips_t
 		SPELL_TYPE_AREA,
 		SPELL_TYPE_SELF_SUSTAIN
 	};
-public:
 	enum SpellTagTypes : int
 	{
 		SPELL_TAG_DAMAGE,
@@ -2741,7 +2770,8 @@ public:
 		SPELL_TAG_STATUS_EFFECT,
 		SPELL_TAG_HEALING,
 		SPELL_TAG_CURE,
-		SPELL_TAG_BASIC_HIT_MESSAGE
+		SPELL_TAG_BASIC_HIT_MESSAGE,
+		SPELL_TAG_TRACK_HITS
 	};
 private:
 	struct spellItem_t
@@ -2830,6 +2860,7 @@ public:
 	std::map<std::string, std::string> bookNameLocalizations;
 	std::map<std::string, std::string> spellNameLocalizations;
 	std::map<std::string, int> itemNameStringToItemID;
+	std::map<std::string, int> spellNameStringToSpellID;
 	std::string defaultString = "";
 	char buf[2048];
 	bool autoReload = false;
@@ -2846,20 +2877,20 @@ public:
 	std::string& getItemEquipmentEffectsForAttributesText(std::string& attribute);
 	std::string& getProficiencyLevelName(Sint32 proficiencyLevel);
 	std::string& getIconLabel(Item& item);
-	std::string getSpellIconText(const int player, Item& item);
+	std::string getSpellIconText(const int player, Item& item, const bool excludePlayerStats);
 	std::string getSpellDescriptionText(const int player, Item& item);
-	std::string getSpellIconPath(const int player, Item& item);
+	std::string getSpellIconPath(const int player, Item& item, int spellID);
 	std::string getCostOfSpellString(const int player, Item& item);
 	std::string& getSpellTypeString(const int player, Item& item);
 	node_t* getSpellNodeFromSpellID(int spellID);
 	real_t getSpellSustainCostPerSecond(int spellID);
-	int getSpellDamageOrHealAmount(const int player, spell_t* spell, Item* spellbook);
+	int getSpellDamageOrHealAmount(const int player, spell_t* spell, Item* spellbook, const bool excludePlayerStats);
 	bool bIsSpellDamageOrHealingType(spell_t* spell);
 	bool bSpellHasBasicHitMessage(const int spellID);
 
-	void formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex, std::string& conditionalAttribute);
+	void formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex, std::string& conditionalAttribute, Frame* parentFrame = nullptr);
 	void formatItemDescription(const int player, std::string tooltipType, Item& item, std::string& str);
-	void formatItemDetails(const int player, std::string tooltipType, Item& item, std::string& str, std::string detailTag);
+	void formatItemDetails(const int player, std::string tooltipType, Item& item, std::string& str, std::string detailTag, Frame* parentFrame = nullptr);
 	void stripOutPositiveNegativeItemDetails(std::string& str, std::string& positiveValues, std::string& negativeValues);
 	void stripOutHighlightBracketText(std::string& str, std::string& bracketText);
 	void getWordIndexesItemDetails(void* field, std::string& str, std::string& highlightValues, std::string& positiveValues, std::string& negativeValues,
@@ -3296,7 +3327,8 @@ struct EditorEntityData_t
 	struct EntityColliderData_t
 	{
 		int gib = 0;
-		int sfxBreak = 0;
+		std::vector<int> gib_hit;
+		std::vector<int> sfxBreak;
 		int sfxHit = 0;
 		std::string damageCalculationType = "default";
 		std::string name = "";
@@ -3304,6 +3336,29 @@ struct EditorEntityData_t
 		int entityLangEntry = 4335;
 		int hitMessageLangEntry = 2509;
 		int breakMessageLangEntry = 2510;
+		std::map<std::string, std::vector<int>> hideMonsters;
+		std::map<std::string, int> overrideProperties;
+		bool hasOverride(std::string key)
+		{
+			auto find = overrideProperties.find(key);
+			if ( find != overrideProperties.end() )
+			{
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		int getOverride(std::string key)
+		{
+			auto find = overrideProperties.find(key);
+			if ( find != overrideProperties.end() )
+			{
+				return find->second;
+			}
+			return 0;
+		}
 	};
 	struct ColliderDmgProperties_t
 	{
@@ -3314,10 +3369,15 @@ struct EditorEntityData_t
 		bool bombsAttach = false;
 		bool boulderDestroys = false;
 		bool showAsWallOnMinimap = false;
+		bool allowNPCPathing = false;
 		std::unordered_set<int> proficiencyBonusDamage;
+		std::unordered_set<int> proficiencyResistDamage;
 	};
+	static const int COLLIDER_COLLISION_FLAG_MINO = 2;
+	static const int COLLIDER_COLLISION_FLAG_NPC = 4;
 	static std::map<std::string, ColliderDmgProperties_t> colliderDmgTypes;
 	static std::map<int, EntityColliderData_t> colliderData;
+	static std::map<std::string, std::map<int, int>> colliderRandomGenPool;
 	static void readFromFile();
 };
 extern EditorEntityData_t editorEntityData;
@@ -3448,3 +3508,770 @@ struct EquipmentModelOffsets_t
 	ModelOffset_t& getModelOffset(int monster, int sprite);
 };
 extern EquipmentModelOffsets_t EquipmentModelOffsets;
+
+struct Compendium_t
+{
+	struct CompendiumView_t
+	{
+		real_t ang = 0.0;
+		real_t vang = 0.0;
+		real_t pan = 0.0;
+		real_t zoom = 0.0;
+		real_t height = 0.0;
+		real_t rotate = 0.0;
+		int rotateState = 0;
+		real_t rotateLimitMin = 0.0;
+		real_t rotateLimitMax = 0.0;
+		real_t rotateSpeed = 1.0;
+		bool rotateLimit = true;
+		bool inUse = false;
+	};
+
+	struct PointsAnim_t
+	{
+		static real_t anim;
+		static Uint32 startTicks;
+		static Sint32 pointsCurrent;
+		static Sint32 pointsChange;
+		static Sint32 txtCurrentPoints;
+		static Sint32 txtChangePoints;
+		static real_t animNoFunds;
+		static Uint32 noFundsTick;
+		static bool firstLoad;
+		static bool noFundsAnimate;
+		static bool showChanged;
+		static void reset();
+		static void tickAnimate();
+		static void noFundsEvent();
+		static bool mainMenuAlert;
+		static Uint32 countUnreadLastTicks;
+		static void countUnreadNotifs();
+		static void pointsChangeEvent(Sint32 amount);
+	};
+
+	static void readContentsLang(std::string name, std::map<std::string, std::vector<std::pair<std::string, std::string>>>& contents,
+		std::map<std::string, std::string>& contentsMap);
+	enum CompendiumUnlockStatus : int {
+		LOCKED_UNKNOWN,
+		LOCKED_REVEALED_UNVISITED,
+		LOCKED_REVEALED_VISITED,
+		UNLOCKED_UNVISITED,
+		UNLOCKED_VISITED,
+		COMPENDIUMUNLOCKSTATUS_MAX
+	};
+
+	class AchievementData_t
+	{
+	public:
+		static int compendiumAchievementPoints;
+		enum AchievementDLCType
+		{
+			ACH_TYPE_NORMAL,
+			ACH_TYPE_DLC1,
+			ACH_TYPE_DLC2,
+			ACH_TYPE_DLC1_DLC2
+		};
+		std::string name;
+		std::string desc;
+		std::string desc_formatted;
+		bool hidden = false;
+		AchievementDLCType dlcType = ACH_TYPE_NORMAL;
+		std::string category = "";
+		int lorePoints = 0;
+		int64_t unlockTime = 0;
+		bool unlocked = false;
+		int achievementProgress = -1; // ->second is the associated achievement stat index
+
+		static bool achievementsNeedResort;
+		static bool achievementsNeedFirstData;
+		typedef std::function<bool(std::pair<std::string, std::string>, std::pair<std::string, std::string>)> Comparator;
+		static std::set<std::pair<std::string, std::string>, Comparator> achievementNamesSorted;
+		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> achievementCategories;
+		static std::unordered_set<std::string> achievementUnlockedLookup;
+		static void onAchievementUnlock(const char* ach);
+		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents;
+		static std::map<std::string, std::string> contentsMap;
+		static std::map<std::string, CompendiumUnlockStatus> unlocks;
+		static int completionPercent;
+		static int numUnread;
+		static void readContentsLang();
+
+		struct CompendiumAchievementsDisplay
+		{
+			std::vector<std::vector<std::string>> pages;
+			int currentPage = 0;
+			int numHidden = 0;
+		};
+		static std::map<std::string, CompendiumAchievementsDisplay> achievementsBookDisplay;
+		static bool sortAlphabetical;
+	};
+	static std::unordered_map<std::string, AchievementData_t> achievements;
+	static std::string compendium_sorting;
+	static bool compendium_sorting_hide_undiscovered;
+	static bool compendium_sorting_hide_ach_unlocked;
+
+	enum EventTags
+	{
+		CPDM_BLOCKED_ATTACKS,
+		CPDM_BROKEN_BY_BLOCKING,
+		CPDM_BROKEN,
+		CPDM_BLESSED_MAX,
+		CPDM_ATTACKS,
+		CPDM_THROWN,
+		CPDM_SHOTS_FIRED,
+		CPDM_AMMO_FIRED,
+		CPDM_CONSUMED,
+		CPDM_TOWEL_USES,
+		CPDM_PICKAXE_WALLS_DUG,
+		CPDM_SINKS_TAPPED,
+		CPDM_ALEMBIC_BREWED,
+		CPDM_TINKERKIT_CRAFTS,
+		CPDM_TORCH_WALLS,
+		CPDM_SHIELD_REFLECT,
+		CPDM_BLESSED_TOTAL,
+		CPDM_DMG_MAX,
+		CPDM_TRADING_GOLD_EARNED,
+		CPDM_FOUNTAINS_TAPPED,
+		CPDM_ALEMBIC_DECANTED,
+		CPDM_TINKERKIT_REPAIRS,
+		CPDM_MIRROR_TELEPORTS,
+		CPDM_BLOCKED_HIGHEST_DMG,
+		CPDM_TRADING_SOLD,
+		CPDM_DMG_0,
+		CPDM_BOTTLE_FROM_BREWING,
+		CPDM_ALEMBIC_DUPLICATED,
+		CPDM_TINKERKIT_METAL_SCRAPPED,
+		CPDM_INSPIRATION_XP,
+		CPDM_CLOAK_BURNED,
+		CPDM_BOTTLES_FROM_CONSUME,
+		CPDM_ALEMBIC_BROKEN,
+		CPDM_TINKERKIT_MAGIC_SCRAPPED,
+		CPDM_TINKERKIT_SALVAGED,
+		CPDM_APPRAISED,
+		CPDM_TOWEL_BLEEDING,
+		CPDM_TOWEL_MESSY,
+		CPDM_TOWEL_GREASY,
+		CPDM_RUNS_COLLECTED,
+		CPDM_ATTACKS_MISSES,
+		CPDM_THROWN_HITS,
+		CPDM_SHOTS_HIT,
+		CPDM_AMMO_HIT,
+		CPDM_MAGICSTAFF_RECHARGED,
+		CPDM_MAGICSTAFF_CASTS,
+		CPDM_FEATHER_ENSCRIBED,
+		CPDM_FEATHER_CHARGE_USED,
+		CPDM_FEATHER_SPELLBOOKS,
+		CPDM_CONSUMED_UNIDENTIFIED,
+		CPDM_SPELL_CASTS,
+		CPDM_SPELL_FAILURES,
+		CPDM_SPELLBOOK_CASTS,
+		CPDM_SPELLBOOK_LEARNT,
+		CPDM_KILLED_SOLO,
+		CPDM_KILLED_PARTY,
+		CPDM_KILLED_BY,
+		CPDM_GHOST_SPAWNED,
+		CPDM_GHOST_TELEPORTS,
+		CPDM_GHOST_PINGS,
+		CPDM_GHOST_PUSHES,
+		CPDM_MINEHEAD_ENTER,
+		CPDM_MINEHEAD_RETURN,
+		CPDM_GATE_OPENED_SPELL,
+		CPDM_GATE_MINOTAUR,
+		CPDM_LEVER_PULLED,
+		CPDM_LEVER_FOLLOWER_PULLED,
+		CPDM_DOOR_BROKEN,
+		CPDM_DOOR_OPENED,
+		CPDM_DOOR_UNLOCKED,
+		CPDM_LEVELS_ENTERED,
+		CPDM_LEVELS_EXITED,
+		CPDM_LEVELS_MAX_LVL,
+		CPDM_LEVELS_MAX_GOLD,
+		CPDM_SINKS_USED,
+		CPDM_SINKS_RINGS,
+		CPDM_SINKS_SLIMES,
+		CPDM_FOUNTAIN_FOOCUBI,
+		CPDM_FOUNTAIN_DRUNK,
+		CPDM_FOUNTAIN_BLESS,
+		CPDM_FOUNTAIN_BLESS_ALL,
+		CPDM_CHESTS_OPENED,
+		CPDM_CHESTS_MIMICS_AWAKENED,
+		CPDM_CHESTS_UNLOCKED,
+		CPDM_CHESTS_DESTROYED,
+		CPDM_BARRIER_DESTROYED,
+		CPDM_GRAVE_GHOULS,
+		CPDM_GRAVE_EPITAPHS_READ,
+		CPDM_GRAVE_EPITAPHS_PERCENT,
+		CPDM_GRAVE_GHOULS_ENSLAVED,
+		CPDM_SHOP_BOUGHT,
+		CPDM_SHOP_SOLD,
+		CPDM_SHOP_GOLD_EARNED,
+		CPDM_TRAP_KILLED_BY,
+		CPDM_TRAP_DAMAGE,
+		CPDM_TRAP_FOLLOWERS_KILLED,
+		CPDM_BOULDERS_PUSHED,
+		CPDM_ARROWS_PILFERED,
+		CPDM_SWIM_TIME,
+		CPDM_SWIM_KILLED_WHILE,
+		CPDM_SWIM_BURN_CURED,
+		CPDM_LAVA_DAMAGE,
+		CPDM_LAVA_ITEMS_BURNT,
+		CPDM_SOKOBAN_SOLVES,
+		CPDM_SOKOBAN_FASTEST_SOLVE,
+		CPDM_TRAP_MAGIC_STATUSED,
+		CPDM_OBELISK_USES,
+		CPDM_OBELISK_FOLLOWER_USES,
+		CPDM_TRIALS_ATTEMPTS,
+		CPDM_TRIALS_PASSED,
+		CPDM_TRIALS_DEATHS,
+		CPDM_LEVELS_BIOME_CLEAR,
+		CPDM_DOOR_CLOSED,
+		CPDM_SINKS_HEALTH_RESTORED,
+		CPDM_FOUNTAIN_USED,
+		CPDM_CHESTS_MIMICS_AWAKENED1ST,
+		CPDM_SHOP_SPENT,
+		CPDM_SOKOBAN_PERFECT_SOLVES,
+		CPDM_PITS_ITEMS_LOST,
+		CPDM_PITS_LEVITATED,
+		CPDM_PITS_DEATHS,
+		CPDM_PITS_ITEMS_VALUE_LOST,
+		CPDM_KILLED_MULTIPLAYER,
+		CPDM_RECRUITED,
+		CPDM_RACE_GAMES_STARTED,
+		CPDM_RACE_RECRUITS,
+		CPDM_RACE_GAMES_WON,
+		CPDM_DISTANCE_TRAVELLED,
+		CPDM_DISTANCE_MAX_RUN,
+		CPDM_XP_KILLS,
+		CPDM_XP_SKILLS,
+		CPDM_XP_MAX_IN_FLOOR,
+		CPDM_XP_MAX_INSTANCE,
+		CPDM_CLASS_LVL_MAX,
+		CPDM_CLASS_LVL_GAINED,
+		CPDM_CLASS_GAMES_STARTED,
+		CPDM_CLASS_GAMES_WON,
+		CPDM_CLASS_GAMES_SOLO,
+		CPDM_CLASS_GAMES_MULTI,
+		CPDM_STAT_MAX,
+		CPDM_CLASS_STAT_STR_MAX,
+		CPDM_STAT_INCREASES,
+		CPDM_STAT_DOUBLED,
+		CPDM_HP_MAX,
+		CPDM_CLASS_HP_MAX,
+		CPDM_MP_MAX,
+		CPDM_CLASS_MP_MAX,
+		CPDM_CLASS_SKILL_UPS,
+		CPDM_CLASS_SKILL_MAX,
+		CPDM_CLASS_SKILL_UPS_RUN_MAX,
+		CPDM_CLASS_STAT_DEX_MAX,
+		CPDM_CLASS_STAT_CON_MAX,
+		CPDM_CLASS_STAT_INT_MAX,
+		CPDM_CLASS_STAT_PER_MAX,
+		CPDM_CLASS_STAT_CHR_MAX,
+		CPDM_RES_MAX,
+		CPDM_CLASS_RES_MAX,
+		CPDM_RES_DMG_RESISTED,
+		CPDM_RES_DMG_RESISTED_RUN,
+		CPDM_AC_MAX,
+		CPDM_CLASS_AC_MAX,
+		CPDM_AC_MAX_FROM_BLESS,
+		CPDM_HP_LOST_RUN,
+		CPDM_MP_SPENT_RUN,
+		CPDM_MP_SPENT_TOTAL,
+		CPDM_CLASS_LVL_WON_MAX,
+		CPDM_CLASS_LVL_WON_MIN,
+		CPDM_CLASS_GAMES_WON_CLASSIC,
+		CPDM_CLASS_GAMES_WON_HELL,
+		CPDM_CLASS_LVL_WON_CLASSIC_MAX,
+		CPDM_CLASS_LVL_WON_HELL_MIN,
+		CPDM_RACE_GAMES_WON_CLASSIC,
+		CPDM_RACE_GAMES_WON_HELL,
+		CPDM_CLASS_LVL_WON_CLASSIC_MIN,
+		CPDM_CLASS_LVL_WON_HELL_MAX,
+		CPDM_DISTANCE_MAX_FLOOR,
+		CPDM_PWR_MAX,
+		CPDM_CLASS_PWR_MAX,
+		CPDM_RGN_HP_SUM,
+		CPDM_RGN_HP_RUN,
+		CPDM_RGN_MP_SUM,
+		CPDM_RGN_MP_RUN,
+		CPDM_RGN_HP_RATE_MAX,
+		CPDM_RGN_MP_RATE_MAX,
+		CPDM_CLASS_WGT_MAX,
+		CPDM_CLASS_WGT_MAX_MOVE_100,
+		CPDM_MELEE_HITS,
+		CPDM_MELEE_DMG_TOTAL,
+		CPDM_CLASS_MELEE_HITS_RUN,
+		CPDM_MELEE_KILLS,
+		CPDM_CRIT_HITS,
+		CPDM_CRITS_DMG_TOTAL,
+		CPDM_CLASS_CRITS_HITS_RUN,
+		CPDM_CRIT_KILLS,
+		CPDM_CLASS_WGT_SLOWEST,
+		CPDM_CLASS_SKILL_LEGENDS,
+		CPDM_SKILL_LEGENDARY_PROCS,
+		CPDM_DEGRADED,
+		CPDM_REPAIRS,
+		CPDM_RANGED_HITS,
+		CPDM_RANGED_DMG_TOTAL,
+		CPDM_CLASS_RANGED_HITS_RUN,
+		CPDM_RANGED_KILLS,
+		CPDM_THROWN_TOTAL_HITS,
+		CPDM_THROWN_DMG_TOTAL,
+		CPDM_CLASS_THROWN_HITS_RUN,
+		CPDM_THROWN_KILLS,
+		CPDM_FLANK_HITS,
+		CPDM_FLANK_DMG,
+		CPDM_CLASS_FLANK_HITS_RUN,
+		CPDM_CLASS_FLANK_DMG_RUN,
+		CPDM_BACKSTAB_HITS,
+		CPDM_CLASS_BACKSTAB_KILLS_RUN,
+		CPDM_CLASS_BACKSTAB_HITS_RUN,
+		CPDM_BACKSTAB_KILLS,
+		CPDM_CLASS_BACKSTAB_DMG_RUN,
+		CPDM_CLASS_BLOCK_DEFENDED,
+		CPDM_CLASS_BLOCK_UNDEFENDED,
+		CPDM_CLASS_BLOCK_DEFENDED_RUN,
+		CPDM_CLASS_BLOCK_UNDEFENDED_RUN,
+		CPDM_CLASS_SPELL_CASTS_RUN,
+		CPDM_CLASS_SPELL_FIZZLES_RUN,
+		CPDM_CLASS_SNEAK_TIME,
+		CPDM_CLASS_SNEAK_SKILLUP_FLOOR,
+		CPDM_WANTED_RUNS,
+		CPDM_WANTED_TIMES_RUN,
+		CPDM_WANTED_INFLUENCE,
+		CPDM_WANTED_CRIMES_RUN,
+		CPDM_CUSTOM_TAG,
+		CPDM_SPELLBOOK_CAST_DEGRADES,
+		CPDM_CLASS_SPELLBOOK_CASTS_RUN,
+		CPDM_CLASS_SPELLBOOK_FIZZLES_RUN,
+		CPDM_CLASS_MOVING_TIME,
+		CPDM_CLASS_IDLING_TIME,
+		CPDM_CLASS_SKILL_UPS_ALL_RUN,
+		CPDM_CLASS_WGT_EQUIPPED_MAX,
+		CPDM_CLASS_PWR_MAX_CASTED,
+		CPDM_PWR_MAX_EQUIP,
+		CPDM_PWR_MAX_SPELLBOOK,
+		CPDM_RES_DMG_TAKEN,
+		CPDM_RES_SPELLS_HIT,
+		CPDM_HP_MOST_DMG_LOST_ONE_HIT,
+		CPDM_HP_LOST_TOTAL,
+		CPDM_AC_EFFECTIVENESS_MAX,
+		CPDM_AC_EQUIPMENT_MAX,
+		CPDM_LEVELS_MIN_COMPLETION,
+		CPDM_LEVELS_MAX_COMPLETION,
+		CPDM_LEVELS_DEATHS,
+		CPDM_LEVELS_DEATHS_FASTEST,
+		CPDM_LEVELS_DEATHS_SLOWEST,
+		CPDM_LEVELS_MIN_LVL,
+		CPDM_BIOMES_MIN_COMPLETION,
+		CPDM_BIOMES_MAX_COMPLETION,
+		CPDM_LEVELS_TIME_SPENT,
+		CPDM_MINEHEAD_ENTER_SOLO,
+		CPDM_MINEHEAD_ENTER_ONLINE_MP,
+		CPDM_MINEHEAD_ENTER_LAN_MP,
+		CPDM_MINEHEAD_TOTAL_PLAYTIME,
+		CPDM_MINEHEAD_ENTER_SPLIT_MP,
+		CPDM_TOTAL_TIME_SPENT,
+		CPDM_TRAP_SUMMONED_MONSTERS,
+		CPDM_LORE_READ,
+		CPDM_LORE_BURNT,
+		CPDM_LORE_PERCENT_READ,
+		CPDM_LORE_PERCENT_READ_2,
+		CPDM_MERCHANT_ORBS,
+		CPDM_SPELL_DMG,
+		CPDM_SPELL_HEAL,
+		CPDM_TIME_WORN,
+		CPDM_LOCKPICK_DOOR_UNLOCK,
+		CPDM_LOCKPICK_DOOR_LOCK,
+		CPDM_LOCKPICK_ARROWTRAPS,
+		CPDM_LOCKPICK_TINKERTRAPS,
+		CPDM_LOCKPICK_CHESTS_UNLOCK,
+		CPDM_LOCKPICK_MIMICS_LOCKED,
+		CPDM_LOCKPICK_CHESTS_LOCK,
+		CPDM_ALEMBIC_DUPLICATION_FAIL,
+		CPDM_ALEMBIC_EXPLOSIONS,
+		CPDM_BEARTRAP_DEPLOYED,
+		CPDM_BEARTRAP_TRAPPED,
+		CPDM_BEARTRAP_DMG,
+		CPDM_GADGET_CRAFTED,
+		CPDM_GADGET_DEPLOYED,
+		CPDM_NOISEMAKER_LURED,
+		CPDM_NOISEMAKER_MOST_LURED,
+		CPDM_DUMMY_HITS_TAKEN,
+		CPDM_DUMMY_DMG_TAKEN,
+		CPDM_SENTRY_DEPLOY_KILLS,
+		CPDM_SENTRY_DEPLOY_DMG,
+		CPDM_GYROBOT_BOULDERS,
+		CPDM_GYROBOT_TIME_SPENT,
+		CPDM_BOMB_DMG,
+		CPDM_BOMB_DETONATED,
+		CPDM_BOMB_DETONATED_ALLY,
+		CPDM_DETONATOR_SCRAPPED,
+		CPDM_DETONATOR_SCRAPPED_METAL,
+		CPDM_DETONATOR_SCRAPPED_MAGIC,
+		CPDM_DEATHBOX_OPEN_OWN,
+		CPDM_DEATHBOX_OPEN_OTHERS,
+		CPDM_DEATHBOX_TO_EXIT,
+		CPDM_DEATHBOX_MOST_CARRIED,
+		CPDM_PICKAXE_BOULDERS_DUG,
+		CPDM_TIN_GREASY,
+		CPDM_TIN_REGEN_HP,
+		CPDM_TIN_REGEN_MP,
+		CPDM_SPELL_TARGETS,
+		CPDM_GYROBOT_FLIPS,
+		CPDM_KILL_XP,
+		CPDM_CONTAINER_BROKEN,
+		CPDM_CONTAINER_ITEMS,
+		CPDM_CONTAINER_GOLD,
+		CPDM_CONTAINER_MONSTERS,
+		CPDM_DAED_USES,
+		CPDM_DAED_EXIT_REVEALS,
+		CPDM_DAED_SPEED_BUFFS,
+		CPDM_DAED_KILLED_MINO,
+		CPDM_BELL_RUNG_TIMES,
+		CPDM_BELL_LOOT_ITEMS,
+		CPDM_BELL_BROKEN,
+		CPDM_BELL_BUFFS_AGILITY,
+		CPDM_BELL_BUFFS_STAMINA,
+		CPDM_BELL_BUFFS_STRENGTH,
+		CPDM_BELL_BUFFS_MENTALITY,
+		CPDM_BELL_BUFFS_HEALS,
+		CPDM_BELL_LOOT_GOLD,
+		CPDM_BELL_LOOT_BATS,
+		CPDM_BELL_CLAPPER_BROKEN,
+		CPDM_CLASS_SKILL_NOVICES,
+		CPDM_FOLLOWER_KILLS,
+		CPDM_COMBAT_MASONRY_BOULDERS,
+		CPDM_MERLINS,
+		CPDM_RITUALS_COMPLETED,
+		CPDM_HUMANS_SAVED,
+		CPDM_SPELLS_LEARNED,
+		CPDM_ALLIES_FED,
+		CPDM_COMBAT_MASONRY_GEMS,
+		CPDM_COMBAT_MASONRY_ROCKS,
+		CPDM_GOLD_LEFT_BEHIND,
+		MONSTERS_LEFT_BEHIND,
+		ITEMS_LEFT_BEHIND,
+		ITEM_VALUE_LEFT_BEHIND,
+		CPDM_EVENT_TAGS_MAX
+	};
+
+	struct CompendiumMonsters_t
+	{
+		enum MonsterSpecies
+		{
+			SPECIES_NONE,
+			SPECIES_HUMANOID,
+			SPECIES_BEAST,
+			SPECIES_BEASTFOLK,
+			SPECIES_UNDEAD,
+			SPECIES_DEMONOID,
+			SPECIES_CONSTRUCT,
+			SPECIES_ELEMENTAL
+		};
+		struct Monster_t
+		{
+			int monsterType = NOTHING;
+			std::string unique_npc = "";
+			std::vector<std::string> blurb;
+			std::vector<Sint32> hp;
+			std::vector<Sint32> spd;
+			std::vector<Sint32> ac;
+			std::vector<Sint32> atk;
+			std::vector<Sint32> rangeatk;
+			std::vector<Sint32> pwr;
+			std::vector<Sint32> str;
+			std::vector<Sint32> con;
+			std::vector<Sint32> dex;
+			MonsterSpecies species;
+			std::vector<Sint32> lvl;
+			std::array<int, 7> resistances;
+			std::vector<std::string> abilities;
+			std::vector<std::string> inventory;
+			std::string imagePath = "";
+			std::vector<std::string> models;
+			std::set<std::string> unlockAchievements;
+			int lorePoints = 0;
+			std::vector<Sint32> getDisplayStat(const char* name);
+		};
+		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents;
+		static std::map<std::string, std::string> contentsMap;
+		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents_unfiltered;
+		static void readContentsLang();
+		static std::map<std::string, CompendiumUnlockStatus> unlocks;
+		static int completionPercent;
+		static int numUnread;
+	};
+	std::map<std::string, CompendiumMonsters_t::Monster_t> monsters;
+	void readMonstersFromFile();
+	void exportCurrentMonster(Entity* monster);
+	void readModelLimbsFromFile(std::string section);
+	CompendiumView_t defaultCamera;
+	struct ObjectLimbs_t
+	{
+		CompendiumView_t baseCamera;
+		CompendiumView_t currentCamera;
+		std::vector<Entity> entities;
+	};
+	std::map<std::string, ObjectLimbs_t> compendiumObjectLimbs;
+	CompendiumView_t currentView;
+	struct CompendiumMap_t
+	{
+		Uint32 width = 0;
+		Uint32 height = 0;
+		Uint32 ceiling = -1;
+	};
+	std::map<std::string, std::pair<CompendiumMap_t, std::vector<int>>> compendiumObjectMapTiles;
+	map_t compendiumMap;
+	struct CompendiumWorld_t
+	{
+		struct World_t
+		{
+			int modelIndex = -1;
+			std::string imagePath = "";
+			std::vector<std::string> models;
+			std::vector<std::string> blurb;
+			std::vector<Uint32> linesToHighlight;
+			std::vector<std::string> details;
+			std::set<std::string> unlockAchievements;
+			std::set<EventTags> unlockTags;
+			std::string featureImg = "";
+			int id = -1;
+			int lorePoints = 0;
+		};
+		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents;
+		static std::map<std::string, std::string> contentsMap;
+		static void readContentsLang();
+		static std::map<std::string, CompendiumUnlockStatus> unlocks;
+		static int completionPercent;
+		static int numUnread;
+	};
+	std::map<std::string, CompendiumWorld_t::World_t> worldObjects;
+	void readWorldFromFile();
+
+	struct CompendiumCodex_t
+	{
+		struct Codex_t
+		{
+			int modelIndex = -1;
+			std::string imagePath = "";
+			std::vector<std::string> renderedImagePaths;
+			std::vector<std::string> blurb;
+			std::vector<Uint32> linesToHighlight;
+			std::vector<std::string> details;
+			std::vector<std::string> models;
+			std::string featureImg = "";
+			int id = -1;
+			CompendiumView_t view;
+			int lorePoints = 0;
+			bool enableTutorial = false;
+		};
+		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents;
+		static std::map<std::string, std::string> contentsMap;
+		static void readContentsLang();
+		static std::map<std::string, CompendiumUnlockStatus> unlocks;
+		static int completionPercent;
+		static int numUnread;
+	};
+	std::map<std::string, CompendiumCodex_t::Codex_t> codex;
+	void readCodexFromFile();
+	static const char* compendiumCurrentLevelToWorldString(const int currentlevel, const bool secretlevel);
+
+	struct CompendiumItems_t
+	{
+		struct Codex_t
+		{
+			struct CodexItem_t
+			{
+				std::string name = "";
+				int rotation = 0;
+				int spellID = -1;
+				int effectID = -1;
+				int itemID = -1;
+			};
+			int modelIndex = -1;
+			std::string imagePath = "";
+			std::vector<std::string> blurb;
+			std::vector<CodexItem_t> items_in_category;
+			int lorePoints = 0;
+		};
+		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents;
+		static std::map<std::string, std::string> contentsMap;
+		static void readContentsLang();
+		static std::map<std::string, CompendiumUnlockStatus> unlocks;
+		static std::map<int, CompendiumUnlockStatus> itemUnlocks;
+		static int completionPercent;
+		static int numUnread;
+	};
+	std::map<std::string, CompendiumItems_t::Codex_t> items;
+	void readItemsFromFile();
+
+	struct CompendiumMagic_t
+	{
+		static std::map<std::string, std::vector<std::pair<std::string, std::string>>> contents;
+		static std::map<std::string, std::string> contentsMap;
+		static void readContentsLang();
+		static int completionPercent;
+		static int numUnread;
+	};
+	std::map<std::string, CompendiumItems_t::Codex_t> magic;
+	void readMagicFromFile();
+	static Item compendiumItem;
+	static bool tooltipNeedUpdate;
+	static void updateTooltip();
+	static SDL_Rect tooltipPos;
+	static Entity compendiumItemModel;
+	static Uint32 lastTickUpdate;
+	static int lorePointsFromAchievements;
+	static int lorePointsAchievementsTotal;
+	static int lorePointsSpent;
+	static bool lorePointsFirstLoad;
+	static void updateLorePointCounts();
+	static void writeUnlocksSaveData();
+	static void readUnlocksSaveData();
+
+	static const char* Compendium_t::getSkillStringForCompendium(const int skill)
+	{
+		switch ( skill )
+		{
+		case PRO_LOCKPICKING: return "tinkering skill";
+		case PRO_STEALTH: return "stealth skill";
+		case PRO_TRADING: return "trading skill";
+		case PRO_APPRAISAL: return "appraisal skill";
+		case PRO_SWIMMING: return "swimming skill";
+		case PRO_LEADERSHIP: return "leadership skill";
+		case PRO_SPELLCASTING: return "casting skill";
+		case PRO_MAGIC: return "magic skill";
+		case PRO_RANGED: return "ranged skill";
+		case PRO_SWORD: return "sword skill";
+		case PRO_MACE: return "mace skill";
+		case PRO_AXE: return "axe skill";
+		case PRO_POLEARM: return "polearm skill";
+		case PRO_SHIELD: return "blocking skill";
+		case PRO_UNARMED: return "unarmed skill";
+		case PRO_ALCHEMY: return "alchemy skill";
+		default:
+			break;
+		}
+		return "";
+	}
+
+	struct CompendiumEntityCurrent
+	{
+		std::string contentsName = "";
+		std::string modelName = "";
+		int modelIndex = -1;
+		Uint32 modelRNG = 0;
+		void set(std::string _contentsName, std::string _modelName, int _modelIndex = -1)
+		{
+			contentsName = _contentsName;
+			modelName = _modelName;
+			modelIndex = _modelIndex;
+			++modelRNG;
+		}
+	};
+	static CompendiumEntityCurrent compendiumEntityCurrent;
+
+	struct Events_t
+	{
+		enum Type
+		{
+			SUM,
+			MAX,
+			AVERAGE_RANGE,
+			BITFIELD,
+			MIN
+		};
+		enum ClientUpdateType
+		{
+			SERVER_ONLY,
+			CLIENT_ONLY,
+			CLIENT_AND_SERVER,
+			CLIENT_UPDATETYPE_MAX
+		};
+		enum EventTrackingType
+		{
+			ALWAYS_UPDATE,
+			ONCE_PER_RUN,
+			UNIQUE_PER_RUN,
+			UNIQUE_PER_FLOOR
+		};
+		struct Event_t
+		{
+			Type type = SUM;
+			EventTrackingType eventTrackingType = ALWAYS_UPDATE;
+			ClientUpdateType clienttype = CLIENT_ONLY;
+			std::string name = "";
+			int id = CPDM_EVENT_TAGS_MAX;
+			std::set<std::string> attributes;
+		};
+		struct EventVal_t
+		{
+			Type type = SUM;
+			int id = CPDM_EVENT_TAGS_MAX;
+			Sint32 value = 0;
+			bool firstValue = true;
+			bool applyValue(const Sint32 val);
+			EventVal_t() = default;
+			EventVal_t(EventTags tag)
+			{
+				auto& def = events[tag];
+				type = def.type;
+				id = def.id;
+				value = 0;
+				firstValue = true;
+			}
+		};
+		static std::map<EventTags, Event_t> events;
+		static std::map<std::string, EventTags> eventIdLookup;
+		static std::map<int, std::set<EventTags>> itemEventLookup;
+		static std::map<std::string, int> monsterUniqueIDLookup;
+		static std::map<int, std::string> itemIDToString;
+		static std::map<int, std::string> monsterIDToString;
+		static std::map<int, std::string> codexIDToString;
+		static std::map<int, std::string> worldIDToString;
+		static std::map<int, std::vector<EventTags>> itemDisplayedEventsList;
+		static std::map<int, std::vector<std::string>> itemDisplayedCustomEventsList;
+		static std::map<std::string, std::string> customEventsValues;
+		static std::map<EventTags, std::set<int>> eventItemLookup;
+		static std::map<EventTags, std::set<int>> eventMonsterLookup;
+		static std::map<EventTags, std::set<std::string>> eventWorldLookup;
+		static std::map<EventTags, std::set<std::string>> eventCodexLookup;
+		static std::map<std::string, int> eventWorldIDLookup;
+		static std::map<std::string, int> eventCodexIDLookup;
+		static std::map<EventTags, std::map<int, int>> eventClassIds;
+		static const int kEventClassesMax = 40;
+		static std::map<EventTags, std::map<std::string, std::string>> eventLangEntries;
+		static std::map<std::string, std::map<std::string, std::string>> eventCustomLangEntries;
+		static std::vector<std::pair<std::string, Sint32>> getCustomEventValue(std::string key, std::string compendiumSection, std::string compendiumContentsSelected, int specificClass = -1);
+		static std::string formatEventRecordText(Sint32 value, const char* formatType, int formatVal, std::map<std::string, std::string>& langMap);
+		static void readEventsFromFile();
+		static void writeItemsSaveData();
+		static void loadItemsSaveData();
+		static void readEventsTranslations();
+		static void createDummyClientData(const int playernum);
+		static void eventUpdate(int playernum, const EventTags tag, const ItemType type, Sint32 value, const bool loadingValue = false, const int spellID = -1);
+		static void eventUpdateMonster(int playernum, const EventTags tag, const Entity* entity, Sint32 value, const bool loadingValue = false, const int entryID = -1);
+		static void eventUpdateWorld(int playernum, const EventTags tag, const char* category, Sint32 value, const bool loadingValue = false, const int entryID = -1, const bool commitUniqueValue = true);
+		static void eventUpdateCodex(int playernum, const EventTags tag, const char* category, Sint32 value, const bool loadingValue = false, const int entryID = -1, const bool floorEvent = false);
+		static std::map<EventTags, std::map<int, EventVal_t>> playerEvents;
+		static std::map<EventTags, std::map<int, EventVal_t>> serverPlayerEvents[MAXPLAYERS];
+		static void onLevelChangeEvent(const int playernum, const int prevlevel, const bool prevsecretfloor, const std::string prevmapname, const bool died);
+		static void onEndgameEvent(const int playernum, const bool tutorialend, const bool saveHighscore, const bool died);
+		static void sendClientDataOverNet(const int playernum);
+		static void updateEventsInMainLoop(const int playernum);
+		static std::map<int, std::string> clientDataStrings[MAXPLAYERS];
+		static std::map<int, std::map<int, std::string>> clientReceiveData;
+		static Uint8 clientSequence;
+		static const int kEventSpellOffset = 10000;
+		static const int kEventMonsterOffset = 1000;
+		static const int kEventWorldOffset = 2000;
+		static const int kEventCodexOffset = 3000;
+		static const int kEventCodexClassOffset = 3500;
+		static const int kEventCodexOffsetMax = 9999;
+		static int previousCurrentLevel;
+		static bool previousSecretlevel;
+	};
+};
+
+extern Compendium_t CompendiumEntries;

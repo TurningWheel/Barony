@@ -31,16 +31,45 @@ See LICENSE for details.
 #define SUMMONTRAP_FIRED my->skill[6]
 #define SUMMONTRAP_INITIALIZED my->skill[7]
 #define SUMMONTRAP_TICKS_TO_FIRE my->skill[8]
+#define SUMMONTRAP_SPAWN_IN_PLAYER_PROXIMITY my->skill[9]
 
 void actSummonTrap(Entity* my)
 {
-	if ( !my || my->skill[28] == 0 || (SUMMONTRAP_INITIALIZED && SUMMONTRAP_FIRED) )
+	if ( !my || (SUMMONTRAP_INITIALIZED && SUMMONTRAP_FIRED) )
 	{
 		return;
 	}
 
+	Entity* foundTriggerEntity = nullptr;
+	if ( SUMMONTRAP_SPAWN_IN_PLAYER_PROXIMITY > 0 && !SUMMONTRAP_FIRED )
+	{
+		if ( ticks % TICKS_PER_SECOND == 0 || SUMMONTRAP_TICKS_TO_FIRE > 0 )
+		{
+			auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, SUMMONTRAP_SPAWN_IN_PLAYER_PROXIMITY);
+			for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !foundTriggerEntity; ++it )
+			{
+				list_t* currentList = *it;
+				node_t* node;
+				for ( node = currentList->first; node != nullptr; node = node->next )
+				{
+					Entity* entity = (Entity*)node->element;
+					if ( entity && (entity->behavior == &actPlayer || (entity->behavior == &actMonster && entity->monsterAllyGetPlayerLeader())) )
+					{
+						real_t tangent = atan2(entity->y - my->y, entity->x - my->x);
+						lineTraceTarget(my, my->x, my->y, tangent, 32.0, 0, false, entity);
+						if ( hit.entity == entity )
+						{
+							foundTriggerEntity = entity;
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+
 	// received on signal
-	if ( (my->skill[28] == 2 && !SUMMONTRAP_POWERTODISABLE) || my->skill[28] == 1 && SUMMONTRAP_POWERTODISABLE )
+	if ( foundTriggerEntity || ((my->skill[28] == 2 && !SUMMONTRAP_POWERTODISABLE) || my->skill[28] == 1 && SUMMONTRAP_POWERTODISABLE) )
 	{
 		if ( SUMMONTRAP_TICKS_TO_FIRE > 0 )
 		{
@@ -83,7 +112,7 @@ void actSummonTrap(Entity* my)
 					// pick a completely random monster (barring some exceptions)
 					const std::set<Monster> typesToSkip
 					{
-	                    LICH, SHOPKEEPER, DEVIL, MIMIC, CRAB, OCTOPUS,
+	                    LICH, SHOPKEEPER, DEVIL, MIMIC, CRAB, BAT_SMALL,
 	                    MINOTAUR, LICH_FIRE, LICH_ICE, NOTHING,
 	                    SENTRYBOT, SPELLBOT, GYROBOT, DUMMYBOT
 	                };
@@ -113,6 +142,17 @@ void actSummonTrap(Entity* my)
 					if ( monster && monster->getStats() )
 					{
 						monster->seedEntityRNG(rng.getU32());
+						if ( !(gameModeManager.getMode() == gameModeManager.GAME_MODE_TUTORIAL
+							|| gameModeManager.getMode() == gameModeManager.GAME_MODE_TUTORIAL_INIT) )
+						{
+							if ( !foundTriggerEntity )
+							{
+								for ( int c = 0; c < MAXPLAYERS; ++c )
+								{
+									Compendium_t::Events_t::eventUpdateWorld(c, Compendium_t::CPDM_TRAP_SUMMONED_MONSTERS, "summoning trap", 1);
+								}
+							}
+						}
 						if ( useCustomMonsters )
 						{
 							std::string variantName = "default";
@@ -134,10 +174,45 @@ void actSummonTrap(Entity* my)
 						{
 							monster->getStats()->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1; // disable champion normally.
 						}
+
+						if ( foundTriggerEntity )
+						{
+							monster->lookAtEntity(*foundTriggerEntity);
+							if ( monster->checkEnemy(foundTriggerEntity) )
+							{
+								monster->monsterAcquireAttackTarget(*foundTriggerEntity, MONSTER_STATE_PATH);
+							}
+							if ( foundTriggerEntity->behavior == &actPlayer )
+							{
+								messagePlayer(foundTriggerEntity->skill[2], MESSAGE_INTERACTION, Language::get(6248),
+									getMonsterLocalizedName(monster->getStats()->type).c_str());
+							}
+						}
 					}
 				}
 
-				playSoundEntity(my, 153, 128);
+				int x = my->x / 16;
+				int y = my->y / 16;
+				int mapIndex = (y)*MAPLAYERS + (x)*MAPLAYERS * map.height;
+				bool splash = false;
+				if ( x > 0 && x < map.width && y > 0 && y < map.height )
+				{
+					if ( map.tiles[mapIndex] )
+					{
+						if ( lavatiles[map.tiles[mapIndex]] || swimmingtiles[map.tiles[mapIndex]] )
+						{
+							splash = true;
+						}
+					}
+				}
+				if ( splash )
+				{
+					playSoundEntity(my, 136, 128);
+				}
+				else
+				{
+					playSoundEntity(my, 153, 128);
+				}
 
 				if ( !SUMMONTRAP_INITIALIZED )
 				{

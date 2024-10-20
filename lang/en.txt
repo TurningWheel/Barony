@@ -131,7 +131,7 @@
 93 goblin#
 94 slime#
 95 troll#
-96 octopus#
+96 bat#
 97 spider#
 98 ghoul#
 99 skeleton#
@@ -156,7 +156,7 @@
 114 goblins#
 115 slimes#
 116 trolls#
-117 octopuses#
+117 bats#
 118 spiders#
 119 ghouls#
 120 skeletons#
@@ -181,7 +181,7 @@
 135 hits#
 136 slimes you#
 137 thumps you#
-138 wrestles you#
+138 bites#
 139 bites#
 140 hits#
 141 hits#
@@ -320,9 +320,9 @@ create an aura of strife
 around a person.#
 
 217 Lamp oil? Rope? Bombs? Dost
-thou want it? It is thine my
+thou want it? It is thine, my
 friend, so long as thou
-havest enough rubies!#
+hast enough rubies!#
 
 218 They say some items are
 enchanted with special
@@ -349,7 +349,7 @@ off over time.#
 
 224 Beware of picture books.
 I knew a person who touched
-one and, suddenly, they were
+one, and suddenly, they were
 all alone on a tiny island.#
 
 225 Thy skills shall improve as
@@ -721,7 +721,7 @@ thou makest use of them.#
 
 486 "Here lies my wife
   Here let her lie!
-  Now she's at rest and so am I."#
+  Now she's at rest and so am I"#
 
 487 "Here lies the body of Blake
   Hit the gas instead of the brake"#
@@ -1179,7 +1179,7 @@ Thank you!#
 # mail
 
 776 This is a letter:
- "This is Moe. I like you Maggie...
+ "This is Moe. I like you, Maggie...
   so much that... I want to...
   eat you... for dinner."#
 
@@ -1317,7 +1317,7 @@ Thank you!#
 867 Your food pouch feels lighter!#
 868 A map coalesces in your mind!#
 869 Huh? What? Where am I?#
-870 Your feel a tingling sensation, but it passes.#
+870 You feel a tingling sensation, but it passes.#
 871 Your %s vibrates.#
 872 Your %s looks better!#
 873 Your skin itches for a moment.#
@@ -1455,7 +1455,7 @@ Thank you!#
 982 a broken %+2d #
 983 a decrepit %+2d #
 984 a worn %+2d #
-985 a servicable %+2d #
+985 a serviceable %+2d #
 986 an excellent %+2d #
 987 a destroyed %+2d #
 988 a cracked %+2d #
@@ -1481,7 +1481,7 @@ Thank you!#
 1008 %d broken %+2d #
 1009 %d decrepit %+2d #
 1010 %d worn %+2d #
-1011 %d servicable %+2d #
+1011 %d serviceable %+2d #
 1012 %d excellent %+2d #
 1013 %d destroyed %+2d #
 1014 %d cracked %+2d #
@@ -1507,7 +1507,7 @@ Thank you!#
 1034 a broken #
 1035 a decrepit #
 1036 a worn #
-1037 a servicable #
+1037 a serviceable #
 1038 an excellent #
 1039 a destroyed #
 1040 a cracked #
@@ -1533,7 +1533,7 @@ Thank you!#
 1060 %d broken #
 1061 %d decrepit #
 1062 %d worn #
-1063 %d servicable #
+1063 %d serviceable #
 1064 %d excellent #
 1065 %d destroyed #
 1066 %d cracked #
@@ -1596,7 +1596,7 @@ Thank you!#
 1110 You pull the lever.#
 1111 Server flags updated.#
 1112 Run, mortal!
- The Baphomet dies, but his minions linger.
+ Baphomet dies, but his minions linger.
  We impart our power upon you!#
 1113 BEWARE!
  You've unleashed the Minotaur!#
@@ -1645,7 +1645,7 @@ Press 'Okay' to return to the main menu.#
      Progress has been saved at the
        start of the current level.#
 1132 Requesting lobby list...#
-1133 You have died. Gameover.
+1133 You have died. Game over.
 
 #
 1134 Your equipment has been identified.
@@ -1691,7 +1691,7 @@ Rats make a good food source early on.#
 Do not be discouraged. Learn from your
 mistakes and you will eventually succeed.#
 1150
-Hold the left-mouse button to perform a
+Hold the left mouse button to perform a
 critical strike.#
 1151
 Raise your shield for a large defensive boost.#
@@ -1957,7 +1957,7 @@ Compatible save file not found.#
 1521 gets mugged by a greedy gnome.#
 1522 gets quartered by a demon.#
 1523 tries vainly to make love to the succubus.#
-1524 gets on the Baron's bad-side.#
+1524 gets on the Baron's bad side.#
 1525 is unceremoniously pulverized by the minotaur.#
 1526 is damned to hell. Literally.#
 1527 attempts a robbery and fails.#
@@ -2784,7 +2784,7 @@ but it retracts beyond your might!#
 #New effects (contd.)
 2451 You are bleeding heavily!#
 2452 The %s is bleeding heavily!#
-2453 %s's is bleeding heavily!#
+2453 %s is bleeding heavily!#
 2454 Your wounds rupture further open!#
 2455 The %s's wounds rupture further open!#
 2456 %s's wounds rupture further open!#
@@ -2995,7 +2995,7 @@ last of your magic is drained!#
 2631 "Mmm. No."#
 
 2632 "The Kobolds guaranteed us better results in the Caves."#
-2633 "Don't worry, brother. There's still a ways to go, they may yet deliver."#
+2633 "Don't worry, Brother. There's still a ways to go, they may yet deliver."#
 
 2634 "Brother, I admit, I wish they'd hurry."#
 2635 "It would make things simpler, wouldn't it?"#
@@ -3011,7 +3011,7 @@ last of your magic is drained!#
 2653 "Let them come."#
 
 2640 "How much longer must I wait around?"#
-2641 "Go about your business, brother. There isn't much to prepare."#
+2641 "Go about your business, Brother. There isn't much to prepare."#
 
 2642 "You were right to exclude the rest of the guild from our plans here, Brother."#
 2643 "Small minds always have small ambitions."#
@@ -3063,7 +3063,7 @@ last of your magic is drained!#
 2731 %s
  It's a secret to everybody.#
 2732 %s
- This used to be the foyer to the Baron's mansion.#
+ This used to be the foyer of the Baron's mansion.#
 2733 %s
  We're remodeling the interior for our next ruler.#
 2734 %s
@@ -3077,9 +3077,9 @@ last of your magic is drained!#
 2741 The %s
  I tried to get into the Crystal Caves, but a barrier stopped me.#
 2742 The %s
- Perhaps the Magician's Guild erected that barrier.#
+ Perhaps the Magicians’ Guild erected that barrier.#
 2743 The %s
- I'm from a distant city, and a member of the Hunter's Guild.#
+ I'm from a distant city and a member of the Hunters' Guild.#
 2744 The %s
  Hamlet's Hunters' Guild isn't in this district.#
 2745 The %s
@@ -3103,17 +3103,17 @@ last of your magic is drained!#
 
 2760 type:seq#
 2761 The %s
- The Magician's Guild must be up to something.#
+ The Magicians' Guild must be up to something.#
 2762 The %s
  Guilds always have too many secrets.#
 2763 The %s
- I heard that Merlin and the Magician's Guild had a falling out.#
+ I heard that Merlin and the Magicians' Guild had a falling out.#
 2764 The %s
  I bet Herx is in tight with Archmagisters Orpheus and Erudyce.#
 2765 The %s
  Don't get me started on the Hunters' Guild.#
 2766 The %s
- I heard the Masons Guild works for the Church.#
+ I heard the Masons' Guild works for the Church.#
 2767 The %s
  The Church has secrets, but they also help the poor.#
 2768 The %s
@@ -3127,7 +3127,7 @@ last of your magic is drained!#
 2772 The %s
  The magicians inside can explain everything.#
 2773 The %s
- Me? No I'm just a doorman.#
+ Me? No, I'm just a doorman.#
 2774 The %s
  Many come and go, %s. No membership required.#
 2775 The %s
@@ -3151,7 +3151,7 @@ last of your magic is drained!#
 2784 The %s
  I think Herx expected favors from the Archmagisters.#
 2785 The %s
- Eventually Herx gave up on getting the help of the Guild.#
+ Eventually, Herx gave up on getting the help of the Guild.#
 2786 The %s
  Things turned out bad, but they could've been worse.#
 2787 The %s
@@ -3165,7 +3165,7 @@ last of your magic is drained!#
 2793 The %s
  I heard rumors about a new letter from Merlin, but I never saw it.#
 2794 The %s
- You know, Merlin was never an official member of the Magicians Guild.#
+ You know, Merlin was never an official member of the Magicians’ Guild.#
 2795 The %s
  Some people just need their independence. I respect that.#
 2796 The %s
@@ -3223,7 +3223,7 @@ last of your magic is drained!#
 2832 %s
  I wanted to meet you before you left town.#
 2833 %s
- Me? I am one of the esteemed members of the Merchant's guild.#
+ Me? I am one of the esteemed members of the Merchants' Guild.#
 2834 %s
  I'm only interested in the rarest of
  artifacts in the land.              
@@ -3240,7 +3240,7 @@ last of your magic is drained!#
  I know you have too much of a heart to do the same yourself.#
 2838 %s
  So it is up to you.                
- Leave them with me and we'll say no 
+ Leave them with me, and we'll say no 
  more about our little encounter.#
 2839 %s
  ...#
@@ -3410,11 +3410,11 @@ last of your magic is drained!#
 3068 DEPRECATED#
 
 # Follower responses.
-3069 I'll stand ground here, %s.#
+3069 I'll stand my ground here, %s.#
 3070 I'll sit tight.#
 3071 My %s cursed!#
 3072 This would suit you well, %s!#
-3073 I'll try find something better.#
+3073 I'll try to find something better.#
 3074 I have no use for this.#
 3075 That hit the spot!#
 3076 Oof. I'm really full now.#
@@ -3423,7 +3423,7 @@ last of your magic is drained!#
 3079 Advancing to point!#
 3080 Cover my retreat, %s!#
 3081 These may be due for repairs.#
-3082 Nothing's irreplacable here!#
+3082 Nothing's irreplaceable here!#
 3083 You can really feel the breeze down here.#
 3084 I can't betray my allies like that.#
 3085 You have to keep what few friends you have down here.#
@@ -3554,10 +3554,10 @@ last of your magic is drained!#
 3202 What a horrible night to have a curse...#
 3203 Blecch! This is disgusting!#
 3204 Unarmed#
-3205 %s is stunned from your blow!#
-3206 The %s is stunned from your blow!#
-3207 You are stunned from %s's blow!#
-3208 You are stunned from the %s's blow!#
+3205 %s is stunned by your blow!#
+3206 The %s is stunned by your blow!#
+3207 You are stunned by %s's blow!#
+3208 You are stunned by the %s's blow!#
 3209 DEPRECATED#
 3210 Your blade cuts deep into %s!#
 3211 Your blade cuts deep into the %s!#
@@ -3797,7 +3797,7 @@ last of your magic is drained!#
 3421 DEPRECATED_SPELL_NAME#
 3422 DEPRECATED_SPELL_NAME#
 3423 You sense a lack of food nearby.#
-3424 Your nose starts to tingle and you smell food!#
+3424 Your nose starts to tingle, and you smell food!#
 3425 Your nose twitches, but there are no new scents.#
 3426 %s is sprayed with poison!#
 3427 The %s is sprayed with poison!#
@@ -3864,7 +3864,7 @@ last of your magic is drained!#
 3488 Your level is not high enough to use that spell.#
 3489 DEPRECATED_SPELL_NAME#
 3490 Your veins feel warm!#
-3491 Your bloodflow returns to normal.#
+3491 Your blood flow returns to normal.#
 3492 DEPRECATED#
 3493 DEPRECATED#
 3494 You hear a trap trigger in the distance.#
@@ -4037,14 +4037,14 @@ last of your magic is drained!#
 3668 Crafted %s!#
 3669 You can't salvage equipped items!#
 3670 Tinker#
-3671 Your gyrobot detects curious footsteps towards your noisemaker!#
+3671 Your gyrobot detects curious footsteps toward your noisemaker!#
 3672 DEPRECATED#
 3673 Your %s needs to be higher quality to use this command.#
 3674 DEPRECATED#
 3675 DEPRECATED#
 3676 The %s locks its rotor.#
 3677 The %s returns to its patrol.#
-3678 Your %s needs to be higher quality detect more object types.#
+3678 Your %s needs to be higher quality to detect more object types.#
 3679 Your Tinkering skill is not high enough to decipher 
 any more gyrobot findings.#
 3680 Your Tinkering skill is not high enough to decipher 
@@ -4560,7 +4560,7 @@ formalities of gold, now!#
 4140 Not enough materials to craft#
 4141 Not enough materials to repair#
 4142 Not enough materials to upgrade#
-4143 Irrepairable, best salvaged#
+4143 Irreparable, best salvaged#
 4144 Skill too low to repair (%d/%d)#
 4145 Skill too low to upgrade (%d/%d)#
 4146 Cannot salvage this while using it!#
@@ -4749,10 +4749,10 @@ favorite customers.#
 4301 The shrine responds to your touch!#
 4302 Your shapeshift fades and you return to your abnormal form.#
 4303 The polymorph wears out.#
-4304 You are no longer an enemy of the Merchant's Guild.#
-4305 You are now deemed an enemy of the Merchant's Guild
+4304 You are no longer an enemy of the Merchants' Guild.#
+4305 You are now deemed an enemy of the Merchants' Guild
 for inciting violence!#
-4306 You are now deemed an enemy of the Merchant's Guild
+4306 You are now deemed an enemy of the Merchants' Guild
 for accessory to violence!#
 4307 You see a shrine.#
 4308 You see a statue.#
@@ -4968,9 +4968,9 @@ The next input you activate will be bound to this action.#
 5117 Enemy Health Bar Scaling#
 5118 Control size of in-world popups for enemy health bars.#
 5119 Popup Scaling#
-5120 Control size of in-world popups for items, gravestones and NPC dialogue.#
+5120 Control size of in-world popups for items, gravestones, and NPC dialogue.#
 5121 Popup Scaling (Splitscreen)#
-5122 Control size of in-world popups for items, gravestones and NPC dialogue in splitscreen.#
+5122 Control size of in-world popups for items, gravestones, and NPC dialogue in splitscreen.#
 5123 Item Tooltip Height#
 5124 Adjust the vertical position of in-world item tooltip popups.#
 5125 Crosshair Opacity#
@@ -5020,17 +5020,17 @@ The next input you activate will be bound to this action.#
 5167 Field of View#
 5168 Adjust the vertical field-of-view of the in-game camera.#
 5169 FPS limit#
-5170 Limit the frame-rate of the game window. Do not set this higher than your refresh rate. (Recommended: Auto)#
+5170 Limit the frame rate of the game window. Do not set this higher than your refresh rate. (Recommended: Auto)#
 5171 High Dynamic Range (HDR)#
 5172 Increases color contrast of the rendered world with both brightened and darkened areas.#
 5173 Camera Interpolation#
 5174 Smooth player camera by interpolating camera movements over additional frames.#
 5175 Vertical Splitscreen#
-5176 For splitscreen with two-players: divide the screen along a vertical line rather than a horizontal one.#
+5176 For splitscreen with two players: divide the screen along a vertical line rather than a horizontal one.#
 5177 Clipped Splitscreen#
-5178 For splitscreen with two-players: reduce each viewport by 20% to preserve aspect ratio.#
+5178 For splitscreen with two players: reduce each viewport by 20% to preserve aspect ratio.#
 5179 Staggered Splitscreen#
-5180 For splitscreen with two-players: stagger each viewport so they each rest in a corner of the display.#
+5180 For splitscreen with two players: stagger each viewport so they each rest in a corner of the display.#
 5181 Auto#
 
 5182 Output#
@@ -5042,16 +5042,16 @@ The next input you activate will be bound to this action.#
 5188 Gameplay Volume#
 5189 Adjust the volume of most game sound effects.#
 5190 Ambient Volume#
-5191 Adjust the volume of ominous subterranean sound-cues.#
+5191 Adjust the volume of ominous subterranean sound cues.#
 5192 Environment Volume#
 5193 Adjust the volume of flowing water and lava.#
 5194 Notification Volume#
-5195 Adjust the volume of callouts, chat messages, skill increases and level up notifications.#
+5195 Adjust the volume of callouts, chat messages, skill increases, and level up notifications.#
 5196 Music Volume#
 5197 Adjust the volume of the game's soundtrack.#
 5198 Options#
 5199 Minimap Pings#
-5200 Toggle the ability to hear pings on the minimap#
+5200 Toggle the ability to hear pings on the minimap.#
 5201 Player Monster Sounds#
 5202 Toggle the chance to emit monstrous mumbles when playing a non-human character.#
 5203 Out-of-Focus Audio#
@@ -5084,7 +5084,7 @@ The next input you activate will be bound to this action.#
 5229 Modern#
 5230 Classic#
 5231 Hotbar Layout#
-5232 Modern: Grouped 3x3 slot layout using held buttons. Classic: Flat 10 slot layout with simpler controls.#
+5232 Modern: Grouped 3x3 slot layout using held buttons. Classic: Flat 10-slot layout with simpler controls.#
 5233 Turn Sensitivity X#
 5234 Affect the horizontal sensitivity of the control stick used for turning.#
 5235 Turn Sensitivity Y#
@@ -5117,12 +5117,12 @@ The next input you activate will be bound to this action.#
 5260 Greatly increases the difficulty of all combat encounters.#
 5261 Classic Mode#
 5262 Toggle this option to make the game end after the battle with Baron Herx.#
-5263 Keep Inventory after Death#
+5263 Keep Inventory After Death#
 5264 When a player dies, they retain their inventory when revived on the next level.#
 5265 Extra Life#
-5266 Start the game with an Amulet of Life-saving, to prevent one death.#
+5266 Start the game with an Amulet of Life-Saving, to prevent one death.#
 5267 Cheats#
-5268 Toggle the ability to activate cheatcodes during gameplay.#
+5268 Toggle the ability to activate cheat codes during gameplay.#
 
 5269 HIGHSCORES#
 5270 LEADERBOARDS#
@@ -5476,7 +5476,7 @@ Address#
 
 5535 TUTORIALS#
 5536 Take on 10 challenges that teach and test your adventuring
-skills, preparing you to take on the dungeon#
+skills, preparing you to take on the dungeon.#
 5537 Trial#
 5538 Best Time#
 5539 Hub#
@@ -5587,7 +5587,7 @@ Lv%d#
 
 5610 ADVENTURE ARCHIVES#
 5611 ACHIEVEMENTS#
-5612 DUNGEON COMPENDIUM#
+5612 COMPENDIUM#
 5613 HIGHSCORES#
 5614 LEADERBOARDS#
 5615 STORY INTRODUCTION#
@@ -5727,7 +5727,7 @@ I'm kicking you out of this game.#
 5760 Press to Start#
 5761 BACK TO GAME#
 5762 ASSIGN CONTROLLERS#
-5763 DUNGEON COMPENDIUM#
+5763 COMPENDIUM#
 5764 ACHIEVEMENTS#
 5765 SETTINGS#
 5766 END LIFE#
@@ -5813,9 +5813,9 @@ to complete the test!#
 5832 You will be revived if your
 party makes it to the next level.#
 5833 You placed at position (%d)
-in local highscores!#
+in local high scores!#
 5834 You failed to place
-in local highscores.#
+in local high scores.#
 
 5835 Dismiss#
 5836 Back to Hub#
@@ -6095,7 +6095,7 @@ Upload#
 
 6019 Populate Hotbar#
 6020 Preload Music Files#
-6021 Preloading improves playback performance, but increases system memory usage. (Applied next game launch)#
+6021 Preloading improves playback performance but increases system memory usage. (Applied next game launch)#
 6022 Holiday Themes#
 6023 Festive Content#
 6024 Toggle holiday themed content on or off as desired. Bah, humbug!#
@@ -6391,11 +6391,152 @@ your One-Shot score attempt.#
 6168 Quitting now will end this run and
 submit it as your One-Shot score.#
 6169 New Seed Events Available!#
-6170 
-Visit the Seed Events menu
+6170 Visit the Seed Events menu
 to participate.#
 6171 Unlock the Achievement:
 "%s"
 to play this class combination.#
+6172 
+Magic Required: %d (%s)#
+6173 Dungeon Floor:#
+6174 Denizens#
+6175 Items#
+6176 Magic#
+6177 World#
+6178 Codex#
+6179 PREV ENTRY: #
+6180 NEXT ENTRY: #
+6181 %d of %d#
+6182 CONTENTS#
+6183 New Entry!#
+6184 Achievements#
+6185 RECORDS#
+6186 RECIPE CHART#
+6187 USAGE TIPS#
+6188 DETAILS#
+6189 STATS#
+6190 LVL #
+6191 DAMAGE TYPE EFFECTIVENESS:#
+6192 ABILITIES:#
+6193 INVENTORY:#
+6194 LORE POINTS AVAILABLE#
+6195 SORT ALPHABETICAL#
+6196 HIDE UNDISCOVERED#
+6197 ATK:#
+6198 PWR:#
+6199 HP:#
+6200 AC:#
+6201 SPD:#
+6202 HUMANOID#
+6203 BEASTFOLK#
+6204 BEAST#
+6205 UNDEAD#
+6206 DEMONIC#
+6207 CONSTRUCT#
+6208 ELEMENTAL#
+6209 PTS#
+6210 TOTAL COMPLETION#
+6211 RESEARCH#
+6212 SHOP SIGNS#
+# breakables
+6213 jar#
+6214 basket#
+6215 casket#
+6216 cage#
+6217 urn#
+6218 sack#
+6219 sarcophagus#
+6220 pot#
+6221 cart#
+6222 pallet#
+6223 crate#
+6224 tent#
+6225 reliquary#
+6226 bulb#
+6227 iron maiden#
+6228 wheelbarrow#
+6229 crystal#
+6230 cabinet#
+6231 capsule#
+6232 barrel#
+6233 stump#
+6234 A %s jumps out from the %s!#
+6235 You are knocked back by a torrent!#
+6236 You are sprayed with grease!#
+6237 You are sprayed with magma!#
+6238 %s is sprayed with burning magma!#
+6239 The %s is sprayed with burning magma!#
+6240 %s is sprayed with corrosive sludge!#
+6241 The %s is sprayed with corrosive sludge!#
+6242 You are sprayed with corrosive sludge!#
+6243 %s is sprayed with grease!#
+6244 The %s is sprayed with grease!#
+6245 Your hands become slippery!#
+6246 Your shield slips through your fingers!#
+6247 SORT BY LOCKED FIRST#
+6248 A %s jumps out!#
+6249 Miss!#
+6250 STATS (HARDCORE)#
+6251 Open Compendium#
+6252 A nearby bat awakens!#
+6253 Some %s jump out from the %s!#
+6254 was fangoriously drained by a bat.#
+6255 gets roughhoused by a bugbear.#
+6256 bugbear#
+6257 bugbears#
+6258 strikes#
+6259 *grunt*#
+6260 You see a shrine of Daedalus.#
+6261 Daedalus shrine#
+6262 Touch Daedalus shrine#
+6263 You are hurt attacking the %s!#
+6264 You are hurt attacking %s!#
+6265 The gnomes' allies cower in fear!#
+6266 Not enough Lore Points available.
+Unlock Achievements to earn more!#
+6267 The exit is revealed!#
+6268 You pull the rope...#
+6269 bell#
+6270 bell#
+6271 Ring bell#
+6272 Something was lodged inside the bell!#
+6273 This bell is broken!#
+6274 But nothing happens.#
+6275 The bell comes crashing down!#
+6276 You are struck by a falling bell!#
+6277 gets their bell rung.#
+6278 Bell#
+6279 The clapper breaks off!#
+6280 The chime invigorates your %s!#
+6281 strength#
+6282 stamina#
+6283 agility#
+6284 mentality#
+6285 The minotaur is nigh, hurry!#
+6286 You dodged an attack!#
+6287 You dodged a %s!#
+6288 Your stamina returns back to normal.#
+6289 Your agility returns back to normal.#
+6290 Your mentality returns back to normal.#
+6291 flying arrow#
+6292 flying bolt#
+6293 flying rock#
+6294 You dodged a flying %s!#
+6295 spell#
+6296 projectile#
+6297 The rope catches fire!#
+6298 The chime refreshes you!#
+6299 Lobby: Open#
+6300 Lobby: Friends Only#
+6301 Lobby: Invite Only#
+6302 gnome thief#
+6303 thief leader#
+6304 Enchant Weapon#
+6305 Enchant Armor#
+6306 Select an item to enchant:#
+6307 This %s
+ is unable to be enchanted.#
+6308 Your %s loses some of its blessing.#
+6309 You are blasted by a torrent!#
 
-6200 END#
+6350 END#

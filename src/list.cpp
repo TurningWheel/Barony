@@ -196,6 +196,11 @@ void list_RemoveNode(node_t* node)
 
 node_t* list_AddNodeFirst(list_t* list)
 {
+	if ( !list )
+	{
+		return nullptr;
+	}
+
 	node_t* node;
 
 	// allocate memory for node
@@ -242,6 +247,11 @@ node_t* list_AddNodeFirst(list_t* list)
 
 node_t* list_AddNodeLast(list_t* list)
 {
+	if ( !list )
+	{
+		return nullptr;
+	}
+
 	node_t* node;
 
 	// allocate memory for node

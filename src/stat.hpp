@@ -63,6 +63,10 @@ static const int EFF_DISTRACTED_COOLDOWN = 38;
 static const int EFF_MIMIC_LOCKED = 39;
 static const int EFF_ROOTED = 40;
 static const int EFF_NAUSEA_PROTECTION = 41;
+static const int EFF_CON_BONUS = 42;
+static const int EFF_PWR = 43;
+static const int EFF_AGILITY = 44;
+static const int EFF_RALLY = 45;
 static const int NUMEFFECTS = 64;
 
 // stats
@@ -206,7 +210,8 @@ enum KilledBy {
     FOUNTAIN,
     SINK,
     FAILED_ALCHEMY,
-	FAILED_CHALLENGE
+	FAILED_CHALLENGE,
+	BELL
 };
 
 class Stat
@@ -215,7 +220,7 @@ class Stat
 public:
 	Monster type;
 	sex_t sex;
-	Uint32 appearance;
+	Uint32 stat_appearance = 0;
 	char name[128];
 
 	// uid of the entity which killed me via burning/poison (for rewarding XP to them)
@@ -224,6 +229,7 @@ public:
 	// Obituary stuff
 	char obituary[128];
 	KilledBy killer = KilledBy::UNKNOWN;
+	Uint32 killer_uid = 0;
 	Monster killer_monster;
 	ItemType killer_item;
 	std::string killer_name = "";
@@ -346,8 +352,8 @@ public:
 		MONSTER_FORCE_PLAYER_ENEMY,
 		MONSTER_FORCE_PLAYER_RECRUITABLE
 	};
-	int getPassiveShieldBonus(bool checkShield) const;
-	int getActiveShieldBonus(bool checkShield) const;
+	int getPassiveShieldBonus(bool checkShield, bool excludeSkill) const;
+	int getActiveShieldBonus(bool checkShield, bool excludeSkill, Item* shieldItem = nullptr, bool checkNonShieldBonus = false) const;
 	std::string getAttribute(std::string key) const
 	{ 
 		if ( attributes.find(key) != attributes.end() )
@@ -372,7 +378,7 @@ inline bool skillCapstoneUnlocked(int player, int proficiency)
 {
 	return (stats[player]->getModifiedProficiency(proficiency) >= CAPSTONE_UNLOCK_LEVEL[proficiency]);
 }
-
+static const int MAX_PLAYER_STAT_VALUE = 248;
 void setDefaultMonsterStats(Stat* stats, int sprite);
 bool isMonsterStatsDefault(Stat& myStats);
 const char* getSkillLangEntry(int skill);

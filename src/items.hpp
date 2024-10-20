@@ -460,7 +460,7 @@ public:
 
 	// weight, category and other generic info reported by function calls
 
-	node_t* node;
+	node_t* node = nullptr;
 
 	/*
 	 * Gems use this to store information about what sort of creature they contain.
@@ -559,6 +559,7 @@ class ItemGeneric
 	std::string item_name_unidentified;    // unidentified item name
 public:
 	int index;                  // world model
+	int indexShort;				// short mob world model
 	int fpindex;                // first person model
 	int variations;             // number of model variations
 	int weight;                 // weight per item
@@ -632,7 +633,7 @@ void item_AmuletSexChange(Item* item, int player);
 void item_ToolTowel(Item*& item, int player);
 void item_ToolTinOpener(Item* item, int player);
 void item_ToolMirror(Item*& item, int player);
-void item_ToolBeartrap(Item*& item, Entity* usedBy);
+Entity* item_ToolBeartrap(Item*& item, Entity* usedBy);
 void item_Food(Item*& item, int player);
 void item_FoodTin(Item*& item, int player);
 void item_FoodAutomaton(Item*& item, int player);
@@ -650,11 +651,12 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 Item** itemSlot(Stat* myStats, Item* item);
 
 enum Category itemCategory(const Item* item);
-Sint32 itemModel(const Item* item);
+Sint32 itemModel(const Item* item, bool shortModel = false);
 Sint32 itemModelFirstperson(const Item* item);
 SDL_Surface* itemSprite(Item* item);
 void consumeItem(Item*& item, int player); //NOTE: Items have to be unequipped before calling this function on them. NOTE: THIS CAN FREE THE ITEM POINTER. Sets item to nullptr if it does.
-bool dropItem(Item* item, int player, bool notifyMessage = true); // return true on free'd item
+bool dropItem(Item* item, int player, const bool notifyMessage = true, const bool dropAll = false); // return true on free'd item
+bool playerGreasyDropItem(const int player, Item* const item);
 void useItem(Item* item, int player, Entity* usedBy = nullptr, bool unequipForDropping = false);
 enum EquipItemResult : int
 {
@@ -755,6 +757,7 @@ int itemCompare(const Item* item1, const Item* item2, bool checkAppearance, bool
  */
 bool isPotionBad(const Item& potion);
 bool isRangedWeapon(const Item& item);
+bool isRangedWeapon(const ItemType type);
 bool isMeleeWeapon(const Item& item);
 bool itemIsThrowableTinkerTool(const Item* item);
 

@@ -22,6 +22,7 @@
 #include "scores.hpp"
 #include "ui/MainMenu.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -73,7 +74,7 @@ void actHudArm(Entity* my)
 	my->z = parent->z - 2.5;
 
 	Monster playerRace = players[HUDARM_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HUDARM_PLAYERNUM]->playerRace);
-	int playerAppearance = stats[HUDARM_PLAYERNUM]->appearance;
+	int playerAppearance = stats[HUDARM_PLAYERNUM]->stat_appearance;
 	if ( players[HUDARM_PLAYERNUM]->entity->effectShapeshift != NOTHING )
 	{
 		playerRace = static_cast<Monster>(players[HUDARM_PLAYERNUM]->entity->effectShapeshift);
@@ -101,6 +102,7 @@ void actHudArm(Entity* my)
 		if ( HUD_SHAPESHIFT_HIDE > 0 )
 		{
 			my->flags[INVISIBLE] = true;
+			my->flags[INVISIBLE_DITHER] = false;
 			--HUD_SHAPESHIFT_HIDE;
 		}
 	}
@@ -328,7 +330,6 @@ enum CrossbowHudweaponChop : int
 void actHudWeapon(Entity* my)
 {
 	double result = 0;
-	bool wearingring = false;
 
 	Player::HUD_t& playerHud = players[HUDWEAPON_PLAYERNUM]->hud;
 
@@ -364,6 +365,7 @@ void actHudWeapon(Entity* my)
 	if ( intro == true )
 	{
 		my->flags[INVISIBLE] = true;
+		my->flags[INVISIBLE_DITHER] = false;
 		return;
 	}
 
@@ -372,6 +374,7 @@ void actHudWeapon(Entity* my)
 		if ( stats[HUDWEAPON_PLAYERNUM]->HP <= 0 )
 		{
 			my->flags[INVISIBLE] = true;
+			my->flags[INVISIBLE_DITHER] = false;
 			return;
 		}
 	}
@@ -427,16 +430,18 @@ void actHudWeapon(Entity* my)
 		if ( players[HUDWEAPON_PLAYERNUM]->movement.isPlayerSwimming() || players[HUDWEAPON_PLAYERNUM]->entity->skill[13] != 0 )  //skill[13] PLAYER_INWATER
 		{
 			my->flags[INVISIBLE] = true;
+			my->flags[INVISIBLE_DITHER] = false;
 			if (parent)
 			{
 				parent->flags[INVISIBLE] = true;
+				parent->flags[INVISIBLE_DITHER] = false;
 			}
 			return;
 		}
 	}
 
 	Monster playerRace = players[HUDWEAPON_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HUDWEAPON_PLAYERNUM]->playerRace);
-	int playerAppearance = stats[HUDWEAPON_PLAYERNUM]->appearance;
+	int playerAppearance = stats[HUDWEAPON_PLAYERNUM]->stat_appearance;
 	if ( players[HUDWEAPON_PLAYERNUM]->entity->effectShapeshift != NOTHING )
 	{
 		playerRace = static_cast<Monster>(players[HUDWEAPON_PLAYERNUM]->entity->effectShapeshift);
@@ -491,27 +496,15 @@ void actHudWeapon(Entity* my)
 		}
 	}
 
-	// select model
-	if ( stats[HUDWEAPON_PLAYERNUM]->ring != nullptr )
-	{
-		if ( stats[HUDWEAPON_PLAYERNUM]->ring->type == RING_INVISIBILITY )
-		{
-			wearingring = true;
-		}
-	}
-	if ( stats[HUDWEAPON_PLAYERNUM]->cloak != nullptr )
-	{
-		if ( stats[HUDWEAPON_PLAYERNUM]->cloak->type == CLOAK_INVISIBILITY )
-		{
-			wearingring = true;
-		}
-	}
-	if ( players[HUDWEAPON_PLAYERNUM]->entity->skill[3] == 1 || players[HUDWEAPON_PLAYERNUM]->entity->isInvisible() )   // debug cam or player invisible
+	my->flags[INVISIBLE_DITHER] = false;
+
+	if ( players[HUDWEAPON_PLAYERNUM]->entity->skill[3] == 1 )   // debug cam or player invisible
 	{
 		my->flags[INVISIBLE] = true;
 		if (parent != nullptr)
 		{
 			parent->flags[INVISIBLE] = true;
+			parent->flags[INVISIBLE_DITHER] = false;
 		}
 	}
 	else
@@ -521,7 +514,16 @@ void actHudWeapon(Entity* my)
 			my->flags[INVISIBLE] = true;
 			if (parent != nullptr)
 			{
-				parent->flags[INVISIBLE] = false;
+				if ( players[HUDWEAPON_PLAYERNUM]->entity->isInvisible() )
+				{
+					parent->flags[INVISIBLE] = true;
+					parent->flags[INVISIBLE_DITHER] = true;
+				}
+				else
+				{
+					parent->flags[INVISIBLE] = false;
+					parent->flags[INVISIBLE_DITHER] = false;
+				}
 			}
 		}
 		else
@@ -643,6 +645,7 @@ void actHudWeapon(Entity* my)
 				if ( parent != NULL )
 				{
 					parent->flags[INVISIBLE] = false;
+					parent->flags[INVISIBLE_DITHER] = false;
 				}
 			}
 			else
@@ -651,6 +654,12 @@ void actHudWeapon(Entity* my)
 				if ( parent != NULL )
 				{
 					parent->flags[INVISIBLE] = true;
+					parent->flags[INVISIBLE_DITHER] = false;
+				}
+				if ( players[HUDWEAPON_PLAYERNUM]->entity->isInvisible() )
+				{
+					my->flags[INVISIBLE] = true;
+					my->flags[INVISIBLE_DITHER] = true;
 				}
 			}
 		}
@@ -660,9 +669,11 @@ void actHudWeapon(Entity* my)
 	if ( HUD_SHAPESHIFT_HIDE > 0 && HUD_SHAPESHIFT_HIDE < 2 )
 	{
 		my->flags[INVISIBLE] = true;
+		my->flags[INVISIBLE_DITHER] = false;
 		if ( parent != NULL )
 		{
 			parent->flags[INVISIBLE] = true;
+			parent->flags[INVISIBLE_DITHER] = false;
 		}
 	}
 
@@ -671,9 +682,11 @@ void actHudWeapon(Entity* my)
 		if ( playerRace != RAT )
 		{
 			my->flags[INVISIBLE] = true;
+			my->flags[INVISIBLE_DITHER] = false;
 			if (parent != NULL)
 			{
 				parent->flags[INVISIBLE] = true;
+				parent->flags[INVISIBLE_DITHER] = false;
 			}
 		}
 	}
@@ -1007,6 +1020,26 @@ void actHudWeapon(Entity* my)
 			}
 			else
 			{
+				if ( playerGreasyDropItem(HUDWEAPON_PLAYERNUM, stats[HUDWEAPON_PLAYERNUM]->weapon) )
+				{
+					my->flags[INVISIBLE] = true;
+					my->flags[INVISIBLE_DITHER] = false;
+					if ( parent != nullptr )
+					{
+						if ( players[HUDWEAPON_PLAYERNUM]->entity->isInvisible() )
+						{
+							parent->flags[INVISIBLE] = true;
+							parent->flags[INVISIBLE_DITHER] = true;
+						}
+						else
+						{
+							parent->flags[INVISIBLE] = false;
+							parent->flags[INVISIBLE_DITHER] = false;
+						}
+					}
+					return;
+				}
+
 				if ( conductGameChallenges[CONDUCT_BRAWLER] || achievementBrawlerMode )
 				{
 					if ( itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == WEAPON 
@@ -1090,6 +1123,10 @@ void actHudWeapon(Entity* my)
 											{
 												Item* quiver = stats[HUDWEAPON_PLAYERNUM]->shield;
 												quiver->count--;
+
+												Compendium_t::Events_t::eventUpdate(HUDWEAPON_PLAYERNUM, Compendium_t::CPDM_AMMO_FIRED,
+													quiver->type, 1);
+
 												if ( quiver->count <= 0 )
 												{
 													if ( quiver->node )
@@ -1241,6 +1278,10 @@ void actHudWeapon(Entity* my)
 										{
 											Item* quiver = stats[HUDWEAPON_PLAYERNUM]->shield;
 											quiver->count--;
+
+											Compendium_t::Events_t::eventUpdate(HUDWEAPON_PLAYERNUM, Compendium_t::CPDM_AMMO_FIRED,
+												quiver->type, 1);
+
 											if ( quiver->count <= 0 )
 											{
 												if ( quiver->node )
@@ -3254,6 +3295,8 @@ void actHudShield(Entity* my)
 	auto& camera_shakex2 = cameravars[HUDSHIELD_PLAYERNUM].shakex2;
 	auto& camera_shakey2 = cameravars[HUDSHIELD_PLAYERNUM].shakey2;
 
+	my->flags[INVISIBLE_DITHER] = false;
+
 	// isn't active during intro/menu sequence
 	if (intro == true)
 	{
@@ -3275,23 +3318,6 @@ void actHudShield(Entity* my)
 	{
 		list_RemoveNode(my->mynode);
 		return;
-	}
-
-	// select model
-	bool wearingring = false;
-	if ( stats[HUDSHIELD_PLAYERNUM]->ring != nullptr )
-	{
-		if ( stats[HUDSHIELD_PLAYERNUM]->ring->type == RING_INVISIBILITY )
-		{
-			wearingring = true;
-		}
-	}
-	if ( stats[HUDSHIELD_PLAYERNUM]->cloak != nullptr )
-	{
-		if ( stats[HUDSHIELD_PLAYERNUM]->cloak->type == CLOAK_INVISIBILITY )
-		{
-			wearingring = true;
-		}
 	}
 
 	Monster playerRace = players[HUDSHIELD_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HUDSHIELD_PLAYERNUM]->playerRace);
@@ -3349,7 +3375,7 @@ void actHudShield(Entity* my)
 	}
 	HUD_LASTSHAPESHIFT_FORM = playerRace;
 
-	if ( players[HUDSHIELD_PLAYERNUM]->entity->skill[3] == 1 || players[HUDSHIELD_PLAYERNUM]->entity->isInvisible() )   // debug cam or player invisible
+	if ( players[HUDSHIELD_PLAYERNUM]->entity->skill[3] == 1 )   // debug cam or player invisible
 	{
 		my->flags[INVISIBLE] = true;
 	}
@@ -3393,6 +3419,11 @@ void actHudShield(Entity* my)
 			}
 			my->sprite = itemModelFirstperson(stats[HUDSHIELD_PLAYERNUM]->shield);
 			my->flags[INVISIBLE] = false;
+			if ( players[HUDSHIELD_PLAYERNUM]->entity->isInvisible() )
+			{
+				my->flags[INVISIBLE] = true;
+				my->flags[INVISIBLE_DITHER] = true;
+			}
 		}
 	}
 
@@ -3403,10 +3434,12 @@ void actHudShield(Entity* my)
 		if ( players[HUDSHIELD_PLAYERNUM]->movement.isPlayerSwimming() || players[HUDSHIELD_PLAYERNUM]->entity->skill[13] != 0 ) //skill[13] PLAYER_INWATER
 		{
 			my->flags[INVISIBLE] = true;
+			my->flags[INVISIBLE_DITHER] = false;
 			Entity* parent = uidToEntity(my->parent);
 			if ( parent )
 			{
 				parent->flags[INVISIBLE] = true;
+				parent->flags[INVISIBLE_DITHER] = false;
 			}
 			swimming = true;
 		}
@@ -3415,14 +3448,17 @@ void actHudShield(Entity* my)
 	if ( hideShield )
 	{
 		my->flags[INVISIBLE] = true;
+		my->flags[INVISIBLE_DITHER] = false;
 	}
 	else if ( cast_animation[HUDSHIELD_PLAYERNUM].active )
 	{
 		my->flags[INVISIBLE] = true;
+		my->flags[INVISIBLE_DITHER] = false;
 	}
 	else if ( cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook && !spellbook )
 	{
 		my->flags[INVISIBLE] = true;
+		my->flags[INVISIBLE_DITHER] = false;
 	}
 
 	bool defending = false;
@@ -3489,6 +3525,14 @@ void actHudShield(Entity* my)
 		wouldBeDefending = false;
 	}
 
+	bool dropShield = false;
+	if ( wouldBeDefending && defending && playerGreasyDropItem(HUDSHIELD_PLAYERNUM, stats[HUDSHIELD_PLAYERNUM]->shield) )
+	{
+		wouldBeDefending = false;
+		defending = false;
+		dropShield = true;
+	}
+
 	if (defending)
 	{
 		stats[HUDSHIELD_PLAYERNUM]->defending = true;
@@ -3530,6 +3574,13 @@ void actHudShield(Entity* my)
 	}
 	HUDSHIELD_DEFEND = defending;
 	HUDSHIELD_SNEAKING = sneaking;
+
+	if ( dropShield )
+	{
+		my->flags[INVISIBLE] = true;
+		my->flags[INVISIBLE_DITHER] = false;
+		return;
+	}
 
 	bool crossbow = (stats[HUDSHIELD_PLAYERNUM]->weapon && (stats[HUDSHIELD_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDSHIELD_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW) );
 	bool doCrossbowReloadAnimation = false;
@@ -3667,6 +3718,7 @@ void actHudShield(Entity* my)
 		if ( hudweapon->skill[7] == RANGED_ANIM_FIRED && (!crossbow || (crossbow && hudweapon->skill[8] == CROSSBOW_ANIM_SHOOT)) )
 		{
 			my->flags[INVISIBLE] = true;
+			my->flags[INVISIBLE_DITHER] = false;
 			HUDSHIELD_MOVEY = 0;
 			HUDSHIELD_PITCH = 0;
 			HUDSHIELD_YAW = 0;
@@ -3742,6 +3794,7 @@ void actHudShield(Entity* my)
 				{
 					players[HUDSHIELD_PLAYERNUM]->hud.throwGimpTimer = std::max(players[HUDSHIELD_PLAYERNUM]->hud.throwGimpTimer, 20);
 					my->flags[INVISIBLE] = true;
+					my->flags[INVISIBLE_DITHER] = false;
 					HUDSHIELD_MOVEY = 0;
 					HUDSHIELD_PITCH = 0;
 					HUDSHIELD_YAW = 0;
@@ -4016,6 +4069,8 @@ void actHudAdditional(Entity* my)
 	auto& camera_shakex2 = cameravars[HUDSHIELD_PLAYERNUM].shakex2;
 	auto& camera_shakey2 = cameravars[HUDSHIELD_PLAYERNUM].shakey2;
 
+	my->flags[INVISIBLE_DITHER] = false;
+
 	// isn't active during intro/menu sequence
 	if ( intro == true )
 	{
@@ -4045,19 +4100,16 @@ void actHudAdditional(Entity* my)
 		return;
 	}
 
-	if ( !players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(2)
-		|| players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(2)->flags[INVISIBLE]
-		|| players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(2)->sprite == 854
-		|| players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(2)->sprite == 1006 )
+	Entity* shieldLimb = nullptr;
+	if ( players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.size() > 2 )
 	{
-		// if shield invisible or spider arm we're invis.
-		my->flags[INVISIBLE] = true;
-		return;
+		shieldLimb = players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(2);
 	}
 
 	if ( stats[HUDSHIELD_PLAYERNUM]->shield == nullptr )
 	{
 		my->flags[INVISIBLE] = true;
+		my->flags[INVISIBLE_DITHER] = false;
 	}
 	else
 	{
@@ -4084,15 +4136,38 @@ void actHudAdditional(Entity* my)
 		}
 		my->sprite = itemModelFirstperson(stats[HUDSHIELD_PLAYERNUM]->shield);
 		my->flags[INVISIBLE] = false;
+		if ( shieldLimb && shieldLimb->flags[INVISIBLE] )
+		{
+			// if shield invisible we're invis.
+			my->flags[INVISIBLE] = true;
+			my->flags[INVISIBLE_DITHER] = false;
+			if ( players[HUDSHIELD_PLAYERNUM]->entity->isInvisible() )
+			{
+				my->flags[INVISIBLE_DITHER] = shieldLimb->flags[INVISIBLE_DITHER];
+			}
+		}
+	}
+
+
+	if ( !shieldLimb
+		|| shieldLimb->sprite == 854
+		|| shieldLimb->sprite == 1006 )
+	{
+		// if spider arm we're invis.
+		my->flags[INVISIBLE] = true;
+		my->flags[INVISIBLE_DITHER] = false;
+		return;
 	}
 
 	if ( cast_animation[HUDSHIELD_PLAYERNUM].active )
 	{
 		my->flags[INVISIBLE] = true;
+		my->flags[INVISIBLE_DITHER] = false;
 	}
 	else if ( cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook && !spellbook )
 	{
 		my->flags[INVISIBLE] = true;
+		my->flags[INVISIBLE_DITHER] = false;
 	}
 
 	bool defending = false;
@@ -4245,6 +4320,8 @@ void actHudArrowModel(Entity* my)
 
 	my->flags[UNCLICKABLE] = true;
 
+	my->flags[INVISIBLE_DITHER] = false;
+
 	// isn't active during intro/menu sequence
 	if ( intro == true )
 	{
@@ -4278,7 +4355,7 @@ void actHudArrowModel(Entity* my)
 
 	if ( crossbow )
 	{
-		if ( hudweapon->flags[INVISIBLE] || hudweapon->skill[6] != 0 ) // skill[6] is hideWeapon
+		if ( hudweapon->skill[6] != 0 ) // skill[6] is hideWeapon
 		{
 			my->flags[INVISIBLE] = true;
 			return;
@@ -4305,8 +4382,7 @@ void actHudArrowModel(Entity* my)
 			}
 		}
 	}
-	else if ( hudweapon->flags[INVISIBLE]
-		|| hudweapon->skill[6] != 0
+	else if ( hudweapon->skill[6] != 0
 		|| hudweapon->skill[7] != RANGED_ANIM_FIRED ) // skill[6] is hiding weapon, skill[7] is shooting something
 	{
 		my->flags[INVISIBLE] = true;
@@ -4318,6 +4394,16 @@ void actHudArrowModel(Entity* my)
 	my->scalez = 1.f;
 
 	my->flags[INVISIBLE] = false;
+	if ( hudweapon->flags[INVISIBLE] )
+	{
+		my->flags[INVISIBLE] = true;
+		my->flags[INVISIBLE_DITHER] = false;
+		if ( players[HUDSHIELD_PLAYERNUM]->entity->isInvisible() )
+		{
+			my->flags[INVISIBLE_DITHER] = hudweapon->flags[INVISIBLE_DITHER];
+		}
+	}
+
 	my->sprite = 934;
 
 	if ( crossbow )
