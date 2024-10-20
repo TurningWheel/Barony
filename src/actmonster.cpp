@@ -5191,7 +5191,37 @@ void actMonster(Entity* my)
 							if ( (local_rng.rand() % 3 == 0 && !my->monsterAllyGetPlayerLeader()) || (my->monsterAllyGetPlayerLeader() && local_rng.rand() % 8 == 0) || myStats->type == DUMMYBOT )
 							{
 								// idle sounds. if player follower, reduce noise frequency by 66%.
-								MONSTER_SOUND = playSoundEntity(my, MONSTER_IDLESND + (local_rng.rand() % MONSTER_IDLEVAR), 128);
+								bool doIdleSound = true;
+#ifdef USE_FMOD
+								if ( myStats->type == KOBOLD )
+								{
+									doIdleSound = local_rng.rand() % 2 == 0;
+									for ( node_t* node = map.creatures->first; node && doIdleSound; node = node->next )
+									{
+										Entity* entity = (Entity*)node->element;
+										if ( entity->behavior == &actMonster && entity->skill[19] == MONSTER_IDLESND ) // skill 19 is monster idle snd
+										{
+											if ( Stat* stats = entity->getStats() )
+											{
+												if ( stats->monster_sound )
+												{
+													bool playing;
+													stats->monster_sound->isPlaying(&playing);
+													if ( playing )
+													{
+														doIdleSound = false;
+														break;
+													}
+												}
+											}
+										}
+									}
+								}
+#endif
+								if ( doIdleSound )
+								{
+									MONSTER_SOUND = playSoundEntity(my, MONSTER_IDLESND + (local_rng.rand() % MONSTER_IDLEVAR), 128);
+								}
 							}
 						}
 						else
