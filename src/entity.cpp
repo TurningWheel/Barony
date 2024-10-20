@@ -7917,6 +7917,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							spawnDamageGib(hit.entity, 0, DamageGib::DMG_MISS, DamageGibDisplayType::DMG_GIB_MISS, true);
 						}
+						if ( player >= 0 && bat )
+						{
+							steamStatisticUpdateClient(player, STEAM_STAT_PITCH_PERFECT, STEAM_STAT_INT, 1);
+						}
 
 						if ( hit.entity->behavior == &actPlayer )
 						{
@@ -8531,6 +8535,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_BARRIER_DESTROYED, "breakable barriers", 1);
 						}
+						if ( behavior == &actPlayer )
+						{
+							if ( hit.entity->isColliderBreakableContainer() )
+							{
+								steamStatisticUpdateClient(player, STEAM_STAT_SMASH_MELEE, STEAM_STAT_INT, 1);
+							}
+					}
 					}
 					else if ( hit.entity->behavior == &::actFurniture )
 					{
@@ -9586,6 +9597,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( player >= 0 && hit.entity->behavior == &actMonster )
 							{
 								steamStatisticUpdateClient(player, STEAM_STAT_UNSTOPPABLE_FORCE, STEAM_STAT_INT, 1);
+								if ( armornum == 4 && hitstats->type == BUGBEAR 
+									&& (hitstats->defending || hit.entity->monsterAttack == MONSTER_POSE_BUGBEAR_SHIELD) )
+								{
+									steamAchievementClient(player, "BARONY_ACH_BEAR_WITH_ME");
+								}
 							}
 						}
 					}

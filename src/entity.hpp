@@ -1095,6 +1095,7 @@ public:
 	bool isColliderDamageableByMagic() const;
 	bool isColliderAttachableToBombs() const;
 	bool isColliderWall() const;
+	bool isColliderBreakableContainer() const;
 	void colliderOnDestroy();
 	int getColliderOnHitLangEntry() const;
 	int getColliderOnBreakLangEntry() const;

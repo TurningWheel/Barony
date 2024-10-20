@@ -16012,6 +16012,7 @@ void Compendium_t::updateLorePointCounts()
 
 	completed = 0;
 	total = 0;
+	int seenEntries = 0;
 	for ( auto& pair : CompendiumWorld_t::contents["default"] )
 	{
 		if ( pair.first != "-" )
@@ -16033,11 +16034,16 @@ void Compendium_t::updateLorePointCounts()
 					}
 				}
 				++completed;
+				++seenEntries;
 			}
 		}
 	}
 	total = std::max(1, total);
 	CompendiumWorld_t::completionPercent = 100.0 * (completed / (real_t)total);
+	if ( seenEntries >= (total / 2) )
+	{
+		steamAchievement("BARONY_ACH_ISEENTIT");
+	}
 
 	completed = 0;
 	total = 0;

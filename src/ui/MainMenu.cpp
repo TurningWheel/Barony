@@ -39070,6 +39070,9 @@ failed:
 					{
 						success = true;
 						playSound(632 + local_rng.rand() % 2, 92);
+
+						steamAchievement("BARONY_ACH_CURIOSITY");
+
 						to_unlock->setText("");
 						auto* unlockStatus = compendium_current == "monsters" ? &Compendium_t::CompendiumMonsters_t::unlocks
 							: (compendium_current == "world" ? &Compendium_t::CompendiumWorld_t::unlocks
@@ -40227,6 +40230,18 @@ failed:
 				{
 					widget.removeWidgetAction("MenuStart");
 					widget.addWidgetAction("MenuAlt1", "page_right_unlock_btn");
+				}
+
+				if ( compendium_current == "codex" && compendium_contents_current[compendium_current] == "alchemy skill" )
+				{
+					auto& unlockStatus = Compendium_t::CompendiumCodex_t::unlocks["alchemy skill"];
+					if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::UNLOCKED_VISITED
+						|| unlockStatus == Compendium_t::CompendiumUnlockStatus::UNLOCKED_UNVISITED )
+					{
+						achievementObserver.updatePlayerAchievement(clientnum,
+							AchievementObserver::BARONY_ACH_BY_THE_BOOK,
+							AchievementObserver::BY_THE_BOOK_COMPENDIUM_PAGE);
+					}
 				}
 				});
 

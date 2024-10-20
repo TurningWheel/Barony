@@ -5101,6 +5101,26 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 {
 	switch ( achievement )
 	{
+		case BARONY_ACH_BY_THE_BOOK:
+			if ( player == clientnum )
+			{
+				if ( achEvent == BY_THE_BOOK_COMPENDIUM_PAGE )
+				{
+					playerAchievements[player].ticksByTheBookViewed = ticks;
+				}
+				else if ( achEvent == BY_THE_BOOK_BREW )
+				{
+					if ( playerAchievements[player].ticksByTheBookViewed != 0
+						&& ticks > playerAchievements[player].ticksByTheBookViewed )
+					{
+						if ( (ticks - playerAchievements[player].ticksByTheBookViewed) < TICKS_PER_SECOND * 10 )
+						{
+							awardAchievement(player, achievement);
+						}
+					}
+				}
+			}
+			break;
 		case BARONY_ACH_BACK_TO_BASICS:
 			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 			{
@@ -5414,6 +5434,7 @@ void AchievementObserver::clearPlayerAchievementData()
 		playerAchievements[i].updatedBountyTargets = false;
 		playerAchievements[i].wearingBountyHat = false;
 		playerAchievements[i].totalKillsTickUpdate = false;
+		playerAchievements[i].ticksByTheBookViewed = 0;
 	}
 }
 
@@ -5484,6 +5505,9 @@ void AchievementObserver::awardAchievement(int player, int achievement)
 			break;
 		case BARONY_ACH_SPROUTS:
 			steamAchievementClient(player, "BARONY_ACH_SPROUTS");
+			break;
+		case BARONY_ACH_BY_THE_BOOK:
+			steamAchievementClient(player, "BARONY_ACH_BY_THE_BOOK");
 			break;
 		default:
 			messagePlayer(player, MESSAGE_DEBUG, "[WARNING]: Unhandled achievement: %d", achievement);

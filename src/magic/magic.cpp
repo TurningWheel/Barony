@@ -387,7 +387,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				{
 					armornum = hitstats->pickRandomEquippedItem(&armor, true, false, true, true);
 				}
-				else if ( !hitstats->defending && (local_rng.rand() % (4 + resistance) == 0) ) // 1 in 4 to corrode armor
+				if ( armornum != -1 && !hitstats->defending && (local_rng.rand() % (4 + resistance) == 0) ) // 1 in 4 to corrode armor
 				{
 					armornum = hitstats->pickRandomEquippedItem(&armor, true, false, false, false);
 				}
@@ -396,6 +396,18 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				{
 					hit.entity->degradeArmor(*hitstats, *armor, armornum);
 					//messagePlayerColor(player, color, "Armor piece: %s", armor->getName());
+
+					if ( armor->status == BROKEN )
+					{
+						if ( parent && parent->behavior == &actPlayer )
+						{
+							if ( armornum == 4 && hitstats->type == BUGBEAR 
+								&& (hitstats->defending || hit.entity->monsterAttack == MONSTER_POSE_BUGBEAR_SHIELD) )
+							{
+								steamAchievementClient(parent->skill[2], "BARONY_ACH_BEAR_WITH_ME");
+							}
+						}
+					}
 				}
 			}
 		}

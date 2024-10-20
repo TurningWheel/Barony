@@ -616,6 +616,8 @@ void daedalusShrineInteract(Entity* my, Entity* touched)
 						if ( touched->behavior == &actPlayer )
 						{
 							messagePlayerColor(touched->skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(768));
+							steamAchievementClient(touched->skill[2], "BARONY_ACH_BULL_RUSH");
+							Compendium_t::Events_t::eventUpdateWorld(touched->skill[2], Compendium_t::CPDM_DAED_SPEED_BUFFS, "daedalus", 1);
 						}
 					}
 				}
@@ -751,6 +753,7 @@ void Entity::actDaedalusShrine()
 							if ( touched->behavior == &actPlayer )
 							{
 								messagePlayerColor(touched->skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(768));
+								steamAchievementClient(touched->skill[2], "BARONY_ACH_BULL_RUSH");
 								Compendium_t::Events_t::eventUpdateWorld(touched->skill[2], Compendium_t::CPDM_DAED_SPEED_BUFFS, "daedalus", 1);
 							}
 						}

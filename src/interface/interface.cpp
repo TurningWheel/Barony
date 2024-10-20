@@ -8146,6 +8146,13 @@ void GenericGUIMenu::alchemyCombinePotions()
 				else
 				{
 					Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_ALEMBIC_BREWED, TOOL_ALEMBIC, 1);
+
+					if ( result != POTION_SICKNESS && result != POTION_WATER )
+					{
+						achievementObserver.updatePlayerAchievement(gui_player, // clientnum intentional for to include splitscreen
+							AchievementObserver::BARONY_ACH_BY_THE_BOOK,
+							AchievementObserver::BY_THE_BOOK_BREW);
+					}
 				}
 			}
 

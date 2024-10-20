@@ -112,7 +112,10 @@ enum SteamStatIndexes : int
 	STEAM_STAT_DAPPER_2,
 	STEAM_STAT_DAPPER_3,
 	STEAM_STAT_DAPPER,
-	STEAM_STAT_DUNGEONSEED
+	STEAM_STAT_DUNGEONSEED,
+	STEAM_STAT_PITCH_PERFECT,
+	STEAM_STAT_RUNG_OUT,
+	STEAM_STAT_SMASH_MELEE
 };
 
 enum SteamGlobalStatIndexes : int
@@ -244,7 +247,10 @@ static const std::pair<std::string, int> steamStatAchStringsAndMaxVals[] =
 	std::make_pair("BARONY_ACH_NONE", 0xFFFFFFFF),			// STEAM_STAT_DAPPER_2
 	std::make_pair("BARONY_ACH_NONE", 0xFFFFFFFF),			// STEAM_STAT_DAPPER_3
 	std::make_pair("BARONY_ACH_DAPPER", 30),				// STEAM_STAT_DAPPER
-	std::make_pair("BARONY_ACH_DUNGEONSEED", 12)			// STEAM_STAT_DUNGEONSEED
+	std::make_pair("BARONY_ACH_DUNGEONSEED", 12),			// STEAM_STAT_DUNGEONSEED
+	std::make_pair("BARONY_ACH_BAT1000", 81),				// STEAM_STAT_PITCH_PERFECT
+	std::make_pair("BARONY_ACH_RUNG_OUT", 20),				// STEAM_STAT_RUNG_OUT
+	std::make_pair("BARONY_ACH_SMASH_MELEE", 500)			// STEAM_STAT_SMASH_MELEE
 };
 
 typedef struct score_t
@@ -719,7 +725,8 @@ public:
 		BARONY_ACH_FAST_LEARNER,
 		BARONY_ACH_MASTER,
 		BARONY_ACH_DAPPER,
-		BARONY_ACH_SPROUTS
+		BARONY_ACH_SPROUTS,
+		BARONY_ACH_BY_THE_BOOK
 	};
 	enum AchievementEvent : int
 	{
@@ -733,7 +740,9 @@ public:
 		DIPLOMA_LEVEL_COMPLETE,
 		BACK_TO_BASICS_LEVEL_COMPLETE,
 		FAST_LEARNER_TIME_UPDATE,
-		DAPPER_EQUIPMENT_CHECK
+		DAPPER_EQUIPMENT_CHECK,
+		BY_THE_BOOK_COMPENDIUM_PAGE,
+		BY_THE_BOOK_BREW
 	};
 	void updatePlayerAchievement(int player, Achievement achievement, AchievementEvent achEvent);
 	bool bIsAchievementAllowedDuringTutorial(std::string achievementStr)
@@ -806,6 +815,7 @@ public:
 		int rollTheBones = 0;
 		int trashCompactor = 0;
 		bool totalKillsTickUpdate = false;
+		Uint32 ticksByTheBookViewed = 0;
 		static bool allPlayersDeadEvent;
 
 		std::pair<int, int> realBoy;

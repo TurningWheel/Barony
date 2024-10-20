@@ -661,6 +661,17 @@ bool Entity::isColliderWall() const
 	return false;
 }
 
+bool Entity::isColliderBreakableContainer() const
+{
+	if ( !isDamageableCollider() ) { return false; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	if ( colliderData.damageCalculationType.find("breakable") != std::string::npos )
+	{
+		return true;
+	}
+	return false;
+}
+
 void Entity::colliderOnDestroy()
 {
 	if ( multiplayer == CLIENT ) { return; }
@@ -672,8 +683,7 @@ void Entity::colliderOnDestroy()
 		killer = uidToEntity(colliderKillerUid);
 		if ( killer )
 		{
-			auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
-			if ( colliderData.damageCalculationType.find("breakable") != std::string::npos )
+			if ( isColliderBreakableContainer() )
 			{
 				Compendium_t::Events_t::eventUpdateWorld(killer->skill[2], Compendium_t::CPDM_CONTAINER_BROKEN, "containers", 1);
 			}
@@ -3703,7 +3713,7 @@ int getBellDmgOnEntity(Entity* entity)
 		return 0;
 	}
 
-	int damage = 50;
+	int damage = 80;
 	int trapResist = entity->getFollowerBonusTrapResist();
 	if ( trapResist != 0 )
 	{
@@ -4233,6 +4243,7 @@ void actBell(Entity* my)
 						if ( puller->behavior == &actPlayer )
 						{
 							Compendium_t::Events_t::eventUpdateWorld(puller->skill[2], Compendium_t::CPDM_BELL_BROKEN, "bell", 1);
+							steamStatisticUpdateClient(puller->skill[2], STEAM_STAT_RUNG_OUT, STEAM_STAT_INT, 1);
 						}
 					}
 				}
@@ -4437,6 +4448,10 @@ void actBell(Entity* my)
 													if ( puller->behavior == &actPlayer )
 													{
 														messagePlayerMonsterEvent(puller->skill[2], makeColorRGB(0, 255, 0), *stats, Language::get(692), Language::get(697), MSG_COMBAT);
+														if ( stats->type == GNOME )
+														{
+															steamAchievementClient(puller->skill[2], "BARONY_ACH_JUBBAITED");
+														}
 													}
 												}
 											}
@@ -4875,6 +4890,7 @@ void actBell(Entity* my)
 				messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6275));
 				Compendium_t::Events_t::eventUpdateWorld(BELL_LAST_TOUCHED_PLAYER, Compendium_t::CPDM_BELL_BROKEN, "bell", 1);
 				bellBreakBulb(my, false);
+				steamStatisticUpdateClient(BELL_LAST_TOUCHED_PLAYER, STEAM_STAT_RUNG_OUT, STEAM_STAT_INT, 1);
 			}
 		}
 		else if ( BELL_CURRENT_EVENT == BELL_CLAPPER_BREAK )
@@ -4887,6 +4903,7 @@ void actBell(Entity* my)
 				messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6279));
 				bellAttractMonsters(my);
 				Compendium_t::Events_t::eventUpdateWorld(BELL_LAST_TOUCHED_PLAYER, Compendium_t::CPDM_BELL_CLAPPER_BROKEN, "bell", 1);
+				steamStatisticUpdateClient(BELL_LAST_TOUCHED_PLAYER, STEAM_STAT_RUNG_OUT, STEAM_STAT_INT, 1);
 			}
 		}
 		else if ( BELL_CURRENT_EVENT == BELL_MONSTER )
@@ -4934,6 +4951,7 @@ void actBell(Entity* my)
 				{
 					messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6275));
 					Compendium_t::Events_t::eventUpdateWorld(BELL_LAST_TOUCHED_PLAYER, Compendium_t::CPDM_BELL_BROKEN, "bell", 1);
+					steamStatisticUpdateClient(BELL_LAST_TOUCHED_PLAYER, STEAM_STAT_RUNG_OUT, STEAM_STAT_INT, 1);
 				}
 				bellBreakBulb(my, false);
 			}
@@ -5019,6 +5037,7 @@ void actBell(Entity* my)
 						{
 							messagePlayer(BELL_LAST_TOUCHED_PLAYER, MESSAGE_INTERACTION, Language::get(6275));
 							Compendium_t::Events_t::eventUpdateWorld(BELL_LAST_TOUCHED_PLAYER, Compendium_t::CPDM_BELL_BROKEN, "bell", 1);
+							steamStatisticUpdateClient(BELL_LAST_TOUCHED_PLAYER, STEAM_STAT_RUNG_OUT, STEAM_STAT_INT, 1);
 						}
 						bellBreakBulb(my, false);
 					}
