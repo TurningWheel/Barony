@@ -190,10 +190,10 @@ void GameModeManager_t::Tutorial_t::readFromFile()
 		return;
 	}
 
-	if ( PHYSFS_getRealDir("/savegames/tutorial_scores.json") )
+	if ( PHYSFS_getRealDir(tutorialScoresFilename.c_str()) )
 	{
-		std::string inputPath = PHYSFS_getRealDir("/savegames/tutorial_scores.json");
-		inputPath.append("/savegames/tutorial_scores.json");
+		std::string inputPath = PHYSFS_getRealDir(tutorialScoresFilename.c_str());
+		inputPath.append(tutorialScoresFilename.c_str());
 
 		File* fp = FileIO::open(inputPath.c_str(), "rb");
 		if ( !fp )
@@ -212,6 +212,24 @@ void GameModeManager_t::Tutorial_t::readFromFile()
 		if ( !d.HasMember("version") || !d.HasMember("levels") )
 		{
 			printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+
+			// recreate this file, corrupted?
+			printlog("[JSON]: File %s corrupt, recreating...", inputPath.c_str());
+			d.Clear();
+			d.SetObject();
+			CustomHelpers::addMemberToRoot(d, "version", rapidjson::Value(1));
+			CustomHelpers::addMemberToRoot(d, "first_time_prompt", rapidjson::Value(FirstTimePrompt.showFirstTimePrompt));
+			CustomHelpers::addMemberToRoot(d, "first_tutorial_complete", rapidjson::Value(firstTutorialCompleted));
+
+			rapidjson::Value levelsObj(rapidjson::kObjectType);
+			CustomHelpers::addMemberToRoot(d, "levels", levelsObj);
+			for ( auto it = levels.begin(); it != levels.end(); ++it )
+			{
+				rapidjson::Value level(rapidjson::kObjectType);
+				level.AddMember("completion_time", rapidjson::Value(it->completionTime), d.GetAllocator());
+				CustomHelpers::addMemberToSubkey(d, "levels", it->filename, level);
+			}
+			writeToFile(d);
 			return;
 		}
 		int version = d["version"].GetInt();
@@ -233,7 +251,7 @@ void GameModeManager_t::Tutorial_t::readFromFile()
 	}
 	else
 	{
-		printlog("[JSON]: File /savegames/tutorial_scores.json does not exist, creating...");
+		printlog("[JSON]: File %s does not exist, creating...", tutorialScoresFilename.c_str());
 
 		rapidjson::Document d;
 		d.SetObject();
@@ -264,14 +282,14 @@ void GameModeManager_t::Tutorial_t::writeToDocument()
 		return;
 	}
 
-	if ( !PHYSFS_getRealDir("/savegames/tutorial_scores.json") )
+	if ( !PHYSFS_getRealDir(tutorialScoresFilename.c_str()) )
 	{
-		printlog("[JSON]: Error file /savegames/tutorial_scores.json does not exist");
+		printlog("[JSON]: Error file %s does not exist", tutorialScoresFilename.c_str());
 		return;
 	}
 
-	std::string inputPath = PHYSFS_getRealDir("/savegames/tutorial_scores.json");
-	inputPath.append("/savegames/tutorial_scores.json");
+	std::string inputPath = PHYSFS_getRealDir(tutorialScoresFilename.c_str());
+	inputPath.append(tutorialScoresFilename.c_str());
 
 	File* fp = FileIO::open(inputPath.c_str(), "rb");
 	if ( !fp )
@@ -288,16 +306,37 @@ void GameModeManager_t::Tutorial_t::writeToDocument()
 	rapidjson::Document d;
 	d.ParseStream(is);
 
-	d["first_time_prompt"].SetBool(this->FirstTimePrompt.showFirstTimePrompt);
-	if ( !d.HasMember("first_tutorial_complete") )
+	if ( !d.HasMember("version") || !d.HasMember("levels") )
 	{
-		CustomHelpers::addMemberToRoot(d, "first_tutorial_complete", rapidjson::Value(false));
-	}
-	d["first_tutorial_complete"].SetBool(this->firstTutorialCompleted);
+		printlog("[JSON]: File %s corrupt, recreating...", inputPath.c_str());
+		d.Clear();
+		d.SetObject();
+		CustomHelpers::addMemberToRoot(d, "version", rapidjson::Value(1));
+		CustomHelpers::addMemberToRoot(d, "first_time_prompt", rapidjson::Value(FirstTimePrompt.showFirstTimePrompt));
+		CustomHelpers::addMemberToRoot(d, "first_tutorial_complete", rapidjson::Value(firstTutorialCompleted));
 
-	for ( auto it = levels.begin(); it != levels.end(); ++it )
+		rapidjson::Value levelsObj(rapidjson::kObjectType);
+		CustomHelpers::addMemberToRoot(d, "levels", levelsObj);
+		for ( auto it = levels.begin(); it != levels.end(); ++it )
+		{
+			rapidjson::Value level(rapidjson::kObjectType);
+			level.AddMember("completion_time", rapidjson::Value(it->completionTime), d.GetAllocator());
+			CustomHelpers::addMemberToSubkey(d, "levels", it->filename, level);
+		}
+	}
+	else
 	{
-		d["levels"][it->filename.c_str()]["completion_time"].SetUint(it->completionTime);
+		d["first_time_prompt"].SetBool(this->FirstTimePrompt.showFirstTimePrompt);
+		if ( !d.HasMember("first_tutorial_complete") )
+		{
+			CustomHelpers::addMemberToRoot(d, "first_tutorial_complete", rapidjson::Value(false));
+		}
+		d["first_tutorial_complete"].SetBool(this->firstTutorialCompleted);
+
+		for ( auto it = levels.begin(); it != levels.end(); ++it )
+		{
+			d["levels"][it->filename.c_str()]["completion_time"].SetUint(it->completionTime);
+		}
 	}
 
 	writeToFile(d);
