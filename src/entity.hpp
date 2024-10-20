@@ -234,6 +234,7 @@ public:
 	Sint32& monsterPathBoundaryXEnd; //skill[16]
 	Sint32& monsterPathBoundaryYEnd; //skill[17]
 	Sint32& monsterStoreType; //skill[18]
+	Sint32& monsterDevilNumSummons; //skill[18]
 	Sint32& monsterStrafeDirection; //skill[39]
 	Sint32& monsterPathCount; //skill[38]
 	real_t& monsterLookDir; //fskill[4]

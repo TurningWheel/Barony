@@ -126,6 +126,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterPathBoundaryXEnd(skill[16]),
 	monsterPathBoundaryYEnd(skill[17]),
 	monsterStoreType(skill[18]),
+	monsterDevilNumSummons(skill[18]),
 	monsterStrafeDirection(skill[39]),
 	monsterPathCount(skill[38]),
 	monsterAllyIndex(skill[42]),
@@ -8541,7 +8542,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								steamStatisticUpdateClient(player, STEAM_STAT_SMASH_MELEE, STEAM_STAT_INT, 1);
 							}
-					}
+						}
 					}
 					else if ( hit.entity->behavior == &::actFurniture )
 					{
@@ -9557,6 +9558,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( hitstats->type == GOBLIN )
 							{
 								shieldDegradeChance += 10;
+							}
+							if ( weaponskill == PRO_MACE )
+							{
+								shieldDegradeChance *= 0.75;
 							}
 							if ( hit.entity->behavior == &actPlayer )
 							{
