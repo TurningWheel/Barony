@@ -5870,32 +5870,39 @@ void actParticleTimer(Entity* my)
 				{
 					if ( Stat* monsterStats = monster->getStats() )
 					{
-						if ( my->parent != 0 && uidToEntity(my->parent) )
+						if ( my->parent != 0 )
 						{
-							if ( uidToEntity(my->parent)->getRace() == LICH_ICE )
+							Entity* parent = uidToEntity(my->parent);
+							if ( parent )
 							{
-								//monsterStats->leader_uid = my->parent;
-								switch ( monsterStats->type )
+								if ( parent->getRace() == LICH_ICE )
 								{
-									case AUTOMATON:
-										strcpy(monsterStats->name, "corrupted automaton");
-										monsterStats->EFFECTS[EFF_CONFUSED] = true;
-										monsterStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
-										break;
-									default:
-										break;
+									//monsterStats->leader_uid = my->parent;
+									switch ( monsterStats->type )
+									{
+										case AUTOMATON:
+											strcpy(monsterStats->name, "corrupted automaton");
+											monsterStats->EFFECTS[EFF_CONFUSED] = true;
+											monsterStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
+											break;
+										default:
+											break;
+									}
 								}
-							}
-							else if ( uidToEntity(my->parent)->getRace() == DEVIL )
-							{
-								monsterStats->monsterNoDropItems = 1;
-								monsterStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] = 1;
-								monsterStats->MISC_FLAGS[STAT_FLAG_NO_DROP_ITEMS] = 1;
-								monsterStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1;
-								if ( my->particleTimerVariable2 >= 0 
-									&& players[my->particleTimerVariable2] && players[my->particleTimerVariable2]->entity )
+								else if ( parent->getRace() == DEVIL )
 								{
-									monster->monsterAcquireAttackTarget(*(players[my->particleTimerVariable2]->entity), MONSTER_STATE_ATTACK);
+									monsterStats->monsterNoDropItems = 1;
+									monsterStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1;
+									monsterStats->LVL = 5;
+									if ( parent->monsterDevilNumSummons <= 25 )
+									{
+										monsterStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] = 1;
+									}
+									if ( my->particleTimerVariable2 >= 0 
+										&& players[my->particleTimerVariable2] && players[my->particleTimerVariable2]->entity )
+									{
+										monster->monsterAcquireAttackTarget(*(players[my->particleTimerVariable2]->entity), MONSTER_STATE_ATTACK);
+									}
 								}
 							}
 						}
