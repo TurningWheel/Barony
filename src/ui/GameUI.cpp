@@ -3802,7 +3802,7 @@ void createXPBar(const int player)
 	auto endCapRight = hud_t.xpFrame->addImage(endCapPos, 0xFFFFFFFF, "*#images/ui/HUD/xpbar/HUD_Bars_ExpCap2_00.png", "xp img endcap right");
 	endCapRight->ontop = true;
 
-	const int textWidth = 72;
+	const int textWidth = 120;
 	auto font = "fonts/pixel_maz.ttf#32#2";
 	auto textStatic = hud_t.xpFrame->addField("xp text static", 16);
 	textStatic->setText(Language::get(6106));
@@ -3810,7 +3810,7 @@ void createXPBar(const int player)
 	textStatic->setSize(SDL_Rect{ pos.w / 2 - 4, 0, textWidth, pos.h }); // x - 4 to center the slash
 	textStatic->setFont(font);
 	textStatic->setVJustify(Field::justify_t::CENTER);
-	textStatic->setHJustify(Field::justify_t::LEFT);
+	textStatic->setHJustify(Field::justify_t::RIGHT);
 	textStatic->setColor(makeColor( 255, 255, 255, 255));
 
 	auto text = hud_t.xpFrame->addField("xp text current", 16);
@@ -28524,7 +28524,7 @@ void Player::HUD_t::updateXPBar()
 		auto xpTextStatic = xpFrame->findField("xp text static");
 		SDL_Rect xpTextStaticPos = xpTextStatic->getSize();
 
-		int offsetx = pos.w / 2 - xpTextStaticPos.w - 24;
+		int offsetx = pos.w / 2 - xpTextStaticPos.w - 24 - 4;
 		if ( bCompactWidth )
 		{
 			xpTextStatic->setDisabled(true);
@@ -28547,7 +28547,12 @@ void Player::HUD_t::updateXPBar()
 		}
 		else
 		{
-			xpTextPos.x = pos.w / 2 - (4 * 2) - xpTextPos.w + offsetx;
+			xpTextPos.x = xpTextStaticPos.x + xpTextStaticPos.w - xpTextPos.w;
+			if ( auto textGet = xpTextStatic->getTextObject() )
+			{
+				xpTextPos.x -= (textGet->getWidth());
+				xpTextPos.x -= 4;
+			}
 		}
 		xpText->setSize(xpTextPos);
 
