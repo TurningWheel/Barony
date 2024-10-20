@@ -6537,5 +6537,6 @@ Unlock Achievements to earn more!#
 6307 This %s
  is unable to be enchanted.#
 6308 Your %s loses some of its blessing.#
+6309 You are blasted by a torrent!#
 
 6350 END#
