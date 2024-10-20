@@ -34727,7 +34727,7 @@ failed:
 										if ( auto txt = frame->findField("txt_1") )
 										{
 											bool toggle = ticks % TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
-											char* binding = "MenuPageRight";
+											const char* binding = "MenuPageRight";
 											if ( input.input("MenuUp").isBindingUsingKeyboard() )
 											{
 												binding = "MenuUp";
@@ -34757,7 +34757,7 @@ failed:
 										}
 										if ( auto txt = frame->findField("txt_2") )
 										{
-											char* binding = "MenuPageRightAlt";
+											const char* binding = "MenuPageRightAlt";
 											if ( input.input("MenuRight").isBindingUsingKeyboard() )
 											{
 												binding = "MenuRight";
