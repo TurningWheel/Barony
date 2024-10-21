@@ -1,0 +1,1049 @@
+{
+    "algernon": {
+        "blurb": [
+            "Due to sparse food, dungeon life isn't easy",
+            "for rats. However, sometimes a large food",
+            "source will cause a boom in the population.",
+            "",
+            "In such times, a very smart rat",
+            "emerges as the king."
+        ],
+        "abilities": [],
+        "inventory": [
+            "- Emeralds",
+            "- Meat, Cheese"
+        ]
+    },
+    "artemisia": {
+        "blurb": [
+            "Banished to the Underworld for betraying",
+            "her fellow Eternals, ARTEMISIA uses her",
+            "ghostly abilities to be an even more",
+            "wily hunter.",
+            "Even death could not pry the",
+            "magic bow from her grasp."
+        ],
+        "abilities": [
+            "- Mimic Other",
+            "- Levitation",
+            "- Teleportation",
+            "- Indominable"
+        ],
+        "inventory": [
+            "- Khryselakatos",
+            "- Quivers of Silver Ammo",
+            "- Spooky Masks"
+        ]
+    },
+    "automaton": {
+        "blurb": [
+            "A construct devised by the Magicians' Guild,",
+            "magic and technology have given the",
+            "AUTOMATON the gift of life as a servant.",
+            "",
+            "They have only been known to",
+            "become violent when commanded."
+        ],
+        "abilities": [
+            "- Salvage",
+            "- Self Destruct"
+        ],
+        "inventory": [
+            ""
+        ]
+    },
+    "baratheon": {
+        "blurb": [
+            "Fathered by wrath, this dark spirit",
+            "seeks those with ambitious purpose.",
+            "",
+            "BARATHEON cares not for its own future,",
+            "existing only to keep heroes from their",
+            "great destinies."
+        ],
+        "abilities": [
+            "- Mimic Other",
+            "- Levitation",
+            "- Teleportation",
+            "- Indominable"
+        ],
+        "inventory": [
+            "- Phantom Masks",
+            "- Spooky Masks"
+        ]
+    },
+    "bat": {
+        "blurb": [
+            "Wild blood-sucking bats recently",
+            "infested the Hamlet mines.",
+            "Though small, wild flapping makes BATS",
+            "a hard target for even the most skilled",
+            "adventurers. Expect more than half of",
+            "attacks to miss these dungeon pests!"
+        ],
+        "abilities": [
+            "- Levitation",
+            "- Evasion",
+            "- Bleeding Attacks",
+            "- Indominable"
+        ],
+        "inventory": []
+    },
+    "bram kindly": {
+        "blurb": [
+            "The enigmatic master of the Hunters' Guild,",
+            "BRAM KINDLY is said to have disappeared",
+            "while investigating the surge of undead.",
+            "",
+            "It appears he found exactly",
+            "what he was looking for."
+        ],
+        "abilities": [
+            "- Drain Soul",
+            "- Vampiric Aura",
+            "- Indominable"
+        ],
+        "inventory": [
+            "- Wraith's Gown",
+            "- Magicstaffs of Bleed",
+            "- Vampire Doublet"
+        ]
+    },
+    "bram succubi": {
+        "blurb": [
+            "Beings of immense power tend to attract",
+            "followers. Verona, Aleera & Marishka",
+            "pledged themselves to a mighty vampire.",
+            "",
+            "He gladly tutored them in vampiric magics",
+            "inside his grim castle."
+        ],
+        "abilities": [
+            "- Charm Monster",
+            "- Teleportation"
+        ],
+        "inventory": [
+            "- Spellbooks of Bloodletting",
+            "- Magicstaffs of Charm Monster",
+            "- Masquerade Masks"
+        ]
+    },
+    "bubbles": {
+        "blurb": [
+            "Those who have survived BUBBLES claim that",
+            "she isn't a crab at all. Rather, she is",
+            "a demonic spirit taking a crab's shape.",
+            "",
+            "She carries with her the",
+            "treasure from her victims."
+        ],
+        "abilities": [
+            "- Poisoned Attacks",
+            "- Spray Web"
+        ],
+        "inventory": [
+            "- Dyrnwyn",
+            "- Ring of Invisibility"
+        ]
+    },
+    "bugbear": {
+        "blurb": [
+            "These dumb bullies fail to organize",
+            "large-scale war against surface humans.",
+            "Nevertheless, they do build coalitions",
+            "of brutal raiders, and seize settlements.",
+            "BUGBEARS often use ruins for homes, and",
+            "recently set up camp underneath Hamlet."
+        ],
+        "abilities": [
+            "- Strafing",
+            "- Shield Bash"
+        ],
+        "inventory": [
+            "- Steel Swords/Axes",
+            "- Arbalests",
+            "- Scutums"
+        ]
+    },
+    "cockatrice": {
+        "blurb": [
+            "A creature long thought to be extinct, ",
+            "the COCKATRICE is a powerful flying beast.",
+            "",
+            "Its razor sharp talons make quick work of",
+            "any prey it paralyzes with its breath.",
+            "Its feathers are thought to be magical."
+        ],
+        "abilities": [
+            "- Stoneblood",
+            "- Levitation",
+            "- Double Strike"
+        ],
+        "inventory": [
+            "- Enchanted Feathers",
+            "- Spellbook of Stoneblood",
+            "- Gemstones",
+            "- Potions"
+        ]
+    },
+    "coral grimes": {
+        "blurb": [
+            "Ghoul hunter CORAL GRIMES and his posse",
+            "rose to fame, but sextons warn that the",
+            "dead keep their compulsions from life.",
+            "",
+            "Once GRIMES' party was killed, all",
+            "prayed he would not again rise."
+        ],
+        "abilities": [],
+        "inventory": [
+            "- Bounty Hunter Hat",
+            "- Ruby",
+            "- Meat"
+        ]
+    },
+    "crab": {
+        "blurb": [
+            "Giant dungeon CRABS",
+            "are patient hunters.",
+            "",
+            "Their slow metabolism and poison claws",
+            "make them well suited to waiting for prey",
+            "to ambush, eviscerate, and devour."
+        ],
+        "abilities": [
+            "- Poisoned Attacks",
+            "- Spray Web"
+        ],
+        "inventory": [
+            ""
+        ]
+    },
+    "crystalgolem": {
+        "blurb": [
+            "The bigger brother of the automaton,",
+            "the CRYSTAL GOLEM has emerged from",
+            "an excess of magic material and will.",
+            "",
+            "When it raises its arms, it's",
+            "best to be somewhere else."
+        ],
+        "abilities": [
+            "- Power Strike"
+        ],
+        "inventory": [
+            "- Crystal equipment",
+            "- Gemstones"
+        ]
+    },
+    "demon": {
+        "blurb": [
+            "Said to be a manifestation of primal",
+            "violence, DEMONS are found near",
+            "the greatest sources of evil. ",
+            "",
+            "They eviscerate enemies with their claws,",
+            "or roast victims with hellfire first."
+        ],
+        "abilities": [
+            "- Fireball"
+        ],
+        "inventory": [
+            ""
+        ]
+    },
+    "deudebreau": {
+        "blurb": [
+            "As foul as demons are, those who climb the",
+            "demonic ranks are fouler still.",
+            "",
+            "Founder of a vicious fraternity,",
+            "DEU DE'BREAU is always accompanied by an",
+            "entourage of demonic sycophants."
+        ],
+        "abilities": [
+            "- Fireball"
+        ],
+        "inventory": [
+            ""
+        ]
+    },
+    "devil": {
+        "blurb": [
+            "The devil BAPHOMET commands the",
+            "surrounding hells to his will, using",
+            "minions, magic, and brimstone.",
+            "",
+            "He will not permit interlopers",
+            "to quell his ambitions."
+        ],
+        "abilities": [
+            "- Fireball Spray",
+            "- Conjure Hellspawn",
+            "- Conjure Shadows",
+            "- Hail of Boulders",
+            "- Indominable",
+            "- Telepathy",
+            "- Lava Portal"
+        ],
+        "inventory": [
+            ""
+        ]
+    },
+    "dummybot": {
+        "blurb": [
+            "The DUMMYBOT is extraordinarily durable.",
+            "With proper maintenance, your shielded",
+            "companion(s) can serve as a powerful",
+            "guardian while you attend to business!"
+        ],
+        "abilities": [
+            "- Taunt"
+        ],
+        "inventory": [
+            ""
+        ]
+    },
+    "enslaved ghoul": {
+        "blurb": [
+            "Those ENSLAVED at death possess a",
+            "supernatural hunger, fueled by hatred",
+            "for their master.",
+            "",
+            "Consuming the living invigorates them, and",
+            "they move with ferocious speed."
+        ],
+        "abilities": [
+            "- Vampiric Aura"
+        ],
+        "inventory": [
+            "- Meat",
+            "- Miscellaneous tools",
+            "- Blessed Water"
+        ]
+    },
+    "funny bones": {
+        "blurb": [
+            "An especially cruel mercenary captain",
+            "was in charge of mine security and",
+            "slave discipline in the mines.",
+            "",
+            "With fine gear and a stern demeanor,",
+            "he earned himself an ironic nickname."
+        ],
+        "abilities": [],
+        "inventory": [
+            "- Parashu",
+            "- Cloak of Protection",
+            "- Eyepatch",
+            "- Leather, Wooden, Iron shields/",
+            "    helmets"
+        ]
+    },
+    "gharbad": {
+        "blurb": [
+            "Rarely a goatman lives long enough for its",
+            "fur to turn silver, and only somewhat less",
+            "rarely, one is born naturally that way.",
+            "",
+            "Whether earned or not, these lucky ones",
+            "attract loyal followers."
+        ],
+        "abilities": [],
+        "inventory": [
+            "- Iron, Steel, Crystal armor",
+            "- Steel, Crystal Axes/Maces",
+            "- Crystal Shurikens",
+            "- Steel Chakrams",
+            "- Potions of Healing",
+            "- Bottles of Booze"
+        ]
+    },
+    "ghost": {
+        "blurb": [
+            "The Hamlet curse enables a bonded group",
+            "of adventurers to be together in spirit",
+            "after death, literally.",
+            "",
+            "With persistence, ambient necromancy may",
+            "cause a body to rematerialize."
+        ],
+        "abilities": [
+            "- Sneak",
+            "- Push",
+            "- Haunt",
+            "- Chill",
+            "- Callout",
+            "- Levitation"
+        ],
+        "inventory": []
+    },
+    "ghoul": {
+        "blurb": [
+            "With a primal hatred for the living, GHOULS",
+            "attack when their rest is disturbed.",
+            "",
+            "Nobody quite knows what turns a dead",
+            "person into a GHOUL, but some try to",
+            "prevent it with certain burial rites."
+        ],
+        "abilities": [],
+        "inventory": [
+            "- Meat",
+            "- Miscellaneous tools",
+            "- Blessed Water"
+        ]
+    },
+    "gnome": {
+        "blurb": [
+            "GNOMES are known for their mischief, but ",
+            "those who become addicted to digging for",
+            "wealth are beyond hope.",
+            "",
+            "One must take care when seeking to",
+            "plunder a gnome's food and riches."
+        ],
+        "abilities": [],
+        "inventory": [
+            "- Pickaxes",
+            "- Magicstaffs of Lightning",
+            "- Fish",
+            "- Pipes",
+            "- Lanterns",
+            "- Gemstones",
+            "- Enchanted Feathers"
+        ]
+    },
+    "gnome thief": {
+        "blurb": [
+            "When gold-addicted gnomes have none",
+            "to mine, they organize to hunt for it.",
+            "",
+            "Beware of GNOME THIEF ambushing parties",
+            "who use traps and weapons with deadly",
+            "skill."
+        ],
+        "abilities": [
+            "- Lay Trap"
+        ],
+        "inventory": [
+            "- Steel Swords/Maces",
+            "- Shortbows/Crossbows and Quivers",
+            "- Bycockets (Thief Leader)",
+            "- Hood Of Whispers",
+            "- Bandanas",
+            "- Bandit Masks",
+            "- Mouthknives",
+            "- Beartraps/Tinkered Traps",
+            "- Enchanted Feathers"
+        ]
+    },
+    "goatman": {
+        "blurb": [
+            "A tribal people from neighboring",
+            "mountains, GOATMEN are hardy,",
+            "dull-witted folk.",
+            "Their culture revolves around drink,",
+            "though they can be competent in",
+            "many skills when satiated."
+        ],
+        "abilities": [],
+        "inventory": [
+            "- Iron, Steel, Crystal armor",
+            "- Steel, Crystal Axes/Maces",
+            "- Miscellaneous magicstaffs",
+            "- Lanterns, Crystal Shards",
+            "- Mirror Shields",
+            "- Steel Chakrams",
+            "- Potions of Healing",
+            "- Bottles of Booze"
+        ]
+    },
+    "goblin": {
+        "blurb": [
+            "Dungeon GOBLINS are similar to humans",
+            "but live in brutal, savage conditions.",
+            "",
+            "While highly resourceful, their minds have",
+            "atrophied, rendering many of them",
+            "dependent on raids against humans."
+        ],
+        "abilities": [],
+        "inventory": [
+            "- Bronze, Iron Maces/Axes",
+            "- Shortbows and Quivers",
+            "- Magicstaffs of Fire",
+            "- Cloaks of Magic Reflection",
+            "- Grass Sprigs",
+            "- Leather, Bronze armor",
+            "- Cloaks",
+            "- Animal Hats",
+            "- Magus Headdresses"
+        ]
+    },
+    "gyrobot": {
+        "blurb": [
+            "While the airborne GYROBOT can avoid",
+            "most threats, some dangers are",
+            "too large to out-maneuver.",
+            "Curious GYROBOTS may unintentionally",
+            "trigger traps and cease function."
+        ],
+        "abilities": [
+            "- Levitation",
+            "- Detection",
+            "- Light"
+        ],
+        "inventory": [
+            ""
+        ]
+    },
+    "human": {
+        "blurb": [
+            "Hamlet commoners once hailed",
+            "from many nations to trade",
+            "and work together peaceably. ",
+            "",
+            "With proper focus, HUMANS can become",
+            "adept in whatever they set their minds to."
+        ],
+        "abilities": [],
+        "inventory": [
+            "- Melee and ranged weaponry",
+            "- Leather, Bronze, Iron, Steel",
+            "armor"
+        ]
+    },
+    "imp": {
+        "blurb": [
+            "Terrible mischief makers, IMPS wander",
+            "wherever they can inflict suffering.",
+            "",
+            "Their wings and magical ability allow them",
+            "to devastate foes, often well out of reach,",
+            "cackling all the while."
+        ],
+        "abilities": [
+            "- Fireball",
+            "- Levitation"
+        ],
+        "inventory": [
+            "- Miscellaneous Spellbooks"
+        ]
+    },
+    "incubus": {
+        "blurb": [
+            "A curse of pride personified, the INCUBUS",
+            "obsesses over controlling others.",
+            "",
+            "He uses spells and weapons to toy with his",
+            "victims, though some take a direct approach",
+            "in their quest for evil."
+        ],
+        "abilities": [
+            "- Teleportation",
+            "- Steal Weapon"
+        ],
+        "inventory": [
+            "- Magicstaffs of Cold",
+            "- Crossbows",
+            "- Steel, Crystal polearms",
+            "- Bottles of Booze",
+            "- Potions of Confusion",
+            "- Masquerade Mask",
+            "- Mirror Shield"
+        ]
+    },
+    "insectoid": {
+        "blurb": [
+            "Not much is known about the elusive bug",
+            "people who roam in remote places.",
+            "",
+            "Their skill and mysterious physiology give",
+            "them an edge on the battlefield, striking",
+            "fear into many humans."
+        ],
+        "abilities": [
+            "- Spray Acid"
+        ],
+        "inventory": [
+            "- Iron, Steel, Crystal armor",
+            "- Steel, Crystal Swords/Polearms",
+            "- Shortbows/Longbows/Compound",
+            "    Bows",
+            "- Crossbows",
+            "- Iron Daggers"
+        ]
+    },
+    "kobold": {
+        "blurb": [
+            "The KOBOLDS are small, scaly folk, and are",
+            "notorious cultists and bandits in the region.",
+            "",
+            "They have long been a problem for the",
+            "Magicians' Guild, thanks to their innate",
+            "magic resistance."
+        ],
+        "abilities": [
+            "- Slow"
+        ],
+        "inventory": [
+            "- Iron, Steel melee/ranged",
+            "    weaponry",
+            "- Enchanted Feathers",
+            "- Tin Openers",
+            "- Towels"
+        ]
+    },
+    "lich": {
+        "blurb": [
+            "BARON HERX's body is blackened in the",
+            "death of his flesh, but wields immense",
+            "magical power and a dark bond with Hell.",
+            "",
+            "Those going toe-to-toe with him must be",
+            "well prepared for his spells."
+        ],
+        "abilities": [
+            "- Lightning Volley",
+            "- Conjure Hellspawn",
+            "- Command Darkness",
+            "- Levitation",
+            "- Indominable",
+            "- Dash"
+        ],
+        "inventory": [
+            "- Purple Mystic Orb",
+            "- Gold"
+        ]
+    },
+    "lichfire": {
+        "blurb": [
+            "ORPHEUS uses his passion to fuel his magic",
+            "and likes to dominate his problems",
+            "face-to-face.",
+            "",
+            "Big, powerful spells and intimidation",
+            "allow him to end things quickly."
+        ],
+        "abilities": [
+            "- Fireball",
+            "- Telepathy",
+            "- Levitation",
+            "- Indominable",
+            "- Call Firestorm",
+            "- Teleport",
+            "- Blood Field"
+        ],
+        "inventory": [
+            "- Crystal Sword",
+            "- Golden Mask"
+        ]
+    },
+    "lichice": {
+        "blurb": [
+            "ERUDYCE prefers the right spell,",
+            "placed with severe intent, to turn",
+            "events in her favor.",
+            "",
+            "She lets others face confrontation while",
+            "staying in control from behind the scenes."
+        ],
+        "abilities": [
+            "- Cold",
+            "- Levitation",
+            "- Telepathy",
+            "- Indominable",
+            "- Magic Missile Volley",
+            "- Blood Field",
+            "- Teleport",
+            "- Command Automata"
+        ],
+        "inventory": [
+            "- Magicstaff of Cold",
+            "- Magus Headdress"
+        ]
+    },
+    "lilith": {
+        "blurb": [
+            "A name first given in myth to the primal",
+            "succubus, those who lead and inspire",
+            "succubi are sometimes granted this title.",
+            "",
+            "Beware her influence, as her foes",
+            "are known to switch sides."
+        ],
+        "abilities": [
+            "- Charm Monster",
+            "- Teleportation"
+        ],
+        "inventory": [
+            "- Magicstaffs of Charm Monster",
+            "- Roses"
+        ]
+    },
+    "mimic": {
+        "blurb": [
+            "Little is understood of a MIMIC'S true ",
+            "nature, but it's assumed they didn't",
+            "always look like treasure chests.",
+            "",
+            "Further study has been impossible due to",
+            "them eating researchers and their notes."
+        ],
+        "abilities": [
+            "- Devour Equipment",
+            "- Indominable"
+        ],
+        "inventory": [
+            "- Chest contents",
+            "- Gold"
+        ]
+    },
+    "minotaur": {
+        "blurb": [
+            "A huge legendary beast of unknown origin,",
+            "the MINOTAUR can break through dungeon",
+            "walls and has been enchanted, permitting it",
+            "to levitate.",
+            "It is ruthless in its pursuit of its master's",
+            "enemies."
+        ],
+        "abilities": [
+            "- Levitation",
+            "- Destroy Obstacle",
+            "- Telepathy",
+            "- Indominable"
+        ],
+        "inventory": [
+            "- High value gemstones"
+        ]
+    },
+    "mysterious shop": {
+        "blurb": [
+            "This MYSTERIOUS MERCHANT knows things",
+            "he couldn't possibly know and carries",
+            "artifacts he couldn't possibly possess.",
+            "",
+            "He will trade only if given mystical orbs,",
+            "if the customer can bear to offer them."
+        ],
+        "abilities": [
+            "- Magic Missile",
+            "- Indominable",
+            "- Drain Soul",
+            "- Bloodletting",
+            "- Teleportation"
+        ],
+        "inventory": [
+            "- Various Shop stock"
+        ]
+    },
+    "potato king": {
+        "blurb": [
+            "In contrast to his kin, THE POTATO KING",
+            "appears merry and carefree, though",
+            "insane.",
+            "Fellow goblins seem drawn to his chaotic",
+            "personality, perhaps desperate for levity",
+            "in the swamps."
+        ],
+        "abilities": [],
+        "inventory": [
+            "- Sharur",
+            "- Jester Hat",
+            "- Cloaks of Magic Reflection",
+            "- Grass Sprigs",
+            "- Leather, Bronze armor",
+            "- Cloaks"
+        ]
+    },
+    "rat": {
+        "blurb": [
+            "The dungeons have bred these RATS for ",
+            "aggression and size.",
+            "",
+            "While one would be wise to stay wary of ",
+            "swarms and sneaky RATS, usually the sight",
+            "of them means the promise of food."
+        ],
+        "abilities": [],
+        "inventory": [
+            "- Meat, Cheese"
+        ]
+    },
+    "scarab": {
+        "blurb": [
+            "The hardy SCARAB is said to bore into dense,",
+            "magical materials, conveying profound",
+            "magical resistance into their shells.",
+            "",
+            "Their slimy meat is unappealing to some",
+            "but it is quite nutritious."
+        ],
+        "abilities": [],
+        "inventory": [
+            "- Tomalleys",
+            "- Low value gemstones"
+        ]
+    },
+    "scorpion": {
+        "blurb": [
+            "A good shield in skilled hands can block the",
+            "deadly paralyzing sting of the SCORPION.",
+            "",
+            "Victims of SCORPIONS usually have a look",
+            "of surprise frozen on their faces when the",
+            "body is found."
+        ],
+        "abilities": [
+            "- Paralyzing Attacks"
+        ],
+        "inventory": [
+            ""
+        ]
+    },
+    "sentrybot": {
+        "blurb": [
+            "Often assumed to be a modern invention,",
+            "variants of this SENTRYBOT blueprint have",
+            "been found active among ancient ruins.",
+            "",
+            "Though easily broken, tinkerers rely",
+            "on sentrybots for high damage output."
+        ],
+        "abilities": [],
+        "inventory": [
+            ""
+        ]
+    },
+    "shadow": {
+        "blurb": [
+            "An evil spirit that wanders, appearing not",
+            "to have any sense of itself.",
+            "",
+            "The SHADOW steals the identity of anyone it",
+            "encounters, and vainly attempts to replace",
+            "its target by murdering the original."
+        ],
+        "abilities": [
+            "- Mimic Other",
+            "- Levitation",
+            "- Teleportation",
+            "- Indominable"
+        ],
+        "inventory": [
+            "- Spooky Masks"
+        ]
+    },
+    "shelob": {
+        "blurb": [
+            "Those who have survived SHELOB claim that",
+            "she isn't a spider at all. Rather, she is",
+            "a demonic spirit taking a spider's shape.",
+            "",
+            "She carries with her the",
+            "treasure from her victims."
+        ],
+        "abilities": [
+            "- Poisoned Attacks",
+            "- Spray Web"
+        ],
+        "inventory": [
+            "- Dyrnwyn",
+            "- Ring of Invisibility"
+        ]
+    },
+    "shopkeeper": {
+        "blurb": [
+            "Good SHOPKEEPERS somehow make their",
+            "businesses work anywhere.",
+            "They are picky about what they buy,",
+            "and do not tolerate burglars.",
+            "",
+            "Word travels fast in the Merchants' Guild."
+        ],
+        "abilities": [
+            "- Magic Missile",
+            "- Drain Soul",
+            "- Indominable",
+            "- Bloodletting"
+        ],
+        "inventory": [
+            "- Various Shop stock"
+        ]
+    },
+    "skeleton": {
+        "blurb": [
+            "The cursed remains of a mercenary army,",
+            "SKELETONS carry a variety of equipment.",
+            "",
+            "One must take care both when fighting and",
+            "looting them, as the battered gear may",
+            "harm more than it helps."
+        ],
+        "abilities": [],
+        "inventory": [
+            "- Bronze, Iron Axes/Swords/",
+            "    Polearms",
+            "- Leather, Wooden, Iron shields/",
+            "    helmets"
+        ]
+    },
+    "skrabblag": {
+        "blurb": [
+            "The exoskeleton of this beast bears",
+            "innumerable splits and scratches from",
+            "battling with weaker prey.",
+            "Naturalists claim that scorpions like",
+            "SKRABBLAG are capable of aging into",
+            "immortality."
+        ],
+        "abilities": [
+            "- Paralyzing Attacks"
+        ],
+        "inventory": [
+            "- Rubies"
+        ]
+    },
+    "slime": {
+        "blurb": [
+            "Found in a variety of colors, SLIMES are",
+            "mindless entities seeking endless",
+            "consumption.",
+            "They often find themselves sliding through",
+            "pipes or waterways in their search for",
+            "organic matter to liquefy."
+        ],
+        "abilities": [
+            "- Waterwalking (Blue/Purple)",
+            "- Lavawalking (Orange)",
+            "- Spray Acid (Green)",
+            "- Spray Water (Blue)",
+            "- Spray Flames (Orange)",
+            "- Spray Tar (Purple)",
+            "- Spray Sludge (Silver)"
+        ],
+        "inventory": [
+            ""
+        ]
+    },
+    "spellbot": {
+        "blurb": [
+            "All automated tinkering mechanisms rely",
+            "on magic scrap for limited behaviors.",
+            "",
+            "The SPELLBOT is affixed with a large supply",
+            "allowing it to create magic damage."
+        ],
+        "abilities": [
+            "- Forcebolt",
+            "- Magic Missile"
+        ],
+        "inventory": [
+            ""
+        ]
+    },
+    "spider": {
+        "blurb": [
+            "Giant dungeon SPIDERS",
+            "are patient hunters.",
+            "",
+            "Their slow metabolism and poison fangs",
+            "make them well suited to waiting for prey",
+            "to ambush, eviscerate, and devour."
+        ],
+        "abilities": [
+            "- Poisoned Attacks",
+            "- Spray Web"
+        ],
+        "inventory": [
+            ""
+        ]
+    },
+    "succubus": {
+        "blurb": [
+            "A personified curse of lust, the SUCCUBUS",
+            "is crafty and cruel.",
+            "",
+            "She has everything she needs to",
+            "manipulate others, though some take the",
+            "independent path in their quest for evil."
+        ],
+        "abilities": [
+            "- Charm Monster",
+            "- Teleportation"
+        ],
+        "inventory": [
+            "- Magicstaffs of Charm Monster",
+            "- Masquerade Masks"
+        ]
+    },
+    "thumpus": {
+        "blurb": [
+            "The amiability between trolls and gnomes is",
+            "well-documented, but typically the gnomes",
+            "enjoy toying with the bigger beasts.",
+            "",
+            "THUMPUS appears to have",
+            "earned the gnomes' respect."
+        ],
+        "abilities": [],
+        "inventory": [
+            "- Miscellaneous dungeon floor loot",
+            "- Roses"
+        ]
+    },
+    "troll": {
+        "blurb": [
+            "These nearly blind giants seem to be",
+            "wandering the dungeons by coincidence,",
+            "preferring to live in isolation, even from",
+            "one another.",
+            "Cross one's path and be prepared for a ",
+            "powerful pummeling."
+        ],
+        "abilities": [],
+        "inventory": [
+            "- Miscellaneous dungeon floor loot",
+            "- Roses"
+        ]
+    },
+    "vampire": {
+        "blurb": [
+            "In order to maintain their curse of",
+            "immortality, VAMPIRES must consume the",
+            "blood of the living.",
+            "They have wonderous magical abilities,",
+            "which are said to be gained by forfeiting",
+            "their very souls."
+        ],
+        "abilities": [
+            "- Drain Soul",
+            "- Vampiric Aura"
+        ],
+        "inventory": [
+            "- Magicstaffs of Bleed",
+            "- Vampire Doublet"
+        ]
+    },
+    "xyggi": {
+        "blurb": [
+            "The cult of sorcerors believes that all",
+            "intellect is born of magic, claiming that",
+            "where you find one, the other will follow.",
+            "",
+            "The scarab, XYGGI, is rumored to have a",
+            "threatening amount of both."
+        ],
+        "abilities": [
+            "- Cold",
+            "- Magic Reflection"
+        ],
+        "inventory": [
+            "- Enchanted Feathers",
+            "- Tomalleys",
+            "- Low value gemstones"
+        ]
+    }
+}

@@ -38962,22 +38962,27 @@ failed:
 		if ( compendium_current == "monsters" )
 		{
 			CompendiumEntries.readMonstersFromFile();
+			CompendiumEntries.readMonstersTranslationsFromFile();
 			refreshCompendiumEntryMonster(compendium_contents_current[compendium_current], main_menu_frame->findFrame("compendium"), false);
 		}
 		else if ( compendium_current == "world" )
 		{
 			CompendiumEntries.readWorldFromFile();
+			CompendiumEntries.readWorldTranslationsFromFile();
 			refreshCompendiumEntryWorld(compendium_contents_current[compendium_current], main_menu_frame->findFrame("compendium"), false);
 		}
 		else if ( compendium_current == "codex" )
 		{
 			CompendiumEntries.readCodexFromFile();
+			CompendiumEntries.readCodexTranslationsFromFile();
 			refreshCompendiumEntryCodex(compendium_contents_current[compendium_current], main_menu_frame->findFrame("compendium"), false);
 		}
 		else if ( compendium_current == "items" )
 		{
 			CompendiumEntries.readItemsFromFile();
 			CompendiumEntries.readMagicFromFile();
+			CompendiumEntries.readItemsTranslationsFromFile();
+			CompendiumEntries.readMagicTranslationsFromFile();
 			refreshCompendiumEntryItemsBlurb(compendium_contents_current[compendium_current], main_menu_frame->findFrame("compendium"));
 			std::string modelsPath = "items_single";
 			if ( Compendium_t::compendiumItemModel.skill[10] == SPELL_ITEM && Compendium_t::compendiumItemModel.flags[SPRITE] )
@@ -38990,6 +38995,8 @@ failed:
 		{
 			CompendiumEntries.readItemsFromFile();
 			CompendiumEntries.readMagicFromFile();
+			CompendiumEntries.readItemsTranslationsFromFile();
+			CompendiumEntries.readMagicTranslationsFromFile();
 			refreshCompendiumEntryItemsBlurb(compendium_contents_current[compendium_current], main_menu_frame->findFrame("compendium"));
 			std::string modelsPath = "items_single";
 			if ( Compendium_t::compendiumItemModel.skill[10] == SPELL_ITEM && Compendium_t::compendiumItemModel.flags[SPRITE] )

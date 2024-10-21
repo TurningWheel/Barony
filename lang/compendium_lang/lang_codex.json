@@ -1,0 +1,1396 @@
+{
+    "ac": {
+        "blurb": [
+            "ARMOR CLASS (AC) reduces incoming physical",
+            "attack damage by 1 for each point, up to a",
+            "maximum of 75% of the total attack damage.",
+            "While blocking, AC can reduce",
+            "up to 100% physical damage."
+        ],
+        "details": [
+            "Stacking as much AC as possible may",
+            "make an adventurer feel virtually",
+            "impervious to attack, which is certainly",
+            "a big advantage.",
+            "",
+            "However, the danger of most traps,",
+            "magic, and status effects remain",
+            "unimpeded by AC. Some enemy weapons",
+            "are also designed specifically to",
+            "penetrate armor.",
+            "",
+            "It is wise not to neglect AC, but",
+            "take care not to be overconfident!"
+        ],
+        "details_line_highlights": []
+    },
+    "alchemy skill": {
+        "blurb": [
+            "With the aid of an alembic, alchemists can",
+            "brew many kinds of potions, such as the",
+            "unstable potions, which scale in power with",
+            "skill. Drinking and throwing potions also",
+            "practices the skill."
+        ],
+        "details": [
+            "While some skill can be gained by",
+            "drinking and throwing potions, alchemy",
+            "skill is truly practiced using an",
+            "alembic.",
+            "",
+            "Combine any primary ingredient with a",
+            "secondary ingredient to form a recipe.",
+            "Each recipe learned improves skill.",
+            "",
+            "Keep empty bottles and tap sinks for",
+            "healthy supplies of water for use in",
+            "duplication, providing more chances",
+            "to solve problems with potions."
+        ],
+        "details_line_highlights": []
+    },
+    "appraisal skill": {
+        "blurb": [
+            "While any adventurer can see what an item",
+            "is just by looking at it, APPRAISAL reveals",
+            "details, especially magical ones. The more",
+            "valuable the item, the more challenging it",
+            "is to appraise."
+        ],
+        "details": [
+            "Appraising inexpensive items, like",
+            "cheese or leather items, is usually",
+            "great for untrained practice.",
+            "",
+            "A few classes start without the ability",
+            "to appraise, thanks to very poor",
+            "perception.",
+            "",
+            "Using unidentified potions or scrolls",
+            "may also yield an increase to",
+            "appraisal skill, up to Basic (20) skill.",
+            "",
+            "Glasses may also help."
+        ],
+        "details_line_highlights": []
+    },
+    "axe skill": {
+        "blurb": [
+            "A hefty axe provides bonus ATK on wooden",
+            "objects, useful for breaking an obstacle in",
+            "an emergency such as a locked door or",
+            "stray mimic.",
+            "A legend in AXE SKILL always causes foes",
+            "to slow when dealing a legendary strike."
+        ],
+        "details": [
+            "Axes are a reliable, if unspecialized",
+            "choice, with few enemies that can resist",
+            "its hefty blade substantially.",
+            "",
+            "Its hacking power provides an extra",
+            "point of guaranteed damage, making",
+            "it great for general slaying, and",
+            "chipping away at armored foes."
+        ],
+        "details_line_highlights": []
+    },
+    "backstabs": {
+        "blurb": [
+            "To backstab an enemy, attack them in",
+            "melee from behind while they are unaware",
+            "of any threats, dealing greater damage.",
+            "If the enemy is slain with this strike,",
+            "it counts as an assassination!"
+        ],
+        "details": [
+            "You can flee from a tougher fight,",
+            "and then return to your prey after",
+            "it has lost sight of you. Doing so gives",
+            "you another chance to deal backstab",
+            "damage and assassinate enemies",
+            "whose health pool might otherwise be",
+            "too large to cope with in a single bout.",
+            "",
+            "Consider using quickturn for the",
+            "fastest possible escape!"
+        ],
+        "details_line_highlights": []
+    },
+    "blocking": {
+        "blurb": [
+            "When holding a shield or torch in their",
+            "off-hand, adventurers can deflect",
+            "incoming physical attacks, but the item",
+            "may be damaged. Higher skill improves",
+            "the amount of damage deflected."
+        ],
+        "details": [
+            "While blocking, an adventurer can",
+            "fend off attacks from all sides.",
+            "If you decide you need to run, a",
+            "behind-the-back block can save your",
+            "life while you're retreating!",
+            "",
+            "While usually it's a good idea to",
+            "block every melee attack, continuing",
+            "an assault and soaking an unblocked",
+            "hit may result in less overall damage.",
+            "",
+            "Remember, AC doesn't block spell",
+            "damage, so only block against magic",
+            "if your shield has special properties."
+        ],
+        "details_line_highlights": []
+    },
+    "blocking skill": {
+        "blurb": [
+            "BLOCKING SKILL provides additional armor",
+            "when wielding a shield, even when not",
+            "blocking. Legends in blocking skill can",
+            "deflect blows without degrading the item",
+            "used for blocking."
+        ],
+        "details": [
+            "When seeking to improve your blocking",
+            "ability, the key is practice.",
+            "",
+            "Avoid quick kills and carry backup",
+            "shields so that you can block as many",
+            "times as possible before vanquishing a",
+            "foe, without endangering yourself.",
+            "",
+            "Training block skill with a torch can",
+            "only carry an adventurer to a max",
+            "skill of 40. After that, a shield is",
+            "needed to advance."
+        ],
+        "details_line_highlights": []
+    },
+    "casting skill": {
+        "blurb": [
+            "Improving CASTING SKILL reduces the",
+            "chances that a spell fizzles, and increases",
+            "MP RGN. Upon reaching legendary casting,",
+            "an adventurer gains the forcebolt",
+            "spell as a cantrip."
+        ],
+        "details": [
+            "When your casting skill is low, casting",
+            "low-cost spells will be the most",
+            "reliable path to growth.",
+            "",
+            "It may be tempting to cast a big spell,",
+            "but it may fizzle and rob you of many",
+            "chances to cast more, cheaper spells",
+            "by emptying your MP/EN/ST supply."
+        ],
+        "details_line_highlights": []
+    },
+    "chr": {
+        "blurb": [
+            "Each point in CHARISMA (CHR) improves the",
+            "trading rates with shopkeepers. It also",
+            "improves follower speed, leadership skill,",
+            "and charisma-based spells."
+        ],
+        "details": [
+            "Rather than putting one's self in",
+            "harm's way, an adventurer with high",
+            "CHARISMA has options for letting",
+            "somebody else do the dirty work.",
+            "",
+            "The patron stat of the leadership skill,",
+            "high CHR can offset inexperience,",
+            "empowering early access to follower",
+            "commands, and stronger charm spells.",
+            "",
+            "Also improving the trade skill, one",
+            "should not underestimate the value of",
+            "striking better deals with shops.",
+            "Gaining early access to a shopkeeper's",
+            "private stock can mean the difference",
+            "between a great adventure and a",
+            "desparate one."
+        ],
+        "details_line_highlights": []
+    },
+    "class": {
+        "blurb": [
+            "A character's class determines their",
+            "starting skills, HP and MP/EN/ST,",
+            "equipment and spells, stats, and the",
+            "likelihood of each stat increasing",
+            "upon level up."
+        ],
+        "details": [
+            "While most adventurers find success",
+            "playing to their strengths, some do",
+            "well by rounding out their weaknesses.",
+            "",
+            "Resourcefulness may be more",
+            "important than raw ability, depending",
+            "on the situation.",
+            "",
+            "When forming a party, work together",
+            "to select classes that will cover",
+            "one-another's weaknesses, or",
+            "enhance shared strengths."
+        ],
+        "details_line_highlights": []
+    },
+    "classes list": {
+        "blurb": [
+            "Adventurers can adapt as they progress,",
+            "adopting skills and using equipment as",
+            "the dungeon's challenges may demand.",
+            "Still, class choice is essential to a",
+            "strong start, and ongoing growth."
+        ],
+        "details": [
+            ""
+        ],
+        "details_line_highlights": []
+    },
+    "con": {
+        "blurb": [
+            "Each point of CONSTITUTION (CON) adds",
+            "natural armor (AC). Those with high",
+            "constitution may recover from negative",
+            "status effects more quickly and restore",
+            "more health when healed."
+        ],
+        "details": [
+            "Classes with strong CON growth may",
+            "find themselves able to make",
+            "equipment decisions based on benefits",
+            "without depending on AC added.",
+            "",
+            "Those with low AC may prefer to",
+            "prioritize armor and protection",
+            "effects.",
+            "",
+            "In both cases, AC remains important",
+            "for making sure you don't take too",
+            "much damage when struck by physical",
+            "attacks by foes."
+        ],
+        "details_line_highlights": []
+    },
+    "crits": {
+        "blurb": [
+            "When making a melee attack, charge an",
+            "attack until your arm begins to shake with",
+            "tension. Releasing the attack at any point",
+            "after that will result in a CRITICAL STRIKE,",
+            "dealing additional damage!"
+        ],
+        "details": [
+            "Your attack gains the benefit of a",
+            "critical strike the instant your",
+            "weapon begins to shake.",
+            "",
+            "Time your release to match your",
+            "approach to the target. This is even",
+            "more effective if the enemy's back",
+            "is turned.",
+            "",
+            "It's not usually a good idea to",
+            "continue performing critical strikes",
+            "in the middle of a fight."
+        ],
+        "details_line_highlights": []
+    },
+    "dex": {
+        "blurb": [
+            "Each point of DEXTERITY (DEX) improves",
+            "an adventurer's potential movement speed,",
+            "and enhances ranged attack (ATK) power."
+        ],
+        "details": [
+            "While every character may benefit",
+            "from increased movement speed,",
+            "characters who prefer to use ranged",
+            "attacks will benefit from DEX the most.",
+            "",
+            "Dexterity improves ranged attacks,",
+            "but improved speed also complements",
+            "skirmishing. A fast adventurer can",
+            "more easily stay out of enemy range,",
+            "outrun traps, and dodge projectiles",
+            "slung by foes.",
+            "",
+            "When you need to stay light on",
+            "your feet DEX is essential!"
+        ],
+        "details_line_highlights": []
+    },
+    "equipment degradation": {
+        "blurb": [
+            "Most items have a chance to degrade upon",
+            "use, whether taking a hit in armor,",
+            "expending a charge on a magic item, or",
+            "attacking with a weapon. Degraded items",
+            "may perform worse than pristine ones."
+        ],
+        "details": [
+            "Opportunities to repair equipment",
+            "may be rare or expensive, and",
+            "equipment breakage during the",
+            "middle of a fight can be deadly.",
+            "",
+            "Replacing your equipment regularly",
+            "with items that are in better condition",
+            "is usually a good idea.",
+            "",
+            "While tinkerers aren't blacksmiths,",
+            "those who are very skilled may be",
+            "able to patch up items for a cost.",
+            "Scrolls of repair, though rare, are",
+            "more reliable for most adventurers."
+        ],
+        "details_line_highlights": []
+    },
+    "flanking": {
+        "blurb": [
+            "If an enemy is preoccupied in combat",
+            "against another foe, they have a harder",
+            "time defending themselves! Attack from",
+            "behind to gain additional flanking damage."
+        ],
+        "details": [
+            "While a foe is focused on somebody",
+            "else, striking rapidly may be the",
+            "best way to bring down your target,",
+            "taking full advantage of extra",
+            "flanking damage.",
+            "",
+            "Fighting solo, don't expect many",
+            "opportunities to flank. But when",
+            "adventuring with allies or followers,",
+            "one member of the party may very",
+            "often be gaining flanking benefits!"
+        ],
+        "details_line_highlights": []
+    },
+    "hp": {
+        "blurb": [
+            "HEALTH POINTS (HP) measure a denizen's",
+            "vitality, with each point of damage",
+            "removing 1 HP, and each point of healing",
+            "restoring 1 HP. A denizen is slain when",
+            "their HP is reduced to 0 or fewer."
+        ],
+        "details": [
+            "While a denizen's maximum HP increases",
+            "substantially over the course of an",
+            "adventure as they level up, their HP",
+            "regeneration rate generally will not.",
+            "",
+            "As a result, it is important to continue",
+            "minimizing HP loss in encounters and",
+            "acquire means of HP restoration to",
+            "recover from larger scrapes."
+        ],
+        "details_line_highlights": []
+    },
+    "int": {
+        "blurb": [
+            "Each point of INTELLIGENCE (INT) improves",
+            "magic power and MP regeneration by a",
+            "percentage. It also contributes to magic",
+            "skills, allowing more difficult spells to",
+            "be memorized."
+        ],
+        "details": [
+            "INT is great for improving magic ability",
+            "generally, enhancing RGN and PWR, and",
+            "making it easier to learn spells.",
+            "",
+            "However, choosing items that directly",
+            "increase RGN or PWR may yield better",
+            "results than raw INT for focused",
+            "spellcasters."
+        ],
+        "details_line_highlights": []
+    },
+    "leadership skill": {
+        "blurb": [
+            "An untrained adventurer can still gather",
+            "four followers, but they won't be able to",
+            "command them to do much. Higher levels of",
+            "LEADERSHIP SKILL grants access to many",
+            "useful commands."
+        ],
+        "details": [
+            "Summons and recruited followers can",
+            "become quite strong if nurtured.",
+            "Allow them to get the last hit on",
+            "enemies, and you'll see their",
+            "confidence (and their levels) rise",
+            "dramatically!",
+            "",
+            "Outfit them with ranged equipment,",
+            "keep healing spells on hand, and",
+            "distract / confuse enemies to keep",
+            "your loyal followers safe!",
+            "",
+            "Wear a crown to inspire them further",
+            "with a variety of follower benefits."
+        ],
+        "details_line_highlights": []
+    },
+    "legendary strikes": {
+        "blurb": [
+            "If an adventurer with LEGENDARY melee",
+            "skill holds a critical strike until it",
+            "releases on its own, they may gain an",
+            "additional status effect against their",
+            "victim. The effect depends on the weapon."
+        ],
+        "details": [
+            "Gaining enough skill points to reach",
+            "legend in a melee skill may be tricky.",
+            "",
+            "If you are durable enough, avoid",
+            "critical strikes so you can get more",
+            "hits in, giving you more chances to",
+            "increase your weapon skill.",
+            "",
+            "If legendary skill is developed, it",
+            "may be available to save your life",
+            "against the dungeon's fiercest foes."
+        ],
+        "details_line_highlights": []
+    },
+    "leveling up": {
+        "blurb": [
+            "Whenever a character gains 100 XP,",
+            "their level increases! When leveling",
+            "up, every character receives the",
+            "following: +5 Max HP, +5 Max MP,",
+            "and an increase to 3 different stats."
+        ],
+        "details": [
+            "Each skill is based on a stat.",
+            "",
+            "If a stat increases upon leveling up,",
+            "and skills associated with that stat",
+            "have been practiced well, the increase",
+            "may be for +2 points instead of +1.",
+            "",
+            "Use skills aligned with your class' stat",
+            "growth to maximize your level-ups."
+        ],
+        "details_line_highlights": []
+    },
+    "mace skill": {
+        "blurb": [
+            "Beating foes with a mace may break",
+            "their armor more than with other weapons.",
+            "A legend in MACE SKILL deals more damage",
+            "and has a chance to inflict paralyze with",
+            "a legendary strike."
+        ],
+        "details": [
+            "Don't be afraid to pick up and use a",
+            "mace early in the dungeons, especially",
+            "if you're using ranged weapons, magic,",
+            "or swords.",
+            "",
+            "Its effectiveness at crushing undead",
+            "may very well help you live long",
+            "enough to become a master in other",
+            "arts."
+        ],
+        "details_line_highlights": []
+    },
+    "magic skill": {
+        "blurb": [
+            "Improving MAGIC SKILL allows an",
+            "adventurer to learn more advanced spells",
+            "and increases PWR. A legend in magic",
+            "also learns the dominate spell."
+        ],
+        "details": [
+            "A good spellcaster always stays in",
+            "practice!",
+            "",
+            "For those with MP/ST regeneration, a",
+            "full bar means you're losing out on",
+            "mana you could be recuperating.",
+            "",
+            "While it's good to save it for when you",
+            "need it, chip away at the top of a full",
+            "bar to keep training."
+        ],
+        "details_line_highlights": []
+    },
+    "melee": {
+        "blurb": [
+            "Simply wield your fist or a melee weapon,",
+            "such as a mace, spear, sword, or axe, and",
+            "ATTACK! Fast strikes may allow an",
+            "adventurer to slay a foe before it can",
+            "respond with an attack of its own."
+        ],
+        "details": [
+            "A simple tap is enough to perform a",
+            "full-strength melee strike.",
+            "",
+            "Only hold the attack longer if you",
+            "need to time your strike, or if",
+            "you're charging for a critical strike.",
+            "",
+            "When ambushing, adventurers often",
+            "have time to follow-up a critical strike",
+            "with one or two fast attacks. This is",
+            "enough to finish off a lot of weaker",
+            "enemies before they can even react."
+        ],
+        "details_line_highlights": []
+    },
+    "memorized": {
+        "blurb": [
+            "Once memorized, spells can be readied",
+            "without the need for a spellbook.",
+            "",
+            "MP, EN, and ST are consumed over the",
+            "course of the cast time, which will be",
+            "lost if the spell fizzles."
+        ],
+        "details": [
+            "From your spell list, use the quickcast",
+            "option to immediately start casting the",
+            "spell without the need to equip it or",
+            "put it in your hotbar. For spells you",
+            "only need occasionally, this makes it",
+            "easier to keep essential spells ready.",
+            "",
+            "Unless you want to use a book for",
+            "enhanced PWR, books can safely be",
+            "discarded or sold once a spell is",
+            "memorized. Be careful to avoid",
+            "reading cursed spellbooks, which will",
+            "result in forgetting a random spell!"
+        ],
+        "details_line_highlights": []
+    },
+    "missiles": {
+        "blurb": [
+            "Slingshots, crossbows, and bows fire",
+            "MISSILES when used to attack. These",
+            "weapons may take time to load before the",
+            "attack fires. Crossbows and bows can be",
+            "loaded with special ammo when it is",
+            "held in the off-hand."
+        ],
+        "details": [
+            "Augment crossbows and bows with",
+            "special ammo to increase your",
+            "damage output and inflict debilitating",
+            "status effects on dangerous targets.",
+            "",
+            "Enemies will always know where a",
+            "ranged weapon attack came from",
+            "when struck. Use this to lure your",
+            "foes where you want them.",
+            "",
+            "Many foes are resistant to small",
+            "projectiles, but your ability to",
+            "hit-and-run will give you the time you",
+            "need to chip their HP down."
+        ],
+        "details_line_highlights": []
+    },
+    "mp": {
+        "blurb": [
+            "Casting memorized spells, or spells from",
+            "books, requires MAGIC POINTS (MP),",
+            "ENERGY (EN), or STEAM (ST). Casters usually",
+            "must have a quantity equal to or greater",
+            "than the cost of the spell in order to cast."
+        ],
+        "details": [
+            "If MP seems too scarce, finish off foes",
+            "that are close to death without magic.",
+            "Save gold for shops, which may sell",
+            "potions that restore magic points.",
+            "",
+            "VAMPIRE BLOOD MAGIC:",
+            "Vampires can continue casting when",
+            "their MP is empty, consuming HP",
+            " instead.",
+            "Take care with channeled spells!",
+            "",
+            "AUTOMATON STEAM:",
+            "Steam regeneration depends on the",
+            "heat of the automaton's boiler. Some",
+            "fuels can cause it to super-heat,",
+            "resulting in rapid steam build-up. If a",
+            "boiler is cold, steam will depressurize",
+            "ultimately killing the automaton.",
+            "",
+            "INSECTOID ENERGY:",
+            "Insectoids metabolize energy into",
+            "magic, but can only eat so much.",
+            "Their energy pool is capped and",
+            "doesn't regenerate, but they can eat",
+            "all foods to rapidly regain energy",
+            "used in casting.",
+            "Magic potions and fruit juice also",
+            "restore lots of energy."
+        ],
+        "details_line_highlights": [
+            {},
+            {},
+            {},
+            {},
+            {},
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {},
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {},
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "per": {
+        "blurb": [
+            "PERCEPTION (PER) improves visibility in",
+            "darkness and increases appraisal.",
+            "",
+            "PER also increases the likelihood that",
+            "ranged attacks will pierce 50% of a",
+            "target's armor."
+        ],
+        "details": [
+            "PER is essential for characters",
+            "focused on missile weapons, making",
+            "tough enemies more susceptible to",
+            "ranged attacks.",
+            "",
+            "Tinkering and appraise skills also",
+            "benefit from a strong perception stat.",
+            "",
+            "If you're struggling to appraise, a",
+            "little boost to PER can make all",
+            "the difference."
+        ],
+        "details_line_highlights": []
+    },
+    "polearm skill": {
+        "blurb": [
+            "Polearms strikes are more accurate,",
+            "with reduced damage variance compared",
+            "to other melee skills of similar level.",
+            "A legend in POLEARM SKILL always causes",
+            "Knockback when dealing a legendary",
+            "strike."
+        ],
+        "details": [
+            "The polearm is a popular choice for",
+            "many classes.",
+            "",
+            "Due to its general effectiveness",
+            "against human-sized targets, it's",
+            "generally an all-around great",
+            "starter weapon.",
+            "",
+            "Watch out for certain big monsters,",
+            "or tiny ones, who may be difficult to",
+            "skewer."
+        ],
+        "details_line_highlights": []
+    },
+    "pwr": {
+        "blurb": [
+            "A denizen's MAGIC POWER (PWR) improves",
+            "the spells they cast by percentage,",
+            "increasing damage output, healing, or",
+            "status effect duration."
+        ],
+        "details": [
+            "Some spells have a binary effect, and",
+            "as a result, PWR won't influence every",
+            "spell.",
+            "",
+            "But for damaging and healing spells,",
+            "PWR is extremely useful, particularly",
+            "when casting from a blessed book.",
+            "",
+            "Status effects may increase in",
+            "duration with improved PWR."
+        ],
+        "details_line_highlights": []
+    },
+    "races": {
+        "blurb": [
+            "Humans aren't the only intelligent",
+            "creatures in the dungeons. RACES each",
+            "have their own friends and foes.",
+            "They also have starting abilities,",
+            "resistances, food preferences,",
+            "and penalties."
+        ],
+        "details": [
+            "Most monster races can recruit their",
+            "own kind. Only humans and automatons",
+            "are welcome inside human-run shops.",
+            "",
+            "When selecting your race during",
+            "character creation, use the \"Show",
+            "Race Info\" button to reveal all of",
+            "your strengths, weaknesses, abilities,",
+            "and allegiances.",
+            "",
+            "To make the dungeons easier, pair",
+            "each race with a class that minimizes",
+            "the downsides, and doubles-down on",
+            "the benefits."
+        ],
+        "details_line_highlights": []
+    },
+    "ranged skill": {
+        "blurb": [
+            "Pelting enemies with missiles may result",
+            "in penetrating their armor. Legendary",
+            "ranged skill allows an archer to use",
+            "missile weapons without degrading",
+            "their quality."
+        ],
+        "details": [
+            "Using low-damage missile weapons like",
+            "the slingshot or short bow is a reliable",
+            "way to raise your skill, considering",
+            "how many shots it might take to bring",
+            "down an enemy.",
+            "",
+            "However, the dungeons often won't be",
+            "generous, with few safe spaces to run",
+            "and kite.",
+            "",
+            "Take care to ensure survival is your",
+            "top priority when training."
+        ],
+        "details_line_highlights": []
+    },
+    "res": {
+        "blurb": [
+            "Magic damage ignores AC, but MAGIC RESIST",
+            "(RES) will reduce the amount of damage",
+            "taken by a percentage. The duration of",
+            "negative magic status effects is also",
+            "reduced."
+        ],
+        "details": [
+            "Since AC won't reduce the damage",
+            "taken from spells, it's a good idea to",
+            "look for sources of magic resistance.",
+            "",
+            "Magic reflect completely negates",
+            "magic projectiles, but comes at a cost.",
+            "Resistance, by comparison, is passive",
+            "and reliable.",
+            "",
+            "Some races have a natural resistance",
+            "or vulnerability to magic attacks."
+        ],
+        "details_line_highlights": []
+    },
+    "rgn": {
+        "blurb": [
+            "Most denizens regenerate over time,",
+            "restoring lost HP and MP. Increasing",
+            "REGENERATION (RGN) improves how fast",
+            "these are restored."
+        ],
+        "details": [
+            "While HP and MP can be depleted very",
+            "rapidly, a little practice can help get",
+            "an adventurer comfortable with how",
+            "long they take to restore.",
+            "",
+            "Explore, manage inventory, and stay",
+            "away from threats when you are",
+            "depleted, allowing you to benefit fully",
+            "from RGN.",
+            "",
+            "Note that HP regen is disabled with",
+            "the hunger Game Setting turned off."
+        ],
+        "details_line_highlights": []
+    },
+    "skills": {
+        "blurb": [
+            "Many actions that adventurers take will",
+            "be modified by the level of their SKILLS.",
+            "",
+            "As they continue practicing, skills",
+            "will increase organically, sometimes",
+            "unlocking entirely new capabilities."
+        ],
+        "details": [
+            "A class' starting skills can be an",
+            "excellent guide to how to most",
+            "effectively succeed as that class.",
+            "",
+            "In some cases, classes have skills that",
+            "they lack the equipment to use, which",
+            "might motivate a hunt for certain",
+            "items.",
+            "",
+            "Every skill has a new capability that's",
+            "unlocked once the skill reaches",
+            "legendary status (100)."
+        ],
+        "details_line_highlights": []
+    },
+    "sneaking": {
+        "blurb": [
+            "With nothing, or special ammo, held in the",
+            "off-hand, an adventurer can creep slowly,",
+            "making it harder for foes to detect them.",
+            "Careful SNEAKING also makes it easier to",
+            "see in the shadows."
+        ],
+        "details": [
+            "When feeling constantly beset or",
+            "surprised by foes, consider how much",
+            "light sources are exposing you.",
+            "",
+            "When taking advantage of darkness",
+            "and sneaking, all but the most",
+            "specialized hunters have a hard",
+            "time finding a stealthy adventurer."
+        ],
+        "details_line_highlights": []
+    },
+    "spellbook casting": {
+        "blurb": [
+            "Any adventurer can wield a spellbook",
+            "in their off-hand and attempt to cast",
+            "the spell within. Adventurers with high",
+            "INT will gain an additional PWR bonus",
+            "when casting from the book compared to",
+            "casting from memory."
+        ],
+        "details": [
+            "Dedicated magicians may benefit from",
+            "keeping their favorite attack spell",
+            "at ready with a wielded spellbook.",
+            "",
+            "In addition to providing greater PWR,",
+            "another memorized spell can also be",
+            "readied, permitting immediate access",
+            "to multiple magic solutions.",
+            "",
+            "Off-hand spellbooks can be blessed",
+            "like any equipment, providing huge",
+            "bonuses to the book's PWR. Use an",
+            "enchanted feather to repair a",
+            "spellbook you depend on!"
+        ],
+        "details_line_highlights": []
+    },
+    "stats metastats": {
+        "blurb": [
+            "Stats measure a character's capabilities",
+            "and are at the root of each skill. These",
+            "include STR, CON, DEX, INT, PER, CHR.",
+            "Metastats such as PWR, AC, RGN and ATK",
+            "are not raised directly by leveling up."
+        ],
+        "details": [
+            "Each adventurer may find some stats",
+            "more essential than others. It's wise",
+            "to monitor your character sheet and",
+            "collect the kind of equipment that",
+            "benefits your most useful stats.",
+            "",
+            "Pay attention to the skill sheet where",
+            "the governing stat is shown. High stats",
+            "can sometimes compensate for poor",
+            "skill.",
+            "",
+            "Metastats are not based on level or",
+            "class but are instead a combination of",
+            "stats, skills, levels, and equipment."
+        ],
+        "details_line_highlights": []
+    },
+    "stealth skill": {
+        "blurb": [
+            "High STEALTH SKILL makes it easier to hide",
+            "from foes and improves the damage caused",
+            "by backstabs and flanking strikes.",
+            "",
+            "Legends in stealth can become almost",
+            "invisible on a whim."
+        ],
+        "details": [
+            "When creeping through the dungeons,",
+            "pause when you see a foe. If you take",
+            "an extra moment to let your enemy",
+            "look away, you can rush in for a",
+            "backstab, or even assassination!",
+            "",
+            "These actions have a higher likelihood",
+            "of increasing your stealth skill.",
+            "With dedication to melee ambushing",
+            "tactics, an adventurer can become",
+            "a legend in their stealth ability."
+        ],
+        "details_line_highlights": []
+    },
+    "str": {
+        "blurb": [
+            "Each point of STRENGTH (STR) adds to",
+            "melee attack (ATK) power. Strong",
+            "adventurers can also carry heavier",
+            "equipment, and lug more in their",
+            "inventory, without being slowed."
+        ],
+        "details": [
+            "A character who depends primarily on",
+            "melee attacks will always benefit",
+            "from more STR.",
+            "",
+            "Prioritize gear blessed with STR",
+            "bonuses to further enhance your",
+            "melee power."
+        ],
+        "details_line_highlights": []
+    },
+    "strafing": {
+        "blurb": [
+            "When exploring, adventurers move",
+            "confidently forward at full speed,",
+            "but stepping backward or to the side",
+            "is slower. This is important to know",
+            "when dealing with threats you",
+            "don't want to be near."
+        ],
+        "details": [
+            "While you might be tempted to back",
+            "away from an intimidating foe, or",
+            "sidestep away from a boulder, it is",
+            "much faster to turn and run!",
+            "",
+            "Many adventurers have been smashed",
+            "because they were caught staring,",
+            "at the source of their demise.",
+            "",
+            "Use the quickturn button if",
+            "you have trouble turning fast!"
+        ],
+        "details_line_highlights": []
+    },
+    "swimming skill": {
+        "blurb": [
+            "Swimming isn't usually the most important",
+            "skill, but when you're fleeing from a",
+            "dangerous threat, it might just be the most",
+            "important skill of your life. Especially",
+            "useful in the swamps."
+        ],
+        "details": [
+            "While the waterwalking provided by",
+            "the swimming skill's legendary bonus",
+            "can be useful in many situations, some",
+            "adventurers may find themselves",
+            "wishing they could take a quick dip to",
+            "put out burning flames.",
+            "",
+            "Consider your next soak carefully!"
+        ],
+        "details_line_highlights": []
+    },
+    "sword skill": {
+        "blurb": [
+            "Slashing against foes with a sword",
+            "increases the chance they may bleed. A",
+            "legend in SWORD SKILL always causes bleed",
+            "when dealing a legendary strike."
+        ],
+        "details": [
+            "Swords may seem weak at first, as",
+            "Skeletons are very resistant to the",
+            "sword's honed edge.",
+            "",
+            "As you encounter more foes, you'll",
+            "discover that some tough enemies are",
+            "quite vulnerable to the blade.",
+            "",
+            "Be patient and careful as a novice",
+            "swordsman."
+        ],
+        "details_line_highlights": []
+    },
+    "thrown": {
+        "blurb": [
+            "Thrown weapon attacks pierce armor",
+            "and gain increased damage from DEX.",
+            "",
+            "Charging a THROWN ATTACK improves",
+            "its flight distance and damage",
+            "considerably."
+        ],
+        "details": [
+            "Thrown weapon attacks can quickly",
+            "take down otherwise tough enemies,",
+            "with 50% reduction to target AC.",
+            "",
+            "Having to collect your items after,",
+            "or even during, the fight means you",
+            "must remain vigilant and careful with",
+            "your inventory.",
+            "",
+            "Prepare to disable enemies or sneak",
+            "away to make sure you can have your",
+            "bandolier full for an encounter."
+        ],
+        "details_line_highlights": []
+    },
+    "tinkering skill": {
+        "blurb": [
+            "With only a lockpick, a talented tinkerer",
+            "can accomplish quite a lot. But the real",
+            "power of tinkering is accessed with a",
+            "tinkering kit. For every problem,",
+            "tinkerers have a mechanical solution."
+        ],
+        "details": [
+            "After grasping the basics learned",
+            "from scrapping items at Expert (60)",
+            "skill level, raising tinkering can be a",
+            "challenge.",
+            "",
+            "Construct as many traps as possible",
+            "and let sentries get the final hit on",
+            "enemies to improve your odds of",
+            "increasing tinkering skill.",
+            "",
+            "When burdened with excess scrap, use",
+            "flame/freeze traps and beartraps as",
+            "a primary means of attack, which may",
+            "also grant increases to tinkering skill."
+        ],
+        "details_line_highlights": []
+    },
+    "trading skill": {
+        "blurb": [
+            "TRADING SKILL helps an adventurer get",
+            "the most out of their gold, buying or",
+            "selling. Only a skilled tradesman can",
+            "convince them to part with a shopkeeper's",
+            "private reserve of consumables."
+        ],
+        "details": [
+            "Trade skill will only increase when",
+            "purchasing items, with each item's gold",
+            "cost amounting to the chance that the",
+            "trade skill will increase (up to 100).",
+            "",
+            "In other words, items costing 100 gold",
+            "have a 100% chance of increasing skill.",
+            "",
+            "A shop's private stock is a great",
+            "source of items that have a good",
+            "likelihood of upping your skill while",
+            "also often being useful to keep on",
+            "hand. A new private stock item becomes",
+            "available every 10 skill levels up to 40."
+        ],
+        "details_line_highlights": []
+    },
+    "unarmed skill": {
+        "blurb": [
+            "Those with high UNARMED SKILL may knock",
+            "back foes with critical strikes. Those",
+            "with legendary ability may briefly",
+            "paralyze a foe with a powerful",
+            "legendary strike from behind."
+        ],
+        "details": [
+            "While overall dealing less damage, and",
+            "being less effective against many",
+            "targets, a tough fighter can quickly",
+            "increase their skill in unarmed",
+            "fighting.",
+            "",
+            "This is thanks in part to how many hits",
+            "it may take to bring down a foe.",
+            "",
+            "With great skill, an unarmed fighting",
+            "master is a serious threat with fewer",
+            "needs."
+        ],
+        "details_line_highlights": []
+    },
+    "wanted": {
+        "blurb": [
+            "If an adventurer is WANTED by the",
+            "Merchants' Guild, shopkeepers will attack",
+            "them on sight. Qualities like race, certain",
+            "items, or magic effects might change how",
+            "shopkeepers feel about you as a customer."
+        ],
+        "details": [
+            "Shopkeepers are tough enough that",
+            "attacking them is already a risky",
+            "prospect, but making all of them",
+            "hostile has great opportunity cost.",
+            "",
+            "With certain resources, it's possible to",
+            "get away with robbing shops only to",
+            "come back later as a customer.",
+            "",
+            "Use a bandit mask to mug shopkeepers",
+            "and remove it when finished. If your",
+            "real identity is wanted, use the",
+            "charm spell to convince shopkeepers",
+            "to forgive your crimes."
+        ],
+        "details_line_highlights": []
+    },
+    "weapon quality": {
+        "blurb": [
+            "All weapons do less damage when they",
+            "are in poorer condition. High Tinkering",
+            "skill and Scrolls of Repair can be used",
+            "to improve weapon damage to its greatest",
+            "potential."
+        ],
+        "details": [
+            "All melee and ranged weapons lose ATK",
+            "when they degrade in quality.",
+            "",
+            "Don't over-commit to a damaged",
+            "weapon.",
+            "",
+            "Even if it's blessed, you might find a",
+            "fresh, mundane weapon that",
+            "significantly outclasses a weapon",
+            "that's about to break.",
+            "",
+            "If you hope to repair your favorite",
+            "weapon, a mundane backup is a good",
+            "idea too."
+        ],
+        "details_line_highlights": []
+    },
+    "wgt": {
+        "blurb": [
+            "Each item equipped or held in the inventory",
+            "adds WEIGHT (WGT). Higher STR allows an",
+            "adventurer to carry more WGT before it",
+            "slows them. The more WGT, the greater the",
+            "speed penalty."
+        ],
+        "details": [
+            "Many adventurers make the mistake",
+            "of collecting every item they see",
+            "which leads to high weight and slow",
+            "movement speed.",
+            "",
+            "This invites death.",
+            "",
+            "It's usually wise to throw items away",
+            "you don't think you'll use in the next",
+            "next few minutes, just to stay light on",
+            "your feet."
+        ],
+        "details_line_highlights": []
+    },
+    "xp": {
+        "blurb": [
+            "Whenever a character's skill increases,",
+            "they gain 2 EXPERIENCE POINTS (XP). Killing",
+            "monsters will also yield XP based on the",
+            "challenge of the kill.",
+            "",
+            "Gain 100 XP to level up!"
+        ],
+        "details": [
+            "If you have the time, seek monsters",
+            "to slay and opportunities to practice",
+            "different skills to increase your XP.",
+            "Descending too quickly without",
+            "earning enough levels is likely",
+            "to end in death!",
+            "",
+            "Combat XP is split between all players",
+            "when adventuring together.",
+            "",
+            "If you already have a skill maxed out,",
+            "consider training a different skill so",
+            "you can keep gaining experience."
+        ],
+        "details_line_highlights": []
+    }
+}

@@ -11090,9 +11090,9 @@ void Compendium_t::updateTooltip()
 	}
 }
 
-void Compendium_t::readItemsFromFile()
+void Compendium_t::readItemsTranslationsFromFile(bool forceLoadBaseDirectory)
 {
-	const std::string filename = "data/compendium/comp_items.json";
+	const std::string filename = "lang/compendium_lang/lang_items.json";
 	if ( !PHYSFS_getRealDir(filename.c_str()) )
 	{
 		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
@@ -11100,6 +11100,22 @@ void Compendium_t::readItemsFromFile()
 	}
 
 	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	if ( forceLoadBaseDirectory )
+	{
+		inputPath = BASE_DATA_DIR;
+	}
+	else
+	{
+		if ( inputPath != BASE_DATA_DIR )
+		{
+			readItemsTranslationsFromFile(true); // force load the base directory first, then modded paths later.
+		}
+		else
+		{
+			forceLoadBaseDirectory = true;
+		}
+	}
+
 	inputPath.append(PHYSFS_getDirSeparator());
 	inputPath.append(filename.c_str());
 
@@ -11110,7 +11126,72 @@ void Compendium_t::readItemsFromFile()
 		return;
 	}
 
-	char buf[65536];
+	char buf[120000];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.IsObject() )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	for ( auto itr = d.MemberBegin(); itr != d.MemberEnd(); ++itr )
+	{
+		std::string key = itr->name.GetString();
+		auto find = items.find(key);
+		if ( find != items.end() )
+		{
+			find->second.blurb.clear();
+			if ( itr->value.HasMember("blurb") )
+			{
+				jsonVecToVec(itr->value["blurb"], find->second.blurb);
+			}
+		}
+	}
+}
+
+void Compendium_t::readItemsFromFile(bool forceLoadBaseDirectory)
+{
+	const std::string filename = "data/compendium/comp_items.json";
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	if ( forceLoadBaseDirectory )
+	{
+		inputPath = BASE_DATA_DIR;
+	}
+	else
+	{
+		if ( inputPath != BASE_DATA_DIR )
+		{
+			readItemsFromFile(true); // force load the base directory first, then modded paths later.
+		}
+		else
+		{
+			forceLoadBaseDirectory = true;
+		}
+	}
+
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		return;
+	}
+
+	char buf[120000];
 	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
 	rapidjson::StringStream is(buf);
@@ -11137,7 +11218,10 @@ void Compendium_t::readItemsFromFile()
 		auto& w = itr->value;
 		auto& obj = items[name];
 
-		jsonVecToVec(w["blurb"], obj.blurb);
+		if ( w.HasMember("blurb") )
+		{
+			jsonVecToVec(w["blurb"], obj.blurb);
+		}
 		for ( auto itr = w["items"].Begin(); itr != w["items"].End(); ++itr )
 		{
 			for ( auto itr2 = itr->MemberBegin(); itr2 != itr->MemberEnd(); ++itr2 )
@@ -11293,11 +11377,48 @@ void Compendium_t::readItemsFromFile()
 			}
 		}
 	}
+
+	/*if ( keystatus[SDLK_g] )
+	{
+		keystatus[SDLK_g] = 0;
+		rapidjson::Document d;
+		d.SetObject();
+		for ( auto& obj : items )
+		{
+			rapidjson::Value entry(rapidjson::kObjectType);
+
+			{
+				rapidjson::Value arr(rapidjson::kArrayType);
+				for ( auto& str : obj.second.blurb )
+				{
+					arr.PushBack(rapidjson::Value(str.c_str(), d.GetAllocator()), d.GetAllocator());
+				}
+				entry.AddMember("blurb", arr, d.GetAllocator());
+			}
+
+			d.AddMember(rapidjson::Value(obj.first.c_str(), d.GetAllocator()), entry, d.GetAllocator());
+		}
+
+		char path[PATH_MAX] = "";
+		completePath(path, "lang/compendium_lang/lang_items.json", outputdir);
+
+		File* fp = FileIO::open(path, "wb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error opening json file %s for write!", path);
+			return;
+		}
+		rapidjson::StringBuffer os;
+		rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
+		d.Accept(writer);
+		fp->write(os.GetString(), sizeof(char), os.GetSize());
+		FileIO::close(fp);
+	}*/
 }
 
-void Compendium_t::readMagicFromFile()
+void Compendium_t::readMagicTranslationsFromFile(bool forceLoadBaseDirectory)
 {
-	const std::string filename = "data/compendium/comp_magic.json";
+	const std::string filename = "lang/compendium_lang/lang_magic.json";
 	if ( !PHYSFS_getRealDir(filename.c_str()) )
 	{
 		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
@@ -11305,6 +11426,22 @@ void Compendium_t::readMagicFromFile()
 	}
 
 	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	if ( forceLoadBaseDirectory )
+	{
+		inputPath = BASE_DATA_DIR;
+	}
+	else
+	{
+		if ( inputPath != BASE_DATA_DIR )
+		{
+			readMagicTranslationsFromFile(true); // force load the base directory first, then modded paths later.
+		}
+		else
+		{
+			forceLoadBaseDirectory = true;
+		}
+	}
+
 	inputPath.append(PHYSFS_getDirSeparator());
 	inputPath.append(filename.c_str());
 
@@ -11315,7 +11452,72 @@ void Compendium_t::readMagicFromFile()
 		return;
 	}
 
-	char buf[65536];
+	char buf[120000];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.IsObject() )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	for ( auto itr = d.MemberBegin(); itr != d.MemberEnd(); ++itr )
+	{
+		std::string key = itr->name.GetString();
+		auto find = magic.find(key);
+		if ( find != magic.end() )
+		{
+			find->second.blurb.clear();
+			if ( itr->value.HasMember("blurb") )
+			{
+				jsonVecToVec(itr->value["blurb"], find->second.blurb);
+			}
+		}
+	}
+}
+
+void Compendium_t::readMagicFromFile(bool forceLoadBaseDirectory)
+{
+	const std::string filename = "data/compendium/comp_magic.json";
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	if ( forceLoadBaseDirectory )
+	{
+		inputPath = BASE_DATA_DIR;
+	}
+	else
+	{
+		if ( inputPath != BASE_DATA_DIR )
+		{
+			readItemsFromFile(true); // force load the base directory first, then modded paths later.
+		}
+		else
+		{
+			forceLoadBaseDirectory = true;
+		}
+	}
+
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		return;
+	}
+
+	char buf[120000];
 	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
 	rapidjson::StringStream is(buf);
@@ -11359,8 +11561,10 @@ void Compendium_t::readMagicFromFile()
 		auto& w = itr->value;
 		auto& obj = magic[name];
 
-		jsonVecToVec(w["blurb"], obj.blurb);
-
+		if ( w.HasMember("blurb") )
+		{
+			jsonVecToVec(w["blurb"], obj.blurb);
+		}
 		std::set<std::string> objSpellsLookup;
 		for ( auto itr = w["items"].Begin(); itr != w["items"].End(); ++itr )
 		{
@@ -11683,9 +11887,171 @@ void Compendium_t::readMagicFromFile()
 			}
 		}
 	}
+
+	/*if ( keystatus[SDLK_g] )
+	{
+		keystatus[SDLK_g] = 0;
+		rapidjson::Document d;
+		d.SetObject();
+		for ( auto& obj : magic )
+		{
+			rapidjson::Value entry(rapidjson::kObjectType);
+
+			{
+				rapidjson::Value arr(rapidjson::kArrayType);
+				for ( auto& str : obj.second.blurb )
+				{
+					arr.PushBack(rapidjson::Value(str.c_str(), d.GetAllocator()), d.GetAllocator());
+				}
+				entry.AddMember("blurb", arr, d.GetAllocator());
+			}
+
+			d.AddMember(rapidjson::Value(obj.first.c_str(), d.GetAllocator()), entry, d.GetAllocator());
+		}
+
+		char path[PATH_MAX] = "";
+		completePath(path, "lang/compendium_lang/lang_magic.json", outputdir);
+
+		File* fp = FileIO::open(path, "wb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error opening json file %s for write!", path);
+			return;
+		}
+		rapidjson::StringBuffer os;
+		rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
+		d.Accept(writer);
+		fp->write(os.GetString(), sizeof(char), os.GetSize());
+		FileIO::close(fp);
+	}*/
 }
 
-void Compendium_t::readCodexFromFile()
+void Compendium_t::readCodexTranslationsFromFile(bool forceLoadBaseDirectory)
+{
+	const std::string filename = "lang/compendium_lang/lang_codex.json";
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	if ( forceLoadBaseDirectory )
+	{
+		inputPath = BASE_DATA_DIR;
+	}
+	else
+	{
+		if ( inputPath != BASE_DATA_DIR )
+		{
+			readCodexTranslationsFromFile(true); // force load the base directory first, then modded paths later.
+		}
+		else
+		{
+			forceLoadBaseDirectory = true;
+		}
+	}
+
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		return;
+	}
+
+	char buf[120000];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.IsObject() )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	for ( auto itr = d.MemberBegin(); itr != d.MemberEnd(); ++itr )
+	{
+		std::string key = itr->name.GetString();
+		auto find = codex.find(key);
+		if ( find != codex.end() )
+		{
+			find->second.blurb.clear();
+			if ( itr->value.HasMember("blurb") )
+			{
+				jsonVecToVec(itr->value["blurb"], find->second.blurb);
+			}
+			find->second.details.clear();
+			if ( itr->value.HasMember("details") )
+			{
+				jsonVecToVec(itr->value["details"], find->second.details);
+			}
+			for ( auto& line : find->second.details )
+			{
+				if ( line.size() > 0 )
+				{
+					if ( line[0] == '-' )
+					{
+						line[0] = '\x1E';
+					}
+					else
+					{
+						for ( size_t c = 0; c < line.size(); ++c )
+						{
+							if ( line[c] == '-' )
+							{
+								line[c] = '\x1E';
+								break;
+							}
+							else if ( line[c] != ' ' )
+							{
+								break;
+							}
+						}
+					}
+				}
+			}
+
+			find->second.linesToHighlight.clear();
+			if ( itr->value.HasMember("details_line_highlights") )
+			{
+				for ( auto itr2 = itr->value["details_line_highlights"].Begin(); itr2 != itr->value["details_line_highlights"].End(); ++itr2 )
+				{
+					if ( itr2->HasMember("color") )
+					{
+						Uint8 r, g, b;
+						if ( (*itr2)["color"].HasMember("r") )
+						{
+							r = (*itr2)["color"]["r"].GetInt();
+						}
+						if ( (*itr2)["color"].HasMember("g") )
+						{
+							g = (*itr2)["color"]["g"].GetInt();
+						}
+						if ( (*itr2)["color"].HasMember("b") )
+						{
+							b = (*itr2)["color"]["b"].GetInt();
+						}
+
+						find->second.linesToHighlight.push_back(makeColorRGB(r, g, b));
+					}
+					else
+					{
+						find->second.linesToHighlight.push_back(0);
+					}
+				}
+			}
+		}
+	}
+}
+
+void Compendium_t::readCodexFromFile(bool forceLoadBaseDirectory)
 {
 	const std::string filename = "data/compendium/codex.json";
 	if ( !PHYSFS_getRealDir(filename.c_str()) )
@@ -11695,6 +12061,22 @@ void Compendium_t::readCodexFromFile()
 	}
 
 	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	if ( forceLoadBaseDirectory )
+	{
+		inputPath = BASE_DATA_DIR;
+	}
+	else
+	{
+		if ( inputPath != BASE_DATA_DIR )
+		{
+			readCodexFromFile(true); // force load the base directory first, then modded paths later.
+		}
+		else
+		{
+			forceLoadBaseDirectory = true;
+		}
+	}
+
 	inputPath.append(PHYSFS_getDirSeparator());
 	inputPath.append(filename.c_str());
 
@@ -11734,8 +12116,14 @@ void Compendium_t::readCodexFromFile()
 		auto& obj = codex[name];
 
 		obj.id = w["event_lookup"].GetInt();
-		jsonVecToVec(w["blurb"], obj.blurb);
-		jsonVecToVec(w["details"], obj.details);
+		if ( w.HasMember("blurb") )
+		{
+			jsonVecToVec(w["blurb"], obj.blurb);
+		}
+		if ( w.HasMember("details") )
+		{
+			jsonVecToVec(w["details"], obj.details);
+		}
 		obj.imagePath = w["img"].GetString();
 		if ( w.HasMember("enable_tutorial") )
 		{
@@ -11888,7 +12276,132 @@ void Compendium_t::readCodexFromFile()
 	}
 }
 
-void Compendium_t::readWorldFromFile()
+void Compendium_t::readWorldTranslationsFromFile(bool forceLoadBaseDirectory)
+{
+	const std::string filename = "lang/compendium_lang/lang_world.json";
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	if ( forceLoadBaseDirectory )
+	{
+		inputPath = BASE_DATA_DIR;
+	}
+	else
+	{
+		if ( inputPath != BASE_DATA_DIR )
+		{
+			readWorldTranslationsFromFile(true); // force load the base directory first, then modded paths later.
+		}
+		else
+		{
+			forceLoadBaseDirectory = true;
+		}
+	}
+
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		return;
+	}
+
+	char buf[120000];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.IsObject() )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	for ( auto itr = d.MemberBegin(); itr != d.MemberEnd(); ++itr )
+	{
+		std::string key = itr->name.GetString();
+		auto find = worldObjects.find(key);
+		if ( find != worldObjects.end() )
+		{
+			find->second.blurb.clear();
+			if ( itr->value.HasMember("blurb") )
+			{
+				jsonVecToVec(itr->value["blurb"], find->second.blurb);
+			}
+			find->second.details.clear();
+			if ( itr->value.HasMember("details") )
+			{
+				jsonVecToVec(itr->value["details"], find->second.details);
+			}
+			for ( auto& line : find->second.details )
+			{
+				if ( line.size() > 0 )
+				{
+					if ( line[0] == '-' )
+					{
+						line[0] = '\x1E';
+					}
+					else
+					{
+						for ( size_t c = 0; c < line.size(); ++c )
+						{
+							if ( line[c] == '-' )
+							{
+								line[c] = '\x1E';
+								break;
+							}
+							else if ( line[c] != ' ' )
+							{
+								break;
+							}
+						}
+					}
+				}
+			}
+
+			find->second.linesToHighlight.clear();
+			if ( itr->value.HasMember("details_line_highlights") )
+			{
+				for ( auto itr2 = itr->value["details_line_highlights"].Begin(); itr2 != itr->value["details_line_highlights"].End(); ++itr2 )
+				{
+					if ( itr2->HasMember("color") )
+					{
+						Uint8 r, g, b;
+						if ( (*itr2)["color"].HasMember("r") )
+						{
+							r = (*itr2)["color"]["r"].GetInt();
+						}
+						if ( (*itr2)["color"].HasMember("g") )
+						{
+							g = (*itr2)["color"]["g"].GetInt();
+						}
+						if ( (*itr2)["color"].HasMember("b") )
+						{
+							b = (*itr2)["color"]["b"].GetInt();
+						}
+
+						find->second.linesToHighlight.push_back(makeColorRGB(r, g, b));
+					}
+					else
+					{
+						find->second.linesToHighlight.push_back(0);
+					}
+				}
+			}
+		}
+	}
+}
+
+void Compendium_t::readWorldFromFile(bool forceLoadBaseDirectory)
 {
 	const std::string filename = "data/compendium/world.json";
 	if ( !PHYSFS_getRealDir(filename.c_str()) )
@@ -11898,6 +12411,22 @@ void Compendium_t::readWorldFromFile()
 	}
 
 	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	if ( forceLoadBaseDirectory )
+	{
+		inputPath = BASE_DATA_DIR;
+	}
+	else
+	{
+		if ( inputPath != BASE_DATA_DIR )
+		{
+			readWorldFromFile(true); // force load the base directory first, then modded paths later.
+		}
+		else
+		{
+			forceLoadBaseDirectory = true;
+		}
+	}
+
 	inputPath.append(PHYSFS_getDirSeparator());
 	inputPath.append(filename.c_str());
 
@@ -11936,8 +12465,14 @@ void Compendium_t::readWorldFromFile()
 		auto& obj = worldObjects[name];
 
 		obj.id = w["event_lookup"].GetInt();
-		jsonVecToVec(w["blurb"], obj.blurb);
-		jsonVecToVec(w["details"], obj.details);
+		if ( w.HasMember("blurb") )
+		{
+			jsonVecToVec(w["blurb"], obj.blurb);
+		}
+		if ( w.HasMember("details") )
+		{
+			jsonVecToVec(w["details"], obj.details);
+		}
 		obj.imagePath = w["img"].GetString();
 		if ( w.HasMember("models") )
 		{
@@ -12079,14 +12614,85 @@ void Compendium_t::readWorldFromFile()
 			}
 		}
 	}
+
+	/*if ( keystatus[SDLK_g] )
+	{
+		keystatus[SDLK_g] = 0;
+		rapidjson::Document d;
+		d.SetObject();
+		for ( auto& obj : worldObjects )
+		{
+			rapidjson::Value entry(rapidjson::kObjectType);
+
+			{
+				rapidjson::Value arr(rapidjson::kArrayType);
+				for ( auto& str : obj.second.blurb )
+				{
+					arr.PushBack(rapidjson::Value(str.c_str(), d.GetAllocator()), d.GetAllocator());
+				}
+				entry.AddMember("blurb", arr, d.GetAllocator());
+			}
+
+			{
+				rapidjson::Value arr(rapidjson::kArrayType);
+				for ( auto& str : obj.second.details )
+				{
+					arr.PushBack(rapidjson::Value(str.c_str(), d.GetAllocator()), d.GetAllocator());
+				}
+				entry.AddMember("details", arr, d.GetAllocator());
+			}
+
+			{
+				rapidjson::Value arr(rapidjson::kArrayType);
+				for ( auto& color : obj.second.linesToHighlight )
+				{
+					rapidjson::Value val(rapidjson::kObjectType);
+					if ( color == 0 )
+					{
+					}
+					else
+					{
+						Uint8 r, g, b, a;
+						getColor(color, &r, &g, &b, &a);
+
+						rapidjson::Value colorVal(rapidjson::kObjectType);
+						colorVal.AddMember("r", r, d.GetAllocator());
+						colorVal.AddMember("g", g, d.GetAllocator());
+						colorVal.AddMember("b", b, d.GetAllocator());
+						colorVal.AddMember("a", a, d.GetAllocator());
+
+						val.AddMember("color", colorVal, d.GetAllocator());
+					}
+					arr.PushBack(val, d.GetAllocator());
+				}
+				entry.AddMember("details_line_highlights", arr, d.GetAllocator());
+			}
+
+			d.AddMember(rapidjson::Value(obj.first.c_str(), d.GetAllocator()), entry, d.GetAllocator());
+		}
+
+		char path[PATH_MAX] = "";
+		completePath(path, "lang/compendium_lang/lang_world.json", outputdir);
+
+		File* fp = FileIO::open(path, "wb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error opening json file %s for write!", path);
+			return;
+		}
+		rapidjson::StringBuffer os;
+		rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
+		d.Accept(writer);
+		fp->write(os.GetString(), sizeof(char), os.GetSize());
+		FileIO::close(fp);
+	}*/
 }
 
 std::map<std::string, int> Compendium_t::Events_t::monsterUniqueIDLookup;
 std::map<Compendium_t::EventTags, std::set<int>> Compendium_t::Events_t::eventMonsterLookup;
-
-void Compendium_t::readMonstersFromFile()
+void Compendium_t::readMonstersTranslationsFromFile(bool forceLoadBaseDirectory)
 {
-	const std::string filename = "data/compendium/monsters.json";
+	const std::string filename = "lang/compendium_lang/lang_monsters.json";
 	if ( !PHYSFS_getRealDir(filename.c_str()) )
 	{
 		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
@@ -12094,6 +12700,22 @@ void Compendium_t::readMonstersFromFile()
 	}
 
 	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	if ( forceLoadBaseDirectory )
+	{
+		inputPath = BASE_DATA_DIR;
+	}
+	else
+	{
+		if ( inputPath != BASE_DATA_DIR )
+		{
+			readMonstersTranslationsFromFile(true); // force load the base directory first, then modded paths later.
+		}
+		else
+		{
+			forceLoadBaseDirectory = true;
+		}
+	}
+
 	inputPath.append(PHYSFS_getDirSeparator());
 	inputPath.append(filename.c_str());
 
@@ -12104,7 +12726,82 @@ void Compendium_t::readMonstersFromFile()
 		return;
 	}
 
-	char buf[65536];
+	char buf[120000];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.IsObject() )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	for ( auto itr = d.MemberBegin(); itr != d.MemberEnd(); ++itr )
+	{
+		std::string key = itr->name.GetString();
+		auto find = monsters.find(key);
+		if ( find != monsters.end() )
+		{
+			find->second.blurb.clear();
+			if ( itr->value.HasMember("blurb") )
+			{
+				jsonVecToVec(itr->value["blurb"], find->second.blurb);
+			}
+			find->second.abilities.clear();
+			if ( itr->value.HasMember("abilities") )
+			{
+				jsonVecToVec(itr->value["abilities"], find->second.abilities);
+			}
+			find->second.inventory.clear();
+			if ( itr->value.HasMember("inventory") )
+			{
+				jsonVecToVec(itr->value["inventory"], find->second.inventory);
+			}
+		}
+	}
+}
+
+void Compendium_t::readMonstersFromFile(bool forceLoadBaseDirectory)
+{
+	const std::string filename = "data/compendium/monsters.json";
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	if ( forceLoadBaseDirectory )
+	{
+		inputPath = BASE_DATA_DIR;
+	}
+	else
+	{
+		if ( inputPath != BASE_DATA_DIR )
+		{
+			readMonstersFromFile(true); // force load the base directory first, then modded paths later.
+		}
+		else
+		{
+			forceLoadBaseDirectory = true;
+		}
+	}
+
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		return;
+	}
+
+	char buf[120000];
 	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
 	rapidjson::StringStream is(buf);
@@ -12203,7 +12900,10 @@ void Compendium_t::readMonstersFromFile()
 		auto& monster = monsters[itr->name.GetString()];
 		monster.monsterType = monsterType;
 		monster.unique_npc = m.HasMember("unique_npc") ? m["unique_npc"].GetString() : "";
-		jsonVecToVec(m["blurb"], monster.blurb);
+		if ( m.HasMember("blurb") )
+		{
+			jsonVecToVec(m["blurb"], monster.blurb);
+		}
 		if ( m.HasMember("img") )
 		{
 			monster.imagePath = m["img"].GetString();
@@ -12269,8 +12969,10 @@ void Compendium_t::readMonstersFromFile()
 			}
 			monster.species = species;
 		}
-
-		jsonVecToVec(m["abilities"], monster.abilities);
+		if ( m.HasMember("abilities") )
+		{
+			jsonVecToVec(m["abilities"], monster.abilities);
+		}
 		{
 			int i = 0;
 			for ( auto itr = m["resistances"].Begin(); itr != m["resistances"].End(); ++itr )
@@ -12279,12 +12981,70 @@ void Compendium_t::readMonstersFromFile()
 				++i;
 			}
 		}
-		jsonVecToVec(m["inventory"], monster.inventory);
+		if ( m.HasMember("inventory") )
+		{
+			jsonVecToVec(m["inventory"], monster.inventory);
+		}
 		if ( m.HasMember("models") )
 		{
 			jsonVecToVec(m["models"], monster.models);
 		}
 	}
+
+	/*if ( keystatus[SDLK_g] )
+	{
+		keystatus[SDLK_g] = 0;
+		rapidjson::Document d;
+		d.SetObject();
+		for ( auto& obj : monsters )
+		{
+			rapidjson::Value entry(rapidjson::kObjectType);
+
+			{
+				rapidjson::Value arr(rapidjson::kArrayType);
+				for ( auto& str : obj.second.blurb )
+				{
+					arr.PushBack(rapidjson::Value(str.c_str(), d.GetAllocator()), d.GetAllocator());
+				}
+				entry.AddMember("blurb", arr, d.GetAllocator());
+			}
+
+			{
+				rapidjson::Value arr(rapidjson::kArrayType);
+				for ( auto& str : obj.second.abilities )
+				{
+					arr.PushBack(rapidjson::Value(str.c_str(), d.GetAllocator()), d.GetAllocator());
+				}
+				entry.AddMember("abilities", arr, d.GetAllocator());
+			}
+
+			{
+				rapidjson::Value arr(rapidjson::kArrayType);
+				for ( auto& str : obj.second.inventory )
+				{
+					arr.PushBack(rapidjson::Value(str.c_str(), d.GetAllocator()), d.GetAllocator());
+				}
+				entry.AddMember("inventory", arr, d.GetAllocator());
+			}
+
+			d.AddMember(rapidjson::Value(obj.first.c_str(), d.GetAllocator()), entry, d.GetAllocator());
+		}
+
+		char path[PATH_MAX] = "";
+		completePath(path, "lang/compendium_lang/lang_monsters.json", outputdir);
+
+		File* fp = FileIO::open(path, "wb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error opening json file %s for write!", path);
+			return;
+		}
+		rapidjson::StringBuffer os;
+		rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
+		d.Accept(writer);
+		fp->write(os.GetString(), sizeof(char), os.GetSize());
+		FileIO::close(fp);
+	}*/
 }
 
 Uint32 Compendium_t::lastTickUpdate = 0;

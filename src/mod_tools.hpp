@@ -4003,7 +4003,8 @@ struct Compendium_t
 		static int numUnread;
 	};
 	std::map<std::string, CompendiumMonsters_t::Monster_t> monsters;
-	void readMonstersFromFile();
+	void readMonstersFromFile(bool forceLoadBaseDirectory = false);
+	void readMonstersTranslationsFromFile(bool forceLoadBaseDirectory = false);
 	void exportCurrentMonster(Entity* monster);
 	void readModelLimbsFromFile(std::string section);
 	CompendiumView_t defaultCamera;
@@ -4047,7 +4048,8 @@ struct Compendium_t
 		static int numUnread;
 	};
 	std::map<std::string, CompendiumWorld_t::World_t> worldObjects;
-	void readWorldFromFile();
+	void readWorldFromFile(bool forceLoadBaseDirectory = false);
+	void readWorldTranslationsFromFile(bool forceLoadBaseDirectory = false);
 
 	struct CompendiumCodex_t
 	{
@@ -4074,7 +4076,8 @@ struct Compendium_t
 		static int numUnread;
 	};
 	std::map<std::string, CompendiumCodex_t::Codex_t> codex;
-	void readCodexFromFile();
+	void readCodexFromFile(bool forceLoadBaseDirectory = false);
+	void readCodexTranslationsFromFile(bool forceLoadBaseDirectory = false);
 	static const char* compendiumCurrentLevelToWorldString(const int currentlevel, const bool secretlevel);
 
 	struct CompendiumItems_t
@@ -4104,7 +4107,8 @@ struct Compendium_t
 		static int numUnread;
 	};
 	std::map<std::string, CompendiumItems_t::Codex_t> items;
-	void readItemsFromFile();
+	void readItemsFromFile(bool forceLoadBaseDirectory = false);
+	void readItemsTranslationsFromFile(bool forceLoadBaseDirectory = false);
 
 	struct CompendiumMagic_t
 	{
@@ -4115,7 +4119,8 @@ struct Compendium_t
 		static int numUnread;
 	};
 	std::map<std::string, CompendiumItems_t::Codex_t> magic;
-	void readMagicFromFile();
+	void readMagicFromFile(bool forceLoadBaseDirectory = false);
+	void readMagicTranslationsFromFile(bool forceLoadBaseDirectory = false);
 	static Item compendiumItem;
 	static bool tooltipNeedUpdate;
 	static void updateTooltip();
