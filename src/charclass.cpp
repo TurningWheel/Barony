@@ -1324,7 +1324,12 @@ void initClass(const int player)
 			free(item);
 
 			// scroll of remove curse
-			item = newItem(SCROLL_REMOVECURSE, EXCELLENT, 0, 1, 0, true, nullptr);
+			item = newItem(SCROLL_REMOVECURSE, EXCELLENT, 0, 3, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			// scroll of identify
+			item = newItem(SCROLL_IDENTIFY, EXCELLENT, 0, 2, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
 
