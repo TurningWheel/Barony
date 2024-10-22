@@ -2872,7 +2872,8 @@ int Entity::getHungerTickRate(Stat* myStats, bool isPlayer, bool checkItemsEffec
 		|| !strncmp(map.name, "Boss", 4)
 		|| !strncmp(map.name, "Hell Boss", 9)
 		|| !strncmp(map.name, "Mages Guild", 11)
-		|| strstr(map.name, " Transition") )
+		|| strstr(map.name, " Transition")
+		|| currentlevel == 0 )
 	{
 		hungerring = 1; // slow down hunger on boss stages.
 		if ( vampiricHunger > 0 )
