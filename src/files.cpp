@@ -3134,7 +3134,11 @@ int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed, int* check
 			mapName = physfsFormatMapName(tempstr);
 			if ( useRandSeed )
 			{
+#ifdef EDITOR
+				if ( gameModeManager.currentSession.seededRun.seed == 0 )
+#else
 				if ( gameModeManager.currentSession.seededRun.seed == 0 && !*cvar_map_sequence_rng )
+#endif
 				{
 					mapseed = local_rng.rand();
 				}

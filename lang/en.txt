@@ -6538,5 +6538,7 @@ Unlock Achievements to earn more!#
  is unable to be enchanted.#
 6308 Your %s loses some of its blessing.#
 6309 You are blasted by a torrent!#
+6310 Quick Turn Speed#
+6311 Affect the horizontal speed of the Quick Turn action.#
 
 6350 END#
