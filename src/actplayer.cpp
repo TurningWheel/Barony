@@ -262,6 +262,8 @@ void Player::Ghost_t::startQuickTurn()
 	bDoingQuickTurn = true;
 }
 
+static ConsoleVariable<float> cvar_quick_turn_speed("/quick_turn_speed", 1.f);
+
 bool Player::Ghost_t::handleQuickTurn(bool useRefreshRateDelta)
 {
 	if ( !my ) { return false; }
@@ -285,7 +287,7 @@ bool Player::Ghost_t::handleQuickTurn(bool useRefreshRateDelta)
 		int dir = ((quickTurnRotation > 0) ? 1 : -1);
 		if ( my->ticks - quickTurnStartTicks < 15 )
 		{
-			GHOSTCAM_ROTX = dir * players[player.playernum]->settings.quickTurnSpeed;
+			GHOSTCAM_ROTX = dir * players[player.playernum]->settings.quickTurnSpeed * *cvar_quick_turn_speed;
 		}
 		else
 		{
@@ -2486,7 +2488,7 @@ bool Player::PlayerMovement_t::handleQuickTurn(bool useRefreshRateDelta)
 		int dir = ((quickTurnRotation > 0) ? 1 : -1);
 		if ( my->ticks - quickTurnStartTicks < 15 )
 		{
-			PLAYER_ROTX = dir * players[player.playernum]->settings.quickTurnSpeed;
+			PLAYER_ROTX = dir * players[player.playernum]->settings.quickTurnSpeed * *cvar_quick_turn_speed;
 		}
 		else
 		{
