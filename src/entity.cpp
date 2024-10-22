@@ -3082,7 +3082,7 @@ void Entity::handleEffects(Stat* myStats)
 			myStats->MAXMP += MP_MOD;
 			if ( behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0 )
 			{
-				myStats->MAXMP = std::min(50, myStats->MAXMP);
+				myStats->MAXMP = std::min(100, myStats->MAXMP);
 				if ( svFlags & SV_FLAG_HUNGER )
 				{
 					Sint32 hungerPointPerMana = playerInsectoidHungerValueOfManaPoint(*myStats);
