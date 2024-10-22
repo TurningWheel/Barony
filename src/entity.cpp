@@ -3746,7 +3746,8 @@ void Entity::handleEffects(Stat* myStats)
 					}
 					else
 					{
-						this->modHP(-4);
+						int damage = std::max(1, myStats->MAXHP / 20);
+						this->modHP(-damage);
 
 						if ( myStats->HP <= 0 )
 						{
