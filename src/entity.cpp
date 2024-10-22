@@ -3006,6 +3006,25 @@ void Entity::handleEffects(Stat* myStats)
 				myStats->HP = 1;
 			}
 		}
+
+		if ( myStats->defending )
+		{
+			if ( myStats->shield && !myStats->EFFECTS[EFF_SHAPESHIFT] )
+			{
+				if ( players[player]->mechanics.defendTicks == 0 )
+				{
+					players[player]->mechanics.defendTicks = ::ticks;
+				}
+			}
+			else
+			{
+				players[player]->mechanics.defendTicks = 0;
+			}
+		}
+		else
+		{
+			players[player]->mechanics.defendTicks = 0;
+		}
 	}
 
 	auto& camera_shakex = cameravars[player >= 0 ? player : 0].shakex;
@@ -9496,14 +9515,27 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( itemCategory(hitstats->shield) == ARMOR
 								|| (hitstats->defending) )
 							{
-								int roll = 16;
+								int roll = 20;
 								if ( damage == 0 )
 								{
 									roll /= 2;
 								}
 								if ( roll > 0 )
 								{
-									if ( (local_rng.rand() % roll == 0 && damage > 0) || (damage == 0 && local_rng.rand() % roll == 0) )
+									bool success = (local_rng.rand() % roll == 0);
+									if ( !success && playerhit >= 0 && hitstats->defending )
+									{
+  										if ( players[playerhit]->mechanics.defendTicks != 0 )
+										{
+											if ( (::ticks - players[playerhit]->mechanics.defendTicks) < (TICKS_PER_SECOND / 3) )
+											{
+												// perfect block timing, roll again
+												success = (local_rng.rand() % roll == 0);
+											}
+										}
+									}
+
+									if ( success )
 									{
 										bool increaseSkill = true;
 										if ( hit.entity->behavior == &actPlayer && behavior == &actPlayer )
@@ -10304,31 +10336,31 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					if ( player >= 0 && hit.entity->behavior == &actMonster )
 					{
-							bool oldRhythmStatus = achievementStatusRhythmOfTheKnight[player];
-							updateAchievementRhythmOfTheKnight(player, hit.entity, false);
-							if ( !oldRhythmStatus && achievementStatusRhythmOfTheKnight[player] )
-							{
-								//messagePlayer(0, MESSAGE_DEBUG, "rhythm roll on atk");
+						bool oldRhythmStatus = achievementStatusRhythmOfTheKnight[player];
+						updateAchievementRhythmOfTheKnight(player, hit.entity, false);
+						if ( !oldRhythmStatus && achievementStatusRhythmOfTheKnight[player] )
+						{
+							//messagePlayer(0, MESSAGE_DEBUG, "rhythm roll on atk");
 							if ( local_rng.rand() % 10 < 8 )
+							{
+								bool increaseSkill = true;
+								if ( this->behavior == &actPlayer )
 								{
-									bool increaseSkill = true;
-									if ( this->behavior == &actPlayer )
+									if ( !players[this->skill[2]]->mechanics.allowedRaiseBlockingAgainstEntity(*hit.entity) )
 									{
-										if ( !players[this->skill[2]]->mechanics.allowedRaiseBlockingAgainstEntity(*hit.entity) )
-										{
-											increaseSkill = false;
-										}
-										players[this->skill[2]]->mechanics.enemyRaisedBlockingAgainst[hit.entity->getUID()]++;
+										increaseSkill = false;
 									}
-									if ( increaseSkill )
-									{
-										this->increaseSkill(PRO_SHIELD);
-									}
+									players[this->skill[2]]->mechanics.enemyRaisedBlockingAgainst[hit.entity->getUID()]++;
 								}
-								achievementStatusRhythmOfTheKnight[player] = false;
-								achievementRhythmOfTheKnightVec[player].clear(); // reset for the next one
+								if ( increaseSkill )
+								{
+									this->increaseSkill(PRO_SHIELD);
+								}
 							}
+							achievementStatusRhythmOfTheKnight[player] = false;
+							achievementRhythmOfTheKnightVec[player].clear(); // reset for the next one
 						}
+					}
 
 					bool artifactWeaponProc = parashuProc || dyrnwynSmite || dyrnwynBurn || gugnirProc;
 
@@ -10965,47 +10997,47 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
-						if ( playerhit >= 0 )
+					if ( playerhit >= 0 )
+					{
+						if ( hitstats->defending )
 						{
-							if ( hitstats->defending )
+							bool oldRhythmStatus = achievementStatusRhythmOfTheKnight[playerhit];
+							updateAchievementRhythmOfTheKnight(playerhit, this, true);
+							if ( !oldRhythmStatus && achievementStatusRhythmOfTheKnight[playerhit] )
 							{
-								bool oldRhythmStatus = achievementStatusRhythmOfTheKnight[playerhit];
-								updateAchievementRhythmOfTheKnight(playerhit, this, true);
-								if ( !oldRhythmStatus && achievementStatusRhythmOfTheKnight[playerhit] )
+								if ( !shieldIncreased )
 								{
-									if ( !shieldIncreased )
-									{
-										//messagePlayer(0, MESSAGE_DEBUG, "rhythm roll on hit");
+									//messagePlayer(0, MESSAGE_DEBUG, "rhythm roll on hit");
 									if ( local_rng.rand() % 10 < 8 )
+									{
+										bool skillIncrease = true;
+										if ( hit.entity->behavior == &actPlayer )
 										{
-											bool skillIncrease = true;
-											if ( hit.entity->behavior == &actPlayer )
+											if ( !players[hit.entity->skill[2]]->mechanics.allowedRaiseBlockingAgainstEntity(*this) )
 											{
-												if ( !players[hit.entity->skill[2]]->mechanics.allowedRaiseBlockingAgainstEntity(*this) )
-												{
-													skillIncrease = false;
-												}
-												players[hit.entity->skill[2]]->mechanics.enemyRaisedBlockingAgainst[this->getUID()]++;
+												skillIncrease = false;
 											}
-											if ( skillIncrease )
-											{
-												hit.entity->increaseSkill(PRO_SHIELD);
-												shieldIncreased = true;
-											}
+											players[hit.entity->skill[2]]->mechanics.enemyRaisedBlockingAgainst[this->getUID()]++;
+										}
+										if ( skillIncrease )
+										{
+											hit.entity->increaseSkill(PRO_SHIELD);
+											shieldIncreased = true;
 										}
 									}
-									achievementStatusRhythmOfTheKnight[playerhit] = false;
-									achievementRhythmOfTheKnightVec[playerhit].clear(); // reset for the next one
 								}
-								updateAchievementThankTheTank(playerhit, this, false);
+								achievementStatusRhythmOfTheKnight[playerhit] = false;
+								achievementRhythmOfTheKnightVec[playerhit].clear(); // reset for the next one
 							}
-						else
-							{
-							achievementStatusRhythmOfTheKnight[playerhit] = false;
-								achievementRhythmOfTheKnightVec[playerhit].clear();
-								//messagePlayer(0, "used AC!");
-							}
+							updateAchievementThankTheTank(playerhit, this, false);
 						}
+						else
+						{
+							achievementStatusRhythmOfTheKnight[playerhit] = false;
+							achievementRhythmOfTheKnightVec[playerhit].clear();
+							//messagePlayer(0, "used AC!");
+						}
+					}
 
 					if ( playerhit >= 0 )
 					{
@@ -19536,8 +19568,8 @@ int Entity::getHealthRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
 	}
 	else
 	{
-	bonusHealring += Entity::getHealringFromEquipment(my, myStats, isPlayer);
-	bonusHealring += Entity::getHealringFromEffects(my, myStats);
+		bonusHealring += Entity::getHealringFromEquipment(my, myStats, isPlayer);
+		bonusHealring += Entity::getHealringFromEffects(my, myStats);
 	}
 	healring += bonusHealring;
 
@@ -19571,8 +19603,8 @@ int Entity::getHealthRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
 		}
 		else
 		{
-		return (HEAL_TIME / (healring * 6)); // 1 HP each 12 sec base
-	}
+			return (HEAL_TIME / (healring * 6)); // 1 HP each 12 sec base
+		}
 	}
 	else if ( healring < 0 )
 	{
