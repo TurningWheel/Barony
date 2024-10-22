@@ -1122,6 +1122,7 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 				if ( this->beatitude < 0 )
 				{
 					entity->skill[22] = ItemBombTriggerType::BOMB_TRIGGER_ALL;
+					entity->skill[25] = 1; // cursed rng explode
 				}
 			}
 
@@ -1254,9 +1255,26 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 			entity->skill[16] = placement;
 			entity->skill[20] = dir;
 			entity->skill[21] = type;
-			if ( this->beatitude < 0 )
+			if ( parent && parent->behavior == &actMonster )
 			{
-				entity->skill[22] = ItemBombTriggerType::BOMB_TRIGGER_ALL;
+				auto& trapProps = monsterTrapIgnoreEntities[entity->getUID()];
+				trapProps.parent = entity->parent;
+				for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+				{
+					Entity* creature = (Entity*)node->element;
+					if ( creature && parent->checkFriend(creature) )
+					{
+						trapProps.ignoreEntities.insert(creature->getUID());
+					}
+				}
+			}
+			else
+			{
+				if ( this->beatitude < 0 )
+				{
+					entity->skill[22] = ItemBombTriggerType::BOMB_TRIGGER_ALL;
+					entity->skill[25] = 1; // cursed rng explode
+				}
 			}
 			playSoundEntity(entity, 686, 64);
 
@@ -1455,9 +1473,26 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 			}
 			entity->skill[20] = dir;
 			entity->skill[21] = type;
-			if ( this->beatitude < 0 )
+			if ( parent && parent->behavior == &actMonster )
 			{
-				entity->skill[22] = ItemBombTriggerType::BOMB_TRIGGER_ALL;
+				auto& trapProps = monsterTrapIgnoreEntities[entity->getUID()];
+				trapProps.parent = entity->parent;
+				for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+				{
+					Entity* creature = (Entity*)node->element;
+					if ( creature && parent->checkFriend(creature) )
+					{
+						trapProps.ignoreEntities.insert(creature->getUID());
+					}
+				}
+			}
+			else
+			{
+				if ( this->beatitude < 0 )
+				{
+					entity->skill[22] = ItemBombTriggerType::BOMB_TRIGGER_ALL;
+					entity->skill[25] = 1; // cursed rng explode
+				}
 			}
 			playSoundEntity(entity, 686, 64);
 
