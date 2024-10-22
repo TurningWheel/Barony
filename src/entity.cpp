@@ -9497,10 +9497,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 								|| (hitstats->defending) )
 							{
 								int roll = 16;
-								if ( hitstats->getProficiency(PRO_SHIELD) >= SKILL_LEVEL_SKILLED )
-								{
-									roll = 32;
-								}
 								if ( damage == 0 )
 								{
 									roll /= 2;
@@ -10308,14 +10304,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					if ( player >= 0 && hit.entity->behavior == &actMonster )
 					{
-						if ( damage > 0 )
-						{
 							bool oldRhythmStatus = achievementStatusRhythmOfTheKnight[player];
 							updateAchievementRhythmOfTheKnight(player, hit.entity, false);
 							if ( !oldRhythmStatus && achievementStatusRhythmOfTheKnight[player] )
 							{
 								//messagePlayer(0, MESSAGE_DEBUG, "rhythm roll on atk");
-								if ( local_rng.rand() % 10 < 6 )
+							if ( local_rng.rand() % 10 < 8 )
 								{
 									bool increaseSkill = true;
 									if ( this->behavior == &actPlayer )
@@ -10335,14 +10329,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 								achievementRhythmOfTheKnightVec[player].clear(); // reset for the next one
 							}
 						}
-						else
-						{
-							if ( !achievementStatusRhythmOfTheKnight[player] )
-							{
-								achievementRhythmOfTheKnightVec[player].clear(); // didn't inflict damage.
-							}
-						}
-					}
 
 					bool artifactWeaponProc = parashuProc || dyrnwynSmite || dyrnwynBurn || gugnirProc;
 
@@ -10935,10 +10921,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 						messagePlayerMonsterEvent(playerhit, color, *myStats, Language::get(698), Language::get(699), MSG_ATTACKS);
 						if ( playerhit >= 0 )
 						{
-							if ( !achievementStatusRhythmOfTheKnight[playerhit] )
-							{
-								achievementRhythmOfTheKnightVec[playerhit].clear();
-							}
 							if ( !achievementStatusThankTheTank[playerhit] )
 							{
 								achievementThankTheTankPair[playerhit] = std::make_pair(0, 0);
@@ -10981,6 +10963,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							steamAchievementClient(playerhit, "BARONY_ACH_ONE_WHO_KNOCKS");
 						}
+					}
+
 						if ( playerhit >= 0 )
 						{
 							if ( hitstats->defending )
@@ -10992,7 +10976,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									if ( !shieldIncreased )
 									{
 										//messagePlayer(0, MESSAGE_DEBUG, "rhythm roll on hit");
-										if ( local_rng.rand() % 10 < 6 )
+									if ( local_rng.rand() % 10 < 8 )
 										{
 											bool skillIncrease = true;
 											if ( hit.entity->behavior == &actPlayer )
@@ -11015,13 +10999,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 								updateAchievementThankTheTank(playerhit, this, false);
 							}
-							else if ( !achievementStatusRhythmOfTheKnight[playerhit] )
+						else
 							{
+							achievementStatusRhythmOfTheKnight[playerhit] = false;
 								achievementRhythmOfTheKnightVec[playerhit].clear();
 								//messagePlayer(0, "used AC!");
 							}
 						}
-					}
 
 					if ( playerhit >= 0 )
 					{
