@@ -9516,9 +9516,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 								|| (hitstats->defending) )
 							{
 								int roll = 20;
+								int hitskill = hitstats->getProficiency(PRO_SHIELD) / 20;
+								roll += hitskill * 5;
 								if ( damage == 0 )
 								{
 									roll /= 2;
+								}
+								if ( myStats->type == BAT_SMALL )
+								{
+									if ( hitstats->getProficiency(PRO_SHIELD) >= SKILL_LEVEL_BASIC )
+									{
+										roll *= 4;
+									}
 								}
 								if ( roll > 0 )
 								{

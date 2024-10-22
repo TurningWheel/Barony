@@ -1283,6 +1283,8 @@ void actArrow(Entity* my)
 									|| (hitstats->defending) )
 								{
 									int roll = 20;
+									int hitskill = hitstats->getProficiency(PRO_SHIELD) / 20;
+									roll += hitskill * 5;
 									if ( damage == 0 )
 									{
 										roll /= 2;
