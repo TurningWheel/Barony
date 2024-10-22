@@ -360,7 +360,6 @@ void initGnome(Entity* my, Stat* myStats)
 						case 7:
 						case 8:
 						case 9:
-							myStats->GOLD += 100;
 							myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 							break;
 					}
@@ -418,6 +417,10 @@ void initGnome(Entity* my, Stat* myStats)
 					if ( myStats->weapon && isRangedWeapon(*myStats->weapon) )
 					{
 						my->monsterGenerateQuiverItem(myStats);
+						if ( myStats->shield )
+						{
+							myStats->shield->isDroppable = (rng.rand() % 2 == 0) ? true : false;
+						}
 					}
 					else
 					{
@@ -493,11 +496,13 @@ void initGnome(Entity* my, Stat* myStats)
 					if ( myStats->leader_uid != 0 )
 					{
 						myStats->helmet = newItem(HAT_HOOD_WHISPERS, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, 0, false, nullptr);
+						myStats->helmet->isDroppable = (rng.rand() % 2 == 0) ? true : false;
 					}
 					else
 					{
 						// leader has the bycocket
 						myStats->helmet = newItem(HAT_BYCOCKET, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, 0, false, nullptr);
+						myStats->helmet->isDroppable = (rng.rand() % 2 == 0) ? true : false;
 					}
 				}
 				else if ( gnomeVariant == GNOME_THIEF_MELEE )
@@ -505,6 +510,7 @@ void initGnome(Entity* my, Stat* myStats)
 					if ( rng.rand() % 4 == 0 )
 					{
 						myStats->helmet = newItem(HAT_BANDANA, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+						myStats->helmet->isDroppable = (rng.rand() % 2 == 0) ? true : false;
 					}
 					else
 					{
@@ -516,6 +522,7 @@ void initGnome(Entity* my, Stat* myStats)
 						else
 						{
 							myStats->helmet = newItem(HAT_HOOD_ASSASSIN, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+							myStats->helmet->isDroppable = (rng.rand() % 2 == 0) ? true : false;
 						}
 					}
 				}
@@ -569,7 +576,7 @@ void initGnome(Entity* my, Stat* myStats)
 					case 8:
 					case 9:
 						myStats->mask = newItem(MASK_BANDIT, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-						myStats->mask->isDroppable = (rng.rand() % 4 == 0) ? true : false;
+						myStats->mask->isDroppable = (rng.rand() % 8 == 0) ? true : false;
 						break;
 					default:
 						break;
