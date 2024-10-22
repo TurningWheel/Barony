@@ -4018,17 +4018,13 @@ void Entity::handleEffects(Stat* myStats)
 	// healing over time
 	int healring = 0;
 	int healthRegenInterval = getHealthRegenInterval(this, *myStats, behavior == &actPlayer);
-	if ( healthRegenInterval == -1 && behavior == &actPlayer && myStats->type == SKELETON )
-	{
-		healthRegenInterval = HEAL_TIME * 4;
-	}
 	bool naturalHeal = false;
 	if ( healthRegenInterval >= 0 )
 	{
 		if ( myStats->HP < myStats->MAXHP )
 		{
 			this->char_heal++;
-			if ( (svFlags & SV_FLAG_HUNGER) || behavior == &actMonster || (behavior == &actPlayer && myStats->type == SKELETON) )
+			/*if ( (svFlags & SV_FLAG_HUNGER) || behavior == &actMonster || (behavior == &actPlayer && myStats->type == SKELETON) )*/
 			{
 				if ( this->char_heal >= healthRegenInterval )
 				{
@@ -19521,13 +19517,6 @@ int Entity::getHealringFromEquipment(Entity* my, Stat& myStats, bool isPlayer)
 
 int Entity::getHealthRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
 {
-	if ( !(svFlags & SV_FLAG_HUNGER) )
-	{
-		if ( isPlayer )
-		{
-			return -1;
-		}
-	}
 	if ( myStats.EFFECTS[EFF_VAMPIRICAURA] )
 	{
 		if ( isPlayer && myStats.EFFECTS_TIMERS[EFF_VAMPIRICAURA] > 0 )
@@ -19544,18 +19533,27 @@ int Entity::getHealthRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
 	{
 		return -1;
 	}
+
 	double healring = 0;
-	if ( isPlayer && myStats.type != HUMAN )
+	double bonusHealring = 0.0;
+	if ( myStats.type == SKELETON && isPlayer )
 	{
-		if ( myStats.type == SKELETON )
+		healring = -1;
+	}
+	if ( !(svFlags & SV_FLAG_HUNGER) && isPlayer )
+	{
+		bonusHealring += Entity::getHealringFromEquipment(my, myStats, isPlayer);
+		bonusHealring += Entity::getHealringFromEffects(my, myStats);
+		if ( bonusHealring < 0.01 && myStats.type != SKELETON )
 		{
-			healring = -1; // 0.25x regen speed.
+			return -1;
 		}
 	}
-
-	double bonusHealring = 0.0;
+	else
+	{
 	bonusHealring += Entity::getHealringFromEquipment(my, myStats, isPlayer);
 	bonusHealring += Entity::getHealringFromEffects(my, myStats);
+	}
 	healring += bonusHealring;
 
 	if ( my && bonusHealring >= 2.0 && ::ticks % TICKS_PER_SECOND == 0 && isPlayer )
@@ -19582,7 +19580,14 @@ int Entity::getHealthRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
 
 	if ( healring > 0 )
 	{
+		if ( !(svFlags & SV_FLAG_HUNGER) && isPlayer )
+		{
+			return (HEAL_TIME / (healring * 4)); // 1 HP each 12 sec base
+		}
+		else
+		{
 		return (HEAL_TIME / (healring * 6)); // 1 HP each 12 sec base
+	}
 	}
 	else if ( healring < 0 )
 	{
