@@ -19551,6 +19551,32 @@ int Entity::getHealthRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
 		return -1;
 	}
 
+	if ( svFlags & SV_FLAG_HUNGER )
+	{
+		if ( isPlayer )
+		{
+			if ( myStats.HUNGER <= 0 )
+			{
+				bool doStarvation = true;
+				if ( myStats.type == AUTOMATON )
+				{
+					if ( myStats.MP > 0 )
+					{
+						doStarvation = false;
+					}
+				}
+				else if ( myStats.type == SKELETON )
+				{
+					doStarvation = false;
+				}
+				if ( doStarvation )
+				{
+					return -1;
+				}
+			}
+		}
+	}
+
 	double healring = 0;
 	double bonusHealring = 0.0;
 	if ( myStats.type == SKELETON && isPlayer )
