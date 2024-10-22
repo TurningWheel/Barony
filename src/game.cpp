@@ -1538,6 +1538,9 @@ void gameLogic(void)
 					if ( achievementStatusThankTheTank[c] )
 					{
 						steamAchievementClient(c, "BARONY_ACH_THANK_THE_TANK");
+						achievementStatusThankTheTank[c] = false;
+						achievementThankTheTankPair[c].first = 0;
+						achievementThankTheTankPair[c].second = 0;
 					}
 
 					int bodyguards = 0;

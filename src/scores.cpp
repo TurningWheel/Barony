@@ -4100,6 +4100,10 @@ void updateAchievementThankTheTank(int player, Entity* target, bool targetKilled
 	{
 		return;
 	}
+	if ( !target )
+	{
+		return;
+	}
 	if ( achievementStatusThankTheTank[player] || multiplayer == CLIENT )
 	{
 		return;
@@ -4123,6 +4127,14 @@ void updateAchievementThankTheTank(int player, Entity* target, bool targetKilled
 					if ( (ticks - achievementThankTheTankPair[player].first) / 50.f < 3.f )
 					{
 						achievementStatusThankTheTank[player] = true;
+						if ( players[player]->mechanics.allowedRaiseBlockingAgainstEntity(*target) )
+						{
+							int skillLVL = 3 * (stats[player]->getProficiency(PRO_SHIELD) / 20);
+							if ( local_rng.rand() % (5 + skillLVL) == 0 )
+							{
+								players[player]->entity->increaseSkill(PRO_SHIELD);
+							}
+						}
 					}
 				}
 			}
