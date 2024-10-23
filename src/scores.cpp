@@ -4137,7 +4137,19 @@ void updateAchievementThankTheTank(int player, Entity* target, bool targetKilled
 						int skillLVL = 3 * (stats[player]->getProficiency(PRO_SHIELD) / 20);
 						if ( local_rng.rand() % (5 + skillLVL) == 0 )
 						{
-							players[player]->entity->increaseSkill(PRO_SHIELD);
+							bool increase = true;
+							if ( stats[player]->shield && itemCategory(stats[player]->shield) != ARMOR )
+							{
+								if ( stats[player]->getProficiency(PRO_SHIELD) >= SKILL_LEVEL_SKILLED )
+								{
+									increase = false;
+								}
+							}
+							if ( increase )
+							{
+								players[player]->entity->increaseSkill(PRO_SHIELD);
+								players[player]->mechanics.enemyRaisedBlockingAgainst[target->getUID()]++;
+							}
 						}
 					}
 				}
