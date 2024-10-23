@@ -1817,6 +1817,7 @@ void buttonSpriteProperties(button_t* my)
 				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->yaw));
 				snprintf(spriteProperties[1], 4, "%d", selectedEntity[0]->skill[9]);
 				snprintf(spriteProperties[2], 4, "%d", selectedEntity[0]->chestLocked);
+				snprintf(spriteProperties[3], 4, "%d", selectedEntity[0]->chestMimicChance);
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -1824,8 +1825,8 @@ void buttonSpriteProperties(button_t* my)
 				newwindow = 3;
 				subx1 = xres / 2 - 160;
 				subx2 = xres / 2 + 160;
-				suby1 = yres / 2 - 105;
-				suby2 = yres / 2 + 105;
+				suby1 = yres / 2 - 125;
+				suby2 = yres / 2 + 125;
 				strcpy(subtext, "Chest Properties:");
 				break;
 			case 3: //items
@@ -1862,13 +1863,14 @@ void buttonSpriteProperties(button_t* my)
 				snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity[0]->skill[3])); //Amount of Spawns 
 				snprintf(spriteProperties[4], 4, "%d", static_cast<int>(selectedEntity[0]->skill[4])); //Requires Power
 				snprintf(spriteProperties[5], 4, "%d", static_cast<int>(selectedEntity[0]->skill[5])); //Chance to Stop Working
+				snprintf(spriteProperties[6], 4, "%d", static_cast<int>(selectedEntity[0]->skill[9])); //Autospawn
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
 				subwindow = 1;
 				newwindow = 6;
-				subx1 = xres / 2 - 210;
-				subx2 = xres / 2 + 210;
+				subx1 = xres / 2 - 220;
+				subx2 = xres / 2 + 220;
 				suby1 = yres / 2 - 140;
 				suby2 = yres / 2 + 140;
 				strcpy(subtext, "Summoning Trap Properties:");
@@ -2137,6 +2139,7 @@ void buttonSpriteProperties(button_t* my)
 				snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity[0]->signalTimerInterval));
 				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity[0]->signalTimerRepeatCount));
 				snprintf(spriteProperties[4], 2, "%d", static_cast<int>(selectedEntity[0]->signalTimerLatchInput));
+				snprintf(spriteProperties[5], 2, "%d", static_cast<int>(selectedEntity[0]->signalInvertOutput));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -2373,6 +2376,37 @@ void buttonSpriteProperties(button_t* my)
 				strcpy(subtext, "Collider Model Properties:");
 				break;
 			}
+			case 28:
+				snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity[0]->signalInputDirection));
+				snprintf(spriteProperties[1], 5, "%d", static_cast<int>(selectedEntity[0]->signalActivateDelay));
+				snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity[0]->signalTimerInterval));
+				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity[0]->signalTimerRepeatCount));
+				snprintf(spriteProperties[4], 2, "%d", static_cast<int>(selectedEntity[0]->signalTimerLatchInput));
+				snprintf(spriteProperties[5], 2, "%d", static_cast<int>(selectedEntity[0]->signalInvertOutput));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 32;
+				subx1 = xres / 2 - 220;
+				subx2 = xres / 2 + 220;
+				suby1 = yres / 2 - 120;
+				suby2 = yres / 2 + 120;
+				strcpy(subtext, "AND Gate Properties:");
+				break;
+			case 29:
+				snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity[0]->pressurePlateTriggerType));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 33;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 60;
+				suby2 = yres / 2 + 60;
+				strcpy(subtext, "Pressure Plate Properties:");
+				break;
 			default:
 				strcpy(message, "No properties available for current sprite.");
 				messagetime = 60;
@@ -3097,6 +3131,7 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity[0]->yaw = (real_t)atoi(spriteProperties[0]);
 				selectedEntity[0]->skill[9] = (Sint32)atoi(spriteProperties[1]);
 				selectedEntity[0]->chestLocked = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->chestMimicChance = (Sint32)atoi(spriteProperties[3]);
 				break;
 			case 3: //items
 				if ( strcmp(spriteProperties[0], "0") == 0 )
@@ -3163,6 +3198,7 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				}
 				selectedEntity[0]->skill[4] = (Sint32)atoi(spriteProperties[4]); //Requires Power
 				selectedEntity[0]->skill[5] = (Sint32)atoi(spriteProperties[5]); //Chance to Stop Working
+				selectedEntity[0]->skill[9] = (Sint32)atoi(spriteProperties[6]); //Autospawn
 				break;
 			case 5: //power crystal
 				selectedEntity[0]->yaw = (real_t)atoi(spriteProperties[0]);
@@ -3368,6 +3404,7 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity[0]->signalTimerInterval = (Sint32)atoi(spriteProperties[2]);
 				selectedEntity[0]->signalTimerRepeatCount = (Sint32)atoi(spriteProperties[3]);
 				selectedEntity[0]->signalTimerLatchInput = (Sint32)atoi(spriteProperties[4]);
+				selectedEntity[0]->signalInvertOutput = (Sint32)atoi(spriteProperties[5]);
 				break;
 			case 18: // custom portal
 			{
@@ -3477,6 +3514,17 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity[0]->colliderMaxHP = (Sint32)atoi(spriteProperties[8]);
 				selectedEntity[0]->colliderDiggable = (Sint32)atoi(spriteProperties[9]);
 				selectedEntity[0]->colliderDamageTypes = (Sint32)atoi(spriteProperties[10]);
+				break;
+			case 28:
+				selectedEntity[0]->signalInputDirection = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->signalActivateDelay = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->signalTimerInterval = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->signalTimerRepeatCount = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity[0]->signalTimerLatchInput = (Sint32)atoi(spriteProperties[4]);
+				selectedEntity[0]->signalInvertOutput = (Sint32)atoi(spriteProperties[5]);
+				break;
+			case 29: // pressure plate
+				selectedEntity[0]->pressurePlateTriggerType = (Sint32)atoi(spriteProperties[0]);
 				break;
 			default:
 				break;

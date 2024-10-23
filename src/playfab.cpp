@@ -26,6 +26,72 @@ void PlayfabUser_t::OnEventsWrite(const PlayFab::EventsModels::WriteEventsRespon
     logInfo("Successfully stored events");
 }
 
+void PlayfabUser_t::gameBegin()
+{
+    if ( !bLoggedIn )
+    {
+        return;
+    }
+
+    if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_DEFAULT )
+    {
+        return;
+    }
+    PlayFab::EventsModels::WriteEventsRequest eventRequest;
+    PlayFab::EventsModels::EventContents eventContent;
+    eventContent.EventNamespace = "custom.game";
+    eventContent.Name = "gamestart";
+    eventContent.Payload["class"] = client_classes[clientnum];
+    eventContent.Payload["multiplayer"] = multiplayer;
+    int players = 1;
+    if ( multiplayer == SERVER || (multiplayer == SINGLE && splitscreen) )
+    {
+        for ( int i = 1; i < MAXPLAYERS; ++i )
+        {
+            if ( !client_disconnected[i] )
+            {
+                ++players;
+            }
+        }
+    }
+    eventContent.Payload["numplayers"] = players;
+    eventContent.Payload["version"] = VERSION;
+    eventContent.Payload["splitscreen"] = (multiplayer == SINGLE && splitscreen) ? 1 : 0;
+    eventContent.Payload["race"] = stats[clientnum]->playerRace;
+    eventContent.Payload["appearance"] = stats[clientnum]->stat_appearance;
+    eventContent.Payload["sex"] = stats[clientnum]->sex;
+    eventContent.Payload["controller"] = inputs.hasController(clientnum) ? 1 : 0;
+    eventContent.Payload["theme"] = *cvar_disableHoliday ? 0 : 1;
+    eventRequest.Events.push_back(eventContent);
+    PlayFab::PlayFabEventsAPI::WriteTelemetryEvents(eventRequest, OnEventsWrite, OnCloudScriptFailure);
+}
+
+void PlayfabUser_t::globalStat(int index, int value)
+{
+    if ( !bLoggedIn )
+    {
+        return;
+    }
+
+    if ( index < 0 || index >= STEAM_GSTAT_MAX || value < 0 )
+    {
+        return;
+    }
+
+    if ( index >= SteamGlobalStatStr.size() )
+    {
+        return;
+    }
+
+    PlayFab::EventsModels::WriteEventsRequest eventRequest;
+    PlayFab::EventsModels::EventContents eventContent;
+    eventContent.EventNamespace = "custom.globalstats";
+    eventContent.Name = "globalstats";
+    eventContent.Payload[SteamGlobalStatStr[index]] = value;
+    eventRequest.Events.push_back(eventContent);
+    PlayFab::PlayFabEventsAPI::WriteTelemetryEvents(eventRequest, OnEventsWrite, OnCloudScriptFailure);
+}
+
 void PlayfabUser_t::OnLoginSuccess(const PlayFab::ClientModels::LoginResult& result, void* customData)
 {
     logInfo("Logged in successfully");
@@ -364,7 +430,7 @@ int parseOnlineHiscore(SaveGameInfo& info, Json::Value score)
                 }
                 else if ( s == "appearance" )
                 {
-                    jsonValueToUint(score[m], s, player.stats.appearance);
+                    jsonValueToUint(score[m], s, player.stats.statscore_appearance);
                 }
                 else if ( s == "race" )
                 {
@@ -499,9 +565,13 @@ int parseOnlineHiscore(SaveGameInfo& info, Json::Value score)
             }
         }
     }
-    if ( player.race > 0 && player.stats.appearance != 0 )
+    if ( player.race > 0 && player.stats.statscore_appearance != 0 )
     {
         player.race = RACE_HUMAN; // set to human appearance for aesthetic scores
+    }
+    if ( info.dungeon_lvl >= 25 && (info.svflags & SV_FLAG_CLASSIC) )
+    {
+        info.svflags &= ~SV_FLAG_CLASSIC; // remove classic flag from scores beyond dungeon level 25
     }
     player.additionalConducts[CONDUCT_MODDED] = 0; // don't display this on the leaderboard window
     return 0;

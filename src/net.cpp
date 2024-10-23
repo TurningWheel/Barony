@@ -328,6 +328,7 @@ bool messagePlayer(int player, Uint32 type, char const * const message, ...)
 	va_end( argptr );
 
 	strncpy(str, messageSanitizePercentSign(str, nullptr).c_str(), Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH - 1);
+	str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH - 1] = '\0';
 
 	return messagePlayerColor(player, type, 0xFFFFFFFF, str);
 }
@@ -521,6 +522,14 @@ void sendEntityUDP(Entity* entity, int c, bool guarantee)
 	SDLNet_Write16((Sint16)(entity->vel_x * 32), &net_packet->data[40]);
 	SDLNet_Write16((Sint16)(entity->vel_y * 32), &net_packet->data[42]);
 	SDLNet_Write16((Sint16)(entity->vel_z * 32), &net_packet->data[44]);
+	net_packet->data[46] = 0;
+	for ( j = 0; j < 8; j++ )
+	{
+		if ( entity->flags[j + 16] )
+		{
+			net_packet->data[46 + j / 8] |= power(2, j - (j / 8) * 8);
+		}
+	}
 	net_packet->address.host = net_clients[c - 1].host;
 	net_packet->address.port = net_clients[c - 1].port;
 	net_packet->len = ENTITY_PACKET_LENGTH;
@@ -649,7 +658,8 @@ void serverUpdateEntityBodypart(Entity* entity, int bodypart)
 		}
 		Entity* tempEntity = (Entity*)node->element;
 		SDLNet_Write32(tempEntity->sprite, &net_packet->data[9]);
-		net_packet->data[13] = tempEntity->flags[INVISIBLE];
+		net_packet->data[13] = (tempEntity->flags[INVISIBLE] ? 1 : 0);
+		net_packet->data[13] |= (tempEntity->flags[INVISIBLE_DITHER] ? (1 << 1) : 0);
 		net_packet->address.host = net_clients[c - 1].host;
 		net_packet->address.port = net_clients[c - 1].port;
 		net_packet->len = 14;
@@ -941,8 +951,15 @@ void serverUpdateEffects(int player)
 	net_packet->data[9] = 0;
 	net_packet->data[10] = 0;
 	net_packet->data[11] = 0;
+
 	net_packet->data[12] = 0;
 	net_packet->data[13] = 0;
+	net_packet->data[14] = 0;
+	net_packet->data[15] = 0;
+	net_packet->data[16] = 0;
+	net_packet->data[17] = 0;
+	net_packet->data[18] = 0;
+	net_packet->data[19] = 0;
 	for (j = 0; j < NUMEFFECTS; j++)
 	{
 		if ( stats[player]->EFFECTS[j] == true )
@@ -952,12 +969,12 @@ void serverUpdateEffects(int player)
 		if ( stats[player]->EFFECTS_TIMERS[j] < TICKS_PER_SECOND * 5 && stats[player]->EFFECTS_TIMERS[j] > 0 )
 		{
 			// use these bits to denote if duration is low.
-			net_packet->data[9 + j / 8] |= power(2, j - (j / 8) * 8);
+			net_packet->data[12 + j / 8] |= power(2, j - (j / 8) * 8);
 		}
 	}
 	net_packet->address.host = net_clients[player - 1].host;
 	net_packet->address.port = net_clients[player - 1].port;
-	net_packet->len = 14;
+	net_packet->len = 20;
 	sendPacketSafe(net_sock, -1, net_packet, player - 1);
 }
 
@@ -1513,7 +1530,7 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 		client_classes[c] = (int)SDLNet_Read32(&net_packet->data[36]);
 		stats[c]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[40]));
 		Uint32 raceAndAppearance = (Uint32)SDLNet_Read32(&net_packet->data[44]);
-		stats[c]->appearance = (raceAndAppearance & 0xFF00) >> 8;
+		stats[c]->stat_appearance = (raceAndAppearance & 0xFF00) >> 8;
 		stats[c]->playerRace = (raceAndAppearance & 0xFF);
 		net_clients[c - 1].host = net_packet->address.host;
 		net_clients[c - 1].port = net_packet->address.port;
@@ -1532,7 +1549,7 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 			net_packet->data[4] = c; // clientnum
 			net_packet->data[5] = client_classes[c]; // class
 			net_packet->data[6] = stats[c]->sex; // sex
-			net_packet->data[7] = (Uint8)stats[c]->appearance; // appearance
+			net_packet->data[7] = (Uint8)stats[c]->stat_appearance; // appearance
 			net_packet->data[8] = (Uint8)stats[c]->playerRace; // player race
 			stringCopy((char*)net_packet->data + 9, stats[c]->name, 32, sizeof(Stat::name)); // name
 			net_packet->address.host = net_clients[x - 1].host;
@@ -1556,7 +1573,7 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 				net_packet->data[8 + x * chunk_size + 1] = lockedSlots[x]; // locked state
 				net_packet->data[8 + x * chunk_size + 2] = client_classes[x]; // class
 				net_packet->data[8 + x * chunk_size + 3] = stats[x]->sex; // sex
-				net_packet->data[8 + x * chunk_size + 4] = (Uint8)stats[x]->appearance; // appearance
+				net_packet->data[8 + x * chunk_size + 4] = (Uint8)stats[x]->stat_appearance; // appearance
 				net_packet->data[8 + x * chunk_size + 5] = (Uint8)stats[x]->playerRace; // player race
 
 				char shortname[32];
@@ -1597,7 +1614,7 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 				net_packet->data[8 + x * chunk_size + 1] = lockedSlots[x]; // locked state
 				net_packet->data[8 + x * chunk_size + 2] = client_classes[x]; // class
 				net_packet->data[8 + x * chunk_size + 3] = stats[x]->sex; // sex
-				net_packet->data[8 + x * chunk_size + 4] = (Uint8)stats[x]->appearance; // appearance
+				net_packet->data[8 + x * chunk_size + 4] = (Uint8)stats[x]->stat_appearance; // appearance
 				net_packet->data[8 + x * chunk_size + 5] = (Uint8)stats[x]->playerRace; // player race
 
 				char shortname[32];
@@ -1670,8 +1687,8 @@ Entity* receiveEntity(Entity* entity)
 	const bool excludeForAnimation =
 	    !newentity &&
 	    entity->behavior == &actMonster &&
-	    (monsterType == RAT || monsterType == SLIME || monsterType == SCARAB) &&
-	    entity->skill[8]; // MONSTER_ATTACK
+		(monsterType == SLIME || ((monsterType == RAT || monsterType == SCARAB) &&
+	    entity->skill[8])); // MONSTER_ATTACK
 
 	//if ( Entity::getMonsterTypeFromSprite(entity->sprite) == SPIDER )
 	//{
@@ -1712,7 +1729,14 @@ Entity* receiveEntity(Entity* entity)
 	//}
 
 	if (excludeForAnimation) {
-	    entity->sprite = oldSprite;
+		if ( monsterType == SLIME && Entity::getMonsterTypeFromSprite(oldSprite) != SLIME )
+		{
+			// take this sprite as we had editor data (e.g sprite 10 or 79)
+		}
+		else
+		{
+			entity->sprite = oldSprite;
+		}
 	}
 
 	entity->lastupdate = ticks;
@@ -1755,6 +1779,13 @@ Entity* receiveEntity(Entity* entity)
 		if ( net_packet->data[34 + c / 8]&power(2, c - (c / 8) * 8) )
 		{
 			entity->flags[c] = true;
+		}
+	}
+	for ( c = 0; c < 8; ++c ) // new flags 16-23
+	{
+		if ( net_packet->data[46 + c / 8] & power(2, c - (c / 8) * 8) )
+		{
+			entity->flags[c + 16] = true;
 		}
 	}
 	entity->vel_x = ((Sint16)SDLNet_Read16(&net_packet->data[40])) / 32.0;
@@ -1803,6 +1834,9 @@ void clientActions(Entity* entity)
 		case 214:
 		case 682:
 		case 681:
+		case 1398:
+		case 1399:
+		case 1400:
 			entity->flags[NOUPDATE] = true;
 			break;
 		case 162:
@@ -1882,7 +1916,11 @@ void clientActions(Entity* entity)
 			entity->flags[NOUPDATE] = true;
 			break;
 		case 130:
+		case 1379:
 			entity->behavior = &actGoldBag;
+			break;
+		case 1481:
+			entity->behavior = &actDaedalusShrine;
 			break;
 		case Player::Ghost_t::GHOST_MODEL_P1:
 		case Player::Ghost_t::GHOST_MODEL_P2:
@@ -2072,6 +2110,10 @@ static void changeLevel() {
 		closeChestClientside(clientnum);
 	}
 
+	int prevcurrentlevel = currentlevel;
+	int prevsecretfloor = secretlevel;
+	std::string prevmapname = map.name;
+
 	// unlock some steam achievements
 	if ( !secretlevel )
 	{
@@ -2150,10 +2192,15 @@ static void changeLevel() {
 	}
 	EnemyHPDamageBarHandler::dumpCache();
 	monsterAllyFormations.reset();
+	particleTimerEmitterHitEntities.clear();
+	monsterTrapIgnoreEntities.clear();
+	minimapHighlights.clear();
 
 	// clear follower menu entities.
 	FollowerMenu[clientnum].closeFollowerMenuGUI(true);
 	CalloutMenu[clientnum].closeCalloutMenuGUI();
+
+	bool died = stats[clientnum] && stats[clientnum]->HP <= 0;
 
     // load map file
 	loading = true;
@@ -2289,10 +2336,20 @@ static void changeLevel() {
 		Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_hunger", ""));
 	}
 
+	Compendium_t::Events_t::onLevelChangeEvent(clientnum, prevcurrentlevel, prevsecretfloor, prevmapname, died);
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		players[i]->compendiumProgress.playerAliveTimeTotal = 0;
+		players[i]->compendiumProgress.playerGameTimeTotal = 0;
+	}
+
 	if ( gameModeManager.allowsSaves() )
 	{
 		saveGame();
 	}
+
+	Compendium_t::Events_t::writeItemsSaveData();
+	Compendium_t::writeUnlocksSaveData();
 #ifdef LOCAL_ACHIEVEMENTS
 	LocalAchievements_t::writeToFile();
 #endif
@@ -2471,8 +2528,20 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				Entity* tempEntity = (Entity*)childNode->element;
 				tempEntity->sprite = SDLNet_Read32(&net_packet->data[9]);
 				tempEntity->skill[7] = tempEntity->sprite;
-				tempEntity->flags[INVISIBLE] = net_packet->data[13];
+				tempEntity->flags[INVISIBLE] = (net_packet->data[13] & (1 << 0)) > 0 ? true : false;
+				tempEntity->flags[INVISIBLE_DITHER] = (net_packet->data[13] & (1 << 1)) > 0 ? true : false;
 			}
+			/*else
+			{
+				if ( entity->behavior == &actPlayer )
+				{
+					messagePlayer(clientnum, MESSAGE_DEBUG, "actPlayer !childNode: %d", net_packet->data[8]);
+				}
+				else
+				{
+					messagePlayer(clientnum, MESSAGE_DEBUG, "!childNode: %d", net_packet->data[8]);
+				}
+			}*/
 		}
 	}},
 
@@ -2592,6 +2661,93 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 	}},
 
+	// breakable dropped item
+	{ 'BREK', []() {
+		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		Entity* entity = uidToEntity(uid);
+		if ( entity )
+		{
+			if ( entity->behavior == &actItem )
+			{
+				//entity->flags[UPDATENEEDED] = true;
+				if ( entity->flags[INVISIBLE] )
+				{
+					entity->flags[INVISIBLE] = false;
+					entity->vel_x = (0.25 + .025 * (local_rng.rand() % 11)) * cos(entity->yaw);
+					entity->vel_y = (0.25 + .025 * (local_rng.rand() % 11)) * sin(entity->yaw);
+					entity->vel_z = (-40 - local_rng.rand() % 5) * .01;
+					entity->itemContainer = 0;
+					entity->z = 0.0;
+					entity->itemNotMoving = 0;
+					entity->itemNotMovingClient = 0;
+					entity->flags[USERFLAG1] = false; // enable collision
+				}
+			}
+			else if ( entity->behavior == &actGoldBag )
+			{
+				if ( entity->flags[INVISIBLE] )
+				{
+					entity->vel_x = (0.25 + .025 * (local_rng.rand() % 11)) * cos(entity->yaw);
+					entity->vel_y = (0.25 + .025 * (local_rng.rand() % 11)) * sin(entity->yaw);
+					entity->vel_z = (-40 - local_rng.rand() % 10) * .01;
+					entity->goldBouncing = 0;
+					entity->z = 0.0 - (local_rng.rand() % 3);
+					entity->flags[INVISIBLE] = false;
+				}
+			}
+		}
+	}},
+
+	{ 'DAED', []() {
+		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		if ( Entity* shrine = uidToEntity(uid) )
+		{
+			if ( shrine->behavior == &::actDaedalusShrine )
+			{
+				daedalusShrineInteract(shrine, nullptr);
+			}
+		}
+	}},
+
+	// bell dropped item
+	{ 'BELI', []() {
+		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		Entity* entity = uidToEntity(uid);
+		if ( entity )
+		{
+			if ( entity->behavior == &actItem )
+			{
+				//entity->flags[UPDATENEEDED] = true;
+				if ( entity->flags[INVISIBLE] )
+				{
+					playSoundEntityLocal(entity, 47 + local_rng.rand() % 3, 64);
+					entity->flags[INVISIBLE] = false;
+					entity->vel_x = 0.0; //(0.25 + .025 * (local_rng.rand() % 11)) * cos(entity->yaw);
+					entity->vel_y = 0.0; //(0.25 + .025 * (local_rng.rand() % 11)) * sin(entity->yaw);
+					entity->vel_z = (-2 - local_rng.rand() % 5) * .01;
+					entity->itemContainer = 0;
+					entity->z = -16;
+					entity->itemNotMoving = 0;
+					entity->itemNotMovingClient = 0;
+					entity->flags[USERFLAG1] = false; // enable collision
+				}
+			}
+			else if ( entity->behavior == &actGoldBag )
+			{
+				if ( entity->flags[INVISIBLE] )
+				{
+					playSoundEntityLocal(entity, 242 + local_rng.rand() % 4, 64);
+					entity->vel_x = 0.0;
+					entity->vel_y = 0.0;
+					entity->vel_z = (-2 - local_rng.rand() % 5) * .01;
+					entity->goldBouncing = 0;
+					entity->z = -16;
+					entity->flags[INVISIBLE] = false;
+				}
+			}
+		}
+	} },
+
 	// ghost interact item
 	{ 'GHOI', []() {
 		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
@@ -2686,6 +2842,16 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		spawnMagicEffectParticles(x, y, z, sprite);
 	}},
 
+	// spawn magical bell effect particles
+	{ 'MAGB', []() {
+		Uint32 uid = (Uint32)SDLNet_Read32(&net_packet->data[4]);
+		if ( Entity* entity = uidToEntity(uid) )
+		{
+			Uint32 sprite = (Uint32)SDLNet_Read32(&net_packet->data[8]);
+			spawnMagicEffectParticlesBell(entity, sprite);
+		}
+	} },
+
 	// spawn misc particle effect 
 	{'SPPE', [](){
 		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
@@ -2779,6 +2945,13 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				{
 					Entity* spellTimer = createParticleTimer(entity, 40, sprite);
 					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
+					spellTimer->particleTimerCountdownSprite = sprite;
+				}
+				break;
+				case PARTICLE_EFFECT_SLIME_SPRAY:
+				{
+					Entity* spellTimer = createParticleTimer(entity, 30, -1);
+					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_MAGIC_SPRAY;
 					spellTimer->particleTimerCountdownSprite = sprite;
 				}
 				break;
@@ -2914,6 +3087,24 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			details->enemy_statusEffectsLowDuration1 = SDLNet_Read32(&net_packet->data[23]);
 			details->enemy_statusEffectsLowDuration2 = SDLNet_Read32(&net_packet->data[27]);
 		}
+	}},
+
+	// custom damage gib (miss/healing)
+	{'DMGG', [](){
+		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		Sint16 dmg = (Sint16)SDLNet_Read16(&net_packet->data[8]);
+		DamageGib gib = DMG_DEFAULT;
+		gib = (DamageGib)(net_packet->data[10]);
+		DamageGibDisplayType displayType = DamageGibDisplayType::DMG_GIB_NUMBER;
+		if ( net_packet->data[11] == 1 )
+		{
+			displayType = DamageGibDisplayType::DMG_GIB_MISS;
+		}
+		else if ( net_packet->data[11] == 2 )
+		{
+			displayType = DamageGibDisplayType::DMG_GIB_SPRITE;
+		}
+		spawnDamageGib(uidToEntity(uid), dmg, gib, displayType);
 	}},
 
 	// ping
@@ -3131,6 +3322,52 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 	}},
 
+	// update equip beatitude
+	{'BEAT', []() {
+		Item* equipment = nullptr;
+		//messagePlayer(0, "client: %d, armornum: %d, status %d", player, net_packet->data[5], net_packet->data[6]);
+		switch ( net_packet->data[5] )
+		{
+			case 0:
+				equipment = stats[clientnum]->weapon;
+				break;
+			case 1:
+				equipment = stats[clientnum]->helmet;
+				break;
+			case 2:
+				equipment = stats[clientnum]->breastplate;
+				break;
+			case 3:
+				equipment = stats[clientnum]->gloves;
+				break;
+			case 4:
+				equipment = stats[clientnum]->shoes;
+				break;
+			case 5:
+				equipment = stats[clientnum]->shield;
+				break;
+			case 6:
+				equipment = stats[clientnum]->cloak;
+				break;
+			case 7:
+				equipment = stats[clientnum]->mask;
+				break;
+			default:
+				equipment = nullptr;
+				break;
+		}
+
+		if ( !equipment )
+		{
+			return;
+		}
+		int itemType = SDLNet_Read16(&net_packet->data[7]);
+		if ( (int)equipment->type == itemType ) // sanity check the item type is what was changed
+		{
+			equipment->beatitude = net_packet->data[6] - 100; // we sent the data beatitude + 100
+		}
+	}},
+
 	// update armor quality
 	{'ARMR', [](){
 	    Item* item;
@@ -3196,7 +3433,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 								Item* item = (Item*)spellnode->element;
 								if ( item && itemCategory(item) == SPELL_CAT )
 								{
-									spell_t* spell = getSpellFromItem(clientnum, item);
+									spell_t* spell = getSpellFromItem(clientnum, item, false);
 									if ( spell && spell->ID == SPELL_CHARM_MONSTER )
 									{
 										foundCharmSpell = true;
@@ -3764,6 +4001,10 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			{
 				nextnode = node->next;
 				Item* item = (Item*)node->element;
+				if ( itemCategory(item) == SPELL_CAT )
+				{
+					continue;
+				}
 				if ( item->type == ARTIFACT_ORB_PURPLE )
 				{
 					strcpy((char*)net_packet->data, "DIEI");
@@ -3898,7 +4139,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			if ( net_packet->data[4 + c / 8]&power(2, c - (c / 8) * 8) )
 			{
 				stats[clientnum]->EFFECTS[c] = true;
-				if ( net_packet->data[9 + c / 8] & power(2, c - (c / 8) * 8) ) // use these bits to denote if duration is low.
+				if ( net_packet->data[12 + c / 8] & power(2, c - (c / 8) * 8) ) // use these bits to denote if duration is low.
 				{
 					stats[clientnum]->EFFECTS_TIMERS[c] = 1;
 				}
@@ -3928,14 +4169,14 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// update attributes
 	{'ATTR', [](){
-		stats[clientnum]->STR = (Sint8)net_packet->data[5];
-		stats[clientnum]->DEX = (Sint8)net_packet->data[6];
-		stats[clientnum]->CON = (Sint8)net_packet->data[7];
-		stats[clientnum]->INT = (Sint8)net_packet->data[8];
-		stats[clientnum]->PER = (Sint8)net_packet->data[9];
-		stats[clientnum]->CHR = (Sint8)net_packet->data[10];
-		stats[clientnum]->EXP = (Sint8)net_packet->data[11];
-		stats[clientnum]->LVL = (Sint8)net_packet->data[12];
+		stats[clientnum]->STR = ((Sint8)net_packet->data[5] <= -8) ? (Uint8)net_packet->data[5] : (Sint8)net_packet->data[5];
+		stats[clientnum]->DEX = ((Sint8)net_packet->data[6] <= -8) ? (Uint8)net_packet->data[6] : (Sint8)net_packet->data[6];
+		stats[clientnum]->CON = ((Sint8)net_packet->data[7] <= -8) ? (Uint8)net_packet->data[7] : (Sint8)net_packet->data[7];
+		stats[clientnum]->INT = ((Sint8)net_packet->data[8] <= -8) ? (Uint8)net_packet->data[8] : (Sint8)net_packet->data[8];
+		stats[clientnum]->PER = ((Sint8)net_packet->data[9] <= -8) ? (Uint8)net_packet->data[9] : (Sint8)net_packet->data[9];
+		stats[clientnum]->CHR = ((Sint8)net_packet->data[10] <= -8) ? (Uint8)net_packet->data[10] : (Sint8)net_packet->data[10];
+		stats[clientnum]->EXP = (Uint8)net_packet->data[11];
+		stats[clientnum]->LVL = (Uint8)net_packet->data[12];
 		stats[clientnum]->HP = (Sint16)SDLNet_Read16(&net_packet->data[13]);
 		stats[clientnum]->MAXHP = (Sint16)SDLNet_Read16(&net_packet->data[15]);
 		stats[clientnum]->MP = (Sint16)SDLNet_Read16(&net_packet->data[17]);
@@ -4218,7 +4459,8 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				{
 					strcpy(monster->clientStats->name, (char*)&net_packet->data[12]);
 				}
-                if ( monster->clientStats->name[0] && !monsterNameIsGeneric(*monster->clientStats) ) {
+                if ( monster->clientStats->name[0] && (!monsterNameIsGeneric(*monster->clientStats) || monster->clientStats->type == SLIME)) 
+				{
                     Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
                     nametag->x = monster->x;
                     nametag->y = monster->y;
@@ -4314,42 +4556,52 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		if ( stats[clientnum]->helmet )
 		{
 			stats[clientnum]->helmet->beatitude++;
+			Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->helmet->type, 1);
 		}
 		if ( stats[clientnum]->breastplate )
 		{
 			stats[clientnum]->breastplate->beatitude++;
+			Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->breastplate->type, 1);
 		}
 		if ( stats[clientnum]->gloves )
 		{
 			stats[clientnum]->gloves->beatitude++;
+			Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->gloves->type, 1);
 		}
 		if ( stats[clientnum]->shoes )
 		{
 			stats[clientnum]->shoes->beatitude++;
+			Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->shoes->type, 1);
 		}
 		if ( stats[clientnum]->shield )
 		{
 			stats[clientnum]->shield->beatitude++;
+			Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->shield->type, 1);
 		}
 		if ( stats[clientnum]->weapon )
 		{
 			stats[clientnum]->weapon->beatitude++;
+			Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->weapon->type, 1);
 		}
 		if ( stats[clientnum]->cloak )
 		{
 			stats[clientnum]->cloak->beatitude++;
+			Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->cloak->type, 1);
 		}
 		if ( stats[clientnum]->amulet )
 		{
 			stats[clientnum]->amulet->beatitude++;
+			Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->amulet->type, 1);
 		}
 		if ( stats[clientnum]->ring )
 		{
 			stats[clientnum]->ring->beatitude++;
+			Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->ring->type, 1);
 		}
 		if ( stats[clientnum]->mask )
 		{
 			stats[clientnum]->mask->beatitude++;
+			Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->mask->type, 1);
 		}
 	}},
 
@@ -4362,60 +4614,70 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				if ( stats[clientnum]->helmet )
 				{
 					stats[clientnum]->helmet->beatitude++;
+					Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->helmet->type, 1);
 				}
 				break;
 			case 1:
 				if ( stats[clientnum]->breastplate )
 				{
 					stats[clientnum]->breastplate->beatitude++;
+					Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->breastplate->type, 1);
 				}
 				break;
 			case 2:
 				if ( stats[clientnum]->gloves )
 				{
 					stats[clientnum]->gloves->beatitude++;
+					Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->gloves->type, 1);
 				}
 				break;
 			case 3:
 				if ( stats[clientnum]->shoes )
 				{
 					stats[clientnum]->shoes->beatitude++;
+					Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->shoes->type, 1);
 				}
 				break;
 			case 4:
 				if ( stats[clientnum]->shield )
 				{
 					stats[clientnum]->shield->beatitude++;
+					Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->shield->type, 1);
 				}
 				break;
 			case 5:
 				if ( stats[clientnum]->weapon )
 				{
 					stats[clientnum]->weapon->beatitude++;
+					Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->weapon->type, 1);
 				}
 				break;
 			case 6:
 				if ( stats[clientnum]->cloak )
 				{
 					stats[clientnum]->cloak->beatitude++;
+					Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->cloak->type, 1);
 				}
 				break;
 			case 7:
 				if ( stats[clientnum]->amulet )
 				{
 					stats[clientnum]->amulet->beatitude++;
+					Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->amulet->type, 1);
 				}
 				break;
 			case 8:
 				if ( stats[clientnum]->ring )
 				{
 					stats[clientnum]->ring->beatitude++;
+					Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->ring->type, 1);
 				}
 				break;
 			case 9:
 				if ( stats[clientnum]->mask )
 				{
 					stats[clientnum]->mask->beatitude++;
+					Compendium_t::Events_t::eventUpdate(clientnum, Compendium_t::CPDM_BLESSED_TOTAL, stats[clientnum]->mask->type, 1);
 				}
 				break;
 			default:
@@ -4636,7 +4898,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 		int victoryType;
 		int race = RACE_HUMAN;
-		if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
+		if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->stat_appearance == 0 )
 		{
 			race = stats[clientnum]->playerRace;
 		}
@@ -4751,7 +5013,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	// mid game cutscene
 	{'MIDG', [](){
 		int race = RACE_HUMAN;
-		if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
+		if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->stat_appearance == 0 )
 		{
 			race = stats[clientnum]->playerRace;
 		}
@@ -4881,14 +5143,14 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			}
 			textSourceScript.playerClearInventory(clearStats);
 		}
-		stats[clientnum]->STR = (Sint8)net_packet->data[5];
-		stats[clientnum]->DEX = (Sint8)net_packet->data[6];
-		stats[clientnum]->CON = (Sint8)net_packet->data[7];
-		stats[clientnum]->INT = (Sint8)net_packet->data[8];
-		stats[clientnum]->PER = (Sint8)net_packet->data[9];
-		stats[clientnum]->CHR = (Sint8)net_packet->data[10];
-		stats[clientnum]->EXP = (Sint8)net_packet->data[11];
-		stats[clientnum]->LVL = (Sint8)net_packet->data[12];
+		stats[clientnum]->STR = ((Sint8)net_packet->data[5] <= -8) ? (Uint8)net_packet->data[5] : (Sint8)net_packet->data[5];
+		stats[clientnum]->DEX = ((Sint8)net_packet->data[6] <= -8) ? (Uint8)net_packet->data[6] : (Sint8)net_packet->data[6];
+		stats[clientnum]->CON = ((Sint8)net_packet->data[7] <= -8) ? (Uint8)net_packet->data[7] : (Sint8)net_packet->data[7];
+		stats[clientnum]->INT = ((Sint8)net_packet->data[8] <= -8) ? (Uint8)net_packet->data[8] : (Sint8)net_packet->data[8];
+		stats[clientnum]->PER = ((Sint8)net_packet->data[9] <= -8) ? (Uint8)net_packet->data[9] : (Sint8)net_packet->data[9];
+		stats[clientnum]->CHR = ((Sint8)net_packet->data[10] <= -8) ? (Uint8)net_packet->data[10] : (Sint8)net_packet->data[10];
+		stats[clientnum]->EXP = (Uint8)net_packet->data[11];
+		stats[clientnum]->LVL = (Uint8)net_packet->data[12];
 		stats[clientnum]->HP = (Sint16)SDLNet_Read16(&net_packet->data[13]);
 		stats[clientnum]->MAXHP = (Sint16)SDLNet_Read16(&net_packet->data[15]);
 		stats[clientnum]->MP = (Sint16)SDLNet_Read16(&net_packet->data[17]);
@@ -5017,6 +5279,111 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		if ( player >= 0 && player < MAXPLAYERS )
 		{
 			achievementObserver.playerAchievements[player].wearingBountyHat = net_packet->data[5] > 0 ? true : false;
+		}
+	} },
+
+	// compendium reveal an entry
+	{ 'CMPU', []() {
+		int eventID = SDLNet_Read32(&net_packet->data[4]);
+		if ( eventID >= Compendium_t::Events_t::kEventMonsterOffset && eventID < Compendium_t::Events_t::kEventMonsterOffset + 1000 )
+		{
+			auto find = Compendium_t::Events_t::monsterIDToString.find(eventID);
+			if ( find != Compendium_t::Events_t::monsterIDToString.end() )
+			{
+				auto& unlockStatus = Compendium_t::CompendiumMonsters_t::unlocks[find->second];
+				if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+				{
+					unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+				}
+			}
+		}
+	} },
+
+	// compendium data update
+	{ 'CMPD', []() {
+		Uint8 clientSequence = net_packet->data[4];
+		int sequence = net_packet->data[5];
+		int numchunks = net_packet->data[6];
+		if ( numchunks == 0 )
+		{
+			return;
+		}
+		char buf[512];
+		stringCopy(buf, (char*)(&net_packet->data[7]), sizeof(buf), std::max(0, (int)net_packet->len - 7));
+		Compendium_t::Events_t::clientReceiveData[clientSequence][sequence] = buf;
+		if ( (int)Compendium_t::Events_t::clientReceiveData[clientSequence].size() == numchunks )
+		{
+			std::string str = "";
+			for ( int i = 1; i <= numchunks; ++i )
+			{
+				str += Compendium_t::Events_t::clientReceiveData[clientSequence][i];
+			}
+
+			rapidjson::Document d;
+			d.Parse(str.c_str());
+			if ( !d.HasParseError() )
+			{
+				if ( d.HasMember("seq") && d.HasMember("item") )
+				{
+					if ( d["seq"].GetInt() == clientSequence )
+					{
+						for ( auto itr = d["item"].MemberBegin(); itr != d["item"].MemberEnd(); ++itr )
+						{
+							int id = std::stoi(itr->name.GetString());
+							if ( id >= 0 && id < Compendium_t::EventTags::CPDM_EVENT_TAGS_MAX )
+							{
+								for ( auto itr2 = itr->value.MemberBegin(); itr2 != itr->value.MemberEnd(); ++itr2 )
+								{
+									int itemType = std::stoi(itr2->name.GetString());
+									Sint32 value = itr2->value.GetInt();
+									if ( itemType >= Compendium_t::Events_t::kEventMonsterOffset && itemType < Compendium_t::Events_t::kEventMonsterOffset + 1000 )
+									{
+										Compendium_t::Events_t::eventUpdateMonster(0, (Compendium_t::EventTags)id, nullptr, value, false, itemType);
+										continue;
+									}
+									if ( itemType >= Compendium_t::Events_t::kEventWorldOffset && itemType < Compendium_t::Events_t::kEventWorldOffset + 1000 )
+									{
+										Compendium_t::Events_t::eventUpdateWorld(0, (Compendium_t::EventTags)id, nullptr, value, false, 
+											itemType - Compendium_t::Events_t::kEventWorldOffset);
+										continue;
+									}
+									if ( itemType >= Compendium_t::Events_t::kEventCodexOffset && itemType <= Compendium_t::Events_t::kEventCodexOffsetMax )
+									{
+										Compendium_t::Events_t::eventUpdateCodex(0, (Compendium_t::EventTags)id, nullptr, value, false, 
+											itemType);
+										continue;
+									}
+									if ( itemType < 0 || (itemType >= NUMITEMS && itemType < Compendium_t::Events_t::kEventSpellOffset) )
+									{
+										continue;
+									}
+									if ( itemType >= Compendium_t::Events_t::kEventSpellOffset )
+									{
+										Compendium_t::Events_t::eventUpdate(0, (Compendium_t::EventTags)id, SPELL_ITEM, value, false, 
+											itemType - Compendium_t::Events_t::kEventSpellOffset);
+									}
+									else
+									{
+										Compendium_t::Events_t::eventUpdate(0, (Compendium_t::EventTags)id, (ItemType)itemType, value);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			Compendium_t::Events_t::clientReceiveData.erase(clientSequence);
+
+			Compendium_t::Events_t::writeItemsSaveData();
+
+			// reply got packet
+			strcpy((char*)net_packet->data, "CMPD");
+			net_packet->data[4] = clientnum;
+			net_packet->data[5] = clientSequence;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 7;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
 	}}
 };
@@ -5575,6 +5942,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		entity->sizex = 2;
 		entity->sizey = 2;
 		entity->flags[UPDATENEEDED] = true;
+		Compendium_t::Events_t::eventUpdateMonster(player, Compendium_t::CPDM_GHOST_SPAWNED, entity, 1);
 	}},
 
 	// tried to update
@@ -5808,6 +6176,52 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		    &stats[player]->inventory);
 		dropItem(item, player);
 	}},
+
+	// item drop (greasy)
+	{ 'GRES', []() {
+		const int player = std::min(net_packet->data[25], (Uint8)(MAXPLAYERS - 1));
+		client_keepalive[player] = ticks;
+		auto item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])),
+			static_cast<Status>(SDLNet_Read32(&net_packet->data[8])),
+			SDLNet_Read32(&net_packet->data[12]),
+			SDLNet_Read32(&net_packet->data[16]),
+			SDLNet_Read32(&net_packet->data[20]),
+			net_packet->data[24],
+			&stats[player]->inventory);
+		playerGreasyDropItem(player, item);
+		if ( net_packet->data[27] == 1 )
+		{
+			// shield
+			if ( stats[player]->shield )
+			{
+				if ( stats[player]->shield->node )
+				{
+					list_RemoveNode(stats[player]->shield->node);
+				}
+				else
+				{
+					free(stats[player]->shield);
+				}
+				stats[player]->shield = nullptr;
+			}
+		}
+		else if ( net_packet->data[27] == 0 )
+		{
+			// weapon
+			if ( stats[player]->weapon )
+			{
+				if ( stats[player]->weapon->node )
+				{
+					list_RemoveNode(stats[player]->weapon->node);
+				}
+				else
+				{
+					free(stats[player]->weapon);
+				}
+				stats[player]->weapon = nullptr;
+			}
+		}
+	} },
 
 	// item drop (on death)
 	{'DIEI', [](){
@@ -6633,7 +7047,6 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 	    const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
 		Item* equipment = nullptr;
 		//messagePlayer(0, "client: %d, armornum: %d, status %d", player, net_packet->data[5], net_packet->data[6]);
-
 		switch ( net_packet->data[5] )
 		{
 			case 0:
@@ -6669,8 +7082,11 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		{
 			return;
 		}
-
-		equipment->beatitude = net_packet->data[6] - 100; // we sent the data beatitude + 100
+		int itemType = SDLNet_Read16(&net_packet->data[7]);
+		if ( (int)equipment->type == itemType ) // sanity check the item type is what was changed
+		{
+			equipment->beatitude = net_packet->data[6] - 100; // we sent the data beatitude + 100
+		}
 		//messagePlayer(0, "%d", equipment->beatitude);
 	}},
 
@@ -6697,17 +7113,19 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		{
 			//Drop gold.
 			playSoundEntity(players[player]->entity, 242 + local_rng.rand() % 4, 64);
-			auto entity = newEntity(130, 0, map.entities, nullptr); // 130 = goldbag model
+			auto entity = newEntity(amount < 5 ? 1379 : 130, 0, map.entities, nullptr); // 130 = goldbag model
 			entity->sizex = 4;
 			entity->sizey = 4;
 			entity->x = players[player]->entity->x;
 			entity->y = players[player]->entity->y;
-			entity->z = 6;
+			entity->goldAmount = amount; // amount
+			entity->z = 0;
+			entity->vel_z = (-40 - local_rng.rand() % 5) * .01;
+			entity->goldBouncing = 0;
 			entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 			entity->flags[PASSABLE] = true;
 			entity->flags[UPDATENEEDED] = true;
 			entity->behavior = &actGoldBag;
-			entity->goldAmount = amount; // amount
 		}
 	}},
 
@@ -6855,7 +7273,19 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			}
 			playSoundEntity(players[player]->entity, 162, 64);
 		}
-	}},
+	} },
+
+	{ 'CMPD', []() {
+		// client ack received the packet
+		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		const Uint8 clientSequence = net_packet->data[5];
+
+		auto find = Compendium_t::Events_t::clientDataStrings[player].find(clientSequence);
+		if ( find != Compendium_t::Events_t::clientDataStrings[player].end() )
+		{
+			Compendium_t::Events_t::clientDataStrings[player].erase(clientSequence);
+		}
+	}}
 };
 
 void serverHandlePacket()

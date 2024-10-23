@@ -700,6 +700,11 @@ int initApp(char const * const title, int fullscreen)
 			loading_done = true;
 			return 11;
 		}
+
+#ifdef EDITOR
+		modelFileNames.clear();
+#endif
+
 		models = (voxel_t**) malloc(sizeof(voxel_t*)*nummodels);
 		fp = openDataFile(modelsDirectory.c_str(), "rb");
 		for ( int c = 0; !fp->eof(); c++ )
@@ -731,6 +736,14 @@ int initApp(char const * const title, int fullscreen)
 					models[c] = model;
 				}
 			}
+#ifdef EDITOR
+			std::string filename = name;
+			if ( filename.find("models/") != std::string::npos )
+			{
+				filename = filename.substr(strlen("models/"));
+			}
+			modelFileNames[c] = filename;
+#endif
 		}
 		updateLoadingScreen(30);
 		generatePolyModels(0, nummodels, false);
@@ -747,7 +760,7 @@ int initApp(char const * const title, int fullscreen)
 #endif
 
 		updateLoadingScreen(80);
-        
+
 		loading_done = true;
 		return 0;
 	});
@@ -1278,12 +1291,6 @@ int deinitApp()
 		}
 		free(sprites);
 	}
-
-	// free achievement images
-	for (auto& item : achievementImages) {
-		SDL_FreeSurface(item.second);
-	}
-	achievementImages.clear();
 
 	// free models
 	printlog("freeing models...\n");

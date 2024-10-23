@@ -931,12 +931,15 @@ char* Item::getName() const
 
 -------------------------------------------------------------------------------*/
 
-Sint32 itemModel(const Item* const item)
+Sint32 itemModel(const Item* const item, bool shortModel)
 {
 	if ( !item || item->type < 0 || item->type >= NUMITEMS )
 	{
 		return 0;
 	}
+
+	int index = shortModel ? items[item->type].indexShort : items[item->type].index;
+
 	if ( item->type == TOOL_PLAYER_LOOT_BAG )
 	{
 		if ( colorblind_lobby )
@@ -960,14 +963,14 @@ Sint32 itemModel(const Item* const item)
 			default:
 				break;
 			}
-			return items[item->type].index + index;
+			return index + index;
 		}
 		else
 		{
-			return items[item->type].index + item->getLootBagPlayer();
+			return index + item->getLootBagPlayer();
 		}
 	}
-	return items[item->type].index + item->appearance % items[item->type].variations;
+	return index + item->appearance % items[item->type].variations;
 }
 
 /*-------------------------------------------------------------------------------
@@ -1006,7 +1009,7 @@ SDL_Surface* itemSprite(Item* const item)
 		spell_t* spell = nullptr;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
-			spell = getSpellFromItem(i, item);
+			spell = getSpellFromItem(i, item, false);
 			if ( spell )
 			{
 				break;
@@ -1170,9 +1173,152 @@ int itemCompare(const Item* const item1, const Item* const item2, bool checkAppe
 	Handles the client impulse to drop an item, returns true on free'd item.
 
 -------------------------------------------------------------------------------*/
-
 Uint32 dropItemSfxTicks[MAXPLAYERS] = { 0 };
-bool dropItem(Item* const item, const int player, const bool notifyMessage)
+
+bool playerGreasyDropItem(const int player, Item* const item)
+{
+	if ( !item || item->count == 0 ) { return false; }
+	if ( player < 0 || player >= MAXPLAYERS ) { return false; }
+	if ( players[player]->isLocalPlayer() )
+	{
+		if ( !stats[player]->EFFECTS[EFF_GREASY] ) { return false; }
+		if ( itemIsEquipped(item, player) )
+		{
+			Item** slot = itemSlot(stats[player], item);
+			if ( !(slot == &stats[player]->weapon || slot == &stats[player]->shield) )
+			{
+				return false;
+			}
+			if ( !players[player]->entity ) { return false; }
+			bool canDrop = false;
+			bool shapeshifted = false;
+			if ( players[player]->entity->effectShapeshift != NOTHING )
+			{
+				shapeshifted = true;
+			}
+			if ( !shapeshifted ||
+				(shapeshifted && slot == &stats[player]->weapon
+					&& stats[player]->type == CREATURE_IMP && itemCategory(item) == MAGICSTAFF)
+				|| (shapeshifted && slot == &stats[player]->shield
+					&& stats[player]->type == CREATURE_IMP && itemCategory(item) == SPELLBOOK) )
+			{
+				if ( item->beatitude == 0 || stats[player]->type == AUTOMATON
+					|| !shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0
+					|| shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude < 0 )
+				{
+					canDrop = true;
+				}
+			}
+
+			if ( !canDrop )
+			{
+				return false;
+			}
+			if ( multiplayer == CLIENT )
+			{
+				strcpy((char*)net_packet->data, "GRES");
+				SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
+				SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
+				SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
+				SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
+				SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
+				net_packet->data[24] = item->identified;
+				net_packet->data[25] = clientnum;
+				net_packet->data[26] = (slot == &stats[player]->weapon) ? 0 : 1;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 27;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+
+				if ( slot == &stats[player]->weapon )
+				{
+					messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(636));
+				}
+				else if ( slot == &stats[player]->shield )
+				{
+					messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(6246));
+				}
+				messagePlayer(player, MESSAGE_SPAM_MISC, Language::get(1088), item->description());
+
+				if ( slot != nullptr )
+				{
+					*slot = nullptr;
+				}
+				players[player]->paperDoll.updateSlots();
+
+				list_RemoveNode(item->node);
+
+				return true;
+			}
+		}
+	}
+
+	if ( multiplayer != CLIENT && players[player]->entity )
+	{
+		Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+		entity->flags[INVISIBLE] = true;
+		entity->flags[UPDATENEEDED] = true;
+		entity->x = players[player]->entity->x;
+		entity->y = players[player]->entity->y;
+		entity->sizex = 4;
+		entity->sizey = 4;
+		entity->yaw = players[player]->entity->yaw;
+		entity->vel_x = (1.5 + .025 * (local_rng.rand() % 11)) * cos(players[player]->entity->yaw);
+		entity->vel_y = (1.5 + .025 * (local_rng.rand() % 11)) * sin(players[player]->entity->yaw);
+		entity->vel_z = (-10 - local_rng.rand() % 20) * .01;
+		entity->flags[PASSABLE] = true;
+		entity->behavior = &actItem;
+		entity->skill[10] = item->type;
+		entity->skill[11] = item->status;
+		entity->skill[12] = item->beatitude;
+		entity->skill[13] = item->count;
+		entity->skill[14] = item->appearance;
+		entity->skill[15] = item->identified;
+		entity->parent = players[player]->entity->getUID();
+		entity->itemOriginalOwner = entity->parent;
+
+		// play sound - not in the same tick
+		if ( ticks - dropItemSfxTicks[player] > 1 )
+		{
+			playSoundEntity(players[player]->entity, 47 + local_rng.rand() % 3, 64);
+		}
+		dropItemSfxTicks[player] = ticks;
+
+		Item** slot = itemSlot(stats[player], item);
+		if ( players[player]->isLocalPlayer() )
+		{
+			if ( slot == &stats[player]->weapon )
+			{
+				messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(636));
+			}
+			else if ( slot == &stats[player]->shield )
+			{
+				messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(6246));
+			}
+			messagePlayer(player, MESSAGE_SPAM_MISC, Language::get(1088), item->description());
+		}
+
+		if ( slot != nullptr )
+		{
+			*slot = nullptr;
+		}
+		players[player]->paperDoll.updateSlots();
+
+		if ( item->node != nullptr )
+		{
+			list_RemoveNode(item->node);
+		}
+		else
+		{
+			free(item);
+		}
+		return true;
+	}
+
+	return false;
+}
+
+bool dropItem(Item* const item, const int player, const bool notifyMessage, const bool dropAll)
 {
 	if (!item)
 	{
@@ -1225,9 +1371,10 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 		oldcount = item->count;
 		if ( item->count >= 10 && (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
 		{
-			item->count = 10;
+			int qty = dropAll ? item->count : 10;
+			item->count = qty;
 			messagePlayer(player, MESSAGE_SPAM_MISC, Language::get(1088), item->description());
-			item->count = oldcount - 10;
+			item->count = oldcount - qty;
 		}
 		else if ( itemTypeIsQuiver(item->type) )
 		{
@@ -1253,7 +1400,7 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 			{
 				messagePlayer(player, MESSAGE_SPAM_MISC, Language::get(1088), item->description());
 			}
-			item->count = oldcount - 1;
+			item->count = dropAll ? 0 : (oldcount - 1);
 		}
 
 		// unequip the item
@@ -1289,14 +1436,11 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 		else if ( itemTypeIsQuiver(item->type) )
 		{
 			qtyToDrop = item->count;
-			/*if ( item->count >= 10 )
-				{
-					qtyToDrop = 10;
-				}
-				else
-				{
-					qtyToDrop = item->count;
-				}*/
+		}
+
+		if ( dropAll )
+		{
+			qtyToDrop = item->count;
 		}
 
 		Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
@@ -1754,6 +1898,10 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1089), (*slot)->getName());
 						}
 						playSoundPlayer(player, 90, 64);
+						if ( !((*slot)->identified) )
+						{
+							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_APPRAISED, (*slot)->type, 1);
+						}
 					}
 					(*slot)->identified = true;
 					return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
@@ -1862,6 +2010,10 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1089), (*slot)->getName());
 						}
 						playSoundPlayer(player, 90, 64);
+						if ( !((*slot)->identified) )
+						{
+							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_APPRAISED, (*slot)->type, 1);
+						}
 					}
 					(*slot)->identified = true;
 					return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
@@ -2383,7 +2535,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 					const Uint32 color = makeColorRGB(255, 128, 0);
 					messagePlayerColor(player, MESSAGE_STATUS, color, Language::get(3699)); // superheats
 					serverUpdateHunger(player);
-					if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
+					if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->stat_appearance == 0 )
 					{
 						steamStatisticUpdateClient(player, STEAM_STAT_SPICY, STEAM_STAT_INT, 1);
 						steamStatisticUpdateClient(player, STEAM_STAT_FASCIST, STEAM_STAT_INT, 1);
@@ -2700,7 +2852,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			break;
 		case SPELL_ITEM:
 		{
-			spell_t* spell = getSpellFromItem(player, item);
+			spell_t* spell = getSpellFromItem(player, item, true);
 			if (spell)
 			{
 				equipSpell(spell, player, item);
@@ -2786,6 +2938,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			&& (players[player] && players[player]->entity)
 			&& players[player]->entity == usedBy )
 		{
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_CONSUMED, potionType, 1);
 			if ( tryLearnPotionRecipe )
 			{
 				GenericGUI[player].alchemyLearnRecipe(potionType, true);
@@ -2823,6 +2976,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 				Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
 				itemPickup(player, emptyBottle);
 				messagePlayer(player, MESSAGE_INTERACTION, Language::get(3351), items[POTION_EMPTY].getIdentifiedName());
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BOTTLES_FROM_CONSUME, POTION_EMPTY, 1);
 				free(emptyBottle);
 			}
 		}
@@ -2994,6 +3148,7 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 		{
 			if ( !item->identified )
 			{
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_APPRAISED, item->type, 1);
 				item->identified = true;
 				item->notifyIcon = true;
 				if ( item->type == GEM_GLASS )
@@ -4676,6 +4831,16 @@ bool Item::canUnequip(const Stat* const wielder)
 		return true;
 	}*/
 
+	int player = -1;
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( stats[i] == wielder )
+		{
+			player = i;
+			break;
+		}
+	}
+
 	if ( wielder )
 	{
 		if ( wielder->type == AUTOMATON )
@@ -4686,6 +4851,13 @@ bool Item::canUnequip(const Stat* const wielder)
 		{
 			if ( beatitude > 0 )
 			{
+				if ( !identified )
+				{
+					if ( player >= 0 && players[player]->isLocalPlayer() )
+					{
+						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_APPRAISED, type, 1);
+					}
+				}
 				identified = true;
 				return false;
 			}
@@ -4698,6 +4870,13 @@ bool Item::canUnequip(const Stat* const wielder)
 
 	if (beatitude < 0)
 	{
+		if ( !identified )
+		{
+			if ( player >= 0 && players[player]->isLocalPlayer() )
+			{
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_APPRAISED, type, 1);
+			}
+		}
 		identified = true;
 		return false;
 	}
@@ -4948,6 +5127,7 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 						playSoundEntity(entity, 176, 128);
 						entity->skill[4] = player + 1; // disabled flag and spit out items.
 						serverUpdateEntitySkill(entity, 4); // update clients.
+						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_ARROWTRAPS, stats[player]->weapon->type, 1);
 					}
 
 					// degrade lockpick.
@@ -5266,18 +5446,23 @@ node_t* getMeleeWeaponItemNodeInInventory(const Stat* const myStats)
 
 bool isRangedWeapon(const Item& item)
 {
-	switch ( item.type )
+	return isRangedWeapon(item.type);
+}
+
+bool isRangedWeapon(const ItemType type)
+{
+	switch ( type )
 	{
-		case SLING:
-		case SHORTBOW:
-		case CROSSBOW:
-		case ARTIFACT_BOW:
-		case LONGBOW:
-		case COMPOUND_BOW:
-		case HEAVY_CROSSBOW:
-			return true;
-		default:
-			return false;
+	case SLING:
+	case SHORTBOW:
+	case CROSSBOW:
+	case ARTIFACT_BOW:
+	case LONGBOW:
+	case COMPOUND_BOW:
+	case HEAVY_CROSSBOW:
+		return true;
+	default:
+		return false;
 	}
 }
 
@@ -5658,6 +5843,7 @@ bool Item::shouldItemStackInShop(bool ignoreStackLimit)
 
 bool shouldInvertEquipmentBeatitude(const Stat* const wielder)
 {
+	if ( !wielder ) { return false; }
 	if ( wielder->type == SUCCUBUS || wielder->type == INCUBUS )
 	{
 		return true;

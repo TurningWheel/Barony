@@ -85,21 +85,25 @@ void initVampire(Entity* my, Stat* myStats)
 				myStats->LVL = 18;
 				myStats->GOLD = 50 + rng.rand() % 50;
 				myStats->RANDOM_GOLD = 0;
-				for ( c = 0; c < 4; ++c )
+				if ( !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
 				{
-					if ( rng.rand() % 2 == 0 )
+					for ( c = 0; c < 4; ++c )
 					{
-						Entity* entity = summonMonster(GHOUL, my->x, my->y);
-						if ( entity )
+						if ( rng.rand() % 2 == 0 )
 						{
-							entity->parent = my->getUID();
-							Stat* followerStats = entity->getStats();
-							if ( followerStats )
+							Entity* entity = summonMonster(GHOUL, my->x, my->y);
+							if ( entity )
 							{
-								strcpy(followerStats->name, "enslaved ghoul");
-								followerStats->leader_uid = entity->parent;
+								entity->parent = my->getUID();
+								Stat* followerStats = entity->getStats();
+								if ( followerStats )
+								{
+									strcpy(followerStats->name, "enslaved ghoul");
+									followerStats->setAttribute("special_npc", "enslaved ghoul");
+									followerStats->leader_uid = entity->parent;
+								}
+								entity->seedEntityRNG(rng.getU32());
 							}
-							entity->seedEntityRNG(rng.getU32());
 						}
 					}
 				}
@@ -797,14 +801,22 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( multiplayer == SERVER )
 					{
 						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
 						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
 						}
 					}
 				}
@@ -825,14 +837,22 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( multiplayer == SERVER )
 					{
 						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
 						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
 						}
 					}
 				}
@@ -853,14 +873,22 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( multiplayer == SERVER )
 					{
 						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
 						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
 						}
 					}
 				}
@@ -885,14 +913,22 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( multiplayer == SERVER )
 					{
 						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
 						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
 						}
 					}
 				}
@@ -950,14 +986,22 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( multiplayer == SERVER )
 					{
 						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
 						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
 						}
 					}
 				}
@@ -1030,19 +1074,27 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( multiplayer == SERVER )
 					{
 						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
 						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->skill[11] != entity->flags[INVISIBLE] )
-						{
-							entity->skill[11] = entity->flags[INVISIBLE];
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->skill[11] != entity->flags[INVISIBLE] )
+							{
+								entity->skill[11] = entity->flags[INVISIBLE];
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
 						}
 					}
 				}
@@ -1083,19 +1135,27 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( multiplayer == SERVER )
 					{
 						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
 						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->skill[11] != entity->flags[INVISIBLE] )
-						{
-							entity->skill[11] = entity->flags[INVISIBLE];
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->skill[11] != entity->flags[INVISIBLE] )
+							{
+								entity->skill[11] = entity->flags[INVISIBLE];
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
 						}
 					}
 				}
@@ -1124,19 +1184,27 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( multiplayer == SERVER )
 					{
 						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
 						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->skill[11] != entity->flags[INVISIBLE] )
-						{
-							entity->skill[11] = entity->flags[INVISIBLE];
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->skill[11] != entity->flags[INVISIBLE] )
+							{
+								entity->skill[11] = entity->flags[INVISIBLE];
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
 						}
 					}
 				}
@@ -1173,19 +1241,27 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( multiplayer == SERVER )
 					{
 						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
 						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->skill[11] != entity->flags[INVISIBLE] )
-						{
-							entity->skill[11] = entity->flags[INVISIBLE];
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->skill[11] != entity->flags[INVISIBLE] )
+							{
+								entity->skill[11] = entity->flags[INVISIBLE];
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
 						}
 					}
 				}
@@ -1243,19 +1319,27 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( multiplayer == SERVER )
 					{
 						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
 						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->skill[11] != entity->flags[INVISIBLE] )
-						{
-							entity->skill[11] = entity->flags[INVISIBLE];
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->skill[11] != entity->flags[INVISIBLE] )
+							{
+								entity->skill[11] = entity->flags[INVISIBLE];
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
 						}
 					}
 				}

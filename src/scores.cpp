@@ -26,6 +26,9 @@
 #include "collision.hpp"
 #include "mod_tools.hpp"
 #include "lobbies.hpp"
+#ifdef USE_PLAYFAB
+#include "playfab.hpp"
+#endif
 
 // definitions
 list_t topscores;
@@ -40,7 +43,8 @@ Sint32 conductGameChallenges[NUM_CONDUCT_CHALLENGES] = { 0 }; // additional 'con
 Sint32 gameStatistics[NUM_GAMEPLAY_STATISTICS] = { 0 }; // general saved game statistics to be stored in here.
 std::vector<std::pair<Uint32, Uint32>> achievementRhythmOfTheKnightVec[MAXPLAYERS] = {};
 bool achievementStatusRhythmOfTheKnight[MAXPLAYERS] = { false };
-std::pair<Uint32, Uint32> achievementThankTheTankPair[MAXPLAYERS] = { std::make_pair(0, 0) };
+bool achievementRhythmOfTheKnight[MAXPLAYERS] = { false };
+std::map<Uint32, Uint32> achievementThankTheTankPair[MAXPLAYERS];
 bool achievementStatusBaitAndSwitch[MAXPLAYERS] = { false };
 Uint32 achievementBaitAndSwitchTimer[MAXPLAYERS] = { 0 };
 std::unordered_set<int> clientLearnedAlchemyIngredients[MAXPLAYERS];
@@ -95,7 +99,7 @@ score_t* scoreConstructor(int player)
 	}
 	score->stats->type = stats[player]->type;
 	score->stats->sex = stats[player]->sex;
-	score->stats->appearance = stats[player]->appearance;
+	score->stats->stat_appearance = stats[player]->stat_appearance;
 	score->stats->playerRace = stats[player]->playerRace;
 	//score->stats->appearance |= stats[player]->playerRace << 8;
 	strcpy(score->stats->name, stats[player]->name);
@@ -444,7 +448,7 @@ void loadScore(score_t* score)
 	}
 	stats[0]->type = score->stats->type;
 	stats[0]->sex = score->stats->sex;
-	stats[0]->appearance = score->stats->appearance;
+	stats[0]->stat_appearance = score->stats->stat_appearance;
 	stats[0]->playerRace = score->stats->playerRace;
 	//((stats[0]->appearance & 0xFF00) >> 8);
 	//stats[0]->appearance = (stats[0]->appearance & 0xFF);
@@ -688,7 +692,7 @@ void saveAllScores(const std::string& scoresfilename)
 		fp->write(&score->stats->sex, sizeof(sex_t), 1);
 		Uint32 raceAndAppearance = 0;
 		raceAndAppearance |= (score->stats->playerRace << 8);
-		raceAndAppearance |= (score->stats->appearance);
+		raceAndAppearance |= (score->stats->stat_appearance);
 		fp->write(&raceAndAppearance, sizeof(Uint32), 1);
 		fp->write(score->stats->name, sizeof(char), 32);
 		if ( versionNumber >= 412 )
@@ -1072,6 +1076,21 @@ void loadAllScores(const std::string& scoresfilename)
 				}
 			}
 		}
+		else if ( versionNumber < 422 )
+		{
+			// legacy nummonsters
+			for ( int c = 0; c < NUMMONSTERS; c++ )
+			{
+				if ( c < 37 )
+				{
+					fp->read(&score->kills[c], sizeof(Sint32), 1);
+				}
+				else
+				{
+					score->kills[c] = 0;
+				}
+			}
+		}
 		else
 		{
 			for ( int c = 0; c < NUMMONSTERS; c++ )
@@ -1086,11 +1105,11 @@ void loadAllScores(const std::string& scoresfilename)
 		fp->read(&score->conductIlliterate, sizeof(bool), 1);
 		fp->read(&score->stats->type, sizeof(Monster), 1);
 		fp->read(&score->stats->sex, sizeof(sex_t), 1);
-		fp->read(&score->stats->appearance, sizeof(Uint32), 1);
+		fp->read(&score->stats->stat_appearance, sizeof(Uint32), 1);
 		if ( versionNumber >= 323 )
 		{
-			score->stats->playerRace = ((score->stats->appearance & 0xFF00) >> 8);
-			score->stats->appearance = (score->stats->appearance & 0xFF);
+			score->stats->playerRace = ((score->stats->stat_appearance & 0xFF00) >> 8);
+			score->stats->stat_appearance = (score->stats->stat_appearance & 0xFF);
 		}
 		fp->read(&score->stats->name, sizeof(char), 32);
 		if ( versionNumber >= 412 )
@@ -1593,7 +1612,7 @@ int saveGameOld(int saveIndex)
 		fp->write(&stats[player]->sex, sizeof(sex_t), 1);
 		Uint32 raceAndAppearance = 0;
 		raceAndAppearance |= (stats[player]->playerRace << 8);
-		raceAndAppearance |= (stats[player]->appearance);
+		raceAndAppearance |= (stats[player]->stat_appearance);
 		fp->write(&raceAndAppearance, sizeof(Uint32), 1);
 		fp->write(stats[player]->name, sizeof(char), 32);
 		fp->write(&stats[player]->HP, sizeof(Sint32), 1);
@@ -1952,7 +1971,7 @@ int saveGameOld(int saveIndex)
 					// record follower stats
 					fp->write(&followerStats->type, sizeof(Monster), 1);
 					fp->write(&followerStats->sex, sizeof(sex_t), 1);
-					fp->write(&followerStats->appearance, sizeof(Uint32), 1);
+					fp->write(&followerStats->stat_appearance, sizeof(Uint32), 1);
 					fp->write(followerStats->name, sizeof(char), 32);
 					fp->write(&followerStats->HP, sizeof(Sint32), 1);
 					fp->write(&followerStats->MAXHP, sizeof(Sint32), 1);
@@ -2600,11 +2619,11 @@ int loadGameOld(int player, int saveIndex)
 	}
 	fp->read(&stats[player]->type, sizeof(Monster), 1);
 	fp->read(&stats[player]->sex, sizeof(sex_t), 1);
-	fp->read(&stats[player]->appearance, sizeof(Uint32), 1);
+	fp->read(&stats[player]->stat_appearance, sizeof(Uint32), 1);
 	if ( versionNumber >= 323 )
 	{
-		stats[player]->playerRace = ((stats[player]->appearance & 0xFF00) >> 8);
-		stats[player]->appearance = (stats[player]->appearance & 0xFF);
+		stats[player]->playerRace = ((stats[player]->stat_appearance & 0xFF00) >> 8);
+		stats[player]->stat_appearance = (stats[player]->stat_appearance & 0xFF);
 	}
 	fp->read(&stats[player]->name, sizeof(char), 32);
 	fp->read(&stats[player]->HP, sizeof(Sint32), 1);
@@ -3021,7 +3040,7 @@ list_t* loadGameFollowersOld(int saveIndex)
 			// read follower attributes
 			fp->read(&followerStats->type, sizeof(Monster), 1);
 			fp->read(&followerStats->sex, sizeof(sex_t), 1);
-			fp->read(&followerStats->appearance, sizeof(Uint32), 1);
+			fp->read(&followerStats->stat_appearance, sizeof(Uint32), 1);
 			fp->read(&followerStats->name, sizeof(char), 32);
 			fp->read(&followerStats->HP, sizeof(Sint32), 1);
 			fp->read(&followerStats->MAXHP, sizeof(Sint32), 1);
@@ -3438,11 +3457,11 @@ void setDefaultPlayerConducts()
 	for ( int c = 0; c < MAXPLAYERS; ++c )
 	{
 		achievementStatusRhythmOfTheKnight[c] = false;
+		achievementRhythmOfTheKnight[c] = false;
 		achievementStatusStrobe[c] = false;
 		achievementStatusThankTheTank[c] = false;
 		achievementRhythmOfTheKnightVec[c].clear();
-		achievementThankTheTankPair[c].first = 0;
-		achievementThankTheTankPair[c].second = 0;
+		achievementThankTheTankPair[c].clear();
 		achievementStrobeVec[c].clear();
 		achievementStatusBaitAndSwitch[c] = false;
 		achievementBaitAndSwitchTimer[c] = 0;
@@ -3723,7 +3742,7 @@ void updateGameplayStatisticsInMainLoop()
 		std::unordered_set<int> bowList;
 		std::unordered_set<int> utilityBeltList;
 		int badAndBeautiful = -1;
-		if ( stats[clientnum]->appearance == 0 && (stats[clientnum]->type == INCUBUS || stats[clientnum]->type == SUCCUBUS) )
+		if ( stats[clientnum]->stat_appearance == 0 && (stats[clientnum]->type == INCUBUS || stats[clientnum]->type == SUCCUBUS) )
 		{
 			if ( stats[clientnum]->playerRace == RACE_INCUBUS || stats[clientnum]->playerRace == RACE_SUCCUBUS )
 			{
@@ -3973,7 +3992,7 @@ bool anySaveFileExists()
 
 void updateAchievementRhythmOfTheKnight(int player, Entity* target, bool playerIsHit)
 {
-	if ( achievementStatusRhythmOfTheKnight[player] || multiplayer == CLIENT
+	if ( multiplayer == CLIENT
 		|| player < 0 || player >= MAXPLAYERS )
 	{
 		return;
@@ -4008,7 +4027,11 @@ void updateAchievementRhythmOfTheKnight(int player, Entity* target, bool playerI
 						{
 							//messagePlayer(0, "achievement get!, time taken %f", timeTaken);
 							achievementStatusRhythmOfTheKnight[player] = true;
-							steamAchievementClient(player, "BARONY_ACH_RHYTHM_OF_THE_KNIGHT");
+							if ( !achievementRhythmOfTheKnight[player] )
+							{
+								steamAchievementClient(player, "BARONY_ACH_RHYTHM_OF_THE_KNIGHT");
+								achievementRhythmOfTheKnight[player] = true;
+							}
 						}
 						achievementRhythmOfTheKnightVec[player].clear();
 					}
@@ -4060,7 +4083,7 @@ void updateAchievementBaitAndSwitch(int player, bool isTeleporting)
 		return;
 	}
 
-	if ( stats[player]->playerRace == RACE_SUCCUBUS && stats[player]->appearance != 0 )
+	if ( stats[player]->playerRace == RACE_SUCCUBUS && stats[player]->stat_appearance != 0 )
 	{
 		return;
 	}
@@ -4085,29 +4108,52 @@ void updateAchievementThankTheTank(int player, Entity* target, bool targetKilled
 	{
 		return;
 	}
-	if ( achievementStatusThankTheTank[player] || multiplayer == CLIENT )
+	if ( !target || target->behavior != &actMonster )
+	{
+		return;
+	}
+	if ( multiplayer == CLIENT )
 	{
 		return;
 	}
 
+
+	auto& entry = achievementThankTheTankPair[player][target->getUID()];
 	if ( !targetKilled )
 	{
-		achievementThankTheTankPair[player] = std::make_pair(ticks, target->getUID()); // track the monster UID defending against
+		entry = ticks;
 		//messagePlayer(0, "pair: %d, %d", achievementThankTheTankPair[player].first, achievementThankTheTankPair[player].second);
 	}
-	else if ( achievementThankTheTankPair[player].first != 0
-		&& achievementThankTheTankPair[player].second != 0 ) // check there is a ticks/UID entry.
+	else if ( entry != 0 ) // check there is a ticks/UID entry.
 	{
 		if ( players[player] && players[player]->entity )
 		{
 			if ( players[player]->entity->checkEnemy(target) )
 			{
-				if ( target->getUID() == achievementThankTheTankPair[player].second )
+				// check timestamp within 3 seconds.
+				if ( (ticks - entry) / 50.f < 3.f )
 				{
-					// same target dying, check timestamp within 3 seconds.
-					if ( (ticks - achievementThankTheTankPair[player].first) / 50.f < 3.f )
+					achievementStatusThankTheTank[player] = true;
+					achievementThankTheTankPair[player].erase(target->getUID());
+					if ( players[player]->mechanics.allowedRaiseBlockingAgainstEntity(*target) )
 					{
-						achievementStatusThankTheTank[player] = true;
+						int skillLVL = 3 * (stats[player]->getProficiency(PRO_SHIELD) / 20);
+						if ( local_rng.rand() % (5 + skillLVL) == 0 )
+						{
+							bool increase = true;
+							if ( stats[player]->shield && itemCategory(stats[player]->shield) != ARMOR )
+							{
+								if ( stats[player]->getProficiency(PRO_SHIELD) >= SKILL_LEVEL_SKILLED )
+								{
+									increase = false;
+								}
+							}
+							if ( increase )
+							{
+								players[player]->entity->increaseSkill(PRO_SHIELD);
+								players[player]->mechanics.enemyRaisedBlockingAgainst[target->getUID()]++;
+							}
+						}
 					}
 				}
 			}
@@ -4812,6 +4858,16 @@ void AchievementObserver::updateData()
 		Entity* mapCreature = (Entity*)node->element;
 		if ( mapCreature && mapCreature->behavior == &actMonster )
 		{
+			if ( auto stats = mapCreature->getStats() )
+			{
+				if ( stats->type == SPELLBOT
+					|| stats->type == SENTRYBOT
+					|| stats->type == DUMMYBOT
+					|| stats->type == GYROBOT )
+				{
+					continue;
+				}
+			}
 			monstersGeneratedOnLevel.push_back(mapCreature);
 		}
 	}
@@ -5076,6 +5132,26 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 {
 	switch ( achievement )
 	{
+		case BARONY_ACH_BY_THE_BOOK:
+			if ( player == clientnum )
+			{
+				if ( achEvent == BY_THE_BOOK_COMPENDIUM_PAGE )
+				{
+					playerAchievements[player].ticksByTheBookViewed = ticks;
+				}
+				else if ( achEvent == BY_THE_BOOK_BREW )
+				{
+					if ( playerAchievements[player].ticksByTheBookViewed != 0
+						&& ticks > playerAchievements[player].ticksByTheBookViewed )
+					{
+						if ( (ticks - playerAchievements[player].ticksByTheBookViewed) < TICKS_PER_SECOND * 10 )
+						{
+							awardAchievement(player, achievement);
+						}
+					}
+				}
+			}
+			break;
 		case BARONY_ACH_BACK_TO_BASICS:
 			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 			{
@@ -5274,7 +5350,7 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 			{
 				if ( !client_disconnected[i] )
 				{
-					if ( stats[i] && stats[i]->playerRace != RACE_HUMAN && stats[i]->appearance == 0 )
+					if ( stats[i] && stats[i]->playerRace != RACE_HUMAN && stats[i]->stat_appearance == 0 )
 					{
 						races.insert(stats[i]->playerRace);
 					}
@@ -5347,7 +5423,7 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 			break;
 	}
 #ifdef DEBUG_ACHIEVEMENTS
-	messagePlayer(player, MESSAGE_DEBUG, "[DEBUG]: Processed achievement %d, event: %d", achievement, achEvent);
+	//messagePlayer(player, MESSAGE_DEBUG, "[DEBUG]: Processed achievement %d, event: %d", achievement, achEvent);
 #endif
 }
 
@@ -5389,6 +5465,7 @@ void AchievementObserver::clearPlayerAchievementData()
 		playerAchievements[i].updatedBountyTargets = false;
 		playerAchievements[i].wearingBountyHat = false;
 		playerAchievements[i].totalKillsTickUpdate = false;
+		playerAchievements[i].ticksByTheBookViewed = 0;
 	}
 }
 
@@ -5459,6 +5536,9 @@ void AchievementObserver::awardAchievement(int player, int achievement)
 			break;
 		case BARONY_ACH_SPROUTS:
 			steamAchievementClient(player, "BARONY_ACH_SPROUTS");
+			break;
+		case BARONY_ACH_BY_THE_BOOK:
+			steamAchievementClient(player, "BARONY_ACH_BY_THE_BOOK");
 			break;
 		default:
 			messagePlayer(player, MESSAGE_DEBUG, "[WARNING]: Unhandled achievement: %d", achievement);
@@ -5599,12 +5679,17 @@ void AchievementObserver::updateGlobalStat(int index, int value)
 	{
 		return;
 	}
+#ifndef DEBUG_ACHIEVEMENTS
 	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 		|| conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS]
 		|| Mods::disableSteamAchievements )
 	{
 		return;
 	}
+#endif
+#ifdef USE_PLAYFAB
+	playfabUser.globalStat(index, value);
+#endif
 #if defined USE_EOS
 	EOS.queueGlobalStatUpdate(index, value);
 #endif
@@ -5680,6 +5765,12 @@ SteamGlobalStatIndexes getIndexForDeathType(int type)
 			return STEAM_GSTAT_DEATHS_GYROBOT;
 		case DUMMYBOT:
 			return STEAM_GSTAT_DEATHS_DUMMYBOT;
+		case BAT_SMALL:
+			return STEAM_GSTAT_DEATHS_BAT;
+		case BUGBEAR:
+			return STEAM_GSTAT_DEATHS_BUGBEAR;
+		case MIMIC:
+			return STEAM_GSTAT_DEATHS_MIMIC;
 		default:
 			return STEAM_GSTAT_INVALID;
 	}
@@ -5748,7 +5839,7 @@ void SaveGameInfo::computeHash(const int playernum, Uint32& hash)
 	{
 		hash += (Uint32)((Uint32)stats->type << (shift % 32)); ++shift;
 		hash += (Uint32)((Uint32)stats->sex << (shift % 32)); ++shift;
-		hash += (Uint32)((Uint32)stats->appearance << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)stats->statscore_appearance << (shift % 32)); ++shift;
 
 		hash += (Uint32)((Uint32)stats->HP << (shift % 32)); ++shift;
 		hash += (Uint32)((Uint32)stats->maxHP << (shift % 32)); ++shift;
@@ -6009,7 +6100,7 @@ int SaveGameInfo::populateFromSession(const int playernum)
 			player.stats.name = stats[c]->name;
 			player.stats.type = stats[c]->type;
 			player.stats.sex = stats[c]->sex;
-			player.stats.appearance = stats[c]->appearance;
+			player.stats.statscore_appearance = stats[c]->stat_appearance;
 			player.stats.HP = stats[c]->HP;
 			player.stats.maxHP = stats[c]->MAXHP;
 			player.stats.MP = stats[c]->MP;
@@ -6053,6 +6144,22 @@ int SaveGameInfo::populateFromSession(const int playernum)
 				h2.second.numKills = h.second.numKills;
 				h2.second.numAggressions = h.second.numAggressions;
 				h2.second.numAccessories = h.second.numAccessories;
+			}
+			for ( auto& pair : ::players[c]->mechanics.itemDegradeRng )
+			{
+				player.itemDegradeRNG.push_back(pair);
+			}
+			player.sustainedSpellMPUsed = ::players[c]->mechanics.sustainedSpellMPUsed;
+
+			for ( auto& pair : ::players[c]->compendiumProgress.itemEvents )
+			{
+				player.compendium_item_events.push_back(std::make_pair(pair.first, std::vector<int>()));
+				auto& vec_entry = player.compendium_item_events.back();
+				for ( auto& itemValue : pair.second )
+				{
+					vec_entry.second.push_back(itemValue.first);
+					vec_entry.second.push_back(itemValue.second);
+				}
 			}
 
 			for ( auto& loot : stats[c]->player_lootbags )
@@ -6148,7 +6255,7 @@ int SaveGameInfo::populateFromSession(const int playernum)
 					stats.name = follower->name;
 					stats.type = follower->type;
 					stats.sex = follower->sex;
-					stats.appearance = follower->appearance;
+					stats.statscore_appearance = follower->stat_appearance;
 					stats.HP = follower->HP;
 					stats.maxHP = follower->MAXHP;
 					stats.MP = follower->MP;
@@ -6239,6 +6346,7 @@ int SaveGameInfo::populateFromSession(const int playernum)
 	{
 		info->additional_data.push_back(std::make_pair("game_scenario", gameModeManager.currentSession.challengeRun.scenarioStr));
 	}
+
 
 	if ( info->game_version >= 410 )
 	{
@@ -6424,7 +6532,7 @@ std::string SaveGameInfo::serializeToOnlineHiscore(const int playernum, const in
 		statsObj.AddMember("LVL", myStats.LVL, d.GetAllocator());
 		statsObj.AddMember("EXP", myStats.EXP, d.GetAllocator());
 		statsObj.AddMember("race", player.race, d.GetAllocator());
-		statsObj.AddMember("appearance", myStats.appearance, d.GetAllocator());
+		statsObj.AddMember("appearance", myStats.statscore_appearance, d.GetAllocator());
 		statsObj.AddMember("sex", myStats.sex, d.GetAllocator());
 		statsObj.AddMember("class", player.char_class, d.GetAllocator());
 
@@ -6619,6 +6727,10 @@ int loadGame(int player, const SaveGameInfo& info) {
 	// load player data
 	client_classes[statsPlayer] = info.players[player].char_class;
 	stats[statsPlayer]->playerRace = info.players[player].race;
+	for ( int c = 0; c < NUMMONSTERS; ++c )
+	{
+		kills[c] = 0;
+	}
 	for (int c = 0; c < NUMMONSTERS && c < info.players[player].kills.size(); ++c) {
 		kills[c] = info.players[player].kills[c];
 	}
@@ -6675,7 +6787,7 @@ int loadGame(int player, const SaveGameInfo& info) {
 	auto& p = info.players[player].stats;
 	stringCopy(stats[statsPlayer]->name, p.name.c_str(), sizeof(Stat::name), p.name.size());
 	stats[statsPlayer]->sex = static_cast<sex_t>(p.sex);
-	stats[statsPlayer]->appearance = p.appearance;
+	stats[statsPlayer]->stat_appearance = p.statscore_appearance;
 	stats[statsPlayer]->HP = p.HP;
 	stats[statsPlayer]->MAXHP = p.maxHP;
 	stats[statsPlayer]->MP = p.MP;
@@ -6893,6 +7005,37 @@ int loadGame(int player, const SaveGameInfo& info) {
 		}
 	}
 
+	// compendium progress
+	{
+		auto& compendiumProgress = players[statsPlayer]->compendiumProgress;
+		for ( auto& compendium_item_events : info.players[player].compendium_item_events )
+		{
+			for ( auto itr = compendium_item_events.second.begin(); itr != compendium_item_events.second.end(); )
+			{
+				int first = *itr;
+				++itr;
+				if ( itr != compendium_item_events.second.end() )
+				{
+					Sint32 second = *itr;
+					compendiumProgress.itemEvents[compendium_item_events.first][first] = second;
+				}
+				++itr;
+			}
+		}
+	}
+
+	// player rng stuff
+	{
+		auto& mechanics = players[statsPlayer]->mechanics;
+		mechanics.itemDegradeRng.clear();
+		for ( auto& pair : info.players[player].itemDegradeRNG )
+		{
+			mechanics.itemDegradeRng[pair.first] = pair.second;
+		}
+		mechanics.sustainedSpellMPUsed = 0;
+		mechanics.sustainedSpellMPUsed = info.players[player].sustainedSpellMPUsed;
+	}
+
 	Player::Minimap_t::mapDetails = info.map_messages;
 
 	if ( !info.hiscore_dummy_loading )
@@ -6953,7 +7096,7 @@ list_t* loadGameFollowers(const SaveGameInfo& info) {
 				sizeof(Stat::name), follower.name.size());
 			stats->type = (Monster)follower.type;
 			stats->sex = (sex_t)follower.sex;
-			stats->appearance = follower.appearance;
+			stats->stat_appearance = follower.statscore_appearance;
 			stats->HP = follower.HP;
 			stats->MAXHP = follower.maxHP;
 			stats->MP = follower.MP;
@@ -7101,7 +7244,7 @@ int SaveGameInfo::Player::isCharacterValidFromDLC()
 	{
 		return VALID_OK_CHARACTER;
 	}
-	else if ( this->race > RACE_HUMAN && this->stats.appearance == 1 )
+	else if ( this->race > RACE_HUMAN && this->stats.statscore_appearance == 1 )
 	{
 		return VALID_OK_CHARACTER; // aesthetic only option.
 	}

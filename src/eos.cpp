@@ -2945,28 +2945,28 @@ void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQuer
 
 		if (AchievementDef->bIsHidden)
 		{
-			achievementHidden.emplace(std::string(AchievementDef->AchievementId));
+			//achievementHidden.emplace(std::string(AchievementDef->AchievementId));
 		}
 
 		if (AchievementDef->UnlockedDisplayName)
 		{
-			achievementNames.emplace(std::make_pair(
+			/*achievementNames.emplace(std::make_pair(
 				std::string(AchievementDef->AchievementId),
-				std::string(AchievementDef->UnlockedDisplayName)));
+				std::string(AchievementDef->UnlockedDisplayName)));*/
 		}
 
 		if (AchievementDef->UnlockedDescription)
 		{
-			auto result = achievementDesc.emplace(std::make_pair(
-				std::string(AchievementDef->AchievementId),
-				std::string(AchievementDef->UnlockedDescription)));
-			if (result.second == true) // insertion success
-			{
-				if (result.first->second.back() != '.') // add punctuation if missing.
-				{
-					result.first->second += '.';
-				}
-			}
+			//auto result = achievementDesc.emplace(std::make_pair(
+			//	std::string(AchievementDef->AchievementId),
+			//	std::string(AchievementDef->UnlockedDescription)));
+			//if (result.second == true) // insertion success
+			//{
+			//	if (result.first->second.back() != '.') // add punctuation if missing.
+			//	{
+			//		result.first->second += '.';
+			//	}
+			//}
 		}
 
 		// Release Achievement Definition
@@ -3011,42 +3011,29 @@ void EOSFuncs::OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPl
 		{
 			if (PlayerAchievement->UnlockTime != EOS_ACHIEVEMENTS_ACHIEVEMENT_UNLOCKTIME_UNDEFINED)
 			{
-				achievementUnlockedLookup.insert(std::string(PlayerAchievement->AchievementId));
-
-				auto find = achievementUnlockTime.find(PlayerAchievement->AchievementId);
-				if (find == achievementUnlockTime.end())
-				{
-					achievementUnlockTime.emplace(std::make_pair(std::string(PlayerAchievement->AchievementId), PlayerAchievement->UnlockTime));
-				}
-				else
-				{
-					find->second = PlayerAchievement->UnlockTime;
-				}
+				Compendium_t::AchievementData_t::achievementUnlockedLookup.insert(PlayerAchievement->AchievementId);
+				Compendium_t::achievements[PlayerAchievement->AchievementId].unlockTime = PlayerAchievement->UnlockTime;
+				auto& achData = Compendium_t::achievements[PlayerAchievement->AchievementId];
+				achData.unlocked = true;
+				achData.unlockTime = PlayerAchievement->UnlockTime;
 			}
 
 			if (PlayerAchievement->StatInfoCount > 0)
 			{
-				for (int statNum = 0; statNum < NUM_STEAM_STATISTICS; ++statNum)
+				/*for (int statNum = 0; statNum < NUM_STEAM_STATISTICS; ++statNum)
 				{
 					if (steamStatAchStringsAndMaxVals[statNum].first.compare(PlayerAchievement->AchievementId) == 0)
 					{
-						auto find = achievementProgress.find(PlayerAchievement->AchievementId);
-						if (find == achievementProgress.end())
-						{
-							achievementProgress.emplace(std::make_pair(std::string(PlayerAchievement->AchievementId), statNum));
-						}
-						else
-						{
-							find->second = statNum;
-						}
+						Compendium_t::achievements[PlayerAchievement->AchievementId].achievementProgress = statNum;
 						break;
 					}
-				}
+				}*/
 			}
 		}
 		EOS_Achievements_PlayerAchievement_Release(PlayerAchievement);
 	}
 
+	Compendium_t::AchievementData_t::achievementsNeedFirstData = false;
 	EOS.Achievements.playerDataLoaded = true;
 	sortAchievementsForDisplay();
 
@@ -3119,9 +3106,9 @@ void EOSFuncs::loadAchievementData()
 	if (!Achievements.definitionsLoaded)
 	{
 		Achievements.definitionsAwaitingCallback = true;
-		achievementNames.clear();
-		achievementDesc.clear();
-		achievementHidden.clear();
+		//achievementNames.clear();
+		//achievementDesc.clear();
+		//achievementHidden.clear();
 		EOS_Achievements_QueryDefinitionsOptions Options{};
 		Options.ApiVersion = EOS_ACHIEVEMENTS_QUERYDEFINITIONS_API_LATEST;
 		//Options.EpicUserId = EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str());
@@ -3179,7 +3166,7 @@ void EOSFuncs::ingestStat(int stat_num, int value)
 
 static void EOS_CALL OnIngestGlobalStatComplete(const EOS_Stats_IngestStatCompleteCallbackInfo* data)
 {
-	assert(data != NULL);
+	/*assert(data != NULL);
 	if (data->ResultCode == EOS_EResult::EOS_Success)
 	{
 		EOSFuncs::logInfo("Successfully stored global stats");
@@ -3197,12 +3184,12 @@ static void EOS_CALL OnIngestGlobalStatComplete(const EOS_Stats_IngestStatComple
 	{
 		EOSFuncs::logError("OnIngestGlobalStatComplete: Callback failure: %d", static_cast<int>(data->ResultCode));
 	}
-	EOS.StatGlobalManager.bDataQueued = true;
+	EOS.StatGlobalManager.bDataQueued = true;*/
 }
 
 void EOSFuncs::queueGlobalStatUpdate(int stat_num, int value)
 {
-	if (stat_num <= STEAM_GSTAT_INVALID || stat_num >= NUM_GLOBAL_STEAM_STATISTICS)
+	/*if (stat_num <= STEAM_GSTAT_INVALID || stat_num >= NUM_GLOBAL_STEAM_STATISTICS)
 	{
 		return;
 	}
@@ -3211,7 +3198,7 @@ void EOSFuncs::queueGlobalStatUpdate(int stat_num, int value)
 		return;
 	}
 	g_SteamGlobalStats[stat_num].m_iValue += value;
-	StatGlobalManager.bDataQueued = true;
+	StatGlobalManager.bDataQueued = true;*/
 }
 
 void EOSFuncs::StatGlobal_t::updateQueuedStats()
@@ -3231,55 +3218,55 @@ void EOSFuncs::StatGlobal_t::updateQueuedStats()
 
 void EOSFuncs::ingestGlobalStats()
 {
-	if (StatGlobalManager.bIsDisabled)
-	{
-		return;
-	}
-	if (!ServerPlatformHandle)
-	{
-		return;
-	}
+	//if (StatGlobalManager.bIsDisabled)
+	//{
+	//	return;
+	//}
+	//if (!ServerPlatformHandle)
+	//{
+	//	return;
+	//}
 
-	Uint32 numStats = 0;
-	std::vector<std::string> StatNames;
-	for (Uint32 i = 0; i < NUM_GLOBAL_STEAM_STATISTICS; ++i)
-	{
-		if (g_SteamGlobalStats[i].m_iValue > 0)
-		{
-			StatNames.push_back(g_SteamGlobalStats[i].m_pchStatName);
-			++numStats;
-		}
-	}
+	//Uint32 numStats = 0;
+	//std::vector<std::string> StatNames;
+	//for (Uint32 i = 0; i < NUM_GLOBAL_STEAM_STATISTICS; ++i)
+	//{
+	//	if (g_SteamGlobalStats[i].m_iValue > 0)
+	//	{
+	//		StatNames.push_back(g_SteamGlobalStats[i].m_pchStatName);
+	//		++numStats;
+	//	}
+	//}
 
-	if (numStats == 0)
-	{
-		return;
-	}
+	//if (numStats == 0)
+	//{
+	//	return;
+	//}
 
-	EOS_Stats_IngestData* StatsToIngest = new EOS_Stats_IngestData[numStats];
-	Uint32 currentIndex = 0;
-	for (Uint32 i = 0; i < NUM_GLOBAL_STEAM_STATISTICS && currentIndex < StatNames.size(); ++i)
-	{
-		if (g_SteamGlobalStats[i].m_iValue > 0)
-		{
-			StatsToIngest[currentIndex].ApiVersion = EOS_STATS_INGESTDATA_API_LATEST;
-			StatsToIngest[currentIndex].StatName = StatNames[currentIndex].c_str();
-			StatsToIngest[currentIndex].IngestAmount = g_SteamGlobalStats[i].m_iValue;
-			//logInfo("Updated %s | %d", StatsToIngest[currentIndex].StatName, StatsToIngest[currentIndex].IngestAmount);
-			++currentIndex;
-		}
-	}
+	//EOS_Stats_IngestData* StatsToIngest = new EOS_Stats_IngestData[numStats];
+	//Uint32 currentIndex = 0;
+	//for (Uint32 i = 0; i < NUM_GLOBAL_STEAM_STATISTICS && currentIndex < StatNames.size(); ++i)
+	//{
+	//	if (g_SteamGlobalStats[i].m_iValue > 0)
+	//	{
+	//		StatsToIngest[currentIndex].ApiVersion = EOS_STATS_INGESTDATA_API_LATEST;
+	//		StatsToIngest[currentIndex].StatName = StatNames[currentIndex].c_str();
+	//		StatsToIngest[currentIndex].IngestAmount = g_SteamGlobalStats[i].m_iValue;
+	//		//logInfo("Updated %s | %d", StatsToIngest[currentIndex].StatName, StatsToIngest[currentIndex].IngestAmount);
+	//		++currentIndex;
+	//	}
+	//}
 
-	EOS_Stats_IngestStatOptions Options{};
-	Options.ApiVersion = EOS_STATS_INGESTSTAT_API_LATEST;
-	Options.Stats = StatsToIngest;
-	Options.StatsCount = numStats;
-	Options.LocalUserId = StatGlobalManager.getProductUserIdHandle();
-	Options.TargetUserId = StatGlobalManager.getProductUserIdHandle();
+	//EOS_Stats_IngestStatOptions Options{};
+	//Options.ApiVersion = EOS_STATS_INGESTSTAT_API_LATEST;
+	//Options.Stats = StatsToIngest;
+	//Options.StatsCount = numStats;
+	//Options.LocalUserId = StatGlobalManager.getProductUserIdHandle();
+	//Options.TargetUserId = StatGlobalManager.getProductUserIdHandle();
 
-	EOS_Stats_IngestStat(EOS_Platform_GetStatsInterface(ServerPlatformHandle), &Options, nullptr, OnIngestGlobalStatComplete);
+	//EOS_Stats_IngestStat(EOS_Platform_GetStatsInterface(ServerPlatformHandle), &Options, nullptr, OnIngestGlobalStatComplete);
 
-	delete[] StatsToIngest;
+	//delete[] StatsToIngest;
 }
 
 void EOS_CALL EOSFuncs::OnQueryAllStatsCallback(const EOS_Stats_OnQueryStatsCompleteCallbackInfo* data)
@@ -3557,6 +3544,20 @@ void EOSFuncs::Accounts_t::handleLogin()
 				}
 			}
 			AccountAuthenticationCompleted = EOS_EResult::EOS_Success;
+		}
+		else
+		{
+			if ( popupType == POPUP_TOAST )
+			{
+				UIToastNotification* n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT);
+				if ( n )
+				{
+					if ( n->getDisplayedText() != "Logged in successfully!" )
+					{
+						n->updateCardEvent(false, true);
+					}
+				}
+			}
 		}
 		return;
 	}
@@ -4062,34 +4063,34 @@ void EOSFuncs::StatGlobal_t::init()
 
 void EOSFuncs::StatGlobal_t::queryGlobalStatUser()
 {
-	init();
+	//init();
 
-	// Query Player Stats
-	EOS_Stats_QueryStatsOptions StatsQueryOptions{};
-	StatsQueryOptions.ApiVersion = EOS_STATS_QUERYSTATS_API_LATEST;
-	StatsQueryOptions.LocalUserId = getProductUserIdHandle();
-	StatsQueryOptions.TargetUserId = getProductUserIdHandle();
+	//// Query Player Stats
+	//EOS_Stats_QueryStatsOptions StatsQueryOptions{};
+	//StatsQueryOptions.ApiVersion = EOS_STATS_QUERYSTATS_API_LATEST;
+	//StatsQueryOptions.LocalUserId = getProductUserIdHandle();
+	//StatsQueryOptions.TargetUserId = getProductUserIdHandle();
 
-	// Optional params
-	StatsQueryOptions.StartTime = EOS_STATS_TIME_UNDEFINED;
-	StatsQueryOptions.EndTime = EOS_STATS_TIME_UNDEFINED;
+	//// Optional params
+	//StatsQueryOptions.StartTime = EOS_STATS_TIME_UNDEFINED;
+	//StatsQueryOptions.EndTime = EOS_STATS_TIME_UNDEFINED;
 
-	StatsQueryOptions.StatNamesCount = NUM_GLOBAL_STEAM_STATISTICS;
-	StatsQueryOptions.StatNames = new const char* [NUM_GLOBAL_STEAM_STATISTICS];
+	//StatsQueryOptions.StatNamesCount = NUM_GLOBAL_STEAM_STATISTICS;
+	//StatsQueryOptions.StatNames = new const char* [NUM_GLOBAL_STEAM_STATISTICS];
 
-	for (int i = 0; i < NUM_GLOBAL_STEAM_STATISTICS; ++i)
-	{
-		StatsQueryOptions.StatNames[i] = g_SteamGlobalStats[i].m_pchStatName;
-	}
+	//for (int i = 0; i < NUM_GLOBAL_STEAM_STATISTICS; ++i)
+	//{
+	//	StatsQueryOptions.StatNames[i] = g_SteamGlobalStats[i].m_pchStatName;
+	//}
 
-	if (EOS.ServerPlatformHandle)
-	{
-		return;
-	}
+	//if (EOS.ServerPlatformHandle)
+	//{
+	//	return;
+	//}
 
-	EOS_Stats_QueryStats(EOS_Platform_GetStatsInterface(EOS.ServerPlatformHandle),
-		&StatsQueryOptions, nullptr, OnQueryGlobalStatsCallback);
-	delete[] StatsQueryOptions.StatNames;
+	//EOS_Stats_QueryStats(EOS_Platform_GetStatsInterface(EOS.ServerPlatformHandle),
+	//	&StatsQueryOptions, nullptr, OnQueryGlobalStatsCallback);
+	//delete[] StatsQueryOptions.StatNames;
 }
 
 #endif //USE_EOS

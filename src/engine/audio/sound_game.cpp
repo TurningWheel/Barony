@@ -36,7 +36,7 @@ FMOD::ChannelGroup* getChannelGroupForSoundIndex(Uint32 snd)
 	{
 		return soundEnvironment_group;
 	}
-	if ( snd == 149 )
+	if ( snd == 149 || snd == 133 )
 	{
 		return soundAmbient_group;
 	}
@@ -63,7 +63,7 @@ FMOD::Channel* playSoundPlayer(int player, Uint16 snd, Uint8 vol)
 	{
 		return playSound(snd, vol);
 	}
-	else if ( multiplayer == SERVER )
+	else if ( multiplayer == SERVER && vol > 0 )
 	{
 		if ( client_disconnected[player] || player <= 0 )
 		{
@@ -98,7 +98,7 @@ FMOD::Channel* playSoundNotificationPlayer(int player, Uint16 snd, Uint8 vol)
 	{
 		return playSoundNotification(snd, vol);
 	}
-	else if ( multiplayer == SERVER )
+	else if ( multiplayer == SERVER && vol > 0 )
 	{
 		if ( client_disconnected[player] || player <= 0 )
 		{
@@ -130,7 +130,7 @@ FMOD::Channel* playSoundPos(real_t x, real_t y, Uint16 snd, Uint8 vol)
 {
 	auto result = playSoundPosLocal(x, y, snd, vol);
 
-	if (multiplayer == SERVER)
+	if (multiplayer == SERVER && vol > 0)
 	{
 		for (int c = 1; c < MAXPLAYERS; c++)
 		{
@@ -207,7 +207,7 @@ FMOD::Channel* playSoundPosLocal(real_t x, real_t y, Uint16 snd, Uint8 vol)
 				//printlog("Channel index: %d, audibility: %f, vol: %f, pos x: %.2f | y: %.2f", i, audibility, volume, playingPosition.z, playingPosition.x);
 				if ( abs(volume - (vol / 255.f)) < 0.05 )
 				{
-					if ( sqrt(pow(playingPosition.x - position.x, 2) + pow(playingPosition.z - position.z, 2)) <= 1.5 )
+					if ( (pow(playingPosition.x - position.x, 2) + pow(playingPosition.z - position.z, 2)) <= 2.25 )
 					{
 						//printlog("Culling sound due to proximity, pos x: %.2f | y: %.2f", position.z, position.x);
 						return nullptr;
@@ -217,6 +217,40 @@ FMOD::Channel* playSoundPosLocal(real_t x, real_t y, Uint16 snd, Uint8 vol)
 		}
 	}
 
+	if ( soundEnvironment_group && getChannelGroupForSoundIndex(snd) == soundEnvironment_group )
+	{
+		int numChannels = 0;
+		soundEnvironment_group->getNumChannels(&numChannels);
+		for ( int i = 0; i < numChannels; ++i )
+		{
+			FMOD::Channel* c;
+			if ( soundEnvironment_group->getChannel(i, &c) == FMOD_RESULT::FMOD_OK )
+			{
+				float audibility = 0.f;
+				c->getAudibility(&audibility);
+				float volume = 0.f;
+				c->getVolume(&volume);
+				FMOD_VECTOR playingPosition;
+				c->get3DAttributes(&playingPosition, nullptr);
+				//printlog("Channel index: %d, audibility: %f, vol: %f, pos x: %.2f | y: %.2f", i, audibility, volume, playingPosition.z, playingPosition.x);
+				if ( abs(volume - (vol / 255.f)) < 0.05 )
+				{
+					if ( (pow(playingPosition.x - position.x, 2) + pow(playingPosition.z - position.z, 2)) <= 4.5 )
+					{
+						//printlog("Culling sound due to proximity, pos x: %.2f | y: %.2f", position.z, position.x);
+						return nullptr;
+					}
+				}
+			}
+		}
+	}
+
+	/*FMOD_OPENSTATE openState;
+	unsigned int percentBuffered = 0;
+	bool starving = false;
+	bool diskbusy = false;
+	sounds[snd]->getOpenState(&openState, &percentBuffered, &starving, &diskbusy);
+	printlog("Sound: %d state: %d pc: %d starving: %d diskbusy: %d", snd, openState, percentBuffered, starving, diskbusy);*/
 	fmod_result = fmod_system->playSound(sounds[snd], getChannelGroupForSoundIndex(snd), true, &channel);
 	if (FMODErrorCheck())
 	{
@@ -355,7 +389,7 @@ OPENAL_CHANNELGROUP* getChannelGroupForSoundIndex(Uint32 snd)
 	{
 		return soundEnvironment_group;
 	}
-	if ( snd == 149 )
+	if ( snd == 149 || snd == 133 )
 	{
 		return soundAmbient_group;
 	}
@@ -378,7 +412,7 @@ OPENAL_SOUND* playSoundPlayer(int player, Uint16 snd, Uint8 vol)
 	{
 		return playSound(snd, vol);
 	}
-	else if ( multiplayer == SERVER )
+	else if ( multiplayer == SERVER && vol > 0 )
 	{
 		if ( client_disconnected[player] || player <= 0 )
 		{
@@ -433,7 +467,7 @@ OPENAL_SOUND* playSoundPos(real_t x, real_t y, Uint16 snd, Uint8 vol)
 		return NULL;
 	}
 
-	if (multiplayer == SERVER)
+	if (multiplayer == SERVER && vol > 0 )
 	{
 		for (c = 1; c < MAXPLAYERS; c++)
 		{

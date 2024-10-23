@@ -16,6 +16,7 @@
 #include "stat.hpp"
 #include "light.hpp"
 #include "monster.hpp"
+#include "interface/consolecommand.hpp"
 
 // entity flags
 #define BRIGHT 1
@@ -32,11 +33,14 @@
 #define PASSABLE 12
 #define USERFLAG1 14
 #define USERFLAG2 15
+#define INVISIBLE_DITHER 16
+#define NOCLIP_WALLS 17
+#define NOCLIP_CREATURES 18
 
 // number of entity skills and fskills
 static const int NUMENTITYSKILLS = 60;
 static const int NUMENTITYFSKILLS = 30;
-
+extern ConsoleVariable<int> cvar_entity_bodypart_sync_tick;
 struct spell_t;
 
 // entity class
@@ -97,6 +101,28 @@ public:
     std::unordered_map<view_t*, Dither> dithering;
 	vec4_t lightBonus;
 
+#ifdef USE_FMOD
+	FMOD::Channel* entity_sound = nullptr;
+#else
+	void* entity_sound = nullptr;
+#endif
+
+	void stopEntitySound()
+	{
+#ifdef USE_FMOD
+		if ( entity_sound )
+		{
+			bool playing = false;
+			entity_sound->isPlaying(&playing);
+			if ( playing )
+			{
+				entity_sound->stop();
+				entity_sound = nullptr;
+			}
+		}
+#endif
+	}
+
 	Uint32 getUID() const {return uid;}
 	void setUID(Uint32 new_uid);
 	Uint32 ticks;                  // duration of the entity's existence
@@ -117,7 +143,7 @@ public:
 	// entity attributes
 	real_t fskill[NUMENTITYFSKILLS]; // floating point general purpose variables
 	Sint32 skill[NUMENTITYSKILLS];  // general purpose variables
-	bool flags[16];    // engine flags
+	bool flags[24];    // engine flags
 	char* string;      // general purpose string
 	light_t* light;    // every entity has a specialized light pointer
 	list_t children;   // every entity has a list of child objects
@@ -176,6 +202,7 @@ public:
 	Sint32& chestHasVampireBook; // skill[11]
 	Sint32& chestLockpickHealth; // skill[12]
 	Sint32& chestOldHealth; //skill[15]
+	Sint32& chestMimicChance; //skill[16]
 
 	Sint32& char_gonnavomit; // skill[26]
 	Sint32& char_heal; // skill[22]
@@ -207,6 +234,7 @@ public:
 	Sint32& monsterPathBoundaryXEnd; //skill[16]
 	Sint32& monsterPathBoundaryYEnd; //skill[17]
 	Sint32& monsterStoreType; //skill[18]
+	Sint32& monsterDevilNumSummons; //skill[18]
 	Sint32& monsterStrafeDirection; //skill[39]
 	Sint32& monsterPathCount; //skill[38]
 	real_t& monsterLookDir; //fskill[4]
@@ -260,6 +288,9 @@ public:
 	//--PUBLIC MONSTER SHADOW SKILLS--
 	Sint32& monsterShadowInitialMimic; //skill[34]. 0 = false, 1 = true.
 	Sint32& monsterShadowDontChangeName; //skill[35]. 0 = false, 1 = true. Doesn't change name in its mimic if = 1.
+
+	//--PUBLIC MONSTER SLIME SKILLS--
+	Sint32& monsterSlimeLastAttack; // skill[34]
 
 	//--PUBLIC MONSTER LICH SKILLS--
 	Sint32& monsterLichFireMeleeSeq; //skill[34]
@@ -415,6 +446,9 @@ public:
 	Sint32& colliderCurrentHP; //skill[12]
 	Sint32& colliderOldHP; //skill[13]
 	Sint32& colliderInit; //skill[14]
+	Sint32& colliderContainedEntity; //skill[15]
+	Sint32& colliderHideMonster; //skill[16]
+	Sint32& colliderKillerUid; //skill[17]
 
 	//--PUBLIC SPELL TRAP SKILLS--
 	Sint32& spellTrapType; //skill[0]
@@ -438,6 +472,7 @@ public:
 	Sint32& shrineZ; //skill[8]
 	Sint32& shrineDestXOffset; //skill[9]
 	Sint32& shrineDestYOffset; //skill[10]
+	Sint32& shrineDaedalusState; // skill[11]
 	
 	//--PUBLIC FURNITURE SKILLS--
 	Sint32& furnitureType; //skill[0]
@@ -483,6 +518,7 @@ public:
 	Sint32& itemReceivedDetailsFromServer; //skill[25]
 	Sint32& itemAutoSalvageByPlayer; //skill[26]
 	Sint32& itemSplooshed; //skill[27]
+	Sint32& itemContainer; //skill[29]
 	real_t& itemWaterBob; //fskill[2]
 
 	//--PUBLIC ACTMAGIC SKILLS (Standard projectiles)--
@@ -500,6 +536,7 @@ public:
 	real_t& actmagicOrbitStationaryX; // fskill[4]
 	real_t& actmagicOrbitStationaryY; // fskill[5]
 	real_t& actmagicOrbitStationaryCurrentDist; // fskill[6]
+	real_t& actmagicSprayGravity; // fskill[7]
 	Sint32& actmagicOrbitStationaryHitTarget; // skill[14]
 	Sint32& actmagicOrbitHitTargetUID1; // skill[15]
 	Sint32& actmagicOrbitHitTargetUID2; // skill[16]
@@ -510,11 +547,16 @@ public:
 	Sint32& actmagicCastByTinkerTrap; // skill[22]
 	Sint32& actmagicTinkerTrapFriendlyFire; // skill[23]
 	Sint32& actmagicReflectionCount; // skill[25]
+	Sint32& actmagicFromSpellbook; // skill[26]
+	Sint32& actmagicSpray; // skill[27]
+	Sint32& actmagicEmitter; // skill[29]
 	
 	//--PUBLIC GOLD SKILLS--
 	Sint32& goldAmount; //skill[0]
 	Sint32& goldAmbience; //skill[1]
 	Sint32& goldSokoban; //skill[2]
+	Sint32& goldBouncing; //skill[3]
+	Sint32& goldInContainer; //skill[4]
 
 	//--PUBLIC SOUND SOURCE SKILLS--
 	Sint32& soundSourceFired; //skill[0]
@@ -548,6 +590,8 @@ public:
 	Sint32& signalTimerRepeatCount; //skill[3]
 	Sint32& signalTimerLatchInput; //skill[4]
 	Sint32& signalInputDirection; //skill[5]
+	Sint32& signalGateANDPowerCount; //skill[9]
+	Sint32& signalInvertOutput; //skill[10]
 
 	//--THROWN PROJECTILE--
 	Sint32& thrownProjectilePower; //skill[19]
@@ -555,6 +599,21 @@ public:
 
 	//--PLAYER SPAWN POINT--
 	Sint32& playerStartDir; //skill[1]
+
+	//--ACTTRAP/PERMANENT
+	Sint32 pressurePlateTriggerType; //skill[3]
+	enum PressurePlateTriggerTypes : int
+	{
+		PRESSURE_PLATE_DEFAULT_ALL,
+		PRESSURE_PLATE_PLAYERS,
+		PRESSURE_PLATE_MONSTERS,
+		PRESSURE_PLATE_ITEMS,
+		PRESSURE_PLATE_BOULDERS,
+		PRESSURE_PLATE_PLAYERS_OR_MONSTERS,
+		PRESSURE_PLATE_PLAYERS_OR_ALLIES,
+		PRESSURE_PLATE_MONSTERS_NON_ALLY,
+		PRESSURE_PLATE_ENUM_END
+	};
 
 	//--WORLDTOOLTIP--
 	real_t& worldTooltipAlpha; //fskill[0]
@@ -625,12 +684,14 @@ public:
 	bool safeConsumeMP(int amount); //A function for the magic code. Attempts to remove mana without overdrawing the player. Returns true if success, returns false if didn't have enough mana.
 
 	static Sint32 getAttack(Entity* my, Stat* myStats, bool isPlayer = false);
-	static real_t getACEffectiveness(Entity* my, Stat* myStats, bool isPlayer, Entity* attacker, Stat* attackerStats);
-	static void setMeleeDamageSkillModifiers(Entity* my, Stat* myStats, int skill, real_t& baseSkillModifier, real_t& variance);
+	static real_t getACEffectiveness(Entity* my, Stat* myStats, bool isPlayer, Entity* attacker, Stat* attackerStats, int& outNumBlessings);
+	static void setMeleeDamageSkillModifiers(Entity* my, Stat* myStats, int skill, real_t& baseSkillModifier, real_t& variance, ItemType* itemType);
 	Sint32 getBonusAttackOnTarget(Stat& hitstats);
 	Sint32 getRangedAttack();
 	Sint32 getThrownAttack();
 	bool isBlind();
+	bool isWaterWalking() const;
+	bool isLavaWalking() const;
 	
 	bool isInvisible() const;
 
@@ -727,6 +788,7 @@ public:
 	void actTeleporter();
 	void actMagicTrapCeiling();
 	void actTeleportShrine();
+	void actDaedalusShrine();
 	void actSpellShrine();
 	bool magicFallingCollision();
 	bool magicOrbitingCollision();
@@ -740,6 +802,7 @@ public:
 	void actLightSource();
 	void actTextSource();
 	void actSignalTimer();
+	void actSignalGateAND();
 
 	Monster getRace() const
 	{
@@ -907,6 +970,12 @@ public:
 			case SUCCUBUS:
 				succubusChooseWeapon(target, dist);
 				break;
+			case SLIME:
+				slimeChooseWeapon(target, dist);
+				break;
+			case BUGBEAR:
+				bugbearChooseWeapon(target, dist);
+				break;
 			case SHOPKEEPER:
 				if ( target )
 				{
@@ -930,6 +999,8 @@ public:
 	void vampireChooseWeapon(const Entity* target, double dist);
 	void shadowChooseWeapon(const Entity* target, double dist);
 	void succubusChooseWeapon(const Entity* target, double dist);
+	void slimeChooseWeapon(const Entity* target, double dist);
+	void bugbearChooseWeapon(const Entity* target, double dist);
 	void skeletonSummonSetEquipment(Stat* myStats, int rank);
 	static void tinkerBotSetStats(Stat* myStats, int rank);
 	static void mimicSetStats(Stat* myStats);
@@ -970,6 +1041,9 @@ public:
 	void addToCreatureList(list_t* list);
 	void addToWorldUIList(list_t *list);
 	std::vector<Entity*> bodyparts;
+	std::set<Uint32> collisionIgnoreTargets;
+
+	bool collisionProjectileMiss(Entity* parent, Entity* projectile);
 
 	// special magic functions/trickery
 	void castFallingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection, int heightDelay);
@@ -1016,10 +1090,14 @@ public:
 	bool isDamageableCollider() const;
 	bool isColliderDamageableByMelee() const;
 	bool isColliderWeakToSkill(const int proficiency) const;
+	bool isColliderResistToSkill(const int proficiency) const;
 	bool isColliderWeakToBoulders() const;
 	bool isColliderShownAsWallOnMinimap() const;
 	bool isColliderDamageableByMagic() const;
 	bool isColliderAttachableToBombs() const;
+	bool isColliderWall() const;
+	bool isColliderBreakableContainer() const;
+	void colliderOnDestroy();
 	int getColliderOnHitLangEntry() const;
 	int getColliderOnBreakLangEntry() const;
 	int getColliderSfxOnHit() const;
@@ -1027,9 +1105,12 @@ public:
 	int getColliderLangName() const;
 	static void monsterRollLevelUpStats(int increasestat[3]);
 	bool disturbMimic(Entity* touched, bool takenDamage, bool doMessage);
+	bool disturbBat(Entity* touched, bool takenDamage, bool doMessage);
 	bool isInertMimic() const;
+	bool isUntargetableBat(real_t* outDist = nullptr) const;
 	bool entityCanVomit() const;
 	bool doSilkenBowOnAttack(Entity* attacker);
+	void setBugbearStrafeDir(bool forceDirection);
 };
 
 Monster getMonsterFromPlayerRace(int playerRace); // convert playerRace into the relevant monster type
@@ -1139,6 +1220,7 @@ void actColliderDecoration(Entity* my);
 
 //---Magic entity functions---
 void actMagiclightBall(Entity* my);
+void actMagiclightMoving(Entity* my);
 
 //---Misc act functions---
 void actAmbientParticleEffectIdle(Entity* my);
@@ -1149,7 +1231,7 @@ void actTextSource(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 333;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 129;
-static const int NUM_EDITOR_SPRITES = 180;
+static const int NUM_EDITOR_SPRITES = 201;
 static const int NUM_EDITOR_TILES = 350;
 
 // furniture types.
@@ -1216,6 +1298,9 @@ bool monsterNameIsGeneric(Stat& monsterStats); // returns true if a monster's na
 bool playerRequiresBloodToSustain(int player); // vampire type or accursed class
 void spawnBloodVialOnMonsterDeath(Entity* entity, Stat* hitstats, Entity* killer);
 
+void shrineDaedalusRevealMap(Entity& my);
+void daedalusShrineInteract(Entity* my, Entity* touched);
+
 enum EntityHungerIntervals : int
 {
 	HUNGER_INTERVAL_OVERSATIATED,
@@ -1255,7 +1340,7 @@ public:
 		TO_GOBLIN,
 		TO_SLIME,
 		TO_TROLL,
-		TO_OCTOPUS,
+		TO_BAT_SMALL,
 		TO_SPIDER,
 		TO_GHOUL,
 		TO_SKELETON,
@@ -1285,7 +1370,8 @@ public:
 		TO_SENTRYBOT,
 		TO_SPELLBOT,
 		TO_GYROBOT,
-		TO_DUMMYBOT
+		TO_DUMMYBOT,
+		TO_BUGBEAR
 	};
 	enum ScriptType : int
 	{

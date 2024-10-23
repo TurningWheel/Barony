@@ -386,12 +386,38 @@ void Player::ShopGUI_t::openShop()
 				if ( shopkeepertype[player.playernum] == 10 ) // mysterious shopkeep
 				{
 					shopName->setText(Language::get(4129)); // '???'s'
+
+					// opening shop triggers shopkeep compendium reveal
+					auto find = Compendium_t::Events_t::monsterUniqueIDLookup.find("mysterious shop");
+					if ( find != Compendium_t::Events_t::monsterUniqueIDLookup.end() )
+					{
+						auto find2 = Compendium_t::Events_t::monsterIDToString.find(Compendium_t::Events_t::kEventMonsterOffset + find->second);
+						if ( find2 != Compendium_t::Events_t::monsterIDToString.end() )
+						{
+							auto& unlockStatus = Compendium_t::CompendiumMonsters_t::unlocks[find2->second];
+							if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+							{
+								unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+							}
+						}
+					}
 				}
 				else
 				{
 					char buf[64];
 					snprintf(buf, sizeof(buf), Language::get(4127), shopkeepername[player.playernum].c_str());
 					shopName->setText(buf);
+
+					// opening shop triggers shopkeep compendium reveal
+					auto find = Compendium_t::Events_t::monsterIDToString.find(Compendium_t::Events_t::kEventMonsterOffset + SHOPKEEPER);
+					if ( find != Compendium_t::Events_t::monsterIDToString.end() )
+					{
+						auto& unlockStatus = Compendium_t::CompendiumMonsters_t::unlocks[find->second];
+						if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
+						{
+							unlockStatus = Compendium_t::CompendiumUnlockStatus::LOCKED_REVEALED_UNVISITED;
+						}
+					}
 				}
 
 				SDL_Rect pos = shopName->getSize();

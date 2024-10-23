@@ -54,6 +54,7 @@ void Input::defaultBindings() {
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("MenuDown", (std::string("Pad") + std::to_string(c) + std::string("DpadY+")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("MenuConfirm", (std::string("Pad") + std::to_string(c) + std::string("ButtonA")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("MenuCancel", (std::string("Pad") + std::to_string(c) + std::string("ButtonB")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("MenuListCancel", (std::string("Pad") + std::to_string(c) + std::string("ButtonB")).c_str()));
 #ifdef NINTENDO
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("MenuAlt1", (std::string("Pad") + std::to_string(c) + std::string("ButtonY")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("MenuAlt2", (std::string("Pad") + std::to_string(c) + std::string("ButtonX")).c_str()));
@@ -174,6 +175,7 @@ void Input::defaultBindings() {
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuDown", "Down"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuConfirm", "Space"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuCancel", "Escape"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("MenuListCancel", "Escape"));
 		//inputs[c].kb_system_bindings.insert(std::make_pair("MenuAlt1", "Left Shift"));
 		//inputs[c].kb_system_bindings.insert(std::make_pair("MenuAlt2", "Left Ctrl"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuStart", "Return"));

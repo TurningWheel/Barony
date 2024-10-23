@@ -115,6 +115,10 @@ void clickDescription(int player, Entity* entity)
 				{
 					messagePlayer(player, MESSAGE_INSPECTION, Language::get(254), Language::get(entity->getColliderLangName()));
 				}
+				else if ( entity->behavior == &actBell || entity->sprite == 1475 || entity->sprite == 1476 || entity->sprite == 1477 || entity->sprite == 1478 )
+				{
+					messagePlayer(player, MESSAGE_INSPECTION, Language::get(254), Language::get(6269));
+				}
 				else if ( entity->behavior == &actItem )
 				{
 					item = newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], false, NULL);
@@ -182,6 +186,10 @@ void clickDescription(int player, Entity* entity)
 				else if ( entity->behavior == &actTeleportShrine /*||entity->behavior == &actSpellShrine*/ )
 				{
 					messagePlayer(player, MESSAGE_INSPECTION, Language::get(4307));
+				}
+				else if ( entity->behavior == &::actDaedalusShrine || entity->sprite == 1480 )
+				{
+					messagePlayer(player, MESSAGE_INSPECTION, Language::get(6260));
 				}
 				else if ( entity->behavior == &actStatue )
 				{

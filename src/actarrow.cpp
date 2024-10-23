@@ -23,6 +23,7 @@
 #include "scores.hpp"
 #include "player.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -427,6 +428,69 @@ void actArrow(Entity* my)
 						}
 					}
 				}
+				else if ( hit.entity->isDamageableCollider() )
+				{
+					int damage = 1;
+					int axe = 0;
+					if ( hit.entity->isColliderResistToSkill(PRO_RANGED) || hit.entity->isColliderWall() )
+					{
+						damage = 1;
+					}
+					else
+					{
+						damage = 2 + local_rng.rand() % 3;
+					}
+					if ( hit.entity->isColliderWeakToSkill(PRO_RANGED) )
+					{
+						if ( parent && parent->getStats() )
+						{
+							axe = 2 * (parent->getStats()->getModifiedProficiency(PRO_RANGED) / 20);
+						}
+						axe = std::min(axe, 9);
+					}
+					damage += axe;
+
+					int& entityHP = hit.entity->colliderCurrentHP;
+					int oldHP = entityHP;
+					entityHP -= damage;
+
+					int sound = 28; //damage.ogg
+					if ( hit.entity->getColliderSfxOnHit() > 0 )
+					{
+						sound = hit.entity->getColliderSfxOnHit();
+					}
+					playSoundEntity(hit.entity, sound, 64);
+
+					if ( entityHP > 0 )
+					{
+						if ( parent && parent->behavior == &actPlayer )
+						{
+							messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, Language::get(hit.entity->getColliderOnHitLangEntry()),
+								Language::get(hit.entity->getColliderLangName()));
+						}
+					}
+					else
+					{
+						entityHP = 0;
+
+						hit.entity->colliderKillerUid = parent ? parent->getUID() : 0;
+						if ( parent && parent->behavior == &actPlayer )
+						{
+							messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(hit.entity->getColliderOnBreakLangEntry()),
+								Language::get(hit.entity->getColliderLangName()));
+							if ( hit.entity->isColliderWall() )
+							{
+								Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_BARRIER_DESTROYED, "breakable barriers", 1);
+							}
+						}
+					}
+
+					if ( parent )
+					{
+						updateEnemyBar(parent, hit.entity, Language::get(hit.entity->getColliderLangName()), entityHP, hit.entity->colliderMaxHP, false,
+							DamageGib::DMG_DEFAULT);
+					}
+				}
 				else if ( hitstats != NULL && hit.entity != parent )
 				{
 					if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
@@ -482,6 +546,7 @@ void actArrow(Entity* my)
 							case KOBOLD:
 							case COCKATRICE:
 							case TROLL:
+							case BUGBEAR:
 								// more damage to these creatures
 								huntingDamage = true;
 								for ( int gibs = 0; gibs < 10; ++gibs )
@@ -519,7 +584,8 @@ void actArrow(Entity* my)
 						// normal damage.
 					}
 
-					real_t targetACEffectiveness = Entity::getACEffectiveness(hit.entity, hitstats, hit.entity->behavior == &actPlayer, parent, parent ? parent->getStats() : nullptr);
+					int numBlessings = 0;
+					real_t targetACEffectiveness = Entity::getACEffectiveness(hit.entity, hitstats, hit.entity->behavior == &actPlayer, parent, parent ? parent->getStats() : nullptr, numBlessings);
 					int attackAfterReductions = static_cast<int>(std::max(0.0, ((my->arrowPower * targetACEffectiveness - enemyAC))) + (1.0 - targetACEffectiveness) * my->arrowPower);
 					int damage = attackAfterReductions;
 
@@ -648,6 +714,7 @@ void actArrow(Entity* my)
 
 					/*messagePlayer(0, "My damage: %d, AC: %d, Pierce: %d", my->arrowPower, AC(hitstats), my->arrowArmorPierce);
 					messagePlayer(0, "Resolved to %d damage.", damage);*/
+					Sint32 oldHP = hitstats->HP;
 					hit.entity->modHP(-damage);
 					// write obituary
 					if ( parent )
@@ -656,10 +723,83 @@ void actArrow(Entity* my)
 						{
 							hit.entity->setObituary(Language::get(1503));
 							hitstats->killer = KilledBy::TRAP_ARROW;
+
+							if ( oldHP > hitstats->HP )
+							{
+								if ( hit.entity->behavior == &actPlayer )
+								{
+										Compendium_t::Events_t::eventUpdateWorld(hit.entity->skill[2], Compendium_t::CPDM_TRAP_DAMAGE, "arrow trap", oldHP - hitstats->HP);
+										if ( hitstats->HP <= 0 )
+										{
+											Compendium_t::Events_t::eventUpdateWorld(hit.entity->skill[2], Compendium_t::CPDM_TRAP_KILLED_BY, "arrow trap", 1);
+										}
+								}
+								else if ( hit.entity->behavior == &actMonster )
+								{
+									if ( auto leader = hit.entity->monsterAllyGetPlayerLeader() )
+									{
+										Compendium_t::Events_t::eventUpdateWorld(hit.entity->monsterAllyIndex, Compendium_t::CPDM_TRAP_FOLLOWERS_KILLED, "arrow trap", 1);
+									}
+								}
+							}
 						}
 						else
 						{
 							parent->killedByMonsterObituary(hit.entity);
+						}
+
+						if ( hit.entity->behavior == &actPlayer )
+						{
+							Compendium_t::Events_t::eventUpdateCodex(hit.entity->skill[2], Compendium_t::CPDM_HP_MOST_DMG_LOST_ONE_HIT, "hp", oldHP - hitstats->HP);
+						}
+						if ( parent->behavior == &actPlayer )
+						{
+							if ( oldHP > hitstats->HP )
+							{
+								if ( itemTypeIsQuiver((ItemType)my->arrowQuiverType) )
+								{
+									Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_RANGED_DMG_TOTAL, (ItemType)my->arrowQuiverType, oldHP - hitstats->HP);
+								}
+								if ( isRangedWeapon((ItemType)my->arrowShotByWeapon) )
+								{
+									Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_RANGED_DMG_TOTAL, (ItemType)my->arrowShotByWeapon, oldHP - hitstats->HP);
+								}
+								Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_RANGED_DMG_TOTAL, "missiles", oldHP - hitstats->HP);
+								Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_RANGED_HITS, "missiles", 1);
+								Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_CLASS_RANGED_HITS_RUN, "missiles", 1);
+							}
+
+							if ( itemTypeIsQuiver((ItemType)my->arrowQuiverType) )
+							{
+								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_DMG_MAX, (ItemType)my->arrowQuiverType, damage);
+								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_AMMO_HIT, (ItemType)my->arrowQuiverType, 1);
+							}
+							if ( isRangedWeapon((ItemType)my->arrowShotByWeapon) )
+							{
+								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_DMG_MAX, (ItemType)my->arrowShotByWeapon, damage);
+								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SHOTS_HIT, (ItemType)my->arrowShotByWeapon, 1);
+							}
+							if ( my->arrowShotByWeapon == SLING && damage == 0 )
+							{
+								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_DMG_0, (ItemType)my->arrowShotByWeapon, 1);
+							}
+						}
+						else if ( parent->behavior == &actMonster )
+						{
+							if ( oldHP > hitstats->HP )
+							{
+								if ( Stat* parentStats = parent->getStats() )
+								{
+									if ( parentStats->type == SENTRYBOT )
+									{
+										if ( auto leader = parent->monsterAllyGetPlayerLeader() )
+										{
+											Compendium_t::Events_t::eventUpdate(leader->skill[2],
+												Compendium_t::CPDM_SENTRY_DEPLOY_DMG, TOOL_SENTRYBOT, oldHP - hitstats->HP);
+										}
+									}
+								}
+							}
 						}
 
 						if ( hit.entity->behavior == &actMonster && parent->behavior == &actPlayer )
@@ -759,6 +899,11 @@ void actArrow(Entity* my)
 					{
 						parent->awardXP( hit.entity, true, true );
 						spawnBloodVialOnMonsterDeath(hit.entity, hitstats, parent);
+
+						if ( parent->behavior == &actPlayer )
+						{
+							Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_RANGED_KILLS, "missiles", 1);
+						}
 					}
 
 					// alert the monster
@@ -1070,7 +1215,206 @@ void actArrow(Entity* my)
 						}
 					}
 
-					if ( damage == 0 && !statusEffectApplied )
+					if ( hit.entity->behavior == &actPlayer )
+					{
+						if ( parent )
+						{
+							if ( hitstats->defending )
+							{
+								updateAchievementThankTheTank(hit.entity->skill[2], parent, false);
+							}
+							else
+							{
+								achievementThankTheTankPair[hit.entity->skill[2]].erase(parent->getUID());
+							}
+						}
+					}
+
+					bool armorDegraded = false;
+
+					// hit armor degrade
+					if ( hitstats && parent && parent->getStats() )
+					{
+						Item* armor = NULL;
+						int armornum = 0;
+						bool isWeakArmor = false;
+						if ( damage > 0 || (damage == 0 && !(hitstats->shield && hitstats->defending)) )
+						{
+							armornum = hitstats->pickRandomEquippedItemToDegradeOnHit(&armor, true, false, false, true);
+							if ( armor != NULL && armor->status > BROKEN )
+							{
+								switch ( armor->type )
+								{
+								case CRYSTAL_HELM:
+								case CRYSTAL_SHIELD:
+								case CRYSTAL_BREASTPIECE:
+								case CRYSTAL_BOOTS:
+								case CRYSTAL_GLOVES:
+									isWeakArmor = true;
+									break;
+								default:
+									isWeakArmor = false;
+									break;
+								}
+							}
+
+							int armorDegradeChance = 30;
+							if ( isWeakArmor )
+							{
+								armorDegradeChance = 25;
+							}
+							if ( hitstats->type == GOBLIN )
+							{
+								armorDegradeChance += 10;
+							}
+
+							if ( armorDegradeChance == 100 || (local_rng.rand() % armorDegradeChance > 0) )
+							{
+								armor = NULL;
+								armornum = 0;
+							}
+						}
+
+						// if nothing chosen to degrade, check extra shield chances to degrade
+						if ( hitstats->shield != NULL && hitstats->shield->status > BROKEN && armor == NULL
+							&& !itemTypeIsQuiver(hitstats->shield->type) && itemCategory(hitstats->shield) != SPELLBOOK
+							&& hitstats->shield->type != TOOL_TINKERING_KIT )
+						{
+							if ( hitstats->shield->type == TOOL_CRYSTALSHARD && hitstats->defending )
+							{
+								// shards degrade by 1 stage each hit.
+								armor = hitstats->shield;
+								armornum = 4;
+							}
+							else if ( hitstats->shield->type == MIRROR_SHIELD && hitstats->defending )
+							{
+								// mirror shield degrade by 1 stage each hit.
+								armor = hitstats->shield;
+								armornum = 4;
+							}
+							{
+								// if no armor piece was chosen to break, grant chance to improve shield skill.
+								if ( itemCategory(hitstats->shield) == ARMOR
+									|| (hitstats->defending) )
+								{
+									int roll = 20;
+									int hitskill = hitstats->getProficiency(PRO_SHIELD) / 20;
+									roll += hitskill * 5;
+									if ( damage == 0 )
+									{
+										roll /= 2;
+									}
+									if ( roll > 0 )
+									{
+										bool success = (local_rng.rand() % roll == 0);
+										if ( !success && hit.entity->behavior == &actPlayer && hitstats->defending )
+										{
+											if ( players[hit.entity->skill[2]]->mechanics.defendTicks != 0 )
+											{
+												if ( (::ticks - players[hit.entity->skill[2]]->mechanics.defendTicks) < (TICKS_PER_SECOND / 3) )
+												{
+													// perfect block timing, roll again
+													success = (local_rng.rand() % roll == 0);
+												}
+											}
+										}
+
+										if ( success )
+										{
+											bool increaseSkill = true;
+											if ( hit.entity->behavior == &actPlayer && parent->behavior == &actPlayer )
+											{
+												increaseSkill = false;
+											}
+											else if ( hit.entity->behavior == &actPlayer && parent->monsterAllyGetPlayerLeader() )
+											{
+												increaseSkill = false;
+											}
+											else if ( hit.entity->behavior == &actPlayer
+												&& !players[hit.entity->skill[2]]->mechanics.allowedRaiseBlockingAgainstEntity(*parent) )
+											{
+												increaseSkill = false;
+											}
+											else if ( hitstats->EFFECTS[EFF_SHAPESHIFT] )
+											{
+												increaseSkill = false;
+											}
+											else if ( itemCategory(hitstats->shield) != ARMOR
+												&& hitstats->getProficiency(PRO_SHIELD) >= SKILL_LEVEL_SKILLED )
+											{
+												increaseSkill = false; // non-shield offhands dont increase skill past 40.
+											}
+											if ( increaseSkill )
+											{
+												hit.entity->increaseSkill(PRO_SHIELD); // increase shield skill
+												if ( hit.entity->behavior == &actPlayer )
+												{
+													players[hit.entity->skill[2]]->mechanics.enemyRaisedBlockingAgainst[parent->getUID()]++;
+												}
+											}
+										}
+									}
+								}
+
+								// shield still has chance to degrade after raising skill.
+								int shieldDegradeChance = 20;
+								if ( svFlags & SV_FLAG_HARDCORE )
+								{
+									shieldDegradeChance = 40;
+								}
+								if ( hitstats->type == GOBLIN )
+								{
+									shieldDegradeChance += 10;
+								}
+								if ( hit.entity->behavior == &actPlayer )
+								{
+									if ( itemCategory(hitstats->shield) == ARMOR )
+									{
+										shieldDegradeChance += 2 * (hitstats->getModifiedProficiency(PRO_SHIELD) / 10); // 2x shield bonus offhand
+										if ( !players[hit.entity->skill[2]]->mechanics.itemDegradeRoll(hitstats->shield) )
+										{
+											shieldDegradeChance = 100; // don't break.
+										}
+									}
+									else
+									{
+										shieldDegradeChance += (hitstats->getModifiedProficiency(PRO_SHIELD) / 10);
+									}
+									if ( skillCapstoneUnlocked(hit.entity->skill[2], PRO_SHIELD) )
+									{
+										shieldDegradeChance = 100; // don't break.
+									}
+								}
+								if ( shieldDegradeChance < 100 && armor == NULL &&
+									(hitstats->defending && local_rng.rand() % shieldDegradeChance == 0)
+									)
+								{
+									armor = hitstats->shield;
+									armornum = 4;
+								}
+							}
+						}
+
+						if ( armor != NULL && armor->status > BROKEN )
+						{
+							hit.entity->degradeArmor(*hitstats, *armor, armornum);
+							armorDegraded = true;
+							if ( armor->status == BROKEN )
+							{
+								if ( parent && parent->behavior == &actPlayer && hit.entity->behavior == &actMonster )
+								{
+									steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_UNSTOPPABLE_FORCE, STEAM_STAT_INT, 1);
+									if ( armornum == 4 && hitstats->type == BUGBEAR
+										&& (hitstats->defending || hit.entity->monsterAttack == MONSTER_POSE_BUGBEAR_SHIELD) )
+									{
+										steamAchievementClient(parent->skill[2], "BARONY_ACH_BEAR_WITH_ME");
+									}
+								}
+							}
+						}
+					}
+
+					if ( damage == 0 && !statusEffectApplied && !armorDegraded )
 					{
 						playSoundEntity(hit.entity, 66, 64); //*tink*
 						if ( hit.entity->behavior == &actPlayer )
@@ -1096,7 +1440,7 @@ void actArrow(Entity* my)
 							}
 						}
 					}
-					else if ( damage == 0 && statusEffectApplied )
+					else if ( damage == 0 && (statusEffectApplied || armorDegraded) )
 					{
 						playSoundEntity(hit.entity, 28, 64);
 					}

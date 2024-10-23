@@ -19,6 +19,7 @@
 #include "items.hpp"
 #include "net.hpp"
 #include "magic/magic.hpp"
+#include "mod_tools.hpp"
 
 int* pathMapFlying = NULL;
 int* pathMapGrounded = NULL;
@@ -336,7 +337,26 @@ int pathCheckObstacle(int x, int y, Entity* my, Entity* target)
 		{
 			continue;
 		}
-		if ( entity->sprite == 14		// fountain
+		if ( entity->sprite == 179 ) // collider
+		{
+			if ( (int)floor(entity->x / 16) == u && (int)floor(entity->y / 16) == v )
+			{
+				if ( entity->colliderHasCollision != 0 || entity->colliderDiggable != 0 )
+				{
+					return 1;
+				}
+				auto find = EditorEntityData_t::colliderData.find(entity->colliderDamageTypes);
+				if ( find != EditorEntityData_t::colliderData.end() )
+				{
+					auto& colliderDmgType = EditorEntityData_t::colliderDmgTypes[find->second.damageCalculationType];
+					if ( !colliderDmgType.allowNPCPathing )
+					{
+						return 1;
+					}
+				}
+			}
+		}
+		else if ( entity->sprite == 14		// fountain
 			|| entity->sprite == 15		// sink
 			|| (entity->sprite == 19 && !entity->flags[PASSABLE]) // gate
 			|| (entity->sprite == 20 && !entity->flags[PASSABLE]) // gate 2
@@ -352,7 +372,7 @@ int pathCheckObstacle(int x, int y, Entity* my, Entity* target)
 			|| entity->sprite == 169	// statue
 			|| entity->sprite == 177	// shrine
 			|| entity->sprite == 178	// spell shrine
-			|| (entity->sprite == 179 && (entity->colliderHasCollision != 0 || entity->colliderDiggable != 0)) // collider
+			|| entity->sprite == 1481	// daedalus shrine
 			)
 		{
 			if ( (int)floor(entity->x / 16) == u && (int)floor(entity->y / 16) == v )
@@ -392,6 +412,7 @@ static std::chrono::microseconds ms(0);
 static Uint32 updatedOnTick = 0;
 static ConsoleVariable<int> cvar_pathlimit("/pathlimit", 200);
 static ConsoleVariable<bool> cvar_pathing_debug("/pathing_debug", false);
+static ConsoleVariable<bool> cvar_pathing_collider_npc("/pathing_collider_npc", true);
 int lastGeneratePathTries = 0;
 list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target, GeneratePathTypes pathingType, bool lavaIsPassable)
 {
@@ -446,9 +467,11 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 
 	int* pathMap = (int*) calloc(map.width * map.height, sizeof(int));
 	int pathMapType = GateGraph::GATE_GRAPH_GROUNDED;
+	bool waterWalking = my && my->isWaterWalking();
+	bool lavaWalking = my && my->isLavaWalking();
 	if ( !loading )
 	{
-		if ( levitating || playerCheckPathToExit )
+		if ( levitating || playerCheckPathToExit || waterWalking || lavaWalking )
 		{
 			memcpy(pathMap, pathMapFlying, map.width * map.height * sizeof(int));
 			pathMapType = GateGraph::GATE_GRAPH_FLYING;
@@ -517,6 +540,28 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 			for ( int x = 0; x < map.width; ++x )
 			{
 				if ( !map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+				{
+					pathMap[y + x * map.height] = 0;
+				}
+			}
+		}
+	}
+	else if ( !levitating && (waterWalking || lavaWalking) )
+	{
+		for ( int y = 0; y < map.height; ++y )
+		{
+			for ( int x = 0; x < map.width; ++x )
+			{
+				int index = y * MAPLAYERS + x * MAPLAYERS * map.height;
+				if ( !map.tiles[index] )
+				{
+					pathMap[y + x * map.height] = 0;
+				}
+				else if ( lavatiles[map.tiles[index]] && !lavaWalking )
+				{
+					pathMap[y + x * map.height] = 0;
+				}
+				else if ( swimmingtiles[map.tiles[index]] && !waterWalking )
 				{
 					pathMap[y + x * map.height] = 0;
 				}
@@ -610,10 +655,19 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		{
 			continue;
 		}
-		if (stats && stats->type == MINOTAUR && (entity->behavior == &actBoulder || (entity->isDamageableCollider() && entity->colliderHasCollision == 2)))
+		if (stats && stats->type == MINOTAUR && (entity->behavior == &actBoulder || entity->behavior == &::actDaedalusShrine || (entity->isDamageableCollider()
+			&& (entity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_MINO))))
 		{
 			// minotaurs bust through boulders, not an obstacle
 			continue;
+		}
+		else if ( (my && my->behavior == &actMonster) && entity->isDamageableCollider()
+			&& (entity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_NPC))
+		{
+			if ( *cvar_pathing_collider_npc )
+			{
+				continue;
+			}
 		}
 		int x = std::min<unsigned int>(std::max<int>(0, entity->x / 16), map.width - 1); //TODO: Why are int and double being compared? And why are int and unsigned int being compared?
 		int y = std::min<unsigned int>(std::max<int>(0, entity->y / 16), map.height - 1); //TODO: Why are int and double being compared? And why are int and unsigned int being compared?
@@ -843,8 +897,8 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		auto now = std::chrono::high_resolution_clock::now();
 		ms = std::chrono::duration_cast<std::chrono::microseconds>(now - pathtime);
 		DebugStats.gui2 = DebugStats.gui2 + ms;
-		messagePlayer(0, MESSAGE_DEBUG, "FAIL (%d) uid: %d : path tries: %d (%d, %d) to (%d, %d)",
-            (int)pathingType, my->getUID(), tries, x1, y1, x2, y2);
+		messagePlayer(0, MESSAGE_DEBUG, "FAIL (%d) sprite: %d uid: %d : path tries: %d (%d, %d) to (%d, %d)",
+            (int)pathingType, my->sprite, my->getUID(), tries, x1, y1, x2, y2);
 	}
 	lastGeneratePathTries = tries;
 	if (my->behavior == &actMonster) {
@@ -1191,6 +1245,10 @@ bool isPathObstacle(Entity* entity)
 		return true;
 	}
 	else if ( entity->behavior == &actTeleportShrine /*|| entity->behavior == &actSpellShrine*/ )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &::actDaedalusShrine )
 	{
 		return true;
 	}

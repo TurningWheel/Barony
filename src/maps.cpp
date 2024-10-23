@@ -81,8 +81,22 @@ Sint32 doorFrameSprite() {
 
 -------------------------------------------------------------------------------*/
 
+static ConsoleVariable<std::string> cvar_monster_curve("/monster_curve", "nothing");
 int monsterCurve(int level)
 {
+	if ( svFlags & SV_FLAG_CHEATS )
+	{
+		for ( int i = 0; i < NUMMONSTERS; ++i )
+		{
+			if ( *cvar_monster_curve == monstertypename[i] )
+			{
+				if ( i != NOTHING )
+				{
+					return i;
+				}
+			}
+		}
+	}
 	if ( !strncmp(map.name, "The Mines", 9) )   // the mines
 	{
 		switch ( map_rng.rand() % 10 )
@@ -178,16 +192,16 @@ int monsterCurve(int level)
 			case 1:
 			case 2:
 			case 3:
-				return GNOME;
 			case 4:
+				return GNOME;
 			case 5:
 			case 6:
 			case 7:
-				return TROLL;
+				return BUGBEAR;
 			case 8:
 				if ( map_rng.rand() % 10 > 0 )
 				{
-					return TROLL;
+					return BUGBEAR;
 				}
 				else
 				{
@@ -334,7 +348,6 @@ int monsterCurve(int level)
 		switch ( map_rng.rand() % 15 )
 		{
 			case 0:
-				return KOBOLD;
 			case 1:
 				return INCUBUS;
 			case 2:
@@ -1037,6 +1050,11 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		{
 			secretlevelexit = 6;
 		}
+		else if ( currentlevel == 23 )
+		{
+			secretlevelexit = 8;
+			minotaurlevel = false;
+		}
 	}
 
 	mapList.first = nullptr;
@@ -1683,6 +1701,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						strcpy(secretmapname, levelset);
 						strcat(secretmapname, "secret");
 						break;
+					case 8:
+						strcpy(secretmapname, "baphoexit");
+						break;
 					default:
 						break;
 				}
@@ -1871,15 +1892,22 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				{
 					if ( c == 0 )
 					{
-						// 7x7, pick random location across all map.
-						x = getMapPossibleLocationX1() + (1 + map_rng.rand() % 4) * 7;
-						y = getMapPossibleLocationY1() + (1 + map_rng.rand() % 4) * 7;
+						if ( secretlevelexit == 8 )
+						{
+							x = getMapPossibleLocationX1() + 7;
+							y = getMapPossibleLocationY1() + 7;
+						}
+						else
+						{
+							// 7x7, pick random location across all map.
+							x = getMapPossibleLocationX1() + (1 + map_rng.rand() % 4) * 7;
+							y = getMapPossibleLocationY1() + (1 + map_rng.rand() % 4) * 7;
+						}
 					}
-					else if ( secretlevelexit && c == 1 )
+					else if ( secretlevelexit == 8 && c == 1 )
 					{
-						// 14x14, pick random location minus 1 from both edges.
-						x = 2 + (map_rng.rand() % 5) * 7;
-						y = 2 + (map_rng.rand() % 5) * 7;
+						x = getMapPossibleLocationX1() + (3) * 7;
+						y = getMapPossibleLocationY1() + (3) * 7;
 					}
 					else if ( c == 2 && shoplevel )
 					{
@@ -2139,6 +2167,10 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							{
 								firstroomtile[y0 + x0 * map.height] = true;
 								startRoomInfo.addCoord(x0, y0);
+							}
+							else if ( c == 1 && secretlevelexit == 8 && !strncmp(map.name, "Hell", 4) )
+							{
+								firstroomtile[y0 + x0 * map.height] = true;
 							}
 							else if ( c == 2 && shoplevel )
 							{
@@ -3217,34 +3249,69 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		startRoomInfo.checkBorderAccessibility();
 	}
 
+	std::vector<int> underworldEmptyTiles;
+	std::vector<int> waterEmptyTiles;
+	std::vector<int> lavaEmptyTiles;
+
 	// monsters, decorations, and items
 	numpossiblelocations = map.width * map.height;
 	for ( y = 0; y < map.height; y++ )
 	{
 		for ( x = 0; x < map.width; x++ )
 		{
-			if ( checkObstacle( x * 16 + 8, y * 16 + 8, NULL, NULL ) || firstroomtile[y + x * map.height] )
+			if ( firstroomtile[y + x * map.height] )
 			{
 				possiblelocations[y + x * map.height] = false;
 				numpossiblelocations--;
+			}
+			else if ( x < getMapPossibleLocationX1() || x >= getMapPossibleLocationX2()
+				|| y < getMapPossibleLocationY1() || y >= getMapPossibleLocationY2() )
+			{
+				possiblelocations[y + x * map.height] = false;
+				--numpossiblelocations;
 			}
 			else if ( lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 			{
 				possiblelocations[y + x * map.height] = false;
 				numpossiblelocations--;
+
+				if ( map.monsterexcludelocations[x + y * map.width] == false )
+				{
+					if ( !checkObstacle(x * 16 + 8, y * 16 + 8, NULL, NULL, false, true, false) )
+					{
+						lavaEmptyTiles.push_back(x + y * 1000);
+					}
+				}
 			}
 			else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 			{
 				possiblelocations[y + x * map.height] = false;
 				numpossiblelocations--;
+
+				if ( map.monsterexcludelocations[x + y * map.width] == false )
+				{
+					if ( !checkObstacle(x * 16 + 8, y * 16 + 8, NULL, NULL, false, true, false) )
+					{
+						waterEmptyTiles.push_back(x + y * 1000);
+					}
+				}
 			}
 			else
 			{
-				if ( x < getMapPossibleLocationX1() || x >= getMapPossibleLocationX2()
-					|| y < getMapPossibleLocationY1() || y >= getMapPossibleLocationY2() )
+				if ( checkObstacle(x * 16 + 8, y * 16 + 8, NULL, NULL, false, true, false) )
 				{
 					possiblelocations[y + x * map.height] = false;
 					--numpossiblelocations;
+				}
+				else if ( !map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+				{
+					possiblelocations[y + x * map.height] = false;
+					numpossiblelocations--;
+
+					if ( !strncmp(map.name, "Underworld", 10) )
+					{
+						underworldEmptyTiles.push_back(x + y * 1000);
+					}
 				}
 				else
 				{
@@ -3332,8 +3399,11 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	int numGenGold = 0;
 	int numGenDecorations = 0;
 
+	std::vector<Uint32> itemsGeneratedList;
 	static ConsoleVariable<bool> cvar_underworldshrinetest("/underworldshrinetest", false);
 
+	int exit_x = -1;
+	int exit_y = -1;
 	//printlog("j: %d\n",j);
 	//printlog("numpossiblelocations: %d\n",numpossiblelocations);
 	for ( c = 0; c < std::min(j, numpossiblelocations); ++c )
@@ -3373,77 +3443,311 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		if ( (c == 0 || (minotaurlevel && c < 2)) && (!secretlevel || currentlevel != 7) && (!secretlevel || currentlevel != 20)
 			&& std::get<LEVELPARAM_DISABLE_NORMAL_EXIT>(mapParameters) == 0 )
 		{
-			if ( strcmp(map.name, "Hell") )
+			if ( !strcmp(map.name, "Hell") && secretlevelexit == 8 )
 			{
-				entity = newEntity(11, 1, map.entities, nullptr); // ladder
-				entity->behavior = &actLadder;
+				continue; // no generate exit
+			}
+
+			// daedalus shrine
+			if ( c == 1 && minotaurlevel && !(secretlevel && (currentlevel == 7 || currentlevel == 20)) )
+			{
+				int numShrines = 1;
+				/*if ( !strncmp(map.name, "The Labyrinth", 13) )
+				{
+					numShrines = 3;
+				}*/
+				std::map<int, std::vector<int>> goodspots;
+
+				// generate in different quadrant than exit
+				int exitquadrant = 0;
+				if ( exit_x >= map.width / 2 )
+				{
+					if ( exit_y >= map.height / 2 )
+					{
+						exitquadrant = 3; // northwest is opposite
+					}
+					else
+					{
+						exitquadrant = 2; // southwest is opposite
+					}
+				}
+				else
+				{
+					if ( exit_y >= map.height / 2 )
+					{
+						exitquadrant = 0; // northeast is opposite
+					}
+					else
+					{
+						exitquadrant = 1; // southeast is opposite
+					}
+				}
+
+				std::vector<int> quadrantOrder;
+				switch ( exitquadrant )
+				{
+				case 0:
+					quadrantOrder = { 0, 1, 3, 2 };
+					break;
+				case 1:
+					quadrantOrder = { 1, 2, 0, 3 };
+					break;
+				case 2:
+					quadrantOrder = { 2, 3, 1, 0 };
+					break;
+				case 3:
+					quadrantOrder = { 3, 0, 2, 1 };
+					break;
+				default:
+					break;
+				}
+
+				for ( int y = 0; y < map.height; ++y )
+				{
+					for ( int x = 0; x < map.width; ++x )
+					{
+						if ( possiblelocations[y + x * map.height] == true )
+						{
+							int quadrant = 0;
+							if ( x >= map.width / 2 )
+							{
+								if ( y >= map.height / 2 )
+								{
+									quadrant = 1; // southeast
+								}
+								else
+								{
+									quadrant = 0; // northeast
+								}
+							}
+							else
+							{
+								if ( y >= map.height / 2 )
+								{
+									quadrant = 2; // southwest
+								}
+								else
+								{
+									quadrant = 3; // northwest
+								}
+							}
+							goodspots[quadrant].push_back(x + y * 1000);
+						}
+					}
+				}
+
+				std::set<int> obstacleSpots;
+				bool foundspot = false;
+				while ( quadrantOrder.size() > 0 )
+				{
+					int quadrant = quadrantOrder[0];
+					quadrantOrder.erase(quadrantOrder.begin());
+
+					while ( goodspots[quadrant].size() > 0 )
+					{
+						int index = map_rng.rand() % goodspots[quadrant].size();
+						int picked = goodspots[quadrant][index];
+
+						goodspots[quadrant].erase(goodspots[quadrant].begin() + index);
+
+						int x = picked % 1000;
+						int y = picked / 1000;
+						int obstacles = 0;
+						for ( int x2 = -1; x2 <= 1; x2++ )
+						{
+							for ( int y2 = -1; y2 <= 1; y2++ )
+							{
+								if ( obstacleSpots.find((x + x2) + 1000 * (y + y2)) != obstacleSpots.end()
+									|| checkObstacle((x + x2) * 16, (y + y2) * 16, NULL, NULL, false) )
+								{
+									obstacles++;
+									obstacleSpots.insert((x + x2) + 1000 * (y + y2));
+									if ( obstacles > 1 )
+									{
+										break;
+									}
+								}
+							}
+							if ( obstacles > 1 )
+							{
+								break;
+							}
+						}
+						if ( obstacles > 1 )
+						{
+							continue;
+						}
+
+						// good spot
+						Entity* entity = newEntity(11, 1, map.entities, nullptr);
+						entity->behavior = &actLadder;
+
+						// determine if the ladder generated in a viable location
+						if ( strncmp(map.name, "Underworld", 10) )
+						{
+							bool nopath = false;
+							bool hellLadderFix = !strncmp(map.name, "Hell", 4);
+							std::vector<Entity*> tempPassableEntities;
+							if ( hellLadderFix )
+							{
+								for ( node = map.entities->first; node != NULL; node = node->next )
+								{
+									if ( (entity2 = (Entity*)node->element) )
+									{
+										if ( entity2->sprite == 19 || entity2->sprite == 20
+											|| entity2->sprite == 113 || entity2->sprite == 114 )
+										{
+											int entx = entity2->x / 16;
+											int enty = entity2->y / 16;
+											if ( !entity2->flags[PASSABLE] )
+											{
+												if ( entx >= startRoomInfo.x1 && entx <= startRoomInfo.x2
+													&& enty >= startRoomInfo.y1 && enty <= startRoomInfo.y2 )
+												{
+													tempPassableEntities.push_back(entity2);
+													entity2->flags[PASSABLE] = true;
+												}
+											}
+										}
+									}
+								}
+							}
+							for ( node = map.entities->first; node != NULL; node = node->next )
+							{
+								entity2 = (Entity*)node->element;
+								if ( entity2->sprite == 1 ) // note entity->behavior == nullptr at this point
+								{
+									list_t* path = generatePath(x, y, entity2->x / 16, entity2->y / 16,
+										entity, entity2, GeneratePathTypes::GENERATE_PATH_CHECK_EXIT, hellLadderFix);
+									if ( path == NULL )
+									{
+										nopath = true;
+									}
+									else
+									{
+										list_FreeAll(path);
+										free(path);
+									}
+									break;
+								}
+							}
+							for ( auto ent : tempPassableEntities )
+							{
+								ent->flags[PASSABLE] = false;
+							}
+							if ( nopath )
+							{
+								// try again
+								list_RemoveNode(entity->mynode);
+								entity = NULL;
+								break;
+							}
+						}
+
+						entity->sprite = 190;
+						entity->behavior = &actDaedalusShrine;
+						entity->x = 16.0 * x;
+						entity->y = 16.0 * y;
+
+						--numpossiblelocations;
+						possiblelocations[y + x * map.height] = false;
+
+						skipPossibleLocationsDecrement = true;
+						foundspot = true;
+						break;
+					}
+
+					if ( foundspot )
+					{
+						foundspot = false;
+						--numShrines;
+						if ( numShrines <= 0 )
+						{
+							break;
+						}
+					}
+				}
 			}
 			else
 			{
-				entity = newEntity(45, 1, map.entities, nullptr); // hell uses portals instead
-				entity->behavior = &actPortal;
-				entity->skill[3] = 1; // not secret portals though
-			}
-
-			// determine if the ladder generated in a viable location
-			if ( strncmp(map.name, "Underworld", 10) )
-			{
-				bool nopath = false;
-				bool hellLadderFix = !strncmp(map.name, "Hell", 4);
-				std::vector<Entity*> tempPassableEntities;
-				if ( hellLadderFix )
+				// normal exits
+				if ( strcmp(map.name, "Hell") )
 				{
-					for ( node = map.entities->first; node != NULL; node = node->next )
+					entity = newEntity(11, 1, map.entities, nullptr); // ladder
+					entity->behavior = &actLadder;
+				}
+				else
+				{
+					entity = newEntity(45, 1, map.entities, nullptr); // hell uses portals instead
+					entity->behavior = &actPortal;
+					entity->skill[3] = 1; // not secret portals though
+				}
+
+				// determine if the ladder generated in a viable location
+				if ( strncmp(map.name, "Underworld", 10) )
+				{
+					bool nopath = false;
+					bool hellLadderFix = !strncmp(map.name, "Hell", 4);
+					std::vector<Entity*> tempPassableEntities;
+					if ( hellLadderFix )
 					{
-						if ( (entity2 = (Entity*)node->element) )
+						for ( node = map.entities->first; node != NULL; node = node->next )
 						{
-							if ( entity2->sprite == 19 || entity2->sprite == 20
-								|| entity2->sprite == 113 || entity2->sprite == 114 )
+							if ( (entity2 = (Entity*)node->element) )
 							{
-								int entx = entity2->x / 16;
-								int enty = entity2->y / 16;
-								if ( !entity2->flags[PASSABLE] )
+								if ( entity2->sprite == 19 || entity2->sprite == 20
+									|| entity2->sprite == 113 || entity2->sprite == 114 )
 								{
-									if ( entx >= startRoomInfo.x1 && entx <= startRoomInfo.x2
-										&& enty >= startRoomInfo.y1 && enty <= startRoomInfo.y2 )
+									int entx = entity2->x / 16;
+									int enty = entity2->y / 16;
+									if ( !entity2->flags[PASSABLE] )
 									{
-										tempPassableEntities.push_back(entity2);
-										entity2->flags[PASSABLE] = true;
+										if ( entx >= startRoomInfo.x1 && entx <= startRoomInfo.x2
+											&& enty >= startRoomInfo.y1 && enty <= startRoomInfo.y2 )
+										{
+											tempPassableEntities.push_back(entity2);
+											entity2->flags[PASSABLE] = true;
+										}
 									}
 								}
 							}
 						}
 					}
-				}
-				for ( node = map.entities->first; node != NULL; node = node->next )
-				{
-					entity2 = (Entity*)node->element;
-					if ( entity2->sprite == 1 ) // note entity->behavior == nullptr at this point
+					for ( node = map.entities->first; node != NULL; node = node->next )
 					{
-						list_t* path = generatePath(x, y, entity2->x / 16, entity2->y / 16, 
-							entity, entity2, GeneratePathTypes::GENERATE_PATH_CHECK_EXIT, hellLadderFix);
-						if ( path == NULL )
+						entity2 = (Entity*)node->element;
+						if ( entity2->sprite == 1 ) // note entity->behavior == nullptr at this point
 						{
-							nopath = true;
+							list_t* path = generatePath(x, y, entity2->x / 16, entity2->y / 16,
+								entity, entity2, GeneratePathTypes::GENERATE_PATH_CHECK_EXIT, hellLadderFix);
+							if ( path == NULL )
+							{
+								nopath = true;
+							}
+							else
+							{
+								list_FreeAll(path);
+								free(path);
+							}
+							break;
 						}
-						else
-						{
-							list_FreeAll(path);
-							free(path);
-						}
-						break;
 					}
-				}
-				for ( auto ent : tempPassableEntities )
-				{
-					ent->flags[PASSABLE] = false;
-				}
-				if ( nopath )
-				{
-					// try again
-					c--;
-					list_RemoveNode(entity->mynode);
-					entity = NULL;
+					for ( auto ent : tempPassableEntities )
+					{
+						ent->flags[PASSABLE] = false;
+					}
+					if ( nopath )
+					{
+						// try again
+						c--;
+						list_RemoveNode(entity->mynode);
+						entity = NULL;
+					}
+					else
+					{
+						exit_x = x;
+						exit_y = y;
+					}
 				}
 			}
 		}
@@ -3721,11 +4025,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						if ( map_rng.rand() % 10 == 0 )   // 10% chance
 						{
 							entity = newEntity(9, 1, map.entities, nullptr);  // gold
+							entity->goldAmount = 0;
 							numGenGold++;
 						}
 						else
 						{
 							entity = newEntity(8, 1, map.entities, nullptr);  // item
+							itemsGeneratedList.push_back(entity->getUID());
 							setSpriteAttributes(entity, nullptr, nullptr);
 							numGenItems++;
 						}
@@ -3854,11 +4160,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								if ( map_rng.rand() % 10 == 0 )   // 10% chance
 								{
 									entity = newEntity(9, 1, map.entities, nullptr);  // gold
+									entity->goldAmount = 0;
 									numGenGold++;
 								}
 								else
 								{
 									entity = newEntity(8, 1, map.entities, nullptr);  // item
+									itemsGeneratedList.push_back(entity->getUID());
 									setSpriteAttributes(entity, nullptr, nullptr);
 									numGenItems++;
 								}
@@ -4001,6 +4309,886 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		}
 	}
 
+	if ( svFlags & SV_FLAG_TRAPS )
+	{
+		int numSlimebushes = 0;
+		if ( currentlevel > 5 && currentlevel < 10 )
+		{
+			numSlimebushes += 2 + map_rng.rand() % 3;
+		}
+		else if ( currentlevel >= 10 )
+		{
+			numSlimebushes += 4 + map_rng.rand() % 3;
+		}
+
+		std::set<int> visited;
+		while ( numSlimebushes > 0 && (waterEmptyTiles.size() > 0 || lavaEmptyTiles.size() > 0) )
+		{
+			size_t totalSize = waterEmptyTiles.size() + lavaEmptyTiles.size();
+			int pick = map_rng.rand() % totalSize;
+
+			int x = 0;
+			int y = 0;
+			if ( pick < waterEmptyTiles.size() )
+			{
+				x = (waterEmptyTiles[pick]) % 1000;
+				y = (waterEmptyTiles[pick]) / 1000;
+				waterEmptyTiles.erase(waterEmptyTiles.begin() + pick);
+			}
+			else if ( pick >= waterEmptyTiles.size() && ((pick - waterEmptyTiles.size()) < lavaEmptyTiles.size()) )
+			{
+				x = (lavaEmptyTiles[pick - waterEmptyTiles.size()]) % 1000;
+				y = (lavaEmptyTiles[pick - waterEmptyTiles.size()]) / 1000;
+				lavaEmptyTiles.erase(lavaEmptyTiles.begin() + (pick - waterEmptyTiles.size()));
+			}
+
+			bool skip = false;
+			for ( auto coord : visited )
+			{
+				int tx = coord % 1000;
+				int ty = coord / 1000;
+
+				real_t dx, dy;
+				dx = tx - x;
+				dy = ty - y;
+				if ( sqrt(dx * dx + dy * dy) < 4.0 ) // too close to other regions, within X tiles
+				{
+					skip = true;
+					break;
+				}
+			}
+
+			visited.insert(x + y * 1000);
+
+			if ( skip )
+			{
+				continue;
+			}
+
+			if ( x != 0 && y != 0 )
+			{
+				Entity* summonTrap = newEntity(97, 1, map.entities, nullptr);
+				summonTrap->x = x * 16.0;
+				summonTrap->y = y * 16.0;
+				setSpriteAttributes(summonTrap, nullptr, nullptr);
+				summonTrap->skill[9] = 3; // x tile auto activate
+				summonTrap->skill[0] = SLIME;
+
+				//Entity* ent = newEntity(245, 0, map.entities, nullptr);
+				////ent->behavior = &actBoulder;
+				//ent->x = x * 16.0 + 8;
+				//ent->y = y * 16.0 + 8;
+				//ent->z = 24.0;
+				//ent->flags[PASSABLE] = true;
+			}
+
+			--numSlimebushes;
+		}
+	}
+
+	{
+		if ( !strcmp(map.name, "The Ruins") || !strcmp(map.name, "Citadel") )
+		{
+			int numBells = 0;
+			if ( currentlevel % 2 == 0 )
+			{
+				numBells = 1 + map_rng.rand() % 2;
+			}
+			else
+			{
+				numBells = 2 + map_rng.rand() % 2;
+			}
+			std::vector<int> goodSpots;
+			for ( int x = 0; x < map.width; ++x )
+			{
+				for ( int y = 0; y < map.height; ++y )
+				{
+					if ( possiblelocations[y + x * map.height] == true )
+					{
+						goodSpots.push_back(x + 10000 * y);
+					}
+				}
+			}
+
+			for ( int c = 0; c < std::min(numBells, (int)goodSpots.size()); ++c )
+			{
+				// choose a random location from those available
+				int pick = map_rng.rand() % goodSpots.size();
+				int x = goodSpots[pick] % 10000;
+				int y = goodSpots[pick] / 10000;
+
+				goodSpots.erase(goodSpots.begin() + pick);
+
+				bool bellSpot = true;
+				for ( int x2 = -1; x2 <= 1; x2++ )
+				{
+					for ( int y2 = -1; y2 <= 1; y2++ )
+					{
+						int checkx = x + x2;
+						int checky = y + y2;
+						if ( checkx >= 0 && checkx < map.width )
+						{
+							if ( checky >= 0 && checky < map.height )
+							{
+								if ( !possiblelocations[checky + checkx * map.height] )
+								{
+									bellSpot = false;
+								}
+								else if ( map.tiles[(MAPLAYERS - 1) + checky * MAPLAYERS + checkx * MAPLAYERS * map.height]
+									|| map.tiles[OBSTACLELAYER + checky * MAPLAYERS + checkx * MAPLAYERS * map.height] )
+								{
+									bellSpot = false;
+								}
+								else if ( checkObstacle((checkx) * 16, (checky) * 16, NULL, NULL, false, false) )
+								{
+									bellSpot = false;
+								}
+							}
+						}
+					}
+				}
+				if ( bellSpot )
+				{
+					Entity* bell = newEntity(191, 1, map.entities, nullptr); //Bell entity.
+					bell->x = x * 16.0;
+					bell->y = y * 16.0;
+
+					possiblelocations[y + x * map.height] = false;
+					numpossiblelocations--;
+				}
+				else
+				{
+					--c;
+					continue;
+				}
+			}
+		}
+	}
+
+	int numBreakables = std::min(15, numpossiblelocations / 10);
+	struct BreakableNode_t
+	{
+		BreakableNode_t(int _walls, int _x, int _y, int _dir, int _id = -1)
+		{
+			walls = _walls;
+			x = _x;
+			y = _y;
+			dir = _dir;
+			id = _id;
+		};
+		int walls;
+		int x;
+		int y;
+		int dir;
+		int id = -1;
+	};
+	auto compFuncBreakable = [](BreakableNode_t& lhs, BreakableNode_t& rhs)
+	{
+		return lhs.walls < rhs.walls;
+	};
+	auto findBreakables = EditorEntityData_t::colliderRandomGenPool.find(map.name);
+	if ( findBreakables == EditorEntityData_t::colliderRandomGenPool.end() )
+	{
+		numBreakables = 0;
+	}
+	int numOpenAreaBreakables = 0;
+	std::priority_queue<BreakableNode_t, std::vector<BreakableNode_t>, decltype(compFuncBreakable)> breakableLocations(compFuncBreakable);
+	if ( findBreakables->first == "Underworld" )
+	{
+		numOpenAreaBreakables = 10;
+
+		std::vector<int> picked;
+		while ( numOpenAreaBreakables > 0 && underworldEmptyTiles.size() > 0 )
+		{
+			int pick = map_rng.rand() % underworldEmptyTiles.size();
+			picked.push_back(underworldEmptyTiles[pick]);
+
+			underworldEmptyTiles.erase(underworldEmptyTiles.begin() + pick);
+		}
+
+		for ( auto& coord : picked )
+		{
+			int x = (coord) % 1000;
+			int y = (coord) / 1000;
+
+			if ( numOpenAreaBreakables > 0 )
+			{
+				int obstacles = 0;
+				// add some hanging cages
+				for ( int x2 = -1; x2 <= 1; x2++ )
+				{
+					for ( int y2 = -1; y2 <= 1; y2++ )
+					{
+						if ( x2 == 0 && y2 == 0 ) { continue; }
+						int checkx = x + x2;
+						int checky = y + y2;
+						if ( checkx >= 0 && checkx < map.width )
+						{
+							if ( checky >= 0 && checky < map.height )
+							{
+								int index = (checky)*MAPLAYERS + (checkx)*MAPLAYERS * map.height;
+								if ( map.tiles[index] )
+								{
+									++obstacles;
+									break;
+								}
+								if ( checkObstacle((checkx) * 16, (checky) * 16, NULL, NULL, false, true, false) )
+								{
+									++obstacles;
+									break;
+								}
+							}
+						}
+					}
+				}
+
+				if ( obstacles == 0 )
+				{
+					breakableLocations.push(BreakableNode_t(1, x, y, map_rng.rand() % 4, 
+						map_rng.rand() % 2 ? 14 : 40)); // random dir, hanging cage ids
+					--numOpenAreaBreakables;
+
+					if ( possiblelocations[y + x * map.height] )
+					{
+						possiblelocations[y + x * map.height] = false;
+						--numpossiblelocations;
+					}
+				}
+			}
+		}
+	}
+
+	for ( c = 0; c < std::min(numBreakables, numpossiblelocations); ++c )
+	{
+		// choose a random location from those available
+		pickedlocation = map_rng.rand() % numpossiblelocations;
+		i = -1;
+		int x = 0;
+		int y = 0;
+		bool skipPossibleLocationsDecrement = false;
+		while ( 1 )
+		{
+			if ( possiblelocations[y + x * map.height] == true )
+			{
+				++i;
+				if ( i == pickedlocation )
+				{
+					break;
+				}
+			}
+			++x;
+			if ( x >= map.width )
+			{
+				x = 0;
+				++y;
+				if ( y >= map.height )
+				{
+					y = 0;
+				}
+			}
+		}
+
+		std::set<int> walls;
+		std::set<int> corners;
+		for ( int x2 = -1; x2 <= 1; x2++ )
+		{
+			for ( int y2 = -1; y2 <= 1; y2++ )
+			{
+				if ( x2 == 0 && y2 == 0 )
+				{
+					continue;
+				}
+
+				int checkx = x + x2;
+				int checky = y + y2;
+				if ( checkx >= 0 && checkx < map.width )
+				{
+					if ( checky >= 0 && checky < map.height )
+					{
+						int index = (checky) * MAPLAYERS + (checkx) * MAPLAYERS * map.height;
+						if ( map.tiles[OBSTACLELAYER + index] )
+						{
+							if ( (x2 == -1 && y2 == -1) || (x2 == 1 && y2 == 1)
+								|| (x2 == -1 && y2 == 1) || (x2 == 1 && y2 == -1) )
+							{
+								corners.insert(checkx + checky * 1000);
+							}
+							else
+							{
+								walls.insert(checkx + checky * 1000);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		possiblelocations[y + x * map.height] = false;
+		numpossiblelocations--;
+
+		//if ( walls.size() == 0 && findBreakables->first == "Underworld" && numOpenAreaBreakables > 0 )
+		//{
+		//	int obstacles = 0;
+		//	// add some hanging cages
+		//	for ( int x2 = -1; x2 <= 1; x2++ )
+		//	{
+		//		for ( int y2 = -1; y2 <= 1; y2++ )
+		//		{
+		//			if ( x2 == 0 && y2 == 0 ) { continue; }
+		//			int checkx = x + x2;
+		//			int checky = y + y2;
+		//			if ( checkObstacle((checkx) * 16, (checky) * 16, NULL, NULL, false, true, false) )
+		//			{
+		//				++obstacles;
+		//				break;
+		//			}
+		//		}
+		//	}
+
+		//	if ( obstacles == 0 )
+		//	{
+		//		breakableLocations.push(BreakableNode_t(1, x, y, map_rng.rand() % 4, 
+		//			map_rng.rand() % 2 ? 14 : 40)); // random dir, low prio, hanging cage ids
+		//		--numOpenAreaBreakables;
+		//	}
+		//	--c;
+		//	continue;
+		//}
+
+		if ( walls.size() == 0 || walls.size() >= 4 )
+		{
+			// try again
+			--c;
+			continue;
+		}
+
+		std::set<int> freespaces;
+		for ( int x2 = -1; x2 <= 1; x2++ )
+		{
+			for ( int y2 = -1; y2 <= 1; y2++ )
+			{
+				if ( x2 == 0 && y2 == 0 ) { continue; }
+				int checkx = x + x2;
+				int checky = y + y2;
+				if ( walls.find(checkx + checky * 1000) != walls.end() 
+					|| corners.find(checkx + checky * 1000) != corners.end() )
+				{
+					continue;
+				}
+				if ( checkx >= 0 && checkx < map.width )
+				{
+					if ( checky >= 0 && checky < map.height )
+					{
+						int index = (checky) * MAPLAYERS + (checkx) * MAPLAYERS * map.height;
+						if ( swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]] )
+						{
+							continue;
+						}
+						if ( !checkObstacle((checkx) * 16, (checky) * 16, NULL, NULL, false, false) )
+						{
+							freespaces.insert(checkx + checky * 1000);
+						}
+					}
+				}
+			}
+		}
+
+		bool foundSpace = false;
+		if ( (walls.size() == 1 && freespaces.size() >= 5)
+			|| (walls.size() == 2 && freespaces.size() >= 3)
+			|| (walls.size() == 3 && freespaces.size() >= 1) )
+		{
+			int numIslands = 0;
+			std::set<int> reachedTiles;
+			std::map<int, std::set<int>> islands;
+			for ( auto it = freespaces.begin(); it != freespaces.end(); ++it )
+			{
+				if ( reachedTiles.find(*it) == reachedTiles.end() )
+				{
+					// new island
+					std::queue<int> frontier;
+					frontier.push(*it);
+					reachedTiles.insert(*it);
+					while ( !frontier.empty() )
+					{
+						auto currentKey = frontier.front();
+						frontier.pop();
+
+						const int ix = (currentKey) % 1000;
+						const int iy = (currentKey) / 1000;
+
+						islands[numIslands].insert(currentKey);
+
+						int checkKey = (ix + 1) + ((iy) * 1000);
+						if ( freespaces.find(checkKey) != freespaces.end()
+							&& reachedTiles.find(checkKey) == reachedTiles.end() )
+						{
+							frontier.push(checkKey);
+							reachedTiles.insert(checkKey);
+						}
+						checkKey = (ix - 1) + ((iy) * 1000);
+						if ( freespaces.find(checkKey) != freespaces.end()
+							&& reachedTiles.find(checkKey) == reachedTiles.end() )
+						{
+							frontier.push(checkKey);
+							reachedTiles.insert(checkKey);
+						}
+						checkKey = (ix) + ((iy + 1) * 1000);
+						if ( freespaces.find(checkKey) != freespaces.end()
+							&& reachedTiles.find(checkKey) == reachedTiles.end() )
+						{
+							frontier.push(checkKey);
+							reachedTiles.insert(checkKey);
+						}
+						checkKey = (ix) + ((iy - 1) * 1000);
+						if ( freespaces.find(checkKey) != freespaces.end()
+							&& reachedTiles.find(checkKey) == reachedTiles.end() )
+						{
+							frontier.push(checkKey);
+							reachedTiles.insert(checkKey);
+						}
+					}
+					if ( !islands[numIslands].empty() )
+					{
+						++numIslands;
+					}
+				}
+			}
+
+			for ( auto& island : islands )
+			{
+				if ( (walls.size() == 1 && island.second.size() >= 5)
+					|| (walls.size() == 2 && island.second.size() >= 3)
+					|| (walls.size() == 3 && island.second.size() >= 1) )
+				{
+					std::vector<unsigned int> dirs;
+					if ( walls.size() == 3 )
+					{
+						if ( walls.find((x + 1) + (y + 0) * 1000) == walls.end() )
+						{
+							dirs.push_back(0);
+						}
+						else if ( walls.find((x - 1) + (y + 0) * 1000) == walls.end() )
+						{
+							dirs.push_back(4);
+						}
+						else if ( walls.find((x + 0) + (y + 1) * 1000) == walls.end() )
+						{
+							dirs.push_back(2);
+						}
+						else if ( walls.find((x + 0) + (y - 1) * 1000) == walls.end() )
+						{
+							dirs.push_back(6);
+						}
+					}
+					else
+					{
+						if ( walls.find((x + 1) + (y + 0) * 1000) != walls.end() )
+						{
+							dirs.push_back(4);
+						}
+						else if ( walls.find((x - 1) + (y + 0) * 1000) != walls.end() )
+						{
+							dirs.push_back(0);
+						}
+						else if ( walls.find((x + 0) + (y + 1) * 1000) != walls.end() )
+						{
+							dirs.push_back(6);
+						}
+						else if ( walls.find((x + 0) + (y - 1) * 1000) != walls.end() )
+						{
+							dirs.push_back(2);
+						}
+					}
+					int picked = dirs[map_rng.rand() % dirs.size()];
+					breakableLocations.push(BreakableNode_t(walls.size(), x, y, picked));
+					foundSpace = true;
+					break;
+				}
+			}
+		}
+
+		if ( !foundSpace )
+		{
+			--c;
+		}
+	}
+
+	int breakableGoodies = breakableLocations.size() * 80 / 100;
+	int breakableMonsters = 0;
+	int breakableMonsterLimit = 2 + (currentlevel / LENGTH_OF_LEVEL_REGION) * (1 + map_rng.rand() % 2);
+	static ConsoleVariable<int> cvar_breakableMonsterLimit("/breakable_monster_limit", 0);
+	if ( svFlags & SV_FLAG_CHEATS )
+	{
+		breakableMonsterLimit = std::max(*cvar_breakableMonsterLimit, breakableMonsterLimit);
+	}
+	if ( findBreakables != EditorEntityData_t::colliderRandomGenPool.end() && findBreakables->second.size() > 0 && breakableGoodies > 0 )
+	{
+		int breakableItemsFromGround = 0;
+		std::vector<unsigned int> chances;
+		std::vector<unsigned int> ids;
+		for ( auto& pair : findBreakables->second )
+		{
+			ids.push_back(pair.first);
+			chances.push_back(pair.second);
+		}
+		Monster lastMonsterEvent = NOTHING;
+		while ( !breakableLocations.empty() )
+		{
+			auto& top = breakableLocations.top();
+			int x = top.x;
+			int y = top.y;
+
+			Entity* breakable = newEntity(179, 1, map.entities, nullptr);
+			breakable->x = x * 16.0;
+			breakable->y = y * 16.0;
+			breakable->colliderDecorationRotation = top.dir;
+
+			if ( top.id >= 0 )
+			{
+				breakable->colliderDamageTypes = top.id;
+			}
+			else
+			{
+				int picked = map_rng.discrete(chances.data(), chances.size());
+				breakable->colliderDamageTypes = ids[picked];
+			}
+
+			bool monsterEventExists = false;
+			auto findData = EditorEntityData_t::colliderData.find(breakable->colliderDamageTypes);
+			if ( findData != EditorEntityData_t::colliderData.end() )
+			{
+				auto findMap = findData->second.hideMonsters.find(map.name);
+				if ( findMap != findData->second.hideMonsters.end() )
+				{
+					if ( findMap->second.size() > 0 )
+					{
+						for ( auto m : findMap->second )
+						{
+							if ( m > NOTHING && m < NUMMONSTERS )
+							{
+								monsterEventExists = true;
+							}
+						}
+					}
+				}
+			}
+
+			if ( breakableGoodies > 0 )
+			{
+				--breakableGoodies;
+
+				int index = (y) * MAPLAYERS + (x) * MAPLAYERS * map.height;
+
+				static ConsoleVariable<int> cvar_breakableMonsterChance("/breakable_monster_chance", 10);
+
+				if ( !map.tiles[index] && map_rng.rand() % 2 == 1 )
+				{
+					// nothing over pits 50%
+				}
+				else if ( (breakableMonsters < breakableMonsterLimit && monsterEventExists 
+					&& map_rng.rand() % ((svFlags & SV_FLAG_CHEATS) ? std::min(10, *cvar_breakableMonsterChance) : 10) == 0)
+					&& map.monsterexcludelocations[x + y * map.width] == false ) // 10% monster inside
+				{
+					Monster monsterEvent = NOTHING;
+					auto findMap = findData->second.hideMonsters.find(map.name);
+					if ( findMap != findData->second.hideMonsters.end() )
+					{
+						if ( findMap->second.size() > 0 )
+						{
+							std::vector<unsigned int> chances;
+							bool avoidLastMonster = false;
+							for ( auto m : findMap->second )
+							{
+								chances.push_back(1);
+								if ( lastMonsterEvent != NOTHING && m != lastMonsterEvent )
+								{
+									avoidLastMonster = true;
+								}
+							}
+							if ( avoidLastMonster )
+							{
+								for ( size_t i = 0; i < chances.size(); ++i )
+								{
+									if ( findMap->second[i] == lastMonsterEvent )
+									{
+										chances[i] = 0;
+									}
+								}
+							}
+							int pickIndex = map_rng.discrete(chances.data(), chances.size());
+							int picked = findMap->second[pickIndex];
+							if ( picked > NOTHING && picked < NUMMONSTERS )
+							{
+								monsterEvent = (Monster)picked;
+								lastMonsterEvent = monsterEvent;
+							}
+						}
+					}
+
+					if ( (svFlags & SV_FLAG_TRAPS) )
+					{
+						if ( map_rng.rand() % 2 == 0 )
+						{
+							breakable->colliderHideMonster = monsterEvent;
+						}
+						else
+						{
+							breakable->colliderHideMonster = 1000 + monsterEvent;
+						}
+					}
+					++breakableMonsters;
+				}
+				else if ( !map.tiles[index] || map_rng.rand() % 2 == 1 )   // 50% chance (or floating over a pit is just gold)
+				{
+					std::vector<Entity*> genGold;
+					int numGold = 3 + map_rng.rand() % 3;
+					while ( numGold > 0 )
+					{
+						--numGold;
+						Entity* entity = newEntity(9, 1, map.entities, nullptr);  // gold
+						genGold.push_back(entity);
+						entity->x = breakable->x;
+						entity->y = breakable->y;
+						entity->goldAmount = 2 + map_rng.rand() % 3;
+						entity->flags[INVISIBLE] = true;
+						entity->yaw = breakable->yaw;
+						entity->goldInContainer = breakable->getUID();
+						breakable->colliderContainedEntity = entity->getUID();
+						numGenGold++;
+					}
+					int index = -1;
+					for ( auto gold : genGold )
+					{
+						++index;
+						gold->yaw += (index * PI) / genGold.size();
+					}
+				}
+				else
+				{
+					if ( itemsGeneratedList.size() > 10 && breakableItemsFromGround < 6 )
+					{
+						// steal an item from the ground
+						size_t index = map_rng.rand() % itemsGeneratedList.size();
+						Uint32 uid = itemsGeneratedList.at(index);
+						itemsGeneratedList.erase(itemsGeneratedList.begin() + index);
+						if ( Entity* entity = uidToEntity(uid) )
+						{
+							entity->x = breakable->x;
+							entity->y = breakable->y;
+							entity->flags[INVISIBLE] = true;
+							entity->itemContainer = breakable->getUID();
+							entity->yaw = breakable->yaw;
+							breakable->colliderContainedEntity = entity->getUID();
+							++breakableItemsFromGround;
+						}
+					}
+					else
+					{
+						Entity* entity = newEntity(8, 1, map.entities, nullptr);  // item
+						setSpriteAttributes(entity, nullptr, nullptr);
+						entity->x = breakable->x;
+						entity->y = breakable->y;
+						entity->flags[INVISIBLE] = true;
+						entity->itemContainer = breakable->getUID();
+						entity->yaw = breakable->yaw;
+						breakable->colliderContainedEntity = entity->getUID();
+						numGenItems++;
+					}
+				}
+			}
+
+			if ( false )
+			{
+				//messagePlayer(0, MESSAGE_DEBUG, "pick: %d | x: %d y: %d", picked, x, y);
+				Entity* ent = newEntity(245, 0, map.entities, nullptr);
+				//ent->behavior = &actBoulder;
+				ent->x = x * 16.0 + 8;
+				ent->y = y * 16.0 + 8;
+				ent->z = 24.0;
+				ent->flags[PASSABLE] = true;
+			}
+			breakableLocations.pop();
+		}
+	}
+
+	if ( darkmap && map.skybox == 0 )
+	{
+		std::vector<std::map<int, std::vector<int>>> batAreasGood;
+		std::vector<std::map<int, std::vector<int>>> batAreasOk;
+		for ( int x = 1; x < map.width - 1; ++x )
+		{
+			for ( int y = 1; y < map.height - 1; ++y )
+			{
+				if ( possiblelocations[y + x * map.height] )
+				{
+					std::vector<int> testAreas = {
+						(x - 1) + 1000 * (y + 0),
+						(x + 1) + 1000 * (y + 0),
+						(x + 0) + 1000 * (y + 1),
+						(x + 0) + 1000 * (y - 1),
+						(x + 0) + 1000 * (y + 0),
+						(x + 1) + 1000 * (y + 1),
+						(x - 1) + 1000 * (y + 1),
+						(x + 1) + 1000 * (y - 1),
+						(x - 1) + 1000 * (y - 1)
+					};
+					std::map<int, std::vector<int>> goodSpots;
+					int openCeilings = 0;
+					for ( auto coord : testAreas )
+					{
+						int tx = coord % 1000;
+						int ty = coord / 1000;
+						if ( tx >= 1 && tx < map.width - 1 && ty >= 1 && ty < map.height - 1 )
+						{
+							if ( possiblelocations[ty + tx * map.height] )
+							{
+								int mapIndex = (ty)*MAPLAYERS + (tx)*MAPLAYERS * map.height;
+								if ( !map.tiles[OBSTACLELAYER + mapIndex] )
+								{
+									if ( !map.tiles[(MAPLAYERS - 1) + mapIndex] )
+									{
+										++openCeilings;
+										goodSpots[0].push_back(coord);
+									}
+									else
+									{
+										goodSpots[1].push_back(coord);
+									}
+								}
+							}
+						}
+					}
+					if ( openCeilings >= 5 )
+					{
+						batAreasGood.push_back(goodSpots);
+					}
+					else if ( (goodSpots[0].size() + goodSpots[1].size()) >= 5 )
+					{
+						batAreasOk.push_back(goodSpots);
+					}
+				}
+			}
+		}
+
+		std::unordered_set<int> visited;
+		std::vector<int> previousAreas;
+		int numBatAreas = std::max(2, std::min(5, 1 + (currentlevel / LENGTH_OF_LEVEL_REGION)));
+		while ( numBatAreas > 0 )
+		{
+			if ( batAreasGood.size() == 0 && batAreasOk.size() == 0 )
+			{
+				break;
+			}
+
+			auto& areas = batAreasGood.size() > 0 ? batAreasGood : batAreasOk;
+			if ( areas.size() > 0 )
+			{
+				size_t picked = map_rng.rand() % areas.size();
+				auto& coords = areas[picked];
+
+				bool skip = false;
+				for ( auto coord : coords[0] )
+				{
+					if ( visited.find(coord) != visited.end() )
+					{
+						// no good
+						skip = true;
+					}
+					else
+					{
+						visited.insert(coord);
+					}
+				}
+				for ( auto coord : coords[1] )
+				{
+					if ( visited.find(coord) != visited.end() )
+					{
+						// no good
+						skip = true;
+					}
+					else
+					{
+						visited.insert(coord);
+					}
+				}
+
+				int currentCoord = 0;
+				if ( coords[0].size() > 0 )
+				{
+					currentCoord = coords[0][0];
+				}
+				else if ( coords[1].size() > 0 )
+				{
+					currentCoord = coords[1][0];
+				}
+
+				int checkx = currentCoord % 1000;
+				int checky = currentCoord / 1000;
+				for ( auto previousCoord : previousAreas )
+				{
+					int ox = previousCoord % 1000;
+					int oy = previousCoord / 1000;
+
+					real_t dx, dy;
+					dx = checkx - ox;
+					dy = checky - oy;
+					if ( sqrt(dx * dx + dy * dy) < 8.0 ) // too close to other regions, within 8 tiles
+					{
+						skip = true;
+						break;
+					}
+				}
+
+				if ( skip )
+				{
+					areas.erase(areas.begin() + picked);
+					continue;
+				}
+
+				if ( coords[0].size() > 0 )
+				{
+					previousAreas.push_back(coords[0][0]);
+				}
+				else if ( coords[1].size() > 0 )
+				{
+					previousAreas.push_back(coords[1][0]);
+				}
+
+				int numSpawns = std::max(2, std::min(4, 1 + (currentlevel / LENGTH_OF_LEVEL_REGION)));
+				for ( size_t i = 0; i < (coords[0].size() + coords[1].size()) && numSpawns > 0; ++i )
+				{
+					auto coord = (i < coords[0].size()) ? coords[0][i] : coords[1][i - coords[0].size()];
+					int tx = coord % 1000;
+					int ty = coord / 1000;
+
+					{
+						Entity* ent = newEntity(188, 0, map.entities, nullptr);
+						ent->x = tx * 16.0;
+						ent->y = ty * 16.0;
+					}
+
+					//Entity* ent = newEntity(245, 0, map.entities, nullptr);
+					////ent->behavior = &actBoulder;
+					//ent->x = tx * 16.0 + 8;
+					//ent->y = ty * 16.0 + 8;
+					//ent->z = 24.0;
+					//ent->flags[PASSABLE] = true;
+					visited.insert(coord);
+					--numSpawns;
+
+					possiblelocations[ty + tx * map.height] = false;
+					--numpossiblelocations;
+				}
+
+				--numBatAreas;
+
+				areas.erase(areas.begin() + picked);
+				continue;
+			}
+		}
+	}
+
 	// on hell levels, lava doesn't bubble. helps performance
 	/*if( !strcmp(map.name,"Hell") ) {
 		for( node=map.entities->first; node!=NULL; node=node->next ) {
@@ -4018,6 +5206,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	list_FreeAll(&subRoomMapList);
 	list_FreeAll(&mapList);
 	list_FreeAll(&doorList);
+
 	printlog("successfully generated a dungeon with %d rooms, %d monsters, %d gold, %d items, %d decorations.\n", roomcount, nummonsters, numGenGold, numGenItems, numGenDecorations);
 	//messagePlayer(0, "successfully generated a dungeon with %d rooms, %d monsters, %d gold, %d items, %d decorations.", roomcount, nummonsters, numGenGold, numGenItems, numGenDecorations);
 	return secretlevelexit;
@@ -4045,6 +5234,111 @@ bool allowedGenerateMimicOnChest(int x, int y, map_t& map)
 		}
 	}*/
 	return true;
+}
+
+void debugMap(map_t* map)
+{
+	return;
+	if ( !map )
+	{
+		return;
+	}
+
+	std::set<Uint32> takenSlots;
+	for ( auto node = map->entities->first; node != nullptr; )
+	{
+		Entity* postProcessEntity = (Entity*)node->element;
+		node = node->next;
+		if ( postProcessEntity )
+		{
+			if ( postProcessEntity->behavior == &actItem && postProcessEntity->z > 4 )
+			{
+				int x = (int)postProcessEntity->x >> 4;
+				int y = (int)postProcessEntity->y >> 4;
+				takenSlots.insert(x + y * 10000);
+			}
+		}
+	}
+
+	for ( int x = 0; x < map->width; ++x )
+	{
+		for ( int y = 0; y < map->height; ++y )
+		{
+			if ( takenSlots.find(x + y * 10000) != takenSlots.end() )
+			{
+				int numWalls = 0;
+				std::vector<std::pair<int, int>> coords = {
+					{x + 1, y},
+					{x - 1, y},
+					{x, y + 1},
+					{x, y - 1}
+				};
+				for ( auto& pair : coords )
+				{
+					if ( pair.first >= 0 && pair.first < map->width )
+					{
+						if ( pair.second >= 0 && pair.second < map->height )
+						{
+							if ( map->tiles[pair.second * MAPLAYERS + pair.first * MAPLAYERS * map->height] ) // floor
+							{
+								numWalls += map->tiles[OBSTACLELAYER + pair.second * MAPLAYERS + pair.first * MAPLAYERS * map->height] != 0 ? 1 : 0;
+							}
+						}
+					}
+				}
+				if ( numWalls > 0 )
+				{
+					//Entity* ent = newEntity(245, 0, map->entities, nullptr);
+					////ent->behavior = &actBoulder;
+					//ent->x = x * 16.0 + 8;
+					//ent->y = y * 16.0 + 8;
+					//ent->z = 24.0;
+				}
+				//int numObstacles = checkObstacle((checkx) * 16, (checky) * 16, NULL, NULL, true);
+			}
+		}
+	}
+	mapLevel2(0);
+
+	/*int num5x5s = 0;
+	// open area debugging tool
+	for ( int x = 0; x < map->width; ++x )
+	{
+		for ( int y = 0; y < map->height; ++y )
+		{
+			if ( takenSlots.find(x + y * 10000) == takenSlots.end() )
+			{
+				if ( !map->tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map->height]
+					&& !map->tiles[2 + y * MAPLAYERS + x * MAPLAYERS * map->height] )
+				{
+					int numTiles = 0;
+					for ( int x1 = x; x1 < map->width && x1 < x + 5; ++x1 )
+					{
+						for ( int y1 = y; y1 < map->height && y1 < y + 5; ++y1 )
+						{
+							if ( takenSlots.find(x1 + y1 * 10000) == takenSlots.end() )
+							{
+								if ( !map->tiles[OBSTACLELAYER + y1 * MAPLAYERS + x1 * MAPLAYERS * map->height]
+									&& !map->tiles[2 + y1 * MAPLAYERS + x1 * MAPLAYERS * map->height] )
+								{
+									++numTiles;
+								}
+							}
+						}
+					}
+					if ( numTiles == 25 )
+					{
+						++num5x5s;
+						Entity* ent = newEntity(245, 0, map->entities, nullptr);
+						ent->behavior == &actBoulder;
+						ent->x = x * 16.0 + 8;
+						ent->y = y * 16.0 + 8;
+					}
+				}
+			}
+		}
+	}
+	messagePlayer(0, MESSAGE_DEBUG, "%d 5x5s", num5x5s);*/
 }
 
 /*-------------------------------------------------------------------------------
@@ -4096,6 +5390,7 @@ void assignActions(map_t* map)
 	}
 
 	bool customMonsterCurveExists = false;
+	monsterCurveCustomManager.followersToGenerateForLeaders.clear();
 	if ( !monsterCurveCustomManager.inUse() )
 	{
 		monsterCurveCustomManager.readFromFile(mapseed);
@@ -4441,7 +5736,10 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->roll = PI / 2.0;
-				entity->yaw = (map_rng.rand() % 360) * PI / 180.0;
+				if ( entity->itemContainer == 0 )
+				{
+					entity->yaw = (map_rng.rand() % 360) * PI / 180.0;
+				}
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actItem;
 				if ( entity->sprite == 68 )   // magic_bow.png
@@ -4752,12 +6050,27 @@ void assignActions(map_t* map)
 				entity->sizey = 4;
 				entity->x += 8;
 				entity->y += 8;
-				entity->z = 6.5;
-				entity->yaw = (map_rng.rand() % 360) * PI / 180.0;
+				if ( entity->goldInContainer == 0 )
+				{
+					entity->yaw = (map_rng.rand() % 360) * PI / 180.0;
+				}
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actGoldBag;
-				entity->skill[0] = 10 + map_rng.rand() % 100 + (currentlevel); // amount
-				entity->sprite = 130; // gold bag model
+				entity->goldBouncing = 1;
+				if ( entity->goldAmount == 0 )
+				{
+					entity->goldAmount = 10 + map_rng.rand() % 100 + (currentlevel); // amount
+				}
+				if ( entity->goldAmount < 5 )
+				{
+					entity->sprite = 1379;
+					entity->z = 7.75;
+				}
+				else
+				{
+					entity->sprite = 130; // gold bag model
+					entity->z = 6.25;
+				}
 				if ( !strcmp(map->name, "Sokoban") )
 				{
 					entity->flags[INVISIBLE] = true;
@@ -4779,6 +6092,11 @@ void assignActions(map_t* map)
 			case 77:
 			case 78:
 			case 79:
+			case 193:
+			case 194:
+			case 195:
+			case 196:
+			case 197:
 			case 80:
 			case 81:
 			case 82:
@@ -4799,6 +6117,8 @@ void assignActions(map_t* map)
 			case 164:
 			case 165:
 			case 166:
+			case 188:
+			case 189:
 			{
 				entity->sizex = 4;
 				entity->sizey = 4;
@@ -4835,6 +6155,11 @@ void assignActions(map_t* map)
                 case 77: monsterType = MINOTAUR; break;
                 case 78: monsterType = SCORPION; break;
                 case 79: monsterType = SLIME; break;
+				case 193: monsterType = SLIME; break;
+				case 194: monsterType = SLIME; break;
+				case 195: monsterType = SLIME; break;
+				case 196: monsterType = SLIME; break;
+				case 197: monsterType = SLIME; break;
                 case 80: monsterType = SUCCUBUS; break;
                 case 81: monsterType = RAT; break;
                 case 82: monsterType = GHOUL; break;
@@ -4855,6 +6180,8 @@ void assignActions(map_t* map)
                 case 164: monsterType = SPELLBOT; break;
                 case 165: monsterType = DUMMYBOT; break;
                 case 166: monsterType = GYROBOT; break;
+				case 188: monsterType = BAT_SMALL; break;
+				case 189: monsterType = BUGBEAR; break;
                 default:
 					monsterIsFixedSprite = false;
 					monsterType = static_cast<Monster>(monsterCurve(currentlevel));
@@ -4877,6 +6204,10 @@ void assignActions(map_t* map)
 				{
 					entity->yaw = 90 * (map_rng.rand() % 4) * PI / 180.0;
 					entity->monsterLookDir = entity->yaw;
+				}
+				else if ( monsterType == BAT_SMALL )
+				{
+					entity->monsterSpecialState = BAT_REST;
 				}
 
 				entity->seedEntityRNG(map_server_rng.getU32());
@@ -4951,6 +6282,29 @@ void assignActions(map_t* map)
 				if ( multiplayer != CLIENT )
 				{
 					myStats->type = monsterType;
+					if ( myStats->type == SLIME )
+					{
+						switch ( entity->sprite )
+						{
+						case 193:
+							myStats->setAttribute("slime_type", "slime green");
+							break;
+						case 194:
+							myStats->setAttribute("slime_type", "slime blue");
+							break;
+						case 195:
+							myStats->setAttribute("slime_type", "slime red");
+							break;
+						case 196:
+							myStats->setAttribute("slime_type", "slime tar");
+							break;
+						case 197:
+							myStats->setAttribute("slime_type", "slime metal");
+							break;
+						default:
+							break;
+						}
+					}
 					if ( myStats->type == DEVIL )
 					{
 						auto childEntity = newEntity(72, 1, map->entities, nullptr);
@@ -5366,7 +6720,10 @@ void assignActions(map_t* map)
 			// summon monster trap
 			case 97:
 			{
-				entity->skill[28] = 1; // is a mechanism
+				if ( entity->skill[9] == 0 ) // no auto activate
+				{
+					entity->skill[28] = 1; // is a mechanism
+				}
 				if ( entity->skill[1] == 0 )
 				{
 					// not generated by editor, set monster qty to 1.
@@ -5550,6 +6907,10 @@ void assignActions(map_t* map)
 				if ( !strcmp(map->name, "Mages Guild") )
 				{
 					entity->skill[3] = 1; // not secret portal, just aesthetic.
+				}
+				else if ( !strcmp(map->name, "Hell") && currentlevel == 23 )
+				{
+					entity->portalNotSecret = 1; // not secret portal, just aesthetic.
 				}
 				entity->flags[PASSABLE] = true;
 				break;
@@ -6857,7 +8218,10 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->roll = PI / 2.0;
-				entity->yaw = (map_rng.rand() % 360) * PI / 180.0;
+				if ( entity->itemContainer == 0 )
+				{
+					entity->yaw = (map_rng.rand() % 360) * PI / 180.0;
+				}
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actItem;
 				entity->skill[10] = READABLE_BOOK;
@@ -6914,7 +8278,22 @@ void assignActions(map_t* map)
 				}
 				strcpy(buf, output.c_str());
 
-				entity->skill[14] = getBook(buf);
+				int index = -1;
+				bool foundBook = false;
+				for ( auto& book : allBooks )
+				{
+					++index;
+					if ( book.default_name == buf )
+					{
+						foundBook = true;
+						entity->skill[14] = getBook(buf);
+						break;
+					}
+				}
+				if ( !foundBook && allBooks.size() > 0 )
+				{
+					entity->skill[14] = map_rng.rand() % allBooks.size();
+				}
 					
 				if ( entity->skill[15] == 1 ) // editor set as identified
 				{
@@ -6990,23 +8369,108 @@ void assignActions(map_t* map)
 				entity->yaw = entity->shrineDir * PI / 2;
 				break;
 			case 179:
+			{
 				// collider decoration
 				entity->x += 8;
 				entity->y += 8;
+				int dir = entity->colliderDecorationRotation;
+				if ( dir == -1 )
+				{
+					dir = map_rng.rand() % 8;
+					entity->colliderDecorationRotation = dir;
+				}
+				entity->yaw = dir * (PI / 4);
+				/*static ConsoleVariable<int> debugColliderType("/collider_type", 14);
+				entity->colliderDamageTypes = *debugColliderType;*/
+				auto find = EditorEntityData_t::colliderData.find(entity->colliderDamageTypes);
+				if ( find != EditorEntityData_t::colliderData.end() )
+				{
+					auto& data = find->second;
+					if ( data.hasOverride("dir_offset") )
+					{
+						entity->yaw = ((dir + data.getOverride("dir_offset")) * (PI / 4));
+					}
+					if ( data.hasOverride("model") )
+					{
+						entity->colliderDecorationModel = data.getOverride("model");
+					}
+					if ( data.hasOverride("height") )
+					{
+						entity->colliderDecorationHeightOffset = data.getOverride("height");
+					}
+					if ( dir == 0 )
+					{
+						if ( data.hasOverride("east_x") )
+						{
+							entity->colliderDecorationXOffset = data.getOverride("east_x");
+						}
+						if ( data.hasOverride("east_y") )
+						{
+							entity->colliderDecorationYOffset = data.getOverride("east_y");
+						}
+					}
+					else if ( dir == 2 )
+					{
+						if ( data.hasOverride("south_x") )
+						{
+							entity->colliderDecorationXOffset = data.getOverride("south_x");
+						}
+						if ( data.hasOverride("south_y") )
+						{
+							entity->colliderDecorationYOffset = data.getOverride("south_y");
+						}
+					}
+					else if ( dir == 4 )
+					{
+						if ( data.hasOverride("west_x") )
+						{
+							entity->colliderDecorationXOffset = data.getOverride("west_x");
+						}
+						if ( data.hasOverride("west_y") )
+						{
+							entity->colliderDecorationYOffset = data.getOverride("west_y");
+						}
+					}
+					else if ( dir == 6 )
+					{
+						if ( data.hasOverride("north_x") )
+						{
+							entity->colliderDecorationXOffset = data.getOverride("north_x");
+						}
+						if ( data.hasOverride("north_y") )
+						{
+							entity->colliderDecorationYOffset = data.getOverride("north_y");
+						}
+					}
+					if ( data.hasOverride("collision") )
+					{
+						entity->colliderHasCollision = data.getOverride("collision");
+					}
+					if ( data.hasOverride("collision_x") )
+					{
+						entity->colliderSizeX = data.getOverride("collision_x");
+					}
+					if ( data.hasOverride("collision_y") )
+					{
+						entity->colliderSizeY = data.getOverride("collision_y");
+					}
+					if ( data.hasOverride("hp") )
+					{
+						entity->colliderMaxHP = data.getOverride("hp");
+					}
+					if ( data.hasOverride("diggable") )
+					{
+						entity->colliderDiggable = data.getOverride("diggable");
+					}
+				}
+
 				entity->sprite = entity->colliderDecorationModel;
 				entity->sizex = entity->colliderSizeX;
 				entity->sizey = entity->colliderSizeY;
-				entity->z = 7.5 - entity->colliderDecorationHeightOffset * 0.25;
 				entity->x += entity->colliderDecorationXOffset * 0.25;
 				entity->y += entity->colliderDecorationYOffset * 0.25;
-				if ( entity->colliderDecorationRotation == -1 )
-				{
-					entity->yaw = (map_rng.rand() % 8) * (PI / 4);
-				}
-				else
-				{
-					entity->yaw = entity->colliderDecorationRotation * (PI / 4);
-				}
+				entity->z = 7.5 - entity->colliderDecorationHeightOffset * 0.25;
+
 				entity->flags[PASSABLE] = entity->colliderHasCollision == 0;
 				entity->flags[BLOCKSIGHT] = false;
 				entity->behavior = &actColliderDecoration;
@@ -7026,6 +8490,119 @@ void assignActions(map_t* map)
 				}
 				entity->setUID(-3);*/
 				break;
+			}
+			//AND gate
+			case 185:
+			case 186:
+			case 187:
+			{
+				entity->sizex = 2;
+				entity->sizey = 2;
+				entity->x += 8;
+				entity->y += 8;
+				entity->behavior = &actSignalGateAND;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->skill[28] = 1; // is a mechanism
+				if ( entity->sprite == 186 ) { entity->signalInputDirection += 4; }
+				if ( entity->sprite == 187 ) { entity->signalInputDirection += 8; }
+				entity->sprite = -1;
+				break;
+			}
+			case 190:
+				entity->x += 8;
+				entity->y += 8;
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->behavior = &actDaedalusShrine;
+				entity->flags[PASSABLE] = false;
+				entity->z = -0.25;
+				entity->sprite = 1481;
+				//entity->focalx = 0.75;
+				entity->yaw = (map_rng.rand() % 360) * PI / 180.0;
+				entity->seedEntityRNG(map_rng.getU32());
+				{
+					Entity* childEntity = newEntity(1480, 1, map->entities, nullptr); // base
+					childEntity->parent = entity->getUID();
+					childEntity->x = entity->x;
+					childEntity->y = entity->y;
+					childEntity->z = entity->z + 6.5;
+					childEntity->yaw = 0.0;
+					childEntity->sizex = 4;
+					childEntity->sizey = 4;
+					childEntity->flags[PASSABLE] = true;
+					childEntity->flags[UNCLICKABLE] = false;
+					TileEntityList.addEntity(*childEntity);
+					//node_t* tempNode = list_AddNodeLast(&entity->children);
+					//tempNode->element = childEntity; // add the node to the children list.
+					//tempNode->deconstructor = &emptyDeconstructor;
+					//tempNode->size = sizeof(Entity*);
+				}
+				break;
+			case 191:
+			{
+				entity->x += 8;
+				entity->y += 8;
+				entity->sizex = 2;
+				entity->sizey = 2;
+				entity->z = 0.0;
+				entity->behavior = &actBell;
+				entity->flags[PASSABLE] = true;
+				entity->flags[BLOCKSIGHT] = false;
+				entity->flags[BURNABLE] = true;
+				entity->sprite = 1478; // rope
+				entity->seedEntityRNG(map_rng.getU32());
+				entity->skill[11] = map_rng.rand(); // buff type
+				{
+					Entity* childEntity = newEntity(1475, 1, map->entities, nullptr); // bell
+					childEntity->parent = entity->getUID();
+					childEntity->x = entity->x - 2 * cos(entity->yaw);
+					childEntity->y = entity->y - 2 * sin(entity->yaw);
+					childEntity->z = -22.25;
+					childEntity->yaw = entity->yaw;
+					childEntity->sizex = 6;
+					childEntity->sizey = 6;
+					childEntity->flags[PASSABLE] = true;
+					childEntity->flags[UNCLICKABLE] = false;
+					childEntity->flags[UPDATENEEDED] = true;
+					childEntity->flags[NOCLIP_CREATURES] = true;
+					childEntity->z = entity->z;
+					TileEntityList.addEntity(*childEntity);
+					node_t* tempNode = list_AddNodeLast(&entity->children);
+					tempNode->element = childEntity; // add the node to the children list.
+					tempNode->deconstructor = &emptyDeconstructor;
+					tempNode->size = sizeof(Entity*);
+				}
+
+				auto& bellRng = entity->entity_rng ? *entity->entity_rng : map_rng;
+				int roll = bellRng.rand() % 4;
+				if ( roll == 0 )
+				{
+					Entity* itemEntity = newEntity(8, 1, map->entities, nullptr);  // item
+					setSpriteAttributes(itemEntity, nullptr, nullptr);
+					itemEntity->x = entity->x - 8.0;
+					itemEntity->y = entity->y - 8.0;
+					itemEntity->z = -16;
+					itemEntity->flags[INVISIBLE] = true;
+					itemEntity->itemContainer = entity->getUID();
+					itemEntity->yaw = entity->yaw;
+					itemEntity->skill[16] = SPELLBOOK + 1;
+					entity->skill[1] = itemEntity->getUID();
+				}
+				else if ( roll == 1 )
+				{
+					Entity* goldEntity = newEntity(9, 1, map->entities, nullptr);  // gold
+					goldEntity->x = entity->x - 8.0;
+					goldEntity->y = entity->y - 8.0;
+					goldEntity->z = -16;
+					goldEntity->goldAmount = 50 + bellRng.rand() % 50;
+					goldEntity->flags[INVISIBLE] = true;
+					entity->skill[1] = goldEntity->getUID();
+				}
+			}
+				break;
             default:
                 break;
 		}
@@ -7042,8 +8619,28 @@ void assignActions(map_t* map)
 		node = node->next;
 		if ( postProcessEntity )
 		{
+			if ( postProcessEntity->behavior == &actGoldBag )
+			{
+				if ( postProcessEntity->goldInContainer != 0 && postProcessEntity->flags[INVISIBLE] == true )
+				{
+					if ( auto parent = uidToEntity(postProcessEntity->itemContainer) )
+					{
+						postProcessEntity->x = parent->x;
+						postProcessEntity->y = parent->y;
+					}
+				}
+			}
 			if ( postProcessEntity->behavior == &actItem )
 			{
+				if ( postProcessEntity->itemContainer != 0 && postProcessEntity->flags[INVISIBLE] == true )
+				{
+					if ( auto parent = uidToEntity(postProcessEntity->itemContainer) )
+					{
+						postProcessEntity->x = parent->x;
+						postProcessEntity->y = parent->y;
+					}
+				}
+
 				// see if there's any platforms to set items upon.
 				for ( node_t* tmpnode = map->entities->first; tmpnode != nullptr; tmpnode = tmpnode->next )
 				{
@@ -7120,7 +8717,6 @@ void assignActions(map_t* map)
 	}
 
 	std::vector<Entity*> chests;
-
 	for ( auto node = map->entities->first; node != nullptr; )
 	{
 		Entity* postProcessEntity = (Entity*)node->element;
@@ -7138,13 +8734,15 @@ void assignActions(map_t* map)
 		}
 	}
 
+	debugMap(map);
+
 	if ( true /*currentlevel == 0*/ )
 	{
 		numChests = 0;
 		numMimics = 0;
 	}
 
-	static ConsoleVariable<int> cvar_mimic_chance("/mimic_chance", 2);
+	static ConsoleVariable<int> cvar_mimic_chance("/mimic_chance", 10);
 	static ConsoleVariable<bool> cvar_mimic_debug("/mimic_debug", false);
 
 	std::vector<Entity*> mimics;
@@ -7155,8 +8753,11 @@ void assignActions(map_t* map)
 			auto chosen = map_rng.rand() % chests.size();
 			if ( allowedGenerateMimicOnChest(chests[chosen]->x / 16, chests[chosen]->y / 16, *map) )
 			{
-				mimics.push_back(chests[chosen]);
-				chests.erase(chests.begin() + chosen);
+				if ( chests[chosen]->chestMimicChance != 0 )
+				{
+					mimics.push_back(chests[chosen]);
+					chests.erase(chests.begin() + chosen);
+				}
 			}
 		}
 
@@ -7171,7 +8772,14 @@ void assignActions(map_t* map)
 				{
 					chance = std::min(100, std::max(0, *cvar_mimic_chance));
 				}
-				doMimic = chest->entity_rng->rand() % 100 < chance;
+				if ( chest->chestMimicChance >= 0 )
+				{
+					doMimic = chest->entity_rng->rand() % 100 < chest->chestMimicChance;
+				}
+				else
+				{
+					doMimic = chest->entity_rng->rand() % 100 < chance;
+				}
 			}
 
 			if ( doMimic )
@@ -7195,6 +8803,12 @@ void assignActions(map_t* map)
 
 	for ( auto chest : mimics )
 	{
+		if ( vampireQuestChest && chest == vampireQuestChest )
+		{
+			createChestInventory(chest, chest->chestType);
+			continue;
+		}
+
 		// mimic
 		numMimics++;
 		Entity* entity = newEntity(10, 1, map->entities, map->creatures);
@@ -7252,6 +8866,11 @@ void assignActions(map_t* map)
 		list_RemoveNode(chest->mynode);
 	}
 
+	if ( monsterCurveCustomManager.inUse() )
+	{
+		monsterCurveCustomManager.generateFollowersForLeaders();
+	}
+
     keepInventoryGlobal = svFlags & SV_FLAG_KEEPINVENTORY;
 }
 
@@ -7274,6 +8893,34 @@ void mapLevel(int player)
 				if ( !minimap[y][x] )
 				{
 					minimap[y][x] = 3;
+				}
+			}
+			else
+			{
+				minimap[y][x] = 0;
+			}
+		}
+	}
+}
+
+void mapLevel2(int player)
+{
+	for ( int y = 0; y < map.height; ++y )
+	{
+		for ( int x = 0; x < map.width; ++x )
+		{
+			if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				if ( !minimap[y][x] )
+				{
+					minimap[y][x] = 2;
+				}
+			}
+			else if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				if ( !minimap[y][x] )
+				{
+					minimap[y][x] = 1;
 				}
 			}
 			else

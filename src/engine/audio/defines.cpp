@@ -19,7 +19,7 @@ FMOD::System* fmod_system = nullptr;
 
 FMOD_RESULT fmod_result;
 
-int fmod_maxchannels = 100;
+int fmod_maxchannels = 256;
 int fmod_flags;
 
 FMOD::Sound** sounds = nullptr;

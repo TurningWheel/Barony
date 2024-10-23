@@ -27,7 +27,7 @@ enum Monster : int
 	GOBLIN,
 	SLIME,
 	TROLL,
-	OCTOPUS,
+	BAT_SMALL,
 	SPIDER,
 	GHOUL,
 	SKELETON,
@@ -58,6 +58,7 @@ enum Monster : int
 	SPELLBOT,
 	GYROBOT,
 	DUMMYBOT,
+	BUGBEAR,
 	MAX_MONSTER
 };
 const int NUMMONSTERS = MAX_MONSTER;
@@ -100,6 +101,9 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
     {
         189, 1108, 1109, 1110, 1111, 1112, // blue
         210, 1113, 1114, 1115, 1116, 1117, // green
+		1380, 1383, 1384, 1385, 1386, 1387, // red
+		1381, 1388, 1389, 1390, 1391, 1392, // tar
+		1382, 1393, 1394, 1395, 1396, 1397, // metal
     },
 
     // TROLL
@@ -109,8 +113,9 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
         1132,   // thumpus
     },
 
-    // OCTOPUS
+    // BAT_SMALL
     {
+		1408
     },
 
     // SPIDER
@@ -155,7 +160,7 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 
     // GNOME
     {
-        295,
+        295, 1426, 1430
     },
 
     // DEMON
@@ -283,6 +288,11 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
     {
         889,
     },
+
+	// BUGBEAR
+	{
+		1412,
+	},
 };
 
 static char monstertypename[][15] =
@@ -293,7 +303,7 @@ static char monstertypename[][15] =
 	"goblin",
 	"slime",
 	"troll",
-	"octopus",
+	"bat",
 	"spider",
 	"ghoul",
 	"skeleton",
@@ -323,7 +333,8 @@ static char monstertypename[][15] =
 	"sentrybot",
 	"spellbot",
 	"gyrobot",
-	"dummybot"
+	"dummybot",
+	"bugbear"
 };
 
 static char monstertypenamecapitalized[][15] =
@@ -334,7 +345,7 @@ static char monstertypenamecapitalized[][15] =
 	"Goblin",
 	"Slime",
 	"Troll",
-	"Octopus",
+	"Bat",
 	"Spider",
 	"Ghoul",
 	"Skeleton",
@@ -364,7 +375,8 @@ static char monstertypenamecapitalized[][15] =
 	"Sentrybot",
 	"Spellbot",
 	"Gyrobot",
-	"Dummybot"
+	"Dummybot",
+	"Bugbear"
 };
 
 // body part focal points
@@ -382,7 +394,7 @@ static char gibtype[NUMMONSTERS] =
 	1,	//GOBLIN,
 	3,	//SLIME,
 	1,	//TROLL,
-	1,	//OCTOPUS,
+	1,	//BAT_SMALL,
 	2,	//SPIDER,
 	2,	//GHOUL,
 	5,	//SKELETON,
@@ -412,7 +424,8 @@ static char gibtype[NUMMONSTERS] =
 	0,	//SENTRYBOT
 	0,	//SPELLBOT
 	0,  //GYROBOT
-	0	//DUMMYBOT
+	0,	//DUMMYBOT
+	1	//BUGBEAR
 };
 
 // columns go like this:
@@ -426,7 +439,7 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f, 0.8 }, // goblin
 	{ 1.4, 0.5, 1.3, 0.7, 0.5, 1.3, 0.5 }, // slime
 	{ 1.1, 0.8, 1.1, 0.8, 0.9, 1.f, 0.8 }, // troll
-	{ 1.2, 1.f, 1.1, 0.9, 1.1, 1.f, 1.f }, // octopus
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 0.5 }, // bat
 	{ 1.f, 1.1, 1.f, 1.2, 1.1, 1.f, 1.1 }, // spider
 	{ 1.f, 1.2, 0.8, 1.1, 0.6, 0.8, 1.1 }, // ghoul
 	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8, 1.1 }, // skeleton
@@ -456,7 +469,8 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // sentrybot
 	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // sentrybot
 	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // gyrobot
-	{ 1.f, 1.f, 1.f, 1.f, 0.5, 1.2, 0.5 }  // dummybot
+	{ 1.f, 1.f, 1.f, 1.f, 0.5, 1.2, 0.5 }, // dummybot
+	{ 1.3, 1.2, 1.2, 0.7, 0.8, 1.f, 0.7 }  // bugbear
 };
 
 enum DamageTableType : int
@@ -694,6 +708,8 @@ void initSentryBot(Entity* my, Stat* myStats);
 void initGyroBot(Entity* my, Stat* myStats);
 void initDummyBot(Entity* my, Stat* myStats);
 void initMimic(Entity* my, Stat* myStats);
+void initBat(Entity* my, Stat* myStats);
+void initBugbear(Entity* my, Stat* myStats);
 
 //--act*Limb functions--
 void actHumanLimb(Entity* my);
@@ -727,6 +743,8 @@ void actSentryBotLimb(Entity* my);
 void actGyroBotLimb(Entity* my);
 void actDummyBotLimb(Entity* my);
 void actMimicLimb(Entity* my);
+void actBatLimb(Entity* my);
+void actBugbearLimb(Entity* my);
 
 //--*Die functions--
 void humanDie(Entity* my);
@@ -762,12 +780,17 @@ void sentryBotDie(Entity* my);
 void gyroBotDie(Entity* my);
 void dummyBotDie(Entity* my);
 void mimicDie(Entity* my);
+void batDie(Entity* my);
+void bugbearDie(Entity* my);
 
+void monsterAnimate(Entity* my, Stat* myStats, double dist);
 //--*MoveBodyparts functions--
 void humanMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void ratAnimate(Entity* my, double dist);
 void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist);
-void slimeAnimate(Entity* my, double dist);
+void slimeSetType(Entity* my, Stat* myStats, bool sink, BaronyRNG* rng);
+void slimeSprayAttack(Entity* my);
+void slimeAnimate(Entity* my, Stat* myStats, double dist);
 void scorpionAnimate(Entity* my, double dist);
 void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void trollMoveBodyparts(Entity* my, Stat* myStats, double dist);
@@ -797,9 +820,12 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist);
 void gyroBotAnimate(Entity* my, Stat* myStats, double dist);
 void dummyBotAnimate(Entity* my, Stat* myStats, double dist);
 void mimicAnimate(Entity* my, Stat* myStats, double dist);
+void batAnimate(Entity* my, Stat* myStats, double dist);
+void bugbearMoveBodyparts(Entity* my, Stat* myStats, double dist);
 
 //--misc functions--
 void actMinotaurTrap(Entity* my);
+int getMinotaurTimeToArrive();
 void actMinotaurTimer(Entity* my);
 void actMinotaurCeilingBuster(Entity* my);
 void actDemonCeilingBuster(Entity* my);
@@ -835,6 +861,8 @@ static const Sint32 MONSTER_STATE_LICHICE_TELEPORT_STATIONARY = 17;
 static const Sint32 MONSTER_STATE_LICHICE_DODGE = 13;
 static const Sint32 MONSTER_STATE_LICHFIRE_DIE = 18;
 static const Sint32 MONSTER_STATE_LICHICE_DIE = 18;
+static const Sint32 MONSTER_STATE_GENERIC_DODGE = 19;
+static const Sint32 MONSTER_STATE_GENERIC_CHARGE = 20;
 
 //--special monster attack constants
 static const int MONSTER_POSE_MELEE_WINDUP1 = 4;
@@ -876,6 +904,7 @@ static const int MONSTER_POSE_MIMIC_LOCKED = 37;
 static const int MONSTER_POSE_MIMIC_LOCKED2 = 38;
 static const int MONSTER_POSE_MIMIC_MAGIC1 = 39;
 static const int MONSTER_POSE_MIMIC_MAGIC2 = 40;
+static const int MONSTER_POSE_BUGBEAR_SHIELD = 41;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
@@ -902,6 +931,8 @@ static const int MONSTER_SPECIAL_COOLDOWN_VAMPIRE_AURA = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_VAMPIRE_DRAIN = 300;
 static const int MONSTER_SPECIAL_COOLDOWN_SUCCUBUS_CHARM = 400;
 static const int MONSTER_SPECIAL_COOLDOWN_MIMIC_EAT = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_SLIME_SPRAY = 250;
+static const int MONSTER_SPECIAL_COOLDOWN_BUGBEAR = 500;
 
 //--monster target search types
 static const int MONSTER_TARGET_ENEMY = 0;
@@ -1012,6 +1043,9 @@ static const int SUCCUBUS_CHARM = 1;
 //--Spider--
 static const int SPIDER_CAST = 1;
 
+//--Slime--
+static const int SLIME_CAST = 1;
+
 //--Shadow--
 static const int SHADOW_SPELLCAST = 1;
 static const int SHADOW_TELEPORT_ONLY = 2;
@@ -1058,6 +1092,13 @@ static const int MIMIC_INERT = 1;
 static const int MIMIC_MAGIC = 2;
 static const int MIMIC_INERT_SECOND = 3;
 static const int MIMIC_STATUS_IMMOBILE = 4;
+
+//-Bat--
+static const int BAT_REST = 1;
+static const int BAT_REST_DISTURBED = 2;
+
+//-Bugbear--
+static const int BUGBEAR_DEFENSE = 1;
 
 struct MonsterData_t
 {

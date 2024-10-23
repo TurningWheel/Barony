@@ -181,6 +181,10 @@ bool doesEntityStopBoulder(Entity* entity)
 	{
 		return true;
 	}
+	else if ( entity->behavior == &::actDaedalusShrine )
+	{
+		return true;
+	}
 	return false;
 }
 
@@ -202,6 +206,10 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 
 	if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
 	{
+		if ( entity->behavior == &actMonster && entity->isUntargetableBat() && my->z > -2.0 ) // boulder doesnt kill when not in air
+		{
+			return 0;
+		}
 		if ( ignoreInsideEntity || entityInsideEntity( my, entity ) )
 		{
 			Stat* stats = entity->getStats();
@@ -327,24 +335,39 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 					}
 				}
 
+				Sint32 oldHP = stats->HP;
 				if ( my->sprite == BOULDER_LAVA_SPRITE )
 				{
 					entity->modHP(-damage);
+					if ( entity->behavior == &actPlayer && stats->HP < oldHP )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_DAMAGE, "brimstone boulder", oldHP - stats->HP);
+					}
 					entity->setObituary(Language::get(3898));
 					stats->killer = KilledBy::BOULDER;
 				}
 				else if ( my->sprite == BOULDER_ARCANE_SPRITE )
 				{
 					entity->modHP(-damage);
+					if ( entity->behavior == &actPlayer && stats->HP < oldHP )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_DAMAGE, "boulder trap", oldHP - stats->HP);
+					}
 					entity->setObituary(Language::get(3899));
 					stats->killer = KilledBy::BOULDER;
 				}
 				else
 				{
 					entity->modHP(-damage);
+					if ( entity->behavior == &actPlayer && stats->HP < oldHP )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_DAMAGE, "boulder trap", oldHP - stats->HP);
+					}
 					entity->setObituary(Language::get(1505));
 					stats->killer = KilledBy::BOULDER;
 				}
+
+				bool lifeSaving = (stats->HP <= 0 && stats->amulet && stats->amulet->type == AMULET_LIFESAVING);
 				if ( entity->behavior == &actPlayer )
 				{
 					if ( stats->HP <= 0 )
@@ -358,15 +381,27 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 						{
 							steamAchievementClient(BOULDER_PLAYERPUSHED, "BARONY_ACH_MOVED_ITSELF");
 						}
+
+						if ( my->sprite == BOULDER_LAVA_SPRITE )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_KILLED_BY, "brimstone boulder", 1);
+						}
+						else
+						{
+							Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_KILLED_BY, "boulder trap", 1);
+						}
 						achievementObserver.updateGlobalStat(STEAM_GSTAT_BOULDER_DEATHS);
 					}
 				}
+				if ( BOULDER_PLAYERPUSHED >= 0 && oldHP > 0 && stats->HP <= 0 )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(BOULDER_PLAYERPUSHED, Compendium_t::CPDM_COMBAT_MASONRY_BOULDERS, "masons guild", 1);
+				}
 
-				bool lifeSaving = (stats->HP <= 0 && stats->amulet && stats->amulet->type == AMULET_LIFESAVING);
 				if ( !lifeSaving )
 				{
 					if ( stats->HP <= 0 && entity->behavior == &actPlayer 
-						&& ((stats->playerRace == RACE_SKELETON && stats->appearance == 0) || stats->type == SKELETON) )
+						&& ((stats->playerRace == RACE_SKELETON && stats->stat_appearance == 0) || stats->type == SKELETON) )
 					{
 						if ( stats->MP >= 75 )
 						{
@@ -497,11 +532,19 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 				}
 				else
 				{
-					if ( stats->type == GYROBOT )
+					if ( Entity* leader = entity->monsterAllyGetPlayerLeader() )
 					{
-						Entity* leader = entity->monsterAllyGetPlayerLeader();
-						if ( leader )
+						if ( my->sprite == BOULDER_LAVA_SPRITE )
 						{
+							Compendium_t::Events_t::eventUpdateWorld(entity->monsterAllyIndex, Compendium_t::CPDM_TRAP_FOLLOWERS_KILLED, "brimstone boulder", 1);
+						}
+						else
+						{
+							Compendium_t::Events_t::eventUpdateWorld(entity->monsterAllyIndex, Compendium_t::CPDM_TRAP_FOLLOWERS_KILLED, "boulder trap", 1);
+						}
+						if ( stats->type == GYROBOT )
+						{
+							Compendium_t::Events_t::eventUpdate(entity->monsterAllyIndex, Compendium_t::CPDM_GYROBOT_BOULDERS, TOOL_GYROBOT, 1);
 							real_t tangent = atan2(leader->y - entity->y, leader->x - entity->x);
 							Entity* ohitentity = hit.entity;
 							lineTraceTarget(entity, entity->x, entity->y, tangent, 1024, 0, false, leader);
@@ -590,6 +633,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 		{
 			playSoundEntity(entity, 28, 64);
 			entity->colliderCurrentHP = 0;
+			entity->colliderKillerUid = 0;
 			playSoundEntity(my, 181, 128);
 		}
 	}
@@ -1291,6 +1335,8 @@ void actBoulder(Entity* my)
 							inputs.addRumbleRemotePlayer(i, Inputs::HAPTIC_SFX_BOULDER_ROLL_LOW_VOL, my->getUID());
 						}
 					}
+
+					Compendium_t::Events_t::eventUpdateWorld(BOULDER_SOUND_ON_PUSH - 1, Compendium_t::CPDM_BOULDERS_PUSHED, "boulder trap", 1);
 					BOULDER_SOUND_ON_PUSH = 0;
 				}
 			}
@@ -1439,15 +1485,30 @@ void actBoulderTrap(Entity* my)
 	int x, y;
 	int c;
 
-	if ( !BOULDERTRAP_FIRED )
-	{
+#ifdef USE_FMOD
+		if ( BOULDERTRAP_AMBIENCE == 0 )
+		{
+			BOULDERTRAP_AMBIENCE--;
+			my->stopEntitySound();
+			my->entity_sound = playSoundEntityLocal(my, 149, 64);
+		}
+		if ( my->entity_sound )
+		{
+			bool playing = false;
+			my->entity_sound->isPlaying(&playing);
+			if ( !playing )
+			{
+				my->entity_sound = nullptr;
+			}
+		}
+#else
 		BOULDERTRAP_AMBIENCE--;
 		if ( BOULDERTRAP_AMBIENCE <= 0 )
 		{
 			BOULDERTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
-			playSoundEntity(my, 149, 64);
+			playSoundEntityLocal(my, 149, 64);
 		}
-	}
+#endif
 
 	if ( !my->skill[28] )
 	{
@@ -1556,15 +1617,30 @@ void actBoulderTrapEast(Entity* my)
 	int x, y;
 	int c;
 
-	if ( !my->boulderTrapFired )
-	{
+#ifdef USE_FMOD
+		if ( my->boulderTrapAmbience == 0 )
+		{
+			my->boulderTrapAmbience--;
+			my->stopEntitySound();
+			my->entity_sound = playSoundEntityLocal(my, 149, 64);
+		}
+		if ( my->entity_sound )
+		{
+			bool playing = false;
+			my->entity_sound->isPlaying(&playing);
+			if ( !playing )
+			{
+				my->entity_sound = nullptr;
+			}
+		}
+#else
 		my->boulderTrapAmbience--;
 		if ( my->boulderTrapAmbience <= 0 )
 		{
 			my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
-			playSoundEntity(my, 149, 64);
+			playSoundEntityLocal(my, 149, 64);
 		}
-	}
+#endif
 
 	if ( my->boulderTrapRefireCounter > 0 )
 	{
@@ -1651,15 +1727,30 @@ void actBoulderTrapSouth(Entity* my)
 	int x, y;
 	int c;
 
-	if ( !my->boulderTrapFired )
-	{
+#ifdef USE_FMOD
+		if ( my->boulderTrapAmbience == 0 )
+		{
+			my->boulderTrapAmbience--;
+			my->stopEntitySound();
+			my->entity_sound = playSoundEntityLocal(my, 149, 64);
+		}
+		if ( my->entity_sound )
+		{
+			bool playing = false;
+			my->entity_sound->isPlaying(&playing);
+			if ( !playing )
+			{
+				my->entity_sound = nullptr;
+			}
+		}
+#else
 		my->boulderTrapAmbience--;
 		if ( my->boulderTrapAmbience <= 0 )
 		{
 			my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
-			playSoundEntity(my, 149, 64);
+			playSoundEntityLocal(my, 149, 64);
 		}
-	}
+#endif
 
 	if ( my->boulderTrapRefireCounter > 0 )
 	{
@@ -1746,15 +1837,30 @@ void actBoulderTrapWest(Entity* my)
 	int x, y;
 	int c;
 
-	if ( !my->boulderTrapFired )
-	{
+#ifdef USE_FMOD
+		if ( my->boulderTrapAmbience == 0 )
+		{
+			my->boulderTrapAmbience--;
+			my->stopEntitySound();
+			my->entity_sound = playSoundEntityLocal(my, 149, 64);
+		}
+		if ( my->entity_sound )
+		{
+			bool playing = false;
+			my->entity_sound->isPlaying(&playing);
+			if ( !playing )
+			{
+				my->entity_sound = nullptr;
+			}
+		}
+#else
 		my->boulderTrapAmbience--;
 		if ( my->boulderTrapAmbience <= 0 )
 		{
 			my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
-			playSoundEntity(my, 149, 64);
+			playSoundEntityLocal(my, 149, 64);
 		}
-	}
+#endif
 
 	if ( my->boulderTrapRefireCounter > 0 )
 	{
@@ -1841,15 +1947,30 @@ void actBoulderTrapNorth(Entity* my)
 	int x, y;
 	int c;
 
-	if ( !my->boulderTrapFired )
-	{
+#ifdef USE_FMOD
+		if ( my->boulderTrapAmbience == 0 )
+		{
+			my->boulderTrapAmbience--;
+			my->stopEntitySound();
+			my->entity_sound = playSoundEntityLocal(my, 149, 64);
+		}
+		if ( my->entity_sound )
+		{
+			bool playing = false;
+			my->entity_sound->isPlaying(&playing);
+			if ( !playing )
+			{
+				my->entity_sound = nullptr;
+			}
+		}
+#else
 		my->boulderTrapAmbience--;
 		if ( my->boulderTrapAmbience <= 0 )
 		{
 			my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
-			playSoundEntity(my, 149, 64);
+			playSoundEntityLocal(my, 149, 64);
 		}
-	}
+#endif
 
 	if ( my->boulderTrapRefireCounter > 0 )
 	{
@@ -1995,13 +2116,31 @@ void boulderSokobanOnDestroy(bool pushedOffLedge)
 			}
 		}
 		//messagePlayer(0, "Solved it!");
+		Uint32 playerAliveTicks = 0;
 		for ( int c = 0; c < MAXPLAYERS; c++ )
 		{
+			if ( players[c] && players[c]->entity )
+			{
+				playerAliveTicks = std::min((Uint32)0x7FFFFFFF, players[c]->entity->ticks);
+				break;
+			}
+		}
+		for ( int c = 0; c < MAXPLAYERS; c++ )
+		{
+			if ( playerAliveTicks > 0 )
+			{
+				Compendium_t::Events_t::eventUpdateWorld(c, Compendium_t::CPDM_SOKOBAN_SOLVES, "sokoban", 1);
+				Compendium_t::Events_t::eventUpdateWorld(c, Compendium_t::CPDM_SOKOBAN_FASTEST_SOLVE, "sokoban", playerAliveTicks);
+			}
 			Uint32 color = makeColorRGB(255, 128, 0);
 			if ( goldCount >= 39 )
 			{
 				playSoundPlayer(c, 393, 128);
 				messagePlayerColor(c, MESSAGE_HINT, color, Language::get(2969));
+				if ( playerAliveTicks > 0 )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(c, Compendium_t::CPDM_SOKOBAN_PERFECT_SOLVES, "sokoban", 1);
+				}
 			}
 			else
 			{

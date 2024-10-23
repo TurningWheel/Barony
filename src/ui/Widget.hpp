@@ -82,6 +82,7 @@ public:
     void    setWidgetPageLeft(const char* s) { widgetActions["MenuPageLeft"] = s; }
     void    setWidgetPageRight(const char* s) { widgetActions["MenuPageRight"] = s; }
     void    setWidgetBack(const char* s) { widgetActions["MenuCancel"] = s; }
+    void    removeWidgetAction(const char* binding) { if ( widgetActions.find(binding) != widgetActions.end() ) { widgetActions.erase(binding); } }
     void    setWidgetSearchParent(const char* s) { widgetSearchParent = s; }
     void    addWidgetAction(const char* binding, const char* action) { widgetActions[binding] = action; }
     void    addWidgetMovement(const char* binding, const char* action) { widgetMovements[binding] = action; }

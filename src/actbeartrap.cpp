@@ -24,6 +24,7 @@
 #include "monster.hpp"
 #include "prng.hpp"
 #include "paths.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -40,6 +41,8 @@
 #define BEARTRAP_APPEARANCE my->skill[14]
 #define BEARTRAP_IDENTIFIED my->skill[15]
 #define BEARTRAP_OWNER my->skill[17]
+
+std::map<Uint32, MonsterTrapIgnoreEntities_t> monsterTrapIgnoreEntities;
 
 void actBeartrap(Entity* my)
 {
@@ -100,8 +103,15 @@ void actBeartrap(Entity* my)
 		return;
 	}
 
+	MonsterTrapIgnoreEntities_t* trapProps = nullptr;
+	if ( my->parent != 0 && monsterTrapIgnoreEntities.find(my->getUID()) != monsterTrapIgnoreEntities.end() )
+	{
+		trapProps = &monsterTrapIgnoreEntities[my->getUID()];
+	}
+
 	// launch beartrap
 	node_t* node;
+	Entity* parent = uidToEntity(my->parent);
 	for ( node = map.creatures->first; node != nullptr; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
@@ -114,12 +124,16 @@ void actBeartrap(Entity* my)
 			Stat* stat = entity->getStats();
 			if ( stat )
 			{
-				Entity* parent = uidToEntity(my->parent);
 				if ( (parent && parent->checkFriend(entity)) )
 				{
 					continue;
 				}
-				if ( stat->type == GYROBOT )
+				if ( trapProps && trapProps->parent == my->parent 
+					&& trapProps->ignoreEntities.find(entity->getUID()) != trapProps->ignoreEntities.end() )
+				{
+					continue;
+				}
+				if ( stat->type == GYROBOT || entity->isUntargetableBat() )
 				{
 					continue;
 				}
@@ -160,6 +174,16 @@ void actBeartrap(Entity* my)
 					//		entity->monsterAcquireAttackTarget(*attackTarget, MONSTER_STATE_PATH);
 					//	}
 					//}
+					
+					if ( parent && parent->behavior == &actPlayer )
+					{
+						Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_BEARTRAP_TRAPPED, TOOL_BEARTRAP, 1);
+						if ( stat->HP < oldHP )
+						{
+							Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_BEARTRAP_DMG, TOOL_BEARTRAP, oldHP - stat->HP);
+						}
+					}
+					
 					// set obituary
 					entity->updateEntityOnHit(parent, true);
 					entity->setObituary(Language::get(1504));
@@ -298,6 +322,7 @@ void actBeartrapLaunched(Entity* my)
 #define BOMB_TRIGGER_TYPE my->skill[22]
 #define BOMB_CHEST_STATUS my->skill[23]
 #define BOMB_HIT_BY_PROJECTILE my->skill[24]
+#define BOMB_CURSED_RNG_EXPLODE my->skill[25]
 
 void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spawnMagicOnTriggeredMonster, bool hitByAOE )
 {
@@ -350,6 +375,21 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 		doVertical = true;
 	}
 
+	int oldHP = stat->HP;
+	if ( stat )
+	{
+		damage *= Entity::getDamageTableMultiplier(triggered, *stat, DAMAGE_TABLE_MAGIC); // reduce/increase by magic table.
+	}
+	bool wasAsleep = false;
+	if ( stat )
+	{
+		wasAsleep = stat->EFFECTS[EFF_ASLEEP];
+	}
+	if ( damage > 0 )
+	{
+		triggered->modHP(-damage);
+	}
+
 	// stumbled into the trap!
 	Uint32 color = makeColorRGB(0, 255, 0);
 	if ( parent && parent->behavior == &actPlayer && triggered != parent )
@@ -375,6 +415,20 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 		else
 		{
 			messagePlayerColor(player, MESSAGE_STATUS, color, Language::get(3612), items[BOMB_ITEMTYPE].getIdentifiedName());
+		}
+	}
+
+	if ( parent && parent->behavior == &actPlayer )
+	{
+		if ( triggered && (triggered == parent || parent->checkFriend(triggered)) )
+		{
+			Compendium_t::Events_t::eventUpdate(parent->skill[2],
+				Compendium_t::CPDM_BOMB_DETONATED_ALLY, (ItemType)BOMB_ITEMTYPE, 1);
+		}
+		else
+		{
+			Compendium_t::Events_t::eventUpdate(parent->skill[2],
+				Compendium_t::CPDM_BOMB_DETONATED, (ItemType)BOMB_ITEMTYPE, 1);
 		}
 	}
 
@@ -470,64 +524,65 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 	}
 	else if ( doSpell != SPELL_NONE )
 	{
-		Entity* spell = castSpell(my->getUID(), getSpellFromID(doSpell), false, true);
-		spell->parent = my->parent;
-		spell->x = triggered->x;
-		spell->y = triggered->y;
-		if ( !doVertical )
+		if ( !stat || (stat && stat->HP > 0) )
 		{
-			real_t speed = 1.f;
-			real_t ticksToHit = (entityDistance / speed);
-			/*real_t predictx = triggered->x + (triggered->vel_x * ticksToHit);
-			real_t predicty = triggered->y + (triggered->vel_y * ticksToHit);
-			double tangent = atan2(predicty - my->y, predictx - my->x);*/
-			double tangent = atan2(triggered->y - my->y, triggered->x - my->x);
-			spell->yaw = tangent;
-			spell->vel_x = speed * cos(spell->yaw);
-			spell->vel_y = speed * sin(spell->yaw);
-		}
-		else
-		{
-			spell->x = my->x;
-			spell->y = my->y;
-			real_t speed = 3.f;
-			real_t ticksToHit = (entityDistance / speed);
-			real_t predictx = triggered->x + (triggered->vel_x * ticksToHit);
-			real_t predicty = triggered->y + (triggered->vel_y * ticksToHit);
-			double tangent = atan2(predicty - my->y, predictx - my->x);
-			spell->yaw = tangent;
-			spell->vel_z = -2.f;
-			spell->vel_x = speed * cos(spell->yaw);
-			spell->vel_y = speed * sin(spell->yaw);
-			spell->pitch = atan2(spell->vel_z, speed);
-			spell->actmagicIsVertical = MAGIC_ISVERTICAL_XYZ;
-		}
-		spell->actmagicCastByTinkerTrap = 1;
-		if ( BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TRIGGER_ALL )
-		{
-			spell->actmagicTinkerTrapFriendlyFire = 1;
-			if ( triggered == parent )
+			Entity* spell = castSpell(my->getUID(), getSpellFromID(doSpell), false, true);
+			spell->parent = my->parent;
+			spell->x = triggered->x;
+			spell->y = triggered->y;
+			if ( !doVertical )
 			{
-				spell->parent = 0;
+				real_t speed = 1.f;
+				real_t ticksToHit = (entityDistance / speed);
+				/*real_t predictx = triggered->x + (triggered->vel_x * ticksToHit);
+				real_t predicty = triggered->y + (triggered->vel_y * ticksToHit);
+				double tangent = atan2(predicty - my->y, predictx - my->x);*/
+				double tangent = atan2(triggered->y - my->y, triggered->x - my->x);
+				spell->yaw = tangent;
+				spell->vel_x = speed * cos(spell->yaw);
+				spell->vel_y = speed * sin(spell->yaw);
 			}
+			else
+			{
+				spell->x = my->x;
+				spell->y = my->y;
+				real_t speed = 3.f;
+				real_t ticksToHit = (entityDistance / speed);
+				real_t predictx = triggered->x + (triggered->vel_x * ticksToHit);
+				real_t predicty = triggered->y + (triggered->vel_y * ticksToHit);
+				double tangent = atan2(predicty - my->y, predictx - my->x);
+				spell->yaw = tangent;
+				spell->vel_z = -2.f;
+				spell->vel_x = speed * cos(spell->yaw);
+				spell->vel_y = speed * sin(spell->yaw);
+				spell->pitch = atan2(spell->vel_z, speed);
+				spell->actmagicIsVertical = MAGIC_ISVERTICAL_XYZ;
+			}
+			spell->actmagicCastByTinkerTrap = 1;
+			if ( BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TRIGGER_ALL )
+			{
+				spell->actmagicTinkerTrapFriendlyFire = 1;
+				if ( triggered == parent )
+				{
+					spell->parent = 0;
+				}
+			}
+			spell->skill[5] = 10; // travel time
 		}
-		spell->skill[5] = 10; // travel time
 	}
 	// set obituary
-	int oldHP = stat->HP;
-	if ( stat )
-	{
-		damage *= Entity::getDamageTableMultiplier(triggered, *stat, DAMAGE_TABLE_MAGIC); // reduce/increase by magic table.
-	}
-	bool wasAsleep = false;
-	if ( stat )
-	{
-		wasAsleep = stat->EFFECTS[EFF_ASLEEP];
-	}
-	triggered->modHP(-damage);
 	triggered->setObituary(Language::get(3496));
 	triggered->updateEntityOnHit(parent, true);
 	stat->killer = KilledBy::TRAP_BOMB;
+
+	if ( stat->HP < oldHP )
+	{
+		if ( parent && parent->behavior == &actPlayer )
+		{
+			Compendium_t::Events_t::eventUpdate(parent->skill[2],
+				Compendium_t::CPDM_BOMB_DMG, (ItemType)BOMB_ITEMTYPE, oldHP - stat->HP);
+		}
+	}
 
 	if ( stat->HP <= 0 && oldHP > 0 )
 	{
@@ -777,7 +832,21 @@ void actBomb(Entity* my)
 		explosionSprite = 0;
 	}
 
-	if ( BOMB_ENTITY_ATTACHED_TO != 0 || BOMB_HIT_BY_PROJECTILE == 1 || BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_WALL )
+	bool cursedExplode = false;
+	if ( BOMB_CURSED_RNG_EXPLODE )
+	{
+		if ( my->ticks >= TICKS_PER_SECOND / 2 )
+		{
+			if ( my->ticks % TICKS_PER_SECOND == (5 * (my->getUID() % 10)) ) // randomly explode
+			{
+				cursedExplode = true;
+			}
+		}
+	}
+
+	if ( BOMB_ENTITY_ATTACHED_TO != 0 || BOMB_HIT_BY_PROJECTILE == 1 
+		|| BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_WALL
+		|| cursedExplode )
 	{
 		Entity* onEntity = uidToEntity(static_cast<Uint32>(BOMB_ENTITY_ATTACHED_TO));
 		bool shouldExplode = false;
@@ -817,7 +886,7 @@ void actBomb(Entity* my)
 		{
 			if ( onEntity->behavior == &actDoor )
 			{
-				if ( onEntity->doorHealth < BOMB_ENTITY_ATTACHED_START_HP || onEntity->flags[PASSABLE]
+				if ( onEntity->doorHealth < BOMB_ENTITY_ATTACHED_START_HP || onEntity->flags[PASSABLE] || cursedExplode
 					|| BOMB_HIT_BY_PROJECTILE == 1 )
 				{
 					if ( onEntity->doorHealth > 0 )
@@ -829,7 +898,7 @@ void actBomb(Entity* my)
 			}
 			else if ( onEntity->behavior == &actMonster && onEntity->getMonsterTypeFromSprite() == MIMIC )
 			{
-				if ( !onEntity->isInertMimic() || BOMB_HIT_BY_PROJECTILE == 1 )
+				if ( !onEntity->isInertMimic() || BOMB_HIT_BY_PROJECTILE == 1 || cursedExplode )
 				{
 					if ( onEntity->isInertMimic() )
 					{
@@ -841,6 +910,7 @@ void actBomb(Entity* my)
 			else if ( onEntity->behavior == &actChest )
 			{
 				if ( onEntity->skill[3] < BOMB_ENTITY_ATTACHED_START_HP || BOMB_CHEST_STATUS != onEntity->skill[1]
+					|| cursedExplode
 					|| BOMB_HIT_BY_PROJECTILE == 1 )
 				{
 					if ( onEntity->skill[3] > 0 )
@@ -860,6 +930,7 @@ void actBomb(Entity* my)
 			else if ( onEntity->behavior == &actColliderDecoration )
 			{
 				if ( onEntity->colliderCurrentHP < BOMB_ENTITY_ATTACHED_START_HP
+					|| cursedExplode
 					|| BOMB_HIT_BY_PROJECTILE == 1 )
 				{
 					if ( onEntity->colliderCurrentHP > 0 )
@@ -882,6 +953,11 @@ void actBomb(Entity* my)
 			shouldExplode = true; // my attached entity died.
 		}
 
+		if ( cursedExplode )
+		{
+			shouldExplode = true;
+		}
+
 		if ( shouldExplode )
 		{
 			if ( onEntity )
@@ -895,6 +971,12 @@ void actBomb(Entity* my)
 			bombExplodeAOETargets = true;
 			BOMB_TRIGGER_TYPE = Item::ItemBombTriggerType::BOMB_TRIGGER_ALL;
 		}
+	}
+
+	MonsterTrapIgnoreEntities_t* trapProps = nullptr;
+	if ( my->parent != 0 && monsterTrapIgnoreEntities.find(my->getUID()) != monsterTrapIgnoreEntities.end() )
+	{
+		trapProps = &monsterTrapIgnoreEntities[my->getUID()];
 	}
 
 	for ( auto it = entitiesWithinRadius.begin(); it != entitiesWithinRadius.end() && !triggered; ++it )
@@ -918,7 +1000,12 @@ void actBomb(Entity* my)
 				{
 					continue;
 				}
-				if ( stat->type == GYROBOT )
+				if ( trapProps && trapProps->parent == my->parent && trapProps->ignoreEntities.find(entity->getUID()) != trapProps->ignoreEntities.end()
+					 && !(BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TRIGGER_ALL) )
+				{
+					continue;
+				}
+				if ( stat->type == GYROBOT || entity->isUntargetableBat() )
 				{
 					continue;
 				}
@@ -1063,11 +1150,14 @@ void actBomb(Entity* my)
 		//	entity->itemNotMoving = 0;
 		//	entity->itemNotMovingClient = 0;
 		//}
-		Item* charge = newItem(TOOL_DETONATOR_CHARGE, BROKEN, 0, 1, ITEM_TINKERING_APPEARANCE, true, nullptr);
-		Entity* dropped = dropItemMonster(charge, my, nullptr);
-		if ( dropped )
+		if ( BEARTRAP_BEATITUDE >= 0 )
 		{
-			dropped->flags[USERFLAG1] = true;
+			Item* charge = newItem(TOOL_DETONATOR_CHARGE, BROKEN, 0, 1, ITEM_TINKERING_APPEARANCE, true, nullptr);
+			Entity* dropped = dropItemMonster(charge, my, nullptr);
+			if ( dropped )
+			{
+				dropped->flags[USERFLAG1] = true;
+			}
 		}
 		my->removeLightField();
 		if ( triggered )
@@ -1180,6 +1270,7 @@ void actDecoyBox(Entity* my)
 		entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, decoyBoxRange);
 		bool message = false;
 		bool detected = false;
+		int lured = 0;
 		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 		{
 			list_t* currentList = *it;
@@ -1247,6 +1338,7 @@ void actDecoyBox(Entity* my)
 										}
 										spawnFloatingSpriteMisc(134, entity->x + (-4 + local_rng.rand() % 9) + cos(entity->yaw) * 2,
 											entity->y + (-4 + local_rng.rand() % 9) + sin(entity->yaw) * 2, entity->z + local_rng.rand() % 4);
+										++lured;
 									}
 								}
 								break;
@@ -1265,6 +1357,7 @@ void actDecoyBox(Entity* my)
 								entity->monsterState = MONSTER_STATE_HUNT; // hunt state
 								serverUpdateEntitySkill(entity, 0);
 								detected = true;
+								++lured;
 
 								if ( entityDist(entity, my) < TOUCHRANGE 
 									&& !myStats->EFFECTS[EFF_DISORIENTED]
@@ -1324,6 +1417,14 @@ void actDecoyBox(Entity* my)
 						}
 					}
 				}
+			}
+		}
+		if ( detected && lured > 0 )
+		{
+			if ( parent && parent->behavior == &actPlayer )
+			{
+				Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_NOISEMAKER_LURED, TOOL_DECOY, lured);
+				Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_NOISEMAKER_MOST_LURED, TOOL_DECOY, lured);
 			}
 		}
 		if ( !message && detected )
