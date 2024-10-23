@@ -2872,7 +2872,8 @@ int Entity::getHungerTickRate(Stat* myStats, bool isPlayer, bool checkItemsEffec
 		|| !strncmp(map.name, "Boss", 4)
 		|| !strncmp(map.name, "Hell Boss", 9)
 		|| !strncmp(map.name, "Mages Guild", 11)
-		|| strstr(map.name, " Transition") )
+		|| strstr(map.name, " Transition")
+		|| currentlevel == 0 )
 	{
 		hungerring = 1; // slow down hunger on boss stages.
 		if ( vampiricHunger > 0 )
@@ -3005,6 +3006,25 @@ void Entity::handleEffects(Stat* myStats)
 				myStats->HP = 1;
 			}
 		}
+
+		if ( myStats->defending )
+		{
+			if ( myStats->shield && !myStats->EFFECTS[EFF_SHAPESHIFT] )
+			{
+				if ( players[player]->mechanics.defendTicks == 0 )
+				{
+					players[player]->mechanics.defendTicks = ::ticks;
+				}
+			}
+			else
+			{
+				players[player]->mechanics.defendTicks = 0;
+			}
+		}
+		else
+		{
+			players[player]->mechanics.defendTicks = 0;
+		}
 	}
 
 	auto& camera_shakex = cameravars[player >= 0 ? player : 0].shakex;
@@ -3081,7 +3101,7 @@ void Entity::handleEffects(Stat* myStats)
 			myStats->MAXMP += MP_MOD;
 			if ( behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0 )
 			{
-				myStats->MAXMP = std::min(50, myStats->MAXMP);
+				myStats->MAXMP = std::min(100, myStats->MAXMP);
 				if ( svFlags & SV_FLAG_HUNGER )
 				{
 					Sint32 hungerPointPerMana = playerInsectoidHungerValueOfManaPoint(*myStats);
@@ -3745,7 +3765,8 @@ void Entity::handleEffects(Stat* myStats)
 					}
 					else
 					{
-						this->modHP(-4);
+						int damage = std::max(1, myStats->MAXHP / 20);
+						this->modHP(-damage);
 
 						if ( myStats->HP <= 0 )
 						{
@@ -4017,17 +4038,13 @@ void Entity::handleEffects(Stat* myStats)
 	// healing over time
 	int healring = 0;
 	int healthRegenInterval = getHealthRegenInterval(this, *myStats, behavior == &actPlayer);
-	if ( healthRegenInterval == -1 && behavior == &actPlayer && myStats->type == SKELETON )
-	{
-		healthRegenInterval = HEAL_TIME * 4;
-	}
 	bool naturalHeal = false;
 	if ( healthRegenInterval >= 0 )
 	{
 		if ( myStats->HP < myStats->MAXHP )
 		{
 			this->char_heal++;
-			if ( (svFlags & SV_FLAG_HUNGER) || behavior == &actMonster || (behavior == &actPlayer && myStats->type == SKELETON) )
+			/*if ( (svFlags & SV_FLAG_HUNGER) || behavior == &actMonster || (behavior == &actPlayer && myStats->type == SKELETON) )*/
 			{
 				if ( this->char_heal >= healthRegenInterval )
 				{
@@ -9498,18 +9515,36 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( itemCategory(hitstats->shield) == ARMOR
 								|| (hitstats->defending) )
 							{
-								int roll = 16;
-								if ( hitstats->getProficiency(PRO_SHIELD) >= SKILL_LEVEL_SKILLED )
-								{
-									roll = 32;
-								}
+								int roll = 20;
+								int hitskill = hitstats->getProficiency(PRO_SHIELD) / 20;
+								roll += hitskill * 5;
 								if ( damage == 0 )
 								{
 									roll /= 2;
 								}
+								if ( myStats->type == BAT_SMALL )
+								{
+									if ( hitstats->getProficiency(PRO_SHIELD) >= SKILL_LEVEL_BASIC )
+									{
+										roll *= 4;
+									}
+								}
 								if ( roll > 0 )
 								{
-									if ( (local_rng.rand() % roll == 0 && damage > 0) || (damage == 0 && local_rng.rand() % roll == 0) )
+									bool success = (local_rng.rand() % roll == 0);
+									if ( !success && playerhit >= 0 && hitstats->defending )
+									{
+  										if ( players[playerhit]->mechanics.defendTicks != 0 )
+										{
+											if ( (::ticks - players[playerhit]->mechanics.defendTicks) < (TICKS_PER_SECOND / 3) )
+											{
+												// perfect block timing, roll again
+												success = (local_rng.rand() % roll == 0);
+											}
+										}
+									}
+
+									if ( success )
 									{
 										bool increaseSkill = true;
 										if ( hit.entity->behavior == &actPlayer && behavior == &actPlayer )
@@ -10310,39 +10345,29 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					if ( player >= 0 && hit.entity->behavior == &actMonster )
 					{
-						if ( damage > 0 )
+						bool oldRhythmStatus = achievementStatusRhythmOfTheKnight[player];
+						updateAchievementRhythmOfTheKnight(player, hit.entity, false);
+						if ( !oldRhythmStatus && achievementStatusRhythmOfTheKnight[player] )
 						{
-							bool oldRhythmStatus = achievementStatusRhythmOfTheKnight[player];
-							updateAchievementRhythmOfTheKnight(player, hit.entity, false);
-							if ( !oldRhythmStatus && achievementStatusRhythmOfTheKnight[player] )
+							//messagePlayer(0, MESSAGE_DEBUG, "rhythm roll on atk");
+							if ( local_rng.rand() % 10 < 8 )
 							{
-								//messagePlayer(0, MESSAGE_DEBUG, "rhythm roll on atk");
-								if ( local_rng.rand() % 10 < 6 )
+								bool increaseSkill = true;
+								if ( this->behavior == &actPlayer )
 								{
-									bool increaseSkill = true;
-									if ( this->behavior == &actPlayer )
+									if ( !players[this->skill[2]]->mechanics.allowedRaiseBlockingAgainstEntity(*hit.entity) )
 									{
-										if ( !players[this->skill[2]]->mechanics.allowedRaiseBlockingAgainstEntity(*hit.entity) )
-										{
-											increaseSkill = false;
-										}
-										players[this->skill[2]]->mechanics.enemyRaisedBlockingAgainst[hit.entity->getUID()]++;
+										increaseSkill = false;
 									}
-									if ( increaseSkill )
-									{
-										this->increaseSkill(PRO_SHIELD);
-									}
+									players[this->skill[2]]->mechanics.enemyRaisedBlockingAgainst[hit.entity->getUID()]++;
 								}
-								achievementStatusRhythmOfTheKnight[player] = false;
-								achievementRhythmOfTheKnightVec[player].clear(); // reset for the next one
+								if ( increaseSkill )
+								{
+									this->increaseSkill(PRO_SHIELD);
+								}
 							}
-						}
-						else
-						{
-							if ( !achievementStatusRhythmOfTheKnight[player] )
-							{
-								achievementRhythmOfTheKnightVec[player].clear(); // didn't inflict damage.
-							}
+							achievementStatusRhythmOfTheKnight[player] = false;
+							achievementRhythmOfTheKnightVec[player].clear(); // reset for the next one
 						}
 					}
 
@@ -10937,14 +10962,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 						messagePlayerMonsterEvent(playerhit, color, *myStats, Language::get(698), Language::get(699), MSG_ATTACKS);
 						if ( playerhit >= 0 )
 						{
-							if ( !achievementStatusRhythmOfTheKnight[playerhit] )
-							{
-								achievementRhythmOfTheKnightVec[playerhit].clear();
-							}
-							if ( !achievementStatusThankTheTank[playerhit] )
-							{
-								achievementThankTheTankPair[playerhit] = std::make_pair(0, 0);
-							}
 							if ( behavior == &actMonster )
 							{
 								updateAchievementBaitAndSwitch(playerhit, false);
@@ -10983,45 +11000,48 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							steamAchievementClient(playerhit, "BARONY_ACH_ONE_WHO_KNOCKS");
 						}
-						if ( playerhit >= 0 )
+					}
+
+					if ( playerhit >= 0 )
+					{
+						if ( hitstats->defending )
 						{
-							if ( hitstats->defending )
+							bool oldRhythmStatus = achievementStatusRhythmOfTheKnight[playerhit];
+							updateAchievementRhythmOfTheKnight(playerhit, this, true);
+							if ( !oldRhythmStatus && achievementStatusRhythmOfTheKnight[playerhit] )
 							{
-								bool oldRhythmStatus = achievementStatusRhythmOfTheKnight[playerhit];
-								updateAchievementRhythmOfTheKnight(playerhit, this, true);
-								if ( !oldRhythmStatus && achievementStatusRhythmOfTheKnight[playerhit] )
+								if ( !shieldIncreased )
 								{
-									if ( !shieldIncreased )
+									//messagePlayer(0, MESSAGE_DEBUG, "rhythm roll on hit");
+									if ( local_rng.rand() % 10 < 8 )
 									{
-										//messagePlayer(0, MESSAGE_DEBUG, "rhythm roll on hit");
-										if ( local_rng.rand() % 10 < 6 )
+										bool skillIncrease = true;
+										if ( hit.entity->behavior == &actPlayer )
 										{
-											bool skillIncrease = true;
-											if ( hit.entity->behavior == &actPlayer )
+											if ( !players[hit.entity->skill[2]]->mechanics.allowedRaiseBlockingAgainstEntity(*this) )
 											{
-												if ( !players[hit.entity->skill[2]]->mechanics.allowedRaiseBlockingAgainstEntity(*this) )
-												{
-													skillIncrease = false;
-												}
-												players[hit.entity->skill[2]]->mechanics.enemyRaisedBlockingAgainst[this->getUID()]++;
+												skillIncrease = false;
 											}
-											if ( skillIncrease )
-											{
-												hit.entity->increaseSkill(PRO_SHIELD);
-												shieldIncreased = true;
-											}
+											players[hit.entity->skill[2]]->mechanics.enemyRaisedBlockingAgainst[this->getUID()]++;
+										}
+										if ( skillIncrease )
+										{
+											hit.entity->increaseSkill(PRO_SHIELD);
+											shieldIncreased = true;
 										}
 									}
-									achievementStatusRhythmOfTheKnight[playerhit] = false;
-									achievementRhythmOfTheKnightVec[playerhit].clear(); // reset for the next one
 								}
-								updateAchievementThankTheTank(playerhit, this, false);
+								achievementStatusRhythmOfTheKnight[playerhit] = false;
+								achievementRhythmOfTheKnightVec[playerhit].clear(); // reset for the next one
 							}
-							else if ( !achievementStatusRhythmOfTheKnight[playerhit] )
-							{
-								achievementRhythmOfTheKnightVec[playerhit].clear();
-								//messagePlayer(0, "used AC!");
-							}
+							updateAchievementThankTheTank(playerhit, this, false);
+						}
+						else
+						{
+							achievementStatusRhythmOfTheKnight[playerhit] = false;
+							achievementRhythmOfTheKnightVec[playerhit].clear();
+							achievementThankTheTankPair[playerhit].erase(this->getUID());
+							//messagePlayer(0, "used AC!");
 						}
 					}
 
@@ -19520,13 +19540,6 @@ int Entity::getHealringFromEquipment(Entity* my, Stat& myStats, bool isPlayer)
 
 int Entity::getHealthRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
 {
-	if ( !(svFlags & SV_FLAG_HUNGER) )
-	{
-		if ( isPlayer )
-		{
-			return -1;
-		}
-	}
 	if ( myStats.EFFECTS[EFF_VAMPIRICAURA] )
 	{
 		if ( isPlayer && myStats.EFFECTS_TIMERS[EFF_VAMPIRICAURA] > 0 )
@@ -19543,18 +19556,53 @@ int Entity::getHealthRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
 	{
 		return -1;
 	}
-	double healring = 0;
-	if ( isPlayer && myStats.type != HUMAN )
+
+	if ( svFlags & SV_FLAG_HUNGER )
 	{
-		if ( myStats.type == SKELETON )
+		if ( isPlayer )
 		{
-			healring = -1; // 0.25x regen speed.
+			if ( myStats.HUNGER <= 0 )
+			{
+				bool doStarvation = true;
+				if ( myStats.type == AUTOMATON )
+				{
+					if ( myStats.MP > 0 )
+					{
+						doStarvation = false;
+					}
+				}
+				else if ( myStats.type == SKELETON )
+				{
+					doStarvation = false;
+				}
+				if ( doStarvation )
+				{
+					return -1;
+				}
+			}
 		}
 	}
 
+	double healring = 0;
 	double bonusHealring = 0.0;
-	bonusHealring += Entity::getHealringFromEquipment(my, myStats, isPlayer);
-	bonusHealring += Entity::getHealringFromEffects(my, myStats);
+	if ( myStats.type == SKELETON && isPlayer )
+	{
+		healring = -1;
+	}
+	if ( !(svFlags & SV_FLAG_HUNGER) && isPlayer )
+	{
+		bonusHealring += Entity::getHealringFromEquipment(my, myStats, isPlayer);
+		bonusHealring += Entity::getHealringFromEffects(my, myStats);
+		if ( bonusHealring < 0.01 && myStats.type != SKELETON )
+		{
+			return -1;
+		}
+	}
+	else
+	{
+		bonusHealring += Entity::getHealringFromEquipment(my, myStats, isPlayer);
+		bonusHealring += Entity::getHealringFromEffects(my, myStats);
+	}
 	healring += bonusHealring;
 
 	if ( my && bonusHealring >= 2.0 && ::ticks % TICKS_PER_SECOND == 0 && isPlayer )
@@ -19581,7 +19629,14 @@ int Entity::getHealthRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
 
 	if ( healring > 0 )
 	{
-		return (HEAL_TIME / (healring * 6)); // 1 HP each 12 sec base
+		if ( !(svFlags & SV_FLAG_HUNGER) && isPlayer )
+		{
+			return (HEAL_TIME / (healring * 4)); // 1 HP each 12 sec base
+		}
+		else
+		{
+			return (HEAL_TIME / (healring * 6)); // 1 HP each 12 sec base
+		}
 	}
 	else if ( healring < 0 )
 	{

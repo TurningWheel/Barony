@@ -322,6 +322,7 @@ void actBeartrapLaunched(Entity* my)
 #define BOMB_TRIGGER_TYPE my->skill[22]
 #define BOMB_CHEST_STATUS my->skill[23]
 #define BOMB_HIT_BY_PROJECTILE my->skill[24]
+#define BOMB_CURSED_RNG_EXPLODE my->skill[25]
 
 void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spawnMagicOnTriggeredMonster, bool hitByAOE )
 {
@@ -831,7 +832,21 @@ void actBomb(Entity* my)
 		explosionSprite = 0;
 	}
 
-	if ( BOMB_ENTITY_ATTACHED_TO != 0 || BOMB_HIT_BY_PROJECTILE == 1 || BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_WALL )
+	bool cursedExplode = false;
+	if ( BOMB_CURSED_RNG_EXPLODE )
+	{
+		if ( my->ticks >= TICKS_PER_SECOND / 2 )
+		{
+			if ( my->ticks % TICKS_PER_SECOND == (5 * (my->getUID() % 10)) ) // randomly explode
+			{
+				cursedExplode = true;
+			}
+		}
+	}
+
+	if ( BOMB_ENTITY_ATTACHED_TO != 0 || BOMB_HIT_BY_PROJECTILE == 1 
+		|| BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_WALL
+		|| cursedExplode )
 	{
 		Entity* onEntity = uidToEntity(static_cast<Uint32>(BOMB_ENTITY_ATTACHED_TO));
 		bool shouldExplode = false;
@@ -871,7 +886,7 @@ void actBomb(Entity* my)
 		{
 			if ( onEntity->behavior == &actDoor )
 			{
-				if ( onEntity->doorHealth < BOMB_ENTITY_ATTACHED_START_HP || onEntity->flags[PASSABLE]
+				if ( onEntity->doorHealth < BOMB_ENTITY_ATTACHED_START_HP || onEntity->flags[PASSABLE] || cursedExplode
 					|| BOMB_HIT_BY_PROJECTILE == 1 )
 				{
 					if ( onEntity->doorHealth > 0 )
@@ -883,7 +898,7 @@ void actBomb(Entity* my)
 			}
 			else if ( onEntity->behavior == &actMonster && onEntity->getMonsterTypeFromSprite() == MIMIC )
 			{
-				if ( !onEntity->isInertMimic() || BOMB_HIT_BY_PROJECTILE == 1 )
+				if ( !onEntity->isInertMimic() || BOMB_HIT_BY_PROJECTILE == 1 || cursedExplode )
 				{
 					if ( onEntity->isInertMimic() )
 					{
@@ -895,6 +910,7 @@ void actBomb(Entity* my)
 			else if ( onEntity->behavior == &actChest )
 			{
 				if ( onEntity->skill[3] < BOMB_ENTITY_ATTACHED_START_HP || BOMB_CHEST_STATUS != onEntity->skill[1]
+					|| cursedExplode
 					|| BOMB_HIT_BY_PROJECTILE == 1 )
 				{
 					if ( onEntity->skill[3] > 0 )
@@ -914,6 +930,7 @@ void actBomb(Entity* my)
 			else if ( onEntity->behavior == &actColliderDecoration )
 			{
 				if ( onEntity->colliderCurrentHP < BOMB_ENTITY_ATTACHED_START_HP
+					|| cursedExplode
 					|| BOMB_HIT_BY_PROJECTILE == 1 )
 				{
 					if ( onEntity->colliderCurrentHP > 0 )
@@ -934,6 +951,11 @@ void actBomb(Entity* my)
 		else
 		{
 			shouldExplode = true; // my attached entity died.
+		}
+
+		if ( cursedExplode )
+		{
+			shouldExplode = true;
 		}
 
 		if ( shouldExplode )
@@ -1128,11 +1150,14 @@ void actBomb(Entity* my)
 		//	entity->itemNotMoving = 0;
 		//	entity->itemNotMovingClient = 0;
 		//}
-		Item* charge = newItem(TOOL_DETONATOR_CHARGE, BROKEN, 0, 1, ITEM_TINKERING_APPEARANCE, true, nullptr);
-		Entity* dropped = dropItemMonster(charge, my, nullptr);
-		if ( dropped )
+		if ( BEARTRAP_BEATITUDE >= 0 )
 		{
-			dropped->flags[USERFLAG1] = true;
+			Item* charge = newItem(TOOL_DETONATOR_CHARGE, BROKEN, 0, 1, ITEM_TINKERING_APPEARANCE, true, nullptr);
+			Entity* dropped = dropItemMonster(charge, my, nullptr);
+			if ( dropped )
+			{
+				dropped->flags[USERFLAG1] = true;
+			}
 		}
 		my->removeLightField();
 		if ( triggered )

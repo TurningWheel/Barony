@@ -262,6 +262,8 @@ void Player::Ghost_t::startQuickTurn()
 	bDoingQuickTurn = true;
 }
 
+static ConsoleVariable<float> cvar_quick_turn_speed("/quick_turn_speed", 1.f);
+
 bool Player::Ghost_t::handleQuickTurn(bool useRefreshRateDelta)
 {
 	if ( !my ) { return false; }
@@ -285,7 +287,42 @@ bool Player::Ghost_t::handleQuickTurn(bool useRefreshRateDelta)
 		int dir = ((quickTurnRotation > 0) ? 1 : -1);
 		if ( my->ticks - quickTurnStartTicks < 15 )
 		{
-			GHOSTCAM_ROTX = dir * players[player.playernum]->settings.quickTurnSpeed;
+			int turnspeed = 1;
+			if ( inputs.hasController(player.playernum) )
+			{
+				turnspeed = static_cast<int>(playerSettings[multiplayer ? 0 : player.playernum].quick_turn_speed);
+			}
+			else if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
+			{
+				turnspeed = static_cast<int>(playerSettings[multiplayer ? 0 : player.playernum].quick_turn_speed_mkb);
+			}
+			else
+			{
+				turnspeed = static_cast<int>(playerSettings[multiplayer ? 0 : player.playernum].quick_turn_speed);
+			}
+			turnspeed = std::min(5, std::max(1, turnspeed));
+			float mult = 1.f;
+			switch ( turnspeed )
+			{
+			case 1:
+				mult = 1.f;
+				break;
+			case 2:
+				mult = 1.25f;
+				break;
+			case 3:
+				mult = 1.5f;
+				break;
+			case 4:
+				mult = 2.5f;
+				break;
+			case 5:
+				mult = 3.f;
+				break;
+			default:
+				break;
+			}
+			GHOSTCAM_ROTX = dir * players[player.playernum]->settings.quickTurnSpeed * *cvar_quick_turn_speed * mult;
 		}
 		else
 		{
@@ -2486,7 +2523,42 @@ bool Player::PlayerMovement_t::handleQuickTurn(bool useRefreshRateDelta)
 		int dir = ((quickTurnRotation > 0) ? 1 : -1);
 		if ( my->ticks - quickTurnStartTicks < 15 )
 		{
-			PLAYER_ROTX = dir * players[player.playernum]->settings.quickTurnSpeed;
+			int turnspeed = 1;
+			if ( inputs.hasController(player.playernum) )
+			{
+				turnspeed = static_cast<int>(playerSettings[multiplayer ? 0 : player.playernum].quick_turn_speed);
+			}
+			else if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
+			{
+				turnspeed = static_cast<int>(playerSettings[multiplayer ? 0 : player.playernum].quick_turn_speed_mkb);
+			}
+			else
+			{
+				turnspeed = static_cast<int>(playerSettings[multiplayer ? 0 : player.playernum].quick_turn_speed);
+			}
+			turnspeed = std::min(5, std::max(1, turnspeed));
+			float mult = 1.f;
+			switch ( turnspeed )
+			{
+			case 1:
+				mult = 1.f;
+				break;
+			case 2:
+				mult = 1.25f;
+				break;
+			case 3:
+				mult = 1.5f;
+				break;
+			case 4:
+				mult = 2.5f;
+				break;
+			case 5:
+				mult = 3.f;
+				break;
+			default:
+				break;
+			}
+			PLAYER_ROTX = dir * players[player.playernum]->settings.quickTurnSpeed * *cvar_quick_turn_speed * mult;
 		}
 		else
 		{

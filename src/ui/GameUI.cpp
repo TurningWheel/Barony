@@ -15252,24 +15252,24 @@ real_t getDisplayedHPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf
 	{
 		regen = (static_cast<real_t>(Entity::getHealthRegenInterval(my,
 			myStats, true)) / TICKS_PER_SECOND);
-		if ( myStats.type == SKELETON )
+		/*if ( myStats.type == SKELETON )
 		{
 			if ( !(svFlags & SV_FLAG_HUNGER) )
 			{
 				regen = HEAL_TIME * 4 / TICKS_PER_SECOND;
 			}
-		}
+		}*/
 		if ( regen < 0 )
 		{
 			regen = 0.0;
-			if ( !(svFlags & SV_FLAG_HUNGER) )
+			/*if ( !(svFlags & SV_FLAG_HUNGER) )
 			{
 				if ( outColor )
 				{
 					*outColor = hudColors.characterSheetNeutral;
 				}
 			}
-			else
+			else*/
 			{
 				if ( outColor )
 				{
@@ -15297,11 +15297,11 @@ real_t getDisplayedHPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf
 	}
 	if ( buf )
 	{
-		if ( !(svFlags & SV_FLAG_HUNGER) )
+		/*if ( !(svFlags & SV_FLAG_HUNGER) && regen < 0.01 )
 		{
 			snprintf(buf, 32, "- ");
 		}
-		else
+		else*/
 		{
 			snprintf(buf, 32, "%.f%%", regen * 100.0);
 		}
@@ -16631,7 +16631,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				titleText = getHoverTextString("attributes_rgn_hp_title");
 				if ( !(svFlags & SV_FLAG_HUNGER) )
 				{
-					descText = getHoverTextString("attributes_rgn_hp_desc_no_hunger");
+					descText = getHoverTextString("attributes_rgn_hp_desc_no_hunger2");
 				}
 				else
 				{
@@ -16749,11 +16749,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_hp_base").c_str());
 					char hpbuf[32] = "";
 					getDisplayedHPRegen(players[player.playernum]->entity, *stats[player.playernum], nullptr, hpbuf);
-					if ( !(svFlags & SV_FLAG_HUNGER) )
+					/*if ( !(svFlags & SV_FLAG_HUNGER) )
 					{
 						snprintf(valueBuf, sizeof(valueBuf), "%s", hpbuf);
 					}
-					else
+					else*/
 					{
 						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_nobonus_format").c_str(), hpbuf);
 					}
@@ -17186,7 +17186,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		bool hasEntryInfoLines = false;
 		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 3, buf, valueBuf)
 			|| (element != SHEET_ATK 
-				&& !(element == SHEET_RGN && !(svFlags & SV_FLAG_HUNGER))
+				&& !(element == SHEET_RGN && false/*&& !(svFlags & SV_FLAG_HUNGER) && stats[player.playernum]->type != SKELETON*/)
 				&& !(element == SHEET_RGN_MP && isInsectoidENRegen && !(svFlags & SV_FLAG_HUNGER))
 				))
 		{
@@ -17326,6 +17326,10 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 
 					snprintf(buf, sizeof(buf), getHoverTextString("attributes_rgn_base_value").c_str(), race.c_str());
 					real_t regen = 100.0;
+					if ( !(svFlags & SV_FLAG_HUNGER) )
+					{
+						regen = 0.0;
+					}
 					if ( type == SKELETON )
 					{
 						regen = 25.0;
@@ -17506,7 +17510,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 
 		if ( (element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 4, buf, valueBuf))
 			|| (element != SHEET_ATK 
-				&& !(element == SHEET_RGN && !(svFlags & SV_FLAG_HUNGER))
+				&& !(element == SHEET_RGN && false/*&& !(svFlags & SV_FLAG_HUNGER) && stats[player.playernum]->type != SKELETON*/)
 				&& !(element == SHEET_RGN_MP && isInsectoidENRegen && !(svFlags & SV_FLAG_HUNGER))
 				)
 			)
@@ -17575,6 +17579,10 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 						}
 					}
 					real_t baseRegen = 100.0;
+					if ( !(svFlags & SV_FLAG_HUNGER) )
+					{
+						baseRegen = 0.0;
+					}
 					if ( type == SKELETON )
 					{
 						baseRegen = 25.0;
@@ -17769,7 +17777,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 5, buf, valueBuf)
 			|| (element != SHEET_ATK 
 				&& element != SHEET_RES 
-				&& !(element == SHEET_RGN && !(svFlags & SV_FLAG_HUNGER))
+				&& !(element == SHEET_RGN && false/*&& !(svFlags & SV_FLAG_HUNGER) && stats[player.playernum]->type != SKELETON*/)
 				&& !(element == SHEET_RGN_MP && isInsectoidENRegen && !(svFlags & SV_FLAG_HUNGER))
 				) 
 			)
@@ -18376,7 +18384,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
-			if ( element == SHEET_RGN && !(svFlags & SV_FLAG_HUNGER) )
+			if ( element == SHEET_RGN && false/*&& !(svFlags & SV_FLAG_HUNGER) && stats[player.playernum]->type != SKELETON*/ )
 			{
 				entry->setColor(hudColors.itemContextMenuHeadingText);
 			}

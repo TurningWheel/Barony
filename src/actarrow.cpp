@@ -1215,7 +1215,206 @@ void actArrow(Entity* my)
 						}
 					}
 
-					if ( damage == 0 && !statusEffectApplied )
+					if ( hit.entity->behavior == &actPlayer )
+					{
+						if ( parent )
+						{
+							if ( hitstats->defending )
+							{
+								updateAchievementThankTheTank(hit.entity->skill[2], parent, false);
+							}
+							else
+							{
+								achievementThankTheTankPair[hit.entity->skill[2]].erase(parent->getUID());
+							}
+						}
+					}
+
+					bool armorDegraded = false;
+
+					// hit armor degrade
+					if ( hitstats && parent && parent->getStats() )
+					{
+						Item* armor = NULL;
+						int armornum = 0;
+						bool isWeakArmor = false;
+						if ( damage > 0 || (damage == 0 && !(hitstats->shield && hitstats->defending)) )
+						{
+							armornum = hitstats->pickRandomEquippedItemToDegradeOnHit(&armor, true, false, false, true);
+							if ( armor != NULL && armor->status > BROKEN )
+							{
+								switch ( armor->type )
+								{
+								case CRYSTAL_HELM:
+								case CRYSTAL_SHIELD:
+								case CRYSTAL_BREASTPIECE:
+								case CRYSTAL_BOOTS:
+								case CRYSTAL_GLOVES:
+									isWeakArmor = true;
+									break;
+								default:
+									isWeakArmor = false;
+									break;
+								}
+							}
+
+							int armorDegradeChance = 30;
+							if ( isWeakArmor )
+							{
+								armorDegradeChance = 25;
+							}
+							if ( hitstats->type == GOBLIN )
+							{
+								armorDegradeChance += 10;
+							}
+
+							if ( armorDegradeChance == 100 || (local_rng.rand() % armorDegradeChance > 0) )
+							{
+								armor = NULL;
+								armornum = 0;
+							}
+						}
+
+						// if nothing chosen to degrade, check extra shield chances to degrade
+						if ( hitstats->shield != NULL && hitstats->shield->status > BROKEN && armor == NULL
+							&& !itemTypeIsQuiver(hitstats->shield->type) && itemCategory(hitstats->shield) != SPELLBOOK
+							&& hitstats->shield->type != TOOL_TINKERING_KIT )
+						{
+							if ( hitstats->shield->type == TOOL_CRYSTALSHARD && hitstats->defending )
+							{
+								// shards degrade by 1 stage each hit.
+								armor = hitstats->shield;
+								armornum = 4;
+							}
+							else if ( hitstats->shield->type == MIRROR_SHIELD && hitstats->defending )
+							{
+								// mirror shield degrade by 1 stage each hit.
+								armor = hitstats->shield;
+								armornum = 4;
+							}
+							{
+								// if no armor piece was chosen to break, grant chance to improve shield skill.
+								if ( itemCategory(hitstats->shield) == ARMOR
+									|| (hitstats->defending) )
+								{
+									int roll = 20;
+									int hitskill = hitstats->getProficiency(PRO_SHIELD) / 20;
+									roll += hitskill * 5;
+									if ( damage == 0 )
+									{
+										roll /= 2;
+									}
+									if ( roll > 0 )
+									{
+										bool success = (local_rng.rand() % roll == 0);
+										if ( !success && hit.entity->behavior == &actPlayer && hitstats->defending )
+										{
+											if ( players[hit.entity->skill[2]]->mechanics.defendTicks != 0 )
+											{
+												if ( (::ticks - players[hit.entity->skill[2]]->mechanics.defendTicks) < (TICKS_PER_SECOND / 3) )
+												{
+													// perfect block timing, roll again
+													success = (local_rng.rand() % roll == 0);
+												}
+											}
+										}
+
+										if ( success )
+										{
+											bool increaseSkill = true;
+											if ( hit.entity->behavior == &actPlayer && parent->behavior == &actPlayer )
+											{
+												increaseSkill = false;
+											}
+											else if ( hit.entity->behavior == &actPlayer && parent->monsterAllyGetPlayerLeader() )
+											{
+												increaseSkill = false;
+											}
+											else if ( hit.entity->behavior == &actPlayer
+												&& !players[hit.entity->skill[2]]->mechanics.allowedRaiseBlockingAgainstEntity(*parent) )
+											{
+												increaseSkill = false;
+											}
+											else if ( hitstats->EFFECTS[EFF_SHAPESHIFT] )
+											{
+												increaseSkill = false;
+											}
+											else if ( itemCategory(hitstats->shield) != ARMOR
+												&& hitstats->getProficiency(PRO_SHIELD) >= SKILL_LEVEL_SKILLED )
+											{
+												increaseSkill = false; // non-shield offhands dont increase skill past 40.
+											}
+											if ( increaseSkill )
+											{
+												hit.entity->increaseSkill(PRO_SHIELD); // increase shield skill
+												if ( hit.entity->behavior == &actPlayer )
+												{
+													players[hit.entity->skill[2]]->mechanics.enemyRaisedBlockingAgainst[parent->getUID()]++;
+												}
+											}
+										}
+									}
+								}
+
+								// shield still has chance to degrade after raising skill.
+								int shieldDegradeChance = 20;
+								if ( svFlags & SV_FLAG_HARDCORE )
+								{
+									shieldDegradeChance = 40;
+								}
+								if ( hitstats->type == GOBLIN )
+								{
+									shieldDegradeChance += 10;
+								}
+								if ( hit.entity->behavior == &actPlayer )
+								{
+									if ( itemCategory(hitstats->shield) == ARMOR )
+									{
+										shieldDegradeChance += 2 * (hitstats->getModifiedProficiency(PRO_SHIELD) / 10); // 2x shield bonus offhand
+										if ( !players[hit.entity->skill[2]]->mechanics.itemDegradeRoll(hitstats->shield) )
+										{
+											shieldDegradeChance = 100; // don't break.
+										}
+									}
+									else
+									{
+										shieldDegradeChance += (hitstats->getModifiedProficiency(PRO_SHIELD) / 10);
+									}
+									if ( skillCapstoneUnlocked(hit.entity->skill[2], PRO_SHIELD) )
+									{
+										shieldDegradeChance = 100; // don't break.
+									}
+								}
+								if ( shieldDegradeChance < 100 && armor == NULL &&
+									(hitstats->defending && local_rng.rand() % shieldDegradeChance == 0)
+									)
+								{
+									armor = hitstats->shield;
+									armornum = 4;
+								}
+							}
+						}
+
+						if ( armor != NULL && armor->status > BROKEN )
+						{
+							hit.entity->degradeArmor(*hitstats, *armor, armornum);
+							armorDegraded = true;
+							if ( armor->status == BROKEN )
+							{
+								if ( parent && parent->behavior == &actPlayer && hit.entity->behavior == &actMonster )
+								{
+									steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_UNSTOPPABLE_FORCE, STEAM_STAT_INT, 1);
+									if ( armornum == 4 && hitstats->type == BUGBEAR
+										&& (hitstats->defending || hit.entity->monsterAttack == MONSTER_POSE_BUGBEAR_SHIELD) )
+									{
+										steamAchievementClient(parent->skill[2], "BARONY_ACH_BEAR_WITH_ME");
+									}
+								}
+							}
+						}
+					}
+
+					if ( damage == 0 && !statusEffectApplied && !armorDegraded )
 					{
 						playSoundEntity(hit.entity, 66, 64); //*tink*
 						if ( hit.entity->behavior == &actPlayer )
@@ -1241,7 +1440,7 @@ void actArrow(Entity* my)
 							}
 						}
 					}
-					else if ( damage == 0 && statusEffectApplied )
+					else if ( damage == 0 && (statusEffectApplied || armorDegraded) )
 					{
 						playSoundEntity(hit.entity, 28, 64);
 					}

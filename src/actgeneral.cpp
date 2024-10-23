@@ -4251,9 +4251,13 @@ void actBell(Entity* my)
 		}
 	}
 
-	if ( multiplayer == CLIENT && my->flags[INVISIBLE] && my->flags[BURNING] )
+	if ( my->flags[INVISIBLE] && my->flags[BURNING] )
 	{
 		my->flags[BURNING] = false;
+		if ( multiplayer != CLIENT )
+		{
+			serverUpdateEntitySkill(my, BURNING);
+		}
 	}
 
 	if ( BELL_USE_DELAY > 0 )

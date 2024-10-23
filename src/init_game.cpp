@@ -99,6 +99,11 @@ void initGameDatafiles(bool moddedReload)
 	CompendiumEntries.readWorldFromFile();
 	CompendiumEntries.readItemsFromFile();
 	CompendiumEntries.readMagicFromFile();
+	CompendiumEntries.readMonstersTranslationsFromFile();
+	CompendiumEntries.readCodexTranslationsFromFile();
+	CompendiumEntries.readWorldTranslationsFromFile();
+	CompendiumEntries.readItemsTranslationsFromFile();
+	CompendiumEntries.readMagicTranslationsFromFile();
 	Compendium_t::AchievementData_t::readContentsLang();
 	Compendium_t::Events_t::readEventsTranslations();
 	Compendium_t::readUnlocksSaveData();

@@ -65,6 +65,8 @@ struct PlayerSettings_t
     real_t gamepad_righty_sensitivity = 1.0;
     bool gamepad_rightx_invert = false;
     bool gamepad_righty_invert = false;
+	float quick_turn_speed = 1.f;
+	float quick_turn_speed_mkb = 1.f;
 	void init(const int _player)
 	{
 		player = _player;
@@ -2293,6 +2295,7 @@ public:
 		bool itemDegradeRoll(Item* item, int* checkInterval = nullptr);
 		void onItemDegrade(Item* item);
 		int sustainedSpellMPUsed = 0;
+		Uint32 defendTicks = 0;
 		bool sustainedSpellLevelChance();
 		void sustainedSpellIncrementMP(int mpChange);
 		std::map<Uint32, int> enemyRaisedBlockingAgainst;

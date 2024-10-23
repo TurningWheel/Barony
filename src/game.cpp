@@ -224,6 +224,7 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 
 ConsoleVariable<bool> cvar_enableKeepAlives("/keepalive_enabled", true);
 ConsoleVariable<bool> cvar_animate_tiles("/animate_tiles", true);
+ConsoleVariable<bool> cvar_map_sequence_rng("/map_sequence_rng", true);
 
 std::vector<std::string> randomPlayerNamesMale;
 std::vector<std::string> randomPlayerNamesFemale;
@@ -2080,7 +2081,7 @@ void gameLogic(void)
 					skipLevelsOnLoad = 0;
 
 					// signal clients about level change
-					if ( gameModeManager.currentSession.seededRun.seed == 0 )
+					if ( gameModeManager.currentSession.seededRun.seed == 0 && !*cvar_map_sequence_rng )
 					{
 						mapseed = local_rng.rand();
 					}

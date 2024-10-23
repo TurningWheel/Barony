@@ -4663,7 +4663,7 @@ void item_Food(Item*& item, int player)
 						break;
 				}
 				manaRegenPercent *= foodMult;
-				int manaAmount = stats[player]->MAXMP * manaRegenPercent;
+				int manaAmount = std::min(stats[player]->MAXMP, 50) * manaRegenPercent;
 				players[player]->entity->modMP(manaAmount);
 			}
 		}
@@ -4914,7 +4914,7 @@ void item_FoodTin(Item*& item, int player)
 			if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->stat_appearance == 0 )
 			{
 				real_t manaRegenPercent = 0.6 * foodMult;
-				int manaAmount = stats[player]->MAXMP * manaRegenPercent;
+				int manaAmount = std::min(stats[player]->MAXMP, 50) * manaRegenPercent;
 				players[player]->entity->modMP(manaAmount);
 			}
 		}

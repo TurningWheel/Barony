@@ -1,0 +1,171 @@
+{
+    "blessings": {
+        "blurb": [
+            "In war, or in adventuring parties, those",
+            "who offer BLESSINGS are in high demand.",
+            "They benefit both the thaumaturgist, plus",
+            "nearby followers and allies.",
+            "",
+            "Some blessings have lasting effects."
+        ]
+    },
+    "contravention": {
+        "blurb": [
+            "While most magic could be described as",
+            "breaking the rules of reality, the study",
+            "of CONTRAVENTION allows sorcerors to",
+            "change how rules effect one's self.",
+            "This requires ongoing magic energy to",
+            "sustain, but can be disabled at will."
+        ]
+    },
+    "daimonia": {
+        "blurb": [
+            "DAIMONIA is the craft of using magic to",
+            "tap into the will of spirits, compelling their",
+            "influence with transformative results.",
+            "Though shunned by civilized society,",
+            "some mystics claim that their own spirit",
+            "is incomplete without this communion."
+        ]
+    },
+    "divinations": {
+        "blurb": [
+            "DIVINATIONS grant access to hidden",
+            "knowledge, revealing information that",
+            "there may be no other way to know.",
+            "",
+            "Practicing thaumaturgists claim",
+            "that knowledge is power."
+        ]
+    },
+    "enchanted amulets": {
+        "blurb": [
+            "AMULETS provide reactive benefits",
+            "to their wearer, often intervening",
+            "against harm a number of times",
+            "until their magic is spent.",
+            "Some amulets have the opposite objective.",
+            "It is wise to appraise before wearing."
+        ]
+    },
+    "enchanted feather": {
+        "blurb": [
+            "The ENCHANTED FEATHER can be depleted to",
+            "restore spellbooks or inscribe magic words",
+            "onto a blank scroll.",
+            "Only those who know the magic",
+            "words can inscribe with purpose.",
+            "Depleted feathers may be recharged."
+        ]
+    },
+    "enchanted rings": {
+        "blurb": [
+            "Adventurers covet magical RINGS for",
+            "the passive magical benefits they",
+            "provide, with effects that range",
+            "from mild, to situational, to",
+            "extremely powerful.",
+            "Magical rings may change the world."
+        ]
+    },
+    "evocation": {
+        "blurb": [
+            "Sorcerors practice EVOCATION to conjure",
+            "energies and material using their minds.",
+            "Largely this is used to launch harmful",
+            "projectiles at enemies by adventurers,",
+            "many of which leave a lasting effect",
+            "that may continue to harm the target."
+        ]
+    },
+    "impeturia": {
+        "blurb": [
+            "Mystics who practice IMPETURIA do so by",
+            "calling to the spirit of the object they",
+            "wish to manipulate, and compel it to alter",
+            "its state. Sorcerors attempting to do the",
+            "same thing with kinesis have so far been",
+            "unsuccessful."
+        ]
+    },
+    "kinesis": {
+        "blurb": [
+            "Sorcerers practice KINESIS to move",
+            "things with their minds. While trying to",
+            "improve control and accuracy, they have",
+            "stumbled upon other innovations, but",
+            "precise manipulation remains difficult."
+        ]
+    },
+    "magicstaffs": {
+        "blurb": [
+            "These weapons allow any adventurer, no",
+            "matter how mundane, to fire magical spells.",
+            "",
+            "The color of the staff indicates",
+            "what kinds of spells it might contain.",
+            "The item always breaks when depleted."
+        ]
+    },
+    "meditations": {
+        "blurb": [
+            "A simple MEDITATION is most magicians'",
+            "first introduction to thaumaturgy.",
+            "",
+            "These spells require concentration to",
+            "sustain, and will only effect the caster,",
+            "but they can be dismissed at will."
+        ]
+    },
+    "miraculous feats": {
+        "blurb": [
+            "Those in ancient times who performed",
+            "MIRACULOUS FEATS are the first known",
+            "thaumaturgists. Casting immediately",
+            "performs a single wonderous action.",
+            "It is taught that aligning one's self with",
+            "great purpose will yield these powers."
+        ]
+    },
+    "psianimus": {
+        "blurb": [
+            "The most commonly practiced of the",
+            "mystic's arts, PSIANIMUS is the craft",
+            "of using magic to alter the mind of a",
+            "living (or unliving) target.",
+            "The effects are usually temporary,",
+            "otherwise its reputation might differ."
+        ]
+    },
+    "sarkomancy": {
+        "blurb": [
+            "Considered a forbidden and dark art by",
+            "the church, SARKOMANCY is the craft of",
+            "using magic to manipulate the body,",
+            "usually against unwilling targets.",
+            "Uses of this magic to benefit one's",
+            "own body are said to only be rumors."
+        ]
+    },
+    "scrolls": {
+        "blurb": [
+            "A scroll can be invoked by any adventurer",
+            "to spend its stored spell, however it is",
+            "immediately consumed upon use.",
+            "Some spells can only be found on scrolls.",
+            "Blank scrolls may later be inscribed,",
+            "with the right tools and knowledge."
+        ]
+    },
+    "temulturgy": {
+        "blurb": [
+            "Sometimes magic is needed that does",
+            "not simply hurl one force at another.",
+            "The study of TEMULTURGY is specialized",
+            "toward disrupting an object's structure.",
+            "So far sorcerors haven't figured out",
+            "how to practice this on living targets."
+        ]
+    }
+}

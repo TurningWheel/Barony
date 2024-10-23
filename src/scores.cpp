@@ -40,7 +40,8 @@ Sint32 conductGameChallenges[NUM_CONDUCT_CHALLENGES] = { 0 }; // additional 'con
 Sint32 gameStatistics[NUM_GAMEPLAY_STATISTICS] = { 0 }; // general saved game statistics to be stored in here.
 std::vector<std::pair<Uint32, Uint32>> achievementRhythmOfTheKnightVec[MAXPLAYERS] = {};
 bool achievementStatusRhythmOfTheKnight[MAXPLAYERS] = { false };
-std::pair<Uint32, Uint32> achievementThankTheTankPair[MAXPLAYERS] = { std::make_pair(0, 0) };
+bool achievementRhythmOfTheKnight[MAXPLAYERS] = { false };
+std::map<Uint32, Uint32> achievementThankTheTankPair[MAXPLAYERS];
 bool achievementStatusBaitAndSwitch[MAXPLAYERS] = { false };
 Uint32 achievementBaitAndSwitchTimer[MAXPLAYERS] = { 0 };
 std::unordered_set<int> clientLearnedAlchemyIngredients[MAXPLAYERS];
@@ -3453,11 +3454,11 @@ void setDefaultPlayerConducts()
 	for ( int c = 0; c < MAXPLAYERS; ++c )
 	{
 		achievementStatusRhythmOfTheKnight[c] = false;
+		achievementRhythmOfTheKnight[c] = false;
 		achievementStatusStrobe[c] = false;
 		achievementStatusThankTheTank[c] = false;
 		achievementRhythmOfTheKnightVec[c].clear();
-		achievementThankTheTankPair[c].first = 0;
-		achievementThankTheTankPair[c].second = 0;
+		achievementThankTheTankPair[c].clear();
 		achievementStrobeVec[c].clear();
 		achievementStatusBaitAndSwitch[c] = false;
 		achievementBaitAndSwitchTimer[c] = 0;
@@ -4023,7 +4024,11 @@ void updateAchievementRhythmOfTheKnight(int player, Entity* target, bool playerI
 						{
 							//messagePlayer(0, "achievement get!, time taken %f", timeTaken);
 							achievementStatusRhythmOfTheKnight[player] = true;
-							steamAchievementClient(player, "BARONY_ACH_RHYTHM_OF_THE_KNIGHT");
+							if ( !achievementRhythmOfTheKnight[player] )
+							{
+								steamAchievementClient(player, "BARONY_ACH_RHYTHM_OF_THE_KNIGHT");
+								achievementRhythmOfTheKnight[player] = true;
+							}
 						}
 						achievementRhythmOfTheKnightVec[player].clear();
 					}
@@ -4100,29 +4105,40 @@ void updateAchievementThankTheTank(int player, Entity* target, bool targetKilled
 	{
 		return;
 	}
-	if ( achievementStatusThankTheTank[player] || multiplayer == CLIENT )
+	if ( !target || target->behavior != &actMonster )
+	{
+		return;
+	}
+	if ( multiplayer == CLIENT )
 	{
 		return;
 	}
 
+
+	auto& entry = achievementThankTheTankPair[player][target->getUID()];
 	if ( !targetKilled )
 	{
-		achievementThankTheTankPair[player] = std::make_pair(ticks, target->getUID()); // track the monster UID defending against
+		entry = ticks;
 		//messagePlayer(0, "pair: %d, %d", achievementThankTheTankPair[player].first, achievementThankTheTankPair[player].second);
 	}
-	else if ( achievementThankTheTankPair[player].first != 0
-		&& achievementThankTheTankPair[player].second != 0 ) // check there is a ticks/UID entry.
+	else if ( entry != 0 ) // check there is a ticks/UID entry.
 	{
 		if ( players[player] && players[player]->entity )
 		{
 			if ( players[player]->entity->checkEnemy(target) )
 			{
-				if ( target->getUID() == achievementThankTheTankPair[player].second )
+				// check timestamp within 3 seconds.
+				if ( (ticks - entry) / 50.f < 3.f )
 				{
-					// same target dying, check timestamp within 3 seconds.
-					if ( (ticks - achievementThankTheTankPair[player].first) / 50.f < 3.f )
+					achievementStatusThankTheTank[player] = true;
+					achievementThankTheTankPair[player].erase(target->getUID());
+					if ( players[player]->mechanics.allowedRaiseBlockingAgainstEntity(*target) )
 					{
-						achievementStatusThankTheTank[player] = true;
+						int skillLVL = 3 * (stats[player]->getProficiency(PRO_SHIELD) / 20);
+						if ( local_rng.rand() % (5 + skillLVL) == 0 )
+						{
+							players[player]->entity->increaseSkill(PRO_SHIELD);
+						}
 					}
 				}
 			}

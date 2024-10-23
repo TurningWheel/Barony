@@ -4981,19 +4981,25 @@ namespace ConsoleCommands {
 
 	static ConsoleCommand ccmd_reloadcompendiummonsters("/reloadcompendiummonsters", "reloads compendium entries", []CCMD{
 		CompendiumEntries.readMonstersFromFile();
+		CompendiumEntries.readMonstersTranslationsFromFile();
 		});
 
 	static ConsoleCommand ccmd_reloadcompendiumworld("/reloadcompendiumworld", "reloads compendium entries", []CCMD{
 		CompendiumEntries.readWorldFromFile();
+		CompendiumEntries.readWorldTranslationsFromFile();
+
 		});
 
 	static ConsoleCommand ccmd_reloadcompendiumcodex("/reloadcompendiumcodex", "reloads compendium entries", []CCMD{
 		CompendiumEntries.readCodexFromFile();
+		CompendiumEntries.readCodexTranslationsFromFile();
 		});
 
 	static ConsoleCommand ccmd_reloadcompendiumitems("/reloadcompendiumitems", "reloads compendium entries", []CCMD{
 		CompendiumEntries.readItemsFromFile();
 		CompendiumEntries.readMagicFromFile();
+		CompendiumEntries.readItemsTranslationsFromFile();
+		CompendiumEntries.readMagicTranslationsFromFile();
 		});
 
 	static ConsoleCommand ccmd_reloadcompendiumevents("/reloadcompendiumevents", "reloads compendium entries", []CCMD{

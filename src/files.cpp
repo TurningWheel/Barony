@@ -588,15 +588,15 @@ std::unordered_map<std::string, int> mapHashes = {
     { "labyrinth32e.lmp", 26968 },
     { "labyrinthsecret.lmp", 73135 },
     { "labyrinthtoruins.lmp", 137530 },
-    { "mainmenu1.lmp", 12427 },
-    { "mainmenu2.lmp", 23291 },
-    { "mainmenu3.lmp", 67606 },
-    { "mainmenu4.lmp", 59632 },
-    { "mainmenu5.lmp", 122197 },
-    { "mainmenu6.lmp", 84492 },
-    { "mainmenu7.lmp", 607316 },
-    { "mainmenu8.lmp", 97824 },
-    { "mainmenu9.lmp", 4654457 },
+    { "mainmenu1.lmp", -1 },
+    { "mainmenu2.lmp", -1 },
+    { "mainmenu3.lmp", -1 },
+    { "mainmenu4.lmp", -1 },
+    { "mainmenu5.lmp", -1 },
+    { "mainmenu6.lmp", -1 },
+    { "mainmenu7.lmp", -1 },
+    { "mainmenu8.lmp", -1 },
+    { "mainmenu9.lmp", -1 },
     { "mine.lmp", 80741 },
     { "mine00.lmp", 12890 },
     { "mine01.lmp", 52889 },
@@ -3134,7 +3134,11 @@ int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed, int* check
 			mapName = physfsFormatMapName(tempstr);
 			if ( useRandSeed )
 			{
+#ifdef EDITOR
 				if ( gameModeManager.currentSession.seededRun.seed == 0 )
+#else
+				if ( gameModeManager.currentSession.seededRun.seed == 0 && !*cvar_map_sequence_rng )
+#endif
 				{
 					mapseed = local_rng.rand();
 				}
