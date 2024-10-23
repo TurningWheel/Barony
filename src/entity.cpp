@@ -10962,10 +10962,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 						messagePlayerMonsterEvent(playerhit, color, *myStats, Language::get(698), Language::get(699), MSG_ATTACKS);
 						if ( playerhit >= 0 )
 						{
-							if ( !achievementStatusThankTheTank[playerhit] )
-							{
-								achievementThankTheTankPair[playerhit] = std::make_pair(0, 0);
-							}
 							if ( behavior == &actMonster )
 							{
 								updateAchievementBaitAndSwitch(playerhit, false);
@@ -11044,6 +11040,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							achievementStatusRhythmOfTheKnight[playerhit] = false;
 							achievementRhythmOfTheKnightVec[playerhit].clear();
+							achievementThankTheTankPair[playerhit].erase(this->getUID());
 							//messagePlayer(0, "used AC!");
 						}
 					}

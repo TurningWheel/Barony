@@ -1215,6 +1215,21 @@ void actArrow(Entity* my)
 						}
 					}
 
+					if ( hit.entity->behavior == &actPlayer )
+					{
+						if ( parent )
+						{
+							if ( hitstats->defending )
+							{
+								updateAchievementThankTheTank(hit.entity->skill[2], parent, false);
+							}
+							else
+							{
+								achievementThankTheTankPair[hit.entity->skill[2]].erase(parent->getUID());
+							}
+						}
+					}
+
 					bool armorDegraded = false;
 
 					// hit armor degrade
