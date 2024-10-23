@@ -47,6 +47,8 @@ public:
 	void getLeaderboardTop100(std::string lid);
 	void getLeaderboardAroundMe(std::string lid);
 	void getLeaderboardTop100Alternate(std::string lid);
+	void gameBegin();
+	void globalStat(int index, int value);
 
 	struct PlayerCheckLeaderboardData_t
 	{
