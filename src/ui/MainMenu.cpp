@@ -553,6 +553,8 @@ namespace MainMenu {
         float turn_sensitivity_y = 50.f;
         bool gamepad_camera_invert_x = false;
         bool gamepad_camera_invert_y = false;
+		float quick_turn_speed_control = 1.f;
+		float quick_turn_speed_mkb_control = 1.f;
         inline void save(int index);
         static inline Controls load(int index);
         static inline Controls reset();
@@ -2750,6 +2752,8 @@ namespace MainMenu {
         settings.gamepad_righty_sensitivity = std::min(std::max(25.f / 32768.f, turn_sensitivity_y / 32768.f), 200.f / 32768.f);
         settings.gamepad_rightx_invert = gamepad_camera_invert_x;
         settings.gamepad_righty_invert = gamepad_camera_invert_y;
+		settings.quick_turn_speed = std::max(1.f, std::min(5.f, quick_turn_speed_control));
+		settings.quick_turn_speed_mkb = std::max(1.f, std::min(5.f, quick_turn_speed_mkb_control));
     }
 
     inline Controls Controls::load(int index) {
@@ -2766,6 +2770,8 @@ namespace MainMenu {
         controls.turn_sensitivity_y = settings.gamepad_righty_sensitivity * 32768.0;
         controls.gamepad_camera_invert_x = settings.gamepad_rightx_invert;
         controls.gamepad_camera_invert_y = settings.gamepad_righty_invert;
+		controls.quick_turn_speed_control = settings.quick_turn_speed;
+		controls.quick_turn_speed_mkb_control = settings.quick_turn_speed_mkb;
         return controls;
     }
 
@@ -2786,6 +2792,8 @@ namespace MainMenu {
         file->property("turn_sensitivity_y", turn_sensitivity_y);
         file->property("gamepad_camera_invert_x", gamepad_camera_invert_x);
         file->property("gamepad_camera_invert_y", gamepad_camera_invert_y);
+		file->property("quick_turn_speed_control", quick_turn_speed_control);
+		file->property("quick_turn_speed_mkb_control", quick_turn_speed_mkb_control);
         return true;
     }
 
@@ -3009,7 +3017,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 20;
+	    int version = 21;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -3116,6 +3124,8 @@ namespace MainMenu {
                 file->property("gamepad_camera_invert_x", controls.gamepad_camera_invert_x);
                 file->property("gamepad_camera_invert_y", controls.gamepad_camera_invert_y);
             }
+			file->propertyVersion("quick_turn_speed_control", version >= 21, controls.quick_turn_speed_control);
+			file->propertyVersion("quick_turn_speed_mkb_control", version >= 21, controls.quick_turn_speed_mkb_control);
             for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
                 this->controls[c] = controls;
             }
@@ -4988,6 +4998,12 @@ namespace MainMenu {
         snprintf(buf, sizeof(buf), "%d%%", (int)v);
         return buf;
     }
+
+	static const char* sliderFloorInt(float v) {
+		static char buf[8];
+		snprintf(buf, sizeof(buf), "%d", (int)floor(v));
+		return buf;
+	};
 
 	static int settingsAddSlider(
 		Frame& frame,
@@ -6904,6 +6920,9 @@ bind_failed:
             y += settingsAddBooleanOption(*settings_subwindow, y, "mkb_world_tooltips", Language::get(5226), Language::get(5227),
                 allSettings.controls[bound_player].mkb_world_tooltips_enabled, [](Button& button)
                 {soundToggleSetting(button); allSettings.controls[bound_player].mkb_world_tooltips_enabled = button.isPressed();});
+			y += settingsAddSlider(*settings_subwindow, y, "quick_turn_speed_mkb_control", Language::get(6310), Language::get(6311),
+				allSettings.controls[bound_player].quick_turn_speed_mkb_control, 1.f, 5.f, sliderFloorInt, [](Slider& slider)
+				{soundSliderSetting(slider, true); allSettings.controls[bound_player].quick_turn_speed_mkb_control = slider.getValue(); });
             
             hookSettings(*settings_subwindow,
                 {{Setting::Type::Customize, "bindings"},
@@ -6912,6 +6931,7 @@ bind_failed:
                 {Setting::Type::Boolean, "reverse_mouse"},
                 {Setting::Type::Boolean, "smooth_mouse"},
                 {Setting::Type::Boolean, "mkb_world_tooltips"},
+				{Setting::Type::Slider, "quick_turn_speed_mkb_control"},
             });
         }
         
@@ -6934,6 +6954,10 @@ bind_failed:
             y += settingsAddBooleanOption(*settings_subwindow, y, "gamepad_camera_invert_y", Language::get(5239), Language::get(5240),
                 allSettings.controls[bound_player].gamepad_camera_invert_y, [](Button& button)
                 {soundToggleSetting(button); allSettings.controls[bound_player].gamepad_camera_invert_y = button.isPressed();});
+
+			y += settingsAddSlider(*settings_subwindow, y, "quick_turn_speed_control", Language::get(6310), Language::get(6311),
+				allSettings.controls[bound_player].quick_turn_speed_control, 1.f, 5.f, sliderFloorInt, [](Slider& slider)
+				{soundSliderSetting(slider, true); allSettings.controls[bound_player].quick_turn_speed_control = slider.getValue(); });
             
             hookSettings(*settings_subwindow,
                 {{Setting::Type::Customize, "bindings"},
@@ -6942,6 +6966,7 @@ bind_failed:
                 {Setting::Type::Slider, "turn_sensitivity_y"},
                 {Setting::Type::Boolean, "gamepad_camera_invert_x"},
                 {Setting::Type::Boolean, "gamepad_camera_invert_y"},
+				{Setting::Type::Slider, "quick_turn_speed_control"},
             });
         }
             
