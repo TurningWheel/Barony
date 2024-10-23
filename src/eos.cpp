@@ -3166,7 +3166,7 @@ void EOSFuncs::ingestStat(int stat_num, int value)
 
 static void EOS_CALL OnIngestGlobalStatComplete(const EOS_Stats_IngestStatCompleteCallbackInfo* data)
 {
-	assert(data != NULL);
+	/*assert(data != NULL);
 	if (data->ResultCode == EOS_EResult::EOS_Success)
 	{
 		EOSFuncs::logInfo("Successfully stored global stats");
@@ -3184,12 +3184,12 @@ static void EOS_CALL OnIngestGlobalStatComplete(const EOS_Stats_IngestStatComple
 	{
 		EOSFuncs::logError("OnIngestGlobalStatComplete: Callback failure: %d", static_cast<int>(data->ResultCode));
 	}
-	EOS.StatGlobalManager.bDataQueued = true;
+	EOS.StatGlobalManager.bDataQueued = true;*/
 }
 
 void EOSFuncs::queueGlobalStatUpdate(int stat_num, int value)
 {
-	if (stat_num <= STEAM_GSTAT_INVALID || stat_num >= NUM_GLOBAL_STEAM_STATISTICS)
+	/*if (stat_num <= STEAM_GSTAT_INVALID || stat_num >= NUM_GLOBAL_STEAM_STATISTICS)
 	{
 		return;
 	}
@@ -3198,7 +3198,7 @@ void EOSFuncs::queueGlobalStatUpdate(int stat_num, int value)
 		return;
 	}
 	g_SteamGlobalStats[stat_num].m_iValue += value;
-	StatGlobalManager.bDataQueued = true;
+	StatGlobalManager.bDataQueued = true;*/
 }
 
 void EOSFuncs::StatGlobal_t::updateQueuedStats()
@@ -3218,55 +3218,55 @@ void EOSFuncs::StatGlobal_t::updateQueuedStats()
 
 void EOSFuncs::ingestGlobalStats()
 {
-	if (StatGlobalManager.bIsDisabled)
-	{
-		return;
-	}
-	if (!ServerPlatformHandle)
-	{
-		return;
-	}
+	//if (StatGlobalManager.bIsDisabled)
+	//{
+	//	return;
+	//}
+	//if (!ServerPlatformHandle)
+	//{
+	//	return;
+	//}
 
-	Uint32 numStats = 0;
-	std::vector<std::string> StatNames;
-	for (Uint32 i = 0; i < NUM_GLOBAL_STEAM_STATISTICS; ++i)
-	{
-		if (g_SteamGlobalStats[i].m_iValue > 0)
-		{
-			StatNames.push_back(g_SteamGlobalStats[i].m_pchStatName);
-			++numStats;
-		}
-	}
+	//Uint32 numStats = 0;
+	//std::vector<std::string> StatNames;
+	//for (Uint32 i = 0; i < NUM_GLOBAL_STEAM_STATISTICS; ++i)
+	//{
+	//	if (g_SteamGlobalStats[i].m_iValue > 0)
+	//	{
+	//		StatNames.push_back(g_SteamGlobalStats[i].m_pchStatName);
+	//		++numStats;
+	//	}
+	//}
 
-	if (numStats == 0)
-	{
-		return;
-	}
+	//if (numStats == 0)
+	//{
+	//	return;
+	//}
 
-	EOS_Stats_IngestData* StatsToIngest = new EOS_Stats_IngestData[numStats];
-	Uint32 currentIndex = 0;
-	for (Uint32 i = 0; i < NUM_GLOBAL_STEAM_STATISTICS && currentIndex < StatNames.size(); ++i)
-	{
-		if (g_SteamGlobalStats[i].m_iValue > 0)
-		{
-			StatsToIngest[currentIndex].ApiVersion = EOS_STATS_INGESTDATA_API_LATEST;
-			StatsToIngest[currentIndex].StatName = StatNames[currentIndex].c_str();
-			StatsToIngest[currentIndex].IngestAmount = g_SteamGlobalStats[i].m_iValue;
-			//logInfo("Updated %s | %d", StatsToIngest[currentIndex].StatName, StatsToIngest[currentIndex].IngestAmount);
-			++currentIndex;
-		}
-	}
+	//EOS_Stats_IngestData* StatsToIngest = new EOS_Stats_IngestData[numStats];
+	//Uint32 currentIndex = 0;
+	//for (Uint32 i = 0; i < NUM_GLOBAL_STEAM_STATISTICS && currentIndex < StatNames.size(); ++i)
+	//{
+	//	if (g_SteamGlobalStats[i].m_iValue > 0)
+	//	{
+	//		StatsToIngest[currentIndex].ApiVersion = EOS_STATS_INGESTDATA_API_LATEST;
+	//		StatsToIngest[currentIndex].StatName = StatNames[currentIndex].c_str();
+	//		StatsToIngest[currentIndex].IngestAmount = g_SteamGlobalStats[i].m_iValue;
+	//		//logInfo("Updated %s | %d", StatsToIngest[currentIndex].StatName, StatsToIngest[currentIndex].IngestAmount);
+	//		++currentIndex;
+	//	}
+	//}
 
-	EOS_Stats_IngestStatOptions Options{};
-	Options.ApiVersion = EOS_STATS_INGESTSTAT_API_LATEST;
-	Options.Stats = StatsToIngest;
-	Options.StatsCount = numStats;
-	Options.LocalUserId = StatGlobalManager.getProductUserIdHandle();
-	Options.TargetUserId = StatGlobalManager.getProductUserIdHandle();
+	//EOS_Stats_IngestStatOptions Options{};
+	//Options.ApiVersion = EOS_STATS_INGESTSTAT_API_LATEST;
+	//Options.Stats = StatsToIngest;
+	//Options.StatsCount = numStats;
+	//Options.LocalUserId = StatGlobalManager.getProductUserIdHandle();
+	//Options.TargetUserId = StatGlobalManager.getProductUserIdHandle();
 
-	EOS_Stats_IngestStat(EOS_Platform_GetStatsInterface(ServerPlatformHandle), &Options, nullptr, OnIngestGlobalStatComplete);
+	//EOS_Stats_IngestStat(EOS_Platform_GetStatsInterface(ServerPlatformHandle), &Options, nullptr, OnIngestGlobalStatComplete);
 
-	delete[] StatsToIngest;
+	//delete[] StatsToIngest;
 }
 
 void EOS_CALL EOSFuncs::OnQueryAllStatsCallback(const EOS_Stats_OnQueryStatsCompleteCallbackInfo* data)
@@ -4063,34 +4063,34 @@ void EOSFuncs::StatGlobal_t::init()
 
 void EOSFuncs::StatGlobal_t::queryGlobalStatUser()
 {
-	init();
+	//init();
 
-	// Query Player Stats
-	EOS_Stats_QueryStatsOptions StatsQueryOptions{};
-	StatsQueryOptions.ApiVersion = EOS_STATS_QUERYSTATS_API_LATEST;
-	StatsQueryOptions.LocalUserId = getProductUserIdHandle();
-	StatsQueryOptions.TargetUserId = getProductUserIdHandle();
+	//// Query Player Stats
+	//EOS_Stats_QueryStatsOptions StatsQueryOptions{};
+	//StatsQueryOptions.ApiVersion = EOS_STATS_QUERYSTATS_API_LATEST;
+	//StatsQueryOptions.LocalUserId = getProductUserIdHandle();
+	//StatsQueryOptions.TargetUserId = getProductUserIdHandle();
 
-	// Optional params
-	StatsQueryOptions.StartTime = EOS_STATS_TIME_UNDEFINED;
-	StatsQueryOptions.EndTime = EOS_STATS_TIME_UNDEFINED;
+	//// Optional params
+	//StatsQueryOptions.StartTime = EOS_STATS_TIME_UNDEFINED;
+	//StatsQueryOptions.EndTime = EOS_STATS_TIME_UNDEFINED;
 
-	StatsQueryOptions.StatNamesCount = NUM_GLOBAL_STEAM_STATISTICS;
-	StatsQueryOptions.StatNames = new const char* [NUM_GLOBAL_STEAM_STATISTICS];
+	//StatsQueryOptions.StatNamesCount = NUM_GLOBAL_STEAM_STATISTICS;
+	//StatsQueryOptions.StatNames = new const char* [NUM_GLOBAL_STEAM_STATISTICS];
 
-	for (int i = 0; i < NUM_GLOBAL_STEAM_STATISTICS; ++i)
-	{
-		StatsQueryOptions.StatNames[i] = g_SteamGlobalStats[i].m_pchStatName;
-	}
+	//for (int i = 0; i < NUM_GLOBAL_STEAM_STATISTICS; ++i)
+	//{
+	//	StatsQueryOptions.StatNames[i] = g_SteamGlobalStats[i].m_pchStatName;
+	//}
 
-	if (EOS.ServerPlatformHandle)
-	{
-		return;
-	}
+	//if (EOS.ServerPlatformHandle)
+	//{
+	//	return;
+	//}
 
-	EOS_Stats_QueryStats(EOS_Platform_GetStatsInterface(EOS.ServerPlatformHandle),
-		&StatsQueryOptions, nullptr, OnQueryGlobalStatsCallback);
-	delete[] StatsQueryOptions.StatNames;
+	//EOS_Stats_QueryStats(EOS_Platform_GetStatsInterface(EOS.ServerPlatformHandle),
+	//	&StatsQueryOptions, nullptr, OnQueryGlobalStatsCallback);
+	//delete[] StatsQueryOptions.StatNames;
 }
 
 #endif //USE_EOS

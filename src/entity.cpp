@@ -10359,7 +10359,17 @@ void Entity::attack(int pose, int charge, Entity* target)
 									{
 										increaseSkill = false;
 									}
-									players[this->skill[2]]->mechanics.enemyRaisedBlockingAgainst[hit.entity->getUID()]++;
+									if ( myStats->shield && itemCategory(myStats->shield) != ARMOR )
+									{
+										if ( myStats->getProficiency(PRO_SHIELD) >= SKILL_LEVEL_SKILLED )
+										{
+											increaseSkill = false;
+										}
+									}
+									if ( increaseSkill )
+									{
+										players[this->skill[2]]->mechanics.enemyRaisedBlockingAgainst[hit.entity->getUID()]++;
+									}
 								}
 								if ( increaseSkill )
 								{
@@ -11022,7 +11032,17 @@ void Entity::attack(int pose, int charge, Entity* target)
 											{
 												skillIncrease = false;
 											}
-											players[hit.entity->skill[2]]->mechanics.enemyRaisedBlockingAgainst[this->getUID()]++;
+											if ( hitstats->shield && itemCategory(hitstats->shield) != ARMOR )
+											{
+												if ( hitstats->getProficiency(PRO_SHIELD) >= SKILL_LEVEL_SKILLED )
+												{
+													skillIncrease = false;
+												}
+											}
+											if ( skillIncrease )
+											{
+												players[hit.entity->skill[2]]->mechanics.enemyRaisedBlockingAgainst[this->getUID()]++;
+											}
 										}
 										if ( skillIncrease )
 										{

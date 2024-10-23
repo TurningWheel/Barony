@@ -1968,6 +1968,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 		summonedStats->RANDOM_GOLD = 0;
 		summonedStats->MISC_FLAGS[STAT_FLAG_MONSTER_DISABLE_HC_SCALING] = 1;
 		summonedStats->leader_uid = targetStats->leader_uid;
+		summonedStats->monsterIsCharmed = targetStats->monsterIsCharmed;
 		if ( summonedStats->leader_uid != 0 && summonedStats->type != SHADOW )
 		{
 			Entity* leader = uidToEntity(summonedStats->leader_uid);

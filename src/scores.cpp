@@ -26,6 +26,9 @@
 #include "collision.hpp"
 #include "mod_tools.hpp"
 #include "lobbies.hpp"
+#ifdef USE_PLAYFAB
+#include "playfab.hpp"
+#endif
 
 // definitions
 list_t topscores;
@@ -4137,7 +4140,19 @@ void updateAchievementThankTheTank(int player, Entity* target, bool targetKilled
 						int skillLVL = 3 * (stats[player]->getProficiency(PRO_SHIELD) / 20);
 						if ( local_rng.rand() % (5 + skillLVL) == 0 )
 						{
-							players[player]->entity->increaseSkill(PRO_SHIELD);
+							bool increase = true;
+							if ( stats[player]->shield && itemCategory(stats[player]->shield) != ARMOR )
+							{
+								if ( stats[player]->getProficiency(PRO_SHIELD) >= SKILL_LEVEL_SKILLED )
+								{
+									increase = false;
+								}
+							}
+							if ( increase )
+							{
+								players[player]->entity->increaseSkill(PRO_SHIELD);
+								players[player]->mechanics.enemyRaisedBlockingAgainst[target->getUID()]++;
+							}
 						}
 					}
 				}
@@ -5664,12 +5679,17 @@ void AchievementObserver::updateGlobalStat(int index, int value)
 	{
 		return;
 	}
+#ifndef DEBUG_ACHIEVEMENTS
 	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 		|| conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS]
 		|| Mods::disableSteamAchievements )
 	{
 		return;
 	}
+#endif
+#ifdef USE_PLAYFAB
+	playfabUser.globalStat(index, value);
+#endif
 #if defined USE_EOS
 	EOS.queueGlobalStatUpdate(index, value);
 #endif
@@ -5745,6 +5765,12 @@ SteamGlobalStatIndexes getIndexForDeathType(int type)
 			return STEAM_GSTAT_DEATHS_GYROBOT;
 		case DUMMYBOT:
 			return STEAM_GSTAT_DEATHS_DUMMYBOT;
+		case BAT_SMALL:
+			return STEAM_GSTAT_DEATHS_BAT;
+		case BUGBEAR:
+			return STEAM_GSTAT_DEATHS_BUGBEAR;
+		case MIMIC:
+			return STEAM_GSTAT_DEATHS_MIMIC;
 		default:
 			return STEAM_GSTAT_INVALID;
 	}

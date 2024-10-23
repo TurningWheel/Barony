@@ -9354,7 +9354,13 @@ void doNewGame(bool makeHighscore) {
 	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_DEFAULT && !loadingsavegame )
 	{
 		steamStatisticUpdate(STEAM_STAT_GAMES_STARTED, STEAM_STAT_INT, 1);
-		achievementObserver.updateGlobalStat(STEAM_GSTAT_GAMES_STARTED);
+#ifdef USE_PLAYFAB
+		if ( !loadingsavegame )
+		{
+			playfabUser.gameBegin();
+		}
+#endif
+		//achievementObserver.updateGlobalStat(STEAM_GSTAT_GAMES_STARTED);
 	}
 
 	// delete game data clutter
