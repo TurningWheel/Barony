@@ -25756,6 +25756,61 @@ failed:
     static GetPlayersOnline getPlayersOnline;
 #endif
 
+	std::string MainMenuBanners_t::updateBannerImg = "";
+	std::string MainMenuBanners_t::updateBannerImgHighlight = "";
+	std::string MainMenuBanners_t::updateBannerURL = "";
+	void MainMenuBanners_t::readFromFile()
+	{
+		const std::string filename = "data/banners.json";
+		if ( !PHYSFS_getRealDir(filename.c_str()) )
+		{
+			printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+			return;
+		}
+
+		std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+		inputPath.append(PHYSFS_getDirSeparator());
+		inputPath.append(filename.c_str());
+
+		File* fp = FileIO::open(inputPath.c_str(), "rb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+			return;
+		}
+
+		char buf[2048];
+		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+		buf[count] = '\0';
+		rapidjson::StringStream is(buf);
+		FileIO::close(fp);
+
+		rapidjson::Document d;
+		d.ParseStream(is);
+		if ( !d.HasMember("version") )
+		{
+			printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+			return;
+		}
+
+		updateBannerImg = "";
+		updateBannerImgHighlight = "";
+		updateBannerURL = "";
+
+		if ( d.HasMember("update_banner_img") && d["update_banner_img"].IsString() )
+		{
+			updateBannerImg = d["update_banner_img"].GetString();
+		}
+		if ( d.HasMember("update_banner_img_highlight") && d["update_banner_img_highlight"].IsString() )
+		{
+			updateBannerImgHighlight = d["update_banner_img_highlight"].GetString();
+		}
+		if ( d.HasMember("update_banner_link") && d["update_banner_link"].IsString() )
+		{
+			updateBannerURL = d["update_banner_link"].GetString();
+		}
+	}
+
 	void createMainMenu(bool ingame) {
 		if (!ingame) { 
 			clientnum = 0;
@@ -26190,14 +26245,22 @@ failed:
 #else
 			const char* banner_images[][2] = {
 				{
-					"*#images/ui/Main Menus/Banners/banner_eatmyhat.png",
-					"*#images/ui/Main Menus/Banners/banner_eatmyhat-hover.png",
+					"",
+					"",
 				},
 				{
 					"*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_base.png",
 					"*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_high.png",
 				}
 			};
+
+			if ( MainMenuBanners_t::updateBannerImg != ""
+				&& MainMenuBanners_t::updateBannerImgHighlight != ""
+				&& MainMenuBanners_t::updateBannerURL != "" )
+			{
+				banner_images[0][0] = MainMenuBanners_t::updateBannerImg.c_str();
+				banner_images[0][1] = MainMenuBanners_t::updateBannerImgHighlight.c_str();
+			}
    
             // customize DLC banner.
             {
@@ -26217,7 +26280,7 @@ failed:
             
 			void(*banner_funcs[])(Button&) = {
 				[](Button&) { // banner #1
-					openURLTryWithOverlay("https://www.baronygame.com/blog/eat-my-hat-release");
+					openURLTryWithOverlay(MainMenuBanners_t::updateBannerURL.c_str());
 				},
 				[](Button&) { // banner #2
 					 openDLCPrompt(enabledDLCPack1 ? 1 : 0);

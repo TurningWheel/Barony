@@ -192,4 +192,12 @@ namespace MainMenu {
 		static void update_details_text(Frame& card);
 		static void update_details_text(Frame& card, void* stats);
 	};
+
+	struct MainMenuBanners_t
+	{
+		static std::string updateBannerImg;
+		static std::string updateBannerImgHighlight;
+		static std::string updateBannerURL;
+		static void readFromFile();
+	};
 }
