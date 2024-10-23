@@ -55,6 +55,7 @@ void PlayfabUser_t::gameBegin()
         }
     }
     eventContent.Payload["numplayers"] = players;
+    eventContent.Payload["version"] = VERSION;
     eventContent.Payload["splitscreen"] = (multiplayer == SINGLE && splitscreen) ? 1 : 0;
     eventContent.Payload["race"] = stats[clientnum]->playerRace;
     eventContent.Payload["appearance"] = stats[clientnum]->stat_appearance;
