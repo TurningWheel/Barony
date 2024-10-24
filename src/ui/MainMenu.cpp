@@ -38763,7 +38763,7 @@ failed:
 				statsTxt->setColor(statValColor);
 
 				page_right_inner->addImage(SDL_Rect{ statx - 18 - 12, staty + 11 - 12, 24, 24 },
-					0xFFFFFFFF, "*images/ui/Charsheet/HUD_CharSheet_AC_00.png");
+					0xFFFFFFFF, "*images/ui/CharSheet/HUD_CharSheet_AC_00.png");
 
 				staty += 26;
 				statsTxt = page_right_inner->addField("spd", 64);
@@ -38782,7 +38782,7 @@ failed:
 				statsTxt->setColor(statValColor);
 
 				page_right_inner->addImage(SDL_Rect{ statx - 18 - 12, staty + 11 - 12, 24, 24 },
-					0xFFFFFFFF, "*images/ui/Charsheet/HUD_CharSheet_DEX_00.png");
+					0xFFFFFFFF, "*images/ui/CharSheet/HUD_CharSheet_DEX_00.png");
 
 				statx = padx + 30 + 178;
 				staty = pady + 22;
@@ -38802,7 +38802,7 @@ failed:
 				statsTxt->setColor(statValColor);
 
 				page_right_inner->addImage(SDL_Rect{ statx - 18 - 12, staty + 11 - 12, 24, 24 },
-					0xFFFFFFFF, "*images/ui/Charsheet/HUD_CharSheet_ATT_00.png");
+					0xFFFFFFFF, "*images/ui/CharSheet/HUD_CharSheet_ATT_00.png");
 
 				staty += 26;
 				statsTxt = page_right_inner->addField("rangeatk", 64);
@@ -38841,7 +38841,7 @@ failed:
 
 
 				page_right_inner->addImage(SDL_Rect{ statx - 18 - 12, staty + 11 - 12, 24, 24 },
-					0xFFFFFFFF, "*images/ui/Charsheet/HUD_CharSheet_SPWR_00.png");
+					0xFFFFFFFF, "*images/ui/CharSheet/HUD_CharSheet_SPWR_00.png");
 
 				pady = staty + *compendiumMonsterSectionPadY;
 			}
