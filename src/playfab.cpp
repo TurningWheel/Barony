@@ -88,6 +88,8 @@ void PlayfabUser_t::globalStat(int index, int value)
     eventContent.EventNamespace = "custom.statglobal";
     eventContent.Name = "statglobal";
     eventContent.Payload["stat"] = SteamGlobalStatStr[index].c_str();
+    eventContent.Payload["level"] = currentlevel;
+    eventContent.Payload["secret"] = secretlevel;
     eventRequest.Events.push_back(eventContent);
     PlayFab::PlayFabEventsAPI::WriteTelemetryEvents(eventRequest, OnEventsWrite, OnCloudScriptFailure);
 }
