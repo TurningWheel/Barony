@@ -85,8 +85,8 @@ void PlayfabUser_t::globalStat(int index, int value)
 
     PlayFab::EventsModels::WriteEventsRequest eventRequest;
     PlayFab::EventsModels::EventContents eventContent;
-    eventContent.EventNamespace = "custom.global_stats";
-    eventContent.Name = "global_stats";
+    eventContent.EventNamespace = "custom.statglobal";
+    eventContent.Name = "statglobal";
     eventContent.Payload["stat"] = SteamGlobalStatStr[index].c_str();
     eventRequest.Events.push_back(eventContent);
     PlayFab::PlayFabEventsAPI::WriteTelemetryEvents(eventRequest, OnEventsWrite, OnCloudScriptFailure);
