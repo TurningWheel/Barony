@@ -301,8 +301,6 @@ public:
 	// group think
 	Uint32 leader_uid;
 	list_t FOLLOWERS;
-	int stache_x1, stache_x2;
-	int stache_y1, stache_y2;
 
 	// equipment
 	list_t inventory;
