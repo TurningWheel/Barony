@@ -257,6 +257,8 @@
 		84F71093292350DA00AE0D03 /* theoraplayer.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 84F7108C292350C500AE0D03 /* theoraplayer.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		84F71094292350DA00AE0D03 /* Vorbis.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 84F71089292350C500AE0D03 /* Vorbis.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		84F7109A29236B0600AE0D03 /* steam_appid.txt in Resources */ = {isa = PBXBuildFile; fileRef = 84F7109929236B0600AE0D03 /* steam_appid.txt */; };
+		84FDF0642CC9A9D500AE8639 /* monster_bugbear.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84FDF0632CC9A9D500AE8639 /* monster_bugbear.cpp */; };
+		84FDF0652CC9A9D500AE8639 /* monster_bat.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84FDF0622CC9A9D500AE8639 /* monster_bat.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -578,6 +580,8 @@
 		84F7108B292350C500AE0D03 /* Theora.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Theora.framework; path = ../../../Theora.framework; sourceTree = "<group>"; };
 		84F7108C292350C500AE0D03 /* theoraplayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = theoraplayer.framework; path = ../../../theoraplayer.framework; sourceTree = "<group>"; };
 		84F7109929236B0600AE0D03 /* steam_appid.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = steam_appid.txt; path = ../../../baronyupdate/steam_appid.txt; sourceTree = "<group>"; };
+		84FDF0622CC9A9D500AE8639 /* monster_bat.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = monster_bat.cpp; path = /Users/sheridan/Work/Barony/src/monster_bat.cpp; sourceTree = "<absolute>"; };
+		84FDF0632CC9A9D500AE8639 /* monster_bugbear.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = monster_bugbear.cpp; path = /Users/sheridan/Work/Barony/src/monster_bugbear.cpp; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -754,8 +758,8 @@
 				84C3DA3E291F78A20084EAD5 /* draw.cpp */,
 				84C3DAD3291F79510084EAD5 /* drawminimap.cpp */,
 				84C3DAD0291F79510084EAD5 /* drawstatus.cpp */,
-				84C3DA3C291F78A20084EAD5 /* entity_shared.cpp */,
 				84C3DA3F291F78A20084EAD5 /* entity.cpp */,
+				84C3DA3C291F78A20084EAD5 /* entity_shared.cpp */,
 				84C3DA3D291F78A20084EAD5 /* eos.cpp */,
 				84C3DB03291F79690084EAD5 /* Field.cpp */,
 				84C3DA4B291F78CD0084EAD5 /* files.cpp */,
@@ -766,16 +770,16 @@
 				84C3DA51291F78CD0084EAD5 /* hash.cpp */,
 				84C3DAD9291F79510084EAD5 /* identify_and_appraise.cpp */,
 				84C3DAFF291F79690084EAD5 /* Image.cpp */,
+				8453694629B09BFF007AC397 /* imgui.cpp */,
 				8453694929B09BFF007AC397 /* imgui_demo.cpp */,
 				8453694829B09BFF007AC397 /* imgui_draw.cpp */,
 				8453694429B09BFF007AC397 /* imgui_impl_opengl3.cpp */,
 				8453694529B09BFF007AC397 /* imgui_impl_sdl.cpp */,
 				8453694729B09BFF007AC397 /* imgui_tables.cpp */,
 				8453694A29B09BFF007AC397 /* imgui_widgets.cpp */,
-				8453694629B09BFF007AC397 /* imgui.cpp */,
+				84C3DA50291F78CD0084EAD5 /* init.cpp */,
 				84C3DAC9291F79310084EAD5 /* init_audio.cpp */,
 				84C3DA4A291F78CD0084EAD5 /* init_game.cpp */,
-				84C3DA50291F78CD0084EAD5 /* init.cpp */,
 				84C3DA4D291F78CD0084EAD5 /* input.cpp */,
 				84C3DAD2291F79510084EAD5 /* interface.cpp */,
 				84C3DA48291F78CD0084EAD5 /* item_tool.cpp */,
@@ -796,6 +800,8 @@
 				84C3DA83291F78F10084EAD5 /* messages.cpp */,
 				84C3DA84291F78F10084EAD5 /* mod_tools.cpp */,
 				84C3DA7B291F78F00084EAD5 /* monster_automaton.cpp */,
+				84FDF0622CC9A9D500AE8639 /* monster_bat.cpp */,
+				84FDF0632CC9A9D500AE8639 /* monster_bugbear.cpp */,
 				84C3DA6F291F78F00084EAD5 /* monster_cockatrice.cpp */,
 				84C3DA81291F78F00084EAD5 /* monster_crystalgolem.cpp */,
 				84C3DA70291F78F00084EAD5 /* monster_demon.cpp */,
@@ -845,13 +851,13 @@
 				84C3DADC291F79510084EAD5 /* shopgui.cpp */,
 				84C3DAB2291F79150084EAD5 /* shops.cpp */,
 				84C3DB01291F79690084EAD5 /* Slider.cpp */,
-				84C3DAC6291F79310084EAD5 /* sound_game.cpp */,
 				84C3DAC7291F79310084EAD5 /* sound.cpp */,
+				84C3DAC6291F79310084EAD5 /* sound_game.cpp */,
 				84C3DAF3291F795B0084EAD5 /* spell.cpp */,
-				84C3DAB4291F79150084EAD5 /* stat_shared.cpp */,
 				84C3DAB6291F79150084EAD5 /* stat.cpp */,
-				84C3DAAA291F79150084EAD5 /* steam_shared.cpp */,
+				84C3DAB4291F79150084EAD5 /* stat_shared.cpp */,
 				84C3DAB0291F79150084EAD5 /* steam.cpp */,
+				84C3DAAA291F79150084EAD5 /* steam_shared.cpp */,
 				84C3DB02291F79690084EAD5 /* Text.cpp */,
 				84C3DADF291F79510084EAD5 /* ui_general.cpp */,
 				84C3DADE291F79510084EAD5 /* updatecharactersheet.cpp */,
@@ -1112,6 +1118,8 @@
 				8453694D29B09BFF007AC397 /* imgui.cpp in Sources */,
 				8453694E29B09BFF007AC397 /* imgui_tables.cpp in Sources */,
 				8453694F29B09BFF007AC397 /* imgui_draw.cpp in Sources */,
+				84FDF0642CC9A9D500AE8639 /* monster_bugbear.cpp in Sources */,
+				84FDF0652CC9A9D500AE8639 /* monster_bat.cpp in Sources */,
 				8453695029B09BFF007AC397 /* imgui_demo.cpp in Sources */,
 				8453695129B09BFF007AC397 /* imgui_widgets.cpp in Sources */,
 				84C3DA54291F78CD0084EAD5 /* light.cpp in Sources */,
