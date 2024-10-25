@@ -10927,8 +10927,16 @@ void Entity::attack(int pose, int charge, Entity* target)
 						else
 						{
 							strcpy((char*)net_packet->data, "SHAK");
-							net_packet->data[4] = 10; // turns into .1
-							net_packet->data[5] = 10;
+							if ( damage > 0 )
+							{
+								net_packet->data[4] = 10; // turns into .1
+								net_packet->data[5] = 10;
+							}
+							else
+							{
+								net_packet->data[4] = 5; // turns into .05
+								net_packet->data[5] = 5;
+							}
 							net_packet->address.host = net_clients[playerhit - 1].host;
 							net_packet->address.port = net_clients[playerhit - 1].port;
 							net_packet->len = 6;

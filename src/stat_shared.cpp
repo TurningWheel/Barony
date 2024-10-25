@@ -128,10 +128,6 @@ Stat::Stat(Sint32 sprite) :
 	this->leader_uid = 0;
 	this->FOLLOWERS.first = NULL;
 	this->FOLLOWERS.last = NULL;
-	this->stache_x1 = 0;
-	this->stache_x2 = 0;
-	this->stache_y1 = 0;
-	this->stache_y2 = 0;
 	this->inventory.first = NULL;
 	this->inventory.last = NULL;
 	this->helmet = NULL;

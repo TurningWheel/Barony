@@ -138,10 +138,6 @@ score_t* scoreConstructor(int player)
 	score->stats->leader_uid = 0;
 	score->stats->FOLLOWERS.first = NULL;
 	score->stats->FOLLOWERS.last = NULL;
-	score->stats->stache_x1 = 0;
-	score->stats->stache_x2 = 0;
-	score->stats->stache_y1 = 0;
-	score->stats->stache_y2 = 0;
 	score->stats->inventory.first = NULL;
 	score->stats->inventory.last = NULL;
 	score->stats->helmet = NULL;
@@ -606,6 +602,312 @@ void loadScore(int scorenum)
 
 -------------------------------------------------------------------------------*/
 
+void saveAllScoresJSON(const std::string& scoresfilename)
+{
+	return;
+	char path[PATH_MAX] = "";
+	completePath(path, scoresfilename.c_str(), outputdir);
+
+	rapidjson::Document d;
+	d.SetObject();
+	d.AddMember("version", rapidjson::Value(1), d.GetAllocator());
+	d.AddMember("game_version", rapidjson::Value(VERSION), d.GetAllocator());
+
+	int versionNumber = 300;
+	char versionStr[4] = "000";
+	int i = 0;
+	for ( int j = 0; j < strlen(VERSION); ++j )
+	{
+		if ( VERSION[j] >= '0' && VERSION[j] <= '9' )
+		{
+			versionStr[i] = VERSION[j]; // copy all integers into versionStr.
+			++i;
+			if ( i == 3 )
+			{
+				versionStr[i] = '\0';
+				break; // written 3 characters, add termination and break loop.
+			}
+		}
+	}
+	versionNumber = atoi(versionStr); // convert from string to int.
+
+	// header info
+	{
+		rapidjson::Value books_read(rapidjson::kArrayType);
+		for ( node_t* node = booksRead.first; node != NULL; node = node->next )
+		{
+			char* book = (char*)node->element;
+			books_read.PushBack(rapidjson::Value(book, d.GetAllocator()), d.GetAllocator());
+		}
+		d.AddMember("books_read", books_read, d.GetAllocator());
+	}
+
+	{
+		rapidjson::Value used_class(rapidjson::kArrayType);
+		for ( int c = 0; c < NUMCLASSES; c++ )
+		{
+			used_class.PushBack(rapidjson::Value(usedClass[c]), d.GetAllocator());
+		}
+		d.AddMember("used_class", used_class, d.GetAllocator());
+	}
+
+	{
+		rapidjson::Value used_race(rapidjson::kArrayType);
+		for ( int c = 0; c < NUMRACES; c++ )
+		{
+			used_race.PushBack(rapidjson::Value(usedRace[c]), d.GetAllocator());
+		}
+		d.AddMember("used_race", used_race, d.GetAllocator());
+	}
+
+	// score list
+	node_t* node = nullptr;
+	if ( scoresfilename == "scores.json" )
+	{
+		node = topscores.first;
+	}
+	else if ( scoresfilename == "scores_multiplayer.json" )
+	{
+		node = topscoresMultiplayer.first;
+	}
+	else
+	{
+		return;
+	}
+
+	rapidjson::Value scores_list(rapidjson::kArrayType);
+	for ( ; node != NULL; node = node->next )
+	{
+		score_t* score = (score_t*)node->element;
+		rapidjson::Value entry(rapidjson::kObjectType);
+
+		{
+			rapidjson::Value kills_num(rapidjson::kArrayType);
+			for ( int c = 0; c < NUMMONSTERS; c++ )
+			{
+				kills_num.PushBack(kills[c], d.GetAllocator());
+			}
+			entry.AddMember("kills", kills_num, d.GetAllocator());
+		}
+
+		entry.AddMember("completionTime", score->completionTime, d.GetAllocator());
+		entry.AddMember("conductPenniless", score->conductPenniless, d.GetAllocator());
+		entry.AddMember("conductFoodless", score->conductFoodless, d.GetAllocator());
+		entry.AddMember("conductVegetarian", score->conductVegetarian, d.GetAllocator());
+		entry.AddMember("conductIlliterate", score->conductIlliterate, d.GetAllocator());
+		entry.AddMember("type", score->stats->type, d.GetAllocator());
+		entry.AddMember("sex", score->stats->sex, d.GetAllocator());
+		entry.AddMember("race", score->stats->playerRace, d.GetAllocator());
+		entry.AddMember("appearance", score->stats->stat_appearance, d.GetAllocator());
+		entry.AddMember("name", rapidjson::Value(score->stats->name, d.GetAllocator()), d.GetAllocator());
+
+		entry.AddMember("killer_monster", score->stats->killer_monster, d.GetAllocator());
+		entry.AddMember("killer_item", score->stats->killer_item, d.GetAllocator());
+		entry.AddMember("killer", score->stats->killer, d.GetAllocator());
+		entry.AddMember("killer_name", rapidjson::Value(score->stats->killer_name.c_str(), d.GetAllocator()), d.GetAllocator());
+
+		entry.AddMember("classnum", score->classnum, d.GetAllocator());
+		entry.AddMember("dungeonlevel", score->dungeonlevel, d.GetAllocator());
+		entry.AddMember("victory", score->victory, d.GetAllocator());
+
+		entry.AddMember("HP", score->stats->HP, d.GetAllocator());
+		entry.AddMember("MAXHP", score->stats->MAXHP, d.GetAllocator());
+		entry.AddMember("MP", score->stats->MP, d.GetAllocator());
+		entry.AddMember("MAXMP", score->stats->MAXMP, d.GetAllocator());
+		entry.AddMember("STR", score->stats->STR, d.GetAllocator());
+		entry.AddMember("DEX", score->stats->DEX, d.GetAllocator());
+		entry.AddMember("CON", score->stats->CON, d.GetAllocator());
+		entry.AddMember("INT", score->stats->INT, d.GetAllocator());
+		entry.AddMember("PER", score->stats->PER, d.GetAllocator());
+		entry.AddMember("CHR", score->stats->CHR, d.GetAllocator());
+		entry.AddMember("EXP", score->stats->EXP, d.GetAllocator());
+		entry.AddMember("LVL", score->stats->LVL, d.GetAllocator());
+		entry.AddMember("GOLD", score->stats->GOLD, d.GetAllocator());
+		entry.AddMember("HUNGER", score->stats->HUNGER, d.GetAllocator());
+		
+		{
+			rapidjson::Value proficiencies(rapidjson::kArrayType);
+			for ( int c = 0; c < NUMPROFICIENCIES; c++ )
+			{
+				proficiencies.PushBack(score->stats->getProficiency(c), d.GetAllocator());
+			}
+			entry.AddMember("proficiencies", proficiencies, d.GetAllocator());
+		}
+
+		{
+			rapidjson::Value effects(rapidjson::kArrayType);
+			for ( int c = 0; c < NUMEFFECTS; c++ )
+			{
+				effects.PushBack(score->stats->EFFECTS[c], d.GetAllocator());
+			}
+			entry.AddMember("effects", effects, d.GetAllocator());
+		}
+		{
+			rapidjson::Value effects_timers(rapidjson::kArrayType);
+			for ( int c = 0; c < NUMEFFECTS; c++ )
+			{
+				effects_timers.PushBack(score->stats->EFFECTS_TIMERS[c], d.GetAllocator());
+			}
+			entry.AddMember("effects_timers", effects_timers, d.GetAllocator());
+		}
+
+
+		{
+			rapidjson::Value conducts(rapidjson::kArrayType);
+			for ( int c = 0; c < NUM_CONDUCT_CHALLENGES; c++ )
+			{
+				conducts.PushBack(score->conductGameChallenges[c], d.GetAllocator());
+			}
+			entry.AddMember("conducts", conducts, d.GetAllocator());
+		}
+
+		{
+			rapidjson::Value statistics(rapidjson::kArrayType);
+			for ( int c = 0; c < NUM_GAMEPLAY_STATISTICS; c++ )
+			{
+				statistics.PushBack(score->gameStatistics[c], d.GetAllocator());
+			}
+			entry.AddMember("statistics", statistics, d.GetAllocator());
+		}
+
+		{
+			rapidjson::Value inventory(rapidjson::kArrayType);
+			for ( node_t* node2 = score->stats->inventory.first; node2 != NULL; node2 = node2->next )
+			{
+				Item* item = (Item*)node2->element;
+
+				rapidjson::Value inv_item(rapidjson::kObjectType);
+				inv_item.AddMember("type", item->type, d.GetAllocator());
+				inv_item.AddMember("status", item->status, d.GetAllocator());
+				inv_item.AddMember("beatitude", item->beatitude, d.GetAllocator());
+				inv_item.AddMember("count", item->count, d.GetAllocator());
+				inv_item.AddMember("appearance", item->appearance, d.GetAllocator());
+				inv_item.AddMember("identified", item->identified, d.GetAllocator());
+
+				inventory.PushBack(inv_item, d.GetAllocator());
+			}
+
+			entry.AddMember("inventory", inventory, d.GetAllocator());
+		}
+
+		{
+			rapidjson::Value equipped(rapidjson::kArrayType);
+			if ( score->stats->helmet )
+			{
+				int c = list_Index(score->stats->helmet->node);
+				equipped.PushBack(c, d.GetAllocator());
+			}
+			else
+			{
+				equipped.PushBack(-1, d.GetAllocator());
+			}
+			if ( score->stats->breastplate )
+			{
+				int c = list_Index(score->stats->breastplate->node);
+				equipped.PushBack(c, d.GetAllocator());
+			}
+			else
+			{
+				equipped.PushBack(-1, d.GetAllocator());
+			}
+			if ( score->stats->gloves )
+			{
+				int c = list_Index(score->stats->gloves->node);
+				equipped.PushBack(c, d.GetAllocator());
+			}
+			else
+			{
+				equipped.PushBack(-1, d.GetAllocator());
+			}
+			if ( score->stats->shoes )
+			{
+				int c = list_Index(score->stats->shoes->node);
+				equipped.PushBack(c, d.GetAllocator());
+			}
+			else
+			{
+				equipped.PushBack(-1, d.GetAllocator());
+			}
+			if ( score->stats->shield )
+			{
+				int c = list_Index(score->stats->shield->node);
+				equipped.PushBack(c, d.GetAllocator());
+			}
+			else
+			{
+				equipped.PushBack(-1, d.GetAllocator());
+			}
+			if ( score->stats->weapon )
+			{
+				int c = list_Index(score->stats->weapon->node);
+				equipped.PushBack(c, d.GetAllocator());
+			}
+			else
+			{
+				equipped.PushBack(-1, d.GetAllocator());
+			}
+			if ( score->stats->cloak )
+			{
+				int c = list_Index(score->stats->cloak->node);
+				equipped.PushBack(c, d.GetAllocator());
+			}
+			else
+			{
+				equipped.PushBack(-1, d.GetAllocator());
+			}
+			if ( score->stats->amulet )
+			{
+				int c = list_Index(score->stats->amulet->node);
+				equipped.PushBack(c, d.GetAllocator());
+			}
+			else
+			{
+				equipped.PushBack(-1, d.GetAllocator());
+			}
+			if ( score->stats->ring )
+			{
+				int c = list_Index(score->stats->ring->node);
+				equipped.PushBack(c, d.GetAllocator());
+			}
+			else
+			{
+				equipped.PushBack(-1, d.GetAllocator());
+			}
+			if ( score->stats->mask )
+			{
+				int c = list_Index(score->stats->mask->node);
+				equipped.PushBack(c, d.GetAllocator());
+			}
+			else
+			{
+				equipped.PushBack(-1, d.GetAllocator());
+			}
+			entry.AddMember("equipped", equipped, d.GetAllocator());
+		}
+
+		scores_list.PushBack(entry, d.GetAllocator());
+	}
+
+	d.AddMember("scores_list", scores_list, d.GetAllocator());
+
+	// open file
+	File* fp = FileIO::open(path, "wb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error opening json file %s for write!", path);
+		return;
+	}
+
+	rapidjson::StringBuffer os;
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
+	d.Accept(writer);
+	fp->write(os.GetString(), sizeof(char), os.GetSize());
+	FileIO::close(fp);
+
+	printlog("[JSON]: Successfully wrote json file %s", path);
+	return;
+}
+
 void saveAllScores(const std::string& scoresfilename)
 {
 	File* fp;
@@ -865,6 +1167,17 @@ void saveAllScores(const std::string& scoresfilename)
 	}
 
 	FileIO::close(fp);
+
+	/*if ( scoresfilename == "scores.dat" )
+	{
+		std::string scoresjson = "scores.json";
+		saveAllScoresJSON(scoresjson);
+	}
+	else if ( scoresfilename == "scores_multiplayer.dat" )
+	{
+		std::string scoresjson = "scores_multiplayer.json";
+		saveAllScoresJSON(scoresjson);
+	}*/
 }
 
 bool deleteScore(bool multiplayer, int index)
@@ -886,6 +1199,221 @@ bool deleteScore(bool multiplayer, int index)
 	loads all highscores from the scores data file
 
 -------------------------------------------------------------------------------*/
+int jsonGetInt(rapidjson::Value& d, const char* key)
+{
+	if ( d.HasMember(key) && d[key].IsInt() )
+	{
+		return d[key].GetInt();
+	}
+	return 0;
+}
+
+bool jsonGetBool(rapidjson::Value& d, const char* key)
+{
+	if ( d.HasMember(key) && d[key].IsBool() )
+	{
+		return d[key].GetBool();
+	}
+	return false;
+}
+
+const char* jsonGetStr(rapidjson::Value& d, const char* key)
+{
+	if ( d.HasMember(key) && d[key].IsString() )
+	{
+		return d[key].GetString();
+	}
+	return "";
+}
+
+void loadAllScoresJSON(const std::string& scoresfilename)
+{
+	return;
+	// clear top scores
+	if ( scoresfilename == "scores.json" )
+	{
+		list_FreeAll(&topscores);
+	}
+	else if ( scoresfilename == "scores_multiplayer.json" )
+	{
+		list_FreeAll(&topscoresMultiplayer);
+	}
+	else
+	{
+		return;
+	}
+
+	char path[PATH_MAX] = "";
+	completePath(path, scoresfilename.c_str(), outputdir);
+
+	File* fp = nullptr;
+
+	// open file
+	if ( (fp = FileIO::open(path, "rb")) == NULL )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", path);
+		return;
+	}
+
+	static char buf[2000000];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.HasMember("version") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", path);
+		return;
+	}
+
+	std::string checkStr = jsonGetStr(d, "game_version");
+	int versionNumber = 000;
+	char versionStr[4] = "000";
+	int i = 0;
+	for ( int j = 0; j < checkStr.size(); ++j )
+	{
+		if ( checkStr[j] >= '0' && checkStr[j] <= '9' )
+		{
+			versionStr[i] = checkStr[j]; // copy all integers into versionStr.
+			++i;
+			if ( i == 3 )
+			{
+				versionStr[i] = '\0';
+				break; // written 3 characters, add termination and break loop.
+			}
+		}
+	}
+	versionNumber = atoi(versionStr); // convert from string to int.
+	printlog("notice: '%s' version number %d", scoresfilename.c_str(), versionNumber);
+	if ( versionNumber < 200 || versionNumber > 999 )
+	{
+		// if version number less than v2.0.0, or more than 3 digits, abort and rebuild scores file.
+		printlog("error: '%s' is corrupt!\n", scoresfilename.c_str());
+		return;
+	}
+
+	list_FreeAll(&booksRead);
+	if ( d.HasMember("books_read") )
+	{
+		for ( auto itr = d["books_read"].Begin(); itr != d["books_read"].End(); ++itr )
+		{
+			std::string bookname = itr->GetString();
+			if ( char* book = (char*)malloc(sizeof(char) * (bookname.size() + 1)) )
+			{
+				memset(book, 0, sizeof(char) * (bookname.size() + 1));
+				strcpy(book, bookname.c_str());
+				node_t* node = list_AddNodeLast(&booksRead);
+				book[bookname.size()] = '\0';
+				node->element = book;
+				node->size = sizeof(char) * (bookname.size() + 1);
+				node->deconstructor = &defaultDeconstructor;
+			}
+		}
+	}
+
+	int c = 0;
+	for ( auto itr = d["used_class"].Begin(); itr != d["used_class"].End(); ++itr )
+	{
+		if ( c >= NUMCLASSES ) { break; }
+		usedClass[c] = itr->GetBool();
+		++c;
+	}
+
+	c = 0;
+	for ( auto itr = d["used_race"].Begin(); itr != d["used_race"].End(); ++itr )
+	{
+		if ( c >= NUMRACES ) { break; }
+		usedRace[c] = itr->GetBool();
+		++c;
+	}
+
+	if ( !d.HasMember("scores_list") )
+	{
+		return;
+	}
+
+	int numscore = 0;
+	for ( auto itr = d["scores_list"].Begin(); itr != d["scores_list"].End(); ++itr )
+	{
+		node_t* node = nullptr;
+		if ( scoresfilename == "scores.json" )
+		{
+			node = list_AddNodeLast(&topscores);
+		}
+		else if ( scoresfilename == "scores_multiplayer.json" )
+		{
+			node = list_AddNodeLast(&topscoresMultiplayer);
+		}
+		else
+		{
+			break;
+		}
+
+		score_t* score = (score_t*)malloc(sizeof(score_t));
+		if ( !score )
+		{
+			printlog("failed to allocate memory for new score!\n");
+			exit(1);
+		}
+		// Stat set to 0 as monster type not needed, values will be overwritten by the savegame data
+		score->stats = new Stat(0);
+		score->totalscore = -1;
+		if ( !score->stats )
+		{
+			printlog("failed to allocate memory for new stat!\n");
+			exit(1);
+		}
+		node->element = score;
+		node->deconstructor = &scoreDeconstructor;
+		node->size = sizeof(score_t);
+
+		c = 0;
+		for ( auto itr2 = (*itr)["kills"].Begin(); itr2 != (*itr)["kills"].End(); ++itr2 )
+		{
+			if ( c >= NUMMONSTERS ) { break; }
+			score->kills[c] = itr2->GetInt();
+			++c;
+		}
+
+		score->completionTime = jsonGetInt(*itr, "completionTime");
+		score->conductPenniless = jsonGetBool(*itr, "conductPenniless");
+		score->conductFoodless = jsonGetBool(*itr, "conductFoodless");
+		score->conductVegetarian = jsonGetBool(*itr, "conductVegetarian");
+		score->conductIlliterate = jsonGetBool(*itr, "conductIlliterate");
+		score->stats->type = (Monster)jsonGetInt(*itr, "type");
+		score->stats->sex = (sex_t)jsonGetInt(*itr, "sex");
+		score->stats->playerRace = jsonGetInt(*itr, "race");
+		score->stats->stat_appearance = (Uint32)jsonGetInt(*itr, "appearance");
+		const char* name = jsonGetStr(*itr, "name");
+		stringCopy(score->stats->name, name, 32, strlen(name));
+
+		score->stats->killer_monster = (Monster)jsonGetInt(*itr, "killer_monster");
+		score->stats->killer_item = (ItemType)jsonGetInt(*itr, "killer_item");
+		score->stats->killer = (KilledBy)jsonGetInt(*itr, "killer");
+		score->stats->killer_name = jsonGetStr(*itr, "killer_name");
+
+		score->classnum = jsonGetInt(*itr, "classnum");
+		score->dungeonlevel = jsonGetInt(*itr, "dungeonlevel");
+		score->victory = jsonGetInt(*itr, "victory");
+		score->stats->HP = jsonGetInt(*itr, "HP");
+		score->stats->MAXHP = jsonGetInt(*itr, "MAXHP");
+		score->stats->MP = jsonGetInt(*itr, "MP");
+		score->stats->MAXMP = jsonGetInt(*itr, "MAXMP");
+		score->stats->STR = jsonGetInt(*itr, "STR");
+		score->stats->DEX = jsonGetInt(*itr, "DEX");
+		score->stats->CON = jsonGetInt(*itr, "CON");
+		score->stats->INT = jsonGetInt(*itr, "INT");
+		score->stats->PER = jsonGetInt(*itr, "PER");
+		score->stats->CHR = jsonGetInt(*itr, "CHR");
+		score->stats->EXP = jsonGetInt(*itr, "EXP");
+		score->stats->LVL = jsonGetInt(*itr, "LVL");
+		score->stats->GOLD = jsonGetInt(*itr, "GOLD");
+		score->stats->HUNGER = jsonGetInt(*itr, "HUNGER");
+	}
+}
 
 void loadAllScores(const std::string& scoresfilename)
 {
@@ -1254,10 +1782,6 @@ void loadAllScores(const std::string& scoresfilename)
 		score->stats->leader_uid = 0;
 		score->stats->FOLLOWERS.first = NULL;
 		score->stats->FOLLOWERS.last = NULL;
-		score->stats->stache_x1 = 0;
-		score->stats->stache_x2 = 0;
-		score->stats->stache_y1 = 0;
-		score->stats->stache_y2 = 0;
 
 		// inventory
 		int numitems = 0;
@@ -2921,10 +3445,6 @@ int loadGameOld(int player, int saveIndex)
 	stats[player]->leader_uid = 0;
 	stats[player]->FOLLOWERS.first = NULL;
 	stats[player]->FOLLOWERS.last = NULL;
-	stats[player]->stache_x1 = 0;
-	stats[player]->stache_x2 = 0;
-	stats[player]->stache_y1 = 0;
-	stats[player]->stache_y2 = 0;
 
 
 	hash += (stats[clientnum]->STR + stats[clientnum]->LVL + stats[clientnum]->DEX * stats[clientnum]->INT);
@@ -6946,10 +7466,6 @@ int loadGame(int player, const SaveGameInfo& info) {
 	stats[statsPlayer]->monster_sound = nullptr;
 	stats[statsPlayer]->monster_idlevar = 0;
 	stats[statsPlayer]->leader_uid = 0;
-	stats[statsPlayer]->stache_x1 = 0;
-	stats[statsPlayer]->stache_x2 = 0;
-	stats[statsPlayer]->stache_y1 = 0;
-	stats[statsPlayer]->stache_y2 = 0;
 
 	// shuffle enchanted feather list
     {
