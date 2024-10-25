@@ -1242,6 +1242,7 @@ static const int FURNITURE_BUNKBED = 3;
 static const int FURNITURE_PODIUM = 4;
 
 int checkSpriteType(Sint32 sprite);
+Monster editorSpriteTypeToMonster(Sint32 sprite);
 extern char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64];
 extern char tileEditorNameStrings[NUM_EDITOR_TILES][44];
 extern char monsterEditorNameStrings[NUMMONSTERS][16];

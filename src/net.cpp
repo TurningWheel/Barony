@@ -1980,6 +1980,7 @@ void clientActions(Entity* entity)
 			{
 				case -4:
 					entity->behavior = &actMonster;
+					entity->skill[2] = -4;
 					break;
 				case -5:
 					entity->behavior = &actItem;

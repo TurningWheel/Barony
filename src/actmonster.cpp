@@ -2388,7 +2388,9 @@ void actMonster(Entity* my)
 	// however, there is a small part for clients:
 	if ( multiplayer == CLIENT )
 	{
-		if ( !MONSTER_INIT && my->getMonsterTypeFromSprite() != NOTHING && checkSpriteType(my->sprite) != 1 )
+		if ( !MONSTER_INIT && my->getMonsterTypeFromSprite() != NOTHING 
+			&& (checkSpriteType(my->sprite) != 1 || my->skill[2] == -4) ) 
+			// if checkSpriteType == 1, skill[2] -4 means server has sent model details so no longer editor sprite (blue slime 189 conflicts editor bugbear 189 fix)
 		{
 			MONSTER_INIT = 1;
 
