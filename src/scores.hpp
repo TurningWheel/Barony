@@ -923,7 +923,7 @@ public:
 	void updateClientBounties(bool firstSend);
 	void clearPlayerAchievementData();
 	void checkMapScriptsOnVariableSet();
-	void updateGlobalStat(int index, int value = 1);
+	void updateGlobalStat(int index, int player);
 };
 extern AchievementObserver achievementObserver;
 #endif

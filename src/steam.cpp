@@ -1212,7 +1212,7 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
 					if ( oldValue == 0 )
 					{
-						achievementObserver.updateGlobalStat(STEAM_GSTAT_TUTORIAL_ENTERED);
+						achievementObserver.updateGlobalStat(STEAM_GSTAT_TUTORIAL_ENTERED, -1);
 					}
 					indicateProgress = false;
 					break;
