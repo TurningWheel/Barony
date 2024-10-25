@@ -37428,7 +37428,7 @@ failed:
 				{
 					contents->remove(i->name.c_str());
 				}
-				if ( i->name == "notif" )
+				else if ( i->name == "notif" )
 				{
 					contents->remove(i->name.c_str());
 				}
