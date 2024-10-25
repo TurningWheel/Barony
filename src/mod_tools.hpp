@@ -2619,7 +2619,7 @@ public:
 		{
 #ifndef EDITOR
 			achievementObserver.updateGlobalStat(
-				std::min(STEAM_GSTAT_TUTORIAL1_ATTEMPTS - 1 + levelNum, static_cast<int>(STEAM_GSTAT_TUTORIAL10_ATTEMPTS)));
+				std::min(STEAM_GSTAT_TUTORIAL1_ATTEMPTS - 1 + levelNum, static_cast<int>(STEAM_GSTAT_TUTORIAL10_ATTEMPTS)), -1);
 #endif // !EDITOR
 		}
 

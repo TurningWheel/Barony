@@ -9637,7 +9637,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 			{
 				conductGameChallenges[CONDUCT_BOOTS_SPEED] = 1;
 			}
-			achievementObserver.updateGlobalStat(STEAM_GSTAT_GAMES_WON);
+			achievementObserver.updateGlobalStat(STEAM_GSTAT_GAMES_WON, clientnum);
 
 			for ( int c = 0; c < MAXPLAYERS; ++c )
 			{

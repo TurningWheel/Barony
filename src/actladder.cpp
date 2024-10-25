@@ -1466,9 +1466,9 @@ void actCustomPortal(Entity* my)
 								tutorialLevels.at(number).completionTime = std::min(tutorialLevels.at(number).completionTime, completionTime);
 							}
 							achievementObserver.updateGlobalStat(
-								std::min(STEAM_GSTAT_TUTORIAL1_COMPLETED - 1 + number, static_cast<int>(STEAM_GSTAT_TUTORIAL10_COMPLETED)));
+								std::min(STEAM_GSTAT_TUTORIAL1_COMPLETED - 1 + number, static_cast<int>(STEAM_GSTAT_TUTORIAL10_COMPLETED)), -1);
 							achievementObserver.updateGlobalStat(
-								std::min(STEAM_GSTAT_TUTORIAL1_ATTEMPTS - 1 + number, static_cast<int>(STEAM_GSTAT_TUTORIAL10_ATTEMPTS)));
+								std::min(STEAM_GSTAT_TUTORIAL1_ATTEMPTS - 1 + number, static_cast<int>(STEAM_GSTAT_TUTORIAL10_ATTEMPTS)), -1);
 						}
 						completionTime = 0;
 						gameModeManager.Tutorial.writeToDocument();

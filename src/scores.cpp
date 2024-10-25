@@ -6193,7 +6193,7 @@ bool AchievementObserver::PlayerAchievements::checkTraditionKill(Entity* player,
 	return true;
 }
 
-void AchievementObserver::updateGlobalStat(int index, int value)
+void AchievementObserver::updateGlobalStat(int index, int player)
 {
 	if ( multiplayer == CLIENT )
 	{
@@ -6208,10 +6208,10 @@ void AchievementObserver::updateGlobalStat(int index, int value)
 	}
 #endif
 #ifdef USE_PLAYFAB
-	playfabUser.globalStat(index, value);
+	playfabUser.globalStat(index, player);
 #endif
 #if defined USE_EOS
-	EOS.queueGlobalStatUpdate(index, value);
+	EOS.queueGlobalStatUpdate(index, 1);
 #endif
 }
 

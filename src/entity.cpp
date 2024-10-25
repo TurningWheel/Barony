@@ -13070,7 +13070,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	{
 		if ( src->behavior == &actPlayer && this->behavior == &actMonster )
 		{
-			achievementObserver.updateGlobalStat(getIndexForDeathType(destStats->type));
+			achievementObserver.updateGlobalStat(getIndexForDeathType(destStats->type), src->skill[2]);
 			if ( destStats->type == MIMIC )
 			{
 				steamAchievementClient(src->skill[2], "BARONY_ACH_ETERNAL_REWARD");
@@ -13080,27 +13080,27 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		{
 			if ( srcStats->type == LICH )
 			{
-				achievementObserver.updateGlobalStat(STEAM_GSTAT_HERX_SLAIN);
+				achievementObserver.updateGlobalStat(STEAM_GSTAT_HERX_SLAIN, this->skill[2]);
 			}
 			else if ( srcStats->type == LICH_FIRE )
 			{
-				achievementObserver.updateGlobalStat(STEAM_GSTAT_TWINSFIRE_SLAIN);
+				achievementObserver.updateGlobalStat(STEAM_GSTAT_TWINSFIRE_SLAIN, this->skill[2]);
 			}
 			else if ( srcStats->type == LICH_ICE )
 			{
-				achievementObserver.updateGlobalStat(STEAM_GSTAT_TWINSICE_SLAIN);
+				achievementObserver.updateGlobalStat(STEAM_GSTAT_TWINSICE_SLAIN, this->skill[2]);
 			}
 			else if ( srcStats->type == DEVIL )
 			{
-				achievementObserver.updateGlobalStat(STEAM_GSTAT_BAPHOMET_SLAIN);
+				achievementObserver.updateGlobalStat(STEAM_GSTAT_BAPHOMET_SLAIN, this->skill[2]);
 			}
 			else if ( srcStats->type == MINOTAUR )
 			{
-				achievementObserver.updateGlobalStat(STEAM_GSTAT_MINOTAURS_SLAIN);
+				achievementObserver.updateGlobalStat(STEAM_GSTAT_MINOTAURS_SLAIN, this->skill[2]);
 			}
 			else if ( srcStats->type == SHOPKEEPER )
 			{
-				achievementObserver.updateGlobalStat(STEAM_GSTAT_SHOPKEEPERS_SLAIN);
+				achievementObserver.updateGlobalStat(STEAM_GSTAT_SHOPKEEPERS_SLAIN, this->skill[2]);
 			}
 		}
 	}

@@ -66,14 +66,14 @@ void PlayfabUser_t::gameBegin()
     PlayFab::PlayFabEventsAPI::WriteTelemetryEvents(eventRequest, OnEventsWrite, OnCloudScriptFailure);
 }
 
-void PlayfabUser_t::globalStat(int index, int value)
+void PlayfabUser_t::globalStat(int index, int player)
 {
     if ( !bLoggedIn )
     {
         return;
     }
 
-    if ( index < 0 || index >= STEAM_GSTAT_MAX || value < 0 )
+    if ( index < 0 || index >= STEAM_GSTAT_MAX )
     {
         return;
     }
@@ -90,6 +90,16 @@ void PlayfabUser_t::globalStat(int index, int value)
     eventContent.Payload["stat"] = SteamGlobalStatStr[index].c_str();
     eventContent.Payload["level"] = currentlevel;
     eventContent.Payload["secret"] = secretlevel;
+    if ( player >= 0 && player < MAXPLAYERS && !client_disconnected[player] )
+    {
+        eventContent.Payload["class"] = client_classes[player];
+        eventContent.Payload["race"] = stats[player]->playerRace;
+    }
+    else
+    {
+        eventContent.Payload["class"] = -1;
+        eventContent.Payload["race"] = -1;
+    }
     eventRequest.Events.push_back(eventContent);
     PlayFab::PlayFabEventsAPI::WriteTelemetryEvents(eventRequest, OnEventsWrite, OnCloudScriptFailure);
 }
