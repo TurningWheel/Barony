@@ -16325,6 +16325,7 @@ void Compendium_t::readModelLimbsFromFile(std::string section)
 		std::string path = PHYSFS_getRealDir(inputPath.c_str()) ? PHYSFS_getRealDir(inputPath.c_str()) : "";
 		if ( path != "" )
 		{
+			path += PHYSFS_getDirSeparator();
 			inputPath = path + inputPath;
 			File* fp = FileIO::open(inputPath.c_str(), "rb");
 			if ( !fp )
