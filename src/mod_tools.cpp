@@ -13621,7 +13621,7 @@ std::vector<std::pair<std::string, Sint32>> Compendium_t::Events_t::getCustomEve
 											{
 												if ( specificClass >= 0 )
 												{
-													if ( classId.first != specificClass )
+													if ( (classId.first % kEventClassesMax) != specificClass )
 													{
 														continue;
 													}

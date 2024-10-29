@@ -9435,7 +9435,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							armorDegradeChance += 10;
 						}
 
-						if ( hit.entity->behavior == &actPlayer && armornum == 4 )
+						if ( hit.entity->behavior == &actPlayer && armornum == 4 && hitstats->shield )
 						{
 							if ( skillCapstoneUnlocked(hit.entity->skill[2], PRO_SHIELD) )
 							{

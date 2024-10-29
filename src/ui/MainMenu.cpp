@@ -34352,7 +34352,7 @@ failed:
 							int index = -1;
 							if ( f->getUserData() )
 							{
-								index = (reinterpret_cast<intptr_t>(f->getUserData()) & 0x7F);
+								index = (reinterpret_cast<intptr_t>(f->getUserData()) & 0x7F) - 1;
 							}
 							Compendium_t::compendiumEntityCurrent.modelIndex = index + 1;
 							populateRecordsSectionItems(page_right_inner.getParent(), Compendium_t::Events_t::kEventCodexOffset + findCat->second, findCat->first.c_str(), index);
@@ -35901,7 +35901,7 @@ failed:
 					actualPos.h = std::max(compendiumPageRightInnerHeight, entry->getSize().y + entry->getSize().h);
 					page_right->setActualSize(actualPos);
 
-					Uint8 userData = classnum;
+					Uint8 userData = (classnum + 1);
 					if ( i == 0 )
 					{
 						userData |= 1 << 7;

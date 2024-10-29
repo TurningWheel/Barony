@@ -1268,6 +1268,30 @@ void actArrow(Entity* my)
 								armorDegradeChance += 10;
 							}
 
+							if ( hit.entity->behavior == &actPlayer && armornum == 4 && hitstats->shield )
+							{
+								if ( skillCapstoneUnlocked(hit.entity->skill[2], PRO_SHIELD) )
+								{
+									armorDegradeChance = 100; // don't break.
+								}
+								else
+								{
+									if ( itemCategory(hitstats->shield) == ARMOR )
+									{
+										armorDegradeChance += 2 * (hitstats->getModifiedProficiency(PRO_SHIELD) / 10);
+										armorDegradeChance += 10;
+										if ( !players[hit.entity->skill[2]]->mechanics.itemDegradeRoll(hitstats->shield) )
+										{
+											armorDegradeChance = 100; // don't break.
+										}
+									}
+									else
+									{
+										armorDegradeChance += (hitstats->getModifiedProficiency(PRO_SHIELD) / 10);
+									}
+								}
+							}
+
 							if ( armorDegradeChance == 100 || (local_rng.rand() % armorDegradeChance > 0) )
 							{
 								armor = NULL;
