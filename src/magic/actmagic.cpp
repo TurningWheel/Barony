@@ -5157,7 +5157,7 @@ Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration, i
 	return entity;
 }
 
-void createParticleRock(Entity* parent, int sprite)
+void createParticleRock(Entity* parent, int sprite, bool light)
 {
 	if ( !parent )
 	{
@@ -5189,8 +5189,11 @@ void createParticleRock(Entity* parent, int sprite)
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
-		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
-			*cvar_magic_fx_light_bonus, 0.f);
+		if ( !light )
+		{
+			entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+				*cvar_magic_fx_light_bonus, 0.f);
+		}
 		if ( multiplayer != CLIENT )
 		{
 			entity_uids--;
