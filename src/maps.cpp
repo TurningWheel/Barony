@@ -4482,17 +4482,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		int dir;
 		int id = -1;
 	};
-	auto compFuncBreakable = [](BreakableNode_t& lhs, BreakableNode_t& rhs)
-	{
-		return lhs.walls < rhs.walls;
-	};
 	auto findBreakables = EditorEntityData_t::colliderRandomGenPool.find(map.name);
 	if ( findBreakables == EditorEntityData_t::colliderRandomGenPool.end() )
 	{
 		numBreakables = 0;
 	}
 	int numOpenAreaBreakables = 0;
-	std::priority_queue<BreakableNode_t, std::vector<BreakableNode_t>, decltype(compFuncBreakable)> breakableLocations(compFuncBreakable);
+	std::vector<BreakableNode_t> breakableLocations;
 	if ( findBreakables->first == "Underworld" )
 	{
 		numOpenAreaBreakables = 10;
@@ -4544,7 +4540,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 
 				if ( obstacles == 0 )
 				{
-					breakableLocations.push(BreakableNode_t(1, x, y, map_rng.rand() % 4, 
+					breakableLocations.push_back(BreakableNode_t(1, x, y, map_rng.rand() % 4, 
 						map_rng.rand() % 2 ? 14 : 40)); // random dir, hanging cage ids
 					--numOpenAreaBreakables;
 
@@ -4801,7 +4797,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						}
 					}
 					int picked = dirs[map_rng.rand() % dirs.size()];
-					breakableLocations.push(BreakableNode_t(walls.size(), x, y, picked));
+					breakableLocations.push_back(BreakableNode_t(walls.size(), x, y, picked));
 					foundSpace = true;
 					break;
 				}
@@ -4835,7 +4831,21 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		Monster lastMonsterEvent = NOTHING;
 		while ( !breakableLocations.empty() )
 		{
-			auto& top = breakableLocations.top();
+			int maxNumWalls = 0;
+			for ( auto& b : breakableLocations )
+			{
+				maxNumWalls = std::max(b.walls, maxNumWalls);
+			}
+			std::vector<unsigned int> posChances;
+			int pickedPos = 0;
+			for ( auto& b : breakableLocations )
+			{
+				posChances.push_back(b.walls == maxNumWalls ? 1 : 0);
+			}
+
+			pickedPos = map_rng.discrete(posChances.data(), posChances.size());
+
+			auto& top = breakableLocations.at(pickedPos);
 			int x = top.x;
 			int y = top.y;
 
@@ -5008,7 +5018,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				ent->z = 24.0;
 				ent->flags[PASSABLE] = true;
 			}
-			breakableLocations.pop();
+			breakableLocations.erase(breakableLocations.begin() + pickedPos);
 		}
 	}
 
