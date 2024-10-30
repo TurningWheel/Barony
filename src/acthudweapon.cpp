@@ -3309,6 +3309,7 @@ void actHudShield(Entity* my)
 		if (stats[HUDSHIELD_PLAYERNUM]->HP <= 0)
 		{
 			my->flags[INVISIBLE] = true;
+			my->flags[INVISIBLE_DITHER] = false;
 			return;
 		}
 	}
@@ -4083,6 +4084,7 @@ void actHudAdditional(Entity* my)
 		if ( stats[HUDSHIELD_PLAYERNUM]->HP <= 0 )
 		{
 			my->flags[INVISIBLE] = true;
+			my->flags[INVISIBLE_DITHER] = false;
 			return;
 		}
 	}

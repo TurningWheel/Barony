@@ -2421,6 +2421,31 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		entity = receiveEntity(NULL);
 		// IMPORTANT! Assign actions to the objects the client has control over
 		clientActions(entity);
+
+		//if ( entity->behavior == &actPlayer && entity->skill[2] >= 0 && entity->skill[2] < MAXPLAYERS ) // respawned
+		//{
+		//	if ( !players[entity->skill[2]]->entity )
+		//	{
+		//		players[entity->skill[2]]->entity = entity;
+		//		if ( entity->skill[2] == clientnum )
+		//		{
+		//			stats[entity->skill[2]]->HP = stats[entity->skill[2]]->MAXHP;
+		//			node_t* nextnode = nullptr;
+		//			for ( auto node = map.entities->first; node != NULL; node = nextnode )
+		//			{
+		//				nextnode = node->next;
+		//				auto entity2 = (Entity*)node->element;
+		//				if ( entity2 )
+		//				{
+		//					if ( entity2->behavior == &actDeathCam && entity2->skill[2] == clientnum )
+		//					{
+		//						list_RemoveNode(entity2->mynode);
+		//					}
+		//				}
+		//			}
+		//		}
+		//	}
+		//}
 	}},
     
     // raise/lower shield
@@ -5901,6 +5926,58 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		}
 	}},
 
+	{'REZZ', []() {
+		// check if the info is outdated
+		if ( net_packet->data[5] != currentlevel || net_packet->data[10] != secretlevel )
+		{
+			return;
+		}
+
+		int player = net_packet->data[4];
+
+		if ( player < 0 || player >= MAXPLAYERS )
+		{
+			return;
+		}
+
+		if ( players[player]->entity )
+		{
+			return;
+		}
+
+		int x = SDLNet_Read16(&net_packet->data[6]);
+		int y = SDLNet_Read16(&net_packet->data[8]);
+
+		if ( players[player]->ghost.my )
+		{
+			list_RemoveNode(players[player]->ghost.my->mynode);
+			players[player]->ghost.my = nullptr;
+		}
+		players[player]->ghost.reset();
+
+		Entity* entity = newEntity(113, 1, map.entities, nullptr); //Player entity.
+		entity->x = (x * 16) + 8;
+		entity->y = (y * 16) + 8;
+		entity->new_x = entity->x;
+		entity->new_y = entity->y;
+		entity->z = -1;
+		entity->flags[INVISIBLE] = false;
+		entity->flags[GENIUS] = true;
+		entity->behavior = &actPlayer;
+		entity->skill[2] = player;
+		entity->yaw = 0.0;
+		entity->sizex = 4;
+		entity->sizey = 4;
+		entity->focalx = limbs[HUMAN][0][0]; // 0
+		entity->focaly = limbs[HUMAN][0][1]; // 0
+		entity->focalz = limbs[HUMAN][0][2]; // -1.5
+		entity->flags[UPDATENEEDED] = true;
+		entity->flags[BLOCKSIGHT] = true;
+		entity->addToCreatureList(map.creatures);
+		players[player]->entity = entity;
+		stats[player]->HP = stats[player]->MAXHP / 2;
+	}},
+
 	// player created ghost
 	{'GHOS', []() {
 		// check if the info is outdated
@@ -5916,6 +5993,9 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			return;
 		}
 
+		int x = SDLNet_Read16(&net_packet->data[6]);
+		int y = SDLNet_Read16(&net_packet->data[8]);
+
 		if ( players[player]->ghost.my )
 		{
 			list_RemoveNode(players[player]->ghost.my->mynode);
@@ -5928,8 +6008,8 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Ghost entity.
 		players[player]->ghost.my = entity;
 		players[player]->ghost.uid = entity->getUID();
-		entity->x = (SDLNet_Read16(&net_packet->data[6]) * 16) + 8;
-		entity->y = (SDLNet_Read16(&net_packet->data[8]) * 16) + 8;
+		entity->x = (x * 16) + 8;
+		entity->y = (y * 16) + 8;
 		entity->new_x = entity->x;
 		entity->new_y = entity->y;
 		entity->z = -4;

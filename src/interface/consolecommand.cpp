@@ -4932,6 +4932,21 @@ namespace ConsoleCommands {
 		generateTileTextures();
 	});
 
+	static ConsoleCommand ccmd_spawnghost2("/respawnasghost2", "respawn", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		if ( players[clientnum]->entity )
+		{
+			return;
+		}
+
+		players[clientnum]->ghost.respawn();
+		});
+
 	static ConsoleCommand ccmd_spawnghost("/respawnasghost", "respawn as a ghost", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{

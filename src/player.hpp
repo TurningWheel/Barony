@@ -1811,6 +1811,7 @@ public:
 		void initStartRoomLocation(int x, int y);
 		bool isControllable();
 		Entity* spawnGhost();
+		Entity* respawn();
 		static void pauseMenuSpectate(const int player);
 		static void pauseMenuSpawnGhost(const int player);
 		static bool gameoverOnDismiss(const int player);
