@@ -48,6 +48,8 @@ public:
 	void getLeaderboardAroundMe(std::string lid);
 	void getLeaderboardTop100Alternate(std::string lid);
 	void gameBegin();
+	void gameEnd();
+	void compendiumResearch(std::string category, std::string section);
 	void globalStat(int index, int player);
 
 	struct PlayerCheckLeaderboardData_t
