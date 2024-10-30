@@ -26,6 +26,64 @@ void PlayfabUser_t::OnEventsWrite(const PlayFab::EventsModels::WriteEventsRespon
     logInfo("Successfully stored events");
 }
 
+void PlayfabUser_t::compendiumResearch(std::string category, std::string section)
+{
+    if ( !bLoggedIn )
+    {
+        return;
+    }
+
+    PlayFab::EventsModels::WriteEventsRequest eventRequest;
+    PlayFab::EventsModels::EventContents eventContent;
+    eventContent.EventNamespace = "custom.game";
+    eventContent.Name = "research";
+    eventContent.Payload["category"] = category;
+    eventContent.Payload["section"] = section;
+    eventRequest.Events.push_back(eventContent);
+    PlayFab::PlayFabEventsAPI::WriteTelemetryEvents(eventRequest, OnEventsWrite, OnCloudScriptFailure);
+}
+
+void PlayfabUser_t::gameEnd()
+{
+    if ( !bLoggedIn )
+    {
+        return;
+    }
+
+    if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_DEFAULT )
+    {
+        return;
+    }
+    PlayFab::EventsModels::WriteEventsRequest eventRequest;
+    PlayFab::EventsModels::EventContents eventContent;
+    eventContent.EventNamespace = "custom.game";
+    eventContent.Name = "gameend";
+    eventContent.Payload["class"] = client_classes[clientnum];
+    eventContent.Payload["multiplayer"] = multiplayer;
+    eventContent.Payload["victory"] = victory;
+    int players = 1;
+    if ( multiplayer == SERVER || (multiplayer == SINGLE && splitscreen) )
+    {
+        for ( int i = 1; i < MAXPLAYERS; ++i )
+        {
+            if ( !client_disconnected[i] )
+            {
+                ++players;
+            }
+        }
+    }
+    eventContent.Payload["numplayers"] = players;
+    eventContent.Payload["version"] = VERSION;
+    eventContent.Payload["splitscreen"] = (multiplayer == SINGLE && splitscreen) ? 1 : 0;
+    eventContent.Payload["race"] = stats[clientnum]->playerRace;
+    eventContent.Payload["appearance"] = stats[clientnum]->stat_appearance;
+    eventContent.Payload["sex"] = stats[clientnum]->sex;
+    eventContent.Payload["controller"] = inputs.hasController(clientnum) ? 1 : 0;
+    eventContent.Payload["theme"] = *cvar_disableHoliday ? 0 : 1;
+    eventRequest.Events.push_back(eventContent);
+    PlayFab::PlayFabEventsAPI::WriteTelemetryEvents(eventRequest, OnEventsWrite, OnCloudScriptFailure);
+}
+
 void PlayfabUser_t::gameBegin()
 {
     if ( !bLoggedIn )
