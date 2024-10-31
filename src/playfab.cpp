@@ -54,6 +54,7 @@ void PlayfabUser_t::gameEnd()
     {
         return;
     }
+
     PlayFab::EventsModels::WriteEventsRequest eventRequest;
     PlayFab::EventsModels::EventContents eventContent;
     eventContent.EventNamespace = "custom.game";
@@ -76,10 +77,53 @@ void PlayfabUser_t::gameEnd()
     eventContent.Payload["version"] = VERSION;
     eventContent.Payload["splitscreen"] = (multiplayer == SINGLE && splitscreen) ? 1 : 0;
     eventContent.Payload["race"] = stats[clientnum]->playerRace;
+    eventContent.Payload["charlvl"] = stats[clientnum]->LVL;
     eventContent.Payload["appearance"] = stats[clientnum]->stat_appearance;
     eventContent.Payload["sex"] = stats[clientnum]->sex;
     eventContent.Payload["controller"] = inputs.hasController(clientnum) ? 1 : 0;
     eventContent.Payload["theme"] = *cvar_disableHoliday ? 0 : 1;
+    eventRequest.Events.push_back(eventContent);
+    PlayFab::PlayFabEventsAPI::WriteTelemetryEvents(eventRequest, OnEventsWrite, OnCloudScriptFailure);
+}
+
+void PlayfabUser_t::biomeLeave()
+{
+    if ( !bLoggedIn )
+    {
+        return;
+    }
+
+    if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_DEFAULT )
+    {
+        return;
+    }
+    PlayFab::EventsModels::WriteEventsRequest eventRequest;
+    PlayFab::EventsModels::EventContents eventContent;
+    eventContent.EventNamespace = "custom.game";
+    eventContent.Name = "biomeleave";
+    eventContent.Payload["class"] = client_classes[clientnum];
+    eventContent.Payload["multiplayer"] = multiplayer;
+    int players = 1;
+    if ( multiplayer == SERVER || (multiplayer == SINGLE && splitscreen) )
+    {
+        for ( int i = 1; i < MAXPLAYERS; ++i )
+        {
+            if ( !client_disconnected[i] )
+            {
+                ++players;
+            }
+        }
+    }
+    eventContent.Payload["level"] = currentlevel;
+    eventContent.Payload["secret"] = secretlevel;
+    eventContent.Payload["numplayers"] = players;
+    eventContent.Payload["version"] = VERSION;
+    eventContent.Payload["splitscreen"] = (multiplayer == SINGLE && splitscreen) ? 1 : 0;
+    eventContent.Payload["race"] = stats[clientnum]->playerRace;
+    eventContent.Payload["charlvl"] = stats[clientnum]->LVL;
+    eventContent.Payload["appearance"] = stats[clientnum]->stat_appearance;
+    eventContent.Payload["sex"] = stats[clientnum]->sex;
+    eventContent.Payload["controller"] = inputs.hasController(clientnum) ? 1 : 0;
     eventRequest.Events.push_back(eventContent);
     PlayFab::PlayFabEventsAPI::WriteTelemetryEvents(eventRequest, OnEventsWrite, OnCloudScriptFailure);
 }
@@ -152,11 +196,13 @@ void PlayfabUser_t::globalStat(int index, int player)
     {
         eventContent.Payload["class"] = client_classes[player];
         eventContent.Payload["race"] = stats[player]->playerRace;
+        eventContent.Payload["charlvl"] = stats[player]->LVL;
     }
     else
     {
         eventContent.Payload["class"] = -1;
         eventContent.Payload["race"] = -1;
+        eventContent.Payload["charlvl"] = -1;
     }
     eventRequest.Events.push_back(eventContent);
     PlayFab::PlayFabEventsAPI::WriteTelemetryEvents(eventRequest, OnEventsWrite, OnCloudScriptFailure);
