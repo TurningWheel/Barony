@@ -8493,6 +8493,7 @@ void doNewGame(bool makeHighscore) {
 				{
 					playfabUser.postScore(clientnum);
 				}
+				playfabUser.gameEnd();
 #endif
             }
             saveAllScores(SCORESFILE);
