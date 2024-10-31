@@ -49,6 +49,7 @@ public:
 	void getLeaderboardTop100Alternate(std::string lid);
 	void gameBegin();
 	void gameEnd();
+	void biomeLeave();
 	void compendiumResearch(std::string category, std::string section);
 	void globalStat(int index, int player);
 
