@@ -4980,6 +4980,76 @@ namespace ConsoleCommands {
 		EquipmentModelOffsets.readFromFile(monstertypename[stats[clientnum]->type]);
 	});
 
+	static ConsoleCommand ccmd_classstatrolls("/classstatrolls", "debug class stats", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
+			return;
+		}
+		if ( !players[clientnum]->entity ) { return; }
+
+		for ( int i = 0; i < NUMCLASSES; ++i )
+		{
+			stats[clientnum]->STR = 0;
+			stats[clientnum]->DEX = 0;
+			stats[clientnum]->CON = 0;
+			stats[clientnum]->INT = 0;
+			stats[clientnum]->PER = 0;
+			stats[clientnum]->CHR = 0;
+			for ( int lv = 0; lv < 50; ++lv )
+			{
+				int increasestat[3] = { 0, 0, 0 };
+				players[clientnum]->entity->playerStatIncrease(i, increasestat);
+				for ( int i = 0; i < 3; i++ )
+				{
+					switch ( increasestat[i] )
+					{
+					case STAT_STR:
+						stats[clientnum]->STR++;
+						break;
+					case STAT_DEX:
+						stats[clientnum]->DEX++;
+						break;
+					case STAT_CON:
+						stats[clientnum]->CON++;
+						break;
+					case STAT_INT:
+						stats[clientnum]->INT++;
+						break;
+					case STAT_PER:
+						stats[clientnum]->PER++;
+						break;
+					case STAT_CHR:
+						stats[clientnum]->CHR++;
+						break;
+					default:
+						break;
+					}
+				}
+			}
+			printlog("%d: %d %d %d %d %d %d",
+				i,
+				stats[clientnum]->STR,
+				stats[clientnum]->DEX,
+				stats[clientnum]->CON,
+				stats[clientnum]->INT,
+				stats[clientnum]->PER,
+				stats[clientnum]->CHR);
+		}
+		stats[clientnum]->STR = 0;
+		stats[clientnum]->DEX = 0;
+		stats[clientnum]->CON = 0;
+		stats[clientnum]->INT = 0;
+		stats[clientnum]->PER = 0;
+		stats[clientnum]->CHR = 0;
+	});
+
 	static ConsoleCommand ccmd_reloadequipmentoffsets_all("/reloadequipmentoffsets_all", "reloads all equipment model offsets", []CCMD{
 		for ( int c = 1; c < NUMMONSTERS; ++c )
 		{
