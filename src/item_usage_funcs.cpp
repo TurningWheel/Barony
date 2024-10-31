@@ -4616,6 +4616,17 @@ void item_Food(Item*& item, int player)
 				hungerIncrease = 10;
 				break;
 		}
+
+		/*if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->stat_appearance == 0 )
+		{
+			if ( stats[player]->MAXMP >= 50 )
+			{
+				real_t nominalIncrease = 50 * (hungerIncrease / 1000.0);
+				real_t currentIncrease = stats[player]->MAXMP * (hungerIncrease / 1000.0);
+				hungerIncrease = hungerIncrease * (nominalIncrease / currentIncrease);
+			}
+		}*/
+
 		stats[player]->HUNGER += hungerIncrease * foodMult;
 	}
 	else
