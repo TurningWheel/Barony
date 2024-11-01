@@ -12847,6 +12847,14 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	{
 		baseXp = 1 + local_rng.rand() % 2;
 	}
+	else if ( srcStats->type == SLIME )
+	{
+		baseXp = 5;
+	}
+	else if ( srcStats->type == GNOME )
+	{
+		baseXp = 5;
+	}
 	int xpGain = baseXp + local_rng.rand() % std::max(1, baseXp) + std::max(0, srcStats->LVL - destStats->LVL) * baseXp;
 	if ( srcStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] > 0 )
 	{

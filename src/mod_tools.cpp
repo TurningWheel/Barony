@@ -22,6 +22,7 @@ See LICENSE for details.
 #include "shops.hpp"
 #include "interface/ui.hpp"
 #include "ui/GameUI.hpp"
+#include "playfab.hpp"
 #endif
 #include "init.hpp"
 #include "ui/LoadingScreen.hpp"
@@ -15130,6 +15131,9 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 					if ( prevlevel == 4 )
 					{
 						eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "mines", 1);
+#ifdef USE_PLAYFAB
+						playfabUser.biomeLeave();
+#endif
 						commitUniqueValue = true; // commit at end of biome to save to file
 					}
 					eventUpdateWorld(playernum, Compendium_t::CPDM_BIOMES_MIN_COMPLETION, "mines", 
@@ -15144,6 +15148,9 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 					if ( prevlevel == 9 )
 					{
 						eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "swamps", 1);
+#ifdef USE_PLAYFAB
+						playfabUser.biomeLeave();
+#endif
 						commitUniqueValue = true; // commit at end of biome to save to file
 					}
 					eventUpdateWorld(playernum, Compendium_t::CPDM_BIOMES_MIN_COMPLETION, "swamps",
@@ -15158,6 +15165,9 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 					if ( prevlevel == 14 )
 					{
 						eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "labyrinth", 1);
+#ifdef USE_PLAYFAB
+						playfabUser.biomeLeave();
+#endif
 						commitUniqueValue = true; // commit at end of biome to save to file
 					}
 					eventUpdateWorld(playernum, Compendium_t::CPDM_BIOMES_MIN_COMPLETION, "labyrinth",
@@ -15172,6 +15182,9 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 					if ( prevlevel == 19 )
 					{
 						eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "ruins", 1);
+#ifdef USE_PLAYFAB
+						playfabUser.biomeLeave();
+#endif
 						commitUniqueValue = true; // commit at end of biome to save to file
 					}
 					eventUpdateWorld(playernum, Compendium_t::CPDM_BIOMES_MIN_COMPLETION, "ruins",
@@ -15190,6 +15203,9 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 					if ( prevlevel == 23 )
 					{
 						eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "hell", 1);
+#ifdef USE_PLAYFAB
+						playfabUser.biomeLeave();
+#endif
 						commitUniqueValue = true; // commit at end of biome to save to file
 					}
 					eventUpdateWorld(playernum, Compendium_t::CPDM_BIOMES_MIN_COMPLETION, "hell",
@@ -15212,6 +15228,9 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 					if ( prevlevel == 29 )
 					{
 						eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "crystal caves", 1);
+#ifdef USE_PLAYFAB
+						playfabUser.biomeLeave();
+#endif
 						commitUniqueValue = true; // commit at end of biome to save to file
 					}
 					eventUpdateWorld(playernum, Compendium_t::CPDM_BIOMES_MIN_COMPLETION, "crystal caves",
@@ -15226,6 +15245,9 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 					if ( prevlevel == 34 )
 					{
 						eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "arcane citadel", 1);
+#ifdef USE_PLAYFAB
+						playfabUser.biomeLeave();
+#endif
 						commitUniqueValue = true; // commit at end of biome to save to file
 					}
 					eventUpdateWorld(playernum, Compendium_t::CPDM_BIOMES_MIN_COMPLETION, "arcane citadel",

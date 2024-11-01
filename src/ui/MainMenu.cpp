@@ -39167,6 +39167,9 @@ failed:
 						playSound(632 + local_rng.rand() % 2, 92);
 
 						steamAchievement("BARONY_ACH_CURIOSITY");
+#ifdef USE_PLAYFAB
+						playfabUser.compendiumResearch(compendium_current, compendium_contents_current[compendium_current]);
+#endif
 
 						to_unlock->setText("");
 						auto* unlockStatus = compendium_current == "monsters" ? &Compendium_t::CompendiumMonsters_t::unlocks
