@@ -9695,7 +9695,7 @@ void Mods::unloadMods(bool force)
 		physfsReloadMusic(reloadIntroMusic, true);
 		if (reloadIntroMusic)
 		{
-#ifdef SOUND
+#ifdef MUSIC
 			playMusic(intromusic[local_rng.rand() % (NUMINTROMUSIC - 1)], false, true, true);
 #endif			
 		}
@@ -9810,7 +9810,7 @@ void Mods::loadMods()
 		physfsReloadMusic(reloadIntroMusic, false);
 		if ( reloadIntroMusic )
 		{
-#ifdef SOUND
+#ifdef MUSIC
 			playMusic(intromusic[local_rng.rand() % (NUMINTROMUSIC - 1)], false, true, true);
 #endif			
 		}
@@ -9823,7 +9823,7 @@ void Mods::loadMods()
 		physfsReloadMusic(reloadIntroMusic, true);
 		if ( reloadIntroMusic )
 		{
-#ifdef SOUND
+#ifdef MUSIC
 			playMusic(intromusic[local_rng.rand() % (NUMINTROMUSIC - 1)], false, true, true);
 #endif			
 		}
