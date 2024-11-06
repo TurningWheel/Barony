@@ -22,6 +22,7 @@
 #include "../scores.hpp"
 #include "../ui/MainMenu.hpp"
 #include "../prng.hpp"
+#include "../mod_tools.hpp"
 
 //The spellcasting animation stages:
 #define CIRCLE 0 //One circle
@@ -86,13 +87,25 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	animation_manager->stage = CIRCLE;
 
 	//Make the HUDWEAPON disappear, or somesuch?
+	players[player]->hud.magicLeftHand->flags[INVISIBLE_DITHER] = false;
+	players[player]->hud.magicRightHand->flags[INVISIBLE_DITHER] = false;
 	if ( stat->type != RAT )
 	{
 		if ( !usingSpellbook )
 		{
 			players[player]->hud.magicLeftHand->flags[INVISIBLE] = false;
+			if ( caster->isInvisible() )
+			{
+				players[player]->hud.magicLeftHand->flags[INVISIBLE] = true;
+				players[player]->hud.magicLeftHand->flags[INVISIBLE_DITHER] = true;
+			}
 		}
 		players[player]->hud.magicRightHand->flags[INVISIBLE] = false;
+		if ( caster->isInvisible() )
+		{
+			players[player]->hud.magicRightHand->flags[INVISIBLE] = true;
+			players[player]->hud.magicRightHand->flags[INVISIBLE_DITHER] = true;
+		}
 	}
 
 	animation_manager->lefthand_angle = 0;
@@ -160,10 +173,12 @@ void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* a
 	if ( players[animation_manager->player]->hud.magicLeftHand )
 	{
 		players[animation_manager->player]->hud.magicLeftHand->flags[INVISIBLE] = true;
+		players[animation_manager->player]->hud.magicLeftHand->flags[INVISIBLE_DITHER] = false;
 	}
 	if ( players[animation_manager->player]->hud.magicRightHand )
 	{
 		players[animation_manager->player]->hud.magicRightHand->flags[INVISIBLE] = true;
+		players[animation_manager->player]->hud.magicRightHand->flags[INVISIBLE_DITHER] = false;
 	}
 }
 
@@ -184,6 +199,7 @@ void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t
 void actLeftHandMagic(Entity* my)
 {
 	//int c = 0;
+	my->flags[INVISIBLE_DITHER] = false;
 	if (intro == true)
 	{
 		my->flags[INVISIBLE] = true;
@@ -223,7 +239,7 @@ void actLeftHandMagic(Entity* my)
 
 	//Sprite
 	Monster playerRace = players[HANDMAGIC_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HANDMAGIC_PLAYERNUM]->playerRace);
-	int playerAppearance = stats[HANDMAGIC_PLAYERNUM]->appearance;
+	int playerAppearance = stats[HANDMAGIC_PLAYERNUM]->stat_appearance;
 	if ( players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift != NOTHING )
 	{
 		playerRace = static_cast<Monster>(players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift);
@@ -369,14 +385,6 @@ void actLeftHandMagic(Entity* my)
 		}*/
 	}
 
-	if ( playerRace == RAT )
-	{
-		my->flags[INVISIBLE] = true;
-		my->y = 0;
-		my->z += 1;
-	}
-
-
 	Entity*& hudarm = players[HANDMAGIC_PLAYERNUM]->hud.arm;
 	if ( playerRace == SPIDER && hudarm && players[HANDMAGIC_PLAYERNUM]->entity->bodyparts.at(0) )
 	{
@@ -396,26 +404,27 @@ void actLeftHandMagic(Entity* my)
 		my->focalz = -1.5;
 	}
 
-	bool wearingring = false;
-
-	//Select model
-	if (stats[HANDMAGIC_PLAYERNUM]->ring != NULL)
-	{
-		if (stats[HANDMAGIC_PLAYERNUM]->ring->type == RING_INVISIBILITY)
-		{
-			wearingring = true;
-		}
-	}
-	if (stats[HANDMAGIC_PLAYERNUM]->cloak != NULL)
-	{
-		if (stats[HANDMAGIC_PLAYERNUM]->cloak->type == CLOAK_INVISIBILITY)
-		{
-			wearingring = true;
-		}
-	}
-	if (players[HANDMAGIC_PLAYERNUM]->entity->skill[3] == 1 || players[HANDMAGIC_PLAYERNUM]->entity->isInvisible() )   // debug cam or player invisible
+	if ( !cast_animation[HANDMAGIC_PLAYERNUM].active )
 	{
 		my->flags[INVISIBLE] = true;
+	}
+	else
+	{
+		if ( playerRace == RAT )
+		{
+			my->flags[INVISIBLE] = true;
+			my->y = 0;
+			my->z += 1;
+		}
+		else if ( players[HANDMAGIC_PLAYERNUM]->entity->skill[3] == 1 )   // debug cam
+		{
+			my->flags[INVISIBLE] = true;
+		}
+		else if ( players[HANDMAGIC_PLAYERNUM]->entity->isInvisible() )
+		{
+			my->flags[INVISIBLE] = true;
+			my->flags[INVISIBLE_DITHER] = true;
+		}
 	}
 
 	if ( (cast_animation[HANDMAGIC_PLAYERNUM].active || cast_animation[HANDMAGIC_PLAYERNUM].active_spellbook) )
@@ -459,7 +468,23 @@ void actLeftHandMagic(Entity* my)
 					if ( multiplayer == SINGLE && cast_animation[HANDMAGIC_PLAYERNUM].consumeMana )
 					{
 						int HP = stats[HANDMAGIC_PLAYERNUM]->HP;
+						int MP = stats[HANDMAGIC_PLAYERNUM]->MP;
 						players[HANDMAGIC_PLAYERNUM]->entity->drainMP(1, false); // don't notify otherwise we'll get spammed each 1 mp
+
+						if ( cast_animation[HANDMAGIC_PLAYERNUM].spell )
+						{
+							bool sustainedSpell = false;
+							auto findSpellDef = ItemTooltips.spellItems.find(cast_animation[HANDMAGIC_PLAYERNUM].spell->ID);
+							if ( findSpellDef != ItemTooltips.spellItems.end() )
+							{
+								sustainedSpell = (findSpellDef->second.spellType == ItemTooltips_t::SpellItemTypes::SPELL_TYPE_SELF_SUSTAIN);
+							}
+							if ( sustainedSpell )
+							{
+								players[HANDMAGIC_PLAYERNUM]->mechanics.sustainedSpellIncrementMP(MP - stats[HANDMAGIC_PLAYERNUM]->MP);
+							}
+						}
+
 						if ( (HP > stats[HANDMAGIC_PLAYERNUM]->HP) && !overDrawDamageNotify )
 						{
 							overDrawDamageNotify = true;
@@ -546,6 +571,7 @@ void actLeftHandMagic(Entity* my)
 
 void actRightHandMagic(Entity* my)
 {
+	my->flags[INVISIBLE_DITHER] = false;
 	if (intro == true)
 	{
 		my->flags[INVISIBLE] = true;
@@ -582,7 +608,7 @@ void actRightHandMagic(Entity* my)
 
 	//Sprite
 	Monster playerRace = players[HANDMAGIC_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HANDMAGIC_PLAYERNUM]->playerRace);
-	int playerAppearance = stats[HANDMAGIC_PLAYERNUM]->appearance;
+	int playerAppearance = stats[HANDMAGIC_PLAYERNUM]->stat_appearance;
 	if ( players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift != NOTHING )
 	{
 		playerRace = static_cast<Monster>(players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift);
@@ -725,11 +751,29 @@ void actRightHandMagic(Entity* my)
 		}*/
 	}
 
-	if ( playerRace == RAT )
+	if ( !(cast_animation[HANDMAGIC_PLAYERNUM].active || cast_animation[HANDMAGIC_PLAYERNUM].active_spellbook) )
 	{
 		my->flags[INVISIBLE] = true;
-		my->y = 0;
-		my->z += 1;
+	}
+	else
+	{
+		my->flags[INVISIBLE] = false;
+
+		if ( playerRace == RAT )
+		{
+			my->flags[INVISIBLE] = true;
+			my->y = 0;
+			my->z += 1;
+		}
+		else if ( players[HANDMAGIC_PLAYERNUM]->entity->skill[3] == 1 )   // debug cam
+		{
+			my->flags[INVISIBLE] = true;
+		}
+		else if ( players[HANDMAGIC_PLAYERNUM]->entity->isInvisible() )
+		{
+			my->flags[INVISIBLE] = true;
+			my->flags[INVISIBLE_DITHER] = true;
+		}
 	}
 
 	Entity*& hudarm = players[HANDMAGIC_PLAYERNUM]->hud.arm;
@@ -750,28 +794,6 @@ void actRightHandMagic(Entity* my)
 	else
 	{
 		my->focalz = -1.5;
-	}
-
-	bool wearingring = false;
-
-	//Select model
-	if (stats[HANDMAGIC_PLAYERNUM]->ring != NULL)
-	{
-		if (stats[HANDMAGIC_PLAYERNUM]->ring->type == RING_INVISIBILITY)
-		{
-			wearingring = true;
-		}
-	}
-	if (stats[HANDMAGIC_PLAYERNUM]->cloak != NULL)
-	{
-		if (stats[HANDMAGIC_PLAYERNUM]->cloak->type == CLOAK_INVISIBILITY)
-		{
-			wearingring = true;
-		}
-	}
-	if ( players[HANDMAGIC_PLAYERNUM]->entity->skill[3] == 1 || players[HANDMAGIC_PLAYERNUM]->entity->isInvisible() )   // debug cam or player invisible
-	{
-		my->flags[INVISIBLE] = true;
 	}
 
 	if ( (cast_animation[HANDMAGIC_PLAYERNUM].active || cast_animation[HANDMAGIC_PLAYERNUM].active_spellbook) )

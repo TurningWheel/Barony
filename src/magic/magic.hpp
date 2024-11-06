@@ -74,7 +74,12 @@ static const int SPELL_SELF_POLYMORPH = 52;
 static const int SPELL_CRAB_FORM = 53;
 static const int SPELL_CRAB_WEB = 54;
 static const int SPELL_GHOST_BOLT = 55;
-static const int NUM_SPELLS = 56;
+static const int SPELL_SLIME_ACID = 56;
+static const int SPELL_SLIME_WATER = 57;
+static const int SPELL_SLIME_FIRE = 58;
+static const int SPELL_SLIME_TAR = 59;
+static const int SPELL_SLIME_METAL = 60;
+static const int NUM_SPELLS = 61;
 
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
@@ -147,6 +152,7 @@ static const int PARTICLE_EFFECT_DEVIL_SUMMON_MONSTER = 24;
 static const int PARTICLE_EFFECT_SHATTERED_GEM = 25;
 static const int PARTICLE_EFFECT_SHRINE_TELEPORT = 26;
 static const int PARTICLE_EFFECT_GHOST_TELEPORT = 27;
+static const int PARTICLE_EFFECT_SLIME_SPRAY = 28;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -159,6 +165,15 @@ static const int PARTICLE_TIMER_ACTION_SPAWN_PORTAL = 2;
 static const int PARTICLE_TIMER_ACTION_SUMMON_MONSTER = 3;
 static const int PARTICLE_TIMER_ACTION_SPELL_SUMMON = 4;
 static const int PARTICLE_TIMER_ACTION_DEVIL_SUMMON_MONSTER = 5;
+static const int PARTICLE_TIMER_ACTION_MAGIC_SPRAY = 6;
+
+struct ParticleEmitterHit_t
+{
+	Uint32 tick = 0;
+	int hits = 0;
+};
+extern std::map<Uint32, std::map<Uint32, ParticleEmitterHit_t>> particleTimerEmitterHitEntities;
+ParticleEmitterHit_t* getParticleEmitterHitProps(Uint32 emitterUid, Entity* hitentity);
 
 bool addSpell(int spell, int player, bool ignoreSkill = false); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
 
@@ -400,6 +415,12 @@ extern spellElement_t spellElement_flutter;
 extern spellElement_t spellElement_dash;
 extern spellElement_t spellElement_selfPolymorph;
 extern spellElement_t spellElement_ghostBolt;
+extern spellElement_t spellElement_slimeAcid;
+extern spellElement_t spellElement_slimeWater;
+extern spellElement_t spellElement_slimeFire;
+extern spellElement_t spellElement_slimeTar;
+extern spellElement_t spellElement_slimeMetal;
+extern spellElement_t spellElement_slime_spray;
 /*
  */
 //TODO: Differentiate between touch spells, enchantment spells, personal spells, ranged spells, area of effect spells, close blast/burst spells, and enemy/ally target spells.
@@ -494,6 +515,11 @@ extern spell_t spell_flutter;
 extern spell_t spell_dash;
 extern spell_t spell_polymorph;
 extern spell_t spell_ghost_bolt;
+extern spell_t spell_slime_acid;
+extern spell_t spell_slime_water;
+extern spell_t spell_slime_fire;
+extern spell_t spell_slime_tar;
+extern spell_t spell_slime_metal;
 //TODO: Armor/protection/warding spells.
 //TODO: Targeting method?
 
@@ -507,6 +533,8 @@ int getSpellcastingAbilityFromUsingSpellbook(spell_t* spell, Entity* caster, Sta
 bool isSpellcasterBeginnerFromSpellbook(int player, Entity* caster, Stat* stat, spell_t* spell, Item* spellbookItem);
 int getSpellbookBonusPercent(Entity* caster, Stat* stat, Item* spellbookItem);
 real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spellElement_t* spellElement, int spellID);
+real_t getSpellBonusFromCasterINT(Entity* caster, Stat* casterStats);
+void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat* hitstats, Sint32 preResistanceDamage, Sint32 damage, Sint32 oldHP, int spellID);
 #endif
 bool isSpellcasterBeginner(int player, Entity* caster);
 void actMagicTrap(Entity* my);
@@ -520,6 +548,7 @@ void actHUDMagicParticleCircling(Entity* my);
 Entity* spawnMagicParticle(Entity* parentent);
 Entity* spawnMagicParticleCustom(Entity* parentent, int sprite, real_t scale, real_t spreadReduce);
 void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite);
+void spawnMagicEffectParticlesBell(Entity* bell, Uint32 sprite);
 void createParticleCircling(Entity* parent, int duration, int sprite);
 void actParticleCircle(Entity* my);
 void actParticleDot(Entity* my);
@@ -538,7 +567,7 @@ void actParticleShadowTag(Entity* my);
 void createParticleDropRising(Entity* parent, int sprite, double scale);
 void createParticleDot(Entity* parent);
 Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration, int particleType);
-void createParticleRock(Entity* parent, int sprite = -1);
+void createParticleRock(Entity* parent, int sprite = -1, bool light = false);
 void createParticleShatteredGem(real_t x, real_t y, real_t z, int sprite, Entity* parent);
 void createParticleErupt(Entity* parent, int sprite);
 Entity* createParticleSapCenter(Entity* parent, Entity* target, int spell, int sprite, int endSprite);
@@ -554,7 +583,6 @@ void createParticleShadowTag(Entity* parent, Uint32 casterUid, int duration);
 void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* autoHitTarget, bool castedSpell = false); // autoHitTarget is to immediate damage an entity, as all 3 tower magics hitting is unreliable
 bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks);
 
-spell_t* newSpell();
 spell_t* copySpell(spell_t* spell);
 void spellConstructor(spell_t* spell);
 void spellDeconstructor(void* data);
@@ -615,7 +643,7 @@ void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t
 
 class Item;
 
-spell_t* getSpellFromItem(const int player, Item* item);
+spell_t* getSpellFromItem(const int player, Item* item, bool usePlayerInventory);
 int getSpellIDFromSpellbook(int spellbookType);
 int canUseShapeshiftSpellInCurrentForm(const int player, Item& item);
 

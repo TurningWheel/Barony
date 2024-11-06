@@ -1091,7 +1091,24 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 	if (activated) {
 		// unselect list
 		if (input.consumeBinaryToggle("MenuCancel")) {
-			deselect();
+			if ( bListMenuListCancelOverride )
+			{
+				// workaround for compendium list into back button
+				// - let menulistcancel access back_button
+				// in handleInput()
+				if ( widgetActions.find("MenuListCancel") != widgetActions.end() )
+				{
+					// no-op, keep selected
+				}
+				else
+				{
+					deselect();
+				}
+			}
+			else
+			{
+				deselect();
+			}
 			std::string deselectTarget;
 			auto find = widgetMovements.find("MenuListCancel");
 			if (find != widgetMovements.end()) {
@@ -1139,12 +1156,12 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 			if (selection == -1) {
 				if (input.consumeBinaryToggle("MenuUp") || 
 					input.consumeBinaryToggle("MenuDown") ||
-					input.consumeBinaryToggle("MenuRight") ||
-					input.consumeBinaryToggle("MenuLeft") ||
+					(list[0]->leftright_control && input.consumeBinaryToggle("MenuRight")) ||
+					(list[0]->leftright_control && input.consumeBinaryToggle("MenuLeft")) ||
 					input.consumeBinaryToggle("AltMenuUp") ||
 					input.consumeBinaryToggle("AltMenuDown") ||
-					input.consumeBinaryToggle("AltMenuRight") ||
-					input.consumeBinaryToggle("AltMenuLeft")) {
+					(list[0]->leftright_control && input.consumeBinaryToggle("AltMenuRight")) ||
+					(list[0]->leftright_control && input.consumeBinaryToggle("AltMenuLeft"))) {
 					selection = 0;
 					scrollToSelection();
 					auto entry = list[selection];
@@ -1153,11 +1170,40 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 					}
 				}
 			} else {
-				if (input.consumeBinaryToggle("MenuUp") || input.consumeBinaryToggle("AltMenuUp") ||
-				    input.consumeBinaryToggle("MenuLeft") || input.consumeBinaryToggle("AltMenuLeft")) {
-					--selection;
-					if (selection < 0) {
-						selection = (int)list.size() - 1;
+				entry_t* entryCurrent = nullptr;
+				if ( selection >= 0 && selection < list.size() )
+				{
+					entryCurrent = list[selection];
+				}
+				if (input.consumeBinaryToggle("MenuUp") || input.consumeBinaryToggle("AltMenuUp") 
+					|| (entryCurrent && entryCurrent->leftright_control && input.consumeBinaryToggle("MenuLeft")) 
+					|| (entryCurrent && entryCurrent->leftright_control &&  input.consumeBinaryToggle("AltMenuLeft"))
+					) {
+					int selectionStart = selection;
+					bool leftright = input.binary("MenuLeft") || input.binary("AltMenuLeft");
+					while ( list.size() > 0 )
+					{
+						--selection;
+						if (selection < 0) {
+							selection = (int)list.size() - 1;
+						}
+						if ( selectionStart == selection )
+						{
+							break;
+						}
+						if ( !list[selection]->navigable )
+						{
+							continue;
+						}
+						else if ( leftright && !list[selection]->leftright_allow_nonclickable && list[selection]->movement_nonclickable )
+						{
+							continue;
+						}
+						else if ( !leftright && !list[selection]->updown_allow_nonclickable && list[selection]->movement_nonclickable )
+						{
+							continue;
+						}
+						break;
 					}
 					scrollToSelection();
 					auto entry = list[selection];
@@ -1165,11 +1211,36 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable
 						(*entry->selected)(*entry);
 					}
 				}
-				if (input.consumeBinaryToggle("MenuDown") || input.consumeBinaryToggle("AltMenuDown") ||
-				    input.consumeBinaryToggle("MenuRight") || input.consumeBinaryToggle("AltMenuRight")) {
-					++selection;
-					if (selection >= list.size()) {
-						selection = 0;
+				if (input.consumeBinaryToggle("MenuDown") || input.consumeBinaryToggle("AltMenuDown") 
+					|| (entryCurrent && entryCurrent->leftright_control && input.consumeBinaryToggle("MenuRight"))
+					|| (entryCurrent && entryCurrent->leftright_control && input.consumeBinaryToggle("AltMenuRight"))
+					) {
+					bool foundSelection = false;
+					int selectionStart = selection;
+					bool leftright = input.binary("MenuRight") || input.binary("AltMenuRight");
+					while ( list.size() > 0 )
+					{
+						++selection;
+						if ( selection >= list.size() ) {
+							selection = 0;
+						}
+						if ( selectionStart == selection )
+						{
+							break;
+						}
+						if ( !list[selection]->navigable )
+						{
+							continue;
+						}
+						else if ( leftright && !list[selection]->leftright_allow_nonclickable && list[selection]->movement_nonclickable )
+						{
+							continue;
+						}
+						else if ( !leftright && !list[selection]->updown_allow_nonclickable && list[selection]->movement_nonclickable )
+						{
+							continue;
+						}
+						break;
 					}
 					scrollToSelection();
 					auto entry = list[selection];
@@ -2754,4 +2825,34 @@ void Frame::setBlitChildren(bool _doBlit)
 			}
 		}
 	}
+}
+
+void Frame::scrollParent() {
+	if ( !allowScrollParent )
+	{
+		return;
+	}
+	Frame* fparent = static_cast<Frame*>(parent);
+	auto fActualSize = fparent->getActualSize();
+	auto fSize = fparent->getSize();
+
+	const auto y = std::max(0, size.y + scrollParentOffset.y);
+	const auto h = size.h + scrollParentOffset.h;
+	const auto x = std::max(0, size.x + scrollParentOffset.x);
+	const auto w = size.w + scrollParentOffset.w;
+
+	if ( y < fActualSize.y ) {
+		fActualSize.y = y;
+	}
+	else if ( size.y + h >= fActualSize.y + fSize.h ) {
+		fActualSize.y = (size.y + h) - fSize.h;
+		fActualSize.y = std::min(std::max(0, fActualSize.y), std::max(0, fActualSize.h - fSize.h));
+	}
+	if ( x < fActualSize.x ) {
+		fActualSize.x = x;
+	}
+	else if ( size.x + w >= fActualSize.x + fSize.w ) {
+		fActualSize.x = (size.x + w) - fSize.w;
+	}
+	fparent->setActualSize(fActualSize);
 }

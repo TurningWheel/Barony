@@ -52,12 +52,30 @@ void actLadder(Entity* my)
 		memset(mpPokeCooldown, 0, sizeof(mpPokeCooldown));
 	}
 
+#ifdef USE_FMOD
+	if ( LADDER_AMBIENCE == 0 )
+	{
+		LADDER_AMBIENCE--;
+		my->stopEntitySound();
+		my->entity_sound = playSoundEntityLocal(my, 149, 64);
+	}
+	if ( my->entity_sound )
+	{
+		bool playing = false;
+		my->entity_sound->isPlaying(&playing);
+		if ( !playing )
+		{
+			my->entity_sound = nullptr;
+		}
+	}
+#else
 	LADDER_AMBIENCE--;
 	if (LADDER_AMBIENCE <= 0)
 	{
 		LADDER_AMBIENCE = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal(my, 149, 64);
 	}
+#endif
 
 	// use ladder (climb)
 	if (multiplayer != CLIENT)
@@ -105,6 +123,8 @@ void actLadder(Entity* my)
 						messagePlayer(i, MESSAGE_INTERACTION, Language::get(507));
 					}
 					loadnextlevel = true;
+					Compendium_t::Events_t::previousCurrentLevel = currentlevel;
+					Compendium_t::Events_t::previousSecretlevel = secretlevel;
 					if (secretlevel)
 					{
 						switch (currentlevel)
@@ -330,6 +350,8 @@ void actPortal(Entity* my)
 					messagePlayer(i, MESSAGE_INTERACTION, Language::get(511));
 				}
 				loadnextlevel = true;
+				Compendium_t::Events_t::previousCurrentLevel = currentlevel;
+				Compendium_t::Events_t::previousSecretlevel = secretlevel;
 				if ( secretlevel )
 				{
 					switch ( currentlevel )
@@ -553,6 +575,9 @@ void actWinningPortal(Entity* my)
 						{
 							continue;
 						}
+
+						Compendium_t::Events_t::sendClientDataOverNet(c);
+
 						strcpy((char*)net_packet->data, "WING");
 						net_packet->data[4] = victory;
 						net_packet->data[5] = cutscene;
@@ -581,7 +606,7 @@ void actWinningPortal(Entity* my)
 
 	            if (cutscene == 1) { // classic herx ending
 					int race = RACE_HUMAN;
-					if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
+					if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->stat_appearance == 0 )
 					{
 						race = stats[clientnum]->playerRace;
 					}
@@ -609,7 +634,7 @@ void actWinningPortal(Entity* my)
 	            }
 	            else if (cutscene == 2) { // classic baphomet ending
 					int race = RACE_HUMAN;
-					if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
+					if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->stat_appearance == 0 )
 					{
 						race = stats[clientnum]->playerRace;
 					}
@@ -780,6 +805,9 @@ void Entity::actExpansionEndGamePortal()
 						{
 							continue;
 						}
+
+						Compendium_t::Events_t::sendClientDataOverNet(c);
+
 						strcpy((char*)net_packet->data, "WING");
 						net_packet->data[4] = victory;
 						net_packet->data[5] = 0;
@@ -807,7 +835,7 @@ void Entity::actExpansionEndGamePortal()
 				}
 
 				int race = RACE_HUMAN;
-				if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
+				if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->stat_appearance == 0 )
 				{
 					race = stats[clientnum]->playerRace;
 				}
@@ -1016,7 +1044,7 @@ void Entity::actMidGamePortal()
 				}
 
 				int race = RACE_HUMAN;
-				if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
+				if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->stat_appearance == 0 )
 				{
 					race = stats[clientnum]->playerRace;
 				}
@@ -1308,20 +1336,43 @@ void actCustomPortal(Entity* my)
 		}
 	}
 
-	my->portalAmbience--;
-	if ( my->portalAmbience <= 0 )
+	if ( my->portalCustomSpriteAnimationFrames > 0 )
 	{
-		if ( my->portalCustomSpriteAnimationFrames > 0 )
+		my->portalAmbience--;
+		if ( my->portalAmbience <= 0 )
 		{
 			my->portalAmbience = TICKS_PER_SECOND * 2; // portal whirr
 			playSoundEntityLocal(my, 154, 128);
 		}
-		else
+	}
+	else
+	{
+#ifdef USE_FMOD
+		if ( my->portalAmbience == 0 )
+		{
+			my->portalAmbience--;
+			my->stopEntitySound();
+			my->entity_sound = playSoundEntityLocal(my, 149, 64);
+		}
+		if ( my->entity_sound )
+		{
+			bool playing = false;
+			my->entity_sound->isPlaying(&playing);
+			if ( !playing )
+			{
+				my->entity_sound = nullptr;
+			}
+		}
+#else
+		my->portalAmbience--;
+		if ( my->portalAmbience <= 0 )
 		{
 			my->portalAmbience = TICKS_PER_SECOND * 30; // trap hum
 			playSoundEntityLocal(my, 149, 64);
 		}
+#endif
 	}
+
 
 	if ( my->portalCustomSpriteAnimationFrames > 0 )
 	{
@@ -1382,6 +1433,8 @@ void actCustomPortal(Entity* my)
 					messagePlayer(i, MESSAGE_INTERACTION, Language::get(507));
 				}
 				loadnextlevel = true;
+				Compendium_t::Events_t::previousCurrentLevel = currentlevel;
+				Compendium_t::Events_t::previousSecretlevel = secretlevel;
 				skipLevelsOnLoad = 0;
 
 				if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
@@ -1413,9 +1466,9 @@ void actCustomPortal(Entity* my)
 								tutorialLevels.at(number).completionTime = std::min(tutorialLevels.at(number).completionTime, completionTime);
 							}
 							achievementObserver.updateGlobalStat(
-								std::min(STEAM_GSTAT_TUTORIAL1_COMPLETED - 1 + number, static_cast<int>(STEAM_GSTAT_TUTORIAL10_COMPLETED)));
+								std::min(STEAM_GSTAT_TUTORIAL1_COMPLETED - 1 + number, static_cast<int>(STEAM_GSTAT_TUTORIAL10_COMPLETED)), -1);
 							achievementObserver.updateGlobalStat(
-								std::min(STEAM_GSTAT_TUTORIAL1_ATTEMPTS - 1 + number, static_cast<int>(STEAM_GSTAT_TUTORIAL10_ATTEMPTS)));
+								std::min(STEAM_GSTAT_TUTORIAL1_ATTEMPTS - 1 + number, static_cast<int>(STEAM_GSTAT_TUTORIAL10_ATTEMPTS)), -1);
 						}
 						completionTime = 0;
 						gameModeManager.Tutorial.writeToDocument();

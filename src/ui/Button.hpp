@@ -97,6 +97,7 @@ public:
 	const char*					getBackgroundActivated() const { return backgroundActivated.c_str(); }
 	SDL_Rect                    getTextOffset() const { return textOffset; }
 	Uint32						getColor() const { return color; }
+	Uint32						getTextColor() const { return textColor; }
 	const bool					isOntop() const { return ontop; }
 
 	void	setBorder(int _border) { border = _border; }

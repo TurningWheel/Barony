@@ -4326,6 +4326,7 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 		case INCUBUS:
 		case INSECTOID:
 		case GOATMAN:
+		case BUGBEAR:
 			creatureTier = 2;
 			break;
 		case CRYSTALGOLEM:
@@ -4868,6 +4869,58 @@ bool GenericGUIMenu::isItemIdentifiable(const Item* item)
 		return false;
 	}
 	return true;
+}
+
+bool GenericGUIMenu::isItemEnchantArmorable(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	if ( !item->identified )
+	{
+		return false;
+	}
+
+	if ( items[item->type].item_slot != NO_EQUIP )
+	{
+		if ( items[item->type].item_slot != EQUIPPABLE_IN_SLOT_AMULET
+			&& items[item->type].item_slot != EQUIPPABLE_IN_SLOT_RING
+			&& items[item->type].item_slot != EQUIPPABLE_IN_SLOT_WEAPON )
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool GenericGUIMenu::isItemEnchantWeaponable(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	if ( !item->identified )
+	{
+		return false;
+	}
+
+	if ( items[item->type].item_slot == EQUIPPABLE_IN_SLOT_WEAPON )
+	{
+		return true;
+		/*if ( itemCategory(item) == WEAPON || itemCategory(item) == THROWN )
+		{
+		}*/
+	}
+	else if ( item->type == BRASS_KNUCKLES
+		|| item->type == IRON_KNUCKLES
+		|| item->type == SPIKED_GAUNTLETS )
+	{
+		return true;
+	}
+
+	return false;
 }
 
 bool GenericGUIMenu::isItemRepairable(const Item* item, int repairScroll)
@@ -6011,6 +6064,14 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 		{
 			return isItemIdentifiable(item);
 		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_ENCHANT_ARMOR )
+		{
+			return isItemEnchantArmorable(item);
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_ENCHANT_WEAPON )
+		{
+			return isItemEnchantWeaponable(item);
+		}
 		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_REPAIR
 			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_CHARGING )
 		{
@@ -6161,8 +6222,104 @@ void GenericGUIMenu::identifyItem(Item* item)
 		return;
 	}
 
+	if ( gui_player >= 0 && gui_player < MAXPLAYERS && players[gui_player]->isLocalPlayer() )
+	{
+		if ( !item->identified )
+		{
+			Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_APPRAISED, item->type, 1);
+		}
+	}
 	item->identified = true;
 	messagePlayer(gui_player, MESSAGE_MISC, Language::get(320), item->description());
+	closeGUI();
+}
+
+void GenericGUIMenu::enchantItem(Item* item)
+{
+	if ( !item )
+	{
+		return;
+	}
+	if ( !shouldDisplayItemInGUI(item) )
+	{
+		messagePlayer(gui_player, MESSAGE_MISC, Language::get(6307), item->getName());
+		return;
+	}
+
+	if ( itemEffectItemBeatitude >= 0 )
+	{
+		if ( gui_player >= 0 && gui_player < MAXPLAYERS && players[gui_player]->isLocalPlayer() )
+		{
+			Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_BLESSED_TOTAL, item->type, 1);
+		}
+		item->beatitude += 1 + itemEffectItemBeatitude;
+		if ( itemEffectItemBeatitude == 0 )
+		{
+			messagePlayer(gui_player, MESSAGE_HINT, Language::get(859), item->getName()); // glows blue
+		}
+		else if ( itemEffectItemBeatitude >= 0 )
+		{
+			messagePlayer(gui_player, MESSAGE_HINT, Language::get(860), item->getName()); // glows violently blue
+		}
+
+		if ( multiplayer == CLIENT )
+		{
+			Item** slot = itemSlot(stats[gui_player], item);
+			int armornum = -1;
+			if ( slot )
+			{
+				if ( slot == &stats[gui_player]->weapon )
+				{
+					armornum = 0;
+				}
+				else if ( slot == &stats[gui_player]->helmet )
+				{
+					armornum = 1;
+				}
+				else if ( slot == &stats[gui_player]->breastplate )
+				{
+					armornum = 2;
+				}
+				else if ( slot == &stats[gui_player]->gloves )
+				{
+					armornum = 3;
+				}
+				else if ( slot == &stats[gui_player]->shoes )
+				{
+					armornum = 4;
+				}
+				else if ( slot == &stats[gui_player]->shield )
+				{
+					armornum = 5;
+				}
+				else if ( slot == &stats[gui_player]->cloak )
+				{
+					armornum = 6;
+				}
+				else if ( slot == &stats[gui_player]->mask )
+				{
+					armornum = 7;
+				}
+				else if ( slot == &stats[gui_player]->mask )
+				{
+					armornum = 7;
+				}
+			}
+			if ( armornum >= 0 )
+			{
+				strcpy((char*)net_packet->data, "BEAT");
+				net_packet->data[4] = gui_player;
+				net_packet->data[5] = armornum;
+				net_packet->data[6] = item->beatitude + 100;
+				SDLNet_Write16((Sint16)item->type, &net_packet->data[7]);
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 9;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+				//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+			}
+		}
+	}
 	closeGUI();
 }
 
@@ -6184,6 +6341,7 @@ void GenericGUIMenu::repairItem(Item* item)
 	{
 		if ( itemCategory(item) == MAGICSTAFF )
 		{
+			Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_MAGICSTAFF_RECHARGED, item->type, 1);
 			if ( item->status == BROKEN )
 			{
 				if ( itemEffectItemBeatitude > 0 )
@@ -6233,6 +6391,7 @@ void GenericGUIMenu::repairItem(Item* item)
 				item->status = static_cast<Status>(std::min(item->status + 2 + itemEffectItemBeatitude, static_cast<int>(EXCELLENT)));
 			}
 		}
+		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_REPAIRS, item->type, 1);
 		messagePlayer(gui_player, MESSAGE_MISC, Language::get(872), item->getName());
 	}
 	closeGUI();
@@ -6447,7 +6606,7 @@ void GenericGUIMenu::openGUI(int type, Item* effectItem, int effectBeatitude, in
 			{
 				continue;
 			}
-			spell_t* spell = getSpellFromItem(gui_player, item);
+			spell_t* spell = getSpellFromItem(gui_player, item, false);
 			if ( spell && spell->ID == usingSpellID )
 			{
 				effectItem = item;
@@ -6497,6 +6656,14 @@ void GenericGUIMenu::openGUI(int type, Item* effectItem, int effectBeatitude, in
 		if ( itemEffectItemType == SCROLL_IDENTIFY )
 		{
 			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SCROLL_IDENTIFY;
+		}
+		else if ( itemEffectItemType == SCROLL_ENCHANTWEAPON )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SCROLL_ENCHANT_WEAPON;
+		}
+		else if ( itemEffectItemType == SCROLL_ENCHANTARMOR )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SCROLL_ENCHANT_ARMOR;
 		}
 		else if ( usingSpellID == SPELL_IDENTIFY )
 		{
@@ -6672,6 +6839,17 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 			identifyItem(item);
 			return true;
 		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_ENCHANT_WEAPON
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_ENCHANT_ARMOR )
+		{
+			if ( itemEffectScrollItem && itemCategory(itemEffectScrollItem) == SCROLL )
+			{
+				messagePlayer(gui_player, MESSAGE_INVENTORY, Language::get(848)); // as you read the scroll it disappears...
+				consumeItem(itemEffectScrollItem, gui_player);
+			}
+			enchantItem(item);
+			return true;
+		}
 		return false;
 	}
 	else if ( guiType == GUI_TYPE_ALCHEMY )
@@ -6734,7 +6912,10 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 			{
 				if ( tinkeringIsItemRepairable(item, gui_player) )
 				{
-					tinkeringRepairItem(item);
+					if ( tinkeringRepairItem(item) )
+					{
+						Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_TINKERKIT_REPAIRS, TOOL_TINKERING_KIT, 1);
+					}
 				}
 			}
 			else if ( tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
@@ -7851,6 +8032,8 @@ void GenericGUIMenu::alchemyCombinePotions()
 
 	if ( explodeSelf && players[gui_player] && players[gui_player]->entity )
 	{
+		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_ALEMBIC_EXPLOSIONS, TOOL_ALEMBIC, 1);
+
 		// hurt.
 		alchemyAddRecipe(gui_player, basePotionType, secondaryPotionType, TOOL_BOMB, true);
 		if ( multiplayer == CLIENT )
@@ -7934,6 +8117,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 				if ( result == POTION_WATER && !duplicateSucceed )
 				{
 					messagePlayer(gui_player, MESSAGE_MISC, Language::get(3356));
+					Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_ALEMBIC_DUPLICATION_FAIL, TOOL_ALEMBIC, 1);
 				}
 				else if ( newPotion )
 				{
@@ -7945,12 +8129,31 @@ void GenericGUIMenu::alchemyCombinePotions()
 						newPotion->status = duplicatedPotion->status;
 					}
 					messagePlayer(gui_player, MESSAGE_MISC, Language::get(3352), newPotion->description());
+					if ( duplicateSucceed )
+					{
+						Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_ALEMBIC_DUPLICATED, TOOL_ALEMBIC, 1);
+					}
 				}
 			}
 			else
 			{
 				messagePlayer(gui_player, MESSAGE_MISC, Language::get(3352), newPotion->description());
 				steamStatisticUpdate(STEAM_STAT_IN_THE_MIX, STEAM_STAT_INT, 1);
+				if ( samePotion )
+				{
+					Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_ALEMBIC_DECANTED, TOOL_ALEMBIC, 1);
+				}
+				else
+				{
+					Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_ALEMBIC_BREWED, TOOL_ALEMBIC, 1);
+
+					if ( result != POTION_SICKNESS && result != POTION_WATER )
+					{
+						achievementObserver.updatePlayerAchievement(gui_player, // clientnum intentional for to include splitscreen
+							AchievementObserver::BARONY_ACH_BY_THE_BOOK,
+							AchievementObserver::BY_THE_BOOK_BREW);
+					}
+				}
 			}
 
 			if ( newPotion )
@@ -8019,6 +8222,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 				Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
 				itemPickup(gui_player, emptyBottle);
 				messagePlayer(gui_player, MESSAGE_MISC, Language::get(3351), items[POTION_EMPTY].getIdentifiedName());
+				Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_BOTTLE_FROM_BREWING, POTION_EMPTY, 1);
 				free(emptyBottle);
 			}
 			if ( raiseSkill && local_rng.rand() % 2 == 0 )
@@ -8398,6 +8602,8 @@ bool GenericGUIMenu::tinkeringCraftItem(Item* item)
 	{
 		Item* pickedUp = itemPickup(gui_player, crafted);
 		messagePlayer(gui_player, MESSAGE_MISC, Language::get(3668), crafted->description());
+		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_TINKERKIT_CRAFTS, TOOL_TINKERING_KIT, 1);
+		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_GADGET_CRAFTED, crafted->type, 1);
 		free(crafted);
 		return true;
 	}
@@ -8511,10 +8717,26 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 				{
 					Uint32 color = makeColorRGB(0, 255, 0);
 					messagePlayerColor(player, MESSAGE_INVENTORY, color, Language::get(3665), metal + tinkeringBulkSalvageMetalScrap, items[pickedUp->type].getIdentifiedName());
+					if ( players[player]->isLocalPlayer() )
+					{
+						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TINKERKIT_METAL_SCRAPPED, TOOL_TINKERING_KIT, metal + tinkeringBulkSalvageMetalScrap);
+						if ( item && item->type == TOOL_DETONATOR_CHARGE )
+						{
+							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_DETONATOR_SCRAPPED_METAL, TOOL_DETONATOR_CHARGE, metal + tinkeringBulkSalvageMetalScrap);
+						}
+					}
 				}
 				else
 				{
 					messagePlayer(player, MESSAGE_MISC, Language::get(3665), metal + tinkeringBulkSalvageMetalScrap, items[pickedUp->type].getIdentifiedName());
+					if ( players[player]->isLocalPlayer() )
+					{
+						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TINKERKIT_METAL_SCRAPPED, TOOL_TINKERING_KIT, metal + tinkeringBulkSalvageMetalScrap);
+						if ( item && item->type == TOOL_DETONATOR_CHARGE )
+						{
+							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_DETONATOR_SCRAPPED_METAL, TOOL_DETONATOR_CHARGE, metal + tinkeringBulkSalvageMetalScrap);
+						}
+					}
 				}
 			}
 			else
@@ -8537,10 +8759,26 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 				{
 					Uint32 color = makeColorRGB(0, 255, 0);
 					messagePlayerColor(player, MESSAGE_INVENTORY, color, Language::get(3665), magic + tinkeringBulkSalvageMagicScrap, items[pickedUp->type].getIdentifiedName());
+					if ( players[player]->isLocalPlayer() )
+					{
+						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TINKERKIT_MAGIC_SCRAPPED, TOOL_TINKERING_KIT, magic + tinkeringBulkSalvageMagicScrap);
+						if ( item && item->type == TOOL_DETONATOR_CHARGE )
+						{
+							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_DETONATOR_SCRAPPED_MAGIC, TOOL_DETONATOR_CHARGE, magic + tinkeringBulkSalvageMagicScrap);
+						}
+					}
 				}
 				else
 				{
 					messagePlayer(player, MESSAGE_MISC, Language::get(3665), magic + tinkeringBulkSalvageMagicScrap, items[pickedUp->type].getIdentifiedName());
+					if ( players[player]->isLocalPlayer() )
+					{
+						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TINKERKIT_MAGIC_SCRAPPED, TOOL_TINKERING_KIT, magic + tinkeringBulkSalvageMagicScrap);
+						if ( item && item->type == TOOL_DETONATOR_CHARGE )
+						{
+							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_DETONATOR_SCRAPPED_MAGIC, TOOL_DETONATOR_CHARGE, magic + tinkeringBulkSalvageMagicScrap);
+						}
+					}
 				}
 			}
 			else
@@ -8653,6 +8891,14 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 		}
 	}
 
+	if ( players[player]->isLocalPlayer() && didCraft )
+	{
+		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_TINKERKIT_SALVAGED, TOOL_TINKERING_KIT, 1);
+		if ( item && item->type == TOOL_DETONATOR_CHARGE )
+		{
+			Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_DETONATOR_SCRAPPED, TOOL_DETONATOR_CHARGE, 1);
+		}
+	}
 	if ( !outsideInventory && didCraft )
 	{
 		consumeItem(item, player);
@@ -10116,6 +10362,8 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 
 			if ( tinkeringConsumeMaterialsForRepair(item, false) )
 			{
+				Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_REPAIRS, item->type, 1);
+
 				int repairedStatus = std::min(static_cast<Status>(item->status + 1), EXCELLENT);
 				item->status = static_cast<Status>(repairedStatus);
 				messagePlayer(gui_player, MESSAGE_MISC, Language::get(872), item->getName());
@@ -10427,6 +10675,7 @@ int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
 
 	if ( durability - usageCost < 0 )
 	{
+		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_FEATHER_CHARGE_USED, ENCHANTED_FEATHER, durability);
 		toDegrade->status = BROKEN;
 		toDegrade->appearance = 0;
 	}
@@ -10434,6 +10683,7 @@ int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
 	{
 		scribingLastUsageDisplayTimer = 200;
 		scribingLastUsageAmount = usageCost;
+		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_FEATHER_CHARGE_USED, ENCHANTED_FEATHER, scribingLastUsageAmount);
 		toDegrade->appearance -= usageCost;
 		if ( toDegrade->appearance % ENCHANTED_FEATHER_MAX_DURABILITY == 0 )
 		{
@@ -10661,6 +10911,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			{
 				steamStatisticUpdate(STEAM_STAT_ROLL_THE_BONES, STEAM_STAT_INT, 1);
 			}
+			Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_FEATHER_ENSCRIBED, ENCHANTED_FEATHER, 1);
 			for ( int i = 0; i < NUMLABELS; ++i )
 			{
 				if ( label == scroll_label[i] )
@@ -10728,6 +10979,9 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 				}
 			}
 		}
+
+		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_FEATHER_SPELLBOOKS, ENCHANTED_FEATHER, 1);
+
 		int repairedStatus = std::min(static_cast<Status>(item->status + 1), EXCELLENT);
 		bool isEquipped = itemIsEquipped(item, gui_player);
 		item->status = static_cast<Status>(repairedStatus);
@@ -11035,12 +11289,26 @@ void EnemyHPDamageBarHandler::EnemyHPDetails::updateWorldCoordinates()
 			worldX = entity->lerpRenderState.x.position * 16.0;
 			worldY = entity->lerpRenderState.y.position * 16.0;
 			worldZ = entity->lerpRenderState.z.position + enemyBarSettings.getHeightOffset(entity);
+			if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == BAT_SMALL )
+			{
+				if ( entity->bodyparts.size() > 0 )
+				{
+					worldZ += entity->bodyparts[0]->lerpRenderState.z.position;
+				}
+			}
 		}
 		else
 		{
 			worldX = entity->x;
 			worldY = entity->y;
 			worldZ = entity->z + enemyBarSettings.getHeightOffset(entity);
+			if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == BAT_SMALL )
+			{
+				if ( entity->bodyparts.size() > 0 )
+				{
+					worldZ += entity->bodyparts[0]->z;
+				}
+			}
 		}
 		if ( entity->behavior == &actDoor && entity->flags[PASSABLE] )
 		{
@@ -11053,7 +11321,13 @@ void EnemyHPDamageBarHandler::EnemyHPDetails::updateWorldCoordinates()
 				worldX -= 5;
 			}
 		}
-		if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == MIMIC )
+		if ( entity->behavior == &actMonster 
+			&& entity->monsterAttack == MONSTER_POSE_MAGIC_WINDUP2
+			&& entity->getMonsterTypeFromSprite() == SLIME )
+		{
+			worldZ += entity->focalz / 2;
+		}
+		else if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == MIMIC )
 		{
 			if ( entity->isInertMimic() )
 			{
@@ -14316,7 +14590,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	}
 	alchFrame->setSize(alchFramePos);
 
-	if ( keystatus[SDLK_j] && enableDebugKeys )
+	/*if ( keystatus[SDLK_j] && enableDebugKeys )
 	{
 		if ( keystatus[SDLK_LSHIFT] )
 		{
@@ -14360,7 +14634,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 			}
 		}
 		keystatus[SDLK_j] = 0;
-	}
+	}*/
 	/*if ( keystatus[SDLK_H] && enableDebugKeys )
 	{
 		keystatus[SDLK_H] = 0;
@@ -20573,6 +20847,50 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 				result = ITEMFX_ACTION_INVALID_ITEM;
 			}
 		}
+		else if ( currentMode == ITEMFX_MODE_SCROLL_ENCHANT_ARMOR )
+		{
+			if ( itemCategory(item) == SPELL_CAT )
+			{
+				result = ITEMFX_ACTION_INVALID_ITEM;
+			}
+			else if ( !item->identified )
+			{
+				result = ITEMFX_ACTION_NOT_IDENTIFIED_YET;
+			}
+			else
+			{
+				if ( parentGUI.isItemEnchantArmorable(item) )
+				{
+					result = ITEMFX_ACTION_OK;
+				}
+				else
+				{
+					result = ITEMFX_ACTION_INVALID_ITEM;
+				}
+			}
+		}
+		else if ( currentMode == ITEMFX_MODE_SCROLL_ENCHANT_WEAPON )
+		{
+			if ( itemCategory(item) == SPELL_CAT )
+			{
+				result = ITEMFX_ACTION_INVALID_ITEM;
+			}
+			else if ( !item->identified )
+			{
+				result = ITEMFX_ACTION_NOT_IDENTIFIED_YET;
+			}
+			else
+			{
+				if ( parentGUI.isItemEnchantWeaponable(item) )
+				{
+					result = ITEMFX_ACTION_OK;
+				}
+				else
+				{
+					result = ITEMFX_ACTION_INVALID_ITEM;
+				}
+			}
+		}
 		else if ( currentMode == ITEMFX_MODE_SCROLL_REPAIR )
 		{
 			if ( itemCategory(item) == SPELL_CAT )
@@ -21114,7 +21432,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 			if ( item && item->type == SPELL_ITEM )
 			{
 				isSpell = true;
-				spell = getSpellFromItem(parentGUI.getPlayer(), item);
+				spell = getSpellFromItem(parentGUI.getPlayer(), item, false);
 				if ( spell )
 				{
 					spellID = spell->ID;
@@ -21231,7 +21549,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 			{
 				if ( parentGUI.itemEffectScrollItem && parentGUI.itemEffectScrollItem->type == SPELL_ITEM )
 				{
-					if ( spell_t* spell = getSpellFromItem(parentGUI.gui_player, parentGUI.itemEffectScrollItem) )
+					if ( spell_t* spell = getSpellFromItem(parentGUI.gui_player, parentGUI.itemEffectScrollItem, false) )
 					{
 						if ( node_t* spellImageNode = ItemTooltips.getSpellNodeFromSpellID(spell->ID) )
 						{
@@ -21489,6 +21807,12 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 					case ITEMFX_MODE_SCROLL_IDENTIFY:
 						actionPromptTxt->setText(Language::get(4208));
 						break;
+					case ITEMFX_MODE_SCROLL_ENCHANT_ARMOR:
+						actionPromptTxt->setText(Language::get(6305));
+						break;
+					case ITEMFX_MODE_SCROLL_ENCHANT_WEAPON:
+						actionPromptTxt->setText(Language::get(6304));
+						break;
 					case ITEMFX_MODE_SPELL_IDENTIFY:
 						actionPromptTxt->setText(Language::get(4208));
 						break;
@@ -21634,6 +21958,12 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 				break;
 			case ITEMFX_MODE_SCROLL_IDENTIFY:
 				actionPromptUnselectedTxt->setText(Language::get(4209));
+				break;
+			case ITEMFX_MODE_SCROLL_ENCHANT_ARMOR:
+				actionPromptUnselectedTxt->setText(Language::get(6306));
+				break;
+			case ITEMFX_MODE_SCROLL_ENCHANT_WEAPON:
+				actionPromptUnselectedTxt->setText(Language::get(6306));
 				break;
 			case ITEMFX_MODE_SCROLL_REMOVECURSE:
 				actionPromptUnselectedTxt->setText(Language::get(4205));
@@ -22302,7 +22632,9 @@ std::string CalloutRadialMenu::getCalloutMessage(const IconEntry::IconEntryText_
 			{
 				char shortname[32];
 				stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
-				snprintf(buf, sizeof(buf), text_map.worldMsgEmote.c_str(), shortname, object);
+				std::string nameStr = shortname;
+				nameStr = messageSanitizePercentSign(nameStr, nullptr);
+				snprintf(buf, sizeof(buf), text_map.worldMsgEmote.c_str(), nameStr.c_str(), object);
 			}
 		}
 		else
@@ -22316,7 +22648,9 @@ std::string CalloutRadialMenu::getCalloutMessage(const IconEntry::IconEntryText_
 			{
 				char shortname[32];
 				stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
-				snprintf(buf, sizeof(buf), text_map.worldMsgEmote.c_str(), shortname);
+				std::string nameStr = shortname;
+				nameStr = messageSanitizePercentSign(nameStr, nullptr);
+				snprintf(buf, sizeof(buf), text_map.worldMsgEmote.c_str(), nameStr.c_str());
 			}
 		}
 		return buf;
@@ -22336,6 +22670,7 @@ std::string CalloutRadialMenu::getCalloutMessage(const IconEntry::IconEntryText_
 				char shortname[32];
 				stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
 				std::string playerSays = shortname;
+				playerSays = messageSanitizePercentSign(playerSays, nullptr);
 				playerSays += ": ";
 				snprintf(buf, sizeof(buf), text_map.worldMsgSays.c_str(), playerSays.c_str(), object);
 			}
@@ -22352,6 +22687,7 @@ std::string CalloutRadialMenu::getCalloutMessage(const IconEntry::IconEntryText_
 				char shortname[32];
 				stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
 				std::string playerSays = shortname;
+				playerSays = messageSanitizePercentSign(playerSays, nullptr);
 				playerSays += ": ";
 				snprintf(buf, sizeof(buf), text_map.worldMsgSays.c_str(), playerSays.c_str());
 			}
@@ -22467,6 +22803,7 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 			char shortname[32];
 			stringCopy(shortname, stats[toPlayer]->name, sizeof(shortname), 22);
 			targetPlayerName = shortname;
+			targetPlayerName = messageSanitizePercentSign(targetPlayerName, nullptr);
 		}
 
 		auto& textMap = findIcon->second.text_map[key];
@@ -22501,8 +22838,10 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 			{
 				char shortname[32];
 				stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
+				std::string nameStr = shortname;
+				nameStr = messageSanitizePercentSign(nameStr, nullptr);
 				char buf[128];
-				snprintf(buf, sizeof(buf), textMap.worldMsgEmoteToYou.c_str(), shortname);
+				snprintf(buf, sizeof(buf), textMap.worldMsgEmoteToYou.c_str(), nameStr.c_str());
 				return buf;
 			}
 			else
@@ -22746,6 +23085,7 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 				char shortname[32];
 				stringCopy(shortname, stats[entity->skill[2]]->name, sizeof(shortname), 22);
 				targetPlayerName = shortname;
+				targetPlayerName = messageSanitizePercentSign(targetPlayerName, nullptr);
 			}
 
 			key = "player_wave";
@@ -22782,8 +23122,10 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 				{
 					char shortname[32];
 					stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
+					std::string nameStr = shortname;
+					nameStr = messageSanitizePercentSign(nameStr, nullptr);
 					char buf[128];
-					snprintf(buf, sizeof(buf), textMap.worldMsgEmoteToYou.c_str(), shortname);
+					snprintf(buf, sizeof(buf), textMap.worldMsgEmoteToYou.c_str(), nameStr.c_str());
 					return buf;
 				}
 				else
@@ -22802,6 +23144,7 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 				char shortname[32];
 				stringCopy(shortname, stats[entity->skill[2]]->name, sizeof(shortname), 22);
 				targetPlayerName = shortname;
+				targetPlayerName = messageSanitizePercentSign(targetPlayerName, nullptr);
 			}
 
 			if ( cmd == CALLOUT_CMD_THANKS )
@@ -22845,8 +23188,10 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 				{
 					char shortname[32];
 					stringCopy(shortname, stats[getPlayer()]->name, sizeof(shortname), 22);
+					std::string nameStr = shortname;
+					nameStr = messageSanitizePercentSign(nameStr, nullptr);
 					char buf[128];
-					snprintf(buf, sizeof(buf), textMap.worldMsgEmoteToYou.c_str(), shortname);
+					snprintf(buf, sizeof(buf), textMap.worldMsgEmoteToYou.c_str(), nameStr.c_str());
 					return buf;
 				}
 				else
@@ -23290,6 +23635,12 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 	}
 	case CALLOUT_TYPE_SHRINE:
 		key = "shrine";
+		break;
+	case CALLOUT_TYPE_BELL:
+		key = "bell";
+		break;
+	case CALLOUT_TYPE_DAEDALUS:
+		key = "daedalus";
 		break;
 	case CALLOUT_TYPE_EXIT:
 		key = "exit";
@@ -23845,6 +24196,14 @@ CalloutRadialMenu::CalloutType CalloutRadialMenu::getCalloutTypeForEntity(const 
 	else if ( parent->behavior == &::actTeleportShrine /*|| parent->behavior == &::actSpellShrine*/ )
 	{
 		type = CALLOUT_TYPE_SHRINE;
+	}
+	else if ( parent->behavior == &::actDaedalusShrine )
+	{
+		type = CALLOUT_TYPE_DAEDALUS;
+	}
+	else if ( parent->behavior == &actBell )
+	{
+		type = CALLOUT_TYPE_BELL;
 	}
 	else if ( parent->behavior == &actBomb || parent->behavior == &actBeartrap )
 	{
@@ -24488,6 +24847,13 @@ void CalloutRadialMenu::update()
 				callout.y = entity->lerpRenderState.y.position * 16.0;
 				callout.z = entity->lerpRenderState.z.position + enemyBarSettings.getHeightOffset(entity);
 				callout.z -= 4;
+				if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == BAT_SMALL )
+				{
+					if ( entity->bodyparts.size() > 0 )
+					{
+						callout.z += entity->bodyparts[0]->lerpRenderState.z.position;
+					}
+				}
 			}
 			else
 			{
@@ -24495,6 +24861,13 @@ void CalloutRadialMenu::update()
 				callout.y = entity->y;
 				callout.z = entity->z + enemyBarSettings.getHeightOffset(entity);
 				callout.z -= 4;
+				if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == BAT_SMALL )
+				{
+					if ( entity->bodyparts.size() > 0 )
+					{
+						callout.z += entity->bodyparts[0]->z;
+					}
+				}
 			}
 		}
 		else if ( callout.entityUid != 0 )
@@ -24650,6 +25023,10 @@ bool CalloutRadialMenu::createParticleCallout(Entity* entity, CalloutRadialMenu:
 	if ( players[getPlayer()]->ghost.isActive() )
 	{
 		players[getPlayer()]->ghost.createBounceAnimate();
+		if ( players[getPlayer()]->isLocalPlayer() )
+		{
+			Compendium_t::Events_t::eventUpdateMonster(getPlayer(), Compendium_t::CPDM_GHOST_PINGS, players[getPlayer()]->ghost.my, 1);
+		}
 	}
 
 	return callout.doMessage;
@@ -24768,6 +25145,10 @@ bool CalloutRadialMenu::createParticleCallout(real_t x, real_t y, real_t z, Uint
 	if ( players[getPlayer()]->ghost.isActive() )
 	{
 		players[getPlayer()]->ghost.createBounceAnimate();
+		if ( players[getPlayer()]->isLocalPlayer() )
+		{
+			Compendium_t::Events_t::eventUpdateMonster(getPlayer(), Compendium_t::CPDM_GHOST_PINGS, players[getPlayer()]->ghost.my, 1);
+		}
 	}
 
 	return callout.doMessage;
@@ -25966,6 +26347,13 @@ bool CalloutRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updat
 			strcat(interactText, Language::get(4309)); // "shrine"
 		}
 	}
+	else if ( (selectedEntity.behavior == &::actDaedalusShrine) && interactWorld )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(6261)); // "shrine"
+		}
+	}
 	else if ( (selectedEntity.behavior == &actTeleporter) && interactWorld )
 	{
 		if ( updateInteractText )
@@ -25982,6 +26370,13 @@ bool CalloutRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updat
 			default:
 				break;
 			}
+		}
+	}
+	else if ( (selectedEntity.behavior == &actBell) && interactWorld )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(6270)); // "bell"
 		}
 	}
 	else if ( selectedEntity.behavior == &actLadder )
@@ -26191,7 +26586,9 @@ bool CalloutRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updat
 			{
 				char shortname[32];
 				stringCopy(shortname, stats[playernum]->name, sizeof(shortname), 22);
-				strcat(interactText, shortname);
+				std::string nameStr = shortname;
+				nameStr = messageSanitizePercentSign(nameStr, nullptr);
+				strcat(interactText, nameStr.c_str());
 			}
 		}
 	}

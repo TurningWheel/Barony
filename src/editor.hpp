@@ -21,6 +21,7 @@ static const unsigned int MAXHEIGHT = 2000;
 static const unsigned int MINWIDTH = 1;
 static const unsigned int MINHEIGHT =  1;
 
+extern std::map<int, std::string> modelFileNames;
 extern int drawlayer, drawx, drawy, odrawx, odrawy;
 extern int alllayers;
 extern int scroll;

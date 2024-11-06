@@ -38,7 +38,7 @@ Stat* Stat::copyStats()
 
 	newStat->type = this->type;
 	newStat->sex = this->sex;
-	newStat->appearance = this->appearance;
+	newStat->stat_appearance = this->stat_appearance;
 	strcpy(newStat->name, this->name);
 	strcpy(newStat->obituary, this->obituary);
 

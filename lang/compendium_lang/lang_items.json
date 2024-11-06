@@ -1,0 +1,685 @@
+{
+    "alembic": {
+        "blurb": [
+            "The ALEMBIC allows an alchemist to extract",
+            "and combine two fluids together, usually",
+            "resulting in a different effect.",
+            "",
+            "Skilled brewers use it to make",
+            "more powerful concoctions."
+        ]
+    },
+    "arbalest": {
+        "blurb": [
+            "The arbalest is a specialized crossbow.",
+            "While it behaves similarly to its smaller",
+            "counterpart, it is slow to rearm, has a",
+            "short range, and massive recoil.",
+            "",
+            "A fine tradeoff for its great strength."
+        ]
+    },
+    "axes": {
+        "blurb": [
+            "What they lack in elegance, AXES make",
+            "up for by delivering blows that take the",
+            "enemy's breath away.",
+            "Ideal against lightly armored foes,",
+            "the heavy blade always bites, even",
+            "against heavily armored targets."
+        ]
+    },
+    "backpacks": {
+        "blurb": [
+            "Elder adventurers usually recommend",
+            "against hoarding items, as death catches",
+            "up quickly to those who move slowly.",
+            "",
+            "Some professions insist that they simply",
+            "need BACKPACKS for extra storage."
+        ]
+    },
+    "beartrap": {
+        "blurb": [
+            "A cruel and somewhat crude device,",
+            "the beartrap snaps shut on the legs of",
+            "enemies, dealing a vicious bite.",
+            "Most are also snared by the trap,",
+            "opening them to attack until",
+            "the jaws release."
+        ]
+    },
+    "blood vials": {
+        "blurb": [
+            "With the proper technique, BLOOD can be",
+            "stolen from victims before being soiled",
+            "by the filthy dungeon floors.",
+            "",
+            "Only the accursed and damned",
+            "would have any use for it."
+        ]
+    },
+    "boomerang": {
+        "blurb": [
+            "Tales tell of a tribe that crafts",
+            "a weapon that always returns to its",
+            " owner when thrown.",
+            "Once battered and old, it is offered",
+            "to the firstborn. Those who restore",
+            "a BOOMERANG are said to be worthy."
+        ]
+    },
+    "booze": {
+        "blurb": [
+            "Potent booze can lift the spirits a",
+            "little and offer strength of confidence.",
+            "However sloppy aim, dull wit, and",
+            "a weak stomach may follow.",
+            "One must decide if booze",
+            "is a vice or a treat."
+        ]
+    },
+    "bows": {
+        "blurb": [
+            "Beloved by skirmishers and knaves alike,",
+            "bows of all varieties can fire arrows",
+            "to slay and pester enemies from afar.",
+            "",
+            "Expert hunters and rogues",
+            "keep special ammunition on hand."
+        ]
+    },
+    "chakrams and shurikens": {
+        "blurb": [
+            "The fine material allows a sharper edge",
+            "to these weapons, and their spin allows",
+            "them to ricochet off walls.",
+            "Crafty adventurers can take out",
+            "enemies from around corners!",
+            "A thrower's dream."
+        ]
+    },
+    "cheese and apples": {
+        "blurb": [
+            "Basic MORSELS of simple food, a",
+            "hungry adventurer must eat several",
+            "to satiate themselves.",
+            "One might only brave spoiled food if",
+            "already desperately hungry, or perhaps",
+            "lacking a refined palate."
+        ]
+    },
+    "cloaks & clothing": {
+        "blurb": [
+            "Mundane CLOTHING isn't as practical",
+            "as armor when faced with violence.",
+            "",
+            "But enchanted garments can convince",
+            "adventurers to adopt more lightweight",
+            "attire for its other benefits."
+        ]
+    },
+    "cream pie": {
+        "blurb": [
+            "A dungeon delicacy, sometimes rigged",
+            "to splatter into a hungry adventurer's",
+            "face, blinding them for a time.",
+            "",
+            "If one is not peckish, a PIE could be thrown",
+            "into an enemy's face to befuddle them."
+        ]
+    },
+    "crossbow": {
+        "blurb": [
+            "The crossbow is mechanically assisted,",
+            "allowing quick reloading and firing at",
+            "the pull of a trigger.",
+            "While it's lacking in range",
+            "compared to other bows, it can still",
+            "fire special ammunition."
+        ]
+    },
+    "crowns & headdresses": {
+        "blurb": [
+            "Rare adornments, reserved for the",
+            "politically or magically attuned.",
+            "",
+            "While seemingly symbolic in nature,",
+            "powerful symbols can make",
+            "a powerful impact."
+        ]
+    },
+    "crystal ammo": {
+        "blurb": [
+            "When you're looking for the finest,",
+            "sharpest, and most lethal serrated",
+            "barbs to harm any enemy, you can't",
+            "do better than CRYSTAL AMMO.",
+            "",
+            "An uncomplicated, superior missile."
+        ]
+    },
+    "crystal armor": {
+        "blurb": [
+            "CRYSTAL so rare would normally never be",
+            "used as protective armor, especially",
+            "given its fragility.",
+            "",
+            "Only an incredible bounty of magical",
+            "crystal would justify using it this way."
+        ]
+    },
+    "crystal shard": {
+        "blurb": [
+            "While CRYSTAL SHARDS are dimmer than",
+            "torches, their light is only visible to the",
+            "wielder, and they never burn out.",
+            "",
+            "However they are fragile, and using them",
+            "to block will cause them to shatter quickly."
+        ]
+    },
+    "death box": {
+        "blurb": [
+            "A locker containing all the worldly",
+            "possessions of a dead adventurer.",
+            "",
+            "Carrying it slows the carrier by 25%.",
+            "Once broken open, all the contents",
+            "immediately spill out."
+        ]
+    },
+    "defensive potions": {
+        "blurb": [
+            "DEFENSIVE POTIONS provide a generally",
+            "beneficial effect to those who drink them.",
+            "",
+            "When allies are in need, chuck a",
+            "helpful bottle at their face!"
+        ]
+    },
+    "djinnis brace": {
+        "blurb": [
+            "A traveler once found a lamp of wishes,",
+            "occupied by a furious Djinni.",
+            "",
+            "The traveler tried to free the Djinni",
+            "but its shackles were invulnerable.",
+            "Only a wish could grant its freedom."
+        ]
+    },
+    "dragons mail": {
+        "blurb": [
+            "Legend tells of a rivalry between a",
+            "dragon and the traveler of myth. As they",
+            "competed for fame, they became friends.",
+            "",
+            "When the dragon later died, it",
+            "offered its scales to the traveler."
+        ]
+    },
+    "dummybot": {
+        "blurb": [
+            "Originally devised as a portable and",
+            "durable training companion, DUMMYBOTS",
+            "have been magically attuned to irritate",
+            "and keep the attention of foes.",
+            "While distracted, adventurers can",
+            "can flank with less risk."
+        ]
+    },
+    "dyrnwyn": {
+        "blurb": [
+            "Legend tells of a sword that served",
+            "high-born citizens with noble quests,",
+            "offering fire and divine retribution.",
+            "",
+            "Age and mixed purposes may have dulled",
+            "its blade, but it can be restored."
+        ]
+    },
+    "empty bottle": {
+        "blurb": [
+            "These brittle vessels are best",
+            "used to collect the contents of",
+            "fountains and water pumps.",
+            "",
+            "A budding brewer needs all the potable",
+            "liquid they can get to experiment with."
+        ]
+    },
+    "face accessories": {
+        "blurb": [
+            "Adventurers may complement their role",
+            "with the right piece of eyewear, or by",
+            "holding something in their mouth.",
+            "",
+            "These items confer a variety of benefits,",
+            "but for some, style is more important."
+        ]
+    },
+    "fire and hunting ammo": {
+        "blurb": [
+            "Some ammo leaves a lasting impression.",
+            "",
+            "FIRE AMMO lights up the room and sets",
+            "enemies ablaze, but the debilitating",
+            "HUNTING AMMO can devastate beasts",
+            "while slowing and poisoning them."
+        ]
+    },
+    "fist weapons": {
+        "blurb": [
+            "Perfect for those who fear the untimely",
+            "breakage of a weapon, fist weapons are",
+            "gauntlets that add a bit more",
+            "bite to each punch.",
+            "The well-trained can stun an",
+            "enemy with a surprise strike."
+        ]
+    },
+    "gungnir": {
+        "blurb": [
+            "Legends say this spear was forged",
+            "for the gods so they may always",
+            "land perfect strikes.",
+            "",
+            "The untrained are deadly with GUNGNIR.",
+            "This weapon is usually well-guarded."
+        ]
+    },
+    "gyrobot": {
+        "blurb": [
+            "Conceived first by tinkerers as a",
+            "simple companion toy, the GYROBOT'S",
+            "function has grown to include",
+            "many useful tasks.",
+            "A skilled tinkerer can command",
+            "their pet to assist in many ways."
+        ]
+    },
+    "hats & hoods": {
+        "blurb": [
+            "Many professions and groups use iconic",
+            "headwear that are practical and stylish.",
+            "",
+            "Perform and signal your role to others",
+            "by donning the perfect HAT or HOOD."
+        ]
+    },
+    "iron armor": {
+        "blurb": [
+            "While heavier than leather, it is twice",
+            "as effective in protecting the wearer.",
+            "One must be strong to move quickly in IRON.",
+            "",
+            "Hamlet was originally known",
+            "for its rich iron mines."
+        ]
+    },
+    "khryselakatos": {
+        "blurb": [
+            "Favored by a legendary hunter,",
+            "KHRYSELAKATOS offers enchanted arrows",
+            "from its unbreaking string.",
+            "",
+            "Myths tell of its owner who was",
+            "stripped of godhood and banished."
+        ]
+    },
+    "leather armor": {
+        "blurb": [
+            "Lightweight, inexpensive, and common, most",
+            "adventurers would much rather wear",
+            "LEATHER than no armor at all.",
+            "",
+            "A full outfit of leather can prevent",
+            "substantial damage from weaker foes."
+        ]
+    },
+    "lockpick": {
+        "blurb": [
+            "Those skilled in tinkering can use these",
+            "simple tools to unlock chests and doors,",
+            "disarm arrow traps, or adjust the",
+            "springs of tinkered traps.",
+            "",
+            "Handy for dealing with dangerous devices."
+        ]
+    },
+    "maces": {
+        "blurb": [
+            "With a head designed to shatter and",
+            "crush rigid targets, MACES are reliable",
+            "weapons that destroy armor and can knock",
+            "the most armored enemies senseless.",
+            "In the right hands, enemies may not",
+            "get the chance to fight back."
+        ]
+    },
+    "mail & lore books": {
+        "blurb": [
+            "While magic users may be disappointed",
+            "when they seek power within these mundane",
+            "pages, curious adventurers enjoy reading",
+            "the inked words for clues.",
+            "",
+            "Paper also burns well when fed to a boiler."
+        ]
+    },
+    "masks & visors": {
+        "blurb": [
+            "Some adventurers use MASKS to conceal",
+            "or communicate their identity",
+            "",
+            "For others, practical facewear provides",
+            "benefits that help fulfill their role."
+        ]
+    },
+    "meat, fish, and bread": {
+        "blurb": [
+            "Hearty portions, treasured by hungry",
+            "dungeon dwellers. If desperate for",
+            "food, one may be able to eat up",
+            "to two servings in and be satisfied,",
+            "being careful not to over-eat."
+        ]
+    },
+    "mining pick": {
+        "blurb": [
+            "These handy tools easily chop through",
+            "the earth, making shortcuts and providing",
+            "access to hidden treasures.",
+            "",
+            "MINING PICKS break quickly but can make",
+            "all the difference when lost or trapped."
+        ]
+    },
+    "mirrors": {
+        "blurb": [
+            "While there's no proof that mirrors can",
+            "steal souls, they do appear to reflect both",
+            "mundane and magical realities.",
+            "",
+            "Some who gaze upon them learn more",
+            "about themselves than they'd expect."
+        ]
+    },
+    "mystic orb": {
+        "blurb": [
+            "An enigmatic sphere that teems",
+            "with magical power.",
+            "A proper pedestal would allow",
+            "its great power to be tapped, though",
+            "somebody is likely to pay dearly",
+            "for such a priceless artifact."
+        ]
+    },
+    "noisemaker": {
+        "blurb": [
+            "The spring-powered mechanism uses a",
+            "crude but clever design to generate",
+            "fascinating noise that draws the",
+            "attention of nearby enemies.",
+            "Great for distracting foes and",
+            "luring them into an ambush."
+        ]
+    },
+    "offensive potions": {
+        "blurb": [
+            "Many potions are useful for harming",
+            "foes, often with devastating effects,",
+            "also dealing damage when thrown.",
+            "",
+            "Adventurers can drink OFFENSIVE POTIONS,",
+            "but it is usually done in ignorance."
+        ]
+    },
+    "oracles treads": {
+        "blurb": [
+            "A traveler of ancient myth is said",
+            "to have entered a realm of darkness",
+            "which concealed all evil.",
+            "Witnesses wrote of the traveler feeling",
+            "vibrations in the ground to seek danger,",
+            "quickly conquering the realm."
+        ]
+    },
+    "parashu": {
+        "blurb": [
+            "Many may call their weapon PARASHU,",
+            "but one such eternal axe can be",
+            "restored to legendary lethality.",
+            "",
+            "It was once a weapon of gods and",
+            "is now found in lowly places."
+        ]
+    },
+    "polearms": {
+        "blurb": [
+            "Polearms offer leverage and balance,",
+            "proving especially effective against",
+            "large and heavy beasts.",
+            "",
+            "In skilled hands, attacks with these",
+            "weapons can keep foes back."
+        ]
+    },
+    "rocks & gems": {
+        "blurb": [
+            "All stones can be handy when you need",
+            "something to throw at a trap or enemy.",
+            "",
+            "But precious gems are beloved by",
+            "shopkeepers and automatons alike,",
+            "or anyone tempted by greed."
+        ]
+    },
+    "sentrybot and magic sentry": {
+        "blurb": [
+            "Using arcane crystal to bestow",
+            "rudimentary intelligence, tinkerers",
+            "have outfitted tripods with",
+            "missile-slinging heads.",
+            "A sentry that is left alone to fire at",
+            "enemies can deal devastating damage."
+        ]
+    },
+    "sharur": {
+        "blurb": [
+            "Legend tells of a wise one who traveled",
+            "from kingdom to kingdom offering advice.",
+            "",
+            "For a time, the kingdom would be",
+            "guaranteed to prosper, but the",
+            "advisor would always be exiled."
+        ]
+    },
+    "shields": {
+        "blurb": [
+            "Shields provide passive armor to",
+            "adventurers wielding them, but actively",
+            "blocking provides much more defense.",
+            "",
+            "Some shields provide additional",
+            "benefits while blocking."
+        ]
+    },
+    "silver and piercing ammo": {
+        "blurb": [
+            "Some ammo is the right choice",
+            "depending on the foe.",
+            "",
+            "PIERCING AMMO can penetrate the",
+            "strongest armor. Undead and demonic",
+            "enemies are more afraid of SILVER AMMO."
+        ]
+    },
+    "skeleton key": {
+        "blurb": [
+            "A locksmith managed to devise this",
+            "style of key which allows its user to",
+            "operate mundane doors and chests.",
+            "",
+            "While it can't do everything a",
+            "lockpick can, it requires no training."
+        ]
+    },
+    "slingshot": {
+        "blurb": [
+            "The most basic of missile weapons,",
+            "slingshots may not seem like much.",
+            "",
+            "But when one needs to fight at a distance,",
+            "one could do worse than flinging bullets",
+            "and running away."
+        ]
+    },
+    "sphinxs casque": {
+        "blurb": [
+            "Legend tells of a traveler who met",
+            "a Sphinx with an impossible riddle.",
+            "",
+            "The traveler thought for a moment, and",
+            "responded with a question that the",
+            "Sphinx could not answer."
+        ]
+    },
+    "steel armor": {
+        "blurb": [
+            "Stronger than iron, and only a little",
+            "heavier, one requires luck or wealth to",
+            "obtain and wear superior STEEL armor.",
+            "",
+            "The craft of STEEL is known to few smiths."
+        ]
+    },
+    "swift and springshot ammo": {
+        "blurb": [
+            "Turning the enemy into a pincushion",
+            "before they can get close is a",
+            "priority for many archers.",
+            "Lightweight SWIFT AMMO is faster to load,",
+            "while SPRINGSHOT AMMO is armed by",
+            "mechanists for powerful knockback."
+        ]
+    },
+    "swords": {
+        "blurb": [
+            "Deadly against soft targets, SWORDS are",
+            "ideal for one grisly task: cutting flesh.",
+            "Rigid, or tough hides may repel a slash,",
+            "but a masterful cut still draws blood."
+        ]
+    },
+    "teleportation trap": {
+        "blurb": [
+            "Like other tinkered traps, a lockpick",
+            "can make this ignore or detonate",
+            "on friendly targets.",
+            "But it's also configurable as a",
+            "TELEPORTATION destination, allowing",
+            "for controlled instant travel."
+        ]
+    },
+    "tin and tin opener": {
+        "blurb": [
+            "Tins hide away cooked, chopped vegetables",
+            "and meats of various kinds, offering an",
+            "invigorating and very filling meal.",
+            "",
+            "However, a tin opener is required, and",
+            "the grease inside can be a nuisance."
+        ]
+    },
+    "tinkered traps": {
+        "blurb": [
+            "TINKERED TRAPS can be deployed",
+            "on floors, walls, doors, and chests.",
+            "When disturbed, they detonate,",
+            "delivering their payload effect.",
+            "Many tinkerers rearm the spent",
+            "detonator to save a little scrap."
+        ]
+    },
+    "tinkering kit": {
+        "blurb": [
+            "The TINKERING KIT can break down",
+            "most gear into reusable parts.",
+            "",
+            "A skilled tinkerer can recombine them",
+            "into useful machines, each more efficient",
+            "when made by more skilled hands."
+        ]
+    },
+    "tomahawks & daggers": {
+        "blurb": [
+            "Weapons built especially for throwing,",
+            "these fly further and strike harder when",
+            "a bit more effort is put into each throw.",
+            "",
+            "Heavier than missile projectiles,",
+            "they also excel at penetrating armor."
+        ]
+    },
+    "tomalley": {
+        "blurb": [
+            "TOMALLEY, not to be confused with",
+            "a stuffed cornmeal snack, is a sludge",
+            "that serves as an invertebrate's liver.",
+            "Dungeon bugs often possess a small",
+            "amount of meat covered with",
+            "this edible substance."
+        ]
+    },
+    "torch and lantern": {
+        "blurb": [
+            "When wielded, these provide light.",
+            "Raise a TORCH or LANTERN to see a",
+            "little further, or block attacks!",
+            "",
+            "TORCHES & LANTERS slowly",
+            "degrade as they burn."
+        ]
+    },
+    "towel": {
+        "blurb": [
+            "While not seeming like much on its own,",
+            "in the right situation, a TOWEL can",
+            "be a lifesaver.",
+            "Towels make fine bandages",
+            "and clean up messes that might",
+            "ruin your next fight."
+        ]
+    },
+    "water": {
+        "blurb": [
+            "Fresh, clean WATER is a luxury",
+            "in the dungeons. It can satisfy an empty",
+            "stomach for a little while, and the brewer's",
+            "supply depends upon it.",
+            "It's also handy for washing",
+            "away certain magic effects."
+        ]
+    },
+    "whip": {
+        "blurb": [
+            "The specialty weapon of the Punisher,",
+            "skilled users can grasp weapons from",
+            "unwary hands with the whip.",
+            "",
+            "While it is slower to strike, it can",
+            "lash beyond the reach of other weapons."
+        ]
+    },
+    "wraiths gown": {
+        "blurb": [
+            "Seeking to master death, the traveler",
+            "of myth entered the Underworld.",
+            "There resided a spirit who longed for life.",
+            "",
+            "The traveler carried the spirit out,",
+            "but only its clothes crossed over."
+        ]
+    }
+}

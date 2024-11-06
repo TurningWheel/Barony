@@ -95,6 +95,11 @@ public:
         bool clickable = true;
 		bool pressed = false;
 		bool highlighted = false;
+		bool leftright_control = true;
+		bool leftright_allow_nonclickable = true;
+		bool updown_allow_nonclickable = true;
+		bool movement_nonclickable = false;
+		bool navigable = true;
 		Uint32 highlightTime = 0;
 		bool suicide = false;
 
@@ -307,6 +312,9 @@ public:
 	//! puts this frame on top of all others
 	void bringToTop();
 
+	//! scroll the parent frame (if any) to be within our bounds
+	virtual void scrollParent();
+
 	virtual type_t					getType() const override { return WIDGET_FRAME; }
 	const char*						getFont() const { return font.c_str(); }
 	const int						getBorder() const { return border; }
@@ -370,6 +378,9 @@ public:
 	void    setScrollWithLeftControls(const bool b) { scrollWithLeftControls = b; }
     void    setAccelerationX(const float x) { scrollAccelerationX = x; }
     void    setAccelerationY(const float y) { scrollAccelerationY = y; }
+	void	setListMenuCancelOverride(const bool b) { bListMenuListCancelOverride = b; }
+	void	setAllowScrollParent(const bool b) { allowScrollParent = b; }
+	void	setScrollParentOffset(const SDL_Rect& offset) { scrollParentOffset = offset; }
 
 	void setActualSize(SDL_Rect _actualSize) {
 		allowScrolling = true;
@@ -427,6 +438,10 @@ private:
 	bool bBlitChildrenToTexture = false;				//!< if true, subframes will blit onto blitSurface and draw from this cached surface
 	bool bBlitDirty = false;							//!< if true, re-blit all subframes next draw()
 	bool bBlitToParent = false;							//!< if true, find a frame with findParentToBlitTo() and blit onto it's surface
+	bool bListMenuListCancelOverride = false;			//!< if true, MenuListCancel will activate a widget rather than deactivating the list (i.e back_button)
+	SDL_Rect scrollParentOffset{ 0,0,0,0 };				//!< scrollParent() increase/decrease amount of scrolling for parent
+	bool allowScrollParent = false;						//!< if true, scrolls parent when widget movement called
+
 
 	std::vector<Frame*> frames;
 	std::vector<Button*> buttons;

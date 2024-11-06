@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "player.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 /*
  * Chest theme ideas:
@@ -621,12 +622,30 @@ void createChestInventory(Entity* my, int chestType)
 
 void Entity::actChest()
 {
+#ifdef USE_FMOD
+	if ( chestAmbience == 0 )
+	{
+		chestAmbience--;
+		stopEntitySound();
+		entity_sound = playSoundEntityLocal(this, 149, 32);
+	}
+	if ( entity_sound )
+	{
+		bool playing = false;
+		entity_sound->isPlaying(&playing);
+		if ( !playing )
+		{
+			entity_sound = nullptr;
+		}
+	}
+#else
 	chestAmbience--;
 	if ( chestAmbience <= 0 )
 	{
 		chestAmbience = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal(this, 149, 32);
 	}
+#endif
 
 	if ( ticks == 1 )
 	{
@@ -642,8 +661,6 @@ void Entity::actChest()
 		}
 		return;
 	}
-
-	int i;
 
 	if (!chestInit)
 	{
@@ -792,7 +809,7 @@ void Entity::actChest()
 
 	//Using the chest (TODO: Monsters using it?).
 	int chestclicked = -1;
-	for (i = 0; i < MAXPLAYERS; ++i)
+	for (int i = 0; i < MAXPLAYERS; ++i)
 	{
 		if ( selectedEntity[i] == this || client_selected[i] == this )
 		{
@@ -815,6 +832,8 @@ void Entity::actChest()
 			{
 				messagePlayer(chestclicked, MESSAGE_INTERACTION, Language::get(459));
 				openedChest[chestclicked] = this;
+
+				Compendium_t::Events_t::eventUpdateWorld(chestclicked, Compendium_t::CPDM_CHESTS_OPENED, "chest", 1);
 
 				chestOpener = chestclicked;
 				if ( !players[chestclicked]->isLocalPlayer() && multiplayer == SERVER)
@@ -1173,6 +1192,13 @@ Item* Entity::addItemToChestFromInventory(int player, Item* item, int amount, bo
 				messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1087));
 			}
 			playSoundPlayer(player, 90, 64);
+			if ( !item->identified )
+			{
+				if ( players[player]->isLocalPlayer() )
+				{
+					Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_APPRAISED, item->type, 1);
+				}
+			}
 			item->identified = true;
 			return nullptr;
 		}
@@ -1630,6 +1656,7 @@ void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity 
 					{
 						messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2520));
 					}
+					Compendium_t::Events_t::eventUpdateWorld(caster->skill[2], Compendium_t::CPDM_CHESTS_DESTROYED, "chest", 1);
 				}
 				else
 				{

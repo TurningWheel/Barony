@@ -21,6 +21,8 @@
 #include "scores.hpp"
 #include "shops.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
+#include "collision.hpp"
 
 void Item::applySkeletonKey(int player, Entity& entity)
 {
@@ -31,11 +33,14 @@ void Item::applySkeletonKey(int player, Entity& entity)
 		{
 			messagePlayer(player, MESSAGE_INTERACTION, Language::get(1097));
 			entity.unlockChest();
+			Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_CHESTS_UNLOCKED, "chest", 1);
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_CHESTS_UNLOCK, TOOL_SKELETONKEY, 1);
 		}
 		else
 		{
 			messagePlayer(player, MESSAGE_INTERACTION, Language::get(1098));
 			entity.lockChest();
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_CHESTS_LOCK, TOOL_SKELETONKEY, 1);
 		}
 	}
 	else if ( entity.behavior == &actDoor )
@@ -52,12 +57,15 @@ void Item::applySkeletonKey(int player, Entity& entity)
 			{
 				messagePlayer(player, MESSAGE_INTERACTION, Language::get(1099));
 				entity.doorLocked = 0;
+				Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_DOOR_UNLOCKED, "door", 1);
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_DOOR_UNLOCK, TOOL_SKELETONKEY, 1);
 			}
 		}
 		else
 		{
 			messagePlayer(player, MESSAGE_INTERACTION, Language::get(1100));
 			entity.doorLocked = 1;
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_DOOR_LOCK, TOOL_SKELETONKEY, 1);
 		}
 	}
 	else if ( entity.behavior == &actMonster && entity.getMonsterTypeFromSprite() == MIMIC )
@@ -99,7 +107,7 @@ void Item::applySkeletonKey(int player, Entity& entity)
 						playSoundEntity(&entity, 91, 64);
 						messagePlayer(player, MESSAGE_INTERACTION, Language::get(1098));
 						entity.setEffect(EFF_MIMIC_LOCKED, true, TICKS_PER_SECOND * 5, false);
-
+						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_MIMICS_LOCKED, TOOL_SKELETONKEY, 1);
 						entity.monsterHitTime = HITRATE - 2;
 						if ( players[player] )
 						{
@@ -143,6 +151,10 @@ void Item::applyLockpick(int player, Entity& entity)
 		else
 		{
 			entity.skill[22] = (entity.skill[22] == BOMB_TRIGGER_ENEMIES) ? BOMB_TRIGGER_ALL : BOMB_TRIGGER_ENEMIES;
+		}
+		if ( !gyrobotUsing )
+		{
+			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_TINKERTRAPS, TOOL_LOCKPICK, 1);
 		}
 		if ( entity.skill[22] == BOMB_TRIGGER_ENEMIES )
 		{
@@ -255,6 +267,8 @@ void Item::applyLockpick(int player, Entity& entity)
 					}
 				}
 				entity.unlockChest();
+				Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_CHESTS_UNLOCKED, "chest", 1);
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_CHESTS_UNLOCK, TOOL_LOCKPICK, 1);
 			}
 			else
 			{
@@ -348,6 +362,8 @@ void Item::applyLockpick(int player, Entity& entity)
 				//Unlock door.
 				playSoundEntity(&entity, 91, 64);
 				messagePlayer(player, MESSAGE_INTERACTION, Language::get(1099));
+				Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_DOOR_UNLOCKED, "door", 1);
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_DOOR_UNLOCK, TOOL_LOCKPICK, 1);
 				entity.doorLocked = 0;
 				if ( !entity.doorPreventLockpickExploit )
 				{
@@ -612,6 +628,11 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 				playSoundEntity(&entity, 166, 128); // invisible.ogg
 				createParticleDropRising(&entity, entity.pedestalOrbType + 605, 1.0);
 				serverSpawnMiscParticles(&entity, PARTICLE_EFFECT_RISING_DROP, entity.pedestalOrbType + 605);
+
+				if ( entity.pedestalLockOrb == 1 )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_RITUALS_COMPLETED, "magicians guild", 1);
+				}
 			}
 			entity.pedestalHasOrb = type - ARTIFACT_ORB_BLUE + 1;
 			serverUpdateEntitySkill(&entity, 0); // update orb status.
@@ -638,16 +659,19 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 					//messagePlayer(player, MESSAGE_WORLD, Language::get(3888), entity.getStats()->name);
 					players[player]->worldUI.worldTooltipDialogue.createDialogueTooltip(entity.getUID(),
 						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, Language::get(3888));
+					Compendium_t::Events_t::eventUpdateMonster(player, Compendium_t::CPDM_MERCHANT_ORBS, &entity, 1);
 					break;
 				case ARTIFACT_ORB_BLUE:
 					//messagePlayer(player, MESSAGE_WORLD, Language::get(3889), entity.getStats()->name);
 					players[player]->worldUI.worldTooltipDialogue.createDialogueTooltip(entity.getUID(),
 						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, Language::get(3889));
+					Compendium_t::Events_t::eventUpdateMonster(player, Compendium_t::CPDM_MERCHANT_ORBS, &entity, 1);
 					break;
 				case ARTIFACT_ORB_RED:
 					//messagePlayer(player, MESSAGE_WORLD, Language::get(3890), entity.getStats()->name);
 					players[player]->worldUI.worldTooltipDialogue.createDialogueTooltip(entity.getUID(),
 						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, Language::get(3890));
+					Compendium_t::Events_t::eventUpdateMonster(player, Compendium_t::CPDM_MERCHANT_ORBS, &entity, 1);
 					break;
 				default:
 					break;
@@ -691,6 +715,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 				else
 				{
 					messagePlayer(player, MESSAGE_INTERACTION, Language::get(580));
+					playSoundEntity(&entity, 140 + local_rng.rand() % 2, 64);
 				}
 			}
 			return;
@@ -849,6 +874,14 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 			}
 			free(item);
 			steamStatisticUpdateClient(player, STEAM_STAT_FREE_REFILLS, STEAM_STAT_INT, 1);
+			if ( entity.behavior == &actSink )
+			{
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SINKS_TAPPED, POTION_EMPTY, 1);
+			}
+			else if ( entity.behavior == &actFountain )
+			{
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_FOUNTAINS_TAPPED, POTION_EMPTY, 1);
+			}
 		}
 
 		if ( entity.behavior == &actSink )
@@ -933,7 +966,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 			}
 
 			if ( stats[player] && (stats[player]->type == GOATMAN
-				|| (stats[player]->playerRace == RACE_GOATMAN && stats[player]->appearance == 0)) )
+				|| (stats[player]->playerRace == RACE_GOATMAN && stats[player]->stat_appearance == 0)) )
 			{
 				int potionDropQuantity = 0;
 				// drop some random potions.
@@ -964,7 +997,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 
 				if ( potionDropQuantity > 0 )
 				{
-					if ( stats[player]->playerRace == RACE_GOATMAN && stats[player]->appearance == 0 )
+					if ( stats[player]->playerRace == RACE_GOATMAN && stats[player]->stat_appearance == 0 )
 					{
 						steamStatisticUpdateClient(player, STEAM_STAT_BOTTLE_NOSED, STEAM_STAT_INT, 1);
 					}
@@ -1070,6 +1103,35 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 			entity->skill[16] = placement;
 			entity->skill[20] = dir;
 			entity->skill[21] = type;
+
+			if ( parent && parent->behavior == &actMonster )
+			{
+				auto& trapProps = monsterTrapIgnoreEntities[entity->getUID()];
+				trapProps.parent = entity->parent;
+				for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+				{
+					Entity* creature = (Entity*)node->element;
+					if ( creature && parent->checkFriend(creature) )
+					{
+						trapProps.ignoreEntities.insert(creature->getUID());
+					}
+				}
+			}
+			else
+			{
+				if ( this->beatitude < 0 )
+				{
+					entity->skill[22] = ItemBombTriggerType::BOMB_TRIGGER_ALL;
+					entity->skill[25] = 1; // cursed rng explode
+				}
+			}
+
+			playSoundEntity(entity, 686, 64);
+
+			if ( parent && parent->behavior == &actPlayer )
+			{
+				Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_GADGET_DEPLOYED, type, 1);
+			}
 		}
 	}
 	else if ( placement == BOMB_WALL )
@@ -1193,6 +1255,33 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 			entity->skill[16] = placement;
 			entity->skill[20] = dir;
 			entity->skill[21] = type;
+			if ( parent && parent->behavior == &actMonster )
+			{
+				auto& trapProps = monsterTrapIgnoreEntities[entity->getUID()];
+				trapProps.parent = entity->parent;
+				for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+				{
+					Entity* creature = (Entity*)node->element;
+					if ( creature && parent->checkFriend(creature) )
+					{
+						trapProps.ignoreEntities.insert(creature->getUID());
+					}
+				}
+			}
+			else
+			{
+				if ( this->beatitude < 0 )
+				{
+					entity->skill[22] = ItemBombTriggerType::BOMB_TRIGGER_ALL;
+					entity->skill[25] = 1; // cursed rng explode
+				}
+			}
+			playSoundEntity(entity, 686, 64);
+
+			if ( parent && parent->behavior == &actPlayer )
+			{
+				Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_GADGET_DEPLOYED, type, 1);
+			}
 		}
 	}
 	else if ( placement == BOMB_CHEST || placement == BOMB_DOOR || placement == BOMB_COLLIDER )
@@ -1384,6 +1473,33 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 			}
 			entity->skill[20] = dir;
 			entity->skill[21] = type;
+			if ( parent && parent->behavior == &actMonster )
+			{
+				auto& trapProps = monsterTrapIgnoreEntities[entity->getUID()];
+				trapProps.parent = entity->parent;
+				for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+				{
+					Entity* creature = (Entity*)node->element;
+					if ( creature && parent->checkFriend(creature) )
+					{
+						trapProps.ignoreEntities.insert(creature->getUID());
+					}
+				}
+			}
+			else
+			{
+				if ( this->beatitude < 0 )
+				{
+					entity->skill[22] = ItemBombTriggerType::BOMB_TRIGGER_ALL;
+					entity->skill[25] = 1; // cursed rng explode
+				}
+			}
+			playSoundEntity(entity, 686, 64);
+
+			if ( parent && parent->behavior == &actPlayer )
+			{
+				Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_GADGET_DEPLOYED, type, 1);
+			}
 		}
 	}
 }
@@ -1417,6 +1533,11 @@ void Item::applyTinkeringCreation(Entity* parent, Entity* thrown)
 		entity->skill[13] = 1;
 		entity->skill[14] = this->appearance;
 		entity->skill[15] = 1;
+
+		if ( parent && parent->behavior == &actPlayer )
+		{
+			Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_GADGET_DEPLOYED, this->type, 1);
+		}
 	}
 	else if ( type == TOOL_DUMMYBOT || type == TOOL_GYROBOT || type == TOOL_SENTRYBOT || type == TOOL_SPELLBOT )
 	{
@@ -1446,6 +1567,10 @@ void Item::applyTinkeringCreation(Entity* parent, Entity* thrown)
 			Stat* summonedStats = summon->getStats();
 			if ( parent && parent->behavior == &actPlayer && summonedStats )
 			{
+				if ( parent && parent->behavior == &actPlayer )
+				{
+					Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_GADGET_DEPLOYED, this->type, 1);
+				}
 				if ( summonedStats->type == GYROBOT )
 				{
 					summon->yaw = thrown->yaw;

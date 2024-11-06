@@ -309,6 +309,7 @@ extern framebuffer main_framebuffer;
 extern Shader voxelShader;
 extern Shader voxelBrightShader;
 extern Shader voxelDitheredShader;
+extern Shader voxelBrightDitheredShader;
 extern Shader worldShader;
 extern Shader worldDitheredShader;
 extern Shader worldDarkShader;
@@ -421,15 +422,15 @@ extern view_t menucam;
 #define REALCOLORS 0
 #define ENTITYUIDS 1
 void beginGraphics();
-void glBeginCamera(view_t* camera, bool useHDR);
+void glBeginCamera(view_t* camera, bool useHDR, map_t& map);
 void glDrawVoxel(view_t* camera, Entity* entity, int mode);
 void glDrawSprite(view_t* camera, Entity* entity, int mode);
 void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode);
 void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode);
 void glDrawEnemyBarSprite(view_t* camera, int mode, int playerViewport, void* enemyHPBarDetails);
-void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode);
+void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode, bool useTextAsImgPath = false, bool rotate = false);
 void glDrawWorld(view_t* camera, int mode);
-void glEndCamera(view_t* camera, bool useHDR);
+void glEndCamera(view_t* camera, bool useHDR, map_t& map);
 unsigned int GO_GetPixelU32(int x, int y, view_t& camera);
 
 extern bool hdrEnabled;

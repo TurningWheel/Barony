@@ -112,7 +112,10 @@ enum SteamStatIndexes : int
 	STEAM_STAT_DAPPER_2,
 	STEAM_STAT_DAPPER_3,
 	STEAM_STAT_DAPPER,
-	STEAM_STAT_DUNGEONSEED
+	STEAM_STAT_DUNGEONSEED,
+	STEAM_STAT_PITCH_PERFECT,
+	STEAM_STAT_RUNG_OUT,
+	STEAM_STAT_SMASH_MELEE
 };
 
 enum SteamGlobalStatIndexes : int
@@ -183,7 +186,84 @@ enum SteamGlobalStatIndexes : int
 	STEAM_GSTAT_TUTORIAL10_ATTEMPTS,
 	STEAM_GSTAT_DISABLE,
 	STEAM_GSTAT_PROMO,
-	STEAM_GSTAT_PROMO_INTERACT
+	STEAM_GSTAT_PROMO_INTERACT,
+	STEAM_GSTAT_DEATHS_BAT,
+	STEAM_GSTAT_DEATHS_BUGBEAR,
+	STEAM_GSTAT_DEATHS_MIMIC,
+	STEAM_GSTAT_MAX
+};
+
+const std::vector<std::string> SteamGlobalStatStr =
+{
+	"GAMES_STARTED",
+	"GAMES_WON",
+	"BOULDER_DEATHS",
+	"HERX_SLAIN",
+	"BAPHOMET_SLAIN",
+	"TWINSFIRE_SLAIN",
+	"DEATHS_HUMAN",
+	"DEATHS_RAT",
+	"DEATHS_GOBLIN",
+	"DEATHS_SLIME",
+	"DEATHS_TROLL",
+	"DEATHS_SPIDER",
+	"DEATHS_GHOUL",
+	"DEATHS_SKELETON",
+	"DEATHS_SCORPION",
+	"DEATHS_IMP",
+	"DEATHS_GNOME",
+	"DEATHS_DEMON",
+	"DEATHS_SUCCUBUS",
+	"DEATHS_LICH",
+	"DEATHS_MINOTAUR",
+	"DEATHS_DEVIL",
+	"DEATHS_SHOPKEEPER",
+	"DEATHS_KOBOLD",
+	"DEATHS_SCARAB",
+	"DEATHS_CRYSTALGOLEM",
+	"DEATHS_INCUBUS",
+	"DEATHS_VAMPIRE",
+	"DEATHS_SHADOW",
+	"DEATHS_COCKATRICE",
+	"DEATHS_INSECTOID",
+	"DEATHS_GOATMAN",
+	"DEATHS_AUTOMATON",
+	"DEATHS_LICHICE",
+	"DEATHS_LICHFIRE",
+	"DEATHS_SENTRYBOT",
+	"DEATHS_SPELLBOT",
+	"DEATHS_GYROBOT",
+	"DEATHS_DUMMYBOT",
+	"TWINSICE_SLAIN",
+	"SHOPKEEPERS_SLAIN",
+	"MINOTAURS_SLAIN",
+	"TUTORIAL_ENTERED",
+	"TUTORIAL1_COMPLETED",
+	"TUTORIAL2_COMPLETED",
+	"TUTORIAL3_COMPLETED",
+	"TUTORIAL4_COMPLETED",
+	"TUTORIAL5_COMPLETED",
+	"TUTORIAL6_COMPLETED",
+	"TUTORIAL7_COMPLETED",
+	"TUTORIAL8_COMPLETED",
+	"TUTORIAL9_COMPLETED",
+	"TUTORIAL10_COMPLETED",
+	"TUTORIAL1_ATTEMPTS",
+	"TUTORIAL2_ATTEMPTS",
+	"TUTORIAL3_ATTEMPTS",
+	"TUTORIAL4_ATTEMPTS",
+	"TUTORIAL5_ATTEMPTS",
+	"TUTORIAL6_ATTEMPTS",
+	"TUTORIAL7_ATTEMPTS",
+	"TUTORIAL8_ATTEMPTS",
+	"TUTORIAL9_ATTEMPTS",
+	"TUTORIAL10_ATTEMPTS",
+	"DISABLE",
+	"PROMO",
+	"PROMO_INTERACT",
+	"DEATHS_BAT",
+	"DEATHS_BUGBEAR",
+	"DEATHS_MIMIC",
 };
 
 SteamGlobalStatIndexes getIndexForDeathType(int type);
@@ -244,7 +324,10 @@ static const std::pair<std::string, int> steamStatAchStringsAndMaxVals[] =
 	std::make_pair("BARONY_ACH_NONE", 0xFFFFFFFF),			// STEAM_STAT_DAPPER_2
 	std::make_pair("BARONY_ACH_NONE", 0xFFFFFFFF),			// STEAM_STAT_DAPPER_3
 	std::make_pair("BARONY_ACH_DAPPER", 30),				// STEAM_STAT_DAPPER
-	std::make_pair("BARONY_ACH_DUNGEONSEED", 12)			// STEAM_STAT_DUNGEONSEED
+	std::make_pair("BARONY_ACH_DUNGEONSEED", 12),			// STEAM_STAT_DUNGEONSEED
+	std::make_pair("BARONY_ACH_BAT1000", 81),				// STEAM_STAT_PITCH_PERFECT
+	std::make_pair("BARONY_ACH_RUNG_OUT", 20),				// STEAM_STAT_RUNG_OUT
+	std::make_pair("BARONY_ACH_SMASH_MELEE", 500)			// STEAM_STAT_SMASH_MELEE
 };
 
 typedef struct score_t
@@ -282,7 +365,8 @@ extern Sint32 conductGameChallenges[NUM_CONDUCT_CHALLENGES];
 extern Sint32 gameStatistics[NUM_GAMEPLAY_STATISTICS];
 extern std::vector<std::pair<Uint32, Uint32>> achievementRhythmOfTheKnightVec[MAXPLAYERS];
 extern bool achievementStatusRhythmOfTheKnight[MAXPLAYERS];
-extern std::pair<Uint32, Uint32> achievementThankTheTankPair[MAXPLAYERS];
+extern bool achievementRhythmOfTheKnight[MAXPLAYERS];
+extern std::map<Uint32, Uint32> achievementThankTheTankPair[MAXPLAYERS];
 extern bool achievementStatusBaitAndSwitch[MAXPLAYERS];
 extern Uint32 achievementBaitAndSwitchTimer[MAXPLAYERS];
 extern std::unordered_set<int> clientLearnedAlchemyIngredients[MAXPLAYERS];
@@ -422,6 +506,9 @@ struct SaveGameInfo {
 			}
 		};
 		std::vector<std::pair<int, PlayerRaceHostility_t>> shopkeeperHostility;
+		std::vector<std::pair<std::string, std::vector<int>>> compendium_item_events;
+		std::vector<std::pair<int, int>> itemDegradeRNG;
+		int sustainedSpellMPUsed = 0;
 
 		struct stat_t {
 			struct item_t {
@@ -506,7 +593,7 @@ struct SaveGameInfo {
 			std::string name;
 			Uint32 type = Monster::HUMAN;
 			Uint32 sex = 0;
-			Uint32 appearance = 0;
+			Uint32 statscore_appearance = 0;
 			int HP = 0;
 			int maxHP = 0;
 			int MP = 0;
@@ -535,7 +622,7 @@ struct SaveGameInfo {
 				fp->property("name", name);
 				fp->property("type", type);
 				fp->property("sex", sex);
-				fp->property("appearance", appearance);
+				fp->property("appearance", statscore_appearance);
 				fp->property("HP", HP);
 				fp->property("maxHP", maxHP);
 				fp->property("MP", MP);
@@ -604,6 +691,9 @@ struct SaveGameInfo {
 			fp->property("followers", followers);
 			fp->property("game_statistics", gameStatistics);
 			fp->property("shopkeeper_hostility", shopkeeperHostility);
+			fp->property("compendium_item_events", compendium_item_events);
+			fp->property("item_degrade_rng", itemDegradeRNG);
+			fp->property("sustained_mp_used", sustainedSpellMPUsed);
 			return true;
 		}
 
@@ -713,7 +803,8 @@ public:
 		BARONY_ACH_FAST_LEARNER,
 		BARONY_ACH_MASTER,
 		BARONY_ACH_DAPPER,
-		BARONY_ACH_SPROUTS
+		BARONY_ACH_SPROUTS,
+		BARONY_ACH_BY_THE_BOOK
 	};
 	enum AchievementEvent : int
 	{
@@ -727,7 +818,9 @@ public:
 		DIPLOMA_LEVEL_COMPLETE,
 		BACK_TO_BASICS_LEVEL_COMPLETE,
 		FAST_LEARNER_TIME_UPDATE,
-		DAPPER_EQUIPMENT_CHECK
+		DAPPER_EQUIPMENT_CHECK,
+		BY_THE_BOOK_COMPENDIUM_PAGE,
+		BY_THE_BOOK_BREW
 	};
 	void updatePlayerAchievement(int player, Achievement achievement, AchievementEvent achEvent);
 	bool bIsAchievementAllowedDuringTutorial(std::string achievementStr)
@@ -800,6 +893,7 @@ public:
 		int rollTheBones = 0;
 		int trashCompactor = 0;
 		bool totalKillsTickUpdate = false;
+		Uint32 ticksByTheBookViewed = 0;
 		static bool allPlayersDeadEvent;
 
 		std::pair<int, int> realBoy;
@@ -829,7 +923,7 @@ public:
 	void updateClientBounties(bool firstSend);
 	void clearPlayerAchievementData();
 	void checkMapScriptsOnVariableSet();
-	void updateGlobalStat(int index, int value = 1);
+	void updateGlobalStat(int index, int player);
 };
 extern AchievementObserver achievementObserver;
 #endif

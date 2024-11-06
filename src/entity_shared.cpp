@@ -11,7 +11,56 @@ See LICENSE for details.
 
 
 #include "entity.hpp"
-
+Monster editorSpriteTypeToMonster(Sint32 sprite)
+{
+	Monster monsterType = NOTHING;
+	switch ( sprite )
+	{
+	case 27: monsterType = HUMAN; break;
+	case 30: monsterType = TROLL; break;
+	case 35: monsterType = SHOPKEEPER; break;
+	case 36: monsterType = GOBLIN; break;
+	case 48: monsterType = SPIDER; break;
+	case 62: monsterType = LICH; break;
+	case 70: monsterType = GNOME; break;
+	case 71: monsterType = DEVIL; break;
+	case 75: monsterType = DEMON; break;
+	case 76: monsterType = CREATURE_IMP; break;
+	case 77: monsterType = MINOTAUR; break;
+	case 78: monsterType = SCORPION; break;
+	case 79: monsterType = SLIME; break;
+	case 193: monsterType = SLIME; break;
+	case 194: monsterType = SLIME; break;
+	case 195: monsterType = SLIME; break;
+	case 196: monsterType = SLIME; break;
+	case 197: monsterType = SLIME; break;
+	case 80: monsterType = SUCCUBUS; break;
+	case 81: monsterType = RAT; break;
+	case 82: monsterType = GHOUL; break;
+	case 83: monsterType = SKELETON; break;
+	case 84: monsterType = KOBOLD; break;
+	case 85: monsterType = SCARAB; break;
+	case 86: monsterType = CRYSTALGOLEM; break;
+	case 87: monsterType = INCUBUS; break;
+	case 88: monsterType = VAMPIRE; break;
+	case 89: monsterType = SHADOW; break;
+	case 90: monsterType = COCKATRICE; break;
+	case 91: monsterType = INSECTOID; break;
+	case 92: monsterType = GOATMAN; break;
+	case 93: monsterType = AUTOMATON; break;
+	case 94: monsterType = LICH_ICE; break;
+	case 95: monsterType = LICH_FIRE; break;
+	case 163: monsterType = SENTRYBOT; break;
+	case 164: monsterType = SPELLBOT; break;
+	case 165: monsterType = DUMMYBOT; break;
+	case 166: monsterType = GYROBOT; break;
+	case 188: monsterType = BAT_SMALL; break;
+	case 189: monsterType = BUGBEAR; break;
+	default:
+		break;
+	}
+	return monsterType;
+}
 
 int checkSpriteType(Sint32 sprite)
 {
@@ -53,6 +102,13 @@ int checkSpriteType(Sint32 sprite)
 	case 164:
 	case 165:
 	case 166:
+	case 188:
+	case 189:
+	case 193:
+	case 194:
+	case 195:
+	case 196:
+	case 197:
 		//monsters
 		return 1;
 		break;
@@ -153,6 +209,15 @@ int checkSpriteType(Sint32 sprite)
 		return 26;
 	case 179:
 		return 27;
+	case 185:
+	case 186:
+	case 187:
+		// AND gate
+		return 28;
+	case 33:
+	case 34:
+		// act trap
+		return 29;
 	default:
 		return 0;
 		break;
@@ -994,7 +1059,28 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"NOT USED",
 	"TELEPORT SHRINE",
 	"SPELL SHRINE",
-	"COLLIDER DECORATION"
+	"COLLIDER DECORATION",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"AND GATE",
+	"AND GATE",
+	"AND GATE",
+	"BAT",
+	"BUGBEAR",
+	"DAEDALUS SHRINE",
+	"BELL",
+	"NOT USED",
+	"SLIME (GREEN)",
+	"SLIME (BLUE)",
+	"SLIME (RED)",
+	"SLIME (TAR)",
+	"SLIME (METAL)",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][16] =
@@ -1005,7 +1091,7 @@ char monsterEditorNameStrings[NUMMONSTERS][16] =
 	"goblin",
 	"slime",
 	"troll",
-	"invalid",
+	"bat",
 	"spider",
 	"ghoul",
 	"skeleton",
@@ -1035,7 +1121,8 @@ char monsterEditorNameStrings[NUMMONSTERS][16] =
 	"sentrybot",
 	"spellbot",
 	"gyrobot",
-	"dummybot"
+	"dummybot",
+	"bugbear"
 };
 
 char tileEditorNameStrings[NUM_EDITOR_TILES][44] =
@@ -1338,7 +1425,7 @@ int canWearEquip(Entity* entity, int category)
 					break;
 
 				//monsters with cloak/weapon/shield/boots/mask/gloves (no helm)
-				case GNOME:
+				case BUGBEAR:
 				case INCUBUS:
 				case SUCCUBUS:
 				case LICH_FIRE:
@@ -1347,6 +1434,7 @@ int canWearEquip(Entity* entity, int category)
 					break;
 
 				//monsters with cloak/weapon/shield/boots/helm/armor/mask/gloves
+				case GNOME:
 				case GOBLIN:
 				case HUMAN:
 				case VAMPIRE:
@@ -1455,6 +1543,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->yaw = entityToCopy->yaw;
 			entityNew->skill[9] = entityToCopy->skill[9];
 			entityNew->chestLocked = entityToCopy->chestLocked;
+			entityNew->chestMimicChance = entityToCopy->chestMimicChance;
 		}
 		else
 		{
@@ -1462,6 +1551,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->yaw = 1;
 			entityNew->skill[9] = 0;
 			entityNew->chestLocked = -1;
+			entityNew->chestMimicChance = -1;
 		}
 	}
 	// items.
@@ -1500,6 +1590,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->skill[3] = entityToCopy->skill[3];
 			entityNew->skill[4] = entityToCopy->skill[4];
 			entityNew->skill[5] = entityToCopy->skill[5];
+			entityNew->skill[9] = entityToCopy->skill[9];
 		}
 		else
 		{
@@ -1510,6 +1601,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->skill[3] = 1;
 			entityNew->skill[4] = 0;
 			entityNew->skill[5] = 0;
+			entityNew->skill[9] = 0;
 		}
 	}
 	// power crystal
@@ -1781,6 +1873,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->signalTimerInterval = entityToCopy->signalTimerInterval;
 			entityNew->signalTimerRepeatCount = entityToCopy->signalTimerRepeatCount;
 			entityNew->signalTimerLatchInput = entityToCopy->signalTimerLatchInput;
+			entityNew->signalInvertOutput = entityToCopy->signalInvertOutput;
 		}
 		else
 		{
@@ -1790,6 +1883,30 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->signalTimerInterval = 0;
 			entityNew->signalTimerRepeatCount = 0;
 			entityNew->signalTimerLatchInput = 0;
+			entityNew->signalInvertOutput = 0;
+		}
+	}
+	else if ( spriteType == 28 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->signalInputDirection = entityToCopy->signalInputDirection;
+			entityNew->signalActivateDelay = entityToCopy->signalActivateDelay;
+			entityNew->signalTimerInterval = entityToCopy->signalTimerInterval;
+			entityNew->signalTimerRepeatCount = entityToCopy->signalTimerRepeatCount;
+			entityNew->signalTimerLatchInput = entityToCopy->signalTimerLatchInput;
+			entityNew->signalInvertOutput = entityToCopy->signalInvertOutput;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->signalInputDirection = 0;
+			entityNew->signalActivateDelay = 0;
+			entityNew->signalTimerInterval = 0;
+			entityNew->signalTimerRepeatCount = 0;
+			entityNew->signalTimerLatchInput = 0;
+			entityNew->signalInvertOutput = 0;
 		}
 	}
 	else if ( spriteType == 18 )
@@ -1992,6 +2109,19 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->colliderMaxHP = 0;
 			entityNew->colliderDiggable = 0;
 			entityNew->colliderDamageTypes = 0;
+		}
+	}
+	else if ( spriteType == 29 ) // pressure plates
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->pressurePlateTriggerType = entityToCopy->pressurePlateTriggerType;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->pressurePlateTriggerType = 0;
 		}
 	}
 

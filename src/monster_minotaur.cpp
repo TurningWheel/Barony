@@ -22,6 +22,7 @@
 #include "player.hpp"
 #include "colors.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 void initMinotaur(Entity* my, Stat* myStats)
 {
@@ -671,6 +672,15 @@ void actMinotaurTrap(Entity* my)
 
 #define MINOTAURTIMER_LIFE my->skill[0]
 #define MINOTAURTIMER_ACTIVE my->skill[1]
+int getMinotaurTimeToArrive()
+{
+	int minotaurDuration = TICKS_PER_SECOND * 150;
+	if ( currentlevel >= 25 || currentlevel < 5 || (currentlevel >= 10 && currentlevel < 15) )
+	{
+		minotaurDuration = TICKS_PER_SECOND * 210;
+	}
+	return minotaurDuration;
+}
 
 void actMinotaurTimer(Entity* my)
 {
@@ -678,10 +688,8 @@ void actMinotaurTimer(Entity* my)
 	auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
 
 	MINOTAURTIMER_LIFE++;
-	if (( (currentlevel < 25 && MINOTAURTIMER_LIFE == TICKS_PER_SECOND * 120)
-			|| (currentlevel >= 25 && MINOTAURTIMER_LIFE == TICKS_PER_SECOND * 180)
-		)
-		&& rng.rand() % 5 == 0 )   // two minutes if currentlevel < 25, else 3 minutes.
+	if ( MINOTAURTIMER_LIFE == (getMinotaurTimeToArrive() - (TICKS_PER_SECOND * 30))
+		&& rng.rand() % 5 == 0 )
 	{
 		int c;
 		bool spawnedsomebody = false;
@@ -723,10 +731,7 @@ void actMinotaurTimer(Entity* my)
 			}
 		}
 	}
-	else if (( (currentlevel < 25 && MINOTAURTIMER_LIFE >= TICKS_PER_SECOND * 150)
-					|| (currentlevel >= 25 && MINOTAURTIMER_LIFE >= TICKS_PER_SECOND * 210)
-				)
-		&& !MINOTAURTIMER_ACTIVE )     // two and a half minutes if currentlevel < 25, else 3.5 minutes
+	else if ( (MINOTAURTIMER_LIFE >= getMinotaurTimeToArrive()) && !MINOTAURTIMER_ACTIVE )
 	{
 		Entity* monster = summonMonster(MINOTAUR, my->x, my->y);
 		if ( monster )
@@ -1006,6 +1011,14 @@ void actMinotaurCeilingBuster(Entity* my)
 								if ( multiplayer != CLIENT )
 								{
 									entity->colliderCurrentHP = 0;
+									entity->colliderKillerUid = 0;
+								}
+							}
+							else if ( entity->behavior == &actBell )
+							{
+								if ( multiplayer != CLIENT )
+								{
+									bellBreakBulb(entity, true);
 								}
 							}
 							else if ( entity->behavior == &actGate )
@@ -1014,7 +1027,25 @@ void actMinotaurCeilingBuster(Entity* my)
 								{
 									playSoundEntity(entity, 76, 64);
 									list_RemoveNode(entity->mynode);
+									for ( int i = 0; i < MAXPLAYERS; ++i )
+									{
+										if ( !client_disconnected[i] )
+										{
+											Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_GATE_MINOTAUR, "portcullis", 1);
+										}
+									}
 								}
+							}
+							else if ( entity->behavior == &::actDaedalusShrine )
+							{
+								Entity* ohitentity = hit.entity;
+								hit.entity = entity;
+								magicDig(my, nullptr, 0, 1);
+								hit.entity = ohitentity;
+							}
+							else if ( entity->sprite == 1480 ) // daedalus base
+							{
+								list_RemoveNode(entity->mynode);
 							}
 							else if (	entity->behavior == &actStalagCeiling	||
 										entity->behavior == &actStalagFloor		||

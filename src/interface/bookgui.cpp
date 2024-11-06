@@ -560,6 +560,19 @@ void Player::BookGUI_t::openBook(int index, Item* item)
 		node->deconstructor = &defaultDeconstructor;
 	}
 
+	Compendium_t::Events_t::eventUpdate(player.playernum, Compendium_t::CPDM_LORE_READ, READABLE_BOOK, 1);
+	if ( numbooks > 0 )
+	{
+		if ( index % numbooks >= 32 )
+		{
+			Compendium_t::Events_t::eventUpdate(player.playernum, Compendium_t::CPDM_LORE_PERCENT_READ_2, READABLE_BOOK, (1 << ((index % numbooks) - 32)));
+		}
+		else
+		{
+			Compendium_t::Events_t::eventUpdate(player.playernum, Compendium_t::CPDM_LORE_PERCENT_READ, READABLE_BOOK, (1 << (index % numbooks)));
+		}
+	}
+
 	// activate the steam achievement
 	if ( list_Size(&booksRead) >= numbooks )
 	{
@@ -597,6 +610,12 @@ void Player::SignGUI_t::openSign(std::string name, Uint32 uid)
 	{
 		signWorldCoordX = entity->x;
 		signWorldCoordY = entity->y;
+	}
+
+	// fix for binding left click to open sign
+	{
+		Input::inputs[player.playernum].consumeBinaryToggle("MenuLeftClick");
+		Input::inputs[player.playernum].consumeBindingsSharedWithBinding("MenuLeftClick");
 	}
 }
 

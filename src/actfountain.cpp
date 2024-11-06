@@ -23,6 +23,7 @@
 #include "colors.hpp"
 #include "scores.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 //Fountain functions.
 const std::vector<unsigned int> fountainPotionDropChances =
@@ -118,12 +119,30 @@ void actFountain(Entity* my)
 	if ( my->skill[0] > 0 )
 	{
 #define FOUNTAIN_AMBIENCE my->skill[7]
+#ifdef USE_FMOD
+		if ( FOUNTAIN_AMBIENCE == 0 )
+		{
+			FOUNTAIN_AMBIENCE--;
+			my->stopEntitySound();
+			my->entity_sound = playSoundEntityLocal(my, 672, 32);
+		}
+		if ( my->entity_sound )
+		{
+			bool playing = false;
+			my->entity_sound->isPlaying(&playing);
+			if ( !playing )
+			{
+				my->entity_sound = nullptr;
+			}
+		}
+#else
 		FOUNTAIN_AMBIENCE--;
 		if ( FOUNTAIN_AMBIENCE <= 0 )
 		{
 			FOUNTAIN_AMBIENCE = TICKS_PER_SECOND * 6;
-			playSoundEntityLocal(my, 135, 32 );
+			playSoundEntityLocal(my, 672, 32 );
 		}
+#endif
 		entity = spawnGib(my);
 		entity->flags[INVISIBLE] = false;
 		entity->y -= 2;
@@ -140,6 +159,10 @@ void actFountain(Entity* my)
 		entity->vel_y = 0;
 		entity->vel_z = .25;
 		entity->fskill[3] = 0.03;
+	}
+	else
+	{
+		my->stopEntitySound();
 	}
 
 	if ( my->ticks == 1 )
@@ -179,7 +202,7 @@ void actFountain(Entity* my)
 						steamAchievementClient(i, "BARONY_ACH_HOT_SHOWER");
 					}
 					int potionDropQuantity = 0;
-					if ( stats[i] && (stats[i]->type == GOATMAN || (stats[i]->playerRace == RACE_GOATMAN && stats[i]->appearance == 0)) )
+					if ( stats[i] && (stats[i]->type == GOATMAN || (stats[i]->playerRace == RACE_GOATMAN && stats[i]->stat_appearance == 0)) )
 					{
 						// drop some random potions.
 						switch ( rng.rand() % 10 )
@@ -209,7 +232,7 @@ void actFountain(Entity* my)
 
 						if ( potionDropQuantity > 0 )
 						{
-							if ( stats[i]->playerRace == RACE_GOATMAN && stats[i]->appearance == 0 )
+							if ( stats[i]->playerRace == RACE_GOATMAN && stats[i]->stat_appearance == 0 )
 							{
 								steamStatisticUpdateClient(i, STEAM_STAT_BOTTLE_NOSED, STEAM_STAT_INT, 1);
 							}
@@ -231,11 +254,13 @@ void actFountain(Entity* my)
 							}
 						}
 					}
+					Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_FOUNTAIN_USED, "fountain", 1);
 					switch (my->skill[1])
 					{
 						case 0:
 						{
 							playSoundEntity(players[i]->entity, 52, 64);
+
 							//Spawn succubus.
 							Uint32 color = makeColorRGB(255, 128, 0);
 							Entity* spawnedMonster = nullptr;
@@ -284,6 +309,7 @@ void actFountain(Entity* my)
 									{
 										messagePlayerColor(i, MESSAGE_INTERACTION, color, Language::get(469));
 									}
+									Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_FOUNTAIN_FOOCUBI, "fountain", 1);
 								}
 							}
 							else if ( currentlevel < 10 )
@@ -307,6 +333,7 @@ void actFountain(Entity* my)
 											strcpy(tmpStats->name, "lesser incubus");
 										}
 										messagePlayerColor(i, MESSAGE_INTERACTION, color, Language::get(2519));
+										Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_FOUNTAIN_FOOCUBI, "fountain", 1);
 									}
 								}
 								else
@@ -315,6 +342,7 @@ void actFountain(Entity* my)
 									{
 										spawnedMonster->seedEntityRNG(rng.getU32());
 										messagePlayerColor(i, MESSAGE_INTERACTION, color, Language::get(469));
+										Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_FOUNTAIN_FOOCUBI, "fountain", 1);
 									}
 								}
 							}
@@ -324,11 +352,13 @@ void actFountain(Entity* my)
 								{
 									spawnedMonster->seedEntityRNG(rng.getU32());
 									messagePlayerColor(i, MESSAGE_INTERACTION, color, Language::get(2519));
+									Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_FOUNTAIN_FOOCUBI, "fountain", 1);
 								}
 							}
 							break;
 						}
 						case 1:
+							Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_FOUNTAIN_DRUNK, "fountain", 1);
 							if ( stats[i] && stats[i]->type != VAMPIRE )
 							{
 								messagePlayer(i, MESSAGE_INTERACTION, Language::get(470));
@@ -371,6 +401,7 @@ void actFountain(Entity* my)
 						case 2:
 						{
 							//Potion effect. Potion effect is stored in my->skill[3], randomly chosen when the fountain is created.
+							Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_FOUNTAIN_DRUNK, "fountain", 1);
 							messagePlayer(i, MESSAGE_INTERACTION, Language::get(470));
 							Item* item = newItem(static_cast<ItemType>(POTION_WATER + my->skill[3]), static_cast<Status>(4), 0, 1, 0, false, NULL);
 							useItem(item, i, my);
@@ -386,6 +417,7 @@ void actFountain(Entity* my)
 							messagePlayerColor(i, MESSAGE_STATUS, textcolor, Language::get(471));
 							messagePlayerColor(i, MESSAGE_STATUS, textcolor, Language::get(473));
 							bool stuckOnYouSuccess = false;
+							Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_FOUNTAIN_BLESS_ALL, "fountain", 1);
 
 							if ( !stats[i] )
 							{
@@ -399,6 +431,7 @@ void actFountain(Entity* my)
 									stuckOnYouSuccess = true;
 								}
 								stats[i]->helmet->beatitude++;
+								Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_BLESSED_TOTAL, stats[i]->helmet->type, 1);
 							}
 							if ( stats[i]->breastplate )
 							{
@@ -407,6 +440,7 @@ void actFountain(Entity* my)
 									stuckOnYouSuccess = true;
 								}
 								stats[i]->breastplate->beatitude++;
+								Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_BLESSED_TOTAL, stats[i]->breastplate->type, 1);
 							}
 							if ( stats[i]->gloves )
 							{
@@ -415,6 +449,7 @@ void actFountain(Entity* my)
 									stuckOnYouSuccess = true;
 								}
 								stats[i]->gloves->beatitude++;
+								Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_BLESSED_TOTAL, stats[i]->gloves->type, 1);
 							}
 							if ( stats[i]->shoes )
 							{
@@ -423,6 +458,7 @@ void actFountain(Entity* my)
 									stuckOnYouSuccess = true;
 								}
 								stats[i]->shoes->beatitude++;
+								Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_BLESSED_TOTAL, stats[i]->shoes->type, 1);
 							}
 							if ( stats[i]->shield )
 							{
@@ -431,6 +467,7 @@ void actFountain(Entity* my)
 									stuckOnYouSuccess = true;
 								}
 								stats[i]->shield->beatitude++;
+								Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_BLESSED_TOTAL, stats[i]->shield->type, 1);
 							}
 							if ( stats[i]->weapon )
 							{
@@ -441,6 +478,7 @@ void actFountain(Entity* my)
 										stuckOnYouSuccess = true;
 									}
 									stats[i]->weapon->beatitude++;
+									Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_BLESSED_TOTAL, stats[i]->weapon->type, 1);
 								}
 							}
 							if ( stats[i]->cloak )
@@ -450,6 +488,7 @@ void actFountain(Entity* my)
 									stuckOnYouSuccess = true;
 								}
 								stats[i]->cloak->beatitude++;
+								Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_BLESSED_TOTAL, stats[i]->cloak->type, 1);
 							}
 							if ( stats[i]->amulet )
 							{
@@ -458,6 +497,7 @@ void actFountain(Entity* my)
 									stuckOnYouSuccess = true;
 								}
 								stats[i]->amulet->beatitude++;
+								Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_BLESSED_TOTAL, stats[i]->amulet->type, 1);
 							}
 							if ( stats[i]->ring )
 							{
@@ -466,6 +506,7 @@ void actFountain(Entity* my)
 									stuckOnYouSuccess = true;
 								}
 								stats[i]->ring->beatitude++;
+								Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_BLESSED_TOTAL, stats[i]->ring->type, 1);
 							}
 							if ( stats[i]->mask )
 							{
@@ -474,6 +515,7 @@ void actFountain(Entity* my)
 									stuckOnYouSuccess = true;
 								}
 								stats[i]->mask->beatitude++;
+								Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_BLESSED_TOTAL, stats[i]->mask->type, 1);
 							}
 							if ( multiplayer == SERVER && i > 0 && !players[i]->isLocalPlayer() )
 							{
@@ -549,6 +591,7 @@ void actFountain(Entity* my)
 							if ( items.size() )
 							{
 								messagePlayerColor(i, MESSAGE_STATUS, textcolor, Language::get(2592)); //"The fountain blesses a piece of equipment"
+								Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_FOUNTAIN_BLESS, "fountain", 1);
 								//Randomly choose a piece of equipment.
 								std::pair<Item*, Uint32> chosen = items[rng.rand()%items.size()];
 								if ( chosen.first->beatitude == 0 )
@@ -559,6 +602,7 @@ void actFountain(Entity* my)
 									}
 								}
 								chosen.first->beatitude++;
+								Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_BLESSED_TOTAL, chosen.first->type, 1);
 
 								if ( multiplayer == SERVER && i > 0 && !players[i]->isLocalPlayer() )
 								{

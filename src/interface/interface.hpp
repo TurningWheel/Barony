@@ -71,7 +71,13 @@ enum DamageGib {
 	DMG_BLEED,
 	DMG_POISON,
 	DMG_HEAL,
+	DMG_MISS,
 	DMG_TODO
+};
+enum DamageGibDisplayType {
+	DMG_GIB_NUMBER,
+	DMG_GIB_MISS,
+	DMG_GIB_SPRITE
 };
 class EnemyHPDamageBarHandler
 {
@@ -224,6 +230,11 @@ void freeInterfaceResources();
 void clickDescription(const int player, Entity* entity);
 void consoleCommand(char const * const command);
 void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap);
+struct MinimapHighlight_t
+{
+	Uint32 ticks = 0;
+};
+extern std::map<int, MinimapHighlight_t> minimapHighlights;
 void handleDamageIndicatorTicks();
 void drawStatus(const int player);
 void drawStatusNew(const int player);
@@ -413,6 +424,11 @@ public:
 	//identify
 	bool isItemIdentifiable(const Item* item);
 	void identifyItem(Item* item);
+
+	//enchant
+	bool isItemEnchantWeaponable(const Item* item);
+	bool isItemEnchantArmorable(const Item* item);
+	void enchantItem(Item* item);
 
 	//alchemy menu funcs
 	bool isItemMixable(const Item* item);
@@ -632,7 +648,9 @@ public:
 			ITEMFX_MODE_SCROLL_IDENTIFY,
 			ITEMFX_MODE_SCROLL_REMOVECURSE,
 			ITEMFX_MODE_SPELL_IDENTIFY,
-			ITEMFX_MODE_SPELL_REMOVECURSE
+			ITEMFX_MODE_SPELL_REMOVECURSE,
+			ITEMFX_MODE_SCROLL_ENCHANT_WEAPON,
+			ITEMFX_MODE_SCROLL_ENCHANT_ARMOR
 		};
 		void openItemEffectMenu(ItemEffectModes mode);
 		ItemEffectModes currentMode = ITEMFX_MODE_NONE;
@@ -1481,7 +1499,9 @@ struct CalloutRadialMenu
 		CALLOUT_TYPE_TELEPORTER_LADDER_DOWN,
 		CALLOUT_TYPE_TELEPORTER_PORTAL,
 		CALLOUT_TYPE_BOMB_TRAP,
-		CALLOUT_TYPE_COLLIDER_BREAKABLE
+		CALLOUT_TYPE_COLLIDER_BREAKABLE,
+		CALLOUT_TYPE_BELL,
+		CALLOUT_TYPE_DAEDALUS
 		/*,CALLOUT_TYPE_PEDESTAL*/
 	};
 	enum CalloutHelpFlags : int

@@ -1,0 +1,2856 @@
+{
+    "arcane citadel": {
+        "blurb": [
+            "Constructed according to an architectural",
+            "master plan, the CITADEL is arranged as",
+            "though it is a grand university.",
+            "",
+            "Only access to extremely powerful magic",
+            "can justify its grandeur."
+        ],
+        "details": [
+            "INHABITANTS:",
+            "Goatmen, Automatons, Incubi,",
+            "Vampires, Crystal Golems, Cockatrices,",
+            "Shadows",
+            "",
+            "This rigidly organized structure",
+            "may be more challenging to navigate",
+            "than other dungeons and labyrinths",
+            "due to closed gates and dead-ends.",
+            "",
+            "A good source of dig and the open spell",
+            "can simplify exploration considerably.",
+            "",
+            "Take care not to be cornered by large",
+            "enemies like the cockatrice and golem."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "arrow trap": {
+        "blurb": [
+            "First thought to be created by goblins,",
+            "these complex mechanisms are now known",
+            "to predate them.",
+            "",
+            "However, they have been repurposed by",
+            "resourceful goblin craftsfolk."
+        ],
+        "details": [
+            "Unless the dungeon is unnaturally,",
+            "dark, arrow traps always have two",
+            "torches fixed to the face.",
+            "",
+            "Each trap is filled with a random",
+            "type of ammo to afflict their target.",
+            "This ammo can be pilfered using a",
+            "lockpick, if the user is skilled",
+            "in tinkering, disabling the trap.",
+            "",
+            "Arrow traps may also be disarmed",
+            "by tossing an item in front of the trap.",
+            "They can only fire arrows five times."
+        ],
+        "details_line_highlights": []
+    },
+    "bell": {
+        "blurb": [
+            "Many towns and cities make use of BELLS",
+            "to draw the attention of inhabitants,",
+            "lifting spirits for collective events.",
+            "",
+            "Old bells that haven't been maintained",
+            "will sometimes fail spectacularly."
+        ],
+        "details": [
+            "FOUND IN:",
+            "- The Ruins",
+            "- The Citadel",
+            "",
+            "BELL USE EFFECTS:",
+            "- Stamina (1 Minute)",
+            "- Agility (1 Minute)",
+            "- Mentality (1 Minute)",
+            "- Strength (1 Minute)",
+            "- HP/MP Restoration",
+            "- Attracts NPCs within 15 tiles",
+            "",
+            "SPAWN POSSIBILITIES:",
+            "- 25% Spellbook hidden inside",
+            "- 25% Gold hidden inside",
+            "- 25% Bats hidden inside",
+            "",
+            "It's usually a good idea to ring a bell,",
+            "if you're not afraid of a fight!",
+            "Each bell will always provide the same",
+            "effect to those who are close enough",
+            "to be inspired by its song. Standing so",
+            "close is not without risk, as bats may",
+            "spill out or the structure may fail",
+            "unexpectedly!",
+            "",
+            "Falling bells deal 80 damage to those",
+            "caught in it's path. The low-hanging",
+            "bell can also be used to deal damage",
+            "to an over-confident minotaur."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {},
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {},
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "boulder trap": {
+        "blurb": [
+            "Heralded by dark holes in the ceiling,",
+            "some say the huge stones are the result",
+            "of cave-ins from excavated earth.",
+            "",
+            "Others theorize that they are a",
+            "punishment from the gods themselves."
+        ],
+        "details": [
+            "Boulders deal 80 damage, regardless",
+            "of the victim's armor or constitution.",
+            "If they're not killed by a boulder, it",
+            "will shatter into several rocks.",
+            "",
+            "Boulders will only roll straight",
+            "North, South, East or West.",
+            "",
+            "Boulders that would block the exit",
+            "are shattered by the gods, leaving",
+            "behind a lucky rock in its rubble.",
+            "",
+            "Most boulder traps can be triggered",
+            "by throwing an object under the hole."
+        ],
+        "details_line_highlights": []
+    },
+    "brams castle": {
+        "blurb": [
+            "While inaccessible by mundane means,",
+            "this manor lies somewhere in the depths",
+            "of the Citadel's machinery. It seems that",
+            "immortals like their own spaces away",
+            "from prying eyes."
+        ],
+        "details": [
+            "SECRET LEVEL TREASURES:",
+            "- Wraith's Gown",
+            "",
+            "Bram's Castle is more of a home and",
+            "less of a fortress. While his servants",
+            "will put up a fight, adventurers will",
+            "have the opportunity to manage each",
+            "room, eventually facing the vampire",
+            "at the top of the castle.",
+            "",
+            "Take care not to let the tight halls",
+            "overwhelm you. Be warned that the",
+            "upper floors are off-limits to many",
+            "bestial followers."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "breakable barriers": {
+        "blurb": [
+            "Some barriers may appear impassable",
+            "at first, but their integrity is such",
+            "that a few strong hits can break",
+            "open the way. Depending on the material,",
+            "they have different weaknesses."
+        ],
+        "details": [
+            "BARRIER TYPES:",
+            "- Wood",
+            "   Flammable, takes extra damage",
+            "   from axes and unarmed attacks.",
+            "- Brick & Stone",
+            "   Takes extra damage from maces.",
+            "- Cordage (webs and thicket)",
+            "   Flammable, takes extra damage",
+            "   from axes and swords.",
+            "",
+            "All breakable barrier types take",
+            "full damage from force, lightning",
+            "and fire spell attacks, but they",
+            "are immune to cold."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "brimstone boulder": {
+        "blurb": [
+            "Boulders are threatening enough,",
+            "but veins of brimstone allow this",
+            "hellish variety to roll over lava.",
+            "They'll also detonate in a",
+            "fiery explosion on contact.",
+            "AVOID."
+        ],
+        "details": [
+            "Summoning brimstone boulders is",
+            "a power unique to Baphomet, dealing",
+            "50 damage regardless of the victim's",
+            "armor or constitution.",
+            "",
+            "Upon impact, brimstone boulders",
+            "explode into a column of flames",
+            "dealing additional magic damage.",
+            "",
+            "On the molten throne, these give",
+            "Baphomet a particular edge, as the",
+            "pools of lava he uses to traverse",
+            "are no longer shelters from the",
+            "rolling destruction.",
+            "",
+            "An adventurer who levitates can",
+            "still nonetheless avoid the boulders,",
+            "while they continue to crush through",
+            "the very minions he has summoned."
+        ],
+        "details_line_highlights": []
+    },
+    "ceiling trap": {
+        "blurb": [
+            "By tapping directly into magical energy",
+            "from the crystal-dense ceilings, these",
+            "security systems can hinder invaders",
+            "with almost no maintenance cost.",
+            "",
+            "An innovation available in several varieties."
+        ],
+        "details": [
+            "CEILING TRAP TYPES:",
+            "- Forcebolt",
+            "- Cold",
+            "- Fireball",
+            "- Lightning",
+            "- Magic Missile",
+            "- Sleep",
+            "- Slow",
+            "- Confuse",
+            "",
+            "Though simliar to magic traps, the",
+            "ceiling trap can't be destroyed.",
+            "",
+            "Dropped items can fool the trap, but it",
+            "will fire continuously. Time between",
+            "each spell permits dodging through."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "chest": {
+        "blurb": [
+            "CHESTS may hold valuable treasures that",
+            "will aid adventurers. Equipment within",
+            "is never cursed. Unfortunately, before",
+            "opening, chests are indistinguishable",
+            "from mimics."
+        ],
+        "details": [
+            "CHEST TYPES:",
+            "- 13.5% Weaponry and Armor",
+            "- 13.5% Scrolls and Magic Supplies",
+            "- 13.5% Potions and Alchemy Supplies",
+            "- 13.5% Tools and Tinkering Supplies",
+            "- 13.5% Jewels and Enchanted Jewelry",
+            "- 13.5% Foodstuffs",
+            "- 13.5% Random Items",
+            "- 5.5% Empty/Garbage",
+            "",
+            "Items found inside chests are usually",
+            "of a higher quality than those found",
+            "scattered along the dungeon floors,",
+            "often uncursed.",
+            "",
+            "Chests usually have a 10% chance of",
+            "of being locked and a 10% chance of",
+            "being mimics.",
+            "",
+            "When unlocked with tinkering skill",
+            "using a lockpick, a chest's locking",
+            "mechanism is salvaged, yielding",
+            "magic and metal scrap in the chest."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "citadel sanctum": {
+        "blurb": [
+            "In the core of the Citadel, its nature",
+            "is revealed as a gigantic magical device,",
+            "created to open up rifts to another",
+            "dimension with forbidden magic.",
+            "",
+            "Its creators will protect it at all costs."
+        ],
+        "details": [
+            "Orpheus and Erudyce had substantial",
+            "magical talent Herx never did when",
+            "he received the evil powers that",
+            "turned him into a lich.",
+            "",
+            "Expect this pair to be far more",
+            "formidable with their spells in combat,",
+            "especially with their more recent",
+            "submission to evil magic.",
+            "",
+            "Erudyce's cold spells will make it easier",
+            "for her brother to catch you in melee!",
+            "",
+            "Each sibling will become enraged if",
+            "their counterpart is killed, enhancing",
+            "their combat prowess. Think ahead!"
+        ],
+        "details_line_highlights": []
+    },
+    "cockatrice lair": {
+        "blurb": [
+            "While no symbiosis between these scaly",
+            "creatures is known, Cockatrices and",
+            "Kobolds are historically depicted",
+            "together by Kobold tribal art. It is",
+            "thought they worship the beasts."
+        ],
+        "details": [
+            "SECRET LEVEL TREASURES:",
+            "- Dragon's Mail",
+            "",
+            "This fiercely guarded kobold maze",
+            "is the greatest known example of",
+            "their ingenuity and culture.",
+            "",
+            "Frought with traps and puzzles,",
+            "this lair is designed to keep intruders",
+            "out.",
+            "",
+            "Strong enchantments prevent",
+            "teleporting, dig, open, and levitation.",
+            "Those seeking treasure must navigate",
+            "these tunnels the hard way, and hope",
+            "they can escape."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "containers": {
+        "blurb": [
+            "Dungeon denizens often gather",
+            "belongings into containers or",
+            "hide them away in sheltered spots.",
+            "",
+            "Gold and items may be found when",
+            "bashing fragile objects open."
+        ],
+        "details": [
+            "The contents of a breakable container",
+            "varies greatly depending on where it's",
+            "found.",
+            "",
+            "What remains most consistent is a",
+            "handful of coins, or a random item",
+            "squirreled away.",
+            "",
+            "Rarely, a small creature, or even a",
+            "small group may be tucked inside for",
+            "shelter."
+        ],
+        "details_line_highlights": []
+    },
+    "crystal caves": {
+        "blurb": [
+            "While this rich source of extremely",
+            "rare crystal was only recently discovered,",
+            "the Magicians' Guild archmagisters",
+            "quickly sealed it off, for Hamlet's",
+            "safety, of course."
+        ],
+        "details": [
+            "INHABITANTS:",
+            "Kobolds, Scarabs, Insectoids,",
+            "Automatons, Incubi, Crystal Golems,",
+            "Cockatrices",
+            "",
+            "NEW TRAP:",
+            "Ceiling Trap",
+            "",
+            "The crystal within these caves gives",
+            "many of its denizens intense power",
+            "beyond what is naturally possible.",
+            "",
+            "Confident adventurers coming from",
+            "the ruins would be wise to exercise",
+            "greater caution with new foes."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {},
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "daedalus": {
+        "blurb": [
+            "Closely bound to the minotaur,",
+            "DAEDALUS SHRINES seem to always be",
+            "nearby when the minotaur is on the hunt.",
+            "",
+            "Savvy adventurers can touch them to",
+            "reveal hope for a speedy escape."
+        ],
+        "details": [
+            "These shrines turn to point to the",
+            "primary exit when touched, sending a",
+            "divining beam forth in that direction.",
+            "This also reveals the map between the",
+            "shrine and the exit!",
+            "",
+            "If activated within 30 seconds of the",
+            "minotaur's arrival, the shrine boosts",
+            "user's escape with an additional",
+            "blessing of speed.",
+            "",
+            "Adventurers exploring together may",
+            "find a bit more confidence splitting",
+            "up where the minotaur is known to",
+            "hunt, thanks to those who honor",
+            "Daedalus."
+        ],
+        "details_line_highlights": []
+    },
+    "door": {
+        "blurb": [
+            "It opens, it closes, and",
+            "may sometimes be locked!",
+            "",
+            "Unlike the stubborn gate, DOORS can",
+            "be picked or bashed open. Monsters bash",
+            "through doors, if too dumb to open them."
+        ],
+        "details": [
+            "While the lock spell can prevent",
+            "monsters from opening doors easily,",
+            "most don't have trouble bashing",
+            "through them anyway.",
+            "Doors are not a reliable way to keep",
+            "out monsters, even if locked.",
+            "",
+            "Lockpicking a sealed door is usually",
+            "faster than bashing it, while providing",
+            "tinkering skill practice.",
+            "",
+            "Doors take extra damage from axes",
+            "or unarmed strikes, if trained.",
+            "Damaging spells may also be effective."
+        ],
+        "details_line_highlights": []
+    },
+    "fountain": {
+        "blurb": [
+            "FOUNTAIN waters refresh or apply magic",
+            "to an adventurer. They've also been known",
+            "to summon a succubus or incubus.",
+            "",
+            "Magic doesn't come without peril."
+        ],
+        "details": [
+            "FOUNTAIN USE POSSIBILITIES:",
+            "- 40% Apply a Random Potion Effect",
+            "- 30% Restore 5 HP, +Satiation",
+            "- 10% Summon Succubus/Incubus:",
+            "    Level 1-10:",
+            "        - Succubus (100%)",
+            "    Level 11-20/Underworld:",
+            "        - Succubus (50%)",
+            "        - Lesser Incubus (50%)",
+            "    Level 21+:",
+            "        - Incubus (100%)",
+            "- 7.5% Bless 1 Piece of Worn Equipment",
+            "- 2.5% Bless All Worn Equipment",
+            "",
+            "Those skilled in alchemy avoid the",
+            "summoning of a foocubus when filling",
+            "a bottle with fountain liquids.",
+            "",
+            "The otherworldly presence causes the",
+            "fountain to refill, allowing multiple",
+            "attempts to collect more potions."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "gnomish mines": {
+        "blurb": [
+            "If the mines beneath Hamlet ever held",
+            "gold, stories about it may've begun here.",
+            "",
+            "When a debt of gnomes descends on the hunt",
+            "for riches, their greed cannot be satisfied."
+        ],
+        "details": [
+            "SECRET LEVEL TREASURES:",
+            "- Sphinx's Casque",
+            "- Dozens of gold veins to mine",
+            "",
+            "The greatest reward to be found",
+            "here may be the experience earned",
+            "by slaying so many gnomes!",
+            "",
+            "Lightning magicstaffs carried by",
+            "gnomes are deadly, but proper",
+            "ambushes can put the staffs in the",
+            "hands of the adventurers, and turn",
+            "the tides in their favor.",
+            "Be sneaky to survive."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "gravestone": {
+        "blurb": [
+            "Often chiseled with epitaphs, a GRAVE",
+            "may result in a ghoul rising from the",
+            "earth when disturbed. Some adventurers",
+            "relish the opportunity to slay, or",
+            "perhaps befriend, emergent undead."
+        ],
+        "details": [
+            "GRAVESTONE USE POSSIBILITIES:",
+            "- 25% Disturb Ghoul",
+            "    Level 1-15:",
+            "        - Ghoul",
+            "    Level 16+/Haunted Castle:",
+            "        - Enslaved Ghoul",
+            "",
+            "If a ghoul is not disturbed by reading",
+            "the gravestone's epitaph, it otherwise",
+            "only acts as an obstacle.",
+            "",
+            "If a trap or puzzle activates a",
+            "gravestone, it will always produce",
+            "an undead ghoul."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "hall of trials": {
+        "blurb": [
+            "Founded by unaffiliated adventurers,",
+            "the HALL OF TRIALS was established shortly",
+            "after Herx's imprisonment in the Devils'",
+            "Bastion. Nobody knows what became of",
+            "its benefactors."
+        ],
+        "details": [
+            "While some adventurers seek to earn",
+            "diplomas from the Hall of Trials all",
+            "at once, many prefer to revisit the",
+            "mysterious academy from time to time,",
+            "mastering disciplines gradually.",
+            "",
+            "The greatest thing to be gained here",
+            "is knowledge. Student awards can",
+            "open more learning opportunities.",
+            "",
+            "While no single guild built it,",
+            "the Hall of Trials is the first effort",
+            "of the movement of united guilds,",
+            "whose objective is to defeat chaos."
+        ],
+        "details_line_highlights": []
+    },
+    "hamlet": {
+        "blurb": [
+            "The reclaimed HAMLET has been",
+            "hastily renovated by the recently",
+            "freed prisoners of the mines.",
+            "",
+            "In this district nearest the Minehead,",
+            "the Magicians' Guild holds high prominence."
+        ],
+        "details": [
+            "Friendly heroes have unparalleled",
+            "access to these kinds of Hamlet shops:",
+            "- 2x Arms & Armor",
+            "- General Store",
+            "- Jeweler",
+            "- Magicstaff",
+            "- Bookstore",
+            "- Alchemist",
+            "- Delicatessen",
+            "",
+            "Monsters traveling to Hamlet will be",
+            "attacked on sight. The inn bunkroom",
+            "conveniently hosts a sewer entrance,",
+            "through which one can travel safely",
+            "to the back of the Magicians' Guild.",
+            "",
+            "Hidden below, there are polymorph",
+            "potions, allowing them to shop freely."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "haunted castle": {
+        "blurb": [
+            "Before he was sealed away, the citizens",
+            "of Hamlet were enslaved by the Baron",
+            "to build this CASTLE for him to occupy.",
+            "",
+            "The walls were formed by stone",
+            "excavated by the miners."
+        ],
+        "details": [
+            "SECRET LEVEL TREASURES:",
+            "- Oracle's Treads",
+            "- Hidden treasure chests",
+            "- 4 Potions of levitation",
+            "",
+            "Ghouls here are cursed to defend",
+            "the Baron's possessions, and rise when",
+            "his things are disturbed. Prior to",
+            "looting, plan the escape or defense!",
+            "",
+            "Secret treasure chests are",
+            "hidden behind a waterfall.",
+            "Explore the castle towers thoroughly",
+            "and find how to reveal the way."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "hell": {
+        "blurb": [
+            "A dimension crafted for human suffering,",
+            "but also home to many magical beasts",
+            "and monsters.",
+            "",
+            "Here vile devils seek ways to dominate",
+            "the realms of mortals and immortals alike."
+        ],
+        "details": [
+            "INHABITANTS:",
+            "Succubi, Incubi, Imps, Demons,",
+            "Shadows, Goatmen",
+            "",
+            "NEW TRAP:",
+            "Summoning Trap",
+            "",
+            "Few survive Hell for long.",
+            "Dodge spells with swift feet while",
+            "watching for spike traps. Arrows traps",
+            "might push adventurers into lava!",
+            "",
+            "To survive one must think quickly.",
+            "Cure ailment will aleviate burning."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {},
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "herx lair": {
+        "blurb": [
+            "The ancient ruins descend into a place",
+            "that channels the flow of primordial power.",
+            "",
+            "Those with the will to control it can",
+            "exert their influence here, as the",
+            "veil between realms is thin."
+        ],
+        "details": [
+            "If an adventurer brings mystic orbs",
+            "to this place, they can be placed on",
+            "pedestals in the northern rooms:",
+            "- Green Orb improves DEX and PER",
+            "- Red Orb improves STR and CON",
+            "- Blue Orb improves INT and Magic",
+            "    Resistance",
+            "",
+            "Herx waits to surprise his foes",
+            "until they are approaching the",
+            "middle of his arena. Keep allies",
+            "on the outer edge of the room and",
+            "give yourself time to prepare.",
+            "Magic Reflection is recommended."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "hunters guild": {
+        "blurb": [
+            "Founded by simple pioneers,",
+            "the HUNTERS' GUILD now employs Rogues,",
+            "Hunters, and Ninjas who are capable of",
+            "snuffing out terrifying threats with",
+            "well-organized efficiency."
+        ],
+        "details": [
+            "Members of the hunters' guild rely on",
+            "ambushing to do their good work. They",
+            "regard this as the least costly,",
+            "the least risky, and thus the most",
+            "moral method to serve civilization.",
+            "",
+            "Members offer death as their first",
+            "solution. This has earned them a",
+            "reputation as death worshippers.",
+            "",
+            "In their own words:",
+            "   Death is necessary for life.",
+            "   Our duty is to choose the",
+            "   right recipients for each."
+        ],
+        "details_line_highlights": []
+    },
+    "labyrinth": {
+        "blurb": [
+            "Geomancers theorize that the waters",
+            "of the Swamps once burbled up from",
+            "a massive subterranean ocean.",
+            "",
+            "However, miners found only dry sand",
+            "and ruins in the depths below."
+        ],
+        "details": [
+            "INHABITANTS:",
+            "Scarabs, Scorpions, Lesser Insectoids,",
+            "Goblins, Trolls",
+            "",
+            "NEW TRAP:",
+            "Spike Trap",
+            "",
+            "With large, winding mazes, the",
+            "labyrinths are quite deadly when",
+            "paired with two threats:",
+            "Starvation and minotaurs.",
+            "Magic mapping can help with speedy",
+            "exploration. Bring a method for",
+            "digging to open hidden paths."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {},
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "lava": {
+        "blurb": [
+            "It's liquid-hot magma!",
+            "",
+            "Anything that falls in is",
+            "engulfed in flame and destroyed,",
+            "including clumsy adventurers."
+        ],
+        "details": [
+            "Lava is a deadly obstacle with",
+            "little reason to attempt swimming in",
+            "it, setting ablaze whatever enters.",
+            "",
+            "Automatons who really want to",
+            "increase their temperature might",
+            "find a short dip to be useful - in spite",
+            "of the rapid damage that lava causes.",
+            "",
+            "Waterwalking allows adventurers",
+            "and their followers to avoid sinking",
+            "into the surface of lava.",
+            "",
+            "Should've called it liquidwalking."
+        ],
+        "details_line_highlights": []
+    },
+    "lever": {
+        "blurb": [
+            "LEVERS are reliable tools",
+            "for a dungeon architect.",
+            "",
+            "Using hidden mechanisms, the power of",
+            "leverage can activate anything from traps",
+            "to doorways and even mystical gadgets."
+        ],
+        "details": [
+            "Some levers have a timed effect,",
+            "requiring them to be cranked up",
+            "multiple times before activating.",
+            "Often these are attached to a",
+            "challenge which demands speed.",
+            "",
+            "Sometimes lever mechanisms overlap",
+            "with hidden machinery attached to",
+            "other dungeon traps. These overlaps",
+            "can be confusing but may also provide",
+            "emergent behaviors to exploit.",
+            "",
+            "Player ghosts can pull levers, allowing",
+            "some challenges to be cheated."
+        ],
+        "details_line_highlights": []
+    },
+    "magic trap": {
+        "blurb": [
+            "These magical pylons once acted",
+            "as channels of magic for those",
+            "who lived here to use.",
+            "",
+            "They have since been corrupted",
+            "into beacons of chaos."
+        ],
+        "details": [
+            "MAGIC TRAP TYPES:",
+            "- Forcebolt",
+            "- Cold",
+            "- Fireball",
+            "- Lightning",
+            "- Magic Missile",
+            "- Sleep",
+            "- Slow",
+            "- Confuse",
+            "",
+            "Some adventurers have the means to",
+            "dig these traps to break them, which",
+            "can greatly simplify exploration.",
+            "If guiding followers, avoid confusion",
+            "traps! Cure ailment saves friendships."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "magicians guild": {
+        "blurb": [
+            "Fostering innovation and ambition, the",
+            "MAGICIANS' GUILD trains Arcanists,",
+            "Healers, and Wizards.",
+            "",
+            "A paradoxical source of time-honored",
+            "wisdom and ill-conceived revolution."
+        ],
+        "details": [
+            "Agents of the magicians' guild are",
+            "adaptable spellcasters, able to",
+            "read and memorize most spells, as",
+            "long as they have been practicing.",
+            "",
+            "Most magicians have secondary skills",
+            "which allow them to reserve magic for",
+            "when a spell is truly necessary.",
+            "",
+            "They follow a complex philosophy of",
+            "the makeup of the universe, pondering",
+            "how each element combines to account",
+            "for material reality, the spirit realm,",
+            "as well as human virtues and vices."
+        ],
+        "details_line_highlights": []
+    },
+    "masons guild": {
+        "blurb": [
+            "Originally a guild of stoneworkers, the",
+            "Masons' Guild's role in communities now",
+            "includes all manner of work that",
+            "requires organized use of might.",
+            "Barbarians, Warriors, and Wanderers",
+            "often place membership."
+        ],
+        "details": [
+            "A proud organization of workers",
+            "and soldiers who are certain that",
+            "they're the foundation of",
+            "civilization itself.",
+            "",
+            "While other guilds may disagree",
+            "on that point, none deny that their",
+            "mighty arms and strong backs are to",
+            "thank for the settlement and",
+            "fortification of all great cities.",
+            "",
+            "Members of the masons' guild believe",
+            "in their duty to protect peace and",
+            "build new, fruitful futures."
+        ],
+        "details_line_highlights": []
+    },
+    "merchants guild": {
+        "blurb": [
+            "An organization of Merchants, Mechanists,",
+            "and Brewers, the MERCHANTS' GUILD is",
+            "quietly respected as the most",
+            "powerful guild in the realm.",
+            "",
+            "Some say Herx was a member long ago."
+        ],
+        "details": [
+            "Merchants' guild members are defined",
+            "by their resourcefulness. While often",
+            "lacking in might or arcane talent, they",
+            "rely on found items more than others.",
+            "",
+            "The guild shepherds associates to",
+            "identify and exploit tools they have",
+            "at their disposal to ensure success.",
+            "",
+            "In parties, merchants' guild sponsored",
+            "classes are able to discover solutions",
+            "that traditional adventurers don't",
+            "often consider. Adaptability is key."
+        ],
+        "details_line_highlights": []
+    },
+    "minehead": {
+        "blurb": [
+            "Just through the ruins of Hamlet",
+            "lies the MINEHEAD where citizens",
+            "slaved away for the Baron.",
+            "",
+            "Entering this place is a one-way trip unless",
+            "the curse on Hamlet can be broken."
+        ],
+        "details": [
+            "Many adventuring parties camp here",
+            "as they prepare for their attempt at",
+            "lifting the Baron's curse.",
+            "",
+            "A convenient location to plan and",
+            "trade equipment or food, preparing",
+            "for the dangerous path ahead.",
+            "",
+            "Allied spellcasters can benefit from",
+            "sharing spellbooks. As long as they",
+            "have the durability, memorizing each",
+            "others' spellbooks multiplies their",
+            "benefit to a party."
+        ],
+        "details_line_highlights": []
+    },
+    "mines": {
+        "blurb": [
+            "Initially mined for iron, and later scoured",
+            "in a fruitless search for gold, the MINES",
+            "became the home of Baron Herx's",
+            "mercenary army as they imprisoned the",
+            "Hamlet miners."
+        ],
+        "details": [
+            "INHABITANTS:",
+            "Rats, Skeletons, Spiders, Trolls,",
+            "Humans",
+            "",
+            "NEW TRAP:",
+            "Boulder Trap",
+            "",
+            "The mines will test your basic",
+            "dungeoning skills, including ambushes,",
+            "blocking, keeping an eye out for traps",
+            "and managing your food supply.",
+            "",
+            "Avoid fights you can't win, and learn",
+            "enemy weaknesses to shorten fights."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {},
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "minetown": {
+        "blurb": [
+            "A place of respite within the Mines,",
+            "hidden from Herx's army. Thought to be",
+            "a myth by Hamlet miners, history doesn't",
+            "say if the hopeful people built MINETOWN,",
+            "or if they discovered it."
+        ],
+        "details": [
+            "SECRET LEVEL TREASURES:",
+            "- Four random shops",
+            "- Four treasure chests",
+            "- Several humans to recruit",
+            "",
+            "Accessing the hidden treasures in",
+            "Minetown requires a way to get past",
+            "the gates which guard the lake.",
+            "Open, dig, pickaxes or even teleport",
+            "may do the job.",
+            "",
+            "Four shops means four shopkeepers.",
+            "Minetown can be dangerous to visit",
+            "for ill-prepared monsters."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "minotaur maze": {
+        "blurb": [
+            "Myths tell of a maze that hides",
+            "artifacts of unmatched power.",
+            "",
+            "The high walls and broad hallways are",
+            "perfectly sized for a terrifyingly large",
+            "protector who would guard such treasure."
+        ],
+        "details": [
+            "SECRET LEVEL TREASURES:",
+            "- Red Mystic Orb",
+            "- Gungnir",
+            "",
+            "For most, it is wise to grab the orb",
+            "and outrun the minotaur to the exit.",
+            "Look for nearby gatehouse levers if",
+            "closed gates block the way. A spell",
+            "of opening, or digging, can help!",
+            "",
+            "The pedestal at the end of the maze",
+            "cripples the minotaur temporarily",
+            "when the orb is placed upon it.",
+            "Don't forget to reclaim the orb!"
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "molten throne": {
+        "blurb": [
+            "The seat of Baphomet's power.",
+            "This devil has chosen a location where",
+            "magic may flow more easily to the mortal",
+            "realm, allowing his influence to seep in.",
+            "",
+            "Other realms may similarly be close by."
+        ],
+        "details": [
+            "While Baphomet is a being of great",
+            "power, an adventurer invading his",
+            "realm is not what he expects. Herx",
+            "is his intended puppet with whom he",
+            "sought to corrupt the mortal world.",
+            "",
+            "Regardless, even caught unprepared,",
+            "his mastery of fiery brimstone with",
+            "the command of evil demons and spirits",
+            "guarantee he won't submit easily.",
+            "",
+            "If he is defeated, beware of rival",
+            "devils sending minotaur agents to",
+            "claim his throne for themselves."
+        ],
+        "details_line_highlights": []
+    },
+    "murky water": {
+        "blurb": [
+            "Most denizens are careful not to",
+            "enter foul pools of dungeon water.",
+            "",
+            "Filled with dense rot, just about",
+            "anything will float on it, including",
+            "adventurers with places to go."
+        ],
+        "details": [
+            "While murky water is usually a trivial",
+            "obstacle, adventurers should avoid",
+            "combat while swimming.",
+            "",
+            "An amulet of olympic swimming can",
+            "all but eliminate the inconvenience",
+            "of having to swim, and can save lives",
+            "if a hasty swimming escape is needed.",
+            "",
+            "Water will put out fires, and washes",
+            "away the effects of polymorph.",
+            "Monsters should make sure their",
+            "shopping is done before falling in."
+        ],
+        "details_line_highlights": []
+    },
+    "mystic library": {
+        "blurb": [
+            "The Magicians' Guild still",
+            "holds a strange connection to",
+            "the MYSTIC LIBRARY, a pocket dimension",
+            "accessible by magic from the ruins",
+            "buried deep beneath Hamlet."
+        ],
+        "details": [
+            "SECRET LEVEL TREASURES:",
+            "- Blue Mystic Orb",
+            "- Chests of random magic items",
+            "- Several humans to recruit",
+            "",
+            "The library is filled with rewards",
+            "for friendly adventurers. Use dig and",
+            "levitate to explore for hidden chests.",
+            "",
+            "Caches of scrolls, spellbooks, and",
+            "magicstaffs can help late-blooming",
+            "magic-users to mature their craft.",
+            "Non-magic users can still benefit",
+            "from many of the scrolls."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "obelisk": {
+        "blurb": [
+            "The shapeless void of the Underworld",
+            "can be confusing to traverse.",
+            "",
+            "These shrines seize upon hapless spirits",
+            "when touched, carrying them off to",
+            "another part of the realm."
+        ],
+        "details": [
+            "While initially random, obelisks lead",
+            "to each room in sequence, eventually",
+            "looping back around to the start.",
+            "",
+            "This does enable exploration of the",
+            "underworld's sea of pits, but also",
+            "sends adventurers along with no",
+            "no warning of what awaits them on the",
+            "other side.",
+            "",
+            "Some adventurers ready potions,",
+            "stealth, or a raised shield. Others",
+            "send a follower through first, waiting",
+            "to see if they survive the journey."
+        ],
+        "details_line_highlights": []
+    },
+    "pits": {
+        "blurb": [
+            "Ambling denizens are wise enough",
+            "not to fling themselves into the",
+            "vast emptiness of PITS.",
+            "Those who defy gravity should make",
+            "sure to land on solid ground,",
+            "or face certain death."
+        ],
+        "details": [
+            "Pits often taunt adventurers with",
+            "unreachable treasures on the other",
+            "side.",
+            "",
+            "While levitation is a great",
+            "solution, often one might also find",
+            "access by digging through walls or",
+            "opening gates on the other side.",
+            "",
+            "Adventuring parties may find pits",
+            "to be a convenient way to dispose of",
+            "unwanted items, making sure allies",
+            "don't waste time picking through",
+            "piles of cursed junk."
+        ],
+        "details_line_highlights": []
+    },
+    "portcullis": {
+        "blurb": [
+            "A portcullis that can only be",
+            "passed by raising its iron bars.",
+            "",
+            "Most often, a nearby lever will operate it,",
+            "though crafty magic may also do the job."
+        ],
+        "details": [
+            "Not all gates have a lever that",
+            "operates them. A spell of opening",
+            "will allow adventurers to bypass",
+            "many dungeon challenges and traps.",
+            "",
+            "Since only the minotaur can shatter",
+            "gates, using a lever to close an open",
+            "gate is a very reliable way to keep",
+            "monsters away if you need a moment.",
+            "",
+            "Some gates are held closed by a",
+            "mechanism, rather than being held",
+            "open by one. These gates cannot be",
+            "opened with magic."
+        ],
+        "details_line_highlights": []
+    },
+    "ruins": {
+        "blurb": [
+            "No one knows which ancient tribe",
+            "built these enchanted RUINS.",
+            "",
+            "Legends tell of a magical catastrophe that",
+            "once sent an entire city to the underworld",
+            "forever. Perhaps this is that place."
+        ],
+        "details": [
+            "INHABITANTS:",
+            "Demons, Gnomes, Young Vampires,",
+            "Bugbears, Damaged Automatons",
+            "",
+            "NEW TRAP:",
+            "Magic Trap",
+            "",
+            "The ruins' open spaces are far easier",
+            "to navigate than the labyrinths, but",
+            "the threats may come from anywhere.",
+            "Situational awareness and decisive",
+            "damage are essential for success.",
+            "",
+            "Traverse pits to discover secrets."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {},
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "shop": {
+        "blurb": [
+            "SHOPS are recognizable no",
+            "matter where they're found.",
+            "",
+            "Even monsters know not to threaten",
+            "shopkeepers, but they won't mind if you",
+            "rummage through their chests for freebies."
+        ],
+        "details": [
+            "SHOP TYPES:",
+            "- Arms & Armor",
+            "- Hats",
+            "- Hunting Supply",
+            "- Delicatessen",
+            "- Alchemist",
+            "- Hardware Store",
+            "- Magicstaffs",
+            "- Bookstore",
+            "- Jeweler",
+            "- General Store",
+            "",
+            "Each shop has a sign signifying",
+            "the kind of wares it trades in.",
+            "Only general stores buy all goods.",
+            "",
+            "Usually it's a good idea to spend!",
+            "Shops may be rare, so taking the",
+            "opportunity to buy supplies and earn",
+            "trading skill is often a wise choice.",
+            "",
+            "With some trade skill, and charisma,",
+            "shoppers can access a shop's private",
+            "stock of consumables to help stay",
+            "in good health and keep gear keen.",
+            "A shop's private stock varies based on",
+            "the shop type, often complementing the",
+            "goods available for trade.",
+            "",
+            "Monsters, and adventurers marked",
+            "with the WANTED status, are attacked",
+            "on-sight by shopkeepers.",
+            "Avoid collateral damage by making",
+            "sure you are not between a",
+            "shopkeeper and his target."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "sink": {
+        "blurb": [
+            "SINK water may restore a little hunger,",
+            "but the water can be scalding, slimes can",
+            "hide in the pipes, and the plumbing",
+            "quickly breaks.",
+            "",
+            "Use with empty bottles for best results."
+        ],
+        "details": [
+            "SINK USE POSSIBILITIES:",
+            "- 60% Fresh Water",
+            "- 20% Scalding Water",
+            "- 10% Slime",
+            "- 10% Find Ring",
+            "",
+            "Fresh sink water, served at the proper",
+            "temperature, restores 1 HP. Those who",
+            "have recently eaten a filling meal",
+            "should take care when drinking from",
+            "sinks so as not to be over-filled.",
+            "",
+            "If a slime emerges while tapping with",
+            "an empty bottle, acid will be collected."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "sokoban": {
+        "blurb": [
+            "Those who enter here say they feel",
+            "watched and judged, as though they",
+            "are being tested.",
+            "Cynics claim it is a trick by cruel",
+            "gods who enjoy watching mortals",
+            "starve to death."
+        ],
+        "details": [
+            "SECRET LEVEL TREASURES:",
+            "- Djinn's Brace",
+            "- A fortune in gold pieces",
+            "",
+            "To solve this challenge, one must rid",
+            "the room of all boulders using a ring",
+            "of might or potion of strength.",
+            "",
+            "Pushing all boulders into pits is the",
+            "path to victory, avoid letting them",
+            "become stuck in corners - boulders",
+            "cannot be pulled backward!",
+            "",
+            "Rewards will be reduced if boulders",
+            "are destroyed to complete the puzzle."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "spike trap": {
+        "blurb": [
+            "Somebody was either very cruel or",
+            "terrified of something very large when",
+            "they created these brutal devices.",
+            "",
+            "They are easy enough to spot and avoid...",
+            "if you have time to watch your step."
+        ],
+        "details": [
+            "Spikes deal 50 damage, regardless",
+            "of the victim's armor or constitution.",
+            "Many spike traps trigger when walked",
+            "on or over, regardless of levitation.",
+            "",
+            "Neutralize spikes by tossing",
+            "an unwanted item on the trap, and",
+            "they will not normally rearm until",
+            "the item is removed. This will help",
+            "followers survive as they wander.",
+            "",
+            "These traps are only dangerous when",
+            "thrusting from below. Navigate",
+            "through raised spikes to provide more",
+            "time to maneuver certain challenges!"
+        ],
+        "details_line_highlights": []
+    },
+    "summoning trap": {
+        "blurb": [
+            "Empowered by arcane rituals the",
+            "SUMMONING TRAP can turn an empty room",
+            "into a deadly battlefield in an instant.",
+            "",
+            "Take care when near these symbols.",
+            "They can be activated in many ways."
+        ],
+        "details": [
+            "The symbol on the floor signals",
+            "the presence of this trap, but",
+            "drawing near, operating a lever,",
+            "or taking an offering from the floor",
+            "may all trigger the summoning.",
+            "",
+            "Loud booms accompany activation",
+            "as demonic spirits transfer.",
+            "",
+            "Some zealous adventurers like to",
+            "tempt summon traps, beckoning more",
+            "hellspawn to slay. But this is a risky",
+            "prospect, with little way of knowing",
+            "what kind of fight awaits."
+        ],
+        "details_line_highlights": []
+    },
+    "swamps": {
+        "blurb": [
+            "Dense plants here were obliterated in the",
+            "effort to expand the Hamlet mines, but",
+            "the hydrophilic flora quickly recovered.",
+            "",
+            "Sadly, the vegetation is known to",
+            "cause psychosis when eaten."
+        ],
+        "details": [
+            "INHABITANTS:",
+            "Spiders, Goblins, Slimes, Ghouls, Trolls",
+            "",
+            "NEW TRAP:",
+            "Arrow Trap",
+            "",
+            "The swamps feature new threats",
+            "that attack at range. Stealth helps!",
+            "",
+            "Beware goblins with magicstaffs.",
+            "Magic reflection is ideal if available.",
+            "Otherwise, ambush, or fight from afar",
+            "so you can dodge projectiles.",
+            "Dip into water to douse flames."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {},
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "temple": {
+        "blurb": [
+            "An evil god has heard the prayers of",
+            "swamp goblins and has provided a place",
+            "on the surface for them to make blood",
+            "sacrifices. A deadly path to this TEMPLE",
+            "is provided for worship."
+        ],
+        "details": [
+            "SECRET LEVEL TREASURES:",
+            "- Green Mystic Orb",
+            "- 4 Potions of strength",
+            "- A hoard of gold pieces",
+            "- Several treasure chests",
+            "",
+            "Hidden rooms make use of the orb's",
+            "power, revealing more treasures.",
+            "The Temple's traps may shut down",
+            "access to secret areas if explorers",
+            "are careless, or prisoners are freed.",
+            "",
+            "It is wise to take time to plan ahead",
+            "to avoid blunders in the Temple."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    },
+    "the church": {
+        "blurb": [
+            "Officials of THE CHURCH play a passive",
+            "cultural role until things get out of hand.",
+            "",
+            "Clerics, Monks, and Sextons act as",
+            "agents of action when wrongs need",
+            "to be made right."
+        ],
+        "details": [
+            "Members of the church see the events",
+            "of the world as a tapestry of great",
+            "purpose, and devote their lives seeking",
+            "to understand and uphold it.",
+            "",
+            "With little ambition, officers usually",
+            "withdraw from public affairs. But no",
+            "other organization is so unified as the",
+            "church when they find the course of",
+            "history is straying from its purpose.",
+            "",
+            "Church agents tend to be practical,",
+            "embracing physical and magic talents",
+            "that provide uncomplicated utility."
+        ],
+        "details_line_highlights": []
+    },
+    "transition floor": {
+        "blurb": [
+            "Each layer of the dungeons was once",
+            "newly discovered, as miners dug deeper.",
+            "",
+            "Natural fissures formed between layers,",
+            "requiring a bridge to be built, often",
+            "taking weeks to finish."
+        ],
+        "details": [
+            "There is a strange sense of peace",
+            "that occupies transition floors,",
+            "causing adventurers to hunger at a",
+            "much slower rate than normal.",
+            "The perfect spot to take a break.",
+            "",
+            "Be warned, mimics may still take",
+            "the place of treasure chests here.",
+            "",
+            "The transition floor between the",
+            "mines and swamps contains a hidden",
+            "portal to the underworld.",
+            "If one wishes to risk a visit, some",
+            "method of digging is needed."
+        ],
+        "details_line_highlights": []
+    },
+    "underworld": {
+        "blurb": [
+            "These catacombs are the first destination",
+            "for souls who have recently died.",
+            "",
+            "Depending on how they lived, the other",
+            "denizens of the Underworld may cast them",
+            "further down into Hell."
+        ],
+        "details": [
+            "INHABITANTS:",
+            "Skeletons, Slimes, Ghouls, Imps,",
+            "Shadows",
+            "",
+            "SECRET LEVEL TREASURES:",
+            "- Khryselakatos (Lvl 7)",
+            "",
+            "The underworld can be accessed tiwce",
+            "via secret entrances on floor 5 and 18.",
+            "In both cases, adventurers who find",
+            "a trapdoor down to a second floor of",
+            "the underworld will find a deadly",
+            "reward awaiting them.",
+            "",
+            "Beware, most foes attack across pits."
+        ],
+        "details_line_highlights": [
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {},
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }
+        ]
+    }
+}

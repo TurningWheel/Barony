@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "player.hpp"
 #include "prng.hpp"
+#include "mod_tools.hpp"
 
 Stat* stats[MAXPLAYERS];
 
@@ -329,6 +330,7 @@ void Stat::clearStats()
 
 	strcpy(this->obituary, Language::get(1500));
 	this->killer = KilledBy::UNKNOWN;
+	this->killer_uid = 0;
 	this->killer_monster = NOTHING;
 	this->killer_item = WOODEN_SHIELD;
 	this->killer_name = "";
@@ -559,7 +561,7 @@ Stat* Stat::copyStats()
 
 	newStat->type = this->type;
 	newStat->sex = this->sex;
-	newStat->appearance = this->appearance;
+	newStat->stat_appearance = this->stat_appearance;
 	strcpy(newStat->name, this->name);
 	strcpy(newStat->obituary, this->obituary);
 
@@ -615,10 +617,6 @@ Stat* Stat::copyStats()
 	newStat->FOLLOWERS.first = NULL;
 	newStat->FOLLOWERS.last = NULL;
 	list_Copy(&newStat->FOLLOWERS, &this->FOLLOWERS);
-	newStat->stache_x1 = this->stache_x1;
-	newStat->stache_x2 = this->stache_x2;
-	newStat->stache_y1 = this->stache_y1;
-	newStat->stache_y2 = this->stache_y2;
 
 	newStat->inventory.first = NULL;
 	newStat->inventory.last = NULL;
@@ -815,7 +813,7 @@ void Stat::printStats()
 {
 	printlog("type = %d\n", this->type);
 	printlog("sex = %d\n", this->sex);
-	printlog("appearance = %d\n", this->appearance);
+	printlog("appearance = %d\n", this->stat_appearance);
 	printlog("name = \"%s\"\n", this->name);
 	printlog("HP = %d\n", this->HP);
 	printlog("MAXHP = %d\n", this->MAXHP);
@@ -1399,20 +1397,36 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 	intro = oldIntro;
 }
 
-int Stat::getActiveShieldBonus(bool checkShield) const
+int Stat::getActiveShieldBonus(bool checkShield, bool excludeSkill, Item* shieldItem, bool checkNonShieldBonus) const
 {
-	if ( !checkShield )
+	Item* item = shieldItem;
+	if ( !item )
 	{
-		return (5 + (getModifiedProficiency(PRO_SHIELD) / 5));
+		if ( !checkShield )
+		{
+			if ( checkNonShieldBonus )
+			{
+				return (5 + (excludeSkill ? 0 : std::min(SKILL_LEVEL_SKILLED, getModifiedProficiency(PRO_SHIELD)) / 5));
+			}
+			else
+			{
+				return (5 + (excludeSkill ? 0 : (getModifiedProficiency(PRO_SHIELD) / 5)));
+			}
+		}
+		item = shield;
 	}
-
-	if ( shield )
+	if ( item )
 	{
-		if ( itemCategory(shield) == SPELLBOOK || itemTypeIsQuiver(shield->type) )
+		if ( itemCategory(item) == SPELLBOOK || itemTypeIsQuiver(item->type) )
 		{
 			return 0;
 		}
-		return (5 + (getModifiedProficiency(PRO_SHIELD) / 5));
+		if ( itemCategory(item) != ARMOR )
+		{
+			// non-armor caps out at 40 blocking
+			return (5 + (excludeSkill ? 0 : std::min(SKILL_LEVEL_SKILLED, getModifiedProficiency(PRO_SHIELD)) / 5));
+		}
+		return (5 + (excludeSkill ? 0 : (getModifiedProficiency(PRO_SHIELD) / 5)));
 	}
 	else
 	{
@@ -1420,10 +1434,14 @@ int Stat::getActiveShieldBonus(bool checkShield) const
 	}
 }
 
-int Stat::getPassiveShieldBonus(bool checkShield) const
+int Stat::getPassiveShieldBonus(bool checkShield, bool excludeSkill) const
 {
 	if ( !checkShield )
 	{
+		if ( excludeSkill )
+		{
+			return 0;
+		}
 		return (getModifiedProficiency(PRO_SHIELD) / 25);
 	}
 
@@ -1431,6 +1449,10 @@ int Stat::getPassiveShieldBonus(bool checkShield) const
 	{
 		if ( itemCategory(shield) == SPELLBOOK || itemTypeIsQuiver(shield->type) 
 			|| itemCategory(shield) == TOOL )
+		{
+			return 0;
+		}
+		if ( excludeSkill )
 		{
 			return 0;
 		}
@@ -1464,7 +1486,7 @@ bool Stat::statusEffectRemovedByCureAilment(const int effect, Entity* my)
 		case EFF_DRUNK:
 			if ( this->type == GOATMAN
 				|| (my && my->behavior == &actPlayer 
-					&& playerRace == RACE_GOATMAN && appearance == 0) )
+					&& playerRace == RACE_GOATMAN && stat_appearance == 0) )
 			{
 				return false;
 			}
@@ -1580,6 +1602,15 @@ bool Stat::emptyLootingBag(const int player, Uint32 key)
 						playSoundEntity(players[player]->entity, 35 + local_rng.rand() % 3, 64);
 					}
 					stats[i]->player_lootbags[key].looted = true;
+				}
+				int owner = (key & 0xF);
+				if ( owner == player )
+				{
+					Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_DEATHBOX_OPEN_OWN, TOOL_PLAYER_LOOT_BAG, 1);
+				}
+				else if ( owner != player )
+				{
+					Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_DEATHBOX_OPEN_OTHERS, TOOL_PLAYER_LOOT_BAG, 1);
 				}
 			}
 			stats[i]->player_lootbags.erase(key);
