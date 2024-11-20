@@ -27,6 +27,13 @@ You will also need the following tools:
  * CMake
  * Linux users will also need Make, or whatever alternate you may generate build files for.
 
+# Download Sources
+Download the latest source code:
+```bash
+git clone https://github.com/TurningWheel/Barony.git
+cd Barony
+```
+
 # Windows Instructions
 
 ## Acquire Dependencies
@@ -83,28 +90,52 @@ If you'd rather debug the editor, instead of hitting the green play button up to
 
 ## Acquire Dependencies
 
-For Debian/Ubuntu, you should be able to install most of these dependencies with: //TODO: Add OpenAL to the list.
-sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-net-dev libsdl2-ttf-dev libpng-dev libz-dev libphysfs-dev rapidjson-dev
+For Debian/Ubuntu, you should be able to install most of these dependencies with:
 
-You will also need PhysFS v3.0.1 for Barony v3.1.5+ if not available in your distro's package repository.
+```bash
+sudo apt-get update
+sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-net-dev libsdl2-ttf-dev libpng-dev libz-dev libphysfs-dev rapidjson-dev libopenal-dev
+```
+
+<details>
+
+<summary>You will also need PhysFS v3.0.1 for Barony v3.1.5+ if not available in your distro's package repository.</summary>
+
 Linux Install (Navigate to somewhere to drop install files first):
- * wget https://icculus.org/physfs/downloads/physfs-3.0.1.tar.bz2
- * bzip2 -d physfs-3.0.1.tar.bz2
- * tar -xvf physfs-3.0.1.tar
- * cd physfs-3.0.1
- * cmake ./
- * make install
+
+```bash
+wget https://icculus.org/physfs/downloads/physfs-3.0.1.tar.bz2
+bzip2 -d physfs-3.0.1.tar.bz2
+tar -xvf physfs-3.0.1.tar
+cd physfs-3.0.1
+cmake ./
+make install
+```
+
 You can then remove the installation files.
+
+</details>
+
+and install OpenGL dependencies with:
+
+```bash
+sudo apt-get install libglu1-mesa-dev freeglut3-dev mesa-common-dev
+```
+
+> Remembering that all dependencies can be installed manually using the links in the section [Dependencies](#dependencies)
 
 ## Building Barony
 
 You can do something along the following lines:
-```
+
+```bash
 mkdir build
 cd build
-cmake ..
-make -j
+cmake [build flags] ..
+make -j [jobs]
 ```
+
+After the build finished, you will find Barony ready to run in `build/barony` or `build/editor`.
 
 # Build Flags
 
@@ -120,3 +151,37 @@ Example cmake invocation, for a build using Steamworks, EOS, and FMOD:
 ```
 cmake -DCMAKE_BUILD_TYPE=Release -DFMOD_ENABLED=ON -DSTEAMWORKS_ENABLED=1 -DEOS_ENABLED=1 # TODO: Standardize ON and 1...
 ```
+
+# Running Barony
+
+After building Barone, it is necessary to install it via Steam to obtain files not included in the repository, such as images, fonts and translation.
+
+To run:
+```bash
+./barony [arguments]
+```
+
+## Arguments
+
+ * `-windowed` - Forces the game to start in a window.
+
+ * `-size` - Sets the display resolution (for example: 960x600, default: 1280x720).
+
+ * `-map` - Chooses a map to run on startup as opposed to reading the first line from levels.txt. Filetype can be included/excluded at will (for example: test).
+
+ * `-gen` - Generates a dungeon to run on startup as opposed to reading the first line from levels.txt. 
+
+ * `-config` - Chooses a config file to execute on startup as opposed to simply running 'default.cfg'.
+
+ * `-quickstart` - Bypasses the menu/character creation process and simply starts the game with the player as the specified class.
+
+ * `-datadir` - Directory containing the game's assets (which are not present in the repository), if the game is installed via Steam, they will be available in the folder: `"~/.local/share/Steam/steamapps/common/Barony"` (default: BASE_DATA_DIR = ./). It is important to highlight that `lang/en.txt` from the game assets will be used and not from the source repository.
+
+ * `-nosound` - Disable in-game audio playback (default: FALSE).
+
+Example:
+```bash
+./barony -windowed -size=960x600 -map=test -quickstart=barbarian
+```
+
+The above command starts the game in a window at 960x600 and quickstarts the map "test.lmp" as a barbarian.
