@@ -5891,13 +5891,35 @@ void actParticleTimer(Entity* my)
 										default:
 											break;
 									}
+
+									if ( Stat* parentStats = parent->getStats() )
+									{
+										monsterStats->monsterNoDropItems = 1;
+										monsterStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1;
+										monsterStats->LVL = 5;
+										std::string lich_num_summons = parentStats->getAttribute("lich_num_summons");
+										if ( lich_num_summons == "" )
+										{
+											parentStats->setAttribute("lich_num_summons", "1");
+										}
+										else
+										{
+											int numSummons = std::stoi(parentStats->getAttribute("lich_num_summons"));
+											if ( numSummons >= 25 )
+											{
+												monsterStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] = 1;
+											}
+											++numSummons;
+											parentStats->setAttribute("lich_num_summons", std::to_string(numSummons));
+										}
+									}
 								}
 								else if ( parent->getRace() == DEVIL )
 								{
 									monsterStats->monsterNoDropItems = 1;
 									monsterStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1;
 									monsterStats->LVL = 5;
-									if ( parent->monsterDevilNumSummons <= 25 )
+									if ( parent->monsterDevilNumSummons >= 25 )
 									{
 										monsterStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] = 1;
 									}

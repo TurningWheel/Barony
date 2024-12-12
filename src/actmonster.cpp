@@ -7656,9 +7656,55 @@ timeToGoAgain:
 				}
 				if ( creature != DEMON )
 				{
-					summonMonster(creature, ((int)(my->x / 16)) * 16 + 8, ((int)(my->y / 16)) * 16 + 8);
+					if ( Entity* summon = summonMonster(creature, ((int)(my->x / 16)) * 16 + 8, ((int)(my->y / 16)) * 16 + 8) )
+					{
+						if ( Stat* summonStats = summon->getStats() )
+						{
+							summonStats->monsterNoDropItems = 1;
+							summonStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1;
+							summonStats->LVL = 5;
+							std::string lich_num_summons = myStats->getAttribute("lich_num_summons");
+							if ( lich_num_summons == "" )
+							{
+								myStats->setAttribute("lich_num_summons", "1");
+							}
+							else
+							{
+								int numSummons = std::stoi(myStats->getAttribute("lich_num_summons"));
+								if ( numSummons >= 25 )
+								{
+									summonStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] = 1;
+								}
+								++numSummons;
+								myStats->setAttribute("lich_num_summons", std::to_string(numSummons));
+							}
+						}
+					}
 				}
-				summonMonster(creature, ((int)(my->x / 16)) * 16 + 8, ((int)(my->y / 16)) * 16 + 8);
+				if ( Entity* summon = summonMonster(creature, ((int)(my->x / 16)) * 16 + 8, ((int)(my->y / 16)) * 16 + 8) )
+				{
+					if ( Stat* summonStats = summon->getStats() )
+					{
+						summonStats->monsterNoDropItems = 1;
+						summonStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1;
+						summonStats->LVL = 5;
+						std::string lich_num_summons = myStats->getAttribute("lich_num_summons");
+						if ( lich_num_summons == "" )
+						{
+							myStats->setAttribute("lich_num_summons", "1");
+						}
+						else
+						{
+							int numSummons = std::stoi(myStats->getAttribute("lich_num_summons"));
+							if ( numSummons >= 25 )
+							{
+								summonStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] = 1;
+							}
+							++numSummons;
+							myStats->setAttribute("lich_num_summons", std::to_string(numSummons));
+						}
+					}
+				}
 			}
 		}
 		else if ( my->monsterState == MONSTER_STATE_LICH_DEATH )     // lich death state
