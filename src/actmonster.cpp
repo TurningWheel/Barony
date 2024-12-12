@@ -680,15 +680,21 @@ bool MonsterAllyFormation_t::getFollowLocation(Uint32 uid, Uint32 leaderUid, std
 	bool found = false;
 	if ( findMelee != leaderUnits.meleeUnits.end() )
 	{
-		outPos.first = findMelee->second.x;
-		outPos.second = findMelee->second.y;
-		found = true;
+		if ( findMelee->second.init )
+		{
+			outPos.first = findMelee->second.x;
+			outPos.second = findMelee->second.y;
+			found = true;
+		}
 	}
 	if ( findRanged != leaderUnits.rangedUnits.end() )
 	{
-		outPos.first = findRanged->second.x;
-		outPos.second = findRanged->second.y;
-		found = true;
+		if ( findRanged->second.init )
+		{
+			outPos.first = findRanged->second.x;
+			outPos.second = findRanged->second.y;
+			found = true;
+		}
 	}
 
 	return found;
