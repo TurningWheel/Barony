@@ -951,12 +951,14 @@ void Entity::actAssistShrine()
 	static ConsoleVariable<float> cvar_assist_flame_z2("/assist_flame_z2", 9.f);
 	static ConsoleVariable<float> cvar_assist_flame_z3("/assist_flame_z3", 6.5);
 	static ConsoleVariable<float> cvar_assist_flame_z4("/assist_flame_z4", 10.f);
-	if ( numFlames > 0 )
+	const int spriteCandle = 202;
+	const int spriteCandleBlue = 203;
+	if ( numFlames > 0 && ( flickerLights || this->ticks % TICKS_PER_SECOND == 1 ) )
 	{
 		Entity* entity = nullptr;
 		if ( numFlames & (1 << 3) )
 		{
-			if ( entity = spawnFlame(this, redFlames & (1 << 3) ? SPRITE_FLAME : SPRITE_CRYSTALFLAME) )
+			if ( entity = spawnFlame(this, redFlames & (1 << 3) ? spriteCandle : spriteCandleBlue) )
 			{
 				entity->x += *cvar_assist_flame_x4 * cos(this->yaw);
 				entity->y += *cvar_assist_flame_x4 * sin(this->yaw);
@@ -969,7 +971,7 @@ void Entity::actAssistShrine()
 		}
 		if ( numFlames & (1 << 2) )
 		{
-			if ( entity = spawnFlame(this, redFlames & (1 << 2) ? SPRITE_FLAME : SPRITE_CRYSTALFLAME) )
+			if ( entity = spawnFlame(this, redFlames & (1 << 2) ? spriteCandle : spriteCandleBlue) )
 			{
 				entity->x += *cvar_assist_flame_x3 * cos(this->yaw);
 				entity->y += *cvar_assist_flame_x3 * sin(this->yaw);
@@ -982,7 +984,7 @@ void Entity::actAssistShrine()
 		}
 		if ( numFlames & (1 << 1) )
 		{
-			if ( entity = spawnFlame(this, redFlames & (1 << 1) ? SPRITE_FLAME : SPRITE_CRYSTALFLAME) )
+			if ( entity = spawnFlame(this, redFlames & (1 << 1) ? spriteCandle : spriteCandleBlue) )
 			{
 				entity->x += *cvar_assist_flame_x2 * cos(this->yaw);
 				entity->y += *cvar_assist_flame_x2 * sin(this->yaw);
@@ -995,7 +997,7 @@ void Entity::actAssistShrine()
 		}
 		if ( numFlames & (1 << 0) )
 		{
-			if ( entity = spawnFlame(this, redFlames & (1 << 0) ? SPRITE_FLAME : SPRITE_CRYSTALFLAME) )
+			if ( entity = spawnFlame(this, redFlames & (1 << 0) ? spriteCandle : spriteCandleBlue) )
 			{
 				entity->x += *cvar_assist_flame_x1 * cos(this->yaw);
 				entity->y += *cvar_assist_flame_x1 * sin(this->yaw);
