@@ -834,7 +834,7 @@ void IRCHandler_t::handleMessage(std::string& msg)
 #endif // !NINTENDO
 
 Uint32 ItemTooltips_t::itemsJsonHashRead = 0;
-const Uint32 ItemTooltips_t::kItemsJsonHash = 2285426623;
+const Uint32 ItemTooltips_t::kItemsJsonHash = 1748555711;
 void ItemTooltips_t::readItemsFromFile()
 {
 	printlog("loading items...\n");
