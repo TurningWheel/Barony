@@ -249,9 +249,29 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 				scaledPos.w = pos.w;
 				scaledPos.h = pos.h;
 				if (focused) {
-					_text->drawColor(section, scaledPos, viewport, textHighlightColor);
+					if ( parent && static_cast<Frame*>(parent)->getOpacity() < 100.0 )
+					{
+						Uint8 r, g, b, a;
+						::getColor(textHighlightColor, &r, &g, &b, &a);
+						a *= static_cast<Frame*>(parent)->getOpacity() / 100.0;
+						_text->drawColor(section, scaledPos, viewport, makeColor(r, g, b, a));
+					}
+					else
+					{
+						_text->drawColor(section, scaledPos, viewport, textHighlightColor);
+					}
 				} else {
-					_text->drawColor(section, scaledPos, viewport, textColor);
+					if ( parent && static_cast<Frame*>(parent)->getOpacity() < 100.0 )
+					{
+						Uint8 r, g, b, a;
+						::getColor(textColor, &r, &g, &b, &a);
+						a *= static_cast<Frame*>(parent)->getOpacity() / 100.0;
+						_text->drawColor(section, scaledPos, viewport, makeColor(r, g, b, a));
+					}
+					else
+					{
+						_text->drawColor(section, scaledPos, viewport, textColor);
+					}
 				}
 			} while ((token = nexttoken) != NULL);
 			free(buf);
