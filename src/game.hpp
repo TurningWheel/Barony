@@ -25,9 +25,9 @@
 
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
 #ifdef NINTENDO
-static const char VERSION[] = "v4.3.0";
+static const char VERSION[] = "v4.3.1";
 #else
-static const char VERSION[] = "v4.3.0";
+static const char VERSION[] = "v4.3.1";
 #endif
 #define GAME_CODE
 
@@ -295,6 +295,7 @@ void actTeleporter(Entity* my);
 void actMagicTrapCeiling(Entity* my);
 void actTeleportShrine(Entity* my);
 void actDaedalusShrine(Entity* my);
+void actAssistShrine(Entity* my);
 void actBell(Entity* my);
 void bellBreakBulb(Entity* my, bool minotaurBreak);
 void actSpellShrine(Entity* my);

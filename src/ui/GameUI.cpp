@@ -396,6 +396,10 @@ std::string EnemyBarSettings_t::getEnemyBarSpriteName(Entity* entity)
 		auto& colliderData = EditorEntityData_t::colliderData[entity->colliderDamageTypes];
 		return colliderData.hpbarLookupName;
 	}
+	else if ( entity->behavior == &::actAssistShrine )
+	{
+		return "assist_shrine";
+	}
 	else if ( entity->behavior == &actFurniture )
 	{
 		switch ( entity->furnitureType )
@@ -412,20 +416,7 @@ std::string EnemyBarSettings_t::getEnemyBarSpriteName(Entity* entity)
 	return "default";
 }
 
-enum ImageIndexes9x9 : int
-{
-	TOP_LEFT,
-	TOP_RIGHT,
-	TOP,
-	MIDDLE_LEFT,
-	MIDDLE_RIGHT,
-	MIDDLE,
-	BOTTOM_LEFT,
-	BOTTOM_RIGHT,
-	BOTTOM
-};
-
-const std::vector<std::string> skillsheetEffectBackgroundImages = 
+const std::vector<std::string> Player::GUI_t::tooltipEffectBackgroundImages =
 {
 	"9x9 bg top left",
 	"9x9 bg top right",
@@ -438,7 +429,7 @@ const std::vector<std::string> skillsheetEffectBackgroundImages =
 	"9x9 bg bottom middle"
 };
 
-void imageSetWidthHeight9x9(Frame* container, const std::vector<std::string>& imgNames)
+void Player::GUI_t::imageSetWidthHeight9x9(Frame* container, const std::vector<std::string>& imgNames)
 {
 	for ( auto& img : imgNames )
 	{
@@ -454,7 +445,7 @@ void imageSetWidthHeight9x9(Frame* container, const std::vector<std::string>& im
 }
 
 // for 9x9 images stretched to fit a container
-void imageResizeToContainer9x9(Frame* container, SDL_Rect dimensionsToFill, const std::vector<std::string>& imgNames)
+void Player::GUI_t::imageResizeToContainer9x9(Frame* container, SDL_Rect dimensionsToFill, const std::vector<std::string>& imgNames)
 {
 	assert(imgNames.size() == 9);
 	// adjust inner background image elements
@@ -1129,6 +1120,9 @@ void createAllyPlayerFrame(const int player)
 	frame->setAllowScrollBinds(false);
 }
 
+static ConsoleVariable<int> cvar_assist_icon_txt_x("/assist_icon_txt_x", 0);
+static ConsoleVariable<int> cvar_assist_icon_txt_y("/assist_icon_txt_y", 8);
+
 Frame* createAllyPlayerEntry(const int player)
 {
 	auto& hud_t = players[player]->hud;
@@ -1309,12 +1303,44 @@ Frame* createAllyPlayerEntry(const int player)
 				img = nullptr;
 				PingNetworkStatus[player].hudDisplayOKTicks = 0;
 			}
+
+			const auto frame = static_cast<const Frame*>(&widget);
+			SDL_Rect pos = frame->getSize();
+			pos.x = pos.x + pos.w - 4;
+			pos.y = pos.y + 8;
+			pos.w = 0;
+			pos.h = 0;
+
+			if ( stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS] > 0 )
+			{
+				if ( auto img = Image::get("#*images/ui/HUD/statusfx/assistance.png") )
+				{
+					pos.y += 2;
+					pos.x -= 4;
+					pos.w = img->getWidth();
+					pos.h = img->getHeight();
+
+					img->drawColor(nullptr, pos, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+						makeColor(255, 255, 255, 255 * (frame->getOpacity() / 100.0)));
+
+					if ( auto text = Text::get(std::to_string(stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS]).c_str(),
+						"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+					{
+						text->drawColor(SDL_Rect{ 0,0,0,0 },
+							SDL_Rect{ pos.x + pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+							pos.y + pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+							0, 0 },
+							SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+							makeColor(255, 255, 255, 255 * (frame->getOpacity() / 100.0)));
+					}
+
+					pos.y -= 2;
+					pos.x += pos.w;
+				}
+			}
+
 			if ( img )
 			{
-				const auto frame = static_cast<const Frame*>(&widget);
-				SDL_Rect pos = frame->getSize();
-				pos.x = pos.x + pos.w - 4;
-				pos.y = pos.y + 8;
 				pos.w = img->getWidth();
 				pos.h = img->getHeight();
 				img->drawColor(nullptr, pos, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY }, 
@@ -2122,7 +2148,6 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 		snprintf(buf, sizeof(buf), "%d/%d", HP, MAXHP);
 		auto hpField = entryFrame->findField("hp");
 		hpField->setText(buf);
-
 		if ( bPlayerBars )
 		{
 			static ConsoleVariable<bool> cvar_playerbars_use_colors("/playerbars_use_colors", true);
@@ -4415,6 +4440,7 @@ void Player::HUD_t::updateUINavigation()
 		{
 			if ( !GenericGUI[player.playernum].tinkerGUI.bOpen && !GenericGUI[player.playernum].alchemyGUI.bOpen
 				&& !GenericGUI[player.playernum].featherGUI.bOpen
+				&& !GenericGUI[player.playernum].assistShrineGUI.bOpen
 				&& !GenericGUI[player.playernum].itemfxGUI.bOpen )
 			{
 				justify = PANEL_JUSTIFY_LEFT;
@@ -4470,6 +4496,7 @@ void Player::HUD_t::updateUINavigation()
 			if ( !player.inventoryUI.chestGUI.bOpen && !player.shopGUI.bOpen
 				&& !GenericGUI[player.playernum].tinkerGUI.bOpen && !GenericGUI[player.playernum].alchemyGUI.bOpen
 				&& !GenericGUI[player.playernum].featherGUI.bOpen
+				&& !GenericGUI[player.playernum].assistShrineGUI.bOpen
 				&& !GenericGUI[player.playernum].itemfxGUI.bOpen )
 			{
 				justify = PANEL_JUSTIFY_RIGHT;
@@ -5577,6 +5604,37 @@ void StatusEffectQueueEntry_t::animateNotification(int player)
 	pos.h = animateStartH + destH * animateH;
 }
 
+void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
+	Frame* frame = (Frame*)&widget;
+	if ( auto parent = frame->getParent() )
+	{
+		int player = parent->getOwner();
+		if ( player >= 0 && player < MAXPLAYERS )
+		{
+			if ( stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS] > 0 )
+			{
+				for ( auto img : frame->getImages() )
+				{
+					if ( !img->disabled && img->path.find("assistance.png") != std::string::npos )
+					{
+						if ( auto text = Text::get(std::to_string(stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS]).c_str(), 
+							"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+						{
+							text->drawColor(SDL_Rect{ 0,0,0,0 },
+								SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+								pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+								0, 0 },
+								SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+								makeColor(255, 255, 255, 255));
+						}
+						break;
+					}
+				}
+			}
+		}
+	}
+};
+
 void createStatusEffectQueue(const int player)
 {
 	auto& statusEffectQueue = StatusEffectQueue[player];
@@ -5614,6 +5672,9 @@ void createStatusEffectQueue(const int player)
 
 	auto innerFrame = statusEffectQueue.statusEffectFrame->addFrame("effects");
 	innerFrame->setHollow(true);
+	innerFrame->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+		draw_status_effect_numbers_fn(widget, pos);
+	});
 }
 
 const int breadStatusEffectHeight = 60;
@@ -5656,24 +5717,24 @@ void StatusEffectQueue_t::createStatusEffectTooltip()
 	{
 		Uint32 color = makeColor(255, 255, 255, 255);
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_LEFT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_Blue_00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_Blue_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_RIGHT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_T_Blue_00.png", skillsheetEffectBackgroundImages[TOP].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_T_Blue_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_L_00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_L_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE_LEFT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_R_00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_R_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE_RIGHT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			makeColor(22, 24, 29, 255), "images/system/white.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
+			makeColor(22, 24, 29, 255), "images/system/white.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_BL_00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_BL_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM_LEFT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_BR_00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_BR_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM_RIGHT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_B_00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
-		imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_B_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM].c_str());
+		Player::GUI_t::imageSetWidthHeight9x9(tooltipFrame, Player::GUI_t::tooltipEffectBackgroundImages);
 
 		auto heading_txt = tooltipFrame->addField("heading txt", 128);
 		heading_txt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
@@ -5746,27 +5807,27 @@ void Player::HUD_t::updateStatusEffectFocusedWindow()
 			heading_txt->setColor(hudColors.characterSheetNeutral);
 
 			backgroundFrame->addImage(SDL_Rect{ 24, 0, 0, 30 },
-				0xFFFFFFFF, "*#images/ui/Inventory/tooltips/HoverFxMenu_T03.png", skillsheetEffectBackgroundImages[TOP].c_str());
+				0xFFFFFFFF, "*#images/ui/Inventory/tooltips/HoverFxMenu_T03.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP].c_str());
 			backgroundFrame->addImage(SDL_Rect{ 0, 0, 24, 30 },
-				0xFFFFFFFF, "*#images/ui/Inventory/tooltips/HoverFxMenu_TL03.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+				0xFFFFFFFF, "*#images/ui/Inventory/tooltips/HoverFxMenu_TL03.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_LEFT].c_str());
 			backgroundFrame->addImage(SDL_Rect{ 0, 0, 24, 30 },
-				0xFFFFFFFF, "*#images/ui/Inventory/tooltips/HoverFxMenu_TR03.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+				0xFFFFFFFF, "*#images/ui/Inventory/tooltips/HoverFxMenu_TR03.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_RIGHT].c_str());
 			backgroundFrame->addImage(SDL_Rect{ 24, 30, 0, 12 },
 				makeColor(22, 24, 29, 255), 
-							"*#images/ui/Inventory/tooltips/HoverFxMenu_C03.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
+							"*#images/ui/Inventory/tooltips/HoverFxMenu_C03.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE].c_str());
 			auto ml = backgroundFrame->addImage(SDL_Rect{ 0, 30, 24, 12 },
-				0xFFFFFFFF, "*#images/ui/Inventory/tooltips/HoverFxMenu_L03.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
+				0xFFFFFFFF, "*#images/ui/Inventory/tooltips/HoverFxMenu_L03.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE_LEFT].c_str());
 			ml->tiled = true;
 			auto mr = backgroundFrame->addImage(SDL_Rect{ 0, 30, 24, 12 },
-				0xFFFFFFFF, "*#images/ui/Inventory/tooltips/HoverFxMenu_R03.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
+				0xFFFFFFFF, "*#images/ui/Inventory/tooltips/HoverFxMenu_R03.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE_RIGHT].c_str());
 			mr->tiled = true;
 
 			backgroundFrame->addImage(SDL_Rect{ 24, 96, 0, 14 },
-				0xFFFFFFFF, "*#images/ui/Inventory/tooltips/HoverFxMenu_B03.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
+				0xFFFFFFFF, "*#images/ui/Inventory/tooltips/HoverFxMenu_B03.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM].c_str());
 			backgroundFrame->addImage(SDL_Rect{ 0, 96, 24, 14 },
-				0xFFFFFFFF, "*#images/ui/Inventory/tooltips/HoverFxMenu_BL03.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
+				0xFFFFFFFF, "*#images/ui/Inventory/tooltips/HoverFxMenu_BL03.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM_LEFT].c_str());
 			backgroundFrame->addImage(SDL_Rect{ 0, 96, 24, 14 },
-				0xFFFFFFFF, "*#images/ui/Inventory/tooltips/HoverFxMenu_BR03.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
+				0xFFFFFFFF, "*#images/ui/Inventory/tooltips/HoverFxMenu_BR03.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM_RIGHT].c_str());
 
 			auto dismiss = backgroundFrame->addButton("dismiss button");
 			dismiss->setSize(SDL_Rect{ 0, 0, 90, 34 });
@@ -5821,6 +5882,9 @@ void Player::HUD_t::updateStatusEffectFocusedWindow()
 
 		auto innerFrame = statusEffectFocusedWindow->addFrame("effects");
 		innerFrame->setHollow(true);
+		innerFrame->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+			draw_status_effect_numbers_fn(widget, pos);
+		});
 	}
 
 	auto& animBackground = StatusEffectQueue[player.playernum].focusedWindowAnim;
@@ -5938,10 +6002,10 @@ void Player::HUD_t::updateStatusEffectFocusedWindow()
 			int maxHeight = bgPos.h;
 			int interimHeight = 0;
 			{
-				auto tl = bgFrame->findImage(skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
-				auto tmid = bgFrame->findImage(skillsheetEffectBackgroundImages[TOP].c_str());
+				auto tl = bgFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_LEFT].c_str());
+				auto tmid = bgFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP].c_str());
 				tmid->pos.w = bgPos.w - tl->pos.w * 2;
-				auto tr = bgFrame->findImage(skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+				auto tr = bgFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_RIGHT].c_str());
 				tr->pos.x = tmid->pos.x + tmid->pos.w;
 
 				interimHeight = tmid->pos.y + tmid->pos.h;
@@ -5949,25 +6013,25 @@ void Player::HUD_t::updateStatusEffectFocusedWindow()
 			}
 			{
 				const int middleOffsetY = 12;
-				auto ml = bgFrame->findImage(skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
+				auto ml = bgFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE_LEFT].c_str());
 				ml->pos.h = maxHeight - interimHeight - middleOffsetY;
-				auto mmid = bgFrame->findImage(skillsheetEffectBackgroundImages[MIDDLE].c_str());
+				auto mmid = bgFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE].c_str());
 				mmid->pos.h = ml->pos.h;
 				mmid->pos.w = bgPos.w - (ml->pos.w) * 2;
 				mmid->color = hudColors.itemContextMenuOptionImg;
-				auto mr = bgFrame->findImage(skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
+				auto mr = bgFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE_RIGHT].c_str());
 				mr->pos.h = ml->pos.h;
 				mr->pos.x = mmid->pos.x + mmid->pos.w;
 
 				interimHeight = mmid->pos.y + mmid->pos.h;
 			}
 			{
-				auto bl = bgFrame->findImage(skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
+				auto bl = bgFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM_LEFT].c_str());
 				bl->pos.y = interimHeight;
-				auto bmid = bgFrame->findImage(skillsheetEffectBackgroundImages[BOTTOM].c_str());
+				auto bmid = bgFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM].c_str());
 				bmid->pos.y = interimHeight;
 				bmid->pos.w = bgPos.w - bl->pos.w * 2;
-				auto br = bgFrame->findImage(skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
+				auto br = bgFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM_RIGHT].c_str());
 				br->pos.y = interimHeight;
 				br->pos.x = bmid->pos.x + bmid->pos.w;
 
@@ -6095,228 +6159,6 @@ void Player::HUD_t::updateStatusEffectFocusedWindow()
 		return;
 	}
 	return;
-	//Frame* fxFrame = nullptr;
-	//if ( !statusEffectFocusedWindow )
-	//{
-	//	char name[32];
-	//	snprintf(name, sizeof(name), "player statusfx window %d", player.playernum);
-	//	statusEffectFocusedWindow = gameUIFrame[player.playernum]->addFrame(name);
-	//	Frame* frame = statusEffectFocusedWindow;
-	//	frame->setHollow(false);
-	//	frame->setDisabled(true);
-	//	frame->setInheritParentFrameOpacity(true);
-	//	frame->setBorder(0);
-	//	frame->setOwner(player.playernum);
-	//	frame->setSize(SDL_Rect{ 0, 0, 0, 0 });
-
-	//	{
-	//		Uint32 color = makeColor(255, 255, 255, 255);
-	//		frame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-	//			color, "*#images/ui/Inventory/tooltips/HoverItemMenu_TL03.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
-	//		frame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-	//			color, "*#images/ui/Inventory/tooltips/HoverItemMenu_TR03.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
-	//		frame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-	//			color, "*#images/ui/Inventory/tooltips/HoverItemMenu_T03.png", skillsheetEffectBackgroundImages[TOP].c_str());
-	//		frame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-	//			color, "*#images/ui/Inventory/tooltips/HoverItemMenu_L03.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
-	//		frame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-	//			color, "*#images/ui/Inventory/tooltips/HoverItemMenu_R03.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
-	//		frame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-	//			makeColor(22, 24, 29, 255), "*#images/ui/Inventory/tooltips/HoverItemMenu_C03.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
-	//		frame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-	//			color, "*#images/ui/Inventory/tooltips/HoverItemMenu_BL03.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
-	//		frame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-	//			color, "*#images/ui/Inventory/tooltips/HoverItemMenu_BR03.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
-	//		frame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-	//			color, "*#images/ui/Inventory/tooltips/HoverItemMenu_B03.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
-	//		imageSetWidthHeight9x9(frame, skillsheetEffectBackgroundImages);
-
-	//		auto heading_txt = frame->addField("heading txt", 128);
-	//		heading_txt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
-	//		heading_txt->setText("Status Effects");
-	//		heading_txt->setColor(makeColor(255, 255, 255, 255));
-	//		heading_txt->setVJustify(Field::justify_t::CENTER);
-	//		heading_txt->setHJustify(Field::justify_t::LEFT);
-	//		/*
-	//		auto desc_txt = tooltipFrame->addField("desc txt", 1024);
-	//		desc_txt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
-	//		desc_txt->setText("");
-	//		desc_txt->setColor(makeColor(0, 192, 255, 255));
-	//		desc_txt->setVJustify(Field::justify_t::LEFT);
-	//		desc_txt->setHJustify(Field::justify_t::LEFT);*/
-	//	}
-
-	//	auto automatonBgFrame = frame->addFrame("automaton bg");
-	//	automatonBgFrame->setSize(SDL_Rect{ 0, 0, 64, 64 });
-	//	automatonBgFrame->setDisabled(true);
-	//	automatonBgFrame->addImage(SDL_Rect{ 0, 0, 64, 64 }, 0xFFFFFFFF, "", "flame");
-
-	//	fxFrame = frame->addFrame("effects");
-	//}
-	//else
-	//{
-	//	fxFrame = statusEffectFocusedWindow->findFrame("effects");
-	//}
-
-	//bool rebuildWindow = true;
-	//if ( keystatus[SDLK_g] )
-	//{
-	//	keystatus[SDLK_g] = 0;
-	//	if ( statusEffectFocusedWindow->isDisabled() )
-	//	{
-	//		statusEffectFocusedWindow->setDisabled(false);
-	//		rebuildWindow = true;
-	//	}
-	//	else
-	//	{
-	//		statusEffectFocusedWindow->setDisabled(true);
-	//	}
-	//}
-
-	//if ( rebuildWindow && StatusEffectQueue[player.playernum].statusEffectFrame )
-	//{
-	//	statusEffectFocusedWindow->setDisabled(false);
-	//	auto& effectQueue = StatusEffectQueue[player.playernum].effectQueue;
-	//	auto& notificationQueue = StatusEffectQueue[player.playernum].notificationQueue;
-	//	auto statusFx = StatusEffectQueue[player.playernum].statusEffectFrame->findFrame("effects");
-
-	//	statusEffectFocusedWindow->setSize(statusFx->getSize());
-	//	fxFrame->setSize(statusFx->getSize());
-
-	//	int numFrameImages = fxFrame->getImages().size();
-	//	while ( effectQueue.size() > numFrameImages )
-	//	{
-	//		auto img = fxFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "inner img");
-	//		img->disabled = true;
-	//		numFrameImages = fxFrame->getImages().size();
-	//	}
-	//	while ( effectQueue.size() < numFrameImages )
-	//	{
-	//		fxFrame->getImages().erase(fxFrame->getImages().begin());
-	//		numFrameImages = fxFrame->getImages().size();
-	//	}
-	//	auto& frameImages = fxFrame->getImages();
-	//	for ( auto img : frameImages )
-	//	{
-	//		img->disabled = true;
-	//	}
-
-	//	auto automatonHungerFrame = statusEffectFocusedWindow->findFrame("automaton bg");
-	//	auto flameImg = automatonHungerFrame->findImage("flame");
-	//	automatonHungerFrame->setDisabled(true);
-	//	auto frameImagesIterator = frameImages.begin();
-	//	auto srcFrameImagesIterator = statusFx->getImages().begin();
-	//	size_t index = 0;
-	//	SDL_Rect windowSizeLimitMin{ 0, 0, 0, 0 };
-	//	SDL_Rect windowSizeLimitMax{ 0, 0, 0, 0 };
-	//	for ( auto it = effectQueue.rbegin(); it != effectQueue.rend(); )
-	//	{
-	//		auto& q = (*it);
-	//		Frame::image_t* frameImg = nullptr;
-	//		Frame::image_t* srcFrameImg = nullptr;
-	//		if ( frameImagesIterator != frameImages.end() )
-	//		{
-	//			frameImg = *frameImagesIterator;
-	//		}
-	//		if ( srcFrameImagesIterator != statusFx->getImages().end() )
-	//		{
-	//			srcFrameImg = *srcFrameImagesIterator;
-	//		}
-
-	//		bool existsInNotifications = false;
-	//		for ( auto it2 = notificationQueue.begin(); it2 != notificationQueue.end(); ++it2 )
-	//		{
-	//			if ( (*it2).effect == q.effect )
-	//			{
-	//				existsInNotifications = true;
-	//				break;
-	//			}
-	//		}
-
-	//		StatusEffectQueue[player.playernum].updateEntryImage(q, frameImg);
-	//		frameImg->pos.x = q.animateSetpointX;
-	//		frameImg->pos.y = q.animateSetpointY;
-	//		frameImg->disabled = (srcFrameImg && !existsInNotifications) ? srcFrameImg->disabled : false;
-
-	//		if ( windowSizeLimitMin.x == 0 && index == 0 )
-	//		{
-	//			windowSizeLimitMin.x = frameImg->pos.x;
-	//		}
-	//		else
-	//		{
-	//			windowSizeLimitMin.x = std::min(frameImg->pos.x, windowSizeLimitMin.x);
-	//		}
-	//		if ( windowSizeLimitMin.y == 0 && index == 0 )
-	//		{
-	//			windowSizeLimitMin.y = frameImg->pos.y;
-	//		}
-	//		else
-	//		{
-	//			windowSizeLimitMin.y = std::min(frameImg->pos.y, windowSizeLimitMin.y);
-	//		}
-	//		windowSizeLimitMax.x = std::max(frameImg->pos.x + frameImg->pos.w, windowSizeLimitMax.x);
-	//		windowSizeLimitMax.y = std::max(frameImg->pos.y + frameImg->pos.h, windowSizeLimitMax.y);
-
-	//		if ( q.effect == StatusEffectQueue_t::kEffectAutomatonHunger )
-	//		{
-	//			auto srcFrame = StatusEffectQueue[player.playernum].statusEffectFrame->findFrame("automaton hunger notification");
-	//			automatonHungerFrame->setDisabled(srcFrame->isDisabled());
-
-	//			SDL_Rect pos = srcFrame->getSize();
-	//			pos.x = q.animateSetpointX;
-	//			pos.y = q.animateSetpointY;
-
-	//			int heightDiff = q.getEffectSpriteNormalHeight() - pos.h;
-	//			pos.y += heightDiff;
-
-	//			automatonHungerFrame->setSize(pos);
-
-	//			auto srcImg = srcFrame->findImage("flame");
-	//			flameImg->pos = SDL_Rect{ 0, -heightDiff, q.getEffectSpriteNormalWidth(), q.getEffectSpriteNormalHeight() };
-	//			flameImg->path = srcImg->path;
-	//			flameImg->disabled = !existsInNotifications ? srcImg->disabled : false;
-	//		}
-
-	//		++it;
-	//		if ( frameImagesIterator != frameImages.end() )
-	//		{
-	//			++frameImagesIterator;
-	//		}
-	//		if ( srcFrameImagesIterator != statusFx->getImages().end() )
-	//		{
-	//			++srcFrameImagesIterator;
-	//		}
-	//		++index;
-	//	}
-
-	//	// rearrange icons to fit size
-	//	{
-	//		int borderX = 16;
-	//		int borderY = 32;
-	//		int bodyW = windowSizeLimitMax.x - windowSizeLimitMin.x;
-	//		int bodyH = windowSizeLimitMax.y - windowSizeLimitMin.y;
-	//		fxFrame->setSize(SDL_Rect{ borderX, borderY, bodyW, bodyH });
-	//		for ( auto img : frameImages )
-	//		{
-	//			img->pos.x -= (windowSizeLimitMin.x);
-	//			img->pos.y -= (windowSizeLimitMin.y);
-	//		}
-	//		SDL_Rect automatonHungerFramePos = automatonHungerFrame->getSize();
-	//		automatonHungerFramePos.x += borderX;
-	//		automatonHungerFramePos.y += borderY;
-	//		automatonHungerFramePos.x -= (windowSizeLimitMin.x);
-	//		automatonHungerFramePos.y -= (windowSizeLimitMin.y);
-	//		automatonHungerFrame->setSize(automatonHungerFramePos);
-
-	//		SDL_Rect windowPos{ 0, 0, borderX * 2 + bodyW, borderY + bodyH + 16 };
-	//		statusEffectFocusedWindow->setSize(windowPos);
-	//		imageResizeToContainer9x9(statusEffectFocusedWindow, SDL_Rect{ 0, 0, windowPos.w, windowPos.h },
-	//			skillsheetEffectBackgroundImages);
-
-	//		auto heading_txt = statusEffectFocusedWindow->findField("heading txt");
-	//		heading_txt->setSize(SDL_Rect{4, 4, windowPos.w - 4 * 2, 24});
-	//	}
-	//}
 }
 
 void StatusEffectQueue_t::animateStatusEffectTooltip(bool showTooltip)
@@ -6616,6 +6458,38 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 					tooltipDesc->setText(definition.getDesc(variation).c_str());
 					tooltipInnerWidth = definition.tooltipWidth;
 				}
+				else if ( effectID == StatusEffectQueue_t::kEffectAssistance )
+				{
+					std::string newHeader = definition.getName(-1).c_str();
+					uppercaseString(newHeader);
+					tooltipHeader->setText(newHeader.c_str());
+
+					std::string descStr = definition.getDesc(0);
+
+					char buf[128];
+					memset(buf, 0, sizeof(buf));
+
+					if ( multiplayer == SINGLE )
+					{
+						snprintf(buf, sizeof(buf), definition.getDesc(1).c_str(), stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS]);
+						if ( descStr != "" ) { descStr += '\n'; }
+						descStr += buf;
+					}
+					if ( multiplayer != SINGLE || splitscreen )
+					{
+						snprintf(buf, sizeof(buf), definition.getDesc(2).c_str(), conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED]);
+						if ( descStr != "" ) { descStr += '\n'; }
+						descStr += buf;
+					}
+
+					int scorePenalty = 100 - std::max(5, 100 - conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED] * 10);
+					snprintf(buf, sizeof(buf), definition.getDesc(3).c_str(), -scorePenalty);
+					if ( descStr != "" ) { descStr += '\n'; }
+					descStr += buf;
+
+					tooltipDesc->setText(descStr.c_str());
+					tooltipInnerWidth = definition.tooltipWidth;
+				}
 				else if ( effectID == StatusEffectQueue_t::kEffectBountyTarget )
 				{
 					std::string newHeader = definition.getName(1).c_str();
@@ -6629,7 +6503,8 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 					&& effectID != StatusEffectQueue_t::kEffectWanted
 					&& effectID != StatusEffectQueue_t::kEffectWantedInShop
 					&& effectID != StatusEffectQueue_t::kEffectBountyTarget
-					&& effectID != StatusEffectQueue_t::kEffectDisabledHPRegen )
+					&& effectID != StatusEffectQueue_t::kEffectDisabledHPRegen
+					&& effectID != StatusEffectQueue_t::kEffectAssistance )
 				{
 					std::string newHeader = definition.getName(variation).c_str();
 					uppercaseString(newHeader);
@@ -6690,7 +6565,7 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 	tooltipPos.y = pos.y - tooltipPos.h - 8;
 	tooltipPos.y = std::max(0, tooltipPos.y);
 	tooltipFrame->setSize(tooltipPos);
-	imageResizeToContainer9x9(tooltipFrame, SDL_Rect{0, 0, tooltipPos.w, tooltipPos.h}, skillsheetEffectBackgroundImages);
+	Player::GUI_t::imageResizeToContainer9x9(tooltipFrame, SDL_Rect{0, 0, tooltipPos.w, tooltipPos.h}, Player::GUI_t::tooltipEffectBackgroundImages);
 	tooltipShowingEffectID = entry.effect;
 	tooltipShowingEffectVariable = entry.customVariable;
 	return true;
@@ -6720,6 +6595,7 @@ const int StatusEffectQueue_t::kEffectDrunkGoatman = -22;
 const int StatusEffectQueue_t::kEffectBountyTarget = -23;
 const int StatusEffectQueue_t::kEffectInspiration = -24;
 const int StatusEffectQueue_t::kEffectRetaliation = -25;
+const int StatusEffectQueue_t::kEffectAssistance = -26;
 const int StatusEffectQueue_t::kSpellEffectOffset = 10000;
 
 Frame* StatusEffectQueue_t::getStatusEffectFrame()
@@ -7162,7 +7038,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	bool inshop = false;
 
 	std::map<int, bool> miscEffects;
-	for ( int i = kEffectBurning; i >= kEffectRetaliation; --i )
+	for ( int i = kEffectBurning; i >= kEffectAssistance; --i )
 	{
 		miscEffects[i] = false;
 	}
@@ -7209,6 +7085,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			if ( stats[player]->mask && stats[player]->mask->type == MASK_MOUTHKNIFE )
 			{
 				miscEffects[kEffectRetaliation] = true;
+			}
+			if ( stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS] > 0 )
+			{
+				miscEffects[kEffectAssistance] = true;
 			}
 			if ( stats[player]->helmet && 
 				(stats[player]->helmet->type == HAT_LAURELS
@@ -7333,7 +7213,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 	}
 
-	for ( int i = kEffectBurning; i >= kEffectRetaliation; --i )
+	for ( int i = kEffectBurning; i >= kEffectAssistance; --i )
 	{
 		if ( miscEffects[i] == false )
 		{
@@ -8389,25 +8269,25 @@ void Player::Inventory_t::updateInventoryMiscTooltip()
 		tooltipFrame->setDisabled(true);
 		Uint32 color = makeColor(255, 255, 255, 255);
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_LEFT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_RIGHT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_T_00.png", skillsheetEffectBackgroundImages[TOP].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_T_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_L_00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_L_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE_LEFT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_R_00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_R_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE_RIGHT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			makeColor(22, 24, 29, 255), "images/system/white.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
+			makeColor(22, 24, 29, 255), "images/system/white.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_BL_00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_BL_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM_LEFT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_BR_00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_BR_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM_RIGHT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_B_00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
-		imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
-		imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, 200, 200 }, skillsheetEffectBackgroundImages);
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_B_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM].c_str());
+		Player::GUI_t::imageSetWidthHeight9x9(tooltipFrame, Player::GUI_t::tooltipEffectBackgroundImages);
+		Player::GUI_t::imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, 200, 200 }, Player::GUI_t::tooltipEffectBackgroundImages);
 		auto txt = tooltipFrame->addField("tooltip text", 1024);
 		const char* tooltipFont = "fonts/pixel_maz_multiline.ttf#16#2";
 		txt->setFont(tooltipFont);
@@ -8560,8 +8440,8 @@ void Player::Inventory_t::updateInventoryMiscTooltip()
 		tooltipPos.x = tooltipCoordX;
 		tooltipPos.y = autosortBtn->getSize().y;
 		tooltipFrame->setSize(tooltipPos);
-		imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
-			skillsheetEffectBackgroundImages);
+		Player::GUI_t::imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
+			Player::GUI_t::tooltipEffectBackgroundImages);
 	}
 }
 
@@ -13161,25 +13041,25 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			tooltipFrame->setDisabled(true);
 			Uint32 color = makeColor(255, 255, 255, 255);
 			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_LEFT].c_str());
 			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_RIGHT].c_str());
 			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_T_00.png", skillsheetEffectBackgroundImages[TOP].c_str());
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_T_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP].c_str());
 			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_L_00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_L_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE_LEFT].c_str());
 			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_R_00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_R_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE_RIGHT].c_str());
 			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				makeColor(22, 24, 29, 255), "images/system/white.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
+				makeColor(22, 24, 29, 255), "images/system/white.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE].c_str());
 			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_BL_00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_BL_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM_LEFT].c_str());
 			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_BR_00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_BR_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM_RIGHT].c_str());
 			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_B_00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
-			imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
-			imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, 200, 200 }, skillsheetEffectBackgroundImages);
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_B_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM].c_str());
+			Player::GUI_t::imageSetWidthHeight9x9(tooltipFrame, Player::GUI_t::tooltipEffectBackgroundImages);
+			Player::GUI_t::imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, 200, 200 }, Player::GUI_t::tooltipEffectBackgroundImages);
 			auto txt = tooltipFrame->addField("tooltip text", 1024);
 			auto txtRightAlignHint = tooltipFrame->addField("tooltip text right align hint", 128);
 			const char* tooltipFont = "fonts/pixel_maz_multiline.ttf#16#2";
@@ -13229,24 +13109,24 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				txtValueBackingFrame->setDisabled(true);
 				Uint32 color = makeColor(51, 33, 26, 255);
 				txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_TL00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_TL00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_LEFT].c_str());
 				txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_TR00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_TR00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_RIGHT].c_str());
 				txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_T00.png", skillsheetEffectBackgroundImages[TOP].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_T00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP].c_str());
 				txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_L00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_L00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE_LEFT].c_str());
 				txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_R00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_R00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE_RIGHT].c_str());
 				txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_M00.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_M00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE].c_str());
 				txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_BL00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_BL00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM_LEFT].c_str());
 				txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_BR00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_BR00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM_RIGHT].c_str());
 				txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_B00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
-				imageSetWidthHeight9x9(txtValueBackingFrame, skillsheetEffectBackgroundImages);
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_B00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM].c_str());
+				Player::GUI_t::imageSetWidthHeight9x9(txtValueBackingFrame, Player::GUI_t::tooltipEffectBackgroundImages);
 
 				characterSheetTooltipTextBackingFrames[player.playernum][i] = txtValueBackingFrame;
 			}
@@ -13286,7 +13166,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 					ItemTooltips.getItemStatShortName("CHR").c_str()
 				};
 				constexpr int num_class_stats = sizeof(class_stats_text) / sizeof(class_stats_text[0]);
-				constexpr SDL_Rect bottom{ 0, 0, 236, 30 };
+				constexpr SDL_Rect bottom{ 0, 0, 236, 36 };
 				constexpr int column = bottom.w / num_class_stats;
 
 				classTooltip->setSize(SDL_Rect{ 0, 0, bottom.w, bottom.h });
@@ -15695,24 +15575,24 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 
 	if ( !(element >= Player::CharacterSheet_t::SHEET_STR && element <= Player::CharacterSheet_t::SHEET_CHR) )
 	{
-		auto tooltipTopLeft = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+		auto tooltipTopLeft = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_LEFT].c_str());
 		tooltipTopLeft->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_00.png";
-		auto tooltipTop = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP].c_str());
+		auto tooltipTop = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP].c_str());
 		tooltipTop->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_T_00.png";
-		auto tooltipTopRight = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+		auto tooltipTopRight = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_RIGHT].c_str());
 		tooltipTopRight->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_00.png";
-		imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
+		Player::GUI_t::imageSetWidthHeight9x9(tooltipFrame, Player::GUI_t::tooltipEffectBackgroundImages);
 	}
 
 	if ( element >= Player::CharacterSheet_t::SHEET_STR && element <= Player::CharacterSheet_t::SHEET_CHR )
 	{
-		auto tooltipTopLeft = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+		auto tooltipTopLeft = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_LEFT].c_str());
 		tooltipTopLeft->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png";
-		auto tooltipTop = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP].c_str());
+		auto tooltipTop = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP].c_str());
 		tooltipTop->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_T_Blue_00.png";
-		auto tooltipTopRight = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+		auto tooltipTopRight = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_RIGHT].c_str());
 		tooltipTopRight->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_Blue_00.png";
-		imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
+		Player::GUI_t::imageSetWidthHeight9x9(tooltipFrame, Player::GUI_t::tooltipEffectBackgroundImages);
 
 		int maxWidth = 260;
 		if ( getHoverTextString("stat_max_tooltip_width") != defaultString )
@@ -16399,7 +16279,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 
 			txtValueBackingFrame->setSize(valuePos);
 
-			imageResizeToContainer9x9(txtValueBackingFrame, SDL_Rect{ 0, 0, valuePos.w, valuePos.h }, skillsheetEffectBackgroundImages);
+			Player::GUI_t::imageResizeToContainer9x9(txtValueBackingFrame, SDL_Rect{ 0, 0, valuePos.w, valuePos.h }, Player::GUI_t::tooltipEffectBackgroundImages);
 		}
 
 		{
@@ -16460,8 +16340,8 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		tooltipPos.y = pos.y;
 
 		tooltipFrame->setSize(tooltipPos);
-		imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
-			skillsheetEffectBackgroundImages);
+		Player::GUI_t::imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
+			Player::GUI_t::tooltipEffectBackgroundImages);
 	}
 	else if ( element >= Player::CharacterSheet_t::SHEET_ATK && element <= Player::CharacterSheet_t::SHEET_WGT )
 	{
@@ -16488,13 +16368,13 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		bool isAutomatonHTRegen = stats[player.playernum]->type == AUTOMATON;
 		bool isInsectoidENRegen = (stats[player.playernum]->playerRace == RACE_INSECTOID && stats[player.playernum]->stat_appearance == 0);
 
-		auto tooltipTopLeft = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+		auto tooltipTopLeft = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_LEFT].c_str());
 		tooltipTopLeft->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png";
-		auto tooltipTop = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP].c_str());
+		auto tooltipTop = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP].c_str());
 		tooltipTop->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_T_Blue_00.png";
-		auto tooltipTopRight = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+		auto tooltipTopRight = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_RIGHT].c_str());
 		tooltipTopRight->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_Blue_00.png";
-		imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
+		Player::GUI_t::imageSetWidthHeight9x9(tooltipFrame, Player::GUI_t::tooltipEffectBackgroundImages);
 
 		int maxWidth = 260;
 		if ( getHoverTextString("attributes_max_tooltip_width") != defaultString )
@@ -18337,7 +18217,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 
 			txtValueBackingFrame->setSize(valuePos);
 
-			imageResizeToContainer9x9(txtValueBackingFrame, SDL_Rect{ 0, 0, valuePos.w, valuePos.h }, skillsheetEffectBackgroundImages);
+			Player::GUI_t::imageResizeToContainer9x9(txtValueBackingFrame, SDL_Rect{ 0, 0, valuePos.w, valuePos.h }, Player::GUI_t::tooltipEffectBackgroundImages);
 		}
 
 		if ( !hasEntryInfoLines )
@@ -18419,8 +18299,8 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			tooltipPos.y -= ((tooltipPos.y + tooltipPos.h) - sheetFrame->getSize().h);
 			tooltipFrame->setSize(tooltipPos);
 		}
-		imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
-			skillsheetEffectBackgroundImages);
+		Player::GUI_t::imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
+			Player::GUI_t::tooltipEffectBackgroundImages);
 	}
 	else if ( element == Player::CharacterSheet_t::SHEET_DUNGEON_FLOOR )
 	{
@@ -18513,8 +18393,8 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		tooltipPos.y = pos.y;
 
 		tooltipFrame->setSize(tooltipPos);
-		imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
-			skillsheetEffectBackgroundImages);
+		Player::GUI_t::imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
+			Player::GUI_t::tooltipEffectBackgroundImages);
 	}
 	else if ( element == Player::CharacterSheet_t::SHEET_GOLD )
 	{
@@ -18560,18 +18440,18 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		tooltipPos.y = pos.y;
 
 		tooltipFrame->setSize(tooltipPos);
-		imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
-			skillsheetEffectBackgroundImages);
+		Player::GUI_t::imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
+			Player::GUI_t::tooltipEffectBackgroundImages);
 	}
 	else if ( element == Player::CharacterSheet_t::SHEET_CHAR_RACE_SEX )
 	{
-		auto tooltipTopLeft = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+		auto tooltipTopLeft = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_LEFT].c_str());
 		tooltipTopLeft->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png";
-		auto tooltipTop = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP].c_str());
+		auto tooltipTop = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP].c_str());
 		tooltipTop->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_T_Blue_00.png";
-		auto tooltipTopRight = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+		auto tooltipTopRight = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_RIGHT].c_str());
 		tooltipTopRight->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_Blue_00.png";
-		imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
+		Player::GUI_t::imageSetWidthHeight9x9(tooltipFrame, Player::GUI_t::tooltipEffectBackgroundImages);
 
 		int maxWidth = 260;
 		int minWidth = 0;
@@ -18709,18 +18589,18 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			tooltipFrame->setSize(tooltipPos);
 		}
 		tooltipFrame->setSize(tooltipPos);
-		imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
-			skillsheetEffectBackgroundImages);
+		Player::GUI_t::imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
+			Player::GUI_t::tooltipEffectBackgroundImages);
 	}
 	else if ( element == Player::CharacterSheet_t::SHEET_CHAR_CLASS )
 	{
-		auto tooltipTopLeft = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+		auto tooltipTopLeft = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_LEFT].c_str());
 		tooltipTopLeft->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png";
-		auto tooltipTop = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP].c_str());
+		auto tooltipTop = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP].c_str());
 		tooltipTop->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_T_Blue_00.png";
-		auto tooltipTopRight = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+		auto tooltipTopRight = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_RIGHT].c_str());
 		tooltipTopRight->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_Blue_00.png";
-		imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
+		Player::GUI_t::imageSetWidthHeight9x9(tooltipFrame, Player::GUI_t::tooltipEffectBackgroundImages);
 
 		int maxWidth = 260;
 		int minWidth = 0;
@@ -18812,7 +18692,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			classTooltipPos.y = currentHeight;
 			classTooltip->setSize(classTooltipPos);
 
-			currentHeight += classTooltipPos.h;
+			currentHeight += classTooltipPos.h - 6;
 
 			std::string descText = "";
 			descText = getHoverTextString("stat_growth_info");
@@ -18881,8 +18761,8 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			tooltipFrame->setSize(tooltipPos);
 		}
 		tooltipFrame->setSize(tooltipPos);
-		imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
-			skillsheetEffectBackgroundImages);
+		Player::GUI_t::imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
+			Player::GUI_t::tooltipEffectBackgroundImages);
 	}
 	else if ( element == Player::CharacterSheet_t::SHEET_TIMER )
 	{
@@ -18944,8 +18824,8 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		tooltipPos.y = pos.y;
 
 		tooltipFrame->setSize(tooltipPos);
-		imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
-			skillsheetEffectBackgroundImages);
+		Player::GUI_t::imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
+			Player::GUI_t::tooltipEffectBackgroundImages);
 	}
 }
 
@@ -25797,6 +25677,13 @@ void createPlayerInventory(const int player)
 		GenericGUI[player].itemfxGUI.itemEffectFrame->setInheritParentFrameOpacity(false);
 		GenericGUI[player].itemfxGUI.itemEffectFrame->setDisabled(true);
 
+		GenericGUI[player].assistShrineGUI.assistShrineFrame = frame->addFrame("assist");
+		GenericGUI[player].assistShrineGUI.assistShrineFrame->setHollow(true);
+		GenericGUI[player].assistShrineGUI.assistShrineFrame->setBorder(0);
+		GenericGUI[player].assistShrineGUI.assistShrineFrame->setOwner(player);
+		GenericGUI[player].assistShrineGUI.assistShrineFrame->setInheritParentFrameOpacity(false);
+		GenericGUI[player].assistShrineGUI.assistShrineFrame->setDisabled(true);
+
 		auto oldCursorFrame = frame->addFrame("inventory old item cursor");
 		oldCursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize + 16, inventorySlotSize + 16 });
 		oldCursorFrame->setDisabled(true);
@@ -27305,6 +27192,8 @@ void Player::Inventory_t::updateCursor()
 	{
 		int cursorWidth = player.inventoryUI.getSlotSize();
 		int cursorHeight = player.inventoryUI.getSlotSize();
+		int cursoroffx = 0;
+		int cursoroffy = 0;
 		bool moveMouse = false;
 		auto queuedModule = cursor.queuedModule;
 		if ( cursor.queuedModule == Player::GUI_t::MODULE_INVENTORY )
@@ -27415,6 +27304,36 @@ void Player::Inventory_t::updateCursor()
 				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
 			}
 		}
+		else if ( cursor.queuedModule == Player::GUI_t::MODULE_ASSISTSHRINE )
+		{
+			auto& assistShrineGUI = GenericGUI[player.playernum].assistShrineGUI;
+			if ( !assistShrineGUI.assistShrineGUIHasBeenCreated()
+				|| assistShrineGUI.assistShrineFrame->isDisabled() )
+			{
+				// cancel
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+			else if ( assistShrineGUI.isInteractable )
+			{
+				moveMouse = true;
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+			if ( cursor.queuedFrameToWarpTo )
+			{
+				if ( assistShrineGUI.currentView == assistShrineGUI.ASSIST_SHRINE_VIEW_CLASSES )
+				{
+					cursoroffx = 1;
+					cursoroffy = 3;
+					cursorWidth = cursor.queuedFrameToWarpTo->getSize().w - 6;
+					cursorHeight = cursor.queuedFrameToWarpTo->getSize().h - 6;
+				}
+				else if ( assistShrineGUI.currentView == assistShrineGUI.ASSIST_SHRINE_VIEW_RACE )
+				{
+					cursorWidth = cursor.queuedFrameToWarpTo->getSize().w;
+					cursorHeight = cursor.queuedFrameToWarpTo->getSize().h;
+				}
+			}
+		}
 		else if ( cursor.queuedModule == Player::GUI_t::MODULE_FEATHER )
 		{
 			auto& featherGUI = GenericGUI[player.playernum].featherGUI;
@@ -27443,6 +27362,8 @@ void Player::Inventory_t::updateCursor()
 			SDL_Rect pos = cursor.queuedFrameToWarpTo->getAbsoluteSize();
 			pos.x -= player.camera_virtualx1(); // offset any splitscreen camera positioning
 			pos.y -= player.camera_virtualy1();
+			pos.x += cursoroffx;
+			pos.y += cursoroffy;
 			player.inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y,
 				cursorWidth, cursorHeight, false);
 			cursor.queuedFrameToWarpTo = nullptr;
@@ -31812,24 +31733,24 @@ void Player::SkillSheet_t::createSkillSheet()
 	{
 		Uint32 color = makeColor(255, 255, 255, 255);
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/SkillSheet/UI_Skills_Window_TL_04.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+			color, "*#images/ui/SkillSheet/UI_Skills_Window_TL_04.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_LEFT].c_str());
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/SkillSheet/UI_Skills_Window_TR_04.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+			color, "*#images/ui/SkillSheet/UI_Skills_Window_TR_04.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_RIGHT].c_str());
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/SkillSheet/UI_Skills_Window_T_04.png", skillsheetEffectBackgroundImages[TOP].c_str());
+			color, "*#images/ui/SkillSheet/UI_Skills_Window_T_04.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP].c_str());
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/SkillSheet/UI_Skills_Window_L_03.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
+			color, "*#images/ui/SkillSheet/UI_Skills_Window_L_03.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE_LEFT].c_str());
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/SkillSheet/UI_Skills_Window_R_03.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
+			color, "*#images/ui/SkillSheet/UI_Skills_Window_R_03.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE_RIGHT].c_str());
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			makeColor(0, 0, 0, 255), "images/system/white.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
+			makeColor(0, 0, 0, 255), "images/system/white.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE].c_str());
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/SkillSheet/UI_Skills_Window_BL_03.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
+			color, "*#images/ui/SkillSheet/UI_Skills_Window_BL_03.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM_LEFT].c_str());
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/SkillSheet/UI_Skills_Window_BR_03.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
+			color, "*#images/ui/SkillSheet/UI_Skills_Window_BR_03.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM_RIGHT].c_str());
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "*#images/ui/SkillSheet/UI_Skills_Window_B_03.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
-		imageSetWidthHeight9x9(skillBackgroundImagesFrame, skillsheetEffectBackgroundImages);
+			color, "*#images/ui/SkillSheet/UI_Skills_Window_B_03.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM].c_str());
+		Player::GUI_t::imageSetWidthHeight9x9(skillBackgroundImagesFrame, Player::GUI_t::tooltipEffectBackgroundImages);
 
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 78, 18 },
 			color, "*#images/ui/SkillSheet/UI_Skills_Window_Flourish_T.png", "flourish top");
@@ -32083,24 +32004,24 @@ void Player::SkillSheet_t::createSkillSheet()
 			//Uint32 color = makeColor(22, 24, 29, 255);
 			Uint32 color = makeColor(255, 255, 255, 128);
 			skillDescriptionBgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_TL_00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_TL_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_LEFT].c_str());
 			skillDescriptionBgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_TR_00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_TR_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_RIGHT].c_str());
 			skillDescriptionBgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_T_00.png", skillsheetEffectBackgroundImages[TOP].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_T_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP].c_str());
 			skillDescriptionBgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_ML_00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_ML_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE_LEFT].c_str());
 			skillDescriptionBgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_MR_00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_MR_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE_RIGHT].c_str());
 			skillDescriptionBgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_M_00.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_M_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE].c_str());
 			skillDescriptionBgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_BL_00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_BL_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM_LEFT].c_str());
 			skillDescriptionBgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_BR_00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_BR_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM_RIGHT].c_str());
 			skillDescriptionBgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_B_00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
-			imageSetWidthHeight9x9(skillDescriptionBgFrame, skillsheetEffectBackgroundImages);
+				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_B_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM].c_str());
+			Player::GUI_t::imageSetWidthHeight9x9(skillDescriptionBgFrame, Player::GUI_t::tooltipEffectBackgroundImages);
 		}
 
 
@@ -32140,28 +32061,28 @@ void Player::SkillSheet_t::createSkillSheet()
 			{
 				Uint32 color = makeColor(51, 33, 26, 255);
 				valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_TL00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_TL00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_LEFT].c_str());
 				valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_TR00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_TR00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_RIGHT].c_str());
 				valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_T00.png", skillsheetEffectBackgroundImages[TOP].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_T00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP].c_str());
 				valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_L00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_L00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE_LEFT].c_str());
 				valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_R00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_R00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE_RIGHT].c_str());
 				valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_M00.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_M00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE].c_str());
 				valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_BL00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_BL00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM_LEFT].c_str());
 				valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_BR00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_BR00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM_RIGHT].c_str());
 				valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_B00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_B00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM].c_str());
 
 				/*valBgImgFrame->addImage(
 					SDL_Rect{ 0, 0, effectFrame->getSize().w, effectFrame->getSize().h - 4 },
 					makeColor(255, 255, 255, 128), "images/system/white.png", "tmp tmp");*/
-				imageSetWidthHeight9x9(valBgImgFrame, skillsheetEffectBackgroundImages);
+				Player::GUI_t::imageSetWidthHeight9x9(valBgImgFrame, Player::GUI_t::tooltipEffectBackgroundImages);
 			}
 
 			auto effectTxtFrame = effectFrame->addFrame("effect txt frame");
@@ -34204,7 +34125,7 @@ void Player::SkillSheet_t::processSkillSheet()
 			{
 				img->disabled = true;
 			}
-			auto mm = bgImgFrame->findImage(skillsheetEffectBackgroundImages[MIDDLE].c_str());
+			auto mm = bgImgFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE].c_str());
 			mm->pos.x = 0;
 			mm->pos.y = 0;
 			mm->pos.w = backgroundWidth;
@@ -34219,7 +34140,7 @@ void Player::SkillSheet_t::processSkillSheet()
 			{
 				img->disabled = true;
 			}
-			auto mm = bgImgFrame->findImage(skillsheetEffectBackgroundImages[MIDDLE].c_str());
+			auto mm = bgImgFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE].c_str());
 			mm->pos.x = 0;
 			mm->pos.y = 0;
 			mm->pos.w = backgroundWidth;
@@ -34234,7 +34155,7 @@ void Player::SkillSheet_t::processSkillSheet()
 			{
 				img->disabled = true;
 			}
-			auto mm = bgImgFrame->findImage(skillsheetEffectBackgroundImages[MIDDLE].c_str());
+			auto mm = bgImgFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE].c_str());
 			mm->pos.x = 0;
 			mm->pos.y = 0;
 			mm->pos.w = backgroundWidth;
@@ -34249,7 +34170,7 @@ void Player::SkillSheet_t::processSkillSheet()
 			{
 				img->disabled = true;
 			}
-			auto mm = bgImgFrame->findImage(skillsheetEffectBackgroundImages[MIDDLE].c_str());
+			auto mm = bgImgFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE].c_str());
 			mm->pos.x = 0;
 			mm->pos.y = 0;
 			mm->pos.w = backgroundWidth;
@@ -34266,10 +34187,10 @@ void Player::SkillSheet_t::processSkillSheet()
 			}
 			flourishTop->disabled = false;
 			flourishBottom->disabled = false;
-			auto mm = bgImgFrame->findImage(skillsheetEffectBackgroundImages[MIDDLE].c_str());
+			auto mm = bgImgFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE].c_str());
 			mm->path = "images/system/white.png";
 			mm->color = makeColor(0, 0, 0, 255);
-			imageResizeToContainer9x9(bgImgFrame, SDL_Rect{0, 12, backgroundWidth, backgroundHeight - 6 }, skillsheetEffectBackgroundImages);
+			Player::GUI_t::imageResizeToContainer9x9(bgImgFrame, SDL_Rect{0, 12, backgroundWidth, backgroundHeight - 6 }, Player::GUI_t::tooltipEffectBackgroundImages);
 		}
 	}
 
@@ -34840,7 +34761,7 @@ void Player::SkillSheet_t::processSkillSheet()
 					{
 						img->disabled = true;
 					}
-					auto mm = skillDescriptionBgFrame->findImage(skillsheetEffectBackgroundImages[MIDDLE].c_str());
+					auto mm = skillDescriptionBgFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE].c_str());
 					mm->disabled = false;
 					mm->path = staticImgPath;
 					mm->pos = SDL_Rect{ 0, 0, skillDescriptionBgFrame->getSize().w, skillDescriptionBgFrame->getSize().h };
@@ -34851,10 +34772,10 @@ void Player::SkillSheet_t::processSkillSheet()
 					{
 						img->disabled = false;
 					}
-					auto mm = skillDescriptionBgFrame->findImage(skillsheetEffectBackgroundImages[MIDDLE].c_str());
+					auto mm = skillDescriptionBgFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE].c_str());
 					mm->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_M_00.png";
-					imageResizeToContainer9x9(skillDescriptionBgFrame,
-						SDL_Rect{ 0, 0, skillDescriptionBgFrame->getSize().w, skillDescriptionBgFrame->getSize().h }, skillsheetEffectBackgroundImages);
+					Player::GUI_t::imageResizeToContainer9x9(skillDescriptionBgFrame,
+						SDL_Rect{ 0, 0, skillDescriptionBgFrame->getSize().w, skillDescriptionBgFrame->getSize().h }, Player::GUI_t::tooltipEffectBackgroundImages);
 				}
 			}
 
@@ -35047,7 +34968,7 @@ void Player::SkillSheet_t::processSkillSheet()
 								{
 									img->disabled = true;
 								}
-								auto mm = effectBgImgFrame->findImage(skillsheetEffectBackgroundImages[MIDDLE].c_str());
+								auto mm = effectBgImgFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE].c_str());
 								mm->disabled = false;
 								mm->path = staticImgPath;
 								mm->color = makeColorRGB(255, 255, 255);
@@ -35059,11 +34980,11 @@ void Player::SkillSheet_t::processSkillSheet()
 								{
 									img->disabled = false;
 								}
-								auto mm = effectBgImgFrame->findImage(skillsheetEffectBackgroundImages[MIDDLE].c_str());
+								auto mm = effectBgImgFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE].c_str());
 								mm->path = "*#images/ui/SkillSheet/UI_Skills_EffectBG_M00.png";
 								mm->color = makeColor(51, 33, 26, 255);
-								imageResizeToContainer9x9(effectBgImgFrame,
-									SDL_Rect{ 0, 0, effectBgImgFrame->getSize().w, effectBgImgFrame->getSize().h }, skillsheetEffectBackgroundImages);
+								Player::GUI_t::imageResizeToContainer9x9(effectBgImgFrame,
+									SDL_Rect{ 0, 0, effectBgImgFrame->getSize().w, effectBgImgFrame->getSize().h }, Player::GUI_t::tooltipEffectBackgroundImages);
 								/*static std::map<int, std::pair<int, int>> sizes;
 								sizes[effectBgImgFrame->getSize().w + effectBgImgFrame->getSize().h * 1000] = std::make_pair(effectBgImgFrame->getSize().w, effectBgImgFrame->getSize().h);
 								printlog("sizes");

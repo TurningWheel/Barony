@@ -869,3 +869,241 @@ void Entity::actDaedalusShrine()
 		}
 	}
 }
+
+void actAssistShrine(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+
+	my->actAssistShrine();
+}
+
+void Entity::actAssistShrine()
+{
+	if ( this->ticks == 1 )
+	{
+		this->createWorldUITooltip();
+	}
+
+	this->removeLightField();
+#ifdef USE_FMOD
+	if ( shrineAmbience == 0 )
+	{
+		shrineAmbience--;
+		stopEntitySound();
+		entity_sound = playSoundEntityLocal(this, 149, 16);
+	}
+	if ( entity_sound )
+	{
+		bool playing = false;
+		entity_sound->isPlaying(&playing);
+		if ( !playing )
+		{
+			entity_sound = nullptr;
+		}
+	}
+#else
+	shrineAmbience--;
+	if ( shrineAmbience <= 0 )
+	{
+		shrineAmbience = TICKS_PER_SECOND * 30;
+		playSoundEntityLocal(this, 149, 16);
+	}
+#endif
+
+	if ( !shrineInit )
+	{
+		shrineInit = 1;
+	}
+
+	Sint32& shrineInteracting = this->skill[0];
+
+	Uint32 numFlames = 0;
+	Uint32 redFlames = 0;
+	Entity* interacting = uidToEntity(shrineInteracting);
+	if ( interacting && interacting->behavior == &actPlayer )
+	{
+		redFlames |= (1 << interacting->skill[2]);
+		numFlames |= (1 << interacting->skill[2]);
+	}
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( !client_disconnected[i] )
+		{
+			if ( stats[i]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS] > 0 )
+			{
+				numFlames |= (1 << i);
+			}
+		}
+	}
+
+	static ConsoleVariable<float> cvar_assist_flame_x1("/assist_flame_x1", 0.5);
+	static ConsoleVariable<float> cvar_assist_flame_y1("/assist_flame_y1", -3.f);
+	static ConsoleVariable<float> cvar_assist_flame_x2("/assist_flame_x2", -1.f);
+	static ConsoleVariable<float> cvar_assist_flame_y2("/assist_flame_y2", -1.f);
+	static ConsoleVariable<float> cvar_assist_flame_x3("/assist_flame_x3", -1.f);
+	static ConsoleVariable<float> cvar_assist_flame_y3("/assist_flame_y3", -3.5);
+	static ConsoleVariable<float> cvar_assist_flame_x4("/assist_flame_x4", 0.5);
+	static ConsoleVariable<float> cvar_assist_flame_y4("/assist_flame_y4", -1.f);
+	static ConsoleVariable<float> cvar_assist_flame_z1("/assist_flame_z1", 6.5);
+	static ConsoleVariable<float> cvar_assist_flame_z2("/assist_flame_z2", 9.f);
+	static ConsoleVariable<float> cvar_assist_flame_z3("/assist_flame_z3", 6.5);
+	static ConsoleVariable<float> cvar_assist_flame_z4("/assist_flame_z4", 10.f);
+	if ( numFlames > 0 )
+	{
+		Entity* entity = nullptr;
+		if ( numFlames & (1 << 3) )
+		{
+			if ( entity = spawnFlame(this, redFlames & (1 << 3) ? SPRITE_FLAME : SPRITE_CRYSTALFLAME) )
+			{
+				entity->x += *cvar_assist_flame_x4 * cos(this->yaw);
+				entity->y += *cvar_assist_flame_x4 * sin(this->yaw);
+				entity->x += *cvar_assist_flame_y4 * cos(this->yaw + PI / 2);
+				entity->y += *cvar_assist_flame_y4 * sin(this->yaw + PI / 2);
+				entity->z -= *cvar_assist_flame_z4;
+				entity->flags[GENIUS] = false;
+				entity->setUID(-3);
+			}
+		}
+		if ( numFlames & (1 << 2) )
+		{
+			if ( entity = spawnFlame(this, redFlames & (1 << 2) ? SPRITE_FLAME : SPRITE_CRYSTALFLAME) )
+			{
+				entity->x += *cvar_assist_flame_x3 * cos(this->yaw);
+				entity->y += *cvar_assist_flame_x3 * sin(this->yaw);
+				entity->x += *cvar_assist_flame_y3 * cos(this->yaw + PI / 2);
+				entity->y += *cvar_assist_flame_y3 * sin(this->yaw + PI / 2);
+				entity->z -= *cvar_assist_flame_z3;
+				entity->flags[GENIUS] = false;
+				entity->setUID(-3);
+			}
+		}
+		if ( numFlames & (1 << 1) )
+		{
+			if ( entity = spawnFlame(this, redFlames & (1 << 1) ? SPRITE_FLAME : SPRITE_CRYSTALFLAME) )
+			{
+				entity->x += *cvar_assist_flame_x2 * cos(this->yaw);
+				entity->y += *cvar_assist_flame_x2 * sin(this->yaw);
+				entity->x += *cvar_assist_flame_y2 * cos(this->yaw + PI / 2);
+				entity->y += *cvar_assist_flame_y2 * sin(this->yaw + PI / 2);
+				entity->z -= *cvar_assist_flame_z2;
+				entity->flags[GENIUS] = false;
+				entity->setUID(-3);
+			}
+		}
+		if ( numFlames & (1 << 0) )
+		{
+			if ( entity = spawnFlame(this, redFlames & (1 << 0) ? SPRITE_FLAME : SPRITE_CRYSTALFLAME) )
+			{
+				entity->x += *cvar_assist_flame_x1 * cos(this->yaw);
+				entity->y += *cvar_assist_flame_x1 * sin(this->yaw);
+				entity->x += *cvar_assist_flame_y1 * cos(this->yaw + PI / 2);
+				entity->y += *cvar_assist_flame_y1 * sin(this->yaw + PI / 2);
+				entity->z -= *cvar_assist_flame_z1;
+				entity->flags[GENIUS] = false;
+				entity->setUID(-3);
+			}
+		}
+
+		if ( redFlames )
+		{
+			this->light = addLight(this->x / 16, this->y / 16, "assist_shrine_red");
+		}
+		else
+		{
+			std::string lightname = "assist_shrine_flame";
+			int flames = 0;
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( numFlames & (1 << i) )
+				{
+					++flames;
+				}
+			}
+			lightname += std::to_string(std::min(MAXPLAYERS, flames));
+			this->light = addLight(this->x / 16, this->y / 16, lightname.c_str());
+		}
+	}
+	else
+	{
+		this->light = addLight(this->x / 16, this->y / 16, "assist_shrine");
+	}
+
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+
+	if ( shrineInteracting > 0 )
+	{
+		if ( !interacting || (entityDist(interacting, this) > TOUCHRANGE) )
+		{
+			int playernum = -1;
+			if ( interacting->behavior == &actPlayer )
+			{
+				playernum = interacting->skill[2];
+			}
+			shrineInteracting = 0;
+			serverUpdateEntitySkill(this, 0);
+			if ( multiplayer == SERVER && playernum > 0 )
+			{
+				strcpy((char*)net_packet->data, "ASCL");
+				net_packet->data[4] = playernum;
+				SDLNet_Write32(this->getUID(), &net_packet->data[5]);
+				net_packet->address.host = net_clients[playernum - 1].host;
+				net_packet->address.port = net_clients[playernum - 1].port;
+				net_packet->len = 9;
+				sendPacketSafe(net_sock, -1, net_packet, playernum - 1);
+			}
+			else if ( multiplayer == SINGLE || playernum == 0 )
+			{
+				GenericGUI[playernum].assistShrineGUI.closeAssistShrine();
+			}
+		}
+	}
+
+	// using
+	for ( int i = 0; i < MAXPLAYERS; i++ )
+	{
+		if ( selectedEntity[i] == this || client_selected[i] == this )
+		{
+			if ( inrange[i] && players[i]->entity )
+			{
+				if ( shrineInteracting != 0 )
+				{
+					if ( Entity* interacting = uidToEntity(shrineInteracting) )
+					{
+						if ( interacting != players[i]->entity )
+						{
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(6351));
+						}
+					}
+				}
+				else
+				{
+					shrineInteracting = players[i]->entity->getUID();
+					if ( multiplayer == SERVER )
+					{
+						serverUpdateEntitySkill(this, 0);
+					}
+					if ( players[i]->isLocalPlayer() )
+					{
+						GenericGUI[i].openGUI(GUI_TYPE_ASSIST, this);
+					}
+					else if ( multiplayer == SERVER && i > 0 )
+					{
+						strcpy((char*)net_packet->data, "ASSO");
+						SDLNet_Write32(this->getUID(), &net_packet->data[4]);
+						net_packet->address.host = net_clients[i - 1].host;
+						net_packet->address.port = net_clients[i - 1].port;
+						net_packet->len = 8;
+						sendPacketSafe(net_sock, -1, net_packet, i - 1);
+					}
+				}
+				break;
+			}
+		}
+	}
+}

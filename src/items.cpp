@@ -2316,6 +2316,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case ARTIFACT_CLOAK:
 		case CLOAK_BACKPACK:
 		case CLOAK_SILVER:
+		case CLOAK_GUARDIAN:
 			equipItemResult = equipItem(item, &stats[player]->cloak, player, checkInventorySpaceForPaperDoll);
 			break;
 		case LEATHER_BOOTS:
@@ -2623,6 +2624,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case RING_LEVITATION:
 		case RING_REGENERATION:
 		case RING_TELEPORTATION:
+		case RING_RESOLVE:
 			equipItemResult = equipItem(item, &stats[player]->ring, player, checkInventorySpaceForPaperDoll);
 			break;
 		case SPELLBOOK_FORCEBOLT:
@@ -2754,6 +2756,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case MASK_EYEPATCH:
 		case MASK_MASQUERADE:
 		case MASK_MOUTH_ROSE:
+		case MASK_MARIGOLD:
 		case MASK_GOLDEN:
 		case MASK_SPOOKY:
 		case MASK_TECH_GOGGLES:

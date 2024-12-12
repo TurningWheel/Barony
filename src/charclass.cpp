@@ -2816,7 +2816,7 @@ void initClass(const int player)
 		}
 	}
 
-	if ( svFlags & SV_FLAG_LIFESAVING )
+	/*if ( svFlags & SV_FLAG_LIFESAVING )
 	{
 		item = newItem(AMULET_LIFESAVING, WORN, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
@@ -2829,7 +2829,7 @@ void initClass(const int player)
 		{
 			useItem(item, player);
 		}
-	}
+	}*/
 	if ( gameModeManager.currentSession.challengeRun.isActive(GameModeManager_t::CurrentSession_t::ChallengeRun_t::CHEVENT_BFG) )
 	{
 		item = newItem(HEAVY_CROSSBOW, EXCELLENT, curseItems ? -99 : 99, 1, 0, true, nullptr);

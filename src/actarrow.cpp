@@ -703,7 +703,7 @@ void actArrow(Entity* my)
 					{
 						if ( parent->behavior == &actArrowTrap )
 						{
-							trapResist = hit.entity->getFollowerBonusTrapResist();
+							trapResist = hit.entity->getEntityBonusTrapResist();
 							if ( trapResist != 0 )
 							{
 								real_t mult = std::max(0.0, 1.0 - (trapResist / 100.0));

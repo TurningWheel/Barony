@@ -477,6 +477,7 @@ void UIToastNotificationManager_t::drawNotifications(bool isMoviePlaying, bool b
 		}
 		else if (conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 			|| conductGameChallenges[CONDUCT_LIFESAVING]
+			|| conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED] >= GenericGUIMenu::AssistShrineGUI_t::achievementDisabledLimit
 			|| Mods::disableSteamAchievements) {
 			achievementsCheck = false;
 			if ( *cvar_achievements_warning )

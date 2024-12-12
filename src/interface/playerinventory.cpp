@@ -886,7 +886,8 @@ bool moveInPaperDoll(int player, Player::PaperDoll_t::PaperDollSlotType paperDol
 	if ( inventoryUI.bCompactView )
 	{
 		if ( GenericGUI[player].tinkerGUI.bOpen || GenericGUI[player].alchemyGUI.bOpen 
-			|| GenericGUI[player].featherGUI.bOpen )
+			|| GenericGUI[player].featherGUI.bOpen
+			|| GenericGUI[player].assistShrineGUI.bOpen )
 		{
 			return false;
 		}
@@ -1249,6 +1250,216 @@ void select_feather_slot(int player, int currentx, int currenty, int diffx, int 
 	x = 0;
 	featherGUI.selectFeatherSlot(x, y);
 	featherGUI.scrollToSlot(x, y, false);
+}
+
+// only called by handleInventoryMovement in player.cpp
+void select_assistshrine_slot(int player, int currentx, int currenty, int diffx, int diffy)
+{
+	int x = currentx + diffx;
+	int y = currenty + diffy;
+
+	auto& assistShrineGUI = GenericGUI[player].assistShrineGUI;
+
+	if ( !assistShrineGUI.bFirstTimeSnapCursor
+		|| !assistShrineGUI.isInteractable )
+	{
+		return;
+	}
+
+	int lowestItemY = 0;
+	if ( assistShrineGUI.currentView == GenericGUIMenu::AssistShrineGUI_t::ASSIST_SHRINE_VIEW_CLASSES )
+	{
+		for ( auto& pair : assistShrineGUI.classSlots )
+		{
+			lowestItemY = std::max(lowestItemY, pair.first / 100);
+		}
+	}
+	else if ( assistShrineGUI.currentView == GenericGUIMenu::AssistShrineGUI_t::ASSIST_SHRINE_VIEW_RACE )
+	{
+		lowestItemY = std::max(lowestItemY, (int)assistShrineGUI.raceSlots.size() - 1);
+	}
+
+	if ( currentx < 0 )
+	{
+		if ( assistShrineGUI.currentView != GenericGUIMenu::AssistShrineGUI_t::ASSIST_SHRINE_VIEW_ITEMS )
+		{
+			if ( assistShrineGUI.currentView == GenericGUIMenu::AssistShrineGUI_t::ASSIST_SHRINE_VIEW_RACE )
+			{
+				assistShrineGUI.selectAssistShrineSlot(assistShrineGUI.ASSIST_RACE_COLUMN, 0);
+				assistShrineGUI.scrollToSlot(assistShrineGUI.ASSIST_RACE_COLUMN, 0, false);
+			}
+			else
+			{
+				assistShrineGUI.selectAssistShrineSlot(0, 0);
+				assistShrineGUI.scrollToSlot(0, 0, false);
+			}
+			return;
+		}
+		if ( diffy != 0 )
+		{
+			y = 0;
+		}
+		else if ( diffx != 0 )
+		{
+			y = 0;
+			if ( diffx > 0 )
+			{
+				if ( currentx > assistShrineGUI.ASSIST_SLOT_RING )
+				{
+					x = std::max(currentx - 1, assistShrineGUI.ASSIST_SLOT_RING);
+				}
+				else if ( currentx <= assistShrineGUI.ASSIST_SLOT_RING )
+				{
+					players[player]->inventoryUI.selectSlot(0, 0);
+					players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+					return;
+				}
+			}
+			else if ( diffx < 0 )
+			{
+				if ( currentx < assistShrineGUI.ASSIST_SLOT_CLOAK )
+				{
+					x = std::min(currentx + 1, assistShrineGUI.ASSIST_SLOT_CLOAK);
+				}
+				else if ( currentx == assistShrineGUI.ASSIST_SLOT_CLOAK )
+				{
+					players[player]->inventoryUI.selectSlot(players[player]->inventoryUI.getSizeX() - 1, 0);
+					players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+					return;
+				}
+			}
+		}
+	}
+	else if ( currentx >= 0 )
+	{
+		if ( assistShrineGUI.currentView == GenericGUIMenu::AssistShrineGUI_t::ASSIST_SHRINE_VIEW_ITEMS )
+		{
+			assistShrineGUI.selectAssistShrineSlot(assistShrineGUI.ASSIST_SLOT_CLOAK, 0);
+			return;
+		}
+		else if ( assistShrineGUI.currentView == GenericGUIMenu::AssistShrineGUI_t::ASSIST_SHRINE_VIEW_RACE )
+		{
+			if ( diffx != 0 )
+			{
+				x = assistShrineGUI.ASSIST_RACE_COLUMN;
+				y = std::min((int)assistShrineGUI.raceSlots.size(), std::max(0, y));
+			}
+			else if ( diffy != 0 )
+			{
+				if ( diffy > 0 )
+				{
+					y = currenty + 1;
+				}
+				else if ( diffy < 0 )
+				{
+					y = currenty - 1;
+				}
+
+				x = assistShrineGUI.ASSIST_RACE_COLUMN;
+				y = std::min(std::max(0, y), lowestItemY);
+			}
+		}
+		else if ( assistShrineGUI.currentView == GenericGUIMenu::AssistShrineGUI_t::ASSIST_SHRINE_VIEW_CLASSES )
+		{
+			if ( diffy != 0 )
+			{
+				if ( diffy > 0 )
+				{
+					auto slotFrame = assistShrineGUI.getAssistShrineSlotFrame(x, currenty + 1);
+					if ( slotFrame && !slotFrame->isDisabled() )
+					{
+						y = currenty + 1;
+					}
+					else
+					{
+						// no move
+						// check slots to the left
+						x = currentx;
+						bool found = false;
+						while ( x > 0 )
+						{
+							--x;
+							auto slotFrame = assistShrineGUI.getAssistShrineSlotFrame(x, currenty + 1);
+							if ( slotFrame && !slotFrame->isDisabled() )
+							{
+								y = currenty + 1;
+								found = true;
+								break;
+							}
+						}
+						if ( !found )
+						{
+							x = currentx;
+							y = currenty;
+						}
+					}
+				}
+				else
+				{
+					auto slotFrame = assistShrineGUI.getAssistShrineSlotFrame(x, currenty - 1);
+					if ( slotFrame && !slotFrame->isDisabled() )
+					{
+						y = currenty - 1;
+					}
+					else
+					{
+						// no move
+					}
+				}
+			}
+			else if ( diffx != 0 )
+			{
+				if ( diffx > 0 )
+				{
+					auto slotFrame = assistShrineGUI.getAssistShrineSlotFrame(currentx + 1, y);
+					if ( slotFrame && !slotFrame->isDisabled() )
+					{
+						x = currentx + 1;
+					}
+					else
+					{
+						// no move
+					}
+				}
+				else
+				{
+					auto slotFrame = assistShrineGUI.getAssistShrineSlotFrame(currentx - 1, y);
+					if ( slotFrame && !slotFrame->isDisabled() )
+					{
+						x = currentx - 1;
+					}
+					else
+					{
+						// no move
+					}
+				}
+			}
+
+			x = std::min(std::max(0, x), assistShrineGUI.MAX_ASSISTSHRINE_X - 1);
+			y = std::min(std::max(0, y), lowestItemY);
+
+			Frame* slotFrame = assistShrineGUI.getAssistShrineSlotFrame(x, y);
+			if ( !slotFrame || slotFrame->isDisabled() )
+			{
+				// dest slot not valid, reset to current
+				x = std::min(std::max(0, currentx), assistShrineGUI.MAX_ASSISTSHRINE_X - 1);
+				y = std::min(std::max(0, currenty), lowestItemY);
+				slotFrame = assistShrineGUI.getAssistShrineSlotFrame(x, y);
+				if ( !slotFrame || slotFrame->isDisabled() )
+				{
+					// current slot not valid, reset to 0, 0
+					assistShrineGUI.selectAssistShrineSlot(0, 0);
+					assistShrineGUI.scrollToSlot(0, 0, false);
+					return;
+				}
+			}
+		}
+	}
+	assistShrineGUI.selectAssistShrineSlot(x, y);
+	if ( assistShrineGUI.currentView != assistShrineGUI.ASSIST_SHRINE_VIEW_ITEMS )
+	{
+		assistShrineGUI.scrollToSlot(x, y, false);
+	}
 }
 
 // only called by handleInventoryMovement in player.cpp
@@ -1651,6 +1862,7 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 						bool skipPaperDollSelection = false;
 						if ( GenericGUI[player].tinkerGUI.bOpen 
 							|| GenericGUI[player].alchemyGUI.bOpen 
+							|| GenericGUI[player].assistShrineGUI.bOpen
 							|| GenericGUI[player].featherGUI.bOpen )
 						{
 							skipPaperDollSelection = true;
@@ -1765,6 +1977,23 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 			players[player]->GUI.activateModule(Player::GUI_t::MODULE_CHEST);
 			return;
 		}
+		else if ( !selectedItem && GenericGUI[player].assistShrineGUI.bOpen )
+		{
+			if ( GenericGUI[player].assistShrineGUI.currentView == GenericGUI[player].assistShrineGUI.ASSIST_SHRINE_VIEW_RACE )
+			{
+				select_assistshrine_slot(player, GenericGUI[player].assistShrineGUI.ASSIST_RACE_COLUMN, 0, 0, 0);
+			}
+			else if ( GenericGUI[player].assistShrineGUI.currentView == GenericGUI[player].assistShrineGUI.ASSIST_SHRINE_VIEW_CLASSES )
+			{
+				select_assistshrine_slot(player, 0, 0, 0, 0);
+			}
+			else if ( GenericGUI[player].assistShrineGUI.currentView == GenericGUI[player].assistShrineGUI.ASSIST_SHRINE_VIEW_ITEMS )
+			{
+				select_assistshrine_slot(player, GenericGUI[player].assistShrineGUI.ASSIST_SLOT_RING, 0, 0, 0);
+			}
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_ASSISTSHRINE);
+			return;
+		}
 		else if ( !selectedItem && GenericGUI[player].alchemyGUI.bOpen )
 		{
 			if ( y >= GenericGUI[player].alchemyGUI.MAX_ALCH_Y )
@@ -1860,6 +2089,23 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 				players[player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
 				return;
 			}
+		}
+		else if ( !selectedItem && GenericGUI[player].assistShrineGUI.bOpen )
+		{
+			if ( GenericGUI[player].assistShrineGUI.currentView == GenericGUI[player].assistShrineGUI.ASSIST_SHRINE_VIEW_RACE )
+			{
+				select_assistshrine_slot(player, GenericGUI[player].assistShrineGUI.ASSIST_RACE_COLUMN, 0, 0, 0);
+			}
+			else if ( GenericGUI[player].assistShrineGUI.currentView == GenericGUI[player].assistShrineGUI.ASSIST_SHRINE_VIEW_CLASSES )
+			{
+				select_assistshrine_slot(player, 0, 0, 0, 0);
+			}
+			else if ( GenericGUI[player].assistShrineGUI.currentView == GenericGUI[player].assistShrineGUI.ASSIST_SHRINE_VIEW_ITEMS )
+			{
+				select_assistshrine_slot(player, GenericGUI[player].assistShrineGUI.ASSIST_SLOT_CLOAK, 0, 0, 0);
+			}
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_ASSISTSHRINE);
+			return;
 		}
 		else if ( !selectedItem && players[player]->gui_mode == GUI_MODE_SHOP && players[player]->shopGUI.bOpen )
 		{
@@ -4884,6 +5130,25 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                             }
                         }
                     }
+					else if ( item->type == MASK_MARIGOLD
+						&& (icon.conditionalAttribute == "EFF_MARIGOLD1"
+							|| icon.conditionalAttribute == "EFF_MARIGOLD1_HUNGER") )
+					{
+						if ( icon.conditionalAttribute == "EFF_MARIGOLD1" )
+						{
+							if ( (svFlags & SV_FLAG_HUNGER) )
+							{
+								continue;
+							}
+						}
+						else if ( icon.conditionalAttribute == "EFF_MARIGOLD1_HUNGER" )
+						{
+							if ( !(svFlags & SV_FLAG_HUNGER) )
+							{
+								continue;
+							}
+						}
+					}
                     else if ( itemCategory(item) == SPELLBOOK
                              && icon.conditionalAttribute.find("SPELLBOOK_") != std::string::npos )
                     {
@@ -5831,13 +6096,20 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
             }
             else
             {
-				if ( !item->identified && itemCategory(item) == GEM )
+				if ( GenericGUI[player].assistShrineGUI.bOpen && GenericGUI[player].assistShrineGUI.itemIsFromGUI(item) )
 				{
-					snprintf(valueBuf, sizeof(valueBuf), "%d", items[GEM_GLASS].value);
+					snprintf(valueBuf, sizeof(valueBuf), "%d", GenericGUI[player].assistShrineGUI.getAssistPointFromItem(item));
 				}
 				else
 				{
-					snprintf(valueBuf, sizeof(valueBuf), "%d", items[item->type].value);
+					if ( !item->identified && itemCategory(item) == GEM )
+					{
+						snprintf(valueBuf, sizeof(valueBuf), "%d", items[GEM_GLASS].value);
+					}
+					else
+					{
+						snprintf(valueBuf, sizeof(valueBuf), "%d", items[item->type].value);
+					}
 				}
                 txtGoldValue->setText(valueBuf);
             }
@@ -5850,6 +6122,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
             const std::string goldImagePath = "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Money_00.png";
             const std::string weightImagePath = "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_WGT_00.png";
             const std::string spellMPCostImagePath = "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_ManaRegen_00.png";
+			const std::string assistImagePath = "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Assistance_00.png";
             
             Font::get(txtGoldValue->getFont())->sizeText("_", &charWidth, &charHeight);
             Font::get(txtWeightValue->getFont())->sizeText("_", &charWidth, &charHeight);
@@ -5904,7 +6177,14 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                 imgGoldIcon->pos.y = pady;
                 txtGoldValue->setSize(SDL_Rect{ imgGoldIcon->pos.x + imgGoldIcon->pos.w + padx,
                     imgGoldIcon->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgGoldIcon->pos.h });
-                imgGoldIcon->path = goldImagePath;
+				if ( GenericGUI[player].assistShrineGUI.bOpen && GenericGUI[player].assistShrineGUI.itemIsFromGUI(item) )
+				{
+					imgGoldIcon->path = assistImagePath;
+				}
+				else
+				{
+					imgGoldIcon->path = goldImagePath;
+				}
                 
                 snprintf(valueBuf, sizeof(valueBuf), "%d", item->getWeight());
                 txtWeightValue->setText(valueBuf);
@@ -6536,6 +6816,7 @@ void Player::HUD_t::finalizeFrameTooltip(Item* item, const int x, const int y, i
 		&& !inputs.getVirtualMouse(player)->draw_cursor
 		&& !compendiumTooltip
 		&& !players[player]->shootmode
+		&& !(GenericGUI->assistShrineGUI.bOpen && GenericGUI->assistShrineGUI.itemIsFromGUI(item))
 		&& !(itemCategory(item) == SPELL_CAT && (players[player]->shopGUI.bOpen || players[player]->inventoryUI.chestGUI.bOpen)) )
 	{
 		auto options = getContextTooltipOptionsForItem(player, item, players[player]->inventoryUI.useItemDropdownOnGamepad, players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR);
@@ -7244,6 +7525,7 @@ void Player::Inventory_t::updateInventory()
 	auto& alchemyGUI = GenericGUI[player].alchemyGUI;
 	auto& featherGUI = GenericGUI[player].featherGUI;
 	auto& itemfxGUI = GenericGUI[player].itemfxGUI;
+	auto& assistShrineGUI = GenericGUI[player].assistShrineGUI;
 
 	appraisal.updateAppraisalAnim();
 
@@ -7436,6 +7718,10 @@ void Player::Inventory_t::updateInventory()
 			else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
 			{
 				featherGUI.warpMouseToSelectedFeatherItem(nullptr, (Inputs::SET_CONTROLLER));
+			}
+			else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE )
+			{
+				assistShrineGUI.warpMouseToSelectedAssistShrineItem(nullptr, (Inputs::SET_CONTROLLER));
 			}
 			else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
 			{
@@ -7815,6 +8101,82 @@ void Player::Inventory_t::updateInventory()
 							starty = slotFrame->getAbsoluteSize().y;
 							startx -= players[player]->camera_virtualx1(); // offset any splitscreen camera positioning.
 							starty -= players[player]->camera_virtualy1();
+						}
+					}
+				}
+			}
+		}
+
+		if ( assistShrineGUI.bOpen && players[player]->inventory_mode == INVENTORY_MODE_ITEM
+			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_ASSISTSHRINE) )
+		{
+			for ( int x = assistShrineGUI.ASSIST_SLOT_RING; x <= assistShrineGUI.MAX_ASSISTSHRINE_X; ++x )
+			{
+				if ( x == assistShrineGUI.MAX_ASSISTSHRINE_X )
+				{
+					x = assistShrineGUI.ASSIST_RACE_COLUMN;
+				}
+				for ( int y = 0; y < assistShrineGUI.MAX_ASSISTSHRINE_Y; ++y )
+				{
+					if ( y > 0 && x < 0 )
+					{
+						continue;
+					}
+
+					if ( assistShrineGUI.currentView == assistShrineGUI.ASSIST_SHRINE_VIEW_ITEMS )
+					{
+						if ( x >= 0 )
+						{
+							continue;
+						}
+					}
+
+					bool slotVisible = assistShrineGUI.isSlotVisible(x, y);
+
+					if ( auto slotFrame = assistShrineGUI.getAssistShrineSlotFrame(x, y) )
+					{
+						if ( !players[player]->GUI.isDropdownActive() ) // don't update selected slot while item menu open
+						{
+							if ( slotVisible && assistShrineGUI.isInteractable && slotFrame->capturesMouseInRealtimeCoords() )
+							{
+								assistShrineGUI.selectAssistShrineSlot(x, y);
+								if ( inputs.getVirtualMouse(player)->draw_cursor )
+								{
+									// mouse movement captures the inventory
+									players[player]->GUI.activateModule(Player::GUI_t::MODULE_ASSISTSHRINE);
+								}
+							}
+						}
+
+						bool hideCursor = false;
+						if ( x == assistShrineGUI.getSelectedAssistShrineX()
+							&& y == assistShrineGUI.getSelectedAssistShrineY()
+							&& !hideCursor
+							&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE
+							&& assistShrineGUI.isInteractable
+							&& slotVisible )
+						{
+							slotFrameToHighlight = slotFrame;
+							startx = slotFrame->getAbsoluteSize().x;
+							starty = slotFrame->getAbsoluteSize().y;
+							startx -= players[player]->camera_virtualx1(); // offset any splitscreen camera positioning.
+							starty -= players[player]->camera_virtualy1();
+							if ( assistShrineGUI.currentView == assistShrineGUI.ASSIST_SHRINE_VIEW_CLASSES
+								&& x >= 0 && x < assistShrineGUI.MAX_ASSISTSHRINE_X
+								&& y >= 0 && y < assistShrineGUI.MAX_ASSISTSHRINE_Y )
+							{
+								startx += 1;
+								starty += 3;
+								highlightWidth = slotFrame->getSize().w - 6;
+								highlightHeight = slotFrame->getSize().h - 6;
+							}
+							else if ( assistShrineGUI.currentView == assistShrineGUI.ASSIST_SHRINE_VIEW_RACE
+								&& x == assistShrineGUI.ASSIST_RACE_COLUMN
+								&& y >= 0 && y < assistShrineGUI.MAX_ASSISTSHRINE_Y )
+							{
+								highlightWidth = slotFrame->getSize().w;
+								highlightHeight = slotFrame->getSize().h;
+							}
 						}
 					}
 				}
@@ -9129,6 +9491,12 @@ void Player::Inventory_t::updateInventory()
 			}
 			if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SHOP
 				&& (!shopGUI.isInteractable) )
+			{
+				// don't do anything while in motion
+				break;
+			}
+			if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE
+				&& (!assistShrineGUI.isInteractable) )
 			{
 				// don't do anything while in motion
 				break;

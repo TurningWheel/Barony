@@ -785,7 +785,8 @@ public:
 			MODULE_MAP,
 			MODULE_SIGN_VIEW,
 			MODULE_ITEMEFFECTGUI,
-			MODULE_PORTRAIT
+			MODULE_PORTRAIT,
+			MODULE_ASSISTSHRINE
 		};
 		GUIModules activeModule = MODULE_NONE;
 		GUIModules previousModule = MODULE_NONE;
@@ -806,6 +807,21 @@ public:
 		GUIDropdown_t dropdownMenu;
 		void closeDropdowns();
 		bool isDropdownActive();
+		static void imageResizeToContainer9x9(Frame* container, SDL_Rect dimensionsToFill, const std::vector<std::string>& imgNames);
+		static void imageSetWidthHeight9x9(Frame* container, const std::vector<std::string>& imgNames);
+		static const std::vector<std::string> tooltipEffectBackgroundImages;
+		enum ImageIndexes9x9 : int
+		{
+			TOP_LEFT,
+			TOP_RIGHT,
+			TOP,
+			MIDDLE_LEFT,
+			MIDDLE_RIGHT,
+			MIDDLE,
+			BOTTOM_LEFT,
+			BOTTOM_RIGHT,
+			BOTTOM
+		};
 	} GUI;
 
 	//All the code that sets shootmode = false. Display chests, inventory, books, shopkeeper, identify, whatever.
@@ -997,6 +1013,27 @@ public:
 			bool displayingShortFormTooltip = false;
 			bool displayingTitleOnlyTooltip = false;
 			ItemTooltipDisplay_t();
+			void reset()
+			{
+				type = WOODEN_SHIELD;
+				status = BROKEN;
+				beatitude = 0;
+				count = -1;
+				appearance = 0;
+				identified = false;
+				uid = 0;
+				wasAppraisalTarget = false;
+
+				playernum = -1;
+				playerLVL = -1;
+				playerEXP = -1;
+				playerSTR = -1;
+				playerDEX = -1;
+				playerCON = -1;
+				playerINT = -1;
+				playerPER = -1;
+				playerCHR = -1;
+			}
 		};
 		ItemTooltipDisplay_t itemTooltipDisplay;
 		ItemTooltipDisplay_t compendiumItemTooltipDisplay;
@@ -1811,6 +1848,7 @@ public:
 		void initStartRoomLocation(int x, int y);
 		bool isControllable();
 		Entity* spawnGhost();
+		Entity* respawn();
 		static void pauseMenuSpectate(const int player);
 		static void pauseMenuSpawnGhost(const int player);
 		static bool gameoverOnDismiss(const int player);

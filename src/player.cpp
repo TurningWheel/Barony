@@ -1192,6 +1192,7 @@ bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 		|| moduleToAccess == MODULE_SHOP || moduleToAccess == MODULE_TINKERING
 		|| moduleToAccess == MODULE_FEATHER
 		|| moduleToAccess == MODULE_ALCHEMY
+		|| moduleToAccess == MODULE_ASSISTSHRINE
 		|| moduleToAccess == MODULE_ITEMEFFECTGUI )
 	{
 		if ( moduleToAccess == MODULE_HOTBAR )
@@ -1333,6 +1334,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				return MODULE_NONE;
 			}
 			else if ( GenericGUI[player.playernum].featherGUI.bOpen )
+			{
+				return MODULE_NONE;
+			}
+			else if ( GenericGUI[player.playernum].assistShrineGUI.bOpen )
 			{
 				return MODULE_NONE;
 			}
@@ -1478,6 +1483,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				}
 				return MODULE_INVENTORY;
 			}
+		}
+		else if ( activeModule == MODULE_ASSISTSHRINE )
+		{
+			return MODULE_NONE;
 		}
 		else if ( activeModule == MODULE_TINKERING )
 		{
@@ -1693,6 +1702,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			{
 				return MODULE_NONE;
 			}
+			else if ( GenericGUI[player.playernum].assistShrineGUI.bOpen )
+			{
+				return MODULE_NONE;
+			}
 			else if ( player.ghost.isActive() )
 			{
 				if ( bCompactView )
@@ -1841,6 +1854,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			return MODULE_NONE;
 		}
 		else if ( activeModule == MODULE_FEATHER )
+		{
+			return MODULE_NONE;
+		}
+		else if ( activeModule == MODULE_ASSISTSHRINE )
 		{
 			return MODULE_NONE;
 		}
@@ -2087,6 +2104,7 @@ bool Player::GUI_t::handleInventoryMovement()
 			&& (players[player]->GUI.activeModule != Player::GUI_t::MODULE_INVENTORY
 				|| players[player]->GUI.activeModule != Player::GUI_t::MODULE_HOTBAR))
 		&& players[player]->GUI.activeModule != Player::GUI_t::MODULE_FEATHER
+		&& players[player]->GUI.activeModule != Player::GUI_t::MODULE_ASSISTSHRINE
 		&& players[player]->GUI.activeModule != Player::GUI_t::MODULE_SPELLS;
 
 	if ( Input::inputs[player].binaryToggle("InventoryMoveLeft")
@@ -2133,6 +2151,13 @@ bool Player::GUI_t::handleInventoryMovement()
 			select_alchemy_slot(player,
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotX(),
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
+				-1, 0);
+		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE )
+		{
+			select_assistshrine_slot(player,
+				GenericGUI[player].assistShrineGUI.getSelectedAssistShrineX(),
+				GenericGUI[player].assistShrineGUI.getSelectedAssistShrineY(),
 				-1, 0);
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
@@ -2233,6 +2258,13 @@ bool Player::GUI_t::handleInventoryMovement()
 			select_alchemy_slot(player,
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotX(),
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
+				1, 0);
+		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE )
+		{
+			select_assistshrine_slot(player,
+				GenericGUI[player].assistShrineGUI.getSelectedAssistShrineX(),
+				GenericGUI[player].assistShrineGUI.getSelectedAssistShrineY(),
 				1, 0);
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
@@ -2387,6 +2419,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
 				0, -1);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE )
+		{
+			select_assistshrine_slot(player,
+				GenericGUI[player].assistShrineGUI.getSelectedAssistShrineX(),
+				GenericGUI[player].assistShrineGUI.getSelectedAssistShrineY(),
+				0, -1);
+		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
 		{
 			if ( !GenericGUI[player].featherGUI.bFirstTimeSnapCursor
@@ -2537,6 +2576,13 @@ bool Player::GUI_t::handleInventoryMovement()
 			select_alchemy_slot(player,
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotX(),
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
+				0, 1);
+		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE )
+		{
+			select_assistshrine_slot(player,
+				GenericGUI[player].assistShrineGUI.getSelectedAssistShrineX(),
+				GenericGUI[player].assistShrineGUI.getSelectedAssistShrineY(),
 				0, 1);
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
@@ -4105,6 +4151,10 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		{
 			interactText += Language::get(6262); // "Touch shrine";
 		}
+		else if ( parent->behavior == &::actAssistShrine )
+		{
+			interactText += Language::get(6354); // "use shrine";
+		}
 		else if ( parent->behavior == &actBomb && parent->skill[21] != 0 ) //skill[21] item type
 		{
 			interactText = Language::get(4039); // "Disarm ";
@@ -4256,6 +4306,10 @@ bool entityBlocksTooltipInteraction(const int player, Entity& entity)
 		return false;
 	}
 	else if ( entity.behavior == &::actDaedalusShrine )
+	{
+		return false;
+	}
+	else if ( entity.behavior == &::actAssistShrine )
 	{
 		return false;
 	}
@@ -6728,6 +6782,8 @@ void Player::clearGUIPointers()
 	genericGUI.alchemyGUI.alchFrame = nullptr;
 	genericGUI.alchemyGUI.alchemySlotFrames.clear();
 	genericGUI.alchemyGUI.itemRequiresTitleReflow = true;
+	genericGUI.assistShrineGUI.assistShrineFrame = nullptr;
+	genericGUI.assistShrineGUI.assistShrineSlotFrames.clear();
 	genericGUI.featherGUI.featherFrame = nullptr;
 	genericGUI.featherGUI.featherSlotFrames.clear();
 	genericGUI.featherGUI.itemRequiresTitleReflow = true;
@@ -6777,6 +6833,9 @@ void Player::clearGUIPointers()
 	FollowerMenu[playernum].followerFrame = nullptr;
 	CalloutMenu[playernum].calloutFrame = nullptr;
 	CalloutMenu[playernum].calloutPingFrame = nullptr;
+
+	players[playernum]->inventoryUI.itemTooltipDisplay.reset();
+	players[playernum]->inventoryUI.compendiumItemTooltipDisplay.reset();
 }
 
 const char* Player::getAccountName() const {

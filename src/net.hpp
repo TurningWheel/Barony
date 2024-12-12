@@ -87,7 +87,8 @@ const Uint32 SV_FLAG_HARDCORE = 1 << 5;
 const Uint32 SV_FLAG_CLASSIC = 1 << 6;
 const Uint32 SV_FLAG_KEEPINVENTORY = 1 << 7;
 const Uint32 SV_FLAG_LIFESAVING = 1 << 8;
-const Uint32 NUM_SERVER_FLAGS =  9;
+const Uint32 SV_FLAG_ASSIST_ITEMS = 1 << 9;
+const Uint32 NUM_SERVER_FLAGS =  10;
 
 extern bool keepInventoryGlobal;
 

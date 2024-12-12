@@ -214,6 +214,7 @@ void select_shop_slot(int player, int currentx, int currenty, int diffx, int dif
 void select_tinkering_slot(int player, int currentx, int currenty, int diffx, int diffy);
 void select_alchemy_slot(int player, int currentx, int currenty, int diffx, int diffy);
 void select_feather_slot(int player, int currentx, int currenty, int diffx, int diffy);
+void select_assistshrine_slot(int player, int currentx, int currenty, int diffx, int diffy);
 
 extern Entity* openedChest[MAXPLAYERS]; //One for each client. //TODO: Clientside, [0] will always point to something other than NULL when a chest is open and it will be NULL when a chest is closed.
 extern list_t chestInv[MAXPLAYERS]; //This is just for the client, so that it can populate the chest inventory on its end.
@@ -311,7 +312,8 @@ enum GUICurrentType
 	GUI_TYPE_ALCHEMY,
 	GUI_TYPE_TINKERING,
 	GUI_TYPE_SCRIBING,
-	GUI_TYPE_ITEMFX
+	GUI_TYPE_ITEMFX,
+	GUI_TYPE_ASSIST
 };
 
 // Generic GUI Stuff (repair/alchemy)
@@ -394,7 +396,8 @@ public:
 		tinkerGUI(*this),
 		alchemyGUI(*this),
 		featherGUI(*this),
-		itemfxGUI(*this)
+		itemfxGUI(*this),
+		assistShrineGUI(*this)
 	{
 		tinkeringTotalItems.first = nullptr;
 		tinkeringTotalItems.last = nullptr;
@@ -408,6 +411,7 @@ public:
 	void openGUI(int type, Item* effectItem, int effectBeatitude, int effectItemType, int usingSpellID);
 	void openGUI(int type, bool experimenting, Item* itemOpenedWith);
 	void openGUI(int type, Item* itemOpenedWith);
+	void openGUI(int type, Entity* interactable);
 	void updateGUI();
 	void rebuildGUIInventory();
 	bool shouldDisplayItemInGUI(Item* item);
@@ -699,6 +703,176 @@ public:
 		static int heightOffsetWhenNotCompact;
 	};
 	ItemEffectGUI_t itemfxGUI;
+
+	struct AssistShrineGUI_t
+	{
+		GenericGUIMenu& parentGUI;
+		AssistShrineGUI_t(GenericGUIMenu& g) :
+			parentGUI(g)
+		{
+#ifndef EDITOR
+			resetItems();
+#endif
+		}
+
+		static const int ASSIST_SLOT_CLOAK = -1;
+		static const int ASSIST_SLOT_MASK = -2;
+		static const int ASSIST_SLOT_AMULET = -3;
+		static const int ASSIST_SLOT_RING = -4;
+		static const int ASSIST_RACE_COLUMN = 10;
+		static const int ASSIST_CHAR_NAME = -10;
+		static const int ASSIST_CHAR_RACE = -11;
+		static const int ASSIST_CHAR_CLASS = -12;
+
+		static const int achievementDisabledLimit = 10;
+
+		Item itemCloak;
+		Item itemMask;
+		Item itemAmulet;
+		Item itemRing;
+
+		void resetItems();
+		void onGameStart();
+		void resetSavedCharacterChanges();
+		void onMainMenuEnd();
+		bool hasItemsToClaim();
+		bool raceHasChanged();
+		bool classHasChanged();
+		bool claimItems(bool* isEquipped);
+
+		enum AssistShrineView_t : int
+		{
+			ASSIST_SHRINE_VIEW_ITEMS,
+			ASSIST_SHRINE_VIEW_CLASSES,
+			ASSIST_SHRINE_VIEW_RACE
+		};
+
+		AssistShrineView_t currentView = ASSIST_SHRINE_VIEW_ITEMS;
+		std::map<int, int> classSlots;
+		std::vector<int> raceSlots;
+		int selectedClass = -1;
+		int selectedRace = -1;
+		int selectedSex = -1;
+		int selectedAppearance = -1;
+		int selectedDisableAbilities = -1;
+		int savedClass = -1;
+		int savedRace = -1;
+		int savedSex = -1;
+		int savedAppearance = -1;
+		void changeCurrentView(AssistShrineView_t view);
+		void updateClassSlots();
+		void updateRaceSlots();
+		bool receivedCharacterChangeOK = false;
+		void onCharacterChange();
+		static void serverUpdateStatFlagsForClients();
+		real_t animx = 0.0;
+		real_t animFilter = 0.0;
+		real_t animPrompt = 0.0;
+		real_t animTooltip = 0.0;
+		real_t animAssistValueFade = 0.0;
+		Uint32 animPromptTicks = 0;
+		Uint32 animTooltipTicks = 0;
+		real_t animClassRaceTooltipOpacity = 0.0;
+		Uint32 animClassRaceTooltipTicks = 0;
+		std::set<ItemType> claimedItems;
+		bool isInteractable = true;
+		bool bOpen = false;
+		bool bFirstTimeSnapCursor = false;
+		Frame* assistShrineFrame = nullptr;
+		Uint32 shrineUID = 0;
+
+		void openAssistShrine(Entity* shrine);
+		void closeAssistShrine();
+		void updateAssistShrine();
+		void createAssistShrine();
+		bool assistShrineGUIHasBeenCreated() const;
+		std::unordered_map<int, Frame*> assistShrineSlotFrames;
+		void selectAssistShrineSlot(const int x, const int y);
+		int getAssistPointsSaved();
+		int getAssistPointsPreview();
+		int getAssistPointFromItem(Item* item);
+
+		int selectedAssistShrineSlotX = -1;
+		int selectedAssistShrineSlotY = -1;
+		int currentScrollRow1 = 0;
+		int currentScrollRow2 = 0;
+		real_t scrollPercent1 = 0.0;
+		real_t scrollInertia1 = 0.0;
+		int scrollSetpoint1 = 0;
+		real_t scrollAnimateX1 = 0.0;
+		real_t scrollPercent2 = 0.0;
+		real_t scrollInertia2 = 0.0;
+		int scrollSetpoint2 = 0;
+		real_t scrollAnimateX2 = 0.0;
+		static const int kNumClassesToDisplayVertical;
+		static const int kNumRacesToDisplayVertical;
+		static const int kClassSlotHeight;
+		static const int kRaceSlotHeight;
+		static const int kRaceSlotWidth;
+		static const int MAX_ASSISTSHRINE_X;
+		static const int MAX_ASSISTSHRINE_Y;
+		const int getSelectedAssistShrineX() const { return selectedAssistShrineSlotX; }
+		const int getSelectedAssistShrineY() const { return selectedAssistShrineSlotY; }
+		Frame* getAssistShrineSlotFrame(int x, int y) const;
+		//void setItemDisplayNameAndPrice(Item* item, bool isTooltipForResultPotion, bool isTooltipForRecipe);
+		bool warpMouseToSelectedAssistShrineItem(Item* snapToItem, Uint32 flags);
+		bool itemIsFromGUI(Item* item);
+		bool isSlotVisible(int x, int y) const;
+		void scrollToSlot(int x, int y, bool instantly);
+		static int heightOffsetWhenNotCompact;
+
+		struct AssistNotification_t
+		{
+			std::string img = "";
+			std::string title = "";
+			std::string body = "";
+			enum NotificationTypes
+			{
+				NOTIF_DEFAULT,
+				NOTIF_SEND_REQ,
+				NOTIF_CHARACTER_CHANGE_OK,
+				NOTIF_CLASS_RESET
+			};
+			Uint32 lifetime = 3 * TICKS_PER_SECOND;
+			NotificationTypes notificationType = NOTIF_DEFAULT;
+			real_t animx = 0.0;
+			int state = 0;
+			AssistNotification_t(std::string _title, std::string _body, std::string _img, NotificationTypes _notifType)
+			{
+				title = _title;
+				img = _img;
+				body = _body;
+				notificationType = _notifType;
+			}
+		};
+		std::vector<std::pair<Uint32, AssistNotification_t>> notifications;
+		AssistNotification_t* addNotification(std::string _title, std::string _body, std::string _img, AssistNotification_t::NotificationTypes _notifType);
+
+		enum AssistItemActions_t
+		{
+			ASSIST_ITEM_NONE,
+			ASSIST_ITEM_ACTIVATE,
+			ASSIST_ITEM_DEACTIVATE,
+			ASSIST_ITEM_CLAIMED,
+			ASSIST_ITEM_NOTHING_TO_CLAIM,
+			ASSIST_ITEM_FLAG_DISABLED,
+			ASSIST_CLASS_OK,
+			ASSIST_RACE_OK,
+		};
+		AssistItemActions_t itemActionType = ASSIST_ITEM_NONE;
+		real_t animInvalidAction = 0.0;
+		Uint32 animInvalidActionTicks = 0;
+		enum InvalidActionFeedback_t : int
+		{
+			INVALID_ACTION_NONE,
+			INVALID_ACTION_SHAKE_PROMPT
+		};
+		InvalidActionFeedback_t invalidActionType = INVALID_ACTION_NONE;
+		int itemType = -1;
+		AssistItemActions_t setItemDisplayNameAndPrice(Item* item, bool checkResultOnly = false);
+		void clearItemDisplayed();
+	};
+	AssistShrineGUI_t assistShrineGUI;
 
 	struct FeatherGUI_t
 	{
@@ -1501,7 +1675,8 @@ struct CalloutRadialMenu
 		CALLOUT_TYPE_BOMB_TRAP,
 		CALLOUT_TYPE_COLLIDER_BREAKABLE,
 		CALLOUT_TYPE_BELL,
-		CALLOUT_TYPE_DAEDALUS
+		CALLOUT_TYPE_DAEDALUS,
+		CALLOUT_TYPE_ASSIST_SHRINE
 		/*,CALLOUT_TYPE_PEDESTAL*/
 	};
 	enum CalloutHelpFlags : int

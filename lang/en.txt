@@ -6540,5 +6540,74 @@ Unlock Achievements to earn more!#
 6309 You are blasted by a torrent!#
 6310 Quick Turn Speed#
 6311 Affect the horizontal speed of the Quick Turn action.#
+6312 BACK#
+6313 FACE#
+6314 NECK#
+6315 RING#
+6316 Claim#
+6317 Already Claimed#
+6318 No Items To Claim#
+6319 CHANGE TO:
+#
+6320 CURRENT: #
+6321 ITEMS#
+6322 RACE#
+6323 CLASS#
+6324 ASSIST ITEM SELECTION#
+6325 RACE SELECTION#
+6326 CLASS SELECTION#
+6327 CHANGING TO: #
+6328 Assistance:#
+6329 Score Penalty:#
+6330 Achievements:#
+6331 ENABLED#
+6332 DISABLED#
+6333 Class choice has reset
+due to selected race.#
+6334 Character Changed#
+6335 Changes will be applied
+on next game start.#
+6336 %s has changed their character for next game start.
+(%s %s)#
+6337 Sending to server...#
+6338 Invalid Class!#
+6339 Take up to four gifts to ease
+the adventure that awaits.
 
-6350 END#
+Each point of Assistance reduces
+the party's final score ranking.#
+6340 ASSIST ITEMS#
+6341 You were Assisted. (%d Pts)#
+6342 Assist Items#
+6343 Allows claiming items from the starting floor Assist Shrine to adjust difficulty.#
+6344 Enable Assist Items#
+6345 Assist Items enabled#
+6346 Assist Items are disabled#
+6347 Take up to four gifts to ease
+the adventure that awaits.
+
+Assist Items are disabled in Game
+Settings. Toggle the option on to
+use Assist Items.
+
+#
+6348 Take up to four gifts to ease
+the adventure that awaits.
+
+Assist Items are disabled in Game
+Settings. Send a request to the
+Host to enable the game setting.
+
+#
+6349 Request Assist Items#
+6350 View Game Settings#
+6351 The shrine is currently in use by someone else.#
+6352 You see an Assist shrine.#
+6353 Assist shrine#
+6354 Use Assist shrine#
+6355 Your character has changed for next game start.
+(%s %s)#
+6356 You claim %d Assistance points from the shrine.#
+6357 %s claims %d Assistance points from the Assist shrine.#
+
+6399 END#

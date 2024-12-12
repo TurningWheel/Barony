@@ -416,6 +416,12 @@ int totalScore(score_t* score)
 			amount /= 4;
 		}
 	}
+	if ( score->conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED] > 0 )
+	{
+		amount /= 100;
+		amount *= (std::max(5, 100 - score->conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED] * 10));
+		amount = std::max(1, amount);
+	}
 	if ( amount < 0 )
 	{
 		amount = 0;
@@ -4012,13 +4018,13 @@ void updatePlayerConductsInMainLoop()
 			}
 		}
 	}
-	if ( !conductGameChallenges[CONDUCT_LIFESAVING] )
+	/*if ( !conductGameChallenges[CONDUCT_LIFESAVING] )
 	{
 		if ( (svFlags & SV_FLAG_LIFESAVING) )
 		{
 			conductGameChallenges[CONDUCT_LIFESAVING] = 1;
 		}
-	}
+	}*/
 	if ( conductGameChallenges[CONDUCT_HARDCORE] )
 	{
 		if ( !(svFlags & SV_FLAG_HARDCORE) )
@@ -4070,7 +4076,8 @@ void updatePlayerConductsInMainLoop()
 	}
 	if ( conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS]
 		|| conductGameChallenges[CONDUCT_CHEATS_ENABLED]
-		|| conductGameChallenges[CONDUCT_LIFESAVING] )
+		|| conductGameChallenges[CONDUCT_LIFESAVING]
+		|| conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED] >= GenericGUIMenu::AssistShrineGUI_t::achievementDisabledLimit )
 	{
 		gameStatistics[STATISTICS_DISABLE_UPLOAD] = 1;
 	}
@@ -6974,6 +6981,12 @@ int SaveGameInfo::getTotalScore(const int playernum, const int victory)
 		{
 			amount /= 4;
 		}
+	}
+	if ( player.additionalConducts[CONDUCT_ASSISTANCE_CLAIMED] > 0 )
+	{
+		amount /= 100;
+		amount *= (std::max(5, 100 - player.additionalConducts[CONDUCT_ASSISTANCE_CLAIMED] * 10));
+		amount = std::max(1, amount);
 	}
 	if ( amount < 0 )
 	{
