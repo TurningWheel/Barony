@@ -6469,7 +6469,7 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 					char buf[128];
 					memset(buf, 0, sizeof(buf));
 
-					if ( multiplayer == SINGLE )
+					if ( true/*multiplayer == SINGLE*/ )
 					{
 						snprintf(buf, sizeof(buf), definition.getDesc(1).c_str(), stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS]);
 						if ( descStr != "" ) { descStr += '\n'; }
