@@ -1316,6 +1316,18 @@
 		"hat_hood_whispers": {
 			"name_identified": "hood of whispers",
 			"name_unidentified": "hood"
+		},
+		"ring_resolve": {
+			"name_identified": "ring of resolve",
+			"name_unidentified": "ring"
+		},
+		"cloak_guardian": {
+			"name_identified": "cloak of the guardian",
+			"name_unidentified": "cloak"
+		},
+		"mask_marigold": {
+			"name_identified": "marigold",
+			"name_unidentified": "marigold"
 		}
     },
 	"spell_names": {
